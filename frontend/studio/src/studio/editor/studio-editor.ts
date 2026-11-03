@@ -254,6 +254,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	let beingOpened = false;
 	/** The article shown is a long one, put in a part at a time; `loading` till the last is in. */
 	let inParts = false;
+	/** About how many formulas the article shown has, all of it (its `$`s halved): a book's are drawn only near the screen. */
+	let formulas = 0;
 	let loading = false;
 	/** Done once the article shown is all in. */
 	let loaded: Promise<unknown> = Promise.resolve();
@@ -333,8 +335,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			new Plugin({
 				props: {
 					attributes: (state): Record<string, string> => {
-						const classes = [...(inParts || isLongArticle(state.doc) ? [LONG] : []), ...(beingOpened ? [OPENING] : [])];
-						return classes.length ? { class: classes.join(' ') } : {};
+						const long = inParts || isLongArticle(state.doc);
+						const classes = [...(long ? [LONG] : []), ...(beingOpened ? [OPENING] : [])];
+						return { ...(classes.length ? { class: classes.join(' ') } : {}), ...(long ? { 'data-formulas': String(formulas) } : {}) };
 					},
 				},
 			}),
@@ -591,6 +594,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		const first = parts?.next().value;
 		const opening = first?.length ? body.slice(0, first.at(-1)!.end) : body;
 		inParts = opening !== body;
+		formulas = Math.round((body.match(/\$/gu)?.length ?? 0) / 2) + (body.match(/\\\(/gu)?.length ?? 0);
 		beingOpened = true;
 		try {
 			// Another article, or this one anew: a review still open is over.

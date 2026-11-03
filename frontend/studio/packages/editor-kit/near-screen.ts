@@ -16,7 +16,12 @@ import type { EditorView } from '@milkdown/prose/view';
  * screen before it is first shown; the rest after, a few at every frame
  * (KaTeX and laying out an article of formulas took a quarter of a second
  * after each click on it in the list). Formulas made once it is shown (typed,
- * pasted) are drawn at once.
+ * pasted) are drawn at once. A long article too, unless it waits on more than
+ * `DRAWN_LATER` of them: a book's thousands drawn made every frame of a scroll
+ * half a second in WebKit (93 s to draw them all), but a long note's six hundred
+ * took 1.7 s in the background, and drawn so, a quick scroll through it had no
+ * frame over 100 ms (twelve before, the longest 370 ms, as each screen reached
+ * drew seven screens of formulas at once).
  *
  * What is fetched (an article's pictures, its 交互模块) is loaded only when it comes near the screen, in an article of
  * any length, and never the rest after (`loadWhenNear`): what is not scrolled to is not downloaded (another device's
@@ -40,8 +45,14 @@ export const OPENING = 'is-opening';
  */
 export const drawsLater = (view: EditorView): boolean => view.dom.classList.contains(LONG) || view.dom.classList.contains(OPENING);
 
-/** How long a frame spends drawing what waits far from the screen in an article that is not long, in ms. */
+/** How long a frame spends drawing what waits far from the screen, in ms. */
 const SPELL = 8;
+/**
+ * A long article of more formulas than this is drawn only near the screen, never the rest after (a book's): how many
+ * its element says (`data-formulas`, studio-editor.ts, counted in its whole text as it is opened, before the parts
+ * after the first are in).
+ */
+export const DRAWN_LATER = 1500;
 
 const WAITING = 'is-waiting';
 /** What waits to be loaded when it comes near, and only then. */
@@ -148,8 +159,9 @@ function drawNear(): void {
 				for (const element of [block, ...block.querySelectorAll(ANY_WAITING)]) if (shown || !element.classList.contains(NEAR_ONLY)) drawNow(element);
 			}
 		}
-		// Not a long article: the rest too, down the article, a few at a frame.
-		if (root.classList.contains(LONG)) continue;
+		// The rest too, down the article, a few at a frame: not in a book (a long article of more than DRAWN_LATER), nor
+		// where near is said for it (a row's page beside its table, which draws only what is on its screen).
+		if (root.classList.contains(LONG) && (reaches.has(root) || Number(root.dataset.formulas) > DRAWN_LATER)) continue;
 		const until = performance.now() + SPELL;
 		for (const element of root.querySelectorAll(`.${WAITING}`)) {
 			if (performance.now() > until) break;
