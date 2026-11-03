@@ -39,3 +39,9 @@
 
 根目录三份 README（中、英、越）的「文档 AI 问答」一节以前宣传按页引用的问答和 PDF Agent。用户定改写成 Studio 的
 读书笔记与 AI（笔记在中间、原书在旁边、AI 在右边）。截图 `ai-assistant.png` 还是旧的，等前端会话换。
+
+## 补充：命令行 retainpdf-agent 也删了
+
+同一天用户定：`retainpdf-agent`（`backend/api/src/bin/retainpdf-agent.rs`，给 AI 终端里的 agent 调本机接口的命令行）一起删。
+它主要靠 Agent 能力令牌认证，这种认证上面已经删了，只剩 `RETAINPDF_AGENT_API_KEY` 那条路；翻译、翻译 agent、管线、Studio 都不用它。
+Docker 镜像和 CI 的桌面包检查不再带它；桌面壳（`prepare-app.mjs`、`run-local.mjs`、`backend-env.js`）归前端，一起改。

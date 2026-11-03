@@ -58,5 +58,5 @@ an API that cannot update SQLite, job checkpoints, the Typst cache,
 or its private runtime home. `RETAINPDF_UID` and `RETAINPDF_GID` are image build
 arguments when a deployment needs different fixed IDs.
 
-The image also bundles `retainpdf-agent`.（以前镜像里由 Rust API 监督的 AI 服务 `retainpdf-ai`、FX 二进制和
-`RETAIN_AI_*` 环境变量 2026-11-03 跟 RetainPDF 自己的 AI 服务一起删了，产品里只留 Studio 的 AI。）
+以前镜像里由 Rust API 监督的 AI 服务 `retainpdf-ai`、FX 二进制、给 AI 的 agent 用的命令行 `retainpdf-agent` 和
+`RETAIN_AI_*` 环境变量 2026-11-03 跟 RetainPDF 自己的 AI 服务一起删了，产品里只留 Studio 的 AI。

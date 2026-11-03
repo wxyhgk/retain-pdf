@@ -1271,3 +1271,14 @@ Studio（`frontend/studio`）自己的 AI，后端把 RetainPDF 自己的 AI 服
   4. `frontend/desktop/scripts/report-package-size.mjs`：去掉 `app/backend/ai_service` 这一项。
   5. `frontend/desktop/requirements-ai-service.txt`：`.github/scripts/sync_backend_python_requirements.py` 不再生成它，CI 的桌面打包
      （`build-desktop-packages.yml`）也不再 `pip install -r` 它；文件可以删掉。
+
+## 删掉命令行 retainpdf-agent（2026-11-03）
+
+用户定：`retainpdf-agent`（给 RetainPDF 自己的 AI 终端里的 agent 调本机接口用的命令行）一起删了。它靠的 Agent 能力令牌
+认证在删 AI 那次已经没了，翻译、翻译 agent、管线、Studio 都不用它。上一节「没删的」里列了它，以这一节为准。
+
+- 后端删了 `backend/api/src/bin/retainpdf-agent.rs`；Docker 镜像不再带它；CI 的 macOS 桌面包检查不再要求 `bin/retainpdf-agent`。
+- 前端要做（桌面壳）：`frontend/desktop/scripts/prepare-app.mjs` 的 `resolveAgentBinary` 和拷贝 bin 那段、清单字段
+  `agentBinaryBundled`；`scripts/run-local.mjs` 的 `requiredBackendBinaries` 去掉它；`src/main/backend-env.js` 里提到它的地方。
+  `cargo build --workspace --bins` 不再产出它，打包时找不到会报错，所以要和这个分支一起合。
+

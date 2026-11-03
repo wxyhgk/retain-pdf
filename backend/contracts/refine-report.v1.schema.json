@@ -13,7 +13,7 @@
         "404": "NOT_FOUND: job does not exist (error.details is {}); the job has no refine report yet: error.details.reason = not_ready, message \"refine report not ready\""
       },
       "rust_view": "JobReportView",
-      "ts_consumer": "terminal agent CLI (retainpdf-agent translation issues)"
+      "ts_consumer": "GET /api/v1/jobs/:job_id/reports/refine 的调用方（以前的终端 agent 命令行 retainpdf-agent 2026-11-03 删了）"
     }
   ],
   "definitions": {

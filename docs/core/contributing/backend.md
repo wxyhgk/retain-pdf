@@ -7,7 +7,7 @@
 
 | 目录 | 包名（`cargo -p`） | crate 名（`use`） | 可执行文件 |
 |---|---|---|---|
-| `backend/api` | `retainpdf-api` | `retainpdf_api` | `rust_api`、`retainpdf-agent` |
+| `backend/api` | `retainpdf-api` | `retainpdf_api` | `rust_api` |
 | `backend/packages/retainpdf-api-base` | `retainpdf-api-base` | `retainpdf_api_base` | |
 | `backend/packages/retainpdf-accounts` | `retainpdf-accounts` | `retainpdf_accounts` | |
 | `backend/packages/retainpdf-files` | `retainpdf-files` | `retainpdf_files` | |

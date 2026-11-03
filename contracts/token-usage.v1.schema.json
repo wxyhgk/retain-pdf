@@ -21,7 +21,7 @@
       "client_name": "getDocumentUsage",
       "transport": "json",
       "output": "UsageSummaryView",
-      "note": "scope=document：这本书的全部任务，加上问这本书时助手花的。书不存在时 404（2026-10-19 以前是 200 和全零汇总）；有书没任务是 200 空汇总。助手可以经 retainpdf-agent document usage 读到。",
+      "note": "scope=document：这本书的全部任务，加上问这本书时助手花的。书不存在时 404（2026-10-19 以前是 200 和全零汇总）；有书没任务是 200 空汇总。",
       "rust_view": "services/jobs/reports/usage :: UsageSummaryView",
       "ts_consumer": "@retainpdf/contracts/token-usage :: UsageSummaryView"
     },
