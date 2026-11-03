@@ -302,7 +302,7 @@ export function ModelMenu({ state, actions }: { state: PanelState; actions: Pane
 							className="ai-picker-keyless"
 							onClick={() => {
 								setOpen(false);
-								actions.showSheet(true);
+								actions.openModels();
 							}}
 						>
 							<KeyRound aria-hidden />

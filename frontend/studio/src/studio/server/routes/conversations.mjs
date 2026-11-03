@@ -25,7 +25,10 @@ const PICTURES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jp
  * @param {import('./index.mjs').Studio} studio
  */
 export function conversationRoutes(api, { blogRoot, conversations, agentSettings, panelModels, articles, drive, programEnv, articleFolder, retainpdfReading }) {
-	const agents = async () => (await agentSettings.config()).list.filter((agent) => agent.acp);
+	/** The AIs of the conversations kept: those of 设置 › AI › 高级 on for an author who has not said (agent-settings.mjs). */
+	const used = async () => (await conversations.list()).map((entry) => entry.agent?.id).filter(Boolean);
+	/** All the AIs, to go on with a conversation had with one off the panel now; the panel lists those `listed`. */
+	const agents = async () => (await agentSettings.config(used)).list;
 	/** Claude Code and pi talk to the services chosen in the panel (panel-models.mjs); Codex to its own. */
 	const isClaude = (agent) => /(^|\/)claude-agent-acp(\s|$)/u.test(agent.acp);
 	const isPi = (agent) => /(^|\/)pi-acp(\s|$)/u.test(agent.acp);
@@ -36,12 +39,19 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		return { env: {}, models: null };
 	};
 
-	api.get('/conversations', async () => ({
-		// Which ones talk to the services of the panel's ⚙ (their models listed by service in the model menu).
-		agents: (await agents()).map((agent) => ({ id: agent.id, name: agent.name, kind: isClaude(agent) ? 'claude' : isPi(agent) ? 'pi' : 'other' })),
-		default: (await agentSettings.config()).default,
-		conversations: await conversations.list(),
-	}));
+	api.get('/conversations', async () => {
+		const known = await agentSettings.config(used);
+		return {
+			// pi first, those of 高级 turned on after it; which ones talk to the services of 设置 › AI › 模型和账号 (their
+			// models listed by service in the model menu).
+			agents: known.listed.map((agent) => ({ id: agent.id, name: agent.name, kind: isClaude(agent) ? 'claude' : isPi(agent) ? 'pi' : 'other' })),
+			default: known.default,
+			conversations: await conversations.list(),
+		};
+	});
+	// 设置 › AI › 高级: Claude Code and Codex, on or off.
+	api.get('/agents', () => agentSettings.shown(used));
+	api.put('/agents', async ({ json }) => agentSettings.set(await json(), used));
 	// A conversation goes on in blog/ whatever article is open (blog/AGENTS.md read there): each thing said is told
 	// which one is, with the lines selected and the articles named with @ (contextOf).
 	api.post('/conversations', async ({ json }) => {

@@ -187,15 +187,13 @@ pre.ai-subagent-error { max-height: 160px; overflow: auto; white-space: pre-wrap
 	.ai-thought.is-going summary, .ai-tool[data-status='in_progress'] .ai-tool-state::after, .ai-subagent-doing, .ai-subagent[data-status='running'] .ai-subagent-mark::after { animation: none; }
 }
 
-/* 模型和账号 (panel/ModelsSheet.tsx), in place of the conversation while open. */
-.ai-pane.is-settings .ai-transcript, .ai-pane.is-settings .ai-composer { display: none; }
+/* 模型和账号 (shell/dialogs/ModelsSettings.tsx): its form, in 设置 › AI. */
 .ai-sheet { flex: 1; min-height: 0; overflow: auto; padding: 12px 14px 16px; }
 .ai-sheet[hidden] { display: none; }
-.ai-sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.ai-sheet-head h3 { margin: 0; color: rgb(var(--black)); font-size: 15px; }
+/* 设置 › AI › 模型和账号: the same form in the settings' page, its room theirs. */
+.ai-sheet.is-in-settings { flex: none; padding: 0; overflow: visible; font-size: 13px; }
+.ai-sheet.is-in-settings h4:first-child { margin-top: 0; }
 .ai-sheet h4 { margin: 16px 0 6px; color: rgb(var(--gray-dark)); font-size: 13px; }
-.ai-sheet-close { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 15px; cursor: pointer; }
-.ai-sheet-close:hover { background: var(--surface-soft); }
 .ai-sheet select, .ai-sheet input { box-sizing: border-box; width: 100%; padding: 6px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 13px; outline: none; }
 .ai-sheet select:focus, .ai-sheet input:focus { border-color: rgb(var(--gray)); }
 .ai-sheet-field { display: block; margin-top: 10px; }
@@ -205,7 +203,7 @@ pre.ai-subagent-error { max-height: 160px; overflow: auto; white-space: pre-wrap
 .ai-sheet-keyed[hidden], .ai-sheet-account[hidden], .ai-sheet button[hidden] { display: none; }
 .ai-sheet-account { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
 .ai-sheet-account p { flex: 1 1 100%; margin: 0; font-size: 13px; }
-.ai-sheet button:not(.ai-sheet-close) { padding: 4px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+.ai-sheet button { padding: 4px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 .ai-sheet button.is-primary { border-color: rgb(var(--black)); background: rgb(var(--black)); color: var(--surface); }
 .ai-sheet button:disabled { opacity: 0.5; cursor: default; }
 .ai-sheet-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 12px; }

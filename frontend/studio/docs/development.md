@@ -26,7 +26,7 @@ src/
     server/           Studio 的后端：api.mjs 是路由和安全检查，routes/ 是各个接口；模块按领域分：
       articles/       文章：读写、文件、发布前检查、git、历史版本、文献库、磁盘监视
       files/ drive/   文章的文件（含回收站）；资料库和它的全文
-      ai/             AI 对话（ACP、Studio 里的 pi）、AI 助手和 AI 设置、编辑器里的 AI、识图
+      ai/             AI 对话（ACP、Studio 里的 pi）、面板里有哪些 AI（agent-settings.mjs）和 AI 设置、编辑器里的 AI、识图
       tasks/ apps/    后台任务和 PDF 识别；小程序
       system/         终端、在 Finder 中显示、选文件夹
     ops/              给大模型用的页面操作（见 docs/ai-tools.md）
@@ -54,7 +54,7 @@ tests/                单元测试（tests/fixtures/articles 是它们用的示�
 这个仓库只有代码。笔记（文章 `blog/`、作者的小程序 `apps/`、`chats/`、`repos/`、页面模板 `templates/`、回收站、`.studio-settings.json`、`.studio-jobs.json`、给 AI 的写作约定和技能）在笔记文件夹里，位置由 `src/studio/server/notes-root.mjs` 决定：环境变量 `STUDIO_NOTES_DIR`，否则代码根目录的 `.studio-local.json`（`{ "notes": "../my-notes" }`，只在本机），都没有就是代码根目录自己。
 
 - 服务器里分两个根：`projectRoot` 是代码（`node_modules`、`bin`、`tools`、`plugins`、`.studio-cache`），`notesRoot` 是笔记。新功能要放作者的东西，放在 `notesRoot` 下面。
-- Studio 替 AI 起的程序（终端、Alt+Enter、AI 面板的 agent）环境里有 `STUDIO_NOTES_DIR`，PATH 里有这个仓库的 `bin/`（`studio` 命令）。终端的「仓库」和没开文章时跑的小程序，都在笔记文件夹里。
+- Studio 替 AI 起的程序（终端、AI 面板的 agent）环境里有 `STUDIO_NOTES_DIR`，PATH 里有这个仓库的 `bin/`（`studio` 命令）。终端的「仓库」和没开文章时跑的小程序，都在笔记文件夹里。
 - 「博客首页」「在博客上打开」：笔记文件夹自己有 Astro 博客（`astro.config.mjs`）时在那里起它的 `astro dev`，没有就说没有。
 
 ## 编辑器

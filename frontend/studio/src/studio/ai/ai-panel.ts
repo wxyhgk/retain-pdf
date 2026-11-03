@@ -13,8 +13,8 @@ export type { AiPanelHost };
  * with it in panel/panel-state.ts. What the Studio around it asks of it: what is returned.
  */
 export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
-	const { store, actions, panel, sheetHost } = createPanelState(pane, host);
+	const { store, actions, panel } = createPanelState(pane, host);
 	// Drawn at once: what is asked of it next finds it there.
-	flushSync(() => createRoot(pane).render(createElement(AiPanel, { store, actions, sheetHost, pane })));
+	flushSync(() => createRoot(pane).render(createElement(AiPanel, { store, actions, pane })));
 	return panel;
 }

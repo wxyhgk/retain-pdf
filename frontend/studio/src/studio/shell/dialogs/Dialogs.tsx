@@ -1,5 +1,4 @@
 import { createStore, useStore } from '../store';
-import { AgentsDialog, type AgentsAsk } from './AgentsDialog';
 import { CiteDialog, type CiteAsk } from './CiteDialog';
 import { DeletePageDialog, PublishCheckDialog, type DeletePageAsk, type PublishCheckAsk } from './AskDialogs';
 import { HistoryDialog, type HistoryHost } from './HistoryDialog';
@@ -14,7 +13,6 @@ type Asks = {
 	trash: { host: TrashHost };
 	history: { slug: string; host: HistoryHost };
 	settings: SettingsAsk;
-	agents: AgentsAsk;
 	publishCheck: PublishCheckAsk;
 	deletePage: DeletePageAsk;
 	finder: QuickFindAsk;
@@ -42,7 +40,6 @@ export function Dialogs() {
 			{asks.history && <HistoryDialog {...asks.history} onClose={closer('history')} />}
 			{/* Asked again while open (for another part): a new one, there. */}
 			{asks.settings && <SettingsDialog key={`${asks.settings.section}-${asks.settings.why ?? ''}`} {...asks.settings} onClose={closer('settings')} />}
-			{asks.agents && <AgentsDialog {...asks.agents} onClose={closer('agents')} />}
 			{asks.publishCheck && <PublishCheckDialog {...asks.publishCheck} onClose={closer('publishCheck')} />}
 			{asks.deletePage && <DeletePageDialog {...asks.deletePage} onClose={closer('deletePage')} />}
 			{/* Asked again while open: a new one, empty. */}

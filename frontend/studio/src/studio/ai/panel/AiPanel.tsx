@@ -13,7 +13,6 @@ import { observePluginBlocks } from '../../plugins';
 import { useStore, type Store } from '../../shell/store';
 import { markdownOfSelection, pictureUrl } from '../ai-markdown';
 import { EffortMenu, ModelMenu } from './ModelMenu';
-import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
 import { recentPages } from '../../state/recent-pages';
 import { createPromptEditor, type PromptCaret, type PromptEditor, type PromptEditorHost } from './prompt-editor';
 import { commandOf, Item, itemProps, ItemsContext, Markdown, PageChip, PanelContext, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
@@ -176,7 +175,7 @@ function Toolbar({ state, actions }: { state: PanelState; actions: PanelActions 
 			<span className="ai-where">{state.conversation?.service ?? ''}</span>
 			<div className="pane-actions">
 				{button(t('显示方式'), state.full ? Maximize2 : state.floating ? PictureInPicture2 : PanelRight, (event) => actions.layout(event.currentTarget), t('显示方式：侧栏、悬浮、全屏'))}
-				{button(t('模型和账号'), Settings2, () => actions.showSheet(!state.settings), t('模型和账号：Claude 账号、DeepSeek 等 API key'))}
+				{button(t('模型和账号'), Settings2, actions.openModels, t('模型和账号：设置 › AI'))}
 				{button(t('对话记录'), History, (event) => actions.history(event.currentTarget))}
 				{button(t('新对话'), SquarePen, actions.newConversation)}
 			</div>
@@ -805,7 +804,7 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
  * it goes; its work (thinking, tools, the plan) one row a stretch, its detail in a dialog. Under the input: which AI,
  * and its options (who decides, model, effort).
  */
-export function AiPanel({ store, actions, sheetHost, pane }: { store: Store<PanelState>; actions: PanelActions; sheetHost: ModelsSheetHost; pane: HTMLElement }) {
+export function AiPanel({ store, actions, pane }: { store: Store<PanelState>; actions: PanelActions; pane: HTMLElement }) {
 	const state = useStore(store);
 	const context = useMemo(() => ({ conversation: state.conversation, items: state.items, actions }), [state.conversation, state.items]);
 	const panel = useMemo(() => ({ conversation: state.conversation, actions }), [state.conversation]);
@@ -814,7 +813,6 @@ export function AiPanel({ store, actions, sheetHost, pane }: { store: Store<Pane
 			<PanelContext value={panel}>
 				<PagePeek root={pane} pages={actions.articles} open={actions.openArticle} />
 				<Toolbar state={state} actions={actions} />
-				<ModelsSheet open={state.settings} host={sheetHost} onClose={() => actions.showSheet(false)} />
 				<Transcript state={state} actions={actions} />
 				<Composer state={state} actions={actions} />
 			</PanelContext>

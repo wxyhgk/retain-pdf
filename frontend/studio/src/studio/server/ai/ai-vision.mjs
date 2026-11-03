@@ -28,7 +28,7 @@ export function answerText(text) {
 }
 
 /**
- * Asks the model set in 「AI 设置」 about a picture.
+ * Asks the model set in 「设置 › AI › 识别图片」 about a picture.
  * @param {import('./ai-settings.mjs').AiConfig} config
  * @param {{ image: Buffer, mediaType: string, prompt: string }} question
  * @param {{ fetch?: typeof fetch, anthropic?: (options: object) => Anthropic }} [seams] for tests
@@ -80,16 +80,16 @@ async function askClaude(config, data, mediaType, prompt, make = (options) => ne
 }
 
 function claudeError(error) {
-	if (error instanceof Anthropic.AuthenticationError) return new AiError(t('Anthropic 的 key 不对或没有给（在「AI 设置」里填，或者设 ANTHROPIC_API_KEY）'), 401);
+	if (error instanceof Anthropic.AuthenticationError) return new AiError(t('Anthropic 的 key 不对或没有给（在「设置 › AI › 识别图片」里填，或者设 ANTHROPIC_API_KEY）'), 401);
 	if (error instanceof Anthropic.PermissionDeniedError) return new AiError(t('这个 key 没有用这个模型的权限'), 403);
-	if (error instanceof Anthropic.NotFoundError) return new AiError(t('没有这个模型，看看「AI 设置」里的模型名'), 404);
+	if (error instanceof Anthropic.NotFoundError) return new AiError(t('没有这个模型，看看「设置 › AI › 识别图片」里的模型名'), 404);
 	if (error instanceof Anthropic.RateLimitError) return new AiError(t('请求太多了，过一会儿再试'), 429);
 	if (error instanceof Anthropic.BadRequestError) {
 		const said = error.error?.error?.message ?? error.message;
-		if (/workspace/iu.test(said)) return new AiError(t('这个 key 属于整个组织，不属于某个工作区：在「AI 设置」里填工作区 ID（wrkspc_…，Claude Console 的 Workspaces 页能看到），或者换一个在工作区里建的 key'), 400);
+		if (/workspace/iu.test(said)) return new AiError(t('这个 key 属于整个组织，不属于某个工作区：在「设置 › AI › 识别图片」里填工作区 ID（wrkspc_…，Claude Console 的 Workspaces 页能看到），或者换一个在工作区里建的 key'), 400);
 		return new AiError(t('请求被拒绝：{message}', { message: said }), 400);
 	}
-	if (error instanceof Anthropic.APIConnectionError) return new AiError(t('连不上 Anthropic 的服务（网络，或者「AI 设置」里的接口地址）'));
+	if (error instanceof Anthropic.APIConnectionError) return new AiError(t('连不上 Anthropic 的服务（网络，或者「设置 › AI › 识别图片」里的接口地址）'));
 	if (error instanceof Anthropic.APIError) return new AiError(t('Anthropic 的服务出错了（{status}）：{message}', { status: error.status ?? '?', message: error.message }));
 	return error;
 }
@@ -98,7 +98,7 @@ async function askOpenAi(config, data, mediaType, prompt, fetchImpl) {
 	if (!config.baseUrl) throw new AiError(t('OpenAI 兼容接口要填接口地址（例如 https://dashscope.aliyuncs.com/compatible-mode/v1）'), 400);
 	if (!config.model) throw new AiError(t('OpenAI 兼容接口要填模型名（例如 qwen-vl-max）'), 400);
 	const key = config.apiKey || process.env.OPENAI_API_KEY;
-	if (!key) throw new AiError(t('没有 key：在「AI 设置」里填，或者设 OPENAI_API_KEY'), 401);
+	if (!key) throw new AiError(t('没有 key：在「设置 › AI › 识别图片」里填，或者设 OPENAI_API_KEY'), 401);
 	let response;
 	try {
 		response = await fetchImpl(`${config.baseUrl.replace(/\/+$/u, '')}/chat/completions`, {

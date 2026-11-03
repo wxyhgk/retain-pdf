@@ -18,7 +18,7 @@ export function Field({ label, id, hidden, children }: { label: string; id?: str
 }
 
 /**
- * 设置 › AI 模型: which large model the Studio asks (识别图片) — Claude, or a service that speaks OpenAI's API — its
+ * 设置 › AI › 识别图片: which large model the Studio asks (识别图片) — Claude, or a service that speaks OpenAI's API — its
  * model, its address, its key, as they are now. `why` above when it is opened for want of a setting (the caret then in
  * the field missing). The key is written, never read back: the page only hears whether there is one.
  */

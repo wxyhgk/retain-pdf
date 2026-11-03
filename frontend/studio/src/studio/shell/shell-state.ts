@@ -67,7 +67,7 @@ export type ShellActions = {
 	moveChat(id: string, before: string | null): void;
 	renameChat(chat: Conversation): void;
 	openTrash(): void;
-	/** 设置: 语言, AI 模型, 插件. */
+	/** 设置: 语言, AI (模型和账号, 识别图片, 高级), 插件…. */
 	openSettings(): void;
 	pageMenu(anchor: HTMLElement): void;
 	/** The page open before (or after) this one, as a browser's ‹ and ›. */

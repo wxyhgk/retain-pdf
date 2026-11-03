@@ -24,7 +24,8 @@ import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
 import type { ArticleSummary } from '../../types';
 import { createStore, type Store } from '../../shell/store';
-import type { ModelsSheetHost } from './ModelsSheet';
+import { openSettings, provideModels } from '../../shell/dialogs/ask';
+import type { ModelsHost } from '../../shell/dialogs/ModelsSettings';
 
 /** What the AI panel needs of the Studio around it. */
 export type AiPanelHost = {
@@ -76,8 +77,6 @@ export type PanelState = {
 	starting: boolean;
 	/** `retry`: what 重试 does after it (said again what failed, the last thing said, the AI started again). */
 	status: { text: string; error: boolean; retry?: 'send' | 'last' | 'start' };
-	/** 模型和账号 in place of the conversation. */
-	settings: boolean;
 	/** Whole in the middle (AI 问答). */
 	full: boolean;
 	/** Floating over the Studio (显示方式 › 悬浮). */
@@ -220,7 +219,6 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		items: [],
 		starting: false,
 		status: { text: '', error: false },
-		settings: false,
 		full: false,
 		floating: false,
 		article: null,
@@ -250,11 +248,10 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	/** A conversation was asked for (open, newChat): none is begun or taken up by itself once the list is read. */
 	let asked = false;
 
-	/** What 模型和账号 tells: a service saved for `agent`, for conversations begun with it from now on. */
-	const sheetHost: ModelsSheetHost = {
+	/** What 设置 › AI › 模型和账号 tells: a service saved for `agent`, for conversations begun with it from now on. */
+	const modelsHost: ModelsHost = {
 		runInTerminal: (command) => host.runInTerminal(command),
 		saved(agent, name) {
-			showSheet(false);
 			// What was saved is for conversations begun from now on: one begun with that AI, with it.
 			if (get().agent === agent) beginAfresh();
 			host.toast(name ? t('AI 面板的 {agent} 改用「{name}」', { agent: agent === 'pi' ? 'pi' : 'Claude Code', name }) : t('已保存'));
@@ -268,11 +265,6 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	/** Its connection to the server gone (followConversation follows it again): said until it is back. */
 	let lost = false;
 
-	/** 模型和账号 in place of the conversation, or the conversation again. */
-	function showSheet(open: boolean): void {
-		pane.classList.toggle('is-settings', open);
-		set({ settings: open });
-	}
 
 	function load(): Promise<void> {
 		loading ??= read();
@@ -286,7 +278,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			const agents = known.agents;
 			set({ agents, agent: agents.some((agent) => agent.id === chosen) ? chosen! : agents.some((agent) => agent.id === known.default) ? known.default : (agents[0]?.id ?? '') });
 			if (!agents.length) {
-				say(t('没有能在面板里用的 AI：在「AI 助手」设置里给 Claude 或 Codex 配上 ACP 命令'));
+				say(t('没有能在面板里用的 AI'));
 				return;
 			}
 			// The one left open, kept in chats/ across restarts.
@@ -595,7 +587,8 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 
 	const actions = {
 		say,
-		showSheet,
+		/** ⚙: 设置 › AI › 模型和账号. */
+		openModels: () => openSettings('ai-models'),
 		submit: () => void submit(),
 		/** Stopped while it works, else what is typed said. */
 		sendOrStop(): void {
@@ -885,12 +878,13 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		},
 	};
 
-	return { store, actions, panel, sheetHost };
+	provideModels(modelsHost);
+	return { store, actions, panel };
 }
 
 /** The AI chosen in the panel (the one asked by the AI in the editor too), and the options chosen for it. */
 export function chosenAI(): { agent: string; options: Record<string, string> } {
-	const agent = remembered(AGENT_KEY) || 'claude';
+	const agent = remembered(AGENT_KEY) || 'pi';
 	try {
 		return { agent, options: JSON.parse(remembered(OPTIONS_KEY(agent)) ?? '{}') as Record<string, string> };
 	} catch {

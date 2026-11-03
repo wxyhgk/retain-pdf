@@ -568,7 +568,7 @@ function Compaction({ item }: { item: Extract<ConversationItem, { kind: 'compact
 export function SettingsFix() {
 	const { actions } = useItems();
 	return (
-		<button type="button" className="ai-status-fix" onClick={() => actions.showSheet(true)}>
+		<button type="button" className="ai-status-fix" onClick={actions.openModels}>
 			{t('模型和账号')}
 		</button>
 	);

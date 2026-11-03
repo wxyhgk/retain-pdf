@@ -109,8 +109,8 @@ export async function workspaceMenu(page: Page, id: string): Promise<void> {
 	await page.locator(`#${id}`).click();
 }
 
-/** 设置 opened from the workspace's menu, at a part of it (语言 `locale`, 打开文件 `files`, AI 模型 `ai`, 插件 `plugins`): what it shows. */
-export async function openSettings(page: Page, section: 'locale' | 'theme' | 'files' | 'remote' | 'retainpdf' | 'ai' | 'plugins'): Promise<Locator> {
+/** 设置 opened from the workspace's menu, at a part of it (语言 `locale`, 打开文件 `files`, 识别图片 `ai-vision`, 插件 `plugins`…): what it shows. */
+export async function openSettings(page: Page, section: 'locale' | 'theme' | 'files' | 'remote' | 'retainpdf' | 'ai-models' | 'ai-vision' | 'ai-advanced' | 'plugins'): Promise<Locator> {
 	await workspaceMenu(page, 'open-settings');
 	await page.locator(`#settings-dialog nav [data-section="${section}"]`).click();
 	const shown = page.locator(`#settings-${section}`);
