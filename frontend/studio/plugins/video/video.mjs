@@ -141,7 +141,7 @@ export function videoProblem(video) {
 	if (onlineVideo(video.src)) return '';
 	if (/^https?:\/\/b23\.tv\//iu.test(video.src)) return t('B 站的短链接要先打开成完整链接（在 Studio 里填一次就好）：{src}', { src: video.src });
 	if (/^https?:/iu.test(video.src)) return t('只认 B 站和 YouTube 的视频链接：{src}', { src: video.src });
-	if (!localVideo(video.src)) return t('视频文件要放在文章的 assets/ 里（mp4、mov、webm…）：{src}', { src: video.src });
+	if (!localVideo(video.src)) return t('视频文件要放在页面的 assets/ 里（mp4、mov、webm…）：{src}', { src: video.src });
 	return '';
 }
 

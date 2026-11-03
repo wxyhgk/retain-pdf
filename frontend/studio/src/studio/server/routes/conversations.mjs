@@ -240,7 +240,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		if (asked.mode !== 'rewrite' && asked.mode !== 'write') throw refuse(400, t('mode 只能是 rewrite 或 write'));
 		if (!text(asked.instruction).trim()) throw refuse(400, t('要说明让 AI 做什么'));
 		const { article } = await contextOf({ article: asked.slug });
-		if (!article) throw refuse(404, t('没有这篇文章'));
+		if (!article) throw refuse(404, t('没有这一页'));
 		const options = asked.options && typeof asked.options === 'object' ? Object.fromEntries(Object.entries(asked.options).filter(([, value]) => typeof value === 'string')) : {};
 		return inline.ask({ id: text(asked.id), agent: text(asked.agent), options, mode: asked.mode, instruction: text(asked.instruction), article, selected: text(asked.selected), before: text(asked.before), after: text(asked.after) });
 	});

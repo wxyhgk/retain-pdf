@@ -333,7 +333,7 @@ export default function studioDev({ site, builds } = {}) {
 						const resourcePath = decodePathComponent(publicFileMatch[3]);
 						return await sendFile(response, await files.stream(slug, root, resourcePath, { range: request.headers.range }));
 					} catch (error) {
-						const message = error instanceof Error ? error.message : t('文章资源读取失败');
+						const message = error instanceof Error ? error.message : t('页面资源读取失败');
 						const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
 						return sendJson(response, status, { error: message });
 					}

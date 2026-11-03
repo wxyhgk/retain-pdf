@@ -213,14 +213,14 @@ export class ArticleRepository {
 	async create({ slug, title, parent = '', body = '', files = [], type = '', kind = '', link = false }) {
 		assertArticleSlug(slug);
 		if (parent) assertArticleSlug(parent);
-		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError(t('新文章的内容无效'));
+		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError(t('新页面的内容无效'));
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		const source = createArticleSource({ title, parent, body, type, kind });
 		// Making the folder is taking the name: two made at once, one of them is refused.
 		try {
 			await mkdir(paths.directory);
 		} catch (error) {
-			if (error?.code === 'EEXIST') throw new ArticleConflictError(t('该文章目录已经存在'));
+			if (error?.code === 'EEXIST') throw new ArticleConflictError(t('该页面目录已经存在'));
 			throw error;
 		}
 		try {
@@ -556,7 +556,7 @@ export class ArticleRepository {
 	}
 
 	async #save(slug, { source: nextSource, expectedRevision }, { before }) {
-		if (typeof nextSource !== 'string') throw new ArticleValidationError(t('文章内容必须是文本'));
+		if (typeof nextSource !== 'string') throw new ArticleValidationError(t('页面内容必须是文本'));
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertReadableBundle(paths);
 		const [current, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
@@ -630,7 +630,7 @@ export class ArticleRepository {
 		const [source, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
 		const currentRevision = bundleRevision(source, viewsSource);
 		if (expectedRevision && currentRevision !== expectedRevision) {
-			throw new ArticleConflictError(t('文章或视角配置已被其他程序修改，请重新载入后再保存'));
+			throw new ArticleConflictError(t('页面或视角配置已被其他程序修改，请重新载入后再保存'));
 		}
 		const nextViewsSource = writeMoleculeView(viewsSource, key, format, view, display);
 		await atomicWriteText(paths.views, nextViewsSource);
@@ -645,7 +645,7 @@ async function assertReadableBundle(paths) {
 		throw error;
 	});
 	if (directory.isSymbolicLink() || !directory.isDirectory() || markdown.isSymbolicLink() || !markdown.isFile()) {
-		throw new StudioPathError(t('文章目录包含不允许的符号链接或文件类型'));
+		throw new StudioPathError(t('页面目录包含不允许的符号链接或文件类型'));
 	}
 }
 
@@ -657,11 +657,11 @@ async function assertFree(directory) {
 		if (error?.code === 'ENOENT') return;
 		throw error;
 	}
-	throw new ArticleConflictError(t('已经有一篇叫 {name} 的文章了', { name: basename(directory) }));
+	throw new ArticleConflictError(t('已经有一个叫 {name} 的页面了', { name: basename(directory) }));
 }
 
 export class ArticleNotFoundError extends Error {
-	constructor(message = t('文章不存在')) {
+	constructor(message = t('页面不存在')) {
 		super(message);
 		this.name = 'ArticleNotFoundError';
 		this.statusCode = 404;

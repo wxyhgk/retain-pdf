@@ -23,7 +23,7 @@ const listed: Listed[] = await fetch('/api/studio/apps')
 	.then((answer) => answer.apps ?? [], () => []);
 
 export const name = 'app-blocks';
-export const description = t('小程序的块：apps/ 里的小程序在 app.json 里写了 blocks，文章里就能用它的块（比如 ```structura），由小程序的页面画、改；博客上显示它存下的图。');
+export const description = t('小程序的块：apps/ 里的小程序在 app.json 里写了 blocks，页面里就能用它的块（比如 ```structura），由小程序的页面画、改；博客上显示它存下的图。');
 export const inject = ['studio', 'blocks'];
 
 const json = languages.find((language) => language.name === 'JSON');
@@ -107,7 +107,7 @@ export function apply(ctx: Context): void {
 					},
 					async picture(data, type) {
 						const slug = ctx.studio.shown();
-						if (!slug) throw new Error(t('还没有打开文章'));
+						if (!slug) throw new Error(t('还没有打开页面'));
 						const state = link.state();
 						const path = picturePath(fence, state, type);
 						await ctx.studio.upload(slug, 'assets', pictureFile(data, type, path.slice('assets/'.length)), { replace: true });

@@ -179,7 +179,7 @@ export class ArticleSession {
 			// The article open before stays open, as it was.
 			this.#host.toast(t('打不开「{slug}」：{error}', { slug, error: error instanceof Error ? error.message : String(error) }));
 			const { article: open, dirty } = this.#store.current;
-			this.#setState(open ? { kind: dirty ? 'dirty' : 'loaded' } : { kind: 'failed', message: t('没有打开文章') });
+			this.#setState(open ? { kind: dirty ? 'dirty' : 'loaded' } : { kind: 'failed', message: t('没有打开页面') });
 			return;
 		}
 		if (sequence !== this.#sequence) return;
@@ -227,7 +227,7 @@ export class ArticleSession {
 			this.#store.updateSource(updateStudioFrontmatter(source, properties));
 		} catch (error) {
 			this.#propertiesValid = false;
-			return error instanceof Error ? error.message : t('文章属性无效');
+			return error instanceof Error ? error.message : t('页面属性无效');
 		}
 		this.#properties = properties;
 		this.#propertiesValid = true;
@@ -251,14 +251,14 @@ export class ArticleSession {
 	/** Before the author leaves this article: saves it, or asks to let the edits go if it cannot. */
 	async saveBeforeLeaving(): Promise<boolean> {
 		if (!this.hasUnsavedEdits() || (await this.#autosave.flush())) return true;
-		return this.#host.confirm(t('当前文章没能保存，切换后未保存的改动会丢失。确定吗？'));
+		return this.#host.confirm(t('当前页面没能保存，切换后未保存的改动会丢失。确定吗？'));
 	}
 
 	/** Saves a molecule's view, after the text, on the revision that leaves. */
 	async saveView(key: string, format: string, view: number[], display?: unknown): Promise<void> {
 		await this.flush();
 		const { article, revision } = this.#store.current;
-		if (!article) throw new Error(t('文章尚未载入'));
+		if (!article) throw new Error(t('页面尚未载入'));
 		const result = await trackWrite(() => this.#api.saveMoleculeView(article.slug, key, format, view, revision, display));
 		this.#store.updateRevision(result.revision, result.chemistryViews);
 	}

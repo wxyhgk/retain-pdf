@@ -228,10 +228,10 @@ test('what a run is given is checked first', async (t) => {
 	await assert.rejects(run({ args: '--opt\nrm -rf ~' }), /一行/u);
 	await assert.rejects(run({ body: '' }), /还没有结构/u);
 	await assert.rejects(run({ body: 'water\nO 0 0 0\n' }), /原子数/u);
-	await assert.rejects(run({ body: '@file ../other/secret.xyz' }), /不是文章 img\/ 或 assets\/ 里的文件/u);
+	await assert.rejects(run({ body: '@file ../other/secret.xyz' }), /不是页面 img\/ 或 assets\/ 里的文件/u);
 	await assert.rejects(run({ body: '@file ./assets/missing.xyz' }), /找不到/u);
 	await assert.rejects(run({ body: '@file ./assets/notes.txt' }), /结构文件只能是/u);
-	await assert.rejects(runs.start('nope', { id: 'ok', program: 'xtb', host: 'local', body: WATER }), /找不到文章/u);
+	await assert.rejects(runs.start('nope', { id: 'ok', program: 'xtb', host: 'local', body: WATER }), /找不到页面/u);
 
 	// A structure that is a file of the article goes as that file.
 	await writeFile(join(article, 'assets', 'mol.sdf'), 'sdf\n');

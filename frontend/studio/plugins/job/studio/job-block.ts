@@ -351,7 +351,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			paintedStructure = body;
 			const structureOf = fence.structure;
 			if (structureOf.kind === 'file') {
-				structureInfo.textContent = structureOf.path ? t('用文章里的文件 {path}', { path: structureOf.path }) : t('{path} 不是文章里的文件', { path: structureOf.written });
+				structureInfo.textContent = structureOf.path ? t('用页面里的文件 {path}', { path: structureOf.path }) : t('{path} 不是页面里的文件', { path: structureOf.written });
 				const url = structureOf.path && slug() ? studioFileUrl(slug() as string, structureOf.path) : null;
 				if (url && /\.xyz$/iu.test(structureOf.path ?? '')) {
 					void fetch(url, { cache: 'no-store' }).then((response) => (response.ok ? response.text() : null)).then((text) => (text ? structureStage.show(text) : undefined)).catch(() => {});
@@ -583,7 +583,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 					element('td', '', candidate.hostLabel || candidate.host),
 					element('td', '', RUN_STATE_NAMES[candidate.state] ?? candidate.state),
 					element('td', '', duration === null ? '' : formatDuration(duration)),
-					element('td', 'job-run-shown', candidate.run === fence.run ? t('文章显示这次') : t('显示这次')),
+					element('td', 'job-run-shown', candidate.run === fence.run ? t('页面显示这次') : t('显示这次')),
 				);
 				row.addEventListener('click', () => {
 					show(candidate.run);
@@ -592,7 +592,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				body.append(row);
 			}
 			table.append(body);
-			panel.append(table, element('p', 'job-section-note', t('每次运行都在 assets/jobs/{id}/ 里；文章显示哪次，博客上就是哪次。', { id: fence.id })));
+			panel.append(table, element('p', 'job-section-note', t('每次运行都在 assets/jobs/{id}/ 里；页面显示哪次，博客上就是哪次。', { id: fence.id })));
 		};
 
 		/**

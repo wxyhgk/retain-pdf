@@ -34,7 +34,7 @@ test('the terminal runs a shell in the repository', async ({ page }) => {
 
 test('in the article’s folder, what the shell writes shows up in the file panel', async ({ page }) => {
 	page.once('dialog', (dialog) => void dialog.accept());
-	await page.getByRole('radio', { name: '当前文章' }).click();
+	await page.getByRole('radio', { name: '当前页面' }).click();
 	await expect(page.locator('#terminal-cwd')).toHaveText('blog/studio-fixture/');
 	await running(page);
 	// A new shell: what is typed before it has started can be lost on a busy machine.
@@ -94,5 +94,5 @@ test('an AI starts with a click, in the article’s folder; one this machine has
 	await agents.getByRole('button', { name: 'Claude' }).click();
 	await expect(page.locator('#terminal-cwd')).toHaveText('blog/studio-fixture/');
 	await expect(screen(page)).toContainText('fake-claude in studio-fixture for studio-fixture');
-	await expect(page.getByRole('radio', { name: '当前文章' })).toHaveAttribute('aria-checked', 'true');
+	await expect(page.getByRole('radio', { name: '当前页面' })).toHaveAttribute('aria-checked', 'true');
 });

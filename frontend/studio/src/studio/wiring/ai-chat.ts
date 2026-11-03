@@ -324,7 +324,7 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 		if (wroteJustNow()) return false;
 		if (!heldChanges || heldChanges.slug !== studio.session.slug) {
 			heldChanges = { slug: studio.session.slug, paths: new Set() };
-			showToast(t('AI 在改这篇文章，做完后一起给你过目'));
+			showToast(t('AI 在改这一页，做完后一起给你过目'));
 		}
 		for (const path of change.paths) heldChanges.paths.add(path);
 		return true;

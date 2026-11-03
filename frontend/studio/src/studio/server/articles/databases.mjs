@@ -83,7 +83,7 @@ export class Databases {
 	/** The rows of the database `slug`: the pages under it, in the tree's order, with their values. */
 	async rows(slug) {
 		const all = await this.articles.list();
-		if (!all.some((article) => article.slug === slug)) throw new DatabaseError(t('文章不存在'), 404);
+		if (!all.some((article) => article.slug === slug)) throw new DatabaseError(t('页面不存在'), 404);
 		const rows = [];
 		for (const article of all.filter((each) => each.parent === slug)) {
 			const { source } = await this.articles.read(article.slug);
@@ -191,7 +191,7 @@ export class Databases {
 		if (sourceOf(text)) throw new DatabaseError(t('这个块已经指向一个数据库'));
 		const config = readConfig(text);
 		const all = await this.articles.list();
-		if (!all.some((article) => article.slug === page)) throw new DatabaseError(t('文章不存在'), 404);
+		if (!all.some((article) => article.slug === page)) throw new DatabaseError(t('页面不存在'), 404);
 		let made = null;
 		if (config.id) {
 			for (const database of all.filter((article) => article.type === 'database')) {

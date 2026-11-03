@@ -114,7 +114,7 @@ export function apply(ctx: Context): void {
 				if (!article || source === null) {
 					const empty = document.createElement('p');
 					empty.className = 'word-count-empty';
-					empty.textContent = t('还没有打开文章。');
+					empty.textContent = t('还没有打开页面。');
 					root.replaceChildren(empty);
 					return;
 				}
@@ -156,7 +156,7 @@ export function apply(ctx: Context): void {
 		places: ['slash', 'page-menu'],
 		run() {
 			const now = current();
-			if (!now) throw new Error(t('还没有打开文章'));
+			if (!now) throw new Error(t('还没有打开页面'));
 			ctx.studio.editor.insertText(statsLine(now.stats));
 		},
 	});

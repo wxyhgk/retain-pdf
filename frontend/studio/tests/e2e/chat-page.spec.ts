@@ -253,13 +253,13 @@ test('the AI in a window of its own at work on the article open: its changes hel
 	await expect(there.locator('.ai-work.is-going')).toBeVisible();
 	// What it changes meanwhile: held in the Studio, as for the AI shown there.
 	editFixture((markdown) => markdown.replace('结尾段落。', '结尾段落，AI 改的。'));
-	await expect(page.locator('.studio-toast')).toContainText('AI 在改这篇文章，做完后一起给你过目');
+	await expect(page.locator('.studio-toast')).toContainText('AI 在改这一页，做完后一起给你过目');
 	editFixture((markdown) => markdown.replace('开头段落', '开头段落（AI 又改了）'));
 	await page.waitForTimeout(1500);
 	await expect(page.locator('#review-bar')).toBeHidden();
 	// Its turn over (stopped there): the changes, together.
 	await there.locator('.ai-send').click();
-	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的页面有 2 处改动');
 	await expect(editor(page)).toContainText('AI 又改了');
 
 	// 显示方式 there › 悬浮: back in the Studio floating, its window shut.

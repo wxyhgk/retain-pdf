@@ -509,7 +509,7 @@ test('what the AI says is blocks: each dragged into the article, or clicked in w
 
 	// All of it, from under the answer.
 	await pane(page).locator('.ai-message').hover();
-	await pane(page).getByRole('button', { name: '插入到文章' }).click();
+	await pane(page).getByRole('button', { name: '插入到页面' }).click();
 	await expect(editor(page)).toContainText('能量和质量的关系：');
 });
 
@@ -571,13 +571,13 @@ test('what the AI changes in the article open while it works is looked over once
 	await tell(page, '慢慢来');
 	await expect(pane(page).locator('.ai-work.is-going')).toBeVisible();
 	editFixture((markdown) => markdown.replace('结尾段落。', '结尾段落，AI 改的。'));
-	await expect(page.locator('.studio-toast')).toContainText('AI 在改这篇文章，做完后一起给你过目');
+	await expect(page.locator('.studio-toast')).toContainText('AI 在改这一页，做完后一起给你过目');
 	editFixture((markdown) => markdown.replace('开头段落', '开头段落（AI 又改了）'));
 	await page.waitForTimeout(1500);
 	await expect(page.locator('#review-bar')).toBeHidden();
 	// Its turn over (stopped here): the changes, together.
 	await pane(page).locator('.ai-send').click();
-	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的页面有 2 处改动');
 	await expect(editor(page)).toContainText('AI 又改了');
 });
 
@@ -607,7 +607,7 @@ test('the plugins’ blocks in an answer are drawn as in the editor, and put in 
 	await expect(blocks.nth(1).locator('.ai-preview svg').first()).toBeVisible();
 	await blocks.nth(2).scrollIntoViewIfNeeded();
 	await expect(blocks.nth(2).locator('.ai-preview canvas')).toHaveCount(1);
-	await expect(blocks.nth(2).getByRole('button', { name: '保存视角到文章' })).toBeHidden();
+	await expect(blocks.nth(2).getByRole('button', { name: '保存视角到页面' })).toBeHidden();
 	await expect(blocks.nth(3).locator('.note-energy')).toHaveCount(1);
 	await expect(blocks.nth(4).locator('iframe')).toHaveCount(1);
 	await expect(blocks.nth(5).locator('.note-bookmark')).toContainText('例子网页');
@@ -768,7 +768,7 @@ test('what was said: copied, or put back to be changed; what failed, said again;
 	await openAi(page);
 	await tell(page, '用量');
 	// Under the answer, its actions there without a pointer on it.
-	await expect(pane(page).locator('.ai-answer').last().getByRole('button', { name: '插入到文章' })).toBeVisible();
+	await expect(pane(page).locator('.ai-answer').last().getByRole('button', { name: '插入到页面' })).toBeVisible();
 	await pane(page).locator('.ai-user').last().getByRole('button', { name: '改一改再问' }).click();
 	await expect(input(page)).toHaveText('用量');
 	await input(page).fill('');

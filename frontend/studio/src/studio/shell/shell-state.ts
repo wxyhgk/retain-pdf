@@ -90,7 +90,7 @@ function initialState(): ShellState {
 	return {
 		view: 'editor',
 		sidebarCollapsed: false,
-		title: t('选择一篇文章'),
+		title: t('选择一个页面'),
 		status: { text: t('正在连接…'), tone: '' },
 		edited: null,
 		articleHref: '/blog',

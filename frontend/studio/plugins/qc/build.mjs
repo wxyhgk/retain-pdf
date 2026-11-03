@@ -35,7 +35,7 @@ export function qcFigure(node, file) {
 		report(t('计算结果块还没有选输出文件'), 'qc-file');
 	} else if (!path) {
 		problem = `${fence.file} 不在文章的 img/ 或 assets/ 里`; // i18n-ignore: the blog's page
-		report(t('计算结果的输出 {file} 不在文章的 img/ 或 assets/ 里，发布后读不到', { file: fence.file }), 'qc-file');
+		report(t('计算结果的输出 {file} 不在页面的 img/ 或 assets/ 里，发布后读不到', { file: fence.file }), 'qc-file');
 	} else if (target && (!existsSync(target) || !statSync(target).isFile())) {
 		problem = `找不到 ./${path}`; // i18n-ignore: the blog's page
 		report(t('找不到计算结果的输出 ./{path}', { path }), 'qc-file');

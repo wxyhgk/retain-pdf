@@ -12,7 +12,7 @@ export type AgentsAsk = { shown: AgentsShown; saved(): void };
 const FIELDS: Array<{ key: 'launch' | 'run' | 'resume'; label: string; hint: string }> = [
 	{ key: 'launch', label: t('终端里启动'), hint: t('点终端上的按钮时运行，比如 claude') },
 	{ key: 'run', label: t('Alt+Enter：后台跑一次'), hint: t('{prompt} 换成交给它的话') },
-	{ key: 'resume', label: t('Alt+Enter：接着上次'), hint: t('接着这篇文章文件夹里最近的会话；{prompt} 同上') },
+	{ key: 'resume', label: t('Alt+Enter：接着上次'), hint: t('接着这一页的文件夹里最近的会话；{prompt} 同上') },
 ];
 
 /** An AI of the list as it is typed: `row` keeps it apart from the others while its id is typed. */

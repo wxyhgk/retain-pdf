@@ -165,10 +165,10 @@ export function createDriveState(host: DriveBrowserHost) {
 	}
 
 	async function insert(entry: DriveEntry): Promise<void> {
-		say(t('正在把 {name} 放进文章…', { name: fileName(entry.path) }), 'busy');
+		say(t('正在把 {name} 放进页面…', { name: fileName(entry.path) }), 'busy');
 		try {
 			await host.insertIntoArticle(entry.path);
-			say(t('已复制到文章并插入：{name}', { name: fileName(entry.path) }));
+			say(t('已复制到页面并插入：{name}', { name: fileName(entry.path) }));
 		} catch (error) {
 			say(errorMessage(error, t('插入失败')), 'error');
 		}

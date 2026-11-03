@@ -115,7 +115,7 @@ test('Alt+Enter twice in one article: the second waits for the first, and can be
 	tasks.cancel(three.id);
 	const [first, second, third] = await Promise.all([over(tasks, one.id), over(tasks, two.id), over(tasks, three.id)]);
 	assert.equal(third.state, 'cancelled');
-	assert.match(second.log, /^这篇文章里还有一件事在做/u);
+	assert.match(second.log, /^这一页里还有一件事在做/u);
 	assert.equal(first.log, 'ran\n');
 	assert.match(second.log, /\nran\n$/u);
 	assert.doesNotMatch(second.log, /overlap/u);

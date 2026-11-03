@@ -234,7 +234,7 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 	function launch(agent: AgentsShown['agents'][number]): void {
 		const target: Cwd = article ? 'article' : 'root';
 		const question = target === 'article'
-			? t('在当前文章打开 {name}？终端里正在运行的程序会被结束。', { name: agent.name })
+			? t('在当前页面打开 {name}？终端里正在运行的程序会被结束。', { name: agent.name })
 			: t('在仓库根目录打开 {name}？终端里正在运行的程序会被结束。', { name: agent.name });
 		if (state === 'running' && !confirm(question)) return;
 		cwd = target;

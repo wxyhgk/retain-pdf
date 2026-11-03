@@ -234,7 +234,7 @@ test('what was removed can be put back, but never over what has taken its place'
 	assert.equal(await readFile(join(bundle.assets, 'runs', 'out.log'), 'utf8'), 'newer');
 
 	await assert.rejects(files.restore('note', '../../etc/passwd'), /回收站路径/u);
-	await assert.rejects(files.restore('note', second.trashed.replace('-note/', '-other-note/')), /不是这篇文章/u);
+	await assert.rejects(files.restore('note', second.trashed.replace('-note/', '-other-note/')), /不是这一页/u);
 });
 
 test('a whole article goes to the trash and comes back under its name', async (t) => {
@@ -245,7 +245,7 @@ test('a whole article goes to the trash and comes back under its name', async (t
 	await assert.rejects(readFile(bundle.markdown, 'utf8'));
 	assert.deepEqual(await files.restoreArticle(trashed.trashed), { slug: 'note' });
 	assert.match(await readFile(bundle.markdown, 'utf8'), /title/u);
-	await assert.rejects(files.restoreArticle('2026-01-01T00-00-00-000Z-note'), /不是删除的文章/u);
+	await assert.rejects(files.restoreArticle('2026-01-01T00-00-00-000Z-note'), /不是删除的页面/u);
 });
 
 test('the trash forgets what it has kept for a month', async (t) => {

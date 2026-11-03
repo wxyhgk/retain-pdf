@@ -52,13 +52,13 @@ test('⌘⇧F: every place in every article listed first; only those ticked chan
 		await page.locator('#replace-find').press('Enter');
 		await expect(dialog.locator('.replace-article')).toHaveCount(2);
 		await expect(dialog.locator('.replace-place')).toHaveCount(3);
-		await expect(page.locator('#replace-status')).toHaveText('2 篇文章里有 3 处');
+		await expect(page.locator('#replace-status')).toHaveText('2 个页面里有 3 处');
 		// The second place of 另一篇 left as it is.
 		const other = dialog.locator('.replace-article', { hasText: '另一篇' });
 		await other.locator('.replace-place').nth(1).locator('input').uncheck();
 		await expect(page.locator('#replace-apply')).toHaveText('替换勾选的 2 处');
 		await page.locator('#replace-apply').click();
-		await expect(page.locator('#replace-status')).toContainText('已替换 2 篇文章里的 2 处');
+		await expect(page.locator('#replace-status')).toContainText('已替换 2 个页面里的 2 处');
 		// Looked for again: the words are still in what they became (QQXYZ-D3(BJ)), and in the one not ticked.
 		await expect(dialog.locator('.replace-place')).toHaveCount(3);
 

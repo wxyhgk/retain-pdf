@@ -42,9 +42,9 @@ const TOOL_DOING: Record<string, (what: string) => string> = {
 /** Items that are work toward an answer (thinking, tools, the plan): a stretch of them is one row, opened in a dialog. */
 const WORK_KINDS = new Set(['thought', 'tool', 'plan']);
 const SUGGESTIONS: Array<{ icon: LucideIcon; text: string }> = [
-	{ icon: TextQuote, text: t('总结这篇文章') },
+	{ icon: TextQuote, text: t('总结这一页') },
 	{ icon: ScanSearch, text: t('检查这篇的公式和单位有没有错') },
-	{ icon: Calculator, text: t('把文章里的计算重新跑一遍，核对结果') },
+	{ icon: Calculator, text: t('把页面里的计算重新跑一遍，核对结果') },
 	{ icon: BookOpenCheck, text: t('找出正文里引用了却没在 refs.bib 里的文献') },
 ];
 /** Reading a book in 翻译, at a page: about it (the AI is told the book and page, and reads it first). */
@@ -353,7 +353,7 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 						? state.book.page
 							? t('它读得到你在读的《{title}》（第 {page} 页），答之前先翻原文；引用的段落能直接放进笔记。', { title: state.book.title ?? t('这本书'), page: state.book.page })
 							: t('它读得到你在读的《{title}》，答之前先翻原文；引用的段落能直接放进笔记。', { title: state.book.title ?? t('这本书') })
-						: t('它会自己读文件、运行命令、改文章；改了文章会像别的改动一样让你过目。')}
+						: t('它会自己读文件、运行命令、改页面；改了页面会像别的改动一样让你过目。')}
 				</p>
 				<div className="ai-suggestions">
 					{(state.book?.page ? BOOK_SUGGESTIONS : SUGGESTIONS).map(({ icon: Icon, text }) => (
@@ -520,8 +520,8 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	const pages = actions.articles();
 	const pageOf = (slug: string) => pages.find((page) => page.slug === slug);
 	const chips: ReactNode[] = [];
-	if (open) chips.push(<Chip key="article" label={open.title} page={pageOf(open.slug)} title={t('当前文章：说话时会告诉 AI 你在看这篇')} onRemove={actions.leaveOutArticle} />);
-	if (open && !selectionLeftOut && selected) chips.push(<Chip key="selection" label={t('选中的内容')} title={t('文章里选中的那几行会一起告诉 AI')} onRemove={actions.leaveOutSelection} />);
+	if (open) chips.push(<Chip key="article" label={open.title} page={pageOf(open.slug)} title={t('当前页面：说话时会告诉 AI 你在看这一页')} onRemove={actions.leaveOutArticle} />);
+	if (open && !selectionLeftOut && selected) chips.push(<Chip key="selection" label={t('选中的内容')} title={t('页面里选中的那几行会一起告诉 AI')} onRemove={actions.leaveOutSelection} />);
 	for (const picture of pictures) {
 		chips.push(
 			<span key={picture.id} className="ai-chip ai-picture-chip">
@@ -785,7 +785,7 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				handlers={handlers}
 				// While it works: to one that can take it, a word in between (Enter); else, or with something selected in the
 				// article (a word in between goes alone), said once it is done.
-				placeholder={running ? (conversation?.canSteer && !(open && !selectionLeftOut && selected) ? t('插话：它会尽快看到（Enter）') : t('排队：它做完这一轮就发（Enter）')) : t('让 AI 做点什么…（@ 提到文章，/ 命令，$ 写公式，可以粘贴图片）')}
+				placeholder={running ? (conversation?.canSteer && !(open && !selectionLeftOut && selected) ? t('插话：它会尽快看到（Enter）') : t('排队：它做完这一轮就发（Enter）')) : t('让 AI 做点什么…（@ 提到页面，/ 命令，$ 写公式，可以粘贴图片）')}
 			/>
 			<div className="ai-composer-bar">
 				<span className="ai-usage">{used && used.size > 0 && <Usage used={used} canCompact={Boolean(conversation?.commands.some((entry) => entry.name === 'compact'))} onCompact={() => actions.ask('/compact')} />}</span>

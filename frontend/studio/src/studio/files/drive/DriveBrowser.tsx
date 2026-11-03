@@ -225,7 +225,7 @@ function Setup({ actions }: { actions: DriveActions }) {
 	return (
 		<>
 			<h2>{t('选择资料库文件夹')}</h2>
-			<p>{t('资料库是你电脑上的一个文件夹，比如放在 iCloud 云盘或 Dropbox 里，由它们负责同步。Studio 在这里浏览、预览里面的文件，并把它们用进文章。')}</p>
+			<p>{t('资料库是你电脑上的一个文件夹，比如放在 iCloud 云盘或 Dropbox 里，由它们负责同步。Studio 在这里浏览、预览里面的文件，并把它们用进页面。')}</p>
 			<button className="drive-primary" type="button" onClick={actions.chooseFolder}>
 				{t('选择文件夹…')}
 			</button>

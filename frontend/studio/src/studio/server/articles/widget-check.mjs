@@ -118,12 +118,12 @@ function shownInFrame() {
  */
 export async function checkWidgets(folder, source, { only = null, shots = join(folder, 'ai', 'shots'), launch = launchBrowser, settle = SETTLE } = {}) {
 	const widgets = widgetsIn(source);
-	if (!widgets.length) return { widgets: [], note: t('这篇文章里没有交互模块') };
+	if (!widgets.length) return { widgets: [], note: t('这一页里没有交互模块') };
 	if (only !== null && (only < 1 || only > widgets.length)) throw new WidgetCheckError(t('这篇只有 {count} 个交互模块', { count: widgets.length }));
 	const chosen = widgets.map((widget, index) => ({ ...widget, index: index + 1 })).filter((widget) => only === null || widget.index === only);
 	const readPublished = async (written) => {
 		const path = publicArticlePath(written);
-		if (!path) return { error: t('{path} 不在文章的 img/ 或 assets/ 里', { path: written }) };
+		if (!path) return { error: t('{path} 不在页面的 img/ 或 assets/ 里', { path: written }) };
 		try {
 			return { text: await readFile(resolveInside(folder, ...path.split('/')), 'utf8') };
 		} catch {

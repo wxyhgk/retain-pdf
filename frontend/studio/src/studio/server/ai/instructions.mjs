@@ -66,7 +66,7 @@ export async function startInstruction({ tasks, agents, slug, folder, env, line,
 	const task = tasks.start({ kind: 'instruction', title: `${agent.name}：${title}`, slug }, async ({ log, signal }) => {
 		try {
 			if (before) {
-				log(`${t('这篇文章里还有一件事在做，等它做完…')}\n`);
+				log(`${t('这一页里还有一件事在做，等它做完…')}\n`);
 				await Promise.race([before, new Promise((resolve) => signal.addEventListener('abort', resolve, { once: true }))]);
 				if (signal.aborted) throw new Error(t('已取消'));
 			}

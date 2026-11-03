@@ -397,12 +397,12 @@ test('an article that cannot be loaded leaves the one open as it was', async () 
 	const { session, api, page } = await opened();
 	const getArticle = api.api.getArticle;
 	api.api.getArticle = async (slug) => {
-		if (slug === 'gone') throw new Error('文章不存在');
+		if (slug === 'gone') throw new Error('页面不存在');
 		return getArticle(slug);
 	};
 	await session.open('gone');
 	assert.equal(session.slug, 'note');
-	assert.equal(page.toasts.at(-1), '打不开「gone」：文章不存在');
+	assert.equal(page.toasts.at(-1), '打不开「gone」：页面不存在');
 	assert.equal(page.states.at(-1), '已载入');
 });
 

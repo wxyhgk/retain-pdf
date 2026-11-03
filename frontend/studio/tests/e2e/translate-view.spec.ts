@@ -455,7 +455,7 @@ test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to a
 
 	// The reader left: no page to ask about (the book still, its notes open), what it offers is the article's again.
 	await inFrame(page).locator('#leave').click();
-	await expect(ai.locator('.ai-suggestion').first()).toHaveText('总结这篇文章');
+	await expect(ai.locator('.ai-suggestion').first()).toHaveText('总结这一页');
 	await expect(ai.locator('.ai-empty-hint')).toContainText('《Quantum Chemistry》，');
 	// Another view: nothing of the book.
 	await page.locator('#article-list .page-row', { hasText: 'Studio 测试夹具' }).click();

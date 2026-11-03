@@ -76,16 +76,16 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 	const { styles } = PAGES.studio;
 	// The page's words, in the language it speaks (escaped for the page).
 	const say = Object.fromEntries(Object.entries({
-		editor: t('文章编辑器'),
-		chooseArticle: t('选择一篇文章'),
+		editor: t('页面编辑器'),
+		chooseArticle: t('选择一个页面'),
 		waiting: t('等待载入'),
 		reviewHint: t('已经保存在磁盘上；拒绝的会改回去'),
 		retry: t('重试'),
 		rejectAll: t('全部拒绝'),
 		acceptAll: t('全部接受'),
-		outline: t('文章目录'),
+		outline: t('页面目录'),
 		drive: t('资料库'),
-		allArticles: t('全部文章'),
+		allArticles: t('全部页面'),
 		apps: t('小程序'),
 		translate: t('书库'),
 		books: t('这篇笔记的书'),
@@ -96,13 +96,13 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 		sideTabs: t('右侧面板'),
 		terminalFolder: t('终端启动目录'),
 		repoRoot: t('仓库根目录'),
-		thisArticle: t('当前文章'),
+		thisArticle: t('当前页面'),
 		driveFirst: t('先在左侧「资料库」里选好文件夹'),
 		restartTerminal: t('重新打开终端'),
 		terminalAgents: t('在终端里启动 AI'),
 		terminal: t('终端'),
 	}).map(([key, text]) => [key, escape(text)])) as Record<string, string>;
-	const title = t('本地文章工作台');
+	const title = t('本地页面工作台');
 	const page = `<!doctype html>
 <html lang="${escape(spoken)}" data-studio-locale="${escape(spoken)}">
 	<head>

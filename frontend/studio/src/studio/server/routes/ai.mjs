@@ -55,7 +55,7 @@ export function aiRoutes(api, { notesRoot, blogRoot, articles, files, history, m
 		const { image, prompt } = await json();
 		if (typeof prompt !== 'string' || !prompt.trim()) throw refuse(400, t('要说明识别什么（prompt）'));
 		const picture = String(image ?? '').replace(/^\.\//u, '').match(/^(img|assets)\/(.+)$/u);
-		if (!picture) throw refuse(400, t('只能识别文章自己的图片（./img/ 或 ./assets/ 里的）'));
+		if (!picture) throw refuse(400, t('只能识别页面自己的图片（./img/ 或 ./assets/ 里的）'));
 		const { body, contentType } = await files.read(slug, picture[1], picture[2], { sizeLimit: 20 * 1024 * 1024 });
 		return { text: await askAboutImage(await aiSettings.config(), { image: body, mediaType: String(contentType).split(';')[0], prompt }) };
 	});
@@ -67,7 +67,7 @@ export function aiRoutes(api, { notesRoot, blogRoot, articles, files, history, m
 		if (typeof image !== 'string' || typeof markdown !== 'string' || !markdown.trim()) throw refuse(400, t('要给出图片和要放的内容'));
 		const { source, revision } = await articles.read(slug);
 		const next = insertBelowImage(source, image, markdown);
-		if (next === null) throw refuse(404, t('没在文章里找到这张图'));
+		if (next === null) throw refuse(404, t('没在页面里找到这张图'));
 		await history.keep(slug, source, 'before-change');
 		await articles.save(slug, { source: next, expectedRevision: revision });
 		return { slug };

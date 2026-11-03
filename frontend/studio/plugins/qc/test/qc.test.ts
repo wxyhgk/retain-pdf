@@ -85,7 +85,7 @@ test('what would be wrong once published is reported for the check before publis
 	const fence = (file: string) => `\`\`\`qc\n@file ${file}\n\`\`\`\n`;
 	assert.deepEqual((await render('```qc\n```\n')).messages, [['qc-file', '计算结果块还没有选输出文件']]);
 	assert.deepEqual((await render(fence('./assets/gone.log'))).messages, [['qc-file', '找不到计算结果的输出 ./assets/gone.log']]);
-	assert.deepEqual((await render(fence('../other/a.log'))).messages, [['qc-file', '计算结果的输出 ../other/a.log 不在文章的 img/ 或 assets/ 里，发布后读不到']]);
+	assert.deepEqual((await render(fence('../other/a.log'))).messages, [['qc-file', '计算结果的输出 ../other/a.log 不在页面的 img/ 或 assets/ 里，发布后读不到']]);
 	assert.deepEqual((await render(fence('./assets/run.log'), { 'run.log': 'step 1 ok\n' })).messages, [['qc-unknown', './assets/run.log 认不出是 Gaussian 或 ORCA 的输出']]);
 	const failed = await render(fence('./assets/stop.out'), { 'stop.out': 'fixture:co2-maxcycles-orca.out' });
 	assert.deepEqual(failed.messages, [['qc-failed', '计算结果 ./assets/stop.out：优化没有收敛（走了 2 步就停了）']]);

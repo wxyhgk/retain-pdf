@@ -51,7 +51,7 @@ export function ReplaceDialog({ ask, onClose }: { ask: ReplaceAsk; onClose(): vo
 			setResults(found);
 			setChosen(new Set(found.flatMap((article) => article.matches.map((_, index) => key(article.slug, index)))));
 			const places = found.reduce((sum, article) => sum + article.matches.length, 0);
-			say(found.length ? t('{count} 篇文章里有 {places} 处', { count: found.length, places }) : '');
+			say(found.length ? t('{count} 个页面里有 {places} 处', { count: found.length, places }) : '');
 		} catch (error) {
 			say(errorText(error, t('没能查找')), true);
 		} finally {
@@ -78,7 +78,7 @@ export function ReplaceDialog({ ask, onClose }: { ask: ReplaceAsk; onClose(): vo
 			});
 			const places = done.changed.reduce((sum, article) => sum + article.count, 0);
 			const left = done.skipped.map((article) => t('「{title}」{why}，没有改', { title: article.title, why: article.why })).join('；');
-			say(t('已替换 {count} 篇文章里的 {places} 处；每篇改之前的样子在它的「历史版本」里', { count: done.changed.length, places }) + (left ? `。${left}` : ''), Boolean(left));
+			say(t('已替换 {count} 个页面里的 {places} 处；每篇改之前的样子在它的「历史版本」里', { count: done.changed.length, places }) + (left ? `。${left}` : ''), Boolean(left));
 			// What is left of those words, looked for again.
 			const { results: found } = await findInArticles(words, options);
 			setResults(found);
@@ -101,7 +101,7 @@ export function ReplaceDialog({ ask, onClose }: { ask: ReplaceAsk; onClose(): vo
 		});
 
 	return (
-		<Frame id="replace-dialog" title={t('查找替换')} description={t('在全部文章里找，先列出每一处，勾选的才换；每篇改之前存一份历史版本')} className="sm:max-w-[720px]" onClose={onClose} focus={() => findField.current}>
+		<Frame id="replace-dialog" title={t('查找替换')} description={t('在全部页面里找，先列出每一处，勾选的才换；每篇改之前存一份历史版本')} className="sm:max-w-[720px]" onClose={onClose} focus={() => findField.current}>
 			<form
 				className="grid gap-2"
 				onSubmit={(event) => {

@@ -61,7 +61,7 @@ export function HistoryDialog({ slug, host, onClose }: { slug: string; host: His
 	}
 
 	return (
-		<Frame id="history-dialog" title={t('历史版本')} description={t('写作时每 10 分钟自动存一份，存在文章的 ai/history 里，不会发布')} className="sm:max-w-[600px]" onClose={onClose}>
+		<Frame id="history-dialog" title={t('历史版本')} description={t('写作时每 10 分钟自动存一份，存在页面的 ai/history 里，不会发布')} className="sm:max-w-[600px]" onClose={onClose}>
 			<ul id="history-list" className={listLook}>
 				{entries?.map((entry, at) => (
 					<Fragment key={entry.name}>
@@ -73,7 +73,7 @@ export function HistoryDialog({ slug, host, onClose }: { slug: string; host: His
 						</Row>
 					</Fragment>
 				))}
-				{entries?.length === 0 && <li className={emptyLook}>{t('还没有历史版本。写作时每 10 分钟自动存一份；终端、AI 或别的编辑器改动这篇文章前，也会先把原来的存在这里。')}</li>}
+				{entries?.length === 0 && <li className={emptyLook}>{t('还没有历史版本。写作时每 10 分钟自动存一份；终端、AI 或别的编辑器改动这一页前，也会先把原来的存在这里。')}</li>}
 			</ul>
 			<Status id="history-status" {...status} />
 		</Frame>

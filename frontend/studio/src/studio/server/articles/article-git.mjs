@@ -80,7 +80,7 @@ export class ArticleGit {
 		const root = await this.#repository();
 		if (!root) throw new GitError(t('blog/ 不在 git 仓库里'), 409);
 		const { changed, vanished } = await this.status();
-		if (!changed[slug] && !vanished.length) throw new GitError(t('这篇文章没有要提交的改动'), 409);
+		if (!changed[slug] && !vanished.length) throw new GitError(t('这一页没有要提交的改动'), 409);
 		const folders = [slug, ...vanished].map((name) => resolve(this.#blog, name));
 		// A folder gone whose removal is staged already is neither on disk nor in the index: `add` would not find it.
 		const indexed = [];

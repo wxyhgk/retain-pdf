@@ -223,7 +223,7 @@ export function FilePanel({ store, actions }: { store: Store<FilePanelState>; ac
 		<>
 			<header className="pane-toolbar">
 				<span id="files-root" className="pane-path">
-					{slug ? `blog/${slug}/` : t('未打开文章')}
+					{slug ? `blog/${slug}/` : t('未打开页面')}
 				</span>
 				<div className="pane-actions">
 					<button id="upload-files" type="button" title={t('上传文件；文件和整个文件夹也可以直接拖进来')} aria-label={t('上传文件')} disabled={!slug} onClick={() => actions.chooseUpload(actions.entryAt(store.get().selected))}>
@@ -294,7 +294,7 @@ export function FilePanel({ store, actions }: { store: Store<FilePanelState>; ac
 						))}
 					</ul>
 				) : (
-					<p className="file-tree-empty">{t('打开一篇文章后，这里显示它的文件夹。')}</p>
+					<p className="file-tree-empty">{t('打开一个页面后，这里显示它的文件夹。')}</p>
 				)}
 			</div>
 			<p id="files-status" className="files-status" role="status" aria-live="polite" data-state={status.state}>

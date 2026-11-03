@@ -78,7 +78,7 @@ export class FileRepository {
 
 	async list(slug) {
 		const paths = articleBundlePaths(this.blogRoot, slug);
-		await assertDirectoryWithoutSymlink(paths.directory, t('文章目录不可用'));
+		await assertDirectoryWithoutSymlink(paths.directory, t('页面目录不可用'));
 		const [img, assets, ai] = await Promise.all(
 			ARTICLE_FOLDERS.map((root) => listRegularFiles(paths[root])),
 		);
@@ -93,7 +93,7 @@ export class FileRepository {
 		assertPublicResourceRoot(root);
 		const segments = validateResourcePath(resourcePath);
 		const paths = articleBundlePaths(this.blogRoot, slug);
-		await assertDirectoryWithoutSymlink(paths.directory, t('文章目录不可用'));
+		await assertDirectoryWithoutSymlink(paths.directory, t('页面目录不可用'));
 		await assertDirectoryWithoutSymlink(paths[root], t('资源目录不存在'));
 
 		let current = paths[root];
@@ -181,7 +181,7 @@ export function validateResourcePath(resourcePath) {
 		throw new StudioPathError(t('无效的资源路径'));
 	}
 	if (resourcePath.includes('\\') || isAbsolute(resourcePath) || /^[A-Za-z]:/u.test(resourcePath)) {
-		throw new StudioPathError(t('资源路径必须是文章内的相对路径'));
+		throw new StudioPathError(t('资源路径必须是页面内的相对路径'));
 	}
 	const segments = resourcePath.split('/');
 	if (segments.some((segment) => !segment || segment === '.' || segment === '..')) {

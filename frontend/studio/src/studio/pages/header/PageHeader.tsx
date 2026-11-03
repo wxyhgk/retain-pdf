@@ -101,7 +101,7 @@ function CoverPicker({ actions, onPick }: { actions: HeaderActions; onPick(cover
 					}
 				}}
 			/>
-			<p className="cover-picker-note">{failed ? t('读不到文章的图片') : pictures && !pictures.length ? t('文章的 img/ 里还没有图片。') : t('或者用文章 img/ 里的图片：')}</p>
+			<p className="cover-picker-note">{failed ? t('读不到页面的图片') : pictures && !pictures.length ? t('页面的 img/ 里还没有图片。') : t('或者用页面 img/ 里的图片：')}</p>
 			<div className="cover-picker-grid">
 				{pictures?.map((picture) => (
 					<button key={picture} type="button" title={picture} aria-label={t('封面 {picture}', { picture })} onClick={() => onPick(picture)}>
@@ -302,7 +302,7 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 					id="article-title-input"
 					className="article-title-input"
 					rows={1}
-					aria-label={t('文章标题')}
+					aria-label={t('页面标题')}
 					placeholder={t('无标题')}
 					disabled={disabled}
 					value={shown?.title ?? ''}

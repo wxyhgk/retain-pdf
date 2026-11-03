@@ -17,7 +17,7 @@ function validateBundleRelativePath(path: string): void {
 		throw new InvalidScienceResourcePathError(t('@file 路径不能包含控制字符'));
 	}
 	if (!SAFE_ROOTS.some((root) => path.startsWith(root))) {
-		throw new InvalidScienceResourcePathError(t('@file 只能引用当前文章的 ./assets/ 或 ./img/'));
+		throw new InvalidScienceResourcePathError(t('@file 只能引用当前页面的 ./assets/ 或 ./img/'));
 	}
 
 	const segments = path.split('/');

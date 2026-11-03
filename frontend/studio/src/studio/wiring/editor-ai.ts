@@ -48,7 +48,7 @@ export function createEditorAi(studio: Studio) {
 		const marked = slug ? editor.markSelection() : null;
 		if (!slug || !marked) return;
 		if (!(await session.flush())) {
-			showToast(t('文章还没保存好，保存后再问 AI'), true);
+			showToast(t('页面还没保存好，保存后再问 AI'), true);
 			return;
 		}
 		const lines = sourceLinesOf(session.current.source, marked);
@@ -66,12 +66,12 @@ export function createEditorAi(studio: Studio) {
 	const inlineAi = createInlineAi({
 		async run(instruction) {
 			const asked = inlineAsk;
-			if (!asked || session.slug !== asked.slug) throw new Error(t('已经换了文章'));
+			if (!asked || session.slug !== asked.slug) throw new Error(t('已经换了页面'));
 			const { agent, options } = chosenAI();
 			inlineId = crypto.randomUUID();
 			const { markdown } = await askInline({ id: inlineId, agent, options, mode: asked.mode, instruction, slug: asked.slug, selected: asked.selected, before: asked.before, after: asked.after });
-			if (session.slug !== asked.slug) throw new Error(t('已经换了文章'));
-			if (session.current.source !== asked.source || session.hasUnsavedEdits()) throw new Error(t('AI 写的时候文章改过了：再选一次，重新问'));
+			if (session.slug !== asked.slug) throw new Error(t('已经换了页面'));
+			if (session.current.source !== asked.source || session.hasUnsavedEdits()) throw new Error(t('AI 写的时候页面改过了：再选一次，重新问'));
 			// Shown in place, to accept or reject (the review bar); taken, it is saved as any edit.
 			void session.reviewProposal([asked.before, markdown.trim(), asked.after].filter((part) => part.trim()).join('\n\n') + '\n');
 		},
@@ -107,7 +107,7 @@ export function createEditorAi(studio: Studio) {
 		const end = marked.indexOf(SELECTION_END);
 		if (start < 0 || end < start) return;
 		if (!(await session.flush())) {
-			showToast(t('文章还没保存好，保存后再问 AI'), true);
+			showToast(t('页面还没保存好，保存后再问 AI'), true);
 			return;
 		}
 		const selected = marked.slice(start + SELECTION_START.length, end).trim();
@@ -177,7 +177,7 @@ export function createEditorAi(studio: Studio) {
 		const mark = `instruction-${++instructions}`;
 		editor.markInstructing(mark);
 		try {
-			if (!(await session.flush())) throw new Error(t('文章还没保存好，保存后再交给 AI'));
+			if (!(await session.flush())) throw new Error(t('页面还没保存好，保存后再交给 AI'));
 			const lines = sourceLinesOf(session.current.source, marked);
 			if (!lines?.text.trim()) throw new Error(t('这一行是空的，没有要交给 AI 的事'));
 			const id = await instruct(slug, { text: lines.text, start: lines.start, end: lines.end, heading: headingAbove(session.current.source, lines.start) }, fresh);

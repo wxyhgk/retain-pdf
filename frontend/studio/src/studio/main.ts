@@ -303,7 +303,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 	},
 	async upload(file) {
 		const slug = session.slug;
-		if (!slug) throw new Error(t('文章尚未载入'));
+		if (!slug) throw new Error(t('页面尚未载入'));
 		const { path } = await uploadArticleFile(slug, 'img', file);
 		void filePanel.refresh();
 		return `./${path}`;
@@ -534,7 +534,7 @@ setDatabaseSpace({
 	},
 	async detach(text) {
 		const page = session.slug;
-		if (!page) throw new Error(t('没有打开文章'));
+		if (!page) throw new Error(t('没有打开页面'));
 		const made = await trackWrite(() => detachDatabase(page, text));
 		void articleList.load();
 		return made.slug;
@@ -559,7 +559,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	files: {
 		async upload(files) {
 			const slug = session.slug;
-			if (!slug) throw new Error(t('文章尚未载入'));
+			if (!slug) throw new Error(t('页面尚未载入'));
 			const paths: string[] = [];
 			try {
 				for (const file of files) paths.push((await uploadArticleFile(slug, uploadFolderFor(null, file), file)).path);
@@ -574,7 +574,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		report: showToast,
 	},
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
-	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error(t('文章尚未载入')))),
+	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error(t('页面尚未载入')))),
 	editFile: (path) => editArticleFile(path),
 	openFile: (path, click) => openArticleFile(path, click),
 	fileMenu: (path, anchor) => fileMenu(path, anchor),
@@ -798,7 +798,7 @@ const quickFind = createQuickFind({
 			{ key: 'studio:import-folder', label: t('导入 Markdown 文件夹…'), icon: '⇪', run: () => void pages.importMarkdown('folder') },
 		];
 		const theme = { key: 'studio:theme', label: t('切换亮色 / 暗色'), icon: '◐', run: toggleTheme };
-		const finding = { key: 'studio:replace', label: t('在全部文章里查找替换…'), icon: '⌕', hint: '⌘⇧F', run: () => findEverywhere() };
+		const finding = { key: 'studio:replace', label: t('在全部页面里查找替换…'), icon: '⌕', hint: '⌘⇧F', run: () => findEverywhere() };
 		return [...fromTemplates, finding, theme, ...imports, ...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
 	},
 });

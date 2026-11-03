@@ -123,7 +123,7 @@ test('a widget file that is not there, or a read of what is not published, is re
 		reads.messages.map((message) => [message.ruleId, message.reason]),
 		[
 			['widget-file', '交互模块读的 ./assets/gone.log 不存在'],
-			['widget-file', '交互模块读的 ai/notes.md 不在文章的 img/ 或 assets/ 里，发布后读不到'],
+			['widget-file', '交互模块读的 ai/notes.md 不在页面的 img/ 或 assets/ 里，发布后读不到'],
 		],
 	);
 });

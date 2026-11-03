@@ -94,8 +94,8 @@ export function Markdown({ text, blocks = false, className, streaming = false }:
 			handle.className = 'ai-block-handle';
 			handle.type = 'button';
 			handle.draggable = true;
-			handle.title = t('拖到文章里；点一下插入到光标处');
-			handle.setAttribute('aria-label', t('插入这一块到文章'));
+			handle.title = t('拖到页面里；点一下插入到光标处');
+			handle.setAttribute('aria-label', t('插入这一块到页面'));
 			handle.addEventListener('dragstart', (event) => {
 				if (!event.dataTransfer) return;
 				event.dataTransfer.setData(STUDIO_MARKDOWN_DRAG_TYPE, markdown);
@@ -202,7 +202,7 @@ function Message({ item, last }: { item: Extract<ConversationItem, { kind: 'mess
 			<Markdown className="ai-message" text={item.text} blocks streaming={last && conversation?.state === 'running'} />
 			{whole && (
 				<div className="ai-message-actions">
-					<Act icon={FilePlus2} label={t('插入到文章')} onClick={() => actions.insert(whole)} />
+					<Act icon={FilePlus2} label={t('插入到页面')} onClick={() => actions.insert(whole)} />
 					<Act icon={Copy} label={t('复制')} onClick={() => actions.copy(whole)} />
 				</div>
 			)}

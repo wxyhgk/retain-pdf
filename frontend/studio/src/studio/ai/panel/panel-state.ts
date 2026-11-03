@@ -502,7 +502,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		const selecting = Boolean(open && !selectionLeftOut && host.hasSelection());
 		const selection = selecting ? await host.selection() : null;
 		// The lines not found (the article not saved, the selection not in its text): said, not sent as if they were.
-		if (selecting && !selection) host.toast(t('选中的内容没能附上（文章没保存好），这句话只带了文章'));
+		if (selecting && !selection) host.toast(t('选中的内容没能附上（页面没保存好），这句话只带了页面'));
 		const widgets = toldSince(target.id);
 		try {
 			const pictures = [...(said.kept ?? []), ...(await Promise.all(said.pictures.map((picture) => keepConversationPicture(target.id, picture.blob))))];
@@ -742,7 +742,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			void submit();
 		},
 		insert(markdown: string): void {
-			host.toast(host.insert(markdown) ? t('已插入到文章') : t('先打开一篇文章'));
+			host.toast(host.insert(markdown) ? t('已插入到页面') : t('先打开一个页面'));
 		},
 		/** `text` copied; `said`, what is said once it is. */
 		copy(text: string, said = t('已复制 Markdown')): void {

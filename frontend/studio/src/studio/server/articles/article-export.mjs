@@ -35,7 +35,7 @@ export class ArticleExport {
 	async export(slug, { children = false } = {}) {
 		const all = await this.articles.list();
 		const root = all.find((article) => article.slug === slug);
-		if (!root) throw Object.assign(new Error(t('文章不存在')), { statusCode: 404 });
+		if (!root) throw Object.assign(new Error(t('页面不存在')), { statusCode: 404 });
 		// The pages given out, each with the folder it goes in (the root's: none), named apart from those beside it.
 		const placed = new Map([[slug, { folder: '', name: fileNameOf(root.untitled ? '' : root.title, slug) }]]);
 		const under = (parent, folder) => {

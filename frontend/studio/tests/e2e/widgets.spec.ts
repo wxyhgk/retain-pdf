@@ -104,5 +104,5 @@ test('a widget reads only what is published with the article', async ({ page }) 
 	await openStudio(page);
 	const frame = editor(page).locator('iframe.note-widget-frame').last();
 	await frame.scrollIntoViewIfNeeded();
-	await expect(page.frameLocator('iframe.note-widget-frame >> nth=-1').locator('#out')).toHaveText('ai/notes.md 不在文章的 img/ 或 assets/ 里');
+	await expect(page.frameLocator('iframe.note-widget-frame >> nth=-1').locator('#out')).toHaveText('ai/notes.md 不在页面的 img/ 或 assets/ 里');
 });
