@@ -24,6 +24,11 @@ export type UrlAnchorJumpOptions = {
     /** 会话身份：跨文档同 anchor 不跳的根因，缺席时退化为旧全局去重 */
     jobId?: string | null;
     documentId?: string | null;
+    /**
+     * 块（regions）到了没有：它们不挡着露页面，比页面晚到。只给了 block_id 的锚点要等它们才知道是哪一页；
+     * 同时给了 page_idx 的先按页跳，块到了再按块所在的页校一次。缺省当已经到了（旧行为）。
+     */
+    regionsSettled?: boolean;
 };
 /**
  * 在 enabled 且 numPages 可用时，按 URL 锚点跳一次（每会话一次）。
