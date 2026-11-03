@@ -74,6 +74,9 @@ def sanitize_typst_markdown_for_compile(markdown: str) -> str:
     text = text.replace(r"\circled{\parallel}", r"\circ")
     text = text.replace(r"\textcircled{\times}", r"\otimes")
     text = text.replace(r"\textcircled{\parallel}", r"\circ")
+    # cmarker 把方括号里紧跟的 @ 当成 Typst 引用（`[@input_index]` → 找 <input_index>），文档里没有这个标签就整本编译失败；
+    # 圆括号里、句中、邮箱里的 @ 不受影响（2026-11-03，手册里的命令格式说明）。
+    text = re.sub(r"\[(\s*)@", r"[\1\\@", text)
     return text
 
 
