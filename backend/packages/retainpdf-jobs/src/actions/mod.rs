@@ -12,5 +12,6 @@ mod stage_retry_overrides;
 mod stage_retry_refine;
 mod stage_retry_request;
 mod stage_retry_view;
+mod streamed_ocr_artifacts;
 pub(crate) mod translation_request_recovery;
 

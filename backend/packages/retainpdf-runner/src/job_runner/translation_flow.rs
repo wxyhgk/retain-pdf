@@ -380,7 +380,10 @@ async fn run_ocr_and_translation_together(
     }
     let mut translated_job = translation_stage.job;
     if !matches!(translated_job.status, JobStatusKind::Succeeded) {
-        // 翻译失败 / 被取消：渲染准备的句柄在这里丢弃，kill_on_drop 结束进程。
+        // 翻译失败 / 被取消：渲染准备的句柄在这里丢弃，kill_on_drop 结束进程。OCR 是成了的，它的产物照样并回父任务
+        // （driver 把这份终态连同产物写库）：以前没并，父任务记录里没有原文 PDF、规范化文档，「重试翻译」判成缺文件
+        // （2026-11-03，6574 页的书翻完 6.86 万条后失败，重试不了）。
+        sync_parent_with_ocr_child(&mut translated_job, &ocr_finished);
         return Ok(translated_job);
     }
     if let Some(process) = render_prepare {
