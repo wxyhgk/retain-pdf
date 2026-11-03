@@ -1,3 +1,4 @@
+import type { PageCap } from "./ports.js";
 // 页码区间的编排：把纯计算（page-ranges.ts）落到 viewPort 与 upload state。
 //
 // 负责 constrain / validate / open / clear / summary 这组交互，
@@ -19,7 +20,7 @@ export interface PageRangeControllerDeps {
   resetAppliedPageRange: () => UploadState;
   refreshSubmitControls: () => void;
   setText: (id: string, value?: unknown) => void;
-  frontMaxPageCount: number;
+  frontMaxPageCount: PageCap;
   workflowNeedsUpload: (workflow?: string) => boolean;
 }
 

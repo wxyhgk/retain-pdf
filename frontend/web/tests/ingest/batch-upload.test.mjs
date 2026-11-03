@@ -315,3 +315,27 @@ test("批量面板：每行的状态文字；传完之前不能交；有没交�
   root.unmount();
   dom.window.close();
 });
+
+test("页数上限跟着设置里选的 OCR：PaddleOCR 999、MinerU 600、GLM-OCR 不限；超了说怎么办", async () => {
+  const { ocrMaxPages } = await import("../../src/platform/config/providers.ts");
+  assert.equal(ocrMaxPages("paddle"), 999);
+  assert.equal(ocrMaxPages("mineru"), 600);
+  assert.equal(ocrMaxPages("glm_ocr"), 0, "GLM-OCR 分段识别，不限页数");
+
+  let provider = "paddle";
+  const uploader = createBatchFileUploader({
+    configPort: { buildUploadUrl: () => "http://127.0.0.1:41000/api/v1/uploads" },
+    apiPrefix: "/api/v1",
+    frontMaxBytes: 50 * 1024 * 1024,
+    // 每次选文件现问：换了 OCR 立刻按新的算。
+    frontMaxPageCount: () => ocrMaxPages(provider),
+    pageLimitHint: () => "可以换成 GLM-OCR",
+    countPdfPages: async (file) => file.pages,
+    collectUploadFormData: (file) => ({ file: file.name, pages: file.pages }),
+    submitUploadRequest: async (_url, form) => ({ upload_id: "up-long", document_id: "doc-long", filename: form.file, page_count: form.pages }),
+  });
+  await assert.rejects(uploader.uploadFile({ ...pdf("long.pdf"), pages: 1500 }), { message: "超过 999 页（可以换成 GLM-OCR）" });
+  provider = "glm_ocr";
+  const result = await uploader.uploadFile({ ...pdf("long.pdf"), pages: 1500 });
+  assert.equal(result.pageCount, 1500);
+});

@@ -4,7 +4,7 @@ export const OCR_PROVIDER_DEFINITIONS = [
   {
     id: "paddle",
     label: "PaddleOCR",
-    description: "百度飞桨在线 OCR。",
+    description: "百度飞桨在线 OCR，一本最多 999 页。",
     logoUrl: "",
     tokenField: "paddle_token",
     runtimeConfigKey: "paddleToken",
@@ -17,11 +17,13 @@ export const OCR_PROVIDER_DEFINITIONS = [
     docsUrl: "https://aistudio.baidu.com/account/accessToken",
     docsLabel: "获取 Token",
     supportsValidation: true,
+    // 一本最多几页：后端 RUST_API_PADDLE_MAX_PAGES 的默认值，超了建任务时后端也拒。0 = 不限。
+    maxPages: 999,
   },
   {
     id: "mineru",
     label: "MinerU",
-    description: "MinerU 在线文档解析。",
+    description: "MinerU 在线文档解析，一本最多 600 页。",
     logoUrl: "",
     tokenField: "mineru_token",
     runtimeConfigKey: "mineruToken",
@@ -34,6 +36,8 @@ export const OCR_PROVIDER_DEFINITIONS = [
     docsUrl: "https://mineru.net/apiManage/docs",
     docsLabel: "获取 Token / API 文档",
     supportsValidation: true,
+    // 后端 RUST_API_MINERU_MAX_PAGES 的默认值。
+    maxPages: 600,
   },
   {
     // 智谱的版面解析（glm-ocr），和智谱翻译模型共用一个 key。任务里没有专用的 key 字段：
@@ -41,7 +45,7 @@ export const OCR_PROVIDER_DEFINITIONS = [
     // 只收上传的本地文件；网页端本来就只交上传的文件。
     id: "glm_ocr",
     label: "GLM-OCR",
-    description: "智谱版面解析，公式出 LaTeX、表格出 HTML；和智谱翻译共用一个 key。",
+    description: "智谱版面解析，公式出 LaTeX、表格出 HTML，不限页数；和智谱翻译共用一个 key。",
     // 设置里服务商卡片上的标志（和翻译「智谱」同一个）；没有标志的用线条图标。
     logoUrl: "src/assets/providers/zai.svg",
     tokenField: "",
@@ -56,6 +60,8 @@ export const OCR_PROVIDER_DEFINITIONS = [
     docsUrl: "https://open.bigmodel.cn/usercenter/apikeys",
     docsLabel: "获取 Key",
     supportsValidation: false,
+    // 分段识别，多长的书都行。
+    maxPages: 0,
   },
 ];
 
@@ -274,6 +280,11 @@ export function isOfficialDeepSeekBaseUrl(value = "") {
 export function normalizeOcrProvider(value: unknown) {
   const provider = `${value || ""}`.trim().toLowerCase();
   return OCR_PROVIDER_DEFINITIONS.some((item) => item.id === provider) ? provider : DEFAULT_OCR_PROVIDER;
+}
+
+/** 这家 OCR 一本最多几页；0 = 不限（GLM-OCR）。 */
+export function ocrMaxPages(provider: unknown): number {
+  return getOcrProviderDefinition(provider).maxPages;
 }
 
 export function getOcrProviderDefinition(provider: unknown) {
