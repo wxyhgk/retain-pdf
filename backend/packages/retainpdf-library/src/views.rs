@@ -196,10 +196,21 @@ pub struct SearchQuery {
     pub document_id: String,
 }
 
+/// 一个块级命中：库里存的那一行，加上按整本书算的页号。
+#[derive(Debug, Serialize)]
+pub struct SearchHitView {
+    #[serde(flatten)]
+    pub hit: BlockSearchHit,
+    /// 这一块在整本书里是第几页（1 起），和 `GET /documents/:id/reading` 给的阅读任务的页序一致
+    /// （合并任务按整本书编页：本地页 = 这个数 - 1）。`page_idx` 是建索引那个任务（`job_id`）自己的
+    /// 本地页号，分段翻译时两者不同。任务记录读不到时是 `null`。
+    pub document_page: Option<i64>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SearchResultView {
     pub query: String,
-    pub hits: Vec<BlockSearchHit>,
+    pub hits: Vec<SearchHitView>,
     /// 生效的 `limit`。
     pub limit: u32,
     /// 命中不止这么多（多取一条判断）。没有 `offset`，要更多就加大 `limit`。

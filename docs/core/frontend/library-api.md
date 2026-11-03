@@ -101,8 +101,12 @@ DELETE /api/v1/favorites/:favorite_id
 GET /api/v1/search?q=光学光谱&limit=20[&document_id=xxx]
     → data: { query, hits[], limit, has_more }
       hits[]: { document_id, job_id, page_idx, block_id,
-                source_snippet, translated_snippet }
+                source_snippet, translated_snippet, document_page }
 ```
+
+- `page_idx`（0 起）是建索引那个任务（`job_id`）自己的本地页号；`document_page`（1 起，2026-11-03 加）是这一块在
+  整本书里的页号。分段翻译的书两者不同：要跳到 `GET /documents/{id}/reading` 给的阅读任务（合并任务按整本书编页），
+  用 `document_page - 1`；直接打开 `job_id` 那个任务才用 `page_idx`。任务记录读不到时 `document_page` 是 `null`。
 
 - snippet 里命中词用 `[` `]` 包裹,前端可替换成高亮标签;
 - 任意长度的 `q` 都能查(≥3 字符走 FTS5 全文索引,更短自动回退模糊匹配);

@@ -1050,14 +1050,15 @@
     },
     "BlockSearchHit": {
       "type": "object",
-      "description": "retainpdf-core models/library.rs :: BlockSearchHit —— 一个块级命中，带完整锚点，前端可以跳到阅读器原位。",
+      "description": "views.rs :: SearchHitView（retainpdf-core models/library.rs :: BlockSearchHit 展开，加上 document_page）—— 一个块级命中，带完整锚点，前端可以跳到阅读器原位。",
       "required": [
         "document_id",
         "job_id",
         "page_idx",
         "block_id",
         "source_snippet",
-        "translated_snippet"
+        "translated_snippet",
+        "document_page"
       ],
       "properties": {
         "document_id": {
@@ -1070,7 +1071,15 @@
         "page_idx": {
           "type": "integer",
           "minimum": 0,
-          "description": "0 起的页号。"
+          "description": "0 起的页号：建索引那个任务（job_id）自己的本地页号。分段翻译的书和整本书的页号不同，跳到 GET /documents/{id}/reading 给的阅读任务时用 document_page。"
+        },
+        "document_page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "这一块在整本书里是第几页（1 起），和 GET /documents/{id}/reading 给的阅读任务的页序一致（合并任务按整本书编页：本地页 = document_page - 1）。2026-11-03 加。任务记录读不到时是 null。"
         },
         "block_id": {
           "type": "string"
