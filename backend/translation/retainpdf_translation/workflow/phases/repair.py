@@ -30,6 +30,7 @@ from retainpdf_translation.workflow.pages import refresh_translation_units_and_c
 REPAIR_PROFILE_ENV = "RETAIN_TRANSLATION_REPAIR_PROFILE"
 FAST_REPAIR_PROFILE = "fast"
 QUALITY_REPAIR_PROFILE = "quality"
+FINAL_RECOVERY_BASE_ITEMS = 64
 FAST_AGENT_REPAIR_DEFAULT_LIMIT = 8
 QUALITY_AGENT_REPAIR_MIN_LIMIT = 8
 QUALITY_AGENT_REPAIR_MAX_LIMIT = 256
@@ -309,6 +310,9 @@ def run_final_untranslated_recovery_stage(
             "blocking_after": 0,
         }
     started = time.perf_counter()
+    max_items = _final_recovery_limit_from_env(
+        payload_size=sum(len(items) for items in page_payloads.values()),
+    )
     emit_stage_transition(
         stage="final_untranslated_recovery",
         substage="final_untranslated_recovery",
@@ -317,7 +321,7 @@ def run_final_untranslated_recovery_stage(
         progress_total=blocking_before,
         payload={
             "blocking_untranslated": blocking_before,
-            "max_items": _final_recovery_limit_from_env(),
+            "max_items": max_items,
         },
     )
     summary = recover_blocking_untranslated_items(
@@ -326,6 +330,7 @@ def run_final_untranslated_recovery_stage(
         model=model,
         base_url=base_url,
         target_language_name=target_language_name,
+        max_items=max_items,
         workers=max(1, min(32, int(workers or 1))),
         request_chat_content_fn=request_chat_content,
     ).as_dict()
@@ -351,14 +356,21 @@ def run_final_untranslated_recovery_stage(
     return summary
 
 
-def _final_recovery_limit_from_env() -> int:
+def _final_recovery_limit_from_env(*, payload_size: int = 0) -> int:
+    """最终补翻最多补几块：64 块加全书条目的 1%（6.9 万条的书约 750 块），环境变量照旧能定死。
+
+    补不回来的块转成死信、保留原文、不阻断导出；超出名额的块没机会补，照样卡导出门禁。以前固定 64（事件里还报成
+    快档 4，其实没传进去，补翻一直按 64 跑），几万条的书剩下几百块没补成就整本失败（2026-11-03，6574 页的手册
+    386 块只补了 64 块）。名额跟着书的大小走，真的大面积失败（几千块）照样会被门禁拦下。
+    """
     raw = str(os.environ.get("RETAIN_TRANSLATION_FINAL_RECOVERY_MAX_ITEMS", "") or "").strip()
+    scaled = FINAL_RECOVERY_BASE_ITEMS + max(0, int(payload_size)) // 100
     if not raw:
-        return 64 if _repair_profile() == QUALITY_REPAIR_PROFILE else 4
+        return scaled
     try:
         return max(0, int(raw))
     except ValueError:
-        return 64
+        return scaled
 
 
 def _agent_repair_limit_from_env(

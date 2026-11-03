@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 
 from retainpdf_translation.artifacts import blocking_untranslated_items
 from retainpdf_translation.services.finalization import recover_blocking_untranslated_items
@@ -158,15 +160,19 @@ def test_final_untranslated_recovery_respects_item_budget(monkeypatch) -> None:
     assert summary.skipped_by_budget == 1
 
 
-def test_final_recovery_limit_defaults_to_small_fast_budget(monkeypatch) -> None:
-    monkeypatch.delenv("RETAIN_TRANSLATION_REPAIR_PROFILE", raising=False)
-    monkeypatch.delenv("RETAIN_TRANSLATION_FINAL_RECOVERY_MAX_ITEMS", raising=False)
-
-    assert repair_phase._final_recovery_limit_from_env() == 4
-
-
-def test_final_recovery_limit_uses_quality_budget(monkeypatch) -> None:
-    monkeypatch.setenv("RETAIN_TRANSLATION_REPAIR_PROFILE", "quality")
+@pytest.mark.parametrize("profile", ["", "quality"])
+def test_final_recovery_budget_grows_with_the_book(monkeypatch, profile: str) -> None:
+    # 64 块加全书条目的 1%；快档、质量档一样（以前快档报 4，其实没传进去，一直按 64 跑）。
+    # 6.9 万条的书剩 386 块没补成：以前只补 64 块、其余卡导出，现在名额 753。
+    monkeypatch.setenv("RETAIN_TRANSLATION_REPAIR_PROFILE", profile)
     monkeypatch.delenv("RETAIN_TRANSLATION_FINAL_RECOVERY_MAX_ITEMS", raising=False)
 
     assert repair_phase._final_recovery_limit_from_env() == 64
+    assert repair_phase._final_recovery_limit_from_env(payload_size=3000) == 94
+    assert repair_phase._final_recovery_limit_from_env(payload_size=68998) == 753
+
+
+def test_final_recovery_budget_env_override_still_wins(monkeypatch) -> None:
+    monkeypatch.setenv("RETAIN_TRANSLATION_FINAL_RECOVERY_MAX_ITEMS", "7")
+
+    assert repair_phase._final_recovery_limit_from_env(payload_size=68998) == 7

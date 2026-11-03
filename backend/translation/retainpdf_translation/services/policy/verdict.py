@@ -6,10 +6,13 @@ from typing import Callable
 
 from retainpdf_translation.core.item_reader import item_block_class
 from retainpdf_translation.core.item_reader import item_is_caption_like
+from retainpdf_translation.core.item_reader import item_is_textual
 from retainpdf_translation.core.item_reader import item_policy_translate
 from retainpdf_translation.core.item_reader import item_raw_block_type
 from retainpdf_translation.core.placeholder_tokens import strip_placeholders
+from retainpdf_translation.services.policy.command_listing import looks_like_command_listing
 from retainpdf_translation.services.policy.metadata_filter import looks_like_hard_nontranslatable_metadata
+from retainpdf_translation.services.policy.soft_hints import normalized_source_text
 from retainpdf_translation.services.policy.special_blocks import looks_like_special_long_list_block
 
 
@@ -146,6 +149,12 @@ _KEEP_ORIGIN_RULES: tuple[_PolicyRule, ...] = (
     _PolicyRule("hard_metadata_fragment", lambda view: looks_like_hard_nontranslatable_metadata(view.item)),
     _PolicyRule("special_long_list_block", lambda view: looks_like_special_long_list_block(view.source)),
     _PolicyRule("protocol_hex_dump", lambda view: looks_like_protocol_or_hex_dump(view.source)),
+    # 整块是命令行 / 代码（工具手册的 Tcl、shell 命令）：见 command_listing.py。看原始原文——保护过的原文里公式
+    # 换成了占位符，占位符的下划线、括号会被当成代码记号。
+    _PolicyRule(
+        "command_listing",
+        lambda view: item_is_textual(view.item) and looks_like_command_listing(normalized_source_text(view.item)),
+    ),
     _PolicyRule(
         "short_non_body_label",
         lambda view: _is_short_alnum_label(view) and item_is_caption_like(view.item),
