@@ -46,7 +46,9 @@ pub async fn get_reader_region(
     State(state): State<AppState>,
     ApiPath((job_id, item_id)): ApiPath<(String, String)>,
 ) -> Result<Json<ApiResponse<ReaderRegionItemView>>, AppError> {
-    let view = run_job_query(&state, format!("reader-region:{job_id}"), move |jobs| {
+    // 合并并发请求的键要带区块编号：只按任务合并的话，同一任务并发取两块，后到的拿到先到的那一块。
+    let key = format!("reader-region:{job_id}:{item_id}");
+    let view = run_job_query(&state, key, move |jobs| {
         jobs.reader_region_item_view(&job_id, &item_id)
     })
     .await?;

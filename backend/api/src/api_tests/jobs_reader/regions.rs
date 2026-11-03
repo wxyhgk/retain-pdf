@@ -423,3 +423,67 @@ async fn large_json_responses_are_gzipped_only_when_the_client_accepts_it() {
     assert_eq!(small.status(), StatusCode::OK);
     assert!(small.headers().get("content-encoding").is_none());
 }
+
+/// 同一任务并发取两个不同的区块，各拿各的（以前合并并发请求的键没带区块编号，后到的请求拿到先到的那一块；
+/// AI 并行调 read_passage 时会静默拿错原文）。
+///
+/// 反证方式：把 `get_reader_region` 的键改回 `reader-region:{job_id}`，这个测试必须变红。
+#[tokio::test]
+async fn concurrent_single_region_requests_each_get_their_own_block() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    let state = test_state("reader-region-concurrent");
+    write_big_job(&state, "reader-region-job", 3, "译文"); // get_region 取的是这个任务
+    let app = build_app(state.clone());
+
+    // 先把读请求的两个槽占住，让两个区块请求同时排在里面（确保它们「同时在跑」）。
+    let started = Arc::new(AtomicUsize::new(0));
+    let mut releases = Vec::new();
+    let mut holders = Vec::new();
+    for index in 0..2 {
+        let (release, wait) = std::sync::mpsc::channel::<()>();
+        releases.push(release);
+        let started = started.clone();
+        let state = state.clone();
+        holders.push(tokio::spawn(async move {
+            crate::routes::common::run_job_query_once(&state, format!("hold-region-slot-{index}"), move |_| {
+                started.fetch_add(1, Ordering::SeqCst);
+                let _ = wait.recv();
+                Ok(())
+            })
+            .await
+        }));
+    }
+    for _ in 0..200 {
+        if started.load(Ordering::SeqCst) == 2 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    assert_eq!(started.load(Ordering::SeqCst), 2, "两个槽都应该被占住");
+
+    let first = tokio::spawn({
+        let app = app.clone();
+        async move { get_region(&app, "p001-b0000").await }
+    });
+    let second = tokio::spawn({
+        let app = app.clone();
+        async move { get_region(&app, "p001-b0002").await }
+    });
+    tokio::time::sleep(Duration::from_millis(100)).await;
+    for release in releases {
+        let _ = release.send(());
+    }
+    for holder in holders {
+        holder.await.expect("holder task").expect("holder query");
+    }
+    let (status, first) = first.await.expect("first request");
+    assert_eq!(status, StatusCode::OK);
+    let (status, second) = second.await.expect("second request");
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(first["data"]["item_id"], "p001-b0000");
+    assert_eq!(second["data"]["item_id"], "p001-b0002");
+    assert_eq!(second["data"]["translated"]["text"], "译文 2");
+}
