@@ -4,6 +4,7 @@ import { PdfDocumentPane } from "../../pdf/PdfDocumentPane.js";
 import type { ProtectedPdfFile } from "../../pdf/useProtectedPdfFile.js";
 import type { PageRowHeights } from "../../pdf/usePageRowSync.js";
 import { READER_ZOOM_DEFAULT } from "../../pdf/reader-zoom.js";
+import { useKeepPageOnResize } from "../../hooks/use-keep-page-on-resize.js";
 import {
   READER_GRID_CLASS,
   READER_SCROLL_SHELL_CLASS,
@@ -218,6 +219,8 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
       typeof document === "undefined" ? shellWidth * 2 : document.documentElement.clientWidth,
     )
     : null;
+  // 阅读区变宽变窄（Studio 里开关右栏、拖分栏）时停在原来那一页，不让页高变化把眼前换成别的页。
+  useKeepPageOnResize(shellEl, pageWidthBasis);
 
   return (
     <div
