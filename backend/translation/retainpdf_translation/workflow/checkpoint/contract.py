@@ -153,10 +153,12 @@ def project_progress(
             for item_id in unit.get("translation_unit_member_ids", [])
             if str(item_id or "")
         ]
-        # 有成员就按成员记（只有一个成员的接续组，单元编号 `__cg__:…` 不是任何一块的编号）
+        # 只有一个成员的接续组照旧记单元编号（`__cg__:…`，对不上任何一块），成员不进各页的待办名单。
+        # 改成记成员会让旧断点上已完成的块「变回待办」，续跑在 advance_checkpoint 当场报 regressed
+        # （2026-11-03 那本 6574 页的书，p917-b021）。阻断判定已经按成员判（_is_settled_non_blocking），不受影响。
         unit_ids = (
             set(member_ids)
-            if member_ids
+            if len(member_ids) > 1
             else {str(unit.get("item_id", "") or "")} - {""}
         )
         pending_ids.update(unit_ids)
