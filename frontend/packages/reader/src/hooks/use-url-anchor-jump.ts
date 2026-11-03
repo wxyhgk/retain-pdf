@@ -76,6 +76,11 @@ export type UrlAnchorJumpOptions = {
   /** 会话身份：跨文档同 anchor 不跳的根因，缺席时退化为旧全局去重 */
   jobId?: string | null;
   documentId?: string | null;
+  /**
+   * 块（regions）到了没有：它们不挡着露页面，比页面晚到。只给了 block_id 的锚点要等它们才知道是哪一页；
+   * 同时给了 page_idx 的先按页跳，块到了再按块所在的页校一次。缺省当已经到了（旧行为）。
+   */
+  regionsSettled?: boolean;
 };
 
 function useUrlAnchorJumpCore(
@@ -83,7 +88,7 @@ function useUrlAnchorJumpCore(
   appliedKeyRef: AppliedKeyRef,
   onSettled?: () => void,
 ): void {
-  const { enabled, numPages, goToPage, resolveBlockPage, onAnchorApplied, jobId, documentId } = options;
+  const { enabled, numPages, goToPage, resolveBlockPage, onAnchorApplied, jobId, documentId, regionsSettled = true } = options;
   const goToPageRef = useRef(goToPage);
   goToPageRef.current = goToPage;
   const resolveBlockPageRef = useRef(resolveBlockPage);
@@ -100,6 +105,8 @@ function useUrlAnchorJumpCore(
 
     const anchor = resolveReaderAnchor() as UrlReaderAnchor | null;
     const page = pageNumberFromUrlAnchor(anchor, resolveBlockPageRef.current);
+    // 只有块、块还没到：先不算处理过（也不放 URL 写回），块到了再来。
+    if (page == null && anchor?.blockId && !regionsSettled) return;
     // 无有效页码：视为已处理，避免后续反复读 URL
     const key = buildUrlAnchorAppliedKey(anchor, page, { jobId, documentId });
     if (appliedKeyRef.current === key) {
@@ -131,7 +138,7 @@ function useUrlAnchorJumpCore(
     return () => {
       for (const t of timers) clearTimeout(t);
     };
-  }, [enabled, numPages, jobId, documentId, appliedKeyRef]);
+  }, [enabled, numPages, jobId, documentId, appliedKeyRef, regionsSettled]);
 }
 
 /**
@@ -237,6 +244,7 @@ export function useReaderUrlAnchorSync(options: UrlReaderAnchorSyncOptions): voi
     onAnchorApplied: options.onAnchorApplied,
     jobId: options.jobId,
     documentId: options.documentId,
+    regionsSettled: options.regionsSettled,
   };
   // jump core 在锚点落定后置位 anchorSettled，写回方向才开闸。
   useUrlAnchorJumpCore(jumpOptions, appliedKeyRef, handleSettled);

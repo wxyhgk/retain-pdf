@@ -289,6 +289,7 @@ export function useReaderReactController(): ReaderReactController {
     resolveBlockPage,
     jobId: session.jobId,
     documentId: session.documentId,
+    regionsSettled: session.regionsSettled,
     onAnchorApplied: (anchor) => {
       activateRegion(findReaderRegion(session.regions, anchor.blockId));
     },
