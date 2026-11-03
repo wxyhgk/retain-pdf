@@ -1,10 +1,6 @@
 // @retainpdf/reader/boot — explicit MPA startup API (react-pdf only).
 import { createRoot, type Root } from "react-dom/client";
 import { ReaderApp } from "./ReaderApp.js";
-import {
-  clearReaderAiNavigationLock,
-  installReaderWindowOpenGuard,
-} from "./external.js";
 import { bootTheme } from "./shared/theme/theme.js";
 
 export type ReaderBootOptions = {
@@ -57,8 +53,6 @@ export function bootReader(options: ReaderBootOptions = {}): Root {
   const host = options.root ?? resolveReaderRoot(body);
 
   bootTheme();
-  clearReaderAiNavigationLock();
-  installReaderWindowOpenGuard();
   syncReaderBodyClasses(body);
   if (options.purgeLegacyMarkup !== false) {
     purgeLegacyMarkup(body, host);

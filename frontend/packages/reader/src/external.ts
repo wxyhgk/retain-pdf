@@ -24,8 +24,6 @@ import {
   resolveReaderDownloadName as defaultResolveReaderDownloadName,
   resolveReaderDownloadUrls as defaultResolveReaderDownloadUrls,
 } from "./shared/state/downloads/resolve.js";
-import {
-} from "./shared/ai/ask-answerer.js";
 
 // —— config / mock / messaging ——
 export const isMockMode = (...args: any[]): boolean => (getReaderAdapters()?.isMockMode as any)?.(...args) ?? false;
@@ -143,79 +141,8 @@ export const resolveMarkdownAssetUrl = (
 ): string => requireAdapter("resolveMarkdownAssetUrl")(imagesBaseUrl, relativePath);
 export { parseMarkdownWithMath } from "./shared/content/markdown-math.js";
 
-// —— AI ——
-// Factory 在 package 边界内消费宿主 adapter，调用方只需传 jobId。
-// 旧实现直接 re-export shared factory，导致默认 ask/documentByJobId 空实现。
-export { createReaderMarkdownAnswerer } from "./shared/ai/markdown-answerer.js";
-export {
-  hydrateProtectedImages,
-  injectCitationMarkers,
-  isAgenticCitation,
-  mountAnswerHtml,
-  normalizeAiCitations,
-  neutralizeMarkdownAnchors,
-  renderCitationFooter,
-  revokeHydratedImageUrls,
-} from "./shared/ai/answer-enhance.js";
-export type { AiCitationLike } from "./shared/ai/answer-enhance.js";
-export {
-  armReaderAiClickShield,
-  clearReaderAiNavigationLock,
-  installReaderWindowOpenGuard,
-  isReaderAiNavigationLocked,
-  lockReaderAiNavigation,
-  shouldIgnoreReaderAiNavEvent,
-} from "./shared/ai/ui-interaction-lock.js";
-export {
-  peekFinalAnswerHtmlCache,
-  renderFinalAnswerHtml,
-  renderStreamingPreviewHtml,
-} from "./shared/ai/render-answer-html.js";
-export { sanitizeAssistantAnswer } from "./shared/ai/sanitize-answer.js";
-export {
-  clearThreadBranchSnapshot,
-  loadThreadBranchSnapshot,
-  saveThreadBranchSnapshot,
-  threadBranchStorageKey,
-  visiblePathFromSnapshot,
-} from "./shared/ai/thread-branch-store.js";
-export type {
-  ThreadBranchCitation,
-  ThreadBranchItem,
-  ThreadBranchMessage,
-  ThreadBranchSnapshot,
-} from "./shared/ai/thread-branch-store.js";
-export {
-  appendConversationMessage,
-  baseConversationTitle,
-  createConversation,
-  deleteConversation,
-  forkConversationFromPath,
-  getConversation,
-  listConversations,
-  messagesToBranchItems,
-  nextForkConversationTitle,
-  patchConversation,
-} from "@retainpdf/api/conversations";
-export type {
-  ConversationDetail,
-  ConversationRecord,
-  MessageRecord,
-} from "@retainpdf/api/conversations";
-export {
-  clearStoredConversationId,
-  loadStoredConversationId,
-  saveStoredConversationId,
-} from "./shared/ai/conversation-store.js";
-
 // —— 文档身份（按 jobId 反查）——
 export const API_PREFIX = "/api/v1";
 export const fetchDocumentByJobId = (...args: [string, string]) =>
   requireAdapter("fetchDocumentByJobId")(...args);
 
-// —— 阅读器 AI 面板：模型 Key 门禁 ——
-export {
-  CREDENTIALS_CHANGED_EVENT,
-  hasModelApiKey,
-  MISSING_MODEL_API_KEY_MESSAGE,
-} from "./shared/ai/config.js";

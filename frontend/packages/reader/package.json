@@ -20,17 +20,9 @@
       "types": "./dist/boot.d.ts",
       "import": "./dist/boot.js"
     },
-    "./ai": {
-      "types": "./dist/ai.d.ts",
-      "import": "./dist/ai.js"
-    },
     "./contracts": {
       "types": "./dist/contracts/index.d.ts",
       "import": "./dist/contracts.js"
-    },
-    "./runtime/ai": {
-      "types": "./dist/runtime/ai.d.ts",
-      "import": "./dist/runtime/ai.js"
     },
     "./runtime/config": {
       "types": "./dist/runtime/config.d.ts",
@@ -48,19 +40,17 @@
       "types": "./dist/runtime/state.d.ts",
       "import": "./dist/runtime/state.js"
     },
-    "./ai.css": "./dist/ai.css",
     "./styles.css": "./dist/styles.css"
   },
   "files": [
     "dist"
   ],
   "sideEffects": [
-    "./dist/styles.css",
-    "./dist/ai.css"
+    "./dist/styles.css"
   ],
   "scripts": {
     "build": "vite build && tsc -p tsconfig.build.json && npm run build:styles",
-    "build:styles": "tailwindcss -i ./scripts/styles.css -o ./dist/styles.css --minify && tailwindcss -i ./scripts/ai.css -o ./dist/ai.css --minify && node ./scripts/flatten-css-layers.mjs ./dist/styles.css ./dist/ai.css",
+    "build:styles": "tailwindcss -i ./scripts/styles.css -o ./dist/styles.css --minify && node ./scripts/flatten-css-layers.mjs ./dist/styles.css",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dev": "vite --port 40003"
   },
@@ -71,15 +61,10 @@
     "sonner": "^2.0.0"
   },
   "dependencies": {
-    "@ai-sdk/react": "^3.0.267",
-    "@assistant-ui/react": "^0.15.16",
     "@retainpdf/api": "0.1.0",
     "@retainpdf/domain": "0.1.0",
     "@retainpdf/ui": "0.1.0",
-    "ai": "^6.0.264",
-    "katex": "^0.16.47",
     "marked": "^18.0.6",
-    "markstream-react": "^2.0.3",
     "mathjax-full": "^3.2.1",
     "pdfjs-dist": "^4.8.69",
     "react-pdf": "^9.2.1",

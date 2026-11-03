@@ -16,6 +16,7 @@ test("reader 源指纹包含入口里每个相对 @import 的分片", () => {
   const sources = new Set(readerCssSourceFiles());
   const imported = [...readFileSync(ENTRY, "utf8").matchAll(/@import\s+"(\.{1,2}\/[^"]+\.css)"/g)]
     .map((m) => join(dirname(ENTRY), m[1]));
-  assert.ok(imported.length >= 3, "入口里应当有宿主分片的相对 @import");
+  // 宿主自己的分片（fx 终端、画板）随 RetainPDF 自己的 AI 删了（2026-11-03），现在只剩阅读器包的样式树那一个。
+  assert.ok(imported.length >= 1, "入口里应当有相对 @import（阅读器包的样式树）");
   for (const file of imported) assert.ok(sources.has(file), `${file} 不在指纹源里`);
 });

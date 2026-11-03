@@ -20,14 +20,13 @@ frontend/packages/reader/scripts/styles.css
   → frontend/packages/reader/dist/styles.css
 ```
 
-AI 回答相关样式还通过 `scripts/ai.css` 单独构建为 `dist/ai.css`，供 `@retainpdf/reader/ai.css` 消费。
+（以前另有 AI 回答样式 `dist/ai.css`，2026-11-03 随 RetainPDF 自己的 AI 删了。）
 
 ## 结构
 
 ```text
 frontend/packages/reader/styles/
 ├── entry.css               # Reader 完整样式入口
-├── ai.css                  # AI Markdown/流式回答样式入口
 ├── tokens.css              # Reader 主题 token
 ├── themes/                 # classic/jiangnan/mojia/night/seacliff
 ├── core/                   # Tailwind theme、氛围底与下载反馈
@@ -47,7 +46,7 @@ frontend/packages/reader/styles/
 - 不引入书架、上传、状态卡、凭据等 `frontend/web` 主页领域样式。
 - 新选择器使用 `reader-*` 或 Reader 组件明确拥有的命名空间。
 - 需要宿主通用能力时，优先在包内提供稳定样式，而不是反向 import `frontend/web` 页面样式。
-- `entry.css` 是完整 Reader 入口；`ai.css` 是可被主页软宿主单独加载的 AI 子集。
+- `entry.css` 是完整 Reader 入口。
 - 当前 Reader 非模态浮层（下载 toast、选区浮条、快捷键面板）统一从 `dialog-shell.css` 获取 `reader-floating-surface` 与 `reader-floating-close`；业务分片只负责定位、尺寸和内部内容。
 - Dock 面板**不是浮层**：它们贴在右栏（`.reader-notes-panel--workspace`），既不可拖动也不叠在 PDF 上。浮窗形态与 `--docked` 形态已随 `ReaderPanelShell` 一起删除。
 

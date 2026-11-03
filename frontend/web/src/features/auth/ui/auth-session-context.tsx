@@ -13,9 +13,8 @@ export function useAuthSession(): AuthSessionView {
   return useContext(AuthSessionContext) ?? { mode: "single", authenticated: true, user: null };
 }
 
-// 多用户模式下首页的「AI 问答」先藏起来（所有人）：助手能在服务器上执行命令、读全部数据，
-// 还没按用户隔离。等数据隔离做完、改用服务器配置再放开。
-export const MULTI_USER_HIDDEN_HOME_TABS: readonly string[] = ["ask"];
+// 多用户模式下首页要藏起来的页签（以前是「AI 问答」，2026-11-03 整个删了；机制留着）。
+export const MULTI_USER_HIDDEN_HOME_TABS: readonly string[] = [];
 
 /** 首页顶部页签在当前模式下看不看得到。 */
 export function useHomeTabVisible(): (key: string) => boolean {

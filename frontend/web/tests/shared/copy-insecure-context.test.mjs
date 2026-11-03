@@ -23,31 +23,9 @@ dom.window.document.execCommand = (command) => {
 const React = await import("react");
 const { createRoot } = await import("react-dom/client");
 const { copyText } = await import("../../src/features/admin/ui/admin-shared.jsx");
-const { MessageActions } = await import("../../src/features/ask/ui/HomeAskMessageControls.jsx");
 
 test("管理后台复制初始密码：非安全上下文下退到 execCommand", async () => {
   copied.length = 0;
   assert.equal(await copyText("Init-Pass-123"), true);
   assert.deepEqual(copied, ["Init-Pass-123"]);
-});
-
-test("主页复制回答：非安全上下文下照样复制并给出对勾", async () => {
-  copied.length = 0;
-  const host = dom.window.document.createElement("div");
-  dom.window.document.body.append(host);
-  const root = createRoot(host);
-  try {
-    await React.act(async () => {
-      root.render(React.createElement(MessageActions, {
-        content: "这是回答", failed: false, canRegenerate: false, onRegenerate() {},
-      }));
-    });
-    const button = host.querySelector('button[title="复制回答"]');
-    await React.act(async () => { button.click(); await new Promise((resolve) => setTimeout(resolve, 0)); });
-    assert.deepEqual(copied, ["这是回答"]);
-    assert.ok(host.querySelector(".lucide-check"), "复制成功后按钮变成对勾");
-  } finally {
-    await React.act(async () => root.unmount());
-    host.remove();
-  }
 });

@@ -9,10 +9,8 @@ RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、批�
 | `@retainpdf/reader` | 无副作用的 `ReaderApp` / `ReaderAppReactPdf` 组件出口 |
 | `@retainpdf/reader/boot` | 浏览器 MPA 显式挂载入口 |
 | `@retainpdf/reader/adapters` | 宿主能力类型、注册和读取 |
-| `@retainpdf/reader/ai` | 可独立消费的 Reader AI 组件/能力 |
-| `@retainpdf/reader/runtime/*` | 按 ai/config/content/data/state 划分的非 UI 能力 |
+| `@retainpdf/reader/runtime/*` | 按 config/content/data/state 划分的非 UI 能力 |
 | `@retainpdf/reader/styles.css` | 完整 Reader 样式 |
-| `@retainpdf/reader/ai.css` | AI 回答与面板样式子集 |
 
 导入包根不会自动挂载 DOM。浏览器宿主需要先调用 `setReaderAdapters(...)`，再显式调用 `bootReader()`，或者自行渲染导出的 React 组件。
 

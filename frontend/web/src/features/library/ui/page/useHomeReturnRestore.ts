@@ -13,7 +13,7 @@ import {
 import { parseHomeTab, toUiTabKey } from "@/platform/navigation/pages.js";
 
 export function readInitialLibraryTabFromReturn(): string {
-  // 统一契约 home ?tab=library|collections|favorites|ask 优先（collections == UI 键 categories）。
+  // 统一契约 home ?tab=library|collections|favorites 优先（collections == UI 键 categories）。
   const fromQuery = parseHomeTab();
   if (fromQuery) {
     return toUiTabKey(fromQuery);
@@ -24,7 +24,6 @@ export function readInitialLibraryTabFromReturn(): string {
     tab === "categories" // == collections（历史契约，见 LibraryTopTabs COLLECTIONS_TAB_KEY）
     || tab === "favorites"
     || tab === "library"
-    || tab === "ask"
   ) {
     return tab;
   }

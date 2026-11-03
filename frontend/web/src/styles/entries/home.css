@@ -28,11 +28,6 @@
 
 @layer tokens, base, pages;
 
-/* reader 的 AI 子集：markstream 渲染器 + katex + 引用皮肤（ai-citations.css）。
- * 主页 AI 回答需要 Markdown/代码/公式全套渲染，三者缺一不可，无法再安全
- * 拆成更小的子集；引用/脚注的皮肤由 reader 侧提供，主页不再重定义。 */
-@import "@retainpdf/reader/ai.css" layer(pages);
-
 @import "../tokens.css" layer(tokens);
 @import "@retainpdf/ui/primitives.css";
 @import "../shadcn-theme.css" layer(tokens);
@@ -77,17 +72,6 @@
 @import "../../features/job-detail/ui/FailureLogDialog.css";
 @import "../../features/job-detail/ui/panels/StatusDetailTabPanel.css";
 @import "../pages/home/app-update.css";
-@import "../pages/home/ai-assistant.css";
-/* 主页 AI 问答：样式放在组件旁边（顺序与原 home-ask.css 一致）。 */
-@import "../../features/ask/ui/HomeAskView.css";
-@import "../../features/ask/ui/HomeAskSidebar.css";
-@import "../../features/ask/ui/HomeAskMain.css";
-@import "../../features/ask/ui/HomeAskThread.css";
-@import "../../features/ask/ui/HomeAskMessageControls.css";
-@import "../../features/ask/ui/operations/AgentOperationCard.css";
-@import "../../features/ask/ui/HomeAskMarkdown.css";
-@import "../../features/ask/ui/HomeAskComposer.css";
-@import "../../features/ask/ui/HomeAskResponsive.css";
 @import "../pages/home/app-settings.css";
 /* 主页外壳与书架：样式放在组件旁边；library-shell.css 里有普通规则必须最后（顺序与拆分前一致）。 */
 @import "../../features/reader/ui/SoftReaderHost.css";
@@ -120,7 +104,6 @@
 /* 凭据 / 术语表：样式放在组件旁边（顺序与原 credential-settings.css 一致，普通规则的先后不能变）。 */
 @import "../pages/home/settings-dialogs.css";
 @import "../../features/credentials/ui/CredentialsWorkbench.css";
-@import "../../features/credentials/ui/AgentRuntimeSettingsCard.css";
 @import "../../features/credentials/ui/TranslationPanel.css";
 @import "../../features/credentials/ui/CredentialFormFields.css";
 @import "../../features/credentials/ui/CredentialCard.css";
