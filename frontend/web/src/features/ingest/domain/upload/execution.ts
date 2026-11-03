@@ -6,7 +6,7 @@ import { withTimeout } from "@/platform/utils/async-timeout.js";
 import { isRefusedSubmission } from "@/platform/api/index.js";
 import { buildErrorDiagnostic } from "@/platform/utils/error-diagnostics.js";
 import type { UploadPayload, UploadState, UploadStatePort } from "./state.js";
-import type { UploadConfigPortLike, UploadResponsePayload, UploadViewPort } from "./ports.js";
+import { currentPageCap, type PageCap, type UploadConfigPortLike, type UploadResponsePayload, type UploadViewPort } from "./ports.js";
 
 const BALANCE_CHECK_TIMEOUT_MS = 12000;
 
@@ -29,7 +29,8 @@ export interface FileUploadHandlerDeps {
   configPort: UploadConfigPortLike;
   apiPrefix?: string;
   frontMaxBytes: number;
-  frontMaxPageCount: number;
+  frontMaxPageCount: PageCap;
+  pageLimitHint?: (max: number) => string;
   countPdfPages?: (file: File) => Promise<number> | number;
   defaultFileLabel: string;
   collectUploadFormData: (file: File) => FormData | unknown;
@@ -65,6 +66,7 @@ export function createFileUploadHandler(deps: FileUploadHandlerDeps) {
     apiPrefix,
     frontMaxBytes,
     frontMaxPageCount,
+    pageLimitHint,
     countPdfPages,
     defaultFileLabel,
     collectUploadFormData,
@@ -89,7 +91,9 @@ export function createFileUploadHandler(deps: FileUploadHandlerDeps) {
       viewPort.showUploadStatus("文件超出大小限制");
       return;
     }
-    if (frontMaxPageCount && countPdfPages) {
+    // 这会儿的上限：按设置里选的 OCR（GLM-OCR 不限页数）。
+    const maxPages = currentPageCap(frontMaxPageCount);
+    if (maxPages && countPdfPages) {
       viewPort.showUploadStatus("正在校验页数…");
       try {
         const localPageCount = await countPdfPages(file);
@@ -99,8 +103,9 @@ export function createFileUploadHandler(deps: FileUploadHandlerDeps) {
           clearFileInputValue?.();
           return;
         }
-        if (localPageCount > frontMaxPageCount) {
-          setText("error-box", `PDF 页数超过限制：最多 ${frontMaxPageCount} 页`);
+        if (localPageCount > maxPages) {
+          const hint = pageLimitHint?.(maxPages);
+          setText("error-box", `PDF 页数超过限制：最多 ${maxPages} 页${hint ? `。${hint}` : ""}`);
           viewPort.showUploadStatus("文件超出页数限制");
           clearFileInputValue?.();
           return;
@@ -111,7 +116,7 @@ export function createFileUploadHandler(deps: FileUploadHandlerDeps) {
           details: {
             file_name: file.name,
             file_size: file.size,
-            max_pages: frontMaxPageCount,
+            max_pages: maxPages,
           },
         }));
         viewPort.showUploadStatus("文件校验失败");
@@ -130,8 +135,9 @@ export function createFileUploadHandler(deps: FileUploadHandlerDeps) {
         setUploadProgress,
       );
       const uploadedPageCount = Number(payload.page_count || 0);
-      if (frontMaxPageCount > 0 && uploadedPageCount > frontMaxPageCount) {
-        setText("error-box", `PDF 页数超过限制：最多 ${frontMaxPageCount} 页`);
+      if (maxPages > 0 && uploadedPageCount > maxPages) {
+        const hint = pageLimitHint?.(maxPages);
+        setText("error-box", `PDF 页数超过限制：最多 ${maxPages} 页${hint ? `。${hint}` : ""}`);
         viewPort.showUploadStatus("文件超出页数限制");
         clearFileInputValue?.();
         resetUploadedFile?.();
@@ -192,7 +198,7 @@ export function createFileUploadHandler(deps: FileUploadHandlerDeps) {
         details: {
           file_name: file.name,
           file_size: file.size,
-          max_pages: frontMaxPageCount,
+          max_pages: maxPages,
         },
       }));
       viewPort.showUploadStatus("上传失败");

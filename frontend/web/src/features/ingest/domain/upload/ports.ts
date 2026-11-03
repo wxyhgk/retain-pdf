@@ -42,7 +42,10 @@ export interface MountUploadFeatureOptions {
   apiBase?: string;
   apiPrefix?: string;
   frontMaxBytes: number;
-  frontMaxPageCount: number;
+  /** 一本最多几页（0 = 不限）；给函数时每次选文件现问（按设置里选的 OCR 定，GLM-OCR 不限）。 */
+  frontMaxPageCount: PageCap;
+  /** 页数超了时补一句怎么办（「换成 GLM-OCR」）；参数是这次的上限。 */
+  pageLimitHint?: (max: number) => string;
   countPdfPages?: (file: File) => Promise<number> | number;
   defaultFileLabel: string;
   collectUploadFormData: (file: File) => FormData | unknown;
@@ -64,4 +67,13 @@ export interface MountUploadFeatureOptions {
   workflowNeedsUpload: (workflow?: string) => boolean;
   configPort?: UploadConfigPortLike;
   viewPort: UploadViewPort;
+}
+
+/** 页数上限：一个数，或者每次现问的函数。 */
+export type PageCap = number | (() => number);
+
+/** 这会儿的页数上限（0 = 不限）。 */
+export function currentPageCap(cap: PageCap | undefined): number {
+  const value = typeof cap === "function" ? cap() : cap;
+  return Number.isFinite(value) && Number(value) > 0 ? Number(value) : 0;
 }

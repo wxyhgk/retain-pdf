@@ -15,8 +15,8 @@ import {
 import {
   DEFAULT_FILE_LABEL,
   FRONT_MAX_BYTES,
-  FRONT_MAX_PAGE_COUNT,
 } from "@/platform/config/upload-constants.js";
+import { getOcrProviderDefinition, ocrMaxPages } from "@/platform/config/providers.js";
 import { savePersistedDeveloperStoredConfig } from "@/platform/config/persisted-config.js";
 import {
   UploadStatePort,
@@ -120,6 +120,8 @@ export function createWorkflowAndUpload({
   }
 
   const isOcrOnly = () => Boolean(workflowView.isOcrOnly?.() ?? false);
+  // 设置里选的 OCR：一本能收几页跟着它（PaddleOCR 999、MinerU 600、GLM-OCR 不限）。
+  const currentOcrProvider = () => credentialsStatePort.getCredentials()?.ocrProvider || defaultOcrProvider();
 
   const workflowFeature = mountWorkflowFeature({
     configPort: defaultWorkflowConfigPort,
@@ -166,7 +168,8 @@ export function createWorkflowAndUpload({
     apiBase: typeof apiBase === "function" ? apiBase() : apiBase,
     apiPrefix: API_PREFIX,
     frontMaxBytes: FRONT_MAX_BYTES,
-    frontMaxPageCount: FRONT_MAX_PAGE_COUNT,
+    frontMaxPageCount: () => ocrMaxPages(currentOcrProvider()),
+    pageLimitHint: () => `这是 ${getOcrProviderDefinition(currentOcrProvider()).label} 的上限；GLM-OCR 不限页数，可以在设置里把 OCR 换成 GLM-OCR`,
     countPdfPages,
     defaultFileLabel: DEFAULT_FILE_LABEL,
     collectUploadFormData,

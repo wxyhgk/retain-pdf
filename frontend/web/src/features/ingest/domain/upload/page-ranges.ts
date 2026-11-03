@@ -1,3 +1,4 @@
+import { currentPageCap, type PageCap } from "./ports.js";
 // 页码区间的纯计算：归一化、上下界约束、校验。
 //
 // 全部无副作用（不读写 store / DOM）。controller 只负责把这里的结果落到
@@ -50,9 +51,9 @@ export function normalizePageNumberInput(value: unknown): string | number {
 /** 上传态页数优先，否则退回前端配置上限。 */
 export function resolvePageRangeLimit(
   uploadedPageCount: unknown,
-  frontMaxPageCount: number,
+  frontMaxPageCount: PageCap,
 ): number {
-  return Number(uploadedPageCount || 0) || frontMaxPageCount || 0;
+  return Number(uploadedPageCount || 0) || currentPageCap(frontMaxPageCount);
 }
 
 /** 归一 + 按 maxPage 夹取 + 保证 start<=end，返回写回 viewPort 的字符串值。 */
