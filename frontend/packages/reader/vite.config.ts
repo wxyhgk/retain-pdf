@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import path from "path";
 
-const packageDependencyPattern = /^(?:ai|react|react-dom|react-pdf|pdfjs-dist|mathjax-full|marked|markstream-react|katex|lucide-react|sonner|@ai-sdk\/react|@assistant-ui\/react|@retainpdf\/api|@retainpdf\/domain)(?:\/.*)?$/;
+const packageDependencyPattern = /^(?:ai|react|react-dom|react-pdf|pdfjs-dist|mathjax-full|marked|markstream-react|katex|lucide-react|sonner|@ai-sdk\/react|@assistant-ui\/react|@retainpdf\/api|@retainpdf\/domain|@retainpdf\/ui)(?:\/.*)?$/;
 
 export default defineConfig({
   build: {

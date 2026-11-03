@@ -41,6 +41,7 @@ import { READER_HOST_PANELS } from "./components/react-pdf/reader-host-panels.js
 import { resolveLiveTranslationToggles } from "./shared/data/live-translation-state.js";
 import { renderReaderBoardSlot } from "./adapters.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
+import { ReaderFinder, ReaderFinderToggles, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
 
 /** 阅读视图可见台面的判别联合。 */
 export type ReaderPaneComposition = {
@@ -162,7 +163,7 @@ export function ReaderAppReactPdf() {
   const [assistantPdfPane, setAssistantPdfPane] = useState<"source" | "translated" | null>(null);
   // agent 产物在左边打开时，看的是哪个文件。null = 看 PDF。
   //
-  // **不进 ReaderWorkspaceMode。** 那三个（源文件/对照/翻译文件）是
+  // **不进 ReaderWorkspaceMode。** 那三个（原文/对照/译文）是
   // resolveReaderPaneComposition 的输入，连着持久化、键盘、HUD 和一堆 PDF 专属
   // 的不变式；往里加第四个成员会让「对照降级」「叠加层」那些判断全部要重想。
   // 这里是文档区的**接管**，和 PDF 栏二选一，所以是独立状态。
@@ -343,6 +344,14 @@ export function ReaderAppReactPdf() {
   // 外壳 Context：只装频繁下钻、且此前纯透传的值；currentPage/numPages 走 HUD
   // context，避免滚动带动整棵外壳重渲染。
   const [regionHover] = useState(createRegionHoverStore);
+  // 左栏的目录 / 搜索：开着哪一页签，null 收着。
+  const [finder, setFinder] = useState<ReaderFinderTab | null>(null);
+  const toggleFinder = useCallback((tab: ReaderFinderTab) => setFinder((open) => (open === tab ? null : tab)), []);
+  const jumpFromFinder = useCallback((itemId: string) => {
+    c.jumpToAnchor({ block_id: itemId });
+    // 窄屏上左栏盖着书：跳过去就收起来。
+    if (readerViewportWidth() < 900) setFinder(null);
+  }, [c.jumpToAnchor]);
   const jumpToBlock = useCallback((itemId: string) => c.jumpToAnchor({ block_id: itemId }), [c.jumpToAnchor]);
   const readerContext = useMemo<ReaderContextValue>(() => ({
     bindShell: c.shell.bindShell,
@@ -400,6 +409,7 @@ export function ReaderAppReactPdf() {
     READER_ROOT_CLASS,
     `is-workspace-${workspaceView}`,
     assistantOpen ? "is-assistant-open" : "",
+    finder ? "is-finder-open" : "",
     paneComposition.overlayOnSource ? "is-live-translation-overlay" : "",
   ].filter(Boolean).join(" ");
 
@@ -409,6 +419,15 @@ export function ReaderAppReactPdf() {
         <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} />
         {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
             原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
+        <ReaderFinderToggles open={finder} onToggle={toggleFinder} />
+        {finder ? (
+          <ReaderFinder
+            tab={finder}
+            onTab={setFinder}
+            onClose={() => setFinder(null)}
+            onJump={jumpFromFinder}
+          />
+        ) : null}
         <div className="reader-chrome-tray">
           <ReaderNotesToggle />
           <ReaderDownloadActions />

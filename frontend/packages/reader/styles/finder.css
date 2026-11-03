@@ -1,0 +1,200 @@
+/* 目录、搜索（ReaderFinder.tsx）：顶栏左边两颗，点开是左边一栏。
+ *
+ * 不是手机宽度时，栏开着，阅读区让出这一栏（.is-finder-open），页面排在它右边，不被盖住；手机上盖在上面。 */
+
+.reader-finder-toggles {
+  position: fixed;
+  top: 12px;
+  left: 14px;
+  z-index: var(--z-hud, 36);
+  display: flex;
+  gap: 4px;
+}
+
+.reader-finder-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 11px 0 9px;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  color: color-mix(in srgb, var(--ink) 70%, var(--muted));
+  font: inherit;
+  font-size: var(--ui-text-md, 13px);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.reader-finder-toggle:hover,
+.reader-finder-toggle[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  color: var(--ink);
+}
+
+.reader-finder {
+  position: fixed;
+  top: 60px;
+  bottom: 0;
+  left: 0;
+  z-index: var(--z-hud, 36);
+  display: flex;
+  width: var(--reader-finder-width, 300px);
+  flex-direction: column;
+  border-right: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  background: var(--paper);
+}
+
+@media (min-width: 900px) {
+  .reader-react-root.is-finder-open .reader-react-scroll-shell {
+    left: var(--reader-finder-width, 300px);
+  }
+}
+
+@media (max-width: 599px) {
+  .reader-finder {
+    width: 100dvw;
+  }
+
+  .reader-finder-toggle span {
+    display: none;
+  }
+}
+
+.reader-finder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 6px 10px;
+}
+
+.reader-finder-tabs {
+  display: flex;
+  gap: 2px;
+}
+
+.reader-finder-tab,
+.reader-finder-close {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 62%, var(--muted));
+  font: inherit;
+  font-size: var(--ui-text-md, 13px);
+  cursor: pointer;
+}
+
+.reader-finder-close {
+  padding: 0 6px;
+}
+
+.reader-finder-tab[aria-selected="true"] {
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.reader-finder-tab:hover,
+.reader-finder-close:hover {
+  color: var(--ink);
+}
+
+.reader-finder-search {
+  padding: 2px 10px 6px;
+}
+
+.reader-finder-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-base, 14px);
+}
+
+.reader-finder-input:focus {
+  border-color: color-mix(in srgb, var(--ink) 40%, transparent);
+  outline: none;
+}
+
+.reader-finder-count {
+  margin: 6px 2px 0;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.reader-finder-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 2px 6px 16px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.reader-finder-entry {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-md, 13px);
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reader-finder-entry[data-level="2"] {
+  padding-left: 22px;
+  color: color-mix(in srgb, var(--ink) 75%, var(--muted));
+}
+
+.reader-finder-entry:hover {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.reader-finder-entry[aria-current="location"] {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  font-weight: 650;
+}
+
+.reader-finder-entry-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.reader-finder-entry.is-hit .reader-finder-entry-text {
+  color: color-mix(in srgb, var(--ink) 80%, var(--muted));
+}
+
+.reader-finder-entry mark {
+  border-radius: var(--ui-radius-sm, 3px);
+  background: color-mix(in srgb, var(--accent, var(--ink)) 22%, transparent);
+  color: var(--ink);
+}
+
+.reader-finder-entry-page {
+  flex: none;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+  font-variant-numeric: tabular-nums;
+}
+
+.reader-finder-empty {
+  margin: 16px 18px;
+  color: var(--muted);
+  font-size: var(--ui-text-md, 13px);
+}

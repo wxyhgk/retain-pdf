@@ -78,7 +78,7 @@ test("workspace tabs take sourceOnly from context and keep disabled copy", () =>
     }),
   );
   assert.match(markup, /对照 需要文档任务/);
-  assert.match(markup, /翻译文件 需要文档任务/);
+  assert.match(markup, /译文 需要文档任务/);
 });
 
 test("assistant dock falls back to context callbacks without crashing", () => {

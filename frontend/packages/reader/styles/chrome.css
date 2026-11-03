@@ -133,11 +133,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
-  width: 34px;
+  gap: 5px;
   min-width: 34px;
   min-height: 30px;
-  padding: 0;
+  padding: 0 11px 0 9px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -150,15 +149,27 @@
 }
 
 .reader-workspace-tab-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
   white-space: nowrap;
-  border: 0;
+}
+
+/* 窄到放不下字（两边给托盘留了位）：只剩图标，字留给读屏。 */
+@media (max-width: 639px) {
+  .reader-workspace-tab {
+    gap: 0;
+    width: 34px;
+    padding: 0;
+  }
+
+  .reader-workspace-tab-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
 }
 
 .reader-workspace-tab:hover:not(:disabled) {
