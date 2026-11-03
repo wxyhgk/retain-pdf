@@ -71,8 +71,8 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 	const files = createFilePanelState({ source: () => '', revision: () => '', settle: async () => {}, moved: async () => {}, insertMarkdown() {}, viewOffice() {}, editFile() {}, openFile() {}, fileHistory() {}, sheetRows: async () => [], ocr() {} });
 	// The mark of what the page shows with each article open (page-snapshot.ts); the address, which picks the article, is the browser's to read.
 	const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(await Promise.all(articles.map(async ({ slug }: { slug: string }) => [slug, await pageVersion(blogRoot, slug)]))) };
-	const [current, dropFiles, instructing] = [t('当前'), t('拖入文件即可上传 · 右键查看更多操作'), t('AI 处理中…')].map((word) => JSON.stringify(word));
-	const words = `--word-current: ${current}; --word-drop-files: ${dropFiles}; --word-instructing: ${instructing}`;
+	const [current, dropFiles] = [t('当前'), t('拖入文件即可上传 · 右键查看更多操作')].map((word) => JSON.stringify(word));
+	const words = `--word-current: ${current}; --word-drop-files: ${dropFiles}`;
 	const { styles } = PAGES.studio;
 	// The page's words, in the language it speaks (escaped for the page).
 	const say = Object.fromEntries(Object.entries({
@@ -99,7 +99,6 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 		thisArticle: t('当前页面'),
 		driveFirst: t('先在左侧「资料库」里选好文件夹'),
 		restartTerminal: t('重新打开终端'),
-		terminalAgents: t('在终端里启动 AI'),
 		terminal: t('终端'),
 	}).map(([key, text]) => [key, escape(text)])) as Record<string, string>;
 	const title = t('本地页面工作台');
@@ -172,7 +171,6 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 							<button id="restart-terminal" type="button" title="${say.restartTerminal}" aria-label="${say.restartTerminal}">${html(<RotateCw aria-hidden="true" />)}</button>
 						</div>
 					</header>
-					<div id="terminal-agents" class="terminal-agents" role="group" aria-label="${say.terminalAgents}" hidden></div>
 					<div id="terminal-screen" class="terminal-screen" aria-label="${say.terminal}"></div>
 				</section>
 			</aside>

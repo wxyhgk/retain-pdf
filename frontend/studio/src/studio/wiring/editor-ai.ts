@@ -1,10 +1,9 @@
-// The AI in the editor: ⌘J (rewrite or write, reviewed in place), 在终端里问 AI, ⌥↩ (an AI does what the blocks say),
-// 识别… (a picture read by the large model), OCR 成子页面 (a PDF read into a page); the task tray, which says when
-// the last two are over.
+// The AI in the editor: ⌘J (rewrite or write, reviewed in place), 在终端里问 AI, 识别… (a picture read by the large
+// model), OCR 成子页面 (a PDF read into a page); the task tray, which says when the last is over.
 import type { EditorView } from '@milkdown/prose/view';
 import { t } from '@blog/i18n/index.mjs';
 import { Recognizers, type Recognizer } from '@blog/kernel/ui.ts';
-import { aiSettings, askInline, cancelInline, instruct, putBelowImage, recognizeImage, startOcr, warmInline } from '../api/client';
+import { aiSettings, askInline, cancelInline, putBelowImage, recognizeImage, startOcr, warmInline } from '../api/client';
 import { chosenAI } from '../ai/ai-panel';
 import { createInlineAi } from '../ai/inline-ai';
 import { showContextMenu } from '../common/context-menu';
@@ -18,17 +17,11 @@ import type { Studio } from './studio';
 export function createEditorAi(studio: Studio) {
 	const { shell, session, editor, articleList } = studio;
 
-	/** The blocks marked as an AI works on them (Alt+Enter), by the task it is: the mark's own name. */
-	const instructing = new Map<string, string>();
-	/** Tasks over before their mark was known (an AI quicker than the answer that started it); PDFs read before their start was said. */
+	/** PDFs read before their start was said. */
 	const overEarly = new Set<string>();
 	createTaskTray(shell.querySelector<HTMLElement>('#task-tray')!, {
 		ended(task) {
-			const mark = instructing.get(task.id);
-			if (mark) {
-				instructing.delete(task.id);
-				editor.unmarkInstructing(mark);
-			} else if (task.kind === 'instruction' || task.kind === 'ocr') overEarly.add(task.id);
+			if (task.kind === 'ocr') overEarly.add(task.id);
 			if (task.state === 'failed') showToast(`${task.title}：${task.error ?? t('出错了')}`, true);
 			// A PDF read: its page, to open.
 			const page = task.kind === 'ocr' && task.state === 'done' ? (task.result as { page?: string } | null)?.page : undefined;
@@ -149,46 +142,6 @@ export function createEditorAi(studio: Studio) {
 		}
 	}
 
-	/** The heading the line `line` (from 1) of `source` is under, skipping what is in code fences; empty for none. */
-	function headingAbove(source: string, line: number): string {
-		let heading = '';
-		let fence: string | null = null;
-		for (const text of source.split('\n').slice(0, line - 1)) {
-			const opening = /^\s{0,3}(`{3,}|~{3,})/u.exec(text)?.[1];
-			if (fence) {
-				if (opening && opening[0] === fence[0] && opening.length >= fence.length) fence = null;
-			} else if (opening) fence = opening;
-			else heading = /^#{1,6}\s+(.*?)\s*#*\s*$/u.exec(text)?.[1] ?? heading;
-		}
-		return heading;
-	}
-
-	let instructions = 0;
-	/**
-	 * Alt+Enter: what the blocks the caret is in say is done by the AI of AI 助手, by itself, in the article's folder
-	 * (server/ai/instructions.mjs); ⇧ as well, in a new talk. The blocks are marked till it is over; what it changes in the
-	 * file comes back as a change on disk, to accept or reject where it is.
-	 */
-	async function instructHere(fresh: boolean): Promise<void> {
-		const slug = session.slug;
-		const marked = slug ? editor.markSelection() : null;
-		if (!slug || !marked) return;
-		// Marked at once, where the caret is now, whatever it does meanwhile.
-		const mark = `instruction-${++instructions}`;
-		editor.markInstructing(mark);
-		try {
-			if (!(await session.flush())) throw new Error(t('页面还没保存好，保存后再交给 AI'));
-			const lines = sourceLinesOf(session.current.source, marked);
-			if (!lines?.text.trim()) throw new Error(t('这一行是空的，没有要交给 AI 的事'));
-			const id = await instruct(slug, { text: lines.text, start: lines.start, end: lines.end, heading: headingAbove(session.current.source, lines.start) }, fresh);
-			if (overEarly.delete(id)) editor.unmarkInstructing(mark);
-			else instructing.set(id, mark);
-		} catch (error) {
-			editor.unmarkInstructing(mark);
-			showToast(error instanceof Error ? error.message : t('没能交给 AI'), true);
-		}
-	}
-
 	/**
 	 * 识别…: the picture at `pos` read by the large model of AI 设置, as what the author picks
 	 * (`ctx.recognizers`: a formula, text, a table…). What is read is put under the picture on disk,
@@ -229,5 +182,5 @@ export function createEditorAi(studio: Studio) {
 		}
 	}
 
-	return { askAI, instructHere, ocrPdf, recognizePicture, retry: () => inlineAi.retry() };
+	return { askAI, ocrPdf, recognizePicture, retry: () => inlineAi.retry() };
 }

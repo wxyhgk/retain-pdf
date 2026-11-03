@@ -1,23 +1,18 @@
 import { askAboutImage } from '../ai/ai-vision.mjs';
 import { insertBelowImage } from '../articles/image-insert.mjs';
-import { startInstruction } from '../ai/instructions.mjs';
-import { noPushEnv } from '../ai/risky-commands.mjs';
 import { OCR_COMMAND, startPdfOcr } from '../tasks/pdf-ocr.mjs';
 import { commandWords } from '../tasks/tasks.mjs';
 import { refuse, reply } from '../api.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
- * What an AI does in the Studio: the AIs it starts (the 终端 tab's buttons,
- * Alt+Enter) and the model it asks (AI 设置), a shell for the 终端 tab, a
- * line of an article done by an agent, a PDF read into a page, a picture
- * read by the model and what it read put under it.
+ * What an AI does in the Studio beside the AI panel (conversations.mjs): the
+ * model it asks (设置 › AI › 识别图片), a shell for the 终端 tab, a PDF read
+ * into a page, a picture read by the model and what it read put under it.
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function aiRoutes(api, { notesRoot, blogRoot, articles, files, history, manager, drive, driveText, terminals, tasks, aiSettings, agentSettings, programEnv, articleFolder }) {
-	api.get('/agents', () => agentSettings.shown());
-	api.put('/agents', async ({ json }) => agentSettings.set(await json()));
+export function aiRoutes(api, { notesRoot, blogRoot, articles, files, history, manager, drive, driveText, terminals, tasks, aiSettings, programEnv, articleFolder }) {
 	// AI 设置: the page sees no key, only whether there is one.
 	api.get('/ai/settings', () => aiSettings.shown());
 	api.put('/ai/settings', async ({ json }) => aiSettings.set(await json()));
@@ -33,14 +28,6 @@ export function aiRoutes(api, { notesRoot, blogRoot, articles, files, history, m
 		// The drive's text brought up to date for what the AI may read.
 		if (driveRoot) void driveText.refresh().catch(() => {});
 		return { ...(await terminals.open(folder, env)), cwd: folder };
-	});
-
-	// Alt+Enter: an AI does what a line of the article asks, in its folder, as a task.
-	api.post('/articles/:slug/instruct', async ({ params: { slug }, json }) => {
-		const { line, fresh, agent } = await json();
-		await manager.locate(slug, '');
-		const task = await startInstruction({ tasks, agents: agentSettings, slug, folder: articleFolder(slug), env: { ...programEnv(slug, await drive.root()), ...noPushEnv() }, line, fresh: Boolean(fresh), agentId: agent });
-		return reply(202, { id: task.id });
 	});
 
 	// A PDF of the article read by PaddleOCR into a page under it, as a task (STUDIO_OCR_COMMAND: browser tests' stand-in).

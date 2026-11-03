@@ -84,7 +84,7 @@ import { createTopBar } from './shell/top-bar';
 import { mountShell } from './shell/mount';
 import { shell as shellState, type View } from './shell/shell-state';
 import { openDialog } from './shell/dialogs/Dialogs';
-import { confirmPublish, createQuickFind, openAgents, openSettings, providePlugins } from './shell/dialogs/ask';
+import { confirmPublish, createQuickFind, openSettings, providePlugins } from './shell/dialogs/ask';
 import { answerWindows } from './windows/studio-line';
 import { openFileEditor } from './files/file-editor';
 import { openFileHistory } from './files/file-history-view';
@@ -314,7 +314,7 @@ const chat = createAiChat(studio, { withArticlePictures: (markdown) => drive.wit
 
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && chat.aiPanel.shown() });
 chat.restoreLayout();
-const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void openAgents(() => terminal.refreshAgents()) });
+const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!);
 // A widget in the article asking the AI (note.ask, a button in it clicked): put in the AI's input, for the author to
 // send (one in an answer is said in its conversation: the panel takes it first).
 document.addEventListener(WIDGET_START, (event) => {
@@ -607,7 +607,6 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	enterPage: (slug) => void pages.enterNewPage(slug),
 	askAI: () => void editorAi.askAI(),
 	writeWithAI: () => void editorAi.askAI(),
-	instruct: (fresh) => void editorAi.instructHere(fresh),
 	ocrPdf: (view, pos, path) => void editorAi.ocrPdf(path, view, pos),
 	recognize: (view, pos) => editorAi.recognizePicture(view, pos),
 	pickCitation: () => library.pick(),

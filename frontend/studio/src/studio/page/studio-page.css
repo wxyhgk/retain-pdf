@@ -425,11 +425,8 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .task-tray .task-foot button { flex: none; height: 22px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 .task-tray .task-log { max-height: 220px; margin: 8px 0 0; padding: 7px 8px; overflow: auto; border-radius: 6px; background: var(--surface-soft); font-family: var(--font-mono); font-size: var(--studio-fs-caption); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 @keyframes task-pulse { 50% { opacity: 0.25; } }
-/* Blocks an AI is working on (Alt+Enter). */
 /* What is selected, shown while the article has no focus (the AI panel's input taken): what the AI is told of. */
 .crepe-host .milkdown .ProseMirror .is-kept-selection { background: rgba(var(--black), 0.1); }
-.crepe-host .milkdown .ProseMirror .is-instructing { position: relative; border-radius: 6px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); box-shadow: inset 2px 0 0 rgb(var(--gray)); }
-.crepe-host .milkdown .ProseMirror .is-instructing::after { content: var(--word-instructing); position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
 /* 小程序: floating windows (mini-apps.ts). */
 .mini-app-layer { position: fixed; z-index: 50; inset: 0; pointer-events: none; }
 /*
@@ -525,7 +522,6 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .mini-app-grip[data-edge='sw'] { bottom: 0; left: 0; }
 .mini-app-grip[data-edge='se'] { right: 0; bottom: 0; }
 .mini-app-grip[data-edge='se']::after { position: absolute; right: 3px; bottom: 3px; width: 6px; height: 6px; border-right: 2px solid rgb(var(--gray)); border-bottom: 2px solid rgb(var(--gray)); border-bottom-right-radius: 3px; opacity: 0.5; content: ''; }
-.terminal-agents .terminal-agents-settings { margin-left: auto; border-color: transparent; background: transparent; color: rgb(var(--gray)); }
 .context-menu { width: auto; min-width: 190px; max-width: 280px; }
 .context-menu .block-menu-item kbd { margin-left: auto; padding-left: 16px; color: rgb(var(--gray)); font-family: inherit; font-size: var(--studio-fs-caption); }
 .context-menu-separator { height: 1px; margin: 4px 6px; background: rgb(var(--gray-light)); }
@@ -533,11 +529,6 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .cwd-switch button { height: 24px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: var(--studio-fs-caption); cursor: pointer; }
 .cwd-switch button[aria-checked='true'] { background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: var(--studio-shadow-sm); }
 .cwd-switch button:disabled { opacity: 0.45; cursor: default; }
-/* The AIs started with a click (terminal.ts): one row under the toolbar. */
-.terminal-agents { display: flex; flex: none; align-items: center; gap: 4px; padding: 5px 8px 5px 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: var(--studio-fs-caption); }
-.terminal-agents button { height: 22px; padding: 0 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; cursor: pointer; }
-.terminal-agents button:hover:not(:disabled) { background: var(--surface-soft); }
-.terminal-agents button:disabled { opacity: 0.45; cursor: default; }
 .terminal-screen { flex: 1; min-height: 0; padding: 8px 4px 4px 10px; overflow: hidden; background: #16181d; }
 .terminal-screen .xterm { height: 100%; }
 .terminal-screen .xterm-viewport { background: #16181d !important; }
