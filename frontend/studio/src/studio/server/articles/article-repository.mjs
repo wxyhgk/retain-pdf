@@ -10,7 +10,7 @@ import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs
 import { findArticleLinks, relinkArticle, retitleArticleLinks } from '@blog/markdown/articles/article-links.mjs';
 import { relinkDatabases } from '../../../articles/database-blocks.mjs';
 import { parseBibtex } from '@blog/markdown/references/bibtex.mjs';
-import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../../articles/schemas.mjs';
+import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource, localDay } from '../../../articles/schemas.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /** What the editor must have read for a change to apply: the article's text and its saved views. */
@@ -210,12 +210,12 @@ export class ArticleRepository {
 	 * page it is under links to it at its end (as Notion's page block; a
 	 * database's rows not: its table lists them), what that page was kept first.
 	 */
-	async create({ slug, title, parent = '', body = '', files = [], type = '', kind = '', blank = false, link = false }) {
+	async create({ slug, title, parent = '', body = '', files = [], type = '', kind = '', link = false }) {
 		assertArticleSlug(slug);
 		if (parent) assertArticleSlug(parent);
 		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError(t('新文章的内容无效'));
 		const paths = articleBundlePaths(this.blogRoot, slug);
-		const source = createArticleSource({ title, parent, body, type, kind, blank });
+		const source = createArticleSource({ title, parent, body, type, kind });
 		// Making the folder is taking the name: two made at once, one of them is refused.
 		try {
 			await mkdir(paths.directory);
@@ -490,7 +490,7 @@ export class ArticleRepository {
 				const copy = updateStudioFrontmatter(source, {
 					...properties,
 					title: `${properties.title || '无标题'}（副本）`, // i18n-ignore: written into the article
-					pubDate: now.toISOString().slice(0, 10),
+					pubDate: localDay(now),
 					draft: true,
 				});
 				await atomicWriteText(target.markdown, copy);

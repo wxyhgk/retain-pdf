@@ -190,7 +190,7 @@ export class ArticleImport {
 			for (const child of made) if (parentOf(nodes.get(child.key)) === page.key) text = withPageBlock(text, child.slug, child.title);
 			const parentSlug = parentOf(node) ? slugOf.get(parentOf(node)) : parent;
 			const { revision } = await this.articles.read(page.slug);
-			await this.articles.save(page.slug, { source: createArticleSource({ title, parent: parentSlug, body: text.trim() ? text : ' ' }), expectedRevision: revision });
+			await this.articles.save(page.slug, { source: createArticleSource({ title, parent: parentSlug, body: text }), expectedRevision: revision });
 		}
 		return { pages: made.map(({ slug, title }) => ({ slug, title })), files: copied, missing };
 	}

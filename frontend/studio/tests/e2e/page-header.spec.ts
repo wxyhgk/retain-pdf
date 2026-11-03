@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
-import { openStudio, resetFixture, savedMarkdown, saveStatus, writeFixtureFile } from './studio.ts';
+import { editFixture, openStudio, resetFixture, savedMarkdown, saveStatus, writeFixtureFile } from './studio.ts';
 
 // The top of the page as Notion has it: an icon, a cover, and the properties as rows changed where they are.
 
@@ -75,7 +75,8 @@ test('tags are chips: Enter or a comma adds one, Backspace takes the last off', 
 	expect(await save(page)).toMatch(/^tags: \["DFT", "激发态"\]$/mu);
 });
 
-test('the kind is a choice between 博客 and 维基', async ({ page }) => {
+test('the kind is a choice between 博客 and 维基, on a published page', async ({ page }) => {
+	editFixture((markdown) => markdown.replace(/^draft: true$/mu, 'draft: false'));
 	await openStudio(page);
 	await page.locator('#article-kind').selectOption('wiki');
 	expect(await save(page)).toMatch(/^kind: "wiki"$/mu);

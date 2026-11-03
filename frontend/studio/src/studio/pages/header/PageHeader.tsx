@@ -233,6 +233,7 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 	useEffect(() => setAdded({ fields: new Set(), focus: null }), [state.shownAt]);
 	const showTags = Boolean(shown?.tags.length) || added.fields.has('tags');
 	const showDescription = Boolean(shown?.description) || added.fields.has('description');
+	const published = Boolean(shown && !shown.draft);
 	const add = (field: 'tags' | 'description') => setAdded({ fields: new Set([...added.fields, field]), focus: field });
 	// And again as the column's width changes (the window, a panel beside it): a title wraps where the width ends.
 	useEffect(() => {
@@ -328,11 +329,6 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 				<div className="page-properties" role="group" aria-label={t('属性')}>
 					{/* A database's row: its columns first, as Notion has them. */}
 					{state.database && shown && <RowProperties config={state.database.config} props={shown.props} disabled={disabled} edit={(props) => actions.edit({ props })} addOption={actions.addOption} />}
-					<span className="property-name">
-						<Calendar aria-hidden />
-						{t('发布日期')}
-					</span>
-					<input id="article-pub-date" className="property-value" type="date" aria-label={t('发布日期')} disabled={disabled} value={shown?.pubDate ?? ''} onChange={(event) => actions.edit({ pubDate: event.target.value })} />
 					{showTags && (
 						<>
 							<span className="property-name">
@@ -361,26 +357,37 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 							/>
 						</>
 					)}
-					<span className="property-name">
-						<Shapes aria-hidden />
-						{t('类型')}
-					</span>
-					<select id="article-kind" className="property-value" aria-label={t('类型')} disabled={disabled} value={shown?.kind ?? 'post'} onChange={(event) => actions.edit({ kind: event.target.value === 'wiki' ? 'wiki' : 'post' })}>
-						<option value="post">{t('博客')}</option>
-						<option value="wiki">{t('维基')}</option>
-					</select>
-					<span className="property-name">
-						<CircleDashed aria-hidden />
-						{t('状态')}
-					</span>
-					<div className="property-value status-field">
-						<span id="article-status" className={`status-pill${shown && !shown.draft ? ' is-published' : ''}`}>
-							{!shown || shown.draft ? t('草稿') : t('已发布')}
-						</span>
-						<button id="publish-article" className="status-action" type="button" disabled={disabled || state.publishing} data-published={String(Boolean(shown && !shown.draft))} onClick={() => void actions.togglePublished()}>
-							{!shown || shown.draft ? t('发布') : t('撤回')}
-						</button>
-					</div>
+					{/* The blog's own (its date, where it lists it, published or not): only on a page published, as Notion keeps
+					    what a page does not use out of sight; a draft is published from the page's ⋯ menu. */}
+					{published && (
+						<>
+							<span className="property-name">
+								<Calendar aria-hidden />
+								{t('发布日期')}
+							</span>
+							<input id="article-pub-date" className="property-value" type="date" aria-label={t('发布日期')} disabled={disabled} value={shown?.pubDate ?? ''} onChange={(event) => actions.edit({ pubDate: event.target.value })} />
+							<span className="property-name">
+								<Shapes aria-hidden />
+								{t('类型')}
+							</span>
+							<select id="article-kind" className="property-value" aria-label={t('类型')} disabled={disabled} value={shown?.kind ?? 'post'} onChange={(event) => actions.edit({ kind: event.target.value === 'wiki' ? 'wiki' : 'post' })}>
+								<option value="post">{t('博客')}</option>
+								<option value="wiki">{t('维基')}</option>
+							</select>
+							<span className="property-name">
+								<CircleDashed aria-hidden />
+								{t('状态')}
+							</span>
+							<div className="property-value status-field">
+								<span id="article-status" className="status-pill is-published">
+									{t('已发布')}
+								</span>
+								<button id="publish-article" className="status-action" type="button" disabled={disabled} data-published="true" onClick={() => void actions.togglePublished()}>
+									{t('撤回')}
+								</button>
+							</div>
+						</>
+					)}
 					{/* The properties left empty, as Notion keeps them: out of the way till added. */}
 					{(!showTags || !showDescription) && (
 						<button

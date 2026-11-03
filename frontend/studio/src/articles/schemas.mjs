@@ -173,21 +173,27 @@ export function isPublishedArticle(entry) {
 	return entry?.data?.draft !== true;
 }
 
+/** The day `date` is where the Studio runs (`2026-11-03`), not in UTC: a page made at 7 in the morning in China is of that day. */
+export function localDay(date = new Date()) {
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 /**
  * A new article's file; with no title (empty), a page not named yet. `kind: 'wiki'` makes it a 维基 page (a post is what
- * a page is unless it says otherwise); `blank` leaves it empty instead of the line to write over (RetainPDF's 读书笔记).
+ * a page is unless it says otherwise). Given no text it is empty: the editor shows what to do there, greyed, the file
+ * holds none of it.
  */
-export function createArticleSource({ title = '', parent = '', body = '', type = '', kind = '', blank = false, date = new Date() }) {
+export function createArticleSource({ title = '', parent = '', body = '', type = '', kind = '', date = new Date() }) {
 	if (typeof title !== 'string') throw new ArticleValidationError('文章标题应是文字');
 	const escapedTitle = title.trim().replaceAll("'", "''");
-	const publicationDate = date.toISOString().slice(0, 10);
+	const publicationDate = localDay(date);
 	// Under another page: its folder name (checked as one by the caller).
 	const under = parent ? `parent: ${parent}\n` : '';
 	// A database (its rows the pages under it).
 	const database = type === 'database' ? 'type: database\n' : '';
 	const wiki = kind === 'wiki' ? 'kind: wiki\n' : '';
-	// What it starts with: the text given (a section of its parent, 转成子页面), or a line to write over.
-	const text = body.trim() ? `${body.trim()}\n` : blank ? '' : '从这里开始写作。\n';
+	// What it starts with: the text given (a section of its parent, 转成子页面), or nothing.
+	const text = body.trim() ? `${body.trim()}\n` : '';
 	return `---\ntitle: '${escapedTitle}'\ndescription: ''\npubDate: '${publicationDate}'\ntags: []\ndraft: true\n${wiki}${database}${under}---\n\n${text}`;
 }
 
