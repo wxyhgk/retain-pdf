@@ -1212,3 +1212,15 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
   手写的 `fetchGlossaries`、`fetchGlossary` 在契约里叫 `listGlossaries`、`getGlossary`，其余 5 个同名。`deleteGlossary` 回的是删掉的那张表
   （`GlossaryDetailView`），`parseGlossaryCsv` 的回包有 `duplicate_count`（去重丢掉的行数）。
 - 前端可以做：重新生成 `src/generated`，换掉 `glossaries.ts` 里手写的 7 个请求（`glossaries-store.ts` 里拼地址的几处一起收）。
+
+## Studio 按书跳转：studio-bridge.v1 的 navigate 加 document_id
+
+2026-11-03。方案见 [按书跳转](../../ops/planning/studio-workbench/20261103-按书跳转.md)。契约只加不改。
+
+- `NavigateMessage` 加可选的 `document_id`；`Feature` 加 `navigate-document`。`job_id` 照旧必填（按书找不到时用）。
+- 前端要做（阅读页，`frontend/web/src/platform/studio-bridge/`）：
+  1. `ready` 的 features 里加 `navigate-document`（做完下面一条再加，Studio 看到它才会发 `document_id`）。
+  2. 收到带 `document_id` 的 navigate：调 `GET /api/v1/documents/:document_id/reading`，拿到 `job_id` 就打开它；
+     `job_id` 是 `null` 或请求失败，就照旧打开消息里的 `job_id`。`page_idx`、`block_id` 照旧用：按书打开的任务都按整本书编页，
+     不用换算。
+- 不加 `navigate-document` 的话什么都不变：Studio 照旧只发 `job_id`。
