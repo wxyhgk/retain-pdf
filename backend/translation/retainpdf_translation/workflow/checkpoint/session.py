@@ -23,6 +23,7 @@ from .contract import (
     changed_item_ids_by_page as diff_changed_item_ids_by_page,
 )
 from .identity import build_translation_identity
+from .identity import resumes_streamed_attempt
 from .store import CheckpointStore
 
 if TYPE_CHECKING:
@@ -58,10 +59,12 @@ class TranslationCheckpointSession:
         output_dir: Path,
         identity: dict[str, Any],
         attempt_id: str,
+        source_pdf_path: str | Path | None = None,
     ) -> None:
         self.output_dir = Path(output_dir)
         self.identity = identity
         self.attempt_id = attempt_id
+        self.source_pdf_path = source_pdf_path
         self.store = CheckpointStore(translation_checkpoint_path(self.output_dir))
         self._owns_store = True
         self.payload: dict[str, Any] | None = None
@@ -110,6 +113,7 @@ class TranslationCheckpointSession:
             output_dir=output_dir,
             identity=build_translation_identity(request, plan),
             attempt_id=output_dir.parent.name or output_dir.name,
+            source_pdf_path=getattr(request, "source_pdf_path", None),
         )
         if store is None:
             session.store.acquire()
@@ -133,7 +137,11 @@ class TranslationCheckpointSession:
         )
         if previous is not None:
             self.store.restore_committed_pages(previous)
-        if previous is not None and previous.get("fingerprint") != self.identity["fingerprint"]:
+        if (
+            previous is not None
+            and previous.get("fingerprint") != self.identity["fingerprint"]
+            and not resumes_streamed_attempt(previous, self.identity, self.source_pdf_path)
+        ):
             previous_attempt = str(previous.get("attempt_id", "") or "")
             if previous_attempt and previous_attempt != self.attempt_id:
                 raise ResumeCandidateFingerprintMismatch(previous_attempt)
