@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Studio",
+  "productName": "RetainPDF",
   "identifier": "blog.studio.app",
   "build": { "frontendDist": "ui" },
   "app": { "windows": [], "security": { "csp": null } },

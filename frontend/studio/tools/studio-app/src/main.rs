@@ -200,7 +200,7 @@ fn placed<'a>(app: &AppHandle, label: &str, builder: WebviewWindowBuilder<'a, ta
 fn open_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let handle = app.clone();
     placed(app, "main", WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into())), (1440.0, 900.0))
-        .title("Studio")
+        .title("RetainPDF")
         .min_inner_size(820.0, 560.0)
         // Files dropped on the page go to the page (pictures into articles, files into the file list).
         .disable_drag_drop_handler()
@@ -329,7 +329,7 @@ fn watch_start(app: AppHandle, url: Url) {
             app.state::<State>().studio_open.store(false, Ordering::Relaxed);
             let _ = window.navigate(Url::parse("tauri://localhost/index.html").unwrap());
         }
-        offer_rescue(&app, "Studio 打开了，但两分多钟还没有启动完：可能是它自己的代码被改坏了（看 .studio-cache/server.log 和页面上的错误）。");
+        offer_rescue(&app, "RetainPDF 打开了，但两分多钟还没有启动完：可能是它自己的代码被改坏了（看 .studio-cache/server.log 和页面上的错误）。");
     });
 }
 
@@ -359,7 +359,7 @@ fn offer_rescue(app: &AppHandle, message: &str) {
     let said = if can {
         message.to_owned()
     } else {
-        format!("{message}\n\n还没有记下能正常启动的版本（Studio 正常启动过一次、它的代码都提交了以后才有），没法自动退回。")
+        format!("{message}\n\n还没有记下能正常启动的版本（RetainPDF 正常启动过一次、它的代码都提交了以后才有），没法自动退回。")
     };
     show(app, &said, true);
 }
@@ -494,7 +494,7 @@ fn find_or_start(app: &AppHandle) -> Result<Url, String> {
     let url = Url::parse(&server.url)
         .and_then(|url| url.join("studio"))
         .map_err(|error| format!("服务器的地址不对：{error}"))?;
-    show(app, "正在打开 Studio…", false);
+    show(app, "正在打开 RetainPDF…", false);
     wait_for(&url, Duration::from_secs(60))?;
     Ok(url)
 }
@@ -726,7 +726,7 @@ fn watch_started(app: AppHandle, repo: PathBuf) {
             ended.len()
         };
         if recent > 3 {
-            show(&app, &format!("服务器两分钟里停了 {recent} 次（这次{how}），不再自动重启。经过记在博客的 {}，退出 Studio 再打开试试。", server_files(&repo).exits), true);
+            show(&app, &format!("服务器两分钟里停了 {recent} 次（这次{how}），不再自动重启。经过记在博客的 {}，退出 RetainPDF 再打开试试。", server_files(&repo).exits), true);
             return;
         }
         // The last good version running: started again as it is, not the broken one.
@@ -852,7 +852,7 @@ fn open_own_window(app: &AppHandle, url: Url) {
     }
     let handle = app.clone();
     let closer = (app.clone(), label.clone());
-    let title = asked.get("title").cloned().unwrap_or_else(|| "Studio".to_owned());
+    let title = asked.get("title").cloned().unwrap_or_else(|| "RetainPDF".to_owned());
     // Where it was left last time; the first time, as large as the page asks.
     let built = placed(app, &label, WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url)), (size("w", 460.0), size("h", 760.0)))
         .title(title)

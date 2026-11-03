@@ -1,5 +1,6 @@
 #!/bin/sh
-# Builds the Studio as a Mac app and puts it in /Applications (or $STUDIO_APP_DIR).
+# Builds the Studio as the Mac app RetainPDF and puts it in /Applications (or $STUDIO_APP_DIR), in place of the
+# RetainPDF.app there before (the Electron desktop app, until the two are one) and of Studio.app (its old name).
 #
 #   tools/studio-app/build.sh [Studio folder]
 #
@@ -14,10 +15,10 @@ into=${STUDIO_APP_DIR:-/Applications}
 
 STUDIO_REPO="$blog" cargo build --release --manifest-path "$here/Cargo.toml"
 
-app="$here/target/Studio.app"
+app="$here/target/RetainPDF.app"
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-cp "$here/target/release/studio-app" "$app/Contents/MacOS/Studio"
+cp "$here/target/release/studio-app" "$app/Contents/MacOS/RetainPDF"
 
 icons="$here/target/icon.iconset"
 rm -rf "$icons" && mkdir -p "$icons"
@@ -32,10 +33,10 @@ cat > "$app/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleName</key><string>Studio</string>
-	<key>CFBundleDisplayName</key><string>Studio</string>
+	<key>CFBundleName</key><string>RetainPDF</string>
+	<key>CFBundleDisplayName</key><string>RetainPDF</string>
 	<key>CFBundleIdentifier</key><string>blog.studio.app</string>
-	<key>CFBundleExecutable</key><string>Studio</string>
+	<key>CFBundleExecutable</key><string>RetainPDF</string>
 	<key>CFBundleIconFile</key><string>icon</string>
 	<key>CFBundlePackageType</key><string>APPL</string>
 	<key>CFBundleShortVersionString</key><string>0.1.0</string>
@@ -50,6 +51,10 @@ PLIST
 
 codesign --force --sign - "$app"
 mkdir -p "$into"
-rm -rf "$into/Studio.app"
+# What was there before goes to the Trash, not away: the Electron RetainPDF (until the two are one), Studio.app (the old
+# name; while it still runs, it runs on till it is quit).
+for old in "$into/RetainPDF.app" "$into/Studio.app"; do
+	[ -e "$old" ] && mv "$old" "$HOME/.Trash/$(basename "$old" .app) $(date +%Y%m%d-%H%M%S).app"
+done
 mv "$app" "$into/"
-echo "已生成 $into/Studio.app（运行的 Studio：${blog}）"
+echo "已生成 $into/RetainPDF.app（运行的 Studio：${blog}）"

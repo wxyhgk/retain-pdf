@@ -26,7 +26,7 @@ npm run studio:serve
 也可以把 Studio 做成一个 Mac 应用，从启动台或程序坞打开，不用先开终端：
 
 ```sh
-tools/studio-app/build.sh      # 需要 Rust（cargo）；生成 /Applications/Studio.app
+tools/studio-app/build.sh      # 需要 Rust（cargo）；生成 /Applications/RetainPDF.app（以前叫 Studio.app；原来的 RetainPDF.app、Studio.app 挪进废纸篓）
 ```
 
 - 打开时，如果 Studio 的服务器已经在跑（比如终端里 `npm run studio:serve` 起的），就直接用它，退出时也不动它。
