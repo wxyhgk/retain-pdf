@@ -64,6 +64,8 @@ pub fn build_app(state: AppState) -> Router {
         .merge(websocket_routes)
         .merge(model_requests::worker::routes())
         .fallback(unknown_route)
+        // 大的 JSON 响应压缩（见 `response_compression.rs`）；文件出口、事件流不压。
+        .layer(super::response_compression::json_compression_layer())
         // 计端点使用量。挂在 CORS/Trace 之下、路由之上,这样能从 `MatchedPath`
         // 拿到路由模板而不是具体 URL。见 `route_usage`：删端点之前先量。
         .layer(middleware::from_fn(super::route_usage::record))

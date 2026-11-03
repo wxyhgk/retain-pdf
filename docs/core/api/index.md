@@ -752,6 +752,10 @@ ETag: "..."
 
 坐标单位固定为 PDF point，原点为左上角。前端可用 `item_id` 做译文 hover 到原文 bbox 的映射，也可以直接使用 `text` / `markdown` 做复制菜单。
 
+缓存（2026-11-03 起）：响应带弱 ETag（`W/"…"`）和 `Cache-Control: private, no-cache`。浏览器带着上次的 ETag
+（`If-None-Match`）再来、原文结构和译文都没变时回 `304`，不带数据；重译、重新识别以后 ETag 跟着变。浏览器的
+`fetch` 默认就会这样做，前端不用改。后端在内存里留着最近几本算好的结果，单个区块（下面那个接口）也从这里取。
+
 只要一块（比如笔记里引用一段）：
 
 `GET /api/v1/jobs/{job_id}/reader/regions/{item_id}`

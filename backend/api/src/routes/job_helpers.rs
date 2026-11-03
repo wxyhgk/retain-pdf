@@ -80,13 +80,21 @@ pub async fn stream_file(
 }
 
 fn if_none_match_hits(headers: &HeaderMap, etag: &str) -> bool {
+    if_none_match_values(headers)
+        .iter()
+        .any(|candidate| candidate == "*" || candidate == etag)
+}
+
+/// If-None-Match 里的每个 ETag（去掉弱校验的 `W/` 前缀，引号留着）。
+pub fn if_none_match_values(headers: &HeaderMap) -> Vec<String> {
     headers
         .get_all(header::IF_NONE_MATCH)
         .iter()
         .filter_map(|value| value.to_str().ok())
         .flat_map(|value| value.split(','))
-        .map(|candidate| candidate.trim().trim_start_matches("W/"))
-        .any(|candidate| candidate == "*" || candidate == etag)
+        .map(|candidate| candidate.trim().trim_start_matches("W/").to_string())
+        .filter(|candidate| !candidate.is_empty())
+        .collect()
 }
 
 fn set_validators(response: &mut Response, etag: Option<&str>, last_modified: Option<&str>) {
