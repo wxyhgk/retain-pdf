@@ -895,3 +895,83 @@ async fn retry_stage_route_applies_overrides_for_in_place_render() {
         "job-retry-stage-render-in-place-overrides"
     );
 }
+
+/// 边识别边翻译的书翻译失败：以前 runner 没把 OCR 子任务的产物并回父任务，父任务记录里没有原文 PDF、规范化文档，
+/// 「重试翻译」灰着（2026-11-03，6574 页的书翻完 6.86 万条后失败）。现在从 OCR 子任务补回来：能做的操作里重试翻译
+/// 可用，提交重试时写回父任务，新任务能复用 OCR 结果。
+#[tokio::test]
+async fn translation_retry_recovers_ocr_artifacts_from_the_streamed_ocr_child() {
+    let state = test_state("retry-stage-streamed-ocr-child");
+    let parent_id = "job-streamed-ocr-parent";
+    let mut parent = source_job_with_artifacts(
+        parent_id,
+        JobArtifacts {
+            job_root: Some(format!("jobs/{parent_id}")),
+            ..JobArtifacts::default()
+        },
+    );
+    parent.status = JobStatusKind::Failed;
+    state.db.save_job(&parent).expect("save parent");
+    let mut child = source_job_with_artifacts(
+        &format!("{parent_id}-ocr"),
+        JobArtifacts {
+            source_pdf: Some(format!("jobs/{parent_id}/source/book.pdf")),
+            normalized_document_json: Some(format!("jobs/{parent_id}/ocr/normalized/document.v1.json")),
+            ..JobArtifacts::default()
+        },
+    );
+    child.workflow = crate::models::WorkflowKind::Ocr;
+    child.status = JobStatusKind::Succeeded;
+    seed_ocr_checkpoint_files(&state, &child);
+    state.db.save_job(&child).expect("save ocr child");
+    let app = build_app(state.clone());
+
+    let actions = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri(format!("/api/v1/jobs/{parent_id}/actions"))
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("actions request"),
+        )
+        .await
+        .expect("actions response");
+    assert_eq!(actions.status(), StatusCode::OK);
+    let actions = read_json(actions).await;
+    let translation = actions["data"]["stages"]
+        .as_array()
+        .expect("stages")
+        .iter()
+        .find(|stage| stage["stage"] == "translation")
+        .expect("translation stage")
+        .clone();
+    assert_eq!(translation["can_retry"], true, "{translation}");
+    // 只看不写：父任务的记录还没动
+    assert!(state.db.get_job(parent_id).unwrap().artifacts.unwrap().normalized_document_json.is_none());
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/jobs/{parent_id}/actions/retry-stage"))
+                .header("X-API-Key", "test-key")
+                .header("Content-Type", "application/json")
+                .body(Body::from(json!({ "stage": "translation" }).to_string()))
+                .expect("retry stage request"),
+        )
+        .await
+        .expect("retry stage response");
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload = read_json(response).await;
+    assert_eq!(payload["data"]["rerun_from_stage"], "translation");
+    let artifacts = state.db.get_job(parent_id).unwrap().artifacts.unwrap();
+    assert_eq!(
+        artifacts.normalized_document_json.as_deref(),
+        Some(format!("jobs/{parent_id}/ocr/normalized/document.v1.json").as_str())
+    );
+    assert_eq!(artifacts.source_pdf.as_deref(), Some(format!("jobs/{parent_id}/source/book.pdf").as_str()));
+    assert_eq!(artifacts.ocr_job_id.as_deref(), Some(format!("{parent_id}-ocr").as_str()));
+    let retry_job = state.db.get_job(payload["data"]["job_id"].as_str().unwrap()).unwrap();
+    assert_eq!(retry_job.request_payload.source.artifact_job_id, parent_id);
+}
