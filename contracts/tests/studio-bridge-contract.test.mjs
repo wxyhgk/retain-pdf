@@ -73,7 +73,7 @@ const left = { ...head, type: "reading", job_id: null, document_id: null, title:
 
 test("every message has one definition, a direction and the shared head", () => {
   const types = schema.messages.map((message) => message.type);
-  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading", "ask-ai"]);
+  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading", "ask-ai", "open-book"]);
   assert.deepEqual(schema.oneOf.map((entry) => entry.$ref), schema.messages.map((message) => `#/definitions/${message.definition}`));
   for (const { type, from, definition } of schema.messages) {
     assert.ok(["studio", "retainpdf"].includes(from), `${type}: from ${from}`);
@@ -128,6 +128,11 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "ready", features: ["theme", "navigate", "quote", "notes", "reading"] },
     { ...head, type: "ask-ai" },
     { ...head, type: "hello", theme: "dark", features: ["quote", "open-notes", "ask-ai"] },
+    // 书库里点书交给 Studio（2026-11-03）
+    { ...head, type: "hello", theme: "light", features: ["quote", "open-notes", "ask-ai", "open-book"] },
+    { ...head, type: "open-book", job_id: "j", document_id: "doc-1", title: "Quantum Chemistry" },
+    { ...head, type: "open-book", job_id: "j", document_id: null, title: null, page_idx: 12 },
+    { ...head, type: "open-book", job_id: "j", document_id: "doc-1", title: "Quantum Chemistry", page_idx: null },
   ];
   for (const each of good) assert.ok(valid(message, each), JSON.stringify(each));
 
@@ -165,6 +170,11 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "ask-ai", job_id: "j" },
     { ...head, type: "ask-ai", question: "解释这一页" },
     { ...head, type: "ready", features: ["ask-ai"] },
+    { ...head, type: "open-book", job_id: "", document_id: "doc-1", title: "t" },
+    { ...head, type: "open-book", job_id: "j", document_id: "doc-1" },
+    { ...head, type: "open-book", job_id: "j", document_id: "doc-1", title: "t", page_idx: -1 },
+    { ...head, type: "open-book", job_id: "j", document_id: "", title: "t" },
+    { ...head, type: "ready", features: ["open-book"] },
   ];
   for (const each of bad) assert.equal(valid(message, each), false, JSON.stringify(each));
 });
