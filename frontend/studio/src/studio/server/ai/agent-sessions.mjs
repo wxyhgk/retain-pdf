@@ -1174,11 +1174,13 @@ export function contextBlock({ article, selection, mentions = [], files = [], hi
  * The book read in 翻译, as told: which it is and the page; where it stands (`standing`), how to read it (the operations
  * of retainpdf-library.mjs, as tools or `studio` commands) and to quote it as 摘到笔记 does.
  */
-function bookLines({ job_id: job, document_id: document, title, page, pages, notes }, standing) {
+function bookLines({ job_id: job, document_id: document, title, page, pages, notes, others = [] }, standing) {
 	const name = title ? `《${title}》` : '一本书'; // i18n-ignore: for the AI
 	const at = page ? `，看到第 ${page} 页${pages ? `（共 ${pages} 页）` : ''}` : ''; // i18n-ignore: for the AI
 	const ids = [document ? `document_id: ${document}` : '', `job_id: ${job}`].filter(Boolean).join('，'); // i18n-ignore: for the AI
 	const lines = [`作者正在读 RetainPDF 的${name}（${ids}）${at}。`]; // i18n-ignore: for the AI
+	// The other books open beside the note: 「这几本书」「另一本」 are of them.
+	if (others.length) lines.push(`笔记旁边还开着：${others.map((book) => `${book.title ? `《${book.title}》` : '一本书'}（${[book.document_id ? `document_id: ${book.document_id}` : '', `job_id: ${book.job_id}`].filter(Boolean).join('，')}）`).join('、')}。`); // i18n-ignore: for the AI
 	if (!standing) return lines;
 	if (notes) lines.push(`作者正在写的笔记是《${notes.title}》（文件夹名 ${notes.slug}），作者让你记到笔记里时写进这一页（一篇笔记里可以有几本书的摘录，每段带着它的出处）。`); // i18n-ignore: for the AI
 	lines.push(

@@ -253,6 +253,8 @@ test('the book read in 翻译: which and the page, its notes, how to read and qu
 	const message = withContext('这一页讲了什么', { book }, 'message');
 	assert.match(message, /作者正在读 RetainPDF 的《Quantum Chemistry》（document_id: doc-1，job_id: job-1），看到第 12 页（共 300 页）。/u);
 	assert.doesNotMatch(message, /read_book|笔记是/u);
+	// The other books open beside the note: said too.
+	assert.match(contextBlock({ book: { ...book, others: [{ job_id: 'job-2', document_id: 'doc-2', title: 'Statistical Mechanics' }] } }), /笔记旁边还开着：《Statistical Mechanics》（document_id: doc-2，job_id: job-2）。/u);
 	// A book RetainPDF said little of: the job, no page.
 	assert.match(contextBlock({ book: { job_id: 'job-2', document_id: null, title: null, page: null, pages: null, notes: null } }), /读 RetainPDF 的一本书（job_id: job-2）。/u);
 });
