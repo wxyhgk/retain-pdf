@@ -7,7 +7,8 @@
 const KEY = 'studio.readingPlace';
 const KEPT = 200;
 
-type Place = { block: number; offset: number; at: number };
+/** `start`: a book's, where its window started (book-window.ts): the block is counted from there. */
+type Place = { block: number; offset: number; at: number; start?: number };
 
 function read(): Record<string, Place> {
 	try {
@@ -27,7 +28,7 @@ function write(places: Record<string, Place>): void {
 	}
 }
 
-export function createReadingPlace(scroller: HTMLElement) {
+export function createReadingPlace(scroller: HTMLElement, windowStart: () => number | null = () => null) {
 	let slug: string | null = null;
 	/** Where the article being opened is to be shown, till it is, or the author moves in it first. */
 	let wanted: Place | null = null;
@@ -41,7 +42,10 @@ export function createReadingPlace(scroller: HTMLElement) {
 		const top = scroller.getBoundingClientRect().top;
 		for (let index = 0; index < shown.length; index += 1) {
 			const box = shown[index]!.getBoundingClientRect();
-			if (box.bottom > top) return { block: index, offset: Math.round(top - box.top), at: Date.now() };
+			if (box.bottom > top) {
+				const start = windowStart();
+				return { block: index, offset: Math.round(top - box.top), at: Date.now(), ...(start ? { start } : {}) };
+			}
 		}
 		return null;
 	}
@@ -53,7 +57,7 @@ export function createReadingPlace(scroller: HTMLElement) {
 		if (!place) return;
 		const places = read();
 		// At the very top: nothing to keep.
-		if (scroller.scrollTop < 8) delete places[slug];
+		if (scroller.scrollTop < 8 && !place.start) delete places[slug];
 		else places[slug] = place;
 		write(places);
 	}
@@ -77,6 +81,8 @@ export function createReadingPlace(scroller: HTMLElement) {
 			slug = next;
 			wanted = read()[next] ?? null;
 		},
+		/** Where the window of the book being opened is to start, where it was read (0: its start, or not a book). */
+		start: (): number => wanted?.start ?? 0,
 		/**
 		 * Shown (its first part, or all of it): taken where it was left, if the block is there yet. Called again once a
 		 * long article is all there; `done` then: what scrolls it from now on is kept.

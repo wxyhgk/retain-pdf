@@ -34,7 +34,7 @@ import { findPlugins } from './find-in-article';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePath, codeFilePreview, observeCodeFiles, redrawCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { blockwiseMarkdown } from './blockwise-markdown';
-import { isLongArticle, LONG, OPENING } from '@blog/editor-kit/near-screen.ts';
+import { isLongArticle, LONG, OPENING, setReach } from '@blog/editor-kit/near-screen.ts';
 import { displayMathPlugins } from '@blog/editor-kit/math/display-math.ts';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
 import { articleLinkPlugins, refreshPageLines, type ArticleLinkHost } from './article-links';
@@ -54,6 +54,8 @@ import { addSearchWords, SLASH_INLINE_TRIGGERS, SLASH_TRIGGERS } from './slash-s
 import { clickIntoCodeBlocks } from './code-block-clicks';
 import { withoutTrailingEmptyLines } from '@blog/document/index.ts';
 import { bodyParts } from '@blog/document/parse.ts';
+import { BookText, bookHeadings, CHUNK, formulaCount, isBook, type BookHeading } from './book-window.ts';
+import { ANCHORED, type Anchored } from '../pages/scroll-anchor.ts';
 import type { MarkdownBlockSlice } from '@blog/document/types.ts';
 import { SELECTION_END, SELECTION_START } from '@blog/document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
@@ -108,7 +110,14 @@ export type StudioEditor = {
 	 * Shows a Markdown body, replacing what was shown; the Markdown the editor writes for it. A long one is shown a
 	 * part at a time (the first at once), unless `whole`; it resolves once all of it is.
 	 */
-	mount(body: string, whole?: boolean): Promise<string>;
+	/** Shows a body (book-window.ts for a book's); `again`: the article open, shown anew where it was. Resolves with its Markdown. */
+	mount(body: string, again?: boolean, options?: { windowed?: boolean; from?: number }): Promise<string>;
+	/** A book's: where its window starts in it (characters before it); null for an article held whole. */
+	bookStart(): number | null;
+	/** A book's headings, all of them (the outline's); null for an article held whole. */
+	bookHeadings(): BookHeading[] | null;
+	/** A book's window opened at `at` (an offset in it): what is there shown, to be gone to. */
+	revealBook(at: number): Promise<void>;
 	/** The caret at the start of the body. */
 	focusStart(): void;
 	/** A new block at the top, holding `text`, the caret at its start (Enter in the title); the empty one there, if it is. */
@@ -240,6 +249,17 @@ function withHeadingIds(ctx: Ctx, doc: ProseNode): ProseNode {
 /** Whether two lists hold the same things, in order. */
 const sameItems = (one: readonly unknown[], other: readonly unknown[]) => one.length === other.length && one.every((item, index) => item === other[index]);
 
+/** A book's window (book-window.ts): the next chunk taken in this many screens from its end; kept at most this many screens long, what is more than KEPT_SCREENS from the screen let go. */
+const BOOK_LOAD_SCREENS = 2;
+const WINDOW_SCREENS = 12;
+const KEPT_SCREENS = 3;
+/** What of a book's window is drawn at once (near-screen.ts): once something waits within a screen of it, the screen and half a screen round it. */
+const BOOK_REACH = { look: [-1, 2] as [number, number], draw: [-0.5, 1.5] as [number, number] };
+/** How long after the last scroll the window's far ends are let go (ms). */
+const TRIM_AFTER = 300;
+/** How long the page has to have stood still for the text above the screen to be moved (ms): put in, let go. */
+const STILL_AFTER = 150;
+
 /** How many blocks of an article just opened are written as Markdown at a frame (a few milliseconds' work). */
 const WRITTEN_AT_A_FRAME = 40;
 
@@ -271,6 +291,10 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	let review: ((markdown: string) => void) | null = null;
 	/** The body as last reported, or as mounted. */
 	let reported: ProseNode | null = null;
+	/** A book's text round the window the editor holds (book-window.ts); null for an article held whole. */
+	let book: BookText | null = null;
+	/** The whole body, from what the editor holds as Markdown: a book's window put back between what is round it. */
+	const whole = (markdown: string): string => (book ? book.full(markdown) : markdown);
 
 	/** Reports the body, when it is an edit and not what was reported already. */
 	function report(): void {
@@ -279,9 +303,185 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			const { doc } = ctx.get(editorViewCtx).state;
 			if (reported?.eq(doc)) return;
 			reported = doc;
-			host.changed(markdownOf(crepe!));
+			host.changed(whole(markdownOf(crepe!)));
 		});
 	}
+	/**
+	 * A book's window moved as it is scrolled (book-window.ts), as SiYuan's: near its end, the next chunk in after it;
+	 * near its start, the one before; once it is more than WINDOW_SCREENS screens, the blocks far from the screen at
+	 * the other end let go (written back as Markdown round it). Where the reader is stays where it is: a block kept is
+	 * measured before and after, and the editor scrolled by the difference. Not edits: nothing to undo, nothing reported.
+	 */
+	const scroller = (): HTMLElement | null => root.closest<HTMLElement>('.editor-scroll');
+	let sliding = 0;
+	/** Let go once the scrolling stops, not as it goes (it is a frame's work of its own). */
+	let trimming = 0;
+	/** The next chunk read (a frame's work), to be put in at the next frame: read and put in at once, a frame was long. */
+	let prepared: { book: BookText; side: 'after' | 'before'; text: string; parsed: ProseNode } | null = null;
+	/** When the page was last scrolled: what moves the text above the screen waits till it has stopped a while. */
+	let scrolledAt = 0;
+	let waitingStill = 0;
+	const still = () => performance.now() - scrolledAt > STILL_AFTER;
+	function slideSoon(): void {
+		if (!book) return;
+		sliding ||= requestAnimationFrame(slide);
+	}
+	document.addEventListener(
+		'scroll',
+		() => {
+			if (!book) return;
+			scrolledAt = performance.now();
+			slideSoon();
+			window.clearTimeout(trimming);
+			trimming = window.setTimeout(trimSoon, TRIM_AFTER);
+		},
+		{ capture: true, passive: true },
+	);
+
+	function slide(): void {
+		sliding = 0;
+		const port = scroller();
+		if (!book || !crepe || !port || mounting || loading || review) return;
+		const shown = book;
+		crepe.editor.action((ctx) => {
+			const view = ctx.get(editorViewCtx);
+			const screen = port.clientHeight;
+			const box = view.dom.getBoundingClientRect();
+			const sight = port.getBoundingClientRect();
+			// More at that end: in the text round the window, or read already to be put in.
+			const more = (side: 'after' | 'before') => (prepared?.book === shown && prepared.side === side) || (side === 'after' ? shown.hasAfter : shown.hasBefore);
+			const side = box.bottom - sight.bottom < BOOK_LOAD_SCREENS * screen && more('after') ? 'after' : sight.top - box.top < BOOK_LOAD_SCREENS * screen && more('before') ? 'before' : null;
+			// Scrolled on and on: let go as it goes too, once the window is more than twice as long as it is kept (one
+			// piece a frame, before anything is put in). Not above the screen while it is being scrolled (unless it is
+			// far too long): what goes there moves the text, the scroll keeps it in place, and WebKit stops the wheel's.
+			const far = side === 'before' ? 'after' : 'before';
+			if (box.height > 2 * WINDOW_SCREENS * screen && (far === 'after' || still() || box.height > 4 * WINDOW_SCREENS * screen) && letGo(view, far)) {
+				slideSoon();
+				return;
+			}
+			if (!side) return;
+			// What goes in above the screen, the same: once the scrolling has stopped (read meanwhile).
+			if (side === 'before' && prepared?.side === 'before' && prepared.book === shown && !still()) {
+				window.clearTimeout(waitingStill);
+				waitingStill = window.setTimeout(slideSoon, STILL_AFTER);
+				return;
+			}
+			// Read this frame, put in the next.
+			if (prepared?.book !== shown || prepared.side !== side) {
+				unprepare();
+				const text = side === 'after' ? shown.takeAfter() : shown.takeBefore();
+				if (text !== null) prepared = { book: shown, side, text, parsed: ctx.get(parserCtx)(text) };
+			} else {
+				takeIn(ctx, view, prepared.side, prepared.parsed);
+				prepared = null;
+			}
+			slideSoon();
+		});
+	}
+
+	/** A chunk read and not put in (scrolled the other way meanwhile): back where it was. */
+	function unprepare(): void {
+		if (!prepared) return;
+		if (prepared.side === 'after') prepared.book.putAfter(prepared.text);
+		else prepared.book.putBefore(prepared.text);
+		prepared = null;
+	}
+
+	/** A chunk read (`parsed`) put in after the window's end, or before its start. */
+	function takeIn(ctx: Ctx, view: EditorView, side: 'after' | 'before', parsed: ProseNode): void {
+		// Typed and not reported yet: reported with the window as it is, before it moves.
+		report();
+		const { state } = view;
+		let tr = state.tr;
+		if (side === 'after') {
+			// Before the empty line the editor keeps last.
+			const $at = state.doc.resolve(nextPartKey.getState(state)!);
+			const at = $at.depth ? $at.after(1) : $at.pos;
+			tr = tr.insert(at, parsed.content).setMeta(nextPartKey, at + parsed.content.size);
+		} else {
+			tr = tr.insert(0, parsed.content);
+		}
+		tr.setMeta('addToHistory', false);
+		syncHeadingIds(ctx, tr);
+		stayingPut(view, () => view.updateState((view.state as Applying).applyInner(tr)));
+		reported = view.state.doc;
+	}
+
+	/** Scrolling stopped: the window's far ends let go, a piece a frame, till it is WINDOW_SCREENS screens or less. */
+	function trimSoon(): void {
+		trimming = 0;
+		if (!book || !crepe || mounting || loading || review) return;
+		const more = crepe.editor.action((ctx) => {
+			const view = ctx.get(editorViewCtx);
+			return letGo(view, 'before') || letGo(view, 'after');
+		});
+		if (more) trimming = window.setTimeout(trimSoon, 0);
+	}
+
+	/**
+	 * Lets the window's blocks at `side` go, far from the screen, while it is longer than WINDOW_SCREENS screens: they
+	 * go back to the text round it as Markdown. The caret in one of them is put where they were (the window's edge): far
+	 * from the screen it is not being typed at, and kept, it would keep all the book between it and the screen.
+	 */
+	function letGo(view: EditorView, side: 'before' | 'after'): boolean {
+		const port = scroller();
+		if (!book || !crepe || !port) return false;
+		const screen = port.clientHeight;
+		if (view.dom.getBoundingClientRect().height < WINDOW_SCREENS * screen) return false;
+		const sight = port.getBoundingClientRect();
+		const { doc } = view.state;
+		/** The top-level blocks, each where it starts and its element. */
+		const blocks: Array<{ from: number; to: number; node: ProseNode; element: Element | null }> = [];
+		doc.forEach((node, offset) => blocks.push({ from: offset, to: offset + node.nodeSize, node, element: view.nodeDOM(offset) as Element | null }));
+		// Not the empty line the editor keeps last.
+		if (doc.lastChild?.type.name === 'paragraph' && !doc.lastChild.content.size) blocks.pop();
+		const far = side === 'before'
+			? (block: (typeof blocks)[number]) => block.element !== null && block.element.getBoundingClientRect().bottom < sight.top - KEPT_SCREENS * screen
+			: (block: (typeof blocks)[number]) => block.element !== null && block.element.getBoundingClientRect().top > sight.bottom + KEPT_SCREENS * screen;
+		// A chunk's worth at most, from the far end: let go a piece at a time, each a chunk to come back as.
+		const gone: typeof blocks = [];
+		let size = 0;
+		const order = side === 'before' ? blocks.slice(0, -1) : blocks.slice(1).reverse();
+		for (const block of order) {
+			if (!far(block) || size >= CHUNK) break;
+			gone.push(block);
+			size += block.node.textContent.length + 2;
+		}
+		if (!gone.length) return false;
+		if (side === 'after') gone.reverse();
+		const [from, to] = [gone[0]!.from, gone.at(-1)!.to];
+		const markdown = withoutTrailingEmptyLines(writerOf(crepe)(doc.copy(doc.slice(from, to).content)));
+		if (side === 'before') book.putBefore(markdown);
+		else book.putAfter(markdown);
+		const tr = view.state.tr.delete(from, to).setMeta('addToHistory', false);
+		stayingPut(view, () => view.updateState((view.state as Applying).applyInner(tr)));
+		reported = view.state.doc;
+		return true;
+	}
+
+	/**
+	 * Does `change` to the window with what is read kept where it is: the first block on the screen measured before and
+	 * after, the page scrolled by the difference; the page's own keeping (scroll-anchor.ts) told, not to do it again.
+	 * ProseMirror keeps a place of its own as it draws a new state, by scrolling every element round the editor (the
+	 * editor's panel too, which does not scroll, and was left moved, the wheel no longer reaching the page): undone.
+	 */
+	function stayingPut(view: EditorView, change: () => void): void {
+		const port = scroller();
+		const sight = port?.getBoundingClientRect();
+		const blocks = [...view.dom.children] as HTMLElement[];
+		const anchor = (sight && blocks.find((block) => block.getBoundingClientRect().bottom > sight.top)) || blocks[0];
+		const before = anchor?.getBoundingClientRect().top;
+		const round: Array<[Element, number, number]> = [];
+		for (let element: Element | null = view.dom.parentElement; element; element = element.parentElement) round.push([element, element.scrollTop, element.scrollLeft]);
+		change();
+		for (const [element, top, left] of round) {
+			if (element.scrollTop !== top) element.scrollTop = top;
+			if (element.scrollLeft !== left) element.scrollLeft = left;
+		}
+		if (port && anchor?.isConnected && before !== undefined) port.scrollTop += anchor.getBoundingClientRect().top - before;
+		port?.dispatchEvent(new CustomEvent<Anchored | undefined>(ANCHORED, { detail: anchor && before !== undefined ? { block: anchor, top: before } : undefined }));
+	}
+
 	observeCodeFiles(root);
 	// A link to a file of the article: a click opens it (in the Studio, with its program, in Finder: as chosen).
 	openFileLinks(root, (path, click) => host.openFile(path, click), (path, anchor) => host.fileMenu(path, anchor));
@@ -335,7 +535,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			new Plugin({
 				props: {
 					attributes: (state): Record<string, string> => {
-						const long = inParts || isLongArticle(state.doc);
+						const long = inParts || book !== null || isLongArticle(state.doc);
 						const classes = [...(long ? [LONG] : []), ...(beingOpened ? [OPENING] : [])];
 						return { ...(classes.length ? { class: classes.join(' ') } : {}), ...(long ? { 'data-formulas': String(formulas) } : {}) };
 					},
@@ -579,7 +779,26 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		});
 	}
 
-	async function mount(body: string, whole = false): Promise<string> {
+	/**
+	 * Shows `body` in the editor. `again`: the article open shown anew (changed on disk), where it was: all at once, not a
+	 * part at a time. A book is shown a window at a time (book-window.ts), opened where the window was (`again`), or at
+	 * `from` (an offset in it), unless `windowed` is false (to be reviewed, all of it). Resolves with the Markdown the
+	 * editor writes for all of the body.
+	 */
+	async function mount(fullBody: string, again = false, { windowed = true, from = 0 }: { windowed?: boolean; from?: number } = {}): Promise<string> {
+		const opened = windowed && isBook(fullBody) ? BookText.open(fullBody, again && book ? book.start : from) : null;
+		const shownBook = (book = opened?.book ?? null);
+		const body = opened?.window ?? fullBody;
+		const markdown = await mountShown(body, again);
+		// A book's window: its formulas drawn near the screen only at once (near-screen.ts), the rest a few at a frame.
+		const element = root.querySelector<HTMLElement>('.ProseMirror');
+		if (element && book === shownBook) setReach(element, book ? BOOK_REACH : null);
+		// Shown as written, or another article shown meanwhile: the body as it was.
+		if (markdown === body) return fullBody;
+		return shownBook ? shownBook.full(markdown) : markdown;
+	}
+
+	async function mountShown(body: string, whole: boolean): Promise<string> {
 		mounting = true;
 		const showing = ++shownCount;
 		// What was being done for the article before (left while it was put in) is over.
@@ -594,7 +813,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		const first = parts?.next().value;
 		const opening = first?.length ? body.slice(0, first.at(-1)!.end) : body;
 		inParts = opening !== body;
-		formulas = Math.round((body.match(/\$/gu)?.length ?? 0) / 2) + (body.match(/\\\(/gu)?.length ?? 0);
+		// A book's window: its formulas all drawn, a few at a frame (near-screen.ts), as a short article's.
+		formulas = book ? 0 : formulaCount(body);
 		beingOpened = true;
 		try {
 			// Another article, or this one anew: a review still open is over.
@@ -724,7 +944,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			const end = $to.depth ? $to.after(1) : to;
 			const mark = (text: string) => paragraph.create(null, state.schema.text(text));
 			const marked = state.tr.insert(end, mark(SELECTION_END)).insert(start, mark(SELECTION_START)).doc;
-			return withoutTrailingEmptyLines(ctx.get(serializerCtx)(marked));
+			return whole(withoutTrailingEmptyLines(ctx.get(serializerCtx)(marked)));
 		});
 	}
 
@@ -791,7 +1011,18 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		});
 	}
 
+	/** The whole body as the editor holds it now, a book's window and all. */
+	const wholeNow = (): string => (crepe ? whole(markdownOf(crepe)) : '');
+
 	return {
+		bookStart: () => book?.start ?? null,
+		bookHeadings: () => (book ? bookHeadings(wholeNow()) : null),
+		async revealBook(at) {
+			if (!book || !crepe || mounting || loading || review) return;
+			// Typed and not reported: reported first, the window's place left after.
+			report();
+			await mount(wholeNow(), false, { from: at });
+		},
 		markSelection,
 		hasSelection: () => crepe?.editor.action((ctx) => !ctx.get(editorViewCtx).state.selection.empty) ?? false,
 		selectedWords: () =>
@@ -859,8 +1090,12 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		focusStart,
 		startNewBlock,
 		settle: report,
-		// A review of a long article waits for all of it to be in.
-		review: (body) => loaded.then(() => startReview(body)),
+		// A review of a long article waits for all of it to be in; a book's, for all of it to be in the editor (the
+		// differences may be anywhere in it), as a long article's is.
+		async review(body) {
+			if (book && crepe) await mount(book.full(markdownOf(crepe)), false, { windowed: false });
+			return loaded.then(() => startReview(body));
+		},
 		acceptAll: () => crepe?.editor.action(callCommand(acceptAllDiffsCmd.key)),
 		rejectAll: () => crepe?.editor.action(callCommand(clearDiffReviewCmd.key)),
 	};
