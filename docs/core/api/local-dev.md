@@ -87,7 +87,7 @@ Docker 中 `ops/deployment/docker/delivery/docker/auth.local.json` 的 `api_keys
 - `RUST_API_SHUTDOWN_GRACE_SECS`：收到停机信号（Ctrl-C、SIGTERM）以后最多等还没结束的请求多少秒（默认 `3`，`0` 不等），进度流这类长连接到点断开。桌面壳、`docker stop` 只给 10 秒，进程内模式最坏约 7.5 秒（见 `config/server.rs`），改大要算这笔账。
 - `RUST_API_MIN_FREE_DISK_MB`：数据目录所在磁盘至少留多少 MiB 才接新上传、新任务（默认 `1024`，`0` 不查）；不够时 503 `insufficient_storage`。
 - 定期清理（`RUST_API_CLEANUP_INTERVAL_SECS`，默认 `21600` 即 6 小时一轮，起服务时先跑一轮），三项各自 `0` 关掉：
-  - `RUST_API_EVENTS_RETENTION_DAYS`：已结束任务的事件保留几天（默认 `30`）。
+  - `RUST_API_EVENTS_RETENTION_DAYS`：已结束任务的事件保留几天（默认 `30`）。截止点取到 UTC 当天零点：截止点一挪，已结束任务的事件流下次读要整份重建，同一天里重启、清理多少次都不挪，最多多留不到一天。
   - `RUST_API_ORPHAN_UPLOAD_RETENTION_HOURS`：没被任务、书用上的上传保留几小时（默认 `48`）。
   - `RUST_API_DERIVED_CACHE_RETENTION_DAYS`：已结束任务和书的派生缓存（Word、对照 PDF、线性化 PDF、页预览，2026-10-28 起
     还有渲染的准备缓存 `artifacts/render_prepare/` 和预热 `artifacts/render_prewarm/`）生成后保留几天（默认 `14`，

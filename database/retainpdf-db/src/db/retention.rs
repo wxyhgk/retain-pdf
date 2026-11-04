@@ -21,7 +21,7 @@ impl Db {
         if retention_days == 0 {
             return Ok(0);
         }
-        let cutoff = cutoff_iso(ChronoDuration::days(retention_days as i64));
+        let cutoff = event_cutoff_iso(retention_days);
         let succeeded = serde_json::to_string(&JobStatusKind::Succeeded)?;
         let failed = serde_json::to_string(&JobStatusKind::Failed)?;
         let canceled = serde_json::to_string(&JobStatusKind::Canceled)?;
@@ -190,6 +190,21 @@ fn cutoff_iso(age: ChronoDuration) -> String {
     (Utc::now() - age).to_rfc3339_opts(SecondsFormat::Secs, true)
 }
 
+/// 事件的截止点取到 UTC 当天零点（保留期最多多出不到一天）。
+///
+/// 截止点一往后挪，所有已结束任务的事件源版本号都要加 1、事件流跟着作废，下次读整份重建。以前精确到秒，
+/// 每次清理（启动时一次、之后每 6 小时）都挪：6574 页的书重启后第一次打开任务详情要等 106 秒（2026-11-04）。
+/// 取到天，同一天里重启、清理多少次截止点都不变，一天最多作废一次。
+fn event_cutoff_iso(retention_days: u64) -> String {
+    let cutoff = Utc::now() - ChronoDuration::days(retention_days as i64);
+    cutoff
+        .date_naive()
+        .and_hms_opt(0, 0, 0)
+        .expect("midnight exists")
+        .and_utc()
+        .to_rfc3339_opts(SecondsFormat::Secs, true)
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -295,6 +310,30 @@ mod tests {
             running_remaining.len(),
             1,
             "events for a still-running job must never be cleaned regardless of age"
+        );
+    }
+
+    #[test]
+    fn repeated_cleanups_on_the_same_day_do_not_invalidate_finished_jobs_again() {
+        // 截止点一挪，已结束任务的事件源版本号就加 1、事件流作废要整份重建；同一天里重复清理不该再挪
+        let fs = TestDbFs::new("events-day-cutoff");
+        let db = fs.db();
+        db.init().expect("init db");
+        db.save_job(&job_with_status("job-done", JobStatusKind::Succeeded))
+            .expect("save finished job");
+        db.cleanup_expired_events(30).expect("first cleanup");
+        let first = db.event_source_version("job-done").expect("version after first cleanup");
+        let cutoff = db
+            .event_source_retention_cutoff("job-done")
+            .expect("cutoff")
+            .expect("cutoff recorded");
+        assert!(cutoff.ends_with("T00:00:00Z"), "cutoff is a UTC midnight: {cutoff}");
+        // 精确到秒时，隔一秒再清理截止点就挪了
+        std::thread::sleep(std::time::Duration::from_millis(1100));
+        db.cleanup_expired_events(30).expect("second cleanup");
+        assert_eq!(
+            db.event_source_version("job-done").expect("version after second cleanup").revision,
+            first.revision
         );
     }
 
