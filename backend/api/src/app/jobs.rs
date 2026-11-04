@@ -37,7 +37,7 @@ pub fn stop_owned_workers_after_shutdown(config: &AppConfig) {
     if config.jobs_service.is_remote() {
         return;
     }
-    let _lock = match acquire_runtime_owner_lock(&config.jobs_db_path) {
+    let _lock = match acquire_runtime_owner_lock_after_release(&config.jobs_db_path) {
         Ok(lock) => lock,
         Err(error) => {
             tracing::warn!("shutdown: runtime lock is held by another process; leaving its workers alone: {error:#}");
@@ -49,6 +49,21 @@ pub fn stop_owned_workers_after_shutdown(config: &AppConfig) {
         Ok(0) => {}
         Ok(count) => tracing::info!("shutdown: terminated {count} running worker(s); they resume on next start"),
         Err(error) => tracing::warn!("shutdown: could not list running workers: {error:#}"),
+    }
+}
+
+/// 停机时自己刚放掉运行时锁，马上重新拿：在 1 秒内反复试，过了还拿不到才算别的运行时在用。
+///
+/// 锁是 flock，挂在打开的文件上。别的线程这时正好 fork 子进程的话，子进程在 exec 之前也拿着这个文件，
+/// 锁跟着它多留一会儿；只试一次就会把自己的 worker 当成别人的、一个都不停（并发跑测试时偶发，2026-11-04）。
+fn acquire_runtime_owner_lock_after_release(jobs_db_path: &std::path::Path) -> Result<RuntimeOwnerLock> {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+    loop {
+        match acquire_runtime_owner_lock(jobs_db_path) {
+            Ok(lock) => return Ok(lock),
+            Err(error) if std::time::Instant::now() >= deadline => return Err(error),
+            Err(_) => std::thread::sleep(std::time::Duration::from_millis(20)),
+        }
     }
 }
 
