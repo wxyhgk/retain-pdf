@@ -11,7 +11,7 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpdfNotes, retainpdfLibrary, retainpdfReading, projectRoot, remote }) {
+export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpdfNotes, retainpdfLibrary, retainpdfReading, projectRoot, remote, articles }) {
 	// 其他设备访问 (remote/remote-access.mjs): seen and changed on this machine only, never from a device let in by it.
 	const here = (request) => {
 		if (request.headers['x-studio-remote']) throw Object.assign(new Error(t('其他设备访问只能在这台 Mac 上设置')), { statusCode: 403 });
@@ -46,6 +46,28 @@ export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpd
 	api.get('/retainpdf/books', ({ query }) => retainpdfLibrary.listBooks({ query: query.get('q') || undefined, limit: 30 }));
 	// ⌘K: the words in RetainPDF's books (their source and translation), a few hits.
 	api.get('/retainpdf/search', ({ query }) => retainpdfLibrary.searchBooks({ query: query.get('q') ?? '', limit: 8 }));
+	// 书库 (library/): RetainPDF's books drawn by the Studio, each with what the notes quote of it; a book's cover (its
+	// key kept here), its sheet (jobs, contents, quotes); a job stopped or carried on.
+	api.get('/retainpdf/shelf', async ({ query }) => {
+		const [shelf, quotes] = await Promise.all([retainpdfLibrary.shelf({ query: query.get('q') || undefined, offset: Number(query.get('offset')) || 0 }), articles.bookQuotes()]);
+		return { ...shelf, books: shelf.books.map((book) => ({ ...book, quoted: quotesOf(quotes, book) })) };
+	});
+	api.get('/retainpdf/shelf/:document/cover', async ({ params, response }) => {
+		const { type, bytes } = await retainpdfLibrary.cover(params.document);
+		response.statusCode = 200;
+		response.setHeader('Content-Type', type);
+		response.setHeader('Content-Length', bytes.length);
+		// A book's cover is its first page: the same as long as the book is.
+		response.setHeader('Cache-Control', 'private, max-age=86400');
+		response.setHeader('X-Content-Type-Options', 'nosniff');
+		response.end(bytes);
+	}, { streams: true });
+	api.get('/retainpdf/shelf/:document', async ({ params }) => {
+		const [detail, quotes] = await Promise.all([retainpdfLibrary.bookDetail(params.document), articles.bookQuotes()]);
+		const quoted = quotesOf(quotes, detail.book, detail.jobs.map((job) => job.job_id));
+		return { ...detail, quoted };
+	});
+	api.post('/retainpdf/jobs/:job/:action', async ({ params }) => retainpdfLibrary.jobAction(params.job, params.action));
 	// What is read in 翻译 (retainpdf-reading.mjs): said by the page, told the AIs.
 	api.get('/retainpdf/reading', () => ({ reading: retainpdfReading.get() }));
 	api.put('/retainpdf/reading', async ({ json }) => ({ reading: retainpdfReading.set(await json()) }));
@@ -67,4 +89,21 @@ export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpd
 		await appendFile(join(projectRoot, '.studio-cache', 'studio-notes.log'), `==== ${new Date().toISOString()}\n${what.slice(0, 8000)}\n`);
 		return { kept: true };
 	});
+}
+
+/**
+ * What the notes quote of `book` (ArticleRepository.bookQuotes): by its id, and by its jobs for quotes that name no
+ * book; each note once, its passages together.
+ */
+function quotesOf(quotes, book, jobs = [book.job_id]) {
+	const notes = new Map();
+	for (const key of [book.document_id, ...jobs.filter(Boolean).map((job) => `job:${job}`)]) {
+		for (const note of quotes[key]?.notes ?? []) {
+			const kept = notes.get(note.slug);
+			if (kept) kept.quotes.push(...note.quotes);
+			else notes.set(note.slug, { ...note, quotes: [...note.quotes] });
+		}
+	}
+	const all = [...notes.values()];
+	return { quotes: all.reduce((sum, note) => sum + note.quotes.length, 0), notes: all };
 }
