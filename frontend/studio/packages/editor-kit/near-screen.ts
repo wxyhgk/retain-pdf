@@ -16,7 +16,12 @@ import type { EditorView } from '@milkdown/prose/view';
  * screen before it is first shown; the rest after, a few at every frame
  * (KaTeX and laying out an article of formulas took a quarter of a second
  * after each click on it in the list). Formulas made once it is shown (typed,
- * pasted) are drawn at once.
+ * pasted) are drawn at once. A long article too, unless it waits on more than
+ * `DRAWN_LATER` of them: a book's thousands drawn made every frame of a scroll
+ * half a second in WebKit (93 s to draw them all), but a long note's six hundred
+ * took 1.7 s in the background, and drawn so, a quick scroll through it had no
+ * frame over 100 ms (twelve before, the longest 370 ms, as each screen reached
+ * drew seven screens of formulas at once).
  *
  * What is fetched (an article's pictures, its 交互模块) is loaded only when it comes near the screen, in an article of
  * any length, and never the rest after (`loadWhenNear`): what is not scrolled to is not downloaded (another device's
@@ -40,8 +45,31 @@ export const OPENING = 'is-opening';
  */
 export const drawsLater = (view: EditorView): boolean => view.dom.classList.contains(LONG) || view.dom.classList.contains(OPENING);
 
-/** How long a frame spends drawing what waits far from the screen in an article that is not long, in ms. */
+/**
+ * How long a frame spends drawing what waits far from the screen, in ms, and how many it draws at most: KaTeX makes
+ * one in a fraction of a millisecond, but WebKit lays each out in 2–3 ms after the frame's script (fifty made in 8 ms
+ * were a frame of 0.14 s).
+ */
 const SPELL = 8;
+const AT_A_FRAME = 8;
+/**
+ * Not while the page is being scrolled, nor this long after (ms): what is drawn above the screen changes the heights
+ * there, the page's keeping (scroll-anchor.ts) scrolls by as much, and WebKit stops a scroll by the wheel the page is
+ * scrolled under (the wheel went on, the page stood still).
+ */
+const QUIET = 250;
+let scrolledAt = 0;
+let resuming = 0;
+function scrolled(): void {
+	scrolledAt = performance.now();
+	soon();
+}
+/**
+ * A long article of more formulas than this is drawn only near the screen, never the rest after (a book's): how many
+ * its element says (`data-formulas`, studio-editor.ts, counted in its whole text as it is opened, before the parts
+ * after the first are in).
+ */
+export const DRAWN_LATER = 1500;
 
 const WAITING = 'is-waiting';
 /** What waits to be loaded when it comes near, and only then. */
@@ -66,13 +94,23 @@ let listening = false;
 /** An article shown (laid out after it was hidden, as one being opened is) or resized: what is near it looked for again. */
 let sized: ResizeObserver | null = null;
 
+/**
+ * How near is near in the article `root` from now on (null: as an article's). A book's window (studio-editor.ts): only
+ * the screen and a little round it at once, the rest a few at a frame after: a few screens of it drawn at once, its
+ * formulas laid out took a frame of 0.2 s in WebKit (2 ms each), and the window is short, laid out again in a moment.
+ */
+export function setReach(root: HTMLElement, reach: Reach | null): void {
+	if (reach) reaches.set(root, reach);
+	else reaches.delete(root);
+}
+
 /** Draws `element` with `draw` once it is near the screen, in the article `root` (near as `reach` says, when given). */
 export function drawWhenNear(root: HTMLElement, element: HTMLElement, draw: () => void, reach?: Reach): void {
 	if (reach) reaches.set(root, reach);
 	if (!listening) {
 		listening = true;
 		// Scrolls of whatever holds the article (scroll events do not bubble; they are caught on the way down).
-		document.addEventListener('scroll', soon, { capture: true, passive: true });
+		document.addEventListener('scroll', scrolled, { capture: true, passive: true });
 		window.addEventListener('resize', soon);
 	}
 	element.classList.add(WAITING);
@@ -148,11 +186,19 @@ function drawNear(): void {
 				for (const element of [block, ...block.querySelectorAll(ANY_WAITING)]) if (shown || !element.classList.contains(NEAR_ONLY)) drawNow(element);
 			}
 		}
-		// Not a long article: the rest too, down the article, a few at a frame.
-		if (root.classList.contains(LONG)) continue;
+		// The rest too, down the article, a few at a frame: not in a book (a long article of more than DRAWN_LATER, or one
+		// that says none: a row's page beside its table, which draws only what is on its screen).
+		if (root.classList.contains(LONG) && !(Number(root.dataset.formulas) <= DRAWN_LATER)) continue;
+		// Scrolled just now: the rest once it stops.
+		if (performance.now() - scrolledAt < QUIET) {
+			window.clearTimeout(resuming);
+			resuming = window.setTimeout(soon, QUIET);
+			continue;
+		}
 		const until = performance.now() + SPELL;
+		let drawn = 0;
 		for (const element of root.querySelectorAll(`.${WAITING}`)) {
-			if (performance.now() > until) break;
+			if (performance.now() > until || drawn++ >= AT_A_FRAME) break;
 			drawNow(element);
 		}
 		if (anyWaiting(root)) soon();

@@ -42,7 +42,7 @@ import {
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { usePictureSizes } from './editor/figure-block';
-import { createStudioEditor } from './editor/studio-editor';
+import { createStudioEditor, type StudioEditor } from './editor/studio-editor';
 import type { EditorView } from '@milkdown/prose/view';
 import { AppWindow, Copy, Eye, FolderSearch, History, LayoutTemplate } from 'lucide-react';
 import { showContextMenu } from './common/context-menu';
@@ -153,7 +153,7 @@ mountShell(shell, {
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
 // Light or dark: as chosen (设置 › 外观), or as the system is, followed as it changes.
 followTheme();
-const readingPlace = createReadingPlace(editorScroll);
+const readingPlace = createReadingPlace(editorScroll, () => madeEditor?.bookStart() ?? null);
 /** 查找替换 in all the articles (ReplaceDialog), with these words to look for. */
 let replaceRound = 0;
 function findEverywhere(words = ''): void {
@@ -171,7 +171,14 @@ function findEverywhere(words = ''): void {
 const editorPanel = shell.querySelector<HTMLElement>('.editor-panel')!;
 // ⌘F in the article (find-in-article.ts), over the editor.
 const findBar = createFindBar({ panel: editorPanel, scroller: editorScroll, view: () => editor.view(), findEverywhere });
-const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!);
+// A book's: all its headings, one outside the window the editor holds gone to by opening the window there. (The
+// editor is made further down: asked for once it is there.)
+let madeEditor: StudioEditor | null = null;
+const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!, {
+	headings: () => madeEditor?.bookHeadings() ?? null,
+	start: () => madeEditor?.bookStart() ?? null,
+	reveal: async (at) => madeEditor?.revealBook(at),
+});
 // Display formulas wider than the page: in lines, or smaller, not scrolled (fit-formulas.ts).
 keepFormulasFitted(editorScroll);
 anchorScroll(editorScroll);
@@ -618,6 +625,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		findBar.refresh();
 	},
 });
+madeEditor = editor;
 const reviewBar = createReviewBar(shell, {
 	acceptAll: () => editor.acceptAll(),
 	rejectAll: () => editor.rejectAll(),
@@ -651,7 +659,7 @@ const session = new ArticleSession(
 				editorScroll.scrollTop = 0;
 			}
 			// Shown again (changed on disk): all at once, to be where it was.
-			const markdown = await editor.mount(body, again);
+			const markdown = await editor.mount(body, again, { from: readingPlace.start() });
 			if (again) editorScroll.scrollTop = scrollTop;
 			// All of it there (a long one is shown a part at a time): where it was read, if the author has not moved since.
 			else readingPlace.show(true);

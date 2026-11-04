@@ -2,8 +2,20 @@
  * The outline at the editor's right edge, as the blog has it: a mark per
  * heading, the current one darker, and their titles on hover, each taking
  * the editor to its heading. It follows the article as it is edited.
+ *
+ * A book's (a window of it in the editor, book-window.ts): all its headings, not the window's; one outside the window
+ * taken to by the window opened there first (`book.reveal`).
  */
-export function createOutline(scroller: HTMLElement, rail: HTMLElement) {
+export type OutlineBook = {
+	/** The book's headings, all of them; null for an article held whole. */
+	headings(): Array<{ level: number; text: string; at: number }> | null;
+	/** Where its window starts (characters before it). */
+	start(): number | null;
+	/** Its window opened at `at`. */
+	reveal(at: number): Promise<void>;
+};
+
+export function createOutline(scroller: HTMLElement, rail: HTMLElement, book?: OutlineBook) {
 	const list = rail.querySelector<HTMLOListElement>('ol')!;
 	const marks = rail.querySelector<HTMLElement>('.outline-marks')!;
 	let headings: HTMLElement[] = [];
@@ -44,41 +56,65 @@ export function createOutline(scroller: HTMLElement, rail: HTMLElement) {
 		go();
 	}
 
+	/** A book's headings, all of them (null: an article's, those in the editor), and how many are before its window. */
+	let all: Array<{ level: number; text: string; at: number }> | null = null;
+	let before = 0;
+
 	function mark(): void {
 		const here = current();
-		headings.forEach((heading, index) => {
-			const now = heading === here;
-			list.children[index]?.querySelector('a')?.toggleAttribute('aria-current', now);
-			marks.children[index]?.toggleAttribute('data-current', now);
-		});
+		const index = here ? headings.indexOf(here) + (all ? before : 0) : -1;
+		[...list.children].forEach((item, at) => item.querySelector('a')?.toggleAttribute('aria-current', at === index));
+		[...marks.children].forEach((line, at) => line.toggleAttribute('data-current', at === index));
 	}
 
 	function draw(): void {
 		const found = [...scroller.querySelectorAll<HTMLElement>('.ProseMirror > h1, .ProseMirror > h2, .ProseMirror > h3')]
 			.filter((heading) => heading.textContent?.trim());
-		// The body's highest heading is the outline's first level.
-		const top = Math.min(...found.map((heading) => Number(heading.tagName[1])));
 		headings = found;
-		rail.hidden = found.length < 2;
-		list.replaceChildren(...found.map((heading) => {
+		all = book?.headings() ?? null;
+		const start = book?.start() ?? 0;
+		before = all ? all.filter((heading) => heading.at < start).length : 0;
+		const listed = all ?? found.map((heading) => ({ level: Number(heading.tagName[1]), text: heading.textContent!.trim(), at: -1 }));
+		// The body's highest heading is the outline's first level.
+		const top = Math.min(...listed.map((heading) => heading.level));
+		rail.hidden = listed.length < 2;
+		list.replaceChildren(...listed.map((heading, index) => {
 			const item = document.createElement('li');
-			item.classList.toggle('child', Number(heading.tagName[1]) > top);
+			item.classList.toggle('child', heading.level > top);
 			const link = document.createElement('a');
 			link.href = '#';
-			link.textContent = heading.textContent!.trim();
+			link.textContent = heading.text;
 			link.addEventListener('click', (event) => {
 				event.preventDefault();
-				reach(heading);
+				void go(index);
 			});
 			item.append(link);
 			return item;
 		}));
-		marks.replaceChildren(...found.map((heading) => {
+		marks.replaceChildren(...listed.map((heading) => {
 			const line = document.createElement('i');
-			line.classList.toggle('child', Number(heading.tagName[1]) > top);
+			line.classList.toggle('child', heading.level > top);
 			return line;
 		}));
 		mark();
+	}
+
+	/** To the `index`th heading listed: in the editor, or (a book's, outside its window) once the window is there. */
+	async function go(index: number): Promise<void> {
+		if (!all) {
+			if (headings[index]) reach(headings[index]!);
+			return;
+		}
+		const shown = headings[index - before];
+		const wanted = all[index]!;
+		if (shown && shown.textContent?.trim() === wanted.text) {
+			reach(shown);
+			return;
+		}
+		await book!.reveal(wanted.at);
+		draw();
+		const there = headings.find((heading) => heading.textContent?.trim() === wanted.text);
+		if (there) reach(there);
 	}
 
 	/** When the article began to change, since it was last drawn. */
