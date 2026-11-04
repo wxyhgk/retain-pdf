@@ -102,3 +102,39 @@ fn stopping_workers_after_shutdown_leaves_them_alone_while_another_runtime_holds
     assert_eq!(db.get_job("running").unwrap().status, JobStatusKind::Running, "库不改，留给下次启动");
     let _ = std::fs::remove_dir_all(&dirs.root);
 }
+
+/// 锁晚一点才空出来（别的线程正好 fork 子进程，子进程 exec 之前也拿着锁文件，锁跟着多留一会儿）：
+/// 停机时重新拿锁要等一等，不能把自己的 worker 当成别人的、一个都不停（并发跑测试时偶发，2026-11-04）。
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[test]
+fn stopping_workers_after_shutdown_waits_briefly_for_a_lock_that_is_about_to_be_released() {
+    use std::os::unix::process::CommandExt;
+
+    use crate::models::domain::{CreateJobInput, JobSnapshot, JobStatusKind};
+
+    let dirs = TestDirs::create(&format!("rust-api-shutdown-late-lock-{}", fastrand::u64(..)));
+    let config = dirs.config();
+    let db = crate::db::Db::new(config.jobs_db_path.clone(), config.data_root.clone());
+    db.init().expect("init db");
+    let mut worker = std::process::Command::new("sleep")
+        .arg("60")
+        .process_group(0)
+        .spawn()
+        .expect("spawn worker");
+    let mut job = JobSnapshot::new("running".to_string(), CreateJobInput::default(), vec![]);
+    job.status = JobStatusKind::Running;
+    job.pid = Some(worker.id());
+    db.save_job(&job).expect("save job");
+    db.record_worker_identity("running", retainpdf_proc::process_identity(worker.id()).as_deref())
+        .expect("record identity");
+
+    let held = crate::job_runner::acquire_runtime_owner_lock(&config.jobs_db_path).expect("hold lock");
+    let releaser = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(300));
+        drop(held);
+    });
+    crate::stop_owned_workers_after_shutdown(&config);
+    releaser.join().expect("releaser");
+    assert!(!worker.wait().expect("reap").success(), "锁晚 300 毫秒空出来也要终止自己的 worker");
+    let _ = std::fs::remove_dir_all(&dirs.root);
+}
