@@ -16,6 +16,8 @@ import { labelBook, parseQuote, parseSourceHref, QUOTE_LANGUAGE, quoteMarkdown, 
  */
 
 export const SOURCE_TYPE = 'retainpdf_source';
+/** How much of a book's title the mark shows (the rest on hover). */
+const BOOK_SHOWN = 10;
 
 type MdastNode = { type: string; value?: string; url?: string; lang?: string | null; label?: string; children?: MdastNode[] };
 type RemarkPlugin = ReturnType<Parameters<typeof $remark>[1]>;
@@ -74,7 +76,10 @@ export const sourceSchema = $nodeSchema(SOURCE_TYPE, () => ({
 	},
 }));
 
-/** The mark: RetainPDF's logo, the book and page said on hover; which book and page, for the page read to pick it out (wiring/book-places.ts). */
+/**
+ * The mark: RetainPDF's logo and, small after it, the book and page (a note quotes several books: which passage is of
+ * which seen at a glance, not on hover only); which book and page, for the page read to pick it out (wiring/book-places.ts).
+ */
 class SourceView implements NodeView {
 	readonly dom: HTMLElement;
 
@@ -118,6 +123,10 @@ class SourceView implements NodeView {
 		const book = labelBook(label);
 		if (book) this.dom.dataset.book = book;
 		else delete this.dom.dataset.book;
+		// Drawn by the page's CSS (`data-shown`), not text of the paragraph (its words, as found and copied, are the passage's).
+		const shown = [book ? (book.length > BOOK_SHOWN ? `${book.slice(0, BOOK_SHOWN)}…` : book) : '', source?.page ? String(source.page) : ''].filter(Boolean).join(' · ');
+		if (shown) this.dom.dataset.shown = shown;
+		else delete this.dom.dataset.shown;
 	}
 }
 

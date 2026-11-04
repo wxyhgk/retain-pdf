@@ -1180,7 +1180,7 @@ function bookLines({ job_id: job, document_id: document, title, page, pages, not
 	const ids = [document ? `document_id: ${document}` : '', `job_id: ${job}`].filter(Boolean).join('，'); // i18n-ignore: for the AI
 	const lines = [`作者正在读 RetainPDF 的${name}（${ids}）${at}。`]; // i18n-ignore: for the AI
 	if (!standing) return lines;
-	if (notes) lines.push(`这本书的笔记是《${notes.title}》（文件夹名 ${notes.slug}），作者让你记到笔记里时写进这一页。`); // i18n-ignore: for the AI
+	if (notes) lines.push(`作者正在写的笔记是《${notes.title}》（文件夹名 ${notes.slug}），作者让你记到笔记里时写进这一页（一篇笔记里可以有几本书的摘录，每段带着它的出处）。`); // i18n-ignore: for the AI
 	lines.push(
 		'问到这本书、「这一页」「这一段」时，先读原文再答，不要凭记忆：read_book 读某几页的原文和译文（from、to 是页码，从 1 起），search_books 在书里找字，read_passage 取一段（block，p001-b0000 这样）。在终端里是 studio read-book、studio search-books、studio read-passage。', // i18n-ignore: for the AI
 		'答案里说到书里的内容时写出第几页；要把书里的一段放进笔记，用 read_passage 给的 quote（译文，前面一个 retainpdf: 链接写着出处）原样放进去，它就是笔记里的普通段落，右上角有 RetainPDF 的标志，作者点它回到原文。', // i18n-ignore: for the AI

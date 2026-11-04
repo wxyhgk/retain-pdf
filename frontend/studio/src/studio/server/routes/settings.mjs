@@ -44,6 +44,8 @@ export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpd
 	api.get('/settings/retainpdf/check', () => retainpdfLibrary.check());
 	// RetainPDF's books, the latest read first: 书's ＋, a book to open beside a note (book-tabs.ts).
 	api.get('/retainpdf/books', ({ query }) => retainpdfLibrary.listBooks({ query: query.get('q') || undefined, limit: 30 }));
+	// ⌘K: the words in RetainPDF's books (their source and translation), a few hits.
+	api.get('/retainpdf/search', ({ query }) => retainpdfLibrary.searchBooks({ query: query.get('q') ?? '', limit: 8 }));
 	// What is read in 翻译 (retainpdf-reading.mjs): said by the page, told the AIs.
 	api.get('/retainpdf/reading', () => ({ reading: retainpdfReading.get() }));
 	api.put('/retainpdf/reading', async ({ json }) => ({ reading: retainpdfReading.set(await json()) }));

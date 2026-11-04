@@ -89,7 +89,10 @@ test.beforeAll(async () => {
 			const known = request.headers['x-api-key'] === STAND_IN_KEY;
 			response.writeHead(known ? 200 : 401, { 'Content-Type': 'application/json' });
 			const documents = [{ document_id: 'doc-3', title: 'Organic Chemistry', page_count: 120, active_job_id: 'job-3' }];
-			response.end(JSON.stringify(known ? { code: 0, message: 'ok', data: { documents, total: 1, has_more: false } } : { code: 40100, message: 'unauthorized', error: { code: 'UNAUTHORIZED', http_status: 401, details: {} } }));
+			// Its words found (⌘K): one passage, on page 12 of the book.
+			const hits = [{ document_id: 'doc-3', job_id: 'job-3', page_idx: 11, block_id: 'p012-b0003', source_snippet: 'The variation principle', translated_snippet: '变分原理告诉我们，能量有下界' }];
+			const data = request.url.startsWith('/api/v1/search') ? { hits, has_more: false } : request.url.startsWith('/api/v1/documents/doc-3') ? documents[0] : { documents, total: 1, has_more: false };
+			response.end(JSON.stringify(known ? { code: 0, message: 'ok', data } : { code: 40100, message: 'unauthorized', error: { code: 'UNAUTHORIZED', http_status: 401, details: {} } }));
 			return;
 		}
 		// Its API on the same port as its pages, as its desktop app has it, said in its runtime config.
@@ -221,8 +224,9 @@ test('摘到笔记 in RetainPDF puts the passage in the book\'s page of notes, o
 			return Math.abs(text.right - shown.right) < 4 && shown.top - text.top < 12;
 		});
 	await expect.poll(corner).toBe(true);
-	// Room kept for it: the text does not run under it.
-	expect(await quotedText.evaluate((element) => getComputedStyle(element).paddingRight)).toBe('30px');
+	// The book and page said by it (not text of the paragraph), the text going round it.
+	await expect(mark).toHaveAttribute('data-shown', 'Quantum Ch… · 12');
+	expect(await mark.evaluate((element) => getComputedStyle(element).float)).toBe('right');
 	await expect(editor(page).locator('.katex-display')).toHaveCount(1);
 	await expect(notesPanel).not.toContainText('The variation principle');
 	await expect(editor(page).locator('.milkdown-code-block')).toHaveCount(0);
@@ -561,6 +565,25 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await expect(page.locator('#books-view')).toBeHidden();
 	await expect(page.locator('#books-toggle')).toHaveAttribute('aria-pressed', 'false');
 	await expect(page.locator('.studio-shell')).not.toHaveClass(/panel-collapsed/u);
+});
+
+test('⌘K finds words in the books too: a passage, its book and page; chosen, the book beside the note at it', async ({ page }) => {
+	tellsKey = true;
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.keyboard.press('ControlOrMeta+k');
+	await page.locator('#quick-find-input').fill('变分');
+	const hit = page.locator('#quick-find-dialog [role="option"]', { hasText: '第 12 页' });
+	await expect(hit).toContainText('Organic Chemistry · 第 12 页');
+	await expect(hit).toContainText('变分原理告诉我们');
+	await hit.click();
+	await expect(page.locator('.book-frame[data-job="job-3"]')).toHaveCount(1);
+	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Organic Chemistry');
+	// At the passage: opened there, or told to go there.
+	await expect
+		.poll(async () => `${await bookFrame(page, 'job-3').locator('#opened').textContent()} ${await bookFrame(page, 'job-3').locator('#navigated').textContent()}`)
+		.toMatch(/page_idx(=|":)11/u);
+	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
 });
 
 test('a passage quoted before (a ```retainpdf block) opens as one quoted now: its translation, the mark in its corner; saved so', async ({ page }) => {

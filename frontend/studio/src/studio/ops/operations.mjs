@@ -314,7 +314,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'reading_now',
-		description: '作者现在在 Studio 里读哪本书（「书库」里，或者笔记旁边打开的书）：document_id、书名、job_id、第几页（从 1 起）、共几页，和这本书的笔记页（文件夹名）。没在读是 null。要 Studio 开着。', // i18n-ignore: for the AI
+		description: '作者现在在 Studio 里读哪本书（「书库」里，或者笔记旁边打开的书）：document_id、书名、job_id、第几页（从 1 起）、共几页，和作者正在写的那篇笔记（文件夹名）。没在读是 null。要 Studio 开着。', // i18n-ignore: for the AI
 		input: { type: 'object', properties: {} },
 		run: (ops) => ops.readingNow(),
 	},

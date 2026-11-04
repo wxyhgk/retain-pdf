@@ -986,6 +986,14 @@ export function retainpdfBooks(): Promise<{ books: Array<{ document_id: string; 
 	return request('/api/studio/retainpdf/books');
 }
 
+/** A passage of a book found by its words (⌘K): its book, job, page (from 1) and block, and the words round it. */
+export type BookHit = { document_id: string; title: string | null; job_id: string; page: number; block: string; source: string | null; translated: string | null };
+
+/** The words in RetainPDF's books, source and translation (server/retainpdf-library.mjs): a few passages. */
+export function searchBooks(query: string, signal?: AbortSignal): Promise<{ hits: BookHit[] }> {
+	return request(`/api/studio/retainpdf/search?${new URLSearchParams({ q: query })}`, { signal });
+}
+
 /** What is read in 翻译 (server/retainpdf-reading.mjs), told the AIs; null: nothing. */
 export function tellRetainpdfReading(reading: { job_id: string; document_id: string | null; title: string | null; page: number | null; pages: number | null; notes: { slug: string; title: string } | null } | null): Promise<unknown> {
 	return request('/api/studio/retainpdf/reading', jsonOptions('PUT', reading));
