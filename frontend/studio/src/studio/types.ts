@@ -27,8 +27,6 @@ export type ArticleSummary = {
 	type?: 'database';
 	/** From before databases were pages: the id of the block in the page it is under whose row it was. */
 	database?: string;
-	/** RetainPDF's 读书笔记 (server/retainpdf-notes.mjs): the notes of a book (its id, the job read), or the page they are under. */
-	retainpdf?: { document?: string; job?: string; books?: boolean };
 };
 
 /** An article that links to the open one, with each link: its line, its words, the words around it. */

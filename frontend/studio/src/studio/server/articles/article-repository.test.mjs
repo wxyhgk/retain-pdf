@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { ArticleConflictError, ArticleRepository } from './article-repository.mjs';
 import { articleBundlePaths, assertArticleSlug, resolveInside } from '../../../articles/bundle-paths.mjs';
-import { articleSummary, isPublishedArticle, validateArticleSource } from '../../../articles/schemas.mjs';
+import { articleSummary, isPublishedArticle, localDay, validateArticleSource } from '../../../articles/schemas.mjs';
 import { CUBE_DISPLAY_DEFAULTS } from '@blog/science/cube-display.mjs';
 
 async function temporaryBlog(t) {
@@ -38,7 +38,7 @@ test('an article is read with its text and revision, once each, and saved agains
 	assert.equal(typeof listed[0]?.modified, 'number');
 	assert.deepEqual(listed, [{
 		slug: 'first-note', title: "研究者的 '草稿'", draft: true, icon: '', tags: [], kind: 'post', parent: '',
-		pubDate: new Date().toISOString().slice(0, 10), description: '', modified: listed[0].modified,
+		pubDate: localDay(), description: '', modified: listed[0].modified,
 	}]);
 
 	const initial = await repository.read('first-note');
@@ -49,7 +49,7 @@ test('an article is read with its text and revision, once each, and saved agains
 	assert.deepEqual(initial.properties, {
 		title: "研究者的 '草稿'",
 		description: '',
-		pubDate: new Date().toISOString().slice(0, 10),
+		pubDate: localDay(),
 		tags: [],
 		draft: true,
 		icon: '',

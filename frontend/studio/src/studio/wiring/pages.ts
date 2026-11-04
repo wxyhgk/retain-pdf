@@ -17,15 +17,6 @@ import type { ArticleSummary } from '../types';
 import type { Studio } from './studio';
 import { rememberRecent } from '../state/recent-pages';
 
-/** 今天的日志: the template its pages are made from (templates/journal.md), and the page they go under. */
-const JOURNAL_TEMPLATE = 'journal';
-const JOURNAL_PAGE = '日志'; // i18n-ignore: a page's title, written into the blog
-
-/** Today, `2026-10-29` (a day's page's title, when there is no 日志 template to say). */
-function today(): string {
-	const now = new Date();
-	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-}
 
 /** The page open last, kept on this machine: what the Studio opens again when it is started, not the first page. */
 const LAST_OPENED = 'studio.lastArticle';
@@ -139,36 +130,6 @@ export function createPages(studio: Studio) {
 		await enterNewPage(slug);
 	}
 
-	/**
-	 * 今天的日志 (as SiYuan's daily note): today's page under 日志, opened; made from the 日志 template (templates/journal.md)
-	 * the first time today, and 日志 with it the first time of all.
-	 */
-	async function todayJournal(): Promise<void> {
-		if (!(await session.saveBeforeLeaving())) return;
-		try {
-			const { title, body } = await renderTemplate(JOURNAL_TEMPLATE).catch(() => ({ title: today(), body: '' }));
-			await articleList.load();
-			const all = articleList.articles();
-			let journal = all.find((article) => !article.parent && article.title === JOURNAL_PAGE)?.slug;
-			const page = journal ? all.find((article) => article.parent === journal && article.title === title)?.slug : undefined;
-			if (page) {
-				studio.showView('editor');
-				await session.open(page);
-				return;
-			}
-			if (!journal) {
-				journal = freeSlug(autoSlug(), slugs());
-				await trackWrite(() => createArticle(journal!, JOURNAL_PAGE, ''));
-			}
-			const slug = freeSlug(autoSlug(), [...slugs(), journal]);
-			await trackWrite(() => createArticle(slug, title, journal!, { body }));
-			await articleList.load();
-			studio.showView('editor');
-			await session.open(slug);
-		} catch (error) {
-			showToast(error instanceof Error ? error.message : t('没能打开今天的日志'), true);
-		}
-	}
 
 	/**
 	 * 导入 Markdown: `.md` files, a zip (Notion's export, an Obsidian vault's) or a folder of them, made pages (under
@@ -332,7 +293,6 @@ export function createPages(studio: Studio) {
 		const open = session.slug ? bySlug.get(session.slug) : undefined;
 		shellState.set({
 			path: pages,
-			book: open?.retainpdf?.job ? { job_id: open.retainpdf.job, document_id: open.retainpdf.document ?? null, title: open.title } : null,
 			icon: (session.slug && bySlug.get(session.slug)?.icon) || '',
 			count: articles.length,
 			favorite: Boolean(session.slug && starred.includes(session.slug)),
@@ -460,5 +420,5 @@ export function createPages(studio: Studio) {
 		], pageMenu);
 	}
 
-	return { visited, importMarkdown, openFromList, newPage, newDatabase, newFromTemplate, todayJournal, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
+	return { visited, importMarkdown, openFromList, newPage, newDatabase, newFromTemplate, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
 }

@@ -118,7 +118,6 @@ mountShell(shell, {
 	search: () => quickFind.open(),
 	showView: (view) => showView(view),
 	newPage: () => void pages.newPage(),
-	todayJournal: () => void pages.todayJournal(),
 	importMarkdown: (kind) => void pages.importMarkdown(kind),
 	newChat: () => chat.newChat(),
 	openChat: (id) => chat.openChat(id),
@@ -787,10 +786,9 @@ const quickFind = createQuickFind({
 			hint: command.keys,
 			run: () => void command.run({ from: 'call' }),
 		}));
-		// 今天的日志, and a page from each template (templates/).
+		// A database, and a page from each template (templates/).
 		const templates = (await listTemplates().catch(() => ({ templates: [] }))).templates;
 		const fromTemplates = [
-			{ key: 'studio:today', label: t('今天的日志'), icon: '📅', run: () => void pages.todayJournal() },
 			{ key: 'studio:new-database', label: t('新建数据库'), icon: '▦', hint: t('一个整页的数据库，它下面的页面就是各行'), run: () => void pages.newDatabase() },
 			...templates.map((template) => ({ key: `template:${template.id}`, label: t('新建：{name}', { name: template.name }), icon: '＋', hint: template.description, run: () => void pages.newFromTemplate(template.id) })),
 		];
@@ -998,16 +996,15 @@ function keepNoteBooks(slug: string, kept: NoteBooks): void {
 let booksOf: string | null = null;
 let tabJobs: string[] = [];
 let caretInNote = false;
-/** The note's books: those kept for it, then (not closed) the book whose notes it is (读书笔记) and the ones it quotes. */
+/** The note's books: those kept for it, then (not closed) the ones it quotes. */
 function noteBooks(slug: string): { books: RetainpdfBook[]; shown: string | null } {
 	const kept = keptNoteBooks(slug);
 	const books = [...(kept?.books ?? [])];
-	const own = shellState.get().book;
 	const view = editor.view();
-	for (const book of [...(own ? [own] : []), ...(view ? citedBooks(view.state.doc) : [])]) {
+	for (const book of view ? citedBooks(view.state.doc) : []) {
 		if (!books.some((each) => each.job_id === book.job_id) && !kept?.closed.includes(book.job_id)) books.push({ ...book });
 	}
-	return { books, shown: kept?.shown ?? own?.job_id ?? null };
+	return { books, shown: kept?.shown ?? null };
 }
 const bookTabs = createBookTabs(booksView, {
 	openSettings: () => openSettings('retainpdf'),

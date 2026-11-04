@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { editor, openStudio, removeArticle, resetFixture } from './studio.ts';
 
-// Page templates (templates/, here the tests' .studio-templates beside their blog/): 今天的日志, a page from one, a page
+// Page templates (templates/, here the tests' .studio-templates beside their blog/): a page from one, a page
 // kept as one, one put in a page (/模板).
 
 const blog = () => process.env.STUDIO_BLOG_DIR!;
@@ -29,23 +29,6 @@ test.beforeEach(() => {
 test.afterEach(() => {
 	for (const folder of made()) removeArticle(folder);
 	rmSync(templates(), { recursive: true, force: true });
-});
-
-test('今天的日志: today’s page under 日志, made from its template once; opened again, the same page', async ({ page }) => {
-	await openStudio(page);
-	await page.locator('#open-today').click();
-	await expect(title(page)).toHaveText(today);
-	await expect(editor(page).locator('h2')).toHaveText('今天做了什么');
-	await expect(editor(page)).toContainText(`写于 ${today}`);
-	await expect.poll(() => made().map(titleOf).sort()).toEqual([today, '日志'].sort());
-	// Under 日志, in the tree.
-	await expect(page.locator('.page-path-link')).toHaveText(['日志']);
-
-	await page.locator('#article-list .page-row', { hasText: 'Studio 测试夹具' }).click();
-	await expect(title(page)).toHaveText('Studio 测试夹具');
-	await page.locator('#open-today').click();
-	await expect(title(page)).toHaveText(today);
-	expect(made().length).toBe(2);
 });
 
 test('⌘K > 新建：计算记录 makes a page from the template, its title and its text filled in', async ({ page }) => {
