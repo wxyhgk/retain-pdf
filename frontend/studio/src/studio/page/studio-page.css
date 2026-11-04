@@ -94,12 +94,15 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* 重试 as 小程序's 新建; 改地址 beside it, lighter. */
 .translate-unreachable-actions button { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: rgb(var(--black)); color: var(--surface); font: inherit; font-size: 13px; cursor: pointer; }
 .translate-unreachable-actions button + button { border: 1px solid rgba(var(--gray), 0.3); background: transparent; color: inherit; }
-/* Where the next passage quoted from a book beside goes (studio-editor.ts showQuoteSpot): faint, while the keys are elsewhere. */
+/* Where the next passage quoted from a book beside goes (studio-editor.ts showQuoteSpot): faint, while the keys are elsewhere.
+   Taking no room (a line of no width at the caret, one of no height after the last block): shown and hidden, nothing
+   moves (it moved what was clicked as the note took the keys, and the click was lost). */
 .crepe-host .milkdown .ProseMirror .quote-spot { pointer-events: none; user-select: none; }
-.crepe-host .milkdown .ProseMirror .quote-spot-caret { display: inline-block; width: 2px; height: 1.1em; margin: 0 1px; vertical-align: -0.15em; border-radius: 1px; background: rgb(var(--gray)); opacity: 0.55; }
-.crepe-host .milkdown .ProseMirror .quote-spot-end { display: flex; align-items: center; gap: 8px; margin: 6px 0; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); opacity: 0.7; }
-.crepe-host .milkdown .ProseMirror .quote-spot-end::before, .crepe-host .milkdown .ProseMirror .quote-spot-end::after { flex: 1; height: 1px; background: rgb(var(--gray-light)); content: ''; }
-.crepe-host .milkdown .ProseMirror.ProseMirror-focused .quote-spot { display: none; }
+.crepe-host .milkdown .ProseMirror .quote-spot-caret { position: relative; display: inline-block; width: 0; height: 1.1em; vertical-align: -0.15em; }
+.crepe-host .milkdown .ProseMirror .quote-spot-caret::after { position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; border-radius: 1px; background: rgb(var(--gray)); opacity: 0.55; content: ''; }
+.crepe-host .milkdown .ProseMirror .quote-spot-end { position: relative; height: 0; }
+.crepe-host .milkdown .ProseMirror .quote-spot-end::before { position: absolute; top: 6px; right: 0; left: 0; padding-top: 4px; border-top: 1px dashed rgb(var(--gray-light)); color: rgb(var(--gray)); content: attr(data-said); font-size: var(--studio-fs-caption); opacity: 0.8; text-align: center; }
+.crepe-host .milkdown .ProseMirror.ProseMirror-focused .quote-spot { visibility: hidden; }
 /* A passage quoted from RetainPDF (editor/retainpdf-source.ts): the note's own paragraphs; where it is, RetainPDF's mark
    and the book and page, small, in the top right corner of the first (floated: its first line goes round it). */
 .retainpdf-source { float: right; display: inline-flex; max-width: 45%; height: 22px; align-items: center; gap: 4px; margin: 0.15em 0 0 10px; padding: 0 6px 0 4px; border-radius: 6px; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); line-height: 1; opacity: 0.8; cursor: pointer; transition: opacity 120ms, background 120ms; }

@@ -827,6 +827,7 @@ function setNotesOpen(open: boolean): void {
 	sidePanel.fold(open && shellState.get().view === 'translate');
 	shellState.set({ notesOpen: open });
 	tellReading();
+	markQuoteSpot();
 }
 /** What RetainPDF's reader said it shows (`reading`); null: nothing, or a RetainPDF that does not say. */
 let readerShows: RetainpdfReading | null = null;
@@ -846,8 +847,10 @@ function tellReading(): void {
 		: null;
 	markReadingPage(view === 'translate' ? readerShows : beside);
 	chat.aiPanel.showBook(book ? { title: book.title, page: typeof book.page_idx === 'number' ? book.page_idx + 1 : null } : null);
+	// The other books open beside the note, for the AIs to know of them too (not only the one shown).
+	const others = beside ? bookTabs.books().filter((each) => each.job_id !== beside.job_id).map(({ job_id, document_id, title }) => ({ job_id, document_id, title })) : [];
 	const told = book
-		? { job_id: book.job_id, document_id: book.document_id, title: book.title, page: typeof book.page_idx === 'number' ? book.page_idx + 1 : null, pages: book.page_count ?? null, notes }
+		? { job_id: book.job_id, document_id: book.document_id, title: book.title, page: typeof book.page_idx === 'number' ? book.page_idx + 1 : null, pages: book.page_count ?? null, notes, ...(others.length ? { others } : {}) }
 		: null;
 	const said = JSON.stringify(told);
 	if (said === toldReading) return;
@@ -877,10 +880,22 @@ async function openNotes(): Promise<boolean> {
 const noteEditor = shell.querySelector<HTMLElement>('#crepe-editor')!;
 noteEditor.addEventListener('focusin', () => {
 	if (notesSplit.open && shellState.get().view === 'translate') caretBeside = session.slug;
+	markQuoteSpot();
 });
 noteEditor.addEventListener('beforeinput', () => {
 	if (booksOf === session.slug) caretInNote = true;
+	markQuoteSpot();
 });
+/**
+ * Where the next passage quoted goes, marked in the note while a book is beside it (studio-editor.ts showQuoteSpot):
+ * at the caret once the author has written there (or quoted: after that passage), else after its last block.
+ */
+function markQuoteSpot(): void {
+	const view = shellState.get().view;
+	const besideBooks = view === 'editor' && booksSplit.open && booksOf === session.slug;
+	const besideReader = view === 'translate' && notesSplit.open;
+	editor.showQuoteSpot(besideBooks ? (caretInNote ? 'caret' : 'end') : besideReader ? (caretBeside === session.slug ? 'caret' : 'end') : null);
+}
 const retainpdf = createRetainpdfView(translateView, {
 	openSettings: () => openSettings('retainpdf'),
 	openNotes: () => void openNotes(),
@@ -935,7 +950,15 @@ function putQuote(quote: RetainpdfQuote, where: 'caret' | 'end'): void {
 				translated: quote.translated_text,
 			}),
 			where,
+			// The keys to the note: written on at once, after the passage (not first clicked back into).
+			{ focus: true },
 		);
+		// The caret after it now: the next passage goes after this one, not at the note's end.
+		if (placed) {
+			caretInNote = booksOf === session.slug;
+			if (notesSplit.open && shellState.get().view === 'translate') caretBeside = session.slug;
+			markQuoteSpot();
+		}
 		if (placed) {
 			placed.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 			placed.dataset.justQuoted = '';
@@ -1019,6 +1042,7 @@ function showNoteBooks(): void {
 	const { books, shown } = noteBooks(session.slug);
 	tabJobs = books.map((book) => book.job_id);
 	bookTabs.setBooks(books, shown);
+	markQuoteSpot();
 }
 /**
  * ⤢ 整页读: the book shown over the whole middle, the note put away meanwhile (what is quoted still goes into it); ⤡, or
@@ -1046,6 +1070,7 @@ function setBooksOpen(open: boolean, first?: { book: RetainpdfBook; target: Reta
 	if (first) bookTabs.open(first.book, first.target);
 	bookTabs.setVisible(beside);
 	tellReading();
+	markQuoteSpot();
 }
 /** ＋: a book of RetainPDF's to open beside the note, from a menu of those not open (the latest read first). */
 async function pickBook(anchor: HTMLElement): Promise<RetainpdfBook | null> {
@@ -1133,6 +1158,7 @@ function showView(view: View, folder?: string): void {
 		url.searchParams.delete('translate');
 	}
 	tellReading();
+	markQuoteSpot();
 	if (view === 'apps') url.searchParams.set('apps', '');
 	else {
 		url.searchParams.delete('apps');

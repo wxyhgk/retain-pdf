@@ -995,6 +995,6 @@ export function searchBooks(query: string, signal?: AbortSignal): Promise<{ hits
 }
 
 /** What is read in 翻译 (server/retainpdf-reading.mjs), told the AIs; null: nothing. */
-export function tellRetainpdfReading(reading: { job_id: string; document_id: string | null; title: string | null; page: number | null; pages: number | null; notes: { slug: string; title: string } | null } | null): Promise<unknown> {
+export function tellRetainpdfReading(reading: { job_id: string; document_id: string | null; title: string | null; page: number | null; pages: number | null; notes: { slug: string; title: string } | null; others?: Array<{ job_id: string; document_id: string | null; title: string | null }> } | null): Promise<unknown> {
 	return request('/api/studio/retainpdf/reading', jsonOptions('PUT', reading));
 }

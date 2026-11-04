@@ -262,7 +262,8 @@ const quoteSpot = $prose(
 						const element = document.createElement(where === 'end' ? 'div' : 'span');
 						element.className = `quote-spot quote-spot-${where}`;
 						element.contentEditable = 'false';
-						if (where === 'end') element.textContent = t('摘录放这里');
+						// Said by the page's CSS (not text of the note).
+						if (where === 'end') element.dataset.said = t('摘录放这里');
 						return element;
 					};
 					return DecorationSet.create(state.doc, [Decoration.widget(at, mark, { side: where === 'end' ? 1 : -1, key: `quote-spot-${where}`, ignoreSelection: true })]);

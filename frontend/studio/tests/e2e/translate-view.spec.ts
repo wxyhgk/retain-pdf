@@ -550,17 +550,35 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await expect(bookFrame(page, 'job-2').locator('#navigated')).toHaveText(JSON.stringify({ job_id: 'job-2', block_id: 'p008-b0004', page_idx: 7 }));
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
 
-	// 摘 in a book beside it: into this note (not a book's page of notes).
+	// Where a passage quoted goes, marked in the note while it has not the keys: after its last block (not written in yet).
+	await bookFrame(page, 'job-2').locator('#read').click();
+	await expect(editor(page).locator('.quote-spot-end')).toHaveAttribute('data-said', '摘录放这里');
+	// Taking no room, faint: shown while the keys are in the book.
+	const spotShown = () => editor(page).locator('.quote-spot').first().evaluate((element) => getComputedStyle(element).visibility === 'visible').catch(() => false);
+	await expect.poll(spotShown).toBe(true);
+
+	// 摘 in a book beside it: into this note (not a book's page of notes); the keys to the note after it, the mark gone.
 	await bookFrame(page, 'job-2').locator('#quote').click();
 	await expect(page.locator('.studio-toast')).toContainText('已摘到「Studio 测试夹具」');
-	await expect(editor(page).locator('p:has(> .retainpdf-source)', { hasText: '变分原理' })).toHaveCount(1);
+	const quoted = editor(page).locator('p:has(> .retainpdf-source)', { hasText: '变分原理' });
+	await expect(quoted).toHaveCount(1);
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
+	await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.ProseMirror') !== null)).toBe(true);
+	await expect.poll(spotShown).toBe(false);
+	// Another: right after the first (the caret was left there), not at the note's end.
+	await bookFrame(page, 'job-2').locator('#quote').click();
+	await expect(quoted).toHaveCount(2);
+	// (The passage is its words and its formula: the second's words right after the first's formula.)
+	expect(await quoted.first().evaluate((element) => element.nextElementSibling?.nextElementSibling?.querySelector(':scope > .retainpdf-source') !== null)).toBe(true);
 
-	// What the AIs are told: the book shown, and this note.
+	// What the AIs are told: the book shown, this note, and the other book beside it.
 	await bookFrame(page, 'job-2').locator('#read').click();
 	await expect
 		.poll(async () => page.evaluate(async () => (await (await fetch('/api/studio/retainpdf/reading')).json()).reading?.notes?.title))
 		.toBe('Studio 测试夹具');
+	await expect
+		.poll(async () => page.evaluate(async () => (await (await fetch('/api/studio/retainpdf/reading')).json()).reading?.others?.map((book: { job_id: string }) => book.job_id)))
+		.toEqual(['job-1']);
 
 	// ＋: a book of RetainPDF's not open, from its library (its key found, not filled in).
 	await page.locator('#book-tabs-add').click();
