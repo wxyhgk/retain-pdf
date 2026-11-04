@@ -583,6 +583,7 @@
         "devtools/tests/rendering/test_typst_color_adapt.py",
         "devtools/tests/rendering/test_typst_compiler_paths.py",
         "devtools/tests/rendering/test_typst_huge_book_compile.py",
+        "devtools/tests/rendering/test_typst_markdown_cleanup.py",
         "devtools/tests/rendering/test_typst_pikepdf_source_cleanup.py",
         "devtools/tests/rendering/test_typst_runtime_failure_policy.py",
         "devtools/tests/rendering/test_word_export.py",
