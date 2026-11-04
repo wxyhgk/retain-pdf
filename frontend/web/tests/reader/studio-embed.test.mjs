@@ -17,6 +17,7 @@ import {
   openBookMessage,
   openNotesMessage,
   quoteMessage,
+  shortcutMessage,
   readingMessage,
   readyMessage,
 } from "../../src/platform/studio-bridge/protocol.ts";
@@ -344,7 +345,7 @@ test("读到哪：阅读器翻页报给宿主，握过手才发，防抖停下�
 test("ask-ai 对得上契约；hello 带 ask-ai 记下来，契约外的能力不认", () => {
   assertMatchesContract(askAiMessage(), "AskAiMessage");
   assert.deepEqual(askAiMessage(), { protocol: "retainpdf-studio-bridge", v: 1, type: "ask-ai" });
-  assert.deepEqual(CONTRACT.definitions.StudioFeature.enum, ["quote", "open-notes", "ask-ai", "open-book"], "Studio 的能力就这四样");
+  assert.deepEqual(CONTRACT.definitions.StudioFeature.enum, ["quote", "open-notes", "ask-ai", "open-book", "shortcut"], "Studio 的能力就这五样");
   assert.deepEqual(parseStudioMessage(hello("light", ["quote", "ask-ai", "fly"])).features, ["quote", "ask-ai"]);
 });
 
@@ -480,4 +481,37 @@ test("open-book 对得上契约（带页、不带页）；Studio 认 open-book �
   assert.deepEqual(fake.sent.at(-1).data, openBookMessage(book, 4));
   assert.equal(fake.sent.at(-1).origin, STUDIO, "不用 '*'");
   embed.stop();
+});
+
+test("书框有焦点时按 Studio 的快捷键（⌘/Ctrl + K、S、J、\\）：Studio 认 shortcut 才转给它、不让浏览器处理；别的键、不带 ⌘/Ctrl 的不转", () => {
+  assertMatchesContract(shortcutMessage({ key: "k", meta: true, ctrl: false, shift: false, alt: false }), "ShortcutMessage");
+  const dom = makeDom();
+  const fake = fakeWindow(dom);
+  const embed = startStudioEmbed(fake.win);
+  const press = (init) => {
+    const event = new dom.window.KeyboardEvent("keydown", { bubbles: true, cancelable: true, ...init });
+    dom.window.document.body.dispatchEvent(event);
+    return event;
+  };
+  const shortcuts = () => fake.sent.filter((item) => item.data.type === "shortcut").map((item) => item.data);
+
+  fake.receive(hello("light", ["quote", "ask-ai"]));
+  assert.equal(press({ key: "k", metaKey: true }).defaultPrevented, false, "Studio 不认 shortcut：不拦");
+  assert.deepEqual(shortcuts(), []);
+
+  fake.receive(hello("light", ["quote", "ask-ai", "shortcut"]));
+  assert.equal(press({ key: "k", metaKey: true }).defaultPrevented, true);
+  press({ key: "S", ctrlKey: true, shiftKey: true });
+  press({ key: "\\", metaKey: true });
+  press({ key: "k" });
+  press({ key: "c", metaKey: true });
+  assert.deepEqual(shortcuts().map(({ key, meta, ctrl, shift, alt }) => [key, meta, ctrl, shift, alt]), [
+    ["k", true, false, false, false],
+    ["S", false, true, true, false],
+    ["\\", true, false, false, false],
+  ], "只转这几样；翻页的 k、复制的 ⌘C 不转");
+  assert.equal(fake.sent.at(-1).origin, STUDIO, "不用 '*'");
+  embed.stop();
+  press({ key: "k", metaKey: true });
+  assert.equal(shortcuts().length, 3, "停了就不转");
 });

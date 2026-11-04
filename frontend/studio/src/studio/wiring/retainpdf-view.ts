@@ -51,9 +51,9 @@ export type RetainpdfViewHost = {
 };
 
 /** What the Studio takes of RetainPDF's messages (`hello`'s `features`): in 书库, a book to read is given to it (`open-book`). */
-const STUDIO_FEATURES = ['quote', 'open-notes', 'ask-ai', 'open-book'];
+const STUDIO_FEATURES = ['quote', 'open-notes', 'ask-ai', 'open-book', 'shortcut'];
 /** A book beside a note (book-tabs.ts): its notes are the note beside it, so no 笔记 button of its own. */
-export const BESIDE_NOTE_FEATURES = ['quote', 'ask-ai'];
+export const BESIDE_NOTE_FEATURES = ['quote', 'ask-ai', 'shortcut'];
 
 /** Whether anything answers at `url`: RetainPDF's pages are another origin, so only that it answered, not what. */
 async function answers(url: string): Promise<boolean> {
@@ -77,6 +77,10 @@ const theme = (): 'light' | 'dark' => (document.documentElement.dataset.theme ==
 
 const orNull = (value: unknown): value is string | null => value === null || (typeof value === 'string' && value.length > 0);
 const isBook = (message: Record<string, unknown>): boolean => typeof message.job_id === 'string' && !!message.job_id && orNull(message.document_id) && (message.title === null || typeof message.title === 'string');
+
+/** A `shortcut` as the contract has it: a key, and which of ⌘ Ctrl ⇧ ⌥ with it. */
+const isShortcut = (message: Record<string, unknown>): boolean =>
+	typeof message.key === 'string' && !!message.key && ['meta', 'ctrl', 'shift', 'alt'].every((name) => typeof message[name] === 'boolean');
 
 const whole = (value: unknown, least: number): value is number | null => value === null || (Number.isInteger(value) && (value as number) >= least);
 /** A `reading` as the contract has it: a book, its page and pages, or all of them null. */
@@ -140,6 +144,19 @@ export function createRetainpdfView(
 			host.openBook(
 				{ job_id: message.job_id as string, document_id: message.document_id as string | null, title: message.title as string | null },
 				typeof page === 'number' && Number.isInteger(page) && page >= 0 ? page : null,
+			);
+		} else if (message.type === 'shortcut' && isShortcut(message)) {
+			// A key of the Studio's pressed while the book had the keys (⌘K, ⌘S, ⌘J, ⌘\): as if pressed here.
+			frame.ownerDocument.dispatchEvent(
+				new KeyboardEvent('keydown', {
+					key: message.key as string,
+					metaKey: message.meta as boolean,
+					ctrlKey: message.ctrl as boolean,
+					shiftKey: message.shift as boolean,
+					altKey: message.alt as boolean,
+					bubbles: true,
+					cancelable: true,
+				}),
 			);
 		} else if (message.type === 'close-notes') {
 			host.closeNotes();
