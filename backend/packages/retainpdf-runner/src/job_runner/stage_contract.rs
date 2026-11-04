@@ -1,4 +1,7 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
+use std::time::SystemTime;
 
 use anyhow::{anyhow, Result};
 use sha2::{Digest, Sha256};
@@ -238,7 +241,17 @@ pub(super) fn resolve_checkpoint_page_source(
         .and_then(serde_json::Value::as_str)
         .filter(|value| !value.is_empty())
     {
+        if verified_page_hash_matches(&source_path, &metadata, expected_hash) {
+            return Ok(CheckpointPageSource {
+                file_name,
+                source_path,
+                snapshot_relative,
+            });
+        }
         let actual_hash = sha256_hex(std::fs::read(&source_path)?);
+        if expected_hash == actual_hash {
+            remember_verified_page_hash(&source_path, &metadata, expected_hash);
+        }
         if expected_hash != actual_hash {
             let kind = if snapshot_relative.is_some() {
                 "snapshot hash mismatch"
@@ -255,6 +268,40 @@ pub(super) fn resolve_checkpoint_page_source(
         source_path,
         snapshot_relative,
     })
+}
+
+/// 核对过哈希的页文件：路径 → (大小, 修改时间, 哈希)。大小和修改时间都没变就不再读一遍算哈希。
+///
+/// 阶段操作接口每次请求都要判断断点能不能续跑，以前每次把每页读出来算 sha256：6574 页的书一次好几秒
+/// （2026-11-04）。文件一改，大小或修改时间就变了，照旧重新核对。
+type VerifiedPageHashes = HashMap<PathBuf, (u64, SystemTime, String)>;
+
+const VERIFIED_PAGE_HASH_LIMIT: usize = 100_000;
+
+fn verified_page_hashes() -> &'static Mutex<VerifiedPageHashes> {
+    static VERIFIED: OnceLock<Mutex<VerifiedPageHashes>> = OnceLock::new();
+    VERIFIED.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn verified_page_hash_matches(path: &Path, metadata: &std::fs::Metadata, expected_hash: &str) -> bool {
+    let Ok(modified) = metadata.modified() else {
+        return false;
+    };
+    let verified = verified_page_hashes().lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    verified
+        .get(path)
+        .is_some_and(|(len, at, hash)| *len == metadata.len() && *at == modified && hash == expected_hash)
+}
+
+fn remember_verified_page_hash(path: &Path, metadata: &std::fs::Metadata, hash: &str) {
+    let Ok(modified) = metadata.modified() else {
+        return;
+    };
+    let mut verified = verified_page_hashes().lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    if verified.len() >= VERIFIED_PAGE_HASH_LIMIT {
+        verified.clear();
+    }
+    verified.insert(path.to_path_buf(), (metadata.len(), modified, hash.to_string()));
 }
 
 fn safe_checkpoint_page_name(relative: &str) -> Option<String> {
@@ -539,6 +586,27 @@ mod tests {
         std::fs::write(&page, b"saved after last checkpoint").expect("uncommitted page save");
         let error = validate_checkpoint_pages(&checkpoint, &root, "job-test", true, false)
             .expect_err("page ahead of checkpoint must be rejected");
+        assert!(error.to_string().contains("page hash mismatch"));
+    }
+
+    #[test]
+    fn a_verified_page_is_not_reread_until_it_changes_even_at_the_same_size() {
+        // 核对过的页记下大小和修改时间，阶段操作接口每次请求就不用再读一遍算哈希（6574 页的书一次好几秒）；
+        // 文件一改（哪怕大小不变），修改时间就变了，照旧重新核对
+        let root = temp_root("page-hash-memo");
+        let page = root.join("page-001-deepseek.json");
+        std::fs::write(&page, b"committed").expect("committed page");
+        let checkpoint = serde_json::json!({
+            "pages": [{"path": "page-001-deepseek.json", "page_hash": sha256_hex(b"committed")}]
+        });
+        validate_checkpoint_pages(&checkpoint, &root, "job-test", true, false).expect("matching page hash");
+        let metadata = std::fs::symlink_metadata(&page).expect("page metadata");
+        assert!(verified_page_hash_matches(&page, &metadata, &sha256_hex(b"committed")));
+
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        std::fs::write(&page, b"commiXXed").expect("same-size edit");
+        let error = validate_checkpoint_pages(&checkpoint, &root, "job-test", true, false)
+            .expect_err("a same-size edit must still be caught");
         assert!(error.to_string().contains("page hash mismatch"));
     }
 
