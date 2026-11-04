@@ -5,6 +5,9 @@ import { contextMenu, type MenuAsk, type MenuIcon } from '../common/context-menu
 import { useStore } from './store';
 
 /** Closed, if it is still this one (another may have opened meanwhile). */
+/** How long after it opens a scroll is the page settling, not the author scrolling away (ms). */
+const OPENING = 400;
+
 const closer = (round: number) => () => {
 	if (contextMenu.get().ask?.round === round) contextMenu.set({ ask: null });
 };
@@ -33,9 +36,12 @@ function Menu({ ask }: { ask: MenuAsk }) {
 		return () => cancelAnimationFrame(frame);
 	}, []);
 
-	// A scroll elsewhere, or the window left: it goes.
+	// A scroll elsewhere, or the window left: it goes. Not a scroll as it opens: what had the keys lets them go then (a
+	// formula being typed, drawn again), and the page moves by itself, not by the author.
 	useEffect(() => {
+		const opened = performance.now();
 		const onScroll = (event: Event) => {
+			if (performance.now() - opened < OPENING) return;
 			if (!(event.target instanceof Node && content.current?.contains(event.target))) close();
 		};
 		window.addEventListener('scroll', onScroll, true);
