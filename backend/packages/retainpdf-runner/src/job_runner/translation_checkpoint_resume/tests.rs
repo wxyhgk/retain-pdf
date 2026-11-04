@@ -42,6 +42,11 @@ fn imports_checkpoint_copy_on_write() {
     )
     .expect("write domain context");
     std::fs::write(
+        source_paths.translated_dir.join(CONTINUATION_REVIEW_MEMO_FILE_NAME),
+        br#"{"schema":"continuation_review_memo_v1","pairs":[]}"#,
+    )
+    .expect("write continuation review memo");
+    std::fs::write(
         source_paths
             .translated_dir
             .join(TRANSLATION_REQUEST_JOURNAL_FILE_NAME),
@@ -64,6 +69,10 @@ fn imports_checkpoint_copy_on_write() {
     assert!(target_paths
         .translated_dir
         .join(DOMAIN_CONTEXT_FILE_NAME)
+        .is_file());
+    assert!(target_paths
+        .translated_dir
+        .join(CONTINUATION_REVIEW_MEMO_FILE_NAME)
         .is_file());
     assert!(target_paths
         .translated_dir

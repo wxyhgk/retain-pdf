@@ -106,6 +106,9 @@ def review_candidate_continuation_pairs(
     batches = chunked(review_pairs, max(1, batch_size))
     approved: list[tuple[str, str]] = list(auto_join_pairs)
 
+    # 模型明确判过的对（连 / 不连）。解析不了的那批不在里面：不能记成「不连」，下次照旧交给模型
+    decided: dict[tuple[str, str], bool] = {}
+
     def _run_review(batch_pairs: list[dict], index: int) -> list[tuple[str, str]]:
         labeled_pairs = []
         for offset, pair in enumerate(batch_pairs, start=1):
@@ -121,6 +124,9 @@ def review_candidate_continuation_pairs(
             request_chat_content_fn=request_chat_content_fn,
         )
         pair_map = {pair["pair_id"]: pair for pair in labeled_pairs}
+        for pair_id, decision in reviewed.items():
+            if pair_id in pair_map:
+                decided[_pair_key(pair_map[pair_id])] = decision == "join"
         return [
             (pair_map[pair_id]["prev_item_id"], pair_map[pair_id]["next_item_id"])
             for pair_id, decision in reviewed.items()
@@ -147,9 +153,7 @@ def review_candidate_continuation_pairs(
                     progress_callback(completed_batches, len(batches))
 
     if review_memo is not None:
-        joined = set(approved)
-        for pair in review_pairs:
-            review_memo[_pair_key(pair)] = _pair_key(pair) in joined
+        review_memo.update(decided)
     applied = apply_candidate_pair_joins(flat_payload, approved)
     annotate_layout_zones_by_page(page_payloads)
     finalize_orchestration_metadata_by_page(page_payloads)

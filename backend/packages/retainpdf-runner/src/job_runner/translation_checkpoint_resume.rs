@@ -11,6 +11,8 @@ use crate::storage_paths::{
 };
 
 const DOMAIN_CONTEXT_FILE_NAME: &str = "domain-context.json";
+/// 跨栏 / 跨页连续段复核的结论（Python `workflow/phases/continuation_memo.py` 写）。跟着拷过去，重试不再把复核请求重发一遍。
+const CONTINUATION_REVIEW_MEMO_FILE_NAME: &str = "continuation-review-memo.json";
 
 pub(super) fn import_translation_checkpoint_candidate(
     output_root: &Path,
@@ -88,12 +90,11 @@ pub(super) fn import_translation_checkpoint_candidate(
             &target_translated_dir.join(&committed.file_name),
         )?;
     }
-    let source_domain_context = source_paths.translated_dir.join(DOMAIN_CONTEXT_FILE_NAME);
-    if source_domain_context.is_file() {
-        copy_checkpoint_file(
-            &source_domain_context,
-            &target_translated_dir.join(DOMAIN_CONTEXT_FILE_NAME),
-        )?;
+    for file_name in [DOMAIN_CONTEXT_FILE_NAME, CONTINUATION_REVIEW_MEMO_FILE_NAME] {
+        let source = source_paths.translated_dir.join(file_name);
+        if source.is_file() {
+            copy_checkpoint_file(&source, &target_translated_dir.join(file_name))?;
+        }
     }
     copy_request_journal_if_present(&source_paths.translated_dir, target_translated_dir)?;
     // The checkpoint is the commit marker for the imported page snapshot, so
