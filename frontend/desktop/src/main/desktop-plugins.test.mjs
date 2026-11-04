@@ -87,7 +87,7 @@ function boot(scenario = {}) {
     canReuseExistingBackend: async () => Boolean(scenario.reusable),
     createPortAllocator: () => ({
       allocateBackendPorts: async () => ({
-        ports: { apiPort: 41000, simplePort: 42000, jobsPort: 41002, aiServicePort: 41100 },
+        ports: { apiPort: 41000, simplePort: 42000, jobsPort: 41002 },
         relocations: [],
       }),
     }),
@@ -176,9 +176,9 @@ test("fresh backend: splash → backend → gateway → window, then quit tears 
   const run = boot();
   await until(() => run.events.some((event) => event.startsWith("window")), "main window");
 
-  assert.deepEqual(run.events.slice(0, 4), [
+  // 只拉起 rust_api：RetainPDF 自己的 AI（python -m retainpdf_ai）2026-11-03 删了。
+  assert.deepEqual(run.events.slice(0, 3), [
     "spawn /fake/backend/bin/rust_api",
-    "spawn python3",
     "tray",
     "window base=http://127.0.0.1:40001",
   ]);
@@ -186,9 +186,9 @@ test("fresh backend: splash → backend → gateway → window, then quit tears 
   assert.equal(run.app.listenerCount("activate"), 1);
 
   await run.quit();
-  const teardown = run.events.slice(4);
-  assert.ok(teardown.indexOf("windows hidden") < teardown.indexOf("stop retainpdf-ai"), "windows hide before children stop");
-  assert.deepEqual(teardown.filter((event) => event.startsWith("stop")), ["stop retainpdf-ai", "stop rust_api"]);
+  const teardown = run.events.slice(3);
+  assert.ok(teardown.indexOf("windows hidden") < teardown.indexOf("stop rust_api"), "windows hide before children stop");
+  assert.deepEqual(teardown.filter((event) => event.startsWith("stop")), ["stop rust_api"]);
   assert.ok(teardown.includes("gateway stopped"));
   assert.ok(teardown.indexOf("stop rust_api") < teardown.indexOf("splash closed"), "splash goes last");
   assert.equal(run.app.listenerCount("activate"), 0, "activate listener removed on dispose");
@@ -197,10 +197,10 @@ test("fresh backend: splash → backend → gateway → window, then quit tears 
 });
 
 test("external backend in development: reused, no gateway, window falls back to file", async () => {
-  const run = boot({ portBusy: { 41000: true, 41100: true }, reusable: true });
+  const run = boot({ portBusy: { 41000: true }, reusable: true });
   await until(() => run.events.some((event) => event.startsWith("window")), "main window");
 
-  assert.deepEqual(run.spawned, [], "nothing spawned: backend reused, AI port already served");
+  assert.deepEqual(run.spawned, [], "nothing spawned: backend reused");
   assert.deepEqual(run.gatewayStarts, [], "gateway is not started on the reuse path (unchanged behaviour)");
   assert.ok(run.events.includes("window base="), "window gets an empty gateway base and loads from file");
   assert.deepEqual(run.progress, [6, 18, 34, 52, 92]);
@@ -211,12 +211,12 @@ test("external backend in development: reused, no gateway, window falls back to 
 
 test("quit during startup does not wait for the readiness timeout", async () => {
   const run = boot({ waitForBackendReady: () => new Promise(() => {}) });
-  await until(() => run.spawned.length === 2, "children spawned");
+  await until(() => run.spawned.length === 1, "rust_api spawned");
 
   const started = Date.now();
   await run.quit();
   assert.ok(Date.now() - started < 1000, "dispose returns promptly instead of waiting for readiness");
-  assert.deepEqual(run.events.filter((event) => event.startsWith("stop")), ["stop retainpdf-ai", "stop rust_api"]);
+  assert.deepEqual(run.events.filter((event) => event.startsWith("stop")), ["stop rust_api"]);
   assert.ok(!run.events.some((event) => event.startsWith("window")), "no window after an aborted startup");
   assert.deepEqual(run.failures, [], "quitting is not reported as a startup failure");
 });
@@ -240,5 +240,5 @@ test("backend crash after startup shows the crash dialog", async () => {
   rust.emit("exit", 1, null);
   assert.ok(run.events.includes("dialog Rust API worker crashed"));
   await run.quit();
-  assert.deepEqual(run.events.filter((event) => event.startsWith("stop")), ["stop retainpdf-ai"], "the crashed rust_api is not stopped again");
+  assert.deepEqual(run.events.filter((event) => event.startsWith("stop")), [], "the crashed rust_api is not stopped again");
 });
