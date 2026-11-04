@@ -19,7 +19,8 @@
     { "type": "notes", "from": "studio", "definition": "NotesMessage" },
     { "type": "reading", "from": "retainpdf", "definition": "ReadingMessage" },
     { "type": "ask-ai", "from": "retainpdf", "definition": "AskAiMessage" },
-    { "type": "open-book", "from": "retainpdf", "definition": "OpenBookMessage" }
+    { "type": "open-book", "from": "retainpdf", "definition": "OpenBookMessage" },
+    { "type": "shortcut", "from": "retainpdf", "definition": "ShortcutMessage" }
   ],
   "oneOf": [
     { "$ref": "#/definitions/HelloMessage" },
@@ -32,7 +33,8 @@
     { "$ref": "#/definitions/NotesMessage" },
     { "$ref": "#/definitions/ReadingMessage" },
     { "$ref": "#/definitions/AskAiMessage" },
-    { "$ref": "#/definitions/OpenBookMessage" }
+    { "$ref": "#/definitions/OpenBookMessage" },
+    { "$ref": "#/definitions/ShortcutMessage" }
   ],
   "definitions": {
     "Protocol": { "const": "retainpdf-studio-bridge" },
@@ -43,8 +45,8 @@
       "enum": ["theme", "navigate", "quote", "notes", "reading", "navigate-document"]
     },
     "StudioFeature": {
-      "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes；ask-ai（2026-11-02 加）：阅读页的「AI」改成发 ask-ai、打开 Studio 自己的 AI，不再打开 RetainPDF 自己的终端；open-book（2026-11-03 加）：书库里点一本书交给 Studio，开在正在写的笔记旁边，RetainPDF 不自己打开阅读页）。hello 没有 features 是早先的 Studio，只认 quote。",
-      "enum": ["quote", "open-notes", "ask-ai", "open-book"]
+      "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes；ask-ai（2026-11-02 加）：阅读页的「AI」改成发 ask-ai、打开 Studio 自己的 AI，不再打开 RetainPDF 自己的终端；open-book（2026-11-03 加）：书库里点一本书交给 Studio，开在正在写的笔记旁边，RetainPDF 不自己打开阅读页；shortcut（2026-11-04 加）：阅读页有焦点时它自己不处理的 ⌘ / Ctrl 快捷键转给 Studio）。hello 没有 features 是早先的 Studio，只认 quote。",
+      "enum": ["quote", "open-notes", "ask-ai", "open-book", "shortcut"]
     },
     "HelloMessage": {
       "type": "object",
@@ -194,6 +196,22 @@
         "title": { "type": ["string", "null"], "description": "书名；没有、不在阅读页时为 null。" },
         "page_idx": { "type": ["integer", "null"], "minimum": 0, "description": "眼下这一页，从 0 开始，和 navigate、阅读页地址的 page_idx 一样（小于 page_count）；页数还没读出来、不在阅读页时为 null。" },
         "page_count": { "type": ["integer", "null"], "minimum": 1, "description": "原文一共几页；还没读出来、不在阅读页时为 null。" }
+      }
+    },
+    "ShortcutMessage": {
+      "type": "object",
+      "description": "RetainPDF → Studio：阅读页有焦点时按了它自己不处理的快捷键（带 ⌘ 或 Ctrl 的组合），交给 Studio 当在 Studio 里按的处理（⌘K 搜索、⌘S 保存、⌘J 问 AI、⌘\\ 收起侧栏……）（2026-11-04 加）。RetainPDF 处理了的（翻页、缩放、书内搜索 ⌘F）不发。只在 hello 的 features 有 shortcut 时发。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "key", "meta", "ctrl", "shift", "alt"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "shortcut" },
+        "key": { "type": "string", "minLength": 1, "description": "KeyboardEvent.key，例如 \"k\"、\"s\"、\"\\\\\"、\"Escape\"。" },
+        "meta": { "type": "boolean", "description": "KeyboardEvent.metaKey（⌘）。" },
+        "ctrl": { "type": "boolean", "description": "KeyboardEvent.ctrlKey。" },
+        "shift": { "type": "boolean", "description": "KeyboardEvent.shiftKey。" },
+        "alt": { "type": "boolean", "description": "KeyboardEvent.altKey（⌥）。" }
       }
     }
   }
