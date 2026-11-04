@@ -11,6 +11,10 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::Path;
 
 const CHUNK: u32 = 1024;
+/// 第一次建事件流（或作废后重建）时每批读多少条。建的过程中事件流不对外，分批只为不把整份历史放进内存；
+/// 每批提交都要把乱序的 `event_id` 索引弄脏的页写一遍，批太小就写很多遍：28 万条事件 1024 一批要 275 次提交，
+/// release 构建 46 秒，16384 一批 21 秒（2026-11-04）。之后的增量同步照旧 1024 一批。
+pub(super) const INITIAL_CHUNK: u32 = 16384;
 // 导入规则一变就要加一：版本进了 context 摘要，旧投影会整体重建，
 // 否则已经导入的事件（比如 v2 混进来的子任务终态）会永远留在里面。
 // v3：OCR 子任务的生命周期/终态事件不再导入父任务事件流。
@@ -282,6 +286,7 @@ fn synchronize_snapshot(
         stored.as_ref().unwrap().epoch.clone()
     };
     loop {
+        let chunk = if checkpoints.initializing { INITIAL_CHUNK } else { CHUNK };
         let before = serde_json::to_value(&checkpoints).map_err(anyhow::Error::from)?;
         let mut records: Vec<(String, JobEventRecord)> = Vec::new();
         let mut more = false;
@@ -293,7 +298,7 @@ fn synchronize_snapshot(
                     &version.job_id,
                     checkpoint.after,
                     version.high_seq,
-                    CHUNK,
+                    chunk,
                 )?;
                 let count = batch.len();
                 for row in batch {
@@ -303,7 +308,7 @@ fn synchronize_snapshot(
                         row.event,
                     ));
                 }
-                if count < CHUNK as usize {
+                if count < chunk as usize {
                     checkpoint.after = version.high_seq;
                 }
                 more |= checkpoint.after < version.high_seq;
@@ -314,7 +319,7 @@ fn synchronize_snapshot(
             if checkpoint.incarnation.is_empty() {
                 checkpoint.incarnation = format!("{:032x}", fastrand::u128(..));
             }
-            let (lines, pending) = files::read_batch(source, checkpoint, CHUNK as usize)?;
+            let (lines, pending) = files::read_batch(source, checkpoint, chunk as usize)?;
             more |= pending;
             for (offset, line_number, line) in lines {
                 if line.trim().is_empty() {

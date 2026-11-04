@@ -53,8 +53,10 @@ the source rather than preserving its file identity and boundary fingerprints.
 
 File work runs outside SQLite transactions. Source-version/CAS validation,
 deduplication, event insertion and checkpoint publication commit atomically.
-Initial import is chunked; no cursor is exposed until chronological bootstrap
-publication completes. The initial live-stage basis is reduced from that same
+Initial import is chunked (16384 DB events per chunk; incremental syncs use 1024),
+so a 280k-event history commits ~18 times instead of ~275; no cursor is exposed until chronological bootstrap
+publication completes. Publication renumbers only rows whose chronological position
+differs from their import position (usually none: DB events arrive in timestamp order). The initial live-stage basis is reduced from that same
 publication order in one streaming pass, including equal-timestamp ties. File
 batches target 1 MiB at complete-line boundaries, with a 4 MiB maximum accepted
 line. Empty warm polls do not parse historical JSONL again.
