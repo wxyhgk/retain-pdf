@@ -145,8 +145,14 @@ export type StudioEditor = {
 	/**
 	 * Puts Markdown in as blocks of their own: where the caret is, or after the last block (`end`, the caret then in
 	 * an empty paragraph after it); scrolled to. The first block put in (its element), to show it; null when nothing was put in.
+	 * `focus`: the keys given the editor after, the caret after what was put in (摘到笔记 from a book beside: written on at once).
 	 */
-	insertMarkdown(markdown: string, where?: 'caret' | 'end'): HTMLElement | null;
+	insertMarkdown(markdown: string, where?: 'caret' | 'end', options?: { focus?: boolean }): HTMLElement | null;
+	/**
+	 * Where the next passage quoted goes, marked faintly while the editor has not the keys (a book beside it, read): at the
+	 * caret, after the last block (`end`), or nowhere (null).
+	 */
+	showQuoteSpot(where: 'caret' | 'end' | null): void;
 	/** The ProseMirror view of the article shown; null before one is. */
 	view(): EditorView | null;
 	/** The article's files listed anew (their sizes known): the file cards drawn again. */
@@ -229,6 +235,37 @@ const keptSelection = $prose(
 						if (keptSelectionKey.getState(view.state)) view.dispatch(view.state.tr.setMeta(keptSelectionKey, false).setMeta('addToHistory', false));
 						return false;
 					},
+				},
+			},
+		}),
+);
+
+/**
+ * Where the next passage quoted goes (showQuoteSpot): a faint mark at the caret, or a line after the last block; not while
+ * the editor has the keys (the caret says it then, studio-page.css).
+ */
+const quoteSpotKey = new PluginKey<'caret' | 'end' | null>('studio-quote-spot');
+const quoteSpot = $prose(
+	() =>
+		new Plugin<'caret' | 'end' | null>({
+			key: quoteSpotKey,
+			state: {
+				init: () => null,
+				apply: (tr, where) => (tr.getMeta(quoteSpotKey) as 'caret' | 'end' | null | undefined) ?? where,
+			},
+			props: {
+				decorations(state) {
+					const where = quoteSpotKey.getState(state);
+					if (!where) return null;
+					const at = where === 'end' ? state.doc.content.size : state.selection.head;
+					const mark = () => {
+						const element = document.createElement(where === 'end' ? 'div' : 'span');
+						element.className = `quote-spot quote-spot-${where}`;
+						element.contentEditable = 'false';
+						if (where === 'end') element.textContent = t('摘录放这里');
+						return element;
+					};
+					return DecorationSet.create(state.doc, [Decoration.widget(at, mark, { side: where === 'end' ? 1 : -1, key: `quote-spot-${where}`, ignoreSelection: true })]);
 				},
 			},
 		}),
@@ -757,7 +794,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			.use(reviewWatch)
 			.use(longArticle)
 			.use(nextPart)
-			.use(keptSelection);
+			.use(keptSelection)
+			.use(quoteSpot);
 		crepe.on((listener) => {
 			// Opening the body is not an edit, nor is deciding a change under review.
 			listener.updated(() => report());
@@ -1011,6 +1049,37 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		});
 	}
 
+	/** Markdown put in as blocks (insertMarkdown, without what is done after). */
+	function putMarkdown(markdown: string, where: 'caret' | 'end'): HTMLElement | null {
+		return (
+			crepe?.editor.action((ctx) => {
+				const view = ctx.get(editorViewCtx);
+				if (where === 'end') {
+					const parsed = ctx.get(parserCtx)(markdown);
+					if (!parsed?.content.size) return null;
+					const at = view.state.doc.content.size;
+					// An empty paragraph after it for the caret: written on below what was put in, not inside it (the
+					// caret at the end of a code block would open it for editing).
+					const tr = view.state.tr.insert(at, parsed.content.append(Fragment.from(view.state.schema.nodes.paragraph.create())));
+					view.dispatch(tr.setSelection(TextSelection.create(tr.doc, tr.doc.content.size - 1)).scrollIntoView());
+					return view.nodeDOM(at) instanceof HTMLElement ? (view.nodeDOM(at) as HTMLElement) : null;
+				}
+				insert(markdown)(ctx);
+				// The block put in: the top-level one the caret is left in (at its end), or the one before when the
+				// caret is between blocks or in the empty paragraph left after it.
+				const { doc, selection } = view.state;
+				const { $from } = selection;
+				let index = $from.depth === 0 ? $from.index(0) - 1 : $from.index(0);
+				if ($from.depth > 0 && index > 0 && doc.child(index).isTextblock && !doc.child(index).content.size) index -= 1;
+				index = Math.max(0, Math.min(index, doc.childCount - 1));
+				let pos = 0;
+				for (let i = 0; i < index; i += 1) pos += doc.child(i).nodeSize;
+				const dom = view.nodeDOM(pos);
+				return dom instanceof HTMLElement ? dom : null;
+			}) ?? null
+		);
+	}
+
 	/** The whole body as the editor holds it now, a book's window and all. */
 	const wholeNow = (): string => (crepe ? whole(markdownOf(crepe)) : '');
 
@@ -1030,34 +1099,16 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				const { selection, doc } = ctx.get(editorViewCtx).state;
 				return selection instanceof TextSelection ? doc.textBetween(selection.from, selection.to, '\n', ' ') : '';
 			}) ?? '',
-		insertMarkdown(markdown, where = 'caret') {
-			return (
-				crepe?.editor.action((ctx) => {
-					const view = ctx.get(editorViewCtx);
-					if (where === 'end') {
-						const parsed = ctx.get(parserCtx)(markdown);
-						if (!parsed?.content.size) return null;
-						const at = view.state.doc.content.size;
-						// An empty paragraph after it for the caret: written on below what was put in, not inside it (the
-						// caret at the end of a code block would open it for editing).
-						const tr = view.state.tr.insert(at, parsed.content.append(Fragment.from(view.state.schema.nodes.paragraph.create())));
-						view.dispatch(tr.setSelection(TextSelection.create(tr.doc, tr.doc.content.size - 1)).scrollIntoView());
-						return view.nodeDOM(at) instanceof HTMLElement ? (view.nodeDOM(at) as HTMLElement) : null;
-					}
-					insert(markdown)(ctx);
-					// The block put in: the top-level one the caret is left in (at its end), or the one before when the
-					// caret is between blocks or in the empty paragraph left after it.
-					const { doc, selection } = view.state;
-					const { $from } = selection;
-					let index = $from.depth === 0 ? $from.index(0) - 1 : $from.index(0);
-					if ($from.depth > 0 && index > 0 && doc.child(index).isTextblock && !doc.child(index).content.size) index -= 1;
-					index = Math.max(0, Math.min(index, doc.childCount - 1));
-					let pos = 0;
-					for (let i = 0; i < index; i += 1) pos += doc.child(i).nodeSize;
-					const dom = view.nodeDOM(pos);
-					return dom instanceof HTMLElement ? dom : null;
-				}) ?? null
-			);
+		showQuoteSpot(where) {
+			crepe?.editor.action((ctx) => {
+				const view = ctx.get(editorViewCtx);
+				if (quoteSpotKey.getState(view.state) !== where) view.dispatch(view.state.tr.setMeta(quoteSpotKey, where).setMeta('addToHistory', false));
+			});
+		},
+		insertMarkdown(markdown, where = 'caret', { focus = false } = {}) {
+			const placed = putMarkdown(markdown, where);
+			if (placed && focus) crepe?.editor.action((ctx) => ctx.get(editorViewCtx).focus());
+			return placed;
 		},
 		redrawCodeFile(path) {
 			redrawCodeFiles(root, path, host.codeFile);
