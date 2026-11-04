@@ -41,7 +41,9 @@ export interface MountUploadFeatureOptions {
   uploadStatePort?: Partial<UploadStatePort> | UploadStatePort | null;
   apiBase?: string;
   apiPrefix?: string;
-  frontMaxBytes: number;
+  frontMaxBytes: SizeCap;
+  /** 超了大小时补一句怎么办（换成分段交的 OCR）。 */
+  sizeLimitHint?: (maxBytes: number) => string;
   /** 一本最多几页（0 = 不限）；给函数时每次选文件现问（按设置里选的 OCR 定，GLM-OCR 不限）。 */
   frontMaxPageCount: PageCap;
   /** 页数超了时补一句怎么办（「换成 GLM-OCR」）；参数是这次的上限。 */
@@ -69,8 +71,10 @@ export interface MountUploadFeatureOptions {
   viewPort: UploadViewPort;
 }
 
-/** 页数上限：一个数，或者每次现问的函数。 */
+/** 页数上限（或大小上限）：一个数，或者每次现问的函数（按设置里选的 OCR）。 */
 export type PageCap = number | (() => number);
+/** 大小上限（字节）：同 PageCap。 */
+export type SizeCap = PageCap;
 
 /** 这会儿的页数上限（0 = 不限）。 */
 export function currentPageCap(cap: PageCap | undefined): number {

@@ -16,7 +16,7 @@ import {
   DEFAULT_FILE_LABEL,
   FRONT_MAX_BYTES,
 } from "@/platform/config/upload-constants.js";
-import { getOcrProviderDefinition, ocrMaxPages } from "@/platform/config/providers.js";
+import { getOcrProviderDefinition, ocrMaxBytes, ocrMaxPages } from "@/platform/config/providers.js";
 import { savePersistedDeveloperStoredConfig } from "@/platform/config/persisted-config.js";
 import {
   UploadStatePort,
@@ -167,7 +167,14 @@ export function createWorkflowAndUpload({
     viewPort: uploadView.viewPort as import("@/features/ingest/domain.js").UploadViewPort,
     apiBase: typeof apiBase === "function" ? apiBase() : apiBase,
     apiPrefix: API_PREFIX,
-    frontMaxBytes: FRONT_MAX_BYTES,
+    // 大小上限：选的 OCR 整份交（MinerU）就是它的上限，分段交的（PaddleOCR、GLM-OCR）只看后端的。
+    frontMaxBytes: () => {
+      const own = ocrMaxBytes(currentOcrProvider());
+      return own ? Math.min(own, FRONT_MAX_BYTES) : FRONT_MAX_BYTES;
+    },
+    sizeLimitHint: () => (ocrMaxBytes(currentOcrProvider())
+      ? `这是 ${getOcrProviderDefinition(currentOcrProvider()).label} 的上限；PaddleOCR、GLM-OCR 分段识别，可以在设置里换成它们`
+      : ""),
     frontMaxPageCount: () => ocrMaxPages(currentOcrProvider()),
     pageLimitHint: () => `这是 ${getOcrProviderDefinition(currentOcrProvider()).label} 的上限；GLM-OCR 不限页数，可以在设置里把 OCR 换成 GLM-OCR`,
     countPdfPages,

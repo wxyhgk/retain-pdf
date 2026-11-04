@@ -3,7 +3,7 @@
 // 失败时抛出的 Error.message 就是给用户看的那句话。
 
 import { isRefusedSubmission } from "@/platform/api/index.js";
-import { currentPageCap, type PageCap, type UploadConfigPortLike, type UploadResponsePayload } from "./ports.js";
+import { currentPageCap, type PageCap, type SizeCap, type UploadConfigPortLike, type UploadResponsePayload } from "./ports.js";
 
 export type BatchUploadedFile = {
   uploadId: string;
@@ -15,7 +15,8 @@ export type BatchUploadedFile = {
 export interface BatchFileUploaderDeps {
   configPort: UploadConfigPortLike;
   apiPrefix?: string;
-  frontMaxBytes: number;
+  frontMaxBytes: SizeCap;
+  sizeLimitHint?: (maxBytes: number) => string;
   frontMaxPageCount: PageCap;
   pageLimitHint?: (max: number) => string;
   countPdfPages?: (file: File) => Promise<number> | number;
@@ -38,6 +39,7 @@ export function createBatchFileUploader({
   frontMaxBytes,
   frontMaxPageCount,
   pageLimitHint,
+  sizeLimitHint,
   countPdfPages,
   collectUploadFormData,
   submitUploadRequest,
@@ -52,8 +54,11 @@ export function createBatchFileUploader({
     if (!/\.pdf$/i.test(file.name) && file.type !== "application/pdf") {
       throw new Error("不是 PDF 文件");
     }
-    if (file.size > frontMaxBytes) {
-      throw new Error(`超过 ${sizeLimitText(frontMaxBytes)}`);
+    // 这会儿的大小上限：按设置里选的 OCR（MinerU 整份交，200MB；别的分段交，看后端的上限）。
+    const maxBytes = currentPageCap(frontMaxBytes);
+    if (maxBytes && file.size > maxBytes) {
+      const hint = sizeLimitHint?.(maxBytes);
+      throw new Error(hint ? `超过 ${sizeLimitText(maxBytes)}（${hint}）` : `超过 ${sizeLimitText(maxBytes)}`);
     }
     const maxPages = currentPageCap(frontMaxPageCount);
     if (!maxPages || !countPdfPages) return;

@@ -3,7 +3,7 @@
 // 提交按钮常显：不可提交时保持禁用（样式上半透明 + not-allowed），用 title
 // 说明原因。只有「文件已就绪却被凭据拦住」时才在下方出一行 submit-hint
 // （补凭据 / 设术语表），hint 内的动作按钮派发凭据设置事件，不新增 props。
-// 缺文件 / 上传中不出 hint：上方拖放区（大加号 + 「单个 PDF / 最大 50MB」
+// 缺文件 / 上传中不出 hint：上方拖放区（大加号 + 「单个 PDF / 最大 512MB」
 // / 上传进度）已经把这件事说清楚，再来一行等于同一屏说两遍。
 import type { ReactNode } from "react";
 import { Languages, Loader2, ScanSearch, SlidersHorizontal } from "lucide-react";

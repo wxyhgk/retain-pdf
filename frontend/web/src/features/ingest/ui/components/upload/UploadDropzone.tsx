@@ -3,6 +3,7 @@
 import type { ChangeEventHandler, MouseEventHandler, ReactNode, RefCallback } from "react";
 
 import type { UploadViewState } from "../../../domain/upload-store.js";
+import { FRONT_MAX_SIZE_TEXT } from "@/platform/config/upload-constants.js";
 
 type UploadDropzoneProps = {
   upload: UploadViewState;
@@ -61,8 +62,8 @@ export function UploadDropzone({
         <em id="upload-help" className={upload.helpVisible ? "" : "hidden"}>{upload.help}</em>
         <div className={`upload-meta upload-meta-inline${upload.tileEnabled ? "" : " hidden"}`}>
           <span>可一次选多个 PDF</span>
-          <span>最大 50MB</span>
-          <span>最多 999 页</span>
+          <span>最大 {FRONT_MAX_SIZE_TEXT}</span>
+          <span>页数上限随所选 OCR</span>
         </div>
       </div>
 

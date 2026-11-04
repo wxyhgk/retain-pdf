@@ -19,6 +19,9 @@ export const OCR_PROVIDER_DEFINITIONS = [
     supportsValidation: true,
     // 一本最多几页：后端 RUST_API_PADDLE_MAX_PAGES 的默认值，超了建任务时后端也拒。0 = 不限。
     maxPages: 999,
+    // 一个文件最大多少字节，0 = 只看后端的上传上限：Paddle 由我们切成 10 页一片交（paddle_chunked.py），
+    // 它自己「本地文件 ≤50MB」的限制落在每一片上，整本多大都行。
+    maxBytes: 0,
   },
   {
     id: "mineru",
@@ -38,6 +41,8 @@ export const OCR_PROVIDER_DEFINITIONS = [
     supportsValidation: true,
     // 后端 RUST_API_MINERU_MAX_PAGES 的默认值。
     maxPages: 600,
+    // MinerU 整份一次交，它的接口单个文件最大 200MB。
+    maxBytes: 200 * 1024 * 1024,
   },
   {
     // 智谱的版面解析（glm-ocr），和智谱翻译模型共用一个 key。任务里没有专用的 key 字段：
@@ -62,6 +67,8 @@ export const OCR_PROVIDER_DEFINITIONS = [
     supportsValidation: false,
     // 分段识别，多长的书都行。
     maxPages: 0,
+    // 同样切成 10 页一片交（glm_ocr_driver.py），它「≤50MB」的限制落在每一片上。
+    maxBytes: 0,
   },
 ];
 
@@ -280,6 +287,11 @@ export function isOfficialDeepSeekBaseUrl(value = "") {
 export function normalizeOcrProvider(value: unknown) {
   const provider = `${value || ""}`.trim().toLowerCase();
   return OCR_PROVIDER_DEFINITIONS.some((item) => item.id === provider) ? provider : DEFAULT_OCR_PROVIDER;
+}
+
+/** 这家 OCR 一个文件最大多少字节；0 = 它自己不限（分段交），只看后端的上传上限。 */
+export function ocrMaxBytes(provider: unknown): number {
+  return getOcrProviderDefinition(provider).maxBytes;
 }
 
 /** 这家 OCR 一本最多几页；0 = 不限（GLM-OCR）。 */
