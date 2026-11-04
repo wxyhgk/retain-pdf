@@ -12,7 +12,6 @@ import { relinkDatabases } from '../../../articles/database-blocks.mjs';
 import { parseBibtex } from '@blog/markdown/references/bibtex.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource, localDay } from '../../../articles/schemas.mjs';
 import { t } from '@blog/i18n/index.mjs';
-import { parseSourceHref } from '../../editor/retainpdf-quote.ts';
 
 /** What the editor must have read for a change to apply: the article's text and its saved views. */
 function bundleRevision(source, viewsSource) {
@@ -65,8 +64,6 @@ export class ArticleRepository {
 	 * with what was clicked next waiting behind it.
 	 */
 	#links = new Map();
-	/** Each page's quotes of RetainPDF's books, as last read (bookQuotes). */
-	#quotes = new Map();
 
 	/**
 	 * @param {string} blogRoot
@@ -136,53 +133,6 @@ export class ArticleRepository {
 		const there = new Set(sources.map((entry) => entry.slug));
 		for (const page of this.#links.keys()) if (!there.has(page)) this.#links.delete(page);
 		return found.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
-	}
-
-	/**
-	 * What the notes quote of RetainPDF's books (摘到笔记: a `retainpdf:` link before the passage), by book (its id; a
-	 * quote that names none, `job:<its job>`): how many, and in which notes, each with its passages (the page, the block,
-	 * a few words of it). For 书库 (library/): which books are being read, and where their passages went.
-	 */
-	async bookQuotes() {
-		/** @type {Record<string, { quotes: number, notes: Array<{ slug: string, title: string, icon?: string, quotes: Array<{ job: string, block: string, page: number | null, text: string }> }> }>} */
-		const books = {};
-		for (const { slug, source } of await this.#sources()) {
-			const found = this.#quotesIn(slug, source);
-			if (!found.length) continue;
-			const { title, icon } = articleSummary(source, slug);
-			const byBook = new Map();
-			for (const quote of found) {
-				const key = quote.document ?? `job:${quote.job}`;
-				if (!byBook.has(key)) byBook.set(key, []);
-				byBook.get(key).push({ job: quote.job, block: quote.block, page: quote.page, text: quote.text });
-			}
-			for (const [key, quotes] of byBook) {
-				books[key] ??= { quotes: 0, notes: [] };
-				books[key].quotes += quotes.length;
-				books[key].notes.push({ slug, title: title || t('无标题'), ...(icon ? { icon } : {}), quotes });
-			}
-		}
-		for (const book of Object.values(books)) book.notes.sort((a, b) => b.quotes.length - a.quotes.length || a.title.localeCompare(b.title, 'zh-CN'));
-		return books;
-	}
-
-	/** The passages `page` quotes (its `retainpdf:` links, with the words after each): read again only when its text changed. */
-	#quotesIn(page, source) {
-		const known = this.#quotes.get(page);
-		if (known?.source === source) return known.quotes;
-		const quotes = [];
-		const lines = source.split('\n');
-		for (const [index, line] of lines.entries()) {
-			for (const match of line.matchAll(/\]\((retainpdf:[^)\s]+)\)/gu)) {
-				const where = parseSourceHref(match[1]);
-				if (!where) continue;
-				// The words of the passage: after the link on its line, else the next line written (in a formula, its first).
-				const after = line.slice(match.index + match[0].length).trim() || (lines.slice(index + 1).find((next) => next.trim() && !/^\s*(\$\$|```|~~~)\s*$/u.test(next)) ?? '').trim();
-				quotes.push({ ...where, text: after.replace(/\s+/gu, ' ').slice(0, 140) });
-			}
-		}
-		this.#quotes.set(page, { source, quotes });
-		return quotes;
 	}
 
 	/** The links in `page`'s text: read again only when the text is not what was read before. */

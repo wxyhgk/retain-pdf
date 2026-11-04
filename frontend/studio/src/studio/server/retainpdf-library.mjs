@@ -14,12 +14,6 @@ import { quoteMarkdown } from '../editor/retainpdf-quote.ts';
  * - GET /api/v1/documents/:id/reading: which job a book is read in;
  * - GET /api/v1/search?q&limit&document_id: blocks with these words;
  * - GET /api/v1/jobs/:job/reader/regions, …/regions/:item: a job's blocks (pages from 1), one block.
- *
- * And the Studio's 书库 (library/), RetainPDF's books drawn by the Studio itself: the books with their jobs' state
- * (GET /api/v1/jobs?job_ids), a book's cover (…/files/thumbnail.jpg, fetched here: the key stays on this machine), its
- * jobs (GET /documents/:id/jobs), how much is translated (…/translation-coverage), its contents (its blocks' headings,
- * as RetainPDF's reader makes them: reader-find.ts readerOutline); a job cancelled or carried on (POST
- * /jobs/:job/actions/cancel, …/resume): what the author asks there, nothing done by itself.
  */
 
 /** Pages given at once, and characters: a tool's result is kept to 60 000 characters (pi-agent.mjs). */
@@ -71,8 +65,17 @@ export class RetainpdfLibrary {
 		}
 	}
 
-	async #getOnce(path, query, { method = 'GET', sent } = {}) {
-		const { answer, url } = await this.#ask(path, query, { method, body: sent, accept: 'application/json' });
+	async #getOnce(path, query) {
+		const { api, key } = await this.settings.connection();
+		const url = new URL(path, api);
+		for (const [name, value] of Object.entries(query)) if (value !== undefined && value !== null && value !== '') url.searchParams.set(name, String(value));
+		let answer;
+		try {
+			answer = await this.fetch(url, { headers: { Accept: 'application/json', ...(key ? { 'X-API-Key': key } : {}) } });
+		} catch {
+			throw new RetainpdfLibraryError(t('连不上 RetainPDF（{api}）：它开着吗？地址在 Studio 设置的 RetainPDF 一栏', { api: url.origin }), 502);
+		}
+		if (answer.status === 401 || answer.status === 403) throw new RetainpdfLibraryError(t('RetainPDF 不认这个 API 密钥：在 Studio 设置的 RetainPDF 一栏填上它的密钥'), 502);
 		const body = await answer.json().catch(() => null);
 		// Its answers, right or wrong: { code, message, data } or { code, message, error: { code, details: { reason } } }.
 		if (!body || typeof body !== 'object' || !('code' in body) || !('message' in body)) {
@@ -85,25 +88,6 @@ export class RetainpdfLibrary {
 			throw new RetainpdfLibraryError(text(body.message) || t('RetainPDF 没有回答（{status}）', { status: answer.status }), 502);
 		}
 		return body.data;
-	}
-
-	/** RetainPDF asked `path`: its answer as it is (its key sent) and where it was asked, or an error that says what to do. */
-	async #ask(path, query = {}, { method = 'GET', body, accept }) {
-		const { api, key } = await this.settings.connection();
-		const url = new URL(path, api);
-		for (const [name, value] of Object.entries(query)) if (value !== undefined && value !== null && value !== '') url.searchParams.set(name, String(value));
-		let answer;
-		try {
-			answer = await this.fetch(url, {
-				method,
-				headers: { Accept: accept, ...(key ? { 'X-API-Key': key } : {}), ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
-				...(body !== undefined ? { body: JSON.stringify(body) } : {}),
-			});
-		} catch {
-			throw new RetainpdfLibraryError(t('连不上 RetainPDF（{api}）：它开着吗？地址在 Studio 设置的 RetainPDF 一栏', { api: url.origin }), 502);
-		}
-		if (answer.status === 401 || answer.status === 403) throw new RetainpdfLibraryError(t('RetainPDF 不认这个 API 密钥：在 Studio 设置的 RetainPDF 一栏填上它的密钥'), 502);
-		return { answer, url };
 	}
 
 	/** Whether RetainPDF answers, and how many books it has: for the settings to show. */
@@ -233,115 +217,6 @@ export class RetainpdfLibrary {
 		const quote = quoteMarkdown({ book: book?.title ?? null, document: book?.document_id ?? null, job, block: passage.block, page: passage.page, source: passage.source, translated: passage.translated });
 		return { book: book ? { document_id: book.document_id, title: book.title } : null, job_id: job, ...passage, quote };
 	}
-
-	/**
-	 * 书库's books, a page of them (`offset`, those whose title has `query`): each as listBooks tells it, with whether it
-	 * is translated and its job's state now (queued or running: its stage and how far; failed: why).
-	 * @param {{ query?: string, offset?: number }} [asked]
-	 */
-	async shelf({ query, offset } = {}) {
-		const data = await this.#get('/api/v1/documents', { q: text(query), limit: SHELF_PAGE, offset: Number.isInteger(offset) && offset > 0 ? offset : undefined });
-		const records = data?.documents ?? [];
-		const jobs = [...new Set(records.map((record) => text(record?.active_job_id)).filter(Boolean))];
-		const states = new Map();
-		if (jobs.length) {
-			const listed = await this.#get('/api/v1/jobs', { job_ids: jobs.join(','), limit: jobs.length }).catch(() => null);
-			for (const item of listed?.items ?? []) states.set(item.job_id, jobState(item));
-		}
-		return {
-			total: Number(data?.total) || 0,
-			books: records.map((record) => {
-				const book = bookOf(record);
-				return { ...book, translated: record?.has_translation === true, added: record?.added_at || null, job: (book.job_id && states.get(book.job_id)) || null };
-			}),
-			more: Boolean(data?.has_more),
-		};
-	}
-
-	/** A book's cover, small (RetainPDF makes it the first time it is asked): its bytes and kind. */
-	async cover(documentId) {
-		const id = text(documentId);
-		if (!/^[0-9a-f]{16,128}$/u.test(id)) throw new RetainpdfLibraryError(t('不认识这本书'), 400);
-		const { answer } = await this.#ask(`/api/v1/documents/${id}/files/thumbnail.jpg`, {}, { accept: 'image/*' });
-		if (!answer.ok) throw new RetainpdfLibraryError(t('这本书没有封面'), answer.status === 404 ? 404 : 502);
-		return { type: answer.headers.get('content-type') || 'image/jpeg', bytes: Buffer.from(await answer.arrayBuffer()) };
-	}
-
-	/**
-	 * A book in full, for 书库's side sheet: the book, its jobs (the latest first, each its state), how many of its pages
-	 * are translated, and its contents (headings of the job it is read in, each its page and block).
-	 */
-	async bookDetail(documentId) {
-		const id = text(documentId);
-		if (!id) throw new RetainpdfLibraryError(t('要说是哪本书'));
-		const [book, jobs, coverage, reading] = await Promise.all([
-			this.#get(`/api/v1/documents/${encodeURIComponent(id)}`),
-			this.#get(`/api/v1/documents/${encodeURIComponent(id)}/jobs`, { limit: 20 }).catch(() => null),
-			this.#get(`/api/v1/documents/${encodeURIComponent(id)}/translation-coverage`).catch(() => null),
-			this.#get(`/api/v1/documents/${encodeURIComponent(id)}/reading`).catch(() => null),
-		]);
-		const told = bookOf(book);
-		const job = text(reading?.job_id) || told.job_id;
-		const contents = job ? outlineOf(await this.#regions(job).catch(() => [])) : [];
-		return {
-			book: { ...told, job_id: job || null, translated: book?.has_translation === true, added: book?.added_at || null },
-			jobs: (jobs?.items ?? []).map((item) => ({ job_id: item.job_id, workflow: item.workflow || null, created: item.created_at || null, ...jobState(item) })),
-			coverage: coverage ? { pages: Number(coverage.page_count) || 0, translated: Number(coverage.translated_pages) || 0 } : null,
-			contents,
-		};
-	}
-
-	/** A job stopped (`cancel`), or carried on from where it stopped (`resume`): what RetainPDF said. */
-	async jobAction(jobId, action) {
-		const job = text(jobId);
-		if (!job || !['cancel', 'resume'].includes(action)) throw new RetainpdfLibraryError(t('不认识这个操作'));
-		const path = `/api/v1/jobs/${encodeURIComponent(job)}/actions/${action}`;
-		try {
-			await this.#getOnce(path, {}, { method: 'POST', sent: {} });
-		} catch (error) {
-			if (error instanceof RetainpdfLibraryError && error.statusCode === 404) throw new RetainpdfLibraryError(t('RetainPDF 里没有这个任务'), 404);
-			throw error;
-		}
-		return { ok: true };
-	}
-}
-
-/** Books listed at once on 书库. */
-const SHELF_PAGE = 60;
-
-/** A job as 书库 shows it: its state; going, its stage and how far (a percent, or so many of so many); failed, why. */
-function jobState(item) {
-	const snapshot = item?.stage_snapshot ?? null;
-	const progress = snapshot?.progress ?? null;
-	const percent = Number.isFinite(progress?.percent) ? Math.round(progress.percent) : Number(progress?.total) > 0 && Number.isFinite(progress?.current) ? Math.round((progress.current / progress.total) * 100) : null;
-	return {
-		status: item?.status || null,
-		...(snapshot ? { stage: text(snapshot.display_stage) || text(snapshot.stage) || null, percent } : {}),
-		...(item?.failure ? { failure: text(item.failure.summary) || null, retryable: item.failure.retryable === true } : {}),
-	};
-}
-
-/** Formulas as words, as RetainPDF's contents shows them (reader-find.ts plainMath, roughly): `$\mathrm{H}_2$` → H2. */
-function plainMath(words) {
-	return words
-		.replace(/\$([^$]+)\$/gu, (_whole, math) => math.replace(/\\(?:mathrm|text|mathbf|mathit|operatorname)\{([^{}]*)\}/gu, '$1').replace(/\\[a-zA-Z]+/gu, '').replace(/[{}^_]/gu, '').trim())
-		.replace(/\s+/gu, ' ')
-		.trim();
-}
-
-/** A job's contents: its headings in reading order (as reader-find.ts readerOutline), each its level (1, 2), words, page and block. */
-function outlineOf(items) {
-	const entries = [];
-	for (const item of items) {
-		if (!(item?.heading_level || item?.sub_type === 'title' || item?.sub_type === 'heading')) continue;
-		const words = plainMath(text(item.translated_block_text) || text(item.translated?.text) || text(item.source?.text));
-		const page = Number(item.source?.page);
-		if (!words || !Number.isFinite(page) || page < 1) continue;
-		const last = entries[entries.length - 1];
-		if (last && last.text === words && last.page === page) continue;
-		entries.push({ block: item.item_id, level: item.heading_level > 1 ? 2 : 1, text: words.slice(0, 200), page });
-	}
-	return entries;
 }
 
 /** A book as told: its id, title, authors, year, pages, how far read, the job it was last read in, when. */
