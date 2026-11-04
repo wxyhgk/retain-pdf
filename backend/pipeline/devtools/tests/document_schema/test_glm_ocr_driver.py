@@ -397,3 +397,105 @@ def test_a_request_waits_by_the_pages_it_carries_unless_the_timeout_is_set(tmp_p
     assert seen == [180, 45]
     # 不是 PDF：读不出页数，按默认的等。
     assert glm_ocr_api.pdf_page_count(b"not a pdf") is None
+
+
+# --- 某一页让服务端一直 500（2026-11-04：一套设计图纸第 61-70 页那片每次都 500，只有第 66 页整页怎么发都不行，切两半能认） ---
+
+WIDE = 800  # 「坏页」的宽：整页发就 500，切成两半（各 400 宽）能认
+
+
+def _pdf_with_wide_page(path: Path, pages: int, wide: int) -> Path:
+    with fitz.open() as document:
+        for number in range(pages):
+            width = WIDE if number == wide else 595
+            page = document.new_page(width=width, height=842)
+            page.insert_text((72, 100), f"Page {number + 1} body text")
+        document.save(path)
+    return path
+
+
+class ChokesOnWidePages(FakeGlm):
+    """发来的 PDF 里只要有整张宽页就 500（`halves_fail` 时连切开的两半也 500）。记下每次请求的各页宽度。"""
+
+    def __init__(self, *, halves_fail: bool = False) -> None:
+        super().__init__()
+        self.halves_fail = halves_fail
+        self.widths: list[list[int]] = []
+
+    def __call__(self, pdf_bytes: bytes, *, api_key: str) -> dict:
+        with fitz.open(stream=pdf_bytes, filetype="pdf") as document:
+            widths = [round(document[i].rect.width) for i in range(document.page_count)]
+        self.widths.append(widths)
+        if WIDE in widths or (self.halves_fail and WIDE // 2 in widths):
+            raise glm_ocr_api.GlmOcrServerError("GLM-OCR 请求失败：network request failed after 5 attempts: HTTPError status=500")
+        return super().__call__(pdf_bytes, api_key=api_key)
+
+
+def test_a_page_the_server_chokes_on_is_recognized_in_two_halves_and_the_rest_page_by_page(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "3")
+    fake = ChokesOnWidePages()
+    job = _job(tmp_path, _pdf_with_wide_page(tmp_path / "book.pdf", 4, wide=1))
+    result = run_glm_ocr_to_job_dir(job, parse=fake)
+    # 第一片（1-3 页）整片 500 → 逐页：第 1、3 页单发能认，第 2 页单发 500 → 左右两半各一次；第二片照常
+    assert fake.widths == [[595, 800, 595], [595], [800], [400], [400], [595], [595]]
+    payload = json.loads(result.provider_result_json_path.read_text(encoding="utf-8"))
+    assert payload["_meta"]["page_fallbacks"] == [{"page": 2, "mode": "halves", "error": payload["_meta"]["page_fallbacks"][0]["error"]}]
+    second = payload["layout_details"][1]
+    assert payload["data_info"]["pages"][1] == {"width": PX_W * 2, "height": PX_H}
+    # 两半的块都在：右半的框挪到右边
+    assert len(second) == 6 and second[3]["bbox_2d"][0] == PX_W + second[0]["bbox_2d"][0]
+    document = _document(result)
+    assert len(document["pages"]) == 4 and document["pages"][1]["width"] == pytest.approx(WIDE)
+    # 整片失败过、但都认出来了：照常进断点，重跑不再花钱
+    again = ChokesOnWidePages()
+    run_glm_ocr_to_job_dir(job, parse=again)
+    assert again.widths == []
+
+
+def test_a_page_that_never_recognizes_is_left_empty_and_the_book_goes_on(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "3")
+    fake = ChokesOnWidePages(halves_fail=True)
+    job = _job(tmp_path, _pdf_with_wide_page(tmp_path / "book.pdf", 4, wide=1))
+    result = run_glm_ocr_to_job_dir(job, parse=fake)
+    payload = json.loads(result.provider_result_json_path.read_text(encoding="utf-8"))
+    assert [(item["page"], item["mode"]) for item in payload["_meta"]["page_fallbacks"]] == [(2, "failed")]
+    assert payload["layout_details"][1] == []
+    document = _document(result)
+    assert len(document["pages"]) == 4 and document["pages"][1]["blocks"] == []
+    assert [block["text"] for block in document["pages"][2]["blocks"]][:1] == ["Page 3"]
+    # 有页没认出来的那片不进断点：重跑还会再试（第二片已经进了断点，不再请求）
+    again = ChokesOnWidePages(halves_fail=True)
+    run_glm_ocr_to_job_dir(job, parse=again)
+    # 整片、第 1 页、第 2 页、第 2 页左半（左半也 500，右半就不发了）、第 3 页
+    assert again.widths == [[595, 800, 595], [595], [800], [400], [595]]
+
+
+def test_only_server_errors_are_retried_page_by_page(tmp_path: Path, monkeypatch) -> None:
+    # 超时、连不上、被拒都照旧直接失败：网络断了时逐页再试只会每页各等一遍重试
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "3")
+    calls: list[int] = []
+
+    def offline(pdf_bytes: bytes, *, api_key: str) -> dict:
+        calls.append(1)
+        raise RuntimeError("GLM-OCR 请求失败：network request failed after 5 attempts: ConnectTimeout status=")
+
+    with pytest.raises(RuntimeError, match="ConnectTimeout"):
+        run_glm_ocr_to_job_dir(_job(tmp_path, _pdf(tmp_path / "book.pdf", 3)), parse=offline)
+    assert calls == [1]
+
+
+def test_a_final_5xx_is_reported_as_a_server_error(monkeypatch) -> None:
+    def always_500(*_args, **_kwargs):
+        raise glm_ocr_api.RetainNetworkError("GLM-OCR network request failed after 5 attempts: HTTPError status=500", status_code=500)
+
+    monkeypatch.setattr(glm_ocr_api, "request_with_retry", always_500)
+    with pytest.raises(glm_ocr_api.GlmOcrServerError):
+        glm_ocr_api.parse_pdf(b"%PDF", api_key="k")
+
+    def offline(*_args, **_kwargs):
+        raise glm_ocr_api.RetainNetworkError("GLM-OCR network request failed after 5 attempts: ConnectionError status=")
+
+    monkeypatch.setattr(glm_ocr_api, "request_with_retry", offline)
+    with pytest.raises(RuntimeError) as raised:
+        glm_ocr_api.parse_pdf(b"%PDF", api_key="k")
+    assert not isinstance(raised.value, glm_ocr_api.GlmOcrServerError)

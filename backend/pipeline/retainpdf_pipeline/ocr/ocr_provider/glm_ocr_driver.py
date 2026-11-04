@@ -60,6 +60,8 @@ DEFAULT_CHUNK_PAGES = 10
 DEFAULT_WORKERS = 1
 MAX_WORKERS = 4
 CROP_DPI = 200
+# 整页认不出来、切成两半再认时，每半长边最多这么多像素（第 66 页那张 2.4 米宽的图纸，两半各 3000 像素都认得出）
+HALF_PAGE_MAX_PIXELS = 3000
 
 RESULT_FILE_NAME = "glm_ocr_result.json"
 RAW_DIR_NAME = "glm_ocr_raw"
@@ -234,9 +236,18 @@ def request_chunks(
 
     def one(task: tuple[int, int, int, bytes]) -> tuple[int, dict]:
         index, start, end, pdf_bytes = task
-        payload = parse(pdf_bytes, api_key=api_key)
+        try:
+            payload = parse(pdf_bytes, api_key=api_key)
+        except glm_ocr_api.GlmOcrServerError as err:
+            # 只有服务端一直 5xx 才拆开再发；被拒（key、额度）、超时、连不上照旧直接失败
+            print(f"glm-ocr: chunk {start + 1}-{end} failed ({err}); retrying page by page", flush=True)
+            with fitz.open(source_pdf) as source:
+                payload = _page_by_page_chunk(source, start, end, parse=parse, api_key=api_key)
         if not _chunk_is_complete(payload, end - start):
             raise RuntimeError(f"GLM-OCR 第 {start + 1}-{end} 页的结果页数不对（应为 {end - start} 页）")
+        if any(item.get("mode") == "failed" for item in payload.get("_page_fallbacks") or []):
+            # 有页最后也没认出来：不进断点和共用缓存，下次重试还会再试这几页
+            return index, payload
         save_json(_chunk_path(raw_dir, index, start, end), payload)
         if shared_dir is not None:
             # 几个任务可能同时做同一份原文：整份写好再换上，读的一方看不到写了一半的文件
@@ -253,6 +264,141 @@ def request_chunks(
             _emit_progress(done_pages, page_count, f"GLM-OCR 识别中：{done_pages}/{page_count} 页")
             publish_prefix()
     return [results[index] for index in range(len(ranges))]
+
+
+def _page_by_page_chunk(source: fitz.Document, start: int, end: int, *, parse, api_key: str) -> dict:
+    """一片整片请求一直失败时逐页再试，拼成和整片同样形状的结果。
+
+    2026-11-04 一套 1265 页的设计图纸：第 61-70 页这片每次都 500（"网络错误，请稍后重试"），整本书停在那里。逐页查下来只有
+    第 66 页（6764×2413 点、10 万多个矢量图元）整页怎么发都 500，原样、渲染成 2000 或 4000 像素的图都一样；切成左右两半各发一次
+    都能认。所以：单页还失败就左右两半各认一次再拼回去，两半也不行就这页留空、记进 `_page_fallbacks`，别的页照常。"""
+    layout_details: list = []
+    pages_meta: list = []
+    markdown_parts: list[str] = []
+    usage_total: dict[str, int] = {}
+    fallbacks: list[dict] = []
+
+    def add_usage(payload: dict) -> None:
+        for key, value in (payload.get("usage") or {}).items():
+            if isinstance(value, int):
+                usage_total[key] = usage_total.get(key, 0) + value
+
+    for page_number in range(start, end):
+        offset = page_number - start
+        try:
+            single = parse(_chunk_bytes(source, page_number, page_number + 1), api_key=api_key)
+            if not _chunk_is_complete(single, 1):
+                raise RuntimeError("结果页数不对")
+            add_usage(single)
+            layout_details.append(single["layout_details"][0])
+            pages_meta.append(single["data_info"]["pages"][0])
+            markdown_parts.append(_shift_placeholders(str(single.get("md_results") or ""), page=offset))
+            continue
+        except glm_ocr_api.GlmOcrServerError as err:
+            single_error = str(err)
+        try:
+            halves = [parse(_half_page_bytes(source, page_number, side), api_key=api_key) for side in (0, 1)]
+            if not all(_chunk_is_complete(half, 1) for half in halves):
+                raise RuntimeError("结果页数不对")
+            for half in halves:
+                add_usage(half)
+            layout, page_meta, markdown = _join_halves(halves, page=offset)
+            layout_details.append(layout)
+            pages_meta.append(page_meta)
+            markdown_parts.append(markdown)
+            fallbacks.append({"page": page_number + 1, "mode": "halves", "error": single_error[:300]})
+            print(f"glm-ocr: page {page_number + 1} only recognized as two halves ({single_error})", flush=True)
+        except glm_ocr_api.GlmOcrServerError as err:
+            rect = source[page_number].rect
+            layout_details.append([])
+            pages_meta.append({"width": int(round(rect.width)), "height": int(round(rect.height))})
+            markdown_parts.append("")
+            fallbacks.append({"page": page_number + 1, "mode": "failed", "error": f"{single_error[:200]}; halves: {str(err)[:200]}"})
+            print(f"glm-ocr: page {page_number + 1} could not be recognized, left empty ({err})", flush=True)
+    return {
+        "model": glm_ocr_api.GLM_OCR_MODEL,
+        "data_info": {"num_pages": len(pages_meta), "pages": pages_meta},
+        "layout_details": layout_details,
+        "md_results": "\n\n".join(part for part in markdown_parts if part.strip()),
+        "usage": usage_total,
+        "_page_fallbacks": fallbacks,
+    }
+
+
+def _half_page_bytes(source: fitz.Document, page_number: int, side: int) -> bytes:
+    """这一页的左半（side=0）或右半，渲染成图片放进单页 PDF（页面大小就是那半页）。"""
+    page = source[page_number]
+    rect = page.rect
+    middle = rect.x0 + rect.width / 2
+    clip = fitz.Rect(rect.x0, rect.y0, middle, rect.y1) if side == 0 else fitz.Rect(middle, rect.y0, rect.x1, rect.y1)
+    zoom = min(CROP_DPI / 72, HALF_PAGE_MAX_PIXELS / max(clip.width, clip.height))
+    pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), clip=clip)
+    with fitz.open() as out:
+        half = out.new_page(width=clip.width, height=clip.height)
+        half.insert_image(half.rect, stream=pixmap.tobytes("jpeg", jpg_quality=85))
+        return out.tobytes(deflate=True)
+
+
+def _join_halves(halves: list[dict], *, page: int) -> tuple[list, dict, str]:
+    """左右两半的结果拼成一页：坐标都换到左半的像素尺度，右半往右挪左半那么宽。"""
+    left_meta = halves[0]["data_info"]["pages"][0]
+    right_meta = halves[1]["data_info"]["pages"][0]
+    width, height = float(left_meta["width"]), float(left_meta["height"])
+    scale_x = width / float(right_meta["width"] or width)
+    scale_y = height / float(right_meta["height"] or height)
+
+    def move(bbox: list, side: int) -> list:
+        if side == 0 or not isinstance(bbox, list) or len(bbox) != 4:
+            return bbox
+        x0, y0, x1, y1 = (float(v) for v in bbox)
+        return [round(width + x0 * scale_x), round(y0 * scale_y), round(width + x1 * scale_x), round(y1 * scale_y)]
+
+    layout: list = []
+    for side, half in enumerate(halves):
+        for block in half["layout_details"][0]:
+            moved = dict(block)
+            moved["bbox_2d"] = move(block.get("bbox_2d"), side)
+            moved["index"] = len(layout)
+            layout.append(moved)
+    markdown = "\n\n".join(
+        part
+        for part in (
+            _shift_placeholders(str(half.get("md_results") or ""), page=page, bbox=lambda b, side=side: move(b, side))
+            for side, half in enumerate(halves)
+        )
+        if part.strip()
+    )
+    return layout, {"width": int(round(width * 2)), "height": int(round(height))}, markdown
+
+
+def _shift_placeholders(markdown: str, *, page: int, bbox=None) -> str:
+    """单页结果里的图片占位（page=0）换成这一片里的页号；`bbox` 给了就把框也换掉。"""
+
+    def replace(match: re.Match) -> str:
+        box = [float(match.group(i)) for i in range(2, 6)]
+        if bbox is not None:
+            box = bbox(box)
+        return f"![](page={page},bbox=[{', '.join(str(int(round(float(v)))) for v in box)}])"
+
+    return _PLACEHOLDER_RE.sub(replace, markdown)
+
+
+def _report_page_fallbacks(fallbacks: list[dict]) -> None:
+    """有页没认出来（留空）就在进度里说清是哪几页；切成两半才认出来的只打日志。"""
+    failed = [int(item["page"]) for item in fallbacks if item.get("mode") == "failed"]
+    if not failed:
+        return
+    shown = "、".join(str(page) for page in failed[:20]) + ("……" if len(failed) > 20 else "")
+    message = f"GLM-OCR 有 {len(failed)} 页认不出来，这几页留空：第 {shown} 页"
+    print(f"glm-ocr: {message}", flush=True)
+    emit_stage_progress(
+        stage="ocr_processing",
+        substage="glm_ocr",
+        message=message,
+        stage_detail=message,
+        provider=PROVIDER_GLM_OCR,
+        payload={"failed_pages": failed},
+    )
 
 
 def _emit_progress(current: int, total: int, message: str) -> None:
@@ -275,8 +421,10 @@ def merge_chunks(chunks: list[dict], *, chunk_pages: int) -> dict:
     markdown_parts: list[str] = []
     meta_chunks: list[dict] = []
     usage_total: dict[str, int] = {}
+    page_fallbacks: list[dict] = []
     for index, chunk in enumerate(chunks):
         offset = index * chunk_pages
+        page_fallbacks.extend(chunk.get("_page_fallbacks") or [])
         count = len(chunk.get("layout_details") or [])
         layout_details.extend(chunk.get("layout_details") or [])
         pages_meta.extend((chunk.get("data_info") or {}).get("pages") or [])
@@ -297,7 +445,7 @@ def merge_chunks(chunks: list[dict], *, chunk_pages: int) -> dict:
         "layout_details": layout_details,
         "md_results": "\n\n".join(part for part in markdown_parts if part.strip()),
         "usage": usage_total,
-        "_meta": {"chunks": meta_chunks, "chunk_pages": chunk_pages},
+        "_meta": {"chunks": meta_chunks, "chunk_pages": chunk_pages, "page_fallbacks": page_fallbacks},
     }
 
 
@@ -432,6 +580,7 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
             cache_root=_pruned_chunk_cache(),
         )
         payload = merge_chunks(chunks, chunk_pages=chunk_pages)
+        _report_page_fallbacks(payload["_meta"]["page_fallbacks"])
         split_cross_column_blocks(payload, source_pdf)
         cropped.update(crop_images(payload, source_pdf, job_dirs.root, first_page=cropped_pages))
         payload["_images"] = dict(cropped)

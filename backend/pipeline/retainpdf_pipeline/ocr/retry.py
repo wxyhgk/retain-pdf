@@ -62,7 +62,11 @@ def sanitize_url_for_log(url: str) -> str:
 
 
 class RetainNetworkError(RuntimeError):
-    pass
+    """重试用完还失败。`status_code`：最后一次的 HTTP 状态码（超时、连不上时为 None）。"""
+
+    def __init__(self, message: str = "", *, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class RetainRateLimitError(RetainNetworkError):
@@ -175,5 +179,6 @@ def request_with_retry(
             f"{label} rate limited after {attempts} attempts: {sanitize_url_for_log(url)}"
         ) from None
     raise RetainNetworkError(
-        f"{label} network request failed after {attempts} attempts: {last_summary}"
+        f"{label} network request failed after {attempts} attempts: {last_summary}",
+        status_code=status_code,
     ) from None

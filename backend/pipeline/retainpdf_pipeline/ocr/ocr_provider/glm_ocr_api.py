@@ -40,6 +40,11 @@ class GlmOcrRequestRejected(RuntimeError):
     """服务端明确拒绝（4xx，429 除外）：key、参数、文件的问题，重试没用。"""
 
 
+class GlmOcrServerError(RuntimeError):
+    """重试用完服务端还回 5xx：可能是这份文件里某一页让它出错（2026-11-04 一张超大图纸整页怎么发都 500），
+    拆开再发可能能过（`glm_ocr_driver._page_by_page_chunk`）。超时、连不上不算这种。"""
+
+
 def api_url() -> str:
     return str(os.environ.get(GLM_OCR_API_URL_ENV, "") or "").strip() or GLM_OCR_API_URL
 
@@ -104,6 +109,8 @@ def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | Non
         status = err.response.status_code if err.response is not None else ""
         raise GlmOcrRequestRejected(f"GLM-OCR 请求被拒绝 status={status} {_error_detail(err.response)}".strip()) from None
     except RetainNetworkError as err:
+        if (err.status_code or 0) >= 500:
+            raise GlmOcrServerError(f"GLM-OCR 请求失败：{err}") from None
         raise RuntimeError(f"GLM-OCR 请求失败：{err}") from None
     try:
         payload = response.json()
