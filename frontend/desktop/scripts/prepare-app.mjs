@@ -303,33 +303,6 @@ function resolveJobsdBinary() {
   };
 }
 
-function resolveAgentBinary() {
-  const overridePath = process.env.RETAINPDF_AGENT_BINARY
-    ? path.resolve(process.env.RETAINPDF_AGENT_BINARY)
-    : "";
-  const fileName = targetPlatform === "win32" ? "retainpdf-agent.exe" : "retainpdf-agent";
-  const candidates = [overridePath];
-
-  if (targetPlatform === "win32") {
-    candidates.push(
-      path.join(repoRoot, "target", "x86_64-pc-windows-msvc", "release", fileName),
-      path.join(repoRoot, "target", "i686-pc-windows-msvc", "release", fileName),
-      path.join(repoRoot, "target", "release", fileName),
-    );
-  } else if (targetPlatform === "darwin") {
-    candidates.push(
-      path.join(repoRoot, "target", "release", fileName),
-      path.join(repoRoot, "target", "x86_64-apple-darwin", "release", fileName),
-      path.join(repoRoot, "target", "aarch64-apple-darwin", "release", fileName),
-    );
-  } else {
-    candidates.push(path.join(repoRoot, "target", "release", fileName));
-  }
-
-  const match = candidates.find((candidate) => candidate && fs.existsSync(candidate));
-  return { path: match || candidates[1] || "", fileName };
-}
-
 // 命令行 retainpdf：桌面版经它读写 ~/.retainpdf/，设置里也能把它装进终端。
 function resolveCliBinary() {
   const overridePath = process.env.RETAINPDF_CLI_BINARY
@@ -581,7 +554,6 @@ function verifyBundledPythonRuntime(root) {
 
 const rustApiBinary = resolveRustApiBinary();
 const jobsdBinary = resolveJobsdBinary();
-const agentBinary = resolveAgentBinary();
 const cliBinary = resolveCliBinary();
 if (desktopPackage.version !== releaseVersion) {
   desktopPackage.version = releaseVersion;
@@ -834,12 +806,6 @@ if (!frontendOnly && fs.existsSync(jobsdBinary.path)) {
     force: true,
   });
 }
-if (!frontendOnly && fs.existsSync(agentBinary.path)) {
-  fs.mkdirSync(path.join(outputBackendRoot, "bin"), { recursive: true });
-  fs.cpSync(agentBinary.path, path.join(outputBackendRoot, "bin", agentBinary.fileName), {
-    force: true,
-  });
-}
 if (!frontendOnly && fs.existsSync(cliBinary.path)) {
   fs.mkdirSync(path.join(outputBackendRoot, "bin"), { recursive: true });
   fs.cpSync(cliBinary.path, path.join(outputBackendRoot, "bin", cliBinary.fileName), {
@@ -950,8 +916,6 @@ if (!frontendOnly) {
     rustApiBinaryName: rustApiBinary.fileName,
     jobsdBinaryBundled: fs.existsSync(path.join(outputBackendRoot, "bin", jobsdBinary.fileName)),
     jobsdBinaryName: jobsdBinary.fileName,
-    agentBinaryBundled: fs.existsSync(path.join(outputBackendRoot, "bin", agentBinary.fileName)),
-    agentBinaryName: agentBinary.fileName,
     cliBinaryBundled: fs.existsSync(path.join(outputBackendRoot, "bin", cliBinary.fileName)),
     cliBinaryName: cliBinary.fileName,
     pipelineCommandBundled: Boolean(resolveBuiltPipelineCommand(outputBackendRoot)),
