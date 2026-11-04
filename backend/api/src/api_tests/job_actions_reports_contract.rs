@@ -151,7 +151,17 @@ async fn stage_actions_and_resume_plan_match_published_schema() {
 
 #[tokio::test]
 async fn retry_resume_and_cancel_submissions_match_published_schema() {
-    let state = test_state("job-actions-contract-submit");
+    // 一个运行名额都不给：续跑以后原任务得一直排着队，下面才测得到「在排队时续跑、重试都 409」。
+    // 以前给 1 个名额，原地重渲染的任务被拉起来、很快失败结束，重试就照常建了新任务（200），并发跑时偶发（2026-11-04）。
+    let dirs = crate::test_support::config::TestDirs::create(&format!(
+        "rust-api-query-routes-job-actions-contract-submit-{}",
+        fastrand::u64(..)
+    ));
+    let state = crate::app::build_state(std::sync::Arc::new(crate::config::AppConfig {
+        max_running_jobs: 0,
+        ..dirs.config()
+    }))
+    .expect("build state");
     let contract = contract(ACTIONS);
     let job_id = "job-actions-contract-submit";
     seed_renderable_job(&state, job_id);
