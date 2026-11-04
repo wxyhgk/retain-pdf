@@ -245,7 +245,7 @@ test('the book read in 翻译: which and the page, its notes, how to read and qu
 	const book = { job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', page: 12, pages: 300, notes: { slug: 'note-1', title: '量子化学笔记' } };
 	const all = contextBlock({ book });
 	assert.match(all, /作者正在读 RetainPDF 的《Quantum Chemistry》（document_id: doc-1，job_id: job-1），看到第 12 页（共 300 页）。/u);
-	assert.match(all, /这本书的笔记是《量子化学笔记》（文件夹名 note-1）/u);
+	assert.match(all, /作者正在写的笔记是《量子化学笔记》（文件夹名 note-1）/u);
 	assert.match(all, /read_book 读某几页的原文和译文/u);
 	assert.match(all, /用 read_passage 给的 quote（译文，前面一个 retainpdf: 链接写着出处）原样放进去/u);
 	// pi: the whole in its system prompt, the book and page with each thing said.

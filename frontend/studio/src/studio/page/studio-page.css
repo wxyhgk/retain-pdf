@@ -89,10 +89,10 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .translate-unreachable-actions button { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: rgb(var(--black)); color: var(--surface); font: inherit; font-size: 13px; cursor: pointer; }
 .translate-unreachable-actions button + button { border: 1px solid rgba(var(--gray), 0.3); background: transparent; color: inherit; }
 /* A passage quoted from RetainPDF (editor/retainpdf-source.ts): the note's own paragraphs; where it is, RetainPDF's mark
-   small in the top right corner of the first, room kept for it. */
-.crepe-host .milkdown .ProseMirror p:has(> .retainpdf-source) { position: relative; padding-right: 30px; }
-.retainpdf-source { position: absolute; top: 0.2em; right: 0; display: grid; width: 22px; height: 22px; place-items: center; padding: 3px; border-radius: 6px; color: rgb(var(--gray)); opacity: 0.7; cursor: pointer; transition: opacity 120ms, background 120ms; }
-.retainpdf-source svg { width: 14px; height: 15px; }
+   and the book and page, small, in the top right corner of the first (floated: its first line goes round it). */
+.retainpdf-source { float: right; display: inline-flex; max-width: 45%; height: 22px; align-items: center; gap: 4px; margin: 0.15em 0 0 10px; padding: 0 6px 0 4px; border-radius: 6px; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); line-height: 1; opacity: 0.8; cursor: pointer; transition: opacity 120ms, background 120ms; }
+.retainpdf-source svg { flex: none; width: 14px; height: 15px; }
+.retainpdf-source[data-shown]::after { overflow: hidden; content: attr(data-shown); text-overflow: ellipsis; white-space: nowrap; }
 .retainpdf-source:hover, .retainpdf-source.is-selected { background: var(--studio-fill-2); color: rgb(var(--black)); opacity: 1; }
 /*
  * Scrollbars: thin, a rounded gray thumb on no track, darker under the pointer. The system's

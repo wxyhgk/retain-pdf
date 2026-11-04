@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { t } from '@blog/i18n/index.mjs';
-import { searchArticles, searchDrive } from '../../api/client';
+import { searchArticles, searchBooks, searchDrive, type BookHit } from '../../api/client';
+import { RETAINPDF_NAVIGATE } from '../../editor/retainpdf-quote';
 import type { ArticleSummary } from '../../types';
 import { filterArticles } from '../../pages/tree/page-tree';
 import { fileSize } from '@blog/markdown/files/file-kinds.mjs';
@@ -44,7 +45,7 @@ export type QuickFindAsk = { round: number; host: QuickFindHost } & (
  * An article, a file of the drive (`drivePath`), a file of the open article (`file`), the row making a page (`create`),
  * where pages go (`place`), or a command.
  */
-type Row = FinderRow & { slug: string; text?: string; drivePath?: string; file?: string; create?: string; place?: string; command?: string };
+type Row = FinderRow & { slug: string; text?: string; drivePath?: string; file?: string; create?: string; place?: string; command?: string; book?: BookHit };
 
 /** What is typed to find commands, as in VS Code: `>` and their words. */
 const COMMANDS = '>';
@@ -159,14 +160,25 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 					return [...listed, ...create];
 				});
 			}, () => {});
-			void Promise.all([drive, articles]).then(([found]) => {
-				if (!found || controller.signal.aborted) return;
-				const files: Row[] = found.results.map((result) => {
+			// The books' words (RetainPDF) last: only when found (RetainPDF not there, or no key: nothing said).
+			const books = ask.mode === 'find' ? searchBooks(wanted, controller.signal).catch(() => null) : Promise.resolve(null);
+			void Promise.all([drive, articles, books]).then(([found, , read]) => {
+				if (controller.signal.aborted) return;
+				const files: Row[] = (found?.results ?? []).map((result) => {
 					const slash = result.path.lastIndexOf('/');
 					return { key: `d:${result.path}`, slug: '', drivePath: result.path, drive: true, title: result.path.slice(slash + 1), icon: '▢', snippet: result.snippet ?? (slash > 0 ? t('资料库 / {folder}', { folder: result.path.slice(0, slash) }) : t('资料库')) };
 				});
-				if (found.indexing) files.push({ key: 'n:indexing', slug: '', title: t('资料库还在建立文字索引，结果可能不全'), icon: '…' });
-				setRows((before) => [...before, ...files]);
+				if (found?.indexing) files.push({ key: 'n:indexing', slug: '', title: t('资料库还在建立文字索引，结果可能不全'), icon: '…' });
+				// In a book: where, and its words there, as translated (the source when it has none).
+				const passages: Row[] = (read?.hits ?? []).map((hit) => ({
+					key: `b:${hit.job_id}:${hit.block}`,
+					slug: '',
+					book: hit,
+					title: t('{book} · 第 {page} 页', { book: hit.title || t('书'), page: hit.page }),
+					icon: '❐',
+					snippet: around((hit.translated || hit.source || '').replace(/<\/?mark>/gu, ''), wanted),
+				}));
+				setRows((before) => [...before, ...files, ...passages]);
 			});
 		}, 120);
 		return () => {
@@ -177,13 +189,15 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 
 	function choose(key: string): void {
 		const row = rows.find((entry) => entry.key === key);
-		if (!row || (!row.slug && !row.drivePath && !row.file && !row.create && !row.command && row.place === undefined)) return;
+		if (!row || (!row.slug && !row.drivePath && !row.file && !row.create && !row.command && !row.book && row.place === undefined)) return;
 		onClose();
 		if (row.command) return commands.current.find((command) => command.key === row.command)?.run();
 		if (ask.mode === 'mention') ask.done(row.file ? { file: row.file } : row.drivePath ? { drive: row.drivePath } : { slug: row.slug });
 		else if (ask.mode === 'place') ask.done(row.place ?? row.slug);
 		else if (ask.mode === 'pick') ask.done(row.create ? { create: row.create } : { slug: row.slug });
 		else if (row.drivePath) host.openDriveFile(row.drivePath);
+		// A passage of a book: shown beside the note open, at it (main.ts takes RETAINPDF_NAVIGATE as a quote's mark).
+		else if (row.book) window.dispatchEvent(new CustomEvent(RETAINPDF_NAVIGATE, { detail: { job_id: row.book.job_id, block_id: row.book.block, page_idx: row.book.page - 1, title: row.book.title ?? undefined, document_id: row.book.document_id } }));
 		else host.open(row.slug, row.text);
 	}
 
@@ -192,7 +206,7 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 			id="quick-find-dialog"
 			inputId="quick-find-input"
 			icon="⌕"
-			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? t('链接到哪个页面…') : ask.mode === 'mention' ? t('插入页面或文件…（这篇的文件、页面、资料库）') : t('搜索页面和资料库…（输入 > 找命令）')}
+			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? t('链接到哪个页面…') : ask.mode === 'mention' ? t('插入页面或文件…（这篇的文件、页面、资料库）') : t('搜索页面、资料库和书…（输入 > 找命令）')}
 			query={query}
 			onQuery={typed}
 			rows={rows}

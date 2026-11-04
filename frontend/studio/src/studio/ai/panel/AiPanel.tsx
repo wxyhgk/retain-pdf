@@ -51,7 +51,7 @@ const BOOK_SUGGESTIONS: Array<{ icon: LucideIcon; text: string }> = [
 	{ icon: BookOpen, text: t('讲讲这一页在说什么') },
 	{ icon: Sigma, text: t('这一页的公式是怎么推出来的') },
 	{ icon: Search, text: t('这一页用到的概念，书里前面哪里讲过') },
-	{ icon: NotebookPen, text: t('把这一页的要点记进这本书的笔记') },
+	{ icon: NotebookPen, text: t('把这一页的要点记进这篇笔记') },
 ];
 
 /** What the conversation shows: what is said as it is, each stretch of work (the items between what is said) one row. */
