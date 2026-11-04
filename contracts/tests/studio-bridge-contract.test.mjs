@@ -73,7 +73,7 @@ const left = { ...head, type: "reading", job_id: null, document_id: null, title:
 
 test("every message has one definition, a direction and the shared head", () => {
   const types = schema.messages.map((message) => message.type);
-  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading", "ask-ai", "open-book"]);
+  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading", "ask-ai", "open-book", "shortcut"]);
   assert.deepEqual(schema.oneOf.map((entry) => entry.$ref), schema.messages.map((message) => `#/definitions/${message.definition}`));
   for (const { type, from, definition } of schema.messages) {
     assert.ok(["studio", "retainpdf"].includes(from), `${type}: from ${from}`);
@@ -133,6 +133,11 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "open-book", job_id: "j", document_id: "doc-1", title: "Quantum Chemistry" },
     { ...head, type: "open-book", job_id: "j", document_id: null, title: null, page_idx: 12 },
     { ...head, type: "open-book", job_id: "j", document_id: "doc-1", title: "Quantum Chemistry", page_idx: null },
+    // 阅读页有焦点时把它不处理的快捷键转给 Studio（2026-11-04）
+    { ...head, type: "hello", theme: "light", features: ["quote", "open-notes", "ask-ai", "open-book", "shortcut"] },
+    { ...head, type: "shortcut", key: "k", meta: true, ctrl: false, shift: false, alt: false },
+    { ...head, type: "shortcut", key: "K", meta: false, ctrl: true, shift: true, alt: false },
+    { ...head, type: "shortcut", key: "\\", meta: true, ctrl: false, shift: false, alt: false },
   ];
   for (const each of good) assert.ok(valid(message, each), JSON.stringify(each));
 
@@ -175,6 +180,11 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "open-book", job_id: "j", document_id: "doc-1", title: "t", page_idx: -1 },
     { ...head, type: "open-book", job_id: "j", document_id: "", title: "t" },
     { ...head, type: "ready", features: ["open-book"] },
+    { ...head, type: "shortcut", key: "", meta: true, ctrl: false, shift: false, alt: false },
+    { ...head, type: "shortcut", key: "k", ctrl: false, shift: false, alt: false },
+    { ...head, type: "shortcut", key: "k", meta: "true", ctrl: false, shift: false, alt: false },
+    { ...head, type: "shortcut", key: "k", meta: true, ctrl: false, shift: false, alt: false, code: "KeyK" },
+    { ...head, type: "ready", features: ["shortcut"] },
   ];
   for (const each of bad) assert.equal(valid(message, each), false, JSON.stringify(each));
 });
