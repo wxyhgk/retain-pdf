@@ -171,12 +171,16 @@ PyMuPDF 主要保留在读和分析场景：
 
 大文档 overlay 路径不要退化成逐页 Typst 编译。逐页 PDF 会重复嵌入字体和资源，最终文件体积容易膨胀。
 
-当前分片是显式 opt-in 策略，不作为默认路径。默认仍优先整本 Typst 编译，因为这通常体积最小，并且很多大文档整本编译并不慢。
+分片对 2000 页以下的书是显式 opt-in 策略，不作为默认路径：整本 Typst 编译通常体积最小，很多大文档整本编译并不慢。
+
+2000 页以上的书（`AUTO_CHUNKED_OVERLAY_PAGES`）不等开关自动分片，每片 `1024` 页（`AUTO_CHUNK_PAGE_COUNT`）：
+6574 页的手册整本编译 Typst 栈溢出（`thread 'main' has overflowed its stack`，SIGABRT），3287 页的半本能编过（2026-11-03）。
+前提同样是能用 `pikepdf` 合并 overlay；不能合并的超大书仍走整本编译。
 
 显式开启后，策略是体积受控的大块分片：
 
 - 只有设置 `RETAIN_TYPST_OVERLAY_CHUNKED=1` 且可以用 `pikepdf` 合并 overlay 的大文档才启用。
-- 默认 `256` 页以上启用分片，默认每片 `128` 页。
+- 默认 `256` 页以上启用分片，默认每片 `128` 页（开了开关的超大书也是 `128` 页一片）。
 - 每片生成一个多页 overlay PDF，再由 `pikepdf` 一次性合并回源 PDF。
 - 小文档继续走整本 Typst 编译，保持体积最优。
 
@@ -184,7 +188,7 @@ PyMuPDF 主要保留在读和分析场景：
 
 - `RETAIN_TYPST_OVERLAY_CHUNKED=1` 开启分片编译。
 - `RETAIN_TYPST_OVERLAY_CHUNK_MIN_PAGES` 调整启用阈值。
-- `RETAIN_TYPST_OVERLAY_CHUNK_PAGES` 调整每片页数。不要轻易设得太小，除非已经确认文件体积可接受。
+- `RETAIN_TYPST_OVERLAY_CHUNK_PAGES` 调整每片页数（自动分片也认它）。不要轻易设得太小，除非已经确认文件体积可接受。
 
 ## Render Prewarm 复用
 

@@ -17,6 +17,10 @@ from retainpdf_pipeline.render.output.typst.shared import prepare_typst_work_dir
 
 DEFAULT_CHUNK_PAGE_COUNT = 128
 MIN_CHUNKED_OVERLAY_PAGES = 256
+# 再大的书不分片就编不出来：6574 页的手册整本编译 Typst 栈溢出（SIGABRT），3287 页的半本能编过
+# （2026-11-03）。这么大的书不等开关，自动分片；片也切得大些，少重复嵌字体。
+AUTO_CHUNKED_OVERLAY_PAGES = 2000
+AUTO_CHUNK_PAGE_COUNT = 1024
 
 
 @dataclass(frozen=True)
@@ -30,10 +34,23 @@ class OverlayChunkCompileResult:
 
 
 def should_use_chunked_overlay_compile(page_count: int) -> bool:
+    if _auto_chunked(page_count):
+        return True
     if os.environ.get("RETAIN_TYPST_OVERLAY_CHUNKED", "").strip() not in {"1", "true", "True"}:
         return False
     threshold = _env_int("RETAIN_TYPST_OVERLAY_CHUNK_MIN_PAGES", MIN_CHUNKED_OVERLAY_PAGES)
     return page_count >= max(1, threshold)
+
+
+def _auto_chunked(page_count: int) -> bool:
+    """超大的书没开开关也分片（开关只管要不要更早分片）。"""
+    return page_count >= AUTO_CHUNKED_OVERLAY_PAGES
+
+
+def _chunk_page_count(page_count: int) -> int:
+    explicit = os.environ.get("RETAIN_TYPST_OVERLAY_CHUNKED", "").strip() in {"1", "true", "True"}
+    default = DEFAULT_CHUNK_PAGE_COUNT if explicit or not _auto_chunked(page_count) else AUTO_CHUNK_PAGE_COUNT
+    return _env_int("RETAIN_TYPST_OVERLAY_CHUNK_PAGES", default)
 
 
 def compile_book_overlay_pdf_chunks(
@@ -48,7 +65,7 @@ def compile_book_overlay_pdf_chunks(
     compile_workers: int | None = None,
 ) -> OverlayChunkCompileResult:
     started = time.perf_counter()
-    chunk_page_count = _env_int("RETAIN_TYPST_OVERLAY_CHUNK_PAGES", DEFAULT_CHUNK_PAGE_COUNT)
+    chunk_page_count = _chunk_page_count(len(book_specs))
     chunks = _overlay_compile_chunks(
         ordered_page_indices=ordered_page_indices,
         book_specs=book_specs,
@@ -130,6 +147,8 @@ def _env_int(name: str, default: int) -> int:
 
 
 __all__ = [
+    "AUTO_CHUNKED_OVERLAY_PAGES",
+    "AUTO_CHUNK_PAGE_COUNT",
     "DEFAULT_CHUNK_PAGE_COUNT",
     "MIN_CHUNKED_OVERLAY_PAGES",
     "OverlayChunkCompileResult",
