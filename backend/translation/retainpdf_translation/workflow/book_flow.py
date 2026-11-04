@@ -252,6 +252,7 @@ def prepare_book_payloads(
             base_url=base_url,
             workers=workers,
             run_diagnostics=run_diagnostics,
+            memo_dir=output_dir,
         )
         if checkpoint is not None:
             save_pages(page_payloads, translation_paths)

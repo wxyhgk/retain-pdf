@@ -126,6 +126,7 @@ def translate_book_streaming(
             translation_paths=translation_paths,
             review_enabled=review_enabled,
             review_memo=review_memo,
+            memo_dir=output_dir,
             api_key=api_key,
             model=model,
             base_url=base_url,
@@ -204,6 +205,7 @@ def _monitor_round(
     translation_paths: dict[int, Path],
     review_enabled: bool,
     review_memo: dict[tuple[str, str], bool],
+    memo_dir: Path,
     api_key: str,
     model: str,
     base_url: str,
@@ -236,6 +238,7 @@ def _monitor_round(
             workers=workers,
             run_diagnostics=run_diagnostics,
             review_memo=review_memo,
+            memo_dir=memo_dir,
         )
     run_page_policy_stage(
         page_payloads=page_payloads,

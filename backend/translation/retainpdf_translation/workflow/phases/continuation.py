@@ -7,6 +7,8 @@ from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.events import emit_stage_transition
 from retainpdf_translation.artifacts import TranslationRunDiagnostics
 from retainpdf_translation.llm.shared.provider_runtime import request_chat_content
+from retainpdf_translation.workflow.phases.continuation_memo import load_continuation_review_memo
+from retainpdf_translation.workflow.phases.continuation_memo import save_continuation_review_memo
 from retainpdf_translation.workflow.page_policies import finalize_page_payloads
 from retainpdf_translation.workflow.page_policies import review_and_apply_continuations
 from retainpdf_translation.workflow.phases.events import throttle_progress_callback
@@ -42,8 +44,15 @@ def run_continuation_review(
     workers: int,
     run_diagnostics: TranslationRunDiagnostics | None,
     review_memo: dict[tuple[str, str], bool] | None = None,
+    memo_dir: Path | None = None,
 ) -> None:
+    """`memo_dir`：复核结论落盘的目录（译文目录），给了就先读回上次判过的对、复核完写回去，重试不再重发。"""
     review_started = time.perf_counter()
+    if memo_dir is not None:
+        if review_memo is None:
+            review_memo = {}
+        for key, join in load_continuation_review_memo(memo_dir, page_payloads).items():
+            review_memo.setdefault(key, join)
     emit_stage_transition(
         stage="continuation_review",
         substage="continuation_review",
@@ -73,6 +82,8 @@ def run_continuation_review(
             )
         ),
     )
+    if memo_dir is not None and review_memo:
+        save_continuation_review_memo(memo_dir, page_payloads, review_memo)
     if run_diagnostics is not None:
         run_diagnostics.mark_phase_end("continuation_review")
     emit_stage_progress(

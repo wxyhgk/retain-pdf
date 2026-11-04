@@ -29,6 +29,9 @@
   页首是图注、图片时下面第一段正文照样算页首；分区排序不全时照旧用 `layout_boundary_role`
 - 规则说该连、但跨页头尾不对的一对，不管是在主循环还是链条延伸时碰到，都标成候选交给模型复核，不悄悄断开
 - 复核通过的一对连成组时，两块原来所在的组整组并进来（`pairs.apply_candidate_pair_joins` 按阅读顺序排成一串），不覆盖
+- 模型判过的对（连 / 不连）写进译文目录的 `continuation-review-memo.json`（`workflow/phases/continuation_memo.py`），
+  重试时 runner 跟 `domain-context.json` 一起拷进新任务，判过的对直接用、只把新出现的对交给模型。每对记下两块原文的摘要，
+  原文变了（OCR 重做过）就重新判；模型这一批回复解析不了时不记结论，下次照旧复核
 
 这样做的目的很明确：
 
