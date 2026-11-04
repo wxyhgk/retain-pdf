@@ -39,6 +39,11 @@ function fakeRetainpdf({ key = 'the-key' } = {}) {
 		if (path === '/api/v1/documents/doc-1') return ok(BOOK);
 		if (path === '/api/v1/documents/doc-1/reading') return ok({ job_id: 'job-1', merged: false, contributing_job_ids: ['job-1'] });
 		if (path === '/api/v1/search') return ok({ query: address.searchParams.get('q'), hits: [{ document_id: 'doc-1', job_id: 'job-1', page_idx: 0, block_id: 'p001-b0001', source_snippet: 'The Schrödinger equation.', translated_snippet: '薛定谔方程。' }], limit: 20, has_more: false });
+		if (path === '/api/v1/jobs') return ok({ items: [{ job_id: 'job-old', status: 'running', stage_snapshot: { display_stage: '翻译', stage: 'translating', progress: { current: 30, total: 120, percent: null } } }], limit: 1, offset: 0, has_more: false });
+		if (path === '/api/v1/documents/doc-1/jobs') return ok({ items: [{ job_id: 'job-1', workflow: 'book', status: 'failed', created_at: '2026-11-02T00:00:00Z', failure: { category: 'provider', stage: 'translation', retryable: true, summary: '模型服务超时' } }] });
+		if (path === '/api/v1/documents/doc-1/translation-coverage') return ok({ page_count: 3, translated_pages: 2, contributing_jobs: 1, segments: [], jobs: [] });
+		if (path === '/api/v1/documents/abcdef0123456789/files/thumbnail.jpg') return new Response(new Uint8Array([0xff, 0xd8, 0xff]), { status: 200, headers: { 'content-type': 'image/jpeg' } });
+		if (path === '/api/v1/jobs/job-1/actions/cancel' && init?.method === 'POST') return ok({ job_id: 'job-1', status: 'canceled' });
 		if (path === '/api/v1/jobs/job-1/reader/regions') return ok({ items: REGIONS });
 		if (path === '/api/v1/jobs/job-1/reader/regions/p001-b0001') return ok(REGIONS[1]);
 		if (path === '/api/v1/jobs/job-2/reader/regions') return new Response(JSON.stringify({ code: 40400, message: 'reader regions not ready', error: { code: 'NOT_FOUND', http_status: 404, details: { reason: 'not_ready' } } }), { status: 404 });
@@ -131,4 +136,25 @@ test('RetainPDF saying no to the key found before (it started since, or its key 
 	found = 'wrong';
 	const stubborn = new RetainpdfLibrary({ fetch, settings: { connection: async () => ({ api: 'http://127.0.0.1:41000/', key: 'wrong' }), forgetFound() {} } });
 	await assert.rejects(stubborn.listBooks(), /不认这个 API 密钥/u);
+});
+
+test('书库: the books with their job now (its stage, how far); a cover asked with the key; a sheet: jobs, coverage, contents; a job stopped', async () => {
+	const retainpdf = fakeRetainpdf();
+	const shelf = await library(retainpdf).shelf({ query: 'quantum', offset: 60 });
+	assert.equal(shelf.books[0].job.status, 'running');
+	assert.deepEqual(shelf.books[0].job, { status: 'running', stage: '翻译', percent: 25 });
+	assert.deepEqual(retainpdf.asked.slice(0, 2), ['/api/v1/documents?q=quantum&limit=60&offset=60', '/api/v1/jobs?job_ids=job-old&limit=1']);
+
+	const cover = await library(retainpdf).cover('abcdef0123456789');
+	assert.equal(cover.type, 'image/jpeg');
+	await assert.rejects(library(retainpdf).cover('../x'), /不认识这本书/u);
+
+	const detail = await library(retainpdf).bookDetail('doc-1');
+	assert.equal(detail.book.job_id, 'job-1');
+	assert.deepEqual(detail.jobs, [{ job_id: 'job-1', workflow: 'book', created: '2026-11-02T00:00:00Z', status: 'failed', failure: '模型服务超时', retryable: true }]);
+	assert.deepEqual(detail.coverage, { pages: 3, translated: 2 });
+	assert.deepEqual(detail.contents, [{ block: 'p001-b0000', level: 1, text: '第一章', page: 1 }]);
+
+	assert.deepEqual(await library(retainpdf).jobAction('job-1', 'cancel'), { ok: true });
+	await assert.rejects(library(retainpdf).jobAction('job-1', 'delete'), /不认识这个操作/u);
 });

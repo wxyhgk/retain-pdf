@@ -100,7 +100,8 @@ import { createRetainpdfView, type RetainpdfBook, type RetainpdfQuote, type Reta
 import { createBookTabs } from './wiring/book-tabs';
 import { citedBooks } from './editor/retainpdf-source';
 import { createNotesSplit } from './wiring/notes-split';
-import { markReadingPage, rememberPage } from './wiring/book-places';
+import { lastPage, markReadingPage, rememberPage } from './wiring/book-places';
+import { createBookShelf } from './library/book-shelf';
 import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfOpen } from './editor/retainpdf-quote';
 import { createAiChat } from './wiring/ai-chat';
 import { createDrive } from './wiring/drive';
@@ -1112,6 +1113,19 @@ window.addEventListener(RETAINPDF_NAVIGATE, (event) => {
 	showView('translate');
 	void retainpdf.navigate(target);
 });
+// 书库: RetainPDF's books as the Studio's own page (library/BookShelf.tsx); a book clicked there opens beside the note
+// being written (以笔记为根), RetainPDF's own page shown only to add a PDF (until the Studio takes them itself).
+const libraryView = shell.querySelector<HTMLElement>('#library-view')!;
+const bookShelf = createBookShelf(libraryView, {
+	openBook: (book, pageIdx) => void openBookBesideNote(book, pageIdx),
+	openNote(slug, find) {
+		showView('editor');
+		void pages.openAt(slug, find);
+	},
+	lastPage,
+	upload: () => showView('translate'),
+	openSettings: () => openSettings('retainpdf'),
+});
 const tableView = shell.querySelector<HTMLElement>('#table-view')!;
 const articleTable = createArticleTable(tableView, {
 	articles: () => articleList.articles(),
@@ -1134,6 +1148,8 @@ function showView(view: View, folder?: string): void {
 	tableView.hidden = view !== 'table';
 	appsView.hidden = view !== 'apps';
 	translateView.hidden = view !== 'translate';
+	libraryView.hidden = view !== 'library';
+	bookShelf.setVisible(view === 'library');
 	booksView.hidden = !(view === 'editor' && booksSplit.open);
 	bookTabs.setVisible(view === 'editor' && booksSplit.open);
 	chat.showChat(view === 'chat');
@@ -1159,6 +1175,8 @@ function showView(view: View, folder?: string): void {
 	}
 	tellReading();
 	markQuoteSpot();
+	if (view === 'library') url.searchParams.set('library', '');
+	else url.searchParams.delete('library');
 	if (view === 'apps') url.searchParams.set('apps', '');
 	else {
 		url.searchParams.delete('apps');
@@ -1177,6 +1195,7 @@ function showView(view: View, folder?: string): void {
 	if (folder !== null) showView('drive', folder);
 	else if (address.has('pages')) showView('table');
 	else if (address.has('translate')) showView('translate');
+	else if (address.has('library')) showView('library');
 	else if (address.get('app')) void miniApps.open(address.get('app')!);
 	else if (address.has('apps')) showView('apps');
 	else if (chatId) chat.openChat(chatId);

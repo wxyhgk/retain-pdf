@@ -147,7 +147,7 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 	const { view, chats, chat, count } = useShell();
 	const act = useActions();
 	const chatting = view === 'chat';
-	const toggle = (to: 'drive' | 'table' | 'translate') => () => act.showView(view === to ? 'editor' : to);
+	const toggle = (to: 'drive' | 'table') => () => act.showView(view === to ? 'editor' : to);
 	return (
 		<>
 			<div className="flex items-center gap-1 px-[9px] pt-2.5 pb-1">
@@ -177,8 +177,9 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				<Item id="open-drive" icon={Library} aria-pressed={view === 'drive'} onClick={toggle('drive')}>
 					{t('资料库')}
 				</Item>
-				{/* 书库: RetainPDF's own pages (the books, translating, reading) in the middle: wiring/retainpdf-view.ts. */}
-				<Item id="open-translate" icon={BookMarked} aria-pressed={view === 'translate'} onClick={toggle('translate')}>
+				{/* 书库: RetainPDF's books drawn by the Studio (library/BookShelf.tsx); pressed too while RetainPDF's own page is
+				    shown from it (上传 PDF: wiring/retainpdf-view.ts), and pressed again, back to the page. */}
+				<Item id="open-library" icon={BookMarked} aria-pressed={view === 'library' || view === 'translate'} onClick={() => act.showView(view === 'library' || view === 'translate' ? 'editor' : 'library')}>
 					{t('书库')}
 				</Item>
 				{/* Today's page under 日志 (as SiYuan's daily note), made from templates/journal.md the first time today. */}

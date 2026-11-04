@@ -145,6 +145,16 @@ test.beforeEach(() => {
 	writeFileSync(settingsFile(), JSON.stringify(settings, null, 2));
 });
 
+/**
+ * 书库 pressed as the author did when it was RetainPDF's own page: now the Studio's (library/BookShelf.tsx), RetainPDF's
+ * page shown from it (上传 PDF); pressed while either is shown, back to the note.
+ */
+async function pressLibrary(page: Page): Promise<void> {
+	const shown = await page.evaluate(() => document.querySelector('.studio-shell')?.getAttribute('data-view'));
+	await page.locator('#open-library').click();
+	if (shown !== 'library' && shown !== 'translate') await page.locator('.shelf-upload').click();
+}
+
 async function setAddress(page: Page, url: string): Promise<void> {
 	const status = await page.evaluate(
 		async (address) => (await fetch('/api/studio/settings/retainpdf', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: address }) })).status,
@@ -163,8 +173,8 @@ test('翻译 shows RetainPDF in the middle, kept as it was while another view is
 	await expect(frame).toHaveCount(1);
 	expect(await frame.getAttribute('src')).toBeNull();
 
-	await page.locator('#open-translate').click();
-	await expect(page.locator('#open-translate')).toHaveAttribute('aria-pressed', 'true');
+	await pressLibrary(page);
+	await expect(page.locator('#open-library')).toHaveAttribute('aria-pressed', 'true');
 	await expect(page.locator('#translate-view')).toBeVisible();
 	await expect(page.locator('.editor-panel')).toBeHidden();
 	// Told it is in the Studio, and how it looks.
@@ -177,7 +187,7 @@ test('翻译 shows RetainPDF in the middle, kept as it was while another view is
 	expect(new URL(page.url()).searchParams.has('translate')).toBe(true);
 
 	// Pressed again: the article, the frame left loaded behind it.
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(page.locator('#translate-view')).toBeHidden();
 	await expect(page.locator('.editor-panel')).toBeVisible();
 	expect(new URL(page.url()).searchParams.has('translate')).toBe(false);
@@ -200,7 +210,7 @@ test('摘到笔记 in RetainPDF puts the passage in the note being written (the 
 	await setAddress(page, retainpdfUrl);
 	// The note written: the page open. The caret put in it before: not where the passage goes (after its last block).
 	await editor(page).locator('p').first().click();
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(inFrame(page).locator('#theme')).toHaveText(/^(light|dark)$/u);
 
 	// The Studio's light or dark followed.
@@ -268,7 +278,7 @@ test('摘到笔记 in RetainPDF puts the passage in the note being written (the 
 	await expect(inFrame(page).locator('#navigated')).toHaveText(JSON.stringify({ job_id: 'job-1', block_id: 'p012-b0003', page_idx: 11 }));
 
 	// Back on the note: the book quoted comes out beside it as a tab (书), the note one of several books' then.
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await page.locator('#books-toggle').click();
 	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry']);
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
@@ -278,7 +288,7 @@ test('笔记 in RetainPDF opens the note being written beside it; another page o
 	writeArticle('second-note', '---\ntitle: 第二篇笔记\n---\n\n另一篇。\n');
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
 	const notesPanel = page.locator('.editor-panel');
 	await expect(notesPanel).toBeHidden();
@@ -314,11 +324,11 @@ test('笔记 in RetainPDF opens the note being written beside it; another page o
 
 	// Another page opened meanwhile: back in 翻译, that one beside it (the note written now), RetainPDF told; what is
 	// quoted then goes there. The right column back while the page was shown on its own.
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(shell).not.toHaveClass(/panel-collapsed/u);
 	await page.locator('#article-list .page-row', { hasText: '第二篇笔记' }).click();
 	await expect(page.locator('#breadcrumb-title')).toHaveText('第二篇笔记');
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(notesPanel).toBeVisible();
 	await expect(shell).toHaveClass(/panel-collapsed/u);
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:第二篇笔记');
@@ -342,7 +352,7 @@ test('笔记 in RetainPDF opens the note being written beside it; another page o
 test('a quote not from RetainPDF\'s frame is not taken', async ({ page }) => {
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(inFrame(page).locator('#theme')).toHaveText(/^(light|dark)$/u);
 	// The Studio's own page saying it, as any page of it could.
 	await page.evaluate(() =>
@@ -350,7 +360,7 @@ test('a quote not from RetainPDF\'s frame is not taken', async ({ page }) => {
 	);
 	await page.waitForTimeout(300);
 	await expect(page.locator('.studio-toast')).toHaveCount(0);
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(editor(page).locator('.retainpdf-source')).toHaveCount(0);
 });
 
@@ -363,7 +373,7 @@ test('RetainPDF not answering: why, a way to try again, and to its address in th
 	await new Promise<void>((resolve) => closed.close(() => resolve()));
 	await setAddress(page, nowhere);
 
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	const why = page.locator('#retainpdf-unreachable');
 	await expect(why).toBeVisible();
 	await expect(why).toContainText('连不上 RetainPDF');
@@ -402,7 +412,7 @@ const reading = (page: Page) => page.evaluate(async () => ((await (await fetch('
 test('what RetainPDF says is read (the book, the page) is kept for the AIs while 翻译 shows it, with the note beside it; nothing elsewhere', async ({ page }) => {
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(inFrame(page).locator('#library')).toHaveText('图书馆');
 	await expect.poll(() => reading(page)).toBeNull();
 
@@ -415,9 +425,9 @@ test('what RetainPDF says is read (the book, the page) is kept for the AIs while
 	await expect.poll(async () => (await reading(page))?.notes).toMatchObject({ title: 'Studio 测试夹具' });
 
 	// Another view: nothing read; back: the book again.
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect.poll(() => reading(page)).toBeNull();
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect.poll(async () => (await reading(page))?.page).toBe(12);
 
 	// The reader left (RetainPDF's 主页): nothing, though its notes are open (a book's notes, not a page of it, then).
@@ -455,7 +465,7 @@ test('设置 › RetainPDF: its API\'s address and key, tried at once; the key k
 test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to ask about the page read', async ({ page }) => {
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
 	// The notes open, the right column folded away for them: asked, it is there again, on the AI.
 	await inFrame(page).locator('#notes').click();
@@ -477,14 +487,14 @@ test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to a
 	// Read again, then another view: nothing of the book.
 	await inFrame(page).locator('#read').click();
 	await expect(ai.locator('.ai-empty-hint')).toContainText('《Quantum Chemistry》（第 12 页）');
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(ai.locator('.ai-empty-hint')).not.toContainText('Quantum Chemistry');
 });
 
 test('the passages quoted from the page read are picked out in the notes; 书 on the notes opens the book beside them where it was left', async ({ page }) => {
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await inFrame(page).locator('#quote').click();
 	const quoted = page.locator('.editor-panel .ProseMirror p:has(> .retainpdf-source)');
 	await expect(quoted).toHaveCount(1);
@@ -499,7 +509,7 @@ test('the passages quoted from the page read are picked out in the notes; 书 on
 	await expect.poll(marked).not.toBe('none');
 
 	// The note on its own (翻译 left): 书 in the bar opens the book beside it, at the page left.
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect.poll(marked).toBe('none');
 	await page.locator('#books-toggle').click();
 	await expect(page.locator('#books-view')).toBeVisible();
@@ -623,7 +633,7 @@ test('a book clicked to read in 书库 opens beside the note being written, a ta
 	tellsKey = true;
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
-	await page.locator('#open-translate').click();
+	await pressLibrary(page);
 	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
 
 	await inFrame(page).locator('#open-book').click();
