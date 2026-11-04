@@ -57,7 +57,7 @@ test("缺文件：按钮禁用但可见，title 说明原因；不再额外出 h
   assert.equal(submitBtn.disabled, true);
   assert.match(submitBtn.getAttribute("title") || "", /选择 PDF/);
   // 旧行为：底部再冒一行无样式的「请先选择 PDF 文件…再提交任务。选择文件」，
-  // 和上方拖放区的「单个 PDF / 最大 50MB」同屏说两遍。
+  // 和上方拖放区的「单个 PDF / 最大 512MB」同屏说两遍。
   // 注意别直接 assert.equal(element, null)：失败时 inspect 整个 JSDOM 节点会把进程撑爆。
   assert.equal(host.querySelector("#submit-hint")?.textContent ?? null, null);
   assert.equal(submitBtn.getAttribute("aria-describedby"), null);

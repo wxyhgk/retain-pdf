@@ -6,7 +6,7 @@ import { withTimeout } from "@/platform/utils/async-timeout.js";
 import { isRefusedSubmission } from "@/platform/api/index.js";
 import { buildErrorDiagnostic } from "@/platform/utils/error-diagnostics.js";
 import type { UploadPayload, UploadState, UploadStatePort } from "./state.js";
-import { currentPageCap, type PageCap, type UploadConfigPortLike, type UploadResponsePayload, type UploadViewPort } from "./ports.js";
+import { currentPageCap, type PageCap, type SizeCap, type UploadConfigPortLike, type UploadResponsePayload, type UploadViewPort } from "./ports.js";
 
 const BALANCE_CHECK_TIMEOUT_MS = 12000;
 
@@ -28,7 +28,8 @@ export interface FileUploadHandlerDeps {
   }) => Promise<{ status?: string } | unknown>) | null;
   configPort: UploadConfigPortLike;
   apiPrefix?: string;
-  frontMaxBytes: number;
+  frontMaxBytes: SizeCap;
+  sizeLimitHint?: (maxBytes: number) => string;
   frontMaxPageCount: PageCap;
   pageLimitHint?: (max: number) => string;
   countPdfPages?: (file: File) => Promise<number> | number;
@@ -66,6 +67,7 @@ export function createFileUploadHandler(deps: FileUploadHandlerDeps) {
     apiPrefix,
     frontMaxBytes,
     frontMaxPageCount,
+    sizeLimitHint,
     pageLimitHint,
     countPdfPages,
     defaultFileLabel,
@@ -86,8 +88,10 @@ export function createFileUploadHandler(deps: FileUploadHandlerDeps) {
     if (!file) {
       return;
     }
-    if (file.size > frontMaxBytes) {
-      setText("error-box", `当前前端限制为 ${formatByteLimit(frontMaxBytes)} 以内 PDF`);
+    const maxBytes = currentPageCap(frontMaxBytes);
+    if (maxBytes && file.size > maxBytes) {
+      const hint = sizeLimitHint?.(maxBytes);
+      setText("error-box", `当前限制为 ${formatByteLimit(maxBytes)} 以内 PDF${hint ? `（${hint}）` : ""}`);
       viewPort.showUploadStatus("文件超出大小限制");
       return;
     }
