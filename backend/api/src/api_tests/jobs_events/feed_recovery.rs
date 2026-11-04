@@ -39,6 +39,8 @@ async fn bootstrap_stage_basis_matches_published_order_across_chunk_boundaries()
             "stage_detail": format!("JSONL page {seq}"), "event_type": "stage_progress",
             "message": format!("JSONL page {seq}"), "progress_current": seq,
             "progress_total": 10000, "progress_unit": "page",
+            // 撑过 1 MiB：文件按字节分批，1025 行照样分成两批导入（建事件流时按条数一批 16384 条，单靠条数分不出两批）
+            "padding": "x".repeat(1100),
         })
         .to_string()
             + "\n"

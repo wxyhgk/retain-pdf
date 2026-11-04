@@ -280,15 +280,20 @@ impl Db {
                 "CREATE UNIQUE INDEX event_feed_publish_order_key
                  ON event_feed_publish_order(source_key)",
             )?;
+            // 只挪位置变了的行。导入顺序多半已经是最终顺序（库里的事件按序号读、时间本来就递增），以前每行都改两遍
+            // 序号，28 万条要 5 秒（2026-11-04）。新序号是 1..N 的一个排列，没挪的行占着的号不会和挪的行撞。
             tx.execute(
                 "UPDATE event_feed_items SET seq = -(
                      SELECT new_seq FROM event_feed_publish_order
                      WHERE event_feed_publish_order.source_key = event_feed_items.source_key
-                 ) WHERE owner_job_id = ?1",
+                 ) WHERE owner_job_id = ?1 AND seq <> (
+                     SELECT new_seq FROM event_feed_publish_order
+                     WHERE event_feed_publish_order.source_key = event_feed_items.source_key
+                 )",
                 [owner],
             )?;
             tx.execute(
-                "UPDATE event_feed_items SET seq = -seq WHERE owner_job_id = ?1",
+                "UPDATE event_feed_items SET seq = -seq WHERE owner_job_id = ?1 AND seq < 0",
                 [owner],
             )?;
             high_seq =

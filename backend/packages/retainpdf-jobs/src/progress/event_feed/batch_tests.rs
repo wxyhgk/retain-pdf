@@ -191,3 +191,32 @@ fn failed_parent_stage_is_not_taken_from_the_ocr_childs_finished_stage() {
     assert_ne!(snapshot["stage_detail"], "任务完成", "{snapshot}");
     assert_eq!(snapshot["stage"], "translating", "{snapshot}");
 }
+
+#[test]
+fn an_initial_build_larger_than_one_batch_publishes_every_event_in_order() {
+    // 建事件流时一批 16384 条（sync::INITIAL_CHUNK）：多出一批的历史要全部导进来、按时间排好，阶段进度取最后一条
+    let fs = Fixture::new("batch-initial-chunks");
+    fs.job("owner", None);
+    let total = sync::INITIAL_CHUNK as i64 + 5;
+    let mut conn = Connection::open(&fs.root.join("jobs.db")).unwrap();
+    let tx = conn.transaction().unwrap();
+    {
+        let mut insert = tx
+            .prepare(
+                "INSERT INTO events(job_id,seq,ts,level,stage,event,message,progress_current,progress_total)
+                 VALUES('owner',?1,?2,'info','translating','stage_progress','progress',?1,?3)",
+            )
+            .unwrap();
+        let base = Utc::now() - Duration::hours(1);
+        for seq in 1..=total {
+            insert
+                .execute(rusqlite::params![seq, (base + Duration::milliseconds(seq)).to_rfc3339(), total])
+                .unwrap();
+        }
+    }
+    tx.commit().unwrap();
+    assert_eq!(fs.project("owner")["progress_current"], total);
+    let feed = fs.db.load_event_feed("owner").unwrap().unwrap();
+    assert_eq!(feed.high_seq, total);
+    assert!(fs.fast("owner"));
+}
