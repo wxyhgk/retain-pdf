@@ -62,6 +62,10 @@ line. Empty warm polls do not parse historical JSONL again.
 Feed retention follows `RUST_API_EVENTS_RETENTION_DAYS` (default 30, 0 disables
 cleanup), only for terminal jobs. A persisted cutoff prevents rebuilding expired
 history from retained source files. Original files are not additionally deleted.
+The cutoff is floored to UTC midnight: moving it bumps every terminal job's
+source revision and forces a full feed rebuild on the next read, so repeated
+sweeps and restarts on the same day leave it unchanged (at most one move a day;
+events may be kept up to one extra day).
 
 ## Release and verification
 
