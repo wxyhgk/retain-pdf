@@ -43,10 +43,15 @@ export type RetainpdfViewHost = {
 	reading(reading: RetainpdfReading | null): void;
 	/** Its reader's AI clicked (`ask-ai`): the Studio's AI asked instead, the book and page read told it (`reading`, just before). */
 	askAi(): void;
+	/**
+	 * A book clicked to read in its library (`open-book`, 书库 only): beside the note being written instead (以笔记为根),
+	 * at `page_idx` when given, else where it was left.
+	 */
+	openBook?(book: RetainpdfBook, page_idx: number | null): void;
 };
 
-/** What the Studio takes of RetainPDF's messages (`hello`'s `features`). */
-const STUDIO_FEATURES = ['quote', 'open-notes', 'ask-ai'];
+/** What the Studio takes of RetainPDF's messages (`hello`'s `features`): in 书库, a book to read is given to it (`open-book`). */
+const STUDIO_FEATURES = ['quote', 'open-notes', 'ask-ai', 'open-book'];
 /** A book beside a note (book-tabs.ts): its notes are the note beside it, so no 笔记 button of its own. */
 export const BESIDE_NOTE_FEATURES = ['quote', 'ask-ai'];
 
@@ -130,6 +135,12 @@ export function createRetainpdfView(
 			host.quote(message as unknown as RetainpdfQuote);
 		} else if (message.type === 'open-notes' && isBook(message)) {
 			host.openNotes({ job_id: message.job_id as string, document_id: message.document_id as string | null, title: message.title as string | null });
+		} else if (message.type === 'open-book' && isBook(message) && studioFeatures.includes('open-book') && host.openBook) {
+			const page = message.page_idx;
+			host.openBook(
+				{ job_id: message.job_id as string, document_id: message.document_id as string | null, title: message.title as string | null },
+				typeof page === 'number' && Number.isInteger(page) && page >= 0 ? page : null,
+			);
 		} else if (message.type === 'close-notes') {
 			host.closeNotes();
 		} else if (message.type === 'ask-ai') {

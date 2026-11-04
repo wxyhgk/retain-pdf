@@ -12,9 +12,12 @@ export const STUDIO_EMBED = "studio";
 export type StudioTheme = "light" | "dark";
 /** 我们处理、会发的（回 ready 时报给 Studio）。reading：会告诉 Studio 眼下读到哪。 */
 export type StudioFeature = "theme" | "navigate" | "quote" | "notes" | "reading";
-/** Studio 处理的、我们发过去的（hello.features）：quote →「摘到笔记」，open-notes →「笔记」按钮，ask-ai → 阅读页的「AI」打开 Studio 的 AI。 */
-export type StudioSideFeature = "quote" | "open-notes" | "ask-ai";
-const STUDIO_SIDE_FEATURES: readonly StudioSideFeature[] = ["quote", "open-notes", "ask-ai"];
+/**
+ * Studio 处理的、我们发过去的（hello.features）：quote →「摘到笔记」，open-notes →「笔记」按钮，ask-ai → 阅读页的「AI」打开
+ * Studio 的 AI，open-book → 书库里点书要读时交给 Studio（在正在写的笔记旁边打开），我们不自己打开阅读页。
+ */
+export type StudioSideFeature = "quote" | "open-notes" | "ask-ai" | "open-book";
+const STUDIO_SIDE_FEATURES: readonly StudioSideFeature[] = ["quote", "open-notes", "ask-ai", "open-book"];
 
 /** Studio 发来、我们认的消息。hello 的 features 为 null 是早先的 Studio（没发这个字段），只认 quote。 */
 export type StudioIncoming =
@@ -100,6 +103,19 @@ export function openNotesMessage(book: StudioBook) {
     job_id: book.jobId,
     document_id: book.documentId || null,
     title: book.title || null,
+  } as const;
+}
+
+/** 书库里点了一本书要读（Studio 认 open-book 时）：交给 Studio；pageIdx 为 null 时 Studio 从上次读到的地方开。 */
+export function openBookMessage(book: StudioBook, pageIdx: number | null = null) {
+  return {
+    protocol: STUDIO_BRIDGE_PROTOCOL,
+    v: STUDIO_BRIDGE_VERSION,
+    type: "open-book",
+    job_id: book.jobId,
+    document_id: book.documentId || null,
+    title: book.title || null,
+    ...(typeof pageIdx === "number" && Number.isInteger(pageIdx) && pageIdx >= 0 ? { page_idx: pageIdx } : {}),
   } as const;
 }
 

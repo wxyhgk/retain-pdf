@@ -32,6 +32,7 @@ const STAND_IN = `<!doctype html><meta charset="utf-8"><title>RetainPDF</title>
 <button id="read" type="button">读</button>
 <button id="leave" type="button">离开</button>
 <button id="ask" type="button">AI</button>
+<button id="open-book" type="button">读 Statistical Mechanics</button>
 <script>
 const head = { protocol: 'retainpdf-studio-bridge', v: 1 };
 let host = '';
@@ -72,6 +73,14 @@ document.querySelector('#leave').addEventListener('click', () => parent.postMess
 	host,
 ));
 document.querySelector('#ask').addEventListener('click', () => parent.postMessage({ ...head, type: 'ask-ai' }, host));
+// A book clicked to read in 图书馆: given to the Studio when it takes it (open-book), as RetainPDF's library does.
+document.querySelector('#open-book').addEventListener('click', () => {
+	if (document.querySelector('#studio').textContent.split(',').includes('open-book')) {
+		parent.postMessage({ ...head, type: 'open-book', job_id: 'job-2', document_id: 'doc-2', title: 'Statistical Mechanics', page_idx: 7 }, host);
+	} else {
+		document.querySelector('#opened').textContent = 'reader:job-2';
+	}
+});
 document.querySelector('#quote').addEventListener('click', () => parent.postMessage({
 	...head, type: 'quote', job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', item_id: 'p012-b0003', page_idx: 11,
 	source_text: 'The variation principle $x^2$.', translated_text: '变分原理：\\n\\n$$E = mc^2$$',
@@ -163,7 +172,7 @@ test('翻译 shows RetainPDF in the middle, kept as it was while another view is
 	await expect(inFrame(page).locator('#library')).toHaveText('图书馆');
 	await expect(inFrame(page).locator('#embed')).toHaveText('studio');
 	await expect(inFrame(page).locator('#theme')).toHaveText(/^(light|dark)$/u);
-	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai');
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
 	expect(new URL(page.url()).searchParams.has('translate')).toBe(true);
 
@@ -447,7 +456,7 @@ test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to a
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#open-translate').click();
-	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai');
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
 	// The notes open, the right column folded away for them: asked, it is there again, on the AI.
 	await inFrame(page).locator('#notes').click();
 	await expect(page.locator('.studio-shell')).toHaveClass(/panel-collapsed/u);
@@ -590,6 +599,64 @@ test('⌘K finds words in the books too: a passage, its book and page; chosen, t
 		.poll(async () => `${await bookFrame(page, 'job-3').locator('#opened').textContent()} ${await bookFrame(page, 'job-3').locator('#navigated').textContent()}`)
 		.toMatch(/page_idx(=|":)11/u);
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
+});
+
+test('a book clicked to read in 书库 opens beside the note being written, a tab of it, at its page; the books beside a note do not hand theirs on', async ({ page }) => {
+	tellsKey = true;
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#open-translate').click();
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
+
+	await inFrame(page).locator('#open-book').click();
+	// Back on the note, the book beside it at that page (以笔记为根); 书库 left.
+	await expect(page.locator('#translate-view')).toBeHidden();
+	await expect(page.locator('#books-view')).toBeVisible();
+	await expect(page.locator('#books-toggle')).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
+	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Statistical Mechanics');
+	await expect(bookFrame(page, 'job-2').locator('#opened')).toHaveText('job_id=job-2&page_idx=7&embed_pane=beside');
+	// A book beside a note is not told the Studio takes open-book: it does not hand its books on.
+	await expect(bookFrame(page, 'job-2').locator('#studio')).toHaveText('quote,ask-ai');
+	// What is quoted from it goes into the note.
+	await bookFrame(page, 'job-2').locator('#quote').click();
+	await expect(page.locator('.studio-toast')).toContainText('已摘到「Studio 测试夹具」');
+});
+
+test('⤢ 整页读: the book over the whole middle, the note put away meanwhile and still quoted into; ⤡ back beside it', async ({ page }) => {
+	appendToFixture('\n[Quantum Chemistry · 第 3 页](retainpdf:job-1/p003-b0001?page=3&document=doc-1) 第一本书。\n');
+	tellsKey = true;
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#books-toggle').click();
+	await expect(bookFrame(page, 'job-1').locator('#opened')).toHaveText('job_id=job-1&page_idx=0&embed_pane=beside');
+	const wide = page.locator('#book-tabs-wide');
+	await expect(wide).toHaveAttribute('aria-pressed', 'false');
+	const beside = (await page.locator('#books-view').boundingBox())!.width;
+
+	await wide.click();
+	await expect(wide).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('.editor-panel')).toBeHidden();
+	const middle = (await page.locator('.workspace-main').boundingBox())!.width;
+	await expect.poll(async () => (await page.locator('#books-view').boundingBox())!.width).toBeGreaterThan(Math.max(beside + 200, middle - 4));
+	// The note is still the one quoted into, and the bar says it.
+	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
+	await bookFrame(page, 'job-1').locator('#quote').click();
+	await expect(page.locator('.studio-toast')).toContainText('已摘到「Studio 测试夹具」');
+
+	// ⤡: beside the note again, the passage in it.
+	await wide.click();
+	await expect(wide).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.locator('.editor-panel')).toBeVisible();
+	await expect(editor(page).locator('p:has(> .retainpdf-source)', { hasText: '变分原理' })).toHaveCount(1);
+
+	// The books put away while over the whole middle: out again, beside the note.
+	await wide.click();
+	await page.locator('#books-toggle').click();
+	await expect(page.locator('.editor-panel')).toBeVisible();
+	await page.locator('#books-toggle').click();
+	await expect(wide).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.locator('.editor-panel')).toBeVisible();
 });
 
 test('a passage quoted before (a ```retainpdf block) opens as one quoted now: its translation, the mark in its corner; saved so', async ({ page }) => {

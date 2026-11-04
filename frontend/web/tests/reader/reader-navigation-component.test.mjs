@@ -329,3 +329,57 @@ test("retry-stage handoff keeps a canonical document Reader URL", async () => {
   assert.equal(next.searchParams.get("page_idx"), "4");
   dom.window.close();
 });
+
+test("openReaderRequested：放在 Studio 的书库里、Studio 认 open-book 时，书交给 Studio（合并后的任务、书编号、页），不开阅读页；不认照旧开", async () => {
+  const dom = makeDom("", NAV_DOM);
+  const hits = { assign: [], replace: [] };
+  const { setReaderNavigateForTests } = await import("../../src/features/reader/domain.ts");
+  setReaderNavigateForTests((url, { replace } = {}) => {
+    if (replace) hits.replace.push(url);
+    else hits.assign.push(url);
+  });
+  const { createRoot } = await import("react-dom/client");
+  const React = await import("react");
+  const { ReaderNavigation } = await import("../../src/features/reader/index.js");
+  const { APP_EVENTS } = await import("@/platform/contracts/app-contract.js");
+  const merged = `merged-${"b".repeat(64)}-0123456789abcdef`;
+  const handed = [];
+  let studioTakes = true;
+
+  const host = dom.window.document.createElement("div");
+  dom.window.document.body.appendChild(host);
+  const root = createRoot(host);
+  await renderFlushingEffects(React, root,
+    React.createElement(ReaderNavigation, {
+      fetchReading: async (documentId) => (documentId === "doc-1" ? { job_id: merged } : { job_id: null }),
+      handOffBook: (book, pageIdx) => {
+        handed.push({ book, pageIdx });
+        return studioTakes;
+      },
+    }),
+  );
+  const ask = (detail) => dom.window.document.dispatchEvent(new dom.window.CustomEvent(APP_EVENTS.openReaderRequested, { detail }));
+
+  ask({ jobId: "job-1", documentId: "doc-1", pageIdx: null, blockId: "" });
+  await waitFor(() => handed.length === 1, "应交给 Studio");
+  assert.deepEqual(handed[0], { book: { jobId: merged, documentId: "doc-1", title: null }, pageIdx: null }, "交的是该打开的那个任务");
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.deepEqual(hits.assign, [], "交出去了就不开阅读页");
+
+  ask({ jobId: "job-1", documentId: "doc-1", pageIdx: 6, blockId: "p007-b0001", pinJob: true, title: "量子化学" });
+  await waitFor(() => handed.length === 2, "带页的也交");
+  assert.deepEqual(handed[1], { book: { jobId: "job-1", documentId: "doc-1", title: "量子化学" }, pageIdx: 6 });
+
+  studioTakes = false;
+  ask({ jobId: "job-1", documentId: "doc-1", pageIdx: null, blockId: "" });
+  await waitFor(() => hits.assign.length === 1, "Studio 不认就照旧开阅读页");
+
+  // 只读原文、还没有任务的书：没有 job_id 交不了，照旧自己开。
+  studioTakes = true;
+  ask({ documentId: "doc-only", pageIdx: null, blockId: "" });
+  await waitFor(() => hits.assign.length === 2, "只读原文的照旧开");
+  assert.equal(handed.length, 3);
+
+  root.unmount();
+  host.remove();
+});

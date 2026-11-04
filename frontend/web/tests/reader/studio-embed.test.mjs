@@ -14,6 +14,7 @@ import {
   isLoopbackOrigin,
   parseStudioMessage,
   closeNotesMessage,
+  openBookMessage,
   openNotesMessage,
   quoteMessage,
   readingMessage,
@@ -343,7 +344,7 @@ test("读到哪：阅读器翻页报给宿主，握过手才发，防抖停下�
 test("ask-ai 对得上契约；hello 带 ask-ai 记下来，契约外的能力不认", () => {
   assertMatchesContract(askAiMessage(), "AskAiMessage");
   assert.deepEqual(askAiMessage(), { protocol: "retainpdf-studio-bridge", v: 1, type: "ask-ai" });
-  assert.deepEqual(CONTRACT.definitions.StudioFeature.enum, ["quote", "open-notes", "ask-ai"], "Studio 的能力就这三样");
+  assert.deepEqual(CONTRACT.definitions.StudioFeature.enum, ["quote", "open-notes", "ask-ai", "open-book"], "Studio 的能力就这四样");
   assert.deepEqual(parseStudioMessage(hello("light", ["quote", "ask-ai", "fly"])).features, ["quote", "ask-ai"]);
 });
 
@@ -456,4 +457,27 @@ test("阅读页没有自己的 AI 了（2026-11-03）：竖条上的「AI」只�
   assert.doesNotMatch(render(), /aria-label="打开AI"/, "Studio 不认 ask-ai：没有");
   setReaderAdapters(null);
   assert.equal(asked, 0);
+});
+
+test("open-book 对得上契约（带页、不带页）；Studio 认 open-book 才交，没握手、不认都不交", () => {
+  const book = { jobId: "j1", documentId: "d1", title: "量子化学" };
+  assertMatchesContract(openBookMessage(book, 4), "OpenBookMessage");
+  assertMatchesContract(openBookMessage(book), "OpenBookMessage");
+  assert.deepEqual(openBookMessage(book, 4), { protocol: "retainpdf-studio-bridge", v: 1, type: "open-book", job_id: "j1", document_id: "d1", title: "量子化学", page_idx: 4 });
+  assert.equal("page_idx" in openBookMessage(book, null), false, "不知道页就不写，Studio 从上次读到的地方开");
+  assert.equal("page_idx" in openBookMessage(book, -1), false);
+  assert.deepEqual(openBookMessage({ jobId: "j1", documentId: "", title: "" }), { protocol: "retainpdf-studio-bridge", v: 1, type: "open-book", job_id: "j1", document_id: null, title: null });
+
+  const dom = makeDom();
+  const fake = fakeWindow(dom);
+  const embed = startStudioEmbed(fake.win);
+  assert.equal(embed.openBook(book), false, "没握手不交");
+  fake.receive(hello("light", ["quote", "open-notes", "ask-ai"]));
+  assert.equal(embed.openBook(book), false, "Studio 不认 open-book（笔记旁边的书）不交");
+  fake.receive(hello("light", ["quote", "open-notes", "ask-ai", "open-book"]));
+  assert.equal(embed.openBook({ jobId: "", documentId: "d1", title: null }), false, "没有任务交不了");
+  assert.equal(embed.openBook(book, 4), true);
+  assert.deepEqual(fake.sent.at(-1).data, openBookMessage(book, 4));
+  assert.equal(fake.sent.at(-1).origin, STUDIO, "不用 '*'");
+  embed.stop();
 });

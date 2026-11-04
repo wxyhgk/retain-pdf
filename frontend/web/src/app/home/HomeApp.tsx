@@ -49,6 +49,7 @@ import type { AuthSessionView } from "@retainpdf/api/auth";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import { StatusDetailDialog } from "@/features/job-detail/index.js";
 import { ReaderNavigation, SoftReaderHost } from "@/features/reader/index.js";
+import { studioEmbed } from "@/app/bootstrap/studio-embed.js";
 import {
   CollectionDialog,
   CollectionsView,
@@ -279,7 +280,8 @@ function HomeShell() {
       <developer-auth-dialog></developer-auth-dialog>
       <developer-settings-dialog></developer-settings-dialog>
       <StatusDetailDialog />
-      <ReaderNavigation />
+      {/* 放在 Studio 的书库里：点书要读交给 Studio（open-book），开在正在写的笔记旁边。 */}
+      <ReaderNavigation handOffBook={handOffToStudio} />
       {/* 软打开阅读器：全屏层，主页不卸载（关 × 不刷新） */}
       <SoftReaderHost />
       <CollectionDialogSlot />
@@ -315,6 +317,11 @@ function CredentialsProviderSlot({ children }: { children: React.ReactNode }) {
     </CredentialsProvider>
   );
 }
+
+
+/** 书库里点书要读：Studio 认 open-book 就交给它（以笔记为根），不认照旧自己开阅读页。 */
+const handOffToStudio = (book: { jobId: string; documentId: string | null; title: string | null }, pageIdx: number | null) =>
+  studioEmbed?.openBook(book, pageIdx) ?? false;
 
 export function HomeApp({ services, authSession = null }: { services: HomeServices; authSession?: AuthSessionView | null }) {
   return (
