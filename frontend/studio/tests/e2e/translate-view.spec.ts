@@ -538,6 +538,9 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await page.frames().find((frame) => frame.url().includes('job_id=job-1'))!.evaluate(() => ((window as unknown as { kept: boolean }).kept = true));
 	await page.locator('.book-tab-name', { hasText: 'Statistical Mechanics' }).click();
 	await expect(bookFrame(page, 'job-2').locator('#opened')).toHaveText('job_id=job-2&page_idx=0&embed_pane=beside');
+	// Each book's reader told which of its passages this note quotes (it marks them), job-1's when it was made.
+	await expect(bookFrame(page, 'job-2').locator('#quoted')).toHaveText('job-2:p008-b0004');
+	await expect(bookFrame(page, 'job-1').locator('#quoted')).toHaveText('job-1:p003-b0001');
 	await page.locator('.book-tab-name', { hasText: 'Quantum Chemistry' }).click();
 	await expect(page.locator('.book-frame[data-job="job-1"]')).toHaveAttribute('data-shown', '');
 	expect(await page.frames().find((frame) => frame.url().includes('job_id=job-1'))!.evaluate(() => (window as unknown as { kept?: boolean }).kept)).toBe(true);
@@ -560,6 +563,8 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await expect(page.locator('.studio-toast')).toContainText('已摘到「Studio 测试夹具」');
 	const quoted = editor(page).locator('p:has(> .retainpdf-source)', { hasText: '变分原理' });
 	await expect(quoted).toHaveCount(1);
+	// The book quoted from told again (a moment after): it marks the new passage too.
+	await expect(bookFrame(page, 'job-1').locator('#quoted')).toHaveText(/^job-1:.*p012-b0003/u);
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
 	await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.ProseMirror') !== null)).toBe(true);
 	await expect.poll(spotShown).toBe(false);

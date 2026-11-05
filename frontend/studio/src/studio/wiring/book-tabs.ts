@@ -58,6 +58,11 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 
 	let books: RetainpdfBook[] = [];
 	let shown: string | null = null;
+	/** Which passages of a book the note quotes (its blocks): told each book's reader, which marks them (studio-bridge `quoted`). */
+	let quotedOf: ((book: RetainpdfBook) => string[]) | null = null;
+	function tellQuoted(book: RetainpdfBook, frame: Frame): void {
+		if (quotedOf) frame.view.quoted(book, quotedOf(book));
+	}
 	/** Whether the pane is out: frames are made only for a tab shown while it is. */
 	let visible = false;
 	const kept = new Map<string, Frame>();
@@ -101,6 +106,7 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 			};
 			frame = made;
 			kept.set(job, frame);
+			tellQuoted(book, made);
 			void frame.view.navigate(target ?? { job_id: job, page_idx: lastPage(job) ?? 0 });
 			letGo();
 		} else if (target) {
@@ -187,6 +193,14 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 	});
 
 	const api = {
+		/** The note's passages of each book (`of`), told the books' readers (now, and to each frame made later). */
+		tellQuoted(of: (book: RetainpdfBook) => string[]): void {
+			quotedOf = of;
+			for (const book of books) {
+				const frame = kept.get(book.job_id);
+				if (frame) tellQuoted(book, frame);
+			}
+		},
 		/** The note's books (another note shown, or the same again): their tabs, `show` the one shown. */
 		setBooks(next: RetainpdfBook[], show: string | null = null): void {
 			books = next.map((book) => ({ ...book }));
