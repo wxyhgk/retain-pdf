@@ -99,6 +99,7 @@ import { createEditorAi } from './wiring/editor-ai';
 import { createRetainpdfView, type RetainpdfBook, type RetainpdfQuote, type RetainpdfReading } from './wiring/retainpdf-view';
 import { createBookTabs } from './wiring/book-tabs';
 import { bookPassages, citedBooks } from './editor/retainpdf-source';
+import { createNoteTabs } from './wiring/note-tabs';
 import { createQuotePanel, type QuoteBook } from './quotes/quote-panel';
 import { createNotesSplit } from './wiring/notes-split';
 import { markReadingPage, rememberPage } from './wiring/book-places';
@@ -244,6 +245,14 @@ const articleActions = createArticleActions({
 	reload: () => articleList.load(),
 	refreshGit: () => refreshGit(),
 });
+// The notes open, a tab each over the note (wiring/note-tabs.ts), as SiYuan's documents.
+const noteTabs = createNoteTabs(shell.querySelector<HTMLElement>('#note-tabs')!, {
+	open(slug) {
+		showView('editor');
+		articleList.select(slug);
+		void session.open(slug);
+	},
+});
 const articleList = createArticleList(shell.querySelector<HTMLElement>('.article-sidebar')!, {
 	open: (slug) => {
 		showView('editor');
@@ -272,6 +281,7 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 	toggleFavorite: (slug) => pages.starPage(slug),
 	listed: (articles) => {
 		pages.showPath();
+		noteTabs.listed(articles.map((article) => article.slug));
 		properties.knowTags(articles.flatMap((article) => article.tags ?? []));
 		if (shell.dataset.view === 'table') articleTable.refresh();
 	},
@@ -701,6 +711,7 @@ const session = new ArticleSession(
 			backlinksShown = backlinks.show(article.slug);
 			terminal.showArticle(article.slug);
 			chat.aiPanel.showArticle({ slug: article.slug, title: openTitle });
+			noteTabs.shown(article.slug, openTitle, articleList.articles().find((each) => each.slug === article.slug)?.icon ?? '');
 			refreshQuotes();
 			void library.load(article.slug);
 			const url = new URL(window.location.href);
@@ -721,6 +732,7 @@ const session = new ArticleSession(
 				articleList.retitled(session.slug, title);
 				// The AI panel's chip of the article open, named anew too (not left as it was till it is taken off and on).
 				chat.aiPanel.showArticle({ slug: session.slug, title: openTitle });
+				noteTabs.retitled(session.slug, openTitle);
 				refreshQuotes();
 			}
 		},

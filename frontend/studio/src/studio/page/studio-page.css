@@ -27,6 +27,16 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* Dragged onto a page: under it. Below the pages: at the top. */
 /* Above or below a page: a line there, as far in as the page. */
 .editor-panel { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; }
+/* The notes open, a tab each (wiring/note-tabs.ts): the row as tall as the books' beside it, the two lined up. */
+.note-tabs { display: flex; min-height: 38px; flex: none; align-items: center; gap: 2px; padding: 4px 8px; overflow-x: auto; border-bottom: 1px solid rgba(var(--gray), 0.2); scrollbar-width: none; }
+.note-tabs:empty { display: none; }
+.note-tab { display: flex; min-width: 72px; max-width: 200px; flex: 0 1 auto; align-items: center; border-radius: 6px; }
+.note-tab:hover, .note-tab:has([aria-selected='true']) { background: rgba(var(--gray), 0.12); }
+.note-tab-name { min-width: 0; overflow: hidden; padding: 4px 4px 4px 9px; border: 0; background: none; color: rgb(var(--gray)); font: inherit; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.note-tab-name[aria-selected='true'] { color: rgb(var(--black)); font-weight: 600; }
+.note-tab-close { display: grid; width: 22px; height: 22px; flex: none; place-items: center; margin-right: 3px; padding: 0; border: 0; border-radius: 5px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 15px; line-height: 1; opacity: 0; cursor: pointer; }
+.note-tab:hover .note-tab-close, .note-tab:has([aria-selected='true']) .note-tab-close, .note-tab-close:focus-visible { opacity: 1; }
+.note-tab-close:hover { background: rgba(var(--gray), 0.18); color: rgb(var(--black)); }
 /* The drive in the middle, the article kept open behind it; the bar keeps only the side panel's button. */
 .drive-page { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 12px; }
 .drive-page[hidden] { display: none; }
@@ -61,17 +71,18 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* A passage just quoted (摘到笔记): its paragraph lit, fading, to see where it went. */
 @keyframes retainpdf-quote-arrive { from { background: rgba(var(--black), 0.08); } to { background: rgba(var(--black), 0); } }
 .crepe-host [data-just-quoted] { border-radius: 4px; animation: retainpdf-quote-arrive 1.6s ease-out; }
-/* 书 beside a note (wiring/book-tabs.ts): the books on the left, a tab each, the note on the right as with 翻译's 笔记. */
+/* 书 beside a note (wiring/book-tabs.ts): the note on the left, the books on its right, a tab each (as SiYuan opens a PDF
+   beside a document: the author, 2026-11-05); the line between them dragged sets the books' width. */
 .books-page { display: flex; min-height: 0; flex-direction: column; }
 .books-page[hidden] { display: none; }
-.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .workspace-main { display: grid; grid-template-columns: minmax(320px, 1fr) min(var(--notes-width, 44%), calc(100% - 320px)); grid-template-rows: auto minmax(0, 1fr); }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .workspace-main { display: grid; grid-template-columns: minmax(320px, 1fr) min(var(--notes-width, 50%), calc(100% - 320px)); grid-template-rows: auto minmax(0, 1fr); }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .studio-bar { grid-column: 1 / -1; }
-.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .books-page { position: relative; grid-column: 1; grid-row: 2; }
-.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .editor-panel { grid-column: 2; grid-row: 2; border-left: 1px solid rgba(var(--gray), 0.2); --studio-editor-padding: 28px; --studio-title-size: 26px; }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .books-page { position: relative; grid-column: 2; grid-row: 2; border-left: 1px solid rgba(var(--gray), 0.2); }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .editor-panel { grid-column: 1; grid-row: 2; --studio-editor-padding: 28px; --studio-title-size: 26px; }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .editor-panel .page-head { padding-top: 22px; }
-.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .notes-divider { position: absolute; z-index: 5; top: 0; right: -4px; bottom: 0; display: block; width: 8px; cursor: col-resize; touch-action: none; }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .notes-divider { position: absolute; z-index: 5; top: 0; left: -4px; bottom: 0; display: block; width: 8px; cursor: col-resize; touch-action: none; }
 /* ⤢ 整页读: the book over the whole middle, the note put away meanwhile (kept as it was, quotes still going into it). */
-.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'][data-books-wide] .workspace-main { grid-template-columns: minmax(0, 1fr); }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'][data-books-wide] .workspace-main { grid-template-columns: 0 minmax(0, 1fr); }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'][data-books-wide] :is(.editor-panel, .notes-divider) { display: none; }
 .studio-shell[data-resizing-notes] .books-page iframe { pointer-events: none; }
 /* One row over a note's books: the tabs (and ＋) shrinking first, then the reader's controls (BookControls.tsx), ⤢. */

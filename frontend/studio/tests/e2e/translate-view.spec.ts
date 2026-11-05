@@ -521,6 +521,14 @@ test('the passages quoted from the page read are picked out in 摘录; 书 on th
 
 const bookFrame = (page: Page, job: string) => page.frameLocator(`.book-frame[data-job="${job}"] iframe`);
 
+/** A book's tab shown: clicked, or picked from ▾ when the row is too narrow for its tab (only the shown one's is). */
+async function showBookTab(page: Page, title: string): Promise<void> {
+	const tab = page.locator('.book-tab-name', { hasText: title });
+	if (await tab.isVisible()) return tab.click();
+	await page.locator('.book-tabs-more').click();
+	await page.getByRole('menuitem', { name: new RegExp(title, 'u') }).click();
+}
+
 test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark shows its passage beside the note; what is quoted goes into the note; ＋ opens another', async ({ page }) => {
 	appendToFixture(
 		'\n[Quantum Chemistry · 第 3 页](retainpdf:job-1/p003-b0001?page=3&document=doc-1) 第一本书。\n\n' +
@@ -534,11 +542,11 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	// Out beside the note: a tab for each book it quotes, the first shown, opened straight at its reader (no 笔记 of its own).
 	await page.locator('#books-toggle').click();
 	await expect(page.locator('#books-toggle')).toHaveAttribute('aria-pressed', 'true');
-	// The right column (the AI) stays (先不收, 2026-11-03); side by side, the books left.
+	// The right column (the AI) stays (先不收, 2026-11-03); side by side, the note left, the books right (as SiYuan).
 	await expect(page.locator('.studio-shell')).not.toHaveClass(/panel-collapsed/u);
 	const books = await page.locator('#books-view').boundingBox();
 	const note = await page.locator('.editor-panel').boundingBox();
-	expect(books!.x + books!.width).toBeLessThanOrEqual(note!.x + 1);
+	expect(note!.x + note!.width).toBeLessThanOrEqual(books!.x + 1);
 	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry', 'Statistical Mechanics']);
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Quantum Chemistry');
 	await expect(bookFrame(page, 'job-1').locator('#opened')).toHaveText('job_id=job-1&page_idx=0&embed_pane=beside');
@@ -548,12 +556,12 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 
 	// Another tab, and back: the first one's page was kept, not loaded again.
 	await page.frames().find((frame) => frame.url().includes('job_id=job-1'))!.evaluate(() => ((window as unknown as { kept: boolean }).kept = true));
-	await page.locator('.book-tab-name', { hasText: 'Statistical Mechanics' }).click();
+	await showBookTab(page, 'Statistical Mechanics');
 	await expect(bookFrame(page, 'job-2').locator('#opened')).toHaveText('job_id=job-2&page_idx=0&embed_pane=beside');
 	// Each book's reader told which of its passages this note quotes (it marks them), job-1's when it was made.
 	await expect(bookFrame(page, 'job-2').locator('#quoted')).toHaveText('job-2:p008-b0004');
 	await expect(bookFrame(page, 'job-1').locator('#quoted')).toHaveText('job-1:p003-b0001');
-	await page.locator('.book-tab-name', { hasText: 'Quantum Chemistry' }).click();
+	await showBookTab(page, 'Quantum Chemistry');
 	await expect(page.locator('.book-frame[data-job="job-1"]')).toHaveAttribute('data-shown', '');
 	expect(await page.frames().find((frame) => frame.url().includes('job_id=job-1'))!.evaluate(() => (window as unknown as { kept?: boolean }).kept)).toBe(true);
 
@@ -603,10 +611,7 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 
 	// A tab closed stays closed for this note, the pane out again when the Studio is opened again. (Three books in a
 	// narrow pane: the shown one's tab alone, the others picked from ▾.)
-	if (!(await page.locator('.book-tab', { hasText: 'Statistical Mechanics' }).isVisible())) {
-		await page.locator('.book-tabs-more').click();
-		await page.getByRole('menuitem', { name: /Statistical Mechanics/u }).click();
-	}
+	await showBookTab(page, 'Statistical Mechanics');
 	await page.locator('.book-tab', { hasText: 'Statistical Mechanics' }).locator('.book-tab-close').click();
 	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry', 'Organic Chemistry']);
 	await page.reload();
@@ -724,20 +729,23 @@ test('a passage quoted before (a ```retainpdf block) opens as one quoted now: it
 	expect(savedMarkdown()).not.toContain('```retainpdf');
 });
 
-test('the line between a note and its books dragged: the note wider, its width set on the grid (not on the shell, where each step had the whole note\'s style worked out again)', async ({ page }) => {
+test('a note\'s books on its right (as SiYuan opens a PDF beside a document); the line between dragged: the books wider, the width set on the grid (not on the shell, where each step had the whole note\'s style worked out again)', async ({ page }) => {
 	appendToFixture('\n[Quantum Chemistry · 第 12 页](retainpdf:job-1/p012-b0003?page=12&document=doc-1) 变分原理。\n');
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#books-toggle').click();
 	await expect(page.locator('#books-view')).toBeVisible();
 	const notesPanel = page.locator('.editor-panel');
-	const before = (await notesPanel.boundingBox())!.width;
+	const books = page.locator('#books-view');
+	// The note left, the books right.
+	expect((await notesPanel.boundingBox())!.x).toBeLessThan((await books.boundingBox())!.x);
+	const before = (await books.boundingBox())!.width;
 	const line = (await page.locator('#books-view .notes-divider').boundingBox())!;
 	await page.mouse.move(line.x + line.width / 2, line.y + 200);
 	await page.mouse.down();
 	await page.mouse.move(line.x - 120, line.y + 200, { steps: 5 });
 	await page.mouse.up();
-	await expect.poll(async () => (await notesPanel.boundingBox())!.width).toBeGreaterThan(before + 80);
+	await expect.poll(async () => (await books.boundingBox())!.width).toBeGreaterThan(before + 80);
 	await expect
 		.poll(() => page.evaluate(() => [document.querySelector<HTMLElement>('.studio-shell')!.style.getPropertyValue('--notes-width'), document.querySelector<HTMLElement>('.workspace-main')!.style.getPropertyValue('--notes-width')]))
 		.toEqual(['', expect.stringMatching(/^\d+px$/u)]);
@@ -746,7 +754,7 @@ test('the line between a note and its books dragged: the note wider, its width s
 test('a book beside a note: its reader\'s controls in the row with the tabs (contents, search, the texts, the page, ⋯), asked of it there', async ({ page }) => {
 	appendToFixture('\n[Quantum Chemistry · 第 12 页](retainpdf:job-1/p012-b0003?page=12&document=doc-1) 变分原理。\n\n[Statistical Mechanics · 第 8 页](retainpdf:job-2/p008-b0004?page=8&document=doc-2) 第二本书。\n');
 	// Wide: the controls with their names, the two tabs side by side.
-	await page.setViewportSize({ width: 1600, height: 900 });
+	await page.setViewportSize({ width: 1900, height: 900 });
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#books-toggle').click();
