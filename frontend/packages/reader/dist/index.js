@@ -1,4 +1,4 @@
-import { R as p, a as r } from "./ReaderApp-ChPA5zGl.js";
+import { R as p, a as r } from "./ReaderApp-Ap64YGLc.js";
 const e = "0.1.0-cut";
 export {
   e as READER_PACKAGE_VERSION,
