@@ -5,6 +5,7 @@ import type { NodeView, NodeViewConstructor } from '@milkdown/prose/view';
 import { $nodeSchema, $remark } from '@milkdown/utils';
 
 import { t } from '@blog/i18n/index.mjs';
+import { isReadingSpot } from '../wiring/book-places';
 import logo from './retainpdf-logo.svg?raw';
 import { labelBook, parseQuote, parseSourceHref, QUOTE_LANGUAGE, quoteMarkdown, quoteTarget, SOURCE_SCHEME, sourceMarkdown } from './retainpdf-quote';
 
@@ -127,6 +128,7 @@ class SourceView implements NodeView {
 		const shown = [book ? (book.length > BOOK_SHOWN ? `${book.slice(0, BOOK_SHOWN)}…` : book) : '', source?.page ? String(source.page) : ''].filter(Boolean).join(' · ');
 		if (shown) this.dom.dataset.shown = shown;
 		else delete this.dom.dataset.shown;
+		this.dom.classList.toggle('is-reading', isReadingSpot(this.dom.dataset.job ?? '', this.dom.dataset.document, this.dom.dataset.page));
 	}
 }
 
