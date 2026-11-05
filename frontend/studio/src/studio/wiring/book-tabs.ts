@@ -2,13 +2,20 @@
 // quotes, and any opened beside it, each a tab over RetainPDF's reader in a frame of its own (retainpdf-view.ts). A
 // book's frame is made the first time its tab is shown and kept, hidden while another is shown, so going back to it,
 // or to another note with it, loads nothing again; only the least lately shown are let go past MOST_FRAMES.
+import { createElement } from 'react';
+import { createRoot } from 'react-dom/client';
+
 import { t } from '@blog/i18n/index.mjs';
+import { showContextMenu } from '../common/context-menu';
+import { BookControls } from './BookControls';
 import type { RetainpdfTarget } from '../editor/retainpdf-quote';
 import { lastPage } from './book-places';
-import { BESIDE_NOTE_FEATURES, createRetainpdfView, type RetainpdfBook, type RetainpdfQuote, type RetainpdfReading } from './retainpdf-view';
+import { BESIDE_NOTE_FEATURES, createRetainpdfView, type ReaderCommand, type ReaderState, type RetainpdfBook, type RetainpdfQuote, type RetainpdfReading } from './retainpdf-view';
 
 /** Frames kept at most: each is a whole RetainPDF reader. */
 const MOST_FRAMES = 6;
+/** A tab narrower than this says too little of its book: the tabs make a list then. */
+const READABLE_TAB = 120;
 
 export type BookTabsHost = {
 	/** 设置 › RetainPDF, to change the address. */
@@ -27,7 +34,8 @@ export type BookTabsHost = {
 	wide(wide: boolean): void;
 };
 
-type Frame = { place: HTMLElement; view: ReturnType<typeof createRetainpdfView>; reading: RetainpdfReading | null; used: number };
+/** `state`: its reader's controls as it says they are, drawn in the row with the tabs; null, it draws its own. */
+type Frame = { place: HTMLElement; view: ReturnType<typeof createRetainpdfView>; reading: RetainpdfReading | null; state: ReaderState | null; used: number };
 
 export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 	const bar = document.createElement('div');
@@ -47,7 +55,29 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 	wide.id = 'book-tabs-wide';
 	wide.className = 'book-tabs-wide';
 	wide.addEventListener('click', () => host.wide(wide.getAttribute('aria-pressed') !== 'true'));
-	bar.append(add, wide);
+	// One row (the author: 合并成一行): the tabs and ＋, the tabs' list when they do not fit (the shown one kept), the
+	// reader's controls (BookControls.tsx, when it lets the Studio draw them), ⤢.
+	const list = document.createElement('div');
+	list.className = 'book-tab-list';
+	list.append(add);
+	const more = document.createElement('button');
+	more.type = 'button';
+	more.className = 'book-tabs-more';
+	more.textContent = '▾';
+	more.title = t('这篇笔记的书');
+	more.setAttribute('aria-label', more.title);
+	more.hidden = true;
+	more.addEventListener('click', () =>
+		showContextMenu(
+			books.map((book) => ({ label: `${book.job_id === shown ? '✓ ' : ''}${book.title || t('未命名的书')}`, action: () => choose(book.job_id) })),
+			more,
+		),
+	);
+	const controls = document.createElement('div');
+	controls.className = 'book-controls';
+	controls.hidden = true;
+	const drawn = createRoot(controls);
+	bar.append(list, more, controls, wide);
 	const frames = document.createElement('div');
 	frames.className = 'book-frames';
 	const empty = document.createElement('p');
@@ -83,6 +113,7 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 			const made: Frame = {
 				place,
 				reading: null,
+				state: null,
 				used: 0,
 				view: createRetainpdfView(
 					place,
@@ -99,6 +130,10 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 							made.reading = reading;
 							if (reading?.title) retitle(job, reading.title);
 							if (shown === job) host.reading(reading);
+						},
+						readerState(state) {
+							made.state = state && state.job_id === job ? state : null;
+							if (shown === job) drawControls();
 						},
 					},
 					{ features: BESIDE_NOTE_FEATURES, id: null, pane: 'beside' },
@@ -156,12 +191,38 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 			close.setAttribute('aria-label', t('关掉《{title}》', { title: book.title || book.job_id }));
 			close.addEventListener('click', () => closeTab(book.job_id));
 			tab.append(name, close);
-			bar.insertBefore(tab, add);
+			list.insertBefore(tab, add);
 		}
 		empty.hidden = books.length > 0;
 		wide.hidden = books.length === 0;
 		for (const [job, frame] of kept) frame.place.toggleAttribute('data-shown', visible && job === shown);
+		drawControls();
 	}
+
+	/** The shown book's reader's controls in the row, when it lets the Studio draw them. */
+	function drawControls(): void {
+		const frame = shown && visible ? kept.get(shown) : undefined;
+		const state = frame?.state ?? null;
+		controls.hidden = !state;
+		drawn.render(state && frame ? createElement(BookControls, { state, command: (asked: ReaderCommand) => frame.view.command(asked) }) : null);
+		fit();
+	}
+
+	/**
+	 * The tabs not fitting beside the controls, or each cut to a few letters to fit: only the shown one, the rest in ▾'s
+	 * list.
+	 */
+	function fit(): void {
+		bar.classList.remove('is-crowded');
+		more.hidden = true;
+		if (books.length > 1 && (list.scrollWidth > list.clientWidth + 1 || list.clientWidth < books.length * READABLE_TAB + add.offsetWidth)) {
+			bar.classList.add('is-crowded');
+			more.hidden = false;
+		}
+	}
+	// Again as the row, or what is in it (the controls drawn a moment after), changes size.
+	const sizes = new ResizeObserver(() => fit());
+	for (const part of [bar, list, controls]) sizes.observe(part);
 
 	/** The tab shown (its frame made if it has none); what it reads told. */
 	function showTab(job: string | null, target?: RetainpdfTarget): void {

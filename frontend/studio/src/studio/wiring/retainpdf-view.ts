@@ -31,6 +31,56 @@ export type RetainpdfBook = { job_id: string; document_id: string | null; title:
 /** What RetainPDF's reader shows (studio-bridge.v1 `ReadingMessage`): the book, the page (from 0) and how many. */
 export type RetainpdfReading = RetainpdfBook & { page_idx: number | null; page_count: number | null };
 
+/** Which of a book's texts its reader shows: the original, the two side by side, the translation. */
+export type ReaderMode = 'source' | 'compare' | 'translated';
+/**
+ * Its reader's controls as it says they are (`reader-state`; the Studio says it takes it, the reader that it takes
+ * `reader-command`: the Studio draws them then): the page, the texts it can show and the one shown, its contents or
+ * search open, how large, what else it offers (for ⋯); `ready`, false while its PDF is still loading.
+ */
+export type ReaderState = {
+	job_id: string;
+	page_idx: number | null;
+	page_count: number | null;
+	modes: ReaderMode[];
+	mode: ReaderMode | null;
+	panels: Array<'outline' | 'search'>;
+	panel: 'outline' | 'search' | null;
+	zoom: { percent: number | null; fit: boolean };
+	actions: Array<{ key: string; label: string }>;
+	ready: boolean;
+};
+/** What the Studio asks of the reader whose controls it draws (`reader-command`). */
+export type ReaderCommand =
+	| { command: 'mode'; mode: ReaderMode }
+	| { command: 'page'; page_idx: number }
+	| { command: 'panel'; panel: 'outline' | 'search' | null }
+	| { command: 'zoom'; zoom: 'in' | 'out' | 'fit' }
+	| { command: 'action'; key: string };
+
+const MODES = new Set<string>(['source', 'compare', 'translated']);
+/** What its reader said, as far as it says it right: the rest left out. */
+function readerStateOf(message: Record<string, unknown>): ReaderState | null {
+	if (typeof message.job_id !== 'string' || !message.job_id) return null;
+	const whole = (value: unknown, least: number) => (typeof value === 'number' && Number.isInteger(value) && value >= least ? value : null);
+	const zoom = (message.zoom ?? {}) as Record<string, unknown>;
+	return {
+		job_id: message.job_id,
+		page_idx: whole(message.page_idx, 0),
+		page_count: whole(message.page_count, 1),
+		modes: (Array.isArray(message.modes) ? message.modes : []).filter((mode): mode is ReaderMode => MODES.has(mode)),
+		mode: MODES.has(message.mode as string) ? (message.mode as ReaderMode) : null,
+		panels: (Array.isArray(message.panels) ? message.panels : []).filter((panel): panel is 'outline' | 'search' => panel === 'outline' || panel === 'search'),
+		panel: message.panel === 'outline' || message.panel === 'search' ? message.panel : null,
+		zoom: { percent: typeof zoom.percent === 'number' && zoom.percent > 0 ? Math.round(zoom.percent) : null, fit: zoom.fit === true },
+		actions: (Array.isArray(message.actions) ? message.actions : [])
+			.filter((action): action is { key: string; label: string } => typeof action?.key === 'string' && typeof action?.label === 'string' && Boolean(action.key))
+			.slice(0, 20)
+			.map(({ key, label }) => ({ key, label: label.slice(0, 60) })),
+		ready: message.ready !== false,
+	};
+}
+
 export type RetainpdfViewHost = {
 	/** 设置 › RetainPDF, to change the address. */
 	openSettings(): void;
@@ -48,12 +98,15 @@ export type RetainpdfViewHost = {
 	 * at `page_idx` when given, else where it was left.
 	 */
 	openBook?(book: RetainpdfBook, page_idx: number | null): void;
+	/** Its reader's controls as it says they are (`reader-state`), the Studio drawing them; null: it draws its own. */
+	readerState?(state: ReaderState | null): void;
 };
 
 /** What the Studio takes of RetainPDF's messages (`hello`'s `features`): in 书库, a book to read is given to it (`open-book`). */
 const STUDIO_FEATURES = ['quote', 'open-notes', 'ask-ai', 'open-book', 'shortcut'];
 /** A book beside a note (book-tabs.ts): its notes are the note beside it, so no 笔记 button of its own. */
-export const BESIDE_NOTE_FEATURES = ['quote', 'ask-ai', 'shortcut'];
+/** Its controls drawn by the Studio, one row with the tabs: `reader-state` taken (the reader says it takes `reader-command`). */
+export const BESIDE_NOTE_FEATURES = ['quote', 'ask-ai', 'shortcut', 'reader-state'];
 
 /** Whether anything answers at `url`: RetainPDF's pages are another origin, so only that it answered, not what. */
 async function answers(url: string): Promise<boolean> {
@@ -134,6 +187,8 @@ export function createRetainpdfView(
 			features = new Set(Array.isArray(message.features) ? message.features.filter((each): each is string => typeof each === 'string') : []);
 			tellNotes();
 			tellQuoted();
+			// Its own controls, till it says how they are (an older reader never does).
+			if (!features.has('reader-command') || !studioFeatures.includes('reader-state')) host.readerState?.(null);
 		} else if (!features) {
 			return;
 		} else if (message.type === 'quote' && isQuote(message)) {
@@ -163,6 +218,9 @@ export function createRetainpdfView(
 			host.closeNotes();
 		} else if (message.type === 'ask-ai') {
 			host.askAi();
+		} else if (message.type === 'reader-state' && features.has('reader-command') && studioFeatures.includes('reader-state')) {
+			const state = readerStateOf(message);
+			if (state) host.readerState?.(state);
 		} else if (message.type === 'reading' && isReading(message)) {
 			host.reading(
 				message.job_id === null
@@ -274,5 +332,10 @@ export function createRetainpdfView(
 		frame.src = embedded(new URL('reader.html', shown).href, { ...search, ...atPane });
 	}
 
-	return { show, navigate, notes, quoted };
+	/** Asked of a reader whose controls the Studio draws; nothing of one that draws its own. */
+	function command(asked: ReaderCommand): void {
+		if (features?.has('reader-command') && studioFeatures.includes('reader-state')) post({ type: 'reader-command', ...asked });
+	}
+
+	return { show, navigate, notes, quoted, command };
 }
