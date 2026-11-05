@@ -20,7 +20,8 @@
     { "type": "reading", "from": "retainpdf", "definition": "ReadingMessage" },
     { "type": "ask-ai", "from": "retainpdf", "definition": "AskAiMessage" },
     { "type": "open-book", "from": "retainpdf", "definition": "OpenBookMessage" },
-    { "type": "shortcut", "from": "retainpdf", "definition": "ShortcutMessage" }
+    { "type": "shortcut", "from": "retainpdf", "definition": "ShortcutMessage" },
+    { "type": "quoted", "from": "studio", "definition": "QuotedMessage" }
   ],
   "oneOf": [
     { "$ref": "#/definitions/HelloMessage" },
@@ -34,15 +35,16 @@
     { "$ref": "#/definitions/ReadingMessage" },
     { "$ref": "#/definitions/AskAiMessage" },
     { "$ref": "#/definitions/OpenBookMessage" },
-    { "$ref": "#/definitions/ShortcutMessage" }
+    { "$ref": "#/definitions/ShortcutMessage" },
+    { "$ref": "#/definitions/QuotedMessage" }
   ],
   "definitions": {
     "Protocol": { "const": "retainpdf-studio-bridge" },
     "Version": { "const": 1 },
     "Theme": { "enum": ["light", "dark"] },
     "Feature": {
-      "description": "RetainPDF 这一版会处理、会发的消息（ready 的 features）：Studio 只发对方列出来的（navigate、theme、notes）；quote、reading 是 RetainPDF 会发的（reading 2026-11-02 加：列了它，Studio 就知道会收到作者在读哪本书、哪一页）。navigate-document（2026-11-03 加）不是一种消息，是 navigate 的一种用法：列了它，RetainPDF 认 navigate 里的 document_id，Studio 可以按书跳转（合并任务的编号多翻几页就会变，按书记不会指向旧任务）。",
-      "enum": ["theme", "navigate", "quote", "notes", "reading", "navigate-document"]
+      "description": "RetainPDF 这一版会处理、会发的消息（ready 的 features）：Studio 只发对方列出来的（navigate、theme、notes）；quote、reading 是 RetainPDF 会发的（reading 2026-11-02 加：列了它，Studio 就知道会收到作者在读哪本书、哪一页）。navigate-document（2026-11-03 加）不是一种消息，是 navigate 的一种用法：列了它，RetainPDF 认 navigate 里的 document_id，Studio 可以按书跳转（合并任务的编号多翻几页就会变，按书记不会指向旧任务）。quoted（2026-11-05 加）：列了它，Studio 把这本书在摘录栏里摘过的段落发过来，阅读页把这些块淡淡标出来。",
+      "enum": ["theme", "navigate", "quote", "notes", "reading", "navigate-document", "quoted"]
     },
     "StudioFeature": {
       "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes；ask-ai（2026-11-02 加）：阅读页的「AI」改成发 ask-ai、打开 Studio 自己的 AI，不再打开 RetainPDF 自己的终端；open-book（2026-11-03 加）：书库里点一本书交给 Studio，开在正在写的笔记旁边，RetainPDF 不自己打开阅读页；shortcut（2026-11-04 加）：阅读页有焦点时它自己不处理的 ⌘ / Ctrl 快捷键转给 Studio）。hello 没有 features 是早先的 Studio，只认 quote。",
@@ -212,6 +214,20 @@
         "ctrl": { "type": "boolean", "description": "KeyboardEvent.ctrlKey。" },
         "shift": { "type": "boolean", "description": "KeyboardEvent.shiftKey。" },
         "alt": { "type": "boolean", "description": "KeyboardEvent.altKey（⌥）。" }
+      }
+    },
+    "QuotedMessage": {
+      "type": "object",
+      "description": "Studio → RetainPDF：这本书在摘录栏里摘过的段落（2026-11-05 加；整份替换，不是增量；空数组表示一段都没摘）。阅读页只认 job_id 是自己正在读的、或 document_id 是自己这本书的那条，把这些块淡淡标出来。只在 ready 的 features 有 quoted 时发；每次 ready 之后发一次当前的，变了再发。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "job_id", "document_id", "item_ids"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "quoted" },
+        "job_id": { "type": "string", "minLength": 1, "description": "摘录所在的阅读任务，和 quote、reading 的 job_id 一样。" },
+        "document_id": { "type": ["string", "null"], "minLength": 1, "description": "书的编号，和 quote、reading 里的同一个；任务不属于哪本书时为 null。" },
+        "item_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "摘过的块，和 quote 的 item_id 一样；一段都没摘时是空数组。" }
       }
     }
   }
