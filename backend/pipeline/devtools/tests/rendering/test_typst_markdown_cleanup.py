@@ -1,6 +1,10 @@
 
 
 
+import shutil
+
+import pytest
+
 from retainpdf_pipeline.render.layout.payload.line_structure import maybe_preserve_structured_line_breaks
 from retainpdf_pipeline.render.layout.inline_content.core.markdown import build_direct_typst_passthrough_text
 
@@ -124,3 +128,47 @@ def test_body_rendering_folds_model_visual_line_breaks_for_flow_text() -> None:
     assert "\n" not in rendered
     assert rendered == "对于较大的 $ CN_{A}^{\\prime} $ 值，该 d 能级能量降低。"
     assert "_render_preserve_line_breaks" not in item
+
+
+# 带圈字：公式插件 mitex 不认 \textcircled / \circled，一处就让整本编译失败（2026-11-04，1265 页的图纸里一处 $\textcircled{1}$）
+@pytest.mark.parametrize(
+    ("markdown", "expected"),
+    [
+        (r"原文中的 $\textcircled{1}$ 是圈号", "原文中的 ① 是圈号"),
+        (r"$x + \circled{2}$", "$x + ②$"),
+        (r"$\textcircled{a}$ 与 $\textcircled{B}$", "ⓐ 与 Ⓑ"),
+        (r"$\textcircled{20}$、$\textcircled{25}$", "⑳、(25)"),
+        # 原有的特例不变
+        (r"$^{\textcircled{R}}$", "®"),
+        (r"$\textcircled{\times}$", r"$\otimes$"),
+    ],
+)
+def test_circled_characters_become_plain_circled_glyphs(markdown: str, expected: str) -> None:
+    from retainpdf_pipeline.render.output.typst.block_renderer import sanitize_typst_markdown_for_compile
+
+    assert sanitize_typst_markdown_for_compile(markdown) == expected
+
+
+@pytest.mark.needs_typst
+@pytest.mark.skipif(shutil.which("typst") is None, reason="needs the typst binary")
+@pytest.mark.parametrize("cleaned", [False, True])
+def test_mitex_only_compiles_a_circled_digit_once_cleaned(tmp_path, cleaned: bool) -> None:
+    import subprocess
+
+    from retainpdf_pipeline.render.output.typst.block_renderer import sanitize_typst_markdown_for_compile
+    from retainpdf_pipeline.render.output.typst.shared import escape_typst_string
+
+    markdown = r"编号 $x + \textcircled{1}$ 后面"
+    if cleaned:
+        markdown = sanitize_typst_markdown_for_compile(markdown)
+    source = tmp_path / "circled.typ"
+    source.write_text(
+        '#import "@preview/cmarker:0.1.10"\n#import "@preview/mitex:0.2.7": mitex\n'
+        f'#cmarker.render("{escape_typst_string(markdown)}", math: mitex)\n',
+        encoding="utf-8",
+    )
+    proc = subprocess.run(["typst", "compile", str(source), str(tmp_path / "circled.pdf")], capture_output=True, text=True)
+    if cleaned:
+        assert proc.returncode == 0, proc.stderr
+    else:
+        assert proc.returncode != 0 and "textcircled" in proc.stderr
