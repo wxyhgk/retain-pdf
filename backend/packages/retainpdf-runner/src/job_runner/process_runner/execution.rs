@@ -27,6 +27,11 @@ use super::timeout_support::persist_timeout_failure;
 /// 所以给收尾 join 一个上限(`RUST_API_WORKER_OUTPUT_DRAIN_SECS`,默认 30 秒),
 /// 超时就放弃那段输出、abort 掉读取任务,带着已知信息走完终态。少收一段
 /// stdout 远好过一个永远卡死的 runner。
+///
+/// 这个上限按「多久没读到新的一行」算,不是从进程退出起一共等多久:读取任务每行都要写库,worker 一口气打完几千行
+/// 进度就退出时,它还在一行行往下读积压。以前一共只等 30 秒,1265 页的书排完版、打完「输出 PDF 已发布」就退出,
+/// 那一行还排在积压里没读到,任务按「worker 成功但没发布 output_pdf」失败(2026-11-04)。一直在读就接着等,
+/// 最多等 [`DRAIN_MAX_FACTOR`] 倍;孙进程抱着管道时一行都读不到,照旧到点放弃。
 pub(super) struct CompletedProcess {
     pub(super) status: ExitStatus,
     pub(super) started: Instant,
@@ -217,7 +222,7 @@ pub(super) async fn collect_process_execution(
                     );
                 }
                 let (stdout_text, stdout_job) =
-                    drain_stdout(stdout_handle, persist, &job_id, drain_secs).await?;
+                    drain_stdout(stdout_handle, persist, &job_id, drain_secs, &last_output_at).await?;
                 let stderr_text = drain_stderr(stderr_handle, &job_id, drain_secs).await;
                 return Ok(ProcessExecution::TimedOut(persist_timeout_failure(
                     persist,
@@ -233,7 +238,7 @@ pub(super) async fn collect_process_execution(
     };
 
     let (stdout_text, latest_job) =
-        drain_stdout(stdout_handle, persist, &job_id, drain_secs).await?;
+        drain_stdout(stdout_handle, persist, &job_id, drain_secs, &last_output_at).await?;
     let stderr_text = drain_stderr(stderr_handle, &job_id, drain_secs).await;
     Ok(ProcessExecution::Completed(CompletedProcess {
         status,
@@ -251,16 +256,42 @@ async fn drain_stdout(
     persist: &JobPersistDeps,
     job_id: &str,
     drain_secs: u64,
+    last_output_at: &Mutex<Instant>,
 ) -> Result<(String, JobRuntimeState)> {
-    match timeout(Duration::from_secs(drain_secs), &mut handle).await {
-        Ok(joined) => joined?,
-        Err(_) => {
+    match join_while_reading(&mut handle, last_output_at, Duration::from_secs(drain_secs)).await {
+        Some(joined) => joined?,
+        None => {
             handle.abort();
             tracing::warn!(
-                "job={job_id}: 进程已退出但 stdout 读取任务 {drain_secs}s 未结束，\
-                 疑有脱离进程组的孙进程仍持有管道写端；放弃收集 stdout 继续收尾"
+                "job={job_id}: 进程已退出但 stdout 读取任务 {drain_secs}s 没读到新的一行（或等满 {}s），\
+                 疑有脱离进程组的孙进程仍持有管道写端；放弃收集 stdout 继续收尾",
+                drain_secs.saturating_mul(DRAIN_MAX_FACTOR)
             );
             Ok((String::new(), persist.db.get_job(job_id)?.into_runtime()))
+        }
+    }
+}
+
+/// 收尾最多等 `drain_secs` 的这么多倍（默认 30 秒 × 20 = 10 分钟），哪怕一直在读。
+const DRAIN_MAX_FACTOR: u64 = 20;
+
+/// 等读取任务结束：`idle` 这么久没读到新的一行（`last_output_at` 没动）、或总共等满 `idle × DRAIN_MAX_FACTOR`，
+/// 返回 None（调用方放弃）。
+async fn join_while_reading<T>(
+    handle: &mut tokio::task::JoinHandle<T>,
+    last_output_at: &Mutex<Instant>,
+    idle: Duration,
+) -> Option<Result<T, tokio::task::JoinError>> {
+    let started = Instant::now();
+    let cap = idle.saturating_mul(DRAIN_MAX_FACTOR as u32);
+    let poll = Duration::from_millis(250).min(idle.max(Duration::from_millis(10)));
+    loop {
+        if let Ok(joined) = timeout(poll, &mut *handle).await {
+            return Some(joined);
+        }
+        let quiet_for = last_output_at.lock().await.elapsed();
+        if quiet_for >= idle || started.elapsed() >= cap {
+            return None;
         }
     }
 }
@@ -290,5 +321,55 @@ async fn drain_stderr(
             );
             String::new()
         }
+    }
+}
+
+#[cfg(test)]
+mod drain_tests {
+    use super::*;
+
+    /// 读取任务一直在往下读（每 100 毫秒一行）、比 `idle` 久得多才读完：要等它读完，不能到点放弃。
+    #[tokio::test]
+    async fn a_reader_still_working_through_its_backlog_is_waited_for() {
+        let last_output_at = Arc::new(Mutex::new(Instant::now()));
+        let clock = last_output_at.clone();
+        let mut handle = tokio::spawn(async move {
+            for _ in 0..15 {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+                *clock.lock().await = Instant::now();
+            }
+            "output-pdf-line"
+        });
+        let joined = join_while_reading(&mut handle, &last_output_at, Duration::from_millis(400)).await;
+        assert_eq!(joined.expect("still reading").expect("joined"), "output-pdf-line");
+    }
+
+    /// 一行都读不到了（孙进程抱着管道）：`idle` 到点就放弃。
+    #[tokio::test]
+    async fn a_reader_that_stopped_reading_is_given_up_on() {
+        let last_output_at = Mutex::new(Instant::now());
+        let mut handle = tokio::spawn(async { tokio::time::sleep(Duration::from_secs(60)).await });
+        let started = Instant::now();
+        assert!(join_while_reading(&mut handle, &last_output_at, Duration::from_millis(300)).await.is_none());
+        assert!(started.elapsed() < Duration::from_secs(2));
+        handle.abort();
+    }
+
+    /// 一直在读也有个头：等满 `idle × DRAIN_MAX_FACTOR` 放弃。
+    #[tokio::test]
+    async fn a_reader_that_never_finishes_is_given_up_on_after_the_cap() {
+        let last_output_at = Arc::new(Mutex::new(Instant::now()));
+        let clock = last_output_at.clone();
+        let mut handle = tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+                *clock.lock().await = Instant::now();
+            }
+        });
+        let started = Instant::now();
+        assert!(join_while_reading(&mut handle, &last_output_at, Duration::from_millis(150)).await.is_none());
+        let elapsed = started.elapsed();
+        assert!(elapsed >= Duration::from_millis(3000) && elapsed < Duration::from_secs(6), "{elapsed:?}");
+        handle.abort();
     }
 }
