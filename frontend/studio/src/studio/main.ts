@@ -103,7 +103,7 @@ import { createNoteTabs } from './wiring/note-tabs';
 import { createQuotePanel, type QuoteBook } from './quotes/quote-panel';
 import { createNotesSplit } from './wiring/notes-split';
 import { markReadingPage, rememberPage } from './wiring/book-places';
-import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfOpen } from './editor/retainpdf-quote';
+import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfOpen, type RetainpdfTarget } from './editor/retainpdf-quote';
 import { createAiChat } from './wiring/ai-chat';
 import { createDrive } from './wiring/drive';
 import { createLibrary } from './wiring/library';
@@ -913,7 +913,7 @@ const quotePanel = createQuotePanel({
 	openNote() {
 		const book = quotesBook;
 		hideQuotes();
-		if (book) void openBookBesideNote(book, book.page_idx);
+		if (book) void openBookBesideNote(book, typeof book.page_idx === 'number' ? { job_id: book.job_id, page_idx: book.page_idx } : undefined);
 		else showView('editor');
 	},
 	openOther(slug, find) {
@@ -1030,7 +1030,7 @@ const retainpdf = createRetainpdfView(translateView, {
 	},
 	// A book clicked to read in 书库 (open-book): beside the note being written, a tab of it (以笔记为根); ⤢ on the tabs reads
 	// it over the whole middle.
-	openBook: (book, page) => void openBookBesideNote(book, page),
+	openBook: (book, page) => void openBookBesideNote(book, page === null ? undefined : { job_id: book.job_id, page_idx: page }),
 	// 摘到笔记: the passage put in the note being written, opened beside RetainPDF when it is not; where the caret is when
 	// the author has been writing in it, else after the last block. Shown where it went. The book comes out beside the note
 	// then (it is quoted there).
@@ -1044,11 +1044,15 @@ const retainpdf = createRetainpdfView(translateView, {
 });
 quotesWired = true;
 /** A book of 书库's to read: the note being written shown (a new one when none is open), the book beside it at `page`. */
-async function openBookBesideNote(book: RetainpdfBook, page: number | null): Promise<void> {
-	showView('editor');
+/**
+ * A book to read, from wherever it is asked (书库, a quote's mark, an AI's source, ⌘K): the note being written shown (a
+ * new one when none is open), the book beside it, at `target` when given (else where it was left). Books are read
+ * beside a note, never in 书库 (as SiYuan: the note is the page, a book a column beside it; 书库 is for picking them).
+ */
+async function openBookBesideNote(book: RetainpdfBook, target?: RetainpdfTarget): Promise<void> {
+	if (shellState.get().view !== 'editor') showView('editor');
 	if (!session.slug) await pages.newPage();
 	if (!session.slug) return;
-	const target = page === null ? undefined : { job_id: book.job_id, page_idx: page };
 	if (booksSplit.open) {
 		bookTabs.open(book, target);
 	} else if (target) {
@@ -1224,15 +1228,9 @@ async function pickBook(anchor: HTMLElement): Promise<RetainpdfBook | null> {
 followQuoteOpens();
 window.addEventListener(RETAINPDF_NAVIGATE, (event) => {
 	const { title, document_id: documentId, ...target } = (event as CustomEvent<RetainpdfOpen>).detail;
-	// On a note: the book beside it, at the passage, the note staying (以笔记为根). Elsewhere (翻译's own notes, AI 问答): 翻译.
-	if (shellState.get().view === 'editor' && session.slug) {
-		const book: RetainpdfBook = { job_id: target.job_id, document_id: documentId ?? null, title: title ?? null };
-		if (booksSplit.open) bookTabs.open(book, target);
-		else setBooksOpen(true, { book, target });
-		return;
-	}
-	showView('translate');
-	void retainpdf.navigate(target);
+	// From anywhere (a note's mark, an AI's source in 对话, ⌘K, 书库): the book beside the note being written, at the
+	// passage, the note staying; never 书库's own reader.
+	void openBookBesideNote({ job_id: target.job_id, document_id: documentId ?? null, title: title ?? null }, target);
 });
 const tableView = shell.querySelector<HTMLElement>('#table-view')!;
 const articleTable = createArticleTable(tableView, {
