@@ -52,76 +52,94 @@
 	--shadow-lg: var(--studio-shadow-pop);
 }
 
-@scope ([data-ui]) to ([data-host]) {
-	/* Tailwind's preflight, here only. */
-	*,
-	::before,
-	::after,
-	::backdrop {
-		box-sizing: border-box;
-		margin: 0;
-		padding: 0;
-		border: 0 solid var(--color-border);
-	}
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		font-size: inherit;
-		font-weight: inherit;
-		color: inherit;
-		line-height: inherit;
-	}
-	p {
-		margin: 0;
-	}
-	a {
-		color: inherit;
-		text-decoration: inherit;
-	}
-	ol,
-	ul,
-	menu {
-		list-style: none;
-	}
-	img,
-	svg,
-	video,
-	canvas {
-		display: block;
-		vertical-align: middle;
-	}
-	img,
-	video {
-		max-width: 100%;
-		height: auto;
-		border-radius: 0;
-	}
-	button,
-	input,
-	select,
-	optgroup,
-	textarea {
-		font: inherit;
-		letter-spacing: inherit;
-		color: inherit;
-		border-radius: 0;
-		background-color: transparent;
-		opacity: 1;
-	}
-	button:not(:disabled),
-	[role='button']:not(:disabled) {
-		cursor: pointer;
-	}
-	::placeholder {
-		color: color-mix(in oklab, currentcolor 50%, transparent);
-	}
-	[hidden]:where(:not([hidden='until-found'])) {
-		display: none !important;
-	}
+/*
+ * Where the shell's reset and utilities apply: in [data-ui], not in [data-host]. Written as plain selectors (`:where()`,
+ * of no weight), not `@scope ([data-ui]) to ([data-host])` as before: WebKit matched every scoped rule against every
+ * element of the page by walking up its ancestors, so that each time the page's style was worked out again (the reader
+ * saying which page it shows, a menu opened) took six times as long (250 ms instead of 40 with a note and two books open;
+ * a second and more on the author's Mac). As SiYuan has it: rules of its own classes, nothing scoped.
+ */
+/* Tailwind's preflight, there only. */
+:where([data-ui]:not([data-host] *), [data-ui] :not([data-host], [data-host] *)),
+:where([data-ui]:not([data-host] *), [data-ui] :not([data-host], [data-host] *))::before,
+:where([data-ui]:not([data-host] *), [data-ui] :not([data-host], [data-host] *))::after,
+:where([data-ui]:not([data-host] *), [data-ui] :not([data-host], [data-host] *))::backdrop {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+	border: 0 solid var(--color-border);
+}
+:where([data-ui]) h1:not(:where([data-host], [data-host] *)),
+:where([data-ui]) h2:not(:where([data-host], [data-host] *)),
+:where([data-ui]) h3:not(:where([data-host], [data-host] *)),
+:where([data-ui]) h4:not(:where([data-host], [data-host] *)),
+:where([data-ui]) h5:not(:where([data-host], [data-host] *)),
+:where([data-ui]) h6:not(:where([data-host], [data-host] *)) {
+	font-size: inherit;
+	font-weight: inherit;
+	color: inherit;
+	line-height: inherit;
+}
 
+:where([data-ui]) p:not(:where([data-host], [data-host] *)) {
+	margin: 0;
+}
+
+:where([data-ui]) a:not(:where([data-host], [data-host] *)) {
+	color: inherit;
+	text-decoration: inherit;
+}
+
+:where([data-ui]) ol:not(:where([data-host], [data-host] *)),
+:where([data-ui]) ul:not(:where([data-host], [data-host] *)),
+:where([data-ui]) menu:not(:where([data-host], [data-host] *)) {
+	list-style: none;
+}
+
+:where([data-ui]) img:not(:where([data-host], [data-host] *)),
+:where([data-ui]) svg:not(:where([data-host], [data-host] *)),
+:where([data-ui]) video:not(:where([data-host], [data-host] *)),
+:where([data-ui]) canvas:not(:where([data-host], [data-host] *)) {
+	display: block;
+	vertical-align: middle;
+}
+
+:where([data-ui]) img:not(:where([data-host], [data-host] *)),
+:where([data-ui]) video:not(:where([data-host], [data-host] *)) {
+	max-width: 100%;
+	height: auto;
+	border-radius: 0;
+}
+
+:where([data-ui]) button:not(:where([data-host], [data-host] *)),
+:where([data-ui]) input:not(:where([data-host], [data-host] *)),
+:where([data-ui]) select:not(:where([data-host], [data-host] *)),
+:where([data-ui]) optgroup:not(:where([data-host], [data-host] *)),
+:where([data-ui]) textarea:not(:where([data-host], [data-host] *)) {
+	font: inherit;
+	letter-spacing: inherit;
+	color: inherit;
+	border-radius: 0;
+	background-color: transparent;
+	opacity: 1;
+}
+
+:where([data-ui]) button:not(:disabled):not(:where([data-host], [data-host] *)),
+:where([data-ui]) [role='button']:not(:disabled):not(:where([data-host], [data-host] *)) {
+	cursor: pointer;
+}
+
+:where([data-ui]:not([data-host] *), [data-ui] :not([data-host], [data-host] *))::placeholder {
+	color: color-mix(in oklab, currentcolor 50%, transparent);
+}
+
+:where([data-ui]) [hidden]:where(:not([hidden='until-found'])):not(:where([data-host], [data-host] *)) {
+	display: none !important;
+}
+
+/* Tailwind's utilities and the pop-ups' look: in [data-ui] (a utility's class is the shell's only; those in [data-host] too,
+   `hidden` and `sr-only`, mean the same there). */
+:where([data-ui]) {
 	@tailwind utilities source(none);
 
 	/* Pop-ups round as design.css has them, their edge the hairline in their shadow; dialogs lifted further. */

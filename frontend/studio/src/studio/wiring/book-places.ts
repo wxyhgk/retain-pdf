@@ -31,25 +31,30 @@ export function lastPage(job: string): number | undefined {
 	return readPages().find(([kept]) => kept === job)?.[1];
 }
 
-let marking: HTMLStyleElement | null = null;
+/** The page read now: its job, book and page (from 1); null when none is. */
+let readingNow: { job: string; document: string | null; page: number } | null = null;
+/** Said last, not marked again. */
+let markedFor = 'null';
+
+/** Whether a mark (editor/retainpdf-source.ts: its job, book, page) is of the page read now. */
+export function isReadingSpot(job: string, document: string | undefined, page: string | undefined): boolean {
+	if (!readingNow || page !== String(readingNow.page)) return false;
+	return job === readingNow.job || (Boolean(readingNow.document) && document === readingNow.document);
+}
 
 /**
- * The passages quoted from the page the reader shows, picked out wherever their marks are (a rule of its own, so the
- * marks the editor draws again later are picked out too); none when it shows no page.
+ * The passages quoted from the page the reader shows, picked out: their marks given `is-reading` (the paragraph tinted
+ * by the page's CSS, studio-page.css); a mark drawn later asks isReadingSpot. As SiYuan marks what it shows, a class on the
+ * element: once a page's stylesheet was written again each time the reader spoke, and the whole page's style was worked
+ * out again (with a :has() over every paragraph), up to a second and more with two books open; now nothing changes while
+ * the page is the same, and only the marks when it is not.
  */
 export function markReadingPage(reading: RetainpdfReading | null): void {
-	marking ??= document.head.appendChild(Object.assign(document.createElement('style'), { id: 'retainpdf-reading-page' }));
-	if (!reading || reading.page_idx === null) {
-		marking.textContent = '';
-		return;
+	readingNow = reading && reading.page_idx !== null ? { job: reading.job_id, document: reading.document_id, page: reading.page_idx + 1 } : null;
+	const said = JSON.stringify(readingNow);
+	if (said === markedFor) return;
+	markedFor = said;
+	for (const mark of document.querySelectorAll<HTMLElement>('.retainpdf-source')) {
+		mark.classList.toggle('is-reading', isReadingSpot(mark.dataset.job ?? '', mark.dataset.document, mark.dataset.page));
 	}
-	const page = `[data-page="${reading.page_idx + 1}"]`;
-	const marks = [`.retainpdf-source[data-job="${CSS.escape(reading.job_id)}"]${page}`];
-	if (reading.document_id) marks.push(`.retainpdf-source[data-document="${CSS.escape(reading.document_id)}"]${page}`);
-	const quoted = `:is(${marks.join(', ')})`;
-	// The paragraph tinted (a little beyond its text, as a selection), its mark full.
-	marking.textContent = [
-		`.crepe-host p:has(> ${quoted}) { border-radius: 4px; background: rgba(var(--black), 0.05); box-shadow: -6px 0 0 rgba(var(--black), 0.05), 6px 0 0 rgba(var(--black), 0.05); }`,
-		`${quoted} { color: rgb(var(--black)); opacity: 1; }`,
-	].join('\n');
 }

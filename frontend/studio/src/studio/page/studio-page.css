@@ -157,6 +157,8 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .retainpdf-source { float: right; display: inline-flex; max-width: 45%; height: 22px; align-items: center; gap: 4px; margin: 0.15em 0 0 10px; padding: 0 6px 0 4px; border-radius: 6px; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); line-height: 1; opacity: 0.8; cursor: pointer; transition: opacity 120ms, background 120ms; }
 .retainpdf-source svg { flex: none; width: 14px; height: 15px; }
 .retainpdf-source[data-shown]::after { overflow: hidden; content: attr(data-shown); text-overflow: ellipsis; white-space: nowrap; }
+.crepe-host p:has(> .retainpdf-source.is-reading) { border-radius: 4px; background: rgba(var(--black), 0.05); box-shadow: -6px 0 0 rgba(var(--black), 0.05), 6px 0 0 rgba(var(--black), 0.05); }
+.retainpdf-source.is-reading { color: rgb(var(--black)); opacity: 1; }
 .retainpdf-source:hover, .retainpdf-source.is-selected { background: var(--studio-fill-2); color: rgb(var(--black)); opacity: 1; }
 /*
  * Scrollbars: thin, a rounded gray thumb on no track, darker under the pointer. The system's
