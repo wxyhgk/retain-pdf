@@ -106,6 +106,10 @@ def _translation_items(
     return items
 
 
+# 引擎（Node）一个字符串最长 0x1fffffe8（约 512 MB）个字符，留点余量
+DRAWINGS_JSON_MAX_CHARS = 400_000_000
+
+
 def build_book_rpr_fit_pdf(
     *,
     mode: str,
@@ -143,7 +147,15 @@ def build_book_rpr_fit_pdf(
     # 没有障碍物信息（引擎照常排，只是看不到框外的线条）。
     drawings = {str(index): (obstacle_scan or {})[str(index)] for index in page_indices if str(index) in (obstacle_scan or {})}
     diagnostics["rpr_fit_raster_pages"] = sorted(int(page) for page, data in drawings.items() if data.get("raster"))
-    (engine_dir / "drawings.json").write_text(json.dumps(drawings), encoding="utf-8")
+    diagnostics["rpr_fit_dense_pages"] = sorted(int(page) for page, data in drawings.items() if data.get("dense"))
+    drawings_text = json.dumps(drawings)
+    if len(drawings_text) > DRAWINGS_JSON_MAX_CHARS:
+        # 引擎（Node）一个字符串最长约 512 MB，读不进来会以 cannot read drawings 退出；先说清楚为什么回退
+        raise RprEngineFailed(
+            "drawings_too_large",
+            f"障碍物数据 {len(drawings_text) / 1e6:.0f} MB，超过引擎能读的上限（{DRAWINGS_JSON_MAX_CHARS / 1e6:.0f} MB）",
+        )
+    (engine_dir / "drawings.json").write_text(drawings_text, encoding="utf-8")
     payload = {
         "schema": RPR_FIT_INPUT_SCHEMA,
         "font": {"family": font_family},

@@ -8,7 +8,7 @@
 - 用 OCR 自己的划分：非文本块（图、表、公式……）里的路径合并成墨迹矩形，所有 OCR 块里的
   像素墨迹不当障碍物。哪些块要翻译由引擎在排版时自己判断。
 
-产物 ``scan.json``：{"<页号>": {width, height, drawings, images, words, raster}}，格式见
+产物 ``scan.json``：{"<页号>": {width, height, drawings, images, words, raster, dense}}，格式见
 obstacle_scan_pdf.py。
 """
 
@@ -24,7 +24,7 @@ from retainpdf_pipeline.render.prepare.store import file_identity
 
 STEP = "obstacle_scan"
 # 改了 obstacle_scan_pdf.py 的读法 / 产物格式就加一。
-VERSION = "1"
+VERSION = "2"  # 2：矢量图元太多的页改成粗格子墨迹（dense），2026-11-04
 OUTPUT = "scan.json"
 
 
