@@ -14,10 +14,11 @@ export type StudioTheme = "light" | "dark";
 export type StudioFeature = "theme" | "navigate" | "quote" | "notes" | "reading";
 /**
  * Studio 处理的、我们发过去的（hello.features）：quote →「摘到笔记」，open-notes →「笔记」按钮，ask-ai → 阅读页的「AI」打开
- * Studio 的 AI，open-book → 书库里点书要读时交给 Studio（在正在写的笔记旁边打开），我们不自己打开阅读页。
+ * Studio 的 AI，open-book → 书库里点书要读时交给 Studio（在正在写的笔记旁边打开），我们不自己打开阅读页，shortcut → 阅读页有焦点时
+ * 按的 Studio 快捷键（⌘K、⌘S、⌘J、⌘\）转给 Studio。
  */
-export type StudioSideFeature = "quote" | "open-notes" | "ask-ai" | "open-book";
-const STUDIO_SIDE_FEATURES: readonly StudioSideFeature[] = ["quote", "open-notes", "ask-ai", "open-book"];
+export type StudioSideFeature = "quote" | "open-notes" | "ask-ai" | "open-book" | "shortcut";
+const STUDIO_SIDE_FEATURES: readonly StudioSideFeature[] = ["quote", "open-notes", "ask-ai", "open-book", "shortcut"];
 
 /** Studio 发来、我们认的消息。hello 的 features 为 null 是早先的 Studio（没发这个字段），只认 quote。 */
 export type StudioIncoming =
@@ -116,6 +117,22 @@ export function openBookMessage(book: StudioBook, pageIdx: number | null = null)
     document_id: book.documentId || null,
     title: book.title || null,
     ...(typeof pageIdx === "number" && Number.isInteger(pageIdx) && pageIdx >= 0 ? { page_idx: pageIdx } : {}),
+  } as const;
+}
+
+/** 阅读页有焦点时按了 Studio 的快捷键：交给 Studio 当在它那里按的。 */
+export type StudioShortcut = { key: string; meta: boolean; ctrl: boolean; shift: boolean; alt: boolean };
+
+export function shortcutMessage(keys: StudioShortcut) {
+  return {
+    protocol: STUDIO_BRIDGE_PROTOCOL,
+    v: STUDIO_BRIDGE_VERSION,
+    type: "shortcut",
+    key: keys.key,
+    meta: Boolean(keys.meta),
+    ctrl: Boolean(keys.ctrl),
+    shift: Boolean(keys.shift),
+    alt: Boolean(keys.alt),
   } as const;
 }
 

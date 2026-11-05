@@ -12,6 +12,8 @@
 // - ask-ai：Studio 认它（它有自己的 AI）时，阅读页的「AI」不开自己的终端，先把读到哪立刻发出去，再发 ask-ai 让 Studio 打开它的 AI。
 // - open-book：Studio 认它（书库那一页）时，书库里点书要读（卡片的阅读、详情里的对照阅读……都走 ReaderNavigation）不自己开
 //   阅读页，交给 Studio 在正在写的笔记旁边打开（以笔记为根）；只读原文、还没有任务的书照旧自己开。
+// - shortcut：Studio 认它时，这一页有焦点时按的 ⌘/Ctrl + K、S、J、\（Studio 的搜索、保存、问 AI、收侧栏）转给 Studio，
+//   不让浏览器自己处理（⌘S 不弹「存网页」）；阅读页自己的键（翻页、缩放）都不带 ⌘/Ctrl，不冲突。
 //   阅读器包的这几样由 studioReaderAdapters 交过去（app/reader/adapters/retainpdf.ts）。
 //
 // 方案和安全要求：docs/ops/planning/studio-workbench/ 的「书和笔记接在一起」「阅读页唤出笔记」；格式：platform/studio-bridge/protocol.ts。
@@ -23,6 +25,7 @@ import {
   isLoopbackOrigin,
   openBookMessage,
   openNotesMessage,
+  shortcutMessage,
   parseStudioMessage,
   quoteMessage,
   readingMessage,
@@ -47,6 +50,9 @@ import {
 
 /** 这一版处理的消息，回 ready 时报给 Studio。 */
 export const STUDIO_FEATURES: readonly StudioFeature[] = ["theme", "navigate", "quote", "notes", "reading"];
+
+/** 转给 Studio 的快捷键（和 ⌘ 或 Ctrl 一起按）：它的搜索、保存、问 AI、收起侧栏。 */
+export const STUDIO_SHORTCUT_KEYS: readonly string[] = ["k", "s", "j", "\\"];
 
 /** 翻页停下来多久才告诉 Studio 读到哪：滚过去的那些页不发。 */
 export const READING_DEBOUNCE_MS = 600;
@@ -169,8 +175,17 @@ export function startStudioEmbed(
     if (state.theme && theme !== state.theme) showTheme(state.theme);
   }
 
+  // 这一页有焦点时按的 Studio 快捷键：Studio 认 shortcut 就交给它。
+  function onKeyDown(event: KeyboardEvent) {
+    if (event.defaultPrevented || !(event.metaKey || event.ctrlKey)) return;
+    if (!STUDIO_SHORTCUT_KEYS.includes(`${event.key || ""}`.toLowerCase()) || !supports("shortcut")) return;
+    event.preventDefault();
+    post(shortcutMessage({ key: event.key, meta: event.metaKey, ctrl: event.ctrlKey, shift: event.shiftKey, alt: event.altKey }));
+  }
+
   win.addEventListener("message", onMessage);
   win.addEventListener(THEME_CHANGE_EVENT, onThemeChange);
+  win.document.addEventListener("keydown", onKeyDown);
   return {
     ready: () => Boolean(state.origin),
     supports,
@@ -205,6 +220,7 @@ export function startStudioEmbed(
       if (state.readingTimer) clearTimeout(state.readingTimer);
       win.removeEventListener("message", onMessage);
       win.removeEventListener(THEME_CHANGE_EVENT, onThemeChange);
+      win.document.removeEventListener("keydown", onKeyDown);
       state.listeners = [];
       state.navigators = [];
     },

@@ -33,6 +33,7 @@ const STAND_IN = `<!doctype html><meta charset="utf-8"><title>RetainPDF</title>
 <button id="leave" type="button">离开</button>
 <button id="ask" type="button">AI</button>
 <button id="open-book" type="button">读 Statistical Mechanics</button>
+<button id="press-cmd-k" type="button">⌘K</button>
 <script>
 const head = { protocol: 'retainpdf-studio-bridge', v: 1 };
 let host = '';
@@ -73,6 +74,12 @@ document.querySelector('#leave').addEventListener('click', () => parent.postMess
 	host,
 ));
 document.querySelector('#ask').addEventListener('click', () => parent.postMessage({ ...head, type: 'ask-ai' }, host));
+// ⌘K pressed while the page has the keys: given to the Studio when it takes it (shortcut), as RetainPDF's pages do.
+document.querySelector('#press-cmd-k').addEventListener('click', () => {
+	if (document.querySelector('#studio').textContent.split(',').includes('shortcut')) {
+		parent.postMessage({ ...head, type: 'shortcut', key: 'k', meta: true, ctrl: false, shift: false, alt: false }, host);
+	}
+});
 // A book clicked to read in 图书馆: given to the Studio when it takes it (open-book), as RetainPDF's library does.
 document.querySelector('#open-book').addEventListener('click', () => {
 	if (document.querySelector('#studio').textContent.split(',').includes('open-book')) {
@@ -172,7 +179,7 @@ test('翻译 shows RetainPDF in the middle, kept as it was while another view is
 	await expect(inFrame(page).locator('#library')).toHaveText('图书馆');
 	await expect(inFrame(page).locator('#embed')).toHaveText('studio');
 	await expect(inFrame(page).locator('#theme')).toHaveText(/^(light|dark)$/u);
-	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book,shortcut');
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
 	expect(new URL(page.url()).searchParams.has('translate')).toBe(true);
 
@@ -458,7 +465,7 @@ test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to a
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#open-translate').click();
-	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book,shortcut');
 	// The notes open, the right column folded away for them: asked, it is there again, on the AI.
 	await inFrame(page).locator('#notes').click();
 	await expect(page.locator('.studio-shell')).toHaveClass(/panel-collapsed/u);
@@ -534,7 +541,7 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry', 'Statistical Mechanics']);
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Quantum Chemistry');
 	await expect(bookFrame(page, 'job-1').locator('#opened')).toHaveText('job_id=job-1&page_idx=0&embed_pane=beside');
-	await expect(bookFrame(page, 'job-1').locator('#studio')).toHaveText('quote,ask-ai');
+	await expect(bookFrame(page, 'job-1').locator('#studio')).toHaveText('quote,ask-ai,shortcut');
 	await expect(page.locator('.book-frame')).toHaveCount(1);
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
 
@@ -626,7 +633,7 @@ test('a book clicked to read in 书库 opens beside the note being written, a ta
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#open-translate').click();
-	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book,shortcut');
 
 	await inFrame(page).locator('#open-book').click();
 	// Back on the note, the book beside it at that page (以笔记为根); 书库 left.
@@ -637,7 +644,7 @@ test('a book clicked to read in 书库 opens beside the note being written, a ta
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Statistical Mechanics');
 	await expect(bookFrame(page, 'job-2').locator('#opened')).toHaveText('job_id=job-2&page_idx=7&embed_pane=beside');
 	// A book beside a note is not told the Studio takes open-book: it does not hand its books on.
-	await expect(bookFrame(page, 'job-2').locator('#studio')).toHaveText('quote,ask-ai');
+	await expect(bookFrame(page, 'job-2').locator('#studio')).toHaveText('quote,ask-ai,shortcut');
 	// What is quoted from it goes into the note.
 	await bookFrame(page, 'job-2').locator('#quote').click();
 	await expect(page.locator('.studio-toast')).toContainText('已摘到「Studio 测试夹具」');
@@ -677,6 +684,18 @@ test('⤢ 整页读: the book over the whole middle, the note put away meanwhile
 	await page.locator('#books-toggle').click();
 	await expect(wide).toHaveAttribute('aria-pressed', 'false');
 	await expect(page.locator('.editor-panel')).toBeVisible();
+});
+
+test('the Studio\'s keys pressed in a book (⌘K): given to the Studio, as if pressed in it', async ({ page }) => {
+	appendToFixture('\n[Quantum Chemistry · 第 3 页](retainpdf:job-1/p003-b0001?page=3&document=doc-1) 第一本书。\n');
+	tellsKey = true;
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#books-toggle').click();
+	await expect(bookFrame(page, 'job-1').locator('#studio')).toHaveText('quote,ask-ai,shortcut');
+	await bookFrame(page, 'job-1').locator('#press-cmd-k').click();
+	await expect(page.locator('#quick-find-input')).toBeVisible();
+	await expect(page.locator('#quick-find-input')).toBeFocused();
 });
 
 test('a passage quoted before (a ```retainpdf block) opens as one quoted now: its translation, the mark in its corner; saved so', async ({ page }) => {
