@@ -319,7 +319,9 @@ test('笔记 in RetainPDF opens the note being written beside it; another page o
 	await page.mouse.up();
 	expect((await notesPanel.boundingBox())!.width).toBeGreaterThan(note!.width + 80);
 	// Set on the grid, not on the shell: there each step had the style of all under it (the note's) worked out again.
-	expect(await page.evaluate(() => [document.querySelector<HTMLElement>('.studio-shell')!.style.getPropertyValue('--notes-width'), document.querySelector<HTMLElement>('.workspace-main')!.style.getPropertyValue('--notes-width')])).toEqual(['', expect.stringMatching(/^\d+px$/u)]);
+	await expect
+		.poll(() => page.evaluate(() => [document.querySelector<HTMLElement>('.studio-shell')!.style.getPropertyValue('--notes-width'), document.querySelector<HTMLElement>('.workspace-main')!.style.getPropertyValue('--notes-width')]))
+		.toEqual(['', expect.stringMatching(/^\d+px$/u)]);
 
 	// Another page opened meanwhile: back in 翻译, that one beside it (the note written now), RetainPDF told; what is
 	// quoted then goes there. The right column back while the page was shown on its own.
