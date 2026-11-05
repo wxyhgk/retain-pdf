@@ -714,6 +714,21 @@ test('the Studio\'s keys pressed in a book (⌘K): given to the Studio, as if pr
 	await expect(page.locator('#quick-find-input')).toBeFocused();
 });
 
+test('a passage asked for from elsewhere (an AI\'s source in 对话, 书库) opens beside the note being written, never 书库\'s own reader', async ({ page }) => {
+	tellsKey = true;
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	for (const away of ['#open-translate', '#sidebar-chats']) {
+		await page.locator(away).click();
+		await page.evaluate(() => window.dispatchEvent(new CustomEvent('retainpdf-navigate', { detail: { job_id: 'job-2', block_id: 'p008-b0004', page_idx: 7, title: 'Statistical Mechanics', document_id: 'doc-2' } })));
+		await expect(page.locator('#translate-view')).toBeHidden();
+		await expect(page.locator('#books-view')).toBeVisible();
+		await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
+		await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Statistical Mechanics');
+	}
+	await expect(bookFrame(page, 'job-2').locator('#opened')).toHaveText(/job_id=job-2.*page_idx=7/u);
+});
+
 test('a passage quoted before (a ```retainpdf block) opens as one quoted now: its translation, the mark in its corner; saved so', async ({ page }) => {
 	appendToFixture('\n```retainpdf\nbook: Quantum Chemistry\ndocument: doc-1\njob: job-1\nblock: p004-b0002\npage: 4\n---\nThe old way.\n---\n旧的摘录。\n```\n');
 	await openStudio(page, { settled: false });
