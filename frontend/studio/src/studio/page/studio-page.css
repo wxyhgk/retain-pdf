@@ -114,7 +114,9 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* Narrow: the controls their marks alone, their names on hover. */
 @container (max-width: 620px) { .book-control-label { display: none; } }
 /* Narrower still: the original / both / the translation in ⋯ (BookControls.tsx puts them there too). */
-@container (max-width: 440px) { .book-modes, .book-page-count { display: none; } }
+@container (max-width: 440px) { .book-modes { display: none; } }
+/* Narrowest: the page alone, not of how many. */
+@container (max-width: 340px) { .book-page-count { display: none; } }
 .book-tab:hover, .book-tab:has([aria-selected='true']) { background: rgba(var(--gray), 0.12); }
 .book-tab-name { min-width: 0; overflow: hidden; padding: 4px 4px 4px 9px; border: 0; background: none; color: rgb(var(--gray)); font: inherit; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .book-tab-name[aria-selected='true'] { color: rgb(var(--black)); font-weight: 600; }
