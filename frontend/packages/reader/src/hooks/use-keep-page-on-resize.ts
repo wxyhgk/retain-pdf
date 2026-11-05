@@ -13,6 +13,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 
 import { READER_PAGE_ATTR, READER_PANE_ATTR, type ReaderPaneId } from "../pdf/reader-dom-contract.js";
+import { READER_WIDTH_SETTLE_MS } from "../pdf/reader-zoom.js";
 import { applyPageScrollProgress, measurePageScrollProgress, type PageScrollProgress } from "../pdf/scroll-to-page.js";
 
 const KEEP_MAX_MS = 2000;
@@ -51,9 +52,12 @@ export function useKeepPageOnResize(shell: HTMLElement | null, pageWidthBasis: n
     const { pane, progress, startHeight, started } = base;
 
     let frame = 0;
-    let lastHeight = shell.scrollHeight;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let lastHeight = startHeight;
     let stableFrames = 0;
+    let looping = started;
     const stop = () => {
+      if (timer) clearTimeout(timer);
       cancelAnimationFrame(frame);
       for (const type of USER_SCROLL_EVENTS) shell.removeEventListener(type, stop);
       if (hold.current?.stop === stop) hold.current = null;
@@ -64,12 +68,18 @@ export function useKeepPageOnResize(shell: HTMLElement | null, pageWidthBasis: n
       stableFrames = height === lastHeight ? stableFrames + 1 : 0;
       lastHeight = height;
       const settled = height !== startHeight && stableFrames >= STABLE_FRAMES;
-      if (settled || performance.now() - started > KEEP_MAX_MS) stop();
+      if (settled || performance.now() - looping > KEEP_MAX_MS) stop();
       else frame = requestAnimationFrame(tick);
     };
     for (const type of USER_SCROLL_EVENTS) shell.addEventListener(type, stop, { passive: true });
     hold.current = { ...base, stop };
-    frame = requestAnimationFrame(tick);
+    // 宽度还在变（拖分栏、开关侧栏的过渡）时什么都不量：页宽要等停稳 READER_WIDTH_SETTLE_MS 才提交（PdfDocumentPane），
+    // 在那之前眼前的页不会动；每帧去量反倒逼浏览器每帧把整本书排一遍（大书拖起来一顿一顿）。停稳了再开始放回去。
+    timer = setTimeout(() => {
+      timer = null;
+      looping = performance.now();
+      frame = requestAnimationFrame(tick);
+    }, READER_WIDTH_SETTLE_MS);
   }, [shell, pageWidthBasis]);
 
   useEffect(() => () => hold.current?.stop(), []);

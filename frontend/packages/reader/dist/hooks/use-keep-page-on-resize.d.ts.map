@@ -1,1 +1,1 @@
-{"version":3,"file":"use-keep-page-on-resize.d.ts","sourceRoot":"","sources":["../../src/hooks/use-keep-page-on-resize.ts"],"names":[],"mappings":"AA4BA,wBAAgB,mBAAmB,CAAC,KAAK,EAAE,WAAW,GAAG,IAAI,EAAE,cAAc,EAAE,MAAM,GAAG,IAAI,GAAG,IAAI,CA+ClG"}
+{"version":3,"file":"use-keep-page-on-resize.d.ts","sourceRoot":"","sources":["../../src/hooks/use-keep-page-on-resize.ts"],"names":[],"mappings":"AA6BA,wBAAgB,mBAAmB,CAAC,KAAK,EAAE,WAAW,GAAG,IAAI,EAAE,cAAc,EAAE,MAAM,GAAG,IAAI,GAAG,IAAI,CAwDlG"}

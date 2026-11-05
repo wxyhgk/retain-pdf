@@ -392,6 +392,9 @@
 .reader-react-pdf-page canvas {
   display: block;
   max-width: none !important;
+  /* 每页画布一层：外面变宽变窄（拖笔记和书之间的分隔线）时浏览器搬这一层，不把整页像素重画一遍。
+     以前拖的时候每帧都重新栅格化眼前几页的大画布，一顿一顿。只有眼前几页有画布，层不多。 */
+  will-change: transform;
 }
 
 /* react-pdf 文本层：透明字可选中 */
