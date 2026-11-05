@@ -186,7 +186,7 @@ test("live overlay is non-interactive and can be assigned to the dedicated live 
     readFile(new URL("../../../../frontend/packages/reader/src/pdf/PdfDocumentPane.tsx", import.meta.url), "utf8"),
   ]);
   assert.match(css, /\.reader-live-translation-overlay\s*\{[\s\S]*pointer-events:\s*none/);
-  assert.match(pageSlot, /active && showLiveTranslation/);
+  assert.match(pageSlot, /active && textLayer && showLiveTranslation/, "只给眼前的页挂（textLayer）");
   assert.match(pageSlot, /showLiveTranslation = pane === "source"/);
   assert.match(pane, /liveTranslation\?\.layoutByPage\.get\(pageNumber - 1\)/);
   assert.match(pane, /const isWindowed = windowedSet\.has\(pageNumber\)/);
