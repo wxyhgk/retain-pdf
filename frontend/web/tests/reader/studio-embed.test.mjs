@@ -103,11 +103,22 @@ test("发出去的 reading 对得上契约：阅读页里是书和页，不在�
   assert.equal(readingMessage({ book: { jobId: "j1", documentId: null, title: null }, pageIdx: 2, pageCount: null }).page_idx, 2, "页数还不知道时照样报页");
 });
 
-test("Studio 的亮暗落到我们的主题：本机主题亮暗对得上就用它", () => {
+test("Studio 的亮暗落到我们的主题：只用黑白灰那两套（夜间再按 Studio 的灰覆盖），本机的彩色皮肤不带进 Studio", () => {
   assert.equal(themeForStudio("dark", "classic"), "night");
   assert.equal(themeForStudio("dark", "night"), "night");
   assert.equal(themeForStudio("light", "night"), "classic");
-  assert.equal(themeForStudio("light", "jiangnan"), "jiangnan");
+  assert.equal(themeForStudio("light", "jiangnan"), "classic");
+  const css = readFileSync(new URL("../../src/styles/themes/studio-embed.css", import.meta.url), "utf8");
+  assert.match(css, /html\[data-embed="studio"\]\[data-theme="night"\]/u, "夜间按 Studio 覆盖，只在放在 Studio 里时");
+  assert.match(css, /--accent: #f5f5f7;/u, "强调色是 Studio 的白，不是绿");
+  assert.match(css, /--bg: #1c1c1e;/u, "底色是 Studio 的中性灰");
+  // 主页、书库用 web 的一份，阅读页用阅读器包的一份：两份一样，都排在 night 后面。
+  const readerCss = readFileSync(new URL("../../../packages/reader/styles/themes/studio-embed.css", import.meta.url), "utf8");
+  assert.equal(readerCss, css, "阅读器包里的那份和 web 的一样");
+  for (const index of ["../../src/styles/themes/index.css", "../../../packages/reader/styles/themes/index.css"]) {
+    const text = readFileSync(new URL(index, import.meta.url), "utf8");
+    assert.ok(text.indexOf("studio-embed.css") > text.indexOf("night.css"), `${index}：排在 night 后面`);
+  }
 });
 
 function fakeWindow(dom, search = "?embed=studio") {
@@ -269,6 +280,26 @@ test("悬停框：宿主给了 notesQuote 且握过手才有「摘到笔记」�
     assert.deepEqual(readerNotesQuoteOf(target), { itemId: "p002-b0004", pageIdx: 1, sourceText: "The vibration", translatedText: "振动" });
   } finally {
     setReaderAdapters(null);
+  }
+});
+
+test("悬停框：单独用时露出翻译编号（调试用）；放在 Studio 里读书时不露；「摘到笔记」说放进去的是译文", () => {
+  const target = hoverTarget();
+  const hadWindow = "window" in globalThis;
+  const before = globalThis.window;
+  try {
+    setReaderAdapters({ notesQuote: { available: () => true, send: () => true } });
+    globalThis.window = { location: { search: "" } };
+    assert.match(renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target })), /p002-b0004<\/button>/, "单独用：有编号");
+    globalThis.window = { location: { search: "?embed=studio&embed_pane=beside" } };
+    const inStudio = renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target }));
+    assert.doesNotMatch(inStudio, /class="reader-text-hover-id"/, "Studio 里：没有编号");
+    assert.match(inStudio, /title="摘到笔记：这一段的译文（没翻译的放原文）放进正在写的笔记"/);
+    assert.doesNotMatch(inStudio, /原文和译文一起/);
+  } finally {
+    setReaderAdapters(null);
+    if (hadWindow) globalThis.window = before;
+    else delete globalThis.window;
   }
 });
 

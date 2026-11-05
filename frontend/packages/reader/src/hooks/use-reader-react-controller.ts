@@ -29,7 +29,8 @@ import { useReaderQuotedBlocks } from "./use-reader-quoted-blocks.js";
 import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
 import { isFinishedJobStatus } from "@retainpdf/domain/job";
 
-export const CITATION_HIGHLIGHT_MS = 2000;
+/** 跳到某一段后那一段亮多久：页还在画的那一两秒也算在里面，太短就看不到（读书走查 9）；最后一秒淡出（react-pdf.css）。 */
+export const CITATION_HIGHLIGHT_MS = 4500;
 
 /**
  * 无 region 命中时的页码回退：区分 0 基与 1 基来源再换算。

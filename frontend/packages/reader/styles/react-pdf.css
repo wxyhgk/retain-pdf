@@ -209,7 +209,14 @@
   background: color-mix(in srgb, var(--warn) 28%, transparent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--paper) 78%, transparent),
     0 4px 18px color-mix(in srgb, var(--warn) 24%, transparent);
-  animation: reader-region-focus 680ms ease-out both;
+  /* 亮 4.5 秒（CITATION_HIGHLIGHT_MS），最后一秒淡出。 */
+  animation: reader-region-focus 680ms ease-out both, reader-region-fade 900ms ease-in 3500ms forwards;
+}
+
+@keyframes reader-region-fade {
+  to {
+    opacity: 0;
+  }
 }
 
 /* 内容块悬停层：红色虚线框 + 翻译编号和「复制」（对照时左右两栏同一块一起画）。

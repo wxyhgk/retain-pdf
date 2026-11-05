@@ -53,8 +53,10 @@
 }
 
 @media (max-width: 599px) {
+  /* 窄（笔记旁边的书、手机）：盖住一部分，不盖住整页；跳过去以后自己收起（ReaderAppReactPdf）。 */
   .reader-finder {
-    width: 100dvw;
+    width: min(var(--reader-finder-width, 300px), 86dvw);
+    box-shadow: 8px 0 24px color-mix(in srgb, var(--ink) 10%, transparent);
   }
 
   .reader-finder-toggle span {

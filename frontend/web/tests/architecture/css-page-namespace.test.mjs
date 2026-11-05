@@ -72,6 +72,12 @@ const READER_FILE_EXEMPTIONS = [
     reason: "皮肤 token 契约：颜色/形态变量必须写在 :root/[data-theme] 上全局生效。",
     selectors: [/^\[data-theme/],
   })),
+  {
+    file: "themes/studio-embed.css",
+    reason:
+      "放在笔记（Studio）里时按 Studio 的暗色覆盖 night 的颜色变量（读书走查 13）：只能写在 html[data-embed=\"studio\"] 文档根上，单独用 RetainPDF 时不生效。",
+    selectors: [/^html\[data-embed="studio"\]\[data-theme="night"\]/],
+  },
 ];
 
 const READER_EXEMPTIONS = new Map(

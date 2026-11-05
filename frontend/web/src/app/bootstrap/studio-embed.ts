@@ -43,7 +43,6 @@ import {
   DEFAULT_THEME_ID,
   THEME_CHANGE_EVENT,
   getStoredTheme,
-  getThemeDefinition,
   showTheme,
   type ThemeId,
 } from "@/ui/theme/theme.js";
@@ -59,11 +58,12 @@ export const READING_DEBOUNCE_MS = 600;
 
 const DARK_THEME_ID: ThemeId = "night";
 
-/** Studio 的亮暗落到我们的主题：本机存的主题亮暗对得上就用它，对不上用默认亮色 / 夜间。 */
-export function themeForStudio(theme: StudioTheme, stored: ThemeId = getStoredTheme()): ThemeId {
-  const dark = getThemeDefinition(stored)?.group === "dark";
-  if (theme === "dark") return dark ? stored : DARK_THEME_ID;
-  return dark ? DEFAULT_THEME_ID : stored;
+/**
+ * Studio 的亮暗落到我们的主题：放在 Studio 里就是 Studio 的一部分，只用黑白灰那两套（默认亮色 / 夜间，夜间的颜色再按 Studio 的
+ * 中性灰覆盖，themes/studio-embed.css），本机存的彩色皮肤不带进来（读书走查 13）。`stored` 留着参数，不再看它。
+ */
+export function themeForStudio(theme: StudioTheme, _stored: ThemeId = getStoredTheme()): ThemeId {
+  return theme === "dark" ? DARK_THEME_ID : DEFAULT_THEME_ID;
 }
 
 export type StudioNotesState = { open: boolean; title: string | null };
