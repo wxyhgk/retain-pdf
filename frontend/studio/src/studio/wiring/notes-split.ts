@@ -1,4 +1,4 @@
-// 翻译 with its 笔记: RetainPDF's pages on the left, the note open (the book's, retainpdf-notes.mjs) on the right, in
+// 翻译 with its 笔记: RetainPDF's pages on the left, the note being written on the right, in
 // the Studio's own editor; between them a line to drag (the width kept in this browser) and 收起笔记. Only in 翻译:
 // the shell says `data-notes="open"`, and the page's CSS puts the two side by side (studio-page.css). A note's 书 are
 // put beside it the same way (`flag: 'books'`, `data-books="open"`; book-tabs.ts), the note's width the same.

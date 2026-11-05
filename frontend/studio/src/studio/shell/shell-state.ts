@@ -5,7 +5,7 @@ import type { Conversation } from '../api/client';
 import { createStore, useStore } from './store.ts';
 
 /** What the middle shows: the article, the drive, the table of all articles, AI 问答, the 小程序, or 翻译 (RetainPDF's pages). */
-export type View = 'editor' | 'drive' | 'table' | 'chat' | 'apps' | 'translate' | 'library';
+export type View = 'editor' | 'drive' | 'table' | 'chat' | 'apps' | 'translate';
 
 /** A tab of the right column: the Studio's (`ai`, `files`…) or a plugin's. */
 /** A tab of the right column; `icon`, a plugin's (an SVG or a character): the Studio's own are drawn by key. */
@@ -39,8 +39,6 @@ export type ShellState = {
 	panelOpen: boolean;
 	/** 翻译 with the book's notes open beside it (wiring/notes-split.ts): the bar says the note's title and saving as for an article. */
 	notesOpen: boolean;
-	/** The open page is a book's notes (读书笔记): the book, opened beside them first (书). */
-	book: { job_id: string; document_id: string | null; title: string } | null;
 	/** 书: the note's books open beside it (wiring/book-tabs.ts). */
 	booksOpen: boolean;
 	/** The right column's tabs not lent elsewhere, in order, and the one shown. */
@@ -56,8 +54,6 @@ export type ShellActions = {
 	search(): void;
 	showView(view: View): void;
 	newPage(): void;
-	/** 今天的日志: today's page under 日志, made from its template the first time today. */
-	todayJournal(): void;
 	/** 导入 Markdown: files (.md, .zip) or a folder, chosen in the system's dialog. */
 	importMarkdown(kind: 'files' | 'folder'): void;
 	newChat(): void;
@@ -102,7 +98,6 @@ function initialState(): ShellState {
 		icon: '',
 		panelOpen: true,
 		notesOpen: false,
-		book: null,
 		booksOpen: false,
 		tabs: [
 			{ key: 'ai', label: 'AI' },
@@ -130,7 +125,6 @@ export const ActionsContext = createContext<ShellActions>({
 	search: nothing,
 	showView: nothing,
 	newPage: nothing,
-	todayJournal: nothing,
 	importMarkdown: nothing,
 	newChat: nothing,
 	openChat: nothing,

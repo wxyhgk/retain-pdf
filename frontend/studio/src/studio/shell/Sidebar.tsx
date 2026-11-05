@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Blocks, BookMarked, CalendarDays, ChevronDown, FolderUp, Upload, FileText, Globe, House, Library, MessageCircle, Plus, Search, Settings, SquarePen, StarOff, Table2, Trash2, type LucideIcon } from 'lucide-react';
+import { Blocks, BookMarked, ChevronDown, FolderUp, Upload, FileText, Globe, House, Library, MessageCircle, Plus, Search, Settings, SquarePen, StarOff, Table2, Trash2, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -147,7 +147,7 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 	const { view, chats, chat, count } = useShell();
 	const act = useActions();
 	const chatting = view === 'chat';
-	const toggle = (to: 'drive' | 'table') => () => act.showView(view === to ? 'editor' : to);
+	const toggle = (to: 'drive' | 'table' | 'translate') => () => act.showView(view === to ? 'editor' : to);
 	return (
 		<>
 			<div className="flex items-center gap-1 px-[9px] pt-2.5 pb-1">
@@ -177,14 +177,9 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				<Item id="open-drive" icon={Library} aria-pressed={view === 'drive'} onClick={toggle('drive')}>
 					{t('资料库')}
 				</Item>
-				{/* 书库: RetainPDF's books drawn by the Studio (library/BookShelf.tsx); pressed too while RetainPDF's own page is
-				    shown from it (上传 PDF: wiring/retainpdf-view.ts), and pressed again, back to the page. */}
-				<Item id="open-library" icon={BookMarked} aria-pressed={view === 'library' || view === 'translate'} onClick={() => act.showView(view === 'library' || view === 'translate' ? 'editor' : 'library')}>
+				{/* 书库: RetainPDF's own pages (the books, translating, reading) in the middle: wiring/retainpdf-view.ts. */}
+				<Item id="open-translate" icon={BookMarked} aria-pressed={view === 'translate'} onClick={toggle('translate')}>
 					{t('书库')}
-				</Item>
-				{/* Today's page under 日志 (as SiYuan's daily note), made from templates/journal.md the first time today. */}
-				<Item id="open-today" icon={CalendarDays} onClick={act.todayJournal}>
-					{t('今天的日志')}
 				</Item>
 				{/* The 小程序 page: their list, or the one open there (mini-apps.ts). */}
 				{/* Not a toggle: from elsewhere to the app left open there, and there to their list. */}

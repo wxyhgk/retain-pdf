@@ -100,8 +100,7 @@ import { createRetainpdfView, type RetainpdfBook, type RetainpdfQuote, type Reta
 import { createBookTabs } from './wiring/book-tabs';
 import { citedBooks } from './editor/retainpdf-source';
 import { createNotesSplit } from './wiring/notes-split';
-import { lastPage, markReadingPage, rememberPage } from './wiring/book-places';
-import { createBookShelf } from './library/book-shelf';
+import { markReadingPage, rememberPage } from './wiring/book-places';
 import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfOpen } from './editor/retainpdf-quote';
 import { createAiChat } from './wiring/ai-chat';
 import { createDrive } from './wiring/drive';
@@ -119,7 +118,6 @@ mountShell(shell, {
 	search: () => quickFind.open(),
 	showView: (view) => showView(view),
 	newPage: () => void pages.newPage(),
-	todayJournal: () => void pages.todayJournal(),
 	importMarkdown: (kind) => void pages.importMarkdown(kind),
 	newChat: () => chat.newChat(),
 	openChat: (id) => chat.openChat(id),
@@ -788,10 +786,9 @@ const quickFind = createQuickFind({
 			hint: command.keys,
 			run: () => void command.run({ from: 'call' }),
 		}));
-		// 今天的日志, and a page from each template (templates/).
+		// A database, and a page from each template (templates/).
 		const templates = (await listTemplates().catch(() => ({ templates: [] }))).templates;
 		const fromTemplates = [
-			{ key: 'studio:today', label: t('今天的日志'), icon: '📅', run: () => void pages.todayJournal() },
 			{ key: 'studio:new-database', label: t('新建数据库'), icon: '▦', hint: t('一个整页的数据库，它下面的页面就是各行'), run: () => void pages.newDatabase() },
 			...templates.map((template) => ({ key: `template:${template.id}`, label: t('新建：{name}', { name: template.name }), icon: '＋', hint: template.description, run: () => void pages.newFromTemplate(template.id) })),
 		];
@@ -999,16 +996,15 @@ function keepNoteBooks(slug: string, kept: NoteBooks): void {
 let booksOf: string | null = null;
 let tabJobs: string[] = [];
 let caretInNote = false;
-/** The note's books: those kept for it, then (not closed) the book whose notes it is (读书笔记) and the ones it quotes. */
+/** The note's books: those kept for it, then (not closed) the ones it quotes. */
 function noteBooks(slug: string): { books: RetainpdfBook[]; shown: string | null } {
 	const kept = keptNoteBooks(slug);
 	const books = [...(kept?.books ?? [])];
-	const own = shellState.get().book;
 	const view = editor.view();
-	for (const book of [...(own ? [own] : []), ...(view ? citedBooks(view.state.doc) : [])]) {
+	for (const book of view ? citedBooks(view.state.doc) : []) {
 		if (!books.some((each) => each.job_id === book.job_id) && !kept?.closed.includes(book.job_id)) books.push({ ...book });
 	}
-	return { books, shown: kept?.shown ?? own?.job_id ?? null };
+	return { books, shown: kept?.shown ?? null };
 }
 const bookTabs = createBookTabs(booksView, {
 	openSettings: () => openSettings('retainpdf'),
@@ -1113,19 +1109,6 @@ window.addEventListener(RETAINPDF_NAVIGATE, (event) => {
 	showView('translate');
 	void retainpdf.navigate(target);
 });
-// 书库: RetainPDF's books as the Studio's own page (library/BookShelf.tsx); a book clicked there opens beside the note
-// being written (以笔记为根), RetainPDF's own page shown only to add a PDF (until the Studio takes them itself).
-const libraryView = shell.querySelector<HTMLElement>('#library-view')!;
-const bookShelf = createBookShelf(libraryView, {
-	openBook: (book, pageIdx) => void openBookBesideNote(book, pageIdx),
-	openNote(slug, find) {
-		showView('editor');
-		void pages.openAt(slug, find);
-	},
-	lastPage,
-	upload: () => showView('translate'),
-	openSettings: () => openSettings('retainpdf'),
-});
 const tableView = shell.querySelector<HTMLElement>('#table-view')!;
 const articleTable = createArticleTable(tableView, {
 	articles: () => articleList.articles(),
@@ -1148,8 +1131,6 @@ function showView(view: View, folder?: string): void {
 	tableView.hidden = view !== 'table';
 	appsView.hidden = view !== 'apps';
 	translateView.hidden = view !== 'translate';
-	libraryView.hidden = view !== 'library';
-	bookShelf.setVisible(view === 'library');
 	booksView.hidden = !(view === 'editor' && booksSplit.open);
 	bookTabs.setVisible(view === 'editor' && booksSplit.open);
 	chat.showChat(view === 'chat');
@@ -1175,8 +1156,6 @@ function showView(view: View, folder?: string): void {
 	}
 	tellReading();
 	markQuoteSpot();
-	if (view === 'library') url.searchParams.set('library', '');
-	else url.searchParams.delete('library');
 	if (view === 'apps') url.searchParams.set('apps', '');
 	else {
 		url.searchParams.delete('apps');
@@ -1195,7 +1174,6 @@ function showView(view: View, folder?: string): void {
 	if (folder !== null) showView('drive', folder);
 	else if (address.has('pages')) showView('table');
 	else if (address.has('translate')) showView('translate');
-	else if (address.has('library')) showView('library');
 	else if (address.get('app')) void miniApps.open(address.get('app')!);
 	else if (address.has('apps')) showView('apps');
 	else if (chatId) chat.openChat(chatId);

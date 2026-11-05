@@ -32,7 +32,6 @@ import { atomicWriteText } from '../studio/server/files/atomic-write.mjs';
 import { serverKernel } from '@blog/kernel/node.mjs';
 import { LocaleSettings, studioSettingsFile } from '../studio/server/locale-settings.mjs';
 import { RetainpdfSettings } from '../studio/server/retainpdf-settings.mjs';
-import { RetainpdfNotes } from '../studio/server/retainpdf-notes.mjs';
 import { RetainpdfLibrary } from '../studio/server/retainpdf-library.mjs';
 import { RetainpdfReading } from '../studio/server/retainpdf-reading.mjs';
 import { notesRoot } from '../studio/server/notes-root.mjs';
@@ -283,7 +282,6 @@ export default function studioDev({ site, builds } = {}) {
 				pluginSettings,
 				localeSettings: new LocaleSettings(settingsFile),
 				retainpdfSettings,
-				retainpdfNotes: new RetainpdfNotes(articles),
 				retainpdfLibrary: new RetainpdfLibrary({ settings: retainpdfSettings }),
 				retainpdfReading,
 				aiSettings,

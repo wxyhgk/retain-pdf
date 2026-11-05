@@ -994,52 +994,6 @@ export function searchBooks(query: string, signal?: AbortSignal): Promise<{ hits
 	return request(`/api/studio/retainpdf/search?${new URLSearchParams({ q: query })}`, { signal });
 }
 
-/** A job of RetainPDF's as 书库 shows it: its state; going, its stage and how far; failed, why (and whether it can go on). */
-export type ShelfJob = { status: 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled' | null; stage?: string | null; percent?: number | null; failure?: string | null; retryable?: boolean };
-/** What the notes quote of a book: how many passages, the notes each with theirs (the page, the block, a few words). */
-export type ShelfQuoted = { quotes: number; notes: Array<{ slug: string; title: string; icon?: string; quotes: Array<{ job: string; block: string; page: number | null; text: string }> }> };
-/** A book of 书库 (server/retainpdf-library.mjs shelf): RetainPDF's, with its job now and what the notes quote of it. */
-export type ShelfBook = {
-	document_id: string;
-	title: string | null;
-	pages: number | null;
-	reading_status: 'unread' | 'reading' | 'done' | null;
-	job_id: string | null;
-	translated: boolean;
-	added: string | null;
-	job: ShelfJob | null;
-	quoted: ShelfQuoted;
-};
-/** A book's sheet on 书库: the book, its jobs, how much is translated, its contents, what the notes quote of it. */
-export type ShelfDetail = {
-	book: Omit<ShelfBook, 'job' | 'quoted'>;
-	jobs: Array<ShelfJob & { job_id: string; workflow: string | null; created: string | null }>;
-	coverage: { pages: number; translated: number } | null;
-	contents: Array<{ block: string; level: 1 | 2; text: string; page: number }>;
-	quoted: ShelfQuoted;
-};
-
-/** 书库's books, a page of them (those whose title has `query`). */
-export function shelfBooks(query = '', offset = 0, signal?: AbortSignal): Promise<{ total: number; books: ShelfBook[]; more: boolean }> {
-	const asked = new URLSearchParams();
-	if (query) asked.set('q', query);
-	if (offset) asked.set('offset', String(offset));
-	return request(`/api/studio/retainpdf/shelf${asked.size ? `?${asked}` : ''}`, { signal });
-}
-
-/** A book's sheet on 书库. */
-export function shelfBook(documentId: string, signal?: AbortSignal): Promise<ShelfDetail> {
-	return request(`/api/studio/retainpdf/shelf/${encodeURIComponent(documentId)}`, { signal });
-}
-
-/** Where a book's cover is (fetched by the Studio's server, RetainPDF's key kept there). */
-export const shelfCover = (documentId: string): string => `/api/studio/retainpdf/shelf/${encodeURIComponent(documentId)}/cover`;
-
-/** A job of RetainPDF's stopped, or carried on from where it stopped. */
-export function retainpdfJobAction(jobId: string, action: 'cancel' | 'resume'): Promise<{ ok: true }> {
-	return request(`/api/studio/retainpdf/jobs/${encodeURIComponent(jobId)}/${action}`, jsonOptions('POST', {}));
-}
-
 /** What is read in 翻译 (server/retainpdf-reading.mjs), told the AIs; null: nothing. */
 export function tellRetainpdfReading(reading: { job_id: string; document_id: string | null; title: string | null; page: number | null; pages: number | null; notes: { slug: string; title: string } | null; others?: Array<{ job_id: string; document_id: string | null; title: string | null }> } | null): Promise<unknown> {
 	return request('/api/studio/retainpdf/reading', jsonOptions('PUT', reading));

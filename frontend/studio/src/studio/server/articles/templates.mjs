@@ -14,10 +14,8 @@ import { t } from '@blog/i18n/index.mjs';
  *     ---
  *
  * In it (the body and the title) `{{date}}` (2026-10-29), `{{time}}` (14:03), `{{datetime}}`, `{{year}}`, `{{month}}`,
- * `{{day}}`, `{{weekday}}` (星期四) and `{{title}}` (the new page's) are filled in. `journal` is 今天的日志's.
+ * `{{day}}`, `{{weekday}}` (星期四) and `{{title}}` (the new page's) are filled in.
  */
-
-export const JOURNAL = 'journal';
 
 const ID = /^[a-z0-9][a-z0-9-]{0,63}$/u;
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']; // i18n-ignore: written into the page

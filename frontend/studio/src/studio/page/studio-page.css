@@ -30,7 +30,7 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* The drive in the middle, the article kept open behind it; the bar keeps only the side panel's button. */
 .drive-page { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 12px; }
 .drive-page[hidden] { display: none; }
-.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat'], [data-view='apps'], [data-view='translate'], [data-view='library']) .editor-panel { display: none; }
+.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat'], [data-view='apps'], [data-view='translate']) .editor-panel { display: none; }
 /* 翻译: RetainPDF's pages filling the middle, edge to edge; a line saying why when they cannot be reached. */
 .translate-page { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 .translate-page[hidden] { display: none; }
