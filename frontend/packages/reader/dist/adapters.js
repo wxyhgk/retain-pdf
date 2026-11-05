@@ -26,7 +26,8 @@ const a = [
   "notesPanel",
   "readingPosition",
   "hostAi",
-  "hostNavigation"
+  "hostNavigation",
+  "quotedBlocks"
 ], t = [
   "resolveMarkdownAssetUrl",
   "resolveReaderDownloadUrls",

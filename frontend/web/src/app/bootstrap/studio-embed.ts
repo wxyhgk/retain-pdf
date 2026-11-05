@@ -49,7 +49,7 @@ import {
 } from "@/ui/theme/theme.js";
 
 /** 这一版处理的消息，回 ready 时报给 Studio。 */
-export const STUDIO_FEATURES: readonly StudioFeature[] = ["theme", "navigate", "quote", "notes", "reading"];
+export const STUDIO_FEATURES: readonly StudioFeature[] = ["theme", "navigate", "quote", "notes", "reading", "quoted"];
 
 /** 转给 Studio 的快捷键（和 ⌘ 或 Ctrl 一起按）：它的搜索、保存、问 AI、收起侧栏。 */
 export const STUDIO_SHORTCUT_KEYS: readonly string[] = ["k", "s", "j", "\\"];
@@ -67,6 +67,8 @@ export function themeForStudio(theme: StudioTheme, stored: ThemeId = getStoredTh
 }
 
 export type StudioNotesState = { open: boolean; title: string | null };
+/** Studio 说的这本书摘过的段落（quoted 消息）；还没说是 null。 */
+export type StudioQuoted = { jobId: string; documentId: string | null; itemIds: readonly string[] } | null;
 export type StudioNavigateTarget = { jobId: string; pageIdx: number | null; blockId: string };
 
 export type StudioEmbed = {
@@ -80,6 +82,8 @@ export type StudioEmbed = {
   openBook: (book: StudioBook, pageIdx?: number | null) => boolean;
   /** Studio 说的旁边笔记开着没有（notes 消息）。 */
   notes: () => StudioNotesState;
+  /** Studio 说的这本书摘过的段落（quoted 消息，每条换一个新对象）。 */
+  quoted: () => StudioQuoted;
   /** 笔记收着就发 open-notes，开着就发 close-notes；开没开等 Studio 回 notes 再变。 */
   toggleNotes: (book: StudioBook) => boolean;
   /** 眼下读到哪（null：不在阅读页）。握过手就（防抖后）发 reading，没握手先记着，握手时发。 */
@@ -105,13 +109,14 @@ export function startStudioEmbed(
     features: StudioSideFeature[] | null;
     theme: ThemeId | null;
     notes: StudioNotesState;
+    quoted: StudioQuoted;
     listeners: Array<() => void>;
     navigators: Array<(target: StudioNavigateTarget) => boolean>;
     reading: StudioReading;
     /** 上一次发出去的 reading（JSON），一样的不再发。 */
     toldReading: string;
     readingTimer: ReturnType<typeof setTimeout> | null;
-  } = { origin: "", features: null, theme: null, notes: { open: false, title: null }, listeners: [], navigators: [], reading: null, toldReading: "", readingTimer: null };
+  } = { origin: "", features: null, theme: null, notes: { open: false, title: null }, quoted: null, listeners: [], navigators: [], reading: null, toldReading: "", readingTimer: null };
 
   const emit = () => state.listeners.forEach((listener) => listener());
   const applyTheme = (theme: StudioTheme) => {
@@ -163,6 +168,11 @@ export function startStudioEmbed(
       emit();
       return;
     }
+    if (message.type === "quoted") {
+      state.quoted = { jobId: message.jobId, documentId: message.documentId, itemIds: message.itemIds };
+      emit();
+      return;
+    }
     const target = { jobId: message.jobId, pageIdx: message.pageIdx, blockId: message.blockId };
     if (state.navigators.some((handler) => handler(target))) return;
     const url = buildReaderUrl(message.jobId, { pageIdx: message.pageIdx, blockId: message.blockId });
@@ -192,6 +202,7 @@ export function startStudioEmbed(
     sendQuote: (quote) => supports("quote") && post(quoteMessage(quote)),
     openBook: (book, pageIdx = null) => Boolean(book.jobId) && supports("open-book") && post(openBookMessage(book, pageIdx)),
     notes: () => state.notes,
+    quoted: () => state.quoted,
     setReading(reading) {
       state.reading = reading;
       if (!state.origin) return;
@@ -255,6 +266,8 @@ export function studioReaderAdapters(
   report();
   // useSyncExternalStore 要同一个对象（没变就不换）。
   const panel: { snapshot: StudioNotesPanelState } = { snapshot: { available: false, open: false, title: null } };
+  const noQuoted: ReadonlySet<string> = new Set();
+  const quotedSeen: { from: StudioQuoted; blocks: ReadonlySet<string> } = { from: null, blocks: noQuoted };
   const refresh = () => {
     const notes = embed.notes();
     const available = Boolean(jobId) && embed.supports("open-notes");
@@ -281,6 +294,19 @@ export function studioReaderAdapters(
     },
     hostNavigation: {
       subscribe: (listener: (target: StudioNavigateTarget) => boolean) => embed.onNavigate(listener),
+    },
+    // 摘过的段落：只认说的是这本书的那条（任务一样，或书的编号一样：重新翻译过任务号会变）；同一条消息给同一个集合。
+    quotedBlocks: {
+      get: () => {
+        const said = embed.quoted();
+        if (said !== quotedSeen.from) {
+          quotedSeen.from = said;
+          const mine = Boolean(said && (said.jobId === jobId || (said.documentId && said.documentId === book.documentId)));
+          quotedSeen.blocks = mine && said ? new Set(said.itemIds) : noQuoted;
+        }
+        return quotedSeen.blocks;
+      },
+      subscribe: (listener: () => void) => embed.subscribe(listener),
     },
     readingPosition: {
       report: (pageIdx: number | null, pageCount: number | null) => {

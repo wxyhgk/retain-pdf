@@ -128,7 +128,8 @@ export function ReaderNotesToggle() {
   const getState = panel?.getState ?? noNotesPanel;
   const state = useSyncExternalStore(panel?.subscribe ?? noSubscribe, getState, getState);
   if (!panel || !state.available) return null;
-  const label = state.open ? `收起笔记${state.title ? `：${state.title}` : ""}` : "打开这本书的笔记";
+  // 书库里读书时右栏的「摘录」（摘到哪篇笔记、这本书摘过的段落）：开着时写摘到哪篇。
+  const label = state.open ? `收起摘录${state.title ? `（摘到《${state.title}》）` : ""}` : "摘录";
   return (
     <ReaderTrayButton className="reader-notes-toggle" label={label} pressed={state.open} onClick={panel.toggle}>
       <NotebookPen className="reader-close-home-icon" size={18} strokeWidth={2.25} aria-hidden />

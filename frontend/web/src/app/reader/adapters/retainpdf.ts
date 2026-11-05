@@ -53,6 +53,8 @@ const adapters: ReaderAdapters = {
   hostAi: studio?.hostAi,
   // —— Studio 让翻到某一段：同一本书原地翻过去，不整页重开 ——
   hostNavigation: studio?.hostNavigation,
+  // Studio 摘录栏说的这本书摘过的段落：阅读页在这些块左边画细线。
+  quotedBlocks: studio?.quotedBlocks,
 };
 setReaderAdapters(adapters);
 

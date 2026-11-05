@@ -25,6 +25,7 @@ import {
 import { readerViewStateScope } from "../shared/state/reader-view-state.js";
 import { useLiveTranslation } from "./use-live-translation.js";
 import { useReaderRevisedBlocks, type RevisedBlocks } from "./use-reader-revised-blocks.js";
+import { useReaderQuotedBlocks } from "./use-reader-quoted-blocks.js";
 import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
 import { isFinishedJobStatus } from "@retainpdf/domain/job";
 
@@ -101,6 +102,7 @@ export type ReaderReactController = {
   liveTranslationAvailable: boolean;
   /** 改过的块（阅读页块编号 → 改过几次），译文栏画标记用。 */
   revisedBlocks: RevisedBlocks;
+  quotedBlocks: ReadonlySet<string>;
 };
 
 const LIVE_TRANSLATION_WORKFLOWS = new Set(["book", "translate"]);
@@ -168,6 +170,7 @@ export function useReaderReactController(): ReaderReactController {
   const { shellRef, shellEl, shellWidth, bindShell } = useReaderShell();
   // 只在有译文时读：原文直开（没有任务）没有修订记录。
   const revisedBlocks = useReaderRevisedBlocks(session.jobId, !session.sourceOnly);
+  const quotedBlocks = useReaderQuotedBlocks();
   const viewStateKey = readerViewStateScope({
     documentId: session.documentId,
     jobId: session.jobId,
@@ -360,7 +363,8 @@ export function useReaderReactController(): ReaderReactController {
     liveTranslation,
     liveTranslationAvailable,
     revisedBlocks,
-  }), [session, shellMemo, panes, sessionFilesMemo, rowHeights, goToPage, activeRegion, jumpToAnchor, setModeKeepingPage, showHud, userZoom, onZoomChange, viewStateKey, liveTranslation, liveTranslationAvailable, revisedBlocks]);
+    quotedBlocks,
+  }), [session, shellMemo, panes, sessionFilesMemo, rowHeights, goToPage, activeRegion, jumpToAnchor, setModeKeepingPage, showHud, userZoom, onZoomChange, viewStateKey, liveTranslation, liveTranslationAvailable, revisedBlocks, quotedBlocks]);
 
   return useMemo(() => ({
     ...stablePart,

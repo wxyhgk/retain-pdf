@@ -134,6 +134,16 @@ export type ReaderHostNavigationAdapters = {
   };
 };
 
+/** 这本书摘过的段落（块编号）：阅读页放在笔记（Studio）里、Studio 的摘录栏说了时由宿主给，阅读页在这些块左边画一道细线。
+ *
+ * `get()` 返回同一个集合，变了才换新的（useSyncExternalStore 要求）；不提供 = 不标。 */
+export type ReaderQuotedBlocksAdapters = {
+  quotedBlocks?: {
+    get: () => ReadonlySet<string>;
+    subscribe: (listener: () => void) => () => void;
+  };
+};
+
 export type ReaderAdapters = ReaderSessionAdapters
   & ReaderMarkdownAdapters
   & ReaderDownloadAdapters
@@ -142,7 +152,8 @@ export type ReaderAdapters = ReaderSessionAdapters
   & ReaderNotesPanelAdapters
   & ReaderReadingPositionAdapters
   & ReaderHostAiAdapters
-  & ReaderHostNavigationAdapters;
+  & ReaderHostNavigationAdapters
+  & ReaderQuotedBlocksAdapters;
 
 /**
  * ReaderAdapters 声明键的运行时镜像（TS 类型在运行时被擦除）。
@@ -177,6 +188,7 @@ export const READER_ADAPTER_KEYS = [
   "readingPosition",
   "hostAi",
   "hostNavigation",
+  "quotedBlocks",
 ] as const satisfies readonly (keyof ReaderAdapters)[];
 
 /** 必填（非 `?`）适配键子集，供门禁断言最小注入面。 */

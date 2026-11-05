@@ -30,6 +30,8 @@ export type ReaderContextValue = {
     jumpToBlock?: (itemId: string) => void;
     /** 改过的块（阅读页块编号 → 改过几次）：译文栏画小标记，悬停写「改过 N 次」。 */
     revisedBlocks?: ReadonlyMap<string, number>;
+    /** 摘过的块（宿主 Studio 的摘录栏说的）：两栏都在块左边画一道灰细线。 */
+    quotedBlocks?: ReadonlySet<string>;
     /**
      * 真源语义 =「无 job」：判断 Markdown / AI / 收藏等需要任务的能力。
      * 仅 FAB 工具禁用等「无 job」场景取用；不要用它判断能否并排。

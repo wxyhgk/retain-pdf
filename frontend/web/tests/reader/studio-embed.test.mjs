@@ -154,7 +154,7 @@ test("握手：只认父窗口、本机回环地址；回 ready 指定那个 ori
   fake.receive(hello("dark"));
   assert.equal(embed.ready(), true);
   assert.deepEqual(fake.sent, [
-    { data: readyMessage(["theme", "navigate", "quote", "notes", "reading"]), origin: STUDIO },
+    { data: readyMessage(["theme", "navigate", "quote", "notes", "reading", "quoted"]), origin: STUDIO },
     { data: readingMessage(null), origin: STUDIO },
   ], "回 ready，再说一声不在阅读页");
   assert.equal(dom.window.document.documentElement.dataset.theme, "night", "按 hello 的 theme 换颜色");
@@ -290,7 +290,7 @@ test("阅读页的加载进度只发给同源的父页（软阅读层），不�
   assert.equal(defaultReaderPageConfigPort.messageTargetOrigin(), "http://127.0.0.1:40001");
 });
 
-test("阅读页顶栏「笔记」：宿主给了且 available 才画；按下跟着 open，悬停写「收起笔记：书名」", () => {
+test("阅读页顶栏「摘录」（书库里读书时 Studio 右栏的摘录）：宿主给了且 available 才画；按下跟着 open，悬停写摘到哪篇", () => {
   const render = () => renderToStaticMarkup(createElement(ReaderNotesToggle));
   try {
     setReaderAdapters(null);
@@ -299,9 +299,9 @@ test("阅读页顶栏「笔记」：宿主给了且 available 才画；按下跟
     setReaderAdapters({ notesPanel: { getState: () => state.snapshot, subscribe: () => () => {}, toggle() {} } });
     assert.equal(render(), "", "Studio 不认 open-notes");
     state.snapshot = { available: true, open: false, title: null };
-    assert.match(render(), /class="reader-notes-toggle"[^>]*aria-label="打开这本书的笔记"[^>]*aria-pressed="false"/);
+    assert.match(render(), /class="reader-notes-toggle"[^>]*aria-label="摘录"[^>]*aria-pressed="false"/);
     state.snapshot = { available: true, open: true, title: "量子化学" };
-    assert.match(render(), /aria-label="收起笔记：量子化学"[^>]*aria-pressed="true"/);
+    assert.match(render(), /aria-label="收起摘录（摘到《量子化学》）"[^>]*aria-pressed="true"/);
   } finally {
     setReaderAdapters(null);
   }
@@ -514,4 +514,35 @@ test("书框有焦点时按 Studio 的快捷键（⌘/Ctrl + K、S、J、\\）�
   embed.stop();
   press({ key: "k", metaKey: true });
   assert.equal(shortcuts().length, 3, "停了就不转");
+});
+
+test("quoted（Studio 摘录栏说这本书摘过哪几段）：格式不对的不认；只认说的是这本书的（任务一样，或书的编号一样）；同一条给同一个集合", async () => {
+  const quoted = (fields) => ({ protocol: "retainpdf-studio-bridge", v: 1, type: "quoted", job_id: "j1", document_id: "d1", item_ids: ["p001-b0001"], ...fields });
+  assert.deepEqual(parseStudioMessage(quoted({})), { type: "quoted", jobId: "j1", documentId: "d1", itemIds: ["p001-b0001"] });
+  assert.deepEqual(parseStudioMessage(quoted({ item_ids: [] })).itemIds, [], "空的是一段都没摘");
+  assert.equal(parseStudioMessage(quoted({ document_id: null })).documentId, null);
+  for (const bad of [{ job_id: "" }, { item_ids: "p001-b0001" }, { item_ids: ["p001-b0001", ""] }, { item_ids: [3] }]) {
+    assert.equal(parseStudioMessage(quoted(bad)), null, JSON.stringify(bad));
+  }
+
+  const dom = makeDom();
+  const fake = fakeWindow(dom);
+  const embed = startStudioEmbed(fake.win);
+  fake.receive(hello("light", ["quote", "open-notes"]));
+  const lookups = [];
+  const adapters = studioReaderAdapters(embed, "j1", async (jobId) => (lookups.push(jobId), { document_id: "d1", title: "量子化学" }));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const blocks = adapters.quotedBlocks;
+  let changed = 0;
+  blocks.subscribe(() => changed++);
+  assert.equal(blocks.get().size, 0, "Studio 还没说");
+  fake.receive(quoted({ item_ids: ["p001-b0001", "p002-b0003"] }));
+  assert.ok(changed > 0, "说了就通知阅读页");
+  assert.deepEqual([...blocks.get()], ["p001-b0001", "p002-b0003"]);
+  assert.equal(blocks.get(), blocks.get(), "同一条消息给同一个集合（useSyncExternalStore）");
+  fake.receive(quoted({ job_id: "j-retranslated", item_ids: ["p003-b0001"] }));
+  assert.deepEqual([...blocks.get()], ["p003-b0001"], "任务号变了（重新翻译过）、书是这本：照认");
+  fake.receive(quoted({ job_id: "other", document_id: "d-other", item_ids: ["p009-b0001"] }));
+  assert.equal(blocks.get().size, 0, "别的书：不标");
+  embed.stop();
 });
