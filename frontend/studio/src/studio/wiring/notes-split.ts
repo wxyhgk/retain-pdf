@@ -52,6 +52,11 @@ export function createNotesSplit(
 		event.preventDefault();
 		divider.setPointerCapture(event.pointerId);
 		shell.dataset.resizingNotes = '';
+		// The note laid out at the width it had till the line is let go: at each step a whole note laid out and painted
+		// again (on a Retina screen, four times the pixels) was most of what made the drag stutter; cut off, or with room
+		// beside it, meanwhile, laid out once at the end.
+		const note = shell.querySelector<HTMLElement>('.editor-panel .editor-scroll');
+		if (note) note.style.width = `${note.getBoundingClientRect().width}px`;
 		const right = grid.getBoundingClientRect().right;
 		const move = (moved: PointerEvent) => {
 			const room = translateView.parentElement!.getBoundingClientRect().width;
@@ -61,6 +66,7 @@ export function createNotesSplit(
 		const done = () => {
 			divider.removeEventListener('pointermove', move);
 			delete shell.dataset.resizingNotes;
+			note?.style.removeProperty('width');
 			try {
 				const kept = parseInt(grid.style.getPropertyValue('--notes-width'), 10);
 				if (kept) localStorage.setItem(WIDTH_KEYS[flag], String(kept));
