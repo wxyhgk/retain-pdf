@@ -73,7 +73,7 @@ const left = { ...head, type: "reading", job_id: null, document_id: null, title:
 
 test("every message has one definition, a direction and the shared head", () => {
   const types = schema.messages.map((message) => message.type);
-  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading", "ask-ai", "open-book", "shortcut"]);
+  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading", "ask-ai", "open-book", "shortcut", "quoted"]);
   assert.deepEqual(schema.oneOf.map((entry) => entry.$ref), schema.messages.map((message) => `#/definitions/${message.definition}`));
   for (const { type, from, definition } of schema.messages) {
     assert.ok(["studio", "retainpdf"].includes(from), `${type}: from ${from}`);
@@ -138,6 +138,11 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "shortcut", key: "k", meta: true, ctrl: false, shift: false, alt: false },
     { ...head, type: "shortcut", key: "K", meta: false, ctrl: true, shift: true, alt: false },
     { ...head, type: "shortcut", key: "\\", meta: true, ctrl: false, shift: false, alt: false },
+    // 摘录栏里摘过的段落，阅读页淡淡标出来（2026-11-05）
+    { ...head, type: "ready", features: ["theme", "navigate", "quote", "notes", "reading", "quoted"] },
+    { ...head, type: "quoted", job_id: "j", document_id: "doc-1", item_ids: ["p001-b0000", "p004-b0002"] },
+    { ...head, type: "quoted", job_id: "j", document_id: "doc-1", item_ids: [] },
+    { ...head, type: "quoted", job_id: "j", document_id: null, item_ids: ["p001-b0000"] },
   ];
   for (const each of good) assert.ok(valid(message, each), JSON.stringify(each));
 
@@ -185,6 +190,11 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "shortcut", key: "k", meta: "true", ctrl: false, shift: false, alt: false },
     { ...head, type: "shortcut", key: "k", meta: true, ctrl: false, shift: false, alt: false, code: "KeyK" },
     { ...head, type: "ready", features: ["shortcut"] },
+    { ...head, type: "quoted", job_id: "", document_id: "doc-1", item_ids: [] },
+    { ...head, type: "quoted", job_id: "j", document_id: "doc-1", item_ids: "p001-b0000" },
+    { ...head, type: "quoted", job_id: "j", document_id: "doc-1", item_ids: ["p001-b0000", ""] },
+    { ...head, type: "quoted", job_id: "j", item_ids: [] },
+    { ...head, type: "hello", theme: "dark", features: ["quoted"] },
   ];
   for (const each of bad) assert.equal(valid(message, each), false, JSON.stringify(each));
 });
