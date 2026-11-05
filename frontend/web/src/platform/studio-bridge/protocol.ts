@@ -11,14 +11,14 @@ export const STUDIO_EMBED = "studio";
 
 export type StudioTheme = "light" | "dark";
 /** 我们处理、会发的（回 ready 时报给 Studio）。reading：会告诉 Studio 眼下读到哪。 */
-export type StudioFeature = "theme" | "navigate" | "quote" | "notes" | "reading" | "quoted";
+export type StudioFeature = "theme" | "navigate" | "quote" | "notes" | "reading" | "quoted" | "reader-command";
 /**
  * Studio 处理的、我们发过去的（hello.features）：quote →「摘到笔记」，open-notes →「笔记」按钮，ask-ai → 阅读页的「AI」打开
  * Studio 的 AI，open-book → 书库里点书要读时交给 Studio（在正在写的笔记旁边打开），我们不自己打开阅读页，shortcut → 阅读页有焦点时
  * 按的 Studio 快捷键（⌘K、⌘S、⌘J、⌘\）转给 Studio。
  */
-export type StudioSideFeature = "quote" | "open-notes" | "ask-ai" | "open-book" | "shortcut";
-const STUDIO_SIDE_FEATURES: readonly StudioSideFeature[] = ["quote", "open-notes", "ask-ai", "open-book", "shortcut"];
+export type StudioSideFeature = "quote" | "open-notes" | "ask-ai" | "open-book" | "shortcut" | "reader-state";
+const STUDIO_SIDE_FEATURES: readonly StudioSideFeature[] = ["quote", "open-notes", "ask-ai", "open-book", "shortcut", "reader-state"];
 
 /** Studio 发来、我们认的消息。hello 的 features 为 null 是早先的 Studio（没发这个字段），只认 quote。 */
 export type StudioIncoming =
@@ -27,7 +27,35 @@ export type StudioIncoming =
   | { type: "navigate"; jobId: string; pageIdx: number | null; blockId: string }
   | { type: "notes"; open: boolean; title: string | null }
   /** 这本书在 Studio 摘录栏里摘过的段落（整份，不是增量；空的是一段都没摘）。 */
-  | { type: "quoted"; jobId: string; documentId: string | null; itemIds: string[] };
+  | { type: "quoted"; jobId: string; documentId: string | null; itemIds: string[] }
+  /** Studio 画控件时让阅读页做的事（换模式、翻页、开关目录 / 搜索、缩放、⋯ 里的动作）。 */
+  | { type: "reader-command"; command: StudioReaderCommand };
+
+const READER_MODES = ["source", "compare", "translated"] as const;
+const READER_PANELS = ["outline", "search"] as const;
+export type StudioReaderCommand =
+  | { command: "mode"; mode: (typeof READER_MODES)[number] }
+  | { command: "page"; pageIdx: number }
+  | { command: "panel"; panel: (typeof READER_PANELS)[number] | null }
+  | { command: "zoom"; zoom: "in" | "out" | "fit" }
+  | { command: "action"; key: string };
+
+function readerCommand(message: Record<string, unknown>): StudioReaderCommand | null {
+  switch (message.command) {
+    case "mode":
+      return READER_MODES.includes(message.mode as never) ? { command: "mode", mode: message.mode as (typeof READER_MODES)[number] } : null;
+    case "page":
+      return typeof message.page_idx === "number" && Number.isInteger(message.page_idx) && message.page_idx >= 0 ? { command: "page", pageIdx: message.page_idx } : null;
+    case "panel":
+      return message.panel === null || READER_PANELS.includes(message.panel as never) ? { command: "panel", panel: message.panel as (typeof READER_PANELS)[number] | null } : null;
+    case "zoom":
+      return message.zoom === "in" || message.zoom === "out" || message.zoom === "fit" ? { command: "zoom", zoom: message.zoom } : null;
+    case "action":
+      return typeof message.key === "string" && message.key.trim() ? { command: "action", key: message.key.trim() } : null;
+    default:
+      return null;
+  }
+}
 
 /** 「笔记」按钮打开的是哪本书的笔记：任务、书编号、书名（和 quote 同一套）。 */
 export type StudioBook = {
@@ -82,6 +110,10 @@ export function parseStudioMessage(data: unknown): StudioIncoming | null {
     if (typeof message.open !== "boolean") return null;
     const title = typeof message.title === "string" && message.title.trim() ? message.title.trim() : null;
     return { type: "notes", open: message.open, title };
+  }
+  if (message.type === "reader-command") {
+    const command = readerCommand(message);
+    return command ? { type: "reader-command", command } : null;
   }
   if (message.type === "quoted") {
     const jobId = typeof message.job_id === "string" ? message.job_id.trim() : "";
@@ -142,6 +174,37 @@ export function shortcutMessage(keys: StudioShortcut) {
     ctrl: Boolean(keys.ctrl),
     shift: Boolean(keys.shift),
     alt: Boolean(keys.alt),
+  } as const;
+}
+
+/** 阅读页的状态（Studio 画控件时）：整份。 */
+export type StudioReaderState = {
+  ready: boolean;
+  pageIdx: number | null;
+  pageCount: number | null;
+  modes: Array<(typeof READER_MODES)[number]>;
+  mode: (typeof READER_MODES)[number] | null;
+  panels: Array<(typeof READER_PANELS)[number]>;
+  panel: (typeof READER_PANELS)[number] | null;
+  zoom: { percent: number; fit: boolean };
+  actions: Array<{ key: string; label: string }>;
+};
+
+export function readerStateMessage(jobId: string, state: StudioReaderState) {
+  return {
+    protocol: STUDIO_BRIDGE_PROTOCOL,
+    v: STUDIO_BRIDGE_VERSION,
+    type: "reader-state",
+    job_id: jobId,
+    ready: state.ready,
+    page_idx: state.pageIdx,
+    page_count: state.pageCount,
+    modes: [...state.modes],
+    mode: state.mode,
+    panels: [...state.panels],
+    panel: state.panel,
+    zoom: { percent: Math.max(1, Math.round(state.zoom.percent)), fit: state.zoom.fit },
+    actions: state.actions.map(({ key, label }) => ({ key, label })),
   } as const;
 }
 

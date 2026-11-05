@@ -19,6 +19,7 @@ import {
   quoteMessage,
   shortcutMessage,
   readingMessage,
+  readerStateMessage,
   readyMessage,
 } from "../../src/platform/studio-bridge/protocol.ts";
 import { startStudioEmbed, studioReaderAdapters, themeForStudio } from "../../src/app/bootstrap/studio-embed.ts";
@@ -154,7 +155,7 @@ test("握手：只认父窗口、本机回环地址；回 ready 指定那个 ori
   fake.receive(hello("dark"));
   assert.equal(embed.ready(), true);
   assert.deepEqual(fake.sent, [
-    { data: readyMessage(["theme", "navigate", "quote", "notes", "reading", "quoted"]), origin: STUDIO },
+    { data: readyMessage(["theme", "navigate", "quote", "notes", "reading", "quoted", "reader-command"]), origin: STUDIO },
     { data: readingMessage(null), origin: STUDIO },
   ], "回 ready，再说一声不在阅读页");
   assert.equal(dom.window.document.documentElement.dataset.theme, "night", "按 hello 的 theme 换颜色");
@@ -544,5 +545,57 @@ test("quoted（Studio 摘录栏说这本书摘过哪几段）：格式不对的�
   assert.deepEqual([...blocks.get()], ["p003-b0001"], "任务号变了（重新翻译过）、书是这本：照认");
   fake.receive(quoted({ job_id: "other", document_id: "d-other", item_ids: ["p009-b0001"] }));
   assert.equal(blocks.get().size, 0, "别的书：不标");
+  embed.stop();
+});
+
+test("控件由 Studio 画（书这一侧精简成一行）：Studio 在 hello 里说 reader-state 才算；状态有变发整份、一样的不重发、重新握手再发；reader-command 照做", () => {
+  const state = {
+    ready: true, pageIdx: 29, pageCount: 863, modes: ["source", "compare", "translated"], mode: "translated",
+    panels: ["outline", "search"], panel: null, zoom: { percent: 100, fit: true },
+    actions: [{ key: "download-translated", label: "下载译文 PDF" }],
+  };
+  const message = readerStateMessage("j1", state);
+  assert.deepEqual(Object.keys(message).sort(), ["actions", "job_id", "mode", "modes", "page_count", "page_idx", "panel", "panels", "protocol", "ready", "type", "v", "zoom"].sort());
+  assert.equal(message.type, "reader-state");
+  assert.equal(message.page_idx, 29);
+
+  const command = (fields) => parseStudioMessage({ protocol: "retainpdf-studio-bridge", v: 1, type: "reader-command", ...fields });
+  assert.deepEqual(command({ command: "mode", mode: "compare" }), { type: "reader-command", command: { command: "mode", mode: "compare" } });
+  assert.deepEqual(command({ command: "page", page_idx: 4 }).command, { command: "page", pageIdx: 4 });
+  assert.deepEqual(command({ command: "panel", panel: null }).command, { command: "panel", panel: null });
+  assert.deepEqual(command({ command: "zoom", zoom: "fit" }).command, { command: "zoom", zoom: "fit" });
+  assert.deepEqual(command({ command: "action", key: "download-source" }).command, { command: "action", key: "download-source" });
+  for (const bad of [{ command: "mode", mode: "split" }, { command: "page", page_idx: -1 }, { command: "panel", panel: "notes" }, { command: "zoom", zoom: 2 }, { command: "action", key: "" }, { command: "fly" }]) {
+    assert.equal(command(bad), null, JSON.stringify(bad));
+  }
+
+  const dom = makeDom();
+  const fake = fakeWindow(dom);
+  const embed = startStudioEmbed(fake.win);
+  const adapters = studioReaderAdapters(embed, "j1", async () => null);
+  const sentStates = () => fake.sent.filter((item) => item.data.type === "reader-state");
+  fake.receive(hello("light", ["quote", "ask-ai"]));
+  assert.equal(adapters.hostChrome.active(), false, "Studio 不画控件（书库整页读、旧版本）：照旧自己画");
+  adapters.hostChrome.report(state);
+  assert.equal(sentStates().length, 0);
+
+  fake.receive(hello("light", ["quote", "ask-ai", "reader-state"]));
+  assert.equal(adapters.hostChrome.active(), true);
+  adapters.hostChrome.report(state);
+  adapters.hostChrome.report({ ...state });
+  assert.equal(sentStates().length, 1, "一样的不重发");
+  adapters.hostChrome.report({ ...state, pageIdx: 30 });
+  assert.equal(sentStates().at(-1).data.page_idx, 30);
+  assert.equal(sentStates().at(-1).origin, STUDIO, "不用 '*'");
+  fake.receive(hello("light", ["quote", "ask-ai", "reader-state"]));
+  adapters.hostChrome.report({ ...state, pageIdx: 30 });
+  assert.equal(sentStates().length, 3, "Studio 重新加载过：再说一遍");
+
+  const heard = [];
+  const stop = adapters.hostChrome.onCommand((each) => heard.push(each));
+  fake.receive({ protocol: "retainpdf-studio-bridge", v: 1, type: "reader-command", command: "zoom", zoom: "in" });
+  stop();
+  fake.receive({ protocol: "retainpdf-studio-bridge", v: 1, type: "reader-command", command: "zoom", zoom: "out" });
+  assert.deepEqual(heard, [{ command: "zoom", zoom: "in" }], "退订了就不再收");
   embed.stop();
 });

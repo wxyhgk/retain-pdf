@@ -55,6 +55,8 @@ const adapters: ReaderAdapters = {
   hostNavigation: studio?.hostNavigation,
   // Studio 摘录栏说的这本书摘过的段落：阅读页在这些块左边画细线。
   quotedBlocks: studio?.quotedBlocks,
+  // Studio 画书标签那一行的控件：阅读页不画自己的工具栏、底部栏、MD/AI 竖条，报状态、听命令。
+  hostChrome: studio?.hostChrome,
 };
 setReaderAdapters(adapters);
 

@@ -27,7 +27,8 @@ const a = [
   "readingPosition",
   "hostAi",
   "hostNavigation",
-  "quotedBlocks"
+  "quotedBlocks",
+  "hostChrome"
 ], t = [
   "resolveMarkdownAssetUrl",
   "resolveReaderDownloadUrls",

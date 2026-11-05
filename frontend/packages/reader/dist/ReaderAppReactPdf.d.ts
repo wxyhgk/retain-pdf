@@ -24,16 +24,6 @@ export type ReaderPaneComposition = {
     /** 无可并排的最终译文 (sourceOnly || !translatedUrl)：页签禁用判定 */
     sourceViewOnly: boolean;
 };
-/**
- * 单一纯函数，从 session.mode、实时译文可用/可见、助手开合与译文产物派生
- * 可见台面。原先散落在 app 的实时对照 / visiblePdfMode /
- * resolveReaderGridPresentation 全部收口到这里，Grid/Tabs/键盘/HUD 只消费结果。
- *
- * liveTranslationVisible 只作为「用户是否想开实时译文」的用户意图（默认关）：
- * 源栏按钮切换后，实时译文直接叠加在原文 PDF 上（overlayOnSource）；
- * overlayContentAvailable 表示「有可叠加的流式译文内容」（进行中或已完成都成立）。
- * 默认不叠加，避免旧「左右都是中文」的自动叠加 bug。
- */
 export declare function resolveReaderPaneComposition(input: {
     mode: "source" | "compare" | "translated";
     sourceOnly: boolean;
