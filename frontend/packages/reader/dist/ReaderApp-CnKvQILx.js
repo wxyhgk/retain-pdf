@@ -1,46 +1,23 @@
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-var Fn = (e) => {
+var $n = (e) => {
   throw TypeError(e);
 };
-var $n = (e, t, n) => t.has(e) || Fn("Cannot " + n);
-var ct = (e, t, n) => ($n(e, t, "read from private field"), n ? n.call(e) : t.get(e)), jn = (e, t, n) => t.has(e) ? Fn("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(e) : t.set(e, n), Bn = (e, t, n, r) => ($n(e, t, "write to private field"), r ? r.call(e, n) : t.set(e, n), n);
+var jn = (e, t, n) => t.has(e) || $n("Cannot " + n);
+var ct = (e, t, n) => (jn(e, t, "read from private field"), n ? n.call(e) : t.get(e)), Bn = (e, t, n) => t.has(e) ? $n("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(e) : t.set(e, n), Un = (e, t, n, r) => (jn(e, t, "write to private field"), r ? r.call(e, n) : t.set(e, n), n);
 import { jsx as y, jsxs as $, Fragment as Ct } from "react/jsx-runtime";
-import { useMemo as Y, useState as L, useEffect as F, useCallback as U, useRef as A, useLayoutEffect as Ce, useSyncExternalStore as nt, memo as fn, createContext as mn, useContext as hn, forwardRef as Mo, useImperativeHandle as pn, useId as Ar, Suspense as Ao, lazy as No } from "react";
+import { useMemo as Y, useState as L, useEffect as F, useCallback as U, useRef as A, useLayoutEffect as Ce, useSyncExternalStore as nt, memo as fn, createContext as mn, useContext as hn, forwardRef as Mo, useImperativeHandle as pn, useId as Nr, Suspense as Ao, lazy as No } from "react";
 import { getReaderAdapters as se, requireAdapter as rt } from "./adapters.js";
-import { resolveReaderDownloadName as _o, resolveReaderDownloadUrls as Lo, READER_PROGRESS_COPY as Ie, trimString as ht, READER_DOWNLOAD_ACTIONS as Nr, disabledReason as Co } from "./runtime/state.js";
+import { resolveReaderDownloadName as _o, resolveReaderDownloadUrls as Lo, READER_PROGRESS_COPY as Ie, trimString as ht, READER_DOWNLOAD_ACTIONS as _r, disabledReason as Co } from "./runtime/state.js";
 import { r as zo, b as Do } from "./page-config-Ct7qR5rm.js";
 import { documentSourcePdfPath as Kt, isFinishedJobStatus as gn } from "@retainpdf/domain/job";
-import { c as xo, n as Oo, f as jt, j as Un, a as Fo, b as $o, h as _r, p as bn, d as jo, k as Hn, i as Bo } from "./reader-regions-CP3ZMHPc.js";
+import { c as xo, n as Oo, f as jt, j as Hn, a as Fo, b as $o, h as Lr, p as bn, d as jo, k as Wn, i as Bo } from "./reader-regions-CP3ZMHPc.js";
 import { fetchDocumentReading as Uo } from "@retainpdf/api/documents";
 import { isReaderTransportError as Ho, createReaderTransportError as Wo } from "./contracts.js";
 import { toast as Zt, Toaster as Vo } from "sonner";
-import { NotebookPen as Jo, X as yn, Radio as qo, FileText as Lr, Columns2 as Cr, Languages as zr, FileCode2 as Go, Sparkles as Ko, Keyboard as Zo, Download as Yo, ChevronDown as Xo, ListTree as Qo, Search as ea } from "lucide-react";
+import { NotebookPen as Jo, X as yn, Radio as qo, FileText as Cr, Columns2 as zr, Languages as Dr, FileCode2 as Go, Sparkles as Ko, Keyboard as Zo, Download as Yo, ChevronDown as Xo, ListTree as Qo, Search as ea } from "lucide-react";
 import { Button as De, Input as ta } from "@retainpdf/ui";
 import { pdfjs as na, Page as ra, Document as oa } from "react-pdf";
 import { extractMarkdownMath as aa, materializeMarkdownMathFallbackHtml as sa, materializeMarkdownMathHtml as ia } from "./runtime/content.js";
 const ca = (...e) => {
-========
-var On = (e) => {
-  throw TypeError(e);
-};
-var Fn = (e, t, n) => t.has(e) || On("Cannot " + n);
-var at = (e, t, n) => (Fn(e, t, "read from private field"), n ? n.call(e) : t.get(e)), $n = (e, t, n) => t.has(e) ? On("Cannot add the same private member more than once") : t instanceof WeakSet ? t.add(e) : t.set(e, n), jn = (e, t, n, r) => (Fn(e, t, "write to private field"), r ? r.call(e, n) : t.set(e, n), n);
-import { jsx as y, jsxs as O, Fragment as Ct } from "react/jsx-runtime";
-import { useMemo as Q, useState as _, useEffect as j, useCallback as $, useRef as M, useLayoutEffect as Ce, useSyncExternalStore as gt, memo as un, createContext as dn, useContext as fn, forwardRef as Ro, useImperativeHandle as mn, useId as Mr, Suspense as Io, lazy as To } from "react";
-import { getReaderAdapters as ue, requireAdapter as et } from "./adapters.js";
-import { resolveReaderDownloadName as Eo, resolveReaderDownloadUrls as ko, READER_PROGRESS_COPY as Ie, trimString as Tt, READER_DOWNLOAD_ACTIONS as Mo, disabledReason as Ao } from "./runtime/state.js";
-import { r as No, b as _o } from "./page-config-Ct7qR5rm.js";
-import { documentSourcePdfPath as Gt, isFinishedJobStatus as hn } from "@retainpdf/domain/job";
-import { c as Lo, n as Co, f as jt, j as Bn, a as Do, b as zo, h as Ar, p as pn, d as xo, k as Un, i as Oo } from "./reader-regions-CP3ZMHPc.js";
-import { fetchDocumentReading as Fo } from "@retainpdf/api/documents";
-import { isReaderTransportError as $o, createReaderTransportError as jo } from "./contracts.js";
-import { toast as Kt, Toaster as Bo } from "sonner";
-import { NotebookPen as Uo, X as gn, Radio as Ho, FileText as Nr, Columns2 as _r, Languages as Lr, FileCode2 as Wo, Sparkles as Vo, Keyboard as Jo, Download as qo, ChevronDown as Go, ListTree as Ko, Search as Zo } from "lucide-react";
-import { Button as ze, Input as Yo } from "@retainpdf/ui";
-import { pdfjs as Xo, Page as Qo, Document as ea } from "react-pdf";
-import { extractMarkdownMath as ta, materializeMarkdownMathFallbackHtml as na, materializeMarkdownMathHtml as ra } from "./runtime/content.js";
-const oa = (...e) => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   var t, n;
   return ((n = (t = se()) == null ? void 0 : t.isMockMode) == null ? void 0 : n.call(t, ...e)) ?? !1;
 }, la = "", ua = Object.freeze({
@@ -50,13 +27,8 @@ const oa = (...e) => {
   return ((n = (t = se()) == null ? void 0 : t.resolveResourceUrl) == null ? void 0 : n.call(t, e)) ?? e;
 }, ku = (...e) => {
   var n;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
   return (((n = se()) == null ? void 0 : n.fetchProtected) ?? fetch)(...e);
-}, Te = () => rt("defaultReaderDataPort"), Wn = () => rt("defaultReaderPageConfigPort"), Mu = {
-========
-  return (((n = ue()) == null ? void 0 : n.fetchProtected) ?? fetch)(...e);
-}, Te = () => et("defaultReaderDataPort"), Hn = () => et("defaultReaderPageConfigPort"), Ru = {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+}, Te = () => rt("defaultReaderDataPort"), Vn = () => rt("defaultReaderPageConfigPort"), Mu = {
   get apiPrefix() {
     return Te().apiPrefix;
   },
@@ -70,27 +42,9 @@ const oa = (...e) => {
   get liveTranslation() {
     return Te().liveTranslation;
   }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-}, Dr = {
-  messageTargetOrigin: () => Wn().messageTargetOrigin(),
-  readerJobId: () => Wn().readerJobId()
-========
-}, Cr = {
-  messageTargetOrigin: () => Hn().messageTargetOrigin(),
-  readerJobId: () => Hn().readerJobId()
-}, ca = () => {
-  var e;
-  return ((e = ue()) == null ? void 0 : e.liveTranslation) ?? null;
-}, la = () => {
-  var e;
-  return ((e = ue()) == null ? void 0 : e.notesQuote) ?? null;
-}, ua = () => {
-  var e;
-  return ((e = ue()) == null ? void 0 : e.notesPanel) ?? null;
-}, da = () => {
-  var e;
-  return ((e = ue()) == null ? void 0 : e.readingPosition) ?? null;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+}, xr = {
+  messageTargetOrigin: () => Vn().messageTargetOrigin(),
+  readerJobId: () => Vn().readerJobId()
 }, fa = () => {
   var e;
   return ((e = se()) == null ? void 0 : e.liveTranslation) ?? null;
@@ -153,7 +107,6 @@ const oa = (...e) => {
   };
 }, va = (...e) => {
   var t, n;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
   return ((n = (t = se()) == null ? void 0 : t.resolveReaderAnchor) == null ? void 0 : n.call(t, ...e)) ?? null;
 }, Sa = () => {
   var e, t;
@@ -167,13 +120,8 @@ const oa = (...e) => {
 }, Ra = (...e) => {
   var t, n;
   return ((n = (t = se()) == null ? void 0 : t.resolveReaderDownloadUrls) == null ? void 0 : n.call(t, ...e)) ?? Lo(...e);
-}, Ia = (...e) => rt("downloadProtectedResource")(...e), Ta = (...e) => rt("failDownloadToast")(...e), Au = (e, t) => rt("resolveMarkdownAssetUrl")(e, t), Vn = "/api/v1";
+}, Ia = (...e) => rt("downloadProtectedResource")(...e), Ta = (...e) => rt("failDownloadToast")(...e), Au = (e, t) => rt("resolveMarkdownAssetUrl")(e, t), Jn = "/api/v1";
 function Ea() {
-========
-  return ((n = (t = ue()) == null ? void 0 : t.resolveReaderDownloadUrls) == null ? void 0 : n.call(t, ...e)) ?? ko(...e);
-}, Sa = (...e) => et("downloadProtectedResource")(...e), wa = (...e) => et("failDownloadToast")(...e), Iu = (e, t) => et("resolveMarkdownAssetUrl")(e, t), Wn = "/api/v1";
-function Pa() {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   const e = () => {
     var r;
     return zo(
@@ -202,13 +150,8 @@ function Pa() {
     };
   }, []), t;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 function ka() {
-  const e = Ea(), t = Y(() => wa(Dr), [e]), n = Y(() => Sa(), [e]), r = t || n ? `job:${t}|document:${n}` : `location:${e}`;
-========
-function Ra() {
-  const e = Pa(), t = Q(() => ba(Cr), [e]), n = Q(() => ga(), [e]), r = t || n ? `job:${t}|document:${n}` : `location:${e}`;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const e = Ea(), t = Y(() => wa(xr), [e]), n = Y(() => Sa(), [e]), r = t || n ? `job:${t}|document:${n}` : `location:${e}`;
   return { locationKey: e, jobId: t, routeDocumentId: n, sessionIdentity: r };
 }
 function Ma(e) {
@@ -293,11 +236,7 @@ function Ma(e) {
     applyIdentityEvent: D
   };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Jn(e) {
-========
-function Vn(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function qn(e) {
   return `${(e == null ? void 0 : e.status) || ""}`.trim().toLowerCase();
 }
 function Aa(e) {
@@ -316,13 +255,8 @@ function Aa(e) {
   }
   return "";
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function qn(e, t) {
+function Gn(e, t) {
   return da(Kt(e, t));
-========
-function Jn(e, t) {
-  return ia(Gt(e, t));
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
 }
 function Na(e, t = "") {
   const n = `${e || ""}`.trim(), r = `${t || ""}`.trim();
@@ -357,11 +291,7 @@ function Xt({
         percent: e,
         text: t
       },
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      Dr.messageTargetOrigin()
-========
-      Cr.messageTargetOrigin()
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      xr.messageTargetOrigin()
     );
   } catch {
   }
@@ -383,8 +313,7 @@ function La(e) {
     sessionJobIdRef: o,
     sessionEpochRef: a,
     closingRef: s
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  } = e, [c, i] = L(null), [l, u] = L(null), [d, f] = L(""), [m, g] = L(0), h = d === n ? c : null, p = d === n ? l : null, v = Jn(h), w = gn(v), S = U(() => {
+  } = e, [c, i] = L(null), [l, u] = L(null), [d, f] = L(""), [m, g] = L(0), h = d === n ? c : null, p = d === n ? l : null, v = qn(h), w = gn(v), S = U(() => {
     g((D) => D + 1);
   }, []), b = U((D) => {
     i(D.jobPayload), u(D.manifestPayload), f(D.sessionIdentity);
@@ -395,32 +324,14 @@ function La(e) {
     if (!D || k.current === D) return;
     const z = zt().loadJobPayload;
     if (typeof z != "function") return;
-========
-  } = e, [c, i] = _(null), [l, u] = _(null), [d, f] = _(""), [m, g] = _(0), h = d === n ? c : null, p = d === n ? l : null, v = Vn(h), w = hn(v), S = $(() => {
-    g((z) => z + 1);
-  }, []), b = $((z) => {
-    i(z.jobPayload), u(z.manifestPayload), f(z.sessionIdentity);
-  }, []), P = $((z) => {
-    i(null), u(null), f(z);
-  }, []), E = M(""), N = M(""), x = $(async () => {
-    const z = o.current;
-    if (!z || E.current === z) return;
-    const D = Dt().loadJobPayload;
-    if (typeof D != "function") return;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     const R = a.current.value;
     k.current = D;
     try {
       const I = await z(D);
       if (s.current || a.current.value !== R || o.current !== D || !I || typeof I != "object")
         return;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      const T = Jn(I);
+      const T = qn(I);
       i(I), f(r.current), T === "succeeded" && _.current !== D && (_.current = D, g((M) => M + 1));
-========
-      const T = Vn(I);
-      i(I), f(r.current), T === "succeeded" && N.current !== z && (N.current = z, g((k) => k + 1));
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     } catch {
     } finally {
       k.current === D && (k.current = "");
@@ -472,23 +383,14 @@ function za(e) {
     document.documentElement.classList.remove("reader-source-only");
   }), [e, t]), { mode: t, setMode: r, setModeState: n, switchSessionMode: o };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Gn(e) {
-========
-function qn(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Kn(e) {
   return typeof e == "string" ? e.trim() : `${e ?? ""}`.trim();
 }
 function Da(e) {
   const t = (e == null ? void 0 : e.data) ?? e, n = t && typeof t == "object" ? t : {};
   return {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    activeJobId: Gn(n.active_job_id),
-    activeVersionId: Gn(n.active_version_id)
-========
-    activeJobId: qn(n.active_job_id),
-    activeVersionId: qn(n.active_version_id)
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    activeJobId: Kn(n.active_job_id),
+    activeVersionId: Kn(n.active_version_id)
   };
 }
 function xa(e) {
@@ -535,11 +437,7 @@ async function Wa(e) {
     return "";
   }
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-async function xr(e, t = pt().fetchProtected, n = {}) {
-========
-async function Dr(e, t = dt().fetchProtected, n = {}) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+async function Or(e, t = pt().fetchProtected, n = {}) {
   const r = `${e || ""}`.trim();
   if (!r)
     return null;
@@ -568,11 +466,7 @@ function qa(e = "", t = null) {
       return;
     }
     const c = new AbortController();
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    return xr(n, void 0, { signal: c.signal }).then((i) => {
-========
-    return Dr(n, void 0, { signal: c.signal }).then((i) => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    return Or(n, void 0, { signal: c.signal }).then((i) => {
       c.signal.aborted || o({ url: n, file: i, loading: !1, error: "" });
     }).catch((i) => {
       c.signal.aborted || o({ url: n, file: null, loading: !1, error: (i == null ? void 0 : i.message) || String(i) });
@@ -600,13 +494,8 @@ async function tn(e) {
   const { url: t, label: n, percentStart: r, percentEnd: o, fence: a, setBoot: s } = e;
   if (!t || a.isInactive())
     return null;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
   kt(s, r, n, "download");
-  const c = await xr(t, pt().fetchProtected, {
-========
-  Et(s, r, n, "download");
-  const c = await Dr(t, dt().fetchProtected, {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const c = await Or(t, pt().fetchProtected, {
     signal: a.signal
   });
   return a.isInactive() ? null : (kt(s, o, n, "download"), c);
@@ -728,11 +617,7 @@ function Xa(e) {
       }), Xt({ percent: 100, text: Ie.ready, stage: "ready" });
     }
     function Ft() {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      return l != null && l.documentId ? qn(
-========
-      return l != null && l.documentId ? Jn(
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      return l != null && l.documentId ? Gn(
         l.documentId,
         l.revision
       ) : ca() ? la : B.resolveResourceUrl(Kt(r));
@@ -817,11 +702,7 @@ function Xa(e) {
           le = ie.linkedDocument;
         else {
           try {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-            le = await B.fetchDocumentByJobId(Vn, t);
-========
-            ce = await J.fetchDocumentByJobId(Wn, t);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+            le = await B.fetchDocumentByJobId(Jn, t);
           } catch {
           }
           if (E.isInactive()) return;
@@ -849,11 +730,7 @@ function Xa(e) {
         }), m("source");
         return;
       }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      const Ae = B.resolveReaderSourcePdf(ce.manifestPayload), at = B.resolveReaderTranslatedPdfUrl(ce.jobPayload, ce.manifestPayload), $t = typeof Ae == "string" ? Ae : B.resolveReaderArtifactUrl(Ae), St = r || Ve, st = l != null && l.documentId ? qn(
-========
-      const Ae = J.resolveReaderSourcePdf(ie.manifestPayload), nt = J.resolveReaderTranslatedPdfUrl(ie.jobPayload, ie.manifestPayload), $t = typeof Ae == "string" ? Ae : J.resolveReaderArtifactUrl(Ae), yt = r || Ve, rt = l != null && l.documentId ? Jn(
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      const Ae = B.resolveReaderSourcePdf(ce.manifestPayload), at = B.resolveReaderTranslatedPdfUrl(ce.jobPayload, ce.manifestPayload), $t = typeof Ae == "string" ? Ae : B.resolveReaderArtifactUrl(Ae), St = r || Ve, st = l != null && l.documentId ? Gn(
         l.documentId,
         l.revision
       ) : $t || (St ? B.resolveResourceUrl(Kt(St)) : ""), it = l ? "" : at || "";
@@ -899,21 +776,12 @@ function Xa(e) {
         }
         await ot();
       } catch (re) {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
         if (E.isClosedOrStale() || (re == null ? void 0 : re.name) === "AbortError") return;
         E.markFailed();
         const fe = Number(re == null ? void 0 : re.status), ge = `${(re == null ? void 0 : re.reason) || ""}`, ie = ja({ status: fe, reason: ge, sessionJobId: t });
         if (ie && (await Ya({
-          apiPrefix: Vn,
+          apiPrefix: Jn,
           documentId: ie,
-========
-        if (W.isClosedOrStale() || (re == null ? void 0 : re.name) === "AbortError") return;
-        W.markFailed();
-        const fe = Number(re == null ? void 0 : re.status), pe = `${(re == null ? void 0 : re.reason) || ""}`, se = xa({ status: fe, reason: pe, sessionJobId: t });
-        if (se && (await qa({
-          apiPrefix: Wn,
-          documentId: se,
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
           expiredJobId: t
         }) || E.isClosedOrStale()))
           return;
@@ -1140,13 +1008,8 @@ function as(e, t) {
     rowSyncRevision: z
   };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const Fe = "data-reader-page", Xe = "data-reader-pane", vn = "data-natural-height", ss = "reader-react-root", is = "reader-react-grid", cs = "reader-react-scroll-shell", ls = "reader-react-pdf-pane", Or = "reader-react-pdf-page", Mt = "reader-react-pdf-page-placeholder", Sn = "reader-react-pdf-page-slot";
+const Fe = "data-reader-page", Xe = "data-reader-pane", vn = "data-natural-height", ss = "reader-react-root", is = "reader-react-grid", cs = "reader-react-scroll-shell", ls = "reader-react-pdf-pane", Fr = "reader-react-pdf-page", Mt = "reader-react-pdf-page-placeholder", Sn = "reader-react-pdf-page-slot";
 function At(e, t) {
-========
-const Fe = "data-reader-page", Xe = "data-reader-pane", bn = "data-natural-height", ns = "reader-react-root", rs = "reader-react-grid", os = "reader-react-scroll-shell", as = "reader-react-pdf-pane", zr = "reader-react-pdf-page", kt = "reader-react-pdf-page-placeholder", yn = "reader-react-pdf-page-slot";
-function Mt(e, t) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   const n = e != null ? `[${Fe}="${e}"]` : `[${Fe}]`;
   return t ? `${n}[${Xe}="${t}"]` : n;
 }
@@ -1156,40 +1019,25 @@ function us() {
 function wn(e) {
   return Number(e.getAttribute(Fe));
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const Fr = 0.25, Qe = 1, ds = 0.05, vt = 0.5, fs = 16, ms = 8, hs = 720;
-========
-const xr = 0.25, At = 1, is = 0.05, bt = 0.5, cs = 16, ls = 8, us = 720;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+const $r = 0.25, Qe = 1, ds = 0.05, vt = 0.5, fs = 16, ms = 8, hs = 720;
 function Oe() {
   const e = typeof window > "u" ? NaN : Number(window.innerWidth);
   return Number.isFinite(e) && e > 0 ? e : Number.POSITIVE_INFINITY;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function $r(e) {
+function jr(e) {
   return Number.isFinite(e) && e < hs;
 }
 function Ge(e, t = Number.POSITIVE_INFINITY) {
-  return $r(t) && (e === "source" || e === "translated") ? Qe : vt;
+  return jr(t) && (e === "source" || e === "translated") ? Qe : vt;
 }
 function Dt(e) {
-  return Number.isFinite(e) ? Math.min(Qe, Math.max(Fr, e)) : vt;
-========
-function Or(e) {
-  return Number.isFinite(e) && e < us;
-}
-function Ge(e, t = Number.POSITIVE_INFINITY) {
-  return Or(t) && (e === "source" || e === "translated") ? At : bt;
-}
-function zt(e) {
-  return Number.isFinite(e) ? Math.min(At, Math.max(xr, e)) : bt;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  return Number.isFinite(e) ? Math.min(Qe, Math.max($r, e)) : vt;
 }
 function et(e, t) {
   const n = Dt(Number(e) + t * ds);
   return Math.round(n * 100) / 100;
 }
-function jr(e) {
+function Br(e) {
   return Math.round(Dt(e) * 100);
 }
 function ps(e) {
@@ -1231,23 +1079,13 @@ const ys = 8;
 function vs(e, t) {
   return !Number.isFinite(e) || e < 80 || Math.abs(e - t) < ys ? "ignore" : !Number.isFinite(t) || t <= 0 ? "immediate" : "settle";
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const Br = 200, Ur = [
+const Ur = 200, Hr = [
   "markdown"
-], Ss = Ur;
-function Hr(e) {
+], Ss = Hr;
+function Wr(e) {
   return Ss.includes(e);
 }
-const ws = "retainpdf:reader:view:v1:", Kn = /* @__PURE__ */ new Set([
-========
-const Fr = 200, $r = [
-  "markdown"
-], bs = $r;
-function jr(e) {
-  return bs.includes(e);
-}
-const ys = "retainpdf:reader:view:v1:", Gn = /* @__PURE__ */ new Set([
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+const ws = "retainpdf:reader:view:v1:", Zn = /* @__PURE__ */ new Set([
   "source",
   "translated",
   "markdown",
@@ -1257,11 +1095,7 @@ const ys = "retainpdf:reader:view:v1:", Gn = /* @__PURE__ */ new Set([
   "compare",
   "translated"
 ]);
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Wr() {
-========
-function Br() {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Vr() {
   try {
     return typeof globalThis.localStorage > "u" ? null : globalThis.localStorage;
   } catch {
@@ -1280,15 +1114,9 @@ function Rs({
   const r = nn(t);
   return r ? `job:${r}` : "";
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Vr(e) {
+function Jr(e) {
   const t = nn(e);
   return t ? `${ws}${t}` : "";
-========
-function Ur(e) {
-  const t = en(e);
-  return t ? `${ys}${t}` : "";
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
 }
 function Is(e) {
   if (!e || typeof e != "object") return;
@@ -1303,28 +1131,16 @@ function Ts(e) {
   if (e === null) return null;
   if (!e || typeof e != "object") return;
   const t = `${e.left || ""}`, n = `${e.right || ""}`;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  if (!(!Kn.has(t) || !Kn.has(n) || t === n))
+  if (!(!Zn.has(t) || !Zn.has(n) || t === n))
     return { left: t, right: n };
 }
 function Es(e) {
-  return e === null ? null : Hr(e) ? e : void 0;
-========
-  if (!(!Gn.has(t) || !Gn.has(n) || t === n))
-    return { left: t, right: n };
-}
-function Rs(e) {
-  return e === null ? null : jr(e) ? e : void 0;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  return e === null ? null : Wr(e) ? e : void 0;
 }
 function ks(e) {
   return Ps.has(e) ? e : void 0;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Jr(e) {
-========
-function Hr(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function qr(e) {
   if (!e || typeof e != "object") return null;
   const t = e;
   if (t.schema !== "retainpdf_reader_view_v1") return null;
@@ -1339,36 +1155,20 @@ function Hr(e) {
     updatedAt: Number.isFinite(Number(t.updatedAt)) ? Number(t.updatedAt) : 0
   };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function we(e, t = Wr()) {
-  const n = Vr(e);
+function we(e, t = Vr()) {
+  const n = Jr(e);
   if (!n || !t) return null;
   try {
     const r = t.getItem(n);
-    return r ? Jr(JSON.parse(r)) : null;
-========
-function we(e, t = Br()) {
-  const n = Ur(e);
-  if (!n || !t) return null;
-  try {
-    const r = t.getItem(n);
-    return r ? Hr(JSON.parse(r)) : null;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    return r ? qr(JSON.parse(r)) : null;
   } catch {
     return null;
   }
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function xt(e, t, n = Wr()) {
-  const r = Vr(e);
+function xt(e, t, n = Vr()) {
+  const r = Jr(e);
   if (!r || !n) return null;
-  const o = we(e, n), a = Jr({
-========
-function xt(e, t, n = Br()) {
-  const r = Ur(e);
-  if (!r || !n) return null;
-  const o = we(e, n), a = Hr({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const o = we(e, n), a = qr({
     schema: "retainpdf_reader_view_v1",
     ...o || {},
     ...t,
@@ -1421,19 +1221,11 @@ function As(e) {
     i !== o.current && (s.current(), a.current(i));
   }, []) };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const Pn = 48;
-function qr(e, t = Pn) {
+function Gr(e, t = Pn) {
   return e.getBoundingClientRect().top + t;
 }
-function Gr(e, t) {
-========
-const Sn = 48;
-function Wr(e, t = Sn) {
-  return e.getBoundingClientRect().top + t;
-}
-function Vr(e, t) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Kr(e, t) {
   if (!e.length)
     return null;
   let n = null, r = -1 / 0;
@@ -1465,11 +1257,7 @@ function Tt(e, t, n = Pn) {
   const r = At(void 0, t), o = Array.from(e.querySelectorAll(r));
   if (!o.length || e.getBoundingClientRect().height <= 0)
     return null;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  const s = qr(e, n), c = Gr(o, s);
-========
-  const s = Wr(e, n), c = Vr(o, s);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const s = Gr(e, n), c = Kr(o, s);
   return c ? { page: c.page, fraction: c.fraction } : null;
 }
 function Ot(e, t, n = "auto", r, o = Pn) {
@@ -1551,11 +1339,7 @@ function Ls(e, t, n = !0, r = "", o) {
       const h = Array.from(c.querySelectorAll(d));
       if (!h.length)
         return;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      const p = qr(c), v = Gr(h, p);
-========
-      const p = Wr(c), v = Vr(h, p);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      const p = Gr(c), v = Kr(h, p);
       v && s(v.page);
     }, m = () => {
       i || (u && cancelAnimationFrame(u), u = requestAnimationFrame(() => {
@@ -1574,23 +1358,13 @@ function Ls(e, t, n = !0, r = "", o) {
     };
   }, [e, t, n, r, o]), a;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const Cs = `canvas, .react-pdf__Page, .${Or}, .${Mt}`, Zn = /* @__PURE__ */ new WeakMap();
+const Cs = `canvas, .react-pdf__Page, .${Fr}, .${Mt}`, Yn = /* @__PURE__ */ new WeakMap();
 function zs(e) {
   const t = Number(e.getAttribute(vn));
   if (Number.isFinite(t) && t > 0)
     return t;
-  let n = Zn.get(e);
-  if ((n == null || !n.isConnected) && (n = e.querySelector(Cs), Zn.set(e, n)), n) {
-========
-const Ns = `canvas, .react-pdf__Page, .${zr}, .${kt}`, Kn = /* @__PURE__ */ new WeakMap();
-function _s(e) {
-  const t = Number(e.getAttribute(bn));
-  if (Number.isFinite(t) && t > 0)
-    return t;
-  let n = Kn.get(e);
-  if ((n == null || !n.isConnected) && (n = e.querySelector(Ns), Kn.set(e, n)), n) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  let n = Yn.get(e);
+  if ((n == null || !n.isConnected) && (n = e.querySelector(Cs), Yn.set(e, n)), n) {
     const o = n.getBoundingClientRect().height;
     if (Number.isFinite(o) && o > 0)
       return o;
@@ -1660,13 +1434,8 @@ const Fs = [0, 48, 140, 320, 560], $s = 700, js = [80, 200, 400], Bs = 500, Us =
   "Spacebar",
   "j",
   "k"
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-]), Ws = 180, Yn = [0, 48, 140, 320, 700, 1200];
+]), Ws = 180, Xn = [0, 48, 140, 320, 700, 1200];
 function Vs(e, t) {
-========
-]), Bs = 180, Zn = [0, 48, 140, 320, 700, 1200];
-function Us(e, t) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   var I;
   const {
     primaryPane: n,
@@ -1746,22 +1515,13 @@ function Us(e, t) {
       {
         behavior: "auto",
         pane: v.current,
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-        delaysMs: Yn,
-========
-        delaysMs: Zn,
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+        delaysMs: Xn,
         onDone: () => P(T)
       }
     ), f.current = setTimeout(() => {
       f.current = null, P(T);
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    }, Math.max(...Yn) + 160), () => w();
+    }, Math.max(...Xn) + 160), () => w();
   }, [o, s, a, e, P, w]), F(() => {
-========
-    }, Math.max(...Zn) + 160), () => w();
-  }, [o, s, a, e, P, w]), j(() => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     if (u.current === r)
       return;
     if (u.current = r, !o) {
@@ -1847,11 +1607,7 @@ function Js(e, t) {
   const r = Math.floor(n) + 1;
   return r >= 1 ? r : null;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Kr(e, t, n) {
-========
-function Jr(e, t, n) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Zr(e, t, n) {
   const r = `${(n == null ? void 0 : n.jobId) || ""}`.trim(), o = `${(n == null ? void 0 : n.documentId) || ""}`.trim(), a = `j:${r}:d:${o}`;
   return t == null ? `${a}:none:${(e == null ? void 0 : e.blockId) || ""}` : `${a}:p:${t}:b:${(e == null ? void 0 : e.blockId) || ""}`;
 }
@@ -1870,11 +1626,7 @@ function Zs(e, t, n) {
       return;
     const h = va(), p = Js(h, f.current);
     if (p == null && (h != null && h.blockId) && !u) return;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    const v = Kr(h, p, { jobId: i, documentId: l });
-========
-    const v = Jr(h, p, { jobId: i, documentId: l });
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    const v = Zr(h, p, { jobId: i, documentId: l });
     if (t.current === v)
       return;
     if (p == null) {
@@ -1928,11 +1680,7 @@ function Xs(e, t, n) {
       const g = ((v = globalThis.location) == null ? void 0 : v.search) || "", h = Do(g, o, u.current);
       if (f.current = o, h === null) return;
       const p = `${new URLSearchParams(h).get("block_id") || ""}`.trim();
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      t.current = Kr(
-========
-      t.current = Jr(
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      t.current = Zr(
         { blockId: p },
         o,
         { jobId: c, documentId: i }
@@ -1973,36 +1721,20 @@ const lt = {
 function ei(e) {
   return new Map(((e == null ? void 0 : e.pages) || []).map((t) => [t.page_idx, t]));
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Xn(e, t) {
+function Qn(e, t) {
   return e.attempt !== t.attempt ? e.attempt < t.attempt ? -1 : 1 : e.generation !== t.generation ? e.generation < t.generation ? -1 : 1 : 0;
 }
-function Zr(e, t, n) {
+function Yr(e, t, n) {
   if (n.page_idx !== t.page_idx) return "retry";
-  const r = Xn(n, t);
+  const r = Qn(n, t);
   if (r < 0 || r === 0 && n.page_hash !== t.page_hash) return "retry";
   if (!e) return "accept";
-  const o = Xn(n, e);
-========
-function Yn(e, t) {
-  return e.attempt !== t.attempt ? e.attempt < t.attempt ? -1 : 1 : e.generation !== t.generation ? e.generation < t.generation ? -1 : 1 : 0;
-}
-function qr(e, t, n) {
-  if (n.page_idx !== t.page_idx) return "retry";
-  const r = Yn(n, t);
-  if (r < 0 || r === 0 && n.page_hash !== t.page_hash) return "retry";
-  if (!e) return "accept";
-  const o = Yn(n, e);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const o = Qn(n, e);
   return o < 0 || o === 0 && n.page_hash === e.pageHash ? "ignore" : "accept";
 }
 function ti(e, t, n) {
   if (t.seq <= e.lastSeq) return e;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  const r = e.pagesByPage.get(t.page_idx), o = Zr(r, t, n);
-========
-  const r = e.pagesByPage.get(t.page_idx), o = qr(r, t, n);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const r = e.pagesByPage.get(t.page_idx), o = Yr(r, t, n);
   if (o === "retry") return e;
   if (o === "ignore")
     return { ...e, lastSeq: t.seq, connection: "live", error: "" };
@@ -2035,13 +1767,8 @@ function ni(e) {
     overlayRenderable: t && r && e.liveTranslationVisible && !e.assistantOpen
   };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const Qn = [250, 500, 1e3, 2e3, 4e3], Ut = [80, 160, 320, 640, 1e3, 1500], er = [250, 500, 1e3, 2e3, 4e3, 5e3];
+const er = [250, 500, 1e3, 2e3, 4e3], Ut = [80, 160, 320, 640, 1e3, 1500], tr = [250, 500, 1e3, 2e3, 4e3, 5e3];
 function on(e, t) {
-========
-const Xn = [250, 500, 1e3, 2e3, 4e3], Ut = [80, 160, 320, 640, 1e3, 1500], Qn = [250, 500, 1e3, 2e3, 4e3, 5e3];
-function nn(e, t) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   return new Promise((n, r) => {
     if (t.aborted) {
       r(new DOMException("Aborted", "AbortError"));
@@ -2067,11 +1794,7 @@ async function ri(e, t, n, r, o) {
   for (let s = 0; ; s += 1) {
     try {
       const i = await o.fetchPage(e, t.page_idx, { signal: r });
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      if (Zr(n.pagesByPage.get(t.page_idx), t, i) !== "retry")
-========
-      if (qr(n.pagesByPage.get(t.page_idx), t, i) !== "retry")
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      if (Yr(n.pagesByPage.get(t.page_idx), t, i) !== "retry")
         return i;
       a = Wo(
         "Authoritative page snapshot has not reached the event generation",
@@ -2167,13 +1890,8 @@ function oi({
             ..._,
             connection: "connecting",
             jobStatus: l,
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
             error: Pt(b, "正在等待 OCR 版面数据")
-          })), await on(Qn[Math.min(S, Qn.length - 1)], m.signal).catch(() => {
-========
-            error: St(b, "正在等待 OCR 版面数据")
-          })), await nn(Xn[Math.min(S, Xn.length - 1)], m.signal).catch(() => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+          })), await on(er[Math.min(S, er.length - 1)], m.signal).catch(() => {
           }), S += 1;
         }
     };
@@ -2245,11 +1963,7 @@ function oi({
           }));
           return;
         }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-        await on(er[Math.min(S, er.length - 1)], m.signal).catch(() => {
-========
-        await nn(Qn[Math.min(S, Qn.length - 1)], m.signal).catch(() => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+        await on(tr[Math.min(S, tr.length - 1)], m.signal).catch(() => {
         }), S += 1;
       }
     })(), () => m.abort();
@@ -2286,13 +2000,8 @@ function ui() {
   const e = ya(), t = (e == null ? void 0 : e.get) ?? li;
   return nt((e == null ? void 0 : e.subscribe) ?? ci, t, t);
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const di = 2e3;
+const di = 4500;
 function fi(e) {
-========
-const ci = 4500;
-function li(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   if (typeof e == "number") {
     const r = Number(e);
     return !Number.isFinite(r) || r < 0 ? null : Math.floor(r) + 1;
@@ -2310,27 +2019,15 @@ function li(e) {
   }
   return null;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const mi = /* @__PURE__ */ new Set(["book", "translate"]);
-function Yr(e) {
+function Xr(e) {
   return !!(e.jobId && e.sourceUrl && mi.has(e.workflow));
 }
 function hi(e) {
-  return !!(Yr(e) && !(e.jobStatus === "succeeded" && e.translatedUrl));
+  return !!(Xr(e) && !(e.jobStatus === "succeeded" && e.translatedUrl));
 }
 function pi() {
-  const e = Qa(), t = Yr({
-========
-const ui = /* @__PURE__ */ new Set(["book", "translate"]);
-function Gr(e) {
-  return !!(e.jobId && e.sourceUrl && ui.has(e.workflow));
-}
-function di(e) {
-  return !!(Gr(e) && !(e.jobStatus === "succeeded" && e.translatedUrl));
-}
-function fi() {
-  const e = Ka(), t = Gr({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const e = Qa(), t = Xr({
     jobId: e.jobId,
     sourceUrl: e.sourceUrl,
     workflow: e.workflow
@@ -2402,27 +2099,15 @@ function fi() {
   F(() => () => {
     D.current && clearTimeout(D.current);
   }, []);
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
   const R = U((O) => {
     const Q = jt(e.regions, O);
-    return Q ? Un(Q, p.primaryPane).page : null;
+    return Q ? Hn(Q, p.primaryPane).page : null;
   }, [e.regions, p.primaryPane]), I = U((O, Q) => {
     const te = Q || p.primaryPane, N = typeof O == "object" && O ? `${O.block_id || ""}`.trim() : "", G = typeof O == "object" && O ? `${O.image_url || ""}`.trim() : "", ae = typeof O == "object" && O ? O.page_idx != null ? Number(O.page_idx) + 1 : O.page != null ? Number(O.page) : null : typeof O == "number" ? O + 1 : null, E = Fo(e.regions, G, ae) || jt(e.regions, N) || (typeof O == "object" ? $o(e.regions, O) : null);
-    let B = E ? Un(E, te).page : null;
+    let B = E ? Hn(E, te).page : null;
     B == null && (B = fi(O)), !(B == null || B < 1) && (z(E), k(B, te));
   }, [z, k, p.primaryPane, e.regions]);
   Qs({
-========
-  const R = $((L) => {
-    const te = jt(e.regions, L);
-    return te ? Bn(te, p.primaryPane).page : null;
-  }, [e.regions, p.primaryPane]), I = $((L, te) => {
-    const oe = te || p.primaryPane, A = typeof L == "object" && L ? `${L.block_id || ""}`.trim() : "", Z = typeof L == "object" && L ? `${L.image_url || ""}`.trim() : "", ae = typeof L == "object" && L ? L.page_idx != null ? Number(L.page_idx) + 1 : L.page != null ? Number(L.page) : null : typeof L == "number" ? L + 1 : null, W = Do(e.regions, Z, ae) || jt(e.regions, A) || (typeof L == "object" ? zo(e.regions, L) : null);
-    let J = W ? Bn(W, oe).page : null;
-    J == null && (J = li(L)), !(J == null || J < 1) && (D(W), E(J, oe));
-  }, [D, E, p.primaryPane, e.regions]);
-  Zs({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     enabled: !e.boot.loading && !e.boot.failed && e.assetsReady,
     syncEnabled: !e.boot.loading && !e.boot.failed && e.assetsReady,
     numPages: p.hudNumPages || 0,
@@ -2607,13 +2292,8 @@ function Pi(e) {
     i
   ]);
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const Ri = "retainpdf:soft-reader-close";
-function Xr(e = typeof window > "u" ? "" : window.location.search) {
-========
-const Si = "retainpdf:soft-reader-close";
-function Pn(e = typeof window > "u" ? "" : window.location.search) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function In(e = typeof window > "u" ? "" : window.location.search) {
   try {
     return `${new URLSearchParams(e).get("embed") || ""}`.trim();
   } catch {
@@ -2627,21 +2307,12 @@ function Ii(e = typeof window > "u" ? "" : window.location.search) {
     return "";
   }
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 function Ti() {
-  const e = new URL("./index.html", window.location.href), t = Xr();
+  const e = new URL("./index.html", window.location.href), t = In();
   return t && e.searchParams.set("embed", t), e.href;
 }
 function Ei() {
-  if (typeof window > "u" || window.self === window.top || Xr()) return !1;
-========
-function Pi() {
-  const e = new URL("./index.html", window.location.href), t = Pn();
-  return t && e.searchParams.set("embed", t), e.href;
-}
-function Ri() {
-  if (typeof window > "u" || window.self === window.top || Pn()) return !1;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  if (typeof window > "u" || window.self === window.top || In()) return !1;
   try {
     return window.parent.postMessage(
       { type: Ri },
@@ -2699,40 +2370,22 @@ function Ci() {
   const r = n.open ? `收起摘录${n.title ? `（摘到《${n.title}》）` : ""}` : "摘录";
   return /* @__PURE__ */ y(Qr, { className: "reader-notes-toggle", label: r, pressed: n.open, onClick: e.toggle, children: /* @__PURE__ */ y(Jo, { className: "reader-close-home-icon", size: 18, strokeWidth: 2.25, "aria-hidden": !0 }) });
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-let tr = !1;
+let nr = !1;
 function zi() {
-  if (tr)
+  if (nr)
     return;
   const e = pt().resolvePdfjsVendorUrl("build/pdf.worker.mjs");
-  e && (na.GlobalWorkerOptions.workerSrc = e, tr = !0);
-========
-let er = !1;
-function _i() {
-  if (er)
-    return;
-  const e = dt().resolvePdfjsVendorUrl("build/pdf.worker.mjs");
-  e && (Xo.GlobalWorkerOptions.workerSrc = e, er = !0);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  e && (na.GlobalWorkerOptions.workerSrc = e, nr = !0);
 }
 const Di = /* @__PURE__ */ new Set(["text", "formula", "table"]);
 function xi(e, t, n) {
   return e.flatMap((r) => {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    if (!Di.has(_r(r.region))) return [];
+    if (!Di.has(Lr(r.region))) return [];
     const o = bn(r, t, n);
     return o ? [{ itemId: r.itemId, highlight: r, rect: o }] : [];
   });
 }
-function nr(e, t, n) {
-========
-    if (!Li.has(Ar(r.region))) return [];
-    const o = pn(r, t, n);
-    return o ? [{ itemId: r.itemId, highlight: r, rect: o }] : [];
-  });
-}
-function tr(e, t, n) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function rr(e, t, n) {
   let r = null, o = Number.POSITIVE_INFINITY;
   for (const a of e) {
     const { rect: s } = a;
@@ -2811,11 +2464,7 @@ function Hi({
       S.forEach((b) => window.clearTimeout(b)), l.current = [];
     };
   }, [u]), !e) return null;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  const d = jo(e.highlight.region, t), f = _r(e.highlight.region), m = (S, b) => async (P) => {
-========
-  const d = xo(e.highlight.region, t), f = Ar(e.highlight.region), m = (S, b) => async (P) => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const d = jo(e.highlight.region, t), f = Lr(e.highlight.region), m = (S, b) => async (P) => {
     P.preventDefault(), P.stopPropagation();
     const k = await Oi(S);
     b(k ? "copied" : "failed"), l.current.push(window.setTimeout(() => b("idle"), 1200));
@@ -2837,7 +2486,7 @@ function Hi({
           className: eo,
           "data-placement": w ? "outside" : "inside",
           children: [
-            Pn() === "studio" ? null : /* @__PURE__ */ y(
+            In() === "studio" ? null : /* @__PURE__ */ y(
               Ht,
               {
                 className: $i,
@@ -3173,25 +2822,14 @@ function oc({
       H(null);
       return;
     }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
     if ((Me = (de = N.target) == null ? void 0 : de.closest) != null && Me.call(de, `.${eo}`)) return;
     const G = N.currentTarget.getBoundingClientRect(), ae = N.clientX - G.left, E = N.clientY - G.top, B = W == null ? void 0 : W.rect;
     if (B && no(B) && ae >= B.left - 4 && ae <= B.left + _t && E >= B.top - to && E <= B.top) return;
-    const pe = nr(R, ae, E);
+    const pe = rr(R, ae, E);
     H((pe == null ? void 0 : pe.itemId) || null);
   }, oe = (N) => {
     if (N.pointerType === "mouse") return;
-    const G = N.currentTarget.getBoundingClientRect(), ae = nr(
-========
-    if ((Me = (de = A.target) == null ? void 0 : de.closest) != null && Me.call(de, `.${Zr}`)) return;
-    const Z = A.currentTarget.getBoundingClientRect(), ae = A.clientX - Z.left, W = A.clientY - Z.top, J = V == null ? void 0 : V.rect;
-    if (J && Xr(J) && ae >= J.left - 4 && ae <= J.left + _t && W >= J.top - Yr && W <= J.top) return;
-    const ge = tr(R, ae, W);
-    H((ge == null ? void 0 : ge.itemId) || null);
-  }, B = (A) => {
-    if (A.pointerType === "mouse") return;
-    const Z = A.currentTarget.getBoundingClientRect(), ae = tr(
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    const G = N.currentTarget.getBoundingClientRect(), ae = rr(
       R,
       N.clientX - G.left,
       N.clientY - G.top
@@ -3227,11 +2865,7 @@ function oc({
             devicePixelRatio: n,
             renderTextLayer: !0,
             renderAnnotationLayer: !1,
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-            className: Or,
-========
-            className: zr,
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+            className: Fr,
             loading: /* @__PURE__ */ y(
               "div",
               {
@@ -3311,27 +2945,15 @@ function oc({
     }
   );
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const ac = fn(oc), Vt = 5, sc = "120% 0px", ic = 120;
-let rr = 1;
-const or = /* @__PURE__ */ new WeakMap();
+let or = 1;
+const ar = /* @__PURE__ */ new WeakMap();
 function cc(e) {
   if (!e) return 0;
-  const t = or.get(e);
+  const t = ar.get(e);
   if (t) return t;
-  const n = rr;
-  return rr += 1, or.set(e, n), n;
-========
-const nc = un(tc), Vt = 5, rc = "120% 0px", oc = 120;
-let nr = 1;
-const rr = /* @__PURE__ */ new WeakMap();
-function ac(e) {
-  if (!e) return 0;
-  const t = rr.get(e);
-  if (t) return t;
-  const n = nr;
-  return nr += 1, rr.set(e, n), n;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const n = or;
+  return or += 1, ar.set(e, n), n;
 }
 function lc() {
   const e = typeof window < "u" && window.devicePixelRatio || 1;
@@ -3383,11 +3005,7 @@ const uc = Mo(
             C(K);
             return;
           }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-          te.current = setTimeout(() => C(K), Br);
-========
-          oe.current = setTimeout(() => C(G), Fr);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+          te.current = setTimeout(() => C(K), Ur);
         }
       }, V = !!(i && i >= 80);
       q(V ? i : (c == null ? void 0 : c.clientWidth) || 0);
@@ -3503,28 +3121,16 @@ const uc = Mo(
     F(() => {
       typeof IntersectionObserver < "u" || We(new Set(Re));
     }, [Re]);
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
     const Ae = Y(
-      () => Hn(g, p, t),
-========
-    const Ae = Q(
-      () => Un(g, p, t),
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      () => Wn(g, p, t),
       [g, p, t]
     ), at = Y(() => {
       const C = /* @__PURE__ */ new Map();
       for (const q of h) {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-        const V = Hn(q, p, t);
+        const V = Wn(q, p, t);
         if (!V) continue;
         const Z = C.get(V.box.page) || [];
         Z.push(V), C.set(V.box.page, Z);
-========
-        const U = Un(q, p, t);
-        if (!U) continue;
-        const K = C.get(U.box.page) || [];
-        K.push(U), C.set(U.box.page, K);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
       }
       return C;
     }, [t, p, h]), $t = Y(() => {
@@ -3636,15 +3242,9 @@ const uc = Mo(
       }
     );
   }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-), ar = fn(uc), dc = 2e3, fc = 6;
+), sr = fn(uc), dc = 2e3, fc = 6;
 function mc(e, t) {
   const n = A(null), r = A(null);
-========
-), or = un(ic), cc = 2e3, lc = 6;
-function uc(e, t) {
-  const n = M(null), r = M(null);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   Ce(() => {
     const o = n.current;
     if (n.current = t, !e || o === null || t === null || Math.abs(o - t) < 1) return;
@@ -3661,30 +3261,18 @@ function uc(e, t) {
     const p = () => {
       var w;
       f && clearTimeout(f), cancelAnimationFrame(d);
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      for (const S of sr) e.removeEventListener(S, p);
-========
-      for (const S of ar) e.removeEventListener(S, p);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      for (const S of ir) e.removeEventListener(S, p);
       ((w = r.current) == null ? void 0 : w.stop) === p && (r.current = null);
     }, v = () => {
       Ot(e, i, "auto", c);
       const w = e.scrollHeight;
       g = w === m ? g + 1 : 0, m = w, w !== l && g >= fc || performance.now() - h > dc ? p() : d = requestAnimationFrame(v);
     };
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    for (const w of sr) e.addEventListener(w, p, { passive: !0 });
+    for (const w of ir) e.addEventListener(w, p, { passive: !0 });
     r.current = { ...s, stop: p }, f = setTimeout(() => {
       f = null, h = performance.now(), d = requestAnimationFrame(v);
-    }, Br);
+    }, Ur);
   }, [e, t]), F(() => () => {
-========
-    for (const w of ar) e.addEventListener(w, p, { passive: !0 });
-    r.current = { ...s, stop: p }, f = setTimeout(() => {
-      f = null, h = performance.now(), d = requestAnimationFrame(v);
-    }, Fr);
-  }, [e, t]), j(() => () => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     var o;
     return (o = r.current) == null ? void 0 : o.stop();
   }, []);
@@ -3696,15 +3284,9 @@ function hc(e) {
   }
   return null;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const sr = ["wheel", "touchstart", "keydown", "pointerdown"], pc = () => () => {
-}, ir = () => null;
+const ir = ["wheel", "touchstart", "keydown", "pointerdown"], pc = () => () => {
+}, cr = () => null;
 function gc({
-========
-const ar = ["wheel", "touchstart", "keydown", "pointerdown"], fc = () => () => {
-}, sr = () => null;
-function mc({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   mode: e,
   compareMode: t,
   showSource: n,
@@ -3732,23 +3314,13 @@ function vc(e) {
     assistantSplit: r = !1,
     liveTranslation: o,
     paneComposition: a
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
   } = e, s = (a == null ? void 0 : a.visibleMode) ?? e.mode ?? "compare", c = (a == null ? void 0 : a.compareMode) ?? e.compareMode ?? s === "compare", i = (a == null ? void 0 : a.showSource) ?? e.showSource ?? !0, l = (a == null ? void 0 : a.showTranslated) ?? e.showTranslated ?? (s === "compare" || s === "translated"), u = (a == null ? void 0 : a.overlayOnSource) ?? e.overlayOnSource ?? !1, d = e.bindShell ?? (t == null ? void 0 : t.bindShell), f = e.shellEl ?? (t == null ? void 0 : t.shellEl) ?? null, m = e.userZoom ?? (t == null ? void 0 : t.userZoom) ?? vt, g = e.shellWidth ?? (t == null ? void 0 : t.shellWidth) ?? 0, h = e.rowHeights ?? (t == null ? void 0 : t.rowHeights), p = e.mountSource ?? (t == null ? void 0 : t.mountSource) ?? !1, v = e.mountTranslated ?? (t == null ? void 0 : t.mountTranslated) ?? !1, w = e.sourceViewOnly ?? (t == null ? void 0 : t.sourceViewOnly) ?? !1, S = e.sourceUrl ?? (t == null ? void 0 : t.sourceUrl) ?? "", b = e.translatedUrl ?? (t == null ? void 0 : t.translatedUrl) ?? "", P = e.sourceFile ?? (t == null ? void 0 : t.sourceFile) ?? null, k = e.translatedFile ?? (t == null ? void 0 : t.translatedFile) ?? null, _ = e.onMetrics ?? (t == null ? void 0 : t.onMetrics), x = e.onNumPagesChange ?? (t == null ? void 0 : t.onNumPagesChange), D = e.activeRegion ?? (t == null ? void 0 : t.activeRegion), z = e.regions ?? (t == null ? void 0 : t.regions) ?? [], R = e.readerMetadata ?? (t == null ? void 0 : t.readerMetadata), I = (t == null ? void 0 : t.regionHover) ?? null, [T, M] = L(null), j = nt(
     I ? I.subscribe : pc,
-    I ? () => I.get().itemId : ir,
-    I ? () => I.get().itemId : ir
+    I ? () => I.get().itemId : cr,
+    I ? () => I.get().itemId : cr
   ), H = I ? j : T, W = U((Q) => {
     I ? I.set(Q, "pdf") : M(Q);
   }, [I]), J = gc({
-========
-  } = e, s = (a == null ? void 0 : a.visibleMode) ?? e.mode ?? "compare", c = (a == null ? void 0 : a.compareMode) ?? e.compareMode ?? s === "compare", i = (a == null ? void 0 : a.showSource) ?? e.showSource ?? !0, l = (a == null ? void 0 : a.showTranslated) ?? e.showTranslated ?? (s === "compare" || s === "translated"), u = (a == null ? void 0 : a.overlayOnSource) ?? e.overlayOnSource ?? !1, d = e.bindShell ?? (t == null ? void 0 : t.bindShell), f = e.shellEl ?? (t == null ? void 0 : t.shellEl) ?? null, m = e.userZoom ?? (t == null ? void 0 : t.userZoom) ?? bt, g = e.shellWidth ?? (t == null ? void 0 : t.shellWidth) ?? 0, h = e.rowHeights ?? (t == null ? void 0 : t.rowHeights), p = e.mountSource ?? (t == null ? void 0 : t.mountSource) ?? !1, v = e.mountTranslated ?? (t == null ? void 0 : t.mountTranslated) ?? !1, w = e.sourceViewOnly ?? (t == null ? void 0 : t.sourceViewOnly) ?? !1, S = e.sourceUrl ?? (t == null ? void 0 : t.sourceUrl) ?? "", b = e.translatedUrl ?? (t == null ? void 0 : t.translatedUrl) ?? "", P = e.sourceFile ?? (t == null ? void 0 : t.sourceFile) ?? null, E = e.translatedFile ?? (t == null ? void 0 : t.translatedFile) ?? null, N = e.onMetrics ?? (t == null ? void 0 : t.onMetrics), x = e.onNumPagesChange ?? (t == null ? void 0 : t.onNumPagesChange), z = e.activeRegion ?? (t == null ? void 0 : t.activeRegion), D = e.regions ?? (t == null ? void 0 : t.regions) ?? [], R = e.readerMetadata ?? (t == null ? void 0 : t.readerMetadata), I = (t == null ? void 0 : t.regionHover) ?? null, [T, k] = _(null), F = gt(
-    I ? I.subscribe : fc,
-    I ? () => I.get().itemId : sr,
-    I ? () => I.get().itemId : sr
-  ), H = I ? F : T, V = $((te) => {
-    I ? I.set(te, "pdf") : k(te);
-  }, [I]), X = mc({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     mode: s,
     compareMode: c,
     showSource: i,
@@ -3775,11 +3347,7 @@ function vc(e) {
           "data-reader-mode": n ? "markdown-split" : r ? "assistant-split" : s,
           children: [
             p ? /* @__PURE__ */ y(
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-              ar,
-========
-              or,
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+              sr,
               {
                 pane: "source",
                 url: S,
@@ -3815,11 +3383,7 @@ function vc(e) {
               }
             ) : null,
             v ? /* @__PURE__ */ y(
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-              ar,
-========
-              or,
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+              sr,
               {
                 pane: "translated",
                 url: b,
@@ -3847,17 +3411,10 @@ function vc(e) {
     }
   );
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const Sc = [
-  { id: "source", label: "原文", Icon: Lr },
-  { id: "compare", label: "对照", Icon: Cr },
-  { id: "translated", label: "译文", Icon: zr }
-========
-const bc = [
-  { id: "source", label: "原文", Icon: Nr },
-  { id: "compare", label: "对照", Icon: _r },
-  { id: "translated", label: "译文", Icon: Lr }
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  { id: "source", label: "原文", Icon: Cr },
+  { id: "compare", label: "对照", Icon: zr },
+  { id: "translated", label: "译文", Icon: Dr }
 ];
 function wc(e) {
   return e.connection === "live" ? `实时译文 · ${e.pagesByPage.size} 页` : e.connection === "reconnecting" ? "实时译文 · 重连中" : e.connection === "unavailable" ? "实时译文 · 不可用" : e.connection === "terminal" ? e.jobStatus === "failed" ? "实时译文 · 已暂停" : e.jobStatus === "cancelled" || e.jobStatus === "canceled" ? "实时译文 · 已取消" : e.jobStatus === "succeeded" ? "实时译文 · 已完成" : "实时译文 · 已结束" : e.error || "实时译文 · 连接中";
@@ -3922,17 +3479,10 @@ function Ec() {
   const e = ga(), t = (e == null ? void 0 : e.available) ?? Tc, n = nt((e == null ? void 0 : e.subscribe) ?? Ic, t, t), r = U(() => !!(e != null && e.available() && e.ask()), [e]);
   return { available: n, ask: r };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const kc = {
   markdown: { label: "Markdown", short: "MD", Icon: Go, needsJob: !0 }
-}, Mc = Ur.map(
+}, Mc = Hr.map(
   (e) => ({ id: e, ...kc[e] })
-========
-const Ic = {
-  markdown: { label: "Markdown", short: "MD", Icon: Wo, needsJob: !0 }
-}, Tc = $r.map(
-  (e) => ({ id: e, ...Ic[e] })
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
 );
 function Ac() {
   return Mc.map(({ id: e, label: t, short: n, Icon: r, needsJob: o }) => ({
@@ -4309,11 +3859,7 @@ function lo(e) {
 var Ne;
 class uo {
   constructor() {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    jn(this, Ne, {});
-========
-    $n(this, Ne, {});
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    Bn(this, Ne, {});
   }
   addListener(t, n) {
     const r = ct(this, Ne)[t];
@@ -4342,11 +3888,7 @@ class uo {
       }
   }
   removeAllListeners() {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    Bn(this, Ne, {});
-========
-    jn(this, Ne, {});
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    Un(this, Ne, {});
   }
   removeListener(t, n) {
     const r = ct(this, Ne)[t];
@@ -4361,57 +3903,32 @@ let Ze = {
   cursorFlags: 0,
   state: "inactive"
 };
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const In = new uo();
+const Tn = new uo();
 function $e() {
   return Ze;
 }
 function jc(e) {
-  return In.addListener("change", e);
-========
-const Rn = new so();
-function $e() {
-  return Ze;
-}
-function Oc(e) {
-  return Rn.addListener("change", e);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  return Tn.addListener("change", e);
 }
 function Bc(e) {
   const t = Ze, n = { ...Ze };
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  n.cursorFlags = e, Ze = n, In.emit("change", {
-========
-  n.cursorFlags = e, Ze = n, Rn.emit("change", {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  n.cursorFlags = e, Ze = n, Tn.emit("change", {
     prev: t,
     next: n
   });
 }
 function Ye(e) {
   const t = Ze;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  Ze = e, In.emit("change", {
-========
-  Ze = e, Rn.emit("change", {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  Ze = e, Tn.emit("change", {
     prev: t,
     next: e
   });
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const Uc = (e) => e, Jt = () => {
-}, fo = 1, mo = 2, ho = 4, po = 8, cr = 3, lr = 12;
+}, fo = 1, mo = 2, ho = 4, po = 8, lr = 3, ur = 12;
 let It;
-function ur() {
+function dr() {
   return It === void 0 && (It = !1, typeof window < "u" && (window.navigator.userAgent.includes("Chrome") || window.navigator.userAgent.includes("Firefox")) && (It = !0)), It;
-========
-const $c = (e) => e, Jt = () => {
-}, io = 1, co = 2, lo = 4, uo = 8, ir = 3, cr = 12;
-let Pt;
-function lr() {
-  return Pt === void 0 && (Pt = !1, typeof window < "u" && (window.navigator.userAgent.includes("Chrome") || window.navigator.userAgent.includes("Firefox")) && (Pt = !0)), Pt;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
 }
 function Hc({
   cursorFlags: e,
@@ -4439,13 +3956,8 @@ function Hc({
   if (!(r === 0 && o === 0)) {
     switch (n) {
       case "active": {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-        if (e && ur()) {
+        if (e && dr()) {
           const a = (e & fo) !== 0, s = (e & mo) !== 0, c = (e & ho) !== 0, i = (e & po) !== 0;
-========
-        if (e && lr()) {
-          const a = (e & io) !== 0, s = (e & co) !== 0, c = (e & lo) !== 0, i = (e & uo) !== 0;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
           if (a)
             return c ? "se-resize" : i ? "ne-resize" : "e-resize";
           if (s)
@@ -4458,25 +3970,14 @@ function Hc({
         break;
       }
     }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    return ur() ? r > 0 && o > 0 ? "move" : r > 0 ? "ew-resize" : "ns-resize" : r > 0 && o > 0 ? "grab" : r > 0 ? "col-resize" : "row-resize";
+    return dr() ? r > 0 && o > 0 ? "move" : r > 0 ? "ew-resize" : "ns-resize" : r > 0 && o > 0 ? "grab" : r > 0 ? "col-resize" : "row-resize";
   }
 }
-const dr = /* @__PURE__ */ new WeakMap();
-function Tn(e) {
+const fr = /* @__PURE__ */ new WeakMap();
+function En(e) {
   if (e.defaultView === null || e.defaultView === void 0)
     return;
-  let { prevStyle: t, styleSheet: n } = dr.get(e) ?? {};
-========
-    return lr() ? r > 0 && o > 0 ? "move" : r > 0 ? "ew-resize" : "ns-resize" : r > 0 && o > 0 ? "grab" : r > 0 ? "col-resize" : "row-resize";
-  }
-}
-const ur = /* @__PURE__ */ new WeakMap();
-function In(e) {
-  if (e.defaultView === null || e.defaultView === void 0)
-    return;
-  let { prevStyle: t, styleSheet: n } = ur.get(e) ?? {};
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  let { prevStyle: t, styleSheet: n } = fr.get(e) ?? {};
   n === void 0 && (n = new e.defaultView.CSSStyleSheet(), e.adoptedStyleSheets && (Object.isExtensible(e.adoptedStyleSheets) ? e.adoptedStyleSheets.push(n) : e.adoptedStyleSheets = [
     ...e.adoptedStyleSheets,
     n
@@ -4500,11 +4001,7 @@ function In(e) {
       break;
     }
   }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  dr.set(e, {
-========
-  ur.set(e, {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  fr.set(e, {
     prevStyle: t,
     styleSheet: n
   });
@@ -4514,11 +4011,7 @@ const go = new uo();
 function Wc(e) {
   Se = new Map(Se), Se.delete(e);
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function fr(e, t) {
-========
-function dr(e, t) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function mr(e, t) {
   for (const [n] of Se)
     if (n.id === e)
       return n;
@@ -4533,13 +4026,8 @@ function _e(e, t) {
 function Ue() {
   return Se;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function En(e, t) {
+function kn(e, t) {
   return go.addListener("groupChange", (n) => {
-========
-function Tn(e, t) {
-  return fo.addListener("groupChange", (n) => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     n.group.id === e && t(n);
   });
 }
@@ -4560,11 +4048,7 @@ function bo(e) {
       Ye({
         cursorFlags: 0,
         state: "inactive"
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      }), t.hitRegions.length > 0 && (Tn(e), n = !0, t.hitRegions.forEach((r) => {
-========
-      }), t.hitRegions.length > 0 && (In(e), n = !0, t.hitRegions.forEach((r) => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      }), t.hitRegions.length > 0 && (En(e), n = !0, t.hitRegions.forEach((r) => {
         const o = _e(r.group.id, !0);
         ke(r.group, o, {
           isUserInteraction: !0
@@ -4573,13 +4057,8 @@ function bo(e) {
   }
   return n;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function mr(e) {
+function hr(e) {
   e.defaultPrevented || bo(e.currentTarget);
-========
-function fr(e) {
-  e.defaultPrevented || mo(e.currentTarget);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
 }
 function Vc(e, t, n) {
   let r, o = {
@@ -4610,13 +4089,8 @@ function Jc(e) {
 function qc(e, t) {
   if (e === t) throw new Error("Cannot compare node with itself");
   const n = {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    a: gr(e),
-    b: gr(t)
-========
-    a: pr(e),
-    b: pr(t)
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    a: br(e),
+    b: br(t)
   };
   let r;
   for (; n.a.at(-1) === n.b.at(-1); )
@@ -4626,13 +4100,8 @@ function qc(e, t) {
     "Stacking order can only be calculated for elements with a common ancestor"
   );
   const o = {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    a: pr(hr(n.a)),
-    b: pr(hr(n.b))
-========
-    a: hr(mr(n.a)),
-    b: hr(mr(n.b))
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    a: gr(pr(n.a)),
+    b: gr(pr(n.b))
   };
   if (o.a === o.b) {
     const a = r.childNodes, s = {
@@ -4657,11 +4126,7 @@ function Zc(e) {
   const t = getComputedStyle(e);
   return !!(t.position === "fixed" || t.zIndex !== "auto" && (t.position !== "static" || Kc(e)) || +t.opacity < 1 || "transform" in t && t.transform !== "none" || "webkitTransform" in t && t.webkitTransform !== "none" || "mixBlendMode" in t && t.mixBlendMode !== "normal" || "filter" in t && t.filter !== "none" || "webkitFilter" in t && t.webkitFilter !== "none" || "isolation" in t && t.isolation === "isolate" || Gc.test(t.willChange) || t.webkitOverflowScrolling === "touch");
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function hr(e) {
-========
-function mr(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function pr(e) {
   let t = e.length;
   for (; t--; ) {
     const n = e[t];
@@ -4669,17 +4134,10 @@ function mr(e) {
   }
   return null;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function pr(e) {
-  return e && Number(getComputedStyle(e).zIndex) || 0;
-}
 function gr(e) {
-========
-function hr(e) {
   return e && Number(getComputedStyle(e).zIndex) || 0;
 }
-function pr(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function br(e) {
   const t = [];
   for (; e; )
     t.push(e), e = yo(e);
@@ -4711,11 +4169,7 @@ function Xc({
   }
   return !0;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function kn(e, t) {
-========
-function En(e, t) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Mn(e, t) {
   const n = [];
   return t.forEach((r, o) => {
     if (o.disabled)
@@ -5118,19 +4572,11 @@ function vo({
     }
   };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function br(e) {
+function yr(e) {
   if (e.defaultPrevented)
     return;
   const t = Ue();
-  kn(e, t).forEach((n) => {
-========
-function gr(e) {
-  if (e.defaultPrevented)
-    return;
-  const t = Ue();
-  En(e, t).forEach((n) => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  Mn(e, t).forEach((n) => {
     if (n.separator && !n.separator.disableDoubleClick) {
       const r = n.panels.find(
         (o) => o.panelConstraints.defaultSize !== void 0
@@ -5225,11 +4671,7 @@ function ze(e, t) {
     { isUserInteraction: !0 }
   );
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function yr(e) {
-========
-function br(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function vr(e) {
   if (e.defaultPrevented)
     return;
   const t = e.currentTarget, n = Et(t);
@@ -5292,17 +4734,10 @@ function br(e) {
       }
     }
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function vr(e) {
+function Sr(e) {
   if (e.defaultPrevented || e.pointerType === "mouse" && e.button > 0)
     return;
-  const t = Ue(), n = kn(e, t), r = /* @__PURE__ */ new Map();
-========
-function yr(e) {
-  if (e.defaultPrevented || e.pointerType === "mouse" && e.button > 0)
-    return;
-  const t = Ue(), n = En(e, t), r = /* @__PURE__ */ new Map();
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const t = Ue(), n = Mn(e, t), r = /* @__PURE__ */ new Map();
   let o = !1;
   n.forEach((a) => {
     a.separator && (o || (o = !0, a.separator.element.focus({
@@ -5376,15 +4811,9 @@ function wo({
     }
   });
   let i = 0;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  t.movementX === 0 ? i |= s & cr : i |= c & cr, t.movementY === 0 ? i |= s & lr : i |= c & lr, Bc(i), Tn(e);
+  t.movementX === 0 ? i |= s & lr : i |= c & lr, t.movementY === 0 ? i |= s & ur : i |= c & ur, Bc(i), En(e);
 }
-function Sr(e) {
-========
-  t.movementX === 0 ? i |= s & ir : i |= c & ir, t.movementY === 0 ? i |= s & cr : i |= c & cr, Fc(i), In(e);
-}
-function vr(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function wr(e) {
   const t = Ue(), n = $e();
   switch (n.state) {
     case "active":
@@ -5398,11 +4827,7 @@ function vr(e) {
       });
   }
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function wr(e) {
-========
-function Sr(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Pr(e) {
   var r, o;
   if (e.defaultPrevented)
     return;
@@ -5441,11 +4866,7 @@ function Sr(e) {
       break;
     }
     default: {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      const a = kn(e, n);
-========
-      const a = En(e, n);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      const a = Mn(e, n);
       a.length === 0 ? t.state !== "inactive" && Ye({
         cursorFlags: 0,
         state: "inactive"
@@ -5453,20 +4874,12 @@ function Sr(e) {
         cursorFlags: 0,
         hitRegions: a,
         state: "hover"
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      }), Tn(e.currentTarget);
-========
-      }), In(e.currentTarget);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      }), En(e.currentTarget);
       break;
     }
   }
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Pr(e) {
-========
-function wr(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Rr(e) {
   if (e.relatedTarget instanceof HTMLIFrameElement)
     switch ($e().state) {
       case "hover":
@@ -5476,17 +4889,10 @@ function wr(e) {
         });
     }
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Rr(e) {
+function Ir(e) {
   e.defaultPrevented || e.pointerType === "mouse" && e.button > 0 || bo(e.currentTarget) && e.preventDefault();
 }
-function Ir(e) {
-========
-function Pr(e) {
-  e.defaultPrevented || e.pointerType === "mouse" && e.button > 0 || mo(e.currentTarget) && e.preventDefault();
-}
-function Rr(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Tr(e) {
   let t = 0, n = 0;
   const r = {};
   for (const a of e)
@@ -5600,11 +5006,7 @@ function ol(e) {
           const S = _e(e.id);
           if (!S)
             return;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-          const b = sn(e), P = S.defaultLayoutDeferred ? Ir(b) : S.layout, k = nl({
-========
-          const b = on(e), P = S.defaultLayoutDeferred ? Rr(b) : S.layout, E = Qc({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+          const b = sn(e), P = S.defaultLayoutDeferred ? Tr(b) : S.layout, k = nl({
             group: e,
             nextGroupSize: w,
             prevGroupSize: S.groupSize,
@@ -5638,13 +5040,8 @@ function ol(e) {
   });
   const s = tt({ group: e }), c = sn(e), i = e.panels.map(({ id: g }) => g).join(",");
   let l = e.mutableState.defaultLayout;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
   l && (rl(e.panels, l) || (l = void 0));
-  const u = e.mutableState.layouts[i] ?? l ?? Ir(c), d = Be({
-========
-  l && (el(e.panels, l) || (l = void 0));
-  const u = e.mutableState.layouts[i] ?? l ?? Rr(c), d = Be({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const u = e.mutableState.layouts[i] ?? l ?? Tr(c), d = Be({
     layout: u,
     panelConstraints: c
   }), f = e.element.ownerDocument;
@@ -5665,62 +5062,34 @@ function ol(e) {
     ee(
       !o.has(g.id),
       `Separator ids must be unique; id "${g.id}" was used more than once`
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    ), o.add(g.id), g.element.addEventListener("keydown", yr);
-  }), Je.get(f) === 1 && (f.addEventListener("contextmenu", mr, !0), f.addEventListener("dblclick", br, !0), f.addEventListener("pointerdown", vr, !0), f.addEventListener("pointerleave", Sr), f.addEventListener("pointermove", wr), f.addEventListener("pointerout", Pr), f.addEventListener("pointerup", Rr, !0)), function() {
+    ), o.add(g.id), g.element.addEventListener("keydown", vr);
+  }), Je.get(f) === 1 && (f.addEventListener("contextmenu", hr, !0), f.addEventListener("dblclick", yr, !0), f.addEventListener("pointerdown", Sr, !0), f.addEventListener("pointerleave", wr), f.addEventListener("pointermove", Pr), f.addEventListener("pointerout", Rr), f.addEventListener("pointerup", Ir, !0)), function() {
     t = !1, Je.set(
       f,
       Math.max(0, (Je.get(f) ?? 0) - 1)
     ), Wc(e), e.separators.forEach((g) => {
-      g.element.removeEventListener("keydown", yr);
+      g.element.removeEventListener("keydown", vr);
     }), Je.get(f) || (f.removeEventListener(
       "contextmenu",
-      mr,
+      hr,
       !0
     ), f.removeEventListener(
       "dblclick",
-      br,
-      !0
-    ), f.removeEventListener(
-      "pointerdown",
-      vr,
-      !0
-    ), f.removeEventListener("pointerleave", Sr), f.removeEventListener("pointermove", wr), f.removeEventListener("pointerout", Pr), f.removeEventListener("pointerup", Rr, !0)), a.disconnect();
-========
-    ), o.add(g.id), g.element.addEventListener("keydown", br);
-  }), Je.get(f) === 1 && (f.addEventListener("contextmenu", fr, !0), f.addEventListener("dblclick", gr, !0), f.addEventListener("pointerdown", yr, !0), f.addEventListener("pointerleave", vr), f.addEventListener("pointermove", Sr), f.addEventListener("pointerout", wr), f.addEventListener("pointerup", Pr, !0)), function() {
-    t = !1, Je.set(
-      f,
-      Math.max(0, (Je.get(f) ?? 0) - 1)
-    ), Bc(e), e.separators.forEach((g) => {
-      g.element.removeEventListener("keydown", br);
-    }), Je.get(f) || (f.removeEventListener(
-      "contextmenu",
-      fr,
-      !0
-    ), f.removeEventListener(
-      "dblclick",
-      gr,
-      !0
-    ), f.removeEventListener(
-      "pointerdown",
       yr,
       !0
-    ), f.removeEventListener("pointerleave", vr), f.removeEventListener("pointermove", Sr), f.removeEventListener("pointerout", wr), f.removeEventListener("pointerup", Pr, !0)), a.disconnect();
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    ), f.removeEventListener(
+      "pointerdown",
+      Sr,
+      !0
+    ), f.removeEventListener("pointerleave", wr), f.removeEventListener("pointermove", Pr), f.removeEventListener("pointerout", Rr), f.removeEventListener("pointerup", Ir, !0)), a.disconnect();
   };
 }
 function al() {
   const [e, t] = L({}), n = U(() => t({}), []);
   return [e, n];
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Mn(e) {
-  const t = Ar();
-========
-function kn(e) {
-  const t = Mr();
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function An(e) {
+  const t = Nr();
   return `${e ?? t}`;
 }
 const He = typeof window < "u" ? Ce : F;
@@ -5736,13 +5105,8 @@ function mt(e) {
     [t]
   );
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function An(...e) {
+function Nn(...e) {
   return mt((t) => {
-========
-function Mn(...e) {
-  return ut((t) => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     e.forEach((n) => {
       if (n)
         switch (typeof n) {
@@ -5758,13 +5122,8 @@ function Mn(...e) {
     });
   });
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Nn(e) {
+function _n(e) {
   const t = A({ ...e });
-========
-function An(e) {
-  const t = M({ ...e });
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   return He(() => {
     for (const n in e)
       t.current[n] = e[n];
@@ -5811,31 +5170,18 @@ function Ro({
     (R, I) => {
       je(g.current.onLayoutChanged, R) || (g.current.onLayoutChanged = R, l == null || l(R, { isUserInteraction: I }));
     }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  ), v = Mn(c), w = A(null), [S, b] = al(), P = A({
-========
-  ), v = kn(c), w = M(null), [S, b] = nl(), P = M({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  ), v = An(c), w = A(null), [S, b] = al(), P = A({
     lastExpandedPanelSizes: {},
     layouts: {},
     panels: [],
     resizeTargetMinimumSize: d,
     separators: []
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  }), k = An(w, a);
+  }), k = Nn(w, a);
   sl(v, s);
   const _ = mt(
     (R, I) => {
-      const T = $e(), M = fr(R), j = _e(R);
+      const T = $e(), M = mr(R), j = _e(R);
       if (j) {
-========
-  }), E = Mn(w, a);
-  rl(v, s);
-  const N = ut(
-    (R, I) => {
-      const T = $e(), k = dr(R), F = _e(R);
-      if (F) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
         let H = !1;
         switch (T.state) {
           case "active": {
@@ -5855,11 +5201,7 @@ function Ro({
           flexGrow: n == null ? void 0 : n[I]
         };
     }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  ), x = Nn({
-========
-  ), x = An({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  ), x = _n({
     defaultLayout: n,
     disableCursor: r
   }), D = Y(
@@ -5897,17 +5239,10 @@ function Ro({
           (H) => H.id === R
         );
         T && (T.panelConstraints.disabled = I);
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-        const M = fr(v), j = _e(v);
+        const M = mr(v), j = _e(v);
         M && j && ke(M, {
           ...j,
           derivedPanelConstraints: sn(M)
-========
-        const k = dr(v), F = _e(v);
-        k && F && ke(k, {
-          ...F,
-          derivedPanelConstraints: on(k)
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
         });
       },
       updateSeparatorProps: (R, {
@@ -5950,21 +5285,12 @@ function Ro({
       resizeTargetMinimumSize: I.resizeTargetMinimumSize,
       separators: I.separators
     };
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
     z.current = M;
     const j = ol(M), { defaultLayoutDeferred: H, derivedPanelConstraints: W, layout: J } = _e(M.id, !0);
     !H && W.length > 0 && (h(J), p(J, !1));
-    const oe = En(v, (O) => {
+    const oe = kn(v, (O) => {
       const { defaultLayoutDeferred: Q, derivedPanelConstraints: te, layout: N } = O.next;
       if (Q || te.length === 0)
-========
-    D.current = k;
-    const F = tl(k), { defaultLayoutDeferred: H, derivedPanelConstraints: V, layout: X } = _e(k.id, !0);
-    !H && V.length > 0 && (h(X), p(X, !1));
-    const B = Tn(v, (L) => {
-      const { defaultLayoutDeferred: te, derivedPanelConstraints: oe, layout: A } = L.next;
-      if (te || oe.length === 0)
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
         return;
       const G = M.panels.map(({ id: E }) => E).join(",");
       M.mutableState.layouts[G] = N, te.forEach((E) => {
@@ -6026,27 +5352,16 @@ function Ro({
     }
   ) });
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 Ro.displayName = "Group";
-function _n() {
+function Ln() {
   const e = hn(Po);
-========
-vo.displayName = "Group";
-function Nn() {
-  const e = fn(yo);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   return ee(
     e,
     "Group Context not found; did you render a Panel or Separator outside of a Group?"
   ), e;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 function il(e, t) {
-  const { id: n } = _n(), r = A({
-========
-function ol(e, t) {
-  const { id: n } = Nn(), r = M({
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const { id: n } = Ln(), r = A({
     collapse: Jt,
     expand: Jt,
     getSize: () => ({
@@ -6080,29 +5395,17 @@ function ln({
   style: m,
   ...g
 }) {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  const h = !!i, p = Mn(i), v = Nn({
+  const h = !!i, p = An(i), v = _n({
     disabled: a
-  }), w = A(null), S = An(w, s), {
-========
-  const h = !!i, p = kn(i), v = An({
-    disabled: a
-  }), w = M(null), S = Mn(w, s), {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  }), w = A(null), S = Nn(w, s), {
     getPanelStyles: b,
     id: P,
     orientation: k,
     registerPanel: _,
     updatePanelProps: x
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  } = _n(), D = d !== null, z = mt(
+  } = Ln(), D = d !== null, z = mt(
     (M, j, H) => {
       d == null || d(M, i, H);
-========
-  } = Nn(), z = d !== null, D = ut(
-    (k, F, H) => {
-      d == null || d(k, i, H);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     }
   );
   He(() => {
@@ -6146,19 +5449,11 @@ function ln({
     x(p, { disabled: a });
   }, [a, p, x]), il(p, f);
   const R = () => {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
     const M = b(P, p);
     if (M)
       return JSON.stringify(M);
   }, I = nt(
-    (M) => En(P, M),
-========
-    const k = b(P, p);
-    if (k)
-      return JSON.stringify(k);
-  }, I = gt(
-    (k) => Tn(P, k),
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    (M) => kn(P, M),
     R,
     R
   );
@@ -6268,28 +5563,16 @@ function Io({
   style: s,
   ...c
 }) {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  const i = Mn(a), l = Nn({
+  const i = An(a), l = _n({
     disabled: n,
     disableDoubleClick: r
-  }), [u, d] = L({}), [f, m] = L("inactive"), [g, h] = L(!1), p = A(null), v = An(p, o), {
-========
-  const i = kn(a), l = An({
-    disabled: n,
-    disableDoubleClick: r
-  }), [u, d] = _({}), [f, m] = _("inactive"), [g, h] = _(!1), p = M(null), v = Mn(p, o), {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  }), [u, d] = L({}), [f, m] = L("inactive"), [g, h] = L(!1), p = A(null), v = Nn(p, o), {
     disableCursor: w,
     id: S,
     orientation: b,
     registerSeparator: P,
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
     updateSeparatorProps: k
-  } = _n(), _ = b === "horizontal" ? "vertical" : "horizontal";
-========
-    updateSeparatorProps: E
-  } = Nn(), N = b === "horizontal" ? "vertical" : "horizontal";
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  } = Ln(), _ = b === "horizontal" ? "vertical" : "horizontal";
   He(() => {
     const z = p.current;
     if (z !== null) {
@@ -6306,11 +5589,7 @@ function Io({
             ) ? j.next.state : "inactive"
           );
         }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      ), M = En(
-========
-      ), k = Tn(
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      ), M = kn(
         S,
         (j) => {
           const { derivedPanelConstraints: H, layout: W, separatorToPanels: J } = j.next, oe = J.get(R);
@@ -6381,82 +5660,47 @@ function Io({
     }
   );
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 Io.displayName = "Separator";
-const Ln = 30, Cn = 65, bt = 50, ul = 100 - Cn, dl = 100 - Ln;
+const Cn = 30, zn = 65, bt = 50, ul = 100 - zn, dl = 100 - Cn;
 function fl(e) {
   const t = Number(e);
-  return Number.isFinite(t) ? Math.min(Cn, Math.max(Ln, t)) : bt;
+  return Number.isFinite(t) ? Math.min(zn, Math.max(Cn, t)) : bt;
 }
-function zn(e) {
-========
-So.displayName = "Separator";
-const _n = 30, Ln = 65, ht = 50, il = 100 - Ln, cl = 100 - _n;
-function ll(e) {
-  const t = Number(e);
-  return Number.isFinite(t) ? Math.min(Ln, Math.max(_n, t)) : ht;
-}
-function Cn(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Dn(e) {
   return 100 - e;
 }
 function qe(e) {
   return `${e}%`;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const Dn = "reader-document", yt = "reader-assistant", To = "retainpdf.reader.ai-split-layout.v1", ml = {
-  [Dn]: zn(bt),
+const xn = "reader-document", yt = "reader-assistant", To = "retainpdf.reader.ai-split-layout.v1", ml = {
+  [xn]: Dn(bt),
   [yt]: bt
 };
-function xn(e) {
+function On(e) {
   const t = fl(e == null ? void 0 : e[yt]);
   return {
-    [Dn]: zn(t),
+    [xn]: Dn(t),
     [yt]: t
-========
-const Dn = "reader-document", pt = "reader-assistant", wo = "retainpdf.reader.ai-split-layout.v1", ul = {
-  [Dn]: Cn(ht),
-  [pt]: ht
-};
-function zn(e) {
-  const t = ll(e == null ? void 0 : e[pt]);
-  return {
-    [Dn]: Cn(t),
-    [pt]: t
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   };
 }
 function hl() {
   try {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
     const e = JSON.parse(localStorage.getItem(To) || "null");
-    return xn(e);
-========
-    const e = JSON.parse(localStorage.getItem(wo) || "null");
-    return zn(e);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    return On(e);
   } catch {
     return ml;
   }
 }
 function pl(e) {
   try {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    localStorage.setItem(To, JSON.stringify(xn(e)));
-========
-    localStorage.setItem(wo, JSON.stringify(zn(e)));
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    localStorage.setItem(To, JSON.stringify(On(e)));
   } catch {
   }
 }
 function qt(e, t) {
   const n = e == null ? void 0 : e.closest(".reader-react-root");
   if (!n) return;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-  const r = xn(t);
-========
-  const r = zn(t);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  const r = On(t);
   n.style.setProperty(
     "--reader-ai-split-width",
     `${r[yt]}vw`
@@ -6491,16 +5735,10 @@ function gl() {
         /* @__PURE__ */ y(
           ln,
           {
-            id: Dn,
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-            defaultSize: qe(zn(bt)),
+            id: xn,
+            defaultSize: qe(Dn(bt)),
             minSize: qe(ul),
             maxSize: qe(dl)
-========
-            defaultSize: qe(Cn(ht)),
-            minSize: qe(il),
-            maxSize: qe(cl)
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
           }
         ),
         /* @__PURE__ */ y(
@@ -6515,17 +5753,10 @@ function gl() {
         /* @__PURE__ */ y(
           ln,
           {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
             id: yt,
             defaultSize: qe(bt),
-            minSize: qe(Ln),
-            maxSize: qe(Cn)
-========
-            id: pt,
-            defaultSize: qe(ht),
-            minSize: qe(_n),
-            maxSize: qe(Ln)
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+            minSize: qe(Cn),
+            maxSize: qe(zn)
           }
         )
       ]
@@ -6589,15 +5820,9 @@ function vl(e) {
   const t = e.tagName;
   return t === "INPUT" || t === "TEXTAREA" || t === "SELECT" || e.isContentEditable ? !0 : !!e.closest("input, textarea, select, [contenteditable='true']");
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 function Sl() {
-  const [e, t] = L(!1), n = Ar(), r = A(null);
+  const [e, t] = L(!1), n = Nr(), r = A(null);
   return F(() => {
-========
-function bl() {
-  const [e, t] = _(!1), n = Mr(), r = M(null);
-  return j(() => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     if (!e) return;
     const o = (s) => {
       const c = r.current;
@@ -6722,19 +5947,11 @@ function Eo(e) {
   }, [r, t, e]);
   return { urls: r, downloadItems: o, busyActions: t, handleDownload: a };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const Il = {
-  source: Lr,
-  sideBySide: Cr,
-  translated: zr
+  source: Cr,
+  sideBySide: zr,
+  translated: Dr
 }, Tl = {
-========
-const Pl = {
-  source: Nr,
-  sideBySide: _r,
-  translated: Lr
-}, Rl = {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   source: "原文",
   sideBySide: "对照",
   translated: "译文"
@@ -6760,7 +5977,7 @@ function El(e) {
       /* @__PURE__ */ y(Xo, { size: 13, strokeWidth: 2.2, "aria-hidden": !0, className: "reader-download-trigger-caret" })
     ] }),
     /* @__PURE__ */ y("div", { className: "reader-download-menu", role: "group", "aria-label": "下载 PDF", children: o.map((i) => {
-      const l = Nr[i], u = ht(r[i]), d = a.has(i), f = !!u && !d, m = f ? "" : Co(i, r), g = Il[i];
+      const l = _r[i], u = ht(r[i]), d = a.has(i), f = !!u && !d, m = f ? "" : Co(i, r), g = Il[i];
       return /* @__PURE__ */ $(
         "button",
         {
@@ -6788,13 +6005,8 @@ function El(e) {
     }) })
   ] });
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const kl = "retainpdf:reader:bookmarks:v1:", Ml = 200;
-function On() {
-========
-const Tl = "retainpdf:reader:bookmarks:v1:", El = 200;
-function xn() {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Fn() {
   try {
     return typeof globalThis.localStorage > "u" ? null : globalThis.localStorage;
   } catch {
@@ -6810,13 +6022,8 @@ function Al(e) {
   const t = e, n = Math.floor(Number(t.page));
   return !Number.isFinite(n) || n < 1 ? null : { page: n, label: `${t.label || ""}`.trim().slice(0, 120), createdAt: `${t.createdAt || ""}` };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Lt(e, t = On()) {
+function Lt(e, t = Fn()) {
   const n = ko(e);
-========
-function Lt(e, t = xn()) {
-  const n = Po(e);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   if (!n || !t) return [];
   try {
     const r = JSON.parse(t.getItem(n) || "[]"), o = /* @__PURE__ */ new Map();
@@ -6838,21 +6045,12 @@ function un(e, t, n) {
   }
   return o;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Nl(e, t, n = "", { storage: r = On(), now: o = () => (/* @__PURE__ */ new Date()).toISOString() } = {}) {
-========
-function Ml(e, t, n = "", { storage: r = xn(), now: o = () => (/* @__PURE__ */ new Date()).toISOString() } = {}) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Nl(e, t, n = "", { storage: r = Fn(), now: o = () => (/* @__PURE__ */ new Date()).toISOString() } = {}) {
   const a = Lt(e, r), s = Math.floor(Number(t));
   return !Number.isFinite(s) || s < 1 ? a : a.some((c) => c.page === s) ? un(e, a.filter((c) => c.page !== s), r) : un(e, [...a, { page: s, label: `${n || ""}`.trim().slice(0, 120), createdAt: o() }], r);
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function _l(e, t, n = On()) {
+function _l(e, t, n = Fn()) {
   return un(e, Lt(e, n).filter((r) => r.page !== t), n);
-========
-function Al(e, t, n = xn()) {
-  return cn(e, Lt(e, n).filter((r) => r.page !== t), n);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
 }
 function Ll(e, t) {
   var r, o, a, s;
@@ -6946,17 +6144,10 @@ function zl({ scope: e, currentPage: t, numPages: n, regions: r, onGoToPage: o }
     ] }, f.page)) }) }) : null
   ] });
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 function Dl(e) {
   const t = Le(), n = ao(), { mode: r = "compare", modeControls: o } = e, a = e.userZoom ?? (t == null ? void 0 : t.userZoom) ?? vt, s = e.onZoomChange ?? (t == null ? void 0 : t.onZoomChange) ?? (() => {
-  }), c = e.currentPage ?? (n == null ? void 0 : n.currentPage) ?? 1, i = e.numPages ?? (n == null ? void 0 : n.numPages) ?? 0, l = e.onGoToPage ?? (t == null ? void 0 : t.goToPage), u = jr(a), d = a > Fr + 1e-3, f = a < Qe - 1e-3, m = Ge(r, Oe()), g = m >= Qe ? "100%（铺满阅读区）" : "50%（半屏，对照铺满）", [h, p] = L(!1), [v, w] = L(`${c}`);
+  }), c = e.currentPage ?? (n == null ? void 0 : n.currentPage) ?? 1, i = e.numPages ?? (n == null ? void 0 : n.numPages) ?? 0, l = e.onGoToPage ?? (t == null ? void 0 : t.goToPage), u = Br(a), d = a > $r + 1e-3, f = a < Qe - 1e-3, m = Ge(r, Oe()), g = m >= Qe ? "100%（铺满阅读区）" : "50%（半屏，对照铺满）", [h, p] = L(!1), [v, w] = L(`${c}`);
   F(() => {
-========
-function Cl(e) {
-  const t = Le(), n = to(), { mode: r = "compare", modeControls: o } = e, a = e.userZoom ?? (t == null ? void 0 : t.userZoom) ?? bt, s = e.onZoomChange ?? (t == null ? void 0 : t.onZoomChange) ?? (() => {
-  }), c = e.currentPage ?? (n == null ? void 0 : n.currentPage) ?? 1, i = e.numPages ?? (n == null ? void 0 : n.numPages) ?? 0, l = e.onGoToPage ?? (t == null ? void 0 : t.goToPage), u = ds(a), d = a > xr + 1e-3, f = a < At - 1e-3, m = Ge(r, Oe()), g = m >= At ? "100%（铺满阅读区）" : "50%（半屏，对照铺满）", [h, p] = _(!1), [v, w] = _(`${c}`);
-  j(() => {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
     h || w(`${Math.min(Math.max(c, 1), Math.max(i, 1))}`);
   }, [c, i, h]);
   const S = () => {
@@ -7063,33 +6254,19 @@ function Cl(e) {
     /* @__PURE__ */ y("div", { className: "reader-react-hud-group reader-react-hud-help", "aria-label": "帮助", children: /* @__PURE__ */ y(Sl, {}) })
   ] });
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-function Tr(e) {
+function Er(e) {
   var t, n;
-  return Hr(e == null ? void 0 : e.assistantPanel) ? e.assistantPanel : ((t = e == null ? void 0 : e.splitLayout) == null ? void 0 : t.left) === "markdown" || ((n = e == null ? void 0 : e.splitLayout) == null ? void 0 : n.right) === "markdown" ? "markdown" : null;
-========
-function Ir(e) {
-  var t, n;
-  return jr(e == null ? void 0 : e.assistantPanel) ? e.assistantPanel : ((t = e == null ? void 0 : e.splitLayout) == null ? void 0 : t.left) === "markdown" || ((n = e == null ? void 0 : e.splitLayout) == null ? void 0 : n.right) === "markdown" ? "markdown" : null;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  return Wr(e == null ? void 0 : e.assistantPanel) ? e.assistantPanel : ((t = e == null ? void 0 : e.splitLayout) == null ? void 0 : t.left) === "markdown" || ((n = e == null ? void 0 : e.splitLayout) == null ? void 0 : n.right) === "markdown" ? "markdown" : null;
 }
 function xl(e) {
   const [t, n] = L(() => ({
     scope: e,
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    panel: Tr(we(e))
-========
-    panel: Ir(we(e))
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    panel: Er(we(e))
   }));
   F(() => {
     n((o) => o.scope === e ? o : {
       scope: e,
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-      panel: Tr(we(e))
-========
-      panel: Ir(we(e))
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+      panel: Er(we(e))
     });
   }, [e]), F(() => {
     t.scope === e && xt(t.scope, {
@@ -7151,19 +6328,14 @@ function $l() {
     /* @__PURE__ */ y("download-toast", { style: { display: "none" }, "aria-hidden": "true", ref: e })
   ] });
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const jl = () => () => {
 }, Bl = () => !1;
 function Ul() {
   const e = Yt(), t = (e == null ? void 0 : e.active) ?? Bl;
   return nt((e == null ? void 0 : e.subscribe) ?? jl, t, t);
-========
-function Fl(e) {
-  return e.sourceViewOnly ? { mode: "source", auto: !1 } : e.savedMode ? { mode: e.savedMode, auto: !1 } : Or(e.viewportWidth) ? { mode: "translated", auto: !0 } : { mode: null, auto: !1 };
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
 }
 function Hl(e) {
-  return e.sourceViewOnly ? { mode: "source", auto: !1 } : e.savedMode ? { mode: e.savedMode, auto: !1 } : $r(e.viewportWidth) ? { mode: "translated", auto: !0 } : { mode: null, auto: !1 };
+  return e.sourceViewOnly ? { mode: "source", auto: !1 } : e.savedMode ? { mode: e.savedMode, auto: !1 } : jr(e.viewportWidth) ? { mode: "translated", auto: !0 } : { mode: null, auto: !1 };
 }
 function Wl(e, t) {
   return t === null || e !== t;
@@ -7176,25 +6348,15 @@ function Jl(e, t) {
   const n = e === t;
   return { open: n, mounted: Vl(n) };
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const Er = { itemId: null, origin: null };
+const kr = { itemId: null, origin: null };
 function ql() {
-  let e = Er;
-========
-const Tr = { itemId: null, origin: null };
-function Ul() {
-  let e = Tr;
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+  let e = kr;
   const t = /* @__PURE__ */ new Set();
   return {
     get: () => e,
     set(n, r) {
       if (!(e.itemId === n && (n === null || e.origin === r))) {
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-        e = n === null ? Er : { itemId: n, origin: r };
-========
-        e = n === null ? Tr : { itemId: n, origin: r };
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+        e = n === null ? kr : { itemId: n, origin: r };
         for (const o of t) o();
       }
     },
@@ -7239,19 +6401,11 @@ const xe = (e) => `${e ?? ""}`.replace(/\s+/gu, " ").trim(), Gl = { 0: "₀", 1:
   Phi: "Φ",
   Psi: "Ψ",
   Omega: "Ω"
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-}, kr = (e, t) => [...e].every((n) => n in t) ? [...e].map((n) => t[n]).join("") : e;
+}, Mr = (e, t) => [...e].every((n) => n in t) ? [...e].map((n) => t[n]).join("") : e;
 function Yl(e) {
   return e.replace(
     /\$([^$]+)\$/gu,
-    (t, n) => n.replace(/\\(?:mathrm|text|mathbf|mathit|operatorname)\{([^{}]*)\}/gu, "$1").replace(/_\{([^{}]*)\}|_(\w)/gu, (r, o, a) => kr(o ?? a ?? "", Gl)).replace(/\^\{([^{}]*)\}|\^(\w)/gu, (r, o, a) => kr(o ?? a ?? "", Kl)).replace(/\\([a-zA-Z]+)/gu, (r, o) => Zl[o] ?? "").replace(/[{}]/gu, "").trim()
-========
-}, Er = (e, t) => [...e].every((n) => n in t) ? [...e].map((n) => t[n]).join("") : e;
-function Jl(e) {
-  return e.replace(
-    /\$([^$]+)\$/gu,
-    (t, n) => n.replace(/\\(?:mathrm|text|mathbf|mathit|operatorname)\{([^{}]*)\}/gu, "$1").replace(/_\{([^{}]*)\}|_(\w)/gu, (r, o, a) => Er(o ?? a ?? "", Hl)).replace(/\^\{([^{}]*)\}|\^(\w)/gu, (r, o, a) => Er(o ?? a ?? "", Wl)).replace(/\\([a-zA-Z]+)/gu, (r, o) => Vl[o] ?? "").replace(/[{}]/gu, "").trim()
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    (t, n) => n.replace(/\\(?:mathrm|text|mathbf|mathit|operatorname)\{([^{}]*)\}/gu, "$1").replace(/_\{([^{}]*)\}|_(\w)/gu, (r, o, a) => Mr(o ?? a ?? "", Gl)).replace(/\^\{([^{}]*)\}|\^(\w)/gu, (r, o, a) => Mr(o ?? a ?? "", Kl)).replace(/\\([a-zA-Z]+)/gu, (r, o) => Zl[o] ?? "").replace(/[{}]/gu, "").trim()
   ).replace(/\s+/gu, " ").trim();
 }
 function Xl(e) {
@@ -7275,13 +6429,8 @@ function tu(e, t) {
     n = r;
   return n;
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
 const nu = 24, ru = 60;
-function Mr(e, t) {
-========
-const Yl = 24, Xl = 60;
-function kr(e, t) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+function Ar(e, t) {
   const n = e.toLowerCase().indexOf(t);
   if (n < 0) return null;
   const r = Math.max(0, n - nu), o = Math.min(e.length, n + t.length + ru), a = r > 0 ? "…" : "";
@@ -7294,11 +6443,7 @@ function ou(e, t, n = 200) {
   for (const a of e) {
     const s = Number(a.source.page);
     if (!Number.isFinite(s) || s < 1) continue;
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-    const c = xe(a.translatedBlockText) || xe(a.translated.text), i = c ? Mr(c, r) : null, l = i ?? Mr(xe(a.source.text), r);
-========
-    const c = xe(a.translatedBlockText) || xe(a.translated.text), i = c ? kr(c, r) : null, l = i ?? kr(xe(a.source.text), r);
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+    const c = xe(a.translatedBlockText) || xe(a.translated.text), i = c ? Ar(c, r) : null, l = i ?? Ar(xe(a.source.text), r);
     if (l && (o.push({ itemId: a.itemId, page: s, side: i ? "translated" : "source", ...l }), o.length >= n))
       break;
   }
@@ -7379,13 +6524,8 @@ function iu({
     ] })
   ] });
 }
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-const cu = No(() => import("./ReaderMarkdownPanel-x1lnwa1r.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Gt = { source: "source", sideBySide: "compare", translated: "translated" };
+const cu = No(() => import("./ReaderMarkdownPanel-DyRl8fhg.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Gt = { source: "source", sideBySide: "compare", translated: "translated" };
 function lu(e) {
-========
-const ru = To(() => import("./ReaderMarkdownPanel-72eKFaw4.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
-function ou(e) {
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantPdfPane || (e.assistantOpen && e.mode === "compare" ? "source" : e.mode), a = !t && (o === "translated" || o === "compare");
   return {
     kind: n ? "live-overlay" : o === "compare" ? "final-compare" : o === "translated" ? "translated-only" : "source-only",
@@ -7475,7 +6615,7 @@ function du() {
     H && oe.current && Math.abs(e.userZoom - J) > 1e-3 && e.onZoomChange(J);
   }, [H, J, e.userZoom, e.onZoomChange]);
   const O = Y(
-    () => W.downloadItems.filter((E) => ht(W.urls[E])).map((E) => ({ key: `download-${Gt[E]}`, label: `下载${Nr[E].label}` })),
+    () => W.downloadItems.filter((E) => ht(W.urls[E])).map((E) => ({ key: `download-${Gt[E]}`, label: `下载${_r[E].label}` })),
     [W.downloadItems, W.urls]
   ), Q = Y(() => ({
     ready: !t.loading && !t.failed,
@@ -7485,7 +6625,7 @@ function du() {
     mode: S ?? null,
     panels: ["outline", "search"],
     panel: R,
-    zoom: { percent: jr(e.userZoom), fit: Math.abs(e.userZoom - J) < 1e-3 },
+    zoom: { percent: Br(e.userZoom), fit: Math.abs(e.userZoom - J) < 1e-3 },
     actions: O
   }), [t.loading, t.failed, e.currentPage, n.hudNumPages, w, S, R, e.userZoom, J, O]);
   F(() => {
@@ -7625,8 +6765,4 @@ export {
   Au as r,
   Le as u
 };
-<<<<<<<< HEAD:frontend/packages/reader/dist/ReaderApp-BbIviw4T.js
-//# sourceMappingURL=ReaderApp-BbIviw4T.js.map
-========
-//# sourceMappingURL=ReaderApp-Db8Oy1wN.js.map
->>>>>>>> fix/reader-studio-polish:frontend/packages/reader/dist/ReaderApp-Db8Oy1wN.js
+//# sourceMappingURL=ReaderApp-CnKvQILx.js.map
