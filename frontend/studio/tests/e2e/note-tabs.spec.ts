@@ -18,12 +18,14 @@ test('a page opened comes in as a tab after the one shown; a tab clicked shows i
 	await openStudio(page);
 	const tabs = page.locator('#note-tabs .note-tab-name');
 	await expect(tabs).toHaveText(['Studio 测试夹具']);
-	// The only one: no × (there is always the note shown).
+	// The only one: no row of tabs (the bar says its title), no × (there is always the note shown).
+	await expect(page.locator('#note-tabs')).toBeHidden();
 	await expect(page.locator('#note-tabs .note-tab-close')).toHaveCount(0);
 
 	await page.locator('#article-list .page-row', { hasText: '第三篇' }).click();
 	await expect(page.locator('#breadcrumb-title')).toHaveText('第三篇');
 	await expect(tabs).toHaveText(['Studio 测试夹具', '🧪 第三篇']);
+	await expect(page.locator('#note-tabs')).toBeVisible();
 	// Opened from the first tab: after it, not at the end.
 	await tabs.first().click();
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');

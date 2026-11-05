@@ -27,9 +27,11 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* Dragged onto a page: under it. Below the pages: at the top. */
 /* Above or below a page: a line there, as far in as the page. */
 .editor-panel { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; }
+/* 编辑于…: not written in the bar all the while (the author: fewer words); the title says it on hover (TopBar.tsx). */
+.studio-bar #edited-at { display: none; }
 /* The notes open, a tab each (wiring/note-tabs.ts): the row as tall as the books' beside it, the two lined up. */
 .note-tabs { display: flex; min-height: 38px; flex: none; align-items: center; gap: 2px; padding: 4px 8px; overflow-x: auto; border-bottom: 1px solid rgba(var(--gray), 0.2); scrollbar-width: none; }
-.note-tabs:empty { display: none; }
+.note-tabs:empty, .note-tabs.is-alone { display: none; }
 .note-tab { display: flex; min-width: 72px; max-width: 200px; flex: 0 1 auto; align-items: center; border-radius: 6px; }
 .note-tab:hover, .note-tab:has([aria-selected='true']) { background: rgba(var(--gray), 0.12); }
 .note-tab-name { min-width: 0; overflow: hidden; padding: 4px 4px 4px 9px; border: 0; background: none; color: rgb(var(--gray)); font: inherit; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }

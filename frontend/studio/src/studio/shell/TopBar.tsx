@@ -80,7 +80,8 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 				{article && (
 					<span className="flex min-w-0 items-center gap-1.5 px-1">
 						<PageIcon icon={icon} />
-						<strong id="breadcrumb-title" className="max-w-[340px] truncate font-semibold max-[720px]:max-w-[150px]" title={title}>
+						{/* When it was edited said on hover of its title (not written in the bar all the while: fewer words). */}
+						<strong id="breadcrumb-title" className="max-w-[340px] truncate font-semibold max-[720px]:max-w-[150px]" title={edited === null ? title : `${title}\n${t('编辑于{time}', { time: timeAgo(edited) })} · ${new Date(edited).toLocaleString(locale())}`}>
 							{title}
 						</strong>
 					</span>
@@ -94,14 +95,14 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 						id="books-toggle"
 						type="button"
 						variant="ghost"
-						size="sm"
+						size="icon-sm"
 						aria-pressed={booksOpen}
-						className="h-7 gap-1.5 px-2 text-[13px] text-muted-foreground hover:text-foreground aria-pressed:bg-accent aria-pressed:text-foreground [&_svg]:size-4"
+						className="size-7 text-muted-foreground hover:text-foreground aria-pressed:bg-accent aria-pressed:text-foreground [&_svg]:size-4"
 						title={booksOpen ? t('收起旁边的书') : t('在旁边打开这篇笔记的书')}
+						aria-label={booksOpen ? t('收起旁边的书') : t('在旁边打开这篇笔记的书')}
 						onClick={act.toggleBooks}
 					>
 						<BookOpen aria-hidden />
-						{t('书')}
 					</Button>
 				)}
 				<span id="edited-at" className="text-xs whitespace-nowrap text-muted-foreground opacity-85" title={edited === null ? '' : new Date(edited).toLocaleString(locale())} hidden={!article}>
