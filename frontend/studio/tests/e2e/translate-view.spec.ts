@@ -759,8 +759,12 @@ test('a note\'s books on its right (as SiYuan opens a PDF beside a document); th
 	await page.mouse.move(line.x + line.width / 2, line.y + 200);
 	await page.mouse.down();
 	await page.mouse.move(line.x - 120, line.y + 200, { steps: 5 });
+	// Meanwhile the note kept at the width it had (laid out once, at the end, not at each step).
+	const kept = await page.locator('.editor-scroll').evaluate((element) => element.style.width);
+	expect(kept).toMatch(/^\d+(\.\d+)?px$/u);
 	await page.mouse.up();
 	await expect.poll(async () => (await books.boundingBox())!.width).toBeGreaterThan(before + 80);
+	await expect.poll(() => page.locator('.editor-scroll').evaluate((element) => element.style.width)).toBe('');
 	await expect
 		.poll(() => page.evaluate(() => [document.querySelector<HTMLElement>('.studio-shell')!.style.getPropertyValue('--notes-width'), document.querySelector<HTMLElement>('.workspace-main')!.style.getPropertyValue('--notes-width')]))
 		.toEqual(['', expect.stringMatching(/^\d+px$/u)]);

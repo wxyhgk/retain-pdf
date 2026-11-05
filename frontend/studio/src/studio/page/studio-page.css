@@ -85,6 +85,9 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'][data-books-wide] .workspace-main { grid-template-columns: 0 minmax(0, 1fr); }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'][data-books-wide] :is(.editor-panel, .notes-divider) { display: none; }
 .studio-shell[data-resizing-notes] .books-page iframe { pointer-events: none; }
+/* The note kept at its width while the line is dragged (notes-split.ts): cut off, or with room beside it, meanwhile. */
+.studio-shell[data-resizing-notes] .editor-panel { overflow: hidden; }
+.studio-shell[data-resizing-notes] .editor-panel .editor-scroll { flex: none; }
 /* One row over a note's books: the tabs (and ＋) shrinking first, then the reader's controls (BookControls.tsx), ⤢. */
 .book-tabs { display: flex; min-height: 38px; flex: none; align-items: center; gap: 4px; padding: 4px 8px; border-bottom: 1px solid rgba(var(--gray), 0.2); container-type: inline-size; }
 .book-tab-list { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 2px; overflow: hidden; }
