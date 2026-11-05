@@ -455,7 +455,7 @@ test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to a
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#open-translate').click();
-	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book,shortcut');
 	// 摘录 out in the right column: asked, the AI's tab beside it.
 	await inFrame(page).locator('#notes').click();
 	await expect(page.locator('#side-tab-own-quotes')).toHaveAttribute('aria-selected', 'true');
@@ -700,4 +700,23 @@ test('a passage quoted before (a ```retainpdf block) opens as one quoted now: it
 	await expect(saveStatus(page)).toHaveText('已保存');
 	expect(savedMarkdown()).toContain('[Quantum Chemistry · 第 4 页](retainpdf:job-1/p004-b0002?page=4&document=doc-1) 旧的摘录。！');
 	expect(savedMarkdown()).not.toContain('```retainpdf');
+});
+
+test('the line between a note and its books dragged: the note wider, its width set on the grid (not on the shell, where each step had the whole note\'s style worked out again)', async ({ page }) => {
+	appendToFixture('\n[Quantum Chemistry · 第 12 页](retainpdf:job-1/p012-b0003?page=12&document=doc-1) 变分原理。\n');
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#books-toggle').click();
+	await expect(page.locator('#books-view')).toBeVisible();
+	const notesPanel = page.locator('.editor-panel');
+	const before = (await notesPanel.boundingBox())!.width;
+	const line = (await page.locator('#books-view .notes-divider').boundingBox())!;
+	await page.mouse.move(line.x + line.width / 2, line.y + 200);
+	await page.mouse.down();
+	await page.mouse.move(line.x - 120, line.y + 200, { steps: 5 });
+	await page.mouse.up();
+	await expect.poll(async () => (await notesPanel.boundingBox())!.width).toBeGreaterThan(before + 80);
+	await expect
+		.poll(() => page.evaluate(() => [document.querySelector<HTMLElement>('.studio-shell')!.style.getPropertyValue('--notes-width'), document.querySelector<HTMLElement>('.workspace-main')!.style.getPropertyValue('--notes-width')]))
+		.toEqual(['', expect.stringMatching(/^\d+px$/u)]);
 });
