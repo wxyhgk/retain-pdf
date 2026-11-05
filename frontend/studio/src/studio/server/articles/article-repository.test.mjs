@@ -565,3 +565,17 @@ test('a page made under another with `link`: linked from it at its end (无标�
 	await repo.create({ slug: 'row', title: '一行', parent: 'table', link: true });
 	assert.doesNotMatch((await repo.read('table')).source, /row/u);
 });
+
+test('what the notes quote of RetainPDF\'s books: by book (or job), how many, in which notes, a few words of each', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'a', title: '量子化学笔记' });
+	await repository.create({ slug: 'b', title: '另一篇' });
+	await writeFile(join(root, 'a', 'index.md'), '---\ntitle: 量子化学笔记\n---\n\n[QC · 第 3 页](retainpdf:job-1/p003-b0001?page=3&document=doc-1) 薛定谔方程。\n\n[QC · 第 4 页](retainpdf:job-1/p004-b0002?page=4&document=doc-1)\n\n$$\nH\\psi = E\\psi\n$$\n');
+	await writeFile(join(root, 'b', 'index.md'), '---\ntitle: 另一篇\n---\n\n[QC](retainpdf:job-1/p009-b0000?page=9&document=doc-1) 波函数。\n\n[旧](retainpdf:job-9/p001-b0000) 没有书号。\n');
+	const books = await repository.bookQuotes();
+	assert.equal(books['doc-1'].quotes, 3);
+	assert.deepEqual(books['doc-1'].notes.map((note) => [note.slug, note.quotes.length]), [['a', 2], ['b', 1]]);
+	assert.deepEqual(books['doc-1'].notes[0].quotes[1], { job: 'job-1', block: 'p004-b0002', page: 4, text: 'H\\psi = E\\psi' });
+	assert.equal(books['job:job-9'].notes[0].quotes[0].text, '没有书号。');
+});

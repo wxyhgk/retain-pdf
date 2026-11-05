@@ -11,7 +11,7 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpdfLibrary, retainpdfReading, projectRoot, remote }) {
+export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpdfLibrary, retainpdfReading, projectRoot, remote, articles }) {
 	// 其他设备访问 (remote/remote-access.mjs): seen and changed on this machine only, never from a device let in by it.
 	const here = (request) => {
 		if (request.headers['x-studio-remote']) throw Object.assign(new Error(t('其他设备访问只能在这台 Mac 上设置')), { statusCode: 403 });
@@ -46,6 +46,19 @@ export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpd
 	api.get('/retainpdf/books', ({ query }) => retainpdfLibrary.listBooks({ query: query.get('q') || undefined, limit: 30 }));
 	// ⌘K: the words in RetainPDF's books (their source and translation), a few hits.
 	api.get('/retainpdf/search', ({ query }) => retainpdfLibrary.searchBooks({ query: query.get('q') ?? '', limit: 8 }));
+	// 摘录 (quotes/QuotePanel.tsx): what the notes quote of a book (its id, or its job), note by note.
+	api.get('/retainpdf/quotes', async ({ query }) => {
+		const all = await articles.bookQuotes();
+		const notes = new Map();
+		for (const key of [query.get('document'), query.get('job') && `job:${query.get('job')}`].filter(Boolean)) {
+			for (const note of all[key]?.notes ?? []) {
+				const kept = notes.get(note.slug);
+				if (kept) kept.quotes.push(...note.quotes);
+				else notes.set(note.slug, { ...note, quotes: [...note.quotes] });
+			}
+		}
+		return { notes: [...notes.values()] };
+	});
 	// What is read in 翻译 (retainpdf-reading.mjs): said by the page, told the AIs.
 	api.get('/retainpdf/reading', () => ({ reading: retainpdfReading.get() }));
 	api.put('/retainpdf/reading', async ({ json }) => ({ reading: retainpdfReading.set(await json()) }));

@@ -153,6 +153,46 @@ export function citedBooks(doc: ProseNode): Array<{ job_id: string; document_id:
 	return [...books.values()];
 }
 
+/** A passage of a book quoted in a note: where its blocks are (`from`–`to`), where it is in the book, its first words. */
+export type QuotedPassage = { from: number; to: number; job: string; block: string; page: number | null; text: string };
+
+/**
+ * The passages a note quotes of `book` (its job, or its id), in order: each from the block with its mark up to the next
+ * passage quoted (of any book) or heading, so that what came with it (a formula, its other paragraphs) and what the
+ * author wrote after it are its; its words the first there are (the mark's block is only the mark when a formula is quoted).
+ */
+export function bookPassages(doc: ProseNode, book: { job_id: string; document_id: string | null }): QuotedPassage[] {
+	const sourceOf = (node: ProseNode) => {
+		let found: ReturnType<typeof parseSourceHref> = null;
+		node.descendants((inner) => {
+			if (found) return false;
+			if (inner.type.name !== SOURCE_TYPE) return true;
+			found = parseSourceHref(String(inner.attrs.href));
+			return false;
+		});
+		return found as ReturnType<typeof parseSourceHref>;
+	};
+	const passages: QuotedPassage[] = [];
+	let open: QuotedPassage | null = null;
+	let pos = 0;
+	for (let index = 0; index < doc.childCount; index += 1) {
+		const node = doc.child(index);
+		const source = sourceOf(node);
+		if (source || node.type.name === 'heading') open = null;
+		if (source && (source.job === book.job_id || (book.document_id && source.document === book.document_id))) {
+			open = { from: pos, to: pos + node.nodeSize, job: source.job, block: source.block, page: source.page, text: node.textContent.trim() };
+			passages.push(open);
+		} else if (open && !(node.type.name === 'paragraph' && !node.content.size)) {
+			// Its (an empty paragraph, the one left at the end to write on, is not).
+			open.to = pos + node.nodeSize;
+			if (!open.text) open.text = node.textContent.trim();
+		}
+		pos += node.nodeSize;
+	}
+	for (const passage of passages) passage.text = passage.text.replace(/\s+/gu, ' ').slice(0, 160);
+	return passages;
+}
+
 export function sourcePlugins(): MilkdownPlugin[] {
 	return [sourceRemark, ...sourceSchema, sourceView()].flat();
 }

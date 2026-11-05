@@ -26,7 +26,7 @@ const savedUrl = () => {
 
 const STAND_IN = `<!doctype html><meta charset="utf-8"><title>RetainPDF</title>
 <h1 id="library">图书馆</h1>
-<p>opened <span id="opened"></span> · embed <span id="embed"></span> · theme <span id="theme"></span> · studio <span id="studio"></span> · navigated <span id="navigated"></span> · notes <span id="notes-state"></span></p>
+<p>opened <span id="opened"></span> · embed <span id="embed"></span> · theme <span id="theme"></span> · studio <span id="studio"></span> · navigated <span id="navigated"></span> · notes <span id="notes-state"></span> · quoted <span id="quoted"></span></p>
 <button id="quote" type="button">摘</button>
 <button id="notes" type="button">笔记</button>
 <button id="read" type="button">读</button>
@@ -46,7 +46,7 @@ addEventListener('message', (event) => {
 		host = event.origin;
 		document.querySelector('#theme').textContent = message.theme;
 		document.querySelector('#studio').textContent = (message.features || []).join(',');
-		parent.postMessage({ ...head, type: 'ready', features: ['theme', 'navigate', 'quote', 'notes', 'reading'] }, host);
+		parent.postMessage({ ...head, type: 'ready', features: ['theme', 'navigate', 'quote', 'notes', 'reading', 'quoted'] }, host);
 	} else if (message.type === 'theme') {
 		document.querySelector('#theme').textContent = message.theme;
 	} else if (message.type === 'navigate') {
@@ -54,6 +54,8 @@ addEventListener('message', (event) => {
 		document.querySelector('#navigated').textContent = JSON.stringify(target);
 	} else if (message.type === 'notes') {
 		document.querySelector('#notes-state').textContent = message.open ? 'open:' + message.title : 'closed';
+	} else if (message.type === 'quoted') {
+		document.querySelector('#quoted').textContent = message.job_id + ':' + message.item_ids.join(',');
 	}
 });
 document.querySelector('#notes').addEventListener('click', () => parent.postMessage(
@@ -202,11 +204,9 @@ async function retainpdfPages(page: Page): Promise<number> {
 	return all.filter((entry) => entry.retainpdf).length;
 }
 
-test('摘到笔记 in RetainPDF puts the passage in the note being written (the page open), opened beside it as its own text; its mark opens RetainPDF there again', async ({ page }) => {
+test('摘到笔记 in RetainPDF puts the passage in the note being written, staying in the book; 摘录 lists it, a line written after it, it shown in the book; the note opened, it is its own text', async ({ page }) => {
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
-	// The note written: the page open. The caret put in it before: not where the passage goes (after its last block).
-	await editor(page).locator('p').first().click();
 	await page.locator('#open-translate').click();
 	await expect(inFrame(page).locator('#theme')).toHaveText(/^(light|dark)$/u);
 
@@ -220,134 +220,122 @@ test('摘到笔记 in RetainPDF puts the passage in the note being written (the 
 
 	await inFrame(page).locator('#quote').click();
 	await expect(page.locator('.studio-toast')).toContainText('已摘到「Studio 测试夹具」');
-	// The note opened beside the pages, RetainPDF told which; the passage there, last, shown.
-	const notesPanel = page.locator('.editor-panel');
-	await expect(notesPanel).toBeVisible();
+	// Still in the book (the note not put beside it, the keys not taken); 摘录 out in the right column, RetainPDF told
+	// which note, and which of its passages are quoted.
+	await expect(page.locator('#translate-view')).toBeVisible();
+	await expect(page.locator('.editor-panel')).toBeHidden();
+	expect(await page.evaluate(() => document.activeElement?.tagName)).toBe('IFRAME');
+	await expect(page.locator('#side-tab-own-quotes')).toHaveAttribute('aria-selected', 'true');
+	const quotes = page.locator('#side-own-quotes');
+	await expect(quotes.locator('.quotes-note')).toHaveText('《Studio 测试夹具》');
+	await expect(quotes.locator('.quotes-passage')).toHaveCount(1);
+	await expect(quotes.locator('.quotes-passage .quotes-text')).toHaveText('变分原理：');
+	await expect(quotes.locator('.quotes-passage .quotes-page')).toHaveText('第 12 页');
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:Studio 测试夹具');
-	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
-	// The note's own text (the translation, its formula drawn), RetainPDF's mark in the corner of its first paragraph.
+	await expect(inFrame(page).locator('#quoted')).toHaveText('job-1:p012-b0003');
+
+	// Another: after the first (its passage and formula), not at the note's end.
+	await inFrame(page).locator('#quote').click();
+	await expect(quotes.locator('.quotes-passage')).toHaveCount(2);
+	// A line of the author's after the first.
+	await quotes.locator('.quotes-passage').first().hover();
+	await quotes.locator('.quotes-passage').first().locator('.quotes-add').click();
+	await quotes.locator('.quotes-line').fill('要记住');
+	await quotes.locator('.quotes-line').press('Enter');
+	await expect(quotes.locator('.quotes-line')).toHaveCount(0);
+	// A passage clicked: shown in the book.
+	await quotes.locator('.quotes-show').first().click();
+	await expect(inFrame(page).locator('#navigated')).toHaveText(JSON.stringify({ job_id: 'job-1', block_id: 'p012-b0003', page_idx: 11 }));
+
+	// 打开笔记: the note, the book beside it; the passages its own text (the translation, its formula drawn), RetainPDF's
+	// mark in the corner of each first paragraph.
+	await quotes.locator('.quotes-open').click();
+	await expect(page.locator('#translate-view')).toBeHidden();
+	await expect(page.locator('#side-tab-own-quotes')).toHaveCount(0);
+	await expect(page.locator('#books-view')).toBeVisible();
+	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry']);
+	const notesPanel = page.locator('.editor-panel');
 	const mark = notesPanel.locator('.retainpdf-source');
-	await expect(mark).toHaveCount(1);
+	await expect(mark).toHaveCount(2);
 	const quotedText = notesPanel.locator('.ProseMirror p:has(> .retainpdf-source)');
-	await expect(quotedText).toBeInViewport();
-	await expect(quotedText).toHaveText('变分原理：');
-	await expect(mark.locator('svg')).toBeVisible();
-	await expect(mark).toHaveAttribute('title', 'Quantum Chemistry · 第 12 页 · 在 RetainPDF 中打开');
-	// In the top right corner of its paragraph (once the right column has folded away).
+	await expect(quotedText.first()).toHaveText('变分原理：');
+	await expect(mark.first().locator('svg')).toBeVisible();
+	await expect(mark.first()).toHaveAttribute('title', 'Quantum Chemistry · 第 12 页 · 在 RetainPDF 中打开');
 	const corner = () =>
-		quotedText.evaluate((element) => {
+		quotedText.first().evaluate((element) => {
 			const text = element.getBoundingClientRect();
 			const shown = element.querySelector('.retainpdf-source')!.getBoundingClientRect();
 			return Math.abs(text.right - shown.right) < 4 && shown.top - text.top < 12;
 		});
 	await expect.poll(corner).toBe(true);
 	// The book and page said by it (not text of the paragraph), the text going round it.
-	await expect(mark).toHaveAttribute('data-shown', 'Quantum Ch… · 12');
-	expect(await mark.evaluate((element) => getComputedStyle(element).float)).toBe('right');
+	await expect(mark.first()).toHaveAttribute('data-shown', 'Quantum Ch… · 12');
+	expect(await mark.first().evaluate((element) => getComputedStyle(element).float)).toBe('right');
 	await expect(notesPanel).not.toContainText('The variation principle');
 	await expect(editor(page).locator('.milkdown-code-block')).toHaveCount(0);
 
-	// Another: after it (the caret was not put in the note since it came out), not above.
-	await inFrame(page).locator('#quote').click();
-	await expect(mark).toHaveCount(2);
-	// Written in as any text is.
-	await quotedText.first().click();
-	await page.keyboard.press('End');
-	await page.keyboard.type('（要记住）');
-	await expect(quotedText.first()).toHaveText('变分原理：（要记住）');
-	// Saved as an article is (the bar says it): the keys to the Studio, not to RetainPDF's frame clicked last.
+	// Saved as an article is: the two passages, the line after the first (its formula and all), not a ```retainpdf.
 	await page.locator('#breadcrumb-title').click();
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
 	const link = '[Quantum Chemistry · 第 12 页](retainpdf:job-1/p012-b0003?page=12&document=doc-1) 变分原理：';
 	const saved = savedMarkdown();
 	expect(saved.split(link).length - 1).toBe(2);
-	expect(saved).toContain(`${link}（要记住）`);
-	expect(saved).toContain('E = mc^2');
+	expect(saved).toMatch(/变分原理：\n\n\$\$\nE = mc\^2\n\$\$\n\n要记住\n\n\[Quantum Chemistry/u);
 	expect(saved).not.toContain('```retainpdf');
-	// The page written stays where it was, as it was: no page of notes made for the book (no 读书笔记).
+	// No page of notes made for the book.
 	expect(await retainpdfPages(page)).toBe(0);
-	await expect(page.locator('#article-list')).not.toContainText('读书笔记');
-
-	// Its mark: 翻译 again, at that passage.
-	await mark.first().click();
-	await expect(page.locator('#translate-view')).toBeVisible();
-	await expect(inFrame(page).locator('#navigated')).toHaveText(JSON.stringify({ job_id: 'job-1', block_id: 'p012-b0003', page_idx: 11 }));
-
-	// Back on the note: the book quoted comes out beside it as a tab (书), the note one of several books' then.
-	await page.locator('#open-translate').click();
-	await page.locator('#books-toggle').click();
-	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry']);
-	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
 });
 
-test('笔记 in RetainPDF opens the note being written beside it; another page opened meanwhile is the note then', async ({ page }) => {
+test('摘录 in 书库: put out by RetainPDF\'s 笔记 and away; into another note, picked there; the book\'s passages in other notes; gone as 书库 is left', async ({ page }) => {
 	writeArticle('second-note', '---\ntitle: 第二篇笔记\n---\n\n另一篇。\n');
+	writeArticle('earlier-note', '---\ntitle: 早先的笔记\n---\n\n[Quantum Chemistry · 第 3 页](retainpdf:job-1/p003-b0001?page=3&document=doc-1) 早先摘的一段。\n');
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#open-translate').click();
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
-	const notesPanel = page.locator('.editor-panel');
-	await expect(notesPanel).toBeHidden();
+	await expect(page.locator('#side-tab-own-quotes')).toHaveCount(0);
 
+	// RetainPDF's 笔记: 摘录, the right column not folded away (the AI and the rest beside it).
 	const shell = page.locator('.studio-shell');
-	await expect(shell).not.toHaveClass(/panel-collapsed/u);
 	await inFrame(page).locator('#notes').click();
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:Studio 测试夹具');
-	await expect(page.locator('#translate-view')).toBeVisible();
-	await expect(notesPanel).toBeVisible();
-	// The note wants the room: the right column folded away meanwhile; the bar says the note as for an article.
-	await expect(shell).toHaveClass(/panel-collapsed/u);
-	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
-	// Narrow, the note's head is: no blog properties beside the pages.
-	await expect(notesPanel.locator('.page-properties')).toBeHidden();
-	// Side by side: the pages left, the note right.
-	const pages = await page.locator('#translate-view').boundingBox();
-	const note = await notesPanel.boundingBox();
-	expect(pages!.x + pages!.width).toBeLessThanOrEqual(note!.x + 1);
-
-	// A passage quoted lands in it, seen at once.
-	await inFrame(page).locator('#quote').click();
-	await expect(notesPanel.locator('.retainpdf-source')).toHaveCount(1);
-
-	// The line between them dragged: the note wider.
-	const divider = page.locator('#translate-view .notes-divider');
-	const line = await divider.boundingBox();
-	await page.mouse.move(line!.x + line!.width / 2, line!.y + 200);
-	await page.mouse.down();
-	await page.mouse.move(line!.x - 120, line!.y + 200, { steps: 5 });
-	await page.mouse.up();
-	expect((await notesPanel.boundingBox())!.width).toBeGreaterThan(note!.width + 80);
-	// Set on the grid, not on the shell: there each step had the style of all under it (the note's) worked out again.
-	await expect
-		.poll(() => page.evaluate(() => [document.querySelector<HTMLElement>('.studio-shell')!.style.getPropertyValue('--notes-width'), document.querySelector<HTMLElement>('.workspace-main')!.style.getPropertyValue('--notes-width')]))
-		.toEqual(['', expect.stringMatching(/^\d+px$/u)]);
-
-	// Another page opened meanwhile: back in 翻译, that one beside it (the note written now), RetainPDF told; what is
-	// quoted then goes there. The right column back while the page was shown on its own.
-	await page.locator('#open-translate').click();
+	await expect(page.locator('#side-tab-own-quotes')).toHaveAttribute('aria-selected', 'true');
 	await expect(shell).not.toHaveClass(/panel-collapsed/u);
-	await page.locator('#article-list .page-row', { hasText: '第二篇笔记' }).click();
-	await expect(page.locator('#breadcrumb-title')).toHaveText('第二篇笔记');
-	await page.locator('#open-translate').click();
-	await expect(notesPanel).toBeVisible();
-	await expect(shell).toHaveClass(/panel-collapsed/u);
+	await expect(page.locator('#translate-view')).toBeVisible();
+	await expect(page.locator('.editor-panel')).toBeHidden();
+	const quotes = page.locator('#side-own-quotes');
+
+	// Into another note: picked in 摘录, 书库 not left; RetainPDF told; what is quoted then goes there.
+	await quotes.locator('.quotes-note').click();
+	await quotes.locator('.quotes-picker input').fill('第二');
+	await quotes.locator('.quotes-picker button', { hasText: '第二篇笔记' }).click();
+	await expect(quotes.locator('.quotes-note')).toHaveText('《第二篇笔记》');
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:第二篇笔记');
+	await expect(page.locator('#translate-view')).toBeVisible();
 	await inFrame(page).locator('#quote').click();
 	await expect(page.locator('.studio-toast').last()).toContainText('已摘到「第二篇笔记」');
-	await expect(notesPanel.locator('.retainpdf-source')).toHaveCount(1);
+	await expect(quotes.locator('.quotes-passage')).toHaveCount(1);
 
-	// Put away from the Studio's side: RetainPDF told, the right column back; and from RetainPDF's.
-	await page.locator('#notes-close').click();
-	await expect(notesPanel).toBeHidden();
-	await expect(shell).not.toHaveClass(/panel-collapsed/u);
+	// The book's passages in other notes: the earlier one's; clicked, that note opened at it.
+	await quotes.locator('.quotes-others summary').click();
+	await expect(quotes.locator('.quotes-other-title')).toHaveText(['早先的笔记']);
+	await quotes.locator('.quotes-other .quotes-show').click();
+	await expect(page.locator('#breadcrumb-title')).toHaveText('早先的笔记');
+	await expect(page.locator('#translate-view')).toBeHidden();
+	// 书库 left: 摘录 gone, RetainPDF told.
+	await expect(page.locator('#side-tab-own-quotes')).toHaveCount(0);
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
+
+	// Back: put out and away by RetainPDF's 笔记.
+	await page.locator('#open-translate').click();
 	await inFrame(page).locator('#notes').click();
-	await expect(notesPanel).toBeVisible();
+	await expect(page.locator('#side-tab-own-quotes')).toHaveCount(1);
 	await inFrame(page).locator('#notes').click();
-	await expect(notesPanel).toBeHidden();
+	await expect(page.locator('#side-tab-own-quotes')).toHaveCount(0);
 	expect(await retainpdfPages(page)).toBe(0);
 	removeArticle('second-note');
+	removeArticle('earlier-note');
 });
 
 test('a quote not from RetainPDF\'s frame is not taken', async ({ page }) => {
@@ -420,7 +408,7 @@ test('what RetainPDF says is read (the book, the page) is kept for the AIs while
 	await inFrame(page).locator('#read').click();
 	await expect.poll(() => reading(page)).toMatchObject({ job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', page: 12, pages: 300, notes: null });
 
-	// The note opened beside it: which page it is, too.
+	// 摘录 out: which note passages go into, too.
 	await inFrame(page).locator('#notes').click();
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:Studio 测试夹具');
 	await expect.poll(async () => (await reading(page))?.notes).toMatchObject({ title: 'Studio 测试夹具' });
@@ -467,10 +455,10 @@ test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to a
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#open-translate').click();
-	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book,shortcut');
-	// The notes open, the right column folded away for them: asked, it is there again, on the AI.
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai,open-book');
+	// 摘录 out in the right column: asked, the AI's tab beside it.
 	await inFrame(page).locator('#notes').click();
-	await expect(page.locator('.studio-shell')).toHaveClass(/panel-collapsed/u);
+	await expect(page.locator('#side-tab-own-quotes')).toHaveAttribute('aria-selected', 'true');
 	await inFrame(page).locator('#read').click();
 	await inFrame(page).locator('#ask').click();
 	await expect(page.locator('.studio-shell')).not.toHaveClass(/panel-collapsed/u);
@@ -478,8 +466,8 @@ test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to a
 	const ai = page.locator('#side-ai');
 	await expect(ai.locator('.ai-empty-hint')).toContainText('《Quantum Chemistry》（第 12 页）');
 	await expect(ai.locator('.ai-suggestion').first()).toHaveText('讲讲这一页在说什么');
-	// Its notes still beside the pages.
-	await expect(page.locator('.editor-panel')).toBeVisible();
+	// 摘录 still there, a tab away.
+	await expect(page.locator('#side-tab-own-quotes')).toHaveCount(1);
 
 	// The reader left: no book read (the note beside it is not any one book's), what it offers is the article's again.
 	await inFrame(page).locator('#leave').click();
@@ -492,26 +480,25 @@ test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to a
 	await expect(ai.locator('.ai-empty-hint')).not.toContainText('Quantum Chemistry');
 });
 
-test('the passages quoted from the page read are picked out in the notes; 书 on the notes opens the book beside them where it was left', async ({ page }) => {
+test('the passages quoted from the page read are picked out in 摘录; 书 on the note opens the book beside it where it was left', async ({ page }) => {
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#open-translate').click();
 	await inFrame(page).locator('#quote').click();
-	const quoted = page.locator('.editor-panel .ProseMirror p:has(> .retainpdf-source)');
+	const quoted = page.locator('#side-own-quotes .quotes-passage');
 	await expect(quoted).toHaveCount(1);
-	const marked = () => quoted.evaluate((element) => getComputedStyle(element).boxShadow);
-	await expect.poll(marked).toBe('none');
-	// The reader at its page (12): picked out; left, no longer.
+	const marked = page.locator('#side-own-quotes .quotes-passage[data-current]');
+	await expect(marked).toHaveCount(0);
+	// The reader at its page (12): picked out; left, none (no book read).
 	await inFrame(page).locator('#read').click();
-	await expect.poll(marked).not.toBe('none');
+	await expect(marked).toHaveCount(1);
 	await inFrame(page).locator('#leave').click();
-	await expect.poll(marked).toBe('none');
+	await expect(marked).toHaveCount(0);
 	await inFrame(page).locator('#read').click();
-	await expect.poll(marked).not.toBe('none');
+	await expect(marked).toHaveCount(1);
 
 	// The note on its own (翻译 left): 书 in the bar opens the book beside it, at the page left.
 	await page.locator('#open-translate').click();
-	await expect.poll(marked).toBe('none');
 	await page.locator('#books-toggle').click();
 	await expect(page.locator('#books-view')).toBeVisible();
 	await expect(page.locator('#translate-view')).toBeHidden();

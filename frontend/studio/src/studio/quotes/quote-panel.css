@@ -1,0 +1,46 @@
+/* 摘录 (QuotePanel.tsx): the right column's tab while a book is read in 书库. Black, white and gray. */
+.quotes-pane { min-height: 0; }
+.quotes { display: flex; flex: 1; min-height: 0; flex-direction: column; color: rgb(var(--gray-dark)); font-size: 13px; }
+.quotes-empty, .quotes-hint { margin: 0; padding: 16px; color: rgb(var(--gray)); line-height: 1.6; }
+.quotes-hint { padding: 4px 0 0; }
+.quotes-bar { display: flex; flex: none; align-items: center; gap: 4px; padding: 10px 12px; border-bottom: 1px solid var(--studio-hairline); }
+.quotes-to { flex: none; color: rgb(var(--gray)); }
+.quotes-note { display: flex; min-width: 0; align-items: center; gap: 2px; padding: 3px 6px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.quotes-note span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.quotes-note svg { flex: none; width: 14px; height: 14px; color: rgb(var(--gray)); }
+.quotes-note:hover, .quotes-note[aria-expanded='true'] { background: var(--surface-hover); }
+.quotes-ask { margin: 10px 12px 0; font-weight: 600; }
+.quotes-picker { flex: none; padding: 8px 12px; border-bottom: 1px solid var(--studio-hairline); }
+.quotes-picker input { width: 100%; height: 28px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; outline: none; }
+.quotes-picker input:focus { border-color: rgb(var(--gray)); }
+.quotes-picker ul { margin: 6px 0 0; padding: 0; list-style: none; }
+.quotes-picker button { display: flex; align-items: center; gap: 6px; width: 100%; padding: 5px 6px; overflow: hidden; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.quotes-picker button:hover { background: var(--surface-hover); }
+.quotes-new { color: rgb(var(--gray)) !important; }
+.quotes-new svg { width: 14px; height: 14px; }
+.quotes-body[hidden] { display: none; }
+.quotes-body { flex: 1; min-height: 0; overflow: auto; padding: 12px; }
+.quotes-body h3, .quotes-others summary { display: flex; align-items: baseline; gap: 6px; margin: 0 0 6px; font-size: 12px; font-weight: 600; }
+.quotes-count { color: rgb(var(--gray)); font-weight: 400; font-variant-numeric: tabular-nums; }
+.quotes-body ul { margin: 0; padding: 0; list-style: none; }
+.quotes-passage { padding: 2px 0 6px; border-left: 2px solid transparent; }
+/* Those of the page read: picked out, as the book picks them out. */
+.quotes-passage[data-current] { border-left-color: rgb(var(--gray)); }
+.quotes-show { display: flex; width: 100%; flex-direction: column; gap: 1px; padding: 4px 8px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.quotes-show:hover { background: var(--surface-hover); }
+.quotes-page { color: rgb(var(--gray)); font-size: 12px; font-variant-numeric: tabular-nums; }
+.quotes-text { display: -webkit-box; overflow: hidden; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.quotes-add { display: inline-flex; align-items: center; gap: 3px; margin-left: 4px; padding: 1px 4px; border: 0; border-radius: 4px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 12px; opacity: 0; cursor: pointer; }
+.quotes-add svg { width: 12px; height: 12px; }
+.quotes-passage:hover .quotes-add, .quotes-add:focus-visible { opacity: 1; }
+.quotes-add:hover { color: rgb(var(--gray-dark)); }
+@media (hover: none) { .quotes-add { opacity: 1; } }
+.quotes-line { display: block; width: calc(100% - 16px); margin: 2px 8px 0; padding: 6px 8px; border: 1px solid rgb(var(--gray)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; line-height: 1.5; resize: none; outline: none; }
+.quotes-others { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--studio-hairline); }
+.quotes-others summary { cursor: pointer; }
+.quotes-other { margin-top: 8px; }
+.quotes-other-title { padding: 2px 8px; border: 0; border-radius: 4px; background: none; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.quotes-other-title:hover { background: var(--surface-hover); }
+.quotes-foot { flex: none; padding: 10px 12px; border-top: 1px solid var(--studio-hairline); }
+.quotes-open { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border: 0; border-radius: 6px; background: var(--accent); color: var(--on-accent); font: inherit; cursor: pointer; }
+.quotes-open svg { width: 15px; height: 15px; }
