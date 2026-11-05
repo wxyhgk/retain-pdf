@@ -97,8 +97,9 @@ test("阅读页接上了：页宽基准一变就钉住阅读线上的页；第�
 test("拖分栏不卡：每页画布单独一层（变宽变窄不重画像素）；宽度还在变时钩子不去量（停稳 READER_WIDTH_SETTLE_MS 才放回去）", () => {
   // WebKit 实测（863 页的书，iframe 600→870→600 每帧 6px）：长帧 32–46 → 4–6。以前每帧都把眼前几页的大画布重新栅格化。
   const css = readFileSync(new URL("../../../packages/reader/styles/react-pdf.css", import.meta.url), "utf8");
-  const rule = /\.reader-react-pdf-page canvas \{[^}]*\}/u.exec(css)?.[0] ?? "";
-  assert.match(rule, /will-change: transform;/u);
+  // 只在宽度变的时候成层（钩子在壳上挂 reader-react-resizing）：平时成层，WebKit 里几千个文字块都要和画布做重叠判断。
+  assert.doesNotMatch(/\.reader-react-pdf-page canvas \{[^}]*\}/u.exec(css)?.[0] ?? "", /will-change/u, "平时不成层");
+  assert.match(/\.reader-react-resizing \.reader-react-pdf-page canvas \{[^}]*\}/u.exec(css)?.[0] ?? "", /will-change: transform;/u);
   const hook = readFileSync(new URL("../../../packages/reader/src/hooks/use-keep-page-on-resize.ts", import.meta.url), "utf8");
   assert.match(hook, /setTimeout\(\(\) => \{[\s\S]*?requestAnimationFrame\(tick\);[\s\S]*?\}, READER_WIDTH_SETTLE_MS\)/u, "停稳了才开始放回去");
 });
@@ -120,8 +121,30 @@ test("拖分栏不跳页：钉着的时候内容一变尺寸就当场放回（�
   // 以前页宽提交后要等下一帧才放回，中间画出一帧几十页之后的空白页；一次拖动里页宽提交好几回时，和最早的总高比，
   // 第二回起一开始就算「变过」，对照的行高还没变矮就停了手，停在第 50 页（本该第 41 页）。
   const hook = readFileSync(new URL("../../../packages/reader/src/hooks/use-keep-page-on-resize.ts", import.meta.url), "utf8");
-  assert.match(hook, /new ResizeObserver\(\(\) => applyPageScrollProgress\(shell, progress, "auto", pane\)\)/u);
+  assert.match(hook, /new ResizeObserver\(\(entries\) => \{/u);
   assert.match(hook, /for \(const child of Array\.from\(shell\.children\)\) resized\?\.observe\(child\);/u);
   assert.match(hook, /resized\?\.disconnect\(\);/u, "停手时一起停");
   assert.match(hook, /looping = performance\.now\(\);\s*startHeight = shell\.scrollHeight;/u);
+});
+
+test("钉页不把主线程占满：同一个值不写 scrollTop；ResizeObserver 只看高度；位置稳了就停，不跑满两秒；宽度在变时壳上挂 reader-react-resizing", () => {
+  // 作者的 RetainPDF.app 里 sample：每次换宽度后两秒主线程 95% 忙，大半在 RO 回调 → 写 scrollTop → WebKit 同步重算合成层。
+  const shell = fakeShell({ width: 600, scrollTop: 10 * (600 * 1.4 + GAP) + 100 });
+  const progress = measurePageScrollProgress(shell);
+  let writes = 0;
+  let top = shell.scrollTop;
+  Object.defineProperty(shell, "scrollTop", { get: () => top, set: (value) => { writes += 1; top = value; } });
+  applyPageScrollProgress(shell, progress);
+  applyPageScrollProgress(shell, progress);
+  assert.equal(writes, 0, "已经在那儿：不写");
+  shell.width = 500;
+  applyPageScrollProgress(shell, progress);
+  applyPageScrollProgress(shell, progress);
+  assert.equal(writes, 1, "放回去一次，之后不再写");
+
+  const hook = readFileSync(new URL("../../../packages/reader/src/hooks/use-keep-page-on-resize.ts", import.meta.url), "utf8");
+  assert.match(hook, /if \(taller\) applyPageScrollProgress/u, "只有高度变了才放回（拖的时候宽度每帧都变）");
+  assert.match(hook, /stableFrames >= STABLE_FRAMES && \(height !== startHeight \|\| elapsed > QUIET_MS\)/u);
+  assert.match(hook, /shell\.classList\.add\(READER_RESIZING_CLASS\)/u);
+  assert.match(hook, /shell\.classList\.remove\(READER_RESIZING_CLASS\)/u);
 });
