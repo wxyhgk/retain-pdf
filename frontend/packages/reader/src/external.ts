@@ -79,6 +79,8 @@ export const readerReadingPosition = () => getReaderAdapters()?.readingPosition 
 export const readerHostAi = () => getReaderAdapters()?.hostAi ?? null;
 /** 宿主让阅读页原地翻到某一段：同上，宿主给了才有。 */
 export const readerHostNavigation = () => getReaderAdapters()?.hostNavigation ?? null;
+/** 这本书摘过的段落：同上，宿主给了才有。 */
+export const readerQuotedBlocks = () => getReaderAdapters()?.quotedBlocks ?? null;
 export const readerPdfPort = (): ReaderPdfPort => {
   const adapters = getReaderAdapters();
   return adapters?.pdf ?? {

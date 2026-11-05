@@ -88,6 +88,7 @@ function PdfPageSlotInner({
 }: PdfPageSlotProps) {
   // 改过的块（来自阅读器上下文；单测里直接渲染时没有，就不画标记）。
   const revisedBlocks = useReaderContext()?.revisedBlocks;
+  const quotedBlocks = useReaderContext()?.quotedBlocks;
   const aspectRef = useRef(cachedAspect ?? DEFAULT_ASPECT);
   const [aspect, setAspect] = useState(aspectRef.current);
 
@@ -260,6 +261,19 @@ function PdfPageSlotInner({
           width={width}
           height={naturalHeight}
         />
+      ) : null}
+      {active && quotedBlocks?.size ? (
+        <div className="reader-quoted-markers" aria-hidden="true">
+          {textHoverTargets.filter((target) => quotedBlocks.has(target.itemId)).map((target) => (
+            <span
+              key={target.itemId}
+              className="reader-quoted-marker"
+              data-reader-quoted-id={target.itemId}
+              title="摘过"
+              style={{ left: target.rect.left, top: target.rect.top, height: target.rect.height }}
+            />
+          ))}
+        </div>
       ) : null}
       {active && pane === "translated" && revisedBlocks?.size ? (
         <div className="reader-revised-markers" aria-hidden="true">

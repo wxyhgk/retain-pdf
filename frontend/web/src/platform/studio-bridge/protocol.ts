@@ -11,7 +11,7 @@ export const STUDIO_EMBED = "studio";
 
 export type StudioTheme = "light" | "dark";
 /** 我们处理、会发的（回 ready 时报给 Studio）。reading：会告诉 Studio 眼下读到哪。 */
-export type StudioFeature = "theme" | "navigate" | "quote" | "notes" | "reading";
+export type StudioFeature = "theme" | "navigate" | "quote" | "notes" | "reading" | "quoted";
 /**
  * Studio 处理的、我们发过去的（hello.features）：quote →「摘到笔记」，open-notes →「笔记」按钮，ask-ai → 阅读页的「AI」打开
  * Studio 的 AI，open-book → 书库里点书要读时交给 Studio（在正在写的笔记旁边打开），我们不自己打开阅读页。
@@ -24,7 +24,9 @@ export type StudioIncoming =
   | { type: "hello"; theme: StudioTheme; features: StudioSideFeature[] | null }
   | { type: "theme"; theme: StudioTheme }
   | { type: "navigate"; jobId: string; pageIdx: number | null; blockId: string }
-  | { type: "notes"; open: boolean; title: string | null };
+  | { type: "notes"; open: boolean; title: string | null }
+  /** 这本书在 Studio 摘录栏里摘过的段落（整份，不是增量；空的是一段都没摘）。 */
+  | { type: "quoted"; jobId: string; documentId: string | null; itemIds: string[] };
 
 /** 「笔记」按钮打开的是哪本书的笔记：任务、书编号、书名（和 quote 同一套）。 */
 export type StudioBook = {
@@ -79,6 +81,13 @@ export function parseStudioMessage(data: unknown): StudioIncoming | null {
     if (typeof message.open !== "boolean") return null;
     const title = typeof message.title === "string" && message.title.trim() ? message.title.trim() : null;
     return { type: "notes", open: message.open, title };
+  }
+  if (message.type === "quoted") {
+    const jobId = typeof message.job_id === "string" ? message.job_id.trim() : "";
+    if (!jobId || !Array.isArray(message.item_ids)) return null;
+    if (!message.item_ids.every((item) => typeof item === "string" && item.trim())) return null;
+    const documentId = typeof message.document_id === "string" && message.document_id.trim() ? message.document_id.trim() : null;
+    return { type: "quoted", jobId, documentId, itemIds: message.item_ids.map((item: string) => item.trim()) };
   }
   if (message.type === "navigate") {
     const jobId = typeof message.job_id === "string" ? message.job_id.trim() : "";

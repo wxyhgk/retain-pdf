@@ -46,6 +46,11 @@ export declare const readerHostNavigation: () => {
         blockId: string;
     }) => boolean) => () => void;
 };
+/** 这本书摘过的段落：同上，宿主给了才有。 */
+export declare const readerQuotedBlocks: () => {
+    get: () => ReadonlySet<string>;
+    subscribe: (listener: () => void) => () => void;
+};
 export declare const readerPdfPort: () => ReaderPdfPort;
 export declare const readerSessionDataPort: () => ReaderSessionDataPort;
 export declare const resolveReaderAnchor: (...a: any[]) => any;

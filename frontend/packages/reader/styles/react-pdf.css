@@ -243,6 +243,24 @@
   background: color-mix(in srgb, var(--warn) 80%, transparent);
 }
 
+/* 摘过的块（Studio 摘录栏说的）：块左边一道灰细线，比「改过」那道再往左一点，两道不叠；不挡字、不接事件。 */
+.reader-quoted-markers {
+  position: absolute;
+  z-index: 4;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.reader-quoted-marker {
+  position: absolute;
+  width: 3px;
+  margin-left: -11px;
+  border-radius: var(--ui-radius-pill);
+  background: color-mix(in srgb, var(--ink) 38%, transparent);
+}
+
 .reader-text-hover-revised {
   display: inline-flex;
   align-items: center;
