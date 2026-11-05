@@ -40,6 +40,9 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .translate-unreachable[hidden] { display: none; }
 .translate-unreachable code { font-family: var(--font-mono); font-size: 13px; }
 /* 翻译 with its 笔记 (wiring/notes-split.ts): RetainPDF's pages left, the note right, a line between to drag. */
+/* The note's width beside a book or 书库, dragged (wiring/notes-split.ts): set on the grid and not inherited, so that a
+   step of the drag works out the grid's style alone, not that of all under it. */
+@property --notes-width { syntax: '<length-percentage>'; inherits: false; initial-value: 44%; }
 .studio-shell[data-view='translate'][data-notes='open'] .workspace-main { display: grid; grid-template-columns: minmax(320px, 1fr) min(var(--notes-width, 44%), calc(100% - 320px)); grid-template-rows: auto minmax(0, 1fr); }
 .studio-shell[data-view='translate'][data-notes='open'] .studio-bar { grid-column: 1 / -1; }
 .studio-shell[data-view='translate'][data-notes='open'] .translate-page { position: relative; grid-column: 1; grid-row: 2; }

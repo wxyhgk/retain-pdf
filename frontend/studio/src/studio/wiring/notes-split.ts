@@ -23,8 +23,12 @@ export function createNotesSplit(
 	host: { close(): void },
 	{ flag = 'notes', closeLabel = t('收起笔记') }: { flag?: 'notes' | 'books'; closeLabel?: string } = {},
 ) {
+	// The width set on the grid itself, not on the shell: a custom property changed on the shell is the style of all
+	// under it worked out again (the note's every formula, a frame of 0.1–0.2 s in WebKit at each step of a drag);
+	// on the grid, registered not to be inherited (studio-page.css @property), it is that one element's.
+	const grid = shell.querySelector<HTMLElement>('.workspace-main')!;
 	const width = keptWidth();
-	if (width) shell.style.setProperty('--notes-width', `${width}px`);
+	if (width) grid.style.setProperty('--notes-width', `${width}px`);
 	const divider = document.createElement('div');
 	divider.className = 'notes-divider';
 	divider.setAttribute('role', 'separator');
@@ -47,17 +51,17 @@ export function createNotesSplit(
 		event.preventDefault();
 		divider.setPointerCapture(event.pointerId);
 		shell.dataset.resizingNotes = '';
-		const right = shell.querySelector<HTMLElement>('.workspace-main')!.getBoundingClientRect().right;
+		const right = grid.getBoundingClientRect().right;
 		const move = (moved: PointerEvent) => {
 			const room = translateView.parentElement!.getBoundingClientRect().width;
 			const next = Math.round(Math.min(Math.max(right - moved.clientX, NARROWEST), room - NARROWEST));
-			shell.style.setProperty('--notes-width', `${next}px`);
+			grid.style.setProperty('--notes-width', `${next}px`);
 		};
 		const done = () => {
 			divider.removeEventListener('pointermove', move);
 			delete shell.dataset.resizingNotes;
 			try {
-				const kept = parseInt(shell.style.getPropertyValue('--notes-width'), 10);
+				const kept = parseInt(grid.style.getPropertyValue('--notes-width'), 10);
 				if (kept) localStorage.setItem(WIDTH_KEY, String(kept));
 			} catch {
 				// Not kept: this time only.
