@@ -71,18 +71,27 @@ const quote = {
 const reading = { ...head, type: "reading", job_id: "20261101112937-ad912a", document_id: "doc-1", title: "Quantum Chemistry", page_idx: 4, page_count: 620 };
 const left = { ...head, type: "reading", job_id: null, document_id: null, title: null, page_idx: null, page_count: null };
 
+// 阅读页的状态，Studio 照着画书这一侧的控件
+const readerState = {
+  ...head, type: "reader-state", job_id: "20261101112937-ad912a", ready: true, page_idx: 4, page_count: 620,
+  modes: ["source", "compare", "translated"], mode: "translated", panels: ["outline", "search"], panel: null,
+  zoom: { percent: 100, fit: true }, actions: [{ key: "download", label: "下载" }, { key: "ask-ai", label: "AI" }],
+};
+
 test("every message has one definition, a direction and the shared head", () => {
   const types = schema.messages.map((message) => message.type);
-  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading", "ask-ai", "open-book", "shortcut", "quoted"]);
+  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading", "ask-ai", "open-book", "shortcut", "quoted", "reader-state", "reader-command"]);
   assert.deepEqual(schema.oneOf.map((entry) => entry.$ref), schema.messages.map((message) => `#/definitions/${message.definition}`));
   for (const { type, from, definition } of schema.messages) {
     assert.ok(["studio", "retainpdf"].includes(from), `${type}: from ${from}`);
-    const shape = definitions[definition];
-    assert.equal(shape.properties.type.const, type, definition);
-    assert.equal(shape.additionalProperties, false, `${definition} must reject unknown fields`);
-    assert.deepEqual(shape.required.slice(0, 3), ["protocol", "v", "type"], definition);
-    assert.equal(shape.properties.protocol.$ref, "#/definitions/Protocol");
-    assert.equal(shape.properties.v.$ref, "#/definitions/Version");
+    // 按某个字段分成几种写法的消息（reader-command 按 command）是 oneOf：每一种都要守同样的规矩
+    for (const shape of definitions[definition].oneOf || [definitions[definition]]) {
+      assert.equal(shape.properties.type.const, type, definition);
+      assert.equal(shape.additionalProperties, false, `${definition} must reject unknown fields`);
+      assert.deepEqual(shape.required.slice(0, 3), ["protocol", "v", "type"], definition);
+      assert.equal(shape.properties.protocol.$ref, "#/definitions/Protocol");
+      assert.equal(shape.properties.v.$ref, "#/definitions/Version");
+    }
   }
   assert.equal(definitions.Protocol.const, schema.protocol);
   assert.equal(schema.embed_query.embed, "studio");
@@ -143,6 +152,17 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "quoted", job_id: "j", document_id: "doc-1", item_ids: ["p001-b0000", "p004-b0002"] },
     { ...head, type: "quoted", job_id: "j", document_id: "doc-1", item_ids: [] },
     { ...head, type: "quoted", job_id: "j", document_id: null, item_ids: ["p001-b0000"] },
+    // 书这一侧精简成一行，控件由 Studio 画（2026-11-05）
+    { ...head, type: "hello", theme: "light", features: ["quote", "open-notes", "ask-ai", "open-book", "shortcut", "reader-state"] },
+    { ...head, type: "ready", features: ["theme", "navigate", "quote", "notes", "reading", "quoted", "reader-command"] },
+    readerState,
+    { ...readerState, ready: false, page_idx: null, page_count: null, modes: [], mode: null, panels: [], panel: null, actions: [] },
+    { ...head, type: "reader-command", command: "mode", mode: "compare" },
+    { ...head, type: "reader-command", command: "page", page_idx: 12 },
+    { ...head, type: "reader-command", command: "panel", panel: "outline" },
+    { ...head, type: "reader-command", command: "panel", panel: null },
+    { ...head, type: "reader-command", command: "zoom", zoom: "fit" },
+    { ...head, type: "reader-command", command: "action", key: "download" },
   ];
   for (const each of good) assert.ok(valid(message, each), JSON.stringify(each));
 
@@ -195,6 +215,22 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "quoted", job_id: "j", document_id: "doc-1", item_ids: ["p001-b0000", ""] },
     { ...head, type: "quoted", job_id: "j", item_ids: [] },
     { ...head, type: "hello", theme: "dark", features: ["quoted"] },
+    (({ zoom: _, ...rest }) => rest)(readerState),
+    { ...readerState, modes: ["source", "sideways"] },
+    { ...readerState, modes: ["source", "source"] },
+    { ...readerState, actions: [{ key: "download" }] },
+    { ...readerState, zoom: { percent: 0, fit: false } },
+    { ...readerState, zoom: { percent: 100, fit: false, step: 10 } },
+    { ...readerState, job_id: "" },
+    { ...head, type: "reader-command", command: "mode", mode: "sideways" },
+    { ...head, type: "reader-command", command: "page", page_idx: -1 },
+    { ...head, type: "reader-command", command: "panel", panel: "notes" },
+    { ...head, type: "reader-command", command: "zoom", zoom: 120 },
+    { ...head, type: "reader-command", command: "action", key: "" },
+    { ...head, type: "reader-command", command: "page", page_idx: 3, mode: "compare" },
+    { ...head, type: "reader-command", command: "print" },
+    { ...head, type: "ready", features: ["reader-state"] },
+    { ...head, type: "hello", theme: "dark", features: ["reader-command"] },
   ];
   for (const each of bad) assert.equal(valid(message, each), false, JSON.stringify(each));
 });
