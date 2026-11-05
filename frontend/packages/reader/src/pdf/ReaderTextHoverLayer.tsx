@@ -7,6 +7,7 @@ import {
   type ReaderRegionRect,
 } from "../shared/data/reader-regions.js";
 import { readerNotesQuote } from "../external.js";
+import { embeddedIn } from "../shared/navigation/soft-reader.js";
 
 export type ReaderTextHoverTarget = {
   itemId: string;
@@ -213,20 +214,22 @@ export function ReaderTextHoverLayer({
         data-reader-text-hover-kind={kind}
         style={target.rect}
       >
-        {/* 编号（和翻译调试、日志里的 item_id 同一个，点一下复制）+ 复制。 */}
+        {/* 编号（和翻译调试、日志里的 item_id 同一个，点一下复制）+ 复制。放在笔记（Studio）里读书时不出编号：读的人用不到。 */}
         <div
           className={READER_TEXT_HOVER_TOOLS_CLASS}
           data-placement={outside ? "outside" : "inside"}
         >
-          <HoverToolButton
-            className={READER_TEXT_HOVER_ID_CLASS}
-            state={idState}
-            label={`复制翻译编号 ${target.itemId}`}
-            title="翻译编号，点击复制"
-            onClick={copyWith(target.itemId, setIdState)}
-          >
-            {idState === "copied" ? "已复制编号" : target.itemId}
-          </HoverToolButton>
+          {embeddedIn() === "studio" ? null : (
+            <HoverToolButton
+              className={READER_TEXT_HOVER_ID_CLASS}
+              state={idState}
+              label={`复制翻译编号 ${target.itemId}`}
+              title="翻译编号，点击复制"
+              onClick={copyWith(target.itemId, setIdState)}
+            >
+              {idState === "copied" ? "已复制编号" : target.itemId}
+            </HoverToolButton>
+          )}
           {pane === "translated" && revisedCount > 0 ? (
             <span className="reader-text-hover-revised" data-reader-revised-count={revisedCount}>
               改过 {revisedCount} 次
@@ -247,7 +250,7 @@ export function ReaderTextHoverLayer({
               className={READER_TEXT_HOVER_QUOTE_CLASS}
               state={quoteState}
               label="把这一段摘到笔记"
-              title="摘到笔记：原文和译文一起放进打开的笔记"
+              title="摘到笔记：这一段的译文（没翻译的放原文）放进正在写的笔记"
               onClick={quote}
             >
               {quoteState === "copied" ? "已摘" : quoteState === "failed" ? "没摘上" : "摘到笔记"}

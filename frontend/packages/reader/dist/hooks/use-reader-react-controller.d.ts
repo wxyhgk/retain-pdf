@@ -6,7 +6,8 @@ import type { ReaderPaneModel } from "./use-reader-pane-model.js";
 import { type ReaderRegion } from "../shared/data/reader-regions.js";
 import { type RevisedBlocks } from "./use-reader-revised-blocks.js";
 import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
-export declare const CITATION_HIGHLIGHT_MS = 2000;
+/** 跳到某一段后那一段亮多久：页还在画的那一两秒也算在里面，太短就看不到（读书走查 9）；最后一秒淡出（react-pdf.css）。 */
+export declare const CITATION_HIGHLIGHT_MS = 4500;
 /**
  * 无 region 命中时的页码回退：区分 0 基与 1 基来源再换算。
  * - number：视为 0 基 page_idx，+1；

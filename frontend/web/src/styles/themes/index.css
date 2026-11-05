@@ -6,3 +6,5 @@
 @import "./mojia.css";
 @import "./seacliff.css";
 @import "./night.css";
+/* 放在 Studio 里的 night 按 Studio 的暗色覆盖：排在各皮肤后面。 */
+@import "./studio-embed.css";
