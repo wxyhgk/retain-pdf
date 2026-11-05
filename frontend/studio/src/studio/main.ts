@@ -911,6 +911,7 @@ const quotePanel = createQuotePanel({
 });
 /** What 摘录 shows, again: the note, the book read, the book's passages in the note; RetainPDF told which are quoted. */
 function refreshQuotes(): void {
+	tellBesideQuoted();
 	if (!quotesWired) return;
 	const book = shellState.get().view === 'translate' ? quotesBook : null;
 	const view = editor.view();
@@ -919,10 +920,17 @@ function refreshQuotes(): void {
 	if (book) retainpdf.quoted(book, passages.map((passage) => passage.block));
 	if (quotesOpen) retainpdf.notes(true, session.slug ? openTitle || t('无标题') : null);
 }
+/** The books beside the note: each told which of its passages the note quotes, which its reader marks (as 书库's 摘录 does). */
+function tellBesideQuoted(): void {
+	const view = editor.view();
+	if (!booksSplit.open || shellState.get().view !== 'editor' || !view || booksOf !== session.slug) return;
+	const doc = view.state.doc;
+	bookTabs.tellQuoted((book) => bookPassages(doc, book).map((passage) => passage.block));
+}
 let quotesTimer = 0;
-/** The note typed in: 摘录 again a moment after (not at every key). */
+/** The note typed in: 摘录 (and the books beside it) again a moment after (not at every key). */
 function quotesChanged(): void {
-	if (!quotesWired || !quotesOpen) return;
+	if (!(quotesWired && quotesOpen) && !booksSplit.open) return;
 	window.clearTimeout(quotesTimer);
 	quotesTimer = window.setTimeout(refreshQuotes, 300);
 }
@@ -1143,6 +1151,7 @@ function showNoteBooks(): void {
 	const { books, shown } = noteBooks(session.slug);
 	tabJobs = books.map((book) => book.job_id);
 	bookTabs.setBooks(books, shown);
+	tellBesideQuoted();
 	markQuoteSpot();
 }
 /**
