@@ -71,6 +71,8 @@ export function createNoteTabs(root: HTMLElement, host: NoteTabsHost) {
 				return item;
 			}),
 		);
+		// One note alone: no row of tabs (its title is in the bar above already).
+		root.classList.toggle('is-alone', tabs.length < 2);
 		root.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 	}
 
