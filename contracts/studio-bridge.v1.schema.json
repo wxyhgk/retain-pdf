@@ -21,7 +21,9 @@
     { "type": "ask-ai", "from": "retainpdf", "definition": "AskAiMessage" },
     { "type": "open-book", "from": "retainpdf", "definition": "OpenBookMessage" },
     { "type": "shortcut", "from": "retainpdf", "definition": "ShortcutMessage" },
-    { "type": "quoted", "from": "studio", "definition": "QuotedMessage" }
+    { "type": "quoted", "from": "studio", "definition": "QuotedMessage" },
+    { "type": "reader-state", "from": "retainpdf", "definition": "ReaderStateMessage" },
+    { "type": "reader-command", "from": "studio", "definition": "ReaderCommandMessage" }
   ],
   "oneOf": [
     { "$ref": "#/definitions/HelloMessage" },
@@ -36,19 +38,21 @@
     { "$ref": "#/definitions/AskAiMessage" },
     { "$ref": "#/definitions/OpenBookMessage" },
     { "$ref": "#/definitions/ShortcutMessage" },
-    { "$ref": "#/definitions/QuotedMessage" }
+    { "$ref": "#/definitions/QuotedMessage" },
+    { "$ref": "#/definitions/ReaderStateMessage" },
+    { "$ref": "#/definitions/ReaderCommandMessage" }
   ],
   "definitions": {
     "Protocol": { "const": "retainpdf-studio-bridge" },
     "Version": { "const": 1 },
     "Theme": { "enum": ["light", "dark"] },
     "Feature": {
-      "description": "RetainPDF 这一版会处理、会发的消息（ready 的 features）：Studio 只发对方列出来的（navigate、theme、notes）；quote、reading 是 RetainPDF 会发的（reading 2026-11-02 加：列了它，Studio 就知道会收到作者在读哪本书、哪一页）。navigate-document（2026-11-03 加）不是一种消息，是 navigate 的一种用法：列了它，RetainPDF 认 navigate 里的 document_id，Studio 可以按书跳转（合并任务的编号多翻几页就会变，按书记不会指向旧任务）。quoted（2026-11-05 加）：列了它，Studio 把这本书在摘录栏里摘过的段落发过来，阅读页把这些块淡淡标出来。",
-      "enum": ["theme", "navigate", "quote", "notes", "reading", "navigate-document", "quoted"]
+      "description": "RetainPDF 这一版会处理、会发的消息（ready 的 features）：Studio 只发对方列出来的（navigate、theme、notes）；quote、reading 是 RetainPDF 会发的（reading 2026-11-02 加：列了它，Studio 就知道会收到作者在读哪本书、哪一页）。navigate-document（2026-11-03 加）不是一种消息，是 navigate 的一种用法：列了它，RetainPDF 认 navigate 里的 document_id，Studio 可以按书跳转（合并任务的编号多翻几页就会变，按书记不会指向旧任务）。quoted（2026-11-05 加）：列了它，Studio 把这本书在摘录栏里摘过的段落发过来，阅读页把这些块淡淡标出来。reader-command（2026-11-05 加）：列了它，Studio 可以发 reader-command 操作阅读页（切模式、翻页、开目录/搜索、缩放、点按钮）。",
+      "enum": ["theme", "navigate", "quote", "notes", "reading", "navigate-document", "quoted", "reader-command"]
     },
     "StudioFeature": {
-      "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes；ask-ai（2026-11-02 加）：阅读页的「AI」改成发 ask-ai、打开 Studio 自己的 AI，不再打开 RetainPDF 自己的终端；open-book（2026-11-03 加）：书库里点一本书交给 Studio，开在正在写的笔记旁边，RetainPDF 不自己打开阅读页；shortcut（2026-11-04 加）：阅读页有焦点时它自己不处理的 ⌘ / Ctrl 快捷键转给 Studio）。hello 没有 features 是早先的 Studio，只认 quote。",
-      "enum": ["quote", "open-notes", "ask-ai", "open-book", "shortcut"]
+      "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes；ask-ai（2026-11-02 加）：阅读页的「AI」改成发 ask-ai、打开 Studio 自己的 AI，不再打开 RetainPDF 自己的终端；open-book（2026-11-03 加）：书库里点一本书交给 Studio，开在正在写的笔记旁边，RetainPDF 不自己打开阅读页；shortcut（2026-11-04 加）：阅读页有焦点时它自己不处理的 ⌘ / Ctrl 快捷键转给 Studio）。hello 没有 features 是早先的 Studio，只认 quote。reader-state（2026-11-05 加）：Studio 要阅读页的状态（reader-state），由它来画书这一侧的控件；RetainPDF 在 ready 里也写了 reader-command 时，阅读页不画自己的顶部工具栏、底部浮动栏、MD/AI 竖条。",
+      "enum": ["quote", "open-notes", "ask-ai", "open-book", "shortcut", "reader-state"]
     },
     "HelloMessage": {
       "type": "object",
@@ -229,6 +233,69 @@
         "document_id": { "type": ["string", "null"], "minLength": 1, "description": "书的编号，和 quote、reading 里的同一个；任务不属于哪本书时为 null。" },
         "item_ids": { "type": "array", "items": { "type": "string", "minLength": 1 }, "description": "摘过的块，和 quote 的 item_id 一样；一段都没摘时是空数组。" }
       }
+    },
+    "ReaderMode": { "enum": ["source", "compare", "translated"], "description": "阅读页的显示模式：原文、对照、译文。" },
+    "ReaderPanel": { "enum": ["outline", "search"], "description": "阅读页的侧栏：目录、书内搜索。" },
+    "ReaderStateMessage": {
+      "type": "object",
+      "description": "RetainPDF → Studio：阅读页现在的状态（2026-11-05 加），有变就发整份，Studio 照着画书这一侧的控件（模式、页码、目录 / 搜索、缩放、按钮）。只在 hello 的 features 有 reader-state 时发。Studio 在 hello 的 features 写 reader-state、RetainPDF 在 ready 的 features 写 reader-command，两边都有时阅读页不画自己的顶部工具栏、底部浮动栏、MD/AI 竖条，由 Studio 画；缺一边照旧。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "job_id", "ready", "page_idx", "page_count", "modes", "mode", "panels", "panel", "zoom", "actions"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "reader-state" },
+        "job_id": { "type": "string", "minLength": 1, "description": "阅读页打开的任务，和 reading 的 job_id 一样。" },
+        "ready": { "type": "boolean", "description": "书读出来了没有；false 时其余字段是占位，Studio 只画个不能点的样子。" },
+        "page_idx": { "type": ["integer", "null"], "minimum": 0, "description": "眼下这一页，从 0 开始；还没读出来时为 null。" },
+        "page_count": { "type": ["integer", "null"], "minimum": 1, "description": "一共几页；还没读出来时为 null。" },
+        "modes": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/definitions/ReaderMode" }, "description": "这本书能切的模式（没译文时只有 source）。" },
+        "mode": { "enum": ["source", "compare", "translated", null], "description": "眼下的模式（同 ReaderMode）；还没定时为 null。" },
+        "panels": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/definitions/ReaderPanel" }, "description": "这本书能开的侧栏。" },
+        "panel": { "enum": ["outline", "search", null], "description": "开着的侧栏（同 ReaderPanel）；都收着时为 null。" },
+        "zoom": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["percent", "fit"],
+          "properties": {
+            "percent": { "type": "integer", "minimum": 1, "description": "眼下的缩放，百分比。" },
+            "fit": { "type": "boolean", "description": "是不是「适合宽度」。" }
+          }
+        },
+        "actions": {
+          "type": "array",
+          "description": "阅读页另外能做的事（下载、AI……），Studio 画成按钮，点了发 reader-command 的 action。",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "label"],
+            "properties": {
+              "key": { "type": "string", "minLength": 1 },
+              "label": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "ReaderCommandMessage": {
+      "description": "Studio → RetainPDF：用户在 Studio 画的书侧控件上点了什么（2026-11-05 加）。只在 ready 的 features 有 reader-command 时发。Studio 在 hello 的 features 写 reader-state、RetainPDF 在 ready 的 features 写 reader-command，两边都有时阅读页不画自己的顶部工具栏、底部浮动栏、MD/AI 竖条，由 Studio 画；缺一边照旧。",
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["protocol", "v", "type", "command", "mode"],
+          "properties": { "protocol": { "$ref": "#/definitions/Protocol" }, "v": { "$ref": "#/definitions/Version" }, "type": { "const": "reader-command" },
+            "command": { "const": "mode" }, "mode": { "$ref": "#/definitions/ReaderMode" } } },
+        { "type": "object", "additionalProperties": false, "required": ["protocol", "v", "type", "command", "page_idx"],
+          "properties": { "protocol": { "$ref": "#/definitions/Protocol" }, "v": { "$ref": "#/definitions/Version" }, "type": { "const": "reader-command" },
+            "command": { "const": "page" }, "page_idx": { "type": "integer", "minimum": 0, "description": "翻到哪一页，从 0 开始。" } } },
+        { "type": "object", "additionalProperties": false, "required": ["protocol", "v", "type", "command", "panel"],
+          "properties": { "protocol": { "$ref": "#/definitions/Protocol" }, "v": { "$ref": "#/definitions/Version" }, "type": { "const": "reader-command" },
+            "command": { "const": "panel" }, "panel": { "enum": ["outline", "search", null], "description": "开哪个侧栏（同 ReaderPanel）；null 是收起。" } } },
+        { "type": "object", "additionalProperties": false, "required": ["protocol", "v", "type", "command", "zoom"],
+          "properties": { "protocol": { "$ref": "#/definitions/Protocol" }, "v": { "$ref": "#/definitions/Version" }, "type": { "const": "reader-command" },
+            "command": { "const": "zoom" }, "zoom": { "enum": ["in", "out", "fit"] } } },
+        { "type": "object", "additionalProperties": false, "required": ["protocol", "v", "type", "command", "key"],
+          "properties": { "protocol": { "$ref": "#/definitions/Protocol" }, "v": { "$ref": "#/definitions/Version" }, "type": { "const": "reader-command" },
+            "command": { "const": "action" }, "key": { "type": "string", "minLength": 1, "description": "reader-state 里 actions 的 key。" } } }
+      ]
     }
   }
 }
