@@ -470,7 +470,7 @@ export type ConversationItem =
 	| { kind: 'question'; id: string; toolCallId: string | null; message: string; schema: FormSchema; answer: { action: 'accept'; content: Record<string, unknown> } | { action: 'decline' | 'cancel' } | null }
 	| { kind: 'permission'; id: string; title: string; toolCallId: string | null; options: Array<{ optionId: string; name: string; kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' }>; chosen: string | null }
 	/** `resume`: a turn over with nothing said; it can be asked to go on (接着说). */
-	| { kind: 'notice'; id: string; severity: string; title: string; description: string; resume?: boolean }
+	| { kind: 'notice'; id: string; severity: string; title: string; description: string; resume?: boolean; passing?: boolean }
 	| { kind: 'stop'; id: string; reason: string }
 	| { kind: 'error'; id: string; message: string };
 export type ConversationEvent =

@@ -338,7 +338,8 @@ pre.ai-subagent-error { max-height: 160px; overflow: auto; white-space: pre-wrap
 .ai-question-answer { margin: 0; color: rgb(var(--gray)); font-size: 12px; }
 
 /* Away from the end: ↓ back to it, a dot when something came meanwhile. */
-.ai-latest { position: sticky; bottom: 10px; display: grid; place-items: center; width: 30px; height: 30px; margin: 0 auto; padding: 0; border: 1px solid rgb(var(--gray-light)); border-radius: 50%; background: var(--surface); box-shadow: var(--studio-shadow-pop); color: rgb(var(--gray-dark)); cursor: pointer; }
+/* Back to the latest: at the log's right corner, not over the middle of what is being read. */
+.ai-latest { position: sticky; bottom: 10px; display: grid; place-items: center; width: 28px; height: 28px; margin: 0 4px 0 auto; padding: 0; border: 1px solid rgb(var(--gray-light)); border-radius: 50%; background: var(--surface); box-shadow: var(--studio-shadow-pop); color: rgb(var(--gray-dark)); cursor: pointer; }
 .ai-latest svg { width: 15px; height: 15px; }
 .ai-latest.is-fresh::after { content: ''; position: absolute; top: 2px; right: 2px; width: 7px; height: 7px; border-radius: 50%; background: rgb(var(--black)); }
 

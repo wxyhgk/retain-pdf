@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { AgentSessions, contextBlock, withContext } from './agent-sessions.mjs';
+import { AgentSessions, contextBlock, titleFrom, withContext } from './agent-sessions.mjs';
 import { ChatStore } from './chat-store.mjs';
 
 const standIn = fileURLToPath(new URL('../../../../tests/e2e/fake-agents/claude-agent-acp', import.meta.url));
@@ -352,4 +352,12 @@ test('a file’s change kept as the change and a few lines around it, not the wh
 	assert.match(made.newText, /…（还有 600 行）$/u);
 	const text = { type: 'content', content: { type: 'text', text: 'x' } };
 	assert.equal(trimmedDiff(text), text);
+});
+
+test('a conversation titled by its first words, not a formula selected or quoted: the formula\'s words when it is all', () => {
+	assert.equal(titleFrom('\\begin{array}{l} \\mathcal {H} _ {elec} \\Phi\n\n这一步为什么能分开？'), '这一步为什么能分开？');
+	assert.equal(titleFrom('> 引用的一段\n就没有研究不使用 slater 行列式的吗?'), '引用的一段');
+	assert.equal(titleFrom('$$\n\\mathcal{H}_{elec}\\Phi = E\\Phi\n$$'), 'H elec = E');
+	assert.equal(titleFrom('把这一页的要点记进笔记'), '把这一页的要点记进笔记');
+	assert.equal(titleFrom('很长'.repeat(30)).length, 41);
 });
