@@ -74,8 +74,33 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'][data-books-wide] .workspace-main { grid-template-columns: minmax(0, 1fr); }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'][data-books-wide] :is(.editor-panel, .notes-divider) { display: none; }
 .studio-shell[data-resizing-notes] .books-page iframe { pointer-events: none; }
-.book-tabs { display: flex; min-height: 38px; flex: none; align-items: center; gap: 2px; padding: 4px 8px; overflow-x: auto; border-bottom: 1px solid rgba(var(--gray), 0.2); }
-.book-tab { display: flex; min-width: 0; max-width: 220px; flex: none; align-items: center; border-radius: 6px; }
+/* One row over a note's books: the tabs (and ＋) shrinking first, then the reader's controls (BookControls.tsx), ⤢. */
+.book-tabs { display: flex; min-height: 38px; flex: none; align-items: center; gap: 4px; padding: 4px 8px; border-bottom: 1px solid rgba(var(--gray), 0.2); container-type: inline-size; }
+.book-tab-list { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 2px; overflow: hidden; }
+.book-tab { display: flex; min-width: 64px; max-width: 220px; flex: 0 1 auto; align-items: center; border-radius: 6px; }
+/* Crowded: the shown tab alone, the others in ▾'s list. */
+.book-tabs.is-crowded .book-tab:not(:has([aria-selected='true'])) { display: none; }
+.book-tabs.is-crowded .book-tab { min-width: 0; }
+.book-tabs-more { display: grid; width: 22px; height: 22px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 5px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; }
+.book-tabs-more[hidden] { display: none; }
+.book-tabs-more:hover { background: rgba(var(--gray), 0.18); color: rgb(var(--black)); }
+.book-controls { display: flex; flex: none; align-items: center; gap: 2px; }
+.book-controls[hidden] { display: none; }
+.book-control, .book-mode, .book-page { display: inline-flex; height: 26px; align-items: center; gap: 4px; padding: 0 7px; border: 0; border-radius: 6px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.book-control svg, .book-mode svg { width: 15px; height: 15px; flex: none; }
+.book-control:hover, .book-mode:hover, .book-page:hover { background: rgba(var(--gray), 0.14); color: rgb(var(--black)); }
+.book-control:disabled, .book-mode:disabled, .book-page:disabled { opacity: 0.45; cursor: default; }
+.book-control[aria-pressed='true'] { background: rgba(var(--gray), 0.14); color: rgb(var(--black)); }
+.book-modes { display: flex; padding: 2px; border-radius: 8px; background: rgba(var(--gray), 0.1); }
+.book-mode { height: 22px; padding: 0 6px; }
+.book-mode[aria-checked='true'] { background: var(--surface); box-shadow: 0 0 0 1px rgba(var(--gray), 0.2); color: rgb(var(--black)); font-weight: 600; }
+.book-page { gap: 0; font-variant-numeric: tabular-nums; }
+.book-page-count { color: rgb(var(--gray)); }
+.book-page-input { width: 56px; height: 24px; padding: 0 6px; border: 1px solid rgb(var(--gray)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 13px; text-align: center; outline: none; }
+/* Narrow: the controls their marks alone, their names on hover. */
+@container (max-width: 620px) { .book-control-label { display: none; } }
+/* Narrower still: the original / both / the translation in ⋯ (BookControls.tsx puts them there too). */
+@container (max-width: 440px) { .book-modes, .book-page-count { display: none; } }
 .book-tab:hover, .book-tab:has([aria-selected='true']) { background: rgba(var(--gray), 0.12); }
 .book-tab-name { min-width: 0; overflow: hidden; padding: 4px 4px 4px 9px; border: 0; background: none; color: rgb(var(--gray)); font: inherit; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .book-tab-name[aria-selected='true'] { color: rgb(var(--black)); font-weight: 600; }

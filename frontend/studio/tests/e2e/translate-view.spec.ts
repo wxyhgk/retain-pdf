@@ -26,7 +26,7 @@ const savedUrl = () => {
 
 const STAND_IN = `<!doctype html><meta charset="utf-8"><title>RetainPDF</title>
 <h1 id="library">图书馆</h1>
-<p>opened <span id="opened"></span> · embed <span id="embed"></span> · theme <span id="theme"></span> · studio <span id="studio"></span> · navigated <span id="navigated"></span> · notes <span id="notes-state"></span> · quoted <span id="quoted"></span></p>
+<p>opened <span id="opened"></span> · embed <span id="embed"></span> · theme <span id="theme"></span> · studio <span id="studio"></span> · navigated <span id="navigated"></span> · notes <span id="notes-state"></span> · quoted <span id="quoted"></span> · command <span id="command"></span></p>
 <button id="quote" type="button">摘</button>
 <button id="notes" type="button">笔记</button>
 <button id="read" type="button">读</button>
@@ -36,6 +36,8 @@ const STAND_IN = `<!doctype html><meta charset="utf-8"><title>RetainPDF</title>
 <button id="press-cmd-k" type="button">⌘K</button>
 <script>
 const head = { protocol: 'retainpdf-studio-bridge', v: 1 };
+const state = { page_idx: 11, page_count: 300, modes: ['source', 'compare', 'translated'], mode: 'translated', panels: ['outline', 'search'], panel: null, zoom: { percent: 100, fit: true }, actions: [{ key: 'download-translated', label: '下载译文 PDF' }], ready: true };
+const tellState = () => parent.postMessage({ ...head, type: 'reader-state', job_id: new URLSearchParams(location.search).get('job_id') || 'job-1', ...state }, host);
 let host = '';
 document.querySelector('#embed').textContent = new URLSearchParams(location.search).get('embed') || '';
 document.querySelector('#opened').textContent = [...new URLSearchParams(location.search)].filter(([key]) => key !== 'embed').map(([key, value]) => key + '=' + value).join('&');
@@ -46,7 +48,10 @@ addEventListener('message', (event) => {
 		host = event.origin;
 		document.querySelector('#theme').textContent = message.theme;
 		document.querySelector('#studio').textContent = (message.features || []).join(',');
-		parent.postMessage({ ...head, type: 'ready', features: ['theme', 'navigate', 'quote', 'notes', 'reading', 'quoted'] }, host);
+		// Its controls drawn by the Studio when it says so (a book beside a note): told how they are, and as they change.
+		const chrome = (message.features || []).includes('reader-state');
+		parent.postMessage({ ...head, type: 'ready', features: ['theme', 'navigate', 'quote', 'notes', 'reading', 'quoted', ...(chrome ? ['reader-command'] : [])] }, host);
+		if (chrome) tellState();
 	} else if (message.type === 'theme') {
 		document.querySelector('#theme').textContent = message.theme;
 	} else if (message.type === 'navigate') {
@@ -54,6 +59,13 @@ addEventListener('message', (event) => {
 		document.querySelector('#navigated').textContent = JSON.stringify(target);
 	} else if (message.type === 'notes') {
 		document.querySelector('#notes-state').textContent = message.open ? 'open:' + message.title : 'closed';
+	} else if (message.type === 'reader-command') {
+		const { protocol, v, type, ...asked } = message;
+		document.querySelector('#command').textContent = JSON.stringify(asked);
+		if (asked.command === 'mode') state.mode = asked.mode;
+		if (asked.command === 'page') state.page_idx = asked.page_idx;
+		if (asked.command === 'panel') state.panel = asked.panel;
+		tellState();
 	} else if (message.type === 'quoted') {
 		document.querySelector('#quoted').textContent = message.job_id + ':' + message.item_ids.join(',');
 	}
@@ -530,7 +542,7 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry', 'Statistical Mechanics']);
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Quantum Chemistry');
 	await expect(bookFrame(page, 'job-1').locator('#opened')).toHaveText('job_id=job-1&page_idx=0&embed_pane=beside');
-	await expect(bookFrame(page, 'job-1').locator('#studio')).toHaveText('quote,ask-ai,shortcut');
+	await expect(bookFrame(page, 'job-1').locator('#studio')).toHaveText('quote,ask-ai,shortcut,reader-state');
 	await expect(page.locator('.book-frame')).toHaveCount(1);
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
 
@@ -589,7 +601,12 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Organic Chemistry');
 	await expect(bookFrame(page, 'job-3').locator('#opened')).toHaveText('job_id=job-3&page_idx=0&embed_pane=beside');
 
-	// A tab closed stays closed for this note, the pane out again when the Studio is opened again.
+	// A tab closed stays closed for this note, the pane out again when the Studio is opened again. (Three books in a
+	// narrow pane: the shown one's tab alone, the others picked from ▾.)
+	if (!(await page.locator('.book-tab', { hasText: 'Statistical Mechanics' }).isVisible())) {
+		await page.locator('.book-tabs-more').click();
+		await page.getByRole('menuitem', { name: /Statistical Mechanics/u }).click();
+	}
 	await page.locator('.book-tab', { hasText: 'Statistical Mechanics' }).locator('.book-tab-close').click();
 	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry', 'Organic Chemistry']);
 	await page.reload();
@@ -638,7 +655,7 @@ test('a book clicked to read in 书库 opens beside the note being written, a ta
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Statistical Mechanics');
 	await expect(bookFrame(page, 'job-2').locator('#opened')).toHaveText('job_id=job-2&page_idx=7&embed_pane=beside');
 	// A book beside a note is not told the Studio takes open-book: it does not hand its books on.
-	await expect(bookFrame(page, 'job-2').locator('#studio')).toHaveText('quote,ask-ai,shortcut');
+	await expect(bookFrame(page, 'job-2').locator('#studio')).toHaveText('quote,ask-ai,shortcut,reader-state');
 	// What is quoted from it goes into the note.
 	await bookFrame(page, 'job-2').locator('#quote').click();
 	await expect(page.locator('.studio-toast')).toContainText('已摘到「Studio 测试夹具」');
@@ -686,7 +703,7 @@ test('the Studio\'s keys pressed in a book (⌘K): given to the Studio, as if pr
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#books-toggle').click();
-	await expect(bookFrame(page, 'job-1').locator('#studio')).toHaveText('quote,ask-ai,shortcut');
+	await expect(bookFrame(page, 'job-1').locator('#studio')).toHaveText('quote,ask-ai,shortcut,reader-state');
 	await bookFrame(page, 'job-1').locator('#press-cmd-k').click();
 	await expect(page.locator('#quick-find-input')).toBeVisible();
 	await expect(page.locator('#quick-find-input')).toBeFocused();
@@ -725,3 +742,54 @@ test('the line between a note and its books dragged: the note wider, its width s
 		.poll(() => page.evaluate(() => [document.querySelector<HTMLElement>('.studio-shell')!.style.getPropertyValue('--notes-width'), document.querySelector<HTMLElement>('.workspace-main')!.style.getPropertyValue('--notes-width')]))
 		.toEqual(['', expect.stringMatching(/^\d+px$/u)]);
 });
+
+test('a book beside a note: its reader\'s controls in the row with the tabs (contents, search, the texts, the page, ⋯), asked of it there', async ({ page }) => {
+	appendToFixture('\n[Quantum Chemistry · 第 12 页](retainpdf:job-1/p012-b0003?page=12&document=doc-1) 变分原理。\n\n[Statistical Mechanics · 第 8 页](retainpdf:job-2/p008-b0004?page=8&document=doc-2) 第二本书。\n');
+	// Wide: the controls with their names, the two tabs side by side.
+	await page.setViewportSize({ width: 1600, height: 900 });
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#books-toggle').click();
+	const row = page.locator('#books-view .book-tabs');
+	const reader = bookFrame(page, 'job-1');
+	await expect(row.locator('.book-controls')).toBeVisible();
+	await expect(row.locator('.book-mode[aria-checked="true"]')).toHaveAttribute('data-mode', 'translated');
+	await expect(row.locator('.book-page')).toHaveText('12/300');
+	// One row: the tab, its controls and ⤢ on the same line.
+	const middles = await row.evaluate((element) => [...element.querySelectorAll('.book-tab, .book-control, .book-page, .book-tabs-wide')].map((each) => { const box = each.getBoundingClientRect(); return box.top + box.height / 2; }));
+	expect(Math.max(...middles) - Math.min(...middles)).toBeLessThan(3);
+
+	await row.locator('.book-mode[data-mode="compare"]').click();
+	await expect(reader.locator('#command')).toHaveText(JSON.stringify({ command: 'mode', mode: 'compare' }));
+	await expect(row.locator('.book-mode[aria-checked="true"]')).toHaveAttribute('data-mode', 'compare');
+	await row.locator('.book-control[data-panel="outline"]').click();
+	await expect(reader.locator('#command')).toHaveText(JSON.stringify({ command: 'panel', panel: 'outline' }));
+	await expect(row.locator('.book-control[data-panel="outline"]')).toHaveAttribute('aria-pressed', 'true');
+	// A page typed: gone to.
+	await row.locator('.book-page').click();
+	await row.locator('.book-page-input').fill('40');
+	await row.locator('.book-page-input').press('Enter');
+	await expect(reader.locator('#command')).toHaveText(JSON.stringify({ command: 'page', page_idx: 39 }));
+	await expect(row.locator('.book-page')).toHaveText('40/300');
+	// ⋯: how large, and what else it offers.
+	await row.locator('.book-more').click();
+	await page.getByRole('menuitem', { name: /下载译文 PDF/u }).click();
+	await expect(reader.locator('#command')).toHaveText(JSON.stringify({ command: 'action', key: 'download-translated' }));
+	await row.locator('.book-more').click();
+	await page.getByRole('menuitem', { name: /^放大/u }).click();
+	await expect(reader.locator('#command')).toHaveText(JSON.stringify({ command: 'zoom', zoom: 'in' }));
+	await expect(row.locator('.book-tab-name:visible')).toHaveCount(2);
+
+	// Narrow: the shown book's tab alone (the other from ▾), the texts in ⋯.
+	await page.setViewportSize({ width: 1180, height: 900 });
+	await expect(row.locator('.book-tabs-more')).toBeVisible();
+	await expect(row.locator('.book-tab-name:visible')).toHaveText(['Quantum Chemistry']);
+	await expect(row.locator('.book-modes')).toBeHidden();
+	await row.locator('.book-more').click();
+	await page.getByRole('menuitem', { name: /^原文/u }).click();
+	await expect(reader.locator('#command')).toHaveText(JSON.stringify({ command: 'mode', mode: 'source' }));
+	await row.locator('.book-tabs-more').click();
+	await page.getByRole('menuitem', { name: /Statistical Mechanics/u }).click();
+	await expect(row.locator('.book-tab-name:visible')).toHaveText(['Statistical Mechanics']);
+});
+
