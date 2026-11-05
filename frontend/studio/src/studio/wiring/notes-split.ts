@@ -4,13 +4,14 @@
 // put beside it the same way (`flag: 'books'`, `data-books="open"`; book-tabs.ts), the note's width the same.
 import { t } from '@blog/i18n/index.mjs';
 
-const WIDTH_KEY = 'retainpdf-notes-width';
+/** The width kept: 书库's note's; the books' beside a note (on its right since 2026-11-05: a width of their own). */
+const WIDTH_KEYS = { notes: 'retainpdf-notes-width', books: 'retainpdf-books-width' } as const;
 /** The note narrower than this, or the pages narrower than this, is not let happen while dragging. */
 const NARROWEST = 320;
 
-function keptWidth(): number | null {
+function keptWidth(flag: 'notes' | 'books'): number | null {
 	try {
-		const width = Number(localStorage.getItem(WIDTH_KEY));
+		const width = Number(localStorage.getItem(WIDTH_KEYS[flag]));
 		return Number.isFinite(width) && width >= NARROWEST ? width : null;
 	} catch {
 		return null;
@@ -27,13 +28,13 @@ export function createNotesSplit(
 	// under it worked out again (the note's every formula, a frame of 0.1–0.2 s in WebKit at each step of a drag);
 	// on the grid, registered not to be inherited (studio-page.css @property), it is that one element's.
 	const grid = shell.querySelector<HTMLElement>('.workspace-main')!;
-	const width = keptWidth();
+	const width = keptWidth(flag);
 	if (width) grid.style.setProperty('--notes-width', `${width}px`);
 	const divider = document.createElement('div');
 	divider.className = 'notes-divider';
 	divider.setAttribute('role', 'separator');
 	divider.setAttribute('aria-orientation', 'vertical');
-	divider.setAttribute('aria-label', t('拖动改笔记的宽度'));
+	divider.setAttribute('aria-label', flag === 'books' ? t('拖动改书的宽度') : t('拖动改笔记的宽度'));
 	const close = document.createElement('button');
 	close.type = 'button';
 	close.id = `${flag}-close`;
@@ -62,7 +63,7 @@ export function createNotesSplit(
 			delete shell.dataset.resizingNotes;
 			try {
 				const kept = parseInt(grid.style.getPropertyValue('--notes-width'), 10);
-				if (kept) localStorage.setItem(WIDTH_KEY, String(kept));
+				if (kept) localStorage.setItem(WIDTH_KEYS[flag], String(kept));
 			} catch {
 				// Not kept: this time only.
 			}

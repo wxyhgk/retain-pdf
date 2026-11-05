@@ -118,6 +118,8 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 				<header class="studio-bar" data-ui>${html(<TopBar siteTitle={SITE_TITLE} />)}</header>
 
 				<section class="editor-panel" aria-label="${say.editor}">
+					<!-- The notes open, a tab each (wiring/note-tabs.ts). -->
+					<div id="note-tabs" class="note-tabs"></div>
 					<div class="panel-label">
 						<span id="editor-path">${say.chooseArticle}</span>
 						<span id="roundtrip-status">${say.waiting}</span>
