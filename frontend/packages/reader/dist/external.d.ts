@@ -51,6 +51,13 @@ export declare const readerQuotedBlocks: () => {
     get: () => ReadonlySet<string>;
     subscribe: (listener: () => void) => () => void;
 };
+/** 控件由宿主画：同上，宿主给了才有。 */
+export declare const readerHostChrome: () => {
+    active: () => boolean;
+    subscribe: (listener: () => void) => () => void;
+    report: (state: import("./adapters.js").ReaderHostChromeState) => void;
+    onCommand: (handler: (command: import("./adapters.js").ReaderHostChromeCommand) => void) => () => void;
+};
 export declare const readerPdfPort: () => ReaderPdfPort;
 export declare const readerSessionDataPort: () => ReaderSessionDataPort;
 export declare const resolveReaderAnchor: (...a: any[]) => any;

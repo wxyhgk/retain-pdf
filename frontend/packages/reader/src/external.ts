@@ -81,6 +81,8 @@ export const readerHostAi = () => getReaderAdapters()?.hostAi ?? null;
 export const readerHostNavigation = () => getReaderAdapters()?.hostNavigation ?? null;
 /** 这本书摘过的段落：同上，宿主给了才有。 */
 export const readerQuotedBlocks = () => getReaderAdapters()?.quotedBlocks ?? null;
+/** 控件由宿主画：同上，宿主给了才有。 */
+export const readerHostChrome = () => getReaderAdapters()?.hostChrome ?? null;
 export const readerPdfPort = (): ReaderPdfPort => {
   const adapters = getReaderAdapters();
   return adapters?.pdf ?? {

@@ -12,6 +12,8 @@
 // - ask-ai：Studio 认它（它有自己的 AI）时，阅读页的「AI」不开自己的终端，先把读到哪立刻发出去，再发 ask-ai 让 Studio 打开它的 AI。
 // - open-book：Studio 认它（书库那一页）时，书库里点书要读（卡片的阅读、详情里的对照阅读……都走 ReaderNavigation）不自己开
 //   阅读页，交给 Studio 在正在写的笔记旁边打开（以笔记为根）；只读原文、还没有任务的书照旧自己开。
+// - reader-state / reader-command：Studio 在 hello 里说认 reader-state（书标签那一行的控件它来画）时，阅读页不画自己的工具栏、
+//   底部栏、MD/AI 竖条，状态有变就发整份 reader-state，照 reader-command 做（换模式、翻页、目录 / 搜索、缩放、⋯ 里的下载）。
 // - shortcut：Studio 认它时，这一页有焦点时按的 ⌘/Ctrl + K、S、J、\（Studio 的搜索、保存、问 AI、收侧栏）转给 Studio，
 //   不让浏览器自己处理（⌘S 不弹「存网页」）；阅读页自己的键（翻页、缩放）都不带 ⌘/Ctrl，不冲突。
 //   阅读器包的这几样由 studioReaderAdapters 交过去（app/reader/adapters/retainpdf.ts）。
@@ -25,6 +27,7 @@ import {
   isLoopbackOrigin,
   openBookMessage,
   openNotesMessage,
+  readerStateMessage,
   shortcutMessage,
   parseStudioMessage,
   quoteMessage,
@@ -33,6 +36,8 @@ import {
   type StudioBook,
   type StudioFeature,
   type StudioQuote,
+  type StudioReaderCommand,
+  type StudioReaderState,
   type StudioReading,
   type StudioSideFeature,
   type StudioTheme,
@@ -49,7 +54,7 @@ import {
 } from "@/ui/theme/theme.js";
 
 /** 这一版处理的消息，回 ready 时报给 Studio。 */
-export const STUDIO_FEATURES: readonly StudioFeature[] = ["theme", "navigate", "quote", "notes", "reading", "quoted"];
+export const STUDIO_FEATURES: readonly StudioFeature[] = ["theme", "navigate", "quote", "notes", "reading", "quoted", "reader-command"];
 
 /** 转给 Studio 的快捷键（和 ⌘ 或 Ctrl 一起按）：它的搜索、保存、问 AI、收起侧栏。 */
 export const STUDIO_SHORTCUT_KEYS: readonly string[] = ["k", "s", "j", "\\"];
@@ -84,6 +89,10 @@ export type StudioEmbed = {
   notes: () => StudioNotesState;
   /** Studio 说的这本书摘过的段落（quoted 消息，每条换一个新对象）。 */
   quoted: () => StudioQuoted;
+  /** 阅读页的状态（Studio 画控件时）：Studio 认 reader-state 才发，一样的不重发。 */
+  sendReaderState: (jobId: string, state: StudioReaderState) => boolean;
+  /** Studio 让阅读页做的事（reader-command）。 */
+  onReaderCommand: (handler: (command: StudioReaderCommand) => void) => () => void;
   /** 笔记收着就发 open-notes，开着就发 close-notes；开没开等 Studio 回 notes 再变。 */
   toggleNotes: (book: StudioBook) => boolean;
   /** 眼下读到哪（null：不在阅读页）。握过手就（防抖后）发 reading，没握手先记着，握手时发。 */
@@ -112,11 +121,14 @@ export function startStudioEmbed(
     quoted: StudioQuoted;
     listeners: Array<() => void>;
     navigators: Array<(target: StudioNavigateTarget) => boolean>;
+    commanders: Array<(command: StudioReaderCommand) => void>;
+    /** 上一次发出去的 reader-state（JSON），一样的不再发；重新握手后清空。 */
+    toldReaderState: string;
     reading: StudioReading;
     /** 上一次发出去的 reading（JSON），一样的不再发。 */
     toldReading: string;
     readingTimer: ReturnType<typeof setTimeout> | null;
-  } = { origin: "", features: null, theme: null, notes: { open: false, title: null }, quoted: null, listeners: [], navigators: [], reading: null, toldReading: "", readingTimer: null };
+  } = { origin: "", features: null, theme: null, notes: { open: false, title: null }, quoted: null, listeners: [], navigators: [], commanders: [], toldReaderState: "", reading: null, toldReading: "", readingTimer: null };
 
   const emit = () => state.listeners.forEach((listener) => listener());
   const applyTheme = (theme: StudioTheme) => {
@@ -151,8 +163,9 @@ export function startStudioEmbed(
       state.features = message.features;
       applyTheme(message.theme);
       post(readyMessage(STUDIO_FEATURES));
-      // 每次握手（Studio 重新加载过这一页也算）都说一遍读到哪。
+      // 每次握手（Studio 重新加载过这一页也算）都说一遍读到哪；阅读页的状态下次报时也再发。
       state.toldReading = "";
+      state.toldReaderState = "";
       tellReading();
       emit();
       return;
@@ -166,6 +179,10 @@ export function startStudioEmbed(
     if (message.type === "notes") {
       state.notes = { open: message.open, title: message.open ? message.title : null };
       emit();
+      return;
+    }
+    if (message.type === "reader-command") {
+      state.commanders.forEach((handler) => handler(message.command));
       return;
     }
     if (message.type === "quoted") {
@@ -203,6 +220,21 @@ export function startStudioEmbed(
     openBook: (book, pageIdx = null) => Boolean(book.jobId) && supports("open-book") && post(openBookMessage(book, pageIdx)),
     notes: () => state.notes,
     quoted: () => state.quoted,
+    sendReaderState(jobId, reader) {
+      if (!jobId || !supports("reader-state")) return false;
+      const message = readerStateMessage(jobId, reader);
+      const said = JSON.stringify(message);
+      if (said === state.toldReaderState) return true;
+      if (!post(message)) return false;
+      state.toldReaderState = said;
+      return true;
+    },
+    onReaderCommand(handler) {
+      state.commanders.push(handler);
+      return () => {
+        state.commanders = state.commanders.filter((item) => item !== handler);
+      };
+    },
     setReading(reading) {
       state.reading = reading;
       if (!state.origin) return;
@@ -234,6 +266,7 @@ export function startStudioEmbed(
       win.document.removeEventListener("keydown", onKeyDown);
       state.listeners = [];
       state.navigators = [];
+      state.commanders = [];
     },
   };
 }
@@ -294,6 +327,15 @@ export function studioReaderAdapters(
     },
     hostNavigation: {
       subscribe: (listener: (target: StudioNavigateTarget) => boolean) => embed.onNavigate(listener),
+    },
+    // 控件由 Studio 画：它在 hello 里说认 reader-state（我们在 ready 里一直报 reader-command）。
+    hostChrome: {
+      active: () => Boolean(jobId) && embed.supports("reader-state"),
+      subscribe: (listener: () => void) => embed.subscribe(listener),
+      report: (reader: StudioReaderState) => {
+        embed.sendReaderState(jobId, reader);
+      },
+      onCommand: (handler: (command: StudioReaderCommand) => void) => embed.onReaderCommand(handler),
     },
     // 摘过的段落：只认说的是这本书的那条（任务一样，或书的编号一样：重新翻译过任务号会变）；同一条消息给同一个集合。
     quotedBlocks: {

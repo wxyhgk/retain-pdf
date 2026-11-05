@@ -126,13 +126,60 @@ export type ReaderQuotedBlocksAdapters = {
         subscribe: (listener: () => void) => () => void;
     };
 };
-export type ReaderAdapters = ReaderSessionAdapters & ReaderMarkdownAdapters & ReaderDownloadAdapters & ReaderDocumentIdentityAdapters & ReaderNotesQuoteAdapters & ReaderNotesPanelAdapters & ReaderReadingPositionAdapters & ReaderHostAiAdapters & ReaderHostNavigationAdapters & ReaderQuotedBlocksAdapters;
+/** 阅读页报给宿主的状态（studio-bridge `reader-state`）：宿主画控件时用。 */
+export type ReaderHostChromeState = {
+    ready: boolean;
+    pageIdx: number | null;
+    pageCount: number | null;
+    modes: Array<"source" | "compare" | "translated">;
+    mode: "source" | "compare" | "translated" | null;
+    panels: Array<"outline" | "search">;
+    panel: "outline" | "search" | null;
+    zoom: {
+        percent: number;
+        fit: boolean;
+    };
+    actions: Array<{
+        key: string;
+        label: string;
+    }>;
+};
+/** 宿主让阅读页做的事（studio-bridge `reader-command`）。 */
+export type ReaderHostChromeCommand = {
+    command: "mode";
+    mode: "source" | "compare" | "translated";
+} | {
+    command: "page";
+    pageIdx: number;
+} | {
+    command: "panel";
+    panel: "outline" | "search" | null;
+} | {
+    command: "zoom";
+    zoom: "in" | "out" | "fit";
+} | {
+    command: "action";
+    key: string;
+};
+/** 控件由宿主画：阅读页放在笔记（Studio）旁边、两边都说了（hello 有 reader-state、ready 有 reader-command）时由宿主给。
+ *
+ * `active()` 为真时阅读页不画自己的顶部工具栏、底部浮动栏、MD/AI 竖条，状态有变就 `report` 整份，照 `onCommand` 来的做。
+ * 能不能用要等握手，所以有 `subscribe`。不提供 = 照旧自己画。 */
+export type ReaderHostChromeAdapters = {
+    hostChrome?: {
+        active: () => boolean;
+        subscribe: (listener: () => void) => () => void;
+        report: (state: ReaderHostChromeState) => void;
+        onCommand: (handler: (command: ReaderHostChromeCommand) => void) => () => void;
+    };
+};
+export type ReaderAdapters = ReaderSessionAdapters & ReaderMarkdownAdapters & ReaderDownloadAdapters & ReaderDocumentIdentityAdapters & ReaderNotesQuoteAdapters & ReaderNotesPanelAdapters & ReaderReadingPositionAdapters & ReaderHostAiAdapters & ReaderHostNavigationAdapters & ReaderQuotedBlocksAdapters & ReaderHostChromeAdapters;
 /**
  * ReaderAdapters 声明键的运行时镜像（TS 类型在运行时被擦除）。
  * 注册层与门禁测试共用，避免手工复制字段集漂移；`satisfies` 保证不引入拼错键。
  * 完整性由紧随其后的编译期断言守护。
  */
-export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId", "notesQuote", "notesPanel", "readingPosition", "hostAi", "hostNavigation", "quotedBlocks"];
+export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId", "notesQuote", "notesPanel", "readingPosition", "hostAi", "hostNavigation", "quotedBlocks", "hostChrome"];
 /** 必填（非 `?`）适配键子集，供门禁断言最小注入面。 */
 export declare const READER_REQUIRED_ADAPTER_KEYS: readonly ["resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "fetchDocumentByJobId"];
 export declare function setReaderAdapters(a: ReaderAdapters | null): void;
