@@ -4,6 +4,7 @@
 import {
   memo,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -105,9 +106,27 @@ function PdfPageSlotInner({
   // Stable callback ref that forwards the slot node to the pane's per-page
   // sentinel registration. Keeping its identity stable avoids re-attaching the
   // observer on every render.
+  const pageBoxRef = useRef<HTMLDivElement | null>(null);
   const sentinelCallbackRef = useRef<(el: HTMLDivElement | null) => void>((el: HTMLDivElement | null) => {
+    pageBoxRef.current = el;
     sentinelRefRef.current?.(el);
   }).current;
+
+  // 页宽（或像素比）一变，react-pdf 先把画布清掉、藏起来，新的画好才露出来（Page/Canvas.js）；拖分隔线时宽度
+  // 一路在变，每次都没画完就被下一次取消，页一直是白的。照 pdf.js 阅读器：清之前把眼前这张拷一份盖在上面、
+  // 按新宽度用 CSS 缩放显示，新的画好（onRenderSuccess）再拿掉。layout effect 在 react-pdf 清画布的 effect 之前跑。
+  const keptRef = useRef<HTMLDivElement | null>(null);
+  const paintedAt = useRef(`${width}@${devicePixelRatio}`);
+  useLayoutEffect(() => {
+    const key = `${width}@${devicePixelRatio}`;
+    if (paintedAt.current === key) return;
+    paintedAt.current = key;
+    if (active) keepLastPaint(pageBoxRef.current, keptRef.current);
+  }, [active, devicePixelRatio, width]);
+  useEffect(() => {
+    if (!active) dropKeptPaint(keptRef.current);
+  }, [active]);
+  useEffect(() => () => dropKeptPaint(keptRef.current), []);
 
   // 旧引擎 page 固定 height = viewport * scale
   const naturalHeight = Math.max(120, Math.floor(width * aspect));
@@ -236,6 +255,7 @@ function PdfPageSlotInner({
             onMetrics?.();
           }}
           onRenderSuccess={() => {
+            dropKeptPaint(keptRef.current);
             onMetrics?.();
           }}
         />
@@ -246,6 +266,7 @@ function PdfPageSlotInner({
           aria-hidden
         />
       )}
+      {active ? <div ref={keptRef} className="reader-react-pdf-kept-paint" aria-hidden="true" /> : null}
       {regionRect ? (
         <div
           className="reader-react-pdf-region-highlight"
@@ -297,3 +318,27 @@ function PdfPageSlotInner({
 }
 
 export const PdfPageSlot = memo(PdfPageSlotInner);
+
+/** 把这一页眼下画好的那张拷进 `host`。已经留着一张（上一次的新画布还没画好）就接着用它，不拷还没画完的。 */
+function keepLastPaint(slot: HTMLElement | null, host: HTMLElement | null): void {
+  if (!slot || !host || host.firstChild) return;
+  const canvas = slot.querySelector<HTMLCanvasElement>(".react-pdf__Page__canvas");
+  if (!canvas || !canvas.width || !canvas.height || canvas.style.visibility === "hidden") return;
+  const copy = slot.ownerDocument.createElement("canvas");
+  copy.width = canvas.width;
+  copy.height = canvas.height;
+  const context = copy.getContext("2d");
+  if (!context) return;
+  context.drawImage(canvas, 0, 0);
+  host.appendChild(copy);
+}
+
+function dropKeptPaint(host: HTMLElement | null): void {
+  if (!host?.firstChild) return;
+  for (const canvas of Array.from(host.querySelectorAll("canvas"))) {
+    // 宽高置 0 浏览器马上放掉这块显存（和 react-pdf 卸画布时一样）。
+    canvas.width = 0;
+    canvas.height = 0;
+  }
+  host.replaceChildren();
+}
