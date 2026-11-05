@@ -994,6 +994,16 @@ export function searchBooks(query: string, signal?: AbortSignal): Promise<{ hits
 	return request(`/api/studio/retainpdf/search?${new URLSearchParams({ q: query })}`, { signal });
 }
 
+/** A note's passages of a book (the server's reading of the notes): the page, the block, a few words of each. */
+export type NoteQuotes = { slug: string; title: string; icon?: string; quotes: Array<{ job: string; block: string; page: number | null; text: string }> };
+
+/** What the notes quote of a book (its id, or its job), note by note. */
+export function bookQuotes(book: { job_id: string; document_id: string | null }, signal?: AbortSignal): Promise<{ notes: NoteQuotes[] }> {
+	const asked = new URLSearchParams({ job: book.job_id });
+	if (book.document_id) asked.set('document', book.document_id);
+	return request(`/api/studio/retainpdf/quotes?${asked}`, { signal });
+}
+
 /** What is read in 翻译 (server/retainpdf-reading.mjs), told the AIs; null: nothing. */
 export function tellRetainpdfReading(reading: { job_id: string; document_id: string | null; title: string | null; page: number | null; pages: number | null; notes: { slug: string; title: string } | null; others?: Array<{ job_id: string; document_id: string | null; title: string | null }> } | null): Promise<unknown> {
 	return request('/api/studio/retainpdf/reading', jsonOptions('PUT', reading));

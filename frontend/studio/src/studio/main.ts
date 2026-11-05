@@ -98,7 +98,8 @@ import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
 import { createRetainpdfView, type RetainpdfBook, type RetainpdfQuote, type RetainpdfReading } from './wiring/retainpdf-view';
 import { createBookTabs } from './wiring/book-tabs';
-import { citedBooks } from './editor/retainpdf-source';
+import { bookPassages, citedBooks } from './editor/retainpdf-source';
+import { createQuotePanel, type QuoteBook } from './quotes/quote-panel';
 import { createNotesSplit } from './wiring/notes-split';
 import { markReadingPage, rememberPage } from './wiring/book-places';
 import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfOpen } from './editor/retainpdf-quote';
@@ -184,6 +185,8 @@ watchOverflow(editorScroll);
 
 /** The open article's title as typed (the plugins' `ctx.studio.article()`). */
 let openTitle = '';
+/** 摘录 made (its tab and RetainPDF's frame, further down): a page shown before then has nothing to tell it. */
+let quotesWired = false;
 /** The parts, for the features (wiring/), each read when used: some features are made before the parts they reach. */
 const studio: Studio = {
 	shell,
@@ -585,7 +588,10 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	fileMenu: (path, anchor) => fileMenu(path, anchor),
 	fileSize: (path) => filePanel.entries().find((entry) => entry.path === path)?.size ?? null,
 	insertTemplate: (view) => void insertTemplate(view),
-	changed: (markdown) => session.editBody(markdown),
+	changed: (markdown) => {
+		session.editBody(markdown);
+		quotesChanged();
+	},
 	async pickArticle() {
 		const picked = await quickFind.pick();
 		if (picked && 'create' in picked) return pages.makeLinkedPage(picked.create);
@@ -666,6 +672,7 @@ const session = new ArticleSession(
 			chat.aiPanel.articleShown();
 			// 书 out: this note's books beside it (found once it is shown: the ones it quotes).
 			if (!again && booksSplit.open) showNoteBooks();
+			refreshQuotes();
 			return markdown;
 		},
 		review(article, body, from) {
@@ -694,6 +701,7 @@ const session = new ArticleSession(
 			backlinksShown = backlinks.show(article.slug);
 			terminal.showArticle(article.slug);
 			chat.aiPanel.showArticle({ slug: article.slug, title: openTitle });
+			refreshQuotes();
 			void library.load(article.slug);
 			const url = new URL(window.location.href);
 			url.searchParams.set('article', article.slug);
@@ -713,6 +721,7 @@ const session = new ArticleSession(
 				articleList.retitled(session.slug, title);
 				// The AI panel's chip of the article open, named anew too (not left as it was till it is taken off and on).
 				chat.aiPanel.showArticle({ slug: session.slug, title: openTitle });
+				refreshQuotes();
 			}
 		},
 		saved(slug, saved, problems) {
@@ -840,7 +849,7 @@ function tellReading(): void {
 	const beside = view === 'editor' && booksSplit.open ? bookTabs.reading() : null;
 	const book: (RetainpdfBook & { page_idx?: number | null; page_count?: number | null }) | null =
 		view === 'editor' ? beside : view === 'translate' ? readerShows : null;
-	const notes = session.slug && ((beside && view === 'editor') || (book && view === 'translate' && notesSplit.open))
+	const notes = session.slug && ((beside && view === 'editor') || (book && view === 'translate' && quotesOpen))
 		? { slug: session.slug, title: openTitle }
 		: null;
 	markReadingPage(view === 'translate' ? readerShows : beside);
@@ -857,21 +866,107 @@ function tellReading(): void {
 		toldReading = '';
 	});
 }
-function closeNotes(): void {
-	setNotesOpen(false);
-	retainpdf.notes(false);
+// 摘录 (quotes/QuotePanel.tsx): while a book is read in 书库, the right column's tab of what is quoted from it: into which
+// note (the one being written, changed there), the book's passages in it and in other notes, a line written after one.
+// RetainPDF's 笔记 (open-notes, close-notes) puts it out and away; leaving 书库 takes it out. The note is not put beside
+// the book there any more (the author: 书库里的笔记重新设计, 2026-11-05).
+let quotesOpen = false;
+/**
+ * The book 摘录 is of: the one the reader says it shows (`reading`), else the one 笔记 or 摘 was pressed in (a RetainPDF
+ * before `reading` says no more); the reader left (its 主页), still that book, no page read.
+ */
+let quotesBook: QuoteBook | null = null;
+/** A passage quoted with no note being written: kept till one is picked. */
+let pendingQuote: RetainpdfQuote | null = null;
+const quotePanel = createQuotePanel({
+	show(passage) {
+		void retainpdf.navigate({ job_id: passage.job, block_id: passage.block, ...(passage.page ? { page_idx: passage.page - 1 } : {}) });
+	},
+	write(passage, text) {
+		editor.insertMarkdown(`${text.replace(/\n+/gu, ' ')}\n`, { after: passage.to });
+		refreshQuotes();
+	},
+	async pick(slug) {
+		if (slug) await session.open(slug);
+		else await pages.newPageHere();
+		if (pendingQuote && session.slug) {
+			const quote = pendingQuote;
+			pendingQuote = null;
+			placeQuote(quote);
+		}
+		quotePanel.set({ asking: Boolean(pendingQuote) });
+		refreshQuotes();
+	},
+	pages: () => [...articleList.articles()].sort((a, b) => (b.modified ?? 0) - (a.modified ?? 0)),
+	openNote() {
+		const book = quotesBook;
+		hideQuotes();
+		if (book) void openBookBesideNote(book, book.page_idx);
+		else showView('editor');
+	},
+	openOther(slug, find) {
+		showView('editor');
+		void pages.openAt(slug, find);
+	},
+});
+/** What 摘录 shows, again: the note, the book read, the book's passages in the note; RetainPDF told which are quoted. */
+function refreshQuotes(): void {
+	if (!quotesWired) return;
+	const book = shellState.get().view === 'translate' ? quotesBook : null;
+	const view = editor.view();
+	const passages = book && view && session.slug ? bookPassages(view.state.doc, book) : [];
+	quotePanel.set({ note: session.slug ? { slug: session.slug, title: openTitle || t('无标题') } : null, book, passages });
+	if (book) retainpdf.quoted(book, passages.map((passage) => passage.block));
+	if (quotesOpen) retainpdf.notes(true, session.slug ? openTitle || t('无标题') : null);
 }
-/** The note being written (the page open; a new one when none is) beside RetainPDF; false when there is none. */
-async function openNotes(): Promise<boolean> {
-	if (!session.slug) await pages.newPage();
-	if (!session.slug) {
-		retainpdf.notes(false);
-		return false;
+let quotesTimer = 0;
+/** The note typed in: 摘录 again a moment after (not at every key). */
+function quotesChanged(): void {
+	if (!quotesWired || !quotesOpen) return;
+	window.clearTimeout(quotesTimer);
+	quotesTimer = window.setTimeout(refreshQuotes, 300);
+}
+function showQuotes(): void {
+	if (!quotesOpen) sidePanel.addTab(quotePanel.panel);
+	else sidePanel.show('quotes');
+	quotesOpen = true;
+	refreshQuotes();
+	tellReading();
+}
+function hideQuotes(): void {
+	if (!quotesWired || !quotesOpen) return;
+	quotesOpen = false;
+	pendingQuote = null;
+	quotePanel.set({ asking: false });
+	sidePanel.removeOwnTab('quotes');
+	retainpdf.notes(false);
+	tellReading();
+}
+function closeNotes(): void {
+	hideQuotes();
+}
+/**
+ * A passage quoted in 书库 into the note being written: after the last passage of its book there, else at its end; the
+ * caret and the keys left where they are (in the book). 摘录 shows it.
+ */
+function placeQuote(quote: RetainpdfQuote): void {
+	const view = editor.view();
+	if (!view) return;
+	const passages = bookPassages(view.state.doc, { job_id: quote.job_id, document_id: quote.document_id });
+	const { doc } = view.state;
+	const last = doc.lastChild;
+	// After the last block, or before the empty paragraph left at the end for writing on.
+	const end = last && last.type.name === 'paragraph' && !last.content.size && doc.childCount > 1 ? doc.content.size - last.nodeSize : doc.content.size;
+	const placed = editor.insertMarkdown(
+		quoteMarkdown({ book: quote.title, document: quote.document_id, job: quote.job_id, block: quote.item_id, page: quote.page_idx + 1, source: quote.source_text, translated: quote.translated_text }),
+		{ after: passages.at(-1)?.to ?? end },
+	);
+	if (placed) {
+		placed.dataset.justQuoted = '';
+		window.setTimeout(() => delete placed.dataset.justQuoted, 1600);
 	}
-	if (!notesSplit.open) caretBeside = null;
-	setNotesOpen(true);
-	retainpdf.notes(true, openTitle || t('无标题'));
-	return true;
+	showToast(t('已摘到「{title}」', { title: openTitle || t('无标题') }));
+	refreshQuotes();
 }
 // Written in (the caret put in the note beside RetainPDF): passages quoted go where the caret is from then on. Beside its
 // books, once typed in (a quote's mark pressed puts the caret there too, but is not writing).
@@ -896,12 +991,17 @@ function markQuoteSpot(): void {
 }
 const retainpdf = createRetainpdfView(translateView, {
 	openSettings: () => openSettings('retainpdf'),
-	openNotes: () => void openNotes(),
+	openNotes(book) {
+		if (quotesBook?.job_id !== book.job_id) quotesBook = { ...book, page_idx: readerShows?.job_id === book.job_id ? readerShows.page_idx : null };
+		showQuotes();
+	},
 	closeNotes,
 	reading(reading) {
 		readerShows = reading;
+		quotesBook = reading ? { job_id: reading.job_id, document_id: reading.document_id, title: reading.title, page_idx: reading.page_idx } : quotesBook && { ...quotesBook, page_idx: null };
 		if (reading && reading.page_idx !== null) rememberPage(reading.job_id, reading.page_idx);
 		tellReading();
+		refreshQuotes();
 	},
 	// Its reader's AI: the Studio's own, which reads RetainPDF's books (told the book and page read, tellReading).
 	askAi() {
@@ -914,11 +1014,15 @@ const retainpdf = createRetainpdfView(translateView, {
 	// 摘到笔记: the passage put in the note being written, opened beside RetainPDF when it is not; where the caret is when
 	// the author has been writing in it, else after the last block. Shown where it went. The book comes out beside the note
 	// then (it is quoted there).
-	async quote(quote) {
-		if (!notesSplit.open && !(await openNotes())) return;
-		putQuote(quote, caretBeside === session.slug ? 'caret' : 'end');
+	quote(quote) {
+		if (quotesBook?.job_id !== quote.job_id) quotesBook = { job_id: quote.job_id, document_id: quote.document_id, title: quote.title, page_idx: readerShows ? readerShows.page_idx : null };
+		showQuotes();
+		if (session.slug) return placeQuote(quote);
+		pendingQuote = quote;
+		quotePanel.set({ asking: true });
 	},
 });
+quotesWired = true;
 /** A book of 书库's to read: the note being written shown (a new one when none is open), the book beside it at `page`. */
 async function openBookBesideNote(book: RetainpdfBook, page: number | null): Promise<void> {
 	showView('editor');
@@ -1149,10 +1253,11 @@ function showView(view: View, folder?: string): void {
 	if (view === 'translate') {
 		url.searchParams.set('translate', '');
 		void retainpdf.show();
-		// Back to 翻译 with the notes open: the page opened meanwhile is the note beside it now (the one being written).
-		if (notesSplit.open) retainpdf.notes(true, openTitle || t('无标题'));
+		refreshQuotes();
 	} else {
 		url.searchParams.delete('translate');
+		// 摘录 is 书库's: taken out as it is left.
+		hideQuotes();
 	}
 	tellReading();
 	markQuoteSpot();

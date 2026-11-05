@@ -147,7 +147,8 @@ export type StudioEditor = {
 	 * an empty paragraph after it); scrolled to. The first block put in (its element), to show it; null when nothing was put in.
 	 * `focus`: the keys given the editor after, the caret after what was put in (摘到笔记 from a book beside: written on at once).
 	 */
-	insertMarkdown(markdown: string, where?: 'caret' | 'end', options?: { focus?: boolean }): HTMLElement | null;
+	/** `{ after }`: at that place between blocks (a passage's end), the caret left where it is. */
+	insertMarkdown(markdown: string, where?: 'caret' | 'end' | { after: number }, options?: { focus?: boolean }): HTMLElement | null;
 	/**
 	 * Where the next passage quoted goes, marked faintly while the editor has not the keys (a book beside it, read): at the
 	 * caret, after the last block (`end`), or nowhere (null).
@@ -1051,10 +1052,17 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	}
 
 	/** Markdown put in as blocks (insertMarkdown, without what is done after). */
-	function putMarkdown(markdown: string, where: 'caret' | 'end'): HTMLElement | null {
+	function putMarkdown(markdown: string, where: 'caret' | 'end' | { after: number }): HTMLElement | null {
 		return (
 			crepe?.editor.action((ctx) => {
 				const view = ctx.get(editorViewCtx);
+				if (typeof where === 'object') {
+					const parsed = ctx.get(parserCtx)(markdown);
+					if (!parsed?.content.size) return null;
+					const at = Math.max(0, Math.min(where.after, view.state.doc.content.size));
+					view.dispatch(view.state.tr.insert(at, parsed.content));
+					return view.nodeDOM(at) instanceof HTMLElement ? (view.nodeDOM(at) as HTMLElement) : null;
+				}
 				if (where === 'end') {
 					const parsed = ctx.get(parserCtx)(markdown);
 					if (!parsed?.content.size) return null;

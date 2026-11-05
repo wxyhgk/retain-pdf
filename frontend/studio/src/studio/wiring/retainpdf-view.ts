@@ -133,6 +133,7 @@ export function createRetainpdfView(
 		if (message.type === 'ready') {
 			features = new Set(Array.isArray(message.features) ? message.features.filter((each): each is string => typeof each === 'string') : []);
 			tellNotes();
+			tellQuoted();
 		} else if (!features) {
 			return;
 		} else if (message.type === 'quote' && isQuote(message)) {
@@ -176,6 +177,19 @@ export function createRetainpdfView(
 
 	function tellNotes(): void {
 		if (features?.has('notes')) post({ type: 'notes', ...notesState });
+	}
+
+	/** Which passages of a book the note quotes (its blocks, all of them each time), for its reader to mark them. */
+	let quotedState: { job_id: string; document_id: string | null; item_ids: string[] } | null = null;
+	function tellQuoted(): void {
+		if (quotedState && features?.has('quoted')) post({ type: 'quoted', ...quotedState });
+	}
+	/** The passages of `book` the note quotes now (its blocks), told RetainPDF when it marks them (ready's `quoted`). */
+	function quoted(book: { job_id: string; document_id: string | null }, itemIds: string[]): void {
+		const next = { job_id: book.job_id, document_id: book.document_id, item_ids: [...new Set(itemIds)] };
+		if (JSON.stringify(next) === JSON.stringify(quotedState)) return;
+		quotedState = next;
+		tellQuoted();
 	}
 
 	/** The book's notes opened beside RetainPDF (with the page's title), or put away: RetainPDF told. */
@@ -260,5 +274,5 @@ export function createRetainpdfView(
 		frame.src = embedded(new URL('reader.html', shown).href, { ...search, ...atPane });
 	}
 
-	return { show, navigate, notes };
+	return { show, navigate, notes, quoted };
 }

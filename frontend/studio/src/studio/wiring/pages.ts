@@ -208,6 +208,21 @@ export function createPages(studio: Studio) {
 	}
 
 	/** 页面 (/page): a page under the open one, linked where the caret is (and gone into, by the editor). */
+	/** A new page at the top, opened as the page written without leaving where the author is (书库's 摘录): its name. */
+	async function newPageHere(): Promise<string | null> {
+		if (!(await session.saveBeforeLeaving())) return null;
+		const slug = freeSlug(autoSlug(), slugs());
+		try {
+			await trackWrite(() => createArticle(slug, '', ''));
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('新建失败'), true);
+			return null;
+		}
+		await articleList.load();
+		await session.open(slug);
+		return session.slug === slug ? slug : null;
+	}
+
 	async function makePage(): Promise<{ slug: string; title: string; href: string } | null> {
 		const parent = session.slug;
 		if (!parent) return null;
@@ -420,5 +435,5 @@ export function createPages(studio: Studio) {
 		], pageMenu);
 	}
 
-	return { visited, importMarkdown, openFromList, newPage, newDatabase, newFromTemplate, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
+	return { visited, importMarkdown, openFromList, newPage, newPageHere, newDatabase, newFromTemplate, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
 }
