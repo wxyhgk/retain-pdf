@@ -346,7 +346,7 @@ test("读到哪：阅读器翻页报给宿主，握过手才发，防抖停下�
 test("ask-ai 对得上契约；hello 带 ask-ai 记下来，契约外的能力不认", () => {
   assertMatchesContract(askAiMessage(), "AskAiMessage");
   assert.deepEqual(askAiMessage(), { protocol: "retainpdf-studio-bridge", v: 1, type: "ask-ai" });
-  assert.deepEqual(CONTRACT.definitions.StudioFeature.enum, ["quote", "open-notes", "ask-ai", "open-book", "shortcut"], "Studio 的能力就这五样");
+  assert.deepEqual(CONTRACT.definitions.StudioFeature.enum, ["quote", "open-notes", "ask-ai", "open-book", "shortcut", "reader-state"], "Studio 的能力就这六样");
   assert.deepEqual(parseStudioMessage(hello("light", ["quote", "ask-ai", "fly"])).features, ["quote", "ask-ai"]);
 });
 
@@ -555,6 +555,14 @@ test("控件由 Studio 画（书这一侧精简成一行）：Studio 在 hello �
     actions: [{ key: "download-translated", label: "下载译文 PDF" }],
   };
   const message = readerStateMessage("j1", state);
+  assertMatchesContract(message, "ReaderStateMessage");
+  const zoomSchema = CONTRACT.definitions.ReaderStateMessage.properties.zoom;
+  assert.deepEqual(Object.keys(message.zoom).sort(), [...zoomSchema.required].sort(), "zoom 就 percent、fit");
+  // 契约里 reader-command 五种，每种带的那个字段（mode / page_idx / panel / zoom / key）就是我们读的那个。
+  const commandFields = Object.fromEntries(CONTRACT.definitions.ReaderCommandMessage.oneOf.map((variant) =>
+    [variant.properties.command.const, variant.required.filter((key) => !["protocol", "v", "type", "command"].includes(key))]));
+  assert.deepEqual(commandFields, { mode: ["mode"], page: ["page_idx"], panel: ["panel"], zoom: ["zoom"], action: ["key"] });
+  assert.ok(CONTRACT.definitions.Feature.enum.includes("reader-command"), "ready 报的 reader-command 在契约里");
   assert.deepEqual(Object.keys(message).sort(), ["actions", "job_id", "mode", "modes", "page_count", "page_idx", "panel", "panels", "protocol", "ready", "type", "v", "zoom"].sort());
   assert.equal(message.type, "reader-state");
   assert.equal(message.page_idx, 29);
