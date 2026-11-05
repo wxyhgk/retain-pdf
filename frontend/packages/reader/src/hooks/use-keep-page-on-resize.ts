@@ -6,9 +6,13 @@
 // （preserveScrollCenter 那样）：页与页之间的空隙不跟着缩，几十页累下来差出一屏。
 //
 // 页宽要等布局稳了才提交（PdfDocumentPane 的 80ms 防抖），再重画，内容高度实测要 600ms 左右才变，
-// 所以不是改一次就完：之后每一帧都把记下的那一处放回阅读线上，等内容总高变过、又连着几帧不变才停，
+// 所以不是改一次就完：之后每一帧都把记下的那一处放回阅读线上，等内容总高（比这一轮开始放回时）变过、又连着几帧不变才停，
 // 最多 KEEP_MAX_MS（宽度变了页宽却没变，高度就一直不变）。
 // 这期间用户自己滚（滚轮、触摸、按键、拖滚动条）就停手，听用户的。
+//
+// 光靠每帧放回不够：页宽提交之后，对照的行高同步、页的长宽比这些是在两帧之间改的，浏览器会先按旧的 scrollTop
+// 画一帧——页一下子变矮，眼前成了几十页之后还没画过的页（整屏白），下一帧才回来。所以钉着的时候还看着内容的
+// 尺寸（ResizeObserver 在排版之后、画之前回调），一变就当场放回去，那一帧画出来的就已经是原来那页。
 
 import { useEffect, useLayoutEffect, useRef } from "react";
 
@@ -22,7 +26,6 @@ const STABLE_FRAMES = 6;
 type Hold = {
   pane: ReaderPaneId | null;
   progress: PageScrollProgress;
-  startHeight: number;
   started: number;
   stop: () => void;
 };
@@ -41,24 +44,31 @@ export function useKeepPageOnResize(shell: HTMLElement | null, pageWidthBasis: n
     // 不重新量（这时眼前可能已经被挪过了）。
     const kept = hold.current;
     kept?.stop();
-    let base = kept ? { pane: kept.pane, progress: kept.progress, startHeight: kept.startHeight, started: kept.started } : null;
+    let base = kept ? { pane: kept.pane, progress: kept.progress, started: kept.started } : null;
     if (!base) {
       // 对照以外另一栏是藏着的（高度 0），两栏都有同号的页：量哪栏、放回哪栏要一致，都用看得见的那栏。
       const pane = visiblePane(shell);
       const progress = measurePageScrollProgress(shell, pane);
       if (!progress) return;
-      base = { pane, progress, startHeight: shell.scrollHeight, started: performance.now() };
+      base = { pane, progress, started: performance.now() };
     }
-    const { pane, progress, startHeight, started } = base;
+    const { pane, progress, started } = base;
 
     let frame = 0;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    // 「变过」比的是这一轮开始放回时的总高，不是最早量的那次：一次拖动里页宽会提交好几回（中间停一下就提交），
+    // 跟最早的比，第二回起一开始就算「变过」，对照的行高还没跟上（晚一两百毫秒才变矮）就停了手，停在十几页之后。
+    let startHeight = shell.scrollHeight;
     let lastHeight = startHeight;
     let stableFrames = 0;
     let looping = started;
+    const resized = typeof ResizeObserver === "undefined"
+      ? null
+      : new ResizeObserver(() => applyPageScrollProgress(shell, progress, "auto", pane));
     const stop = () => {
       if (timer) clearTimeout(timer);
       cancelAnimationFrame(frame);
+      resized?.disconnect();
       for (const type of USER_SCROLL_EVENTS) shell.removeEventListener(type, stop);
       if (hold.current?.stop === stop) hold.current = null;
     };
@@ -72,12 +82,16 @@ export function useKeepPageOnResize(shell: HTMLElement | null, pageWidthBasis: n
       else frame = requestAnimationFrame(tick);
     };
     for (const type of USER_SCROLL_EVENTS) shell.addEventListener(type, stop, { passive: true });
+    for (const child of Array.from(shell.children)) resized?.observe(child);
     hold.current = { ...base, stop };
     // 宽度还在变（拖分栏、开关侧栏的过渡）时什么都不量：页宽要等停稳 READER_WIDTH_SETTLE_MS 才提交（PdfDocumentPane），
     // 在那之前眼前的页不会动；每帧去量反倒逼浏览器每帧把整本书排一遍（大书拖起来一顿一顿）。停稳了再开始放回去。
     timer = setTimeout(() => {
       timer = null;
       looping = performance.now();
+      startHeight = shell.scrollHeight;
+      lastHeight = startHeight;
+      stableFrames = 0;
       frame = requestAnimationFrame(tick);
     }, READER_WIDTH_SETTLE_MS);
   }, [shell, pageWidthBasis]);

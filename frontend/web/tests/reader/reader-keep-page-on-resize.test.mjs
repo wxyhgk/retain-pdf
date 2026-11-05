@@ -102,3 +102,26 @@ test("拖分栏不卡：每页画布单独一层（变宽变窄不重画像素�
   const hook = readFileSync(new URL("../../../packages/reader/src/hooks/use-keep-page-on-resize.ts", import.meta.url), "utf8");
   assert.match(hook, /setTimeout\(\(\) => \{[\s\S]*?requestAnimationFrame\(tick\);[\s\S]*?\}, READER_WIDTH_SETTLE_MS\)/u, "停稳了才开始放回去");
 });
+
+test("拖分栏不白页：页宽一变，清画布之前把眼前这张拷下来盖着，新的画好再拿掉；没画完的不拷", () => {
+  // WebKit 2 倍屏实测（iframe 900→650 停 400ms →450，对照）：整屏白的帧 5–24 → 0–2。react-pdf 的 Canvas 在 effect 里
+  // 先 canvas.width = …（清空）、visibility: hidden，画完才露出来；拖着的时候一路被取消，页一直是白的。
+  const slot = readFileSync(new URL("../../../packages/reader/src/pdf/PdfPageSlot.tsx", import.meta.url), "utf8");
+  assert.match(slot, /useLayoutEffect\(\(\) => \{[\s\S]*?keepLastPaint\(pageBoxRef\.current, keptRef\.current\)[\s\S]*?\}, \[active, devicePixelRatio, width\]\)/u,
+    "layout effect：在 react-pdf 清画布的 effect 之前");
+  assert.match(slot, /onRenderSuccess=\{\(\) => \{\s*dropKeptPaint\(keptRef\.current\);/u, "新的画好就拿掉");
+  assert.match(slot, /host\.firstChild\) return;/u, "已经盖着一张就接着用，不拷还没画完的");
+  assert.match(slot, /canvas\.style\.visibility === "hidden"\) return;/u);
+  const css = readFileSync(new URL("../../../packages/reader/styles/react-pdf.css", import.meta.url), "utf8");
+  assert.match(/\.reader-react-pdf-kept-paint canvas \{[^}]*\}/u.exec(css)?.[0] ?? "", /width: 100%;[\s\S]*height: auto;/u, "按新宽度缩放");
+});
+
+test("拖分栏不跳页：钉着的时候内容一变尺寸就当场放回（画之前）；「变过」比这一轮开始时的总高", () => {
+  // 以前页宽提交后要等下一帧才放回，中间画出一帧几十页之后的空白页；一次拖动里页宽提交好几回时，和最早的总高比，
+  // 第二回起一开始就算「变过」，对照的行高还没变矮就停了手，停在第 50 页（本该第 41 页）。
+  const hook = readFileSync(new URL("../../../packages/reader/src/hooks/use-keep-page-on-resize.ts", import.meta.url), "utf8");
+  assert.match(hook, /new ResizeObserver\(\(\) => applyPageScrollProgress\(shell, progress, "auto", pane\)\)/u);
+  assert.match(hook, /for \(const child of Array\.from\(shell\.children\)\) resized\?\.observe\(child\);/u);
+  assert.match(hook, /resized\?\.disconnect\(\);/u, "停手时一起停");
+  assert.match(hook, /looping = performance\.now\(\);\s*startHeight = shell\.scrollHeight;/u);
+});

@@ -426,6 +426,22 @@
 .reader-react-pdf-page {
   position: relative;
 }
+/* 页宽变了、新画布还没画好时，盖在页上的上一张（PdfPageSlot 的 keepLastPaint）：按新宽度缩放，画好就拿掉。 */
+.reader-react-pdf-kept-paint {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+}
+.reader-react-pdf-kept-paint:empty {
+  display: none;
+}
+.reader-react-pdf-kept-paint canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 .reader-react-pdf-page .textLayer {
   position: absolute;
   inset: 0;
