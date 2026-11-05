@@ -780,15 +780,19 @@ test('a book beside a note: its reader\'s controls in the row with the tabs (con
 	const row = page.locator('#books-view .book-tabs');
 	const reader = bookFrame(page, 'job-1');
 	await expect(row.locator('.book-controls')).toBeVisible();
-	await expect(row.locator('.book-mode[aria-checked="true"]')).toHaveAttribute('data-mode', 'translated');
+	await expect(row.locator('.book-mode-pick')).toHaveAttribute('data-mode', 'translated');
 	await expect(row.locator('.book-page')).toHaveText('12/300');
 	// One row: the tab, its controls and ⤢ on the same line.
 	const middles = await row.evaluate((element) => [...element.querySelectorAll('.book-tab, .book-control, .book-page, .book-tabs-wide')].map((each) => { const box = each.getBoundingClientRect(); return box.top + box.height / 2; }));
 	expect(Math.max(...middles) - Math.min(...middles)).toBeLessThan(3);
 
-	await row.locator('.book-mode[data-mode="compare"]').click();
+	// The original / both / the translation: one button, its mark the one shown, the three in its menu.
+	await row.locator('.book-mode-pick').click();
+	await page.getByRole('menuitem', { name: /^对照/u }).click();
 	await expect(reader.locator('#command')).toHaveText(JSON.stringify({ command: 'mode', mode: 'compare' }));
-	await expect(row.locator('.book-mode[aria-checked="true"]')).toHaveAttribute('data-mode', 'compare');
+	await expect(row.locator('.book-mode-pick')).toHaveAttribute('data-mode', 'compare');
+	// No words in the row: the marks, their names on hover.
+	await expect(row.locator('.book-controls')).not.toContainText('目录');
 	await row.locator('.book-control[data-panel="outline"]').click();
 	await expect(reader.locator('#command')).toHaveText(JSON.stringify({ command: 'panel', panel: 'outline' }));
 	await expect(row.locator('.book-control[data-panel="outline"]')).toHaveAttribute('aria-pressed', 'true');
@@ -811,8 +815,7 @@ test('a book beside a note: its reader\'s controls in the row with the tabs (con
 	await page.setViewportSize({ width: 1180, height: 900 });
 	await expect(row.locator('.book-tabs-more')).toBeVisible();
 	await expect(row.locator('.book-tab-name:visible')).toHaveText(['Quantum Chemistry']);
-	await expect(row.locator('.book-modes')).toBeHidden();
-	await row.locator('.book-more').click();
+	await row.locator('.book-mode-pick').click();
 	await page.getByRole('menuitem', { name: /^原文/u }).click();
 	await expect(reader.locator('#command')).toHaveText(JSON.stringify({ command: 'mode', mode: 'source' }));
 	await row.locator('.book-tabs-more').click();

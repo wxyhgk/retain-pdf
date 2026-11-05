@@ -63,6 +63,9 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* 收起 on the middle of the line, not at its top over RetainPDF's own buttons (关闭 sits there). */
 .notes-close { position: absolute; top: 50%; right: -7px; transform: translateY(-50%); display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 1px solid rgba(var(--gray), 0.3); border-radius: 6px; background: var(--surface); color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 1; cursor: pointer; }
 .notes-close:hover { color: rgb(var(--black)); }
+/* Only while the line is hovered (or the button has the keys): not a box over the book's page all the while. */
+.notes-divider .notes-close { opacity: 0; transition: opacity 0.12s; }
+.notes-divider:hover .notes-close, .notes-close:focus-visible { opacity: 1; }
 /* The note beside the pages is narrow: its head smaller and tighter, the blog's properties (date, kind, 草稿/发布), icon
    and cover put away (they are there when the note is opened on its own). */
 .studio-shell[data-view='translate'][data-notes='open'] .editor-panel { --studio-editor-padding: 28px; --studio-title-size: 26px; }
@@ -100,7 +103,7 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .book-tabs-more:hover { background: rgba(var(--gray), 0.18); color: rgb(var(--black)); }
 .book-controls { display: flex; flex: none; align-items: center; gap: 2px; }
 .book-controls[hidden] { display: none; }
-.book-control, .book-mode, .book-page { display: inline-flex; height: 26px; align-items: center; gap: 4px; padding: 0 7px; border: 0; border-radius: 6px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.book-control, .book-mode, .book-page { display: inline-flex; height: 26px; align-items: center; gap: 4px; padding: 0 6px; border: 0; border-radius: 6px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; }
 .book-control svg, .book-mode svg { width: 15px; height: 15px; flex: none; }
 .book-control:hover, .book-mode:hover, .book-page:hover { background: rgba(var(--gray), 0.14); color: rgb(var(--black)); }
 .book-control:disabled, .book-mode:disabled, .book-page:disabled { opacity: 0.45; cursor: default; }
@@ -108,13 +111,9 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .book-modes { display: flex; padding: 2px; border-radius: 8px; background: rgba(var(--gray), 0.1); }
 .book-mode { height: 22px; padding: 0 6px; }
 .book-mode[aria-checked='true'] { background: var(--surface); box-shadow: 0 0 0 1px rgba(var(--gray), 0.2); color: rgb(var(--black)); font-weight: 600; }
-.book-page { gap: 0; font-variant-numeric: tabular-nums; }
+.book-page { gap: 0; font-size: 12px; font-variant-numeric: tabular-nums; }
 .book-page-count { color: rgb(var(--gray)); }
 .book-page-input { width: 56px; height: 24px; padding: 0 6px; border: 1px solid rgb(var(--gray)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 13px; text-align: center; outline: none; }
-/* Narrow: the controls their marks alone, their names on hover. */
-@container (max-width: 620px) { .book-control-label { display: none; } }
-/* Narrower still: the original / both / the translation in ⋯ (BookControls.tsx puts them there too). */
-@container (max-width: 440px) { .book-modes { display: none; } }
 /* Narrowest: the page alone, not of how many. */
 @container (max-width: 340px) { .book-page-count { display: none; } }
 .book-tab:hover, .book-tab:has([aria-selected='true']) { background: rgba(var(--gray), 0.12); }
@@ -144,8 +143,12 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .crepe-host .milkdown .ProseMirror .quote-spot { pointer-events: none; user-select: none; }
 .crepe-host .milkdown .ProseMirror .quote-spot-caret { position: relative; display: inline-block; width: 0; height: 1.1em; vertical-align: -0.15em; }
 .crepe-host .milkdown .ProseMirror .quote-spot-caret::after { position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; border-radius: 1px; background: rgb(var(--gray)); opacity: 0.55; content: ''; }
+/* After the last block: a faint line alone, no words. */
 .crepe-host .milkdown .ProseMirror .quote-spot-end { position: relative; height: 0; }
-.crepe-host .milkdown .ProseMirror .quote-spot-end::before { position: absolute; top: 6px; right: 0; left: 0; padding-top: 4px; border-top: 1px dashed rgb(var(--gray-light)); color: rgb(var(--gray)); content: attr(data-said); font-size: var(--studio-fs-caption); opacity: 0.8; text-align: center; }
+/* 写点什么… only on the line being written (the note has the keys), or on an empty note's one line: not left standing
+   under a note read beside a book. */
+.crepe-host .milkdown .ProseMirror:not(.ProseMirror-focused) > .crepe-placeholder:not(:only-child)::before { content: none; }
+.crepe-host .milkdown .ProseMirror .quote-spot-end::before { position: absolute; top: 6px; right: 0; left: 0; padding-top: 4px; border-top: 1px dashed rgb(var(--gray-light)); content: ''; }
 .crepe-host .milkdown .ProseMirror.ProseMirror-focused .quote-spot { visibility: hidden; }
 /* A passage quoted from RetainPDF (editor/retainpdf-source.ts): the note's own paragraphs; where it is, RetainPDF's mark
    and the book and page, small, in the top right corner of the first (floated: its first line goes round it). */
