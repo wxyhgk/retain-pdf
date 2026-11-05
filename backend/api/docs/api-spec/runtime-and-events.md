@@ -166,8 +166,12 @@ Config:
 - `RUST_API_QUEUE_POLL_INTERVAL_MS`: queued job slot polling interval, default `250`
 - `RUST_API_WORKER_TERMINATE_GRACE_SECS`: SIGTERM grace window before SIGKILL, default `3`
 - `RUST_API_WORKER_TERMINATE_POLL_MS`: worker process exit polling interval, default `100`
-- `RUST_API_WORKER_OUTPUT_DRAIN_SECS`: after a worker exits, how long to wait
-  for its stdout/stderr readers to finish, default `30`. Normally these finish
+- `RUST_API_WORKER_OUTPUT_DRAIN_SECS`: after a worker exits, how long the stdout
+  reader may go without reading a new line before the runner gives up, default `30`
+  (stderr: how long to wait in total). While the stdout reader is still working
+  through a backlog it is waited for, up to 20× this value — every line is persisted,
+  so a worker that prints thousands of progress lines and exits can leave a backlog
+  whose last line is the `output_pdf` publication (2026-11-04). Normally these finish
   instantly — the cap exists because a grandchild that called `setsid()` escapes
   the process-group kill and can keep the pipe write end open forever, which
   would otherwise hang the runner on that job with no log line explaining it.
