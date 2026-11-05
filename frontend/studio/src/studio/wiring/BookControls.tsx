@@ -68,10 +68,10 @@ export function BookControls({ state, command }: { state: ReaderState; command(a
 		state.panels.includes(key) ? (
 			<button type="button" className="book-control" data-panel={key} aria-pressed={state.panel === key} title={label} disabled={!state.ready} onClick={() => command({ command: 'panel', panel: state.panel === key ? null : key })}>
 				<Icon aria-hidden />
-				<span className="book-control-label">{label}</span>
 			</button>
 		) : null;
 	const modes = MODES.filter(({ mode }) => state.modes.includes(mode));
+	const current = modes.find(({ mode }) => mode === state.mode);
 	function more(event: React.MouseEvent<HTMLButtonElement>): void {
 		const percent = state.zoom.percent ? `${state.zoom.percent}%` : '';
 		const items: MenuItem[] = [
@@ -79,8 +79,6 @@ export function BookControls({ state, command }: { state: ReaderState; command(a
 			{ label: t('缩小'), action: () => command({ command: 'zoom', zoom: 'out' }) },
 			{ label: state.zoom.fit ? t('适合栏宽 ✓') : t('适合栏宽'), action: () => command({ command: 'zoom', zoom: 'fit' }) },
 		];
-		// The texts too, for a row too narrow to show them (book-tabs' CSS hides them there).
-		if (modes.length > 1) items.unshift(...modes.map(({ mode, label }) => ({ label: state.mode === mode ? `${label} ✓` : label, action: () => command({ command: 'mode', mode }) })), 'separator');
 		if (state.actions.length) items.push('separator', ...state.actions.map(({ key, label }) => ({ label, action: () => command({ command: 'action', key }) })));
 		showContextMenu(items, event.currentTarget);
 	}
@@ -89,14 +87,22 @@ export function BookControls({ state, command }: { state: ReaderState; command(a
 			{panel('outline', t('目录'), ListTree)}
 			{panel('search', t('搜索'), Search)}
 			{modes.length > 1 ? (
-				<div className="book-modes" role="radiogroup" aria-label={t('显示原文还是译文')}>
-					{modes.map(({ mode, label, icon: Icon }) => (
-						<button key={mode} type="button" role="radio" className="book-mode" data-mode={mode} aria-checked={state.mode === mode} title={label} disabled={!state.ready} onClick={() => command({ command: 'mode', mode })}>
-							<Icon aria-hidden />
-							<span className="book-control-label">{label}</span>
-						</button>
-					))}
-				</div>
+				<button
+					type="button"
+					className="book-control book-mode-pick"
+					data-mode={state.mode ?? ''}
+					title={t('显示：{mode}（点了换原文、对照、译文）', { mode: current?.label ?? '' })}
+					aria-label={t('显示原文还是译文')}
+					disabled={!state.ready}
+					onClick={(event) =>
+						showContextMenu(
+							modes.map(({ mode, label }) => ({ label: state.mode === mode ? `${label} ✓` : label, action: () => command({ command: 'mode', mode }) })),
+							event.currentTarget,
+						)
+					}
+				>
+					{current ? <current.icon aria-hidden /> : null}
+				</button>
 			) : null}
 			<PageBox state={state} command={command} />
 			<button type="button" className="book-control book-more" title={t('更多')} aria-label={t('更多')} onClick={more}>

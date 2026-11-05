@@ -359,5 +359,7 @@ test('a conversation titled by its first words, not a formula selected or quoted
 	assert.equal(titleFrom('> 引用的一段\n就没有研究不使用 slater 行列式的吗?'), '引用的一段');
 	assert.equal(titleFrom('$$\n\\mathcal{H}_{elec}\\Phi = E\\Phi\n$$'), 'H elec = E');
 	assert.equal(titleFrom('把这一页的要点记进笔记'), '把这一页的要点记进笔记');
+	// A formula of a letter or two: no title.
+	assert.equal(titleFrom('$$\n\\mathcal{H}\n$$'), '');
 	assert.equal(titleFrom('很长'.repeat(30)).length, 41);
 });

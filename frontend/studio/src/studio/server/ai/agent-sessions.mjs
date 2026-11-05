@@ -1210,7 +1210,9 @@ export function titleFrom(said) {
 			.replace(/\s+/gu, ' ')
 			.trim();
 	const words = lines.find((line) => !formulaic(line));
-	const title = words ? plain(words) : (lines.map(plain).find(Boolean) ?? '');
+	// A formula's few letters (`\\mathcal{H}` → H) are no title: none then (the panel says 新对话).
+	const readable = (text) => (text.match(/[\p{L}\p{N}]/gu)?.length ?? 0) >= 3;
+	const title = words ? plain(words) : (lines.map(plain).find(readable) ?? '');
 	return title.length > 40 ? `${title.slice(0, 40)}…` : title;
 }
 

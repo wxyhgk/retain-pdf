@@ -1157,7 +1157,7 @@ const bookTabs = createBookTabs(booksView, {
 		tabJobs = jobs;
 		keepNoteBooks(booksOf, { books, shown, closed });
 	},
-	pick: (anchor) => pickBook(anchor),
+	pick: () => pickBook(),
 });
 /** The note shown's books as the tabs (once for each time it is shown). */
 function showNoteBooks(): void {
@@ -1199,29 +1199,23 @@ function setBooksOpen(open: boolean, first?: { book: RetainpdfBook; target: Reta
 	markQuoteSpot();
 }
 /** ＋: a book of RetainPDF's to open beside the note, from a menu of those not open (the latest read first). */
-async function pickBook(anchor: HTMLElement): Promise<RetainpdfBook | null> {
+/** ＋ on the books beside a note: RetainPDF's library as covers (shell/dialogs/BookPickDialog.tsx), one picked. */
+let bookPickRound = 0;
+async function pickBook(): Promise<RetainpdfBook | null> {
 	let listed: Awaited<ReturnType<typeof retainpdfBooks>>['books'];
 	try {
-		listed = (await retainpdfBooks()).books;
+		listed = (await retainpdfBooks(100)).books;
 	} catch (error) {
 		showToast(t('读不到 RetainPDF 的书：{error}', { error: error instanceof Error ? error.message : String(error) }), true);
 		return null;
 	}
-	const open = new Set(bookTabs.books().map((book) => book.job_id));
-	const choices = listed.filter((book) => book.job_id && !open.has(book.job_id));
-	if (!choices.length) {
-		showToast(listed.length ? t('书库里的书都开着了') : t('RetainPDF 的书库里还没有书'));
-		return null;
-	}
 	return new Promise((resolve) => {
-		showContextMenu(
-			choices.map((book) => ({
-				label: book.title || book.document_id,
-				...(book.pages ? { hint: t('{pages} 页', { pages: book.pages }) } : {}),
-				action: () => resolve({ job_id: book.job_id!, document_id: book.document_id || null, title: book.title }),
-			})),
-			anchor,
-		);
+		openDialog('bookPick', {
+			round: ++bookPickRound,
+			books: listed.map((book) => ({ job_id: book.job_id, document_id: book.document_id, title: book.title, pages: book.pages })),
+			open: bookTabs.books().map((book) => book.job_id),
+			done: (book) => resolve(book?.job_id ? { job_id: book.job_id, document_id: book.document_id || null, title: book.title } : null),
+		});
 	});
 }
 // A quote's RetainPDF mark, or a retainpdf: link (editor/retainpdf-quote.ts): 翻译, at that passage.

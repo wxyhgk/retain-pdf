@@ -43,7 +43,18 @@ export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpd
 	// Whether its API answers with that key (the books the AIs read: retainpdf-library.mjs).
 	api.get('/settings/retainpdf/check', () => retainpdfLibrary.check());
 	// RetainPDF's books, the latest read first: 书's ＋, a book to open beside a note (book-tabs.ts).
-	api.get('/retainpdf/books', ({ query }) => retainpdfLibrary.listBooks({ query: query.get('q') || undefined, limit: 30 }));
+	api.get('/retainpdf/books', ({ query }) => retainpdfLibrary.listBooks({ query: query.get('q') || undefined, limit: Number(query.get('limit')) || 30 }));
+	// A book's cover (its key kept here): the books' ＋ shows the library as covers.
+	api.get('/retainpdf/books/:document/cover', async ({ params, response }) => {
+		const { type, bytes } = await retainpdfLibrary.cover(params.document);
+		response.statusCode = 200;
+		response.setHeader('Content-Type', type);
+		response.setHeader('Content-Length', bytes.length);
+		// A book's first page: the same as long as the book is.
+		response.setHeader('Cache-Control', 'private, max-age=86400');
+		response.setHeader('X-Content-Type-Options', 'nosniff');
+		response.end(bytes);
+	}, { streams: true });
 	// ⌘K: the words in RetainPDF's books (their source and translation), a few hits.
 	api.get('/retainpdf/search', ({ query }) => retainpdfLibrary.searchBooks({ query: query.get('q') ?? '', limit: 8 }));
 	// 摘录 (quotes/QuotePanel.tsx): what the notes quote of a book (its id, or its job), note by note.
