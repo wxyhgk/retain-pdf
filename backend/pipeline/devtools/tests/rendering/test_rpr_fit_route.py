@@ -487,3 +487,71 @@ def test_table_of_contents_keeps_one_entry_per_line() -> None:
         "2.1 概述 ..... 7",
         "2.1.1 多模态架构 ..... 8",
     ]
+
+
+def test_a_page_with_too_many_vector_paths_gets_coarse_ink_rects_instead(tmp_path: Path, monkeypatch) -> None:
+    # CAD 图纸一页十来万条线，逐条写给引擎 1265 页 1.74 GB，引擎（Node）读不进来（2026-11-04）：
+    # 多过 DENSE_VECTOR_DRAWINGS 条就换成粗格子墨迹，上下相邻的格子并成矩形
+    from retainpdf_pipeline.render.prepare import obstacle_scan_pdf
+
+    monkeypatch.setattr(obstacle_scan_pdf, "DENSE_VECTOR_DRAWINGS", 50)
+    pdf = tmp_path / "drawing.pdf"
+    doc = fitz.open()
+    dense = doc.new_page(width=600, height=400)
+    for k in range(120):  # 一片密密的竖线：x 100-220, y 50-150
+        dense.draw_line((100 + k, 50), (100 + k, 150))
+    light = doc.new_page(width=300, height=400)
+    light.draw_line((20, 200), (280, 200))
+    doc.save(pdf)
+    doc.close()
+    drawings = extract_drawings(pdf, [0, 1], obstacle_boxes={0: [], 1: []}, text_boxes={0: [], 1: []})
+    page = drawings["0"]
+    assert page["dense"] is True and not page["raster"]
+    assert all(entry.get("synthetic") == "dense-ink" and not entry["polylines"] for entry in page["drawings"])
+    assert len(page["drawings"]) < 10, "上下相邻、左右一样的格子并成了几个矩形"
+    x0 = min(entry["rect"][0] for entry in page["drawings"])
+    x1 = max(entry["rect"][2] for entry in page["drawings"])
+    y0 = min(entry["rect"][1] for entry in page["drawings"])
+    y1 = max(entry["rect"][3] for entry in page["drawings"])
+    assert x0 <= 100 and x1 >= 219 and y0 <= 50 and y1 >= 149 and x1 - x0 < 200, (x0, y0, x1, y1)
+    # 线条少的页照旧逐条
+    assert drawings["1"]["dense"] is False and drawings["1"]["drawings"][0]["polylines"] == [[[20.0, 200.0], [280.0, 200.0]]]
+
+
+def test_drawings_the_engine_cannot_read_fall_back_with_a_clear_reason(tmp_path: Path, monkeypatch) -> None:
+    from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineFailed
+    from retainpdf_pipeline.render.output.rpr_fit import renderer
+
+    monkeypatch.setattr(renderer, "DRAWINGS_JSON_MAX_CHARS", 10)
+    source_pdf, document_path, translated = _job(tmp_path)
+    with pytest.raises(RprEngineFailed) as raised:
+        renderer.build_book_rpr_fit_pdf(
+            mode="overlay",
+            runtime=None,
+            source_pdf_path=source_pdf,
+            output_pdf_path=tmp_path / "rendered" / "out.pdf",
+            translated_pages=translated,
+            font_family="Source Han Serif SC",
+            document_path=document_path,
+            obstacle_scan={"0": {"width": 300, "height": 400, "drawings": [], "images": [], "words": []}},
+        )
+    assert raised.value.code == "drawings_too_large" and "超过引擎能读的上限" in str(raised.value)
+
+
+def test_a_page_tiled_from_thousands_of_small_images_also_gets_coarse_ink(tmp_path: Path, monkeypatch) -> None:
+    # 图纸的填充花纹是成千上万张小图拼的：图片框多过 DENSE_IMAGES 个也换成粗格子，图片框清空（墨迹在格子里）
+    from retainpdf_pipeline.render.prepare import obstacle_scan_pdf
+
+    monkeypatch.setattr(obstacle_scan_pdf, "DENSE_IMAGES", 20)
+    tile = fitz.Pixmap(fitz.csRGB, fitz.IRect(0, 0, 4, 4), False)
+    tile.clear_with(0)
+    pdf = tmp_path / "tiles.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=400, height=300)
+    for k in range(40):
+        page.insert_image(fitz.Rect(50 + k * 5, 100, 54 + k * 5, 104), pixmap=tile)
+    doc.save(pdf)
+    doc.close()
+    scanned = extract_drawings(pdf, [0], obstacle_boxes={0: []}, text_boxes={0: []})["0"]
+    assert scanned["dense"] is True and scanned["images"] == []
+    assert scanned["drawings"] and all(entry.get("synthetic") == "dense-ink" for entry in scanned["drawings"])

@@ -130,6 +130,13 @@ Box = list[float]
 RASTER_PAGE_IMAGE_RATIO = 0.5
 # 36 dpi：一个像素约 2pt。18 dpi（4pt）时细的彩色题框线被平均到只比纸色暗一点，认不出来（703433 第 23 页）。
 RASTER_INK_DPI = 36
+# 矢量图元多过这么多的页（CAD 图纸，一页十来万条线）不逐条给引擎，改成粗格子墨迹（长边这么多像素），
+# 上下相邻、左右一样的格子并成一个矩形。2026-11-04 一套 1265 页的设计图纸逐条写出来 1.74 GB，引擎（Node）
+# 一个字符串最长约 512 MB，读不进来，只好退回 Typst；粗格子每页几百个矩形、百来 KB。
+DENSE_VECTOR_DRAWINGS = 2000
+# 图片框也一样：图纸的填充花纹是成千上万张小图拼的（一页近 20 万个框、15 MB）；它们的墨迹在粗格子里
+DENSE_IMAGES = 2000
+DENSE_INK_LONG_SIDE_PX = 160
 RASTER_INK_DELTA = 18
 
 
@@ -215,10 +222,22 @@ def _raster_ink(page: fitz.Page, skip_boxes: list[Box]) -> list[dict]:
     只跳过**整格**落在已知框（译文块、障碍物）里的墨迹；跨在框边上的格子留着——贴着译文框
     边的题框线、表格线就在这种格子里。引擎会把障碍物落在译文框里的部分裁掉
     （vector-obstacles.js：repainted text boxes are cut away），所以译文块自己的原文墨迹
-    不会挡住它自己。每行相邻的墨迹格合成一段；墨迹 = 比页面纸色（亮度 90 分位）暗
-    RASTER_INK_DELTA 以上。
+    不会挡住它自己。每行相邻的墨迹格合成一段，上下相邻、左右一样的段再并成一个矩形（盖住的地方不变，
+    一页从几千条变成几百条：2026-11-04 那套图纸八百多页扫描页逐行写出来几百 MB）；墨迹 = 比页面纸色
+    （亮度 90 分位）暗 RASTER_INK_DELTA 以上。
     """
     pix = page.get_pixmap(dpi=RASTER_INK_DPI, colorspace=fitz.csGRAY, alpha=False)
+    return _ink_rects(page, pix, skip_boxes, synthetic="raster-ink")
+
+
+def _coarse_ink(page: fitz.Page, skip_boxes: list[Box]) -> list[dict]:
+    """矢量图元、图片框太多的页：长边 DENSE_INK_LONG_SIDE_PX 像素的墨迹格子当实心障碍物（做法同 `_raster_ink`）。"""
+    zoom = DENSE_INK_LONG_SIDE_PX / max(1.0, page.rect.width, page.rect.height)
+    pix = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), colorspace=fitz.csGRAY, alpha=False)
+    return _ink_rects(page, pix, skip_boxes, synthetic="dense-ink")
+
+
+def _ink_rects(page: fitz.Page, pix: fitz.Pixmap, skip_boxes: list[Box], *, synthetic: str) -> list[dict]:
     width, height, samples = pix.width, pix.height, pix.samples
     if not width or not height:
         return []
@@ -227,10 +246,12 @@ def _raster_ink(page: fitz.Page, skip_boxes: list[Box]) -> list[dict]:
     threshold = paper - RASTER_INK_DELTA
     sx = page.rect.width / width
     sy = page.rect.height / height
-    entries: list[dict] = []
+    rects: list[list[float]] = []
+    open_runs: dict[tuple[int, int], list[float]] = {}
     for row in range(height):
         base = row * width
         y0, y1 = row * sy, (row + 1) * sy
+        runs: list[tuple[int, int]] = []
         start = -1
         for col in range(width + 1):
             dark = col < width and samples[base + col] < threshold
@@ -241,13 +262,23 @@ def _raster_ink(page: fitz.Page, skip_boxes: list[Box]) -> list[dict]:
             if dark and start < 0:
                 start = col
             elif not dark and start >= 0:
-                rect = [start * sx, y0, col * sx, y1]
-                entries.append(
-                    {"rect": rect, "type": "f", "width": 0, "fill": [0, 0, 0], "stroke": None, "clip": None,
-                     "fillOpacity": 1, "polylines": [], "synthetic": "raster-ink"}
-                )
+                runs.append((start, col))
                 start = -1
-    return entries
+        next_runs: dict[tuple[int, int], list[float]] = {}
+        for run in runs:
+            rect = open_runs.get(run)
+            if rect is not None:
+                rect[3] = y1
+            else:
+                rect = [run[0] * sx, y0, run[1] * sx, y1]
+                rects.append(rect)
+            next_runs[run] = rect
+        open_runs = next_runs
+    return [
+        {"rect": [round(v, 2) for v in rect], "type": "f", "width": 0, "fill": [0, 0, 0], "stroke": None, "clip": None,
+         "fillOpacity": 1, "polylines": [], "synthetic": synthetic}
+        for rect in rects
+    ]
 
 
 def extract_drawings(
@@ -257,7 +288,7 @@ def extract_drawings(
     obstacle_boxes: dict[int, list[Box]] | None = None,
     text_boxes: dict[int, list[Box]] | None = None,
 ) -> dict[str, dict]:
-    """{"<页号>": {width, height, drawings, images, words, raster}}，只含 page_indices 里的页。
+    """{"<页号>": {width, height, drawings, images, words, raster, dense}}，只含 page_indices 里的页。
 
     obstacle_boxes：每页已知的障碍物框（不翻译的块：图、表、公式、页眉页脚……），落在里面的
     路径合并成一个墨迹矩形；text_boxes：每页译文块的框。扫描页（raster=True）额外从渲染图
@@ -273,8 +304,12 @@ def extract_drawings(
             texts = list((text_boxes or {}).get(int(index), []))
             words, images = _text_and_image_boxes(page)
             drawings = _collapse_into_obstacles(_page_drawings(page, obstacles), obstacles)
+            dense = len(drawings) > DENSE_VECTOR_DRAWINGS or len(images) > DENSE_IMAGES
             raster = _is_raster_page(page, images)
-            if raster:
+            if dense:
+                drawings = _coarse_ink(page, texts + obstacles)
+                images = []  # 引擎只拿图片框当墨迹（vector-obstacles.js obstacleInkBoxes），粗格子里已经有了
+            elif raster:
                 drawings.extend(_raster_ink(page, texts + obstacles))
             out[str(int(index))] = {
                 "width": page.rect.width,
@@ -283,6 +318,7 @@ def extract_drawings(
                 "images": images,
                 "words": words,
                 "raster": raster,
+                "dense": dense,
             }
     return out
 
