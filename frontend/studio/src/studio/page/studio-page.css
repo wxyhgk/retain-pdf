@@ -634,3 +634,20 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .pm-file-card:hover .pm-file-card-more, .pm-file-card-more:focus-visible { opacity: 1; }
 .pm-file-card-more:hover { background: var(--studio-fill-2); color: rgb(var(--black)); }
 .crepe-host .milkdown .ProseMirror a:has(> .pm-file-mention) { color: inherit; text-decoration: none; cursor: pointer; }
+
+/* ＋'s books (shell/dialogs/BookPickDialog.tsx): the library as covers, found by title. Black, white and gray. */
+.book-pick-search { width: 100%; height: 32px; padding: 0 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 14px; outline: none; }
+.book-pick-search:focus { border-color: rgb(var(--gray)); }
+.book-pick-grid { display: grid; max-height: min(60vh, 560px); grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 18px 14px; margin: 0; padding: 2px 2px 4px; overflow-y: auto; list-style: none; }
+.book-pick-book { display: flex; width: 100%; flex-direction: column; gap: 3px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.book-pick-book:disabled { cursor: default; opacity: 0.5; }
+.book-pick-cover { display: grid; overflow: hidden; aspect-ratio: 3 / 4; margin-bottom: 6px; border-radius: 4px; background: rgba(var(--gray), 0.08); box-shadow: 0 0 0 1px rgba(var(--gray), 0.22); place-items: center; }
+.book-pick-cover img { width: 100%; height: 100%; object-fit: cover; }
+.book-pick-cover-title { display: -webkit-box; overflow: hidden; padding: 10px; color: rgb(var(--gray)); font-size: 12px; text-align: center; -webkit-box-orient: vertical; -webkit-line-clamp: 5; }
+.book-pick-book:not(:disabled):hover .book-pick-cover, .book-pick-book:focus-visible .book-pick-cover { box-shadow: 0 0 0 2px rgb(var(--gray-dark)); }
+.book-pick-book[aria-current='true'] .book-pick-cover { box-shadow: 0 0 0 2px rgb(var(--gray)); }
+.book-pick-book:focus-visible { outline: none; }
+.book-pick-name { display: -webkit-box; overflow: hidden; font-size: 13px; font-weight: 600; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.book-pick-meta { color: rgb(var(--gray)); font-size: 12px; }
+.book-pick-empty { margin: 24px 0; color: rgb(var(--gray)); text-align: center; }
+

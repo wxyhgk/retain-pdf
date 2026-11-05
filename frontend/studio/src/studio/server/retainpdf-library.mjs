@@ -90,6 +90,24 @@ export class RetainpdfLibrary {
 		return body.data;
 	}
 
+	/**
+	 * A book's cover, small (its first page: RetainPDF makes it the first time it is asked), for the books' ＋ to show:
+	 * its bytes and kind, fetched here with the key (never in the page).
+	 */
+	async cover(documentId) {
+		const id = text(documentId);
+		if (!/^[0-9a-f]{16,128}$/u.test(id)) throw new RetainpdfLibraryError(t('不认识这本书'), 400);
+		const { api, key } = await this.settings.connection();
+		let answer;
+		try {
+			answer = await this.fetch(new URL(`/api/v1/documents/${id}/files/thumbnail.jpg`, api), { headers: { Accept: 'image/*', ...(key ? { 'X-API-Key': key } : {}) } });
+		} catch {
+			throw new RetainpdfLibraryError(t('连不上 RetainPDF（{api}）：它开着吗？地址在 Studio 设置的 RetainPDF 一栏', { api: new URL(api).origin }), 502);
+		}
+		if (!answer.ok) throw new RetainpdfLibraryError(t('这本书没有封面'), answer.status === 404 ? 404 : 502);
+		return { type: answer.headers.get('content-type') || 'image/jpeg', bytes: Buffer.from(await answer.arrayBuffer()) };
+	}
+
 	/** Whether RetainPDF answers, and how many books it has: for the settings to show. */
 	async check() {
 		const data = await this.#get('/api/v1/documents', { limit: 1 });

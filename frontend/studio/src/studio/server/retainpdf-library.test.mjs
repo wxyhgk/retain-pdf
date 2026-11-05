@@ -132,3 +132,16 @@ test('RetainPDF saying no to the key found before (it started since, or its key 
 	const stubborn = new RetainpdfLibrary({ fetch, settings: { connection: async () => ({ api: 'http://127.0.0.1:41000/', key: 'wrong' }), forgetFound() {} } });
 	await assert.rejects(stubborn.listBooks(), /不认这个 API 密钥/u);
 });
+
+test('a book\'s cover asked with the key, its bytes and kind; an id not a book\'s refused', async () => {
+	const asked = [];
+	const fetch = async (url, init) => {
+		asked.push([new URL(url).pathname, init?.headers?.['X-API-Key']]);
+		return new Response(new Uint8Array([0xff, 0xd8, 0xff]), { status: 200, headers: { 'content-type': 'image/jpeg' } });
+	};
+	const cover = await library({ fetch }).cover('abcdef0123456789');
+	assert.equal(cover.type, 'image/jpeg');
+	assert.equal(cover.bytes.length, 3);
+	assert.deepEqual(asked, [['/api/v1/documents/abcdef0123456789/files/thumbnail.jpg', 'the-key']]);
+	await assert.rejects(library({ fetch }).cover('../x'), /不认识这本书/u);
+});

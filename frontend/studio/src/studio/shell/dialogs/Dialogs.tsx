@@ -1,4 +1,5 @@
 import { createStore, useStore } from '../store';
+import { BookPickDialog, type BookPickAsk } from './BookPickDialog';
 import { CiteDialog, type CiteAsk } from './CiteDialog';
 import { DeletePageDialog, PublishCheckDialog, type DeletePageAsk, type PublishCheckAsk } from './AskDialogs';
 import { HistoryDialog, type HistoryHost } from './HistoryDialog';
@@ -19,6 +20,7 @@ type Asks = {
 	cite: CiteAsk;
 	newApp: NewAppAsk;
 	replace: ReplaceAsk;
+	bookPick: BookPickAsk;
 };
 
 /** The dialogs open: one at a time of each kind. */
@@ -47,6 +49,7 @@ export function Dialogs() {
 			{asks.cite && <CiteDialog key={asks.cite.round} ask={asks.cite} onClose={closer('cite')} />}
 			{asks.newApp && <NewAppDialog {...asks.newApp} onClose={closer('newApp')} />}
 			{asks.replace && <ReplaceDialog key={asks.replace.round} ask={asks.replace} onClose={closer('replace')} />}
+			{asks.bookPick && <BookPickDialog key={asks.bookPick.round} ask={asks.bookPick} onClose={closer('bookPick')} />}
 		</>
 	);
 }

@@ -605,7 +605,16 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 
 	// ＋: a book of RetainPDF's not open, from its library (its key found, not filled in).
 	await page.locator('#book-tabs-add').click();
-	await page.getByRole('menuitem', { name: /Organic Chemistry/u }).click();
+	// The library as covers (not a long list): a search, a card each, the title on a gray card when there is no cover.
+	const picker = page.locator('#book-pick-dialog');
+	await expect(picker.locator('.book-pick-book')).toHaveCount(1);
+	await expect(picker.locator('.book-pick-name')).toHaveText(['Organic Chemistry']);
+	await expect(picker.locator('.book-pick-meta')).toHaveText(['120 页']);
+	await picker.locator('#book-pick-input').fill('nothing like it');
+	await expect(picker).toContainText('书库里没有这样的书');
+	await picker.locator('#book-pick-input').fill('organic');
+	await picker.locator('.book-pick-book', { hasText: 'Organic Chemistry' }).click();
+	await expect(picker).toHaveCount(0);
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Organic Chemistry');
 	await expect(bookFrame(page, 'job-3').locator('#opened')).toHaveText('job_id=job-3&page_idx=0&embed_pane=beside');
 

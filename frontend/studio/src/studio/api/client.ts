@@ -982,9 +982,12 @@ export function checkRetainpdf(): Promise<{ ok: true; books: number }> {
 }
 
 /** RetainPDF's books, the latest read first (server/retainpdf-library.mjs): `job_id` the translation last read. */
-export function retainpdfBooks(): Promise<{ books: Array<{ document_id: string; title: string | null; pages: number | null; job_id: string | null }> }> {
-	return request('/api/studio/retainpdf/books');
+export function retainpdfBooks(limit?: number): Promise<{ books: Array<{ document_id: string; title: string | null; pages: number | null; job_id: string | null }> }> {
+	return request(`/api/studio/retainpdf/books${limit ? `?limit=${limit}` : ''}`);
 }
+
+/** Where a book's cover is (fetched by the Studio's server, RetainPDF's key kept there). */
+export const retainpdfCover = (documentId: string): string => `/api/studio/retainpdf/books/${encodeURIComponent(documentId)}/cover`;
 
 /** A passage of a book found by its words (⌘K): its book, job, page (from 1) and block, and the words round it. */
 export type BookHit = { document_id: string; title: string | null; job_id: string; page: number; block: string; source: string | null; translated: string | null };
