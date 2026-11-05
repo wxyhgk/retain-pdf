@@ -427,7 +427,7 @@ class AgentSession {
 	static kept(record, page) {
 		const session = new AgentSession({ agent: record.agent, cwd: record.cwd, slug: record.slug ?? null, id: record.id });
 		session.state = 'saved';
-		session.title = record.title ?? '';
+		session.title = record.named ? (record.title ?? '') : titleFrom(record.title ?? '');
 		session.named = record.named === true;
 		session.created = record.created;
 		session.updated = record.updated ?? record.created;
@@ -449,7 +449,7 @@ class AgentSession {
 
 	/** What the list says of a conversation of chats/ not read back. */
 	static summaryOf(record) {
-		return { id: record.id, agent: record.agent, slug: record.slug ?? null, cwd: record.cwd, title: record.title ?? '', state: 'saved', error: '', created: record.created, updated: record.updated ?? record.created, configOptions: record.configOptions ?? [], modes: null, commands: [], usage: null, service: record.service ?? null, pageThrough: record.pageThrough === undefined ? record.items?.at(-1)?.id ?? null : record.pageThrough, onPage: true };
+		return { id: record.id, agent: record.agent, slug: record.slug ?? null, cwd: record.cwd, title: record.named ? (record.title ?? '') : titleFrom(record.title ?? ''), state: 'saved', error: '', created: record.created, updated: record.updated ?? record.created, configOptions: record.configOptions ?? [], modes: null, commands: [], usage: null, service: record.service ?? null, pageThrough: record.pageThrough === undefined ? record.items?.at(-1)?.id ?? null : record.pageThrough, onPage: true };
 	}
 
 	summary() {
@@ -482,8 +482,7 @@ class AgentSession {
 	/** The title its agent gave it, or (Codex gives none) the start of what the author said first. */
 	#title() {
 		if (this.title) return this.title;
-		const first = this.items.find((item) => item.kind === 'user')?.text.trim().split('\n')[0] ?? '';
-		return first.length > 40 ? `${first.slice(0, 40)}…` : first;
+		return titleFrom(this.items.find((item) => item.kind === 'user')?.text ?? '');
 	}
 
 	/** It as kept in chats/ (chat-store.mjs): leave still asked, refused, as it will be once it is read back. */
@@ -912,7 +911,7 @@ class AgentSession {
 			case 'plan':
 				return this.#put({ kind: 'plan', id: 'plan', entries: update.entries ?? [] }, true);
 			case 'notice':
-				return this.#add({ kind: 'notice', id: randomUUID(), severity: update.severity, title: update.title, description: update.description ?? '' });
+				return this.#add({ kind: 'notice', id: randomUUID(), severity: update.severity, title: update.title, description: update.description ?? '', ...(update.passing ? { passing: true } : {}) });
 			// Its context compacted (what was said before made a summary): a line, the summary under it.
 			case 'compaction_update': {
 				const id = `compaction-${update.compactionId}`;
@@ -925,7 +924,7 @@ class AgentSession {
 				return this.#put({ ...before, summary: before.summary + (update.content?.text ?? '') }, this.#byId.has(id));
 			}
 			case 'session_info_update':
-				if (typeof update.title === 'string' && !this.named) this.title = withoutContext(update.title, this.items.find((item) => item.kind === 'user')?.text ?? '');
+				if (typeof update.title === 'string' && !this.named) this.title = titleFrom(withoutContext(update.title, this.items.find((item) => item.kind === 'user')?.text ?? ''));
 				break;
 			case 'config_option_update':
 				this.configOptions = update.configOptions ?? this.configOptions;
@@ -1194,6 +1193,27 @@ function bookLines({ job_id: job, document_id: document, title, page, pages, not
  * A title some agents make of the first thing told (cut short, perhaps): what the author said of it, not what the
  * Studio added after it (withContext).
  */
+/**
+ * A conversation's title from what was first said: its first line of words, not of a formula (a passage quoted, a
+ * formula selected and asked of: `\\begin{array}…` is no title); a formula's words when it is all there is
+ * (`$\\mathcal{H}_{elec}$` → `H elec`). At most 40 characters.
+ */
+export function titleFrom(said) {
+	const lines = String(said).split('\n').map((line) => line.replace(/^\s*(?:>\s*)+/u, '').trim()).filter(Boolean);
+	const formulaic = (line) => /^(\$\$|\\\[|```)/u.test(line) || (line.match(/\\[a-zA-Z]+/gu)?.length ?? 0) >= 2 || /^[\s\\{}_^$&=+\-*/()[\]0-9a-zA-Z.,|]*$/u.test(line) && /[\\{}_^]/u.test(line);
+	const plain = (line) =>
+		line
+			.replace(/\\(?:begin|end)\{[^}]*\}(?:\{[^}]*\})?/gu, ' ')
+			.replace(/\\(?:mathrm|mathcal|mathbf|mathit|text|operatorname)\s*\{([^{}]*)\}/gu, '$1')
+			.replace(/\\[a-zA-Z]+/gu, ' ')
+			.replace(/[{}$^_&]|\\\\/gu, ' ')
+			.replace(/\s+/gu, ' ')
+			.trim();
+	const words = lines.find((line) => !formulaic(line));
+	const title = words ? plain(words) : (lines.map(plain).find(Boolean) ?? '');
+	return title.length > 40 ? `${title.slice(0, 40)}…` : title;
+}
+
 function withoutContext(title, said) {
 	const at = said ? title.indexOf(said.trim()) : -1;
 	if (at >= 0 && /^\s*</u.test(title.slice(at + said.trim().length))) return title.slice(0, at + said.trim().length).trim();

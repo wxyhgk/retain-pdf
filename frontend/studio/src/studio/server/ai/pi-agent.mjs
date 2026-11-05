@@ -425,7 +425,8 @@ function translator(cwd, send, session) {
 				return;
 			}
 			case 'auto_retry_start':
-				send({ sessionUpdate: 'notice', severity: 'info', title: t('模型没回应，{seconds} 秒后再试（第 {attempt}/{max} 次）', { seconds: Math.round((event.delayMs ?? 0) / 1000), attempt: event.attempt, max: event.maxAttempts }), description: event.errorMessage ?? '' });
+				// Passing: gone once the conversation goes on (the panel shows it only while it is the last thing said).
+				send({ sessionUpdate: 'notice', severity: 'info', title: t('模型没回应，{seconds} 秒后再试（第 {attempt}/{max} 次）', { seconds: Math.round((event.delayMs ?? 0) / 1000), attempt: event.attempt, max: event.maxAttempts }), description: event.errorMessage ?? '', passing: true });
 				return;
 			case 'auto_retry_end':
 				if (!event.success) send({ sessionUpdate: 'notice', severity: 'warning', title: t('试了 {attempt} 次，模型还是没回应', { attempt: event.attempt }), description: event.finalError ?? '' });

@@ -599,10 +599,12 @@ export const Item = memo(function Item({ item, last, tool }: { item: Conversatio
 		case 'question':
 			return <Question item={item} />;
 		case 'notice':
+			// A passing one (a retry): only while nothing has been said since; what went wrong (the service's words) on hover.
+			if (item.passing && !last) return null;
 			return (
-				<div className={`ai-notice is-${item.severity}`}>
+				<div className={`ai-notice is-${item.severity}`} title={item.passing ? item.description : undefined}>
 					<strong>{item.title}</strong>
-					<span>{item.description ? ` ${item.description}` : ''}</span>
+					<span>{item.description && !item.passing ? ` ${item.description}` : ''}</span>
 					{/* Nothing said: asked to say it, while it is the last thing in the conversation. */}
 					{item.resume && last && (
 						<>
