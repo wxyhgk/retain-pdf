@@ -69,20 +69,6 @@ export const defaultReaderPageConfigPort: ReaderPageConfigPort = {
 };
 
 export const readerLiveTranslation = () => getReaderAdapters()?.liveTranslation ?? null;
-/** 「摘到笔记」：放在笔记（Studio）里、握过手时宿主才给；没有就是 null。 */
-export const readerNotesQuote = () => getReaderAdapters()?.notesQuote ?? null;
-/** 「笔记」按钮：同上，宿主给了才有。 */
-export const readerNotesPanel = () => getReaderAdapters()?.notesPanel ?? null;
-/** 告诉宿主眼下读到哪：同上，宿主给了才有。 */
-export const readerReadingPosition = () => getReaderAdapters()?.readingPosition ?? null;
-/** 阅读页的「AI」交给宿主（Studio 自己的 AI）：同上，宿主给了才有。 */
-export const readerHostAi = () => getReaderAdapters()?.hostAi ?? null;
-/** 宿主让阅读页原地翻到某一段：同上，宿主给了才有。 */
-export const readerHostNavigation = () => getReaderAdapters()?.hostNavigation ?? null;
-/** 这本书摘过的段落：同上，宿主给了才有。 */
-export const readerQuotedBlocks = () => getReaderAdapters()?.quotedBlocks ?? null;
-/** 控件由宿主画：同上，宿主给了才有。 */
-export const readerHostChrome = () => getReaderAdapters()?.hostChrome ?? null;
 export const readerPdfPort = (): ReaderPdfPort => {
   const adapters = getReaderAdapters();
   return adapters?.pdf ?? {

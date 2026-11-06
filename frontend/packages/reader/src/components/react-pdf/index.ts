@@ -1,5 +1,5 @@
 // Public exits for react-pdf reader UI
-export { ReaderCloseHome, ReaderNotesToggle, navigateReaderToHome } from "./ReaderCloseHome.js";
+export { ReaderCloseHome, navigateReaderToHome } from "./ReaderCloseHome.js";
 export { ReaderCompareGrid } from "./ReaderCompareGrid.js";
 export { ReaderWorkspaceTabs } from "./ReaderWorkspaceTabs.js";
 export type { ReaderWorkspaceMode, ReaderWorkspaceView } from "./ReaderWorkspaceTabs.js";

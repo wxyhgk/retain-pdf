@@ -14,14 +14,6 @@ export declare function copyReaderText(text: string): Promise<boolean>;
 export declare const READER_TEXT_HOVER_COPY_CLASS = "reader-text-hover-copy";
 export declare const READER_TEXT_HOVER_ID_CLASS = "reader-text-hover-id";
 export declare const READER_TEXT_HOVER_TOOLS_CLASS = "reader-text-hover-tools";
-export declare const READER_TEXT_HOVER_QUOTE_CLASS = "reader-text-hover-quote";
-/** 「摘到笔记」交出去的一段：原文页（0 起）、原文、整段译文（跨块接起来的段落是整段，没译文为 null）。 */
-export declare function readerNotesQuoteOf(target: ReaderTextHoverTarget): {
-    itemId: string;
-    pageIdx: number;
-    sourceText: string;
-    translatedText: string;
-};
 /** 工具条（编号 + 复制）大约占的尺寸：放进框内放不下时才挪到框外上方。 */
 export declare const HOVER_TOOLS_HEIGHT = 26;
 export declare const HOVER_TOOLS_WIDTH = 190;
@@ -30,15 +22,12 @@ export declare const HOVER_TOOLS_WIDTH = 190;
  * 也不盖住上一块。框太矮或太窄（行间公式常常只有一行高）放不下时才挪到框外上方。
  */
 export declare function hoverToolsOutside(rect: ReaderRegionRect, toolsWidth?: number): boolean;
-/** 多了「摘到笔记」时工具条大约宽出来的部分。 */
-export declare const HOVER_QUOTE_WIDTH = 72;
 /**
  * 悬停内容块：红色虚线框 + 翻译编号 + 「复制」（行间公式是「复制 LaTeX」）。
  *
  * 对照阅读时左右两栏一起画（悬停的 itemId 由 ReaderCompareGrid 共享），左栏复制原文、
  * 右栏复制译文 —— 这是 4.1.x 旧引擎里最常用的那个交互，React 引擎替换时丢了。
  * 只有这一种块级交互：双击 / 三击留给浏览器选词选段（以前双击会整块复制，把选词弄坏了）。
- * 放在笔记（Studio）里时多一个「摘到笔记」（宿主给了 notesQuote 才有），见 docs/ops/planning/studio-workbench/。
  */
 export declare function ReaderTextHoverLayer({ target, pane, revisedCount, }: {
     target: ReaderTextHoverTarget | null;

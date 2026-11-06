@@ -17,47 +17,6 @@ type ReaderPageConfigPort = ReturnType<typeof createReaderPageConfigPort>;
 export declare const defaultReaderDataPort: ReaderDataPort;
 export declare const defaultReaderPageConfigPort: ReaderPageConfigPort;
 export declare const readerLiveTranslation: () => import("./contracts/live-translation.js").ReaderLiveTranslationPort;
-/** 「摘到笔记」：放在笔记（Studio）里、握过手时宿主才给；没有就是 null。 */
-export declare const readerNotesQuote: () => {
-    available: () => boolean;
-    send: (quote: import("./adapters.js").ReaderNotesQuote) => boolean;
-};
-/** 「笔记」按钮：同上，宿主给了才有。 */
-export declare const readerNotesPanel: () => {
-    getState: () => import("./adapters.js").ReaderNotesPanelState;
-    subscribe: (listener: () => void) => () => void;
-    toggle: () => void;
-};
-/** 告诉宿主眼下读到哪：同上，宿主给了才有。 */
-export declare const readerReadingPosition: () => {
-    report: (pageIdx: number | null, pageCount: number | null) => void;
-};
-/** 阅读页的「AI」交给宿主（Studio 自己的 AI）：同上，宿主给了才有。 */
-export declare const readerHostAi: () => {
-    available: () => boolean;
-    subscribe: (listener: () => void) => () => void;
-    ask: () => boolean;
-};
-/** 宿主让阅读页原地翻到某一段：同上，宿主给了才有。 */
-export declare const readerHostNavigation: () => {
-    subscribe: (listener: (target: {
-        jobId: string;
-        pageIdx: number | null;
-        blockId: string;
-    }) => boolean) => () => void;
-};
-/** 这本书摘过的段落：同上，宿主给了才有。 */
-export declare const readerQuotedBlocks: () => {
-    get: () => ReadonlySet<string>;
-    subscribe: (listener: () => void) => () => void;
-};
-/** 控件由宿主画：同上，宿主给了才有。 */
-export declare const readerHostChrome: () => {
-    active: () => boolean;
-    subscribe: (listener: () => void) => () => void;
-    report: (state: import("./adapters.js").ReaderHostChromeState) => void;
-    onCommand: (handler: (command: import("./adapters.js").ReaderHostChromeCommand) => void) => () => void;
-};
 export declare const readerPdfPort: () => ReaderPdfPort;
 export declare const readerSessionDataPort: () => ReaderSessionDataPort;
 export declare const resolveReaderAnchor: (...a: any[]) => any;

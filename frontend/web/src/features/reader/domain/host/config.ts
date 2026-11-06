@@ -30,7 +30,7 @@ export const createReaderPageConfigPort = (options: ReaderPageConfigPortOptions 
     ...options,
   });
 // 用上面带 readerMessageTargetOrigin（本页 origin）的那个：包里的默认是 '*'，阅读页的加载进度会发给任何把它放进
-// iframe 的页面（放在笔记 Studio 里时就发到了 Studio）。软阅读层和阅读页同源，照样收得到。
+// iframe 的页面。软阅读层和阅读页同源，照样收得到。
 export const defaultReaderPageConfigPort = createReaderPageConfigPort();
 
 export const createReaderPdfDocumentConfigPort = (

@@ -10,7 +10,6 @@ import { useCurrentPage } from "../pdf/useCurrentPage.js";
 import { usePageRowSync } from "../pdf/usePageRowSync.js";
 import { useReadingAnchor } from "../pdf/useReadingAnchor.js";
 import { useReaderUrlAnchorSync } from "./use-url-anchor-jump.js";
-import { readerHostNavigation, readerReadingPosition } from "../external.js";
 import type { PageRowHeights } from "../pdf/usePageRowSync.js";
 import type { ReaderMode, ReaderSessionState } from "./use-reader-session.js";
 import type { ProtectedPdfFile } from "../pdf/useProtectedPdfFile.js";
@@ -25,7 +24,6 @@ import {
 import { readerViewStateScope } from "../shared/state/reader-view-state.js";
 import { useLiveTranslation } from "./use-live-translation.js";
 import { useReaderRevisedBlocks, type RevisedBlocks } from "./use-reader-revised-blocks.js";
-import { useReaderQuotedBlocks } from "./use-reader-quoted-blocks.js";
 import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
 import { isFinishedJobStatus } from "@retainpdf/domain/job";
 
@@ -103,7 +101,6 @@ export type ReaderReactController = {
   liveTranslationAvailable: boolean;
   /** 改过的块（阅读页块编号 → 改过几次），译文栏画标记用。 */
   revisedBlocks: RevisedBlocks;
-  quotedBlocks: ReadonlySet<string>;
 };
 
 const LIVE_TRANSLATION_WORKFLOWS = new Set(["book", "translate"]);
@@ -171,7 +168,6 @@ export function useReaderReactController(): ReaderReactController {
   const { shellRef, shellEl, shellWidth, bindShell } = useReaderShell();
   // 只在有译文时读：原文直开（没有任务）没有修订记录。
   const revisedBlocks = useReaderRevisedBlocks(session.jobId, !session.sourceOnly);
-  const quotedBlocks = useReaderQuotedBlocks();
   const viewStateKey = readerViewStateScope({
     documentId: session.documentId,
     jobId: session.jobId,
@@ -299,25 +295,6 @@ export function useReaderReactController(): ReaderReactController {
     },
   });
 
-  // 放在笔记（Studio）里时告诉宿主眼下读到哪（页 0 起；宿主防抖后发 studio-bridge 的 reading）。
-  const readingKnown = !session.boot.loading && !session.boot.failed && session.assetsReady;
-  const readingPages = Number(panes.hudNumPages) || 0;
-  useEffect(() => {
-    if (!readingKnown) return;
-    readerReadingPosition()?.report(currentPage >= 1 ? currentPage - 1 : null, readingPages >= 1 ? readingPages : null);
-  }, [readingKnown, currentPage, readingPages]);
-
-  // 宿主（Studio）让翻到某一段：这本书已经打开好就原地翻过去，PDF 不重新加载；别的书、还没打开好交回宿主整页打开。
-  useEffect(() => {
-    const hostNavigation = readerHostNavigation();
-    if (!hostNavigation || !readingKnown || !session.jobId) return;
-    return hostNavigation.subscribe(({ jobId, pageIdx, blockId }) => {
-      if (jobId !== session.jobId) return false;
-      jumpToAnchor({ ...(pageIdx != null ? { page_idx: pageIdx } : {}), ...(blockId ? { block_id: blockId } : {}) });
-      return true;
-    });
-  }, [readingKnown, session.jobId, jumpToAnchor]);
-
   const { setModeKeepingPage } = useReaderModeNavigation({
     mode: session.mode,
     setMode: session.setMode,
@@ -364,8 +341,7 @@ export function useReaderReactController(): ReaderReactController {
     liveTranslation,
     liveTranslationAvailable,
     revisedBlocks,
-    quotedBlocks,
-  }), [session, shellMemo, panes, sessionFilesMemo, rowHeights, goToPage, activeRegion, jumpToAnchor, setModeKeepingPage, showHud, userZoom, onZoomChange, viewStateKey, liveTranslation, liveTranslationAvailable, revisedBlocks, quotedBlocks]);
+  }), [session, shellMemo, panes, sessionFilesMemo, rowHeights, goToPage, activeRegion, jumpToAnchor, setModeKeepingPage, showHud, userZoom, onZoomChange, viewStateKey, liveTranslation, liveTranslationAvailable, revisedBlocks]);
 
   return useMemo(() => ({
     ...stablePart,

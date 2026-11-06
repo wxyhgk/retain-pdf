@@ -19,9 +19,8 @@
  * 底）。不用 JS 量宽度 —— 量宽度要监听 resize、要处理首帧为 0，而这里没有任何
  * 需要 JS 才能表达的东西。
  */
-import { Sparkles, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { ReactElement } from "react";
-import { useReaderHostAi } from "../../hooks/use-reader-host-ai.js";
 import { useReaderContext } from "./reader-context.js";
 import { readerDockTabs, type ReaderDockTab } from "./reader-dock-tabs.js";
 import type { ReaderAssistantPanel } from "./reader-assistant-types.js";
@@ -29,7 +28,7 @@ import type { ReaderAssistantPanel } from "./reader-assistant-types.js";
 // 既有 import 兼容：类型真值已移至叶子文件。
 export type { ReaderAssistantPanel } from "./reader-assistant-types.js";
 
-/** 竖条 / tab 条上的一颗：dock 的面板，或宿主的 AI。 */
+/** 竖条 / tab 条上的一颗：dock 的一个面板。 */
 type DockEntry = {
   key: string;
   label: string;
@@ -63,24 +62,16 @@ export function ReaderAssistantDock(props: ReaderAssistantDockProps): ReactEleme
   const sourceOnly = props.sourceOnly ?? ctx?.sourceOnly ?? false;
   const onSelect = props.onSelect ?? ctx?.assistant.select ?? (() => {});
   const onClose = props.onClose ?? ctx?.assistant.close ?? (() => {});
-  // 放在笔记（Studio）里：多一颗「AI」，打开 Studio 自己的 AI（studio-bridge 的 ask-ai）。RetainPDF 自己没有 AI
-  // （2026-11-03 删了），单独打开时没有这一颗。
-  const hostAi = useReaderHostAi();
-  const entries: DockEntry[] = [
-    ...readerDockTabs().map(({ id, label, short, Icon, needsJob }) => ({
-      key: id,
-      label,
-      short,
-      Icon,
-      disabled: needsJob && sourceOnly,
-      selected: active === id,
-      badge: badges?.[id],
-      onClick: () => onSelect(id),
-    })),
-    ...(hostAi.available
-      ? [{ key: "host-ai", label: "AI", short: "AI", Icon: Sparkles, disabled: false, selected: false, onClick: () => void hostAi.ask() }]
-      : []),
-  ];
+  const entries: DockEntry[] = readerDockTabs().map(({ id, label, short, Icon, needsJob }) => ({
+    key: id,
+    label,
+    short,
+    Icon,
+    disabled: needsJob && sourceOnly,
+    selected: active === id,
+    badge: badges?.[id],
+    onClick: () => onSelect(id),
+  }));
 
   if (!active) {
     return (

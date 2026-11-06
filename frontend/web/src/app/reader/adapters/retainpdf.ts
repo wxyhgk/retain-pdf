@@ -2,16 +2,10 @@
 import * as ext from "../external.js";
 import { setReaderAdapters } from "@retainpdf/reader/adapters";
 import type { ReaderAdapters, ReaderDownloadAdapters } from "@retainpdf/reader/adapters";
-import { studioEmbed, studioReaderAdapters } from "@/app/bootstrap/studio-embed.js";
-import { parseReaderParams } from "@/platform/navigation/pages.js";
 
 // external.ts 是 MPA 宿主能力的单一出口。这里只显式列出 ReaderAdapters
 // 声明的字段：过去的 `...ext` 会把未声明的导出静默带入运行时对象，
 // 一旦包契约增删字段无法在类型层暴露。逐字段映射可让漏接/错配立即报错。
-// 放在笔记（Studio）里（?embed=studio）时才有：「摘到笔记」和「笔记」按钮，握过手、Studio 认才显示；翻页告诉 Studio 读到哪。
-const studio = studioEmbed
-  ? studioReaderAdapters(studioEmbed, parseReaderParams().jobId, (jobId) => ext.fetchDocumentByJobId(ext.API_PREFIX, jobId))
-  : null;
 
 const adapters: ReaderAdapters = {
   // —— session ——
@@ -45,18 +39,6 @@ const adapters: ReaderAdapters = {
   apiPrefix: ext.API_PREFIX,
   fetchDocumentByJobId: ext.fetchDocumentByJobId,
   // —— credentials ——
-  // —— 笔记（Studio）：「摘到笔记」、「笔记」按钮 ——
-  notesQuote: studio?.notesQuote,
-  notesPanel: studio?.notesPanel,
-  readingPosition: studio?.readingPosition,
-  // —— 放在 Studio 里、它有自己的 AI：阅读页的「AI」打开它的，不开上面的终端 ——
-  hostAi: studio?.hostAi,
-  // —— Studio 让翻到某一段：同一本书原地翻过去，不整页重开 ——
-  hostNavigation: studio?.hostNavigation,
-  // Studio 摘录栏说的这本书摘过的段落：阅读页在这些块左边画细线。
-  quotedBlocks: studio?.quotedBlocks,
-  // Studio 画书标签那一行的控件：阅读页不画自己的工具栏、底部栏、MD/AI 竖条，报状态、听命令。
-  hostChrome: studio?.hostChrome,
 };
 setReaderAdapters(adapters);
 

@@ -67,7 +67,7 @@ export function setTheme(theme: ThemeId) {
   return showTheme(next);
 }
 
-/** 只换 <html data-theme> 并广播，不写 storage：放在笔记（Studio）里时跟着它换亮暗，不改这台机器存的设置。 */
+/** 只换 <html data-theme> 并广播，不写 storage。 */
 export function showTheme(theme: ThemeId) {
   const next = isThemeId(theme) ? theme : DEFAULT_THEME_ID;
   if (typeof document !== "undefined") {

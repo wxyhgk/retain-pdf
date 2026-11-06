@@ -49,7 +49,6 @@ import type { AuthSessionView } from "@retainpdf/api/auth";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import { StatusDetailDialog } from "@/features/job-detail/index.js";
 import { ReaderNavigation, SoftReaderHost } from "@/features/reader/index.js";
-import { studioEmbed } from "@/app/bootstrap/studio-embed.js";
 import {
   CollectionDialog,
   CollectionsView,
@@ -73,7 +72,7 @@ import "@/features/library/ui/island/index.js";
 // - 任务中心：底部栏点开才显示；
 // - 书籍详情：点开一本书才显示（见 BookDetailDialogSlot）。
 // 两者都只被本文件引用，走各自 index 的动态 import，不破坏「index 是唯一出口」。
-// （以前还有「AI 问答」：2026-11-03 RetainPDF 自己的 AI 删了，只留 Studio 的。）
+// （以前还有「AI 问答」：2026-11-03 RetainPDF 自己的 AI 删了。）
 const TaskCenter = lazy(() => import("@/features/task-center/index.js").then((m) => ({ default: m.TaskCenter })));
 const BookDetailDialog = lazy(() => import("@/features/book-detail/index.js").then((m) => ({ default: m.BookDetailDialog })));
 
@@ -280,8 +279,7 @@ function HomeShell() {
       <developer-auth-dialog></developer-auth-dialog>
       <developer-settings-dialog></developer-settings-dialog>
       <StatusDetailDialog />
-      {/* 放在 Studio 的书库里：点书要读交给 Studio（open-book），开在正在写的笔记旁边。 */}
-      <ReaderNavigation handOffBook={handOffToStudio} />
+      <ReaderNavigation />
       {/* 软打开阅读器：全屏层，主页不卸载（关 × 不刷新） */}
       <SoftReaderHost />
       <CollectionDialogSlot />
@@ -318,10 +316,6 @@ function CredentialsProviderSlot({ children }: { children: React.ReactNode }) {
   );
 }
 
-
-/** 书库里点书要读：Studio 认 open-book 就交给它（以笔记为根），不认照旧自己开阅读页。 */
-const handOffToStudio = (book: { jobId: string; documentId: string | null; title: string | null }, pageIdx: number | null) =>
-  studioEmbed?.openBook(book, pageIdx) ?? false;
 
 export function HomeApp({ services, authSession = null }: { services: HomeServices; authSession?: AuthSessionView | null }) {
   return (

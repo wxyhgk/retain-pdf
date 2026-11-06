@@ -1,4 +1,4 @@
-import { h as i, l as c, n as f } from "./markdown-payload-kK3ewW_I.js";
+import { h as c, l as i, n as f } from "./markdown-payload-kK3ewW_I.js";
 const a = [
   "isMockMode",
   "resolveResourceUrl",
@@ -21,15 +21,8 @@ const a = [
   "downloadProtectedResource",
   "failDownloadToast",
   "apiPrefix",
-  "fetchDocumentByJobId",
-  "notesQuote",
-  "notesPanel",
-  "readingPosition",
-  "hostAi",
-  "hostNavigation",
-  "quotedBlocks",
-  "hostChrome"
-], t = [
+  "fetchDocumentByJobId"
+], d = [
   "resolveMarkdownAssetUrl",
   "resolveReaderDownloadUrls",
   "resolveReaderDownloadName",
@@ -38,25 +31,25 @@ const a = [
   "fetchDocumentByJobId"
 ];
 let e = null;
-function d(o) {
-  e = o;
+function l(r) {
+  e = r;
 }
-function l() {
+function t() {
   return e;
 }
-function s(o) {
-  const r = e == null ? void 0 : e[o];
-  if (r == null) throw new Error(`Reader adapter missing: ${String(o)} (call setReaderAdapters)`);
-  return r;
+function s(r) {
+  const o = e == null ? void 0 : e[r];
+  if (o == null) throw new Error(`Reader adapter missing: ${String(r)} (call setReaderAdapters)`);
+  return o;
 }
 export {
   a as READER_ADAPTER_KEYS,
-  t as READER_REQUIRED_ADAPTER_KEYS,
-  l as getReaderAdapters,
-  i as hasMarkdownContent,
-  c as loadMarkdownPayloadWithFallback,
+  d as READER_REQUIRED_ADAPTER_KEYS,
+  t as getReaderAdapters,
+  c as hasMarkdownContent,
+  i as loadMarkdownPayloadWithFallback,
   f as normalizeMarkdownPayload,
   s as requireAdapter,
-  d as setReaderAdapters
+  l as setReaderAdapters
 };
 //# sourceMappingURL=adapters.js.map
