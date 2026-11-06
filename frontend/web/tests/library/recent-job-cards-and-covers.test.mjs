@@ -3,6 +3,7 @@
 
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   recentJobRawImageUrls,
   recentJobProgressPercent,
@@ -272,6 +273,43 @@ test("recent job image cache keys include optional item version", async () => {
     global.fetch = previousFetch;
     global.URL = previousUrl;
   }
+});
+
+test("书库封面只下一遍：书单先到时无版本下的那张，任务状态到了、版本头一回定下来直接认领；以后版本再变照旧重下", async () => {
+  // 以前第一页每张封面都下两遍（书单一遍，任务状态合进来 cacheVersion 变了又一遍）。
+  const previousFetch = global.fetch;
+  const previousUrl = global.URL;
+  let fetchCount = 0;
+  global.fetch = async () => {
+    fetchCount += 1;
+    return { ok: true, async blob() { return { fetchCount }; } };
+  };
+  global.URL = { createObjectURL(blob) { return `blob:${blob.fetchCount}`; } };
+  const rawUrl = "/api/v1/documents/doc-claim/files/thumbnail.jpg";
+  try {
+    assert.equal(await loadRecentJobImage(rawUrl), "blob:1", "书单先到：还不知道版本");
+    assert.equal(await loadRecentJobImage(rawUrl, { cacheVersion: "succeeded|2026-11-06" }), "blob:1", "版本定下来：认领，不重下");
+    assert.equal(await loadRecentJobImage(rawUrl, { cacheVersion: "succeeded|2026-11-06" }), "blob:1");
+    assert.equal(fetchCount, 1);
+    assert.equal(await loadRecentJobImage(rawUrl, { cacheVersion: "succeeded|2026-11-07" }), "blob:2", "重跑完成换了版本：重下");
+    assert.equal(fetchCount, 2);
+  } finally {
+    clearRecentJobImageCache(rawUrl);
+    global.fetch = previousFetch;
+    global.URL = previousUrl;
+  }
+});
+
+test("书库卡片的封面等快进入视口才下（书多了往下翻一页不再一下子下、解 24 张）", () => {
+  const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8");
+  for (const file of ["../../src/features/library/ui/shell/BookCard.tsx", "../../src/features/library/ui/shell/BookListRow.tsx"]) {
+    const source = read(file);
+    assert.match(source, /useRecentJobCover\(item, \{ enabled: near \}\)/, `${file} 的封面没等近了才下`);
+    assert.match(source, /ref=\{(cardRef|rowRef)\}/, `${file} 没把卡片交给 useNearViewport 看`);
+  }
+  const hook = read("../../src/features/library/ui/display/useNearViewport.ts");
+  assert.match(hook, /new IntersectionObserver/);
+  assert.match(hook, /observer\.disconnect\(\);/, "近过一次就不再看（滚走不撤）");
 });
 
 test("recent job image refresh collects previous and next cover candidates", () => {

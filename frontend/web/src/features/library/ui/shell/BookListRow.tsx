@@ -10,6 +10,7 @@ import { isLibraryCardProcessing, libraryCardBadge } from "../../domain/card/lib
 import { BadgeIcon } from "../display/library-card-badge-icon.jsx";
 import { BookCardProcessingOverlay } from "../display/BookCardProcessingOverlay.jsx";
 import { useRecentJobCover } from "../display/useRecentJobCover.js";
+import { useNearViewport } from "../display/useNearViewport.js";
 import { resolveLibraryReadPresentation } from "../../domain/card/library-card-semantics.js";
 import type { LibraryCardItem } from "../../domain/types.js";
 import {
@@ -91,7 +92,8 @@ function BookListRowImpl({
   const readPresentation = resolveLibraryReadPresentation(item);
   const badge = libraryCardBadge(item);
   const processing = isLibraryCardProcessing(item);
-  const coverUrl = useRecentJobCover(item);
+  const [rowRef, near] = useNearViewport<HTMLDivElement>();
+  const coverUrl = useRecentJobCover(item, { enabled: near });
 
   function open() {
     if (batchMode) {
@@ -131,6 +133,7 @@ function BookListRowImpl({
 
   return (
     <div
+      ref={rowRef}
       className="recent-job-item group flex w-full cursor-pointer items-start gap-4 rounded-2xl px-3 py-3.5 text-left shadow-[0_1px_0_color-mix(in_srgb,var(--shadow-color)_4%,transparent)] transition duration-150 ease-[var(--ease-out)] hover:bg-muted/45 active:scale-[0.99] sm:px-4"
       role="button"
       tabIndex={0}
