@@ -1,8 +1,0 @@
-! B3LYP def2-SVP OptTS Freq
-%maxcore 2000
-%geom Calc_Hess true end
-* xyz 0 1
-C   0.000000  0.000000  0.000000
-N   1.180000  0.000000  0.000000
-H   0.368000  1.132000  0.000000
-*

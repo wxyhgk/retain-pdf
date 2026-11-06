@@ -1,7 +1,0 @@
-{
-  "name": "Gaussian 输入生成",
-  "icon": "⚛",
-  "description": "选任务、方法、基组、溶剂，结构取自文章里的 XYZ 或直接粘贴；插进正文，或存成 assets/ 里的 .gjf",
-  "width": 460,
-  "height": 640
-}

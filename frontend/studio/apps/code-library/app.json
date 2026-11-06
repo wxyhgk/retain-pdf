@@ -1,8 +1,0 @@
-{
-  "name": "代码仓库",
-  "icon": "⌗",
-  "description": "像 GitHub 那样看本机的代码仓库：仓库列表、README、文件、代码；新建仓库或添加本机已有的。「片段」收着所有笔记里的代码块和脚本",
-  "width": 1040,
-  "height": 700,
-  "commands": [{ "id": "open", "title": "打开代码仓库", "entry": "" }]
-}
