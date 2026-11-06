@@ -183,3 +183,81 @@ def test_real_deliberation_is_detected_and_salvaged_to_the_final_line():
 )
 def test_ordinary_text_with_similar_words_passes(source, translated):
     assert self_correction_leak(source, translated) == ""
+
+
+# ---------------------------------------------------------------- 用中文讲自己怎么译
+
+# 真实输出（claude-haiku-5-5，一本 OCR 很烂的俄文图纸，20261105025105-209e5c）
+CIRCLED_SOURCE = "$\\textcircled{1}$ песок пылеваяный (м - мелкий, с - средней крупности)"
+CIRCLED_OUTPUT = (
+    "我需要处理这段：原文中的 $\\textcircled{1}$ 是圈号编号。按照提示，不用 \\textcircled，改用圈内字符本身，即 ①。"
+    "原文是公式包裹的标号，我输出为 ①（不放进公式，因为它是纯编号符号）。\n\n"
+    "① 砂，粉质（м — 细，с — 中等粒度）"
+)
+NUMBERED_SOURCE = (
+    "1 За оптимальный объемку 0,000 приям уровень чистого пола цека Смана 5000,\n"
+    "2 Двери поз. 2, 4, 8 промивопожарные, сертифцированные по пожарной"
+)
+NUMBERED_OUTPUT = (
+    "1 За оптимальный объем... \n\n"
+    "这段原文是OCR损坏严重的俄文工程说明，我需要按字面忠实翻译，并保留编号。\n\n"
+    "1 按最优体积，0,000 处的净地面标高为 Смана 5000。\n"
+    "2 门 поз. 2、4、8 为防火门，已按消防安全认证。"
+)
+
+
+@pytest.mark.parametrize(
+    ("source", "translated", "expected"),
+    [
+        (CIRCLED_SOURCE, CIRCLED_OUTPUT, "我需要处理这段"),
+        (NUMBERED_SOURCE, NUMBERED_OUTPUT, "这段原文是OCR损坏严重的俄文工程说明"),
+        ("Список работ", "注意：按要求只译原文。正确译文如下：\n\n工作清单", "注意：按要求只译原文"),
+        ("Экспликация помещений", "说明：这里的「Экспликация помещений」是建筑图纸中的标准栏目名，意为房间明细表。\n\n房间明细表", "说明：这里的"),
+        ("set_context patterns -scan", "这是一条命令，按规则保留字面命令，不做翻译。", "这是一条命令"),
+        ("Example 3", "的译文应为：\n\n示例 3", "的译文应为"),
+        # 整行都是括号里的话：照样算
+        ("пожарной", "（注：按要求，仅输出译文本身。）\n\n消防的", "（注：按要求"),
+    ],
+)
+def test_chinese_meta_commentary_is_detected(source, translated, expected):
+    assert expected in self_correction_leak(source, translated)
+
+
+@pytest.mark.parametrize(
+    ("source", "translated"),
+    [
+        # 开头和自言自语一样，但只是正常译文
+        ("Внимание! Согласно СП 14.13330.2018 п. 6.18а.10 в сейсмических районах …", "注意！根据 СП 14.13330.2018 第 6.18a.10 条，在地震区必须仅使用抽芯铆钉。"),
+        ("Периодичность вывоза отходов, определенная по нормативам.", "按照规定标准确定的废物清运周期。"),
+        # 「段」「输出」「用户指定」在技术文档里是正常的词
+        (
+            "When your design has unconfined scan segments, you must not use the option.",
+            "当设计包含未受约束的扫描段时，不得使用该选项。对扫描段进行追踪，可使工具正确识别该段中完整的输入输出元件。",
+        ),
+        (
+            "User-specified clocks and scan-related I/O ports are excluded.",
+            "用户指定的时钟和与扫描相关的输入输出端口会被自动排除在识别范围之外。",
+        ),
+        # 原文本身就在讲规则 / OCR：照译出来的不算
+        ("Согласно правилам, текст на исходном языке сохраняется.", "按照规则，原文保持不变。"),
+        ("OCR errors in the original text are kept as-is.", "原文中的 OCR 错误保持原样。"),
+        # 括号里的译者注：译文能用，不拿来重译
+        (
+            "2 Бетон класса B25 демона",
+            "2 采用B25级混凝土（原文“демона”应为“бетона”笔误，按语义译为混凝土）。",
+        ),
+    ],
+)
+def test_ordinary_chinese_translations_pass(source, translated):
+    assert self_correction_leak(source, translated) == ""
+
+
+def test_text_after_chinese_meta_commentary():
+    assert text_after_self_correction(CIRCLED_SOURCE, CIRCLED_OUTPUT) == "① 砂，粉质（м — 细，с — 中等粒度）"
+    assert text_after_self_correction(NUMBERED_SOURCE, NUMBERED_OUTPUT).startswith("1 按最优体积")
+
+
+def test_chinese_meta_commentary_is_retranslated():
+    item = _caption_item("p1235-b009", CIRCLED_SOURCE)
+    with pytest.raises(TranslationProtocolError):
+        validate_batch_result([item], {"p1235-b009": {"decision": "translate", "translated_text": CIRCLED_OUTPUT}})
