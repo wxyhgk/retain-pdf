@@ -32,11 +32,9 @@ export function buildReadBookCardAction(
     };
   }
 
-  // 放在笔记（Studio）的书库里：读这本书是开到正在写的笔记旁边（open-book），按钮照这个说。
-  const inStudio = typeof document !== "undefined" && document.documentElement?.dataset?.embed === "studio";
   return [{
     id: BOOK_CARD_ACTION_READ,
-    label: inStudio && presentation.target === "job" ? "在笔记旁边读" : presentation.label,
+    label: presentation.label,
     icon: "eye",
     // 历史测试锚点 .recent-job-reader
     className: "book-card-action book-card-action-read recent-job-reader",

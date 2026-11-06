@@ -11,17 +11,6 @@ export type SoftReaderJobHandoff = {
     nextJobId?: string | null;
     documentId?: string | null;
 };
-/**
- * 这一页放在别的应用里吗（地址带 `?embed=`，例如笔记 Studio 用 iframe 放 RetainPDF，`embed=studio`）。返回它的值，没有是空串。
- * 嵌入时不软开阅读层、关闭也不找父页：整页跳转，外层的 iframe 才知道换了页（Studio 每次加载完重新握手）；
- * 跳到别的页时带着这个参数。
- */
-export declare function embeddedIn(search?: string): string;
-/**
- * 嵌在宿主的哪一块（地址带 `?embed_pane=`）：Studio 把书开在笔记旁边的标签里时是 `beside`，这时阅读页不该自己走开
- * （没有「关闭」回主页）。没有是空串。
- */
-export declare function embeddedPane(search?: string): string;
 export declare function isHomeDocumentPath(pathname?: string): boolean;
 export declare function isSoftReaderHistoryState(state: unknown): state is SoftReaderHistoryState;
 export declare function isHomeSpaAlive(doc?: Document): boolean;

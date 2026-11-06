@@ -6,7 +6,6 @@ import {
   ReaderAssistantSplitResizeHandle,
   ReaderAssistantDock,
   ReaderCloseHome,
-  ReaderNotesToggle,
   ReaderWorkspaceTabs,
   ReaderReactBoot,
   ReaderCompareGrid,
@@ -17,11 +16,7 @@ import type { ReaderAssistantPanel, ReaderWorkspaceMode } from "./components/rea
 import { useReaderAssistantPanel } from "./hooks/use-reader-assistant-panel.js";
 import { DownloadToastHost } from "./shared/react/DownloadToastHost.jsx";
 import { READER_ROOT_CLASS } from "./pdf/reader-dom-contract.js";
-import { READER_ZOOM_MAX, readerViewportWidth, stepReaderZoom, zoomToDisplayPercent } from "./pdf/reader-zoom.js";
-import { readerHostChrome, READER_DOWNLOAD_ACTIONS, trimReaderDownloadString } from "./external.js";
-import type { ReaderHostChromeCommand, ReaderHostChromeState } from "./adapters.js";
-import { useReaderHostChromeActive } from "./hooks/use-reader-host-chrome.js";
-import { useReaderDownloads, type ReaderDownloadAction } from "./components/react-pdf/use-reader-downloads.js";
+import { readerViewportWidth } from "./pdf/reader-zoom.js";
 import { resolveReaderInitialMode, shouldPersistReaderMode } from "./hooks/reader-initial-mode.js";
 import type { ReaderMode } from "./hooks/use-reader-session.js";
 import {
@@ -79,9 +74,6 @@ export type ReaderPaneComposition = {
  * overlayContentAvailable 表示「有可叠加的流式译文内容」（进行中或已完成都成立）。
  * 默认不叠加，避免旧「左右都是中文」的自动叠加 bug。
  */
-/** ⋯ 里的下载（宿主画控件时）：动作键 `download-<这个>`。 */
-const HOST_DOWNLOAD_KEY: Record<ReaderDownloadAction, string> = { source: "source", sideBySide: "compare", translated: "translated" };
-
 export function resolveReaderPaneComposition(input: {
   mode: "source" | "compare" | "translated";
   sourceOnly: boolean;
@@ -310,59 +302,6 @@ export function ReaderAppReactPdf() {
     if (readerViewportWidth() < 900) setFinder(null);
   }, [c.jumpToAnchor]);
   const jumpToBlock = useCallback((itemId: string) => c.jumpToAnchor({ block_id: itemId }), [c.jumpToAnchor]);
-
-  // —— 控件由宿主（Studio）画（书这一侧精简成一行：studio-workbench/20261105-书这一侧精简.md）——
-  // 两边都说了（hello 有 reader-state、ready 有 reader-command）才算：这时不画自己的顶部工具栏、底部浮动栏、MD/AI 竖条，
-  // 状态有变就报整份，照宿主的命令做。默认适合栏宽（单栏铺满、对照两边各一半）；自己放大缩小以后不再跟着，命令 fit 再回来。
-  const hostChromeActive = useReaderHostChromeActive();
-  const hostDownloads = useReaderDownloads(c.download);
-  const fitZoom = visiblePdfMode === "compare" ? READER_ZOOM_MAX / 2 : READER_ZOOM_MAX;
-  const fitRef = useRef(true);
-  useEffect(() => {
-    if (hostChromeActive && fitRef.current && Math.abs(c.userZoom - fitZoom) > 0.001) c.onZoomChange(fitZoom);
-  }, [hostChromeActive, fitZoom, c.userZoom, c.onZoomChange]);
-  const hostActions = useMemo(
-    () => hostDownloads.downloadItems
-      .filter((action) => trimReaderDownloadString(hostDownloads.urls[action]))
-      .map((action) => ({ key: `download-${HOST_DOWNLOAD_KEY[action]}`, label: `下载${READER_DOWNLOAD_ACTIONS[action].label}` })),
-    [hostDownloads.downloadItems, hostDownloads.urls],
-  );
-  const hostState = useMemo<ReaderHostChromeState>(() => ({
-    ready: !boot.loading && !boot.failed,
-    pageIdx: c.currentPage >= 1 ? c.currentPage - 1 : null,
-    pageCount: panes.hudNumPages >= 1 ? panes.hudNumPages : null,
-    modes: sourceViewOnly ? ["source"] : ["source", "compare", "translated"],
-    mode: visiblePdfMode ?? null,
-    panels: ["outline", "search"],
-    panel: finder,
-    zoom: { percent: zoomToDisplayPercent(c.userZoom), fit: Math.abs(c.userZoom - fitZoom) < 0.001 },
-    actions: hostActions,
-  }), [boot.loading, boot.failed, c.currentPage, panes.hudNumPages, sourceViewOnly, visiblePdfMode, finder, c.userZoom, fitZoom, hostActions]);
-  useEffect(() => {
-    if (hostChromeActive) readerHostChrome()?.report(hostState);
-  }, [hostChromeActive, hostState]);
-  // 命令用最新的办法做（不为每次渲染重新订阅）。
-  const hostCommandRef = useRef<(command: ReaderHostChromeCommand) => void>(() => {});
-  hostCommandRef.current = (command) => {
-    if (command.command === "mode") {
-      if (!sourceViewOnly || command.mode === "source") changeWorkspace(command.mode);
-    } else if (command.command === "page") {
-      c.goToPage(command.pageIdx + 1);
-    } else if (command.command === "panel") {
-      setFinder(command.panel);
-    } else if (command.command === "zoom") {
-      fitRef.current = command.zoom === "fit";
-      c.onZoomChange(command.zoom === "fit" ? fitZoom : stepReaderZoom(c.userZoom, command.zoom === "in" ? 1 : -1));
-    } else if (command.command === "action") {
-      const action = (Object.keys(HOST_DOWNLOAD_KEY) as ReaderDownloadAction[]).find((each) => `download-${HOST_DOWNLOAD_KEY[each]}` === command.key);
-      if (action) void hostDownloads.handleDownload(action);
-    }
-  };
-  useEffect(() => {
-    const chrome = readerHostChrome();
-    if (!hostChromeActive || !chrome) return undefined;
-    return chrome.onCommand((command) => hostCommandRef.current(command));
-  }, [hostChromeActive]);
   const readerContext = useMemo<ReaderContextValue>(() => ({
     bindShell: c.shell.bindShell,
     shellEl: c.shell.shellEl,
@@ -420,7 +359,6 @@ export function ReaderAppReactPdf() {
     `is-workspace-${workspaceView}`,
     assistantOpen ? "is-assistant-open" : "",
     finder ? "is-finder-open" : "",
-    hostChromeActive ? "is-host-chrome" : "",
     paneComposition.overlayOnSource ? "is-live-translation-overlay" : "",
   ].filter(Boolean).join(" ");
 
@@ -430,7 +368,7 @@ export function ReaderAppReactPdf() {
         <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} />
         {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
             原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
-        {hostChromeActive ? null : <ReaderFinderToggles open={finder} onToggle={toggleFinder} />}
+        <ReaderFinderToggles open={finder} onToggle={toggleFinder} />
         {finder ? (
           <ReaderFinder
             tab={finder}
@@ -439,14 +377,11 @@ export function ReaderAppReactPdf() {
             onJump={jumpFromFinder}
           />
         ) : null}
-        {hostChromeActive ? null : (
-          <div className="reader-chrome-tray">
-            <ReaderNotesToggle />
-            <ReaderDownloadActions />
-            <ReaderCloseHome onBeforeClose={session.prepareClose} />
-          </div>
-        )}
-        {hostChromeActive ? null : <ReaderWorkspaceTabs
+        <div className="reader-chrome-tray">
+          <ReaderDownloadActions />
+          <ReaderCloseHome onBeforeClose={session.prepareClose} />
+        </div>
+        <ReaderWorkspaceTabs
           mode={visiblePdfMode}
           documentReady={Boolean(session.jobId)}
           sourceViewOnly={sourceViewOnly}
@@ -456,11 +391,11 @@ export function ReaderAppReactPdf() {
             state: c.liveTranslation,
             onToggle: () => setLiveTranslationVisible((visible) => !visible),
           } : null}
-        />}
-        {hostChromeActive ? null : <ReaderAssistantDock active={assistantPanel} />}
+        />
+        <ReaderAssistantDock active={assistantPanel} />
         {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
         <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={markdownSlot.open} assistantSplit={assistantOpen} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
-        {c.showHud && !hostChromeActive ? (
+        {c.showHud ? (
           <ReaderZoomHud
             mode={visiblePdfMode}
             modeControls={null}

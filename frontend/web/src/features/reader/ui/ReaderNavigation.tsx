@@ -37,13 +37,9 @@ function anchorFromEventDetail(detail: { pageIdx?: unknown; blockId?: unknown } 
  */
 const fetchReadingFromApi: FetchReading = (documentId) => fetchDocumentReading(API_PREFIX, documentId);
 
-/** 放在笔记（Studio）里时把书交出去：交了返回 true，这里就不开阅读页（app 层接上 studio-embed 的 openBook）。 */
-export type HandOffBook = (book: { jobId: string; documentId: string | null; title: string | null }, pageIdx: number | null) => boolean;
-
 export function ReaderNavigation({
   fetchReading = fetchReadingFromApi,
-  handOffBook,
-}: { fetchReading?: FetchReading; handOffBook?: HandOffBook } = {}) {
+}: { fetchReading?: FetchReading } = {}) {
   useAppEvent(APP_EVENTS.openReaderRequested, async (event) => {
     const detail = event?.detail || {};
     const documentId = `${detail.documentId || ""}`.trim();
@@ -59,9 +55,6 @@ export function ReaderNavigation({
     // AI context and immutable artifacts all key off job_id. document_id is
     // reserved for source-only library entries that have no job yet.
     if (jobId) {
-      // 在 Studio 的书库里：书交给 Studio，开在正在写的笔记旁边。
-      const title = `${detail.title || ""}`.trim() || null;
-      if (handOffBook?.({ jobId, documentId: documentId || null, title }, anchor?.pageIdx ?? null)) return;
       const url = buildReaderPageUrl(jobId, anchor);
       navigateToReader(url);
       return;

@@ -1,28 +1,21 @@
-// 阅读器顶栏托盘里的按钮：「返回主页」，以及放在笔记（Studio）里时的「笔记」（ReaderNotesToggle）。
+// 阅读器顶栏托盘里的按钮：「返回主页」。
 //
 // 「返回主页」：
 // 1) 软打开（主页 SoftReaderHost iframe）→ postMessage 父页 history.back，主页不刷新
 // 2) 独立 reader.html 且从主页 assign 进来 → history.back
 // 3) 深链直达 → location.assign(index.html)
-// 放在别的应用里（?embed=，例如笔记 Studio）时不是软阅读层：跳过 1)，回主页的地址带着 embed。
 
-import { useSyncExternalStore, type ReactNode } from "react";
-import { NotebookPen, X } from "lucide-react";
-import { SOFT_READER_CLOSE_MESSAGE, embeddedIn, embeddedPane } from "../../shared/navigation/soft-reader.js";
-import { readerNotesPanel } from "../../external.js";
-import type { ReaderNotesPanelState } from "../../adapters.js";
+import type { ReactNode } from "react";
+import { X } from "lucide-react";
+import { SOFT_READER_CLOSE_MESSAGE } from "../../shared/navigation/soft-reader.js";
 
 function homeIndexUrl() {
-  const url = new URL("./index.html", window.location.href);
-  const embed = embeddedIn();
-  if (embed) url.searchParams.set("embed", embed);
-  return url.href;
+  return new URL("./index.html", window.location.href).href;
 }
 
 function requestSoftHostClose(): boolean {
   if (typeof window === "undefined") return false;
   if (window.self === window.top) return false;
-  if (embeddedIn()) return false;
   try {
     window.parent.postMessage(
       { type: SOFT_READER_CLOSE_MESSAGE },
@@ -76,7 +69,7 @@ export function navigateReaderToHome() {
   window.location.assign(homeIndexUrl());
 }
 
-/** 托盘里的圆角按钮（「关闭」「笔记」同一个样子）。 */
+/** 托盘里的圆角按钮。 */
 function ReaderTrayButton({
   id,
   className,
@@ -100,8 +93,6 @@ function ReaderTrayButton({
 }
 
 export function ReaderCloseHome({ onBeforeClose }: { onBeforeClose?: () => void } = {}) {
-  // 开在 Studio 笔记旁边的标签里：标签自己能关，阅读页不回主页。
-  if (embeddedPane() === "beside") return null;
   const close = () => {
     onBeforeClose?.();
     navigateReaderToHome();
@@ -111,28 +102,6 @@ export function ReaderCloseHome({ onBeforeClose }: { onBeforeClose?: () => void 
     <ReaderTrayButton id="reader-close-home-btn" className="reader-close-home-btn" label="返回主页" onClick={close}>
       <X className="reader-close-home-icon" size={18} strokeWidth={2.25} aria-hidden />
       <span className="reader-close-home-label">关闭</span>
-    </ReaderTrayButton>
-  );
-}
-
-const NO_NOTES_PANEL: ReaderNotesPanelState = { available: false, open: false, title: null };
-const noSubscribe = () => () => {};
-const noNotesPanel = () => NO_NOTES_PANEL;
-
-/**
- * 「笔记」：放在笔记（Studio）里、Studio 认 open-notes 时才有（宿主给 notesPanel）。点了让 Studio 在阅读页旁边开、收这本书的笔记；
- * 按下没有跟着 Studio 说的走（它那边收起、换了笔记也会告诉我们）。只有图标，「笔记：书名」在悬停里。
- */
-export function ReaderNotesToggle() {
-  const panel = readerNotesPanel();
-  const getState = panel?.getState ?? noNotesPanel;
-  const state = useSyncExternalStore(panel?.subscribe ?? noSubscribe, getState, getState);
-  if (!panel || !state.available) return null;
-  // 书库里读书时右栏的「摘录」（摘到哪篇笔记、这本书摘过的段落）：开着时写摘到哪篇。
-  const label = state.open ? `收起摘录${state.title ? `（摘到《${state.title}》）` : ""}` : "摘录";
-  return (
-    <ReaderTrayButton className="reader-notes-toggle" label={label} pressed={state.open} onClick={panel.toggle}>
-      <NotebookPen className="reader-close-home-icon" size={18} strokeWidth={2.25} aria-hidden />
     </ReaderTrayButton>
   );
 }

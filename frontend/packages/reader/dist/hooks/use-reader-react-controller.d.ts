@@ -57,7 +57,6 @@ export type ReaderReactController = {
     liveTranslationAvailable: boolean;
     /** 改过的块（阅读页块编号 → 改过几次），译文栏画标记用。 */
     revisedBlocks: RevisedBlocks;
-    quotedBlocks: ReadonlySet<string>;
 };
 export declare function shouldTrackLiveTranslation(input: {
     jobId: string;

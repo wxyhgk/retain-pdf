@@ -151,18 +151,3 @@ test("详情左栏：旧译文 + 最新任务失败 / 运行中，仍给出对�
     false,
   );
 });
-
-test("放在笔记（Studio）的书库里：能读的书按钮说「在笔记旁边读」（点了开到正在写的笔记旁边）；读原文的照旧", () => {
-  const hadDocument = "document" in globalThis;
-  const before = globalThis.document;
-  try {
-    globalThis.document = { documentElement: { dataset: { embed: "studio" } } };
-    assert.equal(buildReadBookCardAction(failedRetranslation)[0].label, "在笔记旁边读");
-    assert.equal(buildReadBookCardAction({ ...failedRetranslation, has_translation: false })[0].label, "读原文");
-    globalThis.document = { documentElement: { dataset: {} } };
-    assert.equal(buildReadBookCardAction(failedRetranslation)[0].label, "对照阅读", "不在 Studio 里照旧");
-  } finally {
-    if (hadDocument) globalThis.document = before;
-    else delete globalThis.document;
-  }
-});

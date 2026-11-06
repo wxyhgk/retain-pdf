@@ -53,133 +53,13 @@ export type ReaderDocumentIdentityAdapters = {
         active_version_id?: string | null;
     } | null>;
 };
-/** 悬停框「摘到笔记」送出的一段：哪一块、原文在第几页，和点的时候的原文、译文。
- *  任务、书、书名由宿主补（宿主知道自己开的是哪个任务）。 */
-export type ReaderNotesQuote = {
-    itemId: string;
-    /** 原文所在页，0 起。 */
-    pageIdx: number;
-    sourceText: string;
-    /** 跨块、跨页接起来的段落是整段；还没翻译时为 null。 */
-    translatedText: string | null;
-};
-export type ReaderNotesQuoteAdapters = {
-    /** 「摘到笔记」：阅读页放在笔记（Studio）里、和它握过手时由宿主给。
-     *
-     * 包不认识笔记，也不认识消息怎么发，只问两件事：现在能不能摘（`available`，每次画悬停框时问），
-     * 摘的时候把这一段交出去（`send`，返回有没有送出去）。不提供或 `available()` 为假 = 悬停框里不出这个按钮。 */
-    notesQuote?: {
-        available: () => boolean;
-        send: (quote: ReaderNotesQuote) => boolean;
-    };
-};
-/** 「笔记」按钮：阅读页放在笔记（Studio）里、Studio 认 open-notes 时由宿主给。开没开由 Studio 说了算，宿主转告。 */
-export type ReaderNotesPanelState = {
-    available: boolean;
-    open: boolean;
-    title: string | null;
-};
-export type ReaderNotesPanelAdapters = {
-    /** 不提供或 `available` 为假 = 顶栏没有「笔记」按钮。`getState` 没变时返回同一个对象（给 useSyncExternalStore）。 */
-    notesPanel?: {
-        getState: () => ReaderNotesPanelState;
-        subscribe: (listener: () => void) => () => void;
-        toggle: () => void;
-    };
-};
-/** 眼下读到哪：阅读页放在笔记（Studio）里时由宿主给，翻页就报（防抖、发不发由宿主管）。页从 0 起；页数还不知道时为 null。 */
-export type ReaderReadingPositionAdapters = {
-    readingPosition?: {
-        report: (pageIdx: number | null, pageCount: number | null) => void;
-    };
-};
-/** 阅读页的「AI」交给宿主：阅读页放在笔记（Studio）里、Studio 有自己的 AI（认 ask-ai）时由宿主给。
- *
- * `available()` 为真时点「AI」不再打开 dock 的终端面板，改调 `ask()`（宿主去打开它的 AI）；存着的终端面板也不再恢复。
- * 能不能用要等握手，所以有 `subscribe`。不提供 = 照旧打开终端。 */
-export type ReaderHostAiAdapters = {
-    hostAi?: {
-        available: () => boolean;
-        subscribe: (listener: () => void) => () => void;
-        ask: () => boolean;
-    };
-};
-/** 宿主让阅读页翻到某一段：阅读页放在笔记（Studio）里时由宿主给。
- *
- * 宿主收到「打开这一段」时先问这里登记的阅读页：是同一个任务、已经打开好的，就原地翻过去、返回 true，不用整页重开（PDF 不重新加载）；
- * 返回 false（别的书、还在加载）宿主照旧整页打开。不提供 = 一律整页打开。 */
-export type ReaderHostNavigationAdapters = {
-    hostNavigation?: {
-        subscribe: (listener: (target: {
-            jobId: string;
-            pageIdx: number | null;
-            blockId: string;
-        }) => boolean) => () => void;
-    };
-};
-/** 这本书摘过的段落（块编号）：阅读页放在笔记（Studio）里、Studio 的摘录栏说了时由宿主给，阅读页在这些块左边画一道细线。
- *
- * `get()` 返回同一个集合，变了才换新的（useSyncExternalStore 要求）；不提供 = 不标。 */
-export type ReaderQuotedBlocksAdapters = {
-    quotedBlocks?: {
-        get: () => ReadonlySet<string>;
-        subscribe: (listener: () => void) => () => void;
-    };
-};
-/** 阅读页报给宿主的状态（studio-bridge `reader-state`）：宿主画控件时用。 */
-export type ReaderHostChromeState = {
-    ready: boolean;
-    pageIdx: number | null;
-    pageCount: number | null;
-    modes: Array<"source" | "compare" | "translated">;
-    mode: "source" | "compare" | "translated" | null;
-    panels: Array<"outline" | "search">;
-    panel: "outline" | "search" | null;
-    zoom: {
-        percent: number;
-        fit: boolean;
-    };
-    actions: Array<{
-        key: string;
-        label: string;
-    }>;
-};
-/** 宿主让阅读页做的事（studio-bridge `reader-command`）。 */
-export type ReaderHostChromeCommand = {
-    command: "mode";
-    mode: "source" | "compare" | "translated";
-} | {
-    command: "page";
-    pageIdx: number;
-} | {
-    command: "panel";
-    panel: "outline" | "search" | null;
-} | {
-    command: "zoom";
-    zoom: "in" | "out" | "fit";
-} | {
-    command: "action";
-    key: string;
-};
-/** 控件由宿主画：阅读页放在笔记（Studio）旁边、两边都说了（hello 有 reader-state、ready 有 reader-command）时由宿主给。
- *
- * `active()` 为真时阅读页不画自己的顶部工具栏、底部浮动栏、MD/AI 竖条，状态有变就 `report` 整份，照 `onCommand` 来的做。
- * 能不能用要等握手，所以有 `subscribe`。不提供 = 照旧自己画。 */
-export type ReaderHostChromeAdapters = {
-    hostChrome?: {
-        active: () => boolean;
-        subscribe: (listener: () => void) => () => void;
-        report: (state: ReaderHostChromeState) => void;
-        onCommand: (handler: (command: ReaderHostChromeCommand) => void) => () => void;
-    };
-};
-export type ReaderAdapters = ReaderSessionAdapters & ReaderMarkdownAdapters & ReaderDownloadAdapters & ReaderDocumentIdentityAdapters & ReaderNotesQuoteAdapters & ReaderNotesPanelAdapters & ReaderReadingPositionAdapters & ReaderHostAiAdapters & ReaderHostNavigationAdapters & ReaderQuotedBlocksAdapters & ReaderHostChromeAdapters;
+export type ReaderAdapters = ReaderSessionAdapters & ReaderMarkdownAdapters & ReaderDownloadAdapters & ReaderDocumentIdentityAdapters;
 /**
  * ReaderAdapters 声明键的运行时镜像（TS 类型在运行时被擦除）。
  * 注册层与门禁测试共用，避免手工复制字段集漂移；`satisfies` 保证不引入拼错键。
  * 完整性由紧随其后的编译期断言守护。
  */
-export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId", "notesQuote", "notesPanel", "readingPosition", "hostAi", "hostNavigation", "quotedBlocks", "hostChrome"];
+export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId"];
 /** 必填（非 `?`）适配键子集，供门禁断言最小注入面。 */
 export declare const READER_REQUIRED_ADAPTER_KEYS: readonly ["resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "fetchDocumentByJobId"];
 export declare function setReaderAdapters(a: ReaderAdapters | null): void;

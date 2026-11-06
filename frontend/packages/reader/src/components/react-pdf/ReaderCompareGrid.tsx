@@ -219,7 +219,7 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
       typeof document === "undefined" ? shellWidth * 2 : document.documentElement.clientWidth,
     )
     : null;
-  // 阅读区变宽变窄（Studio 里开关右栏、拖分栏）时停在原来那一页，不让页高变化把眼前换成别的页。
+  // 阅读区变宽变窄（开关侧栏、拖分栏）时停在原来那一页，不让页高变化把眼前换成别的页。
   useKeepPageOnResize(shellEl, pageWidthBasis);
 
   return (

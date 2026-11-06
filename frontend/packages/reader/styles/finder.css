@@ -200,30 +200,3 @@
   color: var(--muted);
   font-size: var(--ui-text-md, 13px);
 }
-
-/* 控件由宿主（Studio）画时（.is-host-chrome，书这一侧精简成一行）：没有自己的顶栏，书页顶到最上面；目录 / 搜索在书页
-   上方展开一条（最高 45%），下面的书页让开，不盖住整页。 */
-.reader-react-root.is-host-chrome {
-  --reader-topbar-offset: 0px;
-}
-
-.reader-react-root.is-host-chrome .reader-react-scroll-shell {
-  top: 0;
-  left: 0;
-}
-
-.reader-react-root.is-host-chrome .reader-finder {
-  top: 0;
-  right: 0;
-  bottom: auto;
-  left: 0;
-  width: auto;
-  height: min(45%, 360px);
-  border-right: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  box-shadow: none;
-}
-
-.reader-react-root.is-host-chrome.is-finder-open .reader-react-scroll-shell {
-  top: min(45%, 360px);
-}
