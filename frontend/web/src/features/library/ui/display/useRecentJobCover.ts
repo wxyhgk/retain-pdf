@@ -39,7 +39,8 @@ function imageCacheVersionOf(item: LibraryCardItem = {}) {
   return status;
 }
 
-export function useRecentJobCover(item?: LibraryCardItem | null) {
+/** `enabled` 为假时先不下（书库卡片等快进入视口才下，见 useNearViewport）；不给就马上下。 */
+export function useRecentJobCover(item?: LibraryCardItem | null, { enabled = true }: { enabled?: boolean } = {}) {
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const tokenRef = useRef(0);
   const safeItem = item || {};
@@ -49,6 +50,7 @@ export function useRecentJobCover(item?: LibraryCardItem | null) {
   const rawUrlsKey = rawUrls.join("|");
 
   useEffect(() => {
+    if (!enabled) return undefined;
     const token = (tokenRef.current += 1);
     if (rawUrls.length === 0) {
       setCoverUrl(null);
@@ -74,7 +76,7 @@ export function useRecentJobCover(item?: LibraryCardItem | null) {
     // rawUrlsKey/cacheVersion 是 rawUrls/cacheVersion 的 primitive 化,用作
     // effect 依赖(数组/对象每次渲染新引用,不能直接进依赖表)。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rawUrlsKey, cacheVersion]);
+  }, [rawUrlsKey, cacheVersion, enabled]);
 
   return coverUrl;
 }
