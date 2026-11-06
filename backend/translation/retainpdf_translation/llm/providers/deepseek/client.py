@@ -358,7 +358,10 @@ def request_chat_content(
                 response_format=response_format,
                 thinking_fields=thinking_fields,
             )
-        built: dict[str, Any] = {"model": model, "temperature": temperature, "messages": model_wire.merge_system_messages(messages)}
+        built: dict[str, Any] = {"model": model, "messages": model_wire.merge_system_messages(messages)}
+        if send_temperature:
+            # 文档写明不收 temperature 的模型（比如经 OpenAI 兼容地址调的 claude-haiku-5-5）在这里也不带
+            built["temperature"] = temperature
         built.update(thinking_fields)
         if use_stream:
             built["stream"] = True
