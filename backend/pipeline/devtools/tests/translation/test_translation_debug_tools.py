@@ -513,3 +513,54 @@ def test_replay_translation_case_artifact_uses_frozen_page_payload(monkeypatch) 
         assert seen["item_id"] == "p001-b001"
         assert result["job_id"] == "job-artifact"
         assert result["replay_result"]["translated_text"] == "冻结输入回放成功。"
+
+
+def test_replay_translation_item_registers_the_jobs_protocol_before_calling_the_model(monkeypatch) -> None:
+    # 2026-11-06：不登记就按 OpenAI 协议发，Anthropic 的任务重翻一条走成 /chat/completions，400
+    import devtools.replay_translation_item as replay_module
+    from retainpdf_translation.llm.shared import model_wire
+
+    monkeypatch.setenv("RETAIN_TRANSLATION_API_KEY", "test-key")
+    model_wire.clear_registered_connections()
+    params = {
+        "mode": "sci",
+        "math_mode": "direct_typst",
+        "skip_title_translation": False,
+        "rule_profile_name": "general_sci",
+        "custom_rules_text": "",
+        "classify_batch_size": 4,
+        "workers": 1,
+        "model": "claude-haiku-5-5",
+        "base_url": "https://api.anthropic.com/v1",
+        "api_protocol": "anthropic",
+        "thinking": "off",
+        "glossary_entries": [],
+        "credential_ref": "",
+    }
+    spec = type(
+        "Spec",
+        (),
+        {"job": type("Job", (), {"job_id": "job-protocol"})(), "params": type("Params", (), params)()},
+    )()
+    saved_item = {"item_id": "p001-b001", "page_idx": 0, "source_text": "Text.", "should_translate": True}
+    seen = {}
+
+    def _fake_translate_batch(batch, **kwargs):
+        seen["profile"] = model_wire.resolve_profile(base_url=kwargs["base_url"], model=kwargs["model"])
+        return {batch[0]["item_id"]: {"decision": "translate", "translated_text": "译文"}}
+
+    monkeypatch.setattr(replay_module, "_load_translate_spec", lambda _root: spec)
+    monkeypatch.setattr(
+        replay_module, "_find_item_payload", lambda _root, _id: (0, Path("/tmp/page-001.json"), [saved_item], saved_item)
+    )
+    monkeypatch.setattr(replay_module, "build_translation_policy_config", lambda **_kwargs: object())
+    monkeypatch.setattr(replay_module, "apply_translation_policies", lambda **_kwargs: None)
+    monkeypatch.setattr(replay_module, "build_translation_context_from_policy", lambda *_a, **_k: object())
+    monkeypatch.setattr(replay_module, "translate_batch", _fake_translate_batch)
+    try:
+        replay_module.replay_translation_item(Path("/tmp/job"), "p001-b001")
+    finally:
+        model_wire.clear_registered_connections()
+
+    assert seen["profile"].protocol == "anthropic"
+    assert seen["profile"].thinking == "off"

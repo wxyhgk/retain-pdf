@@ -276,6 +276,30 @@ def test_explicit_arguments_override_the_registry():
 OPENAI_OK = {"choices": [{"message": {"content": "ok"}}]}
 
 
+def test_openai_protocol_drops_temperature_for_documented_no_temperature_models():
+    # 经 OpenAI 兼容地址调 claude-haiku-5-5：以前 /chat/completions 照样带 temperature，直接 400
+    _, session = _call(
+        [_response(payload=OPENAI_OK)],
+        messages=[{"role": "user", "content": "x"}],
+        api_key="k",
+        model="claude-haiku-5-5",
+        base_url="https://api.anthropic.com/v1",
+    )
+    assert "temperature" not in session.post.call_args.kwargs["json"]
+
+
+def test_openai_protocol_keeps_temperature_for_other_models():
+    _, session = _call(
+        [_response(payload=OPENAI_OK)],
+        messages=[{"role": "user", "content": "x"}],
+        api_key="k",
+        model="deepseek-chat",
+        base_url="https://api.deepseek.com/v1",
+        temperature=0.2,
+    )
+    assert session.post.call_args.kwargs["json"]["temperature"] == 0.2
+
+
 @pytest.mark.parametrize("base,model,thinking,expected", [
     ("https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen3.8-flash", "off", {"enable_thinking": False}),
     ("https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen3.8-flash", "medium",
