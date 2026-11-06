@@ -28,7 +28,6 @@ const RAW_SCHEMA_EXPORTS = [
   "./pipeline-stdout.v1.schema.json",
   "./reader-data.v1.schema.json",
   "./refine-report.v1.schema.json",
-  "./studio-bridge.v1.schema.json",
   "./token-usage.v1.schema.json",
   "./translation-revisions.v1.schema.json",
 ];
