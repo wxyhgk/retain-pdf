@@ -1,7 +1,0 @@
-{
-  "name": "能量单位换算",
-  "icon": "⚡",
-  "description": "Hartree、eV、kcal/mol、kJ/mol、cm⁻¹ 互换；点一个结果插进文章",
-  "width": 340,
-  "height": 380
-}

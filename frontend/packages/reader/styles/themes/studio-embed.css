@@ -1,6 +1,6 @@
 /* 放在笔记（Studio）里时的颜色（读书走查 13）：Studio 是黑白灰，RetainPDF 的夜间是偏蓝的深灰加青绿强调色，两套叠在一起不像一个应用。
  * 放在 Studio 里只用 classic（浅，本来就和 Studio 一样）和 night（深），night 的颜色在这里按 Studio 的暗色
- * （frontend/studio/src/studio/design.css 的 html:root[data-theme='dark']）覆盖；单独用 RetainPDF 时不受影响。
+ * （Studio 仓库 notes-studio 的 src/studio/design.css 里 html:root[data-theme='dark']）覆盖；单独用 RetainPDF 时不受影响。
  * 书页本身是 PDF，暗色时只压一点亮度，不反色（图、彩色插图反色会走样）。 */
 
 html[data-embed="studio"][data-theme="night"] {

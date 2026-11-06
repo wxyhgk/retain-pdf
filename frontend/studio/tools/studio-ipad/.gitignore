@@ -1,5 +1,0 @@
-# What Xcode keeps of its own beside the package (its workspace, the author's settings) and builds.
-Studio.swiftpm/.swiftpm/
-Studio.swiftpm/.build/
-*.xcuserstate
-xcuserdata/

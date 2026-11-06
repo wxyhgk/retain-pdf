@@ -1,9 +1,0 @@
-{
-  "name": "@blog/document",
-  "private": true,
-  "description": "An article's Markdown as the Studio holds it: its properties (frontmatter) and body, split into blocks with where each is in the file, written back unchanged where nothing changed; the lines a selection is on.",
-  "type": "module",
-  "exports": {
-    "./*": "./*"
-  }
-}

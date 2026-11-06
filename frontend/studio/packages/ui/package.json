@@ -1,9 +1,0 @@
-{
-  "name": "@blog/ui",
-  "private": true,
-  "description": "Pieces of the page the blog and the Studio share: the sheet a block's details open in.",
-  "type": "module",
-  "exports": {
-    "./*": "./*"
-  }
-}

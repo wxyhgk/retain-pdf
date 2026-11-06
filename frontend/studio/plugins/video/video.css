@@ -1,8 +1,0 @@
-/* Videos (```video, video.mjs): a player for a video online, the cover of one kept on the author's machine. */
-.note-video { width: var(--figure-width, 100%); max-width: 100%; margin: 1.4em auto; }
-.note-video-frame { position: relative; overflow: hidden; border-radius: 8px; background: rgb(0 0 0); }
-.note-video.is-online .note-video-frame { aspect-ratio: 16 / 9; }
-.note-video.is-online iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-.note-video-frame video, .note-video-frame img { display: block; width: 100%; height: auto; max-height: 80vh; margin: 0; border-radius: 0; object-fit: contain; }
-.note-video-missing { display: grid; place-items: center; aspect-ratio: 16 / 9; background: var(--surface-soft, rgb(244 244 244)); color: rgb(var(--gray, 120, 119, 116)); font-size: 14px; }
-.note-video > figcaption { margin-top: 8px; color: rgb(var(--gray, 120, 119, 116)); font-size: 0.9em; line-height: 1.5; text-align: center; }

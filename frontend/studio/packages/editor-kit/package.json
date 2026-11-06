@@ -1,9 +1,0 @@
-{
-  "name": "@blog/editor-kit",
-  "private": true,
-  "description": "Parts of the Studio's Milkdown editors that know nothing of the Studio: formulas edited in place (inline and display, completions, \\tag numbers, \\(…\\) brackets) and what drawing near the screen and an edit's changed range need.",
-  "type": "module",
-  "exports": {
-    "./*": "./*"
-  }
-}
