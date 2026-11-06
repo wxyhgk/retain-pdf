@@ -10,6 +10,8 @@ type PdfPageSlotProps = {
     pane?: ReaderPaneId;
     /** pane-level windowing decides whether the page canvas should be mounted */
     active?: boolean;
+    /** 眼前的页才挂文字层和实时译文框（PdfDocumentPane 的 TEXT_ROOT_MARGIN）；不给就挂（单测、没有 IntersectionObserver）。 */
+    textLayer?: boolean;
     /** 对照左右同页 max 高度 */
     syncedMinHeight?: number;
     onMetrics?: () => void;
@@ -30,7 +32,7 @@ type PdfPageSlotProps = {
     liveTranslationPage?: LiveTranslationPageState;
     showLiveTranslation?: boolean;
 };
-declare function PdfPageSlotInner({ pageNumber, width, devicePixelRatio, pane, active, syncedMinHeight, onMetrics, cachedAspect, onAspectChange, sentinelRef, regionHighlight, regionTargets, hoveredRegionId, onHoverRegion, liveTranslationLayout, liveTranslationPage, showLiveTranslation, }: PdfPageSlotProps): import("react").JSX.Element;
+declare function PdfPageSlotInner({ pageNumber, width, devicePixelRatio, pane, active, textLayer, syncedMinHeight, onMetrics, cachedAspect, onAspectChange, sentinelRef, regionHighlight, regionTargets, hoveredRegionId, onHoverRegion, liveTranslationLayout, liveTranslationPage, showLiveTranslation, }: PdfPageSlotProps): import("react").JSX.Element;
 export declare const PdfPageSlot: import("react").MemoExoticComponent<typeof PdfPageSlotInner>;
 export {};
 //# sourceMappingURL=PdfPageSlot.d.ts.map

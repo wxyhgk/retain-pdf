@@ -80,7 +80,7 @@ test("page row sync publishes max natural height only when both panes have the p
   }
 });
 
-test("pane owns a single IntersectionObserver for window + canvas activeness", () => {
+test("pane owns the IntersectionObservers: one for window + canvas activeness, one for text layers near the view", () => {
   const pane = readFileSync(
     new URL("../../../../frontend/packages/reader/src/pdf/PdfDocumentPane.tsx", import.meta.url),
     "utf8",
@@ -90,7 +90,12 @@ test("pane owns a single IntersectionObserver for window + canvas activeness", (
     "utf8",
   );
 
-  assert.equal((pane.match(/new IntersectionObserver/g) || []).length, 1);
+  // 第二个只管文字层和实时译文框（TEXT_ROOT_MARGIN，眼前的页）：WebKit 里每个绝对定位的 span 都是一个 RenderLayer，
+  // 挂着 11 页的文字层时每次排版、滚动都要全走一遍。页槽自己还是不许有 observer。
+  assert.equal((pane.match(/new IntersectionObserver/g) || []).length, 2);
+  assert.match(pane, /const TEXT_ROOT_MARGIN = "25% 0px"/);
+  assert.match(pane, /textLayer=\{!textWindowed \|\| textPages\.has\(pageNumber\)\}/);
+  assert.match(slot, /renderTextLayer=\{textLayer\}/);
   assert.match(pane, /const ACTIVE_ROOT_MARGIN = "120% 0px"/);
   assert.match(pane, /const ACTIVE_LEAVE_MS = 120/);
   assert.match(pane, /activePages\.has\(pageNumber\)/);

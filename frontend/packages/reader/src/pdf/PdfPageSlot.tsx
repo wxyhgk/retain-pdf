@@ -47,6 +47,8 @@ type PdfPageSlotProps = {
   pane?: ReaderPaneId;
   /** pane-level windowing decides whether the page canvas should be mounted */
   active?: boolean;
+  /** 眼前的页才挂文字层和实时译文框（PdfDocumentPane 的 TEXT_ROOT_MARGIN）；不给就挂（单测、没有 IntersectionObserver）。 */
+  textLayer?: boolean;
   /** 对照左右同页 max 高度 */
   syncedMinHeight?: number;
   onMetrics?: () => void;
@@ -74,6 +76,7 @@ function PdfPageSlotInner({
   devicePixelRatio,
   pane,
   active = false,
+  textLayer = true,
   syncedMinHeight = 0,
   onMetrics,
   cachedAspect,
@@ -233,7 +236,7 @@ function PdfPageSlotInner({
           pageNumber={pageNumber}
           width={width}
           devicePixelRatio={devicePixelRatio}
-          renderTextLayer
+          renderTextLayer={textLayer}
           renderAnnotationLayer={false}
           className={READER_PDF_PAGE_CLASS}
           loading={
@@ -275,7 +278,7 @@ function PdfPageSlotInner({
           aria-hidden="true"
         />
       ) : null}
-      {active && showLiveTranslation ? (
+      {active && textLayer && showLiveTranslation ? (
         <LiveTranslationOverlay
           layoutPage={liveTranslationLayout}
           pageState={liveTranslationPage}

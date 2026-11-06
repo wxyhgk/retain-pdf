@@ -198,6 +198,11 @@
   box-sizing: border-box;
   background: transparent;
 }
+/* 没挂内容的空页槽（离眼前远的页，PdfDocumentPane）不定位：里面只有一块定宽定高的灰底，用不着；
+   定位的元素在 WebKit 里各占一个 RenderLayer，几百页的书光空页槽就上千个，每次排版、滚动都要全走一遍。 */
+.reader-react-pdf-page-slot.is-placeholder {
+  position: static;
+}
 
 .reader-react-pdf-region-highlight {
   position: absolute;
