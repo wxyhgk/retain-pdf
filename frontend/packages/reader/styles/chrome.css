@@ -37,6 +37,14 @@
   -webkit-backdrop-filter: blur(20px);
 }
 
+/* 手机宽度：托盘多了面板按钮（Markdown）以后约 140px，两边都留这么宽，中间放不下原文 / 对照 / 译文（390px 宽时压在托盘上）。
+   左边只用让开「目录 / 搜索」（约 80px），两边不再对称，页签在剩下那块里居中。 */
+@media (max-width: 440px) {
+  .reader-workspace-bar {
+    padding-inline: 96px var(--reader-tray-width, 200px);
+  }
+}
+
 .reader-workspace-tabs {
   display: inline-flex;
   align-items: center;
@@ -212,6 +220,13 @@
   gap: 8px;
 }
 
+/* 手机宽度：托盘三颗按钮之间收到 4px，原文 / 对照 / 译文才放得下（360px 宽时差 8px）。写在基础规则后面，不然被盖回 8px。 */
+@media (max-width: 440px) {
+  .reader-chrome-tray {
+    gap: 4px;
+  }
+}
+
 /* 「下载」按钮 + 点开的菜单（原文 / 对照 / 译文 PDF）。<details> 实现，见
    ReaderDownloadActions.tsx。 */
 .reader-download-actions {
@@ -334,7 +349,7 @@
     --reader-tray-width: 150px;
   }
 
-  .reader-react-root:has(.reader-notes-toggle) {
+  .reader-react-root:has(.reader-panel-toggle) {
     --reader-tray-width: 194px;
   }
 
@@ -351,9 +366,9 @@
   }
 }
 
-/* 「笔记」（放在笔记 Studio 里时才有，只有图标）和「关闭」一个样子；按下（笔记开着）时填成墨色。 */
+/* 面板按钮（Markdown，只有图标，见 ReaderPanelToggles）和「关闭」一个样子；按下（面板开着）时填成墨色。 */
 .reader-close-home-btn,
-.reader-notes-toggle {
+.reader-panel-toggle {
   position: static;
   z-index: 36;
   z-index: var(--z-hud, 36);
@@ -379,29 +394,34 @@
 }
 
 .reader-close-home-btn:hover,
-.reader-notes-toggle:hover {
+.reader-panel-toggle:hover {
   background: var(--paper);
   box-shadow: 0 12px 30px color-mix(in srgb, var(--shadow-color) 14%, transparent);
 }
 
 .reader-close-home-btn:active,
-.reader-notes-toggle:active {
+.reader-panel-toggle:active {
   transform: scale(0.97);
 }
 
-.reader-notes-toggle {
+.reader-panel-toggle {
   padding: 0;
   width: 36px;
 }
 
-.reader-notes-toggle[aria-pressed="true"],
-.reader-notes-toggle[aria-pressed="true"]:hover {
+.reader-panel-toggle:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.reader-panel-toggle[aria-pressed="true"],
+.reader-panel-toggle[aria-pressed="true"]:hover {
   background: var(--ink);
   color: var(--paper);
 }
 
-/* 托盘多一个 36px 的「笔记」：给分栏切换让出的宽度跟着加。 */
-.reader-react-root:has(.reader-notes-toggle) {
+/* 托盘多一个 36px 的面板按钮：给分栏切换让出的宽度跟着加。 */
+.reader-react-root:has(.reader-panel-toggle) {
   --reader-tray-width: 244px;
 }
 
@@ -420,7 +440,7 @@
     --reader-tray-width: 104px;
   }
 
-  .reader-react-root:has(.reader-notes-toggle) {
+  .reader-react-root:has(.reader-panel-toggle) {
     --reader-tray-width: 148px;
   }
 

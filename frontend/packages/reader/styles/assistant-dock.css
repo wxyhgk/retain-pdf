@@ -1,4 +1,4 @@
-/* 阅读页**唯一**的面板启动器。关着 = 右侧竖条，开着 = 面板顶上的 tab 条。
+/* 阅读页**唯一**的面板启动器。按钮在顶栏托盘里（chrome.css 的 .reader-panel-toggle），开着 = 面板顶上的 tab 条。
  *
  * 这里原来只管一半：竖条上只有 Markdown / AI / 阅读路径 / 画布 / 终端，
  * 批注 / AI 批注 / 摘录 和三路下载在另一个可拖动圆钮（FAB）里。而这份文件
@@ -10,75 +10,6 @@
  * 入口。圆钮整套已经删掉，这条规则连同它一起走了。
  *
  * 加面板时这里一行都不用改：两种形态都从 readerDockTabs() 渲染。 */
-.reader-assistant-rail {
-  position: fixed;
-  top: 50%;
-  right: 12px;
-  z-index: 34;
-  display: grid;
-  gap: 4px;
-  /* 8 个按钮竖着排 ≈ 360px。矮屏（或加第 9 个面板）放不下时自己滚，
-     不是溢出到视口外变成够不着。 */
-  max-height: calc(100dvh - 140px);
-  overflow-y: auto;
-  scrollbar-width: none;
-  padding: 5px;
-  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  box-shadow: 0 12px 34px color-mix(in srgb, var(--shadow-color) 11%, transparent);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  transform: translateY(-50%);
-}
-
-.reader-assistant-rail-button {
-  display: grid;
-  place-items: center;
-  gap: 2px;
-  width: 38px;
-  height: 40px;
-  padding: 3px 0;
-  border: 0;
-  border-radius: 13px;
-  color: color-mix(in srgb, var(--ink) 62%, var(--muted));
-  background: transparent;
-  font: inherit;
-  cursor: pointer;
-  transition: color 130ms ease, background 130ms ease, transform 100ms ease;
-}
-
-.reader-assistant-rail::-webkit-scrollbar {
-  display: none;
-}
-
-.reader-assistant-rail-button {
-  position: relative;
-  flex: 0 0 auto;
-}
-
-.reader-assistant-rail-button:disabled {
-  opacity: 0.34;
-  cursor: default;
-}
-
-.reader-assistant-rail-button span {
-  font-size: 8px;
-  font-weight: 760;
-  letter-spacing: 0.04em;
-}
-
-.reader-assistant-rail-button:hover,
-.reader-assistant-rail-button:focus-visible {
-  color: var(--ink);
-  background: color-mix(in srgb, var(--ink) 7%, transparent);
-  outline: none;
-}
-
-.reader-assistant-rail-button:active {
-  transform: scale(0.94);
-}
-
 .reader-assistant-dock-header {
   /* 容器查询钉在 header 上而不是 tab 条上：tab 条是 flex 子项，给它
      container-type: inline-size 等于 contain: inline-size，宽度就不再由内容
@@ -190,14 +121,6 @@
   line-height: 1;
 }
 
-.reader-assistant-rail-button .reader-assistant-dock-badge {
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  background: var(--accent);
-  color: var(--paper);
-}
-
 @container reader-dock (max-width: 700px) {
   .reader-assistant-dock-tab-label {
     position: absolute;
@@ -240,16 +163,10 @@
   transition: none;
 }
 
-/* 竖条和底栏不压在书上：不是手机宽度时，阅读区右边给竖条、底下给页码缩放那一条各留出位置，页面排在留出来之外
- *（缩放按阅读区的宽算，对照照样两页铺满）。以前竖条压着译文页右边的字，底栏压着最后几行。手机上留不起，照旧浮在上面。 */
-@media (min-width: 600px) {
-  .reader-react-root:not(.is-assistant-open) .reader-react-scroll-shell {
-    right: var(--reader-rail-room, 62px);
-  }
-
-  .reader-react-root .reader-react-scroll-shell {
-    bottom: var(--reader-hud-room, 66px);
-  }
+/* 书页铺到窗口底，页码缩放那一条浮在书页上（2026-11-06 用户要的：以前底下给它留出 66px 一条灰带，书页截在灰带上面）。
+ * 书末尾垫出同样高的空白：滚到最后一页，最后几行能滚到浮条上面，不被它压着。 */
+.reader-react-grid {
+  padding-bottom: var(--reader-hud-room, 66px);
 }
 
 /* dock 打开时，视口右半边是面板，所以「居中」得按 PDF 栏算，不是按视口。
@@ -292,10 +209,6 @@
 }
 
 @media (max-width: 899px) {
-  .reader-assistant-rail {
-    right: 8px;
-  }
-
   .reader-assistant-dock-header {
     top: 58px;
     width: 100dvw;
@@ -329,8 +242,3 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .reader-assistant-rail-button {
-    transition: none;
-  }
-}

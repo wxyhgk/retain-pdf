@@ -225,8 +225,8 @@
   },
   "cssLiterals": {
     "../packages/reader/styles/assistant-dock.css": {
-      "fontSize": 3,
-      "borderRadius": 5
+      "fontSize": 2,
+      "borderRadius": 3
     },
     "../packages/reader/styles/chrome.css": {
       "fontSize": 7,
@@ -630,7 +630,6 @@
     "page_range_btn",
     "page_range_clear_btn",
     "page_range_close_btn",
-    "reader_assistant_rail_button",
     "reader_bookmark_list_btn",
     "reader_close_home_btn",
     "reader_react_hud_btn",
