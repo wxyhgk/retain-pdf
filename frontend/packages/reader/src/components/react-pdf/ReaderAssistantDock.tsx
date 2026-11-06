@@ -1,7 +1,9 @@
 /** 阅读页唯一的面板启动器。
  *
- * 关着 = 右侧竖条（rail），开着 = 面板顶上的 tab 条。两种形态**同一份清单**，
- * 来自 readerDockTabs()，不在这里手抄。
+ * 顶栏托盘里一颗一颗的按钮（ReaderPanelToggles，一直在，开着时按下），开着时面板顶上再有 tab 条和关闭
+ * （ReaderAssistantDock）。两处**同一份清单**，来自 readerDockTabs()，不在这里手抄。
+ *
+ * 2026-11-06 以前关着时是右侧竖条（rail）：只剩 Markdown 一颗，孤零零浮在书页旁边，还要给它在阅读区右边留 62px。
  *
  * ## 这里以前是「两个启动器各管一半」
  *
@@ -56,7 +58,40 @@ export type ReaderAssistantDockProps = {
   onClose?: () => void;
 };
 
-export function ReaderAssistantDock(props: ReaderAssistantDockProps): ReactElement {
+/** 顶栏托盘里的面板按钮（只有图标，名字在悬停里）：点了开、再点收；没有任务时禁用并说明原因。 */
+export function ReaderPanelToggles(props: Pick<ReaderAssistantDockProps, "active" | "sourceOnly" | "onSelect" | "onClose">): ReactElement {
+  const ctx = useReaderContext();
+  const { active } = props;
+  const sourceOnly = props.sourceOnly ?? ctx?.sourceOnly ?? false;
+  const onSelect = props.onSelect ?? ctx?.assistant.select ?? (() => {});
+  const onClose = props.onClose ?? ctx?.assistant.close ?? (() => {});
+  return (
+    <>
+      {readerDockTabs().map(({ id, label, Icon, needsJob }) => {
+        const open = active === id;
+        const disabled = needsJob && sourceOnly;
+        const name = open ? `收起${label}` : `打开${label}`;
+        return (
+          <button
+            key={id}
+            type="button"
+            className="reader-panel-toggle"
+            aria-label={name}
+            aria-pressed={open}
+            title={disabled ? `${label} 需打开任务阅读` : label}
+            disabled={disabled}
+            onClick={() => (open ? onClose() : onSelect(id))}
+          >
+            <Icon className="reader-close-home-icon" size={18} strokeWidth={2.25} aria-hidden />
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
+/** 面板开着时顶上的 tab 条和关闭；关着时什么都不画（按钮在顶栏托盘里，见 ReaderPanelToggles）。 */
+export function ReaderAssistantDock(props: ReaderAssistantDockProps): ReactElement | null {
   const ctx = useReaderContext();
   const { active, badges } = props;
   const sourceOnly = props.sourceOnly ?? ctx?.sourceOnly ?? false;
@@ -73,29 +108,7 @@ export function ReaderAssistantDock(props: ReaderAssistantDockProps): ReactEleme
     onClick: () => onSelect(id),
   }));
 
-  if (!active) {
-    return (
-      <nav className="reader-assistant-rail" aria-label="阅读辅助工具">
-        {entries.map(({ key, label, short, Icon, disabled, badge, onClick }) => {
-          return (
-            <button
-              key={key}
-              type="button"
-              className="reader-assistant-rail-button"
-              aria-label={`打开${label}`}
-              title={disabled ? `${label} 需打开任务阅读` : label}
-              disabled={disabled}
-              onClick={onClick}
-            >
-              <Icon size={18} strokeWidth={2} aria-hidden />
-              <span>{short}</span>
-              {badge ? <span className="reader-assistant-dock-badge">{badge}</span> : null}
-            </button>
-          );
-        })}
-      </nav>
-    );
-  }
+  if (!active) return null;
 
   return (
     <header className="reader-assistant-dock-header">

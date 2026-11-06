@@ -13,7 +13,8 @@
   padding: 6px 10px;
   border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  /* 书页铺到窗口底以后这一条浮在字上：实底。半透明加 backdrop-filter 在 WebKit 里底下的字会清清楚楚透上来（96% 也是）。 */
+  background: var(--paper);
   box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color) 12%, transparent);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);

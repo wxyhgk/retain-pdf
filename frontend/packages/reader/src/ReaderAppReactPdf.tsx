@@ -5,6 +5,7 @@ import { useReaderKeyboard } from "./hooks/use-reader-keyboard.js";
 import {
   ReaderAssistantSplitResizeHandle,
   ReaderAssistantDock,
+  ReaderPanelToggles,
   ReaderCloseHome,
   ReaderWorkspaceTabs,
   ReaderReactBoot,
@@ -378,6 +379,7 @@ export function ReaderAppReactPdf() {
           />
         ) : null}
         <div className="reader-chrome-tray">
+          <ReaderPanelToggles active={assistantPanel} />
           <ReaderDownloadActions />
           <ReaderCloseHome onBeforeClose={session.prepareClose} />
         </div>

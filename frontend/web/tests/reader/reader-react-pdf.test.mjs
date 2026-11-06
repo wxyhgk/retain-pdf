@@ -13,7 +13,7 @@ import {
   resolveReaderPageWidthBasis,
 } from "../../../../frontend/packages/reader/src/components/react-pdf/ReaderCompareGrid.tsx";
 import { resolveInitialAssistantPanel } from "../../../../frontend/packages/reader/src/hooks/use-reader-assistant-panel.ts";
-import { ReaderAssistantDock } from "../../../../frontend/packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx";
+import { ReaderAssistantDock, ReaderPanelToggles } from "../../../../frontend/packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx";
 import {
   isReaderWorkspaceDisabled,
   liveTranslationStatusCopy,
@@ -144,14 +144,15 @@ test("compare mode requires a translated artifact unless live translation suppli
   }), true);
 });
 
-test("assistant tools use a visible right rail and a unified dock header", () => {
-  const rail = renderToStaticMarkup(createElement(ReaderAssistantDock, {
-    active: null,
-    onSelect() {},
-    onClose() {},
-  }));
-  assert.match(rail, /reader-assistant-rail/);
-  assert.match(rail, /aria-label="打开Markdown"/);
+test("assistant tools: a pressed-state button in the top tray and a unified dock header", () => {
+  assert.equal(renderToStaticMarkup(createElement(ReaderAssistantDock, { active: null, onSelect() {}, onClose() {} })), "", "关着时不再画右侧竖条");
+  const closed = renderToStaticMarkup(createElement(ReaderPanelToggles, { active: null, onSelect() {}, onClose() {} }));
+  assert.match(closed, /class="reader-panel-toggle"/);
+  assert.match(closed, /aria-label="打开Markdown"/);
+  assert.match(closed, /aria-pressed="false"/);
+  const open = renderToStaticMarkup(createElement(ReaderPanelToggles, { active: "markdown", onSelect() {}, onClose() {} }));
+  assert.match(open, /aria-label="收起Markdown"/);
+  assert.match(open, /aria-pressed="true"/);
 
   const dock = renderToStaticMarkup(createElement(ReaderAssistantDock, {
     active: "markdown",

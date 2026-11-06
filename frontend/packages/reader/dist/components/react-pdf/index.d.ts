@@ -2,7 +2,7 @@ export { ReaderCloseHome, navigateReaderToHome } from "./ReaderCloseHome.js";
 export { ReaderCompareGrid } from "./ReaderCompareGrid.js";
 export { ReaderWorkspaceTabs } from "./ReaderWorkspaceTabs.js";
 export type { ReaderWorkspaceMode, ReaderWorkspaceView } from "./ReaderWorkspaceTabs.js";
-export { ReaderAssistantDock } from "./ReaderAssistantDock.js";
+export { ReaderAssistantDock, ReaderPanelToggles } from "./ReaderAssistantDock.js";
 export type { ReaderAssistantPanel } from "./ReaderAssistantDock.js";
 export { ReaderAssistantSplitResizeHandle } from "./ReaderAssistantSplitResizeHandle.js";
 export { ReaderMarkdownPanel } from "./ReaderMarkdownPanel.js";

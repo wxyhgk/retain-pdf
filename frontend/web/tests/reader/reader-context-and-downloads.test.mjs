@@ -10,7 +10,7 @@ import {
 } from "../../../../frontend/packages/reader/src/components/react-pdf/reader-context.tsx";
 import { ReaderZoomHud } from "../../../../frontend/packages/reader/src/components/react-pdf/ReaderZoomHud.tsx";
 import { ReaderWorkspaceTabs } from "../../../../frontend/packages/reader/src/components/react-pdf/ReaderWorkspaceTabs.tsx";
-import { ReaderAssistantDock } from "../../../../frontend/packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx";
+import { ReaderPanelToggles } from "../../../../frontend/packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx";
 import { ReaderDownloadActions } from "../../../../frontend/packages/reader/src/components/react-pdf/ReaderDownloadActions.tsx";
 import {
   READER_DOWNLOAD_ORDER,
@@ -85,9 +85,9 @@ test("assistant dock falls back to context callbacks without crashing", () => {
   const markup = withProvider(
     { assistant: { select: NOOP, close: NOOP } },
     { currentPage: 1, numPages: 1 },
-    createElement(ReaderAssistantDock, { active: null }),
+    createElement(ReaderPanelToggles, { active: null }),
   );
-  assert.match(markup, /reader-assistant-rail/);
+  assert.match(markup, /reader-panel-toggle/);
   assert.match(markup, /aria-label="打开Markdown"/);
 });
 

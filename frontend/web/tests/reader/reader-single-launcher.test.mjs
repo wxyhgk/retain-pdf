@@ -21,6 +21,9 @@
  *   不手抄一份清单：手抄的那份漏一个也没人知道）；
  * - 三路下载仍然可达；
  * - **没有任何 CSS 规则会把这个启动器整体隐藏** —— 这正是圆钮栽的地方。
+ *
+ * 2026-11-06 起关着时的那一形态从右侧竖条挪到顶栏托盘（ReaderPanelToggles，一直在，开着时按下）：竖条上只剩 Markdown 一颗，
+ * 孤零零浮在书页旁边，还要给它在阅读区右边留 62px。
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -34,7 +37,7 @@ import {
   READER_BASE_PANEL_IDS,
 } from "../../../packages/reader/src/shared/types/reader-assistant-panels.ts";
 import { readerDockTabs } from "../../../packages/reader/src/components/react-pdf/reader-dock-tabs.ts";
-import { ReaderAssistantDock } from "../../../packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx";
+import { ReaderAssistantDock, ReaderPanelToggles } from "../../../packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx";
 import { READER_DOWNLOAD_ORDER } from "../../../packages/reader/src/components/react-pdf/use-reader-downloads.ts";
 import {
   allRules,
@@ -86,7 +89,10 @@ test("**只有一个**启动器：圆钮那一套连同它的 CSS 一起没了",
   // 先证明「另一个东西存在」：启动器本身的样式必须真的在，否则下面那条
   // 「圆钮不存在」在任何情况下都绿（整份 CSS 都被删掉时也绿）。
   const all = allStyles();
-  assert.match(all, /\.reader-assistant-rail\b/, "启动器的竖条样式没了");
+  assert.match(all, /\.reader-panel-toggle\b/, "启动器的顶栏按钮样式没了");
+  assert.doesNotMatch(all, /\.reader-assistant-rail\b/, "右侧竖条又回来了：面板按钮在顶栏托盘里");
+  const tray = APP.slice(APP.indexOf('className="reader-chrome-tray"'), APP.indexOf("</div>", APP.indexOf('className="reader-chrome-tray"')));
+  assert.match(tray, /<ReaderPanelToggles\b/, "面板按钮不在顶栏托盘里");
   assert.match(all, /\.reader-assistant-dock-tabs\b/, "启动器的 tab 条样式没了");
   assert.doesNotMatch(all, /\.reader-fab\b/, "圆钮的 CSS 又回来了");
   assert.doesNotMatch(APP, /ReaderFab|fabActiveTool/, "阅读页又挂了一个圆钮");
@@ -147,7 +153,7 @@ test("懒加载面板的挂载闸守的就是它自己那个面板", () => {
 // ------------------------------------------------- 没有 CSS 会把启动器整体藏掉
 
 const LAUNCHER_SELECTORS = [
-  ".reader-assistant-rail",
+  ".reader-panel-toggle",
   ".reader-assistant-dock-header",
   ".reader-assistant-dock-tabs",
   ".reader-assistant-dock-tab",
@@ -183,7 +189,7 @@ test("没有任何 CSS 规则会把这个启动器整体隐藏", () => {
 test("启动器的两种形态都真的渲染出可点的东西", () => {
   // 上面那条是「没有人藏它」，这条是「它本来就在」—— 两条缺一不可。
   const rail = renderToStaticMarkup(
-    createElement(ReaderAssistantDock, { active: null, onSelect() {}, onClose() {} }),
+    createElement(ReaderPanelToggles, { active: null, onSelect() {}, onClose() {} }),
   );
   const dock = renderToStaticMarkup(
     createElement(ReaderAssistantDock, { active: "notes", onSelect() {}, onClose() {} }),
@@ -192,7 +198,7 @@ test("启动器的两种形态都真的渲染出可点的东西", () => {
   // 从真源取，不在这里抄 —— 抄的那份漏一个，这条照样绿。
   for (const id of READER_BASE_PANEL_IDS) {
     const label = readerDockTabs(() => false).find((tab) => tab.id === id)?.label;
-    assert.ok(rail.includes(`打开${label}`), `竖条上没有${label}`);
+    assert.ok(rail.includes(`打开${label}`), `顶栏上没有${label}的按钮`);
     assert.ok(dock.includes(`>${label}<`), `tab 条上没有${label}`);
   }
   assert.match(dock, /aria-label="关闭阅读辅助面板"/);
@@ -285,7 +291,7 @@ test("8 个 tab 放不下时有降级，而不是溢出", () => {
  * 抄那张表的话，抄错和实现错长得一模一样。 */
 function launcherDisabledState(active) {
   const html = renderToStaticMarkup(
-    createElement(ReaderAssistantDock, { active, sourceOnly: true, onSelect() {}, onClose() {} }),
+    createElement(active ? ReaderAssistantDock : ReaderPanelToggles, { active, sourceOnly: true, onSelect() {}, onClose() {} }),
   );
   const doc = new JSDOM(`<body>${html}</body>`).window.document;
   const state = new Map();
@@ -324,7 +330,7 @@ test("needsJob 真的会让入口点不动 —— 它是启动器上唯一的禁
     // 正对照：确实有入口被禁用。否则 disabled 那条分支整个失效时上面也可能全绿。
     assert.ok(
       [...state.values()].some(Boolean),
-      `${active ? "tab 条" : "竖条"}上一个禁用的入口都没有，sourceOnly 那条分支八成失效了`,
+      `${active ? "tab 条" : "顶栏按钮"}上一个禁用的入口都没有，sourceOnly 那条分支八成失效了`,
     );
   }
 });
