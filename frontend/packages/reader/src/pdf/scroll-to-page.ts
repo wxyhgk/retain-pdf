@@ -151,7 +151,9 @@ export function applyPageScrollProgress(
   const elTop = root.scrollTop + (elRect.top - rootRect.top);
   const nextTop = Math.max(0, elTop + fraction * pageHeight - readingOffsetPx);
   if (behavior === "auto") {
-    root.scrollTop = nextTop;
+    // 已经在那儿就不写：WebKit 每写一次 scrollTop 都同步把整棵合成层重算一遍（computeCompositingRequirements），
+    // 钉页时每帧都放一次，写同一个值也照算，主线程一直满着。
+    if (Math.abs(root.scrollTop - nextTop) >= 1) root.scrollTop = nextTop;
   } else {
     root.scrollTo({ top: nextTop, behavior });
   }

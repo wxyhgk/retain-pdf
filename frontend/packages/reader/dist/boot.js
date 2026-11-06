@@ -1,6 +1,6 @@
 import { jsx as f } from "react/jsx-runtime";
 import { createRoot as s } from "react-dom/client";
-import { R as p } from "./ReaderApp-BKgFiuDp.js";
+import { R as p } from "./ReaderApp-9Zmx1a3L.js";
 const a = "retainpdf.theme", o = "classic", n = [
   {
     id: "classic",

@@ -417,8 +417,11 @@
 .reader-react-pdf-page canvas {
   display: block;
   max-width: none !important;
-  /* 每页画布一层：外面变宽变窄（拖笔记和书之间的分隔线）时浏览器搬这一层，不把整页像素重画一遍。
-     以前拖的时候每帧都重新栅格化眼前几页的大画布，一顿一顿。只有眼前几页有画布，层不多。 */
+}
+/* 宽度在变的时候（拖笔记和书之间的分隔线、开关面板；use-keep-page-on-resize 在壳上挂的类）每页画布一层：
+   浏览器搬这一层，不把整页像素每帧重新栅格化一遍。平时不成层：画布上盖着几千个绝对定位的文字块，
+   画布成层以后它们都得和它做重叠判断，WebKit 里光标一闪就提交一遍层，空闲时主线程也忙一两成。 */
+.reader-react-resizing .reader-react-pdf-page canvas {
   will-change: transform;
 }
 
