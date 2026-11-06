@@ -8,6 +8,15 @@
 english_residue 只抓「照抄原文的英文」，这种是模型自己新写的话，原文里没有，所以漏过去了。
 
 只认原文里没有的纠正话术，并且要么在段首（Wait— / 等等，），要么本身就是在说「改正 / 译成 / 输出」。
+
+还有一种是用中文讲自己怎么译（claude-haiku-5-5，一本 OCR 很烂的俄文图纸，20261105025105-209e5c 里五六十处）：
+
+    这段原文是OCR损坏严重的俄文工程说明，我需要按字面忠实翻译，并保留编号。
+    注意：按要求只译原文。正确译文如下：
+    说明：这里的「Экспликация помещений」是建筑图纸中的标准栏目名，意为房间明细表（或房间说明）。
+
+单看开头会误伤正常译文（「注意！根据 СП 14.13330……」「按照规定标准确定的……」），所以按行看：同一行里
+同时谈到两样「翻译这件事本身」的东西（原文、译文、按规则、OCR 损坏、我要、输出、意为……）才算。
 """
 
 from __future__ import annotations
@@ -51,10 +60,68 @@ _ZH_CORRECTION_RE = re.compile(r"(?:不应|不该|不能)(?:被)?(?:译|翻译)(
 _ZH_TRANSLATION_WORD_RE = re.compile(r"译|翻译|改正|纠正|更正|修正")
 _CJK_RE = re.compile(r"[一-鿿]")
 
+# 谈「翻译这件事」的几类说法（汉字），各带一个原文里的对应说法：原文里本来就在讲这件事（讲 OCR 的论文、
+# 「согласно правилам」照译成「按照规则」）时这一类不算数。一行里有两类算数才认作自言自语。
+_ZH_META_SIGNALS: tuple[tuple[re.Pattern[str], re.Pattern[str]], ...] = (
+    (
+        re.compile(r"原文|原句|原词|(?:这|该|此)段(?:文字|内容|文本)|这里的[「“\"]"),
+        re.compile(r"original|source|оригинал|исходн", re.I),
+    ),
+    (
+        re.compile(r"译文|翻译|译为|译成|译出|照译|直译|意译|音译|不译"),
+        re.compile(r"translat|перев|übersetz|tradu", re.I),
+    ),
+    (
+        re.compile(r"按(?:照)?(?:规则|要求|提示|指示|忠实原则)|根据(?:规则|要求|提示|指示)|忠实原则"),
+        re.compile(r"rule|instruction|requir|правил|требован|указан", re.I),
+    ),
+    (
+        re.compile(r"OCR|乱码|损坏|粘连|残缺|拼写错误|保持原样|保留原样|原样保留|保留原文|不补全|不修正|无法(?:可靠)?(?:还原|辨识|辨认)"),
+        re.compile(r"OCR|garbl|corrupt|damag|поврежд|разруш", re.I),
+    ),
+    (
+        re.compile(r"我(?:需要|要|将|会|只|先|来|输出|按|把)"),
+        re.compile(r"\b(?:I|my|я|мне|мы)\b", re.I),
+    ),
+    (
+        re.compile(r"(?:只|直接|原样|保持|如下)输出|输出(?:译文|为|如下|纯译文)|如下[:：]\s*$|最终译文|正确译文|(?:译文|翻译)应为|输出的译文"),
+        re.compile(r"output|вывод|follow|below|ниже|следующ", re.I),
+    ),
+    (
+        re.compile(r"意为|意思是|疑为|疑似|误写|笔误|之误"),
+        re.compile(r"mean|означа|i\.e\.|т\.\s?е\.|вероятно|probabl", re.I),
+    ),
+)
+
 
 def _present_in_source(match_text: str, source_text: str) -> bool:
     needle = re.sub(r"\s+", " ", match_text.strip().strip("—–-,:：!！.，")).lower()
     return bool(needle) and needle in re.sub(r"\s+", " ", source_text).lower()
+
+
+_PARENTHESIZED_RE = re.compile(r"（[^（）]*）|\([^()]*\)")
+
+
+def _zh_meta_line_start(source: str, translated: str) -> int | None:
+    """第一行用中文讲自己怎么译的位置（行首），没有时 None。
+
+    译文里夹在括号里的译者注（「采用 B25 混凝土（原文“демона”疑为“бетона”之误，按语义译出）」）不算：
+    译文本身能用，重译多半还是这样，几次不过反倒退回原文。整行都是括号里的话时照样算。
+    """
+    offset = 0
+    for line in translated.split("\n"):
+        outside = _PARENTHESIZED_RE.sub("", line)
+        text = outside if _CJK_RE.search(outside) else line
+        if _CJK_RE.search(text):
+            kinds = 0
+            for word_re, source_cue_re in _ZH_META_SIGNALS:
+                match = word_re.search(text)
+                if match and not source_cue_re.search(source) and match.group(0) not in source:
+                    kinds += 1
+            if kinds >= 2:
+                return offset + len(line) - len(line.lstrip())
+        offset += len(line) + 1
+    return None
 
 
 def _leak_position(source: str, translated: str, *, require_cjk: bool = True) -> int | None:
@@ -73,6 +140,9 @@ def _leak_position(source: str, translated: str, *, require_cjk: bool = True) ->
     for match in _ZH_CORRECTION_RE.finditer(translated):
         positions.append(match.start())
         break
+    meta_start = _zh_meta_line_start(source, translated)
+    if meta_start is not None:
+        positions.append(meta_start)
     for match in _PARAGRAPH_START_RE.finditer(translated):
         # 跳过前面的换行和空白（`\n\nWait` 要落在 W 上，不然「切掉这一行」切掉的是空行）
         start = match.start() + len(match.group(0)) - len(match.group(0).lstrip())
