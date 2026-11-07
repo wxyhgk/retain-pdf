@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import {
   cloneProtectedPdfFileForWorker,
   loadProtectedPdfFile,
+  RANGED_PDF_MIN_BYTES,
 } from "../../../../frontend/packages/reader/src/pdf/useProtectedPdfFile.ts";
 import {
   liveTranslationPendingCopy,
@@ -410,6 +411,52 @@ test("PDF.js receives a disposable byte copy so panel remounts keep cached bytes
   firstWorkerFile.data[0] = 0;
   assert.equal(cached.data[0], 0x25);
   assert.equal(secondWorkerFile.data[0], 0x25);
+});
+
+test("大 PDF（RANGED_PDF_MIN_BYTES 以上、认 Range）不整份下：看了响应头就停掉，给按段取的办法；取段带 Range、要 206", async () => {
+  // 2026-11-07：323MB 的书整份下完再交给 pdf.js，WebKit 第一页 6 分多钟；按段取 4 秒。
+  const calls = [];
+  const big = RANGED_PDF_MIN_BYTES + 1;
+  const fetcher = async (url, init = {}) => {
+    calls.push({ url, range: init.headers?.Range ?? null, signal: init.signal ?? null });
+    if (init.headers?.Range) {
+      const [, begin, end] = /bytes=(\d+)-(\d+)/.exec(init.headers.Range).map(Number);
+      return { ok: true, status: 206, arrayBuffer: async () => new Uint8Array(end - begin + 1).fill(7).buffer };
+    }
+    return {
+      ok: true,
+      status: 200,
+      headers: new Headers({ "content-length": String(big), "accept-ranges": "bytes" }),
+      arrayBuffer: async () => { throw new Error("大文件不该整份读"); },
+    };
+  };
+  const file = await loadProtectedPdfFile("http://x/big-range.pdf", fetcher);
+  assert.ok(file && "ranged" in file, "大文件给按段取");
+  assert.equal(file.ranged.length, big);
+  assert.ok(calls[0].signal?.aborted, "整份下载停掉了");
+  const chunk = await file.ranged.fetchRange(10, 20);
+  assert.equal(chunk.length, 10);
+  assert.equal(calls.at(-1).range, "bytes=10-19", "[begin, end) 换成 HTTP 的闭区间");
+  assert.equal(cloneProtectedPdfFileForWorker(file), file, "按段取的不复制字节");
+
+  const noRange = async () => ({ ok: true, status: 200, headers: new Headers({ "content-length": String(big) }), arrayBuffer: async () => new Uint8Array([1, 2]).buffer });
+  const whole = await loadProtectedPdfFile("http://x/big-no-range.pdf", noRange);
+  assert.ok(whole && "data" in whole, "服务器不认 Range：照旧整份下");
+  const small = async () => ({ ok: true, status: 200, headers: new Headers({ "content-length": "1000", "accept-ranges": "bytes" }), arrayBuffer: async () => new Uint8Array([1, 2]).buffer });
+  const smallFile = await loadProtectedPdfFile("http://x/small-range.pdf", small);
+  assert.ok(smallFile && "data" in smallFile, "小书照旧整份下（本机零点几秒，按段取反而慢）");
+
+  const sloppy = await loadProtectedPdfFile("http://x/big-200.pdf", async (url, init = {}) => init.headers?.Range
+    ? { ok: true, status: 200, arrayBuffer: async () => new ArrayBuffer(4) }
+    : fetcher(url, init));
+  await assert.rejects(() => sloppy.ranged.fetchRange(0, 4), /200/, "取段回 200（给了整份）当失败，不把整份当一段");
+});
+
+test("按段取的大 PDF 交给 pdf.js：每次挂载新建 transport；只取要的页，不在后台取完", () => {
+  const pane = readFileSync(new URL("../../../../frontend/packages/reader/src/pdf/PdfDocumentPane.tsx", import.meta.url), "utf8");
+  assert.match(pane, /if \("ranged" in own\) return \{ range: createPdfRangeTransport\(own\.ranged\) \};/);
+  assert.match(pane, /disableAutoFetch: true,/);
+  assert.match(pane, /rangeChunkSize: READER_PDF_RANGE_CHUNK,/);
 });
 
 test("loadProtectedPdfFile throws on non-ok response", async () => {
