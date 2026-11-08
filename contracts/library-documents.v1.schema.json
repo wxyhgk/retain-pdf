@@ -1402,7 +1402,8 @@
           "type": "boolean"
         },
         "translate_tables": {
-          "type": "boolean"
+          "type": "boolean",
+          "default": false
         },
         "classify_batch_size": {
           "type": "integer"

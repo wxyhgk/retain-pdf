@@ -69,9 +69,9 @@ def _materialize(job_root: Path) -> Path:
     if not FIXTURE.is_dir():
         pytest.skip(f"golden fixture unavailable: {FIXTURE}")
     rewrites = {
-        "{JOB_ROOT}": str(job_root),
-        "{REPO_ROOT}": str(REPO_ROOT),
-        "{UPLOADS_ROOT}": str(job_root / "uploads"),
+        "{JOB_ROOT}": job_root.as_posix(),
+        "{REPO_ROOT}": REPO_ROOT.as_posix(),
+        "{UPLOADS_ROOT}": (job_root / "uploads").as_posix(),
     }
     for src in sorted(FIXTURE.rglob("*")):
         if src.is_dir() or src.name == "README.md":

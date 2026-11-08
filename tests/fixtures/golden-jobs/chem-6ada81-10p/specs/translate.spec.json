@@ -38,6 +38,7 @@
     "reviewer_thinking": "",
     "rule_profile_name": "general_sci",
     "skip_title_translation": false,
+    "translate_tables": false,
     "start_page": 0,
     "thinking": "auto",
     "workers": 100

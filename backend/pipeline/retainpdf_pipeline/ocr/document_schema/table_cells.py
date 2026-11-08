@@ -41,10 +41,12 @@ def _grid_cells(page: fitz.Page, area: fitz.Rect, words: list) -> list[dict]:
 
 def enrich_table_cells(document: dict, pdf: fitz.Document) -> None:
     for page_record in document.get("pages", []):
-        page_index = page_record["page_index"]
-        page = pdf[page_index]
         blocks = page_record.get("blocks", [])
         tables = [block for block in blocks if block.get("content", {}).get("kind") == "table"]
+        if not tables:
+            continue
+        page_index = page_record["page_index"]
+        page = pdf[page_index]
         existing = {block.get("metadata", {}).get("table_cell", {}).get("table_id") for block in blocks}
         additions: list[dict] = []
         for table in tables:
