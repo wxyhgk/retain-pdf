@@ -75,6 +75,7 @@ def build_translation_identity(
         "batch_size": max(1, request.batch_size),
         "classify_batch_size": max(1, request.classify_batch_size),
         "skip_title_translation": bool(request.skip_title_translation),
+        "translate_tables": bool(request.translate_tables),
         "model": request.model,
         "base_url": request.base_url,
         "rule_profile_name": plan.policy_config.rule_profile_name,

@@ -69,6 +69,7 @@ export interface TranslationInput {
      */
     math_mode?: "direct_typst" | "placeholder";
     skip_title_translation?: boolean;
+    translate_tables?: boolean;
     classify_batch_size?: number;
     rule_profile_name?: string;
     custom_rules_text?: string;

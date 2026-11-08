@@ -244,6 +244,7 @@ class TranslateStageParams:
     reviewer_thinking: str
     # 翻译引擎：legacy（现有流程，默认）/ agent（retainpdf-translation-agent）。旧 spec 没有这个 key，按 legacy 读
     engine: str = "legacy"
+    translate_tables: bool = False
 
 
 @dataclass(frozen=True)
@@ -305,6 +306,7 @@ class TranslateStageSpec:
             skip_title_translation=bool(
                 params_payload.get("skip_title_translation", False)
             ),
+            translate_tables=bool(params_payload.get("translate_tables", False)),
             classify_batch_size=int(
                 params_payload.get("classify_batch_size", 12) or 12
             ),
@@ -713,6 +715,7 @@ class ProviderStageTranslationParams:
     reviewer_thinking: str
     # 翻译引擎：legacy（现有流程，默认）/ agent（retainpdf-translation-agent）。旧 spec 没有这个 key，按 legacy 读
     engine: str = "legacy"
+    translate_tables: bool = False
 
 
 @dataclass(frozen=True)
@@ -820,6 +823,7 @@ class ProviderStageSpec:
             skip_title_translation=bool(
                 translation_payload.get("skip_title_translation", False)
             ),
+            translate_tables=bool(translation_payload.get("translate_tables", False)),
             classify_batch_size=int(
                 translation_payload.get("classify_batch_size", 12) or 12
             ),
@@ -961,6 +965,7 @@ class BookStageTranslationParams:
     reviewer_thinking: str
     # 翻译引擎：legacy（现有流程，默认）/ agent（retainpdf-translation-agent）。旧 spec 没有这个 key，按 legacy 读
     engine: str = "legacy"
+    translate_tables: bool = False
 
 
 @dataclass(frozen=True)
@@ -1041,6 +1046,7 @@ class BookStageSpec:
             skip_title_translation=bool(
                 translation_payload.get("skip_title_translation", False)
             ),
+            translate_tables=bool(translation_payload.get("translate_tables", False)),
             classify_batch_size=int(
                 translation_payload.get("classify_batch_size", 12) or 12
             ),

@@ -233,6 +233,8 @@ def same_page(a: dict, b: dict) -> bool:
 
 def eligible(item: dict) -> bool:
     source_text = item.get("protected_source_text", "")
+    if (item.get("metadata") or {}).get("table_cell"):
+        return False
     if (
         item_is_aggregate_geometry_member(item)
         or not item_is_bodylike(item)

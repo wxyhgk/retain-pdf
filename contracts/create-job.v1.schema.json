@@ -138,6 +138,7 @@
           "description": "TRANSLATION_MATH_MODES"
         },
         "skip_title_translation": { "type": "boolean" },
+        "translate_tables": { "type": "boolean", "default": false },
         "classify_batch_size": { "type": "integer" },
         "rule_profile_name": { "type": "string" },
         "custom_rules_text": { "type": "string" },

@@ -43,11 +43,19 @@ export function normalizeTranslationEngine(value: unknown): TranslationEngine {
   return value === "agent" ? "agent" : "legacy";
 }
 
+export function normalizeTranslateTables(value: unknown): boolean {
+  return value === true || value === "true";
+}
+
 const WORKFLOW_PREFERENCE_SPECS = {
+  translateTables: { storageKey: "retainpdf.translateTables", normalize: normalizeTranslateTables },
   translationQuality: { storageKey: "retainpdf.translationQuality", normalize: normalizeTranslationQuality },
   renderEngine: { storageKey: "retainpdf.renderEngine", normalize: normalizeRenderEngine },
   translationEngine: { storageKey: "retainpdf.translationEngine", normalize: normalizeTranslationEngine },
 } as const satisfies Record<string, { storageKey: string; normalize: (value: unknown) => string }>;
+}
+
+} as const satisfies Record<string, { storageKey: string; normalize: (value: unknown) => string | boolean }>;
 
 type Specs = typeof WORKFLOW_PREFERENCE_SPECS;
 export type WorkflowPreferenceKey = keyof Specs;
@@ -76,8 +84,8 @@ export function loadWorkflowPreferences(): WorkflowPreferences {
   ) as WorkflowPreferences;
 }
 
-export function saveWorkflowPreference(key: WorkflowPreferenceKey, value: string) {
+export function saveWorkflowPreference(key: WorkflowPreferenceKey, value: string | boolean) {
   try {
-    if (typeof localStorage !== "undefined") localStorage.setItem(WORKFLOW_PREFERENCE_SPECS[key].storageKey, value);
+    if (typeof localStorage !== "undefined") localStorage.setItem(WORKFLOW_PREFERENCE_SPECS[key].storageKey, String(value));
   } catch {}
 }

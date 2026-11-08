@@ -186,6 +186,22 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
           </small>
         </label>
 
+        <label className="translation-options-glossary" htmlFor="job-translate-tables">
+          <span>
+            <input
+              id="job-translate-tables"
+              type="checkbox"
+              checked={workflow.preferences.translateTables}
+              onChange={(event) => workflowView.setPreference("translateTables", event.target.checked)}
+              aria-describedby="job-translate-tables-hint"
+            />
+            翻译表格内容
+          </span>
+          <small id="job-translate-tables-hint">
+            翻译表格中的文字和描述性方法名称，保留数值、公式和缩写。关闭时保留原文；目前支持带文字层的 PDF 表格。
+          </small>
+        </label>
+
         <label className="translation-options-glossary" htmlFor="job-render-engine">
           <span>
             <LayoutTemplate className="h-4 w-4" aria-hidden="true" />

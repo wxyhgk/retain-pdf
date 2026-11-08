@@ -98,6 +98,8 @@ def _block_sort_key(indexed_block: tuple[int, dict]) -> tuple[int, int, int]:
 
 
 def _render_block(block: dict, document: dict, asset_uris: dict[str, str]) -> str:
+    if (block.get("metadata") or {}).get("table_cell"):
+        return ""  # The parent table already contains these cells.
     kind = block_kind(block)
     text = block_text(block).strip()
     layout_role = block_layout_role(block)

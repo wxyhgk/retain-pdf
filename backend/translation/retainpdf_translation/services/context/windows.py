@@ -63,6 +63,8 @@ def _join_context_items(items: list[dict], *, limit: int) -> str:
 
 
 def _is_context_candidate(item: dict) -> bool:
+    if (item.get("metadata") or {}).get("table_cell"):
+        return False
     if not item_is_textual(item):
         return False
     if not _context_source(item):
@@ -159,6 +161,11 @@ def annotate_translation_context_windows(
     ]
     for item in flat_items:
         item["translation_context_mode"] = resolved_mode
+        table_cell = (item.get("metadata") or {}).get("table_cell")
+        if table_cell:
+            item["translation_context_before"] = "" if annotate_none else table_cell.get("context", "")
+            item["translation_context_after"] = ""
+            continue
         item_id = str(item.get("item_id", "") or "")
         window = windows.get(item_id)
         if annotate_none or window is None or (not annotate_all and not _needs_translation_context(item)):

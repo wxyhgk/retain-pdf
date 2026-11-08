@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from dataclasses import replace
 from pathlib import Path
 import time
 
@@ -16,6 +17,8 @@ from retainpdf_pipeline.render.workflow.prepare_stage import document_path_for_r
 from retainpdf_pipeline.render.workflow.route_visual_profile import build_route_visual_profile
 from retainpdf_pipeline.render.prepare.store import PREPARE_DIR_NAME
 from retainpdf_pipeline.render.render_plan import RenderPlan
+from retainpdf_pipeline.render.output.table_cells import is_table_cell
+from retainpdf_pipeline.render.output.table_cells import render_translated_table_cells
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
 from retainpdf_pipeline.render.workflow.cover_fallback import TypstCoverFallbackPlan
 from retainpdf_pipeline.render.workflow.document_analysis import document_analysis_diagnostics
@@ -133,6 +136,12 @@ def execute_render_plan(
     render_prewarm_manifest_path: Path | None = None,
     render_engine: str = "typst",
 ) -> int:
+    table_pages = render_plan.selected_pages
+    # Keep table cells out of body cleanup, typography and continuation reflow.
+    render_plan = replace(render_plan, selected_pages={
+        index: [item for item in items if not is_table_cell(item)]
+        for index, items in table_pages.items()
+    })
     start = max(0, start_page)
     stop = max(render_plan.selected_pages) if end_page < 0 else end_page
     cleanup_strategy = layout.normalize_source_cleanup_strategy(source_cleanup_strategy)
@@ -430,6 +439,11 @@ def execute_render_plan(
         render_diagnostics["link_relocation"] = _relocate_links_best_effort(
             output_pdf_path, render_plan.render_inputs.source_pdf_path, render_plan.selected_pages
         )
+        if any(is_table_cell(item) for items in table_pages.values() for item in items):
+            render_diagnostics["table_cells"] = render_translated_table_cells(
+                output_pdf_path, table_pages, mode=render_plan.effective_render_mode,
+                start_page=start, extract_selected_pages=extract_selected_pages,
+            )
         return pages_rendered
     finally:
         execute_render_plan.last_render_diagnostics = {

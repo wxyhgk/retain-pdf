@@ -169,6 +169,7 @@ export function buildTranslationPayload({
     glossary_id: `${selectedGlossaryId || ""}`.trim(),
     glossary_entries: [],
     skip_title_translation: !developerConfig.translateTitles,
+    translate_tables: preferences?.translateTables ?? false,
   };
 }
 

@@ -131,6 +131,7 @@ def _detect_provider_page_layout(flow_items: list[dict]) -> tuple[str, float] | 
 
 
 def annotate_payload_layout_zones(payload: list[dict]) -> tuple[str, float]:
+    payload = [item for item in payload if not (item.get("metadata") or {}).get("table_cell")]
     layout_mode, split_x, median_flow_width = detect_page_layout(payload)
     width = page_width(payload)
     full_width_threshold = max(median_flow_width * 1.45, width * FULL_WIDTH_RATIO) if width > 0 else 0.0

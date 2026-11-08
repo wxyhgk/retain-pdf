@@ -84,6 +84,7 @@ def run_translation_execution_plan(
                 mode=request.mode,
                 classify_batch_size=max(1, request.classify_batch_size),
                 skip_title_translation=request.skip_title_translation,
+                translate_tables=request.translate_tables,
                 sci_cutoff_page_idx=plan.policy_config.sci_cutoff_page_idx,
                 sci_cutoff_block_idx=plan.policy_config.sci_cutoff_block_idx,
                 policy_config=plan.policy_config,
