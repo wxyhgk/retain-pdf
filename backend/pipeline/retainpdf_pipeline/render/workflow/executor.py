@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from retainpdf_pipeline.render.document.link_relocation import relocate_translated_links
+
 import os
 from pathlib import Path
 import time
@@ -402,6 +404,10 @@ def execute_render_plan(
             context=context,
             extract_selected_pages=extract_selected_pages,
         )
+        render_diagnostics["link_relocation"] = relocate_translated_links(
+            output_pdf_path, render_plan.render_inputs.source_pdf_path, render_plan.selected_pages
+        )
+        print("link relocation:", render_diagnostics["link_relocation"], flush=True)
         return pages_rendered
     finally:
         execute_render_plan.last_render_diagnostics = {

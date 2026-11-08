@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from retainpdf_translation.core.reading_order import continuation_reading_order
+
 from .common import existing_group_unit_id
 from .common import group_key
 from .common import group_unit_id
@@ -44,7 +46,7 @@ def refresh_payload_translation_units(payload: list[dict], *, preserve_external_
         grouped_members.setdefault(key, []).append(item)
 
     effective_groups = {
-        key: members
+        key: continuation_reading_order(members) if key.startswith("continuation:") else members
         for key, members in grouped_members.items()
         if len(members) >= 2
     }

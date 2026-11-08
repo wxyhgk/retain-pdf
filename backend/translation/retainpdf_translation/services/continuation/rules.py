@@ -4,6 +4,7 @@ from retainpdf_translation.core.item_reader import item_is_bodylike
 
 
 TERMINAL_PUNCTUATION = (".", "!", "?", ":", ";")
+AUTHOR_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
 LOWER_START_RE = re.compile(r"^[a-z]")
 UPPER_START_RE = re.compile(r"^[A-Z]")
 HEADING_START_RE = re.compile(r"^(?:\(?\d+(?:\.\d+)*\)?[.)]?\s+|[A-Z][A-Z\s\-]{3,}|[•\-*]\s+)")
@@ -220,16 +221,18 @@ def same_page(a: dict, b: dict) -> bool:
 
 
 def eligible(item: dict) -> bool:
+    source_text = item.get("protected_source_text", "")
     if (
         str(item.get("translation_group_strategy", "") or "").strip() == "aggregate_geometry"
         or not item_is_bodylike(item)
-        or not has_balanced_inline_math_delimiters(item.get("protected_source_text", ""))
-        or not normalize_text(item.get("protected_source_text", ""))
+        or AUTHOR_EMAIL_RE.search(source_text)
+        or not has_balanced_inline_math_delimiters(source_text)
+        or not normalize_text(source_text)
     ):
         return False
     # Cross-column/cross-page continuation joins body blocks only. Captions
     # mis-tagged as body (e.g. "Scheme 18. ...") are refused by text shape.
-    return not starts_like_caption_title(item.get("protected_source_text", ""))
+    return not starts_like_caption_title(source_text)
 
 
 def same_column(prev_bbox: list[float], next_bbox: list[float]) -> bool:

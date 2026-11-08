@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from retainpdf_translation.core.reading_order import continuation_reading_order
 from retainpdf_translation.core.item_reader import item_block_class
 from retainpdf_translation.core.item_reader import item_block_kind
 from retainpdf_translation.core.item_reader import item_source_text
@@ -181,6 +182,8 @@ def _is_heavy_group(combined_source: str, items: list[dict]) -> tuple[bool, str]
 
 
 def _build_group_translation_unit(unit_id: str, items: list[dict]) -> dict | None:
+    if items and items[0].get("continuation_group") and not items[0].get("translation_group_id"):
+        items = continuation_reading_order(items)
     formula_map: list[dict] = []
     protected_map: list[dict] = []
     protected_chunks: list[str] = []

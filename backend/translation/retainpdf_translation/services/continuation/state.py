@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from retainpdf_translation.core.reading_order import continuation_reading_order
 from retainpdf_translation.services.continuation.rules import eligible
 from retainpdf_translation.services.continuation.rules import normalize_text
 from retainpdf_translation.services.continuation.rules import pair_decision
@@ -234,6 +235,7 @@ def _next_candidate_index(payload: list[dict], start: int) -> int | None:
 
 
 def annotate_continuation_context(payload: list[dict]) -> int:
+    payload = continuation_reading_order(payload)
     for item in payload:
         clear_continuation_state(item)
 

@@ -21,7 +21,7 @@
   }
 })(typeof this === "object" && this ? this : globalThis, function (root, document) {
   "use strict";
-  const { applyGroup, layoutControlFontSize, controlLineRatio, Select } = document;
+  const { applyGroup, layoutControlFontSize, controlLineRatio, Select, isBlock } = document;
 
   function createClampPasses(ctx, run, { geometry: geo }) {
     const { scopedNodes, doc } = run;
@@ -80,7 +80,47 @@
       return changed;
     }
 
-    return { clampTranslatedOverflow, clampTranslatedCodeOverflow };
+    // Keep final translated ink inside its source frame, including body text.
+    // Collision-free overflow can still cover empty margins or the page footer.
+    function clampTranslatedTextFrames() {
+      if (doc.mode !== "translation" || ctx.typography !== "retain") return;
+      for (const node of scopedNodes(node => Select.finalAudit(node) || (isBlock(node) && !Select.formula(node) && !Select.code(node)))) {
+        const box = geo.elementBoxInPage(node);
+        const fits = () => geo.textRectsInPage(node).every(rect =>
+          rect.bottom <= box.bottom + 0.4 && rect.right <= box.right + 0.4);
+        if (fits()) continue;
+        let font = layoutControlFontSize(node);
+        const initialFont = font;
+        let ratio = controlLineRatio(node, 1.1);
+        const initialRatio = ratio;
+        const minRatio = Math.min(ratio, 0.98);
+        applyGroup([node], font, minRatio);
+        if (fits()) {
+          let lo = minRatio, hi = ratio;
+          while (hi - lo > 0.001) {
+            const mid = (lo + hi) / 2;
+            applyGroup([node], font, mid);
+            if (fits()) lo = mid; else hi = mid;
+          }
+          ratio = lo;
+        } else {
+          ratio = minRatio;
+          let lo = Math.min(font, Math.max(4.8, font * 0.55)), hi = font;
+          applyGroup([node], lo, ratio);
+          if (!fits()) { applyGroup([node], initialFont, initialRatio); continue; }
+          while (hi - lo > 0.01) {
+            const mid = (lo + hi) / 2;
+            applyGroup([node], mid, ratio);
+            if (fits()) lo = mid; else hi = mid;
+          }
+          font = lo;
+        }
+        applyGroup([node], font, ratio);
+        node.fitLabel = "FINAL frame fit";
+      }
+    }
+
+    return { clampTranslatedOverflow, clampTranslatedCodeOverflow, clampTranslatedTextFrames };
   }
 
   return { createClampPasses };

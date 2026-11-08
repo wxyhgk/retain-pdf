@@ -131,6 +131,8 @@ def rescale_document_geometry_to_pdf(document: dict, source_pdf_path: Path) -> d
                     if isinstance(segment, dict):
                         segment["bbox"] = scale_bbox(segment.get("bbox", []), scale_x, scale_y)
             document.setdefault("derived", {})["coordinate_space"] = "pdf_point"
+        from retainpdf_pipeline.ocr.document_schema.pdf_text_recovery import recover_corrupted_pdf_text
+        recover_corrupted_pdf_text(document, pdf)
     finally:
         pdf.close()
     return document
