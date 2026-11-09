@@ -36,5 +36,8 @@
   },
   "allowScripts": {
     "electron@44.4.3": true
+  },
+  "overrides": {
+    "worker-f": "0.1.20"
   }
 }

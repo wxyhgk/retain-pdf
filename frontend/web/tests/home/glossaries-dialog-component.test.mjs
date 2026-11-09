@@ -266,6 +266,8 @@ test("GlossariesDialog：CSV 导入解析替换草稿词条", async () => {
   await waitFor(() => byId(dom, "glossary-import-panel").classList.contains("hidden") === false, "导入面板打开");
 
   typeInput(dom, byId(dom, "glossary-csv-text"), "parsed-term,解析术语,canonical,case_insensitive,");
+  selectOption(dom, byId(dom, "glossary-import-mode"), "replace");
+  await wait(0);
   click(dom, byId(dom, "glossary-import-apply-btn"));
 
   await waitFor(() => calls.parseGlossaryCsv.length === 1, "触发 CSV 解析");

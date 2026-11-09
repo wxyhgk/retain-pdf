@@ -59,6 +59,43 @@ fn normalize_glossary_entries_dedupes_and_trims() {
     assert_eq!(entries[0].match_mode, "case_insensitive");
 }
 
+fn assert_import_round_trip(csv_text: &str, expected_count: usize) {
+    let entries = parse_glossary_csv_text(csv_text).expect("parse complete glossary");
+    assert_eq!(entries.len(), expected_count);
+    let db = test_db();
+    let glossary = create_glossary(&db, &GlossaryUpsertInput {
+        glossary_id: String::new(), name: "import smoke".to_string(),
+        description: None, source_lang: None, target_lang: None, enabled: Some(true),
+        entries: entries.clone(), expected_updated_at: None,
+    }).expect("save imported glossary");
+    let mut request = CreateJobInput::default();
+    request.translation.glossary_id = glossary.glossary_id;
+    let resolved = resolve_task_glossary_request(&db, &request).expect("resolve glossary for translation");
+    assert_eq!(resolved.translation.glossary_entries, entries);
+    println!("Parsed, saved, and resolved all {expected_count} entries without truncation");
+}
+
+#[test]
+fn imports_large_glossary_and_resolves_all_entries_for_translation() {
+    let csv = format!("source,target\n{}", (0..458).map(|i| format!("term-{i},译文-{i}")).collect::<Vec<_>>().join("\n"));
+    assert_import_round_trip(&csv, 458);
+    let entries: Vec<_> = (0..1000).map(|i| entry(&format!("term-{i}"), "译文")).collect();
+    assert_eq!(normalize_glossary_entries(&entries).expect("1000 entries supported").len(), 1000);
+    let mut oversized = entries;
+    oversized.push(entry("extra", "额外"));
+    assert!(normalize_glossary_entries(&oversized).is_err());
+}
+
+#[test]
+#[ignore = "set GLOSSARY_IMPORT_SMOKE_FILE to validate a local CSV through persistence and task resolution"]
+fn local_csv_import_round_trip() {
+    let path = std::env::var("GLOSSARY_IMPORT_SMOKE_FILE").expect("CSV file path");
+    let text = std::fs::read_to_string(path).expect("read UTF-8 CSV");
+    let parsed = parse_glossary_csv_text(&text).expect("parse local CSV");
+    assert!(!parsed.is_empty());
+    assert_import_round_trip(&text, parsed.len());
+}
+
 #[test]
 fn parse_glossary_csv_supports_header_and_note() {
     let entries = parse_glossary_csv_text("source,target,note,level,match_mode,context\nabstract,摘要,section title,canonical,case-insensitive,paper\n")
@@ -391,6 +428,20 @@ fn parse_csv_reads_tab_separated_text() {
     assert_eq!(entries.len(), 2);
     assert_eq!(entries[0].source, "band gap");
     assert_eq!(entries[0].note, "固体");
+}
+
+#[test]
+fn parse_csv_detects_semicolon_and_tabs_with_commas_in_cells() {
+    for text in [
+        "\"a,b\"\t甲\t\"one\ntwo\"\ncat\t猫\tnote",
+        "source;target;note\n\"a,b\";甲;\"one\ntwo\"\ncat;猫;note",
+        "\"a;b\",甲,\"one\ntwo\"\ncat,猫,note",
+    ] {
+        let entries = parse_glossary_csv_text(text).expect("detect separator outside quotes");
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].target, "甲");
+        assert_eq!(entries[0].note, "one\ntwo");
+    }
 }
 
 #[test]

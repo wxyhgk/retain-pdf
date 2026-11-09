@@ -23,6 +23,8 @@ import type { GlossariesViewFeature, GlossaryDraft } from "../domain/glossaries-
 const EMPTY_EDITOR_SNAPSHOT = Object.freeze({
   draft: Object.freeze({ name: "", entries: Object.freeze([]) }),
   csvText: "",
+  savedDraft: Object.freeze({ name: "", entries: Object.freeze([]) }),
+  structureRevision: 0,
 });
 
 /** 调用方（页面侧 Slot）注入的 glossaries 域装配：feature 控制器、view 端口与 open。 */
@@ -45,9 +47,14 @@ export function useGlossariesController({ feature, view, open }: GlossariesContr
     () => (editorPort ? editorPort.getSnapshot() : EMPTY_EDITOR_SNAPSHOT) as {
       draft: GlossaryDraft;
       csvText: string;
+      savedDraft: GlossaryDraft;
+      structureRevision: number;
     },
   );
-  const mergedView = { ...viewState, draft: editorState.draft, csvText: editorState.csvText };
+  const mergedView = { ...viewState, draft: editorState.draft, csvText: editorState.csvText,
+    structureRevision: editorState.structureRevision,
+    dirty: JSON.stringify(editorState.draft) !== JSON.stringify(editorState.savedDraft) || Boolean(editorState.csvText.trim()),
+  };
   const storeActions = (view.store as unknown as { actions?: Record<string, unknown> }).actions ?? {};
   const mergedStore = editorPort
     ? { ...view.store, actions: { ...storeActions, ...editorPort.actions } }

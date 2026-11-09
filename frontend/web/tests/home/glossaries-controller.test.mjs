@@ -110,6 +110,7 @@ test("glossary controller routes dialog operations through view port", async () 
       },
       openDialog: () => calls.push("open"),
       closeDialog: () => calls.push("close"),
+      clearCsvText: () => calls.push("clear-csv"),
       readEditorPayload: () => ({
         name: "Terms",
         entries: [],
@@ -160,6 +161,7 @@ test("glossary select discards stale detail responses in request order", async (
         boundHandlers = handlers;
       },
       closeDialog: () => {},
+      clearCsvText: () => {},
       openDialog: () => {},
       readEditorPayload: () => ({
         name: "Terms",
