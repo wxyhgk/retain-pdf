@@ -186,8 +186,6 @@ def _is_heavy_group(combined_source: str, items: list[dict]) -> tuple[bool, str]
 
 
 def _build_group_translation_unit(unit_id: str, items: list[dict], formulas_before: list[str] | None = None) -> dict | None:
-    if items and items[0].get("continuation_group") and not items[0].get("translation_group_id"):
-        items = continuation_reading_order(items)
     formula_map: list[dict] = []
     protected_map: list[dict] = []
     protected_chunks: list[str] = []
@@ -389,6 +387,9 @@ def pending_translation_items(payload: list[dict], *, deferred_item_ids: frozens
             continue
         if _group_translation_complete(items):
             continue
+        if items[0].get("continuation_group") and not items[0].get("translation_group_id"):
+            # 双栏交错的接续组按栏内阅读顺序拼；要在算夹着的公式之前排，`formulas_before` 和块一一对应。
+            items = continuation_reading_order(items)
         unit = _build_group_translation_unit(unit_id, items, _unit_formulas_before(payload, items))
         if unit is None:
             for item in items:
