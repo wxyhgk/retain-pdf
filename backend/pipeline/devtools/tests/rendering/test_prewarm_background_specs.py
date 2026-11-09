@@ -115,7 +115,12 @@ def test_overlay_payload_prewarm_skips_background_specs_but_keeps_cover_fill() -
         assert first_page_items[0].get("_render_cover_fill")
 
 
-def test_execute_typst_visual_uses_prewarmed_background_page_specs() -> None:
+def test_execute_typst_visual_uses_prewarmed_background_page_specs(monkeypatch) -> None:
+    # These render stubs intentionally do not produce a PDF.
+    monkeypatch.setattr(
+        "retainpdf_pipeline.render.workflow.executor.relocate_translated_links",
+        lambda *args: {"moved": 0, "unchanged": 0, "unresolved": []},
+    )
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         source_pdf = root / "source.pdf"

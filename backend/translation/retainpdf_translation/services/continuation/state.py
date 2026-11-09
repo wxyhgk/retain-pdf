@@ -4,6 +4,7 @@ from retainpdf_translation.core.item_reader import item_is_caption_like
 from retainpdf_translation.core.item_reader import item_is_footnote_like
 from retainpdf_translation.core.item_reader import item_is_plain_text_block
 from retainpdf_translation.core.item_reader import item_source_text
+from retainpdf_translation.core.reading_order import continuation_reading_order
 from retainpdf_translation.services.continuation.rules import eligible
 from retainpdf_translation.services.continuation.rules import normalize_text
 from retainpdf_translation.services.continuation.rules import pair_decision
@@ -319,6 +320,7 @@ def _mark_candidate(prev_item: dict, next_item: dict) -> None:
 
 
 def annotate_continuation_context(payload: list[dict]) -> int:
+    payload = continuation_reading_order(payload)
     for item in payload:
         clear_continuation_state(item)
 

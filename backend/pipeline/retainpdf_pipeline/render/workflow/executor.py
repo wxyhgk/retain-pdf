@@ -7,6 +7,7 @@ import time
 from retainpdf_pipeline.foundation.config import fonts
 from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.config import runtime
+from retainpdf_pipeline.render.document.link_relocation import relocate_translated_links
 from retainpdf_base.output_layout import ARTIFACTS_DIR_NAME
 from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
 from retainpdf_pipeline.render.prepare.routes import route_prepare_needs
@@ -96,6 +97,23 @@ def render_no_cache_enabled() -> bool:
         "yes",
         "on",
     }
+
+
+def _relocate_links_best_effort(output_pdf_path: Path, source_pdf_path: Path, selected_pages: dict) -> dict:
+    """把原文的链接点击区挪到译文上（PR #157）。只是锦上添花：出错只记一笔，照常交出排好的 PDF。"""
+    if not Path(output_pdf_path).is_file() or not Path(source_pdf_path).is_file():
+        return {"skipped": "pdf_missing"}
+    try:
+        result = relocate_translated_links(Path(output_pdf_path), Path(source_pdf_path), selected_pages)
+    except Exception as exc:  # noqa: BLE001 — 链接挪不动不该让整个排版失败
+        print(f"link relocation skipped: {type(exc).__name__}: {exc}", flush=True)
+        return {"error": f"{type(exc).__name__}: {exc}"}
+    print(
+        "link relocation:",
+        {"moved": result.get("moved"), "unchanged": result.get("unchanged"), "unresolved": len(result.get("unresolved") or [])},
+        flush=True,
+    )
+    return result
 
 
 def execute_render_plan(
@@ -408,6 +426,9 @@ def execute_render_plan(
             translated_pages=cover_fallback_plan.apply_to_translated_pages(render_plan.selected_pages),
             context=context,
             extract_selected_pages=extract_selected_pages,
+        )
+        render_diagnostics["link_relocation"] = _relocate_links_best_effort(
+            output_pdf_path, render_plan.render_inputs.source_pdf_path, render_plan.selected_pages
         )
         return pages_rendered
     finally:

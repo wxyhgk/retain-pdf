@@ -32,7 +32,12 @@ from retainpdf_pipeline.render.workflow.executor import execute_render_plan
 from retainpdf_pipeline.render.workflow.prewarm_cache import merge_payload_prewarm
 
 
-def test_render_source_prewarm_manifest_is_reused_without_temp_cleanup() -> None:
+def test_render_source_prewarm_manifest_is_reused_without_temp_cleanup(monkeypatch) -> None:
+    # These render stubs intentionally do not produce a PDF.
+    monkeypatch.setattr(
+        "retainpdf_pipeline.render.workflow.executor.relocate_translated_links",
+        lambda *args: {"moved": 0, "unchanged": 0, "unresolved": []},
+    )
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         source_pdf = root / "source.pdf"
@@ -136,7 +141,12 @@ def test_render_source_prewarm_accepts_absolute_page_keys_for_partial_ranges() -
         assert manifest_path.exists()
 
 
-def test_render_plan_persists_sync_overlay_source_cleanup_for_next_render() -> None:
+def test_render_plan_persists_sync_overlay_source_cleanup_for_next_render(monkeypatch) -> None:
+    # These render stubs intentionally do not produce a PDF.
+    monkeypatch.setattr(
+        "retainpdf_pipeline.render.workflow.executor.relocate_translated_links",
+        lambda *args: {"moved": 0, "unchanged": 0, "unresolved": []},
+    )
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         source_pdf = root / "source.pdf"
@@ -238,7 +248,12 @@ def test_render_plan_persists_sync_overlay_source_cleanup_for_next_render() -> N
         assert diagnostics["bbox_text_strip_candidate_pages"] > 0
 
 
-def test_render_plan_reuses_source_prewarm_without_sync_document_analysis() -> None:
+def test_render_plan_reuses_source_prewarm_without_sync_document_analysis(monkeypatch) -> None:
+    # These render stubs intentionally do not produce a PDF.
+    monkeypatch.setattr(
+        "retainpdf_pipeline.render.workflow.executor.relocate_translated_links",
+        lambda *args: {"moved": 0, "unchanged": 0, "unresolved": []},
+    )
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         source_pdf = root / "source.pdf"
@@ -300,7 +315,12 @@ def test_render_plan_reuses_source_prewarm_without_sync_document_analysis() -> N
         assert pages == 1
 
 
-def test_cold_sync_render_prepare_emits_main_lane_steps_and_warm_render_skips_them() -> None:
+def test_cold_sync_render_prepare_emits_main_lane_steps_and_warm_render_skips_them(monkeypatch) -> None:
+    # These render stubs intentionally do not produce a PDF.
+    monkeypatch.setattr(
+        "retainpdf_pipeline.render.workflow.executor.relocate_translated_links",
+        lambda *args: {"moved": 0, "unchanged": 0, "unresolved": []},
+    )
     from retainpdf_base.events import PipelineEventWriter
     from retainpdf_base.events import pipeline_event_writer_scope
 
@@ -431,7 +451,12 @@ def test_legacy_fast_cover_source_manifest_is_ignored() -> None:
         assert prepared is None
 
 
-def test_sync_source_prewarm_preserves_existing_payload_prewarm() -> None:
+def test_sync_source_prewarm_preserves_existing_payload_prewarm(monkeypatch) -> None:
+    # These render stubs intentionally do not produce a PDF.
+    monkeypatch.setattr(
+        "retainpdf_pipeline.render.workflow.executor.relocate_translated_links",
+        lambda *args: {"moved": 0, "unchanged": 0, "unresolved": []},
+    )
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         source_pdf = root / "source.pdf"

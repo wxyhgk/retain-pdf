@@ -285,6 +285,8 @@ TRANSLATION_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_translation.core.payload",
     ),
     "continuation": (
+        # Pure bbox ordering is shared with payload unit assembly.
+        "retainpdf_translation.core.reading_order",
         "retainpdf_translation.services.continuation",
         "retainpdf_translation.prompt_loader",
         "retainpdf_translation.services.context",

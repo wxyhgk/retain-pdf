@@ -104,7 +104,7 @@ SOURCE_TEXT_READER_ALLOWLIST: dict[str, int] = {
     "translation/retainpdf_translation/services/classification/prompting.py": 1,
     "translation/retainpdf_translation/services/classification/rule_engine.py": 2,
     "translation/retainpdf_translation/services/continuation/pairs.py": 4,
-    "translation/retainpdf_translation/services/continuation/rules.py": 8,
+    "translation/retainpdf_translation/services/continuation/rules.py": 6,
     "translation/retainpdf_translation/services/continuation/state.py": 5,
     "translation/retainpdf_translation/services/fast_path/keep_origin.py": 4,
     "translation/retainpdf_translation/services/finalization/untranslated.py": 3,

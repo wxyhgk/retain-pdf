@@ -6,6 +6,7 @@ from retainpdf_translation.core.item_reader import item_is_aggregate_geometry_me
 from retainpdf_translation.core.item_reader import item_block_class
 from retainpdf_translation.core.item_reader import item_block_kind
 from retainpdf_translation.core.item_reader import item_source_text
+from retainpdf_translation.core.reading_order import continuation_reading_order
 
 from .formula_gaps import formulas_between
 from .common import (
@@ -386,6 +387,9 @@ def pending_translation_items(payload: list[dict], *, deferred_item_ids: frozens
             continue
         if _group_translation_complete(items):
             continue
+        if items[0].get("continuation_group") and not items[0].get("translation_group_id"):
+            # 双栏交错的接续组按栏内阅读顺序拼；要在算夹着的公式之前排，`formulas_before` 和块一一对应。
+            items = continuation_reading_order(items)
         unit = _build_group_translation_unit(unit_id, items, _unit_formulas_before(payload, items))
         if unit is None:
             for item in items:
