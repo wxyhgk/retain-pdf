@@ -26,6 +26,7 @@ import {
   resolveReaderWidthCommit,
 } from "./reader-zoom.js";
 import { DEFAULT_ASPECT, PdfPageSlot } from "./PdfPageSlot.js";
+import { createPdfRangeTransport, READER_PDF_RANGE_CHUNK } from "./pdf-range-transport.js";
 import type { PageRowHeights } from "./usePageRowSync.js";
 import {
   getPageAttr,
@@ -150,10 +151,13 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
     const documentIdentity = `${url}\u0000${pdfFileIdentity(file)}`;
     const activeDocumentIdentityRef = useRef(documentIdentity);
     activeDocumentIdentityRef.current = documentIdentity;
-    const documentFile = useMemo(
-      () => cloneProtectedPdfFileForWorker(file),
-      [file, url],
-    );
+    // 一般的：每个 Document 一份字节副本（pdf.js 会把它转移给 worker）；按段取的大文件：每个 Document 一个新的取段 transport。
+    const documentFile = useMemo(() => {
+      const own = cloneProtectedPdfFileForWorker(file);
+      if (!own) return null;
+      if ("ranged" in own) return { range: createPdfRangeTransport(own.ranged) };
+      return own;
+    }, [file, url]);
     const [numPages, setNumPages] = useState(0);
     const [docError, setDocError] = useState("");
     const [paneEl, setPaneEl] = useState<HTMLElement | null>(null);
@@ -165,6 +169,9 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
       cMapUrl: readerPdfPort().resolvePdfjsVendorUrl("cmaps/"),
       cMapPacked: true,
       standardFontDataUrl: readerPdfPort().resolvePdfjsVendorUrl("standard_fonts/"),
+      // 只对按段取的大文件起作用：要哪页取哪页，不在后台把整份取完（取完又是一整份在内存里）。
+      rangeChunkSize: READER_PDF_RANGE_CHUNK,
+      disableAutoFetch: true,
     }), []);
 
     useImperativeHandle(ref, () => paneEl as HTMLElement, [paneEl]);
