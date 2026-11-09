@@ -415,6 +415,10 @@ def committed_pages_for_changes(
     return committed
 
 
+class NothingTranslatedError(RuntimeError):
+    """整份文档一个块都没译成。单独一类，调用方好补上「为什么」（多半是上游全拒了）。"""
+
+
 def assert_checkpoint_committable(payload: dict[str, Any]) -> None:
     """提交的两条前置条件。单独暴露，是为了能在**发布 manifest 之前**先问一次。
 
@@ -437,7 +441,7 @@ def assert_checkpoint_committable(payload: dict[str, Any]) -> None:
     # translated==0 说明整份文档一点译文都没产出 —— 这种东西冒充 complete 落盘，
     # load_translated_pages 会照单全收。
     if pending > 0 and int(progress.get("translated_item_count", 0)) == 0:
-        raise RuntimeError(
+        raise NothingTranslatedError(
             "Translation checkpoint cannot commit a document with zero translated items"
         )
 
