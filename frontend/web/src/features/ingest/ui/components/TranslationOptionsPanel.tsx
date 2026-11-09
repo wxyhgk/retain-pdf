@@ -5,7 +5,7 @@
 import type { FormEvent } from "react";
 import { BookOpen, Bot, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, X } from "lucide-react";
 
-import { LegacyButton } from "@retainpdf/ui";
+import { Checkbox, LegacyButton } from "@retainpdf/ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { agentEngineAvailable } from "../../domain/workflow/payload.js";
 import { useIngestServices, useIngestWorkflowView } from "../workflow-view-context.js";
@@ -186,21 +186,18 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
           </small>
         </label>
 
-        <label className="translation-options-glossary" htmlFor="job-translate-tables">
-          <span>
-            <input
-              id="job-translate-tables"
-              type="checkbox"
-              checked={workflow.preferences.translateTables}
-              onChange={(event) => workflowView.setPreference("translateTables", event.target.checked)}
-              aria-describedby="job-translate-tables-hint"
-            />
-            翻译表格内容
-          </span>
+        <div className="translation-options-glossary">
+          <Checkbox
+            id="job-translate-tables"
+            label="翻译表格内容"
+            checked={workflow.preferences.translateTables}
+            onChange={(event) => workflowView.setPreference("translateTables", event.target.checked)}
+            aria-describedby="job-translate-tables-hint"
+          />
           <small id="job-translate-tables-hint">
             翻译表格中的文字和描述性方法名称，保留数值、公式和缩写。关闭时保留原文；目前支持带文字层的 PDF 表格。
           </small>
-        </label>
+        </div>
 
         <label className="translation-options-glossary" htmlFor="job-render-engine">
           <span>
