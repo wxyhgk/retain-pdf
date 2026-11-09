@@ -4,7 +4,7 @@ use retainpdf_data::db::Db;
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::request::{CreateJobInput, GlossaryEntryInput};
 
-pub(crate) const MAX_GLOSSARY_ENTRIES: usize = 200;
+pub(crate) const MAX_GLOSSARY_ENTRIES: usize = 1000;
 const MAX_GLOSSARY_TERM_LEN: usize = 200;
 const MAX_GLOSSARY_NOTE_LEN: usize = 500;
 const MAX_GLOSSARY_CONTEXT_LEN: usize = 500;

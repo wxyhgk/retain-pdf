@@ -44,7 +44,7 @@ Create / update request body:
 - PUT only updates an existing glossary: a missing one (also one deleted after it was read) is 404 and is not recreated.
 - `updated_at` has millisecond precision (since 2026-10-22) and strictly increases on every save.
 - Entries: unknown `level` / `match_mode` values and regex sources that do not compile are 400 with the entry's
-  source in the message (CSV parsing stays lenient). Limits: 200 entries, source / target 200 chars, note and
+  source in the message (CSV parsing stays lenient). Limits: 1000 entries (including the merged job snapshot), source / target 200 chars, note and
   context 500 chars.
 - Deduplication and the inline-overrides-glossary merge use one key: (source, context). Sources compare
   lowercased for `case_insensitive` and case-sensitively for `exact` / `regex`; context compares case-insensitively.
@@ -73,8 +73,8 @@ CSV parse helper request:
 ```
 
 CSV parse helper response returns normalized `entries`, `entry_count` and `duplicate_count` (rows dropped by
-deduplication; added 2026-10-22). It accepts plain CSV text only; a first line with tabs and no commas is read as
-tab-separated (copied from Excel). Without a header row the columns are `source,target,note`. Errors carry the line
+deduplication; added 2026-10-22). It accepts plain text only and detects comma, tab or semicolon separators using
+quoted-field parsing, recognized headers and consistent column counts. Without a header row the columns are `source,target,note`. Errors carry the line
 number (`row 3: ...`). Rows where source, target, note and context are all empty are skipped. A cell made of `'`
 followed by `=`, `+`, `-`, `@`, tab or CR loses that `'` (added by the export).
 
@@ -89,10 +89,22 @@ CSV export:
 
 Recommended import flow:
 
-1. The user pastes CSV / TSV text into the import box.
-2. Frontend calls `POST /api/v1/glossaries/parse-csv`.
-3. Frontend shows normalized rows for review.
+1. The user selects/drops a CSV, TSV, TXT or XLSX file (up to 2 MiB), or pastes CSV / TSV text into the import box.
+   Files are decoded locally: automatic UTF-8 / GB18030 and BOM-marked UTF-16, with a manual encoding selector.
+2. XLSX sheets are read locally; the user selects a sheet, header setting and column mapping. Text separators can
+   be selected manually. The preview shows five rows, total and duplicate counts, and validation errors.
+   The frontend converts mapped columns to CSV and calls `POST /api/v1/glossaries/parse-csv`.
+3. Frontend appends/merges normalized rows into the draft by default (same source/context key as the server,
+   imported entries win), or replaces the draft entries when explicitly selected. Duplicate counts are shown.
+   Empty results, parse errors and merged results over 1000 entries leave the draft intact.
 4. Frontend saves with `POST /api/v1/glossaries` or `PUT /api/v1/glossaries/{glossary_id}`.
+   Pending import text must be applied or cleared first. Importing alone does not persist the glossary.
+
+The manager includes library/entry search, a CSV template download, and unsaved-change confirmation before
+switching libraries, creating another glossary or closing the dialog. Filtering entries does not change their
+edit/delete indexes or remove hidden entries from the saved payload. Context is editable. Selected entries can
+be deleted together after confirmation; this includes selected entries hidden by a filter and only persists on save.
+Context restricts source-text matches; taxonomy-only columns should be mapped to notes or ignored.
 
 Jobs and reruns: a job stores a snapshot (merged `translation.glossary_entries`) plus the user's inline entries
 (`translation.glossary_inline_entries`). Rerun / stage retry that create a new job re-resolve against the current
