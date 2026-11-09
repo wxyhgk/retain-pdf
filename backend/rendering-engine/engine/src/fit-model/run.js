@@ -214,6 +214,7 @@
     fitLayoutFormulas({ expand: true });
     // Post-fit: balanced breaking of justified lines on the final sizes.
     if (steps.justify) steps.justify.balanceJustifiedLines();
+    steps.clamps.clampTranslatedTextFrames();
   }
 
   return { runFit };

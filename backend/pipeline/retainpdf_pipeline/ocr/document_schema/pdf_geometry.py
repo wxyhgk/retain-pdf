@@ -1,6 +1,7 @@
 """归一化文档对齐到原文 PDF 的几何处理，各家服务商通用（2026-10-29 从 `ocr_provider/paddle_normalize.py` 挪到这里）。
 
-- `rescale_document_geometry_to_pdf`：按位置配页，把每页的坐标从 OCR 自己的单位等比缩放到原文 PDF 的点。
+- `rescale_document_geometry_to_pdf`：按位置配页，把每页的坐标从 OCR 自己的单位等比缩放到原文 PDF 的点；
+  缩放完，含替换字符 `�` 的块用原文 PDF 文字层恢复（`pdf_text_recovery.py`，PR #157）。
 - `rebuild_estimated_text_geometry`：没有真实行的文字块（Paddle、content_list_v2、命令型通用格式）按文字和块框估出行、收紧块边；
   有 `bbox_precision = provider_layout` 真实行的块（MinerU）原样保留。按数据里有没有真实行决定，不按服务商名字。
   以前名叫 `post_rescale_rebuild_paddle_text_geometry`，那个名字在 `paddle_normalize.py` 里留着。
@@ -18,6 +19,7 @@ from retainpdf_pipeline.ocr.document_schema.estimated_lines import build_lines a
 from retainpdf_pipeline.ocr.document_schema.estimated_lines import (
     tighten_text_bbox as tighten_estimated_text_bbox,
 )
+from retainpdf_pipeline.ocr.document_schema.pdf_text_recovery import recover_corrupted_pdf_text
 from retainpdf_pipeline.ocr.document_schema.provider_adapters.common.normalize import (
     inherit_missing_segment_bboxes,
 )
@@ -85,6 +87,7 @@ def rescale_document_geometry_to_pdf(document: dict, source_pdf_path: Path) -> d
                     if isinstance(segment, dict):
                         segment["bbox"] = scale_bbox(segment.get("bbox", []), scale_x, scale_y)
             document.setdefault("derived", {})["coordinate_space"] = "pdf_point"
+        recover_corrupted_pdf_text(document, pdf)
     finally:
         pdf.close()
     return document
