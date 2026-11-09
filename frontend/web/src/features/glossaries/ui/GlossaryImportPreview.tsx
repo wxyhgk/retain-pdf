@@ -1,3 +1,4 @@
+import { Checkbox, Select } from "@retainpdf/ui";
 import { IMPORT_FIELDS, previewGlossaryImport } from "../domain/glossary-import-table.js";
 import type { GlossaryTable, ImportMapping } from "../domain/glossary-import-table.js";
 
@@ -7,17 +8,17 @@ export function GlossaryImportPreview({ table, mapping, onMappingChange, disable
   const preview = previewGlossaryImport(table, mapping);
   const width = Math.max(0, ...table.rows.map(row => row.length));
   return <div className="glossary-import-preview">
-    <label className="glossary-check-label"><input type="checkbox" checked={mapping.hasHeader} disabled={disabled}
-      onChange={event => onMappingChange({ ...mapping, hasHeader: event.target.checked })} />首行为表头</label>
+    <Checkbox label="首行为表头" checked={mapping.hasHeader} disabled={disabled}
+      onChange={event => onMappingChange({ ...mapping, hasHeader: event.target.checked })} />
     <div className="glossary-import-options">
       {IMPORT_FIELDS.map(([field, label]) => <label key={field}>{label}列
-        <select aria-label={`${label}列`} value={mapping.columns[field] ?? -1} disabled={disabled}
+        <Select size="sm" aria-label={`${label}列`} value={mapping.columns[field] ?? -1} disabled={disabled}
           onChange={event => onMappingChange({ ...mapping, columns: { ...mapping.columns, [field]: Number(event.target.value) } })}>
           <option value={-1}>{field === "source" || field === "target" ? "请选择" : "不导入"}</option>
           {Array.from({ length: width }, (_, index) => <option key={index} value={index}>
             第 {index + 1} 列{mapping.hasHeader ? ` · ${table.rows[0]?.[index] || "未命名"}` : ""}
           </option>)}
-        </select>
+        </Select>
       </label>)}
     </div>
     <p className="glossary-help">语境用于限制原文中的匹配范围；仅作分类的列建议对应到备注，或选择「不导入」。</p>

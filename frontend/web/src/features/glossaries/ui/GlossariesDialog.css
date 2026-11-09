@@ -1,7 +1,7 @@
 /* 术语表对话框：外壳、列表、编辑区、导入区。（GlossariesDialog / GlossaryList / GlossaryImportPanel）
  *
  * @owns glossary
- * @uses credential-dialog-head, desktop-head, hidden */
+ * @uses credential-dialog-head, desktop-head, hidden, ui-select */
 
 @utility glossary-manager-dialog {
   width: min(860px, calc(100vw - 20px));
@@ -170,10 +170,12 @@
 @utility glossary-import-panel {
   padding: 10px;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--ui-radius-md);
   background: var(--bg);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   &.is-dragging { outline: 2px solid var(--ink); outline-offset: -2px; }
+  /* 导入区的标签（文件编码、分隔符、各列对应、首行为表头……）和说明一样用小字，不吃全局 label 的大字号。 */
+  & label { font-size: var(--ui-text-sm); }
   & textarea {
     border: 1px solid var(--line);
     background: var(--paper);
@@ -201,12 +203,6 @@
 @utility glossary-search {
   min-width: 0;
   width: 100%;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--paper);
-  color: var(--ink);
-  font-size: 12px;
 }
 
 @utility glossary-entry-tools {
@@ -220,7 +216,7 @@
 @utility glossary-help {
   margin: 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -230,10 +226,10 @@
   gap: 6px;
   padding: 12px;
   border: 1px dashed var(--line);
-  border-radius: 8px;
+  border-radius: var(--ui-radius-sm);
   background: var(--paper);
-  & input { max-width: 100%; font-size: 12px; }
-  & span { color: var(--muted); font-size: 11px; }
+  & input { max-width: 100%; font-size: var(--ui-text-sm); }
+  & span { color: var(--muted); font-size: var(--ui-text-xs); }
 }
 
 @utility glossary-import-options {
@@ -243,7 +239,7 @@
   gap: 10px;
   & label { display: grid; gap: 4px; }
   & label { max-width: 100%; min-width: 0; }
-  & select { max-width: 200px; width: 100%; padding: 4px; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; }
+  & .ui-select { max-width: 200px; width: 100%; }
   & a { text-decoration: underline; }
 }
 
@@ -255,17 +251,10 @@
   border-top: 1px solid var(--line);
 }
 
-@utility glossary-check-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  & input { width: 14px; height: 14px; }
-}
-
 @utility glossary-preview-scroll {
   overflow: auto;
   max-height: 220px;
-  & table { width: 100%; min-width: 540px; border-collapse: collapse; font-size: 11px; }
+  & table { width: 100%; min-width: 540px; border-collapse: collapse; font-size: var(--ui-text-xs); }
   & th, & td { padding: 6px; border-bottom: 1px solid var(--line); text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 180px; }
   & th { color: var(--muted); }
 }

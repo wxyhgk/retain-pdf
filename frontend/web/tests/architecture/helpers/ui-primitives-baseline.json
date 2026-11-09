@@ -135,8 +135,7 @@
     },
     "src/features/glossaries/ui/GlossaryEditor.tsx": {
       "button": 1,
-      "select": 2,
-      "input": 3
+      "select": 2
     },
     "src/features/glossaries/ui/GlossaryImportPanel.tsx": {
       "button": 2,

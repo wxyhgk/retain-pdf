@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@retainpdf/ui";
 import { FormStatusLine } from "@retainpdf/ui";
+import { getDesktopHost } from "@/platform/desktop/host.js";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { GLOSSARY_DOM_IDS } from "./glossaries-dom-ids.js";
 import { useGlossariesController } from "./useGlossariesController.js";
@@ -30,7 +31,7 @@ import type { GlossariesDialogStorePort } from "../domain/glossaries-store.js";
 import { GlossaryList } from "./GlossaryList.jsx";
 import { GlossaryEditor } from "./GlossaryEditor.jsx";
 import { GlossaryImportPanel } from "./GlossaryImportPanel.jsx";
-import { Button } from "@retainpdf/ui";
+import { Button, Input } from "@retainpdf/ui";
 
 
 /**
@@ -64,8 +65,10 @@ export function GlossariesDialog({ feature, view: viewFeature, open, dialogStore
   const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
   const busy = opBusy || fileReading || view.loading;
   const draftName = `${view.draft?.name || ""}`.trim();
+  // 浏览器里关标签页前提醒有没保存的修改。桌面版不挂：Electron 里 beforeunload 一拦就静默取消关窗和退出，
+  // 不弹任何提示（主进程没处理 will-prevent-unload），表现成 Cmd+Q、托盘「退出」按了没反应。
   useEffect(() => {
-    if (!open || !view.dirty) return;
+    if (!open || !view.dirty || getDesktopHost()) return;
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
@@ -143,7 +146,7 @@ export function GlossariesDialog({ feature, view: viewFeature, open, dialogStore
                   <Button id={GLOSSARY_DOM_IDS.deleteButton} className="app-button secondary danger" disabled={busy} onClick={() => setConfirmDeleteOpen(true)}>删除</Button>
                 </div>
                 <div className="glossary-entry-tools">
-                  <input id="glossary-entry-search" className="glossary-search" type="search" aria-label="搜索词条" placeholder="搜索原词、译文、备注或语境" value={entryQuery} onChange={(event) => setEntryQuery(event.target.value)} />
+                  <Input size="sm" id="glossary-entry-search" className="glossary-search" type="search" aria-label="搜索词条" placeholder="搜索原词、译文、备注或语境" value={entryQuery} onChange={(event) => setEntryQuery(event.target.value)} />
                   <span className="glossary-help">{view.draft.entries.filter(entry => entry.source.trim()).length} / {MAX_GLOSSARY_ENTRIES} 条{view.dirty ? " · 未保存" : ""}</span>
                 </div>
                 <div className="glossary-editor-scroll">

@@ -2,6 +2,7 @@
 // .glossary-list-panel 区块 + view.js:renderGlossaryList 逐节点镜像)。
 
 import { useState } from "react";
+import { Input } from "@retainpdf/ui";
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
 import { GLOSSARY_DOM_IDS } from "./glossaries-dom-ids.js";
 import type { GlossaryListItem } from "../domain/glossaries-store.js";
@@ -32,7 +33,7 @@ export function GlossaryList({ items, selectedId, onSelect, onCreateNew, disable
           新建
         </button>
       </div>
-      <input id="glossary-list-search" className="glossary-search" type="search" aria-label="搜索术语库" placeholder="搜索术语库" value={query} onChange={(event) => setQuery(event.target.value)} />
+      <Input size="sm" id="glossary-list-search" className="glossary-search" type="search" aria-label="搜索术语库" placeholder="搜索术语库" value={query} onChange={(event) => setQuery(event.target.value)} />
       <div id={GLOSSARY_DOM_IDS.list} className="glossary-list">
         {filteredItems.map((item) => {
           const glossaryId = `${item?.glossary_id || ""}`.trim();

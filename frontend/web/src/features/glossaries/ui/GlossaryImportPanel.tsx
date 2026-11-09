@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Input, Select } from "@retainpdf/ui";
 import { GLOSSARY_DOM_IDS } from "./glossaries-dom-ids.js";
 import { GLOSSARY_CSV_TEMPLATE, MAX_GLOSSARY_ENTRIES, readGlossaryFile } from "../domain/glossary-import.js";
 import type { GlossaryFileEncoding, GlossaryImportMode } from "../domain/glossary-import.js";
@@ -80,31 +81,31 @@ export function GlossaryImportPanel({ visible, csvText, onCsvTextChange, onApply
       <label className="glossary-file-drop">
         <strong>选择或拖入术语文件</strong>
         <span>CSV / TSV / TXT / XLSX，最大 2 MB；支持 Excel 工作表选择。</span>
-        <input id="glossary-import-file" type="file" accept=".csv,.tsv,.txt,.xlsx" disabled={busy || reading}
+        <Input size="sm" id="glossary-import-file" type="file" accept=".csv,.tsv,.txt,.xlsx" disabled={busy || reading}
           onChange={(event) => { pickFiles(event.target.files); event.target.value = ""; }} />
       </label>
       <div className="glossary-import-options">
         <label>文件编码
-          <select aria-label="文件编码" value={encoding} disabled={busy || reading || sheets.length > 0}
+          <Select size="sm" aria-label="文件编码" value={encoding} disabled={busy || reading || sheets.length > 0}
             onChange={(event) => { const next = event.target.value as GlossaryFileEncoding; setEncoding(next); if (fileRef.current) void loadFile(fileRef.current, next); }}>
             <option value="auto">自动识别</option><option value="utf-8">UTF-8</option>
             <option value="gb18030">GBK / GB18030</option><option value="utf-16le">UTF-16 LE</option><option value="utf-16be">UTF-16 BE</option>
-          </select>
+          </Select>
         </label>
         {sheets.length > 0 && <label>工作表
-          <select aria-label="工作表" value={sheetIndex} disabled={busy || reading} onChange={event => {
+          <Select size="sm" aria-label="工作表" value={sheetIndex} disabled={busy || reading} onChange={event => {
             const index = Number(event.target.value); setSheetIndex(index); setMapping(null); setDelimiter("auto"); onCsvTextChange(sheets[index].text);
-          }}>{sheets.map((sheet, index) => <option key={index} value={index}>{sheet.name}</option>)}</select>
+          }}>{sheets.map((sheet, index) => <option key={index} value={index}>{sheet.name}</option>)}</Select>
         </label>}
         <label>分隔符
-          <select aria-label="分隔符" value={delimiter} disabled={busy || reading || sheets.length > 0} onChange={event => { setDelimiter(event.target.value as ImportDelimiter); setMapping(null); }}>
+          <Select size="sm" aria-label="分隔符" value={delimiter} disabled={busy || reading || sheets.length > 0} onChange={event => { setDelimiter(event.target.value as ImportDelimiter); setMapping(null); }}>
             <option value="auto">自动识别</option><option value=",">逗号</option><option value={"\t"}>制表符</option><option value=";">分号</option>
-          </select>
+          </Select>
         </label>
         <label>导入方式
-          <select id="glossary-import-mode" value={mode} disabled={busy || reading} onChange={(event) => setMode(event.target.value as GlossaryImportMode)}>
+          <Select size="sm" id="glossary-import-mode" value={mode} disabled={busy || reading} onChange={(event) => setMode(event.target.value as GlossaryImportMode)}>
             <option value="append">追加合并</option><option value="replace">替换当前词条</option>
-          </select>
+          </Select>
         </label>
         <a download="术语导入模板.csv" href={`data:text/csv;charset=utf-8,${encodeURIComponent(GLOSSARY_CSV_TEMPLATE)}`}>下载 CSV 模板</a>
       </div>

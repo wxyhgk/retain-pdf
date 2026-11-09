@@ -6,8 +6,8 @@
 // 写 store(updateEntryField),不再手写行级 DOM 增删。
 
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { useEffect, useMemo, useState } from "react";
+import { Button, Checkbox, ConfirmDialog, Input } from "@retainpdf/ui";
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
 import { GLOSSARY_DOM_IDS, ENTRY_LEVEL_OPTIONS, MATCH_MODE_OPTIONS } from "./glossaries-dom-ids.js";
 import type { GlossaryEntryRow } from "../domain/glossaries-store.js";
@@ -29,21 +29,29 @@ export function GlossaryEditor({ entries, structureRevision, onFieldChange, onRe
   // 勾选按行号记，只有切换术语表/导入/增删行（行号不再指同一行）才清；改原词译文不能清，
   // 否则每敲一个字勾选就没了。
   useEffect(() => { setSelected(new Set()); setConfirmOpen(false); }, [structureRevision]);
-  const filtered = entries.map((row, index) => ({ row, index })).filter(({ row }) =>
-    [row.source, row.target, row.note, row.context].some(value => (value || "").toLowerCase().includes(query.trim().toLowerCase())));
+  // 搜索结果只在换关键词、增删行时重算：边改边算的话，把一行改到不再匹配，这一行会在输入中途消失。
+  const matchedIndices = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return null;
+    return new Set(entries.flatMap((row, index) =>
+      [row.source, row.target, row.note, row.context].some((value) => (value || "").toLowerCase().includes(needle)) ? [index] : []));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 故意不随 entries 变：见上
+  }, [query, structureRevision]);
+  const filtered = entries.map((row, index) => ({ row, index }))
+    .filter(({ index }) => !matchedIndices || matchedIndices.has(index));
   const hasEntries = filtered.length > 0;
   return (
     <>
     <div className="glossary-entry-tools">
       <span className="glossary-help">显示 {filtered.length} 条 · 已选 {selected.size} 条</span>
-      <button id="glossary-delete-selected" type="button" className="app-button secondary" disabled={disabled || !selected.size} onClick={() => setConfirmOpen(true)}>删除所选</button>
-      {selected.size > 0 && <button type="button" className="app-button secondary" disabled={disabled} onClick={() => setSelected(new Set())}>取消选择</button>}
+      <Button id="glossary-delete-selected" variant="secondary" size="sm" disabled={disabled || !selected.size} onClick={() => setConfirmOpen(true)}>删除所选</Button>
+      {selected.size > 0 && <Button variant="ghost" size="sm" disabled={disabled} onClick={() => setSelected(new Set())}>取消选择</Button>}
     </div>
     <fieldset className="glossary-table-wrap" disabled={disabled} aria-label="术语词条">
       <table className="glossary-table">
         <thead>
           <tr>
-            <th className="glossary-col-select"><input type="checkbox" aria-label="选择全部可见词条" checked={filtered.length > 0 && filtered.every(({ index }) => selected.has(index))}
+            <th className="glossary-col-select"><Checkbox aria-label="选择全部可见词条" checked={filtered.length > 0 && filtered.every(({ index }) => selected.has(index))}
               onChange={event => setSelected(previous => { const next = new Set(previous); filtered.forEach(({ index }) => event.target.checked ? next.add(index) : next.delete(index)); return next; })} /></th>
             <th className="glossary-col-source">原词</th>
             <th className="glossary-col-target">译文</th>
@@ -58,10 +66,11 @@ export function GlossaryEditor({ entries, structureRevision, onFieldChange, onRe
           {filtered.map(({ row, index }) => (
             // eslint-disable-next-line react/no-array-index-key -- 行无稳定 id(旧世界也是纯位置化 DOM 行),索引键与旧行为等价
             <tr key={index} className="glossary-entry-row">
-              <td><input type="checkbox" aria-label={`选择词条 ${row.source || index + 1}`} checked={selected.has(index)}
+              <td><Checkbox aria-label={`选择词条 ${row.source || index + 1}`} checked={selected.has(index)}
                 onChange={event => setSelected(previous => { const next = new Set(previous); if (event.target.checked) next.add(index); else next.delete(index); return next; })} /></td>
               <td>
-                <input
+                <Input
+                  size="sm"
                   type="text"
                   className="glossary-entry-source"
                   placeholder="Hartree-Fock"
@@ -70,7 +79,8 @@ export function GlossaryEditor({ entries, structureRevision, onFieldChange, onRe
                 />
               </td>
               <td>
-                <input
+                <Input
+                  size="sm"
                   type="text"
                   className="glossary-entry-target"
                   placeholder="可留空"
@@ -79,7 +89,8 @@ export function GlossaryEditor({ entries, structureRevision, onFieldChange, onRe
                 />
               </td>
               <td>
-                <input
+                <Input
+                  size="sm"
                   type="text"
                   className="glossary-entry-note"
                   placeholder="可选"
@@ -87,7 +98,7 @@ export function GlossaryEditor({ entries, structureRevision, onFieldChange, onRe
                   onChange={(event) => onFieldChange(index, "note", event.target.value)}
                 />
               </td>
-              <td><input type="text" className="glossary-entry-context" aria-label={`语境 ${row.source || index + 1}`} placeholder="例如：机器学习" value={row.context}
+              <td><Input size="sm" type="text" className="glossary-entry-context" aria-label={`语境 ${row.source || index + 1}`} placeholder="例如：机器学习" value={row.context}
                 onChange={event => onFieldChange(index, "context", event.target.value)} /></td>
               <td>
                 <select

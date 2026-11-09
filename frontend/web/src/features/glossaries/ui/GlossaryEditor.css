@@ -99,6 +99,8 @@
   & input {
     min-width: 0;
     width: 100%;
+    /* 词条格子用的是基础组件 Input，压掉它的 36px 最小高度，和同行的下拉一样高。 */
+    min-height: 0;
     height: 24px;
     border-radius: 6px;
     padding: 0 5px;
