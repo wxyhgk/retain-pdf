@@ -173,6 +173,14 @@ def test_rejects_incomplete_backend_layout(tmp_path: Path) -> None:
         resolve_backend_source(repo_root, allow_dirty=True)
 
 
+def test_required_paths_exist_in_this_repository() -> None:
+    # 删掉一个后端包（例如 2026-11-03 删 backend/ai）时清单没跟着改，CI 每个任务都卡在准备后端这一步。
+    missing = [relative for relative in REQUIRED_PATHS if not (REPO_ROOT / "backend" / relative).exists()]
+    missing += [relative for relative in REQUIRED_ROOT_PATHS if not (REPO_ROOT / relative).exists()]
+
+    assert missing == []
+
+
 def test_manifest_declares_only_the_embedded_package_path() -> None:
     manifest = json.loads((REPO_ROOT / "backend-package.json").read_text(encoding="utf-8"))
 
