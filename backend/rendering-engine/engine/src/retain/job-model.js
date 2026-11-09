@@ -62,6 +62,15 @@ function firstLineIndentOf(item) {
   return Number.isFinite(indent) && indent > 0 ? indent : 0;
 }
 
+// Source font size (pt) retain-pdf measured for a heading: the median text-layer
+// span size inside its box, else the size at which its source text fills the
+// box. Headings are fitted at or below it (passes/retain-titles.js) instead of
+// growing to fill a box sized by the source's own line count. 0 when not given.
+function sourceFontSizeOf(item) {
+  const size = Number(item?.source_font_size_pt);
+  return Number.isFinite(size) && size > 0 ? size : 0;
+}
+
 function translationOf(item) {
   if (!item || !item.policy_translate) return "";
   return String(item.translated_text || "").trim();
@@ -241,6 +250,7 @@ function buildModel(job, options = {}) {
         fontSize: seed.size,
         lineCount,
         indent: firstLineIndentOf(item),
+        sourceFontSize: sourceFontSizeOf(item),
         ...(retain ? { sourceLinePitch: pitchFromPdf || pitchFromOcr || 0 } : {})
       });
     }

@@ -6,7 +6,7 @@
 - 输入：document.v1（OCR 框、行盒、块类型）、译文条目、visual_profile（底色 / 文字色）、
   原 PDF 的障碍物扫描（准备步骤 obstacle_scan 的产物，由 workflow 层传进来），以及要渲染的页；
   译文条目带 retain-pdf 量好的首行缩进 ``first_line_indent_pt``（和 Typst 路线同一个值，
-  OCR 行框量不出缩进，引擎不再自己估）；
+  OCR 行框量不出缩进，引擎不再自己估），标题带原文字号 ``source_font_size_pt``（引擎排标题不超过它，2026-11-09）；
 - 引擎：按 retain-pdf 的种子估算与正文 / 标题 / 注释规则，用精确测量定字号（全书共享正文
   字号，排不下的段落单独封顶），带碰撞兜底：文字不压文字、不压保留元素（公式、图、表、
   未翻译文字）和矢量图形；
@@ -31,6 +31,7 @@ from retainpdf_pipeline.render.document.pikepdf_overlay import overlay_pdf_pages
 from retainpdf_pipeline.render.document.pikepdf_pages import extract_page_indices_with_pikepdf
 from retainpdf_pipeline.render.layout.inline_content.mode_router import build_item_render_markdown
 from retainpdf_pipeline.render.layout.payload.render_item import seed_render_fields
+from retainpdf_pipeline.render.layout.title_source_size import title_source_font_size_pt
 from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineFailed
 from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineRuntime
 from retainpdf_pipeline.render.output.rpr.engine_cli import run_engine
@@ -99,6 +100,9 @@ def _translation_items(
                 entry["page_idx"] = int(page_idx)
             entry["translated_text"] = _engine_text(item)
             entry["source_text"] = str(entry.get("source_text") or "")
+            source_size = title_source_font_size_pt(item)
+            if source_size is not None:
+                entry["source_font_size_pt"] = round(source_size, 2)
             indent = float(indents.get(str(entry.get("item_id") or ""), 0.0) or 0.0)
             if indent > 0:
                 entry["first_line_indent_pt"] = round(indent, 2)

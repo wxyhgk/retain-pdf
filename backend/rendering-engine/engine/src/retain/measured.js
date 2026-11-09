@@ -32,7 +32,8 @@
 //     document: <document.v1 object>,            // pages[].blocks[] with bbox, type, sub_type, lines
 //     translations: [ { page_idx, block_idx, item_id, policy_translate,
 //                       translated_text, source_text, lines,
-//                       first_line_indent_pt? } ],   // retain-pdf's measured indent, pt
+//                       first_line_indent_pt?,       // retain-pdf's measured indent, pt
+//                       source_font_size_pt? } ],    // headings: source size, pt (fit at or below it)
 //     visual_profile: <visual_profile.v1 object> | null,   // cover / text colours
 //     drawings: { "<page index>": { width, height, drawings, images, words } } | null,
 //     pages: [<page index>, ...] | null }        // pages to render, in order; null = all

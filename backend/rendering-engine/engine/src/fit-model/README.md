@@ -28,7 +28,7 @@ DOM fitter; this directory holds the implementation.
 | `passes/final-audit.js` | 134 | The final glyph-level collision audit. |
 | `passes/formulas.js` | 178 | Formula shrink/expand and equation-number alignment. |
 | `passes/retain-body.js` | 843 | Profile "retain": retain-pdf's body pipeline (seed blend, leading, block fit, book-target unify, underfill grow / harmonize / recover) with the ink safety net. |
-| `passes/retain-titles.js` | 102 | Profile "retain": every heading sized on its own box like retain-pdf's solve_title_fit (fill cap, 0.94 × box band, title/heading leading), backed off to 0.72 / 0.78 × after the body settles. On by default (`fitOptions.retainTitles: false` keeps the DOM title rules). |
+| `passes/retain-titles.js` | 109 | Profile "retain": every heading sized on its own box like retain-pdf's solve_title_fit (fill cap, or the host's source size when given, 0.94 × box band, title/heading leading), backed off to 0.72 / 0.78 × after the body settles. On by default (`fitOptions.retainTitles: false` keeps the DOM title rules). |
 | `passes/retain-smoothing.js` | 307 | Profile "retain": retain-pdf's neighbour-consistency stages run inside the body pass — short-body inheritance, page body anchor, long-paragraph harmonizing, adjacent smoothing. On by default (`fitOptions.retainSmoothing: false` skips them). |
 | `passes/justify.js` | 82 | Post-fit balanced breaking of justified text, kept only if line count, vertical extents and collision state are unchanged (`config.balanceLines`, default on in "retain"). |
 | `run.js` | 190 | The pass order with its option sets — the recipe. |
@@ -202,7 +202,10 @@ What the switch selects:
   column (a line band outside its box may enter such a box by ≤ 1 pt).
 - **`passes/retain-titles.js`** (before the body pass): every heading sized
   on its own box like `solve_title_fit` (fill cap, band ≤ 0.94 × box height,
-  title / heading leading); after the body pass, backed off in 0.25 pt steps
+  title / heading leading). When the host gives the heading's source size
+  (`source_font_size_pt` on the translation item, retain-pdf measures it), that
+  size is the cap: the heading keeps it and only shrinks to fit, instead of
+  filling a box sized by the source's line count; after the body pass, backed off in 0.25 pt steps
   down to 0.72 × / 0.78 × where its ink still touches something. Titles are
   measured with `measurers.bold` when the host provides it and serialized
   with `fontWeight: "bold"`; the main title is left-aligned.

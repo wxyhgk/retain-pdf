@@ -54,18 +54,25 @@
     const titleKind = node => (node.mainTitle ? "title" : "heading");
     const titleRatioAt = (node, size) => ratioFor(titleLeadingEm(titleKind(node), size, titleState.get(node).baseFont));
 
-    // The largest size up to the fill cap whose Typst band fits 0.94 x the
-    // box height (our real measure replaces solve_title_fit's character-unit
+    // The largest size up to the fill cap (the source size when the host gave
+    // one) whose Typst band fits 0.94 x the box height (our real measure replaces solve_title_fit's character-unit
     // estimate; its 0.92 width safety is not applied, line breaking is exact
     // here). The floor for the later back-off is fit_min_font: 0.72 x for the
     // main title, 0.78 x for other headings.
     function fitTitles(predicate) {
       for (const node of run.scopedNodes(predicate)) {
         const kind = titleKind(node);
-        const baseFont = Math.max(1, Number(node.baseFont) || layoutControlFontSize(node));
+        // The host's measured source size wins: a heading keeps its source size
+        // and only shrinks to fit. The box was sized by the source's line count,
+        // so filling it grew a two-line heading translated into one line to
+        // nearly twice its size (retain-pdf 2026-11-09). Without it, the old
+        // fill rule (titleFillMax) applies.
+        const sourceFont = Number(node.source?.sourceFontSize);
+        const hasSource = Number.isFinite(sourceFont) && sourceFont > 0;
+        const baseFont = hasSource ? sourceFont : Math.max(1, Number(node.baseFont) || layoutControlFontSize(node));
         const box = nodeBox(node);
         const boxHeight = box.bottom - box.top;
-        const maxFont = titleFillMax(baseFont, boxHeight);
+        const maxFont = hasSource ? sourceFont : titleFillMax(baseFont, boxHeight);
         const lowFont = Math.max(1, Math.min(5.2, baseFont, maxFont));
         titleState.set(node, { baseFont });
         const bandFitsAt = size => {
