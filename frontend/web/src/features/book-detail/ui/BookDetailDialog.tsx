@@ -242,6 +242,7 @@ export function BookDetailDialog() {
               loading={artifactCenter.loading}
               downloadingId={artifactCenter.downloadingId}
               onDownload={(artifact) => void artifactCenter.download(artifact)}
+              onDownloadMarkdown={(artifact, readingJobId) => void artifactCenter.downloadMarkdownBundle(artifact, readingJobId)}
             />
           )}
         />

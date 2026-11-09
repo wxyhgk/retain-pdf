@@ -21,6 +21,21 @@ import {
 } from "../domain/artifact-center-model.js";
 import { isActiveJobStatus, jobOutputFilePath, resolveResourceUrl } from "@retainpdf/domain/job";
 import type { BookDetailCaches } from "../domain/book-detail-caches.js";
+import { buildMarkdownBundle } from "../domain/markdown-bundle.js";
+
+/** 下一个产物：先把响应拿到手并确认成功，再问用户保存到哪（见 download 里的说明）。 */
+async function saveArtifact(item: ArtifactCenterItem): Promise<void> {
+  const response = await fetchProtected(item.url);
+  if (!response.ok) throw new Error(`下载失败，请稍后重试。(${response.status})`);
+  // 文件名以后端响应头为准（统一的「类型前缀_书名_后缀」），「另存为」对话框也预填它。
+  const filename = fileNameFromDisposition(
+    response.headers.get("content-disposition") || "",
+    item.filename || item.label,
+  );
+  const target = await prepareDownloadTarget(filename);
+  if (target.kind === "aborted") return;
+  await saveResponseDownload(response, { target, filename, onProgress: undefined });
+}
 
 export function readerCompatibleArtifactLinks(
   job: DocumentJobSummary,
@@ -219,16 +234,7 @@ export function useBookDetailArtifactCenter({
       // 反过来的话，`showSaveFilePicker` 会在用户点确定的那一刻就创建出文件（0 字节），
       // 随后请求失败抛异常，磁盘上留下一个空文件。用户看到的不是错误，而是一份
       // "打开什么都没有的文档"——Word 导出在打包环境里失败时就是这么表现的。
-      const response = await fetchProtected(item.url);
-      if (!response.ok) throw new Error(`下载失败，请稍后重试。(${response.status})`);
-      // 文件名以后端响应头为准（统一的「类型前缀_书名_后缀」），「另存为」对话框也预填它。
-      const filename = fileNameFromDisposition(
-        response.headers.get("content-disposition") || "",
-        item.filename || item.label,
-      );
-      const target = await prepareDownloadTarget(filename);
-      if (target.kind === "aborted") return;
-      await saveResponseDownload(response, { target, filename, onProgress: undefined });
+      await saveArtifact(item);
     } catch (cause) {
       setError(`${(cause as Error)?.message || "下载失败，请稍后重试。"}`);
     } finally {
@@ -236,11 +242,34 @@ export function useBookDetailArtifactCenter({
     }
   }, [downloadingId]);
 
+  /** 「常用下载」的 Markdown：浏览器里打 zip（原文、译文、双语三份 md + images/，见 markdown-bundle.ts）；
+   * 老任务拼不出块时退回原来的产物（ocr.zip，只有原文）。同样先打好包、再问保存到哪。 */
+  const downloadMarkdownBundle = useCallback(async (item: ArtifactCenterItem, readingJobId = item.jobId) => {
+    if (downloadingId) return;
+    setDownloadingId(item.id);
+    setError("");
+    try {
+      const bundle = readingJobId ? await buildMarkdownBundle({ jobId: readingJobId, title }) : null;
+      if (!bundle) {
+        if (item.url) await saveArtifact(item);
+        return;
+      }
+      const target = await prepareDownloadTarget(bundle.filename);
+      if (target.kind === "aborted") return;
+      await saveResponseDownload(new Response(bundle.blob), { target, filename: bundle.filename, onProgress: undefined });
+    } catch (cause) {
+      setError(`${(cause as Error)?.message || "下载失败，请稍后重试。"}`);
+    } finally {
+      setDownloadingId("");
+    }
+  }, [downloadingId, title]);
+
   return {
     sections,
     loading: loadingJobIds.length > 0,
     error,
     downloadingId,
     download,
+    downloadMarkdownBundle,
   };
 }

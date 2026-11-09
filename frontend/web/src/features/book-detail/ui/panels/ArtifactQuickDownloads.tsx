@@ -61,11 +61,14 @@ export function ArtifactQuickDownloads({
   loading,
   downloadingId,
   onDownload,
+  onDownloadMarkdown,
 }: {
   sections: ArtifactCenterSection[];
   loading: boolean;
   downloadingId: string;
   onDownload: (item: ArtifactCenterItem) => void;
+  /** Markdown 那一颗：打 zip（原文、译文、双语 + 图片）；第二个参数是拿哪个任务的块来拼。不给就照旧下产物。 */
+  onDownloadMarkdown?: (item: ArtifactCenterItem, readingJobId: string) => void;
 }) {
   const items = selectArtifactQuickDownloads(sections);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -79,10 +82,16 @@ export function ArtifactQuickDownloads({
   }, []);
 
   const download = useCallback((id: ArtifactQuickDownloadId, item: ArtifactCenterItem) => {
-    // Word 排版稿是**按请求现生成**的，清晰度得跟着这一次的地址走；其余四个是
-    // 已经躺在磁盘上的产物，原样下载。
+    // Word 排版稿是**按请求现生成**的，清晰度得跟着这一次的地址走；Markdown 在浏览器里打包；
+    // 其余三个是已经躺在磁盘上的产物，原样下载。
+    if (id === "markdown" && onDownloadMarkdown) {
+      // Markdown 产物（ocr.zip）挂在 OCR 子任务（<任务>-ocr）上，那里的块没有译文：拿译文 PDF 那个任务
+      // （阅读页打开的同一个）的块来拼；没翻译过才用 Markdown 自己的任务。
+      onDownloadMarkdown(item, items.translated?.jobId || item.jobId);
+      return;
+    }
     onDownload(id === "word" ? { ...item, url: withWordExportDpi(item.url, dpi) } : item);
-  }, [dpi, onDownload]);
+  }, [dpi, onDownload, onDownloadMarkdown, items.translated?.jobId]);
 
   return (
     <section className="book-detail-quick-downloads" aria-label="常用文件下载">
