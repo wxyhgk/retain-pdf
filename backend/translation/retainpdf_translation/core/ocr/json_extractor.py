@@ -117,7 +117,6 @@ DERIVED_STRUCTURE_ROLE_MAP = {
     "table_of_contents": ROLE_TABLE_OF_CONTENTS,
 }
 _TRANSLATION_METADATA_BRIDGE_KEYS = {
-    "table_cell",
     "continuation_hint",
     "cross_column_merge_suspected",
     "provider_cross_column_merge_suspected",

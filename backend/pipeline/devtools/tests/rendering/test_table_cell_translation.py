@@ -4,7 +4,7 @@ import fitz
 import pytest
 
 from retainpdf_pipeline.ocr.document_schema import build_validation_report
-from retainpdf_pipeline.ocr.document_schema.table_cells import enrich_table_cells
+from retainpdf_translation.core.ocr.table_cells import extract_table_cell_items
 from retainpdf_pipeline.render.output.table_cells import render_translated_table_cells
 from retainpdf_translation.services.context.windows import annotate_translation_context_windows
 from retainpdf_translation.core.orchestration.zones import annotate_payload_layout_zones
@@ -53,13 +53,13 @@ def table_document():
     }
 
 
-def translated_cells(document):
+def translated_cells(items):
     translations = {
         "Criteria": "评分标准", "Min points": "最低分", "Max points": "最高分",
         "Deadline": "截止时间", "Report content": "报告内容",
         "Lab review (questions)/Test": "实验答辩（问答）/测试", "Total": "总分",
     }
-    items = [build_translation_record(item, math_mode="direct_typst") for item in extract_text_items(document, 0)]
+    items = [build_translation_record(item, math_mode="direct_typst") for item in items]
     for item in items:
         item["translated_text"] = translations[item["source_text"]]
     return items
@@ -69,17 +69,15 @@ def test_table_translation_toggle_prunes_previous_cells_and_can_reenable(tmp_pat
     source = tmp_path / "source.pdf"
     make_table_pdf(source)
     document = table_document()
-    with fitz.open(source) as pdf:
-        enrich_table_cells(document, pdf)
     output = tmp_path / "translations"
-    _, enabled = load_page_payloads(data=document, output_dir=output, page_indices=range(1), translate_tables=True)
+    _, enabled = load_page_payloads(data=document, output_dir=output, page_indices=range(1), table_source_pdf=source)
     assert len(enabled[0]) == 7
     assert all(item["metadata"]["table_cell"] for item in enabled[0])
     assert "Translate descriptive method/model names" in enabled[0][0]["translation_style_hint"]
     paths, disabled = load_page_payloads(data=document, output_dir=output, page_indices=range(1))
     assert disabled[0] == []
     assert paths[0].read_text(encoding="utf-8").strip() == "[]"
-    _, enabled_again = load_page_payloads(data=document, output_dir=output, page_indices=range(1), translate_tables=True)
+    _, enabled_again = load_page_payloads(data=document, output_dir=output, page_indices=range(1), table_source_pdf=source)
     assert len(enabled_again[0]) == 7
 
 
@@ -88,16 +86,19 @@ def test_table_translation_keeps_cells_grid_numbers_and_background(tmp_path):
     make_table_pdf(path)
     document = table_document()
     with fitz.open(path) as pdf:
-        enrich_table_cells(document, pdf)
-        enrich_table_cells(document, pdf)  # Re-normalization must not duplicate cells.
+        cells = extract_table_cell_items(document, 0, pdf)
         original_drawings = pdf[0].get_drawings()
     build_validation_report(document)
-    items = translated_cells(document)
+    items = translated_cells(cells)
     assert len(items) == 7
     assert all(item["should_translate"] and not eligible(item) for item in items)
     annotate_translation_context_windows({0: items})
-    assert all("Criteria" in item["translation_context_before"] for item in items)
-    body = {**items[0], "metadata": {}, "bbox": [30, 10, 470, 45]}
+    assert next(item for item in items if item["source_text"] == "Deadline")["translation_context_before"] == "Criteria"
+    assert "Deadline" not in next(item for item in items if item["source_text"] == "Total")["translation_context_before"]
+    assert extract_text_items(document, 0) == []
+    body = {**items[0], "metadata": {}, "bbox": [30, 10, 470, 45],
+            "block_type": "text", "block_kind": "text", "block_class": "body",
+            "layout_role": "paragraph", "semantic_role": "body", "structure_role": "body"}
     annotate_payload_layout_zones([body, *items])
     assert body["layout_zone_size"] == 1
     result = render_translated_table_cells(path, {0: items}, mode="overlay")
@@ -125,7 +126,7 @@ def test_table_translation_maps_selected_and_dual_pages(tmp_path, mode, extract,
     make_table_pdf(path)
     document = table_document()
     with fitz.open(path) as source:
-        enrich_table_cells(document, source)
+        cells = extract_table_cell_items(document, 0, source)
         if mode == "dual":
             dual_path = tmp_path / "dual.pdf"
             with fitz.open() as dual:
@@ -134,7 +135,7 @@ def test_table_translation_maps_selected_and_dual_pages(tmp_path, mode, extract,
                 page.show_pdf_page(fitz.Rect(500, 0, 1000, 340), source, 0)
                 dual.save(dual_path)
             path = dual_path
-    result = render_translated_table_cells(path, {3: translated_cells(document)}, mode=mode,
+    result = render_translated_table_cells(path, {3: translated_cells(cells)}, mode=mode,
                                            start_page=3, extract_selected_pages=extract)
     assert result["translated"] == 7
     with fitz.open(path) as pdf:
@@ -148,8 +149,8 @@ def test_untranslated_or_overflowing_cells_keep_source(tmp_path):
     make_table_pdf(path)
     document = table_document()
     with fitz.open(path) as pdf:
-        enrich_table_cells(document, pdf)
-    items = translated_cells(document)
+        cells = extract_table_cell_items(document, 0, pdf)
+    items = translated_cells(cells)
     items[0]["translated_text"] = ""
     items[1]["translated_text"] = "无法放入单元格的很长译文" * 500
     items[2]["translated_text"] = "最高分 123"
@@ -183,8 +184,8 @@ def test_borderless_html_cells_keep_merged_headers_and_numeric_phrases(tmp_path)
         '<tr><td>Snow as a potential feature</td><td>12 out of 27</td><td>25 out of 27</td></tr></table>'
     )
     with fitz.open(path) as pdf:
-        enrich_table_cells(document, pdf)
-    items = [build_translation_record(item, math_mode="direct_typst") for item in extract_text_items(document, 0)]
+        cells = extract_table_cell_items(document, 0, pdf)
+    items = [build_translation_record(item, math_mode="direct_typst") for item in cells]
     by_text = {item["source_text"]: item for item in items}
     assert len(items) == 10
     assert "10 out of 27" in by_text and "Snow as a potential feature" in by_text
@@ -202,10 +203,83 @@ def test_inline_symbol_renders_without_literal_math_delimiters(tmp_path):
     make_table_pdf(path)
     document = table_document()
     with fitz.open(path) as pdf:
-        enrich_table_cells(document, pdf)
-    item = translated_cells(document)[0]
+        cells = extract_table_cell_items(document, 0, pdf)
+    item = translated_cells(cells)[0]
     item["translated_text"] = "评分标准 $x$"
     assert render_translated_table_cells(path, {0: [item]}, mode="overlay")["translated"] == 1
     with fitz.open(path) as pdf:
         text = pdf[0].get_text(clip=fitz.Rect(item["bbox"]))
         assert "评分标准" in text and "x" in text and "$" not in text
+
+
+def test_tight_three_rule_table_keeps_the_overlapping_neighbor_digits(tmp_path):
+    path = tmp_path / "three-rules.pdf"
+    with fitz.open() as pdf:
+        page = pdf.new_page(width=500, height=340)
+        for y in (72, 100, 139):
+            page.draw_line((30, y), (470, y))
+        for y, label, value in [(90, "Method", "Score"), (116, "Baseline", "42"), (127, "99", "55")]:
+            page.insert_text((40, y), label, fontsize=12)
+            page.insert_text((280, y), value, fontsize=12)
+        pdf.save(path)
+    document = table_document()
+    table = document["pages"][0]["blocks"][0]
+    table["geometry"]["bbox"] = [30, 72, 470, 139]
+    with fitz.open(path) as pdf:
+        # The horizontal rules alone do not establish a column split.
+        assert extract_table_cell_items(document, 0, pdf) == []
+        table["content"]["table_html"] = (
+            "<table><tr><th>Method Score</th></tr><tr><td>Baseline 42</td></tr>"
+            "<tr><td>99 55</td></tr></table>"
+        )
+        assert extract_table_cell_items(document, 0, pdf) == []
+        table["content"]["table_html"] = (
+            "<table><tr><th rowspan>Method</th><th>Score</th></tr>"
+            "<tr><td>Baseline</td><td>42</td></tr><tr><td>99</td><td>55</td></tr></table>"
+        )
+        cells = extract_table_cell_items(document, 0, pdf)
+        assert {cell.text for cell in cells} == {"Method", "Score", "Baseline"}
+        item = build_translation_record(next(cell for cell in cells if cell.text == "Baseline"), math_mode="direct_typst")
+        source = fitz.Rect(item["metadata"]["table_cell"]["source_bbox"])
+        assert source.intersects(pdf[0].search_for("99")[0])
+    item["translated_text"] = "基线"
+    assert render_translated_table_cells(path, {0: [item]}, mode="overlay")["translated"] == 1
+    with fitz.open(path) as pdf:
+        text = pdf[0].get_text()
+        assert "基线" in text and "Baseline" not in text
+        assert all(number in text for number in ("42", "99", "55"))
+
+
+def test_table_extraction_failure_leaves_the_page_usable(tmp_path, monkeypatch):
+    source = tmp_path / "table.pdf"
+    make_table_pdf(source)
+    document = table_document()
+    table = document["pages"][0]["blocks"][0]
+    document["pages"].append({"blocks": [dict(table, metadata={})]})
+    with fitz.open(source) as pdf:
+        assert extract_table_cell_items(document, 1, pdf) == []
+        assert document["pages"][1]["blocks"][0]["metadata"]["table_translation_reason"] == "page_outside_pdf"
+    with monkeypatch.context() as patch:
+        def fail_find_tables(page):
+            raise RuntimeError("cannot read page drawings")
+
+        patch.setattr(fitz.Page, "find_tables", fail_find_tables)
+        paths, payloads = load_page_payloads(
+            data=document, output_dir=tmp_path / "translated", page_indices=[0], table_source_pdf=source,
+        )
+        assert paths[0].is_file() and payloads[0] == []
+        assert table["metadata"]["table_translation_reason"] == "page_extraction_failed"
+
+
+@pytest.mark.parametrize("span", ["rowspan=999999999", "colspan=999999999", "rowspan=invalid"])
+def test_invalid_html_span_keeps_the_original_table(tmp_path, span):
+    source = tmp_path / "table.pdf"
+    with fitz.open() as pdf:
+        pdf.new_page(width=500, height=340).insert_text((38, 87), "Criteria", fontsize=12)
+        pdf.save(source)
+    document = table_document()
+    table = document["pages"][0]["blocks"][0]
+    table["content"]["table_html"] = f"<table><tr><th {span}>Criteria</th></tr></table>"
+    with fitz.open(source) as pdf:
+        assert extract_table_cell_items(document, 0, pdf) == []
+    assert table["metadata"]["table_translation_reason"] == "cell_geometry_unavailable"

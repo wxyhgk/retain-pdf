@@ -118,7 +118,6 @@ DERIVED_STRUCTURE_ROLE_MAP = {
     "table_of_contents": ROLE_TABLE_OF_CONTENTS,
 }
 _TRANSLATION_METADATA_BRIDGE_KEYS = {
-    "table_cell",
     "continuation_hint",
     "cross_column_merge_suspected",
     "provider_cross_column_merge_suspected",
@@ -558,9 +557,6 @@ def extract_block_item(
     inside_algorithm: bool = False,
     page_blocks: list[dict] | None = None,
 ) -> TextItem | None:
-    # Table cells use a constrained overlay after body rendering, including in prewarm.
-    if (block.get("metadata") or {}).get("table_cell"):
-        return None
     segments = block_segments(block)
     lines = block_lines(block)
     text = block_source_text(block, segments)

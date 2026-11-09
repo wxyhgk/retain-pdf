@@ -11,10 +11,12 @@ import json
 import re
 import threading
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+import fitz
 import pytest
 
 from retainpdf_base import paths
@@ -70,7 +72,7 @@ class FakeModel:
                     ]
                 }
             )
-        members = re.findall(r"^原文 (p\d+-b\d+):\n([^\n]+)", user, re.M)
+        members = re.findall(r"^原文 (p\d+-b\d+(?:-cell-\d+-\d+)?):\n([^\n]+)", user, re.M)
         if members:
             with self.lock:
                 self.translated.update(item_id for item_id, _ in members)
@@ -178,6 +180,61 @@ def test_streaming_translation_matches_the_one_shot_run_without_retranslating(tm
     # 一样多的翻译（批量请求按块号记、单块请求按原文记，同一块两种跑法可能走不同的请求，只比总数）
     assert sum(fake_model.translated.values()) == sum(one_shot_counts.values())
     assert all(count == 1 for count in fake_model.reviewed_pairs.values()), "判过的拼接对不再送模型"
+
+
+@pytest.mark.parametrize("translate_tables", [False, True])
+def test_streaming_translates_table_cells_on_later_pages(tmp_path, fake_model, monkeypatch, translate_tables):
+    document = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    pages = document["pages"][:2]
+    document.update(pages=pages, page_count=2)
+    bbox = [30, 60, 230, 120]
+    table_id = "p002-b9999"
+    pages[1]["blocks"].append({
+        "block_id": table_id, "page_index": 1, "order": 9999, "reading_order": 9999,
+        "type": "table", "structure_role": "table", "bbox": bbox, "geometry": {"bbox": bbox},
+        "content": {"kind": "table", "text": ""},
+        "policy": {"translate": False, "translate_reason": "non_text"},
+    })
+    ocr_dir = tmp_path / "ocr"
+    writer = OcrStreamWriter(ocr_dir, provider="glm_ocr", total_pages=2)
+    writer.publish({**document, "pages": pages[:1]})
+    request = _request(tmp_path, tmp_path / "document.v1.json", ocr_stream_dir=ocr_dir)
+    request.source_pdf_path.unlink()
+    with fitz.open() as pdf:
+        pdf.new_page()
+        page = pdf.new_page(width=pages[1]["width"], height=pages[1]["height"])
+        for x in (30, 150, 230):
+            page.draw_line((x, 60), (x, 120))
+        for y in (60, 90, 120):
+            page.draw_line((30, y), (230, y))
+        page.insert_text((38, 80), "Method")
+        page.insert_text((158, 80), "Score")
+        page.insert_text((38, 110), "Baseline")
+        page.insert_text((158, 110), "99")
+        pdf.save(request.source_pdf_path)
+
+    def publish_next(ocr_dir_arg: Path, *, after_seq: int):
+        writer.publish(document, done=True)
+        return read_ocr_stream(ocr_dir_arg)
+
+    monkeypatch.setattr(paths, "TRANSLATION_UNIT_CACHE_DIR", tmp_path / "cache")
+    monkeypatch.setattr(streaming_flow, "wait_for_ocr_stream", publish_next)
+    original_find_tables = fitz.Page.find_tables
+    extracted_pages = []
+
+    def find_tables(page, *args, **kwargs):
+        extracted_pages.append(page.number)
+        return original_find_tables(page, *args, **kwargs)
+
+    monkeypatch.setattr(fitz.Page, "find_tables", find_tables)
+    streamed = execute_translation_request(replace(request, translate_tables=translate_tables, math_mode="placeholder"))
+    translated_cells = {key: value for key, value in _translations(streamed).items() if key.startswith(table_id)}
+    assert extracted_pages == ([1] if translate_tables else [])
+    assert translated_cells == ({
+        f"{table_id}-cell-0-0": ("文", ""),
+        f"{table_id}-cell-0-1": ("文", ""),
+        f"{table_id}-cell-1-0": ("文", ""),
+    } if translate_tables else {})
 
 
 def test_pages_arriving_out_of_order_translate_the_same_as_the_one_shot_run(tmp_path: Path, fake_model, monkeypatch) -> None:

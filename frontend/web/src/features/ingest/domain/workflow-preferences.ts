@@ -52,9 +52,6 @@ const WORKFLOW_PREFERENCE_SPECS = {
   translationQuality: { storageKey: "retainpdf.translationQuality", normalize: normalizeTranslationQuality },
   renderEngine: { storageKey: "retainpdf.renderEngine", normalize: normalizeRenderEngine },
   translationEngine: { storageKey: "retainpdf.translationEngine", normalize: normalizeTranslationEngine },
-} as const satisfies Record<string, { storageKey: string; normalize: (value: unknown) => string }>;
-}
-
 } as const satisfies Record<string, { storageKey: string; normalize: (value: unknown) => string | boolean }>;
 
 type Specs = typeof WORKFLOW_PREFERENCE_SPECS;

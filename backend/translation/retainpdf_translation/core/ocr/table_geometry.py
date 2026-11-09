@@ -8,6 +8,16 @@ import unicodedata
 
 import fitz
 
+MAX_CELL_SPAN = 64
+MAX_GRID_SLOTS = 16384
+
+
+def _span(value: str | None) -> int:
+    span = max(1, int(value or "1"))
+    if span > MAX_CELL_SPAN:
+        raise ValueError("OCR table span exceeds the supported limit")
+    return span
+
 
 class _TableParser(HTMLParser):
     def __init__(self):
@@ -26,8 +36,10 @@ class _TableParser(HTMLParser):
             attributes = dict(attrs)
             while (self.row, self.column) in self.occupied:
                 self.column += 1
-            rowspan = max(1, int(attributes.get("rowspan", "1")))
-            colspan = max(1, int(attributes.get("colspan", "1")))
+            rowspan = _span(attributes.get("rowspan"))
+            colspan = _span(attributes.get("colspan"))
+            if len(self.occupied) + rowspan * colspan > MAX_GRID_SLOTS:
+                raise ValueError("OCR table exceeds the supported grid size")
             self.current = dict(row=self.row, column=self.column, rowspan=rowspan, colspan=colspan, parts=[])
             self.cells.append(self.current)
             for row in range(self.row, self.row + rowspan):
@@ -58,7 +70,8 @@ def _matches(text: str, words: list) -> list[fitz.Rect]:
     for start, word in enumerate(words):
         value = ""
         box = fitz.Rect(word[:4])
-        for candidate in words[start:]:
+        for index in range(start, len(words)):
+            candidate = words[index]
             value += _key(candidate[4])
             if not target.startswith(value):
                 break
@@ -69,7 +82,7 @@ def _matches(text: str, words: list) -> list[fitz.Rect]:
     return result
 
 
-def html_cell_geometry(table: dict, page: fitz.Page, area: fitz.Rect, words: list) -> list[dict] | None:
+def html_cell_geometry(table: dict, area: fitz.Rect, words: list) -> list[dict] | None:
     content = table.get("content", {})
     html = str(content.get("table_html") or content.get("text") or "")
     if "<table" not in html.lower():
@@ -84,6 +97,8 @@ def html_cell_geometry(table: dict, page: fitz.Page, area: fitz.Rect, words: lis
         return None
     row_count = max(cell["row"] + cell["rowspan"] for cell in cells)
     column_count = max(cell["column"] + cell["colspan"] for cell in cells)
+    if column_count < 2:
+        return None  # OCR must identify separate columns before we replace any row.
     row_anchors: dict[int, list[float]] = {}
     column_anchors: dict[int, list[float]] = {}
     for cell in cells:
@@ -122,8 +137,19 @@ def html_cell_geometry(table: dict, page: fitz.Page, area: fitz.Rect, words: lis
             after = [cell["source_bbox"][axis] for cell in located
                      if cell["rowspan" if axis == 1 else "colspan"] == 1
                      and cell["row" if axis == 1 else "column"] == index]
-            if not before or not after or max(before) >= min(after):
+            if not before or not after:
                 return None
+            if max(before) >= min(after):
+                # Tight rows can have overlapping font boxes. Their centers
+                # still identify separate rows; rendering isolates the glyphs.
+                if axis == 0:
+                    return None
+                before = [sum(cell["source_bbox"][i] for i in (1, 3)) / 2 for cell in located
+                          if cell["rowspan"] == 1 and cell["row"] == index - 1]
+                after = [sum(cell["source_bbox"][i] for i in (1, 3)) / 2 for cell in located
+                         if cell["rowspan"] == 1 and cell["row"] == index]
+                if max(before) >= min(after):
+                    return None
             edges.append((max(before) + min(after)) / 2)
         return edges + [high]
     xs = boundaries(0, column_count, area.x0, area.x1)

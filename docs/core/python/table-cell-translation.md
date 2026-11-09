@@ -1,66 +1,42 @@
 # Table cell translation (#147)
 
-OCR-detected tables with a PDF text layer now expose independently translatable
-text cells. The original table asset, rules, fills and numeric cells remain in
-place. The implementation does not translate a table as a body paragraph.
+RetainPDF can translate text in OCR-detected PDF tables and put each translation
+back in its original cell. Enable **翻译表格内容** in the translation options.
+The setting is saved locally and defaults to off. Its API and worker spec key is
+`translation.translate_tables`.
 
-## Stage contracts
+- **Extract:** When enabled, the translation stage reads the source PDF for each
+  ready OCR page. It detects grids once per page and uses OCR HTML to locate
+  cells in borderless tables. For a three-rule table, a one-column grid does not
+  establish cell boundaries; without reliable HTML and text positions, the
+  table is kept as-is. HTML spans have size limits, and an unreadable or missing
+  PDF page skips cell extraction without stopping body translation.
+- **Translate:** Cells are separate translation records, outside the normalized
+  OCR document and paragraph continuation. Each gets only its caption and
+  applicable row/column labels as context. Both completed and streaming OCR
+  use the same extraction. With the option off, no cells are extracted or
+  passed to domain preview or terminology prescan, and old cell records are
+  dropped from translation templates. The setting affects checkpoint reuse.
+- **Render:** Cells bypass body cleanup and reflow. Text is fitted to the
+  original cell, and replacement removes only the source glyphs that can be
+  isolated from neighboring glyphs. Table rules, fills, numeric cells and
+  links remain; dual mode changes the translated half only.
 
-- Normalize: `ocr/document_schema/table_cells.py` uses PDF grid geometry. For
-  borderless tables, `table_geometry.py` matches the OCR HTML cells to actual PDF
-  words, retaining row/column spans. It appends ordinary normalized text blocks
-  with `metadata.table_cell` (parent table ID, cell/source rectangles, typography
-  and table context). It does not change the provider payload or the parent HTML.
-- Translate: cell records use the normal translation queue, model, cache and
-  checkpoint machinery. They carry a concise-cell style hint and table context,
-  remain independent of paragraph continuations, and do not enter neighboring
-  paragraph context. Context mode `off` still disables context.
-- Render: cells bypass body cleanup, prewarm and reflow. After body rendering,
-  `render/output/table_cells.py` fits translated labels inside the source cells.
-  It removes only the replaced text, preserving graphics, images and numeric
-  cells. Links removed by text redaction are restored on the translated anchor
-  (or the translated label rectangle). Dual mode changes only the translated half;
-  selected-page exports account for the page offset.
-- Raw OCR Markdown emits the parent table once, excluding the additional cell
-  records.
+This requires a PDF text layer and reliable cell geometry. Image-only tables
+and cells that cannot be safely located or replaced keep their source text.
+Numeric-only and formula-only cells are skipped. Complex math, changed numeric
+values, overlapping glyphs that cannot be isolated, and text that cannot fit
+are recorded in `render_diagnostics.table_cells.kept_source`. The
+`translated` count reports cells actually replaced.
 
-## Limits and diagnostics
+Existing normalized OCR can be reused for a new translation. Rerendering an
+old translation alone does not add table translations.
 
-This supports digital tables with a detectable grid, or with OCR HTML whose cells
-can be located in the PDF text layer. Image-only tables and tables without usable
-cell geometry remain unchanged; their parent metadata records
-`no_pdf_text_layer` or `cell_geometry_unavailable`.
+The PDF regression tests cover grids, merged headers, three-rule tables with
+overlapping neighboring glyph boxes, links, dual mode and selected-page
+exports. The streaming test covers a table arriving after translation has
+started, with the option both on and off.
 
-Numeric-only and formula-only cells remain in the source PDF. Simple inline
-symbols in translated labels render without literal math delimiters. Complex
-cell mathematics, changed numeric values and text that cannot fit at the source
-font size or down to 6 pt retain the source cell. These cases appear in
-`render_diagnostics.table_cells.kept_source`; `translated` counts fitted cells.
-Descriptive method/model names (including meaningful CamelCase components) are
-translated consistently; opaque acronyms remain unchanged.
-
-## User option
-
-The translation options panel provides a persisted **翻译表格内容** checkbox,
-off by default. `translation.translate_tables` is carried through the API,
-public job spec and worker stage spec into the translation execution request.
-When off, table cell records are excluded before creating translation templates;
-existing cell records in those templates are pruned, leaving original PDF table
-text untouched. The option participates in checkpoint identity, so incompatible
-translation attempts cannot be resumed when it changes.
-
-Existing OCR artifacts must be normalized again to acquire cell records before
-retranslation; rerendering an old translation alone cannot translate a table.
-
-## Verification
-
-`devtools/tests/rendering/test_table_cell_translation.py` exercises real PDF text
-replacement, grid/fill/numeric preservation, links, dual/selected-page mapping,
-borderless HTML with merged headers, table context, inline symbols and source
-retention on failed fitting/invalid numeric output.
-
-Manual validation used a scoring-table reproduction of the issue screenshot and
-tables from LIME (page 9) and FourierLoss (page 7), translated through the configured
-DeepSeek service. Table captions/headers, numeric phrases and translated research
-method names were inspected in rendered PDFs. The issue does not include its
-original PDF, so the reproduction is not the reporter's actual file.
+Before the review changes, manual validation used the configured DeepSeek
+service to translate a scoring table reproduced from the issue screenshot,
+LIME page 9 and FourierLoss page 7. The issue does not include its original PDF.

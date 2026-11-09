@@ -31,6 +31,51 @@ def is_table_cell(item: dict) -> bool:
     return bool((item.get("metadata") or {}).get("table_cell"))
 
 
+def _glyph_boxes(page: fitz.Page) -> list[fitz.Rect]:
+    return [
+        fitz.Rect(char["bbox"])
+        for block in page.get_text("rawdict", flags=fitz.TEXTFLAGS_RAWDICT & ~fitz.TEXT_PRESERVE_IMAGES)["blocks"]
+        for line in block.get("lines", [])
+        for span in line["spans"]
+        for char in span["chars"]
+    ]
+
+
+def _redaction_boxes(source: fitz.Rect, cell: fitz.Rect, glyphs: list[fitz.Rect]) -> list[fitz.Rect] | None:
+    """Use only areas that overlap source glyphs and no glyphs in other cells."""
+    inside = cell & source
+    targets = []
+    protected = []
+    for glyph in glyphs:
+        if glyph.intersects(source):
+            center = (glyph.tl + glyph.br) / 2
+            (targets if inside.contains(center) else protected).append(glyph)
+    if not targets:
+        return None
+    if not protected:
+        return [source]
+    boxes = []
+    for glyph in targets:
+        # Subtract neighboring glyph bounds before marking this glyph. A tiny
+        # intersection suffices for MuPDF to remove the whole source character.
+        rect = glyph & inside
+        for other in protected:
+            overlap = rect & other
+            if overlap.is_empty:
+                continue
+            rect = max((
+                fitz.Rect(rect.x0, rect.y0, overlap.x0, rect.y1),
+                fitz.Rect(overlap.x1, rect.y0, rect.x1, rect.y1),
+                fitz.Rect(rect.x0, rect.y0, rect.x1, overlap.y0),
+                fitz.Rect(rect.x0, overlap.y1, rect.x1, rect.y1),
+            ), key=lambda part: part.width * part.height)
+        if rect.width < 0.1 or rect.height < 0.1:
+            return None
+        center = (rect.tl + rect.br) / 2
+        boxes.append(fitz.Rect(center.x - 0.03, center.y - 0.03, center.x + 0.03, center.y + 0.03))
+    return boxes
+
+
 def render_translated_table_cells(
     output_pdf_path: Path,
     translated_pages: dict[int, list[dict]],
@@ -47,8 +92,11 @@ def render_translated_table_cells(
     kept_source: list[dict] = []
     with fitz.open(output_pdf_path) as pdf, fitz.open() as overlays:
         for page_index, items in cells_by_page.items():
+            if not items:
+                continue
             output_index = page_index - start_page if mode == "dual" or extract_selected_pages else page_index
             page = pdf[output_index]
+            glyphs = _glyph_boxes(page)
             shift = fitz.Rect(page.rect.width / 2, 0, page.rect.width / 2, 0) if mode == "dual" else fitz.Rect()
             placements: list[tuple] = []
             original_links = page.get_links()
@@ -89,11 +137,16 @@ def render_translated_table_cells(
                 clip = fitz.Rect(target.x0, target.y0, target.x1, target.y0 + height)
                 destination = clip + (0, spare / 2, 0, spare / 2)
                 source_box = fitz.Rect(cell["source_bbox"]) + shift
+                redactions = _redaction_boxes(source_box, box, glyphs)
+                if redactions is None:
+                    kept_source.append({"item_id": item["item_id"], "reason": "source_glyphs_not_isolated"})
+                    continue
                 for link in original_links:
                     if fitz.Rect(link["from"]).intersects(source_box):
                         anchor = page.get_text(clip=fitz.Rect(link["from"]) + (-1, -1, 1, 1)).strip()
                         cell_links.append((link, anchor, box, destination))
-                page.add_redact_annot(source_box, fill=False, cross_out=False)
+                for rect in redactions:
+                    page.add_redact_annot(rect, fill=False, cross_out=False)
                 placements.append((overlay.number, destination, clip))
             if placements:
                 # Remove only original text: table rules, fills, images and numeric cells survive.
@@ -110,6 +163,7 @@ def render_translated_table_cells(
                     matches = page.search_for(anchor, clip=box) if anchor else []
                     restored["from"] = matches[0] if matches else destination
                     page.insert_link(restored)
+                    surviving_links.add(link["xref"])
         if rendered:
             pdf.saveIncr()
     return {"translated": rendered, "kept_source": kept_source}

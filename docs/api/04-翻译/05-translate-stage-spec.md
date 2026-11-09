@@ -36,6 +36,7 @@ Python 可执行文件由 `PYTHON_BIN` 配置，不再回退到旧脚本。
     "mode": "sci",
     "math_mode": "direct_typst",
     "skip_title_translation": false,
+    "translate_tables": false,
     "classify_batch_size": 12,
     "rule_profile_name": "general_sci",
     "custom_rules_text": "",
@@ -62,6 +63,11 @@ Python 可执行文件由 `PYTHON_BIN` 配置，不再回退到旧脚本。
 - `credential_ref` 指向运行时环境变量。
 - Rust worker 启动时注入 `RETAIN_TRANSLATION_API_KEY`。
 - 配置了审校 key（`reviewer_api_key` 或 `reviewer_credential_ref`）时，`reviewer_credential_ref` 写 `env:RETAIN_REVIEWER_API_KEY`，worker 启动时注入同名环境变量；没配置时写空串，Python 侧回退到翻译模型。走 Rust 模型执行器（`execution_connection`）时两个 key 环境变量都不注入。
+
+## 表格翻译
+
+- `translation.translate_tables` 是布尔值，默认 `false`。开启后，翻译阶段根据 OCR 表格结构和原 PDF 文字层定位单元格；普通翻译与 OCR 流式翻译均支持。可以复用已有 OCR 产物。
+- 无文字层或无法可靠定位、替换的单元格保留原样。关闭时不提取单元格。
 
 ## 译前准备与审校字段
 
