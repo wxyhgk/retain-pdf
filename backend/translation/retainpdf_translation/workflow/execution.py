@@ -31,6 +31,7 @@ class TranslationExecutionRequest:
     math_mode: str = "direct_typst"
     classify_batch_size: int = 12
     skip_title_translation: bool = False
+    translate_tables: bool = False
     model: str = DEFAULT_MODEL
     base_url: str = DEFAULT_BASE_URL
     source_pdf_path: Path | None = None

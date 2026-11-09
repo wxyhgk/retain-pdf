@@ -6,11 +6,13 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { makeDom } from "../helpers/dom.mjs";
+import { makeDom, DOM_GLOBAL_KEYS } from "../helpers/dom.mjs";
 import { bootHomeApp } from "../helpers/home-app.mjs";
+import { waitFor } from "../helpers/async.mjs";
+import { loadWorkflowPreferences } from "../../src/features/ingest/domain/workflow-preferences.js";
 
 test("弹窗里改的偏好出现在提交载荷里", async () => {
-  const dom = makeDom("?mock=parallel");
+  const dom = makeDom("?mock=parallel", { keys: [...DOM_GLOBAL_KEYS, "localStorage"] });
   const { services, root, host } = await bootHomeApp(dom);
   try {
     const workflowFeature = services.features.workflowFeature;
@@ -18,10 +20,20 @@ test("弹窗里改的偏好出现在提交载荷里", async () => {
 
     services.workflowView.setPreference("translationQuality", "refined");
     services.workflowView.setPreference("renderEngine", "typst");
+    services.workflowDialog.openUpload();
+    services.stores.uploadView.actions.openTranslationOptions({ maxPage: 12 });
+    const checkbox = await waitFor(() => document.getElementById("job-translate-tables"));
+    assert.equal(checkbox.checked, false);
+    checkbox.click();
     const payload = workflowFeature.collectRunPayload();
     assert.equal(payload.translation?.preparation, "editorial");
     assert.equal(payload.translation?.refine, "editorial");
     assert.equal(payload.render?.engine, "typst");
+    assert.equal(payload.translation?.translate_tables, true);
+    assert.equal(localStorage.getItem("retainpdf.translateTables"), "true");
+    assert.equal(loadWorkflowPreferences().translateTables, true);
+    checkbox.click();
+    assert.equal(workflowFeature.collectRunPayload().translation?.translate_tables, false);
 
     services.workflowView.setPreference("renderEngine", "auto");
     assert.equal("engine" in (workflowFeature.collectRunPayload().render || {}), false, "默认不发 engine");

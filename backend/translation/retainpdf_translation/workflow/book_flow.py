@@ -61,6 +61,7 @@ def translate_book_with_global_continuations(
     translation_context: TranslationControlContext | None = None,
     run_diagnostics: TranslationRunDiagnostics | None = None,
     checkpoint: TranslationCheckpointSession | None = None,
+    table_source_pdf: Path | None = None,
 ) -> tuple[dict[int, list[dict]], list[dict]]:
     if translation_context is not None:
         domain_guidance = translation_context.merged_guidance
@@ -71,6 +72,7 @@ def translate_book_with_global_continuations(
         data=data,
         output_dir=output_dir,
         page_indices=page_indices,
+        table_source_pdf=table_source_pdf,
         api_key=api_key,
         workers=workers,
         model=model,
@@ -221,12 +223,14 @@ def prepare_book_payloads(
     translation_context: TranslationControlContext | None = None,
     run_diagnostics: TranslationRunDiagnostics | None = None,
     checkpoint: TranslationCheckpointSession | None = None,
+    table_source_pdf: Path | None = None,
 ) -> tuple[dict[int, Path], dict[int, list[dict]]]:
     """两个翻译引擎共用的前半段：读每页模板、接续段、页面策略和块分类，落盘并提交 policy_ready 断点。"""
     translation_paths, page_payloads = load_page_payloads(
         data=data,
         output_dir=output_dir,
         page_indices=page_indices,
+        table_source_pdf=table_source_pdf,
         math_mode=(policy_config.math_mode if policy_config is not None else "direct_typst"),
     )
     if checkpoint is not None:

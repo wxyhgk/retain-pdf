@@ -94,6 +94,7 @@ def translate_book_streaming(
     translation_context: TranslationControlContext | None = None,
     run_diagnostics: TranslationRunDiagnostics | None = None,
     checkpoint: TranslationCheckpointSession | None = None,
+    table_source_pdf: Path | None = None,
     wait: Callable[..., OcrStreamState] | None = None,
 ) -> tuple[dict[int, list[dict]], list[dict]]:
     """`stream` 是建执行计划时已经等到的那一版清单（至少有一页），`data` 是它的前缀文档。返回值和 `translate_book_with_global_continuations` 一样。"""
@@ -116,7 +117,10 @@ def translate_book_streaming(
         ready = stream.ready_page_indices
         new_pages = [page_idx for page_idx in page_indices if page_idx in ready and page_idx not in page_payloads]
         if new_pages:
-            paths, payloads = load_page_payloads(data=data, output_dir=output_dir, page_indices=new_pages, math_mode=math_mode)
+            paths, payloads = load_page_payloads(
+                data=data, output_dir=output_dir, page_indices=new_pages,
+                math_mode=math_mode, table_source_pdf=table_source_pdf,
+            )
             translation_paths.update(paths)
             page_payloads.update(payloads)
         final = stream.done or all(page_idx in ready for page_idx in page_indices)

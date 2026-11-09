@@ -325,6 +325,7 @@
         "mode",
         "math_mode",
         "skip_title_translation",
+        "translate_tables",
         "classify_batch_size",
         "rule_profile_name",
         "custom_rules_text",
@@ -357,6 +358,9 @@
           "type": "string"
         },
         "skip_title_translation": {
+          "type": "boolean"
+        },
+        "translate_tables": {
           "type": "boolean"
         },
         "classify_batch_size": {

@@ -61,6 +61,8 @@ def default_translation_flags(
 ) -> tuple[str, bool, str]:
     payload = item_policy_payload(block_type, metadata, contract_fields=contract_fields)
     normalized_block_type = item_block_kind(payload)
+    if (metadata or {}).get("table_cell"):
+        return "translate_table_cell", True, ""
     if is_algorithm_item(block_type, metadata, contract_fields=contract_fields):
         return "skip_algorithm", False, "skip_algorithm"
     semantic_role = str(payload.get("semantic_role", (metadata or {}).get("semantic_role", "")) or "").strip().lower()
@@ -181,6 +183,10 @@ def build_translation_record(item: TextItem, *, math_mode: str) -> dict:
         "toc_entries": list(getattr(item, "toc_entries", []) or []),
         "lines": item.lines,
         "metadata": item.metadata,
+        **({"translation_context_before": item.metadata["table_cell"].get("context", ""),
+            "translation_style_hint": "This is one table cell. Use concise wording and the supplied table context. "
+            "Translate descriptive method/model names, including meaningful CamelCase components (for example BaselineMethod means baseline method), into the target language. Use consistent translations for shared name components. Preserve opaque acronyms, numeric values and reference markers. Do not add math delimiters to plain text."}
+           if item.metadata.get("table_cell") else {}),
         **ocr_continuation_fields(item.metadata),
         **provider_layout_warning_fields(item.metadata),
         "layout_mode": "",

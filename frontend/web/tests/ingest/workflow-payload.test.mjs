@@ -73,6 +73,7 @@ test("buildTranslationPayload uses injected glossary and credential ref without 
   assert.equal(payload.model, "deepseek-chat");
   assert.equal(payload.base_url, "https://api.deepseek.com");
   assert.equal(payload.skip_title_translation, false);
+  assert.equal(payload.translate_tables, false);
   // 没设置过时用默认协议（OpenAI Responses，/chat/completions 去掉了）和不思考。
   assert.equal(payload.api_protocol, "openai_responses");
   assert.equal(payload.thinking, "off");

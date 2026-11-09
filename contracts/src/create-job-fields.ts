@@ -114,6 +114,7 @@ export const CREATE_JOB_SECTION_FIELDS: Readonly<
     "skip_title_translation",
     "start_page",
     "thinking",
+    "translate_tables",
     "workers",
   ],
 };

@@ -104,6 +104,7 @@ Canonical JSON request:
     "mode": "sci",
     "math_mode": "direct_typst",
     "skip_title_translation": false,
+    "translate_tables": false,
     "classify_batch_size": 12,
     "rule_profile_name": "general_sci",
     "custom_rules_text": "",
@@ -405,6 +406,7 @@ OCR provider options:
 
 Translation options:
 
+- `translation.translate_tables` is an optional boolean (default `false`). Set it to `true` to translate text in OCR-detected tables whose cells can be located in the source PDF text layer. It works with completed or streaming OCR and can reuse existing OCR artifacts. Image-only tables and cells that cannot be safely replaced retain their source text.
 - `translation.math_mode` is optional
 - `direct_typst` is the default
 - `direct_typst` is an experimental mode that asks the model to output translated prose with inline `$...$` math directly

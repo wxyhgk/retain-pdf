@@ -91,6 +91,7 @@ SUB_TYPE_CLASS = {
     "image_footnote": "float_note",
     "table_footnote": "float_note",
     "table_html": "table",
+    "table_cell": "table_cell",
     "footnote": "footnote",
     "reference": "reference_entry",
     "list_item": "list_item",
@@ -241,6 +242,10 @@ def build_agent_pages(
             if marks:
                 marks_by_block[item_id] = marks
             attributes = {"level": _heading_level(item)} if cls == "section_heading" else {}
+            if cls == "table_cell":
+                attributes["style_hint"] = item["translation_style_hint"]
+                if context := item.get("translation_context_before"):
+                    attributes["table_context"] = context
             group = None
             if item_id in group_of:
                 unit_id, index, count = group_of[item_id]
@@ -444,6 +449,7 @@ def translate_book_with_agent(
     translation_context: TranslationControlContext | None = None,
     run_diagnostics: TranslationRunDiagnostics | None = None,
     checkpoint: TranslationCheckpointSession | None = None,
+    table_source_pdf: Path | None = None,
     glossary_entries: list | None = None,
     transport: Callable[[dict], dict] | None = None,
 ) -> tuple[dict[int, list[dict]], list[dict]]:
@@ -452,6 +458,7 @@ def translate_book_with_agent(
         data=data,
         output_dir=output_dir,
         page_indices=page_indices,
+        table_source_pdf=table_source_pdf,
         api_key=api_key,
         workers=workers,
         model=model,

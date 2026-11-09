@@ -113,6 +113,7 @@ export interface PublicTranslationInput {
     mode: string;
     math_mode: string;
     skip_title_translation: boolean;
+    translate_tables: boolean;
     classify_batch_size: number;
     rule_profile_name: string;
     custom_rules_text: string;

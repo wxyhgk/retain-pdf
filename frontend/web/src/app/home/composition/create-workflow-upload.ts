@@ -2,6 +2,7 @@
 
 import { mountedFeature } from "./feature-registry.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
+import type { WorkflowPreferences } from "@/features/ingest/domain/workflow-preferences.js";
 import type { CredentialGateRequest } from "@/features/ingest/index.js";
 import {
   apiBase,
@@ -50,7 +51,7 @@ import type {
 type WorkflowViewPort = {
   selectedGlossaryId: () => string;
   /** 用户偏好整张表（翻译质量、排版引擎……），由 ingest 给出，这里原样转交。 */
-  preferences?: () => Record<string, string>;
+  preferences?: () => Partial<WorkflowPreferences>;
   isOcrOnly?: () => boolean;
   viewPort: unknown;
 };
