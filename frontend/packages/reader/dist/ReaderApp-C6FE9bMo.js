@@ -9,14 +9,14 @@ import { requireAdapter as at, getReaderAdapters as ye } from "./adapters.js";
 import { resolveReaderDownloadName as Co, resolveReaderDownloadUrls as Do, READER_PROGRESS_COPY as Ie, trimString as _t, READER_DOWNLOAD_ACTIONS as zo, disabledReason as xo } from "./runtime/state.js";
 import { r as Oo, b as Fo } from "./page-config-Ct7qR5rm.js";
 import { documentSourcePdfPath as Yt, isFinishedJobStatus as bn } from "@retainpdf/domain/job";
-import { c as $o, n as jo, f as Ht, j as Un, a as Bo, b as Uo, h as Dr, p as yn, d as Ho, k as Hn, i as Wo } from "./reader-regions-CP3ZMHPc.js";
+import { n as $o, d as jo, f as Ht, k as Un, b as Bo, c as Uo, j as Dr, p as yn, g as Ho, l as Hn, i as Wo } from "./reader-regions-B6o2DsPy.js";
 import { fetchDocumentReading as Vo } from "@retainpdf/api/documents";
 import { isReaderTransportError as Jo, createReaderTransportError as Go } from "./contracts.js";
 import { toast as Xt, Toaster as qo } from "sonner";
 import { X as vn, Radio as Ko, FileText as zr, Columns2 as xr, Languages as Or, FileCode2 as Zo, Keyboard as Yo, Download as Xo, ChevronDown as Qo, ListTree as ea, Search as ta } from "lucide-react";
 import { Button as Oe, Input as na } from "@retainpdf/ui";
 import { pdfjs as Fr, Page as ra, Document as oa } from "react-pdf";
-import { extractMarkdownMath as aa, materializeMarkdownMathFallbackHtml as sa, materializeMarkdownMathHtml as ia } from "./runtime/content.js";
+import { e as aa, m as sa, a as ia } from "./markdown-math-XkF5urpn.js";
 const ca = (...e) => {
   var t, n;
   return ((n = (t = ye()) == null ? void 0 : t.isMockMode) == null ? void 0 : n.call(t, ...e)) ?? !1;
@@ -6536,7 +6536,7 @@ function Jl({
     ] })
   ] });
 }
-const Gl = Lo(() => import("./ReaderMarkdownPanel-DlVwOnci.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
+const Gl = Lo(() => import("./ReaderMarkdownPanel-cDcXuWqb.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
 function ql(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantPdfPane || (e.assistantOpen && e.mode === "compare" ? "source" : e.mode), a = !t && (o === "translated" || o === "compare");
   return {
@@ -6734,4 +6734,4 @@ export {
   hu as r,
   De as u
 };
-//# sourceMappingURL=ReaderApp-_4cqyo5R.js.map
+//# sourceMappingURL=ReaderApp-C6FE9bMo.js.map

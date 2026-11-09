@@ -57,6 +57,7 @@
     "@retainpdf/ui": "0.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "fflate": "^0.8.3",
     "lottie-web": "^5.13.0",
     "lucide-react": "^1.24.0",
     "marked": "^18.0.10",
