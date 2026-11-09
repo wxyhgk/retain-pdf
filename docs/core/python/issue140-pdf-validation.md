@@ -24,3 +24,12 @@ FourierLoss 重新请求 MinerU OCR；LIME 复用已有 MinerU OCR。两篇使�
 未运行 Rust、前端及 Python 全套测试；未修改这些模块。自动 QA 仍有术语、格式等提示，其中 LIME 的 `15,000` 数字缺失提示经人工核对为 LaTeX 千位分隔格式差异。本次没有逐字人工校对全文。
 
 样本 PDF、用户凭据、本地任务目录和生成文件不随源码提交。
+
+## 2026-11-09 合进 main 时的调整
+
+- 正文超框收紧（引擎 `clampTranslatedTextFrames`）没有收：引擎副本 `backend/rendering-engine/` 由引擎仓库同步，
+  直接改副本下次同步会被覆盖；而且引擎在 10-25 之后加了让文字有意越出 OCR 框的排法（绕开图形的脚注、借下方空白、
+  短行加宽），这一步把它们一律收回原框，引擎测试「图里的脚注按原字号排」会红（9 pt 缩到 7.65 pt）。超框按现在的引擎另查。
+- 链接迁移改成只读有链接的页、走过就丢，没有要挪的链接不重写 PDF；出错只记进 `link_relocation.error`，照常交出 PDF。
+- OCR 乱码恢复挂在 `document_schema/pdf_geometry.py` 的缩放之后，所有 OCR 来源都走（原来只在 Paddle 的归一化里）。
+- 双栏接续组在算两块之间夹着的独立公式（main 后来加的 `formulas_before`）之前按阅读顺序排。
