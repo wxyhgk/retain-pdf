@@ -11,6 +11,7 @@
 - `chinese_body_fit.py`
 - `fit_decision/`
 - `title_fit.py`
+- `title_source_size.py`：标题的原文字号（原 PDF 文字层，读不到按原文塞满框反推）。标题不超过它、排不下才缩，Typst 路线和 rpr_fit 引擎（随条目传 `source_font_size_pt`）同一个值（2026-11-09）
 - `payload/`
 - `typography/`
 

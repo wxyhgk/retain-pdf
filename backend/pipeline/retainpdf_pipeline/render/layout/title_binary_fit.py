@@ -8,6 +8,7 @@ from retainpdf_pipeline.render.layout.payload.capacity import estimated_render_h
 from retainpdf_pipeline.render.layout.payload.capacity import estimated_required_lines
 from retainpdf_pipeline.render.layout.payload.capacity import text_demand_units
 from retainpdf_pipeline.render.layout.payload.fit_common import fit_inner_bbox
+from retainpdf_pipeline.render.layout.title_source_size import title_source_font_size_pt
 from retainpdf_pipeline.render.semantics.item_view import layout_role
 from retainpdf_pipeline.render.semantics.item_view import structure_role
 
@@ -105,6 +106,11 @@ def solve_title_fit(
 
     width_pt = max(8.0, inner[2] - inner[0])
     height_pt = max(8.0, inner[3] - inner[1])
+    # 有原文字号就以它为准（title_source_size）：在它以下找塞得下的最大字号，只缩不放
+    source_size = title_source_font_size_pt(item)
+    if source_size is not None:
+        base_font_size_pt = source_size
+        max_font_size_pt = min(max_font_size_pt or source_size, source_size)
     kind = _title_kind(item)
     plain_text = build_plain_text_from_text(protected_text)
     text_len = len(plain_text)
