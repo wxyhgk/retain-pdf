@@ -43,23 +43,60 @@ def _anchor_pattern(text, destination):
     return '(?P<anchor>' + re.escape(text.strip()) + ')'
 
 
+class _PageChars:
+    """Per-page character lists, read only for pages that actually need them.
+
+    Pages are visited in order and a continuation group spans neighbouring
+    pages, so entries far behind the current page are dropped to keep memory
+    flat on long books.
+    """
+
+    def __init__(self, pdf, page_number):
+        self._pdf = pdf
+        self._page_number = page_number
+        self._cache = {}
+
+    def __getitem__(self, page_index):
+        if page_index not in self._cache:
+            page = self._pdf[self._page_number(page_index)]
+            self._cache[page_index] = _characters(page, [page.rect])
+        return self._cache[page_index]
+
+    def forget_before(self, page_index):
+        for key in [key for key in self._cache if key < page_index]:
+            del self._cache[key]
+
+
+_KEEP_PAGES_BEHIND = 2
+
+
 def relocate_translated_links(output_pdf: Path, source_pdf: Path, translated_pages: dict[int, list[dict]]) -> dict:
     moved = unchanged = 0
     unresolved = []
     updates = {}
-    all_items = [item for items in translated_pages.values() for item in items]
+    group_members = {}
+    for items in translated_pages.values():
+        for item in items:
+            if item.get('continuation_group'):
+                group_members.setdefault(item['continuation_group'], []).append(item)
     with fitz.open(source_pdf) as source, fitz.open(output_pdf) as target:
         output_indices = {idx: idx for idx in translated_pages} if len(source) == len(target) else {
             idx: offset for offset, idx in enumerate(sorted(translated_pages))}
-        page_chars = {idx: _characters(target[output_indices[idx]], [target[output_indices[idx]].rect]) for idx in translated_pages}
-        source_chars = {idx: _characters(source[idx], [source[idx].rect]) for idx in translated_pages}
-        for page_index, items in translated_pages.items():
+        page_chars = _PageChars(target, lambda idx: output_indices[idx])
+        source_chars = _PageChars(source, lambda idx: idx)
+        for page_index in sorted(translated_pages):
+            items = translated_pages[page_index]
             if page_index >= len(source) or output_indices[page_index] >= len(target):
                 continue
+            page_chars.forget_before(page_index - _KEEP_PAGES_BEHIND)
+            source_chars.forget_before(page_index)
             source_page, target_page = source[page_index], target[output_indices[page_index]]
+            source_links = source_page.get_links()
+            if not source_links:
+                continue
             target_links = target_page.get_links()
             used = set()
-            for link in source_page.get_links():
+            for link in source_links:
                 rect = link['from']
                 intersecting = [item for item in items if fitz.Rect(item['bbox']).intersects(rect)]
                 if not intersecting:
@@ -70,7 +107,8 @@ def relocate_translated_links(output_pdf: Path, source_pdf: Path, translated_pag
                     unchanged += 1
                     continue
                 group = owner.get('continuation_group')
-                members = [item for item in all_items if group and item.get('continuation_group') == group] or [owner]
+                members = group_members.get(group) if group else None
+                members = members or [owner]
                 original_chars = [(c,r) for c,r in source_chars[page_index] if r and (r.tl+r.br)/2 in rect]
                 anchor = ''.join(c for c, r in original_chars if r).strip()
                 if not anchor:
@@ -94,7 +132,7 @@ def relocate_translated_links(output_pdf: Path, source_pdf: Path, translated_pag
                 destination = link.get('nameddest', '')
                 pattern = _anchor_pattern(anchor, destination)
                 candidates = []
-                for member_page in {item['page_idx'] for item in members}:
+                for member_page in {item['page_idx'] for item in members if item.get('page_idx') in output_indices}:
                     regions = [fitz.Rect(item['bbox']) + (-1,-1,1,1) for item in members if item['page_idx'] == member_page]
                     chars = [(c,r) for c,r in page_chars[member_page] if r and not c.isspace() and any((r.tl+r.br)/2 in region for region in regions)]
                     text = ''.join(c for c,r in chars)
@@ -120,6 +158,9 @@ def relocate_translated_links(output_pdf: Path, source_pdf: Path, translated_pag
                 new_page = output_indices[new_page]
                 updates[old_links[0]['xref']] = (new_page, [list(box * ~target[new_page].transformation_matrix) for box in boxes])
                 moved += 1
+    if not updates:
+        # Nothing moved: leave the rendered PDF untouched instead of rewriting it.
+        return dict(moved=moved, unchanged=unchanged, unresolved=unresolved)
     temporary = output_pdf.with_name(output_pdf.stem + '.links.pdf')
     with pikepdf.Pdf.open(output_pdf) as pdf:
         additions = {}
