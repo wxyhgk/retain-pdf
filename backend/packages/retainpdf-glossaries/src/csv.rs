@@ -39,9 +39,13 @@ fn detect_delimiter(csv_text: &str) -> u8 {
         if let Some(first) = rows.first() {
             let width = first.len();
             let consistent = rows.iter().filter(|row| row.len() == width).count();
+            // 表头最可信；其次是切出来不止一列。从 Excel 复制出来的是制表符分隔、单元格不加引号，
+            // 备注里的逗号会让按逗号切的列更多，所以制表符能切出多列时额外加分，比列数、各行一致更优先。
+            let tab_bonus = usize::from(delimiter == b'\t' && width > 1) * 500;
             let score = usize::from(detect_csv_header(first).is_some()) * 10000
-                + usize::from(width > 1) * 100
-                + consistent * 10 / rows.len()
+                + usize::from(width > 1) * 1000
+                + tab_bonus
+                + consistent * 100 / rows.len()
                 + width.min(50);
             if score > best.1 { best = (delimiter, score); }
         }
