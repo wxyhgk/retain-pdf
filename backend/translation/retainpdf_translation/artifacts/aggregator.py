@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import math
 import re
 import threading
@@ -160,6 +161,10 @@ class TranslationRunDiagnostics:
     _checkpoint_metrics_provider: Callable[[], dict] | None = field(default=None, init=False, repr=False)
     _garbled_stats: dict[str, int] = field(default_factory=dict, init=False, repr=False)
     _tail_retry_stats: dict[str, int] = field(default_factory=dict, init=False, repr=False)
+    # 上游以 401/403 拒过的凭据（base_url + Key 的摘要）-> 第一次被拒时的异常。Key 失效时整份任务的
+    # 每个请求都会被拒，记下以后同一组凭据不再发请求，流程在下一个检查点直接失败（见
+    # upstream_resilience.credential_rejected_error）。按凭据分开记：审校模型可能用另一组 Key。
+    _auth_rejections: dict[tuple[str, str], BaseException] = field(default_factory=dict, init=False, repr=False)
     _token_usage: dict[str, int] = field(
         default_factory=lambda: {
             "requests_with_usage": 0,
@@ -197,6 +202,25 @@ class TranslationRunDiagnostics:
                 "effective_workers_mixed_split": int(max(1, mixed_split_workers)),
                 "effective_batch_size_translation": int(max(1, translation_batch_size)),
             }
+
+    @staticmethod
+    def _credential_key(*, base_url: str, api_key: str) -> tuple[str, str]:
+        return (
+            str(base_url or "").strip().rstrip("/").lower(),
+            hashlib.sha256(str(api_key or "").strip().encode("utf-8")).hexdigest(),
+        )
+
+    def record_auth_rejection(self, *, base_url: str, api_key: str, error: BaseException) -> None:
+        """记下这组凭据被上游以 401/403 拒绝；只留第一次的异常。"""
+        key = self._credential_key(base_url=base_url, api_key=api_key)
+        with self._lock:
+            self._auth_rejections.setdefault(key, error)
+
+    def auth_rejection(self, *, base_url: str, api_key: str) -> BaseException | None:
+        """这组凭据被拒过就返回第一次被拒时的异常，否则 None。"""
+        key = self._credential_key(base_url=base_url, api_key=api_key)
+        with self._lock:
+            return self._auth_rejections.get(key)
 
     def set_workload(
         self,

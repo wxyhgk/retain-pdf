@@ -190,6 +190,7 @@ def test_anthropic_compatible_proxy_follows_the_sdk_convention():
 def test_anthropic_usage_is_recorded_in_openai_shape():
     diagnostics = mock.Mock()
     diagnostics.record_request_start.return_value = 1
+    diagnostics.auth_rejection.return_value = None  # 这组凭据没被拒过
     _call(
         [_response(payload=ANTHROPIC_OK)],
         messages=[{"role": "user", "content": "x"}],
@@ -425,6 +426,7 @@ def test_responses_url_accepts_a_full_endpoint(base):
 def test_responses_usage_is_recorded_in_openai_shape():
     diagnostics = mock.Mock()
     diagnostics.record_request_start.return_value = 1
+    diagnostics.auth_rejection.return_value = None  # 这组凭据没被拒过
     _responses_call([_response(payload=RESPONSES_OK)], diagnostics=diagnostics)
     diagnostics.record_token_usage.assert_called_once_with({
         "prompt_tokens": 120,

@@ -96,6 +96,8 @@ TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_translation.core.provider_identity",
         "retainpdf_translation.llm.shared.control_context",
         "retainpdf_translation.llm.shared.provider_runtime",
+        # 上游错误分类的唯一真相源（不分服务商）：批量翻译阶段据它在 Key 被 401/403 拒绝后整份停下。
+        "retainpdf_translation.llm.shared.upstream_resilience",
         "retainpdf_translation.services.agents",
         "retainpdf_translation.services.finalization",
         "retainpdf_translation.services.policy",

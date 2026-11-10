@@ -432,6 +432,11 @@ repair profile：
 - 可用 `RETAIN_TRANSLATION_TRANSPORT_RECOVERY_ATTEMPTS=N` 和 `RETAIN_TRANSLATION_TRANSPORT_RECOVERY_SECONDS=N` 调整；将 seconds 设为 `0` 可关闭这层断网恢复。
 - transport attempt 在真正发送前必须先 fsync 请求 journal；并发 dispatch 使用约 5ms 的 group commit 窗口合并 fsync，journal 持久化失败会阻止请求离开进程。
 - 尾部 transport retry 会在主队列之后执行，默认允许 2 次 HTTP attempt，并使用更长 timeout。
+- 400/401/402/403 不重试。401/403（Key 无效、没权限）还会让整份翻译停下：第一次被拒就在本次运行的诊断对象
+  （`TranslationRunDiagnostics.record_auth_rejection`）上记下这组 base_url + Key，之后同一组凭据的请求不再发出去；
+  批量翻译开始前、结束后和收尾修复前各查一次，被拒过就抛「翻译 API Key 被上游拒绝」，结构化失败归成
+  `auth_failed`、不可重试。在飞的请求照常收完，已译的块照常落盘。只管默认的 legacy 引擎（Python 直接发请求）；
+  agent 引擎和 Rust 执行器各自碰到 401/403 本来就停。
 
 ## 模式说明
 
