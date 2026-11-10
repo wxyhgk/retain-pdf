@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 use retainpdf_core::models::domain::JobSnapshot;
 use retainpdf_core::storage_paths::{
-    resolve_agent_editorial_events, resolve_markdown_images_dir, resolve_markdown_path, resolve_normalization_report,
+    resolve_agent_editorial_events, resolve_markdown_path, resolve_ocr_markdown_images_dir, resolve_normalization_report,
     resolve_normalized_document, resolve_output_pdf, resolve_source_pdf,
     resolve_translation_debug_index, resolve_translation_manifest,
     resolve_translation_request_journal,
@@ -25,7 +25,8 @@ pub enum StoredFile {
     TranslatedPdf,
     /// 原文 Markdown（OCR 结果）。
     OcrMarkdown,
-    /// Markdown 引用的图片所在的目录。
+    /// OCR 文档（规范化文档、Markdown）引用的图片所在的目录。复用 OCR 的任务自己的 `md/`
+    /// 是空的，图片在产出 OCR 的那个任务下面，见 `resolve_ocr_markdown_images_dir`。
     OcrImagesDir,
     /// 规范化后的文档结构（document.v1.json）。
     NormalizedDocument,
@@ -47,7 +48,7 @@ pub fn stored_path(job: &JobSnapshot, data_root: &Path, file: StoredFile) -> Opt
         StoredFile::SourcePdf => resolve_source_pdf(job, data_root),
         StoredFile::TranslatedPdf => resolve_output_pdf(job, data_root),
         StoredFile::OcrMarkdown => resolve_markdown_path(job, data_root),
-        StoredFile::OcrImagesDir => resolve_markdown_images_dir(job, data_root),
+        StoredFile::OcrImagesDir => resolve_ocr_markdown_images_dir(job, data_root),
         StoredFile::NormalizedDocument => resolve_normalized_document(job, data_root),
         StoredFile::NormalizationReport => resolve_normalization_report(job, data_root),
         StoredFile::TranslationManifest => resolve_translation_manifest(job, data_root),

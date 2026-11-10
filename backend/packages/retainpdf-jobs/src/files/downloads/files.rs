@@ -20,7 +20,7 @@ use retainpdf_files::{
     LayoutDocxOptions, JOB_INTERNAL_FILES,
 };
 use retainpdf_core::storage_paths::{
-    resolve_job_root, resolve_markdown_images_dir, resolve_markdown_path, resolve_output_pdf,
+    resolve_job_root, resolve_markdown_path, resolve_ocr_markdown_images_dir, resolve_output_pdf,
     resolve_source_pdf,
     ARTIFACT_KEY_SOURCE_PDF,
 };
@@ -292,8 +292,9 @@ fn locate(deps: &DownloadJobsDeps<'_>, job: &JobSnapshot, file: &JobFile) -> Res
         }
         JobFile::OcrImage(relative) => {
             // 图片目录还没有 = Markdown 还没产出；目录在、要的那张不在 = 没有这个文件（普通 404）。
-            let images_dir =
-                resolve_markdown_images_dir(job, data_root).ok_or_else(|| AppError::not_ready("ocr/images"))?;
+            // 复用 OCR 的任务，图片在产出 OCR 的那个任务下面；阅读页区域给的就是这个地址。
+            let images_dir = resolve_ocr_markdown_images_dir(job, data_root)
+                .ok_or_else(|| AppError::not_ready("ocr/images"))?;
             let path = images_dir.join(safe_markdown_image_path(relative)?);
             if !path.is_file() {
                 return Err(AppError::not_found(format!("markdown image not found: {relative}")));
