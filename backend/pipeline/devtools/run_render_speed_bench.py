@@ -28,7 +28,7 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[3]
-ENTRYPOINT = ROOT / "backend/pipeline/retainpdf_pipeline/entrypoints/run_render_only.py"
+RENDER_MODULE = "retainpdf_pipeline.render"
 CASES_FILE = Path(__file__).resolve().parent / "render_speed_cases.json"
 
 SPEC_PARAMS = {
@@ -141,7 +141,7 @@ def run_case(job_root: Path, global_caches_dir: Path) -> dict:
     started = time.perf_counter()
     try:
         proc = subprocess.run(
-            [sys.executable, str(ENTRYPOINT), "--spec", str(job_root / "specs" / "render.spec.json")],
+            [sys.executable, "-m", RENDER_MODULE, "--spec", str(job_root / "specs" / "render.spec.json")],
             cwd=ROOT,
             env=child_env(global_caches_dir),
             capture_output=True,

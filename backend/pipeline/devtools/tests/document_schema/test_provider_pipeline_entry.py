@@ -331,7 +331,7 @@ def test_provider_pipeline_dispatches_to_paddle_and_writes_standard_artifacts(
     monkeypatch.setattr(provider_pipeline, "print_pipeline_summary", lambda **_: None)
     monkeypatch.setattr(provider_pipeline, "enable_job_log_capture", lambda *_args, **_kwargs: None)
 
-    monkeypatch.setattr(sys, "argv", ["run_provider_case.py", "--spec", str(spec_path)])
+    monkeypatch.setattr(sys, "argv", ["retainpdf_pipeline.ocr provider-case", "--spec", str(spec_path)])
     provider_pipeline.main()
 
     normalized_json_path = job_dirs.ocr_dir / "normalized" / "document.v1.json"

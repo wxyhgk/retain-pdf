@@ -71,7 +71,7 @@ Note:
 - `workflow = "book"` is the current API workflow identifier for the full document flow
 - this is a protocol enum; OCR provider selection remains under `ocr.provider`
 - production `book` execution is Rust-orchestrated: OCR child/provider transport -> normalize -> translate -> render
-- local manual entrypoints may still use `retainpdf-pipeline provider-case` (`run_provider_case.py` script-mode，仅桌面兼容）, but that wrapper is not the production API orchestration path
+- local manual runs may still use `retainpdf-pipeline provider-case`, but that command is not the production API orchestration path
 
 Canonical JSON request:
 

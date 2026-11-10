@@ -61,8 +61,9 @@ rpr_fit 路线下它还假定每块都翻成，先把每页的底色 / 字色算
 参数取自与 `render.stage.v1` 相同的字段，不带凭据。入口代码：
 [render_prepare.rs](../packages/retainpdf-runner/src/job_runner/render_prepare.rs)。
 
-`provider.stage.v1` 仍保留给 legacy/local `run_provider_case.py` wrapper；当前生产主链的 OCR provider
-transport 由 Rust `ocr_flow` 直接编排，然后只把 normalize 交给 Python worker。
+`provider.stage.v1` 是 `python -m retainpdf_pipeline.ocr provider-ocr|provider-case` 读的 spec。生产上 MinerU、Paddle HTTP
+的 provider transport 由 Rust `ocr_flow` 直接编排，然后只把 normalize 交给 Python worker；只有本地命令行 OCR、Paddle
+官方 CLI 和流式 OCR（GLM-OCR）才由 Rust 拉起 `provider-ocr`。`provider-case` 只在本地用。
 
 ## 3. workflow 到 stage chain 的映射
 
@@ -79,7 +80,7 @@ parent job
   -> render
 ```
 
-这里的 provider transport 是 Rust 运行时逻辑，不是 `run_provider_case.py`。
+这里的 provider transport 是 Rust 运行时逻辑，不是 `retainpdf-pipeline provider-case`。
 
 入口代码：
 

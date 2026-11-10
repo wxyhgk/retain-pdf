@@ -26,8 +26,8 @@ from retainpdf_translation.artifacts.io import aggregate_payload_diagnostics
 DEFAULT_SAMPLE = REPO_ROOT / "tests" / "fixtures" / "pdfs" / "1.pdf"
 GOLDEN_SAMPLE_ROOT = REPO_ROOT / "tests" / "fixtures" / "pdfs"
 GOLDEN_MANIFEST = GOLDEN_SAMPLE_ROOT / "manifest.csv"
-PROVIDER_ENTRYPOINT_MODULE = "retainpdf_pipeline.entrypoints.run_provider_case"
-RENDER_ENTRYPOINT_MODULE = "retainpdf_pipeline.entrypoints.run_render_only"
+PROVIDER_ENTRYPOINT = ("retainpdf_pipeline.ocr", "provider-case")
+RENDER_ENTRYPOINT_MODULE = "retainpdf_pipeline.render"
 
 
 def parse_args() -> argparse.Namespace:
@@ -358,7 +358,7 @@ def main() -> None:
             (job_root / subdir).mkdir(parents=True, exist_ok=True)
         provider_spec = specs_dir / "provider.golden.spec.json"
         _save_json(provider_spec, _provider_spec(args, job_root, source_pdf))
-        _run([sys.executable, "-m", PROVIDER_ENTRYPOINT_MODULE, "--spec", str(provider_spec)], env=os.environ.copy())
+        _run([sys.executable, "-m", *PROVIDER_ENTRYPOINT, "--spec", str(provider_spec)], env=os.environ.copy())
 
     if args.render_only:
         render_spec = specs_dir / "render.golden.spec.json"
