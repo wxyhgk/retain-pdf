@@ -255,6 +255,10 @@ Response:
 - `404` + `reason: "not_ready"` (`ocr/images not ready`) while the job has no Markdown
   image directory yet; a missing image inside an existing directory is a plain `404`
 
+For a job that reuses another job's OCR (its own `md/` is empty), images are served from the
+OCR job's `md/images`, located from the job's `normalized_document_json`. The
+`asset_urls` in `reader/regions` point here under the reusing job's own id.
+
 ## Download Bundle
 
 `GET /api/v1/jobs/{job_id}/files/output/all.zip` (removed: `/download`)

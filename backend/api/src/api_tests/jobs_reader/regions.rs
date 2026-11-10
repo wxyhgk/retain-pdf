@@ -487,3 +487,79 @@ async fn concurrent_single_region_requests_each_get_their_own_block() {
     assert_eq!(second["data"]["item_id"], "p001-b0002");
     assert_eq!(second["data"]["translated"]["text"], "译文 2");
 }
+
+/// 复用 OCR 的翻译任务：自己的 `md/` 是空的，图片在产出 OCR 的那个任务下面。
+/// 以前区域里的 asset_urls 是空的（前端打 Markdown zip 就没有图），按地址取图也是 404。
+#[tokio::test]
+async fn reader_regions_of_a_job_reusing_ocr_point_at_the_ocr_jobs_images() {
+    let state = test_state("reader-regions-reused-ocr");
+    let ocr_root = state.config.output_root.join("ocr-owner-job");
+    let normalized_path = ocr_root.join("ocr/normalized/document.v1.json");
+    fs::create_dir_all(normalized_path.parent().unwrap()).expect("normalized dir");
+    fs::write(
+        &normalized_path,
+        serde_json::to_vec(&json!({
+            "assets": {"asset-figure": {"uri": "md/images/page-1/imgs/fig.png"}},
+            "pages": [{
+                "page_index": 0,
+                "blocks": [{
+                    "block_id": "p001-b0001",
+                    "bbox": [90.0, 210.0, 410.0, 390.0],
+                    "source_text": "",
+                    "type": "image",
+                    "content": {"kind": "image", "asset_id": "asset-figure", "asset_ids": ["asset-figure"]}
+                }]
+            }]
+        }))
+        .expect("normalized json"),
+    )
+    .expect("write normalized");
+    let image_path = ocr_root.join("md/images/page-1/imgs/fig.png");
+    fs::create_dir_all(image_path.parent().unwrap()).expect("image dir");
+    fs::write(&image_path, b"image").expect("image");
+    let translation_root = state.config.output_root.join("reused-ocr-job");
+    fs::create_dir_all(translation_root.join("md")).expect("empty md dir");
+
+    let mut input = CreateJobInput::default();
+    input.runtime.job_id = "reused-ocr-job".to_string();
+    let mut job = JobSnapshot::new("reused-ocr-job".to_string(), input, vec!["python".to_string()]);
+    job.artifacts = Some(JobArtifacts {
+        job_root: Some("jobs/reused-ocr-job".to_string()),
+        normalized_document_json: Some("jobs/ocr-owner-job/ocr/normalized/document.v1.json".to_string()),
+        ..JobArtifacts::default()
+    });
+    state.db.save_job(&job).expect("save job");
+
+    let app = build_app(state);
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/api/v1/jobs/reused-ocr-job/reader/regions")
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("regions request"),
+        )
+        .await
+        .expect("regions response");
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload = read_json(response).await;
+    assert_eq!(
+        payload["data"]["items"][0]["asset_urls"],
+        json!(["/api/v1/jobs/reused-ocr-job/files/output/ocr/images/page-1/imgs/fig.png"])
+    );
+
+    let image_response = app
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri("/api/v1/jobs/reused-ocr-job/files/output/ocr/images/page-1/imgs/fig.png")
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("asset request"),
+        )
+        .await
+        .expect("asset response");
+    assert_eq!(image_response.status(), StatusCode::OK);
+}
