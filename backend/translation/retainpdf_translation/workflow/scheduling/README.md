@@ -14,5 +14,4 @@
 后续需要迁移的当前源文件：
 
 - `workflow/batch_runner.py`
-- `workflow/workers.py`
 - `workflow/batching/pending_units.py` 里和调度相关的部分

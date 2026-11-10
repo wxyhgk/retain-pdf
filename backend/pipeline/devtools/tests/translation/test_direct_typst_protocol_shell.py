@@ -5,11 +5,11 @@ from unittest.mock import Mock
 import pytest
 
 
-from retainpdf_translation.llm.placeholder_guard import TranslationProtocolError
-from retainpdf_translation.llm.placeholder_guard import canonicalize_batch_result
-from retainpdf_translation.llm.placeholder_guard import MathDelimiterError
-from retainpdf_translation.llm.placeholder_guard import result_entry
-from retainpdf_translation.llm.placeholder_guard import validate_batch_result
+from retainpdf_translation.llm.validation.errors import TranslationProtocolError
+from retainpdf_translation.llm.result_canonicalizer import canonicalize_batch_result
+from retainpdf_translation.llm.validation.errors import MathDelimiterError
+from retainpdf_translation.llm.result_payload import result_entry
+from retainpdf_translation.llm.result_validator import validate_batch_result
 from retainpdf_translation.llm.validation.errors import EmptyTranslationError
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 from retainpdf_translation.llm.shared.orchestration.direct_typst import translate_direct_typst_plain_text_with_retries

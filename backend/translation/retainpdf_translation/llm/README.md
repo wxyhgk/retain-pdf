@@ -29,7 +29,7 @@
 - 想看公式切窗、segment 路由：
   `shared/orchestration/segment_routing.py`
 - 想看占位符校验与降级原因：
-  `placeholder_guard.py`
+  `result_validator.py`（整批校验入口）、`validation/`（各类校验和错误类型）、`result_payload.py`（降级结果的形状）
 
 ## 目录地图
 
@@ -104,12 +104,11 @@
   - `shared/orchestration/plain_text_validation.py`
   - `shared/orchestration/sentence_level.py`
   - `shared/orchestration/transport.py`
-  - `shared/orchestration/keep_origin.py`
   - `shared/orchestration/metadata.py`
   - `shared/orchestration/common.py`
   - `shared/orchestration/segment_routing.py`
 - 公共逻辑
-  - `placeholder_guard.py`
+  - `result_validator.py`、`validation/`、`placeholder_transform.py`
   - `domain_context.py`
 
 ## 稳定入口与兼容入口
@@ -148,12 +147,12 @@
   `shared/orchestration/retrying_translator.py`
   -> `shared/orchestration/segment_routing.py`
   -> `shared/orchestration/single_item_flow.py`
-  -> `placeholder_guard.py`
+  -> `result_validator.py`
 
 ## 排错入口
 
 - placeholder 异常、keep-origin 降级：
-  `placeholder_guard.py`
+  `result_validator.py`、`validation/errors.py`
 - 批次重试、单 item 降级：
   `shared/orchestration/retrying_translator.py`
   `shared/orchestration/single_item_flow.py`

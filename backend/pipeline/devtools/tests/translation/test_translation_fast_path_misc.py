@@ -2,7 +2,8 @@ from dataclasses import replace
 from unittest import mock
 
 
-from retainpdf_translation.llm import placeholder_guard
+from retainpdf_translation.llm.validation.english_residue import looks_like_untranslated_english_output
+from retainpdf_translation.llm.validation.english_residue import should_force_translate_body_text
 from retainpdf_translation.llm.providers.deepseek.client import _extract_stream_delta_text
 from retainpdf_translation.llm.shared import cache
 from retainpdf_translation.llm.shared.orchestration import segment_routing
@@ -31,8 +32,8 @@ def test_citation_rich_body_text_still_forces_translation() -> None:
         "protected_source_text": source_text,
     }
 
-    assert placeholder_guard.should_force_translate_body_text(item)
-    assert placeholder_guard.looks_like_untranslated_english_output(item, source_text)
+    assert should_force_translate_body_text(item)
+    assert looks_like_untranslated_english_output(item, source_text)
 
 
 def test_apply_translation_salvages_reasoning_leak_final_answer() -> None:

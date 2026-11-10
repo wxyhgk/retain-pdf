@@ -5,7 +5,13 @@ import json
 import pytest
 
 
-from retainpdf_translation.llm import placeholder_guard
+from retainpdf_translation.llm.result_canonicalizer import canonicalize_batch_result
+from retainpdf_translation.llm.result_validator import validate_batch_result
+from retainpdf_translation.llm.validation.english_residue import looks_like_mixed_english_residue_output
+from retainpdf_translation.llm.validation.english_residue import looks_like_predominantly_english_output
+from retainpdf_translation.llm.validation.english_residue import looks_like_untranslated_english_output
+from retainpdf_translation.llm.validation.errors import MathDelimiterError
+from retainpdf_translation.llm.validation.errors import TranslationProtocolError
 from retainpdf_translation.llm.providers.deepseek import client as deepseek_client
 from retainpdf_translation.llm.shared import structured_models
 from retainpdf_translation.llm.shared import structured_output
@@ -67,8 +73,8 @@ def test_english_residue_detector_only_blocks_copy_dominant_english_output() -> 
         "The advancement of complex computer programs with faster computing power and material simulation methods "
         "remains important."
     )
-    assert not placeholder_guard.looks_like_untranslated_english_output(item, translated)
-    assert placeholder_guard.looks_like_predominantly_english_output(item, translated)
+    assert not looks_like_untranslated_english_output(item, translated)
+    assert looks_like_predominantly_english_output(item, translated)
 
 
 def test_english_residue_detector_only_warns_for_mixed_output_with_english_span() -> None:
@@ -86,9 +92,9 @@ def test_english_residue_detector_only_warns_for_mixed_output_with_english_span(
         "preformed tetrasubstituted carbons like tertiary alkyl bromides, which can be laborious to synthesize or unstable. "
         "后续底物也可以顺利偶联。"
     )
-    assert not placeholder_guard.looks_like_untranslated_english_output(item, translated)
-    assert placeholder_guard.looks_like_mixed_english_residue_output(item, translated)
-    assert placeholder_guard.looks_like_predominantly_english_output(item, translated)
+    assert not looks_like_untranslated_english_output(item, translated)
+    assert looks_like_mixed_english_residue_output(item, translated)
+    assert looks_like_predominantly_english_output(item, translated)
 
 
 def test_english_residue_detector_ignores_author_name_list() -> None:
@@ -101,7 +107,7 @@ def test_english_residue_detector_ignores_author_name_list() -> None:
             "Suhelen Vásquez-Céspedes, Sophia L. Shevick, and Ryan A. Shenvi*"
         ),
     }
-    assert not placeholder_guard.looks_like_untranslated_english_output(
+    assert not looks_like_untranslated_english_output(
         item,
         "Samantha A. Green, Steven W. M. Crossley, Jeishla L. M. Matos, "
         "Suhelen Vásquez-Céspedes, Sophia L. Shevick, and Ryan A. Shenvi*",
@@ -125,7 +131,7 @@ def test_english_residue_guard_ignores_reference_like_entries() -> None:
         "Gregor Bachmann and Vaishnavh Nagarajan. 下一个词预测的陷阱. "
         "In Forty-first International Conference on Machine Learning, ICML, 2024."
     )
-    assert not placeholder_guard.looks_like_untranslated_english_output(item, translated)
+    assert not looks_like_untranslated_english_output(item, translated)
 
 
 def test_formula_dense_body_with_partial_chinese_is_not_treated_as_english_residue() -> None:
@@ -145,8 +151,8 @@ def test_formula_dense_body_with_partial_chinese_is_not_treated_as_english_resid
         "对于扩散过程 <f1-a11/>，transition matrix <f2-b22/> 控制 token 更新，"
         "而 marginal probability <f3-c33/> 与 posterior estimator <f4-d44/> 共同稳定训练。"
     )
-    assert not placeholder_guard.looks_like_predominantly_english_output(item, translated)
-    assert not placeholder_guard.looks_like_mixed_english_residue_output(item, translated)
+    assert not looks_like_predominantly_english_output(item, translated)
+    assert not looks_like_mixed_english_residue_output(item, translated)
 
 
 def test_term_preserving_formula_body_is_not_treated_as_english_residue() -> None:
@@ -165,8 +171,8 @@ def test_term_preserving_formula_body_is_not_treated_as_english_residue() -> Non
         "B3LYP/6-311G** 计算给出的势垒为 <f1-a11/>，而 GC-FID 与 MP2/6-311G 测量结果提供了 "
         "<f2-b22/> 用于比较。"
     )
-    assert not placeholder_guard.looks_like_predominantly_english_output(item, translated)
-    assert not placeholder_guard.looks_like_mixed_english_residue_output(item, translated)
+    assert not looks_like_predominantly_english_output(item, translated)
+    assert not looks_like_mixed_english_residue_output(item, translated)
 
 
 def test_structured_output_repairs_trailing_commas_and_unquoted_keys() -> None:
@@ -253,7 +259,7 @@ def test_structured_json_keeps_legitimate_json_escapes() -> None:
 
 
 def test_placeholder_guard_canonicalizes_nested_json_shell() -> None:
-    result = placeholder_guard.canonicalize_batch_result(
+    result = canonicalize_batch_result(
         [{"item_id": "p030-b010", "translation_unit_protected_source_text": "Computational efficiency."}],
         {
             "p030-b010": {
@@ -276,8 +282,8 @@ def test_placeholder_guard_canonicalizes_nested_json_shell() -> None:
 
 
 def test_placeholder_guard_rejects_protocol_shell_output() -> None:
-    with pytest.raises(placeholder_guard.TranslationProtocolError):
-        placeholder_guard.validate_batch_result(
+    with pytest.raises(TranslationProtocolError):
+        validate_batch_result(
             [{"item_id": "p030-b010", "translation_unit_protected_source_text": "Computational efficiency."}],
             {
                 "p030-b010": {
@@ -289,8 +295,8 @@ def test_placeholder_guard_rejects_protocol_shell_output() -> None:
 
 
 def test_placeholder_guard_rejects_unbalanced_direct_typst_math_delimiters() -> None:
-    with pytest.raises(placeholder_guard.MathDelimiterError):
-        placeholder_guard.validate_batch_result(
+    with pytest.raises(MathDelimiterError):
+        validate_batch_result(
             [
                 {
                     "item_id": "p021-b005",
@@ -318,8 +324,8 @@ def test_placeholder_guard_rejects_direct_typst_following_context_math_bleed() -
         "translation_context_after": r"is positive for $ \lambda = 1 $. To do this we shall use",
     }
 
-    with pytest.raises(placeholder_guard.TranslationProtocolError):
-        placeholder_guard.validate_batch_result(
+    with pytest.raises(TranslationProtocolError):
+        validate_batch_result(
             [item],
             {
                 "p125-b018": {
@@ -331,8 +337,8 @@ def test_placeholder_guard_rejects_direct_typst_following_context_math_bleed() -
 
 
 def test_placeholder_guard_rejects_model_request_prompt_output() -> None:
-    with pytest.raises(placeholder_guard.TranslationProtocolError):
-        placeholder_guard.validate_batch_result(
+    with pytest.raises(TranslationProtocolError):
+        validate_batch_result(
             [
                 {
                     "item_id": "p014-b014",
@@ -350,7 +356,7 @@ def test_placeholder_guard_rejects_model_request_prompt_output() -> None:
 
 
 def test_placeholder_guard_allows_legitimate_source_text_request_sentence() -> None:
-    placeholder_guard.validate_batch_result(
+    validate_batch_result(
         [
             {
                 "item_id": "p014-b015",
