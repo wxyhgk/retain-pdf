@@ -204,7 +204,7 @@ def fitted_typography(block) -> tuple[float, float]:
     # 说明:这一支今天是**冗余**的。全仓 1475 个块查过，fit_to_box 为假时
     # fit_min_font_size_pt 一定是 0，下面的 min_font 会塌成等于 font_size_pt，二分本来
     # 就空转。留着是因为那个不变量没有任何地方写明，而一旦它不成立，这里会把正常字号
-    # 砸到下界。想删的话先去 emit.py / page_collision.py 确认。
+    # 砸到下界。想删的话先去 emit.py 确认。
     if not block.fit_to_box:
         return block.font_size_pt, block.font_size_pt * LINE_STEP_RATIO
 

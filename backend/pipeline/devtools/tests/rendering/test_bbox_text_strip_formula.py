@@ -10,7 +10,6 @@ from pathlib import Path
 
 import fitz
 
-from retainpdf_pipeline.render.source.preparation.redact_restore_formula import build_redact_restore_formula_pdf_copy
 from retainpdf_pipeline.render.source_cleanup.pdf.hit_test import RectIndex
 from retainpdf_pipeline.render.source_cleanup.pdf.hit_test import is_protected_text_op
 from retainpdf_pipeline.render.source_cleanup import build_bbox_text_stripped_pdf_copy
@@ -141,51 +140,6 @@ def test_bbox_text_strip_skips_formula_pages() -> None:
         assert result.changed is False
         assert output_pdf.exists() is False
         assert result.skipped_complex_page_indices == frozenset({0})
-
-
-def test_redact_restore_formula_wrapper_only_marks_changed_pages_precleaned() -> None:
-    with tempfile.TemporaryDirectory() as tmp:
-        root = Path(tmp)
-        source_pdf = root / "source.pdf"
-        output_pdf = root / "redact-restore.pdf"
-        doc = fitz.open()
-        page = doc.new_page(width=240, height=180)
-        page.insert_text((30, 50), "body text", fontsize=12)
-        page.insert_text((80, 90), "I/I0 = A1 + A2", fontsize=12)
-        doc.save(source_pdf)
-        doc.close()
-
-        result = build_redact_restore_formula_pdf_copy(
-            source_pdf_path=source_pdf,
-            output_pdf_path=output_pdf,
-            translated_pages={
-                0: [
-                    {
-                        "block_kind": "text",
-                        "block_type": "text",
-                        "bbox": [20.0, 30.0, 150.0, 65.0],
-                        "protected_translated_text": "正文",
-                    },
-                    {
-                        "block_kind": "formula",
-                        "block_type": "formula",
-                        "bbox": [70.0, 70.0, 200.0, 105.0],
-                        "protected_translated_text": "",
-                    },
-                ]
-            },
-        )
-
-        assert result.changed is True
-        assert result.redaction_rects == 1
-        assert result.formula_rects_restored == 0
-        restored = fitz.open(output_pdf)
-        try:
-            text = restored[0].get_text()
-        finally:
-            restored.close()
-        assert "body text" not in text
-        assert "I/I0 = A1 + A2" in text
 
 
 def test_bbox_text_strip_preserves_formula_zone_pixels() -> None:

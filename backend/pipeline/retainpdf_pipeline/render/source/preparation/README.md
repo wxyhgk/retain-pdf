@@ -11,7 +11,6 @@ bbox text strip 已迁移到 `render.source_cleanup`。不要在本目录
 ## 对外入口
 
 - `hidden_text_strip.py`
-- `redact_restore_formula.py`
 - `xobject_sanitize.py`
 
 ## 与 source_cleanup 的边界

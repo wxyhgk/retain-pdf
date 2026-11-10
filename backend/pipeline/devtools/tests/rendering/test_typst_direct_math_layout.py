@@ -1,41 +1,11 @@
 
-import fitz
 
 
-from retainpdf_pipeline.foundation.config import fonts
 from retainpdf_pipeline.render.layout.payload.blocks import build_render_blocks
 from retainpdf_pipeline.render.layout.payload.continuation_split import split_protected_text_for_boxes
 from retainpdf_pipeline.render.layout.payload.prepare import prepare_render_payloads_by_page
-from retainpdf_pipeline.render.source.dev_overlay.text_draw import _build_direct_draw_tokens
-from retainpdf_pipeline.render.source.dev_overlay.text_draw import _fit_segment_layout
 from retainpdf_pipeline.render.layout.payload.suspicious_ocr import detect_and_drop_suspicious_ocr_glued_blocks
 from retainpdf_pipeline.render.output.typst.block_renderer import build_typst_block
-
-
-def test_direct_math_layout_shrinks_font_to_fit_rect() -> None:
-    font = fitz.Font(fontfile=str(fonts.DEFAULT_FONT_PATH))
-    rect = fitz.Rect(0, 0, 90, 30)
-    markdown_text = "观察到 $\\mathrm{Ph(i-PrO)SiH_2}$ (6) 的消耗速率快于其他硅烷"
-
-    tokens = _build_direct_draw_tokens(markdown_text, font)
-    font_size, placements = _fit_segment_layout(rect, tokens, font)
-
-    assert placements
-    assert font_size < fonts.DEFAULT_FONT_SIZE
-    assert font_size >= fonts.MIN_FONT_SIZE
-
-
-def test_direct_math_layout_keeps_formula_token_atomic_on_wrap() -> None:
-    font = fitz.Font(fontfile=str(fonts.DEFAULT_FONT_PATH))
-    rect = fitz.Rect(0, 0, 80, 80)
-    markdown_text = "前文 $\\mathrm{Ph(i-PrO)SiH_2}$ 后文"
-
-    tokens = _build_direct_draw_tokens(markdown_text, font)
-    _font_size, placements = _fit_segment_layout(rect, tokens, font)
-
-    formula_placements = [placement for placement in placements if placement["token"]["kind"] == "formula"]
-    assert len(formula_placements) == 1
-    assert formula_placements[0]["token"]["text"] == r"\mathrm{Ph(i-PrO)SiH_2}"
 
 
 def test_suspicious_ocr_skip_detector_does_not_drop_continuation_direct_typst_block() -> None:
