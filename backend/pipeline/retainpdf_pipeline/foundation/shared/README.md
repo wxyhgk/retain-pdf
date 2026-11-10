@@ -1,24 +1,23 @@
 # Shared 说明
 
-`scripts/foundation/shared` 放的是整套脚本都会依赖的基础能力。
+`retainpdf_pipeline/foundation/shared` 放的是流水线各阶段都会依赖的基础能力。
 
 这一层不做 OCR、翻译或渲染业务逻辑，主要负责把“共用的东西”集中起来，避免路径、环境变量和默认参数在多个脚本里重复定义。
 
 ## 主要文件
 
 - `config.py`
-  过渡入口。内部实现已经拆到 `scripts/foundation/config/`，新代码应直接依赖拆分后的模块。
-- `input_resolver.py`
-  负责把输入目录解析成明确的 `source_json/source_pdf`。
+  以前的兼容转发，内部实现已经拆到 `foundation/config/`；现在没有代码 import 它，不要再用。
 - `job_dirs.py`
   负责解析和校验标准 job 目录契约：`source/ocr/translated/rendered/artifacts/logs`。
 - 读密钥（原 `local_env.py`）已经下放到底座包 `retainpdf_base.local_env`，默认目录 `backend/pipeline/.env/`。
-- `prompt_loader.py`
-  负责从 `scripts/foundation/prompts/` 加载可编辑提示词模板。
-- `job_cleanup.py`
-  负责输出目录清理相关逻辑。
+- 提示词模板和加载（`prompt_loader.py`、`prompts/`）在翻译包 `retainpdf_translation` 里。
 - `stage_specs.py`
   负责阶段 spec schema 常量和 JSON loader；`credential_ref` 解析在 `retainpdf_base.credentials`。
+- `structured_errors.py`
+  worker 失败时把异常归类成结构化错误（`run_with_structured_failure`），Rust 按它展示失败原因。
+- `tee_output.py`
+  把 worker 的 stdout/stderr 同时写进日志文件。
 
 ## 在总流程中的位置
 
@@ -26,13 +25,12 @@
 
 - Stage worker / 编排层用它解析 spec、凭证引用和标准任务目录
 - OCR provider 实现层用它读取 token、环境配置和输出路径
-- 翻译层用它加载提示词和默认配置
 - 渲染层用它读取字体、压缩和版式参数
 - Rust/Python 编排层用它解析 `job_root/specs/*.spec.json`
 
 ## 一个重要约定
 
-当前 `config.py` 里有一部分是“进程级可变调参”，例如：
+`foundation/config/layout.py` 里有一部分是“进程级可变调参”，例如：
 
 - `BODY_FONT_SIZE_FACTOR`
 - `BODY_LEADING_FACTOR`
@@ -47,11 +45,9 @@
 
 ## Stage Spec 与凭证约定
 
-当前阶段 worker 已统一收敛到：
+当前阶段 worker 已统一收敛到（Rust 拼命令，见 `backend/packages/retainpdf-data/src/worker_command/entrypoints.rs`）：
 
-`retainpdf-pipeline <subcommand> --spec <job_root>/specs/<stage>.spec.json`
-
-未安装 retainpdf-pipeline 的桌面兼容目录回退到 python backend/pipeline/entrypoints/run_*.py --spec <job_root>/specs/<stage>.spec.json。
+`<python> -m retainpdf_pipeline.<阶段模块> [子命令] --spec <job_root>/specs/<stage>.spec.json`
 
 `stage_specs.py` 当前维护的 schema 版本包括：
 
@@ -74,9 +70,9 @@
 
 ## 使用建议
 
-- 新代码优先直接看 `scripts/foundation/config/` 下按职责拆分后的配置。
+- 新代码直接用 `foundation/config/` 下按职责拆分后的配置。
 - 上层脚本不要自己拼 `output/<job-id>/...` 路径，优先走 `job_dirs.py`
 - Python worker 只消费 stage spec，不再暴露业务长参数入口
 - 如果是阶段 worker，优先新增/消费 `stage_specs.py` 里的 schema，而不是继续扩 CLI 参数
 - 密钥读取不要散落在业务代码里，优先走 `retainpdf_base.local_env`
-- 提示词不要硬编码在业务模块里，优先走 `prompt_loader.py`
+- 提示词不要硬编码在业务模块里，放进翻译包的 `prompts/`、走它的 `prompt_loader.py`

@@ -20,6 +20,6 @@
 - 不决定翻译文字怎么排版。
 - 不执行文本层删除策略。
 - 不调用 Typst 编译。
-- 不替代 `page_profile/` 做全局页面分类。
+- 不替代 `analysis/profile/` 做全局页面分类。
 - 不从 `source.cleanup` 借背景重建参数或采样 helper；背景图路径的参数放在
   本目录内。
