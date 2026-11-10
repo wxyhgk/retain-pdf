@@ -55,7 +55,6 @@ TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "README.md",
     # 翻译引擎 agent 的整书流程（translation.engine=agent），和 book_flow.py 同一层
     "agent_flow.py",
-    "batch_plan.py",
     "batch_runner.py",
     "book_flow.py",
     "editorial.py",
@@ -72,7 +71,6 @@ TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "revision.py",
     "stages.py",
     "translation_workflow.py",
-    "workers.py",
 }
 TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
     "checkpoint": (
@@ -130,20 +128,10 @@ TRANSLATION_WORKFLOW_PRIVATE_IMPORT_EXCEPTIONS: dict[Path, tuple[str, ...]] = {
     Path("workflow/stages.py"): (
         "retainpdf_translation.workflow.phases.repair._agent_repair_limit_from_env",
     ),
-    Path("workflow/workers.py"): (
-        "retainpdf_translation.workflow.scheduling.allocation._",
-    ),
-    Path("workflow/batch_plan.py"): (
-        "retainpdf_translation.workflow.scheduling.allocation._",
-    ),
     Path("workflow/batch_runner.py"): (
         "retainpdf_translation.workflow.batching.executor._translate_batch_or_keep_origin",
         "retainpdf_translation.workflow.scheduling.failures._failed_results_for_unhandled_batch_exception",
         "retainpdf_translation.workflow.scheduling.tail_retry._",
-    ),
-    Path("workflow/batch_plan.py"): (
-        "retainpdf_translation.workflow.batching.plan._",
-        "retainpdf_translation.workflow.scheduling.allocation._",
     ),
     Path("workflow/execution_plan.py"): (
         "retainpdf_translation.workflow.scheduling.allocation._adaptive_floor_limit",
@@ -265,7 +253,6 @@ TRANSLATION_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_translation.services.context",
         "retainpdf_translation.core.context",
         "retainpdf_translation.llm.shared.control_context",
-        "retainpdf_translation.llm.style_hints",
         "retainpdf_translation.services.policy",
         "retainpdf_translation.services.terms",
     ),

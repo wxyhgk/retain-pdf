@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-"""Compatibility exports for book-level translation phases.
+"""Book-level translation phases, gathered in one place for the book flows.
 
-New phase implementations live under services.translation.workflow.phases.
-Keep this module thin so existing imports continue to work while the workflow
-package is split by responsibility.
+The implementations live under ``workflow/phases/``; ``book_flow`` and
+``streaming_flow`` import them from here. Keep this module a thin re-export.
 """
 
 from retainpdf_translation.workflow.phases.batch_translation import run_translation_batch_stage

@@ -93,7 +93,7 @@ def run_translation_execution_plan(
     *,
     checkpoint_store: CheckpointStore | None = None,
 ) -> dict:
-    # Import lazily to keep services.translation.workflow importable without pulling runtime.pipeline.
+    # Import lazily so importing retainpdf_translation.workflow does not load the whole book flow.
     from retainpdf_translation.workflow.book_flow import translate_book_with_global_continuations
 
     glossary_entries = plan.glossary_entries

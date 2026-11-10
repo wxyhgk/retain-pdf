@@ -1,7 +1,7 @@
 
 
 
-from retainpdf_translation.llm.placeholder_guard import _is_reference_like_item
+from retainpdf_translation.llm.validation.english_residue import _is_reference_like_item
 
 
 def test_placeholder_guard_reference_detection_uses_top_level_contract_fields() -> None:

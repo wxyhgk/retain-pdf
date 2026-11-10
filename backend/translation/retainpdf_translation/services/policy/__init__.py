@@ -1,6 +1,5 @@
 """Policy subsystem for translation payload filtering and mode control."""
 
-from retainpdf_translation.services.policy.body_text_filter import find_narrow_body_noise_item_ids
 from retainpdf_translation.services.policy.config import TranslationPolicyConfig
 from retainpdf_translation.services.policy.config import build_book_translation_policy_config
 from retainpdf_translation.services.policy.config import build_translation_policy_config
@@ -25,7 +24,6 @@ __all__ = [
     "build_book_translation_policy_config",
     "build_translation_policy_config",
     "extract_ocr_preview_text",
-    "find_narrow_body_noise_item_ids",
     "is_keep_origin_allowed_by_policy",
     "resolve_reference_cutoff",
     "should_apply_after_last_title_cutoff",

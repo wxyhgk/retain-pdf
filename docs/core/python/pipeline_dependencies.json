@@ -888,6 +888,7 @@
         "devtools/tests/translation/test_page_local_optimization.py",
         "devtools/tests/translation/test_partial_results_stay_out_of_the_cache.py",
         "devtools/tests/translation/test_pipeline_events_protocol.py",
+        "devtools/tests/translation/test_placeholder_aliases.py",
         "devtools/tests/translation/test_placeholder_guard_contract_fields.py",
         "devtools/tests/translation/test_placeholder_token_ownership.py",
         "devtools/tests/translation/test_prompt_input_snapshot.py",

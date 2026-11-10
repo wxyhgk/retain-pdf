@@ -1,5 +1,5 @@
 """Whole-book translation phase implementations.
 
-This package is the future split point for the current workflow/stages.py file.
+``workflow/stages.py`` re-exports these for the book flows.
 Keep phase modules focused on one book-level stage at a time.
 """

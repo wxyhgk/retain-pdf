@@ -2,7 +2,7 @@
 
 
 from retainpdf_translation.services.classification.page_classifier import _candidate_record
-from retainpdf_translation.llm.style_hints import structure_style_hint
+from retainpdf_translation.core.text_rules import structure_style_hint
 
 
 def test_structure_style_hint_prefers_top_level_structure_role() -> None:

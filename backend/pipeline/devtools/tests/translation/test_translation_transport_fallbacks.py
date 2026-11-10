@@ -205,7 +205,7 @@ class TranslationTransportFallbackTests(unittest.TestCase):
             "retainpdf_translation.llm.shared.control_context",
         )
         placeholder_module = import_module(
-            "retainpdf_translation.llm.placeholder_guard",
+            "retainpdf_translation.llm.validation.errors",
         )
         context = control_module.build_translation_control_context()
         batch = [
