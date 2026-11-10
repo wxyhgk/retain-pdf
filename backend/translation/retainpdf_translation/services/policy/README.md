@@ -1,6 +1,6 @@
 # Policy 说明
 
-`scripts/translate/policy/` 是翻译策略层的正式实现目录。
+`retainpdf_translation/services/policy/` 是翻译策略层的正式实现目录。
 
 主要包括：
 
@@ -15,5 +15,5 @@
 
 ## 设计原则
 
-- 新代码统一从 `translate.services.policy.*` 导入。
+- 新代码统一从 `retainpdf_translation.services.policy.*` 导入。
 - 策略层只处理 payload 级别判断，不直接碰 PDF 或渲染。

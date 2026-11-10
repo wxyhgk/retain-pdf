@@ -1,8 +1,12 @@
 # Pipeline 目录说明
 
-`retainpdf_pipeline/runtime/pipeline/` 只保留本地 book 串联（`book_pipeline.py`），负责把 OCR 标准化产物、翻译流程和渲染流程在本地串成一条稳定的总线。生产 book 编排由 Rust 顺序调 `ocr / translate / render` 三进程，不走这里。
+`retainpdf_pipeline/runtime/pipeline/` 放两样跨阶段的东西（render 阶段不能 import 翻译包，跨阶段的编排只能放在这一层）：
 
-这里不承载具体的 OCR provider 解析、翻译模型调用或 PDF 低层渲染细节，而是负责“怎么把这些能力按正确顺序组织起来”。
+- `render_only_pipeline.py`：**生产渲染进程的入口**。`python -m retainpdf_pipeline.render` 就转到这里：渲染前按 spec 精修译文
+  （`refine.mode != off` 时），跑 render-only，成功后重算一次翻译 QA。精修和 QA 失败只记日志，不影响渲染结果。
+- `book_pipeline.py`：本地 `retainpdf-pipeline book` 在一个进程里把翻译和渲染串起来。生产上阶段顺序由 Rust 编排，不走这里。
+
+这里不承载具体的 OCR provider 解析、翻译模型调用或 PDF 低层渲染细节。
 
 ## 阶段契约
 
@@ -52,22 +56,16 @@
 
 ## 模块分工
 
+- `render_only_pipeline.py`
+  生产渲染进程入口：精修 → `render/workflow/render_only.py` → 翻译 QA 重算（后两者经 `retainpdf_translation.public`）。
 - `book_pipeline.py`
-  统一编排入口。对外保留最稳定的调用面，负责把翻译阶段和渲染阶段串起来，并返回整条流程的汇总结果。
-- `translation_stage.py`
-  只负责翻译阶段。输入 `document.v1.json` 和输出目录，完成页范围裁剪、学术模式策略装配和全书翻译，输出逐页 translation payload。
-- `render_stage.py`
-  只负责渲染阶段。输入源 PDF 和翻译产物，按 `overlay`、`typst`、`dual` 等模式生成最终 PDF。
-- `services/pipeline_shared/` 与底座包 `retainpdf_base`
-  不属于 `runtime/pipeline/`，但它们承载跨阶段共享的 summary（前者）和 stdout contract、统一 `pipeline_events.jsonl` 事件流、JSON IO（后者）；pipeline 应依赖这层，而不是回头依赖某个 provider 模块的共享 helper。
-- `render_inputs.py`
-  只负责校验 Render-only 调用协议，把 `source_pdf_path + translations_dir/translation_manifest_path` 规范化成渲染阶段可消费的稳定输入。
-- `render_mode.py`
-  只负责页范围和 `auto` 模式判定，包括是否更适合走可编辑 PDF 路径。
-- `translation_loader.py`
-  只负责读取和筛选翻译结果文件，把 per-page translation JSON 组织成渲染阶段可消费的数据结构。
-- `translation_stage.py`
-  负责全书翻译阶段的 pipeline facade，内部通过 `translate.workflow` 执行 continuation、策略应用、批量翻译、结果回填和落盘。
+  本地整书串联，`run_book_pipeline(...)` 把翻译阶段和渲染阶段串起来并返回汇总结果。
+- `__init__.py`
+  懒加载转发 `book_pipeline` 里的几个名字（见下面「对外稳定入口」）。
+
+阶段门面不在这里：翻译阶段门面是 `translate/translation_stage.py`，渲染阶段门面、翻译产物读取、render-only
+输入协议、页范围和模式判定在 `render/`（`render_stage.py`、`translation_loader.py`、`render_inputs.py`、`render_mode.py`）。
+跨阶段共享的 summary 在 `services/pipeline_shared/`，stdout 协议、`pipeline_events.jsonl` 事件流、JSON IO 在底座包 `retainpdf_base`。
 
 ## 协作方式
 
@@ -93,15 +91,17 @@ Rust API 的完整 provider-backed workflow 也按这个边界串联：
 
 ## 对外稳定入口
 
-当前建议优先使用下面这些入口：
+`retainpdf_pipeline.runtime.pipeline` 懒加载转发这些名字（实现分别在 `book_pipeline.py`、`translate/translation_stage.py`、
+`render/render_stage.py`、`render/render_mode.py`，`resolve_page_range` 来自 `retainpdf_translation.public`）：
 
 - `run_book_pipeline(...)`
 - `translate_book_pipeline(...)`
 - `build_book_pipeline(...)`
 - `build_book_from_translations(...)`
-- `run_render_stage(...)`
 - `resolve_page_range(...)`
 - `is_editable_pdf(...)`
+
+`run_render_stage(...)` 在 `render/render_stage.py`，直接从那里 import。
 
 补充约定：
 
@@ -117,7 +117,7 @@ Rust API 的完整 provider-backed workflow 也按这个边界串联：
 
 ## 调用建议
 
-- CLI、API、集成层优先只依赖 `book_pipeline.py`
+- 本地 CLI、集成层要整书串联时依赖 `book_pipeline.py`；生产走 Rust 拉起的各阶段进程
 - OCR 阶段完成后再进入 `runtime/pipeline/`；不要把 provider raw 处理逻辑塞回这里
 - 只翻译时调用 `translate_book_pipeline(...)`
 - 只渲染时调用 `build_book_pipeline(...)` 或 `run_render_stage(...)`

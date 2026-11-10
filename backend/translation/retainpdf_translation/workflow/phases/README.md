@@ -1,18 +1,18 @@
 # 翻译阶段
 
-这个目录用于承接全书级翻译阶段实现。
-
-计划拆分：
+全书级翻译的各个阶段，由 `workflow/stages.py` 汇总给 `book_flow`、`streaming_flow` 用：
 
 - `continuation.py`
   初始连续段整理，以及 provider 辅助的跨栏/跨页连续段复核。
+- `continuation_memo.py`
+  连续段复核结论落盘，重试时接着用。
 - `policy.py`
   页面策略和块分类阶段。
 - `batch_translation.py`
-  批量翻译阶段适配层。它应该调用 scheduling 代码，而不是自己管理队列细节。
+  批量翻译阶段适配层。调 `scheduling/`、`batch_runner.py`，自己不管队列细节。
 - `repair.py`
   乱码重建、agent 修复和最终未翻译收口。
 - `events.py`
-  如果事件格式继续增长，稳定的阶段事件 helper 放这里。
+  阶段事件和进度文案。
 
-不要把 provider HTTP client、render prewarm 或页面文件发现逻辑放到这里。
+不要把 provider HTTP client、渲染预热或页面文件发现逻辑放到这里。

@@ -2,7 +2,7 @@
 
 > 维护者文档：只讲 MinerU 两条输入如何变成 `document.v1`。
 > 背景与全链路约定见 [document_schema README](../../README.md) 与
-> [MinerU 链路 README](../../../mineru/README.md)，本文不重复。
+> [MinerU 链路 README](../../../mineru_provider/README.md)，本文不重复。
 
 权威符号按节标注；凡与代码不一致，以代码为准。
 
@@ -154,7 +154,7 @@ RetainPDF 策略在 `projection.py:project_mineru_block`。
   路径清洗 `normalize_mineru_image_path`：反斜杠转义、去 `./` 前缀、拒绝绝对路径/URL/
   `..`、剥离 `images/` 或 `md/images/` 前缀。真正的 `content.asset_id` 与顶层
   `assets` 由 `contract_v1._build_content/_collect_assets` 派生，文件落地链接由
-  `mineru/artifacts.py`（消费 `provider_image_paths` + 同一清洗函数）完成。
+  `mineru_provider/artifacts.py`（消费 `provider_image_paths` + 同一清洗函数）完成。
 - **代码**：`preserve_lines` + `\n` 连接原文；kind=`code` 使组挂接与翻译策略按非文本处理。
 
 ## 5. 校验 / 报告字段与下游信任判断

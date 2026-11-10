@@ -1,6 +1,6 @@
 # Config 分层说明
 
-`scripts/foundation/config` 用来集中管理配置，避免共享层继续承载所有职责。
+`retainpdf_pipeline/foundation/config` 用来集中管理配置，避免共享层继续承载所有职责。
 
 ## 拆分结果
 
@@ -12,21 +12,17 @@
   只放运行时默认项，例如默认页码、默认输出名、PDF 压缩 DPI。
 - `layout.py`
   只放版式调参相关配置，以及 `apply_layout_tuning(...)`。
+- `external_tools.py`
+  定位不随 Python 包安装的外部程序（目前只有 typst）。
 
-## 兼容策略
+## 怎么 import
 
-当前仍保留 `scripts/foundation/shared/config.py` 作为兼容 facade。
-
-历史代码里常见的旧写法是：
+直接从拆分后的模块取：
 
 ```python
-from foundation.config.paths import OUTPUT_DIR
-from foundation.config.layout import apply_layout_tuning
+from retainpdf_pipeline.foundation.config.fonts import DEFAULT_FONT_PATH
+from retainpdf_pipeline.foundation.config.layout import apply_layout_tuning
 ```
 
-后续如果要逐步去耦合，可以再把各模块的 import 迁移到更明确的来源：
-
-- 路径相关优先用 `foundation.config.paths`
-- 字体相关优先用 `foundation.config.fonts`
-- 版式调参优先用 `foundation.config.layout`
-- 运行默认值优先用 `foundation.config.runtime`
+路径从底座包取（`retainpdf_base.paths`、`retainpdf_base.output_layout`）。
+`foundation/shared/config.py` 是以前的兼容转发，现在没有代码 import 它，不要再用。

@@ -201,7 +201,7 @@
 - 翻译/渲染主链路优先消费 `document.v1.json`
 - `document.v1.report.json` 用于查 adapter 探测、默认值补齐和 schema 校验摘要
 - Rust 主工作流调用的 normalize worker 现在要求 `--spec <job_root/specs/normalize.spec.json>`
-- 如果只是本地手动验证 schema / adapter，应该走 `validate_document_schema.py`（script-mode，仅桌面兼容，无 console 等价物）
+- 如果只是本地手动验证 schema / adapter，见下面「检查入口」
 
 适配器里的顺序（`adapters.py` 的 `adapt_payload_to_document_v1_with_report`）：各家 builder → 补默认值 → 补契约字段 → 把略微超出页边的块夹回页内
 （`page_bounds.py`，每条边超出不超过页面边长的 1%；块的行、片段跟着收进块里；夹过的块 `metadata.page_overflow_clamped` 记原来的框，文档
@@ -354,46 +354,20 @@ Paddle 当前 rich-content trace 也已经继续拆分成三层：
 
 ## 检查入口
 
-长期检查入口（script-mode，仅桌面兼容，无 console 等价物）：
-
-- `backend/pipeline/retainpdf_pipeline/entrypoints/validate_document_schema.py`（script-mode，仅桌面兼容，无 console 等价物）
-- `backend/pipeline/devtools/tests/document_schema/regression_check.py`
-
-现在支持两种用法：
-
-1. 直接校验已经生成好的 `document.v1.json`
-2. 对 raw OCR JSON 执行 `adapter -> defaults -> validation`，并输出 report
-
-示例（script-mode，仅桌面兼容，无 console 等价物）：
-
-```bash
-python backend/pipeline/retainpdf_pipeline/entrypoints/validate_document_schema.py output/.../ocr/normalized/document.v1.json # script-mode，仅桌面兼容，无 console 等价物
-python backend/pipeline/retainpdf_pipeline/entrypoints/validate_document_schema.py output/.../ocr/unpacked/layout.json --adapt --document-id demo --write-report /tmp/document-schema-report.json # script-mode，仅桌面兼容，无 console 等价物
-```
+- 整套回归：`backend/pipeline/devtools/tests/document_schema/regression_check.py`
+  （`--write-report <path>` 存汇总报告），让 detector、adapt、validation、extractor smoke 一次过。
+- 单份文档：`validator.py` 的 `validate_document_path(path)` / `validate_document_payload(document)` 校验，
+  `build_validation_report(document)` 出摘要；对原始 OCR JSON 先走 `adapters.py` 的
+  `adapt_path_to_document_v1_with_report(...)`，拿到文档和 report。
+- 真实任务：`retainpdf-pipeline normalize-ocr --spec <job_root>/specs/normalize.spec.json` 和生产同一条路径，
+  产出 `document.v1.json` 和 `document.v1.report.json`。
 
 report 里当前会包含：
 
-- 输入路径
-- adapter/provider 探测结果
+- adapter/provider 探测结果（`normalization`）
 - 默认值补齐统计
-- schema 校验摘要
-
-`validate_document_schema.py --write-report`（script-mode，仅桌面兼容，无 console 等价物）当前约定：
-
-- `mode = "adapt"` 时：
-  - `input_path`
-  - `normalization`
-  - `normalization_summary`
-  - `validation`
-- `mode = "validate"` 时：
-  - `input_path`
-  - `validation`
-
-也就是说：
-
-- 完整 adapter / defaults / detection 细节看 `normalization`
-- 稳定轻量摘要优先看 `normalization_summary`
-- 顶层校验结果看 `validation`
+- 稳定轻量摘要（`normalization_summary`）
+- schema 校验摘要（`validation`）
 
 统一消费入口：
 
@@ -404,7 +378,7 @@ report 里当前会包含：
 约定：
 
 - Python 侧如果只是想展示 provider / detected provider / pages observed / blocks observed / defaulted field counts / validation 摘要，优先走这两个 helper
-- 不要在 `mineru/summary.py`、排错脚本或后续 API 层里各自重新手写 `report['defaults']['pages_seen']` 这类读取
+- 不要在排错脚本或后续 API 层里各自重新手写 `report['defaults']['pages_seen']` 这类读取
 - 需要完整原始 report 时，再直接使用 report dict，本身不阻止保留原始字段
 
 回归 smoke 检查：
