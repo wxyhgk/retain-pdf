@@ -661,7 +661,8 @@
         "devtools/tests/translation/test_translation_revision.py",
         "devtools/tests/translation/test_translation_validation_protocols.py",
         "devtools/tests/translation/test_upstream_resilience.py",
-        "devtools/tests/translation/test_usage_ledger.py"
+        "devtools/tests/translation/test_usage_ledger.py",
+        "devtools/tests/translation/test_zero_translated_failure_cause.py"
       ],
       "runtime_required": false,
       "devtool_required": false
@@ -990,7 +991,8 @@
         "devtools/tests/translation/test_translation_validation_protocols.py",
         "devtools/tests/translation/test_upstream_resilience.py",
         "devtools/tests/translation/test_usage_ledger.py",
-        "devtools/tests/translation/test_validation_boundaries.py"
+        "devtools/tests/translation/test_validation_boundaries.py",
+        "devtools/tests/translation/test_zero_translated_failure_cause.py"
       ],
       "runtime_required": true,
       "devtool_required": true

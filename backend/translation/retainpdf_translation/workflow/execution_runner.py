@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+from collections import Counter
 from typing import TYPE_CHECKING
 from retainpdf_translation.llm.shared.executor_context import raise_if_executor_failed
 
@@ -14,8 +16,65 @@ from retainpdf_translation.services.terms import summarize_glossary_usage
 from retainpdf_translation.workflow.translation_workflow import page_translation_path
 from retainpdf_translation.workflow.checkpoint import TranslationCheckpointSession
 from retainpdf_translation.workflow.checkpoint import ResumeCandidateFingerprintMismatch
+from retainpdf_translation.workflow.checkpoint import NothingTranslatedError
 from retainpdf_translation.workflow.checkpoint import discard_copied_resume_candidate
 from retainpdf_translation.workflow.checkpoint.store import CheckpointStore
+
+_REQUEST_ID = re.compile(r',?\s*"request_id"\s*:\s*"[^"]*"')
+_ITEM_ERROR_KEYS = ("final_recovery_error", "agent_repair_error")
+
+
+def _item_failure_text(item: dict) -> str:
+    diagnostics = item.get("translation_diagnostics") or {}
+    for key in _ITEM_ERROR_KEYS:
+        text = str(diagnostics.get(key) or "").strip()
+        if text:
+            return text
+    trace = diagnostics.get("error_trace") or []
+    if trace and isinstance(trace[-1], dict):
+        last = trace[-1]
+        return f"{last.get('code', '')}: {last.get('message', '')}".strip(": ")
+    return ""
+
+
+def dominant_failure_cause(translated_pages_map: dict[int, list[dict]]) -> str:
+    """失败块里最常见的那种上游错误，附上占比。
+
+    按第一段（` | ` 之前，如 `HTTPError: 401 Client Error: ...`）归类；每次都不同的
+    request_id、request_meta 不参与，也不报出来，重复追加的提示只留一份。
+
+    整份文档一块都没译成时，checkpoint 只知道「零产出」；真正的原因（Key 失效、
+    欠费、地址写错）散在每个块的诊断里。不带上它，结构化失败只能归成「未识别根因、
+    可重试」，用户照着重试只会再失败一次。
+    """
+    causes: Counter[str] = Counter()
+    samples: dict[str, str] = {}
+    failed = 0
+    for items in translated_pages_map.values():
+        for item in items:
+            if str(item.get("final_status") or "") != "failed":
+                continue
+            failed += 1
+            text = _item_failure_text(item)
+            if not text:
+                continue
+            parts = [part.strip() for part in text.split(" | ")]
+            causes[parts[0]] += 1
+            samples.setdefault(parts[0], _clean_sample(parts))
+    if not causes:
+        return ""
+    key, count = causes.most_common(1)[0]
+    return f"{samples[key]} ({count}/{failed} failed items)"
+
+
+def _clean_sample(parts: list[str]) -> str:
+    kept: list[str] = []
+    for part in parts:
+        if not part or part.startswith("request_meta=") or part in kept:
+            continue
+        kept.append(_REQUEST_ID.sub("", part))
+    return " | ".join(kept)
+
 
 def _record_committed_pages(pages):
     diagnostics = get_active_translation_run_diagnostics()
@@ -123,7 +182,13 @@ def run_translation_execution_plan(
         # 收尾失败会把 status="complete" 的 manifest 留在输出目录里——渲染阶段
         # 的 load_translated_pages 只认这个文件，会把一份没翻译完的文档当成
         # 完整结果渲染出去。
-        checkpoint.assert_committable()
+        try:
+            checkpoint.assert_committable()
+        except NothingTranslatedError as exc:
+            cause = dominant_failure_cause(translated_pages_map)
+            if not cause:
+                raise
+            raise NothingTranslatedError(f"{exc}; most common upstream error: {cause}") from exc
         manifest_path = write_translation_manifest(
             request.output_dir,
             {
