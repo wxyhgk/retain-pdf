@@ -74,7 +74,9 @@ CSV parse helper request:
 
 CSV parse helper response returns normalized `entries`, `entry_count` and `duplicate_count` (rows dropped by
 deduplication; added 2026-10-22). It accepts plain text only and detects comma, tab or semicolon separators using
-quoted-field parsing, recognized headers and consistent column counts. Without a header row the columns are `source,target,note`. Errors carry the line
+quoted-field parsing: a recognized header wins, then splitting into more than one column; tab is preferred
+when it splits the first row (Excel copies are unquoted TSV, so commas in a note do not switch it to CSV; since
+2026-11-09), then consistent column counts. Without a header row the columns are `source,target,note`. Errors carry the line
 number (`row 3: ...`). Rows where source, target, note and context are all empty are skipped. A cell made of `'`
 followed by `=`, `+`, `-`, `@`, tab or CR loses that `'` (added by the export).
 
