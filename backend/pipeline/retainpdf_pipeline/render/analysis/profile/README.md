@@ -12,7 +12,6 @@
 
 - `builder.py`
 - `models.py`
-- `registry.py`
 
 ## 不该做什么
 

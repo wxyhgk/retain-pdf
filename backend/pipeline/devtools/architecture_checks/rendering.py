@@ -551,7 +551,7 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
         for module in imported_modules(path):
             if module in dev_overlay_compat_imports:
                 errors.append(
-                    f"{rel_path}: cleanup dev overlay compatibility path was removed; import from retainpdf_pipeline.render.source.dev_overlay instead of '{module}'"
+                    f"{rel_path}: PyMuPDF direct-draw dev overlay was removed; do not import '{module}'"
                 )
                 break
 

@@ -45,7 +45,6 @@ cleanup 子包内部的稳定入口：
 - 基础矩形工具：`source/rects.py`
 - translated item 读取：`source/items.py`
 - PDF 文档操作：`source/document_ops.py`
-- dev overlay：`source/dev_overlay/`
 
 ## 实现分组
 
@@ -88,8 +87,7 @@ cleanup 子包内部的稳定入口：
 ### Legacy / Dev Overlay
 - 旧 `text_layer.py` / `visual_cover.py` 兼容包装已移除；调用方必须使用
   `routes.py` 或具体执行模块。
-- 旧 `text_draw.py` / `builders.py` 兼容包装已移除；`text_draw.py` 的实现在
-  `source/dev_overlay/`，`builders.py`（`build_dev_pdf`）随单页调试入口一起删除，
+- 旧 PyMuPDF 直绘译文（`text_draw.py`、`builders.py`、`source/dev_overlay/`）已整体删除，
   不要再重新引入。
 
 ## 边界规则
