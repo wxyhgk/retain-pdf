@@ -15,7 +15,6 @@ from devtools.architecture_checks.common import TRANSLATION_PACKAGE_ROOT
 TRANSLATION_ROOT = TRANSLATION_PACKAGE_ROOT
 RENDERING_ROOT = PACKAGE_ROOT / "render"
 
-LEGACY_SEMANTICS_FACADE = "retainpdf_pipeline.ocr.document_schema.semantics"
 LEGACY_COMPAT_MODULE = "retainpdf_pipeline.ocr.document_schema.legacy_compat"
 DECISION_DIFF_MODULE = "retainpdf_pipeline.ocr.document_schema.decision_diff"
 
@@ -91,10 +90,6 @@ def check_document_semantic_boundaries(errors: list[str]) -> None:
     for root in (TRANSLATION_ROOT, RENDERING_ROOT):
         for path in scan_py_files(root):
             modules = imported_modules(path)
-            if any(module_allowed(module, (LEGACY_SEMANTICS_FACADE,)) for module in modules):
-                errors.append(
-                    f"{display_path(path)}: production consumers must use canonical_semantics or an explicit compatibility boundary, not document_schema.semantics"
-                )
             if path not in LEGACY_COMPAT_IMPORTERS and any(
                 module_allowed(module, (LEGACY_COMPAT_MODULE,)) for module in modules
             ):

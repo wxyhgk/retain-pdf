@@ -24,14 +24,17 @@
 - 不做 PDF 渲染
 - 不决定 `fast/sci/precise` 的翻译策略
 
-## 推荐入口（`retainpdf-pipeline` console-mode 为主，script-mode 仅桌面兼容）
+## 入口
 
-- `retainpdf-pipeline provider-case --spec <job_root>/specs/provider.spec.json`
-  本地人工使用时优先走这个通用入口名。它是中性入口名，不把 provider 名字写死。
-- `mineru_pipeline.py`
-  `retainpdf-pipeline provider-case` 背后的稳定实现。
-- `mineru_job.py`
-  只做解析和解包，适合先拿 MinerU 结果再手动接翻译。
+这里没有自己的命令行入口。MinerU 走通用的 OCR 入口：
+
+- `retainpdf-pipeline provider-ocr --spec <job_root>/specs/provider.spec.json`
+  `ocr_provider/drivers.py` 按 spec 里的服务商分发，MinerU 调本目录的 `job_flow.run_mineru_to_job_dir`。
+
+生产上 MinerU 的提交、轮询、下载由 Rust 自己做（`retainpdf-runner` 的 `ocr_flow/mineru*.rs`），不经过这里；
+Rust 只在本地命令型 OCR、Paddle 官方 CLI、OCR 和翻译并行（目前只有 GLM-OCR）时拉起 Python 的 `provider-ocr`。
+所以本目录的提交、下载部分（`job_flow.py`、`submission.py`、`mineru_api.py`）现在只在手动跑 `provider-ocr` 时用到；
+`artifacts.py`、`contracts.py` 的路径和文件名约定 normalize 阶段仍在用。
 - `mineru_api.py`
   最底层 API 调用封装，只在需要直接调 MinerU 接口时使用。
 - `backend/pipeline/devtools/tools/mineru_api_example.py`
@@ -59,20 +62,21 @@
 
 职责拆分：
 
-- `document_v1.py`
-  只负责 MinerU 的 `layout.json -> document.v1.json`
+- `layout.json -> document.v1.json` 不在这里，在 `document_schema/provider_adapters/mineru/`
 - `artifacts.py`
   只负责 MinerU 产物路径和 provider 内部文件组织
 - `contracts.py`
   只负责 MinerU provider 私有产物文件名、目录名
 - `job_flow.py`
   只负责任务编排、下载解包和持久化
-- `mineru_pipeline.py`
-  只负责把规范化后的 OCR 输入送进翻译/渲染主链路
+- `submission.py`
+  只负责提交（远程地址或本地上传）并轮询到出结果
+- `mineru_api.py`
+  只负责 MinerU HTTP 接口
 
 注意：
 
-- 主线 `pipeline_summary.json`、stdout labels、source-json 选择规则都已经收口到 `services/pipeline_shared/` 和底座包 `retainpdf_base`
+- 主线 `pipeline_summary.json`、stdout labels、source-json 选择规则都已经收口到底座包 `retainpdf_base`
 - `ocr/mineru_provider/` 不再承担任何共享规范壳
 
 现在这条链路已经通过 `ocr/document_schema/adapters.py` 暴露为统一 adapter，
@@ -82,13 +86,13 @@
 
 典型链路是：
 
-1. `mineru_job.py` 或 `mineru_pipeline.py` 向 MinerU 提交 PDF
+1. `job_flow.py` 经 `submission.py` 向 MinerU 提交 PDF
 2. 轮询直到任务完成
 3. 下载并解包结果
 4. 把原始 PDF 复制到 `source`
 5. 把解析结果放到 `ocr/unpacked`
 6. 同时生成 `ocr/normalized/document.v1.json`
-7. 后续由 `runtime/pipeline` 调 `translate` 和 `render` 完成剩余流程
+7. 后续由 Rust 依次发起 normalize、translate、render 各阶段
 
 当前 `pipeline_summary.json` 里还会写入一份 `schema_validation`，用于快速确认
 规范化文档是否满足当前 `document.v1` 契约；同时会带上 `normalization_report`
@@ -98,13 +102,11 @@
 
 ## Provider Stage Spec
 
-`provider.stage.v1` 现在主要保留给本地 provider-case helper 和兼容路径：
+`provider.stage.v1` 是 `provider-ocr` 读的 spec：
 
-`retainpdf-pipeline provider-case --spec <job_root>/specs/provider.spec.json`
+`retainpdf-pipeline provider-ocr --spec <job_root>/specs/provider.spec.json`
 
-未安装 retainpdf-pipeline 的桌面兼容目录回退到 python backend/pipeline/entrypoints/run_provider_case.py --spec <job_root>/specs/provider.spec.json。
-
-生产主链中，Rust API 负责 provider-backed OCR flow：按请求中的 OCR provider 分发 MinerU / Paddle transport，产出 provider raw 结果后再进入 normalize、translate 和 render 阶段。MinerU provider 代码仍只维护 MinerU API 语义和 raw 产物整理，不定义上层 book workflow contract。
+未安装 retainpdf-pipeline 的桌面兼容目录回退到 `python backend/pipeline/retainpdf_pipeline/entrypoints/run_provider_ocr.py --spec ...`。
 
 安全约定：
 

@@ -304,8 +304,8 @@ provider 装配层位于：
   已经接入通用 builder，但还没有像 Paddle 一样完全目录化
 - `generic_flat_ocr_adapter.py`
   目前仍是最薄的一层 passthrough adapter
-- `mineru`
-  主线仍在 `ocr/mineru_provider/document_v1.py`，当前不在这轮通用化范围内
+- `mineru/`
+  MinerU `layout.json` 的适配器（`adapter.py`），映射规则见同目录 `NORMALIZATION.md`
 
 也就是说，后续扩展 OCR provider 时，优先目标不是继续堆“大 adapter 文件”，而是：
 
@@ -329,15 +329,16 @@ Paddle 当前 rich-content trace 也已经继续拆分成三层：
 
 新 provider 可以参考：
 
-- `ocr/document_schema/provider_adapters/provider_adapter_template.py`
 - `ocr/document_schema/provider_adapters/paddle/`
+- `ocr/document_schema/provider_adapters/glm_ocr/`（复用 Paddle 解析的最小例子）
 
 后续新增 OCR provider 时，正确做法是：
 
 1. 新增一个 provider adapter
 2. 把原始 JSON 转成 `normalized_document_v1`
-3. 在 adapter 输出后立刻做 schema 校验
-4. 下游继续只消费 `document.v1.json`
+3. 服务商自己给了段落接续分组的，映射成块上的 `continuation_hint`
+4. 在 adapter 输出后立刻做 schema 校验
+5. 下游继续只消费 `document.v1.json`
 
 推荐接入顺序：
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-# Duplicated from retainpdf_pipeline.ocr.document_schema.provider_signals
+# Duplicated from retainpdf_translation.core.provider_signals
 # (stage-decouple: file-contract duplicate; do not re-add cross-stage import).
 
 

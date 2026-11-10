@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-# Duplicated from retainpdf_pipeline.ocr.document_schema.provider_signals
-# (stage-decouple: file-contract duplicate; do not re-add cross-stage import).
+# OCR 补正文时写下的修补标记（body_repair_*，旧名 provider_body_repair_*），翻译模板记录读它。
+# 以前的源头在 OCR 包，那份没有生产代码用，2026-11 删了，改以这份为准；
+# 渲染包 render/semantics/provider_signals.py 是这份的副本（阶段之间不互相 import）。
 
 
 def body_repair_applied(payload: dict | None) -> bool:

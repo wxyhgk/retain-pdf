@@ -70,9 +70,3 @@ def test_unpack_zip_refuses_to_extract_when_over_limit(
 
     # dest_dir may be created up front, but nothing should have been extracted into it.
     assert not dest_dir.exists() or list(dest_dir.iterdir()) == []
-
-
-def test_mineru_job_reuses_shared_guarded_unpack_zip() -> None:
-    from retainpdf_pipeline.ocr.mineru_provider import mineru_job
-
-    assert mineru_job.unpack_zip is artifacts.unpack_zip

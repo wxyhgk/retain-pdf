@@ -1,17 +1,7 @@
 from __future__ import annotations
 
-import pytest
 from retainpdf_pipeline.ocr.document_schema.provider_adapters.paddle.block_labels import (
     map_block_kind,
-)
-from retainpdf_pipeline.ocr.document_schema.provider_adapters.paddle.label_catalog import (
-    DEFAULT_PADDLE_TAXONOMY_PROFILE,
-    GRANULARITY_INLINE_SPAN,
-    GRANULARITY_REGION,
-    PADDLE_OFFICIAL_LAYOUT_LABELS,
-    PADDLE_TAXONOMY_PROFILE_V2,
-    PADDLE_TAXONOMY_PROFILE_V3,
-    get_paddle_label_definition,
 )
 from retainpdf_pipeline.ocr.document_schema.provider_adapters.paddle.roles import (
     derive_paddle_block_roles,
@@ -49,47 +39,7 @@ EXPECTED_OFFICIAL_LABELS = (
 )
 
 
-def test_paddle_catalog_defines_all_official_labels_for_each_profile() -> None:
-    assert PADDLE_OFFICIAL_LAYOUT_LABELS == EXPECTED_OFFICIAL_LABELS
-    assert len(set(PADDLE_OFFICIAL_LAYOUT_LABELS)) == 25
-    assert DEFAULT_PADDLE_TAXONOMY_PROFILE == PADDLE_TAXONOMY_PROFILE_V3
-
-    for profile in (PADDLE_TAXONOMY_PROFILE_V2, PADDLE_TAXONOMY_PROFILE_V3):
-        definitions = [
-            get_paddle_label_definition(label, profile=profile)
-            for label in PADDLE_OFFICIAL_LAYOUT_LABELS
-        ]
-        assert all(definition is not None for definition in definitions)
-
-
-def test_paddle_catalog_separates_span_region_and_block_facts() -> None:
-    inline_formula = get_paddle_label_definition("inline_formula")
-    reference = get_paddle_label_definition("reference")
-    chart = get_paddle_label_definition("chart")
-
-    assert inline_formula is not None
-    assert inline_formula.canonical_granularity == GRANULARITY_INLINE_SPAN
-    assert inline_formula.content_carrier == "formula"
-    assert inline_formula.formula_display == "inline"
-
-    assert reference is not None
-    assert reference.canonical_granularity == GRANULARITY_REGION
-    assert reference.content_carrier == "none"
-    assert reference.relation_intents == ("contains",)
-
-    assert chart is not None
-    assert chart.canonical_granularity == "block"
-    assert chart.element_type == "chart"
-    assert chart.content_carrier == "image"
-    assert chart.relation_intents == ("caption_target", "note_target")
-
-
-def test_paddle_catalog_rejects_an_unknown_profile() -> None:
-    with pytest.raises(ValueError, match="unsupported Paddle taxonomy profile"):
-        get_paddle_label_definition("text", profile="paddle.unknown")
-
-
-def test_legacy_projection_keeps_current_mapping_while_catalog_evolves() -> None:
+def test_legacy_projection_keeps_current_mapping_for_official_labels() -> None:
     expected = {
         "abstract": ("text", "body", ["abstract"], {"source_text_role": "abstract"}),
         "algorithm": ("code", "code_block", ["code"], {}),
@@ -139,7 +89,7 @@ def test_legacy_projection_keeps_current_mapping_while_catalog_evolves() -> None
     }
 
     assert {
-        label: map_block_kind(label) for label in PADDLE_OFFICIAL_LAYOUT_LABELS
+        label: map_block_kind(label) for label in EXPECTED_OFFICIAL_LABELS
     } == expected
     assert map_block_kind("formula") == (
         "formula",
