@@ -13,7 +13,7 @@ from retainpdf_pipeline.foundation.shared.job_dirs import resolve_job_dirs
 from devtools.tests.document_schema.fixtures.registry import PADDLE_FIXTURE_JSON, PADDLE_FIXTURE_PDF
 
 
-NORMALIZE_ENTRYPOINT_MODULE = "retainpdf_pipeline.entrypoints.run_normalize_ocr"
+NORMALIZE_ENTRYPOINT = ("retainpdf_pipeline.ocr", "normalize-ocr")
 
 def test_paddle_adapter_builds_document_v1_from_sample() -> None:
     payload = json.loads(PADDLE_FIXTURE_JSON.read_text(encoding="utf-8"))
@@ -83,7 +83,7 @@ def test_run_normalize_ocr_supports_paddle_provider(tmp_path: Path) -> None:
     )
 
     completed = subprocess.run(
-        [sys.executable, "-m", NORMALIZE_ENTRYPOINT_MODULE, "--spec", str(spec_path)],
+        [sys.executable, "-m", *NORMALIZE_ENTRYPOINT, "--spec", str(spec_path)],
         check=True,
         capture_output=True,
         cwd=REPO_SCRIPTS_ROOT,

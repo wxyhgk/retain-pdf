@@ -49,22 +49,8 @@ impl WorkerContract {
         }) {
             return contract;
         }
-        command
-            .iter()
-            .take_while(|value| value.as_str() != "--spec")
-            .find_map(|value| {
-                Path::new(value)
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .and_then(|file_name| match file_name {
-                        "run_normalize_ocr.py" => Some(WorkerContract::Normalize),
-                        "run_translate_only.py" => Some(WorkerContract::Translate),
-                        "run_render_only.py" => Some(WorkerContract::Render),
-                        "run_provider_ocr.py" => Some(WorkerContract::Provider),
-                        _ => None,
-                    })
-            })
-            .unwrap_or(WorkerContract::Unknown)
+        // 以前的 script-mode（`python .../entrypoints/run_*.py`）已退役，脚本也删了，不再按文件名认阶段。
+        WorkerContract::Unknown
     }
 }
 
@@ -92,22 +78,6 @@ fn build_stage_module_job(module: &str, worker: Option<&str>) -> JobRuntimeState
     command.push("--spec".to_string());
     command.push("/tmp/spec.json".to_string());
     JobSnapshot::new("job-test".to_string(), CreateJobInput::default(), command).into_runtime()
-}
-
-#[cfg(test)]
-fn build_unbuffered_script_job(command_script: &str) -> JobRuntimeState {
-    JobSnapshot::new(
-        "job-test".to_string(),
-        CreateJobInput::default(),
-        vec![
-            "python".to_string(),
-            "-u".to_string(),
-            format!("/tmp/scripts/{command_script}"),
-            "--spec".to_string(),
-            "/tmp/spec.json".to_string(),
-        ],
-    )
-    .into_runtime()
 }
 
 pub(super) fn validate_successful_worker_outputs(
@@ -237,24 +207,15 @@ mod tests {
     }
 
     #[test]
-    fn worker_contract_detects_known_scripts() {
-        assert_eq!(
-            WorkerContract::from_command(&build_job("run_render_only.py").command),
-            WorkerContract::Render
-        );
-        assert_eq!(
-            WorkerContract::from_command(&build_job("run_translate_only.py").command),
-            WorkerContract::Translate
-        );
+    fn worker_contract_detects_stage_commands() {
         assert_eq!(
             WorkerContract::from_command(&build_job("custom.py").command),
             WorkerContract::Unknown
         );
+        // 退役的 script-mode 脚本名不再认。
         assert_eq!(
-            WorkerContract::from_command(
-                &build_unbuffered_script_job("run_translate_only.py").command
-            ),
-            WorkerContract::Translate
+            WorkerContract::from_command(&build_job("run_translate_only.py").command),
+            WorkerContract::Unknown
         );
         assert_eq!(
             WorkerContract::from_command(&build_console_job("normalize-ocr").command),
@@ -299,7 +260,7 @@ mod tests {
         std::fs::create_dir_all(summary.parent().expect("summary parent")).expect("summary dir");
         std::fs::write(&summary, b"{}").expect("summary");
 
-        let mut job = build_job("run_translate_only.py");
+        let mut job = build_stage_module_job("retainpdf_pipeline.translate", None);
         job.artifacts = Some(JobArtifacts {
             translations_dir: Some("jobs/job-test/translated".to_string()),
             summary: Some("jobs/job-test/artifacts/pipeline_summary.json".to_string()),
@@ -322,7 +283,7 @@ mod tests {
         std::fs::create_dir_all(summary.parent().expect("summary parent")).expect("summary dir");
         std::fs::write(&summary, b"{}").expect("summary");
 
-        let mut job = build_job("run_render_only.py");
+        let mut job = build_stage_module_job("retainpdf_pipeline.render", None);
         job.artifacts = Some(JobArtifacts {
             output_pdf: Some("jobs/job-test/rendered/output.pdf".to_string()),
             summary: Some("jobs/job-test/artifacts/pipeline_summary.json".to_string()),

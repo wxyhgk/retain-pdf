@@ -36,12 +36,12 @@ Current installed Python entrypoints used by the Rust layer:
 
 The Rust layer starts stage workers as `python -m retainpdf_pipeline.<stage>`
 (`RUST_API_PYTHON_ENTRYPOINT_MODE` is deprecated and ignored); the
-`backend/pipeline/retainpdf_pipeline/entrypoints/run_*.py` scripts are for manual
-runs. The stage spec and stdout contracts are identical everywhere.
+`retainpdf-pipeline` subcommands above are for manual runs. The stage spec and
+stdout contracts are identical everywhere.
 
-Legacy/local wrappers retained for manual runs (script-mode，仅桌面兼容）：
+Local-only command retained for manual runs:
 
-- `retainpdf-pipeline provider-case`（`backend/pipeline/retainpdf_pipeline/entrypoints/run_provider_case.py` 仅桌面兼容）
+- `retainpdf-pipeline provider-case`
 
 Current top-level workflow contract:
 

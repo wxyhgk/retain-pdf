@@ -179,7 +179,7 @@ refine 和质检（`render/__main__.py` 的说明）。
 ### `retainpdf_pipeline/foundation/`
 
 - 作用：
-  配置（`config/`）、提示词模板（`prompts/`）、共享工具（`shared/`：任务目录、stage spec、结构化错误等）。
+  配置（`config/`）、共享工具（`shared/`：任务目录、stage spec、结构化错误等）。
 - 进入条件：
   改跨阶段共享的配置或 stage spec 协议时进这里。
 

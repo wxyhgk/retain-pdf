@@ -29,7 +29,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = BACKEND_ROOT.parent if BACKEND_ROOT.name == "backend" else BACKEND_ROOT
 PIPELINE_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_FIXTURE = REPO_ROOT / "tests" / "fixtures" / "golden-jobs" / "chem-6ada81-10p"
-RENDER_ENTRYPOINT_MODULE = "retainpdf_pipeline.entrypoints.run_render_only"
+RENDER_ENTRYPOINT_MODULE = "retainpdf_pipeline.render"
 
 
 def parse_args() -> argparse.Namespace:

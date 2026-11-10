@@ -26,7 +26,7 @@ if str(PIPELINE_ROOT) not in sys.path:
 #
 # `foundation/config/paths.py` 在 import 时就把 OUTPUT_DIR 定下来，再由它派生出
 # TRANSLATIONS_DIR / TRANSLATION_UNIT_CACHE_DIR / ... 一串模块级常量，`foundation
-# /config/__init__.py`、`foundation/shared/config.py`
+# /config/__init__.py`
 # 又把这些常量按值再导出一遍。也就是说，等测试跑起来再 monkeypatch
 # `paths.OUTPUT_DIR`，那些副本一个都跟不上——产物照旧落进仓库的 `data/`。
 #

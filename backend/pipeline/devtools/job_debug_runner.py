@@ -388,7 +388,7 @@ def retranslate_job(
     command = [
         sys.executable,
         "-m",
-        "retainpdf_pipeline.entrypoints.run_translate_only",
+        "retainpdf_pipeline.translate",
         "--spec",
         str(spec_path),
     ]
@@ -401,7 +401,7 @@ def rerender_job(job_root: Path, *, translated_pdf_name: str, render_mode: str) 
     command = [
         sys.executable,
         "-m",
-        "retainpdf_pipeline.entrypoints.run_render_only",
+        "retainpdf_pipeline.render",
         "--spec",
         str(spec_path),
     ]

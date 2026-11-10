@@ -25,4 +25,3 @@ from retainpdf_pipeline.foundation.config.layout import apply_layout_tuning
 ```
 
 路径从底座包取（`retainpdf_base.paths`、`retainpdf_base.output_layout`）。
-`foundation/shared/config.py` 是以前的兼容转发，现在没有代码 import 它，不要再用。

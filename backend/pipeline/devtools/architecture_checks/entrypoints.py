@@ -30,11 +30,6 @@ ENTRYPOINT_IMPORT_ALLOWLIST: dict[Path, tuple[str, ...]] = {
     Path("revise_translation_item.py"): (
         "from retainpdf_translation.public import",
     ),
-    Path("run_normalize_ocr.py"): ("from retainpdf_pipeline.ocr.document_schema.normalize_pipeline import main",),
-    Path("run_provider_case.py"): ("from retainpdf_pipeline.ocr.ocr_provider.provider_pipeline import main",),
-    Path("run_provider_ocr.py"): ("from retainpdf_pipeline.ocr.ocr_provider.provider_pipeline import main",),
-    Path("run_render_only.py"): ("from retainpdf_pipeline.runtime.pipeline.render_only_pipeline import main",),
-    Path("run_translate_only.py"): ("from retainpdf_pipeline.translate.entrypoints.translate_only_pipeline import main",),
 }
 
 

@@ -6,8 +6,6 @@
 
 ## 主要文件
 
-- `config.py`
-  以前的兼容转发，内部实现已经拆到 `foundation/config/`；现在没有代码 import 它，不要再用。
 - `job_dirs.py`
   负责解析和校验标准 job 目录契约：`source/ocr/translated/rendered/artifacts/logs`。
 - 读密钥（原 `local_env.py`）已经下放到底座包 `retainpdf_base.local_env`，默认目录 `backend/pipeline/.env/`。

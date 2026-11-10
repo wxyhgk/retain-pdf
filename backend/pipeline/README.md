@@ -3,7 +3,7 @@
 `pipeline/` 是整套“PDF -> OCR -> 翻译 -> 保留排版渲染”的脚本工程目录。
 
 **生产上各阶段由 Rust 用 `python -m retainpdf_pipeline.<阶段>` 拉起；安装后的 `retainpdf-pipeline` 命令给辅助任务和本地人工用。**
-以前的 script-mode（`backend/pipeline/entrypoints/run_*.py`）已经退役。Rust 具体调哪些模块，见
+以前的 script-mode（`entrypoints/run_*.py` 脚本）已经退役，脚本也删了。Rust 具体调哪些模块，见
 [PIPELINE_DIRECTORY_MAP.md](./PIPELINE_DIRECTORY_MAP.md)。
 
 安装后的唯一 Python 命名空间是 `retainpdf_pipeline`。源码树顶层分成两部分：
@@ -141,7 +141,7 @@ AI 服务一起删了，产品里只留 Studio 的 AI。
   字体、版式和运行时默认配置（路径在底座包 `retainpdf_base.paths`）。
 - `retainpdf_pipeline/foundation/shared`
   job 目录、stage spec、结构化错误、日志捕获等共享能力。
-- 提示词模板在翻译包 `retainpdf_translation/prompts/`；`foundation/prompts/` 只剩一个空目录。
+- 提示词模板在翻译包 `retainpdf_translation/prompts/`。
 - `devtools/experiments`
   实验性流程，不属于稳定主链路。
 - `devtools/tests`

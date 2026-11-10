@@ -198,7 +198,7 @@ target.write_text(json.dumps({
     monkeypatch.setattr(provider_pipeline, "write_pipeline_summary", _fake_write_pipeline_summary)
     monkeypatch.setattr(provider_pipeline, "print_pipeline_summary", lambda **_: None)
     monkeypatch.setattr(provider_pipeline, "enable_job_log_capture", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(sys, "argv", ["run_provider_case.py", "--spec", str(spec_path)])
+    monkeypatch.setattr(sys, "argv", ["retainpdf_pipeline.ocr provider-case", "--spec", str(spec_path)])
 
     provider_pipeline.main()
 
@@ -283,7 +283,7 @@ target.write_text(json.dumps({
 
     monkeypatch.setattr(provider_pipeline, "run_book_pipeline", _unexpected_run_book_pipeline)
     monkeypatch.setattr(provider_pipeline, "enable_job_log_capture", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(sys, "argv", ["run_provider_ocr.py", "--spec", str(spec_path)])
+    monkeypatch.setattr(sys, "argv", ["retainpdf_pipeline.ocr provider-ocr", "--spec", str(spec_path)])
 
     provider_pipeline.main()
 
@@ -425,7 +425,7 @@ target.write_text(json.dumps({
     importlib.reload(drivers)
     monkeypatch.setattr(provider_pipeline, "run_book_pipeline", _unexpected_run_book_pipeline)
     monkeypatch.setattr(provider_pipeline, "enable_job_log_capture", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(sys, "argv", ["run_provider_ocr.py", "--spec", str(spec_path)])
+    monkeypatch.setattr(sys, "argv", ["retainpdf_pipeline.ocr provider-ocr", "--spec", str(spec_path)])
 
     provider_pipeline.main()
 

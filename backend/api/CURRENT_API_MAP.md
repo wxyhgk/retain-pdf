@@ -244,9 +244,9 @@ Rust 根据 workflow 选择运行计划：
 - `retainpdf-pipeline render-only --spec specs/render.spec.json`
 
 Rust 层实际用 `python -m retainpdf_pipeline.<阶段> --spec <job_root>/specs/<stage>.spec.json` 启动 stage worker（`RUST_API_PYTHON_ENTRYPOINT_MODE` 已弃用并被忽略）；
-`retainpdf-pipeline` 命令和 `run_*.py` 消费同一份 stage spec，产物校验不依赖物理脚本路径。
+`retainpdf-pipeline` 命令和 `python -m` 消费同一份 stage spec，产物校验不依赖物理脚本路径。
 
-`retainpdf-pipeline provider-case` 仍保留 legacy/local wrapper 用于本地一次性验证 provider-backed 全流程（`run_provider_case.py` 仅桌面兼容）；不要把它当成
+`retainpdf-pipeline provider-case` 仍保留 legacy/local wrapper 用于本地一次性验证 provider-backed 全流程；不要把它当成
 Rust API 生产主链入口。
 
 ## 6. 当前最重要的产物目录
@@ -308,7 +308,7 @@ Rust API 生产主链入口。
 
 保留的 local / legacy wrapper：
 
-- `retainpdf-pipeline provider-case`（`run_provider_case.py` 仅桌面兼容）
+- `retainpdf-pipeline provider-case`（只在本地用）
 
 当前原则：
 

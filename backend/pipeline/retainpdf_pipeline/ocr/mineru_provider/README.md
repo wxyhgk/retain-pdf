@@ -106,7 +106,7 @@ Rust 只在本地命令型 OCR、Paddle 官方 CLI、OCR 和翻译并行（目�
 
 `retainpdf-pipeline provider-ocr --spec <job_root>/specs/provider.spec.json`
 
-未安装 retainpdf-pipeline 的桌面兼容目录回退到 `python backend/pipeline/retainpdf_pipeline/entrypoints/run_provider_ocr.py --spec ...`。
+没装 `retainpdf-pipeline` 命令时用 `python -m retainpdf_pipeline.ocr provider-ocr --spec ...`，效果一样。
 
 安全约定：
 
