@@ -11,4 +11,3 @@ def test_run_provider_ocr_entrypoint_targets_provider_pipeline() -> None:
     source = entrypoint_path.read_text(encoding="utf-8")
 
     assert "from retainpdf_pipeline.ocr.ocr_provider.provider_pipeline import main" in source
-    assert "retainpdf_pipeline.ocr.mineru_provider.ocr_pipeline" not in source

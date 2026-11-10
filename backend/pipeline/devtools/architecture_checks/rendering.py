@@ -166,7 +166,6 @@ RENDERING_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
     ),
     "visual_profile": (
         "retainpdf_pipeline.render.visual_profile",
-        "retainpdf_pipeline.ocr.document_schema.semantics",
         "retainpdf_pipeline.render.layout.font_roles",
         "retainpdf_pipeline.render.layout.typography.geometry",
         "retainpdf_pipeline.render.policy",
