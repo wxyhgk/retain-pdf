@@ -56,7 +56,6 @@ cleanup 子包内部的稳定入口：
 - `text_math_guard.py`：公式保护区过滤和 display math 侵入检测。
 - `text_rects.py`：word/block 匹配结果到 redaction rect 的转换。
 - `text_extract.py`：PyMuPDF 文本 blocks/spans/words 提取。
-- `text_intrusion.py`：检测页面里疑似侵入 display math 区域的大号短文本 span。
 
 ### Route And Plan
 - `auto.py`：自动清理路线的执行细节；`routes.py` 只做 route selection 后的分发。
@@ -67,7 +66,6 @@ cleanup 子包内部的稳定入口：
 - `plan_types.py`：`RedactionPlan` 类型定义。
 - `page_facts.py`：采集 image page、drawing rects 和 drawing count。
 - `plan_builder.py`：从页面和 translated items 构造 `RedactionPlan`。
-- `plan_policy.py`：基于 plan 的页面级 cover/vector-heavy 判断 helper。
 - `empty_result.py`：空 redaction 输入的稳定诊断结果。
 - `redaction_flow.py`：对外 redaction 入口背后的流程编排。
 
@@ -86,8 +84,6 @@ cleanup 子包内部的稳定入口：
 - `math_fonts.py`：特殊公式字体识别。
 - `math_spans.py`：从页面文本 span 采集公式保护 rect 和普通文本高度。
 - `math_intrusion.py`：判断公式保护 rect 是否侵入可删除文本区域。
-- `vector_overlap.py`：计算 item bbox 与页面绘制 rect 的 overlap 数量和面积比例。
-- `vector_item_policy.py`：根据 overlap 统计判断 item 是否只能走视觉遮盖。
 
 ### Legacy / Dev Overlay
 - 旧 `text_layer.py` / `visual_cover.py` 兼容包装已移除；调用方必须使用

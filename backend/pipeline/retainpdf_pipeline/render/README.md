@@ -45,21 +45,27 @@ Rendering 阶段的正式输入和输出固定为：
 ```text
 retainpdf_pipeline/render/
   __init__.py
+  __main__.py      python -m retainpdf_pipeline.render 入口（转到 runtime/pipeline/render_only_pipeline）
   README.md
-  legacy/          旧调用方兼容入口；新逻辑不要放这里
   workflow/        渲染阶段编排，只调度，不做具体 PDF/Typst 细节
   analysis/        页面画像、页面分类和页面路线决策
+  contracts/       渲染分析结果的数据结构（文档/页面分析）
   document/        源 PDF、页码映射、书签/目录等文档级辅助
-  source/          原 PDF 准备、清理、背景重建和压缩
-  layout/          翻译块到渲染块的排版计算
-  output/          Typst 源码生成、编译、overlay 合成和 PDF 写出
+  semantics/       规范化文档条目在渲染侧的语义视图
+  policy/          清理、去字、排版、Typst 输出共用的页面/条目渲染决策
+  prepare/         渲染准备步骤：各自的输入、产物、指纹和缓存（store.py）
+  pdf_structure_profile/  原 PDF 自带的结构框（不是 OCR 框）
+  visual_profile/  页面像素采样：每个条目的背景色、文字色
+  source/          原 PDF 准备、背景重建和压缩；source/cleanup/ 是旧的 PyMuPDF 清理，作回退
+  source_cleanup/  渲染前删除原文文字（pikepdf，主线）
+  layout/          翻译块到渲染块的排版计算（Typst 回退路径用）
+  output/          rpr 引擎调用、Typst 源码生成与编译、overlay 合成和 PDF 写出
+  tools/           渲染辅助工具
 ```
 
 推荐理解顺序：
 
 `workflow -> document/analysis -> source/layout -> output`
-
-`legacy/` 是旧调用方兼容门面，不应该继续堆业务逻辑。
 
 ## 渲染主路径
 
@@ -79,8 +85,6 @@ retainpdf_pipeline/render/
 
 ## 模块分工
 
-- `legacy/`
-  旧调用方兼容门面。新业务逻辑不要写在这里，只转发到具体模块。
 - `workflow/`
   编排渲染流程，负责选择模式、串联 Typst/背景/redaction，不直接写复杂算法。
 - `workflow/render_only.py`

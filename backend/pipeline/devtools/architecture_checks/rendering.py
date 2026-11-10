@@ -44,7 +44,6 @@ RENDERING_ALLOWED_ROOT_DIRS = {
 RENDERING_ALLOWED_ROOT_FILES = {
     "__init__.py",
     "__main__.py",
-    "performance.py",
     "README.md",
     "render_stage.py",
     "render_plan.py",
@@ -237,7 +236,7 @@ def check_render_pipeline_facade_boundary(errors: list[str]) -> None:
     execution_text = read_text(RENDER_EXECUTION_PIPELINE)
     if "from retainpdf_pipeline.render.workflow import execute_render_plan" not in execution_text:
         errors.append(
-            "render/render_execution.py: must delegate to services.rendering.workflow.execute_render_plan"
+            "render/render_execution.py: must delegate to retainpdf_pipeline.render.workflow.execute_render_plan"
         )
     forbidden = (
         "import fitz",
@@ -260,7 +259,7 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
             continue
         if path.is_dir() and path.name not in RENDERING_ALLOWED_ROOT_DIRS:
             errors.append(
-                f"services/rendering/{path.name}: unexpected rendering root directory; use workflow/analysis/document/source/layout/output/legacy"
+                f"render/{path.name}: unexpected rendering root directory; use one of {sorted(RENDERING_ALLOWED_ROOT_DIRS)}"
             )
         if path.is_file() and path.name not in RENDERING_ALLOWED_ROOT_FILES:
             errors.append(
@@ -293,24 +292,7 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
         "from retainpdf_pipeline.render.source_pdf",
         "import retainpdf_pipeline.render.source_pdf",
     )
-    legacy_rendering_wrappers = set()
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "core").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "orchestrator").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "page_profile").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "page_route").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "typst").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "formula").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "formula" / "core").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "formula" / "fallback").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "preprocess").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "redaction").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "background").glob("*.py"))
-    legacy_rendering_wrappers.update((RENDERING_ROOT / "compress").glob("*.py"))
-    legacy_rendering_wrappers.add(RENDERING_ROOT / "page_classifier.py")
-    legacy_rendering_wrappers.add(RENDERING_ROOT / "source_pdf.py")
     for path in scan_py_files(RENDERING_ROOT):
-        if path in legacy_rendering_wrappers:
-            continue
         text = read_text(path)
         rel_path = rel(path)
         for item in legacy_rendering_imports:
@@ -326,14 +308,7 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
         "from retainpdf_pipeline.render.pdf_metadata",
         "import retainpdf_pipeline.render.pdf_metadata",
     )
-    legacy_document_wrappers = {
-        RENDERING_ROOT / "page_map.py",
-        RENDERING_ROOT / "pdf_metadata.py",
-        RENDERING_ROOT / "source_pdf.py",
-    }
     for path in scan_py_files(RENDERING_ROOT):
-        if path in legacy_document_wrappers:
-            continue
         text = read_text(path)
         rel_path = rel(path)
         for item in legacy_document_imports:
@@ -392,7 +367,7 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
         for item in forbidden:
             if item in text:
                 errors.append(
-                    f"{rel_path}: typst layer must not import redaction directly; route background cleanup through rendering/background or orchestrator"
+                    f"{rel_path}: typst layer must not import redaction directly; route background cleanup through render/source_cleanup"
                 )
                 break
 
@@ -464,7 +439,7 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
             for module in imported_modules(path):
                 if module_allowed(module, (text_token_module,)):
                     errors.append(
-                        f"{rel_path}: use services.rendering.layout.text_analysis instead of text_tokens directly"
+                        f"{rel_path}: use retainpdf_pipeline.render.layout.text_analysis instead of text_tokens directly"
                     )
                     break
         if path in inline_math_boundary_allowed_roots:
@@ -474,7 +449,7 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
             continue
         if any(marker in text for marker in inline_math_boundary_markers):
             errors.append(
-                f"{rel_path}: inline math token boundaries must be implemented in services.rendering.layout.text_analysis/text_tokens only"
+                f"{rel_path}: inline math token boundaries must be implemented in retainpdf_pipeline.render.layout.text_analysis/text_tokens only"
             )
 
     removed_cleanup_modules = (
@@ -548,7 +523,7 @@ def check_rendering_internal_boundaries(errors: list[str]) -> None:
         for module in imported_modules(path):
             if module_allowed(module, REMOVED_SOURCE_PREPARATION_BBOX_MODULES):
                 errors.append(
-                    f"{rel_path}: removed bbox source-preparation module '{module}'; use services.rendering.source_cleanup boundary"
+                    f"{rel_path}: removed bbox source-preparation module '{module}'; use retainpdf_pipeline.render.source_cleanup boundary"
                 )
                 break
 
