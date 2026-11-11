@@ -561,6 +561,9 @@ def extract_block_item(
     text = block_source_text(block, segments)
     if not text:
         return None
+    # OCR could not recover this text. Leave the original PDF region visible.
+    if _block_kind(block) == "text" and "\ufffd" in text:
+        return None
     if not should_translate_block(
         block,
         data,

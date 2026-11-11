@@ -495,6 +495,12 @@ def build_validation_report(data: dict) -> dict:
         for block in page.get("blocks", []) or []
     ]
     block_count = len(blocks)
+    unresolved_ocr_block_ids = [
+        block["block_id"]
+        for block in blocks
+        if (block.get("content") or {}).get("kind") == "text"
+        and "\ufffd" in (block["content"].get("text") or "")
+    ]
     asset_blocks = [
         block
         for block in blocks
@@ -620,6 +626,7 @@ def build_validation_report(data: dict) -> dict:
         # 行和片段都在块内、片段在行内），不满足就抛错，根本走不到这里。没有面积的框不算越界，另记在 zero_segment_bbox_count。
         "geometry_bbox_consistent": True,
         "segment_bbox_within_block": True,
+        **({"unresolved_ocr_text_block_ids": unresolved_ocr_block_ids} if unresolved_ocr_block_ids else {}),
     }
 
 

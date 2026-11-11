@@ -14,6 +14,7 @@ from retainpdf_pipeline.foundation.shared.stage_specs import RENDER_PREPARE_STAG
 from retainpdf_pipeline.foundation.shared.stage_specs import RenderPrepareStageSpec
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_payload_to_document_v1
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GENERIC_FLAT_OCR
+from retainpdf_pipeline.ocr.document_schema.validator import build_validation_report
 from retainpdf_pipeline.render.prepare.page_analysis import run_page_analysis
 from retainpdf_pipeline.render.prepare.source_base import run_source_base
 from retainpdf_pipeline.render.prepare.store import PrepareStore
@@ -83,6 +84,19 @@ def test_render_and_translate_extractors_yield_the_same_items(tmp_path: Path) ->
         translate_items = json_extractor.extract_text_items(data, page_idx=page_idx)
         assert [(i.item_id, list(i.bbox)) for i in render_items] == [(i.item_id, list(i.bbox)) for i in translate_items]
         assert render_items
+
+
+def test_unrecoverable_ocr_text_is_omitted_from_translation_and_source_cleanup(tmp_path: Path) -> None:
+    job, _ = _job(tmp_path)
+    data = json.loads(document_path_for_render(job / "translated").read_text(encoding="utf-8"))
+    assert "unresolved_ocr_text_block_ids" not in build_validation_report(data)
+    damaged = data["pages"][0]["blocks"][1]
+    damaged["text"] = damaged["content"]["text"] = "Unknown variable \ufffd in a scan."
+    assert build_validation_report(data)["unresolved_ocr_text_block_ids"] == [damaged["block_id"]]
+    for extractor in (source_page_records, json_extractor):
+        assert [item.text for item in extractor.extract_text_items(data, page_idx=0)] == [
+            "Paragraph 0.0", "Paragraph 0.2",
+        ]
 
 
 def test_prepared_steps_are_what_the_render_stage_asks_for(tmp_path: Path) -> None:
