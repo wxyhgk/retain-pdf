@@ -604,7 +604,6 @@ def build_validation_report(data: dict) -> dict:
         "schema_version": data.get("schema_version", ""),
         "page_count": page_count,
         "block_count": block_count,
-        "unresolved_ocr_text_block_ids": unresolved_ocr_block_ids,
         "asset_count": len(assets),
         "referenced_asset_count": len(referenced_asset_ids),
         "unreferenced_asset_count": len(unreferenced_asset_ids),
@@ -627,6 +626,7 @@ def build_validation_report(data: dict) -> dict:
         # 行和片段都在块内、片段在行内），不满足就抛错，根本走不到这里。没有面积的框不算越界，另记在 zero_segment_bbox_count。
         "geometry_bbox_consistent": True,
         "segment_bbox_within_block": True,
+        **({"unresolved_ocr_text_block_ids": unresolved_ocr_block_ids} if unresolved_ocr_block_ids else {}),
     }
 
 
