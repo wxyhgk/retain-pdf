@@ -118,6 +118,7 @@ def main() -> None:
         normalized_report_json_path=artifact_paths.normalized_report_json_path,
         document_id=job_dirs.root.name,
         provider_version=str(args.provider_version or ""),
+        source_pdf_path=source_pdf_path,
     )
 
     normalization_report_path = artifact_paths.normalized_json_path.with_name(

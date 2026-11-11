@@ -135,9 +135,12 @@ def rebuild_estimated_text_geometry(
                 and str(line.get("bbox_precision", "") or "") == "provider_layout"
                 for line in block.get("lines", []) or []
             )
+            # Recovered lines already come from the PDF text layer. Tightening
+            # the block by estimate can cut off their measured segments.
+            has_measured_lines = has_provider_lines or bool((block.get("metadata") or {}).get("pdf_text_recovered"))
             tightened_bbox = (
                 original_bbox
-                if has_provider_segment_bbox or has_provider_lines
+                if has_provider_segment_bbox or has_measured_lines
                 else tighten_text_bbox(
                     bbox=original_bbox,
                     text=text,
@@ -154,7 +157,7 @@ def rebuild_estimated_text_geometry(
                 metadata["provider_bbox_tightened"] = True
                 metadata["provider_bbox_original"] = original_bbox
                 block["metadata"] = metadata
-            if has_provider_lines:
+            if has_measured_lines:
                 rebuilt_lines = [line for line in block.get("lines", []) or [] if isinstance(line, dict)]
             else:
                 rebuilt_lines = build_lines(
@@ -165,7 +168,7 @@ def rebuild_estimated_text_geometry(
                     block_type=block_type,
                     sub_type=sub_type,
                 )
-            if rebuilt_lines and not has_provider_lines:
+            if rebuilt_lines and not has_measured_lines:
                 inherit_missing_segment_bboxes(
                     bbox=block.get("bbox", []),
                     segments=block.get("segments", []) or [],

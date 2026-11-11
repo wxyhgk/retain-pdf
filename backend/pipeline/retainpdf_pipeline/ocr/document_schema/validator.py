@@ -495,6 +495,12 @@ def build_validation_report(data: dict) -> dict:
         for block in page.get("blocks", []) or []
     ]
     block_count = len(blocks)
+    unresolved_ocr_block_ids = [
+        block["block_id"]
+        for block in blocks
+        if (block.get("content") or {}).get("kind") == "text"
+        and "\ufffd" in (block["content"].get("text") or "")
+    ]
     asset_blocks = [
         block
         for block in blocks
@@ -598,6 +604,7 @@ def build_validation_report(data: dict) -> dict:
         "schema_version": data.get("schema_version", ""),
         "page_count": page_count,
         "block_count": block_count,
+        "unresolved_ocr_text_block_ids": unresolved_ocr_block_ids,
         "asset_count": len(assets),
         "referenced_asset_count": len(referenced_asset_ids),
         "unreferenced_asset_count": len(unreferenced_asset_ids),
