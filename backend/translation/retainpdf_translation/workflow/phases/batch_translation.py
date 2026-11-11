@@ -9,6 +9,7 @@ from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.events import emit_stage_transition
 from retainpdf_translation.artifacts import TranslationRunDiagnostics
 from retainpdf_translation.llm.shared.control_context import TranslationControlContext
+from retainpdf_translation.llm.shared.upstream_resilience import raise_if_credential_rejected
 from retainpdf_translation.workflow.batching.pending_units import translate_pending_units
 from retainpdf_translation.workflow.phases.events import format_translation_block_progress_message
 from retainpdf_translation.workflow.phases.events import format_translation_progress_message
@@ -105,6 +106,8 @@ def run_translation_batch_stage(
     deferred_item_ids: frozenset[str] = frozenset(),
     progress_baseline_completed: int | None = None,
 ) -> dict:
+    # 翻译 Key 在前面的步骤（领域判断、续句复核……）已被上游拒绝：不开批量翻译，直接失败
+    raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key)
     translate_started = time.perf_counter()
     if run_diagnostics is not None:
         run_diagnostics.mark_phase_start("translation_batches")
@@ -162,6 +165,8 @@ def run_translation_batch_stage(
             # keeps propagating and never reaches the success event below.
             run_diagnostics.mark_phase_end("translation_batches")
             _record_batch_diagnostics(run_diagnostics, batch_summary)
+    # 批次里碰到 401/403：在飞的请求收完、已译的块已经落盘，到这里整份失败，不再做尾部修复和补翻
+    raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key)
     finished_payload = {
         "pending_items": batch_summary["pending_items"],
         "effective_batch_size": batch_summary["effective_batch_size"],

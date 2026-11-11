@@ -9,6 +9,7 @@ from retainpdf_translation.core.orchestration.units import refresh_translation_u
 from retainpdf_translation.llm.shared.control_context import (
     TranslationControlContext,
 )
+from retainpdf_translation.llm.shared.upstream_resilience import raise_if_credential_rejected
 from retainpdf_translation.services.context.windows import (
     annotate_translation_context_windows,
 )
@@ -137,6 +138,8 @@ def finish_book_translation(
     checkpoint: TranslationCheckpointSession | None,
 ) -> tuple[dict[int, list[dict]], list[dict]]:
     """批量翻译之后的收尾：乱码修复、agent 修复、漏翻补救，各提交一次断点，最后出每页小结。整本一次翻和跟着 OCR 流式翻（`streaming_flow.py`）共用。"""
+    # 翻译 Key 已被上游拒绝：修复和补翻也都会被拒，直接失败
+    raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key)
     if checkpoint is not None:
         checkpoint.update(
             "repairing",
