@@ -839,6 +839,7 @@
         "devtools/tests/document_schema/test_mineru_reference_markers.py",
         "devtools/tests/document_schema/test_paddle_captions_and_assets.py",
         "devtools/tests/document_schema/test_paddle_page_spec_and_columns.py",
+        "devtools/tests/document_schema/test_pdf_text_recovery.py",
         "devtools/tests/rendering/test_render_caption_roles.py",
         "devtools/tests/rendering/test_render_input_protocol.py",
         "devtools/tests/rendering/test_render_prepare_stage.py",
