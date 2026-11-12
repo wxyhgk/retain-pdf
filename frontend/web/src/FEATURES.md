@@ -14,7 +14,7 @@ frontend/web/src/
 │   ├── bootstrap/#   给 @retainpdf/domain 注入运行时端口
 │   ├── desktop/  #   桌面首启流程
 │   └── shell-boot.ts  # 三页共享启动壳（adapters → bootTheme → 挂载）
-├── features/     # 15 个产品功能，每个 = 用户能指着界面说出的一件事
+├── features/     # 20 个产品功能，每个 = 用户能指着界面说出的一件事
 ├── platform/     # 跨功能基础设施，不知道任何产品功能的存在
 ├── ui/           # 共享 UI 组件与 React 原语，同样不知道产品功能
 ├── types/        # ambient 全局声明
@@ -37,22 +37,18 @@ app  ──►  features  ──►  platform
 
 由 `tests/architecture/layer-boundaries.test.mjs` 把守。
 
-**唯一例外**：15 个 features 文件经 `@/app/home/home-services-context.js` 消费
-主页装配出来的 DI 容器。它要的是 `HomeApp` 装配出来的**实例**，而
-`HomeServices` 类型引用了每一个功能的类型，下沉到 platform 会造成
-`platform → features`，比现状更糟。正确终局是按域拆窄 Context（代码里已有
-`useHomeDialogStore` / `useHomeStatusAreaStore` / `useHomeWorkflowDialog` /
-`useHomeSettingsHub` 四个先例）。在那之前用只减不增的清单把这条遗留倒置显性化，
-见 `architecture-boundaries.test.mjs` 的「features 引用 app 层仅限主页 DI 容器」。
+主页装配出来的服务（`HomeServices`）经 `ui/context/home-services-context.tsx` 的窄 Context 给功能用
+（`useHomeSettingsHub`、`useHomeBookDetail` 这类，16 个功能文件在用）；功能不再引用 `app/` 里的任何东西
+（`react-migration-boundaries.test.mjs` 的清单已清空，只减不增）。
 
 ## `features/` —— 一个功能 = 一个目录
 
-15 个目录，对应界面上 15 件事：
+20 个目录，对应界面上 20 件事：
 
 | 目录 | 用户看到的 |
 |---|---|
 | `library` | 书架：书卡、封面、筛选、批量、搜索 |
-| `book-detail` | 点开一本书的详情弹窗（翻译/OCR/产物/合集/元数据五个 Tab） |
+| `book-detail` | 点开一本书的详情弹窗（概览、进度、文件、质量、术语、历史六个页签） |
 | `ingest` | 添加 PDF：上传、翻译/OCR 选项、页码范围、提交 |
 | `jobs` | 任务运行中的状态卡、阶段流、进度动画、取消/重试 |
 | `job-detail` | 状态详情弹窗 + `detail.html` 整页 |
@@ -64,6 +60,10 @@ app  ──►  features  ──►  platform
 | `task-center` | 任务中心 |
 | `settings` | 设置外壳、主题外观、开发者选项 |
 | `app-update` | 应用更新 |
+| `auth` | 多用户：启动时的登录检查、登录 / 强制改密码界面、设置里的「账户」 |
+| `backup` | 书库数据库备份（设置里的「备份」） |
+| `sync` | 多设备同步（设置里的「同步」） |
+| `usage` | 模型 token 用量：书籍详情「进度」页的用量、设置里的「总用量」 |
 | `admin` | 管理后台 `admin.html`（多用户模式、管理员）：账号、用量、页数、任务 |
 | `notify` | 任务跑完的提醒：页面提示、系统通知、标签页标题记号，设置里的「通知」分栏 |
 | `editorial-room` | 翻译编辑部：翻译 agent 各角色分工、一页稿子怎么流转的动画（`editorial.html` 演示页，见 `docs/core/frontend/editorial-room.md`） |
@@ -83,6 +83,32 @@ features/<功能>/
 
 跨功能引用只能落在对方的 `index.js` 或 `domain.js`，不得深入内部——
 同样有门禁。
+
+## 加一个新功能
+
+照这个顺序（方案见 `docs/ops/planning/frontend-migration/20261112-功能登记表.md`）：
+
+1. **建目录** `features/<功能>/`：`index.ts`（唯一出口）、`ui/`、`domain/`（纯逻辑，不 import React）。
+2. **接口**：调后端的函数放 `@retainpdf/api`（`frontend/packages/api/src`）；web 在 `platform/api/domains/<域>.ts` 用
+   `mockable(真实现, 模拟实现)` 包一层（例子 `domains/sync.ts`），模拟实现写在 `platform/api/mocks/`，再从
+   `platform/api/index.ts` 转出。功能只从 `platform/api/index.ts` 取，不然 mock 模式会静默走真网络。
+3. **样式**：组件旁的 CSS 头部写 `@owns <前缀>`，用到别人的类写 `@uses`（`css-module-boundaries` 门禁，例子
+   `features/sync/ui/SyncSettingsPanel.css`）；在 `styles/entries/<页>.css` 里加一行 `@import`（JS 和 CSS 是两条构建线，JS 打包没配 CSS，
+   组件里不要 import CSS）。控件用 `@retainpdf/ui` 的基础组件，不手写 `<button>`、不写死字号圆角
+   （`ui-primitives-ratchet`）。
+4. **接到界面上**——只在登记表里加一行，不改外壳：
+   - 设置里的一栏：写 `ui/settings-section.tsx`（格式 `ui/settings/settings-section.ts`，例子 `features/sync`），出口导出，
+     在 `app/home/shell/settings-sections.tsx` 的表里加一行；要主页服务的就在那个文件里拼。
+   - 书籍详情的一页：写一项 `BookDetailTab`（格式 `ui/book-detail/book-detail-tab.ts`，例子
+     `features/book-detail/ui/tabs/standalone-tabs.tsx`），出口导出，在 `app/home/shell/book-detail-tabs.ts` 加一行。
+   - 主页上的弹窗、浮层、没有界面的盯梢组件：在 `app/home/shell/home-overlays.tsx` 的 `HOME_OVERLAYS` 加一行；要主页服务的
+     在同一个文件里写个 `*Slot` 接上。
+5. **依赖别的功能**：默认不行，只用 `ui`、`platform`。非要不可，在 `tests/architecture/feature-dependencies.test.mjs`
+   的 `ALLOWED` 里登记并写理由；不许互相引用。功能之间通知用 `platform/contracts/app-contract.ts` 的 `APP_EVENTS`
+   （新事件同时加进 `tests/contracts/app-contract.test.mjs` 钉着的名单）。
+6. **桌面版**要用到主进程能力（打开目录、选文件夹等）：网页这头经 `platform/desktop/host.ts` 的 `getDesktopHost()`，
+   主进程那头在 `frontend/desktop/src/main/plugins/ipc.js` 加一个命令。
+7. 在本文件上面的功能表里加一行。
 
 ## `platform/` —— 跨功能基础设施
 
@@ -121,6 +147,9 @@ ConfirmDialog、FormStatusLine）**不在这里**，在 `frontend/packages/ui`�
 | `tests/architecture/tsx-color-literals.test.mjs` | 主题盲颜色只减不增 |
 | `tests/architecture/ui-primitives-ratchet.test.mjs` | 手写控件、写死的字号圆角、新造按钮类名只减不增；基础组件只有 `@retainpdf/ui` 一份 |
 | `tests/architecture/shell-smoke.test.mjs` | 三页挂载顺序与入口链路 |
+| `tests/architecture/feature-dependencies.test.mjs` | 功能之间谁能引用谁（名单只减不增）、不许互相引用 |
+| `tests/architecture/settings-sections-registry.test.mjs` | 设置外壳里不写具体分栏，分栏 id、order 不重复 |
+| `tests/architecture/book-detail-tabs-registry.test.mjs` | 书籍详情页签外壳里不写具体页签，页签 id、order 不重复 |
 
 改动这些门禁时，**必须注入一个已知违规确认它仍能报错，再移除**。
 只看「测试通过」不足以说明门禁有效——批次 5 查出四条一直在空转的门禁，
