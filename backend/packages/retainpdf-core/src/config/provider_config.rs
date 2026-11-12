@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 
 use serde_json::Value;
 
@@ -9,6 +10,21 @@ const OCR_PROVIDER_CONFIG_COMPAT_ENV: &str = "RUST_API_OCR_PROVIDER_CONFIG";
 const PADDLE_DEFAULT_MODEL_ENV: &str = "RETAIN_PADDLE_DEFAULT_MODEL";
 const PADDLE_DEFAULT_MODEL_COMPAT_ENV: &str = "RUST_API_PADDLE_DEFAULT_MODEL";
 const PADDLE_DEFAULT_MODEL_FALLBACK: &str = "PaddleOCR-VL-1.6";
+
+/// OCR 服务商清单 `backend/config/ocr_providers.json`，编译时嵌进来。
+///
+/// 清单是 OCR 服务商的唯一来源：运行时读不到文件（或文件坏了）就用这份，不再另写一份手抄的定义
+/// （以前 Rust、Python 各有一份「找不到文件时用」的定义，接 GLM-OCR 时三处都要改）。
+/// 部署要加命令型服务商，照旧用 `RETAIN_OCR_PROVIDER_CONFIG` 指向自己的文件。
+const BUNDLED_OCR_PROVIDER_CONFIG: &str = include_str!("../../../../config/ocr_providers.json");
+
+fn bundled_ocr_provider_config() -> &'static Value {
+    static BUNDLED: OnceLock<Value> = OnceLock::new();
+    BUNDLED.get_or_init(|| {
+        serde_json::from_str(BUNDLED_OCR_PROVIDER_CONFIG)
+            .expect("backend/config/ocr_providers.json 必须是合法 JSON（测试 bundled_manifest_* 钉着）")
+    })
+}
 
 pub fn ocr_provider_config_path() -> PathBuf {
     config_path().expect("retainpdf-core must resolve a backend provider config path")
@@ -51,7 +67,15 @@ pub fn ocr_provider_definitions() -> serde_json::Map<String, Value> {
         .and_then(Value::as_object)
         .cloned()
         .filter(|providers| !providers.is_empty())
-        .unwrap_or_else(legacy_provider_definitions)
+        .unwrap_or_else(bundled_provider_definitions)
+}
+
+fn bundled_provider_definitions() -> serde_json::Map<String, Value> {
+    bundled_ocr_provider_config()
+        .get("providers")
+        .and_then(Value::as_object)
+        .cloned()
+        .unwrap_or_default()
 }
 
 pub fn ocr_provider_definition(provider: &str) -> Option<Value> {
@@ -128,91 +152,10 @@ fn paddle_config() -> Value {
 }
 
 fn ocr_provider_config() -> Value {
-    let Some(path) = config_path() else {
-        return Value::Null;
-    };
-    let Ok(text) = fs::read_to_string(path) else {
-        return Value::Null;
-    };
-    serde_json::from_str(&text).unwrap_or(Value::Null)
-}
-
-fn legacy_provider_definitions() -> serde_json::Map<String, Value> {
-    let mut providers = serde_json::Map::new();
-    providers.insert(
-        "mineru".to_string(),
-        serde_json::json!({
-            "display_name": "MinerU",
-            "kind": "remote",
-            "credential": {
-                "field": "mineru_token",
-                "env": "RETAIN_MINERU_API_TOKEN",
-                "required_for": ["remote_url", "local_upload"]
-            },
-            "options": {
-                "model_version": {"type": "string", "default": "vlm"},
-                "language": {"type": "string", "default": "ch"},
-                "disable_formula": {"type": "boolean", "default": false},
-                "disable_table": {"type": "boolean", "default": false}
-            }
-        }),
-    );
-    providers.insert(
-        "paddle".to_string(),
-        serde_json::json!({
-            "display_name": "PaddleOCR",
-            "kind": "remote",
-            "credential": {
-                "field": "paddle_token",
-                "env": "RETAIN_PADDLE_API_TOKEN",
-                "required_for": ["remote_url", "local_upload"]
-            },
-            "options": {
-                "transport": {
-                    "type": "string",
-                    "default": "official_http",
-                    "choices": ["official_http", "official_cli"]
-                },
-                "paddle_api_url": {"type": "string", "default": ""},
-                "paddle_model": {
-                    "type": "string",
-                    "default": paddle_default_model(),
-                    "aliases": paddle_config()
-                        .get("model_aliases")
-                        .cloned()
-                        .unwrap_or(Value::Object(serde_json::Map::new()))
-                }
-            }
-        }),
-    );
-    // 智谱 GLM-OCR：调接口、裁图、归一化都在 Python provider worker 里（glm_ocr_driver），走命令型 provider 的路。
-    // 没给 OCR 凭据、翻译又接智谱（open.bigmodel.cn）时用翻译的 key（worker_process 注入凭据时）。
-    providers.insert(
-        "glm_ocr".to_string(),
-        serde_json::json!({
-            "display_name": "GLM-OCR",
-            "kind": "remote_command",
-            "credential": {
-                "field": "credential",
-                "env": "RETAIN_GLM_OCR_API_TOKEN",
-                "required_for": ["local_upload"]
-            },
-            "options": {}
-        }),
-    );
-    providers.insert(
-        "local".to_string(),
-        serde_json::json!({
-            "display_name": "Local OCR",
-            "kind": "local_command",
-            "credential": null,
-            "options": {
-                "command": {"type": "string", "env": "RETAIN_LOCAL_OCR_COMMAND", "default": ""},
-                "raw_provider": {"type": "string", "env": "RETAIN_OCR_RAW_PROVIDER", "default": "generic_flat_ocr"}
-            }
-        }),
-    );
-    providers
+    config_path()
+        .and_then(|path| fs::read_to_string(path).ok())
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_else(|| bundled_ocr_provider_config().clone())
 }
 
 fn config_path() -> Option<PathBuf> {
@@ -279,6 +222,38 @@ mod tests {
         let actual = config_path().expect("backend provider config path");
         assert_eq!(actual, expected);
         assert!(actual.is_file());
+    }
+
+    /// 嵌进来的清单就是唯一来源：每个服务商都有合法的 kind、显示名和排序。
+    #[test]
+    fn bundled_manifest_declares_every_provider_completely() {
+        let providers = bundled_provider_definitions();
+        for key in ["mineru", "paddle", "glm_ocr", "local"] {
+            assert!(providers.contains_key(key), "清单里没有 {key}");
+        }
+        for (key, definition) in &providers {
+            let kind = definition.get("kind").and_then(Value::as_str).unwrap_or("");
+            assert!(
+                matches!(kind, "remote" | "remote_command" | "local_command"),
+                "{key} 的 kind 不认识：{kind:?}"
+            );
+            assert!(
+                definition.get("display_name").and_then(Value::as_str).is_some_and(|name| !name.trim().is_empty()),
+                "{key} 没有 display_name"
+            );
+            assert!(
+                definition.get("rank").and_then(Value::as_u64).is_some(),
+                "{key} 没有 rank（接口和命令行按它排序）"
+            );
+        }
+    }
+
+    /// 读不到配置文件时用嵌进来的那份，和仓库里的文件逐字一样（不再有手抄的备用定义）。
+    #[test]
+    fn bundled_manifest_is_the_repository_file() {
+        let on_disk = fs::read_to_string(config_path().expect("repo config path")).expect("read manifest");
+        assert_eq!(on_disk, BUNDLED_OCR_PROVIDER_CONFIG);
+        assert_eq!(&ocr_provider_config(), bundled_ocr_provider_config());
     }
 
     #[test]

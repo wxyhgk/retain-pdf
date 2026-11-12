@@ -9,7 +9,7 @@ use toml_edit::{DocumentMut, Item, Table};
 
 use crate::home::ConfigHome;
 use crate::keys::{describe_key, parse_value, Store};
-use crate::providers::{model_provider, MODEL_PROVIDERS, OCR_PROVIDERS};
+use crate::providers::{model_provider, ocr_providers, MODEL_PROVIDERS};
 use crate::settings::Settings;
 
 fn file_text(document: &DocumentMut, path: &str) -> Option<String> {
@@ -131,8 +131,11 @@ impl ConfigHome {
             );
         }
         let mut ocr_tokens = Map::new();
-        for (id, token_key) in OCR_PROVIDERS {
-            ocr_tokens.insert(id.to_string(), secret(file_text(&credentials, &format!("ocr.{token_key}"))));
+        for provider in ocr_providers() {
+            ocr_tokens.insert(
+                provider.id.clone(),
+                secret(file_text(&credentials, &format!("ocr.{}", provider.token_key))),
+            );
         }
         let sources: BTreeMap<String, Value> =
             settings.sources.iter().map(|(k, v)| (k.clone(), serde_json::to_value(v).unwrap_or(Value::Null))).collect();

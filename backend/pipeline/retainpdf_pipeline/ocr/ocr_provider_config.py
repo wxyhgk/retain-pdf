@@ -30,10 +30,19 @@ def ocr_provider_config() -> dict[str, Any]:
     return dict(_ocr_provider_config())
 
 
+class OcrProviderConfigError(RuntimeError):
+    """OCR 服务商清单读不到或不完整。"""
+
+
 def ocr_provider_definitions() -> dict[str, dict[str, Any]]:
+    # 清单 backend/config/ocr_providers.json 是 OCR 服务商的唯一来源（Rust 编译时嵌入同一份）。
+    # 以前这里读不到就用一份手抄的定义，接新服务商时要改三处、漏了也不报错；现在读不到就直接说清楚。
     providers = _ocr_provider_config().get("providers")
-    if not isinstance(providers, dict):
-        return _legacy_provider_definitions()
+    if not isinstance(providers, dict) or not providers:
+        raise OcrProviderConfigError(
+            f"OCR 服务商清单读不到或没有 providers：{_config_path()}。"
+            f"用环境变量 {OCR_PROVIDER_CONFIG_ENV} 指向 backend/config/ocr_providers.json（rust_api 拉起 worker 时会自动设置）。"
+        )
     normalized: dict[str, dict[str, Any]] = {}
     for key, value in providers.items():
         provider_key = str(key or "").strip().lower()
@@ -161,73 +170,6 @@ def _paddle_config() -> dict[str, Any]:
     return legacy
 
 
-def _legacy_provider_definitions() -> dict[str, dict[str, Any]]:
-    paddle = _paddle_config()
-    paddle_default = str(paddle.get("default_model") or PADDLE_DEFAULT_MODEL_FALLBACK).strip()
-    paddle_aliases = dict(paddle.get("model_aliases") or {})
-    return {
-        "mineru": {
-            "display_name": "MinerU",
-            "kind": "remote",
-            "credential": {
-                "field": "mineru_token",
-                "env": "RETAIN_MINERU_API_TOKEN",
-                "required_for": ["remote_url", "local_upload"],
-            },
-            "options": {
-                "model_version": {"type": "string", "default": "vlm"},
-                "language": {"type": "string", "default": "ch"},
-                "disable_formula": {"type": "boolean", "default": False},
-                "disable_table": {"type": "boolean", "default": False},
-            },
-        },
-        "paddle": {
-            "display_name": "PaddleOCR",
-            "kind": "remote",
-            "credential": {
-                "field": "paddle_token",
-                "env": "RETAIN_PADDLE_API_TOKEN",
-                "required_for": ["remote_url", "local_upload"],
-            },
-            "options": {
-                "paddle_api_url": {"type": "string", "default": ""},
-                "paddle_model": {
-                    "type": "string",
-                    "default": paddle_default,
-                    "aliases": paddle_aliases,
-                },
-            },
-        },
-        "glm_ocr": {
-            "display_name": "GLM-OCR",
-            "kind": "remote_command",
-            "credential": {
-                "field": "credential",
-                "env": "RETAIN_GLM_OCR_API_TOKEN",
-                "required_for": ["local_upload"],
-            },
-            "options": {},
-        },
-        "local": {
-            "display_name": "Local OCR",
-            "kind": "local_command",
-            "credential": None,
-            "options": {
-                "command": {
-                    "type": "string",
-                    "env": "RETAIN_LOCAL_OCR_COMMAND",
-                    "default": "",
-                },
-                "raw_provider": {
-                    "type": "string",
-                    "env": "RETAIN_OCR_RAW_PROVIDER",
-                    "default": "generic_flat_ocr",
-                },
-            },
-        },
-    }
-
-
 def _ocr_provider_config() -> dict[str, Any]:
     return _load_ocr_provider_config(str(_config_path()))
 
@@ -282,6 +224,7 @@ def _config_path() -> Path:
 
 
 __all__ = [
+    "OcrProviderConfigError",
     "OCR_PROVIDER_CONFIG_ENV",
     "PADDLE_DEFAULT_MODEL_ENV",
     "PADDLE_DEFAULT_MODEL_FALLBACK",

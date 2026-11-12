@@ -96,6 +96,14 @@ GET /api/v1/providers/ocr
 
 每个选项怎么分的、为什么，见 [OCR 提供方选项分客户端和服务器](../../ops/planning/api-reorg/20261022-OCR提供方选项分客户端和服务器.md)。
 
+## 服务商清单是唯一来源（2026-11-12）
+
+服务商只在 `backend/config/ocr_providers.json` 里登记一次：rust_api 编译时嵌入这份文件（运行时读不到就用嵌入的），
+Python 流水线读同一份（读不到直接报错，不再有手抄的备用定义），命令行 `retainpdf setup` 的 OCR 选项也从它来
+（要 token 的那几家，token 键是 `ocr.<服务商>_token`）。每个服务商有 `rank`，这个接口和命令行都按它排序。
+后续把"会不会一片片交结果、页数和大小上限、key 从哪来"也写进清单，见
+[后端插件化总方案](../../ops/planning/plugin-architecture/20261112-后端插件化总方案.md)。
+
 ## provider_kind
 
 - `remote`: 后端内置远程 provider，例如 MinerU、Paddle。

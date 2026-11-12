@@ -84,27 +84,21 @@ pub fn provider_definition(kind: &OcrProviderKind) -> Option<OcrProviderDefiniti
 }
 
 pub fn provider_public_definitions() -> Vec<OcrProviderPublicDefinition> {
-    let mut definitions: Vec<OcrProviderPublicDefinition> =
+    // 排序看清单里每个服务商的 `rank`（没写的排最后），同 rank 按 key。
+    let mut ranked: Vec<(u64, OcrProviderPublicDefinition)> =
         provider_config::ocr_provider_definitions()
             .into_iter()
-            .map(|(key, value)| provider_public_definition_from_config(key, value))
+            .map(|(key, value)| {
+                let rank = value.get("rank").and_then(Value::as_u64).unwrap_or(u64::MAX);
+                (rank, provider_public_definition_from_config(key, value))
+            })
             .collect();
-    definitions.sort_by(|left, right| {
-        provider_sort_rank(&left.key)
-            .cmp(&provider_sort_rank(&right.key))
+    ranked.sort_by(|(left_rank, left), (right_rank, right)| {
+        left_rank
+            .cmp(right_rank)
             .then_with(|| left.key.cmp(&right.key))
     });
-    definitions
-}
-
-fn provider_sort_rank(key: &str) -> u8 {
-    match key {
-        "mineru" => 0,
-        "paddle" => 1,
-        "glm_ocr" => 2,
-        "local" => 3,
-        _ => 4,
-    }
+    ranked.into_iter().map(|(_, definition)| definition).collect()
 }
 
 fn provider_public_definition_from_config(
