@@ -280,6 +280,36 @@ fn classify_job_failure_accepts_new_structured_failure_protocol() {
     assert_eq!(failure.raw_excerpt.as_deref(), Some("token expired"));
     assert_eq!(failure.raw_error_excerpt.as_deref(), Some("token expired"));
     assert_eq!(failure.suggestion.as_deref(), Some("更新 Token"));
+    assert_eq!(
+        failure.resume_from, None,
+        "OCR 阶段的 Key 被拒没有 OCR 产物可复用，只能整个重跑"
+    );
+}
+
+/// 翻译 Key 被拒时翻译会整份停下（流水线报 failed_stage=translation），OCR 已经做完：
+/// 换 Key 后从翻译续跑，不重付 OCR 的钱。结构化失败照抄流水线实际打出来的那一行。
+#[test]
+fn translation_auth_failure_resumes_at_translation() {
+    let mut job = crate::models::JobSnapshot::new(
+        "job-translation-auth".to_string(),
+        CreateJobInput::default(),
+        vec!["python".to_string()],
+    );
+    job.status = crate::models::JobStatusKind::Failed;
+    job.stage = Some("failed".to_string());
+    job.error = Some(
+        "structured failure json: {\"failed_stage\":\"translation\",\"failure_code\":\"auth_failed\",\"failure_category\":\"auth\",\"provider_stage\":\"\",\"provider_code\":\"\",\"suggestion\":\"检查 translation 凭据、模型 API Key 或相关访问令牌是否有效。\",\"raw_excerpt\":\"翻译 API Key 被上游拒绝（HTTP 401），已停止翻译，剩下的块没有再发请求。\",\"stage\":\"translation\",\"error_type\":\"auth_failed\",\"summary\":\"鉴权失败\",\"retryable\":false,\"provider\":\"translation\"}\n"
+            .to_string(),
+    );
+
+    let failure = classify_job_failure(&job).expect("failure");
+    assert_eq!(failure.category, "auth_failed");
+    assert_eq!(failure.failed_stage.as_deref(), Some("translation"));
+    assert_eq!(failure.resume_from.as_deref(), Some("translation"));
+    assert!(failure
+        .recovery_hint
+        .as_deref()
+        .is_some_and(|hint| hint.contains("从翻译阶段续跑")));
 }
 
 #[test]

@@ -162,6 +162,18 @@ const CATALOGUE: &[(&str, FailureRecovery)] = &[
     }),
 ];
 
+/// 同一种分类在不同阶段恢复方式不同时，按 (分类, 失败阶段) 覆盖上面的表。
+///
+/// 只登记"换个阶段就能少花钱"的情况。例如 `auth_failed`：OCR 阶段的 Key 被拒，
+/// 没有产物可复用，只能整个重跑；翻译阶段的 Key 被拒（翻译会在第一次被拒时整份停下），
+/// OCR 已经完整做完，换 Key 后从翻译续跑就行。
+const STAGE_OVERRIDES: &[(&str, &str, FailureRecovery)] = &[
+    ("auth_failed", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "翻译 API Key 无效或没有权限。OCR 产物完好，在设置里换 Key 后从翻译阶段续跑，不会重复调用 OCR。",
+    }),
+];
+
 fn unknown_recovery() -> FailureRecovery {
     FailureRecovery {
         resume_from: None,
@@ -181,6 +193,19 @@ pub fn recovery_for(category: &str) -> FailureRecovery {
         .unwrap_or_else(unknown_recovery)
 }
 
+/// 按分类和失败阶段查恢复方式：先查 `STAGE_OVERRIDES`，没有再按分类查表。
+pub fn recovery_for_stage(category: &str, failed_stage: &str) -> FailureRecovery {
+    let failed_stage = failed_stage.trim();
+    STAGE_OVERRIDES
+        .iter()
+        .find(|(key, stage, _)| *key == category && *stage == failed_stage)
+        .map(|(_, _, recovery)| FailureRecovery {
+            resume_from: recovery.resume_from,
+            hint: recovery.hint,
+        })
+        .unwrap_or_else(|| recovery_for(category))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -193,6 +218,38 @@ mod tests {
             Some(ResumeFrom::Translation)
         );
         assert_eq!(recovery_for("auth_failed").resume_from, None);
+    }
+
+    /// 翻译阶段的 Key 被拒：OCR 已经做完，换 Key 后从翻译续跑，不该让用户重付 OCR 的钱。
+    /// OCR 阶段（或阶段不明）的 Key 被拒照旧整个重跑。
+    #[test]
+    fn auth_failure_resumes_at_translation_only_when_it_failed_in_translation() {
+        let translation = recovery_for_stage("auth_failed", "translation");
+        assert_eq!(translation.resume_from, Some(ResumeFrom::Translation));
+        assert!(translation.hint.contains("换 Key"));
+        for stage in ["ocr_processing", "ocr", "normalization", "", "startup_recovery"] {
+            assert_eq!(
+                recovery_for_stage("auth_failed", stage).resume_from,
+                None,
+                "{stage} 阶段的 Key 被拒没有可复用的 OCR 产物"
+            );
+        }
+        // 没有覆盖的分类照旧按表查
+        assert_eq!(
+            recovery_for_stage("render_failed", "translation").resume_from,
+            Some(ResumeFrom::Render)
+        );
+    }
+
+    /// 覆盖表里的分类必须先在主表登记——否则其他阶段会落到「未识别」兜底文案。
+    #[test]
+    fn stage_overrides_refer_to_catalogued_categories() {
+        for (category, stage, _) in STAGE_OVERRIDES {
+            assert!(
+                CATALOGUE.iter().any(|(key, _)| key == category),
+                "覆盖表里的 {category}（{stage}）没有在主表登记"
+            );
+        }
     }
 
     /// 没登记的分类必须走保守兜底，而不是 panic 或谎称可以续跑。
@@ -230,7 +287,10 @@ mod tests {
     /// 承诺「不重复调用 OCR」的，必须真的是从翻译或渲染续跑——否则就是在骗用户。
     #[test]
     fn hints_promising_no_ocr_recharge_actually_resume_past_ocr() {
-        for (category, recovery) in CATALOGUE {
+        let overrides = STAGE_OVERRIDES
+            .iter()
+            .map(|(category, _, recovery)| (*category, recovery));
+        for (category, recovery) in CATALOGUE.iter().map(|(c, r)| (*c, r)).chain(overrides) {
             if recovery.hint.contains("不会重复调用 OCR") {
                 assert!(
                     recovery.resume_from.is_some(),
