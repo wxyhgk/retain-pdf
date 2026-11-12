@@ -59,10 +59,18 @@ test("Key 被拒（auth，后端一律标不可重试）时，保留「去设置
   assert.equal(advice.retryLikelyHelps, false);
   assert.match(advice.action, /换一个有效的 Key/);
   assert.doesNotMatch(advice.action, /复制诊断信息/);
-  assert.equal(advice.fixInSettings, true);
+  assert.equal(advice.settingsAction, "去设置换 Key");
   // 换文件、换解析方式这两类本来就有自己的说法，同样不盖。
   assert.match(failureAdvice({ ...mineru, category: "input", retryable: false }).action, /换一份文件/);
   assert.match(failureAdvice({ ...mineru, category: "normalization", retryable: false }).action, /换一种解析方式/);
+});
+
+test("上游余额不足（billing，402）：说充值或换 Key，不写死从哪一步继续，给「去设置」", () => {
+  const advice = failureAdvice({ ...mineru, category: "billing", stage: "translation", retryable: false });
+  assert.equal(advice.retryLikelyHelps, false);
+  assert.match(advice.action, /充值/);
+  assert.doesNotMatch(advice.action, /从翻译继续|复制诊断信息/);
+  assert.equal(advice.settingsAction, "去设置");
 });
 
 test("认不出的分类也要给得出话来，不能空着", () => {

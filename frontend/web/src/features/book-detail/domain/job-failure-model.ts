@@ -29,8 +29,8 @@ export type FailureAdvice = {
   action: string;
   /** 重试大概率有用吗 —— 决定重试按钮是主按钮还是次按钮。 */
   retryLikelyHelps: boolean;
-  /** 要先去设置里改（换 Key）才能修好：卡片上给一个直达「设置 → 接口」的按钮。 */
-  fixInSettings?: boolean;
+  /** 要先去设置里改（换 Key）才能修好：卡片上给一个直达「设置 → 接口」的按钮，值是按钮上的字。 */
+  settingsAction?: string;
 };
 
 /** 键必须覆盖 Python 侧 `_failure_category_for` 发得出的全部取值。
@@ -75,7 +75,15 @@ const BY_CATEGORY: Record<string, FailureAdvice> = {
     title: "凭据被拒",
     action: "上游不认这个 API Key —— 原样重试解决不了。去设置里换一个有效的 Key（确认额度没用完、没过期），再点重试：重试会用设置里的新 Key。",
     retryLikelyHelps: false,
-    fixInSettings: true,
+    settingsAction: "去设置换 Key",
+  },
+  // 上游 HTTP 402（余额不足、欠费）。OCR 和翻译都可能。能不能从翻译接着跑看后端的 resume_from，
+  // 状态行的主按钮照它显示，这里不写死「从翻译继续」。
+  billing: {
+    title: "上游账户余额不足",
+    action: "服务商那边余额不足或欠费，充值前原样重试会同样失败。先去服务商充值、或在设置里换一个有余额的 Key，再点重试。",
+    retryLikelyHelps: false,
+    settingsAction: "去设置",
   },
   input: {
     title: "这份文件本身有问题",

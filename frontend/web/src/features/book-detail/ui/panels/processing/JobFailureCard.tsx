@@ -64,7 +64,7 @@ export function JobFailureCard({
   // 换 Key 这类要去设置里改的失败，给一个直达「设置 → 接口」的按钮；设置窗口叠在详情上面，存完关掉就回到这里点重试。
   // 取不到设置入口（单独挂载、测试）就不画。
   const settingsHub = useContext(HomeSettingsHubContext);
-  const openSettings = advice.fixInSettings && settingsHub?.dialogStore
+  const openSettings = advice.settingsAction && settingsHub?.dialogStore
     ? () => settingsHub.dialogStore.open({ tab: "api" })
     : null;
   const subtitle = failureSubtitle(failure);
@@ -118,7 +118,7 @@ export function JobFailureCard({
       {openSettings ? (
         <Button variant="secondary" size="sm" className="book-detail-failure-settings" data-failure-open-settings="true" onClick={openSettings}>
           <Settings2 aria-hidden="true" />
-          去设置换 Key
+          {advice.settingsAction}
         </Button>
       ) : null}
 
