@@ -18,6 +18,8 @@
 - [翻译 agent（2026-10 起）](./translation-agent/README.md)
 - [书按段走、任务目录新结构（2026-11 起）](./book-segments/README.md)
 - [后端插件化（2026-11 起）](./plugin-architecture/README.md)
+- [表格翻译（2026-11 起）](./table-translation/README.md)
+- [排版 agent（2026-11，暂缓）](./layout-agent/README.md)
 - [架构与 API 契约任务台账](./architecture_tasks.csv)
 - [2026-04-15 Rust API 去耦任务清单](./250415_task.csv)
 - [2026-04-16 Normalize/翻译持续试错台账](./260416.csv)
