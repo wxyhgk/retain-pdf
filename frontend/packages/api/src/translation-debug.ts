@@ -68,3 +68,36 @@ export async function replayTranslationItem(jobId: string, itemId: string, apiPr
       : `重放翻译 item 失败: ${status}`)),
   });
 }
+
+/** 改单条译文时后端的拒绝原因（error.details.reason）。 */
+export type TranslationRevisionIssueView = { item_id?: string; kind?: string; severity?: string; message?: string };
+
+const REVISION_REASON_MESSAGES: Record<string, string> = {
+  validation_failed: "新译文没通过检查，没有保存。",
+  job_running: "这本书正在处理（翻译或排版），等它跑完再改。",
+  generation_mismatch: "这段译文刚被别处改过（精修或另一个窗口），重新打开再改。",
+  checkpoint_locked: "译文文件正被占用（任务刚启动？），稍等再试。",
+  read_only_job: "合并出来的阅读结果是只读的，要改得到原来那本书里改。",
+};
+
+/**
+ * 改单条译文（PATCH /jobs/:id/translations/:item_id）。失败时抛的 Error 带 status、reason（后端的 details.reason）
+ * 和 issues（校验没过时的每一条问题），界面按它们说人话。
+ */
+export async function reviseTranslationItem(
+  jobId: string,
+  itemId: string,
+  body: Parameters<typeof translations.updateTranslationItem>[1]["body"],
+  apiPrefix?: string,
+): Promise<Awaited<ReturnType<typeof translations.updateTranslationItem>>> {
+  return translations.updateTranslationItem(apiPrefix, { job_id: jobId, item_id: itemId, body }, {
+    onError: (status, payload) => {
+      const details = payload?.error?.details || {};
+      const reason = `${details.reason || ""}`;
+      const issues: TranslationRevisionIssueView[] = Array.isArray(details.validation?.issues) ? details.validation.issues : [];
+      const message = REVISION_REASON_MESSAGES[reason]
+        || (status === 404 ? "找不到这段译文（任务的译文可能还没生成）。" : `保存译文失败：${payload?.error?.message || payload?.message || status}`);
+      return Object.assign(new Error(message), { status, reason, issues });
+    },
+  });
+}

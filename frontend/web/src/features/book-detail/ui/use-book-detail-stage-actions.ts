@@ -199,6 +199,8 @@ export function useBookDetailStageActions({
   }, [actions, job, jobId, onJobSubmitted, pendingStage, stageActions]);
 
   return {
+    /** 真正持有译文的任务（底是重新渲染出来的任务时顺着来源找到的那个）；还在找时是空串。改译文要发给它。 */
+    ownerJobId: jobId,
     stageActions,
     loading: effectiveLoading,
     pendingStage,

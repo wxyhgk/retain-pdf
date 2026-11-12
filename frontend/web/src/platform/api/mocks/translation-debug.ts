@@ -46,3 +46,26 @@ export async function replayTranslationItem(jobId: string, itemId: string, apiPr
   void apiPrefix;
   return getMockTranslationReplay(jobId, itemId);
 }
+
+/** mock：改单条译文总是成功，原样回显新译文（不重排版）。 */
+export async function reviseTranslationItem(
+  jobId: string,
+  itemId: string,
+  body: { translated_text: string },
+  apiPrefix?: string,
+) {
+  void apiPrefix;
+  return {
+    job_id: jobId,
+    item_id: itemId,
+    changed: true,
+    generation: 1,
+    item: { item_id: itemId, page_idx: 0, translation_unit_id: itemId, unit_source_text: "", translated_text: body.translated_text, protected_translated_text: body.translated_text, final_status: "translated" },
+    validation: { passed: true, error_count: 0, warning_count: 0, issues: [] },
+    revision: null,
+    page_hashes: {},
+    live_publication: { status: "unavailable", pages: [], error: null },
+    rerender: null,
+    rerender_error: null,
+  };
+}

@@ -180,3 +180,90 @@
   color: var(--muted);
   font-size: var(--ui-text-xs);
 }
+
+/* 每条问题右边的「改译」：和整行按钮并排，悬停那一行时才显眼。 */
+.book-detail-quality-list > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.book-detail-quality-list > li > .book-detail-quality-list-item {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.book-detail-quality-list-edit {
+  flex: none;
+  margin-top: 2px;
+  color: var(--muted);
+}
+
+.book-detail-quality-list > li:hover .book-detail-quality-list-edit,
+.book-detail-quality-list-edit:focus-visible {
+  color: var(--ink);
+}
+
+/* 改过几段以后的一行：「已改 N 段」+「重新排版」。 */
+.book-detail-quality-edited {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--ui-radius-md);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--ink);
+  font-size: var(--ui-text-sm);
+
+  & .is-error {
+    color: var(--danger);
+  }
+}
+
+/* 「改这段译文」窗口。 */
+.book-detail-edit-translation-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+
+  & h4 {
+    margin: 0 0 6px;
+    font-size: var(--ui-text-sm);
+    font-weight: 600;
+  }
+
+  & textarea {
+    width: 100%;
+    min-height: 160px;
+    font-size: var(--ui-text-md);
+    line-height: 1.6;
+  }
+}
+
+.book-detail-edit-translation-source {
+  max-height: 180px;
+  margin: 0;
+  padding: 8px 10px;
+  overflow: auto;
+  border-radius: var(--ui-radius-sm);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--ink);
+  font-size: var(--ui-text-md);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.book-detail-edit-translation-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--ui-text-xs);
+}
+
+.book-detail-edit-translation-issues {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--danger);
+  font-size: var(--ui-text-sm);
+}

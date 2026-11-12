@@ -6,6 +6,8 @@ import type { QualityListKind } from "../domain/quality-model.js";
 
 export type QualityListItem = {
   key: string;
+  /** 译文条目编号（三位，p001-b002），改这段译文用；没有就不能改。 */
+  itemId: string;
   /** 阅读页跳转用的块编号（四位）。 */
   readerItemId: string;
   page: number;
@@ -73,6 +75,7 @@ function base(row: Row, index: number, prefix: string) {
   return {
     key: `${prefix}-${text(row.id || row.revision_id || row.reader_item_id || row.item_id) || index}-${index}`,
     readerItemId: text(row.reader_item_id || row.item_id),
+    itemId: text(row.item_id),
     page: num(row.page),
   };
 }
