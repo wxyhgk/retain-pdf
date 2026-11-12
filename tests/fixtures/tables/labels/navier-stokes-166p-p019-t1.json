@@ -1,0 +1,399 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "navier-stokes-166p-p019-t1",
+ "fixture": "navier-stokes-166p.pdf",
+ "source_page": 19,
+ "bbox_pt": [
+  85.0,
+  109.6,
+  527.0,
+  665.2
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 1: Guide to the principal symbols.",
+ "footnotes": [
+  "Continued on the next page."
+ ],
+ "rows": [
+  [
+   {
+    "text": "Symbol",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "符号"
+   },
+   {
+    "text": "Meaning and role",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "含义与作用"
+   },
+   {
+    "text": "Definition",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "定义"
+   }
+  ],
+  [
+   {
+    "text": "Physical fields and the background construction",
+    "rowspan": 1,
+    "colspan": 3,
+    "role": "stub",
+    "action": "translate",
+    "reference": "物理场与背景构造"
+   }
+  ],
+  [
+   {
+    "text": "u, p, f, ν",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Velocity, pressure, external force, and physical viscosity in the Navier–Stokes equation. The local construction uses ν = 1.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "Navier–Stokes 方程中的速度、压力、外力和物理黏性系数。局部构造取 ν = 1。"
+   },
+   {
+    "text": "(1.1); Section 3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "(1.1)；第 3 节"
+   }
+  ],
+  [
+   {
+    "text": "R(u, p)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Momentum residual at viscosity one, ∂<sub>t</sub>u + (u · ∇)u − ∆u + ∇p.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "黏性系数为 1 时的动量残差，∂<sub>t</sub>u + (u · ∇)u − ∆u + ∇p。"
+   },
+   {
+    "text": "(3.1)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "u<sup>(0)</sup>, p<sup>(0)</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Leading axisymmetric velocity and pressure, including radial, azimuthal, and axial flow. The swirl is u<sub>θ</sub><sup>(0)</sup>.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "主阶轴对称速度和压力，包括径向、周向和轴向流动。旋流分量为 u<sub>θ</sub><sup>(0)</sup>。"
+   },
+   {
+    "text": "(4.3)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "E, U, V<sub>0</sub>, Π",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Leading profiles of swirl, axial velocity, radial flux ru<sub>r</sub><sup>(0)</sup>, and pressure, respectively.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "分别为旋流、轴向速度、径向通量 ru<sub>r</sub><sup>(0)</sup> 和压力的主阶剖面。"
+   },
+   {
+    "text": "(4.3), (4.7)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "ϕ, F, H in the profiles",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "剖面中的 ϕ, F, H"
+   },
+   {
+    "text": "Smooth swirl profile F = E/√2X = ϕ/C, and angular-momentum profile H = √2XE. The normalization C > 1 is fixed.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "光滑旋流剖面 F = E/√2X = ϕ/C，以及角动量剖面 H = √2XE。归一化常数 C > 1 固定不变。"
+   },
+   {
+    "text": "(4.4), (4.8)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "m, (M, I, J, S, C<sub>p</sub>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Five cumulative radial integrals preserving pressure, radial velocity, and stress across profile joins; C<sub>p</sub> is the pressure increment from the axis.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "五个累积径向积分，在剖面拼接处保持压力、径向速度和应力连续；C<sub>p</sub> 为自轴线起算的压力增量。"
+   },
+   {
+    "text": "(4.15); Lemma 4.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "(4.15)；引理 4.4"
+   }
+  ],
+  [
+   {
+    "text": "Q<sub>s</sub>, N<sub>s</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Normalized radial primitives of the inviscid azimuthal and axial momentum residuals, used to form the stress vector p<sub>s</sub>.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "无黏周向和轴向动量残差的归一化径向原函数，用于构成应力向量 p<sub>s</sub>。"
+   },
+   {
+    "text": "(4.9), (4.16), (4.11)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "s = (a, −b<sub>s</sub>), p<sub>s</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Normalized radial shear and integrated inviscid-stress vector, with T<sub>0</sub> = F(p<sub>s</sub> − s). Here p<sub>s</sub> is a two-component stress quantity.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "归一化径向剪切与积分无黏应力向量，其中 T<sub>0</sub> = F(p<sub>s</sub> − s)。这里 p<sub>s</sub> 是一个二分量应力量。"
+   },
+   {
+    "text": "(4.11)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "t<sub>s</sub>, v<sub>s</sub>, P<sub>c</sub>, J<sub>c</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Shear direction and strength parameters, and unnormalized components of p<sub>s</sub> along and across that direction; these specify the positive covariance cone.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "剪切方向参数与强度参数，以及 p<sub>s</sub> 沿该方向和垂直于该方向的未归一化分量；它们确定正协方差锥。"
+   },
+   {
+    "text": "(4.20); Equation (4.21)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "(4.20)；式 (4.21)"
+   }
+  ],
+  [
+   {
+    "text": "E<sub>n</sub>, U<sub>n</sub>, V<sub>n</sub>, Π<sub>n</sub>, λ<sub>n</sub> = 2nh",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Formal background coefficient profiles at order q<sup>2nh</sup>. The index n counts background expansion orders.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "q<sup>2nh</sup> 阶的形式背景系数剖面。指标 n 表示背景展开的阶数。"
+   },
+   {
+    "text": "(5.1), (5.2)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "u<sub>B</sub>, p<sub>B</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Smooth corrected axisymmetric background, obtained by summing the coefficients with cutoffs on vector potentials, direct swirl terms, and pressures.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "光滑的修正轴对称背景场，通过对矢势、直接旋流项和压力加截断后将各系数求和得到。"
+   },
+   {
+    "text": "Proposition 5.5; (5.41)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "命题 5.5；(5.41)"
+   }
+  ],
+  [
+   {
+    "text": "(b, V, G)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Radial, azimuthal (swirl), and axial components of the fixed background in normalized chart coordinates.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "固定背景场在归一化坐标卡坐标下的径向、周向（旋流）和轴向分量。"
+   },
+   {
+    "text": "(8.1), (9.7)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "T<sub>0</sub>, T = q<sup>−A−1/2</sup>T<sub>0</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Leading stress profile and physical stress pair, in (rθ, rz) order. The negative cylindrical divergence of T gives the leading tangential residual, retaining radial viscosity and omitting axial viscosity.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "主阶应力剖面与物理应力对，按 (rθ, rz) 顺序排列。T 的负柱坐标散度给出主阶切向残差，其中保留径向黏性、略去轴向黏性。"
+   },
+   {
+    "text": "(4.11); Proposition 4.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "(4.11)；命题 4.2"
+   }
+  ]
+ ],
+ "tags": [
+  "spanning_cells",
+  "inline_math",
+  "continued_table"
+ ],
+ "notes": "符号表，第 20 页还有续表（本页底部 \"Continued on the next page.\" 记作表注）。分组标题 \"Physical fields and the background construction\"（粗体）跨 3 列，按 stub。第一列全是数学符号，keep；\"ϕ, F, H in the profiles\" 带普通词，translate。第三列只有式号的 keep，带 Section/Lemma/Equation/Proposition 的 translate。花体、哥特体字母（ℛ、𝔪、𝔰、𝒯）文字层里就是普通字母 R、m、s、T，按文字层抄（与斜体一样不记字体）；因此最后一行 \"T<sub>0</sub>, T = …\" 里的花体 𝒯 和正体 T 在 text 里无法区分。√ 的根号线盖住 \"2X\"，按文字层写 \"√2X\"。OCR：GLM 漏掉了分组标题那一行（只有 14 行）；Paddle 结构对（15 行，分组标题 colspan=3），但把 𝔪 认成普通 m、𝔰 认成 \\mathbf{s}。两家都把 Navier–Stokes 的 en dash 写成连字符。"
+}

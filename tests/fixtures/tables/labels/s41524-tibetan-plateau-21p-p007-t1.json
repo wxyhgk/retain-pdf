@@ -1,0 +1,187 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "s41524-tibetan-plateau-21p-p007-t1",
+ "fixture": "s41524-tibetan-plateau-21p.pdf",
+ "source_page": 7,
+ "bbox_pt": [
+  164.1,
+  471.8,
+  455.7,
+  510.6
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 2 Goal-oriented generation results on multiple properties, as well as the similarity toward a target domain dataset.",
+ "footnotes": [],
+ "rows": [
+  [
+   {
+    "text": "Experiment",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "实验"
+   },
+   {
+    "text": "QED",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "SAS",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Similarity",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "相似度"
+   },
+   {
+    "text": "Efficiency",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "效率"
+   }
+  ],
+  [
+   {
+    "text": "De novo generation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "从头生成"
+   },
+   {
+    "text": "0.5762",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.1802",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.8091",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.742",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Property optimization",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "性质优化"
+   },
+   {
+    "text": "0.8604",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.3406",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.7988",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.7558",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Domain-adaptive generation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "领域自适应生成"
+   },
+   {
+    "text": "0.8378",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.3743",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.8317",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.7646",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [],
+ "notes": "这一页文字层完整，按 text_layer。QED、SAS 是通用指标缩写，keep。\"De novo generation\" 译 \"从头生成\"，与 Table 1 表题一致。页面上有 \"ARTICLE IN PRESS\" 水印，文字层里也有，抄格子时剔除。OCR：两家结构和文字都对（4×5）。"
+}

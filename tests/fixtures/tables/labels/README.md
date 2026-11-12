@@ -43,6 +43,9 @@
     参考文献号（`[12]`、`ref. 5`）、DOI 和网址、空格子、表注里定义过的缩写（`THF`、`n.d.`）、人名和方法名的专有缩写。
   - `translate`：表头和行标签里的普通词、文字描述格。表头里的单位保留（`Temperature (°C)` → `温度 (°C)`）。
   - 拿不准的（比如 `Control`）按学术中文的习惯定，在 `notes` 里写一句为什么。
+  - 反应条件格（2026-11-12 抽查时统一）：缩写原样保留（`rt`、`equiv`、`h`、`min`、`°C`、试剂缩写）；格子里有普通英文词
+    （`reflux`、`overnight`、`to`）就算 `translate`，参考译文只译这些词（`reflux, 14 h` → `回流，14 h`），缩写照旧。
+  - 文字层是符号字体替代字形时（`°`、`×`、`Δ`、`λ`、`Φ` 等抽出来是乱码），`text` 按页面显示的正确字符写，在 `notes` 里说明。
 - `reference`：`translate` 的格子给参考译文（学术中文，术语用领域通用译法，化学试剂按中文习惯：`toluene` → `甲苯`）；
   上标原样保留；`keep` 的格子为 `null`。
 - `tags`（用到的都标）：`spanning_cells`、`multi_level_header`、`superscript_markers`、`units_in_header`、`chemical_formulas`、

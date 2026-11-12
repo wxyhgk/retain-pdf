@@ -1,0 +1,2062 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "d3cs00837a-69p-p006-t1",
+ "fixture": "d3cs00837a-69p.pdf",
+ "source_page": 6,
+ "bbox_pt": [
+  42.5,
+  61.1,
+  552.8,
+  719.5
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 2 List of abbreviations (reagents and OLED materials) used in the text",
+ "footnotes": [],
+ "rows": [
+  [
+   {
+    "text": "Abbreviations",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "缩写"
+   },
+   {
+    "text": "Full meaning",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "全称"
+   },
+   {
+    "text": "Abbreviations",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "缩写"
+   },
+   {
+    "text": "Full meaning",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "全称"
+   }
+  ],
+  [
+   {
+    "text": "AIBN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2-Azoisobutyronitrile",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "偶氮二异丁腈"
+   },
+   {
+    "text": "MeI",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Iodomethane",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "碘甲烷"
+   }
+  ],
+  [
+   {
+    "text": "AlCl<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Aluminium chloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "氯化铝"
+   },
+   {
+    "text": "MeOH",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Methyl alcohol",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲醇"
+   }
+  ],
+  [
+   {
+    "text": "BBr<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Boron tribromide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三溴化硼"
+   },
+   {
+    "text": "2-MeTHF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2-Methyltetrahydrofuran",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2-甲基四氢呋喃"
+   }
+  ],
+  [
+   {
+    "text": "BCl<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Boron trichloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三氯化硼"
+   },
+   {
+    "text": "MesB(OMe)<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Dimethyl mesitylboronate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "均三甲苯基硼酸二甲酯"
+   }
+  ],
+  [
+   {
+    "text": "BI<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Boron triiodide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三碘化硼"
+   },
+   {
+    "text": "MesMgBr",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Mesityl magnesium bromide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "均三甲苯基溴化镁"
+   }
+  ],
+  [
+   {
+    "text": "BCPO",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Bis-4(N-carbazolyl)phenylphosphine oxide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "双-4-(N-咔唑基)苯基氧化膦"
+   },
+   {
+    "text": "mCPBA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3-Chloroperbenzoic acid",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "3-氯过氧苯甲酸"
+   }
+  ],
+  [
+   {
+    "text": "Bepp2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Bis[2-(2-hydroxyphenyl)-pyridine] beryllium",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "双[2-(2-羟基苯基)吡啶]铍"
+   },
+   {
+    "text": "mCPBC",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "9-(3-(9H-Carbazol-9-yl)phenyl)-9H-3,9′-bicarbazole",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "9-(3-(9H-咔唑-9-基)苯基)-9H-3,9′-联咔唑"
+   }
+  ],
+  [
+   {
+    "text": "BF<sub>3</sub>·Et<sub>2</sub>O",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Boron trifluoride diethyl ether complex",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三氟化硼乙醚络合物"
+   },
+   {
+    "text": "mCPCN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "9-(3-(9H-Carbazol-9-yl)phenyl)-9H-carbazole-3-carbonitrile",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "9-(3-(9H-咔唑-9-基)苯基)-9H-咔唑-3-甲腈"
+   }
+  ],
+  [
+   {
+    "text": "(Bpin)<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Bis(pinacolato)diboron",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "联硼酸频哪醇酯"
+   },
+   {
+    "text": "mMTDATA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4,4′,4″-Tris(N-3-methylphenyl-N-phenylamino)triphenylamine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "4,4′,4″-三(N-3-甲基苯基-N-苯基氨基)三苯胺"
+   }
+  ],
+  [
+   {
+    "text": "Bu<sub>2</sub>O",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Dibutyl ether",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "二丁醚"
+   },
+   {
+    "text": "NaH",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Sodium hydride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "氢化钠"
+   }
+  ],
+  [
+   {
+    "text": "CBP",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4,4′-Di(9H-carbazol-9-yl)-1,1′-biphenyl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "4,4′-二(9H-咔唑-9-基)-1,1′-联苯"
+   },
+   {
+    "text": "NaHCO<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Sodium hydrogencarbonate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "碳酸氢钠"
+   }
+  ],
+  [
+   {
+    "text": "Co<sub>2</sub>(CO)<sub>8</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Octacarbonyldicobalt",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "八羰基二钴"
+   },
+   {
+    "text": "NaOH",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Sodium hydroxide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "氢氧化钠"
+   }
+  ],
+  [
+   {
+    "text": "Cs<sub>2</sub>CO<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Cesium carbonate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "碳酸铯"
+   },
+   {
+    "text": "NaOAc",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Sodium acetate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "乙酸钠"
+   }
+  ],
+  [
+   {
+    "text": "[Cu(CH<sub>3</sub>CN)<sub>4</sub>]PF<sub>6</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tetrakis(acetonitrile)copper(I) hexafluorophosphate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "四(乙腈)六氟磷酸铜(I)"
+   },
+   {
+    "text": "NaO<sup>t</sup>Bu",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Sodium tert-butoxide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁醇钠"
+   }
+  ],
+  [
+   {
+    "text": "CuCl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Copper(I) chloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "氯化亚铜"
+   },
+   {
+    "text": "Na<sub>2</sub>CO<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Sodium carbonate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "碳酸钠"
+   }
+  ],
+  [
+   {
+    "text": "Cu(ClO<sub>4</sub>)<sub>2</sub>·6H<sub>2</sub>O",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Copper(II) perchlorate hexahydrate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "六水合高氯酸铜(II)"
+   },
+   {
+    "text": "NECO-296",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Bis(di-tert-butyl(3-methyl-2-butenyl)phosphine)dichloro palladium",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "双(二叔丁基(3-甲基-2-丁烯基)膦)二氯化钯"
+   }
+  ],
+  [
+   {
+    "text": "CuCN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Copper(I) cyanide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "氰化亚铜"
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "N,N-Diisopropylethylamine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "N,N-二异丙基乙胺"
+   }
+  ],
+  [
+   {
+    "text": "CuI",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Copper(I) iodide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "碘化亚铜"
+   },
+   {
+    "text": "<sup>n</sup>BuLi",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "n-Butyllithium",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "正丁基锂"
+   }
+  ],
+  [
+   {
+    "text": "3CTF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2,4,6-Tris(2-(3,6-di-tert-butyl-9H-carbazol-9-yl)-5-(tri-fluoromethyl)phenyl)-1,3,5-triazine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2,4,6-三(2-(3,6-二叔丁基-9H-咔唑-9-基)-5-(三氟甲基)苯基)-1,3,5-三嗪"
+   },
+   {
+    "text": "NBS",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "N-Bromosuccinimide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "N-溴代丁二酰亚胺"
+   }
+  ],
+  [
+   {
+    "text": "DBFDPO",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4,6-Bis(diphenylphosphoryl)dibenzofuran",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "4,6-双(二苯基磷酰基)二苯并呋喃"
+   },
+   {
+    "text": "NMP",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "N-Methyl-2-pyrrolidone",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "N-甲基-2-吡咯烷酮"
+   }
+  ],
+  [
+   {
+    "text": "DBFPO (PPF)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Dibenzo[b,d]furan-2,8-diylbis(diphenylphosphine oxide)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "二苯并[b,d]呋喃-2,8-二基双(二苯基氧化膦)"
+   },
+   {
+    "text": "NPB",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "N<sup>4</sup>,N<sup>4′</sup>-Di(naphthalen-1-yl)-N<sup>4</sup>,N<sup>4′</sup>-diphenyl-[1,1′-biphenyl]-4,4′-diamine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "N<sup>4</sup>,N<sup>4′</sup>-二(萘-1-基)-N<sup>4</sup>,N<sup>4′</sup>-二苯基-[1,1′-联苯]-4,4′-二胺"
+   }
+  ],
+  [
+   {
+    "text": "DBU",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1,8-Diazabicyclo[5.4.0]undec-7-ene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "1,8-二氮杂二环[5.4.0]十一碳-7-烯"
+   },
+   {
+    "text": "PdCl<sub>2</sub>(amphos)<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Bis[di-tert-butyl(4-dimethylaminophenyl)phosphine]dichloropalladium(II)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "双[二叔丁基(4-二甲氨基苯基)膦]二氯化钯(II)"
+   }
+  ],
+  [
+   {
+    "text": "26DCzPPy",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2,6-Bis(3-(9H-carbazol-9-yl)phenyl)pyridine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2,6-双(3-(9H-咔唑-9-基)苯基)吡啶"
+   },
+   {
+    "text": "PdCl<sub>2</sub>(dppf)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "[1,1′-Bis(diphenylphosphino)ferrocene]palladium(II) dichloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "[1,1′-双(二苯基膦基)二茂铁]二氯化钯(II)"
+   }
+  ],
+  [
+   {
+    "text": "DDQ",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2,3-Dichloro-5,6-dicyano-1,4-benzoquinone",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2,3-二氯-5,6-二氰基-1,4-苯醌"
+   },
+   {
+    "text": "PdCl<sub>2</sub>(PPh<sub>3</sub>)<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Bis(triphenylphosphine)palladium(II) dichloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "双(三苯基膦)二氯化钯(II)"
+   }
+  ],
+  [
+   {
+    "text": "DIC-TRz",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "11-(4,6-diphenyl-1,3,5-triazin-2-yl)-12-phenyl-11,12-dihydroindolo[2,3-a]carbazole",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "11-(4,6-二苯基-1,3,5-三嗪-2-基)-12-苯基-11,12-二氢吲哚并[2,3-a]咔唑"
+   },
+   {
+    "text": "Pd(OAc)<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "palladium(II) acetate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "乙酸钯(II)"
+   }
+  ],
+  [
+   {
+    "text": "DMAc",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "N,N-Dimethylacetamide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "N,N-二甲基乙酰胺"
+   },
+   {
+    "text": "Pd[P(o-tol)<sub>3</sub>]<sub>2</sub>Cl<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Bis(tri-o-tolylphosphine)palladium(II) dichloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "双(三邻甲苯基膦)二氯化钯(II)"
+   }
+  ],
+  [
+   {
+    "text": "DMAP",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4-Dimethylaminopyridine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "4-二甲氨基吡啶"
+   },
+   {
+    "text": "Pd(PPh<sub>3</sub>)<sub>4</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tetrakis(triphenylphosphine)palladium(0)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "四(三苯基膦)钯(0)"
+   }
+  ],
+  [
+   {
+    "text": "DMF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "N,N-Dimethylformamide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "N,N-二甲基甲酰胺"
+   },
+   {
+    "text": "Pd<sub>2</sub>(dba)<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tris(dibenzylideneacetone)dipalladium(0)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三(二亚苄基丙酮)二钯(0)"
+   }
+  ],
+  [
+   {
+    "text": "DMFBD-TRZ",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2-(3′-(9,9-Dimethyl-9H-fluoren-2-yl)-[1,1′-biphenyl]-3-yl)-4,6-diphenyl-1,3,5-triazine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2-(3′-(9,9-二甲基-9H-芴-2-基)-[1,1′-联苯]-3-基)-4,6-二苯基-1,3,5-三嗪"
+   },
+   {
+    "text": "PhBCl<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Dichlorophenylborane",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "二氯苯基硼烷"
+   }
+  ],
+  [
+   {
+    "text": "DMMN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Dimethylmalononitrile",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "二甲基丙二腈"
+   },
+   {
+    "text": "PhB(OH)<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Phenylboronic acid",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "苯硼酸"
+   }
+  ],
+  [
+   {
+    "text": "DMIC-TRZ",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1,3-Dihydro-1,1-dimethyl-3-(3-(4,6-diphenyl-1,3,5-triazin-2-yl)phenyl)indeno-[2,1-b]-carbazole",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "1,3-二氢-1,1-二甲基-3-(3-(4,6-二苯基-1,3,5-三嗪-2-基)苯基)茚并[2,1-b]咔唑"
+   },
+   {
+    "text": "PhCzBCz",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "9-(2-(9-Phenyl-9H-carbazol-3-yl)phenyl)-9H-3,9′-bicarbazole",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "9-(2-(9-苯基-9H-咔唑-3-基)苯基)-9H-3,9′-联咔唑"
+   }
+  ],
+  [
+   {
+    "text": "DPEPO",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Bis[2-(diphenylphosphino)phenyl]ether oxide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "双[2-(二苯基膦基)苯基]醚氧化物"
+   },
+   {
+    "text": "Ph<sub>2</sub>PH",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Diphenylphosphane",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "二苯基膦"
+   }
+  ],
+  [
+   {
+    "text": "dtbpy",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4,4′-Di-tert-butyl-2,2′-bipyridyl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "4,4′-二叔丁基-2,2′-联吡啶"
+   },
+   {
+    "text": "Ph<sub>3</sub>B",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Triphenylborane",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三苯基硼烷"
+   }
+  ],
+  [
+   {
+    "text": "DTBPY",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2,6-Di-tert-butylpyridine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2,6-二叔丁基吡啶"
+   },
+   {
+    "text": "PMMA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Polymethylmethacrylate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "聚甲基丙烯酸甲酯"
+   }
+  ],
+  [
+   {
+    "text": "EtOH",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Ethyl alcohol",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "乙醇"
+   },
+   {
+    "text": "PMP",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1,2,2,6,6-Pentamethylpiperidine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "1,2,2,6,6-五甲基哌啶"
+   }
+  ],
+  [
+   {
+    "text": "NEt<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Triethylamine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三乙胺"
+   },
+   {
+    "text": "P(OEt)<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Triethyl phosphite",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "亚磷酸三乙酯"
+   }
+  ],
+  [
+   {
+    "text": "FeCl<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Iron(III) chloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "氯化铁"
+   },
+   {
+    "text": "PO-T2T",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2,4,6-Tris[3-(diphenylphosphinyl)phenyl]-1,3,5-triazine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2,4,6-三[3-(二苯基膦酰基)苯基]-1,3,5-三嗪"
+   }
+  ],
+  [
+   {
+    "text": "FF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Fluorenofluorene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "芴并芴"
+   },
+   {
+    "text": "PPF (DBFPO)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Dibenzo[b,d]furan-2,8-diylbis(diphenylphosphine oxide)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "二苯并[b,d]呋喃-2,8-二基双(二苯基氧化膦)"
+   }
+  ],
+  [
+   {
+    "text": "HBC",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Hexabenzocoronene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "六苯并蔻"
+   },
+   {
+    "text": "PPh<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Triphenylphosphine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三苯基膦"
+   }
+  ],
+  [
+   {
+    "text": "HBr",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Hydrogen bromide/hydrobromic acid",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "溴化氢/氢溴酸"
+   },
+   {
+    "text": "PS",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Polystyrene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "聚苯乙烯"
+   }
+  ],
+  [
+   {
+    "text": "HCl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Hydrogen chloride/hydrochloric acid",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "氯化氢/盐酸"
+   },
+   {
+    "text": "<sup>s</sup>BuLi",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "sec-Butyllithium",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "仲丁基锂"
+   }
+  ],
+  [
+   {
+    "text": "HI",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Hydrogen iodide/hydriodic acid",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "碘化氢/氢碘酸"
+   },
+   {
+    "text": "SF3TRZ",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2-(9,9′-Spirobi[fluoren]-3-yl)-4,6-diphenyl-1,3,5-triazine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2-(9,9′-螺二[芴]-3-基)-4,6-二苯基-1,3,5-三嗪"
+   }
+  ],
+  [
+   {
+    "text": "HOAc",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Acetic acid",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "乙酸"
+   },
+   {
+    "text": "SiCzCz",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "9-(3-(Triphenylsilyl)phenyl)-9H-3,9′-bicarbazole",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "9-(3-(三苯基硅基)苯基)-9H-3,9′-联咔唑"
+   }
+  ],
+  [
+   {
+    "text": "IF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Indenofluorene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "茚并芴"
+   },
+   {
+    "text": "SiTrzCz<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "9,9′-(6-(3-(Triphenylsilyl)phenyl)-1,3,5-triazine-2,4-diyl)bis(9H-carbazole)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "9,9′-(6-(3-(三苯基硅基)苯基)-1,3,5-三嗪-2,4-二基)双(9H-咔唑)"
+   }
+  ],
+  [
+   {
+    "text": "<sup>i</sup>PrOBpin",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2-Isopropoxy-4,4,5,5-tetramethyl-1,3,2-dioxaborolane",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2-异丙氧基-4,4,5,5-四甲基-1,3,2-二氧杂硼烷"
+   },
+   {
+    "text": "SnCl<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tin(II) chloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "氯化亚锡"
+   }
+  ],
+  [
+   {
+    "text": "IrCl<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Iridium trichloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三氯化铱"
+   },
+   {
+    "text": "SOCl<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Thionyl chloride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "氯化亚砜"
+   }
+  ],
+  [
+   {
+    "text": "[Ir(cod)(OCH<sub>3</sub>)]<sub>2</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "(1,5-Cyclooctadiene)(methoxy)iridium(I) dimer",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "(1,5-环辛二烯)(甲氧基)铱(I)二聚体"
+   },
+   {
+    "text": "SPhos",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2-Dicyclohexylphosphino-2′,6′-dimethoxybiphenyl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2-二环己基膦基-2′,6′-二甲氧基联苯"
+   }
+  ],
+  [
+   {
+    "text": "KOAc",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Potassium acetate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "乙酸钾"
+   },
+   {
+    "text": "TBAF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tetrabutylammonium fluoride",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "四丁基氟化铵"
+   }
+  ],
+  [
+   {
+    "text": "KO<sup>t</sup>Bu",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Potassium tert-butoxide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁醇钾"
+   },
+   {
+    "text": "<sup>t</sup>Bu-Benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "tert-Butylbenzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基苯"
+   }
+  ],
+  [
+   {
+    "text": "KPF<sub>6</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Potassium hyxafluorophosphate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "六氟磷酸钾"
+   },
+   {
+    "text": "<sup>t</sup>BuLi",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "tert-Butyllithium",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基锂"
+   }
+  ],
+  [
+   {
+    "text": "K<sub>2</sub>CO<sub>3</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Potassium carbonate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "碳酸钾"
+   },
+   {
+    "text": "[<sup>t</sup>Bu<sub>3</sub>PH]BF<sub>4</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tri-tert-butylphosphonium tetrafluoroborate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三叔丁基膦四氟硼酸盐"
+   }
+  ],
+  [
+   {
+    "text": "K<sub>2</sub>PtCl<sub>4</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Potassium tetrachloroplatinate(II)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "四氯铂(II)酸钾"
+   },
+   {
+    "text": "TBTA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tris[(1-benzyl-1H-1,2,3-triazol-4-yl)methyl]amine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三[(1-苄基-1H-1,2,3-三唑-4-基)甲基]胺"
+   }
+  ],
+  [
+   {
+    "text": "K<sub>3</sub>PO<sub>4</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tripotassium phosphate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "磷酸钾"
+   },
+   {
+    "text": "TCTA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tris(4-(9H-carbazol-9-yl)phenyl)amine",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三(4-(9H-咔唑-9-基)苯基)胺"
+   }
+  ],
+  [
+   {
+    "text": "K<sub>4</sub>[Fe(CN)<sub>6</sub>]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Potassium ferrocyanide",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "亚铁氰化钾"
+   },
+   {
+    "text": "TfOH",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Trifluoromethanesulfonic acid",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三氟甲磺酸"
+   }
+  ],
+  [
+   {
+    "text": "MADN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2-Methyl-9,10-bis(naphthalen-2-yl)anthracene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2-甲基-9,10-双(萘-2-基)蒽"
+   },
+   {
+    "text": "THF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Tetrahydrofuran",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "四氢呋喃"
+   }
+  ],
+  [
+   {
+    "text": "mCBP",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3,3′-Di(9H-carbazol-9-yl)-1,1′-biphenyl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "3,3′-二(9H-咔唑-9-基)-1,1′-联苯"
+   },
+   {
+    "text": "TMS",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Trimethylsilyl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三甲基硅基"
+   }
+  ],
+  [
+   {
+    "text": "mCBP-CN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3′,5-Di(9H-carbazol-9-yl)-[1,1′-biphenyl]-3-carbonitrile",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "3′,5-二(9H-咔唑-9-基)-[1,1′-联苯]-3-甲腈"
+   },
+   {
+    "text": "TPSS",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2,2′,7,7′-Tetraphenyl-9,9′-spirobi[thioxanthene]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2,2′,7,7′-四苯基-9,9′-螺二[噻吨]"
+   }
+  ],
+  [
+   {
+    "text": "mCP",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1,3-Di(9H-carbazol-9-yl)benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "1,3-二(9H-咔唑-9-基)苯"
+   },
+   {
+    "text": "XPhos",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2-Dicyclohexylphosphino-2′,4′,6′-triisopropylbiphenyl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "2-二环己基膦基-2′,4′,6′-三异丙基联苯"
+   }
+  ],
+  [
+   {
+    "text": "MeCN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Acetonitrile",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "乙腈"
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "long_table",
+  "chemical_formulas"
+ ],
+ "notes": "左右两栏并排的缩写表，按 4 列标，左右两栏的条目在同一行对齐，一边全称换行时另一边留空，所以按\"任一缩写列有字就开新行\"切行，全称的续行并进上一格（行尾是连字符的直接接上，否则加空格，所以 NECO-296 写成 \"dichloro palladium\"、3CTF 写成 \"(tri-fluoromethyl)\"，都是原文排版断行）。右栏最后一行为空。文字层里撇号 ′ 是符号字体，抽出来是 \"0\"/\"00\"，BF3·Et2O、Cu(ClO4)2·6H2O 的中点是控制字符，Copper(I) 的罗马数字是小号大写——text 按页面显示写。原文 KPF6 的全称拼错成 \"hyxafluorophosphate\"，text 照抄，译文按正确的六氟磷酸钾。全称列都是试剂/材料名，按中文化学命名翻；缩写列全部 keep。OCR：两家结构都对（60 行×4 列）。GLM 丢了全部下标（AlCl3、BBr3 写成平排数字），把 NPB 的 N<sup>4′</sup> 认成 N4″，把 [Ir(cod)(OMe)]2 的 iridium(I) 认成 iridium(II)。PaddleOCR 文字错得多：漏了表题；右栏 <sup>s</sup>BuLi 认成 <sup>n</sup>BuLi，Butyllithium 认成 Butylthium，TBAF 全称认成 Tetrahydromethylfluoride，K<sub>3</sub>PO<sub>4</sub> 认成 K2PO4，Pd(PPh3)4、Pd2(dba)3 的 palladium(0) 认成 (II)，HI 的 hydriodic acid 认成 hydrodioxide，DMFBD-TRZ、PPF、SPhos、XPhos 的名字也有错字。"
+}

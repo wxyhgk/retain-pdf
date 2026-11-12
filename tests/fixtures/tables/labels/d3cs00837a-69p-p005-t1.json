@@ -1,0 +1,905 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "d3cs00837a-69p-p005-t1",
+ "fixture": "d3cs00837a-69p.pdf",
+ "source_page": 5,
+ "bbox_pt": [
+  42.5,
+  61.1,
+  552.8,
+  312.7
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 1 List of abbreviations (general terms) used in the text",
+ "footnotes": [],
+ "rows": [
+  [
+   {
+    "text": "Abbreviations",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "缩写"
+   },
+   {
+    "text": "Full meaning",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "全称"
+   },
+   {
+    "text": "Abbreviations",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "缩写"
+   },
+   {
+    "text": "Full meaning",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "全称"
+   }
+  ],
+  [
+   {
+    "text": "acac",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Acetylacetonate",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "乙酰丙酮根"
+   },
+   {
+    "text": "LE",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Locally excited",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "局域激发"
+   }
+  ],
+  [
+   {
+    "text": "ACQ",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Aggregation caused quenching",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "聚集导致猝灭"
+   },
+   {
+    "text": "<sup>3</sup>LLCT",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Ligand-to-ligand CT",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "配体–配体 CT"
+   }
+  ],
+  [
+   {
+    "text": "AIE",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Aggregation-induced emission",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "聚集诱导发光"
+   },
+   {
+    "text": "LUMO",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Lowest unoccupied molecular orbital",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "最低未占分子轨道"
+   }
+  ],
+  [
+   {
+    "text": "ArLi",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Aryl lithium species",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "芳基锂物种"
+   },
+   {
+    "text": "MR",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Multiple resonance",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "多重共振"
+   }
+  ],
+  [
+   {
+    "text": "BDE",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Bond dissociation energy",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "键解离能"
+   },
+   {
+    "text": "<sup>3</sup>MLCT",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Metal-to-ligand CT",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "金属–配体 CT"
+   }
+  ],
+  [
+   {
+    "text": "Bpin",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Boronic acid pinacol ester",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "硼酸频哪醇酯"
+   },
+   {
+    "text": "NMR",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Nuclear magnetic resonance",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "核磁共振"
+   }
+  ],
+  [
+   {
+    "text": "CT",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Charge transfer",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "电荷转移"
+   },
+   {
+    "text": "OLED",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Organic light-emitting diode",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "有机发光二极管"
+   }
+  ],
+  [
+   {
+    "text": "CIE",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Commission internationale de l’éclairage",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "国际照明委员会"
+   },
+   {
+    "text": "PAH",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Polycyclic aromatic hydrocarbons",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "多环芳烃"
+   }
+  ],
+  [
+   {
+    "text": "CPL",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Circularly polarised luminescence",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "圆偏振发光"
+   },
+   {
+    "text": "Φ<sub>PL</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Photoluminescence quantum yield, PLQY",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "光致发光量子产率，PLQY"
+   }
+  ],
+  [
+   {
+    "text": "D–A",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Donor–acceptor",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "给体–受体"
+   },
+   {
+    "text": "PL",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Photoluminescence",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "光致发光"
+   }
+  ],
+  [
+   {
+    "text": "ΔE<sub>ST</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "S<sub>1</sub>–T<sub>1</sub> energy gap",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "S<sub>1</sub>–T<sub>1</sub> 能隙"
+   },
+   {
+    "text": "PSF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Phosphor-sensitised fluorescence",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "磷光敏化荧光"
+   }
+  ],
+  [
+   {
+    "text": "DFT",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Density functional theory",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "密度泛函理论"
+   },
+   {
+    "text": "RISC",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Reverse intersystem crossing",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "反向系间窜越"
+   }
+  ],
+  [
+   {
+    "text": "EPR",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Electron paramagnetic resonance",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "电子顺磁共振"
+   },
+   {
+    "text": "rt",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Room temperature",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "室温"
+   }
+  ],
+  [
+   {
+    "text": "EQE",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "External quantum efficiency",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "外量子效率"
+   },
+   {
+    "text": "S<sub>N</sub>Ar",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Nucleophilic aromatic substitution reaction",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "芳香亲核取代反应"
+   }
+  ],
+  [
+   {
+    "text": "equiv",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Equivalent",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "当量"
+   },
+   {
+    "text": "SMe",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Methylthio (group)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲硫基"
+   }
+  ],
+  [
+   {
+    "text": "f",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Oscillator strength",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "振子强度"
+   },
+   {
+    "text": "SOC",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Spin–orbit coupling",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "自旋–轨道耦合"
+   }
+  ],
+  [
+   {
+    "text": "FMOs",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Frontier molecular orbitals",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "前线分子轨道"
+   },
+   {
+    "text": "S<sub>0</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Singlet ground (state)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "单重基态"
+   }
+  ],
+  [
+   {
+    "text": "FWHM",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Full width at half maximum",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "半峰全宽"
+   },
+   {
+    "text": "S<sub>1</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "The first singlet excited (state)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "第一单重激发态"
+   }
+  ],
+  [
+   {
+    "text": "|g<sub>PL</sub>|",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Dissymmetry values",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "不对称因子"
+   },
+   {
+    "text": "TADF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Thermally activated delayed fluorescence",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "热活化延迟荧光"
+   }
+  ],
+  [
+   {
+    "text": "HOMO",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Highest occupied molecular orbital",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "最高占据分子轨道"
+   },
+   {
+    "text": "τ<sub>d</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Delayed fluorescence lifetime",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "延迟荧光寿命"
+   }
+  ],
+  [
+   {
+    "text": "Hyperfluorescence",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "超荧光"
+   },
+   {
+    "text": "TADF-assisted fluorescence (TAF)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "TADF 辅助荧光（TAF）"
+   },
+   {
+    "text": "TE",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Terminal emitter",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "终端发光体"
+   }
+  ],
+  [
+   {
+    "text": "ICT",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Intramolecular charge-transfer",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "分子内电荷转移"
+   },
+   {
+    "text": "TTA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Triplet–triplet annihilation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "三重态–三重态湮灭"
+   }
+  ],
+  [
+   {
+    "text": "<sup>3</sup>ILCT",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Intraligand CT",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "配体内 CT"
+   },
+   {
+    "text": "T<sub>1</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "The first triplet excited (state)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "第一三重激发态"
+   }
+  ],
+  [
+   {
+    "text": "IQE",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Internal quantum efficiency",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "内量子效率"
+   },
+   {
+    "text": "UV-Vis",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Ultraviolet-visible",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "紫外–可见"
+   }
+  ],
+  [
+   {
+    "text": "k<sub>RISC</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "RISC rate constant",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "RISC 速率常数"
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "inline_math"
+ ],
+ "notes": "左右两栏并排的缩写表，按 4 列标（缩写/全称/缩写/全称），右栏最后一行为空。缩写列标 stub、一律 keep，只有 Hyperfluorescence 是普通词，翻成\"超荧光\"。文字层里 Φ、Δ、τ 是符号字体，抽出来是 F、D、t；\"l’éclairage\" 抽出来是 \"l’´eclairage\"，eﬃ 是连字——text 按页面显示写成正确字符。OCR：两家结构都对（26 行×4 列、右栏末行空）；GLM 把 Φ<sub>PL</sub> 认成小写 φ，两家都把 en dash（D–A、Spin–orbit、Triplet–triplet）认成连字符 -。"
+}

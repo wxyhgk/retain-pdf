@@ -47,3 +47,53 @@ def test_no_local_paths_in_the_eval_set() -> None:
         text = path.read_text(encoding="utf-8")
         for marker in ("/Users/", "/private/", "/home/", "C:\\\\"):
             assert marker not in text, f"{path.name} 里有本机路径"
+
+
+LABEL_KEYS = {
+    "label_version", "label_id", "fixture", "source_page", "bbox_pt", "source_kind",
+    "caption", "footnotes", "rows", "tags", "notes",
+}
+
+
+def _labels() -> list[dict]:
+    return [json.loads(path.read_text(encoding="utf-8")) for path in sorted((TABLES / "labels").glob("*.json"))]
+
+
+def test_every_ocr_table_has_a_label_and_labels_are_well_formed() -> None:
+    labels = _labels()
+    assert len(labels) == 55
+    pages = {(record["fixture"], record["source_page"]) for record in _records("glm_ocr")}
+    assert {(label["fixture"], label["source_page"]) for label in labels} == pages
+    for label in labels:
+        assert set(label) == LABEL_KEYS, label["label_id"]
+        assert label["label_version"] == "table_label.v1"
+        assert label["source_kind"] in {"text_layer", "vector_paths", "image"}
+        occupied: dict[int, set[int]] = {}
+        for row_index, row in enumerate(label["rows"]):
+            column = 0
+            for cell in row:
+                while column in occupied.setdefault(row_index, set()):
+                    column += 1
+                for dr in range(cell["rowspan"]):
+                    for dc in range(cell["colspan"]):
+                        occupied.setdefault(row_index + dr, set()).add(column + dc)
+                column += cell["colspan"]
+                assert cell["role"] in {"header", "stub", "data", "empty"}
+                assert cell["action"] in {"translate", "keep"}
+                if cell["action"] == "translate":
+                    assert cell["reference"], f"{label['label_id']}: {cell['text']} 要翻却没有参考译文"
+                else:
+                    assert cell["reference"] is None, f"{label['label_id']}: {cell['text']}"
+        widths = {len(occupied[index]) for index in range(len(label["rows"]))}
+        assert len(widths) == 1, f"{label['label_id']}: 每行占的列数不一致 {widths}"
+
+
+def test_same_source_text_has_one_reference_within_a_document() -> None:
+    seen: dict[tuple[str, str], str] = {}
+    for label in _labels():
+        for row in label["rows"]:
+            for cell in row:
+                if cell["action"] != "translate":
+                    continue
+                key = (label["fixture"], cell["text"].strip())
+                assert seen.setdefault(key, cell["reference"].strip()) == cell["reference"].strip(), key

@@ -1,0 +1,2723 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "cr5c00021-55p-p047-t1",
+ "fixture": "cr5c00021-55p.pdf",
+ "source_page": 47,
+ "bbox_pt": [
+  51.5,
+  73.5,
+  555.5,
+  494.0
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 2. Device Performance of Organic Light-Emitting Diodes (OLEDs) with ν-DABNA (11)-Doped EML",
+ "footnotes": [
+  "a Voltage at 1 (turn-on voltage, V<sub>on</sub>), 1 cd m<sup>−2</sup>.",
+  "b EQE for maximum, and at 100 and 1000 cd m<sup>−2</sup>, respectively.",
+  "c Current efficiency for maximum, and at 1000 cd m<sup>−2</sup>.",
+  "d Power efficiency for maximum, and at 1000 cd m<sup>−2</sup>.",
+  "e λ<sub>EL</sub>: EL emission maximum, and FWHM: full width at half maximum.",
+  "f Commission Internationale de l’Éclairage color chromaticity coordinates.",
+  "g 90% of an initial luminance of 1000 cd m<sup>−2</sup>.",
+  "h 95% of an initial luminance of 1000 cd m<sup>−2</sup>.",
+  "i 50% of an initial luminance of 1000 cd m<sup>−2</sup>.",
+  "d1 ITO (50 nm)/ HAT-CN (10 nm)/ TAPC (20 nm)/ Tris-Pcz (10 nm)/ mCBP (5 nm)/ 0.5 wt % ν-DABNA (11):20 wt % HDT-1:mCBP (30 nm)/ SF3-TRZ (10 nm)/ SF3-TRZ: Liq (25 nm)/ Liq (2 nm)/ Al (100 nm).",
+  "d2 ITO (50 nm)/ HAT-CN (10 nm)/ TAPC (70 nm)/ Tris-Pcz (10 nm)/ mCBP (5 nm)/ 0.5 wt % ν-DABNA (11): 20 wt % HDT-1: mCBP (30 nm)/ SF3-TRZ (10 nm)/ SF3-TRZ: Liq (25 nm)/ Liq (2 nm)/ Al (1.5 nm)/ HAT-CN (10 nm)/ TAPC (20 nm)/ Tris-Pcz (10 nm)/ mCBP (5 nm)/ 0.5 wt % ν-DABNA (11): 20 wt % HDT-1:mCBP (30 nm)/ SF3-TRZ (10 nm)/ SF3-TRZ: Liq (25 nm)/ Liq (2 nm)/ Al (100 nm).",
+  "d3 ITO/HAT-CN (10 nm)/ Tris-PCz (30 nm)/ mCBP(5 nm)/ 0.5 wt % ν-DABNA:20 wt % HDT-1:mCBP (30 nm)/ SF3-TRZ (10 nm)/ 30 wt % Liq: SF3-TRZ (30 nm)/ Liq (2 nm)/ Al (100 nm).",
+  "d4 ITO/HAT-CN (10 nm)/ Tris-PCz (30 nm)/ mCBP(5 nm)/ 0.5 wt % ν-DABNA:20 wt % HDT-1:mCBP (30 nm)/ SF3-TRZ (10 nm)/ 30 wt % Liq: MesTRZ2 (30 nm)/ Liq (2 nm)/ Al (100 nm).",
+  "d5 ITO (50 nm)/ DNTPD (40 nm)/ BPBPA (10 nm)/ mCBP (10 nm)/ (10 wt % PPCzTrz or PCzTrz: 1 wt % ν-DABNA (11): 44.5 wt % oCBP and 44.5 wt % CNmCBPCN) (30 nm)/ DBFTrz (5 nm)/ ZADN (20 nm)/ LiF (1.5 nm)/ Al (200 nm).",
+  "d6 ITO/HAT-CN (10 nm)/ Tris-PCz (30 nm)/ mCBP (5 nm)/ 0.5 wt % ν-DABNA (11): 20-wt % 4PhCz2BN: mCBP (30 nm)/ SF3-TRZ (10 nm)/ 35-wt %-Liq: SF3-TRZ (30 nm)/ Liq (2 nm)/ Al (100 nm).",
+  "d7 ITO/HATCN (5 nm)/ TAPC (30 nm)/ TCTA (10 nm)/ mCP (10 nm)/ PPF: 30 wt % sensitizer: 1 wt % ν-DABNA (11) (24 nm)/ PPF (10 nm)/ BPhen (30 nm)/ LiF (0.5 nm)/ Al (150 nm).",
+  "d8 ITO/HATCN (5 nm)/ NPB (30 nm)/ TCTA (10 nm)/ mCPBC: 30 wt % sensitizers: 1 wt % ν-DABNA (30 nm)/ CzPhPy (10 nm)/ DPyPA:Liq (1:1, 30 nm)/ LiF (0.5 nm)/ Al (150 nm).",
+  "d9 ITO/NPB (40 nm)/ TSBPA(10 nm)/ 64.5 wt % DPEPO:35 wt % TMDMAcTOX: 0.5 wt % ν-DABNA (11) (30 nm)/ TPBi (10 nm)/ LiF (0.8 nm)/ Al (150 nm).",
+  "d10 ITO/NPB (35 nm)/ NPB: mCBP(1:1, 5 nm)/ mCBPCN: 10 wt % ACRSA: 1 wt % ν-DABNA or mCBPCN: 10 wt % DMAC-TRZ: 1 wt % v-DABNA or mCP: 10 wt % AZB-TRZ: 1 wt % v-DABNA (30 nm)/ T2T (10 nm)/ T2T:Liq (1:1, 30 nm)/ LiF (0.5 nm)/ Al (150 nm).",
+  "d11 ITO/ TAPC (20 nm)/ DCDPA (10 nm)/ DBFPO: 25 wt % sensitizers: 1 wt % ν-DABNA (30 nm)/ DBFPO (10 nm)/ TPBi (120 nm)/ Al (100 nm).",
+  "d12 ITO/HAT-CN (10 nm)/ α-NPD (30 nm)/ Tris-PCz (15 nm)/ CzSi (6 nm)/ TSPO1:5Cz-BO: ν-DABNA (90 wt %: 10 wt %: 1 wt %, 20 nm)/ CF3-TRZ (10 nm)/ Liq: BPPB (25 nm, 50 wt %: 50 wt %)/ Liq (2 nm)/ Al (100 nm).",
+  "d13 ITO (50 nm)/ HAT-CN (5 nm)/ BCFN (30 nm)/ SiCzCz (5 nm)/ 55 wt % SiCzCz: 30 wt % SiTrzCz2:15 wt % sensitizer: 1 wt % ν-DABNA (11) (24 nm)/ mSiTrz (10 nm)/ DPPyA (25 nm):Liq (30 nm)/ LiF (0.5 nm)/ Al (100 nm).",
+  "d14 ITO (50 nm)/ HATCN (7 nm)/ TAPC (55 nm)/ DCDPA (10 nm)/ DBFPO: 30% of DBA-DmICz or DBA-DTMCz: 1 wt % ν-DABNA (25 nm)/ DBFPO (10 nm)/ TPBi (20 nm)/ LiF (1.5 nm)/ Al (100 nm).",
+  "d15 ITO/HATCN (5 nm)/ NPB (30 nm)/ SiCzCz (10 nm)/ SiCzCz: SiTrzCz2: TADF emitter (0.60:0.40:0.30): 1 wt % ν-DABNA (11) (40 nm)/ SiTrzCz2 (5 nm)/ DPPyA: Liq (1:1, 30 nm)/ LiF (0.5 nm)/ Al (150 nm).",
+  "d16 ITO (50 nm)/ 3 wt % NDP series doped BCFA (HIL, 10 nm)/BCFA (125 nm)/ HT series (10 nm)/ oCBP (5 nm)/ mCPD (5 nm)/ oCBP:mCBP- 2CN:PtON7-dtb: ν-DABNA (11) 50%:50%:10%:1.5%) (40 nm)/ mCP-2CN (10 nm)/ co-deposited NET series:NDN series (5:5,31 nm)/ Al (100 nm).",
+  "d17 ITO (50 nm)/ BPBPA:HAT-CN (40 nm:30 wt %)/ BPBPA (10 nm)/ mCBP (10 nm)/ 50 wt % mCBP: 50 wt % SiCz2Trz: 20 wt % CN-Ir: 0.5 wt % ν-DABNA (11) (30 nm)/ DBFTrz (5 nm)/ ZADN (20 nm)/ LiF (1.5 nm)/ Al (200 nm).",
+  "d18 ITO (50 nm)/ Ag (100 nm)/ ITO (5 nm)/ BCFN:NDP-2 (10 nm:2 wt %)/ BCFN (127 nm)/ mCBP (5 nm)/ 50 wt % mCBP: 50 wt % SiCz2Trz: 20 wt % CN-Ir: 0.5 wt % ν-DABNA (11) (30 nm)/ DBFTrz (5 nm)/ ZADN: Liq (30 nm_50:50)/ Yb (1 nm)/ Ag: Mg (13 nm).",
+  "d19 ITO/HAT-CN (10 nm)/ TAPC (40 nm)/ TCTA (10 nm)/ mCBP (10 nm)/ PPF: phosphors: ν-DABNA (11) (20 wt %, 1 wt %, 25 nm)/ TmPyPB (40 nm)/ Liq (2 nm)/ Al (100 nm).",
+  "d20 ITO/HATCN (5 nm)/ BCFN (30 nm)/ SiCzCz (10 nm)/ 65 wt % SiCzCz: 35 wt % SiTrzCz2:20 wt % fct9b: 2 wt % ν-DABNA (30 nm)/ mSiTrz (5 nm)/ DPPyA (30 nm)/ LiF (0.5 nm)/ Al (150 nm).",
+  "d21 ITO/HAT-CN (8 nm)/ HAT-CN (0.2 wt %):TAPC (40 nm)/ TAPC (10 nm)/ TCTA (5 nm)/ 1 wt % ν-DABNA (11): 10 wt % Ce-2:44.5 wt % TCTA: 44.5 wt % DPEPO (EML, 20 nm)/ Tm3PyP26PyB (60 nm)/ LiF (1 nm)/ Al (100 nm).",
+  "d22 ITO/HAT-CN (10 nm)/ BFCN (40 nm)/ SiCzCz (5 nm)/ 1 wt % ν-DABNA (11): 10 wt % Ce-2: SiCzCz (20 nm)/ mSiTrz (5 nm)/ DPPyA (30 nm)/ LiF (1 nm)/ Al (100 nm).",
+  "d23 ITO/HAT-CN (5 nm)/ TAPC (50 nm)/ TCTA (10 nm)/ mCBP: 8 wt % Cu-5 complex: 1 wt % ν-DABNA (11) (20 nm)/ HBL (10 nm)/ TPBi (40 nm)/ LiF (1 nm)/ Al (100 nm).",
+  "d24 ITO/HAT-CN (5 nm)/ TAPC (40 nm)/ CCP (10 nm)/ 10 wt % Pd-7 (678): 1 wt % ν-DABNA: PPF (10 nm)/ PPF (10 nm)/ TmPyPb (40 nm)/ LiF (1.2 nm)/ Al (100 nm)."
+ ],
+ "rows": [
+  [
+   {
+    "text": "Sensitizer",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "敏化剂"
+   },
+   {
+    "text": "Voltage [v]<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "电压 [v]<sup>a</sup>"
+   },
+   {
+    "text": "EQE [%]<sup>b</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "CE [cd A<sup>−1</sup>]<sup>c</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "PE [lm W<sup>−1</sup>]<sup>d</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "λ<sub>EL</sub>/FWHM [nm]<sup>e</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "CIE<sub>(x,y)</sub><sup>f</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>90</sub> (h)<sup>g</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Ref.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "文献"
+   }
+  ],
+  [
+   {
+    "text": "HDT-1<sup>d1</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27/24/20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "39/36/31",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "41/26/16",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "470/18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15, 0.20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "11<sup>h</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>340</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "HDT-1<sup>d2</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "6.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "41/39/32",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "72/70/59",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23/16/10",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "470/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.16",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "18<sup>h</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "HDT-1<sup>d3</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "28.1/24.6/18.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "471",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.14, 0.20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>50</sub> = 41 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>371</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "HDT-1<sup>d4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "26.1/24.9/20.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "471",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15, 0.21",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>50</sub> = 188 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "PPCzTrz<sup>d5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "33.0/-/25.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "39.7/-/28.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "151<sup>i</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>367</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "PCzTrz<sup>d5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "33.5/-/23.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "35.5/-24.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12, 0.18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "113<sup>i</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "4PhCz2BN<sup>d6</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22.4/21.2/17.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "25.4/-/19.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "25.0/-/9.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "470/18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "7.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>372</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "dCz-Xo-TRZ<sup>d7</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "34.7/33.5/27.6",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "37.6",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "35.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "471/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>373</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "mCz-Xo-TRZ<sup>d7</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27.2/24.5/19.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "24.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "471/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12, 0.14",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "23PCX<sup>d8</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "25.1/21.6/23.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "40.4/38.9/29.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "471/24",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.149, 0.241",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>95</sub> = 15 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>374</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "33PCX<sup>d8</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "20.6/13.1/20.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "24.1/19.3/21.7",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "471/21",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.140, 0.195",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>95</sub> = 13 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "TMDMAcTOX<sup>d9</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22.2%",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>375</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "ACRSA<sup>d10</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "28.5/24.6/18.6",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "37/33/25",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "36/22/12",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "473/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>50</sub> = 69 min (2500 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>376</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DMAC-TRZ<sup>d10</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23.5/22.7/18.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "49/47/38",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "41/31/18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "474/23",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.17, 0.32",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>50</sub> = 18.5 (1500 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "AZB-TRZ<sup>d10</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19.6/16.3/12.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "30/26/20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27/16/9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "473/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.14, 0.22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>261</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DBA-BFICz<sup>d11</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "38.8/-/29.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "30.0/-/22.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "473/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12, 0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DBA-BTICz<sup>d11</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "37.3/-/27.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "28.3/-/21.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "473/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12, 0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "5Cz-BO<sup>d12</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.81",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "33.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "29.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "24.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "468/18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.125, 0.112",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>267</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "D-5CzBN<sup>d13</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "29.2/-/24.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "34.3/-/17.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "468/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.14, 0.14",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>80</sub> = 398 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>377</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "D-5tCzBN<sup>d13</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "33.1/-/29.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "52.9/-/26.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "468/20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15, 0.20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>80</sub> = 1365 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DBA-DmICz<sup>d14</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "36.5/-/31.7",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "42.5/-/38.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "473/21",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>378</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DBA-DTMCz<sup>d14</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "42.2/-/35.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "40.1/-/34.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "473/21",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12, 0.16",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "4TDTBN<sup>d15</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "25.4/-/22.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "467/17",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.10",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>80</sub> = 81.5 (500 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>379</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "4TCzBN<sup>d15</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "21.5/-/16.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "467/18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.12",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>80</sub> = 20.4 (500 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "PtON7-dtb<sup>d16</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "32.4/-/25.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "32.0/-/25.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "473/20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.111, 0.141",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>50</sub> = 156.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>380</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CN-Ir<sup>d17</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27.3/-/23.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "31.2/-/27.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>50</sub> = 121 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>381</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CN-Ir<sup>d18</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "37.0/-/30.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>50</sub> = 493 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "fct-6a<sup>d19</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "26.2/21.6/18.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "25.0/20.5/17.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22.3/13.9/8.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "472/22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12, 0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>382</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "fct-6b<sup>d19</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "25.1/20.7/17.7",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23.3/19.2/16.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "20.7/13.8/8.7",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "472/22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12, 0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "fct-6c<sup>d19</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "25.8/21.5/17.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "25.0/20.9/17.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23.3/15.8/9.6",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "472/22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12, 0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "f-ct9b<sup>d20</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "34.7/-/23.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "32.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "34.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "469/18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.122, 0.131",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>383</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Ce-2<sup>d21</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "30.0/-/25.6",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "30.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "471/20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.14",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>384</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Ce-2<sup>d22</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "28.9/-/25.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>50</sub> = 9.1 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Cu-5<sup>d23</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "10.2/-/8.42",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "12.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "470/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15, 0.20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>90</sub> = 12.21 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>385</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Pd-7<sup>d24</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23.1/-/21.8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "51.7",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "476/24",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.14, 0.24",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>386</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "superscript_markers",
+  "units_in_header",
+  "chemical_formulas",
+  "long_table",
+  "narrow_columns"
+ ],
+ "notes": "36 行 × 9 列，第一列全是敏化剂化合物名，keep；数据格全是数值或 \"LT50 = … (… cd/m2)\"，keep；只有表头 Sensitizer、Voltage、Ref. 要翻。Ref. 列的文献号是小号上标，按 <sup> 抄；同一文献的后续行 Ref. 原文为空，不按合并处理。ACRSA、Cu-5 两行的 LT 格在原文里折成两行，按一格抄。表注很长（a–i 加 d1–d24 器件结构），d14 之后跨到第 48 页顶部（\"Table 2. continued\" 下只有表注、没有表体，所以第 48 页不单独标），表注里把 \"DBA-\" 与续页的 \"DmICz\" 接起来了。表注 d10 里原文混用 \"ν-DABNA\" 和 \"v-DABNA\"，照抄。\"35.5/-24.3\" 原文就少一个斜杠，照抄。OCR：两家结构都对（36×9，空格位置一致）。GLM 把所有上标并进正文（\"HDT-1d1\"、\"LT50=41(1000cd/m2)\"、\"Voltage[v]a\"），并吃掉空格；Paddle 把表头 Voltage 的上标 a 认成 d，把 \"f-ct9b\" 认成 \"fct-9b\"，其余基本正确。"
+}
