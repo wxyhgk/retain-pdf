@@ -12,6 +12,7 @@ import {
   hoverToolsOutside,
   projectReaderTextHoverTargets,
   ReaderTextHoverLayer,
+  readerShowsItemIds,
 } from "../../../../frontend/packages/reader/src/pdf/ReaderTextHoverLayer.tsx";
 import { normalizeReaderRegions, readerRegionCopyText } from "../../../../frontend/packages/reader/src/shared/data/reader-regions.ts";
 import { shouldEnableLiveTranslation } from "../../../../frontend/packages/reader/src/hooks/use-reader-react-controller.ts";
@@ -50,18 +51,32 @@ function target(pane) {
   return t;
 }
 
-test("悬停框带翻译编号和「复制」，左栏标原文、右栏标译文；没有可复制的文字就不给复制按钮", () => {
+test("悬停框带「复制」，左栏标原文、右栏标译文；没有可复制的文字就不给复制按钮；翻译编号默认不显示", () => {
   const left = renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target: target("source"), pane: "source" }));
   assert.match(left, /reader-text-hover-frame/);
   assert.match(left, /aria-label="复制这段原文"/);
-  assert.match(left, /aria-label="复制翻译编号 p001-b0003"/);
-  assert.match(left, />p001-b0003</);
+  assert.doesNotMatch(left, /复制翻译编号|p001-b0003</, "编号是排查用的，读者默认看不到");
   const right = renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target: target("translated"), pane: "translated" }));
   assert.match(right, /aria-label="复制这段译文"/);
   const empty = target("source");
   empty.highlight.region = { ...empty.highlight.region, source: { ...empty.highlight.region.source, text: "" }, markdown: "" };
-  // 编号照样给（排查时要用），只是没有「复制」内容按钮。
   assert.doesNotMatch(renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target: empty, pane: "source" })), /reader-text-hover-copy/);
+});
+
+test("阅读页地址带 ?debug=1 时框上出翻译编号（点一下复制），排查翻译问题用", () => {
+  assert.equal(readerShowsItemIds("?job_id=x&debug=1"), true);
+  assert.equal(readerShowsItemIds("?debug=true"), true);
+  assert.equal(readerShowsItemIds("?job_id=x"), false);
+  assert.equal(readerShowsItemIds("?debug=0"), false);
+  const hadWindow = "window" in globalThis;
+  globalThis.window = { location: { search: "?job_id=x&debug=1" } };
+  try {
+    const html = renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target: target("source"), pane: "source" }));
+    assert.match(html, /aria-label="复制翻译编号 p001-b0003"/);
+    assert.match(html, />p001-b0003</);
+  } finally {
+    if (!hadWindow) delete globalThis.window;
+  }
 });
 
 test("红色虚线框用 danger 语义色", () => {

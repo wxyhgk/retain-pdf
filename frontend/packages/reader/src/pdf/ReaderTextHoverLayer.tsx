@@ -82,6 +82,19 @@ export async function copyReaderText(text: string): Promise<boolean> {
 
 export const READER_TEXT_HOVER_COPY_CLASS = "reader-text-hover-copy";
 export const READER_TEXT_HOVER_ID_CLASS = "reader-text-hover-id";
+
+/**
+ * 框上要不要显示翻译编号（和翻译调试、日志里的 item_id 同一个）：读者用不上，默认不显示；排查翻译问题时在阅读页地址后
+ * 加 `?debug=1`（或 `&debug=1`）就出来，点一下复制。2026-11-12 以前每个读者都看得到。
+ */
+export function readerShowsItemIds(search: string = typeof window === "undefined" ? "" : window.location.search): boolean {
+  try {
+    const value = new URLSearchParams(search).get("debug");
+    return value === "1" || value === "true";
+  } catch {
+    return false;
+  }
+}
 export const READER_TEXT_HOVER_TOOLS_CLASS = "reader-text-hover-tools";
 
 type CopyState = "idle" | "copied" | "failed";
@@ -148,6 +161,8 @@ export function ReaderTextHoverLayer({
 }) {
   const [state, setState] = useState<CopyState>("idle");
   const [idState, setIdState] = useState<CopyState>("idle");
+  // 地址不会在阅读页里变，算一次。
+  const [showItemId] = useState(() => readerShowsItemIds());
   const timersRef = useRef<number[]>([]);
   const itemId = target?.itemId || "";
   // 换了块，「已复制」必须跟着消 —— 否则它在说另一段的话；上一块的定时器也一起清掉，
@@ -183,20 +198,22 @@ export function ReaderTextHoverLayer({
         data-reader-text-hover-kind={kind}
         style={target.rect}
       >
-        {/* 编号（和翻译调试、日志里的 item_id 同一个，点一下复制）+ 复制。 */}
+        {/* 复制；地址带 ?debug=1 时前面多一个编号（和翻译调试、日志里的 item_id 同一个，点一下复制）。 */}
         <div
           className={READER_TEXT_HOVER_TOOLS_CLASS}
           data-placement={outside ? "outside" : "inside"}
         >
-          <HoverToolButton
-            className={READER_TEXT_HOVER_ID_CLASS}
-            state={idState}
-            label={`复制翻译编号 ${target.itemId}`}
-            title="翻译编号，点击复制"
-            onClick={copyWith(target.itemId, setIdState)}
-          >
-            {idState === "copied" ? "已复制编号" : target.itemId}
-          </HoverToolButton>
+          {showItemId ? (
+            <HoverToolButton
+              className={READER_TEXT_HOVER_ID_CLASS}
+              state={idState}
+              label={`复制翻译编号 ${target.itemId}`}
+              title="翻译编号，点击复制"
+              onClick={copyWith(target.itemId, setIdState)}
+            >
+              {idState === "copied" ? "已复制编号" : target.itemId}
+            </HoverToolButton>
+          ) : null}
           {pane === "translated" && revisedCount > 0 ? (
             <span className="reader-text-hover-revised" data-reader-revised-count={revisedCount}>
               改过 {revisedCount} 次

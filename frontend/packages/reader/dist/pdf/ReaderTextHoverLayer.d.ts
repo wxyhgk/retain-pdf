@@ -13,6 +13,11 @@ export declare function hitTestReaderTextHoverTarget(targets: readonly ReaderTex
 export declare function copyReaderText(text: string): Promise<boolean>;
 export declare const READER_TEXT_HOVER_COPY_CLASS = "reader-text-hover-copy";
 export declare const READER_TEXT_HOVER_ID_CLASS = "reader-text-hover-id";
+/**
+ * 框上要不要显示翻译编号（和翻译调试、日志里的 item_id 同一个）：读者用不上，默认不显示；排查翻译问题时在阅读页地址后
+ * 加 `?debug=1`（或 `&debug=1`）就出来，点一下复制。2026-11-12 以前每个读者都看得到。
+ */
+export declare function readerShowsItemIds(search?: string): boolean;
 export declare const READER_TEXT_HOVER_TOOLS_CLASS = "reader-text-hover-tools";
 /** 工具条（编号 + 复制）大约占的尺寸：放进框内放不下时才挪到框外上方。 */
 export declare const HOVER_TOOLS_HEIGHT = 26;

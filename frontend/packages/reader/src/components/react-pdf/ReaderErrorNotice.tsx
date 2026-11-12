@@ -1,10 +1,13 @@
 import { useEffect, useState, type ReactElement } from "react";
+import { Button } from "@retainpdf/ui";
 
 export type ReaderErrorNoticeProps = {
   /** 译文区域（regions）加载失败；可选产物，不阻塞正文阅读。 */
   regionsFailed?: boolean;
   /** 阅读元数据（metadata）加载失败；可选产物，不阻塞正文阅读。 */
   metadataFailed?: boolean;
+  /** 「重试」：重新读一遍（会话的 refreshJobArtifacts）；不给就只有关闭。 */
+  onRetry?: () => void;
 };
 
 /**
@@ -16,6 +19,7 @@ export type ReaderErrorNoticeProps = {
 export function ReaderErrorNotice({
   regionsFailed = false,
   metadataFailed = false,
+  onRetry,
 }: ReaderErrorNoticeProps): ReactElement | null {
   const [dismissed, setDismissed] = useState(false);
   // 错误全部消失（如切换到另一个文档）后重新武装：新会话再次失败时提示应再次出现。
@@ -39,6 +43,9 @@ export function ReaderErrorNotice({
       <span className="reader-error-notice-text">
         {failedParts.join("、")}加载失败，正文仍可正常阅读。
       </span>
+      {onRetry ? (
+        <Button className="reader-error-notice-retry" data-reader-retry="optional" onClick={onRetry}>重试</Button>
+      ) : null}
       <button
         type="button"
         className="reader-error-notice-dismiss"

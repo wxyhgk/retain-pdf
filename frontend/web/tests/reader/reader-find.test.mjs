@@ -109,9 +109,8 @@ test("Cmd/Ctrl+F 打开书内搜索；光标已经在搜索框里时不拦，交
     return null;
   }
   const root = createRoot(dom.window.document.getElementById("root"));
-  root.render(React.createElement(Probe));
-  await waitFor(() => true, "挂上");
-  await new Promise((resolve) => setTimeout(resolve, 10));
+  // act 等渲染和 effect 都跑完，键盘监听一定挂上了（只等几毫秒在整套并发跑时不够）。
+  await React.act(async () => { root.render(React.createElement(Probe)); });
   const press = () => {
     const event = new dom.window.KeyboardEvent("keydown", { key: "f", ctrlKey: true, cancelable: true, bubbles: true });
     dom.window.dispatchEvent(event);

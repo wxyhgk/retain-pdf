@@ -489,6 +489,25 @@
   color: var(--paper);
   font-size: 12px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 加载失败时的「重试」（PDF 下载失败等）：深底上的浅色描边按钮。 */
+.reader-react-error-retry {
+  flex: none;
+  padding: 4px 12px;
+  border: 1px solid color-mix(in srgb, var(--paper) 55%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: transparent;
+  color: var(--paper);
+  font: inherit;
+  cursor: pointer;
+}
+
+.reader-react-error-retry:hover {
+  background: color-mix(in srgb, var(--paper) 14%, transparent);
 }
 
 /* 可选产物失败：不遮挡阅读，仅在外壳上浮一行可关闭提示。 */
@@ -516,6 +535,21 @@
 .reader-error-notice-text {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.reader-error-notice-retry {
+  flex: none;
+  padding: 3px 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper, #fff);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.reader-error-notice-retry:hover {
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper, #fff));
 }
 
 .reader-error-notice-dismiss {
