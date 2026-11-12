@@ -43,6 +43,8 @@ export type ReaderContextValue = {
   jumpToBlock?: (itemId: string) => void;
   /** 改过的块（阅读页块编号 → 改过几次）：译文栏画小标记，悬停写「改过 N 次」。 */
   revisedBlocks?: ReadonlyMap<string, number>;
+  /** 左栏搜索的词（防抖后）：书页文字层把命中标出来（PdfPageSlot）。空串不标。 */
+  findTerm?: string;
   // 和 regions 走同一条路下去，因为它们用的是同一套 bbox 投影。
   // session
   /**

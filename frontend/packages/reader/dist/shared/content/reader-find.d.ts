@@ -23,4 +23,12 @@ export declare function readerOutline(regions: readonly ReaderRegion[]): ReaderO
 export declare function currentOutlineIndex(entries: readonly ReaderOutlineEntry[], page: number): number;
 /** 在每块的译文和原文里找（不分大小写），按阅读顺序，最多 `limit` 处。空的、只有空白的不找。 */
 export declare function searchReaderRegions(regions: readonly ReaderRegion[], query: string, limit?: number): ReaderSearchHit[];
+/**
+ * 书页文字层里标出搜索词：给 react-pdf 的 customTextRenderer 用，返回这一段文字的 HTML（不分大小写，每处包一个
+ * <mark class="reader-find-mark">）。只认落在同一段文字里的命中——pdf.js 把一行拆成好几段时，跨段的词标不出来，
+ * 左栏的命中列表照样列得出。词是空的就原样（转义后）返回。
+ */
+export declare function highlightFindTerm(text: string, term: string): string;
+/** 回车 / Shift+回车在命中之间走：从 current 往前或往后一处，到头绕回。没有命中是 -1。 */
+export declare function stepFindHit(current: number, count: number, backwards: boolean): number;
 //# sourceMappingURL=reader-find.d.ts.map

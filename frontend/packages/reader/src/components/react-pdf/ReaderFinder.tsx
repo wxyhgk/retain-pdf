@@ -1,10 +1,13 @@
 // 阅读页左上的「目录」「搜索」和点开的左栏：目录是这本书的标题块，搜索在每块的原文和译文里找（shared/content/reader-find.ts），
 // 点一条按块跳过去。以前这两样只在 Markdown 面板里，PDF 这边几百页只能输页码跳。
+//
+// 搜索词由阅读页持有（ReaderAppReactPdf）：防抖后的词同时给这里列命中、给书页文字层标出命中（PdfPageSlot）。
+// 回车 / Shift+回车在命中之间走（「第 i / n 处」），Esc 收起。Cmd/Ctrl+F 由阅读页接住打开这里。
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { ListTree, Search, X } from "lucide-react";
 import { Button, Input } from "@retainpdf/ui";
 
-import { currentOutlineIndex, readerOutline, searchReaderRegions } from "../../shared/content/reader-find.js";
+import { currentOutlineIndex, readerOutline, searchReaderRegions, stepFindHit } from "../../shared/content/reader-find.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
 
 export type ReaderFinderTab = "outline" | "search";
@@ -33,25 +36,47 @@ export function ReaderFinder({
   onTab,
   onClose,
   onJump,
+  query,
+  onQuery,
+  term,
+  focusSignal = 0,
 }: {
   tab: ReaderFinderTab;
   onTab: (tab: ReaderFinderTab) => void;
   onClose: () => void;
   onJump: (itemId: string) => void;
+  /** 输入框里的字（每敲一下就变）。 */
+  query: string;
+  onQuery: (query: string) => void;
+  /** 防抖后的搜索词：列命中、书页标命中都按它，不每敲一下就扫全书。 */
+  term: string;
+  /** 每变一次把光标放回搜索框（Cmd/Ctrl+F 在左栏已经开着时）。 */
+  focusSignal?: number;
 }): ReactElement {
   const regions = useReaderContext()?.regions ?? NO_REGIONS;
   const currentPage = useReaderHudContext()?.currentPage ?? 1;
   const outline = useMemo(() => readerOutline(regions), [regions]);
   const here = currentOutlineIndex(outline, currentPage);
-  const [query, setQuery] = useState("");
-  const hits = useMemo(() => searchReaderRegions(regions, query), [regions, query]);
+  const hits = useMemo(() => searchReaderRegions(regions, term), [regions, term]);
+  // 回车走到的那一处；换了词从头来。
+  const [active, setActive] = useState(-1);
+  useEffect(() => setActive(-1), [term]);
   const input = useRef<HTMLInputElement | null>(null);
   const list = useRef<HTMLOListElement | null>(null);
   useEffect(() => {
     if (tab === "search") input.current?.focus();
     // 打开目录：眼下这一节滚到眼前（长目录里它常在下面）。
     else list.current?.querySelector('[aria-current="location"]')?.scrollIntoView({ block: "center" });
-  }, [tab]);
+  }, [tab, focusSignal]);
+  useEffect(() => {
+    if (tab === "search" && active >= 0) list.current?.querySelector('[aria-current="true"]')?.scrollIntoView({ block: "nearest" });
+  }, [tab, active]);
+  const goTo = (index: number) => {
+    const hit = hits[index];
+    if (!hit) return;
+    setActive(index);
+    onJump(hit.itemId);
+  };
 
   return (
     <aside className="reader-finder" aria-label={tab === "outline" ? "目录" : "搜索"}>
@@ -95,19 +120,31 @@ export function ReaderFinder({
               placeholder="原文、译文里的字"
               aria-label="在书里搜索"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => onQuery(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter" && hits[0]) onJump(hits[0].itemId);
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  goTo(stepFindHit(active, hits.length, event.shiftKey));
+                } else if (event.key === "Escape") {
+                  event.preventDefault();
+                  onClose();
+                }
                 // 别让阅读页的快捷键（翻页、缩放）吃掉打的字。
                 event.stopPropagation();
               }}
             />
-            {query.trim() ? <p className="reader-finder-count">{hits.length >= 200 ? "200 处以上，只列前 200 处" : `${hits.length} 处`}</p> : null}
+            {term ? (
+              <p className="reader-finder-count" aria-live="polite">
+                {hits.length === 0
+                  ? "没有找到"
+                  : `${active >= 0 ? `第 ${active + 1} / ` : ""}${hits.length >= 200 ? "200+ 处，只列前 200 处" : `${hits.length} 处`}${active < 0 ? "，回车跳到第一处" : ""}`}
+              </p>
+            ) : null}
           </div>
           <ol className="reader-finder-list">
-            {hits.map((hit) => (
+            {hits.map((hit, index) => (
               <li key={hit.itemId}>
-                <Button className="reader-finder-entry is-hit" onClick={() => onJump(hit.itemId)}>
+                <Button className="reader-finder-entry is-hit" aria-current={index === active ? "true" : undefined} onClick={() => goTo(index)}>
                   <span className="reader-finder-entry-text">
                     {hit.snippet.slice(0, hit.at)}
                     <mark>{hit.snippet.slice(hit.at, hit.at + hit.length)}</mark>

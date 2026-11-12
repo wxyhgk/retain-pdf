@@ -445,7 +445,14 @@
   cursor: text;
   transform-origin: 0 0;
 }
-/* 普通文字使用 PDF 原生选区；选区完成后由产品工具条接管复制与问 AI。 */
+/* 左栏搜索的命中（PdfPageSlot 的 customTextRenderer 包的 <mark>）：文字层的字是透明的，只画底色，盖在原文的字上。 */
+.reader-react-pdf-page .textLayer mark.reader-find-mark {
+  padding: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--warn) 55%, transparent);
+  color: transparent;
+}
+/* 普通文字使用 PDF 原生选区（只留复制，不弹菜单）。 */
 .reader-react-pdf-page .textLayer ::selection {
   background: color-mix(in srgb, var(--warn) 45%, transparent);
   color: transparent;

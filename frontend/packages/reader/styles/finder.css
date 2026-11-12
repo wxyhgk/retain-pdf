@@ -168,6 +168,12 @@
   background: color-mix(in srgb, var(--ink) 5%, transparent);
 }
 
+/* 回车走到的那一处。 */
+.reader-finder-entry.is-hit[aria-current="true"] {
+  background: color-mix(in srgb, var(--accent, var(--ink)) 12%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent, var(--ink));
+}
+
 .reader-finder-entry[aria-current="location"] {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
   font-weight: 650;
