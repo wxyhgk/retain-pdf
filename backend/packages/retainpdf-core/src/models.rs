@@ -68,7 +68,8 @@ pub use job::{
 pub use ocr::{
     OcrArtifactSet, OcrErrorCategory, OcrProviderArtifactLayout, OcrProviderCapabilities,
     OcrProviderCredentialSpec, OcrProviderDiagnostics, OcrProviderErrorInfo, OcrProviderKind,
-    OcrProviderOptionSpec, OcrProviderPublicDefinition, OcrTaskHandle, OcrTaskState, OcrTaskStatus,
+    OcrProviderLimitsView, OcrProviderOptionSpec, OcrProviderPublicDefinition, OcrTaskHandle, OcrTaskState,
+    OcrTaskStatus,
 };
 pub use public_contract::{
     public_request_payload, PublicOcrInput, PublicResolvedJobSpec, PublicTranslationInput,

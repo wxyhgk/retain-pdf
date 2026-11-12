@@ -37,6 +37,20 @@ async fn list_ocr_providers_returns_public_contract() {
 
     assert_eq!(paddle["display_name"], "PaddleOCR");
     assert_eq!(paddle["provider_kind"], "remote");
+    // 能力和上限来自服务商清单（2026-11-12，插件化 P1b），前端不用再手抄一份。
+    assert_eq!(paddle["streams_pages"], "chunked_upload");
+    assert_eq!(paddle["limits"]["max_pages"], 999);
+    assert_eq!(paddle["limits"]["max_file_bytes"], 100 * 1024 * 1024);
+    assert_eq!(paddle["docs_url"], "https://aistudio.baidu.com/account/accessToken");
+    assert!(paddle["shares_translation_key_host"].is_null());
+    let mineru = providers.iter().find(|item| item["key"] == "mineru").expect("mineru provider");
+    assert_eq!(mineru["streams_pages"], "never");
+    assert_eq!(mineru["limits"]["max_pages"], 600);
+    assert_eq!(mineru["limits"]["max_file_bytes"], 200 * 1024 * 1024);
+    let glm = providers.iter().find(|item| item["key"] == "glm_ocr").expect("glm_ocr provider");
+    assert_eq!(glm["streams_pages"], "always");
+    assert_eq!(glm["limits"]["max_pages"], 0, "GLM-OCR 分段识别，不限页数");
+    assert_eq!(glm["shares_translation_key_host"], "open.bigmodel.cn");
     assert_eq!(
         paddle["credential"]["credential_kind"],
         "ocr_provider_token"

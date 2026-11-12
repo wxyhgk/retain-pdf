@@ -12,6 +12,19 @@ export type OcrProviderListView = OcrProviderPublicDefinition[];
 
 export interface OcrProviderPublicDefinition {
   /**
+   * （2026-11-12 起）服务商的文档或申请 key 的页面，来自清单 backend/config/ocr_providers.json 的 docs_url；没写为 null。
+   */
+  docs_url: string | null;
+  limits: OcrProviderLimits;
+  /**
+   * （2026-11-12 起）会不会一片片公布已做完的页（整本任务的翻译可以跟着 OCR 并行）：always 总会；never 不会；chunked_upload 只有交上传的文件、走官方 HTTP 按片提交时才会（Paddle：填了 paddle_api_url、transport=official_cli、按网址提交时不会）。
+   */
+  streams_pages: "always" | "never" | "chunked_upload";
+  /**
+   * （2026-11-12 起）这家 OCR 自己没有 key 时，可以借哪个翻译主机的 key：翻译接的 base_url 主机就是它才借（GLM-OCR 是 open.bigmodel.cn，和智谱翻译模型共用一个 key）。不能借为 null。
+   */
+  shares_translation_key_host: string | null;
+  /**
    * 建任务时 ocr.provider 填它，例如 mineru、paddle、glm_ocr（智谱 GLM-OCR）、local。
    */
   key: string;
@@ -32,6 +45,19 @@ export interface OcrProviderPublicDefinition {
   };
   capabilities: OcrProviderCapabilities;
   artifact_layout: OcrProviderArtifactLayout;
+}
+/**
+ * （2026-11-12 起）建任务时对上传文件的上限，已经算上环境变量覆盖（例如 RUST_API_MINERU_MAX_PAGES）。超了建任务返回 400。
+ */
+export interface OcrProviderLimits {
+  /**
+   * 一份 PDF 最多几页；0 = 不限。
+   */
+  max_pages: number;
+  /**
+   * 一个文件最多多少字节；0 = 不限（仍受上传接口自己的上限约束）。
+   */
+  max_file_bytes: number;
 }
 export interface OcrProviderCredentialSpec {
   /**

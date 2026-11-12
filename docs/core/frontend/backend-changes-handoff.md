@@ -1285,3 +1285,19 @@ Studio（`frontend/studio`）自己的 AI，后端把 RetainPDF 自己的 AI 服
   `agentBinaryBundled`；`scripts/run-local.mjs` 的 `requiredBackendBinaries` 去掉它；`src/main/backend-env.js` 里提到它的地方。
   `cargo build --workspace --bins` 不再产出它，打包时找不到会报错，所以要和这个分支一起合。
 
+## OCR 服务商的能力和上限从接口读（2026-11-12，插件化 P1b）
+
+`GET /api/v1/providers/ocr` 每家服务商多了 4 个字段（契约 `ocr-providers.v1`，只增不改），数据来自后端的服务商清单
+`backend/config/ocr_providers.json`：
+
+| 新字段 | 对应前端 `frontend/web/src/platform/config/providers.ts` 里手抄的 |
+|---|---|
+| `limits.max_pages`（0 = 不限，已算上环境变量覆盖） | `maxPages` |
+| `limits.max_file_bytes`（0 = 不限） | `maxBytes` |
+| `docs_url` | `docsUrl` |
+| `streams_pages`：`always` / `never` / `chunked_upload` | （前端没有；要显示"OCR 和翻译并行"时用） |
+| `shares_translation_key_host`：GLM-OCR 是 `open.bigmodel.cn` | （前端在 OCR-only 任务里自己带翻译 key 的那段逻辑可以参考它） |
+
+前端要做（前端会话排期）：`providers.ts` 里的 `maxPages`、`maxBytes`、`docsUrl` 改成读这个接口，删掉手抄的值。
+注意：PaddleOCR 现在返回 `max_file_bytes = 104857600`（100MB），和前端写的 `maxBytes: 0` 不一致——后端建任务时确实按 100MB 拒；
+分片上传后这个整份大小限制已经过时，后端另开分支去掉，去掉后这里会变成 0。

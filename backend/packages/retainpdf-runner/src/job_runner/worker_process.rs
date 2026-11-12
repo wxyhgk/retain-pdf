@@ -392,20 +392,20 @@ fn shared_zhipu_translation_key(
     data_root: &std::path::Path,
     job: &JobRuntimeState,
 ) -> Result<Option<String>> {
-    if !job.request_payload.ocr.provider.trim().eq_ignore_ascii_case(GLM_OCR_PROVIDER) {
+    // 能借哪个翻译主机的 key 写在服务商清单的 `credential.shared_with_translation_host` 里。
+    let Some(shared_host) = retainpdf_core::config::provider_config::configured_shared_translation_key_host(
+        &job.request_payload.ocr.provider,
+    ) else {
         return Ok(None);
-    }
+    };
     let host = reqwest::Url::parse(job.request_payload.translation.base_url.trim())
         .ok()
         .and_then(|url| url.host_str().map(str::to_ascii_lowercase));
-    if host.as_deref() != Some(ZHIPU_API_HOST) {
+    if host.as_deref() != Some(shared_host.as_str()) {
         return Ok(None);
     }
     resolve_translation_api_key(data_root, job)
 }
-
-const GLM_OCR_PROVIDER: &str = "glm_ocr";
-const ZHIPU_API_HOST: &str = "open.bigmodel.cn";
 
 fn configured_provider_token(job: &JobRuntimeState) -> String {
     for key in ["credential", "token", "api_key"] {

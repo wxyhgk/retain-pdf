@@ -8,6 +8,7 @@ use super::{
     mineru, paddle, OcrProviderArtifactLayout, OcrProviderCapabilities, OcrProviderCredentialSpec,
     OcrProviderDiagnostics, OcrProviderKind, OcrProviderOptionSpec, OcrProviderPublicDefinition,
 };
+use crate::models::domain::OcrProviderLimitsView;
 
 const MINERU_RESULT_FILE_NAME: &str = "mineru_result.json";
 const MINERU_BUNDLE_FILE_NAME: &str = "mineru_bundle.zip";
@@ -120,6 +121,12 @@ fn provider_public_definition_from_config(
         .unwrap_or(key.as_str())
         .to_string();
     let known_kind = kind_for_public_key(&key, &provider_kind);
+    let limits = provider_config::upload_limits_from_definition(&value)
+        .map(|limits| OcrProviderLimitsView {
+            max_pages: limits.max_pages,
+            max_file_bytes: limits.max_file_bytes,
+        })
+        .unwrap_or_default();
     OcrProviderPublicDefinition {
         key: key.clone(),
         display_name,
@@ -128,6 +135,17 @@ fn provider_public_definition_from_config(
         options: parse_option_specs(value.get("options")),
         capabilities: provider_capabilities_for_public(&known_kind, &provider_kind),
         artifact_layout: provider_artifact_layout_for_public(&known_kind, &key, &provider_kind),
+        docs_url: value
+            .get("docs_url")
+            .and_then(Value::as_str)
+            .map(str::trim)
+            .filter(|url| !url.is_empty())
+            .map(ToString::to_string),
+        limits,
+        streams_pages: provider_config::streams_pages_from_definition(&value)
+            .as_str()
+            .to_string(),
+        shares_translation_key_host: provider_config::shared_translation_key_host_from_definition(&value),
     }
 }
 

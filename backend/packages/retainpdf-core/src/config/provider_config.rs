@@ -116,6 +116,85 @@ pub fn configured_provider_credential_env(provider: &str) -> Option<String> {
     })
 }
 
+/// 一家 OCR 服务商建任务时对上传文件的上限（清单里的 `limits`，环境变量覆盖）。0 = 不限。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OcrUploadLimits {
+    pub max_pages: u32,
+    pub max_file_bytes: u64,
+    /// `true`：文件正好等于上限也收（「不超过」）；`false`：必须小于上限（MinerU 接口的说法）。
+    pub max_file_bytes_inclusive: bool,
+}
+
+/// 清单里一家服务商的 `limits`；没写返回 `None`（不限）。环境变量名写在清单里，设了就用它。
+pub fn upload_limits_from_definition(definition: &Value) -> Option<OcrUploadLimits> {
+    let limits = definition.get("limits")?.as_object()?;
+    let pages = limits.get("max_pages");
+    let bytes = limits.get("max_file_bytes");
+    let read = |spec: Option<&Value>| -> u64 {
+        let Some(spec) = spec else { return 0 };
+        let default = spec.get("default").and_then(Value::as_u64).unwrap_or(0);
+        match spec.get("env").and_then(Value::as_str).map(str::trim).filter(|name| !name.is_empty()) {
+            Some(env_name) => super::env_vars::env_u64(env_name, default),
+            None => default,
+        }
+    };
+    Some(OcrUploadLimits {
+        max_pages: u32::try_from(read(pages)).unwrap_or(u32::MAX),
+        max_file_bytes: read(bytes),
+        max_file_bytes_inclusive: bytes
+            .and_then(|spec| spec.get("inclusive"))
+            .and_then(Value::as_bool)
+            .unwrap_or(true),
+    })
+}
+
+/// 服务商会不会一片片公布已经做完的页（能和翻译并行）。清单里的 `streams_pages`。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StreamsPages {
+    Always,
+    Never,
+    /// 只有交上传的文件、走官方 HTTP 按片并行提交时才会（Paddle：自建服务、官方 CLI、网址提交都由 Rust 整份交）。
+    ChunkedUpload,
+}
+
+impl StreamsPages {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Always => "always",
+            Self::Never => "never",
+            Self::ChunkedUpload => "chunked_upload",
+        }
+    }
+}
+
+/// 没登记或写了不认识的值都当 `Never`（保守：不和翻译并行）。
+pub fn configured_streams_pages(provider: &str) -> StreamsPages {
+    streams_pages_from_definition(&ocr_provider_definition(provider).unwrap_or(Value::Null))
+}
+
+pub fn streams_pages_from_definition(definition: &Value) -> StreamsPages {
+    match definition.get("streams_pages").and_then(Value::as_str).map(str::trim) {
+        Some("always") => StreamsPages::Always,
+        Some("chunked_upload") => StreamsPages::ChunkedUpload,
+        _ => StreamsPages::Never,
+    }
+}
+
+/// 这家 OCR 自己没有 key 时，可以借哪个翻译主机的 key（清单里 `credential.shared_with_translation_host`）。
+/// 例如 GLM-OCR 和智谱翻译模型共用一个 key：翻译接的是 `open.bigmodel.cn` 才借，别家的 key 不往它发。
+pub fn configured_shared_translation_key_host(provider: &str) -> Option<String> {
+    ocr_provider_definition(provider).and_then(|definition| shared_translation_key_host_from_definition(&definition))
+}
+
+pub fn shared_translation_key_host_from_definition(definition: &Value) -> Option<String> {
+    definition
+        .get("credential")
+        .and_then(|credential| credential.get("shared_with_translation_host"))
+        .and_then(Value::as_str)
+        .map(|host| host.trim().to_ascii_lowercase())
+        .filter(|host| !host.is_empty())
+}
+
 fn paddle_config() -> Value {
     let payload = ocr_provider_config();
     let mut legacy = payload.get("paddle").cloned().unwrap_or(Value::Null);
@@ -254,6 +333,33 @@ mod tests {
         let on_disk = fs::read_to_string(config_path().expect("repo config path")).expect("read manifest");
         assert_eq!(on_disk, BUNDLED_OCR_PROVIDER_CONFIG);
         assert_eq!(&ocr_provider_config(), bundled_ocr_provider_config());
+    }
+
+    /// 能力写在清单里，代码按能力判断，不再认服务商名字（插件化 P1b）。
+    #[test]
+    fn capabilities_come_from_the_manifest() {
+        assert_eq!(configured_streams_pages("glm_ocr"), StreamsPages::Always);
+        assert_eq!(configured_streams_pages("paddle"), StreamsPages::ChunkedUpload);
+        assert_eq!(configured_streams_pages("mineru"), StreamsPages::Never);
+        assert_eq!(configured_streams_pages("no-such-provider"), StreamsPages::Never);
+        assert_eq!(
+            configured_shared_translation_key_host("GLM_OCR").as_deref(),
+            Some("open.bigmodel.cn")
+        );
+        assert_eq!(configured_shared_translation_key_host("mineru"), None);
+    }
+
+    #[test]
+    fn upload_limits_read_defaults_and_keep_mineru_strict_bound() {
+        let definitions = bundled_provider_definitions();
+        let mineru = upload_limits_from_definition(&definitions["mineru"]).expect("mineru limits");
+        assert_eq!(mineru.max_pages, 600);
+        assert_eq!(mineru.max_file_bytes, 200 * 1024 * 1024);
+        assert!(!mineru.max_file_bytes_inclusive, "MinerU 接口要求小于 200MB");
+        let paddle = upload_limits_from_definition(&definitions["paddle"]).expect("paddle limits");
+        assert_eq!((paddle.max_pages, paddle.max_file_bytes), (999, 100 * 1024 * 1024));
+        assert!(paddle.max_file_bytes_inclusive);
+        assert_eq!(upload_limits_from_definition(&definitions["glm_ocr"]), None, "没写 limits 就不限");
     }
 
     #[test]

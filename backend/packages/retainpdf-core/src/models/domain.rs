@@ -27,5 +27,6 @@ pub use super::job::{
 pub use super::ocr::{
     OcrArtifactSet, OcrErrorCategory, OcrProviderArtifactLayout, OcrProviderCapabilities,
     OcrProviderCredentialSpec, OcrProviderDiagnostics, OcrProviderErrorInfo, OcrProviderKind,
-    OcrProviderOptionSpec, OcrProviderPublicDefinition, OcrTaskHandle, OcrTaskState, OcrTaskStatus,
+    OcrProviderLimitsView, OcrProviderOptionSpec, OcrProviderPublicDefinition, OcrTaskHandle, OcrTaskState,
+    OcrTaskStatus,
 };
