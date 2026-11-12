@@ -41,8 +41,8 @@ test("后端发得出的每一个 failure_category 都有自己的说法", () =>
 });
 
 test("重试解决不了的那几类，不能把用户往重试上引", () => {
-  // 这三类重试一定还是同样的结果：Key 还是错的、文件还是坏的、OCR 产物结构还是那样。
-  for (const category of ["auth", "input", "normalization"]) {
+  // 这几类重试一定还是同样的结果：Key 还是错的、余额还是不够、文件还是坏的、OCR 产物结构还是那样。
+  for (const category of ["auth", "billing", "input", "normalization"]) {
     const advice = failureAdvice({ category, stage: "ocr", retryable: true, summary: "" });
     assert.equal(advice.retryLikelyHelps, false, `${category} 把用户往重试上引，而重试一定还会失败`);
   }

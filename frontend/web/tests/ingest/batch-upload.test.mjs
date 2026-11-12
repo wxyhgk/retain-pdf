@@ -204,7 +204,7 @@ test("没配凭据：一本都不交，错误框里说原因", async () => {
   assert.equal(result.status, "blocked");
   assert.equal(calls.submitted.length, 0);
   assert.equal(opened, 1);
-  assert.ok(calls.text.some(([id, value]) => id === "error-box" && /凭证/.test(value)));
+  assert.ok(calls.text.some(([id, value]) => id === "error-box" && /填好 OCR 和翻译模型的 Key/.test(value)));
 });
 
 test("排队满了、磁盘不够都算提交被拒，换成一句中文", () => {

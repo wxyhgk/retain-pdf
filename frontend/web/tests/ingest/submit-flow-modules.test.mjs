@@ -75,7 +75,7 @@ test("runSubmitFlow blocks on readiness without requesting submit", async () => 
   const result = await runSubmitFlow(h);
   assert.equal(result.status, "blocked");
   assert.equal(requested, false);
-  assert.equal(h.errors.at(-1).text, "请先填写当前 OCR Provider 凭证。");
+  assert.equal(h.errors.at(-1).text, "请先在接口设置里填好 OCR 和翻译模型的 Key。");
 });
 
 test("runSubmitFlow returns invalid_page_ranges before any request", async () => {

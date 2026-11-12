@@ -42,6 +42,7 @@ export type RunBatchSubmitOptions = Pick<
   | "refreshDeepSeekBalance"
   | "libraryEventPort"
   | "notifyPreflightWarning"
+  | "probeTranslationKey"
 > & {
   uploadIds: string[];
   collectRunPayload: (overrides: { uploadId: string; pageRanges: string }) => unknown;
@@ -74,6 +75,7 @@ export async function runBatchSubmit({
   refreshDeepSeekBalance,
   libraryEventPort,
   notifyPreflightWarning,
+  probeTranslationKey,
 }: RunBatchSubmitOptions): Promise<BatchSubmitResult> {
   const mock = Boolean(configPort?.isMock?.());
   if (!mock) {
@@ -103,6 +105,15 @@ export async function runBatchSubmit({
       refreshDeepSeekBalance,
       ensureOcrCredentialsReady,
       notifyPreflightWarning,
+      // 每本的翻译设置是同一套，拿第一本的 payload 测一次。
+      translationProbePayload: () => {
+        try {
+          return collectRunPayload({ uploadId: uploadIds[0], pageRanges: "" });
+        } catch {
+          return null;
+        }
+      },
+      probeTranslationKey,
     });
   }
   setText("error-box", "-");

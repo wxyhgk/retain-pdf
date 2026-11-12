@@ -1,4 +1,4 @@
-// 提交前的两道 provider 预检：DeepSeek 余额、OCR Provider Token（只在单机模式跑）。
+// 提交前的三道 provider 预检：DeepSeek 余额、OCR Provider Token、翻译 Key（只在单机模式跑；翻译 Key 见 translation-probe.ts）。
 //
 // 它们以前挡在 submitJobRequest 前面，各自是一次第三方网络往返（余额检测的超时
 // 上限是 12 秒），而 OCR 校验缓存是纯内存的（getRuntime().ocrValidation，无 TTL、
@@ -14,8 +14,9 @@
 // 不在屏上。改为经 notify 端口报出（composition 接的是 toast）。
 
 import { getApiAuthMode } from "@retainpdf/api/http";
-import { ensureDeepSeekBudgetReady } from "./budget.js";
+import { ensureDeepSeekBudgetReady, needsDeepSeekBudgetCheck } from "./budget.js";
 import { ensureOcrCredentialsForSubmit } from "./credentials.js";
+import { translationProbeInputOf, type ProbeTranslationKey } from "./translation-probe.js";
 import type {
   EnsureDeepSeekBudgetReadyOptions,
   EnsureOcrCredentialsForSubmitOptions,
@@ -31,6 +32,10 @@ export type SubmitPreflightOptions = {
   ensureOcrCredentialsReady?: EnsureOcrCredentialsForSubmitOptions["ensureOcrCredentialsReady"];
   /** 预检失败时报给用户（composition 接 toast）。不传则静默。 */
   notifyPreflightWarning?: (message: string) => void;
+  /** 这次要提交的 payload（只读它的 translation 段去检测翻译 Key）。不传就不测。 */
+  translationProbePayload?: () => unknown;
+  /** 带记忆的翻译 Key 检测器（createTranslationProbe，主页装配时建一个）。不传就不测。 */
+  probeTranslationKey?: ProbeTranslationKey;
 };
 
 /**
@@ -49,6 +54,8 @@ export function startSubmitPreflight({
   refreshDeepSeekBalance,
   ensureOcrCredentialsReady,
   notifyPreflightWarning,
+  translationProbePayload,
+  probeTranslationKey,
 }: SubmitPreflightOptions = {}): Promise<void> {
   // 多用户模式下模型和 OCR 用平台的（服务器上配），本机的 DeepSeek 余额、OCR Token 跟这次提交无关，
   // 查了只会弹出「OCR 凭据未配置」之类的误导提示。
@@ -88,5 +95,13 @@ export function startSubmitPreflight({
     }))
     .catch(() => false);
 
-  return Promise.all([budget, credentials]).then(() => undefined);
+  // 第三道：翻译 Key。DeepSeek 官方的余额检测已经顺带测过 Key，不再测第二遍。
+  const translation = needsDeepSeekBudgetCheck({ workflow, workflowNeedsUpload, currentBudgetState })
+    ? Promise.resolve()
+    : Promise.resolve()
+      .then(() => probeTranslationKey?.(translationProbeInputOf(translationProbePayload?.())) ?? "")
+      .then(warn)
+      .catch(() => undefined);
+
+  return Promise.all([budget, credentials, translation]).then(() => undefined);
 }

@@ -102,6 +102,11 @@
   overflow-wrap: anywhere;
 }
 
+/* 「去设置换 Key」：跟在「该怎么办」那句下面，按内容宽，不撑满整张卡。 */
+.book-detail-failure-settings {
+  justify-self: start;
+}
+
 .book-detail-failure-expand {
   justify-self: start;
   margin-left: -10px;

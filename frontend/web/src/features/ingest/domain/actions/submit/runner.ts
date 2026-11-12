@@ -35,6 +35,7 @@ export async function runSubmitFlow({
   windowRef,
   now,
   notifyPreflightWarning,
+  probeTranslationKey,
 }: RunSubmitFlowOptions) {
   // ---- 分支[MOCK]:不做表单校验/组参/预算/凭证,成功→ publishSubmitSuccess→
   // submitted;失败(抛错)→ 上抛由调用方处理,不落 error-box,不关框。 ----
@@ -101,6 +102,15 @@ export async function runSubmitFlow({
     refreshDeepSeekBalance,
     ensureOcrCredentialsReady,
     notifyPreflightWarning,
+    // 只读翻译段去检测 Key；组参出错时不在这里报，留给下面 [5] 的 try 按原样处理。
+    translationProbePayload: () => {
+      try {
+        return collectRunPayload?.();
+      } catch {
+        return null;
+      }
+    },
+    probeTranslationKey,
   });
 
   setText("error-box", "-");

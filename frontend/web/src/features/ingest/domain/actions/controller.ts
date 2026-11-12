@@ -12,6 +12,7 @@ import { createAppActionsRuntimeEnvPort } from "./runtime-env-port.js";
 import { createAppActionsJobSnapshotPort } from "./job-snapshot-port.js";
 import { createAppActionsUploadStatePort } from "./upload-state-port.js";
 import { runBatchSubmit, type BatchSubmitItemResult } from "./submit/batch.js";
+import type { ProbeTranslationKey } from "./submit/translation-probe.js";
 
 export interface AppActionsUploadStatePort {
   getSnapshot?: () => {
@@ -67,6 +68,8 @@ export interface SubmitFlowDeps {
   }) => Promise<unknown> | unknown;
   /** provider 预检失败的告知口（预检已改为后台并行，不再挡提交）。 */
   notifyPreflightWarning?: (message: string) => void;
+  /** 提交时检测翻译 Key 的探针（见 submit/translation-probe.ts）。 */
+  probeTranslationKey?: ProbeTranslationKey;
   startJobPolling?: (jobId: string) => void;
   libraryEventPort?: LibraryEventPortLike;
   jobSnapshotPort?: AppActionsJobSnapshotPort;
@@ -101,6 +104,7 @@ export interface MountAppActionsFeatureOptions {
   openBrowserCredentialsDialog?: (options?: unknown) => void;
   refreshDeepSeekBalance?: SubmitFlowDeps["refreshDeepSeekBalance"];
   notifyPreflightWarning?: SubmitFlowDeps["notifyPreflightWarning"];
+  probeTranslationKey?: SubmitFlowDeps["probeTranslationKey"];
   startJobPolling?: (jobId: string) => void;
   libraryEventPort?: LibraryEventPortLike;
   configPort?: AppActionsConfigPort;
@@ -134,6 +138,7 @@ export function mountAppActionsFeature({
   openBrowserCredentialsDialog = submitFlow?.openBrowserCredentialsDialog,
   refreshDeepSeekBalance = submitFlow?.refreshDeepSeekBalance,
   notifyPreflightWarning = submitFlow?.notifyPreflightWarning,
+  probeTranslationKey = submitFlow?.probeTranslationKey,
   startJobPolling = submitFlow?.startJobPolling,
   libraryEventPort = submitFlow?.libraryEventPort,
   jobSnapshotPort: submitFlowJobSnapshotPort = submitFlow?.jobSnapshotPort,
@@ -195,6 +200,7 @@ export function mountAppActionsFeature({
         hasBrowserCredentials,
         refreshDeepSeekBalance,
         notifyPreflightWarning,
+        probeTranslationKey,
         syncCurrentJobSnapshot: (_state, payload, jobId, meta) => {
           jobSnapshot.syncCurrentJobSnapshot(payload, jobId, meta);
         },
@@ -238,6 +244,7 @@ export function mountAppActionsFeature({
         refreshDeepSeekBalance,
         libraryEventPort,
         notifyPreflightWarning,
+        probeTranslationKey,
       });
     } finally {
       setSubmitBusyState(false);
