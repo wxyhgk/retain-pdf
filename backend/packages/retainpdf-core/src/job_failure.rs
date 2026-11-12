@@ -40,7 +40,10 @@ pub fn classify_job_failure(job: &JobSnapshot) -> Option<JobFailureInfo> {
 /// 统一在出口补上恢复信息,避免每个检测分支各自记得填一遍——那正是以前
 /// 「三处都要改、漏一处就没提示」的来源。
 fn with_recovery(mut failure: JobFailureInfo) -> JobFailureInfo {
-    let recovery = crate::job_failure_catalogue::recovery_for(&failure.category);
+    // 同一种分类在不同阶段恢复方式可能不同（翻译阶段的 Key 被拒能从翻译续跑）
+    let failed_stage = failure.failed_stage.as_deref().unwrap_or(&failure.stage);
+    let recovery =
+        crate::job_failure_catalogue::recovery_for_stage(&failure.category, failed_stage);
     failure.resume_from = recovery.resume_from.map(|stage| stage.as_str().to_string());
     failure.recovery_hint = Some(recovery.hint.to_string());
     failure
