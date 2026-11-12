@@ -148,11 +148,28 @@ export interface TranslationReplayView {
   job_id: string;
   item_id: string;
   /**
+   * Stable field for clients (added 2026-11-12): the replayed translation, ready to PATCH back as translated_text. Null when the model call failed (see payload.replay_error), the item is not translated, or the model returned an empty translation. Read this instead of payload.
+   */
+  candidate: TranslationReplayCandidate | null;
+  /**
    * What replay_translation_item.py printed, with secrets redacted. Today: job_root, job_id, item_id, page_idx, page_path, source_preview, saved_item, policy_before, policy_after, replay_result (null when the item is not translated or the model call failed), replay_error ({type, message} when the model call failed, else null; a failed model call is still 200). A devtools payload, not a stable schema.
    */
   payload: {
     [k: string]: any;
   };
+}
+/**
+ * views/translation.rs :: TranslationReplayCandidate. Same rule as the replay script's own --commit (_commit_replay_result).
+ */
+export interface TranslationReplayCandidate {
+  /**
+   * Same form as PATCH translated_text (the item's protected_translated_text form). Empty when decision is keep_origin.
+   */
+  translated_text: string;
+  /**
+   * keep_origin: the model judged this block should stay in the source language; do not write it back.
+   */
+  decision: "translate" | "keep_origin";
 }
 export interface TranslationRevisionHistoryView {
   job_id: string;

@@ -86,13 +86,14 @@ test("phase-1b translation items and document jobs endpoints carry the client na
   assert.deepEqual(named, [
     ["GET", "/api/v1/jobs/:job_id/translations", "listTranslationItems", "json", undefined],
     ["GET", "/api/v1/jobs/:job_id/translations/:item_id", "getTranslationItem", "json", undefined],
+    // 单条写回（2026-11-12 前端做「手动改一段译文」时要的）。
+    ["PATCH", "/api/v1/jobs/:job_id/translations/:item_id", "updateTranslationItem", "json", "ReviseTranslationItemRequest"],
     // 重放一条不带请求体。
     ["POST", "/api/v1/jobs/:job_id/translations/:item_id/replay", "replayTranslationItem", "json", undefined],
   ]);
-  // 同一份契约里的写回（PATCH）和修订历史前端清单没给名字，不起名。
+  // 修订历史没人调（前端改用 data/revisions），不起名。
   const unnamed = revisions.endpoints.filter((endpoint) => endpoint.client_name === undefined).map(({ method, path }) => [method, path]);
   assert.deepEqual(unnamed, [
-    ["PATCH", "/api/v1/jobs/:job_id/translations/:item_id"],
     ["GET", "/api/v1/jobs/:job_id/translations/:item_id/revisions"],
   ]);
 

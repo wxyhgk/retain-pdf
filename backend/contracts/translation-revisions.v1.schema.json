@@ -35,6 +35,8 @@
     {
       "method": "PATCH",
       "path": "/api/v1/jobs/:job_id/translations/:item_id",
+      "client_name": "updateTranslationItem",
+      "transport": "json",
       "input": "ReviseTranslationItemRequest",
       "output": "TranslationRevisionView",
       "errors": {
@@ -61,7 +63,7 @@
       "output": "TranslationReplayView",
       "rust_view": "TranslationReplayView",
       "ts_consumer": "@retainpdf/contracts/translation-revisions :: TranslationReplayView",
-      "note": "No request body (there is deliberately no input; send an empty body, any body is ignored). Runs backend/pipeline/devtools/replay_translation_item.py once in dry-run mode: the item is translated again with the job's saved settings and nothing is written back (to keep a replayed text, PATCH it). Synchronous, calls the model; the server gives up after 300 seconds.",
+      "note": "No request body (there is deliberately no input; send an empty body, any body is ignored). Runs backend/pipeline/devtools/replay_translation_item.py once in dry-run mode: the item is translated again with the job's saved settings and nothing is written back (to keep a replayed text, PATCH candidate.translated_text with source user). Synchronous, calls the model; the server gives up after 300 seconds.",
       "errors": {
         "400": "BAD_REQUEST: malformed item id (allowed: 1-128 ASCII letters, digits, - _ : .)",
         "404": "NOT_FOUND: job or item does not exist (error.details is {}); no translation manifest yet: error.details.reason = not_ready",
@@ -154,14 +156,28 @@
         "item": { "type": "object", "additionalProperties": true, "description": "The item exactly as stored in the page payload (source_text, translated_text, protected_translated_text, translation_diagnostics, ...), with secrets from the job request redacted. Not a stable schema." }
       }
     },
+    "TranslationReplayCandidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "views/translation.rs :: TranslationReplayCandidate. Same rule as the replay script's own --commit (_commit_replay_result).",
+      "required": ["translated_text", "decision"],
+      "properties": {
+        "translated_text": { "type": "string", "description": "Same form as PATCH translated_text (the item's protected_translated_text form). Empty when decision is keep_origin." },
+        "decision": { "type": "string", "enum": ["translate", "keep_origin"], "description": "keep_origin: the model judged this block should stay in the source language; do not write it back." }
+      }
+    },
     "TranslationReplayView": {
       "type": "object",
       "additionalProperties": false,
       "description": "views/translation.rs :: TranslationReplayView.",
-      "required": ["job_id", "item_id", "payload"],
+      "required": ["job_id", "item_id", "payload", "candidate"],
       "properties": {
         "job_id": { "type": "string" },
         "item_id": { "type": "string" },
+        "candidate": {
+          "anyOf": [{ "$ref": "#/definitions/TranslationReplayCandidate" }, { "type": "null" }],
+          "description": "Stable field for clients (added 2026-11-12): the replayed translation, ready to PATCH back as translated_text. Null when the model call failed (see payload.replay_error), the item is not translated, or the model returned an empty translation. Read this instead of payload."
+        },
         "payload": { "type": "object", "additionalProperties": true, "description": "What replay_translation_item.py printed, with secrets redacted. Today: job_root, job_id, item_id, page_idx, page_path, source_preview, saved_item, policy_before, policy_after, replay_result (null when the item is not translated or the model call failed), replay_error ({type, message} when the model call failed, else null; a failed model call is still 200). A devtools payload, not a stable schema." }
       }
     },

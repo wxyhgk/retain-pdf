@@ -241,6 +241,8 @@ Response: the item is wrapped; the saved translated item is under `data.item`. S
 
 Contract: `contracts/translation-revisions.v1.schema.json` (`TranslationReplayView`; client name `replayTranslationItem`). No request body: the endpoint has no `input`, any body is ignored. `data.payload` is the devtools script output, not a stable schema.
 
+`data.candidate` (added 2026-11-12) is the stable field for clients: `{ translated_text, decision }` or `null`. `translated_text` is already in the form `PATCH` expects, so "replay → the user approves → `PATCH` it back with `source: "user"`" needs nothing from `payload`. `decision: "keep_origin"` means the model judged the block should stay in the source language; do not write it back. It is `null` when the model call failed (`payload.replay_error`), the item is not translated, or the model returned an empty translation.
+
 Behavior:
 
 - launches `backend/pipeline/devtools/replay_translation_item.py`
