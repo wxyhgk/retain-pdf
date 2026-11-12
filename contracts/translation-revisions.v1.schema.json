@@ -35,6 +35,8 @@
     {
       "method": "PATCH",
       "path": "/api/v1/jobs/:job_id/translations/:item_id",
+      "client_name": "updateTranslationItem",
+      "transport": "json",
       "input": "ReviseTranslationItemRequest",
       "output": "TranslationRevisionView",
       "errors": {
