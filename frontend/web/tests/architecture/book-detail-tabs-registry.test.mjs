@@ -31,5 +31,5 @@ test("书籍详情的页签：id、order 不重复，独立页签和别的功能
   assert.equal(new Set(all.map((t) => t.order)).size, all.length, `页签 order 重复：${all.map((t) => `${t.id}=${t.order}`)}`);
   assert.match(dialog, /qualityBookDetailTab,\s*termsBookDetailTab,/, "独立页签没列进 BookDetailDialog 的表");
   assert.match(dialog, /\.\.\.extraTabs/, "别的功能登记的页签没接进表");
-  assert.match(read("../../src/app/home/HomeApp.tsx"), /<BookDetailDialog extraTabs=\{EXTRA_BOOK_DETAIL_TABS\} \/>/, "首页没把登记表传给书籍详情");
+  assert.match(read("../../src/app/home/shell/home-overlays.tsx"), /<BookDetailDialog extraTabs=\{EXTRA_BOOK_DETAIL_TABS\} \/>/, "首页没把登记表传给书籍详情");
 });

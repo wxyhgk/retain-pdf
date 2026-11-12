@@ -18,11 +18,9 @@ import {
   HomeShellProviders,
   HomeTabsProvider,
   useHomeTabs,
-  useHomeBookDetail,
   useHomeCollections,
   useHomeCredentials,
   useHomeCredentialsStatePort,
-  useHomeGlossaries,
   useHomeSettingsHub,
   useHomeWorkflowDialog,
 } from "./home-services-context.js";
@@ -31,30 +29,20 @@ import { AppTopBar } from "./shell/AppTopBar.jsx";
 import { AppBottomBar, HOME_TASK_CENTER_OPEN_EVENT } from "./shell/AppBottomBar.jsx";
 import { MockModeBanner } from "./shell/MockModeBanner.jsx";
 import { SettingsDialogSlot } from "./shell/SettingsDialogSlot.jsx";
-import { EXTRA_BOOK_DETAIL_TABS } from "./shell/book-detail-tabs.js";
+import { HomeOverlays } from "./shell/home-overlays.jsx";
 import { IngestDialog, IngestServicesProvider, IngestWorkflowViewProvider } from "@/features/ingest/index.js";
 import {
   LibraryServicesProvider,
   RecentJobsLibrary,
   useLibraryServices,
 } from "@/features/library/index.js";
-import { GlossariesDialog } from "@/features/glossaries/index.js";
 import {
   CredentialsProvider,
   HiddenCredentialInputs,
 } from "@/features/credentials/index.js";
-import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
-import { JobFinishNotifier, type FinishedJob } from "@/features/notify/index.js";
 import { AuthSessionProvider, useVisibleHomeTab } from "@/features/auth/index.js";
 import type { AuthSessionView } from "@retainpdf/api/auth";
-import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
-import { StatusDetailDialog } from "@/features/job-detail/index.js";
-import { ReaderNavigation, SoftReaderHost } from "@/features/reader/index.js";
-import {
-  CollectionDialog,
-  CollectionsView,
-} from "@/features/collections/index.js";
-import { DownloadToastHost } from "@/ui/download-toast/DownloadToastHost.jsx";
+import { CollectionsView } from "@/features/collections/index.js";
 import { parseHomeTab } from "@/platform/navigation/pages.js";
 import {
   readInitialLibraryTabFromReturn,
@@ -71,11 +59,10 @@ import "@/features/library/ui/island/index.js";
 //
 // 这几块只在用户点过去时才出现，代码不该跟着首屏一起下载：
 // - 任务中心：底部栏点开才显示；
-// - 书籍详情：点开一本书才显示（见 BookDetailDialogSlot）。
+// - 书籍详情：点开一本书才显示（见 shell/home-overlays.tsx 的 BookDetailDialogSlot）。
 // 两者都只被本文件引用，走各自 index 的动态 import，不破坏「index 是唯一出口」。
 // （以前还有「AI 问答」：2026-11-03 RetainPDF 自己的 AI 删了。）
 const TaskCenter = lazy(() => import("@/features/task-center/index.js").then((m) => ({ default: m.TaskCenter })));
-const BookDetailDialog = lazy(() => import("@/features/book-detail/index.js").then((m) => ({ default: m.BookDetailDialog })));
 
 const HOME_TABS = ["library", "categories"] as const;
 type HomeTab = (typeof HOME_TABS)[number];
@@ -138,17 +125,6 @@ function CollectionsViewSlot() {
   );
 }
 
-function CollectionDialogSlot() {
-  const collections = useHomeCollections();
-  return (
-    <CollectionDialog
-      controller={collections.controller}
-      dialogStore={collections.dialogStore}
-      reloadSignal={collections.reloadSignal}
-    />
-  );
-}
-
 // 任务中心浮层插槽：点任务卡片走同一套书籍详情（job_id 兜底开详情壳，
 // 见 library/domain/documents/navigation-actions），与网格行为一致。
 function TaskCenterSlot() {
@@ -161,50 +137,6 @@ function TaskCenterSlot() {
     />
   );
 }
-// 书籍详情第一次打开时才下载并挂载；之后一直挂着，关闭动画、再次打开都和以前一样。
-function BookDetailDialogSlot() {
-  const { dialogStore } = useHomeBookDetail();
-  const dialogState = useDialogState(dialogStore);
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    if (dialogState.open) setMounted(true);
-  }, [dialogState.open]);
-  if (!mounted && !dialogState.open) return null;
-  return (
-    <Suspense fallback={null}>
-      <BookDetailDialog extraTabs={EXTRA_BOOK_DETAIL_TABS} />
-    </Suspense>
-  );
-}
-
-// 任务跑完的提醒：点「去阅读」进阅读器，失败的点「查看」打开书籍详情（和点网格卡片同一条路）。
-function JobFinishNotifierSlot() {
-  const library = useLibraryServices();
-  const openJob = useCallback((job: FinishedJob) => {
-    if (job.status === "succeeded") {
-      globalThis.document.dispatchEvent(new globalThis.CustomEvent(APP_EVENTS.openReaderRequested, {
-        detail: { jobId: job.jobId, pageIdx: null, blockId: "" },
-      }));
-      return;
-    }
-    library.actions.openBookDetail({ job_id: job.jobId, status: "failed" });
-  }, [library]);
-  return <JobFinishNotifier onOpenJob={openJob} />;
-}
-
-function GlossariesDialogSlot() {
-  const glossaries = useHomeGlossaries();
-  const dialogState = useDialogState(glossaries.dialogStore);
-  return (
-    <GlossariesDialog
-      feature={glossaries.feature}
-      view={glossaries.view}
-      dialogStore={glossaries.dialogStore}
-      open={Boolean(dialogState.open)}
-    />
-  );
-}
-
 function HomeShell() {
   // tabs 来自窄口,不再由 Shell 自持 useState(状态上移到 HomeTabsRoot)。
   const activeTab = useVisibleHomeTab(useHomeTabs().activeTab);
@@ -276,20 +208,10 @@ function HomeShell() {
         <IngestDialog hiddenInputsSlot={<HiddenCredentialInputs />} />
       </main>
       {/* dialogs.html 区块:credentials 域已 React 化,其余占位(3b) */}
-      <GlossariesDialogSlot />
       <developer-auth-dialog></developer-auth-dialog>
       <developer-settings-dialog></developer-settings-dialog>
-      <StatusDetailDialog />
-      <ReaderNavigation />
-      {/* 软打开阅读器：全屏层，主页不卸载（关 × 不刷新） */}
-      <SoftReaderHost />
-      <CollectionDialogSlot />
-      <BookDetailDialogSlot />
-      {/* sonner 全局宿主：DownloadToastHost 内含 <Toaster/>，任务中心取消/重试、
-          收藏等处的 toast.success/error 都经它渲染——TaskCenter 不自带 Toaster，
-          挂载在 HomeApp 下即接入现有宿主，不另起第二个（sonner 双宿主会重影）。 */}
-      <DownloadToastHost />
-      <JobFinishNotifierSlot />
+      {/* 主页上的弹窗、浮层和没有界面的盯梢组件，按表挂（shell/home-overlays.tsx）。 */}
+      <HomeOverlays />
     </>
   );
 }
