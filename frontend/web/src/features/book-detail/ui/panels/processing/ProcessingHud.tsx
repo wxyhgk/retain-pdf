@@ -3,6 +3,7 @@
 // 各站分开的耗时、翻译站用的模型和 token 挂在流水线各站下面（stationChips），这里只放总数。
 // 以前这是四张大卡，进度环、分段条各占一块，太占地方。
 
+import { BrandLogo } from "@/ui/icons/BrandLogo.jsx";
 import type { CSSProperties } from "react";
 import {
   Check,
@@ -79,7 +80,7 @@ export function ProcessingHud({
 
       {model.model && !bootstrapping ? (
         <span className="book-detail-hud-item book-detail-hud-model" title={model.model.title} data-hud="model">
-          {model.model.logo ? <img src={model.model.logo} alt="" aria-hidden="true" /> : null}
+          <BrandLogo logo={model.model.logo} />
           <span className="sr-only">{model.model.title}</span>
           <span className="book-detail-hud-model-name" aria-hidden="true">{model.model.name}</span>
           {model.model.agent ? <span className="book-detail-hud-badge" aria-hidden="true">agent</span> : null}

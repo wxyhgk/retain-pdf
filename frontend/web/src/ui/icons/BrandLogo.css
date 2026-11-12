@@ -1,0 +1,22 @@
+/* 厂商 / 模型标志（ui/icons/BrandLogo）。单色的用 mask 画成当前文字颜色。
+ *
+ * @owns brand-logo */
+
+.brand-logo {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 1em;
+  height: 1em;
+  object-fit: contain;
+  vertical-align: middle;
+}
+
+.brand-logo[data-mono="true"] {
+  background-color: currentColor;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}

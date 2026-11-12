@@ -36,9 +36,9 @@ test("HUD 上的时间写成 m:ss / h:mm:ss；按模型名认出服务商标志"
   assert.equal(clockText(171_000), "2:51");
   assert.equal(clockText(16_000), "0:16");
   assert.equal(clockText(3_723_000), "1:02:03");
-  assert.match(modelLogo("claude-haiku-5-5"), /anthropic/);
-  assert.match(modelLogo("glm-5.3-flash"), /zai/);
-  assert.equal(modelLogo("my-own-model"), "");
+  assert.match(modelLogo("claude-haiku-5-5").src, /models\/claude\.svg$/);
+  assert.match(modelLogo("glm-5.3-flash").src, /models\/glm\.svg$/);
+  assert.equal(modelLogo("my-own-model"), null);
 });
 
 test("完成：环写翻了几页，总耗时、模型、token 都在", () => {
@@ -47,12 +47,12 @@ test("完成：环写翻了几页，总耗时、模型、token 都在", () => {
   assert.equal(hud.time.text, "2:51");
   assert.equal(hud.time.title, "共用时 2 分 51 秒");
   assert.equal(hud.model.name, "claude-haiku-5-5");
-  assert.match(hud.model.logo, /anthropic/);
+  assert.match(hud.model.logo.src, /models\/claude\.svg$/);
   assert.equal(hud.tokens.text, "128.7 万");
   // 各站小标签：OCR 站页数，翻译站模型标志（这里没有按环节的用量，就没有 token）。
   assert.deepEqual(hud.stationChips.ocr.map((chip) => [chip.kind, chip.text]), [["pages", "134"]]);
   assert.deepEqual(hud.stationChips.translate.map((chip) => chip.kind), ["model"]);
-  assert.match(hud.stationChips.translate[0].logo, /anthropic/);
+  assert.match(hud.stationChips.translate[0].logo.src, /models\/claude\.svg$/);
 });
 
 test("在跑：环跟进度、写第几批；token 还在涨不摆", () => {

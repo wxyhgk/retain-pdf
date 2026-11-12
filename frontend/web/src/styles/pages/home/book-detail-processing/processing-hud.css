@@ -105,7 +105,7 @@
 
 /* —— 模型：服务商标志 + 名字 —— */
 
-.book-detail-hud-model img {
+.book-detail-hud-model .brand-logo {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;

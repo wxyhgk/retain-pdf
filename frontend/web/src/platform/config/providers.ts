@@ -1,3 +1,4 @@
+import { MODEL_LOGOS, VENDOR_LOGOS, type BrandLogo } from "./brand-logos.js";
 export const DEFAULT_OCR_PROVIDER = "paddle";
 
 export const OCR_PROVIDER_DEFINITIONS = [
@@ -5,7 +6,7 @@ export const OCR_PROVIDER_DEFINITIONS = [
     id: "paddle",
     label: "PaddleOCR",
     description: "百度飞桨在线 OCR，一本最多 999 页。",
-    logoUrl: "",
+    logo: VENDOR_LOGOS.paddlepaddle,
     tokenField: "paddle_token",
     runtimeConfigKey: "paddleToken",
     tokenLabel: "Paddle Access Token",
@@ -27,7 +28,7 @@ export const OCR_PROVIDER_DEFINITIONS = [
     id: "mineru",
     label: "MinerU",
     description: "MinerU 在线文档解析，一本最多 600 页。",
-    logoUrl: "",
+    logo: VENDOR_LOGOS.mineru,
     tokenField: "mineru_token",
     runtimeConfigKey: "mineruToken",
     tokenLabel: "MinerU API Token",
@@ -52,7 +53,7 @@ export const OCR_PROVIDER_DEFINITIONS = [
     label: "GLM-OCR",
     description: "智谱版面解析，公式出 LaTeX、表格出 HTML，不限页数；和智谱翻译共用一个 key。",
     // 设置里服务商卡片上的标志（和翻译「智谱」同一个）；没有标志的用线条图标。
-    logoUrl: "src/assets/providers/zai.svg",
+    logo: VENDOR_LOGOS.zhipu,
     tokenField: "",
     inlineOption: "credential",
     runtimeConfigKey: "glmOcrToken",
@@ -119,7 +120,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
     defaultModel: "qwen3.8-flash",
     defaultWorkers: 20,
     maxWorkers: 50,
-    logoUrl: "src/assets/providers/qwen.svg",
+    logo: MODEL_LOGOS.qwen,
     billingUrl: "https://platform.qianwenai.com/home/billing/overview",
     billingLabel: "Qwen 充值",
   },
@@ -131,7 +132,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
     defaultModel: "deepseek-flash",
     defaultWorkers: 50,
     maxWorkers: 100,
-    logoUrl: "src/assets/providers/deepseek.svg",
+    logo: VENDOR_LOGOS.deepseek,
     docsUrl: TRANSLATION_PROVIDER_DEFINITION.docsUrl,
     docsLabel: TRANSLATION_PROVIDER_DEFINITION.docsLabel,
   },
@@ -143,7 +144,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
     defaultModel: "claude-sonnet-5",
     defaultWorkers: 50,
     maxWorkers: 100,
-    logoUrl: "src/assets/providers/anthropic.svg",
+    logo: VENDOR_LOGOS.anthropic,
   },
   {
     id: "openai",
@@ -153,7 +154,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
     defaultModel: "gpt-5.6-luna",
     defaultWorkers: 50,
     maxWorkers: 100,
-    logoUrl: "src/assets/providers/openai.svg",
+    logo: VENDOR_LOGOS.openai,
   },
   {
     id: "zhipu",
@@ -163,7 +164,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
     defaultModel: "GLM-5.3-Flash",
     defaultWorkers: 5,
     maxWorkers: 50,
-    logoUrl: "src/assets/providers/zai.svg",
+    logo: VENDOR_LOGOS.zhipu,
     docsUrl: "https://bigmodel.cn/usercenter/proj-mgmt/apikeys",
     docsLabel: "智谱 API Key",
     billingUrl: "https://bigmodel.cn/finance-center/finance/pay",
@@ -177,7 +178,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
     defaultModel: "deepseek-v4.1-flash",
     defaultWorkers: 5,
     maxWorkers: 100,
-    logoUrl: "",
+    logo: VENDOR_LOGOS.opencode,
     docsUrl: "https://opencode.ai/docs/go/",
     docsLabel: "OpenCode Go 文档",
   },
@@ -190,7 +191,8 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
     defaultWorkers: 5,
     maxWorkers: 100,
     recommendedWorkers: 5,
-    logoUrl: "",
+    // 自定义接口没有固定标志：界面按填的接口地址认（vendorLogoForBaseUrl）。
+    logo: null as BrandLogo | null,
   },
 ];
 

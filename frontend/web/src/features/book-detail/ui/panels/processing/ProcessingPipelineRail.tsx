@@ -15,6 +15,8 @@
 // loading（首帧未知）：任务数据还没回来时只占位不下结论 —— 各站「读取中…」，data-state="loading"，
 // 根节点带 data-loading="true"。曾经首帧一律按 pending 渲染成「未执行 / 尚未翻译」，而那份文档的 OCR 其实正在跑。
 
+import { BrandLogo } from "@/ui/icons/BrandLogo.jsx";
+import type { BrandLogo as BrandLogoEntry } from "@/platform/config/brand-logos.js";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { Clock3, Coins, Cpu, FileText, Flag, Languages, Layers, RotateCcw, ScanText, TriangleAlert, X } from "lucide-react";
 import { IconButton } from "@retainpdf/ui";
@@ -67,11 +69,11 @@ const STATION_GLYPH: Record<StationKey, typeof FileText> = {
 };
 
 /** 站下面的一个小标签：图标（或服务商标志）+ 数，整句在悬停里。由调用方给（processingHudModel().stationChips）。 */
-export type StationChipView = { key: string; kind: "pages" | "model" | "tokens"; text: string; title: string; logo?: string };
+export type StationChipView = { key: string; kind: "pages" | "model" | "tokens"; text: string; title: string; logo?: BrandLogoEntry | null };
 
 function ChipIcon({ chip }: { chip: StationChipView }) {
   if (chip.kind === "model") {
-    return chip.logo ? <img src={chip.logo} alt="" aria-hidden="true" /> : <Cpu aria-hidden="true" />;
+    return chip.logo ? <BrandLogo logo={chip.logo} /> : <Cpu aria-hidden="true" />;
   }
   if (chip.kind === "tokens") return <Coins aria-hidden="true" />;
   return <FileText aria-hidden="true" />;

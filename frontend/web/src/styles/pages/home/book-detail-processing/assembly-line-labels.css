@@ -127,7 +127,7 @@
 }
 
 .book-detail-pipeline-chip svg,
-.book-detail-pipeline-chip img {
+.book-detail-pipeline-chip .brand-logo {
   width: 11px;
   height: 11px;
   flex: 0 0 auto;

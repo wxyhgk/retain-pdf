@@ -5,6 +5,8 @@
 // 两个宿主互斥挂载（设置是模态、门弹窗只从上传引导触发），BROWSER_IDS 的
 // DOM id 不会同屏重复。状态/保存/校验全部走 useCredentialsController 的
 // 单例 store——宿主只是壳。
+import { BrandLogo } from "@/ui/icons/BrandLogo.jsx";
+import type { BrandLogo as BrandLogoEntry } from "@/platform/config/brand-logos.js";
 import { useEffect, useRef, useState } from "react";
 import { CREDENTIAL_DOM_IDS } from "./credentials-dom-ids.js";
 import { useCredentialsController } from "./useCredentialsController.js";
@@ -23,8 +25,8 @@ const { browser: BROWSER_IDS } = CREDENTIAL_DOM_IDS;
 const SAVED_FEEDBACK_MS = 1600;
 
 /** OCR 服务商卡片上的图：有官方标志用标志（GLM-OCR 是智谱），没有就用一个线条图标。 */
-function OcrProviderIcon({ providerId, logoUrl }: { providerId: string; logoUrl?: string }) {
-  if (logoUrl) return <img className="credential-choice-tile-logo" src={logoUrl} alt="" />;
+function OcrProviderIcon({ providerId, logo }: { providerId: string; logo?: BrandLogoEntry | null }) {
+  if (logo) return <BrandLogo className="credential-choice-tile-logo" logo={logo} />;
   return providerId === "mineru" ? <Pickaxe /> : <ScanLine />;
 }
 
@@ -101,7 +103,7 @@ export function CredentialsWorkbench() {
                   onChange={(value) => handlers?.changeProvider?.({ currentTarget: { value } })}
                   options={OCR_PROVIDER_DEFINITIONS.map((provider) => ({
                     value: provider.id,
-                    icon: <OcrProviderIcon providerId={provider.id} logoUrl={provider.logoUrl} />,
+                    icon: <OcrProviderIcon providerId={provider.id} logo={provider.logo} />,
                     label: provider.label,
                     title: provider.description,
                     props: { "data-ocr-provider-option": provider.id },

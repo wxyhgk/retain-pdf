@@ -108,6 +108,21 @@
   white-space: nowrap;
 }
 
+/* 按模型用量：模型标志和名字一行。 */
+.usage-bar-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usage-bar-logo {
+  width: 14px;
+  height: 14px;
+}
+
 .usage-bar-label small {
   overflow: hidden;
   color: var(--muted);
