@@ -1,9 +1,10 @@
 // BookDetailDialog —— 容器：组合 hooks + shell/tabs。
 // 业务状态见 use-book-detail-*.js；UI 见 shell / tabs / panels。
 
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { createBookDetailCaches } from "../domain/book-detail-caches.js";
 import {
+  HomeSettingsHubContext,
   useHomeBookDetail,
   useHomeCollections,
   useHomeJobRuntime,
@@ -57,6 +58,9 @@ export function BookDetailDialog() {
   const collectionsReload = collections?.reloadSignal;
   const { store: statusCardStore } = useHomeStatusCard();
   const { store: jobRuntimeStore } = useHomeJobRuntime();
+  // 术语页「存为我的术语表」存好后的「去改」：设置窗口叠在详情上、停在术语表页。取不到（单独挂载）就不给。
+  const settingsHub = useContext(HomeSettingsHubContext);
+  const openGlossarySettings = settingsHub?.dialogStore ? () => settingsHub.dialogStore.open({ tab: "glossary" }) : undefined;
   const dialogState = useDialogState<LibraryCardItem | null>(dialogStore);
   const open = Boolean(dialogState.open);
   const payloadItem: LibraryCardItem = dialogState.payload || {};
@@ -335,7 +339,13 @@ export function BookDetailDialog() {
             />
           )}
           qualityTab={jobId ? <QualityPanel jobId={jobId} documentId={documentId} /> : null}
-          termsTab={jobId ? <BookDetailTermsTab jobId={jobId} /> : null}
+          termsTab={jobId ? (
+            <BookDetailTermsTab
+              jobId={jobId}
+              title={`${docState.doc?.title || docState.titleText || item.title || ""}`}
+              onOpenGlossarySettings={openGlossarySettings}
+            />
+          ) : null}
           historyTab={<BookDetailHistoryTab coverage={coverage} addedAt={docState.doc?.added_at} />}
         />
       )}

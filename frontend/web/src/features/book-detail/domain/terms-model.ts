@@ -82,3 +82,76 @@ export function conflictRows(rows: readonly Row[] | null | undefined): ConflictR
       .join(" · "),
   })).filter((row) => row.source);
 }
+
+// ---- 存为我的术语表 ----
+//
+// 书里的术语按处理方式对应到术语表的类型：锁定译法 → 固定译法，保留原文 → 保留原词（译文写原词），
+// 自由翻译 → 优先译法（默认不勾：模型本来就可以自己翻）。通用词（drop）不进表。
+// 后端的规矩（retainpdf-glossaries entries.rs）：原词、译文都要有，各不超过 200 字，一张表最多 1000 条。
+// 按出现次数从多到少取，超过的丢掉并告诉用户丢了几条；同一个原词只留出现最多的那条。
+
+export type SaveableTreatment = "lock" | "keep_original" | "free";
+
+export const SAVEABLE_TREATMENTS: readonly SaveableTreatment[] = ["lock", "keep_original", "free"];
+
+const LEVEL_BY_TREATMENT: Record<SaveableTreatment, string> = {
+  lock: "canonical",
+  keep_original: "preserve",
+  free: "preferred",
+};
+
+const MAX_GLOSSARY_ENTRIES = 1000;
+const MAX_TERM_LENGTH = 200;
+
+export type GlossaryEntryDraft = {
+  source: string;
+  target: string;
+  note: string;
+  level: string;
+  match_mode: string;
+  context: string;
+};
+
+export function glossaryEntriesFromTerms(
+  rows: readonly TermRow[],
+  include: readonly SaveableTreatment[],
+): { entries: GlossaryEntryDraft[]; skipped: number; truncated: number } {
+  const wanted = new Set<string>(include);
+  const seen = new Set<string>();
+  const entries: GlossaryEntryDraft[] = [];
+  let skipped = 0;
+  let truncated = 0;
+  const sorted = [...rows].sort((a, b) => b.frequency - a.frequency || a.source.localeCompare(b.source));
+  for (const row of sorted) {
+    if (!wanted.has(row.treatment)) continue;
+    const treatment = row.treatment as SaveableTreatment;
+    const source = row.source.trim();
+    const target = treatment === "keep_original" ? source : row.target.trim();
+    if (!source || !target || source.length > MAX_TERM_LENGTH || target.length > MAX_TERM_LENGTH) {
+      skipped += 1;
+      continue;
+    }
+    if (seen.has(source)) continue;
+    if (entries.length >= MAX_GLOSSARY_ENTRIES) {
+      truncated += 1;
+      continue;
+    }
+    seen.add(source);
+    entries.push({
+      source,
+      target,
+      note: CATEGORY_LABELS[row.category] || "",
+      level: LEVEL_BY_TREATMENT[treatment],
+      match_mode: "",
+      context: "",
+    });
+  }
+  return { entries, skipped, truncated };
+}
+
+/** 默认表名：「书名 · 术语」，书名太长截断（表名后端不限长，但列表里放不下）。 */
+export function defaultGlossaryName(title: string): string {
+  const clean = `${title || ""}`.replace(/\s+/g, " ").trim();
+  const short = [...clean].length > 40 ? `${[...clean].slice(0, 40).join("")}…` : clean;
+  return short ? `${short} · 术语` : "这本书的术语";
+}

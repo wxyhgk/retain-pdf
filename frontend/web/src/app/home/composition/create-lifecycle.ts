@@ -7,7 +7,7 @@
 //      特性在 createRuntimeFeatures 已挂好；workflow 对话框事件在 composition
 //      里先于 recent-jobs 绑定（见 composition.js 注释）。
 //   2. bridge：随 composition 建好（无独立启动步），被 initializeIdleView 经端口消费。
-//   3. initialize()：bindDocumentEvents（retryStage / returnHome）→
+//   3. initialize()：bindDocumentEvents（retryStage / returnHome / glossariesChanged）→
 //      applyStartupRoute（reader/job_id/活动任务 → startPolling 恢复）→
 //      initializeIdleView（经 bridge 落 idle store，可重复调）。
 //   4. createRoot().render（mountShellPage：bootTheme → 找根 → 挂载，不开 StrictMode）。
@@ -73,11 +73,17 @@ export function createLifecycle({
       if (stage) mountedFeature(features, "jobRuntimeFeature").retryStage(stage, jobId ? { jobId } : {});
     };
     const onReturnHome = () => mountedFeature(features, "jobRuntimeFeature").returnToHome();
+    // 别处新建了术语表（书的术语页「存为我的术语表」）：提交窗口的下拉只读过一次列表，强制重读。
+    const onGlossariesChanged = () => {
+      void mountedFeature(features, "workflowFeature").loadGlossaryOptions({ force: true });
+    };
     documentRef.addEventListener(APP_EVENTS.retryStage, onRetryStage);
     documentRef.addEventListener(APP_EVENTS.returnHome, onReturnHome);
+    documentRef.addEventListener(APP_EVENTS.glossariesChanged, onGlossariesChanged);
     return () => {
       documentRef.removeEventListener(APP_EVENTS.retryStage, onRetryStage);
       documentRef.removeEventListener(APP_EVENTS.returnHome, onReturnHome);
+      documentRef.removeEventListener(APP_EVENTS.glossariesChanged, onGlossariesChanged);
     };
   }
 
