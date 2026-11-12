@@ -104,6 +104,48 @@ pub struct TranslationReplayView {
     pub job_id: String,
     pub item_id: String,
     pub payload: Value,
+    /// 重翻出来、可以直接交给 PATCH 写回的结果（稳定字段，前端用这个，不读 `payload`）。
+    /// 模型调用失败、条目不需要翻译、或者模型给了空译文时为 null。
+    pub candidate: Option<TranslationReplayCandidate>,
+}
+
+/// 重翻结果。`translated_text` 和 PATCH 的 `translated_text` 同一种写法；
+/// `decision = keep_origin` 表示模型判断这一段该保留原文，不要写回。
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct TranslationReplayCandidate {
+    pub translated_text: String,
+    pub decision: &'static str,
+}
+
+impl TranslationReplayCandidate {
+    /// 从重放脚本的输出里取：和脚本自己的 `--commit`（`_commit_replay_result`）同一个判断。
+    pub fn from_payload(payload: &Value) -> Option<Self> {
+        if payload.get("replay_error").is_some_and(|error| !error.is_null()) {
+            return None;
+        }
+        let result = payload.get("replay_result")?.as_object()?;
+        let decision = match result
+            .get("decision")
+            .and_then(Value::as_str)
+            .unwrap_or("translate")
+            .trim()
+        {
+            "keep_origin" => "keep_origin",
+            _ => "translate",
+        };
+        let translated_text = result
+            .get("translated_text")
+            .and_then(Value::as_str)
+            .unwrap_or("")
+            .to_string();
+        if decision == "translate" && translated_text.trim().is_empty() {
+            return None;
+        }
+        Some(Self {
+            translated_text,
+            decision,
+        })
+    }
 }
 
 /// 修订来源:用户手改、agent 改写、精修轮次。写进修订记录,不影响校验。
@@ -198,4 +240,45 @@ pub struct TranslationRevisionHistoryView {
     /// 按写入顺序(旧 -> 新)。
     pub revisions: Vec<Value>,
     pub total: usize,
+}
+
+#[cfg(test)]
+mod replay_candidate_tests {
+    use super::TranslationReplayCandidate;
+    use serde_json::json;
+
+    #[test]
+    fn candidate_is_the_replayed_text_ready_for_patch() {
+        let payload = json!({
+            "replay_result": {"decision": "translate", "translated_text": "译文 $x$"},
+            "replay_error": null,
+        });
+        assert_eq!(
+            TranslationReplayCandidate::from_payload(&payload),
+            Some(TranslationReplayCandidate {
+                translated_text: "译文 $x$".to_string(),
+                decision: "translate",
+            })
+        );
+    }
+
+    #[test]
+    fn keep_origin_is_reported_so_the_client_does_not_write_it_back() {
+        let payload = json!({"replay_result": {"decision": "keep_origin", "translated_text": ""}, "replay_error": null});
+        let candidate = TranslationReplayCandidate::from_payload(&payload).expect("keep_origin 也给出来");
+        assert_eq!(candidate.decision, "keep_origin");
+    }
+
+    #[test]
+    fn no_candidate_when_the_model_failed_or_returned_nothing() {
+        for payload in [
+            json!({"replay_result": null, "replay_error": {"type": "HTTPError", "message": "401"}}),
+            json!({"replay_result": {"decision": "translate", "translated_text": "残留"}, "replay_error": {"type": "X", "message": "y"}}),
+            json!({"replay_result": {}, "replay_error": null}),
+            json!({"replay_result": {"decision": "translate", "translated_text": "  "}, "replay_error": null}),
+            json!({}),
+        ] {
+            assert_eq!(TranslationReplayCandidate::from_payload(&payload), None, "{payload}");
+        }
+    }
 }

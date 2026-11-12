@@ -3,7 +3,7 @@ use tokio::process::Command;
 
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::api::{redact_json_value, redact_text, sensitive_values};
-use crate::views::TranslationReplayView;
+use crate::views::{TranslationReplayCandidate, TranslationReplayView};
 use retainpdf_core::models::domain::JobSnapshot;
 use retainpdf_core::storage_paths::resolve_job_root;
 
@@ -99,9 +99,11 @@ pub(crate) async fn replay_translation_item(
             "parse replay payload: {err}; stdout={stdout_excerpt}; stderr={stderr_excerpt}"
         ))
     })?;
+    let payload = redact_json_value(&payload, &secrets);
     Ok(TranslationReplayView {
         job_id: job.job_id.clone(),
         item_id: item_id.to_string(),
-        payload: redact_json_value(&payload, &secrets),
+        candidate: TranslationReplayCandidate::from_payload(&payload),
+        payload,
     })
 }
