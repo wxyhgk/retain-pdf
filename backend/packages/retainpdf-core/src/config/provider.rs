@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
-use super::env_vars::{env_bool, env_string, env_u16, env_u32, env_u64, env_usize};
+use super::env_vars::{env_bool, env_string, env_u16, env_u64, env_usize};
 
 /// Shared escape hatch for self-hosted/local OCR & LLM endpoints (e.g. Ollama on
 /// localhost). When unset, client-supplied provider `base_url` values pointing at
@@ -22,12 +22,11 @@ fn provider_probe_timeout_secs() -> u64 {
     )
 }
 
+/// 每家 OCR 服务商建任务时对上传文件的上限，按服务商 key 存。从服务商清单的 `limits` 读，
+/// 环境变量覆盖（变量名也写在清单里，例如 `RUST_API_MINERU_MAX_PAGES`）。清单里没写 `limits` 的不限。
 #[derive(Clone, Debug)]
 pub struct ProviderLimitsConfig {
-    pub mineru_max_bytes: u64,
-    pub mineru_max_pages: u32,
-    pub paddle_max_bytes: u64,
-    pub paddle_max_pages: u32,
+    by_provider: std::collections::BTreeMap<String, super::provider_config::OcrUploadLimits>,
 }
 
 #[derive(Clone, Debug)]
@@ -94,12 +93,21 @@ pub struct DeepSeekRuntimeConfig {
 
 impl ProviderLimitsConfig {
     pub fn from_env() -> Self {
-        Self {
-            mineru_max_bytes: env_u64("RUST_API_MINERU_MAX_BYTES", 200 * 1024 * 1024),
-            mineru_max_pages: env_u32("RUST_API_MINERU_MAX_PAGES", 600),
-            paddle_max_bytes: env_u64("RUST_API_PADDLE_MAX_BYTES", 100 * 1024 * 1024),
-            paddle_max_pages: env_u32("RUST_API_PADDLE_MAX_PAGES", 999),
-        }
+        let by_provider = super::provider_config::ocr_provider_definitions()
+            .into_iter()
+            .filter_map(|(key, definition)| {
+                super::provider_config::upload_limits_from_definition(&definition)
+                    .map(|limits| (key, limits))
+            })
+            .collect();
+        Self { by_provider }
+    }
+
+    /// 这家服务商的上限；清单里没写 `limits` 返回 `None`（不限）。
+    pub fn for_provider(&self, provider: &str) -> Option<super::provider_config::OcrUploadLimits> {
+        self.by_provider
+            .get(&provider.trim().to_ascii_lowercase())
+            .copied()
     }
 }
 

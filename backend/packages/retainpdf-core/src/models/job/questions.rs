@@ -65,20 +65,23 @@ impl JobRecord {
     /// 自建的 Paddle 服务（填了 `paddle_api_url`）不算：同时跑几个任务、排队怎样都只在官方服务上量过，照旧由 Rust 整份提交
     /// （那条路还有派发意向记录，进程死在提交途中重启后不会重复提交）。
     pub fn ocr_streams_pages(&self) -> bool {
+        use crate::config::provider_config::{configured_streams_pages, StreamsPages};
         let ocr = &self.request_payload.ocr;
-        let provider = ocr.provider.trim();
-        if provider.eq_ignore_ascii_case("glm_ocr") {
-            return true;
+        // 会不会一片片公布写在服务商清单的 `streams_pages` 里，不再按服务商名字判断。
+        match configured_streams_pages(&ocr.provider) {
+            StreamsPages::Always => true,
+            StreamsPages::Never => false,
+            StreamsPages::ChunkedUpload => {
+                let official_cli = ocr
+                    .options
+                    .get("transport")
+                    .and_then(serde_json::Value::as_str)
+                    .is_some_and(|transport| transport.trim().eq_ignore_ascii_case("official_cli"));
+                !official_cli
+                    && ocr.paddle_api_url.trim().is_empty()
+                    && self.source_url().trim().is_empty()
+            }
         }
-        let official_cli = ocr
-            .options
-            .get("transport")
-            .and_then(serde_json::Value::as_str)
-            .is_some_and(|transport| transport.trim().eq_ignore_ascii_case("official_cli"));
-        provider.eq_ignore_ascii_case("paddle")
-            && !official_cli
-            && ocr.paddle_api_url.trim().is_empty()
-            && self.source_url().trim().is_empty()
     }
 
     // --- 翻译 ---

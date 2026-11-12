@@ -1,4 +1,4 @@
-use retainpdf_core::config::ProviderLimitsConfig;
+use retainpdf_core::config::{provider_config, ProviderLimitsConfig};
 use retainpdf_api_base::error::AppError;
 use axum::http::StatusCode;
 use retainpdf_data::credentials::{resolve_credential, CredentialResolveError};
@@ -481,29 +481,28 @@ pub fn validate_mineru_upload_limits(
     upload: &UploadRecord,
     limits: &ProviderLimitsConfig,
 ) -> Result<(), AppError> {
-    match parse_provider_kind(&input.ocr.provider) {
-        OcrProviderKind::Mineru => {
-            validate_upload_limit(
-                upload,
-                "MinerU",
-                limits.mineru_max_bytes,
-                limits.mineru_max_pages,
-                false,
-            )?;
-        }
-        OcrProviderKind::Paddle => {
-            validate_upload_limit(
-                upload,
-                "PaddleOCR",
-                limits.paddle_max_bytes,
-                limits.paddle_max_pages,
-                true,
-            )?;
-        }
-        OcrProviderKind::Local => {}
-        OcrProviderKind::Unknown => {}
-    }
-    Ok(())
+    // 上限写在服务商清单的 `limits` 里（环境变量覆盖），没写的服务商不限。
+    let provider = input.ocr.provider.trim().to_ascii_lowercase();
+    let Some(provider_limits) = limits.for_provider(&provider) else {
+        return Ok(());
+    };
+    let provider_name = provider_config::ocr_provider_definition(&provider)
+        .and_then(|definition| {
+            definition
+                .get("display_name")
+                .and_then(serde_json::Value::as_str)
+                .map(str::trim)
+                .filter(|name| !name.is_empty())
+                .map(ToString::to_string)
+        })
+        .unwrap_or_else(|| provider.clone());
+    validate_upload_limit(
+        upload,
+        &provider_name,
+        provider_limits.max_file_bytes,
+        provider_limits.max_pages,
+        provider_limits.max_file_bytes_inclusive,
+    )
 }
 
 fn validate_upload_limit(
@@ -513,11 +512,13 @@ fn validate_upload_limit(
     max_pages: u32,
     bytes_inclusive: bool,
 ) -> Result<(), AppError> {
-    let too_large = if bytes_inclusive {
-        upload.bytes > max_bytes
-    } else {
-        upload.bytes >= max_bytes
-    };
+    // 0 = 不限
+    let too_large = max_bytes > 0
+        && if bytes_inclusive {
+            upload.bytes > max_bytes
+        } else {
+            upload.bytes >= max_bytes
+        };
     if too_large {
         let relation = if bytes_inclusive {
             "不超过"
@@ -530,7 +531,7 @@ fn validate_upload_limit(
             upload.bytes as f64 / 1024.0 / 1024.0
         )));
     }
-    if upload.page_count > max_pages {
+    if max_pages > 0 && upload.page_count > max_pages {
         return Err(AppError::bad_request(format!(
             "{provider_name} API 限制：PDF 页数必须不超过 {max_pages} 页；当前文件为 {} 页",
             upload.page_count

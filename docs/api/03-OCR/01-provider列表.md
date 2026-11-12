@@ -101,8 +101,21 @@ GET /api/v1/providers/ocr
 服务商只在 `backend/config/ocr_providers.json` 里登记一次：rust_api 编译时嵌入这份文件（运行时读不到就用嵌入的），
 Python 流水线读同一份（读不到直接报错，不再有手抄的备用定义），命令行 `retainpdf setup` 的 OCR 选项也从它来
 （要 token 的那几家，token 键是 `ocr.<服务商>_token`）。每个服务商有 `rank`，这个接口和命令行都按它排序。
-后续把"会不会一片片交结果、页数和大小上限、key 从哪来"也写进清单，见
-[后端插件化总方案](../../ops/planning/plugin-architecture/20261112-后端插件化总方案.md)。
+方案见 [后端插件化总方案](../../ops/planning/plugin-architecture/20261112-后端插件化总方案.md)。
+
+## 能力和上限（2026-11-12 起）
+
+每家服务商的能力也写在清单里，这个接口原样返回（代码按这些判断，不再按服务商名字）：
+
+| 字段 | 含义 | 清单里怎么写 |
+|---|---|---|
+| `docs_url` | 服务商的文档或申请 key 的页面，没有为 `null` | `"docs_url": "https://…"` |
+| `limits.max_pages` / `limits.max_file_bytes` | 建任务时对上传文件的上限，已经算上环境变量覆盖；`0` = 不限。超了建任务 400 | `"limits": {"max_pages": {"default": 600, "env": "RUST_API_MINERU_MAX_PAGES"}, "max_file_bytes": {"default": …, "env": …, "inclusive": false}}`；`inclusive: false` 表示必须小于上限 |
+| `streams_pages` | 会不会一片片公布已做完的页（整本任务的翻译跟着 OCR 并行）：`always` / `never` / `chunked_upload`（只有交上传的文件、走官方 HTTP 按片提交时） | `"streams_pages": "always"` |
+| `shares_translation_key_host` | 自己没有 key 时能借哪个翻译主机的 key（翻译接的就是这个主机才借），不能借为 `null` | `credential.shared_with_translation_host` |
+
+现在的取值：MinerU 600 页、小于 200MB、`never`；PaddleOCR 999 页、不超过 100MB、`chunked_upload`；GLM-OCR 不限、`always`、
+借 `open.bigmodel.cn` 的 key；Local OCR 不限、`never`。
 
 ## provider_kind
 

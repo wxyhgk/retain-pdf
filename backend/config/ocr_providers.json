@@ -3,6 +3,12 @@
     "mineru": {
       "rank": 0,
       "display_name": "MinerU",
+      "docs_url": "https://mineru.net/apiManage/docs",
+      "streams_pages": "never",
+      "limits": {
+        "max_pages": {"default": 600, "env": "RUST_API_MINERU_MAX_PAGES"},
+        "max_file_bytes": {"default": 209715200, "env": "RUST_API_MINERU_MAX_BYTES", "inclusive": false}
+      },
       "kind": "remote",
       "credential": {
         "field": "mineru_token",
@@ -31,6 +37,12 @@
     "paddle": {
       "rank": 1,
       "display_name": "PaddleOCR",
+      "docs_url": "https://aistudio.baidu.com/account/accessToken",
+      "streams_pages": "chunked_upload",
+      "limits": {
+        "max_pages": {"default": 999, "env": "RUST_API_PADDLE_MAX_PAGES"},
+        "max_file_bytes": {"default": 104857600, "env": "RUST_API_PADDLE_MAX_BYTES", "inclusive": true}
+      },
       "kind": "remote",
       "credential": {
         "field": "paddle_token",
@@ -64,17 +76,21 @@
     "glm_ocr": {
       "rank": 2,
       "display_name": "GLM-OCR",
+      "docs_url": "https://open.bigmodel.cn/usercenter/apikeys",
+      "streams_pages": "always",
       "kind": "remote_command",
       "credential": {
         "field": "credential",
         "env": "RETAIN_GLM_OCR_API_TOKEN",
-        "required_for": ["local_upload"]
+        "required_for": ["local_upload"],
+        "shared_with_translation_host": "open.bigmodel.cn"
       },
       "options": {}
     },
     "local": {
       "rank": 3,
       "display_name": "Local OCR",
+      "streams_pages": "never",
       "kind": "local_command",
       "credential": null,
       "options": {

@@ -129,6 +129,28 @@ pub struct OcrProviderPublicDefinition {
     pub options: BTreeMap<String, OcrProviderOptionSpec>,
     pub capabilities: OcrProviderCapabilities,
     pub artifact_layout: OcrProviderArtifactLayout,
+    /// 服务商的文档或申请 key 的页面（清单里的 `docs_url`）。
+    #[serde(default)]
+    pub docs_url: Option<String>,
+    /// 建任务时对上传文件的上限，已经算上环境变量覆盖。0 = 不限。
+    #[serde(default)]
+    pub limits: OcrProviderLimitsView,
+    /// 会不会一片片公布已做完的页：`always` / `never` / `chunked_upload`（只有交上传的文件、走官方 HTTP 时）。
+    #[serde(default = "default_streams_pages")]
+    pub streams_pages: String,
+    /// 自己没有 key 时能借哪个翻译主机的 key（翻译接的就是这个主机才借），不能借为 null。
+    #[serde(default)]
+    pub shares_translation_key_host: Option<String>,
+}
+
+fn default_streams_pages() -> String {
+    "never".to_string()
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Default)]
+pub struct OcrProviderLimitsView {
+    pub max_pages: u32,
+    pub max_file_bytes: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
