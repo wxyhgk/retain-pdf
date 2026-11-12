@@ -136,6 +136,10 @@ const CATALOGUE: &[(&str, FailureRecovery)] = &[
         resume_from: None,
         hint: "上游服务限流。稍后重试即可，无需改动配置。",
     }),
+    ("upstream_quota_exhausted", FailureRecovery {
+        resume_from: None,
+        hint: "上游账户余额不足或欠费，充值前重试会同样失败。请先充值或检查账户额度，重试会从头开始。",
+    }),
     ("upstream_bad_request", FailureRecovery {
         resume_from: None,
         hint: "上游服务拒绝了请求（400），重试通常无效。请检查模型配置与请求参数。",

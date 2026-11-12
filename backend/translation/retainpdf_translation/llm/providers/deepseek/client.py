@@ -390,13 +390,13 @@ def request_chat_content(
     )
     transport_recovery_started_at: float | None = None
     rejected = (
-        diagnostics.auth_rejection(base_url=base_url, api_key=api_key) if diagnostics is not None else None
+        diagnostics.credential_rejection(base_url=base_url, api_key=api_key) if diagnostics is not None else None
     )
     if rejected is not None:
-        # 这组凭据本次运行里已被上游以 401/403 拒过（Key 失效时每个请求都会被拒）：不再发请求
+        # 这组凭据本次运行里已被上游以 401/402/403 拒过（Key 失效、余额不足时每个请求都会被拒）：不再发请求
         if request_label:
-            print(f"{request_label}: skipped, API key already rejected by upstream in this run", flush=True)
-        raise _resilience.skipped_after_auth_rejection_error(rejected)
+            print(f"{request_label}: skipped, API key already rejected by upstream in this run (HTTP {_resilience.http_status_of(rejected)})", flush=True)
+        raise _resilience.skipped_after_credential_rejection_error(rejected)
     attempt = 1
     while attempt <= attempt_limit:
         started = time.perf_counter()
@@ -525,8 +525,8 @@ def request_chat_content(
                     f"{request_label}: http failed attempt {attempt}/{attempt_limit} after {elapsed:.2f}s: {type(exc).__name__}: {exc}",
                     flush=True,
                 )
-            if diagnostics is not None and _resilience.is_auth_error(exc):
-                diagnostics.record_auth_rejection(base_url=base_url, api_key=api_key, error=exc)
+            if diagnostics is not None and _resilience.is_credential_rejection(exc):
+                diagnostics.record_credential_rejection(base_url=base_url, api_key=api_key, error=exc)
             rejected_400 = (
                 isinstance(exc, requests.HTTPError)
                 and exc.response is not None

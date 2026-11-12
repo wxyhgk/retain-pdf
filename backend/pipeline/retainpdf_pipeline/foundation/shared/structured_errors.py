@@ -120,6 +120,8 @@ def _extract_provider_stage(text: str) -> str:
 def _failure_category_for(*, failure_code: str, failed_stage: str) -> str:
     if failure_code in {"auth_failed"}:
         return "auth"
+    if failure_code in {"upstream_quota_exhausted"}:
+        return "billing"
     if failure_code in {"dns_resolution_failed"}:
         return "network"
     if failure_code in {"upstream_timeout"}:
@@ -151,6 +153,7 @@ def _suggestion_for(*, failure_code: str, failure_category: str, provider: str) 
     provider_label = provider.strip() or "上游服务"
     suggestions = {
         "auth_failed": f"检查 {provider_label} 凭据、模型 API Key 或相关访问令牌是否有效。",
+        "upstream_quota_exhausted": "上游账户余额不足或欠费，请充值或检查账户额度后重试。",
         "dns_resolution_failed": "检查当前机器的 DNS / 网络连通性，确认目标域名可解析后再重试。",
         "upstream_timeout": "检查网络质量、上游服务负载或适当增大超时后再重试。",
         "upstream_rate_limited": f"{provider_label} 当前限流，请稍后重试或降低并发。",
@@ -218,6 +221,11 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         error_type = "render_failed"
         summary = "排版或编译阶段失败"
         retryable = True
+    elif http_status_code == 402 or "quotaexhausted" in lowered:
+        # 402 / agent 引擎的 QuotaExhausted：账户余额不足，充值前每次重试都会同样失败
+        error_type = "upstream_quota_exhausted"
+        summary = "上游账户余额不足（402）"
+        retryable = False
     elif http_status_code == 429 or any(token in lowered for token in ("rate limited", "rate limit", "too many requests", "retry-after")):
         error_type = "upstream_rate_limited"
         summary = "外部服务请求被限流"

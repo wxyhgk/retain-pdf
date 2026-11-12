@@ -1,9 +1,9 @@
-"""翻译 Key 被上游以 401/403 拒绝后，整份翻译立刻停下，不再把每个块都发一遍。
+"""翻译 Key 被上游以 401/403 拒绝（或账户余额不足 402）后，整份翻译立刻停下，不再把每个块都发一遍。
 
 2026-11-09 任务 20261109164419-5e63e8：Key 失效，38 个块发了 67 个请求——批量翻译、尾部重试、
 agent 修复、最终补翻各被拒一遍，最后才以「zero translated items」失败。几百页的书就是几千个注定
 被拒的请求。现在第一次被拒就在本次运行的诊断对象上记下这组凭据：之后同一组凭据的请求不再发，
-批量翻译收完在飞的请求就整份失败，结构化失败归成鉴权失败、不可重试。
+批量翻译收完在飞的请求就整份失败，结构化失败归成鉴权失败（402 归成余额不足）、不可重试。
 """
 from __future__ import annotations
 
@@ -32,21 +32,22 @@ def _run() -> TranslationRunDiagnostics:
 def _response(status: int, payload: dict) -> requests.Response:
     response = requests.Response()
     response.status_code = status
-    response.reason = "Unauthorized" if status == 401 else "OK"
+    response.reason = {401: "Unauthorized", 402: "Payment Required", 403: "Forbidden"}.get(status, "OK")
     response.url = f"{BASE_URL}/chat/completions"
     response._content = json.dumps(payload).encode()
     return response
 
 
 def _auth_error(status: int = 401) -> requests.HTTPError:
+    reason = _response(status, {}).reason
     return requests.HTTPError(
-        f"{status} Client Error: Unauthorized for url: {BASE_URL}/chat/completions",
+        f"{status} Client Error: {reason} for url: {BASE_URL}/chat/completions",
         response=_response(status, {"error": {"code": "invalid_api_key"}}),
     )
 
 
 class _Session:
-    """按 Key 回应：bad-key 回 401，其余回 200。记下每个真发出去的请求。"""
+    """按 Key 回应：bad-key 回 401，broke-key 回 402（余额不足），其余回 200。记下每个真发出去的请求。"""
 
     def __init__(self) -> None:
         self.sent: list[str] = []
@@ -56,6 +57,8 @@ class _Session:
         self.sent.append(auth)
         if auth == "Bearer bad-key":
             return _response(401, {"error": {"code": "invalid_api_key", "message": "Incorrect API key provided."}})
+        if auth == "Bearer broke-key":
+            return _response(402, {"error": {"message": "Insufficient Balance", "type": "unknown_error"}})
         return _response(200, {"choices": [{"message": {"content": "ok"}}]})
 
 
@@ -94,6 +97,24 @@ def test_rejected_key_is_sent_once_then_skipped_locally(session) -> None:
         assert session.sent[-1] == "Bearer good-key"
 
 
+def test_insufficient_balance_is_sent_once_then_skipped_locally(session) -> None:
+    """余额不足（402）和 Key 失效一样：充值前每个请求都会被拒，第一次以后不再发。"""
+    with translation_run_diagnostics_scope(_run()):
+        for _ in range(3):
+            with pytest.raises(requests.HTTPError) as caught:
+                _ask("broke-key")
+            assert resilience.http_status_of(caught.value) == 402
+        assert session.sent == ["Bearer broke-key"]
+        assert "账户余额不足（402）" in str(caught.value)
+
+
+def test_only_401_402_403_count_as_credential_rejection() -> None:
+    """400 只说明这一个请求有问题，换个块可能就好：不记，下一个请求照发。"""
+    error = requests.HTTPError("400 Client Error", response=_response(400, {}))
+    assert not resilience.is_credential_rejection(error)
+    assert all(resilience.is_credential_rejection(_auth_error(status)) for status in (401, 402, 403))
+
+
 def test_rejection_is_scoped_to_one_run(session) -> None:
     with translation_run_diagnostics_scope(_run()):
         with pytest.raises(requests.HTTPError):
@@ -113,10 +134,10 @@ def test_without_active_run_nothing_is_latched(session) -> None:
 
 def test_credential_key_ignores_trailing_slash_and_key_whitespace() -> None:
     run = _run()
-    run.record_auth_rejection(base_url=BASE_URL + "/", api_key=" bad-key ", error=_auth_error())
-    assert run.auth_rejection(base_url=BASE_URL, api_key="bad-key") is not None
-    assert run.auth_rejection(base_url=BASE_URL, api_key="other-key") is None
-    assert run.auth_rejection(base_url="https://other.example/v1", api_key="bad-key") is None
+    run.record_credential_rejection(base_url=BASE_URL + "/", api_key=" bad-key ", error=_auth_error())
+    assert run.credential_rejection(base_url=BASE_URL, api_key="bad-key") is not None
+    assert run.credential_rejection(base_url=BASE_URL, api_key="other-key") is None
+    assert run.credential_rejection(base_url="https://other.example/v1", api_key="bad-key") is None
 
 
 def _batch_stage_kwargs(run: TranslationRunDiagnostics) -> dict:
@@ -128,7 +149,7 @@ def _batch_stage_kwargs(run: TranslationRunDiagnostics) -> dict:
 
 def test_batch_stage_does_not_start_when_key_already_rejected(monkeypatch) -> None:
     run = _run()
-    run.record_auth_rejection(base_url=BASE_URL, api_key="bad-key", error=_auth_error())
+    run.record_credential_rejection(base_url=BASE_URL, api_key="bad-key", error=_auth_error())
     monkeypatch.setattr(
         batch_translation, "translate_pending_units",
         lambda **_: pytest.fail("Key 已被拒，不该再开批量翻译"),
@@ -143,7 +164,7 @@ def test_batch_stage_fails_after_batches_hit_a_rejection(monkeypatch) -> None:
     run = _run()
 
     def translate_pending_units(**_):
-        run.record_auth_rejection(base_url=BASE_URL, api_key="bad-key", error=_auth_error(403))
+        run.record_credential_rejection(base_url=BASE_URL, api_key="bad-key", error=_auth_error(403))
         return {"pending_items": 3, "effective_batch_size": 8, "total_batches": 3}
 
     monkeypatch.setattr(batch_translation, "translate_pending_units", translate_pending_units)
@@ -154,7 +175,7 @@ def test_batch_stage_fails_after_batches_hit_a_rejection(monkeypatch) -> None:
 
 def test_book_finish_skips_repairs_when_key_rejected(monkeypatch) -> None:
     run = _run()
-    run.record_auth_rejection(base_url=BASE_URL, api_key="bad-key", error=_auth_error())
+    run.record_credential_rejection(base_url=BASE_URL, api_key="bad-key", error=_auth_error())
     for name in ("run_garbled_reconstruction_stage", "run_agent_repair_stage", "run_final_untranslated_recovery_stage"):
         monkeypatch.setattr(book_flow, name, lambda **_: pytest.fail("Key 已被拒，修复和补翻不该再跑"))
     with pytest.raises(requests.HTTPError):
@@ -172,3 +193,15 @@ def test_stop_error_classifies_as_auth_failure_not_retryable() -> None:
     assert failure["failure_code"] == "auth_failed"
     assert failure["retryable"] is False
     assert failure["raw_excerpt"].startswith("翻译 API Key 被上游拒绝（HTTP 401）")
+
+
+def test_insufficient_balance_stop_error_classifies_as_quota_exhausted() -> None:
+    try:
+        raise resilience.credential_rejected_error(_auth_error(402))
+    except requests.HTTPError as exc:
+        failure = json.loads(classify_exception(exc, default_stage="translation", provider="translation").to_json())
+    assert failure["failure_code"] == "upstream_quota_exhausted"
+    assert failure["failure_category"] == "billing"
+    assert failure["retryable"] is False
+    assert failure["raw_excerpt"].startswith("翻译 API 账户余额不足（HTTP 402）")
+    assert "充值" in failure["suggestion"]

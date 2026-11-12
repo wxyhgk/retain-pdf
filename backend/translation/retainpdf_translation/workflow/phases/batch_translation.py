@@ -165,7 +165,7 @@ def run_translation_batch_stage(
             # keeps propagating and never reaches the success event below.
             run_diagnostics.mark_phase_end("translation_batches")
             _record_batch_diagnostics(run_diagnostics, batch_summary)
-    # 批次里碰到 401/403：在飞的请求收完、已译的块已经落盘，到这里整份失败，不再做尾部修复和补翻
+    # 批次里碰到 401/402/403：在飞的请求收完、已译的块已经落盘，到这里整份失败，不再做尾部修复和补翻
     raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key)
     finished_payload = {
         "pending_items": batch_summary["pending_items"],
