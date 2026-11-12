@@ -125,6 +125,7 @@ fn provider_public_definition_from_config(
         .map(|limits| OcrProviderLimitsView {
             max_pages: limits.max_pages,
             max_file_bytes: limits.max_file_bytes,
+            chunked_upload_exempt: limits.max_file_bytes_chunked_upload_exempt,
         })
         .unwrap_or_default();
     OcrProviderPublicDefinition {

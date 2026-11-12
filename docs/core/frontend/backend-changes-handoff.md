@@ -1299,5 +1299,6 @@ Studio（`frontend/studio`）自己的 AI，后端把 RetainPDF 自己的 AI 服
 | `shares_translation_key_host`：GLM-OCR 是 `open.bigmodel.cn` | （前端在 OCR-only 任务里自己带翻译 key 的那段逻辑可以参考它） |
 
 前端要做（前端会话排期）：`providers.ts` 里的 `maxPages`、`maxBytes`、`docsUrl` 改成读这个接口，删掉手抄的值。
-注意：PaddleOCR 现在返回 `max_file_bytes = 104857600`（100MB），和前端写的 `maxBytes: 0` 不一致——后端建任务时确实按 100MB 拒；
-分片上传后这个整份大小限制已经过时，后端另开分支去掉，去掉后这里会变成 0。
+PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_upload_exempt = true`：整本翻译任务（OCR 之后紧接着翻译）
+按片上传，不看文件大小（后端 2026-11-12 起不再拦，以前超过 100MB 建任务会被拒）；纯 OCR 任务、填了自建服务地址、
+`transport=official_cli` 是整份提交，照旧 100MB。前端 `maxBytes: 0` 对整本翻译是对的，纯 OCR 任务要按 100MB 拦。

@@ -114,8 +114,12 @@ Python 流水线读同一份（读不到直接报错，不再有手抄的备用�
 | `streams_pages` | 会不会一片片公布已做完的页（整本任务的翻译跟着 OCR 并行）：`always` / `never` / `chunked_upload`（只有交上传的文件、走官方 HTTP 按片提交时） | `"streams_pages": "always"` |
 | `shares_translation_key_host` | 自己没有 key 时能借哪个翻译主机的 key（翻译接的就是这个主机才借），不能借为 `null` | `credential.shared_with_translation_host` |
 
-现在的取值：MinerU 600 页、小于 200MB、`never`；PaddleOCR 999 页、不超过 100MB、`chunked_upload`；GLM-OCR 不限、`always`、
-借 `open.bigmodel.cn` 的 key；Local OCR 不限、`never`。
+`limits.chunked_upload_exempt`：`true` 表示整本翻译任务（OCR 之后紧接着翻译）按片上传时不看 `max_file_bytes`，
+每片各自有服务商的上限；清单里写在 `max_file_bytes.chunked_upload_exempt`。
+
+现在的取值：MinerU 600 页、小于 200MB、`never`；PaddleOCR 999 页、不超过 100MB、`chunked_upload`，整本翻译任务按片上传时
+不看文件大小（2026-11-12 起；纯 OCR 任务、填了 `paddle_api_url`、`transport=official_cli` 都是整份提交，照旧 100MB）；
+GLM-OCR 不限、`always`、借 `open.bigmodel.cn` 的 key；Local OCR 不限、`never`。
 
 ## provider_kind
 

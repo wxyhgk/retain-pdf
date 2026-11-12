@@ -41,7 +41,7 @@
       "streams_pages": "chunked_upload",
       "limits": {
         "max_pages": {"default": 999, "env": "RUST_API_PADDLE_MAX_PAGES"},
-        "max_file_bytes": {"default": 104857600, "env": "RUST_API_PADDLE_MAX_BYTES", "inclusive": true}
+        "max_file_bytes": {"default": 104857600, "env": "RUST_API_PADDLE_MAX_BYTES", "inclusive": true, "chunked_upload_exempt": true}
       },
       "kind": "remote",
       "credential": {
