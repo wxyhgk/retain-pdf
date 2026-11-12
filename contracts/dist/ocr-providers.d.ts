@@ -55,6 +55,10 @@ export interface OcrProviderLimits {
      * 一个文件最多多少字节；0 = 不限（仍受上传接口自己的上限约束）。
      */
     max_file_bytes: number;
+    /**
+     * true：整本翻译任务（OCR 之后紧接着翻译）按片上传时不受 max_file_bytes 限制，每片各自有服务商的上限（PaddleOCR 官方 HTTP、上传的文件）。纯 OCR 任务、自建服务、官方命令行照旧受限。
+     */
+    chunked_upload_exempt: boolean;
 }
 export interface OcrProviderCredentialSpec {
     /**
