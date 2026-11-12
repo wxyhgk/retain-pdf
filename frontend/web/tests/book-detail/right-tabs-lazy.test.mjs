@@ -1,10 +1,10 @@
-// 书籍详情页签：概览 / 进度 / 文件 / 质量 / 历史 / 用量；后三个第一次点开才挂内容，没给内容的不出现。
+// 书籍详情页签外壳：按 order 排；lazy 的第一次点开才挂内容、之后保留；available 为 false 的不出现。
 import test from "node:test";
 import assert from "node:assert/strict";
 import { waitFor } from "../helpers/async.mjs";
 import { clickWithMouseDown, makeDom as makeDomWith } from "../helpers/dom.mjs";
 
-test("新页签点开才挂载，之后保留；没给内容的页签不出现", async () => {
+test("新页签点开才挂载，之后保留；按 order 排，这本书没有的页签不出现", async () => {
   const dom = makeDomWith("", {
     html: "<!doctype html><html><body><div id='root'></div></body></html>",
     keys: ["window", "document", "HTMLElement", "HTMLButtonElement", "Element", "SVGElement", "Event", "MouseEvent", "PointerEvent", "KeyboardEvent", "FocusEvent", "Node", "MutationObserver"],
@@ -18,18 +18,25 @@ test("新页签点开才挂载，之后保留；没给内容的页签不出现",
     return React.createElement("p", { id: "quality-body" }, "质量");
   }
   const root = createRoot(dom.window.document.getElementById("root"));
+  const Icon = () => null;
+  const tab = (id, order, body, extra = {}) => ({ id, label: id, title: id, Icon, order, render: () => body, ...extra });
   root.render(React.createElement(BookDetailRightTabs, {
     open: true,
-    overviewTab: React.createElement("p", null, "概览"),
-    processingTab: React.createElement("p", null, "进度"),
-    artifactsTab: React.createElement("p", null, "文件"),
-    qualityTab: React.createElement(Quality),
-    historyTab: React.createElement("p", { id: "history-body" }, "历史"),
+    context: { documentId: "doc-1", jobId: "job-1", title: "书", openPinnedJob: () => {} },
+    // 故意乱序：外壳按 order 排。
+    tabs: [
+      tab("history", 60, React.createElement("p", { id: "history-body" }, "历史"), { lazy: true }),
+      tab("overview", 10, React.createElement("p", null, "概览")),
+      tab("processing", 20, React.createElement("p", null, "进度")),
+      tab("artifacts", 30, React.createElement("p", null, "文件")),
+      tab("quality", 40, React.createElement(Quality), { lazy: true }),
+      tab("terms", 50, React.createElement("p", null, "术语"), { lazy: true, available: () => false }),
+    ],
   }));
   const doc = dom.window.document;
   await waitFor(() => doc.getElementById("book-detail-tab-overview"), "页签栏");
   const ids = [...doc.querySelectorAll(".book-detail-right-tab")].map((tab) => tab.id.replace("book-detail-tab-", ""));
-  assert.deepEqual(ids, ["overview", "processing", "artifacts", "quality", "history"], "没给用量内容就不出现「用量」");
+  assert.deepEqual(ids, ["overview", "processing", "artifacts", "quality", "history"], "按 order 排；available 为 false 的「术语」不出现");
   assert.equal(doc.getElementById("quality-body"), null, "没点开前不挂载");
   assert.equal(qualityMounts, 0);
 

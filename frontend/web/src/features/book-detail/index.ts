@@ -8,7 +8,6 @@
 export { BookDetailDialog } from "./ui/BookDetailDialog.jsx";
 export { BookDetailShell } from "./ui/shell/BookDetailShell.jsx";
 export {
-  BOOK_DETAIL_TABS,
   BookDetailArtifactsTab,
   BookDetailOverviewTab,
   BookDetailProcessingTab,

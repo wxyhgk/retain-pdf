@@ -1,99 +1,45 @@
-// 详情右栏 Tab 切换壳：概览 / 进度 / 文件 / 质量 / 术语 / 历史。用量在「进度」页里。
+// 详情右栏的页签外壳：按页签表（BookDetailTab，见 ui/book-detail/book-detail-tab.ts）排序、画页签栏和内容，
+// 不知道有哪些页签。表由 BookDetailDialog 列（书籍详情自己的页签 + 装配层传进来的别的功能的页签）。
+// 2026-11-12 以前页签列表 BOOK_DETAIL_TABS 和一个页签一个参数都写在这里（功能登记表第二步）。
 // 页签样式见同目录 BookDetailRightTabs.css（.book-detail-right-tab.is-active）。
 
-import { useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from "react";
-import { Clock3, Languages, ShieldCheck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import { cn } from "@/ui/lib/utils";
 import { ErrorBoundary } from "@retainpdf/ui";
+import { sortBookDetailTabs, type BookDetailTab, type BookDetailTabContext } from "@/ui/book-detail/book-detail-tab.js";
 
-function IconBook(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" width="13" height="13" aria-hidden="true" {...props}>
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" strokeLinecap="round" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function IconProcessing(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" width="13" height="13" aria-hidden="true" {...props}>
-      <path d="m5 8 6 6" strokeLinecap="round" />
-      <path d="m4 14 6-6 2-3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M2 5h12" strokeLinecap="round" />
-      <path d="M7 2h1" strokeLinecap="round" />
-      <path d="m22 22-5-10-5 10" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M14 18h6" strokeLinecap="round" />
-    </svg>
-  );
-}
-function IconFile(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" width="13" height="13" aria-hidden="true" {...props}>
-      <path d="M6 2h8l4 4v16H6z" strokeLinejoin="round" />
-      <path d="M14 2v5h5M9 12h6M9 16h6" strokeLinecap="round" />
-    </svg>
-  );
-}
-// shortLabel 用于按钮显示，避免挤占关闭钮；title 完整名称给悬停/无障碍。
-// lazy：第一次点开才挂载（之后保留），里面的请求不会在打开详情时就全发出去。
-type TabMeta = {
-  id: string;
-  label: string;
-  title: string;
-  Icon: ComponentType<{ className?: string }>;
-  lazy?: boolean;
-};
-
-export const BOOK_DETAIL_TABS: readonly TabMeta[] = Object.freeze([
-  { id: "overview", label: "概览", title: "文档概览", Icon: IconBook },
-  { id: "processing", label: "进度", title: "文档进度", Icon: IconProcessing },
-  { id: "artifacts", label: "文件", title: "文件与产物", Icon: IconFile },
-  { id: "quality", label: "质量", title: "译文质量", Icon: ShieldCheck, lazy: true },
-  { id: "terms", label: "术语", title: "术语与风格", Icon: Languages, lazy: true },
-  { id: "history", label: "历史", title: "任务记录", Icon: Clock3, lazy: true },
-]);
-
-type TabContext = { activeTab: string; selectTab: (tab: string) => void };
-
-/** 页签内容：直接给节点，或给一个拿到当前页签上下文再渲染的函数。 */
-type TabSlot = ReactNode | ((ctx: TabContext) => ReactNode);
+/** 打开详情时默认停留的页签。 */
+const DEFAULT_TAB = "overview";
 
 export type BookDetailRightTabsProps = {
   open: boolean;
   resetKey?: string;
   defaultTab?: string;
-  overviewTab: TabSlot;
-  processingTab: TabSlot;
-  artifactsTab: TabSlot;
-  /** 以下几个不给（null / undefined）就不出现这个页签。 */
-  qualityTab?: TabSlot;
-  termsTab?: TabSlot;
-  historyTab?: TabSlot;
+  /** 页签表。available 判定为 false 的不出现。 */
+  tabs: readonly BookDetailTab[];
+  /** 给每个页签的这本书的信息（activeTab、selectTab 由这里补上）。 */
+  context: Omit<BookDetailTabContext, "activeTab" | "selectTab" | "open">;
   onTabChange?: (tab: string) => void;
 };
 
 export function BookDetailRightTabs({
   open,
   resetKey = "",
-  defaultTab = "overview",
-  overviewTab,
-  processingTab,
-  artifactsTab,
-  qualityTab = null,
-  termsTab = null,
-  historyTab = null,
+  defaultTab = DEFAULT_TAB,
+  tabs: allTabs,
+  context: bookContext,
   onTabChange,
 }: BookDetailRightTabsProps) {
-  const [activeTab, setActiveTab] = useState(defaultTab || "overview");
-  const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set([defaultTab || "overview"]));
+  const [activeTab, setActiveTab] = useState(defaultTab || DEFAULT_TAB);
+  const [visited, setVisited] = useState<ReadonlySet<string>>(() => new Set([defaultTab || DEFAULT_TAB]));
 
   // open/换文档时回到 defaultTab；同时跟随 defaultTab 变化（例如提交翻译后
   // 强制进处理 Tab）。用户手动切 Tab 不改 defaultTab，所以不会被拉回。
   useEffect(() => {
     if (open) {
-      setActiveTab(defaultTab || "overview");
-      setVisited(new Set([defaultTab || "overview"]));
+      setActiveTab(defaultTab || DEFAULT_TAB);
+      setVisited(new Set([defaultTab || DEFAULT_TAB]));
     }
   }, [open, resetKey, defaultTab]);
 
@@ -103,16 +49,9 @@ export function BookDetailRightTabs({
     onTabChange?.(next);
   }
 
-  const tabCtx = { activeTab, selectTab: handleTabChange };
-  const slots: Record<string, TabSlot> = {
-    overview: overviewTab,
-    processing: processingTab,
-    artifacts: artifactsTab,
-    quality: qualityTab,
-    terms: termsTab,
-    history: historyTab,
-  };
-  const tabs = BOOK_DETAIL_TABS.filter((tab) => slots[tab.id] !== null && slots[tab.id] !== undefined);
+  const context: BookDetailTabContext = { ...bookContext, open, activeTab, selectTab: handleTabChange };
+  const sorted = useMemo(() => sortBookDetailTabs(allTabs), [allTabs]);
+  const tabs = sorted.filter((tab) => !tab.available || tab.available(context));
 
   return (
     <TabsPrimitive.Root
@@ -146,7 +85,6 @@ export function BookDetailRightTabs({
 
       {/* forceMount 保留表单状态；副作用组件必须同时检查 activeTab。lazy 的页签没点开过就不挂内容。 */}
       {tabs.map((tab) => {
-        const slot = slots[tab.id];
         const mounted = !tab.lazy || visited.has(tab.id) || activeTab === tab.id;
         return (
           <TabsPrimitive.Content
@@ -159,7 +97,7 @@ export function BookDetailRightTabs({
             {/* 一个页签出错只坏这一页，别的页签和左栏照常用；换了一本书（resetKey）自动恢复。 */}
             {mounted ? (
               <ErrorBoundary scope="section" label={`「${tab.label}」页`} resetKeys={[resetKey]}>
-                {typeof slot === "function" ? slot(tabCtx) : slot}
+                {tab.render(context)}
               </ErrorBoundary>
             ) : null}
           </TabsPrimitive.Content>

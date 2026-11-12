@@ -301,9 +301,12 @@ test("详情右栏:defaultTab 变化会切到对应 Tab", async () => {
       open: true,
       resetKey: "doc-1",
       defaultTab,
-      overviewTab: React.createElement("div", { id: "tab-overview-content" }),
-      processingTab: React.createElement("div", { id: "tab-processing-content" }),
-      artifactsTab: React.createElement("div", { id: "tab-artifacts-content" }),
+      context: { documentId: "doc-1", jobId: "", title: "", openPinnedJob: () => {} },
+      tabs: [
+        { id: "overview", label: "概览", title: "概览", Icon: () => null, order: 10, render: () => React.createElement("div", { id: "tab-overview-content" }) },
+        { id: "processing", label: "进度", title: "进度", Icon: () => null, order: 20, render: () => React.createElement("div", { id: "tab-processing-content" }) },
+        { id: "artifacts", label: "文件", title: "文件", Icon: () => null, order: 30, render: () => React.createElement("div", { id: "tab-artifacts-content" }) },
+      ],
     }),
   );
 
