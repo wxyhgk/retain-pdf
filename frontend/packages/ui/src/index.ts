@@ -37,6 +37,8 @@ export { ConfirmDialog } from "./components/ui/confirm-dialog.js";
 export type { ConfirmDialogProps } from "./components/ui/confirm-dialog.js";
 export { FormStatusLine, statusToneOf } from "./components/ui/form-status-line.js";
 export type { FormStatusTone } from "./components/ui/form-status-line.js";
+export { ErrorBoundary, errorDiagnosticText } from "./components/ui/error-boundary.js";
+export type { ErrorBoundaryProps } from "./components/ui/error-boundary.js";
 export { Toaster } from "./components/ui/sonner.js";
 export {
   Tooltip,

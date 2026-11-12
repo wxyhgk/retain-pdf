@@ -18,6 +18,8 @@
 @import "./tokens.css" layer(tokens);
 @import "./shadcn-theme.css" layer(tokens);
 @import "./base.css" layer(base);
+/* 出错兜底卡：阅读页没有引基础组件的样式，单独引这一份（见 packages/ui/styles/error-boundary.css）。 */
+@import "../../ui/styles/error-boundary.css" layer(pages);
 /* 阅读器也吃氛围底（PDF 区仍是自己的 --reader-page）— 仅 reader variant，无主页纸台 */
 @import "./core/ambient-surface-reader.css";
 

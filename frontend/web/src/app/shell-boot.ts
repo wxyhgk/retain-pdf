@@ -15,7 +15,8 @@
 
 import "@/app/bootstrap/job-domain-adapters.js";
 import { createRoot } from "react-dom/client";
-import type { ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
+import { ErrorBoundary } from "@retainpdf/ui";
 import { bootTheme } from "@/ui/theme/theme.js";
 
 export type ShellHostOptions = {
@@ -41,9 +42,10 @@ export function resolveShellHost(
 
 // 不开 StrictMode：见文件头约定。返回卸载函数供测试/HMR 复用同一 document
 // 二次挂载前释放（生产 MPA 不卸载，页面级生命周期即进程级）。
+// 最外层套整页的出错兜底：组件渲染出错时不再整页白屏，换成说明卡（再试一次 / 重新加载 / 复制错误详情）。
 export function mountShellApp(host: HTMLElement, app: ReactNode): () => void {
   const root = createRoot(host);
-  root.render(app);
+  root.render(createElement(ErrorBoundary, { scope: "page" }, app));
   return () => root.unmount();
 }
 

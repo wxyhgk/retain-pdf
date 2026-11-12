@@ -11,6 +11,7 @@ export { Sheet } from "./primitives/sheet.js";
 export { Dialog, DialogBody, DialogClose, DialogCloseButton, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogShell, DialogTitle, DialogTrigger, } from "./components/ui/dialog.js";
 export { ConfirmDialog } from "./components/ui/confirm-dialog.js";
 export { FormStatusLine, statusToneOf } from "./components/ui/form-status-line.js";
+export { ErrorBoundary, errorDiagnosticText } from "./components/ui/error-boundary.js";
 export { Toaster } from "./components/ui/sonner.js";
 export { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger, } from "./components/ui/tooltip.js";
 /** @deprecated shadcn 默认样子的旧按钮，只给还没迁的地方用；新代码用 Button / IconButton。门禁只许它的用量减少。 */

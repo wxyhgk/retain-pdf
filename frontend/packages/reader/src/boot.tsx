@@ -1,5 +1,6 @@
 // @retainpdf/reader/boot — explicit MPA startup API (react-pdf only).
 import { createRoot, type Root } from "react-dom/client";
+import { ErrorBoundary } from "@retainpdf/ui";
 import { ReaderApp } from "./ReaderApp.js";
 import { bootTheme } from "./shared/theme/theme.js";
 
@@ -59,6 +60,7 @@ export function bootReader(options: ReaderBootOptions = {}): Root {
   }
 
   const root = createRoot(host);
-  root.render(<ReaderApp />);
+  // 整页出错兜底：阅读器组件渲染出错时不再白屏（见 @retainpdf/ui 的 ErrorBoundary）。
+  root.render(<ErrorBoundary scope="page" label="阅读页"><ReaderApp /></ErrorBoundary>);
   return root;
 }

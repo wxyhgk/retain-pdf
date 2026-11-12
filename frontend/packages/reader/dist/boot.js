@@ -1,7 +1,8 @@
-import { jsx as f } from "react/jsx-runtime";
+import { jsx as a } from "react/jsx-runtime";
 import { createRoot as s } from "react-dom/client";
-import { R as p } from "./ReaderApp-C6FE9bMo.js";
-const a = "retainpdf.theme", o = "classic", n = [
+import { ErrorBoundary as p } from "@retainpdf/ui";
+import { R as m } from "./ReaderApp-C6FE9bMo.js";
+const i = "retainpdf.theme", o = "classic", n = [
   {
     id: "classic",
     label: "经典",
@@ -76,74 +77,74 @@ const a = "retainpdf.theme", o = "classic", n = [
     }
   }
 ];
-function i() {
+function c() {
   return [...n].sort((e, r) => e.order - r.order || e.id.localeCompare(r.id));
 }
-function m(e) {
+function u(e) {
   return n.find((r) => r.id === e);
 }
-function c(e) {
+function f(e) {
   return typeof e == "string" && n.some((r) => r.id === e);
 }
-i().map((e) => e.id);
+c().map((e) => e.id);
 Object.fromEntries(
-  i().map((e) => [e.id, { id: e.id, label: e.label, description: e.description }])
+  c().map((e) => [e.id, { id: e.id, label: e.label, description: e.description }])
 );
-const u = "retainpdf:theme-change";
-function l() {
+const l = "retainpdf:theme-change";
+function g() {
   if (typeof localStorage > "u") return o;
   try {
-    const e = `${localStorage.getItem(a) || ""}`.trim();
-    if (c(e)) return e;
+    const e = `${localStorage.getItem(i) || ""}`.trim();
+    if (f(e)) return e;
   } catch {
   }
   return o;
 }
-function g(e) {
-  const r = c(e) ? e : o;
+function b(e) {
+  const r = f(e) ? e : o;
   try {
-    localStorage.setItem(a, r);
+    localStorage.setItem(i, r);
   } catch {
   }
   if (typeof document < "u") {
     document.documentElement.dataset.theme = r;
-    const t = m(r);
+    const t = u(r);
     document.documentElement.dataset.themeGroup = (t == null ? void 0 : t.group) || "light", document.documentElement.classList.toggle("theme-dark", (t == null ? void 0 : t.group) === "dark");
   }
   if (typeof window < "u")
     try {
       window.dispatchEvent(
-        new CustomEvent(u, { detail: { theme: r } })
+        new CustomEvent(l, { detail: { theme: r } })
       );
     } catch {
     }
   return r;
 }
-function b() {
-  return g(l());
+function h() {
+  return b(g());
 }
-function h(e = document.body) {
+function E(e = document.body) {
   e.classList.add("reader-body", "reader-mode-compare"), globalThis.window && window.self !== window.top && e.classList.add("reader-embedded");
 }
-function E(e = document.body, r) {
+function y(e = document.body, r) {
   Array.from(e.children).forEach((t) => {
     t.tagName !== "SCRIPT" && t.id !== "reader-root" && t !== r && t.remove();
   });
 }
-function y(e = document.body) {
+function w(e = document.body) {
   let r = document.getElementById("reader-root");
   return r || (r = document.createElement("div"), r.id = "reader-root", e.appendChild(r)), r;
 }
-function R(e = {}) {
-  const r = e.body ?? document.body, t = e.root ?? y(r);
-  b(), h(r), e.purgeLegacyMarkup !== !1 && E(r, t);
+function j(e = {}) {
+  const r = e.body ?? document.body, t = e.root ?? w(r);
+  h(), E(r), e.purgeLegacyMarkup !== !1 && y(r, t);
   const d = s(t);
-  return d.render(/* @__PURE__ */ f(p, {})), d;
+  return d.render(/* @__PURE__ */ a(p, { scope: "page", label: "阅读页", children: /* @__PURE__ */ a(m, {}) })), d;
 }
 export {
-  R as bootReader,
-  E as purgeLegacyMarkup,
-  y as resolveReaderRoot,
-  h as syncReaderBodyClasses
+  j as bootReader,
+  y as purgeLegacyMarkup,
+  w as resolveReaderRoot,
+  E as syncReaderBodyClasses
 };
 //# sourceMappingURL=boot.js.map
