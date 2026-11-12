@@ -72,3 +72,17 @@ impl Default for OcrInput {
         }
     }
 }
+
+impl OcrInput {
+    /// 交上传的文件时能不能按片并行提交（只对清单里 `streams_pages = chunked_upload` 的服务商有意义）：
+    /// 走官方 HTTP（`ocr.options.transport` 不是 `official_cli`），也没填自建服务地址 `paddle_api_url`。
+    /// 自建服务和官方命令行由 Rust 整份提交。
+    pub fn chunk_eligible(&self) -> bool {
+        let official_cli = self
+            .options
+            .get("transport")
+            .and_then(Value::as_str)
+            .is_some_and(|transport| transport.trim().eq_ignore_ascii_case("official_cli"));
+        !official_cli && self.paddle_api_url.trim().is_empty()
+    }
+}

@@ -71,16 +71,7 @@ impl JobRecord {
         match configured_streams_pages(&ocr.provider) {
             StreamsPages::Always => true,
             StreamsPages::Never => false,
-            StreamsPages::ChunkedUpload => {
-                let official_cli = ocr
-                    .options
-                    .get("transport")
-                    .and_then(serde_json::Value::as_str)
-                    .is_some_and(|transport| transport.trim().eq_ignore_ascii_case("official_cli"));
-                !official_cli
-                    && ocr.paddle_api_url.trim().is_empty()
-                    && self.source_url().trim().is_empty()
-            }
+            StreamsPages::ChunkedUpload => ocr.chunk_eligible() && self.source_url().trim().is_empty(),
         }
     }
 

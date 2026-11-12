@@ -151,6 +151,9 @@ fn default_streams_pages() -> String {
 pub struct OcrProviderLimitsView {
     pub max_pages: u32,
     pub max_file_bytes: u64,
+    /// 整本翻译任务按片上传时不受 `max_file_bytes` 限制（`streams_pages = chunked_upload` 的服务商）。
+    #[serde(default)]
+    pub chunked_upload_exempt: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]

@@ -123,6 +123,8 @@ pub struct OcrUploadLimits {
     pub max_file_bytes: u64,
     /// `true`：文件正好等于上限也收（「不超过」）；`false`：必须小于上限（MinerU 接口的说法）。
     pub max_file_bytes_inclusive: bool,
+    /// 按片上传时不看整份文件大小（每片自己有服务商的上限）。清单里 `max_file_bytes.chunked_upload_exempt`。
+    pub max_file_bytes_chunked_upload_exempt: bool,
 }
 
 /// 清单里一家服务商的 `limits`；没写返回 `None`（不限）。环境变量名写在清单里，设了就用它。
@@ -145,6 +147,10 @@ pub fn upload_limits_from_definition(definition: &Value) -> Option<OcrUploadLimi
             .and_then(|spec| spec.get("inclusive"))
             .and_then(Value::as_bool)
             .unwrap_or(true),
+        max_file_bytes_chunked_upload_exempt: bytes
+            .and_then(|spec| spec.get("chunked_upload_exempt"))
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
     })
 }
 

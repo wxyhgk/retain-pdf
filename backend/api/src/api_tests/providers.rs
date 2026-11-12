@@ -41,6 +41,7 @@ async fn list_ocr_providers_returns_public_contract() {
     assert_eq!(paddle["streams_pages"], "chunked_upload");
     assert_eq!(paddle["limits"]["max_pages"], 999);
     assert_eq!(paddle["limits"]["max_file_bytes"], 100 * 1024 * 1024);
+    assert_eq!(paddle["limits"]["chunked_upload_exempt"], true, "整本翻译按片上传不看整份大小");
     assert_eq!(paddle["docs_url"], "https://aistudio.baidu.com/account/accessToken");
     assert!(paddle["shares_translation_key_host"].is_null());
     let mineru = providers.iter().find(|item| item["key"] == "mineru").expect("mineru provider");

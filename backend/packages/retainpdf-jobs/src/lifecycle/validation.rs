@@ -476,10 +476,13 @@ fn validate_paddle_transport(
     )))
 }
 
+/// `ocr_then_translation`：OCR 之后紧接着翻译的任务（整本翻译）。只有这种任务的 OCR 会一片片公布，
+/// 清单里 `streams_pages = chunked_upload` 的服务商才按片上传；纯 OCR 任务照旧整份提交。
 pub fn validate_mineru_upload_limits(
     input: &CreateJobInput,
     upload: &UploadRecord,
     limits: &ProviderLimitsConfig,
+    ocr_then_translation: bool,
 ) -> Result<(), AppError> {
     // 上限写在服务商清单的 `limits` 里（环境变量覆盖），没写的服务商不限。
     let provider = input.ocr.provider.trim().to_ascii_lowercase();
@@ -496,10 +499,19 @@ pub fn validate_mineru_upload_limits(
                 .map(ToString::to_string)
         })
         .unwrap_or_else(|| provider.clone());
+    // 按片上传时整份文件多大都行，每片自己有服务商的上限（Paddle「本地文件 ≤50MB」落在每一片上）。
+    let uploads_in_chunks = ocr_then_translation
+        && provider_config::configured_streams_pages(&provider) == provider_config::StreamsPages::ChunkedUpload
+        && input.ocr.chunk_eligible();
+    let max_file_bytes = if uploads_in_chunks && provider_limits.max_file_bytes_chunked_upload_exempt {
+        0
+    } else {
+        provider_limits.max_file_bytes
+    };
     validate_upload_limit(
         upload,
         &provider_name,
-        provider_limits.max_file_bytes,
+        max_file_bytes,
         provider_limits.max_pages,
         provider_limits.max_file_bytes_inclusive,
     )

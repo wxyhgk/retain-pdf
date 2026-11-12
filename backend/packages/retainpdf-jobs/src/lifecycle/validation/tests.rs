@@ -52,7 +52,8 @@ fn paddle_upload_limit_allows_533_pages() {
     assert!(validate_mineru_upload_limits(
         &paddle_input(),
         &upload_with_pages(533),
-        &default_limits()
+        &default_limits(),
+        false,
     )
     .is_ok());
 }
@@ -63,6 +64,7 @@ fn paddle_upload_limit_rejects_pages_above_999() {
         &paddle_input(),
         &upload_with_pages(1000),
         &default_limits(),
+        false,
     )
     .expect_err("1000 pages should exceed Paddle limit");
     assert!(err.to_string().contains("不超过 999 页"));
@@ -78,7 +80,8 @@ fn local_provider_does_not_apply_remote_upload_limits() {
     assert!(validate_mineru_upload_limits(
         &local_input(),
         &upload_with_pages(5000),
-        &default_limits()
+        &default_limits(),
+        false,
     )
     .is_ok());
 }
@@ -512,4 +515,41 @@ fn numeric_job_options_have_upper_bounds() {
         let message = format!("{error:?}");
         assert!(message.contains(&format!("{field} must be at most {max}")), "{message}");
     }
+}
+
+fn paddle_upload_of_megabytes(megabytes: u64) -> UploadRecord {
+    let mut upload = upload_with_pages(500);
+    upload.bytes = megabytes * 1024 * 1024;
+    upload
+}
+
+/// 整本翻译任务里 Paddle 按片上传（每片 10 页、各自 ≤50MB），整份 100MB 的限制不该拦（2026-11-12）。
+#[test]
+fn paddle_chunked_upload_is_not_limited_by_whole_file_size() {
+    assert!(validate_mineru_upload_limits(&paddle_input(), &paddle_upload_of_megabytes(300), &default_limits(), true).is_ok());
+}
+
+/// 纯 OCR 任务、自建服务、官方命令行都是整份提交，100MB 照旧拦。
+#[test]
+fn paddle_whole_file_submission_keeps_the_size_limit() {
+    let big = paddle_upload_of_megabytes(300);
+    let err = validate_mineru_upload_limits(&paddle_input(), &big, &default_limits(), false)
+        .expect_err("纯 OCR 任务整份提交");
+    assert!(err.to_string().contains("100MB"), "{err}");
+
+    let mut self_hosted = paddle_input();
+    self_hosted.ocr.paddle_api_url = "http://paddle.internal".to_string();
+    assert!(validate_mineru_upload_limits(&self_hosted, &big, &default_limits(), true).is_err());
+
+    let mut cli = paddle_input();
+    cli.ocr.options.insert("transport".to_string(), serde_json::Value::String("official_cli".to_string()));
+    assert!(validate_mineru_upload_limits(&cli, &big, &default_limits(), true).is_err());
+}
+
+/// 页数上限按片上传也照旧。
+#[test]
+fn paddle_chunked_upload_keeps_the_page_limit() {
+    let mut upload = paddle_upload_of_megabytes(10);
+    upload.page_count = 1000;
+    assert!(validate_mineru_upload_limits(&paddle_input(), &upload, &default_limits(), true).is_err());
 }

@@ -22,10 +22,11 @@
     "OcrProviderLimits": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["max_pages", "max_file_bytes"],
+      "required": ["max_pages", "max_file_bytes", "chunked_upload_exempt"],
       "properties": {
         "max_pages": { "type": "integer", "minimum": 0, "description": "一份 PDF 最多几页；0 = 不限。" },
-        "max_file_bytes": { "type": "integer", "minimum": 0, "description": "一个文件最多多少字节；0 = 不限（仍受上传接口自己的上限约束）。" }
+        "max_file_bytes": { "type": "integer", "minimum": 0, "description": "一个文件最多多少字节；0 = 不限（仍受上传接口自己的上限约束）。" },
+        "chunked_upload_exempt": { "type": "boolean", "description": "true：整本翻译任务（OCR 之后紧接着翻译）按片上传时不受 max_file_bytes 限制，每片各自有服务商的上限（PaddleOCR 官方 HTTP、上传的文件）。纯 OCR 任务、自建服务、官方命令行照旧受限。" }
       }
     },
     "OcrProviderPublicDefinition": {

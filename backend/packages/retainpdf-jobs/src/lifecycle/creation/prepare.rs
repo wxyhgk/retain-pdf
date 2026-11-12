@@ -119,7 +119,7 @@ pub(super) fn prepare_ocr_input(
         let mut resolved = ResolvedJobSpec::from_input(input.clone());
         resolved.workflow = WorkflowKind::Ocr;
         resolved.source.upload_id = upload.upload_id.clone();
-        validate_mineru_upload_limits(input, upload, ctx.config.provider_limits)?;
+        validate_mineru_upload_limits(input, upload, ctx.config.provider_limits, false)?;
         return Ok(PreparedOcrInput { spec: resolved });
     }
     // Reuse existing upload via upload_id (frontend after POST /uploads)
@@ -128,7 +128,7 @@ pub(super) fn prepare_ocr_input(
         let mut resolved = ResolvedJobSpec::from_input(input.clone());
         resolved.workflow = WorkflowKind::Ocr;
         resolved.source.upload_id = existing.upload_id.clone();
-        validate_mineru_upload_limits(input, &existing, ctx.config.provider_limits)?;
+        validate_mineru_upload_limits(input, &existing, ctx.config.provider_limits, false)?;
         return Ok(PreparedOcrInput { spec: resolved });
     }
     if !input.source.source_url.trim().is_empty() {
@@ -153,7 +153,8 @@ fn require_translation_upload(
     validate_render_options(input)?;
     validate_translation_modes(input)?;
     let upload = load_upload_or_404(ctx.db, &input.source.upload_id)?;
-    validate_mineru_upload_limits(input, &upload, ctx.config.provider_limits)?;
+    // 翻译类任务：OCR 之后紧接着翻译（按片上传的服务商在这里才分片）
+    validate_mineru_upload_limits(input, &upload, ctx.config.provider_limits, true)?;
     Ok(upload)
 }
 
