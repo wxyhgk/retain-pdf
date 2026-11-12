@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { SegmentedControl } from "@retainpdf/ui";
+import { ErrorBoundary, SegmentedControl } from "@retainpdf/ui";
 import {
   READING_STATUS_META,
   filterDocuments,
@@ -208,7 +208,7 @@ function LibrarySearchPanel({ ports }: { ports: LibrarySearchPorts }) {
 
 export function mountLibrarySearchApp(host: HTMLElement, ports: LibrarySearchPorts) {
   const root = createRoot(host);
-  root.render(<LibrarySearchPanel ports={ports} />);
+  root.render(<ErrorBoundary scope="section" label="搜索"><LibrarySearchPanel ports={ports} /></ErrorBoundary>);
   return {
     unmount: () => root.unmount(),
   };

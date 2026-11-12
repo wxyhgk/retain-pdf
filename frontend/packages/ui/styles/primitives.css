@@ -12,3 +12,4 @@
 @import "./menu.css" layer(components);
 @import "./panel.css" layer(components);
 @import "./sheet.css" layer(components);
+@import "./error-boundary.css" layer(components);

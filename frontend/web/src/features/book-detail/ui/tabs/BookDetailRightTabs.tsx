@@ -5,6 +5,7 @@ import { useEffect, useState, type ComponentType, type ReactNode, type SVGProps 
 import { Clock3, Languages, ShieldCheck } from "lucide-react";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import { cn } from "@/ui/lib/utils";
+import { ErrorBoundary } from "@retainpdf/ui";
 
 function IconBook(props: SVGProps<SVGSVGElement>) {
   return (
@@ -155,7 +156,12 @@ export function BookDetailRightTabs({
             id={`book-detail-panel-${tab.id}`}
             className="book-detail-right-panel outline-none data-[state=inactive]:hidden"
           >
-            {mounted ? (typeof slot === "function" ? slot(tabCtx) : slot) : null}
+            {/* 一个页签出错只坏这一页，别的页签和左栏照常用；换了一本书（resetKey）自动恢复。 */}
+            {mounted ? (
+              <ErrorBoundary scope="section" label={`「${tab.label}」页`} resetKeys={[resetKey]}>
+                {typeof slot === "function" ? slot(tabCtx) : slot}
+              </ErrorBoundary>
+            ) : null}
           </TabsPrimitive.Content>
         );
       })}

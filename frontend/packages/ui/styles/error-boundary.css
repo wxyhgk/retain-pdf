@@ -1,0 +1,88 @@
+/* 出错兜底卡（src/components/ui/error-boundary.tsx）。
+ *
+ * web 各页经 primitives.css 引入；阅读页的样式单独打包、没有基础组件的样式，入口里单独引了这一份，
+ * 所以按钮也在这里自带样子，刻度和颜色都带兜底值。
+ *
+ * @owns ui-error-fallback
+ */
+
+.ui-error-fallback {
+  display: grid;
+  gap: 8px;
+  max-width: 560px;
+  margin: 16px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--danger, #c0392b) 24%, var(--line, #e5e2dc));
+  border-radius: var(--ui-radius-lg, 14px);
+  color: var(--ink, #1f1f1f);
+  background: var(--paper, #fff);
+  font-size: var(--ui-text-md, 13px);
+  line-height: 1.55;
+}
+
+/* 整页兜底：摆在页面正中，留出上方空间。 */
+.ui-error-fallback[data-scope="page"] {
+  margin: 12vh auto 0;
+}
+
+.ui-error-fallback-title {
+  margin: 0;
+  font-size: var(--ui-text-base, 14px);
+  font-weight: 650;
+}
+
+.ui-error-fallback-text {
+  margin: 0;
+  color: var(--muted, #6b6b6b);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ui-error-fallback-message {
+  margin: 0;
+  padding: 6px 8px;
+  border-radius: var(--ui-radius-sm, 6px);
+  color: var(--danger, #c0392b);
+  background: color-mix(in srgb, var(--danger, #c0392b) 8%, transparent);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--ui-text-xs, 11px);
+  overflow-wrap: anywhere;
+}
+
+.ui-error-fallback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.ui-error-fallback-action {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line, #e5e2dc);
+  border-radius: var(--ui-radius-pill, 999px);
+  color: var(--ink, #1f1f1f);
+  background: transparent;
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ui-error-fallback-action:hover {
+  background: color-mix(in srgb, var(--ink, #1f1f1f) 6%, transparent);
+}
+
+.ui-error-fallback-action[data-primary="true"] {
+  border-color: transparent;
+  color: var(--btn-primary-fg, #fff);
+  background: var(--btn-primary-bg, var(--ink, #1f1f1f));
+}
+
+.ui-error-fallback-action[data-primary="true"]:hover {
+  filter: brightness(1.08);
+}
+
+.ui-error-fallback-action:focus-visible {
+  outline: 2px solid var(--accent, #3b82f6);
+  outline-offset: 2px;
+}
