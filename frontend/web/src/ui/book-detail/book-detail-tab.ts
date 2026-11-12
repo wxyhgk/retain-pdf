@@ -24,6 +24,10 @@ export type BookDetailTabContext = {
   openPinnedJob: (jobId: string) => void;
   /** 打开设置弹窗的某一栏（叠在详情上）。取不到设置入口时不给。 */
   openSettings?: (tab: string) => void;
+  /** 真正持有译文的任务（改译文发给它）：底是重新渲染出来的任务时，是它的来源任务。还没确定时是空串。 */
+  translationJobId?: string;
+  /** 重跑一个阶段，和「进度」页上的按钮同一条路（发给持有译文的任务、刷新任务列表）；现在不能重跑时返回 null。 */
+  retryStage?: (stage: "render") => Promise<unknown>;
 };
 
 export type BookDetailTab = {

@@ -13,7 +13,14 @@ export const qualityBookDetailTab: BookDetailTab = {
   order: 40,
   lazy: true,
   available: ({ jobId }) => Boolean(jobId),
-  render: ({ jobId, documentId }) => <QualityPanel jobId={jobId} documentId={documentId} />,
+  render: ({ jobId, documentId, translationJobId, retryStage }) => (
+    <QualityPanel
+      jobId={jobId}
+      documentId={documentId}
+      translationJobId={translationJobId}
+      onRerender={retryStage ? () => retryStage("render") : undefined}
+    />
+  ),
 };
 
 export const termsBookDetailTab: BookDetailTab = {

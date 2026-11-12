@@ -1,7 +1,9 @@
 // 书籍详情 ·「质量」页签：自动检查、精修、排版、漏翻各一行，要看的可以展开列表，点一条直接打开
-// 阅读页跳到那一块。总数来自 quality-summary，明细来自通用取数接口（quality-list-loader.ts）。
+// 阅读页跳到那一块；每条旁边的「改译」打开 EditTranslationDialog 改这一段（改几段以后点一次「重新排版」）。
+// 总数来自 quality-summary，明细来自通用取数接口（quality-list-loader.ts）。
 import { useEffect, useState } from "react";
-import { ChevronDown, ShieldCheck, TriangleAlert } from "lucide-react";
+import { Button, IconButton } from "@retainpdf/ui";
+import { ChevronDown, PenLine, ShieldCheck, TriangleAlert } from "lucide-react";
 
 import { fetchQualitySummary } from "@/platform/api/index.js";
 import type { QualitySummaryView } from "@/platform/api/index.js";
@@ -15,6 +17,7 @@ import {
   type QualityList,
   type QualityListItem,
 } from "../../quality-list-loader.js";
+import { EditTranslationDialog, type EditTranslationTarget, type TranslationEditPorts } from "./EditTranslationDialog.jsx";
 
 const defaultLoadSummary = (jobId: string) => fetchQualitySummary(jobId, API_PREFIX);
 const defaultLoadItems: LoadQualityList = createQualityListLoader();
@@ -26,7 +29,14 @@ function openInReader(jobId: string, documentId: string, item: QualityListItem) 
   }, { documentId }));
 }
 
-function ItemList({ jobId, documentId, link, loadItems }: { jobId: string; documentId: string; link: QualityListLink; loadItems: LoadQualityList }) {
+function ItemList({ jobId, documentId, link, loadItems, onEdit }: {
+  jobId: string;
+  documentId: string;
+  link: QualityListLink;
+  loadItems: LoadQualityList;
+  /** 不给就不画「改译」（还没找到持有译文的任务、或者这一条没有译文条目编号）。 */
+  onEdit?: (item: QualityListItem) => void;
+}) {
   const [state, setState] = useState<QualityList & { error: string; loading: boolean }>(
     { items: [], total: 0, error: "", loading: true },
   );
@@ -54,6 +64,11 @@ function ItemList({ jobId, documentId, link, loadItems }: { jobId: string; docum
                 {item.detail ? <span className="book-detail-quality-list-detail">{item.detail}</span> : null}
               </span>
             </button>
+            {onEdit && item.itemId ? (
+              <IconButton size="sm" label="改这段译文" className="book-detail-quality-list-edit" data-quality-edit={item.itemId} onClick={() => onEdit(item)}>
+                <PenLine aria-hidden="true" />
+              </IconButton>
+            ) : null}
           </li>
         ))}
       </ol>
@@ -67,22 +82,38 @@ function ItemList({ jobId, documentId, link, loadItems }: { jobId: string; docum
 export function QualityPanel({
   jobId,
   documentId,
+  translationJobId = "",
+  onRerender,
   loadSummary = defaultLoadSummary,
   loadItems = defaultLoadItems,
+  editPorts,
 }: {
   jobId: string;
   documentId: string;
+  /** 持有译文的任务，改译文发给它；空串时不画「改译」。 */
+  translationJobId?: string;
+  /** 「重新排版」：和「进度」页同一条路；返回 null 表示现在不能重排。不给就不画按钮。 */
+  onRerender?: () => Promise<unknown>;
   loadSummary?: (jobId: string) => Promise<QualitySummaryView>;
   loadItems?: LoadQualityList;
+  editPorts?: TranslationEditPorts;
 }) {
   const [summary, setSummary] = useState<QualitySummaryView | null>(null);
   const [error, setError] = useState("");
   const [openKey, setOpenKey] = useState("");
+  const [editing, setEditing] = useState<EditTranslationTarget | null>(null);
+  const [edited, setEdited] = useState<ReadonlySet<string>>(() => new Set());
+  const [generation, setGeneration] = useState<number | null>(null);
+  const [rerender, setRerender] = useState<{ busy: boolean; message: string; tone: "ok" | "error" | "" }>({ busy: false, message: "", tone: "" });
   useEffect(() => {
     let disposed = false;
     setSummary(null);
     setError("");
     setOpenKey("");
+    setEditing(null);
+    setEdited(new Set());
+    setGeneration(null);
+    setRerender({ busy: false, message: "", tone: "" });
     if (!jobId) return undefined;
     loadSummary(jobId)
       .then((view) => { if (!disposed) setSummary(view); })
@@ -94,6 +125,23 @@ export function QualityPanel({
   }, [jobId]);
 
   const model = qualityModel(summary);
+  const canEdit = Boolean(translationJobId);
+  const startEdit = (item: QualityListItem) => setEditing({ itemId: item.itemId, page: item.page, problem: item.title });
+  const runRerender = async () => {
+    if (!onRerender || rerender.busy) return;
+    setRerender({ busy: true, message: "", tone: "" });
+    try {
+      const result = await onRerender();
+      if (result) {
+        setEdited(new Set());
+        setRerender({ busy: false, message: "已提交重新排版，「进度」页能看到进度；排完译文 PDF 就是新的。", tone: "ok" });
+      } else {
+        setRerender({ busy: false, message: "现在不能重新排版（可能还在处理），去「进度」页看看原因。", tone: "error" });
+      }
+    } catch (cause) {
+      setRerender({ busy: false, message: (cause as Error)?.message || "重新排版失败，请稍后再试。", tone: "error" });
+    }
+  };
   if (!jobId) return null;
   if (!error && !summary) return <p className="book-detail-quality-list-note">正在读取质量检查结果…</p>;
   if (!error && model.empty) {
@@ -107,6 +155,18 @@ export function QualityPanel({
         {model.attentionCount ? <span className="book-detail-quality-attention">{model.attentionCount} 处要看</span> : null}
       </div>
       {error ? <p className="book-detail-quality-list-note" role="alert">{error}</p> : null}
+      {edited.size || rerender.message ? (
+        <div className="book-detail-quality-edited" data-quality-edited={edited.size} role="status">
+          <span className={rerender.tone === "error" ? "is-error" : undefined}>
+            {rerender.message || `已改 ${edited.size} 段。重新排版以后译文 PDF 才会更新。`}
+          </span>
+          {edited.size && onRerender ? (
+            <Button variant="secondary" size="sm" id="book-detail-quality-rerender" pending={rerender.busy} onClick={() => void runRerender()}>
+              重新排版
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
       {model.warnings.length ? (
         <ul className="book-detail-quality-warnings">
           {model.warnings.map((warning) => (
@@ -147,12 +207,28 @@ export function QualityPanel({
                 </span>
               ) : null}
               {row.lists?.map((link) => (openKey === `${row.key}:${link.kind}` ? (
-                <ItemList key={link.kind} jobId={jobId} documentId={documentId} link={link} loadItems={loadItems} />
+                <ItemList key={link.kind} jobId={jobId} documentId={documentId} link={link} loadItems={loadItems} onEdit={canEdit ? startEdit : undefined} />
               ) : null))}
             </dd>
           </div>
         ))}
       </dl>
+      {canEdit ? (
+        <EditTranslationDialog
+          jobId={translationJobId}
+          target={editing}
+          expectedGeneration={generation}
+          onClose={() => setEditing(null)}
+          onSaved={(result) => {
+            if (result.generation != null) setGeneration(result.generation);
+            if (result.changed) {
+              setEdited((current) => new Set([...current, result.itemId]));
+              setRerender({ busy: false, message: "", tone: "" });
+            }
+          }}
+          {...(editPorts ? { ports: editPorts } : {})}
+        />
+      ) : null}
     </section>
   );
 }

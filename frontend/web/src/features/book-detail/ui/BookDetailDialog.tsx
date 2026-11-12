@@ -264,14 +264,12 @@ export function BookDetailDialog({ extraTabs = [] }: BookDetailDialogProps = {})
           resetKey={documentId}
           defaultTab={defaultTab}
           onTabChange={(tab) => {
-            if (tab === "processing") setProcessingSeenFor(documentId);
+            // 阶段操作（重新渲染等）点开「进度」才读；「质量」页改完译文要重新排版，也要它。
+            if (tab === "processing" || tab === "quality") setProcessingSeenFor(documentId);
           }}
           context={{
-            documentId,
-            jobId,
-            title: `${docState.doc?.title || docState.titleText || item.title || ""}`,
-            openPinnedJob,
-            openSettings,
+            documentId, jobId, title: `${docState.doc?.title || docState.titleText || item.title || ""}`, openPinnedJob, openSettings,
+            translationJobId: stageActionState.ownerJobId, retryStage: (stage) => stageActionState.retry(stage),
           }}
           // 页签表：概览、进度、文件、历史要用这里的内部状态，就地拼；质量、术语只要「这是哪本书」，是独立的一项；
           // extraTabs 是别的功能登记的。页签外壳按 order 排（见 ui/book-detail/book-detail-tab.ts）。

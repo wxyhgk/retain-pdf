@@ -9,6 +9,10 @@ export function listTranslationItems(apiPrefix, args, options) {
 export function getTranslationItem(apiPrefix, args, options) {
     return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/translations/${encodePathParam(args.item_id)}`, options });
 }
+/** PATCH /api/v1/jobs/:job_id/translations/:item_id */
+export function updateTranslationItem(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "PATCH", path: `jobs/${encodePathParam(args.job_id)}/translations/${encodePathParam(args.item_id)}`, body: args.body, options });
+}
 /** POST /api/v1/jobs/:job_id/translations/:item_id/replay */
 export function replayTranslationItem(apiPrefix, args, options) {
     return request({ apiPrefix, method: "POST", path: `jobs/${encodePathParam(args.job_id)}/translations/${encodePathParam(args.item_id)}/replay`, options });
