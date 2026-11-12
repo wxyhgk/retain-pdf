@@ -107,16 +107,27 @@ def classify_cell_text(text: str) -> str:
 
 
 def table_html(block: dict) -> str:
-    """表格 block 里 OCR 给的 HTML（放在 segments 或 lines 的 span 文本里）。"""
-    for segment in block.get("segments") or []:
-        text = str(segment.get("text", "") or "")
-        if "<table" in text or "<tr" in text:
-            return text
+    """表格 block 里 OCR 给的完整 HTML。
+
+    表格里有公式时，OCR 把 HTML 拆成好几段（文字段和公式段交替），只取第一段会把表截断
+    （2026-11-12 评测集标注时发现：两家 OCR 的 55 张表里大半被截断）。block 的 ``text`` 是拼好的整段
+    （公式写成 ``$ … $``），优先用它；没有时按顺序把各段拼起来。
+    """
+    text = str(block.get("text", "") or "")
+    if "<table" in text or "<tr" in text:
+        return text
+    segments = block.get("segments") or []
+    if any("<table" in str(segment.get("text", "") or "") or "<tr" in str(segment.get("text", "") or "") for segment in segments):
+        parts = []
+        for segment in segments:
+            piece = str(segment.get("text", "") or "")
+            parts.append(f"$ {piece} $" if segment.get("type") == "inline_formula" else piece)
+        return "".join(parts)
     for line in block.get("lines") or []:
-        for span in line.get("spans") or []:
-            text = str(span.get("text", "") or "")
-            if "<table" in text or "<tr" in text:
-                return text
+        spans = line.get("spans") or []
+        joined = "".join(str(span.get("text", "") or "") for span in spans)
+        if "<table" in joined or "<tr" in joined:
+            return joined
     return ""
 
 

@@ -14,8 +14,8 @@
 每条记录（`table_eval_record.v1`）：`table_id`、`provider`、`fixture`（样例 PDF 文件名）、`source_page`（原文页码）、
 `page_size_pt`、`bbox_pt`（表格框，PDF point，左上角原点）、`block_id`、`html`（OCR 给的表格 HTML）、`captions`、`footnotes`。
 
-2026-11-12 跑的 OCR：8 份样例共 52 页，两家各认出 55 张表。同一批表，GLM-OCR 给了 957 个格子、PaddleOCR 给了 545 个，
-**两家的结构差很多**——标准答案不能取任何一家，要对着原文定（见下）。
+2026-11-12 跑的 OCR：8 份样例共 52 页，两家各认出 55 张表，GLM-OCR 7025 个格子、PaddleOCR 6929 个。总数接近，但逐张的
+结构（合并单元格、多层表头、格子切分）会不一样——标准答案不取任何一家，对着原文定（见 `labels/`）。
 
 ## 怎么重新生成
 
