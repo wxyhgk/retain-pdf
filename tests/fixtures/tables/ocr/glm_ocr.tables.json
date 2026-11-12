@@ -1,0 +1,1253 @@
+[
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "1-p007-p001-b0012",
+  "provider": "glm_ocr",
+  "fixture": "1.pdf",
+  "source_page": 7,
+  "page_size_pt": [
+   625.4359741210938,
+   818.3619995117188
+  ],
+  "bbox_pt": [
+   326.223,
+   241.877,
+   563.913,
+   297.696
+  ],
+  "block_id": "p001-b0012",
+  "html": "<table><tr><td>entrya</td><td>oxidant</td><td>o-cymene(%)</td><td>2-iodotoluene(%)</td></tr><tr><td>",
+  "captions": [],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "1-p008-p002-b0008",
+  "provider": "glm_ocr",
+  "fixture": "1.pdf",
+  "source_page": 8,
+  "page_size_pt": [
+   625.4359741210938,
+   818.3619995117188
+  ],
+  "bbox_pt": [
+   324.122,
+   235.275,
+   564.213,
+   325.005
+  ],
+  "block_id": "p002-b0008",
+  "html": "<table><tr><td>",
+  "captions": [],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "2-p025-p002-b0001",
+  "provider": "glm_ocr",
+  "fixture": "2.pdf",
+  "source_page": 25,
+  "page_size_pt": [
+   612.0,
+   792.0
+  ],
+  "bbox_pt": [
+   102.3,
+   78.6,
+   503.4,
+   455.1
+  ],
+  "block_id": "p002-b0001",
+  "html": "<table><tr><td>",
+  "captions": [
+   "TABLE I. Points on the $ C_{s} $ section of the I-J surface of conical intersections. Bond lengths $ R(AB) $ are in atomic units $ (a_{0}=0.0529 \\mathrm{~nm}) $ . Angles are in degrees, the energy $ E_{x}=E_{I}=E_{J} $ is in eV, and the energy splitting $ \\Delta E_{IJ}\\equiv E_{I}-E_{J} $ is in $ \\mathrm{cm}^{-1} $ . $ R(\\mathrm{NO}) $ is fixed and all the other parameters are optimized except as noted."
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "2-p026-p003-b0001",
+  "provider": "glm_ocr",
+  "fixture": "2.pdf",
+  "source_page": 26,
+  "page_size_pt": [
+   612.0,
+   792.0
+  ],
+  "bbox_pt": [
+   105.0,
+   59.699,
+   503.7,
+   322.2
+  ],
+  "block_id": "p003-b0001",
+  "html": "<table><tr><td>",
+  "captions": [
+   "TABLE II. Points on the $ 2^{1} A-3^{1} A $ surface of conical intersection. Distances are in $ a_{0} $ angles are in degrees, the energy $ E_{x}=E_{I}=E_{J} $ is in eV, and the energy splitting $ \\Delta E_{IJ}\\equiv E_{I}-E_{J} $ is in $ \\mathrm{cm}^{-1}. $ R(NO) is fixed and all the other parameters are optimized except as noted."
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "babeldoc-10p-p001-p001-b0009",
+  "provider": "glm_ocr",
+  "fixture": "babeldoc-10p.pdf",
+  "source_page": 1,
+  "page_size_pt": [
+   595.2760009765625,
+   841.8900146484375
+  ],
+  "bbox_pt": [
+   305.138,
+   219.623,
+   523.867,
+   274.23
+  ],
+  "block_id": "p001-b0009",
+  "html": "<table><tr><td>Feature</td><td>BabelDOC</td><td>PDFMathTrans.</td><td>Doc2X</td><td>Google/DeepL</td></tr><tr><td>Formula processing</td><td>√</td><td>√</td><td>√</td><td>X</td></tr><tr><td>Footnote translation</td><td>√</td><td>X</td><td>X</td><td>X</td></tr><tr><td>Visual style preservation(PDF)</td><td>√</td><td>X</td><td>X</td><td>Partial</td></tr><tr><td>In-figure text translation</td><td>√</td><td>X</td><td>Partial</td><td>X</td></tr><tr><td>Intermediate representation</td><td>√</td><td>X</td><td>X</td><td>X</td></tr><tr><td>Auto contextual terminology</td><td>√</td><td>X</td><td>X</td><td>X</td></tr></table>",
+  "captions": [
+   "Table 1: Comparison of capabilities between BabelDOC and representative document translation systems. PDFMathTrans. denotes PDFMathTranslate (Ouyang et al., 2025)."
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "babeldoc-10p-p005-p003-b0000",
+  "provider": "glm_ocr",
+  "fixture": "babeldoc-10p.pdf",
+  "source_page": 5,
+  "page_size_pt": [
+   595.2760009765625,
+   841.8900146484375
+  ],
+  "bbox_pt": [
+   72.309,
+   69.907,
+   522.367,
+   243.327
+  ],
+  "block_id": "p003-b0000",
+  "html": "<table><tr><td>Category</td><td>Feature</td><td>BabelDOC</td><td>PDFMathTrans.</td><td>Doc2X</td><td>TeX-based</td><td>Google</td><td>DeepL</td></tr><tr><td rowspan=\"2\">Accessibility</td><td>Open-source Deployment</td><td>√</td><td>√</td><td>X</td><td>√</td><td>X</td><td>X</td></tr><tr><td>API Integration</td><td>√</td><td>√</td><td>√</td><td>√</td><td>√</td><td>√</td></tr><tr><td rowspan=\"7\">Layout&amp;Visual Integrity</td><td>Multi-column Layout Preservation</td><td>√</td><td>√</td><td>√</td><td>X</td><td>X</td><td>Partial</td></tr><tr><td>Vector Formula Translation</td><td>√</td><td>√</td><td>√</td><td>√</td><td>X</td><td>X</td></tr><tr><td>Dual-page Bilingual Output</td><td>√</td><td>√</td><td>Partial</td><td>√</td><td>X</td><td>X</td></tr><tr><td>Scanned PDF(OCR Support)</td><td>√</td><td>√</td><td>√</td><td>X</td><td>√</td><td>√</td></tr><tr><td>Footnote Reconstruction</td><td>√</td><td>X</td><td>Partial</td><td>X</td><td>X</td><td>X</td></tr><tr><td>Font Style Preservation</td><td>√</td><td>Partial</td><td>X</td><td>√</td><td>X</td><td>X</td></tr><tr><td>In-Figure/Table Text Translation</td><td>√</td><td>X</td><td>Partial</td><td>X</td><td>X</td><td>Partial</td></tr><tr><td rowspan=\"4\">Semantic&amp;NLP Control</td><td>Intermediate Rep.(IR)</td><td>√</td><td>X</td><td>X</td><td>X</td><td>X</td><td>X</td></tr><tr><td>Cross-page Context Stitching</td><td>√</td><td>X</td><td>X</td><td>X</td><td>X</td><td>X</td></tr><tr><td>Auto Terminology Extraction</td><td>√</td><td>X</td><td>X</td><td>X</td><td>X</td><td>X</td></tr><tr><td>Dictionary(Glossary) Constraints</td><td>√</td><td>Partial</td><td>X</td><td>X</td><td>X</td><td>√</td></tr><tr><td rowspan=\"2\">Efficiency</td><td>Batch Processing</td><td>√</td><td>√</td><td>√</td><td>√</td><td>√</td><td>√</td></tr><tr><td>Avg. Speed(sec/page)</td><td>1.63</td><td>1.47</td><td>1.86</td><td>1.67</td><td>0.38</td><td>1.88</td></tr></table>",
+  "captions": [
+   "Table 2: Comprehensive capability matrix of PDF document translation systems. PDFMathTrans. denotes PDFMathTranslate. TeX-based refers to workflows that reconstruct documents from available LaTeX source rather than directly translating arbitrary PDF inputs. The comparison reflects the evaluated configurations and publicly documented capabilities rather than all possible integrations of each system. Speed is reported for reference only, as systems differ in supported functions, rendering coverage, and deployment settings."
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "babeldoc-10p-p005-p003-b0009",
+  "provider": "glm_ocr",
+  "fixture": "babeldoc-10p.pdf",
+  "source_page": 5,
+  "page_size_pt": [
+   595.2760009765625,
+   841.8900146484375
+  ],
+  "bbox_pt": [
+   306.039,
+   477.051,
+   525.968,
+   637.569
+  ],
+  "block_id": "p003-b0009",
+  "html": "<table><tr><td>System</td><td>BIoU↑</td><td>LF↑</td><td>TP↑</td><td>VA↑</td><td>TC↑</td><td>UTB↓</td></tr><tr><td colspan=\"7\">Automatic Layout Metric</td></tr><tr><td>DeepL(Doc)</td><td>19.8%</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>PDFMathTrans.</td><td>48.7%</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td>BabelDOC</td><td>50.0%</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr><tr><td colspan=\"7\">LLM-as-a-Judge(Gemini-2.5-Flash)</td></tr><tr><td>DeepL(Doc)</td><td>-</td><td>4.20</td><td>4.19</td><td>4.24</td><td>4.38</td><td>2.03</td></tr><tr><td>PDFMathTrans.</td><td>-</td><td>2.55</td><td>2.78</td><td>2.54</td><td>3.02</td><td>5.55</td></tr><tr><td>BabelDOC</td><td>-</td><td>4.46</td><td>4.19</td><td>4.49</td><td>4.43</td><td>1.70</td></tr><tr><td colspan=\"7\">Human Evaluation</td></tr><tr><td>DeepL(Doc)</td><td>-</td><td>3.44</td><td>3.62</td><td>3.63</td><td>4.21</td><td>2.33</td></tr><tr><td>PDFMathTrans.</td><td>-</td><td>3.29</td><td>3.40</td><td>3.28</td><td>3.34</td><td>6.25</td></tr><tr><td>BabelDOC</td><td>-</td><td>4.59</td><td>4.28</td><td>4.46</td><td>4.47</td><td>2.85</td></tr></table>",
+  "captions": [
+   "Table 3: Automatic layout metric and subjective scores on the 200-page benchmark. BIoU is computed from extracted layout-element bounding boxes. UTB denotes the average number of untranslated text blocks per page, where lower is better."
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "babeldoc-10p-p006-p004-b0002",
+  "provider": "glm_ocr",
+  "fixture": "babeldoc-10p.pdf",
+  "source_page": 6,
+  "page_size_pt": [
+   595.2760009765625,
+   841.8900146484375
+  ],
+  "bbox_pt": [
+   69.608,
+   326.434,
+   289.537,
+   389.142
+  ],
+  "block_id": "p004-b0002",
+  "html": "<table><tr><td>Variant</td><td>LF↑</td><td>VA↑</td><td>TC↑</td></tr><tr><td>Full BabelDOC</td><td>4.50</td><td>4.50</td><td>5.00</td></tr><tr><td>w/o adaptive typesetting</td><td>3.00</td><td>2.50</td><td>4.00</td></tr><tr><td>w/o glossary/context control</td><td>4.50</td><td>4.50</td><td>3.00</td></tr></table>",
+  "captions": [
+   "Table 4: Component ablation on representative pages. LF, VA, and TC denote layout fidelity, visual aesthetics, and terminology consistency, respectively."
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "cr5c00021-55p-p042-p001-b0001",
+  "provider": "glm_ocr",
+  "fixture": "cr5c00021-55p.pdf",
+  "source_page": 42,
+  "page_size_pt": [
+   607.4080200195312,
+   800.9010009765625
+  ],
+  "bbox_pt": [
+   51.017,
+   76.819,
+   556.691,
+   185.447
+  ],
+  "block_id": "p001-b0001",
+  "html": "<table><tr><td>Sensitizer</td><td>",
+  "captions": [
+   "Table 1. Device Performance of Organic Light-Emitting Diodes (OLEDs) with t-DABNA (151)-Doped EML"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "cr5c00021-55p-p047-p003-b0001",
+  "provider": "glm_ocr",
+  "fixture": "cr5c00021-55p.pdf",
+  "source_page": 47,
+  "page_size_pt": [
+   607.4080200195312,
+   800.9010009765625
+  ],
+  "bbox_pt": [
+   50.717,
+   73.518,
+   556.991,
+   491.224
+  ],
+  "block_id": "p003-b0001",
+  "html": "<table><tr><td>Sensitizer</td><td>Voltage[v]a</td><td>EQE[%]b</td><td>CE[cdA-1]c</td><td>PE[lmW-1]d</td><td>",
+  "captions": [
+   "Table 2. Device Performance of Organic Light-Emitting Diodes (OLEDs) with $ \\nu $ -DABNA (11)-Doped EML"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p005-p001-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 5,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   59.709,
+   555.371,
+   309.651
+  ],
+  "block_id": "p001-b0001",
+  "html": "<table><tr><td>Abbreviations</td><td>Full meaning</td><td>Abbreviations</td><td>Full meaning</td></tr><tr><td>acac</td><td>Acetylacetonate</td><td>LE</td><td>Locally excited</td></tr><tr><td>ACQ</td><td>Aggregation caused quenching</td><td>",
+  "captions": [
+   "Table 1 List of abbreviations (general terms) used in the text"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p006-p002-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 6,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   35.704,
+   60.009,
+   558.072,
+   717.418
+  ],
+  "block_id": "p002-b0001",
+  "html": "<table><tr><td>Abbreviations</td><td>Full meaning</td><td>Abbreviations</td><td>Full meaning</td></tr><tr><td>AIBN</td><td>2-Azoisobutyronitrile</td><td>MeI</td><td>Iodomethane</td></tr><tr><td>AlCl3</td><td>Aluminium chloride</td><td>MeOH</td><td>Methyl alcohol</td></tr><tr><td>BBr3</td><td>Boron tribromide</td><td>2-MeTHF</td><td>2-Methyltetrahydrofuran</td></tr><tr><td>BCl3</td><td>Boron trichloride</td><td>MesB(OMe)2</td><td>Dimethyl mesitylboronate</td></tr><tr><td>BI3</td><td>Boron triiodide</td><td>MesMgBr</td><td>Mesityl magnesium bromide</td></tr><tr><td>BCPO</td><td>Bis-4(N-carbazolyl)phenylphosphine oxide</td><td>mCPBA</td><td>3-Chloroperbenzoic acid</td></tr><tr><td>Bepp2</td><td>Bis[2-(2-hydroxyphenyl)-pyridine] beryllium</td><td>mCPBC</td><td>9-(3-(9H-Carbazol-9-yl)phenyl)-9H-3,9&#x27;-bicarbazole</td></tr><tr><td>BF3·Et2O</td><td>Boron trifluoride diethyl ether complex</td><td>mCPCN</td><td>9-(3-(9H-Carbazol-9-yl)phenyl)-9H-carbazole-3-carbonitrile</td></tr><tr><td>(Bpin)2</td><td>Bis(pinacolato)diboron</td><td>mMTDATA</td><td>4,4&#x27;,4&#x27;&#x27;-Tris(N-3-methylphenyl-N-phenylamino)triphenylamine</td></tr><tr><td>Bu2O</td><td>Dibutyl ether</td><td>NaH</td><td>Sodium hydride</td></tr><tr><td>CBP</td><td>4,4&#x27;-Di(9H-carbazol-9-yl)-1,1&#x27;-biphenyl</td><td>NaHCO3</td><td>Sodium hydrogencarbonate</td></tr><tr><td>Co2(CO)8</td><td>Octacarbonyldicobalt</td><td>NaOH</td><td>Sodium hydroxide</td></tr><tr><td>Cs2CO3</td><td>Cesium carbonate</td><td>NaOAc</td><td>Sodium acetate</td></tr><tr><td>[Cu(CH3CN)4]PF6</td><td>Tetrakis(acetonitrile)copper(Ⅰ) hexafluorophosphate</td><td>NaOtBu</td><td>Sodium tert-butoxide</td></tr><tr><td>CuCl</td><td>Copper(Ⅰ) chloride</td><td>Na2CO3</td><td>Sodium carbonate</td></tr><tr><td>Cu(ClO4)2·6H2O</td><td>Copper(Ⅱ) perchlorate hexahydrate</td><td>NECO-296</td><td>Bis(di-tert-butyl(3-methyl-2-butenyl)phosphine)dichloro palladium</td></tr><tr><td>CuCN</td><td>Copper(Ⅰ) cyanide</td><td>NEtiPr2</td><td>N,N-Diisopropylethylamine</td></tr><tr><td>CuI</td><td>Copper(Ⅰ) iodide</td><td>nBuLi</td><td>n-Butyllithium</td></tr><tr><td>3CTF</td><td>2,4,6-Tris(2-(3,6-di-tert-butyl-9H-carbazol-9-yl)-5-(tri-fluoromethyl)phenyl)-1,3,5-triazine</td><td>NBS</td><td>N-Bromosuccinimide</td></tr><tr><td>DBFDPO</td><td>4,6-Bis(diphenylphosphoryl)dibenzofuran</td><td>NMP</td><td>N-Methyl-2-pyrrolidone</td></tr><tr><td>DBFPO (PPF)</td><td>Dibenzo[b,d]furan-2,8-diylbis(diphenylphosphine oxide)</td><td>NPB</td><td>N4,N4&#x27;&#x27;-Di(naphthalen-1-yl)-N4,N4&#x27;&#x27;-diphenyl-[1,1&#x27;-biphenyl]-4,4&#x27;-diamine</td></tr><tr><td>DBU</td><td>1,8-Diazabicyclo[5.4.0]undec-7-ene</td><td>PdCl2(amphos)2</td><td>Bis[di-tert-butyl(4-dimethylaminophenyl)phosphine]dichloropalladium(Ⅱ)</td></tr><tr><td>26DCzPPy</td><td>2,6-Bis(3-(9H-carbazol-9-yl)phenyl)pyridine</td><td>PdCl2(dppf)</td><td>[1,1&#x27;-Bis(diphenylphosphino)ferrocene]palladium(Ⅱ) dichloride</td></tr><tr><td>DDQ</td><td>2,3-Dichloro-5,6-dicyano-1,4-benzoquinone</td><td>PdCl2(PPh3)2</td><td>Bis(triphenylphosphine)palladium(Ⅱ) dichloride</td></tr><tr><td>DIC-TRz</td><td>11-(4,6-diphenyl-1,3,5-triazin-2-yl)-12-phenyl-11,12-dihydroindolo[2,3-a]carbazole</td><td>Pd(OAc)2</td><td>palladium(Ⅱ) acetate</td></tr><tr><td>DMAc</td><td>N,N-Dimethylacetamide</td><td>Pd[P(o-tol)3]2Cl2</td><td>Bis(tri-o-tolylphosphine)palladium(Ⅱ) dichloride</td></tr><tr><td>DMAP</td><td>4-Dimethylaminopyridine</td><td>Pd(PPh3)4</td><td>Tetrakis(triphenylphosphine)palladium(0)</td></tr><tr><td>DMF</td><td>N,N-Dimethylformamide</td><td>Pd2(dba)3</td><td>Tris(dibenzylideneacetone)dipalladium(0)</td></tr><tr><td>DMFBD-TRZ</td><td>2-(3&#x27;-(9,9-Dimethyl-9H-fluoren-2-yl)-[1,1&#x27;-biphenyl]-3-yl)-4,6-diphenyl-1,3,5-triazine</td><td>PhBCl2</td><td>Dichlorophenylborane</td></tr><tr><td>DMMN</td><td>Dimethylmalononitrile</td><td>PhB(OH)2</td><td>Phenylboronic acid</td></tr><tr><td>DMIC-TRZ</td><td>1,3-Dihydro-1,1-dimethyl-3-(3-(4,6-diphenyl-1,3,5-triazin-2-yl)phenyl)indeno-[2,1-b]-carbazole</td><td>PhCzBCz</td><td>9-(2-(9-Phenyl-9H-carbazol-3-yl)phenyl)-9H-3,9&#x27;-bicarbazole</td></tr><tr><td>DPEPO</td><td>Bis[2-(diphenylphosphino)phenyl]ether oxide</td><td>Ph2PH</td><td>Diphenylphosphane</td></tr><tr><td>dtbpy</td><td>4,4&#x27;-Di-tert-butyl-2,2&#x27;-bipyridyl</td><td>Ph3B</td><td>Triphenylborane</td></tr><tr><td>DTBPY</td><td>2,6-Di-tert-butylpyridine</td><td>PMMA</td><td>Polymethylmethacrylate</td></tr><tr><td>EtOH</td><td>Ethyl alcohol</td><td>PMP</td><td>1,2,2,6,6-Pentamethylpiperidine</td></tr><tr><td>NEt3</td><td>Triethylamine</td><td>P(OEt)3</td><td>Triethyl phosphite</td></tr><tr><td>FeCl3</td><td>Iron(Ⅲ) chloride</td><td>PO-T2T</td><td>2,4,6-Tris[3-(diphenylphosphinyl)phenyl]-1,3,5-triazine</td></tr><tr><td>FF</td><td>Fluorenofluorene</td><td>PPF (DBFPO)</td><td>Dibenzo[b,d]furan-2,8-diylbis(diphenylphosphine oxide)</td></tr><tr><td>HBC</td><td>Hexabenzocoronene</td><td>PPh3</td><td>Triphenylphosphine</td></tr><tr><td>HBr</td><td>Hydrogen bromide/hydrobromic acid</td><td>PS</td><td>Polystyrene</td></tr><tr><td>HCl</td><td>Hydrogen chloride/hydrochloric acid</td><td>sBuLi</td><td>sec-Butyllithium</td></tr><tr><td>HI</td><td>Hydrogen iodide/hydriodic acid</td><td>SF3TRZ</td><td>2-(9,9&#x27;-Spirobi[fluoren]-3-yl)-4,6-diphenyl-1,3,5-triazine</td></tr><tr><td>HOAc</td><td>Acetic acid</td><td>SiCzCz</td><td>9-(3-(Triphenylsilyl)phenyl)-9H-3,9&#x27;-bicarbazole</td></tr><tr><td>IF</td><td>Indenofluorene</td><td>SiTrzCz2</td><td>9,9&#x27;-(6-(3-(Triphenylsilyl)phenyl)-1,3,5-triazine-2,4-diyl)bis(9H-carbazole)</td></tr><tr><td>iPrOBpin</td><td>2-Isopropoxy-4,4,5,5-tetramethyl-1,3,2-dioxaborolane</td><td>SnCl2</td><td>Tin(Ⅱ) chloride</td></tr><tr><td>IrCl3</td><td>Iridium trichloride</td><td>SOCl2</td><td>Thionyl chloride</td></tr><tr><td>[Ir(cod)(OCH3)]2</td><td>(1,5-Cyclooctadiene)(methoxy)iridium(Ⅱ) dimer</td><td>SPhos</td><td>2-Dicyclohexylphosphino-2&#x27;,6&#x27;-dimethoxybiphenyl</td></tr><tr><td>KOAc</td><td>Potassium acetate</td><td>TBAF</td><td>Tetrabutylammonium fluoride</td></tr><tr><td>KOtBu</td><td>Potassium tert-butoxide</td><td>tBu-Benzene</td><td>tert-Butylbenzene</td></tr><tr><td>KPF6</td><td>Potassium hyxafluorophosphate</td><td>tBuLi</td><td>tert-Butyllithium</td></tr><tr><td>K2CO3</td><td>Potassium carbonate</td><td>[tBu3PH]BF4</td><td>Tri-tert-butylphosphonium tetrafluoroborate</td></tr><tr><td>K2PtCl4</td><td>Potassium tetrachloroplatinate(Ⅱ)</td><td>TBTA</td><td>Tris[(1-benzyl-1H-1,2,3-triazol-4-yl)methyl]amine</td></tr><tr><td>K3PO4</td><td>Tripotassium phosphate</td><td>TCTA</td><td>Tris(4-(9H-carbazol-9-yl)phenyl)amine</td></tr><tr><td>K4[Fe(CN)6]</td><td>Potassium ferrocyanide</td><td>TfOH</td><td>Trifluoromethanesulfonic acid</td></tr><tr><td>MADN</td><td>2-Methyl-9,10-bis(naphthalen-2-yl)anthracene</td><td>THF</td><td>Tetrahydrofuran</td></tr><tr><td>mCBP</td><td>3,3&#x27;-Di(9H-carbazol-9-yl)-1,1&#x27;-biphenyl</td><td>TMS</td><td>Trimethylsilyl</td></tr><tr><td>mCBP-CN</td><td>3&#x27;,5-Di(9H-carbazol-9-yl)-[1,1&#x27;-biphenyl]-3-carbonitrile</td><td>TPSS</td><td>2,2&#x27;,7,7&#x27;-Tetraphenyl-9,9&#x27;-spirobi[thioxanthene]</td></tr><tr><td>mCP</td><td>1,3-Di(9H-carbazol-9-yl)benzene</td><td>XPhos</td><td>2-Dicyclohexylphosphino-2&#x27;,4&#x27;,6&#x27;-triisopropylbiphenyl</td></tr><tr><td>MeCN</td><td>Acetonitrile</td><td></td><td></td></tr></table>",
+  "captions": [
+   "Table 2 List of abbreviations (reagents and OLED materials) used in the text"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p007-p003-b0004",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 7,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   40.205,
+   224.436,
+   291.638,
+   324.654
+  ],
+  "block_id": "p003-b0004",
+  "html": "<table><tr><td>",
+  "captions": [],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p008-p004-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 8,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   61.81,
+   553.571,
+   165.628
+  ],
+  "block_id": "p004-b0001",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 4 Conditions used to synthesise the compounds shown in Fig. 6"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p009-p005-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 9,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   60.309,
+   553.271,
+   202.234
+  ],
+  "block_id": "p005-b0001",
+  "html": "<table><tr><td>Compound</td><td>ConditionA",
+  "captions": [
+   "Table 5 Conditions used to synthesise the compounds shown in Fig. 7"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p011-p006-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 11,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   60.309,
+   555.371,
+   310.551
+  ],
+  "block_id": "p006-b0001",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 6 Conditions used to synthesise the compounds shown in Fig. 8"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p011-p006-b0003",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 11,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   38.704,
+   367.26,
+   554.771,
+   528.087
+  ],
+  "block_id": "p006-b0003",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p013-p007-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 13,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   60.309,
+   555.671,
+   318.953
+  ],
+  "block_id": "p007-b0001",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 8 Conditions used to synthesise the compounds shown in Fig. 9"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p013-p007-b0006",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 13,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   573.694,
+   553.271,
+   633.405
+  ],
+  "block_id": "p007-b0006",
+  "html": "<table><tr><td>Compound</td><td>ConditionA",
+  "captions": [
+   "Table 9 Conditions used to synthesise the compounds shown in Fig. 10"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p014-p008-b0009",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 14,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   402.066,
+   555.071,
+   694.315
+  ],
+  "block_id": "p008-b0009",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 10 Photophysical properties of the compounds shown in Fig. 9 and 10"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p016-p009-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 16,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.905,
+   60.009,
+   555.071,
+   277.546
+  ],
+  "block_id": "p009-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition A",
+  "captions": [
+   "Table 11 Conditions used to synthesise the compounds shown in Fig. 11"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p017-p010-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 17,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   61.21,
+   553.271,
+   184.231
+  ],
+  "block_id": "p010-b0001",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 12 Conditions used to synthesise the compounds shown in Fig. 12"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p018-p011-b0003",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 18,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   499.882,
+   555.371,
+   703.616
+  ],
+  "block_id": "p011-b0003",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 13 Conditions used to synthesise the compounds shown in Fig. 13"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p019-p012-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 19,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   61.51,
+   552.971,
+   200.133
+  ],
+  "block_id": "p012-b0001",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 14 Conditions used to synthesise the compounds shown in Fig. 14"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p021-p013-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 21,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   38.704,
+   61.51,
+   553.271,
+   186.931
+  ],
+  "block_id": "p013-b0001",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 15 Conditions used to synthesise the compounds shown in Scheme 13"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p021-p013-b0009",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 21,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   37.204,
+   474.677,
+   553.571,
+   703.316
+  ],
+  "block_id": "p013-b0009",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 16 Photophysical properties of the compounds shown in Fig. 11"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p022-p014-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 22,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   36.304,
+   52.808,
+   555.371,
+   559.592
+  ],
+  "block_id": "p014-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 17 Photophysical properties of the compounds shown in Fig. 12-14 and Schemes 9, 11-13"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p023-p015-b0009",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 23,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   571.293,
+   554.771,
+   704.516
+  ],
+  "block_id": "p015-b0009",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 18 Conditions used to synthesise the compounds shown in Fig. 15"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p024-p016-b0003",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 24,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.605,
+   256.842,
+   552.971,
+   313.552
+  ],
+  "block_id": "p016-b0003",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 19 Conditions used to synthesise the compounds shown in Scheme 15"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p024-p016-b0011",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 24,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.605,
+   605.499,
+   554.771,
+   702.416
+  ],
+  "block_id": "p016-b0011",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 20 Conditions used to synthesise the compounds shown in Fig. 16"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p025-p017-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 25,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   60.009,
+   555.071,
+   291.348
+  ],
+  "block_id": "p017-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 21 Photophysical properties of the compounds shown in Fig. 15, 16 and Scheme 15"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p027-p018-b0003",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 27,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   336.055,
+   555.071,
+   476.479
+  ],
+  "block_id": "p018-b0003",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 22 Conditions used to synthesise the compounds shown in Fig. 18"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p028-p019-b0003",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 28,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   398.165,
+   552.671,
+   527.787
+  ],
+  "block_id": "p019-b0003",
+  "html": "<table><tr><td>Compound</td><td>ConditionA^{a}",
+  "captions": [
+   "Table 23 Conditions used to synthesise the compounds shown in Fig. 19"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p029-p020-b0003",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 29,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   295.848,
+   552.971,
+   383.463
+  ],
+  "block_id": "p020-b0003",
+  "html": "<table><tr><td>Compound</td><td>Condition A",
+  "captions": [
+   "Table 24 Conditions used to synthesise the compounds shown in Fig. 20"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p030-p021-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 30,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   75.612,
+   555.371,
+   466.277
+  ],
+  "block_id": "p021-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 25 Photophysical properties of the compounds shown in Fig. 17-20"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p031-p022-b0012",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 31,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.605,
+   647.506,
+   554.171,
+   703.316
+  ],
+  "block_id": "p022-b0012",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 26 Photophysical properties of the compounds shown in Scheme 18"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p032-p023-b0010",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 32,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.605,
+   656.207,
+   553.871,
+   703.016
+  ],
+  "block_id": "p023-b0010",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 27 Photophysical properties of the compounds shown in Scheme 20"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p042-p024-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 42,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   36.004,
+   50.708,
+   555.371,
+   710.217
+  ],
+  "block_id": "p024-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 28 Photophysical properties of the compounds shown in Section 3"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p043-p025-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 43,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   61.21,
+   552.671,
+   202.834
+  ],
+  "block_id": "p025-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 28 (continued)"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p046-p026-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 46,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   60.609,
+   555.371,
+   301.85
+  ],
+  "block_id": "p026-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 29 Photophysical properties of the materials shown in Fig. 25"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p046-p026-b0007",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 46,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   517.284,
+   555.071,
+   703.916
+  ],
+  "block_id": "p026-b0007",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 30 Photophysical properties of the materials shown in Fig. 26"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p048-p027-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 48,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   62.11,
+   552.671,
+   184.231
+  ],
+  "block_id": "p027-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 31 Photophysical properties of the materials shown in Fig. 27"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p049-p028-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 49,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   60.309,
+   553.271,
+   186.331
+  ],
+  "block_id": "p028-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 32 Photophysical properties of the materials shown in Fig. 28"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p049-p028-b0007",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 49,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   300.338,
+   249.64,
+   553.271,
+   423.37
+  ],
+  "block_id": "p028-b0007",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 33 Photophysical properties of the materials shown in Scheme $ 4 3^{a} $"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p050-p029-b0009",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 50,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.605,
+   610.0,
+   552.371,
+   703.616
+  ],
+  "block_id": "p029-b0009",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 34 Photophysical properties of the materials shown in Fig. 29"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p053-p030-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 53,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   53.408,
+   555.371,
+   385.564
+  ],
+  "block_id": "p030-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 35 Photophysical properties of the compounds shown in Fig. 30"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p054-p031-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 54,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.004,
+   61.51,
+   552.671,
+   191.732
+  ],
+  "block_id": "p031-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 36 Photophysical properties of the materials shown in Fig. 31"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p055-p032-b0009",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 55,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   645.706,
+   554.171,
+   703.616
+  ],
+  "block_id": "p032-b0009",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 37 Photophysical properties of the materials shown in Fig. 32"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p056-p033-b0003",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 56,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.605,
+   177.929,
+   552.971,
+   257.743
+  ],
+  "block_id": "p033-b0003",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 38 Photophysical properties of the compounds shown in Fig. 33"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p057-p034-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 57,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   38.704,
+   60.309,
+   553.271,
+   194.132
+  ],
+  "block_id": "p034-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 39 Photophysical properties of the materials shown in Schemes 48-50"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "d3cs00837a-69p-p059-p035-b0001",
+  "provider": "glm_ocr",
+  "fixture": "d3cs00837a-69p.pdf",
+  "source_page": 59,
+  "page_size_pt": [
+   595.2760009765625,
+   779.5280151367188
+  ],
+  "bbox_pt": [
+   39.305,
+   61.21,
+   552.671,
+   188.131
+  ],
+  "block_id": "p035-b0001",
+  "html": "<table><tr><td>Compound</td><td>Condition</td><td>",
+  "captions": [
+   "Table 40 Photophysical properties of the compounds shown in Scheme 51"
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "navier-stokes-166p-p019-p001-b0001",
+  "provider": "glm_ocr",
+  "fixture": "navier-stokes-166p.pdf",
+  "source_page": 19,
+  "page_size_pt": [
+   612.0,
+   792.0
+  ],
+  "bbox_pt": [
+   77.7,
+   107.399,
+   530.1,
+   667.2
+  ],
+  "block_id": "p001-b0001",
+  "html": "<table><tr><td>Symbol</td><td>Meaning and role</td><td>Definition</td></tr><tr><td>",
+  "captions": [
+   "Table 1: Guide to the principal symbols."
+  ],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "s41524-tibetan-plateau-21p-p006-p001-b0003",
+  "provider": "glm_ocr",
+  "fixture": "s41524-tibetan-plateau-21p.pdf",
+  "source_page": 6,
+  "page_size_pt": [
+   612.0,
+   832.0
+  ],
+  "bbox_pt": [
+   98.399,
+   343.241,
+   503.7,
+   524.764
+  ],
+  "block_id": "p001-b0003",
+  "html": "<table><tr><td>Dataset</td><td>Metric</td><td>MOLCANO</td><td>SELFIES</td><td>SAFE</td><td>SMARTS</td><td>SMILES</td><td>FRAGSMILES</td><td>TSMILES</td></tr><tr><td rowspan=\"6\">DRUG</td><td>Validity</td><td>0.9170</td><td>0.9996</td><td>0.7054</td><td>0.9148</td><td>0.9246</td><td>0.9576</td><td>0.9996</td></tr><tr><td>Uniqueness</td><td>0.9915</td><td>0.9921</td><td>0.9863</td><td>0.9872</td><td>0.9859</td><td>0.9832</td><td>0.2140</td></tr><tr><td>Novelty</td><td>0.8794</td><td>0.8453</td><td>0.7965</td><td>0.8006</td><td>0.7848</td><td>0.6069</td><td>1.0000</td></tr><tr><td>Efficiency</td><td>0.7995</td><td>0.8383</td><td>0.5542</td><td>0.7230</td><td>0.7154</td><td>0.5714</td><td>0.2139</td></tr><tr><td>Quality</td><td>0.4808</td><td>0.3492</td><td>0.3861</td><td>0.4165</td><td>0.4099</td><td>0.4193</td><td>0.2607</td></tr><tr><td>LRE≥8(%)</td><td>-10.68</td><td>399.5</td><td>122.9</td><td>5.346</td><td>45.01</td><td>505.6</td><td>-77.31</td></tr><tr><td rowspan=\"5\">MOSES</td><td>Validity</td><td>0.9842</td><td>1.0000</td><td>0.9860</td><td>0.9259</td><td>0.9973</td><td>0.9978</td><td>0.9993</td></tr><tr><td>Uniqueness</td><td>0.9994</td><td>0.9948</td><td>0.9795</td><td>0.9904</td><td>0.9878</td><td>0.9988</td><td>0.2734</td></tr><tr><td>Novelty</td><td>0.9115</td><td>0.7830</td><td>0.7316</td><td>0.7449</td><td>0.7015</td><td>0.8108</td><td>1.0000</td></tr><tr><td>Efficiency</td><td>0.8966</td><td>0.7789</td><td>0.7065</td><td>0.6830</td><td>0.808</td><td>0.8080</td><td>0.2732</td></tr><tr><td>Quality</td><td>0.9692</td><td>0.9651</td><td>0.9685</td><td>0.9777</td><td>0.9694</td><td>0.9636</td><td>0.2647</td></tr><tr><td rowspan=\"5\">OEMAT</td><td>Validity</td><td>0.9291</td><td>0.9993</td><td>0.6693</td><td>0.9307</td><td>0.9353</td><td>0.9269</td><td>0.9980</td></tr><tr><td>Uniqueness</td><td>0.9982</td><td>0.9980</td><td>0.9882</td><td>0.9937</td><td>0.9931</td><td>0.9927</td><td>0.4041</td></tr><tr><td>Novelty</td><td>0.9120</td><td>0.9174</td><td>0.7507</td><td>0.7357</td><td>0.7616</td><td>0.6879</td><td>1.0000</td></tr><tr><td>Efficiency</td><td>0.8459</td><td>0.9149</td><td>0.4965</td><td>0.6803</td><td>0.7074</td><td>0.6329</td><td>0.4033</td></tr><tr><td>LRE≥8(%)</td><td>-57.11</td><td>1678.0</td><td>226.5</td><td>-38.85</td><td>-28.55</td><td>133.1</td><td>11.56</td></tr></table>",
+  "captions": [],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "s41524-tibetan-plateau-21p-p007-p002-b0004",
+  "provider": "glm_ocr",
+  "fixture": "s41524-tibetan-plateau-21p.pdf",
+  "source_page": 7,
+  "page_size_pt": [
+   612.0,
+   832.0
+  ],
+  "bbox_pt": [
+   163.5,
+   469.856,
+   454.5,
+   510.362
+  ],
+  "block_id": "p002-b0004",
+  "html": "<table><tr><td>Experiment</td><td>QED</td><td>SAS</td><td>Similarity</td><td>Efficiency</td></tr><tr><td>De novo generation</td><td>0.5762</td><td>3.1802</td><td>0.8091</td><td>0.742</td></tr><tr><td>Property optimization</td><td>0.8604</td><td>2.3406</td><td>0.7988</td><td>0.7558</td></tr><tr><td>Domain-adaptive generation</td><td>0.8378</td><td>2.3743</td><td>0.8317</td><td>0.7646</td></tr></table>",
+  "captions": [],
+  "footnotes": []
+ },
+ {
+  "record_version": "table_eval_record.v1",
+  "table_id": "yakubenko-halogen-lithium-10p-p004-p001-b0003",
+  "provider": "glm_ocr",
+  "fixture": "yakubenko-halogen-lithium-10p.pdf",
+  "source_page": 4,
+  "page_size_pt": [
+   595.2760009765625,
+   841.8900146484375
+  ],
+  "bbox_pt": [
+   45.305,
+   375.04,
+   549.071,
+   581.763
+  ],
+  "block_id": "p001-b0003",
+  "html": "<table><tr><td colspan=\"12\">Table 1. The composition of the reaction mixture after treatment of 2 with n-BuLi under different conditions and further quenching of the resulting naphthyllithiums with MeOH.</td></tr><tr><td rowspan=\"2\">Entry</td><td rowspan=\"2\">Solvent</td><td rowspan=\"2\">n-BuLi, equiv.</td><td rowspan=\"2\">Temp.,℃</td><td rowspan=\"2\">Time,h</td><td colspan=\"7\">Relative ratio of products</td></tr><tr><td>2</td><td>12a</td><td>4a</td><td>10a</td><td>6a</td><td>9a</td><td>7a</td></tr><tr><td>1</td><td>toluene</td><td>0.9</td><td>-20</td><td>1</td><td>1.6</td><td>0.4</td><td>1.0</td><td>-</td><td>0.1</td><td>-</td><td>-</td><td>-</td></tr><tr><td>2</td><td>toluene</td><td>0.9</td><td>25</td><td>1</td><td>1.9</td><td>0.4</td><td>1.0</td><td>0.1</td><td>0.1</td><td>-</td><td>-</td><td>-</td></tr><tr><td>3</td><td>toluene</td><td>0.9</td><td>-20</td><td>24</td><td>1.4</td><td>0.3</td><td>1.0</td><td>-</td><td>0.1</td><td>-</td><td>-</td><td>-</td></tr><tr><td>4</td><td>toluene</td><td>1.5</td><td>-20</td><td>1</td><td>0.2</td><td>0.7</td><td>1.0</td><td>0.3</td><td>0.3</td><td>-</td><td>-</td><td>-</td></tr><tr><td>5</td><td>toluene</td><td>1.5</td><td>25</td><td>1</td><td>0.1</td><td>0.2</td><td>1.0</td><td>-</td><td>0.2</td><td>-</td><td>-</td><td>-</td></tr><tr><td>6</td><td>toluene</td><td>2.8</td><td>-20</td><td>1</td><td>-</td><td>0.3</td><td>1.0</td><td>1.2</td><td>1.6</td><td>-</td><td>-</td><td>-</td></tr><tr><td>7</td><td>toluene</td><td>2.8</td><td>25</td><td>1</td><td>-</td><td>1.6</td><td>1.0</td><td>2.4</td><td>3.3</td><td>-</td><td>-</td><td>-</td></tr><tr><td>8</td><td>toluene</td><td>4.1</td><td>-20</td><td>1</td><td>-</td><td>-</td><td>1.0</td><td>2.8</td><td>3.6</td><td>2.3</td><td>0.1</td><td>-</td></tr><tr><td>9</td><td>toluene</td><td>4.1</td><td>25</td><td>1</td><td>-</td><td>-</td><td>-</td><td>0.5</td><td>0.7</td><td>1.0</td><td>0.1</td><td>-</td></tr><tr><td>10</td><td>toluene</td><td>8.1</td><td>-20</td><td>1</td><td>-</td><td>-</td><td>-</td><td>0.2</td><td>0.2</td><td>1.0</td><td>0.1</td><td>-</td></tr><tr><td>11</td><td>toluene</td><td>8.1</td><td>25</td><td>1</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>1.0</td><td>0.5</td><td>-</td></tr><tr><td>12</td><td>toluene</td><td>8.1</td><td>25</td><td>2</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>1.0</td><td>0.5</td><td>-</td></tr><tr><td>13</td><td>toluene</td><td>8.1</td><td>25</td><td>4</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>1.0</td><td>0.5</td><td>-</td></tr><tr><td>14</td><td>toluene</td><td>8.1</td><td>25</td><td>24</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>1.0</td><td>0.7</td><td>-</td></tr><tr><td>15</td><td>benzene</td><td>8.1</td><td>25</td><td>24</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>1.0</td><td>1.1</td><td>-</td></tr><tr><td>16</td><td>benzene</td><td>8.1</td><td>25</td><td>24</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>1.0</td><td>0.3</td><td>-</td></tr><tr><td>17</td><td>benzene</td><td>16.0</td><td>25</td><td>24</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>1.0</td><td>2.8</td><td>-</td></tr></table>",
+  "captions": [],
+  "footnotes": []
+ }
+]
