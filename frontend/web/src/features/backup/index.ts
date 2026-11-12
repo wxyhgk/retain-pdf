@@ -5,3 +5,6 @@
 
 export { BackupPanel } from "./ui/BackupPanel.jsx";
 export { backupTime, describeAuto, formatSize, kindLabel } from "./domain/describe.js";
+
+// 设置弹窗里这一栏的登记 / 图标（20261112-功能登记表）。
+export { backupSettingsSection } from "./ui/settings-section.jsx";

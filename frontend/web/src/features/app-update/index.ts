@@ -29,3 +29,6 @@ export {
   fetchLatestGithubRelease,
   normalizeReleaseInfo,
 } from "./domain/github-release.js";
+
+// 设置弹窗里这一栏的登记 / 图标（20261112-功能登记表）。
+export { AppUpdateSettingsIcon } from "./ui/settings-icon.jsx";

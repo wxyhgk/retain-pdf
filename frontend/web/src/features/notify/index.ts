@@ -6,3 +6,6 @@
 export { JobFinishNotifier } from "./ui/JobFinishNotifier.jsx";
 export { NotifySettingsPanel } from "./ui/NotifySettingsPanel.jsx";
 export type { FinishedJob } from "./domain/job-finish-watcher.js";
+
+// 设置弹窗里这一栏的登记 / 图标（20261112-功能登记表）。
+export { notifySettingsSection } from "./ui/settings-section.jsx";

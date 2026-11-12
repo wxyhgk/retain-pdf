@@ -12,3 +12,6 @@ export { authErrorText, USERNAME_PATTERN } from "./domain/auth-errors.js";
 export { formatPageDelta, pageAdjustProblem, pageLedgerLabel } from "./domain/page-ledger.js";
 export { buildInviteLink } from "./domain/register.js";
 export { AuthSessionProvider, useAuthSession, useHomeTabVisible, useVisibleHomeTab } from "./ui/auth-session-context.jsx";
+
+// 设置弹窗里这一栏的登记 / 图标（20261112-功能登记表）。
+export { AccountSettingsIcon } from "./ui/settings-icon.jsx";
