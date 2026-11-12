@@ -129,7 +129,7 @@ test("CredentialsDialog：保存(浏览器模式)——写隐藏 input、同步 
   );
   assert.match(
     byId(dom, "browser-translation-provider").querySelector("img")?.getAttribute("src") || "",
-    /providers\/qwen\.svg$/,
+    /models\/qwen\.svg$/,
     "Qwen 选项使用本地品牌图标",
   );
 

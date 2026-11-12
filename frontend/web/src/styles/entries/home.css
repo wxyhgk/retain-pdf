@@ -79,6 +79,7 @@
 @import "../../features/collections/ui/CollectionsView.css";
 @import "../pages/home/favorites.css";
 @import "../../ui/icons/EmptyState.css";
+@import "../../ui/icons/BrandLogo.css" layer(components);
 @import "../../features/library/ui/page/RecentJobsLibrary.css";
 @import "../../features/library/ui/page/LibraryBatchToolbar.css";
 @import "../../app/home/shell/AppBottomBar.css";

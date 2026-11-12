@@ -1,5 +1,6 @@
 // 用量的共用展示：主要数字一排，下面按需显示按阶段 / 按模型 / 按月的条形列表和说明。
 // 设置里的「总用量」用它；书籍详情「进度」页的用量是紧凑版 UsageCompact。
+import { BrandLogo } from "@/ui/icons/BrandLogo.jsx";
 import type { UsageGroup, UsageRow, UsageViewModel } from "../domain/usage-view-model.js";
 
 function Bars({ rows, label }: { rows: UsageRow[]; label: string }) {
@@ -9,7 +10,9 @@ function Bars({ rows, label }: { rows: UsageRow[]; label: string }) {
       {rows.map((row) => (
         <li key={row.key} className="usage-bar-row">
           <span className="usage-bar-label">
-            {row.label}
+            {row.logo ? (
+              <span className="usage-bar-name"><BrandLogo className="usage-bar-logo" logo={row.logo} />{row.label}</span>
+            ) : row.label}
             {row.hint ? <small>{row.hint}</small> : null}
           </span>
           <span className="usage-bar-track" aria-hidden="true">

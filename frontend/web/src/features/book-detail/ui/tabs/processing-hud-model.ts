@@ -2,6 +2,7 @@
 //   HUD 一条：进度环（页数 / 进度 / 停在哪站）、总耗时、模型、token 合计；
 //   各站小标签（stationChips）：OCR 站页数，翻译站模型标志 + 这一站的 token，版面站精修的 token。各站耗时由流水线自己按分段计时写。
 // 只读传入的真实数据（覆盖接口、分段计时、用量），算不出来的就不出，不编数。
+import { modelLogoFor, type BrandLogo } from "@/platform/config/brand-logos.js";
 import type { TranslationCoverageView } from "@/platform/api/index.js";
 import type { UsageViewModel } from "@/features/usage/index.js";
 import { formatTokenCount, formatTokenCountExact } from "@/platform/utils/token-count.js";
@@ -15,27 +16,21 @@ import {
 import type { ProcessingHeaderTone } from "../panels/processing/ProcessingHeader.jsx";
 
 /** 流水线某站下面的一个小标签：图标 + 数（或标志 + 数），整句在悬停里。 */
-export type StationChip = { key: string; kind: "pages" | "model" | "tokens"; text: string; title: string; logo?: string };
+export type StationChip = { key: string; kind: "pages" | "model" | "tokens"; text: string; title: string; logo?: BrandLogo | null };
 
 export type ProcessingHudModel = {
   gauge: { value: number; tone: ProcessingHeaderTone; text: string; title: string };
   time: { text: string; title: string } | null;
-  model: { name: string; logo: string; agent: boolean; title: string } | null;
+  model: { name: string; logo: BrandLogo | null; agent: boolean; title: string } | null;
   tokens: { text: string; title: string } | null;
   stationChips: Partial<Record<StationKey, StationChip[]>>;
 };
 
 export { clockText };
 
-/** 按模型名认出是哪家，挑它的标志；认不出就不画标志。 */
-export function modelLogo(model: string): string {
-  const name = model.toLowerCase();
-  if (/claude|anthropic/.test(name)) return "src/assets/providers/anthropic.svg";
-  if (/deepseek/.test(name)) return "src/assets/providers/deepseek.svg";
-  if (/qwen/.test(name)) return "src/assets/providers/qwen.svg";
-  if (/glm|zhipu|bigmodel/.test(name)) return "src/assets/providers/zai.svg";
-  if (/gpt|openai|^o\d/.test(name)) return "src/assets/providers/openai.svg";
-  return "";
+/** 按模型名认出是哪家，挑它的标志；认不出就不画标志（登记在 platform/config/brand-logos.ts）。 */
+export function modelLogo(model: string): BrandLogo | null {
+  return modelLogoFor(model);
 }
 
 export function processingHudModel({

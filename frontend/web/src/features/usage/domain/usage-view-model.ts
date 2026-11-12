@@ -3,6 +3,7 @@
 // - 缓存命中率 = cache_hit_tokens / cache_reported_input_tokens；分母为 0 写「未报」（千问等服务商不报缓存）；
 // - 思考为 0 写「—」；缓存写入只有 Anthropic 才有，非 0 才显示；
 // - 有请求服务商没报用量、有任务按旧报告折算时各注明一句。
+import { modelLogoFor, vendorLogoForBaseUrl, type BrandLogo } from "@/platform/config/brand-logos.js";
 import type { UsageSummaryView } from "@/platform/api/index.js";
 import { cacheHitRate, formatPercent, formatTokenCount, formatTokenCountExact } from "@/platform/utils/token-count.js";
 
@@ -18,7 +19,11 @@ export type UsageMetric = {
   emphasis?: boolean;
 };
 
-export type UsageRow = { key: string; label: string; hint: string; value: string; exact: string; share: number };
+export type UsageRow = {
+  key: string; label: string; hint: string; value: string; exact: string; share: number;
+  /** 按模型那一栏：模型家族的标志，认不出模型就按接口主机认厂商（platform/config/brand-logos.ts）。 */
+  logo?: BrandLogo | null;
+};
 
 export type UsageGroup = {
   key: string;
@@ -153,7 +158,10 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
     metrics: usageMetrics(totals),
     notes,
     stageGroups: groups,
-    models: models.map((model) => row(`${model.model}@${model.host}`, model.model || "未知模型", model.host || "", model, modelMax)),
+    models: models.map((model) => ({
+      ...row(`${model.model}@${model.host}`, model.model || "未知模型", model.host || "", model, modelMax),
+      logo: modelLogoFor(model.model) || (model.host ? vendorLogoForBaseUrl(`https://${model.host}`) : null),
+    })),
     months: months.map((month) => row(month.month, monthLabel(month.month), "", month, monthMax)),
     summaryLine: view.scope === "job" ? "" : `计入 ${view.jobs_counted} 个任务`,
   };

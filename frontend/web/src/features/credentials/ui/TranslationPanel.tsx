@@ -1,3 +1,6 @@
+import { useReducer } from "react";
+import { BrandLogo } from "@/ui/icons/BrandLogo.jsx";
+import { vendorLogoForBaseUrl, type BrandLogo as BrandLogoEntry } from "@/platform/config/brand-logos.js";
 import { CREDENTIAL_DOM_IDS } from "./credentials-dom-ids.js";
 import { useCredentialsController } from "./useCredentialsController.js";
 import {
@@ -17,16 +20,14 @@ const { browser: BROWSER_IDS } = CREDENTIAL_DOM_IDS;
 
 type TranslationProviderDefinition = ReturnType<typeof getTranslationProviderDefinition>;
 
-function TranslationProviderMark({ provider, compact = false }: { provider: TranslationProviderDefinition; compact?: boolean }) {
-  if (provider.logoUrl) {
-    return (
-      <img
-        className={`credential-translation-provider-logo${compact ? " is-compact" : ""}`}
-        src={provider.logoUrl}
-        alt=""
-        aria-hidden="true"
-      />
-    );
+function TranslationProviderMark({ provider, compact = false, logo = provider.logo }: {
+  provider: TranslationProviderDefinition;
+  compact?: boolean;
+  /** 自定义接口：按填的地址认出来的那家（不给就用服务商自己的）。 */
+  logo?: BrandLogoEntry | null;
+}) {
+  if (logo) {
+    return <BrandLogo className={`credential-translation-provider-logo${compact ? " is-compact" : ""}`} logo={logo} />;
   }
   return (
     <span className={`credential-translation-provider-logo is-custom${compact ? " is-compact" : ""}`} aria-hidden="true">
@@ -40,6 +41,10 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
   const translationProvider = `${view.translationProvider || "custom"}`;
   const providerDefinition = getTranslationProviderDefinition(translationProvider);
   const fixedBaseUrl = providerDefinition.id !== "custom";
+  // 自定义接口填了哪家的地址就显示哪家的标志。地址框是非受控的（表单同步直接写值），渲染时读它当前的值，
+  // 用户每敲一下 bump 一次让这里重新读。
+  const [, bumpBaseUrl] = useReducer((count: number) => count + 1, 0);
+  const customLogo = fixedBaseUrl ? null : vendorLogoForBaseUrl(elementsRef.modelBaseUrlInput?.value);
   const validation = view.deepSeek || { message: "", tone: "" };
   const content = `${validation.message || ""}`.trim();
   // 只有 tone === "pending" 才算「检测进行中」。此前用「有消息且无 tone」推断，
@@ -74,7 +79,7 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
               aria-label="翻译 API 服务商"
             >
               <span className="credential-translation-provider-value">
-                <TranslationProviderMark provider={providerDefinition} compact />
+                <TranslationProviderMark provider={providerDefinition} compact logo={fixedBaseUrl ? providerDefinition.logo : customLogo} />
                 <span>{providerDefinition.label}</span>
               </span>
               <SelectPrimitive.Icon asChild>
@@ -124,7 +129,10 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
             aria-readonly={fixedBaseUrl}
             title={fixedBaseUrl ? `${providerDefinition.label} 官方地址，由服务商选项管理` : "自定义 API 地址"}
             ref={(node) => { elementsRef.modelBaseUrlInput = node || null; }}
-            onInput={() => handlers?.resetDeepSeekValidation?.()}
+            onInput={() => {
+              handlers?.resetDeepSeekValidation?.();
+              bumpBaseUrl();
+            }}
           />
         </label>
         <label className="credential-translation-model-field">
