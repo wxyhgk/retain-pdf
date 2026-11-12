@@ -1,6 +1,7 @@
 {
   "providers": {
     "mineru": {
+      "rank": 0,
       "display_name": "MinerU",
       "kind": "remote",
       "credential": {
@@ -28,6 +29,7 @@
       }
     },
     "paddle": {
+      "rank": 1,
       "display_name": "PaddleOCR",
       "kind": "remote",
       "credential": {
@@ -60,6 +62,7 @@
       }
     },
     "glm_ocr": {
+      "rank": 2,
       "display_name": "GLM-OCR",
       "kind": "remote_command",
       "credential": {
@@ -70,6 +73,7 @@
       "options": {}
     },
     "local": {
+      "rank": 3,
       "display_name": "Local OCR",
       "kind": "local_command",
       "credential": null,

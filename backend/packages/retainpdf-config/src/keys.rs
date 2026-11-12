@@ -7,7 +7,7 @@
 use anyhow::{bail, Result};
 use toml_edit::Value;
 
-use crate::providers::{model_provider, API_PROTOCOLS, MODEL_PROVIDERS, OCR_PROVIDERS, THINKING_LEVELS};
+use crate::providers::{model_provider, ocr_providers, API_PROTOCOLS, MODEL_PROVIDERS, THINKING_LEVELS};
 
 /// 存在哪个文件。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,7 +48,7 @@ fn provider_ids() -> Vec<&'static str> {
 /// 一个键的说明;不认识的键为 None。
 pub fn describe_key(path: &str) -> Option<KeyInfo> {
     let parts: Vec<&str> = path.split('.').collect();
-    let ocr_ids: Vec<&'static str> = OCR_PROVIDERS.iter().map(|(id, _)| *id).collect();
+    let ocr_ids: Vec<&'static str> = ocr_providers().iter().map(|provider| provider.id.as_str()).collect();
     Some(match parts.as_slice() {
         ["translation", "provider"] => info(
             path,
@@ -104,8 +104,8 @@ pub fn describe_key(path: &str) -> Option<KeyInfo> {
                 _ => return None,
             }
         }
-        ["ocr", "provider"] => info(path, Store::Config, KeyKind::Choice(ocr_ids), "OCR 用哪家(paddle / mineru)"),
-        ["ocr", token] if OCR_PROVIDERS.iter().any(|(_, key)| key == token) => {
+        ["ocr", "provider"] => info(path, Store::Config, KeyKind::Choice(ocr_ids), "OCR 用哪家"),
+        ["ocr", token] if ocr_providers().iter().any(|provider| provider.token_key == *token) => {
             info(path, Store::Credentials, KeyKind::Secret, "OCR 服务的 token")
         }
         ["assistant", "provider"] => info(
@@ -150,8 +150,8 @@ pub fn known_keys() -> Vec<KeyInfo> {
         }
     }
     paths.push("ocr.provider".into());
-    for (_, token) in OCR_PROVIDERS {
-        paths.push(format!("ocr.{token}"));
+    for provider in ocr_providers() {
+        paths.push(format!("ocr.{}", provider.token_key));
     }
     for path in [
         "assistant.provider",

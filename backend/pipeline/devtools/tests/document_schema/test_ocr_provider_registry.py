@@ -80,3 +80,30 @@ def test_ocr_provider_registry_discovers_configured_local_provider(
     importlib.reload(provider_config)
     drivers = importlib.reload(drivers)
     assert "local-fast" in drivers.list_registered_ocr_provider_drivers()
+
+
+def test_repository_manifest_is_the_only_source_of_ocr_providers(monkeypatch) -> None:
+    """清单 backend/config/ocr_providers.json 是唯一来源：Python 读它，Rust 编译时嵌入同一份。"""
+    from retainpdf_pipeline.ocr.ocr_provider_config import ocr_provider_definitions
+
+    monkeypatch.delenv(OCR_PROVIDER_CONFIG_ENV, raising=False)
+    manifest = Path(__file__).resolve().parents[4] / "config" / "ocr_providers.json"
+    import json
+
+    expected = json.loads(manifest.read_text(encoding="utf-8"))["providers"]
+    definitions = ocr_provider_definitions()
+    assert set(definitions) == set(expected) >= {"mineru", "paddle", "glm_ocr", "local"}
+    for key, definition in definitions.items():
+        assert isinstance(definition.get("rank"), int), f"{key} 没有 rank"
+
+
+def test_unreadable_manifest_fails_loudly_instead_of_using_a_stale_copy(tmp_path: Path, monkeypatch) -> None:
+    """以前读不到清单就悄悄用一份手抄的定义（接 GLM-OCR 时漏改过）；现在直接说清楚哪个文件读不到。"""
+    import pytest
+
+    from retainpdf_pipeline.ocr.ocr_provider_config import OcrProviderConfigError, ocr_provider_definitions
+
+    missing = tmp_path / "nowhere" / "ocr_providers.json"
+    monkeypatch.setenv(OCR_PROVIDER_CONFIG_ENV, str(missing))
+    with pytest.raises(OcrProviderConfigError, match="ocr_providers.json"):
+        ocr_provider_definitions()

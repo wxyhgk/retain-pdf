@@ -6,7 +6,7 @@
 use std::process::ExitCode;
 
 use anyhow::Result;
-use retainpdf_config::providers::{model_provider, MODEL_PROVIDERS, OCR_PROVIDERS};
+use retainpdf_config::providers::{model_provider, ocr_provider, ocr_providers, MODEL_PROVIDERS};
 
 /// 思考深度的选项(与 `providers.<id>.thinking` 一致)。
 const THINKING_OPTIONS: &[(&str, &str)] = &[
@@ -71,7 +71,12 @@ fn check_ocr(ctx: &Ctx, provider: &str, token: &str) {
     };
     let (path, body) = match provider {
         "mineru" => ("/api/v1/providers/mineru/validate-token", json!({ "mineru_token": token })),
-        _ => ("/api/v1/providers/paddle/validate-token", json!({ "paddle_token": token })),
+        "paddle" => ("/api/v1/providers/paddle/validate-token", json!({ "paddle_token": token })),
+        _ => {
+            // 还没有检测接口的服务商（比如 GLM-OCR），先不测，跑任务时才知道 token 对不对。
+            ui::warn(format!("{provider} 还不能提前检测 token,跑第一个任务时才知道对不对"));
+            return;
+        }
     };
     match backend.post(path, Some(&body)) {
         Ok(view) if view.get("ok").and_then(Value::as_bool) == Some(true) => {
@@ -163,12 +168,12 @@ pub fn run(ctx: &Ctx) -> Result<ExitCode> {
     println!();
 
     // OCR。
-    let ocr_options: Vec<(&str, &str)> = OCR_PROVIDERS
+    let ocr_options: Vec<(&str, &str)> = ocr_providers()
         .iter()
-        .map(|(id, _)| (*id, if *id == "paddle" { "PaddleOCR" } else { "MinerU" }))
+        .map(|provider| (provider.id.as_str(), provider.label.as_str()))
         .collect();
     let ocr = choose("OCR 用哪家", &ocr_options, &current.ocr_provider)?;
-    let token_key = OCR_PROVIDERS.iter().find(|(id, _)| *id == ocr).map(|(_, k)| *k).expect("listed");
+    let token_key = ocr_provider(&ocr).map(|provider| provider.token_key.as_str()).expect("listed");
     ctx.home.set("ocr.provider", &ocr)?;
     let saved_token = ctx.home.settings()?.ocr_token;
     let hint = if saved_token.is_some() { "token(回车保留已保存的)" } else { "token" };

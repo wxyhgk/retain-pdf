@@ -32,7 +32,7 @@ provider = "anthropic"
 thinking = "high"            # 可以和翻译用同一家、不同的思考深度
 
 [ocr]
-provider = "paddle"          # paddle / mineru
+provider = "paddle"          # mineru / paddle / glm_ocr：后端 OCR 服务商清单里要 token 的那几家
 
 [assistant]                  # 阅读页 AI 助手，不写和翻译一样
 provider = "qwen"
@@ -47,7 +47,7 @@ max_running_jobs = 2
 [providers.deepseek]
 api_key = "sk-..."
 [ocr]
-paddle_token = "..."
+paddle_token = "..."         # 每家一个键：<服务商>_token，例如 mineru_token、glm_ocr_token
 ```
 
 生效顺序：命令行参数 > 环境变量 > 文件 > 内置默认。环境变量见 `retainpdf config keys`

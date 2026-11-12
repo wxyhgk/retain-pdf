@@ -9,7 +9,7 @@ use toml_edit::{DocumentMut, Item};
 
 use crate::home::{expand_home, ConfigHome};
 use crate::keys::{describe_key, parse_value, Store};
-use crate::providers::{model_provider, DEFAULT_MODEL_PROVIDER, DEFAULT_OCR_PROVIDER, DEFAULT_THINKING, OCR_PROVIDERS};
+use crate::providers::{model_provider, DEFAULT_MODEL_PROVIDER, DEFAULT_OCR_PROVIDER, DEFAULT_THINKING};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -189,10 +189,10 @@ impl Settings {
 
         let ocr_provider = r.pick("ocr.provider", "ocr.provider")?;
         let ocr_provider = r.or_default("ocr.provider", ocr_provider, DEFAULT_OCR_PROVIDER).to_ascii_lowercase();
-        let Some((_, token_key)) = OCR_PROVIDERS.iter().find(|(id, _)| *id == ocr_provider) else {
+        let Some(ocr_entry) = crate::providers::ocr_provider(&ocr_provider) else {
             bail!("ocr.provider 不认识:{ocr_provider}");
         };
-        let ocr_token = r.pick("ocr.token", &format!("ocr.{token_key}"))?;
+        let ocr_token = r.pick("ocr.token", &format!("ocr.{}", ocr_entry.token_key))?;
 
         // AI 助手:没单独配服务商就和翻译一样。
         let assistant_provider = match r.pick("assistant.provider", "assistant.provider")? {

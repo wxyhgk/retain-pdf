@@ -539,6 +539,7 @@
         "devtools/tests/document_schema/test_mineru_cross_page.py",
         "devtools/tests/document_schema/test_mineru_cross_page_duplicate_spans.py",
         "devtools/tests/document_schema/test_mineru_v2_geometry.py",
+        "devtools/tests/document_schema/test_ocr_provider_registry.py",
         "devtools/tests/document_schema/test_ocr_retry_error_safety.py",
         "devtools/tests/document_schema/test_paddle_api_retry.py",
         "devtools/tests/document_schema/test_paddle_chunked.py",
