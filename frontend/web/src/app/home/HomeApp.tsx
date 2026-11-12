@@ -31,6 +31,7 @@ import { AppTopBar } from "./shell/AppTopBar.jsx";
 import { AppBottomBar, HOME_TASK_CENTER_OPEN_EVENT } from "./shell/AppBottomBar.jsx";
 import { MockModeBanner } from "./shell/MockModeBanner.jsx";
 import { SettingsDialogSlot } from "./shell/SettingsDialogSlot.jsx";
+import { EXTRA_BOOK_DETAIL_TABS } from "./shell/book-detail-tabs.js";
 import { IngestDialog, IngestServicesProvider, IngestWorkflowViewProvider } from "@/features/ingest/index.js";
 import {
   LibraryServicesProvider,
@@ -171,7 +172,7 @@ function BookDetailDialogSlot() {
   if (!mounted && !dialogState.open) return null;
   return (
     <Suspense fallback={null}>
-      <BookDetailDialog />
+      <BookDetailDialog extraTabs={EXTRA_BOOK_DETAIL_TABS} />
     </Suspense>
   );
 }
