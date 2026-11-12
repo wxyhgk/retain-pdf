@@ -61,6 +61,7 @@ export { mountAppActionsFeature } from "./domain/actions/controller.js";
 export type { BatchSubmitItemResult, BatchSubmitResult } from "./domain/actions/submit/batch.js";
 export { defaultAppActionsConfigPort } from "./domain/actions/config-port.js";
 export { createAppActionsRuntimeEnvPort } from "./domain/actions/runtime-env-port.js";
+export { createTranslationProbe } from "./domain/actions/submit/translation-probe.js";
 
 export { createUploadViewFeature } from "./domain/upload-store.js";
 export { createWorkflowViewFeature } from "./domain/workflow-view-store.js";

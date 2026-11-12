@@ -21,6 +21,9 @@ import {
 } from "../../src/features/book-detail/domain/job-failure-model.ts";
 import { pickFailureDetailText } from "../../src/features/book-detail/domain/job-failure-detail.ts";
 import { JobFailureCard } from "../../src/features/book-detail/ui/panels/processing/JobFailureCard.tsx";
+import { HomeSettingsHubContext } from "../../src/ui/context/home-services-context.tsx";
+import { makeDom } from "../helpers/dom.mjs";
+import { waitFor } from "../helpers/async.mjs";
 
 const mineru = {
   category: "provider", stage: "ocr", retryable: true,
@@ -47,6 +50,19 @@ test("后端说不可重试时，不能怂恿用户去点重试", () => {
   const advice = failureAdvice({ ...mineru, retryable: false });
   assert.equal(advice.retryLikelyHelps, false);
   assert.match(advice.action, /重试解决不了/);
+});
+
+test("Key 被拒（auth，后端一律标不可重试）时，保留「去设置换 Key」，不能盖成「复制诊断信息」", () => {
+  // 11-10 后端把翻译 Key 被拒归成 auth_failed、retryable=false。以前这里一见不可重试就把建议
+  // 换成「这次失败重试解决不了，请复制诊断信息」，用户就不知道该去换 Key 了。
+  const advice = failureAdvice({ ...mineru, category: "auth", stage: "translation", retryable: false });
+  assert.equal(advice.retryLikelyHelps, false);
+  assert.match(advice.action, /换一个有效的 Key/);
+  assert.doesNotMatch(advice.action, /复制诊断信息/);
+  assert.equal(advice.fixInSettings, true);
+  // 换文件、换解析方式这两类本来就有自己的说法，同样不盖。
+  assert.match(failureAdvice({ ...mineru, category: "input", retryable: false }).action, /换一份文件/);
+  assert.match(failureAdvice({ ...mineru, category: "normalization", retryable: false }).action, /换一种解析方式/);
 });
 
 test("认不出的分类也要给得出话来，不能空着", () => {
@@ -127,6 +143,34 @@ test("重试解决不了的失败：小标签变成「重试解决不了」，�
   const body = render({ failure: { ...mineru, category: "auth", retryable: false }, jobId: "job-1" });
   assert.equal(body.querySelector("[data-failure-chip='retry']")?.dataset.retryHelps, "false");
   assert.match(body.textContent, /重试解决不了/);
+});
+
+test("Key 被拒的卡片上有「去设置换 Key」，点了打开设置的接口页", async () => {
+  const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div></body></html>" });
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const opened = [];
+  const hub = { dialogStore: { open: (payload) => opened.push(payload) } };
+  const failure = { ...mineru, category: "auth", stage: "translation", retryable: false };
+  const root = createRoot(dom.window.document.getElementById("root"));
+  try {
+    root.render(React.createElement(HomeSettingsHubContext.Provider, { value: hub }, React.createElement(JobFailureCard, { failure, jobId: "job-1" })));
+    await waitFor(() => dom.window.document.querySelector("[data-failure-open-settings]"), "画出「去设置换 Key」");
+    const button = dom.window.document.querySelector("[data-failure-open-settings]");
+    assert.match(button.textContent, /去设置换 Key/);
+    button.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    assert.deepEqual(opened, [{ tab: "api" }]);
+  } finally {
+    root.unmount();
+    dom.window.close();
+  }
+});
+
+test("不是 Key 的问题、或者取不到设置入口时，不画「去设置」", () => {
+  const hub = { dialogStore: { open: () => {} } };
+  const withHub = (failure) => new JSDOM(`<body>${renderToStaticMarkup(createElement(HomeSettingsHubContext.Provider, { value: hub }, createElement(JobFailureCard, { failure, jobId: "job-1" })))}</body>`).window.document.body;
+  assert.equal(withHub(mineru).querySelector("[data-failure-open-settings]"), null, "上游临时故障不该引去设置");
+  assert.equal(render({ failure: { ...mineru, category: "auth", retryable: false }, jobId: "job-1" }).querySelector("[data-failure-open-settings]"), null, "没有设置入口时不画");
 });
 
 test("两段都失败时，不在状态行上的那段带自己的按钮", () => {

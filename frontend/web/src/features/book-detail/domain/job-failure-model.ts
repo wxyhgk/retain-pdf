@@ -29,6 +29,8 @@ export type FailureAdvice = {
   action: string;
   /** 重试大概率有用吗 —— 决定重试按钮是主按钮还是次按钮。 */
   retryLikelyHelps: boolean;
+  /** 要先去设置里改（换 Key）才能修好：卡片上给一个直达「设置 → 接口」的按钮。 */
+  fixInSettings?: boolean;
 };
 
 /** 键必须覆盖 Python 侧 `_failure_category_for` 发得出的全部取值。
@@ -73,6 +75,7 @@ const BY_CATEGORY: Record<string, FailureAdvice> = {
     title: "凭据被拒",
     action: "上游不认这个 API Key —— 原样重试解决不了。去设置里换一个有效的 Key（确认额度没用完、没过期），再点重试：重试会用设置里的新 Key。",
     retryLikelyHelps: false,
+    fixInSettings: true,
   },
   input: {
     title: "这份文件本身有问题",
@@ -106,7 +109,10 @@ export function failureAdvice(failure?: JobFailureBrief | null): FailureAdvice {
   if (!failure) return FALLBACK;
   const base = BY_CATEGORY[`${failure.category || ""}`.trim().toLowerCase()] ?? FALLBACK;
   // 后端说不可重试时，不管分类怎么写都不能怂恿用户去点重试。
+  // 但分类本来就是「重试没用、该先做别的」（换 Key、换文件、换解析方式）时，它那句说法就是答案，
+  // 不能盖成「请复制诊断信息」：Key 被拒（auth_failed）后端一律标不可重试，盖掉以后用户就不知道该去换 Key 了。
   if (!failure.retryable) {
+    if (!base.retryLikelyHelps && base !== FALLBACK) return base;
     return { ...base, retryLikelyHelps: false, action: "这次失败重试解决不了，请复制诊断信息。" };
   }
   return base;

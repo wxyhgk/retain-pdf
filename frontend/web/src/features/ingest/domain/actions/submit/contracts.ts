@@ -1,3 +1,4 @@
+import type { ProbeTranslationKey } from "./translation-probe.js";
 // 提交链路的共享类型与常量。
 // 原 domain/actions/submit-flow.ts 拆分的公共契约集中处；submit-flow.ts 原样转出。
 
@@ -142,6 +143,8 @@ export interface RunSubmitFlowOptions {
   /** provider 预检（余额/OCR Token）失败时的告知口。预检不再挡提交，
    *  结果也不再写 error-box（弹窗那时已关），composition 接的是 toast。 */
   notifyPreflightWarning?: (message: string) => void;
+  /** 提交时检测翻译 Key 的探针（见 translation-probe.ts）。不传就不测。 */
+  probeTranslationKey?: ProbeTranslationKey;
   syncCurrentJobSnapshot?: PublishSubmitSuccessOptions["syncCurrentJobSnapshot"];
   renderJob?: (payload?: unknown) => void;
   startJobPolling?: (jobId: string) => void;

@@ -49,7 +49,9 @@ export function handleSubmitReadinessBlock({
       setText("error-box", "请先完成首次配置。");
       return true;
     case SUBMIT_BLOCK_REASONS.MISSING_CREDENTIALS:
-      setText("error-box", "请先填写当前 OCR Provider 凭证。");
+      // 这道闸要求 OCR 和翻译两把 Key 都在（见 hasCompleteCredentials），缺哪把都会走到这里；
+      // 以前只说 OCR，缺翻译 Key 的人会去 OCR 那栏找半天。设置窗口会打开，空着的那栏一眼能看到。
+      setText("error-box", "请先在接口设置里填好 OCR 和翻译模型的 Key。");
       openBrowserCredentialsDialog?.();
       return true;
     case SUBMIT_BLOCK_REASONS.MISSING_UPLOAD:

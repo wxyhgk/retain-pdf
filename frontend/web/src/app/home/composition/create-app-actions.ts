@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { openDesktopOutputDirectory } from "@/platform/config/desktop-persistence.js";
 import {
   createAppActionsRuntimeEnvPort,
+  createTranslationProbe,
   defaultAppActionsConfigPort,
   mountAppActionsFeature,
 } from "@/features/ingest/domain.js";
@@ -12,6 +13,7 @@ import { syncCurrentJobSnapshot } from "@/features/jobs/index.js";
 import {
   buildApiEndpoint,
   submitJobRequest,
+  validateDeepSeekToken,
 } from "@/platform/api/index.js";
 import { mountedFeature } from "./feature-registry.js";
 import type {
@@ -147,6 +149,8 @@ export function createAppActions({
           /* toast 宿主未挂载时静默，不影响已提交的任务 */
         }
       },
+      // 提交时顺手测一次翻译 Key（Key、模型写错的提前 toast，不挡提交，见 submit/translation-probe.ts）。
+      probeTranslationKey: createTranslationProbe((payload) => validateDeepSeekToken(API_PREFIX, payload)),
       startJobPolling: (jobId: string) => jobRuntime().startPolling(jobId),
       libraryEventPort,
       jobSnapshotPort,

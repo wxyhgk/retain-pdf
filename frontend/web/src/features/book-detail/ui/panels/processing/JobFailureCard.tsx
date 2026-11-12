@@ -19,9 +19,10 @@
  * 列表里那份简报；点「完整错误」时才去打一次 job 详情端点拿完整错误。
  */
 import { Button, IconButton } from "@retainpdf/ui";
-import { useCallback, useState, type ReactNode } from "react";
-import { Ban, Check, ChevronDown, Coins, Copy, LoaderCircle, RotateCcw, Server, TriangleAlert } from "lucide-react";
+import { useCallback, useContext, useState, type ReactNode } from "react";
+import { Ban, Check, ChevronDown, Coins, Copy, LoaderCircle, RotateCcw, Server, Settings2, TriangleAlert } from "lucide-react";
 
+import { HomeSettingsHubContext } from "@/ui/context/home-services-context.js";
 import { copyText } from "@/platform/utils/clipboard.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
 import {
@@ -60,6 +61,12 @@ export function JobFailureCard({
   const [copied, setCopied] = useState(false);
 
   const advice = failureAdvice(failure);
+  // 换 Key 这类要去设置里改的失败，给一个直达「设置 → 接口」的按钮；设置窗口叠在详情上面，存完关掉就回到这里点重试。
+  // 取不到设置入口（单独挂载、测试）就不画。
+  const settingsHub = useContext(HomeSettingsHubContext);
+  const openSettings = advice.fixInSettings && settingsHub?.dialogStore
+    ? () => settingsHub.dialogStore.open({ tab: "api" })
+    : null;
   const subtitle = failureSubtitle(failure);
   const expanded = Boolean(detail || detailError);
 
@@ -108,6 +115,12 @@ export function JobFailureCard({
 
       {/* 重试有用时，「重试多半有用」加上状态行的按钮已经说够了；没用时才需要说该做什么（换 Key、换文件）。 */}
       {advice.retryLikelyHelps ? null : <p className="book-detail-failure-action">{advice.action}</p>}
+      {openSettings ? (
+        <Button variant="secondary" size="sm" className="book-detail-failure-settings" data-failure-open-settings="true" onClick={openSettings}>
+          <Settings2 aria-hidden="true" />
+          去设置换 Key
+        </Button>
+      ) : null}
 
       {/* 后端自己给的根因。它常常就是上游原样抛回来的那句英文，但那句往往比我们
           的分类更具体（「parsing failed, please try again later」）。 */}
