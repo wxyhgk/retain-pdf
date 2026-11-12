@@ -5,3 +5,6 @@
 
 export { SyncSettingsPanel } from "./ui/SyncSettingsPanel.jsx";
 export { describeMaintenance, describePending, describeSyncStatus, relativeTime } from "./domain/describe.js";
+
+// 设置弹窗里这一栏的登记 / 图标（20261112-功能登记表）。
+export { syncSettingsSection } from "./ui/settings-section.jsx";

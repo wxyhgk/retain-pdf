@@ -8,3 +8,6 @@
 export { AdminApp } from "./ui/AdminApp.jsx";
 export { AdminConsoleEntry } from "./ui/AdminConsoleEntry.jsx";
 export { defaultAdminApi, type AdminApi } from "./domain/admin-api.js";
+
+// 设置弹窗里这一栏的登记 / 图标（20261112-功能登记表）。
+export { AdminSettingsIcon } from "./ui/settings-icon.jsx";

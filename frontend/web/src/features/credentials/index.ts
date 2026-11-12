@@ -37,3 +37,6 @@ export type {
   OpenCredentialDialogOptions,
   UpdateCredentialGateViewOptions,
 } from "./domain.js";
+
+// 设置弹窗里这一栏的登记 / 图标（20261112-功能登记表）。
+export { CredentialsSettingsIcon } from "./ui/settings-icon.jsx";
