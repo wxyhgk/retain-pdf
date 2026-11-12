@@ -1,6 +1,6 @@
 # `@retainpdf/reader`
 
-RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、批注、阅读工具、AI 面板和 Reader 样式都以本包为实现真值；`frontend/web` 只是其中一个宿主。
+RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、阅读工具、Markdown 面板和 Reader 样式都以本包为实现真值（2026-11-03 RetainPDF 自己的 AI 删了，批注、AI 面板随之没了）；`frontend/web` 只是其中一个宿主。
 
 ## 公共入口
 
@@ -22,8 +22,7 @@ RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、批�
 - 受保护 PDF/资源请求；
 - Markdown 资源解析；
 - 下载文件名与下载执行；
-- 模型凭据状态；
-- 文档 AI 请求。
+- 模型凭据状态。
 
 RetainPDF Web 的实现位于：
 
@@ -34,7 +33,7 @@ frontend/web/src/app/reader/entry.tsx
   → frontend/web/src/features/reader/domain/host/*
 ```
 
-宿主不得 alias、相对导入或发布依赖 `frontend/packages/reader/src`。需要非 React 能力时，使用 `runtime/ai`、`runtime/config`、`runtime/content`、`runtime/data`、`runtime/state` 等公开 exports。
+宿主不得 alias、相对导入或发布依赖 `frontend/packages/reader/src`。需要非 React 能力时，使用 `runtime/config`、`runtime/content`、`runtime/data`、`runtime/state` 等公开 exports。
 
 唯一例外是软导航共享实现：包内暂无公开 navigation subpath，`frontend/web/src/platform/navigation/soft-reader.ts` 以源码路径 re-export `shared/navigation/soft-reader.ts`，与包内 `ReaderCloseHome` 共用同一真源。补齐公开 navigation export 后应改为经 package exports 消费。
 
@@ -45,7 +44,7 @@ npm --prefix frontend/packages/reader run build
 npm --prefix frontend/packages/reader run typecheck
 ```
 
-构建会生成 ESM、类型声明、`dist/styles.css` 和 `dist/ai.css`。在 Web MPA 中验证完整宿主链：
+构建会生成 ESM、类型声明和 `dist/styles.css`。在 Web MPA 中验证完整宿主链：
 
 ```bash
 npm --prefix frontend/web run build:js
@@ -53,9 +52,9 @@ npm --prefix frontend/web run build:css
 npm --prefix frontend/web test -- 'tests/reader/*.test.mjs'
 ```
 
-## Markdown 与 AI 渲染
+## Markdown 渲染
 
-- AI 回答使用 `markstream-react` 流式渲染，数学公式由 KaTeX 处理。
+- 公式由 MathJax 渲染（markdown-math）。
 - 原始 HTML 按 escape 策略处理；Markdown 图片和链接由受限 custom nodes 接管。
 - 受保护图片只允许当前任务的 Markdown image 路径，并通过宿主 `fetchProtected` 转为 blob；第三方图片不得携带 `X-API-Key`。
 - 代码块当前使用轻量 `<pre><code>`。Mermaid、D2、Infographic 等 optional peers 未进入基础包。

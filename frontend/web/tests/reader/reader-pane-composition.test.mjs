@@ -15,7 +15,6 @@ function compose({
   liveAvailable = false,
   liveVisible = true,
   assistantOpen = false,
-  assistantPdfPane = null,
   hasTranslated = true,
 }) {
   // sourceViewOnly 由 sourceOnly=无 job 或 translatedUrl 缺失达成：
@@ -29,7 +28,6 @@ function compose({
     overlayContentAvailable: liveAvailable,
     liveTranslationVisible: liveVisible,
     assistantOpen,
-    assistantPdfPane,
   });
 }
 
@@ -103,15 +101,6 @@ test("pane composition matrix collapses to a single discriminated union", () => 
         kind: "source-only",
         sourceViewOnly: false,
         panes: { compareMode: false, showSource: true, showTranslated: false, overlayOnSource: false, visibleMode: "source" },
-      },
-    },
-    {
-      name: "assistantPdfPane override locks the visible pane",
-      input: { mode: "compare", sourceViewOnly: false, hasTranslated: true, assistantOpen: true, assistantPdfPane: "translated" },
-      expected: {
-        kind: "translated-only",
-        sourceViewOnly: false,
-        panes: { compareMode: false, showSource: false, showTranslated: true, overlayOnSource: false, visibleMode: "translated" },
       },
     },
     {

@@ -1,4 +1,7 @@
-/** dock 面板的通用外壳：贴住右侧工作区、Esc 关闭、keepMounted 时藏而不卸载。
+/** dock 面板的通用外壳：贴住右侧工作区、Esc 关闭、关掉就卸载。
+ *
+ * 以前还有 keepMounted（关掉时藏而不卸载），只给终端、画布用；它们 2026-11-03 随 RetainPDF 自己的 AI 删了，
+ * 2026-11-12 连同 react-pdf.css 里那条 [data-hidden] 规则一起删掉。
  *
  * ## 这里原来还有「浮窗」形态，删掉了
  *
@@ -36,17 +39,9 @@ export type ReaderPanelShellProps = {
     open: boolean;
     ariaLabel: string;
     className?: string;
-    /** 关掉时**隐藏而不是卸载**。
-     *
-     * 只给「卸载会丢掉不可重建的状态」的面板用：终端卸载 = 关 WebSocket = 杀掉
-     * PTY 子进程，正在生成的那一轮回答直接没了；画布卸载 = tldraw 整个重建。
-     *
-     * 默认 false —— 多数面板卸载掉更省内存，而且重开时重新拉数据反而是对的。
-     */
-    keepMounted?: boolean;
     onClose: () => void;
     toolbar?: ReactNode;
     children: ReactNode;
 };
-export declare function ReaderPanelShell({ id, open, ariaLabel, className, keepMounted, onClose, toolbar, children, }: ReaderPanelShellProps): import("react").JSX.Element;
+export declare function ReaderPanelShell({ id, open, ariaLabel, className, onClose, toolbar, children, }: ReaderPanelShellProps): import("react").JSX.Element;
 //# sourceMappingURL=ReaderPanelShell.d.ts.map

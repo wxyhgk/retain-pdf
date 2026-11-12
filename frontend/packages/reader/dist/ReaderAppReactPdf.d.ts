@@ -41,7 +41,6 @@ export declare function resolveReaderPaneComposition(input: {
     overlayContentAvailable: boolean;
     liveTranslationVisible: boolean;
     assistantOpen: boolean;
-    assistantPdfPane?: "source" | "translated" | null;
 }): ReaderPaneComposition;
 /**
  * 切换工作区页签时，是否自动开关实时译文叠加。

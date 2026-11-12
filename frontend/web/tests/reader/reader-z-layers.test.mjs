@@ -92,7 +92,6 @@ const TOKENS = zTokens();
  * 批注卡和圆钮那两层不在这里了：可拖动浮窗和可拖动圆钮整套删除，面板进了
  * dock（z-index 24，在 chrome 之下），那两个 token 没有消费者也没有定义。 */
 const FLOATING_LAYERS = [
-  "--z-selection-pop",
   "--z-popover",
   "--z-region-popover",
   "--z-citation-hover",
@@ -152,7 +151,8 @@ test("每个 var(--z-*) 都有定义，且 fallback 等于定义值", () => {
       }
     }
   }
-  assert.ok(seen >= 10, `只扫到 ${seen} 处 var(--z-*)，正则八成没匹配上`);
+  // 2026-11-12 删了选中菜单和 AI 批注的样式，剩 8 处；下限只为发现正则失效，不是要求这么多。
+  assert.ok(seen >= 6, `只扫到 ${seen} 处 var(--z-*)，正则八成没匹配上`);
   assert.deepEqual(problems, [], problems.join("\n"));
 });
 

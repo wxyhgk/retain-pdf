@@ -1,4 +1,7 @@
-/** dock 面板的通用外壳：贴住右侧工作区、Esc 关闭、keepMounted 时藏而不卸载。
+/** dock 面板的通用外壳：贴住右侧工作区、Esc 关闭、关掉就卸载。
+ *
+ * 以前还有 keepMounted（关掉时藏而不卸载），只给终端、画布用；它们 2026-11-03 随 RetainPDF 自己的 AI 删了，
+ * 2026-11-12 连同 react-pdf.css 里那条 [data-hidden] 规则一起删掉。
  *
  * ## 这里原来还有「浮窗」形态，删掉了
  *
@@ -38,14 +41,6 @@ export type ReaderPanelShellProps = {
   open: boolean;
   ariaLabel: string;
   className?: string;
-  /** 关掉时**隐藏而不是卸载**。
-   *
-   * 只给「卸载会丢掉不可重建的状态」的面板用：终端卸载 = 关 WebSocket = 杀掉
-   * PTY 子进程，正在生成的那一轮回答直接没了；画布卸载 = tldraw 整个重建。
-   *
-   * 默认 false —— 多数面板卸载掉更省内存，而且重开时重新拉数据反而是对的。
-   */
-  keepMounted?: boolean;
   onClose: () => void;
   toolbar?: ReactNode;
   children: ReactNode;
@@ -56,7 +51,6 @@ export function ReaderPanelShell({
   open,
   ariaLabel,
   className = "",
-  keepMounted = false,
   onClose,
   toolbar,
   children,
@@ -74,13 +68,7 @@ export function ReaderPanelShell({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // keepMounted 的面板即使关着也留在树上，只是隐藏。
-  //
-  // 这里原本是无条件 `if (!open) return null`，于是 ReaderHostPanelShell 的
-  // keepMounted 只让**壳组件**留在树上，壳内部又把子树整个摘掉 —— 终端里
-  // `hidden={!open}` 那行和「卸载会杀掉 PTY」的注释根本没机会生效。
-  // 表现是：从终端切到画布，正在生成的回答就断了。
-  if (!open && !keepMounted) return null;
+  if (!open) return null;
 
   return (
     <aside
@@ -89,16 +77,6 @@ export function ReaderPanelShell({
       aria-label={ariaLabel}
       role="dialog"
       aria-modal="false"
-      // keepMounted 且关着：留在树上但挪出视线（定位交给 CSS 的
-      // [data-hidden]，见 reader/styles/react-pdf.css）。
-      //
-      // **不能用 display:none** —— xterm 在 0 尺寸容器里 fit() 会算成 1 行，
-      // 回来得重新 fit，中间那段输出全挤在一行。挪到视口外保住真实尺寸。
-      //
-      // inert + aria-hidden：藏起来的面板不该被 Tab 走到，也不该被读屏念出来。
-      data-hidden={!open ? "" : undefined}
-      inert={!open ? true : undefined}
-      aria-hidden={!open ? true : undefined}
     >
       {toolbar ? <div className="reader-notes-panel-toolbar">{toolbar}</div> : null}
       <div className="reader-notes-panel-body">{children}</div>

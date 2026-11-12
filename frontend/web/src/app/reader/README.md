@@ -31,5 +31,5 @@ exports; they must never resolve files below `frontend/packages/reader/src` dire
 The one exception is shared soft-navigation: `src/platform/navigation/soft-reader.ts`
 re-exports the package source so the host and ReaderCloseHome share one implementation
 until the package publishes a navigation export.
-The web host owns exactly five adapter entries under `features/reader/domain/host`:
-`ai.ts`, `config.ts`, `content.ts`, `data.ts`, and `state.ts`.
+The web host owns exactly four adapter entries under `features/reader/domain/host`:
+`config.ts`, `content.ts`, `data.ts`, and `state.ts` (`ai.ts` went with RetainPDF's own AI on 2026-11-03).

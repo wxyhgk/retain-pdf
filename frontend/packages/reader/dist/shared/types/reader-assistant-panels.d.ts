@@ -25,8 +25,9 @@
  * shared/state 的 view-state 也要用它 —— 带图标的完整规格在
  * components/react-pdf/reader-base-panels.ts。
  *
- * 2026-11-03 起只剩 Markdown：RetainPDF 自己的 AI（宿主槽位面板「AI」= agent 终端、画板）删了，产品里只留
- * Studio 的 AI。存着的旧面板 id（"terminal"）读回来不认，当没开（isReaderAssistantPanel）。
+ * 2026-11-03 起只剩 Markdown：RetainPDF 自己的 AI（宿主槽位面板「AI」= agent 终端、画板）删了；批注、摘录
+ * 更早就没了。存着的旧面板 id（"terminal"）读回来不认，当没开（isReaderAssistantPanel）。下面这套「多面板」
+ * 清单和 dock 机制留到 Markdown 面板改造时一起收（docs/ops/planning/frontend-migration/20261112-阅读页改进.md）。
  */
 /** 包自己渲染的面板。内容在包里，不需要宿主注入。 */
 export declare const READER_BASE_PANEL_IDS: readonly ["markdown"];
