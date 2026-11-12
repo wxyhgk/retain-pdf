@@ -52,3 +52,98 @@ test("术语页签：显示领域、术语、冲突、风格规则；点「通�
   assert.match(doc.querySelector(".book-detail-terms-rules").textContent, /风格指南没生成成功/);
   root.unmount();
 });
+
+// ---- 存为我的术语表（#99、#145） ----
+
+test("书的术语转术语表词条：锁定 → 固定译法、保留原文 → 保留原词（译文写原词）、自由 → 优先；通用词不进；按出现次数排", async () => {
+  const { glossaryEntriesFromTerms, defaultGlossaryName } = await import("../../src/features/book-detail/domain/terms-model.js");
+  const rows = termRows(RAW);
+  const { entries, skipped, truncated } = glossaryEntriesFromTerms(rows, ["lock", "keep_original", "free"]);
+  assert.deepEqual(entries.map((e) => [e.source, e.target, e.level, e.note]), [
+    ["fiber", "纤程", "canonical", "专业术语"],
+    ["effect", "效应", "preferred", "专业术语"],
+    ["Haskell", "Haskell", "preserve", "专业术语"],
+  ]);
+  assert.equal(skipped, 0);
+  assert.equal(truncated, 0);
+  assert.deepEqual(glossaryEntriesFromTerms(rows, ["lock"]).entries.map((e) => e.source), ["fiber"]);
+  assert.equal(defaultGlossaryName("  Types and   Programming Languages "), "Types and Programming Languages · 术语");
+  assert.equal(defaultGlossaryName(""), "这本书的术语");
+});
+
+test("书的术语转术语表词条：没有译文、太长的跳过；同一原词只留出现最多的；超过 1000 条截掉并计数", async () => {
+  const { glossaryEntriesFromTerms } = await import("../../src/features/book-detail/domain/terms-model.js");
+  const bad = termRows([
+    { source: "monad", target: "", treatment: "lock", frequency: 5 },
+    { source: "x".repeat(201), target: "长", treatment: "lock", frequency: 4 },
+    { source: "fiber", target: "纤维", treatment: "lock", frequency: 3 },
+    { source: "fiber", target: "纤程", treatment: "lock", frequency: 9 },
+  ]);
+  const result = glossaryEntriesFromTerms(bad, ["lock"]);
+  assert.deepEqual(result.entries.map((e) => e.target), ["纤程"]);
+  assert.equal(result.skipped, 2);
+  const many = termRows(Array.from({ length: 1003 }, (_, i) => ({ source: `t${i}`, target: `译${i}`, treatment: "lock", frequency: 2000 - i })));
+  const capped = glossaryEntriesFromTerms(many, ["lock"]);
+  assert.equal(capped.entries.length, 1000);
+  assert.equal(capped.truncated, 3);
+  assert.equal(capped.entries[0].source, "t0", "出现次数多的先进");
+});
+
+test("术语页签「存为我的术语表」：默认存锁定和保留原文，存好后提示、发 glossariesChanged；失败就地说原因", async () => {
+  const dom = makeDomWith("", {
+    html: "<!doctype html><html><body><div id='root'></div></body></html>",
+    keys: ["window", "document", "HTMLElement", "HTMLButtonElement", "HTMLInputElement", "Element", "Event", "MouseEvent", "KeyboardEvent", "Node", "MutationObserver", "NodeFilter", "CustomEvent", "DocumentFragment"],
+  });
+  globalThis.getComputedStyle = dom.window.getComputedStyle.bind(dom.window);
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { BookDetailTermsTab } = await import("../../src/features/book-detail/ui/tabs/BookDetailTermsTab.jsx");
+  const { APP_EVENTS } = await import("../../src/platform/contracts/app-contract.js");
+  const load = async (_jobId, dataset) => {
+    if (dataset === "terms") return { kind: "rows", available: true, total: RAW.length, rows: RAW };
+    if (dataset.startsWith("style_r") || dataset === "term_conflicts") return { kind: "rows", available: true, total: 0, rows: [] };
+    return { kind: "object", available: false, total: 0, object: null };
+  };
+  const created = [];
+  let fail = true;
+  const createGlossary = async (payload) => {
+    created.push(payload);
+    if (fail) throw new Error("保存术语表失败: 400 glossary entry requires both source and target");
+    return { glossary_id: "g1" };
+  };
+  const events = [];
+  dom.window.document.addEventListener(APP_EVENTS.glossariesChanged, () => events.push("changed"));
+  const root = createRoot(dom.window.document.getElementById("root"));
+  const doc = dom.window.document;
+  const click = (el) => el.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+  try {
+    root.render(React.createElement(BookDetailTermsTab, { jobId: "job-1", title: "Types and Programming Languages", load, createGlossary }));
+    await waitFor(() => doc.querySelector("#book-detail-save-terms"), "「存为我的术语表」按钮");
+    click(doc.querySelector("#book-detail-save-terms"));
+    await waitFor(() => doc.querySelector("#book-detail-save-terms-name"), "打开保存窗口");
+    assert.equal(doc.querySelector("#book-detail-save-terms-name").value, "Types and Programming Languages · 术语");
+    assert.equal(doc.querySelector("[data-save-terms-kind='lock']").checked, true);
+    assert.equal(doc.querySelector("[data-save-terms-kind='keep_original']").checked, true);
+    assert.equal(doc.querySelector("[data-save-terms-kind='free']").checked, false, "自由翻译默认不存");
+    assert.match(doc.querySelector("[data-save-terms-summary]").textContent, /将存 2 条/);
+
+    click(doc.querySelector("#book-detail-save-terms-submit"));
+    await waitFor(() => /glossary entry requires/.test(doc.body.textContent), "失败原因就地显示");
+    assert.ok(doc.querySelector("#book-detail-save-terms-name"), "失败时窗口不关");
+    assert.equal(events.length, 0);
+
+    fail = false;
+    click(doc.querySelector("#book-detail-save-terms-submit"));
+    await waitFor(() => doc.querySelector("[data-terms-saved]"), "存好后的提示");
+    assert.match(doc.querySelector("[data-terms-saved]").textContent, /已存为术语表「Types and Programming Languages · 术语」，共 2 条/);
+    assert.deepEqual(events, ["changed"]);
+    const last = created.at(-1);
+    assert.equal(last.name, "Types and Programming Languages · 术语");
+    assert.match(last.description, /Types and Programming Languages/);
+    assert.deepEqual(last.entries.map((e) => [e.source, e.level]), [["fiber", "canonical"], ["Haskell", "preserve"]]);
+    await waitFor(() => !doc.querySelector("#book-detail-save-terms-name"), "存好后窗口关掉");
+  } finally {
+    root.unmount();
+    delete globalThis.getComputedStyle;
+  }
+});

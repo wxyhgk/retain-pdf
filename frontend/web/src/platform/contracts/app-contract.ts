@@ -19,6 +19,7 @@
 //   C recent-jobs/bindings + dialog-runtime 自身（close 先写 data-open，见 composition 注释）
 // openReaderRequested: P library-domain/library-controller/FavoritesView/library-search →
 //   C ReaderNavigation(useAppEvent)
+// glossariesChanged: P book-detail 术语页「存为我的术语表」 → C create-lifecycle → 提交窗口术语表下拉重读
 // 已删 submitBusyChanged（原 P app-actions/view.setSubmitBusy，0 消费者，连带 dispatch 与测试期望一起删）。
 // 注意：retainpdf:credentials-changed（裸串，非本表成员）不可删，desktop  bundles 门禁要求其存在。
 export const APP_EVENTS = {
@@ -32,6 +33,7 @@ export const APP_EVENTS = {
   openTranslationWorkflow: "retainpdf:open-translation-workflow",
   closeTranslationWorkflow: "retainpdf:close-translation-workflow",
   openReaderRequested: "retainpdf:open-reader-requested",
+  glossariesChanged: "retainpdf:glossaries-changed",
 };
 
 export const APP_DIALOG_IDS = {

@@ -1,9 +1,13 @@
-// Tab「术语」：这本书翻译时用的术语表、术语冲突、风格规则和领域判断。只读；改术语表、导出成用户术语表
-// 等后端接口好了再加。数据全部来自通用取数接口（第一次点开这个页签才读）。
+// Tab「术语」：这本书翻译时用的术语表、术语冲突、风格规则和领域判断。数据全部来自通用取数接口
+// （第一次点开这个页签才读）。这里不改这本书的术语；「存为我的术语表」把它存成一张用户术语表
+// （SaveTermsGlossaryDialog），在「设置 → 术语表」里改，翻译时选它。
 import { useEffect, useState } from "react";
-import { Input, SegmentedControl } from "@retainpdf/ui";
+import { Button, Input, SegmentedControl } from "@retainpdf/ui";
+import { BookmarkPlus, Check } from "lucide-react";
 
-import { fetchJobData } from "@/platform/api/index.js";
+import { createGlossaryApi, fetchJobData } from "@/platform/api/index.js";
+import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
+import { SaveTermsGlossaryDialog, type CreateGlossaryFromTerms } from "../panels/SaveTermsGlossaryDialog.js";
 import type { JobDataView } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import {
@@ -22,6 +26,7 @@ type Row = Record<string, unknown>;
 type LoadDataset = (jobId: string, dataset: string, query?: Parameters<typeof fetchJobData>[3]) => Promise<JobDataView>;
 
 const defaultLoad: LoadDataset = (jobId, dataset, query) => fetchJobData(jobId, API_PREFIX, dataset, query);
+const defaultCreateGlossary: CreateGlossaryFromTerms = (payload) => createGlossaryApi(API_PREFIX, payload);
 
 const VISIBLE_LIMIT = 300;
 const FILTERS: TreatmentFilter[] = ["all", "lock", "keep_original", "free", "drop"];
@@ -39,16 +44,33 @@ function text(value: unknown): string {
   return `${value ?? ""}`.trim();
 }
 
-export function BookDetailTermsTab({ jobId, load = defaultLoad }: { jobId: string; load?: LoadDataset }) {
+export function BookDetailTermsTab({
+  jobId,
+  title = "",
+  load = defaultLoad,
+  createGlossary = defaultCreateGlossary,
+  onOpenGlossarySettings,
+}: {
+  jobId: string;
+  /** 书名：存成术语表时做默认表名。 */
+  title?: string;
+  load?: LoadDataset;
+  createGlossary?: CreateGlossaryFromTerms;
+  /** 存好后的「去改」：打开设置的术语表页。页签不直接碰主页服务（架构门禁），由详情弹窗传进来；不给就不画。 */
+  onOpenGlossarySettings?: () => void;
+}) {
   const [data, setData] = useState<Loaded | null>(null);
   const [error, setError] = useState("");
   const [treatment, setTreatment] = useState<TreatmentFilter>("all");
   const [search, setSearch] = useState("");
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saved, setSaved] = useState<{ name: string; count: number } | null>(null);
 
   useEffect(() => {
     let disposed = false;
     setData(null);
     setError("");
+    setSaved(null);
     if (!jobId) return undefined;
     Promise.all([
       load(jobId, "terms", { sort: "-frequency", limit: 1000 }),
@@ -105,7 +127,22 @@ export function BookDetailTermsTab({ jobId, load = defaultLoad }: { jobId: strin
         <div className="book-detail-overview-card-heading">
           <h3>术语表</h3>
           <span className="book-detail-terms-sub">{counts.all} 个 · 冲突 {data.conflicts.length} 处</span>
+          {counts.lock + counts.keep_original + counts.free > 0 ? (
+            <Button variant="secondary" size="sm" id="book-detail-save-terms" className="book-detail-terms-save" onClick={() => setSaveOpen(true)}>
+              <BookmarkPlus aria-hidden="true" />
+              存为我的术语表
+            </Button>
+          ) : null}
         </div>
+        {saved ? (
+          <p className="book-detail-terms-saved" data-terms-saved="true" role="status">
+            <Check aria-hidden="true" />
+            <span>已存为术语表「{saved.name}」，共 {saved.count} 条。翻译时在选项里选它就能用。</span>
+            {onOpenGlossarySettings ? (
+              <Button variant="ghost" size="sm" className="book-detail-terms-saved-edit" onClick={onOpenGlossarySettings}>去改</Button>
+            ) : null}
+          </p>
+        ) : null}
         <SegmentedControl<TreatmentFilter>
           size="sm"
           label="按处理方式"
@@ -148,6 +185,19 @@ export function BookDetailTermsTab({ jobId, load = defaultLoad }: { jobId: strin
         {visible.length > VISIBLE_LIMIT ? <p className="book-detail-terms-note">只列出前 {VISIBLE_LIMIT} 个，共 {visible.length} 个；可以搜索缩小范围。</p> : null}
         {data.termsTotal > data.terms.length ? <p className="book-detail-terms-note">术语表共 {data.termsTotal} 个，这里读了前 {data.terms.length} 个。</p> : null}
       </section>
+
+      <SaveTermsGlossaryDialog
+        open={saveOpen}
+        onOpenChange={setSaveOpen}
+        terms={data.terms}
+        bookTitle={title}
+        createGlossary={createGlossary}
+        onSaved={(result) => {
+          setSaved(result);
+          // 提交窗口的术语表下拉只在第一次打开时读一次列表，告诉它重读（create-lifecycle 接）。
+          document.dispatchEvent(new CustomEvent(APP_EVENTS.glossariesChanged));
+        }}
+      />
 
       {data.conflicts.length ? (
         <section className="book-detail-overview-card book-detail-terms-conflicts" aria-label="术语冲突">

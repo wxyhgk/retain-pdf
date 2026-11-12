@@ -15,6 +15,7 @@ test("app contract centralizes global retainpdf events and dialog roots", () => 
     Object.values(APP_EVENTS).filter((value) => value.startsWith("retainpdf:")).sort(),
     [
       "retainpdf:close-translation-workflow",
+      "retainpdf:glossaries-changed",
       "retainpdf:library-job-created",
       "retainpdf:library-job-updated",
       "retainpdf:library-refresh-requested",
