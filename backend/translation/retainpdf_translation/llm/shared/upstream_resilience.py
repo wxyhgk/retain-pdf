@@ -123,11 +123,23 @@ def describe_upstream_error(exc: BaseException) -> str:
     return f"{base} | {hint}" if hint else base
 
 
-def skipped_after_auth_rejection_error(rejected: BaseException) -> requests.HTTPError:
-    """同一组凭据已被拒过：这次不发请求，直接抛一个同状态码的错误（各处照旧按 401/403 处理）。"""
+CREDENTIAL_REJECTION_STATUS_CODES = frozenset({401, 402, 403})
+
+
+def is_credential_rejection(exc: BaseException) -> bool:
+    """这组 base_url + Key 之后的请求注定同样被拒：Key 无效、没权限（401/403）或账户余额不足（402）。"""
+    return http_status_of(exc) in CREDENTIAL_REJECTION_STATUS_CODES
+
+
+def _rejection_reason(status: int | None) -> str:
+    return "账户余额不足" if status == QUOTA_STATUS_CODE else "被拒绝"
+
+
+def skipped_after_credential_rejection_error(rejected: BaseException) -> requests.HTTPError:
+    """同一组凭据已被拒过：这次不发请求，直接抛一个同状态码的错误（各处照旧按 401/402/403 处理）。"""
     status = http_status_of(rejected)
     return requests.HTTPError(
-        f"{rejected} | 同一组 base_url 和 API Key 已被上游拒绝（{status}），这次没有再发请求",
+        f"{rejected} | 同一组 base_url 和 API Key 已被上游{_rejection_reason(status)}（{status}），这次没有再发请求",
         response=getattr(rejected, "response", None),
     )
 
@@ -135,21 +147,27 @@ def skipped_after_auth_rejection_error(rejected: BaseException) -> requests.HTTP
 def credential_rejected_error(rejected: BaseException) -> requests.HTTPError:
     """翻译凭据被拒后整份翻译停下时抛的错误：中文说明放最前（结构化失败的摘录只取前 280 字）。"""
     status = http_status_of(rejected)
-    return requests.HTTPError(
-        f"翻译 API Key 被上游拒绝（HTTP {status}），已停止翻译，剩下的块没有再发请求。"
-        f"请检查 API Key、权限和 base_url 配置后重试 | 第一次被拒：{rejected}",
-        response=getattr(rejected, "response", None),
-    )
+    if status == QUOTA_STATUS_CODE:
+        head = (
+            f"翻译 API 账户余额不足（HTTP {status}），已停止翻译，剩下的块没有再发请求。"
+            "请充值或检查账户额度后重试"
+        )
+    else:
+        head = (
+            f"翻译 API Key 被上游拒绝（HTTP {status}），已停止翻译，剩下的块没有再发请求。"
+            "请检查 API Key、权限和 base_url 配置后重试"
+        )
+    return requests.HTTPError(f"{head} | 第一次被拒：{rejected}", response=getattr(rejected, "response", None))
 
 
 def raise_if_credential_rejected(run_diagnostics, *, base_url: str, api_key: str) -> None:
-    """本次运行里这组凭据被上游以 401/403 拒过，就抛 ``credential_rejected_error``。
+    """本次运行里这组凭据被上游以 401/402/403 拒过，就抛 ``credential_rejected_error``。
 
     ``run_diagnostics`` 为 None（单测直接调阶段函数）时什么都不做。
     """
     if run_diagnostics is None:
         return
-    rejected = run_diagnostics.auth_rejection(base_url=base_url, api_key=api_key)
+    rejected = run_diagnostics.credential_rejection(base_url=base_url, api_key=api_key)
     if rejected is not None:
         raise credential_rejected_error(rejected)
 
@@ -175,6 +193,7 @@ def review_retry_delay(retry_index: int) -> float:
 
 
 __all__ = [
+    "CREDENTIAL_REJECTION_STATUS_CODES",
     "NON_RETRYABLE_STATUS_CODES",
     "QUOTA_STATUS_CODE",
     "REVIEW_BACKOFF_BASE_SECS",
@@ -187,11 +206,12 @@ __all__ = [
     "http_status_of",
     "is_auth_error",
     "is_bad_request_error",
+    "is_credential_rejection",
     "is_non_retryable_client_error",
     "is_quota_error",
     "is_transient_upstream_error",
     "raise_if_credential_rejected",
     "retry_after_seconds",
     "review_retry_delay",
-    "skipped_after_auth_rejection_error",
+    "skipped_after_credential_rejection_error",
 ]
