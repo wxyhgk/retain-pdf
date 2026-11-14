@@ -4,6 +4,6 @@ import {
 } from "@retainpdf/api/quality";
 import { mockable } from "./_mockable.js";
 
-export type { QualityItem, QualityItemKind, QualityItemsView, QualitySummaryView } from "@retainpdf/api/quality";
+export type { QualitySummaryView } from "@retainpdf/api/quality";
 
 export const fetchQualitySummary = mockable(_canonFetchQualitySummary, MockQuality.fetchQualitySummary);

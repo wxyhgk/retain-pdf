@@ -3,8 +3,6 @@
 
 import type {
   JobDiagnosticsView,
-  QualityItemsQuery,
-  QualityItemsView,
   QualitySummaryView,
   TranslationDiagnosticsView,
 } from "@retainpdf/contracts/job-reports";
@@ -26,15 +24,6 @@ export function getQualityReport(
   options?: RequestOptions,
 ): Promise<QualitySummaryView> {
   return request<QualitySummaryView>({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reports/quality`, options });
-}
-
-/** GET /api/v1/jobs/:job_id/reports/quality/items */
-export function listQualityItems(
-  apiPrefix: string | undefined,
-  args: { job_id: string; query?: QualityItemsQuery },
-  options?: RequestOptions,
-): Promise<QualityItemsView> {
-  return request<QualityItemsView>({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reports/quality/items`, query: args.query, options });
 }
 
 /** GET /api/v1/jobs/:job_id/reports/translation */

@@ -163,6 +163,6 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
       logo: modelLogoFor(model.model) || (model.host ? vendorLogoForBaseUrl(`https://${model.host}`) : null),
     })),
     months: months.map((month) => row(month.month, monthLabel(month.month), "", month, monthMax)),
-    summaryLine: view.scope === "job" ? "" : `计入 ${view.jobs_counted} 个任务`,
+    summaryLine: `计入 ${view.jobs_counted} 个任务`,
   };
 }

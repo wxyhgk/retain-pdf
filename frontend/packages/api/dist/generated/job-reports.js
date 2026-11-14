@@ -9,10 +9,6 @@ export function getFailureReport(apiPrefix, args, options) {
 export function getQualityReport(apiPrefix, args, options) {
     return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reports/quality`, options });
 }
-/** GET /api/v1/jobs/:job_id/reports/quality/items */
-export function listQualityItems(apiPrefix, args, options) {
-    return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reports/quality/items`, query: args.query, options });
-}
 /** GET /api/v1/jobs/:job_id/reports/translation */
 export function getTranslationReport(apiPrefix, args, options) {
     return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reports/translation`, options });

@@ -23,12 +23,3 @@ export function getDocumentUsage(
 ): Promise<UsageSummaryView> {
   return request<UsageSummaryView>({ apiPrefix, method: "GET", path: `documents/${encodePathParam(args.document_id)}/usage`, options });
 }
-
-/** GET /api/v1/jobs/:job_id/reports/usage */
-export function getJobUsage(
-  apiPrefix: string | undefined,
-  args: { job_id: string },
-  options?: RequestOptions,
-): Promise<UsageSummaryView> {
-  return request<UsageSummaryView>({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reports/usage`, options });
-}
