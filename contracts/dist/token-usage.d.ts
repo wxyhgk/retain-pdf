@@ -11,7 +11,7 @@ export type TokenUsageSchema = UsageSummaryView;
  */
 export type UsageStageGroup = "translation" | "preparation" | "refine" | "assistant" | "other";
 export interface UsageSummaryView {
-    scope: "job" | "document" | "all";
+    scope: "document" | "all";
     totals: UsageBucket;
     /**
      * 按 total_tokens 从大到小。
