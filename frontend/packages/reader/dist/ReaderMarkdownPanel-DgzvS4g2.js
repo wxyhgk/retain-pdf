@@ -1,7 +1,7 @@
 import { jsxs as _, jsx as b } from "react/jsx-runtime";
 import { useEffect as Y, useRef as T, useState as z, useMemo as De } from "react";
 import { Search as Le, ChevronUp as Ae, ChevronDown as Ue, ListTree as Se } from "lucide-react";
-import { d as pe, r as se, f as fe, u as xe } from "./ReaderApp-C6FE9bMo.js";
+import { d as pe, r as se, f as fe, u as xe } from "./ReaderApp-BOrzHTX0.js";
 import { e as me, m as ze, a as we } from "./markdown-math-XkF5urpn.js";
 import { n as Pe } from "./markdown-payload-kK3ewW_I.js";
 import { r as Te, b as qe } from "./reader-blocks-BxElLvLX.js";
@@ -23,37 +23,33 @@ function Ie({
   open: e,
   ariaLabel: s,
   className: c = "",
-  keepMounted: o = !1,
-  onClose: a,
-  toolbar: d,
-  children: w
+  onClose: o,
+  toolbar: a,
+  children: d
 }) {
   return Y(() => {
     if (!e) return;
-    const E = (p) => {
-      var h;
-      if (p.key !== "Escape") return;
-      const C = p.target;
-      (h = C == null ? void 0 : C.closest) != null && h.call(C, "textarea, input, select, [contenteditable='true']") || (p.preventDefault(), a());
+    const w = (M) => {
+      var U;
+      if (M.key !== "Escape") return;
+      const k = M.target;
+      (U = k == null ? void 0 : k.closest) != null && U.call(k, "textarea, input, select, [contenteditable='true']") || (M.preventDefault(), o());
     };
-    return window.addEventListener("keydown", E), () => window.removeEventListener("keydown", E);
-  }, [e, a]), !e && !o ? null : /* @__PURE__ */ _(
+    return window.addEventListener("keydown", w), () => window.removeEventListener("keydown", w);
+  }, [e, o]), e ? /* @__PURE__ */ _(
     "aside",
     {
       id: t,
-      className: `reader-notes-panel reader-notes-panel--workspace${d ? " has-panel-toolbar" : ""} ${c}`.trim(),
+      className: `reader-notes-panel reader-notes-panel--workspace${a ? " has-panel-toolbar" : ""} ${c}`.trim(),
       "aria-label": s,
       role: "dialog",
       "aria-modal": "false",
-      "data-hidden": e ? void 0 : "",
-      inert: e ? void 0 : !0,
-      "aria-hidden": e ? void 0 : !0,
       children: [
-        d ? /* @__PURE__ */ b("div", { className: "reader-notes-panel-toolbar", children: d }) : null,
-        /* @__PURE__ */ b("div", { className: "reader-notes-panel-body", children: w })
+        a ? /* @__PURE__ */ b("div", { className: "reader-notes-panel-toolbar", children: a }) : null,
+        /* @__PURE__ */ b("div", { className: "reader-notes-panel-body", children: d })
       ]
     }
-  );
+  ) : null;
 }
 function Be(t) {
   return t.normalize("NFKC").trim().toLocaleLowerCase().replace(/[^\p{Letter}\p{Number}]+/gu, "-").replace(/^-+|-+$/g, "") || "section";
@@ -92,18 +88,18 @@ function Ke(t, e) {
 }
 function be(t, e) {
   let s = !1, c = 0, o = 0, a = 0;
-  const d = [], w = [], E = /* @__PURE__ */ new Set(), p = (u, v) => {
+  const d = [], w = [], M = /* @__PURE__ */ new Set(), k = (u, v) => {
     const m = u.ownerDocument.createElement("span");
     m.className = "reader-markdown-image-missing", m.textContent = v, m.title = u.getAttribute("data-reader-md-src") || "", u.replaceWith(m);
   };
   for (const u of t) {
     const v = u.getAttribute("data-reader-md-src") || "", m = u.ownerDocument.baseURI || "http://localhost/";
-    Ve(v, e.protectedBaseUrl || m) ? w.push(u) : Ke(v, m) ? u.src = v : p(u, "[图片地址不可用]");
+    Ve(v, e.protectedBaseUrl || m) ? w.push(u) : Ke(v, m) ? u.src = v : k(u, "[图片地址不可用]");
   }
-  const C = () => {
+  const U = () => {
     var u;
     return (u = e.onProgress) == null ? void 0 : u.call(e, { failed: a, loaded: o, total: w.length });
-  }, h = () => {
+  }, f = () => {
     if (!s)
       for (; c < 4 && d.length > 0; ) {
         const u = d.shift();
@@ -122,23 +118,23 @@ function be(t, e) {
           }
           e.onObjectUrl(V), u.src = V, o += 1;
         }).catch(() => {
-          s || !u.isConnected || (a += 1, p(u, "[图片暂不可用]"));
+          s || !u.isConnected || (a += 1, k(u, "[图片暂不可用]"));
         }).finally(() => {
-          c -= 1, s || (C(), h());
+          c -= 1, s || (U(), f());
         });
       }
-  }, M = (u) => {
-    s || E.has(u) || (E.add(u), d.push(u), h());
+  }, E = (u) => {
+    s || M.has(u) || (M.add(u), d.push(u), f());
   }, q = globalThis.IntersectionObserver;
-  let k = null;
-  return q && w.length > 0 ? (k = new q((u) => {
+  let p = null;
+  return q && w.length > 0 ? (p = new q((u) => {
     u.forEach((v) => {
       if (!v.isIntersecting) return;
       const m = v.target;
-      k == null || k.unobserve(m), M(m);
+      p == null || p.unobserve(m), E(m);
     });
-  }, { root: e.root || null, rootMargin: "600px 0px" }), w.forEach((u) => k == null ? void 0 : k.observe(u))) : w.forEach(M), C(), () => {
-    s = !0, d.length = 0, k == null || k.disconnect();
+  }, { root: e.root || null, rootMargin: "600px 0px" }), w.forEach((u) => p == null ? void 0 : p.observe(u))) : w.forEach(E), U(), () => {
+    s = !0, d.length = 0, p == null || p.disconnect();
   };
 }
 let ue = null;
@@ -159,8 +155,8 @@ function _e(t) {
 function le(t, e, s, c = {}) {
   const o = t.ownerDocument.createElement("template");
   return o.innerHTML = e, _e(o.content), o.content.querySelectorAll("img[src]").forEach((a) => {
-    var E;
-    const d = a.getAttribute("src") || "", w = ((E = c.resolveAssetUrl) == null ? void 0 : E.call(c, s, d)) || d;
+    var M;
+    const d = a.getAttribute("src") || "", w = ((M = c.resolveAssetUrl) == null ? void 0 : M.call(c, s, d)) || d;
     a.setAttribute("data-reader-md-src", w), a.setAttribute("loading", "lazy"), a.setAttribute("decoding", "async"), a.removeAttribute("src");
   }), t.replaceChildren(o.content), t.classList.remove("hidden"), [...t.querySelectorAll("img[data-reader-md-src]")];
 }
@@ -193,16 +189,16 @@ function Me(t, { minChars: e = 16384 } = {}) {
   const a = t.length;
   for (; o < a; ) {
     const d = t.indexOf(`
-`, o), w = d === -1 ? a : d, p = t.slice(o, w).trim(), C = p.match(/^(`{3,}|~{3,})/);
-    if (C) {
-      const h = C[1][0];
-      s ? s === h && (s = "") : s = h;
+`, o), w = d === -1 ? a : d, k = t.slice(o, w).trim(), U = k.match(/^(`{3,}|~{3,})/);
+    if (U) {
+      const f = U[1][0];
+      s ? s === f && (s = "") : s = f;
     }
-    if (!s && p === "") {
-      const h = d === -1 ? a : d + 1;
-      if (h >= e && !He(t, h, c))
-        return { complete: t.slice(0, h), rest: t.slice(h) };
-    } else p !== "" && (c = p);
+    if (!s && k === "") {
+      const f = d === -1 ? a : d + 1;
+      if (f >= e && !He(t, f, c))
+        return { complete: t.slice(0, f), rest: t.slice(f) };
+    } else k !== "" && (c = k);
     if (d === -1) break;
     o = d + 1;
   }
@@ -215,39 +211,39 @@ function Qe({
   searchQueryRef: c,
   reapplySearchRef: o
 }) {
-  const a = T(null), [d, w] = z("尚未加载"), E = T([]), p = T(null), C = T(/* @__PURE__ */ new Map()), h = T([]), M = T(null), q = T(!1), k = T(!1), u = T(null), [v, m] = z([]), [V, I] = z(!1), [O, S] = z(!1), L = () => {
-    for (const n of E.current)
+  const a = T(null), [d, w] = z("尚未加载"), M = T([]), k = T(null), U = T(/* @__PURE__ */ new Map()), f = T([]), E = T(null), q = T(!1), p = T(!1), u = T(null), [v, m] = z([]), [V, I] = z(!1), [O, S] = z(!1), C = () => {
+    for (const n of M.current)
       try {
         URL.revokeObjectURL(n);
       } catch {
       }
-    E.current = [];
+    M.current = [];
   }, N = () => {
     var n, i;
-    (n = p.current) == null || n.call(p), p.current = null;
-    for (const f of h.current) f();
-    h.current = [], (i = M.current) == null || i.call(M), M.current = null, L();
+    (n = k.current) == null || n.call(k), k.current = null;
+    for (const h of f.current) h();
+    f.current = [], (i = E.current) == null || i.call(E), E.current = null, C();
   }, $ = () => {
     const n = a.current;
-    n && (C.current = /* @__PURE__ */ new Map(), m(ae(n, C.current)));
+    n && (U.current = /* @__PURE__ */ new Map(), m(ae(n, U.current)));
   }, r = () => {
     const n = u.current, i = a.current;
     if (!n || !i) return;
-    const f = [...i.querySelectorAll("h1, h2, h3, h4, h5, h6")].find((A) => A.id === n);
-    f && (u.current = null, typeof f.scrollIntoView == "function" && f.scrollIntoView({ block: "start", behavior: "smooth" }));
+    const h = [...i.querySelectorAll("h1, h2, h3, h4, h5, h6")].find((L) => L.id === n);
+    h && (u.current = null, typeof h.scrollIntoView == "function" && h.scrollIntoView({ block: "start", behavior: "smooth" }));
   };
   return Y(() => () => {
     var n;
-    (n = p.current) == null || n.call(p), L();
+    (n = k.current) == null || n.call(k), C();
   }, []), Y(() => {
     if (!t) {
-      N(), m([]), k.current = !1, I(!1);
+      N(), m([]), p.current = !1, I(!1);
       return;
     }
     let n = !1;
-    N(), C.current = /* @__PURE__ */ new Map(), k.current = !1, I(!1), m([]), q.current = !1, u.current = null, S(!1);
-    const i = new AbortController(), f = pe;
-    async function A() {
+    N(), U.current = /* @__PURE__ */ new Map(), p.current = !1, I(!1), m([]), q.current = !1, u.current = null, S(!1);
+    const i = new AbortController(), h = pe;
+    async function L() {
       var l, g, D, P, R, F;
       const B = e.startsWith("doc:");
       if (!e || B) {
@@ -256,11 +252,11 @@ function Qe({
       }
       w("正在加载 Markdown…"), (l = a.current) == null || l.replaceChildren(), (g = a.current) == null || g.classList.add("hidden");
       try {
-        if (typeof (f == null ? void 0 : f.loadMarkdownSource) == "function" && typeof (f == null ? void 0 : f.loadMarkdownRange) == "function") {
-          const x = await f.loadMarkdownSource(e, i.signal);
+        if (typeof (h == null ? void 0 : h.loadMarkdownSource) == "function" && typeof (h == null ? void 0 : h.loadMarkdownRange) == "function") {
+          const x = await h.loadMarkdownSource(e, i.signal);
           if (n) return;
           if (x != null && x.rawUrl) {
-            await U(x);
+            await A(x);
             return;
           }
         }
@@ -285,14 +281,14 @@ function Qe({
         const ce = le(a.current, oe, X, {
           resolveAssetUrl: se
         });
-        m(ae(a.current)), k.current = !0, I(!0), (F = o.current) == null || F.call(o), w("");
+        m(ae(a.current)), p.current = !0, I(!0), (F = o.current) == null || F.call(o), w("");
         const de = a.current.closest(".reader-notes-panel-body");
-        p.current = be(ce, {
+        k.current = be(ce, {
           root: de,
           protectedBaseUrl: X || a.current.ownerDocument.baseURI,
           fetchImage: fe,
           signal: i.signal,
-          onObjectUrl: (J) => E.current.push(J),
+          onObjectUrl: (J) => M.current.push(J),
           onProgress: ({ failed: J }) => {
             !n && J > 0 && w(`正文已加载 · ${J} 张图片不可用`);
           }
@@ -302,7 +298,7 @@ function Qe({
         w(x instanceof Error ? x.message : "Markdown 加载失败");
       }
     }
-    async function U(B) {
+    async function A(B) {
       var J;
       const l = a.current;
       if (!l) return;
@@ -311,8 +307,8 @@ function Qe({
       const G = 4, te = 4e3;
       let re = 0;
       const oe = () => {
-        for (const y of h.current) y();
-        h.current = [], L(), C.current = /* @__PURE__ */ new Map(), m([]);
+        for (const y of f.current) y();
+        f.current = [], C(), U.current = /* @__PURE__ */ new Map(), m([]);
       }, ce = async (y) => {
         const { marked: H } = await ge();
         if (n || !a.current) return;
@@ -324,33 +320,33 @@ function Qe({
           resolveAssetUrl: se
         });
         l.appendChild(ie), l.classList.remove("hidden");
-        const ke = ae(ie, C.current);
+        const ke = ae(ie, U.current);
         ke.length && m((ee) => [...ee, ...ke]), r();
         const $e = be(Oe, {
           root: R,
           protectedBaseUrl: P || l.ownerDocument.baseURI,
           fetchImage: fe,
           signal: i.signal,
-          onObjectUrl: (ee) => E.current.push(ee),
+          onObjectUrl: (ee) => M.current.push(ee),
           onProgress: ({ failed: ee }) => {
             !n && ee > 0 && w(`正文已加载 · ${ee} 张图片不可用`);
           }
         });
-        h.current.push($e);
+        f.current.push($e);
       }, de = async () => {
         q.current || !R || n || l.scrollHeight <= R.clientHeight * 2 || (S(!0), w("已加载部分 · 滚动或点击继续加载"), await new Promise((y) => {
           let H = !1, Q = null;
           const Z = (he) => {
-            H || (H = !0, R.removeEventListener("scroll", ne), Q && (clearTimeout(Q), Q = null), M.current = null, n || (S(!1), he && (re = 0)), y());
+            H || (H = !0, R.removeEventListener("scroll", ne), Q && (clearTimeout(Q), Q = null), E.current = null, n || (S(!1), he && (re = 0)), y());
           }, ne = () => {
             (l.scrollHeight <= R.clientHeight * 2 || R.scrollTop + R.clientHeight >= l.scrollHeight - 800) && Z(!0);
           };
-          M.current = () => Z(!0), R.addEventListener("scroll", ne, { passive: !0 }), re < G && (re += 1, Q = setTimeout(() => Z(!1), te));
+          E.current = () => Z(!0), R.addEventListener("scroll", ne, { passive: !0 }), re < G && (re += 1, Q = setTimeout(() => Z(!1), te));
         }));
       };
       try {
         for (; !j && !n; ) {
-          const y = await f.loadMarkdownRange(
+          const y = await h.loadMarkdownRange(
             B.rawUrl,
             x,
             x + g - 1,
@@ -381,13 +377,13 @@ function Qe({
           }
           j && K.trim() && (await ce(K), K = "");
         }
-        n || ($(), k.current = !0, I(!0), r(), w(""), c.current.trim() && ((J = o.current) == null || J.call(o)));
+        n || ($(), p.current = !0, I(!0), r(), w(""), c.current.trim() && ((J = o.current) == null || J.call(o)));
       } catch (y) {
         if (n || i.signal.aborted) return;
         w(y instanceof Error ? y.message : "Markdown 加载失败");
       }
     }
-    return A(), () => {
+    return L(), () => {
       n = !0, i.abort(), N();
     };
   }, [t, e, s]), {
@@ -398,79 +394,79 @@ function Qe({
     setOutline: m,
     outlineComplete: V,
     setOutlineComplete: I,
-    outlineCompleteRef: k,
+    outlineCompleteRef: p,
     pendingResume: O,
     rebuildOutline: $,
     renderAllRef: q,
     pendingAnchorRef: u,
-    resumeCleanupRef: M
+    resumeCleanupRef: E
   };
 }
 const Ee = 40, Ce = { resolveAssetUrl: se };
 function je(t, e, s, c) {
-  const [o, a] = z(""), [d, w] = z([]), E = T(/* @__PURE__ */ new Map()), [p, C] = z(0);
+  const [o, a] = z(""), [d, w] = z([]), M = T(/* @__PURE__ */ new Map()), [k, U] = z(0);
   return Y(() => {
-    const h = t.current;
-    if (!c || !h) return;
-    let M = !1;
-    const q = new AbortController(), k = [], u = [], v = /* @__PURE__ */ new Map();
-    E.current = v, h.replaceChildren(), a("正在排版…");
-    const m = h.closest(".reader-notes-panel-body"), V = async (O, S) => {
-      const { text: L, slots: N } = me(O, { bareLatex: !0 }), $ = S(L);
+    const f = t.current;
+    if (!c || !f) return;
+    let E = !1;
+    const q = new AbortController(), p = [], u = [], v = /* @__PURE__ */ new Map();
+    M.current = v, f.replaceChildren(), a("正在排版…");
+    const m = f.closest(".reader-notes-panel-body"), V = async (O, S) => {
+      const { text: C, slots: N } = me(O, { bareLatex: !0 }), $ = S(C);
       return N.length > 0 ? we($, N) : $;
-    }, I = async (O, S, L, N) => {
+    }, I = async (O, S, C, N) => {
       if (S.kind === "figure") {
         const r = S.assetUrls.map((n) => `<img src="${Xe(n)}" alt="">`).join("");
         return le(O, r, "", Ce);
       }
-      let $ = await V(Te(S, L), N);
+      let $ = await V(Te(S, C), N);
       return S.kind === "formula" && S.label && ($ += `<span class="reader-md-formula-label">${Ge(S.label)}</span>`), le(O, $, "", Ce);
     };
     return (async () => {
       try {
-        const { marked: O } = await ge(), S = (L) => String(O.parse(L, { async: !1 }));
-        for (let L = 0; L < e.length; L += Ee) {
-          if (M) return;
-          const N = h.ownerDocument.createDocumentFragment(), $ = [];
-          for (const r of e.slice(L, L + Ee)) {
-            const n = h.ownerDocument.createElement("div");
+        const { marked: O } = await ge(), S = (C) => String(O.parse(C, { async: !1 }));
+        for (let C = 0; C < e.length; C += Ee) {
+          if (E) return;
+          const N = f.ownerDocument.createDocumentFragment(), $ = [];
+          for (const r of e.slice(C, C + Ee)) {
+            const n = f.ownerDocument.createElement("div");
             n.className = `reader-md-block is-${r.kind}`, n.dataset.mdBlock = r.key, n.dataset.mdPage = `${r.page}`, n.tabIndex = 0, n.setAttribute("role", "button"), n.setAttribute("aria-label", `跳到第 ${r.page} 页的这一块`);
-            const i = s === "bilingual" && r.hasTranslation, f = i ? ["source", "translated"] : [s === "source" ? "source" : "translated"];
-            for (const A of f) {
-              const U = h.ownerDocument.createElement("div");
-              if (U.className = i ? `reader-md-block-${A}` : "reader-md-block-body", $.push(...await I(U, r, A, S)), M) return;
-              n.appendChild(U);
+            const i = s === "bilingual" && r.hasTranslation, h = i ? ["source", "translated"] : [s === "source" ? "source" : "translated"];
+            for (const L of h) {
+              const A = f.ownerDocument.createElement("div");
+              if (A.className = i ? `reader-md-block-${L}` : "reader-md-block-body", $.push(...await I(A, r, L, S)), E) return;
+              n.appendChild(A);
             }
-            for (const A of r.itemIds) v.set(A, n);
+            for (const L of r.itemIds) v.set(L, n);
             N.appendChild(n);
           }
-          h.appendChild(N), h.classList.remove("hidden"), u.push(be($, {
+          f.appendChild(N), f.classList.remove("hidden"), u.push(be($, {
             root: m,
             // 受保护的判断要以 API 地址为准（它可能是局域网 IP，和静态页不同源）。
             protectedBaseUrl: se("", "/api/v1/"),
             fetchImage: fe,
             signal: q.signal,
-            onObjectUrl: (r) => k.push(r)
+            onObjectUrl: (r) => p.push(r)
           })), await new Promise((r) => setTimeout(r, 0));
         }
-        if (M) return;
-        w(ae(h).filter((L) => {
+        if (E) return;
+        w(ae(f).filter((C) => {
           var N;
-          return !((N = h.querySelector(`#${CSS.escape(L.id)}`)) != null && N.closest(".reader-md-block-source"));
-        })), a(`${e.length} 块`), C((L) => L + 1);
+          return !((N = f.querySelector(`#${CSS.escape(C.id)}`)) != null && N.closest(".reader-md-block-source"));
+        })), a(`${e.length} 块`), U((C) => C + 1);
       } catch (O) {
-        M || a(O instanceof Error ? O.message : "Markdown 排版失败");
+        E || a(O instanceof Error ? O.message : "Markdown 排版失败");
       }
     })(), () => {
-      M = !0, q.abort();
+      E = !0, q.abort();
       for (const O of u) O();
-      for (const O of k)
+      for (const O of p)
         try {
           URL.revokeObjectURL(O);
         } catch {
         }
     };
-  }, [e, s, c, t]), { status: o, outline: d, elementsRef: E, renderedRevision: p };
+  }, [e, s, c, t]), { status: o, outline: d, elementsRef: M, renderedRevision: k };
 }
 function Xe(t) {
   return t.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
@@ -491,54 +487,54 @@ function Ye({
   jumpToBlock: o,
   onClose: a
 }) {
-  const d = T(null), w = e.some((r) => r.hasTranslation), [E, p] = z(w ? "translated" : "source"), { status: C, outline: h, elementsRef: M, renderedRevision: q } = je(d, e, E, t), [k, u] = z(!1), [v, m] = z(""), V = T([]), [I, O] = z(0), [S, L] = z(-1);
+  const d = T(null), w = e.some((r) => r.hasTranslation), [M, k] = z(w ? "translated" : "source"), { status: U, outline: f, elementsRef: E, renderedRevision: q } = je(d, e, M, t), [p, u] = z(!1), [v, m] = z(""), V = T([]), [I, O] = z(0), [S, C] = z(-1);
   Y(() => {
     if (!c) return;
     let r = null;
     const n = () => {
-      const { itemId: f, origin: A } = c.get(), U = f ? M.current.get(f) ?? null : null;
-      U !== r && (r == null || r.classList.remove("is-linked"), r = U, U && (U.classList.add("is-linked"), A === "pdf" && typeof U.scrollIntoView == "function" && U.scrollIntoView({ block: "nearest", behavior: "smooth" })));
+      const { itemId: h, origin: L } = c.get(), A = h ? E.current.get(h) ?? null : null;
+      A !== r && (r == null || r.classList.remove("is-linked"), r = A, A && (A.classList.add("is-linked"), L === "pdf" && typeof A.scrollIntoView == "function" && A.scrollIntoView({ block: "nearest", behavior: "smooth" })));
     };
     n();
     const i = c.subscribe(n);
     return () => {
       i(), r == null || r.classList.remove("is-linked");
     };
-  }, [c, M, q]), Y(() => {
+  }, [c, E, q]), Y(() => {
     const r = d.current;
     if (!r) return;
     const n = (l) => l instanceof Element ? l.closest("[data-md-block]") : null, i = (l) => {
       const g = n(l.target);
       c == null || c.set((g == null ? void 0 : g.dataset.mdBlock) ?? null, "markdown");
-    }, f = () => c == null ? void 0 : c.set(null, "markdown"), A = (l) => {
+    }, h = () => c == null ? void 0 : c.set(null, "markdown"), L = (l) => {
       const g = l == null ? void 0 : l.dataset.mdBlock;
       g && (o == null || o(g));
-    }, U = (l) => {
+    }, A = (l) => {
       var g;
-      (g = r.ownerDocument.getSelection()) != null && g.toString() || l.target instanceof Element && l.target.closest("a[href]") || A(n(l.target));
+      (g = r.ownerDocument.getSelection()) != null && g.toString() || l.target instanceof Element && l.target.closest("a[href]") || L(n(l.target));
     }, B = (l) => {
       if (l.key !== "Enter" && l.key !== " ") return;
       const g = n(l.target);
-      !g || g !== l.target || (l.preventDefault(), A(g));
+      !g || g !== l.target || (l.preventDefault(), L(g));
     };
-    return r.addEventListener("mouseover", i), r.addEventListener("mouseleave", f), r.addEventListener("click", U), r.addEventListener("keydown", B), () => {
-      r.removeEventListener("mouseover", i), r.removeEventListener("mouseleave", f), r.removeEventListener("click", U), r.removeEventListener("keydown", B);
+    return r.addEventListener("mouseover", i), r.addEventListener("mouseleave", h), r.addEventListener("click", A), r.addEventListener("keydown", B), () => {
+      r.removeEventListener("mouseover", i), r.removeEventListener("mouseleave", h), r.removeEventListener("click", A), r.removeEventListener("keydown", B);
     };
   }, [c, o]);
   const N = (r, n = !0) => {
     const i = V.current;
-    if (i.forEach((U) => U.classList.remove("reader-markdown-search-hit-active")), i.length === 0) {
-      L(-1);
+    if (i.forEach((A) => A.classList.remove("reader-markdown-search-hit-active")), i.length === 0) {
+      C(-1);
       return;
     }
-    const f = (r + i.length) % i.length, A = i[f];
-    A.classList.add("reader-markdown-search-hit-active"), L(f), n && typeof A.scrollIntoView == "function" && A.scrollIntoView({ block: "center", behavior: "smooth" });
+    const h = (r + i.length) % i.length, L = i[h];
+    L.classList.add("reader-markdown-search-hit-active"), C(h), n && typeof L.scrollIntoView == "function" && L.scrollIntoView({ block: "center", behavior: "smooth" });
   }, $ = (r, n = !1) => {
     const i = d.current;
     if (!i) return;
     r.trim() || Ne(i);
-    const f = r.trim() ? Re(i, r) : [];
-    V.current = f, O(f.length), N(f.length > 0 ? 0 : -1, n);
+    const h = r.trim() ? Re(i, r) : [];
+    V.current = h, O(h.length), N(h.length > 0 ? 0 : -1, n);
   };
   return Y(() => {
     v.trim() && $(v);
@@ -550,7 +546,7 @@ function Ye({
       ariaLabel: "Markdown 预览",
       className: `is-pane-${s}`,
       onClose: a,
-      toolbar: /* @__PURE__ */ b("span", { className: "reader-notes-count", children: C || "已加载" }),
+      toolbar: /* @__PURE__ */ b("span", { className: "reader-notes-count", children: U || "已加载" }),
       children: [
         /* @__PURE__ */ _("div", { className: "reader-markdown-nav", "aria-label": "Markdown 导航与搜索", children: [
           w ? /* @__PURE__ */ b("div", { className: "reader-md-view-switch", role: "tablist", "aria-label": "显示原文还是译文", children: Je.map((r) => /* @__PURE__ */ b(
@@ -558,9 +554,9 @@ function Ye({
             {
               type: "button",
               role: "tab",
-              "aria-selected": E === r.value,
-              className: E === r.value ? "is-active" : void 0,
-              onClick: () => p(r.value),
+              "aria-selected": M === r.value,
+              className: M === r.value ? "is-active" : void 0,
+              onClick: () => k(r.value),
               children: r.label
             },
             r.value
@@ -609,27 +605,27 @@ function Ye({
             {
               type: "button",
               className: "reader-markdown-outline-toggle",
-              "aria-expanded": k,
-              disabled: h.length === 0,
+              "aria-expanded": p,
+              disabled: f.length === 0,
               onClick: () => u((r) => !r),
               children: [
                 /* @__PURE__ */ b(Se, { size: 13, "aria-hidden": !0 }),
                 "目录",
-                h.length > 0 ? ` ${h.length}` : ""
+                f.length > 0 ? ` ${f.length}` : ""
               ]
             }
           )
         ] }),
-        k && h.length > 0 ? /* @__PURE__ */ b("nav", { className: "reader-markdown-outline", "aria-label": "Markdown 目录", children: h.map((r) => /* @__PURE__ */ b(
+        p && f.length > 0 ? /* @__PURE__ */ b("nav", { className: "reader-markdown-outline", "aria-label": "Markdown 目录", children: f.map((r) => /* @__PURE__ */ b(
           "button",
           {
             type: "button",
             style: { "--reader-md-outline-level": r.level - 1 },
             onClick: () => {
-              var f, A, U;
-              const n = (f = d.current) == null ? void 0 : f.querySelector(`#${CSS.escape(r.id)}`);
-              (A = n == null ? void 0 : n.scrollIntoView) == null || A.call(n, { block: "start", behavior: "smooth" });
-              const i = (U = n == null ? void 0 : n.closest("[data-md-block]")) == null ? void 0 : U.dataset.mdBlock;
+              var h, L, A;
+              const n = (h = d.current) == null ? void 0 : h.querySelector(`#${CSS.escape(r.id)}`);
+              (L = n == null ? void 0 : n.scrollIntoView) == null || L.call(n, { block: "start", behavior: "smooth" });
+              const i = (A = n == null ? void 0 : n.closest("[data-md-block]")) == null ? void 0 : A.dataset.mdBlock;
               i && (o == null || o(i));
             },
             children: r.text
@@ -669,16 +665,16 @@ function Ze({
   side: c = "right",
   onClose: o
 }) {
-  var U, B;
+  var A, B;
   const a = T([]), d = T(""), w = T(() => {
-  }), [E, p] = z(!1), [C, h] = z(""), [M, q] = z(0), [k, u] = z(-1), {
+  }), [M, k] = z(!1), [U, f] = z(""), [E, q] = z(0), [p, u] = z(-1), {
     contentRef: v,
     status: m,
     setStatus: V,
     outline: I,
     outlineComplete: O,
     setOutlineComplete: S,
-    outlineCompleteRef: L,
+    outlineCompleteRef: C,
     pendingResume: N,
     rebuildOutline: $,
     renderAllRef: r,
@@ -690,7 +686,7 @@ function Ze({
     sourceOnly: s,
     searchQueryRef: d,
     reapplySearchRef: w
-  }), f = (l, g = !0) => {
+  }), h = (l, g = !0) => {
     const D = a.current;
     if (D.forEach((F) => F.classList.remove("reader-markdown-search-hit-active")), D.length === 0) {
       u(-1);
@@ -698,14 +694,14 @@ function Ze({
     }
     const P = (l + D.length) % D.length, R = D[P];
     R.classList.add("reader-markdown-search-hit-active"), u(P), g && typeof R.scrollIntoView == "function" && R.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, A = (l, g = !1) => {
+  }, L = (l, g = !1) => {
     var R;
     const D = `${l || ""}`.trim();
     if (r.current = D.length > 0, r.current && ((R = i.current) == null || R.call(i)), !v.current) return;
     const P = Re(v.current, l);
-    a.current = P, q(P.length), f(P.length > 0 ? 0 : -1, g);
+    a.current = P, q(P.length), h(P.length > 0 ? 0 : -1, g);
   };
-  return w.current = () => A(d.current), /* @__PURE__ */ _(
+  return w.current = () => L(d.current), /* @__PURE__ */ _(
     Ie,
     {
       id: "reader-markdown-panel",
@@ -722,26 +718,26 @@ function Ze({
               "input",
               {
                 type: "search",
-                value: C,
+                value: U,
                 placeholder: "搜索正文",
                 "aria-label": "搜索 Markdown 正文",
                 onChange: (l) => {
                   const g = l.target.value;
-                  d.current = g, h(g), A(g, !1);
+                  d.current = g, f(g), L(g, !1);
                 },
                 onKeyDown: (l) => {
-                  l.key !== "Enter" || M === 0 || (l.preventDefault(), f(k + (l.shiftKey ? -1 : 1)));
+                  l.key !== "Enter" || E === 0 || (l.preventDefault(), h(p + (l.shiftKey ? -1 : 1)));
                 }
               }
             ),
-            C ? /* @__PURE__ */ b("span", { className: "reader-markdown-search-count", "aria-live": "polite", children: M > 0 ? `${k + 1}/${M}` : "0/0" }) : null,
+            U ? /* @__PURE__ */ b("span", { className: "reader-markdown-search-count", "aria-live": "polite", children: E > 0 ? `${p + 1}/${E}` : "0/0" }) : null,
             /* @__PURE__ */ b(
               "button",
               {
                 type: "button",
                 "aria-label": "上一个搜索结果",
-                disabled: M === 0,
-                onClick: () => f(k - 1),
+                disabled: E === 0,
+                onClick: () => h(p - 1),
                 children: /* @__PURE__ */ b(Ae, { size: 13, "aria-hidden": !0 })
               }
             ),
@@ -750,8 +746,8 @@ function Ze({
               {
                 type: "button",
                 "aria-label": "下一个搜索结果",
-                disabled: M === 0,
-                onClick: () => f(k + 1),
+                disabled: E === 0,
+                onClick: () => h(p + 1),
                 children: /* @__PURE__ */ b(Ue, { size: 13, "aria-hidden": !0 })
               }
             )
@@ -761,10 +757,10 @@ function Ze({
             {
               type: "button",
               className: "reader-markdown-outline-toggle",
-              "aria-expanded": E,
+              "aria-expanded": M,
               disabled: I.length === 0,
               onClick: () => {
-                $(), S(L.current), p((l) => !l);
+                $(), S(C.current), k((l) => !l);
               },
               children: [
                 /* @__PURE__ */ b(Se, { size: 13, "aria-hidden": !0 }),
@@ -786,7 +782,7 @@ function Ze({
             }
           ) : null
         ] }),
-        E && I.length > 0 ? /* @__PURE__ */ _("nav", { className: "reader-markdown-outline", "aria-label": "Markdown 目录", children: [
+        M && I.length > 0 ? /* @__PURE__ */ _("nav", { className: "reader-markdown-outline", "aria-label": "Markdown 目录", children: [
           O ? null : /* @__PURE__ */ b("p", { className: "reader-markdown-outline-note", children: "仅显示已加载内容，滚动可加载更多" }),
           I.map((l) => /* @__PURE__ */ b(
             "button",
@@ -807,7 +803,7 @@ function Ze({
             l.id
           ))
         ] }) : null,
-        m && !((B = (U = v.current) == null ? void 0 : U.childNodes) != null && B.length) ? /* @__PURE__ */ b("p", { className: "reader-notes-empty", children: m }) : null,
+        m && !((B = (A = v.current) == null ? void 0 : A.childNodes) != null && B.length) ? /* @__PURE__ */ b("p", { className: "reader-notes-empty", children: m }) : null,
         /* @__PURE__ */ b(
           "article",
           {
@@ -828,4 +824,4 @@ export {
   Ve as isProtectedMarkdownAssetUrl,
   be as startMarkdownImageLoading
 };
-//# sourceMappingURL=ReaderMarkdownPanel-cDcXuWqb.js.map
+//# sourceMappingURL=ReaderMarkdownPanel-DgzvS4g2.js.map

@@ -268,16 +268,12 @@
       "fontSize": 2
     },
     "../packages/reader/styles/react-pdf.css": {
-      "fontSize": 13,
-      "borderRadius": 16
+      "fontSize": 8,
+      "borderRadius": 12
     },
     "../packages/reader/styles/reader.utilities.css": {
       "fontSize": 15,
       "borderRadius": 12
-    },
-    "../packages/reader/styles/selection-pop.css": {
-      "fontSize": 5,
-      "borderRadius": 4
     },
     "src/app/home/shell/AppBottomBar.css": {
       "fontSize": 4,
@@ -633,7 +629,6 @@
     "reader_react_hud_btn",
     "reader_react_hud_page_btn",
     "reader_react_shortcuts_btn",
-    "reader_sel_pop_btn",
     "status_action_btn",
     "status_button",
     "status_footer_btn",

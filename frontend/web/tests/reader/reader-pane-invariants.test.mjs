@@ -29,14 +29,13 @@ function allCompositions() {
       for (const translatedUrl of ["", "/t.pdf"])
         for (const overlayContentAvailable of [true, false])
           for (const liveTranslationVisible of [true, false])
-            for (const assistantOpen of [true, false])
-              for (const assistantPdfPane of [null, "source", "translated"]) {
-                const input = {
-                  mode, sourceOnly, translatedUrl, overlayContentAvailable,
-                  liveTranslationVisible, assistantOpen, assistantPdfPane,
-                };
-                rows.push({ input, out: resolveReaderPaneComposition(input) });
-              }
+            for (const assistantOpen of [true, false]) {
+              const input = {
+                mode, sourceOnly, translatedUrl, overlayContentAvailable,
+                liveTranslationVisible, assistantOpen,
+              };
+              rows.push({ input, out: resolveReaderPaneComposition(input) });
+            }
   return rows;
 }
 
@@ -44,7 +43,7 @@ const ROWS = allCompositions();
 
 /** 正对照：输入空间真的被枚举了。数字掉了说明循环被改坏。 */
 test("枚举覆盖整个输入空间", () => {
-  assert.equal(ROWS.length, 3 * 2 * 2 * 2 * 2 * 2 * 3);
+  assert.equal(ROWS.length, 3 * 2 * 2 * 2 * 2 * 2);
   // 而且结果确实是多样的 —— 全部相同说明函数被短路了。
   assert.ok(new Set(ROWS.map((r) => r.out.kind)).size >= 3, "kind 只有一种，函数八成被短路了");
 });
@@ -86,7 +85,6 @@ test("overlayRenderable 名副其实 —— 它说「在画」就得真的在画
   // 那条抓不到这个退化。
   const lying = [];
   for (const { input, out } of ROWS) {
-    if (input.assistantPdfPane !== null) continue; // 栏锁与叠加无关，减少噪声
     const toggles = resolveLiveTranslationToggles({
       hasOverlayContent: input.overlayContentAvailable,
       connection: "live",

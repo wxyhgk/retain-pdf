@@ -1,21 +1,17 @@
 /** 三条会让用户丢东西的。
  *
  * 1. 隐藏栏被当成答案 → 阅读位置被写成第 1 页
- * 2. 栏锁跟着别的面板活下去 → PDF 半边卡在译文栏
+ * 2. （栏锁跟着别的面板活下去：栏锁 2026-11-12 随「从选区问 AI」一起删了，这条门禁跟着删）
  * 3. 一条物理上不可能成功的 retry → 该页永久停在旧版本，并堵住后面所有页 8.2 秒
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
 
 import { pickPageAtFocus } from "../../../packages/reader/src/pdf/scroll-to-page.ts";
 import { decideLiveTranslationSnapshot }
   from "../../../packages/reader/src/shared/data/live-translation-state.ts";
 
-const read = (p) => readFileSync(fileURLToPath(new URL(p, import.meta.url)), "utf8");
-const APP = read("../../../packages/reader/src/ReaderAppReactPdf.tsx");
 
 // ---------------------------------------------------------------- 阅读锚点
 
@@ -50,29 +46,6 @@ test("正对照：栏没被隐藏时照常挑得出页", () => {
 });
 
 // ---------------------------------------------------------------- 栏锁
-
-test("换面板时清掉栏锁 —— 它的语义是「这一次提问」", () => {
-  // 定长窗口是假的：`closeAssistant` 那条原来取 +700 字符，而它的真实函数体只有 4 行 ——
-  // 窗口越过边界，把**下一个** useCallback（changeWorkspace）里的同一行包了进来，
-  // 于是删掉 closeAssistant 里那行、1953 条全绿（子 agent 实测）。
-  // 改成「到下一个 useCallback / useMemo 之前」。
-  const callbackBody = (name) => {
-    const start = APP.indexOf(`const ${name} = useCallback`);
-    assert.ok(start >= 0, `${name} 不见了，这条门禁守错了地方`);
-    const rest = APP.slice(start + 1);
-    const end = rest.search(/\n {2}const \w+ = use(?:Callback|Memo)\(/);
-    assert.ok(end > 0, `找不到 ${name} 的结尾`);
-    return rest.slice(0, end);
-  };
-  for (const [where, name] of [
-    ["换面板", "selectAssistant"],
-    ["关面板", "closeAssistant"],
-    ["切顶栏页签", "changeWorkspace"],
-  ]) {
-    assert.match(callbackBody(name), /setAssistantPdfPane\(null\)/,
-      `${where}没清栏锁 —— 在译文栏问过 AI 之后${where}，PDF 还只剩译文栏`);
-  }
-});
 
 // ---------------------------------------------------------------- 快照决策
 

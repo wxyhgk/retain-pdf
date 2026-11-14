@@ -36,7 +36,6 @@
 @import "./content.css" layer(pages);
 @import "./react-pdf.css" layer(pages);
 @import "./live-translation.css" layer(pages);
-@import "./selection-pop.css" layer(pages);
 @import "./panel-shell.css" layer(pages);
 @import "./float-markdown.css" layer(pages);
 @import "./hud.css" layer(pages);

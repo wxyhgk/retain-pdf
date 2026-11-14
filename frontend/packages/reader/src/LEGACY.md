@@ -16,7 +16,6 @@
 仓库中保留少量历史命名，含义不等同于旧引擎仍存在：
 
 - payload、localStorage 或字段读取中的 `legacy`：兼容旧数据形状；
-- `frontend/packages/reader/styles/*-legacy.css` 等文件：未被当前样式入口导入的历史分片；
 - 注释中的 “对齐 legacy”：描述交互语义来源，不是运行时依赖。
 
 `frontend/web/dist/css/` 现在只保留当前构建产物 `home.css`、`detail.css`、`reader.css`，不再有 `reader-legacy.css`。

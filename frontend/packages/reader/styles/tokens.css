@@ -42,7 +42,6 @@
   --z-ambient: 1;
   --z-chrome: 35;
   --z-hud: 36;
-  --z-selection-pop: 55;
   /* 批注记号的弹窗：position: fixed，落在根栈里，所以得进这份契约而不是就地写死 */
   --z-popover: 60;
   --z-region-popover: 80;

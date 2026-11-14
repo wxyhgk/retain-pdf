@@ -236,17 +236,13 @@ const compose = (patch) => resolveReaderPaneComposition({
   overlayContentAvailable: false,
   liveTranslationVisible: false,
   assistantOpen: false,
-  assistantPdfPane: null,
   ...patch,
 });
 
-test("开着面板时对照退成单栏；从选区问 AI 锁哪一栏就留哪一栏", () => {
+test("开着面板时对照退成单栏", () => {
   const degraded = compose({ assistantOpen: true });
   assert.equal(degraded.visibleMode, "source");
   assert.equal(degraded.showTranslated, false, "右栏确实让给了面板");
-
-  const locked = compose({ assistantOpen: true, assistantPdfPane: "translated" });
-  assert.equal(locked.visibleMode, "translated");
 
   assert.equal(compose({}).visibleMode, "compare", "没开面板就还是对照");
 });

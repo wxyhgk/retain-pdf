@@ -82,7 +82,6 @@ export function resolveReaderPaneComposition(input: {
   overlayContentAvailable: boolean;
   liveTranslationVisible: boolean;
   assistantOpen: boolean;
-  assistantPdfPane?: "source" | "translated" | null;
 }): ReaderPaneComposition {
   const sourceViewOnly = input.sourceOnly || !input.translatedUrl;
   // 单一真值：仅「有可叠加译文内容且用户主动开启且无助手接管」时，
@@ -92,9 +91,8 @@ export function resolveReaderPaneComposition(input: {
     && input.liveTranslationVisible
     && !input.assistantOpen,
   );
-  // AI 从某栏选区发起时锁定该栏；否则助手分栏把对照降级为单栏原文。
-  const pdfMode = input.assistantPdfPane
-    || (input.assistantOpen && input.mode === "compare" ? "source" : input.mode);
+  // 开着面板时把对照降级为单栏原文（以前 AI 还能从某栏选区发起、锁定那一栏，2026-11-03 随 AI 删了）。
+  const pdfMode = input.assistantOpen && input.mode === "compare" ? "source" : input.mode;
   const visibleMode = pdfMode;
   // 对照态叠加不再「消栏」：overlay 只在源栏叠加流式画布，右栏（最终译文）
   // 照常保留。compareMode / showTranslated 不再被 overlay 强制关闭。
@@ -153,7 +151,6 @@ export function ReaderAppReactPdf() {
   const assistant = useReaderAssistantPanel(c.viewStateKey);
   const assistantPanel = assistant.panel;
   const setAssistantPanel = assistant.setPanel;
-  const [assistantPdfPane, setAssistantPdfPane] = useState<"source" | "translated" | null>(null);
   const [liveTranslationVisible, setLiveTranslationVisible] = useState(false);
   const modeScopeRef = useRef<string | null>(null);
   const autoModeRef = useRef<ReaderMode | null>(null);
@@ -171,7 +168,6 @@ export function ReaderAppReactPdf() {
     overlayContentAvailable: hasOverlayContent,
     liveTranslationVisible,
     assistantOpen,
-    assistantPdfPane,
   });
   // 叠层的两个开关分别摆在哪 —— 判断在 live-translation-state.ts 里，因为
   // 「收掉顶栏 pill 之后叠层还够得着吗」这个不变式要能单测（见那里的注释）。
@@ -201,11 +197,6 @@ export function ReaderAppReactPdf() {
   useEffect(() => {
     if (c.session.jobTerminal) setLiveTranslationVisible(false);
   }, [c.session.jobTerminal]);
-
-  // 栏锁（从某栏的选区问 AI）也是按 scope 作废的：换了书那一栏就不是那一栏了。
-  useEffect(() => {
-    setAssistantPdfPane(null);
-  }, [assistant.scope]);
 
   // 阅读模式恢复/持久化：与 anchor/zoom 对齐。sourceViewOnly 时只允许 source。
   // 窄屏没有存档时自动进译文（resolveReaderInitialMode）；停在这个自动默认上时
@@ -250,10 +241,8 @@ export function ReaderAppReactPdf() {
   });
   const closeAssistant = useCallback(() => {
     setAssistantPanel(null);
-    setAssistantPdfPane(null);
   }, []);
   const changeWorkspace = useCallback((next: ReaderWorkspaceMode) => {
-    setAssistantPdfPane(null);
     // A running translation can provide the compare workspace before the
     // immutable translated PDF exists. Keep the visible workspace and the
     // top-bar selection in sync instead of asking the session mode (which is
@@ -288,7 +277,6 @@ export function ReaderAppReactPdf() {
     // 清它的路原来覆盖了「关面板」「切顶栏页签」「换文档」，**唯独漏了换面板**
     // —— 而换面板是 dock 上最常用的动作。漏掉的表现：在译文栏问过 AI 之后点
     // Markdown，面板换了，PDF 那半边却还只剩译文栏，顶栏还挂着「对照被面板挤掉」。
-    setAssistantPdfPane(null);
   }, []);
 
   // 外壳 Context：只装频繁下钻、且此前纯透传的值；currentPage/numPages 走 HUD
