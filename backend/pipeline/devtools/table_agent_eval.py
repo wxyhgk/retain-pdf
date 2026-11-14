@@ -139,6 +139,8 @@ def main(argv: list[str] | None = None) -> int:
     else:
         engine = ENGINES[args.engine]
         api_key = os.environ.get(engine["key_env"], "")
+        if args.engine == "qwen" and os.environ.get("QWEN_BASE_URL"):
+            engine = {**engine, "base_url": os.environ["QWEN_BASE_URL"]}
         if not api_key:
             raise SystemExit(f"环境变量 {engine['key_env']} 没设")
         inner = table_chat_fn(model=engine["model"], base_url=engine["base_url"], api_key=api_key, protocol=engine["protocol"])
