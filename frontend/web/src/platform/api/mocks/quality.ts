@@ -1,5 +1,5 @@
 // 演示模式的质量摘要：形状照后端约定，数字取自一本真实的 88 页书（编辑部精修过）。
-import type { QualityItemKind, QualityItemsView, QualitySummaryView } from "@retainpdf/api/quality";
+import type { QualitySummaryView } from "@retainpdf/api/quality";
 
 export async function fetchQualitySummary(jobId: string): Promise<QualitySummaryView> {
   return {

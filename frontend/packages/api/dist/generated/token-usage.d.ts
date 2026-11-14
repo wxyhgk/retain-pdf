@@ -6,7 +6,3 @@ export declare function getUsageSummary(apiPrefix: string | undefined, _args?: R
 export declare function getDocumentUsage(apiPrefix: string | undefined, args: {
     document_id: string;
 }, options?: RequestOptions): Promise<UsageSummaryView>;
-/** GET /api/v1/jobs/:job_id/reports/usage */
-export declare function getJobUsage(apiPrefix: string | undefined, args: {
-    job_id: string;
-}, options?: RequestOptions): Promise<UsageSummaryView>;
