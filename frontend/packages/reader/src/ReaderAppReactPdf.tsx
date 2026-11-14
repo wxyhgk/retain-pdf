@@ -374,7 +374,7 @@ export function ReaderAppReactPdf() {
   return (
     <ReaderProvider value={readerContext} hud={readerHud}>
       <div className={rootClasses} data-reader-engine="react-pdf" data-reader-workspace={workspaceView}>
-        <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} />
+        <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
         {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
             原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
         <ReaderFinderToggles open={finder} onToggle={toggleFinder} />

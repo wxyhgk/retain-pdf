@@ -118,6 +118,35 @@ test("ReaderErrorNotice can be dismissed without leaving the reader shell and re
   }
 });
 
+test("出错能重试：PDF 下载失败的提示和段落数据失败的提示条都有「重试」，点了重新加载；没给重试就不画", async () => {
+  const env = installDom("http://localhost/reader.html");
+  const root = createRoot(document.getElementById("root"));
+  let retries = 0;
+  const onRetry = () => { retries += 1; };
+  try {
+    await act(async () => {
+      root.render(createElement(ReaderReactBoot, { loading: false, failed: true, text: "PDF 下载失败，请重试", percent: 0, onRetry }));
+    });
+    assert.match(document.querySelector(".reader-react-error").textContent, /PDF 下载失败/);
+    await act(async () => { document.querySelector('[data-reader-retry="boot"]').click(); });
+    assert.equal(retries, 1);
+
+    await act(async () => {
+      root.render(createElement(ReaderReactBoot, { loading: false, failed: false, text: "", percent: 100, regionsError: true, onRetry }));
+    });
+    await act(async () => { document.querySelector('[data-reader-retry="optional"]').click(); });
+    assert.equal(retries, 2);
+
+    await act(async () => {
+      root.render(createElement(ReaderReactBoot, { loading: false, failed: true, text: "失败", percent: 0 }));
+    });
+    assert.equal(document.querySelector("[data-reader-retry]"), null, "没给重试就不画按钮");
+  } finally {
+    await act(async () => root.unmount());
+    env.restore();
+  }
+});
+
 // —— 会话透出：data-port → session-assets → session → controller ——
 
 test("reader session exposes optional artifact failures from the payload", async () => {
