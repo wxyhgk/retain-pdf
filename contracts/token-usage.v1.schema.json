@@ -163,7 +163,7 @@
         "last_at"
       ],
       "properties": {
-        "scope": { "type": "string", "enum": ["job", "document", "all"] },
+        "scope": { "type": "string", "enum": ["document", "all"] },
         "totals": { "$ref": "#/definitions/UsageBucket" },
         "by_stage": { "type": "array", "items": { "$ref": "#/definitions/UsageStageView" }, "description": "按 total_tokens 从大到小。" },
         "by_model": { "type": "array", "items": { "$ref": "#/definitions/UsageModelView" }, "description": "按 total_tokens 从大到小。" },

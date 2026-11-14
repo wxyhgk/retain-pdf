@@ -40,7 +40,7 @@ fn ledger_rows_add_up_by_stage_model_and_month() {
     raw.push_str("{\"ts\": \"2026-10-01T00:0");
     fs::write(&path, raw).unwrap();
 
-    let view = summarize_jobs("job", &root, ["job-a"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-a"], Vec::new());
 
     assert_eq!(view.totals.requests, 4);
     assert_eq!(view.totals.requests_without_usage, 1);
@@ -78,7 +78,7 @@ fn old_jobs_are_estimated_from_their_reports() {
     fs::write(artifacts.join("refine_report.v1.json"), report("2026-10-09T01:56:00+00:00", 114884)).unwrap();
     fs::write(artifacts.join("refine_history/refine_report-1.v1.json"), report("2026-10-08T10:00:00+00:00", 1000)).unwrap();
 
-    let view = summarize_jobs("job", &root, ["job-old"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-old"], Vec::new());
 
     assert_eq!((view.jobs_counted, view.jobs_estimated_from_reports), (1, 1));
     let stage = |name: &str| view.by_stage.iter().find(|s| s.stage == name).unwrap().usage.clone();
@@ -109,7 +109,7 @@ fn reports_already_covered_by_the_ledger_are_not_counted_twice() {
     }).to_string()).unwrap();
     write_ledger(&root, "job-mixed", &[row("2026-10-10T00:01:00Z", "refine_review", 800, 8, None)]);
 
-    let view = summarize_jobs("job", &root, ["job-mixed"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-mixed"], Vec::new());
 
     let stage = |name: &str| view.by_stage.iter().find(|s| s.stage == name).unwrap().usage.clone();
     assert_eq!(stage("translation").input_tokens, 5000, "台账里没有翻译侧的行：翻译仍按旧诊断折算");
@@ -127,7 +127,7 @@ fn a_translated_job_with_a_ledger_ignores_its_diagnostics() {
     }).to_string()).unwrap();
     write_ledger(&root, "job-new", &[row("2026-10-10T00:01:00Z", "term_prescan", 1000, 100, Some(0))]);
 
-    let view = summarize_jobs("job", &root, ["job-new"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-new"], Vec::new());
 
     assert_eq!(view.totals.input_tokens, 1000);
     assert_eq!(view.jobs_estimated_from_reports, 0);
@@ -170,7 +170,7 @@ fn odd_timestamps_are_left_out_of_the_monthly_breakdown() {
         row("2026-1月1日", "translation", 500, 50, None),
     ]);
 
-    let view = summarize_jobs("job", &root, ["job-odd"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-odd"], Vec::new());
 
     assert_eq!(view.totals.requests, 5);
     assert_eq!(view.totals.input_tokens, 1500);
@@ -198,7 +198,7 @@ fn view_fields_match_the_token_usage_contract() {
         cache_hit: Some(4),
         ..UsageRecord::default()
     };
-    let view = serde_json::to_value(summarize("job", &[record], (1, 0))).unwrap();
+    let view = serde_json::to_value(summarize("document", &[record], (1, 0))).unwrap();
     let keys = |value: &serde_json::Value| {
         let mut keys: Vec<String> = value.as_object().unwrap().keys().cloned().collect();
         keys.sort();
