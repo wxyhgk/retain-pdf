@@ -196,6 +196,7 @@ def _preparation_and_reviewer_fields(payload: dict[str, Any]) -> dict[str, str]:
         "reviewer_api_protocol": str(payload.get("reviewer_api_protocol", "") or "").strip().lower(),
         "reviewer_thinking": str(payload.get("reviewer_thinking", "") or "").strip().lower(),
         "engine": str(payload.get("engine", "legacy") or "legacy").strip().lower(),
+        "tables": str(payload.get("tables", "keep") or "keep").strip().lower(),
     }
 
 
@@ -244,6 +245,8 @@ class TranslateStageParams:
     reviewer_thinking: str
     # 翻译引擎：legacy（现有流程，默认）/ agent（retainpdf-translation-agent）。旧 spec 没有这个 key，按 legacy 读
     engine: str = "legacy"
+    # 表格翻译：keep（默认，表格保留原文）/ translate（表格 agent，translate/tables_stage.py）。旧 spec 没有，按 keep 读
+    tables: str = "keep"
 
 
 @dataclass(frozen=True)
@@ -713,6 +716,8 @@ class ProviderStageTranslationParams:
     reviewer_thinking: str
     # 翻译引擎：legacy（现有流程，默认）/ agent（retainpdf-translation-agent）。旧 spec 没有这个 key，按 legacy 读
     engine: str = "legacy"
+    # 表格翻译：keep（默认，表格保留原文）/ translate（表格 agent，translate/tables_stage.py）。旧 spec 没有，按 keep 读
+    tables: str = "keep"
 
 
 @dataclass(frozen=True)
@@ -961,6 +966,8 @@ class BookStageTranslationParams:
     reviewer_thinking: str
     # 翻译引擎：legacy（现有流程，默认）/ agent（retainpdf-translation-agent）。旧 spec 没有这个 key，按 legacy 读
     engine: str = "legacy"
+    # 表格翻译：keep（默认，表格保留原文）/ translate（表格 agent，translate/tables_stage.py）。旧 spec 没有，按 keep 读
+    tables: str = "keep"
 
 
 @dataclass(frozen=True)

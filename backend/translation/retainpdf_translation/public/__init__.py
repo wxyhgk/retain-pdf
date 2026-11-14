@@ -96,6 +96,18 @@ _EXPORTS = {
         "retainpdf_translation.workflow.refine",
         "run_refine_for_render",
     ),
+    # 表格翻译（T3）：表格 agent、术语记忆、整表译文、模型调用
+    "TableContext": ("retainpdf_translation.services.tables", "TableContext"),
+    "TableResult": ("retainpdf_translation.services.tables", "TableResult"),
+    "TableTermMemory": ("retainpdf_translation.services.tables", "TableTermMemory"),
+    "TABLE_PROMPT_VERSION": ("retainpdf_translation.services.tables", "PROMPT_VERSION"),
+    "TABLE_STATUS_TRANSLATED": ("retainpdf_translation.services.tables", "STATUS_TRANSLATED"),
+    "table_cache_key": ("retainpdf_translation.services.tables", "cache_key"),
+    "table_chat_fn": ("retainpdf_translation.services.tables.llm", "table_chat_fn"),
+    "translate_table": ("retainpdf_translation.services.tables", "translate_table"),
+    "translated_table_html": ("retainpdf_translation.services.tables", "translated_table_html"),
+    "is_credential_rejection": ("retainpdf_translation.llm.shared.upstream_resilience", "is_credential_rejection"),
+    "credential_rejected_error": ("retainpdf_translation.llm.shared.upstream_resilience", "credential_rejected_error"),
 }
 
 __all__ = list(_EXPORTS)

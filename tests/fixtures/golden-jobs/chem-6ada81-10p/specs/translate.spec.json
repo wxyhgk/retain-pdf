@@ -39,6 +39,7 @@
     "rule_profile_name": "general_sci",
     "skip_title_translation": false,
     "start_page": 0,
+    "tables": "keep",
     "thinking": "auto",
     "workers": 100
   },

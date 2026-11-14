@@ -172,6 +172,10 @@ export interface PublicTranslationInput {
    * TRANSLATION_ENGINES：legacy（现有流程）/ agent（翻译 agent）。
    */
   engine?: string;
+  /**
+   * TRANSLATION_TABLE_MODES：keep（表格保留原文）/ translate（表格 agent 翻表格）。
+   */
+  tables?: string;
   start_page: number;
   end_page: number;
   page_ranges: number[];
