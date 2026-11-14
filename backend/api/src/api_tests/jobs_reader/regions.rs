@@ -154,21 +154,6 @@ async fn reader_regions_route_maps_translated_items_to_source_blocks() {
         json!(["/api/v1/jobs/reader-region-job/files/output/ocr/images/page-8/imgs/chart%20a.png"])
     );
 
-    // One block for quoting a paragraph: the same entry as in the list. The translation's
-    // three-digit spelling (p008-b009) and the reader's four-digit one name the same block.
-    for item_id in ["p008-b0009", "p008-b009"] {
-        let (status, one) = get_region(&app, item_id).await;
-        assert_eq!(status, StatusCode::OK, "{item_id}: {one}");
-        assert_eq!(one["data"], payload["data"]["items"][0], "{item_id}");
-    }
-    let (status, figure) = get_region(&app, "p008-b0010").await;
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(figure["data"], payload["data"]["items"][1]);
-    let (status, missing) = get_region(&app, "p008-b0099").await;
-    assert_eq!(status, StatusCode::NOT_FOUND);
-    assert_eq!(missing["error"]["details"], json!({}));
-    assert_eq!(missing["message"], "reader region not found: p008-b0099");
-
     let image_response = app
         .oneshot(
             Request::builder()
@@ -279,23 +264,6 @@ async fn reader_regions_route_returns_normalized_source_blocks_without_translati
         payload["data"]["items"][1]["asset_urls"],
         json!(["/api/v1/jobs/reader-region-source-only-job/files/output/ocr/images/page-1/imgs/source-only.png"])
     );
-}
-
-async fn get_region(app: &axum::Router, item_id: &str) -> (StatusCode, Value) {
-    let response = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .method("GET")
-                .uri(format!("/api/v1/jobs/reader-region-job/reader/regions/{item_id}"))
-                .header("X-API-Key", "test-key")
-                .body(Body::empty())
-                .expect("region request"),
-        )
-        .await
-        .expect("region response");
-    let status = response.status();
-    (status, read_json(response).await)
 }
 
 /// 一本 `blocks` 块的书（够大，响应过 8KB 会压缩）；返回改译文用的那页文件。
@@ -412,7 +380,7 @@ async fn large_json_responses_are_gzipped_only_when_the_client_accepts_it() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/api/v1/jobs/regions-gzip-job/reader/regions/p001-b0001")
+                .uri("/api/v1/jobs/regions-gzip-job/reader/metadata")
                 .header("X-API-Key", "test-key")
                 .header("Accept-Encoding", "gzip")
                 .body(Body::empty())
@@ -422,70 +390,6 @@ async fn large_json_responses_are_gzipped_only_when_the_client_accepts_it() {
         .unwrap();
     assert_eq!(small.status(), StatusCode::OK);
     assert!(small.headers().get("content-encoding").is_none());
-}
-
-/// 同一任务并发取两个不同的区块，各拿各的（以前合并并发请求的键没带区块编号，后到的请求拿到先到的那一块；
-/// AI 并行调 read_passage 时会静默拿错原文）。
-///
-/// 反证方式：把 `get_reader_region` 的键改回 `reader-region:{job_id}`，这个测试必须变红。
-#[tokio::test]
-async fn concurrent_single_region_requests_each_get_their_own_block() {
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::Arc;
-    use std::time::Duration;
-
-    let state = test_state("reader-region-concurrent");
-    write_big_job(&state, "reader-region-job", 3, "译文"); // get_region 取的是这个任务
-    let app = build_app(state.clone());
-
-    // 先把读请求的两个槽占住，让两个区块请求同时排在里面（确保它们「同时在跑」）。
-    let started = Arc::new(AtomicUsize::new(0));
-    let mut releases = Vec::new();
-    let mut holders = Vec::new();
-    for index in 0..2 {
-        let (release, wait) = std::sync::mpsc::channel::<()>();
-        releases.push(release);
-        let started = started.clone();
-        let state = state.clone();
-        holders.push(tokio::spawn(async move {
-            crate::routes::common::run_job_query_once(&state, format!("hold-region-slot-{index}"), move |_| {
-                started.fetch_add(1, Ordering::SeqCst);
-                let _ = wait.recv();
-                Ok(())
-            })
-            .await
-        }));
-    }
-    for _ in 0..200 {
-        if started.load(Ordering::SeqCst) == 2 {
-            break;
-        }
-        tokio::time::sleep(Duration::from_millis(10)).await;
-    }
-    assert_eq!(started.load(Ordering::SeqCst), 2, "两个槽都应该被占住");
-
-    let first = tokio::spawn({
-        let app = app.clone();
-        async move { get_region(&app, "p001-b0000").await }
-    });
-    let second = tokio::spawn({
-        let app = app.clone();
-        async move { get_region(&app, "p001-b0002").await }
-    });
-    tokio::time::sleep(Duration::from_millis(100)).await;
-    for release in releases {
-        let _ = release.send(());
-    }
-    for holder in holders {
-        holder.await.expect("holder task").expect("holder query");
-    }
-    let (status, first) = first.await.expect("first request");
-    assert_eq!(status, StatusCode::OK);
-    let (status, second) = second.await.expect("second request");
-    assert_eq!(status, StatusCode::OK);
-    assert_eq!(first["data"]["item_id"], "p001-b0000");
-    assert_eq!(second["data"]["item_id"], "p001-b0002");
-    assert_eq!(second["data"]["translated"]["text"], "译文 2");
 }
 
 /// 复用 OCR 的翻译任务：自己的 `md/` 是空的，图片在产出 OCR 的那个任务下面。

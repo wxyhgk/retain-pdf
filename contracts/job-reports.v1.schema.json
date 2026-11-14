@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/job-reports/v1",
   "title": "任务报告契约（Job Reports）",
-  "description": "任务报告 /api/v1/jobs/:job_id/reports/…：失败原因、质量体检卡、质量问题逐条清单、翻译诊断。生产者：backend/packages/retainpdf-jobs/src/views/job_types.rs（JobDiagnosticsView、OcrAmbiguityView）、reports/quality/mod.rs（QualitySummaryView、QualityItemsView）、views/translation.rs（TranslationDiagnosticsView）、backend/api/src/routes/jobs/reports.rs（查询参数 QualityItemsParams）；消费者：@retainpdf/contracts/job-reports 生成 DTO（前端以后用它换掉 frontend/packages/api/src/quality.ts、jobs-actions.ts 里手写的类型）。模型用量 reports/usage 在 token-usage.v1，精修报告 reports/refine 在 refine-report.v1；reports/translation-qa、reports/layout-fit 还没有契约。所有响应为 {code, message, data} 信封，本契约描述 data 部分。键的写法照 Rust 实际序列化：类型是 [\"x\", \"null\"] 的键总在、空时是 null；没写进 required 的返回键是空时整个省掉（不是 null）。查询参数 additionalProperties: false 对应 Rust 的 deny_unknown_fields。JsonValue、TranslationRequestRecoveryView 是 job-status.v1 的副本，OcrAmbiguityResolutionKind 和 job-actions.v1 共用（契约只许本文件内 $ref），contracts/tests/job-shared-definitions-parity.test.mjs 守着结构一致。Rust 侧由 backend/api/src/api_tests/job_actions_reports_contract.rs 对真实接口的返回钉键集合。改契约先改本文件，再重新生成 DTO 并让两端测试变绿。",
+  "description": "任务报告 /api/v1/jobs/:job_id/reports/…：失败原因、质量体检卡、翻译诊断（质量问题逐条清单 reports/quality/items 2026-11-14 删了）。生产者：backend/packages/retainpdf-jobs/src/views/job_types.rs（JobDiagnosticsView、OcrAmbiguityView）、reports/quality/mod.rs（QualitySummaryView）、views/translation.rs（TranslationDiagnosticsView）；消费者：@retainpdf/contracts/job-reports 生成 DTO（前端以后用它换掉 frontend/packages/api/src/quality.ts、jobs-actions.ts 里手写的类型）。模型用量在 token-usage.v1（按书、全部；单个任务的 reports/usage 2026-11-14 删了），精修报告 reports/refine 在 refine-report.v1；reports/translation-qa、reports/layout-fit 还没有契约。所有响应为 {code, message, data} 信封，本契约描述 data 部分。键的写法照 Rust 实际序列化：类型是 [\"x\", \"null\"] 的键总在、空时是 null；没写进 required 的返回键是空时整个省掉（不是 null）。查询参数 additionalProperties: false 对应 Rust 的 deny_unknown_fields。JsonValue、TranslationRequestRecoveryView 是 job-status.v1 的副本，OcrAmbiguityResolutionKind 和 job-actions.v1 共用（契约只许本文件内 $ref），contracts/tests/job-shared-definitions-parity.test.mjs 守着结构一致。Rust 侧由 backend/api/src/api_tests/job_actions_reports_contract.rs 对真实接口的返回钉键集合。改契约先改本文件，再重新生成 DTO 并让两端测试变绿。",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -24,17 +24,6 @@
       "rust_view": "QualitySummaryView",
       "ts_consumer": "@retainpdf/contracts/job-reports :: QualitySummaryView",
       "note": "质量体检卡：译前准备、质检、排版、精修各取报告的 summary 段，外加没翻译的块数。哪份报告还没有，那一段就是 null（不是错误）；任务还没有输出目录也是 200。任务不存在 404；旧目录格式的任务 409。"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/jobs/:job_id/reports/quality/items",
-      "client_name": "listQualityItems",
-      "transport": "json",
-      "query": "QualityItemsQuery",
-      "output": "QualityItemsView",
-      "rust_view": "QualityItemsView",
-      "ts_consumer": "@retainpdf/contracts/job-reports :: QualityItemsView",
-      "note": "质量问题逐条清单（阅读页标注用）。kind 不对、limit 不在 1..=1000、不认识的参数 400。报告还没有时是空清单。任务不存在 404；旧目录格式的任务 409。"
     },
     {
       "method": "GET",
@@ -441,189 +430,6 @@
           "additionalProperties": {
             "type": "integer",
             "minimum": 0
-          }
-        }
-      }
-    },
-    "QualityItem": {
-      "type": "object",
-      "description": "reports/quality/mod.rs :: QualityItem。前四个键总在；其余按 kind 出现（Rust 里是 #[serde(flatten)] 的 detail）：layout 有 scale / final_font_size / overflow_pt（报告里没有时是 null），untranslated 有 skip_reason，qa 有 id / check / type / severity / message，escalated 有 categories / attempts。",
-      "additionalProperties": false,
-      "required": [
-        "item_id",
-        "translation_item_id",
-        "page",
-        "reason"
-      ],
-      "properties": {
-        "item_id": {
-          "type": "string",
-          "description": "阅读页的块编号（四位，和 reader/regions 的 item_id 同一套），跳转、取框用它"
-        },
-        "translation_item_id": {
-          "type": "string",
-          "description": "译文条目编号（三位），改译文、看修订历史的接口用它"
-        },
-        "page": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "description": "页码（从 1 开始）；从报告里推不出来时为 null"
-        },
-        "reason": {
-          "type": "string",
-          "description": "layout：overflow / small_scale；untranslated：failed / formula / model_kept / other；qa：问题类型（同 type）；escalated：留给人的原因"
-        },
-        "scale": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "final_font_size": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "overflow_pt": {
-          "type": [
-            "number",
-            "null"
-          ]
-        },
-        "skip_reason": {
-          "type": "string"
-        },
-        "id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "质检问题编号 qa-00001…"
-        },
-        "check": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "type": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "severity": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "critical / major / minor"
-        },
-        "message": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "categories": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "attempts": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "每次尝试的 动作:结果，例如 patch:rejected/crosses_protected_token"
-        }
-      }
-    },
-    "QualityItemsQuery": {
-      "type": "object",
-      "description": "routes/jobs/reports.rs :: QualityItemsParams（deny_unknown_fields，不认识的参数 400）。",
-      "additionalProperties": false,
-      "required": [
-        "kind"
-      ],
-      "properties": {
-        "kind": {
-          "type": "string",
-          "enum": [
-            "layout",
-            "untranslated",
-            "qa",
-            "escalated"
-          ]
-        },
-        "page": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "只看这一页（从 1 开始）"
-        },
-        "severity": {
-          "type": "string",
-          "description": "只对 kind=qa 起作用：critical / major / minor；空串等于不筛"
-        },
-        "offset": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "默认 0"
-        },
-        "limit": {
-          "type": "integer",
-          "minimum": 1,
-          "maximum": 1000,
-          "description": "默认 200"
-        }
-      }
-    },
-    "QualityItemsView": {
-      "type": "object",
-      "description": "reports/quality/mod.rs :: QualityItemsView。",
-      "additionalProperties": false,
-      "required": [
-        "kind",
-        "total",
-        "offset",
-        "limit",
-        "has_more",
-        "items"
-      ],
-      "properties": {
-        "kind": {
-          "type": "string",
-          "enum": [
-            "layout",
-            "untranslated",
-            "qa",
-            "escalated"
-          ]
-        },
-        "total": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "筛选后的总条数"
-        },
-        "offset": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "limit": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "has_more": {
-          "type": "boolean"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/QualityItem"
           }
         }
       }

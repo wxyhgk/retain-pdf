@@ -14,7 +14,6 @@ export type ReaderDataSchema =
   | LiveTranslationPageSnapshot
   | MarkdownDocumentView
   | ReaderMetadataView
-  | ReaderRegionItem
   | ReaderRegionsView;
 
 export interface JobFilesView {
@@ -218,6 +217,9 @@ export interface ReaderPageMetadata {
   width: number;
   height: number;
 }
+export interface ReaderRegionsView {
+  items: ReaderRegionItem[];
+}
 /**
  * item_id is canonicalized and joinable with other Reader projections when they describe the same document block. Empty asset collections are serialized as [] rather than omitted.
  */
@@ -269,7 +271,4 @@ export interface ReaderRegionBox {
   unit: "pdf_point";
   origin: "top_left";
   text: string | null;
-}
-export interface ReaderRegionsView {
-  items: ReaderRegionItem[];
 }

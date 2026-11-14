@@ -7,8 +7,6 @@ crate::endpoints! {
     state: AppState;
     /// 质量体检卡
     GET "/api/v1/jobs/:job_id/reports/quality" => reports::quality_summary_route, signed;
-    /// 质量问题逐条清单
-    GET "/api/v1/jobs/:job_id/reports/quality/items" => reports::quality_items_route, signed;
     /// 翻译质检（AI 助手、命令行在用）
     GET "/api/v1/jobs/:job_id/reports/translation-qa" => reports::get_translation_qa, signed;
     /// 翻译诊断
@@ -19,6 +17,4 @@ crate::endpoints! {
     GET "/api/v1/jobs/:job_id/reports/refine" => reports::get_refine_report, signed;
     /// 失败原因
     GET "/api/v1/jobs/:job_id/reports/failure" => reports::get_job_diagnostics, signed;
-    /// 模型用量
-    GET "/api/v1/jobs/:job_id/reports/usage" => reports::job_usage_route, signed;
 }
