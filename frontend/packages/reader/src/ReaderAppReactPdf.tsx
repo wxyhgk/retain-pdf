@@ -38,6 +38,7 @@ import { useReaderPanelSlot } from "./components/react-pdf/use-reader-panel-slot
 import { resolveLiveTranslationToggles } from "./shared/data/live-translation-state.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderFinder, ReaderFinderToggles, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
+import { useFindShortcut } from "./hooks/use-find-shortcut.js";
 
 /** 阅读视图可见台面的判别联合。 */
 export type ReaderPaneComposition = {
@@ -285,6 +286,22 @@ export function ReaderAppReactPdf() {
   // 左栏的目录 / 搜索：开着哪一页签，null 收着。
   const [finder, setFinder] = useState<ReaderFinderTab | null>(null);
   const toggleFinder = useCallback((tab: ReaderFinderTab) => setFinder((open) => (open === tab ? null : tab)), []);
+  // 搜索词：输入框里的字和防抖后的词。防抖后的词才去扫全书、标书页——每敲一下就扫，几百页的书会卡。
+  // 收起左栏不清词，再打开还在；收起时书页上不标。
+  const [findQuery, setFindQuery] = useState("");
+  const [findTerm, setFindTerm] = useState("");
+  useEffect(() => {
+    const next = findQuery.replace(/\s+/gu, " ").trim();
+    const timer = window.setTimeout(() => setFindTerm(next), next ? 150 : 0);
+    return () => window.clearTimeout(timer);
+  }, [findQuery]);
+  const [findFocus, setFindFocus] = useState(0);
+  // Cmd/Ctrl+F 打开书内搜索（再按一次交还浏览器，见 use-find-shortcut）。
+  const openFind = useCallback(() => {
+    setFinder("search");
+    setFindFocus((count) => count + 1);
+  }, []);
+  useFindShortcut(openFind);
   const jumpFromFinder = useCallback((itemId: string) => {
     c.jumpToAnchor({ block_id: itemId });
     // 窄屏上左栏盖着书：跳过去就收起来。
@@ -312,6 +329,7 @@ export function ReaderAppReactPdf() {
     regionHover,
     jumpToBlock,
     revisedBlocks: c.revisedBlocks,
+    findTerm: finder === "search" ? findTerm : "",
     sourceOnly: c.sourceOnly,
     sourceViewOnly,
     download: c.download,
@@ -330,6 +348,8 @@ export function ReaderAppReactPdf() {
     regionHover,
     jumpToBlock,
     c.revisedBlocks,
+    finder,
+    findTerm,
     c.sourceOnly,
     sourceViewOnly,
     c.download,
@@ -364,6 +384,10 @@ export function ReaderAppReactPdf() {
             onTab={setFinder}
             onClose={() => setFinder(null)}
             onJump={jumpFromFinder}
+            query={findQuery}
+            onQuery={setFindQuery}
+            term={findTerm}
+            focusSignal={findFocus}
           />
         ) : null}
         <div className="reader-chrome-tray">

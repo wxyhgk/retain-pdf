@@ -30,6 +30,8 @@ export type ReaderContextValue = {
     jumpToBlock?: (itemId: string) => void;
     /** 改过的块（阅读页块编号 → 改过几次）：译文栏画小标记，悬停写「改过 N 次」。 */
     revisedBlocks?: ReadonlyMap<string, number>;
+    /** 左栏搜索的词（防抖后）：书页文字层把命中标出来（PdfPageSlot）。空串不标。 */
+    findTerm?: string;
     /**
      * 真源语义 =「无 job」：判断 Markdown / AI / 收藏等需要任务的能力。
      * 仅 FAB 工具禁用等「无 job」场景取用；不要用它判断能否并排。

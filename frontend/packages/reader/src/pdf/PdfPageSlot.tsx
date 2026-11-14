@@ -35,6 +35,7 @@ import {
 } from "./ReaderTextHoverLayer.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
 import { useReaderContext } from "../components/react-pdf/reader-context.js";
+import { highlightFindTerm } from "../shared/content/reader-find.js";
 import type { ReaderLiveTranslationLayoutPage as LiveTranslationLayoutPage } from "../contracts/live-translation.js";
 import type { LiveTranslationPageState } from "../shared/data/live-translation-state.js";
 
@@ -91,7 +92,15 @@ function PdfPageSlotInner({
   showLiveTranslation = pane === "source",
 }: PdfPageSlotProps) {
   // 改过的块（来自阅读器上下文；单测里直接渲染时没有，就不画标记）。
-  const revisedBlocks = useReaderContext()?.revisedBlocks;
+  const readerContext = useReaderContext();
+  const revisedBlocks = readerContext?.revisedBlocks;
+  // 左栏搜索的词：文字层里每处命中包一个 <mark>（reader-find.ts 的 highlightFindTerm）。没有词时不给 renderer，
+  // react-pdf 照原样画文字层，不多一遍 innerHTML。
+  const findTerm = readerContext?.findTerm || "";
+  const customTextRenderer = useMemo(
+    () => (findTerm ? ({ str }: { str: string }) => highlightFindTerm(str, findTerm) : undefined),
+    [findTerm],
+  );
   const aspectRef = useRef(cachedAspect ?? DEFAULT_ASPECT);
   const [aspect, setAspect] = useState(aspectRef.current);
 
@@ -236,6 +245,7 @@ function PdfPageSlotInner({
           width={width}
           devicePixelRatio={devicePixelRatio}
           renderTextLayer={textLayer}
+          customTextRenderer={customTextRenderer}
           renderAnnotationLayer={false}
           className={READER_PDF_PAGE_CLASS}
           loading={

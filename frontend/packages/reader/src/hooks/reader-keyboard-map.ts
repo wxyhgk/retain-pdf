@@ -71,6 +71,14 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
     ],
   },
   {
+    title: "搜索",
+    items: [
+      { actions: [], keys: "⌘F / Ctrl+F", desc: "在书里搜索（光标已在搜索框时再按，用浏览器自己的查找）" },
+      { actions: [], keys: "Enter / Shift+Enter", desc: "下一处 / 上一处" },
+      { actions: [], keys: "Esc", desc: "收起搜索" },
+    ],
+  },
+  {
     title: "模式",
     items: [
       { actions: ["mode-source"], keys: "1", desc: "原文" },

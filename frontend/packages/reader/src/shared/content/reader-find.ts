@@ -104,3 +104,32 @@ export function searchReaderRegions(regions: readonly ReaderRegion[], query: str
   }
   return hits;
 }
+
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]!));
+}
+
+/**
+ * 书页文字层里标出搜索词：给 react-pdf 的 customTextRenderer 用，返回这一段文字的 HTML（不分大小写，每处包一个
+ * <mark class="reader-find-mark">）。只认落在同一段文字里的命中——pdf.js 把一行拆成好几段时，跨段的词标不出来，
+ * 左栏的命中列表照样列得出。词是空的就原样（转义后）返回。
+ */
+export function highlightFindTerm(text: string, term: string): string {
+  const needle = oneLine(term).toLowerCase();
+  if (!needle || !text) return escapeHtml(text || "");
+  const lower = text.toLowerCase();
+  let out = "";
+  let from = 0;
+  for (let at = lower.indexOf(needle); at >= 0; at = lower.indexOf(needle, at + needle.length)) {
+    out += `${escapeHtml(text.slice(from, at))}<mark class="reader-find-mark">${escapeHtml(text.slice(at, at + needle.length))}</mark>`;
+    from = at + needle.length;
+  }
+  return out + escapeHtml(text.slice(from));
+}
+
+/** 回车 / Shift+回车在命中之间走：从 current 往前或往后一处，到头绕回。没有命中是 -1。 */
+export function stepFindHit(current: number, count: number, backwards: boolean): number {
+  if (count <= 0) return -1;
+  if (current < 0 || current >= count) return backwards ? count - 1 : 0;
+  return (current + (backwards ? count - 1 : 1)) % count;
+}
