@@ -43,9 +43,10 @@ const PHASE_1A_CONTRACTS = new Set([
   "token-usage.v1.schema.json",
 ]);
 
-// 第 1a 期以后加进这几份契约的端点，名字由各自的 test 钉（编辑部事件：job-events-v2.test.mjs；
-// 一个阅读区块：reader-data-contract.test.mjs）。
-const LATER_NAMES = new Set(["listEditorialEvents", "getReaderRegion"]);
+// 第 1a 期以后加进这几份契约的端点，名字由各自的 test 钉（编辑部事件：job-events-v2.test.mjs）。
+// 2026-11-14 删掉的三个：getJobUsage（reports/usage）、listQualityItems（reports/quality/items）、
+// getReaderRegion（reader/regions/:item_id），下面的完整清单和 reader-data-contract.test.mjs 钉着它们不再出现。
+const LATER_NAMES = new Set(["listEditorialEvents"]);
 
 test("phase-1a endpoints carry the client names from the frontend list over the json transport", () => {
   const named = [];
@@ -61,7 +62,6 @@ test("phase-1a endpoints carry the client names from the frontend list over the 
     ["token-usage.v1.schema.json", "GET", "/api/v1/documents/:document_id/usage", "getDocumentUsage", "json"],
     ["job-status.v1.schema.json", "GET", "/api/v1/jobs/:job_id", "getJob", "json"],
     ["job-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/data/:dataset", "getJobDataset", "json"],
-    ["token-usage.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reports/usage", "getJobUsage", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/progress/layout", "getLiveLayout", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/progress/pages/:page", "getLivePage", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reader/markdown", "getReaderMarkdown", "json"],
@@ -135,7 +135,6 @@ test("phase-1b job actions and reports endpoints carry the client names from the
   assert.deepEqual(table("job-reports.v1.schema.json"), [
     ["GET", "/api/v1/jobs/:job_id/reports/failure", "getFailureReport", "json", undefined, undefined, "JobDiagnosticsView"],
     ["GET", "/api/v1/jobs/:job_id/reports/quality", "getQualityReport", "json", undefined, undefined, "QualitySummaryView"],
-    ["GET", "/api/v1/jobs/:job_id/reports/quality/items", "listQualityItems", "json", undefined, "QualityItemsQuery", "QualityItemsView"],
     ["GET", "/api/v1/jobs/:job_id/reports/translation", "getTranslationReport", "json", undefined, undefined, "TranslationDiagnosticsView"],
   ]);
 });

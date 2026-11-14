@@ -1,4 +1,4 @@
-//! /api/v1/jobs/:id/reports/quality 与 /quality-items 经真实路由。
+//! /api/v1/jobs/:id/reports/quality 经真实路由。
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -17,7 +17,7 @@ async fn get(state: &crate::AppState, uri: &str) -> axum::response::Response {
 }
 
 #[tokio::test]
-async fn quality_routes_summarize_reports_and_list_blocks() {
+async fn quality_route_summarizes_reports() {
     let state = test_state("quality-routes");
     let mut job = JobSnapshot::new("job-quality".to_string(), CreateJobInput::default(), vec![]);
     let paths = build_job_paths(&state.config.output_root, "job-quality").unwrap();
@@ -40,19 +40,6 @@ async fn quality_routes_summarize_reports_and_list_blocks() {
     assert_eq!(summary["layout"]["overflow_pages"], serde_json::json!([3]));
     assert!(summary["qa"].is_null() && summary["refine"].is_null());
 
-    let items = read_json(get(&state, "/api/v1/jobs/job-quality/reports/quality/items?kind=layout&page=4").await).await["data"].clone();
-    assert_eq!(items["total"], 1);
-    assert_eq!((items["limit"].as_u64(), items["has_more"].as_bool()), (Some(200), Some(false)));
-    let first_page = read_json(get(&state, "/api/v1/jobs/job-quality/reports/quality/items?kind=layout&limit=1").await).await["data"].clone();
-    assert_eq!((first_page["total"].as_u64(), first_page["limit"].as_u64(), first_page["has_more"].as_bool()), (Some(2), Some(1), Some(true)));
-    let last_page = read_json(get(&state, "/api/v1/jobs/job-quality/reports/quality/items?kind=layout&limit=1&offset=1").await).await["data"].clone();
-    assert_eq!(last_page["has_more"], false);
-    assert_eq!((items["items"][0]["item_id"].as_str(), items["items"][0]["reason"].as_str()), (Some("p004-b0001"), Some("small_scale")));
-
-    for bad in ["kind=everything", "kind=qa&limit=0", "kind=qa&limit=5000", "kind=qa&unknown=1"] {
-        let response = get(&state, &format!("/api/v1/jobs/job-quality/reports/quality/items?{bad}")).await;
-        assert!(response.status().is_client_error(), "{bad}");
-    }
     assert_eq!(get(&state, "/api/v1/jobs/job-missing/reports/quality").await.status(), StatusCode::NOT_FOUND);
 }
 
@@ -61,16 +48,12 @@ async fn quality_reads_a_merged_reading_job_and_rejects_legacy_layouts() {
     let state = test_state("quality-virtual");
     let (job_id, _root) = seed_virtual_job(&state);
 
-    // 合并目录里没有报告：摘要的各部分是 null、清单是空的，不是错误。
+    // 合并目录里没有报告：摘要的各部分是 null，不是错误。
     let response = get(&state, &format!("/api/v1/jobs/{job_id}/reports/quality")).await;
     assert_eq!(response.status(), StatusCode::OK);
     let summary = read_json(response).await["data"].clone();
     assert!(summary["qa"].is_null() && summary["refine"].is_null(), "{summary}");
-    let items = get(&state, &format!("/api/v1/jobs/{job_id}/reports/quality/items?kind=layout")).await;
-    assert_eq!(items.status(), StatusCode::OK);
-    assert_eq!(read_json(items).await["data"]["total"], 0);
 
     seed_legacy_layout_job(&state, "job-legacy");
     assert_eq!(get(&state, "/api/v1/jobs/job-legacy/reports/quality").await.status(), StatusCode::CONFLICT);
-    assert_eq!(get(&state, "/api/v1/jobs/job-legacy/reports/quality/items?kind=layout").await.status(), StatusCode::CONFLICT);
 }

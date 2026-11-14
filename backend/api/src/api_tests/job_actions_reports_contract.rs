@@ -23,7 +23,6 @@ use super::library_documents_contract::assert_request_fields_match;
 use super::library_paging::send;
 use crate::models::api::{OcrAmbiguityResolutionRequest, RefineRetryRequest, RetryStageRequest};
 use crate::models::{JobArtifacts, JobStatusKind};
-use crate::routes::jobs::reports::QualityItemsParams;
 use crate::storage_paths::{attach_job_paths, build_job_paths};
 
 const ACTIONS: &str = "job-actions.v1.schema.json";
@@ -417,32 +416,6 @@ async fn quality_and_translation_reports_match_published_schema() {
     assert_eq!(summary["preparation"]["problems"], json!(["term_base_incomplete"]));
     assert_eq!(summary["untranslated"]["failed"], 1);
 
-    // 清单：前四个键总在，其余按 kind 出现。
-    let base = required_keys(&contract, "QualityItem");
-    let declared = schema_keys(&contract, "QualityItem");
-    for (kind, extra) in [
-        ("layout", &["scale", "final_font_size", "overflow_pt"][..]),
-        ("untranslated", &["skip_reason"][..]),
-        ("qa", &["id", "check", "type", "severity", "message"][..]),
-        ("escalated", &["categories", "attempts"][..]),
-    ] {
-        let view = ok_data(&state, "GET", &format!("/api/v1/jobs/{job_id}/reports/quality/items?kind={kind}"), None).await;
-        assert_exact(&view, &contract, "QualityItemsView", &format!("items ({kind})"));
-        let items = view["items"].as_array().unwrap();
-        assert!(!items.is_empty(), "{kind}: {view}");
-        let mut expected = base.clone();
-        expected.extend(extra.iter().map(|key| key.to_string()));
-        assert!(expected.is_subset(&declared), "{kind} 的键 {expected:?} 契约里没写全");
-        for (index, item) in items.iter().enumerate() {
-            let path = format!("items ({kind})[{index}]");
-            assert_definition(item, &contract, "QualityItem", &path);
-            assert_eq!(object_keys(item, &path), expected, "{path}");
-        }
-    }
-    let (status, payload) =
-        send(&state, "GET", &format!("/api/v1/jobs/{job_id}/reports/quality/items?kind=qa&bogus=1"), None).await;
-    assert_eq!(status, StatusCode::BAD_REQUEST, "{payload}");
-
     let diagnostics = ok_data(&state, "GET", &format!("/api/v1/jobs/{job_id}/reports/translation"), None).await;
     assert_exact(&diagnostics, &contract, "TranslationDiagnosticsView", "translation");
     assert_eq!(diagnostics["summary"]["counts"]["translated"], 1);
@@ -460,7 +433,6 @@ async fn request_bodies_and_queries_accept_exactly_the_contract_fields() {
     assert_request_fields_match::<RetryStageRequest>(&actions, "RetryStageRequest");
     assert_request_fields_match::<RefineRetryRequest>(&actions, "RefineRetryRequest");
     assert_request_fields_match::<OcrAmbiguityResolutionRequest>(&actions, "OcrAmbiguityResolutionRequest");
-    assert_request_fields_match::<QualityItemsParams>(&reports, "QualityItemsQuery");
 
     // 续跑的请求体（路由私有的 RerunRequest）：先解析请求体再找任务，所以对不存在的任务发也能看到 400。
     let state = test_state("job-actions-contract-requests");

@@ -19,7 +19,6 @@ test("reader data schema publishes the complete independent read surfaces", () =
       "JobFilesView",
       "MarkdownDocumentView",
       "ReaderRegionsView",
-      "ReaderRegionItem",
       "ReaderMetadataView",
       "LiveTranslationLayout",
       "LiveTranslationPageSnapshot",
@@ -32,10 +31,9 @@ test("reader data schema publishes the complete independent read surfaces", () =
   }
 });
 
-test("one reader region is the same item the region list carries", () => {
-  const endpoint = contract.endpoints.find((entry) => entry.path === "/api/v1/jobs/:job_id/reader/regions/:item_id");
-  assert.deepEqual([endpoint.method, endpoint.client_name, endpoint.transport], ["GET", "getReaderRegion", "json"]);
-  assert.equal(definitions.ReaderRegionsView.properties.items.items.$ref, `#/definitions/${endpoint.output}`);
+test("the region list carries ReaderRegionItem; the single-region endpoint was deleted 2026-11-14", () => {
+  assert.equal(definitions.ReaderRegionsView.properties.items.items.$ref, "#/definitions/ReaderRegionItem");
+  assert.equal(contract.endpoints.some((entry) => entry.path === "/api/v1/jobs/:job_id/reader/regions/:item_id"), false);
 });
 
 test("job files view matches the /files response and the old artifact endpoints are marked deprecated", () => {

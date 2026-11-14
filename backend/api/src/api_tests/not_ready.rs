@@ -49,7 +49,6 @@ const RAW_OUTPUTS: &[(&str, &str)] = &[
     ("files/internal/normalized-document.json", "normalized-document.json not ready"),
     ("files/internal/typst/render.pdf", "typst/render.pdf not ready"),
     ("reader/markdown", "markdown not ready"),
-    ("reader/regions/p001-b0001", "reader regions not ready"),
     ("reports/translation", "translation report not ready"),
     ("reports/translation-qa", "translation-qa report not ready"),
     ("reports/layout-fit", "layout-fit report not ready"),
@@ -84,7 +83,6 @@ async fn a_job_without_an_output_directory_is_also_not_ready() {
         ("files/output/translated.docx", "translated.docx not ready"),
         ("files/output/all.zip", "all.zip not ready"),
         ("reader/markdown", "markdown not ready"),
-        ("reader/regions/p001-b0001", "reader regions not ready"),
         ("reports/refine", "refine report not ready"),
     ] {
         let uri = format!("/api/v1/jobs/{QUEUED_JOB}/{path}");
@@ -129,11 +127,6 @@ async fn summaries_and_lists_stay_200_with_empty_values() {
             assert!(data[section].is_null(), "{uri}: {section} = {}", data[section]);
         }
 
-        let uri = format!("{j}/reports/quality/items?kind=qa");
-        let (status, body) = get(&fixture.state, &uri).await;
-        let data = ok(&uri, status, &body);
-        assert_eq!((data["items"].clone(), data["total"].clone()), (json!([]), json!(0)), "{uri}");
-
         let uri = format!("{j}/data");
         let (status, body) = get(&fixture.state, &uri).await;
         let data = ok(&uri, status, &body);
@@ -145,7 +138,7 @@ async fn summaries_and_lists_stay_200_with_empty_values() {
         let data = ok(&uri, status, &body);
         assert_eq!((data["available"].clone(), data["total"].clone()), (json!(false), json!(0)), "{uri}");
 
-        for path in ["files", "reader/regions", "reader/metadata", "reports/usage", "reports/failure"] {
+        for path in ["files", "reader/regions", "reader/metadata", "reports/failure"] {
             let uri = format!("{j}/{path}");
             let (status, body) = get(&fixture.state, &uri).await;
             ok(&uri, status, &body);

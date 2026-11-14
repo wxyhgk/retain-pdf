@@ -12,6 +12,19 @@
 
 ---
 
+## 删掉三个没人调的接口（chore/api-delete-batch2）
+
+2026-11-14。`GET /api/v1/jobs/{job_id}/reports/usage`、`GET /api/v1/jobs/{job_id}/reports/quality/items`、
+`GET /api/v1/jobs/{job_id}/reader/regions/{item_id}` 删了，现在返回 404。契约里的 `getJobUsage`（`token-usage.v1`）、
+`listQualityItems` 和 `QualityItem*` 三个类型（`job-reports.v1`）、`getReaderRegion`（`reader-data.v1`）跟着删。`UsageSummaryView.scope`
+不会再是 `job`，但契约里先留着这个取值：`features/usage/domain/usage-view-model.ts` 判断了 `scope === "job"`，前端删了这个判断告诉后端，再从契约去掉。
+
+前端要做的：重新生成 `frontend/packages/api/src/generated/`（不然生成一致性测试是红的）；`frontend/packages/api/src/quality.ts`
+里手写的 `QualityItem`、`QualityItemsView`、`QualityItemKind` 和 `web/src/platform/api/domains/quality.ts`、`mocks/quality.ts` 里对它们的
+引用可以删。为什么能删见 [第二批删接口](../../ops/planning/api-reorg/20261114-第二批删接口.md)。
+
+---
+
 ## OCR 这一站照 OCR 子任务的状态（fix/ocr-stage-from-child）
 
 2026-11-02。字段不变，取值的含义变准了：任务的 OCR 交给子任务（`<任务>-ocr`）跑时，`stages.ocr.state` 照子任务，不再按阶段先后推。

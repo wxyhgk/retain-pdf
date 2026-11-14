@@ -8,11 +8,8 @@ use retainpdf_api_base::error::AppError;
 use retainpdf_api_base::job_loading::load_supported_job;
 use retainpdf_core::storage_paths::{resolve_data_path, resolve_job_root};
 
-pub use super::{QualityItemsView, QualitySummaryView};
-use super::{
-    quality_items, quality_summary, QualityItemsQuery, QualitySources, QUALITY_ITEMS_MAX_LIMIT,
-    QUALITY_ITEM_KINDS,
-};
+pub use super::QualitySummaryView;
+use super::{quality_summary, QualitySources};
 
 /// 自己持有数据（Arc + PathBuf），可以搬进阻塞线程。
 #[derive(Clone)]
@@ -25,16 +22,6 @@ impl QualityApiDeps {
     pub fn new(db: Arc<Db>, data_root: PathBuf) -> Self {
         Self { db, data_root }
     }
-}
-
-/// 按块清单的查询参数（已从请求里取出，还没校验）。
-#[derive(Debug, Clone, Default)]
-pub struct QualityItemsParams {
-    pub kind: String,
-    pub page: Option<u64>,
-    pub severity: Option<String>,
-    pub offset: Option<usize>,
-    pub limit: Option<usize>,
 }
 
 /// `None` = 任务还没有输出目录（排队中、还没开始跑）。
@@ -59,30 +46,4 @@ fn sources_for(deps: &QualityApiDeps, job_id: &str) -> Result<Option<QualitySour
 pub fn quality_summary_view(deps: &QualityApiDeps, job_id: &str) -> Result<QualitySummaryView, AppError> {
     let sources = sources_for(deps, job_id)?;
     Ok(quality_summary(job_id, sources.as_ref()))
-}
-
-pub fn quality_items_view(
-    deps: &QualityApiDeps,
-    job_id: &str,
-    params: QualityItemsParams,
-) -> Result<QualityItemsView, AppError> {
-    if !QUALITY_ITEM_KINDS.contains(&params.kind.as_str()) {
-        return Err(AppError::bad_request(format!(
-            "kind must be one of {}",
-            QUALITY_ITEM_KINDS.join(", ")
-        )));
-    }
-    let limit = params.limit.unwrap_or(200);
-    if limit == 0 || limit > QUALITY_ITEMS_MAX_LIMIT {
-        return Err(AppError::bad_request(format!("limit must be 1..={QUALITY_ITEMS_MAX_LIMIT}")));
-    }
-    let sources = sources_for(deps, job_id)?;
-    let query = QualityItemsQuery {
-        kind: params.kind,
-        page: params.page,
-        severity: params.severity.filter(|value| !value.trim().is_empty()),
-        offset: params.offset.unwrap_or(0),
-        limit,
-    };
-    Ok(quality_items(sources.as_ref(), &query))
 }

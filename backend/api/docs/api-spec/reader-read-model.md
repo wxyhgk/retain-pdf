@@ -29,11 +29,12 @@ All listed endpoints require `X-API-Key`. New consumers branch on
 | Structured Markdown | `GET /api/v1/jobs/{job_id}/reader/markdown` | `MarkdownDocumentView` | Provides content, absolute-image content, and image manifest. |
 | Windowed raw Markdown | `GET /api/v1/jobs/{job_id}/files/output/ocr.md` | raw Markdown | Supports `Range`, `Content-Range`, and `ETag`; see [artifacts](artifacts.md#reading-long-markdown-in-parts). |
 | PDF alignment/selection | `GET /api/v1/jobs/{job_id}/reader/regions` | `ReaderRegionsView` | Backend joins normalized source blocks and published translations. Weak `ETag` + `Cache-Control: private, no-cache`; `If-None-Match` with an unchanged fingerprint (same normalized document, translation files, OCR images and server build) answers `304` without a body. Gzipped when the client accepts it (all JSON over 8KB). |
-| One block (quoting a paragraph) | `GET /api/v1/jobs/{job_id}/reader/regions/{item_id}` | `ReaderRegionItem` | The same entry as in `reader/regions`, without fetching the whole book. Accepts the three-digit (`p008-b009`) and four-digit (`p008-b0009`) block id; answers with the four-digit one. No regions yet: 404 with `reason: "not_ready"`; no such block: plain 404. |
 | PDF dimensions | `GET /api/v1/jobs/{job_id}/reader/metadata` | `ReaderMetadataView` | Source and translated metadata are independently nullable. |
 | In-progress layout | `GET /api/v1/jobs/{job_id}/progress/layout` | `LiveTranslationLayout` | Layout can be ready before any page translation. |
 | Committed page translation | `GET /api/v1/jobs/{job_id}/progress/pages/{page}` | `LiveTranslationPageSnapshot` | Reads only a hash-matched durable checkpoint. |
 | Commit refresh stream | `GET /api/v1/jobs/{job_id}/progress/stream?after_seq={seq}` | SSE `translation_units_committed` | An event is a refresh hint, not translation text. |
+
+只取一个区块的 `GET /api/v1/jobs/{job_id}/reader/regions/{item_id}`（给 Studio 引用一段用）2026-11-14 删了，没有调用方；要一块就从 `reader/regions` 里找。
 
 阅读问答（`/api/v1/ai/ask`、会话、公开文档操作）2026-11-03 跟 RetainPDF 自己的 AI 服务一起删了，
 产品里只留 Studio 的 AI；Studio 读书用上面这些只读接口。

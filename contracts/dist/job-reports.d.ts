@@ -5,7 +5,7 @@
 /**
  * Endpoint input, query, and output DTOs published by job-reports.v1.schema.json.
  */
-export type JobReportsSchema = JobDiagnosticsView | QualityItemsQuery | QualityItemsView | QualitySummaryView | TranslationDiagnosticsView;
+export type JobReportsSchema = JobDiagnosticsView | QualitySummaryView | TranslationDiagnosticsView;
 /**
  * 可安全跨线传输的任意 JSON 值；用于 provider 扩展 options 与事件 payload。
  */
@@ -87,83 +87,6 @@ export interface OcrAmbiguityReceiptFieldView {
      * true 时界面按密码框处理，值不进日志
      */
     secret: boolean;
-}
-/**
- * routes/jobs/reports.rs :: QualityItemsParams（deny_unknown_fields，不认识的参数 400）。
- */
-export interface QualityItemsQuery {
-    kind: "layout" | "untranslated" | "qa" | "escalated";
-    /**
-     * 只看这一页（从 1 开始）
-     */
-    page?: number;
-    /**
-     * 只对 kind=qa 起作用：critical / major / minor；空串等于不筛
-     */
-    severity?: string;
-    /**
-     * 默认 0
-     */
-    offset?: number;
-    /**
-     * 默认 200
-     */
-    limit?: number;
-}
-/**
- * reports/quality/mod.rs :: QualityItemsView。
- */
-export interface QualityItemsView {
-    kind: "layout" | "untranslated" | "qa" | "escalated";
-    /**
-     * 筛选后的总条数
-     */
-    total: number;
-    offset: number;
-    limit: number;
-    has_more: boolean;
-    items: QualityItem[];
-}
-/**
- * reports/quality/mod.rs :: QualityItem。前四个键总在；其余按 kind 出现（Rust 里是 #[serde(flatten)] 的 detail）：layout 有 scale / final_font_size / overflow_pt（报告里没有时是 null），untranslated 有 skip_reason，qa 有 id / check / type / severity / message，escalated 有 categories / attempts。
- */
-export interface QualityItem {
-    /**
-     * 阅读页的块编号（四位，和 reader/regions 的 item_id 同一套），跳转、取框用它
-     */
-    item_id: string;
-    /**
-     * 译文条目编号（三位），改译文、看修订历史的接口用它
-     */
-    translation_item_id: string;
-    /**
-     * 页码（从 1 开始）；从报告里推不出来时为 null
-     */
-    page: number | null;
-    /**
-     * layout：overflow / small_scale；untranslated：failed / formula / model_kept / other；qa：问题类型（同 type）；escalated：留给人的原因
-     */
-    reason: string;
-    scale?: number | null;
-    final_font_size?: number | null;
-    overflow_pt?: number | null;
-    skip_reason?: string;
-    /**
-     * 质检问题编号 qa-00001…
-     */
-    id?: string | null;
-    check?: string | null;
-    type?: string | null;
-    /**
-     * critical / major / minor
-     */
-    severity?: string | null;
-    message?: string | null;
-    categories?: string[];
-    /**
-     * 每次尝试的 动作:结果，例如 patch:rejected/crosses_protected_token
-     */
-    attempts?: string[];
 }
 /**
  * reports/quality/mod.rs :: QualitySummaryView。哪份报告缺了，那一段就是 null。

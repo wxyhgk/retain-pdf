@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/token-usage/v1",
   "title": "Model Token Usage Contract",
-  "description": "模型用量（token）汇总：一个任务、一本书、全部。成功响应包在 { code, message, data } 里，data 是 UsageSummaryView。数据来自任务台账 artifacts/token-usage.v1.jsonl（流水线每次模型返回追加一行）、助手台账 <data_root>/usage/assistant.v1.jsonl，以及有台账之前的旧任务的诊断与精修报告（只折算得出输入输出，没有缓存 / 思考明细，jobs_estimated_from_reports 数出有几个任务是这么折算的）。删除的书连同任务目录一起删掉，不再计入。界面显示用「万」「亿」：不足 1 万显示原数（千分位），1 万到 1 亿显示一位小数加「万」，1 亿以上两位小数加「亿」。",
+  "description": "模型用量（token）汇总：一本书、全部（单个任务的 /jobs/:job_id/reports/usage 2026-11-14 删了）。成功响应包在 { code, message, data } 里，data 是 UsageSummaryView。数据来自任务台账 artifacts/token-usage.v1.jsonl（流水线每次模型返回追加一行）、助手台账 <data_root>/usage/assistant.v1.jsonl，以及有台账之前的旧任务的诊断与精修报告（只折算得出输入输出，没有缓存 / 思考明细，jobs_estimated_from_reports 数出有几个任务是这么折算的）。删除的书连同任务目录一起删掉，不再计入。界面显示用「万」「亿」：不足 1 万显示原数（千分位），1 万到 1 亿显示一位小数加「万」，1 亿以上两位小数加「亿」。",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -22,16 +22,6 @@
       "transport": "json",
       "output": "UsageSummaryView",
       "note": "scope=document：这本书的全部任务，加上问这本书时助手花的。书不存在时 404（2026-10-19 以前是 200 和全零汇总）；有书没任务是 200 空汇总。",
-      "rust_view": "services/jobs/reports/usage :: UsageSummaryView",
-      "ts_consumer": "@retainpdf/contracts/token-usage :: UsageSummaryView"
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/jobs/:job_id/reports/usage",
-      "client_name": "getJobUsage",
-      "transport": "json",
-      "output": "UsageSummaryView",
-      "note": "scope=job：单个任务（含它的原地精修、重渲染）。任务不存在时 404。",
       "rust_view": "services/jobs/reports/usage :: UsageSummaryView",
       "ts_consumer": "@retainpdf/contracts/token-usage :: UsageSummaryView"
     }
