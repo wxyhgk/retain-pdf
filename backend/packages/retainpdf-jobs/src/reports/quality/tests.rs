@@ -110,46 +110,4 @@ fn missing_reports_are_null_not_errors() {
     let view = quality_summary("job-2", Some(&sources));
     assert!(view.preparation.is_none() && view.qa.is_none() && view.layout.is_none() && view.refine.is_none());
     assert_eq!(view.untranslated, UntranslatedSummary::default());
-    let items = quality_items(Some(&sources), &QualityItemsQuery { kind: "qa".into(), limit: 10, ..Default::default() });
-    assert_eq!(items.total, 0);
-}
-
-fn items(sources: &QualitySources, kind: &str) -> QualityItemsView {
-    quality_items(Some(sources), &QualityItemsQuery { kind: kind.into(), limit: 200, ..Default::default() })
-}
-
-#[test]
-fn item_lists_carry_page_reason_and_detail() {
-    let sources = full_fixture("items");
-
-    let layout = items(&sources, "layout");
-    assert_eq!(layout.items.iter().map(|i| (i.translation_item_id.as_str(), i.reason.as_str())).collect::<Vec<_>>(),
-               [("p002-b003", "overflow"), ("p002-b004", "small_scale")]);
-    // 阅读页的编号是四位（/reader/regions），跳转和取框靠它。
-    assert_eq!(layout.items[0].item_id, "p002-b0003");
-    assert_eq!(layout.items[0].detail["overflow_pt"], 3.5);
-
-    let untranslated = items(&sources, "untranslated");
-    assert_eq!(untranslated.items.iter().map(|i| i.reason.as_str()).collect::<Vec<_>>(),
-               ["formula", "formula", "model_kept", "failed"]);
-    assert_eq!(untranslated.items[3].page, Some(2));
-
-    let qa = items(&sources, "qa");
-    assert_eq!(qa.items[2].page, Some(2), "没有 page_number 时从 item_id 推页码");
-    let serialized = serde_json::to_value(&qa.items[0]).unwrap();
-    assert_eq!((serialized["severity"].as_str(), serialized["check"].as_str()), (Some("major"), Some("terms")));
-
-    let escalated = items(&sources, "escalated");
-    assert_eq!(escalated.total, 2);
-    assert_eq!((escalated.items[1].page, escalated.items[1].reason.as_str()), (Some(5), "交给人确认"));
-}
-
-#[test]
-fn item_lists_filter_by_page_and_severity_and_paginate() {
-    let sources = full_fixture("filters");
-    let page_two = quality_items(Some(&sources), &QualityItemsQuery { kind: "qa".into(), page: Some(2), limit: 1, offset: 1, ..Default::default() });
-    assert_eq!((page_two.total, page_two.items.len()), (2, 1));
-    assert_eq!(page_two.items[0].translation_item_id, "p002-b004");
-    let major = quality_items(Some(&sources), &QualityItemsQuery { kind: "qa".into(), severity: Some("major".into()), limit: 50, ..Default::default() });
-    assert_eq!(major.total, 1);
 }

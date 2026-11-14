@@ -6,7 +6,7 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 
 use crate::error::AppError;
-use crate::models::api::{ApiResponse, ReaderMetadataView, ReaderRegionItemView, ReaderRegionsView};
+use crate::models::api::{ApiResponse, ReaderMetadataView, ReaderRegionsView};
 use crate::AppState;
 
 use crate::routes::common::{build_jobs_download_route_deps, ok_json, run_job_query, ApiPath};
@@ -42,19 +42,6 @@ pub async fn get_reader_regions(
 }
 
 /// 一个区块（引用一段用）：和 `reader/regions` 的一项一样。
-pub async fn get_reader_region(
-    State(state): State<AppState>,
-    ApiPath((job_id, item_id)): ApiPath<(String, String)>,
-) -> Result<Json<ApiResponse<ReaderRegionItemView>>, AppError> {
-    // 合并并发请求的键要带区块编号：只按任务合并的话，同一任务并发取两块，后到的拿到先到的那一块。
-    let key = format!("reader-region:{job_id}:{item_id}");
-    let view = run_job_query(&state, key, move |jobs| {
-        jobs.reader_region_item_view(&job_id, &item_id)
-    })
-    .await?;
-    Ok(ok_json(view))
-}
-
 pub async fn get_reader_metadata(
     State(state): State<AppState>,
     ApiPath(job_id): ApiPath<String>,

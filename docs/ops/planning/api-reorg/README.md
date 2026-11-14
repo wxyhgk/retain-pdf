@@ -71,6 +71,7 @@ Rust API 接口太多、太散，"牵一发动全身"。这里按日期记录整
 | 2026-10-22 | [契约第 1b 期译文条目和书的任务](./20261022-契约第1b期译文条目和书的任务.md) | 前端第 1 期清单 1b 的 6 条：译文条目列表、单条、重放（不带请求体）进 `translation-revisions.v1`；书的任务列表、翻译、OCR 接在 `library-documents.v1` 原 17 条后面；请求体 `CreateJobInput` 从 `create-job.v1` 抄、任务列表条目和提交结果的链接从 `job-status.v1` 抄，新测试锁成一致；`JobSubmissionView` 第一次进契约；402 页数额度的信封写进 note、`error.details` 加定义；端点表测试改成只钉各期自己的名单 |
 | 2026-10-23 | [任务列表契约补 include_live_stage](./20261023-任务列表契约补include_live_stage.md) | `job-status.v1`、`library-books.v1` 的 `ListJobsQuery` 补后端一直认的 `include_live_stage`（可选布尔，`false` 不导入事件历史）；rust_api 新测试钉契约属性和 Rust 字段一一对应，Rust 加字段时编不过；接口行为不变，前端重新生成 |
 | 2026-10-23 | [删 library-books 重复的任务列表](./20261023-删library-books重复的任务列表.md) | `library-books.v1` 删掉重复登记的 `GET /api/v1/jobs`，只剩删任务；生成的 `library-books.ts` 只导出删任务的两个类型；任务列表定义先留在 JSON 里给前端两个契约测试读，前端改读 `job-status.v1` 后再删；接口行为不变 |
+| 2026-11-14 | [第二批删接口](./20261114-第二批删接口.md) | 删 `reports/usage`（单个任务的用量）、`reports/quality/items`（质量问题清单）、`reader/regions/:item_id`（单个阅读区块）：没有调用方，路由计数前两个 27 天 0 次，第三个只有已删的 Studio 调过；契约去掉 `getJobUsage`、`listQualityItems`、`getReaderRegion`，前端重新生成 |
 
 已经确定的：
 

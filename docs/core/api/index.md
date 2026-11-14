@@ -746,15 +746,11 @@ ETag: "..."
 
 缓存（2026-11-03 起）：响应带弱 ETag（`W/"…"`）和 `Cache-Control: private, no-cache`。浏览器带着上次的 ETag
 （`If-None-Match`）再来、原文结构和译文都没变时回 `304`，不带数据；重译、重新识别以后 ETag 跟着变。浏览器的
-`fetch` 默认就会这样做，前端不用改。后端在内存里留着最近几本算好的结果，单个区块（下面那个接口）也从这里取。
+`fetch` 默认就会这样做，前端不用改。后端在内存里留着最近几本算好的结果。
 
-只要一块（比如笔记里引用一段）：
+只取一块的 `GET /api/v1/jobs/{job_id}/reader/regions/{item_id}`（给 Studio 笔记引用一段加的）2026-11-14 删了，没有调用方了。
 
-`GET /api/v1/jobs/{job_id}/reader/regions/{item_id}`
-
-返回和上面列表里同一项一样的对象。`item_id` 写三位（`p008-b009`）、四位（`p008-b0009`）都认。
-任务还没有任何区块时 `404` + `reason: "not_ready"`；没有这一块是普通 `404`。
-打开阅读页并跳到这一块：`reader.html?job_id={job_id}&page_idx={source.page - 1}&block_id={item_id}`。
+打开阅读页并跳到某一块：`reader.html?job_id={job_id}&page_idx={source.page - 1}&block_id={item_id}`。
 
 PDF 元数据：
 

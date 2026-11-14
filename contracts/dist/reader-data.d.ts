@@ -5,7 +5,7 @@
 /**
  * Endpoint input, query, and output DTOs published by reader-data.v1.schema.json.
  */
-export type ReaderDataSchema = JobFilesView | LiveTranslationCommitEvent | LiveTranslationLayout | LiveTranslationPageSnapshot | MarkdownDocumentView | ReaderMetadataView | ReaderRegionItem | ReaderRegionsView;
+export type ReaderDataSchema = JobFilesView | LiveTranslationCommitEvent | LiveTranslationLayout | LiveTranslationPageSnapshot | MarkdownDocumentView | ReaderMetadataView | ReaderRegionsView;
 export interface JobFilesView {
     job_id: string;
     /**
@@ -207,6 +207,9 @@ export interface ReaderPageMetadata {
     width: number;
     height: number;
 }
+export interface ReaderRegionsView {
+    items: ReaderRegionItem[];
+}
 /**
  * item_id is canonicalized and joinable with other Reader projections when they describe the same document block. Empty asset collections are serialized as [] rather than omitted.
  */
@@ -258,7 +261,4 @@ export interface ReaderRegionBox {
     unit: "pdf_point";
     origin: "top_left";
     text: string | null;
-}
-export interface ReaderRegionsView {
-    items: ReaderRegionItem[];
 }

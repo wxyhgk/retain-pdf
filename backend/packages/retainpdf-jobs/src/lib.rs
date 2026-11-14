@@ -67,12 +67,9 @@ pub use progress::live_stage::{
 pub use progress::stage_view::{build_job_stage_view, terminal_completion_note};
 pub use query::{job_search_text, JobQueries};
 pub use query_execution::QueryExecution;
-pub use reports::quality::api::{
-    quality_items_view, quality_summary_view, QualityApiDeps, QualityItemsParams, QualityItemsView,
-    QualitySummaryView,
-};
+pub use reports::quality::api::{quality_summary_view, QualityApiDeps, QualitySummaryView};
 pub use reports::usage::api::{
-    all_usage_view, document_usage_view, job_usage_view, UsageApiDeps, UsageSummaryView,
+    all_usage_view, document_usage_view, UsageApiDeps, UsageSummaryView,
 };
 pub use runtime_gateway::{JobDriverRegistry, JobRuntime, JobRuntimeLauncher};
 pub use summary_loaders::SummaryCache;
