@@ -427,6 +427,7 @@
         "devtools/tests/document_schema/test_pdf_text_recovery.py",
         "devtools/tests/document_schema/test_rescale_page_mapping.py",
         "devtools/tests/document_schema/test_synthetic_snapshots.py",
+        "devtools/tests/document_schema/test_table_eval_set.py",
         "devtools/tests/document_schema/test_table_survey.py",
         "devtools/tests/ocr_viewer/test_ocr_viewer.py",
         "devtools/tests/pdf_fixtures.py",

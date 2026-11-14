@@ -1,0 +1,319 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "1-p008-t1",
+ "fixture": "1.pdf",
+ "source_page": 8,
+ "bbox_pt": [
+  324.5,
+  235.4,
+  564.5,
+  330.0
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 2. Oxidant Not Necessary for Cobalt Turnover<sup>a</sup>",
+ "footnotes": [
+  "a Reactions run on 50 μmol scale. Yield determined by GC-FID with internal standard.",
+  "b 1-Methyl-2-(4-phenylbutan-2-yl)benzene observed in <1% overall yield (maximum yield is 10%)."
+ ],
+ "rows": [
+  [
+   {
+    "text": "entry<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "序号<sup>a</sup>"
+   },
+   {
+    "text": "variations from above",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "相对上述条件的变化"
+   },
+   {
+    "text": "Co(II)+NFTPB",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Co(III) BF<sub>4</sub>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Co(III) Cl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "L1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "79",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "55",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "44",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "L2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "82",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "56",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "42",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "L2, in the glovebox",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "L2，在手套箱中"
+   },
+   {
+    "text": "82",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "56",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "41",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "L2, 2 equiv of Mn<sup>0</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "L2，2 equiv Mn<sup>0</sup>"
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "76",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "57",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "L2, NFTPB (0.3 equiv)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "70",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "53",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "6<sup>b</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "dtbbpyNi(o-Tol)I (2) as nickel cat. (10 mol %)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "以 dtbbpyNi(o-Tol)I (2) 作镍催化剂 (10 mol %)"
+   },
+   {
+    "text": "68",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "49",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "superscript_markers",
+  "chemical_formulas"
+ ],
+ "notes": "表题下方的反应式是图片（324,85–564,229），不算表格本体。后三列表头是催化剂体系（Co(II)+NFTPB、Co(III)BF4、Co(III)Cl），后两列表头各占两行（\"Co(III)\" 换行 \"BF4\"），按一格抄、中间写空格；都是化学式，keep。第 4、5 行 Co(II)+NFTPB 列、第 6 行 Co(III)Cl 列原文为空。\"L2, NFTPB (0.3 equiv)\" 只有配体编号、试剂缩写和用量，按 keep；\"2 equiv of Mn0\" 只把 of 去掉，equiv 保留不译。L1、L2、2 原文是粗体（化合物编号），按纯文本抄。OCR：两家行列结构都对（7×5，空格位置也对）。GLM 的公式定界符错乱：第 4 行 Co(II)+NFTPB 列本应为空却多出一个 \"$\"，\"Co(III)BF_{4}$\"、\"6^{b}$\" 缺开头的 $，\"nickel cat\" 漏了句点；Paddle 也漏了 \"cat.\" 的句点，其余正确。"
+}

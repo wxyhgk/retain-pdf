@@ -86,3 +86,18 @@ def test_same_document_from_two_jobs_is_counted_once(tmp_path: Path) -> None:
     assert result["total"]["documents"] == 1
     assert result["total"]["documents_duplicate_skipped"] == 1
     assert len(result["per_document"]) == 1
+
+
+def test_table_html_is_not_cut_at_the_first_formula() -> None:
+    """表里有公式时 OCR 把 HTML 拆成多段，只取第一段会把表截断（2026-11-12 发现，大半的表被截断过）。"""
+    segments = [
+        {"type": "text", "text": "<table><tr><td>E"},
+        {"type": "inline_formula", "text": "^{3}"},
+        {"type": "text", "text": "LLCT</td><td>1.2</td></tr></table>"},
+    ]
+    from_segments = table_survey.table_html({"segments": segments})
+    assert from_segments.endswith("</table>")
+    assert "$ ^{3} $" in from_segments
+    whole = "<table><tr><td>E$ ^{3} $LLCT</td><td>1.2</td></tr></table>"
+    assert table_survey.table_html({"text": whole, "segments": segments}) == whole
+    assert table_survey.parse_table_grid(from_segments).cells == ["E$ ^{3} $LLCT", "1.2"]

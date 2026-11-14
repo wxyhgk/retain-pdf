@@ -1,0 +1,4712 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "d3cs00837a-69p-p042-t1",
+ "fixture": "d3cs00837a-69p.pdf",
+ "source_page": 42,
+ "bbox_pt": [
+  42.5,
+  61.1,
+  552.8,
+  710.4
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 28 Photophysical properties of the compounds shown in Section 3",
+ "footnotes": [],
+ "rows": [
+  [
+   {
+    "text": "Compound",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "化合物"
+   },
+   {
+    "text": "Condition",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "条件"
+   },
+   {
+    "text": "λ<sup>max</sup><sub>PL</sub> [nm]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "FWHM [nm]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Φ<sub>PL</sub> [—]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "ΔE<sub>ST</sub> [eV]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "k<sub>RISC</sub> [s<sup>−1</sup>]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Ref.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "参考文献"
+   }
+  ],
+  [
+   {
+    "text": "B2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "CH<sub>2</sub>Cl<sub>2</sub>/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "461/455",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "39/32",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.19/0.68",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12/0.18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/4.1 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "217",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "B3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "CH<sub>2</sub>Cl<sub>2</sub>/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "442/441",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "50/34",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13/0.47",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.31/0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "217",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "B4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "CH<sub>2</sub>Cl<sub>2</sub>/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "449/450",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22/38",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.21/0.61",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.19/0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "217",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "B2-F",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "467",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "44",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.57",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "217",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzDABNA-NP-M/TB",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "465/468",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23/28",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.82/0.86",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.1 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "111",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzB2-M/TB",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "473/491",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23/34",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.72/0.88",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.11",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.4 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "111",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "BN1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "454/458",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "18/22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.91",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.20/0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.3 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "218",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "BN2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "464/467",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "15/22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.93",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.16/0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.6 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "218",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "BN3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "456/458",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "17/21",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.98",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15/0.12",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.55 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "218",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "OBN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/10 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/10 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "425/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "30/46",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.85/0.50",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.20/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.3 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "219",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "NBN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/10 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/10 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "440/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "29/43",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.90/0.71",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.9 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "219",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "ODBN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/10 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/10 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "429/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "26/55",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.93/0.86",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.19/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.1 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "219",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DABNA-NP-M",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "460",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "29",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.88",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.17",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.4 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "111",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DABNA-NP-TB<sup>b</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "453",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "26",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.83",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.17",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.4 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "111",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "t-DAB-DPA<sup>b</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3 wt%-mCBP:mCBP-CN<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.94",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.97 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "220",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "PAB",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-mCP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-mCP<sup>a</sup>"
+   },
+   {
+    "text": "449/453",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.61",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.06",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/6.95 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "221",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "2tPAB",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-mCP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-mCP<sup>a</sup>"
+   },
+   {
+    "text": "456/457",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "26/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.67",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.08",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/6.34 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "221",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "3tPAB<sup>b</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-mCP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-mCP<sup>a</sup>"
+   },
+   {
+    "text": "456/458",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.75",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.10",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/5.74 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "221",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "mBP-DABNA-Me",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-mCP:DPEPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-mCP:DPEPO<sup>a</sup>"
+   },
+   {
+    "text": "464/467",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.97",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12/0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.95 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "222",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "pBP-DABNA-Me",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-mCP:DPEPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-mCP:DPEPO<sup>a</sup>"
+   },
+   {
+    "text": "458/462",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "15/22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.98",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.11/0.18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/6.85 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "223",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "BP-2DPA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-DIC-TRz<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-DIC-TRz<sup>a</sup>"
+   },
+   {
+    "text": "599/601",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "34/37",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.91",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "224",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DBP-4DPA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-DIC-TRz<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-DIC-TRz<sup>a</sup>"
+   },
+   {
+    "text": "605/612",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "34/35",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.96",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "224",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzDABNA-NP",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "457/461",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23/30",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.88/0.80",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.6 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "111",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzDABNA-NP-TB/H",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "462/465",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "16/30",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.86/0.82",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.3 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "111",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Cz2DABNA-NP-M/TB",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "479/478",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23/29",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.95/0.85",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.14",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/7.3 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "111",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "tCBNDA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "CH<sub>2</sub>Cl<sub>2</sub>/neat/7 wt%-DBFDPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "CH<sub>2</sub>Cl<sub>2</sub>/纯膜/7 wt%-DBFDPO<sup>a</sup>"
+   },
+   {
+    "text": "467/470/472",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "28/47/37",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—/0.72",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—/0.05",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—/8.55 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "225",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DPACzBN2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-26DCzPPy<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-26DCzPPy<sup>a</sup>"
+   },
+   {
+    "text": "460/470",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22/29",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.92",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.12",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.9 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "195",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DPACzBN3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-26DCzPPy<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-26DCzPPy<sup>a</sup>"
+   },
+   {
+    "text": "468/475",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "20/27",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.94",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.1 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "195",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "mICz-DABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-mCBP-CN<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-mCBP-CN<sup>a</sup>"
+   },
+   {
+    "text": "461/465",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22/26",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.93",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.20/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.65 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "226",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "BFCz-DABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-mCBP-CN<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-mCBP-CN<sup>a</sup>"
+   },
+   {
+    "text": "456/462",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22/26",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.93",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.20/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.78 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "226",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DPMX-CzDABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/15 wt%-SF3-TRZ<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/15 wt%-SF3-TRZ<sup>a</sup>"
+   },
+   {
+    "text": "471/481",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22/29",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.94",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.11",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/6.6 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "227",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "mono-mx-CzDABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-mCBP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-mCBP<sup>a</sup>"
+   },
+   {
+    "text": "474/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "34/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.77/0.83",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.86 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "228",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "tri-mx-CzDABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-mCBP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-mCBP<sup>a</sup>"
+   },
+   {
+    "text": "462/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "26/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.68/0.91",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.16/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.85 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "228",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Me-PABO",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-PPF<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-PPF<sup>a</sup>"
+   },
+   {
+    "text": "453/457",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "21/26",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.88",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.17/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/3.50 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "229",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Me-PABS",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-PPF<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-PPF<sup>a</sup>"
+   },
+   {
+    "text": "463/470",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "21/32",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.92",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/5.59 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "229",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "tDMAC-BN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "468/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "26/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/4.80 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "230",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "tDPAC-BN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "454/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.94",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.17/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.16 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "230",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "PhDMAC-BN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-PPF<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-PPF<sup>a</sup>"
+   },
+   {
+    "text": "473/483",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27/34",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.86",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.14/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/5.04 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "231",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "PTZBN3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/26DCzPPy<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/26DCzPPy<sup>a</sup>"
+   },
+   {
+    "text": "468/473",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "30/36",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.98",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.17/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.08 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "196",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "PTZBN2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/26DCzPPy<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/26DCzPPy<sup>a</sup>"
+   },
+   {
+    "text": "483/487",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "41/42",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.95",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/4.51 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "196",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DOBNA-Oar",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/neat",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/纯膜"
+   },
+   {
+    "text": "388/433",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "34/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.65/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.16/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "60",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "1B-DTACrs",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-mCBP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-mCBP<sup>a</sup>"
+   },
+   {
+    "text": "438/443",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27/28",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.99/0.83",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.22/0.21",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "232",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "2B-DTACrs",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-mCBP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-mCBP<sup>a</sup>"
+   },
+   {
+    "text": "443/448",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "21/24",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.64/0.74",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.16/0.16",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.3 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "232",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Cl-MR",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/10 wt%-DPEPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/10 wt%-DPEPO<sup>a</sup>"
+   },
+   {
+    "text": "460/474",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27/36",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.85",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.14/0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/9.8 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "233",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Br-MR",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/10 wt%-DPEPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/10 wt%-DPEPO<sup>a</sup>"
+   },
+   {
+    "text": "460/474",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "27/36",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.76",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.14/0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/5.9 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "233",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DBT-BN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯"
+   },
+   {
+    "text": "494",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "234",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DBF-DBN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/2 wt%-CBP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/2 wt%-CBP<sup>a</sup>"
+   },
+   {
+    "text": "514/529",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.24/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.1 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "234",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DBT-DBN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/2 wt%-CBP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/2 wt%-CBP<sup>a</sup>"
+   },
+   {
+    "text": "516/525",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.25/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/7.4 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "234",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "OAB-ABP-1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "503/506",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "31/34",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": ">0.99/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.12",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/4.0 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "235",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzB2-M/P",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "504",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "39",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.87",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.06",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "5.1 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "111",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Cz2B2-M/TB",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "469/483",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "24/38",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.70/0.88",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.11",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/3.1 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "111",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "C-BN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯"
+   },
+   {
+    "text": "450",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.00",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.21",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.8 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "236",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "TPD4PA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-mCBP-CN<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-mCBP-CN<sup>a</sup>"
+   },
+   {
+    "text": "445/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.88",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.05/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.51 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "237",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "tBu-TPD4PA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-mCBP-CN<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-mCBP-CN<sup>a</sup>"
+   },
+   {
+    "text": "451/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.06/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.44 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "237",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "DTBN-B2N3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-26DCzPPy<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-26DCzPPy<sup>a</sup>"
+   },
+   {
+    "text": "471/475",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.97/0.96",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.10/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.6 × 10<sup>6</sup>/1.2 × 10<sup>6</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "152",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "ν-DABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-DOBNA-Oar",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-DOBNA-Oar"
+   },
+   {
+    "text": "468/467",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14/18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.74/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.017",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.0 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "60",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "ν-DABNA-O-Me",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "461/464",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19/24",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.90/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.029",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.6 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "238",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "t-Bu-ν-DABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "467/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.92",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.04/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.54 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "134",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "m-ν-DABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "464/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.91",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.07/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.30 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "240",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "4F-ν-DABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "457/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.05/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.28 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "240",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "4F-m-ν-DABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "455/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.89",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.07/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.10 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "240",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "o-Tol-ν-DABNA-Me",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/3 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/3 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "466/472",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.92/0.99",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "∼0.01/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.95 × 10<sup>5</sup>/3.21 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "241",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "NO-DBMR",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "458/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.83",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.04/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/1.04 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "239",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Cz-DBMR",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/5 wt%-DBFPO<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/5 wt%-DBFPO<sup>a</sup>"
+   },
+   {
+    "text": "480/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.82",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.04/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/3.72 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "239",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Π-CzBN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-mCP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-mCP<sup>a</sup>"
+   },
+   {
+    "text": "486/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "16/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.96/0.98",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.04",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.9 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "242",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "V-DABNA-Mes",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "486/484",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "13/16",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.79/0.80",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.0085",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4.22 × 10<sup>5</sup>/4.4 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "243",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "V-DABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "483/481",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14/17",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.85/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.0060",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "7.14 × 10<sup>5</sup>/5.7 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "244",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "V-DABNA-F",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-PMMA<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-PMMA<sup>a</sup>"
+   },
+   {
+    "text": "467/464",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "13/16",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.91/0.81",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.0049",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "5.06 × 10<sup>5</sup>/6.5 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "244",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzB4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.1 wt%-PS<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "483",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "14",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.92",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.012",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.8 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "245",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzB6",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.1 wt%-PS<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "488",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "12",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.94",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.021",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.0 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "245",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "superscript_markers",
+  "units_in_header",
+  "chemical_formulas",
+  "inline_math",
+  "long_table",
+  "continued_table"
+ ],
+ "notes": "Table 28 跨页，这一页没有表注（表注在下一页 p043）。ν-DABNA 系列的 ν 来自粗体符号字体字形“n”、Π-CzBN 的 Π 来自 AdvGreek_B 的“P”、o-Tol-ν-DABNA-Me 行 ΔE<sub>ST</sub>“∼0.01/—”的“∼”来自 AdvEls-ent7 的“B”、OAB-ABP-1 的“>0.99/0.90”的“>”来自 AdvPi1 的“4”，都按页面显示写。“DIC-TRz”的 z 原文就是小写。“Toluene/neat”的 neat 指纯膜，译“甲苯/纯膜”。条件列里 “Toluene/x wt%-主体” 表示“甲苯溶液/x wt% 掺杂薄膜”，只译 Toluene（甲苯）和 neat-film（纯膜），主体材料缩写和上标保留。 PaddleOCR 结构错得多：把表题当成第一行（colspan=8）塞进表格，末尾 4F-ν-DABNA 到 CzB6 共 11 行缺失，“—/0.91”多处认成“-0/0.91”或“-0.18”。GLM-OCR 71 行完整，只有 o-Tol 认成 o-Toll、Π 写成 ∏。"
+}

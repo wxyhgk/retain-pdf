@@ -1,0 +1,155 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "babeldoc-10p-p006-t1",
+ "fixture": "babeldoc-10p.pdf",
+ "source_page": 6,
+ "bbox_pt": [
+  70.9,
+  328.0,
+  289.1,
+  389.7
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 4: Component ablation on representative pages. LF, VA, and TC denote layout fidelity, visual aesthetics, and terminology consistency, respectively.",
+ "footnotes": [],
+ "rows": [
+  [
+   {
+    "text": "Variant",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "变体"
+   },
+   {
+    "text": "LF↑",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "VA↑",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "TC↑",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Full BabelDOC",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "完整 BabelDOC"
+   },
+   {
+    "text": "4.50",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4.50",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "5.00",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "w/o adaptive typesetting",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "去除自适应排版"
+   },
+   {
+    "text": "3.00",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.50",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4.00",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "w/o glossary/context control",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "去除术语表/上下文控制"
+   },
+   {
+    "text": "4.50",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4.50",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.00",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [],
+ "notes": "LF、VA、TC 在表题里定义过，连同箭头 keep。\"w/o\" 译 \"去除\"（消融实验常用说法）。OCR：两家结构和文字都对（4×4），Paddle 把箭头写成 $\\uparrow$。"
+}

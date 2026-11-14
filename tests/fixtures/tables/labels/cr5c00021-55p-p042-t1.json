@@ -1,0 +1,704 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "cr5c00021-55p-p042-t1",
+ "fixture": "cr5c00021-55p.pdf",
+ "source_page": 42,
+ "bbox_pt": [
+  51.5,
+  76.4,
+  555.5,
+  186.0
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 1. Device Performance of Organic Light-Emitting Diodes (OLEDs) with t-DABNA (151)-Doped EML",
+ "footnotes": [
+  "a Voltage at 1 (turn-on voltage, V<sub>on</sub>), 1 cd m<sup>−2</sup>;",
+  "b EQE for maximum, and at 100 and 1000 cd m<sup>−2</sup>, respectively;",
+  "c Current Efficiency for maximum, and at 1000 cd m<sup>−2</sup>;",
+  "d Power Efficiency for maximum, and at 1000 cd m<sup>−2</sup>;",
+  "e λ<sub>EL</sub>: EL emission maximum, and FWHM: full width at half maximum;",
+  "f Commission Internationale de l’Éclairage color chromaticity coordinates;",
+  "g 90% of an initial luminance of 1000 cd m<sup>−2</sup>.",
+  "d1 ITO/PEDOT:PSS (60 nm)/ TAPC (20 nm)/ mCP (10 nm)/ DPEPO: 30 wt % DMAC-DPS: 1 wt % t-DABNA (25 nm)/ TSPO1 (5 nm)/ TPBi (20 nm)/ LiF (1.5 nm)/ Al (200 nm);",
+  "d2 ITO/HATCN (5 nm)/ NPB (30 nm)/ TCTA (10 nm)/ mCPCz: 40 wt % p4TCzPhBN: 2 wt % t-DABNA (30 nm)/ CzPhPy (10 nm)/ DPPyA:Liq (1:1, 30 nm)/ LiF (0.5 nm)/ Al (150 nm);",
+  "d3 ITO/3 wt % p-dopant: HTL1 (10 nm)/ HTL1(50 nm)/ HTL2 (5 nm)/ 3 wt % t-DABNA: host (25 nm) (20 nm)/ ETL1 (5 nm)/ 50 wt % Liq:ETL2 (30 nm)/ Liq (2 nm)/ Al (120 nm);",
+  "d4 ITO/HATCN (10 nm)/ TAPC (35 nm)/ TCTA (10 nm)/ DPEPO:40 wt % m-tz2:1 wt % t-DABNA (25 nm)/ DPEPO (5 nm)/ TmPyPB (45 nm)/ LiF (2 nm)/ Al (120 nm);",
+  "d5 ITO/PEDOT:PSS (60 nm)/ TAPC (20 nm)/ mCP (10 nm)/ TSPO1:30 wt % Ir(cb)<sub>3</sub>: 1 wt % t-DABNA (25 nm)/ TSPO1 (5 nm)/ TPBi (20 nm)/ LiF (1.5 nm)/ Al (200 nm);",
+  "d6 ITO/HATCN (10 nm)/ TAPC (25 nm)/ mCBP: 30% f-tpb1:1% t-DABNA (30 nm)/ TmPyPB (35 nm)/ LiF (1 nm)/ Al (100 nm)."
+ ],
+ "rows": [
+  [
+   {
+    "text": "Sensitizer",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "敏化剂"
+   },
+   {
+    "text": "V<sub>on</sub> [v]<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "EQE [%]<sup>b</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "CE [cd A<sup>−1</sup>]<sup>c</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "PE [lm W<sup>−1</sup>]<sup>d</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "λ<sub>EL</sub>/ FWHM[nm]<sup>e</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "CIE <sub>(x,y)</sub><sup>f</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT (h)<sup>g</sup>(brightness)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "LT (h)<sup>g</sup>(亮度)"
+   },
+   {
+    "text": "Ref.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "文献"
+   }
+  ],
+  [
+   {
+    "text": "DMAC-DPS<sup>d1</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "31.4/27.2/19.8%",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "32.6/28.9/20.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "33.6/21.0/10.9",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "464/31",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>114</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "p4TCPhBN<sup>d2</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "32.5/26.4/23.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "466/29",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.12",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>80</sub> = 60 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>345</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Host 1<sup>d3</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "主体 1<sup>d3</sup>"
+   },
+   {
+    "text": "2.7",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "11.70/11.40/11.51",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "8.49",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "8.89",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "463",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.125, 0.098",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>90</sub> = 249.0 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>344</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Host 2<sup>d3</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "主体 2<sup>d3</sup>"
+   },
+   {
+    "text": "2.7",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "10.40/10.15/9.87",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "7.11",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "7.52",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "463",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.124, 0.102",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>90</sub> = 192.3 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "MADN<sup>d3</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.6",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "9.60/9.55/9.55",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "7.26",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "8.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "463",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.124, 0.102",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>90</sub> = 100.4 (1000 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "m-tz2<sup>d4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.7",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19.7/−/−",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "20.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "17.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "468/31",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.12, 0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "empty",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>346</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Ir(cb)3<sup>d5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "24.8/-/18.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "22.6/-/",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "20.2/-/8.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.131, 0.107",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "LT<sub>50</sub> = 293 (200 cd/m<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>347</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "f-tpb1<sup>d6</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4.6",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "29.6/−/−",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "28.7/−/−",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19.6/−/−",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "462/30",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13, 0.11",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "-",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>348</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "superscript_markers",
+  "units_in_header",
+  "chemical_formulas",
+  "narrow_columns"
+ ],
+ "notes": "第一列是敏化剂/主体材料名（化合物缩写），keep；只有 \"Host 1\"、\"Host 2\" 译 \"主体 1/2\"。表头多为缩写加单位（EQE、CE、PE、FWHM、CIE 都在表注里定义），keep；\"LT (h)g(brightness)\" 只译 brightness。Ref. 列的文献号在原文是小号上标，按 <sup> 抄；Host 2、MADN 两行的 Ref. 原文为空（与 Host 1 同出 344），不按合并处理。m-tz2 的 LT 格原文为空（不是 \"-\"）。\"19.7/−/−\" 里是 U+2212 负号，\"24.8/-/18.4\" 里是连字符，照原文分别抄。表中 \"p4TCPhBN\" 与表注 \"p4TCzPhBN\" 不一致，是原文如此。OCR：两家结构都对（9×9）。GLM 把 \"22.6/-/\" 补成了 \"22.6/-/-\"，\"19.7/−/−\" 写成 ASCII 连字符，CIE 表头公式残缺（\"CIE($_{(x,y)}$^{f}$\"）；Paddle 把 V<sub>on</sub> 认成 V_qn、上标 a 认成 d，CIE 表头认成 \"(κ_y)\"，\"p4TCPhBN\" 认成 \"p4TCPHBN\"，\"Ir(cb)3<sup>d5</sup>\" 把 3 并进上标（^{3d5}），\"19.7/−/−\"、\"22.6/-/\" 等末尾都少了一个 \"-\"。"
+}

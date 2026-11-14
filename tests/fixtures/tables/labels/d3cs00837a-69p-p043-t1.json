@@ -1,0 +1,952 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "d3cs00837a-69p-p043-t1",
+ "fixture": "d3cs00837a-69p.pdf",
+ "source_page": 43,
+ "bbox_pt": [
+  42.5,
+  61.2,
+  552.8,
+  200.7
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 28 (continued)",
+ "footnotes": [
+  "a See Table 2 for the full compound name.",
+  "b Same compound named differently.",
+  "c See Scheme 3."
+ ],
+ "rows": [
+  [
+   {
+    "text": "Compound",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "化合物"
+   },
+   {
+    "text": "Condition",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "条件"
+   },
+   {
+    "text": "λ<sup>max</sup><sub>PL</sub> [nm]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "FWHM [nm]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Φ<sub>PL</sub> [—]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "ΔE<sub>ST</sub> [eV]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "k<sub>RISC</sub> [s<sup>−1</sup>]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Ref.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "参考文献"
+   }
+  ],
+  [
+   {
+    "text": "CzB8",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.1 wt%-PS<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "491",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "12",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.92",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.0039",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "6.5 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "245",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzB4-oPh",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.1 wt%-PS<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "478",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "16",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.93",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.019",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "6.4 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "245",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "m[B-N]N1",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/2 wt%-mCPBC<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/2 wt%-mCPBC<sup>a</sup>"
+   },
+   {
+    "text": "481/483",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "29/28",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.93/0.91",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.15/0.15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.8 × 10<sup>3</sup>/1.59 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "248",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "m[B-N]N2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/2 wt%-mCPBC<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/2 wt%-mCPBC<sup>a</sup>"
+   },
+   {
+    "text": "491/491",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "34/33",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.91/0.90",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.10/0.13",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "2.4 × 10<sup>3</sup>/1.44 × 10<sup>4</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "248",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "p[B-N]O",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-mCPBC<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-mCPBC<sup>a</sup>"
+   },
+   {
+    "text": "488/497",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19/23",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.93/0.91",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.43/0.44",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "249",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "p[B-N]NO",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-mCPBC<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-mCPBC<sup>a</sup>"
+   },
+   {
+    "text": "522/529",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "28/30",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.90/0.89",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.40/0.37",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "249",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "p[B-N]N",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-mCPBC<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-mCPBC<sup>a</sup>"
+   },
+   {
+    "text": "442/450",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "19/25",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.84/0.83",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.28/0.26",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "249",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "BN2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "THF/5 wt%-mCBP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "567/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "97/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.64/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.10 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "250",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "TCz-BN2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "THF/5 wt%-mCBP<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "584/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "108/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.61/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.17",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/2.44 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "250",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "BN3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "THF",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "694",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "151",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.01",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/—",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "250",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "ω-DABNA",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene/1 wt%-DOBNA-Ph<sup>c</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯/1 wt%-DOBNA-Ph<sup>c</sup>"
+   },
+   {
+    "text": "509/509",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "18/22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.92/0.87",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/0.013",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.3 × 10<sup>5</sup>/1.2 × 10<sup>5</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "252",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "NBONacene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "THF/1.5 wt%-TSPO1<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "305 427/410 430",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "40/38",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.33/0.71",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.31/0.30",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/3.74 × 10<sup>3</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "254",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "MesB-DIDOBNA-N",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "THF/1.5 wt%-TSPO1<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "399/402",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "23/19",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.33/0.75",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.24/0.24",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "—/9.81 × 10<sup>3</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "253",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "superscript_markers",
+  "units_in_header",
+  "inline_math",
+  "continued_table"
+ ],
+ "notes": "Table 28 续表，表头重复一遍，表注 a/b/c 在这一页。ω-DABNA 的 ω 来自 AdvGreek_B 的“x”。NBONacene 的 λ“305 427/410 430”原文就是空格分隔。PaddleOCR 把“—/0.19”“—/2.10 × 10<sup>5</sup>”等吞掉斜杠成负数。GLM-OCR 基本对。"
+}

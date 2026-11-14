@@ -1,0 +1,990 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "babeldoc-10p-p005-t1",
+ "fixture": "babeldoc-10p.pdf",
+ "source_page": 5,
+ "bbox_pt": [
+  72.8,
+  71.2,
+  522.5,
+  243.1
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 2: Comprehensive capability matrix of PDF document translation systems. PDFMathTrans. denotes PDFMathTranslate. TeX-based refers to workflows that reconstruct documents from available LaTeX source rather than directly translating arbitrary PDF inputs. The comparison reflects the evaluated configurations and publicly documented capabilities rather than all possible integrations of each system. Speed is reported for reference only, as systems differ in supported functions, rendering coverage, and deployment settings.",
+ "footnotes": [],
+ "rows": [
+  [
+   {
+    "text": "Category",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "类别"
+   },
+   {
+    "text": "Feature",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "功能"
+   },
+   {
+    "text": "BabelDOC",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "PDFMathTrans.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Doc2X",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "TeX-based",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "基于 TeX 的方案"
+   },
+   {
+    "text": "Google",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "DeepL",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Accessibility",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "可获取性"
+   },
+   {
+    "text": "Open-source Deployment",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "开源部署"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "API Integration",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "API 集成"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Layout & Visual Integrity",
+    "rowspan": 7,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "版面与视觉完整性"
+   },
+   {
+    "text": "Multi-column Layout Preservation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "多栏版面保留"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Partial",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "部分支持"
+   }
+  ],
+  [
+   {
+    "text": "Vector Formula Translation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "矢量公式翻译"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Dual-page Bilingual Output",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "双页双语输出"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Partial",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "部分支持"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Scanned PDF (OCR Support)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "扫描版 PDF (OCR 支持)"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Footnote Reconstruction",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "脚注重建"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Partial",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "部分支持"
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Font Style Preservation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "字体样式保留"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Partial",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "部分支持"
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "In-Figure/Table Text Translation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "图内/表内文字翻译"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Partial",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "部分支持"
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Partial",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "部分支持"
+   }
+  ],
+  [
+   {
+    "text": "Semantic & NLP Control",
+    "rowspan": 4,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "语义与 NLP 控制"
+   },
+   {
+    "text": "Intermediate Rep. (IR)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "中间表示 (IR)"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Cross-page Context Stitching",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "跨页上下文拼接"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Auto Terminology Extraction",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "术语自动提取"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Dictionary (Glossary) Constraints",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "词典 (术语表) 约束"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Partial",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "部分支持"
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Efficiency",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "效率"
+   },
+   {
+    "text": "Batch Processing",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "批量处理"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Avg. Speed (sec/page)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "平均速度 (sec/page)"
+   },
+   {
+    "text": "1.63",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.47",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.86",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.67",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.38",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.88",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "spanning_cells",
+  "units_in_header"
+ ],
+ "notes": "第一列类别纵向合并（2/7/4/2 行），第二列功能名，两列都按 stub。表头里系统名（BabelDOC、PDFMathTrans.、Doc2X、Google、DeepL）keep；\"TeX-based\" 指一类做法而非产品名，译 \"基于 TeX 的方案\"。\"Accessibility\" 这里指能否开源部署、能否接 API，译 \"可获取性\"，拿不准。\"Avg. Speed (sec/page)\" 单位在行标签里，按表头单位规则保留。表题里的 LaTeX 是排版标志，按文字抄成 LaTeX。OCR：两家结构都对（16×8，类别列 rowspan 正确）。GLM 把 ✓ 认成 \"√\"、✗ 认成 \"X\"，\"Layout&Visual Integrity\"、\"Scanned PDF(OCR Support)\" 等丢了空格；Paddle 完全正确。"
+}

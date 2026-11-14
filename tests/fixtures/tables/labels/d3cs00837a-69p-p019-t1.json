@@ -1,0 +1,798 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "d3cs00837a-69p-p019-t1",
+ "fixture": "d3cs00837a-69p.pdf",
+ "source_page": 19,
+ "bbox_pt": [
+  42.5,
+  61.1,
+  552.8,
+  200.1
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 14 Conditions used to synthesise the compounds shown in Fig. 14",
+ "footnotes": [
+  "a Numbers in parentheses refer to reagent loadings (equivalents)."
+ ],
+ "rows": [
+  [
+   {
+    "text": "Compound",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "化合物"
+   },
+   {
+    "text": "Condition A<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "条件 A<sup>a</sup>"
+   },
+   {
+    "text": "Condition B<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "条件 B<sup>a</sup>"
+   },
+   {
+    "text": "Condition C<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "条件 C<sup>a</sup>"
+   },
+   {
+    "text": "Solvent",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "溶剂"
+   },
+   {
+    "text": "Yield [%]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "产率 [%]"
+   },
+   {
+    "text": "Ref.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "参考文献"
+   }
+  ],
+  [
+   {
+    "text": "CzBNCz",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>n</sup>BuLi (1.2)/60 °C, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (1.2)/rt, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.4)/110 °C, 10 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯"
+   },
+   {
+    "text": "34",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "157",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "TCz-BN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>BuLi (3.0)/60 °C, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (3.0)/rt, 0.5 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (4.8)/120 °C, 5 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>Bu-Benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基苯"
+   },
+   {
+    "text": "22",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "172",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "m-Cz-BNCz",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>BuLi (2.0)/60 °C, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (2.0)/rt, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.0)/130 °C, 6 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>Bu-Benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基苯"
+   },
+   {
+    "text": "15",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "179",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzBNNa",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>n</sup>BuLi (1.2)/60 °C, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (1.5)/rt, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.2)/110 °C, 10 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯"
+   },
+   {
+    "text": "28",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "180",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "CzBNpyr",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>n</sup>BuLi (1.2)/60 °C, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (1.5)/rt, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.3)/110 °C, 10 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Xylene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "二甲苯"
+   },
+   {
+    "text": "35",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "180",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "p-TBNCz",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>BuLi (2.0)/60 °C, 4 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (2.0)/rt, 6 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (4.0)/120 °C, 24 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>Bu-Benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基苯"
+   },
+   {
+    "text": "52",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "181",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "BNCz-Br",
+    "rowspan": 6,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>n</sup>BuLi (1.1)/−0 °C to rt",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "<sup>n</sup>BuLi (1.1)/−0 °C 至 rt"
+   },
+   {
+    "text": "BBr<sub>3</sub> (2.0)/rt, 0.5 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.0)/180 °C, 12 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Mesitylene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "均三甲苯"
+   },
+   {
+    "text": "74",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "182",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "<sup>n</sup>BuLi (1.1)/60 °C, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (1.2)/rt, 0.5 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.0)/120 °C, 5 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "m-Xylene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "间二甲苯"
+   },
+   {
+    "text": "55",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "183",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "<sup>n</sup>BuLi (1.1)/−60 °C, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (1.5)/rt, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (4.0)/120 °C, 8 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯"
+   },
+   {
+    "text": "42",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "184",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "<sup>n</sup>BuLi (1.1)/rt, 3 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (1.5)/rt, 3 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.3)/160 °C, 24 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>Bu-Benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基苯"
+   },
+   {
+    "text": "31",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "185",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "<sup>n</sup>BuLi (1.1)/−78 °C, 3 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (1.5)/rt, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (4.0)/130 °C, 8 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯"
+   },
+   {
+    "text": "20",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "186",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "<sup>n</sup>BuLi (1.2)/rt, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (1.5)/rt, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (4.0)/130 °C, 10 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Xylene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "二甲苯"
+   },
+   {
+    "text": "16",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "187",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "BNCz-Br-Cz2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>n</sup>BuLi (1.1)/−60 °C, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (1.5)/rt, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (4.0)/120 °C, 8 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Toluene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "甲苯"
+   },
+   {
+    "text": "45",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "184",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "spanning_cells",
+  "superscript_markers",
+  "units_in_header",
+  "chemical_formulas"
+ ],
+ "notes": "条件 A/B/C 列是\"试剂（当量）/温度，时间\"，按 keep（rt 是表 1 定义的缩写）；只有含 to rt、overnight、reflux 的格子翻（至 rt、过夜、回流）。溶剂名翻成中文，<sup>t</sup>Bu-Benzene 和同文后面几张表一致译作叔丁基苯（拿不准：它在表 2 里列为缩写，也可以 keep）。Ref. 列文献号 keep。文字层里 ° 是符号字体的 \"1\"、负号是控制字符，text 按页面显示写成 °C、−。同一化合物有多条路线时原文只在第一行写名字、下面几行留空，这里标成化合物格 rowspan。OCR：两家结构和文字都对（14×7），BNCz-Br 下面 5 行给的是空格子。"
+}

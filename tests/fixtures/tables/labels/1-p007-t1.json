@@ -1,0 +1,197 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "1-p007-t1",
+ "fixture": "1.pdf",
+ "source_page": 7,
+ "bbox_pt": [
+  324.5,
+  242.0,
+  564.5,
+  300.5
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 1. Stoichiometric Cross-Coupling Studies<sup>a</sup>",
+ "footnotes": [
+  "a Reactions run on 10 μmol scale. Average of two trials. Yield determined by GC-FID with internal standard.",
+  "b No fluorinated products observed.",
+  "c 2,2′-Dimethyl-1,1′-biphenyl also observed."
+ ],
+ "rows": [
+  [
+   {
+    "text": "entry<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "序号<sup>a</sup>"
+   },
+   {
+    "text": "oxidant",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "氧化剂"
+   },
+   {
+    "text": "o-cymene (%)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "邻伞花烃 (%)"
+   },
+   {
+    "text": "2-iodotoluene (%)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "2-碘甲苯 (%)"
+   }
+  ],
+  [
+   {
+    "text": "1<sup>c</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "none",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "无"
+   },
+   {
+    "text": "10",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "25",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "2<sup>b</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NFTPB (1 equiv)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "17",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "78",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "3<sup>c</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "AcFcBF<sub>4</sub> (1 equiv)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "18",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "AcFcBF<sub>4</sub> (2 equiv)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "41",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "44",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "superscript_markers",
+  "units_in_header",
+  "chemical_formulas"
+ ],
+ "notes": "表题上方的反应式是图片（324,196–564,236），不算表格本体。\"o-cymene\" 的 o 是斜体，按纯文本抄。\"NFTPB (1 equiv)\"、\"AcFcBF4 (1 equiv)\" 只有试剂缩写和用量，按 keep；equiv 作单位保留不译。OCR：两家 bbox 和行列结构都对（5×4）。GLM 的上标处理坏了：表头 \"entrya\" 把上标 a 并进了正文，\"AcFcBF_{4</sub>\" 公式定界符残缺；Paddle 基本正确。"
+}

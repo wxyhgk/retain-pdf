@@ -1,0 +1,315 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "d3cs00837a-69p-p024-t1",
+ "fixture": "d3cs00837a-69p.pdf",
+ "source_page": 24,
+ "bbox_pt": [
+  42.5,
+  255.2,
+  552.8,
+  313.6
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 19 Conditions used to synthesise the compounds shown in Scheme 15",
+ "footnotes": [
+  "a Numbers in parentheses refer to reagent loadings (equivalents)."
+ ],
+ "rows": [
+  [
+   {
+    "text": "Compound",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "化合物"
+   },
+   {
+    "text": "Condition A<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "条件 A<sup>a</sup>"
+   },
+   {
+    "text": "Condition B<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "条件 B<sup>a</sup>"
+   },
+   {
+    "text": "Condition C<sup>a</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "条件 C<sup>a</sup>"
+   },
+   {
+    "text": "Solvent",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "溶剂"
+   },
+   {
+    "text": "Yield [%]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "产率 [%]"
+   },
+   {
+    "text": "Ref.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "参考文献"
+   }
+  ],
+  [
+   {
+    "text": "NBO",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>n</sup>BuLi (3.0)/70 °C, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (4.0)/rt, 0.5 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.9)/130 °C, 18 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>Bu-Benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基苯"
+   },
+   {
+    "text": "12 (2 steps)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "12（2 步）"
+   },
+   {
+    "text": "191",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "tCzphB-Ph",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>n</sup>BuLi (1.5)/−40 °C, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (2.9)/rt, overnight",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "BBr<sub>3</sub> (2.9)/rt，过夜"
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.9)/130 °C, 4 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>Bu-Benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基苯"
+   },
+   {
+    "text": "61",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "200",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "tCzphB-Fl",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>n</sup>BuLi (1.5)/−40 °C, 2 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (2.9)/rt, overnight",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "BBr<sub>3</sub> (2.9)/rt，过夜"
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (2.9)/130 °C, 4 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>Bu-Benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基苯"
+   },
+   {
+    "text": "55",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "200",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "LTCz-BN",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>BuLi (4.0)/70 °C, 1 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "BBr<sub>3</sub> (4.2)/rt, 0.5 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "NEt<sup>i</sup>Pr<sub>2</sub> (3.2)/130 °C, 24 h",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "<sup>t</sup>Bu-Benzene",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "叔丁基苯"
+   },
+   {
+    "text": "10 (2 steps)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "10（2 步）"
+   },
+   {
+    "text": "201",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "superscript_markers",
+  "units_in_header",
+  "chemical_formulas"
+ ],
+ "notes": "条件 A/B/C 列是\"试剂（当量）/温度，时间\"，按 keep（rt 是表 1 定义的缩写）；只有含 to rt、overnight、reflux 的格子翻（至 rt、过夜、回流）。溶剂名翻成中文，<sup>t</sup>Bu-Benzene 和同文后面几张表一致译作叔丁基苯（拿不准：它在表 2 里列为缩写，也可以 keep）。Ref. 列文献号 keep。文字层里 ° 是符号字体的 \"1\"、负号是控制字符，text 按页面显示写成 °C、−。产率格 \"12 (2 steps)\" 翻成 \"12（2 步）\"。OCR：两家结构和文字都对（5×7）。"
+}

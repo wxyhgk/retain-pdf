@@ -1,0 +1,834 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "2-p026-t1",
+ "fixture": "2.pdf",
+ "source_page": 26,
+ "bbox_pt": [
+  108.4,
+  81.1,
+  503.6,
+  328.5
+ ],
+ "source_kind": "text_layer",
+ "caption": "TABLE II. Points on the 2<sup>1</sup>A-3<sup>1</sup>A surface of conical intersection. Distances are in a<sub>0</sub>, angles are in degrees, the energy E<sub>x</sub>=E<sub>I</sub>=E<sub>J</sub> is in eV, and the energy splitting ΔE<sub>IJ</sub>≡E<sub>I</sub>−E<sub>J</sub> is in cm<sup>−1</sup>. R(NO) is fixed and all the other parameters are optimized except as noted.",
+ "footnotes": [
+  "a R(NO) was also optimized in this calculation.",
+  "b Steepest descent begun from X<sup>1</sup>A′ equilibrium structure except that κ→88°.",
+  "c Steepest descent begun from X<sup>1</sup>A′ equilibrium structure except that κ→0°.",
+  "d δE=E<sub>3<sup>1</sup>A</sub>(R<sub>x</sub>)−E<sub>3<sup>1</sup>A</sub>(R<sub>ref</sub>) where R<sub>ref</sub> is the equilibrium geometry of the X<sup>1</sup>A′ state with κ modified as indicated and R<sub>x</sub> is the point on the surface of conical intersection."
+ ],
+ "rows": [
+  [
+   {
+    "text": "R(NO)",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "R(OH<sup>1</sup>)",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "R(NH<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "∠H<sup>1</sup>ON",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "∠ONH<sup>2</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "∠H<sup>2</sup>NH<sup>3</sup>",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "κ",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "E<sub>x</sub>",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "ΔE<sub>IJ</sub>",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "R(NH<sup>3</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "∠ONH<sup>3</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Energy minimized points",
+    "rowspan": 1,
+    "colspan": 9,
+    "role": "stub",
+    "action": "translate",
+    "reference": "能量极小化点"
+   }
+  ],
+  [
+   {
+    "text": "2.6686",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.8863",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.9928",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "118.3",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "138.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "105.6",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "8.42",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "5.64",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.32",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "1.9237",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "116.3",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "2.7686",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.8524",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.9474",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "110.7",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "132.2",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "114.4",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "9.61",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "5.43",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.13",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "1.9060",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "113.5",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "2.8145<sup>a</sup>",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.8431",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.9371",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "107.2",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "128.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "120.0",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "12.3",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "5.38",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.25",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "1.9044",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "112.0",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "2.89",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.8423",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.9515",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "101.0",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "119.7",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "130.9",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "10.1",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "5.42",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.14",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "1.9102",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "109.4",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "δR(NO)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "δR(OH<sup>1</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "δR(NH<sup>2</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "∠̃H<sup>1</sup>ON",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "∠̃ONH<sup>2</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "∠̃H<sup>2</sup>NH<sup>3</sup>",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "κ",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "δE<sup>d</sup>",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "ΔE<sub>IJ</sub>",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "[R(NO)]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "[R(OH<sup>1</sup>)]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "δR(NH<sup>3</sup>)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "∠̃ONH<sup>3</sup>",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Near steepest-descent points",
+    "rowspan": 1,
+    "colspan": 9,
+    "role": "stub",
+    "action": "translate",
+    "reference": "近最速下降点"
+   }
+  ],
+  [
+   {
+    "text": "0.0639",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.1405",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.0298",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "9.03",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "12.08",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "10.93",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "81.3",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "−0.86",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.63<sup>b</sup>",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "[2.8325]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "[1.9270]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.0259",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "8.58",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "0.1534",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.0227",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.0529",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "−1.77",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4.580",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "4.63",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "1.53",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "−0.38",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.35<sup>c</sup>",
+    "rowspan": 2,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "[2.9222]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "[1.8092]",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "0.0445",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "3.280",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "spanning_cells",
+  "multi_level_header",
+  "superscript_markers",
+  "inline_math",
+  "chemical_formulas"
+ ],
+ "notes": "每个点占两行：第二行只有 R(NH3)/∠ONH3 两列（下半部分还有 [R(NO)]、[R(OH1)]、δR(NH3)、∠̃ONH3）。表头里这几列是上下两个符号叠在一格，按两行表头标（叠放的拆成上下两格，其余列 rowspan=2），和数据行的两行结构对齐；只有一行数值的列在数据里 rowspan=2。表中间还有第二组表头（δR(NO)/[R(NO)] 等），也标 header。两条组标题跨 9 列，按 stub。文字层用 Symbol 字体：∠ 抽出来是 \"/\"，κ 是 \"k\"，Δ 是 \"D\"，δ 是 \"d\"，′ 是 \"8\"，=、≡、− 是 \"5\"、\"[\"、\"2\"；text 按页面显示字符写。下半表头的角度符号上面带波浪号（文字层是 \"/\" 加 \"˜\"），写成 ∠ 加组合波浪号 \"∠̃\"，拿不准原意（可能表示角度变化量）。\"Near steepest-descent points\" 译 \"近最速下降点\"，拿不准，也可译 \"最速下降路径附近的点\"。OCR：GLM 上半部分用 rowspan=2 表示两行一点，和本标注一致，但表头把叠放的两个符号并进一格（\"R(NH^{2})R(NH^{3})\"），下半部分又改成两行各占一行、空格补齐，前后不统一；下半表头的 ∠̃ 认成了 \\tilde{\\lambda}。Paddle 把表题整段当成表格第一行（colspan=9），bbox 上沿 50 框进了表题，表头叠放符号也并成一格（用换行分开），数据第二行用空格补齐、不用 rowspan；∠̃ 认对了（\\tilde{\\angle}）。两家都没把表头拆成两行。负号两家都写成 ASCII \"-\"。"
+}

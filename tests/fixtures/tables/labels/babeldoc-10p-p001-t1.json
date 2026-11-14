@@ -1,0 +1,315 @@
+{
+ "label_version": "table_label.v1",
+ "label_id": "babeldoc-10p-p001-t1",
+ "fixture": "babeldoc-10p.pdf",
+ "source_page": 1,
+ "bbox_pt": [
+  306.1,
+  220.1,
+  524.4,
+  274.2
+ ],
+ "source_kind": "text_layer",
+ "caption": "Table 1: Comparison of capabilities between BabelDOC and representative document translation systems. PDFMathTrans. denotes PDFMathTranslate (Ouyang et al., 2025).",
+ "footnotes": [],
+ "rows": [
+  [
+   {
+    "text": "Feature",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "translate",
+    "reference": "功能"
+   },
+   {
+    "text": "BabelDOC",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "PDFMathTrans.",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Doc2X",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Google / DeepL",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "header",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Formula processing",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "公式处理"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Footnote translation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "脚注翻译"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Visual style preservation (PDF)",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "视觉样式保留 (PDF)"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Partial",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "部分支持"
+   }
+  ],
+  [
+   {
+    "text": "In-figure text translation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "图内文字翻译"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "Partial",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "translate",
+    "reference": "部分支持"
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Intermediate representation",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "中间表示"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ],
+  [
+   {
+    "text": "Auto contextual terminology",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "stub",
+    "action": "translate",
+    "reference": "上下文术语自动处理"
+   },
+   {
+    "text": "✓",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   },
+   {
+    "text": "✗",
+    "rowspan": 1,
+    "colspan": 1,
+    "role": "data",
+    "action": "keep",
+    "reference": null
+   }
+  ]
+ ],
+ "tags": [
+  "narrow_columns"
+ ],
+ "notes": "系统名表头（BabelDOC、PDFMathTrans.、Doc2X、Google / DeepL）是产品名，keep；✓/✗ keep；\"Partial\" 译 \"部分支持\"。BabelDOC 列有浅绿底色。表题里 \"PDF-MathTrans.\" 是排版断行的连字符，抄成 PDFMathTrans.。\"Auto contextual terminology\" 原文较省略，译 \"上下文术语自动处理\"，拿不准。OCR：两家结构都对（7×5）。GLM 把 ✓ 认成 \"√\"、✗ 认成大写 \"X\"，\"Visual style preservation(PDF)\" 丢了空格；Paddle 完全正确。"
+}
