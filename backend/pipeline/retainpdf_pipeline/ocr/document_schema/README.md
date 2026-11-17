@@ -201,6 +201,16 @@
 - 翻译/渲染主链路优先消费 `document.v1.json`
 - `document.v1.report.json` 用于查 adapter 探测、默认值补齐和 schema 校验摘要
 - Rust 主工作流调用的 normalize worker 现在要求 `--spec <job_root/specs/normalize.spec.json>`
+
+含 Unicode 替代字符 `�` 的正文优先用原 PDF 文字层恢复。部署方可显式设置
+`RETAIN_VISUAL_OCR_API_KEY` 和 `RETAIN_VISUAL_OCR_PROVIDER`（`glm_ocr`，默认；或 `mineru`），
+启用局部视觉兜底。key 必须属于选择的服务商，不会自动读取翻译或其他 OCR 凭据。
+只把无法从文字层恢复的正文块截图发给所选服务。GLM-OCR 复用 `RETAIN_GLM_OCR_API_URL`，
+单次请求超时 15 秒，不重试；MinerU 复用现有上传和下载接口及其网络超时，任务轮询最多 90 秒。
+每次 OCR 执行最多请求 8 个不同的裁片。扫描页和转成矢量路径的行内符号也能进入这条路径。仅当新结果与缺损之外的文本一致，
+并且每段缺损对应一个字符或一条行内公式时才写回；无法确认时保留原文，归一化报告记录对应块 ID。
+默认不发视觉请求。此功能只针对显式缺损 `�`；不检测 OCR 识别成其他合法字符的错误，
+不修复整块损毁的公式、缺损位于行内公式标记内部的情况，以及上下文不足以确认的结果。
 - 如果只是本地手动验证 schema / adapter，应该走 `validate_document_schema.py`（script-mode，仅桌面兼容，无 console 等价物）
 
 适配器里的顺序（`adapters.py` 的 `adapt_payload_to_document_v1_with_report`）：各家 builder → 补默认值 → 补契约字段 → 把略微超出页边的块夹回页内

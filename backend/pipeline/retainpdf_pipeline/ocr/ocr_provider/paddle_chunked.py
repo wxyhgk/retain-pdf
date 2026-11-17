@@ -38,6 +38,7 @@ from retainpdf_pipeline.ocr.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_N
 from retainpdf_pipeline.ocr.ocr_provider import paddle_api
 from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import chunk_ranges
 from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import prepare_source_pdf
+from retainpdf_pipeline.ocr.ocr_provider.visual_recovery import configured_crop_recognizer
 from retainpdf_pipeline.ocr.ocr_provider.paddle_markdown import materialize_paddle_markdown_artifacts
 from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import build_normalized_document_for_paddle
 from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import save_normalized_document_for_paddle
@@ -301,6 +302,7 @@ def run_paddle_chunked_to_job_dir(args: SimpleNamespace, *, api=None) -> tuple[P
     stream = OcrStreamWriter(job_dirs.ocr_dir, provider="paddle", total_pages=total_pages)
     pages_per_chunk = chunk_pages() or total_pages
     ranges = chunk_ranges(total_pages, pages_per_chunk)
+    recognize_crop = configured_crop_recognizer()
 
     def publish(chunk_payloads: list[dict | None]) -> None:
         filled = [
@@ -319,6 +321,7 @@ def run_paddle_chunked_to_job_dir(args: SimpleNamespace, *, api=None) -> tuple[P
             document_id=job_dirs.root.name,
             provider_version=model,
             provider_payload=merge_paddle_chunks(filled),
+            recognize_crop=recognize_crop,
         )
         stream.publish(document, ready_page_indices=ready)
 
@@ -352,6 +355,7 @@ def run_paddle_chunked_to_job_dir(args: SimpleNamespace, *, api=None) -> tuple[P
             document_id=job_dirs.root.name,
             provider_version=model,
             provider_payload=payload,
+            recognize_crop=recognize_crop,
         )
         stream.publish(json.loads(normalized_json_path.read_text(encoding="utf-8")), done=True)
     except BaseException as error:

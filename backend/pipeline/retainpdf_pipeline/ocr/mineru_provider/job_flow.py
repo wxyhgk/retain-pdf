@@ -37,6 +37,9 @@ def _materialize_normalized_document(
     provider_version: str,
     source_pdf_path: Path,
 ) -> dict:
+    # The provider dispatcher imports this job flow when it initializes.
+    from retainpdf_pipeline.ocr.ocr_provider.visual_recovery import configured_crop_recognizer
+
     # Job flow only orchestrates persistence.
     # Provider-specific raw -> normalized logic lives behind the adapter interface.
     normalized_document, normalization_report = adapt_path_to_document_v1_with_report(
@@ -51,6 +54,7 @@ def _materialize_normalized_document(
         normalized_document,
         normalization_report,
         source_pdf_path,
+        recognize_crop=configured_crop_recognizer(),
     )
     save_json(normalized_json_path, normalized_document, compact=True)
     save_json(normalized_report_json_path, normalization_report)

@@ -48,11 +48,13 @@ from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_
 from retainpdf_pipeline.ocr.document_schema.provider_adapters.glm_ocr.adapter import IMAGE_LABELS
 from retainpdf_pipeline.ocr.document_schema.provider_adapters.glm_ocr.adapter import image_asset_key
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GLM_OCR
+from retainpdf_pipeline.ocr.document_schema.visual_text_recovery import RecognizeCrop
 from retainpdf_pipeline.ocr.ocr_provider import glm_ocr_api
 from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_repair import split_cross_column_blocks
 from retainpdf_pipeline.ocr.ocr_provider.paddle_markdown import job_markdown_dir
 from retainpdf_pipeline.ocr.ocr_provider.paddle_markdown import job_markdown_images_dir
 from retainpdf_pipeline.ocr.ocr_provider.types import OcrProviderResult
+from retainpdf_pipeline.ocr.ocr_provider.visual_recovery import configured_crop_recognizer
 
 CHUNK_PAGES_ENV = "RETAIN_GLM_OCR_CHUNK_PAGES"
 WORKERS_ENV = "RETAIN_GLM_OCR_WORKERS"
@@ -525,7 +527,10 @@ def write_full_markdown(payload: dict, cropped: dict[str, str], job_root: Path) 
     return full_md_path
 
 
-def _normalize(payload: dict, *, document_id: str, source_json_path: Path, source_pdf: Path) -> tuple[dict, dict]:
+def _normalize(
+    payload: dict, *, document_id: str, source_json_path: Path, source_pdf: Path,
+    recognize_crop: RecognizeCrop | None = None,
+) -> tuple[dict, dict]:
     document, report = adapt_payload_to_document_v1_with_report(
         payload=payload,
         provider=PROVIDER_GLM_OCR,
@@ -533,7 +538,7 @@ def _normalize(payload: dict, *, document_id: str, source_json_path: Path, sourc
         source_json_path=source_json_path,
         provider_version=str(payload.get("model") or ""),
     )
-    return finalize_normalized_document(document, report, source_pdf)
+    return finalize_normalized_document(document, report, source_pdf, recognize_crop=recognize_crop)
 
 
 def _pruned_chunk_cache() -> Path:
@@ -557,6 +562,7 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
     stream = OcrStreamWriter(job_dirs.ocr_dir, provider=PROVIDER_GLM_OCR, total_pages=total_pages)
     cropped: dict[str, str] = {}
     cropped_pages = 0
+    recognize_crop = configured_crop_recognizer()
 
     def publish(prefix_chunks: list[dict]) -> None:
         nonlocal cropped_pages
@@ -565,7 +571,10 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
         cropped.update(crop_images(prefix, source_pdf, job_dirs.root, first_page=cropped_pages))
         cropped_pages = len(prefix["layout_details"])
         prefix["_images"] = dict(cropped)
-        document, _report = _normalize(prefix, document_id=document_id, source_json_path=provider_result_json_path, source_pdf=source_pdf)
+        document, _report = _normalize(
+            prefix, document_id=document_id, source_json_path=provider_result_json_path,
+            source_pdf=source_pdf, recognize_crop=recognize_crop,
+        )
         stream.publish(document)  # done 只在最后整份文档、full.md 都写好以后标
 
     try:
@@ -590,7 +599,10 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
         normalized_json_path = job_dirs.ocr_dir / "normalized" / "document.v1.json"
         normalized_report_json_path = normalized_json_path.with_name(DOCUMENT_SCHEMA_REPORT_FILE_NAME)
         normalized_json_path.parent.mkdir(parents=True, exist_ok=True)
-        document, report = _normalize(payload, document_id=document_id, source_json_path=provider_result_json_path, source_pdf=source_pdf)
+        document, report = _normalize(
+            payload, document_id=document_id, source_json_path=provider_result_json_path,
+            source_pdf=source_pdf, recognize_crop=recognize_crop,
+        )
         save_json(normalized_json_path, document)
         save_json(normalized_report_json_path, report)
         stream.publish(document, done=True)

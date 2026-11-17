@@ -23,10 +23,12 @@ from retainpdf_pipeline.ocr.document_schema.finalize import (
 from retainpdf_pipeline.ocr.document_schema.version import (
     DOCUMENT_SCHEMA_REPORT_FILE_NAME,
 )
+from retainpdf_pipeline.ocr.document_schema.visual_text_recovery import RecognizeCrop
 from retainpdf_pipeline.ocr.mineru_provider.artifacts import (
     materialize_mineru_page_assets,
     resolve_layout_json_path,
 )
+from retainpdf_pipeline.ocr.ocr_provider.visual_recovery import configured_crop_recognizer
 from retainpdf_base.io import save_json_atomic
 
 
@@ -96,8 +98,10 @@ def _resolve_source_json_path(spec: NormalizeStageSpec) -> Path:
     return resolve_layout_json_path(discovery_root).resolve()
 
 
-def build_normalized_artifacts(spec: NormalizeStageSpec) -> tuple[dict, dict]:
-    """Build and validate the canonical artifacts without touching the filesystem."""
+def build_normalized_artifacts(
+    spec: NormalizeStageSpec, *, recognize_crop: RecognizeCrop | None = None
+) -> tuple[dict, dict]:
+    """Build and validate the canonical artifacts without writing them."""
     provider = spec.inputs.provider.strip().lower()
     normalized_document, normalization_report = adapt_path_to_document_v1_with_report(
         source_json_path=_resolve_source_json_path(spec),
@@ -109,6 +113,7 @@ def build_normalized_artifacts(spec: NormalizeStageSpec) -> tuple[dict, dict]:
         normalized_document,
         normalization_report,
         spec.inputs.source_pdf,
+        recognize_crop=recognize_crop,
     )
 
 
@@ -152,7 +157,9 @@ def main() -> None:
 
     job_dirs = job_dirs_from_explicit_args(args)
     ocr_dir = job_dirs.ocr_dir
-    normalized_document, normalization_report = build_normalized_artifacts(spec)
+    normalized_document, normalization_report = build_normalized_artifacts(
+        spec, recognize_crop=configured_crop_recognizer()
+    )
     if spec.inputs.provider.strip().lower() == "mineru":
         provider_raw_dir = (spec.inputs.provider_raw_dir or source_json_path.parent).resolve()
         asset_materialization = materialize_mineru_page_assets(

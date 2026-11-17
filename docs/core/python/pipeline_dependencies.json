@@ -290,6 +290,7 @@
         "retainpdf_pipeline/ocr/ocr_provider/glm_ocr_repair.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_chunked.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_runner.py",
+        "retainpdf_pipeline/ocr/ocr_provider/visual_recovery.py",
         "retainpdf_pipeline/render/analysis/classifier.py",
         "retainpdf_pipeline/render/analysis/document/builder.py",
         "retainpdf_pipeline/render/analysis/profile/background_coverage.py",
@@ -674,6 +675,7 @@
         "retainpdf_pipeline/ocr/mineru_provider/mineru_api.py",
         "retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
+        "retainpdf_pipeline/ocr/ocr_provider/visual_recovery.py",
         "retainpdf_pipeline/ocr/retry.py"
       ],
       "devtool_files": [

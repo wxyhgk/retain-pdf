@@ -13,19 +13,22 @@ from retainpdf_pipeline.ocr.document_schema.pdf_geometry import (
     rebuild_estimated_text_geometry,
     rescale_document_geometry_to_pdf,
 )
+from retainpdf_pipeline.ocr.document_schema.visual_text_recovery import RecognizeCrop
 
 
 def finalize_normalized_document(
     document: dict,
     report: dict,
     source_pdf: Path,
+    *,
+    recognize_crop: RecognizeCrop | None = None,
 ) -> tuple[dict, dict]:
     """适配器出来的文档对齐到原文 PDF：缩放到 PDF 坐标 → 没有真实行的块重建行 → 按最终文档重新校验、刷新报告。
 
     正式的 normalize worker、命令型 OCR 交回原始输出、MinerU 的 Python 直跑都走这一个（2026-10-29 起）。以前只有
     normalize worker 做：命令型 OCR 交回 Paddle 原始输出时坐标留在像素里、却标着 pt（校验按页面自己的宽高查，查不出来）。
     """
-    document = rescale_document_geometry_to_pdf(document, source_pdf)
+    document = rescale_document_geometry_to_pdf(document, source_pdf, recognize_crop=recognize_crop)
     document = rebuild_estimated_text_geometry(document)
     return document, refresh_report_for_final_document(report, document)
 

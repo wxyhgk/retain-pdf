@@ -6,6 +6,12 @@ import re
 import unicodedata
 
 from retainpdf_pipeline.ocr.document_schema.estimated_lines import DOLLAR_MATH_RE, build_segments
+from retainpdf_pipeline.ocr.document_schema.visual_text_recovery import (
+    RecognizeCrop,
+    can_match_visual_recovery,
+    recognize_pdf_region,
+    visual_replacements,
+)
 
 
 _GREEK = dict(zip(
@@ -162,10 +168,10 @@ def _replace_prose_glyphs(block: dict, content: dict, replacements: list[str]) -
     return True
 
 
-def recover_corrupted_pdf_text(document: dict, pdf) -> int:
+def recover_corrupted_pdf_text(document: dict, pdf, *, recognize_crop: RecognizeCrop | None = None) -> int:
     """Repair only replacement-character blocks with a close text-layer match.
 
-    Image-only pages and unrelated text-layer regions keep the provider text.
+    An optional visual OCR provider can fill gaps the text layer cannot recover.
     Coordinates must already have been converted to PDF points.
     """
     import fitz
@@ -184,12 +190,12 @@ def recover_corrupted_pdf_text(document: dict, pdf) -> int:
             embedded = pdf[page_index].get_text('dict', clip=region)
             lines = [line for b in embedded['blocks'] for line in b.get('lines', [])]
             plain = ' '.join(''.join(s['text'] for s in line['spans']) for line in lines)
-            if not plain or _REPLACEMENT in plain:
-                continue
             kind = content.get('kind', block.get('type', 'text'))
             segments = block.get('segments') or []
             inline_math = list(DOLLAR_MATH_RE.finditer(original))
-            if kind == 'text' and not any(_REPLACEMENT in match[0] for match in inline_math):
+            if plain and _REPLACEMENT not in plain and kind == 'text' and not any(
+                _REPLACEMENT in match[0] for match in inline_math
+            ):
                 damaged = [span['text'] for span in segments if _REPLACEMENT in span['text']]
                 # Provider spans end at equation boundaries, so adjacent LaTeX
                 # tokens need not match the PDF's typography to anchor prose.
@@ -205,25 +211,38 @@ def recover_corrupted_pdf_text(document: dict, pdf) -> int:
                     continue
             # Rebuilding math from linearized PDF text can lose fraction and
             # radical structure. Preserve intact OCR formulas in mixed prose.
-            if kind == 'text' and (inline_math or any(
+            mixed_math = kind == 'text' and (inline_math or any(
                 span.get('type') == 'inline_formula' for span in segments
-            )):
-                continue
+            ))
             compact = lambda value: ''.join(value.split())
             # A short formula may lose most of its symbols; require all of its
             # remaining punctuation/operators to match the embedded expression.
-            original_compact = compact(original)
+            # These tags describe glyph positioning; the PDF text layer
+            # supplies that via baselines rather than literal HTML.
+            original_compact = compact(re.sub(r'</?su[bp]>', '', original, flags=re.IGNORECASE))
             known = original_compact.replace('\ufffd', '')
             damaged_pattern = '.+?'.join(re.escape(part) for part in re.split('\ufffd+', original_compact))
-            formula_match = len(known) >= 8 and re.fullmatch(damaged_pattern, compact(plain)) is not None
+            plain_compact = compact(plain)
+            gaps_filled = re.fullmatch(damaged_pattern, plain_compact) is not None
+            formula_match = len(known) >= 8 and gaps_filled
             if not formula_match and '=' in known and original_compact.count('\ufffd') > len(original_compact) / 2:
                 # OCR may drop a terminal subscript as well as replace symbols.
                 formula_match = len(known) >= 8 and re.fullmatch(
                     damaged_pattern + r'[A-Za-z0-9]{0,3}',
-                    unicodedata.normalize('NFKC', compact(plain)),
+                    unicodedata.normalize('NFKC', plain_compact),
                 ) is not None
-            close_text = SequenceMatcher(None, original_compact, compact(plain), autojunk=False).ratio() >= 0.8
-            if not (close_text or formula_match):
+            # Surrounding words can match almost perfectly even when the
+            # missing glyph is a vector path and absent from the text layer.
+            close_text = gaps_filled and SequenceMatcher(
+                None, original_compact, plain_compact, autojunk=False
+            ).ratio() >= 0.8
+            if not plain or _REPLACEMENT in plain or mixed_math or not (close_text or formula_match):
+                if recognize_crop is not None and kind == 'text' and can_match_visual_recovery(original):
+                    recognized = recognize_pdf_region(pdf[page_index], block_box, recognize_crop)
+                    replacements = visual_replacements(original, recognized, segments=segments) if recognized else []
+                    if replacements and _replace_prose_glyphs(block, content, replacements):
+                        block.setdefault('metadata', {})['visual_ocr_recovered'] = True
+                        repaired += 1
                 continue
             recovered_lines = []
             restored_lines = []

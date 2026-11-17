@@ -16,6 +16,7 @@ from retainpdf_pipeline.ocr.document_schema.pdf_geometry import (  # noqa: F401
 )
 from retainpdf_pipeline.ocr.document_schema.reporting import build_normalization_summary
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_PADDLE
+from retainpdf_pipeline.ocr.document_schema.visual_text_recovery import RecognizeCrop
 from retainpdf_base.io import save_json
 
 
@@ -32,6 +33,7 @@ def build_normalized_document_for_paddle(
     document_id: str,
     provider_version: str,
     provider_payload: dict | None = None,
+    recognize_crop: RecognizeCrop | None = None,
     adapt_document: AdaptDocumentFn = adapt_path_to_document_v1_with_report,
     build_lines: BuildLinesFn = build_paddle_lines,
     tighten_text_bbox: TightenBBoxFn = tighten_paddle_text_bbox,
@@ -50,7 +52,9 @@ def build_normalized_document_for_paddle(
         provider_version=provider_version,
         **adapt_kwargs,
     )
-    normalized_document = rescale_document_geometry_to_pdf(normalized_document, source_pdf_path)
+    normalized_document = rescale_document_geometry_to_pdf(
+        normalized_document, source_pdf_path, recognize_crop=recognize_crop
+    )
     normalized_document = post_rescale_rebuild_paddle_text_geometry(
         normalized_document,
         build_lines=build_lines,
@@ -73,6 +77,7 @@ def save_normalized_document_for_paddle(
     document_id: str,
     provider_version: str,
     provider_payload: dict | None = None,
+    recognize_crop: RecognizeCrop | None = None,
     adapt_document: AdaptDocumentFn = adapt_path_to_document_v1_with_report,
     build_lines: BuildLinesFn = build_paddle_lines,
     tighten_text_bbox: TightenBBoxFn = tighten_paddle_text_bbox,
@@ -85,6 +90,7 @@ def save_normalized_document_for_paddle(
             document_id=document_id,
             provider_version=provider_version,
             provider_payload=provider_payload,
+            recognize_crop=recognize_crop,
             adapt_document=adapt_document,
             build_lines=build_lines,
             tighten_text_bbox=tighten_text_bbox,

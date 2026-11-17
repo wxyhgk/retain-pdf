@@ -24,12 +24,15 @@ from retainpdf_pipeline.ocr.document_schema.provider_adapters.common.normalize i
     inherit_missing_segment_bboxes,
 )
 from retainpdf_pipeline.ocr.document_schema.toc import build_toc_entries
+from retainpdf_pipeline.ocr.document_schema.visual_text_recovery import RecognizeCrop
 
 BuildLinesFn = Callable[..., list]
 TightenBBoxFn = Callable[..., list[float]]
 
 
-def rescale_document_geometry_to_pdf(document: dict, source_pdf_path: Path) -> dict:
+def rescale_document_geometry_to_pdf(
+    document: dict, source_pdf_path: Path, *, recognize_crop: RecognizeCrop | None = None
+) -> dict:
     import fitz
 
     pdf = fitz.open(source_pdf_path)
@@ -87,7 +90,7 @@ def rescale_document_geometry_to_pdf(document: dict, source_pdf_path: Path) -> d
                     if isinstance(segment, dict):
                         segment["bbox"] = scale_bbox(segment.get("bbox", []), scale_x, scale_y)
             document.setdefault("derived", {})["coordinate_space"] = "pdf_point"
-        recover_corrupted_pdf_text(document, pdf)
+        recover_corrupted_pdf_text(document, pdf, recognize_crop=recognize_crop)
     finally:
         pdf.close()
     return document

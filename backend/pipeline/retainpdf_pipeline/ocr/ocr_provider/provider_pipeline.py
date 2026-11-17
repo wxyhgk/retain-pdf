@@ -36,6 +36,7 @@ from retainpdf_pipeline.ocr.ocr_provider.paddle_api import get_paddle_token
 from retainpdf_pipeline.ocr.ocr_provider.paddle_api import normalize_model_name as normalize_paddle_model_name
 from retainpdf_pipeline.ocr.ocr_provider.paddle_markdown import materialize_paddle_markdown_artifacts
 from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import save_normalized_document_for_paddle as _save_normalized_document_for_paddle
+from retainpdf_pipeline.ocr.ocr_provider.visual_recovery import configured_crop_recognizer
 from retainpdf_pipeline.ocr.document_schema.pdf_geometry import rescale_document_geometry_to_pdf
 from retainpdf_pipeline.ocr.ocr_provider.paddle_runner import run_paddle_to_job_dir as _run_paddle_to_job_dir
 from retainpdf_pipeline.ocr.ocr_provider.paddle_runner import PADDLE_TRANSPORT_OFFICIAL_HTTP
@@ -227,6 +228,7 @@ def save_normalized_document_for_paddle(
         document_id=document_id,
         provider_version=provider_version,
         provider_payload=provider_payload,
+        recognize_crop=configured_crop_recognizer(),
         adapt_document=adapt_path_to_document_v1_with_report,
         build_lines=build_paddle_lines,
         tighten_text_bbox=tighten_paddle_text_bbox,

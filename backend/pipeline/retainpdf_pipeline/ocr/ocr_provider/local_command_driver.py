@@ -10,6 +10,7 @@ from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit
 from retainpdf_pipeline.ocr.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
 from retainpdf_pipeline.ocr.document_schema import adapt_path_to_document_v1_with_report
 from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document
+from retainpdf_pipeline.ocr.ocr_provider.visual_recovery import configured_crop_recognizer
 from retainpdf_pipeline.ocr.document_schema import validate_saved_document_path
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GENERIC_FLAT_OCR
 from retainpdf_pipeline.ocr.ocr_provider.types import OcrProviderResult
@@ -261,7 +262,9 @@ def _materialize_normalized_document_from_local_raw(
     )
     # 原始输出的坐标按 OCR 自己的页面尺寸给（Paddle 是像素），和正式的 normalize worker 一样缩放到原文 PDF。
     # 命令自己写好的 document.v1.json 不动：契约要求它已经是 PDF 点。
-    document, report = finalize_normalized_document(document, report, source_pdf_path)
+    document, report = finalize_normalized_document(
+        document, report, source_pdf_path, recognize_crop=configured_crop_recognizer()
+    )
     save_json(normalized_json_path, document)
     save_json(normalized_report_json_path, report)
     if not provider_result_json_path.exists() and source_json_path != provider_result_json_path:

@@ -89,7 +89,10 @@ def _error_detail(response: requests.Response | None) -> str:
     return ""
 
 
-def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | None = None) -> dict:
+def parse_pdf(
+    pdf_bytes: bytes, *, api_key: str, session: requests.Session | None = None,
+    request_timeout: int | None = None, attempts: int = RETRY_ATTEMPTS,
+) -> dict:
     """交一份 PDF，返回原始结果（dict）。`api_key` 只进请求头。"""
     if not api_key:
         raise GlmOcrRequestRejected("GLM-OCR 缺少 API key（智谱 bigmodel 的 key）")
@@ -98,8 +101,8 @@ def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | Non
             session or _SESSION,
             "post",
             api_url(),
-            timeout=timeout_seconds(pdf_page_count(pdf_bytes)),
-            attempts=RETRY_ATTEMPTS,
+            timeout=request_timeout or timeout_seconds(pdf_page_count(pdf_bytes)),
+            attempts=attempts,
             backoff_seconds=RETRY_BACKOFF_SECONDS,
             label="GLM-OCR",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
