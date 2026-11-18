@@ -117,24 +117,117 @@ async fn validate_deepseek_token_inner(
         });
         client.post(&url).bearer_auth(api_key).json(&body)
     } else {
-        let chat_url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
-        let body = serde_json::json!({
-            "model": model,
-            "messages": [{"role": "user", "content": "ping"}],
-            "max_tokens": 1,
-            "stream": false,
-        });
-        client.post(&chat_url).bearer_auth(api_key).json(&body)
+        return Ok(probe_openai_chat(&client, api_key, model, base_url, checked_at).await);
     };
-    let response = request.send().await;
-    let view = match response {
-        Ok(resp) => {
-            classify_deepseek_chat_probe_response(resp, model, base_url.clone(), checked_at).await
-        }
+    let view = match request.send().await {
+        Ok(resp) => classify_deepseek_chat_probe_response(
+            ProbeReply::read(resp).await,
+            model,
+            base_url.clone(),
+            checked_at,
+        ),
         Err(err) => classify_deepseek_probe_transport_error(err, base_url.clone(), checked_at),
     };
 
     Ok(if responses { explain_missing_responses_endpoint(view) } else { view })
+}
+
+/// OpenAI 格式（`/chat/completions`）的最小请求。先发 `max_tokens: 1`（DeepSeek、通义、智谱和各家中转都认）；
+/// OpenAI 的新模型（gpt-5.x、o 系列）不认 `max_tokens`，要 `max_completion_tokens`，回 400 时换这个字段再发一次
+/// （issue #161：以前这里就报「模型不可用」，翻译其实能跑）。思考模型的 1 个 token 不够，换字段时给 16。
+async fn probe_openai_chat(
+    client: &reqwest::Client,
+    api_key: &str,
+    model: &str,
+    base_url: String,
+    checked_at: String,
+) -> ProviderProbeView {
+    let chat_url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
+    let send = |limit_field: &str, limit: u32| {
+        let mut body = serde_json::json!({
+            "model": model,
+            "messages": [{"role": "user", "content": "ping"}],
+            "stream": false,
+        });
+        body[limit_field] = serde_json::json!(limit);
+        client.post(&chat_url).bearer_auth(api_key).json(&body).send()
+    };
+    let mut reply = match send("max_tokens", 1).await {
+        Ok(resp) => ProbeReply::read(resp).await,
+        Err(err) => return classify_deepseek_probe_transport_error(err, base_url, checked_at),
+    };
+    if reply.status == reqwest::StatusCode::BAD_REQUEST
+        && UpstreamError::parse(&reply.body).wants_max_completion_tokens()
+    {
+        reply = match send("max_completion_tokens", 16).await {
+            Ok(resp) => ProbeReply::read(resp).await,
+            Err(err) => return classify_deepseek_probe_transport_error(err, base_url, checked_at),
+        };
+    }
+    classify_deepseek_chat_probe_response(reply, model, base_url, checked_at)
+}
+
+/// 读完的一次响应：分类只看这几样，读出来以后可以按内容决定要不要重发。
+struct ProbeReply {
+    status: reqwest::StatusCode,
+    location: Option<String>,
+    trace_id: Option<String>,
+    body: String,
+}
+
+impl ProbeReply {
+    async fn read(response: reqwest::Response) -> Self {
+        let status = response.status();
+        let location = redirect_location(&response);
+        let trace_id = response
+            .headers()
+            .get("x-request-id")
+            .and_then(|value| value.to_str().ok())
+            .map(|value| value.to_string());
+        let body = response.text().await.unwrap_or_default();
+        Self { status, location, trace_id, body }
+    }
+}
+
+/// 服务商错误正文里的 `error.message` / `error.code` / `error.param`（OpenAI 的格式，多数兼容服务照抄）。
+#[derive(Default)]
+pub(super) struct UpstreamError {
+    pub(super) message: Option<String>,
+    pub(super) code: Option<String>,
+    pub(super) param: Option<String>,
+}
+
+impl UpstreamError {
+    pub(super) fn parse(body_text: &str) -> Self {
+        let parsed: Value = serde_json::from_str(body_text).unwrap_or(Value::Null);
+        let error = parsed.get("error").unwrap_or(&Value::Null);
+        let text = |value: Option<&Value>| value.and_then(Value::as_str).filter(|v| !v.is_empty()).map(str::to_string);
+        Self {
+            message: summarize_deepseek_error_payload(body_text),
+            code: text(error.get("code")).or_else(|| text(parsed.get("code"))),
+            param: text(error.get("param")),
+        }
+    }
+
+    fn wants_max_completion_tokens(&self) -> bool {
+        self.param.as_deref() == Some("max_tokens")
+            || self.message.as_deref().is_some_and(|message| message.contains("max_completion_tokens"))
+    }
+
+    /// 服务商认了 Key 和模型、只是不收某个参数（`unsupported_parameter` / `unsupported_value`，或指明了
+    /// 不是 `model` 的 `param`）。正文里常有 "not supported with this model"，以前因为带 model 被当成模型不可用。
+    pub(super) fn rejected_parameter(&self) -> Option<String> {
+        let code = self.code.as_deref().unwrap_or("");
+        if code == "model_not_found" || self.param.as_deref() == Some("model") {
+            return None;
+        }
+        let lowered = self.message.as_deref().unwrap_or("").to_lowercase();
+        let parameter_error = matches!(code, "unsupported_parameter" | "unsupported_value" | "invalid_parameter")
+            || self.param.is_some()
+            || lowered.contains("unsupported parameter")
+            || lowered.contains("unsupported value");
+        parameter_error.then(|| self.param.clone().unwrap_or_default())
+    }
 }
 
 /// 判定一次失败响应是否在拒绝**模型**（而非 Key 或网络）。
@@ -162,28 +255,16 @@ pub(super) fn is_model_rejection(
         || lowered.contains("not found")
 }
 
-async fn classify_deepseek_chat_probe_response(
-    response: reqwest::Response,
+fn classify_deepseek_chat_probe_response(
+    reply: ProbeReply,
     model: &str,
     base_url: String,
     checked_at: String,
 ) -> ProviderProbeView {
-    let status_code = response.status();
+    let ProbeReply { status: status_code, location, trace_id, body: body_text } = reply;
     if status_code.is_redirection() {
-        return redirected_view(
-            "翻译 API",
-            status_code.as_u16(),
-            redirect_location(&response),
-            base_url,
-            checked_at,
-        );
+        return redirected_view("翻译 API", status_code.as_u16(), location, base_url, checked_at);
     }
-    let trace_id = response
-        .headers()
-        .get("x-request-id")
-        .and_then(|value| value.to_str().ok())
-        .map(|value| value.to_string());
-    let body_text = response.text().await.unwrap_or_default();
 
     if status_code.is_success() {
         return ProviderProbeView {
@@ -216,17 +297,36 @@ async fn classify_deepseek_chat_probe_response(
         };
     }
 
-    let provider_message = summarize_deepseek_error_payload(&body_text);
+    let upstream = UpstreamError::parse(&body_text);
     let unauthorized = status_code == reqwest::StatusCode::UNAUTHORIZED
         || status_code == reqwest::StatusCode::FORBIDDEN;
-    let model_rejected =
-        !unauthorized && is_model_rejection(status_code, provider_message.as_deref());
+    let rejected_parameter = if unauthorized || !status_code.is_client_error() {
+        None
+    } else {
+        upstream.rejected_parameter()
+    };
+    let parameter_rejected = rejected_parameter.is_some();
+    let model_rejected = !unauthorized
+        && !parameter_rejected
+        && is_model_rejection(status_code, upstream.message.as_deref());
+    // 上游的错误码（如 unsupported_parameter）一起带上，方便对照服务商文档。
+    let provider_message = match (upstream.message, upstream.code) {
+        (Some(message), Some(code)) if !message.contains(&code) => Some(format!("{message}（{code}）")),
+        (message, _) => message,
+    };
 
     let (status, summary, operator_hint) = if unauthorized {
         (
             "unauthorized",
             "翻译 API Key 无效".to_string(),
             Some("请确认 Key 与所选 API 服务是否匹配。".to_string()),
+        )
+    } else if let Some(param) = rejected_parameter {
+        let what = if param.is_empty() { "检测请求的参数".to_string() } else { format!("参数 {param}") };
+        (
+            "provider_error",
+            format!("Key 和模型 {model} 已被接受，但服务商不收{what}"),
+            Some("是检测请求本身的参数问题，不代表翻译不能用；可以先试翻一小段确认。".to_string()),
         )
     } else if model_rejected {
         (
@@ -255,7 +355,7 @@ async fn classify_deepseek_chat_probe_response(
         status,
         summary,
         // 只有网络/服务商瞬时错误值得重试；Key、模型、余额都要用户先改配置。
-        retryable: status == "network_error" || status == "provider_error",
+        retryable: status == "network_error" || (status == "provider_error" && !parameter_rejected),
         provider_code: Some(status_code.as_u16().to_string()),
         provider_message,
         operator_hint,

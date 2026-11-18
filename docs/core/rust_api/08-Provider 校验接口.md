@@ -26,7 +26,7 @@
 - `base_url` 空着用各家的默认地址（`RUST_API_MINERU_BASE_URL`、`RUST_API_PADDLE_BASE_URL`、`RUST_API_DEEPSEEK_BASE_URL`；
   `api_protocol=anthropic` 时默认 `https://api.anthropic.com/v1`）。
 - `model_version` 默认 `vlm`。`api_protocol` 是 `openai`（默认）、`openai_responses` 或 `anthropic`，探针按翻译实际用的协议发请求。
-- 翻译接口的 `model` 为空时只能查模型列表（只验 Key），填了就发一次 `max_tokens: 1` 的最小请求，Key、地址、模型一起验。
+- 翻译接口的 `model` 为空时只能查模型列表（只验 Key），填了就发一次 `max_tokens: 1` 的最小请求，Key、地址、模型一起验。OpenAI 格式下服务商回 400 说不认 `max_tokens`（OpenAI 的 gpt-5.x、o 系列，`param` 是 `max_tokens` 或正文提到 `max_completion_tokens`），换成 `max_completion_tokens: 16` 再发一次（issue #161）。
 
 ## 2. 各家怎么探
 
@@ -72,7 +72,7 @@
 | `rate_limited` | true | | | ✓ | Key 和模型都被接受了，此刻被限流（429） |
 | `unauthorized` | false | ✓ | ✓ | ✓ | Key / Token 无效或没权限（401、403、MinerU `A0202` 等） |
 | `expired` | false | ✓ | | | Token 已过期（MinerU `A0211`） |
-| `model_unavailable` | false | | | ✓ | Key 通过了，模型名不存在或没开通 |
+| `model_unavailable` | false | | | ✓ | Key 通过了，模型名不存在或没开通；上游指明是别的参数（`error.param` 不是 `model`，或 `code` 是 `unsupported_parameter` / `unsupported_value`）时不算，归 `provider_error` |
 | `insufficient_balance` | false | | | ✓ | 余额不足（402） |
 | `invalid_input` | false | | | ✓ | Key 里有换行、全角空格等放不进请求头的字符，请求没发出去 |
 | `redirected` | false | ✓ | ✓ | ✓ | 服务商回了 3xx。校验不跟随重定向（第 6 节），请检查地址 |
@@ -80,7 +80,7 @@
 | `provider_error` | false | ✓ | ✓ | ✓ | 服务商回了别的错误，说不清是不是 Key 的问题 |
 
 `retryable` 为 `true` 的只会是 `network_error`、`provider_error`（Key、模型、余额、地址的问题都要用户先改配置）；
-`provider_error` 也可能是 `false`，例如服务商不支持 `/responses` 接口。
+`provider_error` 也可能是 `false`，例如服务商不支持 `/responses` 接口，或不收检测请求里的某个参数（`summary` 写明参数名，`provider_message` 末尾带上游错误码）。
 
 ## 4. 余额结果
 
