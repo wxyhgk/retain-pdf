@@ -463,6 +463,10 @@
           "type": "string",
           "description": "TRANSLATION_ENGINES：legacy（现有流程）/ agent（翻译 agent）。"
         },
+        "tables": {
+          "type": "string",
+          "description": "TRANSLATION_TABLE_MODES：keep（表格保留原文）/ translate（表格 agent 翻表格）。"
+        },
         "start_page": {
           "type": "integer"
         },

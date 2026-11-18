@@ -8,6 +8,8 @@ from retainpdf_translation.public import DEFAULT_MODEL
 from retainpdf_translation.public import TranslationExecutionRequest
 from retainpdf_translation.public import execute_translation_request
 
+from retainpdf_pipeline.translate.tables_stage import translate_tables
+
 
 def translate_book_pipeline(
     *,
@@ -43,8 +45,9 @@ def translate_book_pipeline(
     reviewer_api_key: str = "",
     engine: str = "legacy",
     ocr_stream_dir: Path | None = None,
+    tables: str = "keep",
 ) -> dict:
-    return execute_translation_request(
+    result = execute_translation_request(
         TranslationExecutionRequest(
             source_json_path=source_json_path,
             output_dir=output_dir,
@@ -80,3 +83,26 @@ def translate_book_pipeline(
             ocr_stream_dir=ocr_stream_dir,
         )
     )
+    if tables == "translate":
+        # 表格翻译（T3）：正文翻完再翻表格，术语记忆用上正文定下的译法。结果在 translated/tables.v1.json。
+        document_path = source_json_path
+        if ocr_stream_dir is not None:
+            # 跟着 OCR 翻：正文翻完时 OCR 也做完了，表格用整本的最终文档
+            from retainpdf_base.ocr_stream import wait_for_ocr_stream
+
+            state = wait_for_ocr_stream(ocr_stream_dir)
+            while not state.done:
+                state = wait_for_ocr_stream(ocr_stream_dir, after_seq=state.seq)
+            document_path = state.document_path
+        result["tables"] = translate_tables(
+            source_json_path=document_path,
+            source_pdf_path=source_pdf_path,
+            output_dir=output_dir,
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            glossary_entries=glossary_entries,
+            start_page=start_page,
+            end_page=end_page,
+        )
+    return result

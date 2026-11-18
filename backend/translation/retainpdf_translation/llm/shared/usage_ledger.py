@@ -47,6 +47,8 @@ _STAGE_PREFIXES: tuple[tuple[str, str], ...] = (
     ("agent-revise", "translation"),
     ("agent-read", "agent_reader"),
     ("agent-review", "agent_review"),
+    # 表格 agent（services/tables）
+    ("table-translate", "table_translation"),
 )
 
 

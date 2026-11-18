@@ -41,6 +41,8 @@ TRANSLATION_SHELL_ALLOWED_FILES = {
     "__main__.py",
     "README.md",
     "translation_stage.py",
+    # 表格翻译（T3）：正文翻完后翻表格。要同时用流水线的表格模型和翻译包的表格 agent，只能放在外壳这一层
+    "tables_stage.py",
 }
 TRANSLATION_WORKFLOW_ALLOWED_DIRS = {
     "__pycache__",

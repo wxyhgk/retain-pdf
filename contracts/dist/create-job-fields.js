@@ -101,6 +101,7 @@ export const CREATE_JOB_SECTION_FIELDS = {
         "rule_profile_name",
         "skip_title_translation",
         "start_page",
+        "tables",
         "thinking",
         "workers",
     ],

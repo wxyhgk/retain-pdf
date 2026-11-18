@@ -51,7 +51,8 @@ Python 可执行文件由 `PYTHON_BIN` 配置，不再回退到旧脚本。
     "preparation": "off",
     "reviewer_model": "",
     "reviewer_base_url": "",
-    "reviewer_credential_ref": ""
+    "reviewer_credential_ref": "",
+    "tables": "keep"
   }
 }
 ```
@@ -62,6 +63,11 @@ Python 可执行文件由 `PYTHON_BIN` 配置，不再回退到旧脚本。
 - `credential_ref` 指向运行时环境变量。
 - Rust worker 启动时注入 `RETAIN_TRANSLATION_API_KEY`。
 - 配置了审校 key（`reviewer_api_key` 或 `reviewer_credential_ref`）时，`reviewer_credential_ref` 写 `env:RETAIN_REVIEWER_API_KEY`，worker 启动时注入同名环境变量；没配置时写空串，Python 侧回退到翻译模型。走 Rust 模型执行器（`execution_connection`）时两个 key 环境变量都不注入。
+
+## 表格翻译字段
+
+- `tables`: `keep` / `translate`，默认 `keep`（旧 spec 没有这个 key，按 `keep` 读）。含义见「翻译参数」。provider.stage.v1 的
+  `translation` 段带同样的字段。
 
 ## 译前准备与审校字段
 

@@ -171,6 +171,7 @@ pub(crate) fn write_translate_stage_spec(
             "reviewer_api_protocol": request.translation.reviewer_api_protocol,
             "reviewer_thinking": request.translation.reviewer_thinking,
             "engine": request.translation.engine,
+            "tables": request.translation.tables,
             // 这里曾经还写 4 个 render_prewarm_* key（输出路径 / render_mode /
             // pdf_compress_dpi / source_cleanup_strategy）。阶段解耦之后 render
             // prewarm 整体挪进了 render 阶段（见 translate_only_pipeline 里那段
@@ -457,6 +458,7 @@ pub(crate) fn write_provider_stage_spec(
             "reviewer_api_protocol": request.translation.reviewer_api_protocol,
             "reviewer_thinking": request.translation.reviewer_thinking,
             "engine": request.translation.engine,
+            "tables": request.translation.tables,
         },
         "render": {
             "render_mode": request.render.render_mode,

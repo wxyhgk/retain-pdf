@@ -400,7 +400,8 @@
         "retainpdf_pipeline/render/visual_profile/foreground.py",
         "retainpdf_pipeline/render/visual_profile/sampler.py",
         "retainpdf_pipeline/render/visual_profile/text_spans.py",
-        "retainpdf_pipeline/render/workflow/modes.py"
+        "retainpdf_pipeline/render/workflow/modes.py",
+        "retainpdf_pipeline/translate/tables_stage.py"
       ],
       "devtool_files": [
         "devtools/agent_lab/sample_conference.py",
@@ -415,6 +416,7 @@
         "devtools/ocr_viewer/viewer.py",
         "devtools/render_compare/rc_measure.py",
         "devtools/run_golden_flow.py",
+        "devtools/table_agent_eval.py",
         "devtools/table_model_eval.py",
         "devtools/table_survey.py",
         "devtools/tools/add_retainpdf_footer_typst.py",
@@ -638,6 +640,7 @@
         "devtools/tests/translation/test_self_correction_leak.py",
         "devtools/tests/translation/test_standalone_fast_path.py",
         "devtools/tests/translation/test_streaming_translation.py",
+        "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_translation_auth_fail_fast.py",
         "devtools/tests/translation/test_translation_batch_metrics_contract.py",
         "devtools/tests/translation/test_translation_cache_context_contract.py",
@@ -681,6 +684,7 @@
         "devtools/tests/translation/test_model_protocol.py",
         "devtools/tests/translation/test_opencode_headers.py",
         "devtools/tests/translation/test_rust_executor_client.py",
+        "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_translation_auth_fail_fast.py",
         "devtools/tests/translation/test_translation_batch_transport.py",
         "devtools/tests/translation/test_translation_run_diagnostics.py",
@@ -737,7 +741,8 @@
         "retainpdf_pipeline/services/pipeline_shared/summary.py",
         "retainpdf_pipeline/translate/entrypoints/domain_prewarm.py",
         "retainpdf_pipeline/translate/entrypoints/from_ocr_pipeline.py",
-        "retainpdf_pipeline/translate/entrypoints/translate_only_pipeline.py"
+        "retainpdf_pipeline/translate/entrypoints/translate_only_pipeline.py",
+        "retainpdf_pipeline/translate/translation_stage.py"
       ],
       "devtool_files": [
         "devtools/backfill_normalized_documents.py",
@@ -810,6 +815,7 @@
         "retainpdf_pipeline/translate/entrypoints/domain_prewarm.py",
         "retainpdf_pipeline/translate/entrypoints/from_ocr_pipeline.py",
         "retainpdf_pipeline/translate/entrypoints/translate_only_pipeline.py",
+        "retainpdf_pipeline/translate/tables_stage.py",
         "retainpdf_pipeline/translate/translation_stage.py"
       ],
       "devtool_files": [
@@ -823,6 +829,7 @@
         "devtools/replay_translation_item.py",
         "devtools/run_golden_flow.py",
         "devtools/run_translation_qa.py",
+        "devtools/table_agent_eval.py",
         "devtools/translation_repair_runner.py"
       ],
       "test_files": [
@@ -916,6 +923,8 @@
         "devtools/tests/translation/test_standalone_fast_path.py",
         "devtools/tests/translation/test_streaming_translation.py",
         "devtools/tests/translation/test_style_hint_contract_fields.py",
+        "devtools/tests/translation/test_table_agent.py",
+        "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_term_protection_respects_math.py",
         "devtools/tests/translation/test_term_review.py",
         "devtools/tests/translation/test_translation_abstract_groups.py",

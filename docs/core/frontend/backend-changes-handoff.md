@@ -28,6 +28,17 @@
 
 ---
 
+## 建任务加 `translation.tables`（feat/table-agent）
+
+2026-11-14。表格翻译 T3：建任务的 `translation` 里加 `tables`，`keep`（默认，行为不变）/ `translate`；填别的值 400。
+任务详情回显的 `request.translation` 里也多了 `tables`。契约 `create-job.v1`、`job-status.v1`、`library-documents.v1`（`translateDocument`
+的请求体）都加了这个字段，`contracts/src`、`dist` 重新生成了。
+
+前端现在**不用做什么**：不提交就是 `keep`。阅读页、PDF 还没用上表格译文（T4、T5），先不要把开关放进界面。要重新生成
+`frontend/packages/api/src/generated/` 的话，只会多出这个可选字段。
+
+---
+
 ## 删掉三个没人调的接口（chore/api-delete-batch2）
 
 2026-11-14。`GET /api/v1/jobs/{job_id}/reports/usage`、`GET /api/v1/jobs/{job_id}/reports/quality/items`、

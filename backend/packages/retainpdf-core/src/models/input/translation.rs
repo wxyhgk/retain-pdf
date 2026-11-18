@@ -36,6 +36,10 @@ pub const TRANSLATION_THINKING_LEVELS: &[&str] = &["auto", "off", "low", "medium
 /// `legacy`：现有流程（默认）；`agent`：翻译 agent（retainpdf-translation-agent，先通读、逐页翻、每页审校），
 /// 三种 `api_protocol` 都可以（2026-11-18 以前只收 `anthropic`），公式按 `direct_typst` 处理。
 pub const TRANSLATION_ENGINES: &[&str] = &["legacy", "agent"];
+/// 表格翻译开关（表格翻译 T3）。权威来源是 Python 的 `retainpdf_pipeline/translate/tables_stage.py` 的 `TABLE_MODES`。
+/// `keep`：表格照旧保留原文（默认，行为和没有这个字段时一样）；`translate`：正文翻完后由表格 agent 逐张翻，
+/// 结果写 `translated/tables.v1.json`。
+pub const TRANSLATION_TABLE_MODES: &[&str] = &["keep", "translate"];
 /// 精修的成本上限默认值（0 = 不限）。Python 侧读 render.spec.json 的 `params.refine`。
 ///
 /// 默认审全书、不设上限：选了「精翻」就该整本精修，只审开头几百块等于没说清楚就打了折。
@@ -182,6 +186,9 @@ pub struct TranslationInput {
     /// 翻译引擎，见 [`TRANSLATION_ENGINES`]。
     #[serde(default = "default_translation_engine")]
     pub engine: String,
+    /// 表格翻译，见 [`TRANSLATION_TABLE_MODES`]。
+    #[serde(default = "default_translation_tables_mode")]
+    pub tables: String,
     #[serde(default)]
     pub start_page: i64,
     #[serde(default = "default_end_page")]
@@ -235,6 +242,7 @@ impl Default for TranslationInput {
             reviewer_api_protocol: String::new(),
             reviewer_thinking: String::new(),
             engine: default_translation_engine(),
+            tables: default_translation_tables_mode(),
             start_page: 0,
             end_page: default_end_page(),
             page_ranges: Vec::new(),
@@ -243,6 +251,10 @@ impl Default for TranslationInput {
             accepted_ambiguous_request_risk: false,
         }
     }
+}
+
+pub fn default_translation_tables_mode() -> String {
+    "keep".to_string()
 }
 
 pub fn default_translation_context_mode() -> String {
@@ -383,6 +395,23 @@ mod allowed_value_tests {
         assert_eq!(rust_set(TRANSLATION_ENGINES), python);
     }
 
+    const TABLES_STAGE_PY: &str =
+        include_str!("../../../../../pipeline/retainpdf_pipeline/translate/tables_stage.py");
+
+    #[test]
+    fn table_modes_match_python_tables_stage() {
+        let start = TABLES_STAGE_PY
+            .find("\nTABLE_MODES = (")
+            .expect("tables_stage.py 里找不到 TABLE_MODES = (...) —— 写法变了");
+        let body = &TABLES_STAGE_PY[start + "\nTABLE_MODES = (".len()..];
+        let python: BTreeSet<String> = body[..body.find(')').expect("元组没闭合")]
+            .split(',')
+            .map(|item| item.trim().trim_matches('"').to_string())
+            .filter(|item| !item.is_empty())
+            .collect();
+        assert_eq!(rust_set(TRANSLATION_TABLE_MODES), python);
+    }
+
     /// 每个字段的默认值必须在自己的允许值里,否则「什么都不填」会被自己的校验拒掉。
     #[test]
     fn every_default_is_an_allowed_value() {
@@ -401,6 +430,7 @@ mod allowed_value_tests {
             (&input.api_protocol, TRANSLATION_API_PROTOCOLS, "api_protocol"),
             (&input.thinking, TRANSLATION_THINKING_LEVELS, "thinking"),
             (&input.engine, TRANSLATION_ENGINES, "engine"),
+            (&input.tables, TRANSLATION_TABLE_MODES, "tables"),
         ] {
             assert!(
                 allowed.contains(&value.as_str()),
