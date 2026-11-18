@@ -3,7 +3,7 @@
 // DOM id "page-range-dialog" / "page-range-title" 为历史契约（测试与样式锚点），保留不改。
 
 import type { FormEvent } from "react";
-import { BookOpen, Bot, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, X } from "lucide-react";
+import { BookOpen, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, X } from "lucide-react";
 
 import { LegacyButton } from "@retainpdf/ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
@@ -12,18 +12,13 @@ import { useIngestServices, useIngestWorkflowView } from "../workflow-view-conte
 const QUALITY_HINTS: Record<string, string> = {
   standard: "直接翻译，速度最快、费用最低。",
   terms: "先通读全书定好术语和文风再翻译，译法更一致；模型费用多约 0.4 倍。",
-  refined: "统一术语之外，术语表先经审定；翻完由模型挑错，再分派局部修改或整段重写，最多两轮，改不好就保留原译并列出来给你看；模型费用约为普通的 2.5 倍，耗时更长。",
+  refined: "用翻译 agent：先通读全文定好术语，再逐页翻译并审校，费用和耗时都比普通高。开头通读要一会儿，进度会先停在 0。",
 };
 
 const ENGINE_HINTS: Record<string, string> = {
   auto: "目前默认用自研排版引擎；以后服务端换默认，这里跟着换。",
   rpr_fit: "自研排版引擎：公式不再转换成 Typst，字号按实际放得下的大小来定，放不下会报告。出问题自动退回 Typst。",
   typst: "原来的 Typst 排版，公式要先转换一遍，个别公式可能出错。",
-};
-
-const TRANSLATION_ENGINE_HINTS: Record<string, string> = {
-  legacy: "现有流程：按批翻译，可配合上面的翻译质量。",
-  agent: "翻译 agent：先通读全文，再逐页翻译并审校，自带统一术语和审校，所以翻译质量不再单独选。开头通读要一会儿，进度会先停在 0。",
 };
 
 /** hidePageRange：一次上传多本时每本整本处理，不给页码范围。 */
@@ -38,7 +33,6 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
   const selectedId = `${workflow.selectedGlossaryId || ""}`.trim();
   const hasSelected = !selectedId
     || workflow.glossaries.some((glossary) => glossary.glossaryId === selectedId);
-  const translationEngine = workflow.preferences.translationEngine;
   const maxAttr = upload.pageRangeMax > 0 ? { max: `${upload.pageRangeMax}` } : {};
 
   function handlePageInput(source: "start" | "end", event: FormEvent<HTMLInputElement>) {
@@ -63,7 +57,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
           </h3>
           <p id="page-range-limit-text">
             {hidePageRange
-              ? "这一批每本都整本处理；术语表、翻译质量、翻译引擎和排版引擎对每本都一样。"
+              ? "这一批每本都整本处理；术语表、翻译质量和排版引擎对每本都一样。"
               : "按需设置页码范围、术语表和翻译质量；页码留空表示处理整份 PDF。"}
           </p>
         </div>
@@ -149,35 +143,14 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
           <select
             id="job-translation-quality"
             value={workflow.preferences.translationQuality}
-            disabled={translationEngine === "agent"}
             onChange={(event) => workflowView.setPreference("translationQuality", event.target.value)}
           >
             <option value="standard">普通</option>
             <option value="terms">统一术语</option>
-            <option value="refined">精翻</option>
+            <option value="refined">精翻（翻译 agent）</option>
           </select>
           <small id="job-translation-quality-hint">
-            {translationEngine === "agent"
-              ? "翻译 agent 自带通读和审校，不用另选。"
-              : QUALITY_HINTS[workflow.preferences.translationQuality] || QUALITY_HINTS.standard}
-          </small>
-        </label>
-
-        <label className="translation-options-glossary" htmlFor="job-translation-engine">
-          <span>
-            <Bot className="h-4 w-4" aria-hidden="true" />
-            翻译引擎
-          </span>
-          <select
-            id="job-translation-engine"
-            value={translationEngine}
-            onChange={(event) => workflowView.setPreference("translationEngine", event.target.value)}
-          >
-            <option value="legacy">现有流程</option>
-            <option value="agent">翻译 agent</option>
-          </select>
-          <small id="job-translation-engine-hint">
-            {TRANSLATION_ENGINE_HINTS[translationEngine]}
+            {QUALITY_HINTS[workflow.preferences.translationQuality] || QUALITY_HINTS.standard}
           </small>
         </label>
 
