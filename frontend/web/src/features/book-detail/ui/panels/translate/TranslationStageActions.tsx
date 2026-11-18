@@ -6,6 +6,11 @@ import type {
   JobStageRetryActionView,
 } from "@/platform/api/index.js";
 import { stageDisabledReasonText } from "../../../domain/stage-disabled-reason.js";
+import {
+  RETRANSLATE_AGENT_NOTE,
+  RETRANSLATE_QUALITY_OPTIONS,
+  type RetranslateQuality,
+} from "../../../domain/retranslate-quality.js";
 
 function labelOf(action: JobStageRetryActionView) {
   if (action.stage === "translation") return "重新翻译";
@@ -16,7 +21,7 @@ function labelOf(action: JobStageRetryActionView) {
 // 清单形态（sheet）里每一项的说明：做什么、花不花钱。画面上只摆一个费用小标签，整句在悬停里。顺序按代价从小到大。
 const SHEET_HINTS: Record<string, string> = {
   render: "用现有译文重新排版，不调用模型、不产生费用。",
-  translation: "复用已有 OCR 重新翻译整本，再排版。会产生翻译费用。",
+  translation: "复用已有 OCR 重新翻译整本，再排版；翻译方式可以沿用原来的，也可以换成普通、统一术语或精翻（翻译 agent）。会产生翻译费用。",
 };
 const SHEET_ORDER: Record<string, number> = { render: 0, translation: 1 };
 
@@ -83,12 +88,14 @@ export function TranslationStageActions({
   error?: string;
   onRetry: (
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string },
+    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string; translationQuality?: string },
   ) => Promise<unknown>;
 }) {
   const [confirmAction, setConfirmAction] = useState<JobStageRetryActionView | null>(null);
   // 重新渲染用哪个排版引擎；空串 = 沿用任务原来的。
   const [renderEngine, setRenderEngine] = useState("");
+  // 重新翻译用哪种翻译方式；空串 = 沿用任务原来的。
+  const [translationQuality, setTranslationQuality] = useState<RetranslateQuality>("");
   // 父级 hook 已把错误写入 error prop；本地兜底覆盖 onRetry 直接抛错
   // 但父级未落 error 的场景（如 mock/装配差异），保证错误仍落到 UI。
   const [localError, setLocalError] = useState("");
@@ -105,7 +112,7 @@ export function TranslationStageActions({
 
   async function runRetry(
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string },
+    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string; translationQuality?: string },
   ) {
     setLocalError("");
     try {
@@ -120,7 +127,10 @@ export function TranslationStageActions({
   async function confirmRisk() {
     if (!confirmAction) return;
     try {
-      await onRetry(confirmAction.stage, { acceptDuplicateRisk: true });
+      await onRetry(confirmAction.stage, {
+        acceptDuplicateRisk: true,
+        ...(confirmAction.stage === "translation" && translationQuality ? { translationQuality } : {}),
+      });
       setLocalError("");
       setConfirmAction(null);
     } catch (cause) {
@@ -144,6 +154,7 @@ export function TranslationStageActions({
         onClick={() => {
           if (needsConfirm(action)) setConfirmAction(action);
           else if (action.stage === "render" && renderEngine) void runRetry("render", { renderEngine });
+          else if (action.stage === "translation" && translationQuality) void runRetry("translation", { translationQuality });
           else void runRetry(action.stage);
         }}
       >
@@ -172,6 +183,26 @@ export function TranslationStageActions({
     </Select>
   );
 
+  const qualitySelect = (
+    <Select
+      id="book-detail-translation-quality"
+      size={variant === "sheet" ? "md" : "sm"}
+      aria-label="重新翻译用的翻译方式"
+      title="重新翻译用的翻译方式"
+      className="book-detail-translation-quality"
+      value={translationQuality}
+      disabled={Boolean(pendingStage)}
+      onChange={(event) => setTranslationQuality(event.target.value as RetranslateQuality)}
+    >
+      {RETRANSLATE_QUALITY_OPTIONS.map((option) => (
+        <option key={option.value} value={option.value}>{option.label}</option>
+      ))}
+    </Select>
+  );
+  const confirmDescription = translationQuality === "refined"
+    ? `${CONFIRM_COPY.description}${RETRANSLATE_AGENT_NOTE}`
+    : CONFIRM_COPY.description;
+
   const sheet = variant === "sheet";
   const sheetActions = [...visibleActions].sort(
     (a, b) => (SHEET_ORDER[a.stage] ?? 9) - (SHEET_ORDER[b.stage] ?? 9),
@@ -197,6 +228,7 @@ export function TranslationStageActions({
                 </div>
                 <div className="book-detail-reprocess-controls">
                   {action.stage === "render" && !checking ? engineSelect : null}
+                  {action.stage === "translation" && !checking ? qualitySelect : null}
                   {actionButton(action, true)}
                 </div>
               </li>
@@ -207,6 +239,7 @@ export function TranslationStageActions({
       ) : (
         <div className="book-detail-stage-actions-buttons">
           {visibleActions.map((action) => actionButton(action))}
+          {!checking && visibleActions.some((action) => action.stage === "translation") ? qualitySelect : null}
           {!checking && visibleActions.some((action) => action.stage === "render") ? engineSelect : null}
         </div>
       )}
@@ -218,7 +251,7 @@ export function TranslationStageActions({
           if (!next) setConfirmAction(null);
         }}
         title={CONFIRM_COPY.title}
-        description={CONFIRM_COPY.description}
+        description={confirmDescription}
         confirmLabel={CONFIRM_COPY.confirmLabel}
         tone="default"
         pending={Boolean(confirmAction) && pendingStage === confirmAction?.stage}

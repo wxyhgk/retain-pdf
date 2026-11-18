@@ -63,7 +63,7 @@ export type BookDetailTranslationWorkflowProps = {
   documentJobIds?: string[];
   onRetryStage: (
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string },
+    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string; translationQuality?: string },
   ) => Promise<unknown>;
 };
 
