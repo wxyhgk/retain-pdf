@@ -160,6 +160,12 @@ def without_rejected_thinking(candidates: list[dict[str, Any]], *, base_url: str
     return kept or [{}]
 
 
+def registered_profile(*, base_url: str, model: str) -> ConnectionProfile | None:
+    """阶段入口登记过的连接配置；没登记过是 None（``resolve_profile`` 会退到 OpenAI 协议，分不出来）。"""
+    with _PROFILES_LOCK:
+        return _PROFILES.get(_profile_key(base_url, model))
+
+
 def resolve_profile(*, base_url: str, model: str, protocol: Any = None, thinking: Any = None) -> ConnectionProfile:
     with _PROFILES_LOCK:
         registered = _PROFILES.get(_profile_key(base_url, model), ConnectionProfile())

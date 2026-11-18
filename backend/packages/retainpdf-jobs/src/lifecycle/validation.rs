@@ -243,13 +243,6 @@ pub fn validate_translation_modes(input: &CreateJobInput) -> Result<(), AppError
         &input.translation.engine,
         TRANSLATION_ENGINES,
     )?;
-    // 翻译 agent 直接走 Anthropic Messages 接口
-    if input.translation.engine == "agent" && input.translation.api_protocol != "anthropic" {
-        return Err(AppError::bad_request(format!(
-            "translation.engine=agent requires translation.api_protocol=anthropic (got {:?})",
-            input.translation.api_protocol
-        )));
-    }
     // 审校的两项留空表示沿用翻译模型的设置。
     if !input.translation.reviewer_api_protocol.is_empty() {
         validate_allowed_value(

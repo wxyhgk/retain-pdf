@@ -34,7 +34,7 @@ pub const TRANSLATION_API_PROTOCOLS: &[&str] = &["openai", "openai_responses", "
 pub const TRANSLATION_THINKING_LEVELS: &[&str] = &["auto", "off", "low", "medium", "high", "max"];
 /// 翻译引擎。权威来源是 Python 的 `workflow/execution.py` 的 `TRANSLATION_ENGINES`。
 /// `legacy`：现有流程（默认）；`agent`：翻译 agent（retainpdf-translation-agent，先通读、逐页翻、每页审校），
-/// 要求 `api_protocol=anthropic`，公式按 `direct_typst` 处理。
+/// 三种 `api_protocol` 都可以（2026-11-18 以前只收 `anthropic`），公式按 `direct_typst` 处理。
 pub const TRANSLATION_ENGINES: &[&str] = &["legacy", "agent"];
 /// 精修的成本上限默认值（0 = 不限）。Python 侧读 render.spec.json 的 `params.refine`。
 ///

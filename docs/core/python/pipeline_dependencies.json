@@ -600,6 +600,7 @@
         "devtools/tests/test_translation_recovery_boundary.py",
         "devtools/tests/test_translation_source_reader_gate.py",
         "devtools/tests/translation/test_agent_flow.py",
+        "devtools/tests/translation/test_agent_openai.py",
         "devtools/tests/translation/test_batch_dispatch_plan.py",
         "devtools/tests/translation/test_batch_reply_duplicates.py",
         "devtools/tests/translation/test_book_flow_prewarm.py",
@@ -676,6 +677,7 @@
         "devtools/tests/document_schema/test_glm_ocr_driver.py",
         "devtools/tests/document_schema/test_ocr_retry_error_safety.py",
         "devtools/tests/document_schema/test_paddle_api_retry.py",
+        "devtools/tests/translation/test_agent_openai.py",
         "devtools/tests/translation/test_model_protocol.py",
         "devtools/tests/translation/test_opencode_headers.py",
         "devtools/tests/translation/test_rust_executor_client.py",
@@ -835,6 +837,7 @@
         "devtools/tests/test_translation_recovery_boundary.py",
         "devtools/tests/translation/test_adaptive_concurrency_bursts.py",
         "devtools/tests/translation/test_agent_flow.py",
+        "devtools/tests/translation/test_agent_openai.py",
         "devtools/tests/translation/test_author_line_residue_exemption.py",
         "devtools/tests/translation/test_auto_preserve_terms.py",
         "devtools/tests/translation/test_batch_dispatch_plan.py",
@@ -1000,7 +1003,8 @@
       ],
       "test_files": [
         "devtools/tests/agent_lab/test_agent_lab.py",
-        "devtools/tests/translation/test_agent_flow.py"
+        "devtools/tests/translation/test_agent_flow.py",
+        "devtools/tests/translation/test_agent_openai.py"
       ],
       "runtime_required": false,
       "devtool_required": true
