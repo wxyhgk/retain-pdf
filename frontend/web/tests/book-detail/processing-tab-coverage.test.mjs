@@ -193,7 +193,6 @@ test("翻译完成：重做的动作挂在流水线各站上，点哪站列哪�
   const dom = makeDom();
   const stageActions = [
     { stage: "translation", label: "重新翻译", can_retry: true },
-    { stage: "refine", label: "精修译文", can_retry: true },
     { stage: "render", label: "重新渲染", can_retry: true },
   ];
   const { root, host } = await mountTab(dom, {
@@ -217,7 +216,7 @@ test("翻译完成：重做的动作挂在流水线各站上，点哪站列哪�
 
   await open("translate");
   assert.equal(station("translate").getAttribute("aria-expanded"), "true");
-  assert.deepEqual(rows(), ["refine", "translation"], "翻译站：精修和重新翻译，按代价从小到大");
+  assert.deepEqual(rows(), ["translation"], "翻译站：重新翻译");
   await open("render");
   assert.equal(station("translate").getAttribute("aria-expanded"), "false", "一次只开一站");
   assert.deepEqual(rows(), ["render"]);

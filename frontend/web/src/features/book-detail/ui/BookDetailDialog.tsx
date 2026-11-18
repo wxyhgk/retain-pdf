@@ -328,7 +328,6 @@ export function BookDetailDialog({ extraTabs = [] }: BookDetailDialogProps = {})
                   // 长在 HomeShellProviders 内），让「进度」Tab 组件保持纯展示。
                   resultActionsSlot={<ProcessingResultActions documentJobIds={documentJobIds} />}
                   coverage={coverage}
-                  editorialFlowCache={caches.settledFlows}
                   {...buildProcessingTabProps({
                     open,
                     activeTab,

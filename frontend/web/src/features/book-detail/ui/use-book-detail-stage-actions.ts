@@ -53,7 +53,7 @@ export function useBookDetailStageActions({
 }) {
   const baseJobId = jobIdOf(job);
   // 底是渲染任务时，先顺着 source_artifact_job_id 找到真正持有译文的任务，重新处理都发给它
-  // （见 domain/translation-owner.ts）。找到之前不读阶段动作，免得先闪出一句「不能精修」。
+  // （见 domain/translation-owner.ts）。找到之前不读阶段动作，免得先闪出一句「不能重新处理」。
   const needsOwner = Boolean(
     open && baseJobId && !isDocumentJobActive(job) && `${job?.workflow || ""}`.trim().toLowerCase() === "render",
   );
@@ -121,8 +121,9 @@ export function useBookDetailStageActions({
   }, [refresh, refreshKey]);
 
   const currentView = view?.job_id === jobId ? view : stageActionsCache.get(jobId) || null;
+  // 后端仍会列出 refine（老的编辑部精修），书详情不再提供：「精翻」已改用翻译 agent。
   const stageActions = useMemo(() => {
-    const supported = new Set(["translation", "render", "refine"]);
+    const supported = new Set(["translation", "render"]);
     return (currentView?.stages || []).filter(
       (action): action is JobStageRetryActionView => supported.has(`${action?.stage || ""}`),
     );
@@ -133,11 +134,9 @@ export function useBookDetailStageActions({
 
   const retry = useCallback(async (
     stage: JobRetryStage,
-    { acceptDuplicateRisk = false, renderEngine = "", refineStartPage }: {
+    { acceptDuplicateRisk = false, renderEngine = "" }: {
       acceptDuplicateRisk?: boolean;
       renderEngine?: string;
-      /** 接着精修：从这一页开始（上次精修没审到的第一页）。 */
-      refineStartPage?: number;
     } = {},
   ) => {
     const descriptor = stageActions.find((action) => action.stage === stage);
@@ -164,19 +163,6 @@ export function useBookDetailStageActions({
             },
           }
           : {}),
-        // 精修在原任务上原地跑（不新建任务、不重翻），走编辑部模式：模型挑错后分派局部修改或整段
-        // 重写，最多两轮，改不好的保留原译并列进「留给你确认」。后端 stage-actions 给的默认 body
-        // 仍是 review_and_fix，所以这里显式带 mode；从第 N 页接着精修时 start_page 一并保留。
-        ...(stage === "refine"
-          ? {
-            create_new_job: false,
-            refine: {
-              ...((body.refine as Record<string, unknown>) || {}),
-              mode: "editorial",
-              ...(refineStartPage ? { start_page: refineStartPage } : {}),
-            },
-          }
-          : {}),
         ...(acceptDuplicateRisk
           ? { ambiguous_request_policy: "accept_duplicate_risk" }
           : {}),
@@ -186,7 +172,7 @@ export function useBookDetailStageActions({
         onJobSubmitted?.({
           ...result,
           document_id: result.document_id || job?.document_id,
-          workflow: result.workflow || (stage === "render" || stage === "refine" ? "render" : "book"),
+          workflow: result.workflow || (stage === "render" ? "render" : "book"),
         });
       }
       return result;

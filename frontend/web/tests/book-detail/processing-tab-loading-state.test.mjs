@@ -224,7 +224,7 @@ test("进度 Tab：已有翻译任务时的刷新同样不回占位", async () =
   const headline = () => dom.window.document.querySelector("[data-processing-unified-status]")?.textContent;
   await waitFor(() => headline() === "已完成", "完成态摘要渲染");
   assert.ok(rail(dom), "翻译完成后流水线照样画");
-  assert.ok(dom.window.document.getElementById("book-detail-station-translate-btn"), "完成态翻译站有「重译 / 精修」");
+  assert.ok(dom.window.document.getElementById("book-detail-station-translate-btn"), "完成态翻译站有「重新翻译」");
 
   render({ loading: true, ocr: idleOcr, translation: translated });
   await wait(30);

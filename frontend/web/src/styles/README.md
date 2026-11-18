@@ -53,7 +53,6 @@ Reader 样式只改 `frontend/packages/reader/styles/*`。`src/styles/reader/` �
 | `processing-hud.css` | HUD 条：小进度环、总耗时、模型、token 合计 |
 | `processing-details.css` | 细节区：错误 / 编辑部 / 活动的切换 |
 | `pipeline-rail.css` | 流水线各站徽标的底样（挂在画面上的位置在 `assembly-line-labels.css`） |
-| `editorial-flow.css` | 编辑部精修流程图（第几轮、这一步第几批） |
 | `ocr-range.css` | OCR 指定页码 |
 | `failure-card.css` | 「错误」页里的一块失败 |
 | `job-history.css` | 任务记录 |
