@@ -28,6 +28,7 @@ import re
 import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING
+from typing import Any
 from typing import Callable
 
 from retainpdf_base.cache_ttl import prune_expired_once
@@ -394,22 +395,26 @@ USAGE_LABELS = {"translator": "agent-translate", "reviser": "agent-revise", "rea
 
 
 class _UsageRecorder:
-    """agent 每次真发出去的请求（缓存命中的不算）记一行用量台账。"""
+    """agent 每次真发出去的请求（缓存命中的不算）记一行用量台账。
 
-    def __init__(self, agent: TranslationAgent, *, base_url: str, enabled: bool = True) -> None:
+    `connections`：模型 → (地址, 要不要在这里记)。OpenAI 协议的连接由共用请求层自己记，这里不记；编辑另配了模型时按请求的模型找连接。
+    """
+
+    def __init__(self, agent: TranslationAgent, *, connections: dict[str, tuple[str, bool]]) -> None:
         self.agent = agent
-        self.base_url = base_url
-        self.enabled = enabled
+        self.connections = connections
         self.recorded = 0
 
     def flush(self) -> None:
         for call in self.agent.calls[self.recorded :]:
-            if call.get("cached") or not self.enabled:
+            model = str(call.get("model") or "")
+            base_url, enabled = self.connections.get(model, ("", False))
+            if call.get("cached") or not enabled:
                 continue
             record_model_usage(
                 anthropic_usage({"usage": call.get("usage")}),
-                model=str(call.get("model") or ""),
-                base_url=self.base_url,
+                model=model,
+                base_url=base_url,
                 protocol="anthropic",
                 request_label=f"{USAGE_LABELS.get(str(call.get('role') or ''), 'agent-translate')} {call.get('label', '')}",
             )
@@ -427,6 +432,40 @@ def agent_effort(*, base_url: str, model: str) -> str | None:
     fields = model_wire.anthropic_thinking_candidates(profile.thinking, model=model)[0]
     effort = (fields.get("output_config") or {}).get("effort")
     return str(effort) if effort else None
+
+
+def _is_anthropic(*, base_url: str, model: str) -> bool:
+    profile = model_wire.registered_profile(base_url=base_url, model=model)
+    return profile is None or profile.protocol == model_wire.PROTOCOL_ANTHROPIC
+
+
+def _connection_transport(*, api_key: str, model: str, base_url: str) -> Callable[[dict], dict]:
+    """按阶段入口登记的协议选：Anthropic 走 agent 自己的 Messages 请求，OpenAI 两种协议走共用请求层（agent_openai.py）。"""
+    profile = model_wire.registered_profile(base_url=base_url, model=model)
+    if profile is None or profile.protocol == model_wire.PROTOCOL_ANTHROPIC:
+        return make_http_transport(api_key, url=messages_url(base_url))
+    return make_openai_transport(api_key=api_key, model=model, base_url=base_url, protocol=profile.protocol)
+
+
+def _route_by_model(transports: dict[str, Callable[[dict], dict]], *, default: Callable[[dict], dict]) -> Callable[[dict], dict]:
+    def transport(body: dict) -> dict:
+        return transports.get(str(body.get("model") or ""), default)(body)
+
+    return transport
+
+
+def _separate_reviewer(reviewer: Any, *, model: str, base_url: str) -> str | None:
+    """用户另配了审校模型、而且能单独发请求时返回它的模型名；否则 None（审校、编辑也用翻译模型）。
+    请求按模型名分到连接上，所以模型名和翻译模型一样（只换了地址）时没法分开，照旧用翻译模型。"""
+    if reviewer is None or getattr(reviewer, "inherited", True):
+        return None
+    reviewer_model = str(reviewer.model or "").strip()
+    if not reviewer_model or reviewer_model == model:
+        return None
+    if not str(reviewer.api_key or "").strip():
+        print(f"agent: reviewer {reviewer_model} has no API key for {reviewer.base_url}; reviewer uses the translation model", flush=True)
+        return None
+    return reviewer_model
 
 
 def translate_book_with_agent(
@@ -448,9 +487,13 @@ def translate_book_with_agent(
     run_diagnostics: TranslationRunDiagnostics | None = None,
     checkpoint: TranslationCheckpointSession | None = None,
     glossary_entries: list | None = None,
+    reviewer: Any = None,
     transport: Callable[[dict], dict] | None = None,
 ) -> tuple[dict[int, list[dict]], list[dict]]:
-    """返回值和 `translate_book_with_global_continuations` 一样：（页 → 记录，每页小结）。`transport` 只给测试注入假模型。"""
+    """返回值和 `translate_book_with_global_continuations` 一样：（页 → 记录，每页小结）。`transport` 只给测试注入假模型。
+
+    `reviewer`：审校模型的连接（`execution.resolve_reviewer_connection`）。用户另配了模型时，agent 的审校、编辑重写走它，
+    其余（通读、初译、重翻）走翻译模型；没配就全用翻译模型。"""
     translation_paths, page_payloads = prepare_book_payloads(
         data=data,
         output_dir=output_dir,
@@ -471,8 +514,10 @@ def translate_book_with_agent(
     )
     pages, marks_by_block = build_agent_pages(page_payloads, data, document_title=_document_title(page_payloads))
     model = (model or "").strip() or DEFAULT_MODEL
+    reviewer_model = _separate_reviewer(reviewer, model=model, base_url=base_url)
     state_dir = Path(output_dir) / AGENT_STATE_DIR
-    _prepare_state_dir(state_dir, pages, model)
+    # 编辑另配的模型也算进指纹：换了编辑模型重试时从头做，不沿用旧编辑改的页
+    _prepare_state_dir(state_dir, pages, model if reviewer_model is None else f"{model}+reviewer:{reviewer_model}")
     # 请求缓存以前只增不减（2026-11-02 起默认 90 天过期，RETAIN_AGENT_REQUEST_CACHE_TTL_DAYS=0 关掉）
     prune_expired_once(
         paths.AGENT_REQUEST_CACHE_DIR,
@@ -480,23 +525,27 @@ def translate_book_with_agent(
         label="agent request cache",
     )
     # 协议看阶段入口登记的连接（任务的 api_protocol）；没登记过的（老入口、开发工具）照以前一律按 Anthropic
-    profile = model_wire.registered_profile(base_url=base_url, model=model)
-    anthropic = profile is None or profile.protocol == model_wire.PROTOCOL_ANTHROPIC
+    anthropic = _is_anthropic(base_url=base_url, model=model)
+    connections = {model: (base_url, anthropic)}
+    if reviewer_model is not None:
+        connections[reviewer_model] = (reviewer.base_url, _is_anthropic(base_url=reviewer.base_url, model=reviewer_model))
     if transport is None:
-        transport = (
-            make_http_transport(api_key, url=messages_url(base_url))
-            if anthropic
-            else make_openai_transport(api_key=api_key, model=model, base_url=base_url, protocol=profile.protocol)
-        )
+        transport = _connection_transport(api_key=api_key, model=model, base_url=base_url)
+        if reviewer_model is not None:
+            transport = _route_by_model(
+                {reviewer_model: _connection_transport(api_key=reviewer.api_key, model=reviewer_model, base_url=reviewer.base_url)},
+                default=transport,
+            )
     agent = TranslationAgent(
         model=model,
+        models={"reviewer": reviewer_model} if reviewer_model is not None else None,
         transport=transport,
         cache_dir=paths.AGENT_REQUEST_CACHE_DIR,
         # OpenAI 协议的思考档位由共用请求层按任务的 thinking 换算，请求体里不带 Anthropic 的思考字段
         effort=agent_effort(base_url=base_url, model=model) if anthropic else None,
     )
     # OpenAI 协议的请求由共用请求层自己记用量台账，这里再记就重了
-    usage = _UsageRecorder(agent, base_url=base_url, enabled=anthropic)
+    usage = _UsageRecorder(agent, connections=connections)
     run = DocumentRun(agent, state_dir / RUN_DIR, glossary=glossary_from_entries(glossary_entries or []), read_first=True, review=True)
 
     total_blocks = sum(len(page.to_translate()) for page in pages)

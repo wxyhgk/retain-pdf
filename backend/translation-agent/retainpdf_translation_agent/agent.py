@@ -43,7 +43,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 BREAK = "[[BREAK]]"
 BREAK_RE = re.compile(r"\s*\[\[BREAK\]\]\s*")
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-16"
+PROMPT_VERSION = "translation-agent-17"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
@@ -84,6 +84,9 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
 10. 请求里的 context 是这一页的上下文包，只用来帮你翻准，里面的东西都不要交回：
    - terms：术语表。status 是 approved 或 locked 的**必须照用**；candidate 是前面几页或别的章的译法，
      意思相同就沿用，意思不同（同一个词在这里是另一个意思）就按这里的意思译；有 scope 的只管那几章。
+     术语管的是这个概念：原文就是这个词（作名词、作概念讨论）时照用；词形变了（形容词、动词、分词，如术语 obstructing
+     遇到 proved obstructive、was obstructed）按中文习惯说成动作或状态，意思对上就行，不要把术语名词硬塞进去
+     （不写"设置了阻碍""表现出阻碍态度"，写"就百般阻挠""被拦在门外"）。
    - keep：要原样保留的专名（人名、机构、期刊、软件）。
    - abbreviations：缩写和全称。first_use=true 表示全书第一次用到，译成"中文全称（缩写）"；之后直接写缩写。
    - names：人名等专名的中文译名，必须照用；first_use=true 时写"中文译名（原文）"，之后只写中文译名。
