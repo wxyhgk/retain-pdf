@@ -44,6 +44,11 @@ PATCH /api/v1/documents/:document_id
 - `reading_status` 只接受 `unread | reading | done`,其他值返回 400;
 - `active_job_id` 是书卡当前对应的任务(在跑的优先,其次最好的成功任务,再次最近提交的);打开阅读器用 `GET /api/v1/documents/:id/reading` 给的 `job_id`
   (分次范围翻译时是合并后的虚拟任务),不要直接用 `active_job_id`;
+- 译文版本(2026-11-18):一本书翻过几次就有几份译文。书详情「概览」的「译文版本」卡(`TranslationVersionsPanel`、
+  `use-translation-versions.ts`)列 `GET .../translation-versions?include_hidden=true`,切换走 `PUT .../translation-version`
+  (「自动(最新)」= `version_id: null`),改名、隐藏、恢复走 `PATCH .../translation-versions/:version_id`。选择记在后端,
+  阅读入口照旧调 `/reading`(不带 `version`)就读到书的当前版本,`resolve-reading-target.ts` 不用改。只有一份译文的书不显示这张卡;
+  阅读页里还不能切版本;
 - `active_version_id` 没有时整个键不出现(不是 `null`);
 - `authors_json`(恒为字符串 `"[]"`)、`year`(恒 `null`)、`doi`(恒 `""`)、`last_opened_at`(恒 `null`)没有写入点,
   留着只为不破坏旧客户端,不要拿来显示;

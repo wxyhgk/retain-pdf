@@ -1,5 +1,5 @@
-import type { ApplyDocumentMetadataSuggestionInput, CoverageJobView, CoverageSegment, CreateDocumentMetadataSuggestionInput, DocumentDeleteResultView, DocumentListView, DocumentMetadataEvidenceView, DocumentMetadataSuggestionApplyView, DocumentMetadataSuggestionView, DocumentReadingView, DocumentRecord, DocumentTitleCandidateView, PatchDocumentInput, TranslationCoverageView } from "@retainpdf/contracts/library-documents";
-export type { ApplyDocumentMetadataSuggestionInput, CreateDocumentMetadataSuggestionInput, DocumentDeleteResultView, DocumentListView, DocumentReadingView, DocumentRecord, TranslationCoverageView, };
+import type { ApplyDocumentMetadataSuggestionInput, CoverageJobView, CoverageSegment, CreateDocumentMetadataSuggestionInput, DocumentDeleteResultView, DocumentListView, DocumentMetadataEvidenceView, DocumentMetadataSuggestionApplyView, DocumentMetadataSuggestionView, DocumentReadingView, DocumentRecord, DocumentTitleCandidateView, PatchDocumentInput, PatchTranslationVersionInput, TranslationCoverageView, TranslationVersionView, TranslationVersionsView } from "@retainpdf/contracts/library-documents";
+export type { ApplyDocumentMetadataSuggestionInput, CreateDocumentMetadataSuggestionInput, DocumentDeleteResultView, DocumentListView, DocumentReadingView, DocumentRecord, TranslationCoverageView, PatchTranslationVersionInput, TranslationVersionView, TranslationVersionsView, };
 /** 阅读状态只有这三种，PATCH 时写别的后端回 400。 */
 export type DocumentReadingStatus = NonNullable<PatchDocumentInput["reading_status"]>;
 export type DocumentMetadataEvidence = DocumentMetadataEvidenceView;
@@ -72,6 +72,14 @@ export declare function fetchDocument(apiPrefix: string, documentId: string): Pr
 export declare function patchDocument(apiPrefix: string, documentId: string, payload?: PatchDocumentInput): Promise<DocumentRecord>;
 /** GET /documents/:id/reading —— 阅读器该打开哪个任务。 */
 export declare function fetchDocumentReading(apiPrefix: string, documentId: string): Promise<DocumentReadingView>;
+/** GET /documents/:id/translation-versions —— 一本书的几份译文和当前选的哪份（null = 自动，逐页取最新）。 */
+export declare function fetchTranslationVersions(apiPrefix: string, documentId: string, { includeHidden }?: {
+    includeHidden?: boolean;
+}): Promise<TranslationVersionsView>;
+/** PUT /documents/:id/translation-version —— 换当前版本；null 回到自动。隐藏的版本 409，带后端的原因。 */
+export declare function setCurrentTranslationVersion(apiPrefix: string, documentId: string, versionId: string | null): Promise<TranslationVersionsView>;
+/** PATCH /documents/:id/translation-versions/:version_id —— 改名（空串清掉）、隐藏或恢复。 */
+export declare function patchTranslationVersion(apiPrefix: string, documentId: string, versionId: string, payload: PatchTranslationVersionInput): Promise<TranslationVersionsView>;
 /** GET /documents/:id/translation-coverage —— 一本书翻了哪些页、每次任务提供了几页。 */
 export declare function fetchDocumentTranslationCoverage(apiPrefix: string, documentId: string): Promise<TranslationCoverageView>;
 export declare function createDocumentMetadataSuggestion(apiPrefix: string, documentId: string, payload?: CreateDocumentMetadataSuggestionInput): Promise<DocumentMetadataSuggestion>;

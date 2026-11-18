@@ -12,6 +12,9 @@ import {
   fetchDocumentMetadataSuggestions as _canonFetchDocumentMetadataSuggestions,
   fetchDocumentReading as _canonFetchDocumentReading,
   fetchDocumentTranslationCoverage as _canonFetchDocumentTranslationCoverage,
+  fetchTranslationVersions as _canonFetchTranslationVersions,
+  setCurrentTranslationVersion as _canonSetCurrentTranslationVersion,
+  patchTranslationVersion as _canonPatchTranslationVersion,
 } from "@retainpdf/api/documents";
 import { mockable } from "./_mockable.js";
 
@@ -22,6 +25,8 @@ export type {
   TranslationCoverageView,
   TranslationCoverageJob,
   TranslationCoverageSegment,
+  TranslationVersionView,
+  TranslationVersionsView,
 } from "@retainpdf/api/documents";
 
 export const fetchDocumentList = mockable(_canonFetchDocumentList, MockDocuments.fetchDocumentList);
@@ -48,3 +53,13 @@ export const fetchDocumentTranslationCoverage = mockable(_canonFetchDocumentTran
   segments: [],
   jobs: [],
 }));
+// mock 没有版本：列表为空，详情页不显示版本卡；切换、改名原样回空列表。
+const emptyVersions = async (_apiPrefix: string, documentId: string) => ({
+  document_id: documentId,
+  current_version_id: null,
+  has_newer: false,
+  versions: [],
+});
+export const fetchTranslationVersions = mockable(_canonFetchTranslationVersions, emptyVersions);
+export const setCurrentTranslationVersion = mockable(_canonSetCurrentTranslationVersion, emptyVersions);
+export const patchTranslationVersion = mockable(_canonPatchTranslationVersion, emptyVersions);

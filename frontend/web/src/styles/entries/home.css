@@ -130,6 +130,7 @@
 /* 概览页签：layout 定义卡片底与标题，必须在最前；responsive 必须在最后。 */
 @import "../../features/book-detail/ui/tabs/overview/layout.css" layer(pages);
 @import "../../features/book-detail/ui/tabs/overview/info.css" layer(pages);
+@import "../../features/book-detail/ui/tabs/overview/versions.css" layer(pages);
 @import "../../features/book-detail/ui/tabs/overview/activity.css" layer(pages);
 @import "../../features/book-detail/ui/tabs/overview/quality.css" layer(pages);
 @import "../../features/book-detail/ui/tabs/history.css" layer(pages);
