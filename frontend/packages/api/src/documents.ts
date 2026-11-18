@@ -19,7 +19,10 @@ import type {
   DocumentRecord,
   DocumentTitleCandidateView,
   PatchDocumentInput,
+  PatchTranslationVersionInput,
   TranslationCoverageView,
+  TranslationVersionView,
+  TranslationVersionsView,
 } from "@retainpdf/contracts/library-documents";
 
 // 书库的线上形状以契约 library-documents.v1 为准；下面是沿用的旧名字。
@@ -31,6 +34,9 @@ export type {
   DocumentReadingView,
   DocumentRecord,
   TranslationCoverageView,
+  PatchTranslationVersionInput,
+  TranslationVersionView,
+  TranslationVersionsView,
 };
 /** 阅读状态只有这三种，PATCH 时写别的后端回 400。 */
 export type DocumentReadingStatus = NonNullable<PatchDocumentInput["reading_status"]>;
@@ -195,6 +201,46 @@ export async function fetchDocumentReading(apiPrefix: string, documentId: string
     apiPrefix,
     { document_id: requireId(documentId, "document_id") },
     { onError: failWith("读取阅读入口失败。") },
+  );
+}
+
+/** GET /documents/:id/translation-versions —— 一本书的几份译文和当前选的哪份（null = 自动，逐页取最新）。 */
+export async function fetchTranslationVersions(
+  apiPrefix: string,
+  documentId: string,
+  { includeHidden = false }: { includeHidden?: boolean } = {},
+): Promise<TranslationVersionsView> {
+  return generated.listTranslationVersions(
+    apiPrefix,
+    { document_id: requireId(documentId, "document_id"), query: includeHidden ? { include_hidden: true } : {} },
+    { onError: failWith("读取译文版本失败。") },
+  );
+}
+
+/** PUT /documents/:id/translation-version —— 换当前版本；null 回到自动。隐藏的版本 409，带后端的原因。 */
+export async function setCurrentTranslationVersion(
+  apiPrefix: string,
+  documentId: string,
+  versionId: string | null,
+): Promise<TranslationVersionsView> {
+  return generated.setCurrentTranslationVersion(
+    apiPrefix,
+    { document_id: requireId(documentId, "document_id"), body: { version_id: versionId } },
+    { onError: failWithServerMessage("切换译文版本失败，请稍后重试。") },
+  );
+}
+
+/** PATCH /documents/:id/translation-versions/:version_id —— 改名（空串清掉）、隐藏或恢复。 */
+export async function patchTranslationVersion(
+  apiPrefix: string,
+  documentId: string,
+  versionId: string,
+  payload: PatchTranslationVersionInput,
+): Promise<TranslationVersionsView> {
+  return generated.patchTranslationVersion(
+    apiPrefix,
+    { document_id: requireId(documentId, "document_id"), version_id: requireId(versionId, "version_id"), body: payload },
+    { onError: failWithServerMessage("修改译文版本失败，请稍后重试。") },
   );
 }
 

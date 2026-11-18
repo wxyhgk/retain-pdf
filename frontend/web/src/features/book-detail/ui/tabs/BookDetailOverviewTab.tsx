@@ -35,6 +35,8 @@ export type BookDetailOverviewTabProps = {
   readingSlot?: ReactNode;
   /** 合集切换（CollectionsPanel） */
   collectionsSlot?: ReactNode;
+  /** 译文版本（TranslationVersionsPanel）：只有一份译文时它自己不画。 */
+  versionsSlot?: ReactNode;
   /** 危险操作（DeleteFooterPanel） */
   dangerSlot?: ReactNode;
   /**
@@ -70,6 +72,7 @@ export function BookDetailOverviewTab({
   addedAt,
   readingSlot,
   collectionsSlot,
+  versionsSlot = null,
   dangerSlot,
   aiSlot = null,
   error = "",
@@ -167,6 +170,8 @@ export function BookDetailOverviewTab({
           <div className="book-detail-overview-row-value">{readingSlot}</div>
         </div>
       </section>
+
+      {versionsSlot}
 
       {aiSlot ? <div className="book-detail-overview-ai" data-book-detail-section="ai">{aiSlot}</div> : null}
 

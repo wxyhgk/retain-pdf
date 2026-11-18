@@ -19,7 +19,7 @@ export function deleteDocument(apiPrefix, args, options) {
 }
 /** GET /api/v1/documents/:document_id/reading */
 export function getDocumentReading(apiPrefix, args, options) {
-    return request({ apiPrefix, method: "GET", path: `documents/${encodePathParam(args.document_id)}/reading`, options });
+    return request({ apiPrefix, method: "GET", path: `documents/${encodePathParam(args.document_id)}/reading`, query: args.query, options });
 }
 /** GET /api/v1/documents/:document_id/translation-coverage */
 export function getTranslationCoverage(apiPrefix, args, options) {
@@ -80,4 +80,16 @@ export function translateDocument(apiPrefix, args, options) {
 /** POST /api/v1/documents/:document_id/ocr */
 export function ocrDocument(apiPrefix, args, options) {
     return request({ apiPrefix, method: "POST", path: `documents/${encodePathParam(args.document_id)}/ocr`, body: args.body, options });
+}
+/** GET /api/v1/documents/:document_id/translation-versions */
+export function listTranslationVersions(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "GET", path: `documents/${encodePathParam(args.document_id)}/translation-versions`, query: args.query, options });
+}
+/** PUT /api/v1/documents/:document_id/translation-version */
+export function setCurrentTranslationVersion(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "PUT", path: `documents/${encodePathParam(args.document_id)}/translation-version`, body: args.body, options });
+}
+/** PATCH /api/v1/documents/:document_id/translation-versions/:version_id */
+export function patchTranslationVersion(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "PATCH", path: `documents/${encodePathParam(args.document_id)}/translation-versions/${encodePathParam(args.version_id)}`, body: args.body, options });
 }

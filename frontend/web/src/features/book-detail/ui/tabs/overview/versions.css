@@ -1,0 +1,101 @@
+/* 书籍详情 · 概览页签：「译文版本」卡（TranslationVersionsPanel）—— 读哪份译文的下拉、有新版本的提示、改名和隐藏。
+ * 卡片底在 overview/layout.css。
+ *
+ * @owns book-detail */
+
+.book-detail-versions {
+  display: grid;
+  gap: 8px;
+}
+
+.book-detail-versions-sub,
+.book-detail-versions-hint {
+  color: var(--muted);
+  font-size: var(--ui-text-xs);
+}
+
+.book-detail-versions-hint {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.book-detail-versions-select {
+  width: 100%;
+}
+
+.book-detail-versions-newer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--ui-radius-md);
+  background: color-mix(in srgb, var(--accent) 10%, var(--paper));
+  color: var(--ink);
+  font-size: var(--ui-text-sm);
+}
+
+.book-detail-versions-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--ui-text-sm);
+}
+
+.book-detail-versions-manage summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: var(--ui-text-sm);
+}
+
+.book-detail-versions-list {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.book-detail-versions-item {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.book-detail-versions-item[data-hidden="true"] .book-detail-versions-name {
+  color: var(--muted);
+}
+
+.book-detail-versions-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: var(--ui-text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-versions-name em {
+  font-style: normal;
+}
+
+.book-detail-versions-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+.book-detail-versions-rename {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+}
+
+.book-detail-versions-rename .ui-input,
+.book-detail-versions-rename input {
+  flex: 1;
+  min-width: 0;
+}
