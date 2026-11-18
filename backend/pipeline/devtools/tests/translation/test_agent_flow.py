@@ -361,3 +361,35 @@ def test_the_agent_gets_the_same_thinking_effort_as_legacy() -> None:
             assert agent_effort(base_url=base, model=model) == expected, (thinking, model)
     finally:
         model_wire.clear_registered_connections()
+
+
+def test_job_data_registers_the_agent_glossary_where_and_how_the_agent_writes_it():
+    """术语页读的 agent_terms / agent_term_tickets（契约 job-data.v1）要和 agent 真写出来的 glossary.json 对得上：
+    文件在 translated/ 下的位置、每个登记字段的路径。"""
+    from retainpdf_translation_agent import Glossary
+
+    contract = json.loads(
+        (Path(__file__).resolve().parents[5] / "contracts" / "job-data.v1.schema.json").read_text(encoding="utf-8")
+    )
+    glossary = Glossary()
+    glossary.add("transformer", "Transformer", category="keep", reason="用户", page="3", quote="the transformer")
+    glossary.propose("attention", "注意力", category="term", block_id="p003-b001", page="3", chapter="1", quote="q")
+    glossary.propose("attention", "关注", category="term", block_id="p004-b002", page="4", chapter="1", quote="q2")
+    payload = glossary.to_dict()
+    assert payload["tickets"], "要有一张歧义单才测得到 tickets 的字段"
+
+    def at(row, path):
+        for part in path.split("."):
+            assert isinstance(row, dict) and part in row, path
+            row = row[part]
+        return row
+
+    for name in ("agent_terms", "agent_term_tickets"):
+        spec = contract["datasets"][name]
+        assert spec["source"]["root"] == "translated"
+        assert spec["source"]["file"] == f"{agent_flow.AGENT_STATE_DIR}/{agent_flow.RUN_DIR}/glossary.json"
+        rows = at(payload, spec["source"]["rows"].strip("/"))
+        for field_name, field in spec["fields"].items():
+            at(rows[0], field.get("path", field_name))
+        for path in spec["identity"].values():
+            assert re.fullmatch(r"p\d+-b\d+", at(rows[0], path)), "item_id 要是 pNNN-bNNN，页码才推得出来"
