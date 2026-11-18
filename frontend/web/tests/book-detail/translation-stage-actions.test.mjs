@@ -195,3 +195,85 @@ test("重新渲染：可选排版引擎，选了就带 overrides.render.engine�
   root.unmount();
   dom.window.close();
 });
+
+test("重新翻译换翻译方式：选项对应 overrides.translation，不选不带", async () => {
+  const { retranslateOverrides, RETRANSLATE_QUALITY_OPTIONS } = await import(
+    "../../src/features/book-detail/domain/retranslate-quality.js"
+  );
+  assert.deepEqual(RETRANSLATE_QUALITY_OPTIONS.map((option) => option.value), ["", "standard", "terms", "refined"]);
+  assert.equal(retranslateOverrides(""), null);
+  assert.equal(retranslateOverrides("whatever"), null);
+  assert.deepEqual(retranslateOverrides("refined"), { engine: "agent" });
+  assert.deepEqual(retranslateOverrides("standard"), { engine: "legacy", preparation: "off", refine: "off" });
+  assert.deepEqual(retranslateOverrides("terms"), { engine: "legacy", preparation: "terms+style", refine: "off" });
+});
+
+test("重新翻译选精翻（翻译 agent）：确认框说明 agent，提交带 overrides.translation.engine=agent", async () => {
+  const dom = makeDom();
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { useBookDetailStageActions } = await import(
+    "../../src/features/book-detail/ui/use-book-detail-stage-actions.js"
+  );
+  const { TranslationStageActions } = await import(
+    "../../src/features/book-detail/ui/panels/translate/TranslationStageActions.jsx"
+  );
+  const calls = [];
+  function Probe() {
+    const api = useBookDetailStageActions({
+      open: true,
+      job: { job_id: "job-tr-1", status: "succeeded", document_id: "doc-1" },
+      actions: {
+        getJobStageActions: async () => ({
+          job_id: "job-tr-1",
+          stages: [{
+            stage: "translation", label: "重新翻译", can_retry: true, danger: true,
+            action: { body: { stage: "translation", ambiguous_request_policy: "block" } },
+          }],
+        }),
+        retryJobStage: async (...args) => {
+          calls.push(args);
+          return { job_id: "job-tr-2", workflow: "book" };
+        },
+      },
+    });
+    return React.createElement(TranslationStageActions, {
+      variant: "sheet",
+      actions: api.stageActions,
+      loading: api.loading,
+      pendingStage: api.pendingStage,
+      error: api.error,
+      onRetry: api.retry,
+    });
+  }
+  const root = createRoot(dom.window.document.getElementById("root"));
+  root.render(React.createElement(Probe));
+  const select = await waitFor(() => dom.window.document.getElementById("book-detail-translation-quality"), "翻译方式下拉");
+  assert.equal(select.value, "", "默认沿用原来的");
+  const row = dom.window.document.querySelector("[data-reprocess-stage='translation']");
+  assert.ok(row.contains(select), "翻译方式挨着重新翻译");
+
+  const setter = Object.getOwnPropertyDescriptor(dom.window.HTMLSelectElement.prototype, "value").set;
+  setter.call(select, "refined");
+  select.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  await waitFor(() => select.value === "refined", "选中精翻");
+  click(dom, dom.window.document.getElementById("book-detail-retry-translation-btn"));
+  const confirm = await waitFor(() => dom.window.document.getElementById("book-detail-translation-risk-confirm"), "确认框");
+  assert.match(confirm.textContent, /翻译 agent/);
+  assert.equal(calls.length, 0, "打开确认框不能直接提交");
+  click(dom, dom.window.document.getElementById("book-detail-translation-risk-confirm-confirm"));
+  await waitFor(() => calls.length === 1, "确认后提交");
+  assert.deepEqual(calls[0], [
+    "job-tr-1",
+    "translation",
+    {
+      stage: "translation",
+      ambiguous_request_policy: "accept_duplicate_risk",
+      overrides: { translation: { engine: "agent" } },
+      document_id: "doc-1",
+    },
+  ]);
+
+  root.unmount();
+  dom.window.close();
+});

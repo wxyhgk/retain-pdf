@@ -8,11 +8,15 @@ import { describeActionError, fetchJobPayload } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import type { DocumentJobSummary } from "@/features/library/domain.js";
 import { resolveTranslationOwnerId, type TranslationSourceView } from "../domain/translation-owner.js";
+import { retranslateOverrides } from "../domain/retranslate-quality.js";
 import type { LibraryController } from "@/features/library/index.js";
 import { isDocumentJobActive } from "./use-document-jobs.js";
 
 type RetryBody = Record<string, unknown> & {
-  overrides?: Record<string, unknown> & { render?: Record<string, unknown> };
+  overrides?: Record<string, unknown> & {
+    render?: Record<string, unknown>;
+    translation?: Record<string, unknown>;
+  };
 };
 
 // job_id -> stage-actions 视图。跨文档/跨弹窗复用，但必须有上限，避免长会话无限增长。
@@ -134,9 +138,11 @@ export function useBookDetailStageActions({
 
   const retry = useCallback(async (
     stage: JobRetryStage,
-    { acceptDuplicateRisk = false, renderEngine = "" }: {
+    { acceptDuplicateRisk = false, renderEngine = "", translationQuality = "" }: {
       acceptDuplicateRisk?: boolean;
       renderEngine?: string;
+      /** 重新翻译换翻译方式（standard / terms / refined）；空 = 沿用原任务的。 */
+      translationQuality?: string;
     } = {},
   ) => {
     const descriptor = stageActions.find((action) => action.stage === stage);
@@ -151,15 +157,21 @@ export function useBookDetailStageActions({
       const engineOverride = stage === "render" && (renderEngine === "rpr_fit" || renderEngine === "typst")
         ? renderEngine
         : "";
+      const translationOverride = stage === "translation" ? retranslateOverrides(translationQuality) : null;
       const body = (descriptor.action?.body || {}) as RetryBody;
       const result = await actions.retryJobStage(jobId, stage, {
         ...body,
-        // 不指定引擎时沿用任务原来的引擎（后端保留 render.engine）。
-        ...(engineOverride
+        // 不指定引擎、翻译方式时沿用任务原来的（后端把 overrides 按段合并进原任务的设置）。
+        ...(engineOverride || translationOverride
           ? {
             overrides: {
               ...(body.overrides || {}),
-              render: { ...(body.overrides?.render || {}), engine: engineOverride },
+              ...(engineOverride
+                ? { render: { ...(body.overrides?.render || {}), engine: engineOverride } }
+                : {}),
+              ...(translationOverride
+                ? { translation: { ...(body.overrides?.translation || {}), ...translationOverride } }
+                : {}),
             },
           }
           : {}),
