@@ -61,7 +61,7 @@ const ACTION_CONFLICT_MESSAGES: Record<string, string> = {
   job_active: "任务还在跑，先取消再操作。",
   job_not_active: "任务已经不在运行，不用取消。",
   artifacts_missing: "需要的产物或原始文件不在了，没法从这一步继续。",
-  translations_not_owned: "这个任务用的是别的任务的译文，不能在这里精修。",
+  translations_not_owned: "这个任务用的是别的任务的译文，要在那个任务上处理。",
   request_journal_corrupt: "翻译请求记录损坏，没法自动恢复，请重新翻译。",
   stale_resolution: "恢复信息已过期，请刷新后再试。",
   no_ocr_dispatch: "这个任务已经不需要处理 OCR 歧义，请刷新。",

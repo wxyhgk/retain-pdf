@@ -86,45 +86,7 @@ test("阶段能力读取期间固定展示重新翻译和重新渲染按钮", as
   dom.window.close();
 });
 
-test("精修译文：先弹确认（说明会花钱、可退回），确认后按 refine 提交，不带重复风险标记", async () => {
-  const dom = makeDom();
-  const React = await import("react");
-  const { createRoot } = await import("react-dom/client");
-  const { TranslationStageActions } = await import(
-    "../../src/features/book-detail/ui/panels/translate/TranslationStageActions.jsx"
-  );
-  const calls = [];
-  const root = createRoot(dom.window.document.getElementById("root"));
-  root.render(React.createElement(TranslationStageActions, {
-    actions: [
-      { stage: "render", label: "重新渲染", can_retry: true },
-      { stage: "refine", label: "精修译文", can_retry: true },
-    ],
-    onRetry: async (...args) => calls.push(args),
-  }));
-
-  const refineButton = await waitFor(
-    () => dom.window.document.getElementById("book-detail-retry-refine-btn"),
-    "精修按钮",
-  );
-  assert.equal(refineButton.textContent.trim(), "精修译文");
-  click(dom, refineButton);
-  const confirm = await waitFor(
-    () => dom.window.document.getElementById("book-detail-translation-risk-confirm"),
-    "精修确认框",
-  );
-  assert.match(confirm.textContent, /精修译文/);
-  assert.match(confirm.textContent, /不会重新翻译整本/);
-  assert.equal(calls.length, 0, "打开确认框不能直接提交");
-  click(dom, dom.window.document.getElementById("book-detail-translation-risk-confirm-confirm"));
-  await waitFor(() => calls.length === 1, "确认后提交");
-  assert.deepEqual(calls[0], ["refine", undefined]);
-
-  root.unmount();
-  dom.window.close();
-});
-
-test("精修：失败任务也不走断点恢复，直接 retry-stage(refine) 原地执行", async () => {
+test("后端列出的 refine（老的编辑部精修）不再提供：清单里没有，调 retry(\"refine\") 什么也不发", async () => {
   const dom = makeDom();
   const React = await import("react");
   const { createRoot } = await import("react-dom/client");
@@ -132,49 +94,33 @@ test("精修：失败任务也不走断点恢复，直接 retry-stage(refine) �
     "../../src/features/book-detail/ui/use-book-detail-stage-actions.js"
   );
   const calls = [];
-  const submitted = [];
   let api = null;
   function Probe() {
     api = useBookDetailStageActions({
       open: true,
-      job: { job_id: "job-refine-1", status: "failed", document_id: "doc-1" },
+      job: { job_id: "job-refine-1", status: "succeeded", document_id: "doc-1" },
       actions: {
         getJobStageActions: async () => ({
           job_id: "job-refine-1",
-          stages: [{ stage: "refine", label: "精修译文", can_retry: true, action: { body: { stage: "refine" } } }],
+          stages: [
+            { stage: "render", label: "重新渲染", can_retry: true },
+            { stage: "refine", label: "精修译文", can_retry: true, action: { body: { stage: "refine" } } },
+          ],
         }),
         retryJobStage: async (...args) => {
-          calls.push(["retry", ...args]);
+          calls.push(args);
           return { job_id: "job-refine-1", workflow: "render" };
         },
-        resumeJob: async (...args) => {
-          calls.push(["resume", ...args]);
-          return { job_id: "job-resumed" };
-        },
       },
-      onJobSubmitted: (job) => submitted.push(job),
     });
     return null;
   }
   const root = createRoot(dom.window.document.getElementById("root"));
   root.render(React.createElement(Probe));
-  await waitFor(() => api?.stageActions?.some((action) => action.stage === "refine"), "读到精修能力");
-  await api.retry("refine");
-  assert.deepEqual(calls, [[
-    "retry",
-    "job-refine-1",
-    "refine",
-    // 精修走编辑部模式：后端 stage-actions 的默认 body 仍是 review_and_fix，前端显式带 mode。
-    { stage: "refine", create_new_job: false, refine: { mode: "editorial" }, document_id: "doc-1" },
-  ]]);
-  assert.equal(submitted[0].workflow, "render");
-
-  // 接着精修：从上次没审到的那一页开始。
-  await api.retry("refine", { refineStartPage: 24 });
-  assert.deepEqual(calls[1][3], {
-    stage: "refine", create_new_job: false, refine: { mode: "editorial", start_page: 24 }, document_id: "doc-1",
-  });
-
+  await waitFor(() => api?.stageActions?.length, "读到阶段能力");
+  assert.deepEqual(api.stageActions.map((action) => action.stage), ["render"]);
+  assert.equal(await api.retry("refine"), null);
+  assert.deepEqual(calls, []);
   root.unmount();
   dom.window.close();
 });
@@ -246,126 +192,6 @@ test("重新渲染：可选排版引擎，选了就带 overrides.render.engine�
     { stage: "render", create_new_job: false, overrides: { render: { engine: "typst" } }, document_id: "doc-1" },
   ]);
 
-  root.unmount();
-  dom.window.close();
-});
-
-test("上次精修的结果写在精修那一行下面；没审完时可以从没审到的那一页接着精修（先确认）", async () => {
-  const { describeLastRefine, refineContinuePage } = await import("../../src/features/book-detail/domain/last-refine.js");
-  const stopped = {
-    status: "stopped", generated_at: "2026-10-09T05:25:54+00:00", finding_count: 4, applied: 2,
-    reviewed_item_count: 300, candidate_item_count: 330, unreviewed_item_count: 30, next_page: 24,
-    stopped_reason: "max_tokens",
-  };
-  assert.equal(describeLastRefine(stopped), "上次精修只审到第 24 页之前（达到用量上限，还有 30 块没审）：发现 4 处，改了 2 处。");
-  assert.equal(refineContinuePage(stopped), 24);
-  const done = { ...stopped, status: "completed", unreviewed_item_count: 0, next_page: null, stopped_reason: null };
-  assert.equal(describeLastRefine(done), "上次精修审完了全书：发现 4 处，改了 2 处。");
-  assert.equal(refineContinuePage(done), null);
-  assert.equal(describeLastRefine(undefined), "");
-  const editorial = {
-    ...done, mode: "editorial", escalated_count: 2,
-    escalated: [
-      { item_id: "p014-b019", page_number: 14, reason: "达到修改次数上限，仍未解决" },
-      { item_id: "p019-b017", page_number: 19, reason: "术语有争议，需要人定：Cartesian coordinates（现译「笛卡尔坐标」）" },
-    ],
-  };
-  assert.equal(describeLastRefine(editorial), "上次精修审完了全书：发现 4 处，改了 2 处，2 处留给你确认。");
-
-  const dom = makeDom();
-  const React = await import("react");
-  const { createRoot } = await import("react-dom/client");
-  const { TranslationStageActions } = await import(
-    "../../src/features/book-detail/ui/panels/translate/TranslationStageActions.jsx"
-  );
-  const calls = [];
-  const root = createRoot(dom.window.document.getElementById("root"));
-  root.render(React.createElement(TranslationStageActions, {
-    variant: "sheet",
-    actions: [{ stage: "refine", label: "精修译文", can_retry: true, last_refine: stopped }],
-    onRetry: async (...args) => calls.push(args),
-  }));
-  const resume = await waitFor(() => dom.window.document.querySelector("[data-refine-continue]"), "接着精修按钮");
-  assert.equal(resume.textContent.trim(), "从第 24 页继续");
-  assert.match(dom.window.document.querySelector("[data-last-refine]").textContent, /只审到第 24 页之前/);
-  click(dom, resume);
-  await waitFor(() => dom.window.document.getElementById("book-detail-translation-risk-confirm"), "确认框");
-  assert.match(dom.window.document.body.textContent, /接着精修/);
-  assert.equal(calls.length, 0, "打开确认框不能直接提交");
-  click(dom, dom.window.document.getElementById("book-detail-translation-risk-confirm-confirm"));
-  await waitFor(() => calls.length === 1, "确认后提交");
-  assert.deepEqual(calls[0], ["refine", { refineStartPage: 24 }]);
-
-  root.unmount();
-  dom.window.close();
-});
-
-test("编辑部留给你确认的块列在精修那一行下面（页码 + 原因）", async () => {
-  const dom = makeDom();
-  const React = await import("react");
-  const { createRoot } = await import("react-dom/client");
-  const { TranslationStageActions } = await import(
-    "../../src/features/book-detail/ui/panels/translate/TranslationStageActions.jsx"
-  );
-  const last = {
-    status: "completed", generated_at: "2026-10-09T18:00:00+00:00", finding_count: 9, applied: 5,
-    reviewed_item_count: 330, candidate_item_count: 330, unreviewed_item_count: 0, next_page: null,
-    stopped_reason: null, mode: "editorial", escalated_count: 3,
-    escalated: [
-      { item_id: "p014-b019", page_number: 14, reason: "达到修改次数上限，仍未解决" },
-      { item_id: "p019-b017", page_number: 19, reason: "术语有争议，需要人定：Cartesian coordinates（现译「笛卡尔坐标」）" },
-    ],
-  };
-  const root = createRoot(dom.window.document.getElementById("root"));
-  root.render(React.createElement(TranslationStageActions, {
-    variant: "sheet",
-    actions: [{ stage: "refine", label: "精修译文", can_retry: true, last_refine: last }],
-    onRetry: async () => {},
-  }));
-  const list = await waitFor(() => dom.window.document.querySelector("[data-refine-escalated]"), "待确认清单");
-  assert.equal(list.getAttribute("data-refine-escalated"), "3");
-  assert.equal(list.querySelector("summary").textContent, "查看留给你确认的 3 处");
-  const rows = [...list.querySelectorAll("[data-escalated-item]")].map((row) => row.textContent);
-  assert.deepEqual(rows, [
-    "第 14 页达到修改次数上限，仍未解决",
-    "第 19 页术语有争议，需要人定：Cartesian coordinates（现译「笛卡尔坐标」）",
-  ]);
-  assert.match(list.textContent, /只列出前 2 处/);
-  root.unmount();
-  dom.window.close();
-});
-
-test("精修：后端默认 body 的 refine.mode=review_and_fix 被换成 editorial，其它字段保留", async () => {
-  const dom = makeDom();
-  const React = await import("react");
-  const { createRoot } = await import("react-dom/client");
-  const { useBookDetailStageActions } = await import(
-    "../../src/features/book-detail/ui/use-book-detail-stage-actions.js"
-  );
-  const calls = [];
-  let api = null;
-  function Probe() {
-    api = useBookDetailStageActions({
-      open: true,
-      job: { job_id: "job-1", status: "succeeded", document_id: "doc-1" },
-      actions: {
-        getJobStageActions: async () => ({
-          job_id: "job-1",
-          stages: [{
-            stage: "refine", label: "精修译文", can_retry: true,
-            action: { body: { stage: "refine", refine: { mode: "review_and_fix", scope: "all" } } },
-          }],
-        }),
-        retryJobStage: async (...args) => { calls.push(args); return { job_id: "job-1", workflow: "render" }; },
-      },
-    });
-    return null;
-  }
-  const root = createRoot(dom.window.document.getElementById("root"));
-  root.render(React.createElement(Probe));
-  await waitFor(() => api?.stageActions?.some((action) => action.stage === "refine"), "读到精修能力");
-  await api.retry("refine", { refineStartPage: 7 });
-  assert.deepEqual(calls[0][2].refine, { mode: "editorial", scope: "all", start_page: 7 });
   root.unmount();
   dom.window.close();
 });

@@ -36,7 +36,7 @@ test("来源成环或读不到时停下，不死循环", async () => {
   assert.equal(await resolveTranslationOwnerId("x", async () => null), "x");
 });
 
-test("阶段动作和精修都发给持有者，不是链尾的重新渲染任务", async () => {
+test("阶段动作都发给持有者，不是链尾的重新渲染任务", async () => {
   const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div></body></html>" });
   const React = await import("react");
   const { createRoot } = await import("react-dom/client");
@@ -52,7 +52,7 @@ test("阶段动作和精修都发给持有者，不是链尾的重新渲染任�
       actions: {
         getJobStageActions: async (id) => {
           asked.push(id);
-          return { job_id: id, stages: [{ stage: "refine", label: "精修译文", can_retry: true, action: { body: { stage: "refine" } } }] };
+          return { job_id: id, stages: [{ stage: "render", label: "重新渲染", can_retry: true, action: { body: { stage: "render" } } }] };
         },
         retryJobStage: async (...args) => { retried.push(args); return { job_id: args[0], workflow: "render" }; },
       },
@@ -64,12 +64,12 @@ test("阶段动作和精修都发给持有者，不是链尾的重新渲染任�
   const root = createRoot(dom.window.document.getElementById("root"));
   try {
     root.render(React.createElement(Probe));
-    await waitFor(() => api?.stageActions?.some((action) => action.stage === "refine"), "读到精修能力");
+    await waitFor(() => api?.stageActions?.some((action) => action.stage === "render"), "读到重新渲染能力");
     assert.equal(loadingHistory[0], true, "找持有者期间要显示加载中，不能先闪出一句不可用原因");
     // 测试里 actions 每次渲染都是新对象，会多查几次；要紧的是每次查的都是持有者。
     assert.ok(asked.length > 0 && asked.every((id) => id === "20261006133813-41a078"), `阶段动作查的不是持有者：${asked}`);
-    await api.retry("refine");
-    assert.equal(retried[0][0], "20261006133813-41a078", "精修发给了链尾的重新渲染任务");
+    await api.retry("render");
+    assert.equal(retried[0][0], "20261006133813-41a078", "重新渲染发给了链尾的重新渲染任务");
     assert.equal(retried[0][2].document_id, "doc-1");
   } finally {
     root.unmount();
