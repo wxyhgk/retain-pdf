@@ -12,6 +12,29 @@
 
 ---
 
+## 术语页读得到翻译 agent 的术语（feat/agent-terms-dataset）
+
+2026-11-18。agent 任务（`engine=agent`）跳过译前准备，没有 `term-base.v1.json`，`terms`、`term_conflicts` 一直是空的。
+取数接口 `GET /api/v1/jobs/{job_id}/data/{dataset}` 加了两个数据集（契约 `job-data.v1` 的登记表，没有新接口），读 agent
+自己的术语表 `translated/agent/run/glossary.json`：
+
+- `agent_terms`：术语。字段 `id`、`source`、`target`、`category`（`term` 术语 / `keep` 保留原文 / `abbr` 缩写 / `name` 人名等专名）、
+  `status`（`candidate` 候选 / `approved` 审定 / `locked` 用户给的）、`scope`、`chapters`、`note`、`first_seen_page`（页面标签，字符串）、
+  `first_seen_quote`、`votes`（候选：每种译法报了几次）、`version`。`category`、`status`、`source`、`id` 能筛选。
+- `agent_term_tickets`：歧义单（同一个词报上来和表里不同的译法，没有自动统一）。字段 `term`、`source`、`current`、`proposed`、
+  `page_label`、`quote`、`why`，公共字段 `item_id`、`reader_item_id`、`page` 有（从块号推）。
+
+前端要做的：
+
+- `web/src/features/book-detail/ui/tabs/BookDetailTermsTab.tsx`：现在只 `load(jobId, "terms", …)`、`load(jobId, "term_conflicts", …)`。
+  `terms` 不可用（`available=false`）而 `agent_terms` 可用时改读 `agent_terms`（`limit: 1000`；没有 `frequency`，可以按 `source` 排），
+  冲突一栏读 `agent_term_tickets`。或者两边都读、合在一起显示——一个任务只会有其中一边。
+- `web/src/features/book-detail/domain/terms-model.ts`：字段对应 `treatment` → `category`、`review_status` → `status`；agent 的条目没有
+  `kind`、`origin`、`level`、`annotate`、`frequency`、`conflict_candidates`（候选看 `votes`）。
+- 旧任务、legacy 任务不受影响；`GET /data` 的目录里多两条，没有 agent 跑过时 `available=false`。
+
+---
+
 ## 翻译 agent 不再只收 Anthropic 协议（feat/agent-openai-protocol）
 
 2026-11-18。建任务时 `translation.engine=agent` 配 `api_protocol=openai` / `openai_responses` 不再 400

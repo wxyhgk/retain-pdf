@@ -201,3 +201,37 @@ fn dataset_query_contract_names_the_reserved_params_and_limits() {
     // 保留参数之外的键是等值筛选，契约里必须放开（不能是 additionalProperties: false）。
     assert!(query["additionalProperties"].is_object());
 }
+
+/// 翻译 agent 的术语表：agent 任务没有 term-base.v1.json，术语页从这两个数据集读。
+#[test]
+fn agent_glossary_terms_and_tickets() {
+    let roots = fixture("agent-glossary");
+    write(roots.translated.join("agent/run/glossary.json"), json!({
+        "version": 3, "counter": 2,
+        "terms": [
+            {"id": "k0001", "source": "Transformer", "target": "Transformer", "category": "keep", "scope": [], "status": "locked",
+             "first_seen": {"page": "3", "quote": "the Transformer"}, "votes": {}, "voters": [], "version": 1, "note": "", "chapters": []},
+            {"id": "t0002", "source": "attention", "target": "注意力", "category": "term", "scope": [], "status": "candidate",
+             "first_seen": {"page": "iv", "quote": "q"}, "votes": {"注意力": 1, "关注": 1}, "voters": ["p003-b001", "p004-b002"], "version": 3, "note": "", "chapters": ["1"]}
+        ],
+        "changes": [],
+        "tickets": [
+            {"term": "t0002", "source": "attention", "current": "注意力", "proposed": "关注", "block": "p004-b002", "page": "iv", "quote": "q2", "why": "候选里有两种译法"}
+        ]
+    }).to_string());
+
+    let terms = query("job", "agent_terms", Some(&roots), &params(&[("status", "candidate")])).unwrap();
+    assert!(terms.available);
+    let rows = terms.rows.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!((rows[0]["source"].as_str(), rows[0]["first_seen_page"].as_str()), (Some("attention"), Some("iv")));
+    assert_eq!(rows[0]["votes"]["关注"], 1);
+
+    let tickets = query("job", "agent_term_tickets", Some(&roots), &params(&[])).unwrap();
+    let rows = tickets.rows.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0]["item_id"], "p004-b002");
+    assert_eq!(rows[0]["page"], 4, "页码从 item_id 推");
+    assert_eq!(rows[0]["page_label"], "iv");
+    assert_eq!(rows[0]["proposed"], "关注");
+}

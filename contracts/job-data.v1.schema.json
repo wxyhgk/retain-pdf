@@ -230,6 +230,39 @@
         "conflict_candidates": { "type": "array", "description": "其它候选译名与票数" }
       }
     },
+    "agent_terms": {
+      "description": "翻译 agent 的术语表（engine=agent 的任务；通读定下的 + 译者报上来的，带状态）。legacy 任务的术语见 terms。",
+      "source": { "kind": "json_rows", "root": "translated", "file": "agent/run/glossary.json", "rows": "/terms" },
+      "identity": {},
+      "fields": {
+        "id": { "type": "string", "filter": true, "description": "术语编号（t0001 …）" },
+        "source": { "type": "string", "filter": true, "description": "原文" },
+        "target": { "type": "string", "description": "译法（keep 类是原文本身）" },
+        "category": { "type": "string", "filter": true, "description": "term（术语）/ keep（保留原文）/ abbr（缩写）/ name（人名等专名的译名）" },
+        "status": { "type": "string", "filter": true, "description": "candidate（候选）/ approved（审定）/ locked（用户给的，锁定）" },
+        "scope": { "type": "array", "description": "只管这几章；空 = 全书" },
+        "chapters": { "type": "array", "description": "报过、用过它的章" },
+        "note": { "type": "string", "description": "说明（缩写的全称等）" },
+        "first_seen_page": { "path": "first_seen.page", "type": "string", "description": "第一次出现的页（页面标签，不是页码）" },
+        "first_seen_quote": { "path": "first_seen.quote", "type": "string", "description": "第一次出现的原文片段" },
+        "votes": { "type": "object", "description": "候选：每种译法被报了几次" },
+        "version": { "type": "integer", "description": "这一条最后一次变动时术语表的版本" }
+      }
+    },
+    "agent_term_tickets": {
+      "description": "翻译 agent 的术语歧义单：同一个词出现了和表里不同的译法，没有自动统一，留给人定。",
+      "source": { "kind": "json_rows", "root": "translated", "file": "agent/run/glossary.json", "rows": "/tickets" },
+      "identity": { "item_id": "block" },
+      "fields": {
+        "term": { "type": "string", "filter": true, "description": "表里的术语编号；表里还没有时为空" },
+        "source": { "type": "string", "filter": true, "description": "原文" },
+        "current": { "type": "string", "description": "表里现在的译法" },
+        "proposed": { "type": "string", "description": "这次报上来的译法" },
+        "page_label": { "path": "page", "type": "string", "description": "页面标签" },
+        "quote": { "type": "string", "description": "原文片段" },
+        "why": { "type": "string", "description": "理由" }
+      }
+    },
     "style_rules": {
       "description": "这本书的风格规则（固定规则 + 模型按本书生成的规则）。",
       "source": { "kind": "json_rows", "root": "translated", "file": "style-guide.v1.json", "rows": "/rules" },
