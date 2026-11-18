@@ -87,6 +87,16 @@ impl JobRecord {
         non_empty(&self.request_payload.translation.engine).unwrap_or("legacy")
     }
 
+    /// 另配的审校 / 编辑模型；没配是空串（译文版本列表显示用）。
+    pub fn translation_reviewer_model(&self) -> &str {
+        self.request_payload.translation.reviewer_model.trim()
+    }
+
+    /// 译前准备档位（off / terms / terms+style / editorial…）。
+    pub fn translation_preparation(&self) -> &str {
+        self.request_payload.translation.preparation.trim()
+    }
+
     /// 翻译的本地页码窗口 `(start_page, end_page)`，`end_page` 为 -1 表示到最后。
     pub fn translation_page_window(&self) -> (i64, i64) {
         let translation = &self.request_payload.translation;

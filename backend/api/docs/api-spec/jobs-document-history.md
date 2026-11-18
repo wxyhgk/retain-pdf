@@ -96,6 +96,23 @@ merges build at a time per process. The book's page count is the source PDF's
 actual page count (cached by file stamp), falling back to `documents.page_count`
 only when the PDF cannot be read; `/translation-coverage` uses the same count.
 
+Translation versions (2026-11-18, migration v30): every translation of a book is a
+version (`translation_versions`, jobs in `translation_version_jobs`). A fresh or
+whole-book translation opens a version; a re-translation opens one whose
+`base_version_id` is the source job's version; a partial library translation
+uses the version the user is reading as its base; resume, OCR recovery and
+separate re-render jobs join their source's version; OCR-only jobs are not
+versions. `GET /api/v1/documents/:document_id/reading` takes `?version=<id>`
+(`auto` forces the newest-per-page merge) and otherwise reads
+the book's chosen version (`translation_version_choices`), falling back to the newest-per-page
+merge when none is chosen or the chosen one has nothing readable yet; the
+response carries `version_id` (null = auto). Reading a version merges its own
+jobs over its base chain (own pages always win). Hidden versions are skipped by
+the auto merge. Endpoints: `GET .../translation-versions[?include_hidden=true]`,
+`PUT .../translation-version {version_id|null}` (409 for a hidden version),
+`PATCH .../translation-versions/:version_id {label?, hidden?}`; all return
+`TranslationVersionsView`. See `docs/ops/planning/translation-versions/`.
+
 Book display metadata:
 
 - list items expose `display_name`, `page_count`, `source_file_name`, `cover_url`,

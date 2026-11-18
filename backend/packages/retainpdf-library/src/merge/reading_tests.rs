@@ -173,3 +173,44 @@ fn a_job_pdf_is_parsed_once_while_it_stays_the_same_file() {
     assert_eq!(cached, 1, "文件没变却又把整份 PDF 解析了一遍");
     assert_eq!(changed, 0, "文件变了还在用旧页数");
 }
+
+fn source(job_id: &str, created_at: &str, pages: &[u32]) -> MergeSource {
+    use super::super::plan::{Rank, RankedPages};
+    use super::super::sources::BuildInputs;
+    MergeSource {
+        ranked: RankedPages {
+            rank: Rank {
+                producer_created_at: created_at.to_string(),
+                finished_at: created_at.to_string(),
+                created_at: created_at.to_string(),
+                job_id: job_id.to_string(),
+            },
+            pages: pages.to_vec(),
+        },
+        inputs: BuildInputs {
+            output_pdf: std::path::PathBuf::from(format!("/data/{job_id}.pdf")),
+            ocr_page_numbers: pages.to_vec(),
+            translations_dir: None,
+            normalized_document: None,
+            markdown_images_dir: None,
+        },
+    }
+}
+
+fn plan_for(sources: Vec<MergeSource>, selection: &ReadingSelection) -> Vec<PageSource> {
+    let ranked: Vec<_> = select_sources(sources, selection).into_iter().map(|s| s.ranked).collect();
+    super::super::plan::merge_plan(3, &ranked)
+}
+
+#[test]
+fn a_version_reads_its_own_pages_over_its_base_whatever_the_dates() {
+    // 来源版本（整本）比只重翻第 2 页的版本还晚提交：读第 2 页那个版本时它的页照样盖住来源版本
+    let sources = || vec![source("base", "2026-11-05T00:00:00", &[1, 2, 3]), source("redo", "2026-11-01T00:00:00", &[2]), source("other", "2026-11-09T00:00:00", &[1, 2, 3])];
+    let version = ReadingSelection::Version { layers: vec![vec!["base".into()], vec!["redo".into()]] };
+    assert_eq!(plan_for(sources(), &version), vec![job_page("base", 0), job_page("redo", 0), job_page("base", 2)]);
+    // 自动：逐页取最新；排除的任务（隐藏版本的）不用
+    let auto = ReadingSelection::Auto { excluded: vec![] };
+    assert_eq!(plan_for(sources(), &auto), vec![job_page("other", 0), job_page("other", 1), job_page("other", 2)]);
+    let auto = ReadingSelection::Auto { excluded: vec!["other".into()] };
+    assert_eq!(plan_for(sources(), &auto), vec![job_page("base", 0), job_page("base", 1), job_page("base", 2)]);
+}

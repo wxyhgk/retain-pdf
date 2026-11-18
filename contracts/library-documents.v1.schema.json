@@ -49,9 +49,10 @@
       "path": "/api/v1/documents/:document_id/reading",
       "client_name": "getDocumentReading",
       "transport": "json",
+      "query": "DocumentReadingQuery",
       "output": "DocumentReadingView",
       "rust_view": "DocumentReadingView",
-      "note": "阅读器该打开哪个任务。多次范围翻译拼成的是虚拟任务 merged-<文档>-<指纹>，按需生成合并目录。"
+      "note": "阅读器该打开哪个任务。多次范围翻译拼成的是虚拟任务 merged-<文档>-<指纹>，按需生成合并目录。version 选译文版本（2026-11-18 加）：给了读那个版本，auto 是自动（逐页取最新）；不给读书的当前版本，没选过、或选的版本还没有可读的译文时读自动。"
     },
     {
       "method": "GET",
@@ -196,6 +197,44 @@
       "rust_view": "JobSubmissionView",
       "ts_consumer": "@retainpdf/contracts/library-documents :: JobSubmissionView",
       "note": "给这本书做 OCR：用书存着的原文建一个只做 OCR 的任务，请求体同 POST /api/v1/jobs 的 CreateJobInput。workflow 可以不写，写了只能是 ocr（写 book 等 400，翻译走 /translate）；source.artifact_job_id、source.source_url、runtime.job_id 不许写（400）；source.upload_id 可以不写，写了必须是这本书的上传。选页写 ocr.page_ranges（如 \"1-5,8\"）。返回的 sibling_job_ids 不会出现。书不存在 404。多用户模式下页数额度不够时 402：{\"code\": \"PAGE_QUOTA_EXCEEDED\", \"message\": \"页数额度不够：这次要 N 页，还剩 M 页，请联系管理员\", \"error\": {\"code\": \"PAGE_QUOTA_EXCEEDED\", \"http_status\": 402, \"details\": PageQuotaExceededErrorDetails}}——顶层 code 是字符串，不是 40200 这种数字，按 error.code 认；被拒时不留任务。单机模式不计页数，不会有 402。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/:document_id/translation-versions",
+      "client_name": "listTranslationVersions",
+      "transport": "json",
+      "query": "TranslationVersionsQuery",
+      "output": "TranslationVersionsView",
+      "rust_view": "TranslationVersionsView",
+      "note": "这本书的译文版本（从旧到新）和当前版本。一个版本 = 一次翻译这本书（整本翻译拆成几段的算一个；续跑、单独建的重新排版加进来源版本）。读输出 PDF 页数，放进阻塞线程。"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/documents/:document_id/translation-version",
+      "client_name": "setCurrentTranslationVersion",
+      "transport": "json",
+      "input": "SetCurrentTranslationVersionInput",
+      "output": "TranslationVersionsView",
+      "rust_view": "TranslationVersionsView",
+      "errors": {
+        "404": "NOT_FOUND：书不存在，或版本不属于这本书",
+        "409": "CONFLICT：版本已隐藏，先恢复再选"
+      },
+      "note": "切换当前版本；version_id 为 null 回到自动（逐页取最新）。返回最新的版本列表（不含隐藏的）。"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/documents/:document_id/translation-versions/:version_id",
+      "client_name": "patchTranslationVersion",
+      "transport": "json",
+      "input": "PatchTranslationVersionInput",
+      "output": "TranslationVersionsView",
+      "rust_view": "TranslationVersionsView",
+      "errors": {
+        "400": "BAD_REQUEST：名字超过 80 个字",
+        "404": "NOT_FOUND：书不存在，或版本不属于这本书"
+      },
+      "note": "改名（空串清掉，回到按翻译设置生成的名字）、隐藏或恢复。隐藏只是不列、不参与自动模式，文件都留着；隐藏的正好是当前版本时书回到自动。返回最新的版本列表（含隐藏的）。"
     }
   ],
   "definitions": {
@@ -503,7 +542,8 @@
       "required": [
         "job_id",
         "merged",
-        "contributing_job_ids"
+        "contributing_job_ids",
+        "version_id"
       ],
       "properties": {
         "job_id": {
@@ -523,6 +563,219 @@
             "type": "string"
           },
           "description": "拼成这份译文的任务，按页序首次出现的顺序；不是合并时就是那一个任务，没有译文时是空数组。"
+        },
+        "version_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "读的是哪个译文版本；null = 自动（逐页取最新）。2026-11-18 加。"
+        }
+      }
+    },
+    "DocumentReadingQuery": {
+      "type": "object",
+      "description": "versions.rs :: DocumentReadingQuery（deny_unknown_fields）。",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string",
+          "description": "译文版本编号；auto = 自动（逐页取最新）；不给 = 书的当前版本。"
+        }
+      }
+    },
+    "TranslationVersionsQuery": {
+      "type": "object",
+      "description": "versions.rs :: TranslationVersionsQuery（deny_unknown_fields）。",
+      "additionalProperties": false,
+      "properties": {
+        "include_hidden": {
+          "type": "boolean",
+          "default": false,
+          "description": "带上隐藏的版本。"
+        }
+      }
+    },
+    "SetCurrentTranslationVersionInput": {
+      "type": "object",
+      "description": "versions.rs :: SetCurrentTranslationVersionInput（deny_unknown_fields）。",
+      "additionalProperties": false,
+      "required": [
+        "version_id"
+      ],
+      "properties": {
+        "version_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "要切到的版本；null 回到自动（逐页取最新）。"
+        }
+      }
+    },
+    "PatchTranslationVersionInput": {
+      "type": "object",
+      "description": "versions.rs :: PatchTranslationVersionInput（deny_unknown_fields）。两个字段都可选。",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "新名字；空串清掉，回到按翻译设置生成的名字。"
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "true 隐藏，false 恢复。"
+        }
+      }
+    },
+    "TranslationVersionView": {
+      "type": "object",
+      "description": "versions.rs :: TranslationVersionView。",
+      "required": [
+        "version_id",
+        "name",
+        "label",
+        "origin",
+        "base_version_id",
+        "created_at",
+        "hidden",
+        "status",
+        "job_ids",
+        "page_ranges",
+        "whole_book",
+        "engine",
+        "model",
+        "reviewer_model",
+        "edited_blocks",
+        "is_current"
+      ],
+      "properties": {
+        "version_id": {
+          "type": "string",
+          "description": "版本编号（tv-…）。"
+        },
+        "name": {
+          "type": "string",
+          "description": "显示用的名字：用户起的；没起就按翻译设置生成，如「精翻 · qwen3.8-flash」「普通 · deepseek-flash（第 30–40 页）」。"
+        },
+        "label": {
+          "type": "string",
+          "description": "用户起的名字；没起是空串。"
+        },
+        "origin": {
+          "type": "string",
+          "enum": [
+            "translate",
+            "retranslate",
+            "backfill"
+          ],
+          "description": "translate 整本翻译（书库翻译入口、新上传）/ retranslate 重新翻译（重试翻译阶段）/ backfill 升级时从已有任务回填。"
+        },
+        "base_version_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "只重翻一部分页时，其余页沿用的版本。"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "创建时间。"
+        },
+        "hidden": {
+          "type": "boolean",
+          "description": "是否隐藏。"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "running",
+            "succeeded",
+            "failed",
+            "canceled"
+          ],
+          "description": "running：还有任务在排队或在跑。"
+        },
+        "job_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "这个版本的任务，按提交时间排。"
+        },
+        "page_ranges": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "tsType": "[number, number]"
+          },
+          "description": "这个版本自己翻了哪些页（1 起，闭区间，连续的并成一段）；不含沿用来源版本的页。任务还没完成时为空。"
+        },
+        "whole_book": {
+          "type": "boolean",
+          "description": "自己就覆盖了整本。"
+        },
+        "engine": {
+          "type": "string",
+          "description": "legacy / agent。"
+        },
+        "model": {
+          "type": "string",
+          "description": "翻译模型。"
+        },
+        "reviewer_model": {
+          "type": "string",
+          "description": "另配的审校 / 编辑模型；没配是空串。"
+        },
+        "edited_blocks": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "用户手改过几块（同一块改几次算一块）。"
+        },
+        "is_current": {
+          "type": "boolean",
+          "description": "是不是书的当前版本。"
+        }
+      }
+    },
+    "TranslationVersionsView": {
+      "type": "object",
+      "description": "versions.rs :: TranslationVersionsView。",
+      "required": [
+        "document_id",
+        "current_version_id",
+        "has_newer",
+        "versions"
+      ],
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "书。"
+        },
+        "current_version_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "用户选的版本；null = 自动（逐页取最新），新译文翻完自动跟着最新走。"
+        },
+        "has_newer": {
+          "type": "boolean",
+          "description": "选了某个版本、而且有比它新的（没隐藏的）版本：前端提示「有新版本」。"
+        },
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TranslationVersionView"
+          },
+          "description": "从旧到新。"
         }
       }
     },

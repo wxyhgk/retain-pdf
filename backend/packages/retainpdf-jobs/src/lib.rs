@@ -52,7 +52,9 @@ pub use files::{
 pub use lifecycle::deletion::{
     ensure_deletable, ensure_no_dependents, find_job, remove_path_if_exists, JobDeletion,
 };
-pub use lifecycle::launcher::JobLaunchDeps;
+pub use lifecycle::launcher::{JobLaunchDeps, VersionLink};
+// 译文版本列表显示「改过 N 处」。
+pub use translations::user_edited_block_count;
 // 对外入口不许带 `runtime.job_id`：书库的建任务入口要在查书、查 OCR 之前先拒（先 400 再 404/409）。
 pub use lifecycle::creation::reject_client_job_id;
 pub use lifecycle::managed_credential_gc::cleanup_deleted_job_credentials;

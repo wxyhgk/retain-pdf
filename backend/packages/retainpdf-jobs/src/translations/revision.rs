@@ -452,3 +452,25 @@ mod tests {
         assert!(outcome_from_payload(json!({"outcome": "weird"}), PathBuf::new()).is_err());
     }
 }
+
+/// 这个任务里用户手改过几块（`source=user`，同一块改几次算一块）。读不到修订记录就是 0。
+/// 译文版本列表用它显示「改过 N 处」。
+pub fn user_edited_block_count(data_root: &Path, job: &JobSnapshot) -> usize {
+    let Some(manifest) = stored_path(job, data_root, StoredFile::TranslationManifest) else {
+        return 0;
+    };
+    let path = manifest.parent().unwrap_or(&manifest).join(TRANSLATION_REVISIONS_FILE_NAME);
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return 0;
+    };
+    let mut items = std::collections::BTreeSet::new();
+    for line in text.lines().filter(|line| !line.trim().is_empty()) {
+        let Ok(record) = serde_json::from_str::<Value>(line) else { continue };
+        if record.get("source").and_then(Value::as_str) == Some("user") {
+            if let Some(item_id) = record.get("item_id").and_then(Value::as_str) {
+                items.insert(item_id.to_string());
+            }
+        }
+    }
+    items.len()
+}

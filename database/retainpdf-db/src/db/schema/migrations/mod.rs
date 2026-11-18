@@ -156,6 +156,11 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         name: "legacy_mineru_workflow",
         sql: include_str!("v29_legacy_mineru_workflow.sql"),
     },
+    Migration {
+        version: 30,
+        name: "translation_versions",
+        sql: include_str!("v30_translation_versions.sql"),
+    },
 ];
 
 #[cfg(test)]

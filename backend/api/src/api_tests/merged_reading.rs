@@ -37,7 +37,7 @@ fn make_pdf(path: &Path, texts: &[&str]) {
     assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
 }
 
-fn pdf_texts(bytes: &[u8]) -> String {
+pub(super) fn pdf_texts(bytes: &[u8]) -> String {
     let file = std::env::temp_dir().join(format!("merged-reading-{:016x}.pdf", fastrand::u64(..)));
     fs::write(&file, bytes).unwrap();
     let output = Command::new(venv_bin("python"))
@@ -159,7 +159,7 @@ pub(super) fn seed_range_job(
     .unwrap();
 }
 
-async fn request(app: &axum::Router, method: &str, uri: &str) -> axum::response::Response {
+pub(super) async fn request(app: &axum::Router, method: &str, uri: &str) -> axum::response::Response {
     app.clone()
         .oneshot(
             Request::builder()
@@ -285,7 +285,7 @@ async fn one_job_covering_the_whole_book_is_opened_directly() {
     seed_range_job(&state, &document_id, "job-whole", "2026-10-01T00:00:00", &[1, 2], &["ZH 1", "ZH 2"]);
     let app = build_app(state);
     let view = reading(&app, &document_id).await;
-    assert_eq!(view, json!({ "job_id": "job-whole", "merged": false, "contributing_job_ids": ["job-whole"] }));
+    assert_eq!(view, json!({ "job_id": "job-whole", "merged": false, "contributing_job_ids": ["job-whole"], "version_id": null }));
 }
 
 #[tokio::test]
@@ -294,7 +294,7 @@ async fn a_book_with_no_translation_has_nothing_to_open() {
     let document_id = seed_document(&state, &["SRC 1"]);
     let app = build_app(state);
     let view = reading(&app, &document_id).await;
-    assert_eq!(view, json!({ "job_id": null, "merged": false, "contributing_job_ids": [] }));
+    assert_eq!(view, json!({ "job_id": null, "merged": false, "contributing_job_ids": [], "version_id": null }));
 }
 
 #[tokio::test]

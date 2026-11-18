@@ -6,8 +6,10 @@ use retainpdf_core::models::domain::WorkflowKind;
 use retainpdf_core::models::request::CreateJobInput;
 use retainpdf_jobs::{
     reject_client_job_id, reusable_ocr_coverage, validate_ocr_artifact_reuse,
-    validate_ocr_credential_reference, validate_provider_credentials, JobsFacade,
+    validate_ocr_credential_reference, validate_provider_credentials, JobsFacade, VersionLink,
 };
+
+use super::versions;
 
 use super::translate_plan::{contiguous_runs, plan_segments, SegmentPlan};
 
@@ -55,9 +57,11 @@ pub fn translate_document(
     let reuses_ocr = !request.source.artifact_job_id.trim().is_empty();
     // 复用 OCR + 指定了页：页不连续、或超出所选 OCR 的覆盖范围时，按连续段拆成几个任务
     // （见 `translate_plan`）。一段且覆盖得住就落到下面原来那条路，行为不变。
+    // 译文版本：整本翻译开一个没有来源的新版本；只翻一部分页的，其余页沿用用户正在看的版本
+    let base = if is_partial(&request) { versions::reading_base_version(deps.db, document_id)? } else { None };
     if reuses_ocr && !request.translation.page_ranges.is_empty() {
         if let Some(segments) = split_plan(deps, document_id, document.page_count, &request)? {
-            return submit_segments(jobs, deps, document_id, &request, &segments, base_url);
+            return submit_segments(jobs, deps, document_id, &request, &segments, base_url, base.as_deref());
         }
     }
     if reuses_ocr {
@@ -76,7 +80,18 @@ pub fn translate_document(
         request.runtime.render_after_translation = true;
     }
 
-    jobs.create_document_submission(base_url, &request, document_id)
+    jobs.create_document_submission_in_version(
+        base_url,
+        &request,
+        document_id,
+        VersionLink::New { base: base.as_deref(), origin: "translate" },
+    )
+}
+
+/// 只翻这本书的一部分页（指定了页或起止页）。
+fn is_partial(request: &CreateJobInput) -> bool {
+    let translation = &request.translation;
+    !translation.page_ranges.is_empty() || translation.start_page > 0 || translation.end_page >= 0
 }
 
 /// 需要拆分时返回各段的计划；一段且所选 OCR 覆盖得住时返回 `None`（走原来的单任务路径）。
@@ -134,6 +149,7 @@ fn submit_segments(
     request: &CreateJobInput,
     segments: &[SegmentPlan],
     base_url: &str,
+    base_version: Option<&str>,
 ) -> Result<JobSubmissionView, AppError> {
     // 先把每一段都校验完再建任务：建到一半失败会留下半截提交（翻了 1-3 页、12-13 页没了），
     // 用户看不出来。补 OCR 的段最可能失败（要 OCR 凭据），校验和创建都排在前面。
@@ -158,9 +174,19 @@ fn submit_segments(
             }
         }
     }
-    let mut submissions = Vec::new();
+    // 几段是一次翻译：第一段开新版本，后几段加进同一个版本
+    let mut submissions: Vec<JobSubmissionView> = Vec::new();
+    let mut version: Option<String> = None;
     for (_, segment_request) in &ordered {
-        submissions.push(jobs.create_document_submission(base_url, segment_request, document_id)?);
+        let link = match version.as_deref() {
+            Some(version_id) => VersionLink::Existing(version_id),
+            None => VersionLink::New { base: base_version, origin: "translate" },
+        };
+        let submission = jobs.create_document_submission_in_version(base_url, segment_request, document_id, link)?;
+        if version.is_none() {
+            version = deps.db.translation_version_of_job(&submission.job_id)?;
+        }
+        submissions.push(submission);
     }
     let mut submissions = submissions.into_iter();
     let mut first = submissions

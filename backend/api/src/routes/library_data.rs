@@ -17,6 +17,8 @@ use crate::models::api::{
     DeleteDocumentQuery, DocumentMetadataSuggestionView, DocumentRecord, JobSubmissionView,
     ListDocumentJobsQuery, ListDocumentMetadataSuggestionsQuery, ListDocumentsQuery,
     PatchDocumentInput, SearchQuery, SearchResultView,
+    DocumentReadingQuery, PatchTranslationVersionInput, SetCurrentTranslationVersionInput,
+    TranslationVersionsQuery, TranslationVersionsView,
 };
 use crate::routes::common::{
     build_jobs_route_deps, build_library_route_deps, jobs_facade, ok_json, request_base_url,
@@ -26,7 +28,8 @@ use crate::routes::download_response::file_download_response;
 use crate::services::library::{
     apply_document_metadata_suggestion_view, create_document_metadata_suggestion_view,
     delete_document_view, document_delete_job_ids_view, document_files, document_reading,
-    document_translation_coverage,
+    document_translation_coverage, document_translation_versions, patch_document_translation_version,
+    set_document_translation_version,
     get_document, list_document_metadata_suggestions_view, list_documents, ocr_document_view,
     open_document_file, patch_document, search_blocks_view, translate_document_view, Disposition,
     DocumentFile, DocumentReadingView, TranslationCoverageView,
@@ -71,9 +74,40 @@ pub async fn get_document_route(
 pub async fn get_document_reading_route(
     State(state): State<AppState>,
     ApiPath(document_id): ApiPath<String>,
+    ApiQuery(query): ApiQuery<DocumentReadingQuery>,
 ) -> Result<Json<ApiResponse<DocumentReadingView>>, AppError> {
     let deps = build_library_route_deps(&state);
-    Ok(ok_json(document_reading(&deps.library, &document_id).await?))
+    Ok(ok_json(document_reading(&deps.library, &document_id, query.version).await?))
+}
+
+/// GET /api/v1/documents/:id/translation-versions —— 这本书的译文版本和当前版本（读输出 PDF 页数，放进阻塞线程）。
+pub async fn list_document_translation_versions_route(
+    State(state): State<AppState>,
+    ApiPath(document_id): ApiPath<String>,
+    ApiQuery(query): ApiQuery<TranslationVersionsQuery>,
+) -> Result<Json<ApiResponse<TranslationVersionsView>>, AppError> {
+    let deps = build_library_route_deps(&state);
+    Ok(ok_json(document_translation_versions(&deps.library, &document_id, query).await?))
+}
+
+/// PUT /api/v1/documents/:id/translation-version —— 切换当前版本；`version_id: null` 回到自动。
+pub async fn set_document_translation_version_route(
+    State(state): State<AppState>,
+    ApiPath(document_id): ApiPath<String>,
+    ApiJson(payload): ApiJson<SetCurrentTranslationVersionInput>,
+) -> Result<Json<ApiResponse<TranslationVersionsView>>, AppError> {
+    let deps = build_library_route_deps(&state);
+    Ok(ok_json(set_document_translation_version(&deps.library, &document_id, payload).await?))
+}
+
+/// PATCH /api/v1/documents/:id/translation-versions/:version_id —— 改名、隐藏或恢复一个版本。
+pub async fn patch_document_translation_version_route(
+    State(state): State<AppState>,
+    ApiPath((document_id, version_id)): ApiPath<(String, String)>,
+    ApiJson(payload): ApiJson<PatchTranslationVersionInput>,
+) -> Result<Json<ApiResponse<TranslationVersionsView>>, AppError> {
+    let deps = build_library_route_deps(&state);
+    Ok(ok_json(patch_document_translation_version(&deps.library, &document_id, &version_id, payload).await?))
 }
 
 /// GET /api/v1/documents/:id/translation-coverage —— 翻译覆盖和任务记录（书籍详情「进度」）。

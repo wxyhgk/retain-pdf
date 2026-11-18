@@ -21,6 +21,7 @@ use crate::models::api::{
     CreateDocumentMetadataSuggestionInput, DeleteDocumentQuery, FtsBlockRow,
     ListDocumentMetadataSuggestionsQuery, ListDocumentsQuery, PatchCollectionInput,
     ListDocumentJobsQuery, PatchDocumentInput, SearchQuery,
+    DocumentReadingQuery, PatchTranslationVersionInput, SetCurrentTranslationVersionInput, TranslationVersionsQuery,
 };
 use crate::models::CreateJobInput;
 
@@ -465,6 +466,10 @@ fn request_bodies_and_queries_accept_exactly_the_contract_fields() {
     assert_request_fields_match::<PatchCollectionInput>(&contract, "PatchCollectionInput");
     assert_request_fields_match::<AddCollectionDocumentsInput>(&contract, "AddCollectionDocumentsInput");
     assert_request_fields_match::<ListDocumentJobsQuery>(&contract, "ListDocumentJobsQuery");
+    assert_request_fields_match::<DocumentReadingQuery>(&contract, "DocumentReadingQuery");
+    assert_request_fields_match::<TranslationVersionsQuery>(&contract, "TranslationVersionsQuery");
+    assert_request_fields_match::<SetCurrentTranslationVersionInput>(&contract, "SetCurrentTranslationVersionInput");
+    assert_request_fields_match::<PatchTranslationVersionInput>(&contract, "PatchTranslationVersionInput");
     // 翻译、OCR 的请求体是 POST /jobs 的 CreateJobInput：顶层字段在这里对上，五个段从 create-job.v1 原样抄来，
     // 由 contracts/tests/library-documents-shared-definitions.test.mjs 锁成一致，段和 Rust 的对照在
     // retainpdf-core 的 models/input/request.rs contract_tests。
