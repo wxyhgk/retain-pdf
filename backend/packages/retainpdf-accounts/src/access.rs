@@ -43,7 +43,8 @@ pub fn classify_param(name: &str) -> ParamClass {
         "document_id" => ParamClass::Owned(OwnedKind::Document),
         "glossary_id" => ParamClass::Owned(OwnedKind::Glossary),
         "collection_id" => ParamClass::Owned(OwnedKind::Collection),
-        "item_id" | "page_idx" | "page" | "name" | "dataset" | "artifact_key" | "suggestion_id" | "path" => {
+        // version_id：书下面的译文版本，处理函数核对它属于这本书
+        "item_id" | "page_idx" | "page" | "name" | "dataset" | "artifact_key" | "suggestion_id" | "path" | "version_id" => {
             ParamClass::Nested
         }
         // 只在管理员路由或已关闭路由里出现。

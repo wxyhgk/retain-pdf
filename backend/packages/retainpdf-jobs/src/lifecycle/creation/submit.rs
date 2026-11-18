@@ -27,7 +27,7 @@ use crate::views::ActionBlockReason;
 use retainpdf_core::models::request::CreateJobInput;
 use crate::deps::JobSubmitDeps;
 use crate::lifecycle::launcher::{
-    apply_platform_models, apply_platform_models_to_input, link_new_job_to_document, JobLaunchDeps,
+    apply_platform_models, apply_platform_models_to_input, link_new_job_to_document, JobLaunchDeps, VersionLink,
 };
 
 use super::dev_defaults::with_dev_translation_defaults;
@@ -40,6 +40,7 @@ pub struct NewJob<'a> {
     derived_from: Option<&'a str>,
     document_id: Option<&'a str>,
     ocr_recovery: Option<OcrRecovery<'a>>,
+    version: VersionLink<'a>,
 }
 
 /// OCR 请求结果不确定之后的恢复任务：和"源任务那次 OCR 已处理"写在同一个事务里，
@@ -57,7 +58,14 @@ impl<'a> NewJob<'a> {
             derived_from: None,
             document_id: None,
             ocr_recovery: None,
+            version: VersionLink::Auto,
         }
+    }
+
+    /// 属于哪个译文版本；不调就按任务自己判断（`VersionLink::Auto`）。
+    pub fn in_version(mut self, version: VersionLink<'a>) -> Self {
+        self.version = version;
+        self
     }
 
     /// 从哪个任务派生出来的（OCR 重试只带 upload_id、不带 artifact_job_id）：
@@ -117,6 +125,7 @@ pub fn submit_job(deps: &JobSubmitDeps<'_>, new: NewJob<'_>) -> Result<JobSnapsh
         derived_from,
         document_id,
         ocr_recovery,
+        version,
     } = new;
     // 恢复备份期间不建：建出来的行会被换库盖掉，任务目录却留着。守卫拿到落库完（见 `Db::hold_off_restore`）。
     let _no_restore = deps.launcher.db.hold_off_restore().map_err(restore_in_progress)?;
@@ -155,7 +164,7 @@ pub fn submit_job(deps: &JobSubmitDeps<'_>, new: NewJob<'_>) -> Result<JobSnapsh
     let _credential_guard = acquire_job_credential_usage_lock(deps, &job)?;
 
     let job = match ocr_recovery {
-        None => persist_and_launch(&deps.launcher, job, derived_from, None)?,
+        None => persist_and_launch(&deps.launcher, job, derived_from, None, version)?,
         Some(recovery) => persist_ocr_recovery(&deps.launcher, job, recovery)?,
     };
     if let Some(document_id) = document_id {
@@ -214,7 +223,7 @@ pub fn relaunch_in_place(
     let _no_restore = deps.db.hold_off_restore().map_err(restore_in_progress)?;
     ensure_free_space(deps.data_root, deps.min_free_disk_bytes, "rerun this job")?;
     ensure_queue_room(deps)?;
-    persist_and_launch(deps, job, None, Some(read_as))
+    persist_and_launch(deps, job, None, Some(read_as), VersionLink::Auto)
 }
 
 /// 正在恢复备份：409 `restore_in_progress`。
@@ -250,6 +259,7 @@ fn persist_and_launch(
     mut job: JobSnapshot,
     derived_from: Option<&str>,
     in_place: Option<&RunFence>,
+    version: VersionLink<'_>,
 ) -> Result<JobSnapshot, AppError> {
     if let Some(source) = deps.platform {
         apply_platform_models(&mut job, &source.resolve()?)?;
@@ -303,7 +313,7 @@ fn persist_and_launch(
             );
         }
     }
-    link_new_job_to_document(deps.db, &job, derived_from);
+    link_new_job_to_document(deps.db, &job, derived_from, version);
     deps.runtime.launch(job.job_id.clone());
     Ok(job)
 }
@@ -339,7 +349,12 @@ fn persist_ocr_recovery(
         ));
     }
     // 恢复任务只带 upload_id，upload 没有 content_hash 时按发生歧义的源任务继承归属。
-    link_new_job_to_document(deps.db, &job, Some(&recovery.dispatch.job_id));
+    link_new_job_to_document(
+        deps.db,
+        &job,
+        Some(&recovery.dispatch.job_id),
+        VersionLink::JoinVersionOf(&recovery.dispatch.job_id),
+    );
     deps.runtime.launch(job.job_id.clone());
     Ok(job)
 }

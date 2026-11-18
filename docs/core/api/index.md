@@ -198,6 +198,10 @@ Reader 宿主接入 job/artifact、Markdown、区域、页面元数据和实时�
 给这本书做 OCR（`/ocr`）：请求体是 `POST /jobs` 的 `CreateJobInput`，返回 `JobSubmissionView`，多用户模式下页数额度不够 402
 `PAGE_QUOTA_EXCEEDED`（顶层 `code` 是字符串，`error.details` 是 `{required_pages, balance}`）。空值的写法照契约：类型带 `null` 的键总在、空时是 `null`；
 `DocumentRecord.active_version_id`、元数据建议的 `source_job_id` 和证据里的可选项没有时整个键不出现。
+
+译文版本（2026-11-18）：一本书的几份译文能切换。`GET /documents/{id}/translation-versions` 列版本和当前版本，
+`PUT /documents/{id}/translation-version` 切换（`null` 回到自动：逐页取最新），`PATCH /documents/{id}/translation-versions/{version_id}`
+改名、隐藏或恢复；阅读入口加 `?version=`，回包多 `version_id`。规则见 [译文版本第一期](../../ops/planning/translation-versions/20261118-译文版本第一期.md)。
 `DocumentRecord` 的 `authors_json`（恒为 `"[]"`）、`year`（恒 `null`）、`doi`（恒 `""`）、`last_opened_at`（恒 `null`）
 没有功能，留着不删。Rust 侧 `backend/api/src/api_tests/library_documents_contract.rs` 钉住真实返回的键集合。
 

@@ -72,6 +72,8 @@ pub const SYNC_SEED_VERSIONS: &[(&str, u32)] = &[
 /// 会话,从对话记录重建)。
 pub fn local_only_columns(table: &str) -> &'static [&'static str] {
     match table {
+        // 译文版本（v30）只在本机：版本表不同步，书的当前版本指向别的设备上没有的版本也没用（读的时候会退回自动）。
+        "documents" => &["current_translation_version_id"],
         "ai_conversations" => &[
             "agent_runtime_id",
             "agent_session_cursor",

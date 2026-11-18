@@ -7,6 +7,7 @@ use crate::actions::translation_request_recovery::load_translation_request_recov
 use crate::lifecycle::managed_credential_gc::cleanup_deleted_job_credentials;
 
 use crate::lifecycle::creation::{relaunch_in_place, submit_job, NewJob, RunFence};
+use crate::lifecycle::launcher::VersionLink;
 use retainpdf_api_base::job_loading::load_job_or_404;
 use crate::facade::JobsFacade;
 use crate::actions::ocr_ambiguity::ambiguous_ocr_dispatch;
@@ -82,8 +83,11 @@ impl<'a> JobsFacade<'a> {
         apply_retry_overrides(&mut request, overrides)?;
         require_source_glossary(self.command.db, &source_job, &request)?;
         let workflow = request.workflow.clone();
-        // 归属（jobs.document_id + 书卡）沿 artifact_job_id 继承。
-        let job = submit_job(&self.command.submit, NewJob::new(request))?;
+        // 归属（jobs.document_id + 书卡）沿 artifact_job_id 继承；续跑是同一份译文，加进源任务的译文版本。
+        let job = submit_job(
+            &self.command.submit,
+            NewJob::new(request).in_version(VersionLink::JoinVersionOf(&source_job.job_id)),
+        )?;
         Ok(self.build_submission_view(base_url, &job, JobStatusKind::Queued, workflow))
     }
 }

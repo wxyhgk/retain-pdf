@@ -12,6 +12,30 @@
 
 ---
 
+## 译文版本：一本书的几份译文能切换（feat/translation-versions）
+
+2026-11-18。只加不改：老前端不传 `version` 时阅读入口的行为和以前一样（用户没选过版本 = 自动，逐页取最新）。契约
+`library-documents.v1` 追加三个端点和几个类型（`contracts/src`、`dist` 已重新生成）：
+
+- `GET /api/v1/documents/{id}/translation-versions[?include_hidden=true]` → `TranslationVersionsView`：
+  `current_version_id`（null = 自动）、`has_newer`（选了某个版本、后面还有更新的：提示「有新版本」）、`versions`（从旧到新）。
+  每个版本有 `name`（显示用）、`label`（用户起的）、`origin`、`base_version_id`、`created_at`、`status`、`page_ranges`、`whole_book`、
+  `engine`、`model`、`reviewer_model`、`edited_blocks`（手改了几块）、`hidden`、`is_current`。
+- `PUT /api/v1/documents/{id}/translation-version` `{ "version_id": "tv-…" | null }`：切换；null 回到自动；隐藏的版本 409。
+- `PATCH /api/v1/documents/{id}/translation-versions/{version_id}` `{ "label"?: string, "hidden"?: boolean }`：改名（空串清掉）、隐藏、恢复。
+- `GET /api/v1/documents/{id}/reading?version=<id|auto>`：回包多 `version_id`（null = 自动）。不给 `version` 读书的当前版本。
+
+前端要做的：
+
+- 阅读页 `web/src/features/reader/domain/resolve-reading-target.ts`：`resolveReadingJobId` 现在调 `/reading`；切版本时带上
+  `version`（或先 `PUT` 当前版本再照旧调 `/reading`，两种都行，后者会记住用户的选择）。
+- 书详情 / 阅读页加一个版本下拉：列 `versions`（`name` + `created_at`，`edited_blocks > 0` 显示「改过 N 处」，`status=running` 显示翻译中），
+  第一项「自动（最新）」对应 `version_id: null`；`has_newer` 时提示「有新版本」。改名、隐藏放在下拉的更多菜单里。
+- 只重翻几页（书库「翻译这本书」带页码）出来的版本，读的时候其余页自动用来源版本，前端不用拼。
+- 手改译文照旧用 `/jobs/{job_id}/translations/...`（改在那个版本的任务里）；合并阅读的虚拟任务仍是只读。
+
+---
+
 ## 精翻（agent）可以单独配编辑模型（feat/agent-rewrite-pass）
 
 2026-11-18。接口字段没变。`engine=agent` 时，建任务里已有的 `reviewer_model`、`reviewer_base_url`、`reviewer_api_key` /

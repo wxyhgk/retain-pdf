@@ -55,6 +55,8 @@ pub mod api {
         DocumentMetadataSuggestionListView, DocumentMetadataSuggestionView, DocumentTitleCandidateView,
         ListDocumentMetadataSuggestionsQuery, ListDocumentsQuery, PatchCollectionInput,
         PatchDocumentInput, SearchQuery, SearchResultView,
+        DocumentReadingQuery, PatchTranslationVersionInput, SetCurrentTranslationVersionInput,
+        TranslationVersionView, TranslationVersionsQuery, TranslationVersionsView,
     };
     pub use retainpdf_platform::{BackupItemView, BackupRestoreView, BackupStatusView};
 }

@@ -5,7 +5,7 @@
 /**
  * Endpoint input, query, and output DTOs published by library-documents.v1.schema.json.
  */
-export type LibraryDocumentsSchema = AddCollectionDocumentsInput | ApplyDocumentMetadataSuggestionInput | CollectionDeleteResultView | CollectionDocumentRemoveResultView | CollectionListView | CollectionRecord | CreateCollectionInput | CreateDocumentMetadataSuggestionInput | CreateJobInput | DeleteDocumentQuery | DocumentDeleteResultView | DocumentFilesView | DocumentJobListView | DocumentListView | DocumentMetadataSuggestionApplyView | DocumentMetadataSuggestionListView | DocumentMetadataSuggestionView | DocumentReadingView | DocumentRecord | JobSubmissionView | ListDocumentJobsQuery | ListDocumentMetadataSuggestionsQuery | ListDocumentsQuery | PatchCollectionInput | PatchDocumentInput | SearchQuery | SearchResultView | TranslationCoverageView;
+export type LibraryDocumentsSchema = AddCollectionDocumentsInput | ApplyDocumentMetadataSuggestionInput | CollectionDeleteResultView | CollectionDocumentRemoveResultView | CollectionListView | CollectionRecord | CreateCollectionInput | CreateDocumentMetadataSuggestionInput | CreateJobInput | DeleteDocumentQuery | DocumentDeleteResultView | DocumentFilesView | DocumentJobListView | DocumentListView | DocumentMetadataSuggestionApplyView | DocumentMetadataSuggestionListView | DocumentMetadataSuggestionView | DocumentReadingQuery | DocumentReadingView | DocumentRecord | JobSubmissionView | ListDocumentJobsQuery | ListDocumentMetadataSuggestionsQuery | ListDocumentsQuery | PatchCollectionInput | PatchDocumentInput | PatchTranslationVersionInput | SearchQuery | SearchResultView | SetCurrentTranslationVersionInput | TranslationCoverageView | TranslationVersionsQuery | TranslationVersionsView;
 /**
  * retainpdf-core models::domain::WorkflowKind。
  */
@@ -740,6 +740,15 @@ export interface DocumentMetadataSuggestionListView {
     has_more: boolean;
 }
 /**
+ * versions.rs :: DocumentReadingQuery（deny_unknown_fields）。
+ */
+export interface DocumentReadingQuery {
+    /**
+     * 译文版本编号；auto = 自动（逐页取最新）；不给 = 书的当前版本。
+     */
+    version?: string;
+}
+/**
  * merge/reading.rs :: DocumentReadingView。
  */
 export interface DocumentReadingView {
@@ -755,6 +764,10 @@ export interface DocumentReadingView {
      * 拼成这份译文的任务，按页序首次出现的顺序；不是合并时就是那一个任务，没有译文时是空数组。
      */
     contributing_job_ids: string[];
+    /**
+     * 读的是哪个译文版本；null = 自动（逐页取最新）。2026-11-18 加。
+     */
+    version_id: string | null;
 }
 /**
  * retainpdf-jobs views/common.rs :: JobSubmissionView —— 建任务的回包，status 刚建好是 queued。只有 sibling_job_ids 在没有时整个键不出现。
@@ -889,6 +902,19 @@ export interface PatchDocumentInput {
     reading_status?: ("unread" | "reading" | "done") | null;
 }
 /**
+ * versions.rs :: PatchTranslationVersionInput（deny_unknown_fields）。两个字段都可选。
+ */
+export interface PatchTranslationVersionInput {
+    /**
+     * 新名字；空串清掉，回到按翻译设置生成的名字。
+     */
+    label?: string;
+    /**
+     * true 隐藏，false 恢复。
+     */
+    hidden?: boolean;
+}
+/**
  * views.rs :: SearchQuery（deny_unknown_fields）。没有 offset。
  */
 export interface SearchQuery {
@@ -946,6 +972,15 @@ export interface BlockSearchHit {
      * 译文片段，写法同上。
      */
     translated_snippet: string;
+}
+/**
+ * versions.rs :: SetCurrentTranslationVersionInput（deny_unknown_fields）。
+ */
+export interface SetCurrentTranslationVersionInput {
+    /**
+     * 要切到的版本；null 回到自动（逐页取最新）。
+     */
+    version_id: string | null;
 }
 /**
  * merge/coverage.rs :: TranslationCoverageView —— 书籍详情「进度」。
@@ -1039,4 +1074,103 @@ export interface CoverageJobView {
      * 原始错误的第一行（截到 160 字）。只有失败任务有，别的是 null。
      */
     error_head: string | null;
+}
+/**
+ * versions.rs :: TranslationVersionsQuery（deny_unknown_fields）。
+ */
+export interface TranslationVersionsQuery {
+    /**
+     * 带上隐藏的版本。
+     */
+    include_hidden?: boolean;
+}
+/**
+ * versions.rs :: TranslationVersionsView。
+ */
+export interface TranslationVersionsView {
+    /**
+     * 书。
+     */
+    document_id: string;
+    /**
+     * 用户选的版本；null = 自动（逐页取最新），新译文翻完自动跟着最新走。
+     */
+    current_version_id: string | null;
+    /**
+     * 选了某个版本、而且有比它新的（没隐藏的）版本：前端提示「有新版本」。
+     */
+    has_newer: boolean;
+    /**
+     * 从旧到新。
+     */
+    versions: TranslationVersionView[];
+}
+/**
+ * versions.rs :: TranslationVersionView。
+ */
+export interface TranslationVersionView {
+    /**
+     * 版本编号（tv-…）。
+     */
+    version_id: string;
+    /**
+     * 显示用的名字：用户起的；没起就按翻译设置生成，如「精翻 · qwen3.8-flash」「普通 · deepseek-flash（第 30–40 页）」。
+     */
+    name: string;
+    /**
+     * 用户起的名字；没起是空串。
+     */
+    label: string;
+    /**
+     * translate 整本翻译（书库翻译入口、新上传）/ retranslate 重新翻译（重试翻译阶段）/ backfill 升级时从已有任务回填。
+     */
+    origin: "translate" | "retranslate" | "backfill";
+    /**
+     * 只重翻一部分页时，其余页沿用的版本。
+     */
+    base_version_id: string | null;
+    /**
+     * 创建时间。
+     */
+    created_at: string;
+    /**
+     * 是否隐藏。
+     */
+    hidden: boolean;
+    /**
+     * running：还有任务在排队或在跑。
+     */
+    status: "running" | "succeeded" | "failed" | "canceled";
+    /**
+     * 这个版本的任务，按提交时间排。
+     */
+    job_ids: string[];
+    /**
+     * 这个版本自己翻了哪些页（1 起，闭区间，连续的并成一段）；不含沿用来源版本的页。任务还没完成时为空。
+     */
+    page_ranges: [number, number][];
+    /**
+     * 自己就覆盖了整本。
+     */
+    whole_book: boolean;
+    /**
+     * legacy / agent。
+     */
+    engine: string;
+    /**
+     * 翻译模型。
+     */
+    model: string;
+    /**
+     * 另配的审校 / 编辑模型；没配是空串。
+     */
+    reviewer_model: string;
+    /**
+     * 用户手改过几块（同一块改几次算一块）。
+     */
+    edited_blocks: number;
+    /**
+     * 是不是书的当前版本。
+     */
+    is_current: boolean;
 }

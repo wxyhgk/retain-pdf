@@ -5,7 +5,14 @@
 //! directly; a public entrypoint does not need an extra forwarding function.
 
 pub use super::documents::{get_document, list_documents, patch_document};
-pub use super::reading::{document_reading, document_translation_coverage};
+pub use super::reading::{
+    document_reading, document_translation_coverage, document_translation_versions,
+    patch_document_translation_version, set_document_translation_version,
+};
+pub use super::versions::{
+    DocumentReadingQuery, PatchTranslationVersionInput, SetCurrentTranslationVersionInput, TranslationVersionView, TranslationVersionsQuery,
+    TranslationVersionsView,
+};
 pub use crate::merge::coverage::TranslationCoverageView;
 pub use crate::merge::reading::DocumentReadingView;
 

@@ -88,6 +88,33 @@ pub(crate) enum ReadingTarget {
     Merged { job_id: String, merged: MergedTranslation },
 }
 
+/// 读哪份译文（译文版本 v30）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum ReadingSelection {
+    /// 自动：逐页取最新（和以前一样）。`excluded` 里的任务（隐藏版本的）不用。
+    Auto { excluded: Vec<String> },
+    /// 一个译文版本：`layers[0]` 是最底下的来源版本，最后一层是要读的版本，上层的页盖住下层；
+    /// 层内照旧逐页取最新（同一份译文的重新排版、原地精修）。
+    Version { layers: Vec<Vec<String>> },
+}
+
+/// 按选择留下参与合并的任务。版本模式把层号放在排序键最前面，上层的页一定盖住下层，和提交先后无关。
+pub(crate) fn select_sources(sources: Vec<MergeSource>, selection: &ReadingSelection) -> Vec<MergeSource> {
+    match selection {
+        ReadingSelection::Auto { excluded } => {
+            sources.into_iter().filter(|source| !excluded.contains(&source.ranked.rank.job_id)).collect()
+        }
+        ReadingSelection::Version { layers } => sources
+            .into_iter()
+            .filter_map(|mut source| {
+                let layer = layers.iter().position(|jobs| jobs.contains(&source.ranked.rank.job_id))?;
+                source.ranked.rank.producer_created_at = format!("{layer:04}|{}", source.ranked.rank.producer_created_at);
+                Some(source)
+            })
+            .collect(),
+    }
+}
+
 /// `recorded_page_count` 是数据库里记的页数（`documents.page_count`，0 表示没记），原文 PDF
 /// 读不出页数时才用；和翻译覆盖走同一个 [`book_page_count`]，两边说的页数一致。
 pub(crate) fn resolve_reading_target(
@@ -97,9 +124,10 @@ pub(crate) fn resolve_reading_target(
     document_id: &str,
     source_pdf: &Path,
     recorded_page_count: u32,
+    selection: &ReadingSelection,
 ) -> Result<ReadingTarget, AppError> {
     let jobs = db.list_jobs_for_document(document_id, 500, 0)?;
-    let sources = document_merge_sources(&jobs, data_root);
+    let sources = select_sources(document_merge_sources(&jobs, data_root), selection);
     if sources.is_empty() {
         return Ok(ReadingTarget::None);
     }
@@ -179,21 +207,25 @@ pub struct DocumentReadingView {
     pub merged: bool,
     /// 拼成这份译文的任务，按页序首次出现的顺序；不是合并时就是那一个任务。
     pub contributing_job_ids: Vec<String>,
+    /// 读的是哪个译文版本；`None` = 自动（逐页取最新）。2026-11-18 加。
+    pub version_id: Option<String>,
 }
 
 impl ReadingTarget {
     pub(crate) fn view(&self, data_root: &Path) -> DocumentReadingView {
         match self {
-            Self::None => DocumentReadingView { job_id: None, merged: false, contributing_job_ids: vec![] },
+            Self::None => DocumentReadingView { job_id: None, merged: false, contributing_job_ids: vec![], version_id: None },
             Self::Job(job_id) => DocumentReadingView {
                 job_id: Some(job_id.clone()),
                 merged: false,
                 contributing_job_ids: vec![job_id.clone()],
+                version_id: None,
             },
             Self::Merged { job_id, .. } => DocumentReadingView {
                 job_id: Some(job_id.clone()),
                 merged: true,
                 contributing_job_ids: contributing_jobs(data_root, job_id).unwrap_or_default(),
+                version_id: None,
             },
         }
     }

@@ -59,6 +59,8 @@ mod rows;
 mod schema;
 #[path = "db/sync.rs"]
 pub mod sync;
+#[path = "db/translation_versions.rs"]
+mod translation_versions;
 #[path = "db/uploads.rs"]
 mod uploads;
 
@@ -67,6 +69,7 @@ pub use admin_users::{OwnerJobRow, UserListPage, UserListQuery, UserListRow, Use
 pub use invites::{InviteRecord, InviteUnavailable, InviteUser};
 pub use ownership::OwnedKind;
 pub use platform_settings::PlatformSettingsRecord;
+pub use translation_versions::TranslationVersionRecord;
 pub use page_quota::{
     BillingSource, PageBalanceWouldGoNegative, PageChargeRecord, PageLedgerEntry, PageReservation,
 };

@@ -165,7 +165,7 @@ fn apply_platform_models_to(
 /// 再按那个任务继承。
 ///
 /// 尽力而为：失败只记日志，绝不影响提交；终态 lifecycle 还会再对账一次。
-pub(crate) fn link_new_job_to_document(db: &Db, job: &JobSnapshot, derived_from: Option<&str>) {
+pub(crate) fn link_new_job_to_document(db: &Db, job: &JobSnapshot, derived_from: Option<&str>, version: VersionLink<'_>) {
     // 归属：插入时触发器已按上传 / source.artifact_job_id 继承；只有调用方知道的源任务在这里补。
     if let Some(from) = derived_from.map(str::trim).filter(|from| !from.is_empty()) {
         if let Err(error) = db.inherit_job_owner(&job.job_id, from) {
@@ -178,6 +178,67 @@ pub(crate) fn link_new_job_to_document(db: &Db, job: &JobSnapshot, derived_from:
     if let Err(error) = db.set_document_active_job(&document_id, &job.job_id, None) {
         tracing::warn!("library: set active job for {document_id} at submit failed: {error}");
     }
+    if let Err(error) = link_translation_version(db, &document_id, job, derived_from, version) {
+        tracing::warn!("library: translation version for job {} failed: {error}", job.job_id);
+    }
+}
+
+/// 新任务属于哪个译文版本（v30，规则见迁移 `v30_translation_versions.sql`）。
+#[derive(Debug, Clone, Copy, Default)]
+pub enum VersionLink<'a> {
+    /// 按任务自己判断：OCR 任务不是版本；重新排版（render）加进来源任务的版本；
+    /// 翻译（book / translate）开一个新版本，来源任务有版本的话就是它的来源版本（只翻一部分页时其余页沿用它）。
+    #[default]
+    Auto,
+    /// 续跑、OCR 恢复：和这个任务是同一份译文，加进它的版本。
+    JoinVersionOf(&'a str),
+    /// 加进已有的版本（书库整本翻译拆成几段：后几段加进第一段的版本）。
+    Existing(&'a str),
+    /// 开新版本并指定来源版本（书库只翻一部分页时，其余页沿用用户正在看的版本）。
+    New { base: Option<&'a str>, origin: &'a str },
+}
+
+fn link_translation_version(
+    db: &Db,
+    document_id: &str,
+    job: &JobSnapshot,
+    derived_from: Option<&str>,
+    version: VersionLink<'_>,
+) -> anyhow::Result<()> {
+    use retainpdf_core::models::domain::WorkflowKind;
+    // 原地重跑走的也是这里：已经在某个版本里的任务不动
+    if db.translation_version_of_job(&job.job_id)?.is_some() {
+        return Ok(());
+    }
+    let source = job.source_job_id().or(derived_from).map(str::trim).filter(|id| !id.is_empty());
+    let source_version = |source: Option<&str>| -> anyhow::Result<Option<String>> {
+        Ok(match source {
+            Some(source) => db.translation_version_of_job(source)?,
+            None => None,
+        })
+    };
+    let version_id = match version {
+        VersionLink::Existing(version_id) => Some(version_id.to_string()),
+        VersionLink::New { base, origin } => Some(db.create_translation_version(document_id, base, origin)?),
+        VersionLink::JoinVersionOf(from) => match source_version(Some(from))? {
+            Some(version_id) => Some(version_id),
+            None if job.workflow == WorkflowKind::Ocr => None,
+            None => Some(db.create_translation_version(document_id, None, "translate")?),
+        },
+        VersionLink::Auto => match job.workflow {
+            WorkflowKind::Ocr => None,
+            WorkflowKind::Render => source_version(source)?,
+            WorkflowKind::Book | WorkflowKind::Translate => {
+                let base = source_version(source)?;
+                let origin = if source.is_some() { "retranslate" } else { "translate" };
+                Some(db.create_translation_version(document_id, base.as_deref(), origin)?)
+            }
+        },
+    };
+    if let Some(version_id) = version_id {
+        db.add_job_to_translation_version(&version_id, &job.job_id)?;
+    }
+    Ok(())
 }
 
 fn resolve_new_job_document(
@@ -322,5 +383,95 @@ mod platform_tests {
         input.workflow = WorkflowKind::Render;
         // 只重新渲染：不翻译不 OCR，平台没配也能跑。
         apply_platform_models_to_input(&mut input, &PlatformModels::default()).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod version_tests {
+    use super::*;
+    use retainpdf_core::models::domain::{now_iso, JobSnapshot, UploadRecord, WorkflowKind};
+    use retainpdf_core::models::request::CreateJobInput;
+
+    struct Fixture {
+        root: std::path::PathBuf,
+        db: Db,
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
+
+    fn fixture() -> Fixture {
+        let root = std::env::temp_dir().join(format!("jobs-version-link-{:016x}", fastrand::u64(..)));
+        std::fs::create_dir_all(&root).unwrap();
+        let db = Db::new(root.join("jobs.db"), root.clone());
+        db.init().unwrap();
+        let upload = UploadRecord {
+            upload_id: "up-book".into(),
+            filename: "book.pdf".into(),
+            stored_path: "uploads/up-book/book.pdf".into(),
+            bytes: 10,
+            page_count: 3,
+            uploaded_at: now_iso(),
+            developer_mode: false,
+            content_hash: "doc-book".into(),
+        };
+        db.save_upload(&upload).unwrap();
+        db.upsert_document_from_upload(&upload).unwrap();
+        Fixture { root, db }
+    }
+
+    /// 存一个任务并像提交时那样关联到书、挂进版本。
+    fn submit(db: &Db, job_id: &str, workflow: WorkflowKind, source: &str, link: VersionLink<'_>) -> JobSnapshot {
+        let mut input = CreateJobInput::default();
+        input.workflow = workflow.clone();
+        if source.is_empty() {
+            input.source.upload_id = "up-book".into();
+        } else {
+            input.source.artifact_job_id = source.into();
+        }
+        let mut job = JobSnapshot::new(job_id.to_string(), input, vec![]);
+        job.workflow = workflow;
+        db.save_job(&job).unwrap();
+        link_new_job_to_document(db, &job, None, link);
+        job
+    }
+
+    #[test]
+    fn new_jobs_get_the_version_their_kind_calls_for() {
+        let f = fixture();
+        let db = &f.db;
+        submit(db, "ocr", WorkflowKind::Ocr, "", VersionLink::Auto);
+        assert_eq!(db.translation_version_of_job("ocr").unwrap(), None, "OCR jobs are not translations");
+
+        submit(db, "whole", WorkflowKind::Book, "", VersionLink::Auto);
+        let whole = db.translation_version_of_job("whole").unwrap().expect("a fresh translation opens a version");
+        assert_eq!(db.get_translation_version(&whole).unwrap().unwrap().origin, "translate");
+
+        submit(db, "relayout", WorkflowKind::Render, "whole", VersionLink::Auto);
+        assert_eq!(db.translation_version_of_job("relayout").unwrap().as_deref(), Some(whole.as_str()), "re-layout joins its source");
+
+        submit(db, "resume", WorkflowKind::Book, "whole", VersionLink::JoinVersionOf("whole"));
+        assert_eq!(db.translation_version_of_job("resume").unwrap().as_deref(), Some(whole.as_str()), "resume continues the same translation");
+
+        submit(db, "retranslate", WorkflowKind::Book, "whole", VersionLink::Auto);
+        let retranslated = db.get_translation_version(&db.translation_version_of_job("retranslate").unwrap().unwrap()).unwrap().unwrap();
+        assert_ne!(retranslated.version_id, whole);
+        assert_eq!((retranslated.origin.as_str(), retranslated.base_version_id.as_deref()), ("retranslate", Some(whole.as_str())));
+
+        // 书库只翻一部分页：指定来源版本；拆成几段的后几段加进同一个版本
+        submit(db, "seg-1", WorkflowKind::Translate, "ocr", VersionLink::New { base: Some(&whole), origin: "translate" });
+        let segments = db.translation_version_of_job("seg-1").unwrap().unwrap();
+        submit(db, "seg-2", WorkflowKind::Translate, "ocr", VersionLink::Existing(&segments));
+        let record = db.get_translation_version(&segments).unwrap().unwrap();
+        assert_eq!((record.job_ids.len(), record.base_version_id.as_deref()), (2, Some(whole.as_str())));
+
+        // 原地重跑走同一个入口：已经在版本里的不动
+        let job = db.get_job("whole").unwrap();
+        link_new_job_to_document(db, &job, None, VersionLink::Auto);
+        assert_eq!(db.translation_version_of_job("whole").unwrap().as_deref(), Some(whole.as_str()));
+        assert_eq!(db.list_translation_versions("doc-book", false).unwrap().len(), 3);
     }
 }

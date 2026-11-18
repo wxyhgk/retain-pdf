@@ -98,13 +98,13 @@ test("phase-1b translation items and document jobs endpoints carry the client na
   ]);
 
   const documents = read("library-documents.v1.schema.json");
-  const added = documents.endpoints.slice(17).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
+  const added = documents.endpoints.slice(17, 20).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
   assert.deepEqual(added, [
     ["GET", "/api/v1/documents/:document_id/jobs", "listDocumentJobs", "json", "ListDocumentJobsQuery", undefined, "DocumentJobListView"],
     ["POST", "/api/v1/documents/:document_id/translate", "translateDocument", "json", undefined, "CreateJobInput", "JobSubmissionView"],
     ["POST", "/api/v1/documents/:document_id/ocr", "ocrDocument", "json", undefined, "CreateJobInput", "JobSubmissionView"],
   ]);
-  for (const endpoint of documents.endpoints.slice(18)) {
+  for (const endpoint of documents.endpoints.slice(18, 20)) {
     assert.match(endpoint.note, /402/, `${endpoint.path} note 要写 402 页数额度`);
     assert.match(endpoint.note, /PAGE_QUOTA_EXCEEDED/, `${endpoint.path} note 要写错误码`);
   }
@@ -153,4 +153,18 @@ test("settings batch 2 glossaries endpoints carry the client names from the fron
     ["GET", "/api/v1/glossaries/:glossary_id/export.csv", "exportGlossaryCsv", "binary", undefined, undefined, undefined],
     ["POST", "/api/v1/glossaries/parse-csv", "parseGlossaryCsv", "json", "GlossaryCsvParseInput", undefined, "GlossaryCsvParseView"],
   ]);
+});
+
+// 译文版本（2026-11-18）：一本书的几份译文，前端能切换。追加在书的端点末尾。
+test("translation versions endpoints carry their client names", () => {
+  const documents = read("library-documents.v1.schema.json");
+  const table = documents.endpoints.slice(20).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
+  assert.deepEqual(table, [
+    ["GET", "/api/v1/documents/:document_id/translation-versions", "listTranslationVersions", "json", "TranslationVersionsQuery", undefined, "TranslationVersionsView"],
+    ["PUT", "/api/v1/documents/:document_id/translation-version", "setCurrentTranslationVersion", "json", undefined, "SetCurrentTranslationVersionInput", "TranslationVersionsView"],
+    ["PATCH", "/api/v1/documents/:document_id/translation-versions/:version_id", "patchTranslationVersion", "json", undefined, "PatchTranslationVersionInput", "TranslationVersionsView"],
+  ]);
+  const reading = documents.endpoints.find((endpoint) => endpoint.path === "/api/v1/documents/:document_id/reading");
+  assert.equal(reading.query, "DocumentReadingQuery");
+  assert.ok(documents.definitions.DocumentReadingView.required.includes("version_id"));
 });
