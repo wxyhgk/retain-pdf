@@ -1,9 +1,8 @@
 // 「进度」页的参数类型。拼装见 ../processing-tab-props.ts，展示见 BookDetailProcessingTab。
 
 import type { ReactNode } from "react";
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary, LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import type { TranslationCoverageView } from "@/platform/api/index.js";
-import type { LibraryCardItem } from "@/features/library/domain.js";
 import type { JobRetryStage, JobStageRetryActionView } from "@/platform/api/index.js";
 import type { BookDetailResumeState } from "../use-book-detail-resume.js";
 import type { UsageViewModel } from "@/features/usage/index.js";

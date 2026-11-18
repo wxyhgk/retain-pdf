@@ -8,10 +8,8 @@ import { Button } from "@retainpdf/ui";
 import { useHomeStatusCard } from "@/ui/context/home-services-context.js";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { StatusCard } from "@/features/jobs/index.js";
-import type { LibraryCardItem } from "@/features/library/domain.js";
-import {
-  isLibraryOnlyItem,
-} from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
+import { isLibraryOnlyItem } from "@/features/library/domain.js";
 import { isActiveJobStatus } from "@retainpdf/domain/job";
 import { useLibraryServices } from "@/features/library/index.js";
 

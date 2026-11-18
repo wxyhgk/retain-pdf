@@ -1,19 +1,17 @@
 // 详情封面/可读性派生：下沉 BookDetailDialog:56-66 的 coverProcessing 双源计算。
 // 入参 item/statusCardState（可选 isActive 透传），出 coverProcessing/readerAvailable/canTranslate + isActive/status。
 
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import { useMemo } from "react";
-import { isLibraryCardProcessing } from "@/features/library/domain.js";
 import {
-  isOcrOnlyItem,
-  resolveLibraryReadPresentation,
-} from "@/features/library/domain.js";
-import {
+  isLibraryCardProcessing,
   isLibraryOnlyItem,
+  isOcrOnlyItem,
   isRecentJobActive,
   recentJobStageLabel,
   recentJobStatusLabel,
+  resolveLibraryReadPresentation,
 } from "@/features/library/domain.js";
-import type { LibraryCardItem } from "@/features/library/domain.js";
 import { isActiveJobStatus } from "@retainpdf/domain/job";
 
 type StatusCardState = {

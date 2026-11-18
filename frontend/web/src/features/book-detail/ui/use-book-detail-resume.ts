@@ -11,7 +11,7 @@ import {
   resumeJob as resumeJobRequest,
 } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import type { JobResumePlan } from "../domain/job-resume-model.js";
 import { submittedJobFromResume, type ResumeReceipt } from "./resume-receipt.js";
 

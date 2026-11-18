@@ -3,7 +3,7 @@
 // BookCard 同一个 useRecentJobCover hook(同一份 objectURL 缓存,不会
 // 因为这里多渲染一份而重复请求)。
 import { useRecentJobCover } from "@/features/library/index.js";
-import type { LibraryCardItem } from "@/features/library/index.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 
 const MAX_STACK = 4;
 

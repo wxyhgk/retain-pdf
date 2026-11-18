@@ -13,7 +13,7 @@ import {
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { useRecentJobCover, useLibraryServices } from "@/features/library/index.js";
-import type { LibraryCardItem } from "@/features/library/index.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import { BookDetailShell } from "./shell/BookDetailShell.jsx";
 import { CoverActionsPanel } from "./panels/CoverActionsPanel.jsx";
 import { ArtifactQuickDownloads } from "./panels/ArtifactQuickDownloads.js";

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { CollectionsController } from "./types.js";
 import type { CollectionRecord } from "../domain/controller.js";
-import type { LibraryCardItem } from "@/features/library/index.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 
 type UseCollectionPreviewsArgs = {
   collections: CollectionRecord[];

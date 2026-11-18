@@ -1,16 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { CollectionRecord, CollectionsController } from "@/features/collections/index.js";
+import type { CollectionListView, CollectionRecord } from "@retainpdf/contracts/library-documents";
 import type {
   LibraryActions,
   LibraryCardItem,
 } from "../../domain/types.js";
 import { libraryItemDocumentId } from "./recent-jobs-library-helpers.js";
 
+/**
+ * 批量「加入合集」只用合集的这两件事。按形状接（合集控制器正好满足），不引用合集功能：
+ * 合集要摆书卡，已经引用了书架，书架再反过来引用合集就成了环。
+ */
+export type CollectionTargetsPort = {
+  listCollections: () => Promise<CollectionListView>;
+  addDocuments: (collectionId: string, documentIds: string[]) => Promise<unknown>;
+};
+
 type RecentJobsBatchSelectionOptions = {
   visibleItems: LibraryCardItem[];
   onBatchModeChange?: (active: boolean) => void;
-  collectionsController: CollectionsController;
+  collectionsController: CollectionTargetsPort;
   actions: LibraryActions;
 };
 

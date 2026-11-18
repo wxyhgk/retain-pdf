@@ -11,7 +11,7 @@ import {
   prepareDownloadTarget,
   saveResponseDownload,
 } from "@/platform/utils/downloads.js";
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import {
   buildArtifactCenterSections,
   mergeArtifactLinksIntoManifest,

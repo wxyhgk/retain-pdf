@@ -1,7 +1,7 @@
 // 文档任务模型（纯逻辑）：状态判定、runtime/提交合并、选择器与展示文案。
 // 供 useDocumentJobs 及处理面板消费；不含 React，可被非 React 宿主复用。
 
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import { isPollingBootstrapPlaceholder } from "@/features/jobs/index.js";
 import { isTerminalJobStatus } from "@/platform/contracts/job-status.js";
 import { isActiveJobStatus, jobStatusPresentation } from "@retainpdf/domain/job";

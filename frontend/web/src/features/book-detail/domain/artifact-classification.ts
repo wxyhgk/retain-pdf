@@ -1,7 +1,7 @@
 // 产物分组、标签与预览能力判定：把后端 manifest item 映射成人话。
 // 仅依赖 types/values，不涉及 URL 解析与 section 组装。
 
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import type { ArtifactCenterGroupId, ArtifactManifestItem } from "./artifact-center-types.js";
 import { artifactKey, text, workflowOf } from "./artifact-values.js";
 

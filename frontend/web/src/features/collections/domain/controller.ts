@@ -10,7 +10,7 @@ import {
   removeDocumentFromCollection,
 } from "@/platform/api/index.js";
 import { fetchAllDocuments, shapeDocumentsWithBooks } from "@/features/library/index.js";
-import type { LibraryCardItem } from "@/features/library/index.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import type { DocumentRecord } from "@/platform/api/index.js";
 
 /** 合集记录，形状以契约 library-documents.v1 为准；装配层从 @/features/collections 引用。 */

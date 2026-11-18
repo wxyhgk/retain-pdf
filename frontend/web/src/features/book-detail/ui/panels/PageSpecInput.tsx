@@ -10,7 +10,7 @@
 import { useMemo } from "react";
 import { Input } from "@retainpdf/ui";
 
-import { parsePageSelection } from "@/features/library/domain.js";
+import { parsePageSelection } from "../../domain/page-selection.js";
 
 export type PageSpecInputProps = {
   value: string;

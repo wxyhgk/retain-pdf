@@ -3,7 +3,7 @@
 // 立刻跟上新任务（source_job_id 记下从哪个任务续出来的）。
 // 失败卡片的「从断点继续」和「重新处理」清单里的阶段按钮共用这一份映射。
 
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 
 export type ResumeReceipt = { job_id?: string; id?: string; document_id?: string; workflow?: string };
 

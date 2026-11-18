@@ -1,7 +1,7 @@
 // 文件夹内容加载:openFolderId 变化或手动重试时拉取,瞬时失败自动重试一次。
 import { useCallback, useEffect, useState } from "react";
 import type { CollectionsController } from "./types.js";
-import type { LibraryCardItem } from "@/features/library/index.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 
 type UseFolderItemsArgs = {
   controller: CollectionsController;

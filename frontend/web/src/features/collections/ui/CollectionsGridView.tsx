@@ -1,7 +1,7 @@
 // 合集网格视图:新建按钮 + loading/error/empty/文件夹卡片网格。
 import { Button } from "@retainpdf/ui";
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
-import type { LibraryCardItem } from "@/features/library/index.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import { FolderCoverStack } from "./FolderCoverStack.jsx";
 import type { CollectionRecord } from "../domain/controller.js";
 

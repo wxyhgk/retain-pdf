@@ -3,7 +3,7 @@
 // 不在 ocr_stream 的时候快照里的数是这一轮的批次（每轮从 0 数），不能当全书进度——所以要记住上一条。
 import { useRef } from "react";
 
-import type { LibraryCardItem } from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import { streamProgressOf } from "../domain/assembly-line-model.js";
 
 // jobId 给空（任务没在跑）时忘掉记下的：同一个任务原地重跑时不会接着用上一次的数。
