@@ -122,7 +122,9 @@ def run_translation_execution_plan(
                 from retainpdf_translation.workflow.agent_flow import translate_book_with_agent
 
                 translate_book = translate_book_with_agent
-                engine_kwargs = {"glossary_entries": glossary_entries}
+                from retainpdf_translation.workflow.execution import resolve_reviewer_connection
+
+                engine_kwargs = {"glossary_entries": glossary_entries, "reviewer": resolve_reviewer_connection(request)}
             elif getattr(plan, "ocr_stream", None) is not None:
                 from retainpdf_translation.workflow.streaming_flow import translate_book_streaming
 

@@ -87,8 +87,9 @@ def _fake_translation(text: str) -> str:
 class FakeModel:
     """通读什么都不定，审校没有问题，翻译把每块加个中文前缀交回（公式、标记原样留着）；`fail` 里的块每次都交坏的。"""
 
-    def __init__(self, *, fail: set[str] | None = None, stop_after: int | None = None) -> None:
+    def __init__(self, *, fail: set[str] | None = None, stop_after: int | None = None, genre: str = "science_paper") -> None:
         self.fail = fail or set()
+        self.genre = genre
         self.stop_after = stop_after
         self.bodies: list[dict] = []
 
@@ -99,9 +100,11 @@ class FakeModel:
         tool = body["tools"][0]["name"] if "tools" in body else "plain_text"
         usage = {"input_tokens": 100, "output_tokens": 20}
         if tool == "submit_reading":
-            data = {"genre": "science_paper", "name_policy": "keep", "style": "", "terms": [], "headings": []}
+            data = {"genre": self.genre, "name_policy": "keep", "style": "", "terms": [], "headings": []}
         elif tool == "submit_review":
             data = {"issues": []}
+        elif tool == "submit_rewrite":
+            data = {"blocks": []}
         else:
             payload = json.loads(body["messages"][0]["content"])
             wanted = [b for b in payload["blocks"] if b.get("translate")]
@@ -361,3 +364,29 @@ def test_the_agent_gets_the_same_thinking_effort_as_legacy() -> None:
             assert agent_effort(base_url=base, model=model) == expected, (thinking, model)
     finally:
         model_wire.clear_registered_connections()
+
+
+def test_a_separate_reviewer_model_does_the_editing_on_its_own_connection(tmp_path: Path, monkeypatch) -> None:
+    """用户另配了审校模型：人文书的编辑重写走它的连接和 Key，通读、初译走翻译模型；用量台账按模型分开记。"""
+    translator, editor = FakeModel(genre="humanities"), FakeModel(genre="humanities")
+    by_key = {"sk-job-key": translator, "sk-editor": editor}
+    monkeypatch.setattr(agent_flow, "make_http_transport", lambda api_key, *, url: by_key[api_key])
+    ledger = tmp_path / "usage.jsonl"
+    monkeypatch.setenv("RETAIN_USAGE_LEDGER", str(ledger))
+    execute_translation_request(_request(tmp_path, reviewer_model="claude-editor", reviewer_api_key="sk-editor"))
+
+    tools = lambda model: [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies]  # noqa: E731
+    assert tools(editor) == ["submit_rewrite", "submit_rewrite"], "humanities books are edited, one request per page"
+    assert {b["model"] for b in editor.bodies} == {"claude-editor"}
+    assert "submit_rewrite" not in tools(translator) and tools(translator)[0] == "submit_reading"
+    assert {b["model"] for b in translator.bodies} == {"claude-haiku-5-5"}
+    rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()]
+    assert sorted({row["model"] for row in rows}) == ["claude-editor", "claude-haiku-5-5"]
+
+
+def test_without_a_reviewer_model_science_books_keep_the_ticket_review(tmp_path: Path, fake_transport) -> None:
+    model = fake_transport(FakeModel(genre="science_paper"))
+    execute_translation_request(_request(tmp_path, reviewer_model="claude-haiku-5-5"))  # 和翻译模型同名：不另开连接
+    tools = [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies]
+    assert tools.count("submit_review") == 2 and "submit_rewrite" not in tools
+

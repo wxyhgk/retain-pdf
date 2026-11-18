@@ -12,6 +12,21 @@
 
 ---
 
+## 精翻（agent）可以单独配编辑模型（feat/agent-rewrite-pass）
+
+2026-11-18。接口字段没变。`engine=agent` 时，建任务里已有的 `reviewer_model`、`reviewer_base_url`、`reviewer_api_key` /
+`reviewer_credential_ref`、`reviewer_api_protocol`、`reviewer_thinking` 现在会被用上：人文社科、通俗读物每页由「编辑」整块重写（也改文笔），
+理工类照旧挑错；填了审校模型（和翻译模型不同名）时，编辑 / 审校走它，通读和初译仍走翻译模型。
+
+前端可以做（不做也不出错，编辑就用翻译模型）：
+
+- 翻译选项里选「精翻」时，提供一个可选的「编辑模型」：服务商、模型名，提交成 `reviewer_*`。试过的搭配：初译 qwen3.8-flash +
+  编辑 claude-haiku-5-5，比全用 qwen 自然得多，比全用 Haiku 省。
+- 「编辑部」画面：编辑重写的事件和审校一样是 `review_started` / `review_done`（`applied` 是改了几块）；块的修改历史里说明以
+  「编辑（文笔）」「编辑（意思）」开头。
+
+---
+
 ## 翻译 agent 不再只收 Anthropic 协议（feat/agent-openai-protocol）
 
 2026-11-18。建任务时 `translation.engine=agent` 配 `api_protocol=openai` / `openai_responses` 不再 400

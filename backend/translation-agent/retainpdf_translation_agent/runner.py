@@ -51,6 +51,8 @@ from retainpdf_translation_agent.reader import apply_reading
 from retainpdf_translation_agent.reader import read_document
 from retainpdf_translation_agent.review import review_page
 from retainpdf_translation_agent.review import reviewable
+from retainpdf_translation_agent.rewrite import REWRITE_GENRES
+from retainpdf_translation_agent.rewrite import rewrite_page
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
@@ -86,11 +88,12 @@ class DocumentRun:
         budget: int = DEFAULT_BUDGET,
         memory: bool = True,
         read_first: bool = False,
-        review: bool = False,
+        review: bool | str = False,
     ) -> None:
         """`memory=False` 时不带上下文包、不记术语（和第 1 版以前一样），用来做对比。
         `read_first=True` 时先通读整篇（`reader.py`）：定体裁、文风、全文统一的术语和人名、全部标题的译法，再逐页翻。
-        `review=True` 时每页翻完审校一遍（`review.py`），按问题单改被指出的片段。"""
+        `review=True` 时每页翻完审校一遍：通读判成人文社科、通俗读物（`rewrite.REWRITE_GENRES`）的由编辑整块重写
+        （`rewrite.py`，也改文笔），其余按问题单改被指出的片段（`review.py`）；`review="rewrite"` / `"tickets"` 强制用其中一种。"""
         self.agent = agent
         self.state_dir = Path(state_dir)
         self.initial_glossary = glossary
@@ -244,7 +247,11 @@ class DocumentRun:
                     reviewed = reviewable(units, unit_results)
                     self._event("review_started", page=self._event_page, blocks=sum(len(b.members) or 1 for b in reviewed))
                     try:
-                        review_report = review_page(self.agent, units, unit_results)
+                        genre = self.reading.genre if self.reading is not None else "other"
+                        if self.review == "rewrite" or (self.review is True and genre in REWRITE_GENRES):
+                            review_report = rewrite_page(self.agent, units, unit_results, genre=genre)
+                        else:
+                            review_report = review_page(self.agent, units, unit_results)
                     except StopRun as stop:
                         self._log_calls(page, key, context, calls_before)
                         self._stopped(page, key, stop, done, len(pages))
