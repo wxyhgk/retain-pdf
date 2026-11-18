@@ -130,10 +130,6 @@ fn apply_platform_models_to(
         platform.translation_thinking.clone()
     };
     translation.reviewer_thinking.clear();
-    // 翻译 agent 只走 Anthropic 接口：平台模型不是 Anthropic 时退回现有流程
-    if translation.api_protocol != "anthropic" {
-        translation.engine = retainpdf_core::models::request::TranslationInput::default().engine;
-    }
     if platform.translation_max_workers > 0
         && (translation.workers <= 0 || translation.workers > platform.translation_max_workers)
     {
@@ -300,6 +296,20 @@ mod platform_tests {
         let o = &input.ocr;
         assert_eq!((o.provider.as_str(), o.credential_ref.as_str()), ("mineru", "cred-ocr"));
         assert!(o.paddle_token.is_empty() && o.paddle_api_url.is_empty());
+    }
+
+    /// 翻译 agent 三种接口协议都能用（2026-11-18 起），平台模型是哪种协议都不把 engine 退回 legacy。
+    #[test]
+    fn agent_engine_survives_every_platform_protocol() {
+        for protocol in ["", "openai", "openai_responses", "anthropic"] {
+            let mut platform = platform();
+            platform.translation_api_protocol = protocol.into();
+            let mut input = CreateJobInput::default();
+            input.workflow = WorkflowKind::Book;
+            input.translation.engine = "agent".into();
+            apply_platform_models_to_input(&mut input, &platform).unwrap();
+            assert_eq!(input.translation.engine, "agent", "{protocol:?}");
+        }
     }
 
     #[test]
