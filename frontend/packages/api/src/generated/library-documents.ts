@@ -19,6 +19,7 @@ import type {
   DocumentMetadataSuggestionApplyView,
   DocumentMetadataSuggestionListView,
   DocumentMetadataSuggestionView,
+  DocumentReadingQuery,
   DocumentReadingView,
   DocumentRecord,
   JobSubmissionView,
@@ -27,9 +28,13 @@ import type {
   ListDocumentsQuery,
   PatchCollectionInput,
   PatchDocumentInput,
+  PatchTranslationVersionInput,
   SearchQuery,
   SearchResultView,
+  SetCurrentTranslationVersionInput,
   TranslationCoverageView,
+  TranslationVersionsQuery,
+  TranslationVersionsView,
 } from "@retainpdf/contracts/library-documents";
 import { encodePathParam, request, type RequestOptions } from "../request.js";
 
@@ -72,10 +77,10 @@ export function deleteDocument(
 /** GET /api/v1/documents/:document_id/reading */
 export function getDocumentReading(
   apiPrefix: string | undefined,
-  args: { document_id: string },
+  args: { document_id: string; query?: DocumentReadingQuery },
   options?: RequestOptions,
 ): Promise<DocumentReadingView> {
-  return request<DocumentReadingView>({ apiPrefix, method: "GET", path: `documents/${encodePathParam(args.document_id)}/reading`, options });
+  return request<DocumentReadingView>({ apiPrefix, method: "GET", path: `documents/${encodePathParam(args.document_id)}/reading`, query: args.query, options });
 }
 
 /** GET /api/v1/documents/:document_id/translation-coverage */
@@ -211,4 +216,31 @@ export function ocrDocument(
   options?: RequestOptions,
 ): Promise<JobSubmissionView> {
   return request<JobSubmissionView>({ apiPrefix, method: "POST", path: `documents/${encodePathParam(args.document_id)}/ocr`, body: args.body, options });
+}
+
+/** GET /api/v1/documents/:document_id/translation-versions */
+export function listTranslationVersions(
+  apiPrefix: string | undefined,
+  args: { document_id: string; query?: TranslationVersionsQuery },
+  options?: RequestOptions,
+): Promise<TranslationVersionsView> {
+  return request<TranslationVersionsView>({ apiPrefix, method: "GET", path: `documents/${encodePathParam(args.document_id)}/translation-versions`, query: args.query, options });
+}
+
+/** PUT /api/v1/documents/:document_id/translation-version */
+export function setCurrentTranslationVersion(
+  apiPrefix: string | undefined,
+  args: { document_id: string; body: SetCurrentTranslationVersionInput },
+  options?: RequestOptions,
+): Promise<TranslationVersionsView> {
+  return request<TranslationVersionsView>({ apiPrefix, method: "PUT", path: `documents/${encodePathParam(args.document_id)}/translation-version`, body: args.body, options });
+}
+
+/** PATCH /api/v1/documents/:document_id/translation-versions/:version_id */
+export function patchTranslationVersion(
+  apiPrefix: string | undefined,
+  args: { document_id: string; version_id: string; body: PatchTranslationVersionInput },
+  options?: RequestOptions,
+): Promise<TranslationVersionsView> {
+  return request<TranslationVersionsView>({ apiPrefix, method: "PATCH", path: `documents/${encodePathParam(args.document_id)}/translation-versions/${encodePathParam(args.version_id)}`, body: args.body, options });
 }
