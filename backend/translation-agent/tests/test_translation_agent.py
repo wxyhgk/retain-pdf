@@ -509,3 +509,33 @@ def test_system_prompts_carry_a_cache_breakpoint_and_effort_only_applies_to_the_
     assert bodies[0]["output_config"] == {"effort": "low"} and bodies[0]["thinking"] == {"type": "adaptive"}
     tool_body = agent._body({"x": 1}, system="通读", tool=READER_TOOL)
     assert "output_config" not in tool_body and tool_body["system"][0]["cache_control"] == {"type": "ephemeral"}
+
+
+def test_the_http_transport_retries_network_errors_including_ssl(monkeypatch) -> None:
+    """读回答时 SSL 断开（ssl.SSLError 不是 ConnectionError）也要退避重试，不能把整个阶段弄崩。"""
+    import io
+    import ssl
+    import urllib.request
+
+    from retainpdf_translation_agent.agent import make_http_transport
+
+    failures = [ssl.SSLError("record layer failure"), ConnectionResetError("reset")]
+
+    class Reply(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def urlopen(request, timeout):
+        if failures:
+            raise failures.pop(0)
+        return Reply(b'{"content": [{"type": "text", "text": "ok"}]}')
+
+    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    waits: list[float] = []
+    transport = make_http_transport("k", url="https://example.invalid/v1/messages", sleep=waits.append)
+    assert transport({"model": "m"})["content"][0]["text"] == "ok"
+    assert len(waits) == 2
+

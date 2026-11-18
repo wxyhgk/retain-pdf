@@ -234,8 +234,10 @@ def _post(body: dict, *, key: str, url: str, sleep: Callable[[float], None]) -> 
                 raise RuntimeError(f"model API HTTP {error.code}: {text}") from None
             retry_after = error.headers.get("retry-after") if error.headers else None
             last_error = f"HTTP {error.code}"
-        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException) as error:
-            # 网络层的错（对方没回应就断开、连接被重置……）也退避重试：真实文档实测碰到过 RemoteDisconnected
+        except (OSError, http.client.HTTPException) as error:
+            # 网络层的错（对方没回应就断开、连接被重置……）也退避重试：真实文档实测碰到过 RemoteDisconnected；
+            # 2026-11-18 读回答时碰到 ssl.SSLError（record layer failure），它不是 ConnectionError，以前直接把整个阶段弄崩了。
+            # OSError 包括 URLError、超时、连接错误和 SSL 错误
             last_error = f"{type(error).__name__}: {error}"
         sleep(retry_wait(attempt, retry_after))
     raise RateLimited(f"model API still failing after {MAX_ATTEMPTS} attempts: {last_error}")
