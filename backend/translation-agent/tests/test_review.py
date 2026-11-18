@@ -89,6 +89,49 @@ def test_a_block_gets_at_most_two_edits() -> None:
     assert len(report["applied"]) == 2 and report["rejected"][0]["verdict"] == "too_many_edits"
 
 
+def test_a_fix_that_rewrites_the_following_words_does_not_duplicate_them() -> None:
+    """2026-11-18 实跑：审校把整句写全了（translation_quote 只是前半句），替换后后半句重复了一遍。"""
+    tickets = [
+        _ticket(
+            category="fluency",
+            source_quote="reduces column merges by about a third",
+            translation_quote="栏合并减少了约三分之一",
+            fix="栏合并减少了大约三分之一，所需数据是原来的一百倍。",  # 后文“，数据量……。”已经在了；结尾的。和后文开头的，也会叠
+        ),
+    ]
+    results = _results()
+    review_page(TranslationAgent(model="fake", transport=Model({"issues": tickets})), _page(), results)
+    assert results["p1"].translation == TRANSLATION.replace("约三分之一", "大约三分之一，所需数据是原来的一百倍"), results["p1"].translation
+
+
+def test_overlap_with_the_preceding_words_and_doubled_punctuation_are_trimmed() -> None:
+    from retainpdf_translation_agent.review import trim_overlap
+
+    current = "他先坐下。然后我们开始谈话，气氛很好。"
+    # 改法从前文“然后我们”写起：开头的重叠去掉
+    assert trim_overlap(current, "开始谈话", "然后我们开始交谈") == "开始交谈"
+    # 改法自己带了句号、后文又以句号开头：去掉一个
+    assert trim_overlap("气氛很好。下一句", "气氛很好", "气氛融洽。") == "气氛融洽"
+    # 不到 4 个字的巧合重叠不动
+    assert trim_overlap("我们开始谈话，气氛很好。", "开始谈话", "开始谈，气") == "开始谈，气"
+
+
+def test_a_fix_that_would_still_repeat_the_context_is_rejected() -> None:
+    """改法和要换的那段对不上（审校定位错了），替换后会多出一整段重复：不改。"""
+    tickets = [
+        _ticket(
+            category="fluency",
+            source_quote="reduces column merges by about a third",
+            translation_quote="栏合并减少了约三分之一",
+            fix="字号加入每个词元的特征后的栏合并大约少了三分之一",  # 和前文对不齐，去不掉
+        ),
+    ]
+    results = _results()
+    report = review_page(TranslationAgent(model="fake", transport=Model({"issues": tickets})), _page(), results)
+    assert report["rejected"][0]["verdict"] == "duplicates_context"
+    assert results["p1"].translation == TRANSLATION
+
+
 def test_document_run_reviews_every_page_once(tmp_path: Path) -> None:
     model = Model({"translations": [{"id": "p1", "translation": TRANSLATION}, {"id": "h", "translation": "2.5 失败案例"}]}, {"issues": [_ticket()]})
     outcome = DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path, review=True).run([_page()])

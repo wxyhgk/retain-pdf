@@ -8,6 +8,9 @@
    数字或术语、不通顺、语气偏离；每张单子逐字引用原文片段和译文片段，并给出只替换那段译文的改法。"更自然"不收。
 3. 程序裁判：原文片段在原文里找得到（不分大小写、空白）、译文片段在译文里逐字找得到、改法和原片段不同，才收；
    按单子把那一段替换掉，再跑一遍校验，错误和警告只许减少不许增加，否则不改。每块最多改 2 处。
+   改法常比要换的那段长、把紧挨着的前后文又写了一遍（2026-11-18 一本 209 页的书，qwen3.8-flash 审校，改过的块 6% 出现
+   「……模糊性。，是因为其中蕴含的道德模糊性。」）：替换前先把改法首尾和前后文重叠的部分去掉；去完替换后还多出一段
+   12 个字以上的重复，就不改。
    修订就是这次替换，不再调模型，所以审校每页只多一次请求。
 """
 
@@ -27,6 +30,9 @@ from retainpdf_translation_agent.contract import PageInput
 REVIEW_CLASSES = {"paragraph", "abstract", "footnote", "list_item", "figure_caption", "table_caption", "float_note", "margin_note", "acknowledgement"}
 MIN_WORDS = 8
 MAX_EDITS_PER_BLOCK = 2
+MIN_OVERLAP = 4  # 改法首尾和前后文重叠这么多字以上才当成重写了前后文、去掉
+REPEAT_WINDOW = 12  # 替换后多出这么长的重复就不改
+PUNCT = "。！？；，、：.!?;,:"
 BLOCK_CHECK_CODES = {
     "missing", "empty", "formula_unbalanced", "code_changed", "citation_lost", "footnote_mark_lost",
     "number_lost", "untranslated", "no_chinese", "english_residue", "stray_english", "too_short", "too_long", "hedge_lost", "person_lost",
@@ -147,7 +153,12 @@ def _apply(ticket: dict, by_id: dict, results: dict[str, BlockResult], edits: di
         return "translation_quote_ambiguous"
     if not fix.strip() or fix == old:
         return "no_change"
+    fix = trim_overlap(current, old, fix)
+    if not fix.strip() or fix == old:
+        return "no_change"
     revised = current.replace(old, fix, 1)
+    if adds_repeat(current, revised, fix):
+        return "duplicates_context"
     before = check_block(block.text, current)
     after = check_block(block.text, revised)
     # 错误和警告（数字丢了、残留英文……）都算：改完只许少不许多
@@ -174,3 +185,36 @@ def _apply(ticket: dict, by_id: dict, results: dict[str, BlockResult], edits: di
     result.status = status_of(result.issues)
     result.meta = dict(result.meta or {}, reviewed=True)
     return "applied"
+
+
+def trim_overlap(current: str, old: str, fix: str) -> str:
+    """改法的结尾和要换那段后面的文字重叠（或开头和前面的重叠）时去掉重叠部分：审校常把整句写全，替换后半句就重复了。"""
+    start = current.index(old)
+    head, tail = current[:start], current[start + len(old):]
+    for k in range(min(len(fix) - 1, len(tail)), MIN_OVERLAP - 1, -1):
+        if fix.endswith(tail[:k]):
+            fix = fix[:-k]
+            break
+    for k in range(min(len(fix) - 1, len(head)), MIN_OVERLAP - 1, -1):
+        if fix.startswith(head[-k:]):
+            fix = fix[k:]
+            break
+    # 改法把句号写全了、后文本来就以标点开头：去掉一个，免得「……自己。。我的意思是」
+    if fix and tail and fix[-1] in PUNCT and tail[0] in PUNCT:
+        fix = fix[:-1]
+    if fix and head and fix[0] in PUNCT and head[-1] in PUNCT:
+        fix = fix[1:]
+    return fix
+
+
+def adds_repeat(current: str, revised: str, fix: str) -> bool:
+    """替换后改法里有一段（≥ REPEAT_WINDOW 字）在译文里出现的次数比原来多、而且不止一次：多半是改法重写了前后文、又没对齐。"""
+    for i in range(len(fix) - REPEAT_WINDOW + 1):
+        window = fix[i:i + REPEAT_WINDOW]
+        if not window.strip():
+            continue
+        after = revised.count(window)
+        if after >= 2 and after > current.count(window):
+            return True
+    return False
+

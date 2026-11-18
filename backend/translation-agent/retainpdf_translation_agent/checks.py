@@ -19,7 +19,7 @@ NUMBER_RE = re.compile(r"(?<![A-Za-z0-9_.])\d+(?:\.\d+)*(?![A-Za-z0-9_])")
 LATIN_WORD_RE = re.compile(r"[A-Za-z]{3,}")
 # 要翻的英文词：小写或首字母大写、三个字母以上。原文一个都没有（样品名 "BMS@C-M1 EV"、缩写、网址）就没什么可翻，原样交回不算没翻
 PROSE_WORD_RE = re.compile(r"\b[A-Za-z][a-z]{2,}\b")
-URL_RE = re.compile(r"(?:https?://|www\.)\S+|\S+@\S+\.\w+")
+URL_RE = re.compile(r"(?:https?://|www\.)\S+|\S+@\S+\.\w+|\b[\w-]+(?:\.[\w-]+)*\.(?:com|org|edu|net|gov|io|info|ac|uk|cn|de|fr|jp)\b(?:/\S*)?")
 CJK_RE = re.compile(r"[一-鿿]")
 # 中文译文里不该凭空出现的文字：西里尔、韩文、日文假名、阿拉伯、希伯来、泰文……原文里有的不算。
 # 希腊字母不算：理工文献里 "alpha helix" 译成 "α 螺旋" 是正常写法。
@@ -36,7 +36,9 @@ SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太�
 # 5：2026-10-31 接续组当一块校验、重翻、退回原文（units.py），切开以后不再逐块查：group_overlap、group_share、mark_moved 去掉
 # 6：2026-10-31 原文没有要翻的英文词（样品名、缩写、网址）时原样交回不算 untranslated / no_chinese
 # 7：2026-10-31 独立公式 `$$ … $$`（接续组夹着的）整个算一个公式
-CHECKS_VERSION = "translation-agent-checks-7"
+# 8：2026-11-18 不带 http、www 的域名（press.princeton.edu）也算网址；审校改法和前后文重叠时去掉重叠，替换后多出重复就不改
+#    （review.py；升版本是为了让已经跑了一半的任务重来一遍、按新规矩重做审校替换，请求缓存照用）
+CHECKS_VERSION = "translation-agent-checks-8"
 
 
 def visible_length(text: str) -> int:
