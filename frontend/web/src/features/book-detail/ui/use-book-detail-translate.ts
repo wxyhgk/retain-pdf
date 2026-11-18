@@ -2,15 +2,13 @@
 // 进度只在 bd-job-status-inner，不打开工作流弹窗。
 
 import { usePageRange } from "./use-page-range.js";
-import {
-  reusableOcrJobId,
-} from "@/features/library/domain.js";
+import { reusableOcrJobId } from "@/features/library/domain.js";
 import type {
   DocumentJobSummary,
   JobSubmissionView,
   OcrDocumentPayload,
   TranslateDocumentPayload,
-} from "@/features/library/domain.js";
+} from "@/platform/contracts/library-payloads.js";
 
 /**
  * @param {object} options

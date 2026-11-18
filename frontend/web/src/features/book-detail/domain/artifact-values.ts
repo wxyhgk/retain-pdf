@@ -1,7 +1,7 @@
 // 产物中心的低层取值/归一化工具：数字、文本、工作流与产物键。
 // 纯函数，供分组、链接合并与 sections 构建共享。
 
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import type { ArtifactManifestItem } from "./artifact-center-types.js";
 
 export function text(value: unknown): string {

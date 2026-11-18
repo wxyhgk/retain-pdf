@@ -137,3 +137,43 @@ export type JobSubmissionView = {
   };
   [key: string]: unknown;
 };
+
+// ─── 文档 API payload 和「书 + 它的任务」 ───────────────────────────
+// 从 features/library/domain/types.ts 下沉：书详情、合集都要用，经书架转一道会让它们都依赖书架。
+
+export type TranslateDocumentPayload = {
+  workflow?: "book" | "translate" | string;
+  source?: {
+    artifact_job_id?: string;
+    upload_id?: string;
+    [key: string]: unknown;
+  };
+  ocr?: {
+    page_ranges?: string;
+    [key: string]: unknown;
+  };
+  translation?: {
+    /** 一基文档页码；空数组表示整本或沿用旧范围语义。 */
+    page_ranges?: number[];
+    /** 旧任务兼容字段；OCR 复用请求优先使用 page_ranges。 */
+    start_page?: number;
+    end_page?: number;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
+export type OcrDocumentPayload = {
+  workflow?: "ocr" | string;
+  ocr?: {
+    page_ranges?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
+export type DocumentJobSummary = LibraryCardItem & {
+  job_id: string;
+  workflow: string;
+  status: string;
+};

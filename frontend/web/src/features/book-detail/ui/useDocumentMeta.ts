@@ -1,8 +1,9 @@
 // 详情 meta 子域：doc 全量、authors/pageCount、阅读状态、标题/标签编辑、删除。
 // 由 useBookDetailDocument 门面组合，保持 BookDetailDialog 调用不变。
 
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { LibraryController, LibraryCardItem } from "@/features/library/index.js";
+import type { LibraryController } from "@/features/library/index.js";
 import { fetchDocument } from "@/platform/api/index.js";
 import type { DocumentReadingStatus, DocumentRecord } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";

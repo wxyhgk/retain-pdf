@@ -4,7 +4,7 @@
 // BookDetailProcessingTab —— 字段名拼错、漏传，编译器都不会说。现在两边都有类型
 // （BookDetailProcessingTabProps），拼装是纯函数，可以单独测。
 
-import type { LibraryCardItem } from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import type {
   BookDetailOcrPanelProps,
   BookDetailTranslationPanelProps,

@@ -1,7 +1,7 @@
 // 翻译流水线模型（纯逻辑）：从 job/item 派生 OCR→翻译→渲染→完成 四站状态。
 // 供 ProcessingPipelineRail 消费；不含 React，可被非 React 宿主复用。
 
-import type { LibraryCardItem } from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import { translationUsesReusedOcr } from "@/features/library/domain.js";
 import { percentFromProgress } from "./progress-value.js";
 import { isActiveJobStatus } from "@retainpdf/domain/job";

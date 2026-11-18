@@ -1,7 +1,7 @@
 // 产物中心 section 组装：把 source、manifest items 与 Agent 投影归一成
 // 按 source/ocr/translation/diagnostics/agent 分组、带可见性过滤的列表。
 
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import type {
   ArtifactCenterGroupId,
   ArtifactCenterItem,

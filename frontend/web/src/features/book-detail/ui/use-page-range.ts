@@ -11,7 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { parsePageSelection } from "@/features/library/domain.js";
+import { parsePageSelection } from "../domain/page-selection.js";
 
 export type UsePageRangeOptions = {
   open: boolean;

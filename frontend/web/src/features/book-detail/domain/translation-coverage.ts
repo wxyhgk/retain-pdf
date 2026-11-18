@@ -8,7 +8,7 @@ import type {
   TranslationCoverageJob,
   TranslationCoverageView,
 } from "@/platform/api/index.js";
-import { compactPageSpec } from "@/features/library/domain.js";
+import { compactPageSpec } from "./page-selection.js";
 
 /** 任务记录色块的深浅档位数：不同次翻译用墨色深浅区分（单色设计，不引入新颜色）。 */
 export const COVERAGE_SHADES = 4;

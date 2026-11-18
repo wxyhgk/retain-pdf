@@ -21,7 +21,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { Clock3, Coins, Cpu, FileText, Flag, Languages, Layers, RotateCcw, ScanText, TriangleAlert, X } from "lucide-react";
 import { IconButton } from "@retainpdf/ui";
 
-import type { LibraryCardItem } from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import {
   assemblyStations,
   clockText,

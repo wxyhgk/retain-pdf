@@ -2,7 +2,7 @@
 // 以前挂在流水线画面下面，和失败卡、编辑部画面各占一块；现在三者是细节区的三页。
 // 总用时在状态行的小字里，这里不再写一遍。契约：根节点 data-line-activity。
 
-import type { LibraryCardItem } from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import { recentActivity, type JobTimeline } from "../../../domain/assembly-line-model.js";
 
 export type ProcessingActivityProps = {

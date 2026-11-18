@@ -1,12 +1,9 @@
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { isPageHidden } from "@/platform/utils/page-visibility.js";
-import type { DocumentJobSummary } from "@/features/library/domain.js";
 import type { LibraryController } from "@/features/library/index.js";
-import {
-  selectDocumentOcrStatusJob,
-  selectReusableOcrJob,
-} from "@/features/library/domain.js";
+import { selectDocumentOcrStatusJob, selectReusableOcrJob } from "@/features/library/domain.js";
 import {
   DOCUMENT_JOBS_IDLE_REFRESH_INTERVAL_MS,
   DOCUMENT_JOBS_REFRESH_INTERVAL_MS,

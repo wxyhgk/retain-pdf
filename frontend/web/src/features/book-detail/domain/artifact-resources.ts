@@ -1,7 +1,7 @@
 // 产物下载 URL 解析与细清单补全：把 /artifacts 的稳定发布链接
 // 合并进后端 manifest，供产物中心下载/预览使用。
 
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import type {
   ArtifactLinks,
   ArtifactManifest,

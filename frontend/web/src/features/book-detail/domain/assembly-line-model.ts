@@ -6,7 +6,7 @@
 //   不做预计剩余时间。
 // - 最近活动：stage_history 倒序，每条是后端写的一句话和进入的时间。
 
-import type { LibraryCardItem } from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import { translationProcessModel } from "./translation-process-model.js";
 import { countFromProgress } from "./progress-value.js";
 

@@ -23,12 +23,16 @@ const ALLOWED = {
   ingest: ["library"], // 提交后打开书籍详情（useLibraryServices().actions.openBookDetail）
   "job-detail": ["artifacts"], // 下载按钮的忙碌状态（useArtifactDownloadBusy）
   jobs: ["artifacts", "ingest"], // 下载按钮的忙碌状态；工作流弹窗的状态区端口
-  library: ["collections"], // 书卡上的合集（CollectionRecord、CollectionsController）
   reader: ["jobs"], // 阅读页宿主读当前任务和产物清单
 };
 
-/** 现有的互相引用，只许消掉。 */
-const KNOWN_CYCLES = [["collections", "library"]];
+/** 现有的互相引用，只许消掉。书架 ↔ 合集的环 2026-11-18 拆掉：书架批量「加入合集」按形状接合集控制器
+ *  （CollectionTargetsPort），合集的记录类型直接从 @retainpdf/contracts 取。 */
+const KNOWN_CYCLES = [];
+
+/** 「书 + 它的任务」的数据类型在 platform/contracts/library-payloads.ts，别的功能直接从那里取，
+ *  不经书架转手（经书架取会让书详情、合集为了类型都依赖书架）。书架自己的 re-export 留着给书架内部用。 */
+const DOCUMENT_TYPES = ["LibraryCardItem", "DocumentJobSummary", "JobSubmissionView", "TranslateDocumentPayload", "OcrDocumentPayload"];
 
 function sourceFiles(dir) {
   const out = [];
@@ -115,4 +119,22 @@ test("不许出现新的互相引用", () => {
   const found = cycles(currentGraph());
   const known = KNOWN_CYCLES.map((c) => [...c].sort().join(" ↔ ")).sort();
   assert.deepEqual(found, known, `功能之间的环和登记的不一致（新环要拆开；消掉的环从 KNOWN_CYCLES 删掉）：${found.join("; ")}`);
+});
+
+test("书和任务的数据类型不经书架转手", () => {
+  const offenders = [];
+  for (const feature of readdirSync(FEATURES_ROOT)) {
+    const dir = join(FEATURES_ROOT, feature);
+    if (feature === "library" || !statSync(dir).isDirectory()) continue;
+    for (const file of sourceFiles(dir)) {
+      const text = readFileSync(file, "utf8");
+      for (const m of text.matchAll(/import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*["']@\/features\/library\/[^"']+["']/g)) {
+        const names = m[1].split(",").map((name) => name.replace(/^\s*type\s+/, "").split(/\s+as\s+/)[0].trim()).filter(Boolean);
+        for (const name of names) {
+          if (DOCUMENT_TYPES.includes(name)) offenders.push(`${file.slice(FEATURES_ROOT.length + 1)}: ${name}`);
+        }
+      }
+    }
+  }
+  assert.deepEqual(offenders, [], `改成从 @/platform/contracts/library-payloads.js 取：\n${offenders.join("\n")}`);
 });

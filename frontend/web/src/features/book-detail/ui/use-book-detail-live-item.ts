@@ -5,7 +5,7 @@
 import { useMemo } from "react";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { isPollingBootstrapPlaceholder } from "@/features/jobs/index.js";
-import type { LibraryCardItem } from "@/features/library/domain.js";
+import type { LibraryCardItem } from "@/platform/contracts/library-payloads.js";
 import { useLibraryServices } from "@/features/library/index.js";
 
 /**

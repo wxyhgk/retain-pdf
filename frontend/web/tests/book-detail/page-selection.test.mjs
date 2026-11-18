@@ -10,7 +10,7 @@ import assert from "node:assert/strict";
 import {
   compactPageSpec,
   parsePageSelection,
-} from "../../src/features/library/domain/translation-ocr-reuse.ts";
+} from "../../src/features/book-detail/domain/page-selection.ts";
 
 const ok = (raw, count = 20) => {
   const result = parsePageSelection(raw, count);

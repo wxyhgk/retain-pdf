@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { describeActionError } from "@/platform/api/index.js";
-import { usePageRange } from "./use-page-range.js";
 import type {
   DocumentJobSummary,
   JobSubmissionView,
-  LibraryController,
   OcrDocumentPayload,
-} from "@/features/library/domain.js";
+} from "@/platform/contracts/library-payloads.js";
+import { useState } from "react";
+import { describeActionError } from "@/platform/api/index.js";
+import { usePageRange } from "./use-page-range.js";
+import type { LibraryController } from "@/features/library/domain.js";
 
 export function useBookDetailOcr({
   open,

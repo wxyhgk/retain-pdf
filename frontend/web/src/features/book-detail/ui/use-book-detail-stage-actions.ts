@@ -6,7 +6,7 @@ import type {
 } from "@/platform/api/index.js";
 import { describeActionError, fetchJobPayload } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
-import type { DocumentJobSummary } from "@/features/library/domain.js";
+import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import { resolveTranslationOwnerId, type TranslationSourceView } from "../domain/translation-owner.js";
 import { retranslateOverrides } from "../domain/retranslate-quality.js";
 import type { LibraryController } from "@/features/library/index.js";
