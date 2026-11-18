@@ -7,7 +7,6 @@ import { BookOpen, Bot, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, X
 
 import { LegacyButton } from "@retainpdf/ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
-import { agentEngineAvailable } from "../../domain/workflow/payload.js";
 import { useIngestServices, useIngestWorkflowView } from "../workflow-view-context.js";
 
 const QUALITY_HINTS: Record<string, string> = {
@@ -25,7 +24,6 @@ const ENGINE_HINTS: Record<string, string> = {
 const TRANSLATION_ENGINE_HINTS: Record<string, string> = {
   legacy: "现有流程：按批翻译，可配合上面的翻译质量。",
   agent: "翻译 agent：先通读全文，再逐页翻译并审校，自带统一术语和审校，所以翻译质量不再单独选。开头通读要一会儿，进度会先停在 0。",
-  unavailable: "翻译 agent 只支持 Anthropic 格式的接口；在翻译设置里把接口协议换成 Anthropic 格式后可选。",
 };
 
 /** hidePageRange：一次上传多本时每本整本处理，不给页码范围。 */
@@ -40,10 +38,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
   const selectedId = `${workflow.selectedGlossaryId || ""}`.trim();
   const hasSelected = !selectedId
     || workflow.glossaries.some((glossary) => glossary.glossaryId === selectedId);
-  // 协议在凭据设置里改，改完再打开这个面板时会重新读到；不可用时即使偏好存的是 agent，
-  // 提交时也不发（payload.ts 的 translationEngineFields），这里同样按现有流程显示。
-  const agentAvailable = agentEngineAvailable(features.workflowFeature?.developerConfigWithDefaults().apiProtocol);
-  const translationEngine = agentAvailable ? workflow.preferences.translationEngine : "legacy";
+  const translationEngine = workflow.preferences.translationEngine;
   const maxAttr = upload.pageRangeMax > 0 ? { max: `${upload.pageRangeMax}` } : {};
 
   function handlePageInput(source: "start" | "end", event: FormEvent<HTMLInputElement>) {
@@ -179,10 +174,10 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
             onChange={(event) => workflowView.setPreference("translationEngine", event.target.value)}
           >
             <option value="legacy">现有流程</option>
-            <option value="agent" disabled={!agentAvailable}>翻译 agent</option>
+            <option value="agent">翻译 agent</option>
           </select>
           <small id="job-translation-engine-hint">
-            {agentAvailable ? TRANSLATION_ENGINE_HINTS[translationEngine] : TRANSLATION_ENGINE_HINTS.unavailable}
+            {TRANSLATION_ENGINE_HINTS[translationEngine]}
           </small>
         </label>
 
