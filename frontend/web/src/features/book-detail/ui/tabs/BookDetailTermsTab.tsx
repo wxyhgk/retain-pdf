@@ -1,5 +1,6 @@
 // Tab「术语」：这本书翻译时用的术语表、术语冲突、风格规则和领域判断。数据全部来自通用取数接口
-// （第一次点开这个页签才读）。这里不改这本书的术语；「存为我的术语表」把它存成一张用户术语表
+// （第一次点开这个页签才读）。翻译 agent 的书没有 terms / term_conflicts，术语和歧义单读 agent_terms /
+// agent_term_tickets（两边都读、合在一起，一本书只会有一边；后端还没有这两个数据集时当作没有）。这里不改这本书的术语；「存为我的术语表」把它存成一张用户术语表
 // （SaveTermsGlossaryDialog），在「设置 → 术语表」里改，翻译时选它。
 import { useEffect, useState } from "react";
 import { Button, Input, SegmentedControl } from "@retainpdf/ui";
@@ -11,7 +12,10 @@ import { SaveTermsGlossaryDialog, type CreateGlossaryFromTerms } from "../panels
 import type { JobDataView } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import {
+  AGENT_STATUS_LABELS,
   CATEGORY_LABELS,
+  agentTermRows,
+  agentTicketRows,
   TREATMENT_LABELS,
   conflictRows,
   filterTerms,
@@ -35,6 +39,8 @@ type Loaded = {
   terms: TermRow[];
   termsTotal: number;
   conflicts: ConflictRow[];
+  /** 术语来自翻译 agent：冲突一栏的说明不一样。 */
+  agent: boolean;
   rules: Row[];
   styleGuide: Row | null;
   domain: Row | null;
@@ -78,13 +84,18 @@ export function BookDetailTermsTab({
       load(jobId, "style_rules", { limit: 200 }),
       load(jobId, "style_guide"),
       load(jobId, "domain_context"),
+      load(jobId, "agent_terms", { limit: 1000 }).catch(() => null),
+      load(jobId, "agent_term_tickets", { limit: 1000 }).catch(() => null),
     ])
-      .then(([terms, conflicts, rules, styleGuide, domain]) => {
+      .then(([terms, conflicts, rules, styleGuide, domain, agentTerms, agentTickets]) => {
         if (disposed) return;
+        const fromAgent = agentTermRows(agentTerms?.rows as Row[] | undefined);
+        const agentConflicts = agentTicketRows(agentTickets?.rows as Row[] | undefined);
         setData({
-          terms: termRows(terms.rows as Row[] | undefined),
-          termsTotal: terms.total,
-          conflicts: conflictRows(conflicts.rows as Row[] | undefined),
+          terms: [...termRows(terms.rows as Row[] | undefined), ...fromAgent],
+          termsTotal: terms.total + (fromAgent.length ? agentTerms?.total || 0 : 0),
+          conflicts: [...conflictRows(conflicts.rows as Row[] | undefined), ...agentConflicts],
+          agent: fromAgent.length + agentConflicts.length > 0,
           rules: (rules.rows as Row[] | undefined) || [],
           styleGuide: styleGuide.available ? (styleGuide.object as Row) : null,
           domain: domain.available ? (domain.object as Row) : null,
@@ -173,6 +184,9 @@ export function BookDetailTermsTab({
                 <span className="book-detail-terms-target">{row.treatment === "keep_original" ? "（保留原文）" : row.target || "—"}</span>
                 <span className="book-detail-terms-meta">
                   {CATEGORY_LABELS[row.category] || row.category}
+                  {row.status ? ` · ${AGENT_STATUS_LABELS[row.status] || row.status}` : ""}
+                  {row.page ? ` · 第 ${row.page} 页起` : ""}
+                  {row.note ? ` · ${row.note}` : ""}
                   {row.frequency ? ` · 出现 ${row.frequency} 次` : ""}
                   {row.conflictCount ? " · 有冲突" : ""}
                 </span>
@@ -201,13 +215,14 @@ export function BookDetailTermsTab({
 
       {data.conflicts.length ? (
         <section className="book-detail-overview-card book-detail-terms-conflicts" aria-label="术语冲突">
-          <div className="book-detail-overview-card-heading"><h3>译法冲突</h3><span className="book-detail-terms-sub">抽取时各段给出的译法不一致，最后定了左边这个</span></div>
+          <div className="book-detail-overview-card-heading"><h3>译法冲突</h3><span className="book-detail-terms-sub">{data.agent ? "翻译时报上来的译法和术语表不一样，没有自动统一；左边是表里的" : "抽取时各段给出的译法不一致，最后定了左边这个"}</span></div>
           <ol className="book-detail-terms-rows">
-            {data.conflicts.map((row) => (
-              <li key={row.source} className="book-detail-terms-row">
+            {data.conflicts.map((row, index) => (
+              <li key={`${row.source}\u0000${index}`} className="book-detail-terms-row">
                 <span className="book-detail-terms-source">{row.source}</span>
                 <span className="book-detail-terms-target">{row.target}</span>
-                {row.candidates ? <span className="book-detail-terms-meta">其它译法：{row.candidates}</span> : null}
+                {row.candidates ? <span className="book-detail-terms-meta">{data.agent ? "报上来的" : "其它译法"}：{row.candidates}</span> : null}
+                {row.why ? <span className="book-detail-terms-meta">理由：{row.why}</span> : null}
               </li>
             ))}
           </ol>
