@@ -1,0 +1,191 @@
+"""翻译 agent 接 OpenAI 协议（``openai`` 对话补全 / ``openai_responses``）：把 agent 发的 Anthropic Messages 请求体
+换成翻译共用的 ``request_chat_content`` 一次请求，再把回答包回 Anthropic 的样子交给 agent。
+
+agent 包（``retainpdf-translation-agent``）只认 Anthropic 的请求、回答格式，也只许用标准库；各家 OpenAI 兼容服务的
+差异（temperature 不收、思考字段、json_schema 不支持退到 json_object、流式、Rust 执行器、重试）都在共用请求层里，
+这里只做格式换算，不再写一遍：
+
+- 系统提示（Anthropic 的 system 块）→ 一条 system 消息；用户消息原样；
+- 强制用工具交回的请求（通读 ``submit_reading``、审校 ``submit_review``）→ ``response_format`` 按工具的 schema 要 JSON，
+  系统提示末尾附上 schema（退到 json_object 的服务商只能靠提示）；回答解析成 JSON 后包成 ``tool_use``；
+- 纯文本请求（初译、重翻、改稿）→ 不带 ``response_format``，回答包成 ``text``；
+- Anthropic 专有的字段（``cache_control``、``thinking``、``output_config``、``max_tokens``、``strict``）不往下传；思考档位
+  按任务的 thinking 设置走共用请求层的换算，和 legacy 一样；
+- 用量：共用请求层自己记用量台账（请求标签 ``agent-translate`` / ``agent-read`` / ``agent-review``），这里只把这次请求的
+  token 换成 Anthropic 的字段名交回，agent 自己的计数、编辑部事件照常；
+- 错误：Key 被拒（401/403）→ ``AuthFailed``，402 → ``QuotaExhausted``，一直限流、5xx、网络断 → ``RateLimited``，
+  都是 agent 的 ``StopRun``：保存进度、阶段失败，修好重试从断点接着翻。别的错误原样抛。
+
+已知差别：共用请求层只交回文本，拿不到 ``finish_reason``，回答被长度截断时 agent 不知道（Anthropic 下会把最后一块当没交）；
+被截断的半块由 agent 的校验（长度、公式、标记）兜。
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from typing import Any
+from typing import Callable
+
+import requests
+
+from retainpdf_translation.artifacts.aggregator import TranslationRunDiagnostics
+from retainpdf_translation.artifacts.aggregator import thread_translation_run_diagnostics_scope
+from retainpdf_translation.llm.shared import upstream_resilience
+from retainpdf_translation.llm.shared.executor_context import unit_scope
+from retainpdf_translation.llm.shared.provider_runtime import request_chat_content
+from retainpdf_translation_agent import AuthFailed
+from retainpdf_translation_agent import QuotaExhausted
+from retainpdf_translation_agent import RateLimited
+
+REQUEST_TIMEOUT_SECS = 300
+# 和 legacy 翻译请求一样（translation_client 的翻译请求都是 0.0）；不收 temperature 的模型由共用请求层挨一次 400 后记住、不再带
+TEMPERATURE = 0.0
+TOOL_LABELS = {"submit_reading": "agent-read", "submit_review": "agent-review"}
+PLAIN_LABEL = "agent-translate"
+_FENCE_RE = re.compile(r"^\s*```(?:json)?\s*(.*?)\s*```\s*$", re.DOTALL)
+
+ChatFn = Callable[..., str]
+
+
+def _system_text(system: Any) -> str:
+    if isinstance(system, str):
+        return system
+    return "\n\n".join(str(part.get("text") or "") for part in system or [] if isinstance(part, dict))
+
+
+def _tool_instruction(tool: dict) -> str:
+    schema = json.dumps(tool.get("input_schema") or {}, ensure_ascii=False)
+    return (
+        f"交回方式：不要写别的文字，只输出一个 JSON 对象（不要包在代码块里），它就是 `{tool['name']}` 的参数，"
+        f"符合下面的 JSON Schema：\n{schema}"
+    )
+
+
+def openai_request(body: dict) -> tuple[list[dict[str, str]], dict | None, str, str | None]:
+    """Anthropic 请求体 → (messages, response_format, 请求标签, 要交回的工具名)。"""
+    tools = body.get("tools") or []
+    tool = tools[0] if tools else None
+    system = _system_text(body.get("system"))
+    if tool is not None:
+        system = f"{system}\n\n{_tool_instruction(tool)}" if system else _tool_instruction(tool)
+    messages: list[dict[str, str]] = [{"role": "system", "content": system}] if system else []
+    for message in body.get("messages") or []:
+        content = message.get("content")
+        if not isinstance(content, str):
+            content = "".join(str(part.get("text") or "") for part in content or [] if isinstance(part, dict))
+        messages.append({"role": str(message.get("role") or "user"), "content": content})
+    if tool is None:
+        return messages, None, PLAIN_LABEL, None
+    response_format = {
+        "type": "json_schema",
+        # 不用 strict：OpenAI 的 strict 要求每个属性都列进 required，agent 的工具 schema 有可选字段
+        "json_schema": {"name": str(tool["name"]), "schema": tool.get("input_schema") or {}},
+    }
+    return messages, response_format, TOOL_LABELS.get(str(tool["name"]), PLAIN_LABEL), str(tool["name"])
+
+
+def _decode_json(text: str) -> dict | None:
+    text = (text or "").strip()
+    match = _FENCE_RE.match(text)
+    if match:
+        text = match.group(1)
+    try:
+        data = json.loads(text)
+    except ValueError:
+        start, end = text.find("{"), text.rfind("}")
+        if start < 0 or end <= start:
+            return None
+        try:
+            data = json.loads(text[start : end + 1])
+        except ValueError:
+            return None
+    return data if isinstance(data, dict) else None
+
+
+def anthropic_response(content: str, *, tool_name: str | None, usage: dict[str, int]) -> dict:
+    """OpenAI 回答的文本 → agent 认的 Anthropic 回答。工具请求的 JSON 解析不了就不交 tool_use（agent 按"没交回"处理）。"""
+    if tool_name is None:
+        parts = [{"type": "text", "text": content}]
+    else:
+        data = _decode_json(content)
+        parts = [{"type": "tool_use", "name": tool_name, "input": data}] if data is not None else [{"type": "text", "text": content}]
+    return {"content": parts, "stop_reason": "end_turn", "usage": usage}
+
+
+def anthropic_usage_fields(token_usage: dict[str, Any]) -> dict[str, int]:
+    """共用请求层归一后的 token（prompt/completion/缓存命中）→ Anthropic 的字段名（agent 的 Usage 按这个加）。"""
+    prompt = int(token_usage.get("prompt_tokens") or 0)
+    cached = int(token_usage.get("prompt_cache_hit_tokens") or 0)
+    return {
+        "input_tokens": max(0, prompt - cached),
+        "cache_read_input_tokens": cached,
+        "output_tokens": int(token_usage.get("completion_tokens") or 0),
+    }
+
+
+def _stop_error(error: BaseException) -> BaseException | None:
+    status = upstream_resilience.http_status_of(error)
+    if upstream_resilience.is_quota_error(error):
+        return QuotaExhausted(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
+    if status in {401, 403}:
+        return AuthFailed(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
+    if status in {429, 500, 502, 503, 504, 529} or isinstance(error, (requests.ConnectionError, requests.Timeout)):
+        return RateLimited(f"model API still failing: {upstream_resilience.describe_upstream_error(error)}")
+    return None
+
+
+def make_openai_transport(
+    *,
+    api_key: str,
+    model: str,
+    base_url: str,
+    protocol: str,
+    thinking: str | None = None,
+    chat: ChatFn | None = None,
+) -> Callable[[dict], dict]:
+    """agent 的 transport（收 Anthropic 请求体、交回 Anthropic 回答）；请求经共用的 ``request_chat_content``。
+    ``chat`` 只给测试注入。Key 只在闭包里。"""
+    if not api_key:
+        raise AuthFailed("model API key is empty")
+    send = chat or request_chat_content
+
+    def transport(body: dict) -> dict:
+        messages, response_format, label, tool_name = openai_request(body)
+        # 每次请求一份诊断：拿到这一次的 token（agent 的请求可能并发，共用一份分不开）
+        diagnostics = TranslationRunDiagnostics(
+            provider_family="agent",
+            model=model,
+            base_url=base_url,
+            configured_workers=1,
+            configured_batch_size=0,
+            configured_classify_batch_size=0,
+        )
+        digest = hashlib.sha256(json.dumps(body, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+        try:
+            with thread_translation_run_diagnostics_scope(diagnostics), unit_scope("agent", [digest]):
+                content = send(
+                    messages,
+                    api_key=api_key,
+                    model=model,
+                    base_url=base_url,
+                    temperature=TEMPERATURE,
+                    response_format=response_format,
+                    timeout=REQUEST_TIMEOUT_SECS,
+                    request_label=label,
+                    protocol=protocol,
+                    thinking=thinking,
+                )
+        except Exception as error:  # noqa: BLE001 - 换成 agent 的 StopRun，别的原样抛
+            stop = _stop_error(error)
+            if stop is not None:
+                raise stop from error
+            raise
+        token_usage = dict(diagnostics.build_summary().get("token_usage") or {})
+        return anthropic_response(content, tool_name=tool_name, usage=anthropic_usage_fields(token_usage))
+
+    return transport
+
+
+__all__ = ["anthropic_response", "anthropic_usage_fields", "make_openai_transport", "openai_request"]

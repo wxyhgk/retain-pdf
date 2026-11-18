@@ -55,6 +55,8 @@ TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "README.md",
     # 翻译引擎 agent 的整书流程（translation.engine=agent），和 book_flow.py 同一层
     "agent_flow.py",
+    # agent 接 OpenAI 协议：Anthropic 请求体 ↔ 共用请求层（2026-11-18），agent_flow.py 用
+    "agent_openai.py",
     "batch_runner.py",
     "book_flow.py",
     "editorial.py",

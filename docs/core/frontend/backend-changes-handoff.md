@@ -12,6 +12,22 @@
 
 ---
 
+## 翻译 agent 不再只收 Anthropic 协议（feat/agent-openai-protocol）
+
+2026-11-18。建任务时 `translation.engine=agent` 配 `api_protocol=openai` / `openai_responses` 不再 400
+（以前回 `translation.engine=agent requires translation.api_protocol=anthropic`）。字段、取值都没变，契约只改了 `engine` 的说明。
+
+前端要做的：
+
+- `web/src/features/ingest/domain/workflow/payload.ts`：`agentEngineAvailable(apiProtocol)` 以前写 `return apiProtocol === "anthropic";`，
+  改成不看协议（直接 `true`，或者删掉这个函数，`translationEngineFields` 只看 `engine === "agent"`）；上面那行注释「agent 只在 anthropic 协议下发（否则后端 400）」跟着改。
+- `web/src/features/ingest/ui/components/TranslationOptionsPanel.tsx`：`unavailable` 文案「翻译 agent 只支持 Anthropic 格式的接口……」不再需要。
+- 旧前端不改也不出错：只是 OpenAI 协议下选不了 agent。
+
+为什么、怎么做的见 [agent 接 OpenAI 协议](../../ops/planning/translation-agent/20261118-agent接OpenAI协议.md)。
+
+---
+
 ## 删掉三个没人调的接口（chore/api-delete-batch2）
 
 2026-11-14。`GET /api/v1/jobs/{job_id}/reports/usage`、`GET /api/v1/jobs/{job_id}/reports/quality/items`、

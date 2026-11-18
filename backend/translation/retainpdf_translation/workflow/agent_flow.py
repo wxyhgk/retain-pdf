@@ -16,7 +16,8 @@
 - agent 交回 `fallback_source`（重翻还不合格）的块：标成死信（保留原文，不卡发布，任务完成时提示有几块没翻）。
 - 额度用完、密钥不对、一直限流：保存进度后让这一阶段失败，重试时从断点接着跑。
 
-模型请求用任务的密钥和地址（`make_http_transport`），不读服务器的 `ANTHROPIC_API_KEY`。
+模型请求用任务的密钥和地址，不读服务器的 `ANTHROPIC_API_KEY`。任务的接口协议是 `anthropic` 时 agent 自己发 Messages 请求
+（`make_http_transport`）；`openai` / `openai_responses` 时经 `agent_openai` 换算成翻译共用的请求层（2026-11-18 起，以前只收 anthropic）。
 """
 
 from __future__ import annotations
@@ -50,6 +51,7 @@ from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared.model_wire import anthropic_usage
 from retainpdf_translation.llm.shared.usage_ledger import record_model_usage
 from retainpdf_translation.services.policy import TranslationPolicyConfig
+from retainpdf_translation.workflow.agent_openai import make_openai_transport
 from retainpdf_translation.workflow.book_flow import prepare_book_payloads
 from retainpdf_translation.workflow.page_policies import build_page_summaries
 from retainpdf_translation.workflow.pages import save_pages
@@ -394,14 +396,15 @@ USAGE_LABELS = {"translator": "agent-translate", "reviser": "agent-revise", "rea
 class _UsageRecorder:
     """agent 每次真发出去的请求（缓存命中的不算）记一行用量台账。"""
 
-    def __init__(self, agent: TranslationAgent, *, base_url: str) -> None:
+    def __init__(self, agent: TranslationAgent, *, base_url: str, enabled: bool = True) -> None:
         self.agent = agent
         self.base_url = base_url
+        self.enabled = enabled
         self.recorded = 0
 
     def flush(self) -> None:
         for call in self.agent.calls[self.recorded :]:
-            if call.get("cached"):
+            if call.get("cached") or not self.enabled:
                 continue
             record_model_usage(
                 anthropic_usage({"usage": call.get("usage")}),
@@ -476,13 +479,24 @@ def translate_book_with_agent(
         ttl=ttl_seconds("RETAIN_AGENT_REQUEST_CACHE_TTL_DAYS", 90),
         label="agent request cache",
     )
+    # 协议看阶段入口登记的连接（任务的 api_protocol）；没登记过的（老入口、开发工具）照以前一律按 Anthropic
+    profile = model_wire.registered_profile(base_url=base_url, model=model)
+    anthropic = profile is None or profile.protocol == model_wire.PROTOCOL_ANTHROPIC
+    if transport is None:
+        transport = (
+            make_http_transport(api_key, url=messages_url(base_url))
+            if anthropic
+            else make_openai_transport(api_key=api_key, model=model, base_url=base_url, protocol=profile.protocol)
+        )
     agent = TranslationAgent(
         model=model,
-        transport=transport or make_http_transport(api_key, url=messages_url(base_url)),
+        transport=transport,
         cache_dir=paths.AGENT_REQUEST_CACHE_DIR,
-        effort=agent_effort(base_url=base_url, model=model),
+        # OpenAI 协议的思考档位由共用请求层按任务的 thinking 换算，请求体里不带 Anthropic 的思考字段
+        effort=agent_effort(base_url=base_url, model=model) if anthropic else None,
     )
-    usage = _UsageRecorder(agent, base_url=base_url)
+    # OpenAI 协议的请求由共用请求层自己记用量台账，这里再记就重了
+    usage = _UsageRecorder(agent, base_url=base_url, enabled=anthropic)
     run = DocumentRun(agent, state_dir / RUN_DIR, glossary=glossary_from_entries(glossary_entries or []), read_first=True, review=True)
 
     total_blocks = sum(len(page.to_translate()) for page in pages)

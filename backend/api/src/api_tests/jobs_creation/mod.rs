@@ -512,7 +512,7 @@ fn build_translation_job_snapshot_keeps_rpr_engine_and_rejects_unknown_engine() 
 }
 
 #[test]
-fn build_translation_job_snapshot_accepts_agent_engine_only_with_anthropic_protocol() {
+fn build_translation_job_snapshot_accepts_agent_engine_with_every_protocol() {
     let state = test_state("translation-engine");
     let upload = seed_upload(&state, "upload-translation-engine");
     let mut input = base_translation_input(WorkflowKind::Book);
@@ -521,20 +521,14 @@ fn build_translation_job_snapshot_accepts_agent_engine_only_with_anthropic_proto
         .expect("default engine is accepted");
     assert_eq!(job.request_payload.translation.engine, "legacy", "translation.engine 缺省 = legacy");
 
+    // 2026-11-18 起 agent 三种协议都收（以前只收 anthropic，别的 400）
     input.translation.engine = "agent".to_string();
-    input.translation.api_protocol = "anthropic".to_string();
-    let job = build_translation_job_snapshot(&snapshot_context(&state), &input)
-        .expect("agent engine with anthropic protocol is accepted");
-    assert_eq!(job.request_payload.translation.engine, "agent");
-
-    input.translation.api_protocol = "openai".to_string();
-    match build_translation_job_snapshot(&snapshot_context(&state), &input)
-        .expect_err("agent engine needs the anthropic protocol")
-    {
-        AppError::BadRequest(message) => {
-            assert!(message.contains("requires translation.api_protocol=anthropic"), "{message}")
-        }
-        other => panic!("expected 400 BadRequest, got {other:?}"),
+    for protocol in ["anthropic", "openai", "openai_responses"] {
+        input.translation.api_protocol = protocol.to_string();
+        let job = build_translation_job_snapshot(&snapshot_context(&state), &input)
+            .unwrap_or_else(|err| panic!("agent engine with {protocol} protocol is accepted: {err:?}"));
+        assert_eq!(job.request_payload.translation.engine, "agent");
+        assert_eq!(job.request_payload.translation.api_protocol, protocol);
     }
 
     input.translation.engine = "bogus".to_string();
