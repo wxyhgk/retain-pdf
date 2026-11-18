@@ -41,7 +41,7 @@ test("术语页签：显示领域、术语、冲突、风格规则；点「通�
   root.render(React.createElement(BookDetailTermsTab, { jobId: "job-1", load }));
   const doc = dom.window.document;
   await waitFor(() => doc.querySelector("[data-book-detail-tab='terms']"), "术语页签");
-  assert.deepEqual(asked.sort(), ["domain_context", "style_guide", "style_rules", "term_conflicts", "terms"]);
+  assert.deepEqual(asked.sort(), ["agent_term_tickets", "agent_terms", "domain_context", "style_guide", "style_rules", "term_conflicts", "terms"]);
   assert.match(doc.querySelector(".book-detail-terms-domain").textContent, /编程语言理论/);
   const sources = () => [...doc.querySelectorAll(".book-detail-terms-list [data-term-source]")].map((li) => li.dataset.termSource);
   assert.deepEqual(sources(), ["fiber", "effect", "Haskell"]);
@@ -50,6 +50,74 @@ test("术语页签：显示领域、术语、冲突、风格规则；点「通�
   await waitFor(() => sources().join() === "the", "切到通用词");
   assert.match(doc.querySelector(".book-detail-terms-conflicts").textContent, /纤体 6 · 纤 2/);
   assert.match(doc.querySelector(".book-detail-terms-rules").textContent, /风格指南没生成成功/);
+  root.unmount();
+});
+
+// ---- 翻译 agent 的书：读 agent_terms / agent_term_tickets ----
+
+const AGENT_TERMS = [
+  { id: "t0001", source: "Transformer", target: "Transformer", category: "keep", status: "approved", first_seen_page: "3", note: "", votes: {} },
+  { id: "t0002", source: "attention", target: "注意力", category: "term", status: "candidate", first_seen_page: "iv", votes: { 注意力: 1, 关注: 1 } },
+  { id: "t0003", source: "LLM", target: "大语言模型", category: "abbr", status: "locked", note: "large language model", votes: {} },
+];
+const AGENT_TICKETS = [{ term: "t0002", source: "attention", current: "注意力", proposed: "关注", page_label: "12", quote: "pay attention", why: "这里是日常用法" }];
+
+test("agent 术语模型：keep → 保留原文、候选 → 自由翻译、审定/用户给的 → 锁定；votes 多于一种算有冲突；歧义单换成冲突行", async () => {
+  const { agentTermRows, agentTicketRows, glossaryEntriesFromTerms } = await import("../../src/features/book-detail/domain/terms-model.js");
+  const rows = agentTermRows(AGENT_TERMS);
+  assert.deepEqual(rows.map((r) => [r.source, r.treatment, r.status, r.conflictCount, r.page]), [
+    ["Transformer", "keep_original", "approved", 0, "3"],
+    ["attention", "free", "candidate", 1, "iv"],
+    ["LLM", "lock", "locked", 0, ""],
+  ]);
+  assert.deepEqual(termCounts(rows), { all: 3, lock: 1, keep_original: 1, free: 1, drop: 0 });
+  // 存成术语表：缩写的说明（全称）当备注
+  const { entries } = glossaryEntriesFromTerms(rows, ["lock", "keep_original"]);
+  assert.deepEqual(entries.map((e) => [e.source, e.target, e.level, e.note]), [
+    ["LLM", "大语言模型", "canonical", "large language model"],
+    ["Transformer", "Transformer", "preserve", "保留原文"],
+  ]);
+  assert.deepEqual(agentTicketRows(AGENT_TICKETS), [{ source: "attention", target: "注意力", candidates: "关注（第 12 页）", why: "这里是日常用法" }]);
+  assert.equal(agentTicketRows([{ source: "new", current: "", proposed: "新" }])[0].target, "（表里还没有）");
+});
+
+test("术语页签：agent 的书显示 agent 术语和歧义单；后端没有 agent 数据集（报错）时照常显示老术语", async () => {
+  const dom = makeDomWith("", {
+    html: "<!doctype html><html><body><div id='root'></div></body></html>",
+    keys: ["window", "document", "HTMLElement", "HTMLButtonElement", "HTMLInputElement", "Element", "Event", "MouseEvent", "Node", "MutationObserver"],
+  });
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { BookDetailTermsTab } = await import("../../src/features/book-detail/ui/tabs/BookDetailTermsTab.jsx");
+  const empty = { kind: "rows", available: false, total: 0, rows: [] };
+  const agentLoad = async (jobId, dataset) => {
+    const rows = { agent_terms: AGENT_TERMS, agent_term_tickets: AGENT_TICKETS }[dataset];
+    if (rows) return { kind: "rows", available: true, total: rows.length, rows };
+    return dataset === "style_guide" || dataset === "domain_context" ? { kind: "object", available: false, total: 0, object: null } : empty;
+  };
+  const doc = dom.window.document;
+  const root = createRoot(doc.getElementById("root"));
+  root.render(React.createElement(BookDetailTermsTab, { jobId: "job-agent", load: agentLoad }));
+  await waitFor(() => doc.querySelector("[data-book-detail-tab='terms']"), "agent 术语页签");
+  const sources = () => [...doc.querySelectorAll(".book-detail-terms-list [data-term-source]")].map((li) => li.dataset.termSource);
+  assert.deepEqual(sources(), ["attention", "LLM", "Transformer"]);
+  assert.match(doc.querySelector('[data-term-source="attention"]').textContent, /候选 · 第 iv 页起 · 有冲突/);
+  assert.match(doc.querySelector('[data-term-source="LLM"]').textContent, /缩写 · 用户给的 · large language model/);
+  const conflicts = doc.querySelector(".book-detail-terms-conflicts").textContent;
+  assert.match(conflicts, /没有自动统一/);
+  assert.match(conflicts, /报上来的：关注（第 12 页）/);
+  assert.match(conflicts, /理由：这里是日常用法/);
+  assert.ok(doc.querySelector("#book-detail-save-terms"), "agent 的术语也能存成术语表");
+
+  // 后端还没有 agent 数据集：这两个读失败不算整页失败
+  const oldLoad = async (jobId, dataset) => {
+    if (dataset.startsWith("agent_")) throw new Error("unknown dataset");
+    if (dataset === "terms") return { kind: "rows", available: true, total: RAW.length, rows: RAW };
+    return dataset === "style_guide" || dataset === "domain_context" ? { kind: "object", available: false, total: 0, object: null } : empty;
+  };
+  root.render(React.createElement(BookDetailTermsTab, { jobId: "job-old", load: oldLoad }));
+  await waitFor(() => sources().join() === "fiber,effect,Haskell", "老任务的术语");
+  assert.equal(doc.querySelector("[role='alert']"), null);
   root.unmount();
 });
 
