@@ -842,3 +842,126 @@ async fn provider_message_is_truncated() {
     assert!(message.chars().count() <= super::policy::PROVIDER_MESSAGE_MAX_CHARS + 1, "{}", message.chars().count());
     assert!(message.ends_with('…'));
 }
+
+async fn probe_openai_chat(base_url: String) -> super::types::ProviderProbeView {
+    super::deepseek::validate_deepseek_token_view(
+        super::types::DeepSeekTokenValidationRequest {
+            api_key: "sk-openai".into(),
+            base_url,
+            model: "gpt-5.6-luna".into(),
+            api_protocol: "openai".into(),
+        },
+        retainpdf_core::config::DeepSeekRuntimeConfig {
+            default_base_url: "https://api.deepseek.com/v1".into(),
+            balance_url: String::new(),
+            probe_timeout_secs: 5,
+            allow_private_urls: true,
+        },
+        test_policy(5),
+    )
+    .await
+    .unwrap()
+}
+
+/// issue #161：OpenAI 新模型不认 `max_tokens`（400，param=max_tokens），探针换 `max_completion_tokens` 再发一次，
+/// 不再报「模型不可用」。
+#[tokio::test]
+async fn openai_chat_probe_retries_with_max_completion_tokens() {
+    use axum::http::StatusCode;
+    use axum::routing::post;
+    use std::sync::{Arc, Mutex};
+
+    let seen: Arc<Mutex<Vec<serde_json::Value>>> = Arc::default();
+    let recorder = seen.clone();
+    let router = axum::Router::new().route(
+        "/v1/chat/completions",
+        post(move |axum::Json(body): axum::Json<serde_json::Value>| {
+            let recorder = recorder.clone();
+            async move {
+                recorder.lock().unwrap().push(body.clone());
+                if body.get("max_tokens").is_some() {
+                    let error = serde_json::json!({"error": {
+                        "message": "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+                        "type": "invalid_request_error", "param": "max_tokens", "code": "unsupported_parameter"}});
+                    (StatusCode::BAD_REQUEST, axum::Json(error))
+                } else {
+                    (StatusCode::OK, axum::Json(serde_json::json!({"choices": [{"message": {"content": ""}}]})))
+                }
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+
+    let view = probe_openai_chat(format!("http://{addr}/v1")).await;
+
+    assert!(view.ok, "{}", view.summary);
+    let seen = seen.lock().unwrap();
+    assert_eq!(seen.len(), 2);
+    assert_eq!(seen[0]["max_tokens"], 1);
+    assert_eq!(seen[1]["max_completion_tokens"], 16);
+    assert!(seen[1].get("max_tokens").is_none());
+}
+
+/// 别的服务商照旧只发一次 `max_tokens: 1`。
+#[tokio::test]
+async fn openai_chat_probe_sends_max_tokens_once_when_accepted() {
+    let ok = serde_json::json!({"choices": [{"message": {"content": "p"}}]});
+    let (addr, seen) = fake_provider("/v1/chat/completions", 200, ok).await;
+
+    let view = probe_openai_chat(format!("http://{addr}/v1")).await;
+
+    assert!(view.ok, "{}", view.summary);
+    let seen = seen.lock().unwrap();
+    assert_eq!(seen.len(), 1);
+    assert_eq!(seen[0].1["max_tokens"], 1);
+}
+
+/// 参数不被接受（正文里有 "this model"）不是模型不可用：说清是哪个参数，带上上游错误码，不建议重试。
+#[tokio::test]
+async fn openai_chat_probe_reports_parameter_errors_as_such() {
+    let reply = serde_json::json!({"error": {
+        "message": "Unsupported value: 'stream' does not support false with this model.",
+        "type": "invalid_request_error", "param": "stream", "code": "unsupported_value"}});
+    let (addr, seen) = fake_provider("/v1/chat/completions", 400, reply).await;
+
+    let view = probe_openai_chat(format!("http://{addr}/v1")).await;
+
+    assert_eq!(view.status, "provider_error", "{}", view.summary);
+    assert!(view.summary.contains("stream") && view.summary.contains("gpt-5.6-luna"), "{}", view.summary);
+    assert!(!view.retryable);
+    assert!(view.provider_message.unwrap().contains("unsupported_value"));
+    assert_eq!(seen.lock().unwrap().len(), 1, "不是 max_tokens 的问题，不重发");
+}
+
+/// 模型真不存在照旧是模型不可用。
+#[tokio::test]
+async fn openai_chat_probe_keeps_model_not_found() {
+    let reply = serde_json::json!({"error": {
+        "message": "The model `gpt-x` does not exist or you do not have access to it.",
+        "type": "invalid_request_error", "param": null, "code": "model_not_found"}});
+    let (addr, _) = fake_provider("/v1/chat/completions", 404, reply).await;
+
+    let view = probe_openai_chat(format!("http://{addr}/v1")).await;
+
+    assert_eq!(view.status, "model_unavailable", "{}", view.summary);
+}
+
+#[test]
+fn upstream_error_tells_parameter_errors_from_model_errors() {
+    use super::deepseek::UpstreamError;
+    let parse = |body: serde_json::Value| UpstreamError::parse(&body.to_string());
+    let param = parse(serde_json::json!({"error": {"message": "x", "param": "temperature", "code": "unsupported_value"}}));
+    assert_eq!(param.rejected_parameter().as_deref(), Some("temperature"));
+    let model = parse(serde_json::json!({"error": {"message": "x", "param": "model", "code": "invalid_value"}}));
+    assert_eq!(model.rejected_parameter(), None);
+    let not_found = parse(serde_json::json!({"error": {"message": "x", "code": "model_not_found"}}));
+    assert_eq!(not_found.rejected_parameter(), None);
+    let chinese = parse(serde_json::json!({"error": {"message": "模型不存在"}}));
+    assert_eq!(chinese.rejected_parameter(), None);
+    let text_only = parse(serde_json::json!({"error": {"message": "Unsupported parameter: 'foo'"}}));
+    assert_eq!(text_only.rejected_parameter().as_deref(), Some(""));
+}
