@@ -100,7 +100,7 @@ export function BookDetailTermsTab({
   if (error) return <p className="book-detail-terms-note" role="alert">{error}</p>;
   if (!data) return <p className="book-detail-terms-note">正在读取术语…</p>;
   if (!data.terms.length && !data.rules.length && !data.domain) {
-    return <p className="book-detail-terms-note" data-book-terms-empty="true">这本书翻译时没有抽取术语。选「统一术语」或「精翻」重新翻译时会生成。</p>;
+    return <p className="book-detail-terms-note" data-book-terms-empty="true">这本书翻译时没有抽取术语。选「统一术语」重新翻译时会生成。</p>;
   }
 
   const counts = termCounts(data.terms);

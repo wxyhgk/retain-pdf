@@ -137,10 +137,8 @@ export function buildTranslationPayload({
   preferences,
   constants,
 }: BuildTranslationPayloadOptions): TranslationInput {
-  const engine = translationEngineFields(preferences?.translationEngine);
   return {
-    // agent 自带通读和审校，再发 preparation / refine 后端会照跑一遍，重复花钱。
-    ...(engine.engine === "agent" ? engine : translationQualityFields(preferences?.translationQuality)),
+    ...translationQualityFields(preferences?.translationQuality),
     mode: constants.DEFAULT_MODE,
     math_mode: developerConfig.mathMode,
     model: developerConfig.model,
@@ -175,20 +173,13 @@ export function buildTranslationPayload({
 /**
  * 下拉档位 → 后端字段。standard 一个字段都不加：后端缺省就是 preparation=off，
  * 这样「普通」档发出去的请求和以前逐字相同。
+ * 精翻 = 翻译 agent（engine=agent），三种接口协议都能用；agent 自带通读和审校，不再带 preparation / refine
+ * （带了后端会照跑一遍，重复花钱）。2026-11-18 以前精翻发的是编辑部（preparation=editorial、refine=editorial）。
  */
-export function translationQualityFields(quality: unknown): Pick<TranslationInput, "preparation" | "refine"> {
+export function translationQualityFields(quality: unknown): Pick<TranslationInput, "preparation" | "engine"> {
   if (quality === "terms") return { preparation: "terms+style" };
-  // 精翻 = 编辑部：术语专员审定术语表，翻完由审校挑错、主编分派局部改或整块重写，最多两轮。
-  if (quality === "refined") return { preparation: "editorial", refine: "editorial" };
+  if (quality === "refined") return { engine: "agent" };
   return {};
-}
-
-/**
- * 选了 agent 才发 engine=agent；legacy 不发字段，跟着后端默认走。三种接口协议都能用 agent
- * （2026-11-18 起后端不再要求 anthropic）。
- */
-export function translationEngineFields(engine: unknown): Pick<TranslationInput, "engine"> {
-  return engine === "agent" ? { engine: "agent" } : {};
 }
 
 function resolveStoredFontFamily(fallback: unknown): string {

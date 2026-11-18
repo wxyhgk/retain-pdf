@@ -12,8 +12,8 @@
  * translationQualityFields）：
  * - standard：直接翻译，和以前完全一样；
  * - terms：先通读全书生成术语表和风格指南，再带着它们翻译（preparation=terms+style）；
- * - refined：编辑部——术语表经术语专员审定；翻译完由审校挑错、主编分派局部改或整块重写，
- *   最多两轮，改不好的保留原译并列出来（preparation=editorial、refine=editorial）。
+ * - refined：精翻 = 翻译 agent（engine=agent）：先通读全文，再逐页翻译并审校，自带统一术语。
+ *   2026-11-18 以前精翻是现有流程上的编辑部（preparation=editorial、refine=editorial），已不再从这里发。
  */
 export type TranslationQuality = "standard" | "terms" | "refined";
 
@@ -32,20 +32,9 @@ export function normalizeRenderEngine(value: unknown): RenderEngine {
   return value === "rpr_fit" || value === "typst" ? value : "auto";
 }
 
-/**
- * 翻译引擎（translation.engine）。legacy 不发字段，和以前逐字相同；agent = 翻译 agent
- * （先通读全文，再逐页翻译并审校），哪种接口协议都能用，见 workflow/payload.ts 的 translationEngineFields。
- */
-export type TranslationEngine = "legacy" | "agent";
-
-export function normalizeTranslationEngine(value: unknown): TranslationEngine {
-  return value === "agent" ? "agent" : "legacy";
-}
-
 const WORKFLOW_PREFERENCE_SPECS = {
   translationQuality: { storageKey: "retainpdf.translationQuality", normalize: normalizeTranslationQuality },
   renderEngine: { storageKey: "retainpdf.renderEngine", normalize: normalizeRenderEngine },
-  translationEngine: { storageKey: "retainpdf.translationEngine", normalize: normalizeTranslationEngine },
 } as const satisfies Record<string, { storageKey: string; normalize: (value: unknown) => string }>;
 
 type Specs = typeof WORKFLOW_PREFERENCE_SPECS;
