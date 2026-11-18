@@ -134,10 +134,7 @@ impl Db {
         let hidden_at = hidden.then(now_iso);
         let changed = tx.execute("UPDATE translation_versions SET hidden_at = ?1 WHERE version_id = ?2", params![hidden_at, version_id])?;
         if hidden {
-            tx.execute(
-                "UPDATE documents SET current_translation_version_id = NULL WHERE current_translation_version_id = ?1",
-                params![version_id],
-            )?;
+            tx.execute("DELETE FROM translation_version_choices WHERE version_id = ?1", params![version_id])?;
         }
         tx.commit()?;
         Ok(changed > 0)
@@ -146,22 +143,23 @@ impl Db {
     /// 书的当前版本：None = 自动（逐页取最新）。
     pub fn document_current_translation_version(&self, document_id: &str) -> Result<Option<String>> {
         let conn = self.connect()?;
-        let value: Option<Option<String>> = conn
-            .query_row(
-                "SELECT current_translation_version_id FROM documents WHERE document_id = ?1",
-                params![document_id],
-                |row| row.get(0),
-            )
-            .optional()?;
-        Ok(value.flatten().filter(|id| !id.trim().is_empty()))
+        Ok(conn
+            .query_row("SELECT version_id FROM translation_version_choices WHERE document_id = ?1", params![document_id], |row| row.get(0))
+            .optional()?)
     }
 
-    pub fn set_document_current_translation_version(&self, document_id: &str, version_id: Option<&str>) -> Result<bool> {
+    /// 选当前版本；`None` 回到自动。
+    pub fn set_document_current_translation_version(&self, document_id: &str, version_id: Option<&str>) -> Result<()> {
         let conn = self.connect()?;
-        Ok(conn.execute(
-            "UPDATE documents SET current_translation_version_id = ?1, updated_at = ?2 WHERE document_id = ?3",
-            params![version_id, now_iso(), document_id],
-        )? > 0)
+        match version_id {
+            Some(version_id) => conn.execute(
+                "INSERT INTO translation_version_choices (document_id, version_id, chosen_at) VALUES (?1, ?2, ?3)
+                 ON CONFLICT(document_id) DO UPDATE SET version_id = excluded.version_id, chosen_at = excluded.chosen_at",
+                params![document_id, version_id, now_iso()],
+            )?,
+            None => conn.execute("DELETE FROM translation_version_choices WHERE document_id = ?1", params![document_id])?,
+        };
+        Ok(())
     }
 }
 

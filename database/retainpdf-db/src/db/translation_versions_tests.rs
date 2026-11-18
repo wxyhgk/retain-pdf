@@ -114,8 +114,8 @@ fn the_migration_backfills_one_version_per_translation_job() {
     {
         let conn = t.db.connect().unwrap();
         conn.execute_batch(
-            "DROP TABLE translation_version_jobs; DROP TABLE translation_versions;
-             ALTER TABLE documents DROP COLUMN current_translation_version_id; PRAGMA user_version = 29;",
+            "DROP TABLE translation_version_choices; DROP TABLE translation_version_jobs; DROP TABLE translation_versions;
+             PRAGMA user_version = 29;",
         )
         .unwrap();
     }

@@ -165,8 +165,7 @@ pub(crate) fn translation_versions_view(
             let first = own_jobs.iter().find(|job| job.workflow != retainpdf_core::models::domain::WorkflowKind::Render).or(own_jobs.first());
             let (engine, model, reviewer_model) = first
                 .map(|job| {
-                    let translation = &job.request_payload.translation;
-                    (job.translation_engine().to_string(), translation.model.clone(), translation.reviewer_model.clone())
+                    (job.translation_engine().to_string(), job.translation_model().to_string(), job.translation_reviewer_model().to_string())
                 })
                 .unwrap_or_default();
             let page_ranges = ranges(&pages);
@@ -275,15 +274,16 @@ fn generated_name(job: Option<&JobSnapshot>, page_ranges: &[[u32; 2]], whole_boo
     let Some(job) = job else {
         return "译文".to_string();
     };
-    let translation = &job.request_payload.translation;
+    let preparation = job.translation_preparation();
     let kind = if job.translation_engine() == "agent" {
         "精翻"
-    } else if translation.preparation.starts_with("terms") || translation.preparation == "editorial" {
+    } else if preparation.starts_with("terms") || preparation == "editorial" {
         "统一术语"
     } else {
         "普通"
     };
-    let mut name = if translation.model.trim().is_empty() { kind.to_string() } else { format!("{kind} · {}", translation.model.trim()) };
+    let model = job.translation_model().trim();
+    let mut name = if model.is_empty() { kind.to_string() } else { format!("{kind} · {model}") };
     if !whole_book && !page_ranges.is_empty() {
         let pages: Vec<String> = page_ranges
             .iter()

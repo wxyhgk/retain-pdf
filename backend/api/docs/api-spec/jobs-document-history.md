@@ -104,7 +104,7 @@ uses the version the user is reading as its base; resume, OCR recovery and
 separate re-render jobs join their source's version; OCR-only jobs are not
 versions. `GET /api/v1/documents/:document_id/reading` takes `?version=<id>`
 (`auto` forces the newest-per-page merge) and otherwise reads
-`documents.current_translation_version_id`, falling back to the newest-per-page
+the book's chosen version (`translation_version_choices`), falling back to the newest-per-page
 merge when none is chosen or the chosen one has nothing readable yet; the
 response carries `version_id` (null = auto). Reading a version merges its own
 jobs over its base chain (own pages always win). Hidden versions are skipped by
