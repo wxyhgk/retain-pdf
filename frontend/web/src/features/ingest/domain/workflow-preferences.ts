@@ -34,8 +34,7 @@ export function normalizeRenderEngine(value: unknown): RenderEngine {
 
 /**
  * 翻译引擎（translation.engine）。legacy 不发字段，和以前逐字相同；agent = 翻译 agent
- * （先通读全文，再逐页翻译并审校），后端要求接口协议是 anthropic，协议不对时 payload 里也不发，
- * 见 workflow/payload.ts 的 translationEngineFields。
+ * （先通读全文，再逐页翻译并审校），哪种接口协议都能用，见 workflow/payload.ts 的 translationEngineFields。
  */
 export type TranslationEngine = "legacy" | "agent";
 

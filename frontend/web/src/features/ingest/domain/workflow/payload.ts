@@ -137,7 +137,7 @@ export function buildTranslationPayload({
   preferences,
   constants,
 }: BuildTranslationPayloadOptions): TranslationInput {
-  const engine = translationEngineFields(preferences?.translationEngine, developerConfig.apiProtocol);
+  const engine = translationEngineFields(preferences?.translationEngine);
   return {
     // agent 自带通读和审校，再发 preparation / refine 后端会照跑一遍，重复花钱。
     ...(engine.engine === "agent" ? engine : translationQualityFields(preferences?.translationQuality)),
@@ -183,13 +183,12 @@ export function translationQualityFields(quality: unknown): Pick<TranslationInpu
   return {};
 }
 
-/** agent 只在 anthropic 协议下发（否则后端 400）；legacy 不发字段，跟着后端默认走。 */
-export function agentEngineAvailable(apiProtocol: unknown): boolean {
-  return apiProtocol === "anthropic";
-}
-
-export function translationEngineFields(engine: unknown, apiProtocol: unknown): Pick<TranslationInput, "engine"> {
-  return engine === "agent" && agentEngineAvailable(apiProtocol) ? { engine: "agent" } : {};
+/**
+ * 选了 agent 才发 engine=agent；legacy 不发字段，跟着后端默认走。三种接口协议都能用 agent
+ * （2026-11-18 起后端不再要求 anthropic）。
+ */
+export function translationEngineFields(engine: unknown): Pick<TranslationInput, "engine"> {
+  return engine === "agent" ? { engine: "agent" } : {};
 }
 
 function resolveStoredFontFamily(fallback: unknown): string {
