@@ -1,6 +1,6 @@
 // 概览里的「译文版本」卡：读哪一份译文（下拉，第一项「自动（最新）」），选了固定版本后又翻出新的时提示，
 // 「改名、隐藏」收在下面的折叠区（版本不能删，隐藏了随时能恢复）。只有一份译文的书不显示（hasVersionChoice）。
-// 数据和动作来自 useTranslationVersions；这里只管画。
+// TranslationVersionsCard 接上 useTranslationVersions（详情弹窗只放一行）；TranslationVersionsPanel 只管画，测试直接喂数据。
 import { useState } from "react";
 import { Button, Input, Select } from "@retainpdf/ui";
 import type { TranslationVersionsView } from "@retainpdf/contracts/library-documents";
@@ -14,6 +14,7 @@ import {
   versionLabel,
   versionOptions,
 } from "../../../domain/translation-versions-model.js";
+import { useTranslationVersions, type TranslationVersionsApi } from "../../use-translation-versions.js";
 
 export type TranslationVersionsPanelProps = {
   view: TranslationVersionsView | null;
@@ -123,5 +124,32 @@ export function TranslationVersionsPanel({ view, busy = false, error = "", onSel
         <p className="book-detail-versions-hint">版本不能删，只能隐藏；隐藏的是正在用的那份时，阅读回到「自动」。</p>
       </details>
     </section>
+  );
+}
+
+/** 概览里放的那张卡：概览页签显示时才读版本，之后任务状态一变重读。 */
+export function TranslationVersionsCard({
+  open,
+  documentId,
+  jobs,
+  ready = true,
+  api,
+}: {
+  open: boolean;
+  documentId: string;
+  jobs: Array<{ job_id?: string; id?: string; status?: string }>;
+  ready?: boolean;
+  api?: TranslationVersionsApi;
+}) {
+  const versions = useTranslationVersions({ open, documentId, jobs, ready, api });
+  return (
+    <TranslationVersionsPanel
+      view={versions.view}
+      busy={versions.busy}
+      error={versions.error}
+      onSelect={versions.select}
+      onRename={versions.rename}
+      onSetHidden={versions.setHidden}
+    />
   );
 }

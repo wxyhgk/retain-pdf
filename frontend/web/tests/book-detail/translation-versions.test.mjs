@@ -57,18 +57,10 @@ async function mountHarness(api) {
   });
   const React = await import("react");
   const { createRoot } = await import("react-dom/client");
-  const { useTranslationVersions } = await import("../../src/features/book-detail/ui/use-translation-versions.js");
-  const { TranslationVersionsPanel } = await import("../../src/features/book-detail/ui/panels/overview/TranslationVersionsPanel.jsx");
+  const { TranslationVersionsCard } = await import("../../src/features/book-detail/ui/panels/overview/TranslationVersionsPanel.jsx");
   const jobs = [{ job_id: "job-1", status: "succeeded" }];
-  function Harness() {
-    const versions = useTranslationVersions({ open: true, documentId: "doc-1", jobs, api });
-    return React.createElement(TranslationVersionsPanel, {
-      view: versions.view, busy: versions.busy, error: versions.error,
-      onSelect: versions.select, onRename: versions.rename, onSetHidden: versions.setHidden,
-    });
-  }
   const root = createRoot(dom.window.document.getElementById("root"));
-  root.render(React.createElement(Harness));
+  root.render(React.createElement(TranslationVersionsCard, { open: true, documentId: "doc-1", jobs, api }));
   return { dom, doc: dom.window.document, root };
 }
 

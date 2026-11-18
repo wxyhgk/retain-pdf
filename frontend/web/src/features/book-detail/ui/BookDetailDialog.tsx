@@ -32,9 +32,8 @@ import type { BookDetailTab } from "@/ui/book-detail/book-detail-tab.js";
 import { ReadingStatusPanel } from "./panels/more/ReadingStatusPanel.jsx";
 import { CollectionsPanel } from "./panels/more/CollectionsPanel.jsx";
 import { DeleteFooterPanel } from "./panels/more/DeleteFooterPanel.jsx";
-import { TranslationVersionsPanel } from "./panels/overview/TranslationVersionsPanel.jsx";
+import { TranslationVersionsCard } from "./panels/overview/TranslationVersionsPanel.jsx";
 import { useTranslationCoverage } from "./use-translation-coverage.js";
-import { useTranslationVersions } from "./use-translation-versions.js";
 import { useBookDetailLiveItem } from "./use-book-detail-live-item.js";
 import { useBookDetailDocument } from "./use-book-detail-document.js";
 import { useBookDetailTranslate } from "./use-book-detail-translate.js";
@@ -103,12 +102,6 @@ export function BookDetailDialog({ extraTabs = [] }: BookDetailDialogProps = {})
     onJobSucceeded: () => {
       void docState.refreshDocument?.();
     },
-  });
-  const versions = useTranslationVersions({
-    open,
-    documentId,
-    jobs: documentJobs.jobs,
-    ready: !documentJobs.loading,
   });
   const coverage = useTranslationCoverage({
     open,
@@ -314,16 +307,7 @@ export function BookDetailDialog({ extraTabs = [] }: BookDetailDialogProps = {})
                       onToggle={docState.toggleCollection}
                     />
                   )}
-                  versionsSlot={(
-                    <TranslationVersionsPanel
-                      view={versions.view}
-                      busy={versions.busy}
-                      error={versions.error}
-                      onSelect={versions.select}
-                      onRename={versions.rename}
-                      onSetHidden={versions.setHidden}
-                    />
-                  )}
+                  versionsSlot={<TranslationVersionsCard open={open} documentId={documentId} jobs={documentJobs.jobs} ready={!documentJobs.loading} />}
                   dangerSlot={(
                     <DeleteFooterPanel
                       busy={docState.busy}

@@ -94,7 +94,6 @@
   gap: 6px;
 }
 
-.book-detail-versions-rename .ui-input,
 .book-detail-versions-rename input {
   flex: 1;
   min-width: 0;
