@@ -79,6 +79,8 @@ def test_names_codes_and_urls_returned_as_is_are_not_untranslated() -> None:
     labels = "PBS\nBMS202\nM1 EV\nBMS@M1 EV\nC-M1 EV\nBMS@C-M1 EV"
     assert check_block(labels, labels) == []
     assert check_block("https://pubs.acs.org/10.1021/acsnano.5c12218", "https://pubs.acs.org/10.1021/acsnano.5c12218") == []
+    # 不带 http、www 的域名（版权页的 press.princeton.edu）也是网址，原样交回不算没翻
+    assert check_block("press.princeton.edu", "press.princeton.edu") == []
     assert [i["code"] for i in check_block("Results and discussion", "Results and discussion")] == ["untranslated"]
 
 
