@@ -40,7 +40,7 @@ fn ledger_rows_add_up_by_stage_model_and_month() {
     raw.push_str("{\"ts\": \"2026-10-01T00:0");
     fs::write(&path, raw).unwrap();
 
-    let view = summarize_jobs("document", &root, ["job-a"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-a"], Vec::new(), &PriceBook::bundled());
 
     assert_eq!(view.totals.requests, 4);
     assert_eq!(view.totals.requests_without_usage, 1);
@@ -78,7 +78,7 @@ fn old_jobs_are_estimated_from_their_reports() {
     fs::write(artifacts.join("refine_report.v1.json"), report("2026-10-09T01:56:00+00:00", 114884)).unwrap();
     fs::write(artifacts.join("refine_history/refine_report-1.v1.json"), report("2026-10-08T10:00:00+00:00", 1000)).unwrap();
 
-    let view = summarize_jobs("document", &root, ["job-old"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-old"], Vec::new(), &PriceBook::bundled());
 
     assert_eq!((view.jobs_counted, view.jobs_estimated_from_reports), (1, 1));
     let stage = |name: &str| view.by_stage.iter().find(|s| s.stage == name).unwrap().usage.clone();
@@ -109,7 +109,7 @@ fn reports_already_covered_by_the_ledger_are_not_counted_twice() {
     }).to_string()).unwrap();
     write_ledger(&root, "job-mixed", &[row("2026-10-10T00:01:00Z", "refine_review", 800, 8, None)]);
 
-    let view = summarize_jobs("document", &root, ["job-mixed"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-mixed"], Vec::new(), &PriceBook::bundled());
 
     let stage = |name: &str| view.by_stage.iter().find(|s| s.stage == name).unwrap().usage.clone();
     assert_eq!(stage("translation").input_tokens, 5000, "台账里没有翻译侧的行：翻译仍按旧诊断折算");
@@ -127,7 +127,7 @@ fn a_translated_job_with_a_ledger_ignores_its_diagnostics() {
     }).to_string()).unwrap();
     write_ledger(&root, "job-new", &[row("2026-10-10T00:01:00Z", "term_prescan", 1000, 100, Some(0))]);
 
-    let view = summarize_jobs("document", &root, ["job-new"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-new"], Vec::new(), &PriceBook::bundled());
 
     assert_eq!(view.totals.input_tokens, 1000);
     assert_eq!(view.jobs_estimated_from_reports, 0);
@@ -146,7 +146,7 @@ fn assistant_rows_and_job_directories_feed_the_global_summary() {
         "stage": "assistant_ask", "model": "deepseek-flash", "input": 50, "output": 5, "document_id": "doc-1"}))).unwrap();
 
     let ids = all_job_ids(&output_root);
-    let view = summarize_jobs("all", &output_root, ids.iter().map(String::as_str), read_ledger(&assistant));
+    let view = summarize_jobs("all", &output_root, ids.iter().map(String::as_str), read_ledger(&assistant), &PriceBook::bundled());
 
     assert_eq!(ids, ["job-1", "job-empty"]);
     assert_eq!(view.jobs_counted, 1, "没用量的任务不算");
@@ -170,7 +170,7 @@ fn odd_timestamps_are_left_out_of_the_monthly_breakdown() {
         row("2026-1月1日", "translation", 500, 50, None),
     ]);
 
-    let view = summarize_jobs("document", &root, ["job-odd"], Vec::new());
+    let view = summarize_jobs("document", &root, ["job-odd"], Vec::new(), &PriceBook::bundled());
 
     assert_eq!(view.totals.requests, 5);
     assert_eq!(view.totals.input_tokens, 1500);
@@ -198,7 +198,7 @@ fn view_fields_match_the_token_usage_contract() {
         cache_hit: Some(4),
         ..UsageRecord::default()
     };
-    let view = serde_json::to_value(summarize("document", &[record], (1, 0))).unwrap();
+    let view = serde_json::to_value(summarize("document", &[record], (1, 0), &PriceBook::bundled())).unwrap();
     let keys = |value: &serde_json::Value| {
         let mut keys: Vec<String> = value.as_object().unwrap().keys().cloned().collect();
         keys.sort();
@@ -228,4 +228,41 @@ fn view_fields_match_the_token_usage_contract() {
     for stage in ["translation", "term_review", "refine_chief", "assistant_ask", "failure_diagnosis", "new_stage"] {
         assert!(groups.contains(&stage_label(stage).1), "{stage}");
     }
+}
+
+/// 花费（2026-11-19）：按内置快照的价估算；缓存命中按缓存价，DeepSeek 忙时乘 2，查不到价的单数。
+#[test]
+fn ledger_rows_are_priced_and_unknown_models_are_counted_as_unpriced() {
+    let root = temp_root("cost");
+    let haiku = |ts: &str, host: &str| json!({"v": 1, "ts": ts, "stage": "translation", "model": "claude-haiku-5-5",
+        "host": host, "input": 1_000_000, "output": 100_000, "cache_hit": 400_000, "cache_write": 0, "usage_reported": true});
+    write_ledger(&root, "job-cost", &[
+        haiku("2026-11-19T12:00:00Z", "api.anthropic.com"),
+        haiku("2026-11-19T12:00:00Z", "proxy.example.com"),
+        row("2026-11-21T02:00:00Z", "translation", 1_000_000, 0, Some(0)),
+        row("2026-11-19T02:00:00Z", "translation", 1_000_000, 0, Some(0)),
+        json!({"ts": "2026-11-19T12:00:00Z", "stage": "translation", "model": "home-made-model", "host": "llm.local",
+               "input": 5000, "output": 500, "usage_reported": true}),
+    ]);
+    let prices = PriceBook::bundled();
+    let view = summarize_jobs("document", &root, ["job-cost"], Vec::new(), &prices);
+
+    let (_, _, haiku_price) = prices.quote("api.anthropic.com", "claude-haiku-5-5", "2026-11-19T12:00:00Z").unwrap();
+    // 100 万输入超过 10 万门槛，整次按加价档；40 万命中缓存。
+    let tier = haiku_price.tiers.last().unwrap();
+    let one_haiku = (600_000.0 * tier.input + 400_000.0 * tier.cache_read.unwrap() + 100_000.0 * tier.output) / 1e6;
+    let (_, _, flash) = prices.quote("api.deepseek.com", "deepseek-flash", "2026-11-19T02:00:00Z").unwrap();
+    let expected = 2.0 * one_haiku + flash.input + 2.0 * flash.input;
+    assert!((view.totals.estimated_cost_usd - expected).abs() < 1e-5, "{} vs {expected}", view.totals.estimated_cost_usd);
+    assert_eq!((view.totals.priced_requests, view.totals.list_priced_requests, view.totals.unpriced_requests), (4, 1, 1));
+
+    let model = |model: &str, host: &str| view.by_model.iter().find(|m| m.model == model && m.host == host).unwrap();
+    assert_eq!(model("claude-haiku-5-5", "api.anthropic.com").price_basis, Some(PriceBasis::Host));
+    assert_eq!(model("claude-haiku-5-5", "proxy.example.com").price_basis, Some(PriceBasis::OfficialList));
+    assert_eq!(model("claude-haiku-5-5", "proxy.example.com").price_provider.as_deref(), Some("anthropic"));
+    let unknown = model("home-made-model", "llm.local");
+    assert_eq!((unknown.price_basis, unknown.usage.unpriced_requests, unknown.usage.estimated_cost_usd), (None, 1, 0.0));
+    assert_eq!(view.pricing.currency, "USD");
+    assert!(view.pricing.synced_at.is_none() && view.pricing.snapshot_date.is_some());
+    let _ = fs::remove_dir_all(root);
 }
