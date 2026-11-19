@@ -131,7 +131,6 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     && !ocrActive
     && !bootstrapping
     && !ocr?.pending;
-  const stationActions = stationMode ? stationActionsOf({ ocr, translation, translationStopped }) : {};
 
   // 状态行的主按钮：停下的翻译任务按续跑计划；只有 OCR 失败时是「重新 OCR」。
   const stopped = translationStopped
@@ -176,6 +175,10 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     now: jobTimeline.now,
     usage: usage?.model || null,
   });
+  // 「重新处理」清单：重新翻译那一行要知道这本书现在用的是哪个模型（HUD 上那个），「沿用原来的」后面写出来。
+  const stationActions = stationMode
+    ? stationActionsOf({ ocr, translation, translationStopped, currentModel: hud.model?.name || "" })
+    : {};
 
   // 细节区：错误、编辑部、活动，按要紧程度排；只摆有内容的。错误按段标 data-processing-region（ocr / translation）。
   const failureBlocks = [

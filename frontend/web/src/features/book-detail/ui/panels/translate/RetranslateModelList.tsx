@@ -42,12 +42,15 @@ export function RetranslateModelList({
   onChange,
   disabled = false,
   priceOf,
+  currentModel = "",
 }: {
   options: readonly RetranslateModelOption[];
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   priceOf?: (value: string) => string;
+  /** 这本书现在用的模型：「沿用原来的」后面写出来，同名那一行标「原来用的」。 */
+  currentModel?: string;
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
   if (options.length <= 1) return null;
@@ -90,6 +93,9 @@ export function RetranslateModelList({
       >
         <span className="book-detail-model-radio" aria-hidden="true">{selected ? <Check /> : null}</span>
         <span className="book-detail-model-name">{label}</span>
+        {option.value && currentModel && option.connection?.model === currentModel
+          ? <span className="book-detail-model-tag is-current">原来用的</span>
+          : null}
         {pricedCount > 1 && cheapest.value === option.value ? <span className="book-detail-model-tag">最省</span> : null}
         {price ? <span className="book-detail-model-price">{price}</span> : null}
       </Button>
@@ -105,7 +111,7 @@ export function RetranslateModelList({
       data-retranslate-model-list="true"
       onKeyDown={move}
     >
-      {row(options.find((option) => option.value === KEEP_MODEL) || { value: KEEP_MODEL, label: "", connection: null }, "沿用原来的模型")}
+      {row(options.find((option) => option.value === KEEP_MODEL) || { value: KEEP_MODEL, label: "", connection: null }, currentModel ? `沿用原来的模型（${currentModel}）` : "沿用原来的模型")}
       {groups.map((group) => (
         <div key={group.key} className="book-detail-model-group" role="presentation" data-model-group={group.label}>
           <div className="book-detail-model-group-head" aria-hidden="true">
