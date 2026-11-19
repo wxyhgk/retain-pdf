@@ -1,3 +1,4 @@
+import type { BlockEditMemory } from "../../hooks/use-reader-block-edit.js";
 import type { ReaderTranslationEditPort } from "../../contracts/session.js";
 import { type RevisionEntry } from "../../shared/data/block-edit.js";
 export type BlockEditorStatus = {
@@ -10,11 +11,12 @@ type Loaded = {
     source: string;
     current: string;
 };
-export declare function useBlockEditor({ port, jobId, readerItemId, onSaved, }: {
+export declare function useBlockEditor({ port, jobId, readerItemId, memory, onSaved, }: {
     port: ReaderTranslationEditPort | null;
     /** 持有译文的任务；空串 = 还没问到，先不读。 */
     jobId: string;
     readerItemId: string;
+    memory: BlockEditMemory;
     onSaved: (readerItemId: string, text: string) => void;
 }): {
     loading: boolean;
@@ -31,7 +33,7 @@ export declare function useBlockEditor({ port, jobId, readerItemId, onSaved, }: 
     };
     issues: string[];
     save: (text?: string, why?: string) => Promise<boolean>;
-    resetDraft: () => void;
+    discardDraft: () => void;
 };
 export {};
 //# sourceMappingURL=use-block-editor.d.ts.map

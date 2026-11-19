@@ -9,13 +9,16 @@ function EditedTranslationOverlayInner({
   targets,
   edits,
   width,
+  excludeId,
 }: {
   targets: readonly ReaderTextHoverTarget[];
+  /** 正在框里改的那一段：编辑框盖着，这里不画。 */
+  excludeId?: string;
   edits: ReadonlyMap<string, string>;
   /** 这一页画出来的宽度（px），和 PDF 的页宽一起算缩放。 */
   width: number;
 }) {
-  const edited = targets.filter((target) => edits.has(target.itemId));
+  const edited = targets.filter((target) => edits.has(target.itemId) && target.itemId !== excludeId);
   if (!edited.length) return null;
   return (
     <div className="reader-live-translation-overlay reader-edited-overlay" aria-hidden="true">

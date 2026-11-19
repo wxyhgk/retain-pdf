@@ -1,12 +1,12 @@
-// 「改译文」面板里正在改的那一块：读原文和当前译文（块号对到译文条目号）、草稿、保存、修订历史。
-// 草稿按块记着：改到一半换到别的块再回来，草稿还在；存过以后丢掉。
-import { useCallback, useEffect, useRef, useState } from "react";
+// 框里正在改的那一块：读原文和当前译文（块号对到译文条目号）、草稿、保存、修订历史。
+// 草稿按块记在 memory 里（阅读器级别）：换到别的块再回来、编辑框随翻页重新挂载，草稿都还在；存过或取消就丢掉。
+import { useCallback, useEffect, useState } from "react";
+import type { BlockEditMemory } from "../../hooks/use-reader-block-edit.js";
 import type { ReaderTranslationEditPort } from "../../contracts/session.js";
 import {
   editableTranslation,
   revisionHistory,
   revisionIssueTexts,
-  translationItemIdCandidates,
   type RevisionEntry,
 } from "../../shared/data/block-edit.js";
 
@@ -14,33 +14,18 @@ export type BlockEditorStatus = { tone: "pending" | "ok" | "error"; message: str
 
 type Loaded = { readerItemId: string; itemId: string; source: string; current: string };
 
-async function loadFirstMatch(port: ReaderTranslationEditPort, jobId: string, readerItemId: string) {
-  let lastError: unknown = null;
-  for (const candidate of translationItemIdCandidates(readerItemId)) {
-    try {
-      const view = await port.loadItem(jobId, candidate);
-      if (view?.item) return { itemId: candidate, item: view.item };
-    } catch (cause) {
-      lastError = cause;
-      // 只有「这个写法不存在」才换下一种；还没翻译完（not_ready）、网络错误直接报。
-      const error = cause as { status?: number; reason?: string };
-      if (error?.status !== 404 || error?.reason) throw cause;
-    }
-  }
-  if (lastError) throw lastError;
-  throw new Error("找不到这一段的译文。");
-}
-
 export function useBlockEditor({
   port,
   jobId,
   readerItemId,
+  memory,
   onSaved,
 }: {
   port: ReaderTranslationEditPort | null;
   /** 持有译文的任务；空串 = 还没问到，先不读。 */
   jobId: string;
   readerItemId: string;
+  memory: BlockEditMemory;
   onSaved: (readerItemId: string, text: string) => void;
 }) {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
@@ -51,8 +36,8 @@ export function useBlockEditor({
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<BlockEditorStatus>(null);
   const [issues, setIssues] = useState<string[]>([]);
-  const drafts = useRef(new Map<string, string>());
-  const generation = useRef<number | null>(null);
+  const drafts = memory.drafts;
+  const generation = memory.generation;
 
   const loadHistory = useCallback(async (owner: string, blockId: string) => {
     if (!port) return;
@@ -72,12 +57,16 @@ export function useBlockEditor({
     if (!port || !jobId || !readerItemId) return undefined;
     let disposed = false;
     setLoading(true);
-    loadFirstMatch(port, jobId, readerItemId)
-      .then(({ itemId, item }) => {
+    // 后端认阅读页的四位块号（三位、不补零的写法当成同一块），返回条目里实际存的写法。
+    port.loadItem(jobId, readerItemId)
+      .then((view) => {
         if (disposed) return;
+        const item = view?.item;
+        if (!item) throw new Error("找不到这一段的译文。");
+        const itemId = `${view?.item_id || readerItemId}`;
         const { source, translated } = editableTranslation(item);
         setLoaded({ readerItemId, itemId, source, current: translated });
-        setDraftState(drafts.current.get(readerItemId) ?? translated);
+        setDraftState(drafts.get(readerItemId) ?? translated);
       })
       .catch((cause: unknown) => {
         if (!disposed) setStatus({ tone: "error", message: (cause as Error)?.message || "读取这段译文失败。" });
@@ -89,8 +78,8 @@ export function useBlockEditor({
 
   const setDraft = useCallback((value: string) => {
     setDraftState(value);
-    if (readerItemId) drafts.current.set(readerItemId, value);
-  }, [readerItemId]);
+    if (readerItemId) drafts.set(readerItemId, value);
+  }, [readerItemId, drafts]);
 
   /** 存一版：默认存草稿；「用这版」传历史里的那段文字。 */
   const save = useCallback(async (text?: string, why?: string) => {
@@ -109,7 +98,7 @@ export function useBlockEditor({
       });
       const nextGeneration = Number(result?.generation);
       if (Number.isFinite(nextGeneration)) generation.current = nextGeneration;
-      drafts.current.delete(loaded.readerItemId);
+      drafts.delete(loaded.readerItemId);
       setLoaded({ ...loaded, current: next });
       setDraftState(next);
       setReason("");
@@ -130,13 +119,12 @@ export function useBlockEditor({
     } finally {
       setSaving(false);
     }
-  }, [port, loaded, saving, draft, reason, jobId, onSaved, loadHistory]);
+  }, [port, loaded, saving, draft, reason, jobId, onSaved, loadHistory, drafts, generation]);
 
-  const resetDraft = useCallback(() => {
-    if (!loaded) return;
-    drafts.current.delete(loaded.readerItemId);
-    setDraftState(loaded.current);
-  }, [loaded]);
+  /** 丢掉这一块没存的草稿（取消）。 */
+  const discardDraft = useCallback(() => {
+    if (readerItemId) drafts.delete(readerItemId);
+  }, [readerItemId, drafts]);
 
   return {
     loading,
@@ -150,6 +138,6 @@ export function useBlockEditor({
     status,
     issues,
     save,
-    resetDraft,
+    discardDraft,
   };
 }

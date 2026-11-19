@@ -34,6 +34,7 @@ import {
   ReaderTextHoverLayer,
 } from "./ReaderTextHoverLayer.js";
 import { EditedTranslationOverlay } from "./EditedTranslationOverlay.js";
+import { READER_INLINE_EDIT_CLASS, ReaderInlineBlockEditor } from "./ReaderInlineBlockEditor.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
 import { useReaderContext } from "../components/react-pdf/reader-context.js";
 import { highlightFindTerm } from "../shared/content/reader-find.js";
@@ -95,7 +96,8 @@ function PdfPageSlotInner({
   // 改过的块（来自阅读器上下文；单测里直接渲染时没有，就不画标记）。
   const readerContext = useReaderContext();
   const revisedBlocks = readerContext?.revisedBlocks;
-  const pendingEdits = readerContext?.pendingEdits;
+  const blockEdit = readerContext?.blockEdit;
+  const pendingEdits = blockEdit?.pendingEdits;
   const editBlock = readerContext?.editBlock;
   // 左栏搜索的词：文字层里每处命中包一个 <mark>（reader-find.ts 的 highlightFindTerm）。没有词时不给 renderer，
   // react-pdf 照原样画文字层，不多一遍 innerHTML。
@@ -164,6 +166,12 @@ function PdfPageSlotInner({
     () => textHoverTargets.find((target) => target.itemId === hoveredTextId) || null,
     [hoveredTextId, textHoverTargets],
   );
+  // 正在框里改的那一段（只在译文栏、只在它所在的那一页）。
+  const editingItemId = pane === "translated" ? blockEdit?.target?.itemId || "" : "";
+  const editingTarget = useMemo(
+    () => (editingItemId ? textHoverTargets.find((target) => target.itemId === editingItemId) || null : null),
+    [editingItemId, textHoverTargets],
+  );
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     // 触屏没有悬停：手指滑动（滚动）不该换框，框由点按决定（见 handlePointerDown）。
@@ -175,6 +183,8 @@ function PdfPageSlotInner({
     }
     // 鼠标在工具条（编号 / 复制）上：工具条可能在框外，按坐标命中会把框收掉，按钮就点不到了。
     if ((event.target as HTMLElement | null)?.closest?.(`.${READER_TEXT_HOVER_TOOLS_CLASS}`)) return;
+    // 鼠标在编辑框里：底下是别的段，不换框。
+    if ((event.target as HTMLElement | null)?.closest?.(`.${READER_INLINE_EDIT_CLASS}`)) return;
     const hostRect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - hostRect.left;
     const y = event.clientY - hostRect.top;
@@ -299,7 +309,17 @@ function PdfPageSlotInner({
         />
       ) : null}
       {active && pane === "translated" && pendingEdits?.size ? (
-        <EditedTranslationOverlay targets={textHoverTargets} edits={pendingEdits} width={width} />
+        <EditedTranslationOverlay targets={textHoverTargets} edits={pendingEdits} width={width} excludeId={editingTarget?.itemId} />
+      ) : null}
+      {active && editingTarget && blockEdit ? (
+        <ReaderInlineBlockEditor
+          target={editingTarget}
+          page={{ width, height: naturalHeight }}
+          edit={blockEdit}
+          showSource={Boolean(readerContext?.editShowsSource)}
+          regions={readerContext?.regions}
+          jumpToBlock={readerContext?.jumpToBlock}
+        />
       ) : null}
       {active && pane === "translated" && revisedBlocks?.size ? (
         <div className="reader-revised-markers" aria-hidden="true">
@@ -314,7 +334,7 @@ function PdfPageSlotInner({
         </div>
       ) : null}
       <ReaderTextHoverLayer
-        target={active ? hoveredTextTarget : null}
+        target={active && hoveredTextTarget?.itemId !== editingTarget?.itemId ? hoveredTextTarget : null}
         pane={pane === "translated" ? "translated" : "source"}
         revisedCount={hoveredTextTarget ? revisedBlocks?.get(hoveredTextTarget.itemId) || 0 : 0}
         onEdit={editBlock}
