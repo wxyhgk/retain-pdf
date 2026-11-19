@@ -385,6 +385,53 @@ impl Price {
     }
 }
 
+/// 接口里给出的单价（每百万 token，美元）：键一律都在，没给的缓存价是 null（按输入价算）。
+/// 用量的查单价、估价和翻译接口的「拉取模型」共用（2026-11-19）。
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct PriceTierView {
+    pub above_input_tokens: u64,
+    pub input: f64,
+    pub output: f64,
+    pub cache_read: Option<f64>,
+    pub cache_write: Option<f64>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct PriceView {
+    pub input: f64,
+    pub output: f64,
+    pub cache_read: Option<f64>,
+    pub cache_write: Option<f64>,
+    /// 一次请求输入超过门槛后整次按这一档，门槛从低到高。
+    pub tiers: Vec<PriceTierView>,
+    /// 一天里最贵的时段是标价的几倍（DeepSeek 忙时 2，别家 1）。
+    pub peak_multiplier: f64,
+}
+
+impl Price {
+    /// `provider`：按哪家的价（决定忙时倍数）。
+    pub fn view(&self, provider: &str) -> PriceView {
+        PriceView {
+            input: self.input,
+            output: self.output,
+            cache_read: self.cache_read,
+            cache_write: self.cache_write,
+            tiers: self
+                .tiers
+                .iter()
+                .map(|tier| PriceTierView {
+                    above_input_tokens: tier.above_input_tokens,
+                    input: tier.input,
+                    output: tier.output,
+                    cache_read: tier.cache_read,
+                    cache_write: tier.cache_write,
+                })
+                .collect(),
+            peak_multiplier: peak_multiplier(provider),
+        }
+    }
+}
+
 /// 这家服务商一天里最贵的时段是标价的几倍（DeepSeek 忙时 2 倍，别家 1）。估价的上限用它。
 pub fn peak_multiplier(provider: &str) -> f64 {
     if provider == "deepseek" {

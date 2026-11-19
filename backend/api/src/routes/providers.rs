@@ -7,7 +7,7 @@ use crate::ocr_provider::{provider_client_definitions, OcrProviderPublicDefiniti
 use crate::routes::common::{build_provider_route_deps, ApiJson};
 use crate::services::providers::{
     self, DeepSeekBalanceView, DeepSeekTokenValidationRequest, MineruTokenValidationRequest,
-    ProviderProbeView, PaddleTokenValidationRequest,
+    ProviderProbeView, PaddleTokenValidationRequest, TranslationModelListView, TranslationModelsRequest,
 };
 use crate::AppState;
 
@@ -50,5 +50,15 @@ pub async fn query_deepseek_balance(
 ) -> Result<Json<ApiResponse<DeepSeekBalanceView>>, AppError> {
     let deps = build_provider_route_deps(&state);
     let view = providers::query_deepseek_balance(&deps, payload).await?;
+    Ok(Json(ApiResponse::ok(view)))
+}
+
+/// POST /api/v1/providers/translation/models —— 从翻译接口拉取模型列表（2026-11-19）。
+pub async fn list_translation_models(
+    State(state): State<AppState>,
+    ApiJson(payload): ApiJson<TranslationModelsRequest>,
+) -> Result<Json<ApiResponse<TranslationModelListView>>, AppError> {
+    let deps = build_provider_route_deps(&state);
+    let view = providers::list_translation_models(&deps, payload).await?;
     Ok(Json(ApiResponse::ok(view)))
 }

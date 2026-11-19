@@ -12,6 +12,18 @@
 
 ---
 
+## 从翻译接口拉取模型列表（feat/provider-model-list）
+
+2026-11-19。新接口，只增不改。详见 [Provider 校验接口](../rust_api/08-Provider%20校验接口.md) 第 8 节。
+
+- `POST /api/v1/providers/translation/models`，请求 `{base_url, api_key, api_protocol}`（内联 Key，用完不存）。
+- 返回 `{ok, status, summary, source: "provider", base_url, fetched_at, provider_code, provider_message, chat_models, models}`；
+  `models` 每项 `{id, display_name, owned_by, created, kind: "chat"|"other", price_provider, price_basis, price}`，按 id 排序去重。
+- 设置里「从服务商拉取」：默认只列 `kind = "chat"`，「显示全部」列全部；`price` 和 `/usage/prices` 同形状，可以直接显示单价，不用再调一次。
+- `status = "unsupported"` 时提示「这个接口不支持列模型，请手动填」；`unauthorized` 是 Key 不对。
+
+---
+
 ## 查单价、估价（feat/usage-estimate）
 
 2026-11-19。新接口和新字段，只增不改。详见 [模型用量](../../api/11-用量/01-模型用量.md#估价)。

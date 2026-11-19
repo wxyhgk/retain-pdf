@@ -47,27 +47,8 @@ pub struct PriceLookupInput {
     pub items: Vec<PriceLookupItem>,
 }
 
-/// 每百万 token 的美元单价；没给缓存价的是 null（按输入价算）。
-#[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct PriceTierView {
-    pub above_input_tokens: u64,
-    pub input: f64,
-    pub output: f64,
-    pub cache_read: Option<f64>,
-    pub cache_write: Option<f64>,
-}
-
-#[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct PriceView {
-    pub input: f64,
-    pub output: f64,
-    pub cache_read: Option<f64>,
-    pub cache_write: Option<f64>,
-    /// 一次请求输入超过门槛后整次按这一档，门槛从低到高。
-    pub tiers: Vec<PriceTierView>,
-    /// 一天里最贵的时段是标价的几倍（DeepSeek 忙时 2，别家 1）。
-    pub peak_multiplier: f64,
-}
+/// 单价的形状和「拉取模型」共用，定义在服务商包（2026-11-19）。
+pub use retainpdf_providers::PriceView;
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct PriceQuoteView {
@@ -132,27 +113,6 @@ fn now_ts() -> String {
     chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()
 }
 
-fn price_view(price: &Price, provider: &str) -> PriceView {
-    PriceView {
-        input: price.input,
-        output: price.output,
-        cache_read: price.cache_read,
-        cache_write: price.cache_write,
-        tiers: price
-            .tiers
-            .iter()
-            .map(|tier| PriceTierView {
-                above_input_tokens: tier.above_input_tokens,
-                input: tier.input,
-                output: tier.output,
-                cache_read: tier.cache_read,
-                cache_write: tier.cache_write,
-            })
-            .collect(),
-        peak_multiplier: peak_multiplier(provider),
-    }
-}
-
 pub fn lookup_prices(prices: &PriceBook, input: &PriceLookupInput) -> PriceLookupView {
     let now = now_ts();
     let items = input
@@ -165,7 +125,7 @@ pub fn lookup_prices(prices: &PriceBook, input: &PriceLookupInput) -> PriceLooku
                 model: item.model.clone(),
                 price_provider: quote.as_ref().map(|(provider, _, _)| provider.clone()),
                 price_basis: quote.as_ref().map(|(_, basis, _)| *basis),
-                price: quote.as_ref().map(|(provider, _, price)| price_view(price, provider)),
+                price: quote.as_ref().map(|(provider, _, price)| price.view(provider)),
             }
         })
         .collect();
