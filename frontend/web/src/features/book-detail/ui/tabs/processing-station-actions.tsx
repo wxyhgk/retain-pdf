@@ -19,10 +19,13 @@ export function stationActionsOf({
   ocr,
   translation,
   translationStopped,
+  currentModel = "",
 }: {
   ocr: BookDetailOcrPanelProps;
   translation: BookDetailTranslationPanelProps;
   translationStopped: boolean;
+  /** 这本书现在用的模型（进度页 HUD 上那个）；不知道是空串。 */
+  currentModel?: string;
 }): Partial<Record<StationKey, StationAction>> {
   // OCR 指定页码挨着「重新 OCR」。
   const ocrOptions = (
@@ -85,8 +88,13 @@ export function stationActionsOf({
       </div>
     </li>
   ) : null;
+  // 换了书或任务就重新挂一份：选过的翻译方式、模型不能带到下一本书（2026-11-19：选了 haiku 的书之后，
+  // 另一本书没动模型也用了 haiku，因为书详情弹窗一直开着，这个组件的状态留着）。
+  const item = translation?.item || {};
+  const sheetKey = `${item.document_id || item.id || ""}:${item.job_id || item.active_job_id || ""}`;
   const stageSheet = (stages: JobRetryStage[], extraRows: ReactNode = null) => (
     <TranslationStageActions
+      key={`${sheetKey}:${stages.join(",")}`}
       variant="sheet"
       stages={stages}
       actions={translation?.stageActions}
@@ -95,6 +103,7 @@ export function stationActionsOf({
       error={translation?.stageActionError}
       onRetry={translation?.onRetryStage}
       estimate={translation?.estimateRetranslate}
+      currentModel={currentModel}
       extraRows={extraRows}
     />
   );

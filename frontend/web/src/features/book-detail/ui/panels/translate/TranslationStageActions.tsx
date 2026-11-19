@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Coins, Languages, LoaderCircle, RefreshCw } from "lucide-react";
 import { Button, ConfirmDialog, Select } from "@retainpdf/ui";
 import type {
@@ -13,6 +13,7 @@ import {
 } from "../../../domain/retranslate-quality.js";
 import { KEEP_MODEL, retranslateModelOptions } from "../../../domain/retranslate-model.js";
 import { savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
+import { CREDENTIALS_CHANGED_EVENT } from "@/platform/contracts/credentials-contract.js";
 import { RetranslateModelSelect } from "./RetranslateModelSelect.jsx";
 import { RetranslateModelList } from "./RetranslateModelList.jsx";
 import { useRetranslateEstimates } from "../../use-retranslate-estimates.js";
@@ -90,6 +91,7 @@ export function TranslationStageActions({
   stages,
   onRetry,
   estimate,
+  currentModel = "",
 }: {
   actions?: JobStageRetryActionView[];
   /** inline：一排按钮（失败态和翻译按钮同排）；sheet：「重新处理」展开后的清单，每项一行。 */
@@ -105,6 +107,8 @@ export function TranslationStageActions({
     stage: JobRetryStage,
     options?: RetryOptions,
   ) => Promise<unknown>;
+  /** 这本书现在用的模型；「沿用原来的」后面写出来，列表里那一行标「原来用的」。 */
+  currentModel?: string;
   /** 换成某个模型重新翻译大概要花多少；不给就不显示估价。 */
   estimate?: (baseUrl: string, model: string) => Promise<UsageEstimateView | null>;
 }) {
@@ -114,7 +118,13 @@ export function TranslationStageActions({
   // 重新翻译用哪种翻译方式；空串 = 沿用任务原来的。
   const [translationQuality, setTranslationQuality] = useState<RetranslateQuality>("");
   // 重新翻译用哪条连接（设置里存的）；空串 = 沿用任务原来的。
-  const modelOptions = useMemo(() => retranslateModelOptions(savedTranslationConnections()), []);
+  // 设置里存好的连接；设置一保存（retainpdf:credentials-changed）就重读，不用关掉书详情。
+  const [modelOptions, setModelOptions] = useState(() => retranslateModelOptions(savedTranslationConnections()));
+  useEffect(() => {
+    const reload = () => setModelOptions(retranslateModelOptions(savedTranslationConnections()));
+    document.addEventListener(CREDENTIALS_CHANGED_EVENT, reload);
+    return () => document.removeEventListener(CREDENTIALS_CHANGED_EVENT, reload);
+  }, []);
   const [translationModel, setTranslationModel] = useState(KEEP_MODEL);
   const translationConnection = modelOptions.find((option) => option.value === translationModel)?.connection || null;
   // 清单里列着重新翻译、能用时才去问估价。
@@ -279,6 +289,7 @@ export function TranslationStageActions({
                       onChange={setTranslationModel}
                       disabled={Boolean(pendingStage)}
                       priceOf={priceOf}
+                      currentModel={currentModel}
                     />
                   </div>
                   <div className="book-detail-reprocess-controls">{actionButton(action, true)}</div>

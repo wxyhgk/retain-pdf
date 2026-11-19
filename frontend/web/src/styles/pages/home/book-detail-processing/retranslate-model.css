@@ -156,3 +156,9 @@
     padding-top: 0;
   }
 }
+
+/* 「原来用的」：这本书现在就用这个模型，中性色，不和「最省」抢。 */
+.book-detail-model-tag.is-current {
+  background: color-mix(in srgb, var(--ink) 8%, var(--paper));
+  color: var(--muted);
+}

@@ -160,3 +160,54 @@ test("重新翻译清单：每条连接问一次估价，写在下拉选项后�
   delete globalThis.localStorage;
   dom.window.close();
 });
+
+test("换一本书：重新翻译的模型选择回到「沿用原来的」，不带上一本书选的；沿用那行写出这本书现在用的模型", async () => {
+  const dom = makeDom("", { keys: ["window", "document", "HTMLElement", "HTMLButtonElement", "HTMLSelectElement", "Element", "Event", "MouseEvent", "Node", "MutationObserver", "CustomEvent"] });
+  dom.window.localStorage.setItem("retainpdf.developer.config.v1", JSON.stringify(CONFIG));
+  globalThis.localStorage = dom.window.localStorage;
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { stationActionsOf } = await import("../../src/features/book-detail/ui/tabs/processing-station-actions.jsx");
+  const submitted = [];
+  function Sheet({ item, currentModel }) {
+    const actions = stationActionsOf({
+      ocr: {},
+      translation: {
+        item,
+        stageActions: [{ stage: "translation", label: "重新翻译", can_retry: true }],
+        onRetryStage: async (stage, options) => { submitted.push([item.document_id, options]); },
+      },
+      translationStopped: false,
+      currentModel,
+    });
+    return actions.translate.content;
+  }
+  const container = dom.window.document.createElement("div");
+  dom.window.document.body.appendChild(container);
+  const root = createRoot(container);
+  const doc = dom.window.document;
+  const rowOf = (value) => doc.querySelector(`[data-model-value="${value}"]`);
+  root.render(React.createElement(Sheet, { item: { document_id: "doc-a", job_id: "job-a" }, currentModel: "deepseek-v4-flash" }));
+  await waitFor(() => rowOf("anthropic::claude-haiku-5-5"), "书 A 的模型列表");
+  assert.match(rowOf("").textContent, /沿用原来的模型（deepseek-v4-flash）/);
+  assert.match(rowOf("deepseek::deepseek-v4-flash").textContent, /原来用的/);
+  rowOf("anthropic::claude-haiku-5-5").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+  await waitFor(() => rowOf("anthropic::claude-haiku-5-5").getAttribute("aria-checked") === "true", "书 A 选了 haiku");
+
+  root.render(React.createElement(Sheet, { item: { document_id: "doc-b", job_id: "job-b" }, currentModel: "qwen3.8-flash" }));
+  await waitFor(() => /沿用原来的模型（qwen3\.8-flash）/.test(rowOf("")?.textContent || ""), "换到书 B");
+  assert.equal(rowOf("").getAttribute("aria-checked"), "true", "书 B 回到沿用原来的");
+  assert.equal(rowOf("anthropic::claude-haiku-5-5").getAttribute("aria-checked"), "false");
+  doc.querySelector("#book-detail-retry-translation-btn").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+  await waitFor(() => submitted.length === 1, "书 B 提交");
+  assert.equal(submitted[0][0], "doc-b");
+  assert.equal(submitted[0][1]?.translationConnection, undefined, "书 B 不带书 A 选的模型");
+
+  // 设置一保存，列表就重读（不用关书详情）
+  dom.window.localStorage.setItem("retainpdf.developer.config.v1", JSON.stringify({ translationProfiles: { qwen: { apiKey: "sk-q", model: "qwen3.8-flash" } } }));
+  doc.dispatchEvent(new dom.window.CustomEvent("retainpdf:credentials-changed"));
+  await waitFor(() => rowOf("qwen::qwen3.8-flash") && !rowOf("anthropic::claude-haiku-5-5"), "设置改了列表跟着变");
+  root.unmount();
+  delete globalThis.localStorage;
+  dom.window.close();
+});
