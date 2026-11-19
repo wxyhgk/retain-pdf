@@ -255,7 +255,7 @@
 
 .usage-compact-bar {
   display: grid;
-  /* 最后一栏是这一组的估算花费（「约 $0.31」），没有就空着。 */
+  /* 最后一栏是这一组的估算花费（「约 ¥2.23」），没有就空着。 */
   grid-template-columns: 84px minmax(0, 1fr) 56px 64px;
   align-items: center;
   gap: 10px;
