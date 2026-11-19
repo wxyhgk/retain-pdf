@@ -94,6 +94,7 @@ export function stationActionsOf({
       pendingStage={translation?.stageActionPending}
       error={translation?.stageActionError}
       onRetry={translation?.onRetryStage}
+      estimate={translation?.estimateRetranslate}
       extraRows={extraRows}
     />
   );
