@@ -1,221 +1,264 @@
-/* 侧栏「改译文」（ReaderBlockEditPanel）和译文栏上「待排版」的那一层（EditedTranslationOverlay）。 */
+/* 在框里改译文（ReaderInlineBlockEditor）、右下角「改了 N 处 · 重新排版」（ReaderPendingEditsPill）、
+   译文栏上「待排版」那一层（EditedTranslationOverlay）。 */
 
-.reader-block-edit {
+/* —— 编辑框：盖在这一段上（is-inline），或者小块旁边弹出来（is-popout） —— */
+.reader-inline-edit {
+  position: absolute;
+  /* 高过悬停框（7）和待排版那层（5）；页槽本身不建层叠上下文，弹出来超过页底也盖得住下一页。 */
+  z-index: 12;
   display: grid;
-  gap: 10px;
-  font-size: var(--ui-text-md, 13px);
+  gap: 6px;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 2px solid var(--accent);
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
   color: var(--ink);
-}
-
-.reader-block-edit h4 {
-  margin: 4px 0 0;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 18%, transparent);
   font-size: var(--ui-text-sm, 12px);
-  font-weight: 650;
-  color: var(--muted);
+  cursor: auto;
+  user-select: text;
 }
 
-.reader-block-edit-note {
-  margin: 8px 2px;
-  color: var(--muted);
-  line-height: 1.6;
+.reader-inline-edit.is-inline {
+  /* 盖在原位时边框往外让出来，字和原来那段对齐。 */
+  margin: -8px 0 0 -8px;
 }
 
-.reader-block-edit-note.is-blocked {
+/* 小块：原来那段描一圈，看得出弹出来的框改的是哪段。 */
+.reader-inline-edit-frame {
+  position: absolute;
+  z-index: 11;
+  box-sizing: border-box;
+  border: 2px solid var(--accent);
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+  pointer-events: none;
+}
+
+.reader-inline-edit-text {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 3.2em;
+  max-height: 60vh;
+  padding: 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", serif;
+  font-size: var(--ui-text-base, 14px);
+  line-height: 1.65;
+  resize: none;
+  overflow-y: auto;
+}
+
+.reader-inline-edit-text:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+/* 只看译文时的那行原文：默认三行，点开看全。 */
+.reader-inline-edit-source {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  color: var(--muted);
+  font: inherit;
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.reader-inline-edit-source.is-open {
+  display: block;
+  max-height: 30vh;
+  overflow: auto;
+}
+
+.reader-inline-edit-note {
+  margin: 2px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.reader-inline-edit-note.is-blocked,
+.reader-inline-edit-status.is-error,
+.reader-inline-edit-issues {
   color: var(--danger);
 }
 
-.reader-block-edit-nav {
+.reader-inline-edit-preview {
+  display: grid;
+  gap: 2px;
+  padding: 4px 8px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--accent) 5%, var(--paper));
+  font-size: var(--ui-text-base, 14px);
+  line-height: 1.6;
+}
+
+.reader-inline-edit-preview-label {
+  color: var(--muted);
+  font-size: var(--ui-text-2xs, 10px);
+}
+
+.reader-inline-edit-toolbar {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.reader-block-edit-where {
-  margin-right: auto;
-  font-weight: 650;
-}
-
-.reader-block-edit-step {
-  display: inline-grid;
-  place-items: center;
-  width: 26px;
+.reader-inline-edit-reason {
+  flex: 1;
+  min-width: 60px;
   height: 26px;
+  padding: 0 8px;
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   border-radius: var(--ui-radius-sm, 6px);
   background: var(--paper);
   color: var(--ink);
-  cursor: pointer;
+  font: inherit;
 }
 
-.reader-block-edit-step:disabled,
-.reader-block-edit-act:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.reader-block-edit-act {
+.reader-inline-edit-step,
+.reader-inline-edit-act,
+.reader-pending-edits-act {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  gap: 4px;
-  min-height: 26px;
-  padding: 0 10px;
-  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  justify-content: center;
+  gap: 3px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid transparent;
   border-radius: var(--ui-radius-sm, 6px);
-  background: var(--paper);
+  background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: var(--ui-text-sm, 12px);
   white-space: nowrap;
   cursor: pointer;
 }
 
-.reader-block-edit-act:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+.reader-inline-edit-step {
+  padding: 0;
 }
 
-.reader-block-edit-act[data-variant="ghost"] {
-  border-color: transparent;
+.reader-inline-edit-step:hover:not(:disabled),
+.reader-inline-edit-act:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
 }
 
-.reader-block-edit-act[data-variant="primary"] {
+.reader-inline-edit-act[data-variant="primary"],
+.reader-pending-edits-act {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--paper);
 }
 
-.reader-block-edit-act[data-variant="primary"]:hover:not(:disabled) {
+.reader-inline-edit-act[data-variant="primary"]:hover:not(:disabled),
+.reader-pending-edits-act:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 88%, var(--ink));
 }
 
-.reader-block-edit-form {
-  display: grid;
-  gap: 6px;
+.reader-inline-edit-step:disabled,
+.reader-inline-edit-act:disabled,
+.reader-pending-edits-act:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
-.reader-block-edit-source {
-  margin: 0;
-  max-height: 14em;
-  overflow: auto;
-  padding: 8px 10px;
-  border-radius: var(--ui-radius-sm, 6px);
-  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
-  line-height: 1.55;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.reader-block-edit-text,
-.reader-block-edit-reason {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
-  border-radius: var(--ui-radius-sm, 6px);
-  background: var(--paper);
-  color: var(--ink);
-  font: inherit;
-  line-height: 1.6;
-}
-
-.reader-block-edit-text {
-  min-height: 9em;
-  resize: vertical;
-}
-
-.reader-block-edit-text:focus,
-.reader-block-edit-reason:focus {
-  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  outline-offset: 0;
-}
-
-.reader-block-edit-hint {
-  margin: 0;
-  font-size: var(--ui-text-sm, 12px);
-  color: var(--muted);
-}
-
-.reader-block-edit-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-}
-
-.reader-block-edit-status {
-  margin: 0;
+.reader-inline-edit-status {
+  margin: 0 2px;
   line-height: 1.5;
 }
 
-.reader-block-edit-status.is-ok {
+.reader-inline-edit-status.is-ok {
   color: var(--ok);
 }
 
-.reader-block-edit-status.is-error,
-.reader-block-edit-issues {
-  color: var(--danger);
-}
-
-.reader-block-edit-issues {
+.reader-inline-edit-issues {
   margin: 0;
   padding-left: 1.2em;
   line-height: 1.5;
 }
 
-.reader-block-edit-history ol {
+.reader-inline-edit-history {
   display: grid;
-  gap: 8px;
-  margin: 6px 0 0;
-  padding: 0;
+  gap: 6px;
+  max-height: 220px;
+  margin: 0;
+  padding: 6px 0 0;
+  overflow: auto;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
   list-style: none;
 }
 
-.reader-block-edit-history li {
-  padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  border-radius: var(--ui-radius-sm, 6px);
+.reader-inline-edit-history li[data-current="true"] .reader-inline-edit-history-text {
+  border-left-color: var(--accent);
 }
 
-.reader-block-edit-history li[data-current="true"] {
-  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
-}
-
-.reader-block-edit-history-meta {
+.reader-inline-edit-history-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  font-size: var(--ui-text-sm, 12px);
+  gap: 6px;
   color: var(--muted);
 }
 
-.reader-block-edit-history-reason {
-  margin: 4px 0 0;
-  font-size: var(--ui-text-sm, 12px);
-  color: var(--muted);
-}
-
-.reader-block-edit-history-text {
-  margin: 4px 0 0;
+.reader-inline-edit-history-text {
+  margin: 2px 0 0;
+  padding-left: 8px;
+  border-left: 2px solid color-mix(in srgb, var(--ink) 10%, transparent);
   line-height: 1.55;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-.reader-block-edit-pending {
+/* —— 右下角：改了几处、重新排版 —— */
+.reader-pending-edits {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: var(--z-hud, 36);
   display: flex;
-  flex: 1;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 0;
-  font-size: var(--ui-text-sm, 12px);
+  gap: 10px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 8px 8px 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
   color: var(--ink);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 14%, transparent);
+  font-size: var(--ui-text-sm, 12px);
 }
 
-.reader-block-edit-pending.is-running {
+.reader-pending-edits.is-running {
+  padding-right: 14px;
   color: var(--muted);
 }
 
-/* 译文栏：写回了、还没排进 PDF 的段落，盖在原来那段上。 */
+.reader-pending-edits-act {
+  padding: 0 12px;
+  border-radius: var(--ui-radius-pill, 999px);
+}
+
+/* 窄屏：底栏页码那条在正中，让到它上面。 */
+@media (max-width: 720px) {
+  .reader-pending-edits {
+    right: 12px;
+    bottom: 72px;
+  }
+}
+
+/* —— 译文栏：写回了、还没排进 PDF 的段落，盖在原来那段上 —— */
 .reader-edited-overlay {
   z-index: 5;
 }

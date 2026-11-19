@@ -1,3 +1,4 @@
+import { type ReaderRegion } from "./reader-regions.js";
 type Row = Record<string, unknown>;
 /** 拼出来的书（多次翻译按页合成的虚拟任务 merged-…）是只读的，改要改到源任务上，这一版不支持。 */
 export declare function isMergedReadingJob(jobId: string): boolean;
@@ -42,5 +43,36 @@ export declare function jobRenderedAt(jobPayload: unknown): string;
 export declare function pendingEditsFromRevisions(payload: unknown, renderedAt: string): Map<string, string>;
 /** 保存没通过检查时的一条问题，说成人话；警告不拦保存，不列。 */
 export declare function revisionIssueTexts(issues: unknown): string[];
+/** 能改的块（正文、公式、表格）按阅读顺序排好，给「上一段 / 下一段」用。 */
+export declare function editableBlockIds(regions: readonly ReaderRegion[] | null | undefined): string[];
+/** 编辑框够不够大：块够宽够高就直接盖在块上改，否则在旁边弹一个放大的框。 */
+export declare const INLINE_EDIT_MIN_WIDTH = 300;
+export declare const INLINE_EDIT_MIN_HEIGHT = 72;
+export type InlineEditLayout = {
+    mode: "inline";
+    left: number;
+    top: number;
+    width: number;
+    minHeight: number;
+} | {
+    mode: "popout";
+    left: number;
+    width: number;
+    top?: number;
+    bottom?: number;
+};
+/**
+ * 编辑框放哪（页内坐标）：大块盖在原位，往下按内容长；小块（标题、单行、行间公式）在下面弹一个至少 360 宽的框，
+ * 下面放不下（离页底不到 260）就放上面。左右夹在页里。
+ */
+export declare function inlineEditLayout(rect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+}, page: {
+    width: number;
+    height: number;
+}): InlineEditLayout;
 export {};
 //# sourceMappingURL=block-edit.d.ts.map

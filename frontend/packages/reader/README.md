@@ -23,7 +23,7 @@ RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、阅�
 - Markdown 资源解析；
 - 下载文件名与下载执行；
 - 模型凭据状态；
-- 改译文（`sessionData.translationEdit`，见 [阅读页改译文](../../../docs/core/frontend/reader-block-edit.md)）：不给就没有「改」按钮和那个面板。
+- 改译文（`sessionData.translationEdit`，见 [阅读页改译文](../../../docs/core/frontend/reader-block-edit.md)）：不给就没有「改」按钮。
 
 RetainPDF Web 的实现位于：
 

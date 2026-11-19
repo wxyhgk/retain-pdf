@@ -1,6 +1,8 @@
 // 阅读页「改译文」的纯逻辑：阅读页块号对到译文条目号、取可编辑的文字、修订历史、哪些改动还没排进 PDF。
 // 接口：GET / PATCH /jobs/:id/translations/:item_id，data/revisions（契约 translation-revisions.v1、job-data.v1）。
 
+import { readerRegionKindForRegion, type ReaderRegion } from "./reader-regions.js";
+
 type Row = Record<string, unknown>;
 
 function text(value: unknown): string {
@@ -143,4 +145,47 @@ export function revisionIssueTexts(issues: unknown): string[] {
       const message = text(row.message).trim();
       return message && message !== label ? `${label}（${message}）` : label;
     });
+}
+
+const EDITABLE_KINDS = new Set(["text", "formula", "table"]);
+
+/** 能改的块（正文、公式、表格）按阅读顺序排好，给「上一段 / 下一段」用。 */
+export function editableBlockIds(regions: readonly ReaderRegion[] | null | undefined): string[] {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const region of regions || []) {
+    const id = `${region?.itemId || ""}`.trim();
+    if (!id || seen.has(id) || !EDITABLE_KINDS.has(readerRegionKindForRegion(region))) continue;
+    seen.add(id);
+    ids.push(id);
+  }
+  return ids;
+}
+
+/** 编辑框够不够大：块够宽够高就直接盖在块上改，否则在旁边弹一个放大的框。 */
+export const INLINE_EDIT_MIN_WIDTH = 300;
+export const INLINE_EDIT_MIN_HEIGHT = 72;
+
+export type InlineEditLayout =
+  | { mode: "inline"; left: number; top: number; width: number; minHeight: number }
+  | { mode: "popout"; left: number; width: number; top?: number; bottom?: number };
+
+/**
+ * 编辑框放哪（页内坐标）：大块盖在原位，往下按内容长；小块（标题、单行、行间公式）在下面弹一个至少 360 宽的框，
+ * 下面放不下（离页底不到 260）就放上面。左右夹在页里。
+ */
+export function inlineEditLayout(
+  rect: { left: number; top: number; width: number; height: number },
+  page: { width: number; height: number },
+): InlineEditLayout {
+  if (rect.width >= INLINE_EDIT_MIN_WIDTH && rect.height >= INLINE_EDIT_MIN_HEIGHT) {
+    return { mode: "inline", left: rect.left, top: rect.top, width: rect.width, minHeight: rect.height };
+  }
+  const width = Math.max(240, Math.min(Math.max(rect.width, 360), page.width - 16));
+  const left = Math.max(8, Math.min(rect.left, page.width - width - 8));
+  const gap = 6;
+  const below = rect.top + rect.height + gap;
+  return page.height - below >= 260
+    ? { mode: "popout", left, width, top: below }
+    : { mode: "popout", left, width, bottom: page.height - rect.top + gap };
 }

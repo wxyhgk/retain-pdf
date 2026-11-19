@@ -24,8 +24,13 @@ export type ReaderBlockEdit = {
     port: ReaderTranslationEditPort | null;
     /** 译文在哪个任务上（重新排版出来的任务指回来源任务）；还没问到是空串。 */
     ownerJobId: string;
+    /** 正在框里改的那一块；null = 没在改。 */
     target: BlockEditTarget | null;
     select: (itemId: string) => void;
+    /** 收起编辑框（取消、存完）。 */
+    close: () => void;
+    /** 跨块留着的东西：没存的草稿（按块号）、上一次写回的 generation（下次带上防冲突）。编辑框换页会重新挂载，放这里不丢。 */
+    memory: BlockEditMemory;
     /** 阅读页块号 → 写回了、还没排进 PDF 的译文。 */
     pendingEdits: ReadonlyMap<string, string>;
     /** 这次打开以后又改过几次（叠到「改过 N 次」的标记上）。 */
@@ -33,6 +38,12 @@ export type ReaderBlockEdit = {
     markSaved: (itemId: string, text: string) => void;
     rerender: RerenderState;
     startRerender: () => Promise<void>;
+};
+export type BlockEditMemory = {
+    drafts: Map<string, string>;
+    generation: {
+        current: number | null;
+    };
 };
 export declare function useReaderBlockEdit({ jobId, jobStatus, jobPayload, hasTranslation, refreshJobStatus, }: {
     jobId: string;

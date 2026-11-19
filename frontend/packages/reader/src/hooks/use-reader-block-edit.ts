@@ -1,10 +1,10 @@
-// 阅读页「改译文」的会话状态：改的是哪一块、哪些改动还没排进 PDF、重新排版到哪一步了。
+// 阅读页「改译文」的会话状态：正在框里改哪一块、哪些改动还没排进 PDF、重新排版到哪一步了。
 //
 // 改一块是 PATCH 写回译文（source=user），不排版：PDF 上先盖一层新译文（pendingEdits），连着改几处，
 // 用户点一次「重新排版」（retry-stage render，原地）才整本重排。排版期间任务是运行中，不能再改；
 // 回到 succeeded 时 session 会重新加载译文 PDF（job-status 的终态刷新），完成时间一变，待排版的改动就清空了。
 // 待排版的改动按修订记录现算（PDF 排好以后才写回的），关掉阅读页再开也接得上。
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isFinishedJobStatus } from "@retainpdf/domain/job";
 import { readerSessionDataPort } from "../external.js";
 import {
@@ -32,8 +32,13 @@ export type ReaderBlockEdit = {
   port: ReaderTranslationEditPort | null;
   /** 译文在哪个任务上（重新排版出来的任务指回来源任务）；还没问到是空串。 */
   ownerJobId: string;
+  /** 正在框里改的那一块；null = 没在改。 */
   target: BlockEditTarget | null;
   select: (itemId: string) => void;
+  /** 收起编辑框（取消、存完）。 */
+  close: () => void;
+  /** 跨块留着的东西：没存的草稿（按块号）、上一次写回的 generation（下次带上防冲突）。编辑框换页会重新挂载，放这里不丢。 */
+  memory: BlockEditMemory;
   /** 阅读页块号 → 写回了、还没排进 PDF 的译文。 */
   pendingEdits: ReadonlyMap<string, string>;
   /** 这次打开以后又改过几次（叠到「改过 N 次」的标记上）。 */
@@ -41,6 +46,11 @@ export type ReaderBlockEdit = {
   markSaved: (itemId: string, text: string) => void;
   rerender: RerenderState;
   startRerender: () => Promise<void>;
+};
+
+export type BlockEditMemory = {
+  drafts: Map<string, string>;
+  generation: { current: number | null };
 };
 
 /** 宿主没装适配器（单测里直接渲染阅读器）时当作不能改，不抛错。 */
@@ -84,10 +94,13 @@ export function useReaderBlockEdit({
   );
   const [savedCounts, setSavedCounts] = useState<Map<string, number>>(() => new Map());
   const [rerender, setRerender] = useState<RerenderState>({ phase: "idle" });
+  const memory = useRef<BlockEditMemory>({ drafts: new Map(), generation: { current: null } }).current;
 
-  // 换书：清掉上一本的选择和计数。
+  // 换书：清掉上一本的选择、草稿和计数。
   useEffect(() => {
     setTarget(null);
+    memory.drafts.clear();
+    memory.generation.current = null;
     setSavedCounts(new Map());
     setRerender({ phase: "idle" });
   }, [id]);
@@ -139,6 +152,7 @@ export function useReaderBlockEdit({
     if (!value) return;
     setTarget({ itemId: value, page: pageOfReaderItem(value) });
   }, []);
+  const close = useCallback(() => setTarget(null), []);
 
   const markSaved = useCallback((itemId: string, text: string) => {
     setSavedLocally((current) => {
@@ -166,19 +180,22 @@ export function useReaderBlockEdit({
     ? MERGED_REASON
     : (!finished || rerender.phase === "running" || rerender.phase === "submitting") ? RUNNING_REASON : "";
 
-  return {
+  // 进阅读器上下文、给每一页：只在真变了的时候换对象，不然每次重渲染所有页槽都跟着重画。
+  return useMemo(() => ({
     available,
     blockedReason,
     port,
     ownerJobId,
     target,
     select,
+    close,
+    memory,
     pendingEdits,
     savedCounts,
     markSaved,
     rerender,
     startRerender,
-  };
+  }), [available, blockedReason, port, ownerJobId, target, select, close, memory, pendingEdits, savedCounts, markSaved, rerender, startRerender]);
 }
 
 /** 鼠标停在一块上按 E：改这一块（打字时、按着修饰键时不管）。 */
