@@ -7,7 +7,7 @@ import type {
 import { describeActionError, fetchJobPayload } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
-import { resolveTranslationOwnerId, type TranslationSourceView } from "../domain/translation-owner.js";
+import { resolveTranslationOwnerId, type TranslationSourceView } from "@/features/jobs/index.js";
 import { retranslateOverrides } from "../domain/retranslate-quality.js";
 import type { LibraryController } from "@/features/library/index.js";
 import { isDocumentJobActive } from "./use-document-jobs.js";
@@ -57,7 +57,7 @@ export function useBookDetailStageActions({
 }) {
   const baseJobId = jobIdOf(job);
   // 底是渲染任务时，先顺着 source_artifact_job_id 找到真正持有译文的任务，重新处理都发给它
-  // （见 domain/translation-owner.ts）。找到之前不读阶段动作，免得先闪出一句「不能重新处理」。
+  // （见 features/jobs/domain/translation-owner.ts）。找到之前不读阶段动作，免得先闪出一句「不能重新处理」。
   const needsOwner = Boolean(
     open && baseJobId && !isDocumentJobActive(job) && `${job?.workflow || ""}`.trim().toLowerCase() === "render",
   );

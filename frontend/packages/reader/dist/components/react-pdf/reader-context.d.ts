@@ -30,6 +30,10 @@ export type ReaderContextValue = {
     jumpToBlock?: (itemId: string) => void;
     /** 改过的块（阅读页块编号 → 改过几次）：译文栏画小标记，悬停写「改过 N 次」。 */
     revisedBlocks?: ReadonlyMap<string, number>;
+    /** 译文栏悬停框的「改」：打开侧栏「改译文」改这一块。不能改时不给。 */
+    editBlock?: (itemId: string) => void;
+    /** 写回了、还没排进 PDF 的译文（阅读页块编号 → 文字）：译文栏先盖在 PDF 上。 */
+    pendingEdits?: ReadonlyMap<string, string>;
     /** 左栏搜索的词（防抖后）：书页文字层把命中标出来（PdfPageSlot）。空串不标。 */
     findTerm?: string;
     /**

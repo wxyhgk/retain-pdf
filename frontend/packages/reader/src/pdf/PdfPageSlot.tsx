@@ -33,6 +33,7 @@ import {
   READER_TEXT_HOVER_TOOLS_CLASS,
   ReaderTextHoverLayer,
 } from "./ReaderTextHoverLayer.js";
+import { EditedTranslationOverlay } from "./EditedTranslationOverlay.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
 import { useReaderContext } from "../components/react-pdf/reader-context.js";
 import { highlightFindTerm } from "../shared/content/reader-find.js";
@@ -94,6 +95,8 @@ function PdfPageSlotInner({
   // 改过的块（来自阅读器上下文；单测里直接渲染时没有，就不画标记）。
   const readerContext = useReaderContext();
   const revisedBlocks = readerContext?.revisedBlocks;
+  const pendingEdits = readerContext?.pendingEdits;
+  const editBlock = readerContext?.editBlock;
   // 左栏搜索的词：文字层里每处命中包一个 <mark>（reader-find.ts 的 highlightFindTerm）。没有词时不给 renderer，
   // react-pdf 照原样画文字层，不多一遍 innerHTML。
   const findTerm = readerContext?.findTerm || "";
@@ -295,6 +298,9 @@ function PdfPageSlotInner({
           height={naturalHeight}
         />
       ) : null}
+      {active && pane === "translated" && pendingEdits?.size ? (
+        <EditedTranslationOverlay targets={textHoverTargets} edits={pendingEdits} width={width} />
+      ) : null}
       {active && pane === "translated" && revisedBlocks?.size ? (
         <div className="reader-revised-markers" aria-hidden="true">
           {textHoverTargets.filter((target) => revisedBlocks.has(target.itemId)).map((target) => (
@@ -311,6 +317,7 @@ function PdfPageSlotInner({
         target={active ? hoveredTextTarget : null}
         pane={pane === "translated" ? "translated" : "source"}
         revisedCount={hoveredTextTarget ? revisedBlocks?.get(hoveredTextTarget.itemId) || 0 : 0}
+        onEdit={editBlock}
       />
     </div>
   );

@@ -24,7 +24,7 @@ import {
   type ReaderRegionRect,
 } from "../shared/data/reader-regions.js";
 
-type ProjectedLiveTranslationItem = {
+export type ProjectedLiveTranslationItem = {
   itemId: string;
   translatedText: string;
   status: string;
@@ -327,7 +327,7 @@ function fittedSizeCacheKey(
   ].join("\u0001");
 }
 
-function LiveTranslationTextItem({ item, pageScale }: LiveTranslationTextItemProps) {
+export function LiveTranslationTextItem({ item, pageScale }: LiveTranslationTextItemProps) {
   const contentRef = useRef<HTMLDivElement | null>(null);
   const prepared = useMemo(
     () => prepareLiveTranslationMathHtml(item.translatedText),

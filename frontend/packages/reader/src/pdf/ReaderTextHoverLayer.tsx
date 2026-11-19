@@ -81,6 +81,7 @@ export async function copyReaderText(text: string): Promise<boolean> {
 }
 
 export const READER_TEXT_HOVER_COPY_CLASS = "reader-text-hover-copy";
+export const READER_TEXT_HOVER_EDIT_CLASS = "reader-text-hover-edit";
 export const READER_TEXT_HOVER_ID_CLASS = "reader-text-hover-id";
 
 /**
@@ -132,7 +133,7 @@ function HoverToolButton({
 
 /** 工具条（编号 + 复制）大约占的尺寸：放进框内放不下时才挪到框外上方。 */
 export const HOVER_TOOLS_HEIGHT = 26;
-export const HOVER_TOOLS_WIDTH = 190;
+export const HOVER_TOOLS_WIDTH = 220;
 
 /**
  * 工具条放哪：一般的块放在框内右上角 —— 它就在块的命中范围里，鼠标走过去不会换块，
@@ -153,11 +154,14 @@ export function ReaderTextHoverLayer({
   target,
   pane = "source",
   revisedCount = 0,
+  onEdit,
 }: {
   target: ReaderTextHoverTarget | null;
   pane?: "source" | "translated";
   /** 这一块改过几次（精修、手改、助手改）；只在译文栏提示。 */
   revisedCount?: number;
+  /** 译文栏的「改」：打开侧栏「改译文」改这一块。不给就不画。 */
+  onEdit?: (itemId: string) => void;
 }) {
   const [state, setState] = useState<CopyState>("idle");
   const [idState, setIdState] = useState<CopyState>("idle");
@@ -218,6 +222,21 @@ export function ReaderTextHoverLayer({
             <span className="reader-text-hover-revised" data-reader-revised-count={revisedCount}>
               改过 {revisedCount} 次
             </span>
+          ) : null}
+          {pane === "translated" && onEdit ? (
+            <HoverToolButton
+              className={READER_TEXT_HOVER_EDIT_CLASS}
+              state="idle"
+              label="改这段译文"
+              title="改这段译文（E）"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onEdit(target.itemId);
+              }}
+            >
+              改
+            </HoverToolButton>
           ) : null}
           {text ? (
             <HoverToolButton

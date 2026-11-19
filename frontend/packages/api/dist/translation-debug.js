@@ -9,12 +9,12 @@ function isNotReady(payload) {
     return payload?.error?.details?.reason === "not_ready";
 }
 const TRANSLATION_NOT_READY_MESSAGE = "这个任务的翻译结果还没生成，翻译跑完后再看。";
-/** 404 分「还没产出」和「找不到」两种说法，别的状态码用 otherwise。 */
+/** 404 分「还没产出」和「找不到」两种说法，别的状态码用 otherwise。Error 带 status、reason（后端的 details.reason），调用方好分辨。 */
 function translationError(notFound, otherwise) {
     return (status, payload) => {
-        if (status === 404)
-            return new Error(isNotReady(payload) ? TRANSLATION_NOT_READY_MESSAGE : notFound);
-        return new Error(otherwise(status, payload));
+        const reason = `${payload?.error?.details?.reason || ""}`;
+        const message = status === 404 ? (isNotReady(payload) ? TRANSLATION_NOT_READY_MESSAGE : notFound) : otherwise(status, payload);
+        return Object.assign(new Error(message), { status, reason });
     };
 }
 function trimmedOrUndefined(value) {

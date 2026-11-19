@@ -30,8 +30,8 @@
  * 清单和 dock 机制留到 Markdown 面板改造时一起收（docs/ops/planning/frontend-migration/20261112-阅读页改进.md）。
  */
 /** 包自己渲染的面板。内容在包里，不需要宿主注入。 */
-export declare const READER_BASE_PANEL_IDS: readonly ["markdown"];
-export declare const READER_ASSISTANT_PANEL_IDS: readonly ["markdown"];
+export declare const READER_BASE_PANEL_IDS: readonly ["markdown", "edit"];
+export declare const READER_ASSISTANT_PANEL_IDS: readonly ["markdown", "edit"];
 export type ReaderBasePanelId = (typeof READER_BASE_PANEL_IDS)[number];
 export type ReaderAssistantPanel = ReaderBasePanelId;
 export declare function isReaderAssistantPanel(value: unknown): value is ReaderAssistantPanel;
