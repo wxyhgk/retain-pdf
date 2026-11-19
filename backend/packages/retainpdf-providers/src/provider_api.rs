@@ -12,7 +12,8 @@ use retainpdf_api_base::error::AppError;
 
 pub use super::provider_probe::{
     DeepSeekBalanceView, DeepSeekTokenValidationRequest, MineruTokenValidationRequest,
-    PaddleTokenValidationRequest, ProviderProbeView,
+    PaddleTokenValidationRequest, ProviderProbeView, TranslationModelListView, TranslationModelView,
+    TranslationModelsRequest,
 };
 use super::provider_probe::{PrivateTargets, ProbePolicy};
 
@@ -22,6 +23,8 @@ pub struct ProviderApiDeps {
     paddle_runtime: PaddleRuntimeConfig,
     deepseek_runtime: DeepSeekRuntimeConfig,
     probe: ProbePolicy,
+    /// 读价格表用（拉取模型时顺带给单价）；没给就不带价。
+    data_root: Option<std::path::PathBuf>,
 }
 
 impl ProviderApiDeps {
@@ -38,8 +41,28 @@ impl ProviderApiDeps {
                 runtime.probe_timeout_secs,
                 PrivateTargets::for_deployment(mode, allow_private_env),
             ),
+            data_root: None,
         }
     }
+
+    pub fn with_data_root(mut self, data_root: std::path::PathBuf) -> Self {
+        self.data_root = Some(data_root);
+        self
+    }
+}
+
+/// 翻译接口的「从服务商拉取模型」（2026-11-19）：代一次 `GET {base_url}/models`，Key 用完不存。
+pub async fn list_translation_models(
+    deps: &ProviderApiDeps,
+    payload: TranslationModelsRequest,
+) -> Result<TranslationModelListView, AppError> {
+    super::provider_probe::list_translation_models_view(
+        payload,
+        deps.deepseek_runtime.clone(),
+        deps.probe,
+        deps.data_root.as_deref(),
+    )
+    .await
 }
 
 pub async fn validate_mineru_token(

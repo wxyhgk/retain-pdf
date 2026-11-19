@@ -132,7 +132,51 @@
 2. 调对应接口，看 `data.ok`，显示 `data.summary`；
 3. 失败时可以补 `operator_hint`；调试模式再补 `provider_code`、`provider_message`、`trace_id`。
 
-## 8. 和运行期失败诊断的关系
+## 8. 拉取翻译接口的模型列表（2026-11-19）
+
+`POST /api/v1/providers/translation/models`（admin）。设置里「从服务商拉取」模型用：浏览器不能直接调服务商（跨域、Key 不能发出去），
+后端代一次 `GET {base_url}/models`。Key 用完不存、不回显。
+
+请求（`deny_unknown_fields`）：
+
+```json
+{ "base_url": "https://api.deepseek.com/v1", "api_key": "sk-…", "api_protocol": "openai" }
+```
+
+- `api_protocol`：`openai`（默认，也包括 `openai_responses`）发 `GET {base_url}/models`，`Authorization: Bearer`；
+  `anthropic` 发 `GET {…/v1}/models`，`x-api-key` + `anthropic-version`，按 `has_more` / `last_id` 翻页（最多 10 页）。
+- `base_url` 为空时：Anthropic 用官方地址，别的用默认翻译地址（和校验 Key 一样）。
+- 地址检查、超时、不跟随重定向和上面第 5、6 节一样；没有 Key、地址不合规是 400。
+
+返回（都是 200，看 `ok` / `status`）：
+
+```json
+{ "ok": true, "status": "ok", "summary": "拉到 4 个模型，其中 2 个对话模型", "source": "provider",
+  "base_url": "https://api.deepseek.com/v1", "fetched_at": "…", "provider_code": null, "provider_message": null,
+  "chat_models": 2,
+  "models": [ { "id": "deepseek-flash", "display_name": null, "owned_by": "deepseek", "created": 1760000000,
+                "kind": "chat", "price_provider": "deepseek", "price_basis": "host",
+                "price": { "input": 0.15, "output": 0.6, "cache_read": 0.003, "cache_write": null, "tiers": [], "peak_multiplier": 2.0 } } ] }
+```
+
+- `models` 按 `id` 排序、去重（重复的留第一条），最多 2000 个。认得出的列表形状：`{"data": [...]}`、裸数组、`{"models": [...]}`
+  （Gemini 的 `name: "models/…"` 去掉前缀）。
+- `kind`：名字里看得出是向量、语音、画图、审核、重排、OCR、实时、视频之类的记 `other`，其余 `chat`；`chat_models` 是 `chat` 的个数。
+  前端默认只列 `chat`，「显示全部」再列别的。
+- `price`：和 `POST /api/v1/usage/prices` 同一个形状、同一套对价规则（每百万 token 的美元，查不到是 `null`）。
+- `status` 不是 `ok` 时 `models` 为空：
+
+| `status` | 什么时候 | 界面 |
+|---|---|---|
+| `unsupported` | 服务商回 404 / 405 / 501，或者回的不是 JSON、没有模型列表 | 「这个接口不支持列模型，请手动填」 |
+| `unauthorized` | 401 / 403 | Key 不对或没有权限 |
+| `invalid_input` | Key 里有换行、全角空格等放不进请求头的字符 | 让用户重新粘贴 |
+| `unreachable` | 连不上、超时、读到一半断开 | 稍后重试 |
+| `provider_error` | 别的错误、重定向、列表太大（8 MB） | 显示 `summary`，调试时看 `provider_code`、`provider_message` |
+
+`provider_message` 是服务商的报错原文，截到 500 个字符，里面出现的 Key 换成 `[REDACTED]`。
+
+## 9. 和运行期失败诊断的关系
 
 这几个接口是"前置校验"。运行期如果仍然出现鉴权问题，任务失败诊断里会继续识别（例如 MinerU `A0202` 无效 Token、`A0211` Token 过期）：
 提交前用这些接口提前拦，运行中靠失败诊断兜底归因。

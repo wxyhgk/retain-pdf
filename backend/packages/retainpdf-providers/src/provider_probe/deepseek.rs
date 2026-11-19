@@ -406,7 +406,7 @@ pub(crate) async fn query_deepseek_balance_view(
     Ok(view.bounded())
 }
 
-const ANTHROPIC_DEFAULT_BASE_URL: &str = "https://api.anthropic.com/v1";
+pub(super) const ANTHROPIC_DEFAULT_BASE_URL: &str = "https://api.anthropic.com/v1";
 const ANTHROPIC_VERSION: &str = "2023-06-01";
 
 /// 很多 OpenAI 兼容服务只实现了 `/chat/completions`：`/responses` 返回 404/405 且正文不提模型时，
@@ -451,7 +451,7 @@ pub(super) fn anthropic_messages_url(base_url: &str) -> String {
 }
 
 /// 规范到 `…/v1` 为止；`/messages`、`/models` 都接在它后面。
-fn anthropic_v1_root(base_url: &str) -> String {
+pub(super) fn anthropic_v1_root(base_url: &str) -> String {
     let mut base = base_url.trim().trim_end_matches('/');
     if let Some(stripped) = base.strip_suffix("/messages") {
         base = stripped;
@@ -463,11 +463,11 @@ fn anthropic_v1_root(base_url: &str) -> String {
     }
 }
 
-fn anthropic_auth(request: reqwest::RequestBuilder, api_key: &str) -> reqwest::RequestBuilder {
+pub(super) fn anthropic_auth(request: reqwest::RequestBuilder, api_key: &str) -> reqwest::RequestBuilder {
     request.header("x-api-key", api_key).header("anthropic-version", ANTHROPIC_VERSION)
 }
 
-fn normalize_deepseek_base_url(raw: &str, runtime: &DeepSeekRuntimeConfig) -> String {
+pub(super) fn normalize_deepseek_base_url(raw: &str, runtime: &DeepSeekRuntimeConfig) -> String {
     let trimmed = raw.trim().trim_end_matches('/');
     if trimmed.is_empty() {
         runtime.default_base_url.trim_end_matches('/').to_string()
