@@ -22,6 +22,8 @@
 
 from __future__ import annotations
 
+import os
+
 import hashlib
 import json
 import re
@@ -114,6 +116,13 @@ FN_TOKEN_RE = re.compile(r"\{\{fn:([^{}]+)\}\}")
 class AgentRunStopped(RuntimeError):
     """额度用完、密钥不对、一直限流：进度已保存，修好后重试这个任务会从断点接着翻。"""
 
+
+
+def agent_structure() -> str:
+    """翻译结构（2026-11-19）：`RETAIN_AGENT_STRUCTURE=section` 时人文社科、通俗读物按节翻（翻译 agent 第二版，见
+    `retainpdf_translation_agent/section.py`），别的值或没设都是逐页（第一版）。先用环境变量开，评测集证明更好再换默认。"""
+    value = os.environ.get("RETAIN_AGENT_STRUCTURE", "").strip().lower()
+    return value if value in ("page", "section") else "page"
 
 def messages_url(base_url: str) -> str:
     """任务的 base_url（如 https://api.anthropic.com/v1）→ Messages 接口地址。"""
@@ -516,8 +525,10 @@ def translate_book_with_agent(
     model = (model or "").strip() or DEFAULT_MODEL
     reviewer_model = _separate_reviewer(reviewer, model=model, base_url=base_url)
     state_dir = Path(output_dir) / AGENT_STATE_DIR
-    # 编辑另配的模型也算进指纹：换了编辑模型重试时从头做，不沿用旧编辑改的页
-    _prepare_state_dir(state_dir, pages, model if reviewer_model is None else f"{model}+reviewer:{reviewer_model}")
+    structure = agent_structure()
+    # 编辑另配的模型、按节翻也算进指纹：换了编辑模型、切换翻译结构重试时从头做，不沿用旧的页
+    fingerprint = model if reviewer_model is None else f"{model}+reviewer:{reviewer_model}"
+    _prepare_state_dir(state_dir, pages, fingerprint if structure == "page" else f"{fingerprint}+structure:{structure}")
     # 请求缓存以前只增不减（2026-11-02 起默认 90 天过期，RETAIN_AGENT_REQUEST_CACHE_TTL_DAYS=0 关掉）
     prune_expired_once(
         paths.AGENT_REQUEST_CACHE_DIR,
@@ -546,7 +557,14 @@ def translate_book_with_agent(
     )
     # OpenAI 协议的请求由共用请求层自己记用量台账，这里再记就重了
     usage = _UsageRecorder(agent, connections=connections)
-    run = DocumentRun(agent, state_dir / RUN_DIR, glossary=glossary_from_entries(glossary_entries or []), read_first=True, review=True)
+    run = DocumentRun(
+        agent,
+        state_dir / RUN_DIR,
+        glossary=glossary_from_entries(glossary_entries or []),
+        read_first=True,
+        review=True,
+        structure=structure,
+    )
 
     total_blocks = sum(len(page.to_translate()) for page in pages)
     progress = {"blocks": 0, "pages": 0}

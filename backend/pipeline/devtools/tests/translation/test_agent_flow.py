@@ -421,3 +421,14 @@ def test_without_a_reviewer_model_science_books_keep_the_ticket_review(tmp_path:
     execute_translation_request(_request(tmp_path, reviewer_model="claude-haiku-5-5"))  # 和翻译模型同名：不另开连接
     tools = [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies]
     assert tools.count("submit_review") == 2 and "submit_rewrite" not in tools
+
+
+def test_agent_structure_is_page_unless_section_is_asked_for(monkeypatch) -> None:
+    """翻译 agent 第二版（按节翻，2026-11-19）用环境变量 RETAIN_AGENT_STRUCTURE=section 开；别的值、没设都是逐页。"""
+    from retainpdf_translation.workflow.agent_flow import agent_structure
+
+    monkeypatch.delenv("RETAIN_AGENT_STRUCTURE", raising=False)
+    assert agent_structure() == "page"
+    for value, expected in (("section", "section"), (" SECTION ", "section"), ("page", "page"), ("chapter", "page"), ("", "page")):
+        monkeypatch.setenv("RETAIN_AGENT_STRUCTURE", value)
+        assert agent_structure() == expected, value
