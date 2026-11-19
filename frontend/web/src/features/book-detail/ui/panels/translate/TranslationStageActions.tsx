@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Coins, Languages, LoaderCircle, RefreshCw } from "lucide-react";
 import { Button, ConfirmDialog, Select } from "@retainpdf/ui";
 import type {
@@ -11,6 +11,9 @@ import {
   RETRANSLATE_QUALITY_OPTIONS,
   type RetranslateQuality,
 } from "../../../domain/retranslate-quality.js";
+import { KEEP_MODEL, retranslateModelOptions } from "../../../domain/retranslate-model.js";
+import { savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
+import { RetranslateModelSelect } from "./RetranslateModelSelect.jsx";
 
 function labelOf(action: JobStageRetryActionView) {
   if (action.stage === "translation") return "重新翻译";
@@ -21,7 +24,7 @@ function labelOf(action: JobStageRetryActionView) {
 // 清单形态（sheet）里每一项的说明：做什么、花不花钱。画面上只摆一个费用小标签，整句在悬停里。顺序按代价从小到大。
 const SHEET_HINTS: Record<string, string> = {
   render: "用现有译文重新排版，不调用模型、不产生费用。",
-  translation: "复用已有 OCR 重新翻译整本，再排版；翻译方式可以沿用原来的，也可以换成普通、统一术语或精翻（翻译 agent）。会产生翻译费用。",
+  translation: "复用已有 OCR 重新翻译整本，再排版；翻译方式可以沿用原来的，也可以换成普通、统一术语或精翻（翻译 agent）；模型可以换成设置里存的其他连接。会产生翻译费用。",
 };
 const SHEET_ORDER: Record<string, number> = { render: 0, translation: 1 };
 
@@ -44,6 +47,14 @@ const CONFIRM_COPY = {
   title: "确认重新翻译",
   description: "复用现有 OCR，重新翻译整本再排版，会重新调用翻译接口并产生费用。只想接着上次没做完的部分，请用失败卡片上的「从断点继续」。",
   confirmLabel: "接受风险并重新翻译",
+};
+
+type RetryOptions = {
+  acceptDuplicateRisk?: boolean;
+  renderEngine?: string;
+  translationQuality?: string;
+  /** 重新翻译换成设置里存的这条连接（整套：地址、模型、key……）。 */
+  translationConnection?: TranslationConnection | null;
 };
 
 function StageIcon({ stage }: { stage: JobRetryStage }) {
@@ -88,7 +99,7 @@ export function TranslationStageActions({
   error?: string;
   onRetry: (
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string; translationQuality?: string },
+    options?: RetryOptions,
   ) => Promise<unknown>;
 }) {
   const [confirmAction, setConfirmAction] = useState<JobStageRetryActionView | null>(null);
@@ -96,6 +107,14 @@ export function TranslationStageActions({
   const [renderEngine, setRenderEngine] = useState("");
   // 重新翻译用哪种翻译方式；空串 = 沿用任务原来的。
   const [translationQuality, setTranslationQuality] = useState<RetranslateQuality>("");
+  // 重新翻译用哪条连接（设置里存的）；空串 = 沿用任务原来的。
+  const modelOptions = useMemo(() => retranslateModelOptions(savedTranslationConnections()), []);
+  const [translationModel, setTranslationModel] = useState(KEEP_MODEL);
+  const translationConnection = modelOptions.find((option) => option.value === translationModel)?.connection || null;
+  const translationChoice = {
+    ...(translationQuality ? { translationQuality } : {}),
+    ...(translationConnection ? { translationConnection } : {}),
+  };
   // 父级 hook 已把错误写入 error prop；本地兜底覆盖 onRetry 直接抛错
   // 但父级未落 error 的场景（如 mock/装配差异），保证错误仍落到 UI。
   const [localError, setLocalError] = useState("");
@@ -110,10 +129,7 @@ export function TranslationStageActions({
     return message || "重新处理失败，请稍后重试。";
   }
 
-  async function runRetry(
-    stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string; translationQuality?: string },
-  ) {
+  async function runRetry(stage: JobRetryStage, options?: RetryOptions) {
     setLocalError("");
     try {
       await onRetry(stage, options);
@@ -129,7 +145,7 @@ export function TranslationStageActions({
     try {
       await onRetry(confirmAction.stage, {
         acceptDuplicateRisk: true,
-        ...(confirmAction.stage === "translation" && translationQuality ? { translationQuality } : {}),
+        ...(confirmAction.stage === "translation" ? translationChoice : {}),
       });
       setLocalError("");
       setConfirmAction(null);
@@ -154,7 +170,7 @@ export function TranslationStageActions({
         onClick={() => {
           if (needsConfirm(action)) setConfirmAction(action);
           else if (action.stage === "render" && renderEngine) void runRetry("render", { renderEngine });
-          else if (action.stage === "translation" && translationQuality) void runRetry("translation", { translationQuality });
+          else if (action.stage === "translation" && (translationQuality || translationConnection)) void runRetry("translation", translationChoice);
           else void runRetry(action.stage);
         }}
       >
@@ -199,9 +215,20 @@ export function TranslationStageActions({
       ))}
     </Select>
   );
-  const confirmDescription = translationQuality === "refined"
-    ? `${CONFIRM_COPY.description}${RETRANSLATE_AGENT_NOTE}`
-    : CONFIRM_COPY.description;
+  const modelSelect = (
+    <RetranslateModelSelect
+      options={modelOptions}
+      value={translationModel}
+      onChange={setTranslationModel}
+      disabled={Boolean(pendingStage)}
+      size={variant === "sheet" ? "md" : "sm"}
+    />
+  );
+  const confirmDescription = [
+    CONFIRM_COPY.description,
+    translationQuality === "refined" ? RETRANSLATE_AGENT_NOTE : "",
+    translationConnection ? `这次用 ${translationConnection.label} 的 ${translationConnection.model}。` : "",
+  ].join("");
 
   const sheet = variant === "sheet";
   const sheetActions = [...visibleActions].sort(
@@ -229,6 +256,7 @@ export function TranslationStageActions({
                 <div className="book-detail-reprocess-controls">
                   {action.stage === "render" && !checking ? engineSelect : null}
                   {action.stage === "translation" && !checking ? qualitySelect : null}
+                  {action.stage === "translation" && !checking ? modelSelect : null}
                   {actionButton(action, true)}
                 </div>
               </li>
@@ -240,6 +268,7 @@ export function TranslationStageActions({
         <div className="book-detail-stage-actions-buttons">
           {visibleActions.map((action) => actionButton(action))}
           {!checking && visibleActions.some((action) => action.stage === "translation") ? qualitySelect : null}
+          {!checking && visibleActions.some((action) => action.stage === "translation") ? modelSelect : null}
           {!checking && visibleActions.some((action) => action.stage === "render") ? engineSelect : null}
         </div>
       )}

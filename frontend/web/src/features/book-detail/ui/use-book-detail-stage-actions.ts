@@ -9,6 +9,8 @@ import { API_PREFIX } from "@/platform/config/api-constants.js";
 import type { DocumentJobSummary } from "@/platform/contracts/library-payloads.js";
 import { resolveTranslationOwnerId, type TranslationSourceView } from "@/features/jobs/index.js";
 import { retranslateOverrides } from "../domain/retranslate-quality.js";
+import { connectionOverrides } from "../domain/retranslate-model.js";
+import type { TranslationConnection } from "@/platform/config/translation-connections.js";
 import type { LibraryController } from "@/features/library/index.js";
 import { isDocumentJobActive } from "./use-document-jobs.js";
 
@@ -138,11 +140,13 @@ export function useBookDetailStageActions({
 
   const retry = useCallback(async (
     stage: JobRetryStage,
-    { acceptDuplicateRisk = false, renderEngine = "", translationQuality = "" }: {
+    { acceptDuplicateRisk = false, renderEngine = "", translationQuality = "", translationConnection = null }: {
       acceptDuplicateRisk?: boolean;
       renderEngine?: string;
       /** 重新翻译换翻译方式（standard / terms / refined）；空 = 沿用原任务的。 */
       translationQuality?: string;
+      /** 重新翻译换成设置里存的这条连接（地址、模型、key 整套换）；null = 沿用原任务的。 */
+      translationConnection?: TranslationConnection | null;
     } = {},
   ) => {
     const descriptor = stageActions.find((action) => action.stage === stage);
@@ -157,7 +161,9 @@ export function useBookDetailStageActions({
       const engineOverride = stage === "render" && (renderEngine === "rpr_fit" || renderEngine === "typst")
         ? renderEngine
         : "";
-      const translationOverride = stage === "translation" ? retranslateOverrides(translationQuality) : null;
+      const quality = stage === "translation" ? retranslateOverrides(translationQuality) : null;
+      const connection = stage === "translation" ? connectionOverrides(translationConnection) : null;
+      const translationOverride = quality || connection ? { ...(quality || {}), ...(connection || {}) } : null;
       const body = (descriptor.action?.body || {}) as RetryBody;
       const result = await actions.retryJobStage(jobId, stage, {
         ...body,
