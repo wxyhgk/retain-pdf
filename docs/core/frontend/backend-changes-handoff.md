@@ -12,6 +12,23 @@
 
 ---
 
+## 编辑部事件：翻译 agent 查了什么（feat/agent-tools）
+
+2026-11-19。只加不改：编辑部事件（`GET /jobs/:id/progress/editorial`）新增一种 `tool_call`，初译时模型调了只读工具才有：
+
+- `page`、`role`（现在只有 `translator`）；
+- `tool`：`search_book`（全书搜原文）/ `lookup_term`（查术语表）；
+- `query`：搜的词，最多 80 字；
+- `found`：搜到几处 / 查到几条；
+- `error`：只在出错时有，例如这一页的次数用完了。
+
+同一页的几轮工具调用算在同一次 `translate_call` 里，不会多出 `translate_call`。正式流程还没开工具（先在 agent_lab 上对比），
+所以现在的任务不会产生这个事件；不认识的事件类型照旧跳过即可。格式见 `docs/api/02-进度事件/03-编辑部事件.md`。
+
+前端要做的（可选）：编辑部画面认 `tool_call`，显示成例如「查全书：coroner（3 处）」「查术语表：inquest（没有）」。
+
+---
+
 ## 译文版本：一本书的几份译文能切换（feat/translation-versions）
 
 2026-11-18。只加不改：老前端不传 `version` 时阅读入口的行为和以前一样（用户没选过版本 = 自动，逐页取最新）。契约

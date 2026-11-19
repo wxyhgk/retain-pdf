@@ -64,8 +64,14 @@ def _tool_instruction(tool: dict) -> str:
 
 
 def openai_request(body: dict) -> tuple[list[dict[str, str]], dict | None, str, str | None]:
-    """Anthropic 请求体 → (messages, response_format, 请求标签, 要交回的工具名)。"""
+    """Anthropic 请求体 → (messages, response_format, 请求标签, 要交回的工具名)。
+
+    只认强制交回的那一个工具。初译的多轮只读工具（`tool_choice` 是 auto / none，2026-11-19）共用请求层还交不回
+    tool_calls，换不过来：直接报错，不悄悄当成强制交卷（调用方在 OpenAI 协议下不该开工具）。"""
     tools = body.get("tools") or []
+    choice = body.get("tool_choice") or {}
+    if tools and (len(tools) != 1 or choice.get("type") != "tool"):
+        raise ValueError("agent tool loop (search_book / lookup_term) is not supported over the OpenAI protocol")
     tool = tools[0] if tools else None
     system = _system_text(body.get("system"))
     if tool is not None:

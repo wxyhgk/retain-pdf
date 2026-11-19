@@ -226,3 +226,32 @@ def test_metrics_count_consistency_polysemy_names_abbreviations_and_tone() -> No
     assert metrics["keep_missed"] == ["Ruiz@e"] and metrics["abbreviations"]["OCR"]["first_use_bracketed"] is True
     assert metrics["abbreviations"]["OCR"]["later_kept"] == 1.0
     assert metrics["hedge_lost"] == ["e"] and metrics["cross_refs"] == 1.0
+
+
+class ToolUsingModel(FakeModel):
+    """开了工具：除了第 1 页，每页先在全书搜一次 "chapter"，拿到结果再交卷；别的照 FakeModel。"""
+
+    def __call__(self, body: dict) -> dict:
+        names = [t["name"] for t in body.get("tools") or []]
+        if "search_book" not in names:
+            return super().__call__(body)
+        first = body["messages"][0]["content"]
+        text = first if isinstance(first, str) else first[0]["text"]
+        payload = json.loads(text)
+        if payload["page"] != "1" and len(body["messages"]) == 1:
+            self.searches = getattr(self, "searches", 0) + 1
+            self.bodies.append(body)
+            return {"content": [{"type": "tool_use", "id": "toolu_1", "name": "search_book", "input": {"query": "chapter"}}], "stop_reason": "tool_use", "usage": {"input_tokens": 100, "output_tokens": 10}}
+        if len(body["messages"]) > 1:
+            self.answered = getattr(self, "answered", []) + [body]
+        return super().__call__(dict(body, messages=[{"role": "user", "content": text}]))
+
+
+def test_tools_flag_lets_the_translator_search_the_book_and_counts_the_calls(tmp_path: Path) -> None:
+    fake = ToolUsingModel()
+    out = run(tmp_path / "tools", agent=Agent(model="fake", transport=fake, cache_dir=tmp_path / "cache"), sample="long", pages_filter={"1", "2", "3"}, tools=True)
+    assert out["summary"]["tools"] is True and out["summary"]["run_status"] == "done"
+    assert out["summary"]["tool_calls"] == fake.searches >= 1
+    assert set(out["summary"]["tool_calls_by_tool"]) == {"search_book"}
+    kinds = {b["messages"][2]["content"][0]["type"] for b in fake.answered}
+    assert "tool_result" in kinds, "the search result goes back to the model before it submits"

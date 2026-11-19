@@ -85,9 +85,11 @@ def run(
     pdf: Path | None = None,
     baseline_dir: Path | None = None,
     glossary_csv: Path | None = None,
+    tools: bool = False,
 ) -> dict:
     """`document_path` + `pdf`：跑真实文档（OCR 规范化后的 document.v1.json 和原 PDF），不用样例；
-    `baseline_dir`：正式流程的 translated/ 目录，译文并排放进结果当基线。"""
+    `baseline_dir`：正式流程的 translated/ 目录，译文并排放进结果当基线。
+    `tools`：初译能调只读工具（全书搜原文、查术语表），交卷后的检查问题在同一段对话里回给模型（只接 Anthropic）。"""
     out_dir.mkdir(parents=True, exist_ok=True)
     if document_path is not None:
         truth, labels = truth_from_document(json.loads(Path(document_path).read_text(encoding="utf-8")))
@@ -105,7 +107,7 @@ def run(
     state_dir = out_dir / "state"
     shutil.rmtree(state_dir, ignore_errors=True)
     glossary = glossary_from_csv(Path(glossary_csv).read_text(encoding="utf-8")) if glossary_csv else None
-    outcome = DocumentRun(agent, state_dir, glossary=glossary, memory=memory, read_first=read_first, review=review).run([page.to_input(document) for page in requests])
+    outcome = DocumentRun(agent, state_dir, glossary=glossary, memory=memory, read_first=read_first, review=review, tools=tools).run([page.to_input(document) for page in requests])
     blocks: dict[str, dict] = {}
     pages_out = []
     for key, page in enumerate(requests):
@@ -147,6 +149,7 @@ def run(
         "memory": memory,
         "read_first": read_first and memory,
         "review": review,
+        "tools": tools,
         "run_status": outcome.status,
         "stop_reason": outcome.stop_reason,
         "model": agent.model,
@@ -170,6 +173,11 @@ def run(
         "model_latency_ms": agent.usage.latency_ms,
         "wall_ms": int((time.monotonic() - started) * 1000),
     }
+    events_file = state_dir / "events.jsonl"
+    events = [json.loads(line) for line in events_file.read_text(encoding="utf-8").splitlines()] if events_file.exists() else []
+    tool_calls = [e for e in events if e.get("type") == "tool_call"]
+    summary["tool_calls"] = len(tool_calls)
+    summary["tool_calls_by_tool"] = {name: sum(1 for e in tool_calls if e.get("tool") == name) for name in sorted({e.get("tool") for e in tool_calls})}
     results = {"summary": summary, "pages": pages_out, "calls": agent.calls, "blocks": blocks, "glossary": glossary.to_dict()}
     reading_file = state_dir / "reading.json"
     if reading_file.exists():
@@ -198,6 +206,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--document", type=Path, default=None, help="a real normalized document (ocr/normalized/document.v1.json) instead of a sample")
     parser.add_argument("--pdf", type=Path, default=None, help="the source PDF of --document (for the report)")
     parser.add_argument("--baseline", type=Path, default=None, help="translated/ directory of a production job, shown next to the agent's translations")
+    parser.add_argument("--tools", action="store_true", help="let the translator call read-only tools (search the book, look up the glossary); Anthropic only")
     parser.add_argument("--glossary", type=Path, default=None, help="a user glossary CSV (same format as the web import), e.g. devtools/agent_lab/glossaries/quantum_chemistry.csv")
     args = parser.parse_args(argv)
     names = load_env_file(args.env)
@@ -207,6 +216,7 @@ def main(argv: list[str] | None = None) -> int:
     results = run(
         args.out, agent=agent, pages_filter=pages_filter, sample=args.sample, memory=not args.no_memory, read_first=not args.no_read, review=args.review,
         document_path=args.document, pdf=args.pdf, baseline_dir=args.baseline, glossary_csv=args.glossary,
+        tools=args.tools,
     )
     print(json.dumps(results["summary"], ensure_ascii=False, indent=1))
     print(args.out / "report.html")

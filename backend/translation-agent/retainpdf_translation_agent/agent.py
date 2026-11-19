@@ -34,6 +34,14 @@ from retainpdf_translation_agent.contract import BlockResult
 from retainpdf_translation_agent.contract import PageInput
 from retainpdf_translation_agent.contract import RevisionRequest
 from retainpdf_translation_agent.memory import find_terms
+from retainpdf_translation_agent.tools import MAX_TOOL_CALLS
+from retainpdf_translation_agent.tools import MAX_TOOL_ROUNDS
+from retainpdf_translation_agent.tools import TOOL_DEFINITIONS
+from retainpdf_translation_agent.tools import TOOLS_PROMPT
+from retainpdf_translation_agent.tools import TOOLS_VERSION
+from retainpdf_translation_agent.tools import BookTools
+from retainpdf_translation_agent.tools import summarize_call
+from retainpdf_translation_agent.tools import tool_result_text
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
@@ -272,6 +280,11 @@ class TranslationAgent:
         self._restored: dict[str, list[dict]] = {}  # 这一轮被换回原文写法的公式（块 id → 警告）
         # 这一页合成的接续组（组号 → 原来的各块 id）：编辑部事件里照旧报各块的 id，前端不用知道合过
         self._members: dict[str, list[str]] = {}
+        # 初译用的只读工具（`tools.py`）：调度接上才有；没接就和以前一样一页一次请求、重翻另起请求
+        self.tools: BookTools | None = None
+        # 开了工具时这一页初译的对话（发出去的消息加模型的回答）：交卷后的检查问题接在后面回给模型
+        self._conversation: list[dict] | None = None
+        self._tool_calls = 0
 
     def model_for(self, role: str) -> str:
         return self.models.get(role) or self.model
@@ -301,12 +314,24 @@ class TranslationAgent:
         self._emit("check_result", attempt=attempt, ok=counts[STATUS_OK], warn=counts[STATUS_WARN], error=counts[STATUS_ERROR], codes=codes)
 
     # ---- 请求 ----
-    def _body(self, payload: dict, role: str = ROLE_TRANSLATOR, *, system: str = SYSTEM_PROMPT, tool: dict | None = None) -> dict:
+    def _body(
+        self,
+        payload: dict | None,
+        role: str = ROLE_TRANSLATOR,
+        *,
+        system: str = SYSTEM_PROMPT,
+        tool: dict | None = None,
+        messages: list[dict] | None = None,
+        tools_allowed: bool | None = None,
+    ) -> dict:
         """不给 `tool`（初译、重翻、改稿）：模型按交卷格式交回纯文本；给了（通读、审校）：强制用这个工具交回。
 
         不强制用工具时 Haiku 5.5 默认会思考（medium），强制用工具时不会。2026-10-31 论文 16 页各两遍实测，公式原样保住
         纯文本 + 思考 97.1%、纯文本关掉思考 88.1%、JSON 工具 90.4%——帮上忙的是思考，不要传 `{"type": "disabled"}` 关掉。
-        同一天再测 medium 对 low（`self.effort`）：公式外露、`$` 不成对、漏交都是 0，low 输出少 32%、每页快 30%。"""
+        同一天再测 medium 对 low（`self.effort`）：公式外露、`$` 不成对、漏交都是 0，low 输出少 32%、每页快 30%。
+
+        `messages`（多轮对话，开了工具的初译）代替 `payload`；`tools_allowed` 不是 None 时带上只读工具的定义，
+        False 是这一页的次数用完了（定义照带，提示词缓存的前缀不变；`tool_choice: none` 不许再调）。"""
         # 系统提示打提示词缓存断点：各角色的系统提示（连同前面的工具定义）一本书里逐字不变，缓存读按一折计费、不计入
         # 每分钟输入限额（2026-10-31）。太短的（不到 512 token）服务端不缓存也不报错。
         body = {"model": self.model_for(role), "max_tokens": 16000, "system": [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]}
@@ -314,7 +339,14 @@ class TranslationAgent:
             body.update(tools=[strict_tool(tool)], tool_choice={"type": "tool", "name": tool["name"]})
         elif self.effort:
             body.update(thinking={"type": "adaptive"}, output_config={"effort": self.effort})
-        body["messages"] = [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}]
+        if tools_allowed is not None:
+            body["system"][0]["text"] = system + TOOLS_PROMPT
+            body.update(tools=[strict_tool(t) for t in TOOL_DEFINITIONS], tool_choice={"type": "auto" if tools_allowed else "none"})
+        if messages is None:
+            messages = [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}]
+        else:
+            messages = _mark_last_for_cache(messages)
+        body["messages"] = messages
         return body
 
     def call_tool(self, payload: dict, *, system: str, tool: dict, role: str, label: str, blocks: list[str] | None = None) -> dict:
@@ -348,6 +380,32 @@ class TranslationAgent:
             path.write_text(json.dumps({"request": body, "response": response, "latency_ms": latency}, ensure_ascii=False, indent=1), encoding="utf-8")
         return response
 
+    def _converse(self, *, label: str, event: dict) -> dict:
+        """开了工具的初译：发 `self._conversation`，模型调工具就执行、把结果回给它，直到它交卷（或次数用完后被要求交卷）。
+        模型的每轮回答（含思考块）原样接进对话；返回最后那次回答。"""
+        conversation = self._conversation
+        assert conversation is not None and self.tools is not None
+        rounds = 0
+        while True:
+            allowed = rounds < MAX_TOOL_ROUNDS and self._tool_calls < MAX_TOOL_CALLS
+            response = self._call(self._body(None, messages=conversation, tools_allowed=allowed), label=label if not rounds else f"{label} +tools{rounds}", event=event if not rounds else None)
+            content = response.get("content") or []
+            conversation.append({"role": "assistant", "content": content})
+            calls = [part for part in content if part.get("type") == "tool_use"]
+            if response.get("stop_reason") != "tool_use" or not calls:
+                return response
+            rounds += 1
+            answers = []
+            for part in calls:
+                self._tool_calls += 1
+                if self._tool_calls > MAX_TOOL_CALLS:
+                    result = {"error": f"这一页的工具次数（{MAX_TOOL_CALLS}）用完了，请直接交卷"}
+                else:
+                    result = self.tools.run(str(part.get("name") or ""), part.get("input") or {})
+                self._emit("tool_call", role=ROLE_TRANSLATOR, **summarize_call(str(part.get("name") or ""), part.get("input") or {}, result))
+                answers.append({"type": "tool_result", "tool_use_id": part.get("id"), "content": tool_result_text(result), **({"is_error": True} if "error" in result else {})})
+            conversation.append({"role": "user", "content": answers})
+
     @staticmethod
     def _parse(response: dict) -> dict:
         """按交卷格式取出译文、报上的术语、声明的例外；同一个 id 交了多次的记下来。
@@ -379,7 +437,7 @@ class TranslationAgent:
             "glossary_version": version,
             "used_terms": used,
             "context_hash": page.context.get("hash") if page.context else None,
-        }
+        } | ({"tools_version": TOOLS_VERSION} if self._conversation is not None and role == ROLE_TRANSLATOR else {})
 
     def _check(self, page: PageInput, block, text: str | None, exceptions: dict[str, set[str]]) -> list[dict]:
         issues = check_block(block.text, text) + self._restored.pop(block.id, [])
@@ -420,13 +478,19 @@ class TranslationAgent:
     def translate_units(self, page: PageInput) -> tuple[dict[str, BlockResult], dict]:
         """翻一页合好接续组的块（`merge_groups` 的结果）：合成的那块就是普通的一块，按整段校验、重翻、退回原文。"""
         self._members = {b.id: b.members for b in page.blocks if b.members}
+        self._conversation, self._tool_calls = None, 0
         wanted = {b.id for b in page.to_translate()}
         if not wanted:
             # 这一页没有要翻的（都不翻，或者都是已定好的译文）：不发请求
             return self._fixed_results(page, {}), {"notes": "", "extra_ids": [], "duplicates": [], "terms": [], "term_exceptions": []}
         records = request_records(page.blocks, wanted)
         payload = self._payload(page, records, required_ids=[r["id"] for r in records if r["translate"]])
-        response = self._call(self._body(payload), label=f"page {page.page_label}", event={"attempt": 1, "blocks": [b.id for b in page.to_translate()]})
+        label, event = f"page {page.page_label}", {"attempt": 1, "blocks": [b.id for b in page.to_translate()]}
+        if self.tools is not None:
+            self._conversation = [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}]
+            response = self._converse(label=label, event=event)
+        else:
+            response = self._call(self._body(payload), label=label, event=event)
         parsed = self._parse(response)
         raw, duplicates = parsed["translations"], parsed["duplicates"]
         exceptions = _exceptions_by_block(parsed["term_exceptions"])
@@ -568,12 +632,16 @@ class TranslationAgent:
             }
             for b in unit
         ]
-        payload = self._payload(page, records, retry=retry, required_ids=[r["id"] for r in retry])
-        response = self._call(
-            self._body(payload),
-            label="retry " + ",".join(r["id"] for r in retry),
-            event={"attempt": max(results[b.id].attempts for b in unit) + 1, "blocks": [b.id for b in unit]},
-        )
+        label = "retry " + ",".join(r["id"] for r in retry)
+        event = {"attempt": max(results[b.id].attempts for b in unit) + 1, "blocks": [b.id for b in unit]}
+        if self._conversation is not None:
+            # 开了工具：接着这一页的对话把问题回给模型（它记得整页和自己交的稿，前面的对话走提示词缓存）
+            feedback = {"check": [{"id": r["id"], "problems": r["problems"]} for r in retry], "required_ids": [r["id"] for r in retry]}
+            self._conversation.append({"role": "user", "content": CHECK_FEEDBACK + json.dumps(feedback, ensure_ascii=False, indent=1)})
+            response = self._converse(label=label, event=event)
+        else:
+            payload = self._payload(page, records, retry=retry, required_ids=[r["id"] for r in retry])
+            response = self._call(self._body(payload), label=label, event=event)
         try:
             parsed = self._parse(response)
         except ValueError:
@@ -589,6 +657,26 @@ class TranslationAgent:
             meta = self._meta(page, block, role=ROLE_TRANSLATOR, attempt=first.attempts + 1)
             fixed[block.id] = BlockResult(block.id, per_block.get(block.id), issues, first.attempts + 1, status_of(issues), history, meta)
         return fixed, parsed
+
+
+CHECK_FEEDBACK = (
+    "程序逐块检查了你交的稿，下面这些块有问题。只重交 required_ids 里的块（交卷格式同上，每块完整写出改好的译文），"
+    "别的块不要再交；有新定的术语、例外照常写在后面。\n"
+)
+
+
+def _mark_last_for_cache(messages: list[dict]) -> list[dict]:
+    """多轮对话：只在最后一条消息的最后一块打提示词缓存断点（服务端往前找得到上一次缓存的前缀；断点最多 4 个，不能每条都打）。
+    不改调用方的列表。"""
+    out = [dict(m) for m in messages]
+    last = out[-1]
+    content = last["content"]
+    if isinstance(content, str):
+        content = [{"type": "text", "text": content}]
+    content = [dict(part) for part in content]
+    content[-1]["cache_control"] = {"type": "ephemeral"}
+    last["content"] = content
+    return out
 
 
 def strict_tool(tool: dict) -> dict:

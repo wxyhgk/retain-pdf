@@ -53,6 +53,7 @@ from retainpdf_translation_agent.review import review_page
 from retainpdf_translation_agent.review import reviewable
 from retainpdf_translation_agent.rewrite import REWRITE_GENRES
 from retainpdf_translation_agent.rewrite import rewrite_page
+from retainpdf_translation_agent.tools import BookTools
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
@@ -89,11 +90,14 @@ class DocumentRun:
         memory: bool = True,
         read_first: bool = False,
         review: bool | str = False,
+        tools: bool = False,
     ) -> None:
         """`memory=False` 时不带上下文包、不记术语（和第 1 版以前一样），用来做对比。
         `read_first=True` 时先通读整篇（`reader.py`）：定体裁、文风、全文统一的术语和人名、全部标题的译法，再逐页翻。
         `review=True` 时每页翻完审校一遍：通读判成人文社科、通俗读物（`rewrite.REWRITE_GENRES`）的由编辑整块重写
-        （`rewrite.py`，也改文笔），其余按问题单改被指出的片段（`review.py`）；`review="rewrite"` / `"tickets"` 强制用其中一种。"""
+        （`rewrite.py`，也改文笔），其余按问题单改被指出的片段（`review.py`）；`review="rewrite"` / `"tickets"` 强制用其中一种。
+        `tools=True` 时初译能调只读工具（全书搜原文、查术语表，`tools.py`），交卷后的检查问题在同一段对话里回给模型改；
+        只接 Anthropic 的原生工具调用，OpenAI 协议的 transport 不要开。"""
         self.agent = agent
         self.state_dir = Path(state_dir)
         self.initial_glossary = glossary
@@ -104,6 +108,7 @@ class DocumentRun:
         self.read_first = read_first and memory
         self.reading: Reading | None = None
         self.review = review
+        self.tools = tools
         self._event_page = 0  # 编辑部事件里的页号：正在做第几页（1 起），通读是 0
         self._tickets_seen = 0
 
@@ -160,6 +165,7 @@ class DocumentRun:
             return self._run(pages, on_page)
         finally:
             self.agent.on_event = None
+            self.agent.tools = None
 
     def _run(self, pages: list[PageInput], on_page: Callable[[int, PageInput, dict[str, BlockResult]], None] | None) -> RunOutcome:
         progress_path = self._path("progress.json")
@@ -204,6 +210,8 @@ class DocumentRun:
         self._ledger("start", pages=len(pages), resumed=len(done), prompt_version=PROMPT_VERSION, contract_version=CONTRACT_VERSION, memory=self.memory)
 
         results: dict[str, BlockResult] = {}
+        book_tools = BookTools(pages, glossary) if self.tools else None
+        self.agent.tools = book_tools
         previous: list[dict] = []
         seen_abbreviations: set[str] = set()
         # 缩写和人名：全书第一次用到要写全称、"中文译名（原文）"，之后不用
@@ -230,6 +238,8 @@ class DocumentRun:
                         budget=self.budget,
                     )
                 page_input = replace(page, context=context)
+                if book_tools is not None:
+                    book_tools.current = index
                 calls_before = len(self.agent.calls)
                 changes_before = len(glossary.changes)
                 self._event_page = index + 1
@@ -283,6 +293,8 @@ class DocumentRun:
                 done.append(key)
                 self._progress(done, RUNNING, total=len(pages))
             results.update(page_results)
+            if book_tools is not None:
+                book_tools.record(page_results)
             if on_page is not None:
                 on_page(index, page, page_results)
             text = " ".join(b.text for b in page.to_translate())
