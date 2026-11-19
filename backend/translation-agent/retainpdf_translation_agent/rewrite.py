@@ -30,7 +30,7 @@ from retainpdf_translation_agent.translationese import translationese_signals
 
 MIN_RATIO = 0.7
 MAX_RATIO = 1.4
-# 通读判成这几种体裁时，调度（`runner.py`）默认用编辑重写代替挑错审校；其余体裁照旧挑错
+# 通读判成这几种体裁时，调度（`runner.py`）默认分两轮：先挑错审校只管意思、再由编辑只改文笔（2026-11-19 起；11-18 起是编辑一次做完）；其余体裁照旧挑错
 REWRITE_GENRES = {"humanities", "popular_book"}
 # 编辑常顺手加的词：改出来比初译多、原文里又没有对应的英文，这次重写不收（2026-11-18 实测加过"说实话""其实""大概"）
 ADDED_WORD_SOURCES = {
@@ -77,6 +77,17 @@ REWRITE_PROMPT = """你是英译中图书的责任编辑。你会收到一页里
 一页都不用改就交空列表。
 """
 
+# 两轮分开（`runner` 的 review="split"，2026-11-19）时的第二轮：意思已经由审校对过，编辑把译文当一篇中文来读、只改文笔。
+# 换掉 REWRITE_PROMPT 里"分两步读"那一段和"要改的"第 1 条
+POLISH_STEPS = """这一页的意思已经有审校对照原文核对过，这一轮只管文笔。分两步读：
+第一步，只读中文（translation），把它当成一篇中文作品来读，像中文读者那样，标出读着别扭、要读两遍、一看就是从英文翻过来的句子。
+  suspects 是程序按句式圈出的可疑处（不一定都错），重点看。
+第二步，改第一步标出的句子；改完对照英文（source）确认意思、语气、信息量一点没变。
+  对照时发现意思确实错了也改（category 写 meaning），但不要为了贴近英文把句子改回直译。
+
+要改的：
+1. fluency 文笔（这一轮的重点）：照搬英文结构的翻译腔，常见的有——"""
+
 REWRITE_TOOL = {
     "name": "submit_rewrite",
     "description": "交回这一页改过的块（整块译文）；不用改就是空列表。",
@@ -102,12 +113,13 @@ REWRITE_TOOL = {
 }
 
 
-def rewrite_page(agent, page: PageInput, results: dict[str, BlockResult], *, genre: str = "other") -> dict:
-    """编辑重写一页并就地改 `results`。返回记录（和 `review_page` 同样的键，调度照常记）：收了哪些、拒了哪些、为什么。"""
+def rewrite_page(agent, page: PageInput, results: dict[str, BlockResult], *, genre: str = "other", polish: bool = False) -> dict:
+    """编辑重写一页并就地改 `results`。返回记录（和 `review_page` 同样的键，调度照常记）：收了哪些、拒了哪些、为什么。
+    `polish`：两轮分开时的第二轮，意思已经审过，编辑把译文当中文作品读、只改文笔（`POLISH_STEPS`）。"""
     from retainpdf_translation_agent.agent import ROLE_REVIEWER
 
     blocks = reviewable(page, results)
-    report: dict = {"mode": "rewrite", "reviewed": len(blocks), "tickets": 0, "applied": [], "rejected": []}
+    report: dict = {"mode": "polish" if polish else "rewrite", "reviewed": len(blocks), "tickets": 0, "applied": [], "rejected": []}
     if not blocks:
         return report
     terms = [t for t in context_terms(page.context or {}) if t.get("status") in ("approved", "locked")]
@@ -120,8 +132,11 @@ def rewrite_page(agent, page: PageInput, results: dict[str, BlockResult], *, gen
         "blocks": [_block_payload(b, results[b.id].translation or "") for b in blocks],
     }
     system = REWRITE_PROMPT.format(genre_note=GENRE_NOTES[genre in REWRITE_GENRES])
+    if polish:
+        start, end = system.index("分两步读："), system.index("2. fluency 文笔：照搬英文结构的翻译腔，常见的有——")
+        system = system[:start] + POLISH_STEPS + system[end + len("2. fluency 文笔：照搬英文结构的翻译腔，常见的有——") :]
     try:
-        data = agent.call_tool(payload, system=system, tool=REWRITE_TOOL, role=ROLE_REVIEWER, label=f"rewrite {page.page_label}", blocks=[b.id for b in blocks])
+        data = agent.call_tool(payload, system=system, tool=REWRITE_TOOL, role=ROLE_REVIEWER, label=f"{report['mode']} {page.page_label}", blocks=[b.id for b in blocks])
     except ValueError:
         report["error"] = "no submit_rewrite tool call"
         return report
@@ -193,4 +208,4 @@ def _apply(edit: dict, by_id: dict, results: dict[str, BlockResult], terms: list
     return "applied"
 
 
-__all__ = ["REWRITE_GENRES", "REWRITE_PROMPT", "REWRITE_TOOL", "added_words", "rewrite_page"]
+__all__ = ["POLISH_STEPS", "REWRITE_GENRES", "REWRITE_PROMPT", "REWRITE_TOOL", "added_words", "rewrite_page"]

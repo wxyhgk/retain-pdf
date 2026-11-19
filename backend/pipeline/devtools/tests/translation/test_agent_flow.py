@@ -399,7 +399,7 @@ def test_job_data_registers_the_agent_glossary_where_and_how_the_agent_writes_it
 
 
 def test_a_separate_reviewer_model_does_the_editing_on_its_own_connection(tmp_path: Path, monkeypatch) -> None:
-    """用户另配了审校模型：人文书的编辑重写走它的连接和 Key，通读、初译走翻译模型；用量台账按模型分开记。"""
+    """用户另配了审校模型：人文书的两轮（审意思、改文笔，2026-11-19 起）都走它的连接和 Key，通读、初译走翻译模型；用量台账按模型分开记。"""
     translator, editor = FakeModel(genre="humanities"), FakeModel(genre="humanities")
     by_key = {"sk-job-key": translator, "sk-editor": editor}
     monkeypatch.setattr(agent_flow, "make_http_transport", lambda api_key, *, url: by_key[api_key])
@@ -408,7 +408,7 @@ def test_a_separate_reviewer_model_does_the_editing_on_its_own_connection(tmp_pa
     execute_translation_request(_request(tmp_path, reviewer_model="claude-editor", reviewer_api_key="sk-editor"))
 
     tools = lambda model: [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies]  # noqa: E731
-    assert tools(editor) == ["submit_rewrite", "submit_rewrite"], "humanities books are edited, one request per page"
+    assert tools(editor) == ["submit_review", "submit_rewrite"] * 2, "humanities books: review for meaning, then polish, on every page"
     assert {b["model"] for b in editor.bodies} == {"claude-editor"}
     assert "submit_rewrite" not in tools(translator) and tools(translator)[0] == "submit_reading"
     assert {b["model"] for b in translator.bodies} == {"claude-haiku-5-5"}
