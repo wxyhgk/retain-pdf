@@ -20,6 +20,10 @@ export {
   isPollingBootstrapPlaceholder,
 } from "./domain/polling-placeholder.js";
 export {
+  resolveTranslationOwnerId,
+  type TranslationSourceView,
+} from "./domain/translation-owner.js";
+export {
   readActiveJobId,
 } from "./domain/runtime/active-job-storage.js";
 export {

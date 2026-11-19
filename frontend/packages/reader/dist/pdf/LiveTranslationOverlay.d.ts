@@ -1,7 +1,7 @@
 import type { ReaderLiveTranslationLayoutPage as LiveTranslationLayoutPage, ReaderLiveTranslationTypography as LiveTranslationTypography } from "../contracts/live-translation.js";
 import type { LiveTranslationPageState } from "../shared/data/live-translation-state.js";
 import { type ReaderRegionRect } from "../shared/data/reader-regions.js";
-type ProjectedLiveTranslationItem = {
+export type ProjectedLiveTranslationItem = {
     itemId: string;
     translatedText: string;
     status: string;
@@ -37,6 +37,10 @@ export declare function prepareLiveTranslationMathHtml(text: string): {
 };
 /** Translate Typst point/em values into the current PDF viewport. */
 export declare function resolveLiveTranslationTextStyle(item: Pick<ProjectedLiveTranslationItem, "kind" | "rect" | "sourceText" | "typography">, pageScale: number): LiveTranslationTextStyle;
+type LiveTranslationTextItemProps = {
+    item: ProjectedLiveTranslationItem;
+    pageScale: number;
+};
 type LiveTranslationFitMeasure = (fontSize: number) => {
     width: number;
     height: number;
@@ -56,6 +60,7 @@ type LiveTranslationFitInput = {
  */
 export declare function computeLiveTranslationFit(measure: LiveTranslationFitMeasure, availableWidth: number, availableHeight: number, input: LiveTranslationFitInput): number;
 export declare function clearLiveTranslationFitCache(): void;
+export declare function LiveTranslationTextItem({ item, pageScale }: LiveTranslationTextItemProps): import("react").JSX.Element;
 declare function LiveTranslationOverlayInner({ layoutPage, pageState, width, height, }: LiveTranslationOverlayProps): import("react").JSX.Element;
 export declare const LiveTranslationOverlay: import("react").MemoExoticComponent<typeof LiveTranslationOverlayInner>;
 export {};

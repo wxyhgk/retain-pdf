@@ -38,6 +38,7 @@
 @import "./live-translation.css" layer(pages);
 @import "./panel-shell.css" layer(pages);
 @import "./float-markdown.css" layer(pages);
+@import "./block-edit.css" layer(pages);
 @import "./hud.css" layer(pages);
 /* Markdown 悬浮预览（含 MathJax） */
 @import "./markdown.css" layer(pages);

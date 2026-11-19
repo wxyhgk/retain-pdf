@@ -9,7 +9,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { waitFor } from "../helpers/async.mjs";
 import { makeDom } from "../helpers/dom.mjs";
-import { resolveTranslationOwnerId } from "../../src/features/book-detail/domain/translation-owner.js";
+import { resolveTranslationOwnerId } from "../../src/features/jobs/domain/translation-owner.js";
 import { stageDisabledReasonText } from "../../src/features/book-detail/domain/stage-disabled-reason.js";
 
 // 取自真实数据（Theorems of Molecular Quantum 那本书）。

@@ -33,6 +33,8 @@
 /** 包自己渲染的面板。内容在包里，不需要宿主注入。 */
 export const READER_BASE_PANEL_IDS = [
   "markdown",
+  // 2026-11-19 加：在阅读页里改译文（ReaderBlockEditPanel）。
+  "edit",
 ] as const;
 
 export const READER_ASSISTANT_PANEL_IDS = READER_BASE_PANEL_IDS;

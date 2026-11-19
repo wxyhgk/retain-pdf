@@ -78,9 +78,32 @@ export type ReaderSessionDataPort = {
   /** 这本书的修订按阅读页块编号分组（GET /jobs/:job_id/data/revisions?group_by=reader_item_id），
    * 返回 {groups: [{value, count}]}。宿主不提供时译文栏不画「改过」标记。 */
   fetchRevisionGroups?: (jobId: string) => Promise<unknown>;
+  /** 在阅读页里改译文（侧栏「改译文」）。宿主不提供时没有「改」按钮和这个面板。 */
+  translationEdit?: ReaderTranslationEditPort | null;
   fetchProtected: typeof fetch;
   resolveResourceUrl: (url: string) => string;
   resolveReaderSourcePdf: (manifestPayload: unknown) => unknown;
   resolveReaderTranslatedPdfUrl: (jobPayload: unknown, manifestPayload: unknown) => string;
   resolveReaderArtifactUrl: (item: unknown) => string;
+};
+
+/** 改一段译文时要用的后端能力。错误照抛：Error 带 status、reason（后端的 details.reason）、issues（校验没过的每一条）。 */
+export type ReaderTranslationEditPort = {
+  /** 真正持有译文的任务：重新排版出来的任务没有自己的译文，改要改到来源任务上。 */
+  resolveOwnerJobId: (jobId: string) => Promise<string>;
+  /** GET /jobs/:id/translations/:item_id，返回 {item: {...}}。 */
+  loadItem: (jobId: string, itemId: string) => Promise<{ item?: Record<string, unknown> } | null>;
+  /** PATCH /jobs/:id/translations/:item_id。 */
+  revise: (jobId: string, itemId: string, body: ReaderTranslationRevisionBody) => Promise<{ generation?: number; changed?: boolean } | null>;
+  /** 修订记录（data/revisions）：给了阅读页块号只要这一块的，按时间从旧到新；不给就是全书最近的，从新到旧。 */
+  fetchRevisions: (jobId: string, readerItemId?: string) => Promise<unknown>;
+  /** 原地重新排版（retry-stage render，create_new_job=false）。 */
+  rerender: (jobId: string) => Promise<unknown>;
+};
+
+export type ReaderTranslationRevisionBody = {
+  translated_text: string;
+  source: "user";
+  reason?: string;
+  expected_generation?: number;
 };

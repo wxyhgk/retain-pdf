@@ -86,6 +86,14 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
       { actions: ["mode-translated"], keys: "3", desc: "译文" },
     ],
   },
+  {
+    title: "改译文",
+    items: [
+      { actions: [], keys: "E", desc: "改鼠标停着的那一段" },
+      { actions: [], keys: "Alt+↑ / Alt+↓", desc: "改上一段 / 下一段" },
+      { actions: [], keys: "⌘Enter / Ctrl+Enter", desc: "保存" },
+    ],
+  },
 ];
 
 /** 按 event.key 命中第一个绑定；单字符键不区分大小写。 */

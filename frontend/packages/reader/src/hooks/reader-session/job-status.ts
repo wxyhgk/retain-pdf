@@ -1,7 +1,8 @@
 // 职责 2b：job 权威载荷与轻量 job status 轮询。
 // 约束（与拆分前一致）：
 // - 每秒轮询只调 loadJobPayload，绝不下载 PDF；
-// - 首次观察到 succeeded 只刷新一次最终产物（terminalArtifactRefreshRef fencing）；
+// - 首次观察到 succeeded 只刷新一次最终产物（terminalArtifactRefreshRef fencing）；任务原地重跑
+//   （又看到排队/运行）后栅栏重置，再到 succeeded 再刷新一次；
 // - 旧 session / 已关闭的请求不能写入新 session（epoch + closing + jobId 三重检查）；
 // - 瞬时状态错误不得替换可用的 Reader 快照。
 
@@ -106,6 +107,10 @@ export function useJobStatusPolling(options: {
       const nextStatus = normalizeJobStatus(nextPayload);
       setJobPayload(nextPayload as Record<string, unknown>);
       setPayloadSessionIdentity(sessionIdentityRef.current);
+      // 原地重跑（重新排版、精修）：任务又进了排队/运行，下次到 succeeded 要再刷新一次产物。
+      if (!isFinishedJobStatus(nextStatus) && terminalArtifactRefreshRef.current === targetJobId) {
+        terminalArtifactRefreshRef.current = "";
+      }
       if (
         nextStatus === "succeeded"
         && terminalArtifactRefreshRef.current !== targetJobId

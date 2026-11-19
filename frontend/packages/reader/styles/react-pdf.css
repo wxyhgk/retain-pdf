@@ -300,7 +300,8 @@
   padding-bottom: 3px;
 }
 
-.reader-text-hover-copy {
+.reader-text-hover-copy,
+.reader-text-hover-edit {
   display: inline-flex;
   align-items: center;
   min-height: 20px;
@@ -341,7 +342,8 @@
   font-family: inherit;
 }
 
-.reader-text-hover-copy:hover {
+.reader-text-hover-copy:hover,
+.reader-text-hover-edit:hover {
   background: color-mix(in srgb, var(--danger) 8%, var(--paper));
 }
 

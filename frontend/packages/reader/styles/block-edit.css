@@ -1,0 +1,239 @@
+/* 侧栏「改译文」（ReaderBlockEditPanel）和译文栏上「待排版」的那一层（EditedTranslationOverlay）。 */
+
+.reader-block-edit {
+  display: grid;
+  gap: 10px;
+  font-size: var(--ui-text-md, 13px);
+  color: var(--ink);
+}
+
+.reader-block-edit h4 {
+  margin: 4px 0 0;
+  font-size: var(--ui-text-sm, 12px);
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.reader-block-edit-note {
+  margin: 8px 2px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.reader-block-edit-note.is-blocked {
+  color: var(--danger);
+}
+
+.reader-block-edit-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reader-block-edit-where {
+  margin-right: auto;
+  font-weight: 650;
+}
+
+.reader-block-edit-step {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.reader-block-edit-step:disabled,
+.reader-block-edit-act:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.reader-block-edit-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.reader-block-edit-act:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+}
+
+.reader-block-edit-act[data-variant="ghost"] {
+  border-color: transparent;
+}
+
+.reader-block-edit-act[data-variant="primary"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.reader-block-edit-act[data-variant="primary"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 88%, var(--ink));
+}
+
+.reader-block-edit-form {
+  display: grid;
+  gap: 6px;
+}
+
+.reader-block-edit-source {
+  margin: 0;
+  max-height: 14em;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reader-block-edit-text,
+.reader-block-edit-reason {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.6;
+}
+
+.reader-block-edit-text {
+  min-height: 9em;
+  resize: vertical;
+}
+
+.reader-block-edit-text:focus,
+.reader-block-edit-reason:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 0;
+}
+
+.reader-block-edit-hint {
+  margin: 0;
+  font-size: var(--ui-text-sm, 12px);
+  color: var(--muted);
+}
+
+.reader-block-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.reader-block-edit-status {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.reader-block-edit-status.is-ok {
+  color: var(--ok);
+}
+
+.reader-block-edit-status.is-error,
+.reader-block-edit-issues {
+  color: var(--danger);
+}
+
+.reader-block-edit-issues {
+  margin: 0;
+  padding-left: 1.2em;
+  line-height: 1.5;
+}
+
+.reader-block-edit-history ol {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reader-block-edit-history li {
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: var(--ui-radius-sm, 6px);
+}
+
+.reader-block-edit-history li[data-current="true"] {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.reader-block-edit-history-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: var(--ui-text-sm, 12px);
+  color: var(--muted);
+}
+
+.reader-block-edit-history-reason {
+  margin: 4px 0 0;
+  font-size: var(--ui-text-sm, 12px);
+  color: var(--muted);
+}
+
+.reader-block-edit-history-text {
+  margin: 4px 0 0;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.reader-block-edit-pending {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0;
+  font-size: var(--ui-text-sm, 12px);
+  color: var(--ink);
+}
+
+.reader-block-edit-pending.is-running {
+  color: var(--muted);
+}
+
+/* 译文栏：写回了、还没排进 PDF 的段落，盖在原来那段上。 */
+.reader-edited-overlay {
+  z-index: 5;
+}
+
+.reader-edited-block .reader-live-translation-item {
+  /* 实时译文那层是 96% 不透明（底下是原文）；这里底下是旧译文，透出来会叠成两层字。 */
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.reader-edited-badge {
+  position: absolute;
+  transform: translateY(-100%);
+  padding: 1px 6px;
+  border-radius: var(--ui-radius-sm, 6px) var(--ui-radius-sm, 6px) 0 0;
+  background: color-mix(in srgb, var(--accent) 85%, var(--paper));
+  color: var(--paper);
+  font-size: var(--ui-text-2xs, 10px);
+  line-height: 1.5;
+  white-space: nowrap;
+}

@@ -39,6 +39,8 @@ import { resolveLiveTranslationToggles } from "./shared/data/live-translation-st
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderFinder, ReaderFinderToggles, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
 import { useFindShortcut } from "./hooks/use-find-shortcut.js";
+import { useReaderBlockEdit, useEditBlockShortcut } from "./hooks/use-reader-block-edit.js";
+import { ReaderBlockEditPanel } from "./components/react-pdf/ReaderBlockEditPanel.js";
 
 /** 阅读视图可见台面的判别联合。 */
 export type ReaderPaneComposition = {
@@ -227,6 +229,7 @@ export function ReaderAppReactPdf() {
   // 原来是「闸一遍、open 一遍」，两处各自合法，抄改时把闸上那个写成别的面板
   // 整套测试全绿而摘录永远打不开。见 use-reader-panel-slot.ts。
   const markdownSlot = useReaderPanelSlot(assistantPanel, "markdown");
+  const editSlot = useReaderPanelSlot(assistantPanel, "edit");
   // 键盘与 UI 共用同一「可见模式」真源：paneComposition.visibleMode。
   // 「0」重置缩放据此取模式默认，避免与 HUD/网格显示的模式脱节。
   useReaderKeyboard({
@@ -308,6 +311,26 @@ export function ReaderAppReactPdf() {
     if (readerViewportWidth() < 900) setFinder(null);
   }, [c.jumpToAnchor]);
   const jumpToBlock = useCallback((itemId: string) => c.jumpToAnchor({ block_id: itemId }), [c.jumpToAnchor]);
+  // 改译文：悬停框里的「改」、按 E 都是选中这一块并打开侧栏。
+  const blockEdit = useReaderBlockEdit({
+    jobId: session.jobId,
+    jobStatus: session.jobStatus,
+    jobPayload: session.download.jobPayload,
+    hasTranslation: !c.sourceOnly && Boolean(sessionFiles.translatedUrl),
+    refreshJobStatus: session.refreshJobStatus,
+  });
+  const selectBlock = blockEdit.select;
+  const editBlock = useCallback((itemId: string) => {
+    selectBlock(itemId);
+    setAssistantPanel("edit");
+  }, [selectBlock]);
+  useEditBlockShortcut(blockEdit.available ? editBlock : null, regionHover);
+  const revisedBlocks = useMemo(() => {
+    if (!blockEdit.savedCounts.size) return c.revisedBlocks;
+    const merged = new Map(c.revisedBlocks);
+    for (const [itemId, count] of blockEdit.savedCounts) merged.set(itemId, (merged.get(itemId) || 0) + count);
+    return merged;
+  }, [c.revisedBlocks, blockEdit.savedCounts]);
   const readerContext = useMemo<ReaderContextValue>(() => ({
     bindShell: c.shell.bindShell,
     shellEl: c.shell.shellEl,
@@ -328,7 +351,9 @@ export function ReaderAppReactPdf() {
     activeRegion: c.activeRegion,
     regionHover,
     jumpToBlock,
-    revisedBlocks: c.revisedBlocks,
+    revisedBlocks,
+    editBlock: blockEdit.available ? editBlock : undefined,
+    pendingEdits: blockEdit.pendingEdits,
     findTerm: finder === "search" ? findTerm : "",
     sourceOnly: c.sourceOnly,
     sourceViewOnly,
@@ -347,7 +372,10 @@ export function ReaderAppReactPdf() {
     c.activeRegion,
     regionHover,
     jumpToBlock,
-    c.revisedBlocks,
+    revisedBlocks,
+    blockEdit.available,
+    blockEdit.pendingEdits,
+    editBlock,
     finder,
     findTerm,
     c.sourceOnly,
@@ -418,6 +446,7 @@ export function ReaderAppReactPdf() {
         ) : null}
         <Suspense fallback={null}>
           {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
+          {editSlot.mounted ? <ReaderBlockEditPanel open={editSlot.open} onClose={closeAssistant} edit={blockEdit} regions={session.regions} jumpToBlock={jumpToBlock} /> : null}
         </Suspense>
         <DownloadToastHost />
       </div>
