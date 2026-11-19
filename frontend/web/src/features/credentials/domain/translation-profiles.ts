@@ -20,6 +20,7 @@ type TranslationProfileElements = {
   apiKeyInput?: { value?: string } | null;
   modelBaseUrlInput?: { value?: string } | null;
   modelNameInput?: { value?: string } | null;
+  extraModelsInput?: { value?: string } | null;
   translationWorkersInput?: { value?: string } | null;
   translationProtocolSelect?: { value?: string } | null;
   translationThinkingSelect?: { value?: string } | null;
@@ -85,6 +86,7 @@ export function createTranslationProfiles({
         workers: elements.translationWorkersInput?.value || "",
         apiProtocol: elements.translationProtocolSelect?.value || "",
         thinking: elements.translationThinkingSelect?.value || "",
+        models: elements.extraModelsInput?.value || "",
       },
     );
     if (currentTranslationProvider === "custom") {
@@ -109,6 +111,7 @@ export function createTranslationProfiles({
         : definition.baseUrl;
     }
     if (elements.modelNameInput) elements.modelNameInput.value = profile.model;
+    if (elements.extraModelsInput) elements.extraModelsInput.value = profile.models.join(", ");
     if (elements.translationWorkersInput) elements.translationWorkersInput.value = `${profile.workers}`;
     if (elements.translationProtocolSelect) elements.translationProtocolSelect.value = profile.apiProtocol;
     if (elements.translationThinkingSelect) elements.translationThinkingSelect.value = profile.thinking;
@@ -134,9 +137,11 @@ export function createTranslationProfiles({
   }
 
   function recordCurrentProfile(profile: Partial<TranslationProfile>) {
+    // 保存时只传表单里那几项；「其他模型」在 captureCurrent 里已经读进来了，别被盖掉。
+    const current = translationProfiles[currentTranslationProvider];
     translationProfiles[currentTranslationProvider] = normalizeTranslationProfile(
       currentTranslationProvider,
-      profile,
+      { models: current?.models || [], ...profile },
     );
   }
 

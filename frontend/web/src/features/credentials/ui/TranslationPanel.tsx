@@ -11,10 +11,11 @@ import {
   TRANSLATION_PROVIDER_OPTIONS,
 } from "@/platform/config/providers.js";
 import { validationIcon } from "../domain/validation-icon.js";
-import { Box, Brain, Cable, Check, ChevronDown, Code2, ExternalLink, Gauge, KeyRound, Languages, Link2, PlugZap, Server, TriangleAlert } from "lucide-react";
+import { Box, Brain, Cable, Check, ChevronDown, Code2, ExternalLink, Gauge, KeyRound, Languages, Layers, Link2, PlugZap, Server, TriangleAlert } from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
 import { SecretInput } from "./SecretInput.js";
 import { FieldLabel } from "./FieldLabel.jsx";
+import { Input } from "@retainpdf/ui";
 
 const { browser: BROWSER_IDS } = CREDENTIAL_DOM_IDS;
 
@@ -174,6 +175,18 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
             aria-label="翻译并发数"
             defaultValue=""
             ref={(node) => { elementsRef.translationWorkersInput = node || null; }}
+          />
+        </label>
+        <label className="credential-translation-models-field">
+          <FieldLabel icon={<Layers />}>其他模型（可不填）</FieldLabel>
+          <Input
+            id={BROWSER_IDS.extraModels}
+            type="text"
+            autoComplete="off"
+            placeholder="用逗号隔开，比如 deepseek-v4-pro, deepseek-v4-flash"
+            title="这把 key 还能用的其他模型。书详情「重新翻译」时可以换成它们，旁边写着估价。"
+            defaultValue=""
+            ref={(node) => { elementsRef.extraModelsInput = node || null; }}
           />
         </label>
         <label className="credential-translation-protocol-field">

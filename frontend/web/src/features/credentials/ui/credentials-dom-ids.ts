@@ -33,6 +33,7 @@ export const CREDENTIAL_DOM_IDS = {
     translationProvider: "browser-translation-provider",
     modelBaseUrl: "browser-model-base-url",
     modelName: "browser-model-name",
+    extraModels: "browser-extra-models",
     translationWorkers: "browser-translation-workers",
     translationProtocol: "browser-translation-protocol",
     translationThinking: "browser-translation-thinking",

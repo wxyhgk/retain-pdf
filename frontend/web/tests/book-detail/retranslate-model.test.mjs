@@ -18,7 +18,7 @@ import { RetranslateModelSelect } from "../../src/features/book-detail/ui/panels
 
 const CONFIG = {
   translationProfiles: {
-    deepseek: { apiKey: "sk-ds", baseUrl: "", model: "deepseek-v4-flash", workers: 50, apiProtocol: "", thinking: "" },
+    deepseek: { apiKey: "sk-ds", baseUrl: "", model: "deepseek-v4-flash", models: ["deepseek-v4-pro", "deepseek-v4-flash", " "], workers: 50, apiProtocol: "", thinking: "" },
     qwen: { apiKey: "", baseUrl: "", model: "qwen3.8-flash" },
     anthropic: { apiKey: "sk-ant", baseUrl: "https://api.anthropic.com/v1", model: "claude-haiku-5-5", apiProtocol: "anthropic", thinking: "low" },
     custom: { apiKey: "sk-c", baseUrl: "https://llm.example.com/v1", model: "my-model" },
@@ -26,13 +26,14 @@ const CONFIG = {
   },
 };
 
-test("连接：填了 key 和模型的才算；官方服务商没存地址用它的官方地址；自定义用主机名当名字", () => {
+test("连接：填了 key 和模型的才算，其他模型各一条；官方服务商没存地址用它的官方地址；自定义用主机名当名字", () => {
   const connections = translationConnectionsFrom(CONFIG);
   assert.deepEqual(connections.map((c) => [c.provider, c.label, c.model]).sort(), [
     ["anthropic", "Anthropic", "claude-haiku-5-5"],
     ["custom", "llm.example.com", "my-model"],
     ["deepseek", "DeepSeek", "deepseek-v4-flash"],
-  ].sort());
+    ["deepseek", "DeepSeek", "deepseek-v4-pro"],
+  ].sort(), "「其他模型」各算一条，去重、去空");
   const deepseek = connections.find((c) => c.provider === "deepseek");
   assert.equal(deepseek.baseUrl, "https://api.deepseek.com/v1");
   assert.equal(deepseek.apiProtocol, "openai_responses");
@@ -142,10 +143,19 @@ test("重新翻译清单：每条连接问一次估价，写在下拉选项后�
     onRetry: async () => {},
     estimate,
   }));
-  const select = await waitFor(() => dom.window.document.querySelector("#book-detail-translation-model"), "模型下拉");
-  await waitFor(() => /claude-haiku-5-5　约 ¥1\.20–1\.80/.test(select.textContent), "估价写进选项");
-  assert.deepEqual(asked.sort(), ["claude-haiku-5-5", "deepseek-v4-flash", "my-model"]);
-  assert.doesNotMatch([...select.options].find((o) => o.value === "custom::my-model").textContent, /¥/, "没有可参照的用量不写价");
+  const doc = dom.window.document;
+  await waitFor(() => doc.querySelector("[data-retranslate-model-list]"), "模型列表");
+  const rowOf = (value) => doc.querySelector(`[data-model-value="${value}"]`);
+  await waitFor(() => /约 ¥1\.20–1\.80/.test(rowOf("anthropic::claude-haiku-5-5")?.textContent || ""), "估价写在行尾");
+  assert.deepEqual(asked.sort(), ["claude-haiku-5-5", "deepseek-v4-flash", "deepseek-v4-pro", "my-model"]);
+  assert.doesNotMatch(rowOf("custom::my-model").textContent, /¥/, "没有可参照的用量不写价");
+  // 按服务商分组；第一行「沿用原来的」选中
+  assert.deepEqual([...doc.querySelectorAll("[data-model-group]")].map((g) => g.dataset.modelGroup), ["DeepSeek", "Anthropic", "llm.example.com"]);
+  assert.equal(rowOf("").getAttribute("aria-checked"), "true");
+  // 点一行就选中，确认框里写这次用哪个模型和估价
+  rowOf("anthropic::claude-haiku-5-5").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+  await waitFor(() => rowOf("anthropic::claude-haiku-5-5").getAttribute("aria-checked") === "true", "选中");
+  assert.equal(rowOf("").getAttribute("aria-checked"), "false");
   root.unmount();
   delete globalThis.localStorage;
   dom.window.close();

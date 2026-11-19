@@ -1,7 +1,7 @@
 // 设置里存好的翻译连接：每家服务商一套（key、地址、模型、协议、思考深度），存在本地的开发配置里
 // （developerConfig.translationProfiles，设置「翻译」那一栏写）。key 只在本地（2026-09-14 定），重新翻译换模型时
 // 跟着 overrides.translation 一起发给后端，后端照旧导入凭据库。
-// 填了 key 和模型的才算一条可用的连接。
+// 填了 key 和模型的才算可用；一家的默认模型和「其他模型」各算一条。
 import { loadDeveloperStoredConfig } from "./persisted-config.js";
 import {
   getTranslationProviderDefinition,
@@ -51,15 +51,19 @@ export function translationConnectionsFrom(config: unknown): TranslationConnecti
     const model = text(profile.model);
     const baseUrl = option.id === "custom" ? text(profile.baseUrl) : (text(profile.baseUrl) || `${definition.baseUrl || ""}`);
     if (!apiKey || !model || !baseUrl) continue;
-    connections.push({
-      provider: option.id,
-      label: option.id === "custom" ? hostOf(baseUrl) : definition.label,
-      baseUrl,
-      model,
-      apiKey,
-      apiProtocol: normalizeTranslationApiProtocol(text(profile.apiProtocol) || definition.protocol),
-      thinking: normalizeTranslationThinking(text(profile.thinking) || "off"),
-    });
+    // 默认模型在前，「其他模型」（设置里填的，2026-11-19 加）跟在后面，每个模型一条。
+    const extra = Array.isArray(profile.models) ? profile.models.map(text).filter(Boolean) : [];
+    for (const each of [...new Set([model, ...extra])]) {
+      connections.push({
+        provider: option.id,
+        label: option.id === "custom" ? hostOf(baseUrl) : definition.label,
+        baseUrl,
+        model: each,
+        apiKey,
+        apiProtocol: normalizeTranslationApiProtocol(text(profile.apiProtocol) || definition.protocol),
+        thinking: normalizeTranslationThinking(text(profile.thinking) || "off"),
+      });
+    }
   }
   return connections;
 }

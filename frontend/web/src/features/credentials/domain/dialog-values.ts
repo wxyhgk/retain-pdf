@@ -27,6 +27,7 @@ export interface CredentialDialogElementsLike {
   apiKeyInput?: { value?: string } | null;
   modelBaseUrlInput?: { value?: string } | null;
   modelNameInput?: { value?: string } | null;
+  extraModelsInput?: { value?: string } | null;
   translationWorkersInput?: { value?: string } | null;
   translationProtocolSelect?: { value?: string } | null;
   translationThinkingSelect?: { value?: string } | null;

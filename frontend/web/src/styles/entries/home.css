@@ -140,6 +140,7 @@
 /* 「进度」分区按组件拆分；layout 定义共享变量，必须在最前。 */
 @import "../pages/home/book-detail-processing/layout.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-card.css" layer(pages);
+@import "../pages/home/book-detail-processing/retranslate-model.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-head.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-hud.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-details.css" layer(pages);

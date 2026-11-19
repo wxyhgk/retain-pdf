@@ -1,0 +1,158 @@
+/* 「重新处理」里重新翻译那一行能挑模型时的样子：上下排（is-stacked）和模型单选列表。
+ * （TranslationStageActions、RetranslateModelList） */
+
+.book-detail-reprocess-row.is-stacked {
+  display: grid;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.book-detail-reprocess-row.is-stacked .book-detail-reprocess-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.book-detail-reprocess-row.is-stacked .book-detail-reprocess-controls {
+  justify-content: flex-end;
+}
+
+.book-detail-reprocess-field {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+}
+
+.book-detail-reprocess-field-label {
+  padding-top: 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs);
+}
+
+/* 模型列表：一张圆角卡，分组之间一条细线。 */
+.book-detail-model-list {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: var(--ui-radius-md);
+  background: var(--paper);
+}
+
+.book-detail-model-group {
+  display: grid;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+.book-detail-model-group-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px 3px;
+  color: var(--muted);
+  font-size: var(--ui-text-2xs);
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.book-detail-model-logo {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.book-detail-model-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-sm);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.book-detail-model-option:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+}
+
+.book-detail-model-option:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ink) 30%, transparent);
+  outline-offset: -2px;
+}
+
+.book-detail-model-option[data-selected="true"] {
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+  font-weight: 600;
+}
+
+.book-detail-model-option:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.book-detail-model-radio {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border: 1.5px solid color-mix(in srgb, var(--ink) 28%, transparent);
+  border-radius: var(--ui-radius-pill);
+}
+
+.book-detail-model-option[data-selected="true"] .book-detail-model-radio {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.book-detail-model-radio svg {
+  width: 10px;
+  height: 10px;
+  stroke-width: 3;
+}
+
+.book-detail-model-name {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-model-tag {
+  flex: 0 0 auto;
+  padding: 1px 6px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--ok-weak, color-mix(in srgb, var(--ok) 14%, var(--paper)));
+  color: var(--ok);
+  font-size: var(--ui-text-2xs);
+  font-weight: 600;
+}
+
+.book-detail-model-price {
+  margin-left: auto;
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: var(--ui-text-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 400;
+}
+
+@media (max-width: 719px) {
+  .book-detail-reprocess-field {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .book-detail-reprocess-field-label {
+    padding-top: 0;
+  }
+}
