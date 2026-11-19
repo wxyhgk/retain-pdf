@@ -59,6 +59,9 @@ test("phase-1a endpoints carry the client names from the frontend list over the 
   assert.deepEqual(named, [
     ["create-job.v1.schema.json", "POST", "/api/v1/jobs", "createJob", "json"],
     ["library-books.v1.schema.json", "DELETE", "/api/v1/jobs/:job_id", "deleteJob", "json"],
+    // 估价（2026-11-19）
+    ["token-usage.v1.schema.json", "GET", "/api/v1/documents/:document_id/usage/estimate", "estimateDocumentUsage", "json"],
+    ["token-usage.v1.schema.json", "GET", "/api/v1/usage/estimate", "estimateLibraryUsage", "json"],
     ["token-usage.v1.schema.json", "GET", "/api/v1/documents/:document_id/usage", "getDocumentUsage", "json"],
     ["job-status.v1.schema.json", "GET", "/api/v1/jobs/:job_id", "getJob", "json"],
     ["job-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/data/:dataset", "getJobDataset", "json"],
@@ -72,6 +75,7 @@ test("phase-1a endpoints carry the client names from the frontend list over the 
     ["job-events.v2.schema.json", "GET", "/api/v1/jobs/:job_id/progress/events", "listJobEvents", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/files", "listJobFiles", "json"],
     ["job-status.v1.schema.json", "GET", "/api/v1/jobs", "listJobs", "json"],
+    ["token-usage.v1.schema.json", "POST", "/api/v1/usage/prices", "lookupModelPrices", "json"],
   ]);
   // GET /api/v1/jobs 只登记在 job-status.v1；library-books.v1 重复的那条 2026-10-23 删了。
   const duplicate = read("library-books.v1.schema.json").endpoints.find((endpoint) => endpoint.method === "GET" && endpoint.path === "/api/v1/jobs");

@@ -22,7 +22,7 @@ pub use credentials::api::{
 pub use model_executor::{ModelConnectionPolicy, ModelExecutor};
 pub use model_requests_api::{ModelConnection, ModelRequest, ModelRequestsApi};
 pub use pricing::{
-    price_sync_url, spawn_daily_price_sync, sync_price_book, CostEstimate, PriceBasis, PriceBook, PriceSyncOutcome, TokenCounts,
+    peak_multiplier, price_sync_url, spawn_daily_price_sync, sync_price_book, CostEstimate, CNY_PER_USD, Price, PriceBasis, PriceBook, PriceSyncOutcome, TokenCounts,
 };
 pub use provider_api::{
     query_deepseek_balance, validate_deepseek_token, validate_mineru_token, validate_paddle_token,

@@ -71,7 +71,9 @@ pub use query::{job_search_text, JobQueries};
 pub use query_execution::QueryExecution;
 pub use reports::quality::api::{quality_summary_view, QualityApiDeps, QualitySummaryView};
 pub use reports::usage::api::{
-    all_usage_view, document_usage_view, UsageApiDeps, UsageSummaryView,
+    all_usage_view, document_usage_estimate_view, document_usage_view, library_usage_estimate_view,
+    price_lookup_view, DocumentUsageEstimateQuery, LibraryUsageEstimateQuery, PriceLookupInput, PriceLookupView,
+    UsageApiDeps, UsageEstimateView, UsageSummaryView,
 };
 pub use runtime_gateway::{JobDriverRegistry, JobRuntime, JobRuntimeLauncher};
 pub use summary_loaders::SummaryCache;

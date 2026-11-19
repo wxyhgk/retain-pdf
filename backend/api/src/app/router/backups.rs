@@ -9,6 +9,12 @@ crate::endpoints! {
     GET "/api/v1/usage" => token_usage::all_usage_route, signed;
     /// 一本书的模型用量
     GET "/api/v1/documents/:document_id/usage" => token_usage::document_usage_route, signed;
+    /// 按接口地址和模型批量查单价
+    POST "/api/v1/usage/prices" => token_usage::price_lookup_route, signed;
+    /// 按书库每页平均估一本还没翻译的书
+    GET "/api/v1/usage/estimate" => token_usage::library_usage_estimate_route, signed;
+    /// 这本书换个模型重新翻译大概多少钱
+    GET "/api/v1/documents/:document_id/usage/estimate" => token_usage::document_usage_estimate_route, signed;
     /// 备份列表
     GET "/api/v1/backups" => backups::list_backups_route, admin;
     /// 马上备份一次

@@ -86,7 +86,7 @@ impl UsageBucket {
 }
 
 /// 美元保留到百万分之一，免得浮点尾数出现在接口里。
-fn round_usd(value: f64) -> f64 {
+pub(crate) fn round_usd(value: f64) -> f64 {
     (value * 1_000_000.0).round() / 1_000_000.0
 }
 
@@ -157,15 +157,18 @@ pub struct UsagePricingView {
     pub snapshot_date: Option<String>,
     /// 一律美元。
     pub currency: &'static str,
+    /// 1 美元换多少人民币（2026-11-19 起；写死 7.16，和 models.dev 换算国内站价格用的一致），界面显示「约 ¥x」用。
+    pub usd_cny: f64,
 }
 
 impl UsagePricingView {
-    fn of(prices: &PriceBook) -> Self {
+    pub(crate) fn of(prices: &PriceBook) -> Self {
         Self {
             source: prices.source.clone(),
             synced_at: prices.synced_at.clone(),
             snapshot_date: if prices.synced_at.is_some() { None } else { prices.snapshot_date.clone() },
             currency: "USD",
+            usd_cny: retainpdf_providers::CNY_PER_USD,
         }
     }
 }
@@ -494,6 +497,7 @@ pub fn all_job_ids(output_root: &Path) -> Vec<String> {
 }
 
 pub(crate) mod api;
+pub(crate) mod estimate;
 
 #[cfg(test)]
 mod tests;
