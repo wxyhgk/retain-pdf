@@ -12,6 +12,14 @@
 
 ---
 
+## 拉取模型列表进契约（feat/provider-models-contract）
+
+2026-11-19。`POST /api/v1/providers/translation/models` 登记进新契约 `contracts/translation-providers.v1.schema.json`
+（`@retainpdf/contracts/translation-providers`），调用函数名 `listTranslationProviderModels`，字段和上一节一样。
+`contracts/src`、`dist` 已重新生成；前端跑 `npm --prefix frontend/packages/api run generate:client` 生成调用函数，手写的那份可以删掉。
+
+---
+
 ## 从翻译接口拉取模型列表（feat/provider-model-list）
 
 2026-11-19。新接口，只增不改。详见 [Provider 校验接口](../rust_api/08-Provider%20校验接口.md) 第 8 节。

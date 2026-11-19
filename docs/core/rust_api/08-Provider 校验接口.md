@@ -134,7 +134,7 @@
 
 ## 8. 拉取翻译接口的模型列表（2026-11-19）
 
-`POST /api/v1/providers/translation/models`（admin）。设置里「从服务商拉取」模型用：浏览器不能直接调服务商（跨域、Key 不能发出去），
+`POST /api/v1/providers/translation/models`（admin；契约 [`translation-providers.v1`](../../../contracts/translation-providers.v1.schema.json)，调用函数 `listTranslationProviderModels`）。设置里「从服务商拉取」模型用：浏览器不能直接调服务商（跨域、Key 不能发出去），
 后端代一次 `GET {base_url}/models`。Key 用完不存、不回显。
 
 请求（`deny_unknown_fields`）：
