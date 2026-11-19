@@ -42,6 +42,7 @@ from retainpdf_base.io import save_json
 from retainpdf_base.io import save_json_atomic
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
 from retainpdf_base.ocr_stream import OcrStreamWriter
+from retainpdf_base.usage_ledger import record_model_usage
 from retainpdf_pipeline.ocr.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_payload_to_document_v1_with_report
 from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document
@@ -271,8 +272,6 @@ def request_chunks(
 def _record_usage(payload: dict, start: int, end: int) -> None:
     """GLM-OCR 返回的 token 用量记进任务的模型用量台账（2026-11-19 起；阶段 ocr，按智谱的价估算花费）。
     没配台账路径（命令行直接跑、单元测试）就不记。"""
-    from retainpdf_translation.public import record_model_usage
-
     record_model_usage(
         payload.get("usage") if isinstance(payload.get("usage"), dict) else None,
         model=glm_ocr_api.GLM_OCR_MODEL,

@@ -2,7 +2,7 @@
 //!
 //! 数据来源：
 //! - 任务台账 `<job>/artifacts/token-usage.v1.jsonl`：流水线每次模型返回追加一行（Python
-//!   `retainpdf_translation/llm/shared/usage_ledger.py`；路径由 jobsd 经 `RETAIN_USAGE_LEDGER` 给）。
+//!   `retainpdf_base/usage_ledger.py`；路径由 jobsd 经 `RETAIN_USAGE_LEDGER` 给）。
 //! - 助手台账 `<data_root>/usage/assistant.v1.jsonl`：AI 助手每次模型返回追加一行。
 //! - 有台账之前的旧任务：从 `translation_diagnostics.json` 和精修报告（含 `refine_history/`）
 //!   里的 `token_usage` 折算。旧报告丢了思考、精修还丢了缓存，所以这部分只算得出输入输出；

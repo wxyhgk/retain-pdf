@@ -10,7 +10,7 @@ use super::constants::{
     OUTPUT_TRANSLATED_DIR_NAME,
 };
 
-/// 模型用量台账（每次模型返回追加一行，见 Python `retainpdf_translation/llm/shared/usage_ledger.py`）。
+/// 模型用量台账（每次模型返回追加一行，见 Python `retainpdf_base/usage_ledger.py`）。
 pub const TOKEN_USAGE_LEDGER_FILE_NAME: &str = "token-usage.v1.jsonl";
 
 #[derive(Clone, Debug)]
