@@ -37,6 +37,7 @@ BLOCK_CHECK_CODES = {
     "missing", "empty", "formula_unbalanced", "code_changed", "citation_lost", "footnote_mark_lost",
     "number_lost", "untranslated", "no_chinese", "english_residue", "stray_english", "too_short", "too_long", "hedge_lost", "person_lost",
 }  # fmt: skip
+ORIGINAL_IN_PARENS = re.compile(r"[（(][^（）()]*[A-Za-z][^（）()]*[)）]")
 CATEGORIES = {"mistranslation": "错译", "omission": "漏译或添加", "number_term": "数字或术语", "fluency": "不通顺", "tone": "语气偏离"}
 
 REVIEW_PROMPT = """你是英译中学术翻译的审校。你会收到一页里若干块的英文原文和中文译文，以及全书定好的术语和人名。
@@ -53,6 +54,16 @@ REVIEW_PROMPT = """你是英译中学术翻译的审校。你会收到一页里�
 越短越好，但要能唯一定位）、fix（替换 translation_quote 的新译文，只改这一段，公式、标记、编号照原样）、reason（一句话）。
 一页没有问题就交空列表。
 """
+
+# 两轮分开（`runner` 的 review="split"，2026-11-19）时的第一轮：只对照原文管意思，文笔留给下一轮的编辑
+ACCURACY_NOTE = """
+这一轮只管意思（对照原文审校），文笔由下一轮编辑单独处理：不开 fluency 单子；读着别扭但意思没错的，不开。
+这是人文社科或通俗读物：除了错译、漏译，特别留意多出原文没有的意思（渲染、评价、提前说出的结果）和语气偏离
+（作者含糊、反讽、犹豫的地方被说得更明白、更肯定）。
+意译、成语、调过语序的句子，只要意思、语气、信息量对得上原文，就不是错，不要改回字面
+（so many doors had been slammed 译成"吃了太多闭门羹"是对的，不要改成"那么多门被重重关上"）。
+人名、书名第一次出现时括号里的原文是体例要求，不要删。中文里夹着没翻的英文词，算 omission。"""
+ACCURACY_CATEGORIES = {"mistranslation", "omission", "number_term", "tone"}
 
 REVIEW_TOOL = {
     "name": "submit_review",
@@ -100,8 +111,9 @@ def reviewable(page: PageInput, results: dict[str, BlockResult]) -> list:
     return out
 
 
-def review_page(agent, page: PageInput, results: dict[str, BlockResult]) -> dict:
-    """审一页并按收下的单子改 `results`（就地改）。返回这一页的审校记录：收了哪些、拒了哪些、为什么。"""
+def review_page(agent, page: PageInput, results: dict[str, BlockResult], *, accuracy_only: bool = False) -> dict:
+    """审一页并按收下的单子改 `results`（就地改）。返回这一页的审校记录：收了哪些、拒了哪些、为什么。
+    `accuracy_only`：两轮分开时的第一轮，只收意思类的单子（不收 fluency）。"""
     from retainpdf_translation_agent.agent import ROLE_REVIEWER
 
     blocks = reviewable(page, results)
@@ -119,7 +131,8 @@ def review_page(agent, page: PageInput, results: dict[str, BlockResult]) -> dict
         "blocks": [{"id": b.id, "class": b.cls, "source": b.text, "translation": results[b.id].translation} for b in blocks],
     }
     try:
-        data = agent.call_tool(payload, system=REVIEW_PROMPT, tool=REVIEW_TOOL, role=ROLE_REVIEWER, label=f"review {page.page_label}", blocks=[b.id for b in blocks])
+        system = REVIEW_PROMPT + ACCURACY_NOTE if accuracy_only else REVIEW_PROMPT
+        data = agent.call_tool(payload, system=system, tool=REVIEW_TOOL, role=ROLE_REVIEWER, label=f"review {page.page_label}", blocks=[b.id for b in blocks])
     except ValueError:
         report["error"] = "no submit_review tool call"
         return report
@@ -128,7 +141,9 @@ def review_page(agent, page: PageInput, results: dict[str, BlockResult]) -> dict
     tickets = [t for t in data.get("issues") or [] if isinstance(t, dict)]
     report["tickets"] = len(tickets)
     for ticket in tickets:
-        verdict = _apply(ticket, by_id, results, edits)
+        # 第一轮只收意思类的单子；中文里夹着没翻的英文（模型常记成 fluency）也收，下一轮编辑不一定补
+        stray = re.search(r"[A-Za-z]{3,}", str(ticket.get("translation_quote", "")))
+        verdict = "not_accuracy" if accuracy_only and ticket.get("category") not in ACCURACY_CATEGORIES and not stray else _apply(ticket, by_id, results, edits)
         (report["applied"] if verdict == "applied" else report["rejected"]).append(dict(ticket, verdict=verdict))
     return report
 
@@ -159,6 +174,13 @@ def _apply(ticket: dict, by_id: dict, results: dict[str, BlockResult], edits: di
     revised = current.replace(old, fix, 1)
     if adds_repeat(current, revised, fix):
         return "duplicates_context"
+    # 括号里的原文（人名、书名第一次出现的"中文译名（原文）"）不许删：11-19 实验里审校按"后面只写中文"删过第一次出现的
+    if len(ORIGINAL_IN_PARENS.findall(fix)) < len(ORIGINAL_IN_PARENS.findall(old)):
+        return "original_removed"
+    from retainpdf_translation_agent.rewrite import added_words
+
+    if added_words(block.text, current, revised):
+        return "added_words"
     before = check_block(block.text, current)
     after = check_block(block.text, revised)
     # 错误和警告（数字丢了、残留英文……）都算：改完只许少不许多

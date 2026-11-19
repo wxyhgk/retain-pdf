@@ -95,8 +95,10 @@ class DocumentRun:
     ) -> None:
         """`memory=False` 时不带上下文包、不记术语（和第 1 版以前一样），用来做对比。
         `read_first=True` 时先通读整篇（`reader.py`）：定体裁、文风、全文统一的术语和人名、全部标题的译法，再逐页翻。
-        `review=True` 时每页翻完审校一遍：通读判成人文社科、通俗读物（`rewrite.REWRITE_GENRES`）的由编辑整块重写
-        （`rewrite.py`，也改文笔），其余按问题单改被指出的片段（`review.py`）；`review="rewrite"` / `"tickets"` 强制用其中一种。
+        `review=True` 时每页翻完审校一遍：通读判成人文社科、通俗读物（`rewrite.REWRITE_GENRES`）的分两轮（`split_review`，
+        2026-11-19 起）：先对照原文只审意思（`review.py` 的问题单），再由编辑把译文当中文读、只改文笔（`rewrite.py`）；
+        其余体裁只按问题单改被指出的片段。`review="split"` / `"rewrite"`（一次做完，11-18 到 11-19 的人文书默认）/ `"tickets"`
+        强制用其中一种。
         `tools=True` 时初译能调只读工具（全书搜原文、查术语表，`tools.py`），交卷后的检查问题在同一段对话里回给模型改；
         只接 Anthropic 的原生工具调用，OpenAI 协议的 transport 不要开。"""
         self.agent = agent
@@ -263,7 +265,9 @@ class DocumentRun:
                     self._event("review_started", page=self._event_page, blocks=sum(len(b.members) or 1 for b in reviewed))
                     try:
                         genre = self.reading.genre if self.reading is not None else "other"
-                        if self.review == "rewrite" or (self.review is True and genre in REWRITE_GENRES):
+                        if self.review == "split" or (self.review is True and genre in REWRITE_GENRES):
+                            review_report = split_review(self.agent, units, unit_results, genre=genre)
+                        elif self.review == "rewrite":
                             review_report = rewrite_page(self.agent, units, unit_results, genre=genre)
                         else:
                             review_report = review_page(self.agent, units, unit_results)
@@ -395,6 +399,22 @@ class DocumentRun:
                 glossary.declare_exception(
                     source, used, block_id=block.id, page=page.page_label, chapter=page.chapter, quote=quote, reason=str(item.get("reason", ""))[:200]
                 )
+
+
+def split_review(agent: TranslationAgent, page: PageInput, results: dict[str, BlockResult], *, genre: str) -> dict:
+    """两轮分开（2026-11-19 起人文社科、通俗读物默认）：先对照原文审校，只管意思（`review_page(accuracy_only=True)`）；再由编辑把译文当中文读、
+    只改文笔（`rewrite_page(polish=True)`）。返回的记录把两轮的单子合在一起（编辑部事件、台账照常数），两轮各自的在 accuracy / polish。"""
+    accuracy = review_page(agent, page, results, accuracy_only=True)
+    polish = rewrite_page(agent, page, results, genre=genre, polish=True)
+    return {
+        "mode": "split",
+        "reviewed": max(accuracy["reviewed"], polish["reviewed"]),
+        "tickets": accuracy["tickets"] + polish["tickets"],
+        "applied": accuracy["applied"] + polish["applied"],
+        "rejected": accuracy["rejected"] + polish["rejected"],
+        "accuracy": accuracy,
+        "polish": polish,
+    }
 
 
 def blocks_using(results: dict[str, BlockResult], term_id: str) -> list[str]:

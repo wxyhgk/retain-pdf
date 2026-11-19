@@ -42,7 +42,11 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
 - `reader.py`：翻译前通读。程序挑候选（反复出现的词组、专名）加全部标题和样张，一次请求定体裁、人名规则（理工保留原文、人文"中文译名（原文）"）、
   文风说明、全文统一的术语和人名、标题和目录的译法；`DocumentRun(read_first=True)` 用它。
 - `review.py`：审校。每页正文类块交给审校只开问题单（错译、漏译添加、数字术语、不通顺、语气偏离），逐字引用原文译文，
-  程序核对后只替换被指出的那段，错误和警告只许减少；`DocumentRun(review=True)` 用它。
+  程序核对后只替换被指出的那段，错误和警告只许减少，括号里的原文（人名、书名第一次出现）不许删、不许添"其实""显然"这类词；
+  理工类书 `DocumentRun(review=True)` 用它。
+- `rewrite.py`：编辑整块重写，程序裁判（长度、校验、术语、添词）。`polish=True` 时只改文笔（意思已经审过）。
+- 人文社科、通俗读物的第二遍分两轮（`runner.split_review`，2026-11-19）：先 `review_page(accuracy_only=True)` 只审意思，
+  再 `rewrite_page(polish=True)` 把译文当中文读、只改文笔。
 - `units.py`：接续组（分栏、分页拆开的同一段）当一块翻：`merge_groups` 把各块合成一块（原文接成一整段、id 用组号），校验、重翻、审校、
   退回原文都按整段算，`split_units` 交回前才切回各块，切开以后不再逐块查；一组要么整段是译文，要么整段退回原文。
 - `breaks.py`：接续组译文按原文各块的正文长度比例，在附近的中文标点处切回各块；不切开公式、脚注标记、行内代码。
