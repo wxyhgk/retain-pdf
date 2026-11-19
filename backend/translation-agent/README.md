@@ -32,7 +32,8 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   `DocumentRun(tools=True)` 才开，一页最多 3 轮 8 次，交卷后的检查问题接在同一段对话里重交。只接 Anthropic 原生工具调用。
 - `section.py`：按节翻译（第二版，2026-11-19，`DocumentRun(structure="section")`）：几页接成一份带段号的稿子（跨页的段落接好，公式、代码换占位），
   一节一次请求、模型只当译者（`SECTION_NARRATIVE_PROMPT`），按段号对回、还原占位、查标记，漏的重交一次，不行的段退回逐块翻；合过的段切回各块。
-  只管人文社科、通俗读物，这版不做第二遍审校。见 `docs/ops/planning/translation-agent/20261119-按节翻译.md`。
+  `review=True` 时整节对照原文审一次意思（只收意思类单子，不做文笔那一轮）。只管人文社科、通俗读物。
+  见 `docs/ops/planning/translation-agent/20261119-按节翻译.md`、`20261119-按节翻译后的审校.md`。
 - `typography.py`：原文排版造成的误读，调度开头修掉（2026-11-19）：正文段落开头的章首小型大写（OCR 成全大写，"CATCH," HE CALLED）还原成句首大写。
 - `checks.py`：逐块校验（漏交、空、`$` 成对（公式内容不和原文比）、引用和脚注标记、数字、没翻、截断）；术语校验（定好的译法、保留原文、缩写）；语气信号（表示保留的词、第一人称，只记 info 算指标）。
   判对判错的规则改了升 `CHECKS_VERSION`，

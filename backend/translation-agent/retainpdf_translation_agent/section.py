@@ -8,6 +8,8 @@
 2. 一节一次请求，模型只当译者：提示词按体裁写、很短，段号一一对应，段内怎么组织随它。
 3. 程序按段号拿回译文、还原占位、查标记（`checks.check_block`），有问题的段在同一段对话里让它重交一次；
    还不行的段退回第一版逐块翻（`TranslationAgent.translate_units`）。
+3b. `review=True` 时整节对照原文审一次意思（`review.review_page(accuracy_only=True)`，只收错译、漏译添加、语气、数字术语的单子），
+   2026-11-19 起。不给原文的中文通读试过（改了 10 段、2 段把意思改偏，盲评看不出更好），不做。
 4. 合过的段切回各块（`units.split_units`），按页交给调度，写回、断点、编辑部事件都和第一版一样按页走。
 
 节的边界落在页边界上（`plan_sections`）：到了一定字数、遇到新的标题就断，跨页的段落不断开。
@@ -182,24 +184,31 @@ def restore(paragraph: Paragraph, translation: str) -> tuple[str, list[dict]]:
     return restored, issues
 
 
-def relevant_terms(glossary: Glossary, text: str, *, seen_names: set[str]) -> list[str]:
-    """这一节原文里出现的人名、术语、缩写、保留原文的专名，一行一条。"""
-    lines: list[str] = []
+def section_terms(glossary: Glossary, text: str) -> list:
+    """这一节原文里出现的术语表条目（审定、锁定、候选），最多 MAX_TERMS 条。"""
+    found = []
     for term in glossary.terms.values():
         if not term.source or not term.target:
             continue
         if term.status not in BINDING and term.status != CANDIDATE:
             continue
-        if not term_pattern(term.source, term.category).search(text):
-            continue
+        if term_pattern(term.source, term.category).search(text):
+            found.append(term)
+            if len(found) >= MAX_TERMS:
+                break
+    return found
+
+
+def relevant_terms(glossary: Glossary, text: str, *, seen_names: set[str]) -> list[str]:
+    """这一节原文里出现的人名、术语、缩写、保留原文的专名，一行一条。"""
+    lines: list[str] = []
+    for term in section_terms(glossary, text):
         line = f"- {term.source} → {term.target}"
         if term.note:
             line += f"（{term.note}）"
         if term.category == NAME and term.source in seen_names:
             line += "（前文已出现）"
         lines.append(line)
-        if len(lines) >= MAX_TERMS:
-            break
     return lines
 
 
@@ -218,6 +227,7 @@ def translate_section(
     style: str = "",
     previous: list[dict] | None = None,
     seen_names: set[str] | None = None,
+    review: bool = False,
 ) -> SectionOutcome:
     """一节几页一次翻完。`previous`：上一节最后几段的原文和译文（接上文用）；`seen_names`：前面几节已经出现过的人名。
     模型、请求缓存、用量、编辑部事件都走 `agent`。"""
@@ -314,8 +324,18 @@ def translate_section(
     for block in units.fixed():
         results[block.id] = BlockResult(block.id, block.fixed_translation, [], 0, "ok", [], {"structure": "section", "fixed": True})
     agent._emit_check(attempts, list(results.values()))
+    review_report = None
+    if review:
+        from retainpdf_translation_agent.review import review_page
+
+        bound = [
+            {"source": t.source, "target": t.target, "status": t.status, "category": t.category}
+            for t in section_terms(glossary, section_text)
+            if t.status in BINDING
+        ]
+        review_report = review_page(agent, replace(units, context={"style": style, "terms": bound}), results, accuracy_only=True)
     split = split_units(results, groups)
-    info = {
+    info: dict = {
         "structure": "section",
         "section": combined.page_label,
         "pages": [p.page_label for p in pages],
@@ -324,6 +344,8 @@ def translate_section(
         "fallback": fallback_ids,
         "terms": len(terms),
     }
+    if review_report is not None:
+        info["review"] = review_report
     return SectionOutcome(split, info)
 
 
