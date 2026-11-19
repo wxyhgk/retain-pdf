@@ -8,7 +8,7 @@ use crate::views::{
 };
 use retainpdf_core::models::domain::JobStatusKind;
 
-use crate::translations::{replay_translation_item, revise_translation_item};
+use crate::translations::{replay_translation_item, revise_translation_item, stored_item_id};
 use crate::progress::live_translation::{
     live_publication_view, prune_superseded_revision_snapshots, publish_translation_revisions,
 };
@@ -61,6 +61,9 @@ impl<'a> JobsFacade<'a> {
                 json!({ "status": job.status }),
             ));
         }
+        // 阅读页的四位块号换成条目里实际存的写法，写回、登记和返回都用它。
+        let item_id = stored_item_id(self.command.control.data_root, &job, item_id);
+        let item_id = item_id.as_str();
         let outcome = revise_translation_item(&self.query.replay, &job, item_id, &request).await?;
         // 写回已经落盘;登记进数据库,实时译文、页快照和提交事件才看得到新文本。
         // `changed=false` 也对账一次:上次写回成功、登记失败时,重发同一请求就能补上。

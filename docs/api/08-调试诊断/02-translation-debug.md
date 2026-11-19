@@ -50,6 +50,10 @@ GET /api/v1/jobs/{job_id}/translations/{item_id}
 - 还没翻译完（没有 manifest）：`404` + `reason: "not_ready"`，提示 `translation manifest not ready`。修改历史
   （`…/revisions`）、改写（`PATCH`）、重翻（`replay`）同样。
 - manifest 在、条目不存在：普通 `404`（`translation item not found: …`），不带 `reason`。
+- `{item_id}` 也认阅读页的四位块号（2026-11-19 起）：`p012-b0005`、`p012-b005`、`p012-b5` 是同一块，
+  和 reader_regions、data API 的 `reader_item_id` 同一规则；一字不差的条目优先。取一条、修改历史、改写（`PATCH`）、
+  重翻（`replay`）四个接口都这样。返回的 `item_id` 是条目里实际存的写法（可能是三位），修订日志也记这个写法；
+  拿阅读页块号来改译文，不用再挨个试几种写法。
 
 ## Replay
 

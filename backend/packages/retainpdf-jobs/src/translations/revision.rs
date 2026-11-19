@@ -286,7 +286,8 @@ pub(crate) fn load_translation_revision_history(
     item_id: &str,
 ) -> Result<TranslationRevisionHistoryView, AppError> {
     validate_item_id(item_id)?;
-    load_translation_debug_item_view(data_root, job, item_id)?;
+    let item_id = load_translation_debug_item_view(data_root, job, item_id)?.item_id;
+    let item_id = item_id.as_str();
     let manifest = stored_path(job, data_root, StoredFile::TranslationManifest)
         .ok_or_else(|| AppError::not_ready("translation manifest"))?;
     let path = manifest
