@@ -13,6 +13,9 @@
 - `DATA_ROOT/jobs/{job_id}/`：任务工作目录。
 - `DATA_ROOT/downloads/`：下载缓存（打包下载的 zip，每次请求都重新生成；一小时以前的由定期清理删掉）。
 - `DATA_ROOT/db/jobs.db`：SQLite 数据库。
+- `DATA_ROOT/pricing/model-prices.v1.json`：模型价格历史（2026-11-19 起），用量汇总估算花费用。服务端每天从 models.dev
+  同步一次，价格变了追加、不覆盖；删掉了下次同步重建，没同步过时用程序里带的快照。`RETAINPDF_MODEL_PRICES_URL`
+  换镜像地址，设成空字符串不同步（断网环境）。见 [模型用量](../../api/11-用量/01-模型用量.md#估算花费)。
 - `DATA_ROOT/db/jobs.db.runtime-owner.lock`：任务运行时的独占锁文件（进程内模式的 rust_api 或 retain-jobsd 启动时加锁，进程退出自动释放；文件本身留着无害，不要提交）。
 
 ## 任务目录

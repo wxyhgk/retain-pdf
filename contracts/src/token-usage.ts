@@ -44,6 +44,7 @@ export interface UsageSummaryView {
    * 最近一条用量的时间。
    */
   last_at: string | null;
+  pricing: UsagePricingView;
 }
 export interface UsageBucket {
   /**
@@ -82,6 +83,22 @@ export interface UsageBucket {
    * 思考（推理）token（包含在 output_tokens 里；服务商没报时为 0）。
    */
   reasoning_tokens: number;
+  /**
+   * 查得到价的那些请求估算的花费，美元，保留 6 位小数（2026-11-19 起）。按 models.dev 的标价：缓存命中、缓存写入、其余输入各按各的价，输入超过分档门槛按那一档，DeepSeek 忙时按 2 倍；不含折扣、包月和代金券，界面写「约」。
+   */
+  estimated_cost_usd: number;
+  /**
+   * 查得到价的请求数（含 list_priced_requests）。
+   */
+  priced_requests: number;
+  /**
+   * 其中接口域名对不上已知服务商（代理、自建网关），按模型官方标价估算的请求数。
+   */
+  list_priced_requests: number;
+  /**
+   * 查不到价的请求数，花费里没算；界面可以注明「有 N 次请求的模型查不到价」。
+   */
+  unpriced_requests: number;
 }
 export interface UsageStageView {
   /**
@@ -102,6 +119,10 @@ export interface UsageStageView {
   cache_reported_input_tokens: number;
   cache_write_tokens: number;
   reasoning_tokens: number;
+  estimated_cost_usd: number;
+  priced_requests: number;
+  list_priced_requests: number;
+  unpriced_requests: number;
 }
 export interface UsageModelView {
   /**
@@ -112,6 +133,14 @@ export interface UsageModelView {
    * 接口地址的主机名，例如 dashscope.aliyuncs.com。
    */
   host: string;
+  /**
+   * 按哪家服务商的价算的（models.dev 的服务商编号，例如 anthropic、alibaba-cn）；查不到价为 null。
+   */
+  price_provider: string | null;
+  /**
+   * host：接口域名对上了这家；official_list：域名对不上，按模型官方标价估算；查不到价为 null。
+   */
+  price_basis: "host" | "official_list" | null;
   requests: number;
   requests_without_usage: number;
   input_tokens: number;
@@ -121,6 +150,10 @@ export interface UsageModelView {
   cache_reported_input_tokens: number;
   cache_write_tokens: number;
   reasoning_tokens: number;
+  estimated_cost_usd: number;
+  priced_requests: number;
+  list_priced_requests: number;
+  unpriced_requests: number;
 }
 export interface UsageMonthView {
   /**
@@ -136,4 +169,26 @@ export interface UsageMonthView {
   cache_reported_input_tokens: number;
   cache_write_tokens: number;
   reasoning_tokens: number;
+  estimated_cost_usd: number;
+  priced_requests: number;
+  list_priced_requests: number;
+  unpriced_requests: number;
+}
+/**
+ * 估算花费用的价格表（2026-11-19 起）。服务端每天从 models.dev 同步一次，价格变了追加不覆盖，每条用量按它那天的价算；没同步过用仓库里带的快照。
+ */
+export interface UsagePricingView {
+  /**
+   * 价格来源地址。
+   */
+  source: string;
+  /**
+   * 最后一次同步成功的时间（UTC，RFC 3339）；没同步过为 null。
+   */
+  synced_at: string | null;
+  /**
+   * 没同步过时用的内置快照日期（YYYY-MM-DD）；同步过为 null。
+   */
+  snapshot_date: string | null;
+  currency: "USD";
 }

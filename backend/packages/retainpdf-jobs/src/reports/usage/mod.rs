@@ -9,6 +9,9 @@
 //!   汇总里单独数出有几个任务是这么折算的。
 //!
 //! 删除的书连同任务目录一起删掉，不再计入总量。
+//!
+//! 花费（2026-11-19 起）：每一行按服务商包的价格表（`retainpdf_providers::PriceBook`，每天从
+//! models.dev 同步）估算美元，合进各个桶的 `estimated_cost_usd`；查不到价的请求数进 `unpriced_requests`。
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -18,6 +21,7 @@ use serde::Serialize;
 use serde_json::Value;
 
 use retainpdf_core::storage_paths::JobPaths;
+use retainpdf_providers::{PriceBasis, PriceBook, TokenCounts};
 
 pub const ASSISTANT_USAGE_LEDGER_RELATIVE_PATH: &str = "usage/assistant.v1.jsonl";
 
@@ -30,7 +34,7 @@ pub fn assistant_usage_ledger_path(data_root: &Path) -> PathBuf {
     data_root.join(ASSISTANT_USAGE_LEDGER_RELATIVE_PATH)
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize)]
 pub struct UsageBucket {
     pub requests: u64,
     /// 服务商没报用量的请求数（这些请求的 token 没算进来）。
@@ -46,10 +50,27 @@ pub struct UsageBucket {
     pub cache_write_tokens: u64,
     /// 思考（推理）token（包含在 output_tokens 里；服务商没报时是 0）。
     pub reasoning_tokens: u64,
+    /// 查得到价的那些请求估算的花费（美元，按 models.dev 的标价，不含折扣、包月）。
+    pub estimated_cost_usd: f64,
+    /// 查得到价的请求数（其中域名对不上、按官方标价估算的数在 `list_priced_requests`）。
+    pub priced_requests: u64,
+    pub list_priced_requests: u64,
+    /// 查不到价的请求数（价格表里没有这个模型），花费里没算它们。
+    pub unpriced_requests: u64,
 }
 
 impl UsageBucket {
-    fn add(&mut self, record: &UsageRecord) {
+    fn add(&mut self, record: &UsageRecord, cost: Option<&RecordCost>) {
+        match cost {
+            Some(cost) => {
+                self.estimated_cost_usd += cost.usd;
+                self.priced_requests += record.requests;
+                if cost.basis == PriceBasis::OfficialList {
+                    self.list_priced_requests += record.requests;
+                }
+            }
+            None => self.unpriced_requests += record.requests,
+        }
         self.requests += record.requests;
         self.requests_without_usage += record.requests_without_usage;
         self.input_tokens += record.input;
@@ -64,7 +85,38 @@ impl UsageBucket {
     }
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+/// 美元保留到百万分之一，免得浮点尾数出现在接口里。
+fn round_usd(value: f64) -> f64 {
+    (value * 1_000_000.0).round() / 1_000_000.0
+}
+
+impl UsageBucket {
+    fn finish(mut self) -> Self {
+        self.estimated_cost_usd = round_usd(self.estimated_cost_usd);
+        self
+    }
+}
+
+/// 一行用量估出来的花费。
+#[derive(Debug, Clone, PartialEq)]
+struct RecordCost {
+    usd: f64,
+    provider: String,
+    basis: PriceBasis,
+}
+
+fn record_cost(prices: &PriceBook, record: &UsageRecord) -> Option<RecordCost> {
+    let tokens = TokenCounts {
+        input: record.input,
+        output: record.output,
+        cache_hit: record.cache_hit.unwrap_or(0),
+        cache_write: record.cache_write,
+    };
+    let estimate = prices.estimate(&record.host, &record.model, &record.ts, tokens)?;
+    Some(RecordCost { usd: estimate.usd, provider: estimate.provider, basis: estimate.basis })
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct UsageStageView {
     pub stage: String,
     pub label: &'static str,
@@ -74,15 +126,19 @@ pub struct UsageStageView {
     pub usage: UsageBucket,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct UsageModelView {
     pub model: String,
     pub host: String,
+    /// 按哪家服务商的价算的（models.dev 的服务商编号）；查不到价是 null。
+    pub price_provider: Option<String>,
+    /// `host`：域名对上了这家；`official_list`：域名对不上，按模型的官方标价估算；查不到价是 null。
+    pub price_basis: Option<PriceBasis>,
     #[serde(flatten)]
     pub usage: UsageBucket,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct UsageMonthView {
     /// `YYYY-MM`（UTC）。
     pub month: String,
@@ -90,7 +146,31 @@ pub struct UsageMonthView {
     pub usage: UsageBucket,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+/// 估算花费用的价格表从哪来。
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct UsagePricingView {
+    /// 价格来源地址（models.dev）。
+    pub source: String,
+    /// 最后一次同步成功的时间；还没同步过、用的是内置快照时为 null。
+    pub synced_at: Option<String>,
+    /// 内置快照的日期（没同步过时用它）。
+    pub snapshot_date: Option<String>,
+    /// 一律美元。
+    pub currency: &'static str,
+}
+
+impl UsagePricingView {
+    fn of(prices: &PriceBook) -> Self {
+        Self {
+            source: prices.source.clone(),
+            synced_at: prices.synced_at.clone(),
+            snapshot_date: if prices.synced_at.is_some() { None } else { prices.snapshot_date.clone() },
+            currency: "USD",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct UsageSummaryView {
     /// job / document / all
     pub scope: &'static str,
@@ -106,6 +186,7 @@ pub struct UsageSummaryView {
     pub jobs_estimated_from_reports: u64,
     pub first_at: Option<String>,
     pub last_at: Option<String>,
+    pub pricing: UsagePricingView,
 }
 
 /// 一条用量：台账里的一行，或从旧报告折算出来的一段。
@@ -316,44 +397,59 @@ fn month_of(ts: &str) -> Option<&str> {
     shaped.then_some(month)
 }
 
-/// 汇总若干条用量。`job_counts` 是（有用量的任务数，其中折算的任务数）。
-pub fn summarize(scope: &'static str, records: &[UsageRecord], job_counts: (u64, u64)) -> UsageSummaryView {
+/// 汇总若干条用量。`job_counts` 是（有用量的任务数，其中折算的任务数）；`prices` 估算花费。
+pub fn summarize(
+    scope: &'static str,
+    records: &[UsageRecord],
+    job_counts: (u64, u64),
+    prices: &PriceBook,
+) -> UsageSummaryView {
     let mut totals = UsageBucket::default();
     let mut by_stage: BTreeMap<String, UsageBucket> = BTreeMap::new();
-    let mut by_model: BTreeMap<(String, String), UsageBucket> = BTreeMap::new();
+    let mut by_model: BTreeMap<(String, String), (UsageBucket, Option<(String, PriceBasis)>)> = BTreeMap::new();
     let mut by_month: BTreeMap<String, UsageBucket> = BTreeMap::new();
     for record in records {
-        totals.add(record);
-        by_stage.entry(record.stage.clone()).or_default().add(record);
-        by_model.entry((record.model.clone(), record.host.clone())).or_default().add(record);
+        let cost = record_cost(prices, record);
+        let cost = cost.as_ref();
+        totals.add(record, cost);
+        by_stage.entry(record.stage.clone()).or_default().add(record, cost);
+        let model = by_model.entry((record.model.clone(), record.host.clone())).or_default();
+        model.0.add(record, cost);
+        if model.1.is_none() {
+            model.1 = cost.map(|cost| (cost.provider.clone(), cost.basis));
+        }
         if let Some(month) = month_of(&record.ts) {
-            by_month.entry(month.to_string()).or_default().add(record);
+            by_month.entry(month.to_string()).or_default().add(record, cost);
         }
     }
     let mut by_stage: Vec<UsageStageView> = by_stage
         .into_iter()
         .map(|(stage, usage)| {
             let (label, group) = stage_label(&stage);
-            UsageStageView { stage, label, group, usage }
+            UsageStageView { stage, label, group, usage: usage.finish() }
         })
         .collect();
     by_stage.sort_by(|a, b| b.usage.total_tokens.cmp(&a.usage.total_tokens).then(a.stage.cmp(&b.stage)));
     let mut by_model: Vec<UsageModelView> = by_model
         .into_iter()
-        .map(|((model, host), usage)| UsageModelView { model, host, usage })
+        .map(|((model, host), (usage, priced))| {
+            let (price_provider, price_basis) = priced.map_or((None, None), |(provider, basis)| (Some(provider), Some(basis)));
+            UsageModelView { model, host, price_provider, price_basis, usage: usage.finish() }
+        })
         .collect();
     by_model.sort_by(|a, b| b.usage.total_tokens.cmp(&a.usage.total_tokens).then(a.model.cmp(&b.model)));
     let timestamps = records.iter().map(|record| record.ts.as_str()).filter(|ts| month_of(ts).is_some());
     UsageSummaryView {
         scope,
-        totals,
+        totals: totals.finish(),
         by_stage,
         by_model,
-        by_month: by_month.into_iter().map(|(month, usage)| UsageMonthView { month, usage }).collect(),
+        by_month: by_month.into_iter().map(|(month, usage)| UsageMonthView { month, usage: usage.finish() }).collect(),
         jobs_counted: job_counts.0,
         jobs_estimated_from_reports: job_counts.1,
         first_at: timestamps.clone().min().map(str::to_string),
         last_at: timestamps.max().map(str::to_string),
+        pricing: UsagePricingView::of(prices),
     }
 }
 
@@ -363,6 +459,7 @@ pub fn summarize_jobs<'a>(
     output_root: &Path,
     job_ids: impl IntoIterator<Item = &'a str>,
     mut extra: Vec<UsageRecord>,
+    prices: &PriceBook,
 ) -> UsageSummaryView {
     let (mut counted, mut estimated) = (0, 0);
     let mut records = Vec::new();
@@ -376,7 +473,7 @@ pub fn summarize_jobs<'a>(
         records.extend(job_records);
     }
     records.append(&mut extra);
-    summarize(scope, &records, (counted, estimated))
+    summarize(scope, &records, (counted, estimated), prices)
 }
 
 /// 输出目录下的全部任务目录名（全局汇总用；不依赖数据库，删掉的任务自然不在了）。

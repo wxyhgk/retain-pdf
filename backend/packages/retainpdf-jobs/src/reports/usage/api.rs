@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use retainpdf_data::db::Db;
 use retainpdf_api_base::error::AppError;
+use retainpdf_providers::PriceBook;
 
 pub use super::UsageSummaryView;
 use super::{all_job_ids, assistant_usage_ledger_path, read_ledger, summarize_jobs};
@@ -38,7 +39,8 @@ pub fn document_usage_view(deps: &UsageApiDeps, document_id: &str) -> Result<Usa
         .into_iter()
         .filter(|record| record.document_id == document_id)
         .collect();
-    Ok(summarize_jobs("document", &deps.output_root, jobs.iter().map(|job| job.job_id.as_str()), assistant))
+    let prices = PriceBook::load(&deps.data_root);
+    Ok(summarize_jobs("document", &deps.output_root, jobs.iter().map(|job| job.job_id.as_str()), assistant, &prices))
 }
 
 /// 现存的全部任务加上助手。删掉的书不再计入。
@@ -49,9 +51,9 @@ pub fn all_usage_view(deps: &UsageApiDeps, owner: Option<&str>) -> Result<UsageS
             .db
             .job_ids_for_owner(owner)
             .map_err(|error| AppError::internal(format!("list owned jobs failed: {error:#}")))?;
-        return Ok(summarize_jobs("all", &deps.output_root, ids.iter().map(String::as_str), Vec::new()));
+        return Ok(summarize_jobs("all", &deps.output_root, ids.iter().map(String::as_str), Vec::new(), &PriceBook::load(&deps.data_root)));
     }
     let ids = all_job_ids(&deps.output_root);
     let assistant = read_ledger(&assistant_usage_ledger_path(&deps.data_root));
-    Ok(summarize_jobs("all", &deps.output_root, ids.iter().map(String::as_str), assistant))
+    Ok(summarize_jobs("all", &deps.output_root, ids.iter().map(String::as_str), assistant, &PriceBook::load(&deps.data_root)))
 }

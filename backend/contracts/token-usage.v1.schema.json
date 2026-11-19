@@ -39,7 +39,11 @@
         "cache_hit_tokens",
         "cache_reported_input_tokens",
         "cache_write_tokens",
-        "reasoning_tokens"
+        "reasoning_tokens",
+        "estimated_cost_usd",
+        "priced_requests",
+        "list_priced_requests",
+        "unpriced_requests"
       ],
       "properties": {
         "requests": { "type": "integer", "minimum": 0, "description": "模型请求数。" },
@@ -50,7 +54,11 @@
         "cache_hit_tokens": { "type": "integer", "minimum": 0, "description": "缓存命中的输入 token（包含在 input_tokens 里）。" },
         "cache_reported_input_tokens": { "type": "integer", "minimum": 0, "description": "报了缓存数据的那些请求的输入 token。缓存命中率 = cache_hit_tokens / 它；为 0 表示不知道，界面显示「未报」而不是 0%。" },
         "cache_write_tokens": { "type": "integer", "minimum": 0, "description": "写入缓存的输入 token（只有 Anthropic 报；包含在 input_tokens 里）。" },
-        "reasoning_tokens": { "type": "integer", "minimum": 0, "description": "思考（推理）token（包含在 output_tokens 里；服务商没报时为 0）。" }
+        "reasoning_tokens": { "type": "integer", "minimum": 0, "description": "思考（推理）token（包含在 output_tokens 里；服务商没报时为 0）。" },
+        "estimated_cost_usd": { "type": "number", "minimum": 0, "description": "查得到价的那些请求估算的花费，美元，保留 6 位小数（2026-11-19 起）。按 models.dev 的标价：缓存命中、缓存写入、其余输入各按各的价，输入超过分档门槛按那一档，DeepSeek 忙时按 2 倍；不含折扣、包月和代金券，界面写「约」。" },
+        "priced_requests": { "type": "integer", "minimum": 0, "description": "查得到价的请求数（含 list_priced_requests）。" },
+        "list_priced_requests": { "type": "integer", "minimum": 0, "description": "其中接口域名对不上已知服务商（代理、自建网关），按模型官方标价估算的请求数。" },
+        "unpriced_requests": { "type": "integer", "minimum": 0, "description": "查不到价的请求数，花费里没算；界面可以注明「有 N 次请求的模型查不到价」。" }
       }
     },
     "UsageStageGroup": {
@@ -73,7 +81,11 @@
         "cache_hit_tokens",
         "cache_reported_input_tokens",
         "cache_write_tokens",
-        "reasoning_tokens"
+        "reasoning_tokens",
+        "estimated_cost_usd",
+        "priced_requests",
+        "list_priced_requests",
+        "unpriced_requests"
       ],
       "properties": {
         "stage": { "type": "string", "description": "translation、term_prescan、refine_review、assistant_ask 等；新阶段会继续增加，未知的按 label 显示。" },
@@ -87,7 +99,11 @@
         "cache_hit_tokens": { "type": "integer", "minimum": 0 },
         "cache_reported_input_tokens": { "type": "integer", "minimum": 0 },
         "cache_write_tokens": { "type": "integer", "minimum": 0 },
-        "reasoning_tokens": { "type": "integer", "minimum": 0 }
+        "reasoning_tokens": { "type": "integer", "minimum": 0 },
+        "estimated_cost_usd": { "type": "number", "minimum": 0 },
+        "priced_requests": { "type": "integer", "minimum": 0 },
+        "list_priced_requests": { "type": "integer", "minimum": 0 },
+        "unpriced_requests": { "type": "integer", "minimum": 0 }
       }
     },
     "UsageModelView": {
@@ -96,6 +112,8 @@
       "required": [
         "model",
         "host",
+        "price_provider",
+        "price_basis",
         "requests",
         "requests_without_usage",
         "input_tokens",
@@ -104,11 +122,17 @@
         "cache_hit_tokens",
         "cache_reported_input_tokens",
         "cache_write_tokens",
-        "reasoning_tokens"
+        "reasoning_tokens",
+        "estimated_cost_usd",
+        "priced_requests",
+        "list_priced_requests",
+        "unpriced_requests"
       ],
       "properties": {
         "model": { "type": "string", "description": "模型名；旧报告里没有时为空串。" },
         "host": { "type": "string", "description": "接口地址的主机名，例如 dashscope.aliyuncs.com。" },
+        "price_provider": { "type": ["string", "null"], "description": "按哪家服务商的价算的（models.dev 的服务商编号，例如 anthropic、alibaba-cn）；查不到价为 null。" },
+        "price_basis": { "type": ["string", "null"], "enum": ["host", "official_list", null], "description": "host：接口域名对上了这家；official_list：域名对不上，按模型官方标价估算；查不到价为 null。" },
         "requests": { "type": "integer", "minimum": 0 },
         "requests_without_usage": { "type": "integer", "minimum": 0 },
         "input_tokens": { "type": "integer", "minimum": 0 },
@@ -117,7 +141,11 @@
         "cache_hit_tokens": { "type": "integer", "minimum": 0 },
         "cache_reported_input_tokens": { "type": "integer", "minimum": 0 },
         "cache_write_tokens": { "type": "integer", "minimum": 0 },
-        "reasoning_tokens": { "type": "integer", "minimum": 0 }
+        "reasoning_tokens": { "type": "integer", "minimum": 0 },
+        "estimated_cost_usd": { "type": "number", "minimum": 0 },
+        "priced_requests": { "type": "integer", "minimum": 0 },
+        "list_priced_requests": { "type": "integer", "minimum": 0 },
+        "unpriced_requests": { "type": "integer", "minimum": 0 }
       }
     },
     "UsageMonthView": {
@@ -133,7 +161,11 @@
         "cache_hit_tokens",
         "cache_reported_input_tokens",
         "cache_write_tokens",
-        "reasoning_tokens"
+        "reasoning_tokens",
+        "estimated_cost_usd",
+        "priced_requests",
+        "list_priced_requests",
+        "unpriced_requests"
       ],
       "properties": {
         "month": { "type": "string", "pattern": "^\\d{4}-\\d{2}$", "description": "YYYY-MM（UTC）。" },
@@ -145,7 +177,11 @@
         "cache_hit_tokens": { "type": "integer", "minimum": 0 },
         "cache_reported_input_tokens": { "type": "integer", "minimum": 0 },
         "cache_write_tokens": { "type": "integer", "minimum": 0 },
-        "reasoning_tokens": { "type": "integer", "minimum": 0 }
+        "reasoning_tokens": { "type": "integer", "minimum": 0 },
+        "estimated_cost_usd": { "type": "number", "minimum": 0 },
+        "priced_requests": { "type": "integer", "minimum": 0 },
+        "list_priced_requests": { "type": "integer", "minimum": 0 },
+        "unpriced_requests": { "type": "integer", "minimum": 0 }
       }
     },
     "UsageSummaryView": {
@@ -160,7 +196,8 @@
         "jobs_counted",
         "jobs_estimated_from_reports",
         "first_at",
-        "last_at"
+        "last_at",
+        "pricing"
       ],
       "properties": {
         "scope": { "type": "string", "enum": ["document", "all"] },
@@ -171,7 +208,20 @@
         "jobs_counted": { "type": "integer", "minimum": 0, "description": "有用量记录的任务数。" },
         "jobs_estimated_from_reports": { "type": "integer", "minimum": 0, "description": "其中从旧报告折算的任务数（没有缓存 / 思考明细），界面可以注明「早期任务按报告估算」。" },
         "first_at": { "type": ["string", "null"], "description": "最早一条用量的时间（UTC，RFC 3339）。" },
-        "last_at": { "type": ["string", "null"], "description": "最近一条用量的时间。" }
+        "last_at": { "type": ["string", "null"], "description": "最近一条用量的时间。" },
+        "pricing": { "$ref": "#/definitions/UsagePricingView" }
+      }
+    },
+    "UsagePricingView": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "估算花费用的价格表（2026-11-19 起）。服务端每天从 models.dev 同步一次，价格变了追加不覆盖，每条用量按它那天的价算；没同步过用仓库里带的快照。",
+      "required": ["source", "synced_at", "snapshot_date", "currency"],
+      "properties": {
+        "source": { "type": "string", "description": "价格来源地址。" },
+        "synced_at": { "type": ["string", "null"], "description": "最后一次同步成功的时间（UTC，RFC 3339）；没同步过为 null。" },
+        "snapshot_date": { "type": ["string", "null"], "description": "没同步过时用的内置快照日期（YYYY-MM-DD）；同步过为 null。" },
+        "currency": { "type": "string", "enum": ["USD"] }
       }
     }
   }
