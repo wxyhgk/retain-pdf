@@ -24,6 +24,7 @@ import {
   BookDetailArtifactsTab,
 } from "./tabs/index.js";
 import { ProcessingTabWithUsage } from "./ProcessingTabWithUsage.jsx";
+import { DocumentCostFact } from "@/features/usage/index.js";
 import { BookDetailHistoryTab } from "./tabs/BookDetailHistoryTab.jsx";
 import { qualityBookDetailTab, termsBookDetailTab } from "./tabs/standalone-tabs.jsx";
 import { BookIcon, FileIcon, ProcessingIcon } from "./tabs/tab-icons.jsx";
@@ -308,6 +309,7 @@ export function BookDetailDialog({ extraTabs = [] }: BookDetailDialogProps = {})
                     />
                   )}
                   versionsSlot={<TranslationVersionsCard open={open} documentId={documentId} jobs={documentJobs.jobs} ready={!documentJobs.loading} />}
+                  costSlot={<DocumentCostFact open={open && !documentJobs.loading} documentId={documentId} jobs={documentJobs.jobs} />}
                   dangerSlot={(
                     <DeleteFooterPanel
                       busy={docState.busy}

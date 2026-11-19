@@ -37,6 +37,8 @@ export type BookDetailOverviewTabProps = {
   collectionsSlot?: ReactNode;
   /** 译文版本（TranslationVersionsPanel）：只有一份译文时它自己不画。 */
   versionsSlot?: ReactNode;
+  /** 信息区最后一项「花费」（usage 的 DocumentCostFact，一个 <div><dt/><dd/></div>）：没用量时它自己不画。 */
+  costSlot?: ReactNode;
   /** 危险操作（DeleteFooterPanel） */
   dangerSlot?: ReactNode;
   /**
@@ -73,6 +75,7 @@ export function BookDetailOverviewTab({
   readingSlot,
   collectionsSlot,
   versionsSlot = null,
+  costSlot = null,
   dangerSlot,
   aiSlot = null,
   error = "",
@@ -159,6 +162,7 @@ export function BookDetailOverviewTab({
               {translationHint ? <small>{translationHint}</small> : null}
             </dd>
           </div>
+          {costSlot}
         </dl>
 
         <div className="book-detail-overview-row">

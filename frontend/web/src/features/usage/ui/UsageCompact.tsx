@@ -1,13 +1,14 @@
-// 书籍详情「进度」页细节区的「用量」：一排带图标的数字（输入、输出、缓存命中、思考、合计），
+// 书籍详情「进度」页细节区的「用量」：一排带图标的数字（花费、输入、输出、缓存命中、思考、合计），
 // 下面按环节一行一条条形。数字的名字和精确值在悬停里，画面上只留图标和数。
 // 以前这是右栏单独一个「用量」页签，五个数字各占一张小卡，标题都写成字。
-import { ArrowDownToLine, ArrowUpFromLine, Brain, Info, Sigma, Zap } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine, Brain, CircleDollarSign, Info, Sigma, Zap } from "lucide-react";
 import type { ComponentType } from "react";
 import { Button } from "@retainpdf/ui";
 
 import type { UsageMetric, UsageViewModel } from "../domain/usage-view-model.js";
 
 const METRIC_ICON: Record<string, ComponentType<{ "aria-hidden"?: boolean | "true" }>> = {
+  cost: CircleDollarSign,
   input: ArrowDownToLine,
   output: ArrowUpFromLine,
   cache: Zap,
@@ -17,6 +18,7 @@ const METRIC_ICON: Record<string, ComponentType<{ "aria-hidden"?: boolean | "tru
 };
 
 function metricTitle(metric: UsageMetric): string {
+  if (metric.title) return metric.title;
   return [metric.label, metric.exact ? `${metric.exact} token` : metric.value, metric.note].filter(Boolean).join(" · ");
 }
 
@@ -70,6 +72,7 @@ export function UsageCompact({
                 <span className="usage-compact-bar-fill" style={{ width: `${Math.max(2, Math.round(group.share * 100))}%` }} />
               </span>
               <span className="usage-compact-bar-value">{group.value}</span>
+              {group.cost ? <span className="usage-compact-bar-cost" data-usage-cost={group.key}>{group.cost}</span> : null}
             </li>
           ))}
         </ol>
