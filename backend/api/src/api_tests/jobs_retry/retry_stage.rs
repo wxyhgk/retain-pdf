@@ -975,3 +975,73 @@ async fn translation_retry_recovers_ocr_artifacts_from_the_streamed_ocr_child() 
     let retry_job = state.db.get_job(payload["data"]["job_id"].as_str().unwrap()).unwrap();
     assert_eq!(retry_job.request_payload.source.artifact_job_id, parent_id);
 }
+
+/// 前端换模型连接的做法（2026-11-19；key 存在前端本地）：重新翻译带内联 api_key 和新的地址、模型。
+/// 原任务的 credential_ref 被清掉，内联 key 导入成一条新的托管凭据；审校同理。不会拿旧凭据去请求新服务商。
+#[tokio::test]
+async fn retry_stage_with_an_inline_key_switches_the_whole_connection() {
+    use crate::services::providers::{create_credential, CreateCredentialInput};
+    let state = test_state("retry-stage-inline-connection");
+    let old = create_credential(
+        &state.config.data_root,
+        CreateCredentialInput {
+            kind: "translation_api_key".to_string(),
+            provider: "deepseek".to_string(),
+            label: "old".to_string(),
+            secret: "sk-old-not-real".to_string(),
+            expected_revision: None,
+        },
+    )
+    .expect("create credential")
+    .credential
+    .credential_ref;
+    let mut source_job = source_job_with_artifacts(
+        "job-retry-inline-source",
+        JobArtifacts {
+            source_pdf: Some("jobs/source/source/input.pdf".to_string()),
+            normalized_document_json: Some("jobs/source/ocr/document.v1.json".to_string()),
+            ..JobArtifacts::default()
+        },
+    );
+    source_job.request_payload.translation.api_key.clear();
+    source_job.request_payload.translation.credential_ref = old.clone();
+    source_job.request_payload.translation.reviewer_credential_ref = old.clone();
+    source_job.status = JobStatusKind::Succeeded;
+    seed_ocr_checkpoint_files(&state, &source_job);
+    state.db.save_job(&source_job).expect("save source job");
+
+    let response = build_app(state.clone())
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/jobs/job-retry-inline-source/actions/retry-stage")
+                .header("X-API-Key", "test-key")
+                .header("Content-Type", "application/json")
+                .body(Body::from(
+                    json!({"stage": "translation", "overrides": {"translation": {
+                        "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+                        "model": "qwen3.8-flash",
+                        "api_key": "sk-inline-qwen-not-real",
+                        "reviewer_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+                        "reviewer_model": "qwen3.8-max",
+                        "reviewer_api_key": "sk-inline-reviewer-not-real"
+                    }}})
+                    .to_string(),
+                ))
+                .expect("retry request"),
+        )
+        .await
+        .expect("retry response");
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload = read_json(response).await;
+    let retry_job = state.db.get_job(payload["data"]["job_id"].as_str().unwrap()).expect("retry job");
+    let translation = &retry_job.request_payload.translation;
+    assert_eq!(
+        (translation.base_url.as_str(), translation.model.as_str(), translation.reviewer_model.as_str()),
+        ("https://dashscope.aliyuncs.com/compatible-mode/v1", "qwen3.8-flash", "qwen3.8-max")
+    );
+    assert!(translation.api_key.is_empty() && translation.reviewer_api_key.is_empty(), "内联 key 导入凭据库，不留在任务里");
+    assert!(translation.credential_ref.starts_with("cred_") && translation.credential_ref != old, "不沿用原任务的凭据");
+    assert!(translation.reviewer_credential_ref.starts_with("cred_") && translation.reviewer_credential_ref != old);
+    assert_ne!(translation.credential_ref, translation.reviewer_credential_ref);
+}
