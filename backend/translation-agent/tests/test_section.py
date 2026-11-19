@@ -18,6 +18,7 @@ from retainpdf_translation_agent.section import SECTION_NARRATIVE_PROMPT
 from retainpdf_translation_agent.section import build_manuscript
 from retainpdf_translation_agent.section import combine_pages
 from retainpdf_translation_agent.section import parse_section
+from retainpdf_translation_agent.section import parse_section_notes
 from retainpdf_translation_agent.section import plan_sections
 from retainpdf_translation_agent.section import translate_section
 from retainpdf_translation_agent.units import merge_groups
@@ -111,7 +112,7 @@ def test_the_manuscript_joins_paragraphs_across_pages_and_protects_formulas() ->
     assert "¶3 The cost was ⟦F1⟧ dollars, see ⟦C1⟧." in manuscript
     assert paragraphs[2].placeholders == {"F1": "$x^2$", "C1": "`--json`"}
     assert "12" not in [p.text for p in paragraphs], "页脚不进稿子"
-    assert parse_section("¶1 一\n\n¶2（标题） 二\n二续\n¶2 重复") == {1: "一", 2: "二\n二续"}
+    assert parse_section("¶1 一\n\n¶2（标题） 二\n二续\n¶2 重复") == {1: "一", 2: "重复"}, "同一编号写了两次，以最后一次为准"
 
 
 def test_a_section_is_translated_in_one_request_and_split_back_to_blocks() -> None:
@@ -190,3 +191,60 @@ def test_a_section_is_reviewed_once_for_meaning_only() -> None:
     assert outcome.results["p12-a"].translation.startswith("译：")
     report = outcome.info["review"]
     assert len(report["applied"]) == 1 and [r["verdict"] for r in report["rejected"]] == ["not_accuracy"]
+
+
+def test_a_self_correction_and_echoed_heading_lines_are_dropped() -> None:
+    """2026-11-19 实例（《The Interloper》第二章开头，Haiku）：模型先交「第二章」，接着抄了 § 行、写了一句英文更正，再用同一编号重交。
+    以前留第一次，说明和 § 行都进了 CHAPTER TWO 那一块；现在以最后一次为准，§ 行和没有汉字的英文说明去掉、记警告。"""
+    answer = (
+        "¶10 于是，从前的闯入者如今反倒成了监视入侵的人。\n\n"
+        "¶11 第二章\n\n§ 隐匿于视线之外 → 第二章 隐匿于视线之外\n\n"
+        "Wait — the heading of ¶11 is a chapter title and should be output as the chapter heading, not as a paragraph line. Correcting the output:\n\n"
+        "¶11 第二章\n\n"
+        "¶12 有一天，大都会机场的州警察短暂扣留了我的一名研究生。\n"
+        "Note: the following paragraph keeps the original footnote marker as requested.\n"
+    )
+    found, notes = parse_section_notes(answer)
+    assert found == {10: "于是，从前的闯入者如今反倒成了监视入侵的人。", 11: "第二章", 12: "有一天，大都会机场的州警察短暂扣留了我的一名研究生。"}
+    assert notes[11] == [] and notes[12] == ["Note: the following paragraph keeps the original footnote marker as requested."]
+    first, first_notes = parse_section_notes("¶11 第二章\n\n§ 隐匿于视线之外 → 第二章 隐匿于视线之外\n\nWait — the heading of ¶11 is a chapter title. Correcting the output:")
+    assert first == {11: "第二章"} and len(first_notes[11]) == 1, "§ 行静默去掉，只记英文说明"
+    assert parse_section("¶3 他说：“OK, let's go.” 然后走了。") == {3: "他说：“OK, let's go.” 然后走了。"}, "有汉字的行不动"
+    assert parse_section("¶4 The Interloper") == {4: "The Interloper"}, "英文词不到 5 个的不当说明（书名、缩写）"
+
+
+def test_dropped_notes_are_recorded_as_warnings_on_the_block() -> None:
+    class Noisy(Model):
+        def __call__(self, body: dict) -> dict:
+            response = super().__call__(body)
+            if body["system"][0]["text"].startswith(SECTION_NARRATIVE_PROMPT[:20]):
+                text = response["content"][0]["text"].replace("¶5 ", "¶5 Wait, I should double check this paragraph before answering it.\n", 1)
+                response = {**response, "content": [{"type": "text", "text": text}]}
+            return response
+
+    outcome = translate_section(TranslationAgent(model="fake", transport=Noisy()), _book(), Glossary())
+    result = outcome.results["p14-a"]
+    assert not result.translation.startswith("Wait") and result.status == "warn"
+    assert "model_note_dropped" in [i["code"] for i in result.issues]
+
+
+def test_chapter_labels_are_translated_by_the_program_not_the_model() -> None:
+    from retainpdf_translation_agent.section import chapter_label
+
+    cases = {
+        "CHAPTER TWO": "第二章", "Chapter 2": "第二章", "CHAPTER II": "第二章", "Chapter Twenty-One": "第二十一章",
+        "PART ONE": "第一部分", "Part IV": "第四部分", "BOOK 3": "第三卷", "Chapter 10.": "第十章", "chapter twelve": "第十二章",
+    }
+    for text, expected in cases.items():
+        assert chapter_label(text) == expected, text
+    for text in ("CHAPTER TWO Hiding from View", "Chapter", "Part of the problem", "CHAPTER ONE TWO", "Introduction"):
+        assert chapter_label(text) is None, text
+
+    pages = [_page("46", _block("p46-a", "CHAPTER TWO", cls="paragraph"), BlockInput("p46-b", "heading", "Hiding from View", True, fixed_translation="第二章 隐匿于视线之外"),
+                   _block("p46-c", "The day the State Police detained one of my students was not my proudest moment."))]
+    model = Model()
+    outcome = translate_section(TranslationAgent(model="fake", transport=model), pages, Glossary())
+    manuscript = model.bodies[0]["messages"][0]["content"]
+    assert "§ CHAPTER TWO → 第二章" in manuscript and "§ Hiding from View → 隐匿于视线之外" in manuscript and "¶1 The day" in manuscript, "章号块不进稿子，只作上下文"
+    assert outcome.results["p46-a"].translation == "第二章"
+    assert outcome.results["p46-b"].translation == "隐匿于视线之外", "章名的已定译文去掉重复的章号"

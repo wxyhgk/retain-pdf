@@ -25,6 +25,7 @@ from dataclasses import replace
 
 from retainpdf_translation_agent.agent import ROLE_TRANSLATOR
 from retainpdf_translation_agent.agent import TranslationAgent
+from retainpdf_translation_agent.checks import CJK_RE
 from retainpdf_translation_agent.checks import CODE_RE
 from retainpdf_translation_agent.checks import FORMULA_RE
 from retainpdf_translation_agent.checks import check_block
@@ -40,7 +41,7 @@ from retainpdf_translation_agent.memory import term_pattern
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
-SECTION_VERSION = "agent-section-1"
+SECTION_VERSION = "agent-section-2"
 # 一节最多多少英文词（到了就在下一页开头断）；不到 MIN 遇到标题也不断，免得一页一节。
 SECTION_MAX_WORDS = 2500
 SECTION_MIN_WORDS = 600
@@ -68,8 +69,8 @@ SECTION_NARRATIVE_PROMPT = """你是出版社的资深译者，正在把一本�
 - 稿子按段编号（¶1、¶2……），译稿每段用同样的编号开头，段落数和顺序不变，不合并、不拆分段落；段内怎么组织随你。
 - 编号后面的（标题）（脚注）（图注）只是说明这段是什么，译稿里不用写；标题译得简洁，脚注开头的编号照留。
 - ⟦F1⟧、⟦C1⟧ 这样的占位符（公式、代码）原样留在译文里对应的位置，一个不能少；{{fn:1}} 脚注标记、[1] 引用标记也原样留着。
-- 以 § 开头的行是已经定好译文的标题，只作上下文，不要输出。
-- 只输出译稿，不要别的说明。"""
+- 以 § 开头的行是已经定好译文的标题，版面上单独排好了，只作上下文：不要输出，也不要把它并进别的段。
+- 只输出译稿：不要写说明、更正、思考过程。发现某段写错了，就用同一个编号把那一段整段重写一遍，以最后一次为准。"""
 
 
 @dataclass
@@ -129,6 +130,77 @@ def combine_pages(pages: list[PageInput]) -> PageInput:
     return replace(first, page_label=label, blocks=[b for p in pages for b in p.blocks], context={})
 
 
+_NUMBER_WORDS = {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+    "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17,
+    "eighteen": 18, "nineteen": 19, "twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+}
+_ROMAN = {"i": 1, "v": 5, "x": 10, "l": 50, "c": 100}
+_LABEL_RE = re.compile(r"^(chapter|part|book)\s+([a-z]+(?:[\s-][a-z]+)?|\d{1,3}|[ivxlc]{1,8})\.?$", re.I)
+_LABEL_KIND = {"chapter": "章", "part": "部分", "book": "卷"}
+
+
+def _label_number(token: str) -> int | None:
+    token = token.lower().strip()
+    if token.isdigit():
+        return int(token)
+    if all(ch in _ROMAN for ch in token):
+        total, prev = 0, 0
+        for ch in reversed(token):
+            value = _ROMAN[ch]
+            total += -value if value < prev else value
+            prev = max(prev, value)
+        return total or None
+    words = re.split(r"[\s-]+", token)
+    if all(w in _NUMBER_WORDS for w in words) and len(words) <= 2:
+        return sum(_NUMBER_WORDS[w] for w in words) if len(words) == 1 or _NUMBER_WORDS[words[0]] >= 20 else None
+    return None
+
+
+def _chinese_number(n: int) -> str:
+    digits = "零一二三四五六七八九"
+    if n < 10:
+        return digits[n]
+    if n < 20:
+        return "十" + (digits[n % 10] if n % 10 else "")
+    if n < 100:
+        return digits[n // 10] + "十" + (digits[n % 10] if n % 10 else "")
+    return str(n)
+
+
+def chapter_label(text: str) -> str | None:
+    """单独一块的章号（CHAPTER TWO、Chapter 2、CHAPTER II、PART ONE、Book 3）→ 第二章、第一部分、第三卷；别的返回 None。
+    这类块由程序直接换，不交给模型：2026-11-19 一本书的「CHAPTER TWO」后面紧跟已定译文「第二章 隐匿于视线之外」的章名，
+    模型把章号块也写成了整个章名，版面上出现两遍。"""
+    match = _LABEL_RE.match((text or "").strip())
+    if not match:
+        return None
+    number = _label_number(match.group(2))
+    if not number or number > 99:
+        return None
+    return f"第{_chinese_number(number)}{_LABEL_KIND[match.group(1).lower()]}"
+
+
+def label_chapters(units: PageInput) -> PageInput:
+    """章号块填上程序换好的译文（当成已定译文：不进稿子，结果原样交回）。紧跟着的章名如果已定译文以同样的章号开头、
+    原文却不带章号（通读把「Hiding from View」定成了「第二章 隐匿于视线之外」），去掉这个重复的章号，免得版面上出现两遍。"""
+    blocks = list(units.blocks)
+    for index, block in enumerate(blocks):
+        label = chapter_label(block.text) if block.translate and block.fixed_translation is None else None
+        if not label:
+            continue
+        blocks[index] = replace(block, fixed_translation=label)
+        following = next((b for b in blocks[index + 1 :] if b.translate), None)
+        if following is None or following.fixed_translation is None or chapter_label(following.text.split("\n")[0]):
+            continue
+        title = following.fixed_translation.strip()
+        if title.startswith(label) and len(title) > len(label) and not _LABEL_RE.match(following.text.strip()):
+            rest = title[len(label) :].lstrip(" 　:：·-—")
+            if rest:
+                blocks[blocks.index(following)] = replace(following, fixed_translation=rest)
+    return replace(units, blocks=blocks)
+
+
 def build_manuscript(units: PageInput) -> tuple[list[Paragraph], str]:
     """合好接续组的一节 → （段落，稿子）。公式、行内代码换成占位（整节统一编号）。"""
     paragraphs: list[Paragraph] = []
@@ -159,15 +231,45 @@ def build_manuscript(units: PageInput) -> tuple[list[Paragraph], str]:
     return paragraphs, "\n\n".join(lines)
 
 
-def parse_section(text: str) -> dict[int, str]:
-    """译稿 → {段号: 译文}。同一个段号交了两次的留第一次。"""
+ASCII_WORD_RE = re.compile(r"[A-Za-z]+")
+# 一行没有汉字、英文词却有这么多：当成模型写进译稿的说明（"Wait — the heading of ¶11 is …"），去掉
+NOTE_MIN_WORDS = 5
+
+
+def _strip_notes(body: str) -> tuple[str, list[str]]:
+    """去掉模型抄回来的 § 行（稿子里本来就有的上下文，常被抄在前一段末尾，静默去掉）和夹在译稿里的英文说明，
+    返回（干净的译文，去掉的说明行；不含 § 行）。"""
+    kept: list[str] = []
+    dropped: list[str] = []
+    for line in body.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("§"):
+            continue
+        if stripped and not CJK_RE.search(stripped) and len(ASCII_WORD_RE.findall(stripped)) >= NOTE_MIN_WORDS:
+            dropped.append(stripped)
+            continue
+        kept.append(line)
+    text = re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip()
+    return text, dropped
+
+
+def parse_section_notes(text: str) -> tuple[dict[int, str], dict[int, list[str]]]:
+    """译稿 → （{段号: 译文}，{段号: 去掉的说明行}）。同一个段号写了几次的以最后一次为准：模型发现写错了会用同一个编号
+    重写（2026-11-19 实例：先交「第二章」，接着抄了 § 行、写了一句英文更正，再交一遍）。"""
     found: dict[int, str] = {}
+    notes: dict[int, list[str]] = {}
     for match in PARAGRAPH_RE.finditer(text or ""):
         number = int(match.group(1))
-        body = match.group(2).strip()
-        if number not in found and body:
+        body, dropped = _strip_notes(match.group(2))
+        if body:
             found[number] = body
-    return found
+            notes[number] = dropped
+    return found, notes
+
+
+def parse_section(text: str) -> dict[int, str]:
+    """译稿 → {段号: 译文}（见 `parse_section_notes`）。"""
+    return parse_section_notes(text)[0]
 
 
 def restore(paragraph: Paragraph, translation: str) -> tuple[str, list[dict]]:
@@ -233,6 +335,7 @@ def translate_section(
     模型、请求缓存、用量、编辑部事件都走 `agent`。"""
     combined = combine_pages(pages)
     units, groups = merge_groups(combined)
+    units = label_chapters(units)
     paragraphs, manuscript = build_manuscript(units)
     agent._members = {group_id: [m.id for m in members] for group_id, members in groups.items()}
     if not paragraphs:
@@ -275,7 +378,7 @@ def translate_section(
     translations: dict[int, tuple[str, list[dict]]] = {}
 
     def take(answer: str) -> list[Paragraph]:
-        found = parse_section(answer)
+        found, notes = parse_section_notes(answer)
         failed: list[Paragraph] = []
         for paragraph in paragraphs:
             if paragraph.n in translations and status_of(translations[paragraph.n][1]) != "error":
@@ -287,6 +390,8 @@ def translate_section(
                 continue
             restored, issues = restore(paragraph, text)
             issues += check_block(paragraph.unit.text, restored)
+            if notes.get(paragraph.n):
+                issues.append({"code": "model_note_dropped", "severity": "warn", "message": f"去掉了模型写进译稿的说明：{notes[paragraph.n][:2]}"})
             translations[paragraph.n] = (restored, issues)
             if status_of(issues) == "error":
                 failed.append(paragraph)
@@ -355,7 +460,9 @@ __all__ = [
     "Paragraph",
     "SectionOutcome",
     "build_manuscript",
+    "chapter_label",
     "parse_section",
+    "parse_section_notes",
     "plan_sections",
     "relevant_terms",
     "restore",

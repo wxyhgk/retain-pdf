@@ -31,7 +31,8 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
 - `tools.py`：初译能调的只读工具（2026-11-19）：`search_book` 全书搜原文（带已有译文，中文在译文里搜）、`lookup_term` 查术语表完整条目和歧义单；
   `DocumentRun(tools=True)` 才开，一页最多 3 轮 8 次，交卷后的检查问题接在同一段对话里重交。只接 Anthropic 原生工具调用。
 - `section.py`：按节翻译（第二版，2026-11-19，`DocumentRun(structure="section")`）：几页接成一份带段号的稿子（跨页的段落接好，公式、代码换占位），
-  一节一次请求、模型只当译者（`SECTION_NARRATIVE_PROMPT`），按段号对回、还原占位、查标记，漏的重交一次，不行的段退回逐块翻；合过的段切回各块。
+  一节一次请求、模型只当译者（`SECTION_NARRATIVE_PROMPT`），按段号对回（同一编号写了几次以最后一次为准；抄回来的 § 行、没有汉字的英文说明去掉）、
+  还原占位、查标记，漏的重交一次，不行的段退回逐块翻；合过的段切回各块。章号块（CHAPTER TWO、PART ONE）由程序换成「第二章」「第一部分」，不交给模型。
   `review=True` 时整节对照原文审一次意思（只收意思类单子，不做文笔那一轮）。只管人文社科、通俗读物；正式流程 2026-11-19 起默认按节
   （`agent_flow.agent_structure`，`RETAIN_AGENT_STRUCTURE=page` 退回逐页），`DocumentRun` 自己的默认仍是逐页。
   见 `docs/ops/planning/translation-agent/20261119-按节翻译.md`、`20261119-按节翻译后的审校.md`。
