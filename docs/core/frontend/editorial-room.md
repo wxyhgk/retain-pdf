@@ -44,6 +44,8 @@
 - `run_stopped` 只改状态和原因，各页停在原地。
 - 续跑：同一串事件里第二条 `run_started` 不清空。术语表、歧义单、待人看筐、通读结果和已定稿的页都留着；第 1..`resumed` 页标定稿（这一轮不再发它们的事件），上一轮停在半路的页回到「待派」。`page` 是全书里的第几页，续跑接着编号。
 - `translate_call` 按 `role` 记到工位：缺省和 `translator` 是译者，`reviewer` 算审校中，`reviser` 算修订中，`reader` 不动页。
+- `tool_call`（2026-11-19，译者开了只读工具才有）只进广播、不动页：`search_book` 念「译者查全书：词（3 处）」，`lookup_term` 念「查术语表：词（2 条）」，
+  没查到念「没有」，带 `error` 的念「没查成：原因」（警告色）。不认识的工具名照原样念。
 - 质检代码分 error、warn、info 三级；广播只念 error 和 warn，info（`hedge_lost`、`person_lost`、`review_*`）只算指标不念。不认识的代码照原样显示。
 
 ## 真实进度
