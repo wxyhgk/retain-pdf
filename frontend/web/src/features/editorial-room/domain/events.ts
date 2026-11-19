@@ -21,6 +21,9 @@ export type EditorialEvent =
   | (Base & { type: "page_started"; page: number; label: string; blocks: number })
   // role：translator 译者（缺省）、reviewer 审校、reviser 改稿、reader 通读。现在每个角色只有一个。
   | (Base & { type: "translate_call"; page: number; attempt: number; blocks: string[]; role: string })
+  // 译者翻一页时调了只读工具（2026-11-19 加）：tool 是 search_book（查全书原文）/ lookup_term（查术语表），
+  // query 最多 80 字，found 是搜到几处 / 查到几条，error 只在出错时有（如次数用完）。同一页的几轮都算在那一次 translate_call 里。
+  | (Base & { type: "tool_call"; page: number; role: string; tool: string; query: string; found: number; error: string })
   | (Base & {
       type: "check_result";
       page: number;
@@ -75,6 +78,14 @@ const READERS: Record<EditorialEventType, (raw: Rec) => Rec> = {
     attempt: num(r.attempt) || 1,
     blocks: strList(r.blocks),
     role: str(r.role) || "translator",
+  }),
+  tool_call: (r) => ({
+    page: num(r.page),
+    role: str(r.role) || "translator",
+    tool: str(r.tool),
+    query: str(r.query),
+    found: num(r.found),
+    error: str(r.error),
   }),
   check_result: (r) => ({
     page: num(r.page),

@@ -26,6 +26,18 @@ export const NAME_POLICY_TEXT: Record<string, string> = {
   transliterate: "人名用中文译名（首次括注原文）",
 };
 
+// tool_call 的工具：后端以后可能加新的，不认识的照原样显示。
+const TOOL_TEXT: Record<string, string> = {
+  search_book: "查全书",
+  lookup_term: "查术语表",
+};
+
+const ROLE_TEXT: Record<string, string> = {
+  reviewer: "审校",
+  reviser: "修订",
+  reader: "通读员",
+};
+
 const GLOSSARY_ACTION_TEXT: Record<string, string> = {
   add: "上板",
   promote: "审定",
@@ -107,6 +119,13 @@ export function narrate(event: EditorialEvent): Narration {
       return event.attempt > 1
         ? { text: `译者重翻第 ${event.page} 页的 ${event.blocks.length || "几"} 块（第 ${event.attempt} 次）`, tone: "warn" }
         : { text: `译者开始翻第 ${event.page} 页`, tone: "neutral" };
+    case "tool_call": {
+      const what = TOOL_TEXT[event.tool] || event.tool || "工具";
+      const unit = event.tool === "lookup_term" ? "条" : "处";
+      const who = event.role === "translator" ? "译者" : ROLE_TEXT[event.role] || "译者";
+      if (event.error) return { text: `${who}${what}「${event.query}」没查成：${event.error}`, tone: "warn" };
+      return { text: `${who}${what}：${event.query}（${event.found ? `${event.found} ${unit}` : "没有"}）`, tone: "neutral" };
+    }
     case "check_result": {
       const tone: NarrationTone = event.error > 0 ? "danger" : event.warn > 0 ? "warn" : "ok";
       return {
