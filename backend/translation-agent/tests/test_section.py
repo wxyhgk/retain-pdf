@@ -40,7 +40,7 @@ def _book() -> list[PageInput]:
               _block("p12-b", "and the door", group={"id": "g1", "index": 1, "of": 2}), _block("p12-f", "12", cls="footer", translate=False)),
         _page("13", _block("p13-a", "finally opened.{{fn:3}}", group={"id": "g1", "index": 2, "of": 2}),
               _block("p13-b", "The cost was $x^2$ dollars, see `--json`.")),
-        _page("14", _block("p14-a", "Rabinow left the village.")),
+        _page("14", _block("p14-a", "Rabinow left the village after many long months of waiting there.")),
     ]
 
 
@@ -48,8 +48,8 @@ class Model:
     """按请求认角色：按节翻（系统提示是 SECTION_NARRATIVE_PROMPT）把稿子每段照编号交回「译：原文」，公式占位、标记照留；
     第一版逐块翻（纯文本交卷）按 required_ids 交回；通读交给定体裁。`drop`：第几次按节请求时不交哪些段；`lose`：丢掉哪段的占位。"""
 
-    def __init__(self, *, genre: str = "humanities", drop: dict[int, set[int]] | None = None, lose: dict[int, set[int]] | None = None) -> None:
-        self.genre, self.drop, self.lose = genre, drop or {}, lose or {}
+    def __init__(self, *, genre: str = "humanities", drop: dict[int, set[int]] | None = None, lose: dict[int, set[int]] | None = None, tickets: list[dict] | None = None) -> None:
+        self.genre, self.drop, self.lose, self.tickets = genre, drop or {}, lose or {}, tickets or []
         self.bodies: list[dict] = []
         self.section_calls = 0
 
@@ -57,6 +57,8 @@ class Model:
         self.bodies.append(body)
         usage = {"input_tokens": 10, "output_tokens": 5}
         tools = [t["name"] for t in body.get("tools") or []]
+        if tools == ["submit_review"]:
+            return {"content": [{"type": "tool_use", "name": "submit_review", "input": {"issues": self.tickets}}], "usage": usage}
         if tools:
             answer = {"genre": self.genre, "name_policy": "transliterate", "style": "", "terms": [], "headings": []}
             return {"content": [{"type": "tool_use", "name": tools[0], "input": answer}], "usage": usage}
@@ -145,7 +147,7 @@ def test_missing_or_broken_paragraphs_are_asked_again_then_fall_back_to_block_tr
     stubborn = Model(drop={1: {5}, 2: {5}})
     outcome = translate_section(TranslationAgent(model="fake", transport=stubborn), _book(), Glossary())
     assert outcome.info["fallback"] == ["p14-a"]
-    assert outcome.results["p14-a"].translation == "逐块：Rabinow left the village."
+    assert outcome.results["p14-a"].translation == "逐块：Rabinow left the village after many long months of waiting there."
     assert outcome.results["p14-a"].meta["structure"] == "section_fallback"
 
 
@@ -155,10 +157,13 @@ def test_document_run_translates_narrative_books_by_section_and_keeps_page_check
     run = DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path / "s", read_first=True, review=True, structure="section")
     outcome = run.run(_book(), on_page=lambda index, page, results: seen_pages.append(page.page_label))
     assert outcome.status == "done" and seen_pages == ["12", "13", "14"]
-    assert model.section_calls == 1, "三页一节，一次请求；按节翻不做第二遍审校"
+    assert model.section_calls == 1, "三页一节，一次请求"
+    assert [b["tools"][0]["name"] for b in model.bodies if b.get("tools")][-1:] == ["submit_review"], "整节审一次意思"
+    assert len(model.bodies) == 3, "通读、按节翻、审意思各一次；不做文笔那一轮"
     assert sorted(p.name for p in (tmp_path / "s" / "pages").iterdir()) == ["0000.json", "0001.json", "0002.json"]
     events = [json.loads(line)["type"] for line in (tmp_path / "s" / "events.jsonl").read_text(encoding="utf-8").splitlines()]
     assert events.count("page_started") == 3 and events.count("page_done") == 3 and "translate_call" in events
+    assert events.count("review_started") == 1 and events.count("review_done") == 1
 
     # 续跑：做过的页直接读回，不再请求
     again = Model()
@@ -169,3 +174,19 @@ def test_document_run_translates_narrative_books_by_section_and_keeps_page_check
     science = Model(genre="science_paper")
     DocumentRun(TranslationAgent(model="fake", transport=science), tmp_path / "p", read_first=True, structure="section").run(_book())
     assert science.section_calls == 0 and len(science.bodies) >= 3
+
+
+def test_a_section_is_reviewed_once_for_meaning_only() -> None:
+    """按节审意思（2026-11-19）：整节一次，收意思类的单子改到对应的块（接续组切回前改），文笔单子不收。"""
+    tickets = [
+        {"block_id": "p14-a", "category": "mistranslation", "source_quote": "left the village", "translation_quote": "译：Rabinow left the village after many long months of waiting there.", "fix": "拉比诺等了好几个月，离开了村子。", "reason": "没译"},
+        {"block_id": "p12-a", "category": "fluency", "source_quote": "called out", "translation_quote": "译：", "fix": "", "reason": "文笔"},
+    ]
+    model = Model(tickets=tickets)
+    outcome = translate_section(TranslationAgent(model="fake", transport=model), _book(), Glossary(), review=True)
+    assert [b["tools"][0]["name"] for b in model.bodies if b.get("tools")] == ["submit_review"]
+    assert model.bodies[-1]["system"][0]["text"].count("这一轮只管意思") == 1
+    assert outcome.results["p14-a"].translation == "拉比诺等了好几个月，离开了村子。"
+    assert outcome.results["p12-a"].translation.startswith("译：")
+    report = outcome.info["review"]
+    assert len(report["applied"]) == 1 and [r["verdict"] for r in report["rejected"]] == ["not_accuracy"]

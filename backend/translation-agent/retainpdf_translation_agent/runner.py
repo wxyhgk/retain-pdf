@@ -105,8 +105,8 @@ class DocumentRun:
         `tools=True` 时初译能调只读工具（全书搜原文、查术语表，`tools.py`），交卷后的检查问题在同一段对话里回给模型改；
         只接 Anthropic 的原生工具调用，OpenAI 协议的 transport 不要开。
         `structure="section"`（第二版，2026-11-19 起）：人文社科、通俗读物（没通读时也算）按节翻（`section.py`）：几页接成一份
-        带段号的稿子一次翻，段号对回各块；断点、写回、编辑部事件照旧按页。这一版按节翻不做第二遍审校，`review`、`tools` 不起作用；
-        别的体裁照旧逐页。默认 `"page"`（第一版）。"""
+        带段号的稿子一次翻，段号对回各块；断点、写回、编辑部事件照旧按页。`review` 为真时整节对照原文审一次意思（只收意思类单子，
+        不做文笔那一轮）；`tools` 不起作用。别的体裁照旧逐页。默认 `"page"`（第一版）。"""
         self.agent = agent
         self.state_dir = Path(state_dir)
         self.initial_glossary = glossary
@@ -373,6 +373,7 @@ class DocumentRun:
                         style=self.style,
                         previous=previous,
                         seen_names=seen_names,
+                        review=bool(self.review),
                     )
                 except StopRun as stop:
                     self._log_calls(pages[todo[0]], f"{todo[0]:04d}", {}, calls_before)
@@ -380,6 +381,13 @@ class DocumentRun:
                     return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
                 self._log_calls(pages[todo[0]], f"{todo[0]:04d}", {}, calls_before)
                 self._ledger("section", pages=[pages[i].page_label for i in todo], paragraphs=outcome.info["paragraphs"], attempts=outcome.info["attempts"], fallback=outcome.info["fallback"])
+                report = outcome.info.get("review")
+                if report is not None:
+                    # 审校在整节一次（请求时就审完了），事件补在翻译之后，页号记这一节的第一页
+                    self._event_page = todo[0] + 1
+                    self._event("review_started", page=self._event_page, blocks=report["reviewed"])
+                    self._event("review_done", page=self._event_page, tickets=report["tickets"], applied=len(report["applied"]), rejected=len(report["rejected"]))
+                    self._ledger("review", page=pages[todo[0]].page_label, page_key=f"{todo[0]:04d}", reviewed=report["reviewed"], tickets=report["tickets"], applied=len(report["applied"]))
                 outcome_by_page = {}
                 for index in range(start, end):
                     key = f"{index:04d}"
