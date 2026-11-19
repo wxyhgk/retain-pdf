@@ -1,5 +1,8 @@
 // providers — pure
 import { buildApiEndpoint, submitJson } from "./http.js";
+import type { TranslationModelListView, TranslationModelsRequest } from "@retainpdf/contracts/translation-providers";
+import * as providers from "./generated/translation-providers.js";
+import { serverMessageOr } from "./request.js";
 
 // 凭据检测都是"用户点了按钮在等结果"的前台请求，必须有上限：后端探针自身
 // 超时 20s（RUST_API_DEEPSEEK_PROBE_TIMEOUT_SECS），这里留 10s 余量兜住
@@ -26,4 +29,32 @@ export async function validateDeepSeekToken(apiPrefix: string, payload: unknown)
 
 export async function queryDeepSeekBalance(apiPrefix: string, payload: unknown): Promise<any> {
   return submitJson(buildApiEndpoint(apiPrefix, "providers/deepseek/balance"), payload, probeOptions);
+}
+
+export type {
+  TranslationModelListView as ProviderModelListView,
+  TranslationModelView as ProviderModelView,
+} from "@retainpdf/contracts/translation-providers";
+
+/**
+ * 从翻译接口拉模型列表（POST /providers/translation/models，契约 translation-providers.v1；后端代调服务商的 /models，
+ * key 用完不存）。服务商那边出错也是 200，看 status；没 key、地址不合规是 400。和检测一样最多等 30 秒。
+ */
+export async function fetchTranslationProviderModels(
+  apiPrefix: string,
+  payload: { base_url: string; api_key: string; api_protocol?: string },
+): Promise<TranslationModelListView> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROVIDER_PROBE_TIMEOUT_MS);
+  try {
+    return await providers.listTranslationProviderModels(apiPrefix, { body: payload as TranslationModelsRequest }, {
+      signal: controller.signal,
+      onError: serverMessageOr("拉取模型失败，请稍后重试。"),
+    });
+  } catch (cause) {
+    if (controller.signal.aborted) throw new Error("拉取模型超时（30s），请检查 API URL 与网络后重试。");
+    throw cause;
+  } finally {
+    clearTimeout(timer);
+  }
 }

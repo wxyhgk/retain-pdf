@@ -47,3 +47,23 @@ export async function queryDeepSeekBalance(apiPrefix: string, payload: unknown) 
     ],
   };
 }
+
+/** 演示模式：假装从服务商拉回几个模型（带单价），不访问远端。 */
+export async function fetchTranslationProviderModels(apiPrefix: string, payload: unknown) {
+  void apiPrefix;
+  void payload;
+  const price = (input: number, output: number) => ({ input, output, cache_read: null, cache_write: null, peak_multiplier: null });
+  return {
+    ok: true,
+    status: "ok",
+    summary: "模拟模式：拉到 4 个模型（未访问远端）",
+    source: "provider",
+    chat_models: 3,
+    models: [
+      { id: "demo-flash", kind: "chat", price: price(0.05, 0.4) },
+      { id: "demo-pro", kind: "chat", price: price(0.5, 2) },
+      { id: "demo-mini", kind: "chat", price: null },
+      { id: "demo-embedding", kind: "other", price: null },
+    ],
+  };
+}

@@ -16,6 +16,8 @@ import { Select as SelectPrimitive } from "radix-ui";
 import { SecretInput } from "./SecretInput.js";
 import { FieldLabel } from "./FieldLabel.jsx";
 import { Input } from "@retainpdf/ui";
+import { ProviderModelPicker } from "./ProviderModelPicker.jsx";
+import { parseModelList } from "../domain/translation-profile.js";
 
 const { browser: BROWSER_IDS } = CREDENTIAL_DOM_IDS;
 
@@ -177,8 +179,30 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
             ref={(node) => { elementsRef.translationWorkersInput = node || null; }}
           />
         </label>
+        <div className="credential-translation-models-field">
+          <ProviderModelPicker
+            readRequest={() => {
+              const apiKey = `${elementsRef.apiKeyInput?.value || ""}`.trim();
+              if (!apiKey) return { error: "先填 API Key 再拉。" };
+              return {
+                base_url: `${elementsRef.modelBaseUrlInput?.value || providerDefinition.baseUrl || ""}`.trim(),
+                api_key: apiKey,
+                api_protocol: `${elementsRef.translationProtocolSelect?.value || providerDefinition.protocol || "openai_responses"}`,
+              };
+            }}
+            readCurrent={() => {
+              const model = `${elementsRef.modelNameInput?.value || ""}`.trim();
+              return { model, extras: parseModelList(elementsRef.extraModelsInput?.value || "", model) };
+            }}
+            onApply={({ model, extras }) => {
+              if (elementsRef.modelNameInput) elementsRef.modelNameInput.value = model;
+              if (elementsRef.extraModelsInput) elementsRef.extraModelsInput.value = extras.join(", ");
+              handlers?.resetDeepSeekValidation?.();
+            }}
+          />
+        </div>
         <label className="credential-translation-models-field">
-          <FieldLabel icon={<Layers />}>其他模型（可不填）</FieldLabel>
+          <FieldLabel icon={<Layers />}>其他模型（可不填，也可以从服务商拉取后勾选）</FieldLabel>
           <Input
             id={BROWSER_IDS.extraModels}
             type="text"
