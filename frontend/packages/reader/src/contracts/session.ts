@@ -91,8 +91,8 @@ export type ReaderSessionDataPort = {
 export type ReaderTranslationEditPort = {
   /** 真正持有译文的任务：重新排版出来的任务没有自己的译文，改要改到来源任务上。 */
   resolveOwnerJobId: (jobId: string) => Promise<string>;
-  /** GET /jobs/:id/translations/:item_id，返回 {item: {...}}。 */
-  loadItem: (jobId: string, itemId: string) => Promise<{ item?: Record<string, unknown> } | null>;
+  /** GET /jobs/:id/translations/:item_id（认阅读页块号），返回 {item_id: 条目里实际存的写法, item: {...}}。 */
+  loadItem: (jobId: string, itemId: string) => Promise<{ item_id?: string; item?: Record<string, unknown> } | null>;
   /** PATCH /jobs/:id/translations/:item_id。 */
   revise: (jobId: string, itemId: string, body: ReaderTranslationRevisionBody) => Promise<{ generation?: number; changed?: boolean } | null>;
   /** 修订记录（data/revisions）：给了阅读页块号只要这一块的，按时间从旧到新；不给就是全书最近的，从新到旧。 */

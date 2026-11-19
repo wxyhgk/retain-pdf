@@ -17,7 +17,6 @@ import {
   editableBlockIds,
   inlineEditLayout,
   revisionIssueTexts,
-  translationItemIdCandidates,
 } from "../../../../frontend/packages/reader/src/shared/data/block-edit.ts";
 import { ReaderTextHoverLayer } from "../../../../frontend/packages/reader/src/pdf/ReaderTextHoverLayer.tsx";
 
@@ -30,10 +29,7 @@ const REVISIONS = {
   },
 };
 
-test("改译文模型：块号的几种写法、页码、拼出来的书、排版时间", () => {
-  assert.deepEqual(translationItemIdCandidates("p012-b0005"), ["p012-b0005", "p012-b005", "p012-b5"]);
-  assert.deepEqual(translationItemIdCandidates("p012-b1234"), ["p012-b1234"]);
-  assert.deepEqual(translationItemIdCandidates("odd"), ["odd"]);
+test("改译文模型：页码、拼出来的书、排版时间", () => {
   assert.equal(pageOfReaderItem("p012-b0005"), 12);
   assert.equal(pageOfReaderItem("x"), 0);
   assert.equal(isMergedReadingJob("merged-abc-123"), true);
@@ -164,15 +160,15 @@ test("编辑框放哪：大块盖在原位；小块在下面弹一个放大的�
   assert.equal(inlineEditLayout({ left: 0, top: 0, width: 100, height: 20 }, { width: 300, height: 800 }).width, 284, "页太窄：铺满页宽减边");
 });
 
-test("框里改：块号对不上四位就试三位；只看译文时带原文；保存走 PATCH（source=user、带原因），存好收起；历史能用回初译；Esc 取消丢草稿；Alt+↓ 换段；右下角重新排版", async () => {
+test("框里改：用阅读页块号读、按条目实际写法写回；只看译文时带原文；保存走 PATCH（source=user、带原因），存好收起；历史能用回初译；Esc 取消丢草稿；Alt+↓ 换段；右下角重新排版", async () => {
   const calls = [];
   let history = { data: { rows: [] } };
   const port = {
     resolveOwnerJobId: async (id) => id,
     loadItem: async (jobId, itemId) => {
       calls.push(["load", jobId, itemId]);
-      if (itemId === "p003-b0002") throw Object.assign(new Error("找不到"), { status: 404, reason: "" });
-      return { item: { source_text: "The coroner arrived.", protected_translated_text: "验尸官来了。" } };
+      // 后端认四位块号，回条目里实际存的写法（三位）
+      return { item_id: "p003-b002", item: { source_text: "The coroner arrived.", protected_translated_text: "验尸官来了。" } };
     },
     revise: async (jobId, itemId, body) => {
       calls.push(["revise", jobId, itemId, body]);
@@ -188,7 +184,7 @@ test("框里改：块号对不上四位就试三位；只看译文时带原文�
   assert.equal(text.value, "验尸官来了。");
   assert.equal(doc.querySelector("[data-inline-edit-mode]").dataset.inlineEditMode, "inline");
   assert.match(doc.querySelector("[data-block-edit-source]").textContent, /coroner/);
-  assert.deepEqual(calls.filter((c) => c[0] === "load").map((c) => c[2]), ["p003-b0002", "p003-b002"]);
+  assert.deepEqual(calls.filter((c) => c[0] === "load").map((c) => c[2]), ["p003-b0002"], "直接用阅读页块号读一次");
   assert.match(doc.querySelector("[data-block-edit-pending]").textContent, /改了 1 处，还没排进 PDF/);
 
   typeInput(dom, text, "验尸官到了。");

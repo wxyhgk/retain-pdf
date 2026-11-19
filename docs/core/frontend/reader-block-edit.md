@@ -35,7 +35,7 @@
   - `GET/PATCH /jobs/:id/translations/:item_id`（source=user）。
   - `data/revisions`：按阅读页块号筛，后端认三位、四位写法。
   - `retry-stage` render，`create_new_job=false`。
-- **块号**：阅读页是四位（`p012-b0005`），译文条目里可能存的是三位或不补零。前端依次试这几种写法（`translationItemIdCandidates`）。后端以后会让这些入口认任何写法，到时候第一种就中。
+- **块号**：阅读页是四位（`p012-b0005`），译文条目里可能存的是三位或不补零。后端 2026-11-19 起让条目的读、改、修订、重翻入口按同一规则认任何写法（一字不差的优先），返回条目里实际存的写法。前端直接拿阅读页块号读一次，写回用返回的 `item_id`。
 - **待排版**：按修订记录现算。PDF 排好（任务 `timestamps.finished_at`）以后才写回的修订，每段取最后一次（`pendingEditsFromRevisions`）。所以关掉阅读页再开也接得上；排完一次，完成时间一变，就清空了。
 - **排完重新加载 PDF**：`job-status.ts` 的终态刷新栅栏，在任务又进排队、运行时重置。所以原地重跑（重新排版、精修）以后再到 succeeded，会再刷新一次产物。
 - **主要代码**：

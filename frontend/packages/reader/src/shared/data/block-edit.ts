@@ -14,19 +14,6 @@ export function isMergedReadingJob(jobId: string): boolean {
   return `${jobId || ""}`.trim().startsWith("merged-");
 }
 
-/**
- * 阅读页的块号是四位（p012-b0005），译文条目里存的可能是四位、三位（p012-b005）或不补零。
- * 依次试这几种写法；后端以后按同一规则认任何写法时，第一种就中。
- */
-export function translationItemIdCandidates(readerItemId: string): string[] {
-  const id = `${readerItemId || ""}`.trim();
-  const match = /^(.*-b)(\d+)$/.exec(id);
-  if (!match) return id ? [id] : [];
-  const number = Number(match[2]);
-  const forms = [id, `${match[1]}${`${number}`.padStart(3, "0")}`, `${match[1]}${number}`];
-  return [...new Set(forms)];
-}
-
 /** 块号里的页码（p012-b0005 → 12）；认不出是 0。 */
 export function pageOfReaderItem(readerItemId: string): number {
   const match = /^p(\d+)-/.exec(`${readerItemId || ""}`.trim());

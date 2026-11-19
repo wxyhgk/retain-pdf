@@ -2,11 +2,6 @@ import { type ReaderRegion } from "./reader-regions.js";
 type Row = Record<string, unknown>;
 /** 拼出来的书（多次翻译按页合成的虚拟任务 merged-…）是只读的，改要改到源任务上，这一版不支持。 */
 export declare function isMergedReadingJob(jobId: string): boolean;
-/**
- * 阅读页的块号是四位（p012-b0005），译文条目里存的可能是四位、三位（p012-b005）或不补零。
- * 依次试这几种写法；后端以后按同一规则认任何写法时，第一种就中。
- */
-export declare function translationItemIdCandidates(readerItemId: string): string[];
 /** 块号里的页码（p012-b0005 → 12）；认不出是 0。 */
 export declare function pageOfReaderItem(readerItemId: string): number;
 /**

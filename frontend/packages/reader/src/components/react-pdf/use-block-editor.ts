@@ -7,30 +7,12 @@ import {
   editableTranslation,
   revisionHistory,
   revisionIssueTexts,
-  translationItemIdCandidates,
   type RevisionEntry,
 } from "../../shared/data/block-edit.js";
 
 export type BlockEditorStatus = { tone: "pending" | "ok" | "error"; message: string } | null;
 
 type Loaded = { readerItemId: string; itemId: string; source: string; current: string };
-
-async function loadFirstMatch(port: ReaderTranslationEditPort, jobId: string, readerItemId: string) {
-  let lastError: unknown = null;
-  for (const candidate of translationItemIdCandidates(readerItemId)) {
-    try {
-      const view = await port.loadItem(jobId, candidate);
-      if (view?.item) return { itemId: candidate, item: view.item };
-    } catch (cause) {
-      lastError = cause;
-      // 只有「这个写法不存在」才换下一种；还没翻译完（not_ready）、网络错误直接报。
-      const error = cause as { status?: number; reason?: string };
-      if (error?.status !== 404 || error?.reason) throw cause;
-    }
-  }
-  if (lastError) throw lastError;
-  throw new Error("找不到这一段的译文。");
-}
 
 export function useBlockEditor({
   port,
@@ -75,9 +57,13 @@ export function useBlockEditor({
     if (!port || !jobId || !readerItemId) return undefined;
     let disposed = false;
     setLoading(true);
-    loadFirstMatch(port, jobId, readerItemId)
-      .then(({ itemId, item }) => {
+    // 后端认阅读页的四位块号（三位、不补零的写法当成同一块），返回条目里实际存的写法。
+    port.loadItem(jobId, readerItemId)
+      .then((view) => {
         if (disposed) return;
+        const item = view?.item;
+        if (!item) throw new Error("找不到这一段的译文。");
+        const itemId = `${view?.item_id || readerItemId}`;
         const { source, translated } = editableTranslation(item);
         setLoaded({ readerItemId, itemId, source, current: translated });
         setDraftState(drafts.get(readerItemId) ?? translated);
