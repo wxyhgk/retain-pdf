@@ -1,13 +1,13 @@
 //! 估价（2026-11-19 起）：重新翻译换模型之前，告诉用户大概花多少钱。
 //!
 //! - 查单价：按（接口地址，模型）批量查，和用量汇总同一套对价规则（域名对服务商、对不上按官方标价）。
-//! - 一本书：取这本书最近一次翻译的逐条用量，按新模型的价重算。翻译（含译前准备，不含 OCR：重新翻译复用 OCR）
+//! - 一本书：取这本书最近一次翻译的逐条用量，按新模型的价重算。参照只认成功完成的任务（取消、失败的不算，2026-11-19：
+//!   刚建就取消的任务只用了一千多 token，估出来一排「约 ¥<0.01」）；只翻了部分页的按页数比例放大，翻得太少（不到 5 页）的不算。翻译（含译前准备，不含 OCR：重新翻译复用 OCR）
 //!   和精修分开给。下限按上次的缓存命中算；上限当缓存全没命中，DeepSeek 再按忙时算。
 //! - 没翻译过的书：书库里各本书最近一次翻译的每页平均（翻译、精修分开）乘页数。
 //!
 //! 只是估：模型换了，输出长短、重试次数都会变。
 
-use std::collections::BTreeSet;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
@@ -190,17 +190,38 @@ fn is_refine_part(stage: &str) -> bool {
     stage_label(stage).1 == "refine"
 }
 
+/// 能当参照的一次翻译：成功完成的任务，`pages` 是它实际翻的页数（选了页码范围的按范围算）。挑哪些任务由调用方定。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RunCandidate {
+    pub job_id: String,
+    pub pages: u64,
+}
+
+/// 参照至少要翻这么多页（书本身更短的整本也算）：只翻一两页的，固定开销（通读、术语）摊不开，放大会估高。
+pub const MIN_REFERENCE_PAGES: u64 = 5;
+
 /// 一组任务里最近一次翻译的那个任务和它的全部用量：翻译部分最后一行时间最晚的。
-fn latest_translation_run<'a>(output_root: &Path, job_ids: impl IntoIterator<Item = &'a str>) -> Option<(String, Vec<UsageRecord>)> {
-    job_ids
-        .into_iter()
-        .filter_map(|job_id| {
-            let (records, _) = job_usage_records(output_root, job_id);
+fn latest_translation_run(output_root: &Path, runs: &[RunCandidate]) -> Option<(RunCandidate, Vec<UsageRecord>)> {
+    runs.iter()
+        .filter(|run| run.pages > 0)
+        .filter_map(|run| {
+            let (records, _) = job_usage_records(output_root, &run.job_id);
             let last = records.iter().filter(|r| is_translation_part(&r.stage)).map(|r| r.ts.clone()).max()?;
-            Some((last, job_id.to_string(), records))
+            Some((last, run.clone(), records))
         })
         .max_by(|a, b| a.0.cmp(&b.0))
-        .map(|(_, job_id, records)| (job_id, records))
+        .map(|(_, run, records)| (run, records))
+}
+
+fn scale_profile(profile: &Profile, factor: f64) -> Profile {
+    let scale = |value: u64| (value as f64 * factor).round() as u64;
+    Profile {
+        requests: scale(profile.requests),
+        input: scale(profile.input),
+        output: scale(profile.output),
+        cache_hit: scale(profile.cache_hit),
+        cache_write: scale(profile.cache_write),
+    }
 }
 
 struct Quote<'a> {
@@ -231,16 +252,21 @@ fn empty_view(prices: &PriceBook, base_url: &str, model: &str, quote: &Option<Qu
     }
 }
 
-/// 按这本书最近一次翻译的逐条用量重算。没有翻译记录返回 None（调用方退回书库平均）。
-pub fn estimate_from_history<'a>(
+/// 按这本书最近一次翻译的逐条用量重算；那次只翻了部分页的，按 `pages`（整本页数）比例放大。
+/// 没有能当参照的翻译返回 None（调用方退回书库平均）。
+pub fn estimate_from_history(
     prices: &PriceBook,
     output_root: &Path,
-    job_ids: impl IntoIterator<Item = &'a str>,
+    runs: &[RunCandidate],
     base_url: &str,
     model: &str,
     pages: Option<u64>,
 ) -> Option<UsageEstimateView> {
-    let (job_id, records) = latest_translation_run(output_root, job_ids)?;
+    let (run, records) = latest_translation_run(output_root, runs)?;
+    let factor = match pages {
+        Some(pages) if pages > run.pages => pages as f64 / run.pages as f64,
+        _ => 1.0,
+    };
     let quote = quote(prices, base_url, model);
     let part = |keep: fn(&str) -> bool| -> Option<UsageEstimatePart> {
         let mut profile = Profile::default();
@@ -253,14 +279,14 @@ pub fn estimate_from_history<'a>(
                 cost = (cost.0 + low, cost.1 + high);
             }
         }
-        (!profile.is_empty()).then(|| finish_part(&profile, quote.as_ref().map(|_| cost)))
+        (!profile.is_empty()).then(|| finish_part(&scale_profile(&profile, factor), quote.as_ref().map(|_| (cost.0 * factor, cost.1 * factor))))
     };
     let translation = part(is_translation_part);
     let refine = part(is_refine_part);
     Some(UsageEstimateView {
         basis: "book_history",
         pages,
-        source_job_id: Some(job_id),
+        source_job_id: Some(run.job_id),
         translation,
         refine,
         ..empty_view(prices, base_url, model, &quote)
@@ -275,18 +301,15 @@ pub struct LibrarySample {
     refine: Profile,
 }
 
-/// `books`：（这本书的页数，这本书的任务号）。
-pub fn library_sample(output_root: &Path, books: impl IntoIterator<Item = (u64, Vec<String>)>) -> LibrarySample {
+/// `books`：每本书能当参照的翻译（成功完成的任务和它翻的页数）。每本取最近一次，页数按那次实际翻的算。
+pub fn library_sample(output_root: &Path, books: impl IntoIterator<Item = Vec<RunCandidate>>) -> LibrarySample {
     let mut sample = LibrarySample { documents: 0, pages: 0, translation: Profile::default(), refine: Profile::default() };
-    for (pages, job_ids) in books {
-        if pages == 0 {
-            continue;
-        }
-        let Some((_, records)) = latest_translation_run(output_root, job_ids.iter().map(String::as_str)) else {
+    for runs in books {
+        let Some((run, records)) = latest_translation_run(output_root, &runs) else {
             continue;
         };
         sample.documents += 1;
-        sample.pages += pages;
+        sample.pages += run.pages;
         for record in &records {
             if is_translation_part(&record.stage) {
                 sample.translation.add(record);
@@ -345,12 +368,6 @@ pub fn estimate_from_library(prices: &PriceBook, sample: &LibrarySample, base_ur
 pub fn no_basis(prices: &PriceBook, base_url: &str, model: &str, pages: Option<u64>) -> UsageEstimateView {
     let quote = quote(prices, base_url, model);
     UsageEstimateView { pages, ..empty_view(prices, base_url, model, &quote) }
-}
-
-/// 一组任务号去重（同一本书的任务按 updated_at 倒序来，可能有重复）。
-pub(crate) fn unique(ids: impl IntoIterator<Item = String>) -> Vec<String> {
-    let mut seen = BTreeSet::new();
-    ids.into_iter().filter(|id| seen.insert(id.clone())).collect()
 }
 
 /// 地址要是 http(s)、模型不能空。
