@@ -12,7 +12,11 @@ import {
   type RetranslateQuality,
 } from "../../../domain/retranslate-quality.js";
 import { KEEP_MODEL, retranslateModelOptions } from "../../../domain/retranslate-model.js";
-import { savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
+import {
+  savedDefaultTranslationModel,
+  savedTranslationConnections,
+  type TranslationConnection,
+} from "@/platform/config/translation-connections.js";
 import { CREDENTIALS_CHANGED_EVENT } from "@/platform/contracts/credentials-contract.js";
 import { RetranslateModelSelect } from "./RetranslateModelSelect.jsx";
 import { RetranslateModelList } from "./RetranslateModelList.jsx";
@@ -107,7 +111,7 @@ export function TranslationStageActions({
     stage: JobRetryStage,
     options?: RetryOptions,
   ) => Promise<unknown>;
-  /** 这本书现在用的模型；「沿用原来的」后面写出来，列表里那一行标「原来用的」。 */
+  /** 这本书上次翻译用的模型；列表里同名那一行标「原来用的」。 */
   currentModel?: string;
   /** 换成某个模型重新翻译大概要花多少；不给就不显示估价。 */
   estimate?: (baseUrl: string, model: string) => Promise<UsageEstimateView | null>;
@@ -120,8 +124,13 @@ export function TranslationStageActions({
   // 重新翻译用哪条连接（设置里存的）；空串 = 沿用任务原来的。
   // 设置里存好的连接；设置一保存（retainpdf:credentials-changed）就重读，不用关掉书详情。
   const [modelOptions, setModelOptions] = useState(() => retranslateModelOptions(savedTranslationConnections()));
+  // 什么都不选时用的是设置里的默认模型（重新翻译以设置为底），第一行写出来。
+  const [settingsModel, setSettingsModel] = useState(savedDefaultTranslationModel);
   useEffect(() => {
-    const reload = () => setModelOptions(retranslateModelOptions(savedTranslationConnections()));
+    const reload = () => {
+      setModelOptions(retranslateModelOptions(savedTranslationConnections()));
+      setSettingsModel(savedDefaultTranslationModel());
+    };
     document.addEventListener(CREDENTIALS_CHANGED_EVENT, reload);
     return () => document.removeEventListener(CREDENTIALS_CHANGED_EVENT, reload);
   }, []);
@@ -290,6 +299,7 @@ export function TranslationStageActions({
                       disabled={Boolean(pendingStage)}
                       priceOf={priceOf}
                       currentModel={currentModel}
+                      settingsModel={settingsModel}
                     />
                   </div>
                   <div className="book-detail-reprocess-controls">{actionButton(action, true)}</div>

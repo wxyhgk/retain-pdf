@@ -108,6 +108,54 @@ test("任务动作：cancel 按 workflow 路由；retry 带 document_id 并 prom
   assert.deepEqual(retryCalls[1], ["promote", "doc-1", "job-new"]);
 });
 
+test("重新翻译：书详情里选了的模型连接、翻译方式盖在设置上面；换了连接不带设置里的 credential_ref", async () => {
+  const captured = [];
+  const actions = createDocumentJobActions({
+    bookDetailStore: { getState: () => ({ payload: { document_id: "doc-1", title: "t" } }), setJobs: () => {} },
+    buildTranslateConfig: () => ({
+      translation: {
+        model: "claude-haiku-5-5",
+        base_url: "https://api.anthropic.com/v1",
+        api_key: "sk-settings",
+        credential_ref: "cred-settings",
+        api_protocol: "anthropic",
+        engine: "legacy",
+        workers: 8,
+      },
+    }),
+    promoteDocumentToJob: () => {},
+    retryJobStageApi: async (_id, _prefix, _stage, payload) => {
+      captured.push(payload.overrides.translation);
+      return { job_id: "job-new" };
+    },
+  });
+  await actions.retryJobStage("job-old", "translation", {
+    overrides: {
+      translation: {
+        engine: "agent",
+        base_url: "http://1.94.67.196:1561/v1",
+        model: "Qwen3.8-27B-Uncensored",
+        api_key: "sk-qwen",
+        api_protocol: "openai_responses",
+        thinking: "off",
+      },
+    },
+  });
+  assert.deepEqual(captured[0], {
+    model: "Qwen3.8-27B-Uncensored",
+    base_url: "http://1.94.67.196:1561/v1",
+    api_key: "sk-qwen",
+    api_protocol: "openai_responses",
+    thinking: "off",
+    engine: "agent",
+    workers: 8,
+  }, "选的整套盖住设置；设置里的 credential_ref 没带");
+
+  await actions.retryJobStage("job-old", "translation", {});
+  assert.equal(captured[1].model, "claude-haiku-5-5", "什么都没选：用设置里的");
+  assert.equal(captured[1].credential_ref, "cred-settings");
+});
+
 test("从断点继续：回执 promote 到详情 payload，详情跟上新任务而不是停在旧的失败任务", async () => {
   const { createDialogStore } = await import("../../src/platform/store/dialog-store.js");
   const { promoteDocumentToJob } = await import("../../src/features/library/domain/documents/promote.js");
