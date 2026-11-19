@@ -119,10 +119,11 @@ class AgentRunStopped(RuntimeError):
 
 
 def agent_structure() -> str:
-    """翻译结构（2026-11-19）：`RETAIN_AGENT_STRUCTURE=section` 时人文社科、通俗读物按节翻（翻译 agent 第二版，见
-    `retainpdf_translation_agent/section.py`），别的值或没设都是逐页（第一版）。先用环境变量开，评测集证明更好再换默认。"""
+    """翻译结构：人文社科、通俗读物默认按节翻（翻译 agent 第二版，`retainpdf_translation_agent/section.py`，2026-11-19 起
+    默认，用户定；三段评测样例 Haiku 都比原来好，qwen 和原来差不多、请求少四分之三）。`RETAIN_AGENT_STRUCTURE=page` 退回逐页
+    （第一版）；别的值、没设都按节。论文、教材等别的体裁不受影响，照旧逐页。"""
     value = os.environ.get("RETAIN_AGENT_STRUCTURE", "").strip().lower()
-    return value if value in ("page", "section") else "page"
+    return "page" if value == "page" else "section"
 
 def messages_url(base_url: str) -> str:
     """任务的 base_url（如 https://api.anthropic.com/v1）→ Messages 接口地址。"""

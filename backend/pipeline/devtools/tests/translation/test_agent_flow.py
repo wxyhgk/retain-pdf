@@ -105,6 +105,12 @@ class FakeModel:
             data = {"issues": []}
         elif tool == "submit_rewrite":
             data = {"blocks": []}
+        elif body["messages"][0]["content"].lstrip().startswith(("人名、术语的译法", "上一节", "下面是这一节的原稿")):
+            # 按节翻（第二版）：稿子每段照编号交回，占位、标记原样留着
+            manuscript = body["messages"][0]["content"]
+            paragraphs = re.findall(r"^¶(\d+)(?:（[^）]*）)? (.*)$", manuscript, re.M)
+            text = "\n\n".join(f"¶{n} {_fake_translation(source)}" for n, source in paragraphs)
+            return {"content": [{"type": "text", "text": text}], "usage": usage}
         else:
             payload = json.loads(body["messages"][0]["content"])
             wanted = [b for b in payload["blocks"] if b.get("translate")]
@@ -400,6 +406,7 @@ def test_job_data_registers_the_agent_glossary_where_and_how_the_agent_writes_it
 
 def test_a_separate_reviewer_model_does_the_editing_on_its_own_connection(tmp_path: Path, monkeypatch) -> None:
     """用户另配了审校模型：人文书的两轮（审意思、改文笔，2026-11-19 起）都走它的连接和 Key，通读、初译走翻译模型；用量台账按模型分开记。"""
+    monkeypatch.setenv("RETAIN_AGENT_STRUCTURE", "page")  # 第一版（逐页）的两轮；第二版见下一条
     translator, editor = FakeModel(genre="humanities"), FakeModel(genre="humanities")
     by_key = {"sk-job-key": translator, "sk-editor": editor}
     monkeypatch.setattr(agent_flow, "make_http_transport", lambda api_key, *, url: by_key[api_key])
@@ -416,6 +423,21 @@ def test_a_separate_reviewer_model_does_the_editing_on_its_own_connection(tmp_pa
     assert sorted({row["model"] for row in rows}) == ["claude-editor", "claude-haiku-5-5"]
 
 
+def test_humanities_books_are_translated_by_section_by_default(tmp_path: Path, monkeypatch) -> None:
+    """2026-11-19 起人文社科、通俗读物默认按节翻（第二版）：初译整节一次走翻译模型，整节审一次意思走另配的审校模型，不做文笔那一轮。"""
+    monkeypatch.delenv("RETAIN_AGENT_STRUCTURE", raising=False)
+    translator, editor = FakeModel(genre="humanities"), FakeModel(genre="humanities")
+    by_key = {"sk-job-key": translator, "sk-editor": editor}
+    monkeypatch.setattr(agent_flow, "make_http_transport", lambda api_key, *, url: by_key[api_key])
+    result = execute_translation_request(_request(tmp_path, reviewer_model="claude-editor", reviewer_api_key="sk-editor"))
+
+    tools = lambda model: [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies]  # noqa: E731
+    assert tools(translator) == ["submit_reading", "plain_text"], "通读一次，整节初译一次"
+    assert "下面是这一节的原稿" in translator.bodies[1]["messages"][0]["content"]
+    assert tools(editor) == ["submit_review"], "整节审一次意思，不做文笔那一轮"
+    assert result is not None
+
+
 def test_without_a_reviewer_model_science_books_keep_the_ticket_review(tmp_path: Path, fake_transport) -> None:
     model = fake_transport(FakeModel(genre="science_paper"))
     execute_translation_request(_request(tmp_path, reviewer_model="claude-haiku-5-5"))  # 和翻译模型同名：不另开连接
@@ -423,12 +445,12 @@ def test_without_a_reviewer_model_science_books_keep_the_ticket_review(tmp_path:
     assert tools.count("submit_review") == 2 and "submit_rewrite" not in tools
 
 
-def test_agent_structure_is_page_unless_section_is_asked_for(monkeypatch) -> None:
-    """翻译 agent 第二版（按节翻，2026-11-19）用环境变量 RETAIN_AGENT_STRUCTURE=section 开；别的值、没设都是逐页。"""
+def test_agent_structure_is_section_unless_page_is_asked_for(monkeypatch) -> None:
+    """翻译 agent 第二版（按节翻）2026-11-19 起是默认；RETAIN_AGENT_STRUCTURE=page 退回逐页，别的值、没设都按节。"""
     from retainpdf_translation.workflow.agent_flow import agent_structure
 
     monkeypatch.delenv("RETAIN_AGENT_STRUCTURE", raising=False)
-    assert agent_structure() == "page"
-    for value, expected in (("section", "section"), (" SECTION ", "section"), ("page", "page"), ("chapter", "page"), ("", "page")):
+    assert agent_structure() == "section"
+    for value, expected in (("section", "section"), (" PAGE ", "page"), ("page", "page"), ("chapter", "section"), ("", "section")):
         monkeypatch.setenv("RETAIN_AGENT_STRUCTURE", value)
         assert agent_structure() == expected, value
