@@ -130,6 +130,28 @@ async fn translation_model_list_route_proxies_the_provider_models() {
     assert_eq!(data["models"][1]["kind"], "other");
     assert!(!payload.to_string().contains("sk-local-not-real"));
 
+    // 契约 translation-providers.v1（2026-11-19）：真实返回的键和契约的 required 一一对上。
+    let contract: Value = serde_json::from_str(
+        &std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../contracts/translation-providers.v1.schema.json"))
+            .expect("read contract"),
+    )
+    .unwrap();
+    let keys = |value: &Value| {
+        let mut keys: Vec<String> = value.as_object().unwrap().keys().cloned().collect();
+        keys.sort();
+        keys
+    };
+    let required = |name: &str| {
+        let mut keys: Vec<String> = contract["definitions"][name]["required"].as_array().unwrap().iter().map(|k| k.as_str().unwrap().to_string()).collect();
+        keys.sort();
+        keys
+    };
+    assert_eq!(keys(data), required("TranslationModelListView"));
+    assert_eq!(keys(&data["models"][0]), required("TranslationModelView"));
+    assert_eq!(keys(&data["models"][0]["price"]), required("PriceView"));
+    let statuses = contract["definitions"]["TranslationModelListStatus"]["enum"].as_array().unwrap();
+    assert!(statuses.contains(&data["status"]));
+
     let (status, _) = post_single(
         state,
         "/api/v1/providers/translation/models",

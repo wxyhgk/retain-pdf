@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/translation-providers/v1",
+  "title": "翻译接口（Translation Providers）",
+  "description": "翻译接口相关的服务端代办（2026-11-19 起）。现在只有一个：从翻译接口拉取模型列表——浏览器不能直接调服务商（跨域、Key 不能发出去），后端代一次 GET {base_url}/models，Key 用完不存、不回显。生产者：backend/packages/retainpdf-providers/src/provider_probe/models.rs（TranslationModelsRequest、TranslationModelListView、TranslationModelView），单价形状是 retainpdf-providers pricing 的 PriceView（和 token-usage.v1 的 PriceView 同形状）；Rust 侧由 backend/api/src/api_tests/provider_probes.rs 对真实接口的返回钉键集合。消费者：@retainpdf/contracts/translation-providers 生成 DTO。成功响应包在 {code, message, data} 里，本契约描述 data 部分。详细规则见 docs/core/rust_api/08-Provider 校验接口.md 第 8 节。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/providers/translation/models",
+      "client_name": "listTranslationProviderModels",
+      "transport": "json",
+      "input": "TranslationModelsRequest",
+      "output": "TranslationModelListView",
+      "errors": { "400": "BAD_REQUEST：没有 api_key、base_url 不合规（不是 http(s)、带账号密码、多用户模式下是本机或内网地址）、字段不认识" },
+      "note": "admin。都是 200，看 ok / status：服务商不支持 /models 是 unsupported（界面提示手动填）、Key 不对是 unauthorized、连不上是 unreachable。和校验 Key 同一套地址检查、超时、不跟随重定向。",
+      "rust_view": "retainpdf-providers provider_probe::models :: TranslationModelListView",
+      "ts_consumer": "@retainpdf/contracts/translation-providers :: TranslationModelListView"
+    }
+  ],
+  "definitions": {
+    "TranslationModelsRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "deny_unknown_fields。",
+      "required": ["api_key"],
+      "properties": {
+        "api_key": { "type": "string", "description": "内联 Key，用完不存。" },
+        "base_url": { "type": "string", "description": "接口地址；空时 Anthropic 用官方地址，别的用默认翻译地址。" },
+        "api_protocol": { "type": "string", "description": "openai（默认，openai_responses 同）或 anthropic。" }
+      }
+    },
+    "TranslationModelListStatus": {
+      "type": "string",
+      "enum": ["ok", "unsupported", "unauthorized", "invalid_input", "unreachable", "provider_error"],
+      "description": "unsupported：服务商回 404/405/501，或者回的不是模型列表；unauthorized：401/403；invalid_input：Key 里有放不进请求头的字符；unreachable：连不上、超时；provider_error：别的错误、重定向、列表太大。"
+    },
+    "PriceBasis": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "host",
+        "official_list",
+        null
+      ],
+      "description": "host：接口域名对上了这家服务商；official_list：域名对不上，按模型官方标价；查不到价为 null。"
+    },
+    "PriceTierView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "above_input_tokens",
+        "input",
+        "output",
+        "cache_read",
+        "cache_write"
+      ],
+      "properties": {
+        "above_input_tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "一次请求的输入超过这个数，整次按这一档。"
+        },
+        "input": {
+          "type": "number"
+        },
+        "output": {
+          "type": "number"
+        },
+        "cache_read": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cache_write": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "PriceView": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "每百万 token 的美元单价。cache_read / cache_write 为 null 表示按输入价算。",
+      "required": [
+        "input",
+        "output",
+        "cache_read",
+        "cache_write",
+        "tiers",
+        "peak_multiplier"
+      ],
+      "properties": {
+        "input": {
+          "type": "number"
+        },
+        "output": {
+          "type": "number"
+        },
+        "cache_read": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cache_write": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tiers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PriceTierView"
+          },
+          "description": "门槛从低到高。"
+        },
+        "peak_multiplier": {
+          "type": "number",
+          "description": "一天里最贵的时段是标价的几倍：DeepSeek 忙时 2，别家 1。"
+        }
+      }
+    },
+    "TranslationModelView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name", "owned_by", "created", "kind", "price_provider", "price_basis", "price"],
+      "properties": {
+        "id": { "type": "string" },
+        "display_name": { "type": ["string", "null"], "description": "Anthropic、Gemini 给的展示名；别家没有。" },
+        "owned_by": { "type": ["string", "null"] },
+        "created": { "type": ["integer", "null"], "description": "服务商给的创建时间（Unix 秒）。" },
+        "kind": { "type": "string", "enum": ["chat", "other"], "description": "other：名字看得出是向量、语音、画图、审核、重排、OCR、实时、视频之类；界面默认只列 chat。" },
+        "price_provider": { "type": ["string", "null"], "description": "按哪家的价（models.dev 的服务商编号）；查不到为 null。" },
+        "price_basis": { "$ref": "#/definitions/PriceBasis" },
+        "price": { "oneOf": [{ "$ref": "#/definitions/PriceView" }, { "type": "null" }] }
+      }
+    },
+    "TranslationModelListView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ok", "status", "summary", "source", "base_url", "fetched_at", "provider_code", "provider_message", "models", "chat_models"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "status": { "$ref": "#/definitions/TranslationModelListStatus" },
+        "summary": { "type": "string", "description": "给人看的一句话。" },
+        "source": { "type": "string", "enum": ["provider"] },
+        "base_url": { "type": "string", "description": "实际请求的地址（规范过的）。" },
+        "fetched_at": { "type": "string" },
+        "provider_code": { "type": ["string", "null"], "description": "出错时服务商回的 HTTP 状态码。" },
+        "provider_message": { "type": ["string", "null"], "description": "服务商报错原文，截到 500 字符，里面的 Key 换成 [REDACTED]。" },
+        "models": { "type": "array", "items": { "$ref": "#/definitions/TranslationModelView" }, "description": "按 id 排序去重，最多 2000 个；status 不是 ok 时为空。" },
+        "chat_models": { "type": "integer", "minimum": 0, "description": "models 里 kind=chat 的个数。" }
+      }
+    }
+  }
+}

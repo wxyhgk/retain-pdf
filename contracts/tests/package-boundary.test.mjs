@@ -29,6 +29,7 @@ const RAW_SCHEMA_EXPORTS = [
   "./reader-data.v1.schema.json",
   "./refine-report.v1.schema.json",
   "./token-usage.v1.schema.json",
+  "./translation-providers.v1.schema.json",
   "./translation-revisions.v1.schema.json",
 ];
 
@@ -49,6 +50,7 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
       "./ocr-providers",
       "./reader-data",
       "./token-usage",
+      "./translation-providers",
       "./translation-revisions",
       ...RAW_SCHEMA_EXPORTS,
     ].sort(),

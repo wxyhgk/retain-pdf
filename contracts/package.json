@@ -57,6 +57,10 @@
       "types": "./dist/token-usage.d.ts",
       "import": "./dist/token-usage.js"
     },
+    "./translation-providers": {
+      "types": "./dist/translation-providers.d.ts",
+      "import": "./dist/translation-providers.js"
+    },
     "./translation-revisions": {
       "types": "./dist/translation-revisions.d.ts",
       "import": "./dist/translation-revisions.js"
@@ -76,6 +80,7 @@
     "./reader-data.v1.schema.json": "./reader-data.v1.schema.json",
     "./refine-report.v1.schema.json": "./refine-report.v1.schema.json",
     "./token-usage.v1.schema.json": "./token-usage.v1.schema.json",
+    "./translation-providers.v1.schema.json": "./translation-providers.v1.schema.json",
     "./translation-revisions.v1.schema.json": "./translation-revisions.v1.schema.json"
   },
   "files": [
