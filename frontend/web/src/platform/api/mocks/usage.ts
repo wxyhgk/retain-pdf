@@ -1,6 +1,6 @@
 // 演示模式的用量：形状照 token-usage.v1，数字取自真实书库（29 个旧任务、qwen3.8-flash）。
 // 花费按每百万 token 输入 $0.05、输出 $0.40 粗估（演示用，不是真价格）。
-import type { UsageSummaryView } from "@retainpdf/api/usage";
+import type { UsageEstimateView, UsageSummaryView } from "@retainpdf/api/usage";
 
 function bucket(input: number, output: number, extra: Partial<UsageSummaryView["totals"]> = {}) {
   const requests = Math.round((input + output) / 2400);
@@ -48,7 +48,7 @@ function summary(scope: UsageSummaryView["scope"], scale: number): UsageSummaryV
     jobs_estimated_from_reports: scope === "all" ? 29 : 2,
     first_at: "2026-09-12T08:00:00Z",
     last_at: "2026-10-10T02:56:00Z",
-    pricing: { source: "models.dev", synced_at: null, snapshot_date: "2026-11-19", currency: "USD" },
+    pricing: { source: "models.dev", synced_at: null, snapshot_date: "2026-11-19", currency: "USD", usd_cny: 7.16 },
   };
 }
 
@@ -60,3 +60,25 @@ export async function fetchUsageSummary(): Promise<UsageSummaryView> {
   return summary("all", 1);
 }
 
+
+/** 演示模式的估价：按书的历史，翻译约 ¥1.2–1.8（不分模型）。 */
+export async function estimateDocumentUsage(
+  _documentId: string,
+  { baseUrl, model }: { baseUrl: string; model: string },
+): Promise<UsageEstimateView> {
+  const part = { requests: 365, input_tokens: 980_000, output_tokens: 307_000, cache_hit_tokens: 420_000 };
+  return {
+    basis: "book_history",
+    base_url: baseUrl,
+    model,
+    price_provider: "demo",
+    price_basis: "host",
+    pages: 134,
+    source_job_id: "job-demo",
+    sample_documents: 1,
+    sample_pages: 134,
+    translation: { ...part, low_usd: 0.17, high_usd: 0.25, low_cny: 1.2, high_cny: 1.8 },
+    refine: null,
+    pricing: { source: "models.dev", synced_at: null, snapshot_date: "2026-11-19", currency: "USD", usd_cny: 7.16 },
+  } as UsageEstimateView;
+}

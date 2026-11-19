@@ -11,6 +11,7 @@ import { translationConnectionsFrom } from "../../src/platform/config/translatio
 import {
   KEEP_MODEL,
   connectionOverrides,
+  estimateText,
   retranslateModelOptions,
 } from "../../src/features/book-detail/domain/retranslate-model.js";
 import { RetranslateModelSelect } from "../../src/features/book-detail/ui/panels/translate/RetranslateModelSelect.jsx";
@@ -104,5 +105,48 @@ test("重新翻译带连接：overrides.translation 里翻译方式和整套连�
   await waitFor(() => calls.length === 2, "第二次");
   assert.deepEqual(calls[1][2].overrides.translation, { engine: "legacy", preparation: "off", refine: "off" });
   root.unmount();
+  dom.window.close();
+});
+
+test("估价：翻译加精修的人民币区间；按书库平均的注一句；没可参照的用量、查不到价不显示", () => {
+  const part = (low, high) => ({ requests: 1, input_tokens: 1, output_tokens: 1, cache_hit_tokens: 0, low_usd: 0, high_usd: 0, low_cny: low, high_cny: high });
+  assert.equal(estimateText({ basis: "book_history", translation: part(1.2, 1.8), refine: null }), "约 ¥1.20–1.80");
+  assert.equal(estimateText({ basis: "book_history", translation: part(1.2, 1.8), refine: part(0.3, 0.5) }), "约 ¥1.50–2.30");
+  assert.equal(estimateText({ basis: "library_average", translation: part(120.4, 180.6), refine: null }), "约 ¥120–181（按书库平均）");
+  assert.equal(estimateText({ basis: "book_history", translation: part(0.001, 0.002), refine: null }), "约 ¥<0.01");
+  assert.equal(estimateText({ basis: "none", translation: null, refine: null }), "");
+  assert.equal(estimateText({ basis: "book_history", translation: part(null, null), refine: null }), "", "查不到价");
+  assert.equal(estimateText(null), "");
+});
+
+test("重新翻译清单：每条连接问一次估价，写在下拉选项后面、确认框里", async () => {
+  const dom = makeDom("", { keys: ["window", "document", "HTMLElement", "HTMLButtonElement", "HTMLSelectElement", "Element", "Event", "MouseEvent", "Node", "MutationObserver"] });
+  dom.window.localStorage.setItem("retainpdf.developer.config.v1", JSON.stringify(CONFIG));
+  globalThis.localStorage = dom.window.localStorage;
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { TranslationStageActions } = await import("../../src/features/book-detail/ui/panels/translate/TranslationStageActions.jsx");
+  const asked = [];
+  const estimate = async (baseUrl, model) => {
+    asked.push(model);
+    if (model === "my-model") return { basis: "none", translation: null, refine: null };
+    return { basis: "book_history", translation: { low_cny: 1.2, high_cny: 1.8 }, refine: null };
+  };
+  const container = dom.window.document.createElement("div");
+  dom.window.document.body.appendChild(container);
+  const root = createRoot(container);
+  root.render(React.createElement(TranslationStageActions, {
+    variant: "sheet",
+    stages: ["translation"],
+    actions: [{ stage: "translation", label: "重新翻译", can_retry: true, danger: true }],
+    onRetry: async () => {},
+    estimate,
+  }));
+  const select = await waitFor(() => dom.window.document.querySelector("#book-detail-translation-model"), "模型下拉");
+  await waitFor(() => /claude-haiku-5-5　约 ¥1\.20–1\.80/.test(select.textContent), "估价写进选项");
+  assert.deepEqual(asked.sort(), ["claude-haiku-5-5", "deepseek-v4-flash", "my-model"]);
+  assert.doesNotMatch([...select.options].find((o) => o.value === "custom::my-model").textContent, /¥/, "没有可参照的用量不写价");
+  root.unmount();
+  delete globalThis.localStorage;
   dom.window.close();
 });

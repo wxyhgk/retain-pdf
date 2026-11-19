@@ -42,3 +42,25 @@ export function connectionOverrides(connection: TranslationConnection | null | u
     thinking: connection.thinking,
   };
 }
+
+type EstimatePart = { low_cny?: number | null; high_cny?: number | null } | null | undefined;
+type Estimate = { basis?: string; translation?: EstimatePart; refine?: EstimatePart } | null | undefined;
+
+function yuan(value: number): string {
+  if (value < 0.01) return "<0.01";
+  return value < 100 ? value.toFixed(2) : Math.round(value).toLocaleString("en-US");
+}
+
+/**
+ * 估价写在下拉选项后面：「约 ¥1.20–1.80」（翻译加精修，都按人民币）。没翻译过的书按书库每页平均估，后面注「按书库平均」。
+ * 没有可参照的用量（basis none）、或者这个模型查不到价，写空串（不显示）。
+ */
+export function estimateText(view: Estimate): string {
+  if (!view || view.basis === "none") return "";
+  const parts = [view.translation, view.refine].filter((part) => part && part.low_cny != null && part.high_cny != null);
+  if (!parts.length) return "";
+  const low = parts.reduce((sum, part) => sum + Number(part?.low_cny || 0), 0);
+  const high = parts.reduce((sum, part) => sum + Number(part?.high_cny || 0), 0);
+  const range = yuan(low) === yuan(high) ? `约 ¥${yuan(low)}` : `约 ¥${yuan(low)}–${yuan(high)}`;
+  return view.basis === "library_average" ? `${range}（按书库平均）` : range;
+}

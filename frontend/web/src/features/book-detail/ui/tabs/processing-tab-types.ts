@@ -6,6 +6,8 @@ import type { TranslationCoverageView } from "@/platform/api/index.js";
 import type { JobRetryStage, JobStageRetryActionView } from "@/platform/api/index.js";
 import type { BookDetailResumeState } from "../use-book-detail-resume.js";
 import type { UsageViewModel } from "@/features/usage/index.js";
+import type { UsageEstimateView } from "@/platform/api/index.js";
+import type { TranslationConnection } from "@/platform/config/translation-connections.js";
 
 /** 读进度时只看这几个字段；任务摘要和实时快照都长这样。 */
 export type ProgressSource = {
@@ -62,8 +64,15 @@ export type BookDetailTranslationWorkflowProps = {
   documentJobIds?: string[];
   onRetryStage: (
     stage: JobRetryStage,
-    options?: { acceptDuplicateRisk?: boolean; renderEngine?: string; translationQuality?: string },
+    options?: {
+      acceptDuplicateRisk?: boolean;
+      renderEngine?: string;
+      translationQuality?: string;
+      translationConnection?: TranslationConnection | null;
+    },
   ) => Promise<unknown>;
+  /** 重新翻译换成这个模型大概要花多少（GET /documents/:id/usage/estimate）；不给就不显示估价。 */
+  estimateRetranslate?: (baseUrl: string, model: string) => Promise<UsageEstimateView | null>;
 };
 
 export type BookDetailTranslationPanelProps = BookDetailTranslationWorkflowProps & {

@@ -14,6 +14,8 @@ import {
 import { KEEP_MODEL, retranslateModelOptions } from "../../../domain/retranslate-model.js";
 import { savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
 import { RetranslateModelSelect } from "./RetranslateModelSelect.jsx";
+import { useRetranslateEstimates } from "../../use-retranslate-estimates.js";
+import type { UsageEstimateView } from "@/platform/api/index.js";
 
 function labelOf(action: JobStageRetryActionView) {
   if (action.stage === "translation") return "重新翻译";
@@ -86,6 +88,7 @@ export function TranslationStageActions({
   extraRows = null,
   stages,
   onRetry,
+  estimate,
 }: {
   actions?: JobStageRetryActionView[];
   /** inline：一排按钮（失败态和翻译按钮同排）；sheet：「重新处理」展开后的清单，每项一行。 */
@@ -101,6 +104,8 @@ export function TranslationStageActions({
     stage: JobRetryStage,
     options?: RetryOptions,
   ) => Promise<unknown>;
+  /** 换成某个模型重新翻译大概要花多少；不给就不显示估价。 */
+  estimate?: (baseUrl: string, model: string) => Promise<UsageEstimateView | null>;
 }) {
   const [confirmAction, setConfirmAction] = useState<JobStageRetryActionView | null>(null);
   // 重新渲染用哪个排版引擎；空串 = 沿用任务原来的。
@@ -111,6 +116,10 @@ export function TranslationStageActions({
   const modelOptions = useMemo(() => retranslateModelOptions(savedTranslationConnections()), []);
   const [translationModel, setTranslationModel] = useState(KEEP_MODEL);
   const translationConnection = modelOptions.find((option) => option.value === translationModel)?.connection || null;
+  // 清单里列着重新翻译、能用时才去问估价。
+  const translationListed = actions.some((action) => action.stage === "translation" && action.can_retry)
+    && (!stages || stages.includes("translation"));
+  const priceOf = useRetranslateEstimates(modelOptions, estimate, translationListed && modelOptions.length > 1);
   const translationChoice = {
     ...(translationQuality ? { translationQuality } : {}),
     ...(translationConnection ? { translationConnection } : {}),
@@ -222,12 +231,15 @@ export function TranslationStageActions({
       onChange={setTranslationModel}
       disabled={Boolean(pendingStage)}
       size={variant === "sheet" ? "md" : "sm"}
+      priceOf={priceOf}
     />
   );
   const confirmDescription = [
     CONFIRM_COPY.description,
     translationQuality === "refined" ? RETRANSLATE_AGENT_NOTE : "",
-    translationConnection ? `这次用 ${translationConnection.label} 的 ${translationConnection.model}。` : "",
+    translationConnection
+      ? `这次用 ${translationConnection.label} 的 ${translationConnection.model}${priceOf(translationModel) ? `，${priceOf(translationModel)}` : ""}。`
+      : "",
   ].join("");
 
   const sheet = variant === "sheet";

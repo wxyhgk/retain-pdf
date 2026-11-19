@@ -1,5 +1,5 @@
 // 把 UsageSummaryView（契约 token-usage.v1）整理成界面要显示的几块：主要数字、按阶段分组、按模型、按月。
-// 花费是后端按 models.dev 标价估的（estimated_cost_usd，2026-11-19 加），不含折扣、包月和代金券；界面按人民币显示（USD_TO_CNY 折算），写成「约 ¥3.10」。显示规则：
+// 花费是后端按 models.dev 标价估的（estimated_cost_usd，2026-11-19 加），不含折扣、包月和代金券；界面按人民币显示（按后端 pricing.usd_cny 折算），写成「约 ¥3.10」。显示规则：
 // - 缓存命中率 = cache_hit_tokens / cache_reported_input_tokens；分母为 0 写「未报」（千问等服务商不报缓存）；
 // - 思考为 0 写「—」；缓存写入只有 Anthropic 才有，非 0 才显示；
 // - 有请求服务商没报用量、有任务按旧报告折算时各注明一句。
@@ -71,28 +71,41 @@ function n(value: unknown): number {
 }
 
 /**
- * 后端给的是美元（models.dev 的价目是美元），界面按人民币显示，固定按这个汇率折算（2026-11-19 定）。
+ * 后端给的是美元（models.dev 的价目是美元），界面按人民币显示。汇率用后端价目里的 pricing.usd_cny
+ * （写死 7.16，和 models.dev 换算国内站价格用的一致）；旧后端没这个字段时用这个默认值。
  * 金额本来就是按标价的粗估，汇率差几分不影响「大概花了多少」；悬停里写着原始美元和汇率。
  */
-export const USD_TO_CNY = 7.2;
+export const DEFAULT_USD_TO_CNY = 7.16;
 
-/** 人民币金额（入参是美元）：不足 1 分写「< ¥0.01」，100 元以下两位小数，再大取整。0 或没给是空串。 */
-export function formatCost(usdValue: unknown): string {
-  const cny = n(usdValue) * USD_TO_CNY;
+export function usdToCnyRate(view: { pricing?: { usd_cny?: number | null } | null } | null | undefined): number {
+  return n(view?.pricing?.usd_cny) || DEFAULT_USD_TO_CNY;
+}
+
+/** 人民币金额：不足 1 分写「< ¥0.01」，100 元以下两位小数，再大取整。0 或没给是空串。 */
+export function formatCny(cnyValue: unknown): string {
+  const cny = n(cnyValue);
   if (!cny) return "";
   if (cny < 0.01) return "< ¥0.01";
   if (cny < 100) return `约 ¥${cny.toFixed(2)}`;
   return `约 ¥${Math.round(cny).toLocaleString("en-US")}`;
 }
 
-export const COST_BASIS = `按 models.dev 的标价估算、1 美元按 ${USD_TO_CNY} 元折算，不含折扣、包月和代金券`;
+/** 美元金额按汇率折成人民币再写。 */
+export function formatCost(usdValue: unknown, rate = DEFAULT_USD_TO_CNY): string {
+  return formatCny(n(usdValue) * rate);
+}
+
+export function costBasis(rate = DEFAULT_USD_TO_CNY): string {
+  return `按 models.dev 的标价估算、1 美元按 ${rate} 元折算，不含折扣、包月和代金券`;
+}
 
 /** 花费和它的说明：查不到价的请求、按官方标价估的、价格是内置的价目。 */
 export function usageCost(view: UsageSummaryView | null | undefined): { cost: UsageCost | null; notes: string[] } {
   const totals = view?.totals;
   if (!totals || totals.estimated_cost_usd === undefined || totals.estimated_cost_usd === null) return { cost: null, notes: [] };
   const unpriced = n(totals.unpriced_requests);
-  const text = formatCost(totals.estimated_cost_usd);
+  const rate = usdToCnyRate(view);
+  const text = formatCost(totals.estimated_cost_usd, rate);
   if (!text && !unpriced) return { cost: null, notes: [] };
   const notes: string[] = [];
   if (unpriced) notes.push(`有 ${formatTokenCountExact(unpriced)} 次请求的模型查不到价，没算进花费。`);
@@ -102,9 +115,9 @@ export function usageCost(view: UsageSummaryView | null | undefined): { cost: Us
   const pricing = view?.pricing;
   if (pricing && !pricing.synced_at) notes.push(`价格还没同步过，用的是内置价目（${pricing.snapshot_date || "日期不详"}）。`);
   const usd = n(totals.estimated_cost_usd);
-  const exact = `¥${(usd * USD_TO_CNY).toFixed(4)}（$${usd.toFixed(6)}）`;
+  const exact = `¥${(usd * rate).toFixed(4)}（$${usd.toFixed(6)}）`;
   return {
-    cost: { text: text || "—", title: text ? `估算花费 ${exact} · ${COST_BASIS}` : "这些请求的模型都查不到价" },
+    cost: { text: text || "—", title: text ? `估算花费 ${exact} · ${costBasis(rate)}` : "这些请求的模型都查不到价" },
     notes,
   };
 }
@@ -194,7 +207,7 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
       exact: formatTokenCountExact(total),
       share: groupMax ? total / groupMax : 0,
       total,
-      cost: formatCost(items.reduce((sum, stage) => sum + n(stage.estimated_cost_usd), 0)),
+      cost: formatCost(items.reduce((sum, stage) => sum + n(stage.estimated_cost_usd), 0), usdToCnyRate(view)),
       rows: items.map((stage) => row(stage.stage, stage.label || stage.stage, "", stage, stageMax)),
     }));
 
