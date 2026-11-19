@@ -68,6 +68,11 @@ const TARGETS = [
     rootName: "TokenUsageSchema",
   },
   {
+    input: "translation-providers.v1.schema.json",
+    output: "src/translation-providers.ts",
+    rootName: "TranslationProvidersSchema",
+  },
+  {
     input: "translation-revisions.v1.schema.json",
     output: "src/translation-revisions.ts",
     rootName: "TranslationRevisionsSchema",
