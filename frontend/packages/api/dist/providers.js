@@ -21,3 +21,13 @@ export async function validateDeepSeekToken(apiPrefix, payload) {
 export async function queryDeepSeekBalance(apiPrefix, payload) {
     return submitJson(buildApiEndpoint(apiPrefix, "providers/deepseek/balance"), payload, probeOptions);
 }
+/**
+ * 从翻译接口拉模型列表（POST /providers/translation/models，后端代调服务商的 /models，key 用完不存）。
+ * 服务商那边出错也是 200，看 status；没 key、地址不合规是 400。
+ */
+export async function fetchTranslationProviderModels(apiPrefix, payload) {
+    return submitJson(buildApiEndpoint(apiPrefix, "providers/translation/models"), payload, {
+        timeoutMs: PROVIDER_PROBE_TIMEOUT_MS,
+        timeoutMessage: "拉取模型超时（30s），请检查 API URL 与网络后重试。",
+    });
+}
