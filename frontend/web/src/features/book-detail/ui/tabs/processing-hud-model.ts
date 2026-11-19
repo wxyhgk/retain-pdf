@@ -23,7 +23,7 @@ export type ProcessingHudModel = {
   time: { text: string; title: string } | null;
   model: { name: string; logo: BrandLogo | null; agent: boolean; title: string } | null;
   tokens: { text: string; title: string } | null;
-  /** 这本书估算花了多少钱（「约 $0.43」）；在跑时还在涨、或者后端没给，不摆。 */
+  /** 这本书估算花了多少钱（「约 ¥3.10」）；在跑时还在涨、或者后端没给，不摆。 */
   cost: { text: string; title: string } | null;
   stationChips: Partial<Record<StationKey, StationChip[]>>;
 };
