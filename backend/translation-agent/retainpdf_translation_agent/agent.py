@@ -51,7 +51,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 BREAK = "[[BREAK]]"
 BREAK_RE = re.compile(r"\s*\[\[BREAK\]\]\s*")
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-17"
+PROMPT_VERSION = "translation-agent-18"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
@@ -130,6 +130,24 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
 @@ 备注
 <拿不准的地方>
 """
+
+# 人文社科、通俗读物（通读判的体裁在 `rewrite.REWRITE_GENRES` 里）初译时接在系统提示后面（2026-11-19）。
+# 11-19 实验（同一本民族志开头 3 页四组）：只换流程 qwen 好了一点（习语、个别句子），Haiku 加这一段最接近人工译本的节奏，
+# 也没犯人工译本的错（把"觉得该放行了"写成"获准了"、删句、添"天时地利人和"）。见
+# docs/ops/planning/translation-agent/20261119-人文书初译写法.md
+NARRATIVE_PROMPT = """
+
+本书是人文社科或通俗读物（叙事、论述为主，不是论文）。上面的规则里和这一段冲突的，以这一段为准：
+- 译文要读起来像中文作者写的。先读懂一整段（句群）在说什么，再用中文的语序重新组织：可以拆长句、并短句、调整语序
+  （时间、地点、原因按中文习惯放前面），不必一句对一句，也不必和原文长度相当（第 8 条的"长度和原文相当"不适用）。
+- 英文的比喻、习语换成中文里意思相同的惯用说法（so many doors had been slammed → 处处吃闭门羹），没有对应说法的就意译，
+  不要照字面直译出中文里不说的话。
+- 英文爱用抽象名词（access、commitment、handling、occasion），中文多用动词和具体说法：
+  no access materialized → 他一直没松口；the handling of human cadavers → 处理遗体的事。不要写"进入的事""……的处理"这种名词腔。
+  术语表里的词也一样：概念照用，词形、句式按中文习惯（见第 10 条）。
+- 意思不增不减：不添原文没有的信息、评价、渲染，不堆成语；作者的保留语气（seemed、I can only guess）照样保留；
+  作者当时还不知道的结果，不要提前说出来。
+- 公式、标记、编号、交卷格式的规则照旧。"""
 
 # 交卷格式（2026-10-31 起不用 JSON 工具调用：用户定。公式里的反斜杠在 JSON 里要写两个，交回纯文本照抄原文就行）
 ANSWER_HEADER_RE = re.compile(r"^@@[ \t]*(.+?)[ \t@]*$", re.M)
@@ -285,6 +303,8 @@ class TranslationAgent:
         # 开了工具时这一页初译的对话（发出去的消息加模型的回答）：交卷后的检查问题接在后面回给模型
         self._conversation: list[dict] | None = None
         self._tool_calls = 0
+        # 人文社科、通俗读物：初译、重翻接上 `NARRATIVE_PROMPT`（调度按通读判的体裁设）
+        self.narrative = False
 
     def model_for(self, role: str) -> str:
         return self.models.get(role) or self.model
@@ -334,6 +354,8 @@ class TranslationAgent:
         False 是这一页的次数用完了（定义照带，提示词缓存的前缀不变；`tool_choice: none` 不许再调）。"""
         # 系统提示打提示词缓存断点：各角色的系统提示（连同前面的工具定义）一本书里逐字不变，缓存读按一折计费、不计入
         # 每分钟输入限额（2026-10-31）。太短的（不到 512 token）服务端不缓存也不报错。
+        if self.narrative and role == ROLE_TRANSLATOR and tool is None and system == SYSTEM_PROMPT:
+            system = SYSTEM_PROMPT + NARRATIVE_PROMPT
         body = {"model": self.model_for(role), "max_tokens": 16000, "system": [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]}
         if tool is not None:
             body.update(tools=[strict_tool(tool)], tool_choice={"type": "tool", "name": tool["name"]})

@@ -54,6 +54,7 @@ from retainpdf_translation_agent.review import reviewable
 from retainpdf_translation_agent.rewrite import REWRITE_GENRES
 from retainpdf_translation_agent.rewrite import rewrite_page
 from retainpdf_translation_agent.tools import BookTools
+from retainpdf_translation_agent.typography import fix_page_typography
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
@@ -166,12 +167,15 @@ class DocumentRun:
         finally:
             self.agent.on_event = None
             self.agent.tools = None
+            self.agent.narrative = False
 
     def _run(self, pages: list[PageInput], on_page: Callable[[int, PageInput, dict[str, BlockResult]], None] | None) -> RunOutcome:
         progress_path = self._path("progress.json")
         progress = json.loads(progress_path.read_text(encoding="utf-8")) if progress_path.exists() else {}
         done: list[str] = list(progress.get("pages_done") or [])
         self._event_page = 0
+        # 章首小型大写（OCR 成全大写）先还原，通读、初译、编辑看到的都是修过的原文（`typography.py`）
+        pages = fix_page_typography(pages)
         title = str((pages[0].document or {}).get("title") or "") if pages else ""
         self._event("run_started", pages=len(pages), model=self.agent.model, doc_title=title, resumed=len(done))
         if self._path("glossary.json").exists():
@@ -207,6 +211,7 @@ class DocumentRun:
                 pages = apply_reading(self.reading, Glossary(), pages)  # 术语已经登记过，只要标题的已定译文
             if not self.style:
                 self.style = self.reading.style_text()
+            self.agent.narrative = self.reading.genre in REWRITE_GENRES
         self._ledger("start", pages=len(pages), resumed=len(done), prompt_version=PROMPT_VERSION, contract_version=CONTRACT_VERSION, memory=self.memory)
 
         results: dict[str, BlockResult] = {}

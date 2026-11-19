@@ -48,6 +48,9 @@ READER_PROMPT = """你是学术翻译团队的通读员兼术语专员。正式�
      人文社科、通俗读物里的概念多是人的行为（obstructing、hiding、shelving）：选词先看是谁在做、是不是有意的
      （人有意去拦是"阻挠"，不是泛泛的"阻碍"），再在心里造两三个常见搭配（"遭到阻挠""百般阻挠"）读一遍，读着不像中文就换词；
      source 写名词或动名词的原形，逐页翻译时它的形容词、动词形式按中文习惯表达，不必硬套这个词。
+     人文社科、通俗读物只收本学科的行话（人类学里的 field 田野、gatekeeper 守门人）和专名；反复出现的日常词
+     （access、handling、commitment、donation、support）不要收：这类书里同一个词在不同句子要换不同说法
+     （access 有时是"进去"，有时是"许可""松口"），钉死一个译法会逼出"进入的事始终没有着落"这种句子。
    - 专名：
      · 软件、产品、数据集、期刊、编程接口：category=keep（原样保留）；
      · 人名、书名、机构、地名：按 name_policy——keep 就 category=keep；transliterate 就 category=name，target 写通行中文译名

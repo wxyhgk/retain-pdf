@@ -30,6 +30,7 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   （`agent_flow.agent_effort`，和 legacy 一样：off、auto 对 claude-haiku-5-5 都是 low）。
 - `tools.py`：初译能调的只读工具（2026-11-19）：`search_book` 全书搜原文（带已有译文，中文在译文里搜）、`lookup_term` 查术语表完整条目和歧义单；
   `DocumentRun(tools=True)` 才开，一页最多 3 轮 8 次，交卷后的检查问题接在同一段对话里重交。只接 Anthropic 原生工具调用。
+- `typography.py`：原文排版造成的误读，调度开头修掉（2026-11-19）：正文段落开头的章首小型大写（OCR 成全大写，"CATCH," HE CALLED）还原成句首大写。
 - `checks.py`：逐块校验（漏交、空、`$` 成对（公式内容不和原文比）、引用和脚注标记、数字、没翻、截断）；术语校验（定好的译法、保留原文、缩写）；语气信号（表示保留的词、第一人称，只记 info 算指标）。
   判对判错的规则改了升 `CHECKS_VERSION`，
   正式流程据此不再沿用旧进度（请求缓存照用）。
