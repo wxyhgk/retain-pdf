@@ -1,4 +1,4 @@
-"""模型用量台账：每次模型返回就往任务目录追加一行，翻译、精修、编辑部、失败诊断都记在这里。
+"""模型用量台账：每次模型返回就往任务目录追加一行，翻译、精修、编辑部、失败诊断、GLM-OCR 识别都记在这里。
 
 为什么另起一本账，不复用 ``translation_diagnostics.json`` / 精修报告里的 ``token_usage``：
 
@@ -49,6 +49,8 @@ _STAGE_PREFIXES: tuple[tuple[str, str], ...] = (
     ("agent-review", "agent_review"),
     # 表格 agent（services/tables）
     ("table-translate", "table_translation"),
+    # OCR 识别（GLM-OCR 按 token 计费，2026-11-19 起记账）
+    ("ocr ", "ocr"),
 )
 
 

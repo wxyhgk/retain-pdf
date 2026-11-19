@@ -243,6 +243,8 @@ def request_chunks(
             print(f"glm-ocr: chunk {start + 1}-{end} failed ({err}); retrying page by page", flush=True)
             with fitz.open(source_pdf) as source:
                 payload = _page_by_page_chunk(source, start, end, parse=parse, api_key=api_key)
+        # 真请求过的片才记账（命中断点、共用缓存的不收钱）；逐页重试时各页的用量已经合在 usage 里
+        _record_usage(payload, start, end)
         if not _chunk_is_complete(payload, end - start):
             raise RuntimeError(f"GLM-OCR 第 {start + 1}-{end} 页的结果页数不对（应为 {end - start} 页）")
         if any(item.get("mode") == "failed" for item in payload.get("_page_fallbacks") or []):
@@ -264,6 +266,20 @@ def request_chunks(
             _emit_progress(done_pages, page_count, f"GLM-OCR 识别中：{done_pages}/{page_count} 页")
             publish_prefix()
     return [results[index] for index in range(len(ranges))]
+
+
+def _record_usage(payload: dict, start: int, end: int) -> None:
+    """GLM-OCR 返回的 token 用量记进任务的模型用量台账（2026-11-19 起；阶段 ocr，按智谱的价估算花费）。
+    没配台账路径（命令行直接跑、单元测试）就不记。"""
+    from retainpdf_translation.public import record_model_usage
+
+    record_model_usage(
+        payload.get("usage") if isinstance(payload.get("usage"), dict) else None,
+        model=glm_ocr_api.GLM_OCR_MODEL,
+        base_url=glm_ocr_api.api_url(),
+        protocol="glm_ocr",
+        request_label=f"ocr glm-ocr pages {start + 1}-{end}",
+    )
 
 
 def _page_by_page_chunk(source: fitz.Document, start: int, end: int, *, parse, api_key: str) -> dict:

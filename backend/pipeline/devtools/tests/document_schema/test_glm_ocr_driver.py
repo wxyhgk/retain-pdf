@@ -112,6 +112,30 @@ def _forget_chunk(job: SimpleNamespace, name: str, *, chunk_pages: int) -> None:
     (shared_chunk_dir(paths.GLM_OCR_CHUNK_CACHE_DIR, source_hash, chunk_pages) / name).unlink()
 
 
+def test_each_requested_chunk_is_written_to_the_usage_ledger_and_cached_chunks_are_not(tmp_path: Path, monkeypatch) -> None:
+    """GLM-OCR 按 token 计费（2026-11-19 起记账）：真请求过的片各记一行，阶段 ocr；命中断点、共用缓存的不记。"""
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
+    ledger = tmp_path / "token-usage.v1.jsonl"
+    monkeypatch.setenv("RETAIN_USAGE_LEDGER", str(ledger))
+    monkeypatch.setenv("RETAIN_USAGE_JOB_ID", "job-ocr")
+    job = _job(tmp_path, _pdf(tmp_path / "book.pdf", 5))
+    run_glm_ocr_to_job_dir(job, parse=FakeGlm())
+    rows = [json.loads(line) for line in ledger.read_text(encoding="utf-8").splitlines()]
+    assert sorted(row["input"] for row in rows) == [100, 200, 200]
+    assert {(row["stage"], row["model"], row["host"], row["protocol"], row["job_id"]) for row in rows} == {
+        ("ocr", "glm-ocr", "open.bigmodel.cn", "glm_ocr", "job-ocr")
+    }
+    assert sum(row["output"] for row in rows) == 50
+
+    _forget_chunk(job, "chunk-002-5-5.json", chunk_pages=2)
+    run_glm_ocr_to_job_dir(job, parse=FakeGlm())
+    assert len(ledger.read_text(encoding="utf-8").splitlines()) == 4, "重跑只记补请求的那一片"
+
+    other = _job(tmp_path, Path(job.file_path), name="other")
+    run_glm_ocr_to_job_dir(other, parse=FakeGlm())
+    assert len(ledger.read_text(encoding="utf-8").splitlines()) == 4, "别的任务做同一份原文全走共用缓存，不记"
+
+
 def test_rerunning_the_job_does_not_pay_for_chunks_already_done(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
     job = _job(tmp_path, _pdf(tmp_path / "book.pdf", 5))

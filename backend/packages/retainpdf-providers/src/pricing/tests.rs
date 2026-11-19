@@ -148,3 +148,27 @@ async fn live_sync_from_models_dev() {
     println!("second sync appended {}", again.appended);
     let _ = std::fs::remove_dir_all(&root);
 }
+
+#[test]
+fn glm_ocr_is_priced_from_the_local_table_until_models_dev_lists_it() {
+    let book = PriceBook::bundled();
+    let (provider, basis, price) = book.quote("open.bigmodel.cn", "glm-ocr", "2026-11-19T12:00:00Z").expect("glm-ocr priced");
+    assert_eq!((provider.as_str(), basis), ("zhipuai", PriceBasis::Host));
+    assert!((price.input - 0.2 / 7.16).abs() < 1e-12 && price.input == price.output, "0.2 元/百万 token，输入输出同价");
+    // 一千页大约 80 万 token：约 0.16 元。
+    let cost = price.cost_usd(TokenCounts { input: 700_000, output: 100_000, ..TokenCounts::default() });
+    assert!((cost * 7.16 - 0.16).abs() < 1e-9, "{cost}");
+
+    // 同步下来的价格历史不带补充价（以代码为准），读的时候并上；models.dev 收录了以它为准。
+    let root = std::env::temp_dir().join(format!("retainpdf-pricing-local-{}", fastrand::u64(..)));
+    let now = Utc.with_ymd_and_hms(2026, 11, 20, 0, 0, 0).unwrap();
+    let mut listed = source(0.1);
+    listed["zhipuai"]["models"]["glm-ocr"] = json!({"cost": {"input": 0.05, "output": 0.05}});
+    apply_price_source(&root, &source(0.1), "test", now).unwrap();
+    assert!(!PriceBook::load_synced(&root).unwrap().providers["zhipuai"].models.contains_key("glm-ocr"));
+    assert!(PriceBook::load(&root).quote("open.bigmodel.cn", "glm-ocr", "2026-11-20T00:00:00Z").is_some());
+    apply_price_source(&root, &listed, "test", now).unwrap();
+    let (_, _, price) = PriceBook::load(&root).quote("open.bigmodel.cn", "glm-ocr", "2026-11-20T00:00:00Z").map(|(a, b, p)| (a, b, p.clone())).unwrap();
+    assert_eq!(price.input, 0.05);
+    let _ = std::fs::remove_dir_all(&root);
+}

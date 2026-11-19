@@ -108,6 +108,8 @@ _EXPORTS = {
     "translated_table_html": ("retainpdf_translation.services.tables", "translated_table_html"),
     "is_credential_rejection": ("retainpdf_translation.llm.shared.upstream_resilience", "is_credential_rejection"),
     "credential_rejected_error": ("retainpdf_translation.llm.shared.upstream_resilience", "credential_rejected_error"),
+    # 模型用量台账：OCR 等翻译以外的模型调用也记进同一本账（2026-11-19 起 GLM-OCR）
+    "record_model_usage": ("retainpdf_translation.llm.shared.usage_ledger", "record_model_usage"),
 }
 
 __all__ = list(_EXPORTS)
