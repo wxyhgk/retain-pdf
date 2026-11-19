@@ -19,7 +19,8 @@ pub(crate) async fn replay_translation_item(
     // 和 PATCH 一样先挡坏编号(400),再确认条目存在(404):条目编号会直接做 argv,
     // 条目不存在时 Python 只会抛 RuntimeError,对外成了 500。
     validate_item_id(item_id)?;
-    load_translation_debug_item_view(deps.data_root, job, item_id)?;
+    let item_id = load_translation_debug_item_view(deps.data_root, job, item_id)?.item_id;
+    let item_id = item_id.as_str();
     let job_root = resolve_job_root(job, deps.data_root)
         .ok_or_else(|| AppError::not_ready("translation manifest"))?;
     let script_path = deps

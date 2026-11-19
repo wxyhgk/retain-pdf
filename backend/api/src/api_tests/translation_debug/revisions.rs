@@ -578,3 +578,64 @@ async fn translation_list_reflects_a_revision_even_when_a_stale_index_file_exist
     let stale = get_list(&state, job_id, "?q=%E6%98%AF%E5%88%86%E5%AD%90").await; // “是分子”,只在旧译文里
     assert_eq!(stale["data"]["total"], 0);
 }
+
+async fn get_item(state: &crate::AppState, job_id: &str, item_id: &str) -> (StatusCode, Value) {
+    let response = build_app(state.clone())
+        .oneshot(
+            Request::builder()
+                .uri(format!("/api/v1/jobs/{job_id}/translations/{item_id}"))
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("item request"),
+        )
+        .await
+        .expect("item response");
+    let status = response.status();
+    (status, read_json(response).await)
+}
+
+/// 阅读页的四位块号（`p001-b0001`，reader_item_id 同一规则）也能取、改、查修订（2026-11-19）；
+/// 返回的 item_id 是条目里实际存的写法，修订日志也记这个写法。
+#[tokio::test]
+async fn reader_block_ids_reach_the_stored_translation_item() {
+    let state = state_with_pipeline("translation-revision-reader-id");
+    let translated = seed_committed_job(&state, "job-revision-reader-id", JobStatusKind::Succeeded);
+
+    for alias in ["p001-b0001", "p001-b1", ITEM_ID] {
+        let (status, payload) = get_item(&state, "job-revision-reader-id", alias).await;
+        assert_eq!(status, StatusCode::OK, "{alias}: {payload}");
+        assert_eq!(payload["data"]["item_id"], ITEM_ID, "{alias}");
+    }
+
+    let (status, payload) = patch_item(
+        &state,
+        "job-revision-reader-id",
+        "p001-b0001",
+        json!({"translated_text": REVISED_TEXT, "source": "user", "reason": "措辞"}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{payload}");
+    assert_eq!(payload["data"]["item_id"], ITEM_ID);
+    assert_eq!(payload["data"]["changed"], true);
+    assert_eq!(render_loader_text(&translated, ITEM_ID), REVISED_TEXT);
+    let journal = fs::read_to_string(translated.join("revisions.v1.jsonl")).expect("revisions");
+    assert!(journal.contains(&format!("\"item_id\": \"{ITEM_ID}\"")) || journal.contains(&format!("\"item_id\":\"{ITEM_ID}\"")), "{journal}");
+
+    let (status, payload) = get_revisions(&state, "job-revision-reader-id", "p001-b0001").await;
+    assert_eq!(status, StatusCode::OK, "{payload}");
+    assert_eq!(payload["data"]["item_id"], ITEM_ID);
+    assert_eq!(payload["data"]["total"], 1);
+
+    for missing in ["p001-b0009", "p009-b0001"] {
+        let (status, _) = get_item(&state, "job-revision-reader-id", missing).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{missing}");
+        let (status, _) = patch_item(
+            &state,
+            "job-revision-reader-id",
+            missing,
+            json!({"translated_text": REVISED_TEXT, "source": "user"}),
+        )
+        .await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{missing}");
+    }
+}

@@ -78,3 +78,14 @@ async fn translation_replay_of_a_merged_job_is_409_read_only() {
     assert_eq!(status, StatusCode::CONFLICT, "{payload}");
     assert_eq!(payload["error"]["details"]["reason"], "read_only_job");
 }
+
+#[tokio::test]
+async fn translation_replay_accepts_the_reader_block_id() {
+    let state = test_state("debug-replay-reader-id");
+    seed_translation_debug_job(&state);
+
+    let (status, payload) = post_replay(&state, JOB_ID, "p001-b0001").await;
+
+    assert_eq!(status, StatusCode::OK, "{payload}");
+    assert_eq!(payload["data"]["item_id"], ITEM_ID, "返回条目里实际存的写法");
+}
