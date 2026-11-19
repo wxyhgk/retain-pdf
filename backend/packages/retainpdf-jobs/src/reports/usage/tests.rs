@@ -266,3 +266,28 @@ fn ledger_rows_are_priced_and_unknown_models_are_counted_as_unpriced() {
     assert!(view.pricing.synced_at.is_none() && view.pricing.snapshot_date.is_some());
     let _ = fs::remove_dir_all(root);
 }
+
+/// GLM-OCR（2026-11-19 起记账）：阶段 ocr 显示「OCR 识别」、归译前准备，按智谱价估算；
+/// 台账里只有 OCR 的行不算「翻译已经逐条记了」，旧诊断照样折算。
+#[test]
+fn ocr_rows_are_priced_and_do_not_hide_legacy_translation_reports() {
+    let root = temp_root("ocr");
+    let artifacts = JobPaths::for_job(&root, "job-ocr").artifacts_dir;
+    fs::create_dir_all(&artifacts).unwrap();
+    fs::write(artifacts.join("translation_diagnostics.json"), json!({
+        "model": "m", "token_usage": {"requests_with_usage": 2, "prompt_tokens": 3000, "completion_tokens": 300}
+    }).to_string()).unwrap();
+    write_ledger(&root, "job-ocr", &[json!({"v": 1, "ts": "2026-11-19T12:00:00Z", "stage": "ocr", "model": "glm-ocr",
+        "host": "open.bigmodel.cn", "protocol": "glm_ocr", "input": 700_000, "output": 100_000, "cache_hit": null,
+        "cache_write": null, "reasoning": null, "usage_reported": true})]);
+
+    let view = summarize_jobs("document", &root, ["job-ocr"], Vec::new(), &PriceBook::bundled());
+
+    let ocr = view.by_stage.iter().find(|s| s.stage == "ocr").unwrap();
+    assert_eq!((ocr.label, ocr.group), ("OCR 识别", "preparation"));
+    assert_eq!(ocr.usage.priced_requests, 1);
+    assert!((ocr.usage.estimated_cost_usd * 7.16 - 0.16).abs() < 1e-5, "{}", ocr.usage.estimated_cost_usd);
+    let translation = view.by_stage.iter().find(|s| s.stage == "translation").unwrap();
+    assert_eq!(translation.usage.input_tokens, 3000, "旧诊断照样折算");
+    let _ = fs::remove_dir_all(root);
+}

@@ -62,6 +62,7 @@ def _rows(path):
     ("refine-chief", "refine_chief"),
     ("refine-rewrite", "refine_rewrite"),
     ("failure-ai-diagnosis", "failure_diagnosis"),
+    ("ocr glm-ocr pages 1-10", "ocr"),
     ("something-new", "other"),
     ("", "unspecified"),
 ])

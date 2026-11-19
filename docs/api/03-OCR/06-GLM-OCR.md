@@ -80,4 +80,12 @@ OCR 做完时翻译也基本翻完，接着渲染。
 任务目录里照旧有全部原始片。原文、模型、分片页数任何一个不同就对不上；页数不对、读不出来的缓存片会重新请求。
 每页约 9 KB；写进去超过一年的片在下一次 GLM-OCR 时删掉（`RETAIN_GLM_OCR_CHUNK_CACHE_TTL_DAYS`，默认 365，`0` 不清，2026-11-02）。
 
+## 用量和花费（2026-11-19）
+
+GLM-OCR 按 token 计费（官方「输入输出同价，0.2 元/百万Tokens」）。真请求过的每一片在任务的模型用量台账
+`artifacts/token-usage.v1.jsonl` 记一行：阶段 `ocr`、模型 `glm-ocr`、域名 `open.bigmodel.cn`、协议 `glm_ocr`，
+token 是智谱返回的 `usage`（逐页重试的片是各页加起来）。命中断点、共用缓存的片没请求、不收钱，不记。
+书和全部的用量汇总里显示成「OCR 识别」（译前准备一组），花费按上面的价换成美元估算，见
+[模型用量](../11-用量/01-模型用量.md#估算花费)。这之前的任务没记，OCR 那部分不在汇总里。
+
 实现见 `backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/README.md` 的「智谱 GLM-OCR」一节。
