@@ -48,6 +48,8 @@ from retainpdf_translation_agent.memory import quote_around
 from retainpdf_translation_agent.memory import term_pattern
 from retainpdf_translation_agent.reader import Reading
 from retainpdf_translation_agent.reader import apply_reading
+from retainpdf_translation_agent.section import plan_sections
+from retainpdf_translation_agent.section import translate_section
 from retainpdf_translation_agent.reader import read_document
 from retainpdf_translation_agent.review import review_page
 from retainpdf_translation_agent.review import reviewable
@@ -92,6 +94,7 @@ class DocumentRun:
         read_first: bool = False,
         review: bool | str = False,
         tools: bool = False,
+        structure: str = "page",
     ) -> None:
         """`memory=False` 时不带上下文包、不记术语（和第 1 版以前一样），用来做对比。
         `read_first=True` 时先通读整篇（`reader.py`）：定体裁、文风、全文统一的术语和人名、全部标题的译法，再逐页翻。
@@ -100,7 +103,10 @@ class DocumentRun:
         其余体裁只按问题单改被指出的片段。`review="split"` / `"rewrite"`（一次做完，11-18 到 11-19 的人文书默认）/ `"tickets"`
         强制用其中一种。
         `tools=True` 时初译能调只读工具（全书搜原文、查术语表，`tools.py`），交卷后的检查问题在同一段对话里回给模型改；
-        只接 Anthropic 的原生工具调用，OpenAI 协议的 transport 不要开。"""
+        只接 Anthropic 的原生工具调用，OpenAI 协议的 transport 不要开。
+        `structure="section"`（第二版，2026-11-19 起）：人文社科、通俗读物（没通读时也算）按节翻（`section.py`）：几页接成一份
+        带段号的稿子一次翻，段号对回各块；断点、写回、编辑部事件照旧按页。这一版按节翻不做第二遍审校，`review`、`tools` 不起作用；
+        别的体裁照旧逐页。默认 `"page"`（第一版）。"""
         self.agent = agent
         self.state_dir = Path(state_dir)
         self.initial_glossary = glossary
@@ -112,6 +118,9 @@ class DocumentRun:
         self.reading: Reading | None = None
         self.review = review
         self.tools = tools
+        if structure not in ("page", "section"):
+            raise ValueError(f"unknown structure: {structure}")
+        self.structure = structure
         self._event_page = 0  # 编辑部事件里的页号：正在做第几页（1 起），通读是 0
         self._tickets_seen = 0
 
@@ -214,7 +223,11 @@ class DocumentRun:
             if not self.style:
                 self.style = self.reading.style_text()
             self.agent.narrative = self.reading.genre in REWRITE_GENRES
-        self._ledger("start", pages=len(pages), resumed=len(done), prompt_version=PROMPT_VERSION, contract_version=CONTRACT_VERSION, memory=self.memory)
+        self._ledger("start", pages=len(pages), resumed=len(done), prompt_version=PROMPT_VERSION, contract_version=CONTRACT_VERSION, memory=self.memory, structure=self.structure)
+        if self.structure == "section":
+            if self.reading is None or self.reading.genre in REWRITE_GENRES:
+                return self._run_sections(pages, glossary, done, on_page)
+            self._ledger("section_skipped", genre=self.reading.genre)
 
         results: dict[str, BlockResult] = {}
         book_tools = BookTools(pages, glossary) if self.tools else None
@@ -313,6 +326,93 @@ class DocumentRun:
                 for b in page.to_translate()
                 if b.id in page_results and page_results[b.id].translation
             ]
+        self._progress(done, DONE, total=len(pages))
+        self._ledger("done", pages=len(pages), glossary_version=glossary.version, tickets=len(glossary.tickets))
+        self._event("run_done", pages=len(pages), glossary_version=glossary.version, tickets=len(glossary.tickets))
+        return RunOutcome(DONE, "", results, glossary, len(done), len(pages))
+
+    def _run_sections(
+        self,
+        pages: list[PageInput],
+        glossary: Glossary,
+        done: list[str],
+        on_page: Callable[[int, PageInput, dict[str, BlockResult]], None] | None,
+    ) -> RunOutcome:
+        """按节翻（`section.py`）。节的边界落在页边界上；一节翻完才把这几页一起记进断点（按页写文件、发 page_done、调 `on_page`），
+        中途停下的话这一节从头再翻（请求有缓存，不重复花钱）。续跑时整节都做过的直接读回。"""
+        results: dict[str, BlockResult] = {}
+        title = str((pages[0].document or {}).get("title") or "") if pages else ""
+        previous: list[dict] = []
+        seen_names: set[str] = set()
+        names = [t.source for t in glossary.terms.values() if t.category == NAME]
+
+        def load_page(key: str) -> dict[str, BlockResult]:
+            return {
+                r["id"]: BlockResult(r["id"], r["translation"], r["issues"], r["attempts"], r["status"], r.get("history") or [], r.get("meta") or {})
+                for r in json.loads(self._path("pages", f"{key}.json").read_text(encoding="utf-8"))["results"]
+            }
+
+        for start, end in plan_sections(pages):
+            keys = [f"{index:04d}" for index in range(start, end)]
+            section_pages = pages[start:end]
+            todo = [index for index, key in zip(range(start, end), keys) if key not in done]
+            if not todo:
+                outcome_by_page = {index: load_page(f"{index:04d}") for index in range(start, end)}
+            else:
+                calls_before = len(self.agent.calls)
+                for index in todo:
+                    self._event_page = index + 1
+                    self._event("page_started", page=self._event_page, label=pages[index].page_label, blocks=len(pages[index].to_translate()))
+                self._event_page = todo[0] + 1
+                try:
+                    outcome = translate_section(
+                        self.agent,
+                        [pages[index] for index in todo],
+                        glossary,
+                        title=title,
+                        style=self.style,
+                        previous=previous,
+                        seen_names=seen_names,
+                    )
+                except StopRun as stop:
+                    self._log_calls(pages[todo[0]], f"{todo[0]:04d}", {}, calls_before)
+                    self._stopped(pages[todo[0]], f"{todo[0]:04d}", stop, done, len(pages))
+                    return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
+                self._log_calls(pages[todo[0]], f"{todo[0]:04d}", {}, calls_before)
+                self._ledger("section", pages=[pages[i].page_label for i in todo], paragraphs=outcome.info["paragraphs"], attempts=outcome.info["attempts"], fallback=outcome.info["fallback"])
+                outcome_by_page = {}
+                for index in range(start, end):
+                    key = f"{index:04d}"
+                    if key in done:
+                        outcome_by_page[index] = load_page(key)
+                        continue
+                    page_results = {b.id: outcome.results[b.id] for b in pages[index].blocks if b.id in outcome.results}
+                    outcome_by_page[index] = page_results
+                    self._write_json(
+                        self._path("pages", f"{key}.json"),
+                        {"page": pages[index].page_label, "chapter": pages[index].chapter, "context": {}, "info": outcome.info, "results": [r.to_dict() for r in page_results.values()]},
+                    )
+                    statuses: dict[str, int] = {}
+                    for result in page_results.values():
+                        statuses[result.status] = statuses.get(result.status, 0) + 1
+                    self._ledger("page", page=pages[index].page_label, page_key=key, statuses=statuses, glossary_version=glossary.version)
+                    self._event_page = index + 1
+                    self._event("page_done", page=self._event_page, statuses={"ok": 0, "warn": 0, "error": 0, "fallback_source": 0, **statuses})
+                    done.append(key)
+                    self._progress(done, RUNNING, total=len(pages))
+            for index in range(start, end):
+                page_results = outcome_by_page[index]
+                results.update(page_results)
+                if on_page is not None:
+                    on_page(index, pages[index], page_results)
+            text = " ".join(b.text for p in section_pages for b in p.to_translate())
+            seen_names |= {n for n in names if term_pattern(n, NAME).search(text)}
+            previous = [
+                {"source": b.text, "translation": results[b.id].translation}
+                for p in section_pages
+                for b in p.to_translate()
+                if b.id in results and results[b.id].translation
+            ][-2:]
         self._progress(done, DONE, total=len(pages))
         self._ledger("done", pages=len(pages), glossary_version=glossary.version, tickets=len(glossary.tickets))
         self._event("run_done", pages=len(pages), glossary_version=glossary.version, tickets=len(glossary.tickets))
