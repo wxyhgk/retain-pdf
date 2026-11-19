@@ -23,6 +23,8 @@ export type ProcessingHudModel = {
   time: { text: string; title: string } | null;
   model: { name: string; logo: BrandLogo | null; agent: boolean; title: string } | null;
   tokens: { text: string; title: string } | null;
+  /** 这本书估算花了多少钱（「约 $0.43」）；在跑时还在涨、或者后端没给，不摆。 */
+  cost: { text: string; title: string } | null;
   stationChips: Partial<Record<StationKey, StationChip[]>>;
 };
 
@@ -95,6 +97,7 @@ export function processingHudModel({
   const tokens = totalMetric && !jobActive
     ? { text: totalMetric.value, title: `模型用量合计 ${totalMetric.exact} token · ${totalMetric.note}` }
     : null;
+  const cost = usage?.cost && !jobActive ? { text: usage.cost.text, title: usage.cost.title } : null;
 
   // 各站小标签。用量按环节分组：翻译和译前准备归翻译站，精修与编辑部跑在渲染阶段、归版面站；助手不归哪一站。
   const stationChips: Partial<Record<StationKey, StationChip[]>> = {};
@@ -124,5 +127,5 @@ export function processingHudModel({
     if (refine.length) push("render", { key: "tokens", kind: "tokens", text: refine[0].value, title: `${refine[0].label} ${refine[0].exact} token` });
   }
 
-  return { gauge, time, model, tokens, stationChips };
+  return { gauge, time, model, tokens, cost, stationChips };
 }

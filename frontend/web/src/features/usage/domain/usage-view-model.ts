@@ -1,5 +1,5 @@
 // 把 UsageSummaryView（契约 token-usage.v1）整理成界面要显示的几块：主要数字、按阶段分组、按模型、按月。
-// 只统计 token，不估算费用。显示规则：
+// 花费是后端按 models.dev 标价估的（estimated_cost_usd，2026-11-19 加），不含折扣、包月和代金券，写成「约 $0.43」。显示规则：
 // - 缓存命中率 = cache_hit_tokens / cache_reported_input_tokens；分母为 0 写「未报」（千问等服务商不报缓存）；
 // - 思考为 0 写「—」；缓存写入只有 Anthropic 才有，非 0 才显示；
 // - 有请求服务商没报用量、有任务按旧报告折算时各注明一句。
@@ -17,6 +17,8 @@ export type UsageMetric = {
   exact: string;
   note: string;
   emphasis?: boolean;
+  /** 悬停的整句；不给就按「名字 · 精确值 token · 说明」拼。 */
+  title?: string;
 };
 
 export type UsageRow = {
@@ -34,11 +36,18 @@ export type UsageGroup = {
   share: number;
   /** 这一组的 token 数（几组相加时用）。 */
   total: number;
+  /** 这一组的估算花费（「约 $0.31」）；后端没给或为 0 是空串。 */
+  cost: string;
   rows: UsageRow[];
 };
 
+/** 估算花费：画面上「约 $0.43」，悬停是精确值和怎么估的。 */
+export type UsageCost = { text: string; title: string };
+
 export type UsageViewModel = {
   empty: boolean;
+  /** 估算花了多少；旧后端没这个字段、或者一分钱都没花（也没有查不到价的）时为 null。 */
+  cost: UsageCost | null;
   metrics: UsageMetric[];
   notes: string[];
   stageGroups: UsageGroup[];
@@ -59,6 +68,38 @@ const GROUP_ORDER = ["translation", "preparation", "refine", "assistant", "other
 function n(value: unknown): number {
   const num = Number(value);
   return Number.isFinite(num) && num > 0 ? num : 0;
+}
+
+/** 美元金额：不足 1 分写「< $0.01」，100 以下两位小数，再大取整。0 或没给是空串。 */
+export function formatUsd(value: unknown): string {
+  const usd = n(value);
+  if (!usd) return "";
+  if (usd < 0.01) return "< $0.01";
+  if (usd < 100) return `约 $${usd.toFixed(2)}`;
+  return `约 $${Math.round(usd).toLocaleString("en-US")}`;
+}
+
+export const COST_BASIS = "按 models.dev 的标价估算，不含折扣、包月和代金券";
+
+/** 花费和它的说明：查不到价的请求、按官方标价估的、价格是内置的价目。 */
+export function usageCost(view: UsageSummaryView | null | undefined): { cost: UsageCost | null; notes: string[] } {
+  const totals = view?.totals;
+  if (!totals || totals.estimated_cost_usd === undefined || totals.estimated_cost_usd === null) return { cost: null, notes: [] };
+  const unpriced = n(totals.unpriced_requests);
+  const text = formatUsd(totals.estimated_cost_usd);
+  if (!text && !unpriced) return { cost: null, notes: [] };
+  const notes: string[] = [];
+  if (unpriced) notes.push(`有 ${formatTokenCountExact(unpriced)} 次请求的模型查不到价，没算进花费。`);
+  if (n(totals.list_priced_requests)) {
+    notes.push(`有 ${formatTokenCountExact(totals.list_priced_requests)} 次请求的接口地址对不上服务商，按官方标价估算。`);
+  }
+  const pricing = view?.pricing;
+  if (pricing && !pricing.synced_at) notes.push(`价格还没同步过，用的是内置价目（${pricing.snapshot_date || "日期不详"}）。`);
+  const exact = n(totals.estimated_cost_usd).toFixed(6);
+  return {
+    cost: { text: text || "—", title: text ? `估算花费 $${exact} · ${COST_BASIS}` : "这些请求的模型都查不到价" },
+    notes,
+  };
 }
 
 export function usageMetrics(totals: Bucket): UsageMetric[] {
@@ -118,8 +159,9 @@ function monthLabel(month: string): string {
 export function usageViewModel(view: UsageSummaryView | null | undefined): UsageViewModel {
   const totals = view?.totals;
   if (!view || !totals || (!n(totals.total_tokens) && !n(view.jobs_counted))) {
-    return { empty: true, metrics: [], notes: [], stageGroups: [], models: [], months: [], summaryLine: "" };
+    return { empty: true, cost: null, metrics: [], notes: [], stageGroups: [], models: [], months: [], summaryLine: "" };
   }
+  const { cost, notes: costNotes } = usageCost(view);
   const notes: string[] = [];
   if (n(totals.requests_without_usage)) notes.push(`有 ${formatTokenCountExact(totals.requests_without_usage)} 次请求服务商没报用量，没算进来。`);
   if (n(view.jobs_estimated_from_reports)) {
@@ -145,6 +187,7 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
       exact: formatTokenCountExact(total),
       share: groupMax ? total / groupMax : 0,
       total,
+      cost: formatUsd(items.reduce((sum, stage) => sum + n(stage.estimated_cost_usd), 0)),
       rows: items.map((stage) => row(stage.stage, stage.label || stage.stage, "", stage, stageMax)),
     }));
 
@@ -153,10 +196,14 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
   const months = view.by_month || [];
   const monthMax = Math.max(0, ...months.map((month) => n(month.total_tokens)));
 
+  const metrics = usageMetrics(totals);
+  // 花费放在最前面：一眼要看的就是花了多少钱。
+  if (cost) metrics.unshift({ key: "cost", label: "花费", value: cost.text, exact: "", note: "按标价估算", title: cost.title });
   return {
     empty: false,
-    metrics: usageMetrics(totals),
-    notes,
+    cost,
+    metrics,
+    notes: [...notes, ...costNotes],
     stageGroups: groups,
     models: models.map((model) => ({
       ...row(`${model.model}@${model.host}`, model.model || "未知模型", model.host || "", model, modelMax),

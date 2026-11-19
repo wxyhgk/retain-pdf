@@ -1,4 +1,4 @@
-// 「进度」页的 HUD 条：一行排开——小进度环（中间状态图标）+ 页数 / 进度，总耗时，模型（标志 + 名字），token 合计。
+// 「进度」页的 HUD 条：一行排开——小进度环（中间状态图标）+ 页数 / 进度，总耗时，模型（标志 + 名字），token 合计，估算花费。
 // 画面上只有图标和数，名字和整句在悬停与读屏里；算不出来的项不出（processingHudModel 给 null）。
 // 各站分开的耗时、翻译站用的模型和 token 挂在流水线各站下面（stationChips），这里只放总数。
 // 以前这是四张大卡，进度环、分段条各占一块，太占地方。
@@ -7,6 +7,7 @@ import { BrandLogo } from "@/ui/icons/BrandLogo.jsx";
 import type { CSSProperties } from "react";
 import {
   Check,
+  CircleDollarSign,
   Coins,
   Languages,
   LoaderCircle,
@@ -92,6 +93,14 @@ export function ProcessingHud({
           <Coins aria-hidden="true" />
           <span className="sr-only">{tokens.title}</span>
           <span className="book-detail-hud-num" aria-hidden="true">{tokens.text}</span>
+        </span>
+      ) : null}
+
+      {model.cost && !bootstrapping ? (
+        <span className="book-detail-hud-item" title={model.cost.title} data-hud="cost">
+          <CircleDollarSign aria-hidden="true" />
+          <span className="sr-only">{model.cost.title}</span>
+          <span className="book-detail-hud-num" aria-hidden="true">{model.cost.text}</span>
         </span>
       ) : null}
     </div>

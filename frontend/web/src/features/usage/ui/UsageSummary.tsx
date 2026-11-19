@@ -34,7 +34,7 @@ function StageGroups({ groups }: { groups: UsageGroup[] }) {
         <div key={group.key} className="usage-group" data-usage-group={group.key}>
           <div className="usage-group-head">
             <strong>{group.label}</strong>
-            <span title={`${group.exact} token`}>{group.value}</span>
+            <span title={`${group.exact} token`}>{group.value}{group.cost ? ` · ${group.cost}` : ""}</span>
           </div>
           {group.rows.length > 1 ? <Bars rows={group.rows} label={`${group.label}各环节`} /> : null}
         </div>
@@ -56,7 +56,7 @@ export function UsageSummary({
         {model.metrics.map((metric) => (
           <div key={metric.key} className={`usage-metric${metric.emphasis ? " is-emphasis" : ""}`} data-usage-metric={metric.key}>
             <dt>{metric.label}</dt>
-            <dd title={metric.exact ? `${metric.exact} token` : undefined}>{metric.value}</dd>
+            <dd title={metric.title || (metric.exact ? `${metric.exact} token` : undefined)}>{metric.value}</dd>
             {metric.note ? <span className="usage-metric-note">{metric.note}</span> : null}
           </div>
         ))}

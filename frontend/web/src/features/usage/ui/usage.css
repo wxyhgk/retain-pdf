@@ -255,7 +255,8 @@
 
 .usage-compact-bar {
   display: grid;
-  grid-template-columns: 84px minmax(0, 1fr) 56px;
+  /* 最后一栏是这一组的估算花费（「约 $0.31」），没有就空着。 */
+  grid-template-columns: 84px minmax(0, 1fr) 56px 64px;
   align-items: center;
   gap: 10px;
   font-size: var(--ui-text-xs);
@@ -282,10 +283,16 @@
   background: color-mix(in srgb, var(--ink) 70%, var(--paper));
 }
 
-.usage-compact-bar-value {
+.usage-compact-bar-value,
+.usage-compact-bar-cost {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
   text-align: right;
+}
+
+.usage-compact-bar-cost {
+  grid-column: 4;
+  white-space: nowrap;
 }
 
 .usage-compact-note,

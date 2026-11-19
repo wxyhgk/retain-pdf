@@ -4,6 +4,7 @@
 // ui/     共用展示、书籍卡、设置面板
 
 export { UsageCompact } from "./ui/UsageCompact.jsx";
+export { DocumentCostFact } from "./ui/DocumentCostFact.jsx";
 export { useDocumentUsage, useUsage } from "./ui/use-usage.js";
 export type { UsageState } from "./ui/use-usage.js";
 export { UsageSettingsPanel } from "./ui/UsageSettingsPanel.jsx";
