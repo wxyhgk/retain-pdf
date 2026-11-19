@@ -57,6 +57,8 @@ const SIGNED_WITHOUT_OWNED_PARAM: &[(&str, &str)] = &[
     ("/api/v1/search", "按 owner_filter 过滤"),
     ("/api/v1/uploads", "上传记当前用户为 owner"),
     ("/api/v1/usage", "按 owner_filter 过滤"),
+    ("/api/v1/usage/estimate", "书库平均只算 owner_filter 的任务（2026-11-19）"),
+    ("/api/v1/usage/prices", "只查价格表，不含用户数据（2026-11-19）"),
 ];
 
 #[test]

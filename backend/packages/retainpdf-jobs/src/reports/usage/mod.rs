@@ -2,7 +2,7 @@
 //!
 //! 数据来源：
 //! - 任务台账 `<job>/artifacts/token-usage.v1.jsonl`：流水线每次模型返回追加一行（Python
-//!   `retainpdf_translation/llm/shared/usage_ledger.py`；路径由 jobsd 经 `RETAIN_USAGE_LEDGER` 给）。
+//!   `retainpdf_base/usage_ledger.py`；路径由 jobsd 经 `RETAIN_USAGE_LEDGER` 给）。
 //! - 助手台账 `<data_root>/usage/assistant.v1.jsonl`：AI 助手每次模型返回追加一行。
 //! - 有台账之前的旧任务：从 `translation_diagnostics.json` 和精修报告（含 `refine_history/`）
 //!   里的 `token_usage` 折算。旧报告丢了思考、精修还丢了缓存，所以这部分只算得出输入输出；
@@ -86,7 +86,7 @@ impl UsageBucket {
 }
 
 /// 美元保留到百万分之一，免得浮点尾数出现在接口里。
-fn round_usd(value: f64) -> f64 {
+pub(crate) fn round_usd(value: f64) -> f64 {
     (value * 1_000_000.0).round() / 1_000_000.0
 }
 
@@ -157,15 +157,18 @@ pub struct UsagePricingView {
     pub snapshot_date: Option<String>,
     /// 一律美元。
     pub currency: &'static str,
+    /// 1 美元换多少人民币（2026-11-19 起；写死 7.16，和 models.dev 换算国内站价格用的一致），界面显示「约 ¥x」用。
+    pub usd_cny: f64,
 }
 
 impl UsagePricingView {
-    fn of(prices: &PriceBook) -> Self {
+    pub(crate) fn of(prices: &PriceBook) -> Self {
         Self {
             source: prices.source.clone(),
             synced_at: prices.synced_at.clone(),
             snapshot_date: if prices.synced_at.is_some() { None } else { prices.snapshot_date.clone() },
             currency: "USD",
+            usd_cny: retainpdf_providers::CNY_PER_USD,
         }
     }
 }
@@ -261,8 +264,9 @@ fn host_of(base_url: &str) -> String {
         .unwrap_or_default()
 }
 
+/// OCR（2026-11-19 起记账）在翻译之前，台账里有 OCR 的行不说明翻译已经逐条记了。
 fn is_translation_side(stage: &str) -> bool {
-    !stage.starts_with("refine") && stage != "failure_diagnosis"
+    !stage.starts_with("refine") && stage != "failure_diagnosis" && stage != "ocr"
 }
 
 /// 旧任务（或台账出现之前的那几次运行）：从翻译诊断和精修报告折算。
@@ -368,6 +372,7 @@ pub fn stage_label(stage: &str) -> (&'static str, &'static str) {
         "agent_reader" => ("通读", "translation"),
         "agent_review" => ("审校", "translation"),
         "table_translation" => ("表格翻译", "translation"),
+        "ocr" => ("OCR 识别", "preparation"),
         "term_prescan" => ("术语预扫", "preparation"),
         "term_review" => ("术语审定", "preparation"),
         "style_guide" => ("风格指南", "preparation"),
@@ -492,6 +497,7 @@ pub fn all_job_ids(output_root: &Path) -> Vec<String> {
 }
 
 pub(crate) mod api;
+pub(crate) mod estimate;
 
 #[cfg(test)]
 mod tests;

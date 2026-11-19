@@ -12,6 +12,8 @@
 //!    记作 `official_list`；
 //! 3. 都没有：不定价，汇总里数进未定价的请求，不猜。
 //!
+//! models.dev 里没有的模型（例如智谱 GLM-OCR）在 `LOCAL_PRICES` 里补，按官方人民币价换成美元。
+//!
 //! 算法：缓存命中、缓存写入、其余输入各按各的单价（没给缓存价的按普通输入价）；输入超过分档门槛
 //! （例如 Haiku 5.5 的 10 万 token）用那一档的价；DeepSeek 分忙闲时，models.dev 记的是闲时价，
 //! 忙时（工作日 UTC 01–04、06–10 点）乘 2。中国法定节假日整天算闲时，这里判断不了，按工作日算，
@@ -41,6 +43,37 @@ pub const OFFICIAL_PROVIDERS: [&str; 17] = [
     "moonshotai-cn", "moonshotai", "xai", "mistral", "minimax-cn", "minimax", "volcengine",
     "siliconflow-cn", "siliconflow",
 ];
+
+/// models.dev 里没有、我们自己补的价格（官方页面核对过，写明出处和日期）。
+/// 读价格时并进去（`with_local_prices`），不写进同步下来的价格历史；models.dev 以后收录了同一个模型，以它为准。
+struct LocalPrice {
+    provider: &'static str,
+    host: &'static str,
+    model: &'static str,
+    /// 从这天起（核对日期）。
+    since: &'static str,
+    /// 每百万 token 的人民币单价。
+    input_cny: f64,
+    output_cny: f64,
+    /// 出处，只给人看。
+    #[allow(dead_code)]
+    source: &'static str,
+}
+
+/// 人民币换美元：和 models.dev 换算国内站价格用的汇率一致（2026-11 约 7.16）。用户定了写死，不另外同步汇率；
+/// 用量和估价接口原样给前端（`usd_cny`）。
+pub const CNY_PER_USD: f64 = 7.16;
+
+const LOCAL_PRICES: [LocalPrice; 1] = [LocalPrice {
+    // 智谱 GLM-OCR（layout_parsing）：「API输入输出同价，仅需 0.2 元/百万Tokens」，2026-11-19 核对。
+    provider: "zhipuai",
+    host: "open.bigmodel.cn",
+    model: "glm-ocr",
+    since: "2026-11-19",
+    input_cny: 0.2,
+    output_cny: 0.2,
+    source: "https://docs.bigmodel.cn/cn/guide/models/vlm/glm-ocr",
+}];
 
 /// models.dev 里没写接口地址的官方服务商。
 const HOST_OVERRIDES: [(&str, &str); 5] = [
@@ -215,12 +248,35 @@ impl PriceBook {
         let source = raw.get("_source").and_then(Value::as_str).unwrap_or(DEFAULT_PRICE_SOURCE_URL).to_string();
         let mut book = Self::from_models_dev(&raw, &source, &date);
         book.snapshot_date = Some(date);
-        book
+        book.with_local_prices()
     }
 
-    /// 同步过的价格历史；没有或读不了就用内置快照。
+    /// 同步过的价格历史（并上 `LOCAL_PRICES`）；没有或读不了就用内置快照。
     pub fn load(data_root: &Path) -> Self {
-        Self::load_synced(data_root).unwrap_or_else(Self::bundled)
+        Self::load_synced(data_root).map(Self::with_local_prices).unwrap_or_else(Self::bundled)
+    }
+
+    /// 并上 models.dev 里没有的那几个模型的价（已经有的不动）。
+    fn with_local_prices(mut self) -> Self {
+        for local in &LOCAL_PRICES {
+            let provider = self.providers.entry(local.provider.to_string()).or_insert_with(|| ProviderPrices {
+                hosts: vec![local.host.to_string()],
+                models: BTreeMap::new(),
+            });
+            provider.models.entry(local.model.to_string()).or_insert_with(|| {
+                vec![PricePoint {
+                    since: local.since.to_string(),
+                    price: Price {
+                        input: local.input_cny / CNY_PER_USD,
+                        output: local.output_cny / CNY_PER_USD,
+                        cache_read: None,
+                        cache_write: None,
+                        tiers: Vec::new(),
+                    },
+                }]
+            });
+        }
+        self
     }
 
     /// 只读同步过的价格历史。
@@ -329,6 +385,15 @@ impl Price {
     }
 }
 
+/// 这家服务商一天里最贵的时段是标价的几倍（DeepSeek 忙时 2 倍，别家 1）。估价的上限用它。
+pub fn peak_multiplier(provider: &str) -> f64 {
+    if provider == "deepseek" {
+        2.0
+    } else {
+        1.0
+    }
+}
+
 /// DeepSeek 忙时（工作日 UTC 01:00–04:00、06:00–10:00）按 models.dev 记的闲时价的 2 倍算。
 fn time_of_day_multiplier(provider: &str, ts: &str) -> f64 {
     if provider != "deepseek" {
@@ -341,7 +406,7 @@ fn time_of_day_multiplier(provider: &str, ts: &str) -> f64 {
     let weekday = !matches!(at.weekday(), Weekday::Sat | Weekday::Sun);
     let peak_hour = matches!(at.hour(), 1..=3 | 6..=9);
     if weekday && peak_hour {
-        2.0
+        peak_multiplier(provider)
     } else {
         1.0
     }
