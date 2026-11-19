@@ -89,6 +89,7 @@ test("translation profiles：hydrate 恢复存储 profile，缺 apiKey 时回落
     workers: 9,
     apiProtocol: "anthropic",
     thinking: "high",
+    models: [],
   });
 
   manager.hydrate(

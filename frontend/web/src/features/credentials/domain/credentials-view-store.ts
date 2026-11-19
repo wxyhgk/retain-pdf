@@ -23,6 +23,7 @@ export type CredentialsElementsRef = {
   apiKeyInput: HTMLInputElement | null;
   modelBaseUrlInput: HTMLInputElement | null;
   modelNameInput: HTMLInputElement | null;
+  extraModelsInput: HTMLInputElement | null;
   translationWorkersInput: HTMLInputElement | null;
   translationProtocolSelect: HTMLSelectElement | null;
   translationThinkingSelect: HTMLSelectElement | null;
@@ -156,6 +157,7 @@ export function createCredentialsViewFeature({
     apiKeyInput: null,
     modelBaseUrlInput: null,
     modelNameInput: null,
+    extraModelsInput: null,
     translationWorkersInput: null,
     translationProtocolSelect: null,
     translationThinkingSelect: null,
@@ -171,6 +173,7 @@ export function createCredentialsViewFeature({
       apiKeyInput: elementsRef.apiKeyInput,
       modelBaseUrlInput: elementsRef.modelBaseUrlInput,
       modelNameInput: elementsRef.modelNameInput,
+      extraModelsInput: elementsRef.extraModelsInput,
       translationWorkersInput: elementsRef.translationWorkersInput,
       translationProtocolSelect: elementsRef.translationProtocolSelect,
       translationThinkingSelect: elementsRef.translationThinkingSelect,

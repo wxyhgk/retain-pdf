@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 const {
   dialogDataset,
   normalizeTranslationProfile,
+  parseModelList,
   translationConfigError,
   translationProfileDefaults,
   translationWorkersError,
@@ -65,4 +66,30 @@ test("OpenCode Go preset：默认连接、模型、并发与地址识别", async
   const profile = normalizeTranslationProfile("opencode", {apiKey: "test-key", workers: 101});
   assert.equal(profile.apiKey, "test-key");
   assert.equal(profile.workers, 5);
+});
+
+test("translation profile：其他模型按逗号、顿号、空白分；去空去重、去掉默认模型；最多 20 个", () => {
+  assert.deepEqual(parseModelList("deepseek-v4-pro, deepseek-v4-flash、qwen3.8-plus\n  qwen3.8-plus", "deepseek-v4-flash"), ["deepseek-v4-pro", "qwen3.8-plus"]);
+  assert.deepEqual(parseModelList(["a", " b ", ""], "a"), ["b"]);
+  assert.equal(parseModelList(Array.from({ length: 30 }, (_, i) => `m${i}`)).length, 20);
+  assert.deepEqual(normalizeTranslationProfile("deepseek", { model: "deepseek-v4-flash", models: "deepseek-v4-pro" }).models, ["deepseek-v4-pro"]);
+  assert.deepEqual(normalizeTranslationProfile("deepseek", {}).models, []);
+});
+
+test("translation profiles：「其他模型」从输入框读进档案，保存时不被盖掉，换服务商再换回来填回输入框", async () => {
+  const { createTranslationProfiles } = await import("../../src/features/credentials/domain/translation-profiles.js");
+  const elements = {
+    apiKeyInput: { value: "sk" }, modelBaseUrlInput: { value: "" }, modelNameInput: { value: "deepseek-v4-flash" },
+    extraModelsInput: { value: "deepseek-v4-pro, deepseek-v4-flash" }, translationWorkersInput: { value: "5" },
+    translationProtocolSelect: { value: "" }, translationThinkingSelect: { value: "off" },
+  };
+  const profiles = createTranslationProfiles({ dialogElementsPort: { elements: () => elements } });
+  profiles.hydrate({}, { translationProvider: "deepseek" });
+  profiles.captureCurrent();
+  profiles.recordCurrentProfile({ apiKey: "sk", baseUrl: "", model: "deepseek-v4-flash", workers: 5 });
+  assert.deepEqual(profiles.persistable().deepseek.models, ["deepseek-v4-pro"]);
+  profiles.applyProfile("qwen");
+  assert.equal(elements.extraModelsInput.value, "");
+  profiles.applyProfile("deepseek");
+  assert.equal(elements.extraModelsInput.value, "deepseek-v4-pro");
 });

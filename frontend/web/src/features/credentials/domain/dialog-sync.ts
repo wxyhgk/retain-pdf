@@ -1,4 +1,10 @@
-import { normalizeOcrProvider, normalizeTranslationApiProtocol, normalizeTranslationThinking } from "@/platform/config/providers.js";
+import {
+  inferTranslationProvider,
+  normalizeOcrProvider,
+  normalizeTranslationApiProtocol,
+  normalizeTranslationProvider,
+  normalizeTranslationThinking,
+} from "@/platform/config/providers.js";
 import type { CredentialsFields } from "./state.js";
 import type { CredentialDialogElementsLike } from "./dialog-values.js";
 
@@ -27,6 +33,7 @@ export function syncCredentialDialogFields({
     apiKeyInput,
     modelBaseUrlInput,
     modelNameInput,
+    extraModelsInput,
     translationWorkersInput,
     translationProtocolSelect,
     translationThinkingSelect,
@@ -51,6 +58,15 @@ export function syncCredentialDialogFields({
   }
   if (modelNameInput) {
     modelNameInput.value = `${taskOptions.model || ""}`;
+  }
+  if (extraModelsInput) {
+    // 「其他模型」存在当前服务商的档案里（translationProfiles[服务商].models）。
+    const provider = normalizeTranslationProvider(
+      `${taskOptions.translationProvider || inferTranslationProvider(`${taskOptions.baseUrl || ""}`)}`,
+    );
+    const profiles = (taskOptions.translationProfiles || {}) as Record<string, { models?: unknown } | undefined>;
+    const models = profiles[provider]?.models;
+    extraModelsInput.value = Array.isArray(models) ? models.join(", ") : "";
   }
   if (translationWorkersInput) {
     translationWorkersInput.value = `${taskOptions.workers || 50}`;

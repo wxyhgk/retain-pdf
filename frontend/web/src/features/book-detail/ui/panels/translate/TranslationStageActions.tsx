@@ -14,6 +14,7 @@ import {
 import { KEEP_MODEL, retranslateModelOptions } from "../../../domain/retranslate-model.js";
 import { savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
 import { RetranslateModelSelect } from "./RetranslateModelSelect.jsx";
+import { RetranslateModelList } from "./RetranslateModelList.jsx";
 import { useRetranslateEstimates } from "../../use-retranslate-estimates.js";
 import type { UsageEstimateView } from "@/platform/api/index.js";
 
@@ -208,7 +209,7 @@ export function TranslationStageActions({
     </Select>
   );
 
-  const qualitySelect = (
+  const qualitySelect = (bare = false) => (
     <Select
       id="book-detail-translation-quality"
       size={variant === "sheet" ? "md" : "sm"}
@@ -220,7 +221,8 @@ export function TranslationStageActions({
       onChange={(event) => setTranslationQuality(event.target.value as RetranslateQuality)}
     >
       {RETRANSLATE_QUALITY_OPTIONS.map((option) => (
-        <option key={option.value} value={option.value}>{option.label}</option>
+        // 上下排时前面已经有「翻译方式」几个字，选项里不再重复「翻译：」。
+        <option key={option.value} value={option.value}>{bare ? option.label.replace(/^翻译：/, "") : option.label}</option>
       ))}
     </Select>
   );
@@ -257,6 +259,32 @@ export function TranslationStageActions({
         <ul className="book-detail-reprocess-list">
           {sheetActions.map((action) => {
             const reason = stageDisabledReasonText(action.disabled_reason || action.reason);
+            // 重新翻译能挑模型时整行改成上下排：上面标题和费用，下面翻译方式、模型列表，「开始」在最后。
+            if (action.stage === "translation" && !checking && modelOptions.length > 1) {
+              return (
+                <li key={action.stage} className="book-detail-reprocess-row is-stacked" data-reprocess-stage={action.stage}>
+                  <div className="book-detail-reprocess-copy" title={SHEET_HINTS[action.stage] || undefined}>
+                    <strong><StageIcon stage={action.stage} />{labelOf(action)}</strong>
+                    {!action.can_retry && reason ? <span>{reason}</span> : <ReprocessCost free={false} />}
+                  </div>
+                  <div className="book-detail-reprocess-field">
+                    <span className="book-detail-reprocess-field-label">翻译方式</span>
+                    {qualitySelect(true)}
+                  </div>
+                  <div className="book-detail-reprocess-field">
+                    <span className="book-detail-reprocess-field-label">模型</span>
+                    <RetranslateModelList
+                      options={modelOptions}
+                      value={translationModel}
+                      onChange={setTranslationModel}
+                      disabled={Boolean(pendingStage)}
+                      priceOf={priceOf}
+                    />
+                  </div>
+                  <div className="book-detail-reprocess-controls">{actionButton(action, true)}</div>
+                </li>
+              );
+            }
             return (
               <li key={action.stage} className="book-detail-reprocess-row" data-reprocess-stage={action.stage}>
                 <div className="book-detail-reprocess-copy" title={SHEET_HINTS[action.stage] || undefined}>
@@ -267,7 +295,7 @@ export function TranslationStageActions({
                 </div>
                 <div className="book-detail-reprocess-controls">
                   {action.stage === "render" && !checking ? engineSelect : null}
-                  {action.stage === "translation" && !checking ? qualitySelect : null}
+                  {action.stage === "translation" && !checking ? qualitySelect() : null}
                   {action.stage === "translation" && !checking ? modelSelect : null}
                   {actionButton(action, true)}
                 </div>
@@ -279,7 +307,7 @@ export function TranslationStageActions({
       ) : (
         <div className="book-detail-stage-actions-buttons">
           {visibleActions.map((action) => actionButton(action))}
-          {!checking && visibleActions.some((action) => action.stage === "translation") ? qualitySelect : null}
+          {!checking && visibleActions.some((action) => action.stage === "translation") ? qualitySelect() : null}
           {!checking && visibleActions.some((action) => action.stage === "translation") ? modelSelect : null}
           {!checking && visibleActions.some((action) => action.stage === "render") ? engineSelect : null}
         </div>

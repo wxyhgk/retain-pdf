@@ -16,7 +16,24 @@ export type TranslationProfile = {
   /** 接口协议；默认用服务商自己的（Anthropic 是 anthropic，其余 openai）。 */
   apiProtocol: TranslationApiProtocol;
   thinking: TranslationThinking;
+  /** 这把 key 还能用的其他模型（默认模型 model 之外）；重新翻译换模型时一起列出来。2026-11-19 加。 */
+  models: string[];
 };
+
+/** 「其他模型」输入框：逗号、顿号、空白、换行都能分；去空、去重、去掉和默认模型一样的，最多 20 个。 */
+export function parseModelList(value: unknown, primary = ""): string[] {
+  const raw = Array.isArray(value) ? value.map((item) => `${item ?? ""}`) : `${value ?? ""}`.split(/[\s,，、;；]+/);
+  const seen = new Set<string>([`${primary || ""}`.trim()]);
+  const models: string[] = [];
+  for (const item of raw) {
+    const model = item.trim();
+    if (!model || seen.has(model)) continue;
+    seen.add(model);
+    models.push(model);
+    if (models.length >= 20) break;
+  }
+  return models;
+}
 
 export function translationConfigError(baseUrl = "", model = "") {
   const normalizedBaseUrl = `${baseUrl || ""}`.trim();
@@ -55,6 +72,7 @@ export function translationProfileDefaults(providerId = "custom"): TranslationPr
     workers: Number(definition.defaultWorkers) || 5,
     apiProtocol: normalizeTranslationApiProtocol(definition.protocol),
     thinking: "off",
+    models: [],
   };
 }
 
@@ -77,6 +95,7 @@ export function normalizeTranslationProfile(
       : defaults.workers,
     apiProtocol: normalizeTranslationApiProtocol(candidate.apiProtocol, defaults.apiProtocol),
     thinking: normalizeTranslationThinking(candidate.thinking),
+    models: parseModelList(candidate.models, `${candidate.model || defaults.model}`),
   };
 }
 
