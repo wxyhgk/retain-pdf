@@ -118,3 +118,58 @@ async fn price_lookup_and_estimate_routes() {
     assert_eq!(get(&state, &format!("/api/v1/documents/doc-missing/usage/estimate?{ok}")).await.status(), StatusCode::NOT_FOUND);
     assert_eq!(get(&state, "/api/v1/documents/doc-estimate/usage/estimate?base_url=x&model=y").await.status(), StatusCode::BAD_REQUEST);
 }
+
+/// 估价的参照只认成功完成的任务（2026-11-19）：书上最近一次是刚建就取消的任务（只用了一千多 token），估价不能参照它，
+/// 要参照更早那次成功的；成功的也没有就退回书库平均。只翻了部分页的按页数放大。
+#[tokio::test]
+async fn estimates_ignore_cancelled_runs_and_scale_partial_ones() {
+    use crate::models::JobStatusKind;
+    let state = test_state("usage-estimate-reference");
+    let upload = UploadRecord {
+        upload_id: "up-ref".to_string(),
+        filename: "book.pdf".to_string(),
+        stored_path: "uploads/up-ref/book.pdf".to_string(),
+        bytes: 1,
+        page_count: 20,
+        uploaded_at: now_iso(),
+        developer_mode: false,
+        content_hash: "doc-ref".to_string(),
+    };
+    state.db.save_upload(&upload).expect("save upload");
+    state.db.upsert_document_from_upload(&upload).expect("seed document");
+    let seed = |job_id: &str, status: JobStatusKind, page_ranges: &str, ts: &str, input: u64| {
+        let mut request = CreateJobInput::default();
+        request.ocr.page_ranges = page_ranges.to_string();
+        let mut job = JobSnapshot::new(job_id.to_string(), request, vec![]);
+        job.status = status;
+        state.db.save_job(&job).expect("save job");
+        rusqlite::Connection::open(&state.config.jobs_db_path)
+            .unwrap()
+            .execute("UPDATE jobs SET document_id = 'doc-ref' WHERE job_id = ?1", rusqlite::params![job_id])
+            .unwrap();
+        let ledger = crate::services::jobs::job_usage_ledger_path(&state.config.output_root, job_id);
+        std::fs::create_dir_all(ledger.parent().unwrap()).unwrap();
+        std::fs::write(
+            &ledger,
+            format!(r#"{{"ts":"{ts}","stage":"translation","model":"m","host":"h","input":{input},"output":{},"cache_hit":0}}"#, input / 5) + "\n",
+        )
+        .unwrap();
+    };
+    seed("job-done", JobStatusKind::Succeeded, "", "2026-11-19T10:00:00Z", 200_000);
+    seed("job-cancelled", JobStatusKind::Canceled, "", "2026-11-19T14:48:00Z", 1_272);
+    let uri = "/api/v1/documents/doc-ref/usage/estimate?base_url=https://api.anthropic.com&model=claude-haiku-5-5";
+    let estimate = read_json(get(&state, uri).await).await["data"].clone();
+    assert_eq!((estimate["basis"].as_str(), estimate["source_job_id"].as_str()), (Some("book_history"), Some("job-done")), "取消的不当参照");
+    assert_eq!(estimate["translation"]["input_tokens"], 200_000);
+
+    // 更晚一次只翻了前 10 页（整本 20 页）：参照它，按页数放大一倍
+    seed("job-half", JobStatusKind::Succeeded, "1-10", "2026-11-19T16:00:00Z", 50_000);
+    let estimate = read_json(get(&state, uri).await).await["data"].clone();
+    assert_eq!(estimate["source_job_id"], "job-half");
+    assert_eq!(estimate["translation"]["input_tokens"], 100_000);
+
+    // 只翻了 2 页的不当参照
+    seed("job-tiny", JobStatusKind::Succeeded, "1-2", "2026-11-19T17:00:00Z", 9_000);
+    let estimate = read_json(get(&state, uri).await).await["data"].clone();
+    assert_eq!(estimate["source_job_id"], "job-half");
+}

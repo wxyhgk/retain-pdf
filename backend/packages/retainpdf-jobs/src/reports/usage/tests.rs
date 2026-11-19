@@ -296,8 +296,12 @@ fn ocr_rows_are_priced_and_do_not_hide_legacy_translation_reports() {
 // ---- 估价（2026-11-19）----
 
 use super::estimate::{
-    estimate_from_history, estimate_from_library, library_sample, lookup_prices, PriceLookupInput, PriceLookupItem,
+    estimate_from_history, estimate_from_library, library_sample, lookup_prices, PriceLookupInput, PriceLookupItem, RunCandidate,
 };
+
+fn run(job_id: &str, pages: u64) -> RunCandidate {
+    RunCandidate { job_id: job_id.to_string(), pages }
+}
 
 fn contract_required(name: &str) -> Vec<String> {
     let schema: serde_json::Value = serde_json::from_str(
@@ -353,7 +357,7 @@ fn a_book_is_estimated_from_its_latest_translation_run() {
         haiku_row("2026-11-18T02:00:00Z", "refine_review", 3_000, 300, 0),
     ]);
     let prices = PriceBook::bundled();
-    let view = estimate_from_history(&prices, &root, ["job-old", "job-new"], "https://api.deepseek.com", "deepseek-flash", Some(12)).unwrap();
+    let view = estimate_from_history(&prices, &root, &[run("job-old", 12), run("job-new", 12)], "https://api.deepseek.com", "deepseek-flash", Some(12)).unwrap();
     let value = serde_json::to_value(&view).unwrap();
     assert_eq!(sorted_keys(&value), contract_required("UsageEstimateView"));
     assert_eq!(sorted_keys(&value["translation"]), contract_required("UsageEstimatePart"));
@@ -369,9 +373,15 @@ fn a_book_is_estimated_from_its_latest_translation_run() {
     assert!((translation.low_cny.unwrap() - low * 7.16).abs() < 1e-3);
     assert_eq!(view.refine.as_ref().unwrap().input_tokens, 3_000);
 
-    let unpriced = estimate_from_history(&prices, &root, ["job-new"], "http://1.2.3.4/v1", "home-made", None).unwrap();
+    let unpriced = estimate_from_history(&prices, &root, &[run("job-new", 12)], "http://1.2.3.4/v1", "home-made", None).unwrap();
     assert_eq!((unpriced.price_basis, unpriced.translation.as_ref().unwrap().low_usd), (None, None), "查不到价照样给 token");
-    assert!(estimate_from_history(&prices, &root, ["job-none"], "https://api.deepseek.com", "deepseek-flash", None).is_none());
+    assert!(estimate_from_history(&prices, &root, &[run("job-none", 12)], "https://api.deepseek.com", "deepseek-flash", None).is_none());
+
+    // 那次只翻了 6 页、整本 12 页：按页数比例放大一倍
+    let half = estimate_from_history(&prices, &root, &[run("job-new", 6)], "https://api.deepseek.com", "deepseek-flash", Some(12)).unwrap();
+    let doubled = half.translation.unwrap();
+    assert_eq!((doubled.requests, doubled.input_tokens), (4, 30_000));
+    assert!((doubled.low_usd.unwrap() - 2.0 * low).abs() < 1e-6);
     let _ = fs::remove_dir_all(root);
 }
 
@@ -381,7 +391,7 @@ fn an_untranslated_book_is_estimated_from_the_library_average_per_page() {
     let root = temp_root("estimate-library");
     write_ledger(&root, "job-a", &vec![haiku_row("2026-11-18T00:00:00Z", "translation", 20_000, 4_000, 0); 2]);
     write_ledger(&root, "job-b", &vec![haiku_row("2026-11-18T00:00:00Z", "translation", 20_000, 4_000, 0); 2]);
-    let books = vec![(10, vec!["job-a".to_string()]), (30, vec!["job-b".to_string()]), (0, vec!["job-a".to_string()]), (5, vec!["job-none".to_string()])];
+    let books = vec![vec![run("job-a", 10)], vec![run("job-b", 30)], vec![run("job-a", 0)], vec![run("job-none", 5)]];
     let sample = library_sample(&root, books);
     assert_eq!(sample.documents, 2, "没页数、没翻译记录的书不算");
     let prices = PriceBook::bundled();

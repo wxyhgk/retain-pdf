@@ -12,9 +12,11 @@ pub use super::estimate::{
 };
 pub use super::UsageSummaryView;
 use super::estimate::{
-    estimate_from_history, estimate_from_library, library_sample, lookup_prices, no_basis, unique,
-    validate_connection, MAX_ESTIMATE_PAGES, MAX_PRICE_LOOKUP_ITEMS,
+    estimate_from_history, estimate_from_library, library_sample, lookup_prices, no_basis, validate_connection,
+    RunCandidate, MAX_ESTIMATE_PAGES, MAX_PRICE_LOOKUP_ITEMS, MIN_REFERENCE_PAGES,
 };
+use retainpdf_core::models::domain::JobStatusKind;
+use retainpdf_core::models::request::parse_page_ranges;
 use super::{all_job_ids, assistant_usage_ledger_path, read_ledger, summarize_jobs};
 
 /// 自己持有数据（Arc + PathBuf），可以搬进阻塞线程。
@@ -73,16 +75,44 @@ pub fn price_lookup_view(deps: &UsageApiDeps, input: &PriceLookupInput) -> Resul
     Ok(lookup_prices(&PriceBook::load(&deps.data_root), input))
 }
 
-fn job_ids_of_document(deps: &UsageApiDeps, document_id: &str) -> Result<Vec<String>, AppError> {
+/// 一个任务实际翻了几页：没选页（空、`all`）是整本，选了的按范围算；范围写坏了、整本页数不知道的返回 0（不当参照）。
+fn translated_pages(spec: &str, document_pages: u32) -> u64 {
+    if document_pages == 0 {
+        return 0;
+    }
+    let spec = spec.trim();
+    if spec.is_empty() || spec.eq_ignore_ascii_case("all") {
+        return u64::from(document_pages);
+    }
+    parse_page_ranges(spec, document_pages).map(|pages| pages.len() as u64).unwrap_or(0)
+}
+
+/// 这本书能当估价参照的翻译：成功完成的任务（取消、失败、排队的不算），翻的页数够（`MIN_REFERENCE_PAGES`，书更短就整本）。
+/// `owned`：多用户模式下只留这个账号的任务。
+fn reference_runs(
+    deps: &UsageApiDeps,
+    document_id: &str,
+    document_pages: u32,
+    owned: Option<&std::collections::BTreeSet<String>>,
+) -> Result<Vec<RunCandidate>, AppError> {
     let jobs = deps
         .db
         .list_jobs_for_document(document_id, u32::MAX, 0)
         .map_err(|error| AppError::internal(format!("list document jobs failed: {error:#}")))?;
-    Ok(unique(jobs.iter().map(|job| job.job_id.clone())))
+    let enough = MIN_REFERENCE_PAGES.min(u64::from(document_pages)).max(1);
+    let mut seen = std::collections::BTreeSet::new();
+    Ok(jobs
+        .iter()
+        .filter(|job| job.status == JobStatusKind::Succeeded)
+        .filter(|job| owned.is_none_or(|owned| owned.contains(&job.job_id)))
+        .filter(|job| seen.insert(job.job_id.clone()))
+        .map(|job| RunCandidate { job_id: job.job_id.clone(), pages: translated_pages(job.ocr_page_ranges(), document_pages) })
+        .filter(|run| run.pages >= enough)
+        .collect())
 }
 
-/// 书库里每本书（页数，任务号）。`owner` 非空（多用户模式）时只留这个账号的任务。
-fn library_books(deps: &UsageApiDeps, owner: Option<&str>) -> Result<Vec<(u64, Vec<String>)>, AppError> {
+/// 书库里每本书能当参照的翻译。`owner` 非空（多用户模式）时只留这个账号的任务。
+fn library_books(deps: &UsageApiDeps, owner: Option<&str>) -> Result<Vec<Vec<RunCandidate>>, AppError> {
     let owned: Option<std::collections::BTreeSet<String>> = match owner {
         Some(owner) => Some(
             deps.db
@@ -99,12 +129,9 @@ fn library_books(deps: &UsageApiDeps, owner: Option<&str>) -> Result<Vec<(u64, V
         .map_err(|error| AppError::internal(format!("list documents failed: {error:#}")))?;
     let mut books = Vec::new();
     for document in documents {
-        let mut ids = job_ids_of_document(deps, &document.document_id)?;
-        if let Some(owned) = &owned {
-            ids.retain(|id| owned.contains(id));
-        }
-        if !ids.is_empty() {
-            books.push((u64::from(document.page_count), ids));
+        let runs = reference_runs(deps, &document.document_id, document.page_count, owned.as_ref())?;
+        if !runs.is_empty() {
+            books.push(runs);
         }
     }
     Ok(books)
@@ -123,8 +150,8 @@ pub fn document_usage_estimate_view(
     validate_connection(&query.base_url, &query.model).map_err(AppError::bad_request)?;
     let prices = PriceBook::load(&deps.data_root);
     let pages = Some(u64::from(document.page_count)).filter(|pages| *pages > 0);
-    let ids = job_ids_of_document(deps, document_id)?;
-    if let Some(view) = estimate_from_history(&prices, &deps.output_root, ids.iter().map(String::as_str), &query.base_url, &query.model, pages) {
+    let runs = reference_runs(deps, document_id, document.page_count, None)?;
+    if let Some(view) = estimate_from_history(&prices, &deps.output_root, &runs, &query.base_url, &query.model, pages) {
         return Ok(view);
     }
     let Some(pages) = pages else {
