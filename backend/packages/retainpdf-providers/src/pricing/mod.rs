@@ -60,8 +60,9 @@ struct LocalPrice {
     source: &'static str,
 }
 
-/// 人民币换美元：和 models.dev 换算国内站价格用的汇率一致（2026-11 约 7.16）。
-const CNY_PER_USD: f64 = 7.16;
+/// 人民币换美元：和 models.dev 换算国内站价格用的汇率一致（2026-11 约 7.16）。用户定了写死，不另外同步汇率；
+/// 用量和估价接口原样给前端（`usd_cny`）。
+pub const CNY_PER_USD: f64 = 7.16;
 
 const LOCAL_PRICES: [LocalPrice; 1] = [LocalPrice {
     // 智谱 GLM-OCR（layout_parsing）：「API输入输出同价，仅需 0.2 元/百万Tokens」，2026-11-19 核对。
@@ -384,6 +385,15 @@ impl Price {
     }
 }
 
+/// 这家服务商一天里最贵的时段是标价的几倍（DeepSeek 忙时 2 倍，别家 1）。估价的上限用它。
+pub fn peak_multiplier(provider: &str) -> f64 {
+    if provider == "deepseek" {
+        2.0
+    } else {
+        1.0
+    }
+}
+
 /// DeepSeek 忙时（工作日 UTC 01:00–04:00、06:00–10:00）按 models.dev 记的闲时价的 2 倍算。
 fn time_of_day_multiplier(provider: &str, ts: &str) -> f64 {
     if provider != "deepseek" {
@@ -396,7 +406,7 @@ fn time_of_day_multiplier(provider: &str, ts: &str) -> f64 {
     let weekday = !matches!(at.weekday(), Weekday::Sat | Weekday::Sun);
     let peak_hour = matches!(at.hour(), 1..=3 | 6..=9);
     if weekday && peak_hour {
-        2.0
+        peak_multiplier(provider)
     } else {
         1.0
     }

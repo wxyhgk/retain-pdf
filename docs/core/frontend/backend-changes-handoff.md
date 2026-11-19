@@ -12,6 +12,24 @@
 
 ---
 
+## 查单价、估价（feat/usage-estimate）
+
+2026-11-19。新接口和新字段，只增不改。详见 [模型用量](../../api/11-用量/01-模型用量.md#估价)。
+
+| 接口 | 用途 |
+|---|---|
+| `POST /api/v1/usage/prices`（`lookupModelPrices`） | 下拉框里每个候选模型的单价（每百万 token，美元） |
+| `GET /api/v1/documents/{id}/usage/estimate?base_url=&model=`（`estimateDocumentUsage`） | 这本书换这个模型重新翻译大概多少钱：`translation.low_cny`–`high_cny` |
+| `GET /api/v1/usage/estimate?base_url=&model=&pages=`（`estimateLibraryUsage`） | 还没有的书按书库每页平均估 |
+| 用量汇总、单价、估价里的 `pricing.usd_cny` | 1 美元 = 7.16 元（写死），前端不用再自己写 7.2 |
+
+- 契约 `token-usage.v1` 加了三个接口和 `PriceLookupView`、`UsageEstimateView` 等类型，`contracts/src`、`dist` 已重新生成；
+  前端的调用函数要跑 `npm --prefix frontend/packages/api run generate:client` 重新生成。
+- 估价放后端算：缓存、分档、DeepSeek 忙闲时的规则只在后端一处，前端只显示 `low_cny`–`high_cny`。
+  `basis = "none"`（没有可参照的用量）时不显示金额；`low_usd` 为 `null` 是模型查不到价。
+
+---
+
 ## 人文书第二遍分两轮（feat/agent-split-review）
 
 2026-11-19。接口、字段、事件都没变，前端不用改。人文社科、通俗读物每页的第二遍从"编辑一次做完"改成两轮：先审校只审意思，再由编辑只改文笔。

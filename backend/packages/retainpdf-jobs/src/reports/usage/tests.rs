@@ -219,6 +219,7 @@ fn view_fields_match_the_token_usage_contract() {
     assert_eq!(keys(&view["by_stage"][0]), required("UsageStageView"));
     assert_eq!(keys(&view["by_model"][0]), required("UsageModelView"));
     assert_eq!(keys(&view["by_month"][0]), required("UsageMonthView"));
+    assert_eq!(keys(&view["pricing"]), required("UsagePricingView"));
     let groups: Vec<&str> = schema["definitions"]["UsageStageGroup"]["enum"]
         .as_array()
         .unwrap()
@@ -289,5 +290,111 @@ fn ocr_rows_are_priced_and_do_not_hide_legacy_translation_reports() {
     assert!((ocr.usage.estimated_cost_usd * 7.16 - 0.16).abs() < 1e-5, "{}", ocr.usage.estimated_cost_usd);
     let translation = view.by_stage.iter().find(|s| s.stage == "translation").unwrap();
     assert_eq!(translation.usage.input_tokens, 3000, "旧诊断照样折算");
+    let _ = fs::remove_dir_all(root);
+}
+
+// ---- 估价（2026-11-19）----
+
+use super::estimate::{
+    estimate_from_history, estimate_from_library, library_sample, lookup_prices, PriceLookupInput, PriceLookupItem,
+};
+
+fn contract_required(name: &str) -> Vec<String> {
+    let schema: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../contracts/token-usage.v1.schema.json")).unwrap(),
+    )
+    .unwrap();
+    let mut keys: Vec<String> = schema["definitions"][name]["required"].as_array().unwrap().iter().map(|k| k.as_str().unwrap().to_string()).collect();
+    keys.sort();
+    keys
+}
+
+fn sorted_keys(value: &serde_json::Value) -> Vec<String> {
+    let mut keys: Vec<String> = value.as_object().unwrap().keys().cloned().collect();
+    keys.sort();
+    keys
+}
+
+fn haiku_row(ts: &str, stage: &str, input: u64, output: u64, cache_hit: u64) -> serde_json::Value {
+    json!({"v": 1, "ts": ts, "stage": stage, "model": "claude-haiku-5-5", "host": "api.anthropic.com",
+           "input": input, "output": output, "cache_hit": cache_hit, "cache_write": 0, "usage_reported": true})
+}
+
+#[test]
+fn price_lookup_quotes_each_connection_with_the_usage_rules() {
+    let prices = PriceBook::bundled();
+    let item = |base_url: &str, model: &str| PriceLookupItem { base_url: base_url.to_string(), model: model.to_string() };
+    let view = lookup_prices(&prices, &PriceLookupInput { items: vec![
+        item("https://api.deepseek.com/v1", "deepseek-flash"),
+        item("https://proxy.example.com/v1", "claude-haiku-5-5"),
+        item("http://1.2.3.4:8000/v1", "home-made"),
+    ] });
+    let value = serde_json::to_value(&view).unwrap();
+    assert_eq!(sorted_keys(&value), contract_required("PriceLookupView"));
+    assert_eq!(sorted_keys(&value["items"][0]), contract_required("PriceQuoteView"));
+    assert_eq!(sorted_keys(&value["items"][0]["price"]), contract_required("PriceView"));
+    assert_eq!(sorted_keys(&value["items"][1]["price"]["tiers"][0]), contract_required("PriceTierView"));
+    assert_eq!(value["items"][0]["price_provider"], "deepseek");
+    assert_eq!(value["items"][0]["price"]["peak_multiplier"], 2.0, "DeepSeek 忙时 2 倍");
+    assert_eq!((value["items"][1]["price_basis"].clone(), value["items"][1]["price"]["peak_multiplier"].clone()), (json!("official_list"), json!(1.0)));
+    assert_eq!((value["items"][2]["price"].clone(), value["items"][2]["price_basis"].clone()), (serde_json::Value::Null, serde_json::Value::Null));
+    assert_eq!(value["pricing"]["usd_cny"], 7.16);
+}
+
+/// 按这本书最近一次翻译重算：OCR 不算（复用），翻译、精修分开；下限按上次的缓存，上限当缓存全没命中。
+#[test]
+fn a_book_is_estimated_from_its_latest_translation_run() {
+    let root = temp_root("estimate-history");
+    write_ledger(&root, "job-old", &[haiku_row("2026-11-01T00:00:00Z", "translation", 999_999, 1, 0)]);
+    write_ledger(&root, "job-new", &[
+        json!({"v": 1, "ts": "2026-11-18T00:00:00Z", "stage": "ocr", "model": "glm-ocr", "host": "open.bigmodel.cn", "input": 700000, "output": 100000, "usage_reported": true}),
+        haiku_row("2026-11-18T01:00:00Z", "translation", 10_000, 2_000, 4_000),
+        haiku_row("2026-11-18T01:01:00Z", "term_prescan", 5_000, 500, 0),
+        haiku_row("2026-11-18T02:00:00Z", "refine_review", 3_000, 300, 0),
+    ]);
+    let prices = PriceBook::bundled();
+    let view = estimate_from_history(&prices, &root, ["job-old", "job-new"], "https://api.deepseek.com", "deepseek-flash", Some(12)).unwrap();
+    let value = serde_json::to_value(&view).unwrap();
+    assert_eq!(sorted_keys(&value), contract_required("UsageEstimateView"));
+    assert_eq!(sorted_keys(&value["translation"]), contract_required("UsageEstimatePart"));
+    assert_eq!((view.basis, view.source_job_id.as_deref(), view.pages), ("book_history", Some("job-new"), Some(12)));
+
+    let translation = view.translation.as_ref().unwrap();
+    assert_eq!((translation.requests, translation.input_tokens, translation.cache_hit_tokens), (2, 15_000, 4_000), "OCR 不算");
+    let (_, _, flash) = prices.quote("api.deepseek.com", "deepseek-flash", "2026-11-19T00:00:00Z").unwrap();
+    let low = (11_000.0 * flash.input + 4_000.0 * flash.cache_read.unwrap() + 2_500.0 * flash.output) / 1e6;
+    let high = (15_000.0 * flash.input + 2_500.0 * flash.output) / 1e6 * 2.0;
+    assert!((translation.low_usd.unwrap() - low).abs() < 1e-6, "{translation:?}");
+    assert!((translation.high_usd.unwrap() - high).abs() < 1e-6, "{translation:?}");
+    assert!((translation.low_cny.unwrap() - low * 7.16).abs() < 1e-3);
+    assert_eq!(view.refine.as_ref().unwrap().input_tokens, 3_000);
+
+    let unpriced = estimate_from_history(&prices, &root, ["job-new"], "http://1.2.3.4/v1", "home-made", None).unwrap();
+    assert_eq!((unpriced.price_basis, unpriced.translation.as_ref().unwrap().low_usd), (None, None), "查不到价照样给 token");
+    assert!(estimate_from_history(&prices, &root, ["job-none"], "https://api.deepseek.com", "deepseek-flash", None).is_none());
+    let _ = fs::remove_dir_all(root);
+}
+
+/// 没翻译过的书：书库各本书最近一次翻译合起来按页平均，再乘页数。
+#[test]
+fn an_untranslated_book_is_estimated_from_the_library_average_per_page() {
+    let root = temp_root("estimate-library");
+    write_ledger(&root, "job-a", &vec![haiku_row("2026-11-18T00:00:00Z", "translation", 20_000, 4_000, 0); 2]);
+    write_ledger(&root, "job-b", &vec![haiku_row("2026-11-18T00:00:00Z", "translation", 20_000, 4_000, 0); 2]);
+    let books = vec![(10, vec!["job-a".to_string()]), (30, vec!["job-b".to_string()]), (0, vec!["job-a".to_string()]), (5, vec!["job-none".to_string()])];
+    let sample = library_sample(&root, books);
+    assert_eq!(sample.documents, 2, "没页数、没翻译记录的书不算");
+    let prices = PriceBook::bundled();
+    let view = estimate_from_library(&prices, &sample, "https://api.anthropic.com", "claude-haiku-5-5", 20);
+    assert_eq!((view.basis, view.sample_documents, view.sample_pages, view.pages), ("library_average", 2, 40, Some(20)));
+    let translation = view.translation.unwrap();
+    assert_eq!((translation.requests, translation.input_tokens, translation.output_tokens), (2, 40_000, 8_000), "40 页 4 次请求，20 页 2 次");
+    let (_, _, haiku) = prices.quote("api.anthropic.com", "claude-haiku-5-5", "2026-11-19T00:00:00Z").unwrap();
+    let expected = 2.0 * (20_000.0 * haiku.input + 4_000.0 * haiku.output) / 1e6;
+    assert!((translation.low_usd.unwrap() - expected).abs() < 1e-6);
+    assert!(view.refine.is_none());
+
+    let empty = estimate_from_library(&prices, &library_sample(&root, Vec::new()), "https://api.anthropic.com", "claude-haiku-5-5", 20);
+    assert_eq!((empty.basis, empty.translation.is_none()), ("none", true));
     let _ = fs::remove_dir_all(root);
 }

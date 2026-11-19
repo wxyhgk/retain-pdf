@@ -24,6 +24,42 @@
       "note": "scope=document：这本书的全部任务，加上问这本书时助手花的。书不存在时 404（2026-10-19 以前是 200 和全零汇总）；有书没任务是 200 空汇总。",
       "rust_view": "services/jobs/reports/usage :: UsageSummaryView",
       "ts_consumer": "@retainpdf/contracts/token-usage :: UsageSummaryView"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/usage/prices",
+      "client_name": "lookupModelPrices",
+      "transport": "json",
+      "input": "PriceLookupInput",
+      "output": "PriceLookupView",
+      "errors": { "400": "BAD_REQUEST：超过 100 条、字段不认识" },
+      "note": "2026-11-19 起。按（接口地址，模型）批量查每百万 token 的美元单价，对价规则和用量汇总一样（域名对服务商、对不上按官方标价、查不到给 null）。下拉框显示单价用；估价用下面两个接口，别在前端自己乘。",
+      "rust_view": "services/jobs/reports/usage :: PriceLookupView",
+      "ts_consumer": "@retainpdf/contracts/token-usage :: PriceLookupView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/:document_id/usage/estimate",
+      "client_name": "estimateDocumentUsage",
+      "transport": "json",
+      "query": "DocumentUsageEstimateQuery",
+      "output": "UsageEstimateView",
+      "errors": { "400": "BAD_REQUEST：base_url 不是 http(s)、model 为空、参数不认识", "404": "NOT_FOUND：书不存在" },
+      "note": "2026-11-19 起。这本书换个模型重新翻译大概多少钱：按它最近一次翻译的逐条用量重算（basis=book_history）；没翻译过按书库每页平均乘它的页数（library_average）；都没有是 none。",
+      "rust_view": "services/jobs/reports/usage :: UsageEstimateView",
+      "ts_consumer": "@retainpdf/contracts/token-usage :: UsageEstimateView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/usage/estimate",
+      "client_name": "estimateLibraryUsage",
+      "transport": "json",
+      "query": "LibraryUsageEstimateQuery",
+      "output": "UsageEstimateView",
+      "errors": { "400": "BAD_REQUEST：base_url 不是 http(s)、model 为空、pages 不在 1..=100000、参数不认识" },
+      "note": "2026-11-19 起。还没有的书：书库里各本书最近一次翻译的每页平均乘 pages（basis=library_average；书库里没有翻译过的书是 none）。多用户模式只算当前账号的任务。",
+      "rust_view": "services/jobs/reports/usage :: UsageEstimateView",
+      "ts_consumer": "@retainpdf/contracts/token-usage :: UsageEstimateView"
     }
   ],
   "definitions": {
@@ -216,12 +252,138 @@
       "type": "object",
       "additionalProperties": false,
       "description": "估算花费用的价格表（2026-11-19 起）。服务端每天从 models.dev 同步一次，价格变了追加不覆盖，每条用量按它那天的价算；没同步过用仓库里带的快照。",
-      "required": ["source", "synced_at", "snapshot_date", "currency"],
+      "required": ["source", "synced_at", "snapshot_date", "currency", "usd_cny"],
       "properties": {
         "source": { "type": "string", "description": "价格来源地址。" },
         "synced_at": { "type": ["string", "null"], "description": "最后一次同步成功的时间（UTC，RFC 3339）；没同步过为 null。" },
         "snapshot_date": { "type": ["string", "null"], "description": "没同步过时用的内置快照日期（YYYY-MM-DD）；同步过为 null。" },
-        "currency": { "type": "string", "enum": ["USD"] }
+        "currency": { "type": "string", "enum": ["USD"] },
+        "usd_cny": { "type": "number", "minimum": 0, "description": "1 美元换多少人民币（2026-11-19 起，写死 7.16，和 models.dev 换算国内站价格用的一致），显示「约 ¥x」用。" }
+      }
+    },
+    "PriceBasis": {
+      "type": ["string", "null"],
+      "enum": ["host", "official_list", null],
+      "description": "host：接口域名对上了这家服务商；official_list：域名对不上，按模型官方标价；查不到价为 null。"
+    },
+    "PriceLookupItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_url", "model"],
+      "properties": {
+        "base_url": { "type": "string" },
+        "model": { "type": "string" }
+      }
+    },
+    "PriceLookupInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "maxItems": 100, "items": { "$ref": "#/definitions/PriceLookupItem" } }
+      }
+    },
+    "PriceTierView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["above_input_tokens", "input", "output", "cache_read", "cache_write"],
+      "properties": {
+        "above_input_tokens": { "type": "integer", "minimum": 0, "description": "一次请求的输入超过这个数，整次按这一档。" },
+        "input": { "type": "number" },
+        "output": { "type": "number" },
+        "cache_read": { "type": ["number", "null"] },
+        "cache_write": { "type": ["number", "null"] }
+      }
+    },
+    "PriceView": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "每百万 token 的美元单价。cache_read / cache_write 为 null 表示按输入价算。",
+      "required": ["input", "output", "cache_read", "cache_write", "tiers", "peak_multiplier"],
+      "properties": {
+        "input": { "type": "number" },
+        "output": { "type": "number" },
+        "cache_read": { "type": ["number", "null"] },
+        "cache_write": { "type": ["number", "null"] },
+        "tiers": { "type": "array", "items": { "$ref": "#/definitions/PriceTierView" }, "description": "门槛从低到高。" },
+        "peak_multiplier": { "type": "number", "description": "一天里最贵的时段是标价的几倍：DeepSeek 忙时 2，别家 1。" }
+      }
+    },
+    "PriceQuoteView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["base_url", "model", "price_provider", "price_basis", "price"],
+      "properties": {
+        "base_url": { "type": "string", "description": "原样回传。" },
+        "model": { "type": "string", "description": "原样回传。" },
+        "price_provider": { "type": ["string", "null"], "description": "models.dev 的服务商编号；查不到为 null。" },
+        "price_basis": { "$ref": "#/definitions/PriceBasis" },
+        "price": { "oneOf": [{ "$ref": "#/definitions/PriceView" }, { "type": "null" }] }
+      }
+    },
+    "PriceLookupView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pricing", "items"],
+      "properties": {
+        "pricing": { "$ref": "#/definitions/UsagePricingView" },
+        "items": { "type": "array", "items": { "$ref": "#/definitions/PriceQuoteView" }, "description": "和请求的 items 一一对应、同顺序。" }
+      }
+    },
+    "DocumentUsageEstimateQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "deny_unknown_fields，不认识的参数 400。",
+      "required": ["base_url", "model"],
+      "properties": {
+        "base_url": { "type": "string", "description": "要换成的接口地址（http/https）。" },
+        "model": { "type": "string", "description": "要换成的模型编号。" }
+      }
+    },
+    "LibraryUsageEstimateQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "deny_unknown_fields，不认识的参数 400。",
+      "required": ["base_url", "model", "pages"],
+      "properties": {
+        "base_url": { "type": "string" },
+        "model": { "type": "string" },
+        "pages": { "type": "integer", "minimum": 1, "maximum": 100000, "description": "要估的页数。" }
+      }
+    },
+    "UsageEstimatePart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "input_tokens", "output_tokens", "cache_hit_tokens", "low_usd", "high_usd", "low_cny", "high_cny"],
+      "properties": {
+        "requests": { "type": "integer", "minimum": 0 },
+        "input_tokens": { "type": "integer", "minimum": 0 },
+        "output_tokens": { "type": "integer", "minimum": 0 },
+        "cache_hit_tokens": { "type": "integer", "minimum": 0 },
+        "low_usd": { "type": ["number", "null"], "description": "下限：缓存命中照参照的比例。查不到价为 null。" },
+        "high_usd": { "type": ["number", "null"], "description": "上限：缓存全没命中、按最贵时段（DeepSeek 忙时 2 倍）。" },
+        "low_cny": { "type": ["number", "null"], "description": "low_usd × usd_cny。" },
+        "high_cny": { "type": ["number", "null"] }
+      }
+    },
+    "UsageEstimateView": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "只是估：模型换了，输出长短、重试次数都会变，界面写「约 ¥1.2–1.8」。",
+      "required": ["basis", "base_url", "model", "price_provider", "price_basis", "pages", "source_job_id", "sample_documents", "sample_pages", "translation", "refine", "pricing"],
+      "properties": {
+        "basis": { "type": "string", "enum": ["book_history", "library_average", "none"], "description": "book_history：按这本书最近一次翻译；library_average：按书库每页平均乘页数；none：没有可参照的用量（translation、refine 都是 null）。" },
+        "base_url": { "type": "string" },
+        "model": { "type": "string" },
+        "price_provider": { "type": ["string", "null"] },
+        "price_basis": { "$ref": "#/definitions/PriceBasis" },
+        "pages": { "type": ["integer", "null"], "minimum": 0, "description": "按书库平均估时乘的页数；按这本书估时是这本书的页数（不知道为 null）。" },
+        "source_job_id": { "type": ["string", "null"], "description": "按这本书估时参照的任务。" },
+        "sample_documents": { "type": "integer", "minimum": 0, "description": "按书库平均估时参照了几本书。" },
+        "sample_pages": { "type": "integer", "minimum": 0, "description": "这些书一共几页。" },
+        "translation": { "oneOf": [{ "$ref": "#/definitions/UsageEstimatePart" }, { "type": "null" }], "description": "翻译（含译前准备，不含 OCR：重新翻译复用 OCR）。" },
+        "refine": { "oneOf": [{ "$ref": "#/definitions/UsageEstimatePart" }, { "type": "null" }], "description": "精修、编辑部；参照里没有精修为 null。" },
+        "pricing": { "$ref": "#/definitions/UsagePricingView" }
       }
     }
   }

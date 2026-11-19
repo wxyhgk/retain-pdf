@@ -7,12 +7,185 @@
 /**
  * Endpoint input, query, and output DTOs published by token-usage.v1.schema.json.
  */
-export type TokenUsageSchema = UsageSummaryView;
+export type TokenUsageSchema =
+  | DocumentUsageEstimateQuery
+  | LibraryUsageEstimateQuery
+  | PriceLookupInput
+  | PriceLookupView
+  | UsageEstimateView
+  | UsageSummaryView;
+/**
+ * host：接口域名对上了这家服务商；official_list：域名对不上，按模型官方标价；查不到价为 null。
+ */
+export type PriceBasis = "host" | "official_list" | null;
 /**
  * 界面按它分组：翻译 / 译前准备 / 精修与编辑部 / 助手 / 其它。
  */
 export type UsageStageGroup = "translation" | "preparation" | "refine" | "assistant" | "other";
 
+/**
+ * deny_unknown_fields，不认识的参数 400。
+ */
+export interface DocumentUsageEstimateQuery {
+  /**
+   * 要换成的接口地址（http/https）。
+   */
+  base_url: string;
+  /**
+   * 要换成的模型编号。
+   */
+  model: string;
+}
+/**
+ * deny_unknown_fields，不认识的参数 400。
+ */
+export interface LibraryUsageEstimateQuery {
+  base_url: string;
+  model: string;
+  /**
+   * 要估的页数。
+   */
+  pages: number;
+}
+export interface PriceLookupInput {
+  /**
+   * @maxItems 100
+   */
+  items: PriceLookupItem[];
+}
+export interface PriceLookupItem {
+  base_url: string;
+  model: string;
+}
+export interface PriceLookupView {
+  pricing: UsagePricingView;
+  /**
+   * 和请求的 items 一一对应、同顺序。
+   */
+  items: PriceQuoteView[];
+}
+/**
+ * 估算花费用的价格表（2026-11-19 起）。服务端每天从 models.dev 同步一次，价格变了追加不覆盖，每条用量按它那天的价算；没同步过用仓库里带的快照。
+ */
+export interface UsagePricingView {
+  /**
+   * 价格来源地址。
+   */
+  source: string;
+  /**
+   * 最后一次同步成功的时间（UTC，RFC 3339）；没同步过为 null。
+   */
+  synced_at: string | null;
+  /**
+   * 没同步过时用的内置快照日期（YYYY-MM-DD）；同步过为 null。
+   */
+  snapshot_date: string | null;
+  currency: "USD";
+  /**
+   * 1 美元换多少人民币（2026-11-19 起，写死 7.16，和 models.dev 换算国内站价格用的一致），显示「约 ¥x」用。
+   */
+  usd_cny: number;
+}
+export interface PriceQuoteView {
+  /**
+   * 原样回传。
+   */
+  base_url: string;
+  /**
+   * 原样回传。
+   */
+  model: string;
+  /**
+   * models.dev 的服务商编号；查不到为 null。
+   */
+  price_provider: string | null;
+  price_basis: PriceBasis;
+  price: PriceView | null;
+}
+/**
+ * 每百万 token 的美元单价。cache_read / cache_write 为 null 表示按输入价算。
+ */
+export interface PriceView {
+  input: number;
+  output: number;
+  cache_read: number | null;
+  cache_write: number | null;
+  /**
+   * 门槛从低到高。
+   */
+  tiers: PriceTierView[];
+  /**
+   * 一天里最贵的时段是标价的几倍：DeepSeek 忙时 2，别家 1。
+   */
+  peak_multiplier: number;
+}
+export interface PriceTierView {
+  /**
+   * 一次请求的输入超过这个数，整次按这一档。
+   */
+  above_input_tokens: number;
+  input: number;
+  output: number;
+  cache_read: number | null;
+  cache_write: number | null;
+}
+/**
+ * 只是估：模型换了，输出长短、重试次数都会变，界面写「约 ¥1.2–1.8」。
+ */
+export interface UsageEstimateView {
+  /**
+   * book_history：按这本书最近一次翻译；library_average：按书库每页平均乘页数；none：没有可参照的用量（translation、refine 都是 null）。
+   */
+  basis: "book_history" | "library_average" | "none";
+  base_url: string;
+  model: string;
+  price_provider: string | null;
+  price_basis: PriceBasis;
+  /**
+   * 按书库平均估时乘的页数；按这本书估时是这本书的页数（不知道为 null）。
+   */
+  pages: number | null;
+  /**
+   * 按这本书估时参照的任务。
+   */
+  source_job_id: string | null;
+  /**
+   * 按书库平均估时参照了几本书。
+   */
+  sample_documents: number;
+  /**
+   * 这些书一共几页。
+   */
+  sample_pages: number;
+  /**
+   * 翻译（含译前准备，不含 OCR：重新翻译复用 OCR）。
+   */
+  translation: UsageEstimatePart | null;
+  /**
+   * 精修、编辑部；参照里没有精修为 null。
+   */
+  refine: UsageEstimatePart | null;
+  pricing: UsagePricingView;
+}
+export interface UsageEstimatePart {
+  requests: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_hit_tokens: number;
+  /**
+   * 下限：缓存命中照参照的比例。查不到价为 null。
+   */
+  low_usd: number | null;
+  /**
+   * 上限：缓存全没命中、按最贵时段（DeepSeek 忙时 2 倍）。
+   */
+  high_usd: number | null;
+  /**
+   * low_usd × usd_cny。
+   */
+  low_cny: number | null;
+  high_cny: number | null;
+}
 export interface UsageSummaryView {
   scope: "document" | "all";
   totals: UsageBucket;
@@ -173,22 +346,4 @@ export interface UsageMonthView {
   priced_requests: number;
   list_priced_requests: number;
   unpriced_requests: number;
-}
-/**
- * 估算花费用的价格表（2026-11-19 起）。服务端每天从 models.dev 同步一次，价格变了追加不覆盖，每条用量按它那天的价算；没同步过用仓库里带的快照。
- */
-export interface UsagePricingView {
-  /**
-   * 价格来源地址。
-   */
-  source: string;
-  /**
-   * 最后一次同步成功的时间（UTC，RFC 3339）；没同步过为 null。
-   */
-  synced_at: string | null;
-  /**
-   * 没同步过时用的内置快照日期（YYYY-MM-DD）；同步过为 null。
-   */
-  snapshot_date: string | null;
-  currency: "USD";
 }
