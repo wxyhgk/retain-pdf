@@ -168,3 +168,11 @@ def test_an_openai_job_runs_the_whole_agent_through_the_shared_request_layer(tmp
     assert items["p001-b001"]["translated_text"].startswith("译文：") and "$ ^{12} $" in items["p001-b001"]["translated_text"]
     assert items["p002-b001"]["final_status"] == "translated"
     assert not ledger.exists() or not ledger.read_text(encoding="utf-8").strip(), "the shared layer records usage, agent_flow must not"
+
+
+def test_the_read_only_tool_loop_is_refused_instead_of_forced_into_json() -> None:
+    """初译的多轮只读工具（tool_choice auto）共用请求层还不支持：报错，不能被当成强制交卷的 JSON 请求。"""
+    body = _body()
+    body.update(tools=[{**READING_TOOL, "name": "search_book"}, {**READING_TOOL, "name": "lookup_term"}], tool_choice={"type": "auto"})
+    with pytest.raises(ValueError, match="not supported over the OpenAI protocol"):
+        agent_openai.openai_request(body)
