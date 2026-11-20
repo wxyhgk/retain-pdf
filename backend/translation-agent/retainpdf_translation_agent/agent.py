@@ -51,7 +51,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 BREAK = "[[BREAK]]"
 BREAK_RE = re.compile(r"\s*\[\[BREAK\]\]\s*")
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-20"
+PROMPT_VERSION = "translation-agent-21"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"

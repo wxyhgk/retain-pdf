@@ -272,6 +272,65 @@ def style_signals(source: str, translation: str | None) -> list[dict]:
     return issues
 
 
+# 意思闸门（2026-11-20）：程序逐段打可疑标记，审校只看带标记的段。标记会有误报（作者换了说法），交给审校判断。
+DOUBT_RE = re.compile(
+    r"\b(may|might|perhaps|maybe|possibly|probably|likely|unlikely|seems?|seemed|appears? to|appeared to|presumably|arguably|apparently|"
+    r"I (?:suspect|guess|imagine|think|believe|wonder)|it is possible)\b",
+    re.IGNORECASE,
+)
+DOUBT_ZH = HEDGE_ZH + ("多半", "想必", "八成", "兴许", "说不定", "我猜", "我想", "我估计", "我怀疑", "仿佛", "似是", "或者", "吧", "怕是", "可以说", "我觉得", "我相信", "据说", "显然")
+NEG_RE = re.compile(r"\b(not|never|no|none|nothing|nobody|nowhere|neither|nor|without|cannot|hardly|barely|scarcely|seldom|rarely)\b|n't\b", re.IGNORECASE)
+NEG_ZH = ("不", "没", "无", "未", "非", "别", "勿", "莫", "否", "毫", "难", "鲜", "罕", "少有", "拒", "缺", "失")
+
+
+NEG_ZH_RE = re.compile(r"不|没|无|未|非|别|勿|莫|否|毫|难以|鲜|罕|拒绝|缺|失败")
+SENT_EN_RE = re.compile(r"[.!?](?:[\"'”’)\]]*)\s+(?=[\"'“‘(]*[A-Z])")
+SENT_ZH_RE = re.compile(r"[。！？]")
+
+
+def _doubt_count(text: str) -> int:
+    return sum(text.count(word) for word in DOUBT_ZH)
+
+
+def meaning_flags(source: str, translation: str | None) -> list[str]:
+    """这一段可能丢了意思的地方（给审校的提示，中文一句一条）。按个数比：原文里推测语气、否定、句子有几处，译文里少了就标；
+    数字找不到也标。只看"有没有"太粗：一段里删掉一个「不」，别处还有否定词就查不出（11-20 埋错评测 10 处只标出 4 处）。"""
+    if not translation or not CJK_RE.search(translation):
+        return []
+    plain = _strip_protected(source)
+    flags: list[str] = []
+    doubts = [m.group(1).lower() for m in DOUBT_RE.finditer(plain)]
+    if doubts and _doubt_count(translation) < len(doubts):
+        flags.append(f"原文有 {len(doubts)} 处表示推测、保留的词 {sorted(set(doubts))[:4]}，译文里只找到 {_doubt_count(translation)} 处「可能、或许、大概、似乎」之类")
+    negations = [(m.group(1) or "n't").lower() for m in NEG_RE.finditer(plain)]
+    zh_negations = len(NEG_ZH_RE.findall(translation))
+    if negations and zh_negations < len(negations):
+        flags.append(f"原文有 {len(negations)} 处否定 {sorted(set(negations))[:4]}，译文里只找到 {zh_negations} 处否定词")
+    src_sentences = len(SENT_EN_RE.findall(plain.strip() + " X")) if plain.strip() else 0
+    zh_sentences = len(SENT_ZH_RE.findall(translation))
+    if src_sentences >= 3 and zh_sentences <= src_sentences - 2:
+        flags.append(f"原文 {src_sentences} 句，译文只有 {zh_sentences} 句，看看有没有漏掉的句子、分句")
+    lost = [i["message"] for i in check_block(source, translation) if i["code"] == "number_lost"]
+    if lost:
+        flags.append(lost[0])
+    return flags
+
+
+def short_outliers(pairs: list[tuple[str, str, str]], *, min_words: int = 20, share: float = 0.7) -> dict[str, str]:
+    """一节里明显比别的段短的译文（可能漏了句子、分句）：每段算「中文字数 / 原文词数」，低于全节中位数的 `share` 倍算短。
+    `pairs` 是 [(段 id, 原文, 译文)]；原文不到 `min_words` 个词的不算。返回 {段 id: 提示}。"""
+    ratios: dict[str, float] = {}
+    for key, source, translation in pairs:
+        words = len(PROSE_WORD_RE.findall(_strip_protected(source)))
+        if words >= min_words and translation:
+            ratios[key] = len(CJK_RE.findall(translation)) / words
+    if len(ratios) < 4:
+        return {}
+    ordered = sorted(ratios.values())
+    median = ordered[len(ordered) // 2]
+    return {key: f"译文比同一节别的段短不少（每个英文词 {ratio:.1f} 个汉字，全节中位数 {median:.1f}），可能漏了句子" for key, ratio in ratios.items() if ratio < median * share}
+
+
 def status_of(issues: list[dict]) -> str:
     """error 优先，其次 warn；info 只是记一笔，不影响状态。"""
     if any(i["severity"] == "error" for i in issues):

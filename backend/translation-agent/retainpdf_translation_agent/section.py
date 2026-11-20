@@ -46,7 +46,7 @@ from retainpdf_translation_agent.memory import term_pattern
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
-SECTION_VERSION = "agent-section-6"
+SECTION_VERSION = "agent-section-7"
 MAX_STORY = 6  # 传给后面的节的本章梗概，最多几句
 STORY_CHARS = 600
 FALLBACK_NEIGHBORS = 2  # 退回逐块翻时，每段前后各带几段作上下文
@@ -101,9 +101,10 @@ SECTION_NARRATIVE_PROMPT = """你是出版社的资深译者，正在把一本�
 - ⟦F1⟧、⟦C1⟧ 这样的占位符（公式、代码）原样留在译文里对应的位置，一个不能少；{{fn:1}} 脚注标记、[1] 引用标记也原样留着。
 - 以 § 开头的行是已经定好译文的标题，版面上单独排好了，只作上下文：不要输出，也不要把它并进别的段。
 - 只输出译稿：不要写说明、更正、思考过程。发现某段写错了，就用同一个编号把那一段整段重写一遍，以最后一次为准。
-- 译稿最后可以附两节（没有就不写，各自另起一行开头）：
+- 译稿最后可以附三节（没有就不写，各自另起一行开头）：
   @@ 新词：这一节里第一次出现、上面没给译法的人名、机构、缩写和专门说法，每行「原文 | 译法」；缩写的译法写中文全称
   （TSA | 运输安全管理局），译文里第一次写成「运输安全管理局（TSA）」。
+  @@ 拿不准：你没把握的段（原文读不太懂、一词多义拿不定、找不到合适说法），每行「¶编号 原因」，审校会重点看。
   @@ 梗概：一句话，这一节讲了什么，给后面的节接上文用。"""
 
 
@@ -291,7 +292,7 @@ def _strip_notes(body: str) -> tuple[str, list[str]]:
     return text, dropped
 
 
-TAIL_RE = re.compile(r"^[ \t]*@@[ \t]*(新词|梗概)[ \t]*[:：]?[ \t]*", re.M)
+TAIL_RE = re.compile(r"^[ \t]*@@[ \t]*(新词|拿不准|梗概)[ \t]*[:：]?[ \t]*", re.M)
 ABBR_SHAPE_RE = re.compile(r"^[A-Z][A-Z0-9&]{1,9}s?$")
 NAME_PARTICLES = {"de", "da", "del", "der", "di", "du", "la", "le", "van", "von", "of", "the", "and", "for", "y", "bin", "al"}
 
@@ -302,6 +303,7 @@ class Tail:
 
     terms: list[tuple[str, str]] = field(default_factory=list)
     summary: str = ""
+    doubts: dict[int, str] = field(default_factory=dict)  # 段号 → 译者说的原因
 
 
 def split_tail(text: str) -> tuple[str, Tail]:
@@ -316,6 +318,12 @@ def split_tail(text: str) -> tuple[str, Tail]:
         chunk = rest[mark.end(): marks[i + 1].start() if i + 1 < len(marks) else len(rest)].strip()
         if mark.group(1) == "梗概":
             tail.summary = " ".join(chunk.split())[:200]
+            continue
+        if mark.group(1) == "拿不准":
+            for line in chunk.splitlines():
+                found = re.match(r"\s*[-•]?\s*¶?\s*(\d+)\s*[：:，,、 ]\s*(.*)", line)
+                if found:
+                    tail.doubts[int(found.group(1))] = found.group(2).strip()[:120] or "译者没把握"
             continue
         for line in chunk.splitlines():
             parts = [p.strip(" -•\t「」") for p in re.split(r"[|｜]", line)]
@@ -452,6 +460,34 @@ def fallback_page(units: PageInput, wanted: set[str], results: dict[str, BlockRe
     return replace(page, context=build_context(page, glossary, previous=previous, style=style, used_abbreviations=seen_names))
 
 
+def section_flags(paragraphs: list[Paragraph], results: dict[str, BlockResult], tails: list[Tail]) -> dict[str, list[str]]:
+    """意思闸门（2026-11-20）：给审校的可疑标记，随段附上（整节照审）。标记三种来源：
+    程序对照原文（推测语气、否定、数字找不到对应，`checks.meaning_flags`）；这一段比同节别的段短不少（`checks.short_outliers`）；
+    译者附的「@@ 拿不准」。埋错评测（10 处错、40 段）：程序只标得出 4 处（中文「不仅」「无论」撑高了否定词个数，删一个「不」查不出），
+    只审带标记的段审校输入少四分之三、却只抓到 2 处；整节照审抓到 3–4 处，附不附标记差不多。所以默认整节照审、标记当提示；
+    `review_page(only=…)` 留着，换更强的审校模型、只审可疑段时再用。返回 {段 id: [提示]}。"""
+    from retainpdf_translation_agent.checks import meaning_flags
+    from retainpdf_translation_agent.checks import short_outliers
+
+    flags: dict[str, list[str]] = {}
+    pairs = []
+    for paragraph in paragraphs:
+        result = results.get(paragraph.unit.id)
+        if result is None or not result.translation:
+            continue
+        pairs.append((paragraph.unit.id, paragraph.unit.text, result.translation))
+        for reason in meaning_flags(paragraph.unit.text, result.translation):
+            flags.setdefault(paragraph.unit.id, []).append(reason)
+    for key, reason in short_outliers(pairs).items():
+        flags.setdefault(key, []).append(reason)
+    by_number = {p.n: p.unit.id for p in paragraphs}
+    for tail in tails:
+        for number, why in tail.doubts.items():
+            if number in by_number and by_number[number] in results:
+                flags.setdefault(by_number[number], []).append(f"译者没把握：{why}")
+    return flags
+
+
 def learn_section(
     glossary: Glossary,
     paragraphs: list[Paragraph],
@@ -526,7 +562,7 @@ def translate_section(
     review: bool = False,
     story: list[str] | None = None,
 ) -> SectionOutcome:
-    """一节几页一次翻完。`previous`：上一节最后几段的原文和译文（接上文用）；`seen_names`：前面几节已经出现过的人名、缩写；
+    """一节几页一次翻完（`review=True` 时整节审一次意思，带可疑标记的段附上提示，见 `section_flags`）。`previous`：上一节最后几段的原文和译文（接上文用）；`seen_names`：前面几节已经出现过的人名、缩写；
     `story`：本章前面各节的一句话梗概（译者交卷时附的「@@ 梗概」）。译者附的「@@ 新词」核实后记进术语表（`learn_section`）。
     模型、请求缓存、用量、编辑部事件都走 `agent`。"""
     combined = combine_pages(pages)
@@ -654,7 +690,9 @@ def translate_section(
             for t in section_terms(glossary, section_text, chapters)
             if t.status in BINDING
         ]
-        review_report = review_page(agent, replace(units, context={"style": style, "terms": bound}), results, accuracy_only=True)
+        flags = section_flags(paragraphs, results, tails)
+        review_report = review_page(agent, replace(units, context={"style": style, "terms": bound}), results, accuracy_only=True, hints=flags)
+        review_report["flagged"] = sorted(flags)
     places = {b.id: (page.page_label, page.chapter) for page in pages for b in page.blocks}
     for group_id, members in groups.items():
         if members and members[0].id in places:
@@ -675,6 +713,7 @@ def translate_section(
     }
     if review_report is not None:
         info["review"] = review_report
+        info["flags"] = len(review_report.get("flagged") or [])
     return SectionOutcome(split, info)
 
 
