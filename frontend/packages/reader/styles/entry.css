@@ -43,6 +43,7 @@
 @import "./version-compare.css" layer(pages);
 @import "./issues.css" layer(pages);
 @import "./toolball.css" layer(pages);
+@import "./ink.css" layer(pages);
 /* Markdown 悬浮预览（含 MathJax） */
 @import "./markdown.css" layer(pages);
 @import "./markdown-blocks.css" layer(pages);

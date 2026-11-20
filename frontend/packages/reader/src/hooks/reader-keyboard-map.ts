@@ -79,6 +79,15 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
     ],
   },
   {
+    title: "画笔",
+    items: [
+      { actions: [], keys: "P", desc: "进入 / 退出画笔（书页上右键也能选笔和颜色）" },
+      { actions: [], keys: "Esc", desc: "退出画笔" },
+      { actions: [], keys: "⌘Z / Ctrl+Z", desc: "画笔模式下撤销" },
+      { actions: [], keys: "Shift+右键", desc: "浏览器自己的右键菜单" },
+    ],
+  },
+  {
     title: "待处理",
     items: [
       { actions: [], keys: "N / Shift+N", desc: "跳到下一处 / 上一处要看一眼的段落（底栏「待处理」）" },
