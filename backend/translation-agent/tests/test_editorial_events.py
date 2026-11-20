@@ -37,7 +37,7 @@ FIELDS = {
     "retry": {"page", "blocks"},
     "fallback": {"page", "block", "reason"},
     "review_started": {"page", "blocks"},
-    "review_done": {"page", "tickets", "applied", "rejected"},
+    "review_done": {"page", "tickets", "applied", "rejected", "withdrawn"},
     "glossary_changed": {"version", "action", "source", "target"},
     "ticket_opened": {"term", "current", "proposed", "page"},
     "page_done": {"page", "statuses"},
@@ -139,7 +139,7 @@ def test_review_reports_its_calls_and_tickets(tmp_path: Path) -> None:
     assert kinds.index("review_started") < kinds.index("review_done") < kinds.index("page_done")
     review_call = next(e for e in events if e["type"] == "translate_call" and e["role"] == "reviewer")
     assert review_call["page"] == 1 and review_call["blocks"] == ["p1"], "headings are not reviewed"
-    assert next(e for e in events if e["type"] == "review_done") == dict(next(e for e in events if e["type"] == "review_done"), tickets=1, applied=1, rejected=0)
+    assert next(e for e in events if e["type"] == "review_done") == dict(next(e for e in events if e["type"] == "review_done"), tickets=1, applied=1, rejected=0, withdrawn=0)
 
 
 def test_an_agent_used_outside_a_run_writes_no_events(tmp_path: Path) -> None:
@@ -168,3 +168,15 @@ def test_reading_comes_first_and_its_calls_are_on_page_zero(tmp_path: Path) -> N
     assert next(e for e in events if e["type"] == "reading_done")["genre"] == "humanities"
     reader_call = next(e for e in events if e["type"] == "translate_call")
     assert reader_call["role"] == "reader" and reader_call["page"] == 0
+
+
+def test_review_done_counts_the_tickets_the_reviewer_withdrew(tmp_path: Path) -> None:
+    """审校写完理由自己说不用改（must_fix=false）的单子：rejected 里照旧算，withdrawn 单独数出来给前端分开显示。"""
+    model = ReviewModel(
+        {"translations": [{"id": "p1", "translation": TRANSLATION}, {"id": "h", "translation": "2.5 失败案例"}]},
+        {"issues": [dict(_ticket(), must_fix=False, reason="意思对得上，不用改"), _ticket(source_quote="costs a thousand times")]},
+    )
+    DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path, review=True).run([review_page_input()])
+    done = next(e for e in _events(tmp_path) if e["type"] == "review_done")
+    assert (done["tickets"], done["applied"], done["rejected"], done["withdrawn"]) == (2, 0, 2, 1)
+

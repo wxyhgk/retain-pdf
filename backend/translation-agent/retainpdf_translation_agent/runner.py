@@ -295,6 +295,7 @@ class DocumentRun:
                         tickets=review_report["tickets"],
                         applied=len(review_report["applied"]),
                         rejected=len(review_report["rejected"]),
+                        withdrawn=withdrawn_count(review_report),
                     )
                 page_results = split_units(unit_results, groups)
                 self._log_calls(page, key, context, calls_before)
@@ -386,7 +387,7 @@ class DocumentRun:
                     # 审校在整节一次（请求时就审完了），事件补在翻译之后，页号记这一节的第一页
                     self._event_page = todo[0] + 1
                     self._event("review_started", page=self._event_page, blocks=report["reviewed"])
-                    self._event("review_done", page=self._event_page, tickets=report["tickets"], applied=len(report["applied"]), rejected=len(report["rejected"]))
+                    self._event("review_done", page=self._event_page, tickets=report["tickets"], applied=len(report["applied"]), rejected=len(report["rejected"]), withdrawn=withdrawn_count(report))
                     self._ledger("review", page=pages[todo[0]].page_label, page_key=f"{todo[0]:04d}", reviewed=report["reviewed"], tickets=report["tickets"], applied=len(report["applied"]))
                 outcome_by_page = {}
                 for index in range(start, end):
@@ -523,6 +524,12 @@ def split_review(agent: TranslationAgent, page: PageInput, results: dict[str, Bl
         "accuracy": accuracy,
         "polish": polish,
     }
+
+
+def withdrawn_count(report: dict) -> int:
+    """审校单里审校自己撤回的张数（`must_fix=false`，verdict 是 withdrawn）。编辑部事件 `review_done` 的 `withdrawn`
+    （2026-11-20，前端把「审校撤回」和「没收」分开显示）；`rejected` 照旧包含撤回的，旧前端不受影响。"""
+    return sum(1 for ticket in report.get("rejected") or [] if ticket.get("verdict") == "withdrawn")
 
 
 def blocks_using(results: dict[str, BlockResult], term_id: str) -> list[str]:
