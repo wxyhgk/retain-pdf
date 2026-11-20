@@ -6,7 +6,7 @@
 // 缺文件 / 上传中不出 hint：上方拖放区（大加号 + 「单个 PDF / 最大 512MB」
 // / 上传进度）已经把这件事说清楚，再来一行等于同一屏说两遍。
 import type { ReactNode } from "react";
-import { Languages, Loader2, ScanSearch, SlidersHorizontal } from "lucide-react";
+import { BookmarkPlus, Languages, Loader2, ScanSearch, SlidersHorizontal } from "lucide-react";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 
 type ProcessingChoicePanelProps = {
@@ -80,6 +80,7 @@ export function ProcessingChoicePanel({
           title="只加入书架，稍后再处理"
           onClick={onStoreOnly}
         >
+          <BookmarkPlus aria-hidden="true" />
           仅收藏
         </button>
         <button

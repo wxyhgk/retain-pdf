@@ -219,29 +219,7 @@
   overflow: hidden;
 }
 
-@utility upload-glyph-h {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  background: var(--muted);
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  display: block;
-  width: 18px;
-  height: 2px;
-}
 
-@utility upload-glyph-v {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  background: var(--muted);
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  display: block;
-  width: 2px;
-  height: 18px;
-}
 
 @utility upload-meta-inline {
   max-width: 320px;

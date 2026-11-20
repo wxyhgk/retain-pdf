@@ -1,6 +1,7 @@
 // 展示组件边界：只收 props 发回调，不直连 services/store；
 // 文件选择与拖拽预览均由 UploadTile 容器映射为 onFile* 回调。
 import type { ChangeEventHandler, MouseEventHandler, ReactNode, RefCallback } from "react";
+import { Files, FileUp, HardDrive, ScanText } from "lucide-react";
 
 import type { UploadViewState } from "../../../domain/upload-store.js";
 import { FRONT_MAX_SIZE_TEXT } from "@/platform/config/upload-constants.js";
@@ -51,8 +52,7 @@ export function UploadDropzone({
         style={{ width: `${upload.uploading ? upload.progressPercent : 0}%` }}
       />
       <span id="upload-glyph" className={`upload-glyph${upload.tileEnabled ? "" : " hidden"}`} aria-hidden="true">
-        <span className="upload-glyph-h" />
-        <span className="upload-glyph-v" />
+        <FileUp className="upload-glyph-icon" />
       </span>
 
       <div className="upload-primary-copy">
@@ -61,9 +61,9 @@ export function UploadDropzone({
         </strong>
         <em id="upload-help" className={upload.helpVisible ? "" : "hidden"}>{upload.help}</em>
         <div className={`upload-meta upload-meta-inline${upload.tileEnabled ? "" : " hidden"}`}>
-          <span>可一次选多个 PDF</span>
-          <span>最大 {FRONT_MAX_SIZE_TEXT}</span>
-          <span>页数上限随所选 OCR</span>
+          <span><Files aria-hidden="true" />可一次选多个 PDF</span>
+          <span><HardDrive aria-hidden="true" />最大 {FRONT_MAX_SIZE_TEXT}</span>
+          <span><ScanText aria-hidden="true" />页数上限随所选 OCR</span>
         </div>
       </div>
 

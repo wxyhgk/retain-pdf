@@ -15,6 +15,7 @@
 // 成功则跳详情。
 
 import { useEffect, useRef } from "react";
+import { FilePlus2 } from "lucide-react";
 import { SUBMIT_BLOCK_REASONS } from "@/platform/contracts/submit-readiness-contract.js";
 import {
   TRANSLATION_WORKFLOW_DIALOG,
@@ -174,11 +175,17 @@ export function IngestDialog({
             onClickCapture={handleShellClickCapture}
           >
             <DialogHeader className="translation-workflow-head is-upload-head">
-              <DialogTitle asChild>
-                <h2 id={TRANSLATION_WORKFLOW_DIALOG.ids.title} className="sr-only">
-                  {TRANSLATION_WORKFLOW_DIALOG.copy.uploadTitle}
-                </h2>
-              </DialogTitle>
+              <span className="upload-head-badge" aria-hidden="true">
+                <FilePlus2 />
+              </span>
+              <div className="upload-head-copy">
+                <DialogTitle asChild>
+                  <h2 id={TRANSLATION_WORKFLOW_DIALOG.ids.title}>
+                    {TRANSLATION_WORKFLOW_DIALOG.copy.uploadTitle}
+                  </h2>
+                </DialogTitle>
+                <p>{TRANSLATION_WORKFLOW_DIALOG.copy.uploadDescription}</p>
+              </div>
               <DialogCloseButton
                 id={TRANSLATION_WORKFLOW_DIALOG.ids.closeButton}
               />
