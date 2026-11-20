@@ -1,50 +1,19 @@
-// 悬停框画在哪、工具条（改 / 复制）放哪。2026-11-20 起：
+// 悬停框画在哪、工具条（改 / 复制）放哪。
 //
-// - 框贴着字画：译文比原文短时，按原文块画的框下半截全是空的。文字层里落在这一块里的字（.textLayer 的 span）
-//   取并集，框收到字的范围（不超出原块）；没有文字层（关了、还没画好）就照原块画。命中还按原块算，鼠标在
-//   框外、原块里的空白处不会换块。
-// - 工具条放在框外的页边：放在框里右上角会压住第一行字。右边到页边（或右边那栏）空得下就放右边，左边空得下
-//   就放左边；两边都挤（双栏论文、窄页）才退回框里右上角 / 框外上方（hoverToolsOutside）。工具条贴着框边，
-//   鼠标从框里移过去不经过别的块。
+// - 框贴着字画（2026-11-20）：译文比原文短时，按原文块画的框下半截全是空的。文字层里落在这一块里的字（.textLayer 的 span）
+//   取并集，框收到字的范围（不超出原块）；没有文字层（关了、还没画好）就照原块画。命中还按原块算。
+// - 工具条放框外、不挡字：hover-tools-placement.ts（候选位置 + 碰撞检测）。
 
 import { useLayoutEffect, useState, type RefObject } from "react";
 
 import type { ReaderRegionRect } from "../shared/data/reader-regions.js";
-import { hoverToolsOutside, type HoverToolsPlacement, type ReaderTextHoverTarget } from "./ReaderTextHoverLayer.js";
+import type { ReaderTextHoverTarget } from "./ReaderTextHoverLayer.js";
+import { placeHoverTools, type HoverToolsLayout } from "./hover-tools-placement.js";
 
-/** 竖着排的工具条要多宽：「改」「复制」放得下；行间公式的「复制 LaTeX」宽一些。 */
-export function sideToolsWidth(kind: string): number {
-  return kind === "formula" ? 84 : 64;
-}
-
-const SIDE_GAP = 6;
+export { inHoverToolsZone, placeHoverTools, sideToolsWidth, tailToolsTop, type HoverToolsLayout } from "./hover-tools-placement.js";
 
 const right = (rect: ReaderRegionRect) => rect.left + rect.width;
 const bottom = (rect: ReaderRegionRect) => rect.top + rect.height;
-const overlapsVertically = (a: ReaderRegionRect, b: ReaderRegionRect) => a.top < bottom(b) && b.top < bottom(a);
-
-/**
- * 工具条放哪。右边空：到页右边、或到右边第一个和它上下有重叠的块，空出 toolsWidth + 间距；左边同理。
- * `others` 是这一页别的块（含它自己也行，自己会被跳过）。
- */
-export function hoverToolsPlacement(
-  rect: ReaderRegionRect,
-  others: readonly ReaderRegionRect[],
-  pageWidth: number,
-  toolsWidth: number,
-): HoverToolsPlacement {
-  const need = toolsWidth + SIDE_GAP;
-  let rightLimit = pageWidth;
-  let leftLimit = 0;
-  for (const other of others) {
-    if (other === rect || !overlapsVertically(rect, other)) continue;
-    if (other.left >= right(rect) - 1) rightLimit = Math.min(rightLimit, other.left);
-    if (right(other) <= rect.left + 1) leftLimit = Math.max(leftLimit, right(other));
-  }
-  if (rightLimit - right(rect) >= need) return "side-right";
-  if (rect.left - leftLimit >= need) return "side-left";
-  return hoverToolsOutside(rect, toolsWidth) ? "outside" : "inside";
-}
 
 /**
  * 框收到字的范围：中心落在原块里的字取并集，四边各留 pad。没有字就照原块。
@@ -89,7 +58,7 @@ function glyphRects(host: HTMLElement): ReaderRegionRect[] {
   });
 }
 
-export type HoverPresentation = { rect: ReaderRegionRect; placement: HoverToolsPlacement } | null;
+export type HoverPresentation = ({ rect: ReaderRegionRect } & HoverToolsLayout) | null;
 
 /** 悬停块的框和工具条位置。画面绘制前量好（layout effect），框不会先画大再缩。 */
 export function useHoverPresentation(
@@ -106,9 +75,11 @@ export function useHoverPresentation(
       return;
     }
     const host = hostRef.current;
-    const rect = host ? tightenHoverRect(target.rect, glyphRects(host)) : target.rect;
-    const placement = hoverToolsPlacement(target.rect, targets.map((other) => other.rect), pageWidth, sideToolsWidth(kind));
-    setPresentation({ rect, placement });
+    const glyphs = host ? glyphRects(host) : [];
+    const rect = glyphs.length ? tightenHoverRect(target.rect, glyphs) : target.rect;
+    const others = targets.filter((other) => other.itemId !== target.itemId).map((other) => other.rect);
+    const pageHeight = host?.clientHeight || Number.POSITIVE_INFINITY;
+    setPresentation({ rect, ...placeHoverTools({ frame: rect, others, pageWidth, pageHeight, glyphs, kind }) });
   }, [hostRef, kind, pageWidth, target, targets]);
   return presentation && target ? presentation : null;
 }
