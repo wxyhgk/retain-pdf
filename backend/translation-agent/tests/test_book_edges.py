@@ -12,6 +12,7 @@ from retainpdf_translation_agent.checks import FORMULA_RE
 from retainpdf_translation_agent.checks import check_block
 from retainpdf_translation_agent.checks import escape_currency
 from retainpdf_translation_agent.checks import is_citation_only
+from retainpdf_translation_agent.checks import nothing_to_translate
 from retainpdf_translation_agent.checks import normalize_quotes
 from retainpdf_translation_agent.checks import normalize_translation
 from retainpdf_translation_agent.memory import APPROVED
@@ -96,3 +97,13 @@ def test_section_terms_follow_the_chapter_scope() -> None:
     assert [t.target for t in section_terms(glossary, text, ["第一章"])] == ["田野"]
     assert [t.target for t in section_terms(glossary, text, ["第二章"])] == ["领域"]
     assert [t.target for t in section_terms(glossary, text, ["第三章"])] == []
+
+
+def test_blocks_with_nothing_to_translate_get_a_reason() -> None:
+    """用户定（11-20）：只有引注、纯数字符号网址代码公式的块算「按设计保留原文」，不算没翻成。"""
+    for note in ("35. Brown-Saracino 2014, 43.", "9. Abend 2014; Khurana 2007; Schleef 2005.", "31. Petriglieri, Ashford, and Wrzesniewski 2019."):
+        assert nothing_to_translate(note) == "skip_citation_only", note
+    for bare in ("$$E = mc^2$$", "https://press.princeton.edu/books", "12.3", "(a)", "`foo_bar()`", "[12, 14]"):
+        assert nothing_to_translate(bare) == "skip_no_prose", bare
+    for prose in ("Introduction", "See Figure 3.", "11. On this point, see Keenan 2013.", "Smith, Jones and Lee 2019 found that access was denied.", "中文段落", ""):
+        assert nothing_to_translate(prose) == "", prose

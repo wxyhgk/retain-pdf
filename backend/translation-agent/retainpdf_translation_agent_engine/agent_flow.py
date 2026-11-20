@@ -65,6 +65,7 @@ from retainpdf_translation_agent import STATUS_FALLBACK_SOURCE
 from retainpdf_translation_agent import BlockInput
 from retainpdf_translation_agent import BlockResult
 from retainpdf_translation_agent.checks import escape_currency
+from retainpdf_translation_agent.checks import nothing_to_translate
 from retainpdf_translation_agent import DocumentRun
 from retainpdf_translation_agent import PageInput
 from retainpdf_translation_agent import TranslationAgent
@@ -250,6 +251,25 @@ def _printed_page_numbers(page_payloads: dict[int, list[dict]], source_pdf_path:
         return printed
     offset = _printed_page_offset(page_payloads)
     return {} if offset is None else {page_idx: page_idx + 1 - offset for page_idx in page_payloads}
+
+
+def skip_nothing_to_translate(page_payloads: dict[int, list[dict]]) -> dict[str, int]:
+    """没有要翻的话的块（只有引注、纯数字符号网址代码公式）交给 agent 之前就标成保留原文，写明原因
+    （2026-11-20 用户定：这类块算「按设计保留原文」，不算没翻成）。以前交给模型，原样交回判漏翻，重交几次后进死信，
+    阅读页「待处理」、书详情「没翻成」都把它们当问题列出来（《The Interloper》书末注释 11 条）。
+    接续组的成员不管（整组一起翻）。返回各原因标了几块。"""
+    counts: dict[str, int] = {}
+    for items in page_payloads.values():
+        for item in items:
+            if not item.get("should_translate", True) or str(item.get("final_status") or ""):
+                continue
+            if len(item.get("translation_unit_member_ids") or []) > 1:
+                continue
+            reason = nothing_to_translate(_block_source(item))
+            if reason:
+                mark_policy_skip(item, reason)
+                counts[reason] = counts.get(reason, 0) + 1
+    return counts
 
 
 def skip_back_matter(page_payloads: dict[int, list[dict]], source_pdf_path: Path | None = None) -> dict[str, int]:
@@ -638,6 +658,9 @@ def translate_book_with_agent(
     skipped = skip_back_matter(page_payloads, source_pdf_path)
     if any(skipped.values()):
         print(f"book: agent keeps original for running headers={skipped['running_header']} index blocks={skipped['index']}", flush=True)
+    nothing = skip_nothing_to_translate(page_payloads)
+    if nothing:
+        print(f"book: agent keeps original for blocks with nothing to translate {nothing}", flush=True)
     pages, marks_by_block = build_agent_pages(page_payloads, data, document_title=_document_title(page_payloads, source_pdf_path))
     model = (model or "").strip() or DEFAULT_MODEL
     reviewer_model = _separate_reviewer(reviewer, model=model, base_url=base_url)

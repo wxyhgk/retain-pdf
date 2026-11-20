@@ -17,7 +17,8 @@ CURRENCY_RE = re.compile(r"(?<![\\$])\$(?=\d(?:[\d,]*\d)?(?:\.\d+)?(?!\d)(?![,.]
 _CITE_PAGES = r"(?:\s*,\s*(?:pp?\.\s*)?[\divxlc]+(?:\s*[–-]\s*[\divxlc]+)?(?:n\d+)?)*"
 _CITE_PART = (
     r"(?:(?i:see\s+(?:also\s+)?|cf\.\s+))?"
-    r"(?:[A-Z][\w'’.-]+(?:\s+(?:and|&)\s+[A-Z][\w'’.-]+|\s+et\s+al\.)?\s+(?:\d{4}[a-z]?|n\.d\.)" + _CITE_PAGES
+    # 作者：一个；两个（A and B）；三个以上（A, B, and C）；或 et al.
+    r"(?:[A-Z][\w'’.-]+(?:(?:\s*,\s*[A-Z][\w'’.-]+)*,?\s+(?:and|&)\s+[A-Z][\w'’.-]+|\s+et\s+al\.)?\s+(?:\d{4}[a-z]?|n\.d\.)" + _CITE_PAGES
     + r"|(?i:ibid)\.?" + _CITE_PAGES + r")"
 )
 CITATION_ONLY_RE = re.compile(r"^\s*(?:\d{1,4}\.?\s+)?" + _CITE_PART + r"(?:\s*;\s*" + _CITE_PART + r")*\s*\.?\s*$")
@@ -53,7 +54,8 @@ SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太�
 #    （review.py；升版本是为了让已经跑了一半的任务重来一遍、按新规矩重做审校替换，请求缓存照用）
 # 9：2026-11-20 货币的 `$12.59` 不算公式（写成 `\$`）；只有引注的注释（"Keenan 2013, xxiv."）原样交回不算 untranslated；
 #    译文里成对的直引号换成中文引号（normalize_translation）
-CHECKS_VERSION = "translation-agent-checks-9"
+# 10：2026-11-20 三个以上作者的引注（"Petriglieri, Ashford, and Wrzesniewski 2019."）也算只有引注
+CHECKS_VERSION = "translation-agent-checks-10"
 
 
 def escape_currency(text: str) -> str:
@@ -64,6 +66,22 @@ def escape_currency(text: str) -> str:
 def is_citation_only(text: str) -> bool:
     """整块只是引注（作者、年份、页码，或 Ibid.），没有要翻的话。"""
     return bool(CITATION_ONLY_RE.match(FN_RE.sub(" ", text).strip()))
+
+
+def nothing_to_translate(text: str) -> str:
+    """整块没有要翻的话时给出原因，有要翻的返回空串（2026-11-20，用户定：这类块算「按设计保留原文」，不算没翻成）。
+
+    - `skip_citation_only`：只有引注（"35. Brown-Saracino 2014, 43."、"Ibid., 45."）；
+    - `skip_no_prose`：去掉公式、行内代码、角标、引用编号、网址以后一个英文词都没有（纯数字、符号、网址、代码、整块公式）。
+    原文有中文的不算（中文原稿另有规矩）。"""
+    source = str(text or "")
+    if not source.strip() or CJK_RE.search(source):
+        return ""
+    if is_citation_only(source):
+        return "skip_citation_only"
+    if not PROSE_WORD_RE.search(URL_RE.sub(" ", _strip_protected(source))):
+        return "skip_no_prose"
+    return ""
 
 
 _QUOTE_PROTECTED_RE = re.compile(r"`[^`\n]+`|(?<!\\)\$\$[^$]+\$\$|(?<!\\)\$[^$]+(?<!\\)\$|\{\{fn:[^}]+\}\}")

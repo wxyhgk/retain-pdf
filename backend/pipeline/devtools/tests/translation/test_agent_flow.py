@@ -521,3 +521,43 @@ def test_running_headers_and_the_back_index_keep_the_original(tmp_path: Path) ->
     early = {i: [item("body", "x")] for i in range(10)}
     early[2] = [item("heading", "Index"), item("body", "an early section called Index")]
     assert agent_flow.skip_back_matter(early)["index"] == 0, "只在书的最后四分之一认索引"
+
+
+def test_blocks_with_nothing_to_translate_keep_the_original_before_the_agent(tmp_path: Path) -> None:
+    """《The Interloper》书末注释 "35. Brown-Saracino 2014, 43." 交给模型、原样交回判漏翻，进了死信，阅读页「待处理」当问题列出来。
+    现在交给 agent 之前就记成保留原文（和页眉、书后索引一样），写明原因；接续组的成员不管。"""
+    from retainpdf_translation.core.payload import load_translations
+    from retainpdf_translation.core.payload import save_translations
+    from retainpdf_translation_agent_engine.reclassify import reclassify_failed_blocks
+
+    def item(item_id: str, text: str, **extra) -> dict:
+        return {"item_id": item_id, "normalized_sub_type": "body", "source_text": text, "should_translate": True, **extra}
+
+    payloads = {0: [
+        item("p001-b000", "35. Brown-Saracino 2014, 43."),
+        item("p001-b001", "$$x^2$$"),
+        item("p001-b002", "The puppeteers voted to join the guild."),
+        item("p001-b003", "Ibid., 45.", translation_unit_member_ids=["p001-b002", "p001-b003"]),
+    ]}
+    assert agent_flow.skip_nothing_to_translate(payloads) == {"skip_citation_only": 1, "skip_no_prose": 1}
+    first, formula, prose, member = payloads[0]
+    assert (first["should_translate"], first["final_status"], first["skip_reason"]) == (False, "kept_origin", "skip_citation_only")
+    assert formula["skip_reason"] == "skip_no_prose"
+    assert prose["should_translate"] is True and member["should_translate"] is True
+
+    # 以前翻好的书：失败的块按同一条规则改记，不用重翻；真没翻成的正文照旧是失败
+    translated = tmp_path / "translated"
+    translated.mkdir()
+    page = translated / "page-001-deepseek.json"
+    save_translations(page, [
+        item("p001-b000", "35. Brown-Saracino 2014, 43.", final_status="failed"),
+        item("p001-b001", "The puppeteers voted to join the guild.", final_status="failed"),
+        item("p001-b002", "Ibid., 45.", final_status="translated"),
+    ])
+    assert [c["item_id"] for c in reclassify_failed_blocks(translated, apply=False)] == ["p001-b000"]
+    assert load_translations(page, strict_contract=False)[0]["final_status"] == "failed", "不加 --apply 不写盘"
+    reclassify_failed_blocks(translated, apply=True)
+    rows = load_translations(page, strict_contract=False)
+    assert [(r["final_status"], r.get("skip_reason", "")) for r in rows] == [
+        ("kept_origin", "skip_citation_only"), ("failed", ""), ("translated", "")
+    ]
