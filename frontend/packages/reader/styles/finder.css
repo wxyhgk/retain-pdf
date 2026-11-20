@@ -1,6 +1,7 @@
-/* 目录、搜索（ReaderFinder.tsx）：顶栏左边两颗，点开是左边一栏。
+/* 目录、搜索（ReaderFinder.tsx）：顶栏左边两颗，点开是浮在书页上的一张卡（挂在按钮下面）。
  *
- * 不是手机宽度时，栏开着，阅读区让出这一栏（.is-finder-open），页面排在它右边，不被盖住；手机上盖在上面。 */
+ * 2026-11-20 起浮着：以前是左边一整栏，阅读区让出这一栏、书页挤到右边。现在书页不动，卡盖在左上角；
+ * 点卡外、按 Esc、在目录里点一条跳过去都会收起（搜索时留着，好接着按回车走下一处）。 */
 
 .reader-finder-toggles {
   position: fixed;
@@ -35,28 +36,39 @@
 
 .reader-finder {
   position: fixed;
-  top: 60px;
-  bottom: 0;
-  left: 0;
-  z-index: var(--z-hud, 36);
+  top: 64px;
+  left: 12px;
+  /* 比底栏、顶栏的按钮高一层：卡盖在它们上面。 */
+  z-index: calc(var(--z-hud, 36) + 2);
   display: flex;
-  width: var(--reader-finder-width, 300px);
+  width: var(--reader-finder-width, 340px);
+  max-height: min(640px, calc(100dvh - 88px));
   flex-direction: column;
-  border-right: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: var(--ui-radius-lg, 14px);
   background: var(--paper);
+  box-shadow:
+    0 22px 56px color-mix(in srgb, var(--shadow-color, var(--ink)) 16%, transparent),
+    0 2px 8px color-mix(in srgb, var(--shadow-color, var(--ink)) 8%, transparent);
+  transform-origin: 24px -8px;
+  animation: reader-finder-pop 170ms cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
-@media (min-width: 900px) {
-  .reader-react-root.is-finder-open .reader-react-scroll-shell {
-    left: var(--reader-finder-width, 300px);
+@keyframes reader-finder-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
 @media (max-width: 599px) {
-  /* 窄（笔记旁边的书、手机）：盖住一部分，不盖住整页；跳过去以后自己收起（ReaderAppReactPdf）。 */
   .reader-finder {
-    width: min(var(--reader-finder-width, 300px), 86dvw);
-    box-shadow: 8px 0 24px color-mix(in srgb, var(--ink) 10%, transparent);
+    width: calc(100vw - 24px);
   }
 
   .reader-finder-toggle span {
