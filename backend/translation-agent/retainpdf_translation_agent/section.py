@@ -42,11 +42,13 @@ from retainpdf_translation_agent.memory import NAME
 from retainpdf_translation_agent.memory import Glossary
 from retainpdf_translation_agent.memory import TERM
 from retainpdf_translation_agent.memory import quote_around
+from retainpdf_translation_agent.rules import TRANSLATOR_RULES
+from retainpdf_translation_agent.rules import bullets
 from retainpdf_translation_agent.memory import term_pattern
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
-SECTION_VERSION = "agent-section-7"
+SECTION_VERSION = "agent-section-8"
 MAX_STORY = 6  # 传给后面的节的本章梗概，最多几句
 STORY_CHARS = 600
 FALLBACK_NEIGHBORS = 2  # 退回逐块翻时，每段前后各带几段作上下文
@@ -82,20 +84,13 @@ def quoted_phrases(text: str) -> list[str]:
     return found[:MAX_QUOTED]
 
 
-SECTION_NARRATIVE_PROMPT = """你是出版社的资深译者，正在把一本英文人文社科著作或通俗读物译成简体中文，译稿要直接拿去出版。
-
-怎么译：
-- 先通读这一整节，弄清它在讲什么、怎么讲，再动笔。译文要读起来像中文作者写的：按中文习惯组织句子，可以拆长句、并短句、
-  调语序，不必一句对一句。
-- 意思不增不减：不添原文没有的信息和评价，不删内容；作者的语气、保留（seemed、I can only guess）和自嘲照样传达；
-  作者当时还不知道的结果，不要提前说出来。
-- 英文习语、比喻换成中文里意思相同的惯用说法；英文爱用的抽象名词，中文多用动词和具体说法。
-- 习语和术语分清：作者引用的别的学科的固定说法（效应、定律、某某技术、某某悖论，常带引号，或后面跟着 strategy、effect、theory），用中文学界通行的译名，不要按字面译，第一次出现写"译名（原文）"（the tragedy of the commons → 公地悲剧（the tragedy of the commons），learned helplessness → 习得性无助（learned helplessness））；没有把握的不要硬套中文俗语（俗语的意思常和术语对不上），按它在那个学科里的意思译，同样带上原文。
-- 人名、术语按给出的译法。人名、机构第一次出现写"中文译名（原文）"，之后只写中文；标着"前文已出现"的直接写中文。
-  没给的人名音译，机构名能译就译。书名、报刊名用书名号。
-- 不要在中文句子里夹没翻的英文单词。
-
-格式（只有这几条）：
+SECTION_NARRATIVE_PROMPT = (
+    "你是出版社的资深译者，正在把一本英文人文社科著作或通俗读物译成简体中文，译稿要直接拿去出版。\n\n"
+    "怎么译：\n"
+    "- 先通读这一整节，弄清它在讲什么、怎么讲，再动笔。\n"
+    + bullets(TRANSLATOR_RULES)
+    + "\n\n"
+    + """格式（只有这几条）：
 - 稿子按段编号（¶1、¶2……），译稿每段用同样的编号开头，段落数和顺序不变，不合并、不拆分段落；段内怎么组织随你。
 - 编号后面的（标题）（脚注）（图注）只是说明这段是什么，译稿里不用写；标题译得简洁，脚注开头的编号照留。
 - ⟦F1⟧、⟦C1⟧ 这样的占位符（公式、代码）原样留在译文里对应的位置，一个不能少；{{fn:1}} 脚注标记、[1] 引用标记也原样留着。
@@ -106,6 +101,7 @@ SECTION_NARRATIVE_PROMPT = """你是出版社的资深译者，正在把一本�
   （TSA | 运输安全管理局），译文里第一次写成「运输安全管理局（TSA）」。
   @@ 拿不准：你没把握的段（原文读不太懂、一词多义拿不定、找不到合适说法），每行「¶编号 原因」，审校会重点看。
   @@ 梗概：一句话，这一节讲了什么，给后面的节接上文用。"""
+)
 
 
 @dataclass

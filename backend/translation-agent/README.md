@@ -42,6 +42,7 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   （`agent_flow.agent_structure`，`RETAIN_AGENT_STRUCTURE=page` 退回逐页），`DocumentRun` 自己的默认仍是逐页。
   见 `docs/ops/planning/translation-agent/20261119-按节翻译.md`、`20261119-按节翻译后的审校.md`。
 - `checks.py` 的 `normalize_translation`（按节、逐页都走）：价格的 `$` 转义成 `\$`、直引号换中文引号；只有引注的块（作者、年份、页码）原样交回不算没翻（2026-11-20）。
+- `rules.py`：人文社科、通俗读物的译者规则（意译重组、意思不增不减、习语、学科术语、名词腔、人名、不夹英文）和审校的两条，只写这一处，各角色的提示词从这里拼；例子用通用说法，不用在译书里的句子（2026-11-20）。
 - `typography.py`：原文排版造成的误读，调度开头修掉（2026-11-19）：正文段落开头的章首小型大写（OCR 成全大写，"CATCH," HE CALLED）还原成句首大写。
 - `checks.py`：逐块校验（漏交、空、`$` 成对（公式内容不和原文比）、引用和脚注标记、数字、没翻、截断）；术语校验（定好的译法、保留原文、缩写）；语气信号（表示保留的词、第一人称，只记 info 算指标）。
   判对判错的规则改了升 `CHECKS_VERSION`，

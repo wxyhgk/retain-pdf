@@ -18,6 +18,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from retainpdf_translation_agent.rules import NAMES
+from retainpdf_translation_agent.rules import TRANSLATOR_RULES
+from retainpdf_translation_agent.rules import bullets
 from retainpdf_translation_agent.checks import check_block
 from retainpdf_translation_agent.checks import check_terms
 from retainpdf_translation_agent.checks import restore_formulas
@@ -51,7 +54,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 BREAK = "[[BREAK]]"
 BREAK_RE = re.compile(r"\s*\[\[BREAK\]\]\s*")
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-21"
+PROMPT_VERSION = "translation-agent-22"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
@@ -92,9 +95,9 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
 10. 请求里的 context 是这一页的上下文包，只用来帮你翻准，里面的东西都不要交回：
    - terms：术语表。status 是 approved 或 locked 的**必须照用**；candidate 是前面几页或别的章的译法，
      意思相同就沿用，意思不同（同一个词在这里是另一个意思）就按这里的意思译；有 scope 的只管那几章。
-     术语管的是这个概念：原文就是这个词（作名词、作概念讨论）时照用；词形变了（形容词、动词、分词，如术语 obstructing
-     遇到 proved obstructive、was obstructed）按中文习惯说成动作或状态，意思对上就行，不要把术语名词硬塞进去
-     （不写"设置了阻碍""表现出阻碍态度"，写"就百般阻挠""被拦在门外"）。
+     术语管的是这个概念：原文就是这个词（作名词、作概念讨论）时照用；词形变了（形容词、动词、分词，如术语 replication
+     遇到 replicated、replicable）按中文习惯说成动作或状态，意思对上就行，不要把术语名词硬塞进去
+     （不写"进行了复现""具有可复现性"，写"复现了""能复现"）。
    - keep：要原样保留的专名（人名、机构、期刊、软件）。
    - abbreviations：缩写和全称。first_use=true 表示全书第一次用到，译成"中文全称（缩写）"；之后直接写缩写。
    - names：人名等专名的中文译名，必须照用；first_use=true 时写"中文译名（原文）"，之后只写中文译名。
@@ -135,20 +138,12 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
 # 11-19 实验（同一本民族志开头 3 页四组）：只换流程 qwen 好了一点（习语、个别句子），Haiku 加这一段最接近人工译本的节奏，
 # 也没犯人工译本的错（把"觉得该放行了"写成"获准了"、删句、添"天时地利人和"）。见
 # docs/ops/planning/translation-agent/20261119-人文书初译写法.md
-NARRATIVE_PROMPT = """
-
-本书是人文社科或通俗读物（叙事、论述为主，不是论文）。上面的规则里和这一段冲突的，以这一段为准：
-- 译文要读起来像中文作者写的。先读懂一整段（句群）在说什么，再用中文的语序重新组织：可以拆长句、并短句、调整语序
-  （时间、地点、原因按中文习惯放前面），不必一句对一句，也不必和原文长度相当（第 8 条的"长度和原文相当"不适用）。
-- 英文的比喻、习语换成中文里意思相同的惯用说法（so many doors had been slammed → 处处吃闭门羹），没有对应说法的就意译，
-  不要照字面直译出中文里不说的话。
-- 习语和术语分清：作者引用的别的学科的固定说法（效应、定律、某某技术、某某悖论，常带引号，或后面跟着 strategy、effect、theory），用中文学界通行的译名，不要按字面译，第一次出现写"译名（原文）"（the tragedy of the commons → 公地悲剧（the tragedy of the commons），learned helplessness → 习得性无助（learned helplessness））；没有把握的不要硬套中文俗语（俗语的意思常和术语对不上），按它在那个学科里的意思译，同样带上原文。
-- 英文爱用抽象名词（access、commitment、handling、occasion），中文多用动词和具体说法：
-  no access materialized → 他一直没松口；the handling of human cadavers → 处理遗体的事。不要写"进入的事""……的处理"这种名词腔。
-  术语表里的词也一样：概念照用，词形、句式按中文习惯（见第 10 条）。
-- 意思不增不减：不添原文没有的信息、评价、渲染，不堆成语；作者的保留语气（seemed、I can only guess）照样保留；
-  作者当时还不知道的结果，不要提前说出来。
-- 公式、标记、编号、交卷格式的规则照旧。"""
+NARRATIVE_PROMPT = (
+    "\n\n本书是人文社科或通俗读物（叙事、论述为主，不是论文）。上面的规则里和这一段冲突的，以这一段为准：\n"
+    # 人名那条不带：逐页翻的人名、缩写靠上下文包里的 first_use 管（第 7、10 条），和按节翻的"前文已出现"不是一套
+    + bullets(tuple(rule for rule in TRANSLATOR_RULES if rule is not NAMES))
+    + "\n- 第 8 条的\"长度和原文相当\"不适用；术语的词形见第 10 条。\n- 公式、标记、编号、交卷格式的规则照旧。"
+)
 
 # 交卷格式（2026-10-31 起不用 JSON 工具调用：用户定。公式里的反斜杠在 JSON 里要写两个，交回纯文本照抄原文就行）
 ANSWER_HEADER_RE = re.compile(r"^@@[ \t]*(.+?)[ \t@]*$", re.M)
