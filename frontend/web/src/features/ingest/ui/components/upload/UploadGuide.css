@@ -1,163 +1,92 @@
-/* 上传弹窗的图标说明：顶部带图标的标题、模式下面的流程条（UploadFlowStrip）、拖放区的上传图标和说明小标签上的图标。
+/* 上传弹窗的骨架（2026-11-20 用户）：顶部只有 tab 切换（关闭按钮挂在右上角），中间一个大框（空的只有上传图标，
+ * 拖文件进来高亮），底部一排按钮（附魔按钮 + 选项 + 仅收藏 + 主按钮）。
  *
  * @owns upload
- * @uses translation-workflow-head */
+ * @uses translation-workflow-head, translation-workflow-card */
 
-/* 顶部：图标 + 「添加 PDF」+ 一句说明，关闭按钮靠右。 */
+/* 顶部：标题只给读屏，关闭按钮挂到右上角，和 tab 在一行。 */
 .translation-workflow-head.is-upload-head {
-  justify-content: flex-start;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 16px 4px 20px;
-}
-
-.upload-head-badge {
-  display: inline-grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--ui-radius-lg, 14px);
-  background: var(--ink);
-  color: var(--paper);
-
-  & svg {
-    width: 20px;
-    height: 20px;
-    stroke-width: 1.9;
-  }
-}
-
-.upload-head-copy {
-  display: grid;
-  flex: 1 1 auto;
-  gap: 2px;
-  min-width: 0;
-
-  & h2 {
-    margin: 0;
-    font-size: var(--ui-text-lg, 16px);
-    font-weight: 650;
-    letter-spacing: -0.01em;
-  }
-
-  & p {
-    margin: 0;
-    color: var(--muted);
-    font-size: var(--ui-text-sm, 12px);
-    line-height: 1.5;
-  }
-}
-
-/* 流程条：上传 → 识别版面 → 翻译 → 译文 PDF（仅 OCR：… → Markdown）。 */
-.upload-flow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 4px 2px;
-  min-width: 0;
-  margin: 0 0 4px;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 3;
+  min-height: 0;
   padding: 0;
-  list-style: none;
-  color: var(--muted);
-  font-size: var(--ui-text-sm, 12px);
-  font-weight: 550;
 }
 
-.upload-flow-step {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-
-  &:last-child {
-    color: var(--ink);
-  }
+.translation-workflow-card .upload-workflow-mode-tabs {
+  display: flex;
+  justify-content: center;
+  margin: 2px 0 14px;
 }
 
-.upload-flow-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: var(--ui-radius-pill, 999px);
-  background: var(--bg);
-  color: var(--ink);
-
-  & svg {
-    width: 14px;
-    height: 14px;
-    stroke-width: 2;
-  }
-
-  .upload-flow-step:last-child & {
-    background: var(--ink);
-    color: var(--paper);
-  }
+.translation-workflow-card .upload-workflow-mode-tabs-list {
+  width: auto;
+  min-width: 240px;
 }
 
-.upload-flow-arrow {
-  width: 14px;
-  height: 14px;
-  margin: 0 4px;
-  opacity: 0.45;
+/* 中间的框：空着时只有一个上传图标；拖文件进来整框亮起。 */
+.translation-workflow-card .upload-tile {
+  min-height: 210px;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease;
 }
 
-/* 手机上一行放得下：缩小图标、字和箭头，不折行（折了箭头会落到第二行开头）。 */
-@media (max-width: 480px) {
-  .upload-flow {
-    flex-wrap: nowrap;
-    font-size: var(--ui-text-xs, 11px);
-  }
-
-  .upload-flow-step {
-    gap: 4px;
-  }
-
-  .upload-flow-icon {
-    width: 22px;
-    height: 22px;
-
-    & svg {
-      width: 12px;
-      height: 12px;
-    }
-  }
-
-  .upload-flow-arrow {
-    width: 11px;
-    height: 11px;
-    margin: 0 1px;
-  }
+.translation-workflow-card .upload-tile[data-dragging] {
+  border-color: var(--accent);
+  border-style: solid;
+  background: color-mix(in srgb, var(--accent) 6%, var(--paper));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-/* 再窄（360 左右）放不下箭头：去掉箭头，步骤之间空开一点。 */
-@media (max-width: 400px) {
-  .upload-flow {
-    gap: 4px 9px;
-  }
-
-  .upload-flow-arrow {
-    display: none;
-  }
+.translation-workflow-card .upload-tile.has-file {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--ink) 10%, var(--line));
+  background: color-mix(in srgb, var(--bg) 45%, var(--paper));
 }
 
-/* 拖放区：上传图标，说明小标签前面各一个图标。 */
 .upload-glyph-icon {
   width: 30px;
   height: 30px;
   color: var(--ink);
   stroke-width: 1.6;
+
+  .upload-tile[data-dragging] & {
+    color: var(--accent);
+    animation: upload-glyph-bob 900ms ease-in-out infinite;
+  }
 }
 
-.upload-meta span {
-  gap: 5px;
+@keyframes upload-glyph-bob {
+  50% {
+    transform: translateY(-4px);
+  }
+}
 
-  & svg {
-    flex: 0 0 auto;
-    width: 13px;
-    height: 13px;
-    stroke-width: 2;
+/* 底部：附魔按钮单独一行在上，选项、仅收藏、主按钮一行在下。 */
+.translation-workflow-card .upload-action-group {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.upload-enchant-controls {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  order: -1;
+}
+
+.translation-workflow-card #page-range-btn {
+  min-width: 36px;
+  padding: 0 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-glyph-icon {
+    animation: none !important;
   }
 }

@@ -193,6 +193,9 @@ export function createTranslationWorkflowDialogRuntime({
       [APP_EVENTS.statusAreaVisibilityChanged, sync as EventListener],
     ];
     const onKeydown = (event: KeyboardEvent) => {
+      // 弹窗里点开的小面板（模型、页数）里按 Esc 只收小面板，不关整个弹窗。
+      const target = event.target as Element | null;
+      if (target?.closest?.("[data-radix-popper-content-wrapper]")) return;
       if (event.key === "Escape" && isOpen()) {
         requestClose();
       }

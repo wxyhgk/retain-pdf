@@ -1,16 +1,15 @@
 // 重新翻译时换模型：从设置里存好的连接（每家服务商一套 key、地址、模型）里挑一个。
 // 选了就把这条连接整套（地址、模型、key、协议、思考深度）放进 retry-stage 的 overrides.translation，
 // 后端用新的一套，不和原任务的拼（2026-11-19 后端确认）；不选 = 沿用原任务的。纯函数，单测直接覆盖。
-import type { TranslationConnection } from "@/platform/config/translation-connections.js";
+import { connectionValue, type TranslationConnection } from "@/platform/config/translation-connections.js";
+
+// 连接编号、换成翻译字段这两步上传弹窗选模型也要用，放在 platform（2026-11-20 挪过去），这里照旧导出。
+export { connectionOverrides, connectionValue } from "@/platform/config/translation-connections.js";
 
 export type RetranslateModelOption = { value: string; label: string; connection: TranslationConnection | null };
 
 /** 下拉里「沿用原来的」那一项的值。 */
 export const KEEP_MODEL = "";
-
-export function connectionValue(connection: TranslationConnection): string {
-  return `${connection.provider}::${connection.model}`;
-}
 
 /** 下拉：第一项「沿用原来的」，后面每条连接一项（服务商 · 模型）。原任务正在用的那条标出来。 */
 export function retranslateModelOptions(
@@ -29,18 +28,6 @@ export function retranslateModelOptions(
       };
     }),
   ];
-}
-
-/** 选中的连接换成 overrides.translation 里的字段；没选是 null。 */
-export function connectionOverrides(connection: TranslationConnection | null | undefined): Record<string, string> | null {
-  if (!connection) return null;
-  return {
-    base_url: connection.baseUrl,
-    model: connection.model,
-    api_key: connection.apiKey,
-    api_protocol: connection.apiProtocol,
-    thinking: connection.thinking,
-  };
 }
 
 type EstimatePart = { low_cny?: number | null; high_cny?: number | null } | null | undefined;

@@ -1,5 +1,6 @@
 import { createStore } from "@/platform/store/store.js";
 import type { Store } from "@/platform/store/store.js";
+import { connectionOverrides, connectionValue, savedTranslationConnections } from "@/platform/config/translation-connections.js";
 import {
   isWorkflowPreferenceKey,
   loadWorkflowPreferences,
@@ -77,6 +78,11 @@ export type WorkflowViewState = {
   selectedGlossaryId: string;
   /** 用户的长期偏好（翻译质量、排版引擎……），定义见 workflow-preferences.ts。 */
   preferences: WorkflowPreferences;
+  /**
+   * 上传弹窗这次选的翻译模型（设置里一条连接的编号「服务商::模型」，空 = 用设置里的默认）。
+   * 只管这一次上传：不记到本机，也不影响书库里「翻译整本」（那边走 buildTranslateJobConfig，不读它）。
+   */
+  uploadModel: string;
   developerDialog: WorkflowDeveloperDialog;
   developerFormState: Record<string, unknown>;
   ocrOnly: boolean;
@@ -125,6 +131,7 @@ export function createWorkflowViewStore(): WorkflowViewStore {
       glossaries: [],
       selectedGlossaryId: "",
       preferences: loadWorkflowPreferences(),
+      uploadModel: "",
       developerDialog: {},
       developerFormState: {},
       ocrOnly: false,
@@ -172,6 +179,17 @@ export function createWorkflowViewFeature({
     const next = normalizeWorkflowPreference(key, value);
     saveWorkflowPreference(key, next);
     patch({ preferences: { ...store.getSnapshot().preferences, [key]: next } });
+  }
+
+  function setUploadModel(value: unknown = "") {
+    patch({ uploadModel: `${value || ""}`.trim() });
+  }
+
+  /** 上传提交时把选的模型换成翻译字段（payload-assembly 的 collectRunPayload 用）；没选、连接没了是 null。 */
+  function uploadTranslationOverride(): Record<string, string> | null {
+    const value = store.getSnapshot().uploadModel;
+    if (!value) return null;
+    return connectionOverrides(savedTranslationConnections().find((connection) => connectionValue(connection) === value));
   }
 
   function setJobWarningVisible(visible: boolean) {
@@ -327,6 +345,7 @@ export function createWorkflowViewFeature({
   }
 
   const viewPort = {
+    uploadTranslationOverride,
     applyMockUpload,
     applyWorkflowUpload,
     closeDeveloperDialog: () => {},
@@ -348,6 +367,7 @@ export function createWorkflowViewFeature({
     setSelectedGlossaryId,
     preferences,
     setPreference,
+    setUploadModel,
     setSubmitBusy,
     setSubmitDisabled,
     store,

@@ -90,3 +90,20 @@ export function savedTranslationConnections(): TranslationConnection[] {
     return [];
   }
 }
+
+/** 一条连接的编号（服务商::模型）：下拉、上传弹窗里选模型用它当值。 */
+export function connectionValue(connection: TranslationConnection): string {
+  return `${connection.provider}::${connection.model}`;
+}
+
+/** 选中的连接换成翻译字段（地址、模型、key、协议、思考深度）；没选是 null。重新翻译、上传弹窗选模型都用它。 */
+export function connectionOverrides(connection: TranslationConnection | null | undefined): Record<string, string> | null {
+  if (!connection) return null;
+  return {
+    base_url: connection.baseUrl,
+    model: connection.model,
+    api_key: connection.apiKey,
+    api_protocol: connection.apiProtocol,
+    thinking: connection.thinking,
+  };
+}

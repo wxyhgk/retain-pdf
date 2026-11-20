@@ -37,8 +37,6 @@ import {
 import { useIngestServices, useIngestWorkflowView } from "./workflow-view-context.js";
 import { HeroUpload } from "./components/UploadTile.jsx";
 import { InlineErrorBox } from "./InlineErrorBox.jsx";
-import { UploadFlowStrip } from "./components/upload/UploadFlowStrip.jsx";
-import { UploadEngineChoice, isAgentTranslation } from "./components/upload/UploadEngineChoice.jsx";
 
 export function WorkflowPanel({ hiddenInputsSlot = null }: { hiddenInputsSlot?: React.ReactNode | null }) {
   const workflowView = useIngestWorkflowView();
@@ -105,14 +103,6 @@ export function WorkflowPanel({ hiddenInputsSlot = null }: { hiddenInputsSlot?: 
         </TabsPrimitive.List>
       </TabsPrimitive.Root>
 
-      {ocrOnly ? null : (
-        <UploadEngineChoice
-          quality={workflow.preferences.translationQuality}
-          onChange={(next) => workflowView.setPreference("translationQuality", next)}
-        />
-      )}
-
-      <UploadFlowStrip ocrOnly={ocrOnly} agent={!ocrOnly && isAgentTranslation(workflow.preferences.translationQuality)} />
 
       <form
         id="job-form"

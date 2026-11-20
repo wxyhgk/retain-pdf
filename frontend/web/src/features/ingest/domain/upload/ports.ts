@@ -14,6 +14,8 @@ export interface UploadViewPort {
   markUploadReady: (ready: boolean) => void;
   readPageRanges: () => { start: string; end: string };
   writePageRanges: (ranges: { start?: string; end?: string }) => void;
+  /** 传上去的 PDF 有几页（上传弹窗的「页数」按钮用）。 */
+  setUploadedPageCount?: (count: number) => void;
   setInlinePageRangeVisible: (visible: boolean) => void;
   openTranslationOptions: (options: { applied?: string; maxPage?: number }) => void;
   closeTranslationOptions: () => void;

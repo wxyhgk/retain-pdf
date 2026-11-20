@@ -15,7 +15,6 @@
 // 成功则跳详情。
 
 import { useEffect, useRef } from "react";
-import { FilePlus2 } from "lucide-react";
 import { SUBMIT_BLOCK_REASONS } from "@/platform/contracts/submit-readiness-contract.js";
 import {
   TRANSLATION_WORKFLOW_DIALOG,
@@ -175,17 +174,12 @@ export function IngestDialog({
             onClickCapture={handleShellClickCapture}
           >
             <DialogHeader className="translation-workflow-head is-upload-head">
-              <span className="upload-head-badge" aria-hidden="true">
-                <FilePlus2 />
-              </span>
-              <div className="upload-head-copy">
-                <DialogTitle asChild>
-                  <h2 id={TRANSLATION_WORKFLOW_DIALOG.ids.title}>
-                    {TRANSLATION_WORKFLOW_DIALOG.copy.uploadTitle}
-                  </h2>
-                </DialogTitle>
-                <p>{TRANSLATION_WORKFLOW_DIALOG.copy.uploadDescription}</p>
-              </div>
+              {/* 2026-11-20 用户：顶部只留 tab 切换，标题、说明只给读屏。 */}
+              <DialogTitle asChild>
+                <h2 id={TRANSLATION_WORKFLOW_DIALOG.ids.title} className="sr-only">
+                  {TRANSLATION_WORKFLOW_DIALOG.copy.uploadTitle}
+                </h2>
+              </DialogTitle>
               <DialogCloseButton
                 id={TRANSLATION_WORKFLOW_DIALOG.ids.closeButton}
               />

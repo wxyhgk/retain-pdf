@@ -23,6 +23,8 @@ type ProcessingChoicePanelProps = {
   onToggleTranslationOptions: () => void;
   onStoreOnly: () => void;
   translationOptionsSlot: ReactNode;
+  /** 底部「附魔」按钮（模型、普通 / Agent、页数），放在选项前面；仅 OCR 不给。 */
+  enchantSlot?: ReactNode;
 };
 
 export function ProcessingChoicePanel({
@@ -38,6 +40,7 @@ export function ProcessingChoicePanel({
   onToggleTranslationOptions,
   onStoreOnly,
   translationOptionsSlot,
+  enchantSlot = null,
 }: ProcessingChoicePanelProps) {
   // 禁用原因与下一步：仅凭 uploadReady/submitDisabled 即可区分
   // 「缺文件」与「文件就绪但被凭据·预算·源任务拦住」两类。
@@ -64,17 +67,17 @@ export function ProcessingChoicePanel({
   return (
     <div id="upload-action-slot" className={`upload-action-slot${visible ? "" : " hidden"}`}>
       <div className="upload-action-group">
+        {enchantSlot}
         <button
           id="page-range-btn"
           type="button"
           className={`page-range-mini secondary${pageRangeButtonVisible && !ocrOnly ? "" : " hidden"}`}
-          aria-label="翻译选项"
+          aria-label="更多选项（术语表、翻译质量、排版引擎）"
           aria-expanded={pageRangeOpen}
-          title="设置页码范围和术语表"
+          title="更多选项：术语表、翻译质量、排版引擎"
           onClick={onToggleTranslationOptions}
         >
           <SlidersHorizontal aria-hidden="true" />
-          选项
         </button>
         <button
           id="store-only-btn"

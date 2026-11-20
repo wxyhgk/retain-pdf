@@ -154,6 +154,7 @@ export function createFileUploadHandler(deps: FileUploadHandlerDeps) {
         uploadedPageCount,
         uploadedBytes: Number(payload.bytes || file.size || 0),
       });
+      viewPort.setUploadedPageCount?.(uploadedPageCount);
       viewPort.writePageRanges({
         start: uploadedPageCount > 0 ? "1" : "",
         end: uploadedPageCount > 0 ? `${uploadedPageCount}` : "",

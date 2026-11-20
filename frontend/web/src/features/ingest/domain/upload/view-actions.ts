@@ -44,6 +44,7 @@ export type UploadViewActions = {
     options?: TranslationOptionsOpenOptions,
   ): UploadViewState;
   closeTranslationOptions(currentState: UploadViewState): UploadViewState;
+  setUploadedPageCount(currentState: UploadViewState, count?: number): UploadViewState;
   setInlinePageRangeVisible(
     currentState: UploadViewState,
     visible?: boolean,
@@ -185,6 +186,12 @@ function openTranslationOptions(
   };
 }
 
+// 传上去的 PDF 有几页。
+function setUploadedPageCount(currentState: UploadViewState, count: number = 0) {
+  const pages = Number(count);
+  return { ...currentState, uploadedPageCount: Number.isFinite(pages) && pages > 0 ? Math.floor(pages) : 0 };
+}
+
 // 翻译选项收起：只落开关，保留已填页码以便下次回显。
 function closeTranslationOptions(currentState: UploadViewState) {
   return { ...currentState, translationOptionsOpen: false };
@@ -210,6 +217,7 @@ export const uploadViewActions: UploadViewActions = {
   resetUploadedFileView,
   clearPageRanges,
   setPageRange,
+  setUploadedPageCount,
   openTranslationOptions,
   closeTranslationOptions,
   setInlinePageRangeVisible,

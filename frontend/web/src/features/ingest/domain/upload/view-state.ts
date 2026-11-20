@@ -23,6 +23,8 @@ export type UploadViewState = {
   pageRangeStart: string;
   pageRangeEnd: string;
   pageRangeMax: number;
+  /** 传上去的 PDF 有几页（上传完写，0 = 还不知道）。上传弹窗的「页数」按钮用它判断「1 到最后一页」= 全部页。 */
+  uploadedPageCount: number;
   translationOptionsOpen: boolean;
   credentialGateVisible: boolean;
 };
@@ -81,6 +83,7 @@ export function createInitialUploadViewState(): UploadViewState {
     pageRangeStart: "",
     pageRangeEnd: "",
     pageRangeMax: 0,
+    uploadedPageCount: 0,
     translationOptionsOpen: false,
     credentialGateVisible: false,
   };

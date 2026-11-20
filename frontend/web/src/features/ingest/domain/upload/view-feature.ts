@@ -131,6 +131,7 @@ export function createUploadViewFeature({
       setUploadTileText({ status: message, statusVisible: true }),
     writePageRanges: ({ start = "", end = "" }: UploadPageRangesWrite = {}) =>
       store.actions.setPageRange({ start: `${start}`, end: `${end}` }),
+    setUploadedPageCount: (count: number) => store.actions.setUploadedPageCount(count),
   };
 
   const uploadTilePort = {
