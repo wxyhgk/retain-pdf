@@ -175,3 +175,22 @@ test("译者调工具（tool_call）：查全书说几处、查术语表说几�
   assert.equal(state.pages[0].stage, "translating");
   assert.equal(state.last.type, "tool_call");
 });
+
+test("审校撤回（must_fix = false）和没收分开：后端 rejected 含撤回的，解析时拆开；只有没收才提醒；旧事件没 withdrawn 按 0", () => {
+  const [withdrawnOnly, mixed, legacy] = parseEditorialEvents([
+    { v, ts: 1, type: "review_done", page: 3, tickets: 2, applied: 0, rejected: 2, withdrawn: 2 },
+    { v, ts: 2, type: "review_done", page: 4, tickets: 4, applied: 1, rejected: 3, withdrawn: 1 },
+    { v, ts: 3, type: "review_done", page: 5, tickets: 2, applied: 1, rejected: 1 },
+  ]);
+  assert.deepEqual([withdrawnOnly.rejected, withdrawnOnly.withdrawn], [0, 2]);
+  assert.deepEqual([mixed.rejected, mixed.withdrawn], [2, 1]);
+  assert.deepEqual([legacy.rejected, legacy.withdrawn], [1, 0]);
+
+  assert.deepEqual(narrate(withdrawnOnly), { text: "审校第 3 页开了 2 张单：修订改了 0 处，没收 0 处，审校自己撤回 2 张", tone: "ok" });
+  assert.deepEqual(narrate(mixed), { text: "审校第 4 页开了 4 张单：修订改了 1 处，没收 2 处，审校自己撤回 1 张", tone: "warn" });
+  assert.equal(narrate(legacy).text, "审校第 5 页开了 2 张单：修订改了 1 处，没收 1 处");
+
+  const state = roomStateAt([withdrawnOnly, mixed], 2);
+  assert.deepEqual(state.pages.find((card) => card.page === 4).review, { tickets: 4, applied: 1, rejected: 2, withdrawn: 1 });
+  assert.deepEqual([roomTotals(state).rejected, roomTotals(state).withdrawn], [2, 3]);
+});

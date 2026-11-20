@@ -7,7 +7,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 
-import { genreText } from "../../domain/narration.js";
+import { genreText, reviewWithdrawnText } from "../../domain/narration.js";
 import { stationPages, waitingPages, type PageCard, type PageStage, type RoomState } from "../../domain/room-state.js";
 import { EditorialFigure, type FigureRole } from "../EditorialFigure.jsx";
 import { EditorialRobot } from "../EditorialRobot.jsx";
@@ -187,7 +187,7 @@ export function EditorialOffice({ state, glossaryFresh }: { state: RoomState; gl
       key: "reviser",
       node: (
         <g data-editorial-station="reviser" data-busy={reviser ? "true" : "false"}>
-          <title>{reviser?.review ? `修订第 ${reviser.label} 页：改 ${reviser.review.applied} 处，没收 ${reviser.review.rejected} 处` : "修订：按问题单改那一小段"}</title>
+          <title>{reviser?.review ? `修订第 ${reviser.label} 页：改 ${reviser.review.applied} 处，没收 ${reviser.review.rejected} 处${reviewWithdrawnText(reviser.review.withdrawn)}` : "修订：按问题单改那一小段"}</title>
           <Sprite at={iso(rx, ry)} scale={SPRITE_SCALE}>
             <EditorialRobot role="reviser" busy={!!reviser && running} />
           </Sprite>

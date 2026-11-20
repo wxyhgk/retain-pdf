@@ -36,7 +36,9 @@ export type EditorialEvent =
   | (Base & { type: "retry"; page: number; blocks: string[] })
   | (Base & { type: "fallback"; page: number; block: string; reason: string })
   | (Base & { type: "review_started"; page: number; blocks: number })
-  | (Base & { type: "review_done"; page: number; tickets: number; applied: number; rejected: number })
+  // rejected 是「没收」（修订没改进去的），不含审校自己撤回的；withdrawn 是审校自己撤回的（must_fix = false）。
+  // 后端事件里的 rejected 含撤回的（2026-11-20 起另给 withdrawn），解析时拆开；旧事件没有 withdrawn，按 0。
+  | (Base & { type: "review_done"; page: number; tickets: number; applied: number; rejected: number; withdrawn: number })
   | (Base & { type: "glossary_changed"; version: number; action: GlossaryAction; source: string; target: string })
   | (Base & { type: "ticket_opened"; term: string; current: string; proposed: string; page: number })
   | (Base & {
@@ -98,12 +100,17 @@ const READERS: Record<EditorialEventType, (raw: Rec) => Rec> = {
   retry: (r) => ({ page: num(r.page), blocks: strList(r.blocks) }),
   fallback: (r) => ({ page: num(r.page), block: str(r.block), reason: str(r.reason) }),
   review_started: (r) => ({ page: num(r.page), blocks: num(r.blocks) }),
-  review_done: (r) => ({
-    page: num(r.page),
-    tickets: num(r.tickets),
-    applied: num(r.applied),
-    rejected: num(r.rejected),
-  }),
+  review_done: (r) => {
+    const rejected = num(r.rejected);
+    const withdrawn = Math.min(num(r.withdrawn), rejected);
+    return {
+      page: num(r.page),
+      tickets: num(r.tickets),
+      applied: num(r.applied),
+      rejected: rejected - withdrawn,
+      withdrawn,
+    };
+  },
   glossary_changed: (r) => ({
     version: num(r.version),
     action: str(r.action),
