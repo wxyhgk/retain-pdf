@@ -41,12 +41,6 @@ class TranslationProviderRuntimeProtocol(Protocol):
     is_transport_error: TransportErrorFn
     normalize_base_url: NormalizeBaseUrlFn
     request_chat_content: TransportRequestFn
-    parse_translation_payload: ParseTranslationPayloadFn
-    translate_batch_once: TranslateBatchFn
-    translate_single_item_plain_text: TranslateSingleFn
-    translate_single_item_plain_text_unstructured: TranslateSingleFn
-    translate_single_item_tagged_text: TranslateSingleFn
-    translate_single_item_with_decision: TranslateSingleFn
 
 
 __all__ = [

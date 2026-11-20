@@ -16,8 +16,8 @@ from retainpdf_translation.llm.shared.orchestration.metadata import formula_rout
 import retainpdf_translation.llm.shared.orchestration.terminal_payloads as terminal_payloads
 from retainpdf_translation.llm.shared.orchestration.metadata import restore_runtime_term_tokens
 from retainpdf_translation.llm.shared.provider_runtime import is_transport_error
-from retainpdf_translation.llm.shared.provider_runtime import translate_single_item_plain_text
-from retainpdf_translation.llm.shared.provider_runtime import translate_single_item_plain_text_unstructured
+from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_plain_text
+from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_plain_text_unstructured
 
 
 # Sentence-level fallback runs one LLM request per sentence. Without a

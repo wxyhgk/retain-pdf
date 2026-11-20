@@ -1,6 +1,6 @@
 """翻译引擎 agent（任务的 translation.engine=agent）：逐页翻交给 retainpdf-translation-agent，其余照旧。
 
-和现有流程（legacy）共用前半段 `book_flow.prepare_book_payloads`（读每页模板、接续段、页面策略），也共用后面的
+和现有流程（legacy）共用前半段 `workflow/prepare.py` 的 `prepare_book_payloads`（读每页模板、接续段、页面策略），也共用后面的
 清单、质检、断点收尾（`execution_runner`）；只替换"逐页翻"那一步：
 
 - 每页模板记录 → agent 的 `PageInput`：类别按规范化文档的 sub_type 换成 agent 的分类，原文用 `$…$` 直写公式
@@ -56,7 +56,7 @@ from retainpdf_translation.llm.shared.model_wire import anthropic_usage
 from retainpdf_translation.llm.shared.usage_ledger import record_model_usage
 from retainpdf_translation.services.policy import TranslationPolicyConfig
 from retainpdf_translation.workflow.agent_openai import make_openai_transport
-from retainpdf_translation.workflow.book_flow import prepare_book_payloads
+from retainpdf_translation.workflow.prepare import prepare_book_payloads
 from retainpdf_translation.workflow.page_policies import build_page_summaries
 from retainpdf_translation.workflow.pages import save_pages
 from retainpdf_translation_agent import DEFAULT_MODEL

@@ -8,8 +8,8 @@ from retainpdf_translation.llm.shared.orchestration.heavy_formula import transla
 from retainpdf_translation.llm.shared.orchestration.tagged_placeholder import try_tagged_placeholder_path
 from retainpdf_translation.llm.shared.orchestration.transport import DeferredTransportRetry
 from retainpdf_translation.llm.shared.provider_runtime import is_transport_error
-from retainpdf_translation.llm.shared.provider_runtime import translate_single_item_plain_text
-from retainpdf_translation.llm.shared.provider_runtime import translate_single_item_plain_text_unstructured
+from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_plain_text
+from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_plain_text_unstructured
 
 
 def translate_heavy_formula_route(

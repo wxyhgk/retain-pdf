@@ -17,6 +17,7 @@ from devtools.architecture_checks.stage_contract_duplicates import check_stage_c
 from devtools.architecture_checks.rendering import check_rendering_internal_boundaries
 from devtools.architecture_checks.translation import check_devtools_translation_internal_usage
 from devtools.architecture_checks.translation import check_translation_internal_boundaries
+from devtools.architecture_checks.translation import check_translation_engine_boundaries
 from devtools.architecture_checks.translation import check_translation_library_self_contained
 from devtools.architecture_checks.translation import check_translation_pipeline_facade_boundary
 from devtools.architecture_checks.translation import check_translation_public_surface_usage
@@ -47,6 +48,7 @@ def main() -> int:
         check_rendering_internal_boundaries(errors)
         check_translation_rendering_separation(errors)
         check_translation_internal_boundaries(errors)
+        check_translation_engine_boundaries(errors)
         check_translation_library_self_contained(errors)
         check_translation_payload_field_writers(errors)
         check_translation_source_text_readers(errors)

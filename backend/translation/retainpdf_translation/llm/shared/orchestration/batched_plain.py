@@ -19,7 +19,7 @@ from retainpdf_translation.llm.shared.orchestration.batched_plain_single import 
 from retainpdf_translation.llm.shared.orchestration.identical_copy import worth_retrying_identical_copy
 from retainpdf_translation.llm.shared.orchestration.metadata import should_store_translation_result
 from retainpdf_translation.llm.shared.provider_runtime import is_transport_error
-from retainpdf_translation.llm.shared.provider_runtime import translate_batch_once
+from retainpdf_translation.llm.providers.deepseek.translation_client import translate_batch_once
 
 
 def _try_direct_batched_plain(

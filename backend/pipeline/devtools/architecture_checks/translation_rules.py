@@ -61,6 +61,12 @@ TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "agent_openai.py",
     "batch_runner.py",
     "book_flow.py",
+    # 两个引擎共用的前半段（读模板、接续段、页面策略），2026-11-20 拆包从 book_flow.py 挪出
+    "prepare.py",
+    # 翻译引擎登记表：按名字延迟加载引擎，底座不 import 引擎（2026-11-20 拆包）
+    "engines.py",
+    # 普通翻译引擎的译前准备（术语预扫、审定、风格指南），执行计划经 engines.py 调（2026-11-20 拆包）
+    "preparation_step.py",
     "editorial.py",
     # 跟着 OCR 流式翻译的整书流程（OCR 和翻译并行，2026-10-31），和 book_flow.py 同一层
     "streaming_flow.py",

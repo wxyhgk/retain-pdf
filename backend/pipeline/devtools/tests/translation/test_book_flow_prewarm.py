@@ -6,6 +6,7 @@ import pytest
 
 
 from retainpdf_translation.workflow import book_flow
+from retainpdf_translation.workflow import prepare
 
 
 def test_initial_continuation_state_is_checkpointed_before_provider_review(
@@ -25,6 +26,11 @@ def test_initial_continuation_state_is_checkpointed_before_provider_review(
         "load_page_payloads",
         lambda **kwargs: (translation_paths, page_payloads),
     )
+    monkeypatch.setattr(
+        prepare,
+        "load_page_payloads",
+        lambda **kwargs: (translation_paths, page_payloads),
+    )
 
     def initial_continuation_pass(**kwargs):
         kwargs["page_payloads"][0][0]["layout_mode"] = "double"
@@ -33,7 +39,9 @@ def test_initial_continuation_state_is_checkpointed_before_provider_review(
         raise RuntimeError("upstream unavailable")
 
     monkeypatch.setattr(book_flow, "run_initial_continuation_pass", initial_continuation_pass)
+    monkeypatch.setattr(prepare, "run_initial_continuation_pass", initial_continuation_pass)
     monkeypatch.setattr(book_flow, "run_continuation_review", failed_provider_review)
+    monkeypatch.setattr(prepare, "run_continuation_review", failed_provider_review)
 
     with pytest.raises(RuntimeError, match="upstream unavailable"):
         book_flow.translate_book_with_global_continuations(
@@ -78,12 +86,19 @@ def test_book_flow_does_not_start_render_prewarm_during_translation(monkeypatch,
         return page_payloads[0]
 
     monkeypatch.setattr(book_flow, "load_page_payloads", fake_load_page_payloads)
+    monkeypatch.setattr(prepare, "load_page_payloads", fake_load_page_payloads)
     monkeypatch.setattr(book_flow, "run_initial_continuation_pass", lambda **kwargs: None)
+    monkeypatch.setattr(prepare, "run_initial_continuation_pass", lambda **kwargs: None)
     monkeypatch.setattr(book_flow, "run_continuation_review", lambda **kwargs: None)
+    monkeypatch.setattr(prepare, "run_continuation_review", lambda **kwargs: None)
     monkeypatch.setattr(book_flow, "run_page_policy_stage", lambda **kwargs: 0)
+    monkeypatch.setattr(prepare, "run_page_policy_stage", lambda **kwargs: 0)
     monkeypatch.setattr(book_flow, "finalize_orchestration_metadata_by_page", lambda payloads: None)
+    monkeypatch.setattr(prepare, "finalize_orchestration_metadata_by_page", lambda payloads: None)
     monkeypatch.setattr(book_flow, "annotate_translation_context_windows", lambda payloads, mode: 0)
+    monkeypatch.setattr(prepare, "annotate_translation_context_windows", lambda payloads, mode: 0)
     monkeypatch.setattr(book_flow, "save_pages", lambda *args, **kwargs: None)
+    monkeypatch.setattr(prepare, "save_pages", lambda *args, **kwargs: None)
     monkeypatch.setattr(book_flow, "run_translation_batch_stage", fake_translate_batch_stage)
     monkeypatch.setattr(book_flow, "run_garbled_reconstruction_stage", lambda **kwargs: None)
     monkeypatch.setattr(book_flow, "run_agent_repair_stage", lambda **kwargs: {})

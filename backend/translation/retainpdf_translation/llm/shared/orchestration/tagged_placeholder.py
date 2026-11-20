@@ -20,7 +20,7 @@ from retainpdf_translation.llm.shared.orchestration.transport import defer_trans
 from retainpdf_translation.llm.shared.orchestration.transport import plain_text_timeout_seconds
 from retainpdf_translation.llm.shared.provider_runtime import DEFAULT_BASE_URL
 from retainpdf_translation.llm.shared.provider_runtime import DEFAULT_MODEL
-from retainpdf_translation.llm.shared.provider_runtime import translate_single_item_tagged_text
+from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_tagged_text
 from retainpdf_translation.llm.validation.placeholder_tokens import placeholder_sequence
 
 

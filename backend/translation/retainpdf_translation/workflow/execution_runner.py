@@ -93,9 +93,10 @@ def run_translation_execution_plan(
     *,
     checkpoint_store: CheckpointStore | None = None,
 ) -> dict:
-    # Import lazily so importing retainpdf_translation.workflow does not load the whole book flow.
-    from retainpdf_translation.workflow.book_flow import translate_book_with_global_continuations
+    # 引擎按任务的 translation.engine 从登记表延迟加载（workflow/engines.py），底座不 import 引擎（2026-11-20 拆包）
+    from retainpdf_translation.workflow import engines
 
+    engine = engines.engine_spec(request.engine)
     glossary_entries = plan.glossary_entries
 
     try:
@@ -116,19 +117,14 @@ def run_translation_execution_plan(
     with checkpoint_session as checkpoint:
         checkpoint.on_pages_committed = _record_committed_pages
         with translation_run_diagnostics_scope(plan.run_diagnostics):
-            translate_book = translate_book_with_global_continuations
+            translate_book = engines.load(engine.translate_book)
             engine_kwargs = {"batch_size": request.batch_size, "domain_guidance": plan.policy_config.domain_guidance}
             if request.engine == "agent":
-                from retainpdf_translation.workflow.agent_flow import translate_book_with_agent
-
-                translate_book = translate_book_with_agent
                 from retainpdf_translation.workflow.execution import resolve_reviewer_connection
 
                 engine_kwargs = {"glossary_entries": glossary_entries, "reviewer": resolve_reviewer_connection(request), "source_pdf_path": request.source_pdf_path}
-            elif getattr(plan, "ocr_stream", None) is not None:
-                from retainpdf_translation.workflow.streaming_flow import translate_book_streaming
-
-                translate_book = translate_book_streaming
+            elif getattr(plan, "ocr_stream", None) is not None and engine.translate_book_streaming:
+                translate_book = engines.load(engine.translate_book_streaming)
                 engine_kwargs = {
                     **engine_kwargs,
                     "stream": plan.ocr_stream,

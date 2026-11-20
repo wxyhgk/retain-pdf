@@ -16,6 +16,13 @@
   - `book_flow.py`：默认的全书翻译阶段顺序。
   - `streaming_flow.py`：OCR 和翻译并行时用，OCR 每公布一批页就翻一轮。
   - `agent_flow.py`：`translation.engine=agent` 时，逐页翻交给 `retainpdf-translation-agent`，其余照旧。
+- `engines.py`
+  翻译引擎登记表（2026-11-20 拆包）：执行入口、执行计划按任务的 `translation.engine` 查引擎，「模块:函数」字符串延迟加载，
+  底座不 import 引擎；边界由 `devtools/architecture_checks/translation_engines.py` 卡着。
+- `prepare.py`
+  两个引擎共用的前半段 `prepare_book_payloads`（读模板、接续段、页面策略、上下文窗口），从 `book_flow.py` 挪来。
+- `preparation_step.py`
+  普通翻译引擎的译前准备（术语预扫、审定、风格指南），执行计划经 `engines.py` 调。
 - `stages.py`
   把 `phases/` 里的阶段函数汇到一处，`book_flow`、`streaming_flow` 从这里取。
 

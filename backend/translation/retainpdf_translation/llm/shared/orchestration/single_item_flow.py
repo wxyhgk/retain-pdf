@@ -34,9 +34,9 @@ from retainpdf_translation.llm.shared.orchestration.transport import plain_text_
 from retainpdf_translation.llm.shared.provider_runtime import DEFAULT_BASE_URL
 from retainpdf_translation.llm.shared.provider_runtime import DEFAULT_MODEL
 from retainpdf_translation.llm.shared.provider_runtime import is_transport_error
-from retainpdf_translation.llm.shared.provider_runtime import translate_batch_once
-from retainpdf_translation.llm.shared.provider_runtime import translate_single_item_plain_text
-from retainpdf_translation.llm.shared.provider_runtime import translate_single_item_plain_text_unstructured
+from retainpdf_translation.llm.providers.deepseek.translation_client import translate_batch_once
+from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_plain_text
+from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_plain_text_unstructured
 from retainpdf_translation.llm.shared.provider_runtime import unwrap_translation_shell
 
 
