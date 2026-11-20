@@ -17,7 +17,12 @@
 `database/retainpdf-db/src/db.rs` 及其子模块（`retainpdf-data` 重导出成 `retainpdf_data::db`）：
 
 - `db.rs`：`Db` facade，对外提供 job、artifact、event、document、collection、glossary、translation version、sync 等持久化能力。
-- `db/schema/mod.rs`：编号迁移的执行器，以及老表的幂等加列（`ensure_*_column`）。
+- `database/retainpdf-db/schema.sql`：**现在每张表的完整样子**（列、类型、默认值、主键、外键、索引、触发器），新建空库跑完全部建表和迁移的快照。
+  改了结构（加迁移）要重新生成：`UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot`，看 diff 只该有预期的改动。
+  老库一路升上来和新建的库一样，`an_old_database_upgraded_matches_a_fresh_one` 守着；真实库可以只读比一次：
+  `RETAINPDF_COMPARE_DB=<库文件> cargo test -p retainpdf-db compare_a_real_database -- --ignored --nocapture`。
+- `db/schema/base.sql`：最早几张表（上传、任务、产物、事件、术语表）的幂等建表，新库的起点；不往这里加新表、新列。
+- `db/schema/mod.rs`：编号迁移的执行器，以及老表的幂等加列（`LEGACY_COLUMNS`，现在只有 `jobs.document_id`）。
 - `db/schema/migrations/`：编号迁移，一个迁移一个 `vNN_<领域>.sql`，说明写在文件开头；清单在 `migrations/mod.rs`。版本号就是清单里的位置，已上线的只能往后追加，不能改、删、调序。
 - `db/rows.rs`：共享数据库行 decode；领域专用 decode 留在对应子模块。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
