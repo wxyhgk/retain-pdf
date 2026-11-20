@@ -3,7 +3,7 @@ from __future__ import annotations
 from retainpdf_translation.artifacts.review import TRANSLATION_REVIEW_SCHEMA
 from retainpdf_translation.artifacts.review import TRANSLATION_REVIEW_SCHEMA_VERSION
 from retainpdf_translation.llm.shared.control_context import TranslationControlContext
-from retainpdf_translation.services.agents.coordinator import TranslationAgentCoordinator
+from retainpdf_translation.services.agents.reviewer import ConsistencyReviewerAgent
 
 
 def build_translation_review(
@@ -11,10 +11,12 @@ def build_translation_review(
     translated_pages_map: dict[int, list[dict]],
     translation_context: TranslationControlContext | None = None,
 ) -> dict[str, object]:
-    coordinator = (
-        TranslationAgentCoordinator.from_control_context(translation_context)
+    # 只用规则审查（英文残留、占位符、术语）：和 TranslationAgentCoordinator.from_control_context(...).review_batch 一样，
+    # 不经过协调器，免得把调模型修复的那一半（普通翻译引擎）带进底座（2026-11-20 拆包）
+    reviewer = (
+        ConsistencyReviewerAgent(list(translation_context.scoped_to_source_texts([]).glossary_entries or []))
         if translation_context is not None
-        else TranslationAgentCoordinator()
+        else ConsistencyReviewerAgent()
     )
     issues: list[dict] = []
     reviewed_item_count = 0
@@ -51,7 +53,7 @@ def build_translation_review(
                     "translation_diagnostics": item.get("translation_diagnostics") or {},
                 }
             }
-            review = coordinator.review_batch([item], result)
+            review = reviewer.review_batch([item], result)
             reviewed_item_count += review.reviewed_item_count
             for issue in review.issues:
                 payload = issue.as_dict()
