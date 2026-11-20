@@ -7,7 +7,20 @@ from collections import Counter
 
 from retainpdf_translation_agent.memory import find_terms
 
-FORMULA_RE = re.compile(r"\$\$[^$]+\$\$|\$[^$]+\$")  # 独立公式 `$$ … $$`（接续组夹着的）整个算一个
+# 独立公式 `$$ … $$`（接续组夹着的）整个算一个。`\$` 是字面的美元符（货币，见 CURRENCY_RE），不算公式边界
+FORMULA_RE = re.compile(r"(?<!\\)\$\$[^$]+\$\$|(?<!\\)\$[^$]+(?<!\\)\$")
+# 货币的美元符：`$` 紧跟数字（不隔空格），数字后面不是公式的东西（`$`、上下标、运算符）。OCR 的公式写成 "$ … $"（带空格），
+# 价格写成 "$12.59"。11-20《The Interloper》"$12.59 to $17" 被当成一个公式换成占位，中间的 to 没翻。
+# 这种 `$` 交给模型前写成 `\$`（排版认它是字面美元符），模型交回时漏了反斜杠的也补上。
+CURRENCY_RE = re.compile(r"(?<![\\$])\$(?=\d(?:[\d,]*\d)?(?:\.\d+)?(?!\d)(?![,.]?\d)(?!\s*[=+*<>^_{}|\\$])(?![\^_{}\\$]))")
+# 只有引注的注释（"35. Keenan 2013, xxiv."、"Ibid., 45."、"See Smith and Jones 2019; Lee 2020, 12–14."）：原样保留就对
+_CITE_PAGES = r"(?:\s*,\s*(?:pp?\.\s*)?[\divxlc]+(?:\s*[–-]\s*[\divxlc]+)?(?:n\d+)?)*"
+_CITE_PART = (
+    r"(?:(?i:see\s+(?:also\s+)?|cf\.\s+))?"
+    r"(?:[A-Z][\w'’.-]+(?:\s+(?:and|&)\s+[A-Z][\w'’.-]+|\s+et\s+al\.)?\s+(?:\d{4}[a-z]?|n\.d\.)" + _CITE_PAGES
+    + r"|(?i:ibid)\.?" + _CITE_PAGES + r")"
+)
+CITATION_ONLY_RE = re.compile(r"^\s*(?:\d{1,4}\.?\s+)?" + _CITE_PART + r"(?:\s*;\s*" + _CITE_PART + r")*\s*\.?\s*$")
 CITATION_RE = re.compile(r"\[\d+(?:\s*[,–-]\s*\d+)*\]")
 FN_RE = re.compile(r"\{\{fn:[^}]+\}\}")
 CODE_RE = re.compile(r"`[^`\n]+`")
@@ -38,7 +51,59 @@ SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太�
 # 7：2026-10-31 独立公式 `$$ … $$`（接续组夹着的）整个算一个公式
 # 8：2026-11-18 不带 http、www 的域名（press.princeton.edu）也算网址；审校改法和前后文重叠时去掉重叠，替换后多出重复就不改
 #    （review.py；升版本是为了让已经跑了一半的任务重来一遍、按新规矩重做审校替换，请求缓存照用）
-CHECKS_VERSION = "translation-agent-checks-8"
+# 9：2026-11-20 货币的 `$12.59` 不算公式（写成 `\$`）；只有引注的注释（"Keenan 2013, xxiv."）原样交回不算 untranslated；
+#    译文里成对的直引号换成中文引号（normalize_translation）
+CHECKS_VERSION = "translation-agent-checks-9"
+
+
+def escape_currency(text: str) -> str:
+    """价格里的 `$`（"$12.59"）写成反斜杠加美元符：不算公式边界，排版认它是字面的美元符。已经转义过的不动。"""
+    return CURRENCY_RE.sub(lambda _: "\\$", text)
+
+
+def is_citation_only(text: str) -> bool:
+    """整块只是引注（作者、年份、页码，或 Ibid.），没有要翻的话。"""
+    return bool(CITATION_ONLY_RE.match(FN_RE.sub(" ", text).strip()))
+
+
+_QUOTE_PROTECTED_RE = re.compile(r"`[^`\n]+`|(?<!\\)\$\$[^$]+\$\$|(?<!\\)\$[^$]+(?<!\\)\$|\{\{fn:[^}]+\}\}")
+_SINGLE_QUOTED_CJK_RE = re.compile(r"'([^'\n]{0,60}[\u4e00-\u9fff][^'\n]{0,60})'")
+
+
+def normalize_quotes(text: str) -> str:
+    """中文译文里的直引号换成中文引号：成对的 `"` 依次换成 “ ”（单数个不动，免得配错），引着中文的 '…' 换成 ‘…’。
+    公式、行内代码、脚注标记里的不动；没有中文的译文（保留原文的引注、书目）不动。
+    11-20《The Interloper》全书 251 块用直引号、79 块用弯引号，同一本书里随块变。"""
+    if not text or not CJK_RE.search(text):
+        return text
+    parts: list[tuple[bool, str]] = []
+    last = 0
+    for match in _QUOTE_PROTECTED_RE.finditer(text):
+        parts.append((False, text[last : match.start()]))
+        parts.append((True, match.group(0)))
+        last = match.end()
+    parts.append((False, text[last:]))
+    if sum(chunk.count('"') for protected, chunk in parts if not protected) % 2 == 0:
+        opening = True
+        out = []
+        for protected, chunk in parts:
+            if not protected:
+                pieces = chunk.split('"')
+                rebuilt = pieces[0]
+                for piece in pieces[1:]:
+                    rebuilt += ("“" if opening else "”") + piece
+                    opening = not opening
+                chunk = rebuilt
+            out.append((protected, chunk))
+        parts = out
+    return "".join(chunk if protected else _SINGLE_QUOTED_CJK_RE.sub(lambda m: f"‘{m.group(1)}’", chunk) for protected, chunk in parts)
+
+
+def normalize_translation(translation: str | None) -> str | None:
+    """模型交回的译文统一收拾一遍（按节、逐页都走）：价格的 `$` 转义、直引号换中文引号。"""
+    if not translation:
+        return translation
+    return normalize_quotes(escape_currency(translation))
 
 
 def visible_length(text: str) -> int:
@@ -60,6 +125,7 @@ def restore_formulas(source: str, translation: str | None) -> tuple[str | None, 
     """
     if not translation:
         return translation, []
+    translation = normalize_translation(translation)
     from difflib import SequenceMatcher
 
     if "\\\\" not in source:
@@ -106,7 +172,7 @@ def check_block(source: str, translation: str | None) -> list[dict]:
     # 公式不和原文逐个比（2026-10-31 用户定）：模型把 "$n_{L}^{max}$" 写成 "n_L^max"、数字挪进公式，以前判错、重翻两次还不合格就退回原文，
     # 整段英文比公式写得不像糟得多。只查 `$` 成对——不成对的话后面整段都会被当成公式排。模型顺手改了一点点的公式照旧换回原文写法（restore_formulas）
     src_formulas = Counter(_formula_key(f) for f in FORMULA_RE.findall(CODE_RE.sub(" ", source)))
-    if CODE_RE.sub(" ", translation).count("$") % 2:
+    if len(re.findall(r"(?<!\\)\$", CODE_RE.sub(" ", translation))) % 2:
         issues.append(_issue("formula_unbalanced", "error", "`$` 不成对"))
     lost_code = Counter(CODE_RE.findall(source)) - Counter(CODE_RE.findall(translation))
     if lost_code:
@@ -133,7 +199,7 @@ def check_block(source: str, translation: str | None) -> list[dict]:
     stray = STRAY_EN_RE.findall(QUOTED_RE.sub(" ", plain_out))
     if stray and CJK_RE.search(plain_out):
         issues.append(_issue("stray_english", "error", f"中文句子里夹着英文词：{stray[:5]}"))
-    if not CJK_RE.search(plain_source) and PROSE_WORD_RE.search(URL_RE.sub(" ", plain_source)):
+    if not CJK_RE.search(plain_source) and PROSE_WORD_RE.search(URL_RE.sub(" ", plain_source)) and not is_citation_only(source):
         if translation.strip() == source.strip():
             issues.append(_issue("untranslated", "error", "译文和原文一模一样"))
         elif not CJK_RE.search(plain_out) and len(LATIN_WORD_RE.findall(plain_source)) >= 3:

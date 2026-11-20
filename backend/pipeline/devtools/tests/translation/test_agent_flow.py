@@ -476,3 +476,48 @@ def test_the_book_title_comes_from_the_pdf_metadata_before_the_first_ocr_title(t
         assert agent_flow._document_title(payloads, pdf(junk)) == "Introduction", junk
     assert agent_flow._document_title(payloads, None) == "Introduction"
     assert agent_flow._document_title(payloads, tmp_path / "missing.pdf") == "Introduction"
+
+
+def test_prices_are_escaped_and_spaced_superscripts_become_footnote_marks() -> None:
+    """11-20《The Interloper》："$12.59 to $17" 被当成公式、to 没翻；OCR 写成 "$ ^{1 1} $" 的上标角标漏成原样。"""
+    text, marks = agent_flow._agent_text({"source_text": "Wages ran from $12.59 to $17 an hour.$ ^{1 1} $ See $x$."}, "paragraph")
+    assert text == "Wages ran from \\$12.59 to \\$17 an hour.{{fn:11}} See $x$."
+    assert marks == {"11": "$ ^{1 1} $"}
+
+
+def test_running_headers_and_the_back_index_keep_the_original(tmp_path: Path) -> None:
+    """页眉 "[170] NOTES" 被 OCR 认成标题、通读定成「[170] 注释」；书后的索引被逐条翻成中文（页码是英文版的、排序全乱）。"""
+    import fitz
+
+    pdf_path = tmp_path / "book.pdf"
+    document = fitz.open()
+    for _ in range(12):
+        document.new_page()
+    document.set_page_labels([{"startpage": 0, "prefix": "", "style": "r", "firstpagenum": 1}, {"startpage": 2, "prefix": "", "style": "D", "firstpagenum": 1}])
+    document.save(pdf_path)
+    document.close()
+
+    def item(sub_type: str, text: str) -> dict:
+        return {"normalized_sub_type": sub_type, "source_text": text, "should_translate": True}
+
+    payloads = {i: [item("body", f"Body text on page {i + 1}.")] for i in range(12)}
+    payloads[8] = [item("heading", "[7] NOTES"), item("body", "1. Keenan 2013, xxiv.")]  # PDF 第 9 页印着 7
+    payloads[4] = [item("heading", "2 METHODS"), item("body", "We met.")]  # 印着 3：数字对不上，是正经标题
+    payloads[10] = [item("body", "Last words."), item("heading", "Index"), item("body", "access, 49–50"), item("body", "Keenan, Marie, 92")]
+    payloads[11] = [item("body", "Lamont, Michèle, 163n3")]
+
+    counts = agent_flow.skip_back_matter(payloads, pdf_path)
+    assert counts == {"running_header": 1, "index": 3}
+    assert payloads[8][0]["should_translate"] is False and payloads[8][0]["skip_reason"] == "skip_running_header"
+    assert payloads[4][0]["should_translate"] is True
+    assert [i["should_translate"] for i in payloads[10]] == [True, True, False, False], "索引标题照翻，后面的条目保留原文"
+    assert payloads[11][0]["skip_reason"] == "skip_back_matter_index"
+
+    # 没有 PDF 页码标签：拿页脚页码算页码差；都没有就不认页眉
+    plain = {i: [item("page_number", str(i - 1)), item("body", "x")] for i in range(2, 8)}
+    plain[6].insert(0, item("heading", "CHAPTER NOTES 5"))
+    assert agent_flow.skip_back_matter(plain)["running_header"] == 1
+    assert agent_flow.skip_back_matter({0: [item("heading", "[7] NOTES")]})["running_header"] == 0
+    early = {i: [item("body", "x")] for i in range(10)}
+    early[2] = [item("heading", "Index"), item("body", "an early section called Index")]
+    assert agent_flow.skip_back_matter(early)["index"] == 0, "只在书的最后四分之一认索引"
