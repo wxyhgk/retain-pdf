@@ -3,7 +3,7 @@
 // 展示组件：只收 props 发回调。按钮都是 type="button"——外层是单本提交用的 #job-form。
 
 import type { ReactNode } from "react";
-import { Languages, Loader2, ScanSearch, SlidersHorizontal } from "lucide-react";
+import { Bot, Languages, Loader2, ScanSearch, SlidersHorizontal } from "lucide-react";
 import { summarizeBatch, type BatchItem, type BatchState } from "../../../domain/upload/batch-session.js";
 
 type BatchUploadPanelProps = {
@@ -15,6 +15,8 @@ type BatchUploadPanelProps = {
   onStoreOnly: () => void;
   onReset: () => void;
   optionsSlot: ReactNode;
+  /** 选了 Agent 翻译：主按钮写「Agent 翻译（N 本）」。 */
+  agent?: boolean;
 };
 
 function statusText(item: BatchItem): string {
@@ -51,6 +53,7 @@ export function BatchUploadPanel({
   onStoreOnly,
   onReset,
   optionsSlot,
+  agent = false,
 }: BatchUploadPanelProps) {
   const summary = summarizeBatch(batch);
   const busy = batch.submitting;
@@ -58,7 +61,7 @@ export function BatchUploadPanel({
   const retrying = summary.submitFailed > 0;
   const submitLabel = retrying
     ? `重新提交没交上的 ${summary.readyToSubmit} 本`
-    : `${ocrOnly ? "开始 OCR" : "开始翻译"}（${summary.readyToSubmit} 本）`;
+    : `${ocrOnly ? "开始 OCR" : agent ? "Agent 翻译" : "开始翻译"}（${summary.readyToSubmit} 本）`;
   const uploadedCount = batch.items.filter((item) => item.uploadId).length;
 
   let headline = `共 ${summary.total} 本`;
@@ -125,7 +128,7 @@ export function BatchUploadPanel({
           data-batch-action="submit"
           {...(busy ? { "data-busy": "1" } : {})}
         >
-          {busy ? <Loader2 className="animate-spin" aria-hidden="true" /> : ocrOnly ? <ScanSearch aria-hidden="true" /> : <Languages aria-hidden="true" />}
+          {busy ? <Loader2 className="animate-spin" aria-hidden="true" /> : ocrOnly ? <ScanSearch aria-hidden="true" /> : agent ? <Bot aria-hidden="true" /> : <Languages aria-hidden="true" />}
           {busy ? "提交中…" : submitLabel}
         </button>
       </div>

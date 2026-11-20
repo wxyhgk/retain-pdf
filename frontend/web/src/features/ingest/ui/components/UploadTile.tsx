@@ -18,6 +18,7 @@ import { TranslationOptionsPanel } from "./TranslationOptionsPanel.jsx";
 import { ProcessingChoicePanel } from "./upload/ProcessingChoicePanel.jsx";
 import { UploadDropzone } from "./upload/UploadDropzone.jsx";
 import { BatchUploadPanel } from "./upload/BatchUploadPanel.jsx";
+import { isAgentTranslation } from "./upload/UploadEngineChoice.jsx";
 import { createBatchUploadSession, summarizeBatch, type BatchUploadSession } from "../../domain/upload/batch-session.js";
 import {
   CredentialGateNotice,
@@ -154,6 +155,7 @@ export function HeroUpload() {
         <BatchUploadPanel
           batch={batch}
           ocrOnly={Boolean(workflow.ocrOnly)}
+          agent={isAgentTranslation(workflow.preferences.translationQuality)}
           optionsOpen={upload.translationOptionsOpen}
           onToggleOptions={handleToggleTranslationOptions}
           onSubmit={handleBatchSubmit}
@@ -195,6 +197,7 @@ export function HeroUpload() {
         submitBusy={workflow.submitBusy}
         submitDisabled={workflow.submitDisabled}
         submitLabel={workflow.submitLabel}
+        agent={isAgentTranslation(workflow.preferences.translationQuality)}
         ocrOnly={workflow.ocrOnly}
         pageRangeButtonVisible={workflow.pageRangeButtonVisible}
         pageRangeOpen={upload.translationOptionsOpen}

@@ -6,7 +6,7 @@
 // 缺文件 / 上传中不出 hint：上方拖放区（大加号 + 「单个 PDF / 最大 512MB」
 // / 上传进度）已经把这件事说清楚，再来一行等于同一屏说两遍。
 import type { ReactNode } from "react";
-import { BookmarkPlus, Languages, Loader2, ScanSearch, SlidersHorizontal } from "lucide-react";
+import { BookmarkPlus, Bot, Languages, Loader2, ScanSearch, SlidersHorizontal } from "lucide-react";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 
 type ProcessingChoicePanelProps = {
@@ -15,6 +15,8 @@ type ProcessingChoicePanelProps = {
   submitBusy: boolean;
   submitDisabled: boolean;
   submitLabel: string;
+  /** 选了 Agent 翻译：主按钮写「Agent 翻译」、换机器人图标（不是翻译工作流的「开始渲染」等照旧）。 */
+  agent?: boolean;
   ocrOnly: boolean;
   pageRangeButtonVisible: boolean;
   pageRangeOpen: boolean;
@@ -29,6 +31,7 @@ export function ProcessingChoicePanel({
   submitBusy,
   submitDisabled,
   submitLabel,
+  agent = false,
   ocrOnly,
   pageRangeButtonVisible,
   pageRangeOpen,
@@ -39,6 +42,7 @@ export function ProcessingChoicePanel({
   // 禁用原因与下一步：仅凭 uploadReady/submitDisabled 即可区分
   // 「缺文件」与「文件就绪但被凭据·预算·源任务拦住」两类。
   const blocked = submitDisabled && !submitBusy;
+  const agentSubmit = agent && !ocrOnly && (!submitLabel || submitLabel === "直接翻译");
   const missingUpload = !uploadReady;
   let submitTitle = ocrOnly ? "上传完成后开始 OCR" : "上传完成后开始翻译";
   let hintText = "";
@@ -95,10 +99,12 @@ export function ProcessingChoicePanel({
             <Loader2 className="animate-spin" aria-hidden="true" />
           ) : ocrOnly ? (
             <ScanSearch aria-hidden="true" />
+          ) : agentSubmit ? (
+            <Bot aria-hidden="true" />
           ) : (
             <Languages aria-hidden="true" />
           )}
-          {submitBusy ? "提交中…" : ocrOnly ? "开始 OCR" : submitLabel || "直接翻译"}
+          {submitBusy ? "提交中…" : ocrOnly ? "开始 OCR" : agentSubmit ? "Agent 翻译" : submitLabel || "直接翻译"}
         </button>
       </div>
 
