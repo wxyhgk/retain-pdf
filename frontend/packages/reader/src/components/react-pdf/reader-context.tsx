@@ -53,7 +53,13 @@ export type ReaderContextValue = {
   /** 左栏搜索的词（防抖后）：书页文字层把命中标出来（PdfPageSlot）。空串不标。 */
   findTerm?: string;
   /** 「对比版本」：左栏换成这一份译文（地址、块；块的 source 已换成那一份的译文）。null = 左栏照常是原文。 */
-  compareVersion?: { url: string; regions: ReaderRegion[] } | null;
+  compareVersion?: {
+    url: string;
+    regions: ReaderRegion[];
+    /** 两栏书页上的水印：左边对比的那份、右边正在读的那份。 */
+    left: { name: string; createdAt: string };
+    right: { name: string; createdAt: string };
+  } | null;
   // 和 regions 走同一条路下去，因为它们用的是同一套 bbox 投影。
   // session
   /**

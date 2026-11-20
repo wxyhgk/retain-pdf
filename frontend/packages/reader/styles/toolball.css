@@ -1,0 +1,113 @@
+/* 右下角的悬浮小球（ReaderToolBall.tsx）：面板（Markdown）和「对比版本」的唯一入口。
+ * 点开往上一列圆形图标按钮，名字在悬停里；「对比版本」的列表弹在这一列左边。
+ * 面板开着时不藏（2026-09 删掉的那个圆钮就是被 is-assistant-open 藏掉、里面的功能进不去），挪到面板左边。 */
+
+.reader-toolball {
+  position: fixed;
+  right: 22px;
+  bottom: 20px;
+  z-index: calc(var(--z-hud, 36) + 3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: right 180ms ease;
+}
+
+.reader-react-root.is-assistant-open .reader-toolball {
+  right: calc(var(--reader-ai-split-width, 0px) + 18px);
+}
+
+.reader-toolball-ball {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--shadow-color, var(--ink)) 26%, transparent);
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 160ms ease;
+}
+
+.reader-toolball-ball:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 30%, transparent);
+}
+
+.reader-toolball-ball:active {
+  transform: scale(0.95);
+}
+
+/* 有面板开着、或在对比：小球外面一圈强调色，提醒「这里有东西开着」。 */
+.reader-toolball-ball[data-active="true"] {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 35%, var(--paper)),
+    0 10px 26px color-mix(in srgb, var(--shadow-color, var(--ink)) 26%, transparent);
+}
+
+.reader-toolball-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: reader-toolball-up 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.reader-toolball-stack .reader-panel-toggle,
+.reader-toolball-item {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent);
+  cursor: pointer;
+}
+
+.reader-toolball-stack .reader-panel-toggle-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.reader-toolball-item:hover,
+.reader-toolball-stack .reader-panel-toggle:hover:not([aria-pressed="true"]) {
+  background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+}
+
+.reader-toolball-item[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* 「对比版本」的列表：弹在这一列左边，底边和小球对齐。 */
+.reader-toolball .reader-version-compare-menu {
+  position: absolute;
+  top: auto;
+  right: 58px;
+  bottom: 0;
+  left: auto;
+}
+
+@keyframes reader-toolball-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

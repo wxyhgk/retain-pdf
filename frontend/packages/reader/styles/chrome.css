@@ -12,8 +12,8 @@
  * 一个一个控件去算 max-width 是守不住的，改成顶栏统一给托盘留位。
  */
 .reader-react-root {
-  /* 托盘现在只有「下载」+「关闭」两颗：约 166px 宽 + 右边距 28px。 */
-  --reader-tray-width: 200px;
+  /* 托盘现在只有「下载」「关闭」两颗图标（2026-11-20 起面板按钮进了右下角的小球）：约 100px + 右边距。 */
+  --reader-tray-width: 150px;
 }
 
 /* Reader 顶栏只放场景预设；窗格的自由组合由各自的小选择器负责。 */
@@ -41,8 +41,8 @@
    左边只用让开「目录 / 搜索」（约 80px），两边不再对称，页签在剩下那块里居中。 */
 @media (max-width: 440px) {
   .reader-workspace-bar {
-    /* 左边「目录 / 搜索」两颗图标收在一个分组里，约 100px。 */
-    padding-inline: 108px var(--reader-tray-width, 200px);
+    /* 左边只剩「目录」一颗图标（搜索在底栏），约 52px。 */
+    padding-inline: 66px var(--reader-tray-width, 200px);
   }
 }
 
@@ -350,9 +350,7 @@
     --reader-tray-width: 150px;
   }
 
-  .reader-react-root:has(.reader-panel-toggle) {
-    --reader-tray-width: 194px;
-  }
+
 
   .reader-download-trigger {
     padding: 0 9px;
@@ -432,9 +430,7 @@
 }
 
 /* 托盘多一个带名字的面板按钮（约 110px）：给分栏切换让出的宽度跟着加。 */
-.reader-react-root:has(.reader-panel-toggle) {
-  --reader-tray-width: 318px;
-}
+
 
 .reader-close-home-icon {
   display: block;
@@ -451,9 +447,7 @@
     --reader-tray-width: 104px;
   }
 
-  .reader-react-root:has(.reader-panel-toggle) {
-    --reader-tray-width: 148px;
-  }
+
 
   .reader-close-home-btn {
     padding: 0;
@@ -542,4 +536,24 @@
 
 .reader-chrome-tray .reader-panel-toggle {
   min-width: 30px;
+}
+
+/* 托盘只剩图标：「下载」「关闭」的字收掉，名字在悬停里（2026-11-20，顶栏按钮太多）。 */
+.reader-chrome-tray .reader-download-trigger-label,
+.reader-chrome-tray .reader-close-home-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.reader-chrome-tray .reader-close-home-btn {
+  width: 30px;
+  min-width: 30px;
+  padding: 0;
+}
+
+.reader-chrome-tray .reader-download-trigger {
+  padding: 0 8px;
 }

@@ -1,5 +1,6 @@
-/* 「对比版本」（ReaderVersionCompare.tsx）：顶栏左边按钮点开的版本列表，和对比时书页上方那一条
- * （左半：对比的是哪一份 + 用这一份 + 关掉；右半：正在读的那份）。那一条占 40px，书页往下让出这一条（is-version-compare）。 */
+/* 「对比版本」（ReaderVersionCompare.tsx）：悬浮小球里点开的版本列表（选一份、用左边这份、退出对比），
+ * 和对比时两栏书页上淡淡的水印（RetainPDF 标记、模型名、对比 / 正在读 · 时间）。
+ * 2026-11-20 以前是顶栏左边一颗按钮加书页上方一条文字，顶栏太挤。 */
 
 .reader-version-compare {
   position: relative;
@@ -115,91 +116,35 @@
   }
 }
 
-/* 书页上方一条，左右两半各对着下面一栏。矮、淡：前缀和时间灰色小字，只有版本名是墨色；两颗按钮同一个小字号。 */
-.reader-version-compare-bar {
-  position: fixed;
-  top: 60px;
-  right: 0;
-  left: 0;
-  z-index: 34;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  height: 36px;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
-  background: var(--paper);
-}
-
-.reader-react-root.is-version-compare .reader-react-scroll-shell {
-  top: 96px;
-}
-
-.reader-version-compare-side {
+.reader-version-compare-actions {
   display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 0 12px;
-}
-
-.reader-version-compare-side.is-left {
-  border-right: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
-}
-
-.reader-version-compare-label {
-  display: inline-flex;
-  overflow: hidden;
-  min-width: 0;
-  align-items: baseline;
+  flex-wrap: wrap;
   gap: 6px;
-  color: var(--ink);
-  font-size: var(--ui-text-sm, 13px);
-  white-space: nowrap;
-}
-
-.reader-version-compare-label em {
-  color: var(--muted);
-  font-size: var(--ui-text-xs, 12px);
-  font-style: normal;
-}
-
-.reader-version-compare-label b {
-  overflow: hidden;
-  min-width: 0;
-  font-weight: 600;
-  text-overflow: ellipsis;
-}
-
-.reader-version-compare-label small {
-  flex: 0 0 auto;
-  color: var(--muted);
-  font-size: var(--ui-text-xs, 12px);
-  font-variant-numeric: tabular-nums;
+  margin: 2px 4px 0;
 }
 
 .reader-version-compare-adopt,
 .reader-version-compare-close {
   display: inline-flex;
-  flex: 0 0 auto;
   align-items: center;
-  gap: 3px;
-  height: 24px;
-  min-height: 24px;
-  padding: 0 9px;
+  gap: 4px;
+  height: 28px;
+  padding: 0 11px;
   border-radius: var(--ui-radius-pill, 999px);
+  font: inherit;
   font-size: var(--ui-text-xs, 12px);
   font-weight: 600;
-  line-height: 1;
+  cursor: pointer;
 }
 
 .reader-version-compare-adopt {
   border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
-  background: color-mix(in srgb, var(--accent) 8%, var(--paper));
+  background: color-mix(in srgb, var(--accent) 9%, var(--paper));
   color: var(--ink);
 }
 
 .reader-version-compare-close {
-  border: 0;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
   background: transparent;
   color: var(--muted);
 }
@@ -209,6 +154,60 @@
 }
 
 .reader-version-compare-error {
+  margin: 0 4px;
   color: var(--danger);
-  font-size: var(--ui-text-sm, 13px);
+  font-size: var(--ui-text-xs, 12px);
+}
+
+/* 水印：固定在每栏正上方（VersionWatermarks 量出栏的中线和书页区顶），不接鼠标。 */
+.reader-version-watermarks {
+  pointer-events: none;
+}
+
+.reader-version-watermark-slot {
+  position: fixed;
+  z-index: 30;
+  translate: -50% 0;
+}
+
+.reader-version-watermark {
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  padding: 7px 18px 8px;
+  border-radius: var(--ui-radius-lg, 14px);
+  background: color-mix(in srgb, var(--paper) 72%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.reader-version-watermark em {
+  color: color-mix(in srgb, var(--ink) 30%, transparent);
+  font-size: var(--ui-text-2xs, 11px);
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.reader-version-watermark strong {
+  color: color-mix(in srgb, var(--ink) 48%, transparent);
+  font-size: var(--ui-text-xl, 20px);
+  font-weight: 750;
+  letter-spacing: -0.01em;
+}
+
+.reader-version-watermark span {
+  color: color-mix(in srgb, var(--ink) 38%, transparent);
+  font-size: var(--ui-text-xs, 12px);
+}
+
+.reader-version-watermark.is-compare em {
+  color: color-mix(in srgb, var(--gold) 70%, transparent);
+}
+
+.reader-version-watermark.is-reading em {
+  color: color-mix(in srgb, var(--ok) 70%, transparent);
 }

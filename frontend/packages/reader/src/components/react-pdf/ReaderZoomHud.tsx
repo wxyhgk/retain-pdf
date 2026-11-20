@@ -32,6 +32,8 @@ export type ReaderZoomHudProps = {
   bookmarkScope?: string;
   /** 「待处理」读哪个任务的问题段落；不给就不显示。 */
   issuesJobId?: string;
+  /** 页码后面的「搜索」按钮（ReaderSearchToggle，2026-11-20 从顶栏挪下来）。 */
+  searchSlot?: ReactNode;
 };
 
 export function ReaderZoomHud(props: ReaderZoomHudProps) {
@@ -123,6 +125,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           </button>
         )}
       </div>
+      {props.searchSlot ? <div className="reader-react-hud-group" aria-label="搜索">{props.searchSlot}</div> : null}
       {props.bookmarkScope ? (
         <ReaderBookmarkControl
           scope={props.bookmarkScope}

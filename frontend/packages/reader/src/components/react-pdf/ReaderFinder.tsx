@@ -15,7 +15,8 @@ export type ReaderFinderTab = "outline" | "search";
 
 const NO_REGIONS: never[] = [];
 
-/** 顶栏左边的两颗：点开左栏到那一页签，再点同一颗收起。 */
+/** 顶栏左边的「目录」（只有图标，名字在悬停里）：点开浮着的卡，再点收起。「搜索」在底栏（ReaderSearchToggle）。
+ *  children 跟在后面（以前放「对比版本」，2026-11-20 挪进右下角的悬浮小球）。 */
 export function ReaderFinderToggles({
   open,
   onToggle,
@@ -23,21 +24,31 @@ export function ReaderFinderToggles({
 }: {
   open: ReaderFinderTab | null;
   onToggle: (tab: ReaderFinderTab) => void;
-  /** 跟在两颗后面的（「对比版本」）。 */
   children?: ReactNode;
 }): ReactElement {
   return (
     <div className="reader-finder-toggles">
-      <Button className="reader-finder-toggle" aria-pressed={open === "outline"} title="目录" onClick={() => onToggle("outline")}>
-        <ListTree size={16} strokeWidth={2.1} aria-hidden />
-        <span>目录</span>
-      </Button>
-      <Button className="reader-finder-toggle" aria-pressed={open === "search"} title="在书里搜索（原文和译文）" onClick={() => onToggle("search")}>
-        <Search size={16} strokeWidth={2.1} aria-hidden />
-        <span>搜索</span>
+      <Button className="reader-finder-toggle" aria-label="目录" aria-pressed={open === "outline"} title="目录" onClick={() => onToggle("outline")}>
+        <ListTree size={17} strokeWidth={2.1} aria-hidden />
       </Button>
       {children}
     </div>
+  );
+}
+
+/** 底栏的「搜索」（2026-11-20 从顶栏挪下来）：点开的卡也从底栏往上弹。 */
+export function ReaderSearchToggle({ open, onToggle }: { open: ReaderFinderTab | null; onToggle: (tab: ReaderFinderTab) => void }): ReactElement {
+  return (
+    <Button
+      className="reader-react-hud-btn reader-search-toggle"
+      data-finder-toggle="search"
+      aria-label="在书里搜索"
+      aria-pressed={open === "search"}
+      title="在书里搜索（原文和译文，⌘F）"
+      onClick={() => onToggle("search")}
+    >
+      <Search size={15} strokeWidth={2.1} aria-hidden />
+    </Button>
   );
 }
 
@@ -79,7 +90,7 @@ export function ReaderFinder({
   useEffect(() => {
     const onPointer = (event: PointerEvent) => {
       const target = event.target as Element | null;
-      if (!target || card.current?.contains(target) || target.closest?.(".reader-finder-toggles")) return;
+      if (!target || card.current?.contains(target) || target.closest?.(".reader-finder-toggles, [data-finder-toggle]")) return;
       closeRef.current();
     };
     const onKey = (event: KeyboardEvent) => {
@@ -109,7 +120,7 @@ export function ReaderFinder({
   };
 
   return (
-    <aside ref={card} className="reader-finder" aria-label={tab === "outline" ? "目录" : "搜索"}>
+    <aside ref={card} className="reader-finder" data-finder-tab={tab} aria-label={tab === "outline" ? "目录" : "搜索"}>
       <header className="reader-finder-head">
         <div className="reader-finder-tabs" role="tablist">
           <Button className="reader-finder-tab" role="tab" aria-selected={tab === "outline"} onClick={() => onTab("outline")}>目录</Button>

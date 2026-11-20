@@ -85,17 +85,23 @@ test("每个面板都有标签和图标 —— 少一样那个 tab 要么空白�
   assert.equal(new Set(shorts).size, shorts.length, `竖条缩写有重复: ${shorts}`);
 });
 
-test("**只有一个**启动器：圆钮那一套连同它的 CSS 一起没了", () => {
+test("**只有一个**启动器：右下角的悬浮小球（2026-11-20 起，顶栏按钮太多挪进来）；以前那个可拖圆钮连同它的 CSS 不回来", () => {
   // 先证明「另一个东西存在」：启动器本身的样式必须真的在，否则下面那条
   // 「圆钮不存在」在任何情况下都绿（整份 CSS 都被删掉时也绿）。
   const all = allStyles();
-  assert.match(all, /\.reader-panel-toggle\b/, "启动器的顶栏按钮样式没了");
-  assert.doesNotMatch(all, /\.reader-assistant-rail\b/, "右侧竖条又回来了：面板按钮在顶栏托盘里");
+  assert.match(all, /\.reader-panel-toggle\b/, "启动器的按钮样式没了");
+  assert.match(all, /\.reader-toolball\b/, "悬浮小球的样式没了");
+  assert.doesNotMatch(all, /\.reader-assistant-rail\b/, "右侧竖条又回来了");
+  const ball = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderToolBall.tsx", import.meta.url), "utf8");
+  assert.match(ball, /<ReaderPanelToggles\b/, "面板按钮不在小球里");
+  assert.match(APP, /<ReaderToolBall\b/, "阅读页没挂小球");
   const tray = APP.slice(APP.indexOf('className="reader-chrome-tray"'), APP.indexOf("</div>", APP.indexOf('className="reader-chrome-tray"')));
-  assert.match(tray, /<ReaderPanelToggles\b/, "面板按钮不在顶栏托盘里");
+  assert.doesNotMatch(tray, /<ReaderPanelToggles\b/, "顶栏托盘里又有一份面板按钮：两个启动器");
   assert.match(all, /\.reader-assistant-dock-tabs\b/, "启动器的 tab 条样式没了");
-  assert.doesNotMatch(all, /\.reader-fab\b/, "圆钮的 CSS 又回来了");
-  assert.doesNotMatch(APP, /ReaderFab|fabActiveTool/, "阅读页又挂了一个圆钮");
+  assert.doesNotMatch(all, /\.reader-fab\b/, "旧圆钮的 CSS 又回来了");
+  assert.doesNotMatch(APP, /ReaderFab|fabActiveTool/, "阅读页又挂了旧圆钮");
+  // 面板开着时小球挪到面板左边，不藏（旧圆钮就是被 is-assistant-open 藏掉的）。
+  assert.match(all, /\.reader-react-root\.is-assistant-open \.reader-toolball\s*\{[^}]*right:/);
 });
 
 /** 阅读页里每个包内面板的开合插槽声明：变量名 → 面板 id。
@@ -154,6 +160,7 @@ test("懒加载面板的挂载闸守的就是它自己那个面板", () => {
 
 const LAUNCHER_SELECTORS = [
   ".reader-panel-toggle",
+  ".reader-toolball",
   ".reader-assistant-dock-header",
   ".reader-assistant-dock-tabs",
   ".reader-assistant-dock-tab",

@@ -177,8 +177,15 @@
   color: #fff;
 }
 
+/* 书页栏是平的：不要圆角、阴影（它们来自通用的 reader-panel 卡片样式）。以前两栏都是 18px 圆角卡片，右栏又多一条左边框，
+ * 边框顺着圆角弯下去，看着像右边多套了一层圆角框，左右也不一样（2026-11-20 用户截图）。现在两栏中间一条直的细线。 */
+.reader-react-pdf-pane {
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .reader-react-grid.reader-mode-compare .reader-react-pdf-pane[data-reader-pane="translated"] {
-  border-left: 1px solid var(--line);
+  border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 /* .is-reversed 无写入者：对照固定 source→translated，顺序反转功能未落地。 */
