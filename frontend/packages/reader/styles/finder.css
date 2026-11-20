@@ -218,3 +218,41 @@
   color: var(--muted);
   font-size: var(--ui-text-md, 13px);
 }
+
+/* 顶栏左边一组（目录 / 搜索 / 对比版本）：一个浅底分组，按钮不再各带边框（2026-11-20，见 chrome.css 同一节）。 */
+.reader-finder-toggles {
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 3%);
+}
+
+.reader-finder-toggles .reader-finder-toggle {
+  height: 30px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.reader-finder-toggles .reader-finder-toggle:hover,
+.reader-finder-toggles .reader-finder-toggle[aria-pressed="true"] {
+  background: var(--paper);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color, var(--ink)) 10%, transparent);
+}
+
+/* 窄一些（≤ 820px）：左边一组只剩图标，名字在悬停里；手机宽度（≤ 599px）不放「对比版本」——两份译文左右并排在手机上看不了。 */
+@media (max-width: 820px) {
+  .reader-finder-toggles .reader-finder-toggle span {
+    display: none;
+  }
+
+  .reader-finder-toggles .reader-finder-toggle {
+    padding: 0 9px;
+  }
+}
+
+@media (max-width: 599px) {
+  .reader-finder-toggles .reader-version-compare {
+    display: none;
+  }
+}

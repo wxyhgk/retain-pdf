@@ -41,7 +41,8 @@
    左边只用让开「目录 / 搜索」（约 80px），两边不再对称，页签在剩下那块里居中。 */
 @media (max-width: 440px) {
   .reader-workspace-bar {
-    padding-inline: 96px var(--reader-tray-width, 200px);
+    /* 左边「目录 / 搜索」两颗图标收在一个分组里，约 100px。 */
+    padding-inline: 108px var(--reader-tray-width, 200px);
   }
 }
 
@@ -507,4 +508,38 @@
   border-radius: inherit;
   background: linear-gradient(90deg, var(--ink) 0%, var(--ink) 100%);
   transition: width 0.24s ease;
+}
+
+/* —— 顶栏两边收成分组（2026-11-20）——
+ * 以前左边「目录 / 搜索 / 对比版本」、右边「Markdown / 下载 / 关闭」各是一颗带边框带阴影的胶囊，加上中间的分段切换，
+ * 顶栏上七块各自浮着，看着乱。现在两边各收进一个浅底分组（和中间「原文 / 对照 / 译文」同一个样子），按钮本身不再有边框、阴影。 */
+.reader-chrome-tray {
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 3%);
+}
+
+.reader-chrome-tray .reader-close-home-btn,
+.reader-chrome-tray .reader-panel-toggle,
+.reader-chrome-tray .reader-download-trigger {
+  min-height: 30px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.reader-chrome-tray .reader-close-home-btn:hover,
+.reader-chrome-tray .reader-panel-toggle:hover:not([aria-pressed="true"]),
+.reader-chrome-tray .reader-download-trigger:hover,
+.reader-chrome-tray .reader-download-actions[open] .reader-download-trigger {
+  background: var(--paper);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color, var(--ink)) 10%, transparent);
+}
+
+.reader-chrome-tray .reader-panel-toggle {
+  min-width: 30px;
 }
