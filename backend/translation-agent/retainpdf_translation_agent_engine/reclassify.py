@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from retainpdf_translation.core.item_reader import item_source_text
 from retainpdf_translation.core.payload import load_translations
 from retainpdf_translation.core.payload import save_translations
 from retainpdf_translation.core.payload.parts.policy_state import mark_policy_skip
@@ -21,7 +22,8 @@ from retainpdf_translation_agent.checks import nothing_to_translate
 
 
 def _source(item: dict) -> str:
-    return str(item.get("protected_source_text") or item.get("source_text") or "").strip()
+    # 接续组成员不进这里（见下），单块的完整取值链就是它自己的原文
+    return str(item_source_text(item) or "").strip()
 
 
 def reclassify_failed_blocks(translated_dir: Path, *, apply: bool) -> list[dict]:
