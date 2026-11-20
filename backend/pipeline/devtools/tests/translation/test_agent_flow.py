@@ -454,3 +454,25 @@ def test_agent_structure_is_section_unless_page_is_asked_for(monkeypatch) -> Non
     for value, expected in (("section", "section"), (" PAGE ", "page"), ("page", "page"), ("chapter", "section"), ("", "section")):
         monkeypatch.setenv("RETAIN_AGENT_STRUCTURE", value)
         assert agent_structure() == expected, value
+
+
+def test_the_book_title_comes_from_the_pdf_metadata_before_the_first_ocr_title(tmp_path: Path) -> None:
+    """11-20《The Interloper》：封面是图，OCR 的第一个标题块是第一章的 Introduction，通读、初译、审校、兜底收到的书名都是它。
+    现在先看原 PDF 元数据，垃圾值（文件名、Microsoft Word 开头、纯数字）不要，再退回第一个标题块。"""
+    import fitz
+
+    def pdf(title: str) -> Path:
+        path = tmp_path / f"book-{abs(hash(title))}.pdf"
+        document = fitz.open()
+        document.new_page()
+        document.set_metadata({"title": title})
+        document.save(path)
+        document.close()
+        return path
+
+    payloads = {0: [{"normalized_sub_type": "body", "source_text": "Cover"}], 1: [{"normalized_sub_type": "title", "source_text": "Introduction"}]}
+    assert agent_flow._document_title(payloads, pdf("The Interloper")) == "The Interloper"
+    for junk in ("", "Microsoft Word - draft.docx", "interloper_final.pdf", "12345", "Untitled"):
+        assert agent_flow._document_title(payloads, pdf(junk)) == "Introduction", junk
+    assert agent_flow._document_title(payloads, None) == "Introduction"
+    assert agent_flow._document_title(payloads, tmp_path / "missing.pdf") == "Introduction"

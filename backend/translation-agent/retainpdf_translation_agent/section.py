@@ -33,6 +33,7 @@ from retainpdf_translation_agent.checks import status_of
 from retainpdf_translation_agent.contract import BlockInput
 from retainpdf_translation_agent.contract import BlockResult
 from retainpdf_translation_agent.contract import PageInput
+from retainpdf_translation_agent.context import build_context
 from retainpdf_translation_agent.memory import BINDING
 from retainpdf_translation_agent.memory import CANDIDATE
 from retainpdf_translation_agent.memory import NAME
@@ -41,7 +42,8 @@ from retainpdf_translation_agent.memory import term_pattern
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
-SECTION_VERSION = "agent-section-3"
+SECTION_VERSION = "agent-section-4"
+FALLBACK_NEIGHBORS = 2  # 退回逐块翻时，每段前后各带几段作上下文
 # 一节最多多少英文词（到了就在下一页开头断）；不到 MIN 遇到标题也不断，免得一页一节。
 SECTION_MAX_WORDS = 2500
 SECTION_MIN_WORDS = 600
@@ -342,6 +344,25 @@ class SectionOutcome:
     info: dict
 
 
+def fallback_page(units: PageInput, wanted: set[str], results: dict[str, BlockResult], glossary: Glossary, *, style: str, seen_names: set[str]) -> PageInput:
+    """两次都没交好的段退回逐块翻时交给逐页译者的那一页：只有这几段和前后各 FALLBACK_NEIGHBORS 段（只作上下文），
+    带上下文包（术语、人名、缩写、文风、前面已经译好的几段）。
+    11-20 以前整节的块都塞进去（翻 5 块带 106 块、每次约 2.5 万字），上下文包却是空的：没有术语、人名、文风。"""
+    blocks = units.blocks
+    keep: set[int] = set()
+    for index, block in enumerate(blocks):
+        if block.id in wanted:
+            keep.update(range(max(0, index - FALLBACK_NEIGHBORS), min(len(blocks), index + FALLBACK_NEIGHBORS + 1)))
+    chosen = [blocks[i] if blocks[i].id in wanted else replace(blocks[i], translate=False) for i in sorted(keep)]
+    page = replace(units, blocks=chosen)
+    previous = [
+        {"id": b.id, "source": b.text, "translation": results[b.id].translation}
+        for b in chosen
+        if b.id not in wanted and b.id in results and results[b.id].translation
+    ]
+    return replace(page, context=build_context(page, glossary, previous=previous, style=style, used_abbreviations=seen_names))
+
+
 def translate_section(
     agent: TranslationAgent,
     pages: list[PageInput],
@@ -447,8 +468,7 @@ def translate_section(
     fallback_ids = [p.unit.id for p in failed]
     if fallback_ids:
         # 两次都没交好的段退回第一版：这几段照旧逐块翻（同一节别的块只作上下文）
-        wanted = set(fallback_ids)
-        page = replace(units, blocks=[b if b.id in wanted else replace(b, translate=False) for b in units.blocks])
+        page = fallback_page(units, set(fallback_ids), results, glossary, style=style, seen_names=set(seen_names or ()))
         fallback, _ = agent.translate_units(page)
         for block_id in fallback_ids:
             if block_id in fallback:
