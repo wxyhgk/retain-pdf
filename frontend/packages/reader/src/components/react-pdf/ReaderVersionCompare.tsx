@@ -104,7 +104,7 @@ export function ReaderVersionCompareBar({ compare }: { compare: VersionCompare }
           <span className="reader-version-compare-label"><LoaderCircle size={14} className="reader-version-compare-spin" aria-hidden />正在打开 {loadingName}…</span>
         ) : (
           <span className="reader-version-compare-label" data-compare-side="left">
-            <em>对比</em>{compare.compared?.name}{when(comparedVersion?.createdAt)}
+            <em>对比</em><b>{compare.compared?.name}</b>{when(comparedVersion?.createdAt)}
           </span>
         )}
         {compare.compared && !compare.loading ? (
@@ -122,13 +122,14 @@ export function ReaderVersionCompareBar({ compare }: { compare: VersionCompare }
             用这一份
           </Button>
         ) : null}
-        <Button size="sm" variant="ghost" className="reader-version-compare-close" aria-label="不对比了" title="不对比了" onClick={compare.clear}>
-          <X size={14} aria-hidden />
+        <Button size="sm" variant="ghost" className="reader-version-compare-close" title="左栏换回原文" onClick={compare.clear}>
+          <X size={13} aria-hidden />
+          退出对比
         </Button>
       </div>
       <div className="reader-version-compare-side is-right">
         <span className="reader-version-compare-label" data-compare-side="right">
-          <em>正在读</em>{reading?.name || "当前译文"}{when(reading?.createdAt)}
+          <em>正在读</em><b>{reading?.name || "当前译文"}</b>{when(reading?.createdAt)}
         </span>
       </div>
     </div>

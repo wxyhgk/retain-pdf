@@ -115,7 +115,7 @@
   }
 }
 
-/* 书页上方一条，左右两半各对着下面一栏。 */
+/* 书页上方一条，左右两半各对着下面一栏。矮、淡：前缀和时间灰色小字，只有版本名是墨色；两颗按钮同一个小字号。 */
 .reader-version-compare-bar {
   position: fixed;
   top: 60px;
@@ -124,13 +124,13 @@
   z-index: 34;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  height: 40px;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  height: 36px;
+  border-bottom: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
+  background: var(--paper);
 }
 
 .reader-react-root.is-version-compare .reader-react-scroll-shell {
-  top: 100px;
+  top: 96px;
 }
 
 .reader-version-compare-side {
@@ -138,51 +138,74 @@
   min-width: 0;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   padding: 0 12px;
 }
 
 .reader-version-compare-side.is-left {
-  border-right: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
 }
 
 .reader-version-compare-label {
   display: inline-flex;
   overflow: hidden;
   min-width: 0;
-  align-items: center;
+  align-items: baseline;
   gap: 6px;
   color: var(--ink);
   font-size: var(--ui-text-sm, 13px);
-  font-weight: 600;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.reader-version-compare-label small {
+.reader-version-compare-label em {
   color: var(--muted);
   font-size: var(--ui-text-xs, 12px);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
-
-.reader-version-compare-adopt {
-  border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
-  border-radius: var(--ui-radius-pill, 999px);
-}
-
-.reader-version-compare-label em {
-  padding: 1px 7px;
-  border-radius: var(--ui-radius-pill, 999px);
-  background: color-mix(in srgb, var(--gold) 18%, var(--paper));
-  color: color-mix(in srgb, var(--gold) 70%, var(--ink));
-  font-size: var(--ui-text-2xs, 11px);
   font-style: normal;
 }
 
-.reader-version-compare-side.is-right .reader-version-compare-label em {
-  background: color-mix(in srgb, var(--ok) 14%, var(--paper));
-  color: var(--ok);
+.reader-version-compare-label b {
+  overflow: hidden;
+  min-width: 0;
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+
+.reader-version-compare-label small {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 12px);
+  font-variant-numeric: tabular-nums;
+}
+
+.reader-version-compare-adopt,
+.reader-version-compare-close {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 3px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: var(--ui-radius-pill, 999px);
+  font-size: var(--ui-text-xs, 12px);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.reader-version-compare-adopt {
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--paper));
+  color: var(--ink);
+}
+
+.reader-version-compare-close {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.reader-version-compare-close:hover {
+  color: var(--ink);
 }
 
 .reader-version-compare-error {
