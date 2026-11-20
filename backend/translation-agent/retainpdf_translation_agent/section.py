@@ -41,7 +41,7 @@ from retainpdf_translation_agent.memory import term_pattern
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
-SECTION_VERSION = "agent-section-2"
+SECTION_VERSION = "agent-section-3"
 # 一节最多多少英文词（到了就在下一页开头断）；不到 MIN 遇到标题也不断，免得一页一节。
 SECTION_MAX_WORDS = 2500
 SECTION_MIN_WORDS = 600
@@ -53,6 +53,27 @@ MAX_TERMS = 120
 PLACEHOLDER_RE = re.compile(r"⟦([FC]\d+)⟧")
 PARAGRAPH_RE = re.compile(r"^¶(\d+)[ \t]*(?:（[^）\n]{1,6}）)?[ \t]*(.*?)(?=^¶\d+|\Z)", re.M | re.S)
 
+# 原文里加了引号的短说法（2–6 个词）：多半是作者的强调、反讽，也可能是别的学科的固定术语（foot in the door 登门槛）。
+# 只靠提示词里一条规则，Haiku 时认时不认（11-20 同一节翻两次，一次"登门槛"，一次"一只脚踏进门"），所以程序挑出来单列，让它逐个判断。
+QUOTED_RE = re.compile(r"[\"“]([A-Za-z][A-Za-z'’ -]{2,60}?)[\"”]")
+QUOTED_MIN_WORDS = 2
+QUOTED_MAX_WORDS = 6
+MAX_QUOTED = 20
+
+
+def quoted_phrases(text: str) -> list[str]:
+    """原文里引号括起来的 2–6 个词的说法，去重，保持出现顺序。每个词都大写开头的（多半是书名、机构名）不算。"""
+    found: list[str] = []
+    for match in QUOTED_RE.finditer(text):
+        phrase = " ".join(match.group(1).split()).strip(" -")
+        words = phrase.split()
+        if not QUOTED_MIN_WORDS <= len(words) <= QUOTED_MAX_WORDS or all(w[0].isupper() for w in words):
+            continue
+        if phrase.lower() not in {f.lower() for f in found}:
+            found.append(phrase)
+    return found[:MAX_QUOTED]
+
+
 SECTION_NARRATIVE_PROMPT = """你是出版社的资深译者，正在把一本英文人文社科著作或通俗读物译成简体中文，译稿要直接拿去出版。
 
 怎么译：
@@ -61,6 +82,7 @@ SECTION_NARRATIVE_PROMPT = """你是出版社的资深译者，正在把一本�
 - 意思不增不减：不添原文没有的信息和评价，不删内容；作者的语气、保留（seemed、I can only guess）和自嘲照样传达；
   作者当时还不知道的结果，不要提前说出来。
 - 英文习语、比喻换成中文里意思相同的惯用说法；英文爱用的抽象名词，中文多用动词和具体说法。
+- 习语和术语分清：作者引用的别的学科的固定说法（效应、定律、某某技术、某某悖论，常带引号，或后面跟着 strategy、effect、theory），用中文学界通行的译名，不要按字面译，第一次出现写"译名（原文）"（the tragedy of the commons → 公地悲剧（the tragedy of the commons），learned helplessness → 习得性无助（learned helplessness））；没有把握的不要硬套中文俗语（俗语的意思常和术语对不上），按它在那个学科里的意思译，同样带上原文。
 - 人名、术语按给出的译法。人名、机构第一次出现写"中文译名（原文）"，之后只写中文；标着"前文已出现"的直接写中文。
   没给的人名音译，机构名能译就译。书名、报刊名用书名号。
 - 不要在中文句子里夹没翻的英文单词。
@@ -353,6 +375,12 @@ def translate_section(
     parts = []
     if terms:
         parts.append("人名、术语的译法：\n" + "\n".join(terms))
+    quoted = quoted_phrases(section_text)
+    if quoted:
+        parts.append(
+            "原稿里加了引号的说法，逐个判断：是别的学科的固定术语（效应、技术、定律之类），用中文学界通行的译名，第一次写\"译名（原文）\"；"
+            "只是作者的强调、反讽、口头说法，照常译。\n" + "\n".join(f"- {phrase}" for phrase in quoted)
+        )
     if previous:
         tail = "\n\n".join(f"原文：{p['source']}\n译文：{p['translation']}" for p in previous[-2:])
         parts.append("上一节的最后几段（只作衔接参考，不要重译）：\n" + tail)

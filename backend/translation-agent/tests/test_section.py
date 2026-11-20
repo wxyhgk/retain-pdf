@@ -20,6 +20,7 @@ from retainpdf_translation_agent.section import combine_pages
 from retainpdf_translation_agent.section import parse_section
 from retainpdf_translation_agent.section import parse_section_notes
 from retainpdf_translation_agent.section import plan_sections
+from retainpdf_translation_agent.section import quoted_phrases
 from retainpdf_translation_agent.section import translate_section
 from retainpdf_translation_agent.units import merge_groups
 
@@ -248,3 +249,37 @@ def test_chapter_labels_are_translated_by_the_program_not_the_model() -> None:
     assert "§ CHAPTER TWO → 第二章" in manuscript and "§ Hiding from View → 隐匿于视线之外" in manuscript and "¶1 The day" in manuscript, "章号块不进稿子，只作上下文"
     assert outcome.results["p46-a"].translation == "第二章"
     assert outcome.results["p46-b"].translation == "隐匿于视线之外", "章名的已定译文去掉重复的章号"
+
+
+def test_quoted_phrases_are_listed_for_the_translator_to_check_for_terms_of_art() -> None:
+    """11-20：foot in the door / door in the face 按字面译成"一只脚踏进门""门被甩在脸上"。引号里的短说法由程序挑出来单列，让模型逐个判断是不是学科术语。"""
+    text = (
+        'Whether "the fate" of a project lies with a gatekeeper or in alternating between a "foot in the door" and '
+        '“door in the face” strategy; titles such as "The Social Psychology of Access in Ethnographic Research", "Dirty Work", "no", '
+        'and again "Foot in the door".'
+    )
+    assert quoted_phrases(text) == ["the fate", "foot in the door", "door in the face"], "一个词的、每个词都大写开头的（书名）、太长的不算；不分大小写去重"
+
+    pages = [_page("14", _block("p14-a", text))]
+    model = Model()
+    translate_section(TranslationAgent(model="fake", transport=model), pages, Glossary(), title="The Interloper", style="")
+    request = model.bodies[0]["messages"][0]["content"]
+    assert "原稿里加了引号的说法" in request and "- foot in the door\n- door in the face" in request
+    assert "原稿里加了引号的说法" not in _section_request_without_quotes()
+
+
+def _section_request_without_quotes() -> str:
+    model = Model()
+    translate_section(TranslationAgent(model="fake", transport=model), _book()[2:], Glossary(), title="The Interloper", style="")
+    return model.bodies[0]["messages"][0]["content"]
+
+
+def test_term_of_art_rule_is_in_the_translator_and_reviewer_prompts() -> None:
+    from retainpdf_translation_agent.agent import NARRATIVE_PROMPT
+    from retainpdf_translation_agent.review import ACCURACY_NOTE
+    from retainpdf_translation_agent.review import REVIEW_PROMPT
+
+    for prompt in (SECTION_NARRATIVE_PROMPT, NARRATIVE_PROMPT):
+        assert "习语和术语分清" in prompt and "译名（原文）" in prompt
+    assert "按字面直译了" in REVIEW_PROMPT and "number_term" in ACCURACY_NOTE
+
