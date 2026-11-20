@@ -59,6 +59,9 @@ fn is_job_derived_cache(job_id: &str, name: &str) -> bool {
     if name.ends_with(".linearized.pdf") {
         return true;
     }
+    if name.contains(".watermarked-v") && name.ends_with(".pdf") {
+        return true;
+    }
     (name.starts_with("preview-source-p") || name.starts_with("preview-translated-p"))
         && name.ends_with(".jpg")
 }
@@ -237,7 +240,7 @@ mod tests {
     use crate::derived_artifacts::word::LayoutDocxOptions;
     use crate::derived_artifacts::{
         document_page_preview_path, job_page_preview_file_name, layout_docx_file_name,
-        linearized_file_name, side_by_side_file_name,
+        linearized_file_name, side_by_side_file_name, watermarked_file_name,
     };
     use retainpdf_core::storage_paths::ARTIFACT_KEY_SOURCE_PDF;
 
@@ -276,6 +279,9 @@ mod tests {
             linearized_file_name(ARTIFACT_KEY_SOURCE_PDF),
             linearized_file_name("output"),
             linearized_file_name("side-by-side"),
+            watermarked_file_name("output"),
+            watermarked_file_name("side-by-side"),
+            layout_docx_file_name(JOB, &LayoutDocxOptions { watermark: true, ..LayoutDocxOptions::default() }.cache_suffix()),
             job_page_preview_file_name("source", 1, 1200, 0),
             job_page_preview_file_name("translated", 12, 360, 150),
         ]

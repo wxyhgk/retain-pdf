@@ -209,7 +209,7 @@ async fn two_range_translations_open_as_one_full_length_book() {
     assert_eq!(read_json(detail).await["data"]["job_id"], job_id);
 
     // 阅读器：译文 PDF —— 整本长度，没翻的页是原文
-    let pdf = request(&app, "GET", &format!("/api/v1/jobs/{job_id}/files/output/translated.pdf")).await;
+    let pdf = request(&app, "GET", &format!("/api/v1/jobs/{job_id}/files/output/translated.pdf?watermark=0")).await;
     assert_eq!(pdf.status(), StatusCode::OK);
     let bytes = to_bytes(pdf.into_body(), usize::MAX).await.unwrap();
     assert_eq!(pdf_texts(&bytes), "ZH 1|SRC 2|ZH 3|ZH 4");
@@ -273,7 +273,7 @@ async fn a_newer_range_translation_takes_over_its_pages() {
     seed_range_job(&state, &document_id, "job-redo", "2026-10-02T00:00:00", &[2], &["NEW 2"]);
     let app = build_app(state);
     let job_id = reading(&app, &document_id).await["job_id"].as_str().unwrap().to_string();
-    let pdf = request(&app, "GET", &format!("/api/v1/jobs/{job_id}/files/output/translated.pdf")).await;
+    let pdf = request(&app, "GET", &format!("/api/v1/jobs/{job_id}/files/output/translated.pdf?watermark=0")).await;
     let bytes = to_bytes(pdf.into_body(), usize::MAX).await.unwrap();
     assert_eq!(pdf_texts(&bytes), "OLD 1|NEW 2");
 }

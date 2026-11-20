@@ -66,8 +66,11 @@ function parsePage(raw, index) {
   if (background !== null && typeof background.path !== "string") {
     fail(`${where}.background.path 缺失——有背景图就必须给出它的路径`);
   }
+  // 水印（2026-11-20）：这一页水印放在哪，[x0, y0, x1, y1]（pt，页面坐标）；图在规格顶层的 watermark.path
+  const watermark = raw.watermark ? { rect: parseRect(raw.watermark.rect, `${where}.watermark.rect`) } : null;
   return {
     pageIndex: Number.isInteger(raw.pageIndex) ? raw.pageIndex : index,
+    watermark,
     widthPt: positive(raw.widthPt, `${where}.widthPt`),
     heightPt: positive(raw.heightPt, `${where}.heightPt`),
     background: background ? { path: background.path } : null,
@@ -87,8 +90,13 @@ export function parseSpec(raw) {
   if (pages.length === 0) fail("规格里一页都没有");
   const font = raw.font ?? {};
   if (!font.family) fail("font.family 缺失——文本框声明的字体必须和 Python 侧量宽度用的那个一致");
+  const watermark = raw.watermark ?? null;
+  if (watermark !== null && typeof watermark.path !== "string") {
+    fail("watermark.path 缺失——要放水印就必须给出水印图的路径");
+  }
   return {
     job: { id: `${raw.job?.id ?? ""}`, title: `${raw.job?.title ?? ""}` },
+    watermark: watermark ? { path: watermark.path } : null,
     font: {
       family: `${font.family}`,
       mathFamily: `${font.mathFamily || DEFAULT_MATH_FONT}`,

@@ -144,3 +144,34 @@ async fn preview_validation_keeps_job_scope_before_parameter_errors() {
     ));
     assert_eq!(fixture.render_count(), 0);
 }
+
+#[tokio::test(flavor = "current_thread")]
+async fn downloads_carry_the_watermark_by_default_and_reuse_the_stamped_copy() {
+    // 2026-11-20：下载的译文 PDF 默认盖水印（retainpdf-pipeline watermark-pdf 按需生成、缓存），`?watermark=0` 取原版。
+    use std::os::unix::fs::PermissionsExt;
+    let fixture = Fixture::new();
+    let pipeline = fixture.root.join("pipeline");
+    std::fs::write(
+        &pipeline,
+        "#!/bin/sh\nprintf '%s\\n' \"$1\" >> \"$0.calls\"\nwhile [ $# -gt 0 ]; do\n  if [ \"$1\" = --output-pdf ]; then printf 'stamped pdf' > \"$2\"; fi\n  shift\ndone\n",
+    )
+    .unwrap();
+    std::fs::set_permissions(&pipeline, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let pipeline_command = pipeline.to_string_lossy().into_owned();
+    let downloads = crate::files::downloads::JobDownloads::new(
+        &fixture.db,
+        &fixture.root,
+        &fixture.root,
+        &fixture.generation,
+        &fixture.renderer,
+        &pipeline_command,
+    );
+    let stamped = downloads.open(JOB_ID, JobFile::TranslatedPdf { watermark: true }, Disposition::Inline).await.unwrap();
+    assert_eq!(std::fs::read(&stamped.path).unwrap(), b"stamped pdf");
+    let again = downloads.open(JOB_ID, JobFile::TranslatedPdf { watermark: true }, Disposition::Inline).await.unwrap();
+    assert_eq!(again.path, stamped.path);
+    let plain = downloads.open(JOB_ID, JobFile::TranslatedPdf { watermark: false }, Disposition::Inline).await.unwrap();
+    assert_eq!(std::fs::read(&plain.path).unwrap(), b"translated");
+    let calls = std::fs::read_to_string(fixture.root.join("pipeline.calls")).unwrap();
+    assert_eq!(calls.lines().collect::<Vec<_>>(), ["watermark-pdf"], "盖一次，之后用缓存");
+}

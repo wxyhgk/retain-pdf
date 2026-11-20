@@ -57,3 +57,5 @@ namespaces = true
 [tool.setuptools.package-data]
 "retainpdf_pipeline" = ["*.json", "*.md"]
 "retainpdf_pipeline.ocr.document_schema" = ["*.json"]
+# 导出水印（devtools/build_watermark_stamp.py 生成）：PDF 盖矢量那份，Word 放透明底位图
+"retainpdf_pipeline.render.output.watermark" = ["*.pdf", "*.png"]

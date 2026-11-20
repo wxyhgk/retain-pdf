@@ -183,11 +183,22 @@ pub struct JobFilesQuery {
     /// 预览图宽度（像素）。
     #[serde(default)]
     pub width: Option<u32>,
+    /// 译文 PDF、对照 PDF、Word 右下角的「logo + RetainPDF」水印（2026-11-20）：默认带，`?watermark=0` 取不带水印的。
+    #[serde(default)]
+    pub watermark: Option<String>,
 }
 
 impl JobFilesQuery {
     pub fn wants_download(&self) -> bool {
         matches!(self.download.as_deref().map(str::trim), Some("1" | "true"))
+    }
+
+    /// 默认带水印；`0` / `false` / `off` 不带。
+    pub fn wants_watermark(&self) -> bool {
+        !matches!(
+            self.watermark.as_deref().map(|value| value.trim().to_ascii_lowercase()).as_deref(),
+            Some("0" | "false" | "off")
+        )
     }
 }
 

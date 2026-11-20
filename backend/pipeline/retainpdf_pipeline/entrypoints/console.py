@@ -87,6 +87,13 @@ def run_side_by_side_pdf() -> int:
     return 0
 
 
+def run_watermark_pdf() -> int:
+    from retainpdf_pipeline.render.output.watermark.pdf import main
+
+    main()
+    return 0
+
+
 def run_diagnose_failure() -> int:
     from retainpdf_pipeline.entrypoints.diagnose_failure_with_ai import main
 
@@ -126,6 +133,10 @@ COMMANDS: dict[str, tuple[Callable[[], int], str]] = {
     "side-by-side-pdf": (
         run_side_by_side_pdf,
         "build a left/right source-vs-translated PDF",
+    ),
+    "watermark-pdf": (
+        run_watermark_pdf,
+        "stamp the RetainPDF watermark on every page of a PDF",
     ),
     "layout-docx": (
         run_layout_docx,

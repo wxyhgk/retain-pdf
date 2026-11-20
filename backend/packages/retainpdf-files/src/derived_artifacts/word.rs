@@ -14,12 +14,15 @@ pub(crate) const DEFAULT_BACKGROUND_DPI: u32 = 180;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LayoutDocxOptions {
     pub dpi: u32,
+    /// 每页右下角放「logo + RetainPDF」水印（2026-11-20，下载默认带，`?watermark=0` 不带）。
+    pub watermark: bool,
 }
 
 impl Default for LayoutDocxOptions {
     fn default() -> Self {
         Self {
             dpi: DEFAULT_BACKGROUND_DPI,
+            watermark: false,
         }
     }
 }
@@ -41,7 +44,12 @@ const RENDERER_VERSION: u32 = 2;
 impl LayoutDocxOptions {
     /// 缓存键的一部分：换了 DPI 或导出器版本就是另一份产物，不能命中上一份。
     pub fn cache_suffix(&self) -> String {
-        format!("dpi{}-v{}", self.dpi, RENDERER_VERSION)
+        if self.watermark {
+            // 水印换了图案、位置（WATERMARK_VERSION 加一）也是另一份
+            format!("dpi{}-v{}-wm{}", self.dpi, RENDERER_VERSION, super::watermark::WATERMARK_VERSION)
+        } else {
+            format!("dpi{}-v{}", self.dpi, RENDERER_VERSION)
+        }
     }
 }
 
@@ -88,6 +96,9 @@ pub fn ensure_layout_docx(
                     .arg(source_pdf);
                 if let Some(path) = translated_pdf {
                     command.arg("--translated-pdf").arg(path);
+                }
+                if options.watermark {
+                    command.arg("--watermark");
                 }
                 command
             },

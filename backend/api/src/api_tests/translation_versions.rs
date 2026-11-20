@@ -34,7 +34,7 @@ async fn ok(response: axum::response::Response) -> Value {
 async fn read_pages(app: &axum::Router, document_id: &str, query: &str) -> (String, Value) {
     let view = ok(request(app, "GET", &format!("/api/v1/documents/{document_id}/reading{query}")).await).await;
     let job_id = view["job_id"].as_str().expect("readable").to_string();
-    let pdf = request(app, "GET", &format!("/api/v1/jobs/{job_id}/files/output/translated.pdf")).await;
+    let pdf = request(app, "GET", &format!("/api/v1/jobs/{job_id}/files/output/translated.pdf?watermark=0")).await;
     assert_eq!(pdf.status(), StatusCode::OK);
     (pdf_texts(&to_bytes(pdf.into_body(), usize::MAX).await.unwrap()), view)
 }

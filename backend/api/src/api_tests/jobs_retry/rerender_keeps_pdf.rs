@@ -50,7 +50,7 @@ async fn translated_pdf(state: &crate::AppState, id: &str) -> (StatusCode, Vec<u
     let response = build_app(state.clone())
         .oneshot(
             Request::builder()
-                .uri(format!("/api/v1/jobs/{id}/files/output/translated.pdf"))
+                .uri(format!("/api/v1/jobs/{id}/files/output/translated.pdf?watermark=0"))
                 .header("X-API-Key", "test-key")
                 .body(Body::empty())
                 .unwrap(),

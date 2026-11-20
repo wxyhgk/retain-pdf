@@ -22,6 +22,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+import fitz
+
 from retainpdf_pipeline.render.output.word.backgrounds import render_page_backgrounds
 from retainpdf_pipeline.render.output.word.html_fit import fitted_typography
 from retainpdf_pipeline.render.output.word.html_fit import MEASURED_FONT_FAMILY
@@ -36,6 +38,9 @@ from retainpdf_pipeline.render.output.word.typography_readback import converged_
 from retainpdf_pipeline.render.output.word.typography_readback import open_translated_document
 from retainpdf_pipeline.render.output.word.typography_readback import read_page_lines
 from retainpdf_pipeline.render.layout.page_specs import build_render_page_specs
+from retainpdf_pipeline.render.output.watermark import STAMP_PNG
+from retainpdf_pipeline.render.output.watermark import stamp_aspect
+from retainpdf_pipeline.render.output.watermark import stamp_rect
 
 
 SPEC_VERSION = 1
@@ -109,8 +114,11 @@ def build_layout_spec(
     font_family: str = MEASURED_FONT_FAMILY,
     source_pdf: Path | None = None,
     translated_pdf: Path | None = None,
+    watermark: bool = False,
 ) -> tuple[dict, Path]:
-    """算出排版规格，并把背景图渲染到磁盘。返回 (规格, 规格里相对路径的基准目录)。"""
+    """算出排版规格，并把背景图渲染到磁盘。返回 (规格, 规格里相对路径的基准目录)。
+
+    `watermark`：每页右下角放「logo + RetainPDF」水印（2026-11-20，下载默认带），位置和 PDF 的水印同一套算法。"""
     # 源 PDF 不一定在 `job_root/source/` 下。translate-only 的任务复用上游 OCR 任务的
     # 产物，它自己的 source/ 是空的。调用方解析好了就直接用。
     source_pdf_path = source_pdf or single_pdf(job_root / "source")
@@ -191,7 +199,7 @@ def build_layout_spec(
                     "firstLineIndentPt": round(block.first_line_indent_pt or 0.0, 3),
                 })
             background = bg_paths[spec.page_index] if spec.page_index < len(bg_paths) else None
-            pages.append({
+            page = {
                 "pageIndex": spec.page_index,
                 "widthPt": spec.page_width_pt,
                 "heightPt": spec.page_height_pt,
@@ -200,7 +208,11 @@ def build_layout_spec(
                     if background else None
                 ),
                 "blocks": blocks,
-            })
+            }
+            if watermark:
+                where = stamp_rect(fitz.Rect(0, 0, spec.page_width_pt, spec.page_height_pt), stamp_aspect())
+                page["watermark"] = {"rect": [round(v, 3) for v in (where.x0, where.y0, where.x1, where.y1)]}
+            pages.append(page)
     finally:
         if translated_document is not None:
             translated_document.close()
@@ -211,6 +223,8 @@ def build_layout_spec(
         "font": {"family": font_family, "mathFamily": MATH_FONT_FAMILY},
         "pages": pages,
     }
+    if watermark:
+        spec_payload["watermark"] = {"path": str(STAMP_PNG)}
     return spec_payload, rendered_dir
 
 
@@ -223,6 +237,7 @@ def export_layout_docx(
     font_family: str = MEASURED_FONT_FAMILY,
     source_pdf: Path | None = None,
     translated_pdf: Path | None = None,
+    watermark: bool = False,
 ) -> Path:
     node = _resolve_node()
     cli = _resolve_cli()
@@ -233,6 +248,7 @@ def export_layout_docx(
         font_family=font_family,
         source_pdf=source_pdf,
         translated_pdf=translated_pdf,
+        watermark=watermark,
     )
     # 规格落在背景图旁边:规格里的图片路径是相对这个目录的。
     spec_path = base_dir / "layout-spec.json"
