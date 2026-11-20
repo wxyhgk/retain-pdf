@@ -1,12 +1,19 @@
 //! 数据库结构：编号迁移的执行器，以及任务系统老表后来加的列（`LEGACY_COLUMNS`）。
 //!
-//! 迁移本身在 `migrations/` 下，一个迁移一个 `.sql` 文件，见那里的说明。`apply_schema` 的
-//! 幂等建表和 `ensure_legacy_columns` 补列继续负责任务系统的老表；新表、新列都从编号迁移走。
+//! 开库时按顺序：`base.sql`（最早几张表的幂等建表）→ `ensure_legacy_columns`（很老的库补 `jobs.document_id`）→
+//! 编号迁移（`migrations/`，一个迁移一个 `.sql` 文件）→ 补 `idx_uploads_content_hash`（见 `db.rs` 的 `apply_schema`）。
+//! 新表、新列都从编号迁移走。**现在每张表的完整样子看 `database/retainpdf-db/schema.sql`**（`describe.rs` 生成的快照，
+//! 测试守着；老库升上来和新建的库一样也有测试）。
 
 use anyhow::{Context, Result};
 use rusqlite::{Connection, Transaction, TransactionBehavior};
 
+#[cfg(test)]
+mod describe;
 mod migrations;
+
+#[cfg(test)]
+pub(crate) use describe::describe_schema;
 
 use migrations::MIGRATIONS;
 
