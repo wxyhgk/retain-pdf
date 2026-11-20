@@ -1,0 +1,105 @@
+/* 画笔（InkLayer.tsx、ReaderInkPalette.tsx）：每页盖一张 SVG 画笔迹；画笔模式下它接住拖动、鼠标变十字。
+ * 右键书页弹出的小菜单和画笔模式下左下角常驻的一条是同一排图标按钮。 */
+
+.reader-ink-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.reader-ink-layer[data-ink-active] {
+  cursor: crosshair;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.reader-ink-layer[data-ink-active="eraser"] {
+  cursor: cell;
+}
+
+/* 画笔模式下不让拖动选中文字（拖动是画）。 */
+.reader-react-root[data-ink-mode] .textLayer {
+  user-select: none;
+}
+
+.reader-ink-stroke {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.reader-ink-stroke.is-highlighter {
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+}
+
+/* —— 工具条 —— */
+
+.reader-ink-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 18%, transparent);
+}
+
+.reader-ink-bar.is-menu {
+  position: fixed;
+  z-index: calc(var(--z-hud, 36) + 4);
+  animation: reader-finder-pop 140ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.reader-ink-bar.is-dock {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: calc(var(--z-hud, 36) + 2);
+}
+
+.reader-ink-btn,
+.reader-ink-color {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.reader-ink-btn:hover,
+.reader-ink-color:hover {
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+}
+
+.reader-ink-btn[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* 颜色：一个实心圆点（颜色由 style 里的 color 给），选中的外面一圈。 */
+.reader-ink-color span {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: currentColor;
+}
+
+.reader-ink-color[aria-pressed="true"] span {
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px currentColor;
+}
+
+.reader-ink-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 3px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}

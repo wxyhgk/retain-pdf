@@ -38,6 +38,8 @@ import { resolveLiveTranslationToggles } from "./shared/data/live-translation-st
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderFinder, ReaderFinderToggles, ReaderSearchToggle, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
 import { ReaderToolBall } from "./components/react-pdf/ReaderToolBall.js";
+import { ReaderInkDock, ReaderInkMenu, inkMenuFromContextMenu, useInkShortcuts, type InkMenuState } from "./components/react-pdf/ReaderInkPalette.js";
+import { useReaderInk } from "./hooks/use-reader-ink.js";
 import { useReaderVersionCompare } from "./hooks/use-reader-version-compare.js";
 import { useFindShortcut } from "./hooks/use-find-shortcut.js";
 import { useReaderBlockEdit, useEditBlockShortcut } from "./hooks/use-reader-block-edit.js";
@@ -326,6 +328,11 @@ export function ReaderAppReactPdf() {
     selectBlock(itemId);
   }, [selectBlock, visiblePdfMode, setModeKeepingPage]);
   useEditBlockShortcut(blockEdit.available ? editBlock : null, regionHover);
+  // 画笔：笔迹按书存在本机（hooks/use-reader-ink），右键书页出小菜单，P 进出画笔模式。
+  const ink = useReaderInk(c.viewStateKey);
+  useInkShortcuts(ink);
+  const [inkMenu, setInkMenu] = useState<InkMenuState>(null);
+  const closeInkMenu = useCallback(() => setInkMenu(null), []);
   // 「对比版本」：选了一份就切到对照（左栏放那一份）；切走对照（只看原文 / 译文）就不对比了。
   const versionCompare = useReaderVersionCompare({ documentId: session.documentId, jobId: session.jobId });
   const comparedUrl = versionCompare.compared?.url || "";
@@ -384,6 +391,7 @@ export function ReaderAppReactPdf() {
     editShowsSource: visiblePdfMode !== "compare",
     findTerm: finder === "search" ? findTerm : "",
     compareVersion,
+    ink,
     sourceOnly: c.sourceOnly,
     sourceViewOnly,
     download: c.download,
@@ -408,6 +416,7 @@ export function ReaderAppReactPdf() {
     finder,
     findTerm,
     compareVersion,
+    ink,
     c.sourceOnly,
     sourceViewOnly,
     c.download,
@@ -431,7 +440,18 @@ export function ReaderAppReactPdf() {
 
   return (
     <ReaderProvider value={readerContext} hud={readerHud}>
-      <div className={rootClasses} data-reader-engine="react-pdf" data-reader-workspace={workspaceView}>
+      <div
+        className={rootClasses}
+        data-reader-engine="react-pdf"
+        data-reader-workspace={workspaceView}
+        data-ink-mode={ink.tool || undefined}
+        onContextMenu={(event) => {
+          const menu = inkMenuFromContextMenu(event);
+          if (!menu) return;
+          event.preventDefault();
+          setInkMenu(menu);
+        }}
+      >
         <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
         {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
             原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
@@ -478,7 +498,9 @@ export function ReaderAppReactPdf() {
         <Suspense fallback={null}>
           {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
         </Suspense>
-        <ReaderToolBall active={assistantPanel} compare={versionCompare} />
+        <ReaderToolBall active={assistantPanel} compare={versionCompare} ink={ink} />
+        <ReaderInkMenu ink={ink} menu={inkMenu} onClose={closeInkMenu} />
+        <ReaderInkDock ink={ink} />
         <ReaderPendingEditsPill edit={blockEdit} />
         <DownloadToastHost />
       </div>

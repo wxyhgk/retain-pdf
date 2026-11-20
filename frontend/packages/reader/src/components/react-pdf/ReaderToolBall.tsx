@@ -4,15 +4,16 @@
 // 2026-09 删过一个圆钮：那时有两个启动器各管一半，而且开着面板时圆钮被 CSS 藏掉，里面的功能就进不去了。
 // 这个小球是唯一的启动器，面板开着时不藏，挪到面板左边（toolball.css）。
 import { useEffect, useRef, useState, type ReactElement } from "react";
-import { GitCompareArrows, LayoutGrid, X } from "lucide-react";
+import { GitCompareArrows, LayoutGrid, PenLine, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
 import type { VersionCompare } from "../../hooks/use-reader-version-compare.js";
+import type { ReaderInk } from "../../hooks/use-reader-ink.js";
 import type { ReaderAssistantPanel } from "./reader-assistant-types.js";
 import { ReaderPanelToggles } from "./ReaderAssistantDock.js";
 import { VersionCompareMenu } from "./ReaderVersionCompare.js";
 
-export function ReaderToolBall({ active, compare }: { active: ReaderAssistantPanel | null; compare: VersionCompare }): ReactElement {
+export function ReaderToolBall({ active, compare, ink }: { active: ReaderAssistantPanel | null; compare: VersionCompare; ink?: ReaderInk }): ReactElement {
   const [open, setOpen] = useState(false);
   const [menu, setMenu] = useState(false);
   const root = useRef<HTMLDivElement | null>(null);
@@ -42,6 +43,21 @@ export function ReaderToolBall({ active, compare }: { active: ReaderAssistantPan
       {menu ? <VersionCompareMenu compare={compare} onDone={() => { setMenu(false); setOpen(false); }} /> : null}
       {open ? (
         <div className="reader-toolball-stack" role="group" aria-label="工具">
+          {ink ? (
+            <Button
+              className="reader-toolball-item"
+              aria-label="画笔"
+              title="画笔（P；书页上右键也能选笔和颜色）"
+              aria-pressed={Boolean(ink.tool)}
+              data-toolball-item="ink"
+              onClick={() => {
+                ink.setTool(ink.tool ? null : "pen");
+                setOpen(false);
+              }}
+            >
+              <PenLine size={18} strokeWidth={2.1} aria-hidden />
+            </Button>
+          ) : null}
           <ReaderPanelToggles active={active} />
           {compare.available ? (
             <Button
@@ -59,7 +75,7 @@ export function ReaderToolBall({ active, compare }: { active: ReaderAssistantPan
       ) : null}
       <Button
         className="reader-toolball-ball"
-        aria-label={open ? "收起工具" : "工具：Markdown、对比版本"}
+        aria-label={open ? "收起工具" : "工具：画笔、Markdown、对比版本"}
         title={open ? "收起" : "工具"}
         aria-expanded={open}
         data-active={active || comparing ? "true" : undefined}

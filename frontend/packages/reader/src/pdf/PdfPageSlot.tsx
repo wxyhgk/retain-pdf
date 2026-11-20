@@ -35,6 +35,7 @@ import {
 } from "./ReaderTextHoverLayer.js";
 import { EditedTranslationOverlay } from "./EditedTranslationOverlay.js";
 import { useHoverPresentation } from "./hover-presentation.js";
+import { InkLayer } from "./InkLayer.js";
 import { READER_INLINE_EDIT_CLASS, ReaderInlineBlockEditor } from "./ReaderInlineBlockEditor.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
 import { useReaderContext } from "../components/react-pdf/reader-context.js";
@@ -181,6 +182,11 @@ function PdfPageSlotInner({
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     // 触屏没有悬停：手指滑动（滚动）不该换框，框由点按决定（见 handlePointerDown）。
     if (event.pointerType === "touch") return;
+    // 画笔模式：拖动是画，不出悬停框。
+    if (readerContext?.ink?.tool) {
+      setHoveredTextId(null);
+      return;
+    }
     // 拖选正文时隐藏轮廓，绝不接管 PDF textLayer 的事件。
     if (event.buttons !== 0) {
       setHoveredTextId(null);
@@ -338,8 +344,17 @@ function PdfPageSlotInner({
           ))}
         </div>
       ) : null}
+      {active && readerContext?.ink ? (
+        <InkLayer
+          page={pageNumber}
+          pane={pane === "translated" ? "translated" : readerContext.compareVersion ? "compare" : "source"}
+          width={width}
+          height={naturalHeight}
+          ink={readerContext.ink}
+        />
+      ) : null}
       <ReaderTextHoverLayer
-        target={active && hoveredTextTarget?.itemId !== editingTarget?.itemId ? hoveredTextTarget : null}
+        target={active && !readerContext?.ink?.tool && hoveredTextTarget?.itemId !== editingTarget?.itemId ? hoveredTextTarget : null}
         pane={pane === "translated" ? "translated" : "source"}
         revisedCount={hoveredTextTarget ? revisedBlocks?.get(hoveredTextTarget.itemId) || 0 : 0}
         onEdit={editBlock}
