@@ -35,6 +35,7 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   还原占位、查标记，漏的重交一次，不行的段退回逐块翻；合过的段切回各块。章号块（CHAPTER TWO、PART ONE）由程序换成「第二章」「第一部分」，不交给模型。
   原稿里引号括起来的 2–6 个词的说法由程序单列在请求里，让模型逐个判断是不是别的学科的固定术语（foot in the door 是「登门槛」，2026-11-20）。
   回答写到上限或最后一段没写完（`cut_paragraph`）的段重交；取术语按这一节所在的章（2026-11-20）。
+  译者可以在译稿后附「@@ 新词」「@@ 梗概」：新词核实后记进术语表（缩写记中文全称），梗概按章传给后面的节；缩写也记「前文已出现」（`learn_section`，2026-11-20）。
   两次都没交好的段退回逐块翻时只带前后各两段作上下文，配上术语、人名、文风（`fallback_page`，2026-11-20）。
   `review=True` 时整节对照原文审一次意思（只收意思类单子，不做文笔那一轮）。只管人文社科、通俗读物；正式流程 2026-11-19 起默认按节
   （`agent_flow.agent_structure`，`RETAIN_AGENT_STRUCTURE=page` 退回逐页），`DocumentRun` 自己的默认仍是逐页。

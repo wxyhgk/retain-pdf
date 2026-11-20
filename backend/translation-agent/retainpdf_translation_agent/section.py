@@ -35,15 +35,20 @@ from retainpdf_translation_agent.contract import BlockInput
 from retainpdf_translation_agent.contract import BlockResult
 from retainpdf_translation_agent.contract import PageInput
 from retainpdf_translation_agent.context import build_context
+from retainpdf_translation_agent.memory import ABBR
 from retainpdf_translation_agent.memory import BINDING
 from retainpdf_translation_agent.memory import CANDIDATE
 from retainpdf_translation_agent.memory import NAME
 from retainpdf_translation_agent.memory import Glossary
+from retainpdf_translation_agent.memory import TERM
+from retainpdf_translation_agent.memory import quote_around
 from retainpdf_translation_agent.memory import term_pattern
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
-SECTION_VERSION = "agent-section-5"
+SECTION_VERSION = "agent-section-6"
+MAX_STORY = 6  # 传给后面的节的本章梗概，最多几句
+STORY_CHARS = 600
 FALLBACK_NEIGHBORS = 2  # 退回逐块翻时，每段前后各带几段作上下文
 # 一节最多多少英文词（到了就在下一页开头断）；不到 MIN 遇到标题也不断，免得一页一节。
 SECTION_MAX_WORDS = 2500
@@ -95,7 +100,11 @@ SECTION_NARRATIVE_PROMPT = """你是出版社的资深译者，正在把一本�
 - 编号后面的（标题）（脚注）（图注）只是说明这段是什么，译稿里不用写；标题译得简洁，脚注开头的编号照留。
 - ⟦F1⟧、⟦C1⟧ 这样的占位符（公式、代码）原样留在译文里对应的位置，一个不能少；{{fn:1}} 脚注标记、[1] 引用标记也原样留着。
 - 以 § 开头的行是已经定好译文的标题，版面上单独排好了，只作上下文：不要输出，也不要把它并进别的段。
-- 只输出译稿：不要写说明、更正、思考过程。发现某段写错了，就用同一个编号把那一段整段重写一遍，以最后一次为准。"""
+- 只输出译稿：不要写说明、更正、思考过程。发现某段写错了，就用同一个编号把那一段整段重写一遍，以最后一次为准。
+- 译稿最后可以附两节（没有就不写，各自另起一行开头）：
+  @@ 新词：这一节里第一次出现、上面没给译法的人名、机构、缩写和专门说法，每行「原文 | 译法」；缩写的译法写中文全称
+  （TSA | 运输安全管理局），译文里第一次写成「运输安全管理局（TSA）」。
+  @@ 梗概：一句话，这一节讲了什么，给后面的节接上文用。"""
 
 
 @dataclass
@@ -282,6 +291,51 @@ def _strip_notes(body: str) -> tuple[str, list[str]]:
     return text, dropped
 
 
+TAIL_RE = re.compile(r"^[ \t]*@@[ \t]*(新词|梗概)[ \t]*[:：]?[ \t]*", re.M)
+ABBR_SHAPE_RE = re.compile(r"^[A-Z][A-Z0-9&]{1,9}s?$")
+NAME_PARTICLES = {"de", "da", "del", "der", "di", "du", "la", "le", "van", "von", "of", "the", "and", "for", "y", "bin", "al"}
+
+
+@dataclass
+class Tail:
+    """译稿后面附的两节：报上的新词（原文, 译法）和一句梗概。"""
+
+    terms: list[tuple[str, str]] = field(default_factory=list)
+    summary: str = ""
+
+
+def split_tail(text: str) -> tuple[str, Tail]:
+    """译稿 → （正文部分，附的两节）。「@@ 新词」「@@ 梗概」从第一次出现起都算附录，不进段落解析。"""
+    tail = Tail()
+    first = TAIL_RE.search(text or "")
+    if first is None:
+        return text or "", tail
+    body, rest = text[: first.start()], text[first.start():]
+    marks = list(TAIL_RE.finditer(rest))
+    for i, mark in enumerate(marks):
+        chunk = rest[mark.end(): marks[i + 1].start() if i + 1 < len(marks) else len(rest)].strip()
+        if mark.group(1) == "梗概":
+            tail.summary = " ".join(chunk.split())[:200]
+            continue
+        for line in chunk.splitlines():
+            parts = [p.strip(" -•\t「」") for p in re.split(r"[|｜]", line)]
+            if len(parts) >= 2 and parts[0] and parts[1]:
+                tail.terms.append((parts[0], parts[1]))
+    return body, tail
+
+
+def term_kind(source: str, target: str) -> str | None:
+    """报上的新词归哪类：缩写（全大写）、专名（每个实词大写开头）、术语；译法里没有中文的不要。"""
+    if not CJK_RE.search(target):
+        return None
+    if ABBR_SHAPE_RE.match(source):
+        return ABBR
+    words = source.split()
+    if 1 <= len(words) <= 5 and all(w[:1].isupper() or w.lower() in NAME_PARTICLES for w in words) and words[0][:1].isupper():
+        return NAME
+    return TERM
+
+
 def parse_section_notes(text: str) -> tuple[dict[int, str], dict[int, list[str]]]:
     """译稿 → （{段号: 译文}，{段号: 去掉的说明行}）。同一个段号写了几次的以最后一次为准：模型发现写错了会用同一个编号
     重写（2026-11-19 实例：先交「第二章」，接着抄了 § 行、写了一句英文更正，再交一遍）。"""
@@ -353,6 +407,17 @@ def relevant_terms(glossary: Glossary, text: str, *, seen_names: set[str], chapt
     """这一节原文里出现的人名、术语、缩写、保留原文的专名，一行一条。"""
     lines: list[str] = []
     for term in section_terms(glossary, text, chapters):
+        if term.category == ABBR:
+            # 11-20 以前缩写给的是 "TSA → TSA（Transportation Security Administration）"，模型照抄出英文全称夹在中文里
+            if term.source in seen_names:
+                line = f"- {term.source}（前文已出现，只写 {term.source}）"
+            elif term.zh_full:
+                line = f"- {term.source}：第一次写「{term.zh_full}（{term.source}）」，之后只写 {term.source}"
+            else:
+                full = f"{term.note} 的缩写；" if term.note else ""
+                line = f"- {term.source}：{full}第一次写「中文全称（{term.source}）」，全称译成中文，之后只写 {term.source}"
+            lines.append(line)
+            continue
         line = f"- {term.source} → {term.target}"
         if term.note:
             line += f"（{term.note}）"
@@ -387,6 +452,68 @@ def fallback_page(units: PageInput, wanted: set[str], results: dict[str, BlockRe
     return replace(page, context=build_context(page, glossary, previous=previous, style=style, used_abbreviations=seen_names))
 
 
+def learn_section(
+    glossary: Glossary,
+    paragraphs: list[Paragraph],
+    results: dict[str, BlockResult],
+    tails: list[Tail],
+    places: dict[str, tuple[str, str]],
+    review_report: dict | None,
+) -> dict[str, int]:
+    """把这一节学到的译法记进术语表，后面的节照用（2026-11-20：以前按节翻整本书只有通读那一次定术语，之后谁都补不进去，
+    AGVA 三节三种译法，TSA 写成「TSA（Transportation Security Administration）」）。
+
+    - 译者附的「@@ 新词」：原文要真在这一节的某段里、译法要真在那段的译文里，才算数。缩写记中文全称（第一个为准），
+      专名、术语交给 `Glossary.propose`（候选，投票升审定）。
+    - 审校采纳的单子里改的是短专名、缩写的（原文 ≤ 4 个词、改法 ≤ 16 字），也按新词记。
+    返回各记了几条。"""
+    counts = {"reported": 0, "abbreviations": 0, "proposed": 0, "from_review": 0}
+
+    def register(source: str, target: str, paragraph: Paragraph | None = None) -> bool:
+        source = source.strip()
+        target = re.sub(r"[（(][^（）()]*[)）]\s*$", "", target.strip()).strip("「」“”\"' ")
+        kind = term_kind(source, target)
+        if kind is None or len(target) > 24:
+            return False
+        candidates = [paragraph] if paragraph is not None else paragraphs
+        for item in candidates:
+            result = results.get(item.unit.id)
+            if result is None or result.status not in ("ok", "warn") or target not in (result.translation or ""):
+                continue
+            if not term_pattern(source, kind if kind != TERM else TERM).search(item.unit.text):
+                continue
+            page, chapter = places.get(item.unit.id, ("", ""))
+            if kind == ABBR:
+                glossary.learn_abbreviation(source, target, page=page, block_id=item.unit.id)
+                counts["abbreviations"] += 1
+            else:
+                quote = quote_around(item.unit.text, source)
+                if not quote:
+                    continue
+                glossary.propose(source, target, category=kind, block_id=item.unit.id, page=page, chapter=chapter, quote=quote)
+                counts["proposed"] += 1
+            return True
+        return False
+
+    seen: set[tuple[str, str]] = set()
+    for tail in tails:
+        for source, target in tail.terms:
+            if (source, target) in seen:
+                continue
+            seen.add((source, target))
+            counts["reported"] += 1
+            register(source, target)
+    by_unit = {p.unit.id: p for p in paragraphs}
+    for ticket in (review_report or {}).get("applied") or []:
+        source = str(ticket.get("source_quote", "")).strip(" .,;:")
+        fix = str(ticket.get("fix", "")).strip()
+        if len(source.split()) > 4 or len(fix) > 16 or term_kind(source, fix) not in (ABBR, NAME):
+            continue
+        if register(source, fix, by_unit.get(str(ticket.get("block_id", "")))):
+            counts["from_review"] += 1
+    return counts
+
+
 def translate_section(
     agent: TranslationAgent,
     pages: list[PageInput],
@@ -397,8 +524,10 @@ def translate_section(
     previous: list[dict] | None = None,
     seen_names: set[str] | None = None,
     review: bool = False,
+    story: list[str] | None = None,
 ) -> SectionOutcome:
-    """一节几页一次翻完。`previous`：上一节最后几段的原文和译文（接上文用）；`seen_names`：前面几节已经出现过的人名。
+    """一节几页一次翻完。`previous`：上一节最后几段的原文和译文（接上文用）；`seen_names`：前面几节已经出现过的人名、缩写；
+    `story`：本章前面各节的一句话梗概（译者交卷时附的「@@ 梗概」）。译者附的「@@ 新词」核实后记进术语表（`learn_section`）。
     模型、请求缓存、用量、编辑部事件都走 `agent`。"""
     combined = combine_pages(pages)
     units, groups = merge_groups(combined)
@@ -427,6 +556,11 @@ def translate_section(
             "原稿里加了引号的说法，逐个判断：是别的学科的固定术语（效应、技术、定律之类），用中文学界通行的译名，第一次写\"译名（原文）\"；"
             "只是作者的强调、反讽、口头说法，照常译。\n" + "\n".join(f"- {phrase}" for phrase in quoted)
         )
+    if story:
+        recent = list(story)[-MAX_STORY:]
+        while len("".join(recent)) > STORY_CHARS and len(recent) > 1:
+            recent = recent[1:]
+        parts.append("本章前面各节讲了（只作上下文）：\n" + "\n".join(f"- {line}" for line in recent))
     if previous:
         tail = "\n\n".join(f"原文：{p['source']}\n译文：{p['translation']}" for p in previous[-2:])
         parts.append("上一节的最后几段（只作衔接参考，不要重译）：\n" + tail)
@@ -453,8 +587,11 @@ def translate_section(
         return "".join(part.get("text") or "" for part in content if part.get("type") == "text")
 
     translations: dict[int, tuple[str, list[dict]]] = {}
+    tails: list[Tail] = []
 
     def take(answer: str) -> list[Paragraph]:
+        answer, tail = split_tail(answer)
+        tails.append(tail)
         found, notes = parse_section_notes(answer)
         cut = cut_paragraph(found, {p.n: p.unit.text for p in paragraphs}, hit_limit=stop.get("reason") == "max_tokens")
         failed: list[Paragraph] = []
@@ -518,7 +655,13 @@ def translate_section(
             if t.status in BINDING
         ]
         review_report = review_page(agent, replace(units, context={"style": style, "terms": bound}), results, accuracy_only=True)
+    places = {b.id: (page.page_label, page.chapter) for page in pages for b in page.blocks}
+    for group_id, members in groups.items():
+        if members and members[0].id in places:
+            places[group_id] = places[members[0].id]
+    learned = learn_section(glossary, paragraphs, results, tails, places, review_report)
     split = split_units(results, groups)
+    summary = next((t.summary for t in reversed(tails) if t.summary), "")
     info: dict = {
         "structure": "section",
         "section": combined.page_label,
@@ -527,6 +670,8 @@ def translate_section(
         "attempts": attempts,
         "fallback": fallback_ids,
         "terms": len(terms),
+        "learned": learned,
+        "summary": summary,
     }
     if review_report is not None:
         info["review"] = review_report
