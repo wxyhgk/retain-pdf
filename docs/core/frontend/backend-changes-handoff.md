@@ -12,6 +12,22 @@
 
 ---
 
+## 加回单个任务的用量（feat/job-usage）
+
+2026-11-20。`GET /api/v1/jobs/{job_id}/reports/usage` 加回来了，只增不改。契约 `token-usage.v1`：调用函数名 `getJobUsage`，
+返回 `UsageSummaryView`，和书的用量同形状（含 `estimated_cost_usd`、`pricing`），`scope` 多了取值 `"job"`。
+`contracts/src`、`dist` 已重新生成；前端跑 `npm --prefix frontend/packages/api run generate:client` 生成调用函数。
+
+为什么：进度页顶上的「1040.2 万 / 约 ¥15.58」和各节点上的 token 是 `GET /documents/{id}/usage` 的书的合计，
+这本书前后跑过 10 个任务，这一次其实只用了约 76 万 token、约 ¥1。前端要改的：
+
+- 进度页（单个任务）顶上的 token、花费，和翻译、精修节点上的 token，改用 `getJobUsage(job_id)`；
+  按 `by_stage[].group` 分节点（`translation`、`preparation`、`refine`）。
+- 精修组（`group = "refine"`）现在挂在排版节点上，应该挂到精修，没有精修节点就不显示。
+- 书的合计（`getDocumentUsage`）仍然可以放在概览，写明「全书累计」。
+
+---
+
 ## 拉取模型列表进契约（feat/provider-models-contract）
 
 2026-11-19。`POST /api/v1/providers/translation/models` 登记进新契约 `contracts/translation-providers.v1.schema.json`

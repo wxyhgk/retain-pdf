@@ -72,6 +72,7 @@ Rust API 接口太多、太散，"牵一发动全身"。这里按日期记录整
 | 2026-10-23 | [任务列表契约补 include_live_stage](./20261023-任务列表契约补include_live_stage.md) | `job-status.v1`、`library-books.v1` 的 `ListJobsQuery` 补后端一直认的 `include_live_stage`（可选布尔，`false` 不导入事件历史）；rust_api 新测试钉契约属性和 Rust 字段一一对应，Rust 加字段时编不过；接口行为不变，前端重新生成 |
 | 2026-10-23 | [删 library-books 重复的任务列表](./20261023-删library-books重复的任务列表.md) | `library-books.v1` 删掉重复登记的 `GET /api/v1/jobs`，只剩删任务；生成的 `library-books.ts` 只导出删任务的两个类型；任务列表定义先留在 JSON 里给前端两个契约测试读，前端改读 `job-status.v1` 后再删；接口行为不变 |
 | 2026-11-14 | [第二批删接口](./20261114-第二批删接口.md) | 删 `reports/usage`（单个任务的用量）、`reports/quality/items`（质量问题清单）、`reader/regions/:item_id`（单个阅读区块）：没有调用方，路由计数前两个 27 天 0 次，第三个只有已删的 Studio 调过；契约去掉 `getJobUsage`、`listQualityItems`、`getReaderRegion`，前端重新生成 |
+| 2026-11-20 | [加回单个任务的用量](./20261120-加回单个任务的用量.md) | 加回 `reports/usage`（`getJobUsage`）：进度页把书的合计当成这一次的花费，翻过 10 轮的书显示成十几倍；契约 `scope` 加回 `job` |
 
 已经确定的：
 

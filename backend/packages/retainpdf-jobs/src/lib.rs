@@ -71,7 +71,7 @@ pub use query::{job_search_text, JobQueries};
 pub use query_execution::QueryExecution;
 pub use reports::quality::api::{quality_summary_view, QualityApiDeps, QualitySummaryView};
 pub use reports::usage::api::{
-    all_usage_view, document_usage_estimate_view, document_usage_view, library_usage_estimate_view,
+    all_usage_view, document_usage_estimate_view, document_usage_view, job_usage_view, library_usage_estimate_view,
     price_lookup_view, DocumentUsageEstimateQuery, LibraryUsageEstimateQuery, PriceLookupInput, PriceLookupView,
     UsageApiDeps, UsageEstimateView, UsageSummaryView,
 };

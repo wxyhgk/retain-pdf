@@ -178,7 +178,7 @@ export interface UsageEstimatePart {
     high_cny: number | null;
 }
 export interface UsageSummaryView {
-    scope: "document" | "all";
+    scope: "job" | "document" | "all";
     totals: UsageBucket;
     /**
      * 按 total_tokens 从大到小。

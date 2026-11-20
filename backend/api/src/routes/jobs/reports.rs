@@ -8,10 +8,10 @@ use axum::Json;
 use crate::error::AppError;
 use crate::models::api::{ApiResponse, JobDiagnosticsView, JobReportView, TranslationDiagnosticsView};
 use crate::routes::common::{
-    build_jobs_query_route_deps, build_quality_route_deps, ok_json,
+    build_jobs_query_route_deps, build_quality_route_deps, build_usage_route_deps, ok_json,
     run_state_blocking, ApiPath,
 };
-use crate::services::jobs::{quality_summary_view, QualitySummaryView};
+use crate::services::jobs::{job_usage_view, quality_summary_view, QualitySummaryView, UsageSummaryView};
 use crate::AppState;
 
 async fn blocking<T: Send + 'static>(
@@ -86,4 +86,13 @@ pub async fn get_refine_report(
         Ok(ok_json(deps.jobs.refine_report_view(&job_id)?))
     })
     .await
+}
+
+/// 这个任务自己的模型用量（token、估算花费），不含同一本书的其它任务。
+pub async fn job_usage_route(
+    State(state): State<AppState>,
+    ApiPath(job_id): ApiPath<String>,
+) -> Result<Json<ApiResponse<UsageSummaryView>>, AppError> {
+    let deps = build_usage_route_deps(&state);
+    Ok(ok_json(blocking(move || job_usage_view(&deps, &job_id)).await?))
 }
