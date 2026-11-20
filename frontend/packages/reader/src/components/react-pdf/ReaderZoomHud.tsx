@@ -14,6 +14,7 @@ import {
 import { clampPageNumber } from "../../pdf/scroll-to-page.js";
 import { ReaderShortcutsHelp } from "./ReaderShortcutsHelp.js";
 import { ReaderBookmarkControl } from "./ReaderBookmarkControl.js";
+import { ReaderIssuesControl } from "./ReaderIssuesControl.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
 import { useHudAutoHide } from "./use-hud-autohide.js";
 
@@ -29,6 +30,8 @@ export type ReaderZoomHudProps = {
   modeControls?: ReactNode;
   /** 书签按这本书存（和阅读位置同一个 scope）；不给就不显示书签。 */
   bookmarkScope?: string;
+  /** 「待处理」读哪个任务的问题段落；不给就不显示。 */
+  issuesJobId?: string;
 };
 
 export function ReaderZoomHud(props: ReaderZoomHudProps) {
@@ -129,6 +132,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           onGoToPage={onGoToPage}
         />
       ) : null}
+      {props.issuesJobId ? <ReaderIssuesControl jobId={props.issuesJobId} currentPage={currentPage} /> : null}
       <div className="reader-react-hud-group" aria-label="缩放">
         <button
           type="button"

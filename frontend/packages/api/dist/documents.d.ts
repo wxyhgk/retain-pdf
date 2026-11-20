@@ -70,8 +70,10 @@ export declare function fetchDocumentList(apiPrefix: string, { limit, offset, re
 export declare function fetchDocumentByJobId(apiPrefix: string, jobId: string): Promise<DocumentRecord | null>;
 export declare function fetchDocument(apiPrefix: string, documentId: string): Promise<DocumentRecord>;
 export declare function patchDocument(apiPrefix: string, documentId: string, payload?: PatchDocumentInput): Promise<DocumentRecord>;
-/** GET /documents/:id/reading —— 阅读器该打开哪个任务。 */
-export declare function fetchDocumentReading(apiPrefix: string, documentId: string): Promise<DocumentReadingView>;
+/** GET /documents/:id/reading —— 阅读器该打开哪个任务。给了 version 就是那个译文版本的（阅读页「对比版本」用）。 */
+export declare function fetchDocumentReading(apiPrefix: string, documentId: string, { version }?: {
+    version?: string;
+}): Promise<DocumentReadingView>;
 /** GET /documents/:id/translation-versions —— 一本书的几份译文和当前选的哪份（null = 自动，逐页取最新）。 */
 export declare function fetchTranslationVersions(apiPrefix: string, documentId: string, { includeHidden }?: {
     includeHidden?: boolean;

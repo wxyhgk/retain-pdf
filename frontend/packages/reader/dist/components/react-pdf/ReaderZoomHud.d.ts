@@ -12,6 +12,8 @@ export type ReaderZoomHudProps = {
     modeControls?: ReactNode;
     /** 书签按这本书存（和阅读位置同一个 scope）；不给就不显示书签。 */
     bookmarkScope?: string;
+    /** 「待处理」读哪个任务的问题段落；不给就不显示。 */
+    issuesJobId?: string;
 };
 export declare function ReaderZoomHud(props: ReaderZoomHudProps): import("react").JSX.Element;
 //# sourceMappingURL=ReaderZoomHud.d.ts.map

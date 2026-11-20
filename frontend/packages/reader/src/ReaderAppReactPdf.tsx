@@ -38,6 +38,8 @@ import { useReaderPanelSlot } from "./components/react-pdf/use-reader-panel-slot
 import { resolveLiveTranslationToggles } from "./shared/data/live-translation-state.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderFinder, ReaderFinderToggles, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
+import { ReaderVersionCompareBar, ReaderVersionCompareToggle } from "./components/react-pdf/ReaderVersionCompare.js";
+import { useReaderVersionCompare } from "./hooks/use-reader-version-compare.js";
 import { useFindShortcut } from "./hooks/use-find-shortcut.js";
 import { useReaderBlockEdit, useEditBlockShortcut } from "./hooks/use-reader-block-edit.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
@@ -325,6 +327,20 @@ export function ReaderAppReactPdf() {
     selectBlock(itemId);
   }, [selectBlock, visiblePdfMode, setModeKeepingPage]);
   useEditBlockShortcut(blockEdit.available ? editBlock : null, regionHover);
+  // 「对比版本」：选了一份就切到对照（左栏放那一份）；切走对照（只看原文 / 译文）就不对比了。
+  const versionCompare = useReaderVersionCompare({ documentId: session.documentId, jobId: session.jobId });
+  const comparedUrl = versionCompare.compared?.url || "";
+  useEffect(() => {
+    if (comparedUrl && visiblePdfMode !== "compare") changeWorkspace("compare");
+    // 只在选中另一份时切一次；之后用户自己切走由下面那个 effect 收掉对比。
+  }, [comparedUrl]);
+  useEffect(() => {
+    if (visiblePdfMode !== "compare") versionCompare.clear();
+  }, [visiblePdfMode]);
+  const compareVersion = useMemo(
+    () => (versionCompare.compared ? { url: versionCompare.compared.url, regions: versionCompare.compared.regions } : null),
+    [versionCompare.compared],
+  );
   const revisedBlocks = useMemo(() => {
     if (!blockEdit.savedCounts.size) return c.revisedBlocks;
     const merged = new Map(c.revisedBlocks);
@@ -356,6 +372,7 @@ export function ReaderAppReactPdf() {
     blockEdit,
     editShowsSource: visiblePdfMode !== "compare",
     findTerm: finder === "search" ? findTerm : "",
+    compareVersion,
     sourceOnly: c.sourceOnly,
     sourceViewOnly,
     download: c.download,
@@ -379,6 +396,7 @@ export function ReaderAppReactPdf() {
     visiblePdfMode,
     finder,
     findTerm,
+    compareVersion,
     c.sourceOnly,
     sourceViewOnly,
     c.download,
@@ -397,6 +415,7 @@ export function ReaderAppReactPdf() {
     `is-workspace-${workspaceView}`,
     assistantOpen ? "is-assistant-open" : "",
     finder ? "is-finder-open" : "",
+    versionCompare.compared || versionCompare.loading || versionCompare.error ? "is-version-compare" : "",
     paneComposition.overlayOnSource ? "is-live-translation-overlay" : "",
   ].filter(Boolean).join(" ");
 
@@ -406,7 +425,10 @@ export function ReaderAppReactPdf() {
         <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
         {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
             原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
-        <ReaderFinderToggles open={finder} onToggle={toggleFinder} />
+        <ReaderFinderToggles open={finder} onToggle={toggleFinder}>
+          <ReaderVersionCompareToggle compare={versionCompare} />
+        </ReaderFinderToggles>
+        <ReaderVersionCompareBar compare={versionCompare} />
         {finder ? (
           <ReaderFinder
             tab={finder}
@@ -443,6 +465,7 @@ export function ReaderAppReactPdf() {
             mode={visiblePdfMode}
             modeControls={null}
             bookmarkScope={c.viewStateKey}
+            issuesJobId={c.sourceOnly ? "" : session.jobId}
           />
         ) : null}
         <Suspense fallback={null}>

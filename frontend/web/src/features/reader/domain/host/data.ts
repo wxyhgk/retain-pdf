@@ -28,6 +28,8 @@ import * as readerData from "@retainpdf/reader/runtime/data";
 import type { ReaderLiveTranslationPort, ReaderPdfPort, ReaderSessionDataPort, ReaderSessionSnapshot } from "@retainpdf/reader/contracts";
 import { normalizeReaderMetadata, normalizeReaderRegions } from "@retainpdf/reader/runtime/data";
 import { translationEditPort } from "../translation-edit-port.js";
+import { translationVersionsPort } from "../translation-versions-port.js";
+import { loadReaderIssues } from "../reader-issues-port.js";
 import type {
   MarkdownRangeResult,
   MarkdownSourceDescriptor,
@@ -252,6 +254,8 @@ export const sessionDataPort: ReaderSessionDataPort = {
   fetchRevisionGroups: (jobId) =>
     fetchJobData(jobId, API_PREFIX, "revisions", { groupBy: "reader_item_id", limit: 1000 }),
   translationEdit: translationEditPort,
+  translationVersions: isMockMode() ? null : translationVersionsPort,
+  loadIssues: isMockMode() ? undefined : loadReaderIssues,
   // 包端口的入参是 typeof fetch（RequestInfo | URL），宿主 fetchProtected 只接收字符串 URL；
   // 包内调用方也只传字符串，与 app/reader/adapters/retainpdf.ts 的既有断言口径一致。
   fetchProtected: (input, init) => fetchProtected(input as string, init),
