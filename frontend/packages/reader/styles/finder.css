@@ -46,7 +46,7 @@
   flex-direction: column;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
-  border-radius: 16px;
+  border-radius: var(--ui-radius-lg, 14px);
   background: var(--paper);
   box-shadow:
     0 22px 56px color-mix(in srgb, var(--shadow-color, var(--ink)) 16%, transparent),
