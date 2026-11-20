@@ -17,7 +17,9 @@
 2026-11-20，用户定：默认开、每页右下角「logo + RetainPDF」。`/jobs/{id}/files/output/translated.pdf`、`side-by-side.pdf`、
 `translated.docx` 默认返回带水印的版本，加 `?watermark=0` 返回原版。地址、字段都没变，下载按钮不改就带水印。
 
-前端**要做的**：阅读页显示译文加载的也是 `translated.pdf`，不改的话阅读页译文右下角会出现水印。
+前端已做（2026-11-20，`fix/reader-no-watermark`）：`resolveReaderTranslatedPdfUrl` 出口统一过 `withoutExportWatermark`，阅读页打开书、对比版本显示的译文都带 `watermark=0`；下载菜单走 dialog runtime-port 的 `currentArtifactUrls`，不加，照旧带水印。书详情页的下载链接也不加。「导出时加水印」开关还没做。
+
+原来的交代：阅读页显示译文加载的也是 `translated.pdf`，不改的话阅读页译文右下角会出现水印。
 - `frontend/packages/reader/src/shared/data/resource-resolver.ts`：译文 PDF 地址（`manifestCandidates` 取到的 `pdf` / `translated_pdf` / `result_pdf`，
   和兜底的 `jobOutputFilePath(job_id, "translated.pdf")`）后面加 `watermark=0`（地址里已有 `?` 就用 `&`）；
 - 阅读页「下载」菜单（`shared/state/downloads/resolve.ts`、`web/src/features/reader/domain/dialog/runtime-port.ts`）用的是同一个地址：
