@@ -26,6 +26,8 @@ from retainpdf_translation_agent.contract import STATUS_OK
 from retainpdf_translation_agent.contract import STATUS_WARN
 from retainpdf_translation_agent.contract import BlockResult
 from retainpdf_translation_agent.contract import PageInput
+from retainpdf_translation_agent.rules import REVIEW_KEEP_EXAMPLE
+from retainpdf_translation_agent.rules import REVIEW_TERM_OF_ART
 
 REVIEW_CLASSES = {"paragraph", "abstract", "footnote", "list_item", "figure_caption", "table_caption", "float_note", "margin_note", "acknowledgement"}
 MIN_WORDS = 8
@@ -46,7 +48,7 @@ REVIEW_PROMPT = """你是英译中学术翻译的审校。你会收到一页里�
 推测、否定的意思还在不在，那句话有没有译出来，数字对不对。意思丢了、说反了、句子漏了，就开单补上；
 都在（只是换了说法、并进了别的句子）就不开。flags 只是提示，会误报，也可能漏，别的地方确实错了照样开单。只收五类：
 - mistranslation 错译：意思错、主宾或逻辑颠倒、否定丢了、数量和倍数错（"a hundred times as much"是"……的一百倍"不是"多一百倍"）、
-  一词多义选错（排版里 set 是"排"不是"设置"，points 是"磅"或"百分点"，sorry 在惋惜时不是"懊悔"）；
+  一词多义选错（sorry 在惋惜时不是"懊悔"，issue 在期刊里是"期"不是"问题"）；
 - omission 漏译或添加：少了分句、限定词、例子、修饰语，或多了原文没有的意思；
 - number_term 数字或术语：数字、单位、编号错，或者没用定好的术语、人名译法，或者把作者引用的别的学科的固定说法
   按字面直译了（the tragedy of the commons 译成"公地的悲剧故事"，应为"公地悲剧"）；
@@ -66,11 +68,12 @@ ACCURACY_NOTE = """
 这一轮只管意思（对照原文审校），文笔由下一轮编辑单独处理：不开 fluency 单子；读着别扭但意思没错的，不开。
 这是人文社科或通俗读物：除了错译、漏译，特别留意多出原文没有的意思（渲染、评价、提前说出的结果）和语气偏离
 （作者含糊、反讽、犹豫的地方被说得更明白、更肯定）。
-意译、成语、调过语序的句子，只要意思、语气、信息量对得上原文，就不是错，不要改回字面
-（so many doors had been slammed 译成"吃了太多闭门羹"是对的，不要改成"那么多门被重重关上"）。
-但别的学科的固定说法（效应、定律、某某技术）按字面直译成中文里不这么叫的，是 number_term，要开单子改成通行译名。
+""" + REVIEW_KEEP_EXAMPLE + "\n" + REVIEW_TERM_OF_ART + """
 人名、书名第一次出现时括号里的原文是体例要求，不要删。中文里夹着没翻的英文词，算 omission。"""
 ACCURACY_CATEGORIES = {"mistranslation", "omission", "number_term", "tone"}
+# 理工类（论文、教科书、手册）审校的附加说明：排版、计量里常见的一词多义（2026-11-20 以前写在通用提示词里，社科书也带着）
+SCIENCE_NOTE = """
+理工文献里常见的一词多义：排版里 set 是"排"不是"设置"，points 是"磅"或"百分点"，fitting 是"排入、适配"不是"拟合"。"""
 
 REVIEW_TOOL = {
     "name": "submit_review",
@@ -157,7 +160,7 @@ def review_page(
         ],
     }
     try:
-        system = REVIEW_PROMPT + ACCURACY_NOTE if accuracy_only else REVIEW_PROMPT
+        system = REVIEW_PROMPT + ACCURACY_NOTE if accuracy_only else REVIEW_PROMPT + SCIENCE_NOTE
         data = agent.call_tool(payload, system=system, tool=REVIEW_TOOL, role=ROLE_REVIEWER, label=f"review {page.page_label}", blocks=[b.id for b in blocks])
     except ValueError:
         report["error"] = "no submit_review tool call"
