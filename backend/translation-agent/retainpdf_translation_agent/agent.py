@@ -51,7 +51,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 BREAK = "[[BREAK]]"
 BREAK_RE = re.compile(r"\s*\[\[BREAK\]\]\s*")
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-18"
+PROMPT_VERSION = "translation-agent-19"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
@@ -142,6 +142,7 @@ NARRATIVE_PROMPT = """
   （时间、地点、原因按中文习惯放前面），不必一句对一句，也不必和原文长度相当（第 8 条的"长度和原文相当"不适用）。
 - 英文的比喻、习语换成中文里意思相同的惯用说法（so many doors had been slammed → 处处吃闭门羹），没有对应说法的就意译，
   不要照字面直译出中文里不说的话。
+- 习语和术语分清：作者引用的别的学科的固定说法（效应、定律、某某技术、某某悖论，常带引号，或后面跟着 strategy、effect、theory），用中文学界通行的译名，不要按字面译，第一次出现写"译名（原文）"（the tragedy of the commons → 公地悲剧（the tragedy of the commons），learned helplessness → 习得性无助（learned helplessness））；没有把握的不要硬套中文俗语（俗语的意思常和术语对不上），按它在那个学科里的意思译，同样带上原文。
 - 英文爱用抽象名词（access、commitment、handling、occasion），中文多用动词和具体说法：
   no access materialized → 他一直没松口；the handling of human cadavers → 处理遗体的事。不要写"进入的事""……的处理"这种名词腔。
   术语表里的词也一样：概念照用，词形、句式按中文习惯（见第 10 条）。
