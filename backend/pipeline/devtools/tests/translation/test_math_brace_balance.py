@@ -5,8 +5,8 @@
 
 import pytest
 
-from retainpdf_translation.llm.result_validator import validate_batch_result
-from retainpdf_translation.llm.shared.orchestration.direct_typst_repair import build_direct_typst_repair_messages
+from retainpdf_translation_classic.llm.result_validator import validate_batch_result
+from retainpdf_translation_classic.llm.shared.orchestration.direct_typst_repair import build_direct_typst_repair_messages
 from retainpdf_translation.llm.validation.errors import MathDelimiterError
 from retainpdf_math.checks import unbalanced_brace_math_spans
 from retainpdf_translation.services.quality import review_translation_item

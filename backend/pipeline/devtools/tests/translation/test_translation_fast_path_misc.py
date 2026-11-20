@@ -5,9 +5,9 @@ from unittest import mock
 from retainpdf_translation.llm.validation.english_residue import looks_like_untranslated_english_output
 from retainpdf_translation.llm.validation.english_residue import should_force_translate_body_text
 from retainpdf_translation.llm.providers.deepseek.client import _extract_stream_delta_text
-from retainpdf_translation.llm.shared import cache
-from retainpdf_translation.llm.shared.orchestration import segment_routing
-from retainpdf_translation.llm.shared.orchestration.intentional_keep_origin import (
+from retainpdf_translation_classic.llm.shared import cache
+from retainpdf_translation_classic.llm.shared.orchestration import segment_routing
+from retainpdf_translation_classic.llm.shared.orchestration.intentional_keep_origin import (
     keep_origin_payload_for_repeated_empty_translation,
 )
 from retainpdf_translation.core.payload.parts.apply import apply_translated_text_map
@@ -286,7 +286,7 @@ def test_formula_segment_route_prefers_plain_for_small_segment_count() -> None:
 
 def test_direct_typst_skips_heavy_formula_split_entry() -> None:
     from retainpdf_translation.llm.shared import control_context
-    from retainpdf_translation.llm.shared.orchestration import route_selection
+    from retainpdf_translation_classic.llm.shared.orchestration import route_selection
 
     item = {
         "item_id": "p001-b002",
@@ -308,7 +308,7 @@ def test_direct_typst_skips_heavy_formula_split_entry() -> None:
 
 def test_english_residue_degrades_to_keep_origin_after_sentence_fallback_failure() -> None:
     from retainpdf_translation.llm.shared import control_context
-    from retainpdf_translation.llm.shared.orchestration import fallbacks
+    from retainpdf_translation_classic.llm.shared.orchestration import fallbacks
 
     item = {
         "item_id": "p001-b002",

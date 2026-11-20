@@ -7,27 +7,27 @@ from types import SimpleNamespace
 
 import pytest
 
-from retainpdf_translation.llm.shared import cache
+from retainpdf_translation_classic.llm.shared import cache
 from retainpdf_translation.llm.shared.control_context import normalize_preparation_mode
-from retainpdf_translation.llm.shared.prompt_building import build_single_item_fallback_messages
+from retainpdf_translation_classic.llm.shared.prompt_building import build_single_item_fallback_messages
 from retainpdf_translation.services.context.session_context import build_translation_context_from_policy
 from retainpdf_translation.services.policy import build_translation_policy_config
-from retainpdf_translation.services.preparation import prepare_translation
-from retainpdf_translation.services.preparation.segments import PrescanSegment
-from retainpdf_translation.services.preparation.segments import build_prescan_batches
-from retainpdf_translation.services.preparation.segments import estimate_tokens
-from retainpdf_translation.services.preparation.segments import mask_math
-from retainpdf_translation.services.preparation.style_guide import render_style_guidance
-from retainpdf_translation.services.preparation.term_base import build_term_base_terms
-from retainpdf_translation.services.preparation.term_base import term_base_glossary_entries
-from retainpdf_translation.services.preparation.term_prescan import PrescanBatchResult
-from retainpdf_translation.services.preparation.term_prescan import PrescanTerm
-from retainpdf_translation.services.preparation.term_prescan import filter_prescan_terms
-from retainpdf_translation.services.preparation.term_prescan import run_term_prescan
+from retainpdf_translation_classic.services.preparation import prepare_translation
+from retainpdf_translation_classic.services.preparation.segments import PrescanSegment
+from retainpdf_translation_classic.services.preparation.segments import build_prescan_batches
+from retainpdf_translation_classic.services.preparation.segments import estimate_tokens
+from retainpdf_translation_classic.services.preparation.segments import mask_math
+from retainpdf_translation_classic.services.preparation.style_guide import render_style_guidance
+from retainpdf_translation_classic.services.preparation.term_base import build_term_base_terms
+from retainpdf_translation_classic.services.preparation.term_base import term_base_glossary_entries
+from retainpdf_translation_classic.services.preparation.term_prescan import PrescanBatchResult
+from retainpdf_translation_classic.services.preparation.term_prescan import PrescanTerm
+from retainpdf_translation_classic.services.preparation.term_prescan import filter_prescan_terms
+from retainpdf_translation_classic.services.preparation.term_prescan import run_term_prescan
 from retainpdf_translation.services.terms import normalize_glossary_entries
 from retainpdf_translation.workflow.checkpoint.identity import build_translation_identity
-from retainpdf_translation.workflow.checkpoint.preparation import PrescanCheckpoint
-from retainpdf_translation.workflow.checkpoint.preparation import prescan_checkpoint_path
+from retainpdf_translation_classic.workflow.checkpoint.preparation import PrescanCheckpoint
+from retainpdf_translation_classic.workflow.checkpoint.preparation import prescan_checkpoint_path
 from retainpdf_translation.workflow.execution import TranslationExecutionRequest
 from retainpdf_translation.workflow.execution import resolve_reviewer_connection
 from retainpdf_translation.workflow.execution_plan import build_translation_execution_plan
@@ -579,7 +579,7 @@ def test_default_off_plan_has_no_preparation_and_unchanged_identity(tmp_path: Pa
 
 def test_enabled_preparation_enters_the_input_fingerprint(tmp_path: Path, monkeypatch) -> None:
     llm = MockLLM()
-    from retainpdf_translation.services.preparation import runner
+    from retainpdf_translation_classic.services.preparation import runner
 
     monkeypatch.setattr(runner, "run_term_prescan", _with_request_fn(runner.run_term_prescan, llm))
     monkeypatch.setattr(runner, "request_document_style", _with_request_fn(runner.request_document_style, llm))
@@ -810,7 +810,7 @@ def test_prescan_gives_up_after_two_unparsable_replies(tmp_path: Path) -> None:
 
 
 def test_style_guide_retries_once_when_the_reply_is_not_json() -> None:
-    from retainpdf_translation.services.preparation.style_guide import request_document_style
+    from retainpdf_translation_classic.services.preparation.style_guide import request_document_style
 
     good = json.dumps({"register": "学术", "audience": "研究者", "rules": [{"rule": "引用用“”", "example": ""}],
                        "do_not_translate": [], "notes": ""}, ensure_ascii=False)

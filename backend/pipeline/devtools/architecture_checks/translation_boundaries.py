@@ -7,6 +7,8 @@ from devtools.architecture_checks.common import module_allowed
 from devtools.architecture_checks.common import read_text
 from devtools.architecture_checks.common import rel
 from devtools.architecture_checks.common import scan_py_files
+from devtools.architecture_checks.common import translation_mounts
+from devtools.architecture_checks.common import translation_relative
 from devtools.architecture_checks.translation_rules import FROM_OCR_ENTRYPOINT
 from devtools.architecture_checks.translation_rules import TRANSLATE_ONLY_ENTRYPOINT
 from devtools.architecture_checks.translation_rules import TRANSLATION_ALLOWED_ROOT_DIRS
@@ -42,7 +44,7 @@ def check_translation_library_self_contained(errors: list[str]) -> None:
 
 
 def check_translation_internal_boundaries(errors: list[str]) -> None:
-    for path in TRANSLATION_ROOT.iterdir():
+    for path in [entry for mount in translation_mounts(TRANSLATION_ROOT) for entry in mount.iterdir()]:
         if path.name == "__pycache__":
             continue
         if path.is_dir() and path.name not in TRANSLATION_ALLOWED_ROOT_DIRS:
@@ -66,7 +68,9 @@ def check_translation_internal_boundaries(errors: list[str]) -> None:
             )
 
     workflow_root = TRANSLATION_ROOT / "workflow"
-    for path in workflow_root.iterdir():
+    for path in [entry for mount in translation_mounts(workflow_root) for entry in mount.iterdir()]:
+        if path.name == "__pycache__":
+            continue
         if path.is_dir() and path.name not in TRANSLATION_WORKFLOW_ALLOWED_DIRS:
             errors.append(
                 f"{rel(path)}: unexpected workflow directory; use batching/legacy/phases/scheduling or update architecture rules"
@@ -77,10 +81,7 @@ def check_translation_internal_boundaries(errors: list[str]) -> None:
             )
 
     for path in scan_py_files(workflow_root):
-        try:
-            parts = path.relative_to(workflow_root).parts
-        except ValueError:
-            continue
+        parts = translation_relative(path).parts[1:]
         if len(parts) < 2:
             continue
         subpackage = parts[0]
@@ -98,7 +99,7 @@ def check_translation_internal_boundaries(errors: list[str]) -> None:
 
     private_import_prefix = "retainpdf_translation.workflow."
     for path in scan_py_files(workflow_root):
-        rel_to_translation = path.relative_to(TRANSLATION_ROOT)
+        rel_to_translation = translation_relative(path)
         exception_prefixes = TRANSLATION_WORKFLOW_PRIVATE_IMPORT_EXCEPTIONS.get(rel_to_translation, ())
         for module, symbol in imported_from_symbols(path):
             if not module.startswith(private_import_prefix):
@@ -167,8 +168,8 @@ def check_translation_internal_boundaries(errors: list[str]) -> None:
             # 转发壳靠函数内 import 反向依赖 orchestration,把 llm/ 下 38 个模块
             # 拧成了一个强连通分量 —— 而且因为 import 在函数体内,加载时不报错,
             # 靠读代码根本看不出来。
-            "from retainpdf_translation.llm.shared.orchestration",
-            "import retainpdf_translation.llm.shared.orchestration",
+            "from retainpdf_translation_classic.llm.shared.orchestration",
+            "import retainpdf_translation_classic.llm.shared.orchestration",
             "from retainpdf_pipeline.render",
             "import retainpdf_pipeline.render",
             "from retainpdf_pipeline.runtime.pipeline",
@@ -191,14 +192,14 @@ def check_translation_internal_boundaries(errors: list[str]) -> None:
             "import retainpdf_translation.llm",
             "from retainpdf_translation.workflow",
             "import retainpdf_translation.workflow",
-            "from retainpdf_translation.workflow.batching",
-            "import retainpdf_translation.workflow.batching",
-            "from retainpdf_translation.services.fast_path",
-            "import retainpdf_translation.services.fast_path",
+            "from retainpdf_translation_classic.workflow.batching",
+            "import retainpdf_translation_classic.workflow.batching",
+            "from retainpdf_translation_classic.services.fast_path",
+            "import retainpdf_translation_classic.services.fast_path",
             "from retainpdf_translation.services.results",
             "import retainpdf_translation.services.results",
-            "from retainpdf_translation.services.memory",
-            "import retainpdf_translation.services.memory",
+            "from retainpdf_translation_classic.services.memory",
+            "import retainpdf_translation_classic.services.memory",
             "from retainpdf_pipeline.runtime.pipeline",
             "import retainpdf_pipeline.runtime.pipeline",
         )
@@ -214,7 +215,7 @@ def check_translation_internal_boundaries(errors: list[str]) -> None:
         if layer is None:
             continue
         allowed_prefixes = TRANSLATION_LAYER_IMPORT_RULES[layer]
-        layer_key = path.relative_to(TRANSLATION_ROOT) if path.is_relative_to(TRANSLATION_ROOT) else None
+        layer_key = translation_relative(path) if layer != "entrypoints" else None
         exception_prefixes = TRANSLATION_LAYER_IMPORT_EXCEPTIONS.get(layer_key, ())
         frozen_imports = TRANSLATION_LAYER_FROZEN_IMPORTS.get(layer_key, ())
         for module in imported_modules(path):

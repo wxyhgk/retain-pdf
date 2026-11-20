@@ -90,6 +90,7 @@ def apply_translation_policies(
                 batch_size=classify_batch_size,
                 request_label=f"classification page {page_idx + 1}",
                 request_chat_content_fn=request_chat_content_fn,
+                classify_fn=policy_config.page_classifier,
             )
         except Exception as exc:
             print(

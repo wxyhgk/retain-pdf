@@ -19,7 +19,7 @@ def probe(transport, route, outcome, cache_dir):
     from retainpdf_base import paths
     from retainpdf_translation.llm.shared.rust_executor import ExecutorError
     from retainpdf_translation.llm.shared import executor_context as executor
-    from retainpdf_translation.llm.shared.orchestration import translate_batch
+    from retainpdf_translation_classic.llm.shared.orchestration import translate_batch
     from retainpdf_translation.llm.shared.request_capture import digest
     from retainpdf_translation.llm.providers.deepseek import client
 
@@ -76,7 +76,7 @@ def probe(transport, route, outcome, cache_dir):
          patch.object(client, "_prewarm_dns"), patch.object(client, "should_use_stream_responses", return_value=False), \
          patch.object(client, "get_session", return_value=SimpleNamespace(post=fake_post)):
         for name in ("plain_text_retry", "segment_windows", "segment_executor", "sentence_level", "direct_typst"):
-            module = import_module("retainpdf_translation.llm.shared.orchestration." + name)
+            module = import_module("retainpdf_translation_classic.llm.shared.orchestration." + name)
             stack.enter_context(patch.object(module, "time", clock))
         stack.enter_context(patch.object(client, "time", clock))
         failed = False

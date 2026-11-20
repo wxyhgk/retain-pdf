@@ -5,6 +5,7 @@ from pathlib import Path
 
 from devtools.architecture_checks.common import imported_modules
 from devtools.architecture_checks.common import module_allowed
+from devtools.architecture_checks.common import translation_relative
 from devtools.architecture_checks.common import parse_python_file
 from devtools.architecture_checks.common import read_text
 from devtools.architecture_checks.common import rel
@@ -174,7 +175,7 @@ def check_translation_recovery_boundary(errors: list[str]) -> None:
 
 def check_translation_rendering_separation(errors: list[str]) -> None:
     for path in scan_py_files(TRANSLATION_ROOT):
-        exception_prefixes = TRANSLATION_RENDERING_IMPORT_EXCEPTIONS.get(path.relative_to(TRANSLATION_ROOT), ())
+        exception_prefixes = TRANSLATION_RENDERING_IMPORT_EXCEPTIONS.get(translation_relative(path), ())
         for module in imported_modules(path):
             if not module.startswith("retainpdf_pipeline.render"):
                 continue

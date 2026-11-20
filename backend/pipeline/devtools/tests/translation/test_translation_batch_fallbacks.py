@@ -2,9 +2,9 @@ from __future__ import annotations
 
 
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
-from retainpdf_translation.llm.shared.orchestration.batched_plain import translate_items_plain_text
-from retainpdf_translation.llm.shared.orchestration.transport import DeferredTransportRetry
-from retainpdf_translation.llm.shared.orchestration.transport import DeferredValidationRetry
+from retainpdf_translation_classic.llm.shared.orchestration.batched_plain import translate_items_plain_text
+from retainpdf_translation_classic.llm.shared.orchestration.transport import DeferredTransportRetry
+from retainpdf_translation_classic.llm.shared.orchestration.transport import DeferredValidationRetry
 
 
 def _item(item_id: str, text: str, **overrides):

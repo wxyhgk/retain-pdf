@@ -1,9 +1,9 @@
 import json
 
 
-from retainpdf_translation.services.agents import RepairAgent
-from retainpdf_translation.services.agents import TranslationAgentCoordinator
-from retainpdf_translation.services.agents import TranslationRepairRequest
+from retainpdf_translation_classic.services.agents import RepairAgent
+from retainpdf_translation_classic.services.agents import TranslationAgentCoordinator
+from retainpdf_translation_classic.services.agents import TranslationRepairRequest
 from retainpdf_translation.llm.shared.control_context import GlossaryEntry
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 from retainpdf_translation.services.quality import TranslationQualityIssue

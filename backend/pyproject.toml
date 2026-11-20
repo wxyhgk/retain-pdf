@@ -9,6 +9,7 @@ dependencies = [
   "retainpdf-pipeline",
   "retainpdf-translation",
   "retainpdf-translation-agent",
+  "retainpdf-translation-classic",
 ]
 
 [project.optional-dependencies]
@@ -18,6 +19,7 @@ test = [
   "retainpdf-pipeline[test]",
   "retainpdf-translation[test]",
   "retainpdf-translation-agent[test]",
+  "retainpdf-translation-classic[test]",
 ]
 
 [tool.uv.sources]
@@ -26,6 +28,7 @@ retainpdf-math = { workspace = true }
 retainpdf-pipeline = { workspace = true }
 retainpdf-translation = { workspace = true }
 retainpdf-translation-agent = { workspace = true }
+retainpdf-translation-classic = { workspace = true }
 
 [tool.uv.workspace]
 members = [
@@ -34,6 +37,7 @@ members = [
   "pipeline",
   "translation",
   "translation-agent",
+  "translation-classic",
 ]
 
 [tool.retain_pdf.external-binaries]

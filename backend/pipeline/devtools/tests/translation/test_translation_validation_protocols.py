@@ -5,8 +5,8 @@ import json
 import pytest
 
 
-from retainpdf_translation.llm.result_canonicalizer import canonicalize_batch_result
-from retainpdf_translation.llm.result_validator import validate_batch_result
+from retainpdf_translation_classic.llm.result_canonicalizer import canonicalize_batch_result
+from retainpdf_translation_classic.llm.result_validator import validate_batch_result
 from retainpdf_translation.llm.validation.english_residue import looks_like_mixed_english_residue_output
 from retainpdf_translation.llm.validation.english_residue import looks_like_predominantly_english_output
 from retainpdf_translation.llm.validation.english_residue import looks_like_untranslated_english_output
@@ -16,7 +16,7 @@ from retainpdf_translation.llm.providers.deepseek import client as deepseek_clie
 from retainpdf_translation.llm.shared import structured_models
 from retainpdf_translation.llm.shared import structured_output
 from retainpdf_translation.llm.shared import structured_parsers
-from retainpdf_translation.llm.shared.orchestration import segment_routing
+from retainpdf_translation_classic.llm.shared.orchestration import segment_routing
 
 
 def test_single_item_extractor_returns_plain_text_when_not_json() -> None:

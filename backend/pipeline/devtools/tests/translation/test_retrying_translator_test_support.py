@@ -10,9 +10,9 @@ from retrying_translator_test_support import load_retrying_translator
 
 
 MODULE_NAMES = (
-    "retainpdf_translation.llm.shared.orchestration.retrying_translator",
-    "retainpdf_translation.llm.shared.orchestration.fallbacks",
-    "retainpdf_translation.llm.shared.orchestration.segment_routing",
+    "retainpdf_translation_classic.llm.shared.orchestration.retrying_translator",
+    "retainpdf_translation_classic.llm.shared.orchestration.fallbacks",
+    "retainpdf_translation_classic.llm.shared.orchestration.segment_routing",
     "retainpdf_translation.llm.providers.deepseek.client",
 )
 

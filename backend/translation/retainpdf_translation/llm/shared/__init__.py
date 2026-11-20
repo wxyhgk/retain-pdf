@@ -4,14 +4,14 @@ from importlib import import_module
 
 
 _EXPORTS = {
-    "FORMULA_SEGMENT_STRATEGY_VERSION": ("retainpdf_translation.llm.shared.cache", "FORMULA_SEGMENT_STRATEGY_VERSION"),
-    "PLAIN_TEXT_STRATEGY_VERSION": ("retainpdf_translation.llm.shared.cache", "PLAIN_TEXT_STRATEGY_VERSION"),
-    "TRANSLATION_PROTOCOL_VERSION": ("retainpdf_translation.llm.shared.cache", "TRANSLATION_PROTOCOL_VERSION"),
-    "cache_key_for_item": ("retainpdf_translation.llm.shared.cache", "cache_key_for_item"),
-    "load_cached_translation": ("retainpdf_translation.llm.shared.cache", "load_cached_translation"),
-    "split_cached_batch": ("retainpdf_translation.llm.shared.cache", "split_cached_batch"),
-    "store_cached_batch": ("retainpdf_translation.llm.shared.cache", "store_cached_batch"),
-    "store_cached_translation": ("retainpdf_translation.llm.shared.cache", "store_cached_translation"),
+    "FORMULA_SEGMENT_STRATEGY_VERSION": ("retainpdf_translation_classic.llm.shared.cache", "FORMULA_SEGMENT_STRATEGY_VERSION"),
+    "PLAIN_TEXT_STRATEGY_VERSION": ("retainpdf_translation_classic.llm.shared.cache", "PLAIN_TEXT_STRATEGY_VERSION"),
+    "TRANSLATION_PROTOCOL_VERSION": ("retainpdf_translation_classic.llm.shared.cache", "TRANSLATION_PROTOCOL_VERSION"),
+    "cache_key_for_item": ("retainpdf_translation_classic.llm.shared.cache", "cache_key_for_item"),
+    "load_cached_translation": ("retainpdf_translation_classic.llm.shared.cache", "load_cached_translation"),
+    "split_cached_batch": ("retainpdf_translation_classic.llm.shared.cache", "split_cached_batch"),
+    "store_cached_batch": ("retainpdf_translation_classic.llm.shared.cache", "store_cached_batch"),
+    "store_cached_translation": ("retainpdf_translation_classic.llm.shared.cache", "store_cached_translation"),
     "BatchPolicy": ("retainpdf_translation.llm.shared.control_context", "BatchPolicy"),
     "EngineProfile": ("retainpdf_translation.llm.shared.control_context", "EngineProfile"),
     "FallbackPolicy": ("retainpdf_translation.llm.shared.control_context", "FallbackPolicy"),

@@ -2,9 +2,9 @@ import unittest
 
 
 from retainpdf_translation.llm.result_payload import result_entry
-from retainpdf_translation.llm.shared.orchestration.heavy_formula import heavy_formula_split_reason
-from retainpdf_translation.llm.shared.orchestration.heavy_formula import translate_heavy_formula_block
-from retainpdf_translation.llm.shared.orchestration.transport import DeferredTransportRetry
+from retainpdf_translation_classic.llm.shared.orchestration.heavy_formula import heavy_formula_split_reason
+from retainpdf_translation_classic.llm.shared.orchestration.heavy_formula import translate_heavy_formula_block
+from retainpdf_translation_classic.llm.shared.orchestration.transport import DeferredTransportRetry
 
 
 from retrying_translator_test_support import load_retrying_translator

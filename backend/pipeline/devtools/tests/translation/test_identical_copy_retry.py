@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from retainpdf_translation.llm.result_payload import result_entry
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
-from retainpdf_translation.llm.shared.orchestration import direct_typst
-from retainpdf_translation.llm.shared.orchestration.identical_copy import RETRY_HINT
-from retainpdf_translation.llm.shared.orchestration.identical_copy import worth_retrying_identical_copy
+from retainpdf_translation_classic.llm.shared.orchestration import direct_typst
+from retainpdf_translation_classic.llm.shared.orchestration.identical_copy import RETRY_HINT
+from retainpdf_translation_classic.llm.shared.orchestration.identical_copy import worth_retrying_identical_copy
 
 
 def _item(text: str, **extra) -> dict:
@@ -70,7 +70,7 @@ def test_things_that_are_not_english_words_are_not_retried() -> None:
 
 
 def test_a_batch_hands_unchanged_items_to_the_single_path_and_does_not_cache_them(monkeypatch) -> None:
-    from retainpdf_translation.llm.shared.orchestration import batched_plain
+    from retainpdf_translation_classic.llm.shared.orchestration import batched_plain
 
     monkeypatch.setattr(batched_plain, "should_use_direct_deepseek_batch", lambda *a, **k: True)
     stored: list[list[str]] = []
@@ -98,7 +98,7 @@ def test_a_batch_hands_unchanged_items_to_the_single_path_and_does_not_cache_the
 
 
 def test_an_echoed_source_before_the_translation_is_dropped() -> None:
-    from retainpdf_translation.llm.result_canonicalizer import canonicalize_batch_result
+    from retainpdf_translation_classic.llm.result_canonicalizer import canonicalize_batch_result
 
     item = _item("which has the same form as Eq. (8.94).")
     raw = {"p014-b022": result_entry("translate", "which has the same form as Eq. (8.94).其具有与式 (8.94) 相同的形式。")}
@@ -109,7 +109,7 @@ def test_an_echoed_source_before_the_translation_is_dropped() -> None:
 
 
 def test_a_leading_english_where_becomes_qizhong() -> None:
-    from retainpdf_translation.llm.result_canonicalizer import translate_leading_where
+    from retainpdf_translation_classic.llm.result_canonicalizer import translate_leading_where
 
     assert translate_leading_where("where $\\hat{T}_{el}$ 和 $\\hat{V}$ 分别是动能和势能算符") == "其中 $\\hat{T}_{el}$ 和 $\\hat{V}$ 分别是动能和势能算符"
     assert translate_leading_where("Where 电子的位置矢量为") == "其中电子的位置矢量为"

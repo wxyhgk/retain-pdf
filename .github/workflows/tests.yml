@@ -190,13 +190,16 @@ jobs:
       - name: Check installed command contracts
         run: |
           uv run --project "$RETAIN_PDF_SERVICES_ROOT" retainpdf-pipeline --help
-          uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -c "import retainpdf_base, retainpdf_math, retainpdf_pipeline, retainpdf_translation, retainpdf_translation_agent"
+          uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -c "import retainpdf_base, retainpdf_math, retainpdf_pipeline, retainpdf_translation, retainpdf_translation_agent, retainpdf_translation_classic"
 
       - name: Base package tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/base/tests" -q
 
       - name: Translation package tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/translation/tests" -q
+
+      - name: Classic translation engine package tests
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/translation-classic/tests" -q
 
       - name: Math package tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/math/tests" -q

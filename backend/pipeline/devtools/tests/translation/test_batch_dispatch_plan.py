@@ -4,9 +4,9 @@ from copy import deepcopy
 import pytest
 
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
-from retainpdf_translation.workflow.batching import plan as planning
-from retainpdf_translation.workflow.scheduling.page_order import page_ordered_batches, task_order
-from retainpdf_translation.workflow.batch_runner import _translation_tasks
+from retainpdf_translation_classic.workflow.batching import plan as planning
+from retainpdf_translation_classic.workflow.scheduling.page_order import page_ordered_batches, task_order
+from retainpdf_translation_classic.workflow.batch_runner import _translation_tasks
 
 
 def _item(item_id, text, page=0, **extra):
@@ -223,7 +223,7 @@ def test_fixed_page_local_plan_fills_page_before_batch_size_boundary(
 
 @pytest.mark.parametrize("workers", [1, 8])
 def test_caller_prepares_once_and_shares_captured_plan_with_execution(monkeypatch, workers):
-    from retainpdf_translation.workflow.batching import pending_units
+    from retainpdf_translation_classic.workflow.batching import pending_units
     from retainpdf_translation.llm.shared import request_capture
 
     monkeypatch.setenv("RETAIN_TRANSLATION_TRANSPORT", "rust")

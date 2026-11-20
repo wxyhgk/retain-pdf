@@ -8,8 +8,8 @@
 from __future__ import annotations
 
 from retainpdf_translation.artifacts import TranslationRunDiagnostics
-from retainpdf_translation.workflow.batching.plan import batch_cost
-from retainpdf_translation.workflow.scheduling.pool_specs import build_pool_specs
+from retainpdf_translation_classic.workflow.batching.plan import batch_cost
+from retainpdf_translation_classic.workflow.scheduling.pool_specs import build_pool_specs
 
 
 def _run(limit: int = 32) -> TranslationRunDiagnostics:

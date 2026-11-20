@@ -3,7 +3,7 @@ from __future__ import annotations
 from unittest import mock
 
 
-from retainpdf_translation.llm.shared import cache
+from retainpdf_translation_classic.llm.shared import cache
 from retainpdf_translation.core import engine_identity
 from retainpdf_translation.llm.validation.protocol_shell import looks_like_protocol_shell_output
 

@@ -6,7 +6,7 @@ from retainpdf_translation.core.orchestration.units import (
     refresh_translation_units_by_page,
 )
 from retainpdf_translation.services.results.page_io import save_pages
-from retainpdf_translation.workflow.phases import repair
+from retainpdf_translation_classic.workflow.phases import repair
 
 
 def _pages():

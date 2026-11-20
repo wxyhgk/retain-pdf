@@ -11,7 +11,7 @@ from retainpdf_translation.llm import domain_context
 from retainpdf_translation.llm.shared import control_context
 from retainpdf_translation.core.terms import matched_glossary_entries
 from retainpdf_translation.core.terms import normalize_glossary_entries
-from retainpdf_translation.services.postprocess import garbled_reconstruction
+from retainpdf_translation_classic.services.postprocess import garbled_reconstruction
 from retainpdf_translation.services.context import session_context
 from retainpdf_pipeline.ocr.document_schema.text_flow import classify_text_flow_for_role
 

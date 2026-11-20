@@ -51,13 +51,13 @@ PAYLOAD_FIELD_WRITER_ALLOWLIST: dict[str, frozenset[str]] = {
             "translation/retainpdf_translation/core/payload/template_contract.py",  # frozen-debt
             "translation/retainpdf_translation/artifacts/io.py",  # frozen-debt: 诊断产物
             "translation/retainpdf_translation/artifacts/status.py",  # frozen-debt: 诊断产物
-            "translation/retainpdf_translation/llm/placeholder_transform.py",  # result metadata
-            "translation/retainpdf_translation/llm/result_canonicalizer.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/llm/placeholder_transform.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/llm/result_canonicalizer.py",  # result metadata
             "translation/retainpdf_translation/llm/result_payload.py",  # result metadata
-            "translation/retainpdf_translation/llm/shared/orchestration/metadata.py",  # result metadata
-            "translation/retainpdf_translation/llm/shared/orchestration/sentence_level.py",  # result metadata
-            "translation/retainpdf_translation/llm/shared/orchestration/terminal_payloads.py",  # result metadata
-            "translation/retainpdf_translation/services/postprocess/garbled_reconstruction.py",  # diagnostics dict
+            "translation-classic/retainpdf_translation_classic/llm/shared/orchestration/metadata.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/llm/shared/orchestration/sentence_level.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/llm/shared/orchestration/terminal_payloads.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/services/postprocess/garbled_reconstruction.py",  # diagnostics dict
         }
     ),
     # ---- 诊断:owner = core/payload/parts/diagnostics.py(顶层 merge + history 追加) ----
@@ -70,12 +70,12 @@ PAYLOAD_FIELD_WRITER_ALLOWLIST: dict[str, frozenset[str]] = {
             "translation/retainpdf_translation/core/payload/parts/apply.py",  # frozen-debt: 回填初次写入
             "translation/retainpdf_translation/core/payload/parts/result_entries.py",  # result metadata
             "translation/retainpdf_translation/core/payload/parts/result_status.py",  # frozen-debt
-            "translation/retainpdf_translation/llm/shared/orchestration/direct_typst_long_text.py",  # result metadata
-            "translation/retainpdf_translation/llm/shared/orchestration/heavy_formula.py",  # result metadata
-            "translation/retainpdf_translation/llm/shared/orchestration/metadata.py",  # result metadata
-            "translation/retainpdf_translation/llm/shared/orchestration/sentence_level.py",  # result metadata
-            "translation/retainpdf_translation/llm/shared/orchestration/terminal_payloads.py",  # result metadata
-            "translation/retainpdf_translation/services/fast_path/keep_origin.py",  # frozen-debt
+            "translation-classic/retainpdf_translation_classic/llm/shared/orchestration/direct_typst_long_text.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/llm/shared/orchestration/heavy_formula.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/llm/shared/orchestration/metadata.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/llm/shared/orchestration/sentence_level.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/llm/shared/orchestration/terminal_payloads.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/services/fast_path/keep_origin.py",  # frozen-debt
             "translation/retainpdf_translation/services/finalization/untranslated.py",  # result payload(经 apply 回填)
             "translation/retainpdf_translation/services/results/applier.py",  # frozen-debt
         }
@@ -85,7 +85,7 @@ PAYLOAD_FIELD_WRITER_ALLOWLIST: dict[str, frozenset[str]] = {
         {
             "translation/retainpdf_translation/core/payload/parts/apply.py",  # owner
             "translation/retainpdf_translation/core/payload/parts/policy_state.py",  # owner: clear/preserve
-            "translation/retainpdf_translation/llm/shared/orchestration/metadata.py",  # result metadata
+            "translation-classic/retainpdf_translation_classic/llm/shared/orchestration/metadata.py",  # result metadata
         }
     ),
     "protected_translated_text": frozenset(

@@ -4,7 +4,7 @@ from unittest import mock
 
 
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
-from retainpdf_translation.llm.shared.orchestration.route_selection import select_single_item_route
+from retainpdf_translation_classic.llm.shared.orchestration.route_selection import select_single_item_route
 
 
 def test_route_selector_short_circuits_direct_typst_before_heavy_formula_split() -> None:
@@ -17,7 +17,7 @@ def test_route_selector_short_circuits_direct_typst_before_heavy_formula_split()
     }
 
     with mock.patch(
-        "retainpdf_translation.llm.shared.orchestration.route_selection.heavy_formula_split_reason",
+        "retainpdf_translation_classic.llm.shared.orchestration.route_selection.heavy_formula_split_reason",
         side_effect=AssertionError("direct_typst should not inspect heavy formula split"),
     ):
         route = select_single_item_route(item, context=build_translation_control_context())

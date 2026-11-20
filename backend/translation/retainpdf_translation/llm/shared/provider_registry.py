@@ -12,30 +12,21 @@ from retainpdf_translation.llm.providers.deepseek.client import get_session as d
 from retainpdf_translation.llm.providers.deepseek.client import is_transport_error as deepseek_is_transport_error
 from retainpdf_translation.llm.providers.deepseek.client import normalize_base_url as deepseek_normalize_base_url
 from retainpdf_translation.llm.providers.deepseek.client import request_chat_content as deepseek_request_chat_content
-from retainpdf_translation.llm.providers.deepseek.translation_client import parse_translation_payload as deepseek_parse_translation_payload
-from retainpdf_translation.llm.providers.deepseek.translation_client import translate_batch_once as deepseek_translate_batch_once
-from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_plain_text as deepseek_translate_single_item_plain_text
-from retainpdf_translation.llm.providers.deepseek.translation_client import (
-    translate_single_item_plain_text_unstructured as deepseek_translate_single_item_plain_text_unstructured,
-)
-from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_tagged_text as deepseek_translate_single_item_tagged_text
-from retainpdf_translation.llm.providers.deepseek.translation_client import translate_single_item_with_decision as deepseek_translate_single_item_with_decision
 from retainpdf_translation.llm.shared.provider_protocol import ChatCompletionsUrlFn
 from retainpdf_translation.llm.shared.provider_protocol import GetApiKeyFn
 from retainpdf_translation.llm.shared.provider_protocol import HeadersBuilderFn
 from retainpdf_translation.llm.shared.provider_protocol import NormalizeBaseUrlFn
-from retainpdf_translation.llm.shared.provider_protocol import ParseTranslationPayloadFn
 from retainpdf_translation.llm.shared.provider_protocol import SessionFactoryFn
 from retainpdf_translation.llm.shared.provider_protocol import TranslationProviderCapabilities
 from retainpdf_translation.llm.shared.provider_protocol import TranslationProviderRuntimeProtocol
-from retainpdf_translation.llm.shared.provider_protocol import TranslateBatchFn
-from retainpdf_translation.llm.shared.provider_protocol import TranslateSingleFn
 from retainpdf_translation.llm.shared.provider_protocol import TransportErrorFn
 from retainpdf_translation.llm.shared.provider_protocol import TransportRequestFn
 
 
 @dataclass(frozen=True)
 class TranslationProviderRuntime:
+    # 只有发请求的部分；旧引擎拼请求、解析译文的函数在普通翻译那边（llm/providers/deepseek/translation_client.py），
+    # 编排代码直接从那里取（2026-11-20 拆包：以前捆在这里，底座就得 import 普通翻译）
     provider_id: str
     provider_family: str
     default_api_key_env: str
@@ -49,12 +40,6 @@ class TranslationProviderRuntime:
     is_transport_error: TransportErrorFn
     normalize_base_url: NormalizeBaseUrlFn
     request_chat_content: TransportRequestFn
-    parse_translation_payload: ParseTranslationPayloadFn
-    translate_batch_once: TranslateBatchFn
-    translate_single_item_plain_text: TranslateSingleFn
-    translate_single_item_plain_text_unstructured: TranslateSingleFn
-    translate_single_item_tagged_text: TranslateSingleFn
-    translate_single_item_with_decision: TranslateSingleFn
 
 
 DEEPSEEK_RUNTIME = TranslationProviderRuntime(
@@ -71,12 +56,6 @@ DEEPSEEK_RUNTIME = TranslationProviderRuntime(
     is_transport_error=deepseek_is_transport_error,
     normalize_base_url=deepseek_normalize_base_url,
     request_chat_content=deepseek_request_chat_content,
-    parse_translation_payload=deepseek_parse_translation_payload,
-    translate_batch_once=deepseek_translate_batch_once,
-    translate_single_item_plain_text=deepseek_translate_single_item_plain_text,
-    translate_single_item_plain_text_unstructured=deepseek_translate_single_item_plain_text_unstructured,
-    translate_single_item_tagged_text=deepseek_translate_single_item_tagged_text,
-    translate_single_item_with_decision=deepseek_translate_single_item_with_decision,
 )
 
 

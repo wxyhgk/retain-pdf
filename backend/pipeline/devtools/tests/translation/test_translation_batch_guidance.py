@@ -4,9 +4,9 @@ from __future__ import annotations
 from retainpdf_translation.llm.shared.control_context import EngineProfile
 from retainpdf_translation.llm.shared.control_context import FallbackPolicy
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
-from retainpdf_translation.llm.shared.orchestration.batched_plain import translate_items_plain_text
+from retainpdf_translation_classic.llm.shared.orchestration.batched_plain import translate_items_plain_text
 from retainpdf_translation.services.terms import GlossaryEntry
-from retainpdf_translation.workflow.batching.pending_units import _translate_batch_or_keep_origin
+from retainpdf_translation_classic.workflow.batching.pending_units import _translate_batch_or_keep_origin
 
 
 def _item(item_id: str, text: str, **overrides):

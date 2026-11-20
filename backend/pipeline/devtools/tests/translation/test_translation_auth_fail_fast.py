@@ -16,8 +16,8 @@ from retainpdf_pipeline.foundation.shared.structured_errors import classify_exce
 from retainpdf_translation.artifacts.aggregator import TranslationRunDiagnostics, translation_run_diagnostics_scope
 from retainpdf_translation.llm.providers.deepseek import client
 from retainpdf_translation.llm.shared import upstream_resilience as resilience
-from retainpdf_translation.workflow import book_flow
-from retainpdf_translation.workflow.phases import batch_translation
+from retainpdf_translation_classic.workflow import book_flow
+from retainpdf_translation_classic.workflow.phases import batch_translation
 
 BASE_URL = "https://upstream.example/v1"
 

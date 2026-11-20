@@ -1,8 +1,8 @@
 
 
 
-from retainpdf_translation.llm.shared.orchestration.common import should_keep_origin_on_empty_translation
-from retainpdf_translation.llm.shared.orchestration.intentional_keep_origin import (
+from retainpdf_translation_classic.llm.shared.orchestration.common import should_keep_origin_on_empty_translation
+from retainpdf_translation_classic.llm.shared.orchestration.intentional_keep_origin import (
     keep_origin_payload_for_empty_translation,
 )
 

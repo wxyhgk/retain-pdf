@@ -136,7 +136,7 @@ def test_production_transport_does_not_read_a_key_or_open_upstream_http(executio
 
 def test_legacy_fallback_cannot_turn_executor_error_into_success(execution):
     ctx, rt, client = execution
-    module = importlib.import_module("retainpdf_translation.workflow.batching.executor")
+    module = importlib.import_module("retainpdf_translation_classic.workflow.batching.executor")
     client.request.side_effect = ctx.ExecutorError("unknown upstream result")
 
     @ctx.translation_unit
@@ -155,7 +155,7 @@ def test_legacy_fallback_cannot_turn_executor_error_into_success(execution):
 
 def test_parallel_runner_drains_successes_and_flushes_before_failure(execution, monkeypatch):
     ctx, rt, client = execution
-    runner = importlib.import_module("retainpdf_translation.workflow.batch_runner")
+    runner = importlib.import_module("retainpdf_translation_classic.workflow.batch_runner")
     bad = [{"item_id": "a"}]
     good = [{"item_id": "b"}]
     both_started = threading.Barrier(2, timeout=5)

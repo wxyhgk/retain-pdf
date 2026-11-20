@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import pytest
 
-from retainpdf_translation.llm.result_canonicalizer import canonicalize_batch_result
-from retainpdf_translation.llm.result_canonicalizer import strip_injected_reminders
-from retainpdf_translation.llm.result_validator import validate_batch_result
+from retainpdf_translation_classic.llm.result_canonicalizer import canonicalize_batch_result
+from retainpdf_translation_classic.llm.result_canonicalizer import strip_injected_reminders
+from retainpdf_translation_classic.llm.result_validator import validate_batch_result
 from retainpdf_translation.llm.validation.errors import EmptyTranslationError
 
 REMINDER = (

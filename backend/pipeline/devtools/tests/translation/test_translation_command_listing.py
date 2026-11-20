@@ -11,7 +11,7 @@ import pytest
 from retainpdf_translation.artifacts.status import blocking_untranslated_items
 from retainpdf_translation.services.policy import translation_policy_verdict
 from retainpdf_translation.services.policy.command_listing import looks_like_command_listing
-from retainpdf_translation.workflow.batching.plan import _build_translation_batches
+from retainpdf_translation_classic.workflow.batching.plan import _build_translation_batches
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 
 

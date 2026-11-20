@@ -4,7 +4,7 @@ from __future__ import annotations
 from retainpdf_translation.services.results.applier import (
     TranslationResultApplier,
 )
-from retainpdf_translation.workflow import batch_runner
+from retainpdf_translation_classic.workflow import batch_runner
 
 
 class _FlushState:

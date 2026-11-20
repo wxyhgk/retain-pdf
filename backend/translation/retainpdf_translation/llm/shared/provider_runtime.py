@@ -23,12 +23,6 @@ get_session = _RUNTIME.get_session
 is_transport_error = _RUNTIME.is_transport_error
 normalize_base_url = _RUNTIME.normalize_base_url
 request_chat_content = _RUNTIME.request_chat_content
-parse_translation_payload = _RUNTIME.parse_translation_payload
-translate_batch_once = _RUNTIME.translate_batch_once
-translate_single_item_plain_text = _RUNTIME.translate_single_item_plain_text
-translate_single_item_plain_text_unstructured = _RUNTIME.translate_single_item_plain_text_unstructured
-translate_single_item_tagged_text = _RUNTIME.translate_single_item_tagged_text
-translate_single_item_with_decision = _RUNTIME.translate_single_item_with_decision
 
 __all__ = [
     "ACTIVE_PROVIDER",
@@ -45,12 +39,6 @@ __all__ = [
     "get_session",
     "is_transport_error",
     "normalize_base_url",
-    "parse_translation_payload",
     "request_chat_content",
-    "translate_batch_once",
-    "translate_single_item_plain_text",
-    "translate_single_item_plain_text_unstructured",
-    "translate_single_item_tagged_text",
-    "translate_single_item_with_decision",
     "unwrap_translation_shell",
 ]

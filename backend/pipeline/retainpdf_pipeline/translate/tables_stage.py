@@ -20,18 +20,18 @@ from typing import Any
 import fitz
 
 from retainpdf_pipeline.ocr.tables import build_table_model
-from retainpdf_translation.public import TABLE_PROMPT_VERSION
-from retainpdf_translation.public import TABLE_STATUS_TRANSLATED
+from retainpdf_translation_classic.public import TABLE_PROMPT_VERSION
+from retainpdf_translation_classic.public import TABLE_STATUS_TRANSLATED
 from retainpdf_translation.public import GlossaryEntry
 from retainpdf_translation.public import credential_rejected_error
 from retainpdf_translation.public import is_credential_rejection
-from retainpdf_translation.public import TableContext
-from retainpdf_translation.public import TableResult
-from retainpdf_translation.public import TableTermMemory
-from retainpdf_translation.public import table_cache_key
-from retainpdf_translation.public import table_chat_fn
-from retainpdf_translation.public import translate_table
-from retainpdf_translation.public import translated_table_html
+from retainpdf_translation_classic.public import TableContext
+from retainpdf_translation_classic.public import TableResult
+from retainpdf_translation_classic.public import TableTermMemory
+from retainpdf_translation_classic.public import table_cache_key
+from retainpdf_translation_classic.public import table_chat_fn
+from retainpdf_translation_classic.public import translate_table
+from retainpdf_translation_classic.public import translated_table_html
 
 TABLES_FILE_NAME = "tables.v1.json"
 TABLES_SCHEMA = "tables.v1"

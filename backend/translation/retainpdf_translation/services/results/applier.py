@@ -11,7 +11,8 @@ from retainpdf_translation.core.payload.parts.common import (
     existing_group_unit_id,
     is_group_unit_id,
 )
-from retainpdf_translation.services.memory import (
+# 只用记忆更新器的协议（底座）；任务记忆本身属于普通翻译引擎，由它把更新器传进来（2026-11-20 拆包）
+from retainpdf_translation.services.memory.updater import (
     TranslationMemoryUpdater,
     update_translation_memory,
     update_translation_memory_many,

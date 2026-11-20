@@ -257,7 +257,7 @@ def test_batch_payload_includes_needed_context_without_continuation_group() -> N
 
 
 def test_prompt_building_uses_translation_context_windows() -> None:
-    from retainpdf_translation.llm.shared.prompt_building import build_single_item_fallback_messages
+    from retainpdf_translation_classic.llm.shared.prompt_building import build_single_item_fallback_messages
 
     item = {
         "item_id": "p005-b002",

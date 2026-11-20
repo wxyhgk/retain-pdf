@@ -11,8 +11,9 @@
 
 from __future__ import annotations
 
+from retainpdf_translation_classic.llm.shared import prompt_building
 from retainpdf_translation.prompt_loader import load_prompt
-from retainpdf_translation.llm.shared.prompt_protocols import HALF_SENTENCE_NO_BORROW_GUARD
+from retainpdf_translation_classic.llm.shared.prompt_protocols import HALF_SENTENCE_NO_BORROW_GUARD
 from retainpdf_translation.llm.validation.quality import review_translation_item
 
 
@@ -41,7 +42,7 @@ def test_prompt_templates_forbid_borrowing_for_half_sentence() -> None:
         assert HALF_SENTENCE_NO_BORROW_GUARD in load_prompt(name), name
 
     # The compact user task relies on the system guard instead of duplicating it.
-    from retainpdf_translation.llm.shared.prompt_building import build_single_item_fallback_messages
+    from retainpdf_translation_classic.llm.shared.prompt_building import build_single_item_fallback_messages
 
     for math_mode in ("placeholder", "direct_typst"):
         for style in ("plain_text", "json"):
@@ -54,7 +55,7 @@ def test_prompt_templates_forbid_borrowing_for_half_sentence() -> None:
 def test_plain_text_prompt_adds_no_borrow_guard_for_half_sentence() -> None:
     from retainpdf_translation.llm.providers.deepseek import client as deepseek_client
 
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         _nickel_item(),
         mode="sci",
         response_style="plain_text",

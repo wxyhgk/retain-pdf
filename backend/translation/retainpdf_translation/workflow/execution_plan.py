@@ -17,8 +17,6 @@ from retainpdf_translation.core.ocr.json_extractor import load_ocr_json
 from retainpdf_translation.services.policy import TranslationPolicyConfig
 from retainpdf_translation.services.policy import build_book_translation_policy_config
 from retainpdf_translation.services.context.session_context import build_translation_context_from_policy
-from retainpdf_translation.services.preparation import TranslationPreparation
-from retainpdf_translation.services.preparation import prepare_translation
 from retainpdf_translation.services.terms import GlossaryEntry
 from retainpdf_translation.services.terms import normalize_glossary_entries
 from retainpdf_translation.workflow.scheduling.allocation import adaptive_floor_limit
@@ -26,9 +24,8 @@ from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.workflow.scheduling.allocation import prefix_cache_warmup_enabled
 from retainpdf_translation.workflow.scheduling.allocation import provider_adaptive_initial_limit
 from retainpdf_translation.workflow.page_range import resolve_page_range
-from retainpdf_translation.workflow.batching.plan import effective_translation_batch_size
-from retainpdf_translation.workflow.checkpoint.preparation import PrescanCheckpoint
-from retainpdf_translation.workflow.checkpoint.preparation import prescan_checkpoint_path
+from retainpdf_translation.workflow import engines
+from typing import Any
 
 if TYPE_CHECKING:
     from retainpdf_translation.workflow.execution import TranslationExecutionRequest
@@ -45,7 +42,8 @@ class TranslationExecutionPlan:
     run_diagnostics: TranslationRunDiagnostics
     glossary_entries: list[GlossaryEntry]
     # translation.preparation=off 时为 None：不生成产物、不注入、不进输入指纹。
-    preparation: TranslationPreparation | None = None
+    # 普通翻译引擎的 services.preparation.TranslationPreparation；底座只读它的属性，不 import 引擎（2026-11-20 拆包）
+    preparation: Any | None = None
     # 跟着 OCR 翻时建计划那会儿等到的那一版清单（data 是它的前缀文档）；整本翻时为 None。
     ocr_stream: OcrStreamState | None = None
 
@@ -161,12 +159,7 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
         policy_workers=effective_workers,
         continuation_workers=min(effective_workers, 8),
         mixed_split_workers=min(effective_workers, 4),
-        translation_batch_size=effective_translation_batch_size(
-            batch_size=request.batch_size,
-            model=request.model,
-            base_url=request.base_url,
-            translation_context=translation_context,
-        ),
+        translation_batch_size=_effective_batch_size(request, translation_context),
     )
     return TranslationExecutionPlan(
         data=data,
@@ -190,27 +183,33 @@ def _run_translation_preparation(
     policy_config: TranslationPolicyConfig,
     glossary_entries: list[GlossaryEntry],
     run_diagnostics: TranslationRunDiagnostics,
-) -> TranslationPreparation | None:
+):
+    """译前准备是普通翻译引擎的事（agent 引擎在 execution 里强制关掉）：按登记表调引擎的实现。"""
     mode = normalize_preparation_mode(getattr(request, "preparation", "off"))
     if mode == "off":
         return None
-    print(f"translation preparation: mode={mode}", flush=True)
-    checkpoint_path = prescan_checkpoint_path(request.output_dir)
-    with translation_run_diagnostics_scope(run_diagnostics):
-        return prepare_translation(
-            mode=mode,
-            data=data,
-            page_indices=page_indices,
-            output_dir=request.output_dir,
-            source_json_path=request.source_json_path,
-            api_key=request.api_key,
-            model=request.model,
-            base_url=request.base_url,
-            workers=max(1, request.workers),
-            domain_context=dict(policy_config.domain_context or {}),
-            rule_profile_name=policy_config.rule_profile_name,
-            rule_guidance=policy_config.rule_guidance,
-            custom_rules_text=policy_config.custom_rules_text,
-            user_glossary_entries=glossary_entries,
-            batch_store_factory=lambda fingerprint: PrescanCheckpoint(checkpoint_path, fingerprint=fingerprint),
-        )
+    ref = engines.engine_spec(getattr(request, "engine", "legacy")).run_preparation
+    if not ref:
+        raise ValueError(f"translation engine {request.engine!r} does not support translation.preparation={mode!r}")
+    return engines.load(ref)(
+        request,
+        mode=mode,
+        data=data,
+        page_indices=page_indices,
+        policy_config=policy_config,
+        glossary_entries=glossary_entries,
+        run_diagnostics=run_diagnostics,
+    )
+
+
+def _effective_batch_size(request, translation_context: TranslationControlContext) -> int:
+    """写进运行诊断的实际批大小：引擎登了就按引擎算（普通翻译按模型、协议调整），没登的（agent）照请求里的。"""
+    ref = engines.engine_spec(getattr(request, "engine", "legacy")).effective_batch_size
+    if not ref:
+        return max(1, int(request.batch_size or 1))
+    return engines.load(ref)(
+        batch_size=request.batch_size,
+        model=request.model,
+        base_url=request.base_url,
+        translation_context=translation_context,
+    )

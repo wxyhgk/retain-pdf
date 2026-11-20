@@ -9,7 +9,7 @@ import pytest
 
 from retainpdf_translation.llm.shared.response_parsing import extract_json_text
 from retainpdf_translation.llm.shared.structured_output import parse_structured_json
-from retainpdf_translation.services.preparation.term_prescan import parse_prescan_response
+from retainpdf_translation_classic.services.preparation.term_prescan import parse_prescan_response
 
 
 @pytest.mark.parametrize("content", [

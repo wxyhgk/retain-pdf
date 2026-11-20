@@ -1,7 +1,7 @@
 import unittest
 
 
-from retainpdf_translation.llm.shared.orchestration.metadata import should_store_translation_result
+from retainpdf_translation_classic.llm.shared.orchestration.metadata import should_store_translation_result
 
 
 from retrying_translator_test_support import load_retrying_translator

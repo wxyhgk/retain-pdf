@@ -3,11 +3,11 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 
 
-from retainpdf_translation.services.memory import JobMemory
-from retainpdf_translation.services.memory import JobMemorySnapshot
-from retainpdf_translation.services.memory import JobMemoryStore
-from retainpdf_translation.services.memory import update_job_memory_from_batch
-from retainpdf_translation.services.memory.candidates import extract_scored_term_candidates
+from retainpdf_translation_classic.services.memory import JobMemory
+from retainpdf_translation_classic.services.memory import JobMemorySnapshot
+from retainpdf_translation_classic.services.memory import JobMemoryStore
+from retainpdf_translation_classic.services.memory import update_job_memory_from_batch
+from retainpdf_translation_classic.services.memory.candidates import extract_scored_term_candidates
 
 
 def test_job_memory_extracts_translated_term_pairs_and_prompt_summary(tmp_path) -> None:

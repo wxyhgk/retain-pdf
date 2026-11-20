@@ -4,8 +4,9 @@ import json
 from unittest import mock
 
 
+from retainpdf_translation_classic.llm.shared import prompt_building
 from retainpdf_translation.llm.providers.deepseek import client as deepseek_client
-from retainpdf_translation.llm.providers.deepseek import translation_client
+from retainpdf_translation_classic.llm.providers.deepseek import translation_client
 
 
 def test_translate_single_item_plain_text_uses_plain_text_protocol() -> None:
@@ -80,7 +81,7 @@ def test_translate_batch_once_uses_tagged_protocol_without_schema() -> None:
 
 
 def test_build_messages_sci_tagged_uses_translation_only_protocol() -> None:
-    messages = deepseek_client.build_messages(
+    messages = prompt_building.build_messages(
         [
             {
                 "item_id": "p001-b001",
@@ -96,7 +97,7 @@ def test_build_messages_sci_tagged_uses_translation_only_protocol() -> None:
 
 
 def test_build_messages_sanitizes_continuation_context_placeholders() -> None:
-    messages = deepseek_client.build_messages(
+    messages = prompt_building.build_messages(
         [
             {
                 # 显式 placeholder:本用例测的是 <f1-2e5/> 这类保护 token 要从
@@ -123,7 +124,7 @@ def test_build_messages_sanitizes_continuation_context_placeholders() -> None:
 
 
 def test_build_single_item_fallback_messages_sanitizes_continuation_context_placeholders() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p006-b056",
             "protected_source_text": "The combination of these results",
@@ -140,7 +141,7 @@ def test_build_single_item_fallback_messages_sanitizes_continuation_context_plac
 
 
 def test_build_single_item_fallback_messages_plain_text_has_no_json_contract_conflict() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p014-b004",
             "protected_source_text": "Example 4.2 Example Q-CHEM input for a single point energy calculation on water.",
@@ -165,7 +166,7 @@ def test_build_single_item_fallback_messages_plain_text_has_no_json_contract_con
 
 
 def test_build_single_item_fallback_messages_plain_text_user_prompt_is_not_json() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p026-b007",
             "protected_source_text": "As for any numerical optimization procedure, Q-CHEM features SCF algorithms.",
@@ -187,7 +188,7 @@ def test_build_single_item_fallback_messages_plain_text_user_prompt_is_not_json(
 
 
 def test_plain_text_prompt_keeps_literal_preservation_in_translation_scope() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p006-b012",
             "protected_source_text": "$ uv pip install ./deepx-1.0.6+light-py3-none-any.whl[gpu]",
@@ -206,7 +207,7 @@ def test_plain_text_prompt_keeps_literal_preservation_in_translation_scope() -> 
 
 
 def test_sci_tagged_prompt_does_not_make_translation_model_choose_keep_origin() -> None:
-    messages = deepseek_client.build_messages(
+    messages = prompt_building.build_messages(
         [
             {
                 "item_id": "p006-b012",
@@ -224,7 +225,7 @@ def test_sci_tagged_prompt_does_not_make_translation_model_choose_keep_origin() 
 
 
 def test_build_messages_direct_typst_includes_inline_math_and_local_ocr_repair_guidance() -> None:
-    messages = deepseek_client.build_messages(
+    messages = prompt_building.build_messages(
         [
             {
                 "item_id": "p001-b001",
@@ -265,7 +266,7 @@ def test_build_messages_direct_typst_includes_inline_math_and_local_ocr_repair_g
 
 
 def test_build_single_item_fallback_messages_direct_typst_includes_inline_math_and_local_ocr_repair_guidance() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p001-b001",
             "protected_source_text": r"^{a} reaction at {10\mu}mol scale",
@@ -300,7 +301,7 @@ def test_build_single_item_fallback_messages_direct_typst_includes_inline_math_a
 
 
 def test_build_messages_direct_typst_keeps_single_backslash_source_text_in_user_prompt() -> None:
-    messages = deepseek_client.build_messages(
+    messages = prompt_building.build_messages(
         [
             {
                 "item_id": "p010-b002",
@@ -317,7 +318,7 @@ def test_build_messages_direct_typst_keeps_single_backslash_source_text_in_user_
 
 
 def test_build_single_item_fallback_messages_direct_typst_keeps_single_backslash_source_text_in_user_prompt() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p010-b002",
             "protected_source_text": r"strengthens the argument that a \mathrm{Ni(I) / Ni(III)} cycle is operative.",
@@ -332,7 +333,7 @@ def test_build_single_item_fallback_messages_direct_typst_keeps_single_backslash
 
 
 def test_body_direct_typst_prompt_does_not_preserve_ocr_visual_lines() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p005-b025",
             "source_text": "For large $ CN_{A}^{\\prime} $ values, this d-level is lowered.",
@@ -357,7 +358,7 @@ def test_body_direct_typst_prompt_does_not_preserve_ocr_visual_lines() -> None:
 
 
 def test_toc_prompt_asks_model_to_translate_each_list_line() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p008-b001",
             "source_text": "FIGURE 11.7 Long figure title 370\nTABLE 8.4 Long table title 279",
@@ -385,7 +386,7 @@ def test_toc_prompt_asks_model_to_translate_each_list_line() -> None:
 
 
 def test_prompt_builder_can_render_non_default_target_language() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p001-b001",
             "protected_source_text": "保持术语准确。",
@@ -445,7 +446,7 @@ def test_parse_translation_payload_does_not_cut_literal_end_text_mid_content() -
 def test_direct_typst_single_prompt_warns_model_about_unbalanced_source_dollars() -> None:
     # 源文本 $ 为奇数(OCR 丢了配对的 $)时,用户消息里要先提示模型按
     # 语义修复,而不是直接交给模型产出必然不平衡的译文。
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p009-b008",
             "protected_source_text": r"5a. $ ^{1}\text{H} $ NMR (CDCl $ _3 $, 400 MHz): $ \delta = 144.35, 143.01.",
@@ -459,7 +460,7 @@ def test_direct_typst_single_prompt_warns_model_about_unbalanced_source_dollars(
 
 
 def test_direct_typst_single_prompt_has_no_delimiter_warning_for_balanced_source() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p001-b001",
             "protected_source_text": r"The energy is $E = mc^2$ at rest.",
@@ -475,7 +476,7 @@ def test_direct_typst_single_prompt_has_no_delimiter_warning_for_balanced_source
 def test_direct_typst_single_prompt_lists_mitex_rewrites_found_in_source() -> None:
     # 数据驱动提示:源公式匹配到数据库条目时,把需要的替换写进提示词,
     # 由模型在语义层完成替换——复杂公式里正则改写不可靠。
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p001-b001",
             "protected_source_text": r"标记 $\circled{A}$ 与 $x$。",
@@ -498,7 +499,7 @@ def test_direct_typst_single_prompt_no_longer_asks_to_degrade_supported_commands
     这条提示是逐条注入到每个待翻译条目的,是整条链路上最早、也最难追查的降级点:
     模型照做之后,译文里存下来的就已经是 `ℏ` 而不是 `\hbar`,后面任何环节都救不回来。
     """
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p001-b001",
             "protected_source_text": r"The operator $-i\hbar \partial/\partial q$ acts on $|\varPhi_0\rangle$.",
@@ -515,7 +516,7 @@ def test_direct_typst_single_prompt_no_longer_asks_to_degrade_supported_commands
 
 
 def test_direct_typst_single_prompt_has_no_rewrite_hint_for_clean_source() -> None:
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p001-b002",
             "protected_source_text": r"The energy $E = mc^2$ stays constant.",
@@ -556,7 +557,7 @@ def test_context_bleed_downgraded_to_warning_for_continuation_items() -> None:
 def test_direct_typst_single_prompt_moves_scoped_terms_into_user_message() -> None:
     # 词表按条目匹配后逐条不同,放 system 会打掉前缀缓存;
     # 匹配到的术语经 item 注入 user 消息。
-    messages = deepseek_client.build_single_item_fallback_messages(
+    messages = prompt_building.build_single_item_fallback_messages(
         {
             "item_id": "p001-b001",
             "protected_source_text": "The SCF procedure converges quickly.",
@@ -576,7 +577,7 @@ def test_single_prompt_puts_context_first_and_answer_instruction_last() -> None:
     # 20261014032006-e2f12c p006-b009：作答要求夹在中间、原文后面跟着「前文上下文：……」「后文上下文：……」，
     # 读完没有一处说「下面就是回答」，模型照着格式自己补了个「译文：」再写译文。
     for math_mode in ("direct_typst", "placeholder"):
-        messages = deepseek_client.build_single_item_fallback_messages(
+        messages = prompt_building.build_single_item_fallback_messages(
             {
                 "item_id": "p006-b009",
                 "protected_source_text": "whereas the experimental value of the ionization energy is 0.9033 Eh",

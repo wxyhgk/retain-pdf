@@ -1,0 +1,186 @@
+from __future__ import annotations
+
+import json
+import re
+
+from retainpdf_translation.artifacts import TranslationDiagnosticsCollector
+from retainpdf_translation.core.item_reader import item_source_text
+from retainpdf_translation_classic.llm.result_validator import validate_batch_result
+from retainpdf_translation_classic.llm.result_canonicalizer import canonicalize_batch_result
+from retainpdf_translation.llm.result_payload import result_entry
+from retainpdf_translation.llm.validation.errors import TranslationProtocolError
+from retainpdf_translation.llm.validation.self_correction import self_correction_leak
+from retainpdf_translation.llm.validation.self_correction import text_after_self_correction
+from retainpdf_translation_classic.llm.shared.orchestration.common import looks_like_direct_typst_partial_accept_text
+from retainpdf_translation_classic.llm.shared.orchestration.metadata import attach_result_metadata
+from retainpdf_translation_classic.llm.shared.orchestration.metadata import restore_runtime_term_tokens
+from retainpdf_translation.llm.shared.provider_runtime import unwrap_translation_shell
+
+
+def extract_direct_typst_protocol_text(raw_text: str, *, item_id: str) -> str:
+    current = str(raw_text or "").strip()
+    if not current:
+        return ""
+    unwrapped = unwrap_translation_shell(current, item_id=item_id)
+    if unwrapped and unwrapped != current:
+        current = unwrapped.strip()
+    if current.startswith("```"):
+        lines = current.splitlines()
+        if lines and lines[0].strip().startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        current = "\n".join(lines).strip()
+    if current and not current.startswith("{"):
+        return current
+
+    def _from_payload(payload: object) -> str:
+        if isinstance(payload, dict):
+            for key in (
+                "translated_text",
+                "translation",
+                "text",
+                "target",
+                "content",
+                "answer",
+                "result",
+                "output",
+            ):
+                translated = payload.get(key)
+                if isinstance(translated, str) and translated.strip():
+                    return translated.strip()
+            if item_id:
+                translated = payload.get(item_id)
+                if isinstance(translated, str) and translated.strip():
+                    return translated.strip()
+            translations = payload.get("translations")
+            if isinstance(translations, list):
+                matched: str = ""
+                for entry in translations:
+                    if not isinstance(entry, dict):
+                        continue
+                    candidate = ""
+                    for key in ("translated_text", "translation", "text", "target", "content", "answer", "result", "output"):
+                        candidate = str(entry.get(key, "") or "").strip()
+                        if candidate:
+                            break
+                    if not candidate:
+                        continue
+                    if str(entry.get("item_id", "") or "").strip() == item_id:
+                        return candidate
+                    if not matched:
+                        matched = candidate
+                return matched
+            items = payload.get("items")
+            if isinstance(items, list):
+                return _from_payload({"translations": items})
+        return ""
+
+    probe = current
+    for _ in range(3):
+        try:
+            payload = json.loads(probe)
+        except Exception:
+            try:
+                payload = json.loads(re.sub(r"^[^{]*", "", probe))
+            except Exception:
+                break
+        candidate = _from_payload(payload)
+        if not candidate:
+            break
+        if candidate == probe:
+            return candidate
+        probe = candidate
+        if not probe.startswith("{"):
+            return probe
+    return probe if probe != current else ""
+
+
+def try_salvage_direct_typst_protocol_shell_error(
+    item: dict,
+    *,
+    exc: TranslationProtocolError,
+    context,
+    diagnostics: TranslationDiagnosticsCollector | None,
+    route_path: list[str],
+    output_mode_path: list[str],
+    allow_partial_accept: bool,
+    validate_batch_result_fn=validate_batch_result,
+) -> dict[str, dict[str, str]] | None:
+    raw_text = str(getattr(exc, "translated_text", "") or "").strip()
+    if not raw_text:
+        return None
+    extracted = extract_direct_typst_protocol_text(raw_text, item_id=str(item.get("item_id", "") or ""))
+    if not extracted:
+        return None
+    source_text = item_source_text(item)
+    if self_correction_leak(source_text, extracted):
+        # 模型「边想边改」：草稿 + 「Wait — … Let me correct that.」+ 改好的译文。下面的部分接受只看汉字多不多，
+        # 以前把整段（连抄的原文和自言自语）收下了。这里只取改好的那一版，走完整校验，过了才用；不过就重译。
+        return _salvage_self_correction(
+            item,
+            corrected=text_after_self_correction(source_text, extracted),
+            context=context,
+            diagnostics=diagnostics,
+            route_path=route_path,
+            output_mode_path=output_mode_path,
+            validate_batch_result_fn=validate_batch_result_fn,
+        )
+    try:
+        result = {str(item.get("item_id", "") or ""): result_entry("translate", extracted)}
+        result = canonicalize_batch_result([item], result)
+        validate_batch_result_fn([item], result, diagnostics=diagnostics)
+        result = restore_runtime_term_tokens(result, item=item)
+        return attach_result_metadata(
+            result,
+            item=item,
+            context=context,
+            route_path=route_path,
+            output_mode_path=output_mode_path,
+            degradation_reason="protocol_shell_salvaged",
+        )
+    except Exception:
+        if not allow_partial_accept or not looks_like_direct_typst_partial_accept_text(item, extracted):
+            return None
+        result = canonicalize_batch_result(
+            [item],
+            {str(item.get("item_id", "") or ""): result_entry("translate", extracted)},
+        )
+        result = restore_runtime_term_tokens(result, item=item)
+        return attach_result_metadata(
+            result,
+            item=item,
+            context=context,
+            route_path=route_path,
+            output_mode_path=output_mode_path,
+            degradation_reason="protocol_shell_partial_accept",
+        )
+
+
+def _salvage_self_correction(
+    item: dict,
+    *,
+    corrected: str,
+    context,
+    diagnostics: TranslationDiagnosticsCollector | None,
+    route_path: list[str],
+    output_mode_path: list[str],
+    validate_batch_result_fn,
+) -> dict[str, dict[str, str]] | None:
+    if not corrected:
+        return None
+    item_id = str(item.get("item_id", "") or "")
+    try:
+        result = canonicalize_batch_result([item], {item_id: result_entry("translate", corrected)})
+        validate_batch_result_fn([item], result, diagnostics=diagnostics)
+    except Exception:
+        return None
+    result = restore_runtime_term_tokens(result, item=item)
+    return attach_result_metadata(
+        result,
+        item=item,
+        context=context,
+        route_path=route_path,
+        output_mode_path=output_mode_path,
+        degradation_reason="self_correction_salvaged",
+    )

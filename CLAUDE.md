@@ -38,7 +38,7 @@ backend/.venv/bin/python -m pytest -q .github/scripts/tests   # 文档相对链�
 cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个包漏了 retainpdf-proc、retainpdf-runnerd、retainpdf-cli
 ```
 
-- 改了翻译包 `backend/translation/`（或它的 worker 外壳 `backend/pipeline/retainpdf_pipeline/translate/`）：再跑
+- 改了翻译包 `backend/translation/`、普通翻译引擎包 `backend/translation-classic/`（或它们的 worker 外壳 `backend/pipeline/retainpdf_pipeline/translate/`）：再跑
   `backend/.venv/bin/python backend/pipeline/devtools/run_translation_tests.py`，再用 `--suite translation --reverse`
   倒序跑一遍翻译单测（查模块之间互相污染）。`tests/performance` 的集成测试每个用例都在新进程里跑，顺序影响不到，
   不用倒着再跑（2026-10-30 定，以前整套倒序再跑一遍）。

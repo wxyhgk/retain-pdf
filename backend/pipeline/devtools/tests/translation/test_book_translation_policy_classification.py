@@ -5,6 +5,8 @@ from retainpdf_translation.services.context import TranslationDocumentContext
 from retainpdf_translation.services.policy.flow import apply_translation_policies
 from retainpdf_translation.services.policy.planner import TranslationPlanner
 
+from retainpdf_translation_classic.services.classification.page_classifier import classify_item_contexts
+
 
 def test_translation_planner_reuses_page_context_for_no_trans_classification() -> None:
     captured = {}
@@ -40,6 +42,7 @@ def test_translation_planner_reuses_page_context_for_no_trans_classification() -
         batch_size=8,
         request_label="classification page 8",
         request_chat_content_fn=_fake_request,
+        classify_fn=classify_item_contexts,
     )
 
     assert labels == {"p008-b003": "code"}

@@ -12,8 +12,8 @@ from retainpdf_translation.llm.shared.tail_retry_queue import (
 from retainpdf_translation.services.results.applier import (
     TranslationResultApplier,
 )
-from retainpdf_translation.workflow import batch_runner
-from retainpdf_translation.workflow.scheduling import tail_retry
+from retainpdf_translation_classic.workflow import batch_runner
+from retainpdf_translation_classic.workflow.scheduling import tail_retry
 
 
 class _FlushState:
