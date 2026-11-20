@@ -43,6 +43,15 @@ export type ReaderContextValue = {
     compareVersion?: {
         url: string;
         regions: ReaderRegion[];
+        /** 两栏书页上的水印：左边对比的那份、右边正在读的那份。 */
+        left: {
+            name: string;
+            createdAt: string;
+        };
+        right: {
+            name: string;
+            createdAt: string;
+        };
     } | null;
     /**
      * 真源语义 =「无 job」：判断 Markdown / AI / 收藏等需要任务的能力。

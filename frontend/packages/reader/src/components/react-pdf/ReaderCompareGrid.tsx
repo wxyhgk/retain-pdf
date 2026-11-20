@@ -17,6 +17,7 @@ import {
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
 import type { ReaderPaneComposition } from "../../ReaderAppReactPdf.js";
 import { useReaderContext } from "./reader-context.js";
+import { VersionWatermarks } from "./ReaderVersionCompare.js";
 
 
 const noopSubscribe = () => () => {};
@@ -305,6 +306,7 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
           />
         ) : null}
       </main>
+      {compareVersion ? <VersionWatermarks shellEl={shellEl} left={compareVersion.left} right={compareVersion.right} /> : null}
     </div>
   );
 }

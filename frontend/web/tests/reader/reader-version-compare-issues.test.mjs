@@ -77,3 +77,34 @@ test("N / Shift+N：接着上一次跳到的走，到头绕回；还没跳过从
   assert.equal(stepIssue(issues, 0, 1, true), 3);
   assert.equal(stepIssue([], -1, 1, false), -1);
 });
+
+test("悬浮小球：点开是 Markdown 和「对比版本」两颗图标；点对比弹版本列表；只有一份译文时没有对比；点外面收起", async () => {
+  const { makeDom } = await import("../helpers/dom.mjs");
+  const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div><div id='page'></div></body></html>" });
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { act } = React;
+  const { ReaderToolBall } = await import("../../../packages/reader/src/components/react-pdf/ReaderToolBall.tsx");
+  const compare = (available) => ({
+    available,
+    versions: [{ versionId: "tv-a", name: "精翻 · a", createdAt: "", status: "succeeded", jobIds: ["j1"] }],
+    readingVersionId: "tv-a", compared: null, loading: "", error: "",
+    choose() {}, clear() {}, adopt: async () => {},
+  });
+  const root = createRoot(dom.window.document.getElementById("root"));
+  const doc = dom.window.document;
+  const click = async (el) => { await act(async () => { el.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); }); };
+  await act(async () => { root.render(React.createElement(ReaderToolBall, { active: null, compare: compare(true) })); });
+  assert.equal(doc.querySelector(".reader-toolball-stack"), null, "一开始收着");
+  await click(doc.querySelector(".reader-toolball-ball"));
+  assert.ok(doc.querySelector(".reader-toolball-stack .reader-panel-toggle"), "Markdown 在小球里");
+  await click(doc.querySelector('[data-toolball-item="compare"]'));
+  assert.ok(doc.querySelector(".reader-version-compare-menu"), "版本列表弹出来");
+  await act(async () => { doc.getElementById("page").dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
+  assert.equal(doc.querySelector(".reader-toolball-stack"), null, "点外面收起");
+  await act(async () => { root.render(React.createElement(ReaderToolBall, { active: null, compare: compare(false) })); });
+  await click(doc.querySelector(".reader-toolball-ball"));
+  assert.equal(doc.querySelector('[data-toolball-item="compare"]'), null, "只有一份译文时没有对比");
+  root.unmount();
+  dom.window.close();
+});

@@ -5,7 +5,6 @@ import { useReaderKeyboard } from "./hooks/use-reader-keyboard.js";
 import {
   ReaderAssistantSplitResizeHandle,
   ReaderAssistantDock,
-  ReaderPanelToggles,
   ReaderCloseHome,
   ReaderWorkspaceTabs,
   ReaderReactBoot,
@@ -37,8 +36,8 @@ import { useReaderPanelSlot } from "./components/react-pdf/use-reader-panel-slot
 /** 稳定的空数组：每次渲染新建一个会让每页的标记层白白重算。 */
 import { resolveLiveTranslationToggles } from "./shared/data/live-translation-state.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
-import { ReaderFinder, ReaderFinderToggles, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
-import { ReaderVersionCompareBar, ReaderVersionCompareToggle } from "./components/react-pdf/ReaderVersionCompare.js";
+import { ReaderFinder, ReaderFinderToggles, ReaderSearchToggle, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
+import { ReaderToolBall } from "./components/react-pdf/ReaderToolBall.js";
 import { useReaderVersionCompare } from "./hooks/use-reader-version-compare.js";
 import { useFindShortcut } from "./hooks/use-find-shortcut.js";
 import { useReaderBlockEdit, useEditBlockShortcut } from "./hooks/use-reader-block-edit.js";
@@ -338,8 +337,20 @@ export function ReaderAppReactPdf() {
     if (visiblePdfMode !== "compare") versionCompare.clear();
   }, [visiblePdfMode]);
   const compareVersion = useMemo(
-    () => (versionCompare.compared ? { url: versionCompare.compared.url, regions: versionCompare.compared.regions } : null),
-    [versionCompare.compared],
+    () => {
+      const { compared, versions, readingVersionId } = versionCompare;
+      if (!compared) return null;
+      // 两栏书页上的水印：左边是对比的那份，右边是正在读的那份（名字、时间）。
+      const left = versions.find((version) => version.versionId === compared.versionId);
+      const right = versions.find((version) => version.versionId === readingVersionId);
+      return {
+        url: compared.url,
+        regions: compared.regions,
+        left: { name: compared.name, createdAt: left?.createdAt || "" },
+        right: { name: right?.name || "当前译文", createdAt: right?.createdAt || "" },
+      };
+    },
+    [versionCompare.compared, versionCompare.versions, versionCompare.readingVersionId],
   );
   const revisedBlocks = useMemo(() => {
     if (!blockEdit.savedCounts.size) return c.revisedBlocks;
@@ -415,7 +426,6 @@ export function ReaderAppReactPdf() {
     `is-workspace-${workspaceView}`,
     assistantOpen ? "is-assistant-open" : "",
     finder ? "is-finder-open" : "",
-    versionCompare.compared || versionCompare.loading || versionCompare.error ? "is-version-compare" : "",
     paneComposition.overlayOnSource ? "is-live-translation-overlay" : "",
   ].filter(Boolean).join(" ");
 
@@ -425,10 +435,7 @@ export function ReaderAppReactPdf() {
         <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
         {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
             原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
-        <ReaderFinderToggles open={finder} onToggle={toggleFinder}>
-          <ReaderVersionCompareToggle compare={versionCompare} />
-        </ReaderFinderToggles>
-        <ReaderVersionCompareBar compare={versionCompare} />
+        <ReaderFinderToggles open={finder} onToggle={toggleFinder} />
         {finder ? (
           <ReaderFinder
             tab={finder}
@@ -442,7 +449,6 @@ export function ReaderAppReactPdf() {
           />
         ) : null}
         <div className="reader-chrome-tray">
-          <ReaderPanelToggles active={assistantPanel} />
           <ReaderDownloadActions />
           <ReaderCloseHome onBeforeClose={session.prepareClose} />
         </div>
@@ -466,11 +472,13 @@ export function ReaderAppReactPdf() {
             modeControls={null}
             bookmarkScope={c.viewStateKey}
             issuesJobId={c.sourceOnly ? "" : session.jobId}
+            searchSlot={<ReaderSearchToggle open={finder} onToggle={toggleFinder} />}
           />
         ) : null}
         <Suspense fallback={null}>
           {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
         </Suspense>
+        <ReaderToolBall active={assistantPanel} compare={versionCompare} />
         <ReaderPendingEditsPill edit={blockEdit} />
         <DownloadToastHost />
       </div>

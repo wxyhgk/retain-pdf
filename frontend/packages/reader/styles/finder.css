@@ -240,19 +240,18 @@
   box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color, var(--ink)) 10%, transparent);
 }
 
-/* 窄一些（≤ 820px）：左边一组只剩图标，名字在悬停里；手机宽度（≤ 599px）不放「对比版本」——两份译文左右并排在手机上看不了。 */
-@media (max-width: 820px) {
-  .reader-finder-toggles .reader-finder-toggle span {
-    display: none;
-  }
-
-  .reader-finder-toggles .reader-finder-toggle {
-    padding: 0 9px;
-  }
+/* 「搜索」在底栏：卡从底栏往上弹，水平居中（2026-11-20）。 */
+.reader-finder[data-finder-tab="search"] {
+  top: auto;
+  bottom: 74px;
+  left: 50%;
+  max-height: min(560px, calc(100dvh - 160px));
+  transform-origin: 50% 100%;
+  translate: -50% 0;
 }
 
-@media (max-width: 599px) {
-  .reader-finder-toggles .reader-version-compare {
-    display: none;
-  }
+.reader-finder-toggles .reader-finder-toggle {
+  width: 34px;
+  padding: 0;
+  justify-content: center;
 }

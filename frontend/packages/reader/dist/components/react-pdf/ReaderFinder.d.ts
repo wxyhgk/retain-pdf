@@ -1,11 +1,16 @@
 import { type ReactElement, type ReactNode } from "react";
 export type ReaderFinderTab = "outline" | "search";
-/** 顶栏左边的两颗：点开左栏到那一页签，再点同一颗收起。 */
+/** 顶栏左边的「目录」（只有图标，名字在悬停里）：点开浮着的卡，再点收起。「搜索」在底栏（ReaderSearchToggle）。
+ *  children 跟在后面（以前放「对比版本」，2026-11-20 挪进右下角的悬浮小球）。 */
 export declare function ReaderFinderToggles({ open, onToggle, children, }: {
     open: ReaderFinderTab | null;
     onToggle: (tab: ReaderFinderTab) => void;
-    /** 跟在两颗后面的（「对比版本」）。 */
     children?: ReactNode;
+}): ReactElement;
+/** 底栏的「搜索」（2026-11-20 从顶栏挪下来）：点开的卡也从底栏往上弹。 */
+export declare function ReaderSearchToggle({ open, onToggle }: {
+    open: ReaderFinderTab | null;
+    onToggle: (tab: ReaderFinderTab) => void;
 }): ReactElement;
 /** 块从阅读页的 context 来，眼下的页（目录里标出在哪一节）从 HUD context 来。 */
 export declare function ReaderFinder({ tab, onTab, onClose, onJump, query, onQuery, term, focusSignal, }: {
