@@ -2,8 +2,8 @@
 
 执行入口（`execution_runner`）、执行计划（`execution_plan`）是底座，两种引擎共用；引擎自己的东西按任务的
 `translation.engine` 从这里查，写成「模块:函数」的字符串，用到时才加载。底座因此不静态 import 任何一个引擎，
-架构检查（`translation_engines.py`）卡着这一点；以后普通翻译搬进 `retainpdf-translation-classic`、agent 接线搬进
-`backend/translation-agent`，只改这里的路径。
+架构检查（`translation_engines.py`）卡着这一点。普通翻译在 `retainpdf-translation-classic`，agent 接线在
+`backend/translation-agent` 的 `retainpdf_translation_agent_engine`（第 2、3 步搬的）。
 """
 
 from __future__ import annotations
@@ -23,6 +23,8 @@ class EngineSpec:
     run_preparation: str = ""
     # 实际的批大小（写进运行诊断）；空串就用请求里的 batch_size
     effective_batch_size: str = ""
+    # 断点身份里引擎自己的版本号：() -> dict，空串表示没有（普通翻译的身份保持原样，见 checkpoint/identity.py）
+    checkpoint_identity: str = ""
 
 
 ENGINES: dict[str, EngineSpec] = {
@@ -33,7 +35,8 @@ ENGINES: dict[str, EngineSpec] = {
         effective_batch_size="retainpdf_translation_classic.workflow.batching.plan:effective_translation_batch_size",
     ),
     "agent": EngineSpec(
-        translate_book="retainpdf_translation.workflow.agent_flow:translate_book_with_agent",
+        translate_book="retainpdf_translation_agent_engine.agent_flow:translate_book_with_agent",
+        checkpoint_identity="retainpdf_translation_agent_engine.identity:agent_engine_identity",
     ),
 }
 

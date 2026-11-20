@@ -21,7 +21,7 @@ backend/translation/retainpdf_translation/
 | --- | --- | --- |
 | `retainpdf-translation`（底座） | `backend/translation/retainpdf_translation/` | 读文档、接续段、页面策略、回填、断点、清单、质检、请求层、提示词、用量；执行入口和引擎登记表 `workflow/engines.py` |
 | `retainpdf-translation-classic`（普通翻译引擎，`translation.engine=legacy`） | `backend/translation-classic/retainpdf_translation_classic/` | 批量逐块翻、流式跟着 OCR 翻、乱码重构、修复兜底、译前准备、精修、编辑部、表格翻译、任务记忆、结果缓存 |
-| agent 引擎（`translation.engine=agent`） | 接线 `retainpdf_translation/workflow/agent_flow.py`，本体 `backend/translation-agent` | 通读、按节翻、审校 |
+| agent 引擎（`translation.engine=agent`） | `backend/translation-agent`：核心 `retainpdf_translation_agent`（只用标准库），接线 `retainpdf_translation_agent_engine`（依赖底座） | 通读、按节翻、审校 |
 
 普通翻译包目录结构和底座一样（下面「目录分层」说的目录在两个包里各有一部分），依赖底座，底座不 import 它。
 
@@ -185,7 +185,7 @@ OCR 做完的那一轮不扣、全部翻完，再走和整本一次翻一样的�
 ### 翻译引擎 agent（`translation.engine=agent`）
 
 2026-10-30 接进正式流程，任务可以选，默认仍是上面的流程（`legacy`）。分支在 `workflow/execution_runner.py`：
-`legacy` 走 `book_flow.translate_book_with_global_continuations`，`agent` 走 `workflow/agent_flow.py` 的 `translate_book_with_agent`。
+`legacy` 走普通翻译包的 `book_flow.translate_book_with_global_continuations`，`agent` 走接线 `retainpdf_translation_agent_engine/agent_flow.py` 的 `translate_book_with_agent`（都经 `workflow/engines.py` 加载）。
 两者共用前半段 `book_flow.prepare_book_payloads`（到 "annotate context windows" 为止，提交 `policy_ready` 断点）和后面的清单、质检、断点收尾。
 
 `agent_flow.py` 做的事：

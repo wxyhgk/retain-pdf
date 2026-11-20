@@ -3,12 +3,13 @@ docs/ops/planning/translation-package/20261120-翻译包拆成底座和两个引
 
 - 普通翻译（批量逐块翻、修复兜底、译前准备、精修、编辑部、表格翻译……）：下面 `CLASSIC_MODULES` 列的模块，
   第 2 步搬进了 `retainpdf-translation-classic`（backend/translation-classic，目录结构和翻译包一样）；
-- agent 接线（`AGENT_GLUE_MODULES`）：第 3 步搬进 `backend/translation-agent`；
+- agent 接线：第 3 步搬进 `backend/translation-agent` 的 `retainpdf_translation_agent_engine`（`AGENT_ENGINE_ROOT`）；
 - 其余都是底座 `retainpdf-translation`：两个引擎共用的前后半段（读文档、接续段、页面策略、回填、断点、清单、质检、请求层、用量……）。
 
 规则：
-1. 底座、agent 接线都不许 import 普通翻译（包括写在函数里的延迟 import）。底座要用引擎，经引擎登记表
-   `workflow/engines.py` 按「模块:函数」字符串延迟加载。
+1. 底座、agent 接线都不许 import 普通翻译（包括写在函数里的延迟 import）；底座、普通翻译都不许 import agent 包
+   （核心和接线都不行，翻译包不依赖 agent 包）。底座要用引擎，经引擎登记表 `workflow/engines.py` 按「模块:函数」
+   字符串延迟加载。
 2. 模块放对包：`CLASSIC_MODULES` 里的在普通翻译包，别的在翻译包。清单按逻辑名（相对包根的点分路径）前缀算，
    同一个目录里留在底座的写进 `BASE_EXCEPTIONS`。
 """
@@ -18,6 +19,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
+from devtools.architecture_checks.common import BACKEND_ROOT
 from devtools.architecture_checks.common import parse_python_file
 from devtools.architecture_checks.common import rel
 from devtools.architecture_checks.common import TRANSLATION_CLASSIC_IMPORT
@@ -27,6 +29,8 @@ from devtools.architecture_checks.common import scan_py_files
 from devtools.architecture_checks.translation_rules import TRANSLATION_ROOT
 
 PACKAGE = "retainpdf_translation"
+AGENT_IMPORTS = ("retainpdf_translation_agent", "retainpdf_translation_agent_engine")
+AGENT_ENGINE_ROOT = BACKEND_ROOT / "translation-agent" / "retainpdf_translation_agent_engine"
 
 # 普通翻译引擎的模块（相对 retainpdf_translation，前缀匹配：本身和它下面的子模块）
 CLASSIC_MODULES = (
@@ -71,10 +75,6 @@ BASE_EXCEPTIONS = (
     "services.agents.review_artifact",  # 审校汇总，两种引擎跑完都写
     "services.memory.updater",  # 记忆更新器的协议，回填用；任务记忆本身属于普通翻译
 )
-AGENT_GLUE_MODULES = (
-    "workflow.agent_flow",
-    "workflow.agent_openai",
-)
 
 
 def _matches(module: str, prefixes: tuple[str, ...]) -> bool:
@@ -82,11 +82,9 @@ def _matches(module: str, prefixes: tuple[str, ...]) -> bool:
 
 
 def translation_module_kind(module: str) -> str:
-    """'classic' / 'agent' / 'base'；`module` 是相对 retainpdf_translation 的点分路径。"""
+    """'classic' / 'base'；`module` 是相对 retainpdf_translation 的点分路径。"""
     if _matches(module, BASE_EXCEPTIONS):
         return "base"
-    if _matches(module, AGENT_GLUE_MODULES):
-        return "agent"
     if _matches(module, CLASSIC_MODULES):
         return "classic"
     return "base"
@@ -126,7 +124,31 @@ def _imported_translation_modules(path: Path) -> set[str]:
     return found
 
 
+def _report_classic_imports(path: Path, who: str, errors: list[str]) -> None:
+    for name in _raw_imports(path):
+        logical = logical_translation_module(name)[len(PACKAGE) + 1:]
+        if translation_module_kind(logical) == "classic":
+            continue  # 下面按逻辑名报
+        if name == TRANSLATION_CLASSIC_IMPORT or name.startswith(TRANSLATION_CLASSIC_IMPORT + "."):
+            errors.append(f"{rel(path)}: {who} must not import '{name}'; load engine code through workflow/engines.py")
+            break
+    imported = _imported_translation_modules(path)
+    for module in sorted(imported):
+        # `from 模块 import 名字` 两样都收了：父模块已经算普通翻译时只报父模块，一处 import 报一次
+        parents = {module.rsplit(".", n)[0] for n in range(1, module.count(".") + 1)}
+        if any(parent in imported and translation_module_kind(parent) == "classic" for parent in parents):
+            continue
+        if translation_module_kind(module) == "classic":
+            errors.append(
+                f"{rel(path)}: {who} must not import the classic engine module '{PACKAGE}.{module}'; "
+                "load engine code through workflow/engines.py (see architecture_checks/translation_engines.py)"
+            )
+
+
 def check_translation_engine_boundaries(errors: list[str]) -> None:
+    if AGENT_ENGINE_ROOT.exists():
+        for path in scan_py_files(AGENT_ENGINE_ROOT):
+            _report_classic_imports(path, "agent 接线", errors)
     roots = [root for root in (TRANSLATION_ROOT, TRANSLATION_CLASSIC_PACKAGE_ROOT) if root.exists()]
     for path in dict.fromkeys(path for root in roots for path in scan_py_files(root)):
         module_name = _module_name(path)
@@ -148,35 +170,21 @@ def check_translation_engine_boundaries(errors: list[str]) -> None:
                 f"{rel(path)}: classic engine module '{module_name}' belongs in retainpdf_translation_classic "
                 "(backend/translation-classic); see architecture_checks/translation_engines.py"
             )
-        if kind == "classic":
-            continue
-        if not in_classic_package:
-            for name in _raw_imports(path):
-                logical = logical_translation_module(name)[len(PACKAGE) + 1:]
-                if translation_module_kind(logical) == "classic":
-                    continue  # 下面按逻辑名报
-                if name == TRANSLATION_CLASSIC_IMPORT or name.startswith(TRANSLATION_CLASSIC_IMPORT + "."):
-                    errors.append(
-                        f"{rel(path)}: the translation base must not import '{name}'; "
-                        "load engine code through workflow/engines.py"
-                    )
-                    break
-        imported = _imported_translation_modules(path)
-        for module in sorted(imported):
-            # `from 模块 import 名字` 两样都收了：父模块已经算普通翻译时只报父模块，一处 import 报一次
-            parents = {module.rsplit(".", n)[0] for n in range(1, module.count(".") + 1)}
-            if any(parent in imported and translation_module_kind(parent) == "classic" for parent in parents):
-                continue
-            if translation_module_kind(module) == "classic":
-                who = "agent 接线" if kind == "agent" else "翻译底座"
-                errors.append(
-                    f"{rel(path)}: {who} must not import the classic engine module '{PACKAGE}.{module}'; "
-                    "load engine code through workflow/engines.py (see architecture_checks/translation_engines.py)"
-                )
+        agent_import = next(
+            (name for name in _raw_imports(path) if any(name == pkg or name.startswith(pkg + ".") for pkg in AGENT_IMPORTS)),
+            None,
+        )
+        if agent_import:
+            errors.append(
+                f"{rel(path)}: translation packages must not import the agent package ('{agent_import}'); "
+                "the agent engine is loaded through workflow/engines.py"
+            )
+        if kind != "classic":
+            _report_classic_imports(path, "翻译底座", errors)
 
 
 __all__ = [
-    "AGENT_GLUE_MODULES",
+    "AGENT_ENGINE_ROOT",
     "BASE_EXCEPTIONS",
     "CLASSIC_MODULES",
     "check_translation_engine_boundaries",

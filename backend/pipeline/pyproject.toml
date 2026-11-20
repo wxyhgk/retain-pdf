@@ -25,6 +25,8 @@ dependencies = [
   "retainpdf-translation",
   # 普通翻译引擎（2026-11-20 从翻译包拆出来）：翻译 worker 按 translation.engine 经引擎登记表加载，精修、表格翻译直接用
   "retainpdf-translation-classic",
+  # 翻译引擎 agent 的接线（2026-11-20 从翻译包挪进 agent 包，带 engine extra 才装它的依赖）
+  "retainpdf-translation-agent[engine]",
   "urllib3==2.5.0",
 ]
 
@@ -43,6 +45,7 @@ retainpdf-base = { workspace = true }
 retainpdf-math = { workspace = true }
 retainpdf-translation = { workspace = true }
 retainpdf-translation-classic = { workspace = true }
+retainpdf-translation-agent = { workspace = true }
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -3,6 +3,15 @@
 RetainPDF 的翻译 agent：像人一样，看一整页的块（类别、大概位置、原文、上下文）再逐块翻译；只管翻准，不管排版。
 排版由以后的重排 agent（`retainpdf-layout-agent`）负责，放不下的块用改稿要求交回这里。两边只靠 `contract.py` 的格式交接。
 
+包里有两个 Python 包：
+
+- `retainpdf_translation_agent`：核心（通读、按节翻、校验、审校、改稿），**只用标准库**，测试钉着；
+- `retainpdf_translation_agent_engine`：接线（2026-11-20 拆包第 3 步从翻译包的 `workflow/` 挪来）。`agent_flow` 把翻译包准备好的
+  逐页记录交给核心、结果写回，`agent_openai` 接 OpenAI 兼容服务，`identity` 给断点身份。它依赖翻译包（底座）和 requests，
+  装的时候带 extra：`retainpdf-translation-agent[engine]`（流水线就这么依赖）。翻译包经引擎登记表
+  `retainpdf_translation.workflow.engines` 按字符串加载它，翻译包不依赖这个包。接线的测试和翻译的测试在一起：
+  `backend/pipeline/devtools/tests/translation/test_agent_flow.py`、`test_agent_openai.py`（要那里的 conftest 把产物目录指到临时目录）。
+
 ```python
 from retainpdf_translation_agent import BlockInput, PageInput, RevisionRequest, TranslationAgent
 

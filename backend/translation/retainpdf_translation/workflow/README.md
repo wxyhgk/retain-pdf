@@ -12,10 +12,9 @@
   根据 OCR JSON、策略配置、术语表、上下文和 provider 诊断配置生成不可变执行计划。
 - `execution_runner.py`
   执行计划，并写出 manifest、review、diagnostics 等汇总产物；整份一块都没译成时把最常见的上游错误带进报错。
-- 整书流程，三选一：
-  - `book_flow.py`：默认的全书翻译阶段顺序。
-  - `streaming_flow.py`：OCR 和翻译并行时用，OCR 每公布一批页就翻一轮。
-  - `agent_flow.py`：`translation.engine=agent` 时，逐页翻交给 `retainpdf-translation-agent`，其余照旧。
+- 整书流程不在这里了（2026-11-20 拆包），按任务的 `translation.engine` 经 `engines.py` 加载：
+  - 普通翻译 `retainpdf_translation_classic.workflow.book_flow`（默认）、`streaming_flow`（OCR 和翻译并行时）；
+  - agent `retainpdf_translation_agent_engine.agent_flow`（`backend/translation-agent`），逐页翻交给 agent 核心，其余照旧。
 - `engines.py`
   翻译引擎登记表（2026-11-20 拆包）：执行入口、执行计划按任务的 `translation.engine` 查引擎，「模块:函数」字符串延迟加载，
   底座不 import 引擎；边界由 `devtools/architecture_checks/translation_engines.py` 卡着。

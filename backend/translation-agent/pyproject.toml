@@ -7,16 +7,26 @@ name = "retainpdf-translation-agent"
 version = "4.2.6"
 description = "RetainPDF translation agent: translates a page of classified blocks with an LLM, checks every block, and revises blocks on request from the layout agent"
 requires-python = ">=3.11,<3.12"
-# 不依赖第三方库：调模型用标准库 urllib，这样任何阶段都能放心装它。
+# 核心 retainpdf_translation_agent 不依赖第三方库：调模型用标准库 urllib，这样任何阶段都能放心装它。
 dependencies = []
 
 [project.optional-dependencies]
+# 接线 retainpdf_translation_agent_engine（translation.engine=agent 时翻译包经引擎登记表加载）：
+# 依赖翻译包（底座）和 requests（2026-11-20 从翻译包挪来）。只用核心的不用装。
+engine = [
+  "requests==2.32.5",
+  "retainpdf-translation",
+]
 test = [
   "pytest==9.0.3",
 ]
 
+[tool.uv.sources]
+retainpdf-translation = { workspace = true }
+
 [tool.setuptools.packages.find]
 where = ["."]
 include = [
-  "retainpdf_translation_agent*",
+  "retainpdf_translation_agent",
+  "retainpdf_translation_agent_engine",
 ]

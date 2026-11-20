@@ -119,7 +119,10 @@ def _engine_identity(request) -> dict:
     identity = translation_engine_identity(mode=request.mode)
     engine = getattr(request, "engine", "legacy") or "legacy"
     if engine != "legacy":
-        from retainpdf_translation.core.engine_identity import agent_engine_identity
+        from retainpdf_translation.workflow.engines import engine_spec
+        from retainpdf_translation.workflow.engines import load
 
-        identity = {**identity, "engine": engine, **agent_engine_identity()}
+        spec = engine_spec(engine)
+        extra = load(spec.checkpoint_identity)() if spec.checkpoint_identity else {}
+        identity = {**identity, "engine": engine, **extra}
     return identity

@@ -58,10 +58,6 @@ TRANSLATION_WORKFLOW_ALLOWED_DIRS = {
 TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "__init__.py",
     "README.md",
-    # 翻译引擎 agent 的整书流程（translation.engine=agent），和 book_flow.py 同一层
-    "agent_flow.py",
-    # agent 接 OpenAI 协议：Anthropic 请求体 ↔ 共用请求层（2026-11-18），agent_flow.py 用
-    "agent_openai.py",
     "batch_runner.py",
     "book_flow.py",
     # 两个引擎共用的前半段（读模板、接续段、页面策略），2026-11-20 拆包从 book_flow.py 挪出
@@ -91,6 +87,8 @@ TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_translation.workflow.execution",
         "retainpdf_translation.workflow.execution_plan",
         "retainpdf_translation.core.engine_identity",
+        # 断点身份里引擎自己的版本号经引擎登记表取（2026-11-20 拆包第 3 步，以前直接 import agent 包）
+        "retainpdf_translation.workflow.engines",
         "retainpdf_translation.core.payload.parts.fingerprints",
         "retainpdf_translation.core.payload.parts.units",
         # 「这个块算不算跑完、跑完了阻不阻断导出」的唯一真相源。提交门禁必须和

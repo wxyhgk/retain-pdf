@@ -16,7 +16,8 @@
   ],
   "test_only_python_packages": [
     "docx",
-    "pytest"
+    "pytest",
+    "retainpdf_translation_agent_engine"
   ],
   "external_commands": {
     "typst": [
@@ -1009,6 +1010,18 @@
       ],
       "runtime_required": false,
       "devtool_required": true
+    },
+    {
+      "import_name": "retainpdf_translation_agent_engine",
+      "package_name": "retainpdf_translation_agent_engine",
+      "runtime_files": [],
+      "devtool_files": [],
+      "test_files": [
+        "devtools/tests/translation/test_agent_flow.py",
+        "devtools/tests/translation/test_agent_openai.py"
+      ],
+      "runtime_required": false,
+      "devtool_required": false
     },
     {
       "import_name": "retainpdf_translation_classic",
