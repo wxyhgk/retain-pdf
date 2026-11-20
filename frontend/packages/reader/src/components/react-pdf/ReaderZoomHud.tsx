@@ -1,6 +1,6 @@
 // 底栏：页码（可点跳转）+ 缩放 +/- / 模式默认重置。
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   readerViewportWidth,
   READER_ZOOM_DEFAULT,
@@ -15,6 +15,7 @@ import { clampPageNumber } from "../../pdf/scroll-to-page.js";
 import { ReaderShortcutsHelp } from "./ReaderShortcutsHelp.js";
 import { ReaderBookmarkControl } from "./ReaderBookmarkControl.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
+import { useHudAutoHide } from "./use-hud-autohide.js";
 
 export type ReaderZoomHudProps = {
   /** 以下显示值缺省时从 reader context / hud context 取 */
@@ -45,7 +46,10 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
   const canZoomIn = userZoom < READER_ZOOM_MAX - 0.001;
   const resetZoom = defaultZoomForMode(mode, readerViewportWidth());
   // 窄屏单栏的默认是铺满（见 reader-zoom.ts 的 READER_NARROW_VIEWPORT_PX）。
-  const resetLabel = resetZoom >= READER_ZOOM_MAX ? "100%（铺满阅读区）" : "50%（半屏，对照铺满）";
+  const resetLabel = resetZoom >= READER_ZOOM_MAX ? "恢复默认大小（铺满阅读区）" : "恢复默认大小（对照时左右各占一半）";
+  // 往下翻书时收起、往回翻或鼠标移到底部时出来（use-hud-autohide），不再一直压着正文最后几行。
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const autoHidden = useHudAutoHide(rootRef);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(`${currentPage}`);
@@ -66,7 +70,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
   };
 
   return (
-    <div className="reader-react-hud" data-reader-hud="true">
+    <div ref={rootRef} className="reader-react-hud" data-reader-hud="true" data-hud-hidden={autoHidden ? "true" : undefined}>
       {modeControls ? <div className="reader-react-hud-group reader-react-hud-modes">{modeControls}</div> : null}
       <div className="reader-react-hud-group" aria-label="页码">
         {editing ? (
@@ -138,7 +142,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
         <button
           type="button"
           className="reader-react-hud-btn reader-react-hud-zoom-label"
-          aria-label={`重置为${resetLabel}`}
+          aria-label={`${percent}%，点击${resetLabel}`}
           title={resetLabel}
           onClick={() => onZoomChange(resetZoom)}
         >

@@ -1,6 +1,7 @@
 // 底栏书签：给当前页加 / 取消书签，列表里点一下跳到那一页。按书存在本机（见 reader-bookmarks.ts）。
 
 import { useEffect, useRef, useState } from "react";
+import { ListOrdered } from "lucide-react";
 import {
   bookmarkLabelForPage,
   readReaderBookmarks,
@@ -68,18 +69,21 @@ export function ReaderBookmarkControl({ scope, currentPage, numPages, regions, o
       >
         <BookmarkIcon filled={marked} />
       </button>
-      <button
-        type="button"
-        className="reader-react-hud-btn reader-bookmark-list-btn"
-        aria-expanded={open}
-        aria-haspopup="true"
-        aria-label={`书签列表，共 ${bookmarks.length} 个`}
-        title="书签列表"
-        disabled={!bookmarks.length}
-        onClick={() => setOpen((value) => !value)}
-      >
-        {bookmarks.length}
-      </button>
+      {/* 书签列表：没有书签时不画（以前是一个灰的「0」，看不出是什么）；有了是「列表图标 + 个数」。 */}
+      {bookmarks.length ? (
+        <button
+          type="button"
+          className="reader-react-hud-btn reader-bookmark-list-btn"
+          aria-expanded={open}
+          aria-haspopup="true"
+          aria-label={`书签列表，共 ${bookmarks.length} 个`}
+          title="书签列表"
+          onClick={() => setOpen((value) => !value)}
+        >
+          <ListOrdered size={14} strokeWidth={2} aria-hidden="true" />
+          <span className="reader-bookmark-count">{bookmarks.length}</span>
+        </button>
+      ) : null}
       {open && bookmarks.length ? (
         <div className="reader-bookmark-popover" role="dialog" aria-label="书签">
           <ol className="reader-bookmark-list">

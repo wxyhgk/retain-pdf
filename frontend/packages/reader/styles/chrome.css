@@ -357,12 +357,18 @@
     padding: 0 9px;
   }
 
-  .reader-download-trigger-label {
+  .reader-download-trigger-label,
+  .reader-panel-toggle-label {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
     clip: rect(0, 0, 0, 0);
+  }
+
+  .reader-panel-toggle {
+    width: 36px;
+    padding: 0;
   }
 }
 
@@ -404,9 +410,13 @@
   transform: scale(0.97);
 }
 
+/* 宽屏：图标 + 名字（「Markdown」）；窄屏（≤ 720px）名字收掉，只剩 36px 的圆钮。 */
 .reader-panel-toggle {
-  padding: 0;
-  width: 36px;
+  padding: 0 12px 0 10px;
+}
+
+.reader-panel-toggle-label {
+  line-height: 1;
 }
 
 .reader-panel-toggle:disabled {
@@ -420,9 +430,9 @@
   color: var(--paper);
 }
 
-/* 托盘多一个 36px 的面板按钮：给分栏切换让出的宽度跟着加。 */
+/* 托盘多一个带名字的面板按钮（约 110px）：给分栏切换让出的宽度跟着加。 */
 .reader-react-root:has(.reader-panel-toggle) {
-  --reader-tray-width: 244px;
+  --reader-tray-width: 318px;
 }
 
 .reader-close-home-icon {

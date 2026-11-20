@@ -79,9 +79,11 @@ test("阅读页地址带 ?debug=1 时框上出翻译编号（点一下复制）�
   }
 });
 
-test("红色虚线框用 danger 语义色", () => {
+test("悬停框是淡的强调色实线框（2026-11-20 以前红色虚线像报错），走语义色不写死颜色", () => {
   const css = readFileSync(new URL("../../../../frontend/packages/reader/styles/react-pdf.css", import.meta.url), "utf8");
-  assert.match(css, /\.reader-text-hover-frame\s*\{[^}]*border:\s*2px dashed[^}]*var\(--danger\)/);
+  const frame = css.match(/\.reader-text-hover-frame\s*\{([^}]*)\}/)[1];
+  assert.match(frame, /border:\s*1\.5px solid[^;]*var\(--accent\)/);
+  assert.doesNotMatch(frame, /dashed|--danger|#[0-9a-f]{3,6}/i);
 });
 
 test("复制：剪贴板可用就写进去；空文本不假装成功", async () => {
@@ -158,7 +160,8 @@ test("工具条：一般的块放框内右上角，只有矮 / 窄的块（行�
 test("只在框外工具条自己那一小块里保持当前框；不再保持整条带（紧贴上方的短块要能悬停到）", () => {
   const slot = readFileSync(new URL("../../../../frontend/packages/reader/src/pdf/PdfPageSlot.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(slot, /HOVER_TOOLS_BAND/);
-  assert.match(slot, /hoverToolsOutside\(current\)/);
+  // 只在工具条放框外上方（placement = outside）时才保持；页边、框里的工具条贴着框，不用保持。
+  assert.match(slot, /hoverPresentation\?\.placement === "outside"/);
   assert.match(slot, /x <= current\.left \+ HOVER_TOOLS_WIDTH/);
   const css = readFileSync(new URL("../../../../frontend/packages/reader/styles/react-pdf.css", import.meta.url), "utf8");
   assert.match(css, /\.reader-text-hover-tools\[data-placement="inside"\]\s*\{[^}]*top:\s*4px/);
@@ -184,4 +187,31 @@ test("「已复制」的定时器随换块清掉（A 上复制后马上换 B 复
   const layer = readFileSync(new URL("../../../../frontend/packages/reader/src/pdf/ReaderTextHoverLayer.tsx", import.meta.url), "utf8");
   assert.match(layer, /timers\.forEach\(\(timer\) => window\.clearTimeout\(timer\)\)/);
   assert.match(layer, /\}, \[itemId\]\);/);
+});
+
+test("悬停工具条放页边：右边空得下放右边，右边挤（双栏的左栏）就放左边，两边都挤才回框里 / 框外上方", async () => {
+  const { hoverToolsPlacement } = await import("../../../packages/reader/src/pdf/hover-presentation.ts");
+  const para = { left: 100, top: 200, width: 400, height: 120 };
+  assert.equal(hoverToolsPlacement(para, [para], 600, 64), "side-right", "右边页边 100px");
+  const leftCol = { left: 40, top: 200, width: 250, height: 120 };
+  const rightCol = { left: 300, top: 180, width: 250, height: 200 };
+  assert.equal(hoverToolsPlacement(leftCol, [leftCol, rightCol], 600, 64), "inside", "左栏：右边只隔 10px、左边 40px，都放不下");
+  assert.equal(hoverToolsPlacement(rightCol, [leftCol, rightCol], 640, 64), "side-right", "右栏：右边页边 90px");
+  const tight = { left: 300, top: 200, width: 300, height: 120 };
+  assert.equal(hoverToolsPlacement(tight, [tight, { left: 20, top: 500, width: 100, height: 20 }], 600, 64), "side-left", "右边贴页边、左边空 300px；不和它上下重叠的块不算");
+  const formula = { left: 10, top: 300, width: 580, height: 30 };
+  assert.equal(hoverToolsPlacement(formula, [formula], 600, 84), "outside", "矮的行间公式两边都挤：框外上方");
+});
+
+test("悬停框贴着字：取中心落在块里的字的并集，留 3px，不超出原块；没有字、字太少照原块", async () => {
+  const { tightenHoverRect } = await import("../../../packages/reader/src/pdf/hover-presentation.ts");
+  const block = { left: 100, top: 100, width: 400, height: 300 };
+  const lines = [
+    { left: 110, top: 110, width: 380, height: 18 },
+    { left: 104, top: 132, width: 200, height: 18 },
+    { left: 600, top: 120, width: 50, height: 18 },
+  ];
+  assert.deepEqual(tightenHoverRect(block, lines), { left: 101, top: 107, width: 392, height: 46 }, "译文比原文短：框只到第二行底下");
+  assert.deepEqual(tightenHoverRect(block, []), block);
+  assert.deepEqual(tightenHoverRect(block, [{ left: 120, top: 120, width: 10, height: 10 }]), block, "一两个字的碎块不收");
 });
