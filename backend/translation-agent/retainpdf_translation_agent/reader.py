@@ -228,14 +228,59 @@ def heading_records(pages: list[PageInput]) -> list[dict]:
     return out
 
 
+# 样张不取的部分：标题是这些的，到下一个标题为止（前后附属的内容，判体裁、写文风用不上）
+SIDE_MATTER = {
+    "contents", "table of contents", "acknowledgments", "acknowledgements", "acknowledgment", "acknowledgement", "copyright",
+    "dedication", "about the author", "about the authors", "also by", "praise for", "list of figures", "list of tables",
+    "list of illustrations", "abbreviations",
+}
+BACK_MATTER = {"notes", "endnotes", "references", "bibliography", "works cited", "index", "glossary", "appendix"}  # 遇到就跳到书尾
+SIDE_LINE_RE = re.compile(r"©|\bcopyright\b|\ball rights reserved\b|\bisbn\b|library of congress|cataloging-in-publication|printed in", re.I)
+# 长的书在正文里从哪几处开始取（按段数的比例），各取 limit / 3。第一处不从 0 开始：封底推荐语、作者介绍、出版说明
+# 这些前面的附属内容常常没有统一的标题，按标题排不干净（11-20 看了 4 本，从 0 开始取到的都是这些）
+SAMPLE_SPOTS = (0.08, 0.4, 0.7)
+LONG_PARAGRAPH_WORDS = 60
+
+
+def body_paragraphs(pages: list[PageInput]) -> list[str]:
+    """正文段落：跳过标题是目录、致谢、版权、注释、参考文献、索引之类的部分，和带版权声明、ISBN 的段。"""
+    out: list[str] = []
+    skipping = False
+    for page in pages:
+        for block in page.blocks:
+            if block.cls in HEADING_CLASSES or block.cls in ("title", "heading"):
+                name = " ".join(re.sub(r"[^a-z ]+", " ", block.text.lower()).split())
+                if name in BACK_MATTER and out:
+                    return out  # 注释、参考文献、索引在书后：后面都不算正文（尾注里还按章分小标题，不能遇到下一个标题就停止跳过）
+                skipping = name in SIDE_MATTER
+                continue
+            if skipping or not block.translate or SIDE_LINE_RE.search(block.text):
+                continue
+            out.append(block.text)
+    return out
+
+
 def sample_text(pages: list[PageInput], limit: int = SAMPLE_CHARS) -> str:
-    out, used = [], 0
-    for _, text in _sentences(pages):
-        if used >= limit:
-            break
-        out.append(text[: limit - used])
-        used += len(out[-1])
-    return "\n\n".join(out)
+    """给通读员的样张：正文开头、四成处、七成五处各取 limit / 3 字（2026-11-20）。以前从第一段起连取 limit 字，
+    出版社的书常常取到的是版权页、目录、致谢，判体裁、写文风都靠这一页。正文太少（短文、论文）时就从头连取。"""
+    paragraphs = body_paragraphs(pages) or [text for _, text in _sentences(pages)]
+    # 书名页、作者、版次这些短行不算正文：从第一段长段落开始
+    first_long = next((i for i, text in enumerate(paragraphs) if len(text.split()) >= LONG_PARAGRAPH_WORDS), 0)
+    paragraphs = paragraphs[first_long:]
+    total = sum(len(p) for p in paragraphs)
+    spots = SAMPLE_SPOTS if total > limit * 2 else (0.0,)
+    share = limit // len(spots)
+    out: list[str] = []
+    for spot in spots:
+        used = 0
+        for text in paragraphs[int(len(paragraphs) * spot):]:
+            if used >= share:
+                break
+            out.append(text[: share - used])
+            used += len(out[-1])
+        if len(spots) > 1:
+            out.append("……")
+    return "\n\n".join(out[:-1] if out and out[-1] == "……" else out)
 
 
 def read_document(agent, pages: list[PageInput], *, document: dict | None = None) -> Reading:
