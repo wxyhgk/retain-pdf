@@ -39,6 +39,8 @@ mod glossaries;
 mod job_writes;
 #[path = "db/jobs.rs"]
 mod jobs;
+#[path = "db/maintenance.rs"]
+mod maintenance;
 #[path = "db/model_requests.rs"]
 mod model_requests;
 #[path = "db/ocr_recovery.rs"]
@@ -139,6 +141,7 @@ pub use event_feed::{
 pub use event_projection_inputs::EventProjectionInput;
 pub use job_writes::NewRunWrite;
 pub use jobs::JobListSelection;
+pub use maintenance::CompactReport;
 pub use model_requests::{
     ModelOperation, ModelRecoverySummary, ModelReservation, ModelSession, ModelSessionConflict,
 };
@@ -215,6 +218,7 @@ impl Db {
     fn apply_schema(conn: &Connection) -> Result<()> {
         conn.execute_batch(
             r#"
+            PRAGMA auto_vacuum = INCREMENTAL;
             PRAGMA journal_mode=WAL;
             CREATE TABLE IF NOT EXISTS uploads (
                 upload_id TEXT PRIMARY KEY,

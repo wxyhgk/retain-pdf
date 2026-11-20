@@ -3,7 +3,7 @@ use std::process::ExitStatus;
 use std::time::Instant;
 
 use crate::models::api::{redact_text, sensitive_values};
-use crate::models::domain::{now_iso, JobRuntimeState, ProcessResult};
+use crate::models::domain::{now_iso, stored_output_tail, JobRuntimeState, ProcessResult};
 
 pub(super) fn attach_process_result(
     job: &mut JobRuntimeState,
@@ -28,7 +28,8 @@ pub(super) fn attach_process_result(
         duration_seconds: started.elapsed().as_secs_f64(),
         command: job.command.clone(),
         cwd: project_root.to_string_lossy().to_string(),
-        stdout: redact_text(&stdout_text, &secrets),
-        stderr: redact_text(stderr_text, &secrets),
+        // 进库只留末尾（完整的在任务目录 logs/ 下），见 STORED_OUTPUT_TAIL_BYTES
+        stdout: stored_output_tail(&redact_text(&stdout_text, &secrets)),
+        stderr: stored_output_tail(&redact_text(stderr_text, &secrets)),
     });
 }

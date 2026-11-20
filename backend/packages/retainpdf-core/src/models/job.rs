@@ -19,7 +19,7 @@ pub use artifacts::{
     JobArtifactRecord, JobArtifacts, OcrCheckpointArtifacts, RenderArtifacts, TranslationArtifacts,
 };
 pub use failure::{JobAiDiagnostic, JobFailureInfo, JobRawDiagnostic};
-pub use process::ProcessResult;
+pub use process::{stored_output_tail, ProcessResult, STORED_OUTPUT_TAIL_BYTES};
 pub use record::{JobRecord, JobRuntimeState, JobSnapshot};
 pub use runtime::{JobRuntimeInfo, JobStageTiming};
 pub use stage::{

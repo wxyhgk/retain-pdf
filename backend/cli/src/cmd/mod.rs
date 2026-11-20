@@ -1,4 +1,5 @@
 pub mod backup;
+pub mod compact;
 pub mod config;
 pub mod doctor;
 pub mod setup;
