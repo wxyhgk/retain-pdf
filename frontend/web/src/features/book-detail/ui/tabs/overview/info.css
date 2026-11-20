@@ -1,26 +1,86 @@
-/* 书籍详情 · 概览页签（BookDetailOverviewTab）：信息区 —— 页数 / 大小 / 入库 / 翻译一行，合集一行，阅读状态一行。
+/* 书籍详情 · 概览页签（BookDetailOverviewTab）：信息区 —— 页数 / 大小 / 入库、翻译 / 花费两行带图标的小卡，合集一行，阅读状态一行。
  * 合集切换（CollectionsPanel）和阅读状态（ReadingStatusPanel）嵌在行里，也在这里定样子。
  *
  * @owns book-detail */
 
+/* 五格排成 3 + 2：上面页数、大小、入库三格，下面翻译、花费两格宽一些（翻译有状态和说明，花费有金额和一句小字）。
+ * 每格是一块白底小卡：左边一个带底色的图标方块（data-fact-icon，按项取一种颜色），右边名字和值。 */
 .book-detail-overview-facts {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
   margin: 0;
+}
+
+.book-detail-overview-facts > div {
+  --fact-tint: var(--accent);
+  display: grid;
+  grid-column: span 2;
+  grid-template-columns: 32px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-content: center;
+  align-items: center;
+  min-width: 0;
+  column-gap: 10px;
+  row-gap: 1px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
   border-radius: var(--ui-radius-lg);
   background: var(--paper);
 }
 
-.book-detail-overview-facts > div {
-  display: grid;
-  min-width: 0;
-  align-content: start;
-  gap: 3px;
-  padding: 10px 12px;
+.book-detail-overview-facts > div:nth-child(n + 4) {
+  grid-column: span 3;
 }
 
-.book-detail-overview-facts > div + div {
-  border-left: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+.book-detail-overview-facts [data-fact-icon] {
+  display: inline-grid;
+  grid-row: 1 / span 2;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--ui-radius-md);
+  background: color-mix(in srgb, var(--fact-tint) 13%, var(--paper));
+  color: var(--fact-tint);
+}
+
+.book-detail-overview-facts [data-fact-icon] svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.8;
+}
+
+/* 每项一种颜色，取每套皮肤都有的语义色。翻译按状态：完成绿、在跑强调色、失败红、没翻灰。 */
+.book-detail-overview-facts [data-book-detail-fact="pages"] {
+  --fact-tint: var(--gold);
+}
+
+.book-detail-overview-facts [data-book-detail-fact="size"] {
+  --fact-tint: color-mix(in srgb, var(--accent) 70%, var(--muted));
+}
+
+.book-detail-overview-facts [data-book-detail-fact="added"] {
+  --fact-tint: color-mix(in srgb, var(--ok) 55%, var(--accent));
+}
+
+.book-detail-overview-facts [data-book-detail-fact="cost"] {
+  --fact-tint: var(--warn);
+}
+
+.book-detail-overview-facts [data-tone="done"] {
+  --fact-tint: var(--ok);
+}
+
+.book-detail-overview-facts [data-tone="failed"] {
+  --fact-tint: var(--danger);
+}
+
+.book-detail-overview-facts [data-tone="muted"] {
+  --fact-tint: var(--muted);
+}
+
+.book-detail-overview-facts [data-tone="active"] [data-fact-icon] svg {
+  animation: book-detail-overview-spin 1.4s linear infinite;
 }
 
 .book-detail-overview-facts dt {
@@ -49,6 +109,22 @@
   font-weight: 500;
   letter-spacing: 0;
   text-overflow: ellipsis;
+}
+
+/* 花费金额后面的小叹号：有请求的模型查不到价，悬停看全文。 */
+.book-detail-overview-facts [data-usage-unpriced] {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  margin-left: 5px;
+  color: var(--warn);
+  vertical-align: -1px;
+}
+
+@keyframes book-detail-overview-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 「翻译」一格：状态文字本身就是去「进度」页的入口。 */
@@ -93,7 +169,7 @@
 
 .book-detail-overview-row {
   display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
+  grid-template-columns: 92px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   min-height: 32px;
@@ -105,8 +181,18 @@
 }
 
 .book-detail-overview-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   color: var(--muted);
   font-size: var(--ui-text-sm);
+}
+
+.book-detail-overview-row-label svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  stroke-width: 1.8;
 }
 
 .book-detail-overview-row-value {
@@ -120,4 +206,17 @@
 
 .book-detail-reading-btn {
   min-width: 48px;
+}
+
+/* 阅读状态三个选项：前面各一个小图标（未读书签、在读翻开的书、读完打勾的书）。 */
+.book-detail-reading-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.book-detail-reading-option svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
 }

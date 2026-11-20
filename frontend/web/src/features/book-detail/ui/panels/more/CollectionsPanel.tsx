@@ -3,6 +3,7 @@
 // 所以概览不再另写一份「合集：未加入」。按钮是 @retainpdf/ui 的 Button，已加入的是按下状态（aria-pressed）。
 
 import { Button } from "@retainpdf/ui";
+import { Check, Plus } from "lucide-react";
 
 type CollectionsPanelProps = {
   collections: Array<{ collection_id: string; name: string; member: boolean }>;
@@ -27,7 +28,7 @@ export function CollectionsPanel({ collections, collectionsBusy, onToggle }: Col
           disabled={collectionsBusy === c.collection_id}
           onClick={() => onToggle(c.collection_id, !c.member)}
         >
-          {c.member ? "✓ " : "+ "}
+          {c.member ? <Check aria-hidden="true" /> : <Plus aria-hidden="true" />}
           {c.name}
         </Button>
       ))}

@@ -3,6 +3,7 @@
 // TranslationVersionsCard 接上 useTranslationVersions（详情弹窗只放一行）；TranslationVersionsPanel 只管画，测试直接喂数据。
 import { useState } from "react";
 import { Button, Input, Select } from "@retainpdf/ui";
+import { ArrowUpRight, Eye, EyeOff, Layers, Pencil, Pin, Settings2, Sparkles, Wand2 } from "lucide-react";
 import type { TranslationVersionsView } from "@retainpdf/contracts/library-documents";
 
 import {
@@ -40,7 +41,7 @@ export function TranslationVersionsPanel({ view, busy = false, error = "", onSel
   return (
     <section className="book-detail-overview-card book-detail-versions" aria-label="译文版本" data-book-detail-section="versions">
       <div className="book-detail-overview-card-heading">
-        <h3>译文版本</h3>
+        <h3><Layers aria-hidden="true" />译文版本</h3>
         <span className="book-detail-versions-sub">{view.versions.filter((v) => !v.hidden).length} 份</span>
       </div>
       <Select
@@ -56,21 +57,26 @@ export function TranslationVersionsPanel({ view, busy = false, error = "", onSel
           <option key={option.value || "auto"} value={option.value}>{option.label}</option>
         ))}
       </Select>
-      <p className="book-detail-versions-hint">
-        {current === AUTO_VERSION
-          ? "每页用最新翻好的译文，新译文翻完自动换上。"
-          : "阅读固定用这一份；只翻了几页的版本，其余页用它的来源版本。之后再翻出新译文只提示，不自动换。"}
+      <p className="book-detail-versions-hint" data-versions-mode={current === AUTO_VERSION ? "auto" : "pinned"}>
+        {current === AUTO_VERSION ? <Wand2 aria-hidden="true" /> : <Pin aria-hidden="true" />}
+        <span>
+          {current === AUTO_VERSION
+            ? "每页用最新翻好的译文，新译文翻完自动换上。"
+            : "阅读固定用这一份；只翻了几页的版本，其余页用它的来源版本。之后再翻出新译文只提示，不自动换。"}
+        </span>
       </p>
       {newer ? (
         <p className="book-detail-versions-newer" role="status" data-versions-newer="true">
-          <span>有新版本：{newer.name}</span>
-          <Button variant="secondary" size="sm" disabled={busy} onClick={() => { void onSelect(null); }}>换到最新</Button>
+          <span className="book-detail-versions-newer-text"><Sparkles aria-hidden="true" />有新版本：{newer.name}</span>
+          <Button variant="secondary" size="sm" disabled={busy} onClick={() => { void onSelect(null); }}>
+            换到最新<ArrowUpRight aria-hidden="true" />
+          </Button>
         </p>
       ) : null}
       {error ? <p className="book-detail-versions-error" role="alert">{error}</p> : null}
 
       <details className="book-detail-versions-manage">
-        <summary>改名、隐藏</summary>
+        <summary><Settings2 aria-hidden="true" />改名、隐藏</summary>
         <ol className="book-detail-versions-list">
           {[...view.versions].reverse().map((version) => {
             const isEditing = editing?.id === version.version_id;
@@ -106,14 +112,14 @@ export function TranslationVersionsPanel({ view, busy = false, error = "", onSel
                         disabled={busy}
                         data-version-action="rename"
                         onClick={() => setEditing({ id: version.version_id, draft: version.label })}
-                      >改名</Button>
+                      ><Pencil aria-hidden="true" />改名</Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         disabled={busy}
                         data-version-action={version.hidden ? "unhide" : "hide"}
                         onClick={() => { void onSetHidden(version.version_id, !version.hidden); }}
-                      >{version.hidden ? "恢复" : "隐藏"}</Button>
+                      >{version.hidden ? <Eye aria-hidden="true" /> : <EyeOff aria-hidden="true" />}{version.hidden ? "恢复" : "隐藏"}</Button>
                     </span>
                   </>
                 )}

@@ -3,21 +3,22 @@
  * @owns book-detail */
 
 @media (max-width: 719px) {
-  /* 四项信息排成 2×2，仍是一块，不再各占一整张大卡。 */
+  /* 五格排成两列，花费独占最后一行。 */
   .book-detail-overview-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .book-detail-overview-facts > div:nth-child(3) {
-    border-left: 0;
+  .book-detail-overview-facts > div,
+  .book-detail-overview-facts > div:nth-child(n + 4) {
+    grid-column: span 1;
   }
 
-  .book-detail-overview-facts > div:nth-child(n + 3) {
-    border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  .book-detail-overview-facts > div:nth-child(5) {
+    grid-column: span 2;
   }
 
   .book-detail-overview-row {
-    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-columns: 84px minmax(0, 1fr);
   }
 
   .book-detail-overview-danger {

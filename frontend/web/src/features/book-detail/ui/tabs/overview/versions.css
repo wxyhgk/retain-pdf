@@ -19,6 +19,25 @@
   line-height: 1.5;
 }
 
+/* 下拉下面那句说明：前面一个图标说明现在是「自动换」还是「固定这一份」。 */
+.book-detail-versions-hint[data-versions-mode] {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.book-detail-versions-hint[data-versions-mode] svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+.book-detail-versions-hint[data-versions-mode="pinned"] svg {
+  color: var(--gold);
+}
+
 .book-detail-versions-select {
   width: 100%;
 }
@@ -37,6 +56,20 @@
   font-size: var(--ui-text-sm);
 }
 
+.book-detail-versions-newer-text {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.book-detail-versions-newer-text svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--gold);
+}
+
 .book-detail-versions-error {
   margin: 0;
   color: var(--danger);
@@ -44,9 +77,17 @@
 }
 
 .book-detail-versions-manage summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   cursor: pointer;
   color: var(--muted);
   font-size: var(--ui-text-sm);
+}
+
+.book-detail-versions-manage summary svg {
+  width: 14px;
+  height: 14px;
 }
 
 .book-detail-versions-list {
