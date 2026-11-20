@@ -32,9 +32,6 @@ fn cleanup_orphan_documents(db: &Db) -> Result<()> {
                 SELECT 1 FROM uploads u
                 WHERE u.content_hash = d.document_id AND u.content_hash <> ''
             )
-            AND NOT EXISTS (
-                SELECT 1 FROM favorites f WHERE f.document_id = d.document_id
-            )
             "#,
         )?;
         let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;

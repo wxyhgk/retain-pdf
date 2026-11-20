@@ -68,7 +68,7 @@ after route usage shows no callers.
 
 Files under `src/services/library/**` implement library-domain use cases.
 Routes import library work (books, documents, media, translate-from-library,
-favorites, search, assets, collections) only from the
+search, collections) only from the
 `services::library` facade; the route-facing view functions live in
 `library/api.rs`.
 

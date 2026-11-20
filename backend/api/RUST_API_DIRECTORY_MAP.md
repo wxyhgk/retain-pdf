@@ -102,7 +102,7 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
 - `library.rs`
   books 投影 API；只调书库包的 `api.rs`；cover/thumbnail 走 `download_response`。
 - `library_data.rs`
-  documents / media / translate-from-library / favorites / search；只调书库包的 `api.rs`。
+  documents / media / translate-from-library / search；只调书库包的 `api.rs`。
 - `collections.rs`
   合集 CRUD 与成员关系；只调书库包的 `api.rs`。
 - deps：`routes/common.rs::build_library_route_deps`（`LibraryDeps` + `JobsFacade`）。

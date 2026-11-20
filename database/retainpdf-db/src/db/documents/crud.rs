@@ -530,8 +530,7 @@ impl Db {
         Ok(changed > 0)
     }
 
-    /// 删除文档行(FK 级联清 favorites/collection_documents,
-    /// ai_conversations.document_id 置 NULL)+ 派生的 blocks_fts 行。
+    /// 删除文档行(FK 级联清 collection_documents)+ 派生的 blocks_fts 行。
     pub fn delete_document(&self, document_id: &str) -> Result<bool> {
         let conn = self.connect()?;
         conn.execute(

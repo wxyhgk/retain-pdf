@@ -48,8 +48,8 @@ pub fn classify_param(name: &str) -> ParamClass {
             ParamClass::Nested
         }
         // 只在管理员路由或已关闭路由里出现。
-        "user_id" | "invite_id" | "backup_id" | "credential_ref" | "operation_id" | "conversation_id"
-        | "calculation_id" | "artifact_id" => ParamClass::Nested,
+        // operation_id：内部的模型请求（/internal/model/jobs/:job_id/requests/:operation_id）
+        "user_id" | "invite_id" | "backup_id" | "credential_ref" | "operation_id" | "artifact_id" => ParamClass::Nested,
         _ => ParamClass::Unknown,
     }
 }

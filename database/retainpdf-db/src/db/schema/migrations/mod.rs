@@ -161,6 +161,11 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         name: "translation_versions",
         sql: include_str!("v30_translation_versions.sql"),
     },
+    Migration {
+        version: 31,
+        name: "drop_dead_tables",
+        sql: include_str!("v31_drop_dead_tables.sql"),
+    },
 ];
 
 #[cfg(test)]

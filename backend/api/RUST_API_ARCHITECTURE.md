@@ -402,7 +402,7 @@ Rust 侧关键落点：
 | Route 文件 | HTTP 面 |
 |------------|---------|
 | `library.rs` | books 列表/详情/删除、book cover/thumbnail |
-| `library_data.rs` | documents CRUD/media/translate、favorites、search |
+| `library_data.rs` | documents CRUD/media/translate、search |
 | `collections.rs` | 合集 CRUD 与文档成员 |
 
 快速判断：
@@ -452,7 +452,7 @@ routes/library*.rs, collections.rs
   → library/api.rs (view 级 API)
       → library 包内部模块
            books | documents | media | translate
-           favorites | search | assets | collections
+           search | collections
       → JobsFacade   (仅 translate-from-library 创建 job)
       → derived_artifacts (仅 media 内部使用 cover/thumbnail)
 ```

@@ -94,6 +94,6 @@ pub(crate) fn default_inner_bbox_dense_shrink_y() -> f64 {
 // Single source of truth is `crate::config::limits`; re-export here for
 // `models`-local callers and to satisfy contract-first centralization.
 pub use crate::config::limits::{
-    DEFAULT_LIST_LIMIT, MAX_CONVERSATION_LIMIT, MAX_DOCUMENT_LIMIT, MAX_JOB_EVENT_LIMIT,
+    DEFAULT_LIST_LIMIT, MAX_DOCUMENT_LIMIT, MAX_JOB_EVENT_LIMIT,
     MAX_JOB_LIMIT, MAX_LIST_LIMIT, MAX_SEARCH_LIMIT,
 };

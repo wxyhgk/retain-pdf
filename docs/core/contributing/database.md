@@ -16,12 +16,11 @@
 数据库访问统一收敛在
 `database/retainpdf-db/src/db.rs` 及其子模块（`retainpdf-data` 重导出成 `retainpdf_data::db`）：
 
-- `db.rs`：`Db` facade，对外提供 job、artifact、event、document、conversation、operation 等持久化能力。
+- `db.rs`：`Db` facade，对外提供 job、artifact、event、document、collection、glossary、translation version、sync 等持久化能力。
 - `db/schema/mod.rs`：编号迁移的执行器，以及老表的幂等加列（`ensure_*_column`）。
 - `db/schema/migrations/`：编号迁移，一个迁移一个 `vNN_<领域>.sql`，说明写在文件开头；清单在 `migrations/mod.rs`。版本号就是清单里的位置，已上线的只能往后追加，不能改、删、调序。
 - `db/rows.rs`：共享数据库行 decode；领域专用 decode 留在对应子模块。
-- `db/documents/*`：文档、收藏、搜索、回填和文档行读取。
-- `db/document_operations/*`：operation、attempt、event、version、恢复与状态迁移。
+- `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
 - `db/pipeline/*`：pipeline attempt、dispatch、stage、unit、event 与事务写入；读取和迁移写入不得重新揉回一个大文件。
 
 基本规则：
