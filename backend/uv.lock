@@ -332,6 +332,7 @@ dependencies = [
     { name = "retainpdf-base" },
     { name = "retainpdf-math" },
     { name = "retainpdf-translation" },
+    { name = "retainpdf-translation-agent", extra = ["engine"] },
     { name = "retainpdf-translation-classic" },
     { name = "urllib3" },
 ]
@@ -353,6 +354,7 @@ requires-dist = [
     { name = "retainpdf-base", editable = "base" },
     { name = "retainpdf-math", editable = "math" },
     { name = "retainpdf-translation", editable = "translation" },
+    { name = "retainpdf-translation-agent", extras = ["engine"], editable = "translation-agent" },
     { name = "retainpdf-translation-classic", editable = "translation-classic" },
     { name = "urllib3", specifier = "==2.5.0" },
 ]
@@ -367,7 +369,6 @@ dependencies = [
     { name = "requests" },
     { name = "retainpdf-base" },
     { name = "retainpdf-math" },
-    { name = "retainpdf-translation-agent" },
     { name = "urllib3" },
 ]
 
@@ -383,7 +384,6 @@ requires-dist = [
     { name = "requests", specifier = "==2.32.5" },
     { name = "retainpdf-base", editable = "base" },
     { name = "retainpdf-math", editable = "math" },
-    { name = "retainpdf-translation-agent", editable = "translation-agent" },
     { name = "urllib3", specifier = "==2.5.0" },
 ]
 provides-extras = ["test"]
@@ -394,13 +394,21 @@ version = "4.2.6"
 source = { editable = "translation-agent" }
 
 [package.optional-dependencies]
+engine = [
+    { name = "requests" },
+    { name = "retainpdf-translation" },
+]
 test = [
     { name = "pytest" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pytest", marker = "extra == 'test'", specifier = "==9.0.3" }]
-provides-extras = ["test"]
+requires-dist = [
+    { name = "pytest", marker = "extra == 'test'", specifier = "==9.0.3" },
+    { name = "requests", marker = "extra == 'engine'", specifier = "==2.32.5" },
+    { name = "retainpdf-translation", marker = "extra == 'engine'", editable = "translation" },
+]
+provides-extras = ["engine", "test"]
 
 [[package]]
 name = "retainpdf-translation-classic"

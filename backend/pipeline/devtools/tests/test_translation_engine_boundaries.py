@@ -1,4 +1,4 @@
-"""翻译包拆包第 1 步（2026-11-20）：底座、agent 接线不 import 普通翻译；引擎登记表里的路径都加载得到。"""
+"""翻译包拆包（2026-11-20）：底座、agent 接线不 import 普通翻译；翻译包不 import agent 包；模块放对包；引擎登记表里的路径都加载得到。"""
 
 from __future__ import annotations
 
@@ -26,10 +26,9 @@ from retainpdf_translation.workflow import engines
         ("workflow.engines", "base"),
         ("workflow.execution_runner", "base"),
         ("llm.shared.provider_registry", "base"),
-        ("workflow.agent_flow", "agent"),
     ],
 )
-def test_modules_are_sorted_into_base_classic_and_agent_glue(module: str, kind: str) -> None:
+def test_modules_are_sorted_into_base_and_classic(module: str, kind: str) -> None:
     assert translation_module_kind(module) == kind
 
 
@@ -46,7 +45,10 @@ def test_a_base_module_importing_the_classic_engine_is_reported(tmp_path, monkey
         "def run():\n    from retainpdf_translation_classic.workflow.book_flow import translate_book_with_global_continuations\n",
         encoding="utf-8",
     )
-    (root / "workflow" / "agent_flow.py").write_text("from retainpdf_translation.llm.shared import prompt_building\n", encoding="utf-8")
+    glue = tmp_path / "retainpdf_translation_agent_engine"
+    glue.mkdir()
+    (glue / "agent_flow.py").write_text("from retainpdf_translation.llm.shared import prompt_building\n", encoding="utf-8")
+    monkeypatch.setattr(gate, "AGENT_ENGINE_ROOT", glue)
     monkeypatch.setattr(gate, "TRANSLATION_ROOT", root)
     monkeypatch.setattr(gate, "TRANSLATION_CLASSIC_PACKAGE_ROOT", tmp_path / "retainpdf_translation_classic")
     monkeypatch.setattr(gate, "rel", lambda path: path)
@@ -54,7 +56,23 @@ def test_a_base_module_importing_the_classic_engine_is_reported(tmp_path, monkey
     check_translation_engine_boundaries(errors)
     assert len(errors) == 2, errors
     assert "workflow.book_flow" in errors[0] or "workflow.book_flow" in errors[1], "函数里的延迟 import 也算"
-    assert any("llm.shared.prompt_building" in error for error in errors), "from 包 import 子模块 也算"
+    assert any("llm.shared.prompt_building" in error and "agent 接线" in error for error in errors), "from 包 import 子模块 也算"
+
+
+def test_the_translation_packages_must_not_import_the_agent_package(tmp_path, monkeypatch) -> None:
+    base, classic = tmp_path / "retainpdf_translation", tmp_path / "retainpdf_translation_classic"
+    (base / "workflow").mkdir(parents=True)
+    (classic / "workflow").mkdir(parents=True)
+    (base / "workflow" / "checkpoint.py").write_text("def f():\n    from retainpdf_translation_agent import CHECKS_VERSION\n", encoding="utf-8")
+    (classic / "workflow" / "book_flow.py").write_text("from retainpdf_translation_agent_engine import agent_flow\n", encoding="utf-8")
+    monkeypatch.setattr(gate, "TRANSLATION_ROOT", base)
+    monkeypatch.setattr(gate, "TRANSLATION_CLASSIC_PACKAGE_ROOT", classic)
+    monkeypatch.setattr(gate, "AGENT_ENGINE_ROOT", tmp_path / "missing")
+    monkeypatch.setattr(gate, "rel", lambda path: path)
+    errors: list[str] = []
+    check_translation_engine_boundaries(errors)
+    assert len(errors) == 2, errors
+    assert all("must not import the agent package" in error for error in errors)
 
 
 def test_modules_must_live_in_the_right_package(tmp_path, monkeypatch) -> None:

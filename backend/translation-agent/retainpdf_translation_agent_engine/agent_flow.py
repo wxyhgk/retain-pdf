@@ -39,7 +39,7 @@ from retainpdf_base import paths
 from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.events import emit_stage_transition
 from retainpdf_translation.artifacts import TranslationRunDiagnostics
-from retainpdf_translation.core.engine_identity import agent_engine_identity
+from retainpdf_translation_agent_engine.identity import agent_engine_identity
 from retainpdf_translation.core.item_reader import item_normalized_sub_type
 from retainpdf_translation.core.payload import load_translations
 from retainpdf_translation.core.payload.parts.apply import apply_revised_member_text
@@ -55,7 +55,7 @@ from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared.model_wire import anthropic_usage
 from retainpdf_translation.llm.shared.usage_ledger import record_model_usage
 from retainpdf_translation.services.policy import TranslationPolicyConfig
-from retainpdf_translation.workflow.agent_openai import make_openai_transport
+from retainpdf_translation_agent_engine.agent_openai import make_openai_transport
 from retainpdf_translation.workflow.prepare import prepare_book_payloads
 from retainpdf_translation.workflow.page_policies import build_page_summaries
 from retainpdf_translation.workflow.pages import save_pages

@@ -1,4 +1,4 @@
-"""翻译 agent 接 OpenAI 协议（workflow/agent_openai.py）：Anthropic 请求体 ↔ 共用请求层，不发网络请求。
+"""翻译 agent 接 OpenAI 协议（retainpdf_translation_agent_engine/agent_openai.py）：Anthropic 请求体 ↔ 共用请求层，不发网络请求。
 
 - 通读、审校（强制用工具）→ 按工具的 schema 要 JSON，回答包成 tool_use；初译、重翻（纯文本）→ 原样包成 text；
 - Anthropic 专有字段不往下传，请求标签分出通读、审校，token 换成 Anthropic 的字段名；
@@ -16,9 +16,9 @@ import requests
 
 from retainpdf_translation.artifacts.aggregator import get_active_translation_run_diagnostics
 from retainpdf_translation.llm.shared import model_wire
-from retainpdf_translation.workflow import agent_flow
-from retainpdf_translation.workflow import agent_openai
-from retainpdf_translation.workflow.agent_openai import make_openai_transport
+from retainpdf_translation_agent_engine import agent_flow
+from retainpdf_translation_agent_engine import agent_openai
+from retainpdf_translation_agent_engine.agent_openai import make_openai_transport
 from retainpdf_translation.workflow.execution import execute_translation_request
 from retainpdf_translation_agent import AuthFailed
 from retainpdf_translation_agent import QuotaExhausted

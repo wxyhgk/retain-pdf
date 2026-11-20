@@ -1,4 +1,4 @@
-"""翻译引擎 agent（translation.engine=agent，workflow/agent_flow.py）：用假模型整条跑通，不发网络请求。
+"""翻译引擎 agent（translation.engine=agent，retainpdf_translation_agent_engine/agent_flow.py）：用假模型整条跑通，不发网络请求。
 
 - 整个翻译阶段：通读、逐页翻、审校，译文写回每页记录，清单记上引擎，断点收尾；
 - 参考文献角标换成脚注标记交给 agent，写回时换回原写法；
@@ -17,10 +17,10 @@ from pathlib import Path
 import pytest
 
 from retainpdf_translation.artifacts import blocking_untranslated_items
-from retainpdf_translation.workflow import agent_flow
-from retainpdf_translation.workflow.agent_flow import apply_agent_results
-from retainpdf_translation.workflow.agent_flow import build_agent_pages
-from retainpdf_translation.workflow.agent_flow import messages_url
+from retainpdf_translation_agent_engine import agent_flow
+from retainpdf_translation_agent_engine.agent_flow import apply_agent_results
+from retainpdf_translation_agent_engine.agent_flow import build_agent_pages
+from retainpdf_translation_agent_engine.agent_flow import messages_url
 from retainpdf_translation.workflow.execution import TranslationExecutionRequest
 from retainpdf_translation.workflow.execution import execute_translation_request
 from retainpdf_translation_agent import BlockResult
@@ -356,7 +356,7 @@ def test_messages_url_follows_the_job_base_url() -> None:
 def test_the_agent_gets_the_same_thinking_effort_as_legacy() -> None:
     """off、auto（claude-haiku-5-5）都是 low；明确的档位照用；别的模型 auto 不发字段（2026-10-31）。"""
     from retainpdf_translation.llm.shared import model_wire
-    from retainpdf_translation.workflow.agent_flow import agent_effort
+    from retainpdf_translation_agent_engine.agent_flow import agent_effort
 
     base = "https://api.anthropic.com/v1"
     try:
@@ -447,7 +447,7 @@ def test_without_a_reviewer_model_science_books_keep_the_ticket_review(tmp_path:
 
 def test_agent_structure_is_section_unless_page_is_asked_for(monkeypatch) -> None:
     """翻译 agent 第二版（按节翻）2026-11-19 起是默认；RETAIN_AGENT_STRUCTURE=page 退回逐页，别的值、没设都按节。"""
-    from retainpdf_translation.workflow.agent_flow import agent_structure
+    from retainpdf_translation_agent_engine.agent_flow import agent_structure
 
     monkeypatch.delenv("RETAIN_AGENT_STRUCTURE", raising=False)
     assert agent_structure() == "section"

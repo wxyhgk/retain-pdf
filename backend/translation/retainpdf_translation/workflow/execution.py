@@ -52,7 +52,7 @@ class TranslationExecutionRequest:
     reviewer_model: str = ""
     reviewer_base_url: str = ""
     reviewer_api_key: str = ""
-    # 翻译引擎：legacy（现有流程）/ agent（retainpdf-translation-agent，见 workflow/agent_flow.py）
+    # 翻译引擎：legacy（现有流程）/ agent（retainpdf-translation-agent，接线 retainpdf_translation_agent_engine.agent_flow）
     engine: str = "legacy"
     # OCR 流式公布的目录（任务的 ocr/，见 retainpdf_base.ocr_stream）。给了就跟着 OCR 翻（workflow/streaming_flow.py），
     # 不用等 OCR 做完；source_json_path 是 OCR 最后写的整份文档，这时可能还不存在。

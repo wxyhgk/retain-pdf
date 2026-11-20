@@ -6,6 +6,7 @@ from pathlib import Path
 from devtools.architecture_checks.common import parse_python_file
 from devtools.architecture_checks.common import rel
 from devtools.architecture_checks.common import scan_py_files
+from devtools.architecture_checks.translation_engines import AGENT_ENGINE_ROOT
 from devtools.architecture_checks.translation_rules import TRANSLATION_ROOT
 
 
@@ -69,7 +70,7 @@ SOURCE_TEXT_READER_ALLOWLIST: dict[str, int] = {
     "translation/retainpdf_translation/services/quality/qa/units.py": 2,  # 例外:块内原文
     # 翻译引擎 agent 按块交原文：接续组由 agent 自己合起来翻、再按比例分回各块,
     # 走完整链会把整组原文塞给每个成员,同一段话翻好几遍。收在 _block_source 一个函数里。
-    "translation/retainpdf_translation/workflow/agent_flow.py": 2,  # 例外:块内原文
+    "translation-agent/retainpdf_translation_agent_engine/agent_flow.py": 2,  # 例外:块内原文
     # ---- frozen-debt:逐处判断后再收敛,不能无脑替换 ----
     "translation/retainpdf_translation/artifacts/debug_index.py": 1,
     "translation/retainpdf_translation/core/context/models.py": 1,
@@ -191,7 +192,8 @@ def check_translation_source_text_readers(errors: list[str]) -> None:
     seen_keys: set[str] = set()
     seen_files: set[str] = set()
 
-    for path in scan_py_files(TRANSLATION_ROOT):
+    # agent 接线（2026-11-20 从翻译包挪进 backend/translation-agent）照旧在门禁里
+    for path in [*scan_py_files(TRANSLATION_ROOT), *scan_py_files(AGENT_ENGINE_ROOT)]:
         rel_path = Path(rel(path)).as_posix()
         tree = parse_python_file(path)
         reads = gated_source_text_reads(tree)

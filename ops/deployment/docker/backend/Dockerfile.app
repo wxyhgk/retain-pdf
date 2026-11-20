@@ -84,7 +84,7 @@ COPY backend/math/pyproject.toml math/pyproject.toml
 COPY backend/pipeline/pyproject.toml pipeline/pyproject.toml
 COPY backend/translation/pyproject.toml translation/pyproject.toml
 # 翻译 agent 包（retainpdf-translation-agent）：工作区成员，uv export 要它的 pyproject；
-# 运行时镜像也装（翻译引擎 translation.engine=agent 用它，只依赖标准库）。
+# 运行时镜像也装（翻译引擎 translation.engine=agent 用它；核心只依赖标准库，接线 engine extra 依赖翻译包）。
 COPY backend/translation-agent/pyproject.toml translation-agent/pyproject.toml
 # 普通翻译引擎（retainpdf-translation-classic，2026-11-20 从翻译包拆出来）：工作区成员
 COPY backend/translation-classic/pyproject.toml translation-classic/pyproject.toml
@@ -256,7 +256,7 @@ COPY backend/base /app/services/base
 COPY backend/math /app/services/math
 # 翻译包（retainpdf-translation）：pipeline 的翻译 worker 外壳调它；提示词随包数据装进去。
 COPY backend/translation /app/services/translation
-# 翻译 agent 包：翻译包的 agent 引擎（workflow/agent_flow.py）调它，只用标准库。
+# 翻译 agent 包：核心只用标准库；接线 retainpdf_translation_agent_engine（translation.engine=agent）依赖翻译包。
 COPY backend/translation-agent /app/services/translation-agent
 # 普通翻译引擎：翻译包的引擎登记表按 translation.engine=legacy 加载它（依赖翻译包）。
 COPY backend/translation-classic /app/services/translation-classic
