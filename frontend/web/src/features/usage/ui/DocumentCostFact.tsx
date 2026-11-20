@@ -4,6 +4,7 @@
 // 有查不到价的请求时小字注一句。没有用量、旧后端没这个字段时整项不画。
 // 详情页打开时才读；任务列表一变（翻完、重翻）重读。
 import { useMemo } from "react";
+import { CircleAlert, Coins } from "lucide-react";
 
 import { usageCost } from "../domain/usage-view-model.js";
 import { useDocumentUsage } from "./use-usage.js";
@@ -26,12 +27,17 @@ export function DocumentCostFact({
   const jobCount = Number(state.data?.jobs_counted || 0);
   if (!cost) return null;
   const unpricedNote = notes.find((note) => note.includes("查不到价"));
+  // 和概览别的格子一个样子：前面一个图标（data-fact-icon，样式在概览里）。查不到价的说明太长，收成金额后面一个小叹号，悬停看全文。
   return (
     <div data-book-detail-fact="cost">
+      <span data-fact-icon="cost" aria-hidden="true"><Coins /></span>
       <dt>花费</dt>
       <dd title={[cost.title, ...notes].join("\n")}>
-        <span data-usage-cost="total">{cost.text}</span>
-        <small>{unpricedNote || `全书累计${jobCount > 1 ? ` ${jobCount} 个任务` : ""}，按标价估算`}</small>
+        <span data-usage-cost="total">
+          {cost.text}
+          {unpricedNote ? <CircleAlert data-usage-unpriced="true" aria-label={unpricedNote} /> : null}
+        </span>
+        <small>{`全书累计${jobCount > 1 ? ` ${jobCount} 个任务` : ""}，按标价估算`}</small>
       </dd>
     </div>
   );

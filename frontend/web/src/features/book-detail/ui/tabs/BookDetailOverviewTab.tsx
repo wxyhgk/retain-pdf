@@ -7,10 +7,26 @@
 // 「翻译」一格里给一个可点的状态（点了去「进度」页）。
 // 合集只在信息区出现一次（切换按钮自带是否已加入的状态）；删除挪到最底下单独
 // 的危险操作区，不和日常的阅读状态挨在一起。
+// 每一格、每一行前面一个图标（2026-11-20）：扫一眼认得出是哪一项；翻译那格的图标按状态换（完成打勾、在跑转圈、失败叹号）。
 
 import type { ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
-import { ChevronRight, Pencil, TriangleAlert } from "lucide-react";
+import {
+  BookOpenCheck,
+  CalendarPlus,
+  ChevronRight,
+  CircleAlert,
+  CircleCheck,
+  CircleDashed,
+  FileStack,
+  FolderHeart,
+  HardDrive,
+  Info,
+  LoaderCircle,
+  Pencil,
+  TriangleAlert,
+  type LucideIcon,
+} from "lucide-react";
 import { TitleMetaPanel } from "../panels/overview/TitleMetaPanel.jsx";
 import { formatZhDate } from "@/platform/utils/datetime.js";
 
@@ -68,6 +84,29 @@ function formatDate(value: unknown) {
 
 
 
+/** 信息区一格：图标、名字、值。图标放在 data-fact-icon 的小方块里（花费那格由 usage 的 DocumentCostFact 照这个样子画）。 */
+function Fact({ id, icon: Icon, label, tone, children }: { id: string; icon: LucideIcon; label: string; tone?: string; children: ReactNode }) {
+  return (
+    <div data-book-detail-fact={id} data-tone={tone}>
+      <span data-fact-icon={id} aria-hidden="true"><Icon /></span>
+      <dt>{label}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
+
+/** 翻译状态的图标：完成打勾、在跑转圈、失败叹号，其余（没翻、取消）虚线圈。 */
+const STATUS_ICON: Record<string, LucideIcon> = { done: CircleCheck, active: LoaderCircle, failed: CircleAlert };
+
+function Row({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: ReactNode }) {
+  return (
+    <div className="book-detail-overview-row">
+      <span className="book-detail-overview-row-label"><Icon aria-hidden="true" />{label}</span>
+      <div className="book-detail-overview-row-value">{children}</div>
+    </div>
+  );
+}
+
 export function BookDetailOverviewTab({
   pageCount,
   bytes,
@@ -96,6 +135,7 @@ export function BookDetailOverviewTab({
   const translationHint = translationStatus.tone === "muted" && ocrStatus.tone !== "muted"
     ? `OCR ${ocrStatus.label}`
     : "";
+  const StatusIcon = STATUS_ICON[translationStatus.tone] || CircleDashed;
   return (
     <div
       className="book-detail-tab-overview"
@@ -107,7 +147,7 @@ export function BookDetailOverviewTab({
         data-book-detail-section="management"
       >
         <div className="book-detail-overview-card-heading">
-          <h3>文档信息</h3>
+          <h3><Info aria-hidden="true" />文档信息</h3>
           {!editing ? (
             <Button
               id="book-detail-edit-btn"
@@ -134,45 +174,27 @@ export function BookDetailOverviewTab({
         {error ? <p className="book-detail-overview-error" role="alert">{error}</p> : null}
 
         <dl className="book-detail-overview-facts">
-          <div>
-            <dt>页数</dt>
-            <dd>{pageCount ? `${pageCount} 页` : "—"}</dd>
-          </div>
-          <div>
-            <dt>大小</dt>
-            <dd>{sizeText || "—"}</dd>
-          </div>
-          <div>
-            <dt>入库</dt>
-            <dd>{dateText || "—"}</dd>
-          </div>
-          <div>
-            <dt>翻译</dt>
-            <dd>
-              <button
-                id="book-detail-overview-process-btn"
-                type="button"
-                className={`book-detail-overview-status-link is-${translationStatus.tone}`}
-                onClick={onOpenProcessing}
-                title="查看进度"
-              >
-                <span>{translationStatus.label}</span>
-                <ChevronRight aria-hidden="true" />
-              </button>
-              {translationHint ? <small>{translationHint}</small> : null}
-            </dd>
-          </div>
+          <Fact id="pages" icon={FileStack} label="页数">{pageCount ? `${pageCount} 页` : "—"}</Fact>
+          <Fact id="size" icon={HardDrive} label="大小">{sizeText || "—"}</Fact>
+          <Fact id="added" icon={CalendarPlus} label="入库">{dateText || "—"}</Fact>
+          <Fact id="translation" icon={StatusIcon} label="翻译" tone={translationStatus.tone}>
+            <button
+              id="book-detail-overview-process-btn"
+              type="button"
+              className={`book-detail-overview-status-link is-${translationStatus.tone}`}
+              onClick={onOpenProcessing}
+              title="查看进度"
+            >
+              <span>{translationStatus.label}</span>
+              <ChevronRight aria-hidden="true" />
+            </button>
+            {translationHint ? <small>{translationHint}</small> : null}
+          </Fact>
           {costSlot}
         </dl>
 
-        <div className="book-detail-overview-row">
-          <span className="book-detail-overview-row-label">合集</span>
-          <div className="book-detail-overview-row-value">{collectionsSlot}</div>
-        </div>
-        <div className="book-detail-overview-row">
-          <span className="book-detail-overview-row-label">阅读状态</span>
-          <div className="book-detail-overview-row-value">{readingSlot}</div>
-        </div>
+        <Row icon={FolderHeart} label="合集">{collectionsSlot}</Row>
+        <Row icon={BookOpenCheck} label="阅读状态">{readingSlot}</Row>
       </section>
 
       {versionsSlot}
