@@ -1,0 +1,161 @@
+/* 2.5D 编辑部角色的动作（只在 is-moving 时动）：点头、眨眼、翻书、敲键盘、放大镜扫、机器人挥单子和划笔。
+ * 整站「减弱动态效果」时动画收到瞬时，角色定格。
+ *
+ * @owns office-cast */
+
+.office-cast-head,
+.office-cast-eyes,
+.office-cast-robot-eyes,
+.office-cast-page,
+.office-cast-tap,
+.office-cast-lens,
+.office-cast-robot-arm,
+.office-cast-bulb {
+  transform-box: fill-box;
+}
+
+.office-cast-head {
+  transform-origin: 50% 100%;
+}
+
+.office-cast-eyes,
+.office-cast-robot-eyes,
+.office-cast-bulb {
+  transform-origin: 50% 50%;
+}
+
+/* 书页的书脊在左边。 */
+.office-cast-page {
+  transform-origin: 0% 50%;
+}
+
+.office-cast-robot-arm {
+  transform-origin: 0% 0%;
+}
+
+.office-cast.is-moving .office-cast-head {
+  animation: office-cast-nod 2.6s var(--ease-in-out) infinite;
+}
+
+.office-cast.is-moving .office-cast-eyes,
+.office-cast.is-moving .office-cast-robot-eyes {
+  animation: office-cast-blink 4.2s linear infinite;
+}
+
+.office-cast.is-reader.is-moving .office-cast-page {
+  animation: office-cast-page-flip 3.2s var(--ease-in-out) infinite;
+}
+
+.office-cast.is-translator.is-moving .office-cast-tap {
+  animation: office-cast-tap 380ms var(--ease-in-out) infinite;
+}
+
+.office-cast.is-translator.is-moving .office-cast-tap.is-right {
+  animation-delay: 190ms;
+}
+
+.office-cast.is-reviewer.is-moving .office-cast-lens {
+  animation: office-cast-scan 2.2s var(--ease-in-out) infinite;
+}
+
+.office-cast.is-robot.is-moving .office-cast-bulb {
+  animation: office-cast-pulse 1.1s var(--ease-in-out) infinite;
+}
+
+.office-cast.is-dispatcher.is-moving .office-cast-robot-arm {
+  animation: office-cast-wave 900ms var(--ease-in-out) infinite;
+}
+
+.office-cast.is-reviser.is-moving .office-cast-robot-arm {
+  animation: office-cast-scribble 420ms var(--ease-in-out) infinite;
+}
+
+@keyframes office-cast-nod {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  35% {
+    transform: rotate(-3deg) translateY(0.8px);
+  }
+  70% {
+    transform: rotate(2.5deg);
+  }
+}
+
+@keyframes office-cast-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes office-cast-page-flip {
+  0%,
+  45% {
+    transform: scaleX(1);
+  }
+  60% {
+    transform: scaleX(0.05) skewY(-6deg);
+  }
+  75%,
+  100% {
+    transform: scaleX(-1);
+  }
+}
+
+@keyframes office-cast-tap {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.8px);
+  }
+}
+
+@keyframes office-cast-scan {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-7px, 4px);
+  }
+}
+
+@keyframes office-cast-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.6;
+  }
+}
+
+@keyframes office-cast-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(-12deg);
+  }
+}
+
+@keyframes office-cast-scribble {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  50% {
+    transform: translate(-1.5px, 1.5px) rotate(-6deg);
+  }
+}
