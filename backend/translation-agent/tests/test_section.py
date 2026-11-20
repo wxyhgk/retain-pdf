@@ -283,3 +283,20 @@ def test_term_of_art_rule_is_in_the_translator_and_reviewer_prompts() -> None:
         assert "习语和术语分清" in prompt and "译名（原文）" in prompt
     assert "按字面直译了" in REVIEW_PROMPT and "number_term" in ACCURACY_NOTE
 
+
+def test_the_fallback_translator_gets_the_glossary_style_and_only_nearby_paragraphs() -> None:
+    """11-20：退回逐块翻的请求以前把整节的块都塞进去（翻 5 块带 106 块），上下文包却是空的，没有术语、人名、文风。"""
+    glossary = Glossary()
+    glossary.add("Paul Rabinow", "保罗·拉比诺", category=NAME, status=APPROVED, reason="test")
+    many = [_page(str(n), _block(f"p{n}-a", f"Paragraph {n} talks about Paul Rabinow and the long months of waiting there.")) for n in range(1, 11)]
+    stubborn = Model(drop={1: {10}, 2: {10}})
+    outcome = translate_section(TranslationAgent(model="fake", transport=stubborn), many, glossary, title="The Interloper", style="第一人称，学术随笔")
+    assert outcome.info["fallback"] == ["p10-a"]
+    payload = json.loads(stubborn.bodies[-1]["messages"][0]["content"])
+    assert [b["id"] for b in payload["blocks"]] == ["p8-a", "p9-a", "p10-a"], "只带前后各两段"
+    assert payload["required_ids"] == ["p10-a"]
+    context = payload["context"]
+    assert context["style"] == "第一人称，学术随笔"
+    assert any(n.get("source") == "Paul Rabinow" for n in context["names"]), context
+    assert [p["id"] for p in context["previous"]] == ["p8-a", "p9-a"] and all(p["translation"].startswith("译：") for p in context["previous"])
+

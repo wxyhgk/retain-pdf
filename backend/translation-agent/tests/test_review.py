@@ -142,3 +142,20 @@ def test_document_run_reviews_every_page_once(tmp_path: Path) -> None:
     assert review["applied"] == 1 and any(e["event"] == "call" and e["role"] == "reviewer" for e in ledger)
     page_file = json.loads((tmp_path / "pages" / "0000.json").read_text(encoding="utf-8"))
     assert page_file["info"]["review"]["applied"][0]["verdict"] == "applied"
+
+
+def test_the_reviewer_decides_after_its_reason_and_withdrawn_tickets_are_not_applied() -> None:
+    """11-20《The Interloper》：审校被逼着交单，70 张里 50 张改法等于原译，理由写着"应忽略""撤回"的也被改进去。
+    现在单子里先写理由、再定 must_fix；false 不改，记成 withdrawn。"""
+    schema = __import__("retainpdf_translation_agent.review", fromlist=["REVIEW_TOOL"]).REVIEW_TOOL["input_schema"]["properties"]["issues"]["items"]
+    assert list(schema["properties"]).index("reason") < list(schema["properties"]).index("must_fix") < list(schema["properties"]).index("fix")
+    assert "must_fix" in schema["required"]
+
+    results = _results()
+    withdrawn = _ticket(must_fix=False, reason="意思大体相符，不必改")
+    report = review_page(TranslationAgent(model="fake", transport=Model({"issues": [withdrawn]})), _page(), results)
+    assert [t["verdict"] for t in report["rejected"]] == ["withdrawn"] and results["p1"].translation == TRANSLATION
+
+    results = _results()
+    report = review_page(TranslationAgent(model="fake", transport=Model({"issues": [_ticket(must_fix=True)]})), _page(), results)
+    assert len(report["applied"]) == 1 and "所需数据是原来的一百倍" in results["p1"].translation

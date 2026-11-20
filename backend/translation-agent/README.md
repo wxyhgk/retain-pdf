@@ -34,6 +34,7 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   一节一次请求、模型只当译者（`SECTION_NARRATIVE_PROMPT`），按段号对回（同一编号写了几次以最后一次为准；抄回来的 § 行、没有汉字的英文说明去掉）、
   还原占位、查标记，漏的重交一次，不行的段退回逐块翻；合过的段切回各块。章号块（CHAPTER TWO、PART ONE）由程序换成「第二章」「第一部分」，不交给模型。
   原稿里引号括起来的 2–6 个词的说法由程序单列在请求里，让模型逐个判断是不是别的学科的固定术语（foot in the door 是「登门槛」，2026-11-20）。
+  两次都没交好的段退回逐块翻时只带前后各两段作上下文，配上术语、人名、文风（`fallback_page`，2026-11-20）。
   `review=True` 时整节对照原文审一次意思（只收意思类单子，不做文笔那一轮）。只管人文社科、通俗读物；正式流程 2026-11-19 起默认按节
   （`agent_flow.agent_structure`，`RETAIN_AGENT_STRUCTURE=page` 退回逐页），`DocumentRun` 自己的默认仍是逐页。
   见 `docs/ops/planning/translation-agent/20261119-按节翻译.md`、`20261119-按节翻译后的审校.md`。
@@ -50,7 +51,7 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   文风说明、全文统一的术语和人名、标题和目录的译法；`DocumentRun(read_first=True)` 用它。
 - `review.py`：审校。每页正文类块交给审校只开问题单（错译、漏译添加、数字术语、不通顺、语气偏离），逐字引用原文译文，
   程序核对后只替换被指出的那段，错误和警告只许减少，括号里的原文（人名、书名第一次出现）不许删、不许添"其实""显然"这类词；
-  理工类书 `DocumentRun(review=True)` 用它。
+  理工类书 `DocumentRun(review=True)` 用它。单子先写理由再填 `must_fix`，`false` 是审校自己撤回、不改（2026-11-20，以前被逼着交单，七成是空单）。
 - `rewrite.py`：编辑整块重写，程序裁判（长度、校验、术语、添词）。`polish=True` 时只改文笔（意思已经审过）。
 - 人文社科、通俗读物的第二遍分两轮（`runner.split_review`，2026-11-19）：先 `review_page(accuracy_only=True)` 只审意思，
   再 `rewrite_page(polish=True)` 把译文当中文读、只改文笔。

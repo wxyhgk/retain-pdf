@@ -285,7 +285,33 @@ def build_agent_pages(
     return pages, marks_by_block
 
 
-def _document_title(page_payloads: dict[int, list[dict]]) -> str:
+# PDF 元数据里常见的垃圾书名：排版软件、转换工具自动写的，或者就是文件名
+_JUNK_TITLE = re.compile(r"^(untitled|microsoft word|microsoft powerpoint|document\d*|book\d*|layout \d+)\b|\.(pdf|docx?|indd|tex|qxd|ps)$", re.I)
+
+
+def _pdf_metadata_title(source_pdf_path: Path | None) -> str:
+    """原 PDF 元数据里的书名；没有、读不出、或者是垃圾值（文件名、Microsoft Word 开头、纯数字）时给空串。"""
+    if source_pdf_path is None or not Path(source_pdf_path).exists():
+        return ""
+    try:
+        import fitz
+
+        with fitz.open(source_pdf_path) as pdf:
+            title = " ".join(str((pdf.metadata or {}).get("title") or "").split())
+    except Exception:
+        return ""
+    if len(title) < 3 or title.isdigit() or _JUNK_TITLE.search(title):
+        return ""
+    return title
+
+
+def _document_title(page_payloads: dict[int, list[dict]], source_pdf_path: Path | None = None) -> str:
+    """书名：先看原 PDF 元数据，再退回 OCR 认出的第一个标题块。
+    11-20 以前只看标题块：封面是图的书（《The Interloper》）第一个标题块是第一章的 "Introduction"，通读、初译、审校、兜底收到的书名都是它。
+    书库里用户改过的书名翻译阶段拿不到（stage spec 里没有），以后要的话从 spec 传进来。"""
+    title = _pdf_metadata_title(source_pdf_path)
+    if title:
+        return title
     for page_idx in sorted(page_payloads):
         for item in page_payloads[page_idx]:
             if item_normalized_sub_type(item) == "title" and _block_source(item):
@@ -499,11 +525,12 @@ def translate_book_with_agent(
     glossary_entries: list | None = None,
     reviewer: Any = None,
     transport: Callable[[dict], dict] | None = None,
+    source_pdf_path: Path | None = None,
 ) -> tuple[dict[int, list[dict]], list[dict]]:
     """返回值和 `translate_book_with_global_continuations` 一样：（页 → 记录，每页小结）。`transport` 只给测试注入假模型。
 
     `reviewer`：审校模型的连接（`execution.resolve_reviewer_connection`）。用户另配了模型时，agent 的审校、编辑重写走它，
-    其余（通读、初译、重翻）走翻译模型；没配就全用翻译模型。"""
+    其余（通读、初译、重翻）走翻译模型；没配就全用翻译模型。`source_pdf_path`：原 PDF，取元数据里的书名。"""
     translation_paths, page_payloads = prepare_book_payloads(
         data=data,
         output_dir=output_dir,
@@ -522,7 +549,7 @@ def translate_book_with_agent(
         run_diagnostics=run_diagnostics,
         checkpoint=checkpoint,
     )
-    pages, marks_by_block = build_agent_pages(page_payloads, data, document_title=_document_title(page_payloads))
+    pages, marks_by_block = build_agent_pages(page_payloads, data, document_title=_document_title(page_payloads, source_pdf_path))
     model = (model or "").strip() or DEFAULT_MODEL
     reviewer_model = _separate_reviewer(reviewer, model=model, base_url=base_url)
     state_dir = Path(output_dir) / AGENT_STATE_DIR

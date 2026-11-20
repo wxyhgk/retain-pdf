@@ -52,8 +52,10 @@ REVIEW_PROMPT = """你是英译中学术翻译的审校。你会收到一页里�
 "可以更自然""换个说法更好"这类不收。没把握就不开。
 
 每张单子：block_id、category、source_quote（原文里逐字照抄的那一小段）、translation_quote（译文里逐字照抄的、要改的那一小段，
-越短越好，但要能唯一定位）、fix（替换 translation_quote 的新译文，只改这一段，公式、标记、编号照原样）、reason（一句话）。
-一页没有问题就交空列表。
+越短越好，但要能唯一定位）、reason（一句话：错在哪）、must_fix（读完自己的理由再定：确实错了、非改不可才写 true）、
+fix（替换 translation_quote 的新译文，只改这一段，公式、标记、编号照原样）。
+单子只开给要改的地方，不是逐块打勾：看过、没问题的块什么都不用报，不要写"无误""对应""可以接受"的单子。
+一页没有问题就交空列表，这是常有的事。开了单子、写理由时发现其实不用改，must_fix 写 false。
 """
 
 # 两轮分开（`runner` 的 review="split"，2026-11-19）时的第一轮：只对照原文管意思，文笔留给下一轮的编辑
@@ -69,7 +71,7 @@ ACCURACY_CATEGORIES = {"mistranslation", "omission", "number_term", "tone"}
 
 REVIEW_TOOL = {
     "name": "submit_review",
-    "description": "交回这一页的问题单（没有问题就是空列表）。",
+    "description": "交回这一页要改的地方（只列要改的，没问题的块不用列；一处都没有就是空列表）。",
     "input_schema": {
         "type": "object",
         "properties": {
@@ -82,10 +84,11 @@ REVIEW_TOOL = {
                         "category": {"type": "string", "enum": sorted(CATEGORIES)},
                         "source_quote": {"type": "string"},
                         "translation_quote": {"type": "string"},
-                        "fix": {"type": "string"},
                         "reason": {"type": "string"},
+                        "must_fix": {"type": "boolean"},
+                        "fix": {"type": "string"},
                     },
-                    "required": ["block_id", "category", "source_quote", "translation_quote", "fix", "reason"],
+                    "required": ["block_id", "category", "source_quote", "translation_quote", "reason", "must_fix", "fix"],
                 },
             }
         },
@@ -154,6 +157,10 @@ def _apply(ticket: dict, by_id: dict, results: dict[str, BlockResult], edits: di
     block = by_id.get(str(ticket.get("block_id", "")))
     if block is None:
         return "unknown_block"
+    # 11-20：审校被要求必须调工具交单，没问题也开单子（70 张里 50 张改法等于原译），理由里写着"应忽略""撤回"的也被改了进去。
+    # 现在要它先写理由、再定 must_fix；false 就是它自己撤回的
+    if ticket.get("must_fix") is False:
+        return "withdrawn"
     if ticket.get("category") not in CATEGORIES:
         return "bad_category"
     if edits.get(block.id, 0) >= MAX_EDITS_PER_BLOCK:
