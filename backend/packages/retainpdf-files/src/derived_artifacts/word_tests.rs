@@ -22,9 +22,11 @@ fn uses_the_installed_pipeline_command_with_the_layout_docx_subcommand() {
 fn different_dpi_is_a_different_artifact() {
     // 背景位图的清晰度直接决定文件大小。两个 DPI 共用一个缓存键的话,先请求的那个
     // 会被后面的人拿到——拿到的是一份和自己要的不一样的文档。
-    let low = LayoutDocxOptions { dpi: 96 };
-    let high = LayoutDocxOptions { dpi: 300 };
+    let low = LayoutDocxOptions { dpi: 96, watermark: false };
+    let high = LayoutDocxOptions { dpi: 300, watermark: false };
     assert_ne!(low.cache_suffix(), high.cache_suffix());
+    // 带不带水印也是两份
+    assert_ne!(low.cache_suffix(), LayoutDocxOptions { dpi: 96, watermark: true }.cache_suffix());
     assert_eq!(
         LayoutDocxOptions::default().dpi,
         DEFAULT_BACKGROUND_DPI,

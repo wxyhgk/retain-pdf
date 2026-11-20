@@ -14,7 +14,7 @@ use crate::views::{LayoutDocxQuery, PagePreviewQuery};
 use retainpdf_core::models::domain::{JobSnapshot, JobStatusKind};
 use retainpdf_files::{
     artifact_is_direct_downloadable, build_bundle_for_job, build_markdown_bundle_for_job,
-    ensure_book_image, ensure_layout_docx, ensure_page_preview, ensure_side_by_side_pdf,
+    ensure_book_image, ensure_layout_docx, ensure_page_preview, ensure_side_by_side_pdf, ensure_watermarked_pdf,
     job_download_file_name, job_page_preview_file_name, job_upload_id, resolve_registry_artifact,
     BookImageKind, DownloadKind,
     LayoutDocxOptions, JOB_INTERNAL_FILES,
@@ -48,10 +48,10 @@ const TRANSLATED_PAGE_CACHE: &str = "private, max-age=0, must-revalidate";
 pub enum JobFile {
     /// 原文 PDF。
     SourcePdf,
-    /// 译文 PDF。
-    TranslatedPdf,
+    /// 译文 PDF。`watermark`：右下角盖「logo + RetainPDF」（下载默认带，按需生成）。
+    TranslatedPdf { watermark: bool },
     /// 中英对照 PDF（按需生成）。
-    SideBySidePdf,
+    SideBySidePdf { watermark: bool },
     /// 译文 Word（按需生成，每种清晰度一份）。
     TranslatedDocx(LayoutDocxOptions),
     /// 原文 Markdown（OCR 识别结果，不是译文）。
@@ -74,8 +74,8 @@ pub enum JobFile {
 impl JobFile {
 
     /// 清晰度夹在可用区间里：太低看不清背景，太高单页几十 MB，整本能把浏览器拖垮。
-    pub fn translated_docx(query: &LayoutDocxQuery) -> Self {
-        let mut options = LayoutDocxOptions::default();
+    pub fn translated_docx(query: &LayoutDocxQuery, watermark: bool) -> Self {
+        let mut options = LayoutDocxOptions { watermark, ..LayoutDocxOptions::default() };
         if let Some(dpi) = query.dpi {
             options.dpi = dpi.clamp(72, 300);
         }
@@ -95,8 +95,8 @@ impl JobFile {
     fn generation_key(&self) -> String {
         match self {
             Self::SourcePdf => "source.pdf".into(),
-            Self::TranslatedPdf => "translated.pdf".into(),
-            Self::SideBySidePdf => "side-by-side.pdf".into(),
+            Self::TranslatedPdf { watermark } => format!("translated.pdf:wm={watermark}"),
+            Self::SideBySidePdf { watermark } => format!("side-by-side.pdf:wm={watermark}"),
             Self::TranslatedDocx(options) => format!("translated.docx:{}", options.cache_suffix()),
             Self::OcrMarkdown => "ocr.md".into(),
             Self::OcrMarkdownZip { include_job_dir } => format!("ocr.zip:{include_job_dir}"),
@@ -240,13 +240,18 @@ fn locate(deps: &DownloadJobsDeps<'_>, job: &JobSnapshot, file: &JobFile) -> Res
             Ok(Located::new(path, "application/pdf")
                 .named(user_file_name(deps, job, DownloadKind::Source)))
         }
-        JobFile::TranslatedPdf => {
+        JobFile::TranslatedPdf { watermark } => {
             let path = require_file(resolve_output_pdf(job, data_root), TRANSLATED_PDF)?;
-            let path = linearized_pdf_or_original(deps, job, &path, "output")?;
+            let (path, label) = if *watermark {
+                (ensure_watermarked_pdf(derived_artifact_deps(deps), data_root, job, &path, "output")?, "output-watermarked")
+            } else {
+                (path, "output")
+            };
+            let path = linearized_pdf_or_original(deps, job, &path, label)?;
             Ok(Located::new(path, "application/pdf")
                 .named(user_file_name(deps, job, DownloadKind::Translated)))
         }
-        JobFile::SideBySidePdf => {
+        JobFile::SideBySidePdf { watermark } => {
             let source_pdf = require_file(resolve_source_pdf(job, data_root), SOURCE_PDF)?;
             let translated_pdf = require_file(resolve_output_pdf(job, data_root), TRANSLATED_PDF)?;
             let output_pdf = ensure_side_by_side_pdf(
@@ -256,7 +261,12 @@ fn locate(deps: &DownloadJobsDeps<'_>, job: &JobSnapshot, file: &JobFile) -> Res
                 &source_pdf,
                 &translated_pdf,
             )?;
-            let path = linearized_pdf_or_original(deps, job, &output_pdf, "side-by-side")?;
+            let (output_pdf, label) = if *watermark {
+                (ensure_watermarked_pdf(derived_artifact_deps(deps), data_root, job, &output_pdf, "side-by-side")?, "side-by-side-watermarked")
+            } else {
+                (output_pdf, "side-by-side")
+            };
+            let path = linearized_pdf_or_original(deps, job, &output_pdf, label)?;
             Ok(Located::new(path, "application/pdf")
                 .named(user_file_name(deps, job, DownloadKind::SideBySide)))
         }

@@ -330,3 +330,24 @@ describe("公式边界", () => {
     assert.equal(result.formulaCount, 1, `认成了 ${result.formulaCount} 个公式`);
   });
 });
+
+describe("水印（2026-11-20）", () => {
+  it("每页右下角一张浮动图片，整份文档共用一张图；规格里没有水印就不放", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "retainpdf2doc-wm-"));
+    await writeFile(path.join(dir, "page-001.png"), PNG);
+    await writeFile(path.join(dir, "stamp.png"), PNG);
+    const one = spec({ watermark: { path: "stamp.png" } });
+    one.pages[0].watermark = { rect: [500, 815, 560, 826] };
+    one.pages[1].watermark = { rect: [320, 580, 380, 590] };
+    const built = await buildLayoutDocx(one, { baseDir: dir });
+    const files = unzipSync(built.bytes);
+    const xmlText = strFromU8(files["word/document.xml"]);
+    const marks = xmlText.match(/name="watermark \d+"/g) || [];
+    assert.equal(marks.length, 2, "两页各一个水印");
+    assert.equal(Object.keys(files).filter((name) => name.startsWith("word/media/watermark")).length, 1, "水印图只存一份");
+    assert.ok(xmlText.includes(`<wp:posOffset>${500 * EMU_PER_POINT}</wp:posOffset>`), "位置照规格给的页面坐标");
+    const rels = strFromU8(files["word/_rels/document.xml.rels"]);
+    assert.ok(rels.includes('Id="rIdWatermark"'), "水印图登记了关系");
+    assert.ok(!documentXml.includes("watermark"), "没给水印的规格不放");
+  });
+});

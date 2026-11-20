@@ -25,6 +25,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # 调用方解析好了就传进来，别让这边靠 --job-root 去猜。
     parser.add_argument("--source-pdf", default="", help="Resolved source PDF; defaults to <job-root>/source/*.pdf.")
     parser.add_argument("--translated-pdf", default="", help="Resolved translated PDF; defaults to <job-root>/rendered/*-translated.pdf.")
+    parser.add_argument("--watermark", action="store_true", help="Put the RetainPDF watermark in every page's bottom-right corner.")
     parser.add_argument(
         "--font-family", default=MEASURED_FONT_FAMILY,
         help="Overlay text font family. Changing it invalidates the fitted sizes.",
@@ -42,6 +43,7 @@ def main(argv: list[str] | None = None) -> int:
         font_family=args.font_family,
         source_pdf=Path(args.source_pdf).resolve() if args.source_pdf else None,
         translated_pdf=Path(args.translated_pdf).resolve() if args.translated_pdf else None,
+        watermark=args.watermark,
     )
     return 0
 

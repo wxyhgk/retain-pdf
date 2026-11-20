@@ -85,9 +85,14 @@ pub(super) fn seed() -> Fixture {
     // 按需生成的产物：事先放进缓存位置（写在输入之后，修改时间不早于输入，算新鲜）。
     let cache = root.join("artifacts");
     write(&cache.join(format!("{JOB}-side-by-side.pdf")), &minimal_pdf_bytes(400, 280));
+    // 下载默认带水印（2026-11-20）：盖好水印的译文、对照 PDF 也事先放进缓存
+    write(&cache.join("output.watermarked-v1.pdf"), &minimal_pdf_bytes(210, 297));
+    write(&cache.join("side-by-side.watermarked-v1.pdf"), &minimal_pdf_bytes(420, 297));
     for dpi in [LayoutDocxOptions::default().dpi, 150] {
-        let suffix = LayoutDocxOptions { dpi }.cache_suffix();
-        write(&cache.join(format!("{JOB}-layout-{suffix}.docx")), format!("fake docx dpi={dpi}").as_bytes());
+        for watermark in [false, true] {
+            let suffix = LayoutDocxOptions { dpi, watermark }.cache_suffix();
+            write(&cache.join(format!("{JOB}-layout-{suffix}.docx")), format!("fake docx dpi={dpi} watermark={watermark}").as_bytes());
+        }
     }
     write(&cache.join("cover.jpg"), b"job cover jpeg");
     write(&cache.join("thumbnail.jpg"), b"job thumbnail jpeg");
@@ -155,6 +160,9 @@ fn requests() -> Vec<(&'static str, String, Option<(&'static str, &'static str)>
         ("新：译文 PDF（浏览器里打开）", format!("{j}/files/output/translated.pdf"), None),
         ("新：译文 PDF（下载）", format!("{j}/files/output/translated.pdf?download=1"), None),
         ("新：对照 PDF", format!("{j}/files/output/side-by-side.pdf"), None),
+        ("新：译文 PDF（不带水印）", format!("{j}/files/output/translated.pdf?watermark=0"), None),
+        ("新：对照 PDF（不带水印）", format!("{j}/files/output/side-by-side.pdf?watermark=0"), None),
+        ("新：Word（不带水印）", format!("{j}/files/output/translated.docx?download=1&watermark=0"), None),
         ("新：Word（默认清晰度）", format!("{j}/files/output/translated.docx?download=1"), None),
         ("新：Word（dpi=150）", format!("{j}/files/output/translated.docx?download=1&dpi=150"), None),
         ("新：原文 Markdown", format!("{j}/files/output/ocr.md"), None),

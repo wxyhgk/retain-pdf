@@ -315,6 +315,59 @@ function pageBackground(relationshipId, pageIndex, widthPt, heightPt) {
   ]);
 }
 
+/**
+ * 水印（2026-11-20）：右下角一张浮动图片，压在文字上面（不是 behindDoc，背景图会盖住它），锁住不让误拖。
+ * 位置由 Python 侧按和 PDF 水印同一套算法给出（页面坐标，pt）。
+ */
+function pageWatermark(relationshipId, pageIndex, rect) {
+  const widthEmu = emu(rect.x1 - rect.x0);
+  const heightEmu = emu(rect.y1 - rect.y0);
+  return xml("w:r", {}, [
+    rawXml(xml("w:drawing", {}, [
+      rawXml(xml("wp:anchor", {
+        distT: 0, distB: 0, distL: 0, distR: 0,
+        simplePos: 0,
+        relativeHeight: 251659264,
+        behindDoc: 0, locked: 1, layoutInCell: 1, allowOverlap: 1,
+      }, [
+        rawXml(xml("wp:simplePos", { x: 0, y: 0 })),
+        rawXml(xml("wp:positionH", { relativeFrom: "page" }, [rawXml(xml("wp:posOffset", {}, [emu(rect.x0)]))])),
+        rawXml(xml("wp:positionV", { relativeFrom: "page" }, [rawXml(xml("wp:posOffset", {}, [emu(rect.y0)]))])),
+        rawXml(xml("wp:extent", { cx: widthEmu, cy: heightEmu })),
+        rawXml(xml("wp:effectExtent", { l: 0, t: 0, r: 0, b: 0 })),
+        rawXml(xml("wp:wrapNone")),
+        rawXml(xml("wp:docPr", { id: 3000 + pageIndex, name: `watermark ${pageIndex + 1}`, descr: "RetainPDF" })),
+        rawXml(xml("wp:cNvGraphicFramePr", {}, [
+          rawXml(xml("a:graphicFrameLocks", { noChangeAspect: 1 })),
+        ])),
+        rawXml(xml("a:graphic", {}, [
+          rawXml(xml("a:graphicData", {
+            uri: "http://schemas.openxmlformats.org/drawingml/2006/picture",
+          }, [
+            rawXml(xml("pic:pic", {}, [
+              rawXml(xml("pic:nvPicPr", {}, [
+                rawXml(xml("pic:cNvPr", { id: 4000 + pageIndex, name: `watermark-${pageIndex + 1}` })),
+                rawXml(xml("pic:cNvPicPr")),
+              ])),
+              rawXml(xml("pic:blipFill", {}, [
+                rawXml(xml("a:blip", { "r:embed": relationshipId })),
+                rawXml(xml("a:stretch", {}, [rawXml(xml("a:fillRect"))])),
+              ])),
+              rawXml(xml("pic:spPr", {}, [
+                rawXml(xml("a:xfrm", {}, [
+                  rawXml(xml("a:off", { x: 0, y: 0 })),
+                  rawXml(xml("a:ext", { cx: widthEmu, cy: heightEmu })),
+                ])),
+                rawXml(xml("a:prstGeom", { prst: "rect" }, [rawXml(xml("a:avLst"))])),
+              ])),
+            ])),
+          ])),
+        ])),
+      ])),
+    ])),
+  ]);
+}
+
 function sectionProperties(page) {
   return xml("w:sectPr", {}, [
     rawXml(xml("w:pgSz", { "w:w": twips(page.widthPt), "w:h": twips(page.heightPt) })),
@@ -346,7 +399,7 @@ function hostParagraph(runs, page, isLast) {
 /**
  * @returns {{ body: string, errors: Array, textboxCount: number, formulaCount: number }}
  */
-export function buildBody(spec, mediaByPageIndex) {
+export function buildBody(spec, mediaByPageIndex, watermark = null) {
   const errors = [];
   const paragraphs = [];
   let textboxCount = 0;
@@ -364,6 +417,9 @@ export function buildBody(spec, mediaByPageIndex) {
       runs.push(rawXml(blockTextbox(block, page.pageIndex, blockIndex, spec.font.family, errors)));
       textboxCount += 1;
     });
+    if (watermark && page.watermark) {
+      runs.push(rawXml(pageWatermark(watermark.relationshipId, page.pageIndex, page.watermark.rect)));
+    }
     paragraphs.push(hostParagraph(runs, page, index === spec.pages.length - 1));
   });
 

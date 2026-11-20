@@ -8,6 +8,7 @@ pub(crate) mod pdf;
 pub(crate) mod preview;
 pub(crate) mod retention;
 pub(crate) mod side_by_side;
+pub(crate) mod watermark;
 pub(crate) mod word;
 
 pub(crate) use freshness::cached_output_is_fresh;
@@ -62,6 +63,11 @@ pub(crate) fn side_by_side_file_name(job_id: &str) -> String {
 
 pub(crate) fn layout_docx_file_name(job_id: &str, cache_suffix: &str) -> String {
     format!("{job_id}-layout-{cache_suffix}.docx")
+}
+
+/// 盖了水印的 PDF：`<label>.watermarked-v<版本>.pdf`（版本见 `watermark.rs`）。
+pub(crate) fn watermarked_file_name(label: &str) -> String {
+    format!("{}.watermarked-v{}.pdf", label.replace('/', "_"), watermark::WATERMARK_VERSION)
 }
 
 pub(crate) fn linearized_file_name(label: &str) -> String {

@@ -12,6 +12,19 @@
 
 ---
 
+## 下载的译文 PDF、对照 PDF、Word 默认带水印（feat/export-watermark）
+
+2026-11-20，用户定：默认开、每页右下角「logo + RetainPDF」。`/jobs/{id}/files/output/translated.pdf`、`side-by-side.pdf`、
+`translated.docx` 默认返回带水印的版本，加 `?watermark=0` 返回原版。地址、字段都没变，前端不改也行：现在的下载按钮直接就带水印。
+
+前端要做的（可选）：设置里加「导出时加水印」开关，关的时候下载地址带上 `watermark=0`：
+- `web/src/features/book-detail/domain/artifact-resources.ts` 的 `jobOutputFileUrl(...)`：旧写法 `.../files/output/${name}?download=1`，
+  新写法关水印时 `?download=1&watermark=0`；
+- 译文 PDF 那一项用的是后端给的 `pdfUrl`（`links.pdf`），关水印时在后面加 `watermark=0`；
+- 阅读页用的是 `pages/{n}.jpg` 预览图，本来就不带水印，不用改。
+
+做法见 [导出水印](../../ops/planning/export-watermark/20261120-导出水印.md)。
+
 ## 加回单个任务的用量（feat/job-usage）
 
 2026-11-20。`GET /api/v1/jobs/{job_id}/reports/usage` 加回来了，只增不改。契约 `token-usage.v1`：调用函数名 `getJobUsage`，

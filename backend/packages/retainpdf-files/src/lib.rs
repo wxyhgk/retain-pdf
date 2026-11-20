@@ -34,6 +34,7 @@ pub use derived_artifacts::preview::{
     ensure_book_image, ensure_document_book_image, ensure_page_preview, BookImageKind,
 };
 pub use derived_artifacts::side_by_side::{ensure_side_by_side_pdf, run_supervised};
+pub use derived_artifacts::watermark::ensure_watermarked_pdf;
 pub use derived_artifacts::word::{ensure_layout_docx, LayoutDocxOptions};
 pub use download_generation::{DownloadGeneration, FileDownload};
 pub use download_names::{download_file_name, job_download_file_name, DownloadKind};

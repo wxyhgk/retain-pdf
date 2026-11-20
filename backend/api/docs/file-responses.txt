@@ -164,13 +164,37 @@ GET /api/v1/jobs/files-contract-job/files/output/side-by-side.pdf
   accept-ranges: bytes
   | pdf
 
+## 新：译文 PDF（不带水印）
+GET /api/v1/jobs/files-contract-job/files/output/translated.pdf?watermark=0
+  status: 200
+  content-type: application/pdf
+  content-disposition: inline; filename="zh______translated.pdf"; filename*=UTF-8''zh_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_translated.pdf
+  accept-ranges: bytes
+  | pdf
+
+## 新：对照 PDF（不带水印）
+GET /api/v1/jobs/files-contract-job/files/output/side-by-side.pdf?watermark=0
+  status: 200
+  content-type: application/pdf
+  content-disposition: inline; filename="dual______side-by-side.pdf"; filename*=UTF-8''dual_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_side-by-side.pdf
+  accept-ranges: bytes
+  | pdf
+
+## 新：Word（不带水印）
+GET /api/v1/jobs/files-contract-job/files/output/translated.docx?download=1&watermark=0
+  status: 200
+  content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
+  content-disposition: attachment; filename="zh______layout.docx"; filename*=UTF-8''zh_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_layout.docx
+  accept-ranges: bytes
+  | 33 字节，sha256 4a1122d03508d500
+
 ## 新：Word（默认清晰度）
 GET /api/v1/jobs/files-contract-job/files/output/translated.docx?download=1
   status: 200
   content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
   content-disposition: attachment; filename="zh______layout.docx"; filename*=UTF-8''zh_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_layout.docx
   accept-ranges: bytes
-  | 17 字节，sha256 b1797ec64dd37cdb
+  | 32 字节，sha256 cbdccc2f08eafa8b
 
 ## 新：Word（dpi=150）
 GET /api/v1/jobs/files-contract-job/files/output/translated.docx?download=1&dpi=150
@@ -178,7 +202,7 @@ GET /api/v1/jobs/files-contract-job/files/output/translated.docx?download=1&dpi=
   content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
   content-disposition: attachment; filename="zh______layout.docx"; filename*=UTF-8''zh_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_layout.docx
   accept-ranges: bytes
-  | 17 字节，sha256 d8a707e3a84a55dc
+  | 32 字节，sha256 52d043cc908a95c1
 
 ## 新：原文 Markdown
 GET /api/v1/jobs/files-contract-job/files/output/ocr.md

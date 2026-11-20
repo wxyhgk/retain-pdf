@@ -85,6 +85,22 @@ async function loadBackgrounds(spec, baseDir) {
   return { media, byPageIndex };
 }
 
+/** 水印图（整份文档一张，每页引用同一个关系）。规格里没有水印就是 null。 */
+async function loadWatermark(spec, baseDir) {
+  if (!spec.watermark) return null;
+  const absolute = path.resolve(baseDir, spec.watermark.path);
+  const extension = path.extname(absolute).toLowerCase();
+  const contentType = IMAGE_CONTENT_TYPES.get(extension);
+  if (!contentType) throw new Error(`水印图格式不支持：${extension || "(无扩展名)"}（只收 png/jpg）`);
+  let bytes;
+  try {
+    bytes = new Uint8Array(await readFile(absolute));
+  } catch (cause) {
+    throw new Error(`水印图读不到：${absolute}`, { cause });
+  }
+  return { relationshipId: "rIdWatermark", fileName: `watermark${extension === ".jpeg" ? ".jpg" : extension}`, contentType, bytes };
+}
+
 /**
  * @param {object} rawSpec 规格对象（见 spec.mjs）
  * @param {object} options
@@ -93,7 +109,9 @@ async function loadBackgrounds(spec, baseDir) {
 export async function buildLayoutDocx(rawSpec, { baseDir = process.cwd() } = {}) {
   const spec = parseSpec(rawSpec);
   const { media, byPageIndex } = await loadBackgrounds(spec, baseDir);
-  const { body, errors, textboxCount, formulaCount } = buildBody(spec, byPageIndex);
+  const watermark = await loadWatermark(spec, baseDir);
+  if (watermark) media.push(watermark);
+  const { body, errors, textboxCount, formulaCount } = buildBody(spec, byPageIndex, watermark);
 
   // 主题只用来定最后一页的 sectPr 和基础样式。页面尺寸取最后一页——前面每一页的
   // 尺寸由 body 里各自的分节符给出（源 PDF 各页尺寸可以不同）。
