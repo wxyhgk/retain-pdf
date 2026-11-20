@@ -655,12 +655,17 @@ def translate_book_with_agent(
         run_diagnostics=run_diagnostics,
         checkpoint=checkpoint,
     )
+    statuses_before = {idx: [item.get("final_status") for item in items] for idx, items in page_payloads.items()}
     skipped = skip_back_matter(page_payloads, source_pdf_path)
     if any(skipped.values()):
         print(f"book: agent keeps original for running headers={skipped['running_header']} index blocks={skipped['index']}", flush=True)
     nothing = skip_nothing_to_translate(page_payloads)
     if nothing:
         print(f"book: agent keeps original for blocks with nothing to translate {nothing}", flush=True)
+    # 标成保留原文的页当场存盘：以前只存 agent 交回结果的页，整页都保留原文的（书后索引、书名页）存下来的还是「要翻、没状态」
+    marked = {idx for idx, items in page_payloads.items() if [item.get("final_status") for item in items] != statuses_before.get(idx)}
+    if marked:
+        save_pages(page_payloads, translation_paths, marked)
     pages, marks_by_block = build_agent_pages(page_payloads, data, document_title=_document_title(page_payloads, source_pdf_path))
     model = (model or "").strip() or DEFAULT_MODEL
     reviewer_model = _separate_reviewer(reviewer, model=model, base_url=base_url)

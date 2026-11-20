@@ -197,9 +197,12 @@ OCR 做完的那一轮不扣、全部翻完，再走和整本一次翻一样的�
   块 id、原文、模型、agent 版本有一样变了就清掉重来；断点指纹（`checkpoint/identity.py`）里也加了引擎和 agent 版本，`legacy` 的指纹不变。
 - 每页做完（`on_page` 回调）：单块用 `apply_revised_member_text` 写回，接续组再用 `apply_revised_unit_text` 重建整组字段（和改译文一样）；
   落盘、`checkpoint.update("translating", …)`（实时译文照常）、`translation_batches` 进度（按块计），每次真发出去的请求记一行用量台账。
+- 通读员定标题和书名的译法（`reader.py`）：原文相同的标题只问一次，书名（`document.title`）另交译名 `book_title`；
+  书名做标题、原文和已定标题一样的短块（书名页上被认成正文的大写书名、副标题、页眉章名）都用同一个译文（2026-11-20）。
 - 交给 agent 之前先把不该翻的块标成保留原文（`final_status=kept_origin`，不算没翻成）：被 OCR 认成标题的页眉（`skip_running_header`）、
   书后索引（`skip_back_matter_index`）、没有要翻的话的块（2026-11-20 用户定）——只有引注的（"35. Brown-Saracino 2014, 43."，
-  `skip_citation_only`），去掉公式、代码、角标、网址后一个英文词都没有的（纯数字、符号、网址、代码、整块公式，`skip_no_prose`）。
+  `skip_citation_only`），去掉公式、代码、角标、网址后一个英文词都没有的（纯数字、符号、网址、代码、整块公式，`skip_no_prose`；全大写的词四个字母以上才算词）。
+  标完当场存盘（整页都保留原文的页也存）。
   规则在 agent 核心的 `checks.nothing_to_translate`；以前翻好的书用 `python -m retainpdf_translation_agent_engine.reclassify <任务目录> [--apply]`
   把失败块按同一条规则改记，不用重翻。质检本来只查译好的块，失败、保留原文的块都不进 `qa_violations`。
 - agent 交回 `fallback_source` 的块：`mark_translation_failed_policy_state` + 死信诊断（`fallback_to=dead_letter_queue`，

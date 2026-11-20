@@ -63,6 +63,8 @@ READER_PROMPT = """你是学术翻译团队的通读员兼术语专员。正式�
    target 只写译法本身，**不带括号、不带原文、不带说明**；拿不准的不要收。
 5. headings：每个标题、目录条目（按 id）的译文。同一个标题在目录和正文里要一字不差；编号原样保留；
    简洁、像中文书的标题；术语用你在 terms 里定的译法。
+6. book_title：书名（document.title）的中文译名，不带书名号；书名就是某个标题时，那个标题的译文和它一字不差。
+   封面、书名页、页眉上的书名都按它统一。document.title 是空的就交空串。
 """
 
 READER_TOOL = {
@@ -97,8 +99,10 @@ READER_TOOL = {
                     "required": ["id", "translation"],
                 },
             },
+            "book_title": {"type": "string", "description": "书名的中文译名，不带书名号"},
         },
-        "required": ["genre", "name_policy", "style", "terms", "headings"],
+        # book_title 必填：可选时 haiku 常常不交（11-20 实测）
+        "required": ["genre", "name_policy", "style", "terms", "headings", "book_title"],
     },
 }
 
@@ -129,6 +133,8 @@ class Reading:
     style: str = ""
     terms: list[dict] = field(default_factory=list)
     headings: dict[str, str] = field(default_factory=dict)  # 块 id → 译文
+    book_title: str = ""  # 书名的中文译名（2026-11-20）：封面、书名页、页眉上的书名统一用它
+    title_source: str = ""  # 定译名时的原书名
     candidates: int = 0
 
     def to_dict(self) -> dict:
@@ -216,6 +222,19 @@ def candidate_phrases(pages: list[PageInput], *, limit: int = MAX_CANDIDATES) ->
     return out
 
 
+def same_text_key(text: str) -> str:
+    """判断「同一句原文」用：不分大小写、不计标点和空白（"THE INTERLOPER" 和 "The Interloper" 算一句）。"""
+    return " ".join(re.sub(r"[^\w\s]", " ", str(text or "").casefold()).split())
+
+
+def _title_keys(title: str) -> set[str]:
+    """书名和冒号前的主标题（"The Interloper: Inside …" 封面上常只印 "The Interloper"）。"""
+    keys = {same_text_key(title)}
+    main = re.split(r"\s*[:：]\s*", str(title or ""), maxsplit=1)[0]
+    keys.add(same_text_key(main))
+    return {key for key in keys if key}
+
+
 def heading_records(pages: list[PageInput]) -> list[dict]:
     out = []
     for page in pages:
@@ -239,6 +258,8 @@ SIDE_LINE_RE = re.compile(r"©|\bcopyright\b|\ball rights reserved\b|\bisbn\b|li
 # 长的书在正文里从哪几处开始取（按段数的比例），各取 limit / 3。第一处不从 0 开始：封底推荐语、作者介绍、出版说明
 # 这些前面的附属内容常常没有统一的标题，按标题排不干净（11-20 看了 4 本，从 0 开始取到的都是这些）
 SAMPLE_SPOTS = (0.08, 0.4, 0.7)
+# 同文同译只管短块（标题、书名、页眉这种），长段落不会和标题一字不差
+SAME_TEXT_MAX_WORDS = 16
 LONG_PARAGRAPH_WORDS = 60
 
 
@@ -288,7 +309,13 @@ def read_document(agent, pages: list[PageInput], *, document: dict | None = None
     from retainpdf_translation_agent.agent import ROLE_READER
 
     candidates = candidate_phrases(pages)
-    headings = heading_records(pages)
+    # 原文相同的标题只问一次（以前按块问，分批时封面、书名页、目录里同一句可能落在不同批，译法各不相同）
+    # 一组里有正文标题就拿它去问（目录条目跟着正文标题走）
+    groups: dict[str, list[dict]] = {}
+    for record in heading_records(pages):
+        groups.setdefault(same_text_key(record["text"]), []).append(record)
+    same_text = {key: [record["id"] for record in records] for key, records in groups.items()}
+    headings = [next((r for r in records if r["class"] != "toc_entry"), records[0]) for records in groups.values()]
     sample = sample_text(pages)
     reading = Reading(candidates=len(candidates))
     batches = max(1, -(-len(headings) // MAX_HEADINGS))
@@ -308,10 +335,13 @@ def read_document(agent, pages: list[PageInput], *, document: dict | None = None
             reading.name_policy = "transliterate" if data.get("name_policy") == "transliterate" else "keep"
             reading.style = str(data.get("style") or "")[:600]
             reading.terms = [t for t in data.get("terms") or [] if isinstance(t, dict) and t.get("source") and t.get("target")]
-        known = {h["id"] for h in headings}
+            reading.book_title = str(data.get("book_title") or "").strip().strip("《》").strip()
+            reading.title_source = str((payload["document"] or {}).get("title") or "").strip()
+        known = {h["id"]: h["text"] for h in headings}
         for item in data.get("headings") or []:
             if isinstance(item, dict) and item.get("id") in known and str(item.get("translation") or "").strip():
-                reading.headings[item["id"]] = str(item["translation"]).strip()
+                for block_id in same_text[same_text_key(known[item["id"]])]:
+                    reading.headings[block_id] = str(item["translation"]).strip()
     return reading
 
 
@@ -346,9 +376,13 @@ def apply_reading(reading: Reading, glossary, pages: list[PageInput]) -> list[Pa
         glossary.add(source, target, category=category, status="approved", scope=scope, reason="翻译前通读", note=str(item.get("note") or "")[:120])
 
     blocks = {b.id: b for p in pages for b in p.blocks}
+    title_keys = _title_keys(reading.title_source) if reading.book_title else set()
+    # 书名不进术语表：术语匹配不分大小写，书名是普通词组（"The Gift"）时会把正文里的 the gift 也锁成书名译法
     fixed: dict[str, str] = {}
     for block_id, translation in reading.headings.items():
         block = blocks.get(block_id)
+        if block is not None and same_text_key(block.text) in title_keys:
+            translation = reading.book_title  # 书名做标题时和书名译名一字不差
         # 标题丢了编号也不行（"1 The Ledger" 译成"账簿"）
         if block is not None and not any(i["severity"] == "error" or i["code"] == "number_lost" for i in check_block(block.text, translation)):
             fixed[block_id] = translation
@@ -356,6 +390,17 @@ def apply_reading(reading: Reading, glossary, pages: list[PageInput]) -> list[Pa
         target = blocks.get(block.relations.get("toc_target", "")) if block.cls == "toc_entry" else None
         if target is not None and target.id in fixed and " ".join(target.text.split()) == " ".join(block.text.split()):
             fixed[block.id] = fixed[target.id]
+    # 同文同译（2026-11-20）：原文和某个已定标题、或和书名一样的短块（书名页上被认成正文的大写书名 "THE INTERLOPER"、
+    # 页眉上的书名、章名），直接用同一个译文。《The Interloper》以前封面、目录是「闯入者」，书名页是「不速之客」。
+    by_text: dict[str, str] = {key: reading.book_title for key in title_keys}
+    for block_id, translation in fixed.items():
+        by_text.setdefault(same_text_key(blocks[block_id].text), translation)
+    for block in blocks.values():
+        if block.id in fixed or not block.translate or len(block.text.split()) > SAME_TEXT_MAX_WORDS:
+            continue
+        translation = by_text.get(same_text_key(block.text))
+        if translation and not any(i["severity"] == "error" for i in check_block(block.text, translation)):
+            fixed[block.id] = translation
     return [
         replace(page, blocks=[replace(b, fixed_translation=fixed[b.id]) if b.id in fixed and b.translate else b for b in page.blocks])
         for page in pages

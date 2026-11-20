@@ -68,18 +68,24 @@ def is_citation_only(text: str) -> bool:
     return bool(CITATION_ONLY_RE.match(FN_RE.sub(" ", text).strip()))
 
 
+# 「有要翻的英文词」：小写词，或四个字母以上的全大写词（书名页、目录的 "THE INTERLOPER"、"CONTENTS"）；
+# 三个字母的全大写（DNA、USA）多是缩写，不算。11-20 第一版只认小写词，全大写的书名、副标题、"CONTENTS" 都被当成没东西可翻
+_ANY_PROSE_WORD_RE = re.compile(r"\b(?:[A-Za-z][a-z]{2,}|[A-Z]{4,})\b")
+
+
 def nothing_to_translate(text: str) -> str:
     """整块没有要翻的话时给出原因，有要翻的返回空串（2026-11-20，用户定：这类块算「按设计保留原文」，不算没翻成）。
 
     - `skip_citation_only`：只有引注（"35. Brown-Saracino 2014, 43."、"Ibid., 45."）；
-    - `skip_no_prose`：去掉公式、行内代码、角标、引用编号、网址以后一个英文词都没有（纯数字、符号、网址、代码、整块公式）。
+    - `skip_no_prose`：去掉公式、行内代码、角标、引用编号、网址以后一个英文词都没有（纯数字、符号、网址、代码、整块公式；
+      全大写的词四个字母以上才算词）。
     原文有中文的不算（中文原稿另有规矩）。"""
     source = str(text or "")
     if not source.strip() or CJK_RE.search(source):
         return ""
     if is_citation_only(source):
         return "skip_citation_only"
-    if not PROSE_WORD_RE.search(URL_RE.sub(" ", _strip_protected(source))):
+    if not _ANY_PROSE_WORD_RE.search(URL_RE.sub(" ", _strip_protected(source))):
         return "skip_no_prose"
     return ""
 

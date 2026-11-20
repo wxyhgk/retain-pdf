@@ -561,3 +561,20 @@ def test_blocks_with_nothing_to_translate_keep_the_original_before_the_agent(tmp
     assert [(r["final_status"], r.get("skip_reason", "")) for r in rows] == [
         ("kept_origin", "skip_citation_only"), ("failed", ""), ("translated", "")
     ]
+
+
+def test_a_page_kept_whole_in_the_original_is_saved_as_kept(tmp_path: Path, fake_transport) -> None:
+    """整页都在交给 agent 之前标成保留原文（书后的注释页、索引页）：以前那一页不重新存盘，记录里还是「要翻、没状态」
+    （11-20《The Interloper》书后索引 95 块、书名页都这样）。"""
+    from dataclasses import replace as dc_replace
+
+    fake_transport(FakeModel())
+    request = _request(tmp_path)
+    document = json.loads(request.source_json_path.read_text(encoding="utf-8"))
+    document["pages"].append({"page_index": 2, "width": 600.0, "height": 800.0, "unit": "pt",
+                              "blocks": [_block(2, 0, "body", "35. Keenan 2013, xxiv.", [50, 100, 550, 130])]})
+    document["page_count"] = 3
+    request.source_json_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+    execute_translation_request(dc_replace(request, end_page=-1))
+    note = _pages(tmp_path / "translated")["p003-b000"]
+    assert (note["should_translate"], note["final_status"], note["skip_reason"]) == (False, "kept_origin", "skip_citation_only")
