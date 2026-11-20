@@ -483,16 +483,7 @@ fn blockers_on(conn: &Connection) -> Result<Vec<String>> {
     if jobs > 0 {
         out.push(format!("有 {jobs} 个任务在排队或运行"));
     }
-    let operations = count(
-        "SELECT COUNT(*) FROM document_operations WHERE status IN ('queued', 'running', 'validating')",
-    )?;
-    if operations > 0 {
-        out.push(format!("AI 正在改 {operations} 份文档"));
-    }
-    let calculations = count("SELECT COUNT(*) FROM agent_calculation_runs WHERE status = 'running'")?;
-    if calculations > 0 {
-        out.push(format!("AI 有 {calculations} 个计算没算完"));
-    }
+    // AI 改文档、AI 计算两张表 2026-11-20 删了（v31），不再看
     Ok(out)
 }
 

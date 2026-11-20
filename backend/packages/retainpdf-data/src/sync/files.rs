@@ -113,8 +113,6 @@ fn resolve_stored(data_root: &Path, stored: &str) -> Option<PathBuf> {
 const PATH_COLUMNS: &[(&str, &str)] = &[
     ("uploads", "stored_path"),
     ("job_artifact_entries", "relative_path"),
-    ("agent_calculation_artifacts", "relative_path"),
-    ("document_versions", "artifact_key"),
 ];
 
 /// 发出前数据目录下的路径都换成了 `{{data_root}}/…` 或本来就是相对路径；剩下的绝对路径、带 `..` 的路径
@@ -193,17 +191,6 @@ fn text<'a>(rows: &'a SyncRows, table: &str, column: &str) -> Option<&'a str> {
     rows.get(table)?.first()?.get(column)?.as_str()
 }
 
-/// 某张表每一行里记的文件路径(落在数据目录内的)。
-fn stored_paths(data_root: &Path, rows: &SyncRows, table: &str, column: &str) -> Vec<PathBuf> {
-    rows.get(table)
-        .map(Vec::as_slice)
-        .unwrap_or(&[])
-        .iter()
-        .filter_map(|row| row.get(column)?.as_str())
-        .filter_map(|stored| resolve_stored(data_root, stored))
-        .collect()
-}
-
 /// 一个实体现在在磁盘上的文件(绝对路径,排好序、去重)。
 pub(super) fn entity_files(data_root: &Path, kind: &str, key: &str, rows: &SyncRows) -> Result<Vec<PathBuf>> {
     let mut out = Vec::new();
@@ -216,33 +203,6 @@ pub(super) fn entity_files(data_root: &Path, kind: &str, key: &str, rows: &SyncR
             }
         }
         "document" => walk(&data_root.join("documents").join(key), &mut out)?,
-        "asset" => {
-            // assets/<前两位>/<哈希>.<扩展名>(扩展名按类型定,这里不重复那张表)。
-            if key.len() > 2 && key.is_ascii() {
-                let mut found = Vec::new();
-                walk(&data_root.join("assets").join(&key[..2]), &mut found)?;
-                out.extend(found.into_iter().filter(|path| {
-                    path.file_stem().and_then(|stem| stem.to_str()) == Some(key)
-                }));
-            }
-        }
-        "calculation" => {
-            walk(&data_root.join("agent-calculations").join(key), &mut out)?;
-            for path in stored_paths(data_root, rows, "agent_calculation_artifacts", "relative_path") {
-                if path.is_file() {
-                    out.push(path);
-                }
-            }
-        }
-        "operation" => {
-            // 每次尝试的工作目录:原文、改写程序、产出的 PDF、校验结果、日志。
-            walk(&data_root.join("operations").join(key), &mut out)?;
-            for path in stored_paths(data_root, rows, "document_versions", "artifact_key") {
-                if path.is_file() {
-                    out.push(path);
-                }
-            }
-        }
         "job" => {
             let job_dir = data_root.join("jobs").join(key);
             let mut found = Vec::new();

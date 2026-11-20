@@ -103,7 +103,18 @@ fn event_uid_is_backfilled_for_legacy_schema_and_migrations_are_idempotent() {
          -- 这里回退到 v13，所以 v14 之后的每一条迁移都会重跑一遍。SQLite 没有
          -- ADD COLUMN IF NOT EXISTS，凡是被重跑的加列迁移，都要在这里先撤掉，
          -- 否则第二次执行会以「列已存在」失败。新增迁移时记得跟上这一段。
-         ALTER TABLE ai_messages DROP COLUMN finish_reason;
+         -- v31（2026-11-20）删了 AI 留下的表和收藏；回到 v13 时它们还在，重跑的 v16（给 ai_messages 加列）、
+         -- v17 / v19（在它们身上挂同步触发器）要用到：按触发器用到的列补个骨架，v31 再删掉。
+         CREATE TABLE favorites(favorite_id TEXT PRIMARY KEY, document_id TEXT, job_id TEXT);
+         CREATE TABLE assets(asset_id TEXT PRIMARY KEY);
+         CREATE TABLE ai_conversations(conversation_id TEXT PRIMARY KEY, document_id TEXT);
+         CREATE TABLE ai_messages(message_id TEXT PRIMARY KEY, conversation_id TEXT);
+         CREATE TABLE agent_calculation_runs(calculation_id TEXT PRIMARY KEY);
+         CREATE TABLE agent_calculation_artifacts(artifact_id TEXT PRIMARY KEY, calculation_id TEXT);
+         CREATE TABLE document_operations(operation_id TEXT PRIMARY KEY, document_id TEXT);
+         CREATE TABLE document_operation_attempts(operation_id TEXT, attempt INTEGER);
+         CREATE TABLE document_operation_events(operation_id TEXT, seq INTEGER);
+         CREATE TABLE document_versions(version_id TEXT PRIMARY KEY, operation_id TEXT);
          DROP TRIGGER jobs_inherit_owner;
          DROP TRIGGER documents_inherit_owner;
          DROP INDEX idx_uploads_owner;

@@ -1,8 +1,7 @@
 pub use super::common::ApiResponse;
 pub use super::library::{
-    BlockSearchHit, CollectionRecord,
-    ConversationRecord,
-    DocumentRecord, FtsBlockRow, MessageRecord, };
+    BlockSearchHit, CollectionRecord, DocumentRecord, FtsBlockRow,
+};
 pub use super::public_contract::{public_request_payload, PublicResolvedJobSpec};
 pub use super::sync::{
     SyncMaintenanceView, SyncPeerView, SyncPendingItemView, SyncRunView, SyncSettingsInput, SyncStatusView,

@@ -188,11 +188,11 @@ Rust API layer stores:
     (`pipeline_attempts.auto_resume_count` / `auto_resume_progress`, migration
     v27, cap automatic resume without progress; see
     [jobs-retry-and-control.md](jobs-retry-and-control.md))
-  - `documents`, `favorites`, `collections`, `collection_documents`,
+  - `documents`, `collections`, `collection_documents`,
     `document_tags`, and `blocks_fts` for the library projection
-  - `ai_conversations` / `ai_messages`, `document_operations` (with attempts/events),
-    `document_versions`：以前 AI 对话和 Agent 文档操作用的表，2026-11-03 AI 服务删了以后表还留着，
-    不再有接口读写
+  - 以前 AI 对话、AI 计算、Agent 文档操作用的表（`ai_conversations` / `ai_messages`、`assets`、`agent_calculation_*`、
+    `document_operations` 及其 attempts / events、`document_versions`）和收藏 `favorites`：2026-11-20 迁移 v31 删了
+    （删前真实库里都是 0 行）
 - job workspaces in `DATA_ROOT/jobs/<job_id>/`
 - `DATA_ROOT/operations/<operation_id>/`：以前 Agent 文档操作的工作区，2026-11-03 起不再新建
 - the credential vault in the protected `DATA_ROOT/secrets/` subtree

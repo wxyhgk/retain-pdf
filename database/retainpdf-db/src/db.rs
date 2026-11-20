@@ -17,20 +17,14 @@ mod ownership;
 mod page_quota;
 #[path = "db/platform_settings.rs"]
 mod platform_settings;
-#[path = "db/agent_calculations.rs"]
-mod agent_calculations;
 #[path = "db/artifacts.rs"]
 mod artifacts;
 #[path = "db/backup.rs"]
 pub mod backup;
 #[path = "db/collections.rs"]
 mod collections;
-#[path = "db/conversations.rs"]
-mod conversations;
 #[path = "db/document_metadata_suggestions.rs"]
 mod document_metadata_suggestions;
-#[path = "db/document_operations.rs"]
-mod document_operations;
 #[path = "db/documents.rs"]
 pub mod documents;
 #[path = "db/event_feed.rs"]
@@ -136,31 +130,8 @@ pub struct JobProcessRecord {
     pub updated_at: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct AgentRuntimeSessionRecord {
-    pub conversation_id: String,
-    pub runtime_id: String,
-    pub session_cursor: String,
-    pub revision: u64,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum PutAgentRuntimeSessionResult {
-    Updated(AgentRuntimeSessionRecord),
-    RevisionConflict(AgentRuntimeSessionRecord),
-}
-
-pub use agent_calculations::{
-    AgentCalculationArtifactInput, AgentCalculationArtifactRecord, AgentCalculationRunCreate,
-    AgentCalculationRunRecord, AgentCalculationStatus, AgentCalculationTransitionResult,
-};
 pub use document_metadata_suggestions::{
     ApplyDocumentMetadataSuggestionResult, StoredDocumentMetadataSuggestion,
-};
-pub use document_operations::{
-    CommitDocumentCandidateResult, DocumentOperationEventRecord, DocumentVersionRecord,
-    StoredDocumentOperation, StoredDocumentOperationAttempt,
 };
 pub use event_feed::{
     EventSourceVersion, NewFeedItem, SourceEvent, StoredEventFeed, StoredFeedItem,
@@ -446,6 +417,33 @@ mod tests {
                 .to_string(),
         );
         job
+    }
+
+    #[test]
+    fn the_dead_tables_are_gone_after_the_migrations() {
+        // v31（2026-11-20）：RetainPDF 自己的 AI 留下的表和收藏删了；它们身上的同步触发器、索引也跟着没了，
+        // 书照常能写（documents 上没有指向它们的外键）
+        let fs = TestDbFs::new();
+        let db = fs.db();
+        db.init().expect("init db");
+        let conn = open_raw(&fs.db_path).expect("open sqlite");
+        let dead = [
+            "favorites", "assets", "ai_conversations", "ai_messages", "agent_calculation_runs",
+            "agent_calculation_artifacts", "document_operations", "document_operation_attempts",
+            "document_operation_events", "document_versions",
+        ];
+        for table in dead {
+            let left: i64 = conn
+                .query_row("SELECT COUNT(*) FROM sqlite_master WHERE tbl_name = ?1", params![table], |row| row.get(0))
+                .expect("query sqlite_master");
+            assert_eq!(left, 0, "{table} 和它的索引、触发器都该删了");
+        }
+        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+        conn.execute(
+            "INSERT INTO documents(document_id, title, source_filename, added_at, updated_at) VALUES('d1', 'Book', 'b.pdf', 't', 't')",
+            [],
+        )
+        .expect("documents still writable");
     }
 
     #[test]

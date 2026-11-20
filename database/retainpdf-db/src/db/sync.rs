@@ -43,14 +43,13 @@ pub const SYNC_KINDS: &[&str] = &[
     "document",
     "collection",
     "collection_member",
-    "favorite",
     "job",
     "glossary",
-    "asset",
-    "conversation",
-    "calculation",
-    "operation",
 ];
+
+/// 以前同步过、后来删掉的种类（2026-11-20 v31 删了 RetainPDF 自己的 AI 留下的表和收藏）。旧版本的设备还可能发来，
+/// 收到就当过时的改动忽略，不当成「新版本才有的种类」存着等升级（等不到）。
+pub const RETIRED_SYNC_KINDS: &[&str] = &["favorite", "asset", "conversation", "calculation", "operation"];
 
 /// 每种实体的登记版本。新增种类、或给已有种类加了表时调高:已经开过同步的设备下一轮把
 /// 这一种的现有内容全部重新登记一遍(没变的内容不会重发)。
@@ -59,25 +58,14 @@ pub const SYNC_SEED_VERSIONS: &[(&str, u32)] = &[
     ("document", 2),
     ("collection", 1),
     ("collection_member", 1),
-    ("favorite", 1),
     ("job", 1),
     ("glossary", 1),
-    ("asset", 1),
-    ("conversation", 1),
-    ("calculation", 1),
-    ("operation", 1),
 ];
 
-/// 只在本机有意义、不同步的列:AI 对话接着哪个本机会话进程往下聊(别的设备上没有这个
-/// 会话,从对话记录重建)。
+/// 只在本机有意义、不同步的列。以前是 AI 对话接着哪个本机会话进程往下聊（表 2026-11-20 删了），现在没有；
+/// 机制留着，以后有这种列加在这里。
 pub fn local_only_columns(table: &str) -> &'static [&'static str] {
     match table {
-        "ai_conversations" => &[
-            "agent_runtime_id",
-            "agent_session_cursor",
-            "agent_session_revision",
-            "agent_session_updated_at",
-        ],
         _ => &[],
     }
 }
@@ -93,7 +81,6 @@ pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'st
     const COLLECTION: &[(&str, &[&str])] = &[("collections", &["collection_id"])];
     const MEMBER: &[(&str, &[&str])] =
         &[("collection_documents", &["collection_id", "document_id"])];
-    const FAVORITE: &[(&str, &[&str])] = &[("favorites", &["favorite_id"])];
     const JOB: &[(&str, &[&str])] = &[
         ("jobs", &["job_id"]),
         ("artifacts", &["job_id"]),
@@ -106,33 +93,13 @@ pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'st
         ("events", &["job_id"]),
     ];
     const GLOSSARY: &[(&str, &[&str])] = &[("glossaries", &["glossary_id"])];
-    const ASSET: &[(&str, &[&str])] = &[("assets", &["asset_id"])];
-    const CONVERSATION: &[(&str, &[&str])] = &[
-        ("ai_conversations", &["conversation_id"]),
-        ("ai_messages", &["conversation_id"]),
-    ];
-    const CALCULATION: &[(&str, &[&str])] = &[
-        ("agent_calculation_runs", &["calculation_id"]),
-        ("agent_calculation_artifacts", &["calculation_id"]),
-    ];
-    const OPERATION: &[(&str, &[&str])] = &[
-        ("document_operations", &["operation_id"]),
-        ("document_operation_attempts", &["operation_id"]),
-        ("document_operation_events", &["operation_id"]),
-        ("document_versions", &["operation_id"]),
-    ];
     Some(match kind {
         "upload" => UPLOAD,
         "document" => DOCUMENT,
         "collection" => COLLECTION,
         "collection_member" => MEMBER,
-        "favorite" => FAVORITE,
         "job" => JOB,
         "glossary" => GLOSSARY,
-        "asset" => ASSET,
-        "conversation" => CONVERSATION,
-        "calculation" => CALCULATION,
-        "operation" => OPERATION,
         _ => return None,
     })
 }
@@ -845,11 +812,6 @@ impl Db {
         let (root, root_columns) = spec[0];
         match rows {
             None => {
-                if update.kind == "job" {
-                    // favorites → jobs 是 RESTRICT:先删本机挂在这个任务上的收藏
-                    // (发出删除的那台设备上它们也已经随任务删掉)。
-                    tx.execute("DELETE FROM favorites WHERE job_id = ?1", params![parts[0]])?;
-                }
                 for (table, columns) in spec.iter().skip(1).rev() {
                     tx.execute(
                         &format!("DELETE FROM \"{table}\" WHERE {}", where_clause(columns)),
