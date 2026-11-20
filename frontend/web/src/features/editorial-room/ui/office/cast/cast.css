@@ -1,0 +1,253 @@
+/* 2.5D 编辑部的角色（cast/Person、cast/Robot）：线描用墨色，衣服按角色取一种皮肤色（--tint）调出亮面和暗面。
+ * 三种样子：idle 衣服褪灰、眯眼、不动；busy 上色、睁眼；moving 再加眨眼和手上的动作。全走皮肤变量，五套皮肤跟着变。
+ *
+ * @owns office-cast */
+
+.office-cast {
+  --tint: var(--accent);
+  --hair: color-mix(in srgb, var(--ink) 88%, var(--paper));
+  --skin: color-mix(in srgb, var(--gold) 12%, var(--paper));
+  --cloth: color-mix(in srgb, var(--tint) 30%, var(--paper));
+  --cloth-shade: color-mix(in srgb, var(--tint) 48%, var(--line));
+}
+
+/* 三个人各一种颜色，取每套皮肤都有的语义色（经典皮肤的强调色就是墨色，不能拿来分人）。 */
+.office-cast.is-translator {
+  --tint: var(--danger);
+}
+
+.office-cast.is-reader {
+  --tint: var(--gold);
+  --hair: color-mix(in srgb, var(--gold) 40%, var(--ink));
+}
+
+.office-cast.is-reviewer {
+  --tint: var(--ok);
+  --hair: color-mix(in srgb, var(--ink) 70%, var(--muted));
+}
+
+.office-cast.is-idle {
+  --cloth: color-mix(in srgb, var(--line) 55%, var(--paper));
+  --cloth-shade: color-mix(in srgb, var(--line) 85%, var(--ink) 6%);
+}
+
+/* —— 线条和面 —— */
+
+.office-cast-stroke {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.office-cast-skin.office-cast-stroke {
+  fill: var(--skin);
+}
+
+.office-cast-hair {
+  fill: var(--hair);
+}
+
+.office-cast-parting {
+  fill: none;
+  stroke: color-mix(in srgb, var(--paper) 50%, var(--hair));
+  stroke-width: 0.8;
+}
+
+.office-cast-cloth.office-cast-stroke {
+  fill: var(--cloth);
+}
+
+.office-cast-cloth-shade {
+  fill: var(--cloth-shade);
+  opacity: 0.75;
+}
+
+.office-cast-hood {
+  fill: var(--cloth-shade);
+}
+
+.office-cast-shirt {
+  fill: var(--paper);
+}
+
+.office-cast-tie {
+  fill: color-mix(in srgb, var(--ink) 75%, var(--tint));
+}
+
+.office-cast.is-idle .office-cast-tie {
+  fill: var(--line);
+}
+
+.office-cast-stud {
+  fill: var(--ink);
+  stroke: none;
+}
+
+.office-cast-eye {
+  fill: var(--ink);
+}
+
+.office-cast-eye-shut {
+  display: none;
+}
+
+.office-cast.is-idle .office-cast-eye {
+  display: none;
+}
+
+.office-cast.is-idle .office-cast-eye-shut {
+  display: inline;
+}
+
+.office-cast-blush {
+  fill: var(--danger-weak);
+  opacity: 0.8;
+}
+
+.office-cast.is-idle .office-cast-blush {
+  opacity: 0;
+}
+
+.office-cast-paper.office-cast-stroke,
+.office-cast-paper {
+  fill: var(--paper);
+}
+
+.office-cast-ink.office-cast-stroke {
+  stroke: var(--muted);
+  stroke-width: 0.9;
+}
+
+.office-cast-pen {
+  fill: none;
+  stroke: var(--danger);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+}
+
+.office-cast-handle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.office-cast-glass.office-cast-stroke {
+  fill: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.office-cast-glint {
+  fill: none;
+  stroke: var(--paper);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+}
+
+.office-cast-headband.office-cast-stroke {
+  stroke: color-mix(in srgb, var(--ink) 75%, var(--tint));
+  stroke-width: 2.2;
+}
+
+.office-cast-phones rect {
+  fill: var(--tint);
+}
+
+.office-cast.is-idle .office-cast-phones rect {
+  fill: var(--line);
+}
+
+/* —— 机器人 —— */
+
+.office-cast.is-robot {
+  --shell: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  --shell-shade: color-mix(in srgb, var(--accent) 22%, var(--line));
+}
+
+.office-cast.is-robot.is-idle {
+  --shell: color-mix(in srgb, var(--line) 45%, var(--paper));
+  --shell-shade: color-mix(in srgb, var(--line) 90%, var(--ink) 5%);
+}
+
+.office-cast-shell.office-cast-stroke,
+.office-cast-claw.office-cast-stroke {
+  fill: var(--shell);
+}
+
+.office-cast-shell-shade {
+  fill: var(--shell-shade);
+  opacity: 0.7;
+}
+
+.office-cast-bolt.office-cast-stroke {
+  fill: var(--line);
+}
+
+.office-cast-screen {
+  fill: color-mix(in srgb, var(--ink) 86%, var(--accent));
+}
+
+.office-cast-led {
+  fill: var(--ok);
+}
+
+.office-cast-led-off {
+  display: none;
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.office-cast.is-idle .office-cast-led {
+  display: none;
+}
+
+.office-cast.is-idle .office-cast-led-off {
+  display: inline;
+}
+
+.office-cast-bulb.office-cast-stroke {
+  fill: var(--ok);
+}
+
+.office-cast.is-idle .office-cast-bulb.office-cast-stroke {
+  fill: var(--line);
+}
+
+.office-cast-panel-plate.office-cast-stroke,
+.office-cast-board.office-cast-stroke {
+  fill: var(--paper);
+}
+
+.office-cast-lamp {
+  fill: var(--line);
+}
+
+.office-cast.is-busy .office-cast-lamp.is-a,
+.office-cast.is-moving .office-cast-lamp.is-a {
+  fill: var(--ok);
+}
+
+.office-cast.is-busy .office-cast-lamp.is-b,
+.office-cast.is-moving .office-cast-lamp.is-b {
+  fill: var(--warn);
+}
+
+.office-cast.is-busy .office-cast-lamp.is-c,
+.office-cast.is-moving .office-cast-lamp.is-c {
+  fill: var(--accent);
+}
+
+.office-cast-base.office-cast-stroke {
+  fill: color-mix(in srgb, var(--ink) 18%, var(--paper));
+}
+
+.office-cast-wheel.office-cast-stroke {
+  fill: color-mix(in srgb, var(--ink) 55%, var(--paper));
+}
+
+.office-cast-wheel-shadow {
+  fill: color-mix(in srgb, var(--ink) 12%, transparent);
+}

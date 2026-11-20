@@ -11,18 +11,6 @@
   font-family: var(--font-sans);
 }
 
-/* 小人和机器人在场景里统一按 64 × 68 的画布摆放（缩放在 Sprite 的 transform 上）。 */
-.editorial-room-office .editorial-room-fig,
-.editorial-room-office .editorial-room-robot {
-  width: 64px;
-  height: 68px;
-}
-
-/* 小人画布里自带的那道桌沿线在场景里多余（场景有真的桌子）。 */
-.editorial-room-office .editorial-room-fig-desk {
-  display: none;
-}
-
 /* —— 房间 —— */
 
 .editorial-room-office-floor {

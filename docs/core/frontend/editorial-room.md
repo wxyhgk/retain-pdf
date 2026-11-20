@@ -34,6 +34,21 @@
   - 动画都是放完停在看不见的样子；整站「减弱动态效果」时动画收到瞬时，这些动作直接不出现，白板上的术语、纸堆、筐照常显示。
   - 样式在 `office/OfficeMoments.css` 和 `office/OfficeFiling.css`（定稿、白板写字）。
 - 小人和机器人都是自己画的线描 SVG；立体感靠同一个皮肤色的三档深浅（`color-mix`），五套皮肤都跟着变。
+- 角色和场景（2026-11-20 细化）：
+  - 三个人坐在椅子上、桌子挡住腰以下。通读员盘发、开衫、捧书翻页；译者乱发、戴耳机、连帽衫、两手敲键盘；审校侧分、圆眼镜、马甲领带、放大镜扫、拿红笔。
+  - 两个机器人是屏幕脸。调度高个，胸口三盏灯，举夹板；修订握红笔。
+  - 衣服各取一种每套皮肤都有的语义色：通读员金色，译者危险色，审校绿色。经典皮肤的强调色就是墨色，不能拿来分人。
+  - 角色分三种样子：闲着衣服褪灰、闭眼、不动；有活但任务停了就上色、睁眼、定格；在干就再加眨眼和手上的动作。
+  - 桌上各有东西：通读员书堆和茶杯，译者稿纸和笔记本，审校画了红线的稿子和台灯，修订稿纸和显示器。工位有活时笔记本和显示器的灯、台灯的光、茶杯的热气才亮。
+  - 场景里加了左墙的窗、右墙的钟、两块地毯、两盆绿植、地上的影子。
+- 代码分层（`ui/office/`），角色和家具都不读编辑部状态：
+  - `station-model.ts`：纯函数，从状态算出每个工位此刻的样子（忙不忙、动不动、牌子、悬停、手上哪页）和闸门灯。
+  - `stations.tsx`：工位表，写谁坐哪、坐不坐椅子、什么桌子、桌上摆什么，加一个工位就是加一行。`stationItems` 按表和样子拼出要画的东西。
+  - `cast/`：`Person`、`Robot`，只认角色和样子（idle / busy / moving），样式在 `cast.css`、`cast-motion.css`。
+  - `props/`：`Furniture`（椅背、影子、桌上的东西）和 `Decor`（窗、钟、地毯、绿植），只认位置，样式在 `props.css`。
+  - `fixtures.tsx`：闸门、档案柜、筐、筹备中的空桌和传送带上的稿纸。
+  - `EditorialOffice.tsx` 只按层从后往前拼。
+  - 调试视图的 `EditorialFigure`、`EditorialRobot` 留给调试视图用，全景不再借用。
 
 调试视图是 `EditorialRoom`，信息全：
 
@@ -71,6 +86,6 @@
 - 怎么读（`domain/live-feed.ts`）：`after` 带上次的 `next_after`，`has_more` 就接着取；`next_after` 比带去的 `after` 小说明事件文件重开了，从 0 重取，之前叠的状态作废。
 - `ui/useEditorialLive.ts`：任务在跑时每 3 秒取一次新的，收到 `run_done` 就停；不在跑时只读一次。读失败保留上一次的画面。
 - `ui/EditorialLivePanel.tsx`：没有事件时什么都不画；在跑时是用户视图跟着动；跑完 / 停下后停在最后的样子，可以点「回放这次翻译」。
-- 样式：主页入口 `src/styles/entries/home.css` 只引用户视图用到的几份（`EditorialMotion`、`EditorialStage`、`office/EditorialOffice`、`office/OfficeMoments`、`office/OfficeFiling`、`EditorialFigure`、`EditorialRobot`、`EditorialLivePanel`），调试视图不进主页。共用的动效在 `EditorialMotion.css`，两个入口都引。
+- 样式：主页入口 `src/styles/entries/home.css` 只引用户视图用到的几份（`EditorialMotion`、`EditorialStage`、`office/EditorialOffice`、`office/OfficeMoments`、`office/OfficeFiling`、`office/props/props`、`office/cast/cast`、`office/cast/cast-motion`、`EditorialLivePanel`），调试视图不进主页。共用的动效在 `EditorialMotion.css`，两个入口都引。
 
 回放用 `<EditorialRoomReplay events={events} />`：默认是用户视图、循环播放、没有按钮；加 `debug` 换成调试视图和回放按钮。按事件 `ts` 的间隔播放，每两条之间压在 0.52–1.8 秒，再按倍速（0.5×–4×）缩短。可以暂停、单步、拖进度条、从头播。

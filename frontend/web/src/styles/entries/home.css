@@ -153,8 +153,9 @@
 @import "../../features/editorial-room/ui/office/EditorialOffice.css" layer(pages);
 @import "../../features/editorial-room/ui/office/OfficeMoments.css" layer(pages);
 @import "../../features/editorial-room/ui/office/OfficeFiling.css" layer(pages);
-@import "../../features/editorial-room/ui/EditorialFigure.css" layer(pages);
-@import "../../features/editorial-room/ui/EditorialRobot.css" layer(pages);
+@import "../../features/editorial-room/ui/office/props/props.css" layer(pages);
+@import "../../features/editorial-room/ui/office/cast/cast.css" layer(pages);
+@import "../../features/editorial-room/ui/office/cast/cast-motion.css" layer(pages);
 @import "../../features/editorial-room/ui/EditorialLivePanel.css" layer(pages);
 @import "../pages/home/book-detail-processing/ocr-range.css" layer(pages);
 @import "../pages/home/book-detail-processing/failure-card.css" layer(pages);

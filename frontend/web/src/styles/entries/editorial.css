@@ -28,6 +28,9 @@
 @import "../../features/editorial-room/ui/office/EditorialOffice.css";
 @import "../../features/editorial-room/ui/office/OfficeMoments.css";
 @import "../../features/editorial-room/ui/office/OfficeFiling.css";
+@import "../../features/editorial-room/ui/office/props/props.css";
+@import "../../features/editorial-room/ui/office/cast/cast.css";
+@import "../../features/editorial-room/ui/office/cast/cast-motion.css";
 @import "../../features/editorial-room/ui/EditorialFloor.css";
 @import "../../features/editorial-room/ui/EditorialPageSheet.css";
 @import "../../features/editorial-room/ui/EditorialFigure.css";
