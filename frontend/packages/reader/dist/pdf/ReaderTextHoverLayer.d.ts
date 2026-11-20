@@ -20,8 +20,11 @@ export declare const READER_TEXT_HOVER_ID_CLASS = "reader-text-hover-id";
  */
 export declare function readerShowsItemIds(search?: string): boolean;
 export declare const READER_TEXT_HOVER_TOOLS_CLASS = "reader-text-hover-tools";
-/** 工具条放哪：框外右边 / 左边的页边（竖排，见 hover-presentation 的 hoverToolsPlacement），框里右上角，框外上方。 */
-export type HoverToolsPlacement = "side-right" | "side-left" | "inside" | "outside";
+/**
+ * 工具条放哪（hover-presentation 的 placeHoverTools 选）：框外右边 / 左边的页边（竖排）、框外上方（outside）、
+ * 框外下方（below）、框里最后一行的右边（tail，段尾空着的地方）；inside（框里右上角）只在没量位置时用。
+ */
+export type HoverToolsPlacement = "side-right" | "side-left" | "inside" | "outside" | "below" | "tail";
 /** 工具条（编号 + 复制）大约占的尺寸：放进框内放不下时才挪到框外上方。 */
 export declare const HOVER_TOOLS_HEIGHT = 26;
 export declare const HOVER_TOOLS_WIDTH = 220;
@@ -39,12 +42,16 @@ export declare function hoverToolsOutside(rect: ReaderRegionRect, toolsWidth?: n
  * 右栏复制译文 —— 这是 4.1.x 旧引擎里最常用的那个交互，React 引擎替换时丢了。
  * 只有这一种块级交互：双击 / 三击留给浏览器选词选段（以前双击会整块复制，把选词弄坏了）。
  */
-export declare function ReaderTextHoverLayer({ target, pane, revisedCount, onEdit, frameRect, placement, }: {
+export declare function ReaderTextHoverLayer({ target, pane, revisedCount, onEdit, frameRect, placement, compact, tailTop, }: {
     target: ReaderTextHoverTarget | null;
     /** 框画多大：贴着字的范围（不给就是原块）。 */
     frameRect?: ReaderRegionRect | null;
     /** 工具条放哪（不给按框的大小选框里 / 框外上方）。 */
     placement?: HoverToolsPlacement;
+    /** 地方小：按钮只画图标（名字在悬停提示和读屏里）。 */
+    compact?: boolean;
+    /** placement 是 tail 时，工具条离框顶多高（对齐最后一行）。 */
+    tailTop?: number;
     pane?: "source" | "translated";
     /** 这一块改过几次（精修、手改、助手改）；只在译文栏提示。 */
     revisedCount?: number;

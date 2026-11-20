@@ -27,14 +27,12 @@ import {
 } from "../shared/data/reader-regions.js";
 import {
   hitTestReaderTextHoverTarget,
-  HOVER_TOOLS_HEIGHT,
-  HOVER_TOOLS_WIDTH,
   projectReaderTextHoverTargets,
   READER_TEXT_HOVER_TOOLS_CLASS,
   ReaderTextHoverLayer,
 } from "./ReaderTextHoverLayer.js";
 import { EditedTranslationOverlay } from "./EditedTranslationOverlay.js";
-import { useHoverPresentation } from "./hover-presentation.js";
+import { inHoverToolsZone, useHoverPresentation } from "./hover-presentation.js";
 import { InkLayer } from "./InkLayer.js";
 import { READER_INLINE_EDIT_CLASS, ReaderInlineBlockEditor } from "./ReaderInlineBlockEditor.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
@@ -199,18 +197,8 @@ function PdfPageSlotInner({
     const hostRect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - hostRect.left;
     const y = event.clientY - hostRect.top;
-    // 工具条在框外上方时（矮 / 窄的块，比如行间公式），鼠标斜着走向按钮可能先经过上面
-    // 别的块。只在工具条自己那一小块范围里保持当前框 —— 以前保持的是框上方整条带，
-    // 紧贴在上面的短块（比如图注）从下面就再也悬停不到了。
-    const current = hoverPresentation?.rect;
-    if (
-      current
-      && hoverPresentation?.placement === "outside"
-      && x >= current.left - 4
-      && x <= current.left + HOVER_TOOLS_WIDTH
-      && y >= current.top - HOVER_TOOLS_HEIGHT
-      && y <= current.top
-    ) return;
+    // 工具条在框外上方 / 下方时，鼠标斜着走向按钮可能先经过别的块：在工具条那一小块范围里保持当前框。
+    if (inHoverToolsZone(hoverPresentation, hoverKind, x, y)) return;
     const target = hitTestReaderTextHoverTarget(textHoverTargets, x, y);
     setHoveredTextId(target?.itemId || null);
   };
@@ -360,6 +348,8 @@ function PdfPageSlotInner({
         onEdit={editBlock}
         frameRect={hoverPresentation?.rect}
         placement={hoverPresentation?.placement}
+        compact={hoverPresentation?.compact}
+        tailTop={hoverPresentation?.tailTop}
       />
     </div>
   );

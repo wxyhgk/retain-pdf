@@ -160,9 +160,8 @@ test("工具条：一般的块放框内右上角，只有矮 / 窄的块（行�
 test("只在框外工具条自己那一小块里保持当前框；不再保持整条带（紧贴上方的短块要能悬停到）", () => {
   const slot = readFileSync(new URL("../../../../frontend/packages/reader/src/pdf/PdfPageSlot.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(slot, /HOVER_TOOLS_BAND/);
-  // 只在工具条放框外上方（placement = outside）时才保持；页边、框里的工具条贴着框，不用保持。
-  assert.match(slot, /hoverPresentation\?\.placement === "outside"/);
-  assert.match(slot, /x <= current\.left \+ HOVER_TOOLS_WIDTH/);
+  // 只在工具条放框外上方 / 下方时才保持（hover-presentation 的 inHoverToolsZone）；页边、段尾的工具条贴着框，不用保持。
+  assert.match(slot, /if \(inHoverToolsZone\(hoverPresentation, hoverKind, x, y\)\) return;/);
   const css = readFileSync(new URL("../../../../frontend/packages/reader/styles/react-pdf.css", import.meta.url), "utf8");
   assert.match(css, /\.reader-text-hover-tools\[data-placement="inside"\]\s*\{[^}]*top:\s*4px/);
   assert.match(css, /\.reader-text-hover-tools\[data-placement="outside"\]\s*\{[^}]*bottom:\s*100%/);
@@ -189,18 +188,71 @@ test("「已复制」的定时器随换块清掉（A 上复制后马上换 B 复
   assert.match(layer, /\}, \[itemId\]\);/);
 });
 
-test("悬停工具条放页边：右边空得下放右边，右边挤（双栏的左栏）就放左边，两边都挤才回框里 / 框外上方", async () => {
-  const { hoverToolsPlacement } = await import("../../../packages/reader/src/pdf/hover-presentation.ts");
+test("「改」「复制」放框外不挡字：候选位置按顺序，先找不碰字也不进别的块的，再找不碰字的，都没有挑压字最少的", async () => {
+  const { placeHoverTools, inHoverToolsZone } = await import("../../../packages/reader/src/pdf/hover-presentation.ts");
+  const place = (frame, others, glyphs = [], pageWidth = 600, pageHeight = 800, kind = "text") =>
+    placeHoverTools({ frame, others, pageWidth, pageHeight, glyphs, kind });
   const para = { left: 100, top: 200, width: 400, height: 120 };
-  assert.equal(hoverToolsPlacement(para, [para], 600, 64), "side-right", "右边页边 100px");
-  const leftCol = { left: 40, top: 200, width: 250, height: 120 };
-  const rightCol = { left: 300, top: 180, width: 250, height: 200 };
-  assert.equal(hoverToolsPlacement(leftCol, [leftCol, rightCol], 600, 64), "inside", "左栏：右边只隔 10px、左边 40px，都放不下");
-  assert.equal(hoverToolsPlacement(rightCol, [leftCol, rightCol], 640, 64), "side-right", "右栏：右边页边 90px");
+  assert.deepEqual(place(para, [para]), { placement: "side-right", compact: false }, "右边页边 100px：完整按钮");
   const tight = { left: 300, top: 200, width: 300, height: 120 };
-  assert.equal(hoverToolsPlacement(tight, [tight, { left: 20, top: 500, width: 100, height: 20 }], 600, 64), "side-left", "右边贴页边、左边空 300px；不和它上下重叠的块不算");
+  assert.deepEqual(place(tight, [tight, { left: 20, top: 500, width: 100, height: 20 }]), { placement: "side-left", compact: false }, "右边贴页边、左边空 300px");
+  // 论文页边窄（40px）：放不下完整按钮，换图标版放页边，不进框里。
+  const narrow = { left: 40, top: 200, width: 520, height: 120 };
+  assert.deepEqual(place(narrow, [narrow]), { placement: "side-right", compact: true }, "页边 40px：图标版");
+  // 页边有字（页眉页脚、溢出块的译文）就不放那儿；竖排的页边印章不算字。
+  const stamp = { left: 570, top: 0, width: 12, height: 800 };
+  assert.deepEqual(place(narrow, [narrow], [stamp]), { placement: "side-right", compact: true }, "竖排印章不算字");
+  assert.deepEqual(place(narrow, [narrow], [{ left: 562, top: 210, width: 30, height: 12 }, { left: 2, top: 210, width: 30, height: 12 }]),
+    { placement: "outside", compact: false }, "两边页边都有字：放上方");
+
+  // 两边贴页边：看上下、段尾。框贴着字（两行字，200–250）。
+  const block = { left: 8, top: 200, width: 584, height: 50 };
+  const aboveBlock = { left: 8, top: 100, width: 584, height: 99 };
+  const belowBlock = { left: 8, top: 251, width: 584, height: 90 };
+  const neighbours = [block, aboveBlock, belowBlock];
+  const aboveText = { left: 10, top: 180, width: 580, height: 18 };
+  const belowText = { left: 10, top: 252, width: 580, height: 18 };
+  const line1 = { left: 10, top: 203, width: 580, height: 20 };
+  assert.deepEqual(place(block, neighbours, [line1, { left: 10, top: 226, width: 300, height: 20 }]), { placement: "outside", compact: false },
+    "上一块最后一行在 180 以上就是空的：上方那条落在上一块的空白里，不碰字，可以");
+  assert.deepEqual(place(block, neighbours, [aboveText, belowText, line1, { left: 10, top: 226, width: 300, height: 20 }]),
+    { placement: "tail", compact: false, tailTop: 22 }, "上下都贴着字：最后一行只到 310，段尾放完整按钮");
+  assert.deepEqual(place(block, neighbours, [aboveText, belowText, line1, { left: 10, top: 226, width: 520, height: 20 }]),
+    { placement: "tail", compact: true, tailTop: 22 }, "段尾只空 62px：图标版");
+  // 缩小看：一行只有 9px 高，工具条（24px）放段尾会压到上一行 —— 整条查，压到就不放。
+  const small = { left: 8, top: 200, width: 584, height: 20 };
+  const smallLines = [{ left: 10, top: 201, width: 578, height: 9 }, { left: 10, top: 210, width: 200, height: 9 }];
+  const crowd = [{ left: 10, top: 182, width: 580, height: 16 }, { left: 70, top: 222, width: 520, height: 16 }];
+  assert.deepEqual(place(small, [small], [...smallLines, ...crowd]), { placement: "below", compact: true },
+    "段尾会压上一行、上方贴着字；下方那行从 70 开始（缩进）：放下方图标版（52px 宽，不碰字）");
+  const nearEdge = { left: 8, top: 200, width: 568, height: 50 };
+  const fullLine = [line1, { left: 10, top: 226, width: 560, height: 20 }];
+  assert.deepEqual(place(nearEdge, [nearEdge], [...fullLine, aboveText, belowText]), { placement: "side-right", compact: true },
+    "右边页边 24px：图标版伸出页边一点点");
+  // 哪都碰字：挑压字最少的。
+  const everywhere = [aboveText, belowText, ...fullLine, { left: 0, top: 150, width: 7, height: 150 }];
+  assert.deepEqual(place(block, [block], [...everywhere, { left: 10, top: 252, width: 30, height: 18 }]).compact, true, "只在图标版里挑");
   const formula = { left: 10, top: 300, width: 580, height: 30 };
-  assert.equal(hoverToolsPlacement(formula, [formula], 600, 84), "outside", "矮的行间公式两边都挤：框外上方");
+  assert.deepEqual(place(formula, [formula], [], 600, 800, "formula"), { placement: "outside", compact: false }, "矮的行间公式两边都挤：框外上方");
+
+  // 保持区：只在框外上方 / 下方那一小条里。
+  const shown = { rect: block, placement: "below", compact: false };
+  assert.equal(inHoverToolsZone(shown, "text", 20, 255), true, "框下方工具条那儿");
+  assert.equal(inHoverToolsZone(shown, "text", 300, 255), false, "框下方别处不保持");
+  assert.equal(inHoverToolsZone({ ...shown, placement: "side-right" }, "text", 20, 255), false, "页边的工具条贴着框，不用保持区");
+});
+
+test("图标版：「改」「复制」只画图标，名字在 aria-label / title；段尾的工具条对齐最后一行", () => {
+  const markup = renderToStaticMarkup(createElement(ReaderTextHoverLayer, {
+    target: target("translated"), pane: "translated", onEdit: () => {}, placement: "tail", compact: true, tailTop: 27, revisedCount: 2,
+  }));
+  assert.match(markup, /data-placement="tail"/);
+  assert.match(markup, /data-compact="true"/);
+  assert.match(markup, /style="top:27px"/);
+  assert.match(markup, /aria-label="改这段译文"[^>]*title="改这段译文（E；改过 2 次）"/);
+  assert.match(markup, /aria-label="复制这段译文"[^>]*title="复制"/);
+  assert.doesNotMatch(markup, />改</, "不写字");
+  assert.doesNotMatch(markup, /改过 2 次<\/span>/, "图标版不出「改过几次」的字，放进提示里");
 });
 
 test("悬停框贴着字：取中心落在块里的字的并集，留 3px，不超出原块；没有字、字太少照原块", async () => {
