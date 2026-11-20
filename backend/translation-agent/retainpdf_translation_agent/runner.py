@@ -343,8 +343,11 @@ class DocumentRun:
         results: dict[str, BlockResult] = {}
         title = str((pages[0].document or {}).get("title") or "") if pages else ""
         previous: list[dict] = []
-        seen_names: set[str] = set()
-        names = [t.source for t in glossary.terms.values() if t.category == NAME]
+        seen_names: set[str] = set()  # 前面几节出现过的人名、缩写（原文写法）：后面的节只写中文译名、只写缩写
+        story: dict[str, list[str]] = {}  # 章 → 各节的一句话梗概（译者附的「@@ 梗概」）
+
+        def saved_summary(key: str) -> str:
+            return str((json.loads(self._path("pages", f"{key}.json").read_text(encoding="utf-8")).get("info") or {}).get("summary") or "")
 
         def load_page(key: str) -> dict[str, BlockResult]:
             return {
@@ -356,14 +359,18 @@ class DocumentRun:
             keys = [f"{index:04d}" for index in range(start, end)]
             section_pages = pages[start:end]
             todo = [index for index, key in zip(range(start, end), keys) if key not in done]
+            chapter = section_pages[-1].chapter
+            summary = ""
             if not todo:
                 outcome_by_page = {index: load_page(f"{index:04d}") for index in range(start, end)}
+                summary = saved_summary(keys[0])
             else:
                 calls_before = len(self.agent.calls)
                 for index in todo:
                     self._event_page = index + 1
                     self._event("page_started", page=self._event_page, label=pages[index].page_label, blocks=len(pages[index].to_translate()))
                 self._event_page = todo[0] + 1
+                changes_before = len(glossary.changes)
                 try:
                     outcome = translate_section(
                         self.agent,
@@ -374,13 +381,16 @@ class DocumentRun:
                         previous=previous,
                         seen_names=seen_names,
                         review=bool(self.review),
+                        story=story.get(chapter, []),
                     )
                 except StopRun as stop:
                     self._log_calls(pages[todo[0]], f"{todo[0]:04d}", {}, calls_before)
                     self._stopped(pages[todo[0]], f"{todo[0]:04d}", stop, done, len(pages))
                     return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
                 self._log_calls(pages[todo[0]], f"{todo[0]:04d}", {}, calls_before)
-                self._ledger("section", pages=[pages[i].page_label for i in todo], paragraphs=outcome.info["paragraphs"], attempts=outcome.info["attempts"], fallback=outcome.info["fallback"])
+                self._save_glossary(glossary, changes_before)
+                summary = str(outcome.info.get("summary") or "")
+                self._ledger("section", pages=[pages[i].page_label for i in todo], paragraphs=outcome.info["paragraphs"], attempts=outcome.info["attempts"], fallback=outcome.info["fallback"], learned=outcome.info.get("learned"))
                 report = outcome.info.get("review")
                 if report is not None:
                     # 审校在整节一次（请求时就审完了），事件补在翻译之后，页号记这一节的第一页
@@ -413,8 +423,12 @@ class DocumentRun:
                 results.update(page_results)
                 if on_page is not None:
                     on_page(index, pages[index], page_results)
+            if summary:
+                story.setdefault(chapter, []).append(summary)
             text = " ".join(b.text for p in section_pages for b in p.to_translate())
-            seen_names |= {n for n in names if term_pattern(n, NAME).search(text)}
+            # 每节重新取：前面几节学到的人名、缩写也算（11-20 以前只取开头通读定的人名）
+            known = [(t.source, t.category) for t in glossary.terms.values() if t.category in (NAME, ABBR)]
+            seen_names |= {source for source, category in known if term_pattern(source, category).search(text)}
             previous = [
                 {"source": b.text, "translation": results[b.id].translation}
                 for p in section_pages

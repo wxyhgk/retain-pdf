@@ -15,6 +15,7 @@ import re
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
+from dataclasses import fields
 
 TERM = "term"  # 专业术语：有译法
 KEEP = "keep"  # 保留原文：人名、机构、期刊、软件，译文里原样出现
@@ -58,6 +59,7 @@ class Term:
     version: int = 0  # 这一条最后一次变动时表的版本
     note: str = ""
     chapters: list[str] = field(default_factory=list)  # 报过、用过它的章；空 = 不按章限（用户给的、程序加的）
+    zh_full: str = ""  # 缩写的中文全称（"TSA" → "运输安全管理局"），按节翻时译者报上来的第一个；全书第一次写"中文全称（缩写）"
 
     @property
     def binding(self) -> bool:
@@ -79,7 +81,8 @@ class Term:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Term":
-        return cls(**data)
+        known = {f.name for f in fields(cls)}
+        return cls(**{k: v for k, v in data.items() if k in known})
 
     def for_context(self, chapter: str = "") -> dict:
         """放进上下文包里的样子：只给模型用得上的。在这一章不必照用的审定条目显示成候选。"""
@@ -216,7 +219,7 @@ class Glossary:
 
     def propose(self, source: str, target: str, *, category: str, block_id: str, page: str, chapter: str, quote: str) -> str:
         """译者报上的译法。返回 agreed（和定好的一致）、candidate（记成候选）、promoted（升成审定）、conflict（记了歧义单）。"""
-        if category not in (TERM, KEEP):
+        if category not in (TERM, KEEP, NAME):
             category = TERM
         if category == KEEP:
             target = source
@@ -235,6 +238,21 @@ class Glossary:
             self.terms[current.id] = current
             self._bump(current, "candidate", f"第 {page} 页 {block_id} 报上")
         return self._vote(current, target, block_id, page, quote, chapter)
+
+    def learn_abbreviation(self, abbr: str, zh_full: str, *, page: str, block_id: str) -> str:
+        """译者报上缩写的中文全称（按节翻的「@@ 新词」）：已有这条缩写、还没有中文全称的记上；没有这条缩写的新加一条（候选）。
+        已经有中文全称的不改，全书照第一次定下的写（11-20《The Interloper》AGVA 三节三种译法）。返回 set / kept / added。"""
+        term = self.find(abbr, "", category=ABBR)
+        if term is None:
+            term = Term(self._new_id(ABBR), abbr, abbr, ABBR, [], CANDIDATE, {"page": page, "quote": ""}, zh_full=zh_full)
+            self.terms[term.id] = term
+            self._bump(term, "candidate", f"第 {page} 页 {block_id} 报上缩写，中文全称「{zh_full}」")
+            return "added"
+        if term.zh_full:
+            return "kept"
+        term.zh_full = zh_full
+        self._bump(term, "revise", f"第 {page} 页 {block_id} 定了中文全称「{zh_full}」")
+        return "set"
 
     def declare_exception(self, source: str, used: str, *, block_id: str, page: str, chapter: str, quote: str, reason: str) -> str:
         """译者声明：这一处意思不同，没照用定好的译法。同一章同一个例外译法报够两次，加一条只管这一章的审定术语。"""
