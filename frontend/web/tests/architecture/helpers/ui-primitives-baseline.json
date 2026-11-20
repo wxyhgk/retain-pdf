@@ -405,7 +405,7 @@
     },
     "src/features/ingest/ui/components/upload/UploadDropzone.css": {
       "fontSize": 5,
-      "borderRadius": 7
+      "borderRadius": 5
     },
     "src/features/ingest/ui/components/upload/UploadWorkflowNotices.css": {
       "fontSize": 2,

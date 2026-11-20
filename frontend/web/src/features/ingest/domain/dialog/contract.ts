@@ -27,6 +27,6 @@ export const TRANSLATION_WORKFLOW_DIALOG = {
   copy: {
     statusTitle: "任务进度",
     uploadTitle: "添加 PDF",
-    uploadDescription: "上传后可直接翻译，或只收藏到书架。",
+    uploadDescription: "上传后翻译、只做 OCR，或先收进书架。",
   },
 };
