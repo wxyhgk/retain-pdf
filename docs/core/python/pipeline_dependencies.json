@@ -476,6 +476,7 @@
         "devtools/tests/rendering/test_visual_profile.py",
         "devtools/tests/rendering_support/prewarm_fixtures.py",
         "devtools/tests/source_cleanup_rects.py",
+        "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_domain_prewarm.py"
       ],
       "runtime_required": true,
