@@ -34,10 +34,12 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   一节一次请求、模型只当译者（`SECTION_NARRATIVE_PROMPT`），按段号对回（同一编号写了几次以最后一次为准；抄回来的 § 行、没有汉字的英文说明去掉）、
   还原占位、查标记，漏的重交一次，不行的段退回逐块翻；合过的段切回各块。章号块（CHAPTER TWO、PART ONE）由程序换成「第二章」「第一部分」，不交给模型。
   原稿里引号括起来的 2–6 个词的说法由程序单列在请求里，让模型逐个判断是不是别的学科的固定术语（foot in the door 是「登门槛」，2026-11-20）。
+  回答写到上限或最后一段没写完（`cut_paragraph`）的段重交；取术语按这一节所在的章（2026-11-20）。
   两次都没交好的段退回逐块翻时只带前后各两段作上下文，配上术语、人名、文风（`fallback_page`，2026-11-20）。
   `review=True` 时整节对照原文审一次意思（只收意思类单子，不做文笔那一轮）。只管人文社科、通俗读物；正式流程 2026-11-19 起默认按节
   （`agent_flow.agent_structure`，`RETAIN_AGENT_STRUCTURE=page` 退回逐页），`DocumentRun` 自己的默认仍是逐页。
   见 `docs/ops/planning/translation-agent/20261119-按节翻译.md`、`20261119-按节翻译后的审校.md`。
+- `checks.py` 的 `normalize_translation`（按节、逐页都走）：价格的 `$` 转义成 `\$`、直引号换中文引号；只有引注的块（作者、年份、页码）原样交回不算没翻（2026-11-20）。
 - `typography.py`：原文排版造成的误读，调度开头修掉（2026-11-19）：正文段落开头的章首小型大写（OCR 成全大写，"CATCH," HE CALLED）还原成句首大写。
 - `checks.py`：逐块校验（漏交、空、`$` 成对（公式内容不和原文比）、引用和脚注标记、数字、没翻、截断）；术语校验（定好的译法、保留原文、缩写）；语气信号（表示保留的词、第一人称，只记 info 算指标）。
   判对判错的规则改了升 `CHECKS_VERSION`，

@@ -29,6 +29,7 @@ from retainpdf_translation_agent.checks import CJK_RE
 from retainpdf_translation_agent.checks import CODE_RE
 from retainpdf_translation_agent.checks import FORMULA_RE
 from retainpdf_translation_agent.checks import check_block
+from retainpdf_translation_agent.checks import normalize_translation
 from retainpdf_translation_agent.checks import status_of
 from retainpdf_translation_agent.contract import BlockInput
 from retainpdf_translation_agent.contract import BlockResult
@@ -42,7 +43,7 @@ from retainpdf_translation_agent.memory import term_pattern
 from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
-SECTION_VERSION = "agent-section-4"
+SECTION_VERSION = "agent-section-5"
 FALLBACK_NEIGHBORS = 2  # 退回逐块翻时，每段前后各带几段作上下文
 # 一节最多多少英文词（到了就在下一页开头断）；不到 MIN 遇到标题也不断，免得一页一节。
 SECTION_MAX_WORDS = 2500
@@ -273,6 +274,10 @@ def _strip_notes(body: str) -> tuple[str, list[str]]:
             dropped.append(stripped)
             continue
         kept.append(line)
+    if dropped and not any(CJK_RE.search(line) for line in kept):
+        # 去掉以后一个汉字都不剩：整段本来就是该保留英文的（书目、引注），不是模型写的说明（11-20 尾注页整段被当说明删掉、判成漏交）
+        kept = [line for line in body.split("\n") if not line.strip().startswith("§")]
+        dropped = []
     text = re.sub(r"\n{3,}", "\n\n", "\n".join(kept)).strip()
     return text, dropped
 
@@ -296,6 +301,27 @@ def parse_section(text: str) -> dict[int, str]:
     return parse_section_notes(text)[0]
 
 
+FN_PLAIN_RE = re.compile(r"\{\{fn:[^}]+\}\}|\[\d+(?:\s*[,–-]\s*\d+)*\]")
+SOURCE_END_RE = re.compile(r"[.!?…:;\"'”’)\]]\s*$")
+CLOSED_END_RE = re.compile(r"[。！？…：；.!?:;”’」』）)\]—\"'*]\s*$|⟧\s*$|\}\}\s*$|\$\s*$")
+
+
+def cut_paragraph(found: dict[int, str], sources: dict[int, str], *, hit_limit: bool) -> int | None:
+    """这次回答是不是在最后一段中间断了：返回那一段的编号，没断返回 None。
+    只看编号最大的那段：写到 max_tokens 就算断；拿不到截断标志（OpenAI 协议的共用请求层只交回文本）时，
+    原文那段是整句收尾、译文却没有收尾的标点，也算断。11-20 以前按节翻不看截断，半截译文只要不短于原文 15% 就收下。"""
+    if not found:
+        return None
+    last = max(found)
+    if hit_limit:
+        return last
+    source = FN_PLAIN_RE.sub("", sources.get(last, "")).strip()
+    text = FN_PLAIN_RE.sub("", found[last]).strip()
+    if source and SOURCE_END_RE.search(source) and text and not CLOSED_END_RE.search(text):
+        return last
+    return None
+
+
 def restore(paragraph: Paragraph, translation: str) -> tuple[str, list[dict]]:
     """占位换回原文写法；少了、多了、重复的占位报 error（这一段要重交）。"""
     issues: list[dict] = []
@@ -307,28 +333,26 @@ def restore(paragraph: Paragraph, translation: str) -> tuple[str, list[dict]]:
     if extra:
         issues.append({"code": "placeholder_extra", "severity": "error", "message": f"多出或重复的占位：{extra}"})
     restored = PLACEHOLDER_RE.sub(lambda m: paragraph.placeholders.get(m.group(1), m.group(0)), translation)
-    return restored, issues
+    return normalize_translation(restored), issues
 
 
-def section_terms(glossary: Glossary, text: str) -> list:
-    """这一节原文里出现的术语表条目（审定、锁定、候选），最多 MAX_TERMS 条。"""
-    found = []
-    for term in glossary.terms.values():
-        if not term.source or not term.target:
-            continue
-        if term.status not in BINDING and term.status != CANDIDATE:
-            continue
-        if term_pattern(term.source, term.category).search(text):
-            found.append(term)
-            if len(found) >= MAX_TERMS:
-                break
-    return found
+def section_terms(glossary: Glossary, text: str, chapters: list[str] | None = None) -> list:
+    """这一节原文里出现、适用于这一节所在章的术语表条目（审定、锁定、候选），最多 MAX_TERMS 条。
+    `chapters`：这一节跨的章（一般一章）。按章限的条目只在它管的章里给，同一个词有几条时取最该用的那条（`Glossary.lookup`）；
+    11-20 以前不看章，按章的译法在别的章也被强推。"""
+    found: dict[str, object] = {}
+    for chapter in chapters or [""]:
+        for term in glossary.lookup(text, chapter):
+            if not term.source or not term.target or (term.status not in BINDING and term.status != CANDIDATE):
+                continue
+            found.setdefault(term.id, term)
+    return list(found.values())[:MAX_TERMS]
 
 
-def relevant_terms(glossary: Glossary, text: str, *, seen_names: set[str]) -> list[str]:
+def relevant_terms(glossary: Glossary, text: str, *, seen_names: set[str], chapters: list[str] | None = None) -> list[str]:
     """这一节原文里出现的人名、术语、缩写、保留原文的专名，一行一条。"""
     lines: list[str] = []
-    for term in section_terms(glossary, text):
+    for term in section_terms(glossary, text, chapters):
         line = f"- {term.source} → {term.target}"
         if term.note:
             line += f"（{term.note}）"
@@ -386,7 +410,8 @@ def translate_section(
         fixed = {b.id: BlockResult(b.id, b.fixed_translation, [], 0, "ok", [], {"structure": "section", "fixed": True}) for b in units.fixed()}
         return SectionOutcome(split_units(fixed, groups), {"structure": "section", "section": combined.page_label, "pages": [p.page_label for p in pages], "paragraphs": 0, "attempts": 0, "fallback": [], "terms": 0})
     section_text = " ".join(p.unit.text for p in paragraphs)
-    terms = relevant_terms(glossary, section_text, seen_names=set(seen_names or ()))
+    chapters = list(dict.fromkeys(page.chapter for page in pages)) or [""]
+    terms = relevant_terms(glossary, section_text, seen_names=set(seen_names or ()), chapters=chapters)
 
     system = SECTION_NARRATIVE_PROMPT
     if title:
@@ -410,6 +435,8 @@ def translate_section(
     label = f"agent-translate section {combined.page_label}"
     ids = [p.unit.id for p in paragraphs]
 
+    stop: dict[str, str] = {}
+
     def ask(attempt: int) -> str:
         body = {
             "model": agent.model_for(ROLE_TRANSLATOR),
@@ -420,6 +447,7 @@ def translate_section(
         if agent.effort:
             body.update(thinking={"type": "adaptive"}, output_config={"effort": agent.effort})
         response = agent._call(body, label=label if attempt == 1 else f"{label} retry", role=ROLE_TRANSLATOR, event={"attempt": attempt, "blocks": ids})
+        stop["reason"] = str(response.get("stop_reason") or "")
         content = response.get("content") or []
         messages.append({"role": "assistant", "content": content})
         return "".join(part.get("text") or "" for part in content if part.get("type") == "text")
@@ -428,6 +456,7 @@ def translate_section(
 
     def take(answer: str) -> list[Paragraph]:
         found, notes = parse_section_notes(answer)
+        cut = cut_paragraph(found, {p.n: p.unit.text for p in paragraphs}, hit_limit=stop.get("reason") == "max_tokens")
         failed: list[Paragraph] = []
         for paragraph in paragraphs:
             if paragraph.n in translations and status_of(translations[paragraph.n][1]) != "error":
@@ -439,6 +468,8 @@ def translate_section(
                 continue
             restored, issues = restore(paragraph, text)
             issues += check_block(paragraph.unit.text, restored)
+            if paragraph.n == cut:
+                issues.append({"code": "truncated", "severity": "error", "message": "回答在这一段中间断了（写到上限或没写完），要重交"})
             if notes.get(paragraph.n):
                 issues.append({"code": "model_note_dropped", "severity": "warn", "message": f"去掉了模型写进译稿的说明：{notes[paragraph.n][:2]}"})
             translations[paragraph.n] = (restored, issues)
@@ -483,7 +514,7 @@ def translate_section(
 
         bound = [
             {"source": t.source, "target": t.target, "status": t.status, "category": t.category}
-            for t in section_terms(glossary, section_text)
+            for t in section_terms(glossary, section_text, chapters)
             if t.status in BINDING
         ]
         review_report = review_page(agent, replace(units, context={"style": style, "terms": bound}), results, accuracy_only=True)

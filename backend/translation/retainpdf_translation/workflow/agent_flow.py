@@ -49,6 +49,7 @@ from retainpdf_translation.core.payload.parts.common import is_group_unit_id
 from retainpdf_translation.core.payload.parts.diagnostics import record_translation_diagnostics
 from retainpdf_translation.core.payload.parts.formula_gaps import formulas_between
 from retainpdf_translation.core.payload.parts.policy_state import mark_translation_failed_policy_state
+from retainpdf_translation.core.payload.parts.policy_state import mark_policy_skip
 from retainpdf_translation.llm.shared.control_context import TranslationControlContext
 from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared.model_wire import anthropic_usage
@@ -63,6 +64,7 @@ from retainpdf_translation_agent import EVENTS_FILE
 from retainpdf_translation_agent import STATUS_FALLBACK_SOURCE
 from retainpdf_translation_agent import BlockInput
 from retainpdf_translation_agent import BlockResult
+from retainpdf_translation_agent.checks import escape_currency
 from retainpdf_translation_agent import DocumentRun
 from retainpdf_translation_agent import PageInput
 from retainpdf_translation_agent import TranslationAgent
@@ -108,7 +110,8 @@ HEADING_NUMBER_RE = re.compile(r"^\s*(\d+(?:\.\d+)*)\s+\S")
 # 只认正整数、列表、范围（"34""2-6""40,52,53"）。负数是单位的指数（"mL $ ^{-1} $"），紧跟在数字、单位后面的是乘方
 # （"10 $ ^{5} $""mm $ ^{3} $"），都留着当公式：2026-10-31 一篇 ACS 论文 Methods 里的 "ng mL $ ^{-1} $" 被换成 {{fn:-1}}，
 # 模型写回 $^{-1}$、校验报"脚注标记丢了"，重翻两次一样，6 段整段退回原文
-CITATION_SUPERSCRIPT_RE = re.compile(r"\$\s*\^\s*\{\s*([1-9]\d*(?:\s*[,–-]\s*[1-9]\d*)*)\s*\}\s*\$")
+# OCR 有时在多位数中间加空格（"$ ^{1 1} $" 是 11，11-20《The Interloper》两处漏成原样）：数字之间允许一个空格
+CITATION_SUPERSCRIPT_RE = re.compile(r"\$\s*\^\s*\{\s*([1-9](?: ?\d)*(?:\s*[,–-]\s*[1-9](?: ?\d)*)*)\s*\}\s*\$")
 EXPONENT_BEFORE_RE = re.compile(r"(?:\d|(?<![A-Za-z])(?:[kcmnpµμ]?m|[mµμ]?L|[mµμk]?g|mol|[mµμn]?M|s|min|h|Hz|Pa|cm|nm|K|°C|Å))\s*\$?\s*$")
 FN_TOKEN_RE = re.compile(r"\{\{fn:([^{}]+)\}\}")
 
@@ -184,8 +187,8 @@ def _where(item: dict, size: tuple[float, float] | None, label: str) -> str:
 
 
 def _agent_text(item: dict, cls: str) -> tuple[str, dict[str, str]]:
-    """交给 agent 的原文和换掉的角标（脚注标记 → 原来的公式写法）。"""
-    text = _block_source(item)
+    """交给 agent 的原文和换掉的角标（脚注标记 → 原来的公式写法）。价格里的 `$`（"$12.59"）写成反斜杠加美元符，不当公式边界。"""
+    text = escape_currency(_block_source(item))
     marks: dict[str, str] = {}
     if cls in ("display_formula", "formula_number"):
         return text, marks
@@ -204,6 +207,89 @@ def _restore_marks(text: str, marks: dict[str, str]) -> str:
     """脚注标记换回原来的写法。这一块的表里没有的（接续组切开时从另一块挪过来、模型把 "13, 33" 写成 "13,33"）
     写成上标公式：交给 agent 的标记都是从引用角标换来的，原样留着 {{fn:…}} 会露在译文里。"""
     return FN_TOKEN_RE.sub(lambda m: marks.get(m.group(1)) or f"$ ^{{{m.group(1)}}} $", text)
+
+
+INDEX_HEADINGS = {"index", "subject index", "name index", "author index", "general index", "index of names", "index of subjects"}
+INDEX_FROM_SHARE = 0.75  # 索引标题只在书的最后四分之一里认
+HEADER_NUMBER_RE = re.compile(r"^\[?(\d{1,4})\]?\s+\S.{0,48}$|^\S.{0,48}?\s+\[?(\d{1,4})\]?$")
+
+
+def _printed_page_offset(page_payloads: dict[int, list[dict]]) -> int | None:
+    """PDF 第几页（从 1 数）减去书上印的页码，全书最常见的那个差；页脚没有数字页码时 None。"""
+    from collections import Counter
+
+    offsets = Counter()
+    for page_idx, items in page_payloads.items():
+        for item in items:
+            text = _block_source(item)
+            if item_normalized_sub_type(item) == "page_number" and text.isdigit():
+                offsets[page_idx + 1 - int(text)] += 1
+    if not offsets:
+        return None
+    offset, count = offsets.most_common(1)[0]
+    return offset if count >= 3 else None
+
+
+def _printed_page_numbers(page_payloads: dict[int, list[dict]], source_pdf_path: Path | None) -> dict[int, int]:
+    """每页书上印的页码（只要阿拉伯数字的）：先看原 PDF 的页码标签（出版社的 PDF 多半有，PDF 第 181 页标着 "170"），
+    没有再拿页脚页码块算出全书的页码差。都没有就是空的。"""
+    printed: dict[int, int] = {}
+    if source_pdf_path is not None and Path(source_pdf_path).exists():
+        try:
+            import fitz
+
+            with fitz.open(source_pdf_path) as pdf:
+                for page_idx in page_payloads:
+                    if 0 <= page_idx < pdf.page_count:
+                        label = str(pdf[page_idx].get_label() or "").strip()
+                        if label.isdigit():
+                            printed[page_idx] = int(label)
+        except Exception:
+            printed = {}
+    if printed:
+        return printed
+    offset = _printed_page_offset(page_payloads)
+    return {} if offset is None else {page_idx: page_idx + 1 - offset for page_idx in page_payloads}
+
+
+def skip_back_matter(page_payloads: dict[int, list[dict]], source_pdf_path: Path | None = None) -> dict[str, int]:
+    """交给 agent 之前，把两类不该翻的块标成保留原文（2026-11-20，Sonnet 审读《The Interloper》时查出）：
+
+    - 被 OCR 认成标题的页眉："[170] NOTES" 里的数字正好是这一页印的页码（按全书页脚算出 PDF 页和印的页码差几页）。
+      以前通读把它定成标题译文「[170] 注释」，之后谁也不再看。页码先看 PDF 的页码标签，没有再用页脚页码。
+    - 书后的索引：最后四分之一里出现 Index 这类标题，它后面到书尾都保留原文。索引翻出来按中文排序全乱、页码是英文版的，
+      还白花钱（这本书 3 页索引 88 段）。参考文献以前在 OCR 规范化时就标好了不翻，索引没人管。
+    返回各标了几块。"""
+    counts = {"running_header": 0, "index": 0}
+    printed = _printed_page_numbers(page_payloads, source_pdf_path)
+    if printed:
+        for page_idx, items in page_payloads.items():
+            for item in items:
+                if not item.get("should_translate", True) or item_normalized_sub_type(item) not in ("title", "heading"):
+                    continue
+                match = HEADER_NUMBER_RE.match(_block_source(item))
+                number = match and (match.group(1) or match.group(2))
+                if number and printed.get(page_idx) == int(number):
+                    mark_policy_skip(item, "skip_running_header")
+                    counts["running_header"] += 1
+    if not page_payloads:
+        return counts
+    last_page = max(page_payloads)
+    started = False
+    for page_idx in sorted(page_payloads):
+        for item in page_payloads[page_idx]:
+            if started:
+                if item.get("should_translate", True):
+                    mark_policy_skip(item, "skip_back_matter_index")
+                    counts["index"] += 1
+                continue
+            if (
+                page_idx >= last_page * INDEX_FROM_SHARE
+                and item_normalized_sub_type(item) in ("title", "heading")
+                and " ".join(re.sub(r"[^a-z ]+", " ", _block_source(item).lower()).split()) in INDEX_HEADINGS
+            ):
+                started = True
+    return counts
 
 
 def build_agent_pages(
@@ -549,6 +635,9 @@ def translate_book_with_agent(
         run_diagnostics=run_diagnostics,
         checkpoint=checkpoint,
     )
+    skipped = skip_back_matter(page_payloads, source_pdf_path)
+    if any(skipped.values()):
+        print(f"book: agent keeps original for running headers={skipped['running_header']} index blocks={skipped['index']}", flush=True)
     pages, marks_by_block = build_agent_pages(page_payloads, data, document_title=_document_title(page_payloads, source_pdf_path))
     model = (model or "").strip() or DEFAULT_MODEL
     reviewer_model = _separate_reviewer(reviewer, model=model, base_url=base_url)
