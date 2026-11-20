@@ -86,6 +86,9 @@ export const CHECK_CODE_TEXT: Record<string, string> = {
 /** 只算指标的代码（info），不进广播。 */
 const isInfoCode = (code: string) => code === "hedge_lost" || code === "person_lost" || code.startsWith("review_");
 
+/** 「，审校自己撤回 2 张」；没有撤回是空串。 */
+export const reviewWithdrawnText = (withdrawn: number | undefined) => (withdrawn ? `，审校自己撤回 ${withdrawn} 张` : "");
+
 export const stopReasonText = (reason: string) => STOP_REASON_TEXT[reason] || `停下了（${reason || "原因未知"}）`;
 export const genreText = (genre: string) => GENRE_TEXT[genre] || genre || "未定";
 export const namePolicyText = (policy: string) => NAME_POLICY_TEXT[policy] || policy || "未定";
@@ -142,7 +145,8 @@ export function narrate(event: EditorialEvent): Narration {
     case "review_done":
       if (event.tickets === 0) return { text: `审校第 ${event.page} 页没挑出问题`, tone: "ok" };
       return {
-        text: `审校第 ${event.page} 页开了 ${event.tickets} 张单：修订改了 ${event.applied} 处，没收 ${event.rejected} 处`,
+        text: `审校第 ${event.page} 页开了 ${event.tickets} 张单：修订改了 ${event.applied} 处，没收 ${event.rejected} 处${reviewWithdrawnText(event.withdrawn)}`,
+        // 审校自己撤回的不算问题，只有没收的才提醒。
         tone: event.rejected > 0 ? "warn" : "ok",
       };
     case "glossary_changed":

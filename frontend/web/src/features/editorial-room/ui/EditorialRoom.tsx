@@ -31,6 +31,7 @@ function StatsRow({ state }: { state: RoomState }) {
     { key: "retries", label: "重翻", value: totals.retries },
     { key: "applied", label: "审校改了", value: totals.applied, tone: "accent" },
     { key: "rejected", label: "没收", value: totals.rejected },
+    ...(totals.withdrawn ? [{ key: "withdrawn", label: "审校撤回", value: totals.withdrawn }] : []),
     { key: "glossary", label: "术语表", value: `第 ${totals.glossaryVersion} 版` },
     { key: "ambiguity", label: "歧义单", value: totals.ambiguity, tone: totals.ambiguity ? "warn" : undefined },
   ];

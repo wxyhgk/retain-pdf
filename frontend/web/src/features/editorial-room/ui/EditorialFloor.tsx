@@ -170,7 +170,7 @@ export function EditorialFloor({ state }: { state: RoomState }) {
         busy={!!reviser}
         note={
           reviser?.review
-            ? `第 ${reviser.page} 页：改 ${reviser.review.applied} 处 · 没收 ${reviser.review.rejected} 处`
+            ? `第 ${reviser.page} 页：改 ${reviser.review.applied} 处 · 没收 ${reviser.review.rejected} 处${reviser.review.withdrawn ? ` · 撤回 ${reviser.review.withdrawn} 张` : ""}`
             : "等问题单"
         }
         sheet={reviser}

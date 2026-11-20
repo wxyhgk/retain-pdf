@@ -102,7 +102,7 @@ export function buildDemoEditorialRun(options: { stopAfterPage?: number } = {}):
     const hasNext = page < total && page !== options.stopAfterPage;
     if (hasNext) head(page + 1);
     for (const aside of script.aside || []) push(1, aside);
-    push(2, { type: "review_done", page, tickets, applied, rejected });
+    push(2, { type: "review_done", page, tickets, applied, rejected, withdrawn: 0 });
     const [ok, warn, error] = script.checks[script.checks.length - 1];
     push(1, {
       type: "page_done",

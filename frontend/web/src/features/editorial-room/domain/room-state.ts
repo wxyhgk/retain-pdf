@@ -33,7 +33,8 @@ export type PageCard = {
   codes: Record<string, number>;
   /** 显示原文、进了「待人看」筐的块数。 */
   fallback: number;
-  review: { tickets: number; applied: number; rejected: number } | null;
+  /** rejected 是修订没收的，withdrawn 是审校自己撤回的（两者不重叠）。 */
+  review: { tickets: number; applied: number; rejected: number; withdrawn: number } | null;
   /** 最后一次变动的序号：同一工位有几页时，显示最近动过的那页。 */
   touched: number;
 };
@@ -177,7 +178,7 @@ function applyEvent(state: RoomState, event: EditorialEvent): RoomState {
         ...state,
         pages: withPage(state, event.page, () => ({
           stage: "revising",
-          review: { tickets: event.tickets, applied: event.applied, rejected: event.rejected },
+          review: { tickets: event.tickets, applied: event.applied, rejected: event.rejected, withdrawn: event.withdrawn || 0 },
         })),
       };
     case "page_done": {
@@ -279,6 +280,7 @@ export type RoomTotals = CheckCounts & {
   fallback: number;
   applied: number;
   rejected: number;
+  withdrawn: number;
   reviewTickets: number;
   donePages: number;
   glossaryVersion: number;
@@ -295,6 +297,7 @@ export function roomTotals(state: RoomState): RoomTotals {
     fallback: state.basket.length,
     applied: 0,
     rejected: 0,
+    withdrawn: 0,
     reviewTickets: 0,
     donePages: 0,
     glossaryVersion: state.glossary.version,
@@ -311,6 +314,7 @@ export function roomTotals(state: RoomState): RoomTotals {
     if (card.review) {
       totals.applied += card.review.applied;
       totals.rejected += card.review.rejected;
+      totals.withdrawn += card.review.withdrawn || 0;
       totals.reviewTickets += card.review.tickets;
     }
     finalFallback += card.fallback;
