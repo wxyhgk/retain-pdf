@@ -10,18 +10,12 @@ from retainpdf_translation.llm.providers.deepseek.client import (
     normalize_base_url,
     request_chat_content,
 )
-from retainpdf_translation.llm.shared.prompt_building import (
-    build_messages,
-    build_single_item_fallback_messages,
-)
 
 __all__ = [
     "DEFAULT_API_KEY_ENV",
     "DEFAULT_BASE_URL",
     "DEFAULT_MODEL",
     "build_headers",
-    "build_messages",
-    "build_single_item_fallback_messages",
     "chat_completions_url",
     "extract_json_text",
     "get_api_key",

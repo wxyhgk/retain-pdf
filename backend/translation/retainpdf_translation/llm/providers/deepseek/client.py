@@ -16,8 +16,6 @@ from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared import upstream_resilience as _resilience
 from retainpdf_translation.llm.shared import usage_ledger
 from retainpdf_translation.llm.providers.deepseek import transport
-from retainpdf_translation.llm.shared.prompt_building import build_messages
-from retainpdf_translation.llm.shared.prompt_building import build_single_item_fallback_messages
 from retainpdf_translation.llm.shared.response_parsing import extract_json_text
 from retainpdf_translation.llm.shared.response_parsing import extract_single_item_translation_text
 from retainpdf_translation.llm.shared.response_parsing import unwrap_translation_shell

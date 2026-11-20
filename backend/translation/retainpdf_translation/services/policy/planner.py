@@ -7,12 +7,6 @@ from retainpdf_translation.services.context import TranslationDocumentContext
 from retainpdf_translation.services.context import build_page_item_contexts
 
 
-def _load_classifier():
-    from retainpdf_translation.services.classification.page_classifier import classify_item_contexts
-
-    return classify_item_contexts
-
-
 @dataclass(frozen=True)
 class TranslationPlanDecision:
     item_id: str
@@ -35,8 +29,12 @@ class TranslationPlanner:
         batch_size: int,
         request_label: str = "",
         request_chat_content_fn: Callable[..., str] | None = None,
+        classify_fn: Callable[..., dict[str, str]] | None = None,
     ) -> dict[str, str]:
-        classify_item_contexts = _load_classifier()
+        """`classify_fn`：调模型分类的函数，普通翻译引擎传进来（`TranslationPolicyConfig.page_classifier`）；没给就报错。"""
+        if classify_fn is None:
+            raise RuntimeError("page no-translation classification is on but no classifier was configured")
+        classify_item_contexts = classify_fn
         item_contexts = build_page_item_contexts(payload)
         return classify_item_contexts(
             item_contexts,

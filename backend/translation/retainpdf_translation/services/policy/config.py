@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from dataclasses import field
+from typing import Callable
 from pathlib import Path
 
 from retainpdf_translation.core.ocr.json_extractor import extract_text_items
@@ -24,6 +25,9 @@ class TranslationPolicyConfig:
     metadata_fragment_max_page_idx: int = 1
     enable_candidate_continuation_review: bool = True
     enable_page_no_trans_classification: bool = False
+    # 打开上面那个开关时用的分类函数（调模型判断哪些块不翻）：由普通翻译引擎传进来，页面策略在底座、不 import 引擎（2026-11-20 拆包）。
+    # 签名同 services.classification.page_classifier.classify_item_contexts
+    page_classifier: Callable[..., dict[str, str]] | None = field(default=None, compare=False, repr=False)
     enable_domain_inference: bool = False
     sci_cutoff_page_idx: int | None = None
     sci_cutoff_block_idx: int | None = None
