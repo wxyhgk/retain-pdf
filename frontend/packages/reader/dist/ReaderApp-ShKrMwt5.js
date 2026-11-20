@@ -7598,7 +7598,7 @@ function na({ ink: e, page: t = 0, onPick: n }) {
     Mu.map(({ tool: o, label: a, Icon: s }) => /* @__PURE__ */ p(
       oe,
       {
-        className: "reader-ink-btn",
+        className: "reader-ink-tool",
         "aria-label": a,
         title: a,
         "aria-pressed": e.tool === o,
@@ -7628,11 +7628,11 @@ function na({ ink: e, page: t = 0, onPick: n }) {
       o.key
     )),
     /* @__PURE__ */ p("span", { className: "reader-ink-sep", "aria-hidden": !0 }),
-    /* @__PURE__ */ p(oe, { className: "reader-ink-btn", "aria-label": "撤销", title: "撤销（⌘Z）", onClick: e.undo, children: /* @__PURE__ */ p(Oa, { size: 17, strokeWidth: 2, "aria-hidden": !0 }) }),
+    /* @__PURE__ */ p(oe, { className: "reader-ink-tool", "aria-label": "撤销", title: "撤销（⌘Z）", onClick: e.undo, children: /* @__PURE__ */ p(Oa, { size: 17, strokeWidth: 2, "aria-hidden": !0 }) }),
     t > 0 ? /* @__PURE__ */ p(
       oe,
       {
-        className: "reader-ink-btn",
+        className: "reader-ink-tool",
         "aria-label": `清掉第 ${t} 页的笔迹`,
         title: `清掉第 ${t} 页的笔迹`,
         onClick: () => {
@@ -7644,7 +7644,7 @@ function na({ ink: e, page: t = 0, onPick: n }) {
     e.tool ? /* @__PURE__ */ p(
       oe,
       {
-        className: "reader-ink-btn",
+        className: "reader-ink-tool",
         "aria-label": "退出画笔",
         title: "退出画笔（Esc）",
         "data-ink-exit": "true",
@@ -7909,7 +7909,7 @@ function Ku({ edit: e }) {
     ) : null
   ] });
 }
-const Ju = oa(() => import("./ReaderMarkdownPanel-BpzHBXzZ.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
+const Ju = oa(() => import("./ReaderMarkdownPanel-2z-pTAtn.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
 function qu(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantOpen && e.mode === "compare" ? "source" : e.mode, a = !t && (o === "translated" || o === "compare");
   return {
@@ -8184,4 +8184,4 @@ export {
   pf as r,
   $e as u
 };
-//# sourceMappingURL=ReaderApp-CvurBuOB.js.map
+//# sourceMappingURL=ReaderApp-ShKrMwt5.js.map

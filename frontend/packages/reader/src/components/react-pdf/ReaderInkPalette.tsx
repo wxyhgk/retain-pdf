@@ -29,7 +29,7 @@ function InkTools({ ink, page = 0, onPick }: { ink: ReaderInk; page?: number; on
       {TOOLS.map(({ tool, label, Icon }) => (
         <Button
           key={tool}
-          className="reader-ink-btn"
+          className="reader-ink-tool"
           aria-label={label}
           title={label}
           aria-pressed={ink.tool === tool}
@@ -62,12 +62,12 @@ function InkTools({ ink, page = 0, onPick }: { ink: ReaderInk; page?: number; on
         </Button>
       ))}
       <span className="reader-ink-sep" aria-hidden />
-      <Button className="reader-ink-btn" aria-label="撤销" title="撤销（⌘Z）" onClick={ink.undo}>
+      <Button className="reader-ink-tool" aria-label="撤销" title="撤销（⌘Z）" onClick={ink.undo}>
         <Undo2 size={17} strokeWidth={2} aria-hidden />
       </Button>
       {page > 0 ? (
         <Button
-          className="reader-ink-btn"
+          className="reader-ink-tool"
           aria-label={`清掉第 ${page} 页的笔迹`}
           title={`清掉第 ${page} 页的笔迹`}
           onClick={() => {
@@ -80,7 +80,7 @@ function InkTools({ ink, page = 0, onPick }: { ink: ReaderInk; page?: number; on
       ) : null}
       {ink.tool ? (
         <Button
-          className="reader-ink-btn"
+          className="reader-ink-tool"
           aria-label="退出画笔"
           title="退出画笔（Esc）"
           data-ink-exit="true"
