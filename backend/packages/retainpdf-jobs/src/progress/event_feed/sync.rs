@@ -3,7 +3,7 @@ use super::files::{self, SourceFile};
 use retainpdf_data::db::{Db, EventProjectionInput, EventSourceVersion, NewFeedItem, StoredEventFeed};
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::api::{redact_json_value, redact_text, sensitive_values, JobEventRecord};
-use retainpdf_core::models::domain::JobSnapshot;
+use retainpdf_core::models::domain::{JobSnapshot, WorkflowKind};
 use retainpdf_core::storage_paths::resolve_events_jsonl;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -18,7 +18,9 @@ pub(super) const INITIAL_CHUNK: u32 = 16384;
 // 导入规则一变就要加一：版本进了 context 摘要，旧投影会整体重建，
 // 否则已经导入的事件（比如 v2 混进来的子任务终态）会永远留在里面。
 // v3：OCR 子任务的生命周期/终态事件不再导入父任务事件流。
-const CANONICAL_VERSION: u32 = 3;
+// v4（2026-11-20）：只把流程是 ocr 的任务当 OCR 子任务。复用 OCR 产物的任务以前会把源任务本身记成 ocr_job_id
+// （渲染、书籍任务），它从头到尾的历史事件都被并进来：重新翻译开头几分钟进度显示旧任务的「209/209」。
+const CANONICAL_VERSION: u32 = 4;
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub(super) struct DbCheckpoint {
@@ -45,6 +47,12 @@ struct Sources {
     context: String,
 }
 
+/// `ocr_job_id` 指向的任务真是 OCR 子任务（流程是 ocr）才并它的事件。复用 OCR 产物的任务以前会把源任务本身
+/// （渲染、书籍任务）记成 `ocr_job_id`，不能把那个任务的整段历史当成这次的 OCR 进度。
+fn is_ocr_child(child: &JobSnapshot) -> bool {
+    child.workflow == WorkflowKind::Ocr
+}
+
 fn sources(db: &Db, root: &Path, owner: &JobSnapshot) -> Result<Sources, AppError> {
     let mut jobs = vec![owner.clone()];
     if let Some(child_id) = owner
@@ -54,7 +62,9 @@ fn sources(db: &Db, root: &Path, owner: &JobSnapshot) -> Result<Sources, AppErro
         .filter(|id| !id.is_empty() && *id != owner.job_id)
     {
         if let Ok(child) = db.get_job(child_id) {
-            jobs.push(child);
+            if is_ocr_child(&child) {
+                jobs.push(child);
+            }
         }
     }
     let mut versions = Vec::new();
@@ -146,6 +156,7 @@ pub(super) fn cached_stage_basis(
         .and_then(|artifacts| artifacts.ocr_job_id.as_deref())
         .filter(|id| !id.is_empty() && *id != owner_id)
         .and_then(|id| inputs.get(id))
+        .filter(|child| is_ocr_child(&child.job))
     {
         selected.push(child);
     }

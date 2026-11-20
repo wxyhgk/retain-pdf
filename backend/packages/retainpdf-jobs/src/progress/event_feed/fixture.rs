@@ -8,7 +8,7 @@ use rusqlite::{params, Connection};
 use serde_json::{json, Value};
 
 use super::{files, live_snapshot, live_snapshots, sync};
-use retainpdf_core::models::domain::{CreateJobInput, JobArtifacts, JobSnapshot, JobStatusKind};
+use retainpdf_core::models::domain::{CreateJobInput, JobArtifacts, JobSnapshot, JobStatusKind, WorkflowKind};
 use retainpdf_data::db::Db;
 
 pub struct EventFeedFixture {
@@ -25,7 +25,17 @@ impl EventFeedFixture {
     }
 
     pub fn job(&self, id: &str, child: Option<&str>) {
+        self.job_with(id, child, WorkflowKind::Book);
+    }
+
+    /// OCR 子任务（流程是 ocr）：事件流只并这种子任务的事件。
+    pub fn ocr_child(&self, id: &str) {
+        self.job_with(id, None, WorkflowKind::Ocr);
+    }
+
+    pub fn job_with(&self, id: &str, child: Option<&str>, workflow: WorkflowKind) {
         let mut job = JobSnapshot::new(id.into(), CreateJobInput::default(), vec![]);
+        job.workflow = workflow;
         job.status = JobStatusKind::Running;
         job.stage = Some("translating".into());
         let root = self.root.join("jobs").join(id);

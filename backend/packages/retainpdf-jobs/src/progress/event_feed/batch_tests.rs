@@ -101,7 +101,7 @@ fn batch_stage_observes_child_creation_updates_and_detachment() {
     let fs = Fixture::new("batch-stage-child-deltas");
     fs.job("owner", Some("child"));
     assert!(fs.fast("owner"));
-    fs.job("child", None);
+    fs.ocr_child("child");
     fs.db_progress("child", 2);
     assert!(!fs.fast("owner"));
     assert_eq!(fs.project("owner")["progress_current"], 2);
@@ -155,7 +155,7 @@ fn batch_stage_invalidates_authority_status_and_retention_without_resurrection()
 fn failed_parent_stage_is_not_taken_from_the_ocr_childs_finished_stage() {
     let fs = Fixture::new("ocr-child-finished-rank");
     fs.job("parent", Some("parent-ocr"));
-    fs.job("parent-ocr", None);
+    fs.ocr_child("parent-ocr");
     let mut parent = fs.db.get_job("parent").unwrap();
     parent.status = JobStatusKind::Failed;
     fs.db.save_job(&parent).unwrap();
@@ -220,3 +220,16 @@ fn an_initial_build_larger_than_one_batch_publishes_every_event_in_order() {
     assert_eq!(feed.high_seq, total);
     assert!(fs.fast("owner"));
 }
+
+#[test]
+fn a_linked_job_that_is_not_an_ocr_job_is_not_merged_in() {
+    // 2026-11-20：复用 OCR 产物的任务把源任务（渲染、书籍任务）记成了 ocr_job_id，源任务从头到尾的历史都并进来，
+    // 重新翻译开头几分钟进度显示源任务的「209/209」。只并流程是 ocr 的子任务。
+    let fs = Fixture::new("batch-stage-non-ocr-link");
+    fs.job("owner", Some("earlier-book-job"));
+    fs.job("earlier-book-job", None);
+    fs.db_progress("earlier-book-job", 209);
+    fs.project("owner");
+    assert_eq!(fs.project("owner"), Value::Null, "源任务的进度不算进来");
+}
+

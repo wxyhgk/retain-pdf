@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::{anyhow, Result};
 
 use crate::job_events::cas_persist_job_with_resources;
-use crate::models::domain::{JobArtifacts, JobRuntimeState};
+use crate::models::domain::{JobArtifacts, JobRuntimeState, WorkflowKind};
 use crate::storage_paths::build_job_paths;
 
 use super::translation_checkpoint_resume::import_translation_checkpoint_candidate;
@@ -35,7 +35,7 @@ pub(super) async fn prepare_job_from_ocr_artifacts(
         &job_paths.translated_dir,
     )?;
     attach_job_paths(&mut job, &job_paths);
-    copy_ocr_checkpoint_artifacts(&mut job, &source_job_id, source_artifacts);
+    copy_ocr_checkpoint_artifacts(&mut job, &source_job_id, &source_job.workflow, source_artifacts);
     if let Some(artifacts) = job.artifacts.as_mut() {
         artifacts.copy_translation_inputs_from(source_artifacts);
         artifacts.source_pdf = Some(source_pdf_path.to_string_lossy().to_string());
@@ -69,10 +69,17 @@ pub(super) async fn prepare_job_from_ocr_artifacts(
 fn copy_ocr_checkpoint_artifacts(
     job: &mut JobRuntimeState,
     source_job_id: &str,
+    source_workflow: &WorkflowKind,
     source_artifacts: &JobArtifacts,
 ) {
     let artifacts = job.artifacts.get_or_insert_with(JobArtifacts::default);
     artifacts.copy_ocr_checkpoint_from(source_job_id, source_artifacts);
+    // `copy_ocr_checkpoint_from` 在源任务没有 ocr_job_id 时把源任务本身记成 OCR 子任务：那是给 OCR 子任务用的
+    // （传进来的就是子任务）。复用产物时源任务是渲染、书籍任务，不能记成子任务，否则事件流会把它整段历史并进来
+    // （2026-11-20：重新翻译开头几分钟进度显示源任务的「209/209」）。只照抄源任务自己记着的子任务。
+    if *source_workflow != WorkflowKind::Ocr {
+        artifacts.ocr_job_id = source_artifacts.ocr_job_id.clone().filter(|id| !id.is_empty());
+    }
 }
 
 #[cfg(test)]
@@ -212,4 +219,22 @@ mod tests {
         drop(deps);
         std::fs::remove_dir_all(root).unwrap();
     }
+
+    #[test]
+    fn reusing_a_book_jobs_ocr_does_not_record_that_job_as_the_ocr_child() {
+        // 2026-11-20：复用 OCR 产物时源任务是渲染、书籍任务，以前被记成 ocr_job_id，事件流把它整段历史并进新任务。
+        let mut job = JobSnapshot::new("new".into(), CreateJobInput::default(), vec![]).into_runtime();
+        let book = JobArtifacts::default();
+        copy_ocr_checkpoint_artifacts(&mut job, "book-job", &WorkflowKind::Book, &book);
+        assert_eq!(job.artifacts.as_ref().unwrap().ocr_job_id, None);
+
+        let with_child = JobArtifacts { ocr_job_id: Some("book-job-ocr".into()), ..Default::default() };
+        copy_ocr_checkpoint_artifacts(&mut job, "book-job", &WorkflowKind::Book, &with_child);
+        assert_eq!(job.artifacts.as_ref().unwrap().ocr_job_id.as_deref(), Some("book-job-ocr"), "源任务自己记着的子任务照抄");
+
+        let mut from_child = JobSnapshot::new("parent".into(), CreateJobInput::default(), vec![]).into_runtime();
+        copy_ocr_checkpoint_artifacts(&mut from_child, "parent-ocr", &WorkflowKind::Ocr, &JobArtifacts::default());
+        assert_eq!(from_child.artifacts.as_ref().unwrap().ocr_job_id.as_deref(), Some("parent-ocr"), "真正的 OCR 子任务照旧记下");
+    }
 }
+

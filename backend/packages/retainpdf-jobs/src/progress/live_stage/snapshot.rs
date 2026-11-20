@@ -22,6 +22,11 @@ pub(crate) fn select_live_stage_snapshot(
         && selected_stage.trim() == "failed"
         && !progress_stage.trim().is_empty();
     let progress_event = display_progress_event(selected, page_progress);
+    // 当前数、总数、单位取自同一条事件（2026-11-20）：以前三个字段各自往回找，选中的事件只有单位「批」没有数字时，
+    // 数字落到更早一条「209/209 页」上，拼成「209/209 批」。选中的事件带了数字就整条用它，否则整条用最近的进度事件。
+    let counted = progress_event
+        .filter(|event| progress_current(event).is_some() || progress_total(event).is_some())
+        .or(fallback_progress);
     Some(LiveStageSnapshot {
         display_stage: if should_keep_progress_stage {
             fallback_progress.and_then(|item| item.display_stage.clone())
@@ -48,15 +53,9 @@ pub(crate) fn select_live_stage_snapshot(
         } else {
             selected.stage_detail.clone()
         },
-        progress_current: progress_event
-            .and_then(progress_current)
-            .or_else(|| fallback_progress.and_then(progress_current)),
-        progress_total: progress_event
-            .and_then(progress_total)
-            .or_else(|| fallback_progress.and_then(progress_total)),
-        progress_unit: progress_event
-            .and_then(progress_unit)
-            .or_else(|| fallback_progress.and_then(progress_unit)),
+        progress_current: counted.and_then(progress_current),
+        progress_total: counted.and_then(progress_total),
+        progress_unit: counted.and_then(progress_unit),
         background_stages: latest_background_stages(items),
     })
 }
@@ -384,4 +383,28 @@ mod compact_tests {
         let snapshot = select_live_stage_snapshot(&rendering, &JobStatusKind::Running).expect("snapshot");
         assert_eq!((snapshot.progress_current, snapshot.progress_total), (Some(5), Some(34)));
     }
+
+    #[test]
+    fn progress_numbers_and_unit_come_from_the_same_event() {
+        // 2026-11-20：新任务第一条「OCR 完成，开始翻译」只有单位「批」没有数字，数字落到更早一条「209/209 页」上，
+        // 拼成「209/209 批」。要么整条用选中的事件，要么整条用最近带数字的那条。
+        let mut start: JobEventRecord = serde_json::from_value(serde_json::json!({
+            "job_id": "retranslate", "seq": 2, "ts": "2026-11-20T05:22:50Z", "created_at": "2026-11-20T05:22:50Z", "level": "info",
+            "event": "stage_transition", "message": "OCR 完成，开始翻译", "stage": "translating",
+            "stage_detail": "OCR 完成，开始翻译", "progress_unit": "batch",
+        }))
+        .unwrap();
+        crate::progress::live_stage::canonicalize_job_event(&mut start, "pipeline");
+        let history = vec![render_event(1, "2026-11-18T09:00:43Z", None, 209, 209, "page", "渲染页面完成"), start];
+        let snapshot = select_live_stage_snapshot(&history, &JobStatusKind::Running).expect("snapshot");
+        assert_ne!(
+            (snapshot.progress_current, snapshot.progress_total, snapshot.progress_unit.as_deref()),
+            (Some(209), Some(209), Some("batch")),
+            "不能拿一条事件的数字配另一条事件的单位"
+        );
+        if snapshot.progress_current.is_some() {
+            assert_eq!(snapshot.progress_unit.as_deref(), Some("page"), "退回旧数字时单位也跟着旧事件");
+        }
+    }
 }
+

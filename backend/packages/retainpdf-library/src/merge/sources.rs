@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 use retainpdf_core::models::domain::{JobSnapshot, JobStatusKind, WorkflowKind};
 use retainpdf_core::document_pages::translated_document_pages;
+use retainpdf_core::models::request::parse_page_ranges;
 use retainpdf_core::storage_paths::{resolve_data_path, resolve_ocr_markdown_images_dir};
 
 use super::plan::{Rank, RankedPages};
@@ -50,6 +51,36 @@ pub(crate) fn covered_pages(
     (pages.len() == page_count).then_some(pages)
 }
 
+/// OCR 本地页 `L` 对应文档第几页。`recorded` 是 OCR 时记下的 `ocr_page_numbers`；GLM-OCR 走 Python 服务商 worker，
+/// 那条路不记（2026-11-20 前 GLM 识别的书全是空的，复用它的任务也抄成空的，合并阅读就把这些任务都排除了：
+/// `/documents/:id/reading` 返回 `job_id: null`，切换译文版本打开的总是同一份）。空的时候按请求推：
+/// OCR 写了页码范围就照范围；没写（整本）而且这个任务从头翻到尾，就是 1..=输出 PDF 页数。推不出来给空（照旧不参与合并）。
+/// 书库的覆盖范围（`coverage::job_pages`）一直是这么退的。
+pub(crate) fn effective_ocr_pages(
+    recorded: &[u32],
+    ocr_spec: &str,
+    start_page: i64,
+    end_page: i64,
+    output_pdf_page_count: Option<usize>,
+) -> Vec<u32> {
+    if !recorded.is_empty() {
+        return recorded.to_vec();
+    }
+    let spec = ocr_spec.trim();
+    if !spec.is_empty() && !spec.eq_ignore_ascii_case("all") {
+        let largest = spec
+            .split(|c: char| !c.is_ascii_digit())
+            .filter_map(|part| part.parse::<u32>().ok())
+            .max()
+            .unwrap_or(0);
+        return parse_page_ranges(spec, largest).unwrap_or_default();
+    }
+    match output_pdf_page_count {
+        Some(count) if count > 0 && start_page <= 0 && (end_page < 0 || end_page as usize + 1 == count) => (1..=count as u32).collect(),
+        _ => Vec::new(),
+    }
+}
+
 /// 拼的时候去哪读这个任务的产物。合并计划用不到这些。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct BuildInputs {
@@ -93,10 +124,11 @@ pub(crate) fn job_merge_source(
     // 按文件戳缓存：每次 `/reading`、`/translation-coverage` 都要数，不能每次整份载入。
     let page_count = output_pdf.as_deref().and_then(super::page_count::pdf_page_count);
     let (start_page, end_page) = job.translation_page_window();
+    let ocr_pages = effective_ocr_pages(&artifacts.ocr_page_numbers, job.ocr_page_ranges(), start_page, end_page, page_count);
     let pages = covered_pages(
         &job.status,
         &job.workflow,
-        &artifacts.ocr_page_numbers,
+        &ocr_pages,
         start_page,
         end_page,
         page_count,
@@ -115,7 +147,7 @@ pub(crate) fn job_merge_source(
         },
         inputs: BuildInputs {
             output_pdf: output_pdf?,
-            ocr_page_numbers: artifacts.ocr_page_numbers.clone(),
+            ocr_page_numbers: ocr_pages,
             translations_dir: artifacts
                 .translations_dir
                 .as_deref()
@@ -227,7 +259,7 @@ mod tests {
 
 #[cfg(test)]
 mod job_merge_source_tests {
-    use super::job_merge_source;
+    use super::{effective_ocr_pages, job_merge_source};
     use retainpdf_api_base::test_fixtures::minimal_pdf_bytes;
     use retainpdf_core::models::domain::{JobArtifacts, JobSnapshot, JobStatusKind, WorkflowKind};
     use retainpdf_core::models::request::CreateJobInput;
@@ -314,5 +346,32 @@ mod job_merge_source_tests {
         let job = reuse_job(&root.0, vec![5]);
         std::fs::remove_dir_all(root.0.join("jobs/reuse-job/rendered")).unwrap();
         assert_eq!(job_merge_source(&job, &root.0, "2026-10-01T00:00:00"), None);
+    }
+
+    #[test]
+    fn an_empty_ocr_page_list_falls_back_to_the_requested_ocr_range() {
+        // 2026-11-20：GLM-OCR（Python 服务商 worker）那条路不记 ocr_page_numbers，GLM 识别的书全是空的，
+        // 合并阅读把这些任务都排除了，/reading 给 job_id: null，切换译文版本打开的总是同一份。
+        let root = data_root();
+        let mut job = reuse_job(&root.0, vec![]);
+        let source = job_merge_source(&job, &root.0, "2026-10-01T00:00:00").expect("整本、从头翻到尾：1..=输出 PDF 页数");
+        assert_eq!((source.ranked.pages.clone(), source.inputs.ocr_page_numbers.clone()), (vec![1], vec![1]));
+
+        job.request_payload.ocr.page_ranges = "5".to_string();
+        let source = job_merge_source(&job, &root.0, "2026-10-01T00:00:00").expect("写了 OCR 页码范围：照范围");
+        assert_eq!(source.ranked.pages, vec![5]);
+
+        job.request_payload.ocr.page_ranges = String::new();
+        job.request_payload.translation.start_page = 3;
+        job.request_payload.translation.end_page = 3;
+        assert_eq!(job_merge_source(&job, &root.0, "2026-10-01T00:00:00"), None, "整本 OCR、只翻了中间一段：推不出页号，照旧不参与");
+    }
+
+    #[test]
+    fn effective_ocr_pages_prefers_what_was_recorded() {
+        assert_eq!(effective_ocr_pages(&[2, 3], "1-9", 0, -1, Some(2)), vec![2, 3]);
+        assert_eq!(effective_ocr_pages(&[], "1-3,7", 0, -1, Some(4)), vec![1, 2, 3, 7]);
+        assert_eq!(effective_ocr_pages(&[], "", 0, 208, Some(209)), (1..=209).collect::<Vec<u32>>());
+        assert_eq!(effective_ocr_pages(&[], "", 0, -1, None), Vec::<u32>::new());
     }
 }
