@@ -150,14 +150,15 @@ export function hoverToolsOutside(rect: ReaderRegionRect, toolsWidth = HOVER_TOO
   return rect.height < HOVER_TOOLS_HEIGHT * 2 || rect.width < toolsWidth;
 }
 
-/** 图标版「复制」：复制好了变勾、失败变叉。 */
-function CompactCopyIcon({ state }: { state: CopyState }) {
+/** 「复制」的图标：复制好了变勾、失败变叉。 */
+function CopyStateIcon({ state }: { state: CopyState }) {
   const Icon = state === "copied" ? Check : state === "failed" ? X : Copy;
   return <Icon size={13} strokeWidth={2.2} aria-hidden />;
 }
 
 /**
- * 悬停内容块：淡色的框 + 翻译编号 + 「复制」（行间公式是「复制 LaTeX」）。
+ * 悬停内容块：淡色的框 + 「改」「复制」两个图标按钮（2026-11-20 起只画图标，名字在悬停提示和读屏里；
+ * 行间公式的复制是「复制 LaTeX」）。地址带 ?debug=1 时前面多一个翻译编号。
  * 框和工具条位置由页面量好传进来（frameRect 贴着字、placement 放页边，见 hover-presentation）；不传就照原块、按旧规则放。
  * 2026-11-20 以前是红色虚线框、工具条压在框里第一行字上。
  *
@@ -172,7 +173,6 @@ export function ReaderTextHoverLayer({
   onEdit,
   frameRect,
   placement,
-  compact = false,
   tailTop = 0,
 }: {
   target: ReaderTextHoverTarget | null;
@@ -180,12 +180,10 @@ export function ReaderTextHoverLayer({
   frameRect?: ReaderRegionRect | null;
   /** 工具条放哪（不给按框的大小选框里 / 框外上方）。 */
   placement?: HoverToolsPlacement;
-  /** 地方小：按钮只画图标（名字在悬停提示和读屏里）。 */
-  compact?: boolean;
   /** placement 是 tail 时，工具条离框顶多高（对齐最后一行）。 */
   tailTop?: number;
   pane?: "source" | "translated";
-  /** 这一块改过几次（精修、手改、助手改）；只在译文栏提示。 */
+  /** 这一块改过几次（精修、手改、助手改）；写在译文栏「改」的提示里。 */
   revisedCount?: number;
   /** 译文栏的「改」：打开侧栏「改译文」改这一块。不给就不画。 */
   onEdit?: (itemId: string) => void;
@@ -234,7 +232,6 @@ export function ReaderTextHoverLayer({
         <div
           className={READER_TEXT_HOVER_TOOLS_CLASS}
           data-placement={where}
-          data-compact={compact || undefined}
           style={where === "tail" ? { top: tailTop } : undefined}
         >
           {showItemId ? (
@@ -248,11 +245,6 @@ export function ReaderTextHoverLayer({
               {idState === "copied" ? "已复制编号" : target.itemId}
             </HoverToolButton>
           ) : null}
-          {pane === "translated" && revisedCount > 0 && !compact ? (
-            <span className="reader-text-hover-revised" data-reader-revised-count={revisedCount}>
-              改过 {revisedCount} 次
-            </span>
-          ) : null}
           {pane === "translated" && onEdit ? (
             <HoverToolButton
               className={READER_TEXT_HOVER_EDIT_CLASS}
@@ -265,7 +257,7 @@ export function ReaderTextHoverLayer({
                 onEdit(target.itemId);
               }}
             >
-              {compact ? <PenLine size={13} strokeWidth={2.2} aria-hidden /> : "改"}
+              <PenLine size={13} strokeWidth={2.2} aria-hidden />
             </HoverToolButton>
           ) : null}
           {text ? (
@@ -273,10 +265,10 @@ export function ReaderTextHoverLayer({
               className={READER_TEXT_HOVER_COPY_CLASS}
               state={state}
               label={pane === "translated" ? "复制这段译文" : "复制这段原文"}
-              title={compact ? idleLabel : undefined}
+              title={state === "copied" ? "已复制" : state === "failed" ? "复制失败" : idleLabel}
               onClick={copyWith(text, setState)}
             >
-              {compact ? <CompactCopyIcon state={state} /> : state === "copied" ? "已复制" : state === "failed" ? "复制失败" : idleLabel}
+              <CopyStateIcon state={state} />
             </HoverToolButton>
           ) : null}
         </div>

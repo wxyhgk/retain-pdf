@@ -34,7 +34,8 @@ export declare const HOVER_TOOLS_WIDTH = 220;
  */
 export declare function hoverToolsOutside(rect: ReaderRegionRect, toolsWidth?: number): boolean;
 /**
- * 悬停内容块：淡色的框 + 翻译编号 + 「复制」（行间公式是「复制 LaTeX」）。
+ * 悬停内容块：淡色的框 + 「改」「复制」两个图标按钮（2026-11-20 起只画图标，名字在悬停提示和读屏里；
+ * 行间公式的复制是「复制 LaTeX」）。地址带 ?debug=1 时前面多一个翻译编号。
  * 框和工具条位置由页面量好传进来（frameRect 贴着字、placement 放页边，见 hover-presentation）；不传就照原块、按旧规则放。
  * 2026-11-20 以前是红色虚线框、工具条压在框里第一行字上。
  *
@@ -42,18 +43,16 @@ export declare function hoverToolsOutside(rect: ReaderRegionRect, toolsWidth?: n
  * 右栏复制译文 —— 这是 4.1.x 旧引擎里最常用的那个交互，React 引擎替换时丢了。
  * 只有这一种块级交互：双击 / 三击留给浏览器选词选段（以前双击会整块复制，把选词弄坏了）。
  */
-export declare function ReaderTextHoverLayer({ target, pane, revisedCount, onEdit, frameRect, placement, compact, tailTop, }: {
+export declare function ReaderTextHoverLayer({ target, pane, revisedCount, onEdit, frameRect, placement, tailTop, }: {
     target: ReaderTextHoverTarget | null;
     /** 框画多大：贴着字的范围（不给就是原块）。 */
     frameRect?: ReaderRegionRect | null;
     /** 工具条放哪（不给按框的大小选框里 / 框外上方）。 */
     placement?: HoverToolsPlacement;
-    /** 地方小：按钮只画图标（名字在悬停提示和读屏里）。 */
-    compact?: boolean;
     /** placement 是 tail 时，工具条离框顶多高（对齐最后一行）。 */
     tailTop?: number;
     pane?: "source" | "translated";
-    /** 这一块改过几次（精修、手改、助手改）；只在译文栏提示。 */
+    /** 这一块改过几次（精修、手改、助手改）；写在译文栏「改」的提示里。 */
     revisedCount?: number;
     /** 译文栏的「改」：打开侧栏「改译文」改这一块。不给就不画。 */
     onEdit?: (itemId: string) => void;
