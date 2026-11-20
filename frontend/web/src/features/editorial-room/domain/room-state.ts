@@ -8,7 +8,7 @@
  * 工位手上是哪一页不单独记，由每页的 stage 推出来（stationPages），免得两处对不上。
  */
 
-import type { EditorialEvent, GlossaryAction } from "./events.js";
+import type { EditorialEvent, EditorialEventType, GlossaryAction } from "./events.js";
 
 export type PageStage =
   | "waiting" // 还没派
@@ -45,6 +45,23 @@ export type BasketItem = { page: number; block: string; reason: string };
 
 export type RunStatus = "idle" | "reading" | "running" | "stopped" | "done";
 
+/**
+ * 画面上一闪而过的事（查资料的气泡、审校单飞过去、质检扫一下、定稿盖章……）：留最近几条事件和它的序号，
+ * 画面按序号挂一次性动画（同一条只播一次）。只留会画成动作的那几种。
+ */
+export type Moment = { seq: number; event: EditorialEvent };
+const MOMENT_TYPES: readonly EditorialEventType[] = [
+  "tool_call",
+  "check_result",
+  "retry",
+  "fallback",
+  "review_done",
+  "glossary_changed",
+  "ticket_opened",
+  "page_done",
+];
+const MOMENTS_KEPT = 12;
+
 export type RoomState = {
   /** 已叠上去的事件数。 */
   seq: number;
@@ -61,6 +78,8 @@ export type RoomState = {
   basket: BasketItem[];
   retries: number;
   last: EditorialEvent | null;
+  /** 最近几条会画成动作的事件，旧的在前。 */
+  moments: Moment[];
 };
 
 const GLOSSARY_RECENT = 5;
@@ -81,6 +100,7 @@ export function initialRoomState(): RoomState {
     basket: [],
     retries: 0,
     last: null,
+    moments: [],
   };
 }
 
@@ -109,7 +129,9 @@ function withPage(state: RoomState, page: number, patch: (card: PageCard) => Par
 
 export function reduceEditorialEvent(state: RoomState, event: EditorialEvent): RoomState {
   const next = applyEvent(state, event);
-  return { ...next, seq: state.seq + 1, last: event };
+  const seq = state.seq + 1;
+  const moments = MOMENT_TYPES.includes(event.type) ? [...next.moments, { seq, event }].slice(-MOMENTS_KEPT) : next.moments;
+  return { ...next, seq, last: event, moments };
 }
 
 function applyEvent(state: RoomState, event: EditorialEvent): RoomState {

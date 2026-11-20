@@ -1,0 +1,301 @@
+/* 2.5D 编辑部里一闪而过的动作（OfficeMoments）和白板上写字：每个只播一次，放完停在看不见的样子（both）。
+ * 位移都用 CSS 变量（--dx/--dy 等，由组件按场景坐标算好）。整站「减弱动态效果」时动画收到瞬时，这些动作直接不出现。
+ *
+ * @owns editorial-room */
+
+.editorial-room-office-moments {
+  pointer-events: none;
+}
+
+/* —— 气泡：查资料、退回重翻、歧义单、修订报数 —— */
+
+.editorial-room-office-bubble {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: editorial-room-office-bubble 2800ms var(--ease-out) both;
+}
+
+.editorial-room-office-bubble rect,
+.editorial-room-office-bubble path {
+  fill: var(--paper);
+  stroke: color-mix(in srgb, var(--ink) 28%, var(--line));
+  stroke-width: 1;
+}
+
+.editorial-room-office-bubble text {
+  fill: var(--ink);
+  font-weight: 600;
+}
+
+.editorial-room-office-moment.is-ok .editorial-room-office-bubble rect,
+.editorial-room-office-moment.is-ok .editorial-room-office-bubble path {
+  fill: var(--ok-weak);
+  stroke: var(--ok);
+}
+
+.editorial-room-office-moment.is-warn .editorial-room-office-bubble rect,
+.editorial-room-office-moment.is-warn .editorial-room-office-bubble path {
+  fill: var(--warn-weak);
+  stroke: var(--warn);
+}
+
+.editorial-room-office-moment.is-danger .editorial-room-office-bubble rect,
+.editorial-room-office-moment.is-danger .editorial-room-office-bubble path {
+  fill: var(--danger-weak);
+  stroke: var(--danger);
+}
+
+@keyframes editorial-room-office-bubble {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.85);
+  }
+  10% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+  }
+  16% {
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-10px) scale(1);
+  }
+}
+
+/* —— 质检：闸门里一道光扫下来，灯上荡开一圈 —— */
+
+.editorial-room-office-scan {
+  fill: var(--ok);
+  opacity: 0;
+  animation: editorial-room-office-scan 900ms var(--ease-in-out) both;
+}
+
+.editorial-room-office-ring {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: editorial-room-office-ring 900ms var(--ease-out) 700ms both;
+}
+
+.editorial-room-office-moment.is-warn .editorial-room-office-scan {
+  fill: var(--warn);
+}
+
+.editorial-room-office-moment.is-warn .editorial-room-office-ring {
+  stroke: var(--warn);
+}
+
+.editorial-room-office-moment.is-danger .editorial-room-office-scan {
+  fill: var(--danger);
+}
+
+.editorial-room-office-moment.is-danger .editorial-room-office-ring {
+  stroke: var(--danger);
+}
+
+@keyframes editorial-room-office-scan {
+  0% {
+    opacity: 0;
+    transform: translateY(0);
+  }
+  15% {
+    opacity: 0.55;
+  }
+  85% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(46px);
+  }
+}
+
+@keyframes editorial-room-office-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.8);
+  }
+}
+
+/* —— 退回原文：一张红纸从闸门抛进筐，落下弹一下 —— */
+
+.editorial-room-office-flyer {
+  animation: editorial-room-office-toss 1000ms linear both;
+}
+
+@keyframes editorial-room-office-toss {
+  0% {
+    transform: translate(0, 0);
+    animation-timing-function: ease-out;
+  }
+  45% {
+    transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5 - 34px));
+    animation-timing-function: ease-in;
+  }
+  80% {
+    transform: translate(var(--dx), var(--dy));
+  }
+  88% {
+    transform: translate(var(--dx), calc(var(--dy) - 5px));
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0;
+  }
+}
+
+/* —— 审校单：从审校桌飞到修订桌；改进去的变绿打勾，没收的变灰掉下去，审校撤回的半路淡掉 —— */
+
+.editorial-room-office-note-flyer {
+  animation: editorial-room-office-note-fly 1700ms linear both;
+}
+
+.editorial-room-office-note-flyer.is-rejected {
+  animation-name: editorial-room-office-note-drop;
+}
+
+.editorial-room-office-note-flyer.is-withdrawn {
+  animation-name: editorial-room-office-note-withdraw;
+}
+
+.editorial-room-office-note-body {
+  fill: var(--warn-weak);
+  stroke: var(--warn);
+  stroke-width: 1;
+}
+
+.editorial-room-office-note-flyer.is-applied .editorial-room-office-note-body {
+  animation: editorial-room-office-note-ok 1700ms linear both;
+}
+
+.editorial-room-office-note-flyer.is-rejected .editorial-room-office-note-body {
+  animation: editorial-room-office-note-grey 1700ms linear both;
+}
+
+.editorial-room-office-note-check {
+  fill: none;
+  stroke: var(--ok);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 10;
+  animation: editorial-room-office-note-tick 1700ms linear both;
+}
+
+@keyframes editorial-room-office-note-fly {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+    animation-timing-function: ease-out;
+  }
+  8% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5 - 30px));
+    animation-timing-function: ease-in;
+  }
+  70% {
+    transform: translate(var(--dx), var(--dy));
+  }
+  90% {
+    opacity: 1;
+    transform: translate(var(--dx), var(--dy));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), calc(var(--dy) - 6px));
+  }
+}
+
+@keyframes editorial-room-office-note-drop {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+    animation-timing-function: ease-out;
+  }
+  8% {
+    opacity: 1;
+  }
+  45% {
+    transform: translate(calc(var(--dx) * 0.5), calc(var(--dy) * 0.5 - 30px));
+    animation-timing-function: ease-in;
+  }
+  70% {
+    opacity: 1;
+    transform: translate(var(--dx), var(--dy));
+    animation-timing-function: ease-in;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) + 6px), calc(var(--dy) + 20px)) rotate(35deg);
+  }
+}
+
+@keyframes editorial-room-office-note-withdraw {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  10% {
+    opacity: 1;
+  }
+  40% {
+    opacity: 0.8;
+    transform: translate(calc(var(--dx) * 0.2), calc(var(--dy) * 0.2 - 22px));
+  }
+  65%,
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--dx) * 0.25), calc(var(--dy) * 0.25 - 28px));
+  }
+}
+
+@keyframes editorial-room-office-note-ok {
+  0%,
+  68% {
+    fill: var(--warn-weak);
+    stroke: var(--warn);
+  }
+  76%,
+  100% {
+    fill: var(--ok-weak);
+    stroke: var(--ok);
+  }
+}
+
+@keyframes editorial-room-office-note-grey {
+  0%,
+  68% {
+    fill: var(--warn-weak);
+    stroke: var(--warn);
+  }
+  76%,
+  100% {
+    fill: var(--line);
+    stroke: var(--muted);
+  }
+}
+
+@keyframes editorial-room-office-note-tick {
+  0%,
+  72% {
+    stroke-dashoffset: 10;
+  }
+  84%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}

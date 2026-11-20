@@ -220,7 +220,8 @@
 .editorial-room-office-paper.is-filed {
   fill: color-mix(in srgb, var(--ok) 22%, var(--paper));
   stroke: color-mix(in srgb, var(--ok) 60%, var(--line));
-  animation: editorial-room-office-file 460ms var(--ease-out);
+  /* 等定稿那张纸（OfficeMoments 的 filer）飞到柜顶再出现。 */
+  animation: editorial-room-office-file 360ms var(--ease-out) 1300ms both;
 }
 
 .editorial-room-office-paper.is-flagged {
@@ -229,7 +230,7 @@
 }
 
 .editorial-room-office-sheet {
-  animation: editorial-room-office-slide 900ms var(--ease-in-out);
+  animation: editorial-room-office-slide 1100ms linear;
 }
 
 .editorial-room-office-sheet.is-still {
@@ -275,11 +276,17 @@
   }
 }
 
+/* 沿带子走：起点 → 拐角（不拐就是中点）→ 终点；前半段加速、后半段减速。 */
 @keyframes editorial-room-office-slide {
-  from {
+  0% {
     transform: translate(var(--from-x), var(--from-y));
+    animation-timing-function: ease-in;
   }
-  to {
+  50% {
+    transform: translate(var(--via-x), var(--via-y));
+    animation-timing-function: ease-out;
+  }
+  100% {
     transform: translate(0, 0);
   }
 }

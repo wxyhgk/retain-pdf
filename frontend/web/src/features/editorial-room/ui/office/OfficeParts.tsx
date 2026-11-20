@@ -118,20 +118,74 @@ export function Kanban({ waiting }: { waiting: number }) {
   );
 }
 
-/** 墙上的术语表白板：几行字迹、版本号、歧义单便签。刚改过时笔迹闪一下。 */
-export function Whiteboard({ version, tickets, fresh }: { version: number; tickets: number; fresh: boolean }) {
-  const corner = iso(5.7, 0, 78);
+/** 白板上一行字最长多少（按字号估的宽度，超了截断加「…」）。 */
+const BOARD_LINE_WIDTH = 78;
+const BOARD_FONT = 7;
+
+function clipToWidth(text: string, width: number, size: number): string {
+  let used = 0;
+  let out = "";
+  for (const ch of text) {
+    used += /[\x00-\xff]/.test(ch) ? size * 0.56 : size * 1.02;
+    if (used > width) return `${out}…`;
+    out += ch;
+  }
+  return out;
+}
+
+/**
+ * 墙上的术语表白板：最近改过的几条术语（新的在上；先写译法、后面淡淡跟着原文，长了截原文），版本号，歧义单便签。
+ * 同一个原文改了几次只写最新那次。
+ * 还没有术语时画几道字迹。writeKey 变了（刚改版）最上面那行重新「写」一遍：盖在字上的一条白板色慢慢抽走。
+ * 字贴着右墙：右墙上往右 1 像素、往下走半像素，所以用 matrix(1, 0.5, 0, 1, …) 把一行字斜贴上去。
+ */
+export function Whiteboard({
+  version,
+  tickets,
+  fresh,
+  entries = [],
+  writeKey = 0,
+}: {
+  version: number;
+  tickets: number;
+  fresh: boolean;
+  entries?: ReadonlyArray<{ source: string; target: string }>;
+  writeKey?: number;
+}) {
+  const corner = iso(6.35, 0, 78);
   const lines = [0, 1, 2, 3].map((i) => pts([iso(2.9, 0, 68 - i * 9), iso(4.6 - (i % 2) * 0.6, 0, 68 - i * 9)]));
+  const shown = entries.filter((entry, i) => entries.findIndex((other) => other.source === entry.source) === i).slice(0, 3);
   return (
     <g className={`editorial-room-office-whiteboard${fresh ? " is-fresh" : ""}`} data-editorial-glossary-version={version}>
-      <polygon className="editorial-room-office-board" points={rightWallRect(2.6, 6.2, 28, 82)} />
-      {lines.map((line) => (
-        <polyline key={line} className="editorial-room-office-ink" points={line} />
-      ))}
+      <polygon className="editorial-room-office-board" points={rightWallRect(2.4, 6.8, 28, 82)} />
+      {shown.length
+        ? shown.map((entry, i) => {
+            const origin = iso(2.65, 0, 70 - i * 10);
+            const targetWidth = [...entry.target].length * BOARD_FONT * 1.02;
+            const source = clipToWidth(entry.source, Math.max(0, BOARD_LINE_WIDTH - targetWidth - 5), BOARD_FONT * 0.86);
+            const writing = i === 0 && writeKey > 0;
+            return (
+              <g
+                key={writing ? `w-${writeKey}` : `${i}-${entry.source}`}
+                className={`editorial-room-office-term${i === 0 ? " is-newest" : ""}`}
+                transform={`matrix(1 0.5 0 1 ${origin.x.toFixed(1)} ${origin.y.toFixed(1)})`}
+                data-editorial-term={entry.source}
+              >
+                <text x={0} y={0} fontSize={BOARD_FONT}>
+                  <tspan className="editorial-room-office-term-target">{entry.target}</tspan>
+                  <tspan className="editorial-room-office-term-source" dx={4} fontSize={BOARD_FONT * 0.86}>
+                    {source}
+                  </tspan>
+                </text>
+                {writing ? <rect className="editorial-room-office-term-cover" x={-1} y={-BOARD_FONT} width={BOARD_LINE_WIDTH + 6} height={BOARD_FONT + 3} /> : null}
+              </g>
+            );
+          })
+        : lines.map((line) => <polyline key={line} className="editorial-room-office-ink" points={line} />)}
       {Array.from({ length: Math.min(tickets, 3) }, (_, i) => (
-        <polygon key={i} className="editorial-room-office-sticky" points={rightWallRect(4.9 + i * 0.42, 5.26 + i * 0.42, 36, 50)} />
+        <polygon key={i} className="editorial-room-office-sticky" points={rightWallRect(5.5 + i * 0.42, 5.86 + i * 0.42, 34, 48)} />
       ))}
-      <text className="editorial-room-office-version" x={corner.x - 6} y={corner.y + 16} textAnchor="end">
+      <text key={version} className="editorial-room-office-version" x={corner.x - 6} y={corner.y + 16} textAnchor="end">
         v{version}
       </text>
     </g>
