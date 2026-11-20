@@ -1,0 +1,118 @@
+/* 2.5D 编辑部：定稿归档（OfficeMoments 的 PageFiled）和白板写术语（OfficeParts 的 Whiteboard）。
+ * 和 OfficeMoments.css 一样只播一次、放完停在最后的样子；整站「减弱动态效果」时收到瞬时。
+ *
+ * @owns editorial-room */
+
+/* —— 定稿：章盖上去，稿纸沿带子送到头，再落到档案柜的纸堆上 —— */
+
+.editorial-room-office-filer {
+  animation: editorial-room-office-file-fly 1500ms linear both;
+}
+
+.editorial-room-office-stamp {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: editorial-room-office-stamp 1500ms linear both;
+}
+
+.editorial-room-office-stamp ellipse {
+  fill: color-mix(in srgb, var(--paper) 70%, transparent);
+  stroke: var(--danger);
+  stroke-width: 1.3;
+}
+
+.editorial-room-office-stamp text {
+  fill: var(--danger);
+  font-weight: 700;
+}
+
+@keyframes editorial-room-office-file-fly {
+  0%,
+  22% {
+    transform: translate(0, 0);
+    animation-timing-function: ease-in-out;
+  }
+  55% {
+    transform: translate(var(--end-x), var(--end-y));
+    animation-timing-function: ease-out;
+  }
+  72% {
+    transform: translate(
+      calc(var(--end-x) * 0.5 + var(--shelf-x) * 0.5),
+      calc(var(--end-y) * 0.5 + var(--shelf-y) * 0.5 - 24px)
+    );
+    animation-timing-function: ease-in;
+  }
+  88% {
+    opacity: 1;
+    transform: translate(var(--shelf-x), var(--shelf-y));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--shelf-x), var(--shelf-y));
+  }
+}
+
+@keyframes editorial-room-office-stamp {
+  0% {
+    opacity: 0;
+    transform: scale(2.4) rotate(-14deg);
+    animation-timing-function: ease-in;
+  }
+  12% {
+    opacity: 1;
+    transform: scale(0.9) rotate(-8deg);
+    animation-timing-function: ease-out;
+  }
+  18%,
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+/* —— 白板：最近改过的几条术语；刚改版时最上面那行像笔写出来 —— */
+
+.editorial-room-office-term text {
+  fill: color-mix(in srgb, var(--ink) 70%, var(--muted));
+  font-family: var(--font-sans);
+}
+
+.editorial-room-office-term-target {
+  font-weight: 650;
+}
+
+.editorial-room-office-term-source {
+  fill: var(--muted);
+}
+
+.editorial-room-office-term.is-newest .editorial-room-office-term-target {
+  fill: var(--ink);
+  transition: fill 600ms var(--ease-out);
+}
+
+.editorial-room-office-whiteboard.is-fresh .editorial-room-office-term.is-newest .editorial-room-office-term-target {
+  fill: color-mix(in srgb, var(--gold) 80%, var(--ink));
+}
+
+.editorial-room-office-term-cover {
+  fill: var(--paper);
+  transform-box: fill-box;
+  transform-origin: 100% 50%;
+  animation: editorial-room-office-write 1100ms var(--ease-in-out) both;
+}
+
+.editorial-room-office-whiteboard .editorial-room-office-version {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: editorial-room-pop 360ms var(--ease-out);
+}
+
+@keyframes editorial-room-office-write {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}

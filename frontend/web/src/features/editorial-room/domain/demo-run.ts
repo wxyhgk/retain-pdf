@@ -1,7 +1,7 @@
 /** 编辑部的模拟进度：后端还没推真实事件之前，用这串 editorial.v1 事件演示和测试。
  *
  * 6 页，每页安排一种情况：重翻后合格、有警告、重翻还不行进「待人看」筐、歧义单、
- * 术语表改版……第 N 页在审校的同时，第 N+1 页已经派给译者，两个工位一起动。
+ * 术语表改版、译者查全书和术语表、审校撤回自己的单子……第 N 页在审校的同时，第 N+1 页已经派给译者，两个工位一起动。
  * stopAfterPage 给了就在那页定稿后以「额度用完」停下（演示能接着跑的停法）。
  */
 
@@ -11,23 +11,34 @@ type Aside =
   | { type: "glossary_changed"; version: number; action: string; source: string; target: string }
   | { type: "ticket_opened"; term: string; current: string; proposed: string; page: number };
 
+type ToolLookup = { tool: "search_book" | "lookup_term"; query: string; found: number };
+
 type PageScript = {
   blocks: number;
   /** 每次质检的 [合格, 警告, 不合格, 代码]；不止一次就是有重翻。 */
   checks: Array<[number, number, number, Record<string, number>]>;
   /** 重翻还不行、放进「待人看」筐的块。 */
   fallback?: { block: string; reason: string };
-  review: [blocks: number, tickets: number, applied: number, rejected: number];
+  /** rejected 是修订没收的（不含撤回）；withdrawn 是审校自己撤回的。发事件时 rejected 按后端的口径加上撤回的。 */
+  review: [blocks: number, tickets: number, applied: number, rejected: number, withdrawn?: number];
+  /** 译者翻这页时查了什么（tool_call）。 */
+  lookups?: ToolLookup[];
   /** 审校这页时顺带发生的事（术语表改版、歧义单）。 */
   aside?: Aside[];
 };
 
 const PAGES: PageScript[] = [
-  { blocks: 6, checks: [[5, 0, 1, { untranslated: 1 }], [6, 0, 0, {}]], review: [4, 2, 1, 1] },
+  {
+    blocks: 6,
+    checks: [[5, 0, 1, { untranslated: 1 }], [6, 0, 0, {}]],
+    review: [4, 2, 1, 1],
+    lookups: [{ tool: "lookup_term", query: "bounding box", found: 1 }],
+  },
   {
     blocks: 8,
     checks: [[7, 1, 0, { term_mismatch: 1 }]],
     review: [6, 1, 1, 0],
+    lookups: [{ tool: "search_book", query: "reading order", found: 4 }],
     aside: [{ type: "glossary_changed", version: 3, action: "promote", source: "bounding box", target: "边界框" }],
   },
   {
@@ -39,7 +50,8 @@ const PAGES: PageScript[] = [
   {
     blocks: 7,
     checks: [[7, 0, 0, {}]],
-    review: [5, 3, 2, 1],
+    review: [5, 4, 2, 1, 1],
+    lookups: [{ tool: "search_book", query: "attention", found: 6 }],
     aside: [
       { type: "ticket_opened", term: "attention", current: "注意力", proposed: "关注", page: 4 },
       { type: "glossary_changed", version: 4, action: "candidate", source: "reading order", target: "阅读顺序" },
@@ -72,6 +84,7 @@ export function buildDemoEditorialRun(options: { stopAfterPage?: number } = {}):
     const script = PAGES[page - 1];
     push(1, { type: "page_started", page, label: String(page), blocks: script.blocks });
     push(1, { type: "translate_call", page, attempt: 1, blocks: blockIds(page, script.blocks), role: "translator" });
+    for (const lookup of script.lookups || []) push(1, { type: "tool_call", page, role: "translator", error: "", ...lookup });
   };
   const tail = (page: number) => {
     const script = PAGES[page - 1];
@@ -97,12 +110,12 @@ export function buildDemoEditorialRun(options: { stopAfterPage?: number } = {}):
   tail(1);
   for (let page = 1; page <= total; page += 1) {
     const script = PAGES[page - 1];
-    const [blocks, tickets, applied, rejected] = script.review;
+    const [blocks, tickets, applied, rejected, withdrawn = 0] = script.review;
     push(1, { type: "review_started", page, blocks });
     const hasNext = page < total && page !== options.stopAfterPage;
     if (hasNext) head(page + 1);
     for (const aside of script.aside || []) push(1, aside);
-    push(2, { type: "review_done", page, tickets, applied, rejected, withdrawn: 0 });
+    push(2, { type: "review_done", page, tickets, applied, rejected: rejected + withdrawn, withdrawn });
     const [ok, warn, error] = script.checks[script.checks.length - 1];
     push(1, {
       type: "page_done",

@@ -86,6 +86,14 @@ export const CHECK_CODE_TEXT: Record<string, string> = {
 /** 只算指标的代码（info），不进广播。 */
 const isInfoCode = (code: string) => code === "hedge_lost" || code === "person_lost" || code.startsWith("review_");
 
+/** 气泡里的短句（「查全书「attention」· 4 处」），查的词太长截断；没查成写「没查成」。 */
+export function toolBubbleText(event: { tool: string; query: string; found: number; error: string }): string {
+  const what = TOOL_TEXT[event.tool] || event.tool || "查资料";
+  const query = [...event.query].length > 16 ? `${[...event.query].slice(0, 15).join("")}…` : event.query;
+  if (event.error) return `${what}「${query}」没查成`;
+  return `${what}「${query}」· ${event.found ? `${event.found} ${event.tool === "lookup_term" ? "条" : "处"}` : "没有"}`;
+}
+
 /** 「，审校自己撤回 2 张」；没有撤回是空串。 */
 export const reviewWithdrawnText = (withdrawn: number | undefined) => (withdrawn ? `，审校自己撤回 ${withdrawn} 张` : "");
 

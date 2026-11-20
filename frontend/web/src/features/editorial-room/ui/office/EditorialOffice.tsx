@@ -2,46 +2,34 @@
 //
 // 后排：调度机器人（墙上看板挂着还没派的页）→ 通读员 → 译者；拐角是质检闸门；
 // 前排：审校 ← 修订机器人 ← 档案柜（定稿的页叠上去，最多叠 10 张高）。一条传送带把它们串起来，
-// 稿纸沿着带子从一个工位滑到下一个。墙上是术语表白板（版本号、歧义单便签），地上一只「待人看」筐，
-// 最前面一排灰色空桌是筹备中的工位。忙的角色头上一个词，细节在悬停提示里。
+// 稿纸沿着带子（过拐角）从一个工位走到下一个。墙上是术语表白板（最近改的几条术语、版本号、歧义单便签），
+// 地上一只「待人看」筐，最前面一排灰色空桌是筹备中的工位。忙的角色头上一个词，细节在悬停提示里。
+// 查资料、质检、审校单、定稿归档这些一闪而过的动作在 OfficeMoments（每条事件只播一次）。
 
-import type { CSSProperties, ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
 import { genreText, reviewWithdrawnText } from "../../domain/narration.js";
-import { stationPages, waitingPages, type PageCard, type PageStage, type RoomState } from "../../domain/room-state.js";
+import { stationPages, waitingPages, type PageCard, type RoomState } from "../../domain/room-state.js";
 import { EditorialFigure, type FigureRole } from "../EditorialFigure.jsx";
 import { EditorialRobot } from "../EditorialRobot.jsx";
 import { PLANNED_STATIONS } from "../EditorialSidePanels.jsx";
+import { OfficeMoments } from "./OfficeMoments.jsx";
 import { Basket, Belt, CheckGate, IsoBox, Kanban, Room, Sprite, Tag, Whiteboard } from "./OfficeParts.jsx";
 import { VIEW_H, VIEW_W, depthOf, flatRect, iso, type Point } from "./iso.js";
+import {
+  AT,
+  BELT,
+  CABINET_TOP_Z,
+  PILE_MAX_SHEETS,
+  PILE_STEP,
+  SHEET_ROUTE,
+  SPRITE_SCALE,
+  TAG_Z,
+  type Spot,
+} from "./layout.js";
 
-type Spot = [number, number];
-
-// 工位在地面上的位置，和稿纸停在传送带上的点。
-const AT = {
-  dispatcher: [0.8, 1.7] as Spot,
-  reader: [3.6, 1.5] as Spot,
-  translator: [6.0, 1.5] as Spot,
-  gate: [8.3, 3.7] as Spot,
-  reviewer: [6.0, 4.7] as Spot,
-  reviser: [3.6, 4.7] as Spot,
-  cabinet: [0.7, 4.5] as Spot,
-  basket: [8.5, 6.9] as Spot,
-};
-const DROP = {
-  dispatcher: [1.5, 2.9] as Spot,
-  translator: [6.0, 2.9] as Spot,
-  checker: [8.45, 4.3] as Spot,
-  reviewer: [6.0, 6.2] as Spot,
-  reviser: [3.6, 6.2] as Spot,
-};
-const BELT: Spot[] = [[1.0, 2.9], [8.45, 2.9], [8.45, 6.2], [1.0, 6.2]];
 const PLANNED_GX = [0.6, 2.2, 3.8, 5.4, 7.0];
 const PLANNED_GY = 7.5;
-
-// 档案柜上的纸堆最多画这么多张，每张高 3px；页数再多，一张代表一叠，免得几百页的书把纸堆顶出画面。
-const PILE_MAX_SHEETS = 10;
-const PILE_STEP = 3;
 
 /** 定稿的页分成至多 PILE_MAX_SHEETS 叠；一叠里有退回原文的页就标红。 */
 function filedPile(done: PageCard[]): { flagged: boolean }[] {
@@ -52,21 +40,7 @@ function filedPile(done: PageCard[]): { flagged: boolean }[] {
   });
 }
 
-// 每个阶段的稿纸停在哪、从哪滑过来。
-const SHEET_ROUTE: Partial<Record<PageStage, { to: Spot; from: Spot }>> = {
-  queued: { to: DROP.translator, from: DROP.dispatcher },
-  translating: { to: DROP.translator, from: DROP.translator },
-  retrying: { to: DROP.translator, from: DROP.checker },
-  checking: { to: DROP.checker, from: DROP.translator },
-  reviewing: { to: DROP.reviewer, from: DROP.checker },
-  revising: { to: DROP.reviser, from: DROP.reviewer },
-};
-
 type Item = { depth: number; key: string; node: ReactNode };
-
-/** 小人、机器人在场景里放大多少；头顶牌子的高度跟着算。 */
-const SPRITE_SCALE = 1.35;
-const TAG_Z = 62 * SPRITE_SCALE + 10;
 
 function Person({
   role,
@@ -107,8 +81,16 @@ function Sheet({ card }: { card: PageCard }) {
   if (!route) return null;
   const to = iso(route.to[0], route.to[1], 6);
   const from = iso(route.from[0], route.from[1], 6);
+  // 沿带子拐角走；不拐的那段取中点，好让同一套关键帧（起点 → 中途 → 终点）两种都能用。
+  const via = route.via ? iso(route.via[0], route.via[1], 6) : { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
   const still = from.x === to.x && from.y === to.y;
-  const style = { "--from-x": `${(from.x - to.x).toFixed(1)}px`, "--from-y": `${(from.y - to.y).toFixed(1)}px` } as CSSProperties;
+  const offset = (p: Point, axis: "x" | "y") => `${(p[axis] - to[axis]).toFixed(1)}px`;
+  const style = {
+    "--from-x": offset(from, "x"),
+    "--from-y": offset(from, "y"),
+    "--via-x": offset(via, "x"),
+    "--via-y": offset(via, "y"),
+  } as CSSProperties;
   return (
     <g
       className={`editorial-room-office-sheet is-${card.stage}${still ? " is-still" : ""}`}
@@ -135,6 +117,11 @@ export function EditorialOffice({ state, glossaryFresh }: { state: RoomState; gl
   const done = state.pages.filter((card) => card.stage === "done");
   const { translator, reviewer, reviser, checker } = at;
   const reading = state.reading;
+  // 一闪而过的动作只播挂上以后来的：打开「进度」页时，之前的事件不一起炸开。回放从头放时序号回到 0，跟着归零。
+  const [mountedAt] = useState(state.seq);
+  const since = state.seq < mountedAt ? 0 : mountedAt;
+  const moments = state.moments.filter((moment) => moment.seq > since);
+  const writeKey = [...moments].reverse().find((moment) => moment.event.type === "glossary_changed")?.seq ?? 0;
 
   const items: Item[] = [
     ...Person({
@@ -222,7 +209,7 @@ export function EditorialOffice({ state, glossaryFresh }: { state: RoomState; gl
           <polygon
             key={i}
             className={`editorial-room-office-paper is-filed${sheet.flagged ? " is-flagged" : ""}`}
-            points={flatRect(cx + 0.18, cy + 0.14, 0.62, 0.5, 45 + i * PILE_STEP)}
+            points={flatRect(cx + 0.18, cy + 0.14, 0.62, 0.5, CABINET_TOP_Z + i * PILE_STEP)}
           />
         ))}
       </g>
@@ -268,12 +255,19 @@ export function EditorialOffice({ state, glossaryFresh }: { state: RoomState; gl
     >
       <Room />
       <Kanban waiting={waiting.length} />
-      <Whiteboard version={state.glossary.version} tickets={state.tickets.length} fresh={glossaryFresh} />
+      <Whiteboard
+        version={state.glossary.version}
+        tickets={state.tickets.length}
+        fresh={glossaryFresh}
+        entries={state.glossary.recent}
+        writeKey={writeKey}
+      />
       <Belt path={BELT} moving={running} />
       {items.filter((item) => item.depth < 99).map((item) => <g key={item.key}>{item.node}</g>)}
       {sheets.map((card) => (
         <Sheet key={`${card.page}-${card.stage}-${card.attempt}`} card={card} />
       ))}
+      <OfficeMoments moments={moments} filedCount={done.length} />
       <text className="editorial-room-office-note" x={plannedLabel.x} y={plannedLabel.y}>
         筹备中
       </text>
