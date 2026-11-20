@@ -26,6 +26,10 @@
 - 精修组（`group = "refine"`）现在挂在排版节点上，应该挂到精修，没有精修节点就不显示。
 - 书的合计（`getDocumentUsage`）仍然可以放在概览，写明「全书累计」。
 
+前端已跟上（`fix/job-usage`，2026-11-20）：`@retainpdf/api/usage` 加 `fetchJobUsage`，`features/usage` 加 `useJobUsage`；
+`ProcessingTabWithUsage` 改读这一次任务（`doc:` 开头的占位编号不读），细节区那页改叫「本次用量」；
+`processing-hud-model` 不再把精修组挂到版面站（流水线没有精修站，合计里照样算）；概览的「花费」小字写「全书累计 N 个任务，按标价估算」。
+
 ---
 
 ## 拉取模型列表进契约（feat/provider-models-contract）

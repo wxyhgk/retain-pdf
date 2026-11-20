@@ -56,6 +56,11 @@ export async function fetchDocumentUsage(): Promise<UsageSummaryView> {
   return summary("document", 0.16);
 }
 
+/** 演示模式的单个任务：书的合计里最近这一次的那份。 */
+export async function fetchJobUsage(): Promise<UsageSummaryView> {
+  return summary("job", 0.08);
+}
+
 export async function fetchUsageSummary(): Promise<UsageSummaryView> {
   return summary("all", 1);
 }
