@@ -1,7 +1,7 @@
 import { jsx as a } from "react/jsx-runtime";
 import { createRoot as s } from "react-dom/client";
 import { ErrorBoundary as p } from "@retainpdf/ui";
-import { R as m } from "./ReaderApp-BkOv4ycB.js";
+import { R as m } from "./ReaderApp-DCtAkxcQ.js";
 const i = "retainpdf.theme", o = "classic", n = [
   {
     id: "classic",

@@ -79,6 +79,12 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
     ],
   },
   {
+    title: "待处理",
+    items: [
+      { actions: [], keys: "N / Shift+N", desc: "跳到下一处 / 上一处要看一眼的段落（底栏「待处理」）" },
+    ],
+  },
+  {
     title: "模式",
     items: [
       { actions: ["mode-source"], keys: "1", desc: "原文" },

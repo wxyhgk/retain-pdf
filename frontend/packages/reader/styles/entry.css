@@ -40,6 +40,8 @@
 @import "./float-markdown.css" layer(pages);
 @import "./block-edit.css" layer(pages);
 @import "./hud.css" layer(pages);
+@import "./version-compare.css" layer(pages);
+@import "./issues.css" layer(pages);
 /* Markdown 悬浮预览（含 MathJax） */
 @import "./markdown.css" layer(pages);
 @import "./markdown-blocks.css" layer(pages);

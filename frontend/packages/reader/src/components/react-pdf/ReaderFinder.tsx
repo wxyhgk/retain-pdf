@@ -4,7 +4,7 @@
 // 搜索词由阅读页持有（ReaderAppReactPdf）：防抖后的词同时给这里列命中、给书页文字层标出命中（PdfPageSlot）。
 // 回车 / Shift+回车在命中之间走（「第 i / n 处」），Esc 收起。Cmd/Ctrl+F 由阅读页接住打开这里。
 // 卡浮在书页上（2026-11-20 起，以前是挤开书页的左栏）：点卡外（顶栏那两颗按钮除外，它们自己管开关）、按 Esc 收起。
-import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { ListTree, Search, X } from "lucide-react";
 import { Button, Input } from "@retainpdf/ui";
 
@@ -16,7 +16,16 @@ export type ReaderFinderTab = "outline" | "search";
 const NO_REGIONS: never[] = [];
 
 /** 顶栏左边的两颗：点开左栏到那一页签，再点同一颗收起。 */
-export function ReaderFinderToggles({ open, onToggle }: { open: ReaderFinderTab | null; onToggle: (tab: ReaderFinderTab) => void }): ReactElement {
+export function ReaderFinderToggles({
+  open,
+  onToggle,
+  children,
+}: {
+  open: ReaderFinderTab | null;
+  onToggle: (tab: ReaderFinderTab) => void;
+  /** 跟在两颗后面的（「对比版本」）。 */
+  children?: ReactNode;
+}): ReactElement {
   return (
     <div className="reader-finder-toggles">
       <Button className="reader-finder-toggle" aria-pressed={open === "outline"} title="目录" onClick={() => onToggle("outline")}>
@@ -27,6 +36,7 @@ export function ReaderFinderToggles({ open, onToggle }: { open: ReaderFinderTab 
         <Search size={16} strokeWidth={2.1} aria-hidden />
         <span>搜索</span>
       </Button>
+      {children}
     </div>
   );
 }

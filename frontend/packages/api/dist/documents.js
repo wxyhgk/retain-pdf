@@ -57,9 +57,9 @@ export async function fetchDocument(apiPrefix, documentId) {
 export async function patchDocument(apiPrefix, documentId, payload = {}) {
     return generated.patchDocument(apiPrefix, { document_id: requireId(documentId, "document_id"), body: payload }, { onError: failWithServerMessage("更新文档失败，请稍后重试。") });
 }
-/** GET /documents/:id/reading —— 阅读器该打开哪个任务。 */
-export async function fetchDocumentReading(apiPrefix, documentId) {
-    return generated.getDocumentReading(apiPrefix, { document_id: requireId(documentId, "document_id") }, { onError: failWith("读取阅读入口失败。") });
+/** GET /documents/:id/reading —— 阅读器该打开哪个任务。给了 version 就是那个译文版本的（阅读页「对比版本」用）。 */
+export async function fetchDocumentReading(apiPrefix, documentId, { version = "" } = {}) {
+    return generated.getDocumentReading(apiPrefix, { document_id: requireId(documentId, "document_id"), query: version ? { version } : {} }, { onError: failWith("读取阅读入口失败。") });
 }
 /** GET /documents/:id/translation-versions —— 一本书的几份译文和当前选的哪份（null = 自动，逐页取最新）。 */
 export async function fetchTranslationVersions(apiPrefix, documentId, { includeHidden = false } = {}) {

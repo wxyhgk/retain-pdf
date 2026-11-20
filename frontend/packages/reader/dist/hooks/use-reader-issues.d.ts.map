@@ -1,0 +1,1 @@
+{"version":3,"file":"use-reader-issues.d.ts","sourceRoot":"","sources":["../../src/hooks/use-reader-issues.ts"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,yBAAyB,CAAC;AAG3D,wBAAgB,eAAe,CAAC,KAAK,EAAE,MAAM,GAAG,WAAW,EAAE,CAmB5D;AAED;;;GAGG;AACH,wBAAgB,SAAS,CAAC,MAAM,EAAE,SAAS,WAAW,EAAE,EAAE,IAAI,EAAE,MAAM,EAAE,WAAW,EAAE,MAAM,EAAE,QAAQ,EAAE,OAAO,GAAG,MAAM,CAStH"}

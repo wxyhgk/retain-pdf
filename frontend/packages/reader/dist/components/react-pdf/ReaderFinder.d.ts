@@ -1,9 +1,11 @@
-import { type ReactElement } from "react";
+import { type ReactElement, type ReactNode } from "react";
 export type ReaderFinderTab = "outline" | "search";
 /** 顶栏左边的两颗：点开左栏到那一页签，再点同一颗收起。 */
-export declare function ReaderFinderToggles({ open, onToggle }: {
+export declare function ReaderFinderToggles({ open, onToggle, children, }: {
     open: ReaderFinderTab | null;
     onToggle: (tab: ReaderFinderTab) => void;
+    /** 跟在两颗后面的（「对比版本」）。 */
+    children?: ReactNode;
 }): ReactElement;
 /** 块从阅读页的 context 来，眼下的页（目录里标出在哪一节）从 HUD context 来。 */
 export declare function ReaderFinder({ tab, onTab, onClose, onJump, query, onQuery, term, focusSignal, }: {

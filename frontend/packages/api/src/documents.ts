@@ -195,11 +195,15 @@ export async function patchDocument(apiPrefix: string, documentId: string, paylo
   );
 }
 
-/** GET /documents/:id/reading —— 阅读器该打开哪个任务。 */
-export async function fetchDocumentReading(apiPrefix: string, documentId: string): Promise<DocumentReadingView> {
+/** GET /documents/:id/reading —— 阅读器该打开哪个任务。给了 version 就是那个译文版本的（阅读页「对比版本」用）。 */
+export async function fetchDocumentReading(
+  apiPrefix: string,
+  documentId: string,
+  { version = "" }: { version?: string } = {},
+): Promise<DocumentReadingView> {
   return generated.getDocumentReading(
     apiPrefix,
-    { document_id: requireId(documentId, "document_id") },
+    { document_id: requireId(documentId, "document_id"), query: version ? { version } : {} },
     { onError: failWith("读取阅读入口失败。") },
   );
 }
