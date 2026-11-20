@@ -66,6 +66,17 @@ export function resolveReaderSourcePdf(
   return findReadyManifestArtifact(manifestPayload, "source_pdf");
 }
 
+/**
+ * 阅读页显示用的译文 PDF 不要水印：后端 2026-11-20 起 `translated.pdf` 默认每页右下角带「logo + RetainPDF」水印
+ * （给下载用），加 `watermark=0` 取原版。只给显示用；下载菜单走 dialog runtime-port 的 currentArtifactUrls，照旧带水印。
+ */
+export function withoutExportWatermark(url: string): string {
+  if (!url || /[?&]watermark=/.test(url)) return url;
+  const hash = url.indexOf("#");
+  const [head, tail] = hash < 0 ? [url, ""] : [url.slice(0, hash), url.slice(hash)];
+  return `${head}${head.includes("?") ? "&" : "?"}watermark=0${tail}`;
+}
+
 export function resolveReaderTranslatedPdfUrl(
   jobPayload: any,
   manifestPayload: any,
@@ -80,6 +91,26 @@ export function resolveReaderTranslatedPdfUrl(
     resolveReaderArtifactUrl?: typeof defaultResolveReaderArtifactUrl;
     resolveResourceUrl?: (v: unknown) => string;
   } = {},
+): string {
+  return withoutExportWatermark(
+    pickTranslatedPdfUrl(jobPayload, manifestPayload, { resolveJobActions, findReadyManifestArtifact, resolveReaderArtifactUrl, resolveResourceUrl }),
+  );
+}
+
+function pickTranslatedPdfUrl(
+  jobPayload: any,
+  manifestPayload: any,
+  {
+    resolveJobActions,
+    findReadyManifestArtifact,
+    resolveReaderArtifactUrl,
+    resolveResourceUrl,
+  }: {
+    resolveJobActions: typeof defaultResolveJobActions;
+    findReadyManifestArtifact: typeof defaultFindReadyManifestArtifact;
+    resolveReaderArtifactUrl: typeof defaultResolveReaderArtifactUrl;
+    resolveResourceUrl: (v: unknown) => string;
+  },
 ): string {
   const actions = jobPayload ? resolveJobActions(jobPayload) : null;
   if ((actions as any)?.pdfEnabled && (actions as any)?.pdf) {

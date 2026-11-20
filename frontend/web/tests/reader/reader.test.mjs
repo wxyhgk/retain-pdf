@@ -69,6 +69,7 @@ test("reader artifact url reuses the unified resource resolver", () => {
 });
 
 test("reader resource resolver owns job id source and translated PDF selection", () => {
+  // 阅读页显示的译文都带 watermark=0（后端导出水印，2026-11-20）；下载走 dialog runtime-port，不带。
   assert.equal(
     readerResourceResolver.resolveReaderResourceJobId({ readerJobId: () => "job-reader" }),
     "job-reader",
@@ -94,28 +95,28 @@ test("reader resource resolver owns job id source and translated PDF selection",
   );
   assert.equal(
     readerResourceResolver.resolveReaderTranslatedPdfUrl({}, manifest),
-    "http://retainpdf.local:41000/api/v1/jobs/job-reader/artifacts/translated_pdf",
+    "http://retainpdf.local:41000/api/v1/jobs/job-reader/artifacts/translated_pdf?watermark=0",
   );
   assert.equal(
     readerResourceResolver.resolveReaderTranslatedPdfUrl({
       output_pdf_ready: true,
       pdf_url: "/api/v1/jobs/job-reader/pdf",
     }, manifest),
-    "http://retainpdf.local:41000/api/v1/jobs/job-reader/pdf",
+    "http://retainpdf.local:41000/api/v1/jobs/job-reader/pdf?watermark=0",
   );
   assert.equal(
     readerResourceResolver.resolveReaderTranslatedPdfUrl({
       job_id: "job-reader",
       output_pdf_ready: true,
     }, { items: [] }),
-    "http://retainpdf.local:41000/api/v1/jobs/job-reader/files/output/translated.pdf",
+    "http://retainpdf.local:41000/api/v1/jobs/job-reader/files/output/translated.pdf?watermark=0",
   );
   assert.equal(
     readerResourceResolver.resolveReaderTranslatedPdfUrl({
       job_id: "job-reader",
       status: "succeeded",
     }, { items: [] }),
-    "http://retainpdf.local:41000/api/v1/jobs/job-reader/files/output/translated.pdf",
+    "http://retainpdf.local:41000/api/v1/jobs/job-reader/files/output/translated.pdf?watermark=0",
   );
   assert.equal(
     readerResourceResolver.resolveReaderTranslatedPdfUrl({
