@@ -5,7 +5,7 @@
 
 export { UsageCompact } from "./ui/UsageCompact.jsx";
 export { DocumentCostFact } from "./ui/DocumentCostFact.jsx";
-export { useDocumentUsage, useUsage } from "./ui/use-usage.js";
+export { useDocumentUsage, useJobUsage, useUsage } from "./ui/use-usage.js";
 export type { UsageState } from "./ui/use-usage.js";
 export { UsageSettingsPanel } from "./ui/UsageSettingsPanel.jsx";
 export { usageViewModel } from "./domain/usage-view-model.js";

@@ -7,6 +7,10 @@ function usageError(label) {
 export function fetchDocumentUsage(documentId, apiPrefix) {
     return generated.getDocumentUsage(apiPrefix, { document_id: documentId }, usageError("这本书的"));
 }
+/** 单个任务（含它的原地精修、重渲染），不含同一本书的其它任务：进度页「这一次花了多少」。 */
+export function fetchJobUsage(jobId, apiPrefix) {
+    return generated.getJobUsage(apiPrefix, { job_id: jobId }, usageError("这次任务的"));
+}
 /** 全部用量（删除的书不计入）。 */
 export function fetchUsageSummary(apiPrefix) {
     return generated.getUsageSummary(apiPrefix, {}, usageError(""));

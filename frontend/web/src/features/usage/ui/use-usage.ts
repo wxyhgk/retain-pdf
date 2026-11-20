@@ -2,7 +2,7 @@
 // enabled 为 false 时先不读（书籍详情只在「进度」页可见时才读）。
 import { useCallback, useEffect, useState } from "react";
 
-import { fetchDocumentUsage } from "@/platform/api/index.js";
+import { fetchDocumentUsage, fetchJobUsage } from "@/platform/api/index.js";
 import type { UsageSummaryView } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 
@@ -42,4 +42,12 @@ export function useDocumentUsage(
   { enabled = true, refreshKey = "" }: { enabled?: boolean; refreshKey?: string } = {},
 ): UsageState {
   return useUsage(`${documentId}\u0000${refreshKey}`, () => fetchDocumentUsage(documentId, API_PREFIX), Boolean(documentId) && enabled);
+}
+
+/** 单个任务的用量（书籍详情「进度」页：这一次花了多少）：可见时才读；refreshKey 变了（任务跑完）重新读。 */
+export function useJobUsage(
+  jobId: string,
+  { enabled = true, refreshKey = "" }: { enabled?: boolean; refreshKey?: string } = {},
+): UsageState {
+  return useUsage(`job\u0000${jobId}\u0000${refreshKey}`, () => fetchJobUsage(jobId, API_PREFIX), Boolean(jobId) && enabled);
 }

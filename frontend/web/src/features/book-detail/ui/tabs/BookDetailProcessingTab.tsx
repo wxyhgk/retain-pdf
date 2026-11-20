@@ -226,11 +226,11 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   if (activityLinesOf(activityProps).length) {
     sections.push({ key: "activity", label: "活动", icon: <Activity aria-hidden="true" />, content: <ProcessingActivity {...activityProps} /> });
   }
-  // 用量：以前是右栏单独一个页签。读到了、有记录（或读失败要给重试）才摆。
+  // 用量：这一次任务的（全书累计在「概览」的「花费」）。以前是右栏单独一个页签。读到了、有记录（或读失败要给重试）才摆。
   if (usage && (!usage.model.empty || usage.error)) {
     sections.push({
       key: "usage",
-      label: "用量",
+      label: "本次用量",
       icon: <Coins aria-hidden="true" />,
       content: <UsageCompact model={usage.model} loading={usage.loading} error={usage.error} onRetry={usage.reload} />,
     });

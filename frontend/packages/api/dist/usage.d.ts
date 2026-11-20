@@ -2,6 +2,8 @@ import type { UsageEstimateView, UsageSummaryView } from "@retainpdf/contracts/t
 export type { UsageEstimatePart, UsageEstimateView, UsageSummaryView } from "@retainpdf/contracts/token-usage";
 /** 一本书的全部任务，加上问这本书时助手花的。 */
 export declare function fetchDocumentUsage(documentId: string, apiPrefix?: string): Promise<UsageSummaryView>;
+/** 单个任务（含它的原地精修、重渲染），不含同一本书的其它任务：进度页「这一次花了多少」。 */
+export declare function fetchJobUsage(jobId: string, apiPrefix?: string): Promise<UsageSummaryView>;
 /** 全部用量（删除的书不计入）。 */
 export declare function fetchUsageSummary(apiPrefix?: string): Promise<UsageSummaryView>;
 /**

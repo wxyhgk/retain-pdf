@@ -83,13 +83,13 @@ test("用量里花费排最前、说明并进 notes；按环节每组一个金�
   assert.doesNotMatch(html, /data-usage-cost="preparation"/);
 });
 
-test("进度页 HUD：跑完才摆花费，在跑时还在涨不摆；没花费不摆", () => {
+test("进度页 HUD：跑完才摆这次任务的花费，在跑时还在涨不摆；没花费不摆", () => {
   const base = {
     tone: "done", jobActive: false, runningPercent: null, liveCount: null, stoppedAt: "", stationsDone: 4,
     coverage: null, translationJobId: "", pageCount: 10, timeline: null, now: 0,
   };
   const usage = usageViewModel(view());
-  assert.deepEqual(processingHudModel({ ...base, usage }).cost, { text: "约 ¥3.09", title: usage.cost.title });
+  assert.deepEqual(processingHudModel({ ...base, usage }).cost, { text: "约 ¥3.09", title: `这次任务${usage.cost.title}` });
   assert.equal(processingHudModel({ ...base, usage, tone: "active", jobActive: true, runningPercent: 10 }).cost, null);
   assert.equal(processingHudModel({ ...base, usage: usageViewModel(view({ totals: bucket({ estimated_cost_usd: 0 }) })) }).cost, null);
 });

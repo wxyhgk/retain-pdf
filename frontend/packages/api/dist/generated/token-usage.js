@@ -9,6 +9,10 @@ export function getUsageSummary(apiPrefix, _args = {}, options) {
 export function getDocumentUsage(apiPrefix, args, options) {
     return request({ apiPrefix, method: "GET", path: `documents/${encodePathParam(args.document_id)}/usage`, options });
 }
+/** GET /api/v1/jobs/:job_id/reports/usage */
+export function getJobUsage(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reports/usage`, options });
+}
 /** POST /api/v1/usage/prices */
 export function lookupModelPrices(apiPrefix, args, options) {
     return request({ apiPrefix, method: "POST", path: `usage/prices`, body: args.body, options });
