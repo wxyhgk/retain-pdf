@@ -19,6 +19,14 @@
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   transform: translateX(-50%);
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+}
+
+/* 往下翻书时收到窗口底下（use-hud-autohide）：往回翻、鼠标移到底部时回来。 */
+.reader-react-hud[data-hud-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(100% + 24px));
 }
 
 .reader-react-hud-modes {
@@ -242,8 +250,11 @@
 }
 
 .reader-bookmark-list-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   min-width: 26px;
-  padding: 0 6px;
+  padding: 0 8px 0 6px;
   font-size: 12px;
   font-weight: 650;
   font-variant-numeric: tabular-nums;

@@ -224,7 +224,8 @@
   }
 }
 
-/* 内容块悬停层：红色虚线框 + 翻译编号和「复制」（对照时左右两栏同一块一起画）。
+/* 内容块悬停层：淡色的框 + 翻译编号和「复制」（对照时左右两栏同一块一起画）。
+   2026-11-20 以前是红色虚线框（像报错）、工具条压在框里第一行字上；现在框贴着字（hover-presentation）、工具条放页边。
    这是阅读页上唯一的块级交互 —— 点块浮条、公式 / 表格点选层都删了。
    层本身不接事件，不阻断 textLayer 的拖选；只有工具条可点。 */
 .reader-text-hover-layer {
@@ -272,9 +273,10 @@
 .reader-text-hover-frame {
   position: absolute;
   box-sizing: border-box;
-  border: 2px dashed color-mix(in srgb, var(--danger) 88%, transparent);
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--danger) 4%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 7%, transparent);
   animation: reader-text-hover-in 100ms ease-out both;
 }
 
@@ -294,6 +296,25 @@
   right: 4px;
 }
 
+/* 页边（框外右边 / 左边）：竖着排，贴着框边（中间不留空，鼠标从框里移过去不经过别的块）。 */
+.reader-text-hover-tools[data-placement="side-right"],
+.reader-text-hover-tools[data-placement="side-left"] {
+  top: -2px;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.reader-text-hover-tools[data-placement="side-right"] {
+  left: 100%;
+  padding-left: 6px;
+}
+
+.reader-text-hover-tools[data-placement="side-left"] {
+  right: 100%;
+  align-items: flex-end;
+  padding-right: 6px;
+}
+
 .reader-text-hover-tools[data-placement="outside"] {
   bottom: 100%;
   left: -2px;
@@ -306,10 +327,10 @@
   align-items: center;
   min-height: 20px;
   padding: 0 8px;
-  border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
   border-radius: 999px;
   background: var(--paper);
-  color: var(--danger);
+  color: color-mix(in srgb, var(--ink) 82%, var(--muted));
   font-size: 11px;
   font-weight: 650;
   line-height: 1;
@@ -324,10 +345,10 @@
   align-items: center;
   min-height: 20px;
   padding: 0 7px;
-  border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   border-radius: 999px;
   background: var(--paper);
-  color: color-mix(in srgb, var(--danger) 80%, var(--ink));
+  color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 10.5px;
   line-height: 1;
@@ -344,7 +365,8 @@
 
 .reader-text-hover-copy:hover,
 .reader-text-hover-edit:hover {
-  background: color-mix(in srgb, var(--danger) 8%, var(--paper));
+  background: color-mix(in srgb, var(--accent) 9%, var(--paper));
+  color: var(--ink);
 }
 
 .reader-text-hover-copy[data-copy-state="copied"] {

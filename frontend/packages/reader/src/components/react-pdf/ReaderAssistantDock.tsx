@@ -58,7 +58,8 @@ export type ReaderAssistantDockProps = {
   onClose?: () => void;
 };
 
-/** 顶栏托盘里的面板按钮（只有图标，名字在悬停里）：点了开、再点收；没有任务时禁用并说明原因。 */
+/** 顶栏托盘里的面板按钮（图标 + 名字；窄屏只剩图标，名字在悬停里）：点了开、再点收；没有任务时禁用并说明原因。
+ *  2026-11-20 以前宽屏也只有图标，不悬停看不出是「Markdown」。 */
 export function ReaderPanelToggles(props: Pick<ReaderAssistantDockProps, "active" | "sourceOnly" | "onSelect" | "onClose">): ReactElement {
   const ctx = useReaderContext();
   const { active } = props;
@@ -83,6 +84,7 @@ export function ReaderPanelToggles(props: Pick<ReaderAssistantDockProps, "active
             onClick={() => (open ? onClose() : onSelect(id))}
           >
             <Icon className="reader-close-home-icon" size={18} strokeWidth={2.25} aria-hidden />
+            <span className="reader-panel-toggle-label" aria-hidden="true">{label}</span>
           </button>
         );
       })}

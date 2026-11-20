@@ -21,6 +21,7 @@ import {
   type ReaderPaneId,
 } from "./reader-dom-contract.js";
 import {
+  readerRegionKindForRegion,
   projectReaderRegion,
   type ReaderRegionHighlight,
 } from "../shared/data/reader-regions.js";
@@ -28,12 +29,12 @@ import {
   hitTestReaderTextHoverTarget,
   HOVER_TOOLS_HEIGHT,
   HOVER_TOOLS_WIDTH,
-  hoverToolsOutside,
   projectReaderTextHoverTargets,
   READER_TEXT_HOVER_TOOLS_CLASS,
   ReaderTextHoverLayer,
 } from "./ReaderTextHoverLayer.js";
 import { EditedTranslationOverlay } from "./EditedTranslationOverlay.js";
+import { useHoverPresentation } from "./hover-presentation.js";
 import { READER_INLINE_EDIT_CLASS, ReaderInlineBlockEditor } from "./ReaderInlineBlockEditor.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
 import { useReaderContext } from "../components/react-pdf/reader-context.js";
@@ -173,6 +174,10 @@ function PdfPageSlotInner({
     [editingItemId, textHoverTargets],
   );
 
+  // 悬停框贴着字画、工具条放页边（hover-presentation）。
+  const hoverKind = hoveredTextTarget ? readerRegionKindForRegion(hoveredTextTarget.highlight.region) : "";
+  const hoverPresentation = useHoverPresentation(pageBoxRef, active ? hoveredTextTarget : null, textHoverTargets, width, hoverKind);
+
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     // 触屏没有悬停：手指滑动（滚动）不该换框，框由点按决定（见 handlePointerDown）。
     if (event.pointerType === "touch") return;
@@ -191,10 +196,10 @@ function PdfPageSlotInner({
     // 工具条在框外上方时（矮 / 窄的块，比如行间公式），鼠标斜着走向按钮可能先经过上面
     // 别的块。只在工具条自己那一小块范围里保持当前框 —— 以前保持的是框上方整条带，
     // 紧贴在上面的短块（比如图注）从下面就再也悬停不到了。
-    const current = hoveredTextTarget?.rect;
+    const current = hoverPresentation?.rect;
     if (
       current
-      && hoverToolsOutside(current)
+      && hoverPresentation?.placement === "outside"
       && x >= current.left - 4
       && x <= current.left + HOVER_TOOLS_WIDTH
       && y >= current.top - HOVER_TOOLS_HEIGHT
@@ -338,6 +343,8 @@ function PdfPageSlotInner({
         pane={pane === "translated" ? "translated" : "source"}
         revisedCount={hoveredTextTarget ? revisedBlocks?.get(hoveredTextTarget.itemId) || 0 : 0}
         onEdit={editBlock}
+        frameRect={hoverPresentation?.rect}
+        placement={hoverPresentation?.placement}
       />
     </div>
   );
