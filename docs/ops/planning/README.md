@@ -24,6 +24,7 @@
 - [模型用量与花费（2026-11 起）](./model-usage/README.md)
 - [导出水印（2026-11）](./export-watermark/README.md)
 - [数据库整理（2026-11 起）](./database-cleanup/README.md)
+- [数据库重做（2026-11 起）](./database-redesign/README.md)
 - [架构与 API 契约任务台账](./architecture_tasks.csv)
 - [2026-04-15 Rust API 去耦任务清单](./250415_task.csv)
 - [2026-04-16 Normalize/翻译持续试错台账](./260416.csv)
