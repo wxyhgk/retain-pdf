@@ -6,7 +6,7 @@ from retainpdf_translation.core.orchestration.units import finalize_payload_orch
 from retainpdf_translation.core.payload.parts.apply import apply_translated_text_map
 from retainpdf_translation.core.payload.parts.units import pending_translation_items
 from retainpdf_translation.services.finalization import recover_blocking_untranslated_items
-from retainpdf_translation.services.postprocess import garbled_reconstruction
+from retainpdf_translation_classic.services.postprocess import garbled_reconstruction
 
 
 def _abstract(item_id: str, bbox: list[float], source: str) -> dict:

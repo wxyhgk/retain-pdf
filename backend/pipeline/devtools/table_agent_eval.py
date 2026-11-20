@@ -26,10 +26,10 @@ import re
 import fitz
 
 from retainpdf_pipeline.ocr.tables import build_table_model
-from retainpdf_translation.public import TableContext
-from retainpdf_translation.public import TableTermMemory
-from retainpdf_translation.public import table_chat_fn
-from retainpdf_translation.public import translate_table
+from retainpdf_translation_classic.public import TableContext
+from retainpdf_translation_classic.public import TableTermMemory
+from retainpdf_translation_classic.public import table_chat_fn
+from retainpdf_translation_classic.public import translate_table
 
 DEVTOOLS = Path(__file__).resolve().parent
 sys.path.insert(0, str(DEVTOOLS))

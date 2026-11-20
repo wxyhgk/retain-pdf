@@ -1,7 +1,7 @@
 """OCR 流式公布：OCR 每做完一段，把"到目前为止"的归一化文档和一份就绪清单写到任务目录，后面的环节（跨栏跨页拼接、翻译）不用等整个 OCR 阶段。
 
 2026-10-31 用户："我觉得用 3 是最好的，这样速度能达到极限"——OCR 和翻译并行。写的一方是 OCR provider（GLM-OCR 的
-`glm_ocr_driver`、Paddle 的 `paddle_chunked`，都在 `retainpdf_pipeline`），读的一方是翻译包的流式模式（`retainpdf_translation.workflow.streaming_flow`），
+`glm_ocr_driver`、Paddle 的 `paddle_chunked`，都在 `retainpdf_pipeline`），读的一方是翻译包的流式模式（`retainpdf_translation_classic.workflow.streaming_flow`），
 所以放在两边都依赖的底座包里。
 
 - `ocr/stream/document.v1.json`：document.v1（已缩放到原文 PDF，就绪的页和最后的整份文档逐页一致）。页按原位置放：

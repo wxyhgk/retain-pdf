@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from retainpdf_translation.llm.providers.deepseek.translation_client import parse_translation_payload
+from retainpdf_translation_classic.llm.providers.deepseek.translation_client import parse_translation_payload
 
 
 @pytest.mark.parametrize("protocol", ["tagged", "json"])

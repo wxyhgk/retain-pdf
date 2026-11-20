@@ -9,7 +9,7 @@ import pytest
 
 
 from retainpdf_translation.core.payload import save_translations
-from retainpdf_translation.workflow import book_flow
+from retainpdf_translation_classic.workflow import book_flow
 from retainpdf_translation.workflow import execution_runner
 from retainpdf_translation.workflow.checkpoint import TRANSLATION_CHECKPOINT_FILE_NAME
 from retainpdf_translation.workflow.execution import TranslationExecutionRequest

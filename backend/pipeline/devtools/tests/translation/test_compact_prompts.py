@@ -1,6 +1,6 @@
 import pytest
 
-from retainpdf_translation.llm.shared.prompt_building import (
+from retainpdf_translation_classic.llm.shared.prompt_building import (
     build_messages,
     build_single_item_fallback_messages,
 )

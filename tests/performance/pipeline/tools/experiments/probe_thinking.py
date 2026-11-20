@@ -14,7 +14,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from support.paths import ROOT, PIPELINE
 sys.path.insert(0, str(PIPELINE))
-from retainpdf_translation.llm.shared.prompt_building import build_single_item_fallback_messages
+from retainpdf_translation_classic.llm.shared.prompt_building import build_single_item_fallback_messages
 from run import load_config
 
 

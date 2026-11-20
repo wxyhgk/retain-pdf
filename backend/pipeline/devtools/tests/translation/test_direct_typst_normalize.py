@@ -4,7 +4,7 @@ import pytest
 
 from retainpdf_math.direct_typst import has_balanced_unescaped_dollars
 from retainpdf_math.direct_typst import normalize_direct_typst_translation
-from retainpdf_translation.llm.result_canonicalizer import canonicalize_batch_result
+from retainpdf_translation_classic.llm.result_canonicalizer import canonicalize_batch_result
 
 
 NORMALIZE_CASES = [

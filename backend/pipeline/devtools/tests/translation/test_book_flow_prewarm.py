@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 
-from retainpdf_translation.workflow import book_flow
+from retainpdf_translation_classic.workflow import book_flow
 from retainpdf_translation.workflow import prepare
 
 

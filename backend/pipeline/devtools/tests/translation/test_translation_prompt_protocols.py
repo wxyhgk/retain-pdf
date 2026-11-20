@@ -4,9 +4,9 @@ import json
 from unittest import mock
 
 
-from retainpdf_translation.llm.shared import prompt_building
+from retainpdf_translation_classic.llm.shared import prompt_building
 from retainpdf_translation.llm.providers.deepseek import client as deepseek_client
-from retainpdf_translation.llm.providers.deepseek import translation_client
+from retainpdf_translation_classic.llm.providers.deepseek import translation_client
 
 
 def test_translate_single_item_plain_text_uses_plain_text_protocol() -> None:

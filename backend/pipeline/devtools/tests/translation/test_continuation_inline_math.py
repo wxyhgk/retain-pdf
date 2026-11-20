@@ -4,7 +4,7 @@ from continuation_test_support import payload_item as _payload_item
 
 
 def test_chunk_source_text_fallback_keeps_inline_math_atomic() -> None:
-    from retainpdf_translation.llm.shared.orchestration.common import chunk_source_text_fallback
+    from retainpdf_translation_classic.llm.shared.orchestration.common import chunk_source_text_fallback
 
     text = "h mode i of the excitation spectrum can be characterized by its dispersion relation $\\omega_i(Q)$ and lifetime $\\tau$."
     chunks = chunk_source_text_fallback(text, words_per_chunk=5)

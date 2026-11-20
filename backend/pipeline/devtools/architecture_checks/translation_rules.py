@@ -5,6 +5,7 @@ from pathlib import Path
 from devtools.architecture_checks.common import PACKAGE_ROOT
 from devtools.architecture_checks.common import SCRIPTS_ROOT
 from devtools.architecture_checks.common import TRANSLATION_PACKAGE_ROOT
+from devtools.architecture_checks.common import translation_relative
 
 PIPELINE_ROOT = PACKAGE_ROOT / "runtime" / "pipeline"
 DOCUMENT_SCHEMA_ROOT = PACKAGE_ROOT / "ocr" / "document_schema"
@@ -32,6 +33,8 @@ TRANSLATION_ALLOWED_ROOT_DIRS = {
 TRANSLATION_ALLOWED_ROOT_FILES = {
     "__init__.py",
     "prompt_loader.py",
+    # 普通翻译包（retainpdf_translation_classic）给流水线的门面：渲染前精修、表格翻译
+    "public.py",
 }
 TRANSLATION_SHELL_ALLOWED_DIRS = {
     "entrypoints",
@@ -409,7 +412,7 @@ def translation_layer_for(path: Path) -> str | None:
     if shell_parts:
         return "entrypoints" if shell_parts[0] == "entrypoints" else None
     try:
-        parts = path.relative_to(TRANSLATION_ROOT).parts
+        parts = translation_relative(path).parts
     except ValueError:
         return None
     if not parts:

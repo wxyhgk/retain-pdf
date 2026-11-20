@@ -9,8 +9,8 @@ import pytest
 from retainpdf_translation.artifacts import TranslationRunDiagnostics
 from retainpdf_translation.llm.shared import executor_context
 from retainpdf_translation.services.results.applier import TranslationResultApplier
-from retainpdf_translation.workflow import batch_runner
-from retainpdf_translation.workflow.phases import batch_translation
+from retainpdf_translation_classic.workflow import batch_runner
+from retainpdf_translation_classic.workflow.phases import batch_translation
 
 
 def _stage_args(tmp_path, *, workers, diagnostics, count=1):

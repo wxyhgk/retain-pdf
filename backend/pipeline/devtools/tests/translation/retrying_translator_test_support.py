@@ -10,5 +10,5 @@ from types import ModuleType
 
 def load_retrying_translator() -> ModuleType:
     return import_module(
-        "retainpdf_translation.llm.shared.orchestration.retrying_translator"
+        "retainpdf_translation_classic.llm.shared.orchestration.retrying_translator"
     )

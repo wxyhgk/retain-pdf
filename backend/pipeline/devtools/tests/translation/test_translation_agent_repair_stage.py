@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 
 
-from retainpdf_translation.workflow import stages
-from retainpdf_translation.workflow.phases import repair as repair_phase
+from retainpdf_translation_classic.workflow import stages
+from retainpdf_translation_classic.workflow.phases import repair as repair_phase
 
 
 def _item(item_id: str, text: str) -> dict:

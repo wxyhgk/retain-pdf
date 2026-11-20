@@ -11,6 +11,15 @@ PACKAGE_ROOT = SCRIPTS_ROOT / "retainpdf_pipeline"
 # 翻译库是独立包 retainpdf-translation（backend/translation），和流水线并列；
 # 流水线里的 retainpdf_pipeline/translate/ 只剩 worker 外壳。
 TRANSLATION_PACKAGE_ROOT = BACKEND_ROOT / "translation" / "retainpdf_translation"
+# 普通翻译引擎 retainpdf-translation-classic（2026-11-20 从翻译包拆出来，目录结构和翻译包一样）。架构检查把它当成翻译包
+# 挂进来的一部分（和 rust_api 的 DOMAIN_MOUNTS 一个意思）：
+# - 扫翻译包或它下面的目录时，普通翻译包里同名的目录一起扫（scan_py_files）；
+# - import 名按逻辑名算：retainpdf_translation_classic.X 记成 retainpdf_translation.X（imported_modules 等）；
+# - 规则里照旧写 retainpdf_translation.X 和相对翻译包的路径（translation_relative 两个包都认）。
+# 哪个模块该放哪个包，由 translation_engines.py 卡。
+TRANSLATION_CLASSIC_PACKAGE_ROOT = BACKEND_ROOT / "translation-classic" / "retainpdf_translation_classic"
+TRANSLATION_IMPORT = "retainpdf_translation"
+TRANSLATION_CLASSIC_IMPORT = "retainpdf_translation_classic"
 
 
 class ArchitectureCheckSyntaxError(Exception):
@@ -23,15 +32,41 @@ class ArchitectureCheckSyntaxError(Exception):
         )
 
 
+def logical_translation_module(module: str) -> str:
+    """retainpdf_translation_classic.X → retainpdf_translation.X；别的原样返回。"""
+    if module == TRANSLATION_CLASSIC_IMPORT or module.startswith(TRANSLATION_CLASSIC_IMPORT + "."):
+        return TRANSLATION_IMPORT + module[len(TRANSLATION_CLASSIC_IMPORT):]
+    return module
+
+
+def translation_relative(path: Path) -> Path:
+    """相对翻译包的路径；普通翻译包里的文件也按翻译包算。两个包外的路径抛 ValueError（和 relative_to 一样）。"""
+    for root in (TRANSLATION_PACKAGE_ROOT, TRANSLATION_CLASSIC_PACKAGE_ROOT):
+        if path.is_relative_to(root):
+            return path.relative_to(root)
+    raise ValueError(f"{path} is not inside the translation packages")
+
+
+def translation_mounts(root: Path) -> list[Path]:
+    """`root` 在翻译包里时，连同普通翻译包里同名的目录（存在的话）；不在翻译包里就只有它自己。"""
+    roots = [root]
+    if root.is_relative_to(TRANSLATION_PACKAGE_ROOT):
+        mirror = TRANSLATION_CLASSIC_PACKAGE_ROOT / root.relative_to(TRANSLATION_PACKAGE_ROOT)
+        if mirror.exists():
+            roots.append(mirror)
+    return roots
+
+
 def scan_py_files(root: Path) -> list[Path]:
     paths: list[Path] = []
-    for path in root.rglob("*.py"):
-        if not path.is_file():
-            continue
-        rel_parts = path.relative_to(root).parts
-        if "__pycache__" in rel_parts or ".ipynb_checkpoints" in rel_parts:
-            continue
-        paths.append(path)
+    for mount in translation_mounts(root):
+        for path in mount.rglob("*.py"):
+            if not path.is_file():
+                continue
+            rel_parts = path.relative_to(mount).parts
+            if "__pycache__" in rel_parts or ".ipynb_checkpoints" in rel_parts:
+                continue
+            paths.append(path)
     return sorted(paths)
 
 
@@ -86,9 +121,9 @@ def imported_modules(path: Path) -> list[str]:
         modules: list[str] = []
         for node in ast.walk(parse_python_file(path)):
             if isinstance(node, ast.Import):
-                modules.extend(alias.name for alias in node.names)
+                modules.extend(logical_translation_module(alias.name) for alias in node.names)
             elif isinstance(node, ast.ImportFrom) and node.module:
-                modules.append(node.module)
+                modules.append(logical_translation_module(node.module))
         _IMPORTS_CACHE[key] = tuple(modules)
     return list(_IMPORTS_CACHE[key])
 
@@ -101,7 +136,7 @@ def imported_from_symbols(path: Path) -> list[tuple[str, str]]:
             if not isinstance(node, ast.ImportFrom) or not node.module:
                 continue
             for alias in node.names:
-                symbols.append((node.module, alias.name))
+                symbols.append((logical_translation_module(node.module), alias.name))
         _FROM_SYMBOLS_CACHE[key] = tuple(symbols)
     return list(_FROM_SYMBOLS_CACHE[key])
 
@@ -116,7 +151,13 @@ __all__ = [
     "PACKAGE_ROOT",
     "REPO_ROOT",
     "SCRIPTS_ROOT",
+    "TRANSLATION_CLASSIC_IMPORT",
+    "TRANSLATION_CLASSIC_PACKAGE_ROOT",
+    "TRANSLATION_IMPORT",
     "TRANSLATION_PACKAGE_ROOT",
+    "logical_translation_module",
+    "translation_mounts",
+    "translation_relative",
     "imported_from_symbols",
     "imported_modules",
     "module_allowed",

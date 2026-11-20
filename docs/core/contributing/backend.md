@@ -29,6 +29,9 @@
 Python 的翻译 agent 包 `retainpdf-translation-agent`（`backend/translation-agent`，2026-10-29 新建）：一次翻一整页、逐块校验、
 按重排 agent 的要求改稿，只用标准库；测试系统在 `backend/pipeline/devtools/agent_lab/`。以后的重排 agent 另建 `retainpdf-layout-agent`。
 2026-10-30 起翻译包依赖它：任务选 `translation.engine=agent` 时由 `retainpdf_translation/workflow/agent_flow.py` 调（见 [翻译层说明](../python/translation.md)），运行时镜像也装它。
+Python 的普通翻译引擎包 `retainpdf-translation-classic`（`backend/translation-classic`，2026-11-20 从翻译包拆出来）：批量逐块翻、修复兜底、
+译前准备、精修、编辑部、表格翻译，目录结构和翻译包一样；依赖翻译包，翻译包经引擎登记表 `workflow/engines.py` 延迟加载它，不 import 它。
+流水线的渲染前精修、表格翻译从 `retainpdf_translation_classic.public` 取。
 Rust 的底座包 `retainpdf-api-base` 和 Python 的底座包 `retainpdf-base`（`backend/base`，翻译拆包时新建）是两个东西。`retainpdf-api-base`（2026-10-16 新建）是 API 各领域包共用的底座：
 错误类型 `AppError` 和按编号读出任务 `job_loading`，在 `services` 下面一层。
 

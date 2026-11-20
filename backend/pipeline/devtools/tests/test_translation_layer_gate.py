@@ -74,8 +74,11 @@ def test_real_boundary_checker_limits_frozen_debt_to_exact_file_and_module(monke
 
 def test_frozen_debt_tracks_existing_edges_not_future_permissions():
     from devtools.architecture_checks.common import imported_modules
+    from devtools.architecture_checks.common import translation_mounts
     for relative, modules in TRANSLATION_LAYER_FROZEN_IMPORTS.items():
-        assert modules <= set(imported_modules(TRANSLATION_ROOT / relative)), relative
+        # 普通翻译的模块搬进了 retainpdf_translation_classic（目录结构一样），两个包里找
+        source = next(mount / relative for mount in translation_mounts(TRANSLATION_ROOT) if (mount / relative).exists())
+        assert modules <= set(imported_modules(source)), relative
 
 
 @pytest.mark.parametrize("path,module,accepted", [

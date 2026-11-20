@@ -12,8 +12,8 @@ from retainpdf_translation.core.context.models import TranslationItemContext
 from retainpdf_translation.core.payload.parts.apply import apply_group_translated_entry
 from retainpdf_translation.core.payload.parts.group_split import split_group_protected_translation
 from retainpdf_translation.core.payload.parts.units import pending_translation_items
-from retainpdf_translation.llm.shared.prompt_protocols import DISPLAY_FORMULA_IN_TEXT_HINT
-from retainpdf_translation.llm.shared.prompt_protocols import direct_typst_single_user_prompt
+from retainpdf_translation_classic.llm.shared.prompt_protocols import DISPLAY_FORMULA_IN_TEXT_HINT
+from retainpdf_translation_classic.llm.shared.prompt_protocols import direct_typst_single_user_prompt
 
 FORMULA = r"$$ \mu_{x,\mathrm{c l}}=\sum_{i}Q_{i}x_{i} $$"
 HEAD = r"where $ \mathbf{r}_{i} $ is the position vector from the origin to the $ i $th charge. The electric dipole moment is a vector whose $ x $ component is"

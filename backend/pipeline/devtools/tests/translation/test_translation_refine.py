@@ -16,12 +16,12 @@ from retainpdf_pipeline.foundation.shared.stage_specs import RenderStageRefinePa
 from retainpdf_pipeline.foundation.shared.stage_specs import RenderStageSpec
 from retainpdf_base.events import PipelineEventWriter
 from retainpdf_base.events import pipeline_event_writer_scope
-from retainpdf_translation.public import run_refine_for_render
-from retainpdf_translation.services.refine.config import refine_config_from_mapping
-from retainpdf_translation.services.refine.edits import EditRejected
-from retainpdf_translation.services.refine.edits import apply_edits
-from retainpdf_translation.services.refine.llm import ChatResult
-from retainpdf_translation.services.refine import report as report_rules
+from retainpdf_translation_classic.public import run_refine_for_render
+from retainpdf_translation_classic.services.refine.config import refine_config_from_mapping
+from retainpdf_translation_classic.services.refine.edits import EditRejected
+from retainpdf_translation_classic.services.refine.edits import apply_edits
+from retainpdf_translation_classic.services.refine.llm import ChatResult
+from retainpdf_translation_classic.services.refine import report as report_rules
 from retainpdf_translation.workflow.checkpoint.contract import project_progress
 from retainpdf_translation.workflow.checkpoint.store import CheckpointStore
 
@@ -571,7 +571,7 @@ def test_llm_errors_are_reported_and_never_raised(tmp_path: Path) -> None:
 
 
 def test_unexpected_failure_writes_a_failed_report(tmp_path: Path, monkeypatch) -> None:
-    from retainpdf_translation.workflow import refine as module
+    from retainpdf_translation_classic.workflow import refine as module
 
     translated = _build_job(tmp_path)
 
@@ -616,7 +616,7 @@ def test_parallel_batches_still_emit_progress_events(tmp_path: Path) -> None:
 
     事件写入器挂在 ContextVar 上，线程池里的线程拿不到；回调曾在工作线程里调，55 批进度全被丢掉。
     """
-    from retainpdf_translation.workflow import refine as refine_workflow
+    from retainpdf_translation_classic.workflow import refine as refine_workflow
 
     class SlowChat:
         def request(self, phase, messages, *, response_format=None):
@@ -882,15 +882,15 @@ def test_contract_mirrors_are_byte_identical() -> None:
 
 def test_qa_category_mapping_uses_real_qa_check_names() -> None:
     from retainpdf_translation.services.quality.qa.report import CHECK_ORDER
-    from retainpdf_translation.services.refine.review import CATEGORIES
-    from retainpdf_translation.services.refine.review import QA_CHECK_CATEGORY
+    from retainpdf_translation_classic.services.refine.review import CATEGORIES
+    from retainpdf_translation_classic.services.refine.review import QA_CHECK_CATEGORY
 
     assert set(QA_CHECK_CATEGORY) <= set(CHECK_ORDER)
     assert set(QA_CHECK_CATEGORY.values()) <= set(CATEGORIES)
 
 
 def test_missing_credentials_never_call_a_model_and_keep_everything(tmp_path: Path, monkeypatch) -> None:
-    from retainpdf_translation.services.refine import llm as llm_module
+    from retainpdf_translation_classic.services.refine import llm as llm_module
 
     monkeypatch.delenv("RETAIN_TEST_MISSING_KEY", raising=False)
     monkeypatch.setattr(llm_module, "request_chat_content", lambda *a, **k: pytest.fail("model must not be called"))
@@ -910,8 +910,8 @@ def test_missing_credentials_never_call_a_model_and_keep_everything(tmp_path: Pa
 
 def test_length_budget_allows_growth_only_for_omissions() -> None:
     from retainpdf_translation.services.quality.qa.units import build_qa_items
-    from retainpdf_translation.services.refine.fix import length_budget
-    from retainpdf_translation.services.refine.review import Finding
+    from retainpdf_translation_classic.services.refine.fix import length_budget
+    from retainpdf_translation_classic.services.refine.review import Finding
 
     item = next(i for i in build_qa_items(_pages()) if i.item_id == "p001-b001")
 
@@ -930,8 +930,8 @@ def test_length_budget_allows_growth_only_for_omissions() -> None:
 def test_review_and_fix_responses_keep_chinese_curly_quotes() -> None:
     # 端到端演练时，挑错返回的 explanation 里带了中文引号 “”，宽松解析把它们换成
     # ASCII 双引号，整批 JSON 解析失败、发现被丢掉。合法 JSON 必须原样解析。
-    from retainpdf_translation.services.refine.fix import parse_fix_response
-    from retainpdf_translation.services.refine.review import parse_review_findings
+    from retainpdf_translation_classic.services.refine.fix import parse_fix_response
+    from retainpdf_translation_classic.services.refine.review import parse_review_findings
 
     finding = {
         "item_id": "p043-b006",
@@ -997,7 +997,7 @@ def test_review_only_never_applies_rule_fixes(tmp_path: Path) -> None:
 
 
 def test_refine_reviewer_inherits_protocol_and_thinking_unless_set() -> None:
-    from retainpdf_translation.workflow.refine import _connections
+    from retainpdf_translation_classic.workflow.refine import _connections
 
     cfg = refine_config_from_mapping({
         "mode": "review_only", "model": "m", "base_url": "https://x.test/v1",

@@ -7,7 +7,7 @@ from retainpdf_translation.core import execution_policy as policy
 from retainpdf_translation.llm.shared.rust_executor import ExecutorError
 from retainpdf_translation.core.engine_identity import translation_engine_identity
 from retainpdf_translation.workflow.checkpoint.session import TranslationCheckpointSession
-from retainpdf_translation.workflow.scheduling.tail_retry import _drain_translation_tail_queue
+from retainpdf_translation_classic.workflow.scheduling.tail_retry import _drain_translation_tail_queue
 
 
 def test_policy_preserves_legacy_default_and_error_identity(monkeypatch):

@@ -1,10 +1,10 @@
 
 
 
-from retainpdf_translation.llm.shared.orchestration.common import (
+from retainpdf_translation_classic.llm.shared.orchestration.common import (
     is_low_risk_deepseek_batch_item,
 )
-from retainpdf_translation.llm.shared.orchestration.direct_typst_long_text import (
+from retainpdf_translation_classic.llm.shared.orchestration.direct_typst_long_text import (
     should_split_direct_typst_long_text,
 )
 from retainpdf_translation.llm.validation.english_residue import (

@@ -1,7 +1,7 @@
 import json
 
 
-from retainpdf_translation.llm.shared.orchestration import segment_routing
+from retainpdf_translation_classic.llm.shared.orchestration import segment_routing
 
 
 def _formula_item(formula_count: int) -> dict:

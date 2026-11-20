@@ -7,4 +7,5 @@ retainpdf_base
 retainpdf_math
 retainpdf_translation
 retainpdf_translation_agent
+retainpdf_translation_classic
 urllib3

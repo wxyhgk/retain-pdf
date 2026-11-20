@@ -18,8 +18,8 @@ if str(REPO_SCRIPTS_ROOT) not in sys.path:
 from retainpdf_pipeline.foundation.shared.stage_specs import TranslateStageSpec
 from retainpdf_base.credentials import resolve_credential_ref
 from retainpdf_base.io import save_json
-from retainpdf_translation.services.agents.repair import RepairAgent
-from retainpdf_translation.services.agents.repair import TranslationRepairRequest
+from retainpdf_translation_classic.services.agents.repair import RepairAgent
+from retainpdf_translation_classic.services.agents.repair import TranslationRepairRequest
 from retainpdf_translation.artifacts.review import TRANSLATION_REVIEW_FILE_NAME
 from retainpdf_translation.llm.shared.provider_runtime import request_chat_content
 from retainpdf_translation.core.payload import load_translation_manifest_file

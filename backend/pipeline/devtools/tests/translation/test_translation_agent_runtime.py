@@ -1,12 +1,12 @@
 import json
 
 
-from retainpdf_translation.services.agents import AgentRunContext
-from retainpdf_translation.services.agents import AgentPlan
-from retainpdf_translation.services.agents import LLMTask
-from retainpdf_translation.services.agents import TranslationAgentCoordinator
-from retainpdf_translation.services.agents import TranslationAgentRuntime
-from retainpdf_translation.services.agents import TranslationRepairRequest
+from retainpdf_translation_classic.services.agents import AgentRunContext
+from retainpdf_translation_classic.services.agents import AgentPlan
+from retainpdf_translation_classic.services.agents import LLMTask
+from retainpdf_translation_classic.services.agents import TranslationAgentCoordinator
+from retainpdf_translation_classic.services.agents import TranslationAgentRuntime
+from retainpdf_translation_classic.services.agents import TranslationRepairRequest
 from retainpdf_translation.services.quality import TranslationQualityIssue
 
 

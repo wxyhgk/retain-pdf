@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from retainpdf_translation.llm.citation_style import restore_bracket_citations
-from retainpdf_translation.llm.result_canonicalizer import canonicalize_batch_result
+from retainpdf_translation_classic.llm.citation_style import restore_bracket_citations
+from retainpdf_translation_classic.llm.result_canonicalizer import canonicalize_batch_result
 from retainpdf_translation.prompt_loader import load_prompt
 
 FIXTURE = Path(__file__).parent / "fixtures" / "bracket_citations_b343d1_1ed40e.json"

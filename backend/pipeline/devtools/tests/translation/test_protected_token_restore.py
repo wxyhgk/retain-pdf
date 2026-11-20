@@ -28,13 +28,13 @@ test_equivalent_rewrites_are_not_counted_as_dropped_commands。
 from __future__ import annotations
 
 
-from retainpdf_translation.llm.placeholder_transform import (  # noqa: E402
+from retainpdf_translation_classic.llm.placeholder_transform import (  # noqa: E402
     item_with_runtime_hard_glossary,
 )
-from retainpdf_translation.llm.shared.cache import (  # noqa: E402
+from retainpdf_translation_classic.llm.shared.cache import (  # noqa: E402
     has_unrestored_protected_tokens,
 )
-from retainpdf_translation.llm.shared.orchestration.metadata import (  # noqa: E402
+from retainpdf_translation_classic.llm.shared.orchestration.metadata import (  # noqa: E402
     restore_runtime_term_tokens,
 )
 from retainpdf_math.checks import (  # noqa: E402

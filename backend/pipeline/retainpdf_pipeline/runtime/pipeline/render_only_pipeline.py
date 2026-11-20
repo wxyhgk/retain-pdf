@@ -18,7 +18,7 @@ from retainpdf_pipeline.render.workflow.render_only import main as render_only_m
 from retainpdf_base.events import PipelineEventWriter
 from retainpdf_base.events import pipeline_event_writer_scope
 from retainpdf_translation.public import refresh_translation_qa_after_render
-from retainpdf_translation.public import run_refine_for_render
+from retainpdf_translation_classic.public import run_refine_for_render
 
 
 def _spec_path_from_argv() -> Path:

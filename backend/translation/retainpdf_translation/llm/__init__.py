@@ -8,9 +8,9 @@ _EXPORTS = {
     "DEFAULT_BASE_URL": ("retainpdf_translation.llm.shared.provider_runtime", "DEFAULT_BASE_URL"),
     "DEFAULT_MODEL": ("retainpdf_translation.llm.shared.provider_runtime", "DEFAULT_MODEL"),
     "build_headers": ("retainpdf_translation.llm.shared.provider_runtime", "build_headers"),
-    "build_messages": ("retainpdf_translation.llm.shared.prompt_building", "build_messages"),
+    "build_messages": ("retainpdf_translation_classic.llm.shared.prompt_building", "build_messages"),
     "build_single_item_fallback_messages": (
-        "retainpdf_translation.llm.shared.prompt_building",
+        "retainpdf_translation_classic.llm.shared.prompt_building",
         "build_single_item_fallback_messages",
     ),
     "chat_completions_url": ("retainpdf_translation.llm.shared.provider_runtime", "chat_completions_url"),
@@ -26,8 +26,8 @@ _EXPORTS = {
     "normalize_base_url": ("retainpdf_translation.llm.shared.provider_runtime", "normalize_base_url"),
     "request_chat_content": ("retainpdf_translation.llm.shared.provider_runtime", "request_chat_content"),
     "save_domain_context": ("retainpdf_translation.llm.domain_context", "save_domain_context"),
-    "translate_batch": ("retainpdf_translation.llm.shared.orchestration", "translate_batch"),
-    "translate_items_to_text_map": ("retainpdf_translation.llm.shared.orchestration", "translate_items_to_text_map"),
+    "translate_batch": ("retainpdf_translation_classic.llm.shared.orchestration", "translate_batch"),
+    "translate_items_to_text_map": ("retainpdf_translation_classic.llm.shared.orchestration", "translate_items_to_text_map"),
 }
 
 __all__ = list(_EXPORTS)

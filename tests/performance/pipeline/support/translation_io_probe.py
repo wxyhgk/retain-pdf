@@ -184,7 +184,7 @@ def main():
         clock = SimpleNamespace(sleep=lambda _seconds: None, monotonic=time.monotonic,
                                 perf_counter=time.perf_counter, time=time.time)
         for name in ("plain_text_retry", "segment_windows", "segment_executor", "sentence_level", "direct_typst"):
-            module = import_module("retainpdf_translation.llm.shared.orchestration." + name)
+            module = import_module("retainpdf_translation_classic.llm.shared.orchestration." + name)
             stack.enter_context(patch.object(module, "time", clock))
         stack.enter_context(patch.object(client, "time", clock))
         result = {"ok": False}

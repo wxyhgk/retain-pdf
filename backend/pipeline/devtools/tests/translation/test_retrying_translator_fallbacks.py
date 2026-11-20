@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 
 
 from retainpdf_translation.llm.result_payload import result_entry
-from retainpdf_translation.llm.shared.orchestration.sentence_level import sentence_level_fallback
+from retainpdf_translation_classic.llm.shared.orchestration.sentence_level import sentence_level_fallback
 
 
 from retrying_translator_test_support import load_retrying_translator
@@ -96,8 +96,8 @@ def make_formula_dense_prose_item() -> dict:
 class RetryingTranslatorFallbacksTests(unittest.TestCase):
     def test_plain_text_retry_uses_raw_single_item_fallback_after_repeated_empty_translation(self):
         load_retrying_translator()
-        import retainpdf_translation.llm.shared.orchestration.plain_text_retry as plain_text_retry
-        import retainpdf_translation.llm.shared.orchestration.fallbacks as fallbacks
+        import retainpdf_translation_classic.llm.shared.orchestration.plain_text_retry as plain_text_retry
+        import retainpdf_translation_classic.llm.shared.orchestration.fallbacks as fallbacks
         from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 
         sleep = Mock()
@@ -177,7 +177,7 @@ class RetryingTranslatorFallbacksTests(unittest.TestCase):
 
     def test_sentence_fallback_rejects_merged_partial_output_with_long_english_residue(self):
         load_retrying_translator()
-        import retainpdf_translation.llm.shared.orchestration.fallbacks as fallbacks
+        import retainpdf_translation_classic.llm.shared.orchestration.fallbacks as fallbacks
         from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 
         item = {

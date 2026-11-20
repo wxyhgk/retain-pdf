@@ -1,8 +1,8 @@
 import pytest
 
 from retainpdf_translation.core.execution_policy import is_standalone_number, strategy
-from retainpdf_translation.workflow.scheduling.optimization import page_local_batches
-from retainpdf_translation.workflow.scheduling.metrics import SchedulerMetrics
+from retainpdf_translation_classic.workflow.scheduling.optimization import page_local_batches
+from retainpdf_translation_classic.workflow.scheduling.metrics import SchedulerMetrics
 
 
 @pytest.fixture(autouse=True)
@@ -85,8 +85,8 @@ def test_large_page_plan_does_not_drop_or_duplicate_items():
 
 def test_builder_applies_filter_before_batching_and_returns_explicit_result(monkeypatch):
     from types import SimpleNamespace
-    from retainpdf_translation.workflow.batching import batching
-    from retainpdf_translation.services.fast_path.keep_origin import _is_fast_path_keep_origin_item, _fast_path_keep_origin_result
+    from retainpdf_translation_classic.workflow.batching import batching
+    from retainpdf_translation_classic.services.fast_path.keep_origin import _is_fast_path_keep_origin_item, _fast_path_keep_origin_result
     monkeypatch.setattr(batching, "_is_low_risk_batchable_item", lambda *args, **kwargs: True)
     items = [{"item_id": "n", "page_idx": 0, "source_text": "(1)"},
              {"item_id": "body", "page_idx": 0, "source_text": "Introduction"}]

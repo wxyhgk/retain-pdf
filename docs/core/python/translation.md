@@ -15,6 +15,16 @@ backend/translation/retainpdf_translation/
 再调翻译包的 `retainpdf_translation.public`。翻译包只依赖 `retainpdf_base`、`retainpdf_math`，不 import 流水线。
 翻译的测试仍在 `backend/pipeline/devtools/tests/translation`。
 
+2026-11-20 起翻译拆成底座和引擎（[方案](../../ops/planning/translation-package/20261120-翻译包拆成底座和两个引擎.md)）：
+
+| 包 | 目录 | 管什么 |
+| --- | --- | --- |
+| `retainpdf-translation`（底座） | `backend/translation/retainpdf_translation/` | 读文档、接续段、页面策略、回填、断点、清单、质检、请求层、提示词、用量；执行入口和引擎登记表 `workflow/engines.py` |
+| `retainpdf-translation-classic`（普通翻译引擎，`translation.engine=legacy`） | `backend/translation-classic/retainpdf_translation_classic/` | 批量逐块翻、流式跟着 OCR 翻、乱码重构、修复兜底、译前准备、精修、编辑部、表格翻译、任务记忆、结果缓存 |
+| agent 引擎（`translation.engine=agent`） | 接线 `retainpdf_translation/workflow/agent_flow.py`，本体 `backend/translation-agent` | 通读、按节翻、审校 |
+
+普通翻译包目录结构和底座一样（下面「目录分层」说的目录在两个包里各有一部分），依赖底座，底座不 import 它。
+
 它只负责把标准化 OCR 文档变成可渲染的翻译产物：
 
 ```text

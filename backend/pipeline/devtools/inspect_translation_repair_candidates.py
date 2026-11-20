@@ -15,9 +15,9 @@ if str(REPO_SCRIPTS_ROOT) not in sys.path:
 from retainpdf_translation.core.item_reader import item_policy_translate
 from retainpdf_translation.core.payload import load_translation_manifest_file
 from retainpdf_translation.core.payload import load_translations
-from retainpdf_translation.services.agents import TranslationAgentCoordinator
-from retainpdf_translation.services.agents.repair_pipeline import _has_blocking_issue
-from retainpdf_translation.services.agents.repair_pipeline import _repairable_review_issues
+from retainpdf_translation_classic.services.agents import TranslationAgentCoordinator
+from retainpdf_translation_classic.services.agents.repair_pipeline import _has_blocking_issue
+from retainpdf_translation_classic.services.agents.repair_pipeline import _repairable_review_issues
 
 
 def _job_root_from_arg(value: str) -> Path:

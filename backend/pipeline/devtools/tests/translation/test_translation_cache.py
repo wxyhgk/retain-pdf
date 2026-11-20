@@ -1,8 +1,8 @@
 import json
 
 
-from retainpdf_translation.llm.shared.cache import cache_key_for_item
-from retainpdf_translation.llm.shared import cache
+from retainpdf_translation_classic.llm.shared.cache import cache_key_for_item
+from retainpdf_translation_classic.llm.shared import cache
 
 
 def test_translation_cache_key_includes_translation_style_hint() -> None:
@@ -148,7 +148,7 @@ def test_unit_cache_prunes_expired_entries_once(tmp_path, monkeypatch) -> None:
     import os
     import time as time_module
 
-    from retainpdf_translation.llm.shared import cache as cache_module
+    from retainpdf_translation_classic.llm.shared import cache as cache_module
     from retainpdf_base import paths as paths_module
 
     cache_root = tmp_path / "_translation_unit_cache"

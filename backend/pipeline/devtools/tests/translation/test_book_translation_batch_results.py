@@ -2,10 +2,10 @@ from pathlib import Path
 
 
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
-from retainpdf_translation.services.memory import JobMemorySnapshot
+from retainpdf_translation_classic.services.memory import JobMemorySnapshot
 from retainpdf_translation.services.results.applier import expand_duplicate_results as _expand_duplicate_results
-from retainpdf_translation.workflow.batching import pending_units
-from retainpdf_translation.workflow.batching.plan import _dedupe_pending_items
+from retainpdf_translation_classic.workflow.batching import pending_units
+from retainpdf_translation_classic.workflow.batching.plan import _dedupe_pending_items
 
 
 def _item(item_id: str, text: str, **overrides):

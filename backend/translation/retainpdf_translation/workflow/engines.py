@@ -27,10 +27,10 @@ class EngineSpec:
 
 ENGINES: dict[str, EngineSpec] = {
     "legacy": EngineSpec(
-        translate_book="retainpdf_translation.workflow.book_flow:translate_book_with_global_continuations",
-        translate_book_streaming="retainpdf_translation.workflow.streaming_flow:translate_book_streaming",
-        run_preparation="retainpdf_translation.workflow.preparation_step:run_translation_preparation",
-        effective_batch_size="retainpdf_translation.workflow.batching.plan:effective_translation_batch_size",
+        translate_book="retainpdf_translation_classic.workflow.book_flow:translate_book_with_global_continuations",
+        translate_book_streaming="retainpdf_translation_classic.workflow.streaming_flow:translate_book_streaming",
+        run_preparation="retainpdf_translation_classic.workflow.preparation_step:run_translation_preparation",
+        effective_batch_size="retainpdf_translation_classic.workflow.batching.plan:effective_translation_batch_size",
     ),
     "agent": EngineSpec(
         translate_book="retainpdf_translation.workflow.agent_flow:translate_book_with_agent",

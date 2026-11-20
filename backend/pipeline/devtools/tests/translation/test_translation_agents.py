@@ -1,8 +1,8 @@
 
 
-from retainpdf_translation.services.agents import TerminologyAgent
-from retainpdf_translation.services.agents import TranslationAgentCoordinator
-from retainpdf_translation.services.agents import ConsistencyReviewerAgent
+from retainpdf_translation_classic.services.agents import TerminologyAgent
+from retainpdf_translation_classic.services.agents import TranslationAgentCoordinator
+from retainpdf_translation_classic.services.agents import ConsistencyReviewerAgent
 from retainpdf_translation.llm.shared.control_context import GlossaryEntry
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 

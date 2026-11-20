@@ -5,8 +5,8 @@ from retainpdf_translation.llm.shared.control_context import build_translation_c
 from retainpdf_translation.llm.shared.control_context import FallbackPolicy
 from retainpdf_translation.llm.shared.control_context import TimeoutPolicy
 from retainpdf_translation.llm.shared.control_context import EngineProfile
-from retainpdf_translation.llm.shared.orchestration.batched_plain_single import run_translation_tail_items
-from retainpdf_translation.llm.shared.orchestration.batched_plain_single import retry_deferred_transport_items
+from retainpdf_translation_classic.llm.shared.orchestration.batched_plain_single import run_translation_tail_items
+from retainpdf_translation_classic.llm.shared.orchestration.batched_plain_single import retry_deferred_transport_items
 from retainpdf_translation.llm.shared.tail_retry_queue import TranslationTailItem
 from retainpdf_translation.llm.shared.tail_retry_queue import TranslationTailQueue
 

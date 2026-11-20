@@ -43,17 +43,36 @@ def test_a_base_module_importing_the_classic_engine_is_reported(tmp_path, monkey
     root = tmp_path / "retainpdf_translation"
     (root / "workflow").mkdir(parents=True)
     (root / "workflow" / "execution_runner.py").write_text(
-        "def run():\n    from retainpdf_translation.workflow.book_flow import translate_book_with_global_continuations\n",
+        "def run():\n    from retainpdf_translation_classic.workflow.book_flow import translate_book_with_global_continuations\n",
         encoding="utf-8",
     )
     (root / "workflow" / "agent_flow.py").write_text("from retainpdf_translation.llm.shared import prompt_building\n", encoding="utf-8")
     monkeypatch.setattr(gate, "TRANSLATION_ROOT", root)
+    monkeypatch.setattr(gate, "TRANSLATION_CLASSIC_PACKAGE_ROOT", tmp_path / "retainpdf_translation_classic")
     monkeypatch.setattr(gate, "rel", lambda path: path)
     errors: list[str] = []
     check_translation_engine_boundaries(errors)
     assert len(errors) == 2, errors
     assert "workflow.book_flow" in errors[0] or "workflow.book_flow" in errors[1], "函数里的延迟 import 也算"
     assert any("llm.shared.prompt_building" in error for error in errors), "from 包 import 子模块 也算"
+
+
+def test_modules_must_live_in_the_right_package(tmp_path, monkeypatch) -> None:
+    base, classic = tmp_path / "retainpdf_translation", tmp_path / "retainpdf_translation_classic"
+    (base / "workflow").mkdir(parents=True)
+    (classic / "workflow").mkdir(parents=True)
+    (base / "workflow" / "book_flow.py").write_text("", encoding="utf-8")  # 普通翻译留在了底座
+    (classic / "workflow" / "execution_runner.py").write_text("", encoding="utf-8")  # 底座的模块跑进了普通翻译包
+    (base / "workflow" / "execution.py").write_text("from retainpdf_translation_classic.public import translate_table\n", encoding="utf-8")
+    monkeypatch.setattr(gate, "TRANSLATION_ROOT", base)
+    monkeypatch.setattr(gate, "TRANSLATION_CLASSIC_PACKAGE_ROOT", classic)
+    monkeypatch.setattr(gate, "rel", lambda path: path)
+    errors: list[str] = []
+    check_translation_engine_boundaries(errors)
+    assert len(errors) == 3, errors
+    assert any("book_flow" in error and "belongs in retainpdf_translation_classic" in error for error in errors)
+    assert any("execution_runner" in error and "is not a classic engine module" in error for error in errors)
+    assert any("retainpdf_translation_classic.public" in error for error in errors), "底座连普通翻译的门面也不许 import"
 
 
 @pytest.mark.parametrize("name", sorted(engines.ENGINES))

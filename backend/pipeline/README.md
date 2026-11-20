@@ -264,7 +264,7 @@ python backend/pipeline/devtools/backfill_normalized_documents.py \
 
 Pipeline 是可独立安装的 `retainpdf-pipeline` 包，依赖真相源是本目录的
 [`pyproject.toml`](./pyproject.toml)。后端 workspace 根是
-[`backend/pyproject.toml`](../pyproject.toml)，组合 `base`、`math`、`pipeline`、`translation`、`translation-agent` 这几个成员；
+[`backend/pyproject.toml`](../pyproject.toml)，组合 `base`、`math`、`pipeline`、`translation`、`translation-agent`、`translation-classic` 这几个成员；
 monorepo 根不再持有 Python workspace 真相源。
 
 wheel 只发布 `retainpdf_pipeline.*`；不会再安装通用顶层包名

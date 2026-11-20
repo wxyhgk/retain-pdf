@@ -1,8 +1,8 @@
 import threading
 from unittest.mock import Mock
 
-from retainpdf_translation.workflow import batch_runner as runner
-from retainpdf_translation.workflow.scheduling.page_order import page_ordered_batches, task_order
+from retainpdf_translation_classic.workflow import batch_runner as runner
+from retainpdf_translation_classic.workflow.scheduling.page_order import page_ordered_batches, task_order
 
 
 def test_page_order_splits_transport_batches_but_not_continuation_units():

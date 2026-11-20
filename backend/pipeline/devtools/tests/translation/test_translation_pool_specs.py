@@ -3,8 +3,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from retainpdf_translation.workflow import batch_runner as runner
-from retainpdf_translation.workflow.scheduling.pool_specs import build_pool_specs
+from retainpdf_translation_classic.workflow import batch_runner as runner
+from retainpdf_translation_classic.workflow.scheduling.pool_specs import build_pool_specs
 
 
 def test_legacy_pool_labels_counts_and_batch_identity():

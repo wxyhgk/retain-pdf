@@ -11,7 +11,7 @@ from support.paths import PIPELINE
 sys.path.insert(0, str(PIPELINE))
 from retainpdf_translation.core.engine_identity import translation_engine_identity
 from retainpdf_translation.llm.shared.executor_context import item_ids
-from retainpdf_translation.llm.shared.prompt_building import (
+from retainpdf_translation_classic.llm.shared.prompt_building import (
     build_messages, build_single_item_fallback_messages,
 )
 

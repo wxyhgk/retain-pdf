@@ -6,19 +6,19 @@ import pytest
 
 
 from retainpdf_translation.llm.validation.errors import TranslationProtocolError
-from retainpdf_translation.llm.result_canonicalizer import canonicalize_batch_result
+from retainpdf_translation_classic.llm.result_canonicalizer import canonicalize_batch_result
 from retainpdf_translation.llm.validation.errors import MathDelimiterError
 from retainpdf_translation.llm.result_payload import result_entry
-from retainpdf_translation.llm.result_validator import validate_batch_result
+from retainpdf_translation_classic.llm.result_validator import validate_batch_result
 from retainpdf_translation.llm.validation.errors import EmptyTranslationError
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
-from retainpdf_translation.llm.shared.orchestration.direct_typst import translate_direct_typst_plain_text_with_retries
-from retainpdf_translation.llm.shared.orchestration.direct_typst_salvage import extract_direct_typst_protocol_text
+from retainpdf_translation_classic.llm.shared.orchestration.direct_typst import translate_direct_typst_plain_text_with_retries
+from retainpdf_translation_classic.llm.shared.orchestration.direct_typst_salvage import extract_direct_typst_protocol_text
 
 
 @pytest.fixture
 def retry_sleep(monkeypatch):
-    from retainpdf_translation.llm.shared.orchestration import direct_typst
+    from retainpdf_translation_classic.llm.shared.orchestration import direct_typst
 
     sleep = Mock()
     monkeypatch.setattr(direct_typst, "time", SimpleNamespace(perf_counter=time.perf_counter, sleep=sleep))

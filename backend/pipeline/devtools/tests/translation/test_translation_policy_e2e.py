@@ -7,7 +7,7 @@ from retainpdf_translation.core.payload.parts.apply import apply_single_translat
 from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 from retainpdf_translation.services.agents.review_artifact import build_translation_review
 from retainpdf_translation.services.finalization.untranslated import recover_blocking_untranslated_items
-from retainpdf_translation.workflow.batching.plan import _build_translation_batches
+from retainpdf_translation_classic.workflow.batching.plan import _build_translation_batches
 
 
 def _item(item_id: str, source_text: str, **overrides) -> dict:

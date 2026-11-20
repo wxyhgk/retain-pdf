@@ -1,0 +1,37 @@
+"""普通翻译引擎给流水线用的稳定门面（2026-11-20 拆包：以前在 retainpdf_translation.public，底座的门面不该导出引擎的东西）。
+
+延迟导出，和底座的 public 一样：登记在 `_EXPORTS`，用到时才 import。
+"""
+
+from __future__ import annotations
+
+from importlib import import_module
+
+_EXPORTS = {
+    "run_refine_for_render": (
+        "retainpdf_translation_classic.workflow.refine",
+        "run_refine_for_render",
+    ),
+    # 表格翻译（T3）：表格 agent、术语记忆、整表译文、模型调用
+    "TableContext": ("retainpdf_translation_classic.services.tables", "TableContext"),
+    "TableResult": ("retainpdf_translation_classic.services.tables", "TableResult"),
+    "TableTermMemory": ("retainpdf_translation_classic.services.tables", "TableTermMemory"),
+    "TABLE_PROMPT_VERSION": ("retainpdf_translation_classic.services.tables", "PROMPT_VERSION"),
+    "TABLE_STATUS_TRANSLATED": ("retainpdf_translation_classic.services.tables", "STATUS_TRANSLATED"),
+    "table_cache_key": ("retainpdf_translation_classic.services.tables", "cache_key"),
+    "table_chat_fn": ("retainpdf_translation_classic.services.tables.llm", "table_chat_fn"),
+    "translate_table": ("retainpdf_translation_classic.services.tables", "translate_table"),
+    "translated_table_html": ("retainpdf_translation_classic.services.tables", "translated_table_html"),
+}
+
+__all__ = list(_EXPORTS)
+
+
+def __getattr__(name: str):
+    target = _EXPORTS.get(name)
+    if target is None:
+        raise AttributeError(name)
+    module_name, attr_name = target
+    value = getattr(import_module(module_name), attr_name)
+    globals()[name] = value
+    return value
