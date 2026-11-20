@@ -76,6 +76,8 @@ class Model:
             text = source.replace("TSA", "运输安全管理局（TSA）" if "TSA screened" in source else "TSA").replace("Keenan", "基南")
             out.append(f"¶{n} 译：{text}。")
         answer = "\n\n".join(out)
+        if "visiting researcher" in manuscript:
+            answer += "\n@@ 拿不准\n¶1 人名译法拿不准"
         if "TSA screened" in manuscript:
             answer += "\n@@ 新词\nTSA | 运输安全管理局\nKeenan | 基南\nMorrill | 莫里尔\nAGVA | 美国综艺艺人工会\n@@ 梗概\n作者在机场安检处碰壁。"
         return {"content": [{"type": "text", "text": answer}], "usage": usage}

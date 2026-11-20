@@ -83,7 +83,9 @@ class Model:
                 if n in self.lose.get(self.section_calls, set()):
                     translated = re.sub(r"⟦F\d+⟧", "", translated)
                 out.append(f"¶{n} {translated}")
-            return {"content": [{"type": "text", "text": "\n\n".join(out)}], "usage": usage}
+            # 第一遍附一条「拿不准」：审校只看带可疑标记的段（意思闸门），没有标记就不审
+            doubt = ("\n@@ 拿不准\n" + "\n".join(f"¶{n} 测试用" for n in paragraphs)) if self.section_calls == 1 else ""
+            return {"content": [{"type": "text", "text": "\n\n".join(out) + doubt}], "usage": usage}
         payload = json.loads(body["messages"][0]["content"])
         ids = payload.get("required_ids") or []
         records = {r["id"]: r for r in payload.get("blocks") or []}

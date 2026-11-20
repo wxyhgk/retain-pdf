@@ -36,6 +36,7 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   原稿里引号括起来的 2–6 个词的说法由程序单列在请求里，让模型逐个判断是不是别的学科的固定术语（foot in the door 是「登门槛」，2026-11-20）。
   回答写到上限或最后一段没写完（`cut_paragraph`）的段重交；取术语按这一节所在的章（2026-11-20）。
   译者可以在译稿后附「@@ 新词」「@@ 梗概」：新词核实后记进术语表（缩写记中文全称），梗概按章传给后面的节；缩写也记「前文已出现」（`learn_section`，2026-11-20）。
+  审校时带可疑标记的段附上提示（`section_flags`：推测、否定、句子、数字个数对不上，偏短，译者附的「@@ 拿不准」）；`review_page(only=…)` 可只审这些段（2026-11-20）。
   两次都没交好的段退回逐块翻时只带前后各两段作上下文，配上术语、人名、文风（`fallback_page`，2026-11-20）。
   `review=True` 时整节对照原文审一次意思（只收意思类单子，不做文笔那一轮）。只管人文社科、通俗读物；正式流程 2026-11-19 起默认按节
   （`agent_flow.agent_structure`，`RETAIN_AGENT_STRUCTURE=page` 退回逐页），`DocumentRun` 自己的默认仍是逐页。

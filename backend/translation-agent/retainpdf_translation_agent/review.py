@@ -41,7 +41,10 @@ ORIGINAL_IN_PARENS = re.compile(r"[（(][^（）()]*[A-Za-z][^（）()]*[)）]")
 CATEGORIES = {"mistranslation": "错译", "omission": "漏译或添加", "number_term": "数字或术语", "fluency": "不通顺", "tone": "语气偏离"}
 
 REVIEW_PROMPT = """你是英译中学术翻译的审校。你会收到一页里若干块的英文原文和中文译文，以及全书定好的术语和人名。
-逐块对照原文读译文，只找**确实错了**的地方，开问题单。只收五类：
+逐块对照原文读译文，只找**确实错了**的地方，开问题单。块上有 flags 的，是程序或译者标出的可疑处（推测语气、否定、句子、
+数字的个数对不上，译文偏短，译者没把握）。每一条都逐句核对：在原文里找到那个词、那句话，再在译文里找它对应的地方——
+推测、否定的意思还在不在，那句话有没有译出来，数字对不对。意思丢了、说反了、句子漏了，就开单补上；
+都在（只是换了说法、并进了别的句子）就不开。flags 只是提示，会误报，也可能漏，别的地方确实错了照样开单。只收五类：
 - mistranslation 错译：意思错、主宾或逻辑颠倒、否定丢了、数量和倍数错（"a hundred times as much"是"……的一百倍"不是"多一百倍"）、
   一词多义选错（排版里 set 是"排"不是"设置"，points 是"磅"或"百分点"，sorry 在惋惜时不是"懊悔"）；
 - omission 漏译或添加：少了分句、限定词、例子、修饰语，或多了原文没有的意思；
@@ -116,13 +119,28 @@ def reviewable(page: PageInput, results: dict[str, BlockResult]) -> list:
     return out
 
 
-def review_page(agent, page: PageInput, results: dict[str, BlockResult], *, accuracy_only: bool = False) -> dict:
+def review_page(
+    agent,
+    page: PageInput,
+    results: dict[str, BlockResult],
+    *,
+    accuracy_only: bool = False,
+    only: dict[str, list[str]] | None = None,
+    hints: dict[str, list[str]] | None = None,
+) -> dict:
     """审一页并按收下的单子改 `results`（就地改）。返回这一页的审校记录：收了哪些、拒了哪些、为什么。
-    `accuracy_only`：两轮分开时的第一轮，只收意思类的单子（不收 fluency）。"""
+    `accuracy_only`：两轮分开时的第一轮，只收意思类的单子（不收 fluency）。
+    `only`：只审这些块（块 id → 可疑之处的提示，随块交给审校）；一块都没有就不发请求。
+    `hints`：照常审全部，这些块附上可疑之处的提示（按节翻的意思闸门，2026-11-20）。"""
+    flagged = only if only is not None else (hints or {})
     from retainpdf_translation_agent.agent import ROLE_REVIEWER
 
     blocks = reviewable(page, results)
+    if only is not None:
+        blocks = [b for b in blocks if b.id in only]
     report: dict = {"reviewed": len(blocks), "tickets": 0, "applied": [], "rejected": []}
+    if only is not None:
+        report["flagged"] = [b.id for b in blocks]
     if not blocks:
         return report
     glossary = [
@@ -133,7 +151,10 @@ def review_page(agent, page: PageInput, results: dict[str, BlockResult], *, accu
         "page": page.page_label,
         "style": (page.context or {}).get("style", ""),
         "glossary": glossary,
-        "blocks": [{"id": b.id, "class": b.cls, "source": b.text, "translation": results[b.id].translation} for b in blocks],
+        "blocks": [
+            {"id": b.id, "class": b.cls, "source": b.text, "translation": results[b.id].translation} | ({"flags": flagged[b.id]} if flagged.get(b.id) else {})
+            for b in blocks
+        ],
     }
     try:
         system = REVIEW_PROMPT + ACCURACY_NOTE if accuracy_only else REVIEW_PROMPT
