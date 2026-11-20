@@ -163,3 +163,34 @@ test("搜索框：回车跳下一处、Shift+回车上一处，写「第 i / n �
   root.unmount();
   dom.window.close();
 });
+
+test("目录、搜索是浮在书页上的卡：点卡外、按 Esc 收起；点卡里、点顶栏开关按钮不收；书页不让位", async () => {
+  const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div><div class='reader-finder-toggles'><button id='toggle'>目录</button></div><div id='page'></div></body></html>" });
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { act } = React;
+  const { ReaderFinder } = await import("../../../packages/reader/src/components/react-pdf/ReaderFinder.tsx");
+  const { ReaderProvider } = await import("../../../packages/reader/src/components/react-pdf/reader-context.tsx");
+  let closed = 0;
+  const root = createRoot(dom.window.document.getElementById("root"));
+  await act(async () => {
+    root.render(React.createElement(ReaderProvider, { value: { regions: [region("p001-b0001", 1, "Intro", "引言")] }, hud: { currentPage: 1 } },
+      React.createElement(ReaderFinder, { tab: "outline", onTab: () => {}, onClose: () => { closed += 1; }, onJump: () => {}, query: "", onQuery: () => {}, term: "" })));
+  });
+  const doc = dom.window.document;
+  const press = async (el) => { await act(async () => { el.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); }); };
+  await waitFor(() => doc.querySelector(".reader-finder"), "卡");
+  await press(doc.querySelector(".reader-finder-head"));
+  await press(doc.getElementById("toggle"));
+  assert.equal(closed, 0, "卡里、开关按钮不收");
+  await press(doc.getElementById("page"));
+  assert.equal(closed, 1, "点书页收起");
+  await act(async () => { doc.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+  assert.equal(closed, 2, "Esc 收起");
+  root.unmount();
+  dom.window.close();
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("../../../packages/reader/styles/finder.css", import.meta.url), "utf8");
+  assert.doesNotMatch(css, /is-finder-open[^{]*\{[^}]*left:/, "书页不再让出一栏");
+  assert.match(css, /\.reader-finder\s*\{[^}]*border-radius[^}]*box-shadow/s, "浮着的卡：圆角加阴影");
+});

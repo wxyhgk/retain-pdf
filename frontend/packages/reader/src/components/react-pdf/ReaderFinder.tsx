@@ -3,6 +3,7 @@
 //
 // 搜索词由阅读页持有（ReaderAppReactPdf）：防抖后的词同时给这里列命中、给书页文字层标出命中（PdfPageSlot）。
 // 回车 / Shift+回车在命中之间走（「第 i / n 处」），Esc 收起。Cmd/Ctrl+F 由阅读页接住打开这里。
+// 卡浮在书页上（2026-11-20 起，以前是挤开书页的左栏）：点卡外（顶栏那两颗按钮除外，它们自己管开关）、按 Esc 收起。
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { ListTree, Search, X } from "lucide-react";
 import { Button, Input } from "@retainpdf/ui";
@@ -62,6 +63,25 @@ export function ReaderFinder({
   const [active, setActive] = useState(-1);
   useEffect(() => setActive(-1), [term]);
   const input = useRef<HTMLInputElement | null>(null);
+  const card = useRef<HTMLElement | null>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    const onPointer = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      if (!target || card.current?.contains(target) || target.closest?.(".reader-finder-toggles")) return;
+      closeRef.current();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeRef.current();
+    };
+    document.addEventListener("pointerdown", onPointer, true);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, []);
   const list = useRef<HTMLOListElement | null>(null);
   useEffect(() => {
     if (tab === "search") input.current?.focus();
@@ -79,7 +99,7 @@ export function ReaderFinder({
   };
 
   return (
-    <aside className="reader-finder" aria-label={tab === "outline" ? "目录" : "搜索"}>
+    <aside ref={card} className="reader-finder" aria-label={tab === "outline" ? "目录" : "搜索"}>
       <header className="reader-finder-head">
         <div className="reader-finder-tabs" role="tablist">
           <Button className="reader-finder-tab" role="tab" aria-selected={tab === "outline"} onClick={() => onTab("outline")}>目录</Button>

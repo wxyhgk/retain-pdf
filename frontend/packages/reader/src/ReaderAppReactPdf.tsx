@@ -306,9 +306,9 @@ export function ReaderAppReactPdf() {
   useFindShortcut(openFind);
   const jumpFromFinder = useCallback((itemId: string) => {
     c.jumpToAnchor({ block_id: itemId });
-    // 窄屏上左栏盖着书：跳过去就收起来。
-    if (readerViewportWidth() < 900) setFinder(null);
-  }, [c.jumpToAnchor]);
+    // 卡浮在书上：在目录里点一条就收起；搜索时留着（接着按回车走下一处），窄屏上搜索也收起（卡盖着书）。
+    if (finder === "outline" || readerViewportWidth() < 900) setFinder(null);
+  }, [c.jumpToAnchor, finder]);
   const jumpToBlock = useCallback((itemId: string) => c.jumpToAnchor({ block_id: itemId }), [c.jumpToAnchor]);
   // 改译文：悬停框里的「改」、按 E 都是把这一段变成编辑框（在译文栏里）。只开着原文栏时先切到对照。
   const blockEdit = useReaderBlockEdit({
