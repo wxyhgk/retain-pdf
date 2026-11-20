@@ -28,6 +28,7 @@ const PATHS: &[(&str, &str)] = &[
     ("GET", "/reports/layout-fit"),
     ("GET", "/reports/refine"),
     ("GET", "/reports/failure"),
+    ("GET", "/reports/usage"),
     ("GET", "/reader/markdown"),
     ("GET", "/translations"),
     ("GET", "/translations/p001-b001"),

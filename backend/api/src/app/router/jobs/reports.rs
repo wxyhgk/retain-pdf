@@ -17,4 +17,6 @@ crate::endpoints! {
     GET "/api/v1/jobs/:job_id/reports/refine" => reports::get_refine_report, signed;
     /// 失败原因
     GET "/api/v1/jobs/:job_id/reports/failure" => reports::get_job_diagnostics, signed;
+    /// 这个任务自己的模型用量
+    GET "/api/v1/jobs/:job_id/reports/usage" => reports::job_usage_route, signed;
 }

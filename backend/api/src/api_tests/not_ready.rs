@@ -138,7 +138,7 @@ async fn summaries_and_lists_stay_200_with_empty_values() {
         let data = ok(&uri, status, &body);
         assert_eq!((data["available"].clone(), data["total"].clone()), (json!(false), json!(0)), "{uri}");
 
-        for path in ["files", "reader/regions", "reader/metadata", "reports/failure"] {
+        for path in ["files", "reader/regions", "reader/metadata", "reports/usage", "reports/failure"] {
             let uri = format!("{j}/{path}");
             let (status, body) = get(&fixture.state, &uri).await;
             ok(&uri, status, &body);
