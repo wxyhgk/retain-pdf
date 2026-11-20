@@ -161,9 +161,9 @@ test("重新翻译清单：每条连接问一次估价，写在下拉选项后�
   dom.window.close();
 });
 
-test("换一本书：重新翻译的模型选择回到「沿用原来的」，不带上一本书选的；沿用那行写出这本书现在用的模型", async () => {
+test("换一本书：重新翻译的模型选择回到第一行，不带上一本书选的；第一行写设置里的默认模型，上次用的那行标「原来用的」", async () => {
   const dom = makeDom("", { keys: ["window", "document", "HTMLElement", "HTMLButtonElement", "HTMLSelectElement", "Element", "Event", "MouseEvent", "Node", "MutationObserver", "CustomEvent"] });
-  dom.window.localStorage.setItem("retainpdf.developer.config.v1", JSON.stringify(CONFIG));
+  dom.window.localStorage.setItem("retainpdf.developer.config.v1", JSON.stringify({ ...CONFIG, model: "claude-haiku-5-5" }));
   globalThis.localStorage = dom.window.localStorage;
   const React = await import("react");
   const { createRoot } = await import("react-dom/client");
@@ -189,14 +189,14 @@ test("换一本书：重新翻译的模型选择回到「沿用原来的」，�
   const rowOf = (value) => doc.querySelector(`[data-model-value="${value}"]`);
   root.render(React.createElement(Sheet, { item: { document_id: "doc-a", job_id: "job-a" }, currentModel: "deepseek-v4-flash" }));
   await waitFor(() => rowOf("anthropic::claude-haiku-5-5"), "书 A 的模型列表");
-  assert.match(rowOf("").textContent, /沿用原来的模型（deepseek-v4-flash）/);
+  assert.match(rowOf("").textContent, /用设置里的默认（claude-haiku-5-5）/);
   assert.match(rowOf("deepseek::deepseek-v4-flash").textContent, /原来用的/);
   rowOf("anthropic::claude-haiku-5-5").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
   await waitFor(() => rowOf("anthropic::claude-haiku-5-5").getAttribute("aria-checked") === "true", "书 A 选了 haiku");
 
-  root.render(React.createElement(Sheet, { item: { document_id: "doc-b", job_id: "job-b" }, currentModel: "qwen3.8-flash" }));
-  await waitFor(() => /沿用原来的模型（qwen3\.8-flash）/.test(rowOf("")?.textContent || ""), "换到书 B");
-  assert.equal(rowOf("").getAttribute("aria-checked"), "true", "书 B 回到沿用原来的");
+  root.render(React.createElement(Sheet, { item: { document_id: "doc-b", job_id: "job-b" }, currentModel: "deepseek-v4-pro" }));
+  await waitFor(() => /原来用的/.test(rowOf("deepseek::deepseek-v4-pro")?.textContent || ""), "换到书 B");
+  assert.equal(rowOf("").getAttribute("aria-checked"), "true", "书 B 回到第一行");
   assert.equal(rowOf("anthropic::claude-haiku-5-5").getAttribute("aria-checked"), "false");
   doc.querySelector("#book-detail-retry-translation-btn").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
   await waitFor(() => submitted.length === 1, "书 B 提交");

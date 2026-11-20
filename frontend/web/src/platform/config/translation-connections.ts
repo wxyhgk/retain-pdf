@@ -68,6 +68,20 @@ export function translationConnectionsFrom(config: unknown): TranslationConnecti
   return connections;
 }
 
+/** 设置里现在的默认模型（新书、什么都不选的重新翻译用它）；读不到是空串。 */
+export function defaultTranslationModelFrom(config: unknown): string {
+  const root = (config && typeof config === "object" ? config : {}) as Row;
+  return text(root.model);
+}
+
+export function savedDefaultTranslationModel(): string {
+  try {
+    return defaultTranslationModelFrom(loadDeveloperStoredConfig());
+  } catch {
+    return "";
+  }
+}
+
 /** 本机存着的连接（读不到配置就是空的）。 */
 export function savedTranslationConnections(): TranslationConnection[] {
   try {

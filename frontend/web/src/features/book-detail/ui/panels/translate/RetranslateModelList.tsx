@@ -1,6 +1,6 @@
 // 「重新处理」清单里重新翻译用哪个模型：一张单选列表，代替原来那个塞满长字的下拉。
 //
-// 第一行「沿用原来的」；下面按服务商分组（服务商标志 + 名字），每个模型一行，估价靠右（约 ¥x–y），
+// 第一行「用设置里的默认」（重新翻译以设置为底，什么都不选就用设置里的模型）；下面按服务商分组（服务商标志 + 名字），每个模型一行，估价靠右（约 ¥x–y），
 // 最便宜的那个标「最省」。上下方向键换选项（选中跟着走），和系统单选一样只有选中那行能 Tab 到。
 // 模型来自设置里存了 key 的服务商（默认模型和「其他模型」各一行）。
 import { useRef, type KeyboardEvent } from "react";
@@ -43,14 +43,17 @@ export function RetranslateModelList({
   disabled = false,
   priceOf,
   currentModel = "",
+  settingsModel = "",
 }: {
   options: readonly RetranslateModelOption[];
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   priceOf?: (value: string) => string;
-  /** 这本书现在用的模型：「沿用原来的」后面写出来，同名那一行标「原来用的」。 */
+  /** 这本书上次翻译用的模型：同名那一行标「原来用的」。 */
   currentModel?: string;
+  /** 设置里的默认模型：什么都不选时用它，第一行写出来。 */
+  settingsModel?: string;
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
   if (options.length <= 1) return null;
@@ -111,7 +114,7 @@ export function RetranslateModelList({
       data-retranslate-model-list="true"
       onKeyDown={move}
     >
-      {row(options.find((option) => option.value === KEEP_MODEL) || { value: KEEP_MODEL, label: "", connection: null }, currentModel ? `沿用原来的模型（${currentModel}）` : "沿用原来的模型")}
+      {row(options.find((option) => option.value === KEEP_MODEL) || { value: KEEP_MODEL, label: "", connection: null }, settingsModel ? `用设置里的默认（${settingsModel}）` : "用设置里的默认模型")}
       {groups.map((group) => (
         <div key={group.key} className="book-detail-model-group" role="presentation" data-model-group={group.label}>
           <div className="book-detail-model-group-head" aria-hidden="true">

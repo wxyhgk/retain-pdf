@@ -118,15 +118,18 @@ export function createDocumentJobActions({
     const requestedOverrides = overrides.overrides && typeof overrides.overrides === "object"
       ? overrides.overrides as Record<string, unknown>
       : {};
+    // 「重新翻译」的底子是设置里当前的配置；书详情里明确选了的（翻译方式、换模型连接）盖在它上面。
+    // 2026-11-19 以前反过来，设置把选的盖掉了：选了 Qwen 也跑成设置里默认的 claude-haiku-5-5。
+    // 换了连接（自带 api_key）时，设置里的 credential_ref 不能跟着去，不然两把钥匙打架。
+    const requestedTranslation = (requestedOverrides.translation && typeof requestedOverrides.translation === "object")
+      ? requestedOverrides.translation as Record<string, unknown>
+      : {};
+    const baseTranslation: Record<string, unknown> = { ...(currentTranslation || {}) };
+    if (`${requestedTranslation.api_key || ""}`.trim()) delete baseTranslation.credential_ref;
     const stageOverrides = currentTranslation
       ? {
           ...requestedOverrides,
-          translation: {
-            ...((requestedOverrides.translation && typeof requestedOverrides.translation === "object")
-              ? requestedOverrides.translation as Record<string, unknown>
-              : {}),
-            ...currentTranslation,
-          },
+          translation: { ...baseTranslation, ...requestedTranslation },
         }
       : requestedOverrides;
     const result = await retryJobStageApi(normalizedJobId, API_PREFIX, normalizedStage, {
