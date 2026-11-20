@@ -65,6 +65,9 @@ retainpdf config show|get|set|unset|keys|path|edit
 retainpdf status                    后端、数据目录、书库、同步、备份的概况
 retainpdf doctor                    逐项检查（有不通过的项时退出码 2）
 retainpdf backup list|create|restore <编号或序号> [--yes]|delete <…>
+retainpdf compact [--drop-events <任务编号>]... [--yes]
+                                    整理书库数据库（只在后端没开时用）：先备份，截短老任务存下的程序输出、
+                                    给的已结束任务的进度事件现在就清掉、整库压缩并切到增量收缩模式
 retainpdf sync status|run|on|off|test
 retainpdf sync set --folder <文件夹> | --webdav <地址> --user <账号> [--password-stdin] [--device-name <名字>]
 ```
@@ -75,7 +78,7 @@ retainpdf sync set --folder <文件夹> | --webdav <地址> --user <账号> [--p
 ## 后端开着还是没开
 
 同一个数据目录同一时间只能有一个程序写。命令行先看 `run/backend.json`：记录的进程在、数据目录相同、
-`/health` 应答，就把会改东西的命令（备份、恢复、同步）转给后端；没有在用这个数据目录的后端时，直接
+`/health` 应答，就把会改东西的命令（备份、恢复、同步）转给后端（`compact` 不转，后端开着时拒绝：压缩要独占数据库）；没有在用这个数据目录的后端时，直接
 操作数据目录（规则和后端一样：恢复前先备份、有任务在跑时不恢复；同步用 `retainpdf_data::sync::control`，
 与后端同一套）；记录说后端在却连不上时，会改东西的命令拒绝执行。`status`、`doctor` 只读，任何时候都能用。
 

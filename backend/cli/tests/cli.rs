@@ -163,3 +163,19 @@ fn a_backend_that_is_recorded_but_unreachable_blocks_changes() {
     // 只读的照样能看。
     assert_eq!(sb.json(&["status"])["backend"]["state"], "unreachable");
 }
+
+#[test]
+fn compact_backs_up_first_drops_one_jobs_events_and_needs_yes_in_scripts() {
+    // 2026-11-20 数据库瘦身：后端没开时整理库；脚本里不加 --yes 拒绝；先备份
+    let sb = Sandbox::new();
+    sb.library();
+    let refused = sb.run(&["compact"]);
+    assert_eq!(refused.status.code(), Some(1));
+    let done = sb.json(&["compact", "--yes", "--drop-events", "no-such-job"]);
+    assert_eq!(done["ok"], true, "{done}");
+    assert!(done["backup"].as_str().unwrap().starts_with("manual-"));
+    assert_eq!(done["dropped_events"][0]["events"], 0);
+    assert!(done["bytes_after"].as_u64().unwrap() > 0);
+    let list = sb.json(&["backup", "list"]);
+    assert_eq!(list[0]["id"], done["backup"]);
+}

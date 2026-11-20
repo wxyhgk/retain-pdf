@@ -12,7 +12,7 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 
-use crate::cmd::{backup, config, doctor, setup, status, sync};
+use crate::cmd::{backup, compact, config, doctor, setup, status, sync};
 use crate::context::Ctx;
 
 #[derive(Parser)]
@@ -46,6 +46,8 @@ enum Command {
         #[command(subcommand)]
         action: backup::BackupCommand,
     },
+    /// 整理书库数据库、把空间还给磁盘（只在后端没开时用；先自动备份）
+    Compact(compact::CompactArgs),
     /// 多设备同步
     Sync {
         #[command(subcommand)]
@@ -61,6 +63,7 @@ fn main() -> ExitCode {
         Command::Status => status::run(&ctx),
         Command::Doctor => doctor::run(&ctx),
         Command::Backup { action } => backup::run(&ctx, action),
+        Command::Compact(args) => compact::run(&ctx, args),
         Command::Sync { action } => sync::run(&ctx, action),
     });
     match outcome {

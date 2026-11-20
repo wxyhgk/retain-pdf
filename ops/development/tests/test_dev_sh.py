@@ -250,3 +250,15 @@ def test_the_system_bash_misreads_a_variable_followed_by_cjk_punctuation() -> No
     if probe.returncode == 0:
         pytest.skip("这个系统的 bash 不会把中文标点读进变量名")
     assert b"unbound" in probe.stderr.lower()
+
+
+def test_the_backend_gets_time_for_a_database_upgrade() -> None:
+    """升级库结构时后端先压缩备份整个库，1.4GB 要 1 分多钟（2026-11-20）。以前 dev_stack 只等 60 秒，升级那次被当成失败停掉。"""
+    def timeout(env: dict[str, str] | None = None) -> str:
+        done = _argv(env=env)
+        assert done.returncode == 0, done.stderr
+        args = done.stdout.split()
+        return args[args.index("--readiness-timeout") + 1]
+
+    assert float(timeout()) >= 300
+    assert timeout({"DEV_STACK_READINESS_TIMEOUT": "900"}) == "900"

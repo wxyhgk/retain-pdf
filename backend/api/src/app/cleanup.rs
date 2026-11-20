@@ -112,6 +112,10 @@ pub fn run_cleanup_once(settings: &RetentionSettings, db: &Db, data_root: &Path)
                 "retention cleanup: deleted {deleted} event row(s) older than {} day(s) for finished jobs",
                 settings.events_retention_days
             );
+            // 删了行文件不会变小：增量收缩模式下把空页还给磁盘（老库经 `retainpdf compact` 切过去以前什么都不做）
+            if let Err(error) = db.release_free_pages() {
+                warn!("retention cleanup: releasing free pages failed: {error:#}");
+            }
         }
     }
 

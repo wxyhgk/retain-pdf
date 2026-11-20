@@ -15,7 +15,7 @@ pub use super::job::{
     job_user_stage, normalize_event_substage, normalize_event_user_stage, normalize_job_stage,
     public_stage_for_raw_stage, public_stage_for_substage, JobAiDiagnostic, JobArtifactRecord,
     JobArtifacts, JobFailureInfo, JobRawDiagnostic, JobRecord, JobRuntimeInfo, JobRuntimeState,
-    JobSnapshot, JobStage, JobStageTiming, OcrCheckpointArtifacts, ProcessResult, RenderArtifacts,
+    JobSnapshot, JobStage, JobStageTiming, OcrCheckpointArtifacts, ProcessResult, RenderArtifacts, stored_output_tail, STORED_OUTPUT_TAIL_BYTES,
     TranslationArtifacts,
 };
 pub use super::ocr::{

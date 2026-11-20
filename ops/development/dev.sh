@@ -38,6 +38,9 @@ DEFAULT_API_KEY="dev-local-key"
 # data-root 默认指向主 checkout —— worktree 里开发时共用同一份 data，
 # 不然每个 worktree 都要重新跑一遍 OCR 和翻译。
 DATA_ROOT="${RETAINPDF_DATA_ROOT:-$HOME/Code/retain-pdf/data}"
+# 等后端就绪最多几秒。库结构升级时要先压缩备份整个库（2026-11-20 那次 1.4GB 的库要 1 分多钟），
+# 以前写死 60 秒，升级那次后端还没起来就被当成失败停掉了。
+READINESS_TIMEOUT="${DEV_STACK_READINESS_TIMEOUT:-600}"
 
 mkdir -p "$RUN_DIR"
 
@@ -96,6 +99,7 @@ stack_argv() {
   local build_flag=()
   [[ "$fast" == "--fast" ]] && build_flag=(--no-build)
   printf '%s ' --host "$(api_host)" --port "$API_PORT" --data-root "$DATA_ROOT" --no-sync \
+    --readiness-timeout "$READINESS_TIMEOUT" \
     ${build_flag[@]+"${build_flag[@]}"}
   printf '\n'
 }
@@ -161,7 +165,7 @@ cmd_up() {
   disown
 
   echo -n "等后端就绪"
-  for _ in $(seq 1 180); do
+  for _ in $(seq 1 "$READINESS_TIMEOUT"); do
     if curl -sf -o /dev/null "http://127.0.0.1:$API_PORT/health" 2>/dev/null; then
       echo " ✓"
       cmd_status
