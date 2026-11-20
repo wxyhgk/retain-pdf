@@ -105,5 +105,6 @@ def test_blocks_with_nothing_to_translate_get_a_reason() -> None:
         assert nothing_to_translate(note) == "skip_citation_only", note
     for bare in ("$$E = mc^2$$", "https://press.princeton.edu/books", "12.3", "(a)", "`foo_bar()`", "[12, 14]"):
         assert nothing_to_translate(bare) == "skip_no_prose", bare
-    for prose in ("Introduction", "See Figure 3.", "11. On this point, see Keenan 2013.", "Smith, Jones and Lee 2019 found that access was denied.", "中文段落", ""):
+    assert nothing_to_translate("DNA") == "skip_no_prose", "三个字母的全大写是缩写"
+    for prose in ("THE INTERLOPER", "CONTENTS", "LESSONS FROM RESISTANCE IN THE FIELD", "Introduction", "See Figure 3.", "11. On this point, see Keenan 2013.", "Smith, Jones and Lee 2019 found that access was denied.", "中文段落", ""):
         assert nothing_to_translate(prose) == "", prose

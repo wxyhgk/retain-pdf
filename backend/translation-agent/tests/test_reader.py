@@ -139,3 +139,50 @@ def test_a_name_translated_differently_is_retried(tmp_path: Path) -> None:
     outcome = DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path, read_first=True).run(_book())
     second = outcome.results["p-2"]
     assert second.attempts == 2 and second.status == "ok" and second.history[0]["issues"][0]["code"] == "name_mismatch"
+
+
+def _title_book() -> list[PageInput]:
+    doc = {"title": "The Interloper: Inside Fields That Keep Outsiders Out"}
+    cover = PageInput(page_label="1", chapter="", document=doc, blocks=[BlockInput("cover", "section_heading", "The Interloper", True)])
+    title_page = PageInput(page_label="2", chapter="", document=doc, blocks=[BlockInput("tp", "paragraph", "THE INTERLOPER", True)])
+    toc = PageInput(page_label="3", chapter="", document=doc, blocks=[
+        BlockInput("toc-cover", "toc_entry", "The Interloper", True),
+        BlockInput("toc-intro", "toc_entry", "Introduction", True, relations={"toc_target": "intro"}),
+    ])
+    body = PageInput(page_label="4", chapter="intro", document=doc, blocks=[
+        BlockInput("intro", "section_heading", "Introduction", True),
+        BlockInput("header", "paragraph", "INTRODUCTION", True),
+        BlockInput("p", "paragraph", "The interloper knocked on doors that stayed shut for a long time, and the archive kept its secrets.", True),
+    ])
+    return [cover, title_page, toc, body]
+
+
+def test_the_book_title_and_repeated_headings_get_one_translation() -> None:
+    """11-20《The Interloper》：封面、目录是「闯入者」，书名页上被认成正文的 "THE INTERLOPER" 是「不速之客」。
+    通读员交书名译名；书名做标题、原文和已定标题一样的短块（不分大小写）都用同一个译文；长段落不动。"""
+    reading = Reading(book_title="闯入者", title_source="The Interloper: Inside Fields That Keep Outsiders Out",
+                      headings={"cover": "不速之客", "toc-cover": "不速之客", "intro": "引言", "toc-intro": "导论"})
+    fixed = {b.id: b.fixed_translation for p in apply_reading(reading, Glossary(), _title_book()) for b in p.blocks}
+    assert fixed["cover"] == fixed["toc-cover"] == fixed["tp"] == "闯入者", "书名一律用通读员定的书名译名"
+    assert fixed["intro"] == fixed["toc-intro"] == fixed["header"] == "引言", "页眉上的章名和标题同文同译"
+    assert fixed["p"] is None
+
+
+def test_headings_with_the_same_text_are_asked_once(tmp_path: Path) -> None:
+    from retainpdf_translation_agent.reader import read_document
+
+    class Agent:
+        def __init__(self) -> None:
+            self.payloads: list[dict] = []
+
+        def call_tool(self, payload: dict, **_: object) -> dict:
+            self.payloads.append(payload)
+            return {"genre": "humanities", "name_policy": "transliterate", "style": "", "terms": [], "book_title": "《闯入者》",
+                    "headings": [{"id": h["id"], "translation": "闯入者" if "nterloper" in h["text"] else "引言"} for h in payload["headings"]]}
+
+    agent = Agent()
+    reading = read_document(agent, _title_book())
+    assert [(h["id"], h["text"]) for h in agent.payloads[0]["headings"]] == [("cover", "The Interloper"), ("intro", "Introduction")], \
+        "同一句原文只问一次，有正文标题就拿正文标题问"
+    assert reading.headings == {"cover": "闯入者", "toc-cover": "闯入者", "toc-intro": "引言", "intro": "引言"}
+    assert (reading.book_title, reading.title_source) == ("闯入者", "The Interloper: Inside Fields That Keep Outsiders Out")
