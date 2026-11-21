@@ -54,6 +54,22 @@ pub(super) fn run_versioned_migrations(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
+/// 测试用：把一个新库建到第 `version` 个迁移为止（老库的样子），好往里写老结构的数据，再用 `Db::init` 升上来。
+/// 比「把版本号拨回去重跑」干净：不用手动撤掉后面迁移做的改动。`conn` 要是直接开的连接（`Db` 的连接一开就升到最新）。
+#[cfg(test)]
+pub(crate) fn create_at_version(conn: &Connection, version: i64) -> Result<()> {
+    conn.execute_batch(include_str!("base.sql"))?;
+    ensure_legacy_columns(conn)?;
+    for migration in MIGRATIONS.iter().filter(|migration| migration.version <= version) {
+        let tx = Transaction::new_unchecked(conn, TransactionBehavior::Immediate)?;
+        tx.execute_batch(migration.sql)
+            .with_context(|| format!("schema migration v{} ({}) failed", migration.version, migration.name))?;
+        tx.pragma_update(None, "user_version", migration.version)?;
+        tx.commit()?;
+    }
+    Ok(())
+}
+
 /// 不能重跑的迁移（改列的取值、删列、加带外键的列）：库里已经是迁移后的样子，就只记版本、不再执行。
 /// 正常升级碰不到（版本号只往上走）；是给把 `user_version` 倒回去重跑后面迁移的测试用的——它们的惯例是先手动撤掉
 /// 后面迁移加的东西（见 `event_feed_tests`），可 SQLite 删不掉带外键的列，v32 的 `parent_job_id` 撤不掉。
@@ -61,6 +77,7 @@ pub(super) fn run_versioned_migrations(conn: &Connection) -> Result<()> {
 const APPLIED_CHECKS: &[(i64, &str)] = &[
     (32, "SELECT COUNT(*) FROM pragma_table_info('jobs') WHERE name = 'status'"),
     (33, "SELECT COUNT(*) FROM pragma_table_info('jobs') WHERE name = 'stage_entered_at'"),
+    (36, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'library_items'"),
 ];
 
 /// 从这个版本起不再补 `LEGACY_COLUMNS`（v33 删了其中的 `jobs.runtime_json`）。

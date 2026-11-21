@@ -36,7 +36,9 @@ pub enum ApplyDocumentMetadataSuggestionResult {
     RevisionConflict(DocumentRecord),
 }
 
-const SUGGESTION_COLUMNS: &str = "suggestion_id, document_id, source_job_id, artifact_sha256, fields_json, candidates_json, selected_title, generation_method, needs_ai_review, status, applied_at, created_at, updated_at";
+/// 书名建议挂在条目上（v36 起表名 `item_title_suggestions`、列 `item_id`）；接口按书（文件的内容指纹）查，
+/// 读出来的 `document_id` 就是调用方给的那本书（`?1`），所以每条查询的第一个参数都是 document_id。
+const SUGGESTION_COLUMNS: &str = "suggestion_id, ?1, source_job_id, artifact_sha256, fields_json, candidates_json, selected_title, generation_method, needs_ai_review, status, applied_at, created_at, updated_at";
 
 fn row_to_suggestion(
     row: &rusqlite::Row<'_>,
@@ -76,12 +78,14 @@ impl Db {
         let now = now_iso();
         conn.execute(
             r#"
-            INSERT OR IGNORE INTO document_metadata_suggestions (
-                suggestion_id, document_id, source_job_id, artifact_sha256,
+            INSERT OR IGNORE INTO item_title_suggestions (
+                suggestion_id, item_id, source_job_id, artifact_sha256,
                 fields_json, candidates_json, selected_title,
                 generation_method, needs_ai_review, status,
                 created_at, updated_at
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'completed', ?10, ?10)
+            )
+            SELECT ?1, f.item_id, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 'completed', ?10, ?10
+            FROM item_files f WHERE f.file_id = ?2
             "#,
             params![
                 suggestion_id,
@@ -99,8 +103,8 @@ impl Db {
 
         conn.query_row(
             &format!(
-                "SELECT {SUGGESTION_COLUMNS} FROM document_metadata_suggestions \
-                 WHERE document_id = ?1 AND COALESCE(source_job_id, '') = COALESCE(?2, '') \
+                "SELECT {SUGGESTION_COLUMNS} FROM item_title_suggestions \
+                 WHERE item_id = (SELECT item_id FROM item_files WHERE file_id = ?1) AND COALESCE(source_job_id, '') = COALESCE(?2, '') \
                    AND artifact_sha256 = ?3 AND selected_title = ?4"
             ),
             params![document_id, source_job_id, artifact_sha256, selected_title],
@@ -116,8 +120,8 @@ impl Db {
     ) -> Result<Vec<StoredDocumentMetadataSuggestion>> {
         let conn = self.connect()?;
         let mut stmt = conn.prepare(&format!(
-            "SELECT {SUGGESTION_COLUMNS} FROM document_metadata_suggestions \
-             WHERE document_id = ?1 ORDER BY created_at DESC, suggestion_id DESC LIMIT ?2"
+            "SELECT {SUGGESTION_COLUMNS} FROM item_title_suggestions \
+             WHERE item_id = (SELECT item_id FROM item_files WHERE file_id = ?1) ORDER BY created_at DESC, suggestion_id DESC LIMIT ?2"
         ))?;
         let rows = stmt.query_map(params![document_id, i64::from(limit)], row_to_suggestion)?;
         rows.collect::<rusqlite::Result<Vec<_>>>()
@@ -132,8 +136,8 @@ impl Db {
         let conn = self.connect()?;
         conn.query_row(
             &format!(
-                "SELECT {SUGGESTION_COLUMNS} FROM document_metadata_suggestions \
-                 WHERE document_id = ?1 AND suggestion_id = ?2"
+                "SELECT {SUGGESTION_COLUMNS} FROM item_title_suggestions \
+                 WHERE item_id = (SELECT item_id FROM item_files WHERE file_id = ?1) AND suggestion_id = ?2"
             ),
             params![document_id, suggestion_id],
             row_to_suggestion,
@@ -153,8 +157,8 @@ impl Db {
         let suggestion = tx
             .query_row(
                 &format!(
-                    "SELECT {SUGGESTION_COLUMNS} FROM document_metadata_suggestions \
-                     WHERE document_id = ?1 AND suggestion_id = ?2"
+                    "SELECT {SUGGESTION_COLUMNS} FROM item_title_suggestions \
+                     WHERE item_id = (SELECT item_id FROM item_files WHERE file_id = ?1) AND suggestion_id = ?2"
                 ),
                 params![document_id, suggestion_id],
                 row_to_suggestion,
@@ -191,34 +195,22 @@ impl Db {
         }
 
         let now = now_iso();
-        tx.execute(
-            "UPDATE documents SET title = ?1, updated_at = ?2 WHERE document_id = ?3",
-            params![suggestion.selected_title, now, document_id],
-        )?;
+        let source = if suggestion.generation_method == "pdf_metadata" { "pdf_metadata" } else { "ocr" };
         tx.execute(
             r#"
-            INSERT INTO document_title_state (document_id, source, locked, suggestion_id, updated_at)
-            VALUES (?1, ?2, 0, ?3, ?4)
-            ON CONFLICT(document_id) DO UPDATE SET
-                source = excluded.source,
-                locked = 0,
-                suggestion_id = excluded.suggestion_id,
-                updated_at = excluded.updated_at
+            UPDATE item_references
+            SET title = ?1, title_source = ?2, title_locked = 0, title_suggestion_id = ?3
+            WHERE item_id = (SELECT item_id FROM item_files WHERE file_id = ?4)
             "#,
-            params![
-                document_id,
-                if suggestion.generation_method == "pdf_metadata" {
-                    "pdf_metadata"
-                } else {
-                    "ocr"
-                },
-                suggestion_id,
-                now,
-            ],
+            params![suggestion.selected_title, source, suggestion_id, document_id],
+        )?;
+        tx.execute(
+            "UPDATE library_items SET updated_at = ?1 WHERE item_id = (SELECT item_id FROM item_files WHERE file_id = ?2)",
+            params![now, document_id],
         )?;
         tx.execute(
             r#"
-            UPDATE document_metadata_suggestions
+            UPDATE item_title_suggestions
             SET status = 'applied', applied_at = ?1, updated_at = ?1
             WHERE suggestion_id = ?2
             "#,

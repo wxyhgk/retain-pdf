@@ -25,11 +25,13 @@ async fn call(state: &crate::AppState, method: &str, uri: &str, body: Option<ser
 /// 插一本读不出来的书：`page_count` 存成文本，解码成整数失败。
 fn insert_malformed_document(state: &crate::AppState, document_id: &str) {
     let conn = rusqlite::Connection::open(&state.config.jobs_db_path).unwrap();
-    conn.execute(
-        "INSERT INTO documents (document_id, title, source_filename, page_count, added_at, updated_at) \
-         VALUES (?1, 'bad', 'bad.pdf', 'not-a-number', ?2, ?2)",
-        rusqlite::params![document_id, now_iso()],
-    )
+    conn.execute_batch(&format!(
+        "INSERT INTO library_items (item_id, item_type, created_at, updated_at) VALUES ('{document_id}', 'reference', '{now}', '{now}');
+         INSERT INTO item_references (item_id, title) VALUES ('{document_id}', 'bad');
+         INSERT INTO item_files (file_id, item_id, source_filename, page_count, added_at, updated_at)
+             VALUES ('{document_id}', '{document_id}', 'bad.pdf', 'not-a-number', '{now}', '{now}');",
+        now = now_iso()
+    ))
     .unwrap();
 }
 
@@ -82,7 +84,7 @@ async fn an_unreadable_document_row_is_a_server_error_not_a_missing_book() {
     // 书还在库里：读错不能顺手把它删了。
     let conn = rusqlite::Connection::open(&state.config.jobs_db_path).unwrap();
     let left: i64 = conn
-        .query_row("SELECT COUNT(*) FROM documents WHERE document_id = ?1", [&bad], |row| row.get(0))
+        .query_row("SELECT COUNT(*) FROM item_files WHERE file_id = ?1", [&bad], |row| row.get(0))
         .unwrap();
     assert_eq!(left, 1);
 }

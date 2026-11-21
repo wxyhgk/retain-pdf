@@ -211,7 +211,7 @@ impl Db {
             |row| row.get(0),
         )?;
         stats.documents = conn.query_row(
-            "SELECT COUNT(*) FROM documents WHERE owner_user_id = ?1",
+            "SELECT COUNT(*) FROM library_documents WHERE owner_user_id = ?1",
             params![user_id],
             |row| row.get(0),
         )?;
@@ -247,7 +247,7 @@ impl Db {
                     u.page_count, c.pages, c.status, j.created_at, j.finished_at \
              FROM jobs j \
              LEFT JOIN uploads u ON u.upload_id = j.upload_id \
-             LEFT JOIN documents d ON d.document_id = j.document_id \
+             LEFT JOIN library_documents d ON d.document_id = j.document_id \
              LEFT JOIN job_page_charges c ON c.job_id = j.job_id \
              WHERE j.owner_user_id = ?1 ORDER BY j.created_at DESC, j.job_id DESC LIMIT ?2 OFFSET ?3",
         )?;

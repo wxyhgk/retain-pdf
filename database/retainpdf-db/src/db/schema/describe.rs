@@ -1,5 +1,5 @@
 //! 把一个库现在的表结构写成一份文本（2026-11-20 数据库整理第 4 步）：每张表的列、类型、非空、默认值、主键、外键、
-//! 索引、触发器。新建空库跑完全部建表和迁移的结果提交成 `database/retainpdf-db/schema.sql`（测试守着），
+//! 索引、触发器，以及视图（写 SQL）。新建空库跑完全部建表和迁移的结果提交成 `database/retainpdf-db/schema.sql`（测试守着），
 //! 以后看「现在每张表长什么样」只看那一个文件；老库升上来的结构也拿它比。
 //!
 //! `canonical`：列按名字排（老库 ALTER 补的列排在最后，顺序不同不算差异），比较用；不排的按声明顺序，给人看。
@@ -36,6 +36,10 @@ pub(crate) fn describe_schema(conn: &Connection, canonical: bool) -> Result<Stri
         .collect();
     let mut out = format!("-- user_version {version}\n");
     for (kind, name, _, sql) in &objects {
+        if kind == "view" {
+            out.push_str(&format!("\nVIEW {name}\n  {}\n", normalized(sql.as_deref().unwrap_or(""))));
+            continue;
+        }
         if kind != "table" || is_shadow_table(name, &virtual_tables) {
             continue;
         }

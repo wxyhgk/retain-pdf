@@ -608,9 +608,11 @@ async fn documents_list_total_uses_filters_upload_constraint_and_job_lookup() {
     // This row matches the visible filters but has no upload and must remain
     // absent from both the current page and its total.
     let conn = rusqlite::Connection::open(state.config.jobs_db_path.clone()).expect("open db");
-    conn.execute(
-        "INSERT INTO documents (document_id, title, source_filename, page_count, bytes, added_at, updated_at, reading_status) VALUES ('orphan-filtered', 'Orphan', 'orphan.pdf', 1, 1, '2026-01-01', '2026-01-01', 'reading')",
-        [],
+    conn.execute_batch(
+        "INSERT INTO library_items (item_id, item_type, created_at, updated_at) VALUES ('orphan-filtered', 'reference', '2026-01-01', '2026-01-01');
+         INSERT INTO item_references (item_id, title) VALUES ('orphan-filtered', 'Orphan');
+         INSERT INTO item_files (file_id, item_id, source_filename, page_count, bytes, added_at, updated_at, reading_status)
+             VALUES ('orphan-filtered', 'orphan-filtered', 'orphan.pdf', 1, 1, '2026-01-01', '2026-01-01', 'reading');",
     )
     .expect("insert orphan document");
 
@@ -1795,13 +1797,14 @@ async fn ingest_only_document_survives_and_orphans_are_hidden() {
 
     // 一篇"只入库"文档:有 upload、无 job(合法,必须保留可见)
     let ingest_only = seed_document(&state, b"ingest only doc");
-    // 一个孤儿文档:直接建 documents 行,不建任何 upload(源文件已丢)
+    // 一个孤儿文档:直接建书(条目 + 书目 + 文件),不建任何 upload(源文件已丢)
     {
         let conn = rusqlite::Connection::open(state.config.jobs_db_path.clone()).expect("open db");
-        conn.execute(
-            "INSERT INTO documents (document_id, title, source_filename, page_count, bytes, added_at, updated_at)
-             VALUES ('orphandoc0000', 'Zombie', 'zombie.pdf', 10, 1, '2026-01-01', '2026-01-01')",
-            [],
+        conn.execute_batch(
+            "INSERT INTO library_items (item_id, item_type, created_at, updated_at) VALUES ('orphandoc0000', 'reference', '2026-01-01', '2026-01-01');
+             INSERT INTO item_references (item_id, title) VALUES ('orphandoc0000', 'Zombie');
+             INSERT INTO item_files (file_id, item_id, source_filename, page_count, bytes, added_at, updated_at)
+                 VALUES ('orphandoc0000', 'orphandoc0000', 'zombie.pdf', 10, 1, '2026-01-01', '2026-01-01');",
         )
         .expect("insert orphan");
     }
@@ -1917,9 +1920,9 @@ async fn delete_document_rolls_back_rows_and_keeps_files_when_a_step_fails() {
     fs::create_dir_all(&job_root).expect("job root");
     fs::write(job_root.join("full.md"), b"artifact").expect("artifact");
 
-    // 让删 documents 行必定失败(模拟 DB 忙、约束冲突、进程被杀等真实中断)。
+    // 让删书(条目行)必定失败(模拟 DB 忙、约束冲突、进程被杀等真实中断)。
     conn.execute_batch(
-        "CREATE TRIGGER reject_document_delete BEFORE DELETE ON documents
+        "CREATE TRIGGER reject_document_delete BEFORE DELETE ON library_items
          BEGIN SELECT RAISE(ABORT, 'synthetic failure'); END;",
     )
     .expect("install failing trigger");

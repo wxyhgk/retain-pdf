@@ -105,9 +105,9 @@ impl Db {
                 Some(needle) => {
                     values.push(needle.to_string().into());
                     (
-                        "documents.document_id IS NOT NULL",
-                        " LEFT JOIN documents ON documents.document_id = uploads.content_hash \
-                         AND instr(lower(documents.title), ?) > 0",
+                        "library_documents.document_id IS NOT NULL",
+                        " LEFT JOIN library_documents ON library_documents.document_id = uploads.content_hash \
+                         AND instr(lower(library_documents.title), ?) > 0",
                     )
                 }
                 None => ("0", ""),

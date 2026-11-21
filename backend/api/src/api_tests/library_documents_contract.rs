@@ -45,13 +45,7 @@ async fn book_collection_search_and_delete_views_match_published_schema() {
     let contract = contract(CONTRACT);
     let book = seed_document(&state, b"library-documents-contract-a");
     let versioned = seed_document(&state, b"library-documents-contract-b");
-    // `active_version_id` 没有时整个键不出现；给第二本书填上，键集合就该正好是契约的全部属性。
-    let conn = rusqlite::Connection::open(state.config.jobs_db_path.clone()).unwrap();
-    conn.execute(
-        "UPDATE documents SET active_version_id = 'ver-contract' WHERE document_id = ?1",
-        rusqlite::params![versioned],
-    )
-    .unwrap();
+    // `active_version_id`（AI 改写文档留下的，v36 删了那一列）没有时整个键不出现，现在恒不出现；契约里照旧是可选的。
 
     // 书列表、一本书。
     let list = ok_data(&state, "GET", "/api/v1/documents", None).await;
@@ -73,8 +67,6 @@ async fn book_collection_search_and_delete_views_match_published_schema() {
         .map(|key| key.as_str().unwrap().to_string())
         .collect();
     assert_eq!(object_keys(&plain, "document"), required, "没有版本的书正好是 required 那些键");
-    let with_version = ok_data(&state, "GET", &format!("/api/v1/documents/{versioned}"), None).await;
-    assert_exact(&with_version, &contract, "DocumentRecord", "document (versioned)");
     required.insert("active_version_id".to_string());
     assert_eq!(required, schema_keys(&contract, "DocumentRecord"), "只有 active_version_id 可以不出现");
     // 契约里写着「未使用，恒为空」的四个键，实际的空值就是这些。

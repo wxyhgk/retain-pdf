@@ -186,6 +186,11 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         name: "event_feed_by_reference",
         sql: include_str!("v35_event_feed_by_reference.sql"),
     },
+    Migration {
+        version: 36,
+        name: "library_items",
+        sql: include_str!("v36_library_items.sql"),
+    },
 ];
 
 #[cfg(test)]

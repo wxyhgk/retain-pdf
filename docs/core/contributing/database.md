@@ -40,6 +40,8 @@
 - `db/schema/migrations/`：编号迁移，一个迁移一个 `vNN_<领域>.sql`，说明写在文件开头；清单在 `migrations/mod.rs`。版本号就是清单里的位置，已上线的只能往后追加，不能改、删、调序。
   改列的取值、删列、加带外键的列这种**不能重跑**的迁移（v32 起），在 `schema/mod.rs` 的 `APPLIED_CHECKS` 登记一条「已经是迁移后的样子」的查询：
   正常升级碰不到，是给把 `user_version` 倒回去重跑后面迁移的测试用的（SQLite 删不掉带外键的列，撤不回去）。
+  要测「老库升上来」，优先用 `schema::create_at_version(conn, N)` 新建一个停在第 N 个迁移的库、按那时的表写数据、再 `Db::init`，
+  不用手动撤掉后面迁移做的改动（例子见 `documents/tests.rs` 的 `a_v35_book_reads_the_same_after_the_library_items_migration`）。
 - 状态、流程这类取值存**纯文本**并用 `CHECK` 钉住取值（v32 起 `jobs.status`、`jobs.workflow`；以前是 JSON 字符串 `"succeeded"`）。
   代码里写库、查库用 `JobStatusKind::as_str()` / `WorkflowKind::as_str()`，不要 `serde_json::to_string`（那会带引号）。
   OCR 子任务的父任务在 `jobs.parent_job_id`（写任务时由数据库层按编号 `{父任务}-ocr` 填，父任务不在库里时留空）。
@@ -57,6 +59,14 @@
   宽松处理：数据目录外的（别的设备同步来的）原样留着、不报错；以前存成本机绝对路径的，`Db::init` 里 `relativize_stored_artifact_paths` 改一次。
 - 增量收缩：`PRAGMA incremental_vacuum` 每还一页返回一行，要用 `maintenance::incremental_vacuum` 走到头（`execute_batch` 只走一步、只还一页）。
 - `db/rows.rs`：共享数据库行 decode；领域专用 decode 留在对应子模块。
+- 书库（v36 起）是「条目主表 + 各类型明细表」：条目 `library_items`（现在只有文献 `reference`，以后有笔记、批注、插件的类型）、
+  书目 `item_references`（常用 CSL 字段是列，其余整块放 `extra_csl_json`；书名来源和锁也在这里）、作者 `item_creators`（一人一行）、
+  条目下的文件 `item_files`（`file_id` = PDF 内容的 sha256 = 接口里的 `document_id`；阅读状态、当前任务、选哪份译文 `chosen_version_id`）、
+  书名建议 `item_title_suggestions`。上传 PDF 自动建的条目编号就是文件的内容指纹（`item_id = file_id`）。
+  **接口里的一本书（`DocumentRecord`）从视图 `library_documents` 读**，按书查、按书过滤都写在这个视图上；写的时候分别写条目、书目、
+  文件。删一本书删的是条目（`DELETE FROM library_items`），书目、作者、文件、书名建议，以及挂在文件下的译文版本、文件夹成员
+  都跟着外键级联删。任务、译文版本、全文索引按文件的内容指纹关联，不直接指向条目。设计见
+  [书库条目模型](../../ops/planning/database-redesign/20261121-书库条目模型.md) 和 [第 5a 步的调整](../../ops/planning/database-redesign/20261121-书库条目第5a步.md)。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
 - `db/pipeline/*`：pipeline attempt、dispatch、stage、unit、event 与事务写入；读取和迁移写入不得重新揉回一个大文件。
 

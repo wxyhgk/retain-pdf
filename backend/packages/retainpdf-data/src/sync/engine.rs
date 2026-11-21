@@ -18,7 +18,7 @@ use super::store::{Backend, BlobLocation, DeviceState, Segment, SyncStore, SYNC_
 use super::{ChangeRecord, SyncFileEntry};
 use crate::db::sync::{
     entity_spec, SyncApplyOutcome, SyncDirty, SyncEntityState, SyncEntityUpdate, SyncFileRef, RETIRED_SYNC_KINDS,
-    SyncRows, SYNC_SEED_VERSIONS,
+    SyncRows, SYNC_SEED_VERSIONS, upgrade_legacy_sync_record,
 };
 use crate::db::Db;
 
@@ -352,7 +352,7 @@ impl SyncEngine {
     /// 跑一轮同步。第一次跑时把本机现有的书库全部放进去。
     pub fn run_cycle(&self) -> Result<SyncReport> {
         let (folder_id, mut format_version) = self.store.ensure_version()?;
-        // 格式 4 的任务行旧版本读不了:发任何东西之前先把文件夹升上去(见 SYNC_FORMAT_VERSION)。
+        // 新格式的行(任务、书)旧版本读不了:发任何东西之前先把文件夹升上去(见 SYNC_FORMAT_VERSION)。
         if format_version < SYNC_FORMAT_VERSION {
             self.store.upgrade_format(&folder_id)?;
             format_version = SYNC_FORMAT_VERSION;
@@ -758,6 +758,15 @@ impl SyncEngine {
     }
 
     fn consider(&self, record: &ChangeRecord, hlc: &mut Hlc) -> Result<Considered> {
+        // 旧版本设备发来的(同步文件夹里的老包也是)先按现在的表结构改写,逐字段合并才比得上本机的字段。
+        let upgraded = record.rows.as_ref().and_then(|rows| {
+            upgrade_legacy_sync_record(&record.kind, rows, &record.clocks).map(|(rows, clocks)| ChangeRecord {
+                rows: Some(rows),
+                clocks,
+                ..record.clone()
+            })
+        });
+        let record = upgraded.as_ref().unwrap_or(record);
         if RETIRED_SYNC_KINDS.contains(&record.kind.as_str()) {
             // 删掉的种类（收藏、RetainPDF 自己的 AI 留下的，2026-11-20）：旧版本设备发来的当过时改动忽略
             return Ok(Considered::Stale);

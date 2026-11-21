@@ -97,7 +97,7 @@ async fn documents_list_echoes_limit_offset_and_has_more_with_a_stable_order() {
         .collect();
     // 同一秒入库（批量上传）：只按 added_at 排，跨页会重复或漏；第二键 document_id DESC。
     let conn = rusqlite::Connection::open(state.config.jobs_db_path.clone()).unwrap();
-    conn.execute("UPDATE documents SET added_at = '2026-10-22T00:00:00Z'", []).unwrap();
+    conn.execute("UPDATE item_files SET added_at = '2026-10-22T00:00:00Z'", []).unwrap();
     seeded.sort_by(|a, b| b.cmp(a));
 
     let (status, first) = get(&state, "/api/v1/documents?limit=2").await;

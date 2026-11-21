@@ -246,6 +246,11 @@ impl Db {
         if relativized > 0 {
             tracing::info!(relativized, "stored artifact paths made data-root relative");
         }
+        // v36 书换成条目以后，本机记着的上次同步的书还是旧结构：改写一次，逐字段合并才比得上。
+        let upgraded = self.upgrade_legacy_sync_states()?;
+        if upgraded > 0 {
+            tracing::info!(upgraded, "sync states of books rewritten to the library item layout");
+        }
         Ok(())
     }
 
@@ -361,11 +366,11 @@ mod tests {
             assert_eq!(left, 0, "{table} 和它的索引、触发器都该删了");
         }
         conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-        conn.execute(
-            "INSERT INTO documents(document_id, title, source_filename, added_at, updated_at) VALUES('d1', 'Book', 'b.pdf', 't', 't')",
-            [],
+        conn.execute_batch(
+            "INSERT INTO library_items(item_id, item_type, created_at, updated_at) VALUES('d1', 'reference', 't', 't');
+             INSERT INTO item_files(file_id, item_id, source_filename, added_at, updated_at) VALUES('d1', 'd1', 'b.pdf', 't', 't');",
         )
-        .expect("documents still writable");
+        .expect("library still writable");
     }
 
     #[test]

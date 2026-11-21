@@ -157,7 +157,7 @@ impl Db {
                       SELECT upload_id FROM jobs WHERE upload_id IS NOT NULL
                   )
                   AND (content_hash = '' OR content_hash NOT IN (
-                      SELECT document_id FROM documents
+                      SELECT file_id FROM item_files
                   ))
                 "#,
             )?;

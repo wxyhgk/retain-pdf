@@ -324,9 +324,9 @@ def test_failed_active_job_requires_explicit_opt_in(tmp_path: Path) -> None:
     connection.executescript(
         """
         CREATE TABLE jobs (job_id TEXT PRIMARY KEY, status_json TEXT);
-        CREATE TABLE documents (document_id TEXT PRIMARY KEY, active_job_id TEXT);
+        CREATE TABLE item_files (file_id TEXT PRIMARY KEY, active_job_id TEXT);
         INSERT INTO jobs VALUES ('job-failed', '"failed"');
-        INSERT INTO documents VALUES ('doc-1', 'job-failed');
+        INSERT INTO item_files VALUES ('doc-1', 'job-failed');
         """
     )
     connection.commit()

@@ -3,7 +3,7 @@ use rusqlite::params;
 
 use crate::storage_paths::resolve_data_path;
 
-use super::crud::repair_wrong_document_cards;
+use super::crud::{delete_document_item, repair_wrong_document_cards};
 use super::search::fts_normalized_document;
 use super::sha256_hex;
 use crate::db::Db;
@@ -27,10 +27,10 @@ fn cleanup_orphan_documents(db: &Db) -> Result<()> {
     let orphan_ids: Vec<String> = {
         let mut stmt = conn.prepare(
             r#"
-            SELECT d.document_id FROM documents d
+            SELECT f.file_id FROM item_files f
             WHERE NOT EXISTS (
                 SELECT 1 FROM uploads u
-                WHERE u.content_hash = d.document_id AND u.content_hash <> ''
+                WHERE u.content_hash = f.file_id AND u.content_hash <> ''
             )
             "#,
         )?;
@@ -45,10 +45,7 @@ fn cleanup_orphan_documents(db: &Db) -> Result<()> {
             "DELETE FROM blocks_fts WHERE document_id = ?1",
             params![document_id],
         )?;
-        conn.execute(
-            "DELETE FROM documents WHERE document_id = ?1",
-            params![document_id],
-        )?;
+        delete_document_item(&conn, document_id)?;
     }
     tracing::info!(
         "[library] cleaned {} orphan document(s) with no backing upload",
@@ -92,7 +89,7 @@ pub(super) fn fts_backfill_targets(db: &Db) -> Result<Vec<String>> {
                 LEFT JOIN jobs j ON j.job_id = f.job_id
                 GROUP BY f.document_id
             )
-            SELECT d.document_id, NULL FROM documents d
+            SELECT d.document_id, NULL FROM library_documents d
             LEFT JOIN indexed i ON i.document_id = d.document_id
             WHERE d.active_job_id IS NOT NULL AND i.document_id IS NULL
               AND EXISTS (
@@ -100,7 +97,7 @@ pub(super) fn fts_backfill_targets(db: &Db) -> Result<Vec<String>> {
                   WHERE s.document_id = d.document_id AND s.status = 'succeeded'
               )
             UNION ALL
-            SELECT d.document_id, j.job_id FROM documents d
+            SELECT d.document_id, j.job_id FROM library_documents d
             JOIN indexed i ON i.document_id = d.document_id
             JOIN jobs j ON j.document_id = d.document_id
             WHERE d.active_job_id IS NOT NULL

@@ -23,13 +23,14 @@ pub enum OwnedKind {
 }
 
 impl OwnedKind {
+    /// (存归属的表, 按编号 `?1` 找到那一行的条件)。书的编号是文件的内容指纹，归属在它所属的条目上（v36）。
     fn table_and_key(self) -> (&'static str, &'static str) {
         match self {
-            Self::Upload => ("uploads", "upload_id"),
-            Self::Job => ("jobs", "job_id"),
-            Self::Document => ("documents", "document_id"),
-            Self::Glossary => ("glossaries", "glossary_id"),
-            Self::Collection => ("collections", "collection_id"),
+            Self::Upload => ("uploads", "upload_id = ?1"),
+            Self::Job => ("jobs", "job_id = ?1"),
+            Self::Document => ("library_items", "item_id = (SELECT item_id FROM item_files WHERE file_id = ?1)"),
+            Self::Glossary => ("glossaries", "glossary_id = ?1"),
+            Self::Collection => ("collections", "collection_id = ?1"),
         }
     }
 }
@@ -40,12 +41,12 @@ impl Db {
         let (table, key) = kind.table_and_key();
         let conn = self.connect()?;
         let owner = conn
-            .query_row(&format!("SELECT owner_user_id FROM {table} WHERE {key} = ?1"), params![id], |row| row.get(0))
+            .query_row(&format!("SELECT owner_user_id FROM {table} WHERE {key}"), params![id], |row| row.get(0))
             .optional()?;
         if owner.is_some() || kind != OwnedKind::Document {
             return Ok(owner);
         }
-        // 书的编号也可能只在上传里出现（还没建 documents 行的旧数据）。
+        // 书的编号也可能只在上传里出现（还没建书的旧数据）。
         Ok(conn
             .query_row(
                 "SELECT owner_user_id FROM uploads WHERE content_hash = ?1 ORDER BY uploaded_at LIMIT 1",
@@ -58,7 +59,7 @@ impl Db {
     pub fn set_resource_owner(&self, kind: OwnedKind, id: &str, owner: &str) -> Result<bool> {
         let (table, key) = kind.table_and_key();
         let conn = self.connect()?;
-        let updated = conn.execute(&format!("UPDATE {table} SET owner_user_id = ?2 WHERE {key} = ?1"), params![id, owner])?;
+        let updated = conn.execute(&format!("UPDATE {table} SET owner_user_id = ?2 WHERE {key}"), params![id, owner])?;
         Ok(updated > 0)
     }
 

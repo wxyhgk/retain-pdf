@@ -93,18 +93,25 @@ fn a_user_title_is_still_protected() {
 /// 一次性补成 user + 锁定，免得只看来源以后被自动命名盖掉；书名就是默认值的不补。
 #[test]
 fn upgrading_marks_legacy_renamed_titles_as_user_titles() {
-    let fx = Fixture::new();
-    let renamed = fx.upload("up-renamed", "scan_0001.pdf", b"legacy renamed");
-    let untouched = fx.upload("up-untouched", "untouched.PDF", b"legacy untouched");
-    let conn = fx.db.connect().unwrap();
-    conn.execute(
-        "UPDATE documents SET title = 'Hand Picked Name' WHERE document_id = ?1",
-        params![renamed],
-    )
-    .unwrap();
-    conn.execute_batch("DELETE FROM document_title_state; PRAGMA user_version = 27;").unwrap();
-    drop(conn);
-    let reopened = Db::new(fx.root.join("db.sqlite"), fx.root.join("data"));
+    // 建一个停在 v27 的库，按那时的表写两本书（都没有来源记录），再升到最新。
+    let root = std::env::temp_dir().join(format!("retain-title-state-{}", fastrand::u64(..)));
+    std::fs::create_dir_all(&root).unwrap();
+    let (renamed, untouched) = ("renamed-doc".to_string(), "untouched-doc".to_string());
+    {
+        let conn = rusqlite::Connection::open(root.join("db.sqlite")).unwrap();
+        crate::db::schema::create_at_version(&conn, 27).unwrap();
+        // 没有上传记录的书开库时会当孤儿清掉，各配一条上传。
+        conn.execute_batch(
+            "INSERT INTO documents (document_id, title, source_filename, added_at, updated_at) VALUES
+                 ('renamed-doc', 'Hand Picked Name', 'scan_0001.pdf', 't', 't'),
+                 ('untouched-doc', 'untouched', 'untouched.PDF', 't', 't');
+             INSERT INTO uploads (upload_id, filename, stored_path, bytes, page_count, uploaded_at, developer_mode, content_hash)
+             VALUES ('up-renamed', 'scan_0001.pdf', 'uploads/a.pdf', 1, 1, 't', 0, 'renamed-doc'),
+                    ('up-untouched', 'untouched.PDF', 'uploads/b.pdf', 1, 1, 't', 0, 'untouched-doc');",
+        )
+        .unwrap();
+    }
+    let reopened = Db::new(root.join("db.sqlite"), root.join("data"));
     reopened.init().unwrap();
 
     let renamed = reopened.get_document(&renamed).unwrap();
@@ -114,7 +121,7 @@ fn upgrading_marks_legacy_renamed_titles_as_user_titles() {
     let rows: i64 = reopened
         .connect()
         .unwrap()
-        .query_row("SELECT COUNT(*) FROM document_title_state", [], |row| row.get(0))
+        .query_row("SELECT COUNT(*) FROM item_references WHERE title_source = 'user'", [], |row| row.get(0))
         .unwrap();
-    assert_eq!(rows, 1, "only the renamed title gets a provenance row");
+    assert_eq!(rows, 1, "only the renamed title is marked as the user's");
 }

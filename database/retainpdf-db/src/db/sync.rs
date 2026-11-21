@@ -3,10 +3,11 @@
 //! # 实体
 //!
 //! 同步的单位是「实体」:一组按同一个键取出的行。键和表的对应见 [`entity_spec`]:
-//! 一本书(documents + 标题状态与标题建议)、一次上传、一个合集、一条合集成员、一条收藏、
+//! 一本书(条目 library_items + 书目、作者、文件、书名建议;v36 以前是 documents + 标题状态与标题建议)、一次上传、一个合集、一条合集成员、一条收藏、
 //! 一个任务(jobs + 产物登记 + 流水线记录 + 事件)、一张术语表、一张收藏截图、一段 AI 对话
 //! (含消息)、一次 AI 计算(含产出的图)、一次 AI 改文档的操作(含尝试、事件、产出的版本)。
-//! 实体的第一张表是根表,其余是挂在它下面的子表。
+//! 实体的第一张表是根表,其余是挂在它下面的子表。v36 以前的书由 [`upgrade_legacy_sync_record`] 改写成现在的样子
+//! (同步文件夹里别的设备发来的、本机记着的上次同步的内容都要改写)。
 //!
 //! 只在本机有意义的列不同步(见 [`local_only_columns`]):发出去前去掉,写入时这些列保留
 //! 本机的值(新行用默认值)。
@@ -55,7 +56,8 @@ pub const RETIRED_SYNC_KINDS: &[&str] = &["favorite", "asset", "conversation", "
 /// 这一种的现有内容全部重新登记一遍(没变的内容不会重发)。
 pub const SYNC_SEED_VERSIONS: &[(&str, u32)] = &[
     ("upload", 1),
-    ("document", 2),
+    // 3:v36 书换成条目 + 明细表。
+    ("document", 3),
     ("collection", 1),
     ("collection_member", 1),
     ("job", 2),
@@ -66,17 +68,26 @@ pub const SYNC_SEED_VERSIONS: &[(&str, u32)] = &[
 /// 机制留着，以后有这种列加在这里。
 pub fn local_only_columns(table: &str) -> &'static [&'static str] {
     match table {
+        // 这本书选了哪份译文:译文版本不同步,选择也只在本机(v36 以前是一张不同步的表)。
+        "item_files" => &["chosen_version_id"],
         _ => &[],
     }
 }
 
+/// 写入别的设备发来的实体时,按主键覆盖、不先删的子表(其余子表先删后插)。
+/// 文件下面挂着本机才有的译文版本(外键级联):先删文件行会把它们连带删掉。
+const UPSERT_CHILD_TABLES: &[&str] = &["item_files"];
+
 /// (表, 按哪几列取行)。第一项是根表。
 pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'static str])]> {
     const UPLOAD: &[(&str, &[&str])] = &[("uploads", &["upload_id"])];
+    // 一个文献条目:书目、作者、文件(PDF)、书名建议。键是条目编号(上传自动建的书 = PDF 的内容指纹)。
     const DOCUMENT: &[(&str, &[&str])] = &[
-        ("documents", &["document_id"]),
-        ("document_title_state", &["document_id"]),
-        ("document_metadata_suggestions", &["document_id"]),
+        ("library_items", &["item_id"]),
+        ("item_references", &["item_id"]),
+        ("item_creators", &["item_id"]),
+        ("item_files", &["item_id"]),
+        ("item_title_suggestions", &["item_id"]),
     ];
     const COLLECTION: &[(&str, &[&str])] = &[("collections", &["collection_id"])];
     const MEMBER: &[(&str, &[&str])] =
@@ -302,6 +313,12 @@ fn read_rows(
 /// - v33：任务行的 `runtime_json` 拆成 `jobs` 上的几列（进入当前阶段、最后出错和重试的时间、重试次数）和
 ///   `job_stage_history` 的行；其余字段读的时候算，丢掉。
 fn upgrade_legacy_entity<'a>(kind: &str, rows: &'a SyncRows) -> std::borrow::Cow<'a, SyncRows> {
+    if kind == "document" {
+        return match upgrade_legacy_document(rows) {
+            Some(upgraded) => std::borrow::Cow::Owned(upgraded),
+            None => std::borrow::Cow::Borrowed(rows),
+        };
+    }
     let legacy_runtime = kind == "job"
         && rows.get("jobs").and_then(|r| r.first()).is_some_and(|row| row.contains_key("runtime_json"));
     if !legacy_runtime {
@@ -347,6 +364,141 @@ fn upgrade_legacy_entity<'a>(kind: &str, rows: &'a SyncRows) -> std::borrow::Cow
         upgraded.insert("job_stage_history".into(), history);
     }
     std::borrow::Cow::Owned(upgraded)
+}
+
+/// v36 以前的书(`documents` 一行 + `document_title_state` + `document_metadata_suggestions`)拆成条目、书目、作者、文件、
+/// 书名建议,和迁移 `v36_library_items.sql` 同一套对应。不是旧结构返回 None。
+fn upgrade_legacy_document(rows: &SyncRows) -> Option<SyncRows> {
+    let document = rows.get("documents")?.first()?;
+    let id = document.get("document_id")?.clone();
+    let pick = |row: &Map<String, Value>, pairs: &[(&str, &str)]| {
+        let mut out = Map::new();
+        for (from, to) in pairs {
+            if let Some(value) = row.get(*from) {
+                out.insert((*to).to_string(), value.clone());
+            }
+        }
+        out
+    };
+    let mut item = pick(document, &[("added_at", "created_at"), ("updated_at", "updated_at"), ("owner_user_id", "owner_user_id")]);
+    item.insert("item_id".into(), id.clone());
+    item.insert("item_type".into(), Value::from("reference"));
+
+    let mut reference = pick(document, &[("title", "title"), ("year", "year"), ("doi", "doi")]);
+    reference.insert("item_id".into(), id.clone());
+    if let Some(state) = rows.get("document_title_state").and_then(|r| r.first()) {
+        reference.extend(pick(state, &[("source", "title_source"), ("suggestion_id", "title_suggestion_id")]));
+        let locked = state.get("locked").is_some_and(|v| v.as_i64().is_some_and(|n| n != 0) || v.as_bool() == Some(true));
+        reference.insert("title_locked".into(), Value::from(i64::from(locked)));
+    }
+
+    let authors: Vec<Value> = document
+        .get("authors_json")
+        .and_then(Value::as_str)
+        .and_then(|text| serde_json::from_str::<Value>(text).ok())
+        .and_then(|value| value.as_array().cloned())
+        .unwrap_or_default();
+    let creators = authors
+        .iter()
+        .enumerate()
+        .map(|(position, author)| {
+            let literal = author.as_str().map(str::to_string).unwrap_or_else(|| author.to_string());
+            let mut row = Map::new();
+            row.insert("item_id".into(), id.clone());
+            row.insert("position".into(), Value::from(position as i64));
+            row.insert("role".into(), Value::from("author"));
+            row.insert("literal".into(), Value::from(literal));
+            row
+        })
+        .collect();
+
+    let mut file = pick(
+        document,
+        &[
+            ("document_id", "file_id"),
+            ("source_filename", "source_filename"),
+            ("page_count", "page_count"),
+            ("bytes", "bytes"),
+            ("active_job_id", "active_job_id"),
+            ("reading_status", "reading_status"),
+            ("added_at", "added_at"),
+            ("last_opened_at", "last_opened_at"),
+            ("updated_at", "updated_at"),
+        ],
+    );
+    file.insert("item_id".into(), id.clone());
+
+    let suggestions = rows
+        .get("document_metadata_suggestions")
+        .map(|list| {
+            list.iter()
+                .map(|row| {
+                    let mut row = row.clone();
+                    row.remove("document_id");
+                    row.insert("item_id".into(), id.clone());
+                    row
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let mut out = SyncRows::new();
+    out.insert("library_items".into(), vec![item]);
+    out.insert("item_references".into(), vec![reference]);
+    out.insert("item_creators".into(), creators);
+    out.insert("item_files".into(), vec![file]);
+    out.insert("item_title_suggestions".into(), suggestions);
+    Some(out)
+}
+
+/// v36 以前的书每个字段的同步时钟换成现在的字段:新的一个字段由旧的哪几个合成,取其中最新的时钟
+/// (旧的一个都没有就不写,合并时按整条记录的时钟算)。
+const LEGACY_DOCUMENT_CLOCKS: &[(&str, &[&str])] = &[
+    ("library_items.item_id", &["documents.document_id"]),
+    ("library_items.created_at", &["documents.added_at"]),
+    ("library_items.updated_at", &["documents.updated_at"]),
+    ("library_items.owner_user_id", &["documents.owner_user_id"]),
+    ("item_references", &["documents.title", "documents.year", "documents.doi", "document_title_state"]),
+    ("item_creators", &["documents.authors_json"]),
+    (
+        "item_files",
+        &[
+            "documents.source_filename",
+            "documents.page_count",
+            "documents.bytes",
+            "documents.active_job_id",
+            "documents.reading_status",
+            "documents.added_at",
+            "documents.last_opened_at",
+        ],
+    ),
+    ("item_title_suggestions", &["document_metadata_suggestions"]),
+];
+
+/// 一条同步记录(内容 + 每个字段的时钟)按现在的表结构改写;本来就是现在的样子返回 None。
+/// 同步引擎收到别的设备的记录时、开库时改写本机记着的上次同步内容时都用它,
+/// 这样逐字段合并比的是同一套字段。
+pub fn upgrade_legacy_sync_record(
+    kind: &str,
+    rows: &SyncRows,
+    clocks: &BTreeMap<String, String>,
+) -> Option<(SyncRows, BTreeMap<String, String>)> {
+    if kind != "document" {
+        return None;
+    }
+    let upgraded = upgrade_legacy_document(rows)?;
+    let mut new_clocks = BTreeMap::new();
+    for (field, sources) in LEGACY_DOCUMENT_CLOCKS {
+        if let Some(clock) = sources.iter().filter_map(|source| clocks.get(*source)).max() {
+            new_clocks.insert((*field).to_string(), clock.clone());
+        }
+    }
+    for (field, clock) in clocks {
+        if !field.starts_with("documents.") && !field.starts_with("document_") {
+            new_clocks.insert(field.clone(), clock.clone());
+        }
+    }
+    Some((upgraded, new_clocks))
 }
 
 /// 旧版本设备发来的行（同步文件夹里老的包也是）按现在的表结构改写。只认得的几处，按迁移版本往下加：
@@ -424,6 +576,37 @@ fn insert_row(
         .map(|c| sql_from_json(&row[c.as_str()]))
         .collect::<Result<Vec<_>>>()?;
     tx.execute(&sql, rusqlite::params_from_iter(values.iter()))?;
+    Ok(())
+}
+
+/// 按主键覆盖的子表:删掉本机这个实体下、对方已经没有的行(按主键比)。
+fn remove_rows_not_in(
+    tx: &Transaction<'_>,
+    table: &str,
+    info: &TableInfo,
+    key_columns: &[&str],
+    key: &[&str],
+    incoming: &[Map<String, Value>],
+) -> Result<()> {
+    if info.primary_key.is_empty() {
+        bail!("{table} has no primary key to upsert by");
+    }
+    let primary_key = |row: &Map<String, Value>| -> Vec<Value> {
+        info.primary_key.iter().map(|c| row.get(c.as_str()).cloned().unwrap_or(Value::Null)).collect()
+    };
+    let wanted: Vec<Vec<Value>> = incoming.iter().map(|row| primary_key(row)).collect();
+    for row in read_rows(tx, table, key_columns, key)? {
+        let pk = primary_key(&row);
+        if wanted.contains(&pk) {
+            continue;
+        }
+        let values = pk.iter().map(sql_from_json).collect::<Result<Vec<_>>>()?;
+        let columns: Vec<&str> = info.primary_key.iter().map(String::as_str).collect();
+        tx.execute(
+            &format!("DELETE FROM \"{table}\" WHERE {}", where_clause(&columns)),
+            rusqlite::params_from_iter(values.iter()),
+        )?;
+    }
     Ok(())
 }
 
@@ -523,6 +706,34 @@ pub(crate) fn sync_after_restore(conn: &Connection, previous: &[(String, String)
 }
 
 impl Db {
+    /// 本机记着的上次同步内容（`sync_entities.base_json`）和字段时钟还是 v36 以前的书的，按 [`upgrade_legacy_sync_record`]
+    /// 改写。改完以后再跑什么都不动。返回改了几条。
+    pub(crate) fn upgrade_legacy_sync_states(&self) -> Result<usize> {
+        let mut conn = self.connect()?;
+        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let legacy: Vec<(String, String, String)> = {
+            let mut stmt = tx.prepare(
+                "SELECT entity_key, base_json, clocks_json FROM sync_entities
+                 WHERE kind = 'document' AND base_json LIKE '%\"documents\"%'",
+            )?;
+            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?;
+            rows.collect::<rusqlite::Result<_>>()?
+        };
+        let mut upgraded = 0;
+        for (key, base_json, clocks_json) in legacy {
+            let Ok(base) = serde_json::from_str::<SyncRows>(&base_json) else { continue };
+            let clocks: BTreeMap<String, String> = serde_json::from_str(&clocks_json).unwrap_or_default();
+            let Some((rows, clocks)) = upgrade_legacy_sync_record("document", &base, &clocks) else { continue };
+            tx.execute(
+                "UPDATE sync_entities SET base_json = ?1, clocks_json = ?2 WHERE kind = 'document' AND entity_key = ?3",
+                params![serde_json::to_string(&rows)?, serde_json::to_string(&clocks)?, key],
+            )?;
+            upgraded += 1;
+        }
+        tx.commit()?;
+        Ok(upgraded)
+    }
+
     pub fn sync_state_get(&self, key: &str) -> Result<Option<String>> {
         let conn = self.connect()?;
         Ok(conn
@@ -912,15 +1123,23 @@ impl Db {
                 let info = table_info(&tx, root)?;
                 insert_row(&tx, root, &info, &root_rows[0], true)?;
                 for (table, columns) in spec.iter().skip(1) {
+                    if UPSERT_CHILD_TABLES.contains(table) {
+                        continue;
+                    }
                     tx.execute(
                         &format!("DELETE FROM \"{table}\" WHERE {}", where_clause(columns)),
                         rusqlite::params_from_iter(parts[..columns.len()].iter()),
                     )?;
                 }
-                for (table, _) in spec.iter().skip(1) {
+                for (table, columns) in spec.iter().skip(1) {
                     let info = table_info(&tx, table)?;
-                    for row in rows.get(*table).map(Vec::as_slice).unwrap_or(&[]) {
-                        insert_row(&tx, table, &info, row, false)?;
+                    let incoming = rows.get(*table).map(Vec::as_slice).unwrap_or(&[]);
+                    let upsert = UPSERT_CHILD_TABLES.contains(table);
+                    if upsert {
+                        remove_rows_not_in(&tx, table, &info, columns, &parts[..columns.len()], incoming)?;
+                    }
+                    for row in incoming {
+                        insert_row(&tx, table, &info, row, upsert)?;
                     }
                 }
             }
@@ -1067,6 +1286,94 @@ mod legacy_row_tests {
         let mut current = super::SyncRows::new();
         current.insert("jobs".into(), vec![row(json!({"job_id": "j", "status": "running"}))]);
         assert!(matches!(super::upgrade_legacy_entity("job", &current), std::borrow::Cow::Borrowed(_)));
+    }
+
+    fn legacy_book() -> super::SyncRows {
+        let mut rows = super::SyncRows::new();
+        rows.insert(
+            "documents".into(),
+            vec![row(json!({"document_id": "d", "title": "T", "authors_json": "[\"A\", \"B\"]", "year": 1999,
+                "doi": "10.1/x", "source_filename": "t.pdf", "page_count": 3, "bytes": 9, "active_job_id": "j",
+                "reading_status": "reading", "added_at": "t0", "last_opened_at": null, "updated_at": "t1",
+                "active_version_id": null, "owner_user_id": "local"}))],
+        );
+        rows.insert(
+            "document_title_state".into(),
+            vec![row(json!({"document_id": "d", "source": "user", "locked": 1, "suggestion_id": null, "updated_at": "t1"}))],
+        );
+        rows.insert(
+            "document_metadata_suggestions".into(),
+            vec![row(json!({"suggestion_id": "s", "document_id": "d", "selected_title": "T"}))],
+        );
+        rows
+    }
+
+    /// v36 以前的书拆成条目、书目、作者、文件、书名建议；字段时钟按「新字段由哪几个旧字段合成、取最新」换过来。
+    #[test]
+    fn a_legacy_book_record_is_split_into_library_item_rows_and_clocks() {
+        let clocks: std::collections::BTreeMap<String, String> = [
+            ("documents.title", "c3"),
+            ("documents.doi", "c1"),
+            ("document_title_state", "c2"),
+            ("documents.reading_status", "c4"),
+            ("documents.authors_json", "c1"),
+            ("$files", "c5"),
+        ]
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
+        let (rows, clocks) = super::upgrade_legacy_sync_record("document", &legacy_book(), &clocks).unwrap();
+        assert_eq!(
+            Value::Object(rows["library_items"][0].clone()),
+            json!({"item_id": "d", "item_type": "reference", "created_at": "t0", "updated_at": "t1", "owner_user_id": "local"})
+        );
+        let reference = &rows["item_references"][0];
+        assert_eq!((&reference["title"], &reference["title_source"], &reference["title_locked"]), (&json!("T"), &json!("user"), &json!(1)));
+        assert_eq!((&reference["year"], &reference["doi"]), (&json!(1999), &json!("10.1/x")));
+        let names: Vec<&Value> = rows["item_creators"].iter().map(|c| &c["literal"]).collect();
+        assert_eq!(names, vec![&json!("A"), &json!("B")]);
+        let file = &rows["item_files"][0];
+        assert_eq!((&file["file_id"], &file["item_id"], &file["reading_status"]), (&json!("d"), &json!("d"), &json!("reading")));
+        assert!(!file.contains_key("title") && !file.contains_key("owner_user_id"));
+        assert_eq!(rows["item_title_suggestions"][0]["item_id"], json!("d"));
+        assert!(!rows["item_title_suggestions"][0].contains_key("document_id"));
+        assert!(!rows.contains_key("documents"));
+
+        assert_eq!(clocks["item_references"], "c3", "书名、DOI、书名状态里最新的");
+        assert_eq!(clocks["item_files"], "c4");
+        assert_eq!(clocks["item_creators"], "c1");
+        assert_eq!(clocks["$files"], "c5");
+        assert!(clocks.keys().all(|k| !k.starts_with("documents.") && !k.starts_with("document_")), "{clocks:?}");
+
+        assert!(super::upgrade_legacy_sync_record("document", &rows, &clocks).is_none(), "已经是现在的样子就不再改");
+        assert!(super::upgrade_legacy_sync_record("job", &legacy_book(), &clocks).is_none());
+    }
+
+    /// 本机记着的上次同步的书（`sync_entities`）开库时改写一次，以后再开什么都不动。
+    #[test]
+    fn stored_sync_states_of_legacy_books_are_rewritten_once_on_init() {
+        let root = std::env::temp_dir().join(format!("retain-sync-legacy-{:016x}", fastrand::u64(..)));
+        let db = crate::db::Db::new(root.join("jobs.db"), root.clone());
+        db.init().unwrap();
+        db.connect()
+            .unwrap()
+            .execute(
+                "INSERT INTO sync_entities(kind, entity_key, clock, deleted, digest, base_json, clocks_json)
+                 VALUES('document', 'd', 'c9', 0, 'x', ?1, '{\"documents.title\":\"c3\"}')",
+                [serde_json::to_string(&legacy_book()).unwrap()],
+            )
+            .unwrap();
+        db.init().unwrap();
+        let (base, clocks): (String, String) = db
+            .connect()
+            .unwrap()
+            .query_row("SELECT base_json, clocks_json FROM sync_entities WHERE entity_key = 'd'", [], |r| Ok((r.get(0)?, r.get(1)?)))
+            .unwrap();
+        let base: super::SyncRows = serde_json::from_str(&base).unwrap();
+        assert!(base.contains_key("library_items") && !base.contains_key("documents"));
+        assert_eq!(clocks, r#"{"item_references":"c3"}"#);
+        assert_eq!(db.upgrade_legacy_sync_states().unwrap(), 0);
+        std::fs::remove_dir_all(root).ok();
     }
 
     /// 旧版本设备发来的任务行（v32 以前的列）改写成现在的样子；新的行、别的表原样不动。
