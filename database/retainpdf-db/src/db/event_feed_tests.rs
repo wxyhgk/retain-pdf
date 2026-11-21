@@ -49,7 +49,9 @@ fn item(key: &str, ts: &str) -> NewFeedItem {
         source_key: key.to_owned(),
         event_id: format!("event-{key}"),
         ts: ts.to_owned(),
-        payload: json!({"message": key}),
+        source_seq: None,
+        source_event_uid: None,
+        payload: Some(json!({"message": key})),
     }
 }
 
@@ -586,9 +588,9 @@ fn bootstrap_source_order_breaks_timestamp_ties_and_tail_respects_captured_upper
     fs.job("owner", JobStatusKind::Running);
     let ts = now_iso();
     let mut first = item("z-first", &ts);
-    first.payload["raw"] = json!({"source_seq": 1});
+    first.source_seq = Some(1);
     let mut second = item("a-second", &ts);
-    second.payload["raw"] = json!({"source_seq": 2});
+    second.source_seq = Some(2);
     assert!(fs
         .db
         .commit_event_feed(
@@ -783,11 +785,11 @@ fn initial_order_visitor_matches_publication_and_requires_unpublished_epoch() {
     fs.job("owner", JobStatusKind::Running);
     let ts = now_iso();
     let mut first = item("z-first", &ts);
-    first.payload["raw"] = json!({"source_seq": 1});
+    first.source_seq = Some(1);
     let mut second = item("a-second", &ts);
-    second.payload["raw"] = json!({"source_seq": 2});
+    second.source_seq = Some(2);
     let mut third = item("b-third", &ts);
-    third.payload["raw"] = json!({"source_seq": 2});
+    third.source_seq = Some(2);
     let older = item("older", "2000-01-01T00:00:00Z");
     assert!(fs
         .db
@@ -869,4 +871,52 @@ fn initial_order_visitor_matches_publication_and_requires_unpublished_epoch() {
             "published feed must not invoke visitor"
         ))
         .is_err());
+}
+
+/// v35：来自 events 的条目只记它是哪条原始事件，不存内容；读出来带着那条原始事件（内容由任务包现算）。
+/// 原始事件读的同时被删掉了（保留期）：按「事件流变了」报，调用方当游标过期处理。
+#[test]
+fn referenced_items_carry_their_source_event_and_a_missing_source_reads_as_a_changed_feed() {
+    let fs = Fixture::new();
+    fs.job("owner", JobStatusKind::Running);
+    let conn = fs.db.connect().unwrap();
+    conn.execute(
+        "INSERT INTO events(job_id, seq, ts, level, stage, event, message, event_uid, progress_current, progress_total,
+                            retry_count, elapsed_ms, payload_json)
+         VALUES('owner', 1, '2026-11-21T00:00:00Z', 'info', 'translate', 'stage_progress', '翻到第 3 页', 'uid-1', 3, 9,
+                2, 1500, '{\"k\":1}')",
+        [],
+    )
+    .unwrap();
+    let mut referenced = item("db:owner:uid-1", "2026-11-21T00:00:00Z");
+    referenced.payload = None;
+    referenced.source_event_uid = Some("uid-1".into());
+    let stored = item("jsonl:owner:x:0", "2026-11-21T00:00:01Z");
+    assert!(fs
+        .db
+        .commit_event_feed("owner", None, "epoch", "ctx", &json!({}), &[referenced, stored], false, &[])
+        .unwrap());
+
+    let page = fs.db.read_event_feed_page("owner", "epoch", 0, 10, 10).unwrap();
+    assert_eq!(page.len(), 2);
+    assert!(page[0].payload.is_none());
+    let source = page[0].source.as_ref().expect("带着原始事件");
+    assert_eq!((source.seq, source.message.as_str(), source.stage.as_deref()), (1, "翻到第 3 页", Some("translate")));
+    // 原始事件接在条目的列后面读（列号要整体挪），每一列都要对上（以前漏挪过 retry_count）。
+    let direct = fs.db.list_job_events("owner", 10, 0).unwrap().remove(0);
+    assert_eq!(serde_json::to_value(source).unwrap(), serde_json::to_value(&direct).unwrap());
+    assert_eq!((source.progress_current, source.progress_total, source.retry_count, source.elapsed_ms), (Some(3), Some(9), Some(2), Some(1500)));
+    assert_eq!(page[1].payload, Some(json!({"message": "jsonl:owner:x:0"})));
+    assert!(page[1].source.is_none());
+    let tail = fs.db.read_event_feed_tail("owner", "epoch", 10, 1).unwrap();
+    assert_eq!(tail[0].seq, 2);
+
+    conn.execute("DELETE FROM events WHERE event_uid = 'uid-1'", []).unwrap();
+    let error = fs.db.read_event_feed_page("owner", "epoch", 0, 10, 10).unwrap_err();
+    assert!(error.to_string().contains("event feed epoch changed"), "{error}");
+
+    // 既没内容也没指向原始事件的条目写不进去。
+    let mut empty = item("db:owner:none", "2026-11-21T00:00:02Z");
+    empty.payload = None;
+    assert!(fs.db.commit_event_feed("owner", Some(1), "epoch", "ctx", &json!({}), &[empty], false, &[]).is_err());
 }

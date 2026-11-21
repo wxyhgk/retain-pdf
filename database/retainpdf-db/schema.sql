@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 34
+-- user_version 35
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -103,7 +103,9 @@ TABLE event_feed_items
   source_key TEXT NOT NULL
   event_id TEXT NOT NULL
   ts TEXT NOT NULL
-  payload_json TEXT NOT NULL
+  source_seq INTEGER
+  source_event_uid TEXT
+  payload_json TEXT
   FOREIGN KEY (owner_job_id) REFERENCES event_feeds(owner_job_id) ON UPDATE NO ACTION ON DELETE CASCADE
   PRIMARY KEY (owner_job_id, seq)
   UNIQUE (owner_job_id, event_id)

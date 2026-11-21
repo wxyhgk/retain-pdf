@@ -59,11 +59,14 @@ impl Db {
         Ok(changed)
     }
 
-    /// 增量收缩模式下把空页还给磁盘（不是这个模式时什么都不做）。30 天清理之后调。
-    pub fn release_free_pages(&self) -> Result<()> {
-        let conn = self.connect()?;
-        conn.execute_batch("PRAGMA incremental_vacuum;")?;
-        Ok(())
+    /// 增量收缩模式下把空页还给磁盘（不是这个模式时什么都不做）。30 天清理之后调。返回还了几页。
+    pub fn release_free_pages(&self) -> Result<usize> {
+        incremental_vacuum(&self.connect()?)
+    }
+
+    /// 空页数（还没还给磁盘的）。
+    pub fn free_pages(&self) -> Result<u64> {
+        Ok(self.connect()?.query_row("PRAGMA freelist_count", [], |row| row.get::<_, i64>(0))?.max(0) as u64)
     }
 
     /// 整库压缩，并切到增量收缩模式。要独占整个库：后端开着（别的连接在用）会失败。
@@ -89,6 +92,18 @@ impl Db {
     }
 }
 
+/// `PRAGMA incremental_vacuum` 每还一页返回一行（空行），要一直走到头才全部还完。`execute_batch` 只走一步，
+/// 只还一页——2026-11-20 起 30 天清理之后的收缩一直只还了一页，2026-11-21 发现。返回还了几页。
+pub(super) fn incremental_vacuum(conn: &rusqlite::Connection) -> Result<usize> {
+    let mut stmt = conn.prepare("PRAGMA incremental_vacuum")?;
+    let mut rows = stmt.query([])?;
+    let mut released = 0;
+    while rows.next()?.is_some() {
+        released += 1;
+    }
+    Ok(released)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,6 +122,25 @@ mod tests {
         let (db, root) = temp_db("mode");
         assert!(db.incremental_vacuum_enabled().unwrap());
         db.release_free_pages().unwrap();
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    /// 空页要全部还回去（以前 `execute_batch` 只走一步、只还一页）。
+    #[test]
+    fn releasing_free_pages_returns_all_of_them() {
+        let (db, root) = temp_db("release");
+        let conn = db.connect().unwrap();
+        conn.execute_batch(
+            "CREATE TABLE filler(x TEXT);
+             WITH RECURSIVE n(i) AS (SELECT 1 UNION ALL SELECT i + 1 FROM n WHERE i < 2000)
+             INSERT INTO filler SELECT printf('%.2000c', 'x') FROM n;
+             DROP TABLE filler;",
+        )
+        .unwrap();
+        let free = db.free_pages().unwrap();
+        assert!(free > 500, "{free}");
+        assert_eq!(db.release_free_pages().unwrap() as u64, free);
+        assert_eq!(db.free_pages().unwrap(), 0);
         std::fs::remove_dir_all(root).unwrap();
     }
 

@@ -89,14 +89,14 @@ pub(crate) fn read_events(
             .is_empty()
     };
     let next_position = if has_more { position } else { upper };
+    let secrets = if rows.iter().any(|row| row.payload.is_none()) { sync::feed_secrets(db, &job) } else { Vec::new() };
     let mut ids = Vec::with_capacity(rows.len());
-    let mut events = Vec::with_capacity(rows.len());
+    let mut events: Vec<JobEventRecord> = Vec::with_capacity(rows.len());
     for row in rows {
-        let mut event: JobEventRecord = serde_json::from_value(row.payload)
-            .map_err(|_| AppError::internal("invalid stored event projection"))?;
-        event.seq = row.seq;
+        let event_id = row.event_id.clone();
+        let mut event = sync::materialize(&job.job_id, row, &secrets)?;
         event.user_stage = event.display_stage.clone();
-        ids.push(row.event_id);
+        ids.push(event_id);
         events.push(event);
     }
     let items = ids
