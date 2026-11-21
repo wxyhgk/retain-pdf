@@ -35,6 +35,7 @@ import { useReaderPanelSlot } from "./components/react-pdf/use-reader-panel-slot
 
 /** 稳定的空数组：每次渲染新建一个会让每页的标记层白白重算。 */
 import { resolveLiveTranslationToggles } from "./shared/data/live-translation-state.js";
+import { isEditableReaderBlock } from "./shared/data/block-edit.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderFinder, ReaderFinderToggles, ReaderSearchToggle, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
 import { ReaderToolBall } from "./components/react-pdf/ReaderToolBall.js";
@@ -323,10 +324,12 @@ export function ReaderAppReactPdf() {
   });
   const selectBlock = blockEdit.select;
   const setModeKeepingPage = c.setModeKeepingPage;
+  const regions = session.regions;
   const editBlock = useCallback((itemId: string) => {
+    if (!isEditableReaderBlock(regions, itemId)) return; // 表格译文还不能改（block-edit 的 EDITABLE_KINDS）
     if (visiblePdfMode === "source") setModeKeepingPage("compare");
     selectBlock(itemId);
-  }, [selectBlock, visiblePdfMode, setModeKeepingPage]);
+  }, [regions, selectBlock, visiblePdfMode, setModeKeepingPage]);
   useEditBlockShortcut(blockEdit.available ? editBlock : null, regionHover);
   // 画笔：笔迹按书存在本机（hooks/use-reader-ink），右键书页出小菜单，P 进出画笔模式。
   const ink = useReaderInk(c.viewStateKey);

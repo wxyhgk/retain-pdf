@@ -32,9 +32,20 @@ export function normalizeRenderEngine(value: unknown): RenderEngine {
   return value === "rpr_fit" || value === "typst" ? value : "auto";
 }
 
+/**
+ * 表格翻译（translation.tables，2026-11-22 接入，试验）。keep 一个字段都不发，后端缺省保留原文；
+ * translate = 正文翻完后由表格 agent 逐张翻（只翻有文字层的表），译文只在阅读页，译文 PDF 里表格还是原文。
+ */
+export type TableTranslation = "keep" | "translate";
+
+export function normalizeTableTranslation(value: unknown): TableTranslation {
+  return value === "translate" ? "translate" : "keep";
+}
+
 const WORKFLOW_PREFERENCE_SPECS = {
   translationQuality: { storageKey: "retainpdf.translationQuality", normalize: normalizeTranslationQuality },
   renderEngine: { storageKey: "retainpdf.renderEngine", normalize: normalizeRenderEngine },
+  tableTranslation: { storageKey: "retainpdf.tableTranslation", normalize: normalizeTableTranslation },
 } as const satisfies Record<string, { storageKey: string; normalize: (value: unknown) => string }>;
 
 type Specs = typeof WORKFLOW_PREFERENCE_SPECS;

@@ -3,7 +3,7 @@
 // DOM id "page-range-dialog" / "page-range-title" 为历史契约（测试与样式锚点），保留不改。
 
 import type { FormEvent } from "react";
-import { BookOpen, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, X } from "lucide-react";
+import { BookOpen, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, Table, X } from "lucide-react";
 
 import { LegacyButton } from "@retainpdf/ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
@@ -19,6 +19,11 @@ const ENGINE_HINTS: Record<string, string> = {
   auto: "目前默认用自研排版引擎；以后服务端换默认，这里跟着换。",
   rpr_fit: "自研排版引擎：公式不再转换成 Typst，字号按实际放得下的大小来定，放不下会报告。出问题自动退回 Typst。",
   typst: "原来的 Typst 排版，公式要先转换一遍，个别公式可能出错。",
+};
+
+const TABLE_HINTS: Record<string, string> = {
+  keep: "表格保留原文。",
+  translate: "试验：正文翻完后逐张翻表格，只翻有文字层的表；阅读页能看到，译文 PDF 里表格还是原文。会多花一些 token，用量页记在「表格翻译」。",
 };
 
 /** hidePageRange：一次上传多本时每本整本处理，不给页码范围。 */
@@ -57,7 +62,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
           </h3>
           <p id="page-range-limit-text">
             {hidePageRange
-              ? "这一批每本都整本处理；术语表、翻译质量和排版引擎对每本都一样。"
+              ? "这一批每本都整本处理；术语表、翻译质量、排版引擎和表格对每本都一样。"
               : "按需设置页码范围、术语表和翻译质量；页码留空表示处理整份 PDF。"}
           </p>
         </div>
@@ -170,6 +175,24 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
           </select>
           <small id="job-render-engine-hint">
             {ENGINE_HINTS[workflow.preferences.renderEngine] || ENGINE_HINTS.auto}
+          </small>
+        </label>
+
+        <label className="translation-options-glossary" htmlFor="job-table-translation">
+          <span>
+            <Table className="h-4 w-4" aria-hidden="true" />
+            表格
+          </span>
+          <select
+            id="job-table-translation"
+            value={workflow.preferences.tableTranslation}
+            onChange={(event) => workflowView.setPreference("tableTranslation", event.target.value)}
+          >
+            <option value="keep">保留原文</option>
+            <option value="translate">翻译表格（试验）</option>
+          </select>
+          <small id="job-table-translation-hint">
+            {TABLE_HINTS[workflow.preferences.tableTranslation] || TABLE_HINTS.keep}
           </small>
         </label>
       </div>

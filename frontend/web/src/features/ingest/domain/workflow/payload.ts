@@ -72,7 +72,7 @@ export interface BuildTranslationPayloadOptions {
   modelApiKey?: string;
   translationCredentialRef?: string;
   selectedGlossaryId?: string;
-  /** 用户偏好（workflow-preferences.ts）。这里用 translationQuality；缺省按 standard。 */
+  /** 用户偏好（workflow-preferences.ts）。这里用 translationQuality（缺省按 standard）和 tableTranslation（缺省保留原文）。 */
   preferences?: Partial<WorkflowPreferences>;
   constants: WorkflowPayloadConstants;
 }
@@ -139,6 +139,7 @@ export function buildTranslationPayload({
 }: BuildTranslationPayloadOptions): TranslationInput {
   return {
     ...translationQualityFields(preferences?.translationQuality),
+    ...tableTranslationFields(preferences?.tableTranslation),
     mode: constants.DEFAULT_MODE,
     math_mode: developerConfig.mathMode,
     model: developerConfig.model,
@@ -180,6 +181,11 @@ export function translationQualityFields(quality: unknown): Pick<TranslationInpu
   if (quality === "terms") return { preparation: "terms+style" };
   if (quality === "refined") return { engine: "agent" };
   return {};
+}
+
+/** 「表格」下拉 → translation.tables。keep 不发字段（后端缺省就是保留原文）。 */
+export function tableTranslationFields(mode: unknown): Pick<TranslationInput, "tables"> {
+  return mode === "translate" ? { tables: "translate" } : {};
 }
 
 function resolveStoredFontFamily(fallback: unknown): string {

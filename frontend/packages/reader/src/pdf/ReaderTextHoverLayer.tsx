@@ -7,6 +7,7 @@ import {
   type ReaderRegionHighlight,
   type ReaderRegionRect,
 } from "../shared/data/reader-regions.js";
+import { canEditReaderKind } from "../shared/data/block-edit.js";
 
 export type ReaderTextHoverTarget = {
   itemId: string;
@@ -245,7 +246,7 @@ export function ReaderTextHoverLayer({
               {idState === "copied" ? "已复制编号" : target.itemId}
             </HoverToolButton>
           ) : null}
-          {pane === "translated" && onEdit ? (
+          {pane === "translated" && onEdit && canEditReaderKind(kind) ? (
             <HoverToolButton
               className={READER_TEXT_HOVER_EDIT_CLASS}
               state="idle"

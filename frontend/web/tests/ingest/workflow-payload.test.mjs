@@ -263,6 +263,37 @@ test("排版引擎选择记在本机，不认识的值退回默认", () => {
   }
 });
 
+test("表格翻译：默认不发 tables（后端缺省保留原文），选了「翻译表格」才发 tables=translate", () => {
+  const base = { developerConfig: developerConfig(), translationCredentialRef: "cred_translation", selectedGlossaryId: "", constants };
+  const legacy = buildTranslationPayload(base);
+  assert.equal("tables" in legacy, false);
+  assert.deepEqual(buildTranslationPayload({ ...base, preferences: { tableTranslation: "keep" } }), legacy);
+  assert.equal(buildTranslationPayload({ ...base, preferences: { tableTranslation: "translate" } }).tables, "translate");
+  assert.equal("tables" in buildTranslationPayload({ ...base, preferences: { tableTranslation: "bogus" } }), false);
+  const both = buildTranslationPayload({ ...base, preferences: { translationQuality: "refined", tableTranslation: "translate" } });
+  assert.equal(both.engine, "agent", "和翻译质量互不影响");
+  assert.equal(both.tables, "translate");
+});
+
+test("表格翻译选择记在本机，不认识的值退回保留原文", () => {
+  const store = new Map();
+  const original = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (key) => (store.has(key) ? store.get(key) : null),
+    setItem: (key, value) => store.set(key, String(value)),
+  };
+  try {
+    const view = createWorkflowViewFeature();
+    assert.equal(view.preferences().tableTranslation, "keep");
+    view.setPreference("tableTranslation", "translate");
+    assert.equal(createWorkflowViewFeature().preferences().tableTranslation, "translate", "新开的视图沿用上次的选择");
+    view.setPreference("tableTranslation", "all");
+    assert.equal(view.preferences().tableTranslation, "keep");
+  } finally {
+    globalThis.localStorage = original;
+  }
+});
+
 test("buildOcrPayload maps provider token field and paddle api url", () => {
   const payload = buildOcrPayload({
     pageRanges: "1-3",

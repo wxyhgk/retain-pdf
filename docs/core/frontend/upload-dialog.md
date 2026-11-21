@@ -27,7 +27,11 @@
        （凭据库引用只属于设置里那家，换了家不带）；一本能收多大、多少页也跟着它。书库的「翻译整本」「只做 OCR」不读它。
      - **页数**：点开填起止页，或者「全部页」。上传完会自动填成「1 到最后一页」，这也算全部页（总页数记在
        上传视图状态的 `uploadedPageCount`）。
-   - 第二行：更多选项（术语表、翻译质量三档、排版引擎）、仅收藏、主按钮。
+   - 第二行：更多选项（术语表、翻译质量三档、排版引擎、表格）、仅收藏、主按钮。
+     - **表格**（2026-11-22，试验）：保留原文（默认，不发字段）/ 翻译表格（发 `translation.tables = "translate"`）。
+       正文翻完后表格 agent 逐张翻，只翻有文字层的表；译文只在阅读页（Markdown 视图、悬停复制），译文 PDF 里表格还是原文；
+       多花的 token 在用量页记在「表格翻译」。和其他偏好一样记在本机（`workflow-preferences.ts` 的 `tableTranslation`），
+       映射在 `workflow/payload.ts` 的 `tableTranslationFields`。
    - 小面板里按 Esc 只收小面板，不关弹窗。
    - 这次选的模型、OCR 都只管这一次上传：新开一次上传（打开弹窗）回到设置里的（`upload-choices.ts` 的 `resetUploadChoices`）。
 

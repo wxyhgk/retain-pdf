@@ -134,15 +134,27 @@ export function revisionIssueTexts(issues: unknown): string[] {
     });
 }
 
-const EDITABLE_KINDS = new Set(["text", "formula", "table"]);
+// 表格不能改（2026-11-22）：单块修改只改正文翻译清单，表格译文（表格 agent 整表翻的 HTML）不在里面。
+const EDITABLE_KINDS = new Set(["text", "formula"]);
 
-/** 能改的块（正文、公式、表格）按阅读顺序排好，给「上一段 / 下一段」用。 */
+/** 这种块能不能「改」（悬停框的「改」、按 E 都看它）。 */
+export function canEditReaderKind(kind: string): boolean {
+  return EDITABLE_KINDS.has(kind);
+}
+
+/** 这一块能不能「改」；块号在 regions 里找不到时不拦（regions 还没到的时候照旧能改正文）。 */
+export function isEditableReaderBlock(regions: readonly ReaderRegion[] | null | undefined, itemId: string): boolean {
+  const region = (regions || []).find((item) => item?.itemId === itemId);
+  return !region || canEditReaderKind(readerRegionKindForRegion(region));
+}
+
+/** 能改的块（正文、公式）按阅读顺序排好，给「上一段 / 下一段」用。 */
 export function editableBlockIds(regions: readonly ReaderRegion[] | null | undefined): string[] {
   const ids: string[] = [];
   const seen = new Set<string>();
   for (const region of regions || []) {
     const id = `${region?.itemId || ""}`.trim();
-    if (!id || seen.has(id) || !EDITABLE_KINDS.has(readerRegionKindForRegion(region))) continue;
+    if (!id || seen.has(id) || !canEditReaderKind(readerRegionKindForRegion(region))) continue;
     seen.add(id);
     ids.push(id);
   }

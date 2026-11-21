@@ -111,6 +111,24 @@ test("MinerU 的词表（figure / image_caption / page_footnote / table_body）�
   assert.deepEqual(blocks.map((block) => block.kind), ["figure", "caption", "table", "footnote"]);
 });
 
+test("表格译文（表格 agent 整表翻的 HTML）在译文视图里按表格渲染，原文视图还是原表", () => {
+  const sourceHtml = "<table><tr><th>Name</th><th>Value</th></tr><tr><td colspan=\"2\">Total</td></tr></table>";
+  const translatedHtml = "<table><tr><th>名称</th><th>数值</th></tr><tr><td colspan=\"2\">合计</td></tr></table>";
+  const regions = normalizeReaderRegions({
+    items: [
+      item("p001-b000", 1, 0, "table_body", sourceHtml, { region_type: "table", translated: translatedHtml }),
+      item("p001-b001", 1, 1, "table_body", sourceHtml, { region_type: "table" }),
+    ],
+  });
+  const [translated, kept] = buildReaderMdBlocks(regions);
+  assert.equal(translated.kind, "table");
+  assert.equal(translated.hasTranslation, true);
+  assert.equal(readerMdBlockMarkdown(translated, "translated"), translatedHtml, "交给 marked 的是整段 <table>，不是转义后的文字");
+  assert.equal(readerMdBlockMarkdown(translated, "source"), sourceHtml);
+  assert.equal(kept.hasTranslation, false, "没翻的表（source_only）照旧显示原表");
+  assert.equal(readerMdBlockMarkdown(kept, "translated"), sourceHtml);
+});
+
 test("悬停 store：同值不重复通知，记住是谁触发的", () => {
   const store = createRegionHoverStore();
   let calls = 0;
