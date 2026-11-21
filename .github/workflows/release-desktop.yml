@@ -43,6 +43,7 @@ jobs:
     outputs:
       mode: ${{ steps.decision.outputs.mode }}
       run_id: ${{ steps.decision.outputs.run_id }}
+      tests_run_id: ${{ steps.find.outputs.tests_run_id }}
       version: ${{ steps.find.outputs.version }}
       tag: ${{ steps.find.outputs.tag }}
       prerelease: ${{ steps.find.outputs.prerelease }}
@@ -137,6 +138,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/tests.yml
+    with:
+      tested-main-run-id: ${{ needs.resolve.outputs.tests_run_id }}
 
   # 三个平台的 build 不等 quality-gate，与测试并行跑（build 只产出 workflow 内
   # artifact，不碰任何 secret、不对外发布）。

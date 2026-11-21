@@ -1,6 +1,6 @@
 """「打 tag 只提升 main 预构建产物」的契约。
 
-- main 预构建：只在 push main / 手动 dispatch（main）上跑，不取消正在跑的那份，
+- main 预构建：由 main 上的手动 dispatch 触发，已经开始的构建继续执行，
   用声明版本、复用与回退构建同一份 reusable workflow；
 - 提升：只在 tag push 且 resolve 判定 promote 时运行，跨 run 下载要 run-id +
   github-token，提升前有硬校验（身份 / sha256 / 平台 / OCI 标签 / tag 未移动）；
@@ -76,20 +76,18 @@ def condition(job_text: str) -> str | None:
 # ---------------------------------------------------------------- prebuild
 
 
-def test_prebuild_runs_only_for_main_pushes_and_manual_main_runs():
+def test_prebuild_runs_only_on_manual_main_dispatch():
     on = on_block(PREBUILD)
-    assert re.search(r"^  push:\n    branches:\n      - main\n", on, re.M)
+    assert "push:" not in on
     assert "tags:" not in on
     assert "pull_request" not in on
     assert "workflow_dispatch" in on
-    # 只改文档的 commit 不预构建（这样的 commit 打 tag 会回退到完整构建）。
-    assert '"docs/**"' in on and '"**/*.md"' in on
     # dispatch 到别的分支时整条链路跳过（提升判定也只认 main 上的 run）。
     assert condition(job(PREBUILD, "prepare")) == "github.ref == 'refs/heads/main'"
 
 
 def test_prebuild_never_cancels_a_running_candidate_build():
-    """正在跑的预构建可能正是马上要打 tag 的 release commit，不能被新的 push 取消。"""
+    """正在跑的预构建可能正是马上要打 tag 的 release commit。"""
     source = workflow(PREBUILD)
     assert "group: prebuild-release-candidates-${{ github.ref }}" in source
     assert "cancel-in-progress: false" in source

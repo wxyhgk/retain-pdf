@@ -28,25 +28,30 @@ on:
       - '.github/scripts/find_release_candidate.py'
       - '.github/scripts/release_candidate_manifest.py'
       - '.dockerignore'
+      - '.gitattributes'
+      - '.cargo/**'
       - 'backend-package.json'
       - 'package.json'
       - 'package-lock.json'
       - 'frontend/web/scripts/build-workspace-packages.mjs'
+      - 'frontend/web/vite.config.*'
       - 'frontend/desktop/package.json'
-      - 'frontend/web/**'
-      - 'frontend/packages/api/**'
-      - 'frontend/packages/domain/**'
-      - 'frontend/packages/reader/**'
-      - 'contracts/**'
-      - 'frontend/packages/ui/**'
+      - 'frontend/**/package.json'
+      - 'contracts/package.json'
       - 'ops/deployment/docker/Dockerfile.web'
       - 'ops/deployment/docker/entrypoint-web.sh'
       - 'ops/deployment/docker/nginx-mjs.types.conf'
       - 'ops/deployment/docker/nginx.conf.template'
       - 'ops/deployment/docker/backend-api-key.envsh'
-      - 'backend/**'
-      - 'database/**'
-      - 'resources/**'
+      - 'backend/**/Cargo.toml'
+      - 'backend/**/build.rs'
+      - 'backend/**/package.json'
+      - 'backend/**/package-lock.json'
+      - 'backend/**/pyproject.toml'
+      - 'backend/uv.lock'
+      - 'database/**/Cargo.toml'
+      - 'database/**/build.rs'
+      - 'resources/fonts/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'ops/deployment/docker/backend/**'
@@ -94,6 +99,7 @@ jobs:
     outputs:
       mode: ${{ steps.decision.outputs.mode }}
       run_id: ${{ steps.decision.outputs.run_id }}
+      tests_run_id: ${{ steps.find.outputs.tests_run_id }}
       version: ${{ steps.find.outputs.version }}
       tag: ${{ steps.find.outputs.tag }}
       stable: ${{ steps.find.outputs.stable }}
@@ -214,6 +220,8 @@ jobs:
     permissions:
       contents: read
     uses: ./.github/workflows/tests.yml
+    with:
+      tested-main-run-id: ${{ needs.resolve.outputs.tests_run_id }}
 
   # 版本号与构建策略只解析一次，传给 build-docker-images.yml 的矩阵和 merge。
   # 不依赖 quality-gate，与测试并行跑；dispatch 输入不合法时可以立刻失败。

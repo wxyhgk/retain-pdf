@@ -50,6 +50,8 @@ def test_publish_workflows_require_complete_tests(workflow):
             expected += " && github.event_name != 'pull_request'"
         assert condition == expected
         assert re.search(r"^    needs: resolve$", gate, re.M)
+        assert "tested-main-run-id: ${{ needs.resolve.outputs.tests_run_id }}" in gate
+        assert "tests_run_id: ${{ steps.find.outputs.tests_run_id }}" in job(workflow, "resolve")
     assert re.search(r"^    continue-on-error:", gate, re.M) is None
 
 

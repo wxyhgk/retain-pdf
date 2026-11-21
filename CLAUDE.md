@@ -26,7 +26,9 @@
 
 ## 合并前必须跑的检查
 
-CI 的 Tests 包含架构检查，Web 自动发布复用同一提交的 Tests 结果。以下检查本地先跑过再合：
+CI 的 Tests 按 PR 改动选择文档检查、前端检查或全量测试。主分支推送跑全量测试，
+独立后端源码包在打包边界有变化时验证。Web 自动发布和正式发版可以复用同一提交的
+主分支 Tests 成功结果。发布候选可从 main 手动预构建。以下检查本地先跑过再合：
 
 ```bash
 python3 backend/api/scripts/check_architecture.py

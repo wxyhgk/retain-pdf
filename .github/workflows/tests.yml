@@ -6,7 +6,13 @@ name: Tests
 # 包括渲染、排版、命令契约、包边界及 durable stage 测试。
 
 "on":
-  workflow_call: {}
+  workflow_call:
+    inputs:
+      tested-main-run-id:
+        description: Verified successful full Tests run for the exact release SHA
+        type: string
+        default: ""
+  workflow_dispatch: {}
   pull_request:
   push:
     branches:
@@ -23,10 +29,47 @@ concurrency:
   cancel-in-progress: ${{ github.ref_type != 'tag' }}
 
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      scope: ${{ steps.select.outputs.scope }}
+      archive: ${{ steps.select.outputs.archive }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - name: Select checks
+        id: select
+        env:
+          PUSH_BEFORE: ${{ github.event.before }}
+          TESTED_MAIN_RUN_ID: ${{ inputs.tested-main-run-id }}
+        run: python3 .github/scripts/ci_scope.py --tested-main-run-id "$TESTED_MAIN_RUN_ID"
+
+  docs:
+    needs: scope
+    if: needs.scope.outputs.scope == 'docs' || needs.scope.outputs.scope == 'frontend'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Check documentation and repository layout
+        run: |
+          python -m pip install pytest==9.0.3
+          python -m pytest -q .github/scripts/tests/test_repository_layout_contracts.py
+          python ops/development/check_devlog.py
+
   architecture:
+    needs: scope
+    if: needs.scope.outputs.scope == 'full'
     uses: ./.github/workflows/rust-api-architecture.yml
 
   rust-workspace:
+    needs: scope
+    if: needs.scope.outputs.scope == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -66,6 +109,8 @@ jobs:
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" cargo test --locked --workspace --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
 
   frontend:
+    needs: scope
+    if: needs.scope.outputs.scope == 'full' || needs.scope.outputs.scope == 'frontend'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -125,6 +170,8 @@ jobs:
         run: npm test --ignore-scripts
 
   python-services:
+    needs: scope
+    if: needs.scope.outputs.scope == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -211,9 +258,11 @@ jobs:
       - name: Typst integration pipeline tests (rendering and durable stages)
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/tests" -q -m needs_typst
 
-  backend-standalone:
+  tooling:
+    needs: scope
+    if: needs.scope.outputs.scope == 'full'
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -228,9 +277,6 @@ jobs:
         with:
           version: "0.11.19"
           python-version: "3.11"
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
 
       - name: Install locked backend test environment
         run: uv sync --project "$RETAIN_PDF_SERVICES_ROOT" --locked --all-extras
@@ -255,6 +301,24 @@ jobs:
             product_schema="$GITHUB_WORKSPACE/contracts/$(basename "$backend_schema")"
             diff -- "$backend_schema" "$product_schema"
           done
+
+  backend-standalone:
+    needs: scope
+    if: needs.scope.outputs.archive == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - name: Prepare embedded backend package
+        id: backend
+        uses: ./.github/actions/prepare-backend-source
+      - name: Setup uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9
+        with:
+          version: "0.11.19"
+          python-version: "3.11"
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Verify isolated backend workspace
         run: |

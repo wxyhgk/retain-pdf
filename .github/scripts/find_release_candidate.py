@@ -11,9 +11,8 @@ promote 需要同时满足（缺一条就 mode=build，并写明原因，走原�
 5. 该 commit 的预构建 workflow 成功；
 6. 那次预构建 run 里提升所需的 artifact 都在、没过期（且离过期还有余量）。
 
-预构建 / Tests 还在跑时会等待（默认最多 120 分钟：release commit 的预构建可能
-排在上一份预构建后面，两份加起来约 80 分钟）；找不到 run 时只等一个短的
-宽限期（push main 与 push tag 几乎同时发生，run 可能还没创建）。
+已手动触发的预构建还在跑时会等待，默认最多 120 分钟。未触发预构建的标签直接
+进入构建路径，有同一提交的 main Tests 成功记录时继续复用该结果。
 
 只会选 head_sha 与本次 tag 完全相同的 run，绝不会拿别的 commit 的产物。
 """
@@ -220,46 +219,42 @@ def decide(
         decision.reason = reason
         return decision
 
-    if not declared_version:
-        return fallback("this commit does not declare an aligned application version")
-    if declared_version != release["version"]:
-        return fallback(
-            f"tag version {release['version']} != version declared by this commit ({declared_version}); "
-            "prebuilt candidates carry the declared version"
-        )
-
     try:
+        tests_state, tests_run, tests_detail = select_workflow_run(
+            list_workflow_runs(api, repo, TESTS_WORKFLOW, sha), sha=sha, events={"push"}
+        )
+        if tests_run is not None and tests_state == "success":
+            decision.tests_run_id = str(tests_run["id"])
+        if not declared_version:
+            return fallback("this commit does not declare an aligned application version")
+        if declared_version != release["version"]:
+            return fallback(
+                f"tag version {release['version']} != version declared by this commit ({declared_version}); "
+                "prebuilt candidates carry the declared version"
+            )
+
         compare = api.get(f"/repos/{repo}/compare/{sha}...{MAIN_BRANCH}")
         if compare.get("status") not in {"ahead", "identical"}:
             return fallback(f"tagged commit {sha} is not on {MAIN_BRANCH} (compare status={compare.get('status')})")
 
         started = now()
         while True:
-            tests_state, tests_run, tests_detail = select_workflow_run(
-                list_workflow_runs(api, repo, TESTS_WORKFLOW, sha), sha=sha, events={"push"}
-            )
             prebuild_state, prebuild_run, prebuild_detail = select_workflow_run(
                 list_workflow_runs(api, repo, PREBUILD_WORKFLOW, sha),
                 sha=sha,
                 events={"push", "workflow_dispatch"},
             )
             elapsed = now() - started
+            if prebuild_state == "missing":
+                return fallback(f"no prebuild run on {MAIN_BRANCH} for {sha}")
             if tests_state == "failed":
                 return fallback(f"Tests workflow did not succeed for {sha}: {tests_detail}")
             if prebuild_state == "failed":
                 return fallback(f"prebuild workflow did not succeed for {sha}: {prebuild_detail}")
             if tests_state == "success" and prebuild_state == "success":
                 break
-            if "missing" in (tests_state, prebuild_state) and elapsed >= appear_grace_seconds:
-                missing = [
-                    name
-                    for name, state in (("Tests", tests_state), ("prebuild", prebuild_state))
-                    if state == "missing"
-                ]
-                return fallback(
-                    f"no {' / '.join(missing)} run on {MAIN_BRANCH} for {sha} "
-                    "(commit skipped by paths filter, superseded in the concurrency queue, or not pushed to main)"
-                )
+            if tests_state == "missing" and elapsed >= appear_grace_seconds:
+                return fallback(f"no Tests run on {MAIN_BRANCH} for {sha}")
             if elapsed >= wait_seconds:
                 return fallback(
                     f"timed out after {int(elapsed // 60)} minutes waiting for Tests ({tests_state} {tests_detail}) "
@@ -270,6 +265,10 @@ def decide(
                 flush=True,
             )
             sleep(poll_seconds)
+            tests_state, tests_run, tests_detail = select_workflow_run(
+                list_workflow_runs(api, repo, TESTS_WORKFLOW, sha), sha=sha, events={"push"}
+            )
+            decision.tests_run_id = str(tests_run["id"]) if tests_run is not None and tests_state == "success" else ""
 
         assert tests_run is not None and prebuild_run is not None
         run_id = int(prebuild_run["id"])
@@ -351,7 +350,9 @@ def main(argv: list[str] | None = None) -> int:
             title = "提升 main 预构建产物" if decision.mode == "promote" else "回退到完整构建"
             summary.write(f"### {args.kind} 发布：{title}\n\n- 原因：{outputs['reason']}\n")
             if decision.run_id:
-                summary.write(f"- 预构建 run：{decision.run_id}\n- Tests run：{decision.tests_run_id}\n")
+                summary.write(f"- 预构建 run：{decision.run_id}\n")
+            if decision.tests_run_id:
+                summary.write(f"- Tests run：{decision.tests_run_id}\n")
     return 0
 
 
