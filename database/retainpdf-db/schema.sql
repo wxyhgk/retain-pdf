@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 35
+-- user_version 36
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -20,7 +20,7 @@ TABLE collection_documents
   document_id TEXT NOT NULL PRIMARY KEY#2
   added_at TEXT NOT NULL
   FOREIGN KEY (collection_id) REFERENCES collections(collection_id) ON UPDATE NO ACTION ON DELETE CASCADE
-  FOREIGN KEY (document_id) REFERENCES documents(document_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  FOREIGN KEY (document_id) REFERENCES item_files(file_id) ON UPDATE NO ACTION ON DELETE CASCADE
   PRIMARY KEY (collection_id, document_id)
   TRIGGER sync_dirty_collection_documents_delete: CREATE TRIGGER sync_dirty_collection_documents_delete AFTER DELETE ON collection_documents WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('collection_member', OLD.collection_id || '|' || OLD.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_collection_documents_insert: CREATE TRIGGER sync_dirty_collection_documents_insert AFTER INSERT ON collection_documents WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('collection_member', NEW.collection_id || '|' || NEW.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
@@ -38,64 +38,6 @@ TABLE collections
   TRIGGER sync_dirty_collections_delete: CREATE TRIGGER sync_dirty_collections_delete AFTER DELETE ON collections WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('collection', OLD.collection_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_collections_insert: CREATE TRIGGER sync_dirty_collections_insert AFTER INSERT ON collections WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('collection', NEW.collection_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_collections_update: CREATE TRIGGER sync_dirty_collections_update AFTER UPDATE ON collections WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('collection', NEW.collection_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
-
-TABLE document_metadata_suggestions
-  suggestion_id TEXT PRIMARY KEY#1
-  document_id TEXT NOT NULL
-  source_job_id TEXT
-  artifact_sha256 TEXT NOT NULL
-  fields_json TEXT NOT NULL DEFAULT '["title"]'
-  candidates_json TEXT NOT NULL
-  selected_title TEXT NOT NULL
-  generation_method TEXT NOT NULL DEFAULT 'deterministic'
-  needs_ai_review INTEGER NOT NULL DEFAULT 0
-  status TEXT NOT NULL DEFAULT 'completed'
-  applied_at TEXT
-  created_at TEXT NOT NULL
-  updated_at TEXT NOT NULL
-  FOREIGN KEY (document_id) REFERENCES documents(document_id) ON UPDATE NO ACTION ON DELETE CASCADE
-  INDEX idx_document_metadata_suggestions_document: CREATE INDEX idx_document_metadata_suggestions_document ON document_metadata_suggestions(document_id, created_at DESC, suggestion_id DESC)
-  INDEX idx_document_metadata_suggestions_evidence: CREATE UNIQUE INDEX idx_document_metadata_suggestions_evidence ON document_metadata_suggestions( document_id, COALESCE(source_job_id, ''), artifact_sha256, selected_title )
-  PRIMARY KEY (suggestion_id)
-  TRIGGER sync_dirty_document_metadata_suggestions_delete: CREATE TRIGGER sync_dirty_document_metadata_suggestions_delete AFTER DELETE ON document_metadata_suggestions WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', OLD.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
-  TRIGGER sync_dirty_document_metadata_suggestions_insert: CREATE TRIGGER sync_dirty_document_metadata_suggestions_insert AFTER INSERT ON document_metadata_suggestions WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
-  TRIGGER sync_dirty_document_metadata_suggestions_update: CREATE TRIGGER sync_dirty_document_metadata_suggestions_update AFTER UPDATE ON document_metadata_suggestions WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
-
-TABLE document_title_state
-  document_id TEXT PRIMARY KEY#1
-  source TEXT NOT NULL DEFAULT 'filename'
-  locked INTEGER NOT NULL DEFAULT 0
-  suggestion_id TEXT
-  updated_at TEXT NOT NULL
-  FOREIGN KEY (document_id) REFERENCES documents(document_id) ON UPDATE NO ACTION ON DELETE CASCADE
-  PRIMARY KEY (document_id)
-  TRIGGER sync_dirty_document_title_state_delete: CREATE TRIGGER sync_dirty_document_title_state_delete AFTER DELETE ON document_title_state WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', OLD.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
-  TRIGGER sync_dirty_document_title_state_insert: CREATE TRIGGER sync_dirty_document_title_state_insert AFTER INSERT ON document_title_state WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
-  TRIGGER sync_dirty_document_title_state_update: CREATE TRIGGER sync_dirty_document_title_state_update AFTER UPDATE ON document_title_state WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
-
-TABLE documents
-  document_id TEXT PRIMARY KEY#1
-  title TEXT NOT NULL DEFAULT ''
-  authors_json TEXT NOT NULL DEFAULT '[]'
-  year INTEGER
-  doi TEXT NOT NULL DEFAULT ''
-  source_filename TEXT NOT NULL
-  page_count INTEGER NOT NULL DEFAULT 0
-  bytes INTEGER NOT NULL DEFAULT 0
-  active_job_id TEXT
-  reading_status TEXT NOT NULL DEFAULT 'unread'
-  added_at TEXT NOT NULL
-  last_opened_at TEXT
-  updated_at TEXT NOT NULL
-  active_version_id TEXT
-  owner_user_id TEXT NOT NULL DEFAULT 'local'
-  INDEX idx_documents_added_at: CREATE INDEX idx_documents_added_at ON documents(added_at DESC)
-  INDEX idx_documents_owner: CREATE INDEX idx_documents_owner ON documents(owner_user_id)
-  PRIMARY KEY (document_id)
-  TRIGGER documents_inherit_owner: CREATE TRIGGER documents_inherit_owner AFTER INSERT ON documents BEGIN UPDATE documents SET owner_user_id = COALESCE( (SELECT u.owner_user_id FROM uploads u WHERE u.content_hash = NEW.document_id ORDER BY u.uploaded_at LIMIT 1), owner_user_id) WHERE document_id = NEW.document_id AND owner_user_id = 'local'; END
-  TRIGGER sync_dirty_documents_delete: CREATE TRIGGER sync_dirty_documents_delete AFTER DELETE ON documents WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', OLD.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
-  TRIGGER sync_dirty_documents_insert: CREATE TRIGGER sync_dirty_documents_insert AFTER INSERT ON documents WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
-  TRIGGER sync_dirty_documents_update: CREATE TRIGGER sync_dirty_documents_update AFTER UPDATE ON documents WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.document_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
 
 TABLE event_feed_items
   owner_job_id TEXT NOT NULL PRIMARY KEY#1
@@ -194,6 +136,91 @@ TABLE invite_codes
   created_at TEXT NOT NULL
   PRIMARY KEY (invite_id)
   UNIQUE (code)
+
+TABLE item_creators
+  item_id TEXT NOT NULL PRIMARY KEY#1
+  position INTEGER NOT NULL PRIMARY KEY#2
+  role TEXT NOT NULL DEFAULT 'author'
+  family TEXT NOT NULL DEFAULT ''
+  given TEXT NOT NULL DEFAULT ''
+  literal TEXT NOT NULL DEFAULT ''
+  FOREIGN KEY (item_id) REFERENCES library_items(item_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  PRIMARY KEY (item_id, position)
+  TRIGGER sync_dirty_item_creators_delete: CREATE TRIGGER sync_dirty_item_creators_delete AFTER DELETE ON item_creators WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', OLD.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_item_creators_insert: CREATE TRIGGER sync_dirty_item_creators_insert AFTER INSERT ON item_creators WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_item_creators_update: CREATE TRIGGER sync_dirty_item_creators_update AFTER UPDATE ON item_creators WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+TABLE item_files
+  file_id TEXT PRIMARY KEY#1
+  source_filename TEXT NOT NULL
+  page_count INTEGER NOT NULL DEFAULT 0
+  bytes INTEGER NOT NULL DEFAULT 0
+  active_job_id TEXT
+  reading_status TEXT NOT NULL DEFAULT 'unread'
+  added_at TEXT NOT NULL
+  last_opened_at TEXT
+  updated_at TEXT NOT NULL
+  item_id TEXT
+  chosen_version_id TEXT
+  FOREIGN KEY (chosen_version_id) REFERENCES translation_versions(version_id) ON UPDATE NO ACTION ON DELETE SET NULL
+  FOREIGN KEY (item_id) REFERENCES library_items(item_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  INDEX idx_item_files_added_at: CREATE INDEX idx_item_files_added_at ON item_files(added_at DESC)
+  INDEX idx_item_files_item: CREATE INDEX idx_item_files_item ON item_files(item_id)
+  PRIMARY KEY (file_id)
+  TRIGGER item_files_item_required_insert: CREATE TRIGGER item_files_item_required_insert BEFORE INSERT ON item_files WHEN NEW.item_id IS NULL BEGIN SELECT RAISE(ABORT, 'item_files.item_id is required'); END
+  TRIGGER item_files_item_required_update: CREATE TRIGGER item_files_item_required_update BEFORE UPDATE OF item_id ON item_files WHEN NEW.item_id IS NULL BEGIN SELECT RAISE(ABORT, 'item_files.item_id is required'); END
+  TRIGGER sync_dirty_item_files_delete: CREATE TRIGGER sync_dirty_item_files_delete AFTER DELETE ON item_files WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', OLD.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_item_files_insert: CREATE TRIGGER sync_dirty_item_files_insert AFTER INSERT ON item_files WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_item_files_update: CREATE TRIGGER sync_dirty_item_files_update AFTER UPDATE ON item_files WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+TABLE item_references
+  item_id TEXT PRIMARY KEY#1
+  csl_type TEXT NOT NULL DEFAULT 'document'
+  title TEXT NOT NULL DEFAULT ''
+  title_source TEXT NOT NULL DEFAULT 'filename'
+  title_locked INTEGER NOT NULL DEFAULT 0
+  title_suggestion_id TEXT
+  short_title TEXT NOT NULL DEFAULT ''
+  issued TEXT NOT NULL DEFAULT ''
+  year INTEGER
+  container_title TEXT NOT NULL DEFAULT ''
+  volume TEXT NOT NULL DEFAULT ''
+  issue TEXT NOT NULL DEFAULT ''
+  pages TEXT NOT NULL DEFAULT ''
+  publisher TEXT NOT NULL DEFAULT ''
+  doi TEXT NOT NULL DEFAULT ''
+  isbn TEXT NOT NULL DEFAULT ''
+  url TEXT NOT NULL DEFAULT ''
+  language TEXT NOT NULL DEFAULT ''
+  abstract TEXT NOT NULL DEFAULT ''
+  extra_csl_json TEXT NOT NULL DEFAULT '{}'
+  FOREIGN KEY (item_id) REFERENCES library_items(item_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  PRIMARY KEY (item_id)
+  TRIGGER sync_dirty_item_references_delete: CREATE TRIGGER sync_dirty_item_references_delete AFTER DELETE ON item_references WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', OLD.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_item_references_insert: CREATE TRIGGER sync_dirty_item_references_insert AFTER INSERT ON item_references WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_item_references_update: CREATE TRIGGER sync_dirty_item_references_update AFTER UPDATE ON item_references WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+TABLE item_title_suggestions
+  suggestion_id TEXT PRIMARY KEY#1
+  item_id TEXT NOT NULL
+  source_job_id TEXT
+  artifact_sha256 TEXT NOT NULL
+  fields_json TEXT NOT NULL DEFAULT '["title"]'
+  candidates_json TEXT NOT NULL
+  selected_title TEXT NOT NULL
+  generation_method TEXT NOT NULL DEFAULT 'deterministic'
+  needs_ai_review INTEGER NOT NULL DEFAULT 0
+  status TEXT NOT NULL DEFAULT 'completed'
+  applied_at TEXT
+  created_at TEXT NOT NULL
+  updated_at TEXT NOT NULL
+  FOREIGN KEY (item_id) REFERENCES library_items(item_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  INDEX idx_item_title_suggestions_evidence: CREATE UNIQUE INDEX idx_item_title_suggestions_evidence ON item_title_suggestions( item_id, COALESCE(source_job_id, ''), artifact_sha256, selected_title )
+  INDEX idx_item_title_suggestions_item: CREATE INDEX idx_item_title_suggestions_item ON item_title_suggestions(item_id, created_at DESC, suggestion_id DESC)
+  PRIMARY KEY (suggestion_id)
+  TRIGGER sync_dirty_item_title_suggestions_delete: CREATE TRIGGER sync_dirty_item_title_suggestions_delete AFTER DELETE ON item_title_suggestions WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', OLD.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_item_title_suggestions_insert: CREATE TRIGGER sync_dirty_item_title_suggestions_insert AFTER INSERT ON item_title_suggestions WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_item_title_suggestions_update: CREATE TRIGGER sync_dirty_item_title_suggestions_update AFTER UPDATE ON item_title_suggestions WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
 
 TABLE job_artifact_entries
   job_id TEXT NOT NULL PRIMARY KEY#1
@@ -320,6 +347,26 @@ TABLE jobs
   TRIGGER sync_dirty_jobs_delete: CREATE TRIGGER sync_dirty_jobs_delete AFTER DELETE ON jobs WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', OLD.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_jobs_insert: CREATE TRIGGER sync_dirty_jobs_insert AFTER INSERT ON jobs WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_jobs_update: CREATE TRIGGER sync_dirty_jobs_update AFTER UPDATE ON jobs WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+VIEW library_documents
+  CREATE VIEW library_documents AS SELECT f.file_id AS document_id, f.item_id, i.owner_user_id, COALESCE(r.title, '') AS title, COALESCE(r.title_source, 'filename') AS title_source, COALESCE(r.title_locked, 0) AS title_locked, ( SELECT json_group_array( CASE WHEN c.literal <> '' THEN c.literal ELSE trim(c.given || ' ' || c.family) END ORDER BY c.position ) FROM item_creators c WHERE c.item_id = f.item_id AND c.role = 'author' ) AS authors_json, r.year, COALESCE(r.doi, '') AS doi, f.source_filename, f.page_count, f.bytes, f.active_job_id, f.chosen_version_id, f.reading_status, f.added_at, f.last_opened_at, MAX(i.updated_at, f.updated_at) AS updated_at FROM item_files f JOIN library_items i ON i.item_id = f.item_id LEFT JOIN item_references r ON r.item_id = f.item_id
+
+TABLE library_items
+  item_id TEXT PRIMARY KEY#1
+  item_type TEXT NOT NULL
+  parent_item_id TEXT
+  created_at TEXT NOT NULL
+  updated_at TEXT NOT NULL
+  deleted_at TEXT
+  owner_user_id TEXT NOT NULL DEFAULT 'local'
+  FOREIGN KEY (parent_item_id) REFERENCES library_items(item_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  INDEX idx_library_items_owner: CREATE INDEX idx_library_items_owner ON library_items(owner_user_id)
+  INDEX idx_library_items_parent: CREATE INDEX idx_library_items_parent ON library_items(parent_item_id) WHERE parent_item_id IS NOT NULL
+  PRIMARY KEY (item_id)
+  TRIGGER library_items_inherit_owner: CREATE TRIGGER library_items_inherit_owner AFTER INSERT ON library_items BEGIN UPDATE library_items SET owner_user_id = COALESCE( (SELECT u.owner_user_id FROM uploads u WHERE u.content_hash = NEW.item_id ORDER BY u.uploaded_at LIMIT 1), owner_user_id ) WHERE item_id = NEW.item_id AND owner_user_id = 'local'; END
+  TRIGGER sync_dirty_library_items_delete: CREATE TRIGGER sync_dirty_library_items_delete AFTER DELETE ON library_items WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', OLD.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_library_items_insert: CREATE TRIGGER sync_dirty_library_items_insert AFTER INSERT ON library_items WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_library_items_update: CREATE TRIGGER sync_dirty_library_items_update AFTER UPDATE ON library_items WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', NEW.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
 
 TABLE model_operations
   job_id TEXT NOT NULL PRIMARY KEY#1
@@ -548,14 +595,6 @@ TABLE sync_state
   value TEXT NOT NULL
   PRIMARY KEY (key)
 
-TABLE translation_version_choices
-  document_id TEXT PRIMARY KEY#1
-  version_id TEXT NOT NULL
-  chosen_at TEXT NOT NULL
-  FOREIGN KEY (document_id) REFERENCES documents(document_id) ON UPDATE NO ACTION ON DELETE CASCADE
-  FOREIGN KEY (version_id) REFERENCES translation_versions(version_id) ON UPDATE NO ACTION ON DELETE CASCADE
-  PRIMARY KEY (document_id)
-
 TABLE translation_version_jobs
   job_id TEXT PRIMARY KEY#1
   version_id TEXT NOT NULL
@@ -572,7 +611,7 @@ TABLE translation_versions
   label TEXT NOT NULL DEFAULT ''
   hidden_at TEXT
   created_at TEXT NOT NULL
-  FOREIGN KEY (document_id) REFERENCES documents(document_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  FOREIGN KEY (document_id) REFERENCES item_files(file_id) ON UPDATE NO ACTION ON DELETE CASCADE
   INDEX idx_translation_versions_document: CREATE INDEX idx_translation_versions_document ON translation_versions(document_id, created_at)
   PRIMARY KEY (version_id)
 

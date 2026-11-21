@@ -134,31 +134,28 @@ impl Db {
         let hidden_at = hidden.then(now_iso);
         let changed = tx.execute("UPDATE translation_versions SET hidden_at = ?1 WHERE version_id = ?2", params![hidden_at, version_id])?;
         if hidden {
-            tx.execute("DELETE FROM translation_version_choices WHERE version_id = ?1", params![version_id])?;
+            tx.execute("UPDATE item_files SET chosen_version_id = NULL WHERE chosen_version_id = ?1", params![version_id])?;
         }
         tx.commit()?;
         Ok(changed > 0)
     }
 
-    /// 书的当前版本：None = 自动（逐页取最新）。
+    /// 书的当前版本：None = 自动（逐页取最新）。存在文件上（`item_files.chosen_version_id`，v36 以前是单独一张表），只在本机、不同步。
     pub fn document_current_translation_version(&self, document_id: &str) -> Result<Option<String>> {
         let conn = self.connect()?;
         Ok(conn
-            .query_row("SELECT version_id FROM translation_version_choices WHERE document_id = ?1", params![document_id], |row| row.get(0))
-            .optional()?)
+            .query_row("SELECT chosen_version_id FROM item_files WHERE file_id = ?1", params![document_id], |row| row.get(0))
+            .optional()?
+            .flatten())
     }
 
     /// 选当前版本；`None` 回到自动。
     pub fn set_document_current_translation_version(&self, document_id: &str, version_id: Option<&str>) -> Result<()> {
         let conn = self.connect()?;
-        match version_id {
-            Some(version_id) => conn.execute(
-                "INSERT INTO translation_version_choices (document_id, version_id, chosen_at) VALUES (?1, ?2, ?3)
-                 ON CONFLICT(document_id) DO UPDATE SET version_id = excluded.version_id, chosen_at = excluded.chosen_at",
-                params![document_id, version_id, now_iso()],
-            )?,
-            None => conn.execute("DELETE FROM translation_version_choices WHERE document_id = ?1", params![document_id])?,
-        };
+        conn.execute(
+            "UPDATE item_files SET chosen_version_id = ?2 WHERE file_id = ?1",
+            params![document_id, version_id],
+        )?;
         Ok(())
     }
 }

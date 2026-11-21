@@ -49,7 +49,7 @@ PATCH /api/v1/documents/:document_id
   (「自动(最新)」= `version_id: null`),改名、隐藏、恢复走 `PATCH .../translation-versions/:version_id`。选择记在后端,
   阅读入口照旧调 `/reading`(不带 `version`)就读到书的当前版本,`resolve-reading-target.ts` 不用改。只有一份译文的书不显示这张卡;
   阅读页里还不能切版本;
-- `active_version_id` 没有时整个键不出现(不是 `null`);
+- `active_version_id` 没有时整个键不出现(不是 `null`);它是早已删掉的 AI 改写文档留下的,2026-11-21(数据库 v36)起恒不出现,不要再用;
 - `authors_json`(恒为字符串 `"[]"`)、`year`(恒 `null`)、`doi`(恒 `""`)、`last_opened_at`(恒 `null`)没有写入点,
   留着只为不破坏旧客户端,不要拿来显示;
 - 列表按 `added_at` 倒序、同一秒的按 `document_id` 倒序,`limit` 默认 50、范围 1..=500,越界 400(2026-10-22 前静默夹)。

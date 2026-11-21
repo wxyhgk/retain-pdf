@@ -519,19 +519,18 @@ mod tests {
     fn title(db: &Db) -> Option<String> {
         db.connect()
             .unwrap()
-            .query_row("SELECT title FROM documents WHERE document_id = 'd1'", [], |row| row.get(0))
+            .query_row("SELECT title FROM item_references WHERE item_id = 'd1'", [], |row| row.get(0))
             .ok()
     }
 
     fn set_title(db: &Db, title: &str) {
         db.connect()
             .unwrap()
-            .execute(
-                "INSERT INTO documents(document_id, title, source_filename, added_at, updated_at)
-                 VALUES('d1', ?1, 'a.pdf', 't', 't')
-                 ON CONFLICT(document_id) DO UPDATE SET title = excluded.title",
-                [title],
-            )
+            .execute_batch(&format!(
+                "INSERT OR IGNORE INTO library_items(item_id, item_type, created_at, updated_at) VALUES('d1', 'reference', 't', 't');
+                 INSERT INTO item_references(item_id, title) VALUES('d1', '{title}')
+                 ON CONFLICT(item_id) DO UPDATE SET title = excluded.title;"
+            ))
             .unwrap();
     }
 

@@ -415,7 +415,7 @@ fn title_contains_matches_the_document_title_or_the_callback() {
     test.db.save_upload(&upload).unwrap();
     test.db.upsert_document_from_upload(&upload).unwrap();
     let conn = test.db.connect().unwrap();
-    conn.execute("UPDATE documents SET title = 'Quantum Mechanics 2e' WHERE document_id = 'hash-a'", []).unwrap();
+    conn.execute("UPDATE item_references SET title = 'Quantum Mechanics 2e' WHERE item_id = 'hash-a'", []).unwrap();
     conn.execute("UPDATE jobs SET upload_id = 'upload-a' WHERE job_id = '3-renamed'", []).unwrap();
     let select = |needle: &str| {
         test.db

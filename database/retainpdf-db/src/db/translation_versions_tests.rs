@@ -115,18 +115,25 @@ fn the_migration_backfills_one_version_per_translation_job() {
     insert_job(&t.db, "doc-b", "relayout", WorkflowKind::Render, "2026-11-03T00:00:00Z", "whole");
     insert_job(&t.db, "doc-b", "redo", WorkflowKind::Book, "2026-11-04T00:00:00Z", "whole");
     // 去掉 v30 建的东西，按 v30 那时的样子再跑一遍它：那时任务的流程还是 JSON 字符串（`"book"`，v32 才改成纯文本），
-    // 暂时关掉 CHECK 把流程改回带引号、跑 v30、再改回来。
+    // 暂时关掉 CHECK 把流程改回带引号、跑 v30、再改回来。那时书在 `documents`（v36 改名成 `item_files`、列 `file_id`），
+    // 跑之前把 v30 里的表名换成现在的；它建的「选哪份译文」表 v36 已经并进 `item_files`，跑完删掉。
     {
         let conn = t.db.connect().unwrap();
         conn.execute_batch(
-            "DROP TABLE translation_version_choices; DROP TABLE translation_version_jobs; DROP TABLE translation_versions;
+            "DROP TABLE translation_version_jobs; DROP TABLE translation_versions;
              PRAGMA ignore_check_constraints = ON;
              UPDATE jobs SET workflow = '\"' || workflow || '\"';",
         )
         .unwrap();
-        conn.execute_batch(include_str!("schema/migrations/v30_translation_versions.sql")).unwrap();
-        conn.execute_batch("UPDATE jobs SET workflow = trim(workflow, '\"'); PRAGMA ignore_check_constraints = OFF;")
-            .unwrap();
+        let v30 = include_str!("schema/migrations/v30_translation_versions.sql")
+            .replace("REFERENCES documents(document_id)", "REFERENCES item_files(file_id)")
+            .replace("JOIN documents d ON d.document_id", "JOIN item_files d ON d.file_id");
+        conn.execute_batch(&v30).unwrap();
+        conn.execute_batch(
+            "DROP TABLE translation_version_choices;
+             UPDATE jobs SET workflow = trim(workflow, '\"'); PRAGMA ignore_check_constraints = OFF;",
+        )
+        .unwrap();
     }
     let db = t.reopen();
     db.init().unwrap();

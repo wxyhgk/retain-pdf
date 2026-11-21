@@ -405,10 +405,11 @@ def _job_backfill_eligibility(
             (job_id,),
         ).fetchone()
         active = False
-        if _table_exists(connection, "documents"):
+        books = _book_files_table(connection)
+        if books is not None:
             active = (
                 connection.execute(
-                    "SELECT 1 FROM documents WHERE active_job_id = ?1 LIMIT 1",
+                    f"SELECT 1 FROM {books[0]} WHERE active_job_id = ?1 LIMIT 1",
                     (job_id,),
                 ).fetchone()
                 is not None
@@ -760,10 +761,12 @@ def _sync_active_document_fts(
         return {"status": "database_missing", "row_count": 0}
     rows = list(_build_fts_rows(job_dir, document))
     with sqlite3.connect(db_path, timeout=5.0) as connection:
-        if not _table_exists(connection, "documents") or not _table_exists(connection, "blocks_fts"):
+        books = _book_files_table(connection)
+        if books is None or not _table_exists(connection, "blocks_fts"):
             raise RuntimeError("jobs database is missing documents or blocks_fts schema")
+        table, id_column = books
         active = connection.execute(
-            "SELECT document_id FROM documents WHERE active_job_id = ?1",
+            f"SELECT {id_column} FROM {table} WHERE active_job_id = ?1",
             (job_dir.name,),
         ).fetchone()
         if active is None:
@@ -818,6 +821,15 @@ def _table_exists(connection: sqlite3.Connection, table: str) -> bool:
         ).fetchone()
         is not None
     )
+
+
+def _book_files_table(connection: sqlite3.Connection) -> tuple[str, str] | None:
+    """书的文件表和它的编号列：库 v36 起是 `item_files.file_id`，以前是 `documents.document_id`。"""
+    if _table_exists(connection, "item_files"):
+        return "item_files", "file_id"
+    if _table_exists(connection, "documents"):
+        return "documents", "document_id"
+    return None
 
 
 def _build_fts_rows(job_dir: Path, document: dict) -> Iterable[tuple[int, str, str, str]]:

@@ -131,7 +131,7 @@ impl Db {
         if let Some(owner) = owner {
             values.push(owner.to_string().into());
             conditions.push(format!(
-                "document_id IN (SELECT document_id FROM documents WHERE owner_user_id = ?{})",
+                "document_id IN (SELECT document_id FROM library_documents WHERE owner_user_id = ?{})",
                 values.len()
             ));
         }

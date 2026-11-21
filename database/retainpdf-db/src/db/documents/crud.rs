@@ -9,11 +9,11 @@ use crate::storage_paths::resolve_data_path;
 use super::rows::{default_title_from_filename, query_document, row_to_document, DOCUMENT_COLUMNS};
 use crate::db::Db;
 
-/// 「这本书该展示哪个成功任务」的统一规则(相关子查询,外层必须是 `documents`):
+/// 「这本书该展示哪个成功任务」的统一规则(相关子查询,外层必须是文件表 `item_files`):
 /// 非 OCR 优先,同类取最近完成的。悬空修复、失败回退、启动回填共用这一条。
 pub(super) const BEST_SUCCEEDED_JOB_SQL: &str = r#"
     SELECT j.job_id FROM jobs j
-    WHERE j.document_id = documents.document_id
+    WHERE j.document_id = item_files.file_id
       AND j.status = 'succeeded'
     ORDER BY CASE WHEN j.workflow = 'ocr' THEN 1 ELSE 0 END, j.finished_at DESC
     LIMIT 1
@@ -23,7 +23,7 @@ pub(super) const BEST_SUCCEEDED_JOB_SQL: &str = r#"
 /// 新提交的优先。书卡上应当先看到它的进度，而不是停在一个取消 / 失败的任务上。
 const IN_PROGRESS_JOB_SQL: &str = r#"
     SELECT j.job_id FROM jobs j
-    WHERE j.document_id = documents.document_id
+    WHERE j.document_id = item_files.file_id
       AND j.job_id <> ?2
       AND j.job_id <> ?2 || '-ocr'
       AND j.status IN ('queued', 'running')
@@ -36,7 +36,7 @@ const IN_PROGRESS_JOB_SQL: &str = r#"
 /// 只给指针为空 / 悬空的卡用,不参与失败回退(那边「没有可换的就不动」)。
 const LATEST_JOB_SQL: &str = r#"
     SELECT j.job_id FROM jobs j
-    WHERE j.document_id = documents.document_id
+    WHERE j.document_id = item_files.file_id
     ORDER BY CASE WHEN j.workflow = 'ocr' THEN 1 ELSE 0 END, j.created_at DESC, j.job_id DESC
     LIMIT 1
 "#;
@@ -45,20 +45,20 @@ const LATEST_JOB_SQL: &str = r#"
 /// 成功任务而这本书已有翻译成功的任务(`active_job_after_success` 的「翻译优先」)。
 /// 指着在跑 / 失败 / 取消 / 成功的翻译任务的卡都不算错,不动 —— 那是运行时规则的产物。
 const WRONG_CARD_SQL: &str = r#"
-    documents.active_job_id IS NULL
+    item_files.active_job_id IS NULL
     OR NOT EXISTS (
         SELECT 1 FROM jobs c
-        WHERE c.job_id = documents.active_job_id AND c.document_id = documents.document_id
+        WHERE c.job_id = item_files.active_job_id AND c.document_id = item_files.file_id
     )
     OR (
         EXISTS (
             SELECT 1 FROM jobs c
-            WHERE c.job_id = documents.active_job_id
+            WHERE c.job_id = item_files.active_job_id
               AND c.status = 'succeeded' AND c.workflow = 'ocr'
         )
         AND EXISTS (
             SELECT 1 FROM jobs n
-            WHERE n.document_id = documents.document_id
+            WHERE n.document_id = item_files.file_id
               AND n.status = 'succeeded' AND n.workflow <> 'ocr'
         )
     )
@@ -74,10 +74,10 @@ pub(super) fn repair_wrong_document_cards(conn: &Connection, document_id: Option
     let changed = conn.execute(
         &format!(
             r#"
-            UPDATE documents SET active_job_id = {pick}, updated_at = ?3
-            WHERE (?1 IS NULL OR documents.document_id = ?1)
+            UPDATE item_files SET active_job_id = {pick}, updated_at = ?3
+            WHERE (?1 IS NULL OR item_files.file_id = ?1)
               AND ({WRONG_CARD_SQL})
-              AND ({pick} IS NOT NULL OR documents.active_job_id IS NOT NULL)
+              AND ({pick} IS NOT NULL OR item_files.active_job_id IS NOT NULL)
             "#
         ),
         params![document_id, "", now_iso()],
@@ -161,7 +161,7 @@ fn query_documents(
 ) -> Result<Vec<DocumentRecord>> {
     let sql = format!(
         // 第二键 document_id：同一秒入库（批量上传）的书跨页不重复、不漏。
-        "SELECT {DOCUMENT_COLUMNS} FROM documents d {} ORDER BY d.added_at DESC, d.document_id DESC LIMIT ?{} OFFSET ?{}",
+        "SELECT {DOCUMENT_COLUMNS} FROM library_documents d {} ORDER BY d.added_at DESC, d.document_id DESC LIMIT ?{} OFFSET ?{}",
         filter.where_sql,
         filter.args.len() + 1,
         filter.args.len() + 2
@@ -186,7 +186,7 @@ fn query_documents(
 
 
 fn count_documents_with_filter(conn: &Connection, filter: &DocumentFilterQuery) -> Result<u64> {
-    let sql = format!("SELECT COUNT(*) FROM documents d {}", filter.where_sql);
+    let sql = format!("SELECT COUNT(*) FROM library_documents d {}", filter.where_sql);
     let count: i64 = conn.query_row(
         &sql,
         rusqlite::params_from_iter(filter.args.iter()),
@@ -213,25 +213,30 @@ impl Db {
             return Ok(());
         }
         let now = now_iso();
+        // 这个文件已经在书库里：只刷新文件的信息，书名、作者这些不动。
+        let refreshed = conn.execute(
+            "UPDATE item_files SET source_filename = ?2, page_count = ?3, bytes = ?4, updated_at = ?5 WHERE file_id = ?1",
+            params![upload.content_hash, upload.filename, upload.page_count as i64, upload.bytes as i64, now],
+        )?;
+        if refreshed > 0 {
+            return Ok(());
+        }
+        // 新书：一个文献条目（编号就用文件的内容指纹）+ 它的书目信息（书名先用文件名）+ 这个文件。
+        conn.execute(
+            "INSERT INTO library_items (item_id, item_type, created_at, updated_at) VALUES (?1, 'reference', ?2, ?2)
+             ON CONFLICT(item_id) DO NOTHING",
+            params![upload.content_hash, now],
+        )?;
+        conn.execute(
+            "INSERT INTO item_references (item_id, title) VALUES (?1, ?2) ON CONFLICT(item_id) DO NOTHING",
+            params![upload.content_hash, default_title_from_filename(&upload.filename)],
+        )?;
         conn.execute(
             r#"
-            INSERT INTO documents (
-                document_id, title, source_filename, page_count, bytes, added_at, updated_at
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)
-            ON CONFLICT(document_id) DO UPDATE SET
-                source_filename=excluded.source_filename,
-                page_count=excluded.page_count,
-                bytes=excluded.bytes,
-                updated_at=excluded.updated_at
+            INSERT INTO item_files (file_id, item_id, source_filename, page_count, bytes, added_at, updated_at)
+            VALUES (?1, ?1, ?2, ?3, ?4, ?5, ?5)
             "#,
-            params![
-                upload.content_hash,
-                default_title_from_filename(&upload.filename),
-                upload.filename,
-                upload.page_count as i64,
-                upload.bytes as i64,
-                now,
-            ],
+            params![upload.content_hash, upload.filename, upload.page_count as i64, upload.bytes as i64, now],
         )?;
         Ok(())
     }
@@ -249,7 +254,7 @@ impl Db {
             return Ok(titles);
         }
         let conn = self.connect()?;
-        let mut stmt = conn.prepare("SELECT title FROM documents WHERE document_id = ?1")?;
+        let mut stmt = conn.prepare("SELECT title FROM library_documents WHERE document_id = ?1")?;
         for document_id in document_ids {
             if titles.contains_key(document_id) {
                 continue;
@@ -350,38 +355,34 @@ impl Db {
     ) -> Result<DocumentRecord> {
         let mut conn = self.connect()?;
         let tx = conn.transaction()?;
-        // 先确认书在：不在时 title_state 的外键会先报错，调用方就分不出「没有这本书」（404）。
-        // 「没有」带 QueryReturnedNoRows，和 `get_document` 一样。
-        let exists = tx
-            .query_row("SELECT 1 FROM documents WHERE document_id = ?1", params![document_id], |_| Ok(()))
-            .optional()?
-            .is_some();
-        if !exists {
+        // 先确认书在：「没有」带 QueryReturnedNoRows，和 `get_document` 一样，调用方凭它判 404。
+        let item_id: Option<String> = tx
+            .query_row("SELECT item_id FROM item_files WHERE file_id = ?1", params![document_id], |row| row.get(0))
+            .optional()?;
+        let Some(item_id) = item_id else {
             return Err(rusqlite::Error::QueryReturnedNoRows)
                 .with_context(|| format!("document not found: {document_id}"));
-        }
+        };
         let now = now_iso();
         if let Some(title) = title {
-            tx.execute(
-                "UPDATE documents SET title = ?1, updated_at = ?2 WHERE document_id = ?3",
-                params![title, now, document_id],
-            )?;
+            // 用户改的书名锁住，书名建议不再自动改它。
             tx.execute(
                 r#"
-                INSERT INTO document_title_state (document_id, source, locked, suggestion_id, updated_at)
-                VALUES (?1, 'user', 1, NULL, ?2)
-                ON CONFLICT(document_id) DO UPDATE SET
-                    source = 'user',
-                    locked = 1,
-                    suggestion_id = NULL,
-                    updated_at = excluded.updated_at
+                INSERT INTO item_references (item_id, title, title_source, title_locked, title_suggestion_id)
+                VALUES (?1, ?2, 'user', 1, NULL)
+                ON CONFLICT(item_id) DO UPDATE SET
+                    title = excluded.title,
+                    title_source = 'user',
+                    title_locked = 1,
+                    title_suggestion_id = NULL
                 "#,
-                params![document_id, now],
+                params![item_id, title],
             )?;
+            tx.execute("UPDATE library_items SET updated_at = ?1 WHERE item_id = ?2", params![now, item_id])?;
         }
         if let Some(status) = reading_status {
             tx.execute(
-                "UPDATE documents SET reading_status = ?1, updated_at = ?2 WHERE document_id = ?3",
+                "UPDATE item_files SET reading_status = ?1, updated_at = ?2 WHERE file_id = ?3",
                 params![status, now, document_id],
             )?;
         }
@@ -436,12 +437,7 @@ impl Db {
                        developer_mode, content_hash
                 FROM uploads
                 WHERE content_hash = ?1 AND content_hash <> ''
-                ORDER BY
-                    CASE WHEN upload_id = 'version-upload-' || COALESCE(
-                        (SELECT active_version_id FROM documents WHERE document_id = ?1),
-                        ''
-                    ) THEN 0 ELSE 1 END,
-                    uploaded_at DESC
+                ORDER BY uploaded_at DESC
                 LIMIT 1
                 "#,
                 params![document_id],
@@ -530,18 +526,14 @@ impl Db {
         Ok(changed > 0)
     }
 
-    /// 删除文档行(FK 级联清 collection_documents)+ 派生的 blocks_fts 行。
+    /// 删掉这本书(条目连同书目、作者、文件,外键级联清掉文件夹成员、译文版本、书名建议)+ 派生的 blocks_fts 行。
     pub fn delete_document(&self, document_id: &str) -> Result<bool> {
         let conn = self.connect()?;
         conn.execute(
             "DELETE FROM blocks_fts WHERE document_id = ?1",
             params![document_id],
         )?;
-        let changed = conn.execute(
-            "DELETE FROM documents WHERE document_id = ?1",
-            params![document_id],
-        )?;
-        Ok(changed > 0)
+        delete_document_item(&conn, document_id)
     }
 
     /// 删除范围 `job_ids` 之外、还要用范围内任务产物的任务(`source.artifact_job_id` 指向范围内的任务)。
@@ -614,12 +606,9 @@ impl Db {
             "DELETE FROM blocks_fts WHERE document_id = ?1",
             params![document_id],
         )?;
-        let changed = tx.execute(
-            "DELETE FROM documents WHERE document_id = ?1",
-            params![document_id],
-        )?;
+        let deleted = delete_document_item(&tx, document_id)?;
         tx.commit()?;
-        Ok(changed > 0)
+        Ok(deleted)
     }
 
     /// 修复悬空的 active_job_id(`repair_wrong_document_cards`):它指向的 job 已不存在 / 不属于这本书
@@ -644,10 +633,10 @@ impl Db {
         let changed = conn.execute(
             &format!(
                 r#"
-                UPDATE documents
+                UPDATE item_files
                 SET active_job_id = COALESCE(({IN_PROGRESS_JOB_SQL}), ({BEST_SUCCEEDED_JOB_SQL})), updated_at = ?3
-                WHERE documents.document_id = ?1
-                  AND documents.active_job_id = ?2
+                WHERE item_files.file_id = ?1
+                  AND item_files.active_job_id = ?2
                   AND COALESCE(({IN_PROGRESS_JOB_SQL}), ({BEST_SUCCEEDED_JOB_SQL})) IS NOT NULL
                 "#
             ),
@@ -664,17 +653,26 @@ impl Db {
     ) -> Result<()> {
         let conn = self.connect()?;
         conn.execute(
-            "UPDATE documents SET active_job_id = ?1, updated_at = ?2 WHERE document_id = ?3",
+            "UPDATE item_files SET active_job_id = ?1, updated_at = ?2 WHERE file_id = ?3",
             params![job_id, now_iso(), document_id],
         )?;
         if let Some(page_count) = page_count {
             conn.execute(
-                "UPDATE documents SET page_count = ?1 WHERE document_id = ?2 AND ?1 > 0",
+                "UPDATE item_files SET page_count = ?1 WHERE file_id = ?2 AND ?1 > 0",
                 params![page_count as i64, document_id],
             )?;
         }
         Ok(())
     }
+}
+
+/// 删掉文件 `document_id` 所属的条目(一本书)。返回删没删。
+pub(super) fn delete_document_item(conn: &Connection, document_id: &str) -> Result<bool> {
+    let changed = conn.execute(
+        "DELETE FROM library_items WHERE item_id = (SELECT item_id FROM item_files WHERE file_id = ?1)",
+        params![document_id],
+    )?;
+    Ok(changed > 0)
 }
 
 /// 删 job 行的共用语句对:events 是 job 的从属行,必须与 jobs 同生共死;

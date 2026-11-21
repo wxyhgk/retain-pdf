@@ -39,7 +39,7 @@ pub fn sync_state(conn: &Connection, key: &str) -> Option<String> {
 
 pub fn library(conn: &Connection) -> Value {
     json!({
-        "books": count(conn, "SELECT COUNT(*) FROM documents"),
+        "books": count(conn, "SELECT COUNT(*) FROM item_files"),
         "jobs": count(conn, "SELECT COUNT(*) FROM jobs"),
         "running_jobs": count(conn, "SELECT COUNT(*) FROM jobs WHERE status IN ('queued', 'running')"),
         "failed_jobs": count(conn, "SELECT COUNT(*) FROM jobs WHERE status = 'failed'"),

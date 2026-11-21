@@ -379,7 +379,7 @@ async fn coverage_and_reading_count_the_book_the_same_way() {
     seed_range_job(&state, &document_id, "job-a", "2026-10-01T00:00:00", &[1], &["ZH 1"]);
     let conn = rusqlite::Connection::open(&state.config.jobs_db_path).unwrap();
     conn.execute(
-        "UPDATE documents SET page_count = 0 WHERE document_id = ?1",
+        "UPDATE item_files SET page_count = 0 WHERE file_id = ?1",
         rusqlite::params![document_id],
     )
     .unwrap();

@@ -28,7 +28,7 @@ fn sql(state: &crate::AppState, statement: &str) {
 
 fn title(state: &crate::AppState) -> Option<String> {
     let conn = rusqlite::Connection::open(state.db.path()).expect("open db");
-    conn.query_row("SELECT title FROM documents WHERE document_id = 'd1'", [], |row| row.get(0)).ok()
+    conn.query_row("SELECT title FROM item_references WHERE item_id = 'd1'", [], |row| row.get(0)).ok()
 }
 
 #[tokio::test]
@@ -41,12 +41,17 @@ async fn back_up_now_then_restore_brings_the_library_back_and_keeps_a_safety_cop
     assert_eq!(body["data"]["auto_interval_hours"], 24);
     assert!(body["data"]["last_restore"].is_null(), "{body}");
 
-    sql(&state, "INSERT INTO documents(document_id, title, source_filename, added_at, updated_at) VALUES('d1', 'Before', 'a.pdf', 't', 't');");
+    sql(
+        &state,
+        "INSERT INTO library_items(item_id, item_type, created_at, updated_at) VALUES('d1', 'reference', 't', 't');
+         INSERT INTO item_references(item_id, title) VALUES('d1', 'Before');
+         INSERT INTO item_files(file_id, item_id, source_filename, added_at, updated_at) VALUES('d1', 'd1', 'a.pdf', 't', 't');",
+    );
     let (status, made) = call(&state, "POST", "/api/v1/backups").await;
     assert_eq!(status, StatusCode::OK, "{made}");
     assert_eq!(made["data"]["kind"], "manual");
     let id = made["data"]["id"].as_str().expect("id").to_string();
-    sql(&state, "UPDATE documents SET title = 'After' WHERE document_id = 'd1';");
+    sql(&state, "UPDATE item_references SET title = 'After' WHERE item_id = 'd1';");
 
     // 有任务在跑:不恢复,说明在等什么。
     sql(&state, "INSERT INTO jobs(job_id, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json)

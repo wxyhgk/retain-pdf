@@ -195,7 +195,7 @@ mod tests {
             content_hash: "synthetic-content".into(),
         };
         let conn = db.connect().unwrap();
-        conn.execute_batch("CREATE TRIGGER reject_document BEFORE INSERT ON documents BEGIN SELECT RAISE(ABORT, 'synthetic failure'); END;").unwrap();
+        conn.execute_batch("CREATE TRIGGER reject_document BEFORE INSERT ON item_files BEGIN SELECT RAISE(ABORT, 'synthetic failure'); END;").unwrap();
         assert!(db.save_upload_with_document(&upload).is_err());
         assert_eq!(
             conn.query_row("SELECT COUNT(*) FROM uploads", [], |r| r.get::<_, i64>(0))
@@ -203,7 +203,7 @@ mod tests {
             0
         );
         assert_eq!(
-            conn.query_row("SELECT COUNT(*) FROM documents", [], |r| r.get::<_, i64>(0))
+            conn.query_row("SELECT COUNT(*) FROM item_files", [], |r| r.get::<_, i64>(0))
                 .unwrap(),
             0
         );
@@ -218,7 +218,7 @@ mod tests {
             2
         );
         assert_eq!(
-            conn.query_row("SELECT COUNT(*) FROM documents", [], |r| r.get::<_, i64>(0))
+            conn.query_row("SELECT COUNT(*) FROM item_files", [], |r| r.get::<_, i64>(0))
                 .unwrap(),
             1
         );

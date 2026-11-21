@@ -117,14 +117,39 @@ fn event_uid_is_backfilled_for_legacy_schema_and_migrations_are_idempotent() {
          CREATE TABLE document_operation_attempts(operation_id TEXT, attempt INTEGER);
          CREATE TABLE document_operation_events(operation_id TEXT, seq INTEGER);
          CREATE TABLE document_versions(version_id TEXT PRIMARY KEY, operation_id TEXT);
+         -- v36（2026-11-21）把 documents 拆成条目表：回到 v13 时还是 documents（这时还没有 v22 的归属列）、
+         -- document_title_state、document_metadata_suggestions。夹具里没有书，删掉新表、按那时的样子补回空表，重跑的 v36 再拆。
+         -- v30 的译文版本表指向书，一起撤掉，重跑的 v30 按 documents 再建。
+         DROP VIEW library_documents;
+         DROP TABLE translation_version_jobs;
+         DROP TABLE translation_versions;
+         DROP TABLE item_title_suggestions;
+         DROP TABLE item_creators;
+         DROP TABLE item_references;
+         DROP TABLE item_files;
+         DROP TABLE library_items;
+         CREATE TABLE documents(
+             document_id TEXT PRIMARY KEY, title TEXT NOT NULL DEFAULT '', authors_json TEXT NOT NULL DEFAULT '[]',
+             year INTEGER, doi TEXT NOT NULL DEFAULT '', source_filename TEXT NOT NULL,
+             page_count INTEGER NOT NULL DEFAULT 0, bytes INTEGER NOT NULL DEFAULT 0, active_job_id TEXT,
+             reading_status TEXT NOT NULL DEFAULT 'unread', added_at TEXT NOT NULL, last_opened_at TEXT,
+             updated_at TEXT NOT NULL, active_version_id TEXT);
+         CREATE TABLE document_title_state(
+             document_id TEXT PRIMARY KEY REFERENCES documents(document_id) ON DELETE CASCADE,
+             source TEXT NOT NULL DEFAULT 'filename', locked INTEGER NOT NULL DEFAULT 0, suggestion_id TEXT,
+             updated_at TEXT NOT NULL);
+         CREATE TABLE document_metadata_suggestions(
+             suggestion_id TEXT PRIMARY KEY, document_id TEXT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+             source_job_id TEXT, artifact_sha256 TEXT NOT NULL, fields_json TEXT NOT NULL DEFAULT '[\"title\"]',
+             candidates_json TEXT NOT NULL, selected_title TEXT NOT NULL,
+             generation_method TEXT NOT NULL DEFAULT 'deterministic', needs_ai_review INTEGER NOT NULL DEFAULT 0,
+             status TEXT NOT NULL DEFAULT 'completed', applied_at TEXT, created_at TEXT NOT NULL,
+             updated_at TEXT NOT NULL);
          DROP TRIGGER jobs_inherit_owner;
-         DROP TRIGGER documents_inherit_owner;
          DROP INDEX idx_uploads_owner;
          DROP INDEX idx_jobs_owner;
-         DROP INDEX idx_documents_owner;
          ALTER TABLE uploads DROP COLUMN owner_user_id;
          ALTER TABLE jobs DROP COLUMN owner_user_id;
-         ALTER TABLE documents DROP COLUMN owner_user_id;
          ALTER TABLE glossaries DROP COLUMN owner_user_id;
          ALTER TABLE collections DROP COLUMN owner_user_id;
          ALTER TABLE users DROP COLUMN deleted_at;
