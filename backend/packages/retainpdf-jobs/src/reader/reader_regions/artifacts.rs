@@ -44,6 +44,36 @@ pub(super) fn load_translation_manifest_pages(
         .collect())
 }
 
+/// 表格翻译的结果：表格块编号 → 整表译文 HTML（`tables.v1.json` 里整表翻了的表）。
+///
+/// 没开表格翻译、文件还没写出来、或者读不懂，都当没有：表格照旧显示原文，不让整页区块读不出来。
+pub(super) fn load_table_translations(data_root: &Path, job: &JobSnapshot) -> HashMap<String, String> {
+    let Some(path) = stored_path(job, data_root, StoredFile::TableTranslations) else {
+        return HashMap::new();
+    };
+    let payload: Value = match std::fs::read_to_string(&path)
+        .map_err(|err| err.to_string())
+        .and_then(|text| serde_json::from_str(&text).map_err(|err| err.to_string()))
+    {
+        Ok(value) => value,
+        Err(err) => {
+            tracing::warn!(job_id = %job.job_id, "skip unreadable table translations {}: {err}", path.display());
+            return HashMap::new();
+        }
+    };
+    let mut tables = HashMap::new();
+    for entry in payload.get("tables").and_then(Value::as_array).into_iter().flatten() {
+        let block_id = value_string(entry.get("block_id"));
+        let status = entry.get("result").and_then(|result| result.get("status")).and_then(Value::as_str);
+        let html = value_string(entry.get("translated_html"));
+        if block_id.is_empty() || status != Some("translated") || html.trim().is_empty() {
+            continue;
+        }
+        tables.insert(canonical_item_id(&block_id), html);
+    }
+    tables
+}
+
 pub(super) fn load_source_region_map(
     data_root: &Path,
     job: &JobSnapshot,

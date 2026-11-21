@@ -12,6 +12,34 @@
 
 ---
 
+## 阅读页能看到表格译文，开关可以放进界面了（feat/reader-table-translations）
+
+2026-11-22。表格翻译 T4。建任务时 `translation.tables` 选 `translate`，表格 agent 整表翻了的表，
+`GET /api/v1/jobs/{job_id}/reader/regions` 里这一块变成：
+
+| 字段 | 以前（只有原文） | 现在（整表翻了） |
+|---|---|---|
+| `status` | `source_only` | `translated` |
+| `translated.text` | `null` | 整表译文 HTML（`<table>…</table>`，跨行跨列照原表） |
+| `markdown` | 原文表格 HTML | 整表译文 HTML |
+| `source.*`、`translated.bbox`、`region_type`、`sub_type` | 不变 | 不变（位置用原文的） |
+
+没开表格翻译、整表保留原文、结构不可信没送的表照旧是 `source_only`。字段和契约都没加，只是这些块有了译文。
+
+前端要做的：
+
+1. **开关放进建任务界面**（以前交接写的「先不要放」作废）：`translation.tables`，`keep`（默认）/ `translate`，
+   契约里早就有（`create-job.v1`、`library-documents.v1` 的 `translateDocument`）。建议文案：「翻译表格（试验）：正文翻完后逐张翻表格，
+   只翻有文字层的表；阅读页能看到，译文 PDF 里表格还是原文」。会多花一些 token（评测集 55 张表约 31 万 token，用量页记在「表格翻译」）。
+2. **阅读页**：`reader-blocks.ts` 拿 `translated.text` 当译文，表格块的内容本来就是 HTML，预计 Markdown 视图、悬停框、复制、
+   MD 打包下载不用改就能拿到译文。请确认表格块的译文按 HTML 渲染（不是当纯文本显示 `<td>`）。
+3. **译文 PDF 里的表格还是原文**（放回 PDF 是 T5）。阅读页 PDF 视图的译文一侧看不到表格译文，这是预期的。
+4. **表格译文还不能「改」**：单块修改只改正文翻译清单里的条目，表格译文不在清单里（单格修改以后再接）。表格块的「改」先别对译文开放。
+
+为什么、怎么做的见 [T4 阅读页用上表格译文](../../ops/planning/table-translation/20261122-T4阅读页用上表格译文.md)。
+
+---
+
 ## 下载的译文 PDF、对照 PDF、Word 默认带水印（feat/export-watermark）
 
 2026-11-20，用户定：默认开、每页右下角「logo + RetainPDF」。`/jobs/{id}/files/output/translated.pdf`、`side-by-side.pdf`、

@@ -47,6 +47,9 @@ pub const ARTIFACT_KEY_RENDER_CONFIG_JSON: &str = "render_config_json";
 pub const ARTIFACT_KEY_TRANSLATIONS_DIR: &str = "translations_dir";
 pub const ARTIFACT_KEY_EVENTS_JSONL: &str = "events_jsonl";
 pub const TRANSLATION_MANIFEST_FILE_NAME: &str = "translation-manifest.json";
+/// 表格翻译的结果（tables.v1），在翻译目录里。Python 那边是
+/// `retainpdf_pipeline.translate.tables_stage.TABLES_FILE_NAME`，改了两边一起改。
+pub const TABLE_TRANSLATIONS_FILE_NAME: &str = "tables.v1.json";
 pub const TRANSLATION_CHECKPOINT_FILE_NAME: &str = "translation-checkpoint.v1.json";
 pub const TRANSLATION_REQUEST_JOURNAL_FILE_NAME: &str = "translation-request-journal.v1.jsonl";
 /// 翻译 agent 的编辑部事件（editorial.v1），相对翻译目录。Python 那边是

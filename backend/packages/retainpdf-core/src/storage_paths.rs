@@ -25,7 +25,7 @@ pub use constants::{
     ARTIFACT_KEY_TRANSLATION_DIAGNOSTICS_JSON, ARTIFACT_KEY_TRANSLATION_MANIFEST_JSON,
     ARTIFACT_KEY_TRANSLATION_REQUEST_JOURNAL_JSONL, ARTIFACT_KEY_TYPST_PDF,
     ARTIFACT_KEY_TYPST_SOURCE, ARTIFACT_KIND_DIR, ARTIFACT_KIND_FILE,
-    LEGACY_JOB_UNSUPPORTED_MESSAGE, TRANSLATION_CHECKPOINT_FILE_NAME,
+    LEGACY_JOB_UNSUPPORTED_MESSAGE, TABLE_TRANSLATIONS_FILE_NAME, TRANSLATION_CHECKPOINT_FILE_NAME,
     TRANSLATION_MANIFEST_FILE_NAME, TRANSLATION_REQUEST_JOURNAL_FILE_NAME,
     AGENT_EDITORIAL_EVENTS_RELATIVE_PATH,
 };
@@ -47,7 +47,8 @@ pub use resolvers::{
     resolve_markdown_images_dir, resolve_markdown_path, resolve_normalization_report,
     resolve_normalized_document, resolve_ocr_markdown_images_dir, resolve_output_pdf,
     resolve_pipeline_summary, resolve_refine_report,
-    resolve_registered_artifact_path, resolve_source_pdf, resolve_translation_debug_index,
+    resolve_registered_artifact_path, resolve_source_pdf, resolve_table_translations,
+    resolve_translation_debug_index,
     resolve_translation_diagnostics, resolve_translation_manifest,
     resolve_translation_qa, resolve_translation_request_journal, resolve_typst_pdf,
     resolve_typst_source,

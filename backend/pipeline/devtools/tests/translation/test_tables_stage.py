@@ -111,3 +111,9 @@ def test_without_the_source_pdf_nothing_is_sent(tmp_path: Path) -> None:
     summary = translate_tables(source_json_path=_document(tmp_path), source_pdf_path=None, output_dir=tmp_path / "t",
                                api_key="", model="m", base_url="u", chat_fn=Model())
     assert summary == {"mode": "translate", "skipped_reason": "source_pdf_missing"}
+
+
+def test_the_reader_looks_for_the_same_file_name() -> None:
+    # 阅读页的区块接口按同一个文件名找表格译文（retainpdf-core 的 storage_paths 常量）
+    constants = REPO / "backend/packages/retainpdf-core/src/storage_paths/constants.rs"
+    assert f'TABLE_TRANSLATIONS_FILE_NAME: &str = "{TABLES_FILE_NAME}"' in constants.read_text(encoding="utf-8")
