@@ -1,7 +1,7 @@
 use anyhow::Result;
 use rusqlite::{params, OptionalExtension, TransactionBehavior};
 
-use crate::models::domain::{JobArtifactRecord, JobSnapshot, JobStatusKind};
+use crate::models::domain::{ocr_parent_job_id, JobArtifactRecord, JobSnapshot, JobStatusKind};
 use crate::storage_paths::{
     collect_job_artifact_entries, normalize_job_paths_for_storage, restore_previous_output_pdf,
 };
@@ -76,13 +76,17 @@ pub(super) fn persist_prepared_job(
     tx.execute(
         r#"
         INSERT INTO jobs (
-            job_id, workflow, status_json, created_at, updated_at, started_at, finished_at,
+            job_id, workflow, status, created_at, updated_at, started_at, finished_at,
             upload_id, pid, command_json, request_json, error, stage, stage_detail,
-            progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json,
+            parent_job_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            -- OCR 子任务指向父任务（编号 `{父任务}-ocr`）；父任务不在库里时留空，免得外键挡住写入。
+            (SELECT job_id FROM jobs WHERE job_id = ?21))
         ON CONFLICT(job_id) DO UPDATE SET
             workflow=excluded.workflow,
-            status_json=excluded.status_json,
+            status=excluded.status,
+            parent_job_id=excluded.parent_job_id,
             created_at=excluded.created_at,
             updated_at=excluded.updated_at,
             started_at=excluded.started_at,
@@ -103,8 +107,8 @@ pub(super) fn persist_prepared_job(
         "#,
         params![
             stored_job.job_id,
-            serde_json::to_string(&stored_job.workflow)?,
-            serde_json::to_string(&stored_job.status)?,
+            stored_job.workflow.as_str(),
+            stored_job.status.as_str(),
             stored_job.created_at,
             stored_job.updated_at,
             stored_job.started_at,
@@ -122,6 +126,7 @@ pub(super) fn persist_prepared_job(
             serde_json::to_string(&stored_job.result)?,
             runtime_json,
             failure_json,
+            ocr_parent_job_id(&stored_job.job_id),
         ],
     )?;
     persist_job_artifacts(tx, &stored_job.job_id, artifacts_json, &artifact_entries)
@@ -178,18 +183,15 @@ impl Db {
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         let current: Option<(String, i64)> = tx
             .query_row(
-                "SELECT status_json, run_generation FROM jobs WHERE job_id = ?1",
+                "SELECT status, run_generation FROM jobs WHERE job_id = ?1",
                 params![job.job_id],
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
             .optional()?;
-        let Some((status_json, generation)) = current else {
+        let Some((status, generation)) = current else {
             return Ok(NewRunWrite::Missing);
         };
-        // 同 cas_save_job：存的是 JSON 字符串（`"queued"`），老数据可能没带引号。
-        let current_status = serde_json::from_str::<JobStatusKind>(&status_json)
-            .or_else(|_| serde_json::from_value(serde_json::Value::String(status_json.clone())))
-            .ok();
+        let current_status = super::rows::parse_status_text(&status);
         let current_generation = generation.max(0) as u64;
         if current_status.as_ref() != Some(expected_status) || current_generation != expected_generation {
             return Ok(NewRunWrite::Changed {
@@ -239,7 +241,7 @@ impl Db {
         // Check current status
         let current_row: Option<(String, i64)> = tx
             .query_row(
-                "SELECT status_json, run_generation FROM jobs WHERE job_id = ?1",
+                "SELECT status, run_generation FROM jobs WHERE job_id = ?1",
                 params![prepared.stored_job.job_id],
                 |row| Ok((row.get(0)?, row.get(1)?)),
             )
@@ -247,10 +249,7 @@ impl Db {
         let Some((current, current_generation)) = current_row else {
             return Ok(false);
         };
-        let is_expected = expected_statuses.iter().any(|s| {
-            let quoted = format!("\"{}\"", s);
-            current == quoted || current == *s
-        });
+        let is_expected = expected_statuses.iter().any(|s| current == *s);
         if !is_expected {
             return Ok(false);
         }

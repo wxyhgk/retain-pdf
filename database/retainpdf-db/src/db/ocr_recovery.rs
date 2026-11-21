@@ -49,7 +49,7 @@ impl Db {
               AND EXISTS (
                   SELECT 1 FROM jobs
                   WHERE (jobs.job_id = ?3 OR jobs.job_id || '-ocr' = ?3)
-                    AND jobs.status_json IN ('"failed"', 'failed', '"canceled"', 'canceled')
+                    AND jobs.status IN ('failed', 'canceled')
               )
             "#,
             params![

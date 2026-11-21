@@ -64,12 +64,12 @@ impl Db {
         let mut conditions = Vec::new();
         let mut values: Vec<Value> = Vec::new();
         if let Some(status) = selection.status {
-            conditions.push("jobs.status_json = ?");
-            values.push(serde_json::to_string(status)?.into());
+            conditions.push("jobs.status = ?");
+            values.push(status.as_str().to_string().into());
         }
         if let Some(workflow) = selection.workflow {
             conditions.push("jobs.workflow = ?");
-            values.push(serde_json::to_string(workflow)?.into());
+            values.push(workflow.as_str().to_string().into());
         }
         if let Some(owner) = selection.owner {
             conditions.push("jobs.owner_user_id = ?");
@@ -77,7 +77,7 @@ impl Db {
         }
         if selection.exclude_ocr {
             conditions.push("jobs.workflow != ?");
-            values.push(serde_json::to_string(&WorkflowKind::Ocr)?.into());
+            values.push(WorkflowKind::Ocr.as_str().to_string().into());
         }
         let provider = selection.provider.map(str::to_ascii_lowercase);
         if let Some(provider) = provider.as_ref() {
@@ -205,27 +205,27 @@ impl Db {
         workflow: Option<&WorkflowKind>,
     ) -> Result<Vec<JobSnapshot>> {
         let conn = self.connect()?;
-        let status_json = status.map(serde_json::to_string).transpose()?;
-        let workflow_json = workflow.map(serde_json::to_string).transpose()?;
+        let status_text = status.map(JobStatusKind::as_str);
+        let workflow_text = workflow.map(WorkflowKind::as_str);
         let base_sql = JOB_SELECT_SQL;
-        let query = match (status_json.as_ref(), workflow_json.as_ref()) {
-            (Some(_), Some(_)) => format!("{base_sql} WHERE jobs.status_json = ?1 AND jobs.workflow = ?2 ORDER BY jobs.updated_at DESC, jobs.job_id DESC LIMIT ?3 OFFSET ?4"),
-            (Some(_), None) => format!("{base_sql} WHERE jobs.status_json = ?1 ORDER BY jobs.updated_at DESC, jobs.job_id DESC LIMIT ?2 OFFSET ?3"),
+        let query = match (status_text.as_ref(), workflow_text.as_ref()) {
+            (Some(_), Some(_)) => format!("{base_sql} WHERE jobs.status = ?1 AND jobs.workflow = ?2 ORDER BY jobs.updated_at DESC, jobs.job_id DESC LIMIT ?3 OFFSET ?4"),
+            (Some(_), None) => format!("{base_sql} WHERE jobs.status = ?1 ORDER BY jobs.updated_at DESC, jobs.job_id DESC LIMIT ?2 OFFSET ?3"),
             (None, Some(_)) => format!("{base_sql} WHERE jobs.workflow = ?1 ORDER BY jobs.updated_at DESC, jobs.job_id DESC LIMIT ?2 OFFSET ?3"),
             (None, None) => format!("{base_sql} ORDER BY jobs.updated_at DESC, jobs.job_id DESC LIMIT ?1 OFFSET ?2"),
         };
         let mut stmt = conn.prepare(&query)?;
-        let rows = match (status_json.as_ref(), workflow_json.as_ref()) {
-            (Some(status_json), Some(workflow_json)) => stmt.query_map(
-                params![status_json, workflow_json, limit as i64, offset as i64],
+        let rows = match (status_text.as_ref(), workflow_text.as_ref()) {
+            (Some(status_text), Some(workflow_text)) => stmt.query_map(
+                params![status_text, workflow_text, limit as i64, offset as i64],
                 row_to_job_snapshot,
             )?,
-            (Some(status_json), None) => stmt.query_map(
-                params![status_json, limit as i64, offset as i64],
+            (Some(status_text), None) => stmt.query_map(
+                params![status_text, limit as i64, offset as i64],
                 row_to_job_snapshot,
             )?,
-            (None, Some(workflow_json)) => stmt.query_map(
-                params![workflow_json, limit as i64, offset as i64],
+            (None, Some(workflow_text)) => stmt.query_map(
+                params![workflow_text, limit as i64, offset as i64],
                 row_to_job_snapshot,
             )?,
             (None, None) => {
@@ -342,25 +342,23 @@ impl Db {
     pub fn job_status(&self, job_id: &str) -> Result<Option<JobStatusKind>> {
         let conn = self.connect()?;
         let raw: Option<String> = conn
-            .query_row("SELECT status_json FROM jobs WHERE job_id = ?1", params![job_id], |row| row.get(0))
+            .query_row("SELECT status FROM jobs WHERE job_id = ?1", params![job_id], |row| row.get(0))
             .optional()?;
         let Some(raw) = raw else {
             return Ok(None);
         };
-        // 老数据可能存的是不带引号的裸字符串。
-        let status = serde_json::from_str(&raw)
-            .or_else(|_| serde_json::from_value(serde_json::Value::String(raw.clone())))
+        let status = super::rows::parse_status_text(&raw)
             .with_context(|| format!("unreadable status for job {job_id}: {raw}"))?;
         Ok(Some(status))
     }
 
     pub fn list_jobs_with_status(&self, status: &JobStatusKind) -> Result<Vec<JobSnapshot>> {
         let conn = self.connect()?;
-        let status_json = serde_json::to_string(status)?;
+        let status_text = status.as_str();
         let query =
-            format!("{JOB_SELECT_SQL} WHERE jobs.status_json = ?1 ORDER BY jobs.updated_at DESC");
+            format!("{JOB_SELECT_SQL} WHERE jobs.status = ?1 ORDER BY jobs.updated_at DESC");
         let mut stmt = conn.prepare(&query)?;
-        let rows = stmt.query_map(params![status_json], row_to_job_snapshot)?;
+        let rows = stmt.query_map(params![status_text], row_to_job_snapshot)?;
         let mut jobs = Vec::new();
         for row in rows {
             match row {
@@ -387,16 +385,16 @@ impl Db {
         status: &JobStatusKind,
     ) -> Result<Vec<JobProcessRecord>> {
         let conn = self.connect()?;
-        let status_json = serde_json::to_string(status)?;
+        let status_text = status.as_str();
         let mut stmt = conn.prepare(
             r#"
             SELECT job_id, pid, stage, updated_at, worker_identity
             FROM jobs
-            WHERE status_json = ?1
+            WHERE status = ?1
             ORDER BY updated_at DESC
             "#,
         )?;
-        let rows = stmt.query_map(params![status_json], job_process_record_from_row)?;
+        let rows = stmt.query_map(params![status_text], job_process_record_from_row)?;
         let mut jobs = Vec::new();
         for row in rows {
             jobs.push(row?);
@@ -412,15 +410,15 @@ impl Db {
         status: &JobStatusKind,
     ) -> Result<Vec<JobProcessRecord>> {
         let conn = self.connect()?;
-        let status_json = serde_json::to_string(status)?;
+        let status_text = status.as_str();
         let mut stmt = conn.prepare(
             r#"
             SELECT job_id, pid, stage, updated_at, worker_identity
             FROM jobs
-            WHERE pid = ?1 AND status_json = ?2
+            WHERE pid = ?1 AND status = ?2
             "#,
         )?;
-        let rows = stmt.query_map(params![pid as i64, status_json], job_process_record_from_row)?;
+        let rows = stmt.query_map(params![pid as i64, status_text], job_process_record_from_row)?;
         let mut jobs = Vec::new();
         for row in rows {
             jobs.push(row?);
@@ -461,7 +459,7 @@ impl Db {
         timestamp: &str,
     ) -> Result<()> {
         let conn = self.connect()?;
-        let failed_status_json = serde_json::to_string(&JobStatusKind::Failed)?;
+        let failed_status = JobStatusKind::Failed.as_str();
         // 查目录而不是在这里写死:新增失败类型只该改 job_failure_catalogue 一处。
         let recovery = retainpdf_core::job_failure_catalogue::recovery_for("worker_process_missing");
         let failure = JobFailureInfo {
@@ -500,7 +498,7 @@ impl Db {
         conn.execute(
             r#"
             UPDATE jobs
-            SET status_json = ?1,
+            SET status = ?1,
                 updated_at = ?2,
                 finished_at = ?3,
                 pid = NULL,
@@ -512,7 +510,7 @@ impl Db {
             WHERE job_id = ?7
             "#,
             params![
-                failed_status_json,
+                failed_status,
                 timestamp,
                 timestamp,
                 detail,
@@ -526,10 +524,10 @@ impl Db {
 
     pub fn count_jobs_with_status(&self, status: &JobStatusKind) -> Result<i64> {
         let conn = self.connect()?;
-        let status_json = serde_json::to_string(status)?;
+        let status_text = status.as_str();
         let count = conn.query_row(
-            "SELECT COUNT(*) FROM jobs WHERE status_json = ?1",
-            params![status_json],
+            "SELECT COUNT(*) FROM jobs WHERE status = ?1",
+            params![status_text],
             |row| row.get::<_, i64>(0),
         )?;
         Ok(count)

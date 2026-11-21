@@ -66,14 +66,14 @@ fn insert_succeeded_job(
     conn.execute(
         r#"
         INSERT INTO jobs (
-            job_id, workflow, status_json, created_at, updated_at, finished_at,
+            job_id, workflow, status, created_at, updated_at, finished_at,
             command_json, request_json, log_tail_json, document_id
         ) VALUES (?1, ?2, ?3, ?4, ?4, ?4, '[]', '{}', '[]', ?5)
         "#,
         params![
             job_id,
-            serde_json::to_string(&workflow).expect("workflow json"),
-            serde_json::to_string(&JobStatusKind::Succeeded).expect("status json"),
+            workflow.as_str(),
+            JobStatusKind::Succeeded.as_str(),
             finished_at,
             document_id,
         ],
@@ -205,14 +205,14 @@ fn backfill_links_artifact_reuse_job_and_refreshes_active_job() {
     conn.execute(
         r#"
         INSERT INTO jobs (
-            job_id, workflow, status_json, created_at, updated_at, finished_at,
+            job_id, workflow, status, created_at, updated_at, finished_at,
             command_json, request_json, log_tail_json
         ) VALUES (?1, ?2, ?3, ?4, ?4, ?4, '[]', ?5, '[]')
         "#,
         params![
             "job-translation-reuse",
-            serde_json::to_string(&WorkflowKind::Translate).expect("workflow json"),
-            serde_json::to_string(&JobStatusKind::Succeeded).expect("status json"),
+            WorkflowKind::Translate.as_str(),
+            JobStatusKind::Succeeded.as_str(),
             "2026-02-01T00:00:00Z",
             serde_json::json!({
                 "source": {"artifact_job_id": "job-ocr-source"}
@@ -741,9 +741,9 @@ fn release_active_job_prefers_a_job_still_in_progress() {
         db.connect()
             .unwrap()
             .execute(
-                "INSERT INTO jobs (job_id, workflow, status_json, created_at, updated_at, command_json, request_json, \
+                "INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, command_json, request_json, \
                  log_tail_json, document_id) VALUES (?1, ?2, ?3, ?4, ?4, '[]', '{}', '[]', ?5)",
-                params![job_id, format!("\"{workflow}\""), format!("\"{status}\""), created_at, document_id],
+                params![job_id, workflow, status, created_at, document_id],
             )
             .unwrap();
     };
@@ -774,9 +774,9 @@ fn insert_job_with_status(
     db.connect()
         .unwrap()
         .execute(
-            "INSERT INTO jobs (job_id, workflow, status_json, created_at, updated_at, command_json, request_json, \
+            "INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, command_json, request_json, \
              log_tail_json, document_id) VALUES (?1, ?2, ?3, ?4, ?4, '[]', '{}', '[]', ?5)",
-            params![job_id, format!("\"{workflow}\""), format!("\"{status}\""), created_at, document_id],
+            params![job_id, workflow, status, created_at, document_id],
         )
         .unwrap();
 }

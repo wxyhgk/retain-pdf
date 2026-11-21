@@ -76,7 +76,7 @@ fn source_retention_cutoff(conn: &Connection, job_id: &str) -> Result<Option<Str
              UNION ALL
              SELECT cutoff FROM event_feed_retention WHERE singleton = 1
                AND EXISTS (SELECT 1 FROM jobs WHERE job_id = ?1
-                   AND status_json IN ('\"succeeded\"', '\"failed\"', '\"canceled\"'))
+                   AND status IN ('succeeded', 'failed', 'canceled'))
          )",
         [job_id],
         |row| row.get(0),

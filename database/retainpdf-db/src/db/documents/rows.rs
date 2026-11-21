@@ -5,7 +5,7 @@ use crate::models::api::{BlockSearchHit, DocumentRecord};
 
 /// 最后一列 `has_translation`：有没有成功的非 OCR 任务（走 idx_jobs_document_updated，每行一次
 /// 索引探测）。规则和 `BEST_SUCCEEDED_JOB_SQL` 的「非 OCR 优先」同源，见 DocumentRecord 字段注释。
-pub(in crate::db) const DOCUMENT_COLUMNS: &str = "d.document_id, d.title, COALESCE((SELECT ts.source FROM document_title_state ts WHERE ts.document_id = d.document_id), 'filename'), COALESCE((SELECT ts.locked FROM document_title_state ts WHERE ts.document_id = d.document_id), 0), d.authors_json, d.year, d.doi, d.source_filename, d.page_count, d.bytes, d.active_job_id, d.active_version_id, d.reading_status, d.added_at, d.last_opened_at, d.updated_at, EXISTS (SELECT 1 FROM jobs j WHERE j.document_id = d.document_id AND j.status_json = '\"succeeded\"' AND COALESCE(j.workflow, '') <> '\"ocr\"')";
+pub(in crate::db) const DOCUMENT_COLUMNS: &str = "d.document_id, d.title, COALESCE((SELECT ts.source FROM document_title_state ts WHERE ts.document_id = d.document_id), 'filename'), COALESCE((SELECT ts.locked FROM document_title_state ts WHERE ts.document_id = d.document_id), 0), d.authors_json, d.year, d.doi, d.source_filename, d.page_count, d.bytes, d.active_job_id, d.active_version_id, d.reading_status, d.added_at, d.last_opened_at, d.updated_at, EXISTS (SELECT 1 FROM jobs j WHERE j.document_id = d.document_id AND j.status = 'succeeded' AND COALESCE(j.workflow, '') <> 'ocr')";
 
 /// sha2 0.11 的输出类型不再实现 LowerHex,统一走手动十六进制编码。
 pub fn sha256_hex(bytes: &[u8]) -> String {

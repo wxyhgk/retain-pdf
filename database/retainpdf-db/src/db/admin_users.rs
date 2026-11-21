@@ -115,7 +115,7 @@ fn like_pattern(raw: &str) -> String {
     escaped
 }
 
-/// status_json / workflow 存的是 JSON 字符串（`"failed"`），去掉引号。
+/// 状态、流程 v32 起存纯文本；以前是 JSON 字符串（`"failed"`），去引号留着无害。
 fn unquote(raw: String) -> String {
     raw.trim_matches('"').to_string()
 }
@@ -196,7 +196,7 @@ impl Db {
         let conn = self.connect()?;
         let mut stats = UserStats::default();
         let mut stmt = conn.prepare(
-            "SELECT status_json, COUNT(*) FROM jobs WHERE owner_user_id = ?1 GROUP BY status_json",
+            "SELECT status, COUNT(*) FROM jobs WHERE owner_user_id = ?1 GROUP BY status",
         )?;
         for row in stmt.query_map(params![user_id], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
@@ -243,7 +243,7 @@ impl Db {
             |row| row.get(0),
         )?;
         let mut stmt = conn.prepare(
-            "SELECT j.job_id, j.workflow, j.status_json, COALESCE(NULLIF(d.title, ''), u.filename, ''), \
+            "SELECT j.job_id, j.workflow, j.status, COALESCE(NULLIF(d.title, ''), u.filename, ''), \
                     u.page_count, c.pages, c.status, j.created_at, j.finished_at \
              FROM jobs j \
              LEFT JOIN uploads u ON u.upload_id = j.upload_id \
@@ -272,7 +272,7 @@ impl Db {
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             "SELECT job_id FROM jobs WHERE owner_user_id = ?1 \
-             AND status_json IN ('\"queued\"', '\"running\"', 'queued', 'running') ORDER BY created_at",
+             AND status IN ('queued', 'running') ORDER BY created_at",
         )?;
         let rows = stmt.query_map(params![owner], |row| row.get(0))?;
         Ok(rows.collect::<rusqlite::Result<Vec<String>>>()?)
@@ -303,9 +303,9 @@ mod tests {
         db.connect()
             .unwrap()
             .execute(
-                "INSERT INTO jobs (job_id, workflow, status_json, created_at, updated_at, command_json, request_json, log_tail_json, owner_user_id) \
-                 VALUES (?1, '\"book\"', ?2, ?3, ?3, '[]', '{}', '[]', ?4)",
-                params![job_id, format!("\"{status}\""), created_at, owner],
+                "INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json, owner_user_id) \
+                 VALUES (?1, 'book', ?2, ?3, ?3, '[]', '{}', '[]', ?4)",
+                params![job_id, status, created_at, owner],
             )
             .unwrap();
     }
@@ -411,14 +411,14 @@ mod tests {
         db.connect()
             .unwrap()
             .execute(
-                "UPDATE jobs SET status_json = '\"succeeded\"' WHERE job_id = 'j1'",
+                "UPDATE jobs SET status = 'succeeded' WHERE job_id = 'j1'",
                 [],
             )
             .unwrap();
         db.connect()
             .unwrap()
             .execute(
-                "UPDATE jobs SET status_json = '\"failed\"' WHERE job_id = 'j2'",
+                "UPDATE jobs SET status = 'failed' WHERE job_id = 'j2'",
                 [],
             )
             .unwrap();

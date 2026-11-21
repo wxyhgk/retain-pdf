@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use rusqlite::{params, Connection};
 
 use super::folder::sha256_file;
+use super::store::SYNC_FORMAT_VERSION;
 use super::{SyncEngine, SyncReport};
 use crate::db::Db;
 
@@ -97,11 +98,11 @@ impl Device {
         )
         .unwrap();
         conn.execute(
-            "INSERT INTO jobs(job_id, workflow, status_json, created_at, updated_at, upload_id, pid, command_json, request_json, log_tail_json, document_id)
-             VALUES(?1, '\"book\"', ?2, '2026-10-01T00:00:00Z', '2026-10-01T00:00:00Z', ?3, 4242, ?4, '{}', '[]', ?5)",
+            "INSERT INTO jobs(job_id, workflow, status, created_at, updated_at, upload_id, pid, command_json, request_json, log_tail_json, document_id)
+             VALUES(?1, 'book', ?2, '2026-10-01T00:00:00Z', '2026-10-01T00:00:00Z', ?3, 4242, ?4, '{}', '[]', ?5)",
             params![
                 job_id,
-                format!("\"{status}\""),
+                status,
                 upload_id,
                 format!("[\"python\", \"--spec\", \"{root}/jobs/{job_id}/specs/translate.spec.json\"]"),
                 document_id
@@ -347,7 +348,7 @@ fn running_jobs_are_sent_once_they_end() {
     assert_eq!(b.count("SELECT COUNT(*) FROM documents"), 1);
     assert_eq!(b.count("SELECT COUNT(*) FROM jobs"), 0);
 
-    a.conn().execute("UPDATE jobs SET status_json = '\"succeeded\"' WHERE job_id = ?1", params![JOB]).unwrap();
+    a.conn().execute("UPDATE jobs SET status = 'succeeded' WHERE job_id = ?1", params![JOB]).unwrap();
     a.sync();
     b.sync();
     assert_eq!(b.count("SELECT COUNT(*) FROM jobs"), 1);
@@ -971,7 +972,7 @@ fn compaction_keeps_the_latest_records_and_late_or_new_devices_catch_up_from_the
     let (base, folder, devices) = setup(&["b"]);
     let b = &devices[0];
     let lagging = &Device::watchful(&base, "lagging", &folder);
-    // 格式 2 的文件夹:整理前照常用,整理时升到 3,文件夹编号不变。
+    // 格式 2 的文件夹:新程序一连上就升到 4(任务行换了列),文件夹编号不变,之后照常整理。
     fs::write(folder.join("format.json"), br#"{"format":"retain-pdf-sync","version":2,"folder_id":"00000000000000aa"}"#).unwrap();
     let a = Device::tidy(&base, "a", &folder);
     a.add_book(DOC, JOB, UPLOAD, "succeeded");
@@ -990,7 +991,7 @@ fn compaction_keeps_the_latest_records_and_late_or_new_devices_catch_up_from_the
     .unwrap();
     let new_base = state["base"].as_u64().unwrap();
     assert!(new_base > 1, "{state}");
-    assert_eq!(format_version(&folder), (3, "00000000000000aa".to_string()));
+    assert_eq!(format_version(&folder), (SYNC_FORMAT_VERSION, "00000000000000aa".to_string()));
     // 之前的段删了;留下的段里每个实体只有最后一条。
     let segments = a.dir_in(&folder, "changes");
     assert!(segments.iter().all(|name| name.as_str() >= format!("{new_base:08}.jsonl").as_str()), "{segments:?}");

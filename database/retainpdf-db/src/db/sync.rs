@@ -296,6 +296,30 @@ fn read_rows(
     Ok(out)
 }
 
+/// 旧版本设备发来的行（同步文件夹里老的包也是）按现在的表结构改写。只认得的几处，按迁移版本往下加：
+/// - v32：`jobs.status_json`（`"succeeded"`）→ `jobs.status`（`succeeded`），`jobs.workflow` 去掉引号。
+fn upgrade_legacy_row<'a>(table: &str, row: &'a Map<String, Value>) -> std::borrow::Cow<'a, Map<String, Value>> {
+    if table != "jobs" {
+        return std::borrow::Cow::Borrowed(row);
+    }
+    let quoted = |value: Option<&Value>| value.and_then(Value::as_str).is_some_and(|text| text.starts_with('"'));
+    if !row.contains_key("status_json") && !quoted(row.get("workflow")) {
+        return std::borrow::Cow::Borrowed(row);
+    }
+    let unquote = |value: &Value| match value.as_str() {
+        Some(text) => Value::String(text.trim_matches('"').to_string()),
+        None => value.clone(),
+    };
+    let mut upgraded = row.clone();
+    if let Some(status) = upgraded.remove("status_json") {
+        upgraded.entry("status".to_string()).or_insert_with(|| unquote(&status));
+    }
+    if let Some(workflow) = upgraded.get("workflow").map(unquote) {
+        upgraded.insert("workflow".to_string(), workflow);
+    }
+    std::borrow::Cow::Owned(upgraded)
+}
+
 fn insert_row(
     tx: &Transaction<'_>,
     table: &str,
@@ -303,6 +327,8 @@ fn insert_row(
     row: &Map<String, Value>,
     upsert: bool,
 ) -> Result<()> {
+    let row = upgrade_legacy_row(table, row);
+    let row = row.as_ref();
     let local_only = local_only_columns(table);
     let columns: Vec<&String> = info
         .columns
@@ -951,5 +977,32 @@ impl Db {
             params![path, size as i64, mtime_ns, sha256],
         )?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod legacy_row_tests {
+    use serde_json::{json, Map, Value};
+
+    use super::upgrade_legacy_row;
+
+    fn row(value: Value) -> Map<String, Value> {
+        value.as_object().unwrap().clone()
+    }
+
+    /// 旧版本设备发来的任务行（v32 以前的列）改写成现在的样子；新的行、别的表原样不动。
+    #[test]
+    fn legacy_job_rows_are_rewritten_to_plain_text_columns() {
+        let old = row(json!({"job_id": "j", "workflow": "\"book\"", "status_json": "\"failed\""}));
+        let upgraded = upgrade_legacy_row("jobs", &old);
+        assert_eq!(
+            Value::Object(upgraded.into_owned()),
+            json!({"job_id": "j", "workflow": "book", "status": "failed"})
+        );
+
+        let current = row(json!({"job_id": "j", "workflow": "ocr", "status": "running"}));
+        assert!(matches!(upgrade_legacy_row("jobs", &current), std::borrow::Cow::Borrowed(_)));
+        let other = row(json!({"status_json": "\"x\""}));
+        assert!(matches!(upgrade_legacy_row("documents", &other), std::borrow::Cow::Borrowed(_)));
     }
 }

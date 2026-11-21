@@ -397,8 +397,11 @@ def _job_backfill_eligibility(
     with sqlite3.connect(db_path, timeout=5.0) as connection:
         if not _table_exists(connection, "jobs"):
             raise RuntimeError("jobs database is missing jobs schema")
+        # 库 v32 起状态在 `status`（纯文本），以前在 `status_json`（JSON 字符串）；旧库也照样能用。
+        columns = {info[1] for info in connection.execute("PRAGMA table_info(jobs)")}
+        status_column = "status" if "status" in columns else "status_json"
         row = connection.execute(
-            "SELECT status_json FROM jobs WHERE job_id = ?1",
+            f"SELECT {status_column} FROM jobs WHERE job_id = ?1",
             (job_id,),
         ).fetchone()
         active = False

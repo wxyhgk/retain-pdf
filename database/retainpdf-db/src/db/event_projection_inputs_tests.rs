@@ -46,8 +46,8 @@ fn batch_inputs_use_two_queries_for_a_large_page_and_only_direct_children() {
     let mut ids = vec!["parent'quoted".to_owned()];
     for n in 0..1100 {
         let id = format!("job-{n}");
-        tx.execute("INSERT INTO jobs(job_id, workflow, status_json, created_at, updated_at, command_json, request_json, log_tail_json)
-            SELECT ?1, workflow, status_json, created_at, updated_at, command_json, request_json, log_tail_json FROM jobs WHERE job_id='template'", [&id]).unwrap();
+        tx.execute("INSERT INTO jobs(job_id, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json)
+            SELECT ?1, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json FROM jobs WHERE job_id='template'", [&id]).unwrap();
         ids.push(id);
     }
     tx.commit().unwrap();
@@ -136,8 +136,9 @@ fn malformed_jobs_are_absent_but_corrupt_feed_metadata_aborts_the_fast_path() {
     fs.job("child", None, JobStatusKind::Running);
     let conn = fs.db.connect().unwrap();
     conn.execute(
-        "UPDATE jobs SET status_json=?1 WHERE job_id='child'",
-        params!["bad-json"],
+        // 状态有 CHECK 钉着写不进坏值（v32），用对不上类型的请求造一条读不出来的任务。
+        "UPDATE jobs SET request_json=?1 WHERE job_id='child'",
+        params!["{\"invalid\":true}"],
     )
     .unwrap();
     let inputs = fs.db.load_event_projection_inputs(&["owner"]).unwrap();

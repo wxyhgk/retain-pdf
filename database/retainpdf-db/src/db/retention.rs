@@ -36,9 +36,9 @@ impl Db {
     /// 给了任务编号：只清这一个（不动全局截止点）。
     fn expire_events(&self, cutoff: &str, only_job: Option<&str>) -> Result<usize> {
         let cutoff = cutoff.to_string();
-        let succeeded = serde_json::to_string(&JobStatusKind::Succeeded)?;
-        let failed = serde_json::to_string(&JobStatusKind::Failed)?;
-        let canceled = serde_json::to_string(&JobStatusKind::Canceled)?;
+        let succeeded = JobStatusKind::Succeeded.as_str();
+        let failed = JobStatusKind::Failed.as_str();
+        let canceled = JobStatusKind::Canceled.as_str();
         let mut conn = self.connect()?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         if only_job.is_none() {
@@ -51,13 +51,13 @@ impl Db {
             )?;
         }
         // 已结束的任务（只清一个时再加上任务编号）。?5 为空时不限任务。
-        let terminal = "SELECT job_id FROM jobs WHERE status_json IN (?2, ?3, ?4) AND (?5 IS NULL OR job_id = ?5)";
+        let terminal = "SELECT job_id FROM jobs WHERE status IN (?2, ?3, ?4) AND (?5 IS NULL OR job_id = ?5)";
         // A terminal child may only have been read through its parent's feed.
         // Persist its own cutoff even without raw events or a child feed, so
         // rerendering that child cannot restore already expired JSONL history.
         tx.execute(
             "INSERT INTO event_source_versions(job_id, revision, retention_cutoff)
-             SELECT job_id, 1, ?1 FROM jobs WHERE status_json IN (?2, ?3, ?4) AND (?5 IS NULL OR job_id = ?5)
+             SELECT job_id, 1, ?1 FROM jobs WHERE status IN (?2, ?3, ?4) AND (?5 IS NULL OR job_id = ?5)
              ON CONFLICT(job_id) DO UPDATE SET
                  revision = revision + 1, retention_cutoff = excluded.retention_cutoff
              WHERE retention_cutoff IS NULL OR retention_cutoff < excluded.retention_cutoff",
@@ -98,12 +98,12 @@ impl Db {
 
     /// 已经结束（成功、失败、取消）的任务编号，给派生缓存的回收用：排队、在跑的任务不回收。
     pub fn terminal_job_ids(&self) -> Result<Vec<String>> {
-        let succeeded = serde_json::to_string(&JobStatusKind::Succeeded)?;
-        let failed = serde_json::to_string(&JobStatusKind::Failed)?;
-        let canceled = serde_json::to_string(&JobStatusKind::Canceled)?;
+        let succeeded = JobStatusKind::Succeeded.as_str();
+        let failed = JobStatusKind::Failed.as_str();
+        let canceled = JobStatusKind::Canceled.as_str();
         let conn = self.connect()?;
         let mut stmt =
-            conn.prepare("SELECT job_id FROM jobs WHERE status_json IN (?1, ?2, ?3) ORDER BY job_id")?;
+            conn.prepare("SELECT job_id FROM jobs WHERE status IN (?1, ?2, ?3) ORDER BY job_id")?;
         let rows = stmt.query_map(params![succeeded, failed, canceled], |row| row.get(0))?;
         Ok(rows.collect::<rusqlite::Result<Vec<String>>>()?)
     }
@@ -119,14 +119,11 @@ impl Db {
     }
 
     fn job_ids_with_status(&self, statuses: &[JobStatusKind]) -> Result<Vec<String>> {
-        let encoded = statuses
-            .iter()
-            .map(serde_json::to_string)
-            .collect::<serde_json::Result<Vec<String>>>()?;
+        let encoded: Vec<&str> = statuses.iter().map(JobStatusKind::as_str).collect();
         let placeholders = vec!["?"; encoded.len()].join(", ");
         let conn = self.connect()?;
         let mut stmt = conn.prepare(&format!(
-            "SELECT job_id FROM jobs WHERE status_json IN ({placeholders}) ORDER BY job_id"
+            "SELECT job_id FROM jobs WHERE status IN ({placeholders}) ORDER BY job_id"
         ))?;
         let rows = stmt.query_map(rusqlite::params_from_iter(encoded.iter()), |row| row.get(0))?;
         Ok(rows.collect::<rusqlite::Result<Vec<String>>>()?)

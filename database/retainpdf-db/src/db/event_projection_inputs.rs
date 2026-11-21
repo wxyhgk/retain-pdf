@@ -60,7 +60,7 @@ fn read_inputs(conn: &Connection, ids: &[&str]) -> Result<HashMap<String, EventP
                 SELECT source.retention_cutoff AS cutoff
                 UNION ALL SELECT feed.retention_cutoff
                 UNION ALL SELECT cutoff FROM event_feed_retention WHERE singleton = 1
-                    AND candidates.status_json IN ('\"succeeded\"', '\"failed\"', '\"canceled\"')
+                    AND candidates.status IN ('succeeded', 'failed', 'canceled')
             )),
             feed.epoch, feed.revision, feed.context, feed.checkpoints_json,
             feed.high_seq, feed.retention_cutoff

@@ -14,8 +14,8 @@ use crate::db::Db;
 pub(super) const BEST_SUCCEEDED_JOB_SQL: &str = r#"
     SELECT j.job_id FROM jobs j
     WHERE j.document_id = documents.document_id
-      AND j.status_json = '"succeeded"'
-    ORDER BY CASE WHEN j.workflow = '"ocr"' THEN 1 ELSE 0 END, j.finished_at DESC
+      AND j.status = 'succeeded'
+    ORDER BY CASE WHEN j.workflow = 'ocr' THEN 1 ELSE 0 END, j.finished_at DESC
     LIMIT 1
 "#;
 
@@ -26,8 +26,8 @@ const IN_PROGRESS_JOB_SQL: &str = r#"
     WHERE j.document_id = documents.document_id
       AND j.job_id <> ?2
       AND j.job_id <> ?2 || '-ocr'
-      AND j.status_json IN ('"queued"', '"running"')
-    ORDER BY CASE WHEN j.workflow = '"ocr"' THEN 1 ELSE 0 END, j.created_at DESC, j.job_id DESC
+      AND j.status IN ('queued', 'running')
+    ORDER BY CASE WHEN j.workflow = 'ocr' THEN 1 ELSE 0 END, j.created_at DESC, j.job_id DESC
     LIMIT 1
 "#;
 
@@ -37,7 +37,7 @@ const IN_PROGRESS_JOB_SQL: &str = r#"
 const LATEST_JOB_SQL: &str = r#"
     SELECT j.job_id FROM jobs j
     WHERE j.document_id = documents.document_id
-    ORDER BY CASE WHEN j.workflow = '"ocr"' THEN 1 ELSE 0 END, j.created_at DESC, j.job_id DESC
+    ORDER BY CASE WHEN j.workflow = 'ocr' THEN 1 ELSE 0 END, j.created_at DESC, j.job_id DESC
     LIMIT 1
 "#;
 
@@ -54,12 +54,12 @@ const WRONG_CARD_SQL: &str = r#"
         EXISTS (
             SELECT 1 FROM jobs c
             WHERE c.job_id = documents.active_job_id
-              AND c.status_json = '"succeeded"' AND c.workflow = '"ocr"'
+              AND c.status = 'succeeded' AND c.workflow = 'ocr'
         )
         AND EXISTS (
             SELECT 1 FROM jobs n
             WHERE n.document_id = documents.document_id
-              AND n.status_json = '"succeeded"' AND n.workflow <> '"ocr"'
+              AND n.status = 'succeeded' AND n.workflow <> 'ocr'
         )
     )
 "#;

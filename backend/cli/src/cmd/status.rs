@@ -41,8 +41,8 @@ pub fn library(conn: &Connection) -> Value {
     json!({
         "books": count(conn, "SELECT COUNT(*) FROM documents"),
         "jobs": count(conn, "SELECT COUNT(*) FROM jobs"),
-        "running_jobs": count(conn, "SELECT COUNT(*) FROM jobs WHERE status_json IN ('\"queued\"', '\"running\"')"),
-        "failed_jobs": count(conn, "SELECT COUNT(*) FROM jobs WHERE status_json = '\"failed\"'"),
+        "running_jobs": count(conn, "SELECT COUNT(*) FROM jobs WHERE status IN ('queued', 'running')"),
+        "failed_jobs": count(conn, "SELECT COUNT(*) FROM jobs WHERE status = 'failed'"),
     })
 }
 

@@ -38,6 +38,11 @@
 - `db/schema/base.sql`：最早几张表（上传、任务、产物、事件、术语表）的幂等建表，新库的起点；不往这里加新表、新列。
 - `db/schema/mod.rs`：编号迁移的执行器，以及老表的幂等加列（`LEGACY_COLUMNS`，现在只有 `jobs.document_id`）。
 - `db/schema/migrations/`：编号迁移，一个迁移一个 `vNN_<领域>.sql`，说明写在文件开头；清单在 `migrations/mod.rs`。版本号就是清单里的位置，已上线的只能往后追加，不能改、删、调序。
+  改列的取值、删列、加带外键的列这种**不能重跑**的迁移（v32 起），在 `schema/mod.rs` 的 `APPLIED_CHECKS` 登记一条「已经是迁移后的样子」的查询：
+  正常升级碰不到，是给把 `user_version` 倒回去重跑后面迁移的测试用的（SQLite 删不掉带外键的列，撤不回去）。
+- 状态、流程这类取值存**纯文本**并用 `CHECK` 钉住取值（v32 起 `jobs.status`、`jobs.workflow`；以前是 JSON 字符串 `"succeeded"`）。
+  代码里写库、查库用 `JobStatusKind::as_str()` / `WorkflowKind::as_str()`，不要 `serde_json::to_string`（那会带引号）。
+  OCR 子任务的父任务在 `jobs.parent_job_id`（写任务时由数据库层按编号 `{父任务}-ocr` 填，父任务不在库里时留空）。
 - `db/rows.rs`：共享数据库行 decode；领域专用 decode 留在对应子模块。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
 - `db/pipeline/*`：pipeline attempt、dispatch、stage、unit、event 与事务写入；读取和迁移写入不得重新揉回一个大文件。

@@ -375,15 +375,15 @@ fn build_state_reconciles_malformed_running_rows_via_raw_db_fallback() {
     conn.execute(
         r#"
             INSERT INTO jobs (
-                job_id, workflow, status_json, created_at, updated_at, started_at, finished_at,
+                job_id, workflow, status, created_at, updated_at, started_at, finished_at,
                 upload_id, pid, command_json, request_json, error, stage, stage_detail,
                 progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
             "#,
         params![
             "job-malformed-running",
-            serde_json::to_string(&WorkflowKind::Book).expect("workflow json"),
-            serde_json::to_string(&JobStatusKind::Running).expect("status json"),
+            WorkflowKind::Book.as_str(),
+            JobStatusKind::Running.as_str(),
             "2026-04-02T00:00:00Z",
             "2026-04-02T00:10:00Z",
             "2026-04-02T00:00:00Z",
@@ -416,7 +416,7 @@ fn build_state_reconciles_malformed_running_rows_via_raw_db_fallback() {
 
     let row = conn
         .query_row(
-            "SELECT status_json, pid, stage, error, failure_json FROM jobs WHERE job_id = ?1",
+            "SELECT status, pid, stage, error, failure_json FROM jobs WHERE job_id = ?1",
             params!["job-malformed-running"],
             |row| {
                 Ok((
@@ -431,7 +431,7 @@ fn build_state_reconciles_malformed_running_rows_via_raw_db_fallback() {
         .expect("query recovered row");
     assert_eq!(
         row.0,
-        serde_json::to_string(&JobStatusKind::Failed).expect("failed status json")
+        JobStatusKind::Failed.as_str()
     );
     assert_eq!(row.1, None);
     assert_eq!(row.2.as_deref(), Some("failed"));
@@ -453,10 +453,13 @@ fn upgrading_to_v29_rewrites_legacy_workflow_rows_once() {
     db.init().expect("init db");
 
     let conn = Connection::open(&fs.jobs_db_path).expect("open sqlite");
+    // v29 那时流程存的是 JSON 字符串（`"mineru"`）；v32 起列上有 CHECK，造老数据时暂时关掉。
+    // 倒回 v28 重跑时 v32 见 `status` 已在就跳过（APPLIED_CHECKS），这一行留着 v29 改出来的 `"book"`。
+    conn.execute_batch("PRAGMA ignore_check_constraints = ON;").expect("allow legacy values");
     conn.execute(
         r#"
             INSERT INTO jobs (
-                job_id, workflow, status_json, created_at, updated_at, started_at, finished_at,
+                job_id, workflow, status, created_at, updated_at, started_at, finished_at,
                 upload_id, pid, command_json, request_json, error, stage, stage_detail,
                 progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
@@ -464,7 +467,7 @@ fn upgrading_to_v29_rewrites_legacy_workflow_rows_once() {
         params![
             "job-legacy-workflow",
             "\"mineru\"",
-            serde_json::to_string(&JobStatusKind::Succeeded).expect("status json"),
+            JobStatusKind::Succeeded.as_str(),
             "2026-04-02T00:00:00Z",
             "2026-04-02T00:10:00Z",
             Option::<String>::None,
@@ -503,9 +506,14 @@ fn upgrading_to_v29_rewrites_legacy_workflow_rows_once() {
         ],
     )
     .expect("insert legacy event");
-    // 装成 v28 的库：升级到 v29 时跑那段修正。
-    conn.execute_batch("PRAGMA user_version = 28;")
-        .expect("pretend the database is at v28");
+    // 跑一遍 v29 的修正。以前是把库装成 v28 让启动去升级；v32 起流程列有 CHECK，倒回去重跑时 v29 写回的
+    // `"book"`（那时的写法）过不了，所以直接在关着 CHECK 的连接上执行 v29 那段语句。
+    conn.execute_batch(include_str!(
+        "../../../../../database/retainpdf-db/src/db/schema/migrations/v29_legacy_mineru_workflow.sql"
+    ))
+    .expect("run v29");
+    conn.execute_batch("UPDATE jobs SET workflow = trim(workflow, '\"'); PRAGMA ignore_check_constraints = OFF;")
+        .expect("back to the current shape");
 
     let _state = build_state(fs.config()).expect("build state");
 
@@ -516,7 +524,7 @@ fn upgrading_to_v29_rewrites_legacy_workflow_rows_once() {
             |row| row.get(0),
         )
         .expect("workflow");
-    assert_eq!(workflow, "\"book\"");
+    assert_eq!(workflow, "book");
 
     let request_json: String = conn
         .query_row(
