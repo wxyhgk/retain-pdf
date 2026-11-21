@@ -385,7 +385,7 @@ fn synchronize_snapshot(
         } else {
             stored.as_ref().map(|s| s.high_seq).unwrap_or(0)
         };
-        for (source_key, mut event) in records {
+        for (source_key, event) in records {
             if checkpoints
                 .retention_cutoff
                 .as_deref()
@@ -404,40 +404,25 @@ fn synchronize_snapshot(
             if event.job_id != owner.job_id && is_ocr_child_lifecycle_event(&event) {
                 continue;
             }
-            sanitize(&mut event, &secrets);
-            let source_id = event.job_id.clone();
-            let kind = if source_id != owner.job_id {
-                "ocr_child"
-            } else if source_key.starts_with("db:") {
-                // This is presentation metadata only, not the trusted key.
-                if event
-                    .payload
-                    .as_ref()
-                    .and_then(|p| p.get("authority"))
-                    .is_some()
-                {
-                    "pipeline_state"
-                } else {
-                    "db"
-                }
-            } else {
-                "pipeline_jsonl"
-            };
-            if source_id != owner.job_id {
-                event.job_id = owner.job_id.clone();
-                event.payload = Some(
-                    json!({"raw_source_kind":"ocr_child", "source_job_id":source_id, "source_event":event.payload.take()}),
-                );
-            }
-            canonicalize_job_event(&mut event, kind);
+            let source_event_uid = source_event_uid(&source_key);
+            let mut event = project_event(&owner.job_id, source_key.starts_with("db:"), event, &secrets);
             event.seq = base + new_items.len() as i64 + 1;
             basis.push(event.clone());
             let event_id = files::digest(format!("{}\0{source_key}", owner.job_id).as_bytes());
+            let source_seq = event.raw.as_ref().and_then(|raw| raw.source_seq);
+            let event_ts = event.ts.clone();
+            // 来自 events 的只记它是哪条（v35），内容读的时候按 project_event 现算；文件来源的照旧存内容。
+            let payload = match source_event_uid {
+                Some(_) => None,
+                None => Some(serde_json::to_value(event).map_err(anyhow::Error::from)?),
+            };
             new_items.push(NewFeedItem {
                 source_key,
                 event_id,
-                ts: event.ts.clone(),
-                payload: serde_json::to_value(event).map_err(anyhow::Error::from)?,
+                ts: event_ts,
+                source_seq,
+                source_event_uid,
+                payload,
             });
         }
         checkpoints.stage_basis = compact_stage_basis(&basis);
@@ -493,8 +478,7 @@ fn synchronize_snapshot(
             // timestamps tie across sources or chunk boundaries.
             let mut basis = Vec::new();
             let visited = db.visit_event_feed_initial_order(&owner.job_id, &epoch, |row| {
-                let mut event: JobEventRecord = serde_json::from_value(row.payload)?;
-                event.seq = row.seq;
+                let event = materialize(&owner.job_id, row, &secrets).map_err(|error| anyhow::anyhow!("{error:?}"))?;
                 basis.push(event);
                 if basis.len() >= CHUNK as usize {
                     basis = compact_stage_basis(&basis);
@@ -563,6 +547,87 @@ fn is_ocr_child_lifecycle_event(event: &JobEventRecord) -> bool {
         event.stage.as_deref().map(str::trim),
         Some("finished" | "failed" | "canceled")
     )
+}
+
+/// `db:<来源任务>:<事件 uid>` 这种来源键里的事件 uid；文件来源（`jsonl:…`）是 None。
+fn source_event_uid(source_key: &str) -> Option<String> {
+    let rest = source_key.strip_prefix("db:")?;
+    rest.split_once(':').map(|(_, uid)| uid.to_string()).filter(|uid| !uid.is_empty())
+}
+
+/// 一条来源事件变成进度流里的样子：脱敏、OCR 子任务的事件改挂到父任务名下、整理成统一的写法。不含位置（seq）。
+///
+/// 导入时用它；v35 起来自 events 的条目不存内容，读的时候也用它从原始事件现算——两边必须是同一个函数，
+/// 读出来才和以前存下的一样（真实库逐条比对过）。
+/// `from_db`：来自 events 表（来源键 `db:…`），不是任务目录里的 jsonl 文件。
+pub(super) fn project_event(
+    owner_id: &str,
+    from_db: bool,
+    mut event: JobEventRecord,
+    secrets: &[String],
+) -> JobEventRecord {
+    sanitize(&mut event, secrets);
+    let source_id = event.job_id.clone();
+    let kind = if source_id != owner_id {
+        "ocr_child"
+    } else if from_db {
+        // This is presentation metadata only, not the trusted key.
+        if event.payload.as_ref().and_then(|p| p.get("authority")).is_some() {
+            "pipeline_state"
+        } else {
+            "db"
+        }
+    } else {
+        "pipeline_jsonl"
+    };
+    if source_id != owner_id {
+        event.job_id = owner_id.to_string();
+        event.payload = Some(
+            json!({"raw_source_kind":"ocr_child", "source_job_id":source_id, "source_event":event.payload.take()}),
+        );
+    }
+    canonicalize_job_event(&mut event, kind);
+    event
+}
+
+/// 进度流的一条读出来：存了内容的直接用，没存的（来自 events）从原始事件现算。位置用条目自己的。
+pub(super) fn materialize(
+    owner_id: &str,
+    item: retainpdf_data::db::StoredFeedItem,
+    secrets: &[String],
+) -> Result<JobEventRecord, AppError> {
+    let mut event = match (item.payload, item.source) {
+        (Some(payload), _) => serde_json::from_value(payload)
+            .map_err(|_| AppError::internal("invalid stored event projection"))?,
+        (None, Some(source)) => {
+            // 以前存的是这段内容的 JSON 文本、读的时候再解析；serde_json 默认的浮点解析末位可能差 1
+            // （例如进度百分比 0.9090909090909092），照样过一遍文本，读出来才和以前一字不差。
+            let projected = project_event(owner_id, true, source, secrets);
+            let text = serde_json::to_string(&projected).map_err(anyhow::Error::from)?;
+            serde_json::from_str::<JobEventRecord>(&text).map_err(|_| AppError::internal("invalid stored event projection"))?
+        }
+        (None, None) => return Err(AppError::internal("event feed item without content")),
+    };
+    event.seq = item.seq;
+    Ok(event)
+}
+
+/// 读进度流时脱敏要用的凭证：任务自己和它的 OCR 子任务的（和导入时 `sources` 收的一样）。
+pub(super) fn feed_secrets(db: &Db, owner: &JobSnapshot) -> Vec<String> {
+    let mut secrets = sensitive_values(&owner.request_payload);
+    if let Some(child_id) = owner
+        .artifacts
+        .as_ref()
+        .and_then(|a| a.ocr_job_id.as_deref())
+        .filter(|id| !id.is_empty() && *id != owner.job_id)
+    {
+        if let Ok(child) = db.get_job(child_id) {
+            if is_ocr_child(&child) {
+                secrets.extend(sensitive_values(&child.request_payload));
+            }
+        }
+    }
+    secrets
 }
 
 fn sanitize(event: &mut JobEventRecord, secrets: &[String]) {

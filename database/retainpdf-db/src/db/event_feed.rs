@@ -40,15 +40,23 @@ pub struct NewFeedItem {
     pub source_key: String,
     pub event_id: String,
     pub ts: String,
+    /// 首次建流时排序用（整理后内容里的 `raw.source_seq`）。
+    pub source_seq: Option<i64>,
+    /// 来自 events 的那条原始事件（v35）：给了就不存内容，读的时候现算。
+    pub source_event_uid: Option<String>,
     /// Caller must sanitize before passing durable projection payloads here.
-    pub payload: Value,
+    /// 来自 events 的条目传 None（见 `source_event_uid`）。
+    pub payload: Option<Value>,
 }
 
+/// 进度流里的一条。v35 起来自 events 的条目不存整理好的内容：`payload` 是 None，`source` 是那条原始事件，
+/// 内容由任务包按写进来时同一套规则现算（progress/event_feed）。来自 jsonl 文件的条目照旧带 `payload`。
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct StoredFeedItem {
     pub seq: i64,
     pub event_id: String,
-    pub payload: Value,
+    pub payload: Option<Value>,
+    pub source: Option<JobEventRecord>,
 }
 
 fn source_version(conn: &Connection, job_id: &str) -> Result<EventSourceVersion> {
@@ -174,11 +182,16 @@ impl Db {
         source_versions: &[EventSourceVersion],
     ) -> Result<bool> {
         ensure!(!epoch.is_empty(), "event feed epoch must not be empty");
+        // 写入用 INSERT OR IGNORE（重复的条目跳过），它也会悄悄跳过违反 CHECK 的行，所以「既没内容也没指向原始事件」在这里拦。
+        ensure!(
+            items.iter().all(|item| item.payload.is_some() || item.source_event_uid.is_some()),
+            "event feed item needs a payload or a source event"
+        );
         // Serialization can be sizeable and does not need the SQLite write lock.
         let checkpoints_json = serde_json::to_string(checkpoints)?;
         let serialized_items = items
             .iter()
-            .map(|item| serde_json::to_string(&item.payload))
+            .map(|item| item.payload.as_ref().map(serde_json::to_string).transpose())
             .collect::<std::result::Result<Vec<_>, _>>()?;
         let mut conn = self.connect()?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -233,8 +246,8 @@ impl Db {
         {
             let mut insert = tx.prepare(
                 "INSERT OR IGNORE INTO event_feed_items
-                 (owner_job_id, seq, source_key, event_id, ts, payload_json)
-                 VALUES(?1, ?2, ?3, ?4, ?5, ?6)",
+                 (owner_job_id, seq, source_key, event_id, ts, source_seq, source_event_uid, payload_json)
+                 VALUES(?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             )?;
             for (item, payload_json) in items.iter().zip(serialized_items) {
                 if retention_cutoff
@@ -249,6 +262,8 @@ impl Db {
                     item.source_key,
                     item.event_id,
                     item.ts,
+                    item.source_seq,
+                    item.source_event_uid,
                     payload_json,
                 ])?;
                 if inserted == 1 {
@@ -271,7 +286,7 @@ impl Db {
             tx.execute(
                 "CREATE TEMP TABLE event_feed_publish_order AS
                  SELECT source_key, ROW_NUMBER() OVER(
-                     ORDER BY ts, COALESCE(json_extract(payload_json, '$.raw.source_seq'), 0), event_id
+                     ORDER BY ts, COALESCE(source_seq, 0), event_id
                  ) AS new_seq
                  FROM event_feed_items WHERE owner_job_id = ?1",
                 [owner],
@@ -335,20 +350,17 @@ impl Db {
         // Keep this order identical to bootstrap publication above. Source
         // sequence is the tie-breaker, never the temporary insertion sequence.
         let mut stmt = tx.prepare(
-            "SELECT ROW_NUMBER() OVER(
-                 ORDER BY ts, COALESCE(json_extract(payload_json, '$.raw.source_seq'), 0), event_id
-             ) AS final_seq, event_id, payload_json
-             FROM event_feed_items WHERE owner_job_id = ?1
-             ORDER BY ts, COALESCE(json_extract(payload_json, '$.raw.source_seq'), 0), event_id",
+            &format!(
+                "SELECT ROW_NUMBER() OVER(
+                     ORDER BY f.ts, COALESCE(f.source_seq, 0), f.event_id
+                 ) AS final_seq, f.event_id, f.payload_json, {SOURCE_EVENT_COLUMNS}
+                 FROM event_feed_items f {SOURCE_EVENT_JOIN} WHERE f.owner_job_id = ?1
+                 ORDER BY f.ts, COALESCE(f.source_seq, 0), f.event_id"
+            ),
         )?;
         let mut rows = stmt.query([owner])?;
         while let Some(row) = rows.next()? {
-            let payload: String = row.get(2)?;
-            visitor(StoredFeedItem {
-                seq: row.get(0)?,
-                event_id: row.get(1)?,
-                payload: serde_json::from_str(&payload)?,
-            })?;
+            visitor(feed_item_from_row(row)?)?;
         }
         Ok(())
     }
@@ -400,34 +412,54 @@ impl Db {
             "event feed epoch changed"
         );
         let sql = if tail {
-            "SELECT seq, event_id, payload_json FROM (
-                 SELECT seq, event_id, payload_json FROM event_feed_items
-                 WHERE owner_job_id = ?1 AND seq > ?2 AND seq <= ?3
-                 ORDER BY seq DESC LIMIT ?4
-             ) ORDER BY seq ASC"
+            format!(
+                "SELECT * FROM (
+                     SELECT f.seq, f.event_id, f.payload_json, {SOURCE_EVENT_COLUMNS}
+                     FROM event_feed_items f {SOURCE_EVENT_JOIN}
+                     WHERE f.owner_job_id = ?1 AND f.seq > ?2 AND f.seq <= ?3
+                     ORDER BY f.seq DESC LIMIT ?4
+                 ) ORDER BY 1 ASC"
+            )
         } else {
-            "SELECT seq, event_id, payload_json FROM event_feed_items
-             WHERE owner_job_id = ?1 AND seq > ?2 AND seq <= ?3
-             ORDER BY seq ASC LIMIT ?4"
+            format!(
+                "SELECT f.seq, f.event_id, f.payload_json, {SOURCE_EVENT_COLUMNS}
+                 FROM event_feed_items f {SOURCE_EVENT_JOIN}
+                 WHERE f.owner_job_id = ?1 AND f.seq > ?2 AND f.seq <= ?3
+                 ORDER BY f.seq ASC LIMIT ?4"
+            )
         };
-        let mut stmt = tx.prepare(sql)?;
-        let rows = stmt.query_map(params![owner, after, through, limit], |row| {
-            Ok((
-                row.get::<_, i64>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, String>(2)?,
-            ))
-        })?;
-        rows.map(|row| {
-            let (seq, event_id, payload) = row?;
-            Ok(StoredFeedItem {
-                seq,
-                event_id,
-                payload: serde_json::from_str(&payload)?,
-            })
-        })
-        .collect()
+        let mut stmt = tx.prepare(&sql)?;
+        let mut rows = stmt.query(params![owner, after, through, limit])?;
+        let mut items = Vec::new();
+        while let Some(row) = rows.next()? {
+            items.push(feed_item_from_row(row)?);
+        }
+        Ok(items)
     }
+}
+
+/// 进度流条目连上它的原始事件（v35）。`e.event_uid <> ''` 让 SQLite 用得上 events 上的部分唯一索引 `idx_events_uid`。
+const SOURCE_EVENT_JOIN: &str =
+    "LEFT JOIN events e ON f.source_event_uid IS NOT NULL AND e.event_uid = f.source_event_uid AND e.event_uid <> ''";
+/// 原始事件的列，顺序同 `rows::row_to_job_event`；在结果里从第 4 列（下标 3）起。
+const SOURCE_EVENT_COLUMNS: &str = "e.job_id, e.seq, e.ts, e.level, e.stage, e.stage_detail, e.provider, e.provider_stage,
+     e.event, e.event_type, e.progress_current, e.progress_total, e.payload_json, e.retry_count, e.elapsed_ms, e.message";
+
+/// 一行（seq, event_id, payload_json, 原始事件的列…）变成条目。没存内容、原始事件也没了（读的同时被保留期删掉），
+/// 按「事件流变了」报：调用方当游标过期处理，前端从头重读，下一次同步会因为来源的 revision 变了而重建。
+fn feed_item_from_row(row: &rusqlite::Row<'_>) -> Result<StoredFeedItem> {
+    let payload: Option<String> = row.get(2)?;
+    let source = match row.get::<_, Option<String>>(3)? {
+        Some(_) => Some(super::rows::row_to_job_event_at(row, 3)?),
+        None => None,
+    };
+    ensure!(payload.is_some() || source.is_some(), "event feed epoch changed: source event expired");
+    Ok(StoredFeedItem {
+        seq: row.get(0)?,
+        event_id: row.get(1)?,
+        payload: payload.map(|text| serde_json::from_str(&text)).transpose()?,
+        source,
+    })
 }
 
 #[cfg(test)]

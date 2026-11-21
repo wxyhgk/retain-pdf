@@ -107,41 +107,46 @@ pub(super) fn row_to_job_snapshot(row: &Row<'_>) -> rusqlite::Result<JobSnapshot
 }
 
 pub(super) fn row_to_job_event(row: &Row<'_>) -> rusqlite::Result<JobEventRecord> {
-    let payload_json: Option<String> = row.get(12)?;
-    let event: String = row.get(8)?;
-    let event_type: Option<String> = row.get(9)?;
-    let stage: Option<String> = row.get(4)?;
-    let provider_stage: Option<String> = row.get(7)?;
+    row_to_job_event_at(row, 0)
+}
+
+/// 同 [`row_to_job_event`]，事件的列从第 `at` 列（下标）起：进度流读条目时把原始事件接在条目的列后面（v35）。
+pub(super) fn row_to_job_event_at(row: &Row<'_>, at: usize) -> rusqlite::Result<JobEventRecord> {
+    let payload_json: Option<String> = row.get(at + 12)?;
+    let event: String = row.get(at + 8)?;
+    let event_type: Option<String> = row.get(at + 9)?;
+    let stage: Option<String> = row.get(at + 4)?;
+    let provider_stage: Option<String> = row.get(at + 7)?;
     let payload: Option<serde_json::Value> =
         payload_json.and_then(|text| serde_json::from_str(&text).ok());
     let progress_unit = explicit_pipeline_progress_unit(payload.as_ref())
         .unwrap_or_else(|| event_progress_unit(stage.as_deref(), &event).to_string());
     Ok(JobEventRecord {
-        job_id: row.get(0)?,
-        seq: row.get(1)?,
-        ts: row.get(2)?,
-        created_at: row.get(2)?,
-        level: row.get(3)?,
+        job_id: row.get(at + 0)?,
+        seq: row.get(at + 1)?,
+        ts: row.get(at + 2)?,
+        created_at: row.get(at + 2)?,
+        level: row.get(at + 3)?,
         lane: None,
         display_stage: None,
         user_stage: job_user_stage(stage.as_deref()).map(str::to_string),
         stage: stage.clone(),
         substage: provider_stage.clone(),
-        stage_detail: row.get(5)?,
-        provider: row.get(6)?,
+        stage_detail: row.get(at + 5)?,
+        provider: row.get(at + 6)?,
         provider_stage,
         event: event.clone(),
         event_type: event_type.or_else(|| Some(event.clone())),
         raw_event_type: Some(event.clone()),
         raw: None,
         progress: None,
-        progress_current: row.get(10)?,
-        progress_total: row.get(11)?,
+        progress_current: row.get(at + 10)?,
+        progress_total: row.get(at + 11)?,
         progress_unit: Some(progress_unit),
-        retry_count: row.get::<_, Option<i64>>(13)?.map(|value| value as u32),
-        elapsed_ms: row.get(14)?,
+        retry_count: row.get::<_, Option<i64>>(at + 13)?.map(|value| value as u32),
+        elapsed_ms: row.get(at + 14)?,
         payload,
-        message: row.get(15)?,
+        message: row.get(at + 15)?,
     })
 }
 

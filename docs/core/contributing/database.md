@@ -50,6 +50,10 @@
 - `job_usage_cache` / `job_usage_rollups`（v34）：每个任务的模型用量汇总，是**缓存**——正本是任务目录里的台账和报告，`source_key`
   记着算的时候这些文件的大小、修改时间和价格表指纹，对不上就重算（任务包 `reports/usage/cache.rs`）。没有指向 `jobs` 的外键
   （库里删了记录、目录还在的任务照样算用量），不同步。
+- 进度流 `event_feed_items`（v35 起）：来自 `events` 的条目只存 `source_event_uid`（是哪条原始事件），内容读的时候由任务包
+  `progress/event_feed/sync.rs` 的 `project_event` 现算——和导入时是同一个函数；来自任务目录 jsonl 文件的条目照旧存 `payload_json`。
+  原始事件按保留期删掉时来源的 revision 会变、进度流随之重建；读的同时被删按「事件流变了」报，前端从头重读。
+- 增量收缩：`PRAGMA incremental_vacuum` 每还一页返回一行，要用 `maintenance::incremental_vacuum` 走到头（`execute_batch` 只走一步、只还一页）。
 - `db/rows.rs`：共享数据库行 decode；领域专用 decode 留在对应子模块。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
 - `db/pipeline/*`：pipeline attempt、dispatch、stage、unit、event 与事务写入；读取和迁移写入不得重新揉回一个大文件。

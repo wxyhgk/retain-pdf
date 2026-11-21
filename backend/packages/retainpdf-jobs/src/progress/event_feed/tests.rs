@@ -91,3 +91,53 @@ fn checkpoint_limits_batch_bytes_even_for_large_complete_lines() {
     assert_eq!(checkpoint.offset, source.size);
     std::fs::remove_file(&path).unwrap();
 }
+
+/// 手动跑：在真实数据上把每个任务的进度流整页整页读出来（和 `/jobs/{id}/events` 同一段代码，从头读到尾），
+/// 外加任务列表用的「当前阶段」快照，写成一行一个任务的 JSONL。改进度流的存法前后各跑一遍、逐行比，必须一样
+/// （游标里的 epoch 是随机的，不写）。只读任务目录；库要给一份**副本**（会建事件流）。
+/// `RETAINPDF_FEED_DATA=<数据目录> RETAINPDF_FEED_DB=<库的副本> RETAINPDF_FEED_OUT=<输出文件>
+///  cargo test -p retainpdf-jobs real_feed_dump -- --ignored --nocapture`
+#[test]
+#[ignore]
+fn real_feed_dump() {
+    use std::io::Write;
+    let (Ok(data), Ok(db_copy), Ok(out)) =
+        (std::env::var("RETAINPDF_FEED_DATA"), std::env::var("RETAINPDF_FEED_DB"), std::env::var("RETAINPDF_FEED_OUT"))
+    else {
+        return;
+    };
+    let data = std::path::PathBuf::from(data);
+    let db_copy = std::path::PathBuf::from(db_copy);
+    let db = Db::new(db_copy.clone(), db_copy.parent().unwrap().join("feed-scratch"));
+    db.init().unwrap();
+    let mut jobs = db.list_jobs(u32::MAX, 0, None, None).unwrap();
+    jobs.sort_by(|a, b| a.job_id.cmp(&b.job_id));
+    let mut file = std::io::BufWriter::new(std::fs::File::create(&out).unwrap());
+    let started = std::time::Instant::now();
+    for job in &jobs {
+        let mut items = Vec::new();
+        let mut cursor = None;
+        let outcome = loop {
+            let query = crate::views::ListJobEventsQuery {
+                limit: retainpdf_core::config::limits::MAX_JOB_EVENT_LIMIT,
+                start: cursor.is_none().then_some(crate::views::ListJobEventsStart::Head),
+                cursor: cursor.clone(),
+            };
+            match read_events(&db, &data, &job.job_id, &query) {
+                Ok(page) => {
+                    items.extend(page.items.into_iter().map(|item| serde_json::to_value(item).unwrap()));
+                    if !page.has_more {
+                        break "ok".to_string();
+                    }
+                    cursor = Some(page.next_cursor);
+                }
+                Err(error) => break format!("error: {error:?}"),
+            }
+        };
+        let live = live_snapshot(&db, &data, job).map(|live| serde_json::to_value(live).unwrap());
+        let line = serde_json::json!({"job_id": job.job_id, "outcome": outcome, "items": items, "live": live});
+        writeln!(file, "{line}").unwrap();
+    }
+    file.flush().unwrap();
+    println!("{} jobs in {:?}", jobs.len(), started.elapsed());
+}

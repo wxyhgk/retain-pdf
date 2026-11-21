@@ -25,6 +25,7 @@ pub(crate) fn versioned_migration_count() -> i64 {
 
 pub(super) fn run_versioned_migrations(conn: &Connection) -> Result<()> {
     let initial_version: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+    let mut migrated = false;
     for migration in MIGRATIONS {
         let version = migration.version;
         if version <= initial_version {
@@ -43,6 +44,12 @@ pub(super) fn run_versioned_migrations(conn: &Connection) -> Result<()> {
         }
         tx.pragma_update(None, "user_version", version)?;
         tx.commit()?;
+        migrated = true;
+    }
+    // 迁移删表、重建表腾出来的页，提交以后才收得回来：库是增量收缩模式时当场还给磁盘（v35 进度流瘦身腾出约 200MB）。
+    // 不是这个模式时什么都不做。
+    if migrated {
+        super::maintenance::incremental_vacuum(conn)?;
     }
     Ok(())
 }
