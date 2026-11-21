@@ -69,184 +69,206 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
           <h3>{TRANSLATION_PROVIDER_DEFINITION.label}</h3>
         </div>
       </div>
-      <div className="credential-translation-grid">
-        <label className="credential-translation-provider-field">
-          <FieldLabel icon={<Server />}>API 服务</FieldLabel>
-          <SelectPrimitive.Root
-            value={providerDefinition.id}
-            onValueChange={(value) => handlers?.changeTranslationProvider?.(value)}
-          >
-            <SelectPrimitive.Trigger
-              id={BROWSER_IDS.translationProvider}
-              className="credential-translation-provider-trigger"
-              aria-label="翻译 API 服务商"
-            >
-              <span className="credential-translation-provider-value">
-                <TranslationProviderMark provider={providerDefinition} compact logo={fixedBaseUrl ? providerDefinition.logo : customLogo} />
-                <span>{providerDefinition.label}</span>
-              </span>
-              <SelectPrimitive.Icon asChild>
-                <ChevronDown aria-hidden="true" />
-              </SelectPrimitive.Icon>
-            </SelectPrimitive.Trigger>
-            <SelectPrimitive.Portal>
-              <SelectPrimitive.Content
-                className="credential-translation-provider-content"
-                position="popper"
-                sideOffset={6}
-                align="start"
+      {/* 三组：连接（服务、地址、key）、模型（模型、并发、其他模型）、高级（协议、思考）。2026-11-21 用户：排版乱、没有呼吸感。 */}
+      <div className="credential-translation-groups">
+        <div className="credential-translation-group" data-credential-group="connection">
+          <p className="credential-translation-group-title">连接</p>
+          <div className="credential-translation-grid">
+            <label className="credential-translation-provider-field">
+              <FieldLabel icon={<Server />}>API 服务</FieldLabel>
+              <SelectPrimitive.Root
+                value={providerDefinition.id}
+                onValueChange={(value) => handlers?.changeTranslationProvider?.(value)}
               >
-                <SelectPrimitive.Viewport className="credential-translation-provider-viewport">
-                  {TRANSLATION_PROVIDER_OPTIONS.map((provider) => (
-                    <SelectPrimitive.Item
-                      key={provider.id}
-                      value={provider.id}
-                      className="credential-translation-provider-option"
-                    >
-                      <SelectPrimitive.ItemText>
-                        <span className="credential-translation-provider-option-copy">
-                          <TranslationProviderMark provider={provider} />
-                          <span>{provider.label}</span>
-                        </span>
-                      </SelectPrimitive.ItemText>
-                      <SelectPrimitive.ItemIndicator className="credential-translation-provider-check">
-                        <Check aria-hidden="true" />
-                      </SelectPrimitive.ItemIndicator>
-                    </SelectPrimitive.Item>
-                  ))}
-                </SelectPrimitive.Viewport>
-              </SelectPrimitive.Content>
-            </SelectPrimitive.Portal>
-          </SelectPrimitive.Root>
-        </label>
-        <label className="credential-translation-url-field">
-          <FieldLabel icon={<Link2 />}>API URL</FieldLabel>
-          <input
-            id={BROWSER_IDS.modelBaseUrl}
-            type="url"
-            inputMode="url"
-            autoComplete="url"
-            placeholder="https://api.example.com/v1"
-            defaultValue=""
-            readOnly={fixedBaseUrl}
-            aria-readonly={fixedBaseUrl}
-            title={fixedBaseUrl ? `${providerDefinition.label} 官方地址，由服务商选项管理` : "自定义 API 地址"}
-            ref={(node) => { elementsRef.modelBaseUrlInput = node || null; }}
-            onInput={() => {
-              handlers?.resetDeepSeekValidation?.();
-              bumpBaseUrl();
-            }}
-          />
-        </label>
-        <label className="credential-translation-model-field">
-          <FieldLabel icon={<Box />}>模型</FieldLabel>
-          <input
-            id={BROWSER_IDS.modelName}
-            type="text"
-            autoComplete="off"
-            placeholder="模型名称"
-            defaultValue=""
-            ref={(node) => { elementsRef.modelNameInput = node || null; }}
-            onInput={() => handlers?.resetDeepSeekValidation?.()}
-          />
-        </label>
-        <label className="credential-translation-key-field">
-          <FieldLabel icon={<KeyRound />}>API Key</FieldLabel>
-          <SecretInput
-            id={BROWSER_IDS.apiKey}
-            secretLabel="翻译 API Key"
-            autoComplete="off"
-            placeholder={TRANSLATION_PROVIDER_DEFINITION.keyPlaceholder}
-            defaultValue=""
-            ref={(node) => { elementsRef.apiKeyInput = node || null; }}
-            onInput={() => handlers?.resetDeepSeekValidation?.()}
-          />
-        </label>
-        <label className="credential-translation-workers-field">
-          <FieldLabel icon={<Gauge />}>并发数</FieldLabel>
-          <input
-            id={BROWSER_IDS.translationWorkers}
-            type="number"
-            inputMode="numeric"
-            min="1"
-            max={`${providerDefinition.maxWorkers || 100}`}
-            step="1"
-            autoComplete="off"
-            placeholder={`${providerDefinition.defaultWorkers || 5}`}
-            title={`${providerDefinition.label} 同时发送的翻译请求数（1–${providerDefinition.maxWorkers || 100}）`}
-            aria-label="翻译并发数"
-            defaultValue=""
-            ref={(node) => { elementsRef.translationWorkersInput = node || null; }}
-          />
-        </label>
-        <div className="credential-translation-models-field">
-          <ProviderModelPicker
-            readRequest={() => {
-              const apiKey = `${elementsRef.apiKeyInput?.value || ""}`.trim();
-              if (!apiKey) return { error: "先填 API Key 再拉。" };
-              return {
-                base_url: `${elementsRef.modelBaseUrlInput?.value || providerDefinition.baseUrl || ""}`.trim(),
-                api_key: apiKey,
-                api_protocol: `${elementsRef.translationProtocolSelect?.value || providerDefinition.protocol || "openai_responses"}`,
-              };
-            }}
-            readCurrent={() => {
-              const model = `${elementsRef.modelNameInput?.value || ""}`.trim();
-              return { model, extras: parseModelList(elementsRef.extraModelsInput?.value || "", model) };
-            }}
-            onApply={({ model, extras }) => {
-              if (elementsRef.modelNameInput) elementsRef.modelNameInput.value = model;
-              if (elementsRef.extraModelsInput) elementsRef.extraModelsInput.value = extras.join(", ");
-              handlers?.resetDeepSeekValidation?.();
-            }}
-          />
+                <SelectPrimitive.Trigger
+                  id={BROWSER_IDS.translationProvider}
+                  className="credential-translation-provider-trigger"
+                  aria-label="翻译 API 服务商"
+                >
+                  <span className="credential-translation-provider-value">
+                    <TranslationProviderMark provider={providerDefinition} compact logo={fixedBaseUrl ? providerDefinition.logo : customLogo} />
+                    <span>{providerDefinition.label}</span>
+                  </span>
+                  <SelectPrimitive.Icon asChild>
+                    <ChevronDown aria-hidden="true" />
+                  </SelectPrimitive.Icon>
+                </SelectPrimitive.Trigger>
+                <SelectPrimitive.Portal>
+                  <SelectPrimitive.Content
+                    className="credential-translation-provider-content"
+                    position="popper"
+                    sideOffset={6}
+                    align="start"
+                  >
+                    <SelectPrimitive.Viewport className="credential-translation-provider-viewport">
+                      {TRANSLATION_PROVIDER_OPTIONS.map((provider) => (
+                        <SelectPrimitive.Item
+                          key={provider.id}
+                          value={provider.id}
+                          className="credential-translation-provider-option"
+                        >
+                          <SelectPrimitive.ItemText>
+                            <span className="credential-translation-provider-option-copy">
+                              <TranslationProviderMark provider={provider} />
+                              <span>{provider.label}</span>
+                            </span>
+                          </SelectPrimitive.ItemText>
+                          <SelectPrimitive.ItemIndicator className="credential-translation-provider-check">
+                            <Check aria-hidden="true" />
+                          </SelectPrimitive.ItemIndicator>
+                        </SelectPrimitive.Item>
+                      ))}
+                    </SelectPrimitive.Viewport>
+                  </SelectPrimitive.Content>
+                </SelectPrimitive.Portal>
+              </SelectPrimitive.Root>
+            </label>
+            <label className="credential-translation-url-field">
+              <FieldLabel icon={<Link2 />}>API URL</FieldLabel>
+              <input
+                id={BROWSER_IDS.modelBaseUrl}
+                type="url"
+                inputMode="url"
+                autoComplete="url"
+                placeholder="https://api.example.com/v1"
+                defaultValue=""
+                readOnly={fixedBaseUrl}
+                aria-readonly={fixedBaseUrl}
+                title={fixedBaseUrl ? `${providerDefinition.label} 官方地址，由服务商选项管理` : "自定义 API 地址"}
+                ref={(node) => { elementsRef.modelBaseUrlInput = node || null; }}
+                onInput={() => {
+                  handlers?.resetDeepSeekValidation?.();
+                  bumpBaseUrl();
+                }}
+              />
+            </label>
+            <label className="credential-translation-key-field">
+              <FieldLabel icon={<KeyRound />}>API Key</FieldLabel>
+              <SecretInput
+                id={BROWSER_IDS.apiKey}
+                secretLabel="翻译 API Key"
+                autoComplete="off"
+                placeholder={TRANSLATION_PROVIDER_DEFINITION.keyPlaceholder}
+                defaultValue=""
+                ref={(node) => { elementsRef.apiKeyInput = node || null; }}
+                onInput={() => handlers?.resetDeepSeekValidation?.()}
+              />
+            </label>
+          </div>
         </div>
-        <label className="credential-translation-models-field">
-          <FieldLabel icon={<Layers />}>其他模型（可不填，也可以从服务商拉取后勾选）</FieldLabel>
-          <Input
-            id={BROWSER_IDS.extraModels}
-            type="text"
-            autoComplete="off"
-            placeholder="用逗号隔开，比如 deepseek-v4-pro, deepseek-v4-flash"
-            title="这把 key 还能用的其他模型。书详情「重新翻译」时可以换成它们，旁边写着估价。"
-            defaultValue=""
-            ref={(node) => { elementsRef.extraModelsInput = node || null; }}
-          />
-        </label>
-        <label className="credential-translation-protocol-field">
-          <FieldLabel icon={<Cable />}>接口协议</FieldLabel>
-          <select
-            id={BROWSER_IDS.translationProtocol}
-            defaultValue={providerDefinition.protocol}
-            title="翻译请求用哪种接口格式。Anthropic 官方用 Anthropic 格式，其余用 OpenAI Responses 格式（/chat/completions 已去掉）。"
-            ref={(node) => { elementsRef.translationProtocolSelect = node || null; }}
-            onChange={() => handlers?.resetDeepSeekValidation?.()}
-          >
-            {TRANSLATION_API_PROTOCOL_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>{`${option.label}（${option.hint}）`}</option>
-            ))}
-          </select>
-        </label>
-        <label className="credential-translation-thinking-field">
-          <FieldLabel icon={<Brain />}>思考深度</FieldLabel>
-          <select
-            id={BROWSER_IDS.translationThinking}
-            defaultValue="off"
-            title="默认关闭，翻译一般用不着思考。自动：能关就关。调深会更慢、更贵；服务商不支持的档位会自动退回。"
-            ref={(node) => { elementsRef.translationThinkingSelect = node || null; }}
-          >
-            {TRANSLATION_THINKING_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>{option.label}</option>
-            ))}
-          </select>
-        </label>
+        <div className="credential-translation-group" data-credential-group="model">
+          <p className="credential-translation-group-title">模型</p>
+          <div className="credential-translation-grid">
+            <label className="credential-translation-model-field">
+              <FieldLabel icon={<Box />}>模型</FieldLabel>
+              <input
+                id={BROWSER_IDS.modelName}
+                type="text"
+                autoComplete="off"
+                placeholder="模型名称"
+                defaultValue=""
+                ref={(node) => { elementsRef.modelNameInput = node || null; }}
+                onInput={() => handlers?.resetDeepSeekValidation?.()}
+              />
+            </label>
+            <label className="credential-translation-workers-field">
+              <FieldLabel icon={<Gauge />}>并发数</FieldLabel>
+              <input
+                id={BROWSER_IDS.translationWorkers}
+                type="number"
+                inputMode="numeric"
+                min="1"
+                max={`${providerDefinition.maxWorkers || 100}`}
+                step="1"
+                autoComplete="off"
+                placeholder={`${providerDefinition.defaultWorkers || 5}`}
+                title={`${providerDefinition.label} 同时发送的翻译请求数（1–${providerDefinition.maxWorkers || 100}）`}
+                aria-label="翻译并发数"
+                defaultValue=""
+                ref={(node) => { elementsRef.translationWorkersInput = node || null; }}
+              />
+            </label>
+            {providerDefinition.id === "custom" ? (
+              <p className="credential-custom-api-warning" role="note">
+                <TriangleAlert aria-hidden="true" />
+                自定义 API 建议并发不超过 5，过高可能导致接口异常。
+              </p>
+            ) : null}
+            <div className="credential-translation-models-field">
+              <ProviderModelPicker
+                readRequest={() => {
+                  const apiKey = `${elementsRef.apiKeyInput?.value || ""}`.trim();
+                  if (!apiKey) return { error: "先填 API Key 再拉。" };
+                  return {
+                    base_url: `${elementsRef.modelBaseUrlInput?.value || providerDefinition.baseUrl || ""}`.trim(),
+                    api_key: apiKey,
+                    api_protocol: `${elementsRef.translationProtocolSelect?.value || providerDefinition.protocol || "openai_responses"}`,
+                  };
+                }}
+                readCurrent={() => {
+                  const model = `${elementsRef.modelNameInput?.value || ""}`.trim();
+                  return { model, extras: parseModelList(elementsRef.extraModelsInput?.value || "", model) };
+                }}
+                onApply={({ model, extras }) => {
+                  if (elementsRef.modelNameInput) elementsRef.modelNameInput.value = model;
+                  if (elementsRef.extraModelsInput) elementsRef.extraModelsInput.value = extras.join(", ");
+                  handlers?.resetDeepSeekValidation?.();
+                }}
+              />
+            </div>
+            <label className="credential-translation-models-field">
+              <FieldLabel icon={<Layers />}>其他模型（可不填）</FieldLabel>
+              <Input
+                id={BROWSER_IDS.extraModels}
+                type="text"
+                autoComplete="off"
+                placeholder="用逗号隔开，比如 deepseek-v4-pro, deepseek-v4-flash"
+                title="这把 key 还能用的其他模型。书详情「重新翻译」时可以换成它们，旁边写着估价。"
+                defaultValue=""
+                ref={(node) => { elementsRef.extraModelsInput = node || null; }}
+              />
+            </label>
+          </div>
+        </div>
+        <div className="credential-translation-group" data-credential-group="advanced">
+          <p className="credential-translation-group-title">高级</p>
+          <div className="credential-translation-grid">
+            <label className="credential-translation-protocol-field">
+              <FieldLabel icon={<Cable />}>接口协议</FieldLabel>
+              <span className="credential-select">
+                <select
+                  id={BROWSER_IDS.translationProtocol}
+                  defaultValue={providerDefinition.protocol}
+                  title="翻译请求用哪种接口格式。Anthropic 官方用 Anthropic 格式，其余用 OpenAI Responses 格式（/chat/completions 已去掉）。"
+                  ref={(node) => { elementsRef.translationProtocolSelect = node || null; }}
+                  onChange={() => handlers?.resetDeepSeekValidation?.()}
+                >
+                  {TRANSLATION_API_PROTOCOL_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>{`${option.label}（${option.hint}）`}</option>
+                  ))}
+                </select>
+                <ChevronDown aria-hidden="true" />
+              </span>
+            </label>
+            <label className="credential-translation-thinking-field">
+              <FieldLabel icon={<Brain />}>思考深度</FieldLabel>
+              <span className="credential-select">
+                <select
+                  id={BROWSER_IDS.translationThinking}
+                  defaultValue="off"
+                  title="默认关闭，翻译一般用不着思考。自动：能关就关。调深会更慢、更贵；服务商不支持的档位会自动退回。"
+                  ref={(node) => { elementsRef.translationThinkingSelect = node || null; }}
+                >
+                  {TRANSLATION_THINKING_OPTIONS.map((option) => (
+                    <option key={option.id} value={option.id}>{option.label}</option>
+                  ))}
+                </select>
+                <ChevronDown aria-hidden="true" />
+              </span>
+            </label>
+          </div>
+        </div>
       </div>
-      {providerDefinition.id === "custom" ? (
-        <p className="credential-custom-api-warning" role="note">
-          <TriangleAlert aria-hidden="true" />
-          自定义 API 建议并发不超过 5，过高可能导致接口异常。
-        </p>
-      ) : null}
       <div className="credential-card-footer">
         <div className="credential-card-actions">
           <button
