@@ -19,6 +19,7 @@ from find_release_candidate import (  # noqa: E402
     main,
     required_artifacts,
 )
+from wait_for_tests import wait_for_push_tests  # noqa: E402
 
 
 REPO = "wxyhgk/retain-pdf"
@@ -79,6 +80,50 @@ class FakeApi:
 
 
 KIND = ["desktop"]
+
+
+def test_web_gate_only_reuses_a_successful_push_for_the_exact_branch_and_sha():
+    api = FakeApi(tests=[
+        run(10, sha=OTHER_SHA, branch="master"),
+        run(11, branch="main"),
+        run(12, branch="master", event="pull_request"),
+        run(13, branch="master"),
+    ])
+    assert wait_for_push_tests(api, repo=REPO, sha=SHA, branch="master") == 13
+
+
+@pytest.mark.parametrize("conclusion", ["failure", "cancelled", "skipped"])
+def test_web_gate_blocks_publication_when_tests_do_not_pass(conclusion):
+    api = FakeApi(tests=[run(10, conclusion=conclusion)])
+    with pytest.raises(RuntimeError, match="Tests failed"):
+        wait_for_push_tests(api, repo=REPO, sha=SHA, branch="main")
+
+
+def test_web_gate_waits_for_the_matching_tests_run():
+    clock = Clock()
+    api = FakeApi(tests=[])
+
+    def poll(seconds):
+        clock.sleep(seconds)
+        runs, _ = api.snapshots[0]
+        if not runs:
+            runs.append(run(10, status="in_progress"))
+        else:
+            runs[0] = run(10)
+
+    assert wait_for_push_tests(
+        api, repo=REPO, sha=SHA, branch="main", now=clock.now, sleep=poll
+    ) == 10
+    assert len(api.calls) == 3
+
+
+def test_web_gate_times_out_when_only_another_commit_passed():
+    clock = Clock()
+    api = FakeApi(tests=[run(10, sha=OTHER_SHA)])
+    with pytest.raises(RuntimeError, match="Timed out waiting for Tests"):
+        wait_for_push_tests(
+            api, repo=REPO, sha=SHA, branch="main", now=clock.now, sleep=clock.sleep
+        )
 
 
 class Clock:

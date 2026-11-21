@@ -2,41 +2,6 @@ name: Rust API Architecture
 
 "on":
   workflow_call: {}
-  pull_request:
-    paths:
-      - "backend/api/**"
-      - "backend/packages/**"
-      - "backend/jobs/**"
-      - "database/**"
-      - "contracts/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "backend/pipeline/**"
-      - "backend-package.json"
-      - ".github/actions/prepare-backend-source/**"
-      - ".github/scripts/resolve_backend_source.py"
-      - "docs/adr/**"
-      - "docs/core/python/**"
-      - ".github/workflows/rust-api-architecture.yml"
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - "backend/api/**"
-      - "backend/packages/**"
-      - "backend/jobs/**"
-      - "database/**"
-      - "contracts/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "backend/pipeline/**"
-      - "backend-package.json"
-      - ".github/actions/prepare-backend-source/**"
-      - ".github/scripts/resolve_backend_source.py"
-      - "docs/adr/**"
-      - "docs/core/python/**"
-      - ".github/workflows/rust-api-architecture.yml"
 
 permissions:
   contents: read

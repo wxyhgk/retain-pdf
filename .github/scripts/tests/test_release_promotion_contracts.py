@@ -322,7 +322,8 @@ def test_full_build_fallback_paths_remain():
     for name in ("quality-gate", "build", "publish-desktop-release"):
         assert "needs.resolve.outputs.mode == 'build'" == condition(desktop[name]), name
     docker = jobs("release-docker.yml")
-    assert condition(docker["build"]) == "needs.resolve.outputs.mode == 'build'"
+    assert "needs.resolve.outputs.mode == 'build' &&" in docker["build"]
+    assert "needs.quality-gate.result == 'success'" in docker["build"]
     assert "uses: ./.github/workflows/build-docker-images.yml" in docker["build"]
     assert "candidate_tag: candidate-${{ github.sha }}-${{ github.run_id }}" in docker["build"]
     assert "push: ${{ needs.prepare.outputs.push == 'true' }}" in docker["build"]

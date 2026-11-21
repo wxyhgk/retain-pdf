@@ -26,7 +26,7 @@
 
 ## 合并前必须跑的检查
 
-CI 的 Tests、Rust API Architecture、Publish Current Web Image 都卡在这些上，本地先跑过再合：
+CI 的 Tests 包含架构检查，Web 自动发布复用同一提交的 Tests 结果。以下检查本地先跑过再合：
 
 ```bash
 python3 backend/api/scripts/check_architecture.py

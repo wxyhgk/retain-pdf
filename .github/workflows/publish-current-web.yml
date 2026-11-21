@@ -13,6 +13,7 @@ name: Publish Current Web Image
       - master
     paths:
       - ".github/workflows/publish-current-web.yml"
+      - ".github/scripts/wait_for_tests.py"
       - ".dockerignore"
       - "package.json"
       - "package-lock.json"
@@ -21,7 +22,9 @@ name: Publish Current Web Image
       - "ops/deployment/docker/entrypoint-web.sh"
       - "ops/deployment/docker/nginx-mjs.types.conf"
       - "ops/deployment/docker/nginx.conf.template"
+      - "ops/deployment/docker/backend-api-key.envsh"
       - "frontend/desktop/package.json"
+      - "backend/packages/retainpdf2doc/package.json"
       - "frontend/web/**"
       - "frontend/packages/api/**"
       - "frontend/packages/domain/**"
@@ -37,13 +40,34 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  tested-push:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Wait for Tests on this push
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/wait_for_tests.py
+
   quality-gate:
+    if: github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
     uses: ./.github/workflows/tests.yml
 
   publish-web:
-    needs: quality-gate
+    needs: [tested-push, quality-gate]
+    if: >-
+      !cancelled() &&
+      ((github.event_name == 'push' && needs.tested-push.result == 'success') ||
+       (github.event_name == 'workflow_dispatch' && needs.quality-gate.result == 'success'))
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:

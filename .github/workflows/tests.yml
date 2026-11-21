@@ -65,7 +65,7 @@ jobs:
       - name: Cargo Workspace Tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" cargo test --locked --workspace --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
 
-  packages:
+  frontend:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -110,36 +110,8 @@ jobs:
       - name: Build @retainpdf/reader
         run: npm --prefix frontend/packages/reader run build
 
-  # 不 needs packages：下面会自己 npm ci 并重建全部 workspace 包，不消费
-  # packages job 的任何 artifact / output；串行只会让前端测试干等。
-  frontend:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: "22.22.0"
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install (root workspaces)
-        run: npm ci
-
-      - name: Build frontend package dependencies
-        run: |
-          npm --prefix contracts run build
-          npm --prefix frontend/packages/domain run build
-          npm --prefix frontend/packages/ui run build
-          npm --prefix frontend/packages/api run build
-          npm --prefix frontend/packages/reader run build
-
       - name: Frontend Typecheck
-        # deps were just built above, so skip the pretypecheck ->
-        # prepare:workspace rebuild (and its duplicate prepare:workspace run).
+        # 前端依赖已构建，跳过两个会重建它们的 npm 生命周期钩子。
         run: npm --prefix frontend/web run typecheck --ignore-scripts
 
       # tests/layout/* 用 playwright 起真浏览器（顶栏命中、agent 产物沙箱）。runner 上没有
@@ -150,7 +122,7 @@ jobs:
 
       - name: Frontend Tests
         working-directory: frontend/web
-        run: npm test
+        run: npm test --ignore-scripts
 
   python-services:
     runs-on: ubuntu-latest
@@ -285,7 +257,13 @@ jobs:
           done
 
       - name: Verify isolated backend workspace
-        run: python3 "$RETAIN_PDF_SOURCE_ROOT/ops/release/check_standalone.py" --compile-rust
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            rust_check=--compile-rust
+          else
+            rust_check=--check-rust
+          fi
+          python3 "$RETAIN_PDF_SOURCE_ROOT/ops/release/check_standalone.py" "$rust_check"
 
       - name: Build backend source archive
         run: python3 "$RETAIN_PDF_SOURCE_ROOT/ops/release/build_source_archive.py"

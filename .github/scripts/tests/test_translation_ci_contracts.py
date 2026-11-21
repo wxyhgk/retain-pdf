@@ -45,10 +45,14 @@ def test_formula_runtime_matches_repository_version():
     assert "TYPST_BIN=" in action
 
 
-def test_rust_architecture_filters_cover_shared_workspace_dependencies():
+def test_rust_architecture_is_only_invoked_through_tests():
     workflow = (ROOT / ".github/workflows/rust-api-architecture.yml").read_text()
-    for path in ("backend/api/**", "backend/packages/**", "backend/jobs/**", "database/**", "contracts/**", "Cargo.toml", "Cargo.lock"):
-        assert workflow.count(f'- "{path}"') == 2
+    tests = (ROOT / ".github/workflows/tests.yml").read_text()
+    assert "workflow_call: {}" in workflow
+    assert "pull_request:" not in workflow
+    assert "push:" not in workflow
+    assert "pull_request:" in tests and "push:" in tests
+    assert "uses: ./.github/workflows/rust-api-architecture.yml" in tests
 
 
 def test_backend_cargo_commands_use_aggregate_source_root():

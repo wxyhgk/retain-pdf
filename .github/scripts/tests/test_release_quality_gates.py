@@ -1,12 +1,4 @@
-"""Every publishing path must include the same tests and architecture gates.
-
-发版有两条路径：
-- 回退 / 完整构建：quality-gate（复用 tests.yml）必须是发布 job 的直接或间接依赖；
-- 提升：不再重跑测试，改由 find_release_candidate.py 要求「同 sha 在 main 上的
-  push 触发的 Tests run 成功」（见 test_release_promotion_contracts.py /
-  test_find_release_candidate.py）。
-无论哪条路径，发布都不能绕过测试。
-"""
+"""Require a successful Tests run on every publishing path."""
 from pathlib import Path
 import re
 
@@ -26,6 +18,9 @@ def job(workflow: str, name: str) -> str:
 
 
 def job_condition(job_text: str) -> str | None:
+    folded = re.search(r"^    if: >-\n((?:      [^\n]+\n)+)", job_text, re.M)
+    if folded:
+        return " ".join(folded.group(1).split())
     match = re.search(r"^    if: (.+)$", job_text, re.M)
     return match.group(1) if match else None
 
@@ -48,37 +43,46 @@ def test_publish_workflows_require_complete_tests(workflow):
     assert "secrets: inherit" not in gate
     condition = job_condition(gate)
     if workflow == "publish-current-web.yml":
-        assert condition is None
+        assert condition == "github.event_name == 'workflow_dispatch'"
     else:
-        # 发版 workflow 只在完整构建路径上跑 quality-gate；条件只能是这一个比较，
-        # 提升路径的测试门禁由 resolve 查询 main 上同 sha 的 Tests run 承担。
-        assert condition == FALLBACK_CONDITION
+        expected = FALLBACK_CONDITION
+        if workflow == "release-docker.yml":
+            expected += " && github.event_name != 'pull_request'"
+        assert condition == expected
         assert re.search(r"^    needs: resolve$", gate, re.M)
     assert re.search(r"^    continue-on-error:", gate, re.M) is None
 
 
-@pytest.mark.parametrize("workflow,build_job", [
-    ("publish-current-web.yml", "publish-web"),
-    ("release-docker.yml", "build"),
-])
-def test_build_and_publish_cannot_bypass_failed_tests(workflow, build_job):
-    build = job(workflow, build_job)
-    # A build job may also need cheap preparation jobs (release-docker resolves
-    # its per-platform matrix in `prepare` and the release path in `resolve`),
-    # but quality-gate must stay a direct dependency.
-    needs = re.search(r"^    needs: (.+)\n", build, re.M)
-    assert needs is not None
-    assert needs.group(1) == "quality-gate" or re.fullmatch(
-        r"\[(?:[\w-]+, )*quality-gate(?:, [\w-]+)*\]", needs.group(1)
+def test_web_publication_requires_the_gate_for_its_event():
+    tested_push = job("publish-current-web.yml", "tested-push")
+    assert job_condition(tested_push) == "github.event_name == 'push'"
+    assert "actions: read" in tested_push
+    assert "python3 .github/scripts/wait_for_tests.py" in tested_push
+    assert "continue-on-error:" not in tested_push
+    publish = job("publish-current-web.yml", "publish-web")
+    assert "needs: [tested-push, quality-gate]" in publish
+    assert job_condition(publish) == (
+        "!cancelled() && "
+        "((github.event_name == 'push' && needs.tested-push.result == 'success') || "
+        "(github.event_name == 'workflow_dispatch' && needs.quality-gate.result == 'success'))"
     )
-    assert_cannot_bypass_success(build)
-    condition = job_condition(build)
-    assert condition is None or condition == FALLBACK_CONDITION
+
+
+def test_docker_build_only_accepts_skipped_gate_on_pull_requests():
+    build = job("release-docker.yml", "build")
+    assert "needs: [quality-gate, prepare, resolve]" in build
+    assert "continue-on-error:" not in build
+    assert job_condition(build) == (
+        "!cancelled() && needs.resolve.result == 'success' && needs.prepare.result == 'success' && "
+        f"{FALLBACK_CONDITION} && "
+        "(needs.quality-gate.result == 'success' || "
+        "(github.event_name == 'pull_request' && needs.quality-gate.result == 'skipped'))"
+    )
 
 
 def test_docker_publish_waits_for_the_gated_build():
     publish = job("release-docker.yml", "publish")
-    assert re.search(r"^    needs: \[prepare, build\]$", publish, re.M)
+    assert re.search(r"^    needs: \[quality-gate, prepare, build\]$", publish, re.M)
     assert_cannot_bypass_success(publish)
 
 

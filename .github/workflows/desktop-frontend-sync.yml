@@ -72,7 +72,7 @@ jobs:
         env:
           RETAIN_PDF_DESKTOP_PLATFORM: linux
           RETAIN_PDF_SKIP_BUNDLED_RUNTIME_VERIFICATION: "1"
-        run: npm run verify:desktop
+        run: npm --prefix frontend/desktop run verify-frontend-sync
 
       - name: Check tracked generated files are up to date
         run: |

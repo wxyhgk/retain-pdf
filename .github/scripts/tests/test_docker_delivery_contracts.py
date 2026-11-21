@@ -486,7 +486,7 @@ def test_release_docker_merge_keeps_the_candidate_identity_contract():
     assert "name: docker-candidate-${{ matrix.target.name }}-${{ github.run_id }}" in merge
     assert "{target: $target, repo: $repo, digest: $digest, revision: $revision, version: $version, platforms: $platforms}" in merge
     assert "    needs: build\n" in merge
-    assert "    needs: [prepare, build]\n" in publish
+    assert "    needs: [quality-gate, prepare, build]\n" in publish
     for target in ("app", "web"):
         assert f"name: docker-candidate-{target}-${{{{ github.run_id }}}}" in publish
 

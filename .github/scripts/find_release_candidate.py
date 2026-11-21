@@ -116,7 +116,7 @@ class GitHubApi:
         raise last_error
 
 
-def _list_runs(api, repo: str, workflow: str, sha: str) -> list[dict]:
+def list_workflow_runs(api, repo: str, workflow: str, sha: str) -> list[dict]:
     payload = api.get(
         f"/repos/{repo}/actions/workflows/{workflow}/runs",
         {"head_sha": sha, "per_page": 100},
@@ -124,13 +124,15 @@ def _list_runs(api, repo: str, workflow: str, sha: str) -> list[dict]:
     return list(payload.get("workflow_runs") or [])
 
 
-def _select_run(runs: list[dict], *, sha: str, events: set[str]) -> tuple[str, dict | None, str]:
+def select_workflow_run(
+    runs: list[dict], *, sha: str, events: set[str], branch: str = MAIN_BRANCH
+) -> tuple[str, dict | None, str]:
     """Return (state, run, detail); state in success / pending / failed / missing."""
     relevant = [
         run
         for run in runs
         if run.get("head_sha") == sha
-        and run.get("head_branch") == MAIN_BRANCH
+        and run.get("head_branch") == branch
         and run.get("event") in events
     ]
     if not relevant:
@@ -233,11 +235,11 @@ def decide(
 
         started = now()
         while True:
-            tests_state, tests_run, tests_detail = _select_run(
-                _list_runs(api, repo, TESTS_WORKFLOW, sha), sha=sha, events={"push"}
+            tests_state, tests_run, tests_detail = select_workflow_run(
+                list_workflow_runs(api, repo, TESTS_WORKFLOW, sha), sha=sha, events={"push"}
             )
-            prebuild_state, prebuild_run, prebuild_detail = _select_run(
-                _list_runs(api, repo, PREBUILD_WORKFLOW, sha),
+            prebuild_state, prebuild_run, prebuild_detail = select_workflow_run(
+                list_workflow_runs(api, repo, PREBUILD_WORKFLOW, sha),
                 sha=sha,
                 events={"push", "workflow_dispatch"},
             )
