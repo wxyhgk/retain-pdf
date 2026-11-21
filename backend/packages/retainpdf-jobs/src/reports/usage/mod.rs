@@ -60,6 +60,23 @@ pub struct UsageBucket {
 }
 
 impl UsageBucket {
+    /// 把另一组的和并进来（按组汇总用；各项都是简单相加）。
+    fn merge(&mut self, other: &UsageBucket) {
+        self.requests += other.requests;
+        self.requests_without_usage += other.requests_without_usage;
+        self.input_tokens += other.input_tokens;
+        self.output_tokens += other.output_tokens;
+        self.total_tokens += other.total_tokens;
+        self.cache_hit_tokens += other.cache_hit_tokens;
+        self.cache_reported_input_tokens += other.cache_reported_input_tokens;
+        self.cache_write_tokens += other.cache_write_tokens;
+        self.reasoning_tokens += other.reasoning_tokens;
+        self.estimated_cost_usd += other.estimated_cost_usd;
+        self.priced_requests += other.priced_requests;
+        self.list_priced_requests += other.list_priced_requests;
+        self.unpriced_requests += other.unpriced_requests;
+    }
+
     fn add(&mut self, record: &UsageRecord, cost: Option<&RecordCost>) {
         match cost {
             Some(cost) => {
@@ -403,28 +420,52 @@ fn month_of(ts: &str) -> Option<&str> {
 }
 
 /// 汇总若干条用量。`job_counts` 是（有用量的任务数，其中折算的任务数）；`prices` 估算花费。
+/// 只给测试用：接口都按任务分组走 [`summarize_rollups`]。
+#[cfg(test)]
 pub fn summarize(
     scope: &'static str,
     records: &[UsageRecord],
     job_counts: (u64, u64),
     prices: &PriceBook,
 ) -> UsageSummaryView {
+    summarize_rollups(scope, &[rollup::rollup_records(records, prices)], job_counts, prices)
+}
+
+/// 由几批组（一个任务一批，按任务顺序；助手的在最后）合成汇总。按模型汇总时「按哪家的价」取全部行里第一条
+/// 查得到价的：先比批的先后，再比组里记的序号。
+pub(crate) fn summarize_rollups(
+    scope: &'static str,
+    parts: &[Vec<UsageRollup>],
+    job_counts: (u64, u64),
+    prices: &PriceBook,
+) -> UsageSummaryView {
     let mut totals = UsageBucket::default();
     let mut by_stage: BTreeMap<String, UsageBucket> = BTreeMap::new();
-    let mut by_model: BTreeMap<(String, String), (UsageBucket, Option<(String, PriceBasis)>)> = BTreeMap::new();
+    type Priced = Option<((usize, u64), String, PriceBasis)>;
+    let mut by_model: BTreeMap<(String, String), (UsageBucket, Priced)> = BTreeMap::new();
     let mut by_month: BTreeMap<String, UsageBucket> = BTreeMap::new();
-    for record in records {
-        let cost = record_cost(prices, record);
-        let cost = cost.as_ref();
-        totals.add(record, cost);
-        by_stage.entry(record.stage.clone()).or_default().add(record, cost);
-        let model = by_model.entry((record.model.clone(), record.host.clone())).or_default();
-        model.0.add(record, cost);
-        if model.1.is_none() {
-            model.1 = cost.map(|cost| (cost.provider.clone(), cost.basis));
-        }
-        if let Some(month) = month_of(&record.ts) {
-            by_month.entry(month.to_string()).or_default().add(record, cost);
+    let (mut first_at, mut last_at): (Option<&str>, Option<&str>) = (None, None);
+    for (part, rollups) in parts.iter().enumerate() {
+        for rollup in rollups {
+            totals.merge(&rollup.usage);
+            by_stage.entry(rollup.stage.clone()).or_default().merge(&rollup.usage);
+            let model = by_model.entry((rollup.model.clone(), rollup.host.clone())).or_default();
+            model.0.merge(&rollup.usage);
+            if let Some((seq, provider, basis)) = &rollup.first_priced {
+                let order = (part, *seq);
+                if model.1.as_ref().is_none_or(|(known, _, _)| order < *known) {
+                    model.1 = Some((order, provider.clone(), *basis));
+                }
+            }
+            if let Some(month) = &rollup.month {
+                by_month.entry(month.clone()).or_default().merge(&rollup.usage);
+            }
+            if let Some(first) = rollup.first_at.as_deref() {
+                first_at = Some(first_at.map_or(first, |known| known.min(first)));
+            }
+            if let Some(last) = rollup.last_at.as_deref() {
+                last_at = Some(last_at.map_or(last, |known| known.max(last)));
+            }
         }
     }
     let mut by_stage: Vec<UsageStageView> = by_stage
@@ -438,12 +479,12 @@ pub fn summarize(
     let mut by_model: Vec<UsageModelView> = by_model
         .into_iter()
         .map(|((model, host), (usage, priced))| {
-            let (price_provider, price_basis) = priced.map_or((None, None), |(provider, basis)| (Some(provider), Some(basis)));
+            let (price_provider, price_basis) =
+                priced.map_or((None, None), |(_, provider, basis)| (Some(provider), Some(basis)));
             UsageModelView { model, host, price_provider, price_basis, usage: usage.finish() }
         })
         .collect();
     by_model.sort_by(|a, b| b.usage.total_tokens.cmp(&a.usage.total_tokens).then(a.model.cmp(&b.model)));
-    let timestamps = records.iter().map(|record| record.ts.as_str()).filter(|ts| month_of(ts).is_some());
     UsageSummaryView {
         scope,
         totals: totals.finish(),
@@ -452,33 +493,51 @@ pub fn summarize(
         by_month: by_month.into_iter().map(|(month, usage)| UsageMonthView { month, usage: usage.finish() }).collect(),
         jobs_counted: job_counts.0,
         jobs_estimated_from_reports: job_counts.1,
-        first_at: timestamps.clone().min().map(str::to_string),
-        last_at: timestamps.max().map(str::to_string),
+        first_at: first_at.map(str::to_string),
+        last_at: last_at.map(str::to_string),
         pricing: UsagePricingView::of(prices),
     }
 }
 
-/// 多个任务（加上可选的助手用量）合成一份汇总。
+/// 多个任务（加上可选的助手用量）合成一份汇总，直接读文件（不用库里存的汇总）。测试拿它和存库的结果对照。
+#[cfg(test)]
 pub fn summarize_jobs<'a>(
     scope: &'static str,
     output_root: &Path,
     job_ids: impl IntoIterator<Item = &'a str>,
-    mut extra: Vec<UsageRecord>,
+    extra: Vec<UsageRecord>,
     prices: &PriceBook,
 ) -> UsageSummaryView {
-    let (mut counted, mut estimated) = (0, 0);
-    let mut records = Vec::new();
-    for job_id in job_ids {
-        let (job_records, from_reports) = job_usage_records(output_root, job_id);
-        if job_records.is_empty() {
-            continue;
-        }
-        counted += 1;
-        estimated += u64::from(from_reports);
-        records.extend(job_records);
-    }
-    records.append(&mut extra);
-    summarize(scope, &records, (counted, estimated), prices)
+    let usages: Vec<cache::JobUsage> =
+        job_ids.into_iter().map(|job_id| cache::compute_job_usage(output_root, job_id, prices)).collect();
+    summarize_usages(scope, &usages, &extra, prices)
+}
+
+/// 同 [`summarize_jobs`]，但每个任务用库里存着的汇总（对不上才重算，见 `cache.rs`）。接口走这个。
+pub fn summarize_jobs_cached(
+    scope: &'static str,
+    db: &retainpdf_data::db::Db,
+    output_root: &Path,
+    job_ids: &[&str],
+    extra: Vec<UsageRecord>,
+    prices: &PriceBook,
+) -> UsageSummaryView {
+    let usages = cache::job_usages(db, output_root, job_ids, prices);
+    summarize_usages(scope, &usages, &extra, prices)
+}
+
+/// 几个任务的组（按任务顺序）加上助手的行，合成汇总。没有用量的任务不计数。
+fn summarize_usages(
+    scope: &'static str,
+    usages: &[cache::JobUsage],
+    extra: &[UsageRecord],
+    prices: &PriceBook,
+) -> UsageSummaryView {
+    let counted: Vec<&cache::JobUsage> = usages.iter().filter(|usage| usage.has_records).collect();
+    let estimated = counted.iter().filter(|usage| usage.estimated).count() as u64;
+    let mut parts: Vec<Vec<UsageRollup>> = counted.iter().map(|usage| usage.rollups.clone()).collect();
+    parts.push(rollup::rollup_records(extra, prices));
+    summarize_rollups(scope, &parts, (counted.len() as u64, estimated), prices)
 }
 
 /// 输出目录下的全部任务目录名（全局汇总用；不依赖数据库，删掉的任务自然不在了）。
@@ -497,7 +556,11 @@ pub fn all_job_ids(output_root: &Path) -> Vec<String> {
 }
 
 pub(crate) mod api;
+pub(crate) mod cache;
 pub(crate) mod estimate;
+pub(crate) mod rollup;
+
+pub(crate) use rollup::UsageRollup;
 
 #[cfg(test)]
 mod tests;

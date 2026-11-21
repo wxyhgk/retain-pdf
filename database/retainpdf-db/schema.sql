@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 33
+-- user_version 34
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -239,6 +239,40 @@ TABLE job_stage_history
   TRIGGER sync_dirty_job_stage_history_delete: CREATE TRIGGER sync_dirty_job_stage_history_delete AFTER DELETE ON job_stage_history WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', OLD.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_job_stage_history_insert: CREATE TRIGGER sync_dirty_job_stage_history_insert AFTER INSERT ON job_stage_history WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_job_stage_history_update: CREATE TRIGGER sync_dirty_job_stage_history_update AFTER UPDATE ON job_stage_history WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+TABLE job_usage_cache
+  job_id TEXT PRIMARY KEY#1
+  source_key TEXT NOT NULL
+  has_records INTEGER NOT NULL
+  estimated INTEGER NOT NULL
+  computed_at TEXT NOT NULL
+  PRIMARY KEY (job_id)
+
+TABLE job_usage_rollups
+  job_id TEXT NOT NULL PRIMARY KEY#1
+  stage TEXT NOT NULL PRIMARY KEY#2
+  model TEXT NOT NULL PRIMARY KEY#3
+  host TEXT NOT NULL PRIMARY KEY#4
+  month TEXT NOT NULL PRIMARY KEY#5
+  first_at TEXT
+  last_at TEXT
+  requests INTEGER NOT NULL
+  requests_without_usage INTEGER NOT NULL
+  input_tokens INTEGER NOT NULL
+  output_tokens INTEGER NOT NULL
+  cache_hit_tokens INTEGER NOT NULL
+  cache_reported_input_tokens INTEGER NOT NULL
+  cache_write_tokens INTEGER NOT NULL
+  reasoning_tokens INTEGER NOT NULL
+  estimated_cost_usd REAL NOT NULL
+  priced_requests INTEGER NOT NULL
+  list_priced_requests INTEGER NOT NULL
+  unpriced_requests INTEGER NOT NULL
+  price_provider TEXT
+  price_basis TEXT
+  first_priced_seq INTEGER
+  FOREIGN KEY (job_id) REFERENCES job_usage_cache(job_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  PRIMARY KEY (job_id, stage, model, host, month)
 
 TABLE jobs
   job_id TEXT PRIMARY KEY#1

@@ -59,6 +59,8 @@ pub mod snapshot_diff;
 pub mod sync;
 #[path = "db/translation_versions.rs"]
 mod translation_versions;
+#[path = "db/usage_cache.rs"]
+mod usage_cache;
 #[path = "db/uploads.rs"]
 mod uploads;
 
@@ -144,6 +146,7 @@ pub use event_projection_inputs::EventProjectionInput;
 pub use job_writes::NewRunWrite;
 pub use jobs::JobListSelection;
 pub use maintenance::CompactReport;
+pub use usage_cache::{UsageCacheEntry, UsageRollupRow};
 pub use model_requests::{
     ModelOperation, ModelRecoverySummary, ModelReservation, ModelSession, ModelSessionConflict,
 };
