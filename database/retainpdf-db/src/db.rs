@@ -55,6 +55,8 @@ mod rows;
 mod schema;
 #[path = "db/snapshot_diff.rs"]
 pub mod snapshot_diff;
+#[path = "db/stored_paths.rs"]
+mod stored_paths;
 #[path = "db/sync.rs"]
 pub mod sync;
 #[path = "db/translation_versions.rs"]
@@ -239,6 +241,11 @@ impl Db {
         let conn = self.connect()?;
         ensure_no_legacy_artifacts_json(&conn)?;
         self.backfill_library_records()?;
+        // 事件日志以前存成了本机绝对路径（2b）：改成相对的。改完以后再跑什么都不动。
+        let relativized = self.relativize_stored_artifact_paths()?;
+        if relativized > 0 {
+            tracing::info!(relativized, "stored artifact paths made data-root relative");
+        }
         Ok(())
     }
 

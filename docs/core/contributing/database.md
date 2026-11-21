@@ -53,6 +53,8 @@
 - 进度流 `event_feed_items`（v35 起）：来自 `events` 的条目只存 `source_event_uid`（是哪条原始事件），内容读的时候由任务包
   `progress/event_feed/sync.rs` 的 `project_event` 现算——和导入时是同一个函数；来自任务目录 jsonl 文件的条目照旧存 `payload_json`。
   原始事件按保留期删掉时来源的 revision 会变、进度流随之重建；读的同时被删按「事件流变了」报，前端从头重读。
+- 产物路径一律存相对数据目录的写法（`normalize_job_artifacts_for_storage`）。事件日志 `events_jsonl`、上一份译文 `previous_output_pdf` 2026-11-21 才补上，
+  宽松处理：数据目录外的（别的设备同步来的）原样留着、不报错；以前存成本机绝对路径的，`Db::init` 里 `relativize_stored_artifact_paths` 改一次。
 - 增量收缩：`PRAGMA incremental_vacuum` 每还一页返回一行，要用 `maintenance::incremental_vacuum` 走到头（`execute_batch` 只走一步、只还一页）。
 - `db/rows.rs`：共享数据库行 decode；领域专用 decode 留在对应子模块。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
