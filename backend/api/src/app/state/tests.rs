@@ -453,6 +453,9 @@ fn upgrading_to_v29_rewrites_legacy_workflow_rows_once() {
     db.init().expect("init db");
 
     let conn = Connection::open(&fs.jobs_db_path).expect("open sqlite");
+    // v29 那时流程存的是 JSON 字符串（`"mineru"`）；v32 起列上有 CHECK，造老数据时暂时关掉。
+    // 倒回 v28 重跑时 v32 见 `status` 已在就跳过（APPLIED_CHECKS），这一行留着 v29 改出来的 `"book"`。
+    conn.execute_batch("PRAGMA ignore_check_constraints = ON;").expect("allow legacy values");
     conn.execute(
         r#"
             INSERT INTO jobs (
@@ -503,9 +506,14 @@ fn upgrading_to_v29_rewrites_legacy_workflow_rows_once() {
         ],
     )
     .expect("insert legacy event");
-    // 装成 v28 的库：升级到 v29 时跑那段修正。
-    conn.execute_batch("PRAGMA user_version = 28;")
-        .expect("pretend the database is at v28");
+    // 跑一遍 v29 的修正。以前是把库装成 v28 让启动去升级；v32 起流程列有 CHECK，倒回去重跑时 v29 写回的
+    // `"book"`（那时的写法）过不了，所以直接在关着 CHECK 的连接上执行 v29 那段语句。
+    conn.execute_batch(include_str!(
+        "../../../../../database/retainpdf-db/src/db/schema/migrations/v29_legacy_mineru_workflow.sql"
+    ))
+    .expect("run v29");
+    conn.execute_batch("UPDATE jobs SET workflow = trim(workflow, '\"'); PRAGMA ignore_check_constraints = OFF;")
+        .expect("back to the current shape");
 
     let _state = build_state(fs.config()).expect("build state");
 
@@ -516,7 +524,7 @@ fn upgrading_to_v29_rewrites_legacy_workflow_rows_once() {
             |row| row.get(0),
         )
         .expect("workflow");
-    assert_eq!(workflow, "\"book\"");
+    assert_eq!(workflow, "book");
 
     let request_json: String = conn
         .query_row(
