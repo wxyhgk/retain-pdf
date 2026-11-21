@@ -1,15 +1,19 @@
 // 上传弹窗底部的「附魔」按钮（2026-11-20 用户：选模型、普通 / Agent、页数，点了像游戏里给文件附魔）：
 // - 模型：设置里存好的连接挑一条（只管这一次上传，不记到本机，见 workflow-view-store 的 uploadModel）；
 // - 普通 / Agent：和「选项」里「翻译质量」同一个设置（Agent = refined），选 Agent 时弹一条提示：质量大幅提升、速度很慢、token 多；
+// - OCR：PaddleOCR / MinerU / GLM-OCR 挑一家（2026-11-21 用户），也只管这一次；本机没设好的灰掉；
 // - 页数：页码范围（和「选项」里的页码同一份）。
-// 选了什么，中间的文件卡片就叠上对应的效果（EnchantedFile）。只在「翻译」下出现；仅 OCR 不出。
+// 模型、OCR 都画各家的标志（2026-11-21 用户：模型多用图标）。
+// 选了什么，中间的文件卡片就叠上对应的效果（EnchantedFile）。仅 OCR 下只有 OCR 和页数。
 import { useState } from "react";
-import { Bot, Check, ChevronDown, Cpu, FileStack, Languages } from "lucide-react";
+import { Bot, Check, ChevronDown, Cpu, FileStack, Languages, ScanText } from "lucide-react";
 import { Popover, ToggleGroup } from "radix-ui";
 import { toast } from "sonner";
 
 import { Button, Input } from "@retainpdf/ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
+import { BrandLogo } from "@/ui/icons/BrandLogo.jsx";
+import { modelLogoFor, vendorLogoForBaseUrl, type BrandLogo as BrandLogoEntry } from "@/platform/config/brand-logos.js";
 import {
   connectionValue,
   savedDefaultTranslationModel,
@@ -38,6 +42,17 @@ export function shortModelName(model: string): string {
   return value.includes("/") ? value.slice(value.lastIndexOf("/") + 1) : value;
 }
 
+/** 模型的标志：先认模型家族（Claude、通义……），认不出按接口地址认厂商。 */
+export function modelLogo(model: string, baseUrl = ""): BrandLogoEntry | null {
+  return modelLogoFor(model) || vendorLogoForBaseUrl(baseUrl);
+}
+
+/** 按钮、选项前面的小图：有标志画标志，没有用线条图标。 */
+function ChoiceIcon({ logo, fallback }: { logo: BrandLogoEntry | null; fallback: typeof Cpu }) {
+  const Fallback = fallback;
+  return logo ? <BrandLogo className="upload-enchant-logo" logo={logo} /> : <Fallback className="upload-enchant-logo" aria-hidden="true" />;
+}
+
 function ModelPicker() {
   const workflowView = useIngestWorkflowView();
   const workflow = useStoreSnapshot(workflowView.store);
@@ -55,7 +70,7 @@ function ModelPicker() {
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <Button className="upload-enchant-chip" data-enchant="model" data-active={chosen ? "true" : undefined} title="这次用哪个模型翻译">
-          <Cpu aria-hidden="true" />
+          <ChoiceIcon logo={modelLogo(chosen || defaultModel)} fallback={Cpu} />
           <span>{label}</span>
           <ChevronDown className="upload-enchant-caret" aria-hidden="true" />
         </Button>
@@ -63,6 +78,7 @@ function ModelPicker() {
       <Popover.Portal>
         <Popover.Content className="upload-enchant-pop" side="top" align="start" sideOffset={8} aria-label="选翻译模型">
           <Button className="upload-enchant-option" data-selected={!chosen || undefined} onClick={() => pick("")}>
+            <ChoiceIcon logo={modelLogo(defaultModel)} fallback={Cpu} />
             <span>设置里的默认{defaultModel ? `（${shortModelName(defaultModel)}）` : ""}</span>
             {!chosen ? <Check aria-hidden="true" /> : null}
           </Button>
@@ -71,6 +87,7 @@ function ModelPicker() {
             const selected = workflow.uploadModel === value;
             return (
               <Button key={value} className="upload-enchant-option" data-selected={selected || undefined} onClick={() => pick(value)}>
+                <ChoiceIcon logo={modelLogo(connection.model, connection.baseUrl)} fallback={Cpu} />
                 <span>
                   <small>{connection.label}</small>
                   {connection.model}
@@ -117,6 +134,58 @@ function EngineToggle() {
   );
 }
 
+function OcrPicker() {
+  const workflowView = useIngestWorkflowView();
+  const workflow = useStoreSnapshot(workflowView.store);
+  const [open, setOpen] = useState(false);
+  // 打开时现读：设置里刚填的 Token 这次就能选。
+  const choices = workflowView.uploadOcrChoices();
+  const fallback = workflowView.defaultOcr();
+  const current = choices.find((choice) => choice.id === (workflow.uploadOcr || fallback)) || choices[0];
+  const active = Boolean(workflow.uploadOcr) && workflow.uploadOcr !== fallback;
+  const pick = (id: string) => {
+    // 选回设置里那家 = 不附魔。
+    workflowView.setUploadOcr(id === fallback ? "" : id);
+    setOpen(false);
+  };
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger asChild>
+        <Button className="upload-enchant-chip" data-enchant="ocr" data-active={active ? "true" : undefined} title="这次用哪家 OCR 识别">
+          <ChoiceIcon logo={current?.logo || null} fallback={ScanText} />
+          <span>{current?.label || "OCR"}</span>
+          <ChevronDown className="upload-enchant-caret" aria-hidden="true" />
+        </Button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content className="upload-enchant-pop" side="top" align="start" sideOffset={8} aria-label="选 OCR">
+          {choices.map((choice) => {
+            const selected = choice.id === current?.id;
+            return (
+              <Button
+                key={choice.id}
+                className="upload-enchant-option"
+                data-ocr={choice.id}
+                data-selected={selected || undefined}
+                disabled={!choice.ready}
+                title={choice.ready ? undefined : "设置里还没填它的 Token"}
+                onClick={() => pick(choice.id)}
+              >
+                <ChoiceIcon logo={choice.logo} fallback={ScanText} />
+                <span>
+                  {choice.label}
+                  {choice.isDefault ? <small>设置里的默认</small> : !choice.ready ? <small>没设 Token</small> : null}
+                </span>
+                {selected ? <Check aria-hidden="true" /> : null}
+              </Button>
+            );
+          })}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
 function PagePicker() {
   const { uploadViewStore, features } = useIngestServices();
   const upload = useStoreSnapshot(uploadViewStore);
@@ -155,11 +224,12 @@ function PagePicker() {
   );
 }
 
-export function UploadEnchantControls() {
+export function UploadEnchantControls({ ocrOnly = false }: { ocrOnly?: boolean }) {
   return (
     <div className="upload-enchant-controls" data-enchant-controls>
-      <ModelPicker />
-      <EngineToggle />
+      {ocrOnly ? null : <ModelPicker />}
+      {ocrOnly ? null : <EngineToggle />}
+      <OcrPicker />
       <PagePicker />
     </div>
   );

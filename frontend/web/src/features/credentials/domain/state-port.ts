@@ -2,6 +2,7 @@ import type { BoundStoreActions } from "@/platform/store/store.js";
 import { createCredentialsStore } from "./state-store.js";
 import {
   hasCompleteCredentials,
+  ocrReadyFor,
   ocrTokenFromCredentials,
 } from "./state-selectors.js";
 import type {
@@ -58,6 +59,10 @@ export function createCredentialsStatePort({
     return hasCompleteCredentials(getCredentials(), options);
   }
 
+  function isOcrReady(options: OcrTokenOptions = {}): boolean {
+    return ocrReadyFor(getCredentials(), options);
+  }
+
   function getDeepSeekBalanceState(): DeepSeekBalanceState {
     const runtime = getRuntime();
     return {
@@ -108,6 +113,7 @@ export function createCredentialsStatePort({
     getRuntime,
     getSnapshot,
     hasComplete,
+    isOcrReady,
     hasValidOcrValidationCache,
     patchCredentials,
     resetDeepSeekBalance,

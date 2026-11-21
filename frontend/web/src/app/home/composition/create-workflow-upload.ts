@@ -52,6 +52,8 @@ type WorkflowViewPort = {
   /** 用户偏好整张表（翻译质量、排版引擎……），由 ingest 给出，这里原样转交。 */
   preferences?: () => Record<string, string>;
   isOcrOnly?: () => boolean;
+  /** 上传弹窗这次选的 OCR，空 = 照设置里的。 */
+  uploadOcrProvider?: () => string;
   viewPort: unknown;
 };
 
@@ -96,13 +98,18 @@ export function createWorkflowAndUpload({
     defaultOcrProvider: ocrProviderFallback,
     defaultPaddleToken: paddleTokenFallback,
     defaultModelApiKey: _modelApiKeyFallback,
+    ocrProvider: ocrProviderOverride,
   }: {
     defaultOcrProvider?: string;
     defaultPaddleToken?: string;
     defaultModelApiKey?: string;
+    /** 上传弹窗这次选的 OCR（只上传提交给）；凭据库引用只属于设置里那家，换了家就不带。 */
+    ocrProvider?: string;
   } = {}) {
     const credentials = credentialsStatePort.getCredentials();
-    const ocrProvider = credentials?.ocrProvider || ocrProviderFallback;
+    const settingsProvider = credentials?.ocrProvider || ocrProviderFallback;
+    const ocrProvider = ocrProviderOverride || settingsProvider;
+    const ownRef = ocrProvider === settingsProvider ? credentials?.ocrCredentialRef || "" : "";
     // 两家 OCR 分开读取本机 Token；引用仅兼容尚未迁移的旧配置。
     const ocrToken = credentialsStatePort.getOcrToken({
       providerId: ocrProvider,
@@ -110,7 +117,7 @@ export function createWorkflowAndUpload({
     }) || "";
     return {
       ocrProvider,
-      ocrCredentialRef: ocrToken ? "" : credentials?.ocrCredentialRef || "",
+      ocrCredentialRef: ocrToken ? "" : ownRef,
       ocrToken,
       translationCredentialRef: credentials?.modelApiKey ? "" : credentials?.translationCredentialRef || "",
       modelApiKey: credentials?.modelApiKey || _modelApiKeyFallback || "",
@@ -120,8 +127,9 @@ export function createWorkflowAndUpload({
   }
 
   const isOcrOnly = () => Boolean(workflowView.isOcrOnly?.() ?? false);
-  // 设置里选的 OCR：一本能收几页跟着它（PaddleOCR 999、MinerU 600、GLM-OCR 不限）。
-  const currentOcrProvider = () => credentialsStatePort.getCredentials()?.ocrProvider || defaultOcrProvider();
+  // 这次用的 OCR（弹窗里选的，没选照设置里的）：一本能收几页跟着它（PaddleOCR 999、MinerU 600、GLM-OCR 不限）。
+  const currentOcrProvider = () => workflowView.uploadOcrProvider?.()
+    || credentialsStatePort.getCredentials()?.ocrProvider || defaultOcrProvider();
 
   const workflowFeature = mountWorkflowFeature({
     configPort: defaultWorkflowConfigPort,
@@ -149,6 +157,8 @@ export function createWorkflowAndUpload({
     hasBrowserCredentials: () => {
       if (isOcrOnly()) {
         const credentials = credentialsStatePort.getCredentials();
+        const chosen = workflowView.uploadOcrProvider?.() || "";
+        if (chosen) return credentialsStatePort.isOcrReady?.({ providerId: chosen, defaultPaddleToken: () => defaultPaddleToken() }) ?? true;
         const token = credentialsStatePort.getOcrToken({ defaultPaddleToken: () => defaultPaddleToken() }) || "";
         return Boolean(credentials.ocrCredentialRef || token);
       }

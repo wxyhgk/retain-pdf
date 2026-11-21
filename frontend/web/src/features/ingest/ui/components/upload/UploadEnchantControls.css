@@ -1,4 +1,4 @@
-/* 底部「附魔」按钮（UploadEnchantControls）：模型、普通 / Agent、页数。点开的小面板（Popover）。
+/* 底部「附魔」按钮（UploadEnchantControls）：模型、普通 / Agent、OCR、页数；模型和 OCR 画各家的标志。点开的小面板（Popover）。
  *
  * @owns upload */
 
@@ -42,9 +42,20 @@
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--gold) 14%, transparent);
   }
 
-  &[data-active] > svg:first-child {
+  &[data-active] > svg.upload-enchant-logo:first-child {
     color: var(--gold);
   }
+}
+
+/* 各家的标志（彩色的照原样，单色的跟着文字颜色）；认不出的用线条图标。 */
+.upload-enchant-logo {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+}
+
+.upload-enchant-chip[data-active] > .upload-enchant-logo:first-child {
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--gold) 55%, transparent));
 }
 
 .upload-enchant-caret {
@@ -116,7 +127,7 @@
 .upload-enchant-option {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 10px;
   width: 100%;
   padding: 7px 9px;
@@ -128,10 +139,21 @@
   text-align: left;
   cursor: pointer;
 
-  & > span {
+  /* 单色标志也是 span（mask 画的），别被当成文字撑开。 */
+  & > span:not(.upload-enchant-logo) {
     display: grid;
+    flex: 1 1 auto;
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+
+  & > .upload-enchant-logo {
+    color: var(--muted);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   & small {
@@ -139,14 +161,14 @@
     font-size: var(--ui-text-xs, 11px);
   }
 
-  & > svg {
+  & > svg:last-child:not(.upload-enchant-logo) {
     flex: 0 0 auto;
     width: 15px;
     height: 15px;
     color: var(--accent);
   }
 
-  &:hover,
+  &:hover:not(:disabled),
   &[data-selected] {
     background: color-mix(in srgb, var(--accent) 7%, var(--paper));
   }

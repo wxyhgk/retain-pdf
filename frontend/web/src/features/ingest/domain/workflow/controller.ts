@@ -179,6 +179,7 @@ export function mountWorkflowFeature({
     defaultModelApiKey,
     readSubmitValues,
     uploadTranslationOverride: viewPort.uploadTranslationOverride,
+    uploadOcrProvider: viewPort.uploadOcrProvider,
   });
 
   return {

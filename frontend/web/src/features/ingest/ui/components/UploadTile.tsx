@@ -20,7 +20,7 @@ import { UploadDropzone } from "./upload/UploadDropzone.jsx";
 import { BatchUploadPanel } from "./upload/BatchUploadPanel.jsx";
 import { isAgentTranslation } from "../../domain/workflow-preferences.js";
 import { EnchantedFile } from "./upload/EnchantedFile.jsx";
-import { UploadEnchantControls, pageRangeLabel, shortModelName } from "./upload/UploadEnchantControls.jsx";
+import { UploadEnchantControls, modelLogo, pageRangeLabel, shortModelName } from "./upload/UploadEnchantControls.jsx";
 import { createBatchUploadSession, summarizeBatch, type BatchUploadSession } from "../../domain/upload/batch-session.js";
 import {
   CredentialGateNotice,
@@ -176,14 +176,23 @@ export function HeroUpload() {
   // 附魔卡片：选好（或正在传）的文件只写名字；翻译模式下底部选的模型、Agent、页数叠在卡片上。
   const fileName = `${upload.labelTitle || ""}`.trim();
   const agent = isAgentTranslation(workflow.preferences.translationQuality);
+  const chosenModel = workflow.uploadModel.split("::").slice(1).join("::");
+  // 换过的 OCR（选回设置里那家时 uploadOcr 是空串，不算）。
+  const ocrChoice = workflow.uploadOcr
+    ? workflowView.uploadOcrChoices().find((choice) => choice.id === workflow.uploadOcr)
+    : undefined;
+  const pages = pageRangeLabel(upload.pageRangeStart, upload.pageRangeEnd, upload.pageRangeMax || upload.uploadedPageCount);
+  const ocr = ocrChoice ? { label: ocrChoice.label, logo: ocrChoice.logo } : undefined;
   const fileSlot = fileName ? (
     <EnchantedFile
       name={fileName}
       uploading={upload.uploading}
-      enchants={workflow.ocrOnly ? {} : {
+      enchants={workflow.ocrOnly ? { ocr, pages } : {
         agent,
-        pages: pageRangeLabel(upload.pageRangeStart, upload.pageRangeEnd, upload.pageRangeMax || upload.uploadedPageCount),
-        model: shortModelName(workflow.uploadModel.split("::").slice(1).join("::")),
+        ocr,
+        pages,
+        model: shortModelName(chosenModel),
+        modelLogo: chosenModel ? modelLogo(chosenModel) : null,
       }}
     />
   ) : null;
@@ -217,7 +226,7 @@ export function HeroUpload() {
         submitLabel={workflow.submitLabel}
         agent={agent}
         ocrOnly={workflow.ocrOnly}
-        enchantSlot={workflow.ocrOnly ? null : <UploadEnchantControls />}
+        enchantSlot={<UploadEnchantControls ocrOnly={Boolean(workflow.ocrOnly)} />}
         pageRangeButtonVisible={workflow.pageRangeButtonVisible}
         pageRangeOpen={upload.translationOptionsOpen}
         onToggleTranslationOptions={handleToggleTranslationOptions}
