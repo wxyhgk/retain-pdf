@@ -19,7 +19,7 @@ use super::estimate::{
 };
 use retainpdf_core::models::domain::JobStatusKind;
 use retainpdf_core::models::request::parse_page_ranges;
-use super::{all_job_ids, assistant_usage_ledger_path, read_ledger, summarize_jobs};
+use super::{all_job_ids, assistant_usage_ledger_path, read_ledger, summarize_jobs_cached};
 
 /// 自己持有数据（Arc + PathBuf），可以搬进阻塞线程。
 #[derive(Clone)]
@@ -49,7 +49,7 @@ pub fn job_usage_view(deps: &UsageApiDeps, job_id: &str) -> Result<UsageSummaryV
         Err(AppError::NotFound(_)) if JobPaths::for_job(&deps.output_root, job_id).root.is_dir() => {}
         Err(error) => return Err(error),
     }
-    Ok(summarize_jobs("job", &deps.output_root, [job_id], Vec::new(), &PriceBook::load(&deps.data_root)))
+    Ok(summarize_jobs_cached("job", &deps.db, &deps.output_root, &[job_id], Vec::new(), &PriceBook::load(&deps.data_root)))
 }
 
 /// 这本书的全部任务，加上问这本书时助手花的。书不存在时 404（以前给 200 和全零汇总）；有书没任务照旧 200 空汇总。
@@ -66,7 +66,8 @@ pub fn document_usage_view(deps: &UsageApiDeps, document_id: &str) -> Result<Usa
         .filter(|record| record.document_id == document_id)
         .collect();
     let prices = PriceBook::load(&deps.data_root);
-    Ok(summarize_jobs("document", &deps.output_root, jobs.iter().map(|job| job.job_id.as_str()), assistant, &prices))
+    let ids: Vec<&str> = jobs.iter().map(|job| job.job_id.as_str()).collect();
+    Ok(summarize_jobs_cached("document", &deps.db, &deps.output_root, &ids, assistant, &prices))
 }
 
 /// 现存的全部任务加上助手。删掉的书不再计入。
@@ -77,11 +78,17 @@ pub fn all_usage_view(deps: &UsageApiDeps, owner: Option<&str>) -> Result<UsageS
             .db
             .job_ids_for_owner(owner)
             .map_err(|error| AppError::internal(format!("list owned jobs failed: {error:#}")))?;
-        return Ok(summarize_jobs("all", &deps.output_root, ids.iter().map(String::as_str), Vec::new(), &PriceBook::load(&deps.data_root)));
+        let ids: Vec<&str> = ids.iter().map(String::as_str).collect();
+        return Ok(summarize_jobs_cached("all", &deps.db, &deps.output_root, &ids, Vec::new(), &PriceBook::load(&deps.data_root)));
     }
     let ids = all_job_ids(&deps.output_root);
+    let ids: Vec<&str> = ids.iter().map(String::as_str).collect();
+    // 任务目录删掉了的，库里存着的汇总也去掉（只在全局汇总时做：它列的是全部任务目录）。
+    if let Err(error) = deps.db.prune_usage_cache(&ids) {
+        tracing::warn!("prune usage cache failed: {error:#}");
+    }
     let assistant = read_ledger(&assistant_usage_ledger_path(&deps.data_root));
-    Ok(summarize_jobs("all", &deps.output_root, ids.iter().map(String::as_str), assistant, &PriceBook::load(&deps.data_root)))
+    Ok(summarize_jobs_cached("all", &deps.db, &deps.output_root, &ids, assistant, &PriceBook::load(&deps.data_root)))
 }
 
 /// 按（接口地址，模型）批量查单价（2026-11-19 起）。一次最多 100 条。

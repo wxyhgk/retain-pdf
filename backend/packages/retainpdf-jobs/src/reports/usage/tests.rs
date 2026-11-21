@@ -408,3 +408,90 @@ fn an_untranslated_book_is_estimated_from_the_library_average_per_page() {
     assert_eq!((empty.basis, empty.translation.is_none()), ("none", true));
     let _ = fs::remove_dir_all(root);
 }
+
+/// 存库的汇总（2026-11-21，数据库重做第 2a 步）：和直接读文件算的一模一样；第二次读库；台账变了、价格表变了就重算。
+#[test]
+fn cached_summaries_match_the_files_and_follow_file_and_price_changes() {
+    let root = temp_root("cached");
+    let output = root.join("jobs");
+    let haiku = |ts: &str, host: &str| json!({"v": 1, "ts": ts, "stage": "translation", "model": "claude-haiku-5-5",
+        "host": host, "input": 300_000, "output": 2_000, "cache_hit": 1_000, "cache_write": 0, "usage_reported": true});
+    write_ledger(&output, "job-a", &[
+        haiku("2026-11-19T12:00:00Z", "proxy.example.com"),
+        haiku("2026-11-19T13:00:00Z", "api.anthropic.com"),
+        row("2026-10-01T00:01:00Z", "translation", 500, 100, None),
+        row("weird", "translation", 10, 1, Some(0)),
+        json!({"ts": "2026-11-19T12:00:00Z", "stage": "ocr", "model": "home-made", "host": "llm.local", "input": 50, "output": 5}),
+    ]);
+    write_ledger(&output, "job-b", &[row("2026-09-30T23:59:00Z", "refine_review", 1000, 200, Some(600))]);
+    let artifacts = JobPaths::for_job(&output, "job-old").artifacts_dir;
+    fs::create_dir_all(&artifacts).unwrap();
+    fs::write(artifacts.join("translation_diagnostics.json"), json!({
+        "model": "deepseek-flash", "base_url": "https://api.deepseek.com/v1",
+        "token_usage": {"requests_with_usage": 3, "prompt_tokens": 9000, "completion_tokens": 900}
+    }).to_string()).unwrap();
+    fs::create_dir_all(JobPaths::for_job(&output, "job-empty").root).unwrap();
+    let db = retainpdf_data::db::Db::new(root.join("db.sqlite"), root.join("data"));
+    db.init().unwrap();
+    let ids = ["job-a", "job-b", "job-old", "job-empty", "job-gone"];
+    let assistant = vec![UsageRecord { ts: "2026-11-01T00:00:00Z".into(), stage: "assistant_ask".into(), requests: 1, input: 7, ..UsageRecord::default() }];
+    let prices = PriceBook::bundled();
+    let same = |a: &UsageSummaryView, b: &UsageSummaryView| assert_eq!(serde_json::to_value(a).unwrap(), serde_json::to_value(b).unwrap());
+
+    let direct = summarize_jobs("all", &output, ids, assistant.clone(), &prices);
+    same(&summarize_jobs_cached("all", &db, &output, &ids, assistant.clone(), &prices), &direct);
+    assert_eq!((direct.jobs_counted, direct.jobs_estimated_from_reports), (3, 1));
+    let stored = db.usage_cache_entries(&ids).unwrap();
+    assert_eq!(stored.len(), 4, "目录在的都存了（没有用量的也存，免得每次再读）；目录不在的不存");
+
+    // 第二次读库：把库里 job-b 那份改掉，读出来的就是改过的。
+    let mut tampered = stored["job-b"].clone();
+    tampered.rows[0].requests = 99;
+    db.store_usage_cache("job-b", &tampered).unwrap();
+    let from_db = summarize_jobs_cached("job", &db, &output, &["job-b"], Vec::new(), &prices);
+    assert_eq!(from_db.totals.requests, 99);
+
+    // 台账变了（还在跑的任务一直在追加）：重算这一个。
+    let ledger = job_usage_ledger_path(&output, "job-b");
+    let mut raw = fs::read_to_string(&ledger).unwrap();
+    raw.push_str(&format!("{}\n", row("2026-10-02T00:00:00Z", "refine_fix", 10, 1, None)));
+    fs::write(&ledger, raw).unwrap();
+    let refreshed = summarize_jobs_cached("job", &db, &output, &["job-b"], Vec::new(), &prices);
+    same(&refreshed, &summarize_jobs("job", &output, ["job-b"], Vec::new(), &prices));
+    assert_eq!(refreshed.totals.requests, 2);
+
+    // 价格表变了：花费重算。
+    let mut no_prices = prices.clone();
+    no_prices.providers.clear();
+    let repriced = summarize_jobs_cached("all", &db, &output, &ids, assistant.clone(), &no_prices);
+    same(&repriced, &summarize_jobs("all", &output, ids, assistant, &no_prices));
+    assert_eq!(repriced.totals.estimated_cost_usd, 0.0);
+
+    assert_eq!(db.prune_usage_cache(&["job-a"]).unwrap(), 3);
+    let _ = fs::remove_dir_all(root);
+}
+
+/// 手动跑：在真实数据上比「总用量」——第一次（算完存库）、第二次（读库）各要多久，结果写成 JSON 供和旧程序的输出对照。
+/// 只读任务目录；库要给一份**副本**（会建表、写汇总）。
+/// `RETAINPDF_USAGE_DATA=<数据目录> RETAINPDF_USAGE_DB=<库的副本> RETAINPDF_USAGE_OUT=<输出文件>
+///  cargo test -p retainpdf-jobs real_usage -- --ignored --nocapture`
+#[test]
+#[ignore]
+fn real_usage_timing() {
+    let (Ok(data), Ok(db_copy), Ok(out)) =
+        (std::env::var("RETAINPDF_USAGE_DATA"), std::env::var("RETAINPDF_USAGE_DB"), std::env::var("RETAINPDF_USAGE_OUT"))
+    else {
+        return;
+    };
+    let data = PathBuf::from(data);
+    let db_copy = PathBuf::from(db_copy);
+    let db = retainpdf_data::db::Db::new(db_copy.clone(), db_copy.parent().unwrap().join("usage-scratch"));
+    db.init().unwrap();
+    let deps = api::UsageApiDeps::new(std::sync::Arc::new(db), data.join("jobs"), data.clone());
+    for round in ["first", "second"] {
+        let started = std::time::Instant::now();
+        let view = api::all_usage_view(&deps, None).unwrap();
+        println!("{round}: {:?}", started.elapsed());
+        fs::write(format!("{out}.{round}.json"), serde_json::to_vec_pretty(&view).unwrap()).unwrap();
+    }
+}

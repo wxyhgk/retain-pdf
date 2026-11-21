@@ -176,6 +176,11 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         name: "job_stage_history",
         sql: include_str!("v33_job_stage_history.sql"),
     },
+    Migration {
+        version: 34,
+        name: "job_usage_cache",
+        sql: include_str!("v34_job_usage_cache.sql"),
+    },
 ];
 
 #[cfg(test)]

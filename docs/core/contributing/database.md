@@ -47,6 +47,9 @@
   进入当前阶段、最后出错和重试的时间、重试次数是 `jobs` 上的列。当前阶段、结束原因、两个耗时、最终失败分类和摘要读出来时按
   `JobRecord::fill_derived_runtime` 现算——和写之前 `sync_runtime_info` 最后一步是同一个函数，所以读出来的和写进去时算的一样
   （`runtime_reads_back_exactly_what_was_computed_before_writing` 钉着）。`LEGACY_COLUMNS` 从 v33 起不再补（否则会把删掉的 `runtime_json` 加回来）。
+- `job_usage_cache` / `job_usage_rollups`（v34）：每个任务的模型用量汇总，是**缓存**——正本是任务目录里的台账和报告，`source_key`
+  记着算的时候这些文件的大小、修改时间和价格表指纹，对不上就重算（任务包 `reports/usage/cache.rs`）。没有指向 `jobs` 的外键
+  （库里删了记录、目录还在的任务照样算用量），不同步。
 - `db/rows.rs`：共享数据库行 decode；领域专用 decode 留在对应子模块。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
 - `db/pipeline/*`：pipeline attempt、dispatch、stage、unit、event 与事务写入；读取和迁移写入不得重新揉回一个大文件。
