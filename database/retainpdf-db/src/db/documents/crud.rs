@@ -101,12 +101,21 @@ fn like_pattern(query: &str) -> String {
     format!("%{escaped}%")
 }
 
-fn build_document_filter_query(
-    reading_status: Option<&str>,
-    collection_id: Option<&str>,
-    query: Option<&str>,
-    owner: Option<&str>,
-) -> DocumentFilterQuery {
+/// 书库列表的筛选条件，都可以不给。
+#[derive(Debug, Default, Clone, Copy)]
+pub struct DocumentListFilter<'a> {
+    pub reading_status: Option<&'a str>,
+    pub collection_id: Option<&'a str>,
+    /// 打了这个标签的书（v37）。
+    pub tag_id: Option<&'a str>,
+    /// 书名或原始文件名里有这段文字。
+    pub query: Option<&'a str>,
+    /// 多用户模式：只列这个账号的。
+    pub owner: Option<&'a str>,
+}
+
+fn build_document_filter_query(filter: &DocumentListFilter<'_>) -> DocumentFilterQuery {
+    let DocumentListFilter { reading_status, collection_id, tag_id, query, owner } = *filter;
     // A document without a backing upload is not a readable library item and
     // must be excluded from both the page and its authoritative total.
     let mut clauses = vec![
@@ -124,10 +133,17 @@ fn build_document_filter_query(
     }
     if let Some(collection_id) = collection_id {
         clauses.push(format!(
-            "EXISTS (SELECT 1 FROM collection_documents c WHERE c.document_id = d.document_id AND c.collection_id = ?{})",
+            "EXISTS (SELECT 1 FROM collection_items c WHERE c.item_id = d.item_id AND c.collection_id = ?{})",
             args.len() + 1
         ));
         args.push(collection_id.to_string());
+    }
+    if let Some(tag_id) = tag_id {
+        clauses.push(format!(
+            "EXISTS (SELECT 1 FROM item_tags t WHERE t.item_id = d.item_id AND t.tag_id = ?{})",
+            args.len() + 1
+        ));
+        args.push(tag_id.to_string());
     }
     // 文档级文本搜索：标题或原始文件名任一命中即可。
     //
@@ -312,7 +328,7 @@ impl Db {
         query: Option<&str>,
     ) -> Result<Vec<DocumentRecord>> {
         let conn = self.connect()?;
-        let filter = build_document_filter_query(reading_status, collection_id, query, None);
+        let filter = build_document_filter_query(&DocumentListFilter { reading_status, collection_id, query, ..Default::default() });
         query_documents(&conn, &filter, limit, offset)
     }
 
@@ -323,7 +339,7 @@ impl Db {
         query: Option<&str>,
     ) -> Result<u64> {
         let conn = self.connect()?;
-        let filter = build_document_filter_query(reading_status, collection_id, query, None);
+        let filter = build_document_filter_query(&DocumentListFilter { reading_status, collection_id, query, ..Default::default() });
         count_documents_with_filter(&conn, &filter)
     }
 
@@ -333,14 +349,11 @@ impl Db {
         &self,
         limit: u32,
         offset: u32,
-        reading_status: Option<&str>,
-        collection_id: Option<&str>,
-        query: Option<&str>,
-        owner: Option<&str>,
+        filter: &DocumentListFilter<'_>,
     ) -> Result<(Vec<DocumentRecord>, u64)> {
         let mut conn = self.connect()?;
         let transaction = conn.transaction()?;
-        let filter = build_document_filter_query(reading_status, collection_id, query, owner);
+        let filter = build_document_filter_query(filter);
         let total = count_documents_with_filter(&transaction, &filter)?;
         let documents = query_documents(&transaction, &filter, limit, offset)?;
         transaction.commit()?;

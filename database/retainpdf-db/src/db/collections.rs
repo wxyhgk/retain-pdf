@@ -7,7 +7,7 @@ use crate::models::domain::now_iso;
 use super::Db;
 
 pub(super) const COLLECTION_COLUMNS: &str = "c.collection_id, c.name, c.parent_id, c.sort_order, c.created_at,
-     (SELECT COUNT(*) FROM collection_documents cd WHERE cd.collection_id = c.collection_id)";
+     (SELECT COUNT(*) FROM collection_items ci WHERE ci.collection_id = c.collection_id)";
 
 impl Db {
     pub fn create_collection(
@@ -89,7 +89,7 @@ impl Db {
             .with_context(|| format!("collection not found: {collection_id}"))
     }
 
-    /// 删除文件夹本身;collection_documents 的归属行随 ON DELETE CASCADE 自动清掉,
+    /// 删除文件夹本身;成员行(collection_items)随 ON DELETE CASCADE 自动清掉,
     /// 文档记录本身不受影响。
     pub fn delete_collection(&self, collection_id: &str) -> Result<bool> {
         let conn = self.connect()?;
@@ -100,7 +100,7 @@ impl Db {
         Ok(changed > 0)
     }
 
-    /// 批量加入文档;同一 (collection_id, document_id) 已存在则跳过(幂等)。
+    /// 批量加入书;已经在里面的跳过(幂等)。成员是书所属的条目(v37);书不存在的跳过。
     pub fn add_documents_to_collection(
         &self,
         collection_id: &str,
@@ -112,8 +112,8 @@ impl Db {
         for document_id in document_ids {
             tx.execute(
                 r#"
-                INSERT OR IGNORE INTO collection_documents (collection_id, document_id, added_at)
-                VALUES (?1, ?2, ?3)
+                INSERT OR IGNORE INTO collection_items (collection_id, item_id, added_at)
+                SELECT ?1, item_id, ?3 FROM item_files WHERE file_id = ?2
                 "#,
                 params![collection_id, document_id, now],
             )?;
@@ -129,7 +129,7 @@ impl Db {
     ) -> Result<bool> {
         let conn = self.connect()?;
         let changed = conn.execute(
-            "DELETE FROM collection_documents WHERE collection_id = ?1 AND document_id = ?2",
+            "DELETE FROM collection_items WHERE collection_id = ?1 AND item_id = (SELECT item_id FROM item_files WHERE file_id = ?2)",
             params![collection_id, document_id],
         )?;
         Ok(changed > 0)
@@ -257,7 +257,7 @@ mod tests {
         db.init().expect("init");
         db.create_collection("col-a", "化学", None).expect("create");
 
-        // collection_documents 的 document_id 外键要求文档真实存在,先造一条。
+        // 成员是书所属的条目,书要真实存在,先造一条。
         let hash = sha256_hex(b"membership doc");
         db.upsert_document_from_upload(&upload_with_hash("up-membership", &hash))
             .expect("seed document");

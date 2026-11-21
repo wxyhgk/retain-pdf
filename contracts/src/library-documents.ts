@@ -17,6 +17,7 @@ export type LibraryDocumentsSchema =
   | CreateCollectionInput
   | CreateDocumentMetadataSuggestionInput
   | CreateJobInput
+  | CreateTagInput
   | DeleteDocumentQuery
   | DocumentDeleteResultView
   | DocumentFilesView
@@ -34,10 +35,15 @@ export type LibraryDocumentsSchema =
   | ListDocumentsQuery
   | PatchCollectionInput
   | PatchDocumentInput
+  | PatchTagInput
   | PatchTranslationVersionInput
   | SearchQuery
   | SearchResultView
   | SetCurrentTranslationVersionInput
+  | SetDocumentTagsInput
+  | TagDeleteResultView
+  | TagListView
+  | TagRecord
   | TranslationCoverageView
   | TranslationVersionsQuery
   | TranslationVersionsView;
@@ -380,6 +386,19 @@ export interface RuntimeInput {
   render_after_translation?: boolean;
 }
 /**
+ * views.rs :: CreateTagInput（deny_unknown_fields）。同名的标签已经有了就返回那个，不再建。
+ */
+export interface CreateTagInput {
+  /**
+   * 去掉首尾空白后 1–64 个字，否则 400。
+   */
+  name: string;
+  /**
+   * #RRGGBB；不给、null 或空字符串 = 不设颜色；别的写法 400。
+   */
+  color?: string | null;
+}
+/**
  * views.rs :: DeleteDocumentQuery（deny_unknown_fields）。拼错的 force 是 400，不会悄悄变成不强删。
  */
 export interface DeleteDocumentQuery {
@@ -680,6 +699,21 @@ export interface DocumentRecord {
    * 有没有成功的、带译文（非纯 OCR）的任务，即能不能对照阅读。读时由 SQL 现算，不保证输出 PDF 还在磁盘上。
    */
   has_translation: boolean;
+  /**
+   * 书上的标签，按名字排；没有是空数组（2026-11-21 起）。改用 PUT /api/v1/documents/:document_id/tags。
+   */
+  tags: DocumentTag[];
+}
+/**
+ * retainpdf-core models/library.rs :: DocumentTag —— DocumentRecord.tags 里的一项。
+ */
+export interface DocumentTag {
+  tag_id: string;
+  name: string;
+  /**
+   * 空字符串 = 不设颜色；有就是 #RRGGBB。
+   */
+  color: string;
 }
 /**
  * views.rs :: DocumentMetadataSuggestionApplyView —— 采用后的建议和书。
@@ -907,6 +941,10 @@ export interface ListDocumentsQuery {
    */
   collection_id?: string;
   /**
+   * 只列打了这个标签的书（GET /api/v1/tags 列出的 tag_id）。
+   */
+  tag_id?: string;
+  /**
    * 按任意 job_id（含历史任务、merged- 虚拟任务）找它所属的书。带它时其余参数不起作用（limit 照样校验）。
    */
   job_id?: string;
@@ -937,6 +975,19 @@ export interface PatchDocumentInput {
    * 别的值 400。
    */
   reading_status?: ("unread" | "reading" | "done") | null;
+}
+/**
+ * views.rs :: PatchTagInput（deny_unknown_fields）。
+ */
+export interface PatchTagInput {
+  /**
+   * 去掉首尾空白后 1–64 个字，否则 400；改成别的标签在用的名字 409。
+   */
+  name?: string | null;
+  /**
+   * #RRGGBB 或空字符串（去掉颜色）。
+   */
+  color?: string | null;
 }
 /**
  * versions.rs :: PatchTranslationVersionInput（deny_unknown_fields）。两个字段都可选。
@@ -1018,6 +1069,48 @@ export interface SetCurrentTranslationVersionInput {
    * 要切到的版本；null 回到自动（逐页取最新）。
    */
   version_id: string | null;
+}
+/**
+ * views.rs :: SetDocumentTagsInput（deny_unknown_fields）。书的标签设成正好这几个，空数组 = 全去掉；重复的只算一次。
+ */
+export interface SetDocumentTagsInput {
+  tag_ids: string[];
+}
+/**
+ * views.rs :: TagDeleteResultView。
+ */
+export interface TagDeleteResultView {
+  tag_id: string;
+  /**
+   * 恒为 true；标签不存在是 404。
+   */
+  deleted: true;
+}
+/**
+ * views.rs :: TagListView。按名字排（不分大小写），不分页。
+ */
+export interface TagListView {
+  tags: TagRecord[];
+}
+/**
+ * retainpdf-core models/library.rs :: TagRecord —— 一个标签。同名（不分大小写、不看首尾空白）的标签只有一个；编号由名字算出来，两台设备各自建的同名标签同步后是同一个。
+ */
+export interface TagRecord {
+  /**
+   * tag-<16 位十六进制>。
+   */
+  tag_id: string;
+  name: string;
+  /**
+   * 空字符串 = 不设颜色；有就是 #RRGGBB。
+   */
+  color: string;
+  /**
+   * 打了这个标签的书有几本，每次读时现算。
+   */
+  document_count: number;
+  created_at: string;
+  updated_at: string;
 }
 /**
  * merge/coverage.rs :: TranslationCoverageView —— 书籍详情「进度」。

@@ -1,6 +1,6 @@
 pub use super::common::ApiResponse;
 pub use super::library::{
-    BlockSearchHit, CollectionRecord, DocumentRecord, FtsBlockRow,
+    BlockSearchHit, CollectionRecord, DocumentRecord, DocumentTag, FtsBlockRow, TagRecord,
 };
 pub use super::public_contract::{public_request_payload, PublicResolvedJobSpec};
 pub use super::sync::{

@@ -1,7 +1,7 @@
 //! 书（文档）：一本 PDF 是一本书，同一本书的多个任务挂在它下面；书本身的文件；全文检索。
 
 use crate::app::AppState;
-use crate::routes::library_data;
+use crate::routes::{library_data, tags};
 
 crate::endpoints! {
     state: AppState;
@@ -11,6 +11,8 @@ crate::endpoints! {
     GET "/api/v1/documents/:document_id" => library_data::get_document_route, signed;
     /// 改书的信息（书名、阅读状态）
     PATCH "/api/v1/documents/:document_id" => library_data::patch_document_route, signed;
+    /// 设书的标签（设成正好这几个）
+    PUT "/api/v1/documents/:document_id/tags" => tags::set_document_tags_route, signed;
     /// 删除一本书和它的任务
     DELETE "/api/v1/documents/:document_id" => library_data::delete_document_route, signed;
     /// 哪些页已经有译文

@@ -504,7 +504,7 @@ fn library_snapshot(device: &Device) -> Vec<String> {
     for sql in [
         "SELECT document_id || ':' || title || ':' || reading_status FROM library_documents ORDER BY 1",
         "SELECT collection_id || ':' || name FROM collections ORDER BY 1",
-        "SELECT collection_id || ':' || document_id FROM collection_documents ORDER BY 1",
+        "SELECT collection_id || ':' || item_id FROM collection_items ORDER BY 1",
         "SELECT glossary_id || ':' || name FROM glossaries ORDER BY 1",
         "SELECT job_id FROM jobs ORDER BY 1",
     ] {
@@ -547,13 +547,13 @@ fn three_devices_converge_whatever_the_order_of_edits_and_syncs() {
                 }
                 2 if has_doc > 0 && has_col > 0 => {
                     conn.execute(
-                        "INSERT OR IGNORE INTO collection_documents(collection_id, document_id, added_at) VALUES('col-1', ?1, 't')",
+                        "INSERT OR IGNORE INTO collection_items(collection_id, item_id, added_at) VALUES('col-1', ?1, 't')",
                         params![DOC],
                     )
                     .unwrap();
                 }
                 3 => {
-                    conn.execute("DELETE FROM collection_documents", []).unwrap();
+                    conn.execute("DELETE FROM collection_items", []).unwrap();
                 }
                 4 if has_col > 0 => {
                     conn.execute("UPDATE collections SET name = ?1", params![format!("c{step}")]).unwrap();
@@ -881,6 +881,34 @@ fn edits_from_another_device_keep_this_devices_translation_versions() {
     assert_eq!(b.text("SELECT reading_status FROM library_documents WHERE document_id = ?1", DOC).as_deref(), Some("reading"));
     assert_eq!(b.count("SELECT COUNT(*) FROM translation_versions"), 1);
     assert_eq!(b.text("SELECT chosen_version_id FROM item_files WHERE file_id = ?1", DOC).as_deref(), Some("tv-b"));
+    fs::remove_dir_all(base).unwrap();
+}
+
+/// 标签单独同步，书上打的标签跟着书走；同名标签两边是同一个；删标签两边都去掉。
+#[test]
+fn tags_and_the_tags_on_a_book_arrive_and_a_deleted_tag_goes_away() {
+    let (base, _folder, devices) = setup(&["a", "b"]);
+    let (a, b) = (&devices[0], &devices[1]);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+    b.sync();
+    let (tag, _) = a.db.create_tag("Quantum", "#112233", "local").unwrap();
+    a.db.set_document_tags(DOC, &[tag.tag_id.clone()]).unwrap();
+    let sent = a.sync();
+    assert_eq!(sent.exported, 2, "标签、书: {sent:?}");
+    let got = b.sync();
+    assert_eq!((got.applied, got.pending), (2, 0), "{got:?}");
+    let tags = b.db.get_document(DOC).unwrap().tags;
+    assert_eq!(tags.len(), 1);
+    assert_eq!((tags[0].name.as_str(), tags[0].color.as_str()), ("Quantum", "#112233"));
+    // 两台设备各自建同名标签：编号一样，是同一个。
+    assert_eq!(b.db.create_tag("quantum", "", "local").unwrap(), (b.db.get_tag(&tag.tag_id).unwrap().unwrap(), false));
+
+    a.db.delete_tag(&tag.tag_id).unwrap();
+    a.sync();
+    b.sync();
+    assert!(b.db.get_tag(&tag.tag_id).unwrap().is_none());
+    assert!(b.db.get_document(DOC).unwrap().tags.is_empty());
     fs::remove_dir_all(base).unwrap();
 }
 

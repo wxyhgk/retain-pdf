@@ -16,5 +16,6 @@ pub mod jobs;
 pub mod library_data;
 pub mod model_requests;
 pub mod providers;
+pub mod tags;
 pub mod token_usage;
 pub mod uploads;

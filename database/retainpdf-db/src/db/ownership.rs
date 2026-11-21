@@ -20,6 +20,7 @@ pub enum OwnedKind {
     Document,
     Glossary,
     Collection,
+    Tag,
 }
 
 impl OwnedKind {
@@ -31,6 +32,7 @@ impl OwnedKind {
             Self::Document => ("library_items", "item_id = (SELECT item_id FROM item_files WHERE file_id = ?1)"),
             Self::Glossary => ("glossaries", "glossary_id = ?1"),
             Self::Collection => ("collections", "collection_id = ?1"),
+            Self::Tag => ("tags", "tag_id = ?1"),
         }
     }
 }

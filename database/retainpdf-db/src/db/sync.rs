@@ -3,7 +3,8 @@
 //! # 实体
 //!
 //! 同步的单位是「实体」:一组按同一个键取出的行。键和表的对应见 [`entity_spec`]:
-//! 一本书(条目 library_items + 书目、作者、文件、书名建议;v36 以前是 documents + 标题状态与标题建议)、一次上传、一个合集、一条合集成员、一条收藏、
+//! 一本书(条目 library_items + 书目、作者、文件、书名建议、标签、关联;v36 以前是 documents + 标题状态与标题建议)、
+//! 一个标签、一次上传、一个合集、一条合集成员、一条收藏、
 //! 一个任务(jobs + 产物登记 + 流水线记录 + 事件)、一张术语表、一张收藏截图、一段 AI 对话
 //! (含消息)、一次 AI 计算(含产出的图)、一次 AI 改文档的操作(含尝试、事件、产出的版本)。
 //! 实体的第一张表是根表,其余是挂在它下面的子表。v36 以前的书由 [`upgrade_legacy_sync_record`] 改写成现在的样子
@@ -46,6 +47,7 @@ pub const SYNC_KINDS: &[&str] = &[
     "collection_member",
     "job",
     "glossary",
+    "tag",
 ];
 
 /// 以前同步过、后来删掉的种类（2026-11-20 v31 删了 RetainPDF 自己的 AI 留下的表和收藏）。旧版本的设备还可能发来，
@@ -56,12 +58,14 @@ pub const RETIRED_SYNC_KINDS: &[&str] = &["favorite", "asset", "conversation", "
 /// 这一种的现有内容全部重新登记一遍(没变的内容不会重发)。
 pub const SYNC_SEED_VERSIONS: &[(&str, u32)] = &[
     ("upload", 1),
-    // 3:v36 书换成条目 + 明细表。
-    ("document", 3),
+    // 3:v36 书换成条目 + 明细表;4:v37 加了条目的标签、关联。
+    ("document", 4),
     ("collection", 1),
-    ("collection_member", 1),
+    // 2:v37 成员换成条目(collection_items)。
+    ("collection_member", 2),
     ("job", 2),
     ("glossary", 1),
+    ("tag", 1),
 ];
 
 /// 只在本机有意义、不同步的列。以前是 AI 对话接着哪个本机会话进程往下聊（表 2026-11-20 删了），现在没有；
@@ -88,10 +92,14 @@ pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'st
         ("item_creators", &["item_id"]),
         ("item_files", &["item_id"]),
         ("item_title_suggestions", &["item_id"]),
+        // v37:条目的标签、条目之间的关联(挂在主语条目上)。
+        ("item_tags", &["item_id"]),
+        ("item_relations", &["subject_item_id"]),
     ];
     const COLLECTION: &[(&str, &[&str])] = &[("collections", &["collection_id"])];
-    const MEMBER: &[(&str, &[&str])] =
-        &[("collection_documents", &["collection_id", "document_id"])];
+    // v37 起成员是任何条目(以前是书的文件,`collection_documents`)。
+    const MEMBER: &[(&str, &[&str])] = &[("collection_items", &["collection_id", "item_id"])];
+    const TAG: &[(&str, &[&str])] = &[("tags", &["tag_id"])];
     const JOB: &[(&str, &[&str])] = &[
         ("jobs", &["job_id"]),
         ("artifacts", &["job_id"]),
@@ -113,6 +121,7 @@ pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'st
         "collection_member" => MEMBER,
         "job" => JOB,
         "glossary" => GLOSSARY,
+        "tag" => TAG,
         _ => return None,
     })
 }
@@ -313,6 +322,12 @@ fn read_rows(
 /// - v33：任务行的 `runtime_json` 拆成 `jobs` 上的几列（进入当前阶段、最后出错和重试的时间、重试次数）和
 ///   `job_stage_history` 的行；其余字段读的时候算，丢掉。
 fn upgrade_legacy_entity<'a>(kind: &str, rows: &'a SyncRows) -> std::borrow::Cow<'a, SyncRows> {
+    if kind == "collection_member" {
+        return match upgrade_legacy_member(rows, &BTreeMap::new()) {
+            Some((upgraded, _)) => std::borrow::Cow::Owned(upgraded),
+            None => std::borrow::Cow::Borrowed(rows),
+        };
+    }
     if kind == "document" {
         return match upgrade_legacy_document(rows) {
             Some(upgraded) => std::borrow::Cow::Owned(upgraded),
@@ -483,6 +498,9 @@ pub fn upgrade_legacy_sync_record(
     rows: &SyncRows,
     clocks: &BTreeMap<String, String>,
 ) -> Option<(SyncRows, BTreeMap<String, String>)> {
+    if kind == "collection_member" {
+        return upgrade_legacy_member(rows, clocks);
+    }
     if kind != "document" {
         return None;
     }
@@ -498,6 +516,40 @@ pub fn upgrade_legacy_sync_record(
             new_clocks.insert(field.clone(), clock.clone());
         }
     }
+    Some((upgraded, new_clocks))
+}
+
+/// v37 以前的文件夹成员(`collection_documents`,成员是书的文件)换成 `collection_items`(成员是条目):
+/// 自动建的条目编号就是文件的内容指纹,值不变,只换表名和列名;字段时钟跟着换名。
+fn upgrade_legacy_member(
+    rows: &SyncRows,
+    clocks: &BTreeMap<String, String>,
+) -> Option<(SyncRows, BTreeMap<String, String>)> {
+    let old = rows.get("collection_documents")?;
+    let members = old
+        .iter()
+        .map(|row| {
+            row.iter()
+                .map(|(column, value)| {
+                    let column = if column == "document_id" { "item_id" } else { column.as_str() };
+                    (column.to_string(), value.clone())
+                })
+                .collect::<Map<String, Value>>()
+        })
+        .collect();
+    let mut upgraded = SyncRows::new();
+    upgraded.insert("collection_items".into(), members);
+    let new_clocks = clocks
+        .iter()
+        .map(|(field, clock)| {
+            let field = match field.strip_prefix("collection_documents.") {
+                Some("document_id") => "collection_items.item_id".to_string(),
+                Some(column) => format!("collection_items.{column}"),
+                None => field.clone(),
+            };
+            (field, clock.clone())
+        })
+        .collect();
     Some((upgraded, new_clocks))
 }
 
@@ -706,27 +758,28 @@ pub(crate) fn sync_after_restore(conn: &Connection, previous: &[(String, String)
 }
 
 impl Db {
-    /// 本机记着的上次同步内容（`sync_entities.base_json`）和字段时钟还是 v36 以前的书的，按 [`upgrade_legacy_sync_record`]
+    /// 本机记着的上次同步内容（`sync_entities.base_json`）和字段时钟还是 v36 以前的书、v37 以前的文件夹成员的，按 [`upgrade_legacy_sync_record`]
     /// 改写。改完以后再跑什么都不动。返回改了几条。
     pub(crate) fn upgrade_legacy_sync_states(&self) -> Result<usize> {
         let mut conn = self.connect()?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let legacy: Vec<(String, String, String)> = {
+        let legacy: Vec<(String, String, String, String)> = {
             let mut stmt = tx.prepare(
-                "SELECT entity_key, base_json, clocks_json FROM sync_entities
-                 WHERE kind = 'document' AND base_json LIKE '%\"documents\"%'",
+                "SELECT kind, entity_key, base_json, clocks_json FROM sync_entities
+                 WHERE (kind = 'document' AND base_json LIKE '%\"documents\"%')
+                    OR (kind = 'collection_member' AND base_json LIKE '%\"collection_documents\"%')",
             )?;
-            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?;
+            let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)))?;
             rows.collect::<rusqlite::Result<_>>()?
         };
         let mut upgraded = 0;
-        for (key, base_json, clocks_json) in legacy {
+        for (kind, key, base_json, clocks_json) in legacy {
             let Ok(base) = serde_json::from_str::<SyncRows>(&base_json) else { continue };
             let clocks: BTreeMap<String, String> = serde_json::from_str(&clocks_json).unwrap_or_default();
-            let Some((rows, clocks)) = upgrade_legacy_sync_record("document", &base, &clocks) else { continue };
+            let Some((rows, clocks)) = upgrade_legacy_sync_record(&kind, &base, &clocks) else { continue };
             tx.execute(
-                "UPDATE sync_entities SET base_json = ?1, clocks_json = ?2 WHERE kind = 'document' AND entity_key = ?3",
-                params![serde_json::to_string(&rows)?, serde_json::to_string(&clocks)?, key],
+                "UPDATE sync_entities SET base_json = ?1, clocks_json = ?2 WHERE kind = ?3 AND entity_key = ?4",
+                params![serde_json::to_string(&rows)?, serde_json::to_string(&clocks)?, kind, key],
             )?;
             upgraded += 1;
         }
@@ -1347,6 +1400,30 @@ mod legacy_row_tests {
 
         assert!(super::upgrade_legacy_sync_record("document", &rows, &clocks).is_none(), "已经是现在的样子就不再改");
         assert!(super::upgrade_legacy_sync_record("job", &legacy_book(), &clocks).is_none());
+    }
+
+    /// v37 以前的文件夹成员（成员是书的文件）换成条目：只换表名、列名，字段时钟跟着换名。
+    #[test]
+    fn a_legacy_collection_member_becomes_a_collection_item() {
+        let mut rows = super::SyncRows::new();
+        rows.insert(
+            "collection_documents".into(),
+            vec![row(json!({"collection_id": "c", "document_id": "d", "added_at": "t"}))],
+        );
+        let clocks: std::collections::BTreeMap<String, String> =
+            [("collection_documents.document_id", "c1"), ("collection_documents.added_at", "c2")]
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect();
+        let (upgraded, clocks) = super::upgrade_legacy_sync_record("collection_member", &rows, &clocks).unwrap();
+        assert_eq!(
+            Value::Object(upgraded["collection_items"][0].clone()),
+            json!({"collection_id": "c", "item_id": "d", "added_at": "t"})
+        );
+        assert!(!upgraded.contains_key("collection_documents"));
+        assert_eq!(clocks["collection_items.item_id"], "c1");
+        assert_eq!(clocks["collection_items.added_at"], "c2");
+        assert!(super::upgrade_legacy_sync_record("collection_member", &upgraded, &clocks).is_none());
     }
 
     /// 本机记着的上次同步的书（`sync_entities`）开库时改写一次，以后再开什么都不动。

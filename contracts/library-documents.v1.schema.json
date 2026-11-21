@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/library-documents/v1",
   "title": "书库契约（Library Documents）",
-  "description": "书（文档）、合集、全文检索、阅读入口、翻译覆盖、书的文件清单、元数据建议、书的任务列表、翻译这本书、给这本书做 OCR 的请求和返回。生产者：backend/packages/retainpdf-core/src/models/library.rs（DocumentRecord / CollectionRecord / BlockSearchHit，库里存的记录）、backend/packages/retainpdf-library/src/views.rs（请求体、查询参数、列表和删除结果）、merge/reading.rs（DocumentReadingView）、merge/coverage.rs（TranslationCoverageView）、media.rs（DocumentFilesView）；消费者：@retainpdf/contracts/library-documents 生成 DTO（前端以后用它换掉 frontend/packages/api/src/documents.ts、collections.ts、search.ts 里手写的类型）。所有响应为 {code, message, data} 信封，本契约描述 data 部分。键的写法照 Rust 实际序列化：类型是 [\"x\", \"null\"] 的键总在、空时是 null；没写进 required 的返回键是空时整个省掉（不是 null）。请求体和查询参数都是 additionalProperties: false，对应 Rust 的 deny_unknown_fields（不认识的字段 400）。翻译、OCR 的请求体是 POST /api/v1/jobs 的 CreateJobInput，五个段和 JsonValue、ModelConnection、GlossaryEntryInput 从 create-job.v1 原样抄来；任务列表条目 JobListItemView 和它用到的阶段、失败摘要，以及提交结果里的 JobLinksView、JobActionsView、ActionLinkView 从 job-status.v1 原样抄来（$ref 不能跨文件，前端生成器也只读本文件的 definitions）。抄来的定义由 contracts/tests/library-documents-shared-definitions.test.mjs 锁成和源头一致，要改先改源头再照抄。Rust 侧由 backend/api/src/api_tests/library_documents_contract.rs 对真实接口的返回钉键集合，并把请求类型的字段集合和这里对上。改契约先改本文件，再重新生成 DTO 并让两端测试变绿。",
+  "description": "书（文档）、合集、标签、全文检索、阅读入口、翻译覆盖、书的文件清单、元数据建议、书的任务列表、翻译这本书、给这本书做 OCR 的请求和返回。生产者：backend/packages/retainpdf-core/src/models/library.rs（DocumentRecord / CollectionRecord / BlockSearchHit，库里存的记录）、backend/packages/retainpdf-library/src/views.rs（请求体、查询参数、列表和删除结果）、merge/reading.rs（DocumentReadingView）、merge/coverage.rs（TranslationCoverageView）、media.rs（DocumentFilesView）；消费者：@retainpdf/contracts/library-documents 生成 DTO（前端以后用它换掉 frontend/packages/api/src/documents.ts、collections.ts、search.ts 里手写的类型）。所有响应为 {code, message, data} 信封，本契约描述 data 部分。键的写法照 Rust 实际序列化：类型是 [\"x\", \"null\"] 的键总在、空时是 null；没写进 required 的返回键是空时整个省掉（不是 null）。请求体和查询参数都是 additionalProperties: false，对应 Rust 的 deny_unknown_fields（不认识的字段 400）。翻译、OCR 的请求体是 POST /api/v1/jobs 的 CreateJobInput，五个段和 JsonValue、ModelConnection、GlossaryEntryInput 从 create-job.v1 原样抄来；任务列表条目 JobListItemView 和它用到的阶段、失败摘要，以及提交结果里的 JobLinksView、JobActionsView、ActionLinkView 从 job-status.v1 原样抄来（$ref 不能跨文件，前端生成器也只读本文件的 definitions）。抄来的定义由 contracts/tests/library-documents-shared-definitions.test.mjs 锁成和源头一致，要改先改源头再照抄。Rust 侧由 backend/api/src/api_tests/library_documents_contract.rs 对真实接口的返回钉键集合，并把请求类型的字段集合和这里对上。改契约先改本文件，再重新生成 DTO 并让两端测试变绿。",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -235,6 +235,54 @@
         "404": "NOT_FOUND：书不存在，或版本不属于这本书"
       },
       "note": "改名（空串清掉，回到按翻译设置生成的名字）、隐藏或恢复。隐藏只是不列、不参与自动模式，文件都留着；隐藏的正好是当前版本时书回到自动。返回最新的版本列表（含隐藏的）。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tags",
+      "client_name": "listTags",
+      "transport": "json",
+      "output": "TagListView",
+      "rust_view": "TagListView",
+      "note": "不分页。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tags",
+      "client_name": "createTag",
+      "transport": "json",
+      "input": "CreateTagInput",
+      "output": "TagRecord",
+      "rust_view": "TagRecord",
+      "note": "同名的已经有了就返回那个。"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/tags/:tag_id",
+      "client_name": "patchTag",
+      "transport": "json",
+      "input": "PatchTagInput",
+      "output": "TagRecord",
+      "rust_view": "TagRecord",
+      "note": "标签不存在 404；改成别的标签在用的名字 409。"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/tags/:tag_id",
+      "client_name": "deleteTag",
+      "transport": "json",
+      "output": "TagDeleteResultView",
+      "rust_view": "TagDeleteResultView",
+      "note": "标签不存在 404。打了它的书上一起去掉，书不动。"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/documents/:document_id/tags",
+      "client_name": "setDocumentTags",
+      "transport": "json",
+      "input": "SetDocumentTagsInput",
+      "output": "DocumentRecord",
+      "rust_view": "DocumentRecord",
+      "note": "返回改完的书。书或任何一个标签不存在 404。"
     }
   ],
   "definitions": {
@@ -281,7 +329,8 @@
         "source_pdf_url",
         "cover_url",
         "thumbnail_url",
-        "has_translation"
+        "has_translation",
+        "tags"
       ],
       "properties": {
         "document_id": {
@@ -386,6 +435,13 @@
         "has_translation": {
           "type": "boolean",
           "description": "有没有成功的、带译文（非纯 OCR）的任务，即能不能对照阅读。读时由 SQL 现算，不保证输出 PDF 还在磁盘上。"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DocumentTag"
+          },
+          "description": "书上的标签，按名字排；没有是空数组（2026-11-21 起）。改用 PUT /api/v1/documents/:document_id/tags。"
         }
       }
     },
@@ -450,6 +506,10 @@
         "collection_id": {
           "type": "string",
           "description": "只列这个合集里的书。"
+        },
+        "tag_id": {
+          "type": "string",
+          "description": "只列打了这个标签的书（GET /api/v1/tags 列出的 tag_id）。"
         },
         "job_id": {
           "type": "string",
@@ -1521,6 +1581,160 @@
             true
           ],
           "description": "恒为 true；书不在这个合集里是 404。"
+        }
+      }
+    },
+    "DocumentTag": {
+      "type": "object",
+      "description": "retainpdf-core models/library.rs :: DocumentTag —— DocumentRecord.tags 里的一项。",
+      "required": [
+        "tag_id",
+        "name",
+        "color"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tag_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "description": "空字符串 = 不设颜色；有就是 #RRGGBB。"
+        }
+      }
+    },
+    "TagRecord": {
+      "type": "object",
+      "description": "retainpdf-core models/library.rs :: TagRecord —— 一个标签。同名（不分大小写、不看首尾空白）的标签只有一个；编号由名字算出来，两台设备各自建的同名标签同步后是同一个。",
+      "required": [
+        "tag_id",
+        "name",
+        "color",
+        "document_count",
+        "created_at",
+        "updated_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tag_id": {
+          "type": "string",
+          "description": "tag-<16 位十六进制>。"
+        },
+        "name": {
+          "type": "string"
+        },
+        "color": {
+          "type": "string",
+          "description": "空字符串 = 不设颜色；有就是 #RRGGBB。"
+        },
+        "document_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "打了这个标签的书有几本，每次读时现算。"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        }
+      }
+    },
+    "TagListView": {
+      "type": "object",
+      "description": "views.rs :: TagListView。按名字排（不分大小写），不分页。",
+      "required": [
+        "tags"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TagRecord"
+          }
+        }
+      }
+    },
+    "CreateTagInput": {
+      "type": "object",
+      "description": "views.rs :: CreateTagInput（deny_unknown_fields）。同名的标签已经有了就返回那个，不再建。",
+      "required": [
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "去掉首尾空白后 1–64 个字，否则 400。"
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "#RRGGBB；不给、null 或空字符串 = 不设颜色；别的写法 400。"
+        }
+      }
+    },
+    "PatchTagInput": {
+      "type": "object",
+      "description": "views.rs :: PatchTagInput（deny_unknown_fields）。",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "去掉首尾空白后 1–64 个字，否则 400；改成别的标签在用的名字 409。"
+        },
+        "color": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "#RRGGBB 或空字符串（去掉颜色）。"
+        }
+      }
+    },
+    "SetDocumentTagsInput": {
+      "type": "object",
+      "description": "views.rs :: SetDocumentTagsInput（deny_unknown_fields）。书的标签设成正好这几个，空数组 = 全去掉；重复的只算一次。",
+      "required": [
+        "tag_ids"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tag_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "TagDeleteResultView": {
+      "type": "object",
+      "description": "views.rs :: TagDeleteResultView。",
+      "required": [
+        "tag_id",
+        "deleted"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "tag_id": {
+          "type": "string"
+        },
+        "deleted": {
+          "type": "boolean",
+          "enum": [
+            true
+          ],
+          "description": "恒为 true；标签不存在是 404。"
         }
       }
     },

@@ -59,6 +59,8 @@ pub mod snapshot_diff;
 mod stored_paths;
 #[path = "db/sync.rs"]
 pub mod sync;
+#[path = "db/tags.rs"]
+mod tags;
 #[path = "db/translation_versions.rs"]
 mod translation_versions;
 #[path = "db/usage_cache.rs"]
@@ -71,6 +73,8 @@ pub use admin_users::{OwnerJobRow, UserListPage, UserListQuery, UserListRow, Use
 pub use invites::{InviteRecord, InviteUnavailable, InviteUser};
 pub use ownership::OwnedKind;
 pub use platform_settings::PlatformSettingsRecord;
+pub use documents::DocumentListFilter;
+pub use tags::tag_id_for_name;
 pub use translation_versions::TranslationVersionRecord;
 pub use page_quota::{
     BillingSource, PageBalanceWouldGoNegative, PageChargeRecord, PageLedgerEntry, PageReservation,

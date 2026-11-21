@@ -26,13 +26,13 @@
 ### 1. 文档列表 / 详情 / 编辑
 
 ```
-GET  /api/v1/documents?limit=50&offset=0&reading_status=reading&collection_id=xxx&q=xxx
+GET  /api/v1/documents?limit=50&offset=0&reading_status=reading&collection_id=xxx&tag_id=xxx&q=xxx
 GET  /api/v1/documents?job_id=xxx          ← 任意 job_id(含历史 run)直查所属文档,勿再扫列表反查 active_job_id
      → data: { documents[], total, limit, offset, has_more }
        documents[]: DocumentRecord { document_id, title, title_source, title_locked,
                       source_filename, page_count, bytes, active_job_id, active_version_id?,
                       reading_status, added_at, updated_at, source_pdf_url, cover_url,
-                      thumbnail_url, has_translation,
+                      thumbnail_url, has_translation, tags[],
                       authors_json, year, doi, last_opened_at }   ← 最后四个没有功能,见下
 
 GET  /api/v1/documents/:document_id
@@ -55,7 +55,8 @@ PATCH /api/v1/documents/:document_id
 - 列表按 `added_at` 倒序、同一秒的按 `document_id` 倒序,`limit` 默认 50、范围 1..=500,越界 400(2026-10-22 前静默夹)。
 - `limit`、`offset`、`has_more` 2026-10-22 起回显;有没有下一页看 `has_more`,不用再拿 `offset + 条数 < total` 算(两者结果一样)。
 - 带 `job_id` 时其余参数都不起作用,最多返回 1 条,`has_more` 恒为 `false`。
-- 只认上面这些查询参数,不认识的 400(例如已删的 `tag`)。PATCH 只认 `title`、`reading_status`,别的字段 400。
+- `tags`(2026-11-21 起):书上的标签 `[{ tag_id, name, color }]`,按名字排,没有是 `[]`;按标签筛用 `tag_id`,见第 8 节。
+- 只认上面这些查询参数,不认识的 400(例如已删的 `tag`,按标签筛现在是 `tag_id`)。PATCH 只认 `title`、`reading_status`,别的字段 400。
 - `DELETE /api/v1/documents/:document_id?force=true`:只认 `force`,拼错 400(以前当成不强删)。
 
 书上的两个列表(2026-10-22 起同样回显 `limit`、给 `has_more`,不认识的查询参数 400):
@@ -161,6 +162,24 @@ DELETE /api/v1/collections/:id/documents/:document_id
   `GET /api/v1/jobs?job_ids=a,b&limit=n&include_live_stage=true`(`n` ≤ 500,超了分批;
   不排除 OCR 任务),标题读 `display_name`,阶段和进度读 `stage_snapshot`。
   旧的做法是同样拼进 `/api/v1/library/books?job_ids=`,书架 2026-10-22 删了。
+
+### 8. 标签(2026-11-21 起,只增)
+
+一个标签可以打在很多本书上,一本书可以有很多标签。同名的标签(不分大小写、不看首尾空白)只有一个;
+编号由名字算出来,两台设备各自建的同名标签同步以后是同一个。前端还没接,不接也不影响别的。
+
+```
+GET    /api/v1/tags                         → data: { tags[] }   TagRecord { tag_id, name, color, document_count, created_at, updated_at },按名字排
+POST   /api/v1/tags                         body: { name, color? }   ← 同名的已经有了就返回那个
+PATCH  /api/v1/tags/:tag_id                 body: { name?, color? }  ← 改成别的标签在用的名字 409
+DELETE /api/v1/tags/:tag_id                 → data: { tag_id, deleted: true }   ← 打了它的书上一起去掉,书不动
+
+PUT    /api/v1/documents/:document_id/tags  body: { tag_ids: [...] }   ← 设成正好这几个,空数组 = 全去掉;返回改完的书
+GET    /api/v1/documents?tag_id=xxx         ← 打了这个标签的书
+```
+
+- `name` 去掉首尾空白后 1–64 个字;`color` 是 `#RRGGBB`,空字符串或不给 = 不设颜色,别的写法 400;
+- 书或任何一个标签不存在 404;请求体不认识的字段 400。
 
 ## 两个必须处理的边界
 

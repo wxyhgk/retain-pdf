@@ -4,7 +4,7 @@
 //! 库里存的记录（`DocumentRecord` 这些）还在核心包，数据库层要用。
 
 use retainpdf_core::models::api::{
-    BlockSearchHit, CollectionRecord, DocumentRecord,
+    BlockSearchHit, CollectionRecord, DocumentRecord, TagRecord,
 };
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::request::CreateJobInput;
@@ -26,7 +26,7 @@ fn default_search_limit() -> u32 {
     retainpdf_core::config::limits::DEFAULT_LIST_LIMIT
 }
 
-/// GET /api/v1/documents 查询参数。不认识的参数 400（2026-10-22 起；标签 `tag` 早已删掉）。
+/// GET /api/v1/documents 查询参数。不认识的参数 400（2026-10-22 起；以前的标签参数 `tag` 早已删掉，2026-11-21 起按标签筛用 `tag_id`）。
 /// 带 `job_id` 时是另一种查法：只按任务找它所属的书，其余参数不起作用（`limit` 照样校验）。
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -37,6 +37,8 @@ pub struct ListDocumentsQuery {
     pub offset: u32,
     pub reading_status: Option<String>,
     pub collection_id: Option<String>,
+    /// 打了这个标签的书（`GET /api/v1/tags` 列出的 `tag_id`）。
+    pub tag_id: Option<String>,
     /// 按任意 job_id(含历史 run)直查其所属文档,前端无需再扫列表反查
     pub job_id: Option<String>,
     /// 文档级文本搜索:标题或原始文件名任一包含即命中(大小写不敏感)。
@@ -245,6 +247,42 @@ pub struct CollectionMutationResult {
     pub deleted: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub removed: Option<bool>,
+}
+
+/// POST /api/v1/tags。同名（不分大小写、不看首尾空白）的标签已经有了就返回那个，不再建。不认识的字段 400。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CreateTagInput {
+    pub name: String,
+    /// `#RRGGBB`；不给或空字符串 = 不设颜色。
+    #[serde(default)]
+    pub color: Option<String>,
+}
+
+/// PATCH /api/v1/tags/:tag_id：改名、改颜色，都可以不给。改成别的标签已经在用的名字 409。不认识的字段 400。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PatchTagInput {
+    pub name: Option<String>,
+    pub color: Option<String>,
+}
+
+/// PUT /api/v1/documents/:document_id/tags：书的标签设成正好这几个（空数组 = 全去掉）。不认识的字段 400。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SetDocumentTagsInput {
+    pub tag_ids: Vec<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TagListView {
+    pub tags: Vec<TagRecord>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TagDeleteResultView {
+    pub tag_id: String,
+    pub deleted: bool,
 }
 
 /// `DELETE /api/v1/documents/:id` 的查询参数。不认识的参数 400（拼错的 `force` 不会悄悄变成不强删）。

@@ -20,7 +20,7 @@ use crate::models::api::{
     AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, CreateCollectionInput,
     CreateDocumentMetadataSuggestionInput, DeleteDocumentQuery, FtsBlockRow,
     ListDocumentMetadataSuggestionsQuery, ListDocumentsQuery, PatchCollectionInput,
-    ListDocumentJobsQuery, PatchDocumentInput, SearchQuery,
+    ListDocumentJobsQuery, PatchDocumentInput, SearchQuery, CreateTagInput, PatchTagInput, SetDocumentTagsInput,
     DocumentReadingQuery, PatchTranslationVersionInput, SetCurrentTranslationVersionInput, TranslationVersionsQuery,
 };
 use crate::models::CreateJobInput;
@@ -256,6 +256,44 @@ async fn book_collection_search_and_delete_views_match_published_schema() {
     let deleted = ok_data(&state, "DELETE", &format!("/api/v1/collections/{collection_id}"), None).await;
     assert_exact(&deleted, &contract, "CollectionDeleteResultView", "collection delete");
 
+    // 标签：建（同名不重复建）、给书设、按标签筛、改、列表、删。
+    let tag = ok_data(&state, "POST", "/api/v1/tags", Some(json!({ "name": "光谱", "color": "#3366AA" }))).await;
+    assert_exact(&tag, &contract, "TagRecord", "tag (created)");
+    let tag_id = tag["tag_id"].as_str().unwrap().to_string();
+    let same = ok_data(&state, "POST", "/api/v1/tags", Some(json!({ "name": " 光谱 " }))).await;
+    assert_eq!(same["tag_id"], tag_id.as_str(), "同名的返回已有的");
+    let tagged = ok_data(
+        &state,
+        "PUT",
+        &format!("/api/v1/documents/{book}/tags"),
+        Some(json!({ "tag_ids": [tag_id, tag_id] })),
+    )
+    .await;
+    assert_object_keys_allowing_absent(&tagged, &contract, "DocumentRecord", "tagged", &["active_version_id"]);
+    assert_eq!(tagged["tags"].as_array().unwrap().len(), 1, "{tagged}");
+    assert_exact(&tagged["tags"][0], &contract, "DocumentTag", "tagged.tags[0]");
+    let by_tag = ok_data(&state, "GET", &format!("/api/v1/documents?tag_id={tag_id}"), None).await;
+    assert_eq!(by_tag["total"], 1);
+    assert_eq!(by_tag["documents"][0]["document_id"], book.as_str());
+    let recolored = ok_data(&state, "PATCH", &format!("/api/v1/tags/{tag_id}"), Some(json!({ "color": "" }))).await;
+    assert_exact(&recolored, &contract, "TagRecord", "tag (patched)");
+    assert_eq!(recolored["document_count"], 1);
+    let other = ok_data(&state, "POST", "/api/v1/tags", Some(json!({ "name": "荧光" }))).await;
+    let (status, _) = send(&state, "PATCH", &format!("/api/v1/tags/{}", other["tag_id"].as_str().unwrap()), Some(json!({ "name": "光谱" }))).await;
+    assert_eq!(status, StatusCode::CONFLICT, "改成别的标签在用的名字");
+    let (status, _) = send(&state, "POST", "/api/v1/tags", Some(json!({ "name": "坏颜色", "color": "red" }))).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    let (status, _) =
+        send(&state, "PUT", &format!("/api/v1/documents/{book}/tags"), Some(json!({ "tag_ids": ["tag-missing"] }))).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    let tags = ok_data(&state, "GET", "/api/v1/tags", None).await;
+    assert_exact(&tags, &contract, "TagListView", "tags");
+    assert_eq!(tags["tags"].as_array().unwrap().len(), 2);
+    let tag_deleted = ok_data(&state, "DELETE", &format!("/api/v1/tags/{tag_id}"), None).await;
+    assert_exact(&tag_deleted, &contract, "TagDeleteResultView", "tag delete");
+    let untagged = ok_data(&state, "GET", &format!("/api/v1/documents/{book}"), None).await;
+    assert_eq!(untagged["tags"], json!([]));
+
     // 删书。
     let deleted = ok_data(&state, "DELETE", &format!("/api/v1/documents/{versioned}"), None).await;
     assert_exact(&deleted, &contract, "DocumentDeleteResultView", "document delete");
@@ -456,6 +494,9 @@ fn request_bodies_and_queries_accept_exactly_the_contract_fields() {
     assert_request_fields_match::<ApplyDocumentMetadataSuggestionInput>(&contract, "ApplyDocumentMetadataSuggestionInput");
     assert_request_fields_match::<CreateCollectionInput>(&contract, "CreateCollectionInput");
     assert_request_fields_match::<PatchCollectionInput>(&contract, "PatchCollectionInput");
+    assert_request_fields_match::<CreateTagInput>(&contract, "CreateTagInput");
+    assert_request_fields_match::<PatchTagInput>(&contract, "PatchTagInput");
+    assert_request_fields_match::<SetDocumentTagsInput>(&contract, "SetDocumentTagsInput");
     assert_request_fields_match::<AddCollectionDocumentsInput>(&contract, "AddCollectionDocumentsInput");
     assert_request_fields_match::<ListDocumentJobsQuery>(&contract, "ListDocumentJobsQuery");
     assert_request_fields_match::<DocumentReadingQuery>(&contract, "DocumentReadingQuery");

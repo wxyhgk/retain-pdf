@@ -44,6 +44,30 @@ pub struct DocumentRecord {
     /// 不保证输出 PDF 仍在磁盘上，那由阅读入口 `/documents/:id/reading` 兜底。
     #[serde(default)]
     pub has_translation: bool,
+    /// 书上的标签，按名字排（v37 起；没有是空数组）。
+    #[serde(default)]
+    pub tags: Vec<DocumentTag>,
+}
+
+/// 书上的一个标签（`DocumentRecord.tags` 里的一项）。
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub struct DocumentTag {
+    pub tag_id: String,
+    pub name: String,
+    /// 空 = 不设颜色；有就是 `#RRGGBB`。
+    pub color: String,
+}
+
+/// 一个标签（v37）。任何条目都能打，现在接口里只有书。
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub struct TagRecord {
+    pub tag_id: String,
+    pub name: String,
+    pub color: String,
+    /// 打了这个标签的书有几本；每次读时现算。
+    pub document_count: i64,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 fn default_document_title_source() -> String {
