@@ -479,7 +479,7 @@ impl Drop for CheckedBackup {
 fn blockers_on(conn: &Connection) -> Result<Vec<String>> {
     let count = |sql: &str| -> Result<i64> { Ok(conn.query_row(sql, [], |row| row.get(0))?) };
     let mut out = Vec::new();
-    let jobs = count("SELECT COUNT(*) FROM jobs WHERE status_json IN ('\"queued\"', '\"running\"')")?;
+    let jobs = count("SELECT COUNT(*) FROM jobs WHERE status IN ('queued', 'running')")?;
     if jobs > 0 {
         out.push(format!("有 {jobs} 个任务在排队或运行"));
     }
@@ -494,7 +494,7 @@ fn blockers_on(conn: &Connection) -> Result<Vec<String>> {
 fn clear_restored_job_pids(conn: &Connection) -> Result<usize> {
     Ok(conn.execute(
         "UPDATE jobs SET pid = NULL
-         WHERE pid IS NOT NULL AND status_json IN ('\"queued\"', '\"running\"')",
+         WHERE pid IS NOT NULL AND status IN ('queued', 'running')",
         [],
     )?)
 }
@@ -625,8 +625,8 @@ mod tests {
         db.connect()
             .unwrap()
             .execute(
-                "INSERT INTO jobs(job_id, workflow, status_json, created_at, updated_at, command_json, request_json, log_tail_json)
-                 VALUES('j1', '\"book\"', '\"running\"', 't', 't', '[]', '{}', '[]')",
+                "INSERT INTO jobs(job_id, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json)
+                 VALUES('j1', 'book', 'running', 't', 't', '[]', '{}', '[]')",
                 [],
             )
             .unwrap();
@@ -642,15 +642,15 @@ mod tests {
         let conn = db.connect().unwrap();
         for (id, status) in [("run", "running"), ("wait", "queued"), ("done", "succeeded")] {
             conn.execute(
-                "INSERT INTO jobs(job_id, workflow, status_json, created_at, updated_at, pid, command_json, request_json, log_tail_json)
-                 VALUES(?1, '\"book\"', ?2, 't', 't', 4242, '[]', '{}', '[]')",
-                rusqlite::params![id, format!("\"{status}\"")],
+                "INSERT INTO jobs(job_id, workflow, status, created_at, updated_at, pid, command_json, request_json, log_tail_json)
+                 VALUES(?1, 'book', ?2, 't', 't', 4242, '[]', '{}', '[]')",
+                rusqlite::params![id, status],
             )
             .unwrap();
         }
         let backup = db.create_backup(KIND_MANUAL).unwrap();
         // 恢复前这些任务都结束了（否则 restore_blockers 不让恢复）。
-        conn.execute("UPDATE jobs SET status_json = '\"failed\"', pid = NULL", []).unwrap();
+        conn.execute("UPDATE jobs SET status = 'failed', pid = NULL", []).unwrap();
         drop(conn);
 
         assert_eq!(db.restore_backup(&backup.id).unwrap(), Ok(()));
@@ -707,8 +707,8 @@ mod tests {
         let conn = db.connect().unwrap();
         set_title(&db, "before");
         conn.execute(
-            "INSERT INTO jobs(job_id, workflow, status_json, created_at, updated_at, pid, command_json, request_json, log_tail_json)
-             VALUES('j1', '\"book\"', '\"running\"', 't', 't', 4242, '[]', '{}', '[]')",
+            "INSERT INTO jobs(job_id, workflow, status, created_at, updated_at, pid, command_json, request_json, log_tail_json)
+             VALUES('j1', 'book', 'running', 't', 't', 4242, '[]', '{}', '[]')",
             [],
         )
         .unwrap();
@@ -719,7 +719,7 @@ mod tests {
         .unwrap();
         let backup = db.create_backup(KIND_MANUAL).unwrap();
         conn.execute_batch(
-            "DROP TRIGGER boom; UPDATE jobs SET status_json = '\"failed\"', pid = NULL;",
+            "DROP TRIGGER boom; UPDATE jobs SET status = 'failed', pid = NULL;",
         )
         .unwrap();
         drop(conn);
@@ -741,8 +741,8 @@ mod tests {
         db.connect()
             .unwrap()
             .execute(
-                "INSERT INTO jobs(job_id, workflow, status_json, created_at, updated_at, command_json, request_json, log_tail_json)
-                 VALUES('j1', '\"book\"', '\"queued\"', 't', 't', '[]', '{}', '[]')",
+                "INSERT INTO jobs(job_id, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json)
+                 VALUES('j1', 'book', 'queued', 't', 't', '[]', '{}', '[]')",
                 [],
             )
             .unwrap();

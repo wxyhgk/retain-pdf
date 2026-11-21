@@ -14,7 +14,7 @@ use super::files::{
     checked_relative, entity_files, file_hash, has_content, path_outside_data_root, remove_file,
 };
 use super::folder::{hex, FolderBackend};
-use super::store::{Backend, BlobLocation, DeviceState, Segment, SyncStore};
+use super::store::{Backend, BlobLocation, DeviceState, Segment, SyncStore, SYNC_FORMAT_VERSION};
 use super::{ChangeRecord, SyncFileEntry};
 use crate::db::sync::{
     entity_spec, SyncApplyOutcome, SyncDirty, SyncEntityState, SyncEntityUpdate, SyncFileRef, RETIRED_SYNC_KINDS,
@@ -183,10 +183,12 @@ fn in_progress(kind: &str, rows: &SyncRows) -> bool {
     };
     match kind {
         // 失败的任务也可能已经翻好了一部分。
-        "job" => !matches!(
-            root("jobs", "status_json").as_str(),
-            "\"succeeded\"" | "\"failed\"" | "\"canceled\""
-        ),
+        // v32 起是 `status`（纯文本）；旧版本设备发来的、同步文件夹里老的包是 `status_json`（`"succeeded"`）。
+        "job" => {
+            let status = root("jobs", "status");
+            let status = if status.is_empty() { root("jobs", "status_json").trim_matches('"').to_string() } else { status };
+            !matches!(status.as_str(), "succeeded" | "failed" | "canceled")
+        }
         _ => false,
     }
 }
@@ -349,7 +351,12 @@ impl SyncEngine {
 
     /// 跑一轮同步。第一次跑时把本机现有的书库全部放进去。
     pub fn run_cycle(&self) -> Result<SyncReport> {
-        let (folder_id, format_version) = self.store.ensure_version()?;
+        let (folder_id, mut format_version) = self.store.ensure_version()?;
+        // 格式 4 的任务行旧版本读不了:发任何东西之前先把文件夹升上去(见 SYNC_FORMAT_VERSION)。
+        if format_version < SYNC_FORMAT_VERSION {
+            self.store.upgrade_format(&folder_id)?;
+            format_version = SYNC_FORMAT_VERSION;
+        }
         let mut folder_changed = false;
         match self.db.sync_state_get(STATE_FOLDER_ID)? {
             Some(known) if known == folder_id => {}

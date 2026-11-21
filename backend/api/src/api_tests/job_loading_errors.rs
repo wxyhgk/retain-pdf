@@ -22,8 +22,8 @@ async fn get(state: &crate::AppState, uri: &str) -> axum::response::Response {
 fn insert_malformed_job(state: &crate::AppState, job_id: &str, document_id: Option<&str>) {
     let conn = rusqlite::Connection::open(&state.config.jobs_db_path).unwrap();
     conn.execute(
-        "INSERT INTO jobs (job_id, workflow, status_json, created_at, updated_at, command_json, request_json, \
-         log_tail_json, document_id) VALUES (?1, '\"book\"', '\"succeeded\"', ?2, ?2, '[]', '{\"invalid\":true}', '[]', ?3)",
+        "INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, command_json, request_json, \
+         log_tail_json, document_id) VALUES (?1, 'book', 'succeeded', ?2, ?2, '[]', '{\"invalid\":true}', '[]', ?3)",
         rusqlite::params![job_id, now_iso(), document_id],
     )
     .unwrap();

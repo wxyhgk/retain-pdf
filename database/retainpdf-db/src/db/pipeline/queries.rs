@@ -56,13 +56,13 @@ impl Db {
 
     pub fn list_resumable_pipeline_job_ids(&self) -> Result<Vec<String>> {
         let conn = self.connect()?;
-        let queued = serde_json::to_string(&crate::models::domain::JobStatusKind::Queued)?;
+        let queued = crate::models::domain::JobStatusKind::Queued.as_str();
         let mut stmt = conn.prepare(
             r#"
             SELECT DISTINCT jobs.job_id
             FROM jobs
             JOIN pipeline_attempts ON pipeline_attempts.job_id = jobs.job_id
-            WHERE jobs.status_json = ?1 AND pipeline_attempts.status = 'running'
+            WHERE jobs.status = ?1 AND pipeline_attempts.status = 'running'
             -- 排除 OCR 子任务:它由父任务的 driver 内联执行,不该被独立驱动。
             --
             -- 子任务 id 是 `{parent}-ocr`(见 translation_flow_child.rs 的
@@ -93,12 +93,12 @@ impl Db {
     /// may own the job and a second driver would duplicate execution.
     pub fn list_stuck_queued_job_ids(&self) -> Result<Vec<String>> {
         let conn = self.connect()?;
-        let queued = serde_json::to_string(&crate::models::domain::JobStatusKind::Queued)?;
+        let queued = crate::models::domain::JobStatusKind::Queued.as_str();
         let mut stmt = conn.prepare(
             r#"
             SELECT jobs.job_id
             FROM jobs
-            WHERE jobs.status_json = ?1
+            WHERE jobs.status = ?1
               AND NOT EXISTS (
                 SELECT 1 FROM pipeline_attempts
                 WHERE pipeline_attempts.job_id = jobs.job_id
@@ -139,12 +139,12 @@ impl Db {
         let conn = self.connect()?;
         let mut stmt = conn.prepare(
             r#"
-            SELECT child.job_id, parent.status_json
+            SELECT child.job_id, parent.status
             FROM jobs AS child
             JOIN jobs AS parent ON child.job_id = parent.job_id || '-ocr'
-            WHERE parent.status_json IN ('"succeeded"', '"failed"', '"canceled"')
+            WHERE parent.status IN ('succeeded', 'failed', 'canceled')
               AND (
-                child.status_json IN ('"queued"', '"running"')
+                child.status IN ('queued', 'running')
                 OR EXISTS (
                     SELECT 1 FROM pipeline_attempts a
                     WHERE a.job_id = child.job_id AND a.status = 'running'
@@ -159,7 +159,11 @@ impl Db {
         let mut children = Vec::new();
         for row in rows {
             let (child_id, parent_status) = row?;
-            children.push((child_id, serde_json::from_str(&parent_status)?));
+            children.push((
+                child_id,
+                super::super::rows::parse_status_text(&parent_status)
+                    .ok_or_else(|| anyhow::anyhow!("unreadable status for job {parent_status}"))?,
+            ));
         }
         Ok(children)
     }

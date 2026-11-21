@@ -294,6 +294,30 @@ def test_normalized_artifact_pair_rolls_back_when_second_write_fails(
     assert report_path.read_bytes() == b"old report"
 
 
+def test_current_schema_plain_text_status_is_read(tmp_path: Path) -> None:
+    """库 v32 起状态是 `status` 列里的纯文本。"""
+    db_path = tmp_path / "jobs.db"
+    connection = sqlite3.connect(db_path)
+    connection.executescript(
+        """
+        CREATE TABLE jobs (job_id TEXT PRIMARY KEY, status TEXT);
+        INSERT INTO jobs VALUES ('job-ok', 'succeeded'), ('job-failed', 'failed');
+        """
+    )
+    connection.commit()
+    connection.close()
+
+    ok = backfill._job_backfill_eligibility(
+        db_path=db_path, job_id="job-ok", include_non_succeeded=False, write=False
+    )
+    failed = backfill._job_backfill_eligibility(
+        db_path=db_path, job_id="job-failed", include_non_succeeded=False, write=False
+    )
+
+    assert ok["eligible"] is True and ok["status"] == "succeeded"
+    assert failed["eligible"] is False
+
+
 def test_failed_active_job_requires_explicit_opt_in(tmp_path: Path) -> None:
     db_path = tmp_path / "jobs.db"
     connection = sqlite3.connect(db_path)

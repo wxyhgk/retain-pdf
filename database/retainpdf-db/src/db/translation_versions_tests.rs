@@ -57,13 +57,13 @@ fn insert_job(db: &Db, document_id: &str, job_id: &str, workflow: WorkflowKind, 
     db.connect()
         .unwrap()
         .execute(
-            "INSERT INTO jobs (job_id, workflow, status_json, created_at, updated_at, finished_at,
+            "INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, finished_at,
                                command_json, request_json, log_tail_json, document_id)
              VALUES (?1, ?2, ?3, ?4, ?4, ?4, '[]', ?5, '[]', ?6)",
             params![
                 job_id,
-                serde_json::to_string(&workflow).unwrap(),
-                serde_json::to_string(&JobStatusKind::Succeeded).unwrap(),
+                workflow.as_str(),
+                JobStatusKind::Succeeded.as_str(),
                 created_at,
                 request.to_string(),
                 document_id,
@@ -110,19 +110,24 @@ fn versions_group_jobs_and_the_document_remembers_its_choice() {
 fn the_migration_backfills_one_version_per_translation_job() {
     let t = TestDb::new("backfill");
     seed_document(&t.db, "doc-b");
-    // 退回 v29、去掉 v30 建的东西，插入老任务，再升级一次
-    {
-        let conn = t.db.connect().unwrap();
-        conn.execute_batch(
-            "DROP TABLE translation_version_choices; DROP TABLE translation_version_jobs; DROP TABLE translation_versions;
-             PRAGMA user_version = 29;",
-        )
-        .unwrap();
-    }
     insert_job(&t.db, "doc-b", "ocr-1", WorkflowKind::Ocr, "2026-11-01T00:00:00Z", "");
     insert_job(&t.db, "doc-b", "whole", WorkflowKind::Book, "2026-11-02T00:00:00Z", "ocr-1");
     insert_job(&t.db, "doc-b", "relayout", WorkflowKind::Render, "2026-11-03T00:00:00Z", "whole");
     insert_job(&t.db, "doc-b", "redo", WorkflowKind::Book, "2026-11-04T00:00:00Z", "whole");
+    // 去掉 v30 建的东西，按 v30 那时的样子再跑一遍它：那时任务的流程还是 JSON 字符串（`"book"`，v32 才改成纯文本），
+    // 暂时关掉 CHECK 把流程改回带引号、跑 v30、再改回来。
+    {
+        let conn = t.db.connect().unwrap();
+        conn.execute_batch(
+            "DROP TABLE translation_version_choices; DROP TABLE translation_version_jobs; DROP TABLE translation_versions;
+             PRAGMA ignore_check_constraints = ON;
+             UPDATE jobs SET workflow = '\"' || workflow || '\"';",
+        )
+        .unwrap();
+        conn.execute_batch(include_str!("schema/migrations/v30_translation_versions.sql")).unwrap();
+        conn.execute_batch("UPDATE jobs SET workflow = trim(workflow, '\"'); PRAGMA ignore_check_constraints = OFF;")
+            .unwrap();
+    }
     let db = t.reopen();
     db.init().unwrap();
 

@@ -166,6 +166,11 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         name: "drop_dead_tables",
         sql: include_str!("v31_drop_dead_tables.sql"),
     },
+    Migration {
+        version: 32,
+        name: "job_status_text",
+        sql: include_str!("v32_job_status_text.sql"),
+    },
 ];
 
 #[cfg(test)]
@@ -178,6 +183,52 @@ mod tests {
             assert_eq!(migration.version, index as i64 + 1, "{}", migration.name);
             assert!(!migration.sql.trim().is_empty(), "{}", migration.name);
         }
+    }
+
+    /// v32 的数据搬迁：带引号的状态、流程变成纯文本；`{父任务}-ocr` 指向在库里的父任务；之后不认识的取值写不进去；
+    /// 扣页数触发器跟着新列走。在一个只有相关列的 v31 样子的表上直接跑迁移语句。
+    #[test]
+    fn v32_unquotes_status_and_workflow_and_links_ocr_children() {
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        conn.execute_batch(
+            r#"
+            PRAGMA foreign_keys = ON;
+            CREATE TABLE jobs (job_id TEXT PRIMARY KEY, workflow TEXT NOT NULL, status_json TEXT NOT NULL, updated_at TEXT);
+            CREATE TABLE page_ledger (user_id TEXT, delta INTEGER, kind TEXT, job_id TEXT, note TEXT, created_at TEXT);
+            CREATE TABLE job_page_charges (job_id TEXT, user_id TEXT, pages INTEGER, status TEXT, updated_at TEXT);
+            CREATE TRIGGER jobs_page_charge_settle AFTER UPDATE OF status_json ON jobs BEGIN SELECT 1; END;
+            INSERT INTO jobs VALUES ('a', '"book"', '"succeeded"', 't'), ('a-ocr', '"ocr"', '"failed"', 't'),
+                                    ('lost-ocr', '"ocr"', 'canceled', 't'), ('r', 'render', '"running"', 't');
+            INSERT INTO job_page_charges VALUES ('r', 'u1', 7, 'reserved', '');
+            "#,
+        )
+        .unwrap();
+        let v32 = MIGRATIONS.iter().find(|m| m.version == 32).unwrap();
+        conn.execute_batch(v32.sql).unwrap();
+
+        let rows: Vec<(String, String, String, Option<String>)> = conn
+            .prepare("SELECT job_id, workflow, status, parent_job_id FROM jobs ORDER BY job_id")
+            .unwrap()
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)))
+            .unwrap()
+            .collect::<Result<_, _>>()
+            .unwrap();
+        let expected = [
+            ("a", "book", "succeeded", None),
+            ("a-ocr", "ocr", "failed", Some("a")),
+            ("lost-ocr", "ocr", "canceled", None),
+            ("r", "render", "running", None),
+        ];
+        let got: Vec<_> = rows.iter().map(|(j, w, s, p)| (j.as_str(), w.as_str(), s.as_str(), p.as_deref())).collect();
+        assert_eq!(got, expected);
+
+        assert!(conn.execute("UPDATE jobs SET status = 'done' WHERE job_id = 'a'", []).is_err());
+        assert!(conn.execute("UPDATE jobs SET workflow = '\"book\"' WHERE job_id = 'a'", []).is_err());
+        conn.execute("UPDATE jobs SET status = 'failed' WHERE job_id = 'r'", []).unwrap();
+        let refunded: i64 = conn
+            .query_row("SELECT COUNT(*) FROM page_ledger WHERE job_id = 'r' AND kind = 'refund' AND note = 'failed'", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(refunded, 1, "扣页数触发器按新的 status 列退回");
     }
 
     #[test]

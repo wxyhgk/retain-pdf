@@ -45,9 +45,11 @@ use super::folder::{hex, temp_path};
 use super::ChangeRecord;
 
 pub const SYNC_FORMAT: &str = "retain-pdf-sync";
-/// 2:文件内容按段打包(1 是一个文件一个对象,只在开发中用过);3:可以整理(见上)。
-/// 格式 2 的文件夹照常读写,第一次整理前升到 3。
-pub const SYNC_FORMAT_VERSION: u64 = 3;
+/// 2:文件内容按段打包(1 是一个文件一个对象,只在开发中用过);3:可以整理(见上);
+/// 4:任务行换成数据库 v32 的列(`jobs.status` 纯文本、`workflow` 不带引号,2026-11-21 数据库重做第 1a 步)。
+/// 格式 3 的程序读不了 4 的任务行,所以新程序一连上就把文件夹升到 4(旧设备会提示先更新);
+/// 文件夹里格式 2、3 时期的老包照常读,收到的旧任务行按新列改写(`retainpdf-db` 的 `upgrade_legacy_row`)。
+pub const SYNC_FORMAT_VERSION: u64 = 4;
 const OLDEST_READABLE_VERSION: u64 = 2;
 
 const SEGMENT_END: &str = "segment_end";

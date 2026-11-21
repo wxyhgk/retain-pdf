@@ -97,15 +97,15 @@ pub(super) fn fts_backfill_targets(db: &Db) -> Result<Vec<String>> {
             WHERE d.active_job_id IS NOT NULL AND i.document_id IS NULL
               AND EXISTS (
                   SELECT 1 FROM jobs s
-                  WHERE s.document_id = d.document_id AND s.status_json = '"succeeded"'
+                  WHERE s.document_id = d.document_id AND s.status = 'succeeded'
               )
             UNION ALL
             SELECT d.document_id, j.job_id FROM documents d
             JOIN indexed i ON i.document_id = d.document_id
             JOIN jobs j ON j.document_id = d.document_id
             WHERE d.active_job_id IS NOT NULL
-              AND j.status_json = '"succeeded"'
-              AND j.workflow <> '"ocr"'
+              AND j.status = 'succeeded'
+              AND j.workflow <> 'ocr'
               AND j.created_at > i.newest
             "#,
         )?;

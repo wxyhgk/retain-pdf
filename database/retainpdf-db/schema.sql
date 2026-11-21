@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 31
+-- user_version 32
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -225,8 +225,6 @@ TABLE job_page_charges
 
 TABLE jobs
   job_id TEXT PRIMARY KEY#1
-  workflow TEXT NOT NULL
-  status_json TEXT NOT NULL
   created_at TEXT NOT NULL
   updated_at TEXT NOT NULL
   started_at TEXT
@@ -248,15 +246,21 @@ TABLE jobs
   run_generation INTEGER NOT NULL DEFAULT 0
   worker_identity TEXT
   owner_user_id TEXT NOT NULL DEFAULT 'local'
+  status TEXT NOT NULL DEFAULT 'queued'
+  workflow TEXT NOT NULL DEFAULT 'book'
+  parent_job_id TEXT
+  FOREIGN KEY (parent_job_id) REFERENCES jobs(job_id) ON UPDATE NO ACTION ON DELETE SET NULL
   INDEX idx_jobs_document_updated: CREATE INDEX idx_jobs_document_updated ON jobs(document_id, updated_at DESC, job_id DESC)
   INDEX idx_jobs_owner: CREATE INDEX idx_jobs_owner ON jobs(owner_user_id)
+  INDEX idx_jobs_parent: CREATE INDEX idx_jobs_parent ON jobs(parent_job_id) WHERE parent_job_id IS NOT NULL
+  INDEX idx_jobs_status: CREATE INDEX idx_jobs_status ON jobs(status, updated_at DESC)
   INDEX idx_jobs_updated_at: CREATE INDEX idx_jobs_updated_at ON jobs(updated_at DESC)
   INDEX idx_jobs_upload_id: CREATE INDEX idx_jobs_upload_id ON jobs(upload_id)
   PRIMARY KEY (job_id)
   TRIGGER jobs_inherit_owner: CREATE TRIGGER jobs_inherit_owner AFTER INSERT ON jobs BEGIN UPDATE jobs SET owner_user_id = COALESCE( (SELECT u.owner_user_id FROM uploads u WHERE u.upload_id = NEW.upload_id), (SELECT p.owner_user_id FROM jobs p WHERE p.job_id = CASE WHEN json_valid(NEW.request_json) THEN json_extract(NEW.request_json, '$.source.artifact_job_id') END AND p.job_id <> NEW.job_id), owner_user_id) WHERE job_id = NEW.job_id AND owner_user_id = 'local'; END
-  TRIGGER jobs_page_charge_refund: CREATE TRIGGER jobs_page_charge_refund AFTER UPDATE OF status_json ON jobs WHEN NEW.status_json IN ('"failed"', '"canceled"', 'failed', 'canceled') BEGIN INSERT INTO page_ledger (user_id, delta, kind, job_id, note, created_at) SELECT user_id, pages, 'refund', job_id, TRIM(NEW.status_json, '"'), strftime('%Y-%m-%dT%H:%M:%SZ', 'now') FROM job_page_charges WHERE job_id = NEW.job_id AND status = 'reserved'; UPDATE job_page_charges SET status = 'refunded', updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE job_id = NEW.job_id AND status = 'reserved'; END
+  TRIGGER jobs_page_charge_refund: CREATE TRIGGER jobs_page_charge_refund AFTER UPDATE OF status ON jobs WHEN NEW.status IN ('failed', 'canceled') BEGIN INSERT INTO page_ledger (user_id, delta, kind, job_id, note, created_at) SELECT user_id, pages, 'refund', job_id, NEW.status, strftime('%Y-%m-%dT%H:%M:%SZ', 'now') FROM job_page_charges WHERE job_id = NEW.job_id AND status = 'reserved'; UPDATE job_page_charges SET status = 'refunded', updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE job_id = NEW.job_id AND status = 'reserved'; END
   TRIGGER jobs_page_charge_refund_on_delete: CREATE TRIGGER jobs_page_charge_refund_on_delete AFTER DELETE ON jobs BEGIN INSERT INTO page_ledger (user_id, delta, kind, job_id, note, created_at) SELECT user_id, pages, 'refund', job_id, 'deleted', strftime('%Y-%m-%dT%H:%M:%SZ', 'now') FROM job_page_charges WHERE job_id = OLD.job_id AND status = 'reserved'; UPDATE job_page_charges SET status = 'refunded', updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE job_id = OLD.job_id AND status = 'reserved'; END
-  TRIGGER jobs_page_charge_settle: CREATE TRIGGER jobs_page_charge_settle AFTER UPDATE OF status_json ON jobs WHEN NEW.status_json IN ('"succeeded"', 'succeeded') BEGIN UPDATE job_page_charges SET status = 'settled', updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE job_id = NEW.job_id AND status = 'reserved'; END
+  TRIGGER jobs_page_charge_settle: CREATE TRIGGER jobs_page_charge_settle AFTER UPDATE OF status ON jobs WHEN NEW.status = 'succeeded' BEGIN UPDATE job_page_charges SET status = 'settled', updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE job_id = NEW.job_id AND status = 'reserved'; END
   TRIGGER sync_dirty_jobs_delete: CREATE TRIGGER sync_dirty_jobs_delete AFTER DELETE ON jobs WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', OLD.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_jobs_insert: CREATE TRIGGER sync_dirty_jobs_insert AFTER INSERT ON jobs WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_jobs_update: CREATE TRIGGER sync_dirty_jobs_update AFTER UPDATE ON jobs WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END

@@ -12,7 +12,7 @@ use crate::models::domain::{
 
 pub(super) const JOB_SELECT_SQL: &str = r#"
     SELECT
-        jobs.job_id, jobs.workflow, jobs.status_json, jobs.created_at, jobs.updated_at,
+        jobs.job_id, jobs.workflow, jobs.status, jobs.created_at, jobs.updated_at,
         jobs.started_at, jobs.finished_at, jobs.upload_id, jobs.pid, jobs.command_json,
         jobs.request_json, jobs.error, jobs.stage, jobs.stage_detail,
         jobs.progress_current, jobs.progress_total, jobs.log_tail_json, jobs.result_json,
@@ -26,7 +26,7 @@ pub(super) const JOB_SELECT_SQL: &str = r#"
 /// 不能直接改 `JOB_SELECT_SQL`：`select_jobs`、事件投影的外层查询按固定列号接着往后读。
 pub(super) const JOB_SELECT_SQL_WITH_GENERATION: &str = r#"
     SELECT
-        jobs.job_id, jobs.workflow, jobs.status_json, jobs.created_at, jobs.updated_at,
+        jobs.job_id, jobs.workflow, jobs.status, jobs.created_at, jobs.updated_at,
         jobs.started_at, jobs.finished_at, jobs.upload_id, jobs.pid, jobs.command_json,
         jobs.request_json, jobs.error, jobs.stage, jobs.stage_detail,
         jobs.progress_current, jobs.progress_total, jobs.log_tail_json, jobs.result_json,
@@ -41,14 +41,14 @@ pub(super) fn row_to_job_snapshot(row: &Row<'_>) -> rusqlite::Result<JobSnapshot
     let runtime_json: Option<String> = row.get(18)?;
     let failure_json: Option<String> = row.get(19)?;
     let artifacts_json: Option<String> = row.get(20)?;
-    let workflow_json: String = row.get(1)?;
-    let status_json: String = row.get(2)?;
+    let workflow: String = row.get(1)?;
+    let status: String = row.get(2)?;
     let request_json: String = row.get(10)?;
     Ok(JobSnapshot {
         record: JobRecord {
             job_id: row.get(0)?,
-            workflow: parse_json_column(1, "workflow", &workflow_json)?,
-            status: parse_json_column(2, "status_json", &status_json)?,
+            workflow: parse_text_column(1, "workflow", &workflow)?,
+            status: parse_text_column(2, "status", &status)?,
             created_at: row.get(3)?,
             updated_at: row.get(4)?,
             started_at: row.get(5)?,
@@ -181,12 +181,18 @@ fn json_column_decode_error(
     )
 }
 
-fn parse_json_column<T>(column_idx: usize, column_name: &str, raw: &str) -> rusqlite::Result<T>
+/// 状态、流程这类纯文本取值列（`jobs.status`、`jobs.workflow`，v32 起不再是 JSON 字符串）按 serde 的取值读成枚举。
+fn parse_text_column<T>(column_idx: usize, column_name: &str, raw: &str) -> rusqlite::Result<T>
 where
     T: serde::de::DeserializeOwned,
 {
-    serde_json::from_str::<T>(raw)
+    serde_json::from_value::<T>(serde_json::Value::String(raw.to_string()))
         .map_err(|error| json_column_decode_error(column_idx, column_name, error))
+}
+
+/// `jobs.status` 的纯文本读成状态；不认识的取值是 None（CHECK 钉着，正常碰不到）。
+pub(super) fn parse_status_text(raw: &str) -> Option<crate::models::domain::JobStatusKind> {
+    serde_json::from_value(serde_json::Value::String(raw.to_string())).ok()
 }
 
 fn deserialize_request_spec_column(

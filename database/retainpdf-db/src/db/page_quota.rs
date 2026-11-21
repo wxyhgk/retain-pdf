@@ -317,8 +317,8 @@ mod tests {
         db.connect()
             .unwrap()
             .execute(
-                "INSERT INTO jobs (job_id, workflow, status_json, created_at, updated_at, upload_id, command_json, request_json, log_tail_json) \
-                 VALUES (?1, '\"book\"', '\"queued\"', ?2, ?2, ?3, '[]', ?4, '[]')",
+                "INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, upload_id, command_json, request_json, log_tail_json) \
+                 VALUES (?1, 'book', 'queued', ?2, ?2, ?3, '[]', ?4, '[]')",
                 params![job_id, NOW, upload_id, request],
             )
             .unwrap();
@@ -328,10 +328,10 @@ mod tests {
         db.connect()
             .unwrap()
             .execute(
-                "INSERT INTO jobs (job_id, workflow, status_json, created_at, updated_at, command_json, request_json, log_tail_json) \
-                 VALUES (?1, '\"book\"', ?2, ?3, ?3, '[]', '{}', '[]') \
-                 ON CONFLICT(job_id) DO UPDATE SET status_json = excluded.status_json",
-                params![job_id, format!("\"{status}\""), NOW],
+                "INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json) \
+                 VALUES (?1, 'book', ?2, ?3, ?3, '[]', '{}', '[]') \
+                 ON CONFLICT(job_id) DO UPDATE SET status = excluded.status",
+                params![job_id, status, NOW],
             )
             .unwrap();
     }

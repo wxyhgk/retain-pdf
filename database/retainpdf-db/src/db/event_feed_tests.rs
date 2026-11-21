@@ -130,6 +130,9 @@ fn event_uid_is_backfilled_for_legacy_schema_and_migrations_are_idempotent() {
          ALTER TABLE users DROP COLUMN invite_id;
          ALTER TABLE pipeline_attempts DROP COLUMN auto_resume_count;
          ALTER TABLE pipeline_attempts DROP COLUMN auto_resume_progress;
+         -- v32（2026-11-21）把 jobs.status_json 换成 status：重跑的 v15 要读 status_json，补一列；v32 自己见
+         -- status 已经在就跳过（APPLIED_CHECKS），这一列就留着不用。
+         ALTER TABLE jobs ADD COLUMN status_json TEXT;
          PRAGMA user_version = 13;",
     )
     .unwrap();

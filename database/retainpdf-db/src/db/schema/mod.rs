@@ -37,12 +37,27 @@ pub(super) fn run_versioned_migrations(conn: &Connection) -> Result<()> {
         if version <= current {
             continue;
         }
-        tx.execute_batch(migration.sql)
-            .with_context(|| format!("schema migration v{version} ({}) failed", migration.name))?;
+        if !already_applied(&tx, version)? {
+            tx.execute_batch(migration.sql)
+                .with_context(|| format!("schema migration v{version} ({}) failed", migration.name))?;
+        }
         tx.pragma_update(None, "user_version", version)?;
         tx.commit()?;
     }
     Ok(())
+}
+
+/// 不能重跑的迁移（改列的取值、删列、加带外键的列）：库里已经是迁移后的样子，就只记版本、不再执行。
+/// 正常升级碰不到（版本号只往上走）；是给把 `user_version` 倒回去重跑后面迁移的测试用的——它们的惯例是先手动撤掉
+/// 后面迁移加的东西（见 `event_feed_tests`），可 SQLite 删不掉带外键的列，v32 的 `parent_job_id` 撤不掉。
+/// 每项是（版本，查询；返回非 0 表示已经是迁移后的样子）。
+const APPLIED_CHECKS: &[(i64, &str)] = &[(32, "SELECT COUNT(*) FROM pragma_table_info('jobs') WHERE name = 'status'")];
+
+fn already_applied(conn: &Connection, version: i64) -> Result<bool> {
+    let Some((_, check)) = APPLIED_CHECKS.iter().find(|(v, _)| *v == version) else {
+        return Ok(false);
+    };
+    Ok(conn.query_row(check, [], |row| row.get::<_, i64>(0))? > 0)
 }
 
 /// 编号迁移以前就有的老表后来加的列：(表, 列, 定义)。只许往后加。

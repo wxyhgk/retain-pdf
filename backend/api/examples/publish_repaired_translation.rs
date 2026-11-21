@@ -107,7 +107,7 @@ fn main() -> Result<()> {
     let db_path = data_root.join("db/jobs.db");
     let connection = Connection::open_with_flags(&db_path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
     let status: String = connection.query_row(
-        "SELECT status_json FROM jobs WHERE job_id=?1",
+        "SELECT status FROM jobs WHERE job_id=?1",
         [job_id],
         |row| row.get(0),
     )?;

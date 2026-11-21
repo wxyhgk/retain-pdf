@@ -15,8 +15,8 @@ fn jobs_limit_out_of_range_is_400_and_has_more_comes_from_one_extra_row() {
     let conn = rusqlite::Connection::open(&state.config.jobs_db_path).unwrap();
     conn.execute(
         "WITH RECURSIVE n(value) AS (SELECT 1 UNION ALL SELECT value + 1 FROM n WHERE value < 501) \
-         INSERT INTO jobs (job_id, workflow, status_json, created_at, updated_at, command_json, request_json, log_tail_json) \
-         SELECT printf('job-%05d', value), '\"book\"', '\"queued\"', '2026-01-01', '2026-01-01', '[]', ?1, '[]' FROM n",
+         INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json) \
+         SELECT printf('job-%05d', value), 'book', 'queued', '2026-01-01', '2026-01-01', '[]', ?1, '[]' FROM n",
         [request],
     ).unwrap();
     for limit in [1, 500] {

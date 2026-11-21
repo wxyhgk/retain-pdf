@@ -39,6 +39,31 @@ pub enum WorkflowKind {
     Render,
 }
 
+impl JobStatusKind {
+    /// 库里存的写法（`jobs.status`，纯文本），和 serde 的取值一样。
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Queued => "queued",
+            Self::Running => "running",
+            Self::Succeeded => "succeeded",
+            Self::Failed => "failed",
+            Self::Canceled => "canceled",
+        }
+    }
+}
+
+impl WorkflowKind {
+    /// 库里存的写法（`jobs.workflow`，纯文本），和 serde 的取值一样。
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Book => "book",
+            Self::Ocr => "ocr",
+            Self::Translate => "translate",
+            Self::Render => "render",
+        }
+    }
+}
+
 impl Default for WorkflowKind {
     fn default() -> Self {
         Self::Book
@@ -82,6 +107,11 @@ pub fn seconds_since_iso(timestamp: &str) -> Option<i64> {
 /// 建子任务的 runner、找 OCR 派发记录的接口和恢复任务的种子都用这一个拼法。
 pub fn ocr_child_job_id(parent_job_id: &str) -> String {
     format!("{parent_job_id}-ocr")
+}
+
+/// [`ocr_child_job_id`] 反过来：OCR 子任务的父任务编号；不是这种编号返回 None。数据库层写任务时用它填 `parent_job_id`。
+pub fn ocr_parent_job_id(job_id: &str) -> Option<&str> {
+    job_id.strip_suffix("-ocr").filter(|parent| !parent.is_empty())
 }
 
 pub fn build_job_id() -> String {

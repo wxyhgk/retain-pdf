@@ -711,15 +711,15 @@ mod tests {
         conn.execute(
             r#"
             INSERT INTO jobs (
-                job_id, workflow, status_json, created_at, updated_at, started_at, finished_at,
+                job_id, workflow, status, created_at, updated_at, started_at, finished_at,
                 upload_id, pid, command_json, request_json, error, stage, stage_detail,
                 progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
             "#,
             params![
                 job_id,
-                serde_json::to_string(&WorkflowKind::Book).expect("workflow json"),
-                serde_json::to_string(&JobStatusKind::Succeeded).expect("status json"),
+                WorkflowKind::Book.as_str(),
+                JobStatusKind::Succeeded.as_str(),
                 now_iso(),
                 now_iso(),
                 Option::<String>::None,

@@ -278,8 +278,8 @@ fn streaming_search_and_exact_ids_have_no_ten_thousand_row_cutoff() {
     let conn = test.db.connect().unwrap();
     conn.execute(
         "WITH RECURSIVE n(value) AS (SELECT 1 UNION ALL SELECT value + 1 FROM n WHERE value < 10001) \
-         INSERT INTO jobs (job_id, workflow, status_json, created_at, updated_at, command_json, request_json, log_tail_json) \
-         SELECT printf('job-%05d', value), '\"book\"', '\"queued\"', '2026-01-01', '2026-01-01', '[]', ?1, '[]' FROM n",
+         INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json) \
+         SELECT printf('job-%05d', value), 'book', 'queued', '2026-01-01', '2026-01-01', '[]', ?1, '[]' FROM n",
         [request],
     ).unwrap();
     let mut visited = 0;
@@ -542,4 +542,43 @@ fn cas_save_never_inserts_a_missing_row() {
     canceled.status = JobStatusKind::Canceled;
     test.db.save_job(&canceled).unwrap();
     assert!(!test.db.cas_save_job(&next, &["queued", "running"]).unwrap());
+}
+
+/// v32：OCR 子任务（`{父任务}-ocr`）写进库时由数据库层填 `parent_job_id`；父任务还不在库里就留空（外键不挡写入），
+/// 之后再写一次就补上。状态、流程存的是纯文本。
+#[test]
+fn saving_an_ocr_child_links_it_to_its_parent_and_stores_plain_text_status() {
+    let test = TestDb::new();
+    let parent_of = |id: &str| -> Option<String> {
+        test.db
+            .connect()
+            .unwrap()
+            .query_row("SELECT parent_job_id FROM jobs WHERE job_id = ?1", [id], |row| row.get(0))
+            .unwrap()
+    };
+    test.seed("orphan-ocr", WorkflowKind::Ocr, JobStatusKind::Queued, OcrProviderKind::Mineru);
+    assert_eq!(parent_of("orphan-ocr"), None, "父任务不在：留空");
+
+    test.seed("book-1", WorkflowKind::Book, JobStatusKind::Running, OcrProviderKind::Mineru);
+    test.seed("book-1-ocr", WorkflowKind::Ocr, JobStatusKind::Succeeded, OcrProviderKind::Mineru);
+    assert_eq!(parent_of("book-1-ocr").as_deref(), Some("book-1"));
+    assert_eq!(parent_of("book-1"), None);
+
+    test.seed("orphan", WorkflowKind::Book, JobStatusKind::Queued, OcrProviderKind::Mineru);
+    test.seed("orphan-ocr", WorkflowKind::Ocr, JobStatusKind::Queued, OcrProviderKind::Mineru);
+    assert_eq!(parent_of("orphan-ocr").as_deref(), Some("orphan"), "父任务后来才有：再写一次就补上");
+
+    let (workflow, status): (String, String) = test
+        .db
+        .connect()
+        .unwrap()
+        .query_row("SELECT workflow, status FROM jobs WHERE job_id = 'book-1-ocr'", [], |row| {
+            Ok((row.get(0)?, row.get(1)?))
+        })
+        .unwrap();
+    assert_eq!((workflow.as_str(), status.as_str()), ("ocr", "succeeded"));
+    assert!(
+        test.db.connect().unwrap().execute("UPDATE jobs SET status = '\"failed\"' WHERE job_id = 'book-1'", []).is_err(),
+        "CHECK 挡住不认识的取值（包括以前带引号的写法）"
+    );
 }

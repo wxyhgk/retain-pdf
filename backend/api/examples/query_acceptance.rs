@@ -71,7 +71,7 @@ fn seed_library(state: &AppState) -> Result<()> {
     let mut conn = Connection::open(&state.config.jobs_db_path)?;
     let tx = conn.transaction()?;
     {
-        let mut insert = tx.prepare("INSERT INTO jobs(job_id,workflow,status_json,created_at,updated_at,command_json,request_json,stage,stage_detail,log_tail_json) SELECT ?1,workflow,'\"failed\"',created_at,?2,command_json,request_json,'failed',?3,'[]' FROM jobs WHERE job_id='acceptance-ui'")?;
+        let mut insert = tx.prepare("INSERT INTO jobs(job_id,workflow,status,created_at,updated_at,command_json,request_json,stage,stage_detail,log_tail_json) SELECT ?1,workflow,'failed',created_at,?2,command_json,request_json,'failed',?3,'[]' FROM jobs WHERE job_id='acceptance-ui'")?;
         for n in 0..12_001 {
             let id = format!("acceptance-library-{n:05}");
             insert.execute(params![
