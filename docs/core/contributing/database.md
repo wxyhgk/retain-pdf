@@ -43,6 +43,10 @@
 - 状态、流程这类取值存**纯文本**并用 `CHECK` 钉住取值（v32 起 `jobs.status`、`jobs.workflow`；以前是 JSON 字符串 `"succeeded"`）。
   代码里写库、查库用 `JobStatusKind::as_str()` / `WorkflowKind::as_str()`，不要 `serde_json::to_string`（那会带引号）。
   OCR 子任务的父任务在 `jobs.parent_job_id`（写任务时由数据库层按编号 `{父任务}-ocr` 填，父任务不在库里时留空）。
+- 任务的运行信息（接口里的 `runtime`，v33 起）**只存算不出来的**：阶段历史在 `job_stage_history`（一段一行，只追加；写的时候只动有变化的行），
+  进入当前阶段、最后出错和重试的时间、重试次数是 `jobs` 上的列。当前阶段、结束原因、两个耗时、最终失败分类和摘要读出来时按
+  `JobRecord::fill_derived_runtime` 现算——和写之前 `sync_runtime_info` 最后一步是同一个函数，所以读出来的和写进去时算的一样
+  （`runtime_reads_back_exactly_what_was_computed_before_writing` 钉着）。`LEGACY_COLUMNS` 从 v33 起不再补（否则会把删掉的 `runtime_json` 加回来）。
 - `db/rows.rs`：共享数据库行 decode；领域专用 decode 留在对应子模块。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
 - `db/pipeline/*`：pipeline attempt、dispatch、stage、unit、event 与事务写入；读取和迁移写入不得重新揉回一个大文件。

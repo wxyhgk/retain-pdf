@@ -377,7 +377,7 @@ fn build_state_reconciles_malformed_running_rows_via_raw_db_fallback() {
             INSERT INTO jobs (
                 job_id, workflow, status, created_at, updated_at, started_at, finished_at,
                 upload_id, pid, command_json, request_json, error, stage, stage_detail,
-                progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json
+                progress_current, progress_total, log_tail_json, result_json, last_error_at, failure_json
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
             "#,
         params![
@@ -453,15 +453,14 @@ fn upgrading_to_v29_rewrites_legacy_workflow_rows_once() {
     db.init().expect("init db");
 
     let conn = Connection::open(&fs.jobs_db_path).expect("open sqlite");
-    // v29 那时流程存的是 JSON 字符串（`"mineru"`）；v32 起列上有 CHECK，造老数据时暂时关掉。
-    // 倒回 v28 重跑时 v32 见 `status` 已在就跳过（APPLIED_CHECKS），这一行留着 v29 改出来的 `"book"`。
+    // v29 那时流程存的是 JSON 字符串（`"mineru"`）；v32 起列上有 CHECK，造老数据、跑 v29 时暂时关掉。
     conn.execute_batch("PRAGMA ignore_check_constraints = ON;").expect("allow legacy values");
     conn.execute(
         r#"
             INSERT INTO jobs (
                 job_id, workflow, status, created_at, updated_at, started_at, finished_at,
                 upload_id, pid, command_json, request_json, error, stage, stage_detail,
-                progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json
+                progress_current, progress_total, log_tail_json, result_json, last_error_at, failure_json
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
             "#,
         params![

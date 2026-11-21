@@ -1665,14 +1665,10 @@ async fn document_jobs_return_authoritative_pagination_and_retry_metadata() {
         )
         .expect("set deterministic ordering");
     }
+    // 运行信息 v33 起拆成列：重试次数和时间在 jobs 上。
     conn.execute(
-        "UPDATE jobs SET runtime_json = ?1 WHERE job_id = 'job-page-2'",
-        rusqlite::params![serde_json::json!({
-            "retry_count": 2,
-            "last_retry_at": "2026-09-01T01:59:00Z",
-            "stage_history": []
-        })
-        .to_string()],
+        "UPDATE jobs SET retry_count = 2, last_retry_at = '2026-09-01T01:59:00Z' WHERE job_id = 'job-page-2'",
+        [],
     )
     .expect("set retry runtime");
 

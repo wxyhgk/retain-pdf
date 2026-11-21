@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 32
+-- user_version 33
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -223,6 +223,23 @@ TABLE job_page_charges
   updated_at TEXT NOT NULL
   PRIMARY KEY (job_id)
 
+TABLE job_stage_history
+  job_id TEXT NOT NULL PRIMARY KEY#1
+  seq INTEGER NOT NULL PRIMARY KEY#2
+  stage TEXT NOT NULL
+  detail TEXT
+  enter_at TEXT NOT NULL
+  exit_at TEXT
+  duration_ms INTEGER
+  terminal_status TEXT
+  progress_current INTEGER
+  progress_total INTEGER
+  FOREIGN KEY (job_id) REFERENCES jobs(job_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  PRIMARY KEY (job_id, seq)
+  TRIGGER sync_dirty_job_stage_history_delete: CREATE TRIGGER sync_dirty_job_stage_history_delete AFTER DELETE ON job_stage_history WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', OLD.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_job_stage_history_insert: CREATE TRIGGER sync_dirty_job_stage_history_insert AFTER INSERT ON job_stage_history WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+  TRIGGER sync_dirty_job_stage_history_update: CREATE TRIGGER sync_dirty_job_stage_history_update AFTER UPDATE ON job_stage_history WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
 TABLE jobs
   job_id TEXT PRIMARY KEY#1
   created_at TEXT NOT NULL
@@ -240,7 +257,6 @@ TABLE jobs
   progress_total INTEGER
   log_tail_json TEXT NOT NULL
   result_json TEXT
-  runtime_json TEXT
   failure_json TEXT
   document_id TEXT
   run_generation INTEGER NOT NULL DEFAULT 0
@@ -249,6 +265,10 @@ TABLE jobs
   status TEXT NOT NULL DEFAULT 'queued'
   workflow TEXT NOT NULL DEFAULT 'book'
   parent_job_id TEXT
+  stage_entered_at TEXT
+  last_error_at TEXT
+  retry_count INTEGER NOT NULL DEFAULT 0
+  last_retry_at TEXT
   FOREIGN KEY (parent_job_id) REFERENCES jobs(job_id) ON UPDATE NO ACTION ON DELETE SET NULL
   INDEX idx_jobs_document_updated: CREATE INDEX idx_jobs_document_updated ON jobs(document_id, updated_at DESC, job_id DESC)
   INDEX idx_jobs_owner: CREATE INDEX idx_jobs_owner ON jobs(owner_user_id)

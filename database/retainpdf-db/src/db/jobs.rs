@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use rusqlite::{params, params_from_iter, types::Value, OptionalExtension, Row};
 
 use crate::models::domain::{
-    JobFailureInfo, JobRuntimeInfo, JobSnapshot, JobStatusKind, WorkflowKind,
+    JobFailureInfo, JobSnapshot, JobStatusKind, WorkflowKind,
 };
 
 use super::rows::{row_to_job_snapshot, JOB_SELECT_SQL, JOB_SELECT_SQL_WITH_GENERATION};
@@ -485,16 +485,8 @@ impl Db {
             resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
             recovery_hint: Some(recovery.hint.to_string()),
         };
-        let runtime = JobRuntimeInfo {
-            current_stage: Some("failed".to_string()),
-            stage_started_at: Some(timestamp.to_string()),
-            last_stage_transition_at: Some(timestamp.to_string()),
-            terminal_reason: Some("failed".to_string()),
-            last_error_at: Some(timestamp.to_string()),
-            final_failure_category: Some(failure.category.clone()),
-            final_failure_summary: Some(failure.summary.clone()),
-            ..JobRuntimeInfo::default()
-        };
+        // 运行信息（v33 起）只存进入当前阶段、最后出错的时间；当前阶段、结束原因、最终失败从下面这几列算。
+        // 以前这里整块覆盖 runtime_json，连阶段历史一起清空、耗时写成空；现在阶段历史留着，耗时读的时候照常算。
         conn.execute(
             r#"
             UPDATE jobs
@@ -505,16 +497,16 @@ impl Db {
                 error = ?4,
                 stage = 'failed',
                 stage_detail = 'startup stale running job recovered',
-                runtime_json = ?5,
-                failure_json = ?6
-            WHERE job_id = ?7
+                stage_entered_at = ?3,
+                last_error_at = ?3,
+                failure_json = ?5
+            WHERE job_id = ?6
             "#,
             params![
                 failed_status,
                 timestamp,
                 timestamp,
                 detail,
-                serde_json::to_string(&runtime)?,
                 serde_json::to_string(&failure)?,
                 job_id,
             ],

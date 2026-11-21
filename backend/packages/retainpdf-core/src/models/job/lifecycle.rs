@@ -51,12 +51,10 @@ impl JobRecord {
         let stage = self.stage.clone();
         let stage_detail = self.stage_detail.clone();
         let terminal_reason = terminal_reason_for_status(&self.status);
-        let started_at = self.started_at.clone();
         let finished_at = self
             .finished_at
             .clone()
             .unwrap_or_else(|| updated_at.clone());
-        let failure = self.failure.clone();
         // 阶段切换时 job 上的这对字段还是上一阶段的值,正好是要归档的那个。
         let stage_progress = (self.progress_current, self.progress_total);
 
@@ -114,6 +112,24 @@ impl JobRecord {
             );
         }
 
+        self.fill_derived_runtime();
+    }
+
+    /// 运行信息里能从任务别的列算出来的几项：当前阶段（= `stage`）、阶段切换时间（= 进入当前阶段的时间）、
+    /// 结束原因（按状态）、两个耗时、最终失败分类和摘要（= `failure`）。
+    ///
+    /// 写任务前 [`Self::sync_runtime_info`] 最后一步就是它；库 v33 起这几项不再存，数据库层读出任务后也调它补上，
+    /// 所以读出来的和写进去时算的一模一样。
+    pub fn fill_derived_runtime(&mut self) {
+        let stage = self.stage.clone();
+        let updated_at = self.updated_at.clone();
+        let started_at = self.started_at.clone();
+        let finished_at = self.finished_at.clone().unwrap_or_else(|| updated_at.clone());
+        let terminal_reason = terminal_reason_for_status(&self.status);
+        let failure = self.failure.clone();
+        let runtime = self.ensure_runtime_info();
+        runtime.current_stage = stage;
+        runtime.last_stage_transition_at = runtime.stage_started_at.clone();
         runtime.terminal_reason = terminal_reason;
         runtime.active_stage_elapsed_ms = runtime
             .stage_started_at

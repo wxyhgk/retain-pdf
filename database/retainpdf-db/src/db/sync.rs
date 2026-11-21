@@ -58,7 +58,7 @@ pub const SYNC_SEED_VERSIONS: &[(&str, u32)] = &[
     ("document", 2),
     ("collection", 1),
     ("collection_member", 1),
-    ("job", 1),
+    ("job", 2),
     ("glossary", 1),
 ];
 
@@ -91,6 +91,8 @@ pub fn entity_spec(kind: &str) -> Option<&'static [(&'static str, &'static [&'st
         ("pipeline_dispatches", &["job_id"]),
         // 任务进度、阶段快照都从事件算出来。
         ("events", &["job_id"]),
+        // v33 起任务的阶段历史单独一张表（以前在 jobs.runtime_json 里）。
+        ("job_stage_history", &["job_id"]),
     ];
     const GLOSSARY: &[(&str, &[&str])] = &[("glossaries", &["glossary_id"])];
     Some(match kind {
@@ -294,6 +296,57 @@ fn read_rows(
         out.push(map);
     }
     Ok(out)
+}
+
+/// 旧版本设备发来的整个实体按现在的表结构改写（行内的列见 [`upgrade_legacy_row`]）：
+/// - v33：任务行的 `runtime_json` 拆成 `jobs` 上的几列（进入当前阶段、最后出错和重试的时间、重试次数）和
+///   `job_stage_history` 的行；其余字段读的时候算，丢掉。
+fn upgrade_legacy_entity<'a>(kind: &str, rows: &'a SyncRows) -> std::borrow::Cow<'a, SyncRows> {
+    let legacy_runtime = kind == "job"
+        && rows.get("jobs").and_then(|r| r.first()).is_some_and(|row| row.contains_key("runtime_json"));
+    if !legacy_runtime {
+        return std::borrow::Cow::Borrowed(rows);
+    }
+    let mut upgraded = rows.clone();
+    let Some(job) = upgraded.get_mut("jobs").and_then(|r| r.first_mut()) else {
+        return std::borrow::Cow::Owned(upgraded);
+    };
+    let runtime: Value = job
+        .remove("runtime_json")
+        .and_then(|value| value.as_str().and_then(|text| serde_json::from_str(text).ok()))
+        .unwrap_or(Value::Null);
+    let job_id = job.get("job_id").cloned().unwrap_or(Value::Null);
+    let field = |name: &str| runtime.get(name).cloned().unwrap_or(Value::Null);
+    job.insert("stage_entered_at".into(), field("stage_started_at"));
+    job.insert("last_error_at".into(), field("last_error_at"));
+    job.insert("retry_count".into(), runtime.get("retry_count").cloned().unwrap_or(Value::from(0)));
+    job.insert("last_retry_at".into(), field("last_retry_at"));
+    if !upgraded.contains_key("job_stage_history") {
+        let history = runtime
+            .get("stage_history")
+            .and_then(Value::as_array)
+            .map(|entries| {
+                entries
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(seq, entry)| {
+                        let mut row = Map::new();
+                        row.insert("job_id".into(), job_id.clone());
+                        row.insert("seq".into(), Value::from(seq as i64));
+                        for key in [
+                            "stage", "detail", "enter_at", "exit_at", "duration_ms", "terminal_status",
+                            "progress_current", "progress_total",
+                        ] {
+                            row.insert(key.into(), entry.get(key).cloned().unwrap_or(Value::Null));
+                        }
+                        row.get("stage").is_some_and(Value::is_string).then_some(row)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        upgraded.insert("job_stage_history".into(), history);
+    }
+    std::borrow::Cow::Owned(upgraded)
 }
 
 /// 旧版本设备发来的行（同步文件夹里老的包也是）按现在的表结构改写。只认得的几处，按迁移版本往下加：
@@ -831,6 +884,8 @@ impl Db {
         let spec = entity_spec(update.kind)
             .ok_or_else(|| anyhow::anyhow!("unknown sync kind: {}", update.kind))?;
         let parts = split_entity_key(update.kind, update.key)?;
+        let rows = rows.map(|rows| upgrade_legacy_entity(update.kind, rows));
+        let rows = rows.as_deref();
         let mut conn = self.connect()?;
         let tx = Transaction::new(&mut conn, TransactionBehavior::Immediate)?;
         tx.execute_batch("PRAGMA defer_foreign_keys = ON;")?;
@@ -988,6 +1043,30 @@ mod legacy_row_tests {
 
     fn row(value: Value) -> Map<String, Value> {
         value.as_object().unwrap().clone()
+    }
+
+    /// 旧版本设备发来的任务（v33 以前）：runtime_json 拆成几列和阶段历史的行。
+    #[test]
+    fn legacy_job_runtime_is_split_into_columns_and_history_rows() {
+        let runtime = json!({"stage_started_at": "t1", "retry_count": 2, "last_retry_at": "t0", "last_error_at": null,
+            "stage_history": [{"stage": "queued", "enter_at": "t0", "exit_at": "t1", "duration_ms": 5},
+                              {"stage": "translating", "enter_at": "t1"}]});
+        let mut rows = super::SyncRows::new();
+        rows.insert("jobs".into(), vec![row(json!({"job_id": "j", "status_json": "\"running\"", "runtime_json": runtime.to_string()}))]);
+        let upgraded = super::upgrade_legacy_entity("job", &rows);
+        let job = &upgraded["jobs"][0];
+        assert!(!job.contains_key("runtime_json"));
+        assert_eq!(job["stage_entered_at"], json!("t1"));
+        assert_eq!(job["retry_count"], json!(2));
+        let history = &upgraded["job_stage_history"];
+        assert_eq!(history.len(), 2);
+        assert_eq!(history[1]["seq"], json!(1));
+        assert_eq!(history[1]["stage"], json!("translating"));
+        assert_eq!(history[1]["exit_at"], Value::Null);
+
+        let mut current = super::SyncRows::new();
+        current.insert("jobs".into(), vec![row(json!({"job_id": "j", "status": "running"}))]);
+        assert!(matches!(super::upgrade_legacy_entity("job", &current), std::borrow::Cow::Borrowed(_)));
     }
 
     /// 旧版本设备发来的任务行（v32 以前的列）改写成现在的样子；新的行、别的表原样不动。
