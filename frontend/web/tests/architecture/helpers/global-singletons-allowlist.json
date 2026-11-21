@@ -24,6 +24,7 @@
   "src/features/library/domain/recent-jobs/state.ts::let-var::defaultRecentJobsStatePort",
   "src/features/library/ui/shell/BookCard.tsx::new-collection::renderCountsForTests",
   "src/features/reader/domain/navigate-to-reader.ts::let-var::navigateImpl",
+  "src/features/usage/ui/use-usage.ts::new-collection::remembered",
   "src/platform/config/desktop-persistence.ts::let-var::desktopPersistedSnapshot",
   "src/platform/config/runtime.ts::let-var::runtimeConfig",
   "src/platform/contracts/credentials-contract.ts::let-var::_defaultCredentialsStatePort",
