@@ -925,7 +925,7 @@ fn a_v35_book_reads_the_same_after_the_library_items_migration() {
     assert_eq!(db.document_current_translation_version("doc-1").unwrap().as_deref(), Some("tv-1"));
     let suggestions = db.list_document_metadata_suggestions("doc-1", 10).unwrap();
     assert_eq!((suggestions.len(), suggestions[0].document_id.as_str()), (1, "doc-1"));
-    let (in_collection, _) = db.list_documents_with_total(10, 0, None, Some("col-1"), None, None).unwrap();
+    let (in_collection, _) = db.list_documents_with_total(10, 0, &crate::db::DocumentListFilter { collection_id: Some("col-1"), ..Default::default() }).unwrap();
     assert_eq!(in_collection.len(), 1);
     assert_eq!(
         db.resource_owner(crate::db::OwnedKind::Document, "doc-1").unwrap().as_deref(),
@@ -939,7 +939,7 @@ fn a_v35_book_reads_the_same_after_the_library_items_migration() {
 
     assert!(db.delete_document("doc-1").unwrap());
     let conn = db.connect().unwrap();
-    for table in ["library_items", "item_references", "item_creators", "item_files", "item_title_suggestions", "translation_versions", "collection_documents"] {
+    for table in ["library_items", "item_references", "item_creators", "item_files", "item_title_suggestions", "translation_versions", "collection_items", "item_tags"] {
         let left: i64 = conn.query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| row.get(0)).unwrap();
         assert_eq!(left, 0, "{table}");
     }

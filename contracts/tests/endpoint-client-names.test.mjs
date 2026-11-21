@@ -164,7 +164,7 @@ test("settings batch 2 glossaries endpoints carry the client names from the fron
 // 译文版本（2026-11-18）：一本书的几份译文，前端能切换。追加在书的端点末尾。
 test("translation versions endpoints carry their client names", () => {
   const documents = read("library-documents.v1.schema.json");
-  const table = documents.endpoints.slice(20).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
+  const table = documents.endpoints.slice(20, 23).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
   assert.deepEqual(table, [
     ["GET", "/api/v1/documents/:document_id/translation-versions", "listTranslationVersions", "json", "TranslationVersionsQuery", undefined, "TranslationVersionsView"],
     ["PUT", "/api/v1/documents/:document_id/translation-version", "setCurrentTranslationVersion", "json", undefined, "SetCurrentTranslationVersionInput", "TranslationVersionsView"],
@@ -173,4 +173,18 @@ test("translation versions endpoints carry their client names", () => {
   const reading = documents.endpoints.find((endpoint) => endpoint.path === "/api/v1/documents/:document_id/reading");
   assert.equal(reading.query, "DocumentReadingQuery");
   assert.ok(documents.definitions.DocumentReadingView.required.includes("version_id"));
+});
+
+test("tag endpoints carry their client names", () => {
+  const documents = read("library-documents.v1.schema.json");
+  const table = documents.endpoints.slice(23).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
+  assert.deepEqual(table, [
+    ["GET", "/api/v1/tags", "listTags", "json", undefined, undefined, "TagListView"],
+    ["POST", "/api/v1/tags", "createTag", "json", undefined, "CreateTagInput", "TagRecord"],
+    ["PATCH", "/api/v1/tags/:tag_id", "patchTag", "json", undefined, "PatchTagInput", "TagRecord"],
+    ["DELETE", "/api/v1/tags/:tag_id", "deleteTag", "json", undefined, undefined, "TagDeleteResultView"],
+    ["PUT", "/api/v1/documents/:document_id/tags", "setDocumentTags", "json", undefined, "SetDocumentTagsInput", "DocumentRecord"],
+  ]);
+  assert.ok(documents.definitions.DocumentRecord.required.includes("tags"));
+  assert.equal(documents.definitions.ListDocumentsQuery.properties.tag_id.type, "string");
 });

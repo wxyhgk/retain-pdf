@@ -57,6 +57,7 @@ pub mod api {
         PatchDocumentInput, SearchQuery, SearchResultView,
         DocumentReadingQuery, PatchTranslationVersionInput, SetCurrentTranslationVersionInput,
         TranslationVersionView, TranslationVersionsQuery, TranslationVersionsView,
+        CreateTagInput, PatchTagInput, SetDocumentTagsInput, TagDeleteResultView, TagListView,
     };
     pub use retainpdf_platform::{BackupItemView, BackupRestoreView, BackupStatusView};
 }

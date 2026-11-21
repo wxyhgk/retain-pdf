@@ -98,14 +98,14 @@ pub fn list_documents(
         // 按任务查：最多一条，不分页；`limit`、`offset` 照请求回显，`has_more` 恒为 false。
         return Ok(DocumentListView { documents, total, limit, offset: query.offset, has_more: false });
     }
-    let (documents, total) = deps.db.list_documents_with_total(
-        limit,
-        query.offset,
-        query.reading_status.as_deref(),
-        query.collection_id.as_deref(),
-        query.q.as_deref(),
+    let filter = retainpdf_data::db::DocumentListFilter {
+        reading_status: query.reading_status.as_deref(),
+        collection_id: query.collection_id.as_deref(),
+        tag_id: query.tag_id.as_deref(),
+        query: query.q.as_deref(),
         owner,
-    )?;
+    };
+    let (documents, total) = deps.db.list_documents_with_total(limit, query.offset, &filter)?;
     let documents = documents
         .into_iter()
         .map(|doc| with_document_media_urls(doc, base_url))

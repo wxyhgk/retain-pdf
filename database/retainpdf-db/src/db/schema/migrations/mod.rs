@@ -191,6 +191,11 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         name: "library_items",
         sql: include_str!("v36_library_items.sql"),
     },
+    Migration {
+        version: 37,
+        name: "library_tags",
+        sql: include_str!("v37_library_tags.sql"),
+    },
 ];
 
 #[cfg(test)]

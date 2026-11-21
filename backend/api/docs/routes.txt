@@ -1,7 +1,7 @@
 # 全部 HTTP 路由：方法 路径 多用户下网站账号的访问策略（signed 登录可用 / admin 只给管理员 /
 # closed 关闭 / public 不需要登录）。由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
-# 104 条路径，126 个接口
+# 107 条路径，131 个接口
 GET    /api/v1/account/pages  signed
 GET    /api/v1/admin/invites  admin
 POST   /api/v1/admin/invites  admin
@@ -55,6 +55,7 @@ POST   /api/v1/documents/:document_id/metadata-suggestions  signed
 POST   /api/v1/documents/:document_id/metadata-suggestions/:suggestion_id/apply  signed
 POST   /api/v1/documents/:document_id/ocr  signed
 GET    /api/v1/documents/:document_id/reading  signed
+PUT    /api/v1/documents/:document_id/tags  signed
 POST   /api/v1/documents/:document_id/translate  signed
 GET    /api/v1/documents/:document_id/translation-coverage  signed
 PUT    /api/v1/documents/:document_id/translation-version  signed
@@ -122,6 +123,10 @@ GET    /api/v1/sync  admin
 PUT    /api/v1/sync  admin
 POST   /api/v1/sync/run  admin
 POST   /api/v1/sync/test  admin
+GET    /api/v1/tags  signed
+POST   /api/v1/tags  signed
+DELETE /api/v1/tags/:tag_id  signed
+PATCH  /api/v1/tags/:tag_id  signed
 POST   /api/v1/uploads  signed
 GET    /api/v1/usage  signed
 GET    /api/v1/usage/estimate  signed

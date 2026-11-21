@@ -62,7 +62,8 @@
 - 书库（v36 起）是「条目主表 + 各类型明细表」：条目 `library_items`（现在只有文献 `reference`，以后有笔记、批注、插件的类型）、
   书目 `item_references`（常用 CSL 字段是列，其余整块放 `extra_csl_json`；书名来源和锁也在这里）、作者 `item_creators`（一人一行）、
   条目下的文件 `item_files`（`file_id` = PDF 内容的 sha256 = 接口里的 `document_id`；阅读状态、当前任务、选哪份译文 `chosen_version_id`）、
-  书名建议 `item_title_suggestions`。上传 PDF 自动建的条目编号就是文件的内容指纹（`item_id = file_id`）。
+  书名建议 `item_title_suggestions`；v37 起还有标签 `tags` / `item_tags`（任何条目都能打；标签编号由名字算出来，同名不重复建）、
+  条目之间的关联 `item_relations`、文件夹成员 `collection_items`（成员是条目）。上传 PDF 自动建的条目编号就是文件的内容指纹（`item_id = file_id`）。
   **接口里的一本书（`DocumentRecord`）从视图 `library_documents` 读**，按书查、按书过滤都写在这个视图上；写的时候分别写条目、书目、
   文件。删一本书删的是条目（`DELETE FROM library_items`），书目、作者、文件、书名建议，以及挂在文件下的译文版本、文件夹成员
   都跟着外键级联删。任务、译文版本、全文索引按文件的内容指纹关联，不直接指向条目。设计见

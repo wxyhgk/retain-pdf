@@ -49,10 +49,11 @@ pub const SYNC_FORMAT: &str = "retain-pdf-sync";
 /// 4:任务行换成数据库 v32 的列(`jobs.status` 纯文本、`workflow` 不带引号,2026-11-21 数据库重做第 1a 步);
 /// 5:任务的运行信息拆开(v33:`jobs.runtime_json` 换成几列 + `job_stage_history` 表,第 1b 步);
 /// 6:书换成条目 + 明细表(v36:`documents` 拆成 `library_items`、`item_references`、`item_creators`、`item_files`,第 5a 步)。
+/// 7:书带上标签、条目关联,新种类 `tag`,文件夹成员换成条目(v37:`collection_items`、`tags`、`item_tags`、`item_relations`,第 5b 步)。
 /// 旧格式的程序读不了新的任务行,所以新程序一连上就把文件夹升到最新(旧设备会提示先更新);
-/// 文件夹里以前格式的老包照常读,收到的旧任务行、旧的书按新结构改写(`retainpdf-db` 的 `upgrade_legacy_entity`、`upgrade_legacy_row`、
+/// 文件夹里以前格式的老包照常读,收到的旧任务行、旧的书和文件夹成员按新结构改写(`retainpdf-db` 的 `upgrade_legacy_entity`、`upgrade_legacy_row`、
 /// `upgrade_legacy_sync_record`)。
-pub const SYNC_FORMAT_VERSION: u64 = 6;
+pub const SYNC_FORMAT_VERSION: u64 = 7;
 const OLDEST_READABLE_VERSION: u64 = 2;
 
 const SEGMENT_END: &str = "segment_end";

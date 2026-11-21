@@ -137,6 +137,7 @@ fn not_found_for(kind: OwnedKind, id: &str) -> AppError {
         OwnedKind::Document => "document",
         OwnedKind::Glossary => "glossary",
         OwnedKind::Collection => "collection",
+        OwnedKind::Tag => "tag",
     };
     AppError::not_found(format!("{label} not found: {id}"))
 }

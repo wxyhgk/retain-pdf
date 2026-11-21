@@ -63,7 +63,7 @@ impl Db {
         let secrets: Vec<String> = secrets.into_iter().collect();
         let mut out = OrderedSink { sink, secrets, last: None, count: 0 };
 
-        // 类别按字母顺序：collection、document、event_feed、glossary、job、job_events、job_pipeline、list、upload。
+        // 类别按字母顺序：collection、document、event_feed、glossary、job、job_events、job_pipeline、list、tag、upload。
         let mut collections = self.list_collections()?;
         collections.sort_by(|a, b| a.collection_id.cmp(&b.collection_id));
         for collection in collections {
@@ -71,7 +71,7 @@ impl Db {
             out.emit("collection", &id, serde_json::to_value(collection)?)?;
         }
 
-        let (mut documents, document_total) = self.list_documents_with_total(u32::MAX, 0, None, None, None, None)?;
+        let (mut documents, document_total) = self.list_documents_with_total(u32::MAX, 0, &Default::default())?;
         let document_order: Vec<String> = documents.iter().map(|d| d.document_id.clone()).collect();
         documents.sort_by(|a, b| a.document_id.cmp(&b.document_id));
         for document in &documents {
@@ -198,6 +198,14 @@ impl Db {
         lists.sort_by(|a, b| a.0.cmp(&b.0));
         for (id, data) in lists {
             out.emit("list", &id, data)?;
+        }
+
+        // 标签（v37 起）。
+        let mut tags = self.list_tags(None)?;
+        tags.sort_by(|a, b| a.tag_id.cmp(&b.tag_id));
+        for tag in tags {
+            let id = tag.tag_id.clone();
+            out.emit("tag", &id, serde_json::to_value(tag)?)?;
         }
 
         for upload_id in &keys.upload_ids {

@@ -189,7 +189,8 @@ Reader 宿主接入 job/artifact、Markdown、区域、页面元数据和实时�
 - `/documents/{id}/jobs` 的 `has_more` 改成多取一条判断，`total` 照旧。
 - 这几个接口和书、合集的请求体（`PATCH /documents/{id}`、`POST|PATCH /collections`、
   `POST /collections/{id}/documents`）、`DELETE /documents/{id}` 的查询参数，不认识的字段一律 400。
-  `PATCH /collections/{id}` 只认 `name`、`sort_order`，`parent_id` 400。
+  `PATCH /collections/{id}` 只认 `name`、`sort_order`，`parent_id` 400。标签的请求体（`POST|PATCH /tags`、
+  `PUT /documents/{id}/tags`）也一样。
 
 书、合集、全文检索、阅读入口（`/documents/{id}/reading`）、翻译覆盖（`/documents/{id}/translation-coverage`）、
 书的文件清单（`/documents/{id}/files`）、元数据建议的请求和返回，2026-10-22 起有契约
@@ -786,6 +787,8 @@ PDF 元数据：
 - `PATCH|DELETE /api/v1/collections/{collection_id}`
 - `POST /api/v1/collections/{collection_id}/documents`
 - `DELETE /api/v1/collections/{collection_id}/documents/{document_id}`
+- `GET|POST /api/v1/tags`、`PATCH|DELETE /api/v1/tags/{tag_id}`、`PUT /api/v1/documents/{document_id}/tags`（2026-11-21 起，见
+  [书库接口](../frontend/library-api.md)第 8 节）
 - `GET /api/v1/fonts`
 - `POST /api/v1/fonts/upload`
 

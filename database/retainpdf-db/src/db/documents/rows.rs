@@ -6,7 +6,7 @@ use crate::models::api::{BlockSearchHit, DocumentRecord};
 /// 一本书从视图 `library_documents` 读（v36：文件 + 所属条目的书目信息，见迁移 `v36_library_items.sql`）。
 /// 最后一列 `has_translation`：有没有成功的非 OCR 任务（走 idx_jobs_document_updated，每行一次
 /// 索引探测）。规则和 `BEST_SUCCEEDED_JOB_SQL` 的「非 OCR 优先」同源，见 DocumentRecord 字段注释。
-pub(in crate::db) const DOCUMENT_COLUMNS: &str = "d.document_id, d.title, d.title_source, d.title_locked, d.authors_json, d.year, d.doi, d.source_filename, d.page_count, d.bytes, d.active_job_id, d.reading_status, d.added_at, d.last_opened_at, d.updated_at, EXISTS (SELECT 1 FROM jobs j WHERE j.document_id = d.document_id AND j.status = 'succeeded' AND COALESCE(j.workflow, '') <> 'ocr')";
+pub(in crate::db) const DOCUMENT_COLUMNS: &str = "d.document_id, d.title, d.title_source, d.title_locked, d.authors_json, d.year, d.doi, d.source_filename, d.page_count, d.bytes, d.active_job_id, d.reading_status, d.added_at, d.last_opened_at, d.updated_at, EXISTS (SELECT 1 FROM jobs j WHERE j.document_id = d.document_id AND j.status = 'succeeded' AND COALESCE(j.workflow, '') <> 'ocr'), d.tags_json";
 
 /// sha2 0.11 的输出类型不再实现 LowerHex,统一走手动十六进制编码。
 pub fn sha256_hex(bytes: &[u8]) -> String {
@@ -70,6 +70,12 @@ pub(in crate::db) fn row_to_document(row: &rusqlite::Row<'_>) -> rusqlite::Resul
         cover_url: String::new(),
         thumbnail_url: String::new(),
         has_translation: row.get::<_, i64>(15)? != 0,
+        tags: {
+            let json: String = row.get(16)?;
+            serde_json::from_str(&json).map_err(|error| {
+                rusqlite::Error::FromSqlConversionFailure(16, rusqlite::types::Type::Text, Box::new(error))
+            })?
+        },
     })
 }
 

@@ -120,6 +120,11 @@ fn event_uid_is_backfilled_for_legacy_schema_and_migrations_are_idempotent() {
          -- v36（2026-11-21）把 documents 拆成条目表：回到 v13 时还是 documents（这时还没有 v22 的归属列）、
          -- document_title_state、document_metadata_suggestions。夹具里没有书，删掉新表、按那时的样子补回空表，重跑的 v36 再拆。
          -- v30 的译文版本表指向书，一起撤掉，重跑的 v30 按 documents 再建。
+         -- v37 的标签、条目关联、文件夹成员（成员是条目）也撤掉；回到 v13 时成员表是 collection_documents。
+         DROP TABLE item_relations;
+         DROP TABLE item_tags;
+         DROP TABLE tags;
+         DROP TABLE collection_items;
          DROP VIEW library_documents;
          DROP TABLE translation_version_jobs;
          DROP TABLE translation_versions;
@@ -134,6 +139,10 @@ fn event_uid_is_backfilled_for_legacy_schema_and_migrations_are_idempotent() {
              page_count INTEGER NOT NULL DEFAULT 0, bytes INTEGER NOT NULL DEFAULT 0, active_job_id TEXT,
              reading_status TEXT NOT NULL DEFAULT 'unread', added_at TEXT NOT NULL, last_opened_at TEXT,
              updated_at TEXT NOT NULL, active_version_id TEXT);
+         CREATE TABLE collection_documents(
+             collection_id TEXT NOT NULL REFERENCES collections(collection_id) ON DELETE CASCADE,
+             document_id TEXT NOT NULL REFERENCES documents(document_id) ON DELETE CASCADE,
+             added_at TEXT NOT NULL, PRIMARY KEY (collection_id, document_id));
          CREATE TABLE document_title_state(
              document_id TEXT PRIMARY KEY REFERENCES documents(document_id) ON DELETE CASCADE,
              source TEXT NOT NULL DEFAULT 'filename', locked INTEGER NOT NULL DEFAULT 0, suggestion_id TEXT,

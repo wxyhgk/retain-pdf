@@ -187,6 +187,9 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     Path("src/routes/collections.rs"): (
         "crate::services::library",
     ),
+    Path("src/routes/tags.rs"): (
+        "crate::services::library",
+    ),
     Path("src/routes/uploads.rs"): (
         "crate::services::ingest",
     ),
