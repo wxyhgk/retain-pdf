@@ -93,3 +93,23 @@ export function setCurrentTranslationVersion(apiPrefix, args, options) {
 export function patchTranslationVersion(apiPrefix, args, options) {
     return request({ apiPrefix, method: "PATCH", path: `documents/${encodePathParam(args.document_id)}/translation-versions/${encodePathParam(args.version_id)}`, body: args.body, options });
 }
+/** GET /api/v1/tags */
+export function listTags(apiPrefix, _args = {}, options) {
+    return request({ apiPrefix, method: "GET", path: `tags`, options });
+}
+/** POST /api/v1/tags */
+export function createTag(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "POST", path: `tags`, body: args.body, options });
+}
+/** PATCH /api/v1/tags/:tag_id */
+export function patchTag(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "PATCH", path: `tags/${encodePathParam(args.tag_id)}`, body: args.body, options });
+}
+/** DELETE /api/v1/tags/:tag_id */
+export function deleteTag(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "DELETE", path: `tags/${encodePathParam(args.tag_id)}`, options });
+}
+/** PUT /api/v1/documents/:document_id/tags */
+export function setDocumentTags(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "PUT", path: `documents/${encodePathParam(args.document_id)}/tags`, body: args.body, options });
+}
