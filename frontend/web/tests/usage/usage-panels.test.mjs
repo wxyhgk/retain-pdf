@@ -134,3 +134,50 @@ test("概览的「花费」是全书累计：读这本书的用量，小字写�
     globalThis.fetch = previousFetch;
   }
 });
+
+test("设置「总用量」后端很慢：再打开先显示上一次的数字、写「正在更新…」，读好换上；同一时间只发一个请求", async () => {
+  const dom = makeDom();
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { UsageSettingsPanel } = await import("../../src/features/usage/ui/UsageSettingsPanel.jsx");
+  const { resetRememberedUsage } = await import("../../src/features/usage/ui/use-usage.js");
+  resetRememberedUsage();
+  const doc = dom.window.document;
+  let calls = 0;
+  const pending = [];
+  const load = () => {
+    calls += 1;
+    return new Promise((resolve) => pending.push(resolve));
+  };
+  const first = summary("all");
+  const second = { ...summary("all"), jobs_counted: 30 };
+
+  // 第一次：没有记住的，等着读；两个面板同时开也只发一个请求。
+  const host = doc.getElementById("root");
+  const extra = doc.createElement("div");
+  doc.body.appendChild(extra);
+  const rootA = createRoot(host);
+  const rootB = createRoot(extra);
+  rootA.render(React.createElement(UsageSettingsPanel, { load }));
+  rootB.render(React.createElement(UsageSettingsPanel, { load }));
+  await waitFor(() => /正在读取用量/.test(host.textContent), "第一次显示正在读取");
+  assert.equal(calls, 1, "同一份正在读，不发第二个请求");
+  pending.shift()(first);
+  await waitFor(() => /计入 29 个任务/.test(host.textContent), "读好显示");
+  rootA.unmount();
+  rootB.unmount();
+
+  // 再打开：马上是上一次的数字，后面写「正在更新…」；读好换成新的。
+  const rootC = createRoot(host);
+  rootC.render(React.createElement(UsageSettingsPanel, { load }));
+  await waitFor(() => doc.querySelector("[data-usage-refreshing]"), "正在更新");
+  assert.match(host.textContent, /计入 29 个任务/, "先显示上一次的");
+  // 重读在 effect 里发：先显示、后发请求，机器忙时两者之间有空档。
+  await waitFor(() => calls === 2 && pending.length === 1, "后台重读");
+  pending.shift()(second);
+  await waitFor(() => /计入 30 个任务/.test(host.textContent), "换成新的");
+  assert.equal(doc.querySelector("[data-usage-refreshing]"), null);
+  rootC.unmount();
+  extra.remove();
+  resetRememberedUsage();
+});
