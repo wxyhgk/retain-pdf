@@ -181,3 +181,38 @@ fn reader_regions_link_cross_page_continuations() {
     assert!(wire.get("translated_block_text").is_none());
     fs::remove_dir_all(data_root).ok();
 }
+
+#[test]
+fn reader_regions_show_whole_table_translations() {
+    let data_root = temp_data_root("tables");
+    let job = sample_job(&data_root);
+    let table_html = "<table><tr><td>温度</td><td>25</td></tr></table>";
+    write_json(
+        &data_root.join("jobs/sample/translated/tables.v1.json"),
+        &json!({"schema": "tables.v1", "tables": [
+            // 整表翻了：图片块这里借来当表格块，看译文换上去
+            {"block_id": "p001-b0002", "page_index": 0, "result": {"status": "translated"},
+             "translated_html": table_html},
+            // 整表保留原文、没交齐：照旧只有原文
+            {"block_id": "p002-b0001", "page_index": 1, "result": {"status": "kept"},
+             "translated_html": null}
+        ]}),
+    );
+    let view = load_reader_regions_view(&data_root, &job).expect("regions");
+    let by_id = |id: &str| view.items.iter().find(|item| item.item_id == id).expect("item");
+    let table = by_id("p001-b0002");
+    assert_eq!(table.status, "translated");
+    assert_eq!(table.translated.text.as_deref(), Some(table_html));
+    assert_eq!(table.markdown.as_deref(), Some(table_html));
+    assert_eq!(table.source.bbox, table.translated.bbox);
+    let kept = by_id("p002-b0001");
+    assert_eq!(kept.status, "source_only");
+    assert_eq!(kept.translated.text, None);
+
+    // 读不懂的文件当没有，区块照常出来
+    fs::write(data_root.join("jobs/sample/translated/tables.v1.json"), "{").expect("write");
+    let view = load_reader_regions_view(&data_root, &job).expect("regions");
+    let table = view.items.iter().find(|item| item.item_id == "p001-b0002").expect("item");
+    assert_eq!(table.status, "source_only");
+    fs::remove_dir_all(data_root).ok();
+}

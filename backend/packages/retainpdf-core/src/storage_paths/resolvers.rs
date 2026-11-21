@@ -5,7 +5,7 @@ use crate::models::domain::{JobArtifactRecord, JobSnapshot};
 use super::constants::{
     OUTPUT_ARTIFACTS_DIR_NAME, OUTPUT_LOGS_DIR_NAME, OUTPUT_MARKDOWN_DIR_NAME,
     OUTPUT_RENDERED_DIR_NAME, OUTPUT_TRANSLATED_DIR_NAME, OUTPUT_TYPST_BOOK_OVERLAYS_DIR_NAME,
-    OUTPUT_TYPST_DIR_NAME, TRANSLATION_MANIFEST_FILE_NAME, TRANSLATION_REQUEST_JOURNAL_FILE_NAME,
+    OUTPUT_TYPST_DIR_NAME, TABLE_TRANSLATIONS_FILE_NAME, TRANSLATION_MANIFEST_FILE_NAME, TRANSLATION_REQUEST_JOURNAL_FILE_NAME,
     AGENT_EDITORIAL_EVENTS_RELATIVE_PATH,
 };
 use super::path_ops::resolve_data_path;
@@ -103,6 +103,15 @@ pub fn resolve_translation_manifest(job: &JobSnapshot, data_root: &Path) -> Opti
         .ok()?
         .join(TRANSLATION_MANIFEST_FILE_NAME);
     path.exists().then_some(path)
+}
+
+/// `<翻译目录>/tables.v1.json` —— 表格翻译的结果（建任务时 `translation.tables` 选了 `translate` 才有）。
+pub fn resolve_table_translations(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
+    let translations_dir = job.artifacts.as_ref()?.translations_dir.as_ref()?;
+    let path = resolve_data_path(data_root, translations_dir)
+        .ok()?
+        .join(TABLE_TRANSLATIONS_FILE_NAME);
+    path.is_file().then_some(path)
 }
 
 pub fn resolve_translation_diagnostics(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {

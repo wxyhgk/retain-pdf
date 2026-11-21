@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use retainpdf_core::models::domain::JobSnapshot;
 use retainpdf_core::storage_paths::{
     resolve_agent_editorial_events, resolve_markdown_path, resolve_ocr_markdown_images_dir, resolve_normalization_report,
-    resolve_normalized_document, resolve_output_pdf, resolve_source_pdf,
+    resolve_normalized_document, resolve_output_pdf, resolve_source_pdf, resolve_table_translations,
     resolve_translation_debug_index, resolve_translation_manifest,
     resolve_translation_request_journal,
 };
@@ -34,6 +34,8 @@ pub enum StoredFile {
     NormalizationReport,
     /// 翻译清单。
     TranslationManifest,
+    /// 表格翻译的结果（tables.v1.json）；没开表格翻译的任务没有。
+    TableTranslations,
     /// 翻译调试索引。
     TranslationDebugIndex,
     /// 翻译请求日志（jsonl）。
@@ -52,6 +54,7 @@ pub fn stored_path(job: &JobSnapshot, data_root: &Path, file: StoredFile) -> Opt
         StoredFile::NormalizedDocument => resolve_normalized_document(job, data_root),
         StoredFile::NormalizationReport => resolve_normalization_report(job, data_root),
         StoredFile::TranslationManifest => resolve_translation_manifest(job, data_root),
+        StoredFile::TableTranslations => resolve_table_translations(job, data_root),
         StoredFile::TranslationDebugIndex => resolve_translation_debug_index(job, data_root),
         StoredFile::TranslationRequestJournal => resolve_translation_request_journal(job, data_root),
         StoredFile::AgentEditorialEvents => resolve_agent_editorial_events(job, data_root),

@@ -151,7 +151,7 @@ export interface TranslationInput {
      */
     engine?: "legacy" | "agent";
     /**
-     * TRANSLATION_TABLE_MODES。表格翻译。keep：表格保留原文（默认）；translate：正文翻完后由表格 agent 逐张翻（先只翻有文字层的表），结果写 translated/tables.v1.json。阅读页、PDF 还没用上这份结果。
+     * TRANSLATION_TABLE_MODES。表格翻译。keep：表格保留原文（默认）；translate：正文翻完后由表格 agent 逐张翻（先只翻有文字层的表），结果写 translated/tables.v1.json。阅读页的区块接口 reader/regions 用上了（整表翻了的表格块，translated.text 是整表译文 HTML）；译文 PDF 还没用上。
      */
     tables?: "keep" | "translate";
     start_page?: number;
