@@ -136,6 +136,11 @@ pub fn normalize_job_artifacts_for_storage(
     normalize_optional_path(data_root, &mut artifacts.thumbnail_image_path)?;
     normalize_optional_path(data_root, &mut artifacts.summary)?;
     normalize_optional_path(data_root, &mut artifacts.render_config_json)?;
+    // 这两个以前漏了（2026-11-21 查出 142 个任务把事件日志存成了本机绝对路径，还会同步到别的设备）。
+    // 宽松处理：数据目录外的路径（别的设备同步来的）原样留着，不让整条任务写不进去——事件日志的位置读的时候
+    // 由任务目录推出来（`resolve_events_jsonl`），这一项只在列中间文件时用到。
+    normalize_optional_path_lenient(data_root, &mut artifacts.events_jsonl);
+    normalize_optional_path_lenient(data_root, &mut artifacts.previous_output_pdf);
     if let Some(diagnostics) = artifacts.ocr_provider_diagnostics.as_mut() {
         normalize_optional_path(data_root, &mut diagnostics.artifacts.provider_result_json)?;
         normalize_optional_path(data_root, &mut diagnostics.artifacts.provider_bundle_zip)?;
@@ -211,6 +216,16 @@ pub fn job_uses_legacy_path_storage(job: &JobSnapshot) -> bool {
             .any(data_path_is_absolute)
         })
         .unwrap_or(false)
+}
+
+/// 同 [`normalize_optional_path`]，但数据目录外的路径不报错、原样留着。
+fn normalize_optional_path_lenient(data_root: &Path, slot: &mut Option<String>) {
+    let Some(value) = slot.as_ref().map(|item| item.trim()).filter(|item| !item.is_empty()) else {
+        return;
+    };
+    if let Ok(relative) = to_relative_data_path(data_root, Path::new(value)) {
+        *slot = Some(relative);
+    }
 }
 
 fn normalize_optional_path(data_root: &Path, slot: &mut Option<String>) -> Result<()> {
