@@ -21,7 +21,6 @@ import {
   type ReaderPaneId,
 } from "./reader-dom-contract.js";
 import {
-  readerRegionKindForRegion,
   projectReaderRegion,
   type ReaderRegionHighlight,
 } from "../shared/data/reader-regions.js";
@@ -174,8 +173,7 @@ function PdfPageSlotInner({
   );
 
   // 悬停框贴着字画、工具条放页边（hover-presentation）。
-  const hoverKind = hoveredTextTarget ? readerRegionKindForRegion(hoveredTextTarget.highlight.region) : "";
-  const hoverPresentation = useHoverPresentation(pageBoxRef, active ? hoveredTextTarget : null, textHoverTargets, width, hoverKind);
+  const hoverPresentation = useHoverPresentation(pageBoxRef, active ? hoveredTextTarget : null, textHoverTargets, width);
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     // 触屏没有悬停：手指滑动（滚动）不该换框，框由点按决定（见 handlePointerDown）。
@@ -198,7 +196,7 @@ function PdfPageSlotInner({
     const x = event.clientX - hostRect.left;
     const y = event.clientY - hostRect.top;
     // 工具条在框外上方 / 下方时，鼠标斜着走向按钮可能先经过别的块：在工具条那一小块范围里保持当前框。
-    if (inHoverToolsZone(hoverPresentation, hoverKind, x, y)) return;
+    if (inHoverToolsZone(hoverPresentation, x, y)) return;
     const target = hitTestReaderTextHoverTarget(textHoverTargets, x, y);
     setHoveredTextId(target?.itemId || null);
   };
@@ -348,7 +346,6 @@ function PdfPageSlotInner({
         onEdit={editBlock}
         frameRect={hoverPresentation?.rect}
         placement={hoverPresentation?.placement}
-        compact={hoverPresentation?.compact}
         tailTop={hoverPresentation?.tailTop}
       />
     </div>

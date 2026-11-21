@@ -10,7 +10,7 @@ import type { ReaderRegionRect } from "../shared/data/reader-regions.js";
 import type { ReaderTextHoverTarget } from "./ReaderTextHoverLayer.js";
 import { placeHoverTools, type HoverToolsLayout } from "./hover-tools-placement.js";
 
-export { inHoverToolsZone, placeHoverTools, sideToolsWidth, tailToolsTop, type HoverToolsLayout } from "./hover-tools-placement.js";
+export { inHoverToolsZone, placeHoverTools, tailToolsTop, type HoverToolsLayout } from "./hover-tools-placement.js";
 
 const right = (rect: ReaderRegionRect) => rect.left + rect.width;
 const bottom = (rect: ReaderRegionRect) => rect.top + rect.height;
@@ -66,7 +66,6 @@ export function useHoverPresentation(
   target: ReaderTextHoverTarget | null,
   targets: readonly ReaderTextHoverTarget[],
   pageWidth: number,
-  kind: string,
 ): HoverPresentation {
   const [presentation, setPresentation] = useState<HoverPresentation>(null);
   useLayoutEffect(() => {
@@ -79,7 +78,7 @@ export function useHoverPresentation(
     const rect = glyphs.length ? tightenHoverRect(target.rect, glyphs) : target.rect;
     const others = targets.filter((other) => other.itemId !== target.itemId).map((other) => other.rect);
     const pageHeight = host?.clientHeight || Number.POSITIVE_INFINITY;
-    setPresentation({ rect, ...placeHoverTools({ frame: rect, others, pageWidth, pageHeight, glyphs, kind }) });
-  }, [hostRef, kind, pageWidth, target, targets]);
+    setPresentation({ rect, ...placeHoverTools({ frame: rect, others, pageWidth, pageHeight, glyphs }) });
+  }, [hostRef, pageWidth, target, targets]);
   return presentation && target ? presentation : null;
 }

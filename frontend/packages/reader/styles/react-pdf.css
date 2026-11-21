@@ -245,7 +245,7 @@
   pointer-events: none;
 }
 
-/* 改过的块（精修、手改、助手改）：译文栏块左边一条细竖线，不挡字、不接事件；悬停时工具条里写「改过 N 次」。 */
+/* 改过的块（精修、手改、助手改）：译文栏块左边一条细竖线，不挡字、不接事件；悬停时「改」的提示里写「改过 N 次」。 */
 .reader-revised-markers {
   position: absolute;
   z-index: 4;
@@ -263,19 +263,6 @@
   background: color-mix(in srgb, var(--warn) 80%, transparent);
 }
 
-.reader-text-hover-revised {
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--warn) 16%, var(--paper));
-  color: var(--ink);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1;
-  white-space: nowrap;
-}
 
 .reader-text-hover-frame {
   position: absolute;
@@ -313,13 +300,13 @@
 
 .reader-text-hover-tools[data-placement="side-right"] {
   left: 100%;
-  padding-left: 6px;
+  padding-left: 4px;
 }
 
 .reader-text-hover-tools[data-placement="side-left"] {
   right: 100%;
   align-items: flex-end;
-  padding-right: 6px;
+  padding-right: 4px;
 }
 
 .reader-text-hover-tools[data-placement="outside"] {
@@ -340,21 +327,9 @@
   right: 4px;
 }
 
-/* 地方小：只画图标的圆按钮（名字在悬停提示里）。 */
-.reader-text-hover-tools[data-compact] {
-  gap: 4px;
-}
-
-.reader-text-hover-tools[data-placement="side-right"][data-compact] {
-  padding-left: 4px;
-}
-
-.reader-text-hover-tools[data-placement="side-left"][data-compact] {
-  padding-right: 4px;
-}
-
-.reader-text-hover-tools[data-compact] .reader-text-hover-copy,
-.reader-text-hover-tools[data-compact] .reader-text-hover-edit {
+/* 「改」「复制」只画图标的圆按钮（名字在悬停提示里，2026-11-20 起）。 */
+.reader-text-hover-tools .reader-text-hover-copy,
+.reader-text-hover-tools .reader-text-hover-edit {
   justify-content: center;
   width: 24px;
   height: 24px;

@@ -79,7 +79,7 @@ test("悬停框：译文栏给了 onEdit 才有「改」，原文栏没有", () 
     },
   };
   const onEdit = () => {};
-  assert.match(renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target, pane: "translated", onEdit })), /reader-text-hover-edit[^>]*>改</);
+  assert.match(renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target, pane: "translated", onEdit })), /class="reader-text-hover-edit"[^>]*aria-label="改这段译文"[^>]*><svg/, "「改」只画图标（2026-11-20）");
   assert.doesNotMatch(renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target, pane: "translated" })), /reader-text-hover-edit/);
   assert.doesNotMatch(renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target, pane: "source", onEdit })), /reader-text-hover-edit/);
 });
