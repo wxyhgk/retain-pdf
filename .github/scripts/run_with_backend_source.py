@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import subprocess
 
@@ -29,7 +30,22 @@ def main() -> int:
     repo_root = args.repo_root.resolve()
     source = resolve_backend_source(repo_root, allow_dirty=True)
     expanded = [item.replace("{backend}", source["path"]).replace("{source_root}", source["source_root"]) for item in command]
-    return subprocess.run(expanded, cwd=repo_root, check=False).returncode
+    environment = dict(os.environ)
+    # The embedded backend snapshot deliberately does not contain a virtualenv.
+    # Keep Rust integration tests and Python workers on the caller's locked
+    # project environment when the wrapper is used from a checkout that has one.
+    project_environment = environment.get("UV_PROJECT_ENVIRONMENT", "").strip()
+    if not project_environment:
+        local_environment = repo_root / "backend" / ".venv"
+        if local_environment.is_dir():
+            project_environment = str(local_environment)
+            environment["UV_PROJECT_ENVIRONMENT"] = project_environment
+    if project_environment:
+        bin_dir = Path(project_environment) / ("Scripts" if os.name == "nt" else "bin")
+        environment["PATH"] = os.pathsep.join(
+            [str(bin_dir), environment.get("PATH", "")]
+        )
+    return subprocess.run(expanded, cwd=repo_root, env=environment, check=False).returncode
 
 
 if __name__ == "__main__":

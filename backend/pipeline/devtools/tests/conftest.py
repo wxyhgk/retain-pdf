@@ -96,10 +96,20 @@ def _isolate_output_root(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
         monkeypatch.setattr(paths, name, output_root / child)
 
 
-# 本机开着开发栈时，rust_api 和测试共用这个 data/，它会定时把路由计数刷进
-# diagnostics/route-usage.json。流水线从不写这个文件；不排除的话，哪次全量跑
-# 碰上一次刷盘，守卫就把账记在会话最后一条用例头上（偶发 ERROR at teardown）。
-_SERVICE_OWNED = frozenset({os.path.join("diagnostics", "route-usage.json")})
+# 本机开着开发栈时，rust_api 和测试共用这个 data/。服务会定时写路由计数，
+# 也会持续持有 SQLite 主库和 WAL 文件。流水线从不写这些服务文件；不排除的话，
+# 哪次全量跑碰上一次刷盘，守卫就把账记在会话最后一条用例头上（偶发 ERROR at teardown）。
+_SERVICE_OWNED = frozenset(
+    {
+        os.path.join("diagnostics", "route-usage.json"),
+        # A local dev stack may keep the repository data root open while the
+        # hermetic Python tests run. Its SQLite/WAL files are service-owned,
+        # while test outputs are redirected to tmp_path above.
+        os.path.join("db", "jobs.db"),
+        os.path.join("db", "jobs.db-wal"),
+        os.path.join("db", "jobs.db-shm"),
+    }
+)
 
 
 def _snapshot(root: Path) -> dict[str, tuple[int, int]]:

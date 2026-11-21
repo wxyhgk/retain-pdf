@@ -226,8 +226,10 @@ jobs:
       - name: Setup Typst for offline formula tests
         uses: ./.github/actions/setup-test-typst
 
-      - name: Offline translation regression
-        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/run_translation_tests.py"
+      # Translation tests and architecture gates already ran in the complete
+      # devtools suite above. Run only the unique benchmark suites here.
+      - name: Offline pipeline benchmarks
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python "$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/run_translation_tests.py" --suite benchmarks
 
       # 与上面「Typst not installed yet」那步互补：那步已跑完 not needs_typst 的全部
       # 用例，这里只补 needs_typst 的真排版集成用例。两步的 -m 互为补集，合起来就是

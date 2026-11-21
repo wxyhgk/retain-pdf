@@ -6,10 +6,10 @@ ROOT = Path(__file__).resolve().parents[3]
 ENTRY = '$RETAIN_PDF_SERVICES_ROOT/pipeline/devtools/run_translation_tests.py'
 
 
-def test_daily_gate_uses_full_offline_entry_and_keeps_stage_tests():
+def test_daily_gate_runs_only_benchmarks_after_the_full_devtools_suite():
     workflow = (ROOT / ".github/workflows/tests.yml").read_text()
-    assert f'python "{ENTRY}"' in workflow
-    assert ENTRY + '" --reverse' not in workflow
+    assert f'python "{ENTRY}" --suite benchmarks' in workflow
+    assert f'python "{ENTRY}"\n' not in workflow
     assert "pipeline/devtools/tests/translation/test_" not in workflow
     # pipeline 测试拆成互补的两步：装 typst 前跑 not needs_typst，装 typst 后
     # 只补 needs_typst。两步 -m 互为补集，合起来必须仍是全集。

@@ -13,6 +13,7 @@ REPO_ROOT = SCRIPTS_ROOT.parents[1]
 sys.path.insert(0, str(SCRIPTS_ROOT))
 
 from resolve_backend_source import REQUIRED_PATHS, REQUIRED_ROOT_PATHS, resolve_backend_source
+import run_with_backend_source
 
 
 BACKEND_WORKFLOWS = (
@@ -244,3 +245,72 @@ def test_local_backend_entrypoints_resolve_the_embedded_package() -> None:
         script = (REPO_ROOT / relative).read_text(encoding="utf-8")
         assert ".github/scripts/resolve_backend_source.py" in script
         assert '${SERVICES_ROOT}/../ops/deployment/docker/backend/Dockerfile.app' in script
+
+
+def test_backend_source_runner_points_tests_at_the_checkout_venv(
+    tmp_path: Path, monkeypatch
+) -> None:
+    repo_root = tmp_path / "product"
+    venv_bin = repo_root / "backend" / ".venv" / "bin"
+    venv_bin.mkdir(parents=True)
+    monkeypatch.delenv("UV_PROJECT_ENVIRONMENT", raising=False)
+    monkeypatch.setattr(
+        run_with_backend_source,
+        "resolve_backend_source",
+        lambda *_args, **_kwargs: {
+            "path": str(repo_root / "backend"),
+            "source_root": str(repo_root),
+        },
+    )
+    captured = {}
+
+    def fake_run(command, *, cwd, env, check):
+        captured.update(command=command, cwd=cwd, env=env, check=check)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(run_with_backend_source.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["run_with_backend_source.py", "--repo-root", str(repo_root), "--", "cargo", "test"],
+    )
+
+    assert run_with_backend_source.main() == 0
+    assert captured["env"]["UV_PROJECT_ENVIRONMENT"] == str(venv_bin.parent)
+    assert captured["env"]["PATH"].split(":", 1)[0] == str(venv_bin)
+    assert captured["command"] == ["cargo", "test"]
+
+
+def test_backend_source_runner_preserves_explicit_uv_environment(
+    tmp_path: Path, monkeypatch
+) -> None:
+    repo_root = tmp_path / "product"
+    explicit_venv = tmp_path / "shared-venv"
+    explicit_bin = explicit_venv / "bin"
+    explicit_bin.mkdir(parents=True)
+    (repo_root / "backend" / ".venv").mkdir(parents=True)
+    monkeypatch.setenv("UV_PROJECT_ENVIRONMENT", str(explicit_venv))
+    monkeypatch.setattr(
+        run_with_backend_source,
+        "resolve_backend_source",
+        lambda *_args, **_kwargs: {
+            "path": str(repo_root / "backend"),
+            "source_root": str(repo_root),
+        },
+    )
+    captured = {}
+
+    def fake_run(command, *, cwd, env, check):
+        captured.update(command=command, cwd=cwd, env=env, check=check)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(run_with_backend_source.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["run_with_backend_source.py", "--repo-root", str(repo_root), "--", "cargo", "test"],
+    )
+
+    assert run_with_backend_source.main() == 0
+    assert captured["env"]["UV_PROJECT_ENVIRONMENT"] == str(explicit_venv)
+    assert captured["env"]["PATH"].split(":", 1)[0] == str(explicit_bin)

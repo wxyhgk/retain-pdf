@@ -36,11 +36,14 @@ Only OS/runtime essentials and `TYPST_BIN` are retained; the runner creates a te
 including test failures and timeouts. Direct `pytest` calls bypass this runner-level
 isolation, so individual tests must still scope their own external dependencies.
 The runner does not launch `live_smoke.py` or promptfoo. Live evaluations require separate explicit
-authorization. The main `Tests` workflow runs this full suite in normal order;
-the manual `Translation Offline Order Check` workflow runs reverse file order.
-Neither workflow requests provider secrets or launches a live evaluation. CI
-installs Typst 0.15.1 for the real formula-compilation regression; locally install
-Typst or set `TYPST_BIN` to its executable.
+authorization. The main `Tests` workflow runs the complete devtools suite in
+complementary non-Typst and Typst selections, then runs this entrypoint with
+`--suite benchmarks`. The translation tests and architecture gates are already
+covered by the devtools suite. The manual `Translation Offline Order Check`
+workflow runs the full translation suite in reverse file order. Neither workflow
+requests provider secrets or launches a live evaluation. CI installs Typst 0.15.1
+for the real formula-compilation regression; locally install Typst or set
+`TYPST_BIN` to its executable.
 
 Keep these layers separate: component tests locate individual rules; static golden
 fixtures lock complete messages and identities; capture replay checks saved-input
