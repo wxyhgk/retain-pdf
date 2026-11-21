@@ -10,31 +10,55 @@ use crate::models::domain::{
     JobRecord, JobRuntimeInfo, JobSnapshot, ResolvedJobSpec,
 };
 
-pub(super) const JOB_SELECT_SQL: &str = r#"
+/// 任务的「运行信息」里存在库里的几样（v33 起拆开存）：进入当前阶段的时间、最后出错和重试的时间、重试次数、
+/// 阶段历史（`job_stage_history`，按顺序）。拼成和 `JobRuntimeInfo` 同名字段的 JSON 交给 Rust 解，其余字段读出后按
+/// `JobRecord::fill_derived_runtime` 算。占原来 `runtime_json` 的列号（18），后面的列号不变。
+macro_rules! job_runtime_parts_sql {
+    () => {
+        r#"json_object(
+            'stage_started_at', jobs.stage_entered_at,
+            'last_error_at', jobs.last_error_at,
+            'retry_count', jobs.retry_count,
+            'last_retry_at', jobs.last_retry_at,
+            'stage_history', json(COALESCE((
+                SELECT json_group_array(json_object(
+                    'stage', h.stage, 'detail', h.detail, 'enter_at', h.enter_at, 'exit_at', h.exit_at,
+                    'duration_ms', h.duration_ms, 'terminal_status', h.terminal_status,
+                    'progress_current', h.progress_current, 'progress_total', h.progress_total
+                ) ORDER BY h.seq)
+                FROM job_stage_history h WHERE h.job_id = jobs.job_id
+            ), '[]'))
+        )"#
+    };
+}
+
+macro_rules! job_select_sql {
+    ($tail:literal) => {
+        concat!(
+            r#"
     SELECT
         jobs.job_id, jobs.workflow, jobs.status, jobs.created_at, jobs.updated_at,
         jobs.started_at, jobs.finished_at, jobs.upload_id, jobs.pid, jobs.command_json,
         jobs.request_json, jobs.error, jobs.stage, jobs.stage_detail,
         jobs.progress_current, jobs.progress_total, jobs.log_tail_json, jobs.result_json,
-        jobs.runtime_json, jobs.failure_json,
-        artifacts.artifacts_json
+        "#,
+            job_runtime_parts_sql!(),
+            r#", jobs.failure_json,
+        artifacts.artifacts_json"#,
+            $tail,
+            r#"
     FROM jobs
     LEFT JOIN artifacts ON artifacts.job_id = jobs.job_id
-"#;
+"#
+        )
+    };
+}
+
+pub(super) const JOB_SELECT_SQL: &str = job_select_sql!("");
 
 /// 同 [`JOB_SELECT_SQL`]，末尾多一列 `jobs.run_generation`（列号 21），只给 `get_job` 用。
 /// 不能直接改 `JOB_SELECT_SQL`：`select_jobs`、事件投影的外层查询按固定列号接着往后读。
-pub(super) const JOB_SELECT_SQL_WITH_GENERATION: &str = r#"
-    SELECT
-        jobs.job_id, jobs.workflow, jobs.status, jobs.created_at, jobs.updated_at,
-        jobs.started_at, jobs.finished_at, jobs.upload_id, jobs.pid, jobs.command_json,
-        jobs.request_json, jobs.error, jobs.stage, jobs.stage_detail,
-        jobs.progress_current, jobs.progress_total, jobs.log_tail_json, jobs.result_json,
-        jobs.runtime_json, jobs.failure_json,
-        artifacts.artifacts_json, jobs.run_generation
-    FROM jobs
-    LEFT JOIN artifacts ON artifacts.job_id = jobs.job_id
-"#;
+pub(super) const JOB_SELECT_SQL_WITH_GENERATION: &str = job_select_sql!(", jobs.run_generation");
 
 pub(super) fn row_to_job_snapshot(row: &Row<'_>) -> rusqlite::Result<JobSnapshot> {
     let result_json: Option<String> = row.get(17)?;
@@ -44,7 +68,7 @@ pub(super) fn row_to_job_snapshot(row: &Row<'_>) -> rusqlite::Result<JobSnapshot
     let workflow: String = row.get(1)?;
     let status: String = row.get(2)?;
     let request_json: String = row.get(10)?;
-    Ok(JobSnapshot {
+    let mut snapshot = JobSnapshot {
         record: JobRecord {
             job_id: row.get(0)?,
             workflow: parse_text_column(1, "workflow", &workflow)?,
@@ -76,7 +100,10 @@ pub(super) fn row_to_job_snapshot(row: &Row<'_>) -> rusqlite::Result<JobSnapshot
         artifacts: artifacts_json
             .and_then(|text| serde_json::from_str(&text).ok())
             .unwrap_or(None),
-    })
+    };
+    // 运行信息里没存的几项（当前阶段、结束原因、耗时、最终失败……）按写的时候同一套规则算回来。
+    snapshot.record.fill_derived_runtime();
+    Ok(snapshot)
 }
 
 pub(super) fn row_to_job_event(row: &Row<'_>) -> rusqlite::Result<JobEventRecord> {

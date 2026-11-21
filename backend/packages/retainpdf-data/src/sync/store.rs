@@ -46,10 +46,11 @@ use super::ChangeRecord;
 
 pub const SYNC_FORMAT: &str = "retain-pdf-sync";
 /// 2:文件内容按段打包(1 是一个文件一个对象,只在开发中用过);3:可以整理(见上);
-/// 4:任务行换成数据库 v32 的列(`jobs.status` 纯文本、`workflow` 不带引号,2026-11-21 数据库重做第 1a 步)。
-/// 格式 3 的程序读不了 4 的任务行,所以新程序一连上就把文件夹升到 4(旧设备会提示先更新);
-/// 文件夹里格式 2、3 时期的老包照常读,收到的旧任务行按新列改写(`retainpdf-db` 的 `upgrade_legacy_row`)。
-pub const SYNC_FORMAT_VERSION: u64 = 4;
+/// 4:任务行换成数据库 v32 的列(`jobs.status` 纯文本、`workflow` 不带引号,2026-11-21 数据库重做第 1a 步);
+/// 5:任务的运行信息拆开(v33:`jobs.runtime_json` 换成几列 + `job_stage_history` 表,第 1b 步)。
+/// 旧格式的程序读不了新的任务行,所以新程序一连上就把文件夹升到最新(旧设备会提示先更新);
+/// 文件夹里以前格式的老包照常读,收到的旧任务行按新结构改写(`retainpdf-db` 的 `upgrade_legacy_entity`、`upgrade_legacy_row`)。
+pub const SYNC_FORMAT_VERSION: u64 = 5;
 const OLDEST_READABLE_VERSION: u64 = 2;
 
 const SEGMENT_END: &str = "segment_end";

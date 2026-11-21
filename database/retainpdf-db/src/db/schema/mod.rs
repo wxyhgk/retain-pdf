@@ -51,7 +51,13 @@ pub(super) fn run_versioned_migrations(conn: &Connection) -> Result<()> {
 /// 正常升级碰不到（版本号只往上走）；是给把 `user_version` 倒回去重跑后面迁移的测试用的——它们的惯例是先手动撤掉
 /// 后面迁移加的东西（见 `event_feed_tests`），可 SQLite 删不掉带外键的列，v32 的 `parent_job_id` 撤不掉。
 /// 每项是（版本，查询；返回非 0 表示已经是迁移后的样子）。
-const APPLIED_CHECKS: &[(i64, &str)] = &[(32, "SELECT COUNT(*) FROM pragma_table_info('jobs') WHERE name = 'status'")];
+const APPLIED_CHECKS: &[(i64, &str)] = &[
+    (32, "SELECT COUNT(*) FROM pragma_table_info('jobs') WHERE name = 'status'"),
+    (33, "SELECT COUNT(*) FROM pragma_table_info('jobs') WHERE name = 'stage_entered_at'"),
+];
+
+/// 从这个版本起不再补 `LEGACY_COLUMNS`（v33 删了其中的 `jobs.runtime_json`）。
+const LEGACY_COLUMNS_SETTLED_AT: i64 = 33;
 
 fn already_applied(conn: &Connection, version: i64) -> Result<bool> {
     let Some((_, check)) = APPLIED_CHECKS.iter().find(|(v, _)| *v == version) else {
@@ -94,6 +100,11 @@ const LEGACY_COLUMNS: &[(&str, &str, &str)] = &[
 /// 会同时起来，以前两边都看到缺列、都去 `ALTER`，后到的那个报 "duplicate column" 起不来。和编号迁移一样用
 /// IMMEDIATE 事务，加列要么全加上要么一个不加。
 pub(super) fn ensure_legacy_columns(conn: &Connection) -> Result<()> {
+    // v33 起删掉了其中的 `jobs.runtime_json`：升到这个版本以后老列都早已补齐，不再看（否则会把删掉的列加回来）。
+    let version: i64 = conn.query_row("PRAGMA user_version", [], |row| row.get(0))?;
+    if version >= LEGACY_COLUMNS_SETTLED_AT {
+        return Ok(());
+    }
     if missing_legacy_columns(conn)?.is_empty() {
         return Ok(());
     }

@@ -520,7 +520,8 @@ mod tests {
 
         // 以前一半在 apply_schema 里补、一半只在 init 里补；这里不照抄 LEGACY_COLUMNS，少了哪一列都要红。
         for (table, expected) in [
-            ("jobs", &["document_id", "run_generation", "worker_identity", "runtime_json", "failure_json"][..]),
+            // runtime_json 是老列，v33 拆成这几列和 job_stage_history 后删了。
+            ("jobs", &["document_id", "run_generation", "worker_identity", "stage_entered_at", "failure_json"][..]),
             (
                 "events",
                 &[
@@ -713,7 +714,7 @@ mod tests {
             INSERT INTO jobs (
                 job_id, workflow, status, created_at, updated_at, started_at, finished_at,
                 upload_id, pid, command_json, request_json, error, stage, stage_detail,
-                progress_current, progress_total, log_tail_json, result_json, runtime_json, failure_json
+                progress_current, progress_total, log_tail_json, result_json, last_error_at, failure_json
             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)
             "#,
             params![

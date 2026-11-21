@@ -582,3 +582,49 @@ fn saving_an_ocr_child_links_it_to_its_parent_and_stores_plain_text_status() {
         "CHECK 挡住不认识的取值（包括以前带引号的写法）"
     );
 }
+
+/// v33：运行信息拆开存（几列 + `job_stage_history`），读出来的 `runtime` 必须和写之前在内存里算出来的一模一样——
+/// 接口返回的 `runtime` 就是它。走一遍：排队 → 翻译（进度变）→ 渲染 → 成功。
+#[test]
+fn runtime_reads_back_exactly_what_was_computed_before_writing() {
+    let test = TestDb::new();
+    let mut job = JobSnapshot::new("rt-1".into(), CreateJobInput::default(), vec![]);
+    job.started_at = Some("2026-01-01T00:00:00Z".into());
+    let steps: [(&str, &str, JobStatusKind, Option<(i64, i64)>); 5] = [
+        ("2026-01-01T00:00:00Z", "queued", JobStatusKind::Queued, None),
+        ("2026-01-01T00:00:05Z", "translating", JobStatusKind::Running, Some((1, 10))),
+        ("2026-01-01T00:01:00Z", "translating", JobStatusKind::Running, Some((10, 10))),
+        ("2026-01-01T00:01:30Z", "rendering", JobStatusKind::Running, Some((0, 4))),
+        ("2026-01-01T00:02:00Z", "finished", JobStatusKind::Succeeded, None),
+    ];
+    for (at, stage, status, progress) in steps {
+        job.updated_at = at.into();
+        job.stage = Some(stage.into());
+        job.stage_detail = Some(format!("{stage} detail"));
+        job.status = status.clone();
+        job.progress_current = progress.map(|p| p.0);
+        job.progress_total = progress.map(|p| p.1);
+        if status == JobStatusKind::Succeeded {
+            job.finished_at = Some(at.into());
+        }
+        test.db.save_job(&job).unwrap();
+        // 下一步从库里读回来接着改（和 runner 一样），读到的就是要比的。
+        let mut expected = job.clone();
+        expected.sync_runtime_state();
+        let stored = test.db.get_job("rt-1").unwrap();
+        assert_eq!(stored.runtime, expected.runtime, "at {at}");
+        job = stored;
+    }
+    let runtime = job.runtime.clone().unwrap();
+    assert_eq!(runtime.stage_history.len(), 4, "{:?}", runtime.stage_history);
+    assert_eq!(runtime.stage_history[1].progress_current, Some(10), "翻译那段带着离开时的进度");
+    assert_eq!(runtime.total_elapsed_ms, Some(120_000));
+    assert_eq!(runtime.terminal_reason.as_deref(), Some("succeeded"));
+    let rows: i64 = test
+        .db
+        .connect()
+        .unwrap()
+        .query_row("SELECT COUNT(*) FROM job_stage_history WHERE job_id = 'rt-1'", [], |row| row.get(0))
+        .unwrap();
+    assert_eq!(rows, 4);
+}
