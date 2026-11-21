@@ -109,6 +109,7 @@
 @import "../pages/home/settings-dialogs.css";
 @import "../../features/credentials/ui/CredentialsWorkbench.css";
 @import "../../features/credentials/ui/TranslationPanel.css";
+@import "../../features/credentials/ui/TranslationPanelGroups.css";
 @import "../../features/credentials/ui/CredentialFormFields.css";
 @import "../../features/credentials/ui/CredentialCard.css";
 @import "../../features/glossaries/ui/GlossariesDialog.css";
