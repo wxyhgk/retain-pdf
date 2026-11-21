@@ -6,7 +6,7 @@
 // 缺文件 / 上传中不出 hint：上方拖放区（大加号 + 「单个 PDF / 最大 512MB」
 // / 上传进度）已经把这件事说清楚，再来一行等于同一屏说两遍。
 import type { ReactNode } from "react";
-import { BookmarkPlus, Languages, Loader2, ScanSearch, SlidersHorizontal } from "lucide-react";
+import { BookmarkPlus, Bot, Languages, Loader2, ScanSearch, SlidersHorizontal } from "lucide-react";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 
 type ProcessingChoicePanelProps = {
@@ -15,12 +15,16 @@ type ProcessingChoicePanelProps = {
   submitBusy: boolean;
   submitDisabled: boolean;
   submitLabel: string;
+  /** 选了 Agent 翻译：主按钮写「Agent 翻译」、换机器人图标（不是翻译工作流的「开始渲染」等照旧）。 */
+  agent?: boolean;
   ocrOnly: boolean;
   pageRangeButtonVisible: boolean;
   pageRangeOpen: boolean;
   onToggleTranslationOptions: () => void;
   onStoreOnly: () => void;
   translationOptionsSlot: ReactNode;
+  /** 底部「附魔」按钮（模型、普通 / Agent、页数），放在选项前面；仅 OCR 不给。 */
+  enchantSlot?: ReactNode;
 };
 
 export function ProcessingChoicePanel({
@@ -29,16 +33,19 @@ export function ProcessingChoicePanel({
   submitBusy,
   submitDisabled,
   submitLabel,
+  agent = false,
   ocrOnly,
   pageRangeButtonVisible,
   pageRangeOpen,
   onToggleTranslationOptions,
   onStoreOnly,
   translationOptionsSlot,
+  enchantSlot = null,
 }: ProcessingChoicePanelProps) {
   // 禁用原因与下一步：仅凭 uploadReady/submitDisabled 即可区分
   // 「缺文件」与「文件就绪但被凭据·预算·源任务拦住」两类。
   const blocked = submitDisabled && !submitBusy;
+  const agentSubmit = agent && !ocrOnly && (!submitLabel || submitLabel === "直接翻译");
   const missingUpload = !uploadReady;
   let submitTitle = ocrOnly ? "上传完成后开始 OCR" : "上传完成后开始翻译";
   let hintText = "";
@@ -60,17 +67,17 @@ export function ProcessingChoicePanel({
   return (
     <div id="upload-action-slot" className={`upload-action-slot${visible ? "" : " hidden"}`}>
       <div className="upload-action-group">
+        {enchantSlot}
         <button
           id="page-range-btn"
           type="button"
           className={`page-range-mini secondary${pageRangeButtonVisible && !ocrOnly ? "" : " hidden"}`}
-          aria-label="翻译选项"
+          aria-label="更多选项（术语表、翻译质量、排版引擎）"
           aria-expanded={pageRangeOpen}
-          title="设置页码范围和术语表"
+          title="更多选项：术语表、翻译质量、排版引擎"
           onClick={onToggleTranslationOptions}
         >
           <SlidersHorizontal aria-hidden="true" />
-          选项
         </button>
         <button
           id="store-only-btn"
@@ -95,10 +102,12 @@ export function ProcessingChoicePanel({
             <Loader2 className="animate-spin" aria-hidden="true" />
           ) : ocrOnly ? (
             <ScanSearch aria-hidden="true" />
+          ) : agentSubmit ? (
+            <Bot aria-hidden="true" />
           ) : (
             <Languages aria-hidden="true" />
           )}
-          {submitBusy ? "提交中…" : ocrOnly ? "开始 OCR" : submitLabel || "直接翻译"}
+          {submitBusy ? "提交中…" : ocrOnly ? "开始 OCR" : agentSubmit ? "Agent 翻译" : submitLabel || "直接翻译"}
         </button>
       </div>
 

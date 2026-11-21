@@ -178,6 +178,7 @@ export function mountWorkflowFeature({
     defaultPaddleToken,
     defaultModelApiKey,
     readSubmitValues,
+    uploadTranslationOverride: viewPort.uploadTranslationOverride,
   });
 
   return {

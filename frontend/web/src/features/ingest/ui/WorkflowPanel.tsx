@@ -37,7 +37,6 @@ import {
 import { useIngestServices, useIngestWorkflowView } from "./workflow-view-context.js";
 import { HeroUpload } from "./components/UploadTile.jsx";
 import { InlineErrorBox } from "./InlineErrorBox.jsx";
-import { UploadFlowStrip } from "./components/upload/UploadFlowStrip.jsx";
 
 export function WorkflowPanel({ hiddenInputsSlot = null }: { hiddenInputsSlot?: React.ReactNode | null }) {
   const workflowView = useIngestWorkflowView();
@@ -104,7 +103,6 @@ export function WorkflowPanel({ hiddenInputsSlot = null }: { hiddenInputsSlot?: 
         </TabsPrimitive.List>
       </TabsPrimitive.Root>
 
-      <UploadFlowStrip ocrOnly={ocrOnly} />
 
       <form
         id="job-form"

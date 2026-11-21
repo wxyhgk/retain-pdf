@@ -95,10 +95,11 @@ test("HomeApp：契约 id、idle 链、工作流对话框事件契约与交互",
   assert.equal(dialog.dataset.open, "1");
   assert.equal(dialog.classList.contains("is-upload-mode"), true);
   assert.equal(byId(dom, "translation-workflow-title").textContent, "添加 PDF");
-  // 2026-11-20 用户要上传弹窗多用图标、结构清楚：标题看得见，前面一个图标，下面一句说明。
-  assert.equal(byId(dom, "translation-workflow-title").classList.contains("sr-only"), false, "上传标题看得见");
-  assert.ok(dom.window.document.querySelector(".is-upload-head .upload-head-badge svg"), "标题前面有图标");
-  assert.ok(dom.window.document.querySelector(".upload-flow[data-flow='translate']"), "模式下面有流程条");
+  // 2026-11-20 用户：顶部只留 tab 切换，标题只给读屏；底部有模型、普通 / Agent、页数三个附魔按钮。
+  assert.equal(byId(dom, "translation-workflow-title").classList.contains("sr-only"), true, "上传标题只给读屏");
+  assert.ok(dom.window.document.querySelector("[data-enchant-controls] [data-enchant='model']"), "底部有选模型");
+  assert.ok(dom.window.document.querySelector("[data-enchant-controls] [aria-label='Agent 翻译']"), "底部有 Agent 翻译");
+  assert.ok(dom.window.document.querySelector("[data-enchant-controls] [data-enchant='pages']"), "底部有页数");
   assert.equal(byId(dom, "translation-workflow-desc"), null, "上传副标题不再渲染");
   assert.equal(dom.window.document.documentElement.classList.contains("translation-workflow-open"), true);
   await waitFor(() => byId(dom, "library-add-pdf-btn").getAttribute("aria-expanded") === "true", "触发按钮 aria 同步");

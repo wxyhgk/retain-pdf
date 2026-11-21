@@ -30,6 +30,8 @@ export interface CreateWorkflowPayloadAssemblyOptions {
     defaultPaddleToken?: string;
     defaultModelApiKey?: string;
   }) => WorkflowSubmitValues;
+  /** 上传弹窗这次选的模型（整套地址、模型、key……），只叠到上传提交的翻译字段上。 */
+  uploadTranslationOverride?: () => Record<string, string> | null;
 }
 
 export function createWorkflowPayloadAssembly({
@@ -45,6 +47,7 @@ export function createWorkflowPayloadAssembly({
   defaultPaddleToken,
   defaultModelApiKey,
   readSubmitValues,
+  uploadTranslationOverride,
 }: CreateWorkflowPayloadAssemblyOptions) {
   const { WORKFLOW_BOOK, WORKFLOW_TRANSLATE } = constants;
   const WORKFLOW_OCR = (constants as { WORKFLOW_OCR?: string }).WORKFLOW_OCR || "ocr";
@@ -140,6 +143,14 @@ export function createWorkflowPayloadAssembly({
     };
   }
 
+  // 上传弹窗选了模型：整套换掉（地址、模型、key、协议、思考深度），和重新翻译换模型一样；带了 key 就不再带 credential_ref。
+  function withUploadModel<T extends object>(translation: T): T {
+    const override = uploadTranslationOverride?.();
+    if (!override) return translation;
+    const { credential_ref: _ignored, ...rest } = translation as T & { credential_ref?: unknown };
+    return { ...rest, ...override } as T;
+  }
+
   // overrides 给一次上传多本用：每本用自己的 upload_id、整本处理（页码范围只对单本有意义）。
   // 不给就和以前一样读当前上传和页码输入框。
   function collectRunPayload(overrides: { uploadId?: string; pageRanges?: string } = {}): WorkflowRunPayload {
@@ -170,7 +181,7 @@ export function createWorkflowPayloadAssembly({
     }
     if (workflow === WORKFLOW_BOOK || workflow === WORKFLOW_TRANSLATE) {
       payload.ocr = buildOcrPayload(pageRanges, submitValues);
-      payload.translation = buildTranslationPayload(developerConfig, submitValues);
+      payload.translation = withUploadModel(buildTranslationPayload(developerConfig, submitValues));
     }
     if (workflowUsesRenderStage(workflow)) {
       payload.render = buildRenderPayload(developerConfig, submitValues);

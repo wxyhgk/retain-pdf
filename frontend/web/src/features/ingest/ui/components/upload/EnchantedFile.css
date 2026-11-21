@@ -1,0 +1,341 @@
+/* 上传框里选好的 PDF（EnchantedFile）：一张只写文件名的卡片；底部选了什么就叠一层效果，像给装备附魔。
+ * 克制：颜色只用主题的 accent / gold，动的东西少而慢；每加一项闪一下就停；「减少动态效果」时都不动。
+ *
+ * @owns upload */
+
+.upload-file {
+  --enchant-glow: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  width: min(100%, 380px);
+  min-width: 0;
+  padding: 18px 22px;
+  isolation: isolate;
+}
+
+.upload-file[data-level='1'] {
+  --enchant-glow: 1;
+}
+
+.upload-file[data-level='2'] {
+  --enchant-glow: 2;
+}
+
+.upload-file[data-level='3'] {
+  --enchant-glow: 3;
+}
+
+.upload-file-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  min-height: 64px;
+  padding: 14px 18px;
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, var(--line));
+  border-radius: var(--ui-radius-lg, 14px);
+  background: var(--paper);
+  overflow: visible;
+  /* 叠得越多光越亮一点：每一级多一圈很淡的 accent。 */
+  box-shadow:
+    0 6px 18px color-mix(in srgb, var(--shadow-color) 8%, transparent),
+    0 0 calc(var(--enchant-glow) * 10px) calc(var(--enchant-glow) * 1px) color-mix(in srgb, var(--gold) calc(var(--enchant-glow) * 10%), transparent);
+  transition: box-shadow 400ms ease;
+  animation: upload-file-in 260ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.upload-file-icon {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 38px;
+  height: 46px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--danger) 10%, var(--paper));
+  color: var(--danger);
+
+  & svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.upload-file-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: var(--ui-text-base, 14px);
+  font-weight: 650;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 上传中：卡片轻轻呼吸（进度条在框底）。 */
+.upload-file[data-uploading] .upload-file-card {
+  animation: upload-file-breathe 1.4s ease-in-out infinite;
+}
+
+/* 每加一项附魔：一道光从左扫到右，只放一次。 */
+.upload-file-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 30%, color-mix(in srgb, var(--gold) 38%, transparent) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: upload-file-shimmer 900ms ease-out both;
+}
+
+/* —— 模型：右上角一枚印记 —— */
+.upload-file-sigil {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  max-width: 140px;
+  overflow: hidden;
+  padding: 3px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--accent);
+  font-size: var(--ui-text-xs, 11px);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 8%, transparent);
+  animation: upload-file-stamp 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+/* —— 页数：后面错开两张纸，左下挂一条书签 —— */
+.upload-file-sheets {
+  position: absolute;
+  inset: 18px 22px;
+  z-index: -1;
+  pointer-events: none;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid color-mix(in srgb, var(--ink) 10%, var(--line));
+    border-radius: var(--ui-radius-lg, 14px);
+    background: var(--paper);
+    animation: upload-file-fan 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  }
+
+  &::before {
+    --fan: rotate(-3deg) translate(-6px, 5px);
+    opacity: 0.7;
+  }
+
+  &::after {
+    --fan: rotate(2.5deg) translate(7px, 7px);
+    opacity: 0.5;
+  }
+}
+
+.upload-file-ribbon {
+  position: absolute;
+  bottom: -11px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px 3px 7px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--ui-text-xs, 11px);
+  font-weight: 700;
+  animation: upload-file-drop 380ms cubic-bezier(0.2, 1.3, 0.4, 1) both;
+
+  & svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* —— Agent：卡片外一圈慢慢转的金色光环 + 几颗星点，右下一个小徽记 —— */
+.upload-file-aura {
+  position: absolute;
+  inset: 12px 16px;
+  z-index: -1;
+  border-radius: calc(var(--ui-radius-lg, 14px) + 6px);
+  pointer-events: none;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1.5px;
+    border-radius: inherit;
+    background: conic-gradient(from var(--aura-angle, 0deg), transparent 0deg, color-mix(in srgb, var(--gold) 35%, transparent) 50deg, var(--gold) 110deg, color-mix(in srgb, var(--gold) 35%, transparent) 170deg, transparent 220deg, transparent 360deg);
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    animation: upload-aura-spin 6s linear infinite;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: inherit;
+    background: radial-gradient(closest-side, color-mix(in srgb, var(--gold) 16%, transparent), transparent);
+    filter: blur(6px);
+    animation: upload-aura-in 600ms ease-out both;
+  }
+
+  & i {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: var(--ui-radius-pill, 999px);
+    background: var(--gold);
+    box-shadow: 0 0 6px var(--gold);
+    animation: upload-aura-spark 3.2s ease-in-out infinite;
+  }
+
+  & i:nth-child(1) {
+    top: -2px;
+    left: 18%;
+  }
+
+  & i:nth-child(2) {
+    top: 40%;
+    right: -3px;
+    animation-delay: 1.1s;
+  }
+
+  & i:nth-child(3) {
+    bottom: -2px;
+    left: 62%;
+    animation-delay: 2.2s;
+  }
+}
+
+@property --aura-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.upload-file-agent {
+  position: absolute;
+  right: -9px;
+  bottom: -9px;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: linear-gradient(135deg, var(--gold), color-mix(in srgb, var(--gold) 70%, var(--ink)));
+  color: var(--paper);
+  box-shadow: 0 0 0 3px var(--paper), 0 0 12px color-mix(in srgb, var(--gold) 55%, transparent);
+  animation: upload-file-stamp 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+
+  & svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@keyframes upload-file-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+
+@keyframes upload-file-breathe {
+  50% {
+    opacity: 0.72;
+  }
+}
+
+@keyframes upload-file-shimmer {
+  from {
+    background-position: 120% 0;
+    opacity: 1;
+  }
+  to {
+    background-position: -40% 0;
+    opacity: 0;
+  }
+}
+
+@keyframes upload-file-stamp {
+  from {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@keyframes upload-file-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes upload-file-fan {
+  from {
+    transform: none;
+    opacity: 0;
+  }
+  to {
+    transform: var(--fan);
+  }
+}
+
+@keyframes upload-aura-spin {
+  to {
+    --aura-angle: 360deg;
+  }
+}
+
+@keyframes upload-aura-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes upload-aura-spark {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  40% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-file-card,
+  .upload-file-flash,
+  .upload-file-sigil,
+  .upload-file-ribbon,
+  .upload-file-agent,
+  .upload-file-aura::before,
+  .upload-file-aura::after,
+  .upload-file-aura i,
+  .upload-file-sheets::before,
+  .upload-file-sheets::after {
+    animation: none !important;
+  }
+
+  .upload-file-sheets::before {
+    transform: rotate(-3deg) translate(-6px, 5px);
+  }
+
+  .upload-file-sheets::after {
+    transform: rotate(2.5deg) translate(7px, 7px);
+  }
+}

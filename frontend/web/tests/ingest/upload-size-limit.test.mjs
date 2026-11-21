@@ -12,7 +12,7 @@ test("前端的上传大小上限 = 后端默认的 DEFAULT_UPLOAD_MAX_BYTES；�
   assert.equal(FRONT_MAX_BYTES, Number(match[1]) * 1024 * 1024);
   assert.equal(FRONT_MAX_SIZE_TEXT, `${match[1]}MB`);
   const dropzone = readFileSync(new URL("../../src/features/ingest/ui/components/upload/UploadDropzone.tsx", import.meta.url), "utf8");
-  assert.match(dropzone, /最大 \{FRONT_MAX_SIZE_TEXT\}/u, "上传框不再写死大小");
+  assert.match(dropzone, /最大 \$?\{FRONT_MAX_SIZE_TEXT\}/u, "上传框不再写死大小（2026-11-20 起写在悬停提示和读屏里）");
   assert.doesNotMatch(dropzone, /最多 999 页/u, "页数上限随所选 OCR，不写死");
 });
 

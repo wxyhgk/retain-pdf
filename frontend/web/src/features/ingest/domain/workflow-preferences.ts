@@ -69,3 +69,14 @@ export function saveWorkflowPreference(key: WorkflowPreferenceKey, value: string
     if (typeof localStorage !== "undefined") localStorage.setItem(WORKFLOW_PREFERENCE_SPECS[key].storageKey, value);
   } catch {}
 }
+
+/** 上传弹窗的「普通 / Agent」：Agent = refined（翻译 agent）。 */
+export function isAgentTranslation(quality: TranslationQuality): boolean {
+  return quality === "refined";
+}
+
+/** 点了普通还是 Agent → 翻译质量。点普通时原来是「统一术语」就留着。 */
+export function qualityForEngine(engine: string, current: TranslationQuality): TranslationQuality {
+  if (engine === "agent") return "refined";
+  return current === "refined" ? "standard" : current;
+}

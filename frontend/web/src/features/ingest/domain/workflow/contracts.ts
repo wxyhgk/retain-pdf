@@ -57,6 +57,8 @@ export interface WorkflowViewPortLike {
     defaultPaddleToken?: string;
     defaultModelApiKey?: string;
   }) => WorkflowSubmitValues;
+  /** 上传弹窗这次选的翻译模型换成的翻译字段（只用在上传提交，见 workflow-view-store）。 */
+  uploadTranslationOverride?: () => Record<string, string> | null;
 }
 
 export interface WorkflowConstants extends WorkflowPayloadConstants {

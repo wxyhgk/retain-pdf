@@ -14,7 +14,7 @@ test("上传弹窗：恢复顶部模式切换 + 就绪后执行当前模式或�
   clickWithMouseDown(dom, byId("library-add-pdf-btn"));
   await waitFor(() => byId("translation-workflow-dialog") !== null, "添加对话框打开");
   assert.equal(byId("translation-workflow-title").textContent, "添加 PDF");
-  assert.equal(byId("translation-workflow-title").classList.contains("sr-only"), false, "标题看得见（2026-11-20）");
+  assert.equal(byId("translation-workflow-title").classList.contains("sr-only"), true, "顶部只留 tab，标题只给读屏（2026-11-20）");
   assert.equal(byId("translation-workflow-desc"), null);
   assert.ok(byId("ocr-only-toggle"), "顶部模式切换存在");
   assert.equal(byId("file-label").textContent, "点击选择文件或拖到这里");
