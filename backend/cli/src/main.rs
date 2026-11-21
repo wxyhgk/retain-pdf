@@ -12,7 +12,7 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 
-use crate::cmd::{backup, compact, config, doctor, setup, status, sync};
+use crate::cmd::{backup, compact, config, db_snapshot, doctor, setup, status, sync};
 use crate::context::Ctx;
 
 #[derive(Parser)]
@@ -53,6 +53,12 @@ enum Command {
         #[command(subcommand)]
         action: sync::SyncCommand,
     },
+    /// 数据库重做的比对工具：迁移前后导出、比对读出来的东西（开发用）
+    #[command(hide = true)]
+    DbSnapshot {
+        #[command(subcommand)]
+        action: db_snapshot::DbSnapshotCommand,
+    },
 }
 
 fn main() -> ExitCode {
@@ -65,6 +71,7 @@ fn main() -> ExitCode {
         Command::Backup { action } => backup::run(&ctx, action),
         Command::Compact(args) => compact::run(&ctx, args),
         Command::Sync { action } => sync::run(&ctx, action),
+        Command::DbSnapshot { action } => db_snapshot::run(&ctx, action),
     });
     match outcome {
         Ok(code) => code,

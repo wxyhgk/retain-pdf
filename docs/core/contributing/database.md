@@ -21,6 +21,20 @@
   改了结构（加迁移）要重新生成：`UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot`，看 diff 只该有预期的改动。
   老库一路升上来和新建的库一样，`an_old_database_upgraded_matches_a_fresh_one` 守着；真实库可以只读比一次：
   `RETAINPDF_COMPARE_DB=<库文件> cargo test -p retainpdf-db compare_a_real_database -- --ignored --nocapture`。
+- `db/snapshot_diff.rs`：**改表结构前后的比对工具**（数据库重做每一步都用，见
+  [数据库重做总体设计](../../ops/planning/database-redesign/20261120-数据库重做总体设计.md)）。它只调 `Db` 的公开读接口，把读出来的
+  任务快照、产物清单、进度事件、断点续跑记录、书、上传、译文版本、进度流、各种列表和计数导成一行一条的 JSON（按类别、编号排好，
+  请求里的凭证换成指纹），迁移前后各导一份逐条比，读接口不变就该一模一样。读接口要先知道的编号（上传、进度流、续跑的阶段和外部调用）
+  在 `enumerate_keys` 里从表列出，**改表名、拆表时改这一处**。用法（打开旧库会按当前程序升级它，所以只对副本用，给正在用的库会拒绝）：
+
+  ```bash
+  sqlite3 data/db/jobs.db ".backup /tmp/x/before.db" && cp /tmp/x/before.db /tmp/x/after.db
+  <main 上编的 retainpdf> db-snapshot dump --db /tmp/x/before.db --out /tmp/x/before.jsonl
+  <分支上编的 retainpdf>  db-snapshot dump --db /tmp/x/after.db  --out /tmp/x/after.jsonl   # 打开时跑新迁移
+  retainpdf db-snapshot diff /tmp/x/before.jsonl /tmp/x/after.jsonl [--ignore 类别[:字段路径前缀]]...
+  ```
+
+  一样退出码 0，有不同 1，并列出哪条、哪个字段、前后的值。`--ignore` 只写**有意的**变化，合并说明里写明忽略了什么、为什么。
 - `db/schema/base.sql`：最早几张表（上传、任务、产物、事件、术语表）的幂等建表，新库的起点；不往这里加新表、新列。
 - `db/schema/mod.rs`：编号迁移的执行器，以及老表的幂等加列（`LEGACY_COLUMNS`，现在只有 `jobs.document_id`）。
 - `db/schema/migrations/`：编号迁移，一个迁移一个 `vNN_<领域>.sql`，说明写在文件开头；清单在 `migrations/mod.rs`。版本号就是清单里的位置，已上线的只能往后追加，不能改、删、调序。

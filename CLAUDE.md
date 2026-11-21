@@ -66,7 +66,8 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
 
 - 三份快照钉住对外行为：接口清单 `backend/api/docs/routes.txt`、文件出口返回 `backend/api/docs/file-responses.txt`、
   建任务各入口的结果 `backend/api/docs/submissions.txt`。数据库表结构另有一份 `database/retainpdf-db/schema.sql`
-  （加了迁移就 `UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot`）。有意改了才重新生成：
+  （加了迁移就 `UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot`）；数据库重做的每一步合并前，还要在真实库副本上用
+`retainpdf db-snapshot dump|diff` 比迁移前后读出来的东西（用法见 `docs/core/contributing/database.md`）。有意改了才重新生成：
   `UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest`、
   `UPDATE_FILE_RESPONSES=1 cargo test -p retainpdf-api --lib file_responses`、
   `UPDATE_SUBMISSIONS=1 cargo test -p retainpdf-api --lib submissions`。重新生成后看 diff，只该有预期的改动。

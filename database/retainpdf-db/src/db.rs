@@ -53,6 +53,8 @@ mod retention;
 mod rows;
 #[path = "db/schema/mod.rs"]
 mod schema;
+#[path = "db/snapshot_diff.rs"]
+pub mod snapshot_diff;
 #[path = "db/sync.rs"]
 pub mod sync;
 #[path = "db/translation_versions.rs"]
@@ -122,7 +124,7 @@ pub struct Db {
     restore_gate: Arc<std::sync::RwLock<()>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct JobProcessRecord {
     pub job_id: String,
     pub pid: Option<u32>,
