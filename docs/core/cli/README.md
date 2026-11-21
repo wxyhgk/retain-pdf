@@ -75,6 +75,9 @@ retainpdf sync set --folder <文件夹> | --webdav <地址> --user <账号> [--p
 全局参数：`--json`（输出 JSON 给脚本）、`--data <目录>`（数据目录，默认依次取配置、正在运行的后端、
 桌面版的默认位置）。
 
+开发用、帮助里不列的：`retainpdf db-snapshot dump --db <库的副本> --out <文件>` 和 `retainpdf db-snapshot diff <前> <后> [--ignore …]`，
+数据库改表结构前后比对读出来的东西，见 [数据库贡献指南](../contributing/database.md)。
+
 ## 后端开着还是没开
 
 同一个数据目录同一时间只能有一个程序写。命令行先看 `run/backend.json`：记录的进程在、数据目录相同、

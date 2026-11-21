@@ -9,7 +9,7 @@ use rusqlite::{params, OptionalExtension};
 use crate::db::Db;
 
 /// 再自动续跑一次之后，这个 attempt 的计数。
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
 pub struct AutoResumeTally {
     pub attempt: u32,
     /// 连续没有新进度的自动续跑次数（含这一次）。

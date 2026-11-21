@@ -11,7 +11,7 @@ use crate::models::domain::now_iso;
 
 use crate::db::Db;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct TranslationVersionRecord {
     pub version_id: String,
     pub document_id: String,

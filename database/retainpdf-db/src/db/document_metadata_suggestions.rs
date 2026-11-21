@@ -7,7 +7,7 @@ use crate::models::domain::now_iso;
 use super::documents::rows::query_document;
 use super::Db;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct StoredDocumentMetadataSuggestion {
     pub suggestion_id: String,
     pub document_id: String,

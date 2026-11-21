@@ -8,7 +8,7 @@ use super::rows::row_to_job_event;
 use super::Db;
 use crate::models::api::JobEventRecord;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct EventSourceVersion {
     pub job_id: String,
     /// Highest sequence ever observed, including rows later deleted.
@@ -23,7 +23,7 @@ pub struct SourceEvent {
     pub event: JobEventRecord,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct StoredEventFeed {
     pub epoch: String,
     pub revision: i64,
@@ -44,7 +44,7 @@ pub struct NewFeedItem {
     pub payload: Value,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct StoredFeedItem {
     pub seq: i64,
     pub event_id: String,
