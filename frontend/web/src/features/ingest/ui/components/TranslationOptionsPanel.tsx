@@ -5,7 +5,7 @@
 import type { FormEvent } from "react";
 import { BookOpen, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, Table, X } from "lucide-react";
 
-import { LegacyButton } from "@retainpdf/ui";
+import { LegacyButton, Select } from "@retainpdf/ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { useIngestServices, useIngestWorkflowView } from "../workflow-view-context.js";
 
@@ -122,7 +122,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
             <BookOpen className="h-4 w-4" aria-hidden="true" />
             术语表
           </span>
-          <select
+          <Select
             id="job-glossary-id"
             value={selectedId}
             onChange={(event) => workflowView.setSelectedGlossaryId(event.target.value)}
@@ -137,7 +137,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
             {!hasSelected ? (
               <option value={selectedId}>{`已删除或不可用: ${selectedId}`}</option>
             ) : null}
-          </select>
+          </Select>
         </label>
 
         <label className="translation-options-glossary" htmlFor="job-translation-quality">
@@ -145,7 +145,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
             <Sparkles className="h-4 w-4" aria-hidden="true" />
             翻译质量
           </span>
-          <select
+          <Select
             id="job-translation-quality"
             value={workflow.preferences.translationQuality}
             onChange={(event) => workflowView.setPreference("translationQuality", event.target.value)}
@@ -153,7 +153,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
             <option value="standard">普通</option>
             <option value="terms">统一术语</option>
             <option value="refined">精翻（翻译 agent）</option>
-          </select>
+          </Select>
           <small id="job-translation-quality-hint">
             {QUALITY_HINTS[workflow.preferences.translationQuality] || QUALITY_HINTS.standard}
           </small>
@@ -164,7 +164,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
             <LayoutTemplate className="h-4 w-4" aria-hidden="true" />
             排版引擎
           </span>
-          <select
+          <Select
             id="job-render-engine"
             value={workflow.preferences.renderEngine}
             onChange={(event) => workflowView.setPreference("renderEngine", event.target.value)}
@@ -172,7 +172,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
             <option value="auto">默认（新引擎）</option>
             <option value="rpr_fit">新引擎</option>
             <option value="typst">Typst（旧）</option>
-          </select>
+          </Select>
           <small id="job-render-engine-hint">
             {ENGINE_HINTS[workflow.preferences.renderEngine] || ENGINE_HINTS.auto}
           </small>
@@ -183,14 +183,14 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
             <Table className="h-4 w-4" aria-hidden="true" />
             表格
           </span>
-          <select
+          <Select
             id="job-table-translation"
             value={workflow.preferences.tableTranslation}
             onChange={(event) => workflowView.setPreference("tableTranslation", event.target.value)}
           >
             <option value="keep">保留原文</option>
             <option value="translate">翻译表格（试验）</option>
-          </select>
+          </Select>
           <small id="job-table-translation-hint">
             {TABLE_HINTS[workflow.preferences.tableTranslation] || TABLE_HINTS.keep}
           </small>

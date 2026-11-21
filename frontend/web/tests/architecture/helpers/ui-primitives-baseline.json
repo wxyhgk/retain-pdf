@@ -145,7 +145,6 @@
       "button": 2
     },
     "src/features/ingest/ui/components/TranslationOptionsPanel.tsx": {
-      "select": 3,
       "input": 2,
       "legacyButton": 7
     },
