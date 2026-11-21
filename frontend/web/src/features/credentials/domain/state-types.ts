@@ -93,6 +93,8 @@ export interface CredentialsStatePort {
   getRuntime(): CredentialsRuntime;
   getSnapshot(): CredentialsState;
   hasComplete(options?: OcrTokenOptions): boolean;
+  /** 这家 OCR 能不能用（见 state-selectors 的 ocrReadyFor）。 */
+  isOcrReady?(options?: OcrTokenOptions): boolean;
   hasValidOcrValidationCache(options?: HasValidOcrValidationCacheOptions): boolean;
   patchCredentials(payload?: Partial<CredentialsFields>): CredentialsFields;
   resetDeepSeekBalance(): DeepSeekBalanceState;

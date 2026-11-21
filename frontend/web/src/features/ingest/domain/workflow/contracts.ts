@@ -56,9 +56,12 @@ export interface WorkflowViewPortLike {
     defaultOcrProvider?: string;
     defaultPaddleToken?: string;
     defaultModelApiKey?: string;
+    ocrProvider?: string;
   }) => WorkflowSubmitValues;
   /** 上传弹窗这次选的翻译模型换成的翻译字段（只用在上传提交，见 workflow-view-store）。 */
   uploadTranslationOverride?: () => Record<string, string> | null;
+  /** 上传弹窗这次选的 OCR（空 = 照设置里的），只用在上传提交。 */
+  uploadOcrProvider?: () => string;
 }
 
 export interface WorkflowConstants extends WorkflowPayloadConstants {

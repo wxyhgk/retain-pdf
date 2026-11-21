@@ -29,9 +29,12 @@ export interface CreateWorkflowPayloadAssemblyOptions {
     defaultOcrProvider?: string;
     defaultPaddleToken?: string;
     defaultModelApiKey?: string;
+    ocrProvider?: string;
   }) => WorkflowSubmitValues;
   /** 上传弹窗这次选的模型（整套地址、模型、key……），只叠到上传提交的翻译字段上。 */
   uploadTranslationOverride?: () => Record<string, string> | null;
+  /** 上传弹窗这次选的 OCR（空 = 照设置里的），也只用在上传提交。 */
+  uploadOcrProvider?: () => string;
 }
 
 export function createWorkflowPayloadAssembly({
@@ -48,15 +51,18 @@ export function createWorkflowPayloadAssembly({
   defaultModelApiKey,
   readSubmitValues,
   uploadTranslationOverride,
+  uploadOcrProvider,
 }: CreateWorkflowPayloadAssemblyOptions) {
   const { WORKFLOW_BOOK, WORKFLOW_TRANSLATE } = constants;
   const WORKFLOW_OCR = (constants as { WORKFLOW_OCR?: string }).WORKFLOW_OCR || "ocr";
 
-  function currentWorkflowSubmitValues(): WorkflowSubmitValues {
+  // ocrProvider 只有上传提交（collectRunPayload）给：书库的「翻译整本」「只做 OCR」照设置里的。
+  function currentWorkflowSubmitValues(ocrProvider = ""): WorkflowSubmitValues {
     return readSubmitValues?.({
       defaultOcrProvider: defaultOcrProvider(),
       defaultPaddleToken: defaultPaddleToken(),
       defaultModelApiKey: defaultModelApiKey(),
+      ...(ocrProvider ? { ocrProvider } : {}),
     }) || {};
   }
 
@@ -159,7 +165,7 @@ export function createWorkflowPayloadAssembly({
     const ocrOnly = isOcrOnlyMode();
     const workflow = ocrOnly ? WORKFLOW_OCR : developerConfig.workflow;
     const uploadState = overrides.uploadId ? { uploadId: overrides.uploadId } : getUploadState();
-    const submitValues = currentWorkflowSubmitValues();
+    const submitValues = currentWorkflowSubmitValues(uploadOcrProvider?.() || "");
     const effectiveNeedsUpload = ocrOnly ? () => true : workflowNeedsUpload;
     const payload: WorkflowRunPayload = {
       workflow,

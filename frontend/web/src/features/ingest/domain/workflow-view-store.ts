@@ -1,6 +1,6 @@
 import { createStore } from "@/platform/store/store.js";
 import type { Store } from "@/platform/store/store.js";
-import { connectionOverrides, connectionValue, savedTranslationConnections } from "@/platform/config/translation-connections.js";
+import { createUploadChoices } from "./upload-choices.js";
 import {
   isWorkflowPreferenceKey,
   loadWorkflowPreferences,
@@ -9,6 +9,7 @@ import {
   type WorkflowPreferences,
 } from "./workflow-preferences.js";
 
+export type { UploadOcrChoice } from "./upload-choices.js";
 export {
   normalizeRenderEngine,
   normalizeTranslationQuality,
@@ -83,6 +84,8 @@ export type WorkflowViewState = {
    * 只管这一次上传：不记到本机，也不影响书库里「翻译整本」（那边走 buildTranslateJobConfig，不读它）。
    */
   uploadModel: string;
+  /** 上传弹窗这次选的 OCR（PaddleOCR / MinerU / GLM-OCR 的编号，空 = 用设置里的）。和 uploadModel 一样只管这一次上传。 */
+  uploadOcr: string;
   developerDialog: WorkflowDeveloperDialog;
   developerFormState: Record<string, unknown>;
   ocrOnly: boolean;
@@ -132,6 +135,7 @@ export function createWorkflowViewStore(): WorkflowViewStore {
       selectedGlossaryId: "",
       preferences: loadWorkflowPreferences(),
       uploadModel: "",
+      uploadOcr: "",
       developerDialog: {},
       developerFormState: {},
       ocrOnly: false,
@@ -147,11 +151,18 @@ export function createWorkflowViewStore(): WorkflowViewStore {
 export function createWorkflowViewFeature({
   store = createWorkflowViewStore(),
   uploadTilePort,
+  ocrReady,
+  settingsOcrProvider,
 }: {
   store?: WorkflowViewStore;
   uploadTilePort?: WorkflowUploadTilePort | null;
+  /** 这家 OCR 本机能不能用、设置里选的 OCR：见 upload-choices.ts。 */
+  ocrReady?: (providerId: string) => boolean;
+  settingsOcrProvider?: () => string;
 } = {}) {
   const patch = (payload: Partial<WorkflowViewState> = {}) => store.actions.patch(payload);
+  // 这次上传选的模型、OCR（upload-choices.ts）。
+  const uploadChoices = createUploadChoices({ getState: () => store.getSnapshot(), patch, ocrReady, settingsOcrProvider });
 
   function setSubmitBusy(busy = false) {
     patch({ submitBusy: Boolean(busy) });
@@ -179,17 +190,6 @@ export function createWorkflowViewFeature({
     const next = normalizeWorkflowPreference(key, value);
     saveWorkflowPreference(key, next);
     patch({ preferences: { ...store.getSnapshot().preferences, [key]: next } });
-  }
-
-  function setUploadModel(value: unknown = "") {
-    patch({ uploadModel: `${value || ""}`.trim() });
-  }
-
-  /** 上传提交时把选的模型换成翻译字段（payload-assembly 的 collectRunPayload 用）；没选、连接没了是 null。 */
-  function uploadTranslationOverride(): Record<string, string> | null {
-    const value = store.getSnapshot().uploadModel;
-    if (!value) return null;
-    return connectionOverrides(savedTranslationConnections().find((connection) => connectionValue(connection) === value));
   }
 
   function setJobWarningVisible(visible: boolean) {
@@ -345,7 +345,8 @@ export function createWorkflowViewFeature({
   }
 
   const viewPort = {
-    uploadTranslationOverride,
+    uploadTranslationOverride: uploadChoices.uploadTranslationOverride,
+    uploadOcrProvider: uploadChoices.uploadOcrProvider,
     applyMockUpload,
     applyWorkflowUpload,
     closeDeveloperDialog: () => {},
@@ -367,7 +368,7 @@ export function createWorkflowViewFeature({
     setSelectedGlossaryId,
     preferences,
     setPreference,
-    setUploadModel,
+    ...uploadChoices,
     setSubmitBusy,
     setSubmitDisabled,
     store,

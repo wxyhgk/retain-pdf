@@ -27,6 +27,10 @@
   --enchant-glow: 3;
 }
 
+.upload-file[data-level='4'] {
+  --enchant-glow: 4;
+}
+
 .upload-file-card {
   position: relative;
   display: flex;
@@ -49,6 +53,7 @@
 }
 
 .upload-file-icon {
+  position: relative;
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
@@ -58,10 +63,45 @@
   background: color-mix(in srgb, var(--danger) 10%, var(--paper));
   color: var(--danger);
 
-  & svg {
+  & > svg {
     width: 20px;
     height: 20px;
   }
+}
+
+/* —— OCR：文件图标右下角一枚那家 OCR 的徽章，图标上一道金色扫描线慢慢扫过 —— */
+.upload-file[data-ocr] .upload-file-icon::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, transparent 0 42%, color-mix(in srgb, var(--gold) 55%, transparent) 50%, transparent 58% 100%);
+  background-size: 100% 260%;
+  pointer-events: none;
+  animation: upload-file-scan 2.8s ease-in-out infinite;
+}
+
+.upload-file-ocr {
+  position: absolute;
+  top: -7px;
+  right: -8px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--line));
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 16%, transparent);
+  animation: upload-file-stamp 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.upload-file-ocr-logo,
+.upload-file-sigil-logo {
+  width: 12px;
+  height: 12px;
 }
 
 .upload-file-name {
@@ -109,7 +149,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 8%, transparent);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   animation: upload-file-stamp 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.upload-file-sigil > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* —— 页数：后面错开两张纸，左下挂一条书签 —— */
@@ -299,6 +347,15 @@
   }
 }
 
+@keyframes upload-file-scan {
+  from {
+    background-position: 0 100%;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
 @keyframes upload-aura-in {
   from {
     opacity: 0;
@@ -321,6 +378,8 @@
   .upload-file-card,
   .upload-file-flash,
   .upload-file-sigil,
+  .upload-file-ocr,
+  .upload-file[data-ocr] .upload-file-icon::after,
   .upload-file-ribbon,
   .upload-file-agent,
   .upload-file-aura::before,
