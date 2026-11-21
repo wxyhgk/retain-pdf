@@ -12,7 +12,7 @@
   未翻译文字）和矢量图形；
 - 叠加层合并到底图：底图就是渲染源（去文字层 PDF；扫描件是原件，由引擎画的底色盖住原文）。
   overlay 模式在原件上叠加、其余页原样保留（与 overlay 路线一致）；typst / typst_visual 模式
-  只输出要渲染的页（与 Typst 背景路线一致）；
+  只输出要渲染的页（与 Typst 背景路线一致），书签按页从原文件抄过来（2026-11-22，以前丢了，#146）；
 - 查公式（``formula_check.py``，2026-11-02）：合并完看译文 PDF 上有没有看得见的 LaTeX、引擎报没报
   MathJax 失败，有的话这些块改成保留原文、引擎重排一次，再把原件的那一块盖回去（要 ``original_pdf_path``，
   上传的原文件；没给就只记下来不改）。
@@ -27,6 +27,7 @@ import shutil
 import time
 from pathlib import Path
 
+from retainpdf_pipeline.render.document.pikepdf_outline import copy_outline_for_pages
 from retainpdf_pipeline.render.document.pikepdf_overlay import overlay_pdf_pages_with_pikepdf
 from retainpdf_pipeline.render.document.pikepdf_pages import extract_page_indices_with_pikepdf
 from retainpdf_pipeline.render.layout.inline_content.mode_router import build_item_render_markdown
@@ -112,6 +113,29 @@ def _translation_items(
 
 # 引擎（Node）一个字符串最长 0x1fffffe8（约 512 MB）个字符，留点余量
 DRAWINGS_JSON_MAX_CHARS = 400_000_000
+
+
+def _copy_outline(
+    *,
+    original_pdf_path: Path | None,
+    source_pdf_path: Path,
+    output_pdf_path: Path,
+    output_page_indices: list[int],
+) -> int:
+    """只输出要渲染的页时，抽页拼出的底图没有书签：从上传的原文件（没有就用渲染源）按页抄过去。
+
+    抄不成只少了书签，不让整次渲染回退 Typst。
+    """
+    outline_source = Path(original_pdf_path) if original_pdf_path is not None and Path(original_pdf_path).is_file() else source_pdf_path
+    try:
+        return copy_outline_for_pages(
+            source_pdf_path=outline_source,
+            target_pdf_path=output_pdf_path,
+            source_page_indices=output_page_indices,
+        )
+    except Exception as exc:  # noqa: BLE001 - 书签是附带的，坏了不连累译文
+        print(f"rpr_fit outline copy failed: {type(exc).__name__}: {exc}", flush=True)
+        return 0
 
 
 def build_book_rpr_fit_pdf(
@@ -274,6 +298,13 @@ def build_book_rpr_fit_pdf(
         "kept_origin": kept,
         "remaining": [{"item_id": item_id, "reasons": reasons} for item_id, reasons in sorted(remaining.items())],
     }
+    if background_mode:
+        diagnostics["rpr_fit_outline_items"] = _copy_outline(
+            original_pdf_path=original_pdf_path,
+            source_pdf_path=source_pdf_path,
+            output_pdf_path=output_pdf_path,
+            output_page_indices=output_page_indices,
+        )
     emit_render_compile_progress(
         current=3,
         total=3,

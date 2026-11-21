@@ -125,11 +125,10 @@ def test_rpr_fit_route_end_to_end_with_fake_engine(tmp_path: Path, monkeypatch, 
 
     output = fitz.open(context.output_pdf_path)
     try:
-        # overlay：原件全部页（第 3 页原样）+ 目录；typst 系：只输出要渲染的页。
+        # overlay：原件全部页（第 3 页原样）；typst 系：只输出要渲染的页。书签都在（typst 系以前抽页时丢了，#146）。
         assert len(output) == (3 if mode == "overlay" else 2)
         assert "FIT" in output[0].get_text()
-        if mode == "overlay":
-            assert output.get_toc() == [[1, "Chapter", 1]]
+        assert output.get_toc() == [[1, "Chapter", 1]]
     finally:
         output.close()
 
