@@ -60,6 +60,14 @@
       }
     ],
     "asar": true,
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "wxyhgk",
+        "repo": "retain-pdf",
+        "releaseType": "release"
+      }
+    ],
     "win": {
       "icon": "build/icon.ico",
       "electronLanguages": [

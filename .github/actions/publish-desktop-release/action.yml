@@ -26,7 +26,8 @@ runs:
   using: composite
   steps:
     # 硬门禁：三平台齐全、manifest 的版本 / revision / 文件名与本次发布一致、
-    # 每个安装包的大小与 sha256 和 manifest 一致；同时写出 SHA256SUMS.txt。
+    # 每个安装包和自动更新附带文件（latest*.yml、.blockmap、Mac 的 zip）的大小与 sha256
+    # 和 manifest 一致；同时写出 SHA256SUMS.txt。
     - name: Verify complete desktop release set
       shell: bash
       env:
@@ -40,6 +41,7 @@ runs:
           --version "$RELEASE_VERSION" \
           --revision "$RELEASE_REVISION" \
           --check-files \
+          --require-extras \
           --sums-out "$ASSETS_DIR/SHA256SUMS.txt"
         cat "$ASSETS_DIR/SHA256SUMS.txt"
 
@@ -68,6 +70,11 @@ runs:
         fail_on_unmatched_files: true
         files: |
           ${{ inputs.assets-dir }}/RetainPDF-Windows-${{ inputs.version }}-Setup.exe
+          ${{ inputs.assets-dir }}/RetainPDF-Windows-${{ inputs.version }}-Setup.exe.blockmap
+          ${{ inputs.assets-dir }}/latest.yml
           ${{ inputs.assets-dir }}/RetainPDF-Linux-${{ inputs.version }}.deb
           ${{ inputs.assets-dir }}/RetainPDF-Mac-${{ inputs.version }}.dmg
+          ${{ inputs.assets-dir }}/RetainPDF-Mac-${{ inputs.version }}.zip
+          ${{ inputs.assets-dir }}/RetainPDF-Mac-${{ inputs.version }}.zip.blockmap
+          ${{ inputs.assets-dir }}/latest-mac.yml
           ${{ inputs.assets-dir }}/SHA256SUMS.txt

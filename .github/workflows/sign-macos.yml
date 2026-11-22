@@ -8,8 +8,8 @@ name: Sign macOS Package
 #   2. frontend/desktop/scripts/sign-mac.mjs：@electron/osx-sign 给包里每个二进制签名（hardened runtime +
 #      build/entitlements.mac.plist），@electron/notarize 用 App Store Connect API key 公证并 staple；
 #   3. 校验：codesign --verify --deep --strict、每个 Mach-O 都是 Developer ID + runtime、stapler、spctl；
-#   4. electron-builder --prepackaged 用签好的 .app 出 dmg 和 zip（自动更新用 zip），dmg 再签一次名；
-#   5. 上传 desktop-macos-signed-<sha>。
+#   4. electron-builder --prepackaged 用签好的 .app 出 dmg、zip（自动更新用）和 latest-mac.yml；
+#   5. 登记签好的这一套（desktop-meta-macos-signed-<sha>）并上传（desktop-macos-signed-<sha>），发版只认它。
 
 "on":
   workflow_call:
@@ -156,11 +156,12 @@ jobs:
         run: |
           # artifactName 里的 ${version} 取 package.json；只改 runner 上这份，不提交。
           npm pkg set version="$PACKAGE_VERSION"
+          # 有 publish 配置，--publish never 也会写 latest-mac.yml（自动更新读它，里面记着 zip / dmg 的 sha512）。
+          # dmg 不再另外签名：签了 sha512 就和 latest-mac.yml 对不上；里面的 App 已签名公证并 staple。
           npx electron-builder --prepackaged "$GITHUB_WORKSPACE/work/RetainPDF.app" --mac dmg zip --publish never --config.directories.output=signed
-          identity="$(security find-identity -v -p codesigning "$SIGNING_KEYCHAIN" | sed -nE 's/.*"(Developer ID Application: [^"]+)".*/\1/p' | head -n 1)"
-          codesign --sign "$identity" --keychain "$SIGNING_KEYCHAIN" --timestamp "signed/RetainPDF-Mac-$PACKAGE_VERSION.dmg"
-          codesign --verify --verbose=2 "signed/RetainPDF-Mac-$PACKAGE_VERSION.dmg"
           ls -lh signed
+          test -s signed/latest-mac.yml
+          cat signed/latest-mac.yml
 
       - name: Check the dmg opens to a notarized app
         shell: bash
@@ -180,16 +181,37 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$unpacked/RetainPDF.app"
           xcrun stapler validate "$unpacked/RetainPDF.app"
 
+      # 签好的这一套重新登记（发版时只认它，不认预构建里未签名的 dmg）。
+      - name: Record signed macOS package manifest
+        shell: bash
+        run: |
+          signed="$DESKTOP_ROOT/signed"
+          python3 .github/scripts/release_candidate_manifest.py record-desktop --platform macos \
+            --file "$signed/RetainPDF-Mac-$PACKAGE_VERSION.dmg" \
+            --extra "$signed/RetainPDF-Mac-$PACKAGE_VERSION.zip" \
+            --extra "$signed/RetainPDF-Mac-$PACKAGE_VERSION.zip.blockmap" \
+            --extra "$signed/latest-mac.yml" \
+            --version "$PACKAGE_VERSION" --revision "$GITHUB_SHA" --out-dir desktop-meta-signed
+
       - name: Upload signed macOS packages
         uses: actions/upload-artifact@v7
         with:
           name: desktop-macos-signed-${{ github.sha }}
           path: |
             ${{ env.DESKTOP_ROOT }}/signed/RetainPDF-Mac-${{ inputs.version }}.dmg
-            ${{ env.DESKTOP_ROOT }}/signed/RetainPDF-Mac-${{ inputs.version }}*.zip
-            ${{ env.DESKTOP_ROOT }}/signed/*.yml
-            ${{ env.DESKTOP_ROOT }}/signed/*.blockmap
-          if-no-files-found: warn
+            ${{ env.DESKTOP_ROOT }}/signed/RetainPDF-Mac-${{ inputs.version }}.zip
+            ${{ env.DESKTOP_ROOT }}/signed/RetainPDF-Mac-${{ inputs.version }}.zip.blockmap
+            ${{ env.DESKTOP_ROOT }}/signed/latest-mac.yml
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+      - name: Upload signed macOS package manifest
+        uses: actions/upload-artifact@v7
+        with:
+          name: desktop-meta-macos-signed-${{ github.sha }}
+          path: desktop-meta-signed/desktop-package-macos.json
+          if-no-files-found: error
           retention-days: 7
           overwrite: true
 

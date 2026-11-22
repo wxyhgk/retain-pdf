@@ -100,9 +100,17 @@ def test_desktop_builds_run_in_parallel_but_publish_waits_for_tests():
     needs = re.search(r"^    needs:\n((?:      - [\w-]+\n)+)", publish, re.M)
     assert needs is not None
     listed = set(re.findall(r"- ([\w-]+)", needs.group(1)))
-    assert listed == {"resolve", "quality-gate", "build"}
+    assert listed == {"resolve", "quality-gate", "build", "sign-macos-build"}
     assert job_condition(publish) == FALLBACK_CONDITION
     assert_cannot_bypass_success(publish)
+
+    # Mac 签名（带密钥）必须等测试和打包都过了才跑。
+    sign = job("release-desktop.yml", "sign-macos-build")
+    sign_needs = re.search(r"^    needs:\n((?:      - [\w-]+\n)+)", sign, re.M)
+    assert sign_needs is not None
+    assert set(re.findall(r"- ([\w-]+)", sign_needs.group(1))) == {"resolve", "quality-gate", "build"}
+    assert job_condition(sign) == FALLBACK_CONDITION
+    assert_cannot_bypass_success(sign)
 
     build = job("release-desktop.yml", "build")
     assert "uses: ./.github/workflows/build-desktop-packages.yml" in build

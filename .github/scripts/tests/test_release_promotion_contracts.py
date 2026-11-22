@@ -248,14 +248,19 @@ def test_docker_resolve_checks_the_registry_without_promoting():
 # ---------------------------------------------------------------- promote
 
 
-@pytest.mark.parametrize("workflow_name,promote_job", [
-    ("release-desktop.yml", "promote-desktop-release"),
-    ("release-docker.yml", "promote"),
+@pytest.mark.parametrize("workflow_name,promote_job,needs", [
+    # 桌面提升还要等 Mac 签名（sign-macos-promote，2026-11-22 起）；它自己也只在可提升的 tag push 上跑。
+    ("release-desktop.yml", "promote-desktop-release", {"resolve", "sign-macos-promote"}),
+    ("release-docker.yml", "promote", {"resolve"}),
 ])
-def test_promotion_only_runs_for_tag_pushes_judged_promotable(workflow_name, promote_job):
+def test_promotion_only_runs_for_tag_pushes_judged_promotable(workflow_name, promote_job, needs):
     body = job(workflow_name, promote_job)
     assert condition(body) == TAG_PUSH_PROMOTE
-    assert "    needs: resolve\n" in body
+    listed = re.search(r"^    needs:(?: (\S+)\n|\n((?:      - [\w-]+\n)+))", body, re.M)
+    assert listed is not None
+    assert ({listed.group(1)} if listed.group(1) else set(re.findall(r"- ([\w-]+)", listed.group(2)))) == needs
+    for upstream in needs - {"resolve"}:
+        assert condition(job(workflow_name, upstream)) == TAG_PUSH_PROMOTE
     assert re.search(r"^    continue-on-error:", body, re.M) is None
     download = step(body, next(n for n in re.findall(r"^      - name: (.+)$", body, re.M) if n.startswith("Download prebuilt")))
     assert "run-id: ${{ needs.resolve.outputs.run_id }}" in download
@@ -282,7 +287,7 @@ def test_desktop_promotion_verifies_checksums_before_publishing():
     tag_check = action.index("Verify release tag still targets this revision")
     publish = action.index("uses: softprops/action-gh-release@v3")
     assert verify < tag_check < publish
-    assert "verify-desktop" in action and "--check-files" in action
+    assert "verify-desktop" in action and "--check-files" in action and "--require-extras" in action
     assert "fail_on_unmatched_files: true" in action
     for job_name in ("publish-desktop-release", "promote-desktop-release"):
         body = job("release-desktop.yml", job_name)
@@ -290,7 +295,10 @@ def test_desktop_promotion_verifies_checksums_before_publishing():
         assert "uses: ./.github/actions/publish-desktop-release" in publish_step
         assert "revision: ${{ github.sha }}" in publish_step
         assert "version: ${{ needs.resolve.outputs.version }}" in publish_step
-        assert "pattern: desktop-*-${{ github.sha }}" in body
+        # Windows / Linux 用打包产出的；Mac 只用签好名的（未签名的 dmg / .app 不会混进 Release）。
+        assert "pattern: desktop-*{windows,linux}-${{ github.sha }}" in body
+        assert "pattern: desktop-*macos-signed-${{ github.sha }}" in body
+        assert "pattern: desktop-*-${{ github.sha }}" not in body
 
 
 def test_docker_promotion_verifies_before_tagging_and_never_rebuilds():
@@ -359,6 +367,9 @@ def test_actions_read_is_only_granted_where_runs_or_artifacts_are_queried():
     assert granted == {
         ("release-desktop.yml", "resolve"),
         ("release-desktop.yml", "promote-desktop-release"),
+        # Mac 签名要跨运行下载预构建的未签名 .app（提升路径）/ 本运行的（完整构建路径）。
+        ("release-desktop.yml", "sign-macos-promote"),
+        ("release-desktop.yml", "sign-macos-build"),
         ("release-docker.yml", "resolve"),
         ("release-docker.yml", "promote"),
     }
@@ -367,10 +378,19 @@ def test_actions_read_is_only_granted_where_runs_or_artifacts_are_queried():
         assert "actions: write" not in workflow(workflow_name)
 
 
+MAC_SIGNING_SECRETS = {"MAC_CSC_LINK", "MAC_CSC_KEY_PASSWORD", "APPLE_API_KEY", "APPLE_API_KEY_ID", "APPLE_API_ISSUER"}
+
+
 def test_no_new_secrets_are_introduced():
     allowed = {"DOCKERHUB_USERNAME", "DOCKERHUB_TOKEN"}
     for workflow_name in RELEASE_WORKFLOWS:
-        used = set(re.findall(r"secrets\.(\w+)", workflow(workflow_name)))
-        assert used <= allowed, (workflow_name, used - allowed)
+        # Mac 签名密钥（2026-11-22）只许出现在桌面发版的两个签名 job 里，显式逐个传给 sign-macos.yml。
+        for name, body in jobs(workflow_name).items():
+            used = set(re.findall(r"secrets\.(\w+)", body))
+            if workflow_name == "release-desktop.yml" and name in {"sign-macos-build", "sign-macos-promote"}:
+                assert used == MAC_SIGNING_SECRETS, (workflow_name, name, used)
+                assert "secrets: inherit" not in body
+            else:
+                assert used <= allowed, (workflow_name, name, used - allowed)
     for action in ("docker-candidates", "publish-desktop-release"):
         assert "secrets." not in text(ACTIONS / action / "action.yml")

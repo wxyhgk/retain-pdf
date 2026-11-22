@@ -251,13 +251,17 @@ jobs:
         shell: pwsh
         env:
           PACKAGE_VERSION: ${{ steps.version.outputs.version }}
-        run: python .github/scripts/release_candidate_manifest.py record-desktop --platform windows --file "$env:DESKTOP_ROOT/win/RetainPDF-Windows-$env:PACKAGE_VERSION-Setup.exe" --version "$env:PACKAGE_VERSION" --revision "$env:GITHUB_SHA" --out-dir desktop-meta
+        # latest.yml 和 .blockmap 给 electron-updater（自动更新、增量下载）用，一起登记、一起发版。
+        run: python .github/scripts/release_candidate_manifest.py record-desktop --platform windows --file "$env:DESKTOP_ROOT/win/RetainPDF-Windows-$env:PACKAGE_VERSION-Setup.exe" --extra "$env:DESKTOP_ROOT/win/RetainPDF-Windows-$env:PACKAGE_VERSION-Setup.exe.blockmap" --extra "$env:DESKTOP_ROOT/win/latest.yml" --version "$env:PACKAGE_VERSION" --revision "$env:GITHUB_SHA" --out-dir desktop-meta
 
       - name: Upload Windows package artifact
         uses: actions/upload-artifact@v7
         with:
           name: desktop-windows-${{ github.sha }}
-          path: ${{ env.DESKTOP_ROOT }}/win/RetainPDF-Windows-${{ steps.version.outputs.version }}-Setup.exe
+          path: |
+            ${{ env.DESKTOP_ROOT }}/win/RetainPDF-Windows-${{ steps.version.outputs.version }}-Setup.exe
+            ${{ env.DESKTOP_ROOT }}/win/RetainPDF-Windows-${{ steps.version.outputs.version }}-Setup.exe.blockmap
+            ${{ env.DESKTOP_ROOT }}/win/latest.yml
           if-no-files-found: error
           retention-days: 7
           overwrite: true
