@@ -55,6 +55,13 @@ CI 不读取这里的任何 PDF，它们只服务下面的手动脚本。
 `multi-column-paper` 四行的 `file` 为空，是待补的样本类型占位，`--list-samples`
 会把它们标成不可用。
 
+## 表格样本
+
+`editable-tables.pdf`（5 页，约 190 KB）是合成的英文报告，用来测表格翻译（建任务时 `translation.tables = "translate"`）。
+内容全是虚构的，源文件 `editable-tables.typ`，改了以后用 `typst compile editable-tables.typ editable-tables.pdf` 重新生成。
+7 张表各覆盖一种情况：简单数值（表 1）、单元格长句（表 2）、跨列两层表头（表 3）、首列跨行的全框线表（表 4）、
+化学式和上下标（表 5）、8 列宽表（表 6）、跨页续表（表 7，第 4–5 页，续页重复表头）。
+
 ## 本地回归脚本
 
 完整跑 OCR、翻译、渲染：
