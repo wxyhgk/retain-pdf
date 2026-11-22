@@ -26,7 +26,7 @@ test("GLM-OCR 的「获取 Key」指向智谱开放平台的 API Key 页（2026-
 });
 
 test("GLM-OCR 检测：发智谱地址和免费 flash 模型；结果改成智谱 key 的说法，其余字段原样", () => {
-  assert.deepEqual(glmOcrProbePayload(" k "), { api_key: "k", base_url: ZHIPU, model: "GLM-5.3-Flash", api_protocol: "openai_responses" });
+  assert.deepEqual(glmOcrProbePayload(" k "), { api_key: "k", base_url: ZHIPU, model: "glm-5.3-flash", api_protocol: "openai" });
   assert.equal(OCR_PROVIDER_DEFINITIONS.find((item) => item.id === "glm_ocr").supportsValidation, true);
   assert.match(describeGlmOcrProbe({ ok: true, status: "valid", summary: "翻译 API 与模型 X 可用" }).summary, /智谱 API Key 可用/);
   assert.match(describeGlmOcrProbe({ ok: false, status: "unauthorized", summary: "翻译 API Key 无效" }).summary, /智谱 API Key 无效/);

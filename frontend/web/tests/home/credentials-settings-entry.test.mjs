@@ -172,8 +172,8 @@ test("GLM-OCR：有「检测」按钮，借翻译检测接口用智谱地址和�
     assert.deepEqual(calls[0], {
       api_key: "zhipu-fixture-key",
       base_url: "https://open.bigmodel.cn/api/paas/v4",
-      model: "GLM-5.3-Flash",
-      api_protocol: "openai_responses",
+      model: "glm-5.3-flash",
+      api_protocol: "openai",
     });
     outcome = "ok";
     clickWithMouseDown(dom, button);
