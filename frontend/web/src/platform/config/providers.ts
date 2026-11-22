@@ -63,7 +63,7 @@ export const OCR_PROVIDER_DEFINITIONS = [
     validationIdleMessage: "未检测",
     validationMissingMessage: "请先填写智谱 API Key；翻译用智谱时可以不填。",
     validationUnavailableMessage: "翻译选了智谱时可以不填，用翻译的同一个 key。",
-    docsUrl: "https://open.bigmodel.cn/usercenter/apikeys",
+    docsUrl: "https://open.bigmodel.cn/apikey/platform",
     docsLabel: "获取 Key",
     supportsValidation: false,
     // 分段识别，多长的书都行。

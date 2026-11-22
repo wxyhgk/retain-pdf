@@ -19,6 +19,12 @@ test("GLM-OCR 在服务商列表里，排在 paddle、mineru 后面", () => {
   assert.equal(isZhipuBaseUrl("https://dashscope.aliyuncs.com/compatible-mode/v1"), false);
 });
 
+test("GLM-OCR 的「获取 Key」指向智谱开放平台的 API Key 页（2026-11-22 用户给的地址）", () => {
+  const glm = OCR_PROVIDER_DEFINITIONS.find((item) => item.id === "glm_ocr");
+  assert.equal(glm.docsUrl, "https://open.bigmodel.cn/apikey/platform");
+  assert.equal(glm.docsLabel, "获取 Key");
+});
+
 test("GLM-OCR 的内联 key 放进 options.credential，不造 glm 专用字段；没 key 就什么都不带", () => {
   const withKey = buildOcrPayload({ ocrProvider: "glm_ocr", ocrToken: "zhipu-key", pageRanges: "1-3", defaultPaddleApiUrl: () => "", constants });
   assert.equal(withKey.provider, "glm_ocr");
