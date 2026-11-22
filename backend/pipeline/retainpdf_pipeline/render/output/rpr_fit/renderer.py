@@ -66,6 +66,10 @@ def _reset_dir(path: Path) -> Path:
 
 
 def _engine_text(item: dict) -> str:
+    return _engine_text_and_lines(item)[0]
+
+
+def _engine_text_and_lines(item: dict) -> tuple[str, bool]:
     """一条译文在 retain-pdf 里真正要排出来的文字，转成引擎的格式。
 
     与其它路线同一步：seed_render_fields（占位符还原、与原文相同则不排、行间公式跳过……）
@@ -77,14 +81,53 @@ def _engine_text(item: dict) -> str:
     seed_render_fields(probe)
     render_text = str(probe.get("render_protected_text") or "")
     if not render_text.strip():
-        return ""
+        return "", False
     markdown = build_item_render_markdown(probe, render_text, list(probe.get("render_formula_map") or []))
     # seed_render_fields 判定「逐行排」（目录、列表、术语表……）时写的是 _render_preserve_line_breaks；
     # 以前这里读 preserve_line_breaks（译文条目里没有这个字段），目录整块被压成一段（#133）。
-    return markdown_to_engine_text(
-        sanitize_typst_markdown_for_compile(markdown),
-        preserve_line_breaks=bool(probe.get("_render_preserve_line_breaks")),
-    )
+    preserve = bool(probe.get("_render_preserve_line_breaks"))
+    return markdown_to_engine_text(sanitize_typst_markdown_for_compile(markdown), preserve_line_breaks=preserve), preserve
+
+
+def _joins_with_space(left: str, right: str) -> bool:
+    """两块译文接起来时中间要不要空格：两边都是西文（字母、数字、公式的 $）才加，挨着汉字、中文标点不加。"""
+    a, b = left[-1:], right[:1]
+    return bool(a) and bool(b) and a.isascii() and b.isascii() and not a.isspace() and not b.isspace()
+
+
+def _continuation_flows(rows: list[tuple[dict, dict, bool]]) -> None:
+    """跨栏、跨页接续组（continuation_group）：把各块已经转好的引擎文本按阅读顺序接成整段，标在每个成员的
+    ``flow`` 上，引擎按各框的宽度和容量在行末重新切（retain/continuation-balance.js，公式不拆）。翻译阶段按原文
+    长度比例、优先句号切的结果照旧放在各块的 translated_text 里，引擎切不了（框不全是正文框、有独立公式、
+    $ 不成对）就用它。
+
+    不标的组：成员不全在这次渲染里、有成员没有译文（保留原文等）、成员之间夹着独立公式（翻译阶段已在公式处切开）、
+    逐行排的块、文本里有换行（段落、强制换行）。"""
+    by_id = {str(item.get("item_id") or ""): (item, entry, preserve) for item, entry, preserve in rows}
+    groups: dict[str, list[str]] = {}
+    for item, _entry, _preserve in rows:
+        group = str(item.get("continuation_group") or "")
+        members = [str(m or "") for m in item.get("translation_unit_member_ids") or []]
+        if group and len(members) >= 2:
+            groups.setdefault(group, members)
+    for group, members in groups.items():
+        found = [by_id.get(member) for member in members]
+        if any(row is None for row in found):
+            continue
+        if any(
+            preserve
+            or not entry["translated_text"].strip()
+            or "\n" in entry["translated_text"]
+            or (index > 0 and str(item.get("translation_unit_formula_before") or "").strip())
+            for index, (item, entry, preserve) in enumerate(found)
+        ):
+            continue
+        text = ""
+        for _item, entry, _preserve in found:
+            piece = entry["translated_text"].strip()
+            text = f"{text} {piece}" if text and _joins_with_space(text, piece) else text + piece
+        for index, (_item, entry, _preserve) in enumerate(found):
+            entry["flow"] = {"group": group, "index": index, "count": len(found), "text": text}
 
 
 def _translation_items(
@@ -92,6 +135,7 @@ def _translation_items(
 ) -> list[dict]:
     indents = first_line_indents or {}
     items: list[dict] = []
+    rows: list[tuple[dict, dict, bool]] = []
     for page_idx in sorted(translated_pages):
         for item in translated_pages[page_idx] or []:
             if not isinstance(item, dict):
@@ -99,7 +143,7 @@ def _translation_items(
             entry = {key: item.get(key) for key in _ITEM_FIELDS}
             if entry.get("page_idx") is None:
                 entry["page_idx"] = int(page_idx)
-            entry["translated_text"] = _engine_text(item)
+            entry["translated_text"], preserve = _engine_text_and_lines(item)
             entry["source_text"] = str(entry.get("source_text") or "")
             source_size = title_source_font_size_pt(item)
             if source_size is not None:
@@ -108,6 +152,8 @@ def _translation_items(
             if indent > 0:
                 entry["first_line_indent_pt"] = round(indent, 2)
             items.append(entry)
+            rows.append((item, entry, preserve))
+    _continuation_flows(rows)
     return items
 
 
