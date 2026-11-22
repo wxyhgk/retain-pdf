@@ -36,13 +36,17 @@
 //                       source_font_size_pt? } ],    // headings: source size, pt (fit at or below it)
 //     visual_profile: <visual_profile.v1 object> | null,   // cover / text colours
 //     drawings: { "<page index>": { width, height, drawings, images, words } } | null,
-//     pages: [<page index>, ...] | null }        // pages to render, in order; null = all
+//     pages: [<page index>, ...] | null,         // pages to render, in order; null = all
+//     fill_policy: { <FillPolicy parameter>: number } | null,    // overrides of fit-model/fill-policy.js DEFAULTS
+//     widen_policy: { <WidenPolicy parameter>: number } | null } // overrides of fit-model/widen-policy.js DEFAULTS
 // Output: <outDir>/overlay.pdf (one transparent page per rendered page),
 // overlay.typ, math/, report.json.
 
 const fs = require("node:fs");
 const path = require("node:path");
 const FitModel = require("../fit-model.js");
+const FillPolicy = require("../fit-model/fill-policy");
+const WidenPolicy = require("../fit-model/widen-policy");
 const Text = require("../text/measurer");
 const { defaultFontTable } = require("../index.js");
 const { MathStore } = require("../output/math-store");
@@ -85,6 +89,16 @@ function validate(input) {
   if (!input.document || !Array.isArray(input.document.pages)) throw new InputError("input.document must be a document.v1 object with pages[]");
   if (!Array.isArray(input.translations)) throw new InputError("input.translations must be an array of translation items");
   if (input.pages != null && !Array.isArray(input.pages)) throw new InputError("input.pages must be an array of page indices or null");
+  if (input.fill_policy != null) {
+    if (typeof input.fill_policy !== "object" || Array.isArray(input.fill_policy)) throw new InputError("input.fill_policy must be an object or null");
+    try { FillPolicy.resolve(input.fill_policy); }
+    catch (error) { throw new InputError(error.message); }
+  }
+  if (input.widen_policy != null) {
+    if (typeof input.widen_policy !== "object" || Array.isArray(input.widen_policy)) throw new InputError("input.widen_policy must be an object or null");
+    try { WidenPolicy.resolve(input.widen_policy); }
+    catch (error) { throw new InputError(error.message); }
+  }
 }
 
 // The job as experiments/overlay/adapter.js loadJob builds it, minus files.
@@ -164,11 +178,17 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
   const bodyMaxFont = Number.isFinite(stats.sourceBodyFont) ? round(stats.sourceBodyFont * PRESET.bodyMaxFactor, 2) : undefined;
   mark = performance.now();
   const mathBefore = maths.stats.ms;
+  let fillPlan = null;
+  let widened = [];
   const fitted = fitter.fitDocument(model, {
+    retainFillPolicy: input.fill_policy || undefined,
+    retainWidenPolicy: input.widen_policy || undefined,
+    onFillPlan: planned => { fillPlan = planned; },
+    onWiden: list => { widened = list; },
     ...fitOptions, mode: "translation", bodyMaxFont, strictSourceFit: PRESET.strictSourceFit, bodyNodeFontCaps: PRESET.fontCaps
   });
   timings.fitMs = Math.round(performance.now() - mark - (maths.stats.ms - mathBefore));
-  return { job, model, paint, stats, vectors, fitted, bodyMaxFont, seeds, measurers: { regular: base, bold } };
+  return { job, model, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, measurers: { regular: base, bold } };
 }
 
 function runMeasured(input, options = {}) {
@@ -183,7 +203,7 @@ function runMeasured(input, options = {}) {
   // Fail before any work when the PDF output cannot find its font files.
   const fonts = output === "pdf" ? { ...findFamily(fontPaths, "Source Han Serif SC"), fallbacks: findFallbacks(fontPaths) } : null;
   const maths = output === "pdf" ? new MathStore(outDir, { files: false }) : new MathStore(outDir, { stamps: true });
-  const { job, paint, stats, vectors, fitted, bodyMaxFont, seeds, measurers } = fitInput(input, { maths, timings });
+  const { job, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, measurers } = fitInput(input, { maths, timings });
 
   let mark = performance.now();
   let painted;
@@ -214,7 +234,7 @@ function runMeasured(input, options = {}) {
   }
   timings.mathjaxMs = Math.round(maths.stats.ms);
 
-  const report = buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds });
+  const report = buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened });
   timings.totalMs = Math.round(performance.now() - started);
   report.timings = timings;
   report.output = output === "pdf" ? { kind: "pdf", layout: "layout.json", stats: outputStats } : { kind: "typst" };
@@ -222,7 +242,7 @@ function runMeasured(input, options = {}) {
   return { report, overlayPdf: path.join(outDir, "overlay.pdf"), outDir };
 }
 
-function buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds }) {
+function buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened = [] }) {
   const itemFor = (pageIndex, id) => job.translations.get(`${pageIndex}:${blockNumber(id)}`) || null;
   const blocks = [];
   const pages = [];
@@ -292,6 +312,21 @@ function buildReport({ job, input, fitted, paint, stats, vectors, maths, painted
     pages,
     blocks,
     painted,
+    // fit-model/fill-policy.js: parameters, the book's length ratio / fill /
+    // inflation / size scale / line ratio, and each page's (null: fill off or
+    // no paragraph of two or more lines).
+    // fit-model/widen-policy.js: one-line items moved out to the right so the
+    // translation stays on one line ({ id, page, from, to, need }, pt).
+    widened: widened.map(entry => ({ id: entry.id, page: entry.page, from: round(entry.from, 2), to: round(entry.to, 2), need: round(entry.need, 2) })),
+    fill_policy: fillPlan ? {
+      params: fillPlan.params,
+      base_line_ratio: round(fillPlan.baseRatio, 3),
+      book: Object.fromEntries(Object.entries(fillPlan.book).map(([key, value]) => [key, round(value, 3)])),
+      pages: Object.entries(fillPlan.pages).map(([page, entry]) => ({
+        page: Number(page), rho: round(entry.rho, 3), fill: round(entry.fill, 3), target: round(entry.target, 3),
+        k: round(entry.k, 3), line_ratio: round(entry.lineRatio, 3), paragraphs: entry.paragraphs
+      }))
+    } : null,
     body_font: {
       ceiling: bodyMaxFont ?? null,
       shared,

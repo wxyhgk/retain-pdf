@@ -12,6 +12,18 @@
 //                (body_font_unify_policy, resolve_book_body_font_target)
 //   4. underfill grow -> harmonize -> recover (body_font_underfill_policy)
 //   5. unify again, recover again (the second half of the role_min order)
+//   6. fill (ours, on by default; fitOptions.retainFill: false restores 4-5
+//      as above): how much of the room a shorter translation leaves goes to
+//      the book size, how much to each page's leading and how much stays
+//      white is fill-policy.js's plan (from the translated / source length
+//      ratio and the measured fill); this stage measures its inputs and
+//      applies it within the ink safety net: the size on every body
+//      paragraph as far as its band stays in its box, the page leading on
+//      every paragraph of two or more lines (translation not longer than its
+//      source) as far as `reserveEm` of white stays under its ink. The
+//      underfill size growth of 4 is skipped. Parameters:
+//      fitOptions.retainFillPolicy (overrides of FillPolicy.DEFAULTS); the
+//      plan goes to fitOptions.onFillPlan(plan) when given.
 //
 // Our addition, the safety net: every size or leading a rule asks for is
 // accepted only if the paragraph's band still fits its box (the test
@@ -22,7 +34,7 @@
 (function (root, factory) {
   "use strict";
   const NAME = "retainBodyPass";
-  const DEPENDENCIES = [["document", "../document"], ["typographyRetain", "../typography-retain"]];
+  const DEPENDENCIES = [["document", "../document"], ["typographyRetain", "../typography-retain"], ["fillPolicy", "../fill-policy"], ["widenPolicy", "../widen-policy"], ["constants", "../constants"]];
   const isNode = typeof module === "object" && module && module.exports;
   const parts = isNode ? null : ((root.RetainPdfRendering || {}).FitModelParts || {});
   const resolved = DEPENDENCIES.map(([key, file]) => {
@@ -36,7 +48,7 @@
     const namespace = root.RetainPdfRendering = root.RetainPdfRendering || {};
     (namespace.FitModelParts = namespace.FitModelParts || {})[NAME] = api;
   }
-})(typeof this === "object" && this ? this : globalThis, function (root, document, typography) {
+})(typeof this === "object" && this ? this : globalThis, function (root, document, typography, FillPolicy, WidenPolicy, constants) {
   "use strict";
   const { isStream, isBlock, nodeBox, layoutControlFontSize, effectiveLineRatio } = document;
   const T = typography;
@@ -52,6 +64,8 @@
   // depth or a descender bridging a tight gap, small enough that text stays
   // where the source put it.
   const NUDGE_MAX_EM = 0.5;
+  // Fill (stage 6): search steps for the leading and the size.
+  const LEADING_FILL_STEP = 0.01;
 
   function median(values) {
     const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
@@ -690,10 +704,56 @@
       facts.clear();
     }
 
+    // A one-line source item whose translation does not fit its box on one
+    // line at its seed size gets its right edge moved out, just enough, within
+    // its column and clear of anything beside it (widen-policy.js). Before any
+    // measurement, like the rule it replaces (expandShortRegions).
+    function widenShortLines(textNodes) {
+      const params = WidenPolicy.resolve(run.fitOptions.retainWidenPolicy);
+      const widened = [];
+      const byPage = new Map();
+      for (const node of textNodes) {
+        if (!byPage.has(node.page)) byPage.set(node.page, []);
+        byPage.get(node.page).push(node);
+      }
+      for (const [page, nodes] of byPage) {
+        const textBoxes = nodes.map(node => nodeBox(node));
+        const allBoxes = page.nodes.map(node => nodeBox(node));
+        nodes.forEach((node, index) => {
+          // Titles and captions carry no originalLines: a box under 1.6 lines tall is one line.
+          const box0 = nodeBox(node);
+          const single = node.originalLines === "single" ||
+            (node.originalLines == null && box0.bottom - box0.top < 1.6 * layoutControlFontSize(node));
+          if (!single || node.toc || node.style.align === "center") return;
+          const paragraphs = (node.content && node.content.paragraphs) || [];
+          if (paragraphs.length !== 1 || !paragraphs[0].prepared) return;
+          const using = (node.type === "title" && ctx.roleMeasurers && ctx.roleMeasurers.bold) || ctx.measurer;
+          // A stream lays its text out inside its padding (geometry.js).
+          const padding = isStream(node) ? constants.STREAM_PADDING_LEFT + constants.STREAM_PADDING_RIGHT : 0;
+          const need = using.naturalWidth(paragraphs[0].prepared, { fontSize: layoutControlFontSize(node) }) + (Number(paragraphs[0].indent) || 0) + padding;
+          const box = textBoxes[index];
+          const right = WidenPolicy.widenedRight({
+            box, need, neighbours: textBoxes.filter(other => other !== box),
+            others: allBoxes.filter(other => other !== box), pageWidth: Number(page.width) || 0, params
+          });
+          if (right === null) return;
+          node.style.width = Number((right - box.left).toFixed(3));
+          node.retainWidened = { from: box.right, to: right, need: box.left + need };
+          widened.push({ id: String(node.id), page: page.index, from: box.right, to: right, need: Number((box.left + need).toFixed(3)) });
+          if (traceFn) trace(node, "widen", node.retainWidened);
+        });
+      }
+      facts.clear();
+      if (typeof run.fitOptions.onWiden === "function") run.fitOptions.onWiden(widened);
+    }
+
     function prepare() {
       const bodyNodes = run.scopedNodes(isBodyNode);
       const nonBodyNodes = run.scopedNodes(isNonBodyText);
-      if (run.fitOptions.retainRegionExpansion !== false) expandShortRegions(bodyNodes, nonBodyNodes);
+      if (run.fitOptions.retainWiden !== false) {
+        widenShortLines(bodyNodes.concat(nonBodyNodes, run.scopedNodes(node => isBlock(node) && node.type === "title")));
+      }
+      else if (run.fitOptions.retainRegionExpansion !== false) expandShortRegions(bodyNodes, nonBodyNodes);
       blendBodySeeds(bodyNodes);
       seedLeading(bodyNodes, nonBodyNodes);
       topGaps(bodyNodes.concat(nonBodyNodes, run.scopedNodes(node => isBlock(node) && node.type === "title")));
@@ -839,6 +899,93 @@
       }
     }
 
+    // ----- 6: fill (fill-policy.js) -----
+
+    function inkBottom(node) {
+      const rects = geometry.geometry(node).text || [];
+      return rects.length ? Math.max(...rects.map(rect => rect.bottom)) : nodeBox(node).top;
+    }
+
+    // White left under the ink at the current style.
+    function freeBelow(node) {
+      return nodeBox(node).bottom - inkBottom(node);
+    }
+
+    function withStyle(node, fontSize, lineRatio, check) {
+      const saved = { fontSize: node.style.fontSize, lineRatio: node.style.lineRatio };
+      setStyle(node, fontSize, lineRatio);
+      const ok = check();
+      node.style.fontSize = saved.fontSize;
+      node.style.lineRatio = saved.lineRatio;
+      return ok;
+    }
+
+    // Band in the box, `reserve` (em) of white under the ink, ink clear.
+    function fitsWithRatio(node, lineRatio, reserveEm) {
+      return withStyle(node, layoutControlFontSize(node), lineRatio,
+        () => bandFits(node) && freeBelow(node) >= reserveEm * layoutControlFontSize(node) - 1e-6 &&
+          !collision.textCollisionDetails([node], COLLIDE));
+    }
+
+    // Set width at size 1: the translation as laid out, the source as plain text.
+    function setWidth(prepared) {
+      return ctx.measurer.naturalWidth(prepared, { fontSize: 1 });
+    }
+
+    function lengthRatio(node) {
+      const translated = ((node.content && node.content.paragraphs) || [])
+        .reduce((sum, paragraph) => sum + (paragraph.prepared ? setWidth(paragraph.prepared) : 0), 0);
+      const sourceText = ((node.source && node.source.items) || []).map(item => String(item.text || "")).join(" ").trim();
+      if (!sourceText || !(translated > 0)) return null;
+      const source = setWidth(ctx.measurer.prepare([{ type: "text", text: sourceText }]));
+      return source > 0 ? { rho: translated / source, weight: source } : null;
+    }
+
+    function fill(bodyNodes) {
+      const params = FillPolicy.resolve(run.fitOptions.retainFillPolicy);
+      const paragraphs = [];
+      const ratios = [];
+      for (const node of bodyNodes) {
+        if (lineCount(node) < 2) continue;
+        const length = lengthRatio(node);
+        if (!length) continue;
+        const box = nodeBox(node);
+        const height = box.bottom - box.top;
+        if (!(height > 0)) continue;
+        node.retainLengthRatio = length.rho;
+        ratios.push(effectiveLineRatio(node));
+        paragraphs.push({ page: node.page.index, rho: length.rho, weight: length.weight, fill: (inkBottom(node) - box.top) / height });
+      }
+      const baseRatio = ratios.length ? median(ratios) : 0;
+      const plan = FillPolicy.plan(paragraphs, { baseRatio, params });
+      if (!plan) return;
+      // The book size: every body paragraph, under the same test the book size
+      // unification uses (raiseFontSafely: ink clear of everything, so a nearly
+      // full paragraph may reach into the free space under its box) -- one size
+      // for the book matters more than a box edge nobody sees.
+      const scale = plan.book.fontScale;
+      if (scale > 1 + 1e-4) {
+        for (const node of bodyNodes) {
+          raiseFontSafely(node, Math.round(layoutControlFontSize(node) * scale * 100) / 100);
+        }
+      }
+      // The page leading: paragraphs of two or more lines whose translation is
+      // not longer than their source; one-line paragraphs have none to give.
+      for (const node of bodyNodes) {
+        const page = plan.pages[node.page.index];
+        if (!page || lineCount(node) < 2 || !(node.retainLengthRatio <= 1)) continue;
+        const current = effectiveLineRatio(node);
+        const target = Math.max(current, page.lineRatio);
+        if (target <= current + 1e-6 || !fitsWithRatio(node, current, params.reserveEm)) continue;
+        const ratio = largestPassing(current, target, LEADING_FILL_STEP, value => fitsWithRatio(node, value, params.reserveEm));
+        if (ratio > current + 1e-6) {
+          setStyle(node, layoutControlFontSize(node), ratio);
+          trace(node, "fill", { from: current, target, rho: node.retainLengthRatio });
+        }
+      }
+      if (typeof run.fitOptions.onFillPlan === "function") run.fitOptions.onFillPlan({ params, baseRatio, ...plan });
+    }
+
     // ----- the pass -----
 
     // Reading order (page, then top): a paragraph that runs past its box is
@@ -859,16 +1006,22 @@
       if (smoothing) smoothing.inheritShort(groups);
       const target = bookTarget(groups);
       unify(groups, target);
-      for (const group of groups) growUnderfilled(group);
-      for (const group of groups) harmonizeUnderfilled(group);
-      for (const group of groups) recoverUnderfilled(group);
+      const fillOn = run.fitOptions.retainFill !== false;
+      // With the fill (stage 6) the room under a short translation is shared
+      // by fill-policy.js, so the underfill growth of the size is skipped.
+      if (!fillOn) {
+        for (const group of groups) growUnderfilled(group);
+        for (const group of groups) harmonizeUnderfilled(group);
+        for (const group of groups) recoverUnderfilled(group);
+      }
       if (smoothing) {
         smoothing.pageAnchor(groups);
         smoothing.harmonizeLong(groups);
         smoothing.smoothAdjacent(groups);
       }
       unify(groups, target);
-      for (const group of groups) recoverUnderfilled(group);
+      if (fillOn) fill(bodyNodes);
+      else for (const group of groups) recoverUnderfilled(group);
       run.retainBookBodyFont = target;
       if (traceFn) for (const node of bodyNodes) trace(node, "final", { target });
     }
