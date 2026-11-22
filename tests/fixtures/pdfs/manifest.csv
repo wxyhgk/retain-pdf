@@ -12,3 +12,4 @@ tibetan-plateau-21,s41524-tibetan-plateau-21p.pdf,editable-paper,21,background-r
 lda-lithiation-zh-17,lda-lithiation-zh-17p.pdf,editable-paper,17,cjk/background-render,中文化学论文；CJK 覆盖
 yakubenko-halogen-10,yakubenko-halogen-lithium-10p.pdf,editable-paper,10,background-render,10 页小体量速度回归
 babeldoc-10,babeldoc-10p.pdf,editable-paper,10,background-render,10 页小体量速度回归
+editable-tables,editable-tables.pdf,editable-paper,5,tables/table-translation,"合成的英文报告（Typst 生成，源文件 editable-tables.typ，内容全虚构）；7 张表：简单数值、跨列两层表头、首列跨行、单元格长句、化学式和上下标、8 列宽表、跨页续表"
