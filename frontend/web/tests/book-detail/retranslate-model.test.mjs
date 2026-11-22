@@ -72,21 +72,21 @@ test("重新翻译带连接：overrides.translation 里翻译方式和整套连�
   const { useBookDetailStageActions } = await import("../../src/features/book-detail/ui/use-book-detail-stage-actions.js");
   const calls = [];
   let api = null;
+  // job、actions 放在组件外面：和书详情里一样是稳定的引用。写在组件里每次渲染都是新对象，
+  // hook 的 refresh 跟着变、effect 反复重跑，会报「Maximum update depth exceeded」（2026-11-22）。
+  const job = { job_id: "job-1", status: "succeeded", document_id: "doc-1" };
+  const actions = {
+    getJobStageActions: async () => ({
+      job_id: "job-1",
+      stages: [{ stage: "translation", label: "重新翻译", can_retry: true, danger: true, action: { body: { stage: "translation" } } }],
+    }),
+    retryJobStage: async (...args) => {
+      calls.push(args);
+      return { job_id: "job-1", workflow: "book" };
+    },
+  };
   function Probe() {
-    api = useBookDetailStageActions({
-      open: true,
-      job: { job_id: "job-1", status: "succeeded", document_id: "doc-1" },
-      actions: {
-        getJobStageActions: async () => ({
-          job_id: "job-1",
-          stages: [{ stage: "translation", label: "重新翻译", can_retry: true, danger: true, action: { body: { stage: "translation" } } }],
-        }),
-        retryJobStage: async (...args) => {
-          calls.push(args);
-          return { job_id: "job-1", workflow: "book" };
-        },
-      },
-    });
+    api = useBookDetailStageActions({ open: true, job, actions });
     return null;
   }
   const container = dom.window.document.createElement("div");

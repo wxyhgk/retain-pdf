@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useLayoutEffect, useState, type ReactNode } from "react";
 import { Coins, Languages, LoaderCircle, RefreshCw } from "lucide-react";
 import { Button, ConfirmDialog, Select } from "@retainpdf/ui";
 import type {
@@ -126,7 +126,9 @@ export function TranslationStageActions({
   const [modelOptions, setModelOptions] = useState(() => retranslateModelOptions(savedTranslationConnections()));
   // 什么都不选时用的是设置里的默认模型（重新翻译以设置为底），第一行写出来。
   const [settingsModel, setSettingsModel] = useState(savedDefaultTranslationModel);
-  useEffect(() => {
+  // useLayoutEffect：和换书那次提交同步挂上（2026-11-22）。useEffect 会晚一拍，机器忙时
+  // 设置刚好在这一拍里保存，事件就落到上一本书已卸载的组件上，列表不更新。
+  useLayoutEffect(() => {
     const reload = () => {
       setModelOptions(retranslateModelOptions(savedTranslationConnections()));
       setSettingsModel(savedDefaultTranslationModel());
