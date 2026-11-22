@@ -1,0 +1,61 @@
+name: Publish Runtime Assets
+run-name: Publish Runtime Assets · ${{ github.sha }}
+
+# 按需下载的字体、Typst 发到 npm（@retainpdf/*），桌面端首次启动从 npmjs / npmmirror 下。
+# 清单 backend/config/runtime_assets.json 改了（换字体、升 Typst）合进 main 时自动发；也能手动触发。
+# 用 npm 的受信任发布（Trusted Publishing，OIDC）：不存 npm token、不要验证码。每个包要在 npm 网站
+# 的包设置里登记这个仓库和这个 workflow 文件名一次（见 docs/ops/planning/desktop-size/）。
+# 清单里的版本已经在 npm 上的跳过，所以重复跑不会出错。
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "backend/config/runtime_assets.json"
+      - "ops/runtime-assets/**"
+      - ".github/workflows/publish-runtime-assets.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: publish-runtime-assets
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.22.0"
+          registry-url: "https://registry.npmjs.org"
+
+      # 受信任发布要 npm 11.5.1 以上；Node 22 自带的是 10.x。
+      - name: Install npm with trusted publishing
+        run: npm install -g npm@11.19.1
+
+      - name: Build packages from the manifest
+        run: python3 ops/runtime-assets/build_npm_packages.py --out "$RUNNER_TEMP/npm-out"
+
+      - name: Publish versions not yet on npm
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dir in "$RUNNER_TEMP"/npm-out/*/; do
+            name="$(node -p "require('$dir/package.json').name")"
+            version="$(node -p "require('$dir/package.json').version")"
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version 已在 npm 上，跳过"
+              continue
+            fi
+            echo "发布 $name@$version"
+            (cd "$dir" && npm publish --access public)
+          done
