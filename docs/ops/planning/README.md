@@ -19,6 +19,7 @@
 - [书按段走、任务目录新结构（2026-11 起）](./book-segments/README.md)
 - [后端插件化（2026-11 起）](./plugin-architecture/README.md)
 - [表格翻译（2026-11 起）](./table-translation/README.md)
+- [桌面安装包瘦身（2026-11 起）](./desktop-size/README.md)
 - [译文版本（2026-11 起）](./translation-versions/README.md)
 - [排版 agent（2026-11，暂缓）](./layout-agent/README.md)
 - [模型用量与花费（2026-11 起）](./model-usage/README.md)
