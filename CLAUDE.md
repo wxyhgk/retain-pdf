@@ -75,7 +75,7 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
   `UPDATE_SUBMISSIONS=1 cargo test -p retainpdf-api --lib submissions`。重新生成后看 diff，只该有预期的改动。
 - 路由只在接口登记表里注册：每个路由文件是一张 `crate::endpoints!` 表（`backend/api/src/app/endpoints.rs`），一个接口一条，
   写明方法、地址、处理函数、多用户下谁能用（`public`/`signed`/`admin`/`closed`），`///` 写一句话说明，旧地址行尾写 `old "<新地址>"`。
-  路由文件里直接写 `.route(` 会让测试红。接口目录 `docs/api/00-接口目录.md` 和 `docs/routes.txt` 都从表生成（`UPDATE_ROUTES=1`）。
+  路由文件里直接写 `.route(` 会让测试红。接口目录（总目录 `docs/api/00-接口目录.md`，各组在 `docs/api/00-接口目录/` 下）和 `docs/routes.txt` 都从表生成（`UPDATE_ROUTES=1`）。
 - 每个接口写明谁负责、谁在用（2026-11-22）：表头 `owner: <领域>;`（8 个领域之一，个别条目行尾 `owner(…)` 另写），每条必写
   `by(…)`：`web` 前端页面、`desktop` 桌面壳主进程、`worker` Python 流水线、`cli` 命令行、`ops` 运维调试、`multiuser` 只有已停的多用户版、
   `none` 还没有调用方。不写编译不过。说不出调用方就不加接口；后端先加、调用方随后接的写 `none`，并在交接记录里写清等谁接。

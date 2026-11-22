@@ -4,7 +4,7 @@
 //! 这份快照让每次增删、改策略都出现在提交的 diff 里，要有意识地确认。改了路由之后这里会红，
 //! 确认是有意的，就用 `UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest` 重新生成。
 //!
-//! 清单和接口目录（`docs/api/00-接口目录.md`）都从接口登记表（`app/endpoints.rs`）汇总，不启动服务。
+//! 清单和接口目录（总目录 `docs/api/00-接口目录.md`，各组在 `docs/api/00-接口目录/` 下）都从接口登记表（`app/endpoints.rs`）汇总，不启动服务。
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -80,121 +80,173 @@ fn route_manifest_matches_snapshot() {
     }
 }
 
-/// 路由文件（模块路径的最后几段）→ 接口目录里的分组标题。没列的照模块名显示。
-const SECTIONS: &[(&str, &str)] = &[
-    ("router::public", "登录和健康检查（不需要登录）"),
-    ("router::accounts", "账号、管理后台"),
-    ("router::credentials", "凭据"),
-    ("router::providers", "模型和 OCR 服务商"),
-    ("router::ingestion", "上传和建任务的旧入口"),
-    ("router::jobs::lifecycle", "任务"),
-    ("router::jobs::actions", "任务 · 操作"),
-    ("router::jobs::progress", "任务 · 进度"),
-    ("router::jobs::files", "任务 · 文件"),
-    ("router::jobs::reports", "任务 · 报告"),
-    ("router::jobs::reader", "任务 · 阅读"),
-    ("router::jobs::translations", "任务 · 译文"),
-    ("router::jobs::data", "任务 · 数据"),
-    ("router::jobs::ai", "任务 · AI"),
-    ("router::documents", "书（文档）"),
-    ("router::library", "书库"),
-    ("router::collections", "合集"),
-    ("router::glossaries", "术语表"),
-    ("router::fonts", "字体"),
-    ("router::sync", "多设备同步"),
-    ("router::backups", "备份"),
-    ("router::ai", "AI 助手"),
-    ("router::internal_agent", "内部：Agent"),
-    ("router::model_requests", "内部：模型调用"),
-    ("router::terminal", "助手终端（只在单机版）"),
-    ("router::simple", "简化接口（另一个端口）"),
+/// 接口目录分总两级（2026-11-22）：总目录 `docs/api/00-接口目录.md` 放说明、统计、分组表，每组一个文件放在
+/// `docs/api/00-接口目录/` 下，总目录引用它们。
+const DIRECTORY_INDEX: &str = "docs/api/00-接口目录.md";
+const DIRECTORY_DIR: &str = "docs/api/00-接口目录";
+
+/// 路由文件（模块路径的最后几段）→ 分组：(模块后缀, 文件名, 标题)。每个路由文件都要在这里登记，否则测试红
+/// （以前没登记的落进“其他”，标签、运行资源就在那里）。文件名的编号就是总目录里的顺序。
+const SECTIONS: &[(&str, &str, &str)] = &[
+    ("router::public", "01-登录和健康检查", "登录和健康检查（不需要登录）"),
+    ("router::accounts", "02-账号和管理后台", "账号、管理后台"),
+    ("router::credentials", "03-凭据", "凭据"),
+    ("router::providers", "04-服务商", "模型和 OCR 服务商"),
+    ("router::ingestion", "05-上传", "上传"),
+    ("router::jobs::lifecycle", "06-任务", "任务"),
+    ("router::jobs::actions", "07-任务-操作", "任务 · 操作"),
+    ("router::jobs::progress", "08-任务-进度", "任务 · 进度"),
+    ("router::jobs::files", "09-任务-文件", "任务 · 文件"),
+    ("router::jobs::reports", "10-任务-报告", "任务 · 报告"),
+    ("router::jobs::reader", "11-任务-阅读", "任务 · 阅读"),
+    ("router::jobs::translations", "12-任务-译文", "任务 · 译文"),
+    ("router::jobs::data", "13-任务-数据", "任务 · 数据"),
+    ("router::documents", "14-书", "书（文档）"),
+    ("router::collections", "15-合集", "合集"),
+    ("router::tags", "16-标签", "标签"),
+    ("router::glossaries", "17-术语表", "术语表"),
+    ("router::fonts", "18-字体", "字体"),
+    ("router::runtime_assets", "19-运行资源", "运行资源（字体、Typst 按需下载）"),
+    ("router::sync", "20-多设备同步", "多设备同步"),
+    ("router::backups", "21-备份和用量", "备份、模型用量"),
+    ("router::model_requests", "22-内部-模型调用", "内部：模型调用"),
 ];
 
-fn section_of(module: &str) -> (usize, &'static str) {
+/// 这个路由文件归哪一组（`SECTIONS` 里的下标）。没登记返回 None。
+fn section_of(module: &str) -> Option<usize> {
     SECTIONS
         .iter()
         .enumerate()
-        .filter(|(_, (suffix, _))| module.ends_with(suffix) || module.contains(&format!("{suffix}::")))
-        .max_by_key(|(_, (suffix, _))| suffix.len())
-        .map(|(index, (_, title))| (index, *title))
-        .unwrap_or((SECTIONS.len(), "其他"))
+        .filter(|(_, (suffix, _, _))| module.ends_with(suffix) || module.contains(&format!("{suffix}::")))
+        .max_by_key(|(_, (suffix, _, _))| suffix.len())
+        .map(|(index, _)| index)
 }
 
-/// 接口目录 `docs/api/00-接口目录.md`：登记表里的全部接口，按路由文件分组，旧地址列在新地址后面。
-fn directory() -> String {
+fn short_path(path: &str) -> String {
+    path.strip_prefix("/api/v1").filter(|rest| !rest.is_empty()).unwrap_or(path).to_string()
+}
+
+const LEGEND: &[&str] = &[
+    "「谁能用」只在多用户模式下起作用：`signed` 登录就能用（路径里的编号要是自己的）、`admin` 只给管理员、",
+    "`closed` 对网站账号关闭、`public` 不需要登录。单机版里所有接口都能用。",
+    "",
+    "「负责」是业务逻辑所在的领域包（改它、删它找谁）；「谁在用」：`web` 前端页面、`desktop` 桌面壳主进程、`worker` Python 流水线、",
+    "`cli` 命令行、`ops` 运维和调试、`multiuser` 只有已停的多用户网站版、`none` 还没有调用方。依据是代码里的调用和 rust_api 的",
+    "按接口计数（`backend/api/src/app/route_usage.rs`，用 `ops/development/route_usage_report.py` 看）。",
+];
+
+const GENERATED_NOTE: [&str; 2] = [
+    "<!-- 由 backend/api/src/api_tests/route_manifest.rs 从接口登记表（backend/api/src/app/endpoints.rs）生成，不要手改：",
+    "     UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest -->",
+];
+
+/// 接口目录：总目录和各组的文件，(相对仓库根的路径, 内容)。登记表里的全部接口按路由文件分组，旧地址列在新地址后面。
+fn directory() -> Vec<(String, String)> {
     let endpoints = crate::app::registered_endpoints();
-    let mut sections: BTreeMap<(usize, &str), Vec<crate::app::endpoints::Endpoint>> = BTreeMap::new();
+    let mut sections: BTreeMap<usize, Vec<crate::app::endpoints::Endpoint>> = BTreeMap::new();
     for endpoint in &endpoints {
-        sections.entry(section_of(endpoint.module)).or_default().push(*endpoint);
+        let section = section_of(endpoint.module)
+            .unwrap_or_else(|| panic!("{}：路由文件没在 route_manifest.rs 的 SECTIONS 里登记分组", endpoint.module));
+        sections.entry(section).or_default().push(*endpoint);
     }
+    let link_of = |module: &str| -> String {
+        let (_, stem, title) = SECTIONS[section_of(module).unwrap()];
+        format!("[{title}](00-接口目录/{stem}.md)")
+    };
     let current = endpoints.iter().filter(|e| e.replaced_by.is_none()).count();
-    let mut out = vec![
-        "# 接口目录".to_string(),
-        String::new(),
-        "<!-- 由 backend/api/src/api_tests/route_manifest.rs 从接口登记表（backend/api/src/app/endpoints.rs）生成，不要手改：".to_string(),
-        "     UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest -->".to_string(),
-        String::new(),
-        match endpoints.len() - current {
-            0 => format!("共 {} 个接口。地址前缀省略了 `/api/v1`。", endpoints.len()),
-            old => format!(
-                "共 {} 个接口，其中 {current} 个现用地址、{old} 个旧地址（还能用，新代码不要再调）。地址前缀省略了 `/api/v1`。",
-                endpoints.len()
-            ),
-        },
-        String::new(),
-        "「谁能用」只在多用户模式下起作用：`signed` 登录就能用（路径里的编号要是自己的）、`admin` 只给管理员、".to_string(),
-        "`closed` 对网站账号关闭、`public` 不需要登录。单机版里所有接口都能用。".to_string(),
-        String::new(),
-        "「负责」是业务逻辑所在的领域包（改它、删它找谁）；「谁在用」：`web` 前端页面、`desktop` 桌面壳主进程、`worker` Python 流水线、".to_string(),
-        "`cli` 命令行、`ops` 运维和调试、`multiuser` 只有已停的多用户网站版、`none` 还没有调用方。依据是代码里的调用和 rust_api 的".to_string(),
-        "按接口计数（`backend/api/src/app/route_usage.rs`，用 `ops/development/route_usage_report.py` 看）。".to_string(),
-    ];
-    out.extend(usage_summary(&endpoints));
-    let short = |path: &str| path.strip_prefix("/api/v1").filter(|rest| !rest.is_empty()).unwrap_or(path).to_string();
-    for ((_, title), items) in &sections {
-        out.push(String::new());
-        out.push(format!("## {title}"));
-        out.push(String::new());
-        out.push("| 方法 | 地址 | 谁能用 | 负责 | 谁在用 | 说明 | 旧地址 | 处理函数 |".to_string());
-        out.push("|---|---|---|---|---|---|---|---|".to_string());
-        for endpoint in items.iter().filter(|e| e.replaced_by.is_none()) {
-            // 旧地址可能登记在别的路由文件里（比如任务下的封面现在在书下面），所以在全部接口里找。
-            // 同一地址换方法的旧地址（比如 GET 换成 POST）方法和新地址不同，显示时带上方法。
-            let olds: Vec<String> = endpoints
-                .iter()
-                .filter(|old| old.replaced_by == Some(endpoint.path) && replaces(old, endpoint))
-                .map(|old| {
-                    let address = if old.method == endpoint.method {
-                        short(old.path)
-                    } else {
-                        format!("{} {}", old.method, short(old.path))
-                    };
-                    match old.summary.trim() {
-                        "" => format!("`{address}`"),
-                        note => format!("`{address}`（{}）", note.replace('|', "\\|")),
-                    }
-                })
-                .collect();
-            out.push(format!(
-                "| {} | `{}` | {} | {} | {} | {} | {} | `{}` |",
-                endpoint.method,
-                short(endpoint.path),
-                endpoint.access.label(),
-                endpoint.owner.label(),
-                users_label(endpoint).replace(',', "、"),
-                endpoint.summary.trim().replace('|', "\\|"),
-                olds.join("<br>"),
-                endpoint.handler.replace(' ', ""),
-            ));
-        }
+    let mut index = vec!["# 接口目录".to_string(), String::new()];
+    index.extend(GENERATED_NOTE.iter().map(|line| line.to_string()));
+    index.push(String::new());
+    index.push(match endpoints.len() - current {
+        0 => format!("共 {} 个接口，分 {} 组，每组一个文件。地址前缀省略了 `/api/v1`。", endpoints.len(), sections.len()),
+        old => format!(
+            "共 {} 个接口（{current} 个现用地址、{old} 个旧地址：还能用，新代码不要再调），分 {} 组，每组一个文件。地址前缀省略了 `/api/v1`。",
+            endpoints.len(),
+            sections.len()
+        ),
+    });
+    index.push(String::new());
+    index.extend(LEGEND.iter().map(|line| line.to_string()));
+    index.push(String::new());
+    index.push("## 分组".to_string());
+    index.push(String::new());
+    index.push("| 分组 | 接口 | 负责 | 谁在用 |".to_string());
+    index.push("|---|---|---|---|".to_string());
+    let mut files = Vec::new();
+    for (section, items) in &sections {
+        let (_, stem, title) = SECTIONS[*section];
+        let count = |pick: &dyn Fn(&crate::app::endpoints::Endpoint) -> Vec<&'static str>| -> String {
+            let mut tally: BTreeMap<&str, usize> = BTreeMap::new();
+            for endpoint in items {
+                for label in pick(endpoint) {
+                    *tally.entry(label).or_default() += 1;
+                }
+            }
+            tally.iter().map(|(label, n)| format!("{label} {n}")).collect::<Vec<_>>().join("、")
+        };
+        index.push(format!(
+            "| [{title}](00-接口目录/{stem}.md) | {} | {} | {} |",
+            items.len(),
+            count(&|e| vec![e.owner.label()]),
+            count(&|e| e.users.iter().map(|user| user.label()).collect()),
+        ));
+        files.push((format!("{DIRECTORY_DIR}/{stem}.md"), section_file(title, items, &endpoints)));
+    }
+    index.extend(usage_summary(&endpoints, &link_of));
+    let mut out = vec![(DIRECTORY_INDEX.to_string(), index.join("\n") + "\n")];
+    out.extend(files);
+    out
+}
+
+/// 一组的文件：标题、回到总目录的链接、这一组的接口表。
+fn section_file(title: &str, items: &[crate::app::endpoints::Endpoint], endpoints: &[crate::app::endpoints::Endpoint]) -> String {
+    let mut out = vec![format!("# {title}"), String::new()];
+    out.extend(GENERATED_NOTE.iter().map(|line| line.to_string()));
+    out.push(String::new());
+    out.push(format!(
+        "{} 个接口。属于[接口目录](../00-接口目录.md)；「谁能用」「负责」「谁在用」的取值见那里。地址前缀省略了 `/api/v1`。",
+        items.len()
+    ));
+    out.push(String::new());
+    out.push("| 方法 | 地址 | 谁能用 | 负责 | 谁在用 | 说明 | 旧地址 | 处理函数 |".to_string());
+    out.push("|---|---|---|---|---|---|---|---|".to_string());
+    for endpoint in items.iter().filter(|e| e.replaced_by.is_none()) {
+        // 旧地址可能登记在别的路由文件里（比如任务下的封面现在在书下面），所以在全部接口里找。
+        // 同一地址换方法的旧地址（比如 GET 换成 POST）方法和新地址不同，显示时带上方法。
+        let olds: Vec<String> = endpoints
+            .iter()
+            .filter(|old| old.replaced_by == Some(endpoint.path) && replaces(old, endpoint))
+            .map(|old| {
+                let address = if old.method == endpoint.method {
+                    short_path(old.path)
+                } else {
+                    format!("{} {}", old.method, short_path(old.path))
+                };
+                match old.summary.trim() {
+                    "" => format!("`{address}`"),
+                    note => format!("`{address}`（{}）", note.replace('|', "\\|")),
+                }
+            })
+            .collect();
+        out.push(format!(
+            "| {} | `{}` | {} | {} | {} | {} | {} | `{}` |",
+            endpoint.method,
+            short_path(endpoint.path),
+            endpoint.access.label(),
+            endpoint.owner.label(),
+            users_label(endpoint).replace(',', "、"),
+            endpoint.summary.trim().replace('|', "\\|"),
+            olds.join("<br>"),
+            endpoint.handler.replace(' ', ""),
+        ));
     }
     out.join("\n") + "\n"
 }
 
-/// 接口目录开头的统计：按谁在用、按负责的领域各有多少；还没有调用方的、只有多用户版用的单独列出来。
-fn usage_summary(endpoints: &[crate::app::endpoints::Endpoint]) -> Vec<String> {
+/// 总目录的统计：按谁在用、按负责的领域各有多少；还没有调用方的、只有多用户版用的单独列出来，带上所在分组的链接。
+fn usage_summary(endpoints: &[crate::app::endpoints::Endpoint], link_of: &dyn Fn(&str) -> String) -> Vec<String> {
     use crate::app::endpoints::User;
-    let short = |path: &str| path.strip_prefix("/api/v1").filter(|rest| !rest.is_empty()).unwrap_or(path).to_string();
+    let short = short_path;
     let mut by_user: BTreeMap<User, usize> = BTreeMap::new();
     let mut by_owner: BTreeMap<&str, usize> = BTreeMap::new();
     for endpoint in endpoints {
@@ -226,7 +278,7 @@ fn usage_summary(endpoints: &[crate::app::endpoints::Endpoint]) -> Vec<String> {
             .filter(|endpoint| endpoint.users.contains(&user))
             .map(|endpoint| {
                 let old = endpoint.replaced_by.map(|new| format!("（旧地址，新地址 `{}`）", short(new))).unwrap_or_default();
-                format!("- {} `{}`{old}", endpoint.method, short(endpoint.path))
+                format!("- {} `{}`{old}（{}）", endpoint.method, short(endpoint.path), link_of(endpoint.module))
             })
             .collect();
         out.push(String::new());
@@ -292,17 +344,51 @@ fn endpoint_registry_is_complete() {
 
 #[test]
 fn endpoint_directory_matches_registry() {
-    let doc = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/api/00-接口目录.md");
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let current = directory();
+    let generated: std::collections::BTreeSet<String> = current.iter().map(|(path, _)| path.clone()).collect();
+    // 分组文件目录里不该有生成之外的文件（分组改名、删掉以后留下的旧文件）
+    let dir = repo.join(DIRECTORY_DIR);
+    let existing: Vec<String> = std::fs::read_dir(&dir)
+        .map(|entries| {
+            entries
+                .filter_map(|entry| entry.ok())
+                .map(|entry| format!("{DIRECTORY_DIR}/{}", entry.file_name().to_string_lossy()))
+                .collect()
+        })
+        .unwrap_or_default();
     if std::env::var_os("UPDATE_ROUTES").is_some() {
-        std::fs::write(&doc, &current).unwrap();
+        std::fs::create_dir_all(&dir).unwrap();
+        for stale in existing.iter().filter(|path| !generated.contains(*path)) {
+            std::fs::remove_file(repo.join(stale)).unwrap();
+        }
+        for (path, content) in &current {
+            std::fs::write(repo.join(path), content).unwrap();
+        }
         return;
     }
-    let saved = std::fs::read_to_string(&doc).unwrap_or_default();
+    let stale: Vec<&String> = existing.iter().filter(|path| !generated.contains(*path)).collect();
+    let outdated: Vec<&String> = current
+        .iter()
+        .filter(|(path, content)| std::fs::read_to_string(repo.join(path)).unwrap_or_default() != *content)
+        .map(|(path, _)| path)
+        .collect();
     assert!(
-        saved == current,
-        "docs/api/00-接口目录.md is out of date. Regenerate: UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest"
+        stale.is_empty() && outdated.is_empty(),
+        "接口目录和登记表对不上（过期 {outdated:?}，多出来的 {stale:?}）。重新生成：UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest"
     );
+}
+
+/// 每个路由文件都登记了分组，分组的文件名不重名。
+#[test]
+fn every_router_file_has_a_directory_section() {
+    for endpoint in crate::app::registered_endpoints() {
+        assert!(section_of(endpoint.module).is_some(), "{}：在 SECTIONS 里登记分组", endpoint.module);
+    }
+    let mut stems = std::collections::BTreeSet::new();
+    for (_, stem, _) in SECTIONS {
+        assert!(stems.insert(*stem), "分组文件名 {stem} 重复");
+    }
 }
 
 /// 多用户下谁能用直接查登记表（2026-10-17 前是账号包按地址前缀判断，这组用例从那里搬过来，结果一条没变）。
