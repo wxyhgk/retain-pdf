@@ -39,7 +39,7 @@ Regenerate with:
 | `docx` | `docx` | no | yes | `devtools/tests/rendering/test_word_export.py` |
 | `fitz` | `PyMuPDF` | yes | yes | `retainpdf_pipeline/ocr/document_schema/pdf_geometry.py`, `retainpdf_pipeline/ocr/document_schema/pdf_text_recovery.py`, `retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py` |
 | `fontTools` | `fontTools` | yes | no | `retainpdf_pipeline/foundation/config/fonts.py` |
-| `pikepdf` | `pikepdf` | yes | yes | `retainpdf_pipeline/render/document/link_relocation.py`, `retainpdf_pipeline/render/document/pikepdf_overlay.py`, `retainpdf_pipeline/render/document/pikepdf_pages.py` |
+| `pikepdf` | `pikepdf` | yes | yes | `retainpdf_pipeline/render/document/link_relocation.py`, `retainpdf_pipeline/render/document/pikepdf_outline.py`, `retainpdf_pipeline/render/document/pikepdf_overlay.py` |
 | `pytest` | `pytest` | no | yes | `devtools/tests/agent_lab/test_agent_lab.py`, `devtools/tests/agent_lab/test_sample_conference.py`, `devtools/tests/agent_lab/test_sample_essay.py` |
 | `requests` | `requests` | yes | yes | `retainpdf_pipeline/ocr/mineru_provider/mineru_api.py`, `retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py`, `retainpdf_pipeline/ocr/ocr_provider/paddle_api.py` |
 | `retainpdf_base` | `retainpdf_base` | yes | yes | `retainpdf_pipeline/foundation/config/__init__.py`, `retainpdf_pipeline/foundation/shared/job_dirs.py`, `retainpdf_pipeline/ocr/document_schema/normalize_pipeline.py` |
