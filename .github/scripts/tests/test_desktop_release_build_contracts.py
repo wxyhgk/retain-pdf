@@ -87,3 +87,13 @@ def test_desktop_python_bundle_is_checked_on_every_backend_python_change():
     assert "ubuntu-latest" in source and "windows-latest" in source
     assert "requirements-desktop-posix.txt" in source and "requirements-desktop-windows.txt" in source
     assert source.index("desktop_python_bundle.py install") < source.index("desktop_python_bundle.py check")
+
+
+def test_desktop_python_scripts_print_utf8_on_windows_consoles():
+    """Windows 构建机的控制台是 cp1252：两个脚本的中文输出要先把 stdout 换成 UTF-8，
+    调检查的子进程也带上 PYTHONIOENCODING（Desktop Python Bundle 第一次跑就红在 UnicodeEncodeError）。"""
+    repo = WORKFLOWS.parents[1]
+    for name in ("desktop_python_bundle.py", "desktop_python_check.py"):
+        source = (repo / "ops/release" / name).read_text(encoding="utf-8")
+        assert 'reconfigure(encoding="utf-8"' in source, name
+    assert 'PYTHONIOENCODING="utf-8"' in (repo / "ops/release/desktop_python_bundle.py").read_text(encoding="utf-8")

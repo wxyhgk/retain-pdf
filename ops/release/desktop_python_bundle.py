@@ -65,7 +65,7 @@ def install(pip_python: str, target: str = "") -> None:
 def check(python: str, pythonpath: str = "") -> None:
     # 下面换了工作目录，相对路径（如 .bundle-venv/bin/python）先变成绝对路径；只写命令名的照 PATH 找。
     python = os.path.abspath(python) if Path(python).exists() else (shutil.which(python) or python)
-    env = dict(os.environ)
+    env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONUTF8="1")
     if pythonpath:
         env["PYTHONPATH"] = pythonpath
     names = ",".join(name for name, _ in workspace_members())
@@ -74,6 +74,10 @@ def check(python: str, pythonpath: str = "") -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Windows 构建机的控制台是 cp1252，打印中文会 UnicodeEncodeError（2026-11-22 Desktop Python Bundle 第一次跑就红在这）。
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("members")
