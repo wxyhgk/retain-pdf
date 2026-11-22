@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""旧地址用量报表：删旧地址之前，看这些地址这段时间到底有没有人调。
+"""接口用量报表：删旧地址之前，看这些地址这段时间到底有没有人调；也拿登记表里写的“谁在用”（`by(…)`，
+2026-11-22 起）和实际调用对账。
 
 rust_api 按路由模板给每个接口计数（`backend/api/src/app/route_usage.rs`），落在
 `<data_root>/diagnostics/route-usage.json`。这个脚本把计数和接口登记表（路由文件里的
@@ -23,6 +24,11 @@ rust_api 按路由模板给每个接口计数（`backend/api/src/app/route_usage
 清零 = 把原文件改名存档为同目录的 `route-usage.<UTC 时间戳>.json`，再写一个 `since` 为现在、
 `routes` 为空的新文件。不加 `--yes` 只打印计划。
 
+对账（“谁在用”和调用次数）：
+- 写了 `by(none)`（没有调用方）却有调用的：多半是登记错了，或者是开发时手动调的；
+- 写了有调用方、各个用量文件里却一次都没调过的：调用方可能在别的环境（桌面安装包的数据目录不在这里）、
+  可能已经不用了。只是提示，不一定是错。
+
 HEAD 请求：axum 对 GET 路由自动接 HEAD，用量里记成 `HEAD /路径`。报表把它并入同路径的 GET 计数，
 不当作"不在登记表里"。
 """
@@ -44,21 +50,26 @@ RUNNING_WINDOW_SECONDS = 120
 
 METHODS = ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")
 
-# 登记表的一条：  GET "/路径" => 模块::处理函数, signed [unlimited_body] old "/新路径";
+# 登记表的一条：  GET "/路径" => 模块::处理函数, signed by(web, cli) [unlimited_body] owner(jobs) old "/新路径";
 # 说明写在 `///` 里，解析前先把注释整行去掉。
 ENDPOINT_RE = re.compile(
     r"\b(?P<method>" + "|".join(METHODS) + r")\s+"
     r'"(?P<path>[^"]*)"\s*=>\s*'
     r"(?P<handler>[\w:]+)\s*,\s*"
     r"(?P<access>\w+)\s*"
+    r"(?:by\((?P<users>[^)]*)\))?\s*"
     r"(?:\[(?P<flags>[^\]]*)\])?\s*"
+    r"(?:owner\((?P<owner>\w+)\))?\s*"
     r'(?:old\s+"(?P<old>[^"]*)")?\s*;'
 )
+# 表头：    owner: jobs;
+TABLE_OWNER_RE = re.compile(r"^\s*owner:\s*(?P<owner>\w+)\s*;", re.MULTILINE)
 
 
 class Endpoint:
     def __init__(self, method: str, path: str, handler: str, access: str,
-                 flags: list[str], replaced_by: str | None, router_file: str) -> None:
+                 flags: list[str], replaced_by: str | None, router_file: str,
+                 users: list[str] | None = None, owner: str = "") -> None:
         self.method = method
         self.path = path
         self.handler = handler
@@ -66,6 +77,8 @@ class Endpoint:
         self.flags = flags
         self.replaced_by = replaced_by
         self.router_file = router_file
+        self.users = users or []
+        self.owner = owner
 
     @property
     def key(self) -> str:
@@ -81,9 +94,11 @@ def strip_comments(text: str) -> str:
 
 def parse_endpoint_file(path: Path, rel: str) -> list[Endpoint]:
     text = strip_comments(path.read_text(encoding="utf-8"))
+    table_owner = TABLE_OWNER_RE.search(text)
     found = []
     for match in ENDPOINT_RE.finditer(text):
         flags = [flag.strip() for flag in (match.group("flags") or "").split(",") if flag.strip()]
+        users = [user.strip() for user in (match.group("users") or "").split(",") if user.strip()]
         found.append(Endpoint(
             method=match.group("method"),
             path=match.group("path"),
@@ -92,6 +107,8 @@ def parse_endpoint_file(path: Path, rel: str) -> list[Endpoint]:
             flags=flags,
             replaced_by=match.group("old"),
             router_file=rel,
+            users=users,
+            owner=match.group("owner") or (table_owner.group("owner") if table_owner else ""),
         ))
     return found
 
@@ -193,6 +210,20 @@ def build_report(usages: list[dict], labels: list[str], registry: list[Endpoint]
         for key, counts in sorted(unknown.items())
     ]
 
+    # 对账：登记的“谁在用”和调用次数
+    declared_none_but_called = []
+    declared_used_but_silent = []
+    for endpoint in registry:
+        if not endpoint.users:
+            continue
+        counts = counts_of(endpoint.key)
+        entry = {"key": endpoint.key, "users": endpoint.users, "owner": endpoint.owner,
+                 "router_file": endpoint.router_file, "counts": counts, "total": sum(counts)}
+        if endpoint.users == ["none"] and entry["total"] > 0:
+            declared_none_but_called.append(entry)
+        elif endpoint.users not in (["none"], ["multiuser"]) and entry["total"] == 0 and usages:
+            declared_used_but_silent.append(entry)
+
     with_calls = sorted((e for e in old_entries if e["total"] > 0),
                         key=lambda e: (-e["total"], e["key"]))
     zero_calls = sorted((e for e in old_entries if e["total"] == 0), key=lambda e: e["key"])
@@ -215,6 +246,8 @@ def build_report(usages: list[dict], labels: list[str], registry: list[Endpoint]
         "with_calls": with_calls,
         "zero_calls": zero_calls,
         "unknown_routes": unknown_entries,
+        "declared_none_but_called": sorted(declared_none_but_called, key=lambda e: (-e["total"], e["key"])),
+        "declared_used_but_silent": sorted(declared_used_but_silent, key=lambda e: e["key"]),
     }
 
 
@@ -258,6 +291,20 @@ def render_text(report: dict) -> str:
         out.append("  （无）")
     for entry in report["unknown_routes"]:
         out.append(f"  {entry['total']:>7}  {format_counts(entry['counts'])}  {entry['key']}")
+
+    out.append("")
+    out.append(f"== 登记 by(none) 却有调用（{len(report['declared_none_but_called'])} 个：登记错了，或是开发时手动调的）==")
+    if not report["declared_none_but_called"]:
+        out.append("  （无）")
+    for entry in report["declared_none_but_called"]:
+        out.append(f"  {entry['total']:>7}  {format_counts(entry['counts'])}  {entry['key']}  [{entry['owner']}]")
+
+    out.append("")
+    out.append(f"== 登记有调用方、这些用量文件里却零调用（{len(report['declared_used_but_silent'])} 个：调用方可能在别的环境，或已经不用了）==")
+    if not report["declared_used_but_silent"]:
+        out.append("  （无）")
+    for entry in report["declared_used_but_silent"]:
+        out.append(f"  {entry['key']}  by({', '.join(entry['users'])})  [{entry['owner']}]")
     return "\n".join(out) + "\n"
 
 
@@ -342,7 +389,7 @@ def reset_usage_file(path: Path, *, yes: bool, even_if_running: bool,
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="旧地址用量报表：把 route-usage.json 和接口登记表对起来。",
+        description="接口用量报表：把 route-usage.json 和接口登记表对起来（旧地址还有没有人调；登记的“谁在用”和实际调用对账）。",
         epilog="清零前必须先停 rust_api，详见脚本开头的说明。",
     )
     parser.add_argument("usage", nargs="*", type=Path,

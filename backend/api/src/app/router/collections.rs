@@ -5,16 +5,17 @@ use crate::routes::collections;
 
 crate::endpoints! {
     state: AppState;
+    owner: library;
     /// 新建合集
-    POST "/api/v1/collections" => collections::create_collection_route, signed;
+    POST "/api/v1/collections" => collections::create_collection_route, signed by(web);
     /// 合集列表
-    GET "/api/v1/collections" => collections::list_collections_route, signed;
+    GET "/api/v1/collections" => collections::list_collections_route, signed by(web);
     /// 改合集（名字、排序）
-    PATCH "/api/v1/collections/:collection_id" => collections::patch_collection_route, signed;
+    PATCH "/api/v1/collections/:collection_id" => collections::patch_collection_route, signed by(web);
     /// 删除合集
-    DELETE "/api/v1/collections/:collection_id" => collections::delete_collection_route, signed;
+    DELETE "/api/v1/collections/:collection_id" => collections::delete_collection_route, signed by(web);
     /// 往合集里加书
-    POST "/api/v1/collections/:collection_id/documents" => collections::add_collection_documents_route, signed;
+    POST "/api/v1/collections/:collection_id/documents" => collections::add_collection_documents_route, signed by(web);
     /// 从合集里拿掉一本书
-    DELETE "/api/v1/collections/:collection_id/documents/:document_id" => collections::remove_collection_document_route, signed;
+    DELETE "/api/v1/collections/:collection_id/documents/:document_id" => collections::remove_collection_document_route, signed by(web);
 }

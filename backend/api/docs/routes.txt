@@ -1,138 +1,140 @@
 # 全部 HTTP 路由：方法 路径 多用户下网站账号的访问策略（signed 登录可用 / admin 只给管理员 /
-# closed 关闭 / public 不需要登录）。由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
+# closed 关闭 / public 不需要登录） 归哪个领域负责 by 谁在用（web 前端页面 / desktop 桌面壳 / worker Python 流水线 /
+# cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / none 还没有调用方）。
+# 由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
 # 110 条路径，134 个接口
-GET    /api/v1/account/pages  signed
-GET    /api/v1/admin/invites  admin
-POST   /api/v1/admin/invites  admin
-GET    /api/v1/admin/invites/:invite_id  admin
-POST   /api/v1/admin/invites/:invite_id/revoke  admin
-GET    /api/v1/admin/platform  admin
-PUT    /api/v1/admin/platform  admin
-POST   /api/v1/admin/platform/test  admin
-GET    /api/v1/admin/users  admin
-POST   /api/v1/admin/users  admin
-DELETE /api/v1/admin/users/:user_id  admin
-GET    /api/v1/admin/users/:user_id  admin
-POST   /api/v1/admin/users/:user_id/disable  admin
-POST   /api/v1/admin/users/:user_id/enable  admin
-GET    /api/v1/admin/users/:user_id/jobs  admin
-GET    /api/v1/admin/users/:user_id/pages  admin
-POST   /api/v1/admin/users/:user_id/pages  admin
-POST   /api/v1/admin/users/:user_id/reset-password  admin
-POST   /api/v1/admin/users/:user_id/restore  admin
-POST   /api/v1/admin/users/:user_id/role  admin
-POST   /api/v1/auth/login  public
-POST   /api/v1/auth/logout  signed
-POST   /api/v1/auth/password  signed
-POST   /api/v1/auth/register  public
-GET    /api/v1/auth/session  public
-GET    /api/v1/backups  admin
-POST   /api/v1/backups  admin
-DELETE /api/v1/backups/:backup_id  admin
-POST   /api/v1/backups/:backup_id/restore  admin
-GET    /api/v1/collections  signed
-POST   /api/v1/collections  signed
-DELETE /api/v1/collections/:collection_id  signed
-PATCH  /api/v1/collections/:collection_id  signed
-POST   /api/v1/collections/:collection_id/documents  signed
-DELETE /api/v1/collections/:collection_id/documents/:document_id  signed
-GET    /api/v1/credentials  admin
-POST   /api/v1/credentials  admin
-DELETE /api/v1/credentials/:credential_ref  admin
-GET    /api/v1/credentials/:credential_ref  admin
-PUT    /api/v1/credentials/:credential_ref  admin
-GET    /api/v1/documents  signed
-DELETE /api/v1/documents/:document_id  signed
-GET    /api/v1/documents/:document_id  signed
-PATCH  /api/v1/documents/:document_id  signed
-GET    /api/v1/documents/:document_id/files  signed
-GET    /api/v1/documents/:document_id/files/:name  signed
-GET    /api/v1/documents/:document_id/files/pages/:page  signed
-GET    /api/v1/documents/:document_id/jobs  signed
-GET    /api/v1/documents/:document_id/metadata-suggestions  signed
-POST   /api/v1/documents/:document_id/metadata-suggestions  signed
-POST   /api/v1/documents/:document_id/metadata-suggestions/:suggestion_id/apply  signed
-POST   /api/v1/documents/:document_id/ocr  signed
-GET    /api/v1/documents/:document_id/reading  signed
-PUT    /api/v1/documents/:document_id/tags  signed
-POST   /api/v1/documents/:document_id/translate  signed
-GET    /api/v1/documents/:document_id/translation-coverage  signed
-PUT    /api/v1/documents/:document_id/translation-version  signed
-GET    /api/v1/documents/:document_id/translation-versions  signed
-PATCH  /api/v1/documents/:document_id/translation-versions/:version_id  signed
-GET    /api/v1/documents/:document_id/usage  signed
-GET    /api/v1/documents/:document_id/usage/estimate  signed
-GET    /api/v1/fonts  signed
-POST   /api/v1/fonts/upload  admin
-GET    /api/v1/glossaries  signed
-POST   /api/v1/glossaries  signed
-DELETE /api/v1/glossaries/:glossary_id  signed
-GET    /api/v1/glossaries/:glossary_id  signed
-PUT    /api/v1/glossaries/:glossary_id  signed
-GET    /api/v1/glossaries/:glossary_id/export.csv  signed
-POST   /api/v1/glossaries/parse-csv  signed
-POST   /api/v1/internal/model/jobs/:job_id/requests  closed
-GET    /api/v1/internal/model/jobs/:job_id/requests/:operation_id  closed
-POST   /api/v1/internal/model/jobs/:job_id/requests/:operation_id/cancel  closed
-GET    /api/v1/jobs  signed
-POST   /api/v1/jobs  signed
-DELETE /api/v1/jobs/:job_id  signed
-GET    /api/v1/jobs/:job_id  signed
-GET    /api/v1/jobs/:job_id/actions  signed
-POST   /api/v1/jobs/:job_id/actions/cancel  signed
-POST   /api/v1/jobs/:job_id/actions/rerun  signed
-POST   /api/v1/jobs/:job_id/actions/resolve-ocr-ambiguity  signed
-GET    /api/v1/jobs/:job_id/actions/resume  signed
-POST   /api/v1/jobs/:job_id/actions/resume  signed
-POST   /api/v1/jobs/:job_id/actions/retry-stage  signed
-GET    /api/v1/jobs/:job_id/data  signed
-GET    /api/v1/jobs/:job_id/data/:dataset  signed
-GET    /api/v1/jobs/:job_id/files  signed
-GET    /api/v1/jobs/:job_id/files/internal/*name  admin
-GET    /api/v1/jobs/:job_id/files/output/*name  signed
-GET    /api/v1/jobs/:job_id/files/pages/:page  signed
-GET    /api/v1/jobs/:job_id/progress/editorial  signed
-GET    /api/v1/jobs/:job_id/progress/events  signed
-GET    /api/v1/jobs/:job_id/progress/layout  signed
-GET    /api/v1/jobs/:job_id/progress/pages/:page  signed
-GET    /api/v1/jobs/:job_id/progress/stream  signed
-GET    /api/v1/jobs/:job_id/reader/markdown  signed
-GET    /api/v1/jobs/:job_id/reader/metadata  signed
-GET    /api/v1/jobs/:job_id/reader/regions  signed
-GET    /api/v1/jobs/:job_id/reports/failure  signed
-GET    /api/v1/jobs/:job_id/reports/layout-fit  signed
-GET    /api/v1/jobs/:job_id/reports/quality  signed
-GET    /api/v1/jobs/:job_id/reports/refine  signed
-GET    /api/v1/jobs/:job_id/reports/translation  signed
-GET    /api/v1/jobs/:job_id/reports/translation-qa  signed
-GET    /api/v1/jobs/:job_id/reports/usage  signed
-GET    /api/v1/jobs/:job_id/translations  signed
-GET    /api/v1/jobs/:job_id/translations/:item_id  signed
-PATCH  /api/v1/jobs/:job_id/translations/:item_id  signed
-POST   /api/v1/jobs/:job_id/translations/:item_id/replay  signed
-GET    /api/v1/jobs/:job_id/translations/:item_id/revisions  signed
-POST   /api/v1/providers/deepseek/balance  admin
-POST   /api/v1/providers/deepseek/validate-token  admin
-POST   /api/v1/providers/mineru/validate-token  admin
-GET    /api/v1/providers/ocr  signed
-POST   /api/v1/providers/paddle/validate-token  admin
-POST   /api/v1/providers/translation/ask  admin
-POST   /api/v1/providers/translation/models  admin
-GET    /api/v1/runtime-assets  signed
-POST   /api/v1/runtime-assets/download  admin
-GET    /api/v1/search  signed
-GET    /api/v1/sync  admin
-PUT    /api/v1/sync  admin
-POST   /api/v1/sync/run  admin
-POST   /api/v1/sync/test  admin
-GET    /api/v1/tags  signed
-POST   /api/v1/tags  signed
-DELETE /api/v1/tags/:tag_id  signed
-PATCH  /api/v1/tags/:tag_id  signed
-POST   /api/v1/uploads  signed
-GET    /api/v1/usage  signed
-GET    /api/v1/usage/estimate  signed
-POST   /api/v1/usage/prices  signed
-GET    /health  public
-GET    /ready  public
+GET    /api/v1/account/pages  signed  accounts  by multiuser
+GET    /api/v1/admin/invites  admin  accounts  by multiuser
+POST   /api/v1/admin/invites  admin  accounts  by multiuser
+GET    /api/v1/admin/invites/:invite_id  admin  accounts  by multiuser
+POST   /api/v1/admin/invites/:invite_id/revoke  admin  accounts  by multiuser
+GET    /api/v1/admin/platform  admin  accounts  by multiuser
+PUT    /api/v1/admin/platform  admin  accounts  by multiuser
+POST   /api/v1/admin/platform/test  admin  accounts  by multiuser
+GET    /api/v1/admin/users  admin  accounts  by multiuser
+POST   /api/v1/admin/users  admin  accounts  by multiuser
+DELETE /api/v1/admin/users/:user_id  admin  accounts  by multiuser
+GET    /api/v1/admin/users/:user_id  admin  accounts  by multiuser
+POST   /api/v1/admin/users/:user_id/disable  admin  accounts  by multiuser
+POST   /api/v1/admin/users/:user_id/enable  admin  accounts  by multiuser
+GET    /api/v1/admin/users/:user_id/jobs  admin  accounts  by multiuser
+GET    /api/v1/admin/users/:user_id/pages  admin  accounts  by multiuser
+POST   /api/v1/admin/users/:user_id/pages  admin  accounts  by multiuser
+POST   /api/v1/admin/users/:user_id/reset-password  admin  accounts  by multiuser
+POST   /api/v1/admin/users/:user_id/restore  admin  accounts  by multiuser
+POST   /api/v1/admin/users/:user_id/role  admin  accounts  by multiuser
+POST   /api/v1/auth/login  public  accounts  by multiuser
+POST   /api/v1/auth/logout  signed  accounts  by multiuser
+POST   /api/v1/auth/password  signed  accounts  by multiuser
+POST   /api/v1/auth/register  public  accounts  by multiuser
+GET    /api/v1/auth/session  public  accounts  by web
+GET    /api/v1/backups  admin  platform  by web,cli
+POST   /api/v1/backups  admin  platform  by web,cli
+DELETE /api/v1/backups/:backup_id  admin  platform  by web,cli
+POST   /api/v1/backups/:backup_id/restore  admin  platform  by web,cli
+GET    /api/v1/collections  signed  library  by web
+POST   /api/v1/collections  signed  library  by web
+DELETE /api/v1/collections/:collection_id  signed  library  by web
+PATCH  /api/v1/collections/:collection_id  signed  library  by web
+POST   /api/v1/collections/:collection_id/documents  signed  library  by web
+DELETE /api/v1/collections/:collection_id/documents/:document_id  signed  library  by web
+GET    /api/v1/credentials  admin  providers  by web
+POST   /api/v1/credentials  admin  providers  by web
+DELETE /api/v1/credentials/:credential_ref  admin  providers  by web
+GET    /api/v1/credentials/:credential_ref  admin  providers  by web
+PUT    /api/v1/credentials/:credential_ref  admin  providers  by web
+GET    /api/v1/documents  signed  library  by web
+DELETE /api/v1/documents/:document_id  signed  library  by web
+GET    /api/v1/documents/:document_id  signed  library  by web
+PATCH  /api/v1/documents/:document_id  signed  library  by web
+GET    /api/v1/documents/:document_id/files  signed  library  by none
+GET    /api/v1/documents/:document_id/files/:name  signed  library  by web
+GET    /api/v1/documents/:document_id/files/pages/:page  signed  library  by none
+GET    /api/v1/documents/:document_id/jobs  signed  library  by web
+GET    /api/v1/documents/:document_id/metadata-suggestions  signed  library  by web
+POST   /api/v1/documents/:document_id/metadata-suggestions  signed  library  by web
+POST   /api/v1/documents/:document_id/metadata-suggestions/:suggestion_id/apply  signed  library  by web
+POST   /api/v1/documents/:document_id/ocr  signed  library  by web
+GET    /api/v1/documents/:document_id/reading  signed  library  by web
+PUT    /api/v1/documents/:document_id/tags  signed  library  by none
+POST   /api/v1/documents/:document_id/translate  signed  library  by web
+GET    /api/v1/documents/:document_id/translation-coverage  signed  library  by web
+PUT    /api/v1/documents/:document_id/translation-version  signed  library  by web
+GET    /api/v1/documents/:document_id/translation-versions  signed  library  by web
+PATCH  /api/v1/documents/:document_id/translation-versions/:version_id  signed  library  by web
+GET    /api/v1/documents/:document_id/usage  signed  jobs  by web
+GET    /api/v1/documents/:document_id/usage/estimate  signed  jobs  by web
+GET    /api/v1/fonts  signed  platform  by web
+POST   /api/v1/fonts/upload  admin  platform  by none
+GET    /api/v1/glossaries  signed  glossaries  by web
+POST   /api/v1/glossaries  signed  glossaries  by web
+DELETE /api/v1/glossaries/:glossary_id  signed  glossaries  by web
+GET    /api/v1/glossaries/:glossary_id  signed  glossaries  by web
+PUT    /api/v1/glossaries/:glossary_id  signed  glossaries  by web
+GET    /api/v1/glossaries/:glossary_id/export.csv  signed  glossaries  by web
+POST   /api/v1/glossaries/parse-csv  signed  glossaries  by web
+POST   /api/v1/internal/model/jobs/:job_id/requests  closed  providers  by worker
+GET    /api/v1/internal/model/jobs/:job_id/requests/:operation_id  closed  providers  by worker
+POST   /api/v1/internal/model/jobs/:job_id/requests/:operation_id/cancel  closed  providers  by worker
+GET    /api/v1/jobs  signed  jobs  by web
+POST   /api/v1/jobs  signed  jobs  by web
+DELETE /api/v1/jobs/:job_id  signed  jobs  by web
+GET    /api/v1/jobs/:job_id  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/actions  signed  jobs  by web
+POST   /api/v1/jobs/:job_id/actions/cancel  signed  jobs  by web
+POST   /api/v1/jobs/:job_id/actions/rerun  signed  jobs  by none
+POST   /api/v1/jobs/:job_id/actions/resolve-ocr-ambiguity  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/actions/resume  signed  jobs  by web
+POST   /api/v1/jobs/:job_id/actions/resume  signed  jobs  by web
+POST   /api/v1/jobs/:job_id/actions/retry-stage  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/data  signed  jobs  by none
+GET    /api/v1/jobs/:job_id/data/:dataset  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/files  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/files/internal/*name  admin  jobs  by ops
+GET    /api/v1/jobs/:job_id/files/output/*name  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/files/pages/:page  signed  jobs  by none
+GET    /api/v1/jobs/:job_id/progress/editorial  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/progress/events  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/progress/layout  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/progress/pages/:page  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/progress/stream  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reader/markdown  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reader/metadata  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reader/regions  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reports/failure  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reports/layout-fit  signed  jobs  by none
+GET    /api/v1/jobs/:job_id/reports/quality  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reports/refine  signed  jobs  by none
+GET    /api/v1/jobs/:job_id/reports/translation  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reports/translation-qa  signed  jobs  by none
+GET    /api/v1/jobs/:job_id/reports/usage  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/translations  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/translations/:item_id  signed  jobs  by web
+PATCH  /api/v1/jobs/:job_id/translations/:item_id  signed  jobs  by web
+POST   /api/v1/jobs/:job_id/translations/:item_id/replay  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/translations/:item_id/revisions  signed  jobs  by web
+POST   /api/v1/providers/deepseek/balance  admin  providers  by web,cli
+POST   /api/v1/providers/deepseek/validate-token  admin  providers  by web,cli
+POST   /api/v1/providers/mineru/validate-token  admin  providers  by web,cli
+GET    /api/v1/providers/ocr  signed  providers  by none
+POST   /api/v1/providers/paddle/validate-token  admin  providers  by web,cli
+POST   /api/v1/providers/translation/ask  admin  providers  by none
+POST   /api/v1/providers/translation/models  admin  providers  by web
+GET    /api/v1/runtime-assets  signed  platform  by none
+POST   /api/v1/runtime-assets/download  admin  platform  by none
+GET    /api/v1/search  signed  library  by web
+GET    /api/v1/sync  admin  platform  by web,cli
+PUT    /api/v1/sync  admin  platform  by web,cli
+POST   /api/v1/sync/run  admin  platform  by web,cli
+POST   /api/v1/sync/test  admin  platform  by web,cli
+GET    /api/v1/tags  signed  library  by none
+POST   /api/v1/tags  signed  library  by none
+DELETE /api/v1/tags/:tag_id  signed  library  by none
+PATCH  /api/v1/tags/:tag_id  signed  library  by none
+POST   /api/v1/uploads  signed  ingest  by web
+GET    /api/v1/usage  signed  jobs  by web
+GET    /api/v1/usage/estimate  signed  jobs  by web
+POST   /api/v1/usage/prices  signed  jobs  by none
+GET    /health  public  platform  by desktop,cli,ops
+GET    /ready  public  platform  by cli,ops

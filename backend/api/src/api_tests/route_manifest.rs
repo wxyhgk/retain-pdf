@@ -1,4 +1,4 @@
-//! 接口清单快照：`docs/routes.txt` 列出全部路由（方法、路径、多用户下网站账号的访问策略）。
+//! 接口清单快照：`docs/routes.txt` 列出全部路由（方法、路径、多用户下网站账号的访问策略、归哪个领域负责、谁在用）。
 //!
 //! 接口多了、杂了，很大一部分是因为加接口没有门槛——加一条就是加一条，没人注意到总数在涨。
 //! 这份快照让每次增删、改策略都出现在提交的 diff 里，要有意识地确认。改了路由之后这里会红，
@@ -14,27 +14,35 @@ use crate::services::accounts::RoutePolicy;
 
 /// 接口清单：从登记表汇总，一行一个接口。
 fn manifest() -> String {
-    let mut table: BTreeMap<String, Vec<(String, &'static str)>> = BTreeMap::new();
+    let mut table: BTreeMap<String, Vec<(String, &'static str, &'static str, String)>> = BTreeMap::new();
     for endpoint in crate::app::registered_endpoints() {
-        table
-            .entry(endpoint.path.to_string())
-            .or_default()
-            .push((endpoint.method.to_string(), endpoint.access.label()));
+        table.entry(endpoint.path.to_string()).or_default().push((
+            endpoint.method.to_string(),
+            endpoint.access.label(),
+            endpoint.owner.label(),
+            users_label(&endpoint),
+        ));
     }
     let mut lines = vec![
         "# 全部 HTTP 路由：方法 路径 多用户下网站账号的访问策略（signed 登录可用 / admin 只给管理员 /".to_string(),
-        "# closed 关闭 / public 不需要登录）。由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：".to_string(),
+        "# closed 关闭 / public 不需要登录） 归哪个领域负责 by 谁在用（web 前端页面 / desktop 桌面壳 / worker Python 流水线 /".to_string(),
+        "# cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / none 还没有调用方）。".to_string(),
+        "# 由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：".to_string(),
         "#   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest".to_string(),
     ];
     let count: usize = table.values().map(Vec::len).sum();
     lines.push(format!("# {} 条路径，{count} 个接口", table.len()));
     for (path, methods) in &mut table {
         methods.sort();
-        for (method, access) in methods.iter() {
-            lines.push(format!("{method:<7}{path}  {access}"));
+        for (method, access, owner, users) in methods.iter() {
+            lines.push(format!("{method:<7}{path}  {access}  {owner}  by {users}"));
         }
     }
     lines.join("\n") + "\n"
+}
+
+fn users_label(endpoint: &crate::app::endpoints::Endpoint) -> String {
+    endpoint.users.iter().map(|user| user.label()).collect::<Vec<_>>().join(",")
 }
 
 /// 路由只在登记表里注册：路由文件里不许再直接写 `.route(`，否则这条接口不进接口目录、也没有说明。
@@ -136,14 +144,19 @@ fn directory() -> String {
         String::new(),
         "「谁能用」只在多用户模式下起作用：`signed` 登录就能用（路径里的编号要是自己的）、`admin` 只给管理员、".to_string(),
         "`closed` 对网站账号关闭、`public` 不需要登录。单机版里所有接口都能用。".to_string(),
+        String::new(),
+        "「负责」是业务逻辑所在的领域包（改它、删它找谁）；「谁在用」：`web` 前端页面、`desktop` 桌面壳主进程、`worker` Python 流水线、".to_string(),
+        "`cli` 命令行、`ops` 运维和调试、`multiuser` 只有已停的多用户网站版、`none` 还没有调用方。依据是代码里的调用和 rust_api 的".to_string(),
+        "按接口计数（`backend/api/src/app/route_usage.rs`，用 `ops/development/route_usage_report.py` 看）。".to_string(),
     ];
+    out.extend(usage_summary(&endpoints));
     let short = |path: &str| path.strip_prefix("/api/v1").filter(|rest| !rest.is_empty()).unwrap_or(path).to_string();
     for ((_, title), items) in &sections {
         out.push(String::new());
         out.push(format!("## {title}"));
         out.push(String::new());
-        out.push("| 方法 | 地址 | 谁能用 | 说明 | 旧地址 | 处理函数 |".to_string());
-        out.push("|---|---|---|---|---|---|".to_string());
+        out.push("| 方法 | 地址 | 谁能用 | 负责 | 谁在用 | 说明 | 旧地址 | 处理函数 |".to_string());
+        out.push("|---|---|---|---|---|---|---|---|".to_string());
         for endpoint in items.iter().filter(|e| e.replaced_by.is_none()) {
             // 旧地址可能登记在别的路由文件里（比如任务下的封面现在在书下面），所以在全部接口里找。
             // 同一地址换方法的旧地址（比如 GET 换成 POST）方法和新地址不同，显示时带上方法。
@@ -163,10 +176,12 @@ fn directory() -> String {
                 })
                 .collect();
             out.push(format!(
-                "| {} | `{}` | {} | {} | {} | `{}` |",
+                "| {} | `{}` | {} | {} | {} | {} | {} | `{}` |",
                 endpoint.method,
                 short(endpoint.path),
                 endpoint.access.label(),
+                endpoint.owner.label(),
+                users_label(endpoint).replace(',', "、"),
                 endpoint.summary.trim().replace('|', "\\|"),
                 olds.join("<br>"),
                 endpoint.handler.replace(' ', ""),
@@ -174,6 +189,52 @@ fn directory() -> String {
         }
     }
     out.join("\n") + "\n"
+}
+
+/// 接口目录开头的统计：按谁在用、按负责的领域各有多少；还没有调用方的、只有多用户版用的单独列出来。
+fn usage_summary(endpoints: &[crate::app::endpoints::Endpoint]) -> Vec<String> {
+    use crate::app::endpoints::User;
+    let short = |path: &str| path.strip_prefix("/api/v1").filter(|rest| !rest.is_empty()).unwrap_or(path).to_string();
+    let mut by_user: BTreeMap<User, usize> = BTreeMap::new();
+    let mut by_owner: BTreeMap<&str, usize> = BTreeMap::new();
+    for endpoint in endpoints {
+        for user in endpoint.users {
+            *by_user.entry(*user).or_default() += 1;
+        }
+        *by_owner.entry(endpoint.owner.label()).or_default() += 1;
+    }
+    let mut out = vec![
+        String::new(),
+        "## 统计".to_string(),
+        String::new(),
+        format!(
+            "按谁在用（一个接口可以有几个调用方）：{}。",
+            by_user.iter().map(|(user, n)| format!("`{}` {n}", user.label())).collect::<Vec<_>>().join("、")
+        ),
+        String::new(),
+        format!(
+            "按负责的领域：{}。",
+            by_owner.iter().map(|(owner, n)| format!("`{owner}` {n}")).collect::<Vec<_>>().join("、")
+        ),
+    ];
+    for (user, title) in [
+        (User::None, "还没有调用方的（后端先加的、调用方没接上的；要么接上，要么删）"),
+        (User::Multiuser, "只有多用户网站版用的（2026-10-16 商业版停了，代码冻结）"),
+    ] {
+        let listed: Vec<String> = endpoints
+            .iter()
+            .filter(|endpoint| endpoint.users.contains(&user))
+            .map(|endpoint| {
+                let old = endpoint.replaced_by.map(|new| format!("（旧地址，新地址 `{}`）", short(new))).unwrap_or_default();
+                format!("- {} `{}`{old}", endpoint.method, short(endpoint.path))
+            })
+            .collect();
+        out.push(String::new());
+        out.push(format!("### {title}：{} 个", listed.len()));
+        out.push(String::new());
+        out.extend(listed);
+    }
+    out
 }
 
 /// 旧地址 `old` 算不算 `new` 的旧写法：方法相同；或者地址相同、只换了方法（GET 换 POST 这种）。
@@ -208,6 +269,24 @@ fn endpoint_registry_is_complete() {
     let mut seen = std::collections::BTreeSet::new();
     for endpoint in &endpoints {
         assert!(seen.insert((endpoint.method, endpoint.path)), "{} {} 登记了两次", endpoint.method, endpoint.path);
+    }
+    // 谁在用：`none`（没有调用方）、`multiuser`（只有已停的多用户版）不能和别的写在一起，也不能重复。
+    use crate::app::endpoints::User;
+    for endpoint in &endpoints {
+        let users = endpoint.users;
+        let mut unique = users.to_vec();
+        unique.sort();
+        unique.dedup();
+        assert_eq!(unique.len(), users.len(), "{} {}：by(…) 里有重复", endpoint.method, endpoint.path);
+        for exclusive in [User::None, User::Multiuser] {
+            assert!(
+                !users.contains(&exclusive) || users.len() == 1,
+                "{} {}：by({}) 不能和别的调用方写在一起",
+                endpoint.method,
+                endpoint.path,
+                exclusive.label()
+            );
+        }
     }
 }
 

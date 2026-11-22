@@ -1,4 +1,4 @@
-//! 接口登记表：一个接口一条，写明方法、地址、处理函数、多用户下谁能用、一句话说明。
+//! 接口登记表：一个接口一条，写明方法、地址、处理函数、多用户下谁能用、谁在用、一句话说明；每张表写明归哪个领域负责。
 //!
 //! 每个领域的路由文件（`app/router/<领域>.rs`、`app/router/jobs/<类>.rs`）用 [`endpoints!`] 写自己的表，
 //! 同一张表同时生成两样东西：
@@ -30,6 +30,70 @@ impl Access {
             Access::Signed => "signed",
             Access::Admin => "admin",
             Access::Closed => "closed",
+        }
+    }
+}
+
+/// 这个接口归哪个领域负责（2026-11-22）：业务逻辑在哪个领域包里，改它、删它找谁。和 `services/` 下的 8 个领域一一对应。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Owner {
+    Accounts,
+    Providers,
+    Ingest,
+    Files,
+    Jobs,
+    Library,
+    Glossaries,
+    Platform,
+}
+
+impl Owner {
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub fn label(self) -> &'static str {
+        match self {
+            Owner::Accounts => "accounts",
+            Owner::Providers => "providers",
+            Owner::Ingest => "ingest",
+            Owner::Files => "files",
+            Owner::Jobs => "jobs",
+            Owner::Library => "library",
+            Owner::Glossaries => "glossaries",
+            Owner::Platform => "platform",
+        }
+    }
+}
+
+/// 谁在调这个接口（2026-11-22）。依据是代码里的调用和 rust_api 的按接口计数（`app/route_usage.rs`）。
+/// 加接口必须写；写 `none` 的是后端先加、还没有调用方的，接口目录里单独列出来。
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum User {
+    /// 前端页面（`frontend/web`、`frontend/packages`；浏览器和桌面窗口里是同一套）。
+    Web,
+    /// 桌面壳主进程（`frontend/desktop/src/main`）。
+    Desktop,
+    /// Python 流水线（翻译、排版的 worker 回调）。
+    Worker,
+    /// 命令行 `retainpdf`（`backend/cli`）。
+    Cli,
+    /// 运维和调试：部署探活、开发脚本、手动 curl。
+    Ops,
+    /// 只有多用户网站版用（2026-10-16 商业版停了，代码冻结）。
+    Multiuser,
+    /// 还没有调用方。
+    None,
+}
+
+impl User {
+    #[cfg_attr(not(test), allow(dead_code))]
+    pub fn label(self) -> &'static str {
+        match self {
+            User::Web => "web",
+            User::Desktop => "desktop",
+            User::Worker => "worker",
+            User::Cli => "cli",
+            User::Ops => "ops",
+            User::Multiuser => "multiuser",
+            User::None => "none",
         }
     }
 }
@@ -94,6 +158,10 @@ pub struct Endpoint {
     /// 处理函数，例如 `actions::get_stage_actions`。
     pub handler: &'static str,
     pub access: Access,
+    /// 归哪个领域负责：表头的 `owner:`，个别条目用 `owner(…)` 另写。
+    pub owner: Owner,
+    /// 谁在用（`by(…)`，至少一个）。
+    pub users: &'static [User],
     /// 一句话说明。旧地址可以不写，写 `old` 指向它的新地址。
     pub summary: &'static str,
     /// 旧地址：它的新地址。新地址上线后旧地址还能用，接口目录里列在新地址下面。
@@ -107,14 +175,20 @@ pub struct Endpoint {
 /// ```ignore
 /// endpoints! {
 ///     state: AppState;
+///     owner: jobs;
 ///     /// 现在能做哪些操作
-///     GET "/api/v1/jobs/:job_id/actions" => actions::get_stage_actions, signed;
-///     GET "/api/v1/jobs/:job_id/stage-actions" => actions::get_stage_actions, signed
+///     GET "/api/v1/jobs/:job_id/actions" => actions::get_stage_actions, signed by(web);
+///     GET "/api/v1/jobs/:job_id/stage-actions" => actions::get_stage_actions, signed by(none)
 ///         old "/api/v1/jobs/:job_id/actions";
 ///     /// 上传 PDF（不限请求体大小）
-///     POST "/api/v1/uploads" => uploads::upload_pdf, signed [unlimited_body];
+///     POST "/api/v1/uploads" => uploads::upload_pdf, signed by(web) [unlimited_body] owner(ingest);
 /// }
 /// ```
+///
+/// - 表头 `owner:` 写这张表归哪个领域负责（`accounts`、`providers`、`ingest`、`files`、`jobs`、`library`、`glossaries`、
+///   `platform`）；表里个别条目归别的领域，在行尾 `owner(…)` 另写。
+/// - `by(…)` 写谁在用，必填：`web`、`desktop`、`worker`、`cli`、`ops`、`multiuser`、`none`，可以写几个（见 [`User`]）。
+///   没有调用方就不该加接口；后端先加、调用方随后接的写 `none`，接口目录里会单独列出来。
 ///
 /// - 说明写在 `///` 里；旧地址在行尾写 `old "<新地址>"`，说明可以省。
 /// - 同一地址只换方法（例如 GET 换成 POST）：新方法登记成新的一行，旧方法那行行尾写 `old "<同一地址>"`，
@@ -132,10 +206,12 @@ pub struct Endpoint {
 macro_rules! endpoints {
     (
         state: $state:ty;
+        owner: $table_owner:ident;
         $(
             $(#[doc = $doc:literal])*
-            $method:ident $path:literal => $handler:path, $access:ident
+            $method:ident $path:literal => $handler:path, $access:ident by($($user:ident),+ $(,)?)
             $([$($flag:ident),* $(,)?])?
+            $(owner($owner:ident))?
             $(old $replaced_by:literal)?
             ;
         )*
@@ -159,6 +235,8 @@ macro_rules! endpoints {
                     path: $path,
                     handler: stringify!($handler),
                     access: $crate::endpoints!(@access $access),
+                    owner: $crate::endpoints!(@owner $table_owner $($owner)?),
+                    users: &[$($crate::endpoints!(@user $user)),+],
                     summary: $crate::endpoints!(@summary $($doc)*),
                     replaced_by: $crate::endpoints!(@replaced_by $($replaced_by)?),
                     module: module_path!(),
@@ -186,6 +264,24 @@ macro_rules! endpoints {
     (@access signed) => { $crate::app::endpoints::Access::Signed };
     (@access admin) => { $crate::app::endpoints::Access::Admin };
     (@access closed) => { $crate::app::endpoints::Access::Closed };
+
+    (@owner $table:ident $entry:ident) => { $crate::endpoints!(@owner $entry) };
+    (@owner accounts) => { $crate::app::endpoints::Owner::Accounts };
+    (@owner providers) => { $crate::app::endpoints::Owner::Providers };
+    (@owner ingest) => { $crate::app::endpoints::Owner::Ingest };
+    (@owner files) => { $crate::app::endpoints::Owner::Files };
+    (@owner jobs) => { $crate::app::endpoints::Owner::Jobs };
+    (@owner library) => { $crate::app::endpoints::Owner::Library };
+    (@owner glossaries) => { $crate::app::endpoints::Owner::Glossaries };
+    (@owner platform) => { $crate::app::endpoints::Owner::Platform };
+
+    (@user web) => { $crate::app::endpoints::User::Web };
+    (@user desktop) => { $crate::app::endpoints::User::Desktop };
+    (@user worker) => { $crate::app::endpoints::User::Worker };
+    (@user cli) => { $crate::app::endpoints::User::Cli };
+    (@user ops) => { $crate::app::endpoints::User::Ops };
+    (@user multiuser) => { $crate::app::endpoints::User::Multiuser };
+    (@user none) => { $crate::app::endpoints::User::None };
 
     (@summary) => { "" };
     (@summary $($doc:literal)+) => { $crate::app::endpoints::trim_summary(concat!($($doc),+)) };
