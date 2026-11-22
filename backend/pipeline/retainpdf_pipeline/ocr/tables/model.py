@@ -16,6 +16,8 @@ from .text_layer import table_text_lines
 
 TABLE_MODEL_VERSION = "table.v1"
 MIN_WORDS_FOR_TEXT_LAYER = 3
+# 折行判断：上一行写到这一列文字范围的这个比例以上，才算写满了折下来
+WRAP_FILL_RATIO = 0.7
 
 _NUMBER = r"[-+±−–—~∼≈<>≤≥]?\s*\d+(?:[.,]\d+)?(?:\s*(?:%|°C|K|eV|nm|ms|μs|ns|s|h|min|wt%|mol%|equiv|×\s*10\S*))?"
 _NUMERIC_LIKE = re.compile(rf"^(?:{_NUMBER}|[-–—−/]+|n\.?d\.?|N/A|\s|[()\[\]/,;:±×x*†‡§]|<sup>[^<]*</sup>|<sub>[^<]*</sub>)+$", re.IGNORECASE)
@@ -160,12 +162,56 @@ def build_table_model(block: dict, page: fitz.Page) -> dict[str, Any]:
     def _filled_columns(line_index: int) -> int:
         return len({_column_of_word(word, bounds) for word in lines[line_index].words})
 
+    extents = _column_extents(lines, mapping, bounds)
     for indexes in mapping.row_lines:
         full = [index for index in indexes if _filled_columns(index) >= max(2, (grid.n_cols + 1) // 2)]
-        if len(full) >= 2:
+        if len(full) >= 2 and not _wrapped_prose_row(lines, indexes, bounds, extents):
             model["issues"].append("row_swallows_rows")
             break
     return model
+
+
+def _column_extents(lines, mapping, bounds) -> list[tuple[float, float] | None]:
+    """每列文字实际占到的左右范围（全表用到的文字行里，落在这一列的词）。"""
+    extents: list[tuple[float, float] | None] = [None] * len(bounds)
+    for indexes in mapping.row_lines:
+        for index in indexes:
+            for word in lines[index].words:
+                column = _column_of_word(word, bounds)
+                old = extents[column]
+                extents[column] = (word.x0, word.x1) if old is None else (min(old[0], word.x0), max(old[1], word.x1))
+    return extents
+
+
+def _wrapped_prose_row(lines, indexes: list[int], bounds, extents) -> bool:
+    """一行表格里的几行文字是不是同一批格子折行（说明文字表），而不是 OCR 把几行表格并成了一行。
+
+    折行的下一行接着上一句往下写：大半有字的列，这一行是小写字母开头，而且同一列的上一行写到了接近这一列的最右边
+    （写满了才折）。漏行的下一行是新的一条数据，开头是大写、数字、代号（"B-02"、"265.9"），上一行也写不满。
+    没有大小写的文字（中文等）判断不了，照旧当漏行（2026-11-22，回归样本表 2 每格三五行说明文字被误判）。
+    """
+    if len(indexes) < 2:
+        return False
+    for previous, current in zip(indexes, indexes[1:]):
+        segments: dict[int, list] = {}
+        for word in lines[current].words:
+            segments.setdefault(_column_of_word(word, bounds), []).append(word)
+        before: dict[int, float] = {}
+        for word in lines[previous].words:
+            column = _column_of_word(word, bounds)
+            before[column] = max(before.get(column, float("-inf")), word.x1)
+        continued = 0
+        for column, words in segments.items():
+            first = min(words, key=lambda word: word.x0).text.lstrip("([\"'“‘")
+            extent = extents[column]
+            if not first[:1].islower() or column not in before or extent is None:
+                continue
+            width = extent[1] - extent[0]
+            if width > 0 and before[column] >= extent[0] + WRAP_FILL_RATIO * width:
+                continued += 1
+        if continued * 2 < len(segments):
+            return False
+    return True
 
 
 def _similarity_text(left: str, right: str) -> float:
