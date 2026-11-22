@@ -63,6 +63,10 @@ def imported_tops(source: str) -> set[str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Windows 构建机的控制台是 cp1252，打印中文会 UnicodeEncodeError（2026-11-22 Desktop Python Bundle 第一次跑就红在这）。
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     parser = argparse.ArgumentParser()
     parser.add_argument("--members", required=True, help="逗号分隔的工作区包名")
     args = parser.parse_args(argv)
