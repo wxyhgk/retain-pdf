@@ -66,6 +66,7 @@ import { safeLoad } from "./composition/safe-load.js";
 import { createBridge } from "./composition/create-bridge.js";
 import { createWorkflowAndUpload } from "./composition/create-workflow-upload.js";
 import { createCredentials } from "./composition/create-credentials.js";
+import { hasDesktopCredentials } from "@/features/credentials/domain.js";
 import { createGlossariesAndAppUpdate } from "./composition/create-glossaries-app-update.js";
 import { createStatusDomain } from "./composition/create-status-domain.js";
 import { createLibraryDomain } from "./composition/create-library-domain.js";
@@ -235,6 +236,7 @@ export function createHomeComposition({
     statusCardPresenter: status.statusCardPresenter,
     libraryEventPort: library.libraryEventPort,
     settingsHubDialogStore: credentials.settingsHubDialogStore,
+    desktopCredentialsReady: () => hasDesktopCredentials(credentialsStatePort.getCredentials()),
   });
   features.appActionsFeature = appActionsFeature;
 

@@ -308,6 +308,35 @@ test("CredentialsDialog：保存(桌面模式)——走 saveDesktopConfig 分支
   host.remove();
 });
 
+// 2026-11-22 用户（Windows 桌面版）：设置里保存了，提交时还是弹「请先完成首次配置」、要再存一遍。
+// 提交前的「已配置」以前只看 legacyState.desktopConfigured，它只在首配门里保存时才置 true；
+// 现在凭据齐全（hasDesktopCredentials）就算已配置。
+test("桌面：凭据齐了提交不再被拦成「请先完成首次配置」，凭据不齐照旧拦", async () => {
+  const services = createServices({ initialDesktopMode: true });
+  const { host, root } = await bootHomeApp(dom, { services });
+  const previous = defaultCredentialsStatePort.getCredentials();
+  try {
+    services.workflowDialog.openUpload();
+    await waitFor(() => byId(dom, "error-box-inline"), "上传弹窗打开");
+    const errorText = () => byId(dom, "error-box-inline")?.textContent || "";
+
+    defaultCredentialsStatePort.setCredentials({ ...previous, ocrProvider: "paddle", paddleToken: "", ocrCredentialRef: "", modelApiKey: "", translationCredentialRef: "" });
+    await services.features.appActionsFeature.submitForm({ preventDefault() {} });
+    await waitFor(() => /请先完成首次配置/.test(errorText()), "凭据不齐：拦下");
+
+    services.bridge.setText("error-box", "-");
+    defaultCredentialsStatePort.setCredentials({ ...previous, ocrProvider: "paddle", paddleToken: "paddle-desktop", modelApiKey: "key-desktop" });
+    await services.features.appActionsFeature.submitForm({ preventDefault() {} });
+    await wait(50);
+    assert.doesNotMatch(errorText(), /请先完成首次配置/, "凭据齐了（不是在首配门里存的）也能往下走");
+  } finally {
+    defaultCredentialsStatePort.setCredentials(previous);
+    root.unmount();
+    services.dispose();
+    host.remove();
+  }
+});
+
 // 服务端 vault 里的明文，一个字节都不能流进浏览器。
 //
 // 这条用例原来叫「旧凭据读回具体值」，断言的正是相反的事：打开设置就把 vault 里
