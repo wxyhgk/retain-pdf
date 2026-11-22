@@ -81,3 +81,14 @@ def test_executor_keeps_render_when_link_relocation_fails(tmp_path, monkeypatch)
     result = executor._relocate_links_best_effort(target, source, {0: []})
     assert result == {'error': "KeyError: 'page_idx'"}
     assert executor._relocate_links_best_effort(tmp_path / 'missing.pdf', source, {}) == {'skipped': 'pdf_missing'}
+
+
+def test_point_inside_matches_pymupdf_edges() -> None:
+    """浮点数判断和 PyMuPDF 的 ``point in rect`` 一致：左上边含、右下边不含。"""
+    import fitz
+
+    from retainpdf_pipeline.render.document.link_relocation import _inside
+
+    rect = fitz.Rect(10, 20, 30, 40)
+    for x, y in [(10, 20), (29.999, 39.999), (30, 25), (15, 40), (9.999, 25), (20, 30)]:
+        assert _inside(x, y, tuple(rect)) == (fitz.Point(x, y) in rect), (x, y)
