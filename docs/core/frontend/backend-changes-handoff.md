@@ -12,6 +12,34 @@
 
 ---
 
+## 字体和 Typst 改成按需下载（feat/runtime-assets）
+
+2026-11-22，用户定：安装包里不带思源宋体（压缩后约 33MB）和 Typst（约 16MB），首次启动在后台下载，缓存在数据目录，
+升级不重下；断网时用包里留着的 DroidSansFallback 先排。后端这半已经做好，**打开开关之前行为不变**（包里照旧带着时，
+状态都是 `bundled`，不会去下）。
+
+后端给的：
+- `GET /api/v1/runtime-assets`：`{downloads_enabled, assets: [{id: "fonts"|"typst", title, version, state, bytes_done, bytes_total, source, error}]}`，
+  `state` = `bundled` / `ready` / `missing` / `downloading` / `failed`。
+- `POST /api/v1/runtime-assets/download`：在后台把缺的、失败的再下一遍，马上返回当前状态。
+- 两个都不在契约里（和 `/api/v1/fonts` 一样手写调用）。
+
+前端（第 3 步）要做的，**要等 npm 上的包发好以后再发版**，不然用户那边下不到、只能用后备字体：
+1. `frontend/desktop/src/main/backend-env.js`：加 `RETAIN_PDF_RUNTIME_ASSETS: "download"`；`RETAIN_PDF_FONT_PATH`、
+   `RETAIN_PDF_TITLE_BOLD_FONT_PATH` 只在包里那个文件存在时才设（指向不存在的文件时 Python 会照用、然后报错，不会自己换字体）；
+   `RETAIN_PDF_TYPST_FONT_FAMILY` 不要再写死 `Source Han Serif SC`，不设就行（Python 按有没有思源宋体自己选，没有时用 `Droid Sans Fallback`）；
+   `TYPST_BIN` 照旧只在文件存在时设（现在就是这样）。
+2. `frontend/desktop/src/main/plugins/backend.js` 第 194 行：包里没有 typst 时不要报错退出。
+3. 打包（`scripts/prepare-app.mjs`、workflow 里下载 Typst 的那几步）：不再拷 `SourceHanSerifSC-*.otf` 和 `typst/`；
+   `DroidSansFallbackFull.ttf` 留在 `backend/fonts/`。`typst-packages` 照旧带着（小）。
+4. 设置页：显示每份资源的状态和进度（`bytes_done / bytes_total`），`failed` 时给「重新下载」（POST），`missing`/`failed` 时提示
+   「生成的 PDF 会暂时用后备字体」。
+5. 断网试一次：不联网新装、翻译一本，PDF 照样出来（黑体风格）；联网后重新渲染换成宋体。
+
+为什么、怎么做的见 [字体和 Typst 按需下载](../../ops/planning/desktop-size/20261122-字体和Typst按需下载.md)。
+
+---
+
 ## 阅读页能看到表格译文，开关可以放进界面了（feat/reader-table-translations）
 
 2026-11-22。表格翻译 T4。建任务时 `translation.tables` 选 `translate`，表格 agent 整表翻了的表，

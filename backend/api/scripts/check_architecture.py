@@ -148,6 +148,7 @@ ROUTE_STATE_RESOURCE_ALLOWLIST = {
     Path("src/routes/common/auth.rs"),
     Path("src/routes/common/credentials.rs"),
     Path("src/routes/common/fonts.rs"),
+    Path("src/routes/common/runtime_assets.rs"),
     Path("src/routes/common/platform_settings.rs"),
     Path("src/routes/common/glossaries.rs"),
     Path("src/routes/common/job_data.rs"),
@@ -229,11 +230,17 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     Path("src/routes/fonts.rs"): (
         "crate::services::platform",
     ),
+    Path("src/routes/runtime_assets.rs"): (
+        "crate::services::platform",
+    ),
     Path("src/routes/common/providers.rs"): (
         "crate::services::providers::ProviderApiDeps",
     ),
     Path("src/routes/common/fonts.rs"): (
         "crate::services::platform::FontApiDeps",
+    ),
+    Path("src/routes/common/runtime_assets.rs"): (
+        "crate::services::platform::RuntimeAssetsApiDeps",
     ),
     # 报告：质量报告、单个任务的模型用量各有自己的服务。
     Path("src/routes/jobs/reports.rs"): (

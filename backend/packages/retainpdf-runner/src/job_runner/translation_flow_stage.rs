@@ -202,6 +202,13 @@ pub(super) async fn run_render_stage_after_translation(
     source_pdf_path: &Path,
 ) -> Result<JobRuntimeState> {
     ensure_translations_dir_ready(&job_paths.translated_dir, &job.job_id)?;
+    // 安装包不带字体、Typst 时（桌面端打开了按需下载），渲染前等它们下好；没好就用后备字体照常排。
+    retainpdf_data::runtime_assets::wait_for_runtime_assets(
+        &deps.persist.data_root,
+        Some(&deps.config.project_root),
+        retainpdf_data::runtime_assets::RENDER_WAIT,
+    )
+    .await;
     let normalized_document_path =
         crate::job_runner::stage_contract::normalized_document_for_render(job.artifacts.as_ref(), &deps.persist.data_root);
     job.command = build_worker_stage_command(

@@ -1,0 +1,57 @@
+{
+  "schema": "runtime_assets.v1",
+  "comment": "按需下载的运行时资源（字体、Typst）。发成 npm 包，国外走 npmjs、国内走 npmmirror；缓存在 <数据目录>/runtime-assets/<编号>/<版本>/。Rust（retainpdf-platform 的 runtime_assets）和 Python（retainpdf_pipeline.foundation.config.runtime_assets）都读这一份。发包脚本见 ops/runtime-assets/。",
+  "registries": [
+    {"name": "npmmirror", "url": "https://registry.npmmirror.com", "preferred_time_zones": ["Asia/Shanghai", "Asia/Chongqing", "Asia/Harbin", "Asia/Urumqi", "Asia/Hong_Kong", "Asia/Macau", "Asia/Taipei"]},
+    {"name": "npmjs", "url": "https://registry.npmjs.org"}
+  ],
+  "assets": {
+    "fonts": {
+      "title": "思源宋体",
+      "version": "2.003R",
+      "package": "@retainpdf/font-source-han-serif-sc",
+      "package_version": "2.3.0",
+      "files": [
+        {"path": "SourceHanSerifSC-Regular.otf", "sha256": "78aa7a328fd974df2d688c8a9fd74a33d8334dfa84ab24d9d11efb2ffc464117", "size": 24543332},
+        {"path": "SourceHanSerifSC-Bold.otf", "sha256": "706b8c0de2deff6cbc0c87e2cdedfd33a78b7ffd76cebb4549012f197ba611fe", "size": 25521732},
+        {"path": "LICENSE-OFL-1.1.txt", "sha256": "9ff5bb567e1b92c801fc1069e5fbf992ff8efccacb9db94e5959a5b3ba9bb903", "size": 4463}
+      ]
+    },
+    "typst": {
+      "title": "Typst",
+      "version": "0.15.1",
+      "platforms": {
+        "darwin-arm64": {
+          "package": "@retainpdf/typst-darwin-arm64",
+          "package_version": "0.15.1",
+          "upstream": "https://github.com/typst/typst/releases/download/v0.15.1/typst-aarch64-apple-darwin.tar.xz",
+          "files": [
+            {"path": "typst", "sha256": "7c4a136b377f3689400afe37b4f0fe3528d50faaa55cbb1106ac8a128f86ba1a", "size": 45029488, "executable": true},
+            {"path": "LICENSE", "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a", "size": 9723},
+            {"path": "NOTICE", "sha256": "1778244777547c281b6f5fa9fc0c18ab21f8d4491c803f64e09046800f5fcb26", "size": 21066}
+          ]
+        },
+        "linux-x64": {
+          "package": "@retainpdf/typst-linux-x64",
+          "package_version": "0.15.1",
+          "upstream": "https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-unknown-linux-musl.tar.xz",
+          "files": [
+            {"path": "typst", "sha256": "29273eaa04f6d00edd0c2bec578f565fc9c65be856bfbffc894567c68ed0b237", "size": 55739488, "executable": true},
+            {"path": "LICENSE", "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a", "size": 9723},
+            {"path": "NOTICE", "sha256": "1778244777547c281b6f5fa9fc0c18ab21f8d4491c803f64e09046800f5fcb26", "size": 21066}
+          ]
+        },
+        "win32-x64": {
+          "package": "@retainpdf/typst-win32-x64",
+          "package_version": "0.15.1",
+          "upstream": "https://github.com/typst/typst/releases/download/v0.15.1/typst-x86_64-pc-windows-msvc.zip",
+          "files": [
+            {"path": "typst.exe", "sha256": "081217a463adb006f8894b44227fe4b9c9e91fc85f5463d5948e8370db9bb31e", "size": 52487680, "executable": true},
+            {"path": "LICENSE", "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a", "size": 9723},
+            {"path": "NOTICE", "sha256": "1778244777547c281b6f5fa9fc0c18ab21f8d4491c803f64e09046800f5fcb26", "size": 21066}
+          ]
+        }
+      }
+    }
+  }
+}

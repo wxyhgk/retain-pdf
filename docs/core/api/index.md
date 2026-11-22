@@ -796,6 +796,12 @@ PDF 元数据：
   [书库接口](../frontend/library-api.md)第 8 节）
 - `GET /api/v1/fonts`
 - `POST /api/v1/fonts/upload`
+- `GET /api/v1/runtime-assets`、`POST /api/v1/runtime-assets/download`（2026-11-22 起）：安装包不带思源宋体和 Typst 时，
+  后端首次启动在后台从 npm 源（东八区先 npmmirror）下到 `<数据目录>/runtime-assets/`，逐个文件核对 sha256。GET 返回
+  `{downloads_enabled, assets: [{id, title, version, state, bytes_done, bytes_total, source, error}]}`，`state` 是
+  `bundled`（包里带着）/ `ready`（下好了）/ `missing` / `downloading` / `failed`；POST 在后台把缺的、失败的再下一遍，马上返回当前状态。
+  要桌面端设 `RETAIN_PDF_RUNTIME_ASSETS=download` 才会下（Docker、开发环境不下）。渲染前最多等 5 分钟，还没好就用包里的
+  DroidSansFallback 排（黑体风格、标题没有粗体）。方案见 [字体和 Typst 按需下载](../../ops/planning/desktop-size/20261122-字体和Typst按需下载.md)。
 
 查询和关系接口只返回持久化 ID 与安全投影；客户端不得把本地文件路径作为资源 ID。
 

@@ -16,6 +16,13 @@ pub(super) async fn run_render_job_from_artifacts(
 ) -> Result<JobRuntimeState> {
     let (mut job, render_inputs) = prepare_render_job_from_artifacts(&deps.persist, job)?;
     let job_paths = crate::storage_paths::build_job_paths(&deps.persist.output_root, &job.job_id)?;
+    // 安装包不带字体、Typst 时（桌面端打开了按需下载），渲染前等它们下好；没好就用后备字体照常排。
+    retainpdf_data::runtime_assets::wait_for_runtime_assets(
+        &deps.persist.data_root,
+        Some(&deps.config.project_root),
+        retainpdf_data::runtime_assets::RENDER_WAIT,
+    )
+    .await;
 
     // Render workflow 默认不精修；只有 `retry-stage stage=refine` 写下的一次性覆盖会让
     // 这次渲染先精修（trigger=manual）。覆盖不在任务快照里，见 refine_override 模块注释。

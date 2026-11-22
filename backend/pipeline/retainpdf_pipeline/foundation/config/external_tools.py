@@ -6,7 +6,8 @@
 - 桌面端在 spawn 后端进程前把 ``TYPST_BIN`` 指向随包发行的那一份
   （``frontend/desktop/src/main/backend-env.js``）；
 - Docker 镜像把 typst 装进 ``/usr/local/bin``，直接在 PATH 上；
-- 本地开发 checkout 两者都没有，需要开发者自己安装。
+- 本地开发 checkout 两者都没有，需要开发者自己安装；
+- 安装包不带 typst 时，后端首次启动下到数据目录（``runtime_assets.py``），PATH 里找不到再看那里。
 
 所以定位失败只可能发生在第三种情况，而且应该说清楚怎么修，而不是回落到某个
 平台专属的猜测路径——那样只会在别的平台上抛一个没有上下文的
@@ -18,6 +19,8 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
+
+from retainpdf_pipeline.foundation.config.runtime_assets import cached_typst_bin
 
 
 class ExternalToolNotFound(RuntimeError):
@@ -57,6 +60,10 @@ def resolve_typst_bin() -> str:
     discovered = shutil.which("typst")
     if discovered:
         return discovered
+    # 安装包不再带 typst 时，后端首次启动下到数据目录的那一份（runtime_assets.py）
+    cached = cached_typst_bin()
+    if cached is not None:
+        return str(cached)
     raise ExternalToolNotFound(
         "未找到 typst 可执行文件：TYPST_BIN 未设置，PATH 里也没有 typst。"
         "桌面端和 Docker 镜像都自带 typst，出现这个错误通常是在本地开发环境里——"

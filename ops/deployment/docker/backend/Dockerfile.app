@@ -67,6 +67,7 @@ COPY backend/packages/retainpdf-proc ./backend/packages/retainpdf-proc
 COPY backend/contracts/job-data.v1.schema.json ./backend/contracts/job-data.v1.schema.json
 # OCR 服务商清单：retainpdf-core 和 retainpdf-config 编译时嵌入（清单是服务商的唯一来源）。
 COPY backend/config/ocr_providers.json ./backend/config/ocr_providers.json
+COPY backend/config/runtime_assets.json ./backend/config/runtime_assets.json
 # COPY 保留构建上下文里的 mtime，可能比 cook 产物还旧；touch 一遍保证工作区
 # crate 一定按真实源码重编，而不是沿用 cook 阶段的空壳。
 RUN find database backend -name '*.rs' -exec touch {} + \
