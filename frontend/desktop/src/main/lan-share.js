@@ -137,6 +137,10 @@ const LAN_BLOCKED = [
   { prefix: "/api/v1/internal" },
   { pattern: /^\/api\/v1\/jobs\/[^/]+\/files\/internal(\/|$)/ },
   { prefix: "/api/v1/credentials", methods: ["POST", "PUT", "PATCH", "DELETE"] },
+  // 检测服务商、列模型、问一次模型、查余额：单机后端允许连本机和内网地址（为了本机的 Ollama、vLLM），
+  // 局域网访客能借它让这台电脑去请求 127.0.0.1 / 内网服务并读回部分返回（SSRF，后端 2026-11-22 提醒）。
+  // 只放 GET /providers/ocr（服务商列表），检测留给电脑主人在本机做。
+  { prefix: "/api/v1/providers", methods: ["POST", "PUT", "PATCH", "DELETE"] },
 ];
 
 /** 这个请求在局域网上是不是被拦。路径先解码、去掉重复的斜杠、转小写再比，绕不过去。 */
