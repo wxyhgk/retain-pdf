@@ -25,6 +25,11 @@ test("弹窗里改的偏好出现在提交载荷里", async () => {
 
     services.workflowView.setPreference("renderEngine", "auto");
     assert.equal("engine" in (workflowFeature.collectRunPayload().render || {}), false, "默认不发 engine");
+
+    assert.equal("tables" in (workflowFeature.collectRunPayload().translation || {}), false, "默认不发 tables");
+    services.workflowView.setPreference("tableTranslation", "translate");
+    assert.equal(workflowFeature.collectRunPayload().translation?.tables, "translate");
+    services.workflowView.setPreference("tableTranslation", "keep");
   } finally {
     root.unmount();
     services.dispose();

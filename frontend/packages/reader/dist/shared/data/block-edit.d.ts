@@ -38,7 +38,11 @@ export declare function jobRenderedAt(jobPayload: unknown): string;
 export declare function pendingEditsFromRevisions(payload: unknown, renderedAt: string): Map<string, string>;
 /** 保存没通过检查时的一条问题，说成人话；警告不拦保存，不列。 */
 export declare function revisionIssueTexts(issues: unknown): string[];
-/** 能改的块（正文、公式、表格）按阅读顺序排好，给「上一段 / 下一段」用。 */
+/** 这种块能不能「改」（悬停框的「改」、按 E 都看它）。 */
+export declare function canEditReaderKind(kind: string): boolean;
+/** 这一块能不能「改」；块号在 regions 里找不到时不拦（regions 还没到的时候照旧能改正文）。 */
+export declare function isEditableReaderBlock(regions: readonly ReaderRegion[] | null | undefined, itemId: string): boolean;
+/** 能改的块（正文、公式）按阅读顺序排好，给「上一段 / 下一段」用。 */
 export declare function editableBlockIds(regions: readonly ReaderRegion[] | null | undefined): string[];
 /** 编辑框够不够大：块够宽够高就直接盖在块上改，否则在旁边弹一个放大的框。 */
 export declare const INLINE_EDIT_MIN_WIDTH = 300;

@@ -72,9 +72,9 @@ export function ProcessingChoicePanel({
           id="page-range-btn"
           type="button"
           className={`page-range-mini secondary${pageRangeButtonVisible && !ocrOnly ? "" : " hidden"}`}
-          aria-label="更多选项（术语表、翻译质量、排版引擎）"
+          aria-label="更多选项（术语表、翻译质量、排版引擎、表格）"
           aria-expanded={pageRangeOpen}
-          title="更多选项：术语表、翻译质量、排版引擎"
+          title="更多选项：术语表、翻译质量、排版引擎、表格"
           onClick={onToggleTranslationOptions}
         >
           <SlidersHorizontal aria-hidden="true" />

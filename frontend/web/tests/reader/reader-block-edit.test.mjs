@@ -15,6 +15,7 @@ import {
   pendingEditsFromRevisions,
   revisionHistory,
   editableBlockIds,
+  isEditableReaderBlock,
   inlineEditLayout,
   revisionIssueTexts,
 } from "../../../../frontend/packages/reader/src/shared/data/block-edit.ts";
@@ -59,12 +60,13 @@ test("改译文模型：修订历史新的在前、最后是初译；排版以�
   );
 });
 
-test("改译文模型：上一段 / 下一段只走正文、公式、表格，去重、保持阅读顺序", () => {
+test("改译文模型：上一段 / 下一段只走正文、公式（表格译文不在翻译清单里，2026-11-22 起不能改），去重、保持阅读顺序", () => {
   const region = (itemId, regionType) => ({ itemId, regionType, source: null, translated: null, markdown: "", status: "", assetIds: [], assetUrls: [] });
-  assert.deepEqual(
-    editableBlockIds([region("p001-b0001", "text"), region("p001-b0002", "image"), region("p001-b0003", "table"), region("p001-b0001", "text"), region("p002-b0001", "text")]),
-    ["p001-b0001", "p001-b0003", "p002-b0001"],
-  );
+  const regions = [region("p001-b0001", "text"), region("p001-b0002", "image"), region("p001-b0003", "table"), region("p001-b0001", "text"), region("p001-b0004", "formula"), region("p002-b0001", "text")];
+  assert.deepEqual(editableBlockIds(regions), ["p001-b0001", "p001-b0004", "p002-b0001"]);
+  assert.equal(isEditableReaderBlock(regions, "p001-b0003"), false, "按 E 也不改表格");
+  assert.equal(isEditableReaderBlock(regions, "p001-b0001"), true);
+  assert.equal(isEditableReaderBlock(null, "p001-b0003"), true, "regions 还没到时不拦");
 });
 
 test("悬停框：译文栏给了 onEdit 才有「改」，原文栏没有", () => {
@@ -82,6 +84,10 @@ test("悬停框：译文栏给了 onEdit 才有「改」，原文栏没有", () 
   assert.match(renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target, pane: "translated", onEdit })), /class="reader-text-hover-edit"[^>]*aria-label="改这段译文"[^>]*><svg/, "「改」只画图标（2026-11-20）");
   assert.doesNotMatch(renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target, pane: "translated" })), /reader-text-hover-edit/);
   assert.doesNotMatch(renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target, pane: "source", onEdit })), /reader-text-hover-edit/);
+  const table = { ...target, highlight: { ...target.highlight, region: { ...target.highlight.region, regionType: "table" } } };
+  const tableMarkup = renderToStaticMarkup(createElement(ReaderTextHoverLayer, { target: table, pane: "translated", onEdit }));
+  assert.doesNotMatch(tableMarkup, /reader-text-hover-edit/, "表格译文还不能改，不画「改」");
+  assert.match(tableMarkup, /reader-text-hover-copy/, "表格照样能复制");
 });
 
 function fakeEdit(port, overrides = {}) {

@@ -292,7 +292,7 @@
   gap: 8px;
   min-width: 0;
 
-  & span {
+  & > span:not(.ui-select) {
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -312,6 +312,7 @@
     padding: 0 12px;
     box-shadow: none;
     font-size: 14px;
+    font-weight: 400;
   }
 
   & small {
