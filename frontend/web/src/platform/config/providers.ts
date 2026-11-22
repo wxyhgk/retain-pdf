@@ -59,13 +59,15 @@ export const OCR_PROVIDER_DEFINITIONS = [
     runtimeConfigKey: "glmOcrToken",
     tokenLabel: "智谱 API Key",
     tokenPlaceholder: "智谱 API Key（翻译用智谱时可以不填）",
-    validationButtonLabel: "",
+    // 检测（2026-11-22 用户要）：后端没有 GLM-OCR 专用的检测接口，借翻译的检测接口，
+    // 拿这个 key 向智谱发一个 max_tokens=1 的请求（模型用智谱的免费 flash，见 glmOcrProbePayload）。
+    validationButtonLabel: "检测 GLM-OCR",
     validationIdleMessage: "未检测",
     validationMissingMessage: "请先填写智谱 API Key；翻译用智谱时可以不填。",
     validationUnavailableMessage: "翻译选了智谱时可以不填，用翻译的同一个 key。",
     docsUrl: "https://open.bigmodel.cn/apikey/platform",
     docsLabel: "获取 Key",
-    supportsValidation: false,
+    supportsValidation: true,
     // 分段识别，多长的书都行。
     maxPages: 0,
     // 同样切成 10 页一片交（glm_ocr_driver.py），它「≤50MB」的限制落在每一片上。
@@ -303,4 +305,26 @@ export function ocrMaxPages(provider: unknown): number {
 
 export function getOcrProviderDefinition(provider: unknown) {
   return OCR_PROVIDER_DEFINITIONS.find((item) => item.id === normalizeOcrProvider(provider)) || OCR_PROVIDER_DEFINITIONS[0];
+}
+
+/** GLM-OCR 的检测：借翻译的检测接口，用智谱翻译预设的地址、协议和（免费的）默认模型试这个 key。 */
+export function glmOcrProbePayload(token: string) {
+  const zhipu = TRANSLATION_PROVIDER_OPTIONS.find((option) => option.id === "zhipu");
+  return {
+    api_key: `${token || ""}`.trim(),
+    base_url: zhipu?.baseUrl || ZHIPU_TRANSLATION_BASE_URL,
+    model: zhipu?.defaultModel || "GLM-5.3-Flash",
+    api_protocol: zhipu?.protocol || "openai_responses",
+  };
+}
+
+/** 翻译检测接口的结果说的是「翻译 API」，GLM-OCR 这里换成智谱 key 的说法；其余字段原样。 */
+export function describeGlmOcrProbe<T extends { ok?: boolean; status?: unknown; summary?: unknown }>(result: T): T {
+  const status = `${result?.status ?? ""}`;
+  const summary = result?.ok
+    ? "智谱 API Key 可用，GLM-OCR 能用"
+    : status === "unauthorized"
+      ? "智谱 API Key 无效，请到智谱开放平台重新复制"
+      : `${result?.summary || "检测失败，请稍后重试"}`.replace(/翻译 ?API ?/g, "智谱接口");
+  return { ...result, summary };
 }
