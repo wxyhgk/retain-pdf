@@ -76,7 +76,7 @@ test("AppUpdateBanner：composition 默认关闭自动检查(测试隔离,不真
     // 不传 appUpdateAutoCheckEnabled——验证默认值就是安全的(false)。
     fetchLatestRelease: async () => {
       fetchCalled = true;
-      return { tag_name: "v99.0.0" };
+      return { tag_name: "v9999.0.0" };
     },
     appUpdateCachePort: memoryCachePort({ info: null, fresh: false }),
   });
@@ -100,7 +100,7 @@ test("AppUpdateBanner：启动缓存命中(fresh)直接展示,不发起网络请
     appUpdateAutoCheckEnabled: true,
     fetchLatestRelease: async () => {
       fetchCalled = true;
-      return { tag_name: "v99.0.0" };
+      return { tag_name: "v9999.0.0" };
     },
     appUpdateCachePort: memoryCachePort({
       fresh: true,
@@ -180,11 +180,11 @@ test("AppUpdateBanner：手动检查 loading → 成功(available/latest)三态�
   assert.equal(byId(dom, "app-update-dialog").querySelector("h2").textContent, "正在检查更新");
 
   check1.resolve({
-    // Keep this fixture newer than the generated local build version.
-    tag_name: "v99.0.0",
-    name: "RetainPDF 99.0.0",
+    // Keep this fixture newer than the generated local build version（版本号 2026-11-22 起按日期，99.0.0 已经比它旧）。
+    tag_name: "v9999.0.0",
+    name: "RetainPDF 9999.0.0",
     body: "## 新版本说明\n- 修复状态显示\n**重要**：请升级\n`fix-1`",
-    html_url: "https://example.com/releases/99.0.0",
+    html_url: "https://example.com/releases/9999.0.0",
   });
   await waitFor(() => byId(dom, "app-update-btn").dataset.updateState === "available", "解析后进入 available 态");
   assert.equal(byId(dom, "app-update-btn").classList.contains("has-update"), true);

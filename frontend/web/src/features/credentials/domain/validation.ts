@@ -1,4 +1,5 @@
 import {
+  translationProtocolFor,
   getOcrProviderDefinition,
   TRANSLATION_PROVIDER_DEFINITION,
 } from "@/platform/config/providers.js";
@@ -193,7 +194,7 @@ export async function runDeepSeekConnectivityCheck({
       api_key: modelApiKey,
       base_url: modelBaseUrl,
       model: modelName,
-      api_protocol: apiProtocol,
+      api_protocol: translationProtocolFor(modelBaseUrl, apiProtocol),
     }));
     if (showResult) {
       setDeepSeekValidationMessage(

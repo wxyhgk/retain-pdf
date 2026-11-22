@@ -5,7 +5,7 @@ import type {
 } from "@retainpdf/contracts/create-job";
 import type { WorkflowPreferences } from "../workflow-preferences.js";
 
-import { getOcrProviderDefinition, normalizeOcrProvider } from "@/platform/config/providers.js";
+import { translationProtocolFor, getOcrProviderDefinition, normalizeOcrProvider } from "@/platform/config/providers.js";
 import { RENDER_FONT_STORAGE_KEY } from "@/platform/config/storage-keys.js";
 
 /** Developer/workflow config fields consumed by payload builders. */
@@ -144,7 +144,7 @@ export function buildTranslationPayload({
     math_mode: developerConfig.mathMode,
     model: developerConfig.model,
     base_url: developerConfig.baseUrl,
-    api_protocol: developerConfig.apiProtocol || "openai_responses",
+    api_protocol: translationProtocolFor(developerConfig.baseUrl, developerConfig.apiProtocol || "openai_responses"),
     thinking: developerConfig.thinking || "off",
     ...(modelApiKey?.trim()
       ? { api_key: modelApiKey.trim() }

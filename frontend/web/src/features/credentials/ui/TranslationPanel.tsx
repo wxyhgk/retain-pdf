@@ -4,6 +4,7 @@ import { vendorLogoForBaseUrl, type BrandLogo as BrandLogoEntry } from "@/platfo
 import { CREDENTIAL_DOM_IDS } from "./credentials-dom-ids.js";
 import { useCredentialsController } from "./useCredentialsController.js";
 import {
+  translationProtocolFor,
   getTranslationProviderDefinition,
   TRANSLATION_API_PROTOCOL_OPTIONS,
   TRANSLATION_PROVIDER_DEFINITION,
@@ -199,10 +200,11 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
                 readRequest={() => {
                   const apiKey = `${elementsRef.apiKeyInput?.value || ""}`.trim();
                   if (!apiKey) return { error: "先填 API Key 再拉。" };
+                  const baseUrl = `${elementsRef.modelBaseUrlInput?.value || providerDefinition.baseUrl || ""}`.trim();
                   return {
-                    base_url: `${elementsRef.modelBaseUrlInput?.value || providerDefinition.baseUrl || ""}`.trim(),
+                    base_url: baseUrl,
                     api_key: apiKey,
-                    api_protocol: `${elementsRef.translationProtocolSelect?.value || providerDefinition.protocol || "openai_responses"}`,
+                    api_protocol: translationProtocolFor(baseUrl, elementsRef.translationProtocolSelect?.value || providerDefinition.protocol || "openai_responses"),
                   };
                 }}
                 readCurrent={() => {
