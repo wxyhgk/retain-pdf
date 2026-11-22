@@ -104,3 +104,45 @@ def test_quality_on_the_eval_set_does_not_regress() -> None:
     assert flagged == wrong, "PaddleOCR 结构错的表都要标出来"
     flagged_right, right = (int(part) for part in glm["right_shape_flagged"].split("/"))
     assert flagged_right <= right * 0.12, "结构对的表不能误标太多（会多花看图的钱）"
+
+
+def _three_column_table(page: fitz.Page, rows: list[list[str]], top: float = 100, step: float = 12) -> None:
+    for index, row in enumerate(rows):
+        for x, text in zip((50, 160, 270), row):
+            if text:
+                page.insert_text((x, top + index * step), text, fontsize=9)
+
+
+def test_cells_wrapped_over_several_lines_are_not_swallowed_rows(tmp_path: Path) -> None:
+    """说明文字表：一行表格里每格都折成几行，每行文字都横跨各列，但下一行是小写接着写，不是 OCR 漏行（2026-11-22）。"""
+    lines = [
+        ["Method", "Principle", "Limitations"],
+        ["Wet sol-gel", "Particles are soaked in a", "Layer is often uneven;"],
+        ["", "precursor solution and", "residual solvent may"],
+        ["", "dried at low heat.", "react with the surface."],
+        ["Dry route", "Fine powder is pressed", "Coverage is incomplete"],
+        ["", "onto the particles.", "in most cases."],
+    ]
+    html = (
+        "<table><tr><td>Method</td><td>Principle</td><td>Limitations</td></tr>"
+        "<tr><td>Wet sol-gel</td><td>Particles are soaked in a precursor solution and dried at low heat.</td>"
+        "<td>Layer is often uneven; residual solvent may react with the surface.</td></tr>"
+        "<tr><td>Dry route</td><td>Fine powder is pressed onto the particles.</td>"
+        "<td>Coverage is incomplete in most cases.</td></tr></table>"
+    )
+    page = _page_with(tmp_path, lambda page: _three_column_table(page, lines))
+    model = build_table_model({"block_id": "t", "page_index": 0, "bbox": [40, 85, 390, 180], "text": html}, page)
+    assert model["n_rows"] == 3 and model["issues"] == []
+
+
+def test_data_rows_merged_by_ocr_are_still_flagged(tmp_path: Path) -> None:
+    """OCR 把两行数据并成一行：下一行是新数据（大写、数字开头），照旧标出来。"""
+    lines = [["Batch", "Capacity", "Density"], ["B-01", "268.4", "1.92"], ["B-02", "265.9", "1.95"], ["B-03", "270.2", "1.89"]]
+    html = (
+        "<table><tr><td>Batch</td><td>Capacity</td><td>Density</td></tr>"
+        "<tr><td>B-01 B-02</td><td>268.4 265.9</td><td>1.92 1.95</td></tr>"
+        "<tr><td>B-03</td><td>270.2</td><td>1.89</td></tr></table>"
+    )
+    page = _page_with(tmp_path, lambda page: _three_column_table(page, lines, step=16))
+    model = build_table_model({"block_id": "t", "page_index": 0, "bbox": [40, 85, 390, 160], "text": html}, page)
+    assert "row_swallows_rows" in model["issues"]
