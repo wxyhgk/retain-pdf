@@ -307,14 +307,18 @@ export function getOcrProviderDefinition(provider: unknown) {
   return OCR_PROVIDER_DEFINITIONS.find((item) => item.id === normalizeOcrProvider(provider)) || OCR_PROVIDER_DEFINITIONS[0];
 }
 
-/** GLM-OCR 的检测：借翻译的检测接口，用智谱翻译预设的地址、协议和（免费的）默认模型试这个 key。 */
+/**
+ * GLM-OCR 的检测：借翻译的检测接口，拿这个 key 向智谱发一个 max_tokens=1 的请求。
+ * 协议固定用 OpenAI 格式（/chat/completions）、模型名用小写：智谱官方只文档化了 chat 接口，
+ * 照搬翻译预设的 Responses 协议时检测报红（2026-11-22 用户截图，key 是对的）。
+ */
 export function glmOcrProbePayload(token: string) {
   const zhipu = TRANSLATION_PROVIDER_OPTIONS.find((option) => option.id === "zhipu");
   return {
     api_key: `${token || ""}`.trim(),
     base_url: zhipu?.baseUrl || ZHIPU_TRANSLATION_BASE_URL,
-    model: zhipu?.defaultModel || "GLM-5.3-Flash",
-    api_protocol: zhipu?.protocol || "openai_responses",
+    model: `${zhipu?.defaultModel || "glm-5.3-flash"}`.toLowerCase(),
+    api_protocol: "openai",
   };
 }
 
