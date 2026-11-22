@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import {
   pruneBundledMacPythonRuntime,
   pruneBundledPortablePythonRuntime,
+  removeDanglingSymlinks,
 } from "./runtime-prune.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -783,6 +784,9 @@ if (!frontendOnly) {
   for (const unused of ["es5", "ts", "components"]) {
     fs.rmSync(path.join(rprEngineDst, "node_modules", "mathjax-full", unused), { recursive: true, force: true });
   }
+  // node_modules/.bin 是命令行入口的软链接，运行时用不到；其中 sre 指向上面删掉的 mathjax 部分，
+  // 成了断链，Mac 签名遍历时 ENOENT（2026-11-22 签名试验）。
+  fs.rmSync(path.join(rprEngineDst, "node_modules", ".bin"), { recursive: true, force: true });
 
   // Keep the bundled layout aligned with main.js and RUST_API_SCRIPTS_DIR.
   const pipelineScriptsRoot = servicesPipelineRoot;
@@ -973,6 +977,8 @@ if (!frontendOnly) {
     bundledFonts: fs.readdirSync(bundledFontsRoot).sort(),
   };
 
+  // 打进包的东西里不留断链：codesign / osx-sign 遇到会 ENOENT，Mac 签名直接失败。
+  removeDanglingSymlinks(outputBackendRoot);
   fs.writeFileSync(
     path.join(outputBackendRoot, "bundle-manifest.json"),
     JSON.stringify(manifest, null, 2),

@@ -228,3 +228,50 @@ test("mac signing signs every file with hardened runtime and the shared entitlem
     { appPath: "/tmp/RetainPDF.app", appleApiKey: "/k.p8", appleApiKeyId: "id", appleApiIssuer: "iss" },
   );
 });
+
+test("mac pruning normalizes Python.framework first, so removals land on the bundled version and no link dangles", () => {
+  withTempRuntime((root) => {
+    const framework = path.join(root, "Frameworks/Python.framework");
+    // 构建机上的样子：runner 自己的 3.15 是 Current，顶层软链接也指着它；打包的是 3.11。
+    for (const version of ["3.11", "3.15"]) {
+      makeFile(root, `Frameworks/Python.framework/Versions/${version}/Python`);
+      makeFile(root, `Frameworks/Python.framework/Versions/${version}/Resources/Info.plist`);
+      makeFile(root, `Frameworks/Python.framework/Versions/${version}/include/python${version}/Python.h`);
+      makeFile(root, `Frameworks/Python.framework/Versions/${version}/share/doc/readme`);
+      makeFile(root, `Frameworks/Python.framework/Versions/${version}/lib/python${version}/config-${version}-darwin/libpython.a`);
+      makeFile(root, `Frameworks/Python.framework/Versions/${version}/lib/python${version}/json/__init__.py`);
+      fs.symlinkSync(`include/python${version}`, path.join(framework, `Versions/${version}/Headers`));
+    }
+    fs.symlinkSync("3.15", path.join(framework, "Versions/Current"));
+    fs.symlinkSync("Versions/3.15/Python", path.join(framework, "Python"));
+    fs.symlinkSync("Versions/3.15/Resources", path.join(framework, "Resources"));
+    makeFile(root, "lib/python3.11/site-packages/runtime_dependency/__init__.py");
+
+    pruneBundledMacPythonRuntime(root);
+
+    const v311 = path.join(framework, "Versions/3.11");
+    assert.equal(fs.existsSync(path.join(framework, "Versions/3.15")), false);
+    assert.equal(fs.readlinkSync(path.join(framework, "Versions/Current")), "3.11");
+    assert.equal(fs.readlinkSync(path.join(framework, "Python")), "Versions/Current/Python");
+    assert.equal(fs.existsSync(path.join(framework, "Python")), true);
+    assert.equal(fs.existsSync(path.join(framework, "Resources/Info.plist")), true);
+    for (const gone of ["include", "share", "Headers", "lib/python3.11/config-3.11-darwin"]) {
+      assert.equal(fs.existsSync(path.join(v311, gone)), false, gone);
+      assert.throws(() => fs.lstatSync(path.join(v311, gone)), undefined, `${gone} (连软链接也不留)`);
+    }
+    assert.equal(fs.existsSync(path.join(v311, "lib/python3.11/json/__init__.py")), true);
+  });
+});
+
+test("dangling symlinks are removed, live ones kept", async () => {
+  const { removeDanglingSymlinks } = await import("./runtime-prune.mjs");
+  withTempRuntime((root) => {
+    makeFile(root, "node_modules/mathjax/js/index.js");
+    fs.mkdirSync(path.join(root, "node_modules/.bin"), { recursive: true });
+    fs.symlinkSync("../mathjax/js/index.js", path.join(root, "node_modules/.bin/live"));
+    fs.symlinkSync("../mathjax/components/gone.js", path.join(root, "node_modules/.bin/sre"));
+    removeDanglingSymlinks(root);
+    assert.equal(fs.existsSync(path.join(root, "node_modules/.bin/live")), true);
+    assert.throws(() => fs.lstatSync(path.join(root, "node_modules/.bin/sre")));
+  });
+});
