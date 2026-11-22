@@ -14,6 +14,9 @@ import { GlossariesSettingsIcon } from "@/features/glossaries/index.js";
 import { APP_SETTINGS_DIALOG_IDS, CommandLinePanel, appearanceSettingsSection } from "@/features/settings/index.js";
 import { backupSettingsSection } from "@/features/backup/index.js";
 import { syncSettingsSection } from "@/features/sync/index.js";
+import { lanShareSettingsSection } from "@/features/lan-share/index.js";
+import { isDesktopHostAvailable } from "@/platform/desktop/host.js";
+import { isLanSharedPage } from "@/platform/config/runtime.js";
 import { usageSettingsSection } from "@/features/usage/index.js";
 import { notifySettingsSection } from "@/features/notify/index.js";
 import { AdminConsoleEntry, AdminSettingsIcon } from "@/features/admin/index.js";
@@ -94,6 +97,8 @@ export function useHomeSettingsSections(): SettingsSection[] {
         ),
       },
       ...FEATURE_SECTIONS,
+      // 局域网共享只有桌面版单机有：网页版、多用户本身就是服务器。
+      ...(!multi && isDesktopHostAvailable() ? [lanShareSettingsSection] : []),
       {
         id: "update",
         label: "更新",
@@ -111,6 +116,12 @@ export function useHomeSettingsSections(): SettingsSection[] {
       },
     ];
     const hidden = new Set(hiddenSettingsTabs(session));
+    // 经桌面版局域网共享打开：同步、备份的接口在局域网上不开放（frontend/desktop/src/main/lan-share.js 的 LAN_BLOCKED），
+    // 这两栏只能在那台电脑上用。
+    if (isLanSharedPage()) {
+      hidden.add(syncSettingsSection.id);
+      hidden.add(backupSettingsSection.id);
+    }
     return sections.filter(({ id }) => !hidden.has(id));
   }, [multi, admin, session, glossaries, credentials]);
 }

@@ -4,7 +4,11 @@
 function createGatewayPlugin({
   buildRuntimeConfig,
   canConnectToPort,
+  createLanShare = null,
   createLocalGateway,
+  desktopApiKey = "",
+  lanShareState = null,
+  setLanShare = () => {},
   logDesktop,
   logDesktopError,
   resolveFrontendRoot,
@@ -30,6 +34,24 @@ function createGatewayPlugin({
         ctx.effect(() => () => {
           void instance.stop();
         }, "local gateway");
+        // 局域网共享（src/main/lan-share.js）：和本机网关一起建，设置里打开过的照旧开起来。
+        if (createLanShare) {
+          const lanShare = createLanShare({
+            frontendRoot: () => resolveFrontendRoot(),
+            getBackendBase: () => `http://127.0.0.1:${apiPort}`,
+            getDesktopApiKey: () => desktopApiKey,
+            getRuntimeConfig: buildRuntimeConfig,
+            loadState: lanShareState?.load,
+            saveState: lanShareState?.save,
+            logger: { warn: logDesktop, error: logDesktopError },
+          });
+          setLanShare(lanShare);
+          await lanShare.startIfEnabled();
+          ctx.effect(() => () => {
+            setLanShare(null);
+            void lanShare.stop();
+          }, "lan share");
+        }
       } catch (error) {
         // Gateway is an optimization: without it windows fall back to loadFile
         // plus IPC runtime config, exactly like before.

@@ -61,6 +61,16 @@ export interface DesktopUpdateStatus {
   error?: string;
 }
 
+/** 局域网共享（frontend/desktop/src/main/lan-share.js）的状态。复用外部后端时 supported 为 false。 */
+export interface DesktopLanShareStatus {
+  supported: boolean;
+  enabled: boolean;
+  running: boolean;
+  port: number;
+  /** 本机每个局域网地址一项：url 带访问码（扫码 / 复制用），display 不带（给人看）。 */
+  urls: Array<{ name: string; url: string; display: string; qrSvg: string }>;
+}
+
 /** Normalized host surface used by the rest of the frontend. */
 export interface DesktopHost {
   invoke(command: string, args?: DesktopInvokeArgs): DesktopIpcResult;
@@ -83,6 +93,10 @@ export interface DesktopHost {
   checkForUpdate(): Promise<DesktopUpdateStatus>;
   installUpdate(): Promise<{ ok: boolean }>;
   onUpdateStatus(callback: (status: DesktopUpdateStatus) => void): () => void;
+  /** 局域网共享：状态 / 开关 / 重置访问码（旧访问码连上的设备立刻断开）。 */
+  lanShareStatus(): Promise<DesktopLanShareStatus>;
+  setLanShareEnabled(enabled: boolean): Promise<DesktopLanShareStatus>;
+  resetLanShareToken(): Promise<DesktopLanShareStatus>;
   platform: string;
 }
 
@@ -186,7 +200,33 @@ function resolveDesktopHost(): DesktopHost | null {
       }
       return () => {};
     },
+    async lanShareStatus() {
+      return normalizeLanShareStatus(await invokeAdapter!.invoke("lan_share_status"));
+    },
+    async setLanShareEnabled(enabled: boolean) {
+      return normalizeLanShareStatus(await invokeAdapter!.invoke("lan_share_set_enabled", { enabled }));
+    },
+    async resetLanShareToken() {
+      return normalizeLanShareStatus(await invokeAdapter!.invoke("lan_share_reset_token"));
+    },
     platform: preferredBridge?.platform || "",
+  };
+}
+
+/** 主进程给的局域网共享状态收成固定形状；旧版桌面壳没有这些命令（会抛错）由调用方当不支持。 */
+export function normalizeLanShareStatus(value: unknown): DesktopLanShareStatus {
+  const raw = (isObject(value) ? value : {}) as Record<string, unknown>;
+  const urls = Array.isArray(raw.urls) ? raw.urls : [];
+  return {
+    supported: raw.supported !== false && isObject(value),
+    enabled: raw.enabled === true,
+    running: raw.running === true,
+    port: Number.isFinite(Number(raw.port)) ? Number(raw.port) : 0,
+    urls: urls.filter(isObject).map((item) => {
+      const entry = item as Record<string, unknown>;
+      const text = (key: string) => (typeof entry[key] === "string" ? entry[key] as string : "");
+      return { name: text("name"), url: text("url"), display: text("display"), qrSvg: text("qrSvg") };
+    }).filter((item) => item.url),
   };
 }
 
