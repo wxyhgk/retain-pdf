@@ -1,5 +1,5 @@
 repo=https://github.com/wxyhgk/retain-pdf-rendering.git
-ref=feat/continuation-balance
-commit=6d58e82d40406add045dfb39c415750244ae47b5
-synced_at=2026-11-22T11:19:09Z
+ref=main
+commit=bf237025eee3bcb4eb8d28a4b727350e59ca8147
+synced_at=2026-11-22T11:21:52Z
 paths=bin/rpr-retain.js bin/rpr-fit.js bin/rpr-layout-pdf.js bin/rpr-table.js bin/rpr-math-check.js src data/fonts package.json LICENSE
