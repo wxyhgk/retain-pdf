@@ -58,6 +58,12 @@ type CreateAppActionsArgs = {
   libraryEventPort: LibraryEventPort;
   /** 常规凭据入口：打开设置 → API，避免与首次配置弹窗双轨 */
   settingsHubDialogStore?: SettingsDialogStore | null;
+  /**
+   * 桌面端：当前凭据是否齐全（hasDesktopCredentials）。提交前「已配置」的检查也看它——
+   * legacyState.desktopConfigured 只在首配门里保存时才置 true，从设置中心保存不置，
+   * 于是每次启动后第一次提交都被拦成「请先完成首次配置」、逼人再存一遍（2026-11-22 用户报）。
+   */
+  desktopCredentialsReady?: () => boolean;
 };
 
 export function createAppActions({
@@ -72,7 +78,13 @@ export function createAppActions({
   statusCardPresenter,
   libraryEventPort,
   settingsHubDialogStore = null,
+  desktopCredentialsReady = () => false,
 }: CreateAppActionsArgs): { appActionsFeature: AppActionsFeature } {
+  const baseRuntimeEnv = createAppActionsRuntimeEnvPort(legacyState);
+  const runtimeEnvPort = Object.freeze({
+    ...baseRuntimeEnv,
+    isDesktopConfigured: () => baseRuntimeEnv.isDesktopConfigured() || Boolean(desktopCredentialsReady()),
+  });
   const jobSnapshotPort = Object.freeze({
     syncCurrentJobSnapshot: (
       payload: unknown,
@@ -104,7 +116,7 @@ export function createAppActions({
   const appActionsFeature = mountAppActionsFeature({
     state: jobRuntimeState,
     uploadStatePort,
-    runtimeEnvPort: createAppActionsRuntimeEnvPort(legacyState),
+    runtimeEnvPort,
     jobSnapshotPort,
     viewPort,
     configPort: defaultAppActionsConfigPort,
