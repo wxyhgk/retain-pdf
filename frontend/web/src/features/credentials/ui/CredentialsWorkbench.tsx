@@ -88,7 +88,7 @@ export function CredentialsWorkbench() {
       {isLanSharedPage() ? (
         // 经桌面版的局域网共享打开：Key 是那台电脑上的，这里显示的是占位符。
         <p className="credential-lan-shared-note" role="note" data-credential-lan-shared>
-          你正通过局域网使用另一台电脑上的 RetainPDF：翻译和 OCR 用那台电脑设置好的 Key，不用在这里填。要换 Key，请在那台电脑上改。
+          你正通过局域网使用另一台电脑上的 RetainPDF：翻译和 OCR 用那台电脑设置好的 Key，不用在这里填，这里也改不了。要换 Key，请在那台电脑上改。
         </p>
       ) : null}
       <div className="credential-panels">

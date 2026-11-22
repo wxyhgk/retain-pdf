@@ -7,7 +7,7 @@ import test from "node:test";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { createLanShare, sanitizeRuntimeConfig, replaceSentinels, lanAddresses, qrSvg } = require("./lan-share.js");
+const { createLanShare, sanitizeRuntimeConfig, replaceSentinels, lanAddresses, qrSvg, isBlockedOnLan } = require("./lan-share.js");
 
 const RUNTIME = {
   apiBase: "http://127.0.0.1:41000",
@@ -111,6 +111,46 @@ test("placeholders in request JSON are swapped for the desktop's real keys; unkn
   }
 });
 
+test("management endpoints that reach the computer itself are not opened on the LAN", () => {
+  for (const [method, url] of [
+    ["GET", "/api/v1/admin/users"],
+    ["POST", "/api/v1/backups/b1/restore"],
+    ["GET", "/api/v1/backups"],
+    ["PUT", "/api/v1/sync"],
+    ["POST", "/api/v1/sync/run"],
+    ["POST", "/api/v1/fonts/upload"],
+    ["POST", "/api/v1/runtime-assets/download"],
+    ["POST", "/api/v1/internal/model/jobs/j/requests"],
+    ["GET", "/api/v1/jobs/j1/files/internal/x.json"],
+    ["POST", "/api/v1/credentials"],
+    ["PUT", "/api/v1/credentials/ref-1"],
+    ["DELETE", "/api/v1/credentials/ref-1"],
+    // 绕法：编码、重复斜杠、大小写、点段
+    ["PUT", "/api/v1/%73ync"],
+    ["PUT", "/api/v1//sync"],
+    ["PUT", "/API/V1/SYNC"],
+    ["PUT", "/api/v1/jobs/../sync"],
+    ["GET", "/api/v1/%E0%A4%A"],
+  ]) {
+    assert.equal(isBlockedOnLan(method, url), true, `${method} ${url}`);
+  }
+  for (const [method, url] of [
+    ["GET", "/api/v1/jobs?limit=5"],
+    ["POST", "/api/v1/jobs"],
+    ["POST", "/api/v1/uploads"],
+    ["GET", "/api/v1/credentials"],
+    ["GET", "/api/v1/credentials/ref-1"],
+    ["POST", "/api/v1/providers/paddle/validate-token"],
+    ["POST", "/api/v1/providers/translation/models"],
+    ["GET", "/api/v1/fonts"],
+    ["GET", "/api/v1/runtime-assets"],
+    ["GET", "/api/v1/jobs/j1/files/output/translated.pdf"],
+    ["GET", "/api/v1/synced-books"],
+  ]) {
+    assert.equal(isBlockedOnLan(method, url), false, `${method} ${url}`);
+  }
+});
+
 test("QR code for the link is an SVG", () => {
   const svg = qrSvg("http://192.168.1.20:40100/?k=abc");
   assert.match(svg, /^<svg [^>]*viewBox="0 0 \d+ \d+"/);
@@ -187,6 +227,11 @@ test("gateway: adds the backend key, strips the browser's Origin, swaps placehol
     });
     assert.equal(refused.status, 400, "电脑上没设的 Key 不转发占位符");
     assert.equal(received.length, 1);
+
+    const blocked = await request(port, { method: "PUT", urlPath: "/api/v1/sync", headers: { cookie, "content-type": "application/json" }, body: "{}" });
+    assert.equal(blocked.status, 403);
+    assert.match(blocked.body, /在那台电脑上操作/);
+    assert.equal(received.length, 1, "被拦的请求不到后端");
 
     const get = await request(port, { urlPath: "/api/v1/jobs?limit=5", headers: { cookie } });
     assert.equal(get.status, 200);

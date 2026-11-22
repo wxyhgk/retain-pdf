@@ -16,6 +16,7 @@ import { backupSettingsSection } from "@/features/backup/index.js";
 import { syncSettingsSection } from "@/features/sync/index.js";
 import { lanShareSettingsSection } from "@/features/lan-share/index.js";
 import { isDesktopHostAvailable } from "@/platform/desktop/host.js";
+import { isLanSharedPage } from "@/platform/config/runtime.js";
 import { usageSettingsSection } from "@/features/usage/index.js";
 import { notifySettingsSection } from "@/features/notify/index.js";
 import { AdminConsoleEntry, AdminSettingsIcon } from "@/features/admin/index.js";
@@ -115,6 +116,12 @@ export function useHomeSettingsSections(): SettingsSection[] {
       },
     ];
     const hidden = new Set(hiddenSettingsTabs(session));
+    // 经桌面版局域网共享打开：同步、备份的接口在局域网上不开放（frontend/desktop/src/main/lan-share.js 的 LAN_BLOCKED），
+    // 这两栏只能在那台电脑上用。
+    if (isLanSharedPage()) {
+      hidden.add(syncSettingsSection.id);
+      hidden.add(backupSettingsSection.id);
+    }
     return sections.filter(({ id }) => !hidden.has(id));
   }, [multi, admin, session, glossaries, credentials]);
 }

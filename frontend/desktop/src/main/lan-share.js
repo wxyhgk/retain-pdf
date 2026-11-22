@@ -124,6 +124,38 @@ function replaceSentinels(value, config) {
   return value;
 }
 
+// 局域网上不开放的接口（2026-11-22，后端提醒：网关替访问者带后端密钥，等于给了电脑主人的权限）。
+// 「全部功能」指看书、上传、翻译、改书库；碰得到电脑本身的管理接口只能在电脑上用：
+// 恢复备份（覆盖数据库）、同步文件夹（能指向电脑上任意路径）、上传字体、下载运行资源、任务内部文件、
+// 内部接口、账号管理；密钥库只许读（读接口不含明文），不许改。
+const LAN_BLOCKED = [
+  { prefix: "/api/v1/admin" },
+  { prefix: "/api/v1/backups" },
+  { prefix: "/api/v1/sync" },
+  { prefix: "/api/v1/fonts/upload" },
+  { prefix: "/api/v1/runtime-assets/download" },
+  { prefix: "/api/v1/internal" },
+  { pattern: /^\/api\/v1\/jobs\/[^/]+\/files\/internal(\/|$)/ },
+  { prefix: "/api/v1/credentials", methods: ["POST", "PUT", "PATCH", "DELETE"] },
+];
+
+/** 这个请求在局域网上是不是被拦。路径先解码、去掉重复的斜杠、转小写再比，绕不过去。 */
+function isBlockedOnLan(method, rawPath) {
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(rawPath, "http://lan.local").pathname);
+  } catch {
+    return true;
+  }
+  pathname = pathname.replace(/\/{2,}/g, "/").toLowerCase();
+  const verb = `${method || "GET"}`.toUpperCase();
+  return LAN_BLOCKED.some((rule) => {
+    if (rule.methods && !rule.methods.includes(verb)) return false;
+    if (rule.pattern) return rule.pattern.test(pathname);
+    return pathname === rule.prefix || pathname.startsWith(`${rule.prefix}/`);
+  });
+}
+
 function parseCookies(header) {
   const cookies = {};
   for (const part of `${header || ""}`.split(";")) {
@@ -343,6 +375,10 @@ function createLanShare({
       return;
     }
     if (url.pathname === "/api" || url.pathname.startsWith("/api/")) {
+      if (isBlockedOnLan(req.method, req.url || "/")) {
+        sendText(res, 403, JSON.stringify({ code: 403, message: "局域网共享不开放这个功能，请在那台电脑上操作" }), "application/json");
+        return;
+      }
       proxyApi(req, res);
       return;
     }
@@ -436,6 +472,7 @@ module.exports = {
   sanitizeRuntimeConfig,
   replaceSentinels,
   lanAddresses,
+  isBlockedOnLan,
   qrSvg,
   LAN_SHARE_PREFERRED_PORT,
 };
