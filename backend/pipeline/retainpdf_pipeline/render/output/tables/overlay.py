@@ -8,7 +8,12 @@
 2. 量原表：字号（格子字号的中位数）、表头是不是粗体、每列左/中/右对齐、行距（反推格子上下内边距）、
    表格线（只有横线按三线表，线宽取原表的；有竖线画全框）、文字颜色。
 3. 排版：交给正文同一个 rpr 引擎的表格排版（``rpr-table.js``，像 HTML ``<table>`` 那样：列宽按内容自动分、跨行跨列、
-   格子里折行，和正文同一套中文折行），按原表的宽度排，从原文字号往下找排得进原表高度的最大字号（最多缩到 0.7 倍）。
+   格子里折行，和正文同一套中文折行），按原表的宽度排，从起始字号往下找排得进原表高度的最大字号（最多缩到 0.7 倍）。
+   起始字号不超过译文正文字号的 0.9 倍（2026-11-22 用户定：表格比正文小一号；汉字满框，同字号看着比英文大，
+   照原表字号排显得挤）：正文字号取 rpr 引擎全书统一的那个，拿不到（Typst 退路）按原表字号 × 0.9。
+   行距照原表：字号变小时格子上下内边距跟着加大，行和行的间距还是原表的。
+   排进了还有空（中文比英文短，常见于每格几行说明文字的表）：先加格内行距（到 1.6 倍），再加格子上下内边距，
+   不加字号（用户 11-22：中文优先加行距，再加字）。
    翻了的格子用译文，没翻的（数字、代号）照抄原文；``<sup>``/``<sub>`` 转成公式上下标。
 4. 换上：排进了的表，擦掉原表框里的字和表格线（不填底色、图片不动），把引擎画的那一层叠上去（字嵌子集字体）。
    排不进的表不动（以后交给排版 agent，见 docs/ops/planning/layout-agent/）；引擎用不了（没有 node、缺依赖）也不动。
@@ -33,9 +38,15 @@ import fitz
 TABLES_FILE_NAME = "tables.v1.json"
 TABLES_SCHEMA = "tables.v1"
 ENGINE_INPUT_SCHEMA = "rpr_table_input_v1"
-# 字号最多缩到原文的这么多倍；再排不进这张表就不动
+# 字号最多缩到起始字号的这么多倍；再排不进这张表就不动
 TABLE_MIN_SCALE = 0.7
+# 表格起始字号不超过译文正文字号的这么多倍（拿不到正文字号时乘在原表字号上）
+TABLE_BODY_RATIO = 0.9
 LINE_HEIGHT = 1.2
+# 排进了还有空：先把格内行距加到这么多倍，再把格子上下内边距加到字号的这么多倍（字号不动）。中文行距 1.5–1.75 倍
+# 读着舒服；表格比正文紧一点，到 1.6 为止
+FILL_LINE_HEIGHT_MAX = 1.6
+FILL_PADDING_MAX_EM = 0.6
 # 量不出原表行距时格子的上下内边距（pt）
 DEFAULT_PADDING_PT = 1.5
 # 一列格子左/中/右边缘的离散度在这个范围内算对齐（pt）
@@ -172,15 +183,18 @@ def _rules(page: fitz.Page, rect: fitz.Rect) -> dict:
     return rules
 
 
-def _padding_from_pitch(cells: list[dict], size: float) -> float:
-    """原表相邻两行（都是一行字的行）的行距 → 格子上下内边距（引擎里一行字的行高 = 字号 + 2 × 内边距）。"""
+def _padding_from_pitch(cells: list[dict], source_size: float, size: float | None = None) -> float:
+    """原表相邻两行（都是一行字的行）的行距 → 格子上下内边距（引擎里一行字的行高 = 字号 + 2 × 内边距）。
+
+    认"一行字的行"按原表字号；内边距按实际排的字号 ``size`` 算：字号变小，内边距加大，行距还是原表的。"""
+    size = source_size if size is None else size
     tops: dict[int, list[float]] = {}
     single: dict[int, bool] = {}
     for cell in cells:
         row = int(cell.get("row") or 0)
         rect = fitz.Rect(cell["bbox"])
         tops.setdefault(row, []).append(rect.y0)
-        single[row] = single.get(row, True) and rect.height < size * 1.6 and int(cell.get("rowspan") or 1) == 1
+        single[row] = single.get(row, True) and rect.height < source_size * 1.6 and int(cell.get("rowspan") or 1) == 1
     pitches = [
         min(tops[row + 1]) - min(tops[row])
         for row in sorted(tops)
@@ -216,7 +230,13 @@ def _header_rows(cells: list[dict], *, mid_y: float | None, bold_rows: set[int])
     return rows or {0}
 
 
-def measure_table(page: fitz.Page, table: dict) -> tuple[TableStyle | None, dict]:
+def table_start_size(source_size: float, body_font_size: float | None) -> float:
+    """表格的起始字号：原表字号，但不超过正文字号的 0.9 倍；不知道正文字号时按原表字号 × 0.9。"""
+    cap = (body_font_size if body_font_size and body_font_size > 0 else source_size) * TABLE_BODY_RATIO
+    return round(min(source_size, cap), 2)
+
+
+def measure_table(page: fitz.Page, table: dict, body_font_size: float | None = None) -> tuple[TableStyle | None, dict]:
     """核对原表、量出原表的样式。核对不过返回 (None, 原因)。"""
     model = table["model"]
     translations = (table.get("result") or {}).get("cells") or {}
@@ -249,14 +269,16 @@ def measure_table(page: fitz.Page, table: dict) -> tuple[TableStyle | None, dict
         for col in range(n_cols)
     ]
     sizes = [float(c["font_size"]) for c in cells if c.get("font_size")]
-    size = statistics.median(sizes) if sizes else 10.0
+    source_size = statistics.median(sizes) if sizes else 10.0
+    size = table_start_size(source_size, body_font_size)
+    stats["source_font_size"] = round(source_size, 2)
     style = TableStyle(
         font_size=size,
         header_bold=sum(header_bold_votes) * 2 > len(header_bold_votes),
         header_rows=max(header_rows) + 1,
         aligns=aligns,
         rules=rules,
-        padding=_padding_from_pitch(cells, size),
+        padding=_padding_from_pitch(cells, source_size, size),
         color=statistics.mode(colors) if colors else (0.0, 0.0, 0.0),
     )
     return style, stats
@@ -284,6 +306,7 @@ def engine_table(table: dict, style: TableStyle) -> dict:
         "minFontSize": round(style.font_size * TABLE_MIN_SCALE, 2),
         "lineHeight": LINE_HEIGHT,
         "padding": {"x": round(max(2.0, style.font_size * 0.4), 2), "y": style.padding},
+        "fill": {"lineHeightMax": FILL_LINE_HEIGHT_MAX, "paddingYMax": round(max(style.padding, style.font_size * FILL_PADDING_MAX_EM), 2)},
         "color": [round(c, 4) for c in style.color],
         "rules": style.rules,
         "headerRows": style.header_rows,
@@ -339,7 +362,9 @@ def apply_table_translations(
     source_pdf_path: Path,
     translations_dir: Path,
     page_indices,
+    body_font_size: float | None = None,
 ) -> dict:
+    """``body_font_size``：译文正文的字号（rpr 引擎全书统一的那个），表格不超过它的 0.9 倍；不知道就传 None。"""
     tables = load_translated_tables(translations_dir)
     if not tables:
         return {"skipped": "no_translated_tables"}
@@ -351,14 +376,15 @@ def apply_table_translations(
         work_dir = Path(work)
         temp_pdf = work_dir / "with-tables.pdf"
         with fitz.open(output_pdf_path) as doc:
-            summary = _overlay_document(doc, tables, source_count, selected, work_dir, temp_pdf)
+            summary = _overlay_document(doc, tables, source_count, selected, work_dir, temp_pdf, body_font_size)
+        summary["body_font_size"] = body_font_size
         if summary.get("tables_written"):
             # 先存到旁边，关掉原文件再换掉：存一半出错不留半个文件
             os.replace(temp_pdf, output_pdf_path)
     return summary
 
 
-def _overlay_document(doc, tables, source_count, selected, work_dir: Path, temp_pdf: Path) -> dict:
+def _overlay_document(doc, tables, source_count, selected, work_dir: Path, temp_pdf: Path, body_font_size: float | None = None) -> dict:
     from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineUnavailable
 
     results: list[dict] = []
@@ -374,7 +400,7 @@ def _overlay_document(doc, tables, source_count, selected, work_dir: Path, temp_
         if page.rotation:
             results.append({"block_id": table.get("block_id"), "skipped": "page_rotated"})
             continue
-        style, stats = measure_table(page, table)
+        style, stats = measure_table(page, table, body_font_size)
         results.append(stats)
         if style is None:
             continue
@@ -397,7 +423,10 @@ def _overlay_document(doc, tables, source_count, selected, work_dir: Path, temp_
     written = 0
     with fitz.open(overlay_pdf) as overlay:
         for index, ((page_number, stats, rect), entry) in enumerate(zip(targets, entries)):
-            stats.update({"font_size": entry.get("font_size"), "height": round(float(entry.get("height") or 0), 1), "box_height": round(rect.height, 1)})
+            stats.update({
+                "font_size": entry.get("font_size"), "line_height": entry.get("line_height"), "padding_y": entry.get("padding_y"),
+                "height": round(float(entry.get("height") or 0), 1), "box_height": round(rect.height, 1),
+            })
             if not entry.get("fits"):
                 stats["skipped"] = "does_not_fit"
                 continue

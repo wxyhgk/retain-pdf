@@ -111,9 +111,11 @@ def test_measure_reads_the_original_table(tmp_path):
     assert style.header_bold
     assert style.aligns == ["left", "right"]
     assert style.rules == {"kind": "booktabs", "top": 0.9, "mid": 0.5, "bottom": 0.9}
-    assert style.font_size == SIZE
-    # 原表行距 16pt，字号 10pt：上下内边距各 3pt
-    assert style.padding == pytest.approx(3.0, abs=0.3)
+    # 不知道正文字号：原表字号 × 0.9
+    assert style.font_size == pytest.approx(SIZE * 0.9)
+    assert stats["source_font_size"] == SIZE
+    # 原表行距 16pt，排 9pt：上下内边距各 3.5pt，行距还是原表的
+    assert style.padding == pytest.approx(3.5, abs=0.3)
 
 
 def test_text_mismatch_keeps_the_table(tmp_path):
@@ -137,7 +139,27 @@ def test_engine_table_uses_translations_and_keeps_the_rest(tmp_path):
     assert cells[(1, 0)]["text"] == "原始" and not cells[(1, 0)]["bold"]
     assert cells[(1, 1)]["text"] == "268.4" and cells[(1, 1)]["align"] == "right"  # 数字没翻，照抄
     assert spec["headerRows"] == 1 and spec["rules"]["kind"] == "booktabs"
-    assert spec["minFontSize"] == pytest.approx(SIZE * overlay.TABLE_MIN_SCALE)
+    assert spec["minFontSize"] == pytest.approx(SIZE * 0.9 * overlay.TABLE_MIN_SCALE, abs=0.01)
+    # 排进了还有空：先加行距（到 1.6 倍），再加内边距（到字号的 0.6 倍）
+    assert spec["fill"] == {"lineHeightMax": overlay.FILL_LINE_HEIGHT_MAX, "paddingYMax": pytest.approx(max(style.padding, style.font_size * 0.6), abs=0.01)}
+
+
+def test_table_start_size_stays_below_the_body_text():
+    # 表格比正文小一号：不超过正文字号的 0.9 倍
+    assert overlay.table_start_size(10.5, 10.2) == pytest.approx(9.18)
+    # 原表本来就比正文的 0.9 倍小：照原表
+    assert overlay.table_start_size(8.0, 10.2) == 8.0
+    # 不知道正文字号（Typst 退路）：原表字号 × 0.9
+    assert overlay.table_start_size(10.0, None) == 9.0
+
+
+def test_measure_uses_the_body_font_size(tmp_path):
+    pdf, table = _table(tmp_path)
+    with fitz.open(pdf) as doc:
+        style, _ = overlay.measure_table(doc[0], table, body_font_size=9.0)
+    assert style.font_size == pytest.approx(8.1)
+    # 字号小了，内边距加大：一行的行高（字号 + 2 × 内边距）还是原表的 16pt
+    assert style.font_size + 2 * style.padding == pytest.approx(16.0, abs=0.6)
 
 
 def test_output_page_indices():
@@ -166,6 +188,8 @@ def test_apply_redraws_the_table(tmp_path):
     source.write_bytes(pdf.read_bytes())
     result = overlay.apply_table_translations(output_pdf_path=pdf, source_pdf_path=source, translations_dir=tmp_path, page_indices=[0])
     assert result["tables_written"] == 1, result
+    detail = result["details"][0]
+    assert detail["font_size"] == pytest.approx(9.0) and detail["line_height"] >= 1.2
     with fitz.open(pdf) as doc:
         page = doc[0]
         text = page.get_text()

@@ -15,6 +15,9 @@
 //     fontSize, minFontSize, step,          largest size tried, smallest, ladder step
 //     lineHeight,                           CSS-style ratio inside a cell (1.2)
 //     padding: { x, y },                    cell padding, pt
+//     fill: { lineHeightMax, paddingYMax }, optional: room left in the box goes to
+//                                           the leading first, then the cell padding
+//                                           (never to the font size)
 //     color: [r, g, b],                     text and rules
 //     rules: { kind: "booktabs" | "grid" | "none", top, mid, bottom },  rule widths, pt
 //     headerRows,                           rows above the mid rule (booktabs)
@@ -29,7 +32,11 @@
 //   placed in page coordinates; rules are covers (thin filled rectangles).
 // The largest size on the ladder whose table fits the box (height within
 // `heightTolerance`, every column at least its min-content width) is used;
-// when none does, the smallest, with fits: false.
+// when none does, the smallest, with fits: false. With `fill`, a table that
+// fits with room to spare then takes the largest line height up to
+// lineHeightMax that still fits, then the largest vertical padding up to
+// paddingYMax: Chinese set from a longer English source is shorter, and the
+// room is better spent on leading than on a larger size.
 
 const { OBJECT, LINE_SEPARATOR } = require("../text/linebreak");
 const { STRONG_SCRIPT } = require("../output/pdf/shaping");
@@ -95,7 +102,11 @@ function normalizeTable(table) {
     },
     headerRows: Math.max(0, Math.trunc(num(table.headerRows, 1))),
     valign: table.valign === "middle" ? "middle" : DEFAULTS.valign,
-    heightTolerance: num(table.heightTolerance, DEFAULTS.heightTolerance)
+    heightTolerance: num(table.heightTolerance, DEFAULTS.heightTolerance),
+    fill: table.fill ? {
+      lineHeightMax: Math.max(num(table.lineHeight, DEFAULTS.lineHeight), num(table.fill.lineHeightMax, 0)),
+      paddingYMax: Math.max(num((table.padding || {}).y, 1), num(table.fill.paddingYMax, 0))
+    } : null
   };
 }
 
@@ -146,18 +157,20 @@ function columnWidths(t, prepared, fontSize) {
   return { widths, minFits: sumMin <= width + 0.01 };
 }
 
-function layoutAt(t, prepared, fontSize) {
+function layoutAt(t, prepared, fontSize, style = {}) {
+  const lineHeight = num(style.lineHeight, t.lineHeight);
+  const padY = num(style.padY, t.padding.y);
   const { widths, minFits } = columnWidths(t, prepared, fontSize);
   const colX = [0];
   for (const w of widths) colX.push(colX[colX.length - 1] + w);
   const laid = t.cells.map((cell, i) => {
     const inner = Math.max(0.001, colX[cell.col + cell.colspan] - colX[cell.col] - 2 * t.padding.x);
-    const result = prepared[i].measurer.layout(prepared[i].prepared, { fontSize, width: inner, lineHeight: t.lineHeight, align: cell.align });
-    return { inner, result, height: (result.lines.length ? result.height : 0) + 2 * t.padding.y };
+    const result = prepared[i].measurer.layout(prepared[i].prepared, { fontSize, width: inner, lineHeight, align: cell.align });
+    return { inner, result, height: (result.lines.length ? result.height : 0) + 2 * padY };
   });
   const rowH = new Array(t.nRows).fill(0);
   t.cells.forEach((cell, i) => { if (cell.rowspan === 1) rowH[cell.row] = Math.max(rowH[cell.row], laid[i].height); });
-  for (let r = 0; r < t.nRows; r++) if (!rowH[r]) rowH[r] = fontSize + 2 * t.padding.y;
+  for (let r = 0; r < t.nRows; r++) if (!rowH[r]) rowH[r] = fontSize + 2 * padY;
   t.cells.forEach((cell, i) => {
     if (cell.rowspan === 1) return;
     const rows = Array.from({ length: cell.rowspan }, (_, k) => cell.row + k).filter(r => r < t.nRows);
@@ -166,7 +179,7 @@ function layoutAt(t, prepared, fontSize) {
   });
   const rowY = [0];
   for (const h of rowH) rowY.push(rowY[rowY.length - 1] + h);
-  return { fontSize, widths, colX, rowH, rowY, laid, height: rowY[rowY.length - 1], minFits };
+  return { fontSize, lineHeight, padY, widths, colX, rowH, rowY, laid, height: rowY[rowY.length - 1], minFits };
 }
 
 function emit(t, prepared, at) {
@@ -179,7 +192,7 @@ function emit(t, prepared, at) {
     const cellTop = y0 + at.rowY[cell.row];
     const cellH = at.rowY[Math.min(t.nRows, cell.row + cell.rowspan)] - at.rowY[cell.row];
     const contentH = result.height;
-    const top = cellTop + t.padding.y + (t.valign === "middle" ? Math.max(0, (cellH - 2 * t.padding.y - contentH) / 2) : 0);
+    const top = cellTop + at.padY + (t.valign === "middle" ? Math.max(0, (cellH - 2 * at.padY - contentH) / 2) : 0);
     const left = x0 + at.colX[cell.col] + t.padding.x;
     const modes = unitModes(p);
     const lines = [];
@@ -250,6 +263,31 @@ function rules(t, at) {
   return covers;
 }
 
+// Largest value in [low, high] for which `fits(value)` holds, assuming it holds
+// at `low` and the height grows with the value (bisection, 12 steps).
+function largestFitting(low, high, fits) {
+  if (!(high > low) || fits(high)) return high > low ? high : low;
+  let good = low;
+  let bad = high;
+  for (let i = 0; i < 12; i++) {
+    const mid = (good + bad) / 2;
+    if (fits(mid)) good = mid;
+    else bad = mid;
+  }
+  return good;
+}
+
+// The room left in the box: leading first, then the cell padding. The font
+// size stays as chosen.
+function fillRoom(t, prepared, at, boxH) {
+  const limit = boxH + t.heightTolerance;
+  const lineHeight = largestFitting(at.lineHeight, t.fill.lineHeightMax,
+    value => layoutAt(t, prepared, at.fontSize, { lineHeight: value, padY: at.padY }).height <= limit);
+  const padY = largestFitting(at.padY, t.fill.paddingYMax,
+    value => layoutAt(t, prepared, at.fontSize, { lineHeight, padY: value }).height <= limit);
+  return layoutAt(t, prepared, at.fontSize, { lineHeight: Math.round(lineHeight * 1000) / 1000, padY: Math.round(padY * 1000) / 1000 });
+}
+
 function layoutTable(table, { measurers, contentFor }) {
   if (!measurers || !measurers.regular) throw new Error("layoutTable needs measurers.regular");
   const t = normalizeTable(table);
@@ -266,6 +304,7 @@ function layoutTable(table, { measurers, contentFor }) {
     chosen = { at, fits: false };
   }
   if (!chosen) chosen = { at: layoutAt(t, prepared, t.minFontSize), fits: false };
+  if (chosen.fits && t.fill) chosen.at = fillRoom(t, prepared, chosen.at, boxH);
   const { blocks, covers } = emit(t, prepared, chosen.at);
   return {
     id: t.id,
@@ -274,6 +313,8 @@ function layoutTable(table, { measurers, contentFor }) {
     width: chosen.at.colX[chosen.at.colX.length - 1],
     height: chosen.at.height,
     columns: chosen.at.widths,
+    lineHeight: chosen.at.lineHeight,
+    paddingY: chosen.at.padY,
     blocks,
     covers
   };
