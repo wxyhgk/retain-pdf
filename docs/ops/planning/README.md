@@ -22,7 +22,7 @@
 - [桌面安装包瘦身（2026-11 起）](./desktop-size/README.md)
 - [桌面端自动更新和 Mac 签名（2026-11 起）](./desktop-auto-update/README.md)
 - [译文版本（2026-11 起）](./translation-versions/README.md)
-- [排版 agent（2026-11，暂缓）](./layout-agent/README.md)
+- [排版 agent（2026-11，整页暂缓；表格排版 agent 写了方案）](./layout-agent/README.md)
 - [模型用量与花费（2026-11 起）](./model-usage/README.md)
 - [导出水印（2026-11）](./export-watermark/README.md)
 - [数据库整理（2026-11 起）](./database-cleanup/README.md)
