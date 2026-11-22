@@ -22,8 +22,8 @@
     "sync-frontend": "npm --prefix ../web run build && node scripts/prepare-app.mjs --frontend-only",
     "verify-frontend-sync": "npm run sync-frontend && npm run smoke:frontend-desktop",
     "prepare-app": "npm --prefix ../.. run build:doc && npm --prefix ../web run build && node scripts/prepare-app.mjs",
-    "dist:win32": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win portable --x64 --config.directories.output=win",
-    "dist:win32-installer": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win nsis --x64 --config.directories.output=win",
+    "dist:win32": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win portable --x64 --publish never --config.directories.output=win",
+    "dist:win32-installer": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win nsis --x64 --publish never --config.directories.output=win",
     "dist:mac": "RETAIN_PDF_BUNDLE_MAC_PYTHON=1 npm run prepare-app && npm run verify:packaging-deps && RETAIN_PDF_BUNDLE_MAC_PYTHON=1 electron-builder --mac dmg --publish never --config.directories.output=mac",
     "dist:linux": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --linux deb --publish never --config.directories.output=linux"
   },

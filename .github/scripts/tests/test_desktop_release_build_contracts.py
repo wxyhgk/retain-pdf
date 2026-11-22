@@ -119,3 +119,15 @@ def test_mac_signing_lives_in_its_own_workflow_with_only_the_signing_secrets():
     assert set(re.findall(r"secrets\.(\w+)", trial)) == MAC_SIGNING_SECRETS
     assert "platforms: macos" in trial  # 也可以带上 windows，验 latest.yml 和自动更新配置
     assert '"trial/mac-sign"' in trial
+
+
+def test_every_desktop_dist_script_never_publishes_by_itself():
+    """package.json 有 GitHub publish 配置（生成 latest*.yml 用）后，electron-builder 在 CI 上会自己尝试发布、
+    找不到 GH_TOKEN 就失败（2026-11-22 试验 44996344026 的 Windows）。发版只走 publish-desktop-release。"""
+    import json
+
+    scripts = json.loads((WORKFLOWS.parents[1] / "frontend/desktop/package.json").read_text(encoding="utf-8"))["scripts"]
+    dist = {name: command for name, command in scripts.items() if name.startswith("dist:")}
+    assert dist
+    for name, command in dist.items():
+        assert "--publish never" in command, name
