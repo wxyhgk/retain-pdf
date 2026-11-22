@@ -5,7 +5,7 @@
 
 | 文件 | 作用 |
 | --- | --- |
-| `engine/` | 引擎源码最小集合（`bin/rpr-retain.js`、`bin/rpr-fit.js`、`bin/rpr-math-check.js`（公式检查服务，backend/math 的 retainpdf_math 用它判断译文公式能不能渲染）、`src/`、`data/fonts`（宽度表与后备字体；思源宋体用本仓库 `resources/fonts` 那份，`sync.sh` 不复制）、`package.json`、`LICENSE`）与 `COMMIT` |
+| `engine/` | 引擎源码最小集合（`bin/rpr-retain.js`、`bin/rpr-fit.js`、`bin/rpr-table.js`（表格排版：表格译文按原表的框重排，渲染的 `render/output/tables` 用）、`bin/rpr-math-check.js`（公式检查服务，backend/math 的 retainpdf_math 用它判断译文公式能不能渲染）、`src/`、`data/fonts`（宽度表与后备字体；思源宋体用本仓库 `resources/fonts` 那份，`sync.sh` 不复制）、`package.json`、`LICENSE`）与 `COMMIT` |
 | `package.json` / `package-lock.json` | 运行时 npm 依赖：`mathjax-full`（锁 3.2.1，公式）与 `fontkit`（锁 2.0.4，引擎直接写 PDF 时嵌入、整形字体） |
 | `UPSTREAM` | 来源仓库、ref、提交号、同步时间 |
 | `sync.sh` | 从引擎仓库指定提交重新复制 `engine/` |
