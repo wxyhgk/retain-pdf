@@ -1,4 +1,5 @@
 // services：Bridge/Core/Domains/Views/Stores 装配面（对外 HomeServices bag）。
+import type { DesktopUpdaterPort } from "@/features/app-update/index.js";
 import type {
   createCredential,
   createGlossaryApi,
@@ -239,4 +240,6 @@ export type CreateHomeCompositionOptions = {
     write?: (info: unknown) => void;
   };
   appUpdateAutoCheckEnabled?: boolean;
+  /** 桌面端自动更新；不给 = 用桌面壳的（网页端没有）。测试里换成假的。 */
+  desktopUpdater?: DesktopUpdaterPort | null;
 };

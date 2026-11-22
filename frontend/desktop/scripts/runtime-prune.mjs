@@ -98,11 +98,53 @@ function removePythonRuntimeTargets(removalTargets) {
   }
 }
 
+/** Python.framework 只留打包的版本：删掉其他版本，Current 指向它，顶层 Python / Resources 指向 Versions/Current。 */
+function normalizeFrameworkVersions(frameworkRoot, expectedVersion) {
+  const versionsRoot = path.join(frameworkRoot, "Versions");
+  if (!expectedVersion || !fs.existsSync(path.join(versionsRoot, expectedVersion))) {
+    return;
+  }
+  for (const entry of fs.readdirSync(versionsRoot, { withFileTypes: true })) {
+    if (entry.name === "Current" || entry.name === expectedVersion) {
+      continue;
+    }
+    fs.rmSync(path.join(versionsRoot, entry.name), { recursive: true, force: true });
+  }
+  const currentLink = path.join(versionsRoot, "Current");
+  fs.rmSync(currentLink, { recursive: true, force: true });
+  fs.symlinkSync(expectedVersion, currentLink);
+  for (const name of ["Python", "Resources"]) {
+    const link = path.join(frameworkRoot, name);
+    fs.rmSync(link, { recursive: true, force: true });
+    if (fs.existsSync(path.join(versionsRoot, expectedVersion, name))) {
+      fs.symlinkSync(path.join("Versions", "Current", name), link);
+    }
+  }
+}
+
+/** 剪完以后指向不存在目标的软链接（比如 Headers → 已删的 include）删掉：codesign / osx-sign 遇到会 ENOENT。 */
+export function removeDanglingSymlinks(currentPath) {
+  if (!fs.existsSync(currentPath)) {
+    return;
+  }
+  for (const entry of fs.readdirSync(currentPath, { withFileTypes: true })) {
+    const entryPath = path.join(currentPath, entry.name);
+    if (entry.isSymbolicLink()) {
+      if (!fs.existsSync(entryPath)) {
+        fs.rmSync(entryPath, { force: true });
+      }
+      continue;
+    }
+    if (entry.isDirectory()) {
+      removeDanglingSymlinks(entryPath);
+    }
+  }
+}
+
 export function pruneBundledMacPythonRuntime(root) {
   if (!fs.existsSync(root)) {
     return;
   }
-  const frameworkVersionsRoot = path.join(root, "Frameworks", "Python.framework", "Versions");
   const libRoot = path.join(root, "lib");
   const pythonLibDir = fs.existsSync(libRoot)
     ? fs.readdirSync(libRoot).find((entry) => /^python\d+\.\d+$/.test(entry))
@@ -117,6 +159,11 @@ export function pruneBundledMacPythonRuntime(root) {
     "Versions",
     "Current",
   );
+  // 先把 Versions 收拾成只剩打包的那个版本、Current 指向它，下面按 Current 算的删除才落在真正打包的版本上。
+  // 2026-11-22 发现：构建机上 Current 原本指向 runner 自己的 Python（3.15），以前是先按 Current 算删除、
+  // 再删掉其他版本、最后才改 Current，结果所有删除都落在随后整个删掉的 3.15 上，3.11 的 include、share、
+  // Headers、config 一样没删；框架顶层的 Python / Resources 软链接也还指着 3.15，签名时 ENOENT。
+  normalizeFrameworkVersions(path.join(root, "Frameworks", "Python.framework"), expectedFrameworkVersion);
   const frameworkStdlibRoot = expectedFrameworkVersion
     ? path.join(frameworkCurrentRoot, "lib", `python${expectedFrameworkVersion}`)
     : "";
@@ -163,24 +210,8 @@ export function pruneBundledMacPythonRuntime(root) {
     fs.rmSync(path.join(root, "bin", fileName), { force: true });
   }
 
-  if (fs.existsSync(frameworkVersionsRoot)) {
-    for (const entry of fs.readdirSync(frameworkVersionsRoot, { withFileTypes: true })) {
-      if (!entry.isDirectory()) {
-        continue;
-      }
-      if (entry.name === "Current" || entry.name === expectedFrameworkVersion) {
-        continue;
-      }
-      fs.rmSync(path.join(frameworkVersionsRoot, entry.name), { recursive: true, force: true });
-    }
-    if (expectedFrameworkVersion) {
-      const currentLink = path.join(frameworkVersionsRoot, "Current");
-      fs.rmSync(currentLink, { recursive: true, force: true });
-      fs.symlinkSync(expectedFrameworkVersion, currentLink);
-    }
-  }
-
   pruneTransientPythonTree(root);
+  removeDanglingSymlinks(root);
 }
 
 export function pruneBundledPortablePythonRuntime(root, platformName) {

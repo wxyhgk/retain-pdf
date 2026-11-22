@@ -152,6 +152,28 @@ jobs:
     with:
       version: ${{ needs.resolve.outputs.version }}
 
+  # Mac 的 Developer ID 签名 + 公证（2026-11-22 起）：测试（quality-gate）和打包都过了才签，
+  # 签名密钥只在这一步出现（sign-macos.yml）。
+  sign-macos-build:
+    needs:
+      - resolve
+      - quality-gate
+      - build
+    if: needs.resolve.outputs.mode == 'build'
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/sign-macos.yml
+    with:
+      version: ${{ needs.resolve.outputs.version }}
+      app_artifact: desktop-macos-app-${{ github.sha }}
+    secrets:
+      MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+      MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+
   # 门禁收在这里：必须同时等到 quality-gate 和 build 都成功，测试失败时绝不发布。
   # job 级 if 只比较 mode，不含 always() / failure() 之类的状态函数，GitHub 会
   # 隐式加上 success()，所以任何 needs 失败或被跳过都不会发布。
@@ -160,6 +182,7 @@ jobs:
       - resolve
       - quality-gate
       - build
+      - sign-macos-build
     if: needs.resolve.outputs.mode == 'build'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -174,10 +197,18 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Download desktop packages built by this run
+      # Windows / Linux 用打包产出的；Mac 只用签好名的那一套（未签名的 dmg 和 .app 不下）。
+      - name: Download Windows and Linux packages built by this run
         uses: actions/download-artifact@v7
         with:
-          pattern: desktop-*-${{ github.sha }}
+          pattern: desktop-*{windows,linux}-${{ github.sha }}
+          path: release-assets
+          merge-multiple: true
+
+      - name: Download signed macOS packages
+        uses: actions/download-artifact@v7
+        with:
+          pattern: desktop-*macos-signed-${{ github.sha }}
           path: release-assets
           merge-multiple: true
 
@@ -195,8 +226,30 @@ jobs:
   # 只在 tag push 且 resolve 判定可提升时运行（PR / dispatch 永远走不到这里）。
   # 跨 run 下载需要 run-id + github-token（actions: read）；安装包 sha256 与
   # manifest 不符时硬失败，不会发布。
-  promote-desktop-release:
+  # 预构建的 Mac 包没签名（预构建和测试并行跑，不碰密钥）：提升时先签。resolve 已经确认这个 sha 的
+  # Tests 成功，所以签名也在测试之后。
+  sign-macos-promote:
     needs: resolve
+    if: github.event_name == 'push' && github.ref_type == 'tag' && needs.resolve.outputs.mode == 'promote'
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/sign-macos.yml
+    with:
+      version: ${{ needs.resolve.outputs.version }}
+      app_artifact: desktop-macos-app-${{ github.sha }}
+      app_run_id: ${{ needs.resolve.outputs.run_id }}
+    secrets:
+      MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+      MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+
+  promote-desktop-release:
+    needs:
+      - resolve
+      - sign-macos-promote
     if: github.event_name == 'push' && github.ref_type == 'tag' && needs.resolve.outputs.mode == 'promote'
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -211,14 +264,22 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Download prebuilt desktop packages
+      - name: Download prebuilt Windows and Linux packages
         uses: actions/download-artifact@v7
         with:
-          pattern: desktop-*-${{ github.sha }}
+          pattern: desktop-*{windows,linux}-${{ github.sha }}
           path: release-assets
           merge-multiple: true
           run-id: ${{ needs.resolve.outputs.run_id }}
           github-token: ${{ github.token }}
+
+      # 签名在本次运行里（sign-macos-promote）。
+      - name: Download signed macOS packages
+        uses: actions/download-artifact@v7
+        with:
+          pattern: desktop-*macos-signed-${{ github.sha }}
+          path: release-assets
+          merge-multiple: true
 
       - name: Publish desktop release
         uses: ./.github/actions/publish-desktop-release

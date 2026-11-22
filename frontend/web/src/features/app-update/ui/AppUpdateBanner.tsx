@@ -125,6 +125,15 @@ export function AppUpdateBanner({ view, handlersRef }: AppUpdateBannerProps) {
                 >
                   重新检查
                 </Button>
+                {panel.installable ? (
+                  <Button
+                    variant="primary"
+                    id={APP_UPDATE_IDS.installButton}
+                    onClick={() => handlersRef.current?.onInstall?.()}
+                  >
+                    重启并更新
+                  </Button>
+                ) : null}
                 <a
                   className={panel.htmlUrl ? "app-update-link" : "app-update-link hidden"}
                   href={panel.htmlUrl || "#"}

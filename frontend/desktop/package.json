@@ -22,13 +22,15 @@
     "sync-frontend": "npm --prefix ../web run build && node scripts/prepare-app.mjs --frontend-only",
     "verify-frontend-sync": "npm run sync-frontend && npm run smoke:frontend-desktop",
     "prepare-app": "npm --prefix ../.. run build:doc && npm --prefix ../web run build && node scripts/prepare-app.mjs",
-    "dist:win32": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win portable --x64 --config.directories.output=win",
-    "dist:win32-installer": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win nsis --x64 --config.directories.output=win",
+    "dist:win32": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win portable --x64 --publish never --config.directories.output=win",
+    "dist:win32-installer": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --win nsis --x64 --publish never --config.directories.output=win",
     "dist:mac": "RETAIN_PDF_BUNDLE_MAC_PYTHON=1 npm run prepare-app && npm run verify:packaging-deps && RETAIN_PDF_BUNDLE_MAC_PYTHON=1 electron-builder --mac dmg --publish never --config.directories.output=mac",
     "dist:linux": "npm run prepare-app && npm run verify:packaging-deps && electron-builder --linux deb --publish never --config.directories.output=linux"
   },
   "devDependencies": {
     "@electron/asar": "3.4.1",
+    "@electron/notarize": "2.5.0",
+    "@electron/osx-sign": "1.3.3",
     "electron": "44.4.3",
     "electron-builder": "26.15.3",
     "eslint": "10.8.1"
@@ -58,6 +60,14 @@
       }
     ],
     "asar": true,
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "wxyhgk",
+        "repo": "retain-pdf",
+        "releaseType": "release"
+      }
+    ],
     "win": {
       "icon": "build/icon.ico",
       "electronLanguages": [
@@ -83,7 +93,15 @@
         "zh_CN",
         "zh_TW"
       ],
-      "artifactName": "RetainPDF-Mac-${version}.${ext}"
+      "artifactName": "RetainPDF-Mac-${version}.${ext}",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "dmg": {
       "format": "ULFO"
@@ -118,5 +136,8 @@
       "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico"
     }
+  },
+  "dependencies": {
+    "electron-updater": "6.8.12"
   }
 }

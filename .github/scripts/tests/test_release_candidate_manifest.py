@@ -161,3 +161,55 @@ def test_verify_docker_requires_both_images(tmp_path):
         "verify-docker", "--dir", str(tmp_path), "--version", VERSION, "--revision", SHA,
         "--platforms", "linux/amd64,linux/arm64",
     ]) == 1
+
+
+def make_extras(directory: Path, platform: str, version=VERSION) -> list[Path]:
+    from release_candidate_manifest import expected_desktop_extras
+
+    paths = []
+    for name in expected_desktop_extras(platform, version):
+        path = directory / name
+        path.write_bytes(f"{name}-content".encode())
+        paths.append(path)
+    return paths
+
+
+def test_release_requires_auto_update_extras_and_lists_them_in_sums(tmp_path):
+    """自动更新的附带文件（latest*.yml、.blockmap、Mac 的 zip）发版时要齐，sha256 也写进 SHA256SUMS。"""
+    for platform in ("windows", "linux", "macos"):
+        package = tmp_path / expected_desktop_file(platform, VERSION)
+        package.write_bytes(f"{platform}-package".encode())
+        args = ["record-desktop", "--platform", platform, "--file", str(package),
+                "--version", VERSION, "--revision", SHA, "--out-dir", str(tmp_path)]
+        for extra in make_extras(tmp_path, platform):
+            args += ["--extra", str(extra)]
+        assert main(args) == 0
+    sums = tmp_path / "SHA256SUMS.txt"
+    manifests = verify_desktop(tmp_path, version=VERSION, revision=SHA, check_files=True, require_extras=True)
+    from release_candidate_manifest import write_sha256sums
+
+    write_sha256sums(manifests, sums)
+    text = sums.read_text(encoding="utf-8")
+    for name in ("latest.yml", "latest-mac.yml", f"RetainPDF-Mac-{VERSION}.zip", f"RetainPDF-Windows-{VERSION}-Setup.exe.blockmap"):
+        assert name in text
+    # 附带文件被改过：发版拒绝
+    (tmp_path / "latest-mac.yml").write_bytes(b"tampered")
+    with pytest.raises(CandidateError, match="latest-mac.yml"):
+        verify_desktop(tmp_path, version=VERSION, revision=SHA, check_files=True, require_extras=True)
+
+
+def test_missing_extras_only_fail_when_required(tmp_path):
+    make_desktop_set(tmp_path)
+    # 预构建时（resolve 阶段）不要求附带文件
+    verify_desktop(tmp_path, version=VERSION, revision=SHA, check_files=True)
+    with pytest.raises(CandidateError, match="extras"):
+        verify_desktop(tmp_path, version=VERSION, revision=SHA, check_files=True, require_extras=True)
+
+
+def test_record_desktop_rejects_unexpected_extras(tmp_path):
+    package = tmp_path / expected_desktop_file("linux", VERSION)
+    package.write_bytes(b"deb")
+    stray = tmp_path / "latest-linux.yml"
+    stray.write_bytes(b"x")
+    with pytest.raises(CandidateError, match="not one of"):
+        record_desktop(platform="linux", file=package, version=VERSION, revision=SHA, extras=[stray])

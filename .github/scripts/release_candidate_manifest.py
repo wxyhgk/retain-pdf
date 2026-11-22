@@ -28,6 +28,14 @@ DESKTOP_FILE_PATTERNS = {
     "linux": "RetainPDF-Linux-{version}.deb",
     "macos": "RetainPDF-Mac-{version}.dmg",
 }
+# 自动更新要的附带文件（2026-11-22 起）：electron-updater 读 latest*.yml、按 .blockmap 增量下载；
+# Mac 的自动更新下的是 zip（dmg 只给第一次安装）。Linux 的 deb 不支持自动更新，没有附带文件。
+# 发版时（verify-desktop --require-extras）这些一个都不能少，大小和 sha256 也要和清单一致。
+DESKTOP_EXTRA_PATTERNS = {
+    "windows": ("RetainPDF-Windows-{version}-Setup.exe.blockmap", "latest.yml"),
+    "linux": (),
+    "macos": ("RetainPDF-Mac-{version}.zip", "RetainPDF-Mac-{version}.zip.blockmap", "latest-mac.yml"),
+}
 DOCKER_TARGETS = {"app": "retainpdf-app", "web": "retainpdf-web"}
 SHA256_HEX = re.compile(r"^[0-9a-f]{64}$")
 IMAGE_DIGEST = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -55,7 +63,19 @@ def expected_desktop_file(platform: str, version: str) -> str:
     return DESKTOP_FILE_PATTERNS[platform].format(version=version)
 
 
-def record_desktop(*, platform: str, file: Path, version: str, revision: str) -> dict:
+def expected_desktop_extras(platform: str, version: str) -> list[str]:
+    return [pattern.format(version=version) for pattern in DESKTOP_EXTRA_PATTERNS[platform]]
+
+
+def _file_record(path: Path) -> dict:
+    if not path.is_file() or path.stat().st_size == 0:
+        raise CandidateError(f"missing or empty desktop file: {path}")
+    return {"file": path.name, "sha256": sha256_file(path), "size": path.stat().st_size}
+
+
+def record_desktop(
+    *, platform: str, file: Path, version: str, revision: str, extras: list[Path] | None = None
+) -> dict:
     if platform not in DESKTOP_PLATFORMS:
         raise CandidateError(f"unknown desktop platform {platform!r}")
     if not GIT_SHA.fullmatch(revision):
@@ -67,7 +87,13 @@ def record_desktop(*, platform: str, file: Path, version: str, revision: str) ->
         )
     if not file.is_file() or file.stat().st_size == 0:
         raise CandidateError(f"missing or empty desktop package: {file}")
-    return {
+    allowed_extras = set(expected_desktop_extras(platform, version))
+    extra_records = []
+    for extra in extras or []:
+        if extra.name not in allowed_extras:
+            raise CandidateError(f"{platform} extra {extra.name!r} is not one of {sorted(allowed_extras)}")
+        extra_records.append(_file_record(extra))
+    manifest = {
         "schema": MANIFEST_SCHEMA,
         "platform": platform,
         "file": file.name,
@@ -76,6 +102,9 @@ def record_desktop(*, platform: str, file: Path, version: str, revision: str) ->
         "sha256": sha256_file(file),
         "size": file.stat().st_size,
     }
+    if extra_records:
+        manifest["extras"] = sorted(extra_records, key=lambda item: item["file"])
+    return manifest
 
 
 def _load_json(path: Path) -> dict:
@@ -90,12 +119,24 @@ def _load_json(path: Path) -> dict:
     return data
 
 
+def _check_file(directory: Path, record: dict) -> None:
+    path = directory / record["file"]
+    if not path.is_file():
+        raise CandidateError(f"missing desktop file: {path}")
+    if path.stat().st_size != record["size"]:
+        raise CandidateError(f"{record['file']} size {path.stat().st_size} != manifest {record['size']}")
+    actual = sha256_file(path)
+    if actual != record["sha256"]:
+        raise CandidateError(f"{record['file']} sha256 {actual} != manifest {record['sha256']}")
+
+
 def verify_desktop(
     directory: Path,
     *,
     version: str,
     revision: str,
     check_files: bool,
+    require_extras: bool = False,
 ) -> list[dict]:
     """Return manifests ordered windows, linux, macos; raise on any mismatch."""
     manifests = []
@@ -117,30 +158,37 @@ def verify_desktop(
             problems.append(f"sha256={manifest.get('sha256')!r}")
         if not isinstance(manifest.get("size"), int) or manifest["size"] <= 0:
             problems.append(f"size={manifest.get('size')!r}")
+        extras = manifest.get("extras", [])
+        if not isinstance(extras, list) or not all(
+            isinstance(item, dict) and SHA256_HEX.fullmatch(f"{item.get('sha256', '')}")
+            and isinstance(item.get("size"), int) and item["size"] > 0
+            for item in extras
+        ):
+            problems.append(f"extras={extras!r}")
+        elif require_extras:
+            listed = sorted(item.get("file") for item in extras)
+            wanted = sorted(expected_desktop_extras(platform, version))
+            if listed != wanted:
+                problems.append(f"extras={listed!r} expected {wanted!r}")
         if problems:
             raise CandidateError(f"{platform} desktop manifest mismatch: {'; '.join(problems)}")
         if check_files:
             package = directory / expected_file
             if not package.is_file():
                 raise CandidateError(f"missing desktop package: {package}")
-            if package.stat().st_size != manifest["size"]:
-                raise CandidateError(
-                    f"{expected_file} size {package.stat().st_size} != manifest {manifest['size']}"
-                )
-            actual = sha256_file(package)
-            if actual != manifest["sha256"]:
-                raise CandidateError(
-                    f"{expected_file} sha256 {actual} != manifest {manifest['sha256']}"
-                )
+            _check_file(directory, {"file": expected_file, "size": manifest["size"], "sha256": manifest["sha256"]})
+            for extra in extras:
+                _check_file(directory, extra)
         manifests.append(manifest)
     return manifests
 
 
 def write_sha256sums(manifests: list[dict], path: Path) -> None:
-    path.write_text(
-        "".join(f"{manifest['sha256']}  {manifest['file']}\n" for manifest in manifests),
-        encoding="utf-8",
-    )
+    lines = []
+    for manifest in manifests:
+        lines.append(f"{manifest['sha256']}  {manifest['file']}\n")
+        lines.extend(f"{extra['sha256']}  {extra['file']}\n" for extra in manifest.get("extras", []))
+    path.write_text("".join(lines), encoding="utf-8")
 
 
 def _platform_set(value: str) -> list[str]:
@@ -191,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
     record.add_argument("--version", required=True)
     record.add_argument("--revision", required=True)
     record.add_argument("--out-dir", required=True, type=Path)
+    record.add_argument("--extra", action="append", type=Path, default=[], help="自动更新的附带文件（可多次）")
 
     desktop = sub.add_parser("verify-desktop")
     desktop.add_argument("--dir", required=True, type=Path)
@@ -198,6 +247,7 @@ def main(argv: list[str] | None = None) -> int:
     desktop.add_argument("--revision", required=True)
     desktop.add_argument("--check-files", action="store_true")
     desktop.add_argument("--sums-out", type=Path)
+    desktop.add_argument("--require-extras", action="store_true", help="发版时要求自动更新的附带文件齐全")
 
     docker = sub.add_parser("verify-docker")
     docker.add_argument("--dir", required=True, type=Path)
@@ -209,7 +259,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command == "record-desktop":
             manifest = record_desktop(
-                platform=args.platform, file=args.file, version=args.version, revision=args.revision
+                platform=args.platform, file=args.file, version=args.version, revision=args.revision,
+                extras=args.extra,
             )
             args.out_dir.mkdir(parents=True, exist_ok=True)
             out = args.out_dir / desktop_manifest_name(args.platform)
@@ -219,7 +270,8 @@ def main(argv: list[str] | None = None) -> int:
             if args.sums_out is not None and not args.check_files:
                 parser.error("--sums-out requires --check-files")
             manifests = verify_desktop(
-                args.dir, version=args.version, revision=args.revision, check_files=args.check_files
+                args.dir, version=args.version, revision=args.revision, check_files=args.check_files,
+                require_extras=args.require_extras,
             )
             if args.sums_out is not None:
                 write_sha256sums(manifests, args.sums_out)

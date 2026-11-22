@@ -23,6 +23,7 @@ export { APP_UPDATE_IDS } from "./ui/app-update-contract.js";
 export { APP_UPDATE_STATES } from "./domain/app-update-states.js";
 
 export { mountAppUpdateFeature } from "./domain/controller.js";
+export type { DesktopUpdaterPort } from "./domain/controller.js";
 export { APP_VERSION } from "./domain/current-version.js";
 export { defaultUpdateCachePort } from "./domain/state.js";
 export {

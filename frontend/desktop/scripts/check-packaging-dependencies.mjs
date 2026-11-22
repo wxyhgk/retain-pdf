@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
+import path from "node:path";
 
 const require = createRequire(import.meta.url);
 const desktopPackage = require("../package.json");
@@ -40,16 +41,20 @@ if (installedElectronBuilder !== dependencyElectronBuilder) {
 }
 
 if (desktopPackage.build?.npmRebuild !== false) {
-  throw new Error("build.npmRebuild must remain false while the desktop workspace has no Node runtime dependencies");
+  throw new Error("build.npmRebuild must remain false while the desktop workspace has no native Node runtime dependencies");
 }
 
+// npmRebuild 关着，所以运行时依赖（连同它们的依赖）不许带原生模块：原生模块要按 Electron 的 ABI 重编，
+// 不重编装进去就加载失败。纯 JS 的可以（2026-11-22 起 electron-updater 是唯一的运行时依赖）。
+// 带了原生模块的依赖，要先换成分阶段重编的打包方式，再打开 npmRebuild。
 const runtimeDependencyNames = [
   ...Object.keys(desktopPackage.dependencies || {}),
   ...Object.keys(desktopPackage.optionalDependencies || {}),
 ];
-if (runtimeDependencyNames.length > 0) {
+const nativeDependencies = findNativeDependencies(runtimeDependencyNames);
+if (nativeDependencies.length > 0) {
   throw new Error(
-    `Desktop Node runtime dependencies require a staged rebuild strategy before npmRebuild can be enabled: ${runtimeDependencyNames.join(", ")}`,
+    `Desktop Node runtime dependencies with native modules require a staged rebuild strategy before npmRebuild can be enabled: ${nativeDependencies.join(", ")}`,
   );
 }
 
@@ -93,3 +98,35 @@ try {
 console.log(
   `Desktop packaging dependencies verified: electron=${installedElectron}, electron-builder=${installedElectronBuilder}, config-schema=${schemaChecked ? "ok" : "skipped"}`,
 );
+
+/** 运行时依赖及其传递依赖里，哪些带原生模块（binding.gyp、package.json 的 gypfile，或包里有 .node 文件）。 */
+function findNativeDependencies(names) {
+  const seen = new Map();
+  const native = [];
+  const queue = names.map((name) => ({ name, from: path.dirname(require.resolve("../package.json")) }));
+  while (queue.length) {
+    const { name, from } = queue.shift();
+    const manifestPath = require.resolve(`${name}/package.json`, { paths: [from] });
+    const dir = path.dirname(manifestPath);
+    if (seen.has(dir)) continue;
+    seen.set(dir, name);
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (manifest.gypfile || fs.existsSync(path.join(dir, "binding.gyp")) || containsNodeAddon(dir)) {
+      native.push(`${name}@${manifest.version}`);
+    }
+    for (const dependency of Object.keys({ ...manifest.dependencies, ...manifest.optionalDependencies })) {
+      queue.push({ name: dependency, from: dir });
+    }
+  }
+  return native;
+}
+
+function containsNodeAddon(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === "node_modules") continue;
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory() && containsNodeAddon(full)) return true;
+    if (entry.isFile() && entry.name.endsWith(".node")) return true;
+  }
+  return false;
+}
