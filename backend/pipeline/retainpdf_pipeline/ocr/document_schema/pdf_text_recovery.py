@@ -92,10 +92,43 @@ def recover_corrupted_pdf_text(document: dict, pdf) -> int:
             if not plain or '\ufffd' in plain or not (close_text or formula_match):
                 continue
             restored_lines = [_line_text(line) for line in lines]
-            block['text'] = ' '.join(restored_lines)
-            block['lines'] = [dict(bbox=list(line['bbox']), spans=[dict(
-                type='text', text=text, bbox=list(line['bbox']), score=1.0)])
-                for line, text in zip(lines, restored_lines)]
+            _replace_block_text(block, lines, restored_lines)
             block.setdefault('metadata', {})['pdf_text_recovered'] = True
             repaired += 1
     return repaired
+
+
+def _inside(bbox, container) -> list:
+    """文字层的行框按"块框外放 1pt"取，校验要求行框在块框里：收回块框。"""
+    if not isinstance(container, list) or len(container) != 4:
+        return list(bbox)
+    x0, y0, x1, y1 = (float(v) for v in bbox)
+    cx0, cy0, cx1, cy1 = (float(v) for v in container)
+    x0, x1 = min(max(x0, cx0), cx1), min(max(x1, cx0), cx1)
+    y0, y1 = min(max(y0, cy0), cy1), min(max(y1, cy0), cy1)
+    return [x0, y0, x1, y1]
+
+
+def _replace_block_text(block: dict, lines: list, restored_lines: list[str]) -> None:
+    """恢复后的文字写回块上所有带文字的地方：text、content（翻译读的是 content.text，校验要求它和 text 一样）、
+    lines、segments。以前只改 text 和 lines：content.text 还是乱码，翻译照旧拿到乱码，校验判"两份不一样"整个任务失败
+    （2026-11-22，一本 583 页的书第 480 页一块 photore\\ufffdsistors）。"""
+    container = (block.get('geometry') or {}).get('bbox') or block.get('bbox')
+    text = ' '.join(restored_lines)
+    raw_type = next((str(segment.get('raw_type') or '') for segment in block.get('segments') or []
+                     if isinstance(segment, dict) and segment.get('raw_type')), '') or 'text'
+    block['text'] = text
+    block['lines'] = [dict(bbox=_inside(line['bbox'], container), spans=[dict(
+        type='text', raw_type=raw_type, text=line_text, bbox=_inside(line['bbox'], container), score=1.0)])
+        for line, line_text in zip(lines, restored_lines)]
+    block['segments'] = [dict(type='text', raw_type=raw_type, text=line_text, bbox=_inside(line['bbox'], container),
+                              score=1.0, bbox_precision='line')
+                         for line, line_text in zip(lines, restored_lines) if line_text.strip()]
+    content = block.get('content')
+    if isinstance(content, dict):
+        content['text'] = text
+        line_texts = [line_text for line_text in restored_lines if line_text.strip()]
+        if line_texts:
+            content['line_texts'] = line_texts
+        else:
+            content.pop('line_texts', None)
