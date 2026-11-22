@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "retainpdf-pipeline"
-version = "4.2.6"
+version = "2026.11.22"
 description = "RetainPDF OCR, translation, and rendering pipeline"
 requires-python = ">=3.11,<3.12"
 dependencies = [
