@@ -55,12 +55,43 @@ SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太�
 # 9：2026-11-20 货币的 `$12.59` 不算公式（写成 `\$`）；只有引注的注释（"Keenan 2013, xxiv."）原样交回不算 untranslated；
 #    译文里成对的直引号换成中文引号（normalize_translation）
 # 10：2026-11-20 三个以上作者的引注（"Petriglieri, Ashford, and Wrzesniewski 2019."）也算只有引注
-CHECKS_VERSION = "translation-agent-checks-10"
+# 11：2026-11-22 数字开头的公式（"$1 / r^{2}$"）不当价格转义；全角的引用编号（"［8，14］"）换回半角再查
+CHECKS_VERSION = "translation-agent-checks-11"
+
+
+# `$` 加数字后面到下一个 `$` 之间像公式（"$1 / r^{2}$"、"$1/\epsilon_0$"、"$2e$"），就不是价格（"$12.59 to $17"）：
+# 去掉 LaTeX 命令后没有英文词，并且有公式符号或者中间不隔空格
+_FORMULA_INSIDE_RE = re.compile(r"[\^_{}\\=<>/]")
+_LATEX_COMMAND_RE = re.compile(r"\\[A-Za-z]+")
+_WORD_INSIDE_RE = re.compile(r"[A-Za-z]{3,}")
+_UNESCAPED_DOLLAR_RE = re.compile(r"(?<!\\)\$")
+
+
+def _opens_formula(text: str, start: int) -> bool:
+    close = _UNESCAPED_DOLLAR_RE.search(text, start + 1)
+    if close is None:
+        return False
+    inside = text[start + 1 : close.start()]
+    if _WORD_INSIDE_RE.search(_LATEX_COMMAND_RE.sub(" ", inside)):
+        return False
+    return bool(_FORMULA_INSIDE_RE.search(inside)) or not re.search(r"\s", inside)
 
 
 def escape_currency(text: str) -> str:
-    """价格里的 `$`（"$12.59"）写成反斜杠加美元符：不算公式边界，排版认它是字面的美元符。已经转义过的不动。"""
-    return CURRENCY_RE.sub(lambda _: "\\$", text)
+    """价格里的 `$`（"$12.59"）写成反斜杠加美元符：不算公式边界，排版认它是字面的美元符。已经转义过的不动。
+
+    数字开头的公式（"$1 / r^{2}$"）不动：11-21《电磁学》32 块以前被当成价格转义，`$` 不成对，整段退回原文。
+    """
+    return CURRENCY_RE.sub(lambda m: m.group(0) if _opens_formula(text, m.start()) else "\\$", text)
+
+
+# 引用编号写成全角（"［8，14，23］"）：模型按中文体例换了括号和逗号，换回半角，免得当成引用丢了（11-22 一篇论文 5 段整段退回原文）
+_LOOSE_CITATION_RE = re.compile(r"[\[［]\s*\d+(?:\s*[,，、–—~～-]\s*\d+)*\s*[\]］]")
+_CITATION_CHARS = str.maketrans({"［": "[", "］": "]", "，": ",", "、": ",", "—": "–", "~": "–", "～": "–"})
+
+
+def normalize_citations(text: str) -> str:
+    return _LOOSE_CITATION_RE.sub(lambda m: m.group(0).translate(_CITATION_CHARS), text)
 
 
 def is_citation_only(text: str) -> bool:
@@ -124,10 +155,10 @@ def normalize_quotes(text: str) -> str:
 
 
 def normalize_translation(translation: str | None) -> str | None:
-    """模型交回的译文统一收拾一遍（按节、逐页都走）：价格的 `$` 转义、直引号换中文引号。"""
+    """模型交回的译文统一收拾一遍（按节、逐页都走）：价格的 `$` 转义、直引号换中文引号、全角的引用编号换回半角。"""
     if not translation:
         return translation
-    return normalize_quotes(escape_currency(translation))
+    return normalize_citations(normalize_quotes(escape_currency(translation)))
 
 
 def visible_length(text: str) -> int:
