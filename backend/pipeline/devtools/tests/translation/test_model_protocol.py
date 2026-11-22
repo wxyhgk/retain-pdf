@@ -645,3 +645,79 @@ def test_an_unrelated_400_does_not_stop_us_asking_for_low_effort_later():
 def test_auto_gives_haiku_5_5_the_low_effort_it_was_tested_with_and_leaves_others_alone():
     assert model_wire.anthropic_thinking_candidates("auto", model="claude-haiku-5-5")[0] == LOW
     assert model_wire.anthropic_thinking_candidates("auto", model="claude-sonnet-5") == [{}]
+
+
+# ── 带图片的消息（2026-11-22）：调用方写 OpenAI Chat 的片段列表，三种协议各自换写法 ──
+
+PNG = b"\x89PNG\r\n\x1a\nfake"
+PNG_B64 = "iVBORw0KGgpmYWtl"
+
+
+def _image_messages():
+    return [
+        {"role": "system", "content": "你是排版检查员。"},
+        {"role": "user", "content": [model_wire.text_part("这两张表一样吗？"), model_wire.image_part(PNG), model_wire.image_part(PNG, "image/jpeg")]},
+    ]
+
+
+def test_image_part_is_a_data_url_and_rejects_unknown_types():
+    assert model_wire.image_part(PNG) == {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{PNG_B64}"}}
+    with pytest.raises(ValueError):
+        model_wire.image_part(PNG, "image/tiff")
+
+
+def test_openai_chat_sends_image_parts_as_they_are():
+    content, session = _call(
+        [_response(payload={"choices": [{"message": {"content": "一样"}}]})],
+        messages=_image_messages(), api_key="k", model="qwen-vl", base_url="https://example.test/v1", protocol="openai",
+    )
+    assert content == "一样"
+    user = session.post.call_args.kwargs["json"]["messages"][1]
+    assert user["content"][1] == {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{PNG_B64}"}}
+
+
+def test_responses_converts_images_to_input_image():
+    content, session = _responses_call([_response(payload=RESPONSES_OK)], messages=_image_messages())
+    body = session.post.call_args.kwargs["json"]
+    assert body["instructions"] == "你是排版检查员。"
+    assert body["input"][0]["content"] == [
+        {"type": "input_text", "text": "这两张表一样吗？"},
+        {"type": "input_image", "image_url": f"data:image/png;base64,{PNG_B64}"},
+        {"type": "input_image", "image_url": f"data:image/jpeg;base64,{PNG_B64}"},
+    ]
+
+
+def test_anthropic_converts_images_to_base64_blocks_and_merges_turns():
+    messages = _image_messages() + [{"role": "user", "content": "只回答一样或不一样。"}]
+    content, session = _call(
+        [_response(payload=ANTHROPIC_OK)],
+        messages=messages, api_key="k", model="claude-haiku-5-5", base_url="https://api.anthropic.com/v1",
+        protocol="anthropic", thinking="off",
+    )
+    body = session.post.call_args.kwargs["json"]
+    assert len(body["messages"]) == 1  # 相邻两条 user 并成一条块列表
+    blocks = body["messages"][0]["content"]
+    assert blocks[0] == {"type": "text", "text": "这两张表一样吗？"}
+    assert blocks[1] == {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": PNG_B64}}
+    assert blocks[2]["source"]["media_type"] == "image/jpeg"
+    assert blocks[3] == {"type": "text", "text": "只回答一样或不一样。"}
+
+
+def test_anthropic_keeps_image_urls_as_url_sources():
+    url_part = {"type": "image_url", "image_url": {"url": "https://example.test/t.png"}}
+    assert model_wire.anthropic_message_content([url_part]) == [{"type": "image", "source": {"type": "url", "url": "https://example.test/t.png"}}]
+
+
+def test_text_only_messages_are_unchanged():
+    # 纯文字的请求和以前完全一样：内容还是字符串
+    assert model_wire.responses_message_content("Translate A") == "Translate A"
+    assert model_wire.anthropic_message_content("Translate A") == "Translate A"
+    assert model_wire.content_text([model_wire.text_part("a"), model_wire.image_part(PNG), model_wire.text_part("b")]) == "a\n\nb"
+
+
+def test_the_rust_executor_refuses_image_messages(monkeypatch):
+    from retainpdf_translation.llm.shared import executor_context
+
+    monkeypatch.setattr(executor_context, "execution_enabled", lambda: True)
+    with pytest.raises(ValueError, match="image"):
+        client.request_chat_content(_image_messages(), api_key="k", model="m", base_url="https://example.test/v1")

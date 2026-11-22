@@ -176,7 +176,51 @@
 
 `provider_message` 是服务商的报错原文，截到 500 个字符，里面出现的 Key 换成 `[REDACTED]`。
 
-## 9. 和运行期失败诊断的关系
+## 9. 用翻译接口的配置问一次模型，可以带图片（2026-11-22）
+
+`POST /api/v1/providers/translation/ask`（admin；契约 [`translation-providers.v1`](../../../contracts/translation-providers.v1.schema.json)，调用函数
+`askTranslationProviderModel`）。给前端、调试和以后的表格排版 agent 用：浏览器不能直接调服务商，后端代发一次对话请求。Key 用完不存、不回显。
+实现在 `backend/packages/retainpdf-providers/src/provider_probe/ask.rs`。
+
+请求（`deny_unknown_fields`；请求体上限 24 MB，比别的 JSON 接口的 2 MB 大，见接口登记的 `large_body`）：
+
+```json
+{ "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1", "api_key": "sk-…", "api_protocol": "openai",
+  "model": "qwen-vl-max", "system": "你是排版检查员。", "prompt": "这两张表一样吗？",
+  "images": [ { "media_type": "image/png", "data": "<base64>" } ], "max_tokens": 512 }
+```
+
+- 必填 `api_key`、`model`、`prompt`（最多 100000 字）。`images` 最多 4 张，每张解码后最多 4 MB，类型 png / jpeg / webp / gif，
+  `data` 是标准 base64（不带 `data:` 前缀）。`max_tokens` 默认 1024，最多 8192。
+- 按 `api_protocol` 换写法：`openai`（默认）发 `POST {base_url}/chat/completions`，图片是 `image_url` + data URL，新模型不认 `max_tokens`
+  时换 `max_completion_tokens` 再发一次；`openai_responses` 发 `/responses`（`input_image`，`store: false`）；`anthropic` 发
+  `/messages`（`image` 块，base64）。
+- 地址检查、不跟随重定向和第 5、6 节一样；超时放长到 180 秒（看图要时间）。没有 Key / 模型 / 提示词、图片不对、地址不合规、
+  字段不认识是 400。
+
+返回（服务商那边的结果都是 200，看 `ok` / `status`）：
+
+```json
+{ "ok": true, "status": "ok", "summary": "模型已回答", "base_url": "…", "model": "qwen-vl-max", "protocol": "openai",
+  "text": "两张表一样", "usage": { "input_tokens": 812, "output_tokens": 6 }, "images": 1, "elapsed_ms": 2310,
+  "provider_code": null, "provider_message": null, "asked_at": "…" }
+```
+
+| `status` | 什么时候 |
+|---|---|
+| `unauthorized` | 401 / 403 |
+| `rejected` | 别的 4xx：常见是模型不支持看图、图片太大、模型名不对（看 `provider_message`） |
+| `rate_limited` | 429 |
+| `provider_error` | 5xx、重定向、回的不是 JSON |
+| `unreachable` | 连不上、超时、读到一半断开 |
+| `empty` | 回了但没有文字（可能都用在思考上，调大 `max_tokens`） |
+| `invalid_input` | Key 里有放不进请求头的字符 |
+
+Python 这边（翻译、表格 agent 用的 `request_chat_content`）也能带图了：消息的 `content` 写成片段列表（`model_wire.text_part` /
+`model_wire.image_part`），三种协议各自换写法，见 `backend/translation/retainpdf_translation/llm/shared/model_wire.py` 开头。
+Rust 模型执行器（`RETAIN_MODEL_EXECUTOR`）还只收文字，带图的请求在 Python 这边直接报错，不会悄悄丢图。
+
+## 10. 和运行期失败诊断的关系
 
 这几个接口是"前置校验"。运行期如果仍然出现鉴权问题，任务失败诊断里会继续识别（例如 MinerU `A0202` 无效 Token、`A0211` Token 过期）：
 提交前用这些接口提前拦，运行中靠失败诊断兜底归因。

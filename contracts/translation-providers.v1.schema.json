@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/translation-providers/v1",
   "title": "翻译接口（Translation Providers）",
-  "description": "翻译接口相关的服务端代办（2026-11-19 起）。现在只有一个：从翻译接口拉取模型列表——浏览器不能直接调服务商（跨域、Key 不能发出去），后端代一次 GET {base_url}/models，Key 用完不存、不回显。生产者：backend/packages/retainpdf-providers/src/provider_probe/models.rs（TranslationModelsRequest、TranslationModelListView、TranslationModelView），单价形状是 retainpdf-providers pricing 的 PriceView（和 token-usage.v1 的 PriceView 同形状）；Rust 侧由 backend/api/src/api_tests/provider_probes.rs 对真实接口的返回钉键集合。消费者：@retainpdf/contracts/translation-providers 生成 DTO。成功响应包在 {code, message, data} 里，本契约描述 data 部分。详细规则见 docs/core/rust_api/08-Provider 校验接口.md 第 8 节。",
+  "description": "翻译接口相关的服务端代办（2026-11-19 起）。有两个：从翻译接口拉取模型列表，和用翻译接口的配置问一次模型（可带图片，2026-11-22）——浏览器不能直接调服务商（跨域、Key 不能发出去），后端代发，Key 用完不存、不回显。生产者：backend/packages/retainpdf-providers/src/provider_probe/models.rs（TranslationModelsRequest、TranslationModelListView、TranslationModelView）和 provider_probe/ask.rs（TranslationModelAskRequest、TranslationModelAskView），单价形状是 retainpdf-providers pricing 的 PriceView（和 token-usage.v1 的 PriceView 同形状）；Rust 侧由 backend/api/src/api_tests/provider_probes.rs 对真实接口的返回钉键集合。消费者：@retainpdf/contracts/translation-providers 生成 DTO。成功响应包在 {code, message, data} 里，本契约描述 data 部分。详细规则见 docs/core/rust_api/08-Provider 校验接口.md 第 8 节。",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -16,6 +16,21 @@
       "note": "admin。都是 200，看 ok / status：服务商不支持 /models 是 unsupported（界面提示手动填）、Key 不对是 unauthorized、连不上是 unreachable。和校验 Key 同一套地址检查、超时、不跟随重定向。",
       "rust_view": "retainpdf-providers provider_probe::models :: TranslationModelListView",
       "ts_consumer": "@retainpdf/contracts/translation-providers :: TranslationModelListView"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/providers/translation/ask",
+      "client_name": "askTranslationProviderModel",
+      "transport": "json",
+      "input": "TranslationModelAskRequest",
+      "output": "TranslationModelAskView",
+      "errors": {
+        "400": "BAD_REQUEST：没有 api_key / model / prompt、提示词超过 100000 字、图片超过 4 张或每张超过 4 MB、图片不是标准 base64 或类型不认、base_url 不合规、字段不认识",
+        "413": "请求体超过 24 MB"
+      },
+      "note": "admin。服务商那边的结果都是 200，看 ok / status。按 api_protocol 换写法：openai 走 /chat/completions（image_url + data URL）、openai_responses 走 /responses（input_image）、anthropic 走 /messages（image 块）。超时 180 秒，不跟随重定向。",
+      "rust_view": "retainpdf-providers provider_probe::ask :: TranslationModelAskView",
+      "ts_consumer": "@retainpdf/contracts/translation-providers :: TranslationModelAskView"
     }
   ],
   "definitions": {
@@ -157,6 +172,204 @@
         "provider_message": { "type": ["string", "null"], "description": "服务商报错原文，截到 500 字符，里面的 Key 换成 [REDACTED]。" },
         "models": { "type": "array", "items": { "$ref": "#/definitions/TranslationModelView" }, "description": "按 id 排序去重，最多 2000 个；status 不是 ok 时为空。" },
         "chat_models": { "type": "integer", "minimum": 0, "description": "models 里 kind=chat 的个数。" }
+      }
+    },
+    "AskImage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "media_type",
+        "data"
+      ],
+      "properties": {
+        "media_type": {
+          "type": "string",
+          "enum": [
+            "image/png",
+            "image/jpeg",
+            "image/webp",
+            "image/gif"
+          ]
+        },
+        "data": {
+          "type": "string",
+          "description": "图片内容，标准 base64，不带 data: 前缀；解码后最多 4 MB。"
+        }
+      }
+    },
+    "TranslationModelAskRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "deny_unknown_fields。",
+      "required": [
+        "api_key",
+        "model",
+        "prompt"
+      ],
+      "properties": {
+        "api_key": {
+          "type": "string",
+          "description": "内联 Key，用完不存。"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "接口地址；空时 Anthropic 用官方地址，别的用默认翻译地址。"
+        },
+        "api_protocol": {
+          "type": "string",
+          "description": "openai（默认）、openai_responses 或 anthropic。"
+        },
+        "model": {
+          "type": "string"
+        },
+        "system": {
+          "type": "string",
+          "description": "系统提示，可空。"
+        },
+        "prompt": {
+          "type": "string",
+          "description": "用户的问题，最多 100000 字。"
+        },
+        "images": {
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "$ref": "#/definitions/AskImage"
+          }
+        },
+        "max_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 8192,
+          "description": "回答最多多少 token，默认 1024，超过 8192 按 8192。"
+        }
+      }
+    },
+    "TranslationModelAskStatus": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "unauthorized",
+        "rejected",
+        "rate_limited",
+        "provider_error",
+        "unreachable",
+        "empty",
+        "invalid_input"
+      ],
+      "description": "rejected：服务商拒绝了请求（常见：模型不支持看图、模型名不对）；empty：回了但没有文字（可能都用在思考上）。"
+    },
+    "AskUsageView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_tokens",
+        "output_tokens"
+      ],
+      "properties": {
+        "input_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "output_tokens": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        }
+      }
+    },
+    "TranslationModelAskView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "status",
+        "summary",
+        "base_url",
+        "model",
+        "protocol",
+        "text",
+        "usage",
+        "images",
+        "elapsed_ms",
+        "provider_code",
+        "provider_message",
+        "asked_at"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/definitions/TranslationModelAskStatus"
+        },
+        "summary": {
+          "type": "string",
+          "description": "给人看的一句话。"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "实际请求的地址（规范过的）。"
+        },
+        "model": {
+          "type": "string"
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "openai_responses",
+            "anthropic"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "description": "模型的回答；失败时是空串。"
+        },
+        "usage": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/AskUsageView"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "images": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "这次带了几张图。"
+        },
+        "elapsed_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "provider_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "出错时服务商回的 HTTP 状态码。"
+        },
+        "provider_message": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "服务商报错原文，截到 500 字符，里面的 Key 换成 [REDACTED]。"
+        },
+        "asked_at": {
+          "type": "string"
+        }
       }
     }
   }

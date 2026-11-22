@@ -126,7 +126,8 @@ pub struct Endpoint {
 ///       old "/api/v1/collections/:collection_id/agent-workspace";
 ///   ```
 /// - 访问：`public`、`signed`、`admin`、`closed`。
-/// - 方括号里是附加选项，现在只有 `unlimited_body`：去掉默认的请求体大小限制（上传文件的接口）。
+/// - 方括号里是附加选项：`unlimited_body` 去掉默认的请求体大小限制（上传文件的接口）；`large_body` 放宽到
+///   `LARGE_BODY_LIMIT_BYTES`（带 base64 图片的 JSON）。
 #[macro_export]
 macro_rules! endpoints {
     (
@@ -176,6 +177,10 @@ macro_rules! endpoints {
     (@flags $router:expr, unlimited_body $(, $rest:ident)*) => {
         $crate::endpoints!(@flags $router.layer(::axum::extract::DefaultBodyLimit::disable()) $(, $rest)*)
     };
+    // 带图片的 JSON（base64）：比默认的 2 MB 大，又不像上传那样不设上限
+    (@flags $router:expr, large_body $(, $rest:ident)*) => {
+        $crate::endpoints!(@flags $router.layer(::axum::extract::DefaultBodyLimit::max($crate::app::endpoints::LARGE_BODY_LIMIT_BYTES)) $(, $rest)*)
+    };
 
     (@access public) => { $crate::app::endpoints::Access::Public };
     (@access signed) => { $crate::app::endpoints::Access::Signed };
@@ -188,6 +193,9 @@ macro_rules! endpoints {
     (@replaced_by) => { None };
     (@replaced_by $replaced_by:literal) => { Some($replaced_by) };
 }
+
+/// `large_body` 标记的接口的请求体上限：带几张 base64 图片的 JSON（问模型时最多 4 张、每张 4 MB）。
+pub const LARGE_BODY_LIMIT_BYTES: usize = 24 * 1024 * 1024;
 
 /// `///` 行开头的空格去掉；多行说明连成一行（中文不加空格）。
 pub const fn trim_summary(doc: &'static str) -> &'static str {

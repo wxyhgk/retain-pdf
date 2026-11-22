@@ -160,3 +160,97 @@ async fn translation_model_list_route_proxies_the_provider_models() {
     .await;
     assert_eq!(status, StatusCode::BAD_REQUEST, "多余字段");
 }
+
+/// 用翻译接口问一次模型、带图片（2026-11-22）经真实路由：图片按 OpenAI Chat 的写法转给服务商，回答原样带回；
+/// 返回的键和契约一一对上；图片不是 base64、字段多余都是 400；Key 不回显。
+#[tokio::test]
+async fn translation_ask_route_sends_images_to_the_provider() {
+    let seen = std::sync::Arc::new(std::sync::Mutex::new(Value::Null));
+    let recorder = seen.clone();
+    let router = axum::Router::new().route(
+        "/v1/chat/completions",
+        axum::routing::post(move |axum::Json(body): axum::Json<Value>| {
+            let recorder = recorder.clone();
+            async move {
+                *recorder.lock().unwrap() = body;
+                axum::Json(json!({"choices": [{"message": {"content": "两张表一样"}}], "usage": {"prompt_tokens": 812, "completion_tokens": 6}}))
+            }
+        }),
+    );
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        axum::serve(listener, router).await.unwrap();
+    });
+    let state = no_private_escape(test_state("provider-ask"));
+    let png = "iVBORw0KGgpmYWtl";
+
+    let (status, payload) = post_single(
+        state.clone(),
+        "/api/v1/providers/translation/ask",
+        json!({
+            "base_url": format!("http://{addr}/v1"), "api_key": "sk-local-not-real", "model": "qwen-vl",
+            "system": "你是排版检查员。", "prompt": "这两张表一样吗？",
+            "images": [{"media_type": "image/png", "data": png}, {"media_type": "image/jpeg", "data": png}],
+        }),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{payload}");
+    let data = &payload["data"];
+    assert_eq!((data["ok"].as_bool(), data["status"].as_str(), data["text"].as_str()), (Some(true), Some("ok"), Some("两张表一样")));
+    assert_eq!((data["images"].as_u64(), data["usage"]["input_tokens"].as_u64()), (Some(2), Some(812)));
+    assert!(!payload.to_string().contains("sk-local-not-real"));
+    let sent = seen.lock().unwrap().clone();
+    assert_eq!(sent["model"], "qwen-vl");
+    assert_eq!(sent["messages"][0], json!({"role": "system", "content": "你是排版检查员。"}));
+    let content = &sent["messages"][1]["content"];
+    assert_eq!(content[0], json!({"type": "text", "text": "这两张表一样吗？"}));
+    assert_eq!(content[1]["image_url"]["url"], format!("data:image/png;base64,{png}"));
+    assert_eq!(content[2]["image_url"]["url"], format!("data:image/jpeg;base64,{png}"));
+
+    // 契约 translation-providers.v1：真实返回的键和契约的 required 一一对上。
+    let contract: Value = serde_json::from_str(
+        &std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../contracts/translation-providers.v1.schema.json"))
+            .expect("read contract"),
+    )
+    .unwrap();
+    let keys = |value: &Value| {
+        let mut keys: Vec<String> = value.as_object().unwrap().keys().cloned().collect();
+        keys.sort();
+        keys
+    };
+    let required = |name: &str| {
+        let mut keys: Vec<String> = contract["definitions"][name]["required"].as_array().unwrap().iter().map(|k| k.as_str().unwrap().to_string()).collect();
+        keys.sort();
+        keys
+    };
+    assert_eq!(keys(data), required("TranslationModelAskView"));
+    assert_eq!(keys(&data["usage"]), required("AskUsageView"));
+    assert!(contract["definitions"]["TranslationModelAskStatus"]["enum"].as_array().unwrap().contains(&data["status"]));
+
+    for body in [
+        json!({"base_url": format!("http://{addr}/v1"), "api_key": "sk", "model": "m", "prompt": "p", "images": [{"media_type": "image/png", "data": "not base64!"}]}),
+        json!({"base_url": format!("http://{addr}/v1"), "api_key": "sk", "model": "m", "prompt": "p", "images": [{"media_type": "image/tiff", "data": png}]}),
+        json!({"base_url": format!("http://{addr}/v1"), "api_key": "sk", "model": "m", "prompt": ""}),
+        json!({"base_url": format!("http://{addr}/v1"), "api_key": "sk", "model": "m", "prompt": "p", "temperature": 0}),
+    ] {
+        let (status, payload) = post_single(state.clone(), "/api/v1/providers/translation/ask", body).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{payload}");
+    }
+}
+
+/// 带图片的请求体比默认的 2 MB 大：问模型的接口放宽到 24 MB。
+#[tokio::test]
+async fn translation_ask_accepts_bodies_larger_than_the_default_limit() {
+    let state = no_private_escape(test_state("provider-ask-large-body"));
+    use base64::Engine;
+    let image = base64::engine::general_purpose::STANDARD.encode(vec![0u8; 3 * 1024 * 1024]);
+    // 本机没人监听的端口，马上连不上：只看请求体有没有被收下（不是 413），结果是 unreachable 也行
+    let (status, payload) = post_single(
+        state,
+        "/api/v1/providers/translation/ask",
+        json!({"base_url": "http://127.0.0.1:9/v1", "api_key": "sk", "model": "m", "prompt": "p", "images": [{"media_type": "image/png", "data": image}]}),
+    )
+    .await;
+    assert_ne!(status, StatusCode::PAYLOAD_TOO_LARGE, "{payload}");
+}

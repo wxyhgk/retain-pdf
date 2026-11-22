@@ -7,7 +7,23 @@
 /**
  * Endpoint input, query, and output DTOs published by translation-providers.v1.schema.json.
  */
-export type TranslationProvidersSchema = TranslationModelListView | TranslationModelsRequest;
+export type TranslationProvidersSchema =
+  | TranslationModelAskRequest
+  | TranslationModelAskView
+  | TranslationModelListView
+  | TranslationModelsRequest;
+/**
+ * rejected：服务商拒绝了请求（常见：模型不支持看图、模型名不对）；empty：回了但没有文字（可能都用在思考上）。
+ */
+export type TranslationModelAskStatus =
+  | "ok"
+  | "unauthorized"
+  | "rejected"
+  | "rate_limited"
+  | "provider_error"
+  | "unreachable"
+  | "empty"
+  | "invalid_input";
 /**
  * unsupported：服务商回 404/405/501，或者回的不是模型列表；unauthorized：401/403；invalid_input：Key 里有放不进请求头的字符；unreachable：连不上、超时；provider_error：别的错误、重定向、列表太大。
  */
@@ -18,6 +34,89 @@ export type TranslationModelListStatus =
  */
 export type PriceBasis = "host" | "official_list" | null;
 
+/**
+ * deny_unknown_fields。
+ */
+export interface TranslationModelAskRequest {
+  /**
+   * 内联 Key，用完不存。
+   */
+  api_key: string;
+  /**
+   * 接口地址；空时 Anthropic 用官方地址，别的用默认翻译地址。
+   */
+  base_url?: string;
+  /**
+   * openai（默认）、openai_responses 或 anthropic。
+   */
+  api_protocol?: string;
+  model: string;
+  /**
+   * 系统提示，可空。
+   */
+  system?: string;
+  /**
+   * 用户的问题，最多 100000 字。
+   */
+  prompt: string;
+  /**
+   * @maxItems 4
+   */
+  images?:
+    | []
+    | [AskImage]
+    | [AskImage, AskImage]
+    | [AskImage, AskImage, AskImage]
+    | [AskImage, AskImage, AskImage, AskImage];
+  /**
+   * 回答最多多少 token，默认 1024，超过 8192 按 8192。
+   */
+  max_tokens?: number | null;
+}
+export interface AskImage {
+  media_type: "image/png" | "image/jpeg" | "image/webp" | "image/gif";
+  /**
+   * 图片内容，标准 base64，不带 data: 前缀；解码后最多 4 MB。
+   */
+  data: string;
+}
+export interface TranslationModelAskView {
+  ok: boolean;
+  status: TranslationModelAskStatus;
+  /**
+   * 给人看的一句话。
+   */
+  summary: string;
+  /**
+   * 实际请求的地址（规范过的）。
+   */
+  base_url: string;
+  model: string;
+  protocol: "openai" | "openai_responses" | "anthropic";
+  /**
+   * 模型的回答；失败时是空串。
+   */
+  text: string;
+  usage: AskUsageView | null;
+  /**
+   * 这次带了几张图。
+   */
+  images: number;
+  elapsed_ms: number;
+  /**
+   * 出错时服务商回的 HTTP 状态码。
+   */
+  provider_code: string | null;
+  /**
+   * 服务商报错原文，截到 500 字符，里面的 Key 换成 [REDACTED]。
+   */
+  provider_message: string | null;
+  asked_at: string;
+}
+export interface AskUsageView {
+  input_tokens: number | null;
+  output_tokens: number | null;
+}
 export interface TranslationModelListView {
   ok: boolean;
   status: TranslationModelListStatus;
