@@ -11,7 +11,7 @@
 //     pages: [{ index, width, height, tables: [ <table, see src/table/layout.js> ] }] }
 // Writes DIR/overlay.pdf, DIR/layout.json (rpr_layout_v1: redraw with
 // bin/rpr-layout-pdf.js) and DIR/report.json (rpr_table_report_v1: per table
-// fits / fontSize / width / height / columns). Cells are text with "$...$"
+// fits / fontSize / width / height / columns / line_height / padding_y). Cells are text with "$...$"
 // formulas (MathJax, like the body text). Fonts: every --font-path, then the
 // bundled data/fonts. Exit 0 on success; otherwise non-zero with one JSON
 // line {"error": "..."} on stderr (2: usage or input, 1: anything else).
@@ -93,7 +93,7 @@ function main() {
         catch (error) { throw new UsageError(`page ${p} table ${table.id}: ${error.message}`); }
         blocks.push(...laid.blocks);
         covers.push(...laid.covers);
-        report.push({ page: Number.isFinite(Number(page.index)) ? Number(page.index) : p, id: laid.id, fits: laid.fits, font_size: laid.fontSize, width: laid.width, height: laid.height, columns: laid.columns });
+        report.push({ page: Number.isFinite(Number(page.index)) ? Number(page.index) : p, id: laid.id, fits: laid.fits, font_size: laid.fontSize, width: laid.width, height: laid.height, columns: laid.columns, line_height: laid.lineHeight, padding_y: laid.paddingY });
       }
       return { index: Number.isFinite(Number(page.index)) ? Number(page.index) : p, width: Number(page.width), height: Number(page.height), covers, blocks };
     });

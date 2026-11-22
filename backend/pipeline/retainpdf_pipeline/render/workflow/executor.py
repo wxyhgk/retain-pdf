@@ -117,7 +117,7 @@ def _relocate_links_best_effort(output_pdf_path: Path, source_pdf_path: Path, se
     return result
 
 
-def _apply_table_translations_best_effort(output_pdf_path: Path, render_plan: RenderPlan) -> dict:
+def _apply_table_translations_best_effort(output_pdf_path: Path, render_plan: RenderPlan, render_diagnostics: dict) -> dict:
     """表格译文放回译文 PDF（表格翻译 T5，render/output/tables/overlay.py：rpr 引擎按原表的框重排整表）。没开表格翻译就没有 tables.v1.json，直接跳过；
     出错只记一笔，照常交出排好的 PDF（表格保持原文，阅读页照样能看到整表译文）。"""
     if not Path(output_pdf_path).is_file():
@@ -128,6 +128,7 @@ def _apply_table_translations_best_effort(output_pdf_path: Path, render_plan: Re
             source_pdf_path=render_plan.render_inputs.source_pdf_path,
             translations_dir=render_plan.render_inputs.translations_dir,
             page_indices=render_plan.selected_pages.keys(),
+            body_font_size=_body_font_size(render_diagnostics),
         )
     except Exception as exc:  # noqa: BLE001 — 表格放不回去不该让整个排版失败
         print(f"table overlay skipped: {type(exc).__name__}: {exc}", flush=True)
@@ -139,6 +140,15 @@ def _apply_table_translations_best_effort(output_pdf_path: Path, render_plan: Re
             flush=True,
         )
     return result
+
+
+def _body_font_size(render_diagnostics: dict) -> float | None:
+    """rpr 引擎排正文时全书统一的正文字号（报告的 body_font.shared）；Typst 退路没有，返回 None。"""
+    try:
+        value = float((render_diagnostics.get("rpr_fit_body_font") or {}).get("shared") or 0)
+    except (TypeError, ValueError):
+        return None
+    return value if value > 0 else None
 
 
 def execute_render_plan(
@@ -452,7 +462,7 @@ def execute_render_plan(
             context=context,
             extract_selected_pages=extract_selected_pages,
         )
-        render_diagnostics["table_overlay"] = _apply_table_translations_best_effort(output_pdf_path, render_plan)
+        render_diagnostics["table_overlay"] = _apply_table_translations_best_effort(output_pdf_path, render_plan, render_diagnostics)
         render_diagnostics["link_relocation"] = _relocate_links_best_effort(
             output_pdf_path, render_plan.render_inputs.source_pdf_path, render_plan.selected_pages
         )
