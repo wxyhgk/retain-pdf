@@ -163,37 +163,20 @@ jobs:
           python -m pip install --target $sitePackages -r frontend/desktop/requirements-desktop-windows.txt
           if ($LASTEXITCODE -ne 0) { throw "pip install desktop requirements failed (exit=$LASTEXITCODE)" }
           $pythonBundleExe = Join-Path $bundleRoot "python.exe"
-          # 打包 retainpdf-pipeline console 入口：--no-deps 避免重复拉原生轮子；
-          # 用捆绑 python.exe 直接安装（产出 Lib/site-packages + Scripts/retainpdf-pipeline.exe），
-          # 但 Scripts exe 首行 shebang 硬编码构建机路径不可搬运，运行时走 backend/bin/*.cmd wrapper（-m）。
-          $pipelineSrc = Join-Path $env:RETAIN_PDF_SERVICES_ROOT "pipeline"
-          # 注意：捆绑 python.exe 自身没有 pip（No module named pip），必须用
-          # 系统 python 的 pip --target 装进 bundle，不能调 bundle python -m pip。
-          # pwsh 不会因为原生命令（pip、python）失败而停下：每一步都查退出码，失败就让构建失败。
-          # v2026.11.22 的 Windows 包就是这里四个本仓库包全没装上、import 检查也报错，构建却照样成功发了出去。
+          # 本仓库的 Python 包装哪些、装完怎么查，三个平台共用 ops/release/desktop_python_bundle.py：
+          # 名单取后端工作区成员（后端加包自动跟上，v2026.11.22 就是漏了只按字符串加载的翻译引擎包）；
+          # 装完用这个自带的 python.exe 查每个模块、翻译引擎入口、源码里 import 的第三方库。
+          # 捆绑 python.exe 自身没有 pip，用系统 python 的 pip --target 装进 bundle。
+          # pwsh 不会因为原生命令失败而停下：每一步查退出码，失败就让构建失败。
           function Assert-Exit([string]$what) {
             if ($LASTEXITCODE -ne 0) { throw "$what failed (exit=$LASTEXITCODE)" }
           }
-          # 先装 wheel（和 macOS 一样）：--no-build-isolation 用的是这台机器 python 的 setuptools，
-          # 缺 wheel 时报 invalid command 'bdist_wheel'，metadata 生成失败。
-          python -m pip install --upgrade wheel setuptools
-          Assert-Exit "pip install wheel setuptools"
-          # 底座包（retainpdf-base）、公式包（retainpdf-math）先装：pipeline 依赖它们，--no-deps 不会替我们拉。
-          $baseSrc = Join-Path $env:RETAIN_PDF_SERVICES_ROOT "base"
-          python -m pip install --target $sitePackages --no-deps --no-build-isolation $baseSrc
-          Assert-Exit "pip install retainpdf-base"
-          $mathSrc = Join-Path $env:RETAIN_PDF_SERVICES_ROOT "math"
-          python -m pip install --target $sitePackages --no-deps --no-build-isolation $mathSrc
-          Assert-Exit "pip install retainpdf-math"
-          # 翻译包（retainpdf-translation）同理，提示词作为包数据随 wheel 装进去。
-          $translationSrc = Join-Path $env:RETAIN_PDF_SERVICES_ROOT "translation"
-          python -m pip install --target $sitePackages --no-deps --no-build-isolation $translationSrc
-          Assert-Exit "pip install retainpdf-translation"
-          python -m pip install --target $sitePackages --no-deps --no-build-isolation $pipelineSrc
-          Assert-Exit "pip install retainpdf-pipeline"
+          python ops/release/desktop_python_bundle.py install --pip-python python --target $sitePackages
+          Assert-Exit "install repo python packages"
+          python ops/release/desktop_python_bundle.py check --python $pythonBundleExe --pythonpath $sitePackages
+          Assert-Exit "bundled python check"
+          Write-Host "python_bundle_import_check=ok"
           $env:PYTHONPATH = $sitePackages
-          & $pythonBundleExe -c "import requests, fitz, pikepdf, PIL, urllib3, retainpdf_base, retainpdf_math, retainpdf_translation, retainpdf_pipeline; print('python_bundle_import_check=ok')"
-          Assert-Exit "bundled python import check"
           # console 入口探针（过渡期 warn-only，不阻断打包）
           try {
             & $pythonBundleExe -m retainpdf_pipeline.entrypoints.console --help
@@ -411,17 +394,11 @@ jobs:
           site_packages="$bundle_root/lib/python${py_minor}/site-packages"
           mkdir -p "$site_packages"
           "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r frontend/desktop/requirements-desktop-posix.txt
-          "$bundle_root/bin/python3" - <<'PY'
-          import requests, fitz, pikepdf, PIL, urllib3
-          print("python_bundle_import_check=ok")
-          PY
-          # 打包 retainpdf-pipeline console 入口：--no-deps 避免重复拉原生轮子触发 ldd 门禁
-          # 底座包（retainpdf-base）、公式包（retainpdf-math）先装：pipeline 依赖它们，--no-deps 不会替我们拉。
-          "$bundle_root/bin/python3" -m pip install --target "$site_packages" --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/base"
-          "$bundle_root/bin/python3" -m pip install --target "$site_packages" --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/math"
-          # 翻译包（retainpdf-translation）同理，提示词作为包数据随 wheel 装进去。
-          "$bundle_root/bin/python3" -m pip install --target "$site_packages" --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/translation"
-          "$bundle_root/bin/python3" -m pip install --target "$site_packages" --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/pipeline"
+          # 本仓库的 Python 包：三个平台共用 ops/release/desktop_python_bundle.py（名单取后端工作区成员，
+          # --no-deps 避免重复拉原生轮子触发 ldd 门禁）；装完用自带 python3 查模块、翻译引擎入口、第三方库。
+          "$bundle_root/bin/python3" ops/release/desktop_python_bundle.py install --pip-python "$bundle_root/bin/python3" --target "$site_packages"
+          "$bundle_root/bin/python3" ops/release/desktop_python_bundle.py check --python "$bundle_root/bin/python3"
+          echo "python_bundle_import_check=ok"
           # 兜底：pip 生成脚本首行多为 runner 绝对路径，重写为可搬运 shebang
           pipeline_entry="$(find "$bundle_root" -maxdepth 4 -name 'retainpdf-pipeline' -type f | head -n 1 || true)"
           if [ -n "${pipeline_entry:-}" ]; then
@@ -883,15 +860,9 @@ jobs:
           # 只装现成 wheel（pikepdf 有 macosx arm64 wheel，自带 qpdf）：没有 wheel 时
           # 直接失败，而不是悄悄源码编译出一个依赖构建机 Homebrew 的扩展。
           "$bundle_python3" -m pip install --only-binary=:all: -r frontend/desktop/requirements-desktop-posix.txt
-          # 打包 retainpdf-pipeline console 入口：--no-deps 避免重复拉原生轮子触发门禁
-          # 先装 wheel：venv 精简后缺 bdist_wheel，否则 metadata 生成失败
-          "$bundle_python3" -m pip install wheel
-          # 底座包（retainpdf-base）、公式包（retainpdf-math）先装：pipeline 依赖它们，--no-deps 不会替我们拉。
-          "$bundle_python3" -m pip install --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/base"
-          "$bundle_python3" -m pip install --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/math"
-          # 翻译包（retainpdf-translation）同理，提示词作为包数据随 wheel 装进去。
-          "$bundle_python3" -m pip install --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/translation"
-          "$bundle_python3" -m pip install --no-deps --no-build-isolation "$RETAIN_PDF_SERVICES_ROOT/pipeline"
+          # 本仓库的 Python 包：三个平台共用 ops/release/desktop_python_bundle.py（名单取后端工作区成员，
+          # 先装 wheel，--no-deps 避免重复拉原生轮子触发门禁）；装完的检查在下面「python_bundle_import_check」那步。
+          "$bundle_python3" ops/release/desktop_python_bundle.py install --pip-python "$bundle_python3"
           # 兜底：pip 生成脚本首行多为 runner 绝对路径，重写为可搬运 shebang（纯文本替换，不跑 install_name_tool）
           pipeline_entry="$bundle_root/bin/retainpdf-pipeline"
           if [ -f "$pipeline_entry" ]; then
@@ -941,8 +912,10 @@ jobs:
           print(f"python_socket_ext={socket_spec.origin}")
           for module_name in ["_socket", "socket", "ssl", "requests", "fitz", "pikepdf", "PIL", "urllib3"]:
               importlib.import_module(module_name)
-          print("python_bundle_import_check=ok")
           PY
+          # 本仓库包的完整检查（每个模块、翻译引擎入口、第三方库），沿用上面的 PYTHONHOME / PYTHONPATH。
+          "$bundle_python3" ops/release/desktop_python_bundle.py check --python "$bundle_python3"
+          echo "python_bundle_import_check=ok"
           unset PYTHONHOME
           unset PYTHONPATH
           otool -L "$bundle_python3"

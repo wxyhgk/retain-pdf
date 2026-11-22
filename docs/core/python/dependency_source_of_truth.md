@@ -35,6 +35,27 @@ python backend/pipeline/devtools/sync_python_requirements.py --repo-root .
 python backend/pipeline/devtools/sync_python_requirements.py --repo-root . --check
 ```
 
+## 桌面安装包里的本仓库 Python 包
+
+2026-11-22 起，三个平台的桌面安装包都用 `ops/release/desktop_python_bundle.py` 装本仓库的 Python 包：
+
+- 装哪些：只看 `backend/pyproject.toml` 的 `[tool.uv.workspace].members`。新加的包登记进工作区就会被打进安装包，
+  不用改打包脚本。以前三个平台各写一份名单，后端拆出只按字符串加载的翻译引擎包（`retainpdf-translation-classic`、
+  `retainpdf-translation-agent`）后名单没跟上，v2026.11.22 的翻译在三个平台上都报 `ModuleNotFoundError`。
+- 装完检查（`ops/release/desktop_python_check.py`，用安装包自带的 Python 跑，失败就让构建失败）：
+  工作区包和它们声明的依赖都装了；每个模块都能 import；翻译引擎登记表里的入口都能加载；源码里所有 import
+  （含函数里面的）指向的第三方库都装了。确实可选的第三方库写进 `OPTIONAL_IMPORTS` 并写明理由。
+- 平时：`.github/workflows/desktop-python-bundle.yml` 在后端 Python 包、桌面依赖清单改动时，
+  照同样的装法在 Linux 和 Windows 上装一遍、查一遍，PR 上就能发现，不等发版。
+
+本地照着查一遍：
+
+```bash
+python -m venv /tmp/bundle-venv && /tmp/bundle-venv/bin/python -m pip install -r frontend/desktop/requirements-desktop-posix.txt
+python ops/release/desktop_python_bundle.py install --pip-python /tmp/bundle-venv/bin/python
+python ops/release/desktop_python_bundle.py check --python /tmp/bundle-venv/bin/python
+```
+
 ## 当前口径
 
 运行时 Python 包：
