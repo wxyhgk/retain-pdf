@@ -1,5 +1,5 @@
 repo=https://github.com/wxyhgk/retain-pdf-rendering.git
-ref=feat/cjk-linebreak
-commit=253a045d75738d1fc46ffa18d5b1de4aec89af74
-synced_at=2026-11-22T10:30:07Z
+ref=main
+commit=bf237025eee3bcb4eb8d28a4b727350e59ca8147
+synced_at=2026-11-22T11:21:50Z
 paths=bin/rpr-retain.js bin/rpr-fit.js bin/rpr-layout-pdf.js bin/rpr-table.js bin/rpr-math-check.js src data/fonts package.json LICENSE
