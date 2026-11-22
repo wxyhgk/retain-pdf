@@ -5,3 +5,7 @@ import { request } from "../request.js";
 export function listTranslationProviderModels(apiPrefix, args, options) {
     return request({ apiPrefix, method: "POST", path: `providers/translation/models`, body: args.body, options });
 }
+/** POST /api/v1/providers/translation/ask */
+export function askTranslationProviderModel(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "POST", path: `providers/translation/ask`, body: args.body, options });
+}

@@ -2,6 +2,8 @@
 // 重新生成：npm --prefix frontend/packages/api run generate:client
 
 import type {
+  TranslationModelAskRequest,
+  TranslationModelAskView,
   TranslationModelListView,
   TranslationModelsRequest,
 } from "@retainpdf/contracts/translation-providers";
@@ -14,4 +16,13 @@ export function listTranslationProviderModels(
   options?: RequestOptions,
 ): Promise<TranslationModelListView> {
   return request<TranslationModelListView>({ apiPrefix, method: "POST", path: `providers/translation/models`, body: args.body, options });
+}
+
+/** POST /api/v1/providers/translation/ask */
+export function askTranslationProviderModel(
+  apiPrefix: string | undefined,
+  args: { body: TranslationModelAskRequest },
+  options?: RequestOptions,
+): Promise<TranslationModelAskView> {
+  return request<TranslationModelAskView>({ apiPrefix, method: "POST", path: `providers/translation/ask`, body: args.body, options });
 }
