@@ -88,8 +88,10 @@
       ? options.metrics
       : Metrics.createMetrics(options.metrics);
 
-    function prepare(content) {
-      const prepared = Linebreak.prepare(toSegments(content), fontMetrics);
+    // options.rules: "cjk" (default: Chinese keep-together and runt rules) or
+    // "typst" (Typst 0.15.1's breaking exactly; the parity tests).
+    function prepare(content, options = {}) {
+      const prepared = Linebreak.prepare(toSegments(content), fontMetrics, options);
       prepared.content = content;
       return prepared;
     }
@@ -113,7 +115,8 @@
       // Breaking: greedy first-fit (Typst "simple", the default here),
       // linebreaks: "optimized" (Typst's default Knuth–Plass, which may shrink
       // a justified line's spaces), or opt-in balanced greedy (see Linebreak.layout).
-      const breakOptions = { indent, hang };
+      // justify also tells the runt repair (rules "cjk") how the lines are set
+      const breakOptions = { indent, hang, justify: align === "justify" };
       if (layoutOptions.linebreaks === "optimized") Object.assign(breakOptions, { optimized: true, justify: align === "justify" });
       else if (layoutOptions.balance) breakOptions.balance = layoutOptions.balance;
       const core = Linebreak.layout(prepared, fontSize, width, breakOptions);
