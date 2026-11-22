@@ -8,18 +8,43 @@ import fitz
 import pikepdf
 
 
+def _inside(x, y, region) -> bool:
+    """和 PyMuPDF 的 ``point in rect`` 一样（左上含、右下不含），只是用浮点数比，不建 fitz 对象。
+
+    以前每个字、每个链接都建 fitz.Point / fitz.Rect 再交给 MuPDF 判断：一篇 JACS 论文 10 页 321 个引用链接，
+    88 万次判断，链接重定位用了约 2 分钟，排版本身才 18 秒（2026-11-22 c16bb6）。"""
+    return region[0] <= x < region[2] and region[1] <= y < region[3]
+
+
+class _Char(tuple):
+    """一个字：(字符, 框)，框是 (x0, y0, x1, y1)；``center`` 是框的中心。换行标记的框是 None。"""
+    __slots__ = ()
+
+    @property
+    def center(self):
+        box = self[1]
+        return ((box[0] + box[2]) / 2, (box[1] + box[3]) / 2)
+
+
 def _characters(page, regions):
+    regions = [tuple(region) for region in regions]
     chars = []
     for block in page.get_text('rawdict')['blocks']:
         for line in block.get('lines', []):
             for span in line['spans']:
                 for char in span['chars']:
-                    rect = fitz.Rect(char['bbox'])
-                    center = (rect.tl + rect.br) / 2
-                    if any(center in region for region in regions):
-                        chars.append((char['c'], rect))
-            chars.append(('\n', None))
+                    box = tuple(char['bbox'])
+                    cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+                    if any(_inside(cx, cy, region) for region in regions):
+                        chars.append(_Char((char['c'], box)))
+            chars.append(_Char(('\n', None)))
     return chars
+
+
+def _in_rect(chars, rect):
+    """``chars`` 里中心落在 ``rect`` 里的字（保持顺序）。"""
+    region = tuple(rect)
+    return [char for char in chars if char[1] and _inside(*char.center, region)]
 
 
 def _anchor_pattern(text, destination):
@@ -84,11 +109,30 @@ def relocate_translated_links(output_pdf: Path, source_pdf: Path, translated_pag
             idx: offset for offset, idx in enumerate(sorted(translated_pages))}
         page_chars = _PageChars(target, lambda idx: output_indices[idx])
         source_chars = _PageChars(source, lambda idx: idx)
+        # 同一块（或同一接续组）在某页上的译文字：一页的链接多半落在同几块里，按块筛一次，不按链接每次重筛整页
+        member_texts = {}
+
+        def member_text(member_page, members):
+            regions = tuple(
+                (x0 - 1, y0 - 1, x1 + 1, y1 + 1)
+                for x0, y0, x1, y1 in (tuple(item['bbox']) for item in members if item['page_idx'] == member_page)
+            )
+            key = (member_page, regions)
+            if key not in member_texts:
+                chars = [
+                    (c, r) for c, r in page_chars[member_page]
+                    if r and not c.isspace() and any(_inside((r[0]+r[2])/2, (r[1]+r[3])/2, region) for region in regions)
+                ]
+                member_texts[key] = (chars, ''.join(c for c, r in chars))
+            return member_texts[key]
+
         for page_index in sorted(translated_pages):
             items = translated_pages[page_index]
             if page_index >= len(source) or output_indices[page_index] >= len(target):
                 continue
             page_chars.forget_before(page_index - _KEEP_PAGES_BEHIND)
+            for key in [key for key in member_texts if key[0] < page_index - _KEEP_PAGES_BEHIND]:
+                del member_texts[key]
             source_chars.forget_before(page_index)
             source_page, target_page = source[page_index], target[output_indices[page_index]]
             source_links = source_page.get_links()
@@ -109,7 +153,7 @@ def relocate_translated_links(output_pdf: Path, source_pdf: Path, translated_pag
                 group = owner.get('continuation_group')
                 members = group_members.get(group) if group else None
                 members = members or [owner]
-                original_chars = [(c,r) for c,r in source_chars[page_index] if r and (r.tl+r.br)/2 in rect]
+                original_chars = _in_rect(source_chars[page_index], rect)
                 anchor = ''.join(c for c, r in original_chars if r).strip()
                 if not anchor:
                     anchor = source_page.get_textbox(rect).strip()
@@ -119,12 +163,13 @@ def relocate_translated_links(output_pdf: Path, source_pdf: Path, translated_pag
                     continue
                 if re.fullmatch(r'Fig(?:ure)?\.|Tables?', anchor, re.I):
                     nearby = [(c,r) for c,r in source_chars[page_index] if r
-                              and rect.x1-1 <= r.x0 <= rect.x1+35
-                              and abs((r.y0+r.y1-rect.y0-rect.y1)/2) < rect.height]
+                              and rect.x1-1 <= r[0] <= rect.x1+35
+                              and abs((r[1]+r[3]-rect.y0-rect.y1)/2) < rect.height]
                     following = ''.join(c for c,r in nearby)
                     number = re.search(r'\d+', following)
                     if not number:
-                        indices = [idx for idx,(c,r) in enumerate(source_chars[page_index]) if r and (r.tl+r.br)/2 in rect]
+                        region = tuple(rect)
+                        indices = [idx for idx,(c,r) in enumerate(source_chars[page_index]) if r and _inside((r[0]+r[2])/2, (r[1]+r[3])/2, region)]
                         if indices:
                             following = ''.join(c for c,r in source_chars[page_index][max(indices)+1:max(indices)+14])
                             number = re.match(r'\s*(\d+)', following)
@@ -133,12 +178,10 @@ def relocate_translated_links(output_pdf: Path, source_pdf: Path, translated_pag
                 pattern = _anchor_pattern(anchor, destination)
                 candidates = []
                 for member_page in {item['page_idx'] for item in members if item.get('page_idx') in output_indices}:
-                    regions = [fitz.Rect(item['bbox']) + (-1,-1,1,1) for item in members if item['page_idx'] == member_page]
-                    chars = [(c,r) for c,r in page_chars[member_page] if r and not c.isspace() and any((r.tl+r.br)/2 in region for region in regions)]
-                    text = ''.join(c for c,r in chars)
+                    chars, text = member_text(member_page, members)
                     matches = list(re.finditer(pattern, text, re.IGNORECASE)) if anchor else []
                     for match in matches:
-                        boxes = [r for c,r in chars[match.start('anchor'):match.end('anchor')]]
+                        boxes = [fitz.Rect(r) for c,r in chars[match.start('anchor'):match.end('anchor')]]
                         if not boxes: continue
                         # Wrapped URLs need one clickable rectangle per line.
                         line_boxes = []
