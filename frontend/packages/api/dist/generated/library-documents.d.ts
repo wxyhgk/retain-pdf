@@ -1,4 +1,4 @@
-import type { AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, CollectionDeleteResultView, CollectionDocumentRemoveResultView, CollectionListView, CollectionRecord, CreateCollectionInput, CreateDocumentMetadataSuggestionInput, CreateJobInput, DeleteDocumentQuery, DocumentDeleteResultView, DocumentFilesView, DocumentJobListView, DocumentListView, DocumentMetadataSuggestionApplyView, DocumentMetadataSuggestionListView, DocumentMetadataSuggestionView, DocumentReadingQuery, DocumentReadingView, DocumentRecord, JobSubmissionView, ListDocumentJobsQuery, ListDocumentMetadataSuggestionsQuery, ListDocumentsQuery, PatchCollectionInput, PatchDocumentInput, PatchTranslationVersionInput, SearchQuery, SearchResultView, SetCurrentTranslationVersionInput, TranslationCoverageView, TranslationVersionsQuery, TranslationVersionsView } from "@retainpdf/contracts/library-documents";
+import type { AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, CollectionDeleteResultView, CollectionDocumentRemoveResultView, CollectionListView, CollectionRecord, CreateCollectionInput, CreateDocumentMetadataSuggestionInput, CreateJobInput, CreateTagInput, DeleteDocumentQuery, DocumentDeleteResultView, DocumentFilesView, DocumentJobListView, DocumentListView, DocumentMetadataSuggestionApplyView, DocumentMetadataSuggestionListView, DocumentMetadataSuggestionView, DocumentReadingQuery, DocumentReadingView, DocumentRecord, JobSubmissionView, ListDocumentJobsQuery, ListDocumentMetadataSuggestionsQuery, ListDocumentsQuery, PatchCollectionInput, PatchDocumentInput, PatchTagInput, PatchTranslationVersionInput, SearchQuery, SearchResultView, SetCurrentTranslationVersionInput, SetDocumentTagsInput, TagDeleteResultView, TagListView, TagRecord, TranslationCoverageView, TranslationVersionsQuery, TranslationVersionsView } from "@retainpdf/contracts/library-documents";
 import { type RequestOptions } from "../request.js";
 /** GET /api/v1/documents */
 export declare function listDocuments(apiPrefix: string | undefined, args?: {
@@ -107,3 +107,23 @@ export declare function patchTranslationVersion(apiPrefix: string | undefined, a
     version_id: string;
     body: PatchTranslationVersionInput;
 }, options?: RequestOptions): Promise<TranslationVersionsView>;
+/** GET /api/v1/tags */
+export declare function listTags(apiPrefix: string | undefined, _args?: Record<string, never>, options?: RequestOptions): Promise<TagListView>;
+/** POST /api/v1/tags */
+export declare function createTag(apiPrefix: string | undefined, args: {
+    body: CreateTagInput;
+}, options?: RequestOptions): Promise<TagRecord>;
+/** PATCH /api/v1/tags/:tag_id */
+export declare function patchTag(apiPrefix: string | undefined, args: {
+    tag_id: string;
+    body: PatchTagInput;
+}, options?: RequestOptions): Promise<TagRecord>;
+/** DELETE /api/v1/tags/:tag_id */
+export declare function deleteTag(apiPrefix: string | undefined, args: {
+    tag_id: string;
+}, options?: RequestOptions): Promise<TagDeleteResultView>;
+/** PUT /api/v1/documents/:document_id/tags */
+export declare function setDocumentTags(apiPrefix: string | undefined, args: {
+    document_id: string;
+    body: SetDocumentTagsInput;
+}, options?: RequestOptions): Promise<DocumentRecord>;

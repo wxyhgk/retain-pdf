@@ -11,6 +11,7 @@ import type {
   CreateCollectionInput,
   CreateDocumentMetadataSuggestionInput,
   CreateJobInput,
+  CreateTagInput,
   DeleteDocumentQuery,
   DocumentDeleteResultView,
   DocumentFilesView,
@@ -28,10 +29,15 @@ import type {
   ListDocumentsQuery,
   PatchCollectionInput,
   PatchDocumentInput,
+  PatchTagInput,
   PatchTranslationVersionInput,
   SearchQuery,
   SearchResultView,
   SetCurrentTranslationVersionInput,
+  SetDocumentTagsInput,
+  TagDeleteResultView,
+  TagListView,
+  TagRecord,
   TranslationCoverageView,
   TranslationVersionsQuery,
   TranslationVersionsView,
@@ -243,4 +249,49 @@ export function patchTranslationVersion(
   options?: RequestOptions,
 ): Promise<TranslationVersionsView> {
   return request<TranslationVersionsView>({ apiPrefix, method: "PATCH", path: `documents/${encodePathParam(args.document_id)}/translation-versions/${encodePathParam(args.version_id)}`, body: args.body, options });
+}
+
+/** GET /api/v1/tags */
+export function listTags(
+  apiPrefix: string | undefined,
+  _args: Record<string, never> = {},
+  options?: RequestOptions,
+): Promise<TagListView> {
+  return request<TagListView>({ apiPrefix, method: "GET", path: `tags`, options });
+}
+
+/** POST /api/v1/tags */
+export function createTag(
+  apiPrefix: string | undefined,
+  args: { body: CreateTagInput },
+  options?: RequestOptions,
+): Promise<TagRecord> {
+  return request<TagRecord>({ apiPrefix, method: "POST", path: `tags`, body: args.body, options });
+}
+
+/** PATCH /api/v1/tags/:tag_id */
+export function patchTag(
+  apiPrefix: string | undefined,
+  args: { tag_id: string; body: PatchTagInput },
+  options?: RequestOptions,
+): Promise<TagRecord> {
+  return request<TagRecord>({ apiPrefix, method: "PATCH", path: `tags/${encodePathParam(args.tag_id)}`, body: args.body, options });
+}
+
+/** DELETE /api/v1/tags/:tag_id */
+export function deleteTag(
+  apiPrefix: string | undefined,
+  args: { tag_id: string },
+  options?: RequestOptions,
+): Promise<TagDeleteResultView> {
+  return request<TagDeleteResultView>({ apiPrefix, method: "DELETE", path: `tags/${encodePathParam(args.tag_id)}`, options });
+}
+
+/** PUT /api/v1/documents/:document_id/tags */
+export function setDocumentTags(
+  apiPrefix: string | undefined,
+  args: { document_id: string; body: SetDocumentTagsInput },
+  options?: RequestOptions,
+): Promise<DocumentRecord> {
+  return request<DocumentRecord>({ apiPrefix, method: "PUT", path: `documents/${encodePathParam(args.document_id)}/tags`, body: args.body, options });
 }
