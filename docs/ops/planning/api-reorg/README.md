@@ -73,6 +73,7 @@ Rust API 接口太多、太散，"牵一发动全身"。这里按日期记录整
 | 2026-10-23 | [删 library-books 重复的任务列表](./20261023-删library-books重复的任务列表.md) | `library-books.v1` 删掉重复登记的 `GET /api/v1/jobs`，只剩删任务；生成的 `library-books.ts` 只导出删任务的两个类型；任务列表定义先留在 JSON 里给前端两个契约测试读，前端改读 `job-status.v1` 后再删；接口行为不变 |
 | 2026-11-14 | [第二批删接口](./20261114-第二批删接口.md) | 删 `reports/usage`（单个任务的用量）、`reports/quality/items`（质量问题清单）、`reader/regions/:item_id`（单个阅读区块）：没有调用方，路由计数前两个 27 天 0 次，第三个只有已删的 Studio 调过；契约去掉 `getJobUsage`、`listQualityItems`、`getReaderRegion`，前端重新生成 |
 | 2026-11-20 | [加回单个任务的用量](./20261120-加回单个任务的用量.md) | 加回 `reports/usage`（`getJobUsage`）：进度页把书的合计当成这一次的花费，翻过 10 轮的书显示成十几倍；契约 `scope` 加回 `job` |
+| 2026-11-22 | [接口写明负责和调用方](./20261122-接口写明负责和调用方.md) | 登记表每张表写 `owner:`（8 个领域之一），每条必写 `by(…)`（web/desktop/worker/cli/ops/multiuser/none），清单和目录跟着生成，目录开头加统计和 none、multiuser 名单；用量报表拿登记的调用方和按接口计数对账；第一次登记 134 个：web 85、multiuser 24、none 19 |
 
 已经确定的：
 

@@ -302,3 +302,55 @@ def test_reset_via_command_line_needs_yes(tmp_path: Path, capsys) -> None:
     assert report_mod.main(["--reset", str(path)]) == 0
     assert json.loads(path.read_text(encoding="utf-8"))["routes"] == {"GET /a": 1}
     assert report_mod.main(["--yes"]) == 2
+
+
+# ------------------------------------------------------------ 谁在用（by(…)、owner，2026-11-22）
+
+OWNED_SOURCE = '''\
+crate::endpoints! {
+    state: AppState;
+    owner: jobs;
+    /// 任务详情
+    GET "/api/v1/jobs/:job_id" => lifecycle::get_job, signed by(web, cli);
+    /// 上传
+    POST "/api/v1/uploads" => uploads::upload, signed by(web) [unlimited_body] owner(ingest);
+    /// 后端先加的
+    POST "/api/v1/jobs/:job_id/ask" => lifecycle::ask, admin by(none) [large_body];
+    /// 多用户版
+    POST "/api/v1/auth/login" => accounts::login, public by(multiuser) owner(accounts);
+    GET "/api/v1/jobs/:job_id/old" => lifecycle::get_job, signed by(none)
+        old "/api/v1/jobs/:job_id";
+}
+'''
+
+
+def make_owned_repo(tmp_path: Path) -> Path:
+    router = tmp_path / "backend" / "api" / "src" / "app" / "router"
+    router.mkdir(parents=True)
+    (router / "jobs.rs").write_text(OWNED_SOURCE, encoding="utf-8")
+    return tmp_path
+
+
+def test_parses_users_and_owner(tmp_path: Path) -> None:
+    repo = make_owned_repo(tmp_path)
+    by_key = {e.key: e for e in report_mod.load_registry(repo / report_mod.ROUTER_DIR_REL, repo)}
+    assert len(by_key) == 5
+    assert (by_key["GET /api/v1/jobs/:job_id"].users, by_key["GET /api/v1/jobs/:job_id"].owner) == (["web", "cli"], "jobs")
+    upload = by_key["POST /api/v1/uploads"]
+    assert (upload.users, upload.owner, upload.flags) == (["web"], "ingest", ["unlimited_body"])
+    assert by_key["POST /api/v1/jobs/:job_id/ask"].flags == ["large_body"]
+    assert by_key["GET /api/v1/jobs/:job_id/old"].replaced_by == "/api/v1/jobs/:job_id"
+
+
+def test_declared_users_are_checked_against_calls(tmp_path: Path, capsys) -> None:
+    repo = make_owned_repo(tmp_path)
+    usage = write_usage(repo / "data" / "diagnostics" / "route-usage.json",
+                        {"GET /api/v1/jobs/:job_id": 9, "POST /api/v1/jobs/:job_id/ask": 2})
+    report = run_json(repo, usage, capsys=capsys)
+    assert [e["key"] for e in report["declared_none_but_called"]] == ["POST /api/v1/jobs/:job_id/ask"]
+    # 有调用方却零调用：只提示写了真实调用方的；none、multiuser 不算
+    assert [e["key"] for e in report["declared_used_but_silent"]] == ["POST /api/v1/uploads"]
+    code = report_mod.main(["--repo-root", str(repo), str(usage)])
+    assert code == 0
+    text = capsys.readouterr().out
+    assert "登记 by(none) 却有调用（1 个" in text and "POST /api/v1/uploads  by(web)  [ingest]" in text

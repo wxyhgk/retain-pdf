@@ -5,8 +5,9 @@ use crate::routes::runtime_assets;
 
 crate::endpoints! {
     state: AppState;
+    owner: platform;
     /// 字体、Typst 的下载状态和进度
-    GET "/api/v1/runtime-assets" => runtime_assets::get_runtime_assets, signed;
+    GET "/api/v1/runtime-assets" => runtime_assets::get_runtime_assets, signed by(none);
     /// 把缺的、下失败的再下一遍（后台下，进度再看上面那个）
-    POST "/api/v1/runtime-assets/download" => runtime_assets::download_runtime_assets, admin;
+    POST "/api/v1/runtime-assets/download" => runtime_assets::download_runtime_assets, admin by(none);
 }

@@ -8,11 +8,12 @@ pub(super) mod worker {
 
     crate::endpoints! {
         state: AppState;
+    owner: providers;
         /// 工作进程提交一次模型调用（凭能力令牌，返回不带信封）
-        POST "/api/v1/internal/model/jobs/:job_id/requests" => model_requests::submit, closed;
+        POST "/api/v1/internal/model/jobs/:job_id/requests" => model_requests::submit, closed by(worker);
         /// 一次模型调用的状态和结果（返回不带信封）
-        GET "/api/v1/internal/model/jobs/:job_id/requests/:operation_id" => model_requests::status, closed;
+        GET "/api/v1/internal/model/jobs/:job_id/requests/:operation_id" => model_requests::status, closed by(worker);
         /// 取消一次模型调用（返回不带信封）
-        POST "/api/v1/internal/model/jobs/:job_id/requests/:operation_id/cancel" => model_requests::cancel, closed;
+        POST "/api/v1/internal/model/jobs/:job_id/requests/:operation_id/cancel" => model_requests::cancel, closed by(worker);
     }
 }
