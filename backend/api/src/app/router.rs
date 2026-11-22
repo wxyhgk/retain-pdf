@@ -14,6 +14,7 @@ mod collections;
 mod credentials;
 mod documents;
 mod fonts;
+mod runtime_assets;
 mod glossaries;
 mod backups;
 mod sync;
@@ -40,6 +41,7 @@ pub(crate) fn registered_endpoints() -> Vec<crate::app::endpoints::Endpoint> {
         tags::ENDPOINTS,
         glossaries::ENDPOINTS,
         fonts::ENDPOINTS,
+        runtime_assets::ENDPOINTS,
         sync::ENDPOINTS,
         backups::ENDPOINTS,
         model_requests::worker::ENDPOINTS,
@@ -125,6 +127,7 @@ fn authenticated_api_routes(state: &AppState) -> Router<AppState> {
         .merge(jobs::routes())
         .merge(providers::routes())
         .merge(fonts::routes())
+        .merge(runtime_assets::routes())
         .method_not_allowed_fallback(method_not_allowed)
         // 先挂的在里层、后跑：先认证（require_api_key），再看能不能访问（enforce_access）。
         .route_layer(middleware::from_fn_with_state(

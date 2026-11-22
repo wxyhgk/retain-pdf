@@ -229,6 +229,9 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     Path("src/routes/fonts.rs"): (
         "crate::services::platform",
     ),
+    Path("src/routes/runtime_assets.rs"): (
+        "crate::services::platform",
+    ),
     Path("src/routes/common/providers.rs"): (
         "crate::services::providers::ProviderApiDeps",
     ),

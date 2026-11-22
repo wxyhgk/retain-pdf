@@ -139,6 +139,10 @@ fn resolve_font_dirs(project_root: &Path, data_root: &Path) -> Vec<PathBuf> {
     ] {
         push_dir(candidate, &mut dirs, &mut seen);
     }
+    // 安装包不带思源宋体时，首次启动下到数据目录的那一份
+    if let Some(downloaded) = retainpdf_data::runtime_assets::installed_asset_dir(data_root, "fonts") {
+        push_dir(downloaded, &mut dirs, &mut seen);
+    }
 
     dirs
 }

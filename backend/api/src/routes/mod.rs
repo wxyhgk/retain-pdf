@@ -7,6 +7,7 @@ pub mod common;
 pub mod credentials;
 pub(crate) mod download_response;
 pub mod fonts;
+pub mod runtime_assets;
 pub mod glossaries;
 pub mod backups;
 pub mod sync;

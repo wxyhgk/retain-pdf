@@ -37,6 +37,14 @@ pub struct RuntimeAssetView {
     pub error: String,
 }
 
+/// 打开按需下载的开关：桌面端不再往包里放字体、Typst 时设 `RETAIN_PDF_RUNTIME_ASSETS=download`。
+/// 没设就不下（Docker 镜像、开发环境、测试都不联网），渲染前也不等。
+pub const DOWNLOAD_SWITCH_ENV: &str = "RETAIN_PDF_RUNTIME_ASSETS";
+
+pub fn downloads_enabled() -> bool {
+    std::env::var(DOWNLOAD_SWITCH_ENV).map(|value| value.trim() == "download").unwrap_or(false)
+}
+
 /// 每份资源现在的状态。
 pub fn runtime_assets_status(data_root: &Path, project_root: Option<&Path>) -> Vec<RuntimeAssetView> {
     status_of(data_root, project_root, &manifest::assets_for_this_machine())
@@ -83,12 +91,23 @@ fn status_of(data_root: &Path, project_root: Option<&Path>, specs: &[AssetSpec])
         .collect()
 }
 
+/// 下好的这份资源所在的目录（`fonts`、`typst`）；没下、版本不对、文件不全都是 None。
+pub fn installed_asset_dir(data_root: &Path, id: &str) -> Option<PathBuf> {
+    manifest::assets_for_this_machine()
+        .into_iter()
+        .find(|spec| spec.id == id)
+        .and_then(|spec| store::installed_dir(data_root, &spec))
+}
+
 fn needs_download(view: &RuntimeAssetView) -> bool {
     matches!(view.state.as_str(), "missing" | "failed")
 }
 
 /// 把还没有的资源下下来。别的进程正在下就直接返回（返回 false），自己下完返回 true；单份失败记进进度，不报错。
 pub async fn ensure_runtime_assets(data_root: &Path, project_root: Option<&Path>) -> Result<bool> {
+    if !downloads_enabled() {
+        return Ok(true);
+    }
     ensure_specs(data_root, project_root, &manifest::assets_for_this_machine(), &download::registry_order()).await
 }
 
@@ -129,9 +148,15 @@ async fn ensure_specs(
     Ok(true)
 }
 
+/// 渲染前等资源的上限：50MB 在慢的网上也够下完；再慢就先用后备字体排，不让任务一直等。
+pub const RENDER_WAIT: Duration = Duration::from_secs(300);
+
 /// 渲染前用：资源都有了就马上返回；没有就下（别的进程在下就等它），最多等 `timeout`。
 /// 返回时还缺的，调用方照常往下走（Python 用后备字体；缺 Typst 时只走默认排版）。
 pub async fn wait_for_runtime_assets(data_root: &Path, project_root: Option<&Path>, timeout: Duration) {
+    if !downloads_enabled() {
+        return;
+    }
     wait_for_specs(data_root, project_root, &manifest::assets_for_this_machine(), &download::registry_order(), timeout).await
 }
 
@@ -174,6 +199,9 @@ async fn wait_for_specs(
 
 /// 后端启动时在后台把缺的资源下好（首次启动）。
 pub fn spawn_runtime_assets_prefetch(data_root: PathBuf, project_root: Option<PathBuf>) {
+    if !downloads_enabled() {
+        return;
+    }
     tokio::spawn(async move {
         if let Err(error) = ensure_runtime_assets(&data_root, project_root.as_deref()).await {
             tracing::warn!("runtime assets prefetch failed: {error:#}");
