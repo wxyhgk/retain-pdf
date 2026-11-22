@@ -16,15 +16,27 @@ pub struct RuntimeAssetsView {
     pub assets: Vec<RuntimeAssetView>,
 }
 
-pub fn runtime_assets_view(project_root: &Path, data_root: &Path) -> RuntimeAssetsView {
+/// 接口要的两个目录：看包里带没带（项目根）、缓存在哪（数据目录）。
+pub struct RuntimeAssetsApiDeps<'a> {
+    project_root: &'a Path,
+    data_root: &'a Path,
+}
+
+impl<'a> RuntimeAssetsApiDeps<'a> {
+    pub fn new(project_root: &'a Path, data_root: &'a Path) -> Self {
+        Self { project_root, data_root }
+    }
+}
+
+pub fn runtime_assets_view(deps: &RuntimeAssetsApiDeps<'_>) -> RuntimeAssetsView {
     RuntimeAssetsView {
         downloads_enabled: retainpdf_data::runtime_assets::downloads_enabled(),
-        assets: retainpdf_data::runtime_assets::runtime_assets_status(data_root, Some(project_root)),
+        assets: retainpdf_data::runtime_assets::runtime_assets_status(deps.data_root, Some(deps.project_root)),
     }
 }
 
 /// 手动重试：在后台把缺的、失败的再下一遍，马上返回当前状态（进度靠再 GET）。没打开按需下载时什么都不做。
-pub fn start_runtime_assets_download(project_root: &Path, data_root: &Path) -> RuntimeAssetsView {
-    spawn_runtime_assets_prefetch(PathBuf::from(data_root), Some(PathBuf::from(project_root)));
-    runtime_assets_view(project_root, data_root)
+pub fn start_runtime_assets_download(deps: &RuntimeAssetsApiDeps<'_>) -> RuntimeAssetsView {
+    spawn_runtime_assets_prefetch(PathBuf::from(deps.data_root), Some(PathBuf::from(deps.project_root)));
+    runtime_assets_view(deps)
 }

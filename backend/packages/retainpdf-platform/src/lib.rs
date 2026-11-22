@@ -21,7 +21,7 @@ pub use backup::api::{
 pub use fonts::api::{list_fonts, upload_font, FontApiDeps, FontInfo};
 pub use runtime_assets::{
     runtime_assets_view, spawn_runtime_assets_prefetch, start_runtime_assets_download, RuntimeAssetView,
-    RuntimeAssetsView,
+    RuntimeAssetsApiDeps, RuntimeAssetsView,
 };
 pub use health_api::{
     build_current_readiness_view, build_health_view, HealthApiDeps, HealthView, ReadinessView,
