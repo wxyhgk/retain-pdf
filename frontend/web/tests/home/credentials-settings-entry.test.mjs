@@ -138,6 +138,56 @@ test("MinerU：独立检测接入真实 API transport，显示缺失、过期、
   }
 });
 
+test("GLM-OCR：有「检测」按钮，借翻译检测接口用智谱地址和免费 flash 模型试这个 key，结果按智谱 key 说", async () => {
+  const calls = [];
+  let outcome = "unauthorized";
+  dom.window.localStorage.clear();
+  const services = createServices({
+    validateOcrToken: undefined,
+    validateDeepSeekToken: async (_apiPrefix, payload) => {
+      calls.push(payload);
+      return outcome === "ok"
+        ? { ok: true, status: "valid", summary: "翻译 API 与模型 GLM-5.3-Flash 可用" }
+        : { ok: false, status: "unauthorized", summary: "翻译 API Key 无效" };
+    },
+  });
+  const { host, root } = await bootHomeApp(dom, { services });
+  try {
+    document.dispatchEvent(new CustomEvent(APP_EVENTS.openBrowserCredentials));
+    await waitFor(() => byId(dom, "browser-ocr-provider-select"), "OCR 提供商选择器");
+    await waitForDialogReady();
+    byId(dom, "browser-ocr-provider-select").querySelector('[data-ocr-provider-option="glm_ocr"]').click();
+    const button = byId(dom, "browser-glm_ocr-validate-btn");
+    assert.ok(button, "GLM-OCR 面板有检测按钮");
+    assert.equal(button.textContent.trim(), "检测 GLM-OCR");
+    await waitFor(() => !button.closest("section").hidden, "GLM-OCR 面板");
+    const input = button.closest("section").querySelector("input");
+    const status = byId(dom, "browser-glm_ocr-validation");
+    const statusMessage = () => status.getAttribute("aria-label") || "";
+    typeInput(dom, input, " zhipu-fixture-key ");
+    clickWithMouseDown(dom, button);
+    await waitFor(() => statusMessage().includes("无效"), "key 无效");
+    assert.match(statusMessage(), /智谱 API Key 无效/);
+    assert.doesNotMatch(statusMessage(), /翻译 API/);
+    assert.deepEqual(calls[0], {
+      api_key: "zhipu-fixture-key",
+      base_url: "https://open.bigmodel.cn/api/paas/v4",
+      model: "GLM-5.3-Flash",
+      api_protocol: "openai_responses",
+    });
+    outcome = "ok";
+    clickWithMouseDown(dom, button);
+    await waitFor(() => statusMessage().includes("可用"), "key 可用");
+    assert.match(statusMessage(), /智谱 API Key 可用/);
+    assert.ok(status.classList.contains("is-valid"));
+    assert.equal(calls.length, 2, "只调用检测接口");
+  } finally {
+    root.unmount();
+    services.dispose();
+    host.remove();
+  }
+});
+
 test("保存按钮每次点击都有可见反馈，不会让人以为没生效", async () => {
   const services = createServices();
   const { host, root } = await bootHomeApp(dom, { services });

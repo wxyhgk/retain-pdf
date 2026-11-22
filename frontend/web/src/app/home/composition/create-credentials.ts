@@ -2,6 +2,7 @@
 
 import { mountedFeature } from "./feature-registry.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
+import { describeGlmOcrProbe, glmOcrProbePayload } from "@/platform/config/providers.js";
 import {
   defaultModelApiKey,
   defaultModelBaseUrl,
@@ -116,6 +117,10 @@ export function createCredentials({
     const resolvedToken = typeof token === "string" ? token : "";
     if (providerId === "mineru") {
       return validateMineruToken(resolvedApiPrefix, { mineru_token: resolvedToken });
+    }
+    if (providerId === "glm_ocr") {
+      // 后端没有 GLM-OCR 专用检测：借翻译的检测接口试这个智谱 key（providers.ts 的 glmOcrProbePayload）。
+      return describeGlmOcrProbe(await validateDeepSeekTokenOverride(resolvedApiPrefix, glmOcrProbePayload(resolvedToken)));
     }
     if (providerId !== "paddle") {
       return { ok: false, status: "unsupported", summary: "该 OCR 提供商暂不支持单独检测 Token" };
