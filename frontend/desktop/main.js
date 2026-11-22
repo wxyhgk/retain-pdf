@@ -26,6 +26,7 @@ const { createCliInstaller } = require("./src/main/cli-install");
 const { createDesktopLogger } = require("./src/main/desktop-logging");
 const { createDesktopWindows } = require("./src/main/desktop-windows");
 const { createAppUpdater } = require("./src/main/app-updater");
+const { createLanShare } = require("./src/main/lan-share");
 
 const desktopLogger = createDesktopLogger(app);
 const {
@@ -102,6 +103,26 @@ const quitController = new AbortController();
 let appContext = null;
 // 自动更新（Windows / Mac 打包版；其余 supported:false，见 src/main/app-updater.js）。app ready 后才建。
 let appUpdater = null;
+// 局域网共享（src/main/lan-share.js）：网关插件建好后放进来，退出时清空。
+let lanShare = null;
+// 开关和访问码存在应用数据目录的 lan-share.json（只有本人可读写）。
+const lanShareState = {
+  file: () => path.join(app.getPath("userData"), "lan-share.json"),
+  load() {
+    try {
+      return JSON.parse(fs.readFileSync(lanShareState.file(), "utf8"));
+    } catch {
+      return {};
+    }
+  },
+  save(state) {
+    try {
+      fs.writeFileSync(lanShareState.file(), JSON.stringify({ enabled: Boolean(state.enabled), token: state.token || "" }), { mode: 0o600 });
+    } catch (error) {
+      logDesktopError(`[lan-share] failed to save state: ${error?.message || error}`);
+    }
+  },
+};
 
 function getService(name) {
   return appContext ? appContext.get(name) : undefined;
@@ -166,6 +187,7 @@ function startDesktopApp() {
   root.plugin(createIpcPlugin({
     BrowserWindow,
     getAppUpdater: () => appUpdater,
+    getLanShare: () => lanShare,
     buildDesktopConfigResponse,
     cliInstaller,
     dialog,
@@ -211,7 +233,13 @@ function startDesktopApp() {
   root.plugin(createGatewayPlugin({
     buildRuntimeConfig: () => buildDesktopRuntimeConfig(loadDesktopConfig()),
     canConnectToPort,
+    createLanShare,
     createLocalGateway,
+    desktopApiKey: DESKTOP_API_KEY,
+    lanShareState,
+    setLanShare: (instance) => {
+      lanShare = instance;
+    },
     logDesktop,
     logDesktopError,
     resolveFrontendRoot,

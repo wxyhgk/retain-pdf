@@ -1,4 +1,4 @@
-// 渲染进程 → 主进程的 IPC：桌面配置、打开目录、命令行工具、选文件夹、把窗口拿到前面、自动更新，以及渲染进程报错。
+// 渲染进程 → 主进程的 IPC：桌面配置、打开目录、命令行工具、选文件夹、把窗口拿到前面、自动更新、局域网共享，以及渲染进程报错。
 // 不依赖别的服务，插件树一建好就注册；dispose 时撤掉。
 const fs = require("fs");
 const path = require("path");
@@ -6,6 +6,7 @@ const path = require("path");
 function createIpcPlugin({
   BrowserWindow,
   getAppUpdater = () => null,
+  getLanShare = () => null,
   buildDesktopConfigResponse,
   cliInstaller,
   dialog,
@@ -75,6 +76,13 @@ function createIpcPlugin({
         return (await getAppUpdater()?.check()) || { supported: false, state: "idle" };
       case "update_install":
         return getAppUpdater()?.install() || { ok: false };
+      // 局域网共享（src/main/lan-share.js）：状态 / 开关 / 重置访问码。复用外部后端时没有它，按不支持回。
+      case "lan_share_status":
+        return getLanShare()?.status() || { supported: false };
+      case "lan_share_set_enabled":
+        return (await getLanShare()?.setEnabled(Boolean(args?.enabled))) || { supported: false };
+      case "lan_share_reset_token":
+        return (await getLanShare()?.resetToken()) || { supported: false };
       default:
         throw new Error(`unsupported desktop command: ${command}`);
     }

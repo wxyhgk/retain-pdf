@@ -1,0 +1,85 @@
+/* 设置 → 局域网共享 分栏：状态、开关、地址和二维码、重置访问码。
+ *
+ * 勾选框、按钮用 @retainpdf/ui 的 Checkbox、Button。
+ *
+ * @owns lan-share */
+
+.lan-share {
+  display: grid;
+  gap: 14px;
+  max-width: 560px;
+}
+
+.lan-share-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-lg);
+}
+
+.lan-share-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--muted);
+}
+
+.lan-share-dot.is-ok { background: var(--ok); }
+
+.lan-share-headline {
+  margin: 0;
+  font-size: var(--ui-text-base);
+  font-weight: 650;
+}
+
+.lan-share-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-sm);
+  line-height: 1.6;
+}
+
+.lan-share-hint.is-warn { color: var(--warn); }
+
+.lan-share-address {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-lg);
+}
+
+.lan-share-qr {
+  flex: none;
+  width: 132px;
+  height: 132px;
+  border-radius: var(--ui-radius-md);
+  /* 二维码自带白底；深色主题下也保持白底黑块，手机才扫得出。 */
+  background: #fff;
+}
+
+.lan-share-address-body {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  min-width: 0;
+}
+
+.lan-share-address-url {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--ui-text-base);
+  overflow-wrap: anywhere;
+}
+
+.lan-share-reset { justify-self: start; }
+
+.lan-share-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--ui-text-sm);
+}

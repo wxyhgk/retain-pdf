@@ -15,7 +15,7 @@ test("设置外壳里不写具体分栏", () => {
   const shell = read("../../src/features/settings/ui/SettingsDialog.tsx")
     .replace(/\/\/.*$/gm, "")
     .replace(/\/\*[\s\S]*?\*\//g, "");
-  const ids = ["account", "admin", "api", "glossary", "usage", "sync", "backup", "notify", "appearance", "update"];
+  const ids = ["account", "admin", "api", "glossary", "usage", "sync", "lan-share", "backup", "notify", "appearance", "update"];
   const leaked = ids.filter((id) => new RegExp(`["'\`]${id}["'\`]`).test(shell) && id !== "api");
   assert.deepEqual(leaked, [], `外壳里又写了分栏名：${leaked.join(", ")}（加到功能的 settings-section 和装配层的表里）`);
   assert.doesNotMatch(shell, /PanelSlot|PANE_HEADS|\bTABS\b/, "外壳里又出现了按分栏写死的参数或列表");
@@ -26,6 +26,7 @@ test("设置外壳里不写具体分栏", () => {
 test("功能登记的分栏：id、order 不重复，图标和内容都有", async () => {
   const sections = [
     (await import("../../src/features/sync/index.js")).syncSettingsSection,
+    (await import("../../src/features/lan-share/index.js")).lanShareSettingsSection,
     (await import("../../src/features/backup/index.js")).backupSettingsSection,
     (await import("../../src/features/usage/index.js")).usageSettingsSection,
     (await import("../../src/features/notify/index.js")).notifySettingsSection,
@@ -46,7 +47,7 @@ test("功能登记的分栏：id、order 不重复，图标和内容都有", asy
   assert.equal(new Set(orders).size, orders.length, `分栏 order 重复：${orders}`);
   const table = read("../../src/app/home/shell/settings-sections.tsx");
   for (const section of sections) {
-    const name = `${section.id === "appearance" ? "appearance" : section.id}SettingsSection`;
+    const name = `${section.id.replace(/-(\w)/g, (_, c) => c.toUpperCase())}SettingsSection`;
     assert.match(table, new RegExp(`\\b${name}\\b`), `${name} 没列进 settings-sections.tsx 的表`);
   }
   for (const [id, order] of appIds.map((id, i) => [id, appOrders[i]])) {

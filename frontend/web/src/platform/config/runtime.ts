@@ -160,6 +160,15 @@ function liveRuntimeString(key: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+/**
+ * 这一页是不是经桌面版的局域网共享打开的（frontend/desktop/src/main/lan-share.js 往运行配置里写 lanShared）。
+ * 是的话，页面上的 Key 都是占位符，真的 Key 在那台电脑上，转发时才换进去。
+ */
+export function isLanSharedPage(): boolean {
+  if (typeof window === "undefined") return false;
+  return (window as FrontRuntimeWindow).__FRONT_RUNTIME_CONFIG__?.lanShared === true || runtimeConfig.lanShared === true;
+}
+
 export function frontendApiKey() {
   const fromEnv = readEnv(ENV_X_API_KEY_NAMES);
   if (fromEnv) {

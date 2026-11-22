@@ -14,6 +14,8 @@ import { GlossariesSettingsIcon } from "@/features/glossaries/index.js";
 import { APP_SETTINGS_DIALOG_IDS, CommandLinePanel, appearanceSettingsSection } from "@/features/settings/index.js";
 import { backupSettingsSection } from "@/features/backup/index.js";
 import { syncSettingsSection } from "@/features/sync/index.js";
+import { lanShareSettingsSection } from "@/features/lan-share/index.js";
+import { isDesktopHostAvailable } from "@/platform/desktop/host.js";
 import { usageSettingsSection } from "@/features/usage/index.js";
 import { notifySettingsSection } from "@/features/notify/index.js";
 import { AdminConsoleEntry, AdminSettingsIcon } from "@/features/admin/index.js";
@@ -94,6 +96,8 @@ export function useHomeSettingsSections(): SettingsSection[] {
         ),
       },
       ...FEATURE_SECTIONS,
+      // 局域网共享只有桌面版单机有：网页版、多用户本身就是服务器。
+      ...(!multi && isDesktopHostAvailable() ? [lanShareSettingsSection] : []),
       {
         id: "update",
         label: "更新",
