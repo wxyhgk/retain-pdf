@@ -500,6 +500,29 @@ function probePipelineConsoleWrapper(backendRoot) {
   return { ok: true, skipped: false, detail: (probe.stdout || "").trim().slice(0, 2000) };
 }
 
+function runDesktopPythonCheck(pythonCommand, env) {
+  const bundleScript = path.join(repoRoot, "ops", "release", "desktop_python_bundle.py");
+  const checkScript = path.join(repoRoot, "ops", "release", "desktop_python_check.py");
+  const checkEnv = { ...env, PYTHONIOENCODING: "utf-8", RETAIN_PDF_SERVICES_ROOT: servicesRoot };
+  // 工作区成员用安装包自带的 Python 读（3.11 自带 tomllib），和打包时装的是同一份名单。
+  const members = spawnSync(pythonCommand, [bundleScript, "members"], { env: checkEnv, encoding: "utf8" });
+  if (members.status !== 0) {
+    throw new Error(`Bundled Python workspace member listing failed: ${[members.stdout, members.stderr].join("\n").trim()}`);
+  }
+  const names = members.stdout.split(/\r?\n/).map((line) => line.split("\t")[0].trim()).filter(Boolean);
+  const check = spawnSync(pythonCommand, [checkScript, "--members", names.join(",")], {
+    env: checkEnv,
+    encoding: "utf8",
+    cwd: path.parse(repoRoot).root,
+  });
+  const output = [check.stdout, check.stderr].filter(Boolean).join("\n").trim();
+  if (check.status !== 0) {
+    throw new Error(`Bundled Python full check failed after pruning:\n${output || "unknown error"}`);
+  }
+  console.log(output);
+  return output.split(/\r?\n/).filter((line) => line.startsWith("desktop")).join("\n");
+}
+
 function verifyBundledPythonRuntime(root) {
   const pythonCommand = resolveBundledPythonCommand(root);
   if (!pythonCommand) {
@@ -539,6 +562,10 @@ function verifyBundledPythonRuntime(root) {
     const detail = [probe.stdout, probe.stderr].filter(Boolean).join("\n").trim();
     throw new Error(`Bundled Python runtime import check failed: ${detail || "unknown error"}`);
   }
+  // 剪完以后、真正要发出去的这份目录上，再跑一遍完整检查（ops/release/desktop_python_check.py）：
+  // 工作区每个包、每个模块、翻译引擎入口、源码里 import 的第三方库。runtime-prune 删多了
+  // （比如删了某个运行时要用的标准库目录）在这里就会失败，而不是等用户跑任务才报。
+  const fullCheck = runDesktopPythonCheck(pythonCommand, env);
   // Console entrypoint probe: wrapper --help. Warn-only so legacy bundles
   // without the wrapper (or without the console entrypoint module) still pass.
   const consoleProbe = probePipelineConsoleWrapper(path.dirname(root));
@@ -547,7 +574,7 @@ function verifyBundledPythonRuntime(root) {
     pythonHome: bundledPythonHome,
     sitePackages: bundledPythonSitePackages(root),
     importPaths: bundledPythonImportPaths(root),
-    importCheck: probe.stdout.trim() || "python_bundle_import_check=ok",
+    importCheck: [probe.stdout.trim() || "python_bundle_import_check=ok", fullCheck].join("\n"),
     consoleProbe,
   };
 }
