@@ -117,7 +117,13 @@ def _require_layout(root: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
+    rust = parser.add_mutually_exclusive_group()
+    rust.add_argument(
+        "--check-rust",
+        action="store_true",
+        help="type-check all Rust targets in the isolated workspace without linking them",
+    )
+    rust.add_argument(
         "--compile-rust",
         action="store_true",
         help="also compile every Rust workspace test without executing it",
@@ -220,14 +226,14 @@ def main() -> int:
             env=env,
             suppress_stdout=True,
         )
-        if args.compile_rust:
+        if args.check_rust or args.compile_rust:
+            rust_command = ["test", "--no-run"] if args.compile_rust else ["check", "--all-targets"]
             _run(
                 [
                     "cargo",
-                    "test",
+                    *rust_command,
                     "--locked",
                     "--workspace",
-                    "--no-run",
                     "--manifest-path",
                     str(snapshot / "Cargo.toml"),
                 ],

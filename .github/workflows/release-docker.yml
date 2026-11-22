@@ -9,9 +9,9 @@ run-name: Release Docker Images · ${{ github.ref_name }}
 #   预构建成功、candidate artifact 未过期、registry 里的候选平台与 OCI 标签一致」
 #   后，promote job 用 imagetools create 把候选 digest 直接打成版本标签，不重新构建。
 #
-# build（回退，也是 PR / workflow_dispatch 的唯一路径）：quality-gate + 构建
-#   （build-docker-images.yml）+ publish，与之前完全相同。回退原因写在 resolve 的
-#   日志、notice 和 run summary 里。
+# build：PR 验证镜像构建，同一 PR 的完整测试由 Tests 执行。
+#   发版回退 / workflow_dispatch 先过 quality-gate，再构建并按事件决定是否发布。
+#   回退原因写在 resolve 的日志、notice 和 run summary 里。
 #
 # publish 与 promote 共用 docker-candidates composite action 做校验与提升。
 
@@ -28,24 +28,30 @@ on:
       - '.github/scripts/find_release_candidate.py'
       - '.github/scripts/release_candidate_manifest.py'
       - '.dockerignore'
+      - '.gitattributes'
+      - '.cargo/**'
       - 'backend-package.json'
       - 'package.json'
       - 'package-lock.json'
       - 'frontend/web/scripts/build-workspace-packages.mjs'
+      - 'frontend/web/vite.config.*'
       - 'frontend/desktop/package.json'
-      - 'frontend/web/**'
-      - 'frontend/packages/api/**'
-      - 'frontend/packages/domain/**'
-      - 'frontend/packages/reader/**'
-      - 'contracts/**'
-      - 'frontend/packages/ui/**'
+      - 'frontend/**/package.json'
+      - 'contracts/package.json'
       - 'ops/deployment/docker/Dockerfile.web'
       - 'ops/deployment/docker/entrypoint-web.sh'
       - 'ops/deployment/docker/nginx-mjs.types.conf'
       - 'ops/deployment/docker/nginx.conf.template'
-      - 'backend/**'
-      - 'database/**'
-      - 'resources/**'
+      - 'ops/deployment/docker/backend-api-key.envsh'
+      - 'backend/**/Cargo.toml'
+      - 'backend/**/build.rs'
+      - 'backend/**/package.json'
+      - 'backend/**/package-lock.json'
+      - 'backend/**/pyproject.toml'
+      - 'backend/uv.lock'
+      - 'database/**/Cargo.toml'
+      - 'database/**/build.rs'
+      - 'resources/fonts/**'
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'ops/deployment/docker/backend/**'
@@ -93,6 +99,7 @@ jobs:
     outputs:
       mode: ${{ steps.decision.outputs.mode }}
       run_id: ${{ steps.decision.outputs.run_id }}
+      tests_run_id: ${{ steps.find.outputs.tests_run_id }}
       version: ${{ steps.find.outputs.version }}
       tag: ${{ steps.find.outputs.tag }}
       stable: ${{ steps.find.outputs.stable }}
@@ -209,10 +216,12 @@ jobs:
 
   quality-gate:
     needs: resolve
-    if: needs.resolve.outputs.mode == 'build'
+    if: needs.resolve.outputs.mode == 'build' && github.event_name != 'pull_request'
     permissions:
       contents: read
     uses: ./.github/workflows/tests.yml
+    with:
+      tested-main-run-id: ${{ needs.resolve.outputs.tests_run_id }}
 
   # 版本号与构建策略只解析一次，传给 build-docker-images.yml 的矩阵和 merge。
   # 不依赖 quality-gate，与测试并行跑；dispatch 输入不合法时可以立刻失败。
@@ -285,7 +294,13 @@ jobs:
 
   build:
     needs: [quality-gate, prepare, resolve]
-    if: needs.resolve.outputs.mode == 'build'
+    if: >-
+      !cancelled() &&
+      needs.resolve.result == 'success' &&
+      needs.prepare.result == 'success' &&
+      needs.resolve.outputs.mode == 'build' &&
+      (needs.quality-gate.result == 'success' ||
+       (github.event_name == 'pull_request' && needs.quality-gate.result == 'skipped'))
     permissions:
       contents: read
     uses: ./.github/workflows/build-docker-images.yml
@@ -300,7 +315,7 @@ jobs:
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
 
   publish:
-    needs: [prepare, build]
+    needs: [quality-gate, prepare, build]
     if: github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.push == true)
     runs-on: ubuntu-latest
     timeout-minutes: 20

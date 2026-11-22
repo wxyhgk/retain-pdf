@@ -1,7 +1,7 @@
 name: Prebuild Release Candidates
 run-name: Prebuild Release Candidates · ${{ github.sha }}
 
-# push main 时把「可发布候选」提前构建好，打 tag 时 release-docker.yml /
+# 准备发版时，可在 main 上手动预构建候选。打 tag 时 release-docker.yml /
 # release-desktop.yml 只需提升、不再重新构建：
 # - Docker：app / web 多架构镜像，按 digest 推送后合成 manifest list，打上可覆盖的
 #   candidate-<sha> 标签，并上传 docker-candidate-<target>-<run_id> identity artifact；
@@ -15,21 +15,9 @@ run-name: Prebuild Release Candidates · ${{ github.sha }}
 # 与 Tests 并行、互不阻塞：Tests 是否通过由发版 workflow 在提升前查询（同 sha 的
 # Tests run 必须成功），这里不重复跑测试。
 #
-# 并发：同一时刻只跑一份、不取消正在跑的那份（cancel-in-progress: false）——
-# 正在构建的可能正是马上要打 tag 的 release commit。连续 push 时排队中的旧 run
-# 会被更新的 push 替换掉，被替换的 commit 打 tag 时会回退到完整构建。
-#
-# 只改文档不预构建（paths-ignore）；这样的 commit 打 tag 同样会回退到完整构建。
+# 已经开始的候选构建会继续运行。打 tag 时可提升同一提交的有效候选。
 
 "on":
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-  # 手动补一份候选（例如预构建 artifact 过期后又要在这个 commit 上发版）。
-  # 只接受 main：prepare 的 job 级条件会跳过其他分支，提升判定也只认 main 上的 run。
   workflow_dispatch: {}
 
 permissions:

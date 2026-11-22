@@ -19,6 +19,7 @@ from find_release_candidate import (  # noqa: E402
     main,
     required_artifacts,
 )
+from wait_for_tests import wait_for_push_tests  # noqa: E402
 
 
 REPO = "wxyhgk/retain-pdf"
@@ -81,6 +82,50 @@ class FakeApi:
 KIND = ["desktop"]
 
 
+def test_web_gate_only_reuses_a_successful_push_for_the_exact_branch_and_sha():
+    api = FakeApi(tests=[
+        run(10, sha=OTHER_SHA, branch="master"),
+        run(11, branch="main"),
+        run(12, branch="master", event="pull_request"),
+        run(13, branch="master"),
+    ])
+    assert wait_for_push_tests(api, repo=REPO, sha=SHA, branch="master") == 13
+
+
+@pytest.mark.parametrize("conclusion", ["failure", "cancelled", "skipped"])
+def test_web_gate_blocks_publication_when_tests_do_not_pass(conclusion):
+    api = FakeApi(tests=[run(10, conclusion=conclusion)])
+    with pytest.raises(RuntimeError, match="Tests failed"):
+        wait_for_push_tests(api, repo=REPO, sha=SHA, branch="main")
+
+
+def test_web_gate_waits_for_the_matching_tests_run():
+    clock = Clock()
+    api = FakeApi(tests=[])
+
+    def poll(seconds):
+        clock.sleep(seconds)
+        runs, _ = api.snapshots[0]
+        if not runs:
+            runs.append(run(10, status="in_progress"))
+        else:
+            runs[0] = run(10)
+
+    assert wait_for_push_tests(
+        api, repo=REPO, sha=SHA, branch="main", now=clock.now, sleep=poll
+    ) == 10
+    assert len(api.calls) == 3
+
+
+def test_web_gate_times_out_when_only_another_commit_passed():
+    clock = Clock()
+    api = FakeApi(tests=[run(10, sha=OTHER_SHA)])
+    with pytest.raises(RuntimeError, match="Timed out waiting for Tests"):
+        wait_for_push_tests(
+            api, repo=REPO, sha=SHA, branch="main", now=clock.now, sleep=clock.sleep
+        )
+
+
 class Clock:
     def __init__(self):
         self.t = NOW.timestamp()
@@ -136,7 +181,8 @@ def test_version_mismatch_falls_back_without_touching_artifacts():
     decision = call(api, tag="v4.2.7", declared="4.2.6")
     assert decision.mode == "build"
     assert "4.2.6" in decision.reason and "4.2.7" in decision.reason
-    assert api.calls == []
+    assert decision.tests_run_id == "11"
+    assert [path for path, _ in api.calls] == [f"/repos/{REPO}/actions/workflows/{TESTS_WORKFLOW}/runs"]
     # 回退时仍给出 tag 版本，供完整构建使用。
     assert decision.version == "4.2.7"
 
@@ -170,6 +216,7 @@ def test_identical_to_main_is_on_main():
 def test_failed_tests_block_promotion_even_with_a_good_prebuild():
     decision = call(FakeApi(tests=[run(11, conclusion="failure")]))
     assert decision.mode == "build"
+    assert decision.tests_run_id == ""
     assert "Tests workflow did not succeed" in decision.reason
 
 
@@ -189,12 +236,15 @@ def test_runs_for_other_commits_branches_or_events_are_ignored():
     decision = call(FakeApi(tests=[run(11)], prebuild=foreign), clock=clock, appear_grace_seconds=120)
     assert decision.mode == "build"
     assert "no prebuild run" in decision.reason
+    assert decision.tests_run_id == "11"
+    assert clock.t == NOW.timestamp()
 
 
 def test_tests_triggered_outside_push_do_not_count():
     decision = call(FakeApi(tests=[run(11, event="workflow_dispatch")]), appear_grace_seconds=60)
     assert decision.mode == "build"
     assert "no Tests run" in decision.reason
+    assert decision.tests_run_id == ""
 
 
 def test_manual_prebuild_on_main_counts():
@@ -208,7 +258,6 @@ def test_latest_successful_prebuild_wins_over_older_and_failed_runs():
 
 def test_waits_for_in_progress_runs_then_promotes():
     api = FakeApi(script=[
-        ([run(11, status="in_progress")], []),
         ([run(11, status="in_progress")], [run(22, status="queued")]),
         ([run(11)], [run(22, status="in_progress")]),
         ([run(11)], [run(22)]),
@@ -216,7 +265,13 @@ def test_waits_for_in_progress_runs_then_promotes():
     clock = Clock()
     decision = call(api, clock=clock, poll_seconds=60)
     assert decision.mode == "promote"
-    assert clock.t - NOW.timestamp() == 180
+    assert clock.t - NOW.timestamp() == 120
+
+
+def test_release_build_without_prebuild_does_not_reuse_pending_main_tests():
+    decision = call(FakeApi(tests=[run(11, status="in_progress")], prebuild=[]))
+    assert decision.mode == "build"
+    assert decision.tests_run_id == ""
 
 
 def test_gives_up_waiting_after_the_deadline():
