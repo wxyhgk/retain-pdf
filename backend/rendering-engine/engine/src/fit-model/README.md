@@ -15,6 +15,8 @@ DOM fitter; this directory holds the implementation.
 | `content.js` | 215 | Which text a node shows, as measurer runs (`defaultContentFor`). Pure. |
 | `document.js` | 344 | Node building from a layout model, node accessors (`layoutControlFontSize`, `applyGroup`, `nodeBox`, …), the `Select` predicates. |
 | `typography-retain.js` | 350 | Profile "retain": retain-pdf's constants (each citing its source file) and pure rules — leading blends, density estimate, book target, unify decision, underfill target and limits, formula insets, geometry seeds. |
+| `fill-policy.js` | 170 | Ours: how the room a shorter translation leaves is shared between the book size, each page's leading and white — length ratio per book / page, target fill F*(rho), inflation k, smooth caps S(x, m) = m tanh(x/m); pure, parameters overridable (`fitOptions.retainFillPolicy`). |
+| `widen-policy.js` | 100 | Ours: a one-line source item whose translation is longer moves its right edge out just enough (column right edge, nothing beside it, page edge); replaces the fixed 30% short-region rule; parameters overridable (`fitOptions.retainWidenPolicy`). |
 | `line-models/base.js` | 41 | What both line models share: measuring a paragraph, painted line width. |
 | `line-models/measurer.js` | 94 | Typst geometry with ink-safe line spacing (what the Typst output paints). |
 | `line-models/css.js` | 102 | CSS line boxes around the measurer's breaks (what a browser measures). |
@@ -145,6 +147,8 @@ fit-model/rects.js
 fit-model/content.js
 fit-model/document.js
 fit-model/typography-retain.js
+fit-model/fill-policy.js
+fit-model/widen-policy.js
 fit-model/line-models/base.js
 fit-model/line-models/measurer.js
 fit-model/line-models/css.js
@@ -255,6 +259,16 @@ What the switch selects:
   with balanced breaking after the fit, keeping it only if the line count,
   every line's vertical extent and the collision state are unchanged
   (`config.justifyCap`, `config.balanceLines`).
+  6. fill (default; `fitOptions.retainFill: false` restores the underfill size
+  growth of 5): fill-policy.js plans, from the translated / source length ratio
+  and the measured fill, how much of the room goes to the book size (at most
+  +6%), how much to each page's leading (line ratio at most 1.5, a page within
+  the book's +- 0.1) and how much stays white (target fill
+  1 - 0.3 (1 - rho)); this stage applies it within the ink safety net, keeping
+  half an em of white under each paragraph. Chinese from English sets in about
+  60% of the width (measured on three textbooks), so body boxes were 67-83%
+  full at the old 1.24 leading. (Earlier versions filled boxes up to 1.8, then
+  capped at 1.45 with fixed thresholds; both were replaced by this.)
 
 Not ported from retain-pdf: low-height body inheritance (it only sets a
 reference size), `relax_short_body_context_heights`, comfort leading, the
