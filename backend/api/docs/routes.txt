@@ -134,7 +134,7 @@ DELETE /api/v1/tags/:tag_id  signed  library  by none
 PATCH  /api/v1/tags/:tag_id  signed  library  by none
 POST   /api/v1/uploads  signed  ingest  by web
 GET    /api/v1/usage  signed  jobs  by web
-GET    /api/v1/usage/estimate  signed  jobs  by web
+GET    /api/v1/usage/estimate  signed  jobs  by none
 POST   /api/v1/usage/prices  signed  jobs  by none
 GET    /health  public  platform  by desktop,cli,ops
 GET    /ready  public  platform  by cli,ops
