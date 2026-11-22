@@ -36,6 +36,19 @@
 npm --prefix frontend/web test
 ```
 
+只跑和这次改动有关的测试（本地合并前用这个；全量由 CI 在 main 上跑）：
+
+```sh
+npm --prefix frontend/web run test:changed            # 先构建工作区包，再跑挑出来的测试
+node frontend/web/scripts/test-changed.mjs --list     # 只看挑了哪些、为什么
+node frontend/web/scripts/test-changed.mjs --base main  # 换比较的基点（默认 origin/main）
+```
+
+怎么挑（`scripts/test-changed.mjs`）：和基点比改过的文件（加上工作区里没提交的），顺着 import
+往回找用到它们的测试（`@/`、相对路径、`.js`→`.ts`、`@retainpdf/<包>` 算整个包）；测试里直接写了
+改过文件路径的也算；改了源码或样式就加上 `tests/architecture`。改了测试加载器、`package.json`、
+lockfile、tsconfig、构建包的脚本，或者挑出来超过七成，就跑全量。只改文档不跑测试。
+
 运行单个文件或一个目录：
 
 ```sh
@@ -102,5 +115,5 @@ npm --prefix frontend/web run visual:update   # 仅在确认视觉变化符合�
 - [ ] 测试没有依赖执行顺序，并清理了自身创建的全局状态和资源。
 - [ ] 单个测试文件通过。
 - [ ] `tests/architecture` 通过；涉及类型时 `typecheck` 通过。
-- [ ] 提交前全量 `npm --prefix frontend/web test` 通过。
+- [ ] 合并前 `npm --prefix frontend/web run test:changed` 通过（改了测试加载器、依赖等会自动跑全量）。
 - [ ] 涉及可见 UI 变化时运行 `visual:check`，只有确认变化后才更新基线。
