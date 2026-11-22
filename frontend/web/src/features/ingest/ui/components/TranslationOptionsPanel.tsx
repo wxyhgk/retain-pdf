@@ -79,7 +79,8 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
       </div>
 
       <div className="translation-options-grid">
-        <fieldset className={`translation-options-range${hidePageRange ? " hidden" : ""}`}>
+        {/* 类名要单独写全：写成 `translation-options-range${…}` Tailwind 扫不出来，这条工具类就不生成（2026-11-22 修）。 */}
+        <fieldset className={hidePageRange ? "translation-options-range hidden" : "translation-options-range"}>
           <legend>
             <FileText className="h-4 w-4" aria-hidden="true" />
             页码范围

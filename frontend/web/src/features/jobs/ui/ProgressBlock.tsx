@@ -58,7 +58,7 @@ export function ProgressBlock({ renderOptions }: ProgressBlockProps) {
 
   return (
     <>
-      <div className={`status-progress-block${visible ? "" : " hidden"}`}>
+      <div className={visible ? "status-progress-block" : "status-progress-block hidden"}>
         <div
           id={ids.progressBar}
           className={`status-progress-bar${indeterminate ? " is-indeterminate" : ""}`}
