@@ -1,8 +1,8 @@
-// npm run test:changed 按改动挑测试（scripts/test-changed.mjs）。用真仓库的依赖图验几种典型改动。
+// npm run test:changed 按改动挑测试（scripts/pick-tests.mjs）。用真仓库的依赖图验几种典型改动。
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildDependencyIndex, selectTests } from "../../scripts/test-changed.mjs";
+import { buildDependencyIndex, selectTests } from "../../scripts/pick-tests.mjs";
 
 const index = buildDependencyIndex();
 const pick = (changed) => selectTests(changed, { index });
@@ -48,4 +48,12 @@ test("测试里按路径读源码文本的，也算用到了", () => {
     readText: (path) => (path.endsWith("ingest/glm-ocr-payload.test.mjs") ? 'readFileSync("src/styles/pages/home/translation-workflow.utilities.css")' : ""),
   });
   assert.match(result.reasons.get(T("ingest/glm-ocr-payload.test.mjs")) || "", /写了 .*translation-workflow\.utilities\.css 的路径/);
+});
+
+test("挑测试的脚本不会被 node --test 的默认匹配当成测试文件跑", async () => {
+  const { readdirSync } = await import("node:fs");
+  const defaults = [/\.test\.[cm]?js$/, /-test\.[cm]?js$/, /_test\.[cm]?js$/, /^test-.*\.[cm]?js$/, /^test\.[cm]?js$/];
+  for (const name of readdirSync(new URL("../../scripts/", import.meta.url))) {
+    assert.ok(!defaults.some((pattern) => pattern.test(name)), `scripts/${name} 会被 npm test 当成测试跑`);
+  }
 });

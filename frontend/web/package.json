@@ -29,7 +29,7 @@
     "smoke:status": "node ./scripts/frontend-status-smoke.mjs",
     "pretest": "npm run prepare:workspace",
     "test": "node --import ./tests/helpers/register-jsx.mjs --test --test-force-exit --test-concurrency=4",
-    "test:changed": "npm run prepare:workspace && node ./scripts/test-changed.mjs",
+    "test:changed": "npm run prepare:workspace && node ./scripts/pick-tests.mjs",
     "watch:css": "node ./scripts/build-css.mjs --watch",
     "watch:js": "node ./scripts/build-js-bundle.mjs --watch",
     "visual:check": "node ./scripts/visual-check.mjs",

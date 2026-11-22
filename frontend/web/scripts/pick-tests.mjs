@@ -15,7 +15,10 @@
 //
 // 用法：
 //   npm run test:changed                 先 prepare:workspace，再跑挑出来的测试
-//   node scripts/test-changed.mjs --list 只列出挑了哪些、为什么，不跑
+//   node scripts/pick-tests.mjs --list   只列出挑了哪些、为什么，不跑
+//
+// 文件名不能叫 test-*.mjs：node --test 的默认匹配会把它当成测试文件跑（2026-11-22 叫 test-changed.mjs 时，
+// 全量 npm test 会顺带执行它、再起一轮测试）。下面也拦了一道：在测试运行器里被加载时不执行。
 //   --base <ref>                         和哪个提交比（默认 origin/main，没有就 main）
 //   --all                                直接跑全量
 import { execFileSync, spawnSync } from "node:child_process";
@@ -261,6 +264,6 @@ function main(argv) {
   return run.status ?? 1;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (!process.env.NODE_TEST_CONTEXT && process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }

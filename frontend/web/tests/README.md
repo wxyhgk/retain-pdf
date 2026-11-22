@@ -40,11 +40,11 @@ npm --prefix frontend/web test
 
 ```sh
 npm --prefix frontend/web run test:changed            # 先构建工作区包，再跑挑出来的测试
-node frontend/web/scripts/test-changed.mjs --list     # 只看挑了哪些、为什么
-node frontend/web/scripts/test-changed.mjs --base main  # 换比较的基点（默认 origin/main）
+node frontend/web/scripts/pick-tests.mjs --list     # 只看挑了哪些、为什么
+node frontend/web/scripts/pick-tests.mjs --base main  # 换比较的基点（默认 origin/main）
 ```
 
-怎么挑（`scripts/test-changed.mjs`）：和基点比改过的文件（加上工作区里没提交的），顺着 import
+怎么挑（`scripts/pick-tests.mjs`）：和基点比改过的文件（加上工作区里没提交的），顺着 import
 往回找用到它们的测试（`@/`、相对路径、`.js`→`.ts`、`@retainpdf/<包>` 算整个包）；测试里直接写了
 改过文件路径的也算；改了源码或样式就加上 `tests/architecture`。改了测试加载器、`package.json`、
 lockfile、tsconfig、构建包的脚本，或者挑出来超过七成，就跑全量。只改文档不跑测试。
