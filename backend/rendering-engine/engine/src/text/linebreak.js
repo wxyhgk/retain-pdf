@@ -39,6 +39,19 @@
 //     the paragraph text as a space: it adds a break opportunity right after
 //     the indent, and the first line no longer "starts with" punctuation
 //
+// Ours, beyond Typst (rules "cjk", the default; prepare(..., { rules:
+// "typst" }) and breakOpportunities(text, lead, "typst") keep Typst's exact
+// behaviour for the parity tests) (Chinese typesetting, 2026-11-22; spaces that must not
+// break -- "图 2.7", "300 K" -- are turned into NBSP by the host before it
+// gets here, which Typst honours too):
+//   - no break inside a number range, a unit or a bond: around – / — between
+//     letters or digits ("10–20", "kJ/mol", "C—H"), after the hyphen of a
+//     locant before a Han character ("1,3-丁二烯"), before ·, between a
+//     reference word and its number ("图3.23", "式(1.22)", "第3章")
+//   - optimized breaking (justified text) pays CJK_RUNT_COST for a paragraph's
+//     last line of CJK_RUNT_CHARS visible characters or fewer, so a lone
+//     "值。" pulls a character down from the line above
+//
 // Everything that does not depend on the font size is computed once per
 // paragraph (prepare); a layout at one size/width is a single greedy pass.
 (function (root, factory) {
@@ -251,7 +264,34 @@
   }
 
   // `lead`: the paragraph starts with an indent spacing item (Typst text " ").
-  function breakOpportunities(text, lead) {
+  const JOIN_DASHES = new Set("–—/");
+  const REFERENCE_WORDS = new Set("图表式节章题例第页");
+  const COUNTERS = new Set("章节页条款卷期部篇次");
+  const ALNUM = /[A-Za-z0-9\u00c0-\u024f\u0370-\u03ff]/;
+  const HAN = /\p{Script=Han}/u;
+  // A break at `k` (between text[k - 1] and text[k]) that would split a
+  // number range, a unit, a bond or a locant.
+  function keepTogether(text, k) {
+    if (k <= 0 || k >= text.length) return false;
+    const before = text[k - 1];
+    const after = text[k];
+    // after a dash or slash: "10–|20", "kJ/|mol", "C—|H"
+    if (JOIN_DASHES.has(before) && k >= 2 && ALNUM.test(text[k - 2]) && ALNUM.test(after)) return true;
+    // before a dash or slash: "C|—H", "kJ|/mol"
+    if (JOIN_DASHES.has(after) && k + 1 < text.length && ALNUM.test(before) && ALNUM.test(text[k + 1])) return true;
+    // a locant: "1,3-|丁二烯"
+    if ((before === "-" || before === "‐") && k >= 2 && /[0-9]/.test(text[k - 2]) && HAN.test(after)) return true;
+    // a reference word and its number written without a space: "图|3.23",
+    // "式|(1.22)", "第|3章" (with a space the host writes NBSP instead)
+    if (REFERENCE_WORDS.has(before) && /[0-9(（]/.test(after)) return true;
+    // a number and its counter: "第3|章", "2.2.6|节"
+    if (/[0-9]/.test(before) && COUNTERS.has(after)) return true;
+    // the interpunct never starts a line: "牛顿|·玻恩"
+    if (after === "·" || after === "・") return true;
+    return false;
+  }
+
+  function breakOpportunities(text, lead, rules = "cjk") {
     const n = text.length;
     const uax = [];
     const shift = lead ? 1 : 0;
@@ -293,6 +333,12 @@
       if (k + 1 < n && BOX_BREAK_AFTER.has(lineBreakClass(text, k + 1))) addBreak(k + 1);
       if (k > 0 && BOX_BREAK_BEFORE.has(lineBreakClass(text, k - 1))) addBreak(k);
     }
+    // Ours: keep ranges, units, bonds and locants together (see the header).
+    if (rules !== "typst") {
+      for (let i = uax.length - 1; i >= 0; i--) {
+        if (!uax[i].mandatory && keepTogether(text, uax[i].position)) uax.splice(i, 1);
+      }
+    }
     uax.sort((a, b) => a.position - b.position);
 
     // Typst's breakpoints() loop with the link special case.
@@ -322,7 +368,7 @@
 
   // segments: [{ type: "text", value } | { type: "math", widthEm, heightEm, depthEm }]
   // Forced breaks are LINE_SEPARATOR characters inside text values.
-  function prepare(segments, metrics) {
+  function prepare(segments, metrics, options = {}) {
     let text = "";
     const boxes = new Map(); // unit index -> math segment
     for (const segment of segments) {
@@ -412,13 +458,14 @@
       // Break opportunities depend on whether an indent leads the paragraph;
       // both variants are computed on first use.
       breakSets: [null, null],
+      rules: options.rules === "typst" ? "typst" : "cjk",
       hasText: [...text].some(c => c !== OBJECT && c !== LINE_SEPARATOR && !isSpace(c))
     };
   }
 
   function breaksFor(p, lead) {
     const slot = lead ? 1 : 0;
-    if (!p.breakSets[slot]) p.breakSets[slot] = breakOpportunities(p.text, lead);
+    if (!p.breakSets[slot]) p.breakSets[slot] = breakOpportunities(p.text, lead, p.rules);
     return p.breakSets[slot];
   }
 
@@ -566,6 +613,27 @@
   // total plus that cost exceed the bound are skipped without measuring.
   const MIN_RATIO = -1;
   const RUNT_COST = 100;
+  // A paragraph's last line of this many visible characters or fewer, in a
+  // paragraph that has Han characters, is a runt ("值。"): optimized breaking
+  // pays CJK_RUNT_COST for it. Badness is 100 x ratio^3, so 200 buys a ratio
+  // of about 1.26 on the line above -- some 0.13 em more per gap: pulling one
+  // character down from a full line costs far less, a line that would gape
+  // keeps the runt.
+  const CJK_RUNT_CHARS = 2;
+  const CJK_RUNT_COST = 200;
+  function cjkRunt(p, start, end) {
+    if (p.rules === "typst") return false;
+    if (p.hasHan === undefined) p.hasHan = HAN.test(p.text);
+    if (!p.hasHan || start === 0) return false;
+    let visible = 0;
+    for (let i = start; i < end; i++) {
+      const c = p.text[i];
+      if (isSpace(c) || c === LINE_SEPARATOR || c === "\n") continue;
+      visible += 1;
+      if (visible > CJK_RUNT_CHARS) return false;
+    }
+    return visible > 0;
+  }
   const BOUND_EPS = 1e-3;
   function lineCost(p, lineWidth, available, size, justify, lead, start, end, mandatory, unbreakable) {
     const first = start === 0;
@@ -587,7 +655,8 @@
     // only when it has to shrink.
     else if (!mandatory || ratio < 0) badness = 100 * Math.abs(ratio) ** 3;
     else badness = 0;
-    const penalty = unbreakable && mandatory ? RUNT_COST : 0;
+    const runt = mandatory && end >= p.n && cjkRunt(p, start, end) ? CJK_RUNT_COST : 0;
+    const penalty = Math.max(mandatory && unbreakable ? RUNT_COST : 0, runt);
     return { width, ratio, overfull: ratio < minRatio, cost: (1 + badness + penalty) ** 2 };
   }
 
@@ -713,6 +782,23 @@
   // Returns { lines: [{ start, end, width, mandatory, top, bottom }], height }
   // where top/bottom are the line's extent above/below its baseline and
   // height is the stacked extent at leading 0.
+  // Greedy breaking ends a paragraph wherever the text runs out, often on
+  // "值。" alone. When it does (rules "cjk"), lay the paragraph out again with
+  // optimized breaking, which pays CJK_RUNT_COST for that, and keep the
+  // result only if it has as many lines and no runt; other paragraphs keep
+  // their greedy breaks untouched.
+  function withoutRunt(p, lines, breaks, lineWidth, available, size, justify, lead) {
+    if (p.rules === "typst" || lines.length < 2) return lines;
+    const last = lines[lines.length - 1];
+    if (last.end < p.n || !cjkRunt(p, last.start, last.end)) return lines;
+    let alternative;
+    try { alternative = optimizedBreaks(p, breaks, lineWidth, available, size, justify, lead, lines); }
+    catch (_) { return lines; }
+    const end = alternative[alternative.length - 1];
+    if (alternative.length !== lines.length || cjkRunt(p, end.start, end.end)) return lines;
+    return alternative;
+  }
+
   function layout(p, size, width, options = {}) {
     const indent = Number(options.indent) || 0;
     const hang = Number(options.hang) || 0;
@@ -743,7 +829,10 @@
     // options.optimized: Typst `linebreaks: "optimized"` (justify:
     // options.justify), bounded by the greedy layout just computed.
     if (options.optimized) lines = optimizedBreaks(p, breaks, lineWidth, available, size, options.justify !== false, lead, lines);
-    else if (options.balance) balanceLines(p, lines, breaks, lineWidth, available, size, options.balance);
+    else {
+      if (options.balance) balanceLines(p, lines, breaks, lineWidth, available, size, options.balance);
+      lines = withoutRunt(p, lines, breaks, lineWidth, available, size, options.justify !== false, lead);
+    }
 
     let height = 0;
     for (const line of lines) {

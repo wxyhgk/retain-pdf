@@ -47,6 +47,14 @@ def escape_literal_asterisks_preserving_emphasis(text: str) -> str:
     return "".join(chunks)
 
 
+# 只有上标的行内公式：$^{14}$、${}^{1,2}$、$^\dagger$、$^{a}$（注释号、参考文献号）
+_PURE_SUPERSCRIPT_RE = re.compile(r"^\$\s*(?:\{\})?\^\s*(?:\{[0-9a-z,\-–*†‡§\\dagger\\ddagger\s]+\}|[0-9a-z*]|\\dagger|\\ddagger)\s*\$$")
+
+
+def is_pure_superscript(expr: str) -> bool:
+    return bool(_PURE_SUPERSCRIPT_RE.match(str(expr or "").strip()))
+
+
 def surround_inline_math_with_spaces(markdown: str) -> str:
     text = markdown or ""
     if not text:
@@ -78,6 +86,11 @@ def surround_inline_math_with_spaces(markdown: str) -> str:
         next_char = text[token.end] if token.end < len(text) else ""
         prefix = ""
         suffix = ""
+        if is_pure_superscript(expr):
+            # 注释号这类纯上标贴着前后文字，不补空格（「刚度”。¹ 力场」→「刚度”。¹力场」，2026-11-22）
+            chunks.append(expr)
+            after_math = False
+            continue
         if (
             prev_char and not prev_char.isspace() and prev_char not in left_no_space
             and not is_fullwidth_punctuation(prev_char)
