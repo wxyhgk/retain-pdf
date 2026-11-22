@@ -213,3 +213,18 @@ test("mac runtime pruning removes the framework static library config and pkgcon
     assert.equal(fs.existsSync(path.join(root, "lib/python3.11/site-packages/runtime_dependency")), true);
   });
 });
+
+test("mac signing signs every file with hardened runtime and the shared entitlements; notarizes only with all three keys", async () => {
+  const { signOptions, notarizeOptions, ENTITLEMENTS } = await import("./sign-mac.mjs");
+  assert.equal(fs.existsSync(ENTITLEMENTS), true);
+  const options = signOptions({ app: "/tmp/RetainPDF.app", identity: "Developer ID Application: X (TEAM)", keychain: "/tmp/k" });
+  assert.equal(options.platform, "darwin");
+  assert.equal(options.type, "distribution");
+  assert.deepEqual(options.optionsForFile("/tmp/RetainPDF.app/Contents/Resources/backend/bin/rust_api"), { hardenedRuntime: true, entitlements: ENTITLEMENTS });
+  assert.equal(notarizeOptions("/tmp/RetainPDF.app", {}), null);
+  assert.equal(notarizeOptions("/tmp/RetainPDF.app", { APPLE_API_KEY: "/k.p8", APPLE_API_KEY_ID: "id" }), null);
+  assert.deepEqual(
+    notarizeOptions("/tmp/RetainPDF.app", { APPLE_API_KEY: "/k.p8", APPLE_API_KEY_ID: "id", APPLE_API_ISSUER: "iss" }),
+    { appPath: "/tmp/RetainPDF.app", appleApiKey: "/k.p8", appleApiKeyId: "id", appleApiIssuer: "iss" },
+  );
+});

@@ -1,0 +1,61 @@
+name: Mac Sign Trial
+
+# 只打 Mac 包、签名、公证，试 Developer ID 签名这条路（2026-11-22 起，接自动更新前要先过这一关）。
+# 第一次公证多半要来回几轮：推到 trial/mac-sign 分支就跑，不用每次跑三平台的预构建，也不碰 main。
+# 和正式发版用同一份 build-desktop-packages.yml（platforms 只给 macos）和 sign-macos.yml。
+# 产物不会被发版用到：发版只认 Prebuild Release Candidates 那次运行的 artifact。
+#
+# 注意：这里签名前没等完整测试——试验分支只改打包和签名，由用户确认推上来的；正式发版里签名在测试之后。
+
+"on":
+  push:
+    branches:
+      - "trial/mac-sign"
+      - "trial/mac-sign/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mac-sign-trial-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.declared.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Resolve declared application version
+        id: declared
+        run: python3 .github/scripts/resolve_declared_version.py --github-output "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-desktop-packages.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+      platforms: macos
+
+  sign:
+    needs: [prepare, build]
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/sign-macos.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+      app_artifact: desktop-macos-app-${{ github.sha }}
+    secrets:
+      MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+      MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+      APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}

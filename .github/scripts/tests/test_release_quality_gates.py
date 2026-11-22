@@ -108,11 +108,19 @@ def test_desktop_builds_run_in_parallel_but_publish_waits_for_tests():
     assert "uses: ./.github/workflows/build-desktop-packages.yml" in build
     assert job_condition(build) == FALLBACK_CONDITION
     assert "secrets" not in build
+    # 平台 job 只许按 inputs.platforms 过滤（mac-sign-trial.yml 只打 Mac 用）；发版和预构建不传 platforms，
+    # 走默认的三平台，所以三个都一定跑。
     for name in DESKTOP_BUILD_JOBS:
         reusable_build = job("build-desktop-packages.yml", name)
-        assert re.search(r"^    if:", reusable_build, re.M) is None
+        platform = name.removeprefix("build-").removesuffix("-release")
+        conditions = re.findall(r"^    if:(.*)$", reusable_build, re.M)
+        assert conditions in ([], [f" contains(inputs.platforms, '{platform}')"]), (name, conditions)
         assert "secrets." not in reusable_build
-    assert "secrets" not in (WORKFLOWS / "build-desktop-packages.yml").read_text()
+    source = (WORKFLOWS / "build-desktop-packages.yml").read_text()
+    assert "secrets" not in source
+    assert 'default: "windows,linux,macos"' in source
+    assert "platforms" not in build
+    assert "platforms" not in job("prebuild-release-candidates.yml", "desktop")
 
 
 def test_tests_include_reusable_architecture_gate():

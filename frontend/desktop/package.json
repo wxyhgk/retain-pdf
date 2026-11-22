@@ -29,6 +29,8 @@
   },
   "devDependencies": {
     "@electron/asar": "3.4.1",
+    "@electron/notarize": "2.5.0",
+    "@electron/osx-sign": "1.3.3",
     "electron": "44.4.3",
     "electron-builder": "26.15.3",
     "eslint": "10.8.1"
@@ -83,7 +85,15 @@
         "zh_CN",
         "zh_TW"
       ],
-      "artifactName": "RetainPDF-Mac-${version}.${ext}"
+      "artifactName": "RetainPDF-Mac-${version}.${ext}",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "dmg": {
       "format": "ULFO"

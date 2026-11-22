@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Developer ID 签名开 hardened runtime 时的权限（App 本身和包里每个子程序共用，entitlementsInherit 也指向这份）：
+  - allow-jit / allow-unsigned-executable-memory：Electron 的 V8，以及打包的 Python（ctypes / 扩展模块）要可写可执行内存；
+  - disable-library-validation：打包的 Python 加载 site-packages 里的 .so、node 加载 rendering-engine 的原生模块，
+    这些库虽然都由我们重签，但保险起见不要求和加载者同一团队签名。
+-->
+<plist version="1.0">
+<dict>
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+</dict>
+</plist>

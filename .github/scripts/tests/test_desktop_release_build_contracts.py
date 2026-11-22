@@ -97,3 +97,25 @@ def test_desktop_python_scripts_print_utf8_on_windows_consoles():
         source = (repo / "ops/release" / name).read_text(encoding="utf-8")
         assert 'reconfigure(encoding="utf-8"' in source, name
     assert 'PYTHONIOENCODING="utf-8"' in (repo / "ops/release/desktop_python_bundle.py").read_text(encoding="utf-8")
+
+
+MAC_SIGNING_SECRETS = {"MAC_CSC_LINK", "MAC_CSC_KEY_PASSWORD", "APPLE_API_KEY", "APPLE_API_KEY_ID", "APPLE_API_ISSUER"}
+
+
+def test_mac_signing_lives_in_its_own_workflow_with_only_the_signing_secrets():
+    """Developer ID 签名和公证（2026-11-22）：打包和测试并行跑、不碰密钥，签名放在单独的 sign-macos.yml，
+    只用这 5 个密钥；调用方显式一个个传，不 secrets: inherit。"""
+    import re
+
+    sign = (WORKFLOWS / "sign-macos.yml").read_text(encoding="utf-8")
+    assert set(re.findall(r"secrets\.(\w+)", sign)) == MAC_SIGNING_SECRETS
+    for step in ("scripts/sign-mac.mjs", "codesign --verify --deep --strict", "xcrun stapler validate",
+                 "spctl --assess", "--prepackaged", "security delete-keychain"):
+        assert step in sign, step
+    assert "if: always()" in sign  # 钥匙串一定删
+    assert "desktop-macos-app-" in (WORKFLOWS / "build-desktop-packages.yml").read_text(encoding="utf-8")
+    trial = (WORKFLOWS / "mac-sign-trial.yml").read_text(encoding="utf-8")
+    assert "secrets: inherit" not in trial
+    assert set(re.findall(r"secrets\.(\w+)", trial)) == MAC_SIGNING_SECRETS
+    assert "platforms: macos" in trial
+    assert '"trial/mac-sign"' in trial

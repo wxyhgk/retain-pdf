@@ -1,0 +1,203 @@
+name: Sign macOS Package
+
+# Mac 安装包的 Developer ID 签名 + 公证（2026-11-22 起，接自动更新的前提）。
+#
+# 桌面打包（build-desktop-packages.yml）和测试并行跑，所以那一步不许碰任何密钥；它只产出未签名的
+# RetainPDF.app（desktop-macos-app-<sha>，tar 包）。这里在测试过了以后（调用方负责保证）：
+#   1. 把 Developer ID 证书导入一次性钥匙串；
+#   2. frontend/desktop/scripts/sign-mac.mjs：@electron/osx-sign 给包里每个二进制签名（hardened runtime +
+#      build/entitlements.mac.plist），@electron/notarize 用 App Store Connect API key 公证并 staple；
+#   3. 校验：codesign --verify --deep --strict、每个 Mach-O 都是 Developer ID + runtime、stapler、spctl；
+#   4. electron-builder --prepackaged 用签好的 .app 出 dmg 和 zip（自动更新用 zip），dmg 再签一次名；
+#   5. 上传 desktop-macos-signed-<sha>。
+
+"on":
+  workflow_call:
+    inputs:
+      version:
+        description: "应用版本号（不带 v）"
+        required: true
+        type: string
+      app_artifact:
+        description: "未签名 .app 的 artifact 名（desktop-macos-app-<sha>）"
+        required: true
+        type: string
+      app_run_id:
+        description: "那个 artifact 在哪次运行里；留空 = 当前这次"
+        required: false
+        type: string
+        default: ""
+    secrets:
+      MAC_CSC_LINK:
+        required: true
+      MAC_CSC_KEY_PASSWORD:
+        required: true
+      APPLE_API_KEY:
+        required: true
+      APPLE_API_KEY_ID:
+        required: true
+      APPLE_API_ISSUER:
+        required: true
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  sign:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      DESKTOP_ROOT: frontend/desktop
+      PACKAGE_VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.22.0"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install JavaScript workspace dependencies
+        run: npm ci
+
+      - name: Download unsigned macOS app (this run)
+        if: inputs.app_run_id == ''
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ inputs.app_artifact }}
+          path: unsigned
+
+      - name: Download unsigned macOS app (prebuild run)
+        if: inputs.app_run_id != ''
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ inputs.app_artifact }}
+          path: unsigned
+          run-id: ${{ inputs.app_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Unpack unsigned app
+        shell: bash
+        run: |
+          mkdir -p work
+          tar -C work -xzf "unsigned/RetainPDF-Mac-$PACKAGE_VERSION-unsigned-app.tar.gz"
+          test -d work/RetainPDF.app
+          du -sh work/RetainPDF.app
+
+      - name: Import Developer ID certificate into a throwaway keychain
+        shell: bash
+        env:
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+        run: |
+          keychain="$RUNNER_TEMP/retainpdf-signing.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          cert="$RUNNER_TEMP/developer-id.p12"
+          printf '%s' "$MAC_CSC_LINK" | base64 --decode > "$cert"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$cert" -k "$keychain" -P "$MAC_CSC_KEY_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain" >/dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm -f "$cert"
+          security find-identity -v -p codesigning "$keychain" | sed -E 's/\(([A-Z0-9]{10})\)/(…)/'
+          echo "SIGNING_KEYCHAIN=$keychain" >> "$GITHUB_ENV"
+
+      - name: Sign and notarize
+        working-directory: frontend/desktop
+        shell: bash
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          # notarytool / @electron/notarize 要的是 .p8 文件路径，仓库密钥里存的是内容。
+          key_file="$RUNNER_TEMP/AuthKey_${APPLE_API_KEY_ID}.p8"
+          printf '%s\n' "$APPLE_API_KEY_CONTENT" > "$key_file"
+          chmod 600 "$key_file"
+          export APPLE_API_KEY="$key_file"
+          unset APPLE_API_KEY_CONTENT
+          node scripts/sign-mac.mjs --app "$GITHUB_WORKSPACE/work/RetainPDF.app" --keychain "$SIGNING_KEYCHAIN"
+          rm -f "$key_file"
+
+      - name: Verify signature and notarization
+        shell: bash
+        run: |
+          app_root="$GITHUB_WORKSPACE/work/RetainPDF.app"
+          codesign -dv --verbose=2 "$app_root" 2>&1 | grep -E "Authority|flags|Timestamp" | sed -E 's/\(([A-Z0-9]{10})\)/(…)/'
+          codesign --verify --deep --strict --verbose=2 "$app_root"
+          # 公证的硬性要求：包里每个 Mach-O 都是 Developer ID 签的、带 hardened runtime。
+          bad=0
+          while IFS= read -r -d '' file; do
+            if file "$file" | grep -q 'Mach-O'; then
+              info="$(codesign -dv --verbose=2 "$file" 2>&1 || true)"
+              if ! grep -q "Authority=Developer ID Application" <<<"$info" || ! grep -q "flags=.*runtime" <<<"$info"; then
+                echo "not Developer ID + hardened runtime: ${file#$app_root/}"
+                bad=$((bad + 1))
+              fi
+            fi
+          done < <(find "$app_root/Contents" -type f -print0)
+          echo "mach_o_without_developer_id_or_runtime=$bad"
+          test "$bad" -eq 0
+          xcrun stapler validate "$app_root"
+          spctl --assess --type execute --verbose=4 "$app_root"
+
+      - name: Package signed app as dmg and zip
+        working-directory: frontend/desktop
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          # artifactName 里的 ${version} 取 package.json；只改 runner 上这份，不提交。
+          npm pkg set version="$PACKAGE_VERSION"
+          npx electron-builder --prepackaged "$GITHUB_WORKSPACE/work/RetainPDF.app" --mac dmg zip --publish never --config.directories.output=signed
+          identity="$(security find-identity -v -p codesigning "$SIGNING_KEYCHAIN" | sed -nE 's/.*"(Developer ID Application: [^"]+)".*/\1/p' | head -n 1)"
+          codesign --sign "$identity" --keychain "$SIGNING_KEYCHAIN" --timestamp "signed/RetainPDF-Mac-$PACKAGE_VERSION.dmg"
+          codesign --verify --verbose=2 "signed/RetainPDF-Mac-$PACKAGE_VERSION.dmg"
+          ls -lh signed
+
+      - name: Check the dmg opens to a notarized app
+        shell: bash
+        run: |
+          mount_point="$(mktemp -d)"
+          hdiutil attach -nobrowse -readonly -mountpoint "$mount_point" "$DESKTOP_ROOT/signed/RetainPDF-Mac-$PACKAGE_VERSION.dmg"
+          xcrun stapler validate "$mount_point/RetainPDF.app"
+          spctl --assess --type execute --verbose=4 "$mount_point/RetainPDF.app"
+          hdiutil detach "$mount_point"
+
+      - name: Check the zip still carries a valid signature
+        shell: bash
+        run: |
+          # 自动更新下的是 zip：解开以后签名和 staple 都要还在（压缩时丢了软链接，签名就坏了）。
+          unpacked="$(mktemp -d)"
+          ditto -x -k "$DESKTOP_ROOT/signed/RetainPDF-Mac-$PACKAGE_VERSION"*.zip "$unpacked"
+          codesign --verify --deep --strict --verbose=2 "$unpacked/RetainPDF.app"
+          xcrun stapler validate "$unpacked/RetainPDF.app"
+
+      - name: Upload signed macOS packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: desktop-macos-signed-${{ github.sha }}
+          path: |
+            ${{ env.DESKTOP_ROOT }}/signed/RetainPDF-Mac-${{ inputs.version }}.dmg
+            ${{ env.DESKTOP_ROOT }}/signed/RetainPDF-Mac-${{ inputs.version }}*.zip
+            ${{ env.DESKTOP_ROOT }}/signed/*.yml
+            ${{ env.DESKTOP_ROOT }}/signed/*.blockmap
+          if-no-files-found: warn
+          retention-days: 7
+          overwrite: true
+
+      - name: Remove signing keychain
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${SIGNING_KEYCHAIN:-}" ]; then
+            security delete-keychain "$SIGNING_KEYCHAIN" || true
+          fi
+          rm -f "$RUNNER_TEMP"/AuthKey_*.p8 "$RUNNER_TEMP"/developer-id.p12

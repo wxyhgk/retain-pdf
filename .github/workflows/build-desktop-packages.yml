@@ -20,6 +20,11 @@ name: Build Desktop Packages
         description: "注入构建的应用版本号（不带 v），例如 4.2.7"
         required: true
         type: string
+      platforms:
+        description: "构建哪些平台（逗号分隔）；发版和预构建用默认的三个，mac-sign-trial.yml 只跑 macos"
+        required: false
+        type: string
+        default: "windows,linux,macos"
 
 permissions:
   contents: read
@@ -32,6 +37,7 @@ env:
 
 jobs:
   build-windows-release:
+    if: contains(inputs.platforms, 'windows')
     runs-on: windows-latest
     timeout-minutes: 90
 
@@ -266,6 +272,7 @@ jobs:
           overwrite: true
 
   build-linux-release:
+    if: contains(inputs.platforms, 'linux')
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -541,6 +548,7 @@ jobs:
           overwrite: true
 
   build-macos-release:
+    if: contains(inputs.platforms, 'macos')
     runs-on: macos-latest
     timeout-minutes: 120
 
@@ -1002,6 +1010,8 @@ jobs:
           iconutil -c icns "$iconset_dir" -o "$PWD/$DESKTOP_ROOT/build/icon.icns"
           ls -lah "$PWD/$DESKTOP_ROOT/build/icon.icns"
 
+      # 这一步不签名、不碰任何密钥（和测试并行跑，见 test_release_quality_gates）：Developer ID 签名和公证
+      # 在测试过了以后由 sign-macos.yml 对下面上传的未签名 .app 做（2026-11-22 起）。
       - name: Build macOS package
         working-directory: frontend/desktop
         shell: bash
@@ -1149,6 +1159,28 @@ jobs:
         with:
           name: desktop-meta-macos-${{ github.sha }}
           path: desktop-meta/desktop-package-macos.json
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+      # 未签名的 RetainPDF.app 给 sign-macos.yml 签名、公证、重新出 dmg / zip 用（测试过了以后才签）。
+      # 用 tar 打：upload-artifact 自己的 zip 会丢掉 Python.framework 的软链接和可执行位。
+      - name: Archive unsigned macOS app
+        shell: bash
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          app_root="$(find "$PWD/$DESKTOP_ROOT/mac" -maxdepth 2 -type d -name 'RetainPDF.app' | head -n 1)"
+          test -n "$app_root"
+          mkdir -p desktop-app
+          tar -C "$(dirname "$app_root")" -czf "desktop-app/RetainPDF-Mac-$PACKAGE_VERSION-unsigned-app.tar.gz" RetainPDF.app
+          ls -lh desktop-app
+
+      - name: Upload unsigned macOS app
+        uses: actions/upload-artifact@v7
+        with:
+          name: desktop-macos-app-${{ github.sha }}
+          path: desktop-app/RetainPDF-Mac-${{ steps.version.outputs.version }}-unsigned-app.tar.gz
           if-no-files-found: error
           retention-days: 7
           overwrite: true
