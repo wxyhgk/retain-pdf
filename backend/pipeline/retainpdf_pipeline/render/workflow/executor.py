@@ -8,6 +8,7 @@ from retainpdf_pipeline.foundation.config import fonts
 from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.config import runtime
 from retainpdf_pipeline.render.document.link_relocation import relocate_translated_links
+from retainpdf_pipeline.render.output.tables.overlay import apply_table_translations
 from retainpdf_base.output_layout import ARTIFACTS_DIR_NAME
 from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
 from retainpdf_pipeline.render.prepare.routes import route_prepare_needs
@@ -113,6 +114,30 @@ def _relocate_links_best_effort(output_pdf_path: Path, source_pdf_path: Path, se
         {"moved": result.get("moved"), "unchanged": result.get("unchanged"), "unresolved": len(result.get("unresolved") or [])},
         flush=True,
     )
+    return result
+
+
+def _apply_table_translations_best_effort(output_pdf_path: Path, render_plan: RenderPlan) -> dict:
+    """表格译文放回译文 PDF（表格翻译 T5，render/output/tables/overlay.py：rpr 引擎按原表的框重排整表）。没开表格翻译就没有 tables.v1.json，直接跳过；
+    出错只记一笔，照常交出排好的 PDF（表格保持原文，阅读页照样能看到整表译文）。"""
+    if not Path(output_pdf_path).is_file():
+        return {"skipped": "pdf_missing"}
+    try:
+        result = apply_table_translations(
+            output_pdf_path=Path(output_pdf_path),
+            source_pdf_path=render_plan.render_inputs.source_pdf_path,
+            translations_dir=render_plan.render_inputs.translations_dir,
+            page_indices=render_plan.selected_pages.keys(),
+        )
+    except Exception as exc:  # noqa: BLE001 — 表格放不回去不该让整个排版失败
+        print(f"table overlay skipped: {type(exc).__name__}: {exc}", flush=True)
+        return {"error": f"{type(exc).__name__}: {exc}"}
+    if not result.get("skipped"):
+        print(
+            "table overlay:",
+            {key: result.get(key) for key in ("tables", "tables_written")},
+            flush=True,
+        )
     return result
 
 
@@ -427,6 +452,7 @@ def execute_render_plan(
             context=context,
             extract_selected_pages=extract_selected_pages,
         )
+        render_diagnostics["table_overlay"] = _apply_table_translations_best_effort(output_pdf_path, render_plan)
         render_diagnostics["link_relocation"] = _relocate_links_best_effort(
             output_pdf_path, render_plan.render_inputs.source_pdf_path, render_plan.selected_pages
         )

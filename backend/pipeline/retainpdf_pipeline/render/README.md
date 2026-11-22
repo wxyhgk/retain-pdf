@@ -119,6 +119,8 @@ retainpdf_pipeline/render/
   渲染层公共数据结构和排版文本 helper。
 - `layout/page_specs.py`
   页面级渲染规格组装，连接翻译 payload、页面几何和输出层。
+- `output/tables/`
+  表格译文放回译文 PDF：读 `tables.v1.json`，排完正文后用 rpr 引擎（`rpr-table.js`）按原表的框重排整表，换掉原表。
 
 ## 背景遮盖策略
 
