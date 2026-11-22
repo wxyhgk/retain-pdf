@@ -40,6 +40,8 @@ pub enum Owner {
     Accounts,
     Providers,
     Ingest,
+    /// 文件包（`retainpdf-files`）。现在没有接口直接归它（文件出口的接口按任务、书登记），留着给以后。
+    #[allow(dead_code)]
     Files,
     Jobs,
     Library,
