@@ -4,6 +4,8 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from retainpdf_pipeline.foundation.config.runtime_assets import cached_asset_dir
+
 # --- Backend font dirs: configurable via RETAIN_PDF_FONTS_DIR (comma-separated) ---
 
 
@@ -52,6 +54,10 @@ def _parse_font_dirs() -> list[Path]:
         # Always keep the bundled backend fonts as a final fallback.
         if _DEFAULT_FONTS_DIR not in dirs:
             dirs.append(_DEFAULT_FONTS_DIR)
+    # 安装包不再带思源宋体时，后端首次启动下到数据目录的那一份（runtime_assets.py）；包里带着的排在前面。
+    cached = cached_asset_dir("fonts")
+    if cached is not None and cached not in dirs:
+        dirs.append(cached)
     # Deduplicate preserving order
     seen: set[Path] = set()
     uniq: list[Path] = []
@@ -66,29 +72,60 @@ def _parse_font_dirs() -> list[Path]:
 BACKEND_FONTS_DIRS: list[Path] = _parse_font_dirs()
 BACKEND_FONTS_DIR: Path = BACKEND_FONTS_DIRS[0]
 
+PRIMARY_CJK_FONT_FAMILY = "Source Han Serif SC"
+# 断网、思源宋体还没下好时的后备：安装包里留着的 DroidSansFallbackFull（黑体风格、没有粗体），PDF 照样出（2026-11-22 用户定）。
+FALLBACK_CJK_FONT_FAMILY = "Droid Sans Fallback"
+_FALLBACK_FONT_FILE = "DroidSansFallbackFull.ttf"
+_SYSTEM_FALLBACK_FONT = Path("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf")
+
+
+def _override(env_name: str) -> Path | None:
+    """环境变量指定的字体文件，照用不换（文件不在就让它报错，不悄悄换成别的字体）。
+    安装包不带思源宋体时，桌面端不设这几个变量（见 docs/ops/planning/desktop-size/）。"""
+    value = os.environ.get(env_name, "").strip()
+    return Path(value).expanduser() if value else None
+
+
+def _find_font_file(name: str) -> Path | None:
+    return next((directory / name for directory in BACKEND_FONTS_DIRS if (directory / name).is_file()), None)
+
+
+def _fallback_font_path() -> Path | None:
+    return _find_font_file(_FALLBACK_FONT_FILE) or (_SYSTEM_FALLBACK_FONT if _SYSTEM_FALLBACK_FONT.is_file() else None)
+
+
 def _default_font_path() -> Path:
-    override = os.environ.get("RETAIN_PDF_FONT_PATH", "").strip()
-    if override:
-        return Path(override).expanduser()
+    override = _override("RETAIN_PDF_FONT_PATH")
+    if override is not None:
+        return override
     # Use the shipped CJK font on every platform, not a Linux-only system path.
-    candidates = [directory / "SourceHanSerifSC-Regular.otf" for directory in BACKEND_FONTS_DIRS]
-    candidates.append(Path("/usr/share/fonts/truetype/droid/DroidSansFallbackFull.ttf"))
-    return next((path for path in candidates if path.is_file()), candidates[0])
+    return (
+        _find_font_file("SourceHanSerifSC-Regular.otf")
+        or _fallback_font_path()
+        or BACKEND_FONTS_DIRS[0] / "SourceHanSerifSC-Regular.otf"
+    )
 
 
 DEFAULT_FONT_PATH = _default_font_path()
-TITLE_BOLD_FONT_PATH = Path(
-    os.environ.get("RETAIN_PDF_TITLE_BOLD_FONT_PATH", "").strip()
-    or str(BACKEND_FONTS_DIR / "SourceHanSerifSC-Bold.otf")
+# 思源宋体（包里带的、下好的）都没有、只能用后备字体排的时候为 True。
+USING_FALLBACK_CJK_FONT = DEFAULT_FONT_PATH.name == _FALLBACK_FONT_FILE
+TITLE_BOLD_FONT_PATH = (
+    _override("RETAIN_PDF_TITLE_BOLD_FONT_PATH")
+    or _find_font_file("SourceHanSerifSC-Bold.otf")
+    # 后备字体没有粗体：标题用常规体
+    or (DEFAULT_FONT_PATH if USING_FALLBACK_CJK_FONT else BACKEND_FONTS_DIR / "SourceHanSerifSC-Bold.otf")
 )
 # Allow override for regular weight as well (used by some debug paths)
-TITLE_REGULAR_FONT_PATH = Path(
-    os.environ.get("RETAIN_PDF_TITLE_REGULAR_FONT_PATH", "").strip()
-    or str(BACKEND_FONTS_DIR / "SourceHanSerifSC-Regular.otf")
+TITLE_REGULAR_FONT_PATH = (
+    _override("RETAIN_PDF_TITLE_REGULAR_FONT_PATH")
+    or _find_font_file("SourceHanSerifSC-Regular.otf")
+    or DEFAULT_FONT_PATH
 )
 DEFAULT_FONT_SIZE = 11.4
 MIN_FONT_SIZE = 8.5
-TYPST_DEFAULT_FONT_FAMILY = os.environ.get("RETAIN_PDF_TYPST_FONT_FAMILY", "").strip() or "Source Han Serif SC"
+TYPST_DEFAULT_FONT_FAMILY = os.environ.get("RETAIN_PDF_TYPST_FONT_FAMILY", "").strip() or (
+    FALLBACK_CJK_FONT_FAMILY if USING_FALLBACK_CJK_FONT else PRIMARY_CJK_FONT_FAMILY
+)
 
 
 # ---------------------------------------------------------------------------

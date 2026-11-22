@@ -9,6 +9,7 @@ pub mod credentials;
 pub use retainpdf_db::db;
 pub mod job_events;
 pub mod ocr_provider;
+pub mod runtime_assets;
 pub mod sync;
 pub mod translation_revisions;
 pub mod worker_command;

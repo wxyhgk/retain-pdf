@@ -19,6 +19,7 @@ import time
 from pathlib import Path
 from typing import Callable
 
+from retainpdf_pipeline.foundation.config import fonts
 from retainpdf_pipeline.foundation.shared.stage_specs import RENDER_ENGINE_RPR_FIT
 from retainpdf_pipeline.foundation.shared.stage_specs import RENDER_ENGINE_TYPST
 from retainpdf_pipeline.foundation.shared.stage_specs import normalize_render_engine
@@ -37,7 +38,8 @@ from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
 RPR_SUPPORTED_FONT_FAMILIES = frozenset({"source han serif sc", "noto serif cjk sc"})
 # 引擎只认这一个族名（字宽表与 retain-pdf 自带的字体文件都是它）；Noto Serif CJK SC 字形相同，
 # 一律按它排、按它画。
-RPR_ENGINE_FONT_FAMILY = "Source Han Serif SC"
+# 思源宋体；没有时（断网、还没下好）是后备字体的名字，见 foundation/config/fonts.py
+RPR_ENGINE_FONT_FAMILY = fonts.TYPST_DEFAULT_FONT_FAMILY
 
 TypstDispatch = Callable[[], tuple[int, dict[str, object]]]
 CompressFinal = Callable[[RenderExecutionContext, str], bool]
