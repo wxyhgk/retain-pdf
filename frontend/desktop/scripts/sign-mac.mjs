@@ -11,7 +11,7 @@
 // 用法：node scripts/sign-mac.mjs --app <RetainPDF.app> --keychain <钥匙串> [--no-notarize]
 //   公证要 APPLE_API_KEY（.p8 文件路径）、APPLE_API_KEY_ID、APPLE_API_ISSUER 三个环境变量。
 import { execFileSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -37,7 +37,40 @@ export function findDeveloperIdIdentity(keychain) {
   return unique[0];
 }
 
-/** osx-sign 的参数：每个文件都开 hardened runtime、用同一份 entitlements。 */
+// Mach-O 的魔数（大小端、32/64 位、多架构 fat 包）。
+const MACH_O_MAGICS = new Set([0xfeedface, 0xfeedfacf, 0xcefaedfe, 0xcffaedfe, 0xcafebabe, 0xbebafeca]);
+
+/** 文件开头 4 个字节是不是 Mach-O（可执行程序、.dylib、.so、.node 都是）。 */
+export function isMachO(filePath) {
+  let fd;
+  try {
+    fd = openSync(filePath, "r");
+    const head = Buffer.alloc(4);
+    if (readSync(fd, head, 0, 4, 0) < 4) return false;
+    return MACH_O_MAGICS.has(head.readUInt32BE(0));
+  } catch {
+    return false;
+  } finally {
+    if (fd !== undefined) closeSync(fd);
+  }
+}
+
+/**
+ * osx-sign 要跳过的：不是 Mach-O 的普通文件。osx-sign 默认把所有「看起来是二进制」的文件都签一遍——
+ * 包里 1721 个，真正的 Mach-O 只有约 300 个，其余是图片、字体、PDF、数据文件，它们由 App 顶层签名的
+ * CodeResources 统一封住，不用单独签。每签一个都要连一次苹果的时间戳服务器，这一步原来要 3 分多钟
+ * （2026-11-22 试验 44997010299）。.app / .framework 是目录，照常签。
+ */
+export function skipNonMachO(filePath) {
+  try {
+    if (statSync(filePath).isDirectory()) return false;
+  } catch {
+    return false;
+  }
+  return !isMachO(filePath);
+}
+
+/** osx-sign 的参数：只签 Mach-O（和 .app / .framework），每个都开 hardened runtime、用同一份 entitlements。 */
 export function signOptions({ app, identity, keychain, entitlements = ENTITLEMENTS }) {
   return {
     app,
@@ -46,6 +79,7 @@ export function signOptions({ app, identity, keychain, entitlements = ENTITLEMEN
     platform: "darwin",
     type: "distribution",
     preAutoEntitlements: false,
+    ignore: skipNonMachO,
     optionsForFile: () => ({ hardenedRuntime: true, entitlements }),
   };
 }

@@ -275,3 +275,28 @@ test("dangling symlinks are removed, live ones kept", async () => {
     assert.throws(() => fs.lstatSync(path.join(root, "node_modules/.bin/sre")));
   });
 });
+
+test("mac signing only signs Mach-O files (and bundle directories), skips plain resources", async () => {
+  const { isMachO, skipNonMachO, signOptions } = await import("./sign-mac.mjs");
+  withTempRuntime((root) => {
+    const write = (name, bytes) => {
+      const file = path.join(root, name);
+      fs.writeFileSync(file, Buffer.from(bytes));
+      return file;
+    };
+    const thin = write("rust_api", [0xcf, 0xfa, 0xed, 0xfe, 0, 0, 0, 0]); // 64 位小端
+    const fat = write("python3", [0xca, 0xfe, 0xba, 0xbe, 0, 0, 0, 2]); // 多架构
+    const png = write("icon.png", [0x89, 0x50, 0x4e, 0x47, 0, 0]);
+    const tiny = write("empty.bin", [0xcf]);
+    const bundle = path.join(root, "Python.framework");
+    fs.mkdirSync(bundle);
+    assert.equal(isMachO(thin), true);
+    assert.equal(isMachO(fat), true);
+    assert.equal(isMachO(png), false);
+    assert.equal(isMachO(tiny), false);
+    assert.equal(skipNonMachO(thin), false);
+    assert.equal(skipNonMachO(png), true);
+    assert.equal(skipNonMachO(bundle), false, ".framework / .app 目录照常签");
+    assert.equal(signOptions({ app: "/x.app", identity: "i", keychain: "k" }).ignore, skipNonMachO);
+  });
+});
