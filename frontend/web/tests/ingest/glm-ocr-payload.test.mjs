@@ -3,11 +3,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildOcrPayload } from "../../src/features/ingest/domain/workflow/payload.js";
+import { buildOcrPayload, buildTranslationPayload } from "../../src/features/ingest/domain/workflow/payload.js";
+import { connectionOverrides } from "../../src/platform/config/translation-connections.js";
 import { createWorkflowPayloadAssembly } from "../../src/features/ingest/domain/workflow/payload-assembly.js";
 import { hasCompleteCredentials } from "../../src/features/credentials/domain/state-selectors.js";
 import { hasDesktopCredentials } from "../../src/features/credentials/domain/desktop-readiness.js";
-import { OCR_PROVIDER_DEFINITIONS, describeGlmOcrProbe, glmOcrProbePayload, isZhipuBaseUrl } from "../../src/platform/config/providers.js";
+import { OCR_PROVIDER_DEFINITIONS, TRANSLATION_PROVIDER_OPTIONS, describeGlmOcrProbe, glmOcrProbePayload, isZhipuBaseUrl, translationProtocolFor } from "../../src/platform/config/providers.js";
 
 const constants = { DEFAULT_MODEL_VERSION: "v", DEFAULT_LANGUAGE: "ch", WORKFLOW_BOOK: "book", WORKFLOW_TRANSLATE: "translate" };
 const ZHIPU = "https://open.bigmodel.cn/api/paas/v4";
@@ -79,4 +80,25 @@ test("配好了没有：GLM-OCR 没有自己的 key 时，有翻译凭据就算�
   assert.equal(hasCompleteCredentials({ ocrProvider: "paddle", modelApiKey: "k" }), false);
   assert.equal(hasDesktopCredentials({ ocrProvider: "glm_ocr", modelApiKey: "k" }), true);
   assert.equal(hasDesktopCredentials({ ocrProvider: "glm_ocr", glmOcrToken: "g" }), false, "翻译没配照样不行");
+});
+
+
+test("智谱没有 /responses：发给后端时智谱地址的 Responses 换成 OpenAI 格式，别家照旧（2026-11-22 实测 /v4/responses 404）", () => {
+  assert.equal(translationProtocolFor(ZHIPU, "openai_responses"), "openai");
+  assert.equal(translationProtocolFor(`${ZHIPU}/`, ""), "openai", "没存协议按默认 Responses 算，也换");
+  assert.equal(translationProtocolFor(ZHIPU, "anthropic"), "anthropic", "用户明确选了别的协议不动");
+  assert.equal(translationProtocolFor("https://api.deepseek.com/v1", "openai"), "openai", "已经换过的不再落回 Responses");
+  assert.equal(translationProtocolFor("https://api.deepseek.com/v1", "openai_responses"), "openai_responses");
+  assert.equal(translationProtocolFor("https://open.bigmodel.cn.evil.example/v1", "openai_responses"), "openai_responses");
+  // 设置里能选的仍只有 Responses / Anthropic（2026-11-01 用户定），智谱预设也照旧；换只发生在发出去时。
+  assert.equal(TRANSLATION_PROVIDER_OPTIONS.find((item) => item.id === "zhipu").protocol, "openai_responses");
+
+  const payload = buildTranslationPayload({
+    developerConfig: { baseUrl: ZHIPU, model: "glm-5.3-flash", apiProtocol: "openai_responses" },
+    translationCredentialRef: "cred",
+    selectedGlossaryId: "",
+    constants: {},
+  });
+  assert.equal(payload.api_protocol, "openai", "提交翻译");
+  assert.equal(connectionOverrides({ provider: "zhipu", baseUrl: ZHIPU, model: "glm-5.3-flash", apiKey: "k", apiProtocol: "openai_responses", thinking: "off" }).api_protocol, "openai", "上传选模型 / 重新翻译");
 });

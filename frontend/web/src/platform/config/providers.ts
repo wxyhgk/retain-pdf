@@ -161,6 +161,8 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
   {
     id: "zhipu",
     label: "智谱",
+    // 设置里只有 Responses / Anthropic 两种（2026-11-01 用户定）；智谱没有 /responses，发出去时由
+    // translationProtocolFor 换成 OpenAI 格式（/chat/completions）。
     protocol: "openai_responses",
     baseUrl: ZHIPU_TRANSLATION_BASE_URL,
     defaultModel: "GLM-5.3-Flash",
@@ -223,6 +225,21 @@ export type TranslationThinking = typeof TRANSLATION_THINKING_OPTIONS[number]["i
 export function normalizeTranslationApiProtocol(value: unknown, fallback: TranslationApiProtocol = "openai_responses"): TranslationApiProtocol {
   const text = `${value || ""}`.trim().toLowerCase();
   return TRANSLATION_API_PROTOCOL_OPTIONS.some((option) => option.id === text) ? text as TranslationApiProtocol : fallback;
+}
+
+/** 发给后端的协议（契约 translation.api_protocol）：比设置里能选的多一个 openai（/chat/completions）。 */
+export type TranslationWireProtocol = TranslationApiProtocol | "openai";
+
+/**
+ * 实际发给后端的协议。设置里只留 Responses / Anthropic（2026-11-01 用户定），但智谱没有 /responses
+ * （/v4/responses 是 404，2026-11-22 用测试 key 实测；chat 正常）：接口地址是智谱时改成 OpenAI 格式，
+ * 用户不用改设置，以前存下的智谱配置也直接能用。
+ */
+export function translationProtocolFor(baseUrl: unknown, protocol: unknown): TranslationWireProtocol {
+  // 已经是 openai（换过一次的、或 GLM-OCR 检测直接给的）原样留着，不再落回 Responses。
+  if (`${protocol || ""}`.trim().toLowerCase() === "openai") return "openai";
+  const normalized = normalizeTranslationApiProtocol(protocol);
+  return normalized === "openai_responses" && isZhipuBaseUrl(baseUrl) ? "openai" : normalized;
 }
 
 export function normalizeTranslationThinking(value: unknown): TranslationThinking {

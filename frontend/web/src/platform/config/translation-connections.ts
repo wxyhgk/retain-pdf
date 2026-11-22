@@ -4,6 +4,7 @@
 // 填了 key 和模型的才算可用；一家的默认模型和「其他模型」各算一条。
 import { loadDeveloperStoredConfig } from "./persisted-config.js";
 import {
+  translationProtocolFor,
   getTranslationProviderDefinition,
   normalizeTranslationApiProtocol,
   normalizeTranslationThinking,
@@ -103,7 +104,7 @@ export function connectionOverrides(connection: TranslationConnection | null | u
     base_url: connection.baseUrl,
     model: connection.model,
     api_key: connection.apiKey,
-    api_protocol: connection.apiProtocol,
+    api_protocol: translationProtocolFor(connection.baseUrl, connection.apiProtocol),
     thinking: connection.thinking,
   };
 }
