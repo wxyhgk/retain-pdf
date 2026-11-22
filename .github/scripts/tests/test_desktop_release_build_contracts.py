@@ -41,6 +41,26 @@ def test_macos_python_bundle_uses_prebuilt_wheels_without_homebrew_qpdf():
     assert mac.index('"$RETAIN_PDF_SERVICES_ROOT/translation"') < mac.index('"$RETAIN_PDF_SERVICES_ROOT/pipeline"')
 
 
+def test_windows_python_bundle_installs_wheel_first_and_fails_on_native_errors():
+    """v2026.11.22 的 Windows 包四个本仓库 Python 包都没装上（缺 wheel，invalid command
+    'bdist_wheel'），import 检查也报错，但 pwsh 不因原生命令失败而停，构建照样成功、坏包发了出去。
+    现在：先装 wheel；每个 pip install 和 import 检查后都查 $LASTEXITCODE，失败就让构建失败。"""
+    win = _job("build-windows-release")
+    lines = win.splitlines()
+    wheel = next(i for i, line in enumerate(lines) if "pip install --upgrade wheel" in line)
+    for package in ("base", "math", "translation"):
+        install = next(i for i, line in enumerate(lines) if f'RETAIN_PDF_SERVICES_ROOT "{package}"' in line)
+        assert wheel < install, package
+    installs = [i for i, line in enumerate(lines) if "pip install" in line and "--target $sitePackages" in line]
+    assert len(installs) >= 5
+    for i in installs:
+        following = lines[i + 1].strip()
+        assert following.startswith("Assert-Exit") or "$LASTEXITCODE -ne 0" in following, lines[i].strip()
+    check = next(i for i, line in enumerate(lines) if "python_bundle_import_check=ok" in line)
+    assert "retainpdf_pipeline" in lines[check]
+    assert lines[check + 1].strip().startswith("Assert-Exit")
+
+
 def test_each_desktop_build_smokes_frontend_bundle_once_before_manifest_validation():
     for name in ("build-windows-release", "build-linux-release", "build-macos-release"):
         build = _job(name)
