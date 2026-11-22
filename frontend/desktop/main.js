@@ -25,6 +25,7 @@ const { createRetainpdfHome } = require("./src/main/retainpdf-home");
 const { createCliInstaller } = require("./src/main/cli-install");
 const { createDesktopLogger } = require("./src/main/desktop-logging");
 const { createDesktopWindows } = require("./src/main/desktop-windows");
+const { createAppUpdater } = require("./src/main/app-updater");
 
 const desktopLogger = createDesktopLogger(app);
 const {
@@ -99,6 +100,8 @@ let shutdownState = "idle";
 // before-quit 先 abort 它：后端插件还在等就绪时立刻放弃，不用等满超时（见 plugins/backend.js）。
 const quitController = new AbortController();
 let appContext = null;
+// 自动更新（Windows / Mac 打包版；其余 supported:false，见 src/main/app-updater.js）。app ready 后才建。
+let appUpdater = null;
 
 function getService(name) {
   return appContext ? appContext.get(name) : undefined;
@@ -162,6 +165,7 @@ function startDesktopApp() {
   const root = new Context();
   root.plugin(createIpcPlugin({
     BrowserWindow,
+    getAppUpdater: () => appUpdater,
     buildDesktopConfigResponse,
     cliInstaller,
     dialog,
@@ -227,7 +231,22 @@ if (gotSingleInstanceLock) {
     appendDesktopLog("========== RetainPDF desktop startup ==========");
     logDesktop(`[desktop] app ready version=${app.getVersion()} packaged=${app.isPackaged} userData=${app.getPath("userData")}`);
     setCloseToTrayHintShown(loadDesktopConfig().closeToTrayHintShown);
+    appUpdater = createAppUpdater({
+      platform: process.platform,
+      isPackaged: app.isPackaged,
+      currentVersion: app.getVersion(),
+      // 用到才加载：开发态和 Linux 不会 require 它。
+      loadAutoUpdater: () => require("electron-updater").autoUpdater,
+      send: (channel, payload) => {
+        for (const window of BrowserWindow.getAllWindows()) {
+          if (!window.isDestroyed()) window.webContents.send(channel, payload);
+        }
+      },
+      log: logDesktop,
+      logError: logDesktopError,
+    });
     appContext = startDesktopApp();
+    appUpdater.start();
   });
 }
 
@@ -240,6 +259,7 @@ app.on("window-all-closed", () => {
 app.on("before-quit", (event) => {
   isQuitting = true;
   quitController.abort();
+  appUpdater?.dispose();
   if (shutdownState === "done" || !appContext) {
     return;
   }

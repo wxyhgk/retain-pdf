@@ -1,10 +1,11 @@
-// 渲染进程 → 主进程的 IPC：桌面配置、打开目录、命令行工具、选文件夹、把窗口拿到前面，以及渲染进程报错。
+// 渲染进程 → 主进程的 IPC：桌面配置、打开目录、命令行工具、选文件夹、把窗口拿到前面、自动更新，以及渲染进程报错。
 // 不依赖别的服务，插件树一建好就注册；dispose 时撤掉。
 const fs = require("fs");
 const path = require("path");
 
 function createIpcPlugin({
   BrowserWindow,
+  getAppUpdater = () => null,
   buildDesktopConfigResponse,
   cliInstaller,
   dialog,
@@ -67,6 +68,13 @@ function createIpcPlugin({
         win.focus();
         return { ok: true };
       }
+      // 自动更新（src/main/app-updater.js）：查状态、立即检查、重启并更新。没有更新器时按不支持回。
+      case "update_status":
+        return getAppUpdater()?.status() || { supported: false, state: "idle" };
+      case "update_check":
+        return (await getAppUpdater()?.check()) || { supported: false, state: "idle" };
+      case "update_install":
+        return getAppUpdater()?.install() || { ok: false };
       default:
         throw new Error(`unsupported desktop command: ${command}`);
     }

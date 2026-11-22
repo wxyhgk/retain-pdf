@@ -44,8 +44,21 @@ export interface DesktopBridge {
   loadDesktopConfig?: () => DesktopIpcResult;
   saveDesktopConfig?: (payload?: DesktopConfigPayload) => DesktopIpcResult;
   onStartupProgress?: (callback: (event: unknown) => void) => () => void;
+  onUpdateStatus?: (callback: (status: unknown) => void) => () => void;
   platform?: string;
   [key: string]: unknown;
+}
+
+/** 桌面端自动更新的状态（frontend/desktop/src/main/app-updater.js 推过来的）。 */
+export interface DesktopUpdateStatus {
+  /** Windows 安装版 / Mac 打包版才支持；Linux deb、开发态为 false。 */
+  supported: boolean;
+  state: "idle" | "checking" | "downloading" | "downloaded" | "latest" | "error";
+  currentVersion?: string;
+  version?: string;
+  notes?: string;
+  percent?: number;
+  error?: string;
 }
 
 /** Normalized host surface used by the rest of the frontend. */
@@ -65,6 +78,11 @@ export interface DesktopHost {
   /** 系统的文件夹选择框；取消时为 null。 */
   pickDirectory(options?: { title?: string; defaultPath?: string }): Promise<string | null>;
   onStartupProgress(callback: (event: unknown) => void): () => void;
+  /** 自动更新：现在的状态 / 立即检查 / 重启并更新 / 订阅状态推送（返回退订函数）。 */
+  updateStatus(): Promise<DesktopUpdateStatus>;
+  checkForUpdate(): Promise<DesktopUpdateStatus>;
+  installUpdate(): Promise<{ ok: boolean }>;
+  onUpdateStatus(callback: (status: DesktopUpdateStatus) => void): () => void;
   platform: string;
 }
 
@@ -152,7 +170,40 @@ function resolveDesktopHost(): DesktopHost | null {
       }
       return () => {};
     },
+    async updateStatus() {
+      return normalizeUpdateStatus(await invokeAdapter!.invoke("update_status"));
+    },
+    async checkForUpdate() {
+      return normalizeUpdateStatus(await invokeAdapter!.invoke("update_check"));
+    },
+    async installUpdate() {
+      const result = await invokeAdapter!.invoke("update_install");
+      return { ok: Boolean(result?.ok) };
+    },
+    onUpdateStatus(callback: (status: DesktopUpdateStatus) => void) {
+      if (preferredBridge && typeof preferredBridge.onUpdateStatus === "function") {
+        return preferredBridge.onUpdateStatus((status) => callback(normalizeUpdateStatus(status)));
+      }
+      return () => {};
+    },
     platform: preferredBridge?.platform || "",
+  };
+}
+
+const UPDATE_STATES: readonly string[] = ["idle", "checking", "downloading", "downloaded", "latest", "error"];
+
+/** 主进程（或旧版桌面壳没有这些命令时）给的东西收成固定形状；认不出的一律当不支持。 */
+export function normalizeUpdateStatus(value: unknown): DesktopUpdateStatus {
+  const raw = (isObject(value) ? value : {}) as Record<string, unknown>;
+  const text = (key: string) => (typeof raw[key] === "string" ? raw[key] as string : "");
+  return {
+    supported: raw.supported === true,
+    state: UPDATE_STATES.includes(text("state")) ? text("state") as DesktopUpdateStatus["state"] : "idle",
+    currentVersion: text("currentVersion"),
+    version: text("version"),
+    notes: text("notes"),
+    percent: Number.isFinite(Number(raw.percent)) ? Number(raw.percent) : 0,
+    error: text("error"),
   };
 }
 

@@ -31,6 +31,17 @@ contextBridge.exposeInMainWorld("retainPdfDesktop", {
   saveDesktopConfig(payload = {}) {
     return ipcRenderer.invoke("desktop:invoke", "save_desktop_config", { payload });
   },
+  // 自动更新的状态推送（src/main/app-updater.js 的 desktop:update-status）；返回退订函数。
+  onUpdateStatus(callback) {
+    if (typeof callback !== "function") {
+      return () => {};
+    }
+    const listener = (_event, payload) => callback(payload);
+    ipcRenderer.on("desktop:update-status", listener);
+    return () => {
+      ipcRenderer.removeListener("desktop:update-status", listener);
+    };
+  },
   onStartupProgress(callback) {
     if (typeof callback !== "function") {
       return () => {};

@@ -25,6 +25,8 @@ export type AppUpdatePanel = {
   latestVersion: string;
   currentVersion: string;
   htmlUrl: string;
+  /** 桌面端自动更新已经下好：弹窗里给「重启并更新」。 */
+  installable: boolean;
 };
 
 export type AppUpdateViewState = {
@@ -62,8 +64,9 @@ function panelOf({
   latestVersion = "",
   currentVersion = APP_VERSION,
   htmlUrl = "",
+  installable = false,
 }: Partial<AppUpdatePanel> = {}): AppUpdatePanel {
-  return { title, body, latestVersion, currentVersion, htmlUrl };
+  return { title, body, latestVersion, currentVersion, htmlUrl, installable };
 }
 
 export function createAppUpdateViewFeature() {
@@ -126,6 +129,33 @@ export function createAppUpdateViewFeature() {
         latestVersion: info.latestVersion,
         currentVersion: info.currentVersion,
         htmlUrl: info.htmlUrl,
+      }),
+    }),
+    // 桌面端自动更新（Windows / Mac，2026-11-22）：新版本正在后台下载。
+    setDownloading: (info: AppUpdateReleaseInfo & { percent?: number } = {}) => store.actions.apply({
+      buttonState: APP_UPDATE_STATES.available,
+      hasUpdate: true,
+      buttonTitle: `正在下载新版本 ${info.latestVersion || ""}`.trim(),
+      statusText: `正在下载新版本${Number(info.percent) > 0 ? ` ${Math.round(Number(info.percent))}%` : "…"}`,
+      panel: panelOf({
+        title: info.title || `RetainPDF ${info.latestVersion || ""}`.trim(),
+        body: info.body,
+        latestVersion: info.latestVersion,
+        currentVersion: info.currentVersion,
+      }),
+    }),
+    // 桌面端自动更新：下好了，重启即可更新（不点的话下次正常退出时也会自动装）。
+    setDownloaded: (info: AppUpdateReleaseInfo = {}) => store.actions.apply({
+      buttonState: APP_UPDATE_STATES.available,
+      hasUpdate: true,
+      buttonTitle: info.latestVersion ? `新版本 ${info.latestVersion} 已下载，重启即可更新` : "新版本已下载，重启即可更新",
+      statusText: "新版本已下载，重启即可更新",
+      panel: panelOf({
+        title: info.title || `RetainPDF ${info.latestVersion || ""}`.trim(),
+        body: info.body,
+        latestVersion: info.latestVersion,
+        currentVersion: info.currentVersion,
+        installable: true,
       }),
     }),
     // 抄自 view.js:135-151(setUpdateLatest)

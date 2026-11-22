@@ -34,6 +34,7 @@ type CreateGlossariesAndAppUpdateArgs = {
   appUpdateAutoCheckEnabled: boolean;
   appUpdateCachePort: NonNullable<CreateHomeCompositionOptions["appUpdateCachePort"]>;
   fetchLatestRelease: NonNullable<CreateHomeCompositionOptions["fetchLatestRelease"]>;
+  desktopUpdater?: CreateHomeCompositionOptions["desktopUpdater"];
 };
 
 export function createGlossariesAndAppUpdate({
@@ -48,6 +49,7 @@ export function createGlossariesAndAppUpdate({
   appUpdateAutoCheckEnabled,
   appUpdateCachePort,
   fetchLatestRelease,
+  desktopUpdater = null,
 }: CreateGlossariesAndAppUpdateArgs): {
   glossariesFeature: GlossariesFeature;
   glossariesView: GlossariesViewBag;
@@ -79,6 +81,7 @@ export function createGlossariesAndAppUpdate({
     fetchLatestRelease,
     normalizeRelease: normalizeReleaseInfo,
     viewPort: appUpdateView.viewPort,
+    desktopUpdater,
   }) as AppUpdateFeature;
 
   return {

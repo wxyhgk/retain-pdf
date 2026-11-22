@@ -17,6 +17,7 @@
 //   3. features 是唯一可变注册表；晚绑定通过它完成
 //   4. job-runtime / recent-jobs / artifacts 在 composition 阶段一次挂齐
 
+import { desktopUpdaterFromHost } from "./composition/desktop-updater.js";
 import { mountedFeature } from "./composition/feature-registry.js";
 import {
   loadBrowserStoredConfig,
@@ -114,6 +115,7 @@ export function createHomeComposition({
   fetchLatestRelease: fetchLatestReleaseOverride = fetchLatestGithubRelease,
   appUpdateCachePort: appUpdateCachePortOverride = defaultUpdateCachePort,
   appUpdateAutoCheckEnabled = false,
+  desktopUpdater = desktopUpdaterFromHost(),
 }: CreateHomeCompositionOptions = {}): HomeServices {
   const features: HomeFeatures = {};
 
@@ -211,6 +213,7 @@ export function createHomeComposition({
     appUpdateAutoCheckEnabled,
     appUpdateCachePort: appUpdateCachePortOverride,
     fetchLatestRelease: fetchLatestReleaseOverride,
+    desktopUpdater,
   });
   features.glossariesFeature = glossaries.glossariesFeature;
   features.appUpdateFeature = glossaries.appUpdateFeature;

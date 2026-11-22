@@ -136,5 +136,8 @@
       "uninstallerIcon": "build/icon.ico",
       "installerHeaderIcon": "build/icon.ico"
     }
+  },
+  "dependencies": {
+    "electron-updater": "6.8.12"
   }
 }

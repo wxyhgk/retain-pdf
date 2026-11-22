@@ -9,4 +9,6 @@ export const APP_UPDATE_IDS = Object.freeze({
   dialog: "app-update-dialog",
   status: "app-update-status",
   checkButton: "app-update-check-btn",
+  // 桌面端自动更新下好以后才出现的「重启并更新」。
+  installButton: "app-update-install-btn",
 });
