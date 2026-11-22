@@ -11,6 +11,7 @@
 - `link_relocation.py`：把保留下来的链接热区挪到译文对应位置
 - `pdf_ops.py`：PyMuPDF 的保存、压缩、去链接
 - `pikepdf_pages.py`、`pikepdf_overlay.py`：pikepdf 的拷贝、抽页、按页叠加
+- `pikepdf_outline.py`：书签按页抄到只含部分页的输出上（rpr_fit 只输出译文页时用，`copy_outline_for_pages`）
 
 ## 不该做什么
 
