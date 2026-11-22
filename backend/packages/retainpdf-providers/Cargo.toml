@@ -9,6 +9,7 @@ retainpdf-api-base = { path = "../retainpdf-api-base" }
 retainpdf-core = { path = "../retainpdf-core" }
 retainpdf-data = { path = "../retainpdf-data" }
 anyhow = "1"
+base64 = "0.22"
 axum = "0.7"
 chrono = { version = "0.4", features = ["serde", "clock"] }
 fastrand = "2"

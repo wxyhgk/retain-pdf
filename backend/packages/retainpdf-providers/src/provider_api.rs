@@ -11,7 +11,7 @@ use retainpdf_core::config::{
 use retainpdf_api_base::error::AppError;
 
 pub use super::provider_probe::{
-    DeepSeekBalanceView, DeepSeekTokenValidationRequest, MineruTokenValidationRequest,
+    AskImage, AskUsageView, TranslationModelAskRequest, TranslationModelAskView, DeepSeekBalanceView, DeepSeekTokenValidationRequest, MineruTokenValidationRequest,
     PaddleTokenValidationRequest, ProviderProbeView, TranslationModelListView, TranslationModelView,
     TranslationModelsRequest,
 };
@@ -63,6 +63,14 @@ pub async fn list_translation_models(
         deps.data_root.as_deref(),
     )
     .await
+}
+
+/// 用翻译接口的配置问一次模型，可以带图片（2026-11-22）：代发一次对话请求，Key 用完不存。
+pub async fn ask_translation_model(
+    deps: &ProviderApiDeps,
+    payload: TranslationModelAskRequest,
+) -> Result<TranslationModelAskView, AppError> {
+    super::provider_probe::ask_translation_model_view(payload, deps.deepseek_runtime.clone(), deps.probe).await
 }
 
 pub async fn validate_mineru_token(

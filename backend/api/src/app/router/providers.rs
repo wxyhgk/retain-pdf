@@ -1,4 +1,4 @@
-//! 服务商：OCR 服务商清单、各家的密钥校验和余额、翻译接口的模型列表。
+//! 服务商：OCR 服务商清单、各家的密钥校验和余额、翻译接口的模型列表、用翻译接口问一次模型（可带图片）。
 
 use crate::app::AppState;
 use crate::routes::providers;
@@ -17,4 +17,6 @@ crate::endpoints! {
     POST "/api/v1/providers/deepseek/balance" => providers::query_deepseek_balance, admin;
     /// 从翻译接口拉取模型列表
     POST "/api/v1/providers/translation/models" => providers::list_translation_models, admin;
+    /// 用翻译接口的配置问一次模型，可以带图片
+    POST "/api/v1/providers/translation/ask" => providers::ask_translation_model, admin [large_body];
 }

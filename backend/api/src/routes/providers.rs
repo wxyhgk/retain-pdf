@@ -7,7 +7,8 @@ use crate::ocr_provider::{provider_client_definitions, OcrProviderPublicDefiniti
 use crate::routes::common::{build_provider_route_deps, ApiJson};
 use crate::services::providers::{
     self, DeepSeekBalanceView, DeepSeekTokenValidationRequest, MineruTokenValidationRequest,
-    ProviderProbeView, PaddleTokenValidationRequest, TranslationModelListView, TranslationModelsRequest,
+    ProviderProbeView, PaddleTokenValidationRequest, TranslationModelAskRequest, TranslationModelAskView,
+    TranslationModelListView, TranslationModelsRequest,
 };
 use crate::AppState;
 
@@ -60,5 +61,15 @@ pub async fn list_translation_models(
 ) -> Result<Json<ApiResponse<TranslationModelListView>>, AppError> {
     let deps = build_provider_route_deps(&state);
     let view = providers::list_translation_models(&deps, payload).await?;
+    Ok(Json(ApiResponse::ok(view)))
+}
+
+/// POST /api/v1/providers/translation/ask —— 用翻译接口的配置问一次模型，可以带图片（2026-11-22）。
+pub async fn ask_translation_model(
+    State(state): State<AppState>,
+    ApiJson(payload): ApiJson<TranslationModelAskRequest>,
+) -> Result<Json<ApiResponse<TranslationModelAskView>>, AppError> {
+    let deps = build_provider_route_deps(&state);
+    let view = providers::ask_translation_model(&deps, payload).await?;
     Ok(Json(ApiResponse::ok(view)))
 }

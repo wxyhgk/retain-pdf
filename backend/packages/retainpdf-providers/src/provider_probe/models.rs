@@ -160,7 +160,7 @@ fn redact(message: &str, api_key: &str) -> String {
 }
 
 /// 服务商错误正文里的说明：`error.message`、`error`（字符串）、`message`，都没有就是正文开头。
-fn provider_message(body: &str, api_key: &str) -> Option<String> {
+pub(super) fn provider_message(body: &str, api_key: &str) -> Option<String> {
     let parsed: Option<Value> = serde_json::from_str(body).ok();
     let message = parsed
         .as_ref()

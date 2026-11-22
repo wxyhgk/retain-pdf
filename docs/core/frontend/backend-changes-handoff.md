@@ -12,6 +12,17 @@
 
 ---
 
+## 用翻译接口问一次模型，可以带图片（feat/model-image-input）
+
+2026-11-22，用户要"后端增加一个 api，最好可以发图片"。新接口 `POST /api/v1/providers/translation/ask`（admin），在契约
+`translation-providers.v1` 里（`askTranslationProviderModel`、`TranslationModelAskRequest`、`TranslationModelAskView`），
+细节见 [Provider 校验接口第 9 节](../rust_api/08-Provider%20校验接口.md)。只增不改，别的接口不动。
+
+前端要做的：
+1. `npm --prefix frontend/packages/api run generate:client`：契约加了接口，`src/generated/translation-providers.ts` 要重新生成
+   （不生成 `generate:client:check` 会红）。
+2. 要不要在界面上用（比如设置里"测试看图"、调试面板）由前端定；请求体里图片是 base64（不带 `data:` 前缀），最多 4 张、每张 4 MB。
+
 ## 字体和 Typst 改成按需下载（feat/runtime-assets）
 
 2026-11-22，用户定：安装包里不带思源宋体（压缩后约 33MB）和 Typst（约 16MB），首次启动在后台下载，缓存在数据目录，

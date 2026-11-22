@@ -20,9 +20,15 @@
 
 连接配置（协议 + 思考深度）由阶段入口按「地址 + 模型」登记一次（``register_connection``），
 发请求时查表；调用方也可以显式传，显式的优先。
+
+消息可以带图片（2026-11-22）：``content`` 是字符串，或者 OpenAI Chat 写法的片段列表
+``[{"type": "text", "text": …}, {"type": "image_url", "image_url": {"url": "data:image/png;base64,…"}}]``
+（用 ``text_part`` / ``image_part`` 拼）。OpenAI Chat 原样发；Responses 换成 ``input_text`` / ``input_image``，
+Anthropic 换成 ``text`` / ``image``（base64 或网址）。system 消息只取文字。
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
 import re
@@ -293,6 +299,86 @@ def _responses_text_format(response_format: dict[str, Any] | None) -> dict[str, 
     return None
 
 
+IMAGE_MEDIA_TYPES = ("image/png", "image/jpeg", "image/webp", "image/gif")
+_DATA_URL_RE = re.compile(r"^data:(?P<media>[\w./+-]+);base64,(?P<data>.*)$", re.S)
+
+
+def text_part(text: str) -> dict[str, Any]:
+    return {"type": "text", "text": str(text)}
+
+
+def image_part(data: bytes, media_type: str = "image/png") -> dict[str, Any]:
+    """一张图 → 消息片段（OpenAI Chat 写法，data URL）。"""
+    media_type = str(media_type or "").lower()
+    if media_type not in IMAGE_MEDIA_TYPES:
+        raise ValueError(f"unsupported image type {media_type!r}; use one of {', '.join(IMAGE_MEDIA_TYPES)}")
+    return {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{base64.b64encode(data).decode('ascii')}"}}
+
+
+def _parts(content: Any) -> list[dict[str, Any]]:
+    """消息内容 → 片段列表（字符串当一段文字）。认不出的片段丢掉。"""
+    if isinstance(content, list):
+        return [part for part in content if isinstance(part, dict)]
+    text = "" if content is None else str(content)
+    return [text_part(text)] if text else []
+
+
+def _image_url(part: dict[str, Any]) -> str:
+    image = part.get("image_url")
+    return str((image or {}).get("url") if isinstance(image, dict) else image or "")
+
+
+def content_text(content: Any) -> str:
+    """消息内容里的文字（图片不算）：system 消息、字数统计用。"""
+    if not isinstance(content, list):
+        return "" if content is None else str(content)
+    return "\n\n".join(str(part.get("text") or "") for part in _parts(content) if part.get("type") == "text")
+
+
+def has_images(messages: list[dict[str, Any]]) -> bool:
+    return any(
+        part.get("type") == "image_url"
+        for message in messages
+        if isinstance(message, dict) and isinstance(message.get("content"), list)
+        for part in _parts(message["content"])
+    )
+
+
+def responses_message_content(content: Any) -> Any:
+    """一条消息的内容 → Responses API 的写法：纯文字照旧是字符串，带图的换成 input_text / input_image。"""
+    if not isinstance(content, list):
+        return "" if content is None else str(content)
+    out: list[dict[str, Any]] = []
+    for part in _parts(content):
+        if part.get("type") == "text":
+            out.append({"type": "input_text", "text": str(part.get("text") or "")})
+        elif part.get("type") == "image_url" and _image_url(part):
+            out.append({"type": "input_image", "image_url": _image_url(part)})
+    return out
+
+
+def anthropic_message_content(content: Any) -> Any:
+    """一条消息的内容 → Messages API 的写法：纯文字照旧是字符串，带图的换成 text / image 块。"""
+    if not isinstance(content, list):
+        return "" if content is None else str(content)
+    out: list[dict[str, Any]] = []
+    for part in _parts(content):
+        if part.get("type") == "text":
+            out.append({"type": "text", "text": str(part.get("text") or "")})
+        elif part.get("type") == "image_url" and _image_url(part):
+            url = _image_url(part)
+            match = _DATA_URL_RE.match(url)
+            if match:
+                out.append({"type": "image", "source": {"type": "base64", "media_type": match["media"], "data": match["data"]}})
+            else:
+                out.append({"type": "image", "source": {"type": "url", "url": url}})
+    return out
+
+
+def _as_blocks(content: Any) -> list[dict[str, Any]]:
+    return content if isinstance(content, list) else ([{"type": "text", "text": content}] if content else [])
+
+
 def responses_body(
     *,
     model: str,
@@ -310,17 +396,17 @@ def responses_body(
     - 不设 ``max_output_tokens``，和 Chat Completions 一样由服务商默认，免得思考吃掉额度后截断译文。
     """
     instructions: list[str] = []
-    turns: list[dict[str, str]] = []
+    turns: list[dict[str, Any]] = []
     for message in messages:
         if not isinstance(message, dict):
             continue
         role = str(message.get("role", "") or "")
-        content = str(message.get("content", "") or "")
         if role == "system":
+            content = content_text(message.get("content"))
             if content.strip():
                 instructions.append(content)
             continue
-        turns.append({"role": "assistant" if role == "assistant" else "user", "content": content})
+        turns.append({"role": "assistant" if role == "assistant" else "user", "content": responses_message_content(message.get("content"))})
     if not turns:
         turns.append({"role": "user", "content": "请按系统说明处理。"})
     body: dict[str, Any] = {"model": model, "input": turns, "store": False}
@@ -496,19 +582,25 @@ def anthropic_body(
       因为服务商拒绝而去掉了它（新模型如 claude-opus-5-5 已不再接受 temperature）。
     """
     system_parts: list[str] = []
-    turns: list[dict[str, str]] = []
+    turns: list[dict[str, Any]] = []
     for message in messages:
         if not isinstance(message, dict):
             continue
         role = str(message.get("role", "") or "")
-        content = str(message.get("content", "") or "")
         if role == "system":
-            if content.strip():
-                system_parts.append(content)
+            text = content_text(message.get("content"))
+            if text.strip():
+                system_parts.append(text)
             continue
+        content = anthropic_message_content(message.get("content"))
         role = "assistant" if role == "assistant" else "user"
         if turns and turns[-1]["role"] == role:
-            turns[-1]["content"] = f"{turns[-1]['content']}\n\n{content}"
+            previous = turns[-1]["content"]
+            if isinstance(previous, str) and isinstance(content, str):
+                turns[-1]["content"] = f"{previous}\n\n{content}"
+            else:
+                # 带图的消息并成块列表
+                turns[-1]["content"] = _as_blocks(previous) + _as_blocks(content)
         else:
             turns.append({"role": role, "content": content})
     if not turns or turns[0]["role"] != "user":
@@ -619,6 +711,7 @@ def looks_like_thinking_rejection(response_text: str) -> bool:
 __all__ = [
     "ANTHROPIC_DEFAULT_MAX_TOKENS",
     "ConnectionProfile",
+    "IMAGE_MEDIA_TYPES",
     "PROTOCOLS",
     "PROTOCOL_ANTHROPIC",
     "PROTOCOL_OPENAI",
@@ -627,10 +720,14 @@ __all__ = [
     "anthropic_body",
     "anthropic_content",
     "anthropic_headers",
+    "anthropic_message_content",
     "anthropic_messages_url",
     "anthropic_thinking_candidates",
     "anthropic_usage",
     "clear_registered_connections",
+    "content_text",
+    "has_images",
+    "image_part",
     "looks_like_temperature_rejection",
     "anthropic_system_blocks",
     "merge_system_messages",
@@ -646,7 +743,9 @@ __all__ = [
     "resolve_profile",
     "responses_body",
     "responses_content",
+    "responses_message_content",
     "responses_thinking_candidates",
     "responses_url",
     "responses_usage",
+    "text_part",
 ]

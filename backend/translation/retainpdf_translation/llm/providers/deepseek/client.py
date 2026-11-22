@@ -63,12 +63,12 @@ def build_headers(api_key: str, base_url: str = "") -> dict[str, str]:
     return transport.build_headers(api_key, base_url)
 
 
-def _message_chars(messages: list[dict[str, str]]) -> int:
+def _message_chars(messages: list[dict[str, Any]]) -> int:
     total = 0
     for message in messages:
         if not isinstance(message, dict):
             continue
-        total += len(str(message.get("content", "") or ""))
+        total += len(model_wire.content_text(message.get("content")))
     return total
 
 
@@ -267,7 +267,7 @@ def _read_streaming_chat_content(response: requests.Response) -> tuple[str, dict
 
 
 def request_chat_content(
-    messages: list[dict[str, str]],
+    messages: list[dict[str, Any]],
     api_key: str = "",
     model: str = DEFAULT_MODEL,
     base_url: str = DEFAULT_BASE_URL,
@@ -281,11 +281,17 @@ def request_chat_content(
 ) -> str:
     """发一次对话请求，返回模型输出的文本。
 
+    消息可以带图片：``content`` 写成片段列表（``model_wire.text_part`` / ``model_wire.image_part``），
+    三种协议各自换成自己的写法（见 ``model_wire`` 开头）。
+
     ``protocol`` / ``thinking`` 不给时按阶段入口登记的连接配置（``model_wire.register_connection``），
     都没有就是 OpenAI 协议 + 自动思考，和以前完全一样。
     """
     from retainpdf_translation.llm.shared.executor_context import execution_enabled, runtime
     if execution_enabled():
+        if model_wire.has_images(messages):
+            # Rust 执行器的请求只收文字消息；带图的请求不能悄悄丢掉图片再发
+            raise ValueError("model executor does not accept image messages yet")
         # Rust owns provider policy, deadlines, concurrency and network retries.
         # No Python slot, HTTP request, API key lookup or direct fallback here.
         # 系统提示现在分两条（不变的规则 + 文档指导）；Rust 执行器照旧收一条
