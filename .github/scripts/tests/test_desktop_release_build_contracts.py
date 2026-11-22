@@ -117,5 +117,5 @@ def test_mac_signing_lives_in_its_own_workflow_with_only_the_signing_secrets():
     trial = (WORKFLOWS / "mac-sign-trial.yml").read_text(encoding="utf-8")
     assert "secrets: inherit" not in trial
     assert set(re.findall(r"secrets\.(\w+)", trial)) == MAC_SIGNING_SECRETS
-    assert "platforms: macos" in trial
+    assert "platforms: macos" in trial  # 也可以带上 windows，验 latest.yml 和自动更新配置
     assert '"trial/mac-sign"' in trial

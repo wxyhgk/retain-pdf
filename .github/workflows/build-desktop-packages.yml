@@ -231,6 +231,10 @@ jobs:
         working-directory: frontend/desktop
         run: npm run report:size
 
+      - name: Check Windows auto-update wiring
+        working-directory: frontend/desktop
+        run: node scripts/check-auto-update-wiring.mjs win/win-unpacked/resources
+
       - name: Show desktop bundle manifest
         shell: pwsh
         run: |
@@ -1029,6 +1033,13 @@ jobs:
       - name: Report macOS package sizes
         working-directory: frontend/desktop
         run: npm run report:size
+
+      - name: Check macOS auto-update wiring
+        working-directory: frontend/desktop
+        shell: bash
+        run: |
+          app_root="$(find mac -maxdepth 2 -type d -name 'RetainPDF.app' | head -n 1)"
+          node scripts/check-auto-update-wiring.mjs "$app_root/Contents/Resources"
 
       - name: Check macOS bundled binary architectures
         shell: bash

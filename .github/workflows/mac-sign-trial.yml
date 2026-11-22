@@ -1,6 +1,7 @@
 name: Mac Sign Trial
 
-# 只打 Mac 包、签名、公证，试 Developer ID 签名这条路（2026-11-22 起，接自动更新前要先过这一关）。
+# 只打 Mac（和 Windows）包、签名、公证，试 Developer ID 签名和自动更新这条路（2026-11-22 起）。
+# 带上 Windows 是为了顺带验 latest.yml、.blockmap 和 app-update.yml（打包后的 auto-update wiring 检查）。
 # 第一次公证多半要来回几轮：推到 trial/mac-sign 分支就跑，不用每次跑三平台的预构建，也不碰 main。
 # 和正式发版用同一份 build-desktop-packages.yml（platforms 只给 macos）和 sign-macos.yml。
 # 产物不会被发版用到：发版只认 Prebuild Release Candidates 那次运行的 artifact。
@@ -42,7 +43,7 @@ jobs:
     uses: ./.github/workflows/build-desktop-packages.yml
     with:
       version: ${{ needs.prepare.outputs.version }}
-      platforms: macos
+      platforms: macos,windows
 
   sign:
     needs: [prepare, build]
