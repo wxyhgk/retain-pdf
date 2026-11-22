@@ -1,0 +1,78 @@
+name: Desktop Python Bundle
+
+# 平时就照桌面安装包的装法装一遍、查一遍本仓库的 Python 包，不用等到发版才发现。
+#
+# 2026-11-22：v2026.11.22 的三个平台都缺 retainpdf-translation-classic / -agent（翻译引擎只按字符串
+# 加载、不在任何包的依赖里），Windows 还四个包全没装上；都是发出去、用户跑任务才知道。后端 11-20 拆包
+# 那次要是有这一步，PR 上就红了。
+#
+# 做的事和打包时一样（共用 ops/release/desktop_python_bundle.py）：干净的 venv 只装桌面依赖清单
+# （requirements-desktop-*.txt），再装后端工作区的全部包，然后查每个模块、翻译引擎入口、源码里
+# import 的第三方库。Linux 和 Windows 各跑一遍（两份依赖清单、两种装法）。
+
+"on":
+  pull_request:
+    paths:
+      - ".github/workflows/desktop-python-bundle.yml"
+      - "ops/release/desktop_python_*.py"
+      - "frontend/desktop/requirements-desktop-*.txt"
+      - "backend/pyproject.toml"
+      - "backend/*/pyproject.toml"
+      - "backend/*/retainpdf_*/**"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/desktop-python-bundle.yml"
+      - "ops/release/desktop_python_*.py"
+      - "frontend/desktop/requirements-desktop-*.txt"
+      - "backend/pyproject.toml"
+      - "backend/*/pyproject.toml"
+      - "backend/*/retainpdf_*/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-python-bundle-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            requirements: frontend/desktop/requirements-desktop-posix.txt
+            venv_python: .bundle-venv/bin/python
+          - os: windows-latest
+            requirements: frontend/desktop/requirements-desktop-windows.txt
+            venv_python: .bundle-venv/Scripts/python.exe
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Clean venv with only the desktop requirements
+        run: |
+          python -m venv .bundle-venv
+          "${{ matrix.venv_python }}" -m pip install --upgrade pip
+          "${{ matrix.venv_python }}" -m pip install -r "${{ matrix.requirements }}"
+
+      - name: Install repo Python packages the way the desktop bundle does
+        run: python ops/release/desktop_python_bundle.py install --pip-python "${{ matrix.venv_python }}"
+
+      - name: Check every module, translation engine and third-party import
+        run: python ops/release/desktop_python_bundle.py check --python "${{ matrix.venv_python }}"
