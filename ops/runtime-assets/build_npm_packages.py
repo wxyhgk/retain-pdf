@@ -53,7 +53,7 @@ def _package_json(name: str, version: str, description: str, files: list[dict], 
         "description": description,
         "license": license_name,
         "homepage": "https://github.com/wxyhgk/retain-pdf",
-        "repository": {"type": "git", "url": "https://github.com/wxyhgk/retain-pdf.git"},
+        "repository": {"type": "git", "url": "git+https://github.com/wxyhgk/retain-pdf.git"},
         "files": [entry["path"] for entry in files],
     }
 
