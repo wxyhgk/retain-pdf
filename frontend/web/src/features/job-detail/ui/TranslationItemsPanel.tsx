@@ -38,7 +38,7 @@ function TranslationItemCard({
   return (
     <button
       type="button"
-      className={`translation-item-card${active ? " is-active" : ""}`}
+      className={active ? "translation-item-card is-active" : "translation-item-card"}
       data-translation-item-id={item.item_id}
       onClick={() => onSelect(item.item_id ?? "")}
     >

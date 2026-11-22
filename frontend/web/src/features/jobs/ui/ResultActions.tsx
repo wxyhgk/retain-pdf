@@ -37,7 +37,7 @@ function ActionLink({ id, label, ready, url, onClick }: ActionLinkProps) {
   return (
     <a
       id={id}
-      className={`status-action-btn task-toolbar-btn-result${ready ? "" : " hidden"}${enabled ? "" : " disabled"}`}
+      className={["status-action-btn", "task-toolbar-btn-result", ready ? "" : "hidden", enabled ? "" : "disabled"].filter(Boolean).join(" ")}
       href={ready && url ? url : "#"}
       target={isReaderLink ? undefined : "_blank"}
       rel={isReaderLink ? undefined : "noopener noreferrer"}
