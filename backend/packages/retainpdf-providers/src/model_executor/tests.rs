@@ -286,7 +286,10 @@ async fn only_429_retries_once() {
     let op = terminal(e, "j", &token, "op").await;
     assert_eq!(op.status, "succeeded");
     assert_eq!(count.load(Ordering::SeqCst), 2);
-    assert_eq!(op.result.unwrap()["retry_reasons"], json!(["explicit_429"]));
+    let result = op.result.unwrap();
+    assert_eq!(result["retry_reasons"], json!(["explicit_429"]));
+    assert!(result.get("upstream_status").is_none(), "重试成功了不留上游错");
+    assert!(result.get("upstream_provider").is_none());
     task.abort();
 }
 
@@ -322,6 +325,7 @@ async fn quota_429_is_not_retried_and_pauses_the_job() {
     let result = op.result.clone().unwrap();
     assert_eq!(result["upstream_status"], json!(429));
     assert_eq!(result["upstream_code"], json!("insufficient_quota"));
+    assert_eq!(result["upstream_provider"], json!("custom"), "本地地址认不出服务商");
     assert!(!serde_json::to_string(&op).unwrap().contains("echoed-secret"));
     assert!(e.submit("j", &token, request("other")).await.is_err(), "整份停下：后面的请求不再收");
     task.abort();
@@ -355,8 +359,22 @@ async fn provider_rejection_is_masked_and_not_retried() {
         .unwrap()
         .contains("echoed-secret"));
     assert_eq!(count.load(Ordering::SeqCst), 1);
+    // 认不出业务码的拒绝也带上状态码和服务商（任务失败的 upstream 用），不带码
+    let result = op.result.clone().unwrap();
+    assert_eq!(result["upstream_status"], json!(400));
+    assert_eq!(result["upstream_provider"], json!("custom"));
+    assert!(result.get("upstream_code").is_none());
     assert!(e.submit("j", &token, request("other")).await.is_err());
     task.abort();
+}
+
+#[test]
+fn vendor_for_url_uses_catalogue_ids() {
+    let vendor = |u: &str| super::transport::vendor_for_url(&url::Url::parse(u).unwrap());
+    assert_eq!(vendor("https://api.openai.com/v1/chat/completions"), "openai");
+    assert_eq!(vendor("https://open.bigmodel.cn/api/paas/v4/chat/completions"), "zhipu");
+    assert_eq!(vendor("https://dashscope.aliyuncs.com/compatible-mode/v1"), "qwen");
+    assert_eq!(vendor("https://relay.example.com/v1"), "custom");
 }
 
 #[tokio::test]

@@ -80,3 +80,50 @@ def test_receipt_identity_is_checked():
     session.request.return_value = wrong
     with mock.patch.object(c, "_session", return_value=session), pytest.raises(ExecutorUnavailable, match="identity"):
         run(c)
+
+
+def _terminal(state, result, *, error_code=None):
+    reply = mock.Mock(status_code=200)
+    body = {"operation_id": "op", "unit_id": "unit", "status": state, "result": result}
+    if error_code:
+        body["error_code"] = error_code
+    reply.json.return_value = body
+    return reply
+
+
+@pytest.mark.parametrize(
+    "state,error_code,result,expected",
+    [
+        # 按业务码停下：额度用完
+        ("failed", "quota_exhausted", {"upstream_status": 429, "upstream_code": "insufficient_quota", "upstream_provider": "openai"},
+         {"provider": "openai", "http_status": 429, "code": "insufficient_quota"}),
+        # 认不出业务码的拒绝：只有状态码
+        ("failed", "provider_rejected_request", {"upstream_status": 400, "upstream_provider": "qwen"},
+         {"provider": "qwen", "http_status": 400, "code": None}),
+        # 上游 5xx，结果不明
+        ("ambiguous", "upstream_error", {"upstream_status": 503, "upstream_provider": "deepseek"},
+         {"provider": "deepseek", "http_status": 503, "code": None}),
+    ],
+)
+def test_executor_failure_carries_upstream_from_receipt(state, error_code, result, expected):
+    """走 Rust 执行器的翻译失败：回执里的上游信息写到报错上，任务失败的 upstream 由它来。"""
+    from retainpdf_base.upstream import upstream_info
+
+    c = client()
+    session = mock.Mock()
+    session.request.return_value = _terminal(state, result, error_code=error_code)
+    with mock.patch.object(c, "_session", return_value=session), pytest.raises(ExecutorError) as caught:
+        run(c)
+    assert upstream_info(caught.value) == expected
+
+
+def test_executor_failure_without_upstream_response_has_no_upstream():
+    """连不上、本地超时这类没收到上游回应的，不编造 upstream。"""
+    from retainpdf_base.upstream import upstream_info
+
+    c = client()
+    session = mock.Mock()
+    session.request.return_value = _terminal("failed", {"upstream_attempts": 1}, error_code="connect_failed")
+    with mock.patch.object(c, "_session", return_value=session), pytest.raises(ExecutorError) as caught:
+        run(c)
+    assert upstream_info(caught.value) is None
