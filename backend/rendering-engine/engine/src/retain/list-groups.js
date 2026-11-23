@@ -80,7 +80,8 @@ function separateSourceSizes(model, bodySourceSize, detach) {
 // One page: entries = the page's translated text in block order,
 // [{ id, flow, bodyLike }] (bodyLike: OCR body text, set as a body stream or,
 // too short for the body group, as a text block). paint: the model's paint map
-// (covers are merged). options: { bodySourceSize, bodyLineHeight }.
+// (covers are merged). options: { bodySourceSize, bodyLineHeight, sizeRuns }
+// (sizeRuns: also group paragraphs of one size apart from the body's; off by default).
 // -> [{ id, members }] groups made. Run before separateSourceSizes.
 function groupLists(page, entries, paint, options = {}) {
   const streams = page.restoration.streams;
@@ -107,7 +108,11 @@ function groupLists(page, entries, paint, options = {}) {
     if (!entity) return null;
     if (entity.kind === "stream" && entity.stream.styleKind !== "body_text") return null;
     entity.size = Number(entity.kind === "stream" ? entity.stream.sourceTextSize : entity.block.sourceFontSize) || 0;
-    if (sourceSizeApart(entity.size, Number(options.bodySourceSize) || 0)) entity.cls = "size";
+    if (sourceSizeApart(entity.size, Number(options.bodySourceSize) || 0)) {
+      // a list set in a size apart from the body's stays out unless size runs are on
+      if (!options.sizeRuns) return null;
+      entity.cls = "size";
+    }
     else if (MARKER.test(String(entity.item.text || ""))) entity.cls = "list";
     else return null;
     return entity;
