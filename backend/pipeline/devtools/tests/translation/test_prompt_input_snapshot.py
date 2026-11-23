@@ -43,14 +43,15 @@ _BUILDERS = [build_single_item_fallback_messages, lambda item: build_messages([i
 # 作答要求放最后一行（原来夹在中间，模型读完一串「后文上下文：……」后自己补了个「译文：」）。
 # direct_typst 的整批请求（route 1）只换了格式示例里占位的那行；placeholder 的整批请求走 JSON，一字未动。
 #
-# 第五次重录（2026-11-23）：系统提示加了一行「只交译文」（不写对原文或翻译本身的说明，原文是地址、索引、
-# 残句也照翻或照抄）。两本教材里 claude-haiku-5-5 把「这是一个索引条目列表，页码需保留。译文如下：」
-# 「…的译文需要准确。」这类话写进了译文。四组请求都只多了这一行（重录前逐字比过）。
+# 第五次重录（2026-11-23）：系统提示的「忠实」一句改成「不增删；只交译文，不加“这是…”“译文如下”等说明，
+# 索引照译」，末句去掉重复的「不附加解释」（固定提示有 1200 字上限，加一整行会超）。两本教材里
+# claude-haiku-5-5 把「这是一个索引条目列表，页码需保留。译文如下：」「…的译文需要准确。」这类话写进了译文。
+# 四组请求都只有这两句变了（重录前逐字比过）；冻结基线 28 例同样只变这两句和 prompt_hash。
 _DIGESTS = {
-    False: ["17d2dbfe10ab956ba44335297b9379dc8cc5d5d62eb4d55e0cfab1f5329b977f",
-            "edaa481cd6009e97ae6453c8a31cd9da0564056db3851b55265255065176cb76"],
-    True: ["0730cb0019f9e256eda240c777c6dbd57807cf06a2bcff5abdaf6a4ad21de8a7",
-           "b369c03c2439e3b091d165fe0bd3d578410c68c4d362f63dcaefbe4259fb2fb2"],
+    False: ["20cdb349225152f713a31d90ecd82b43bf90a4b33290c83c300808cebb1364aa",
+            "9aaea30ac6e2c18450924ffae5b39b334e5a90d01d195f4c2a39f5d6474451c4"],
+    True: ["f93f23d23fa342ab387066cc0ce5e019a834f390f7ea705cb5bed22923194f0e",
+           "a02a7172b24f3c4097ae254fe8e04bafc9ee73bb6a3ea9dc8aa537f371ed528e"],
 }
 
 
