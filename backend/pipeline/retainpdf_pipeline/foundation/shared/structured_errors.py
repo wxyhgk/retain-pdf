@@ -36,6 +36,9 @@ _WINDOWS_PATH_RE = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\)")
 LOCAL_ENVIRONMENT_FAILURE_CODES = frozenset(
     {"out_of_memory", "runtime_environment_broken", "path_too_long", "local_permission_denied"}
 )
+# OCR 服务商按业务码在异常上写明的归类（``retain_failure_code``，见 ``ocr/provider_failures.py``，fix/ocr-provider-codes）
+# 里，这几个已有的码由下面的「声明的 OCR 归类」分支直接采用；新码 ocr_file_rejected / ocr_provider_failed 各有一支。
+DECLARED_OCR_FAILURE_CODES = frozenset({"upstream_bad_request", "upstream_rate_limited", "upstream_timeout"})
 _MISSING_PATH_RE = re.compile(r"no such file or directory:\s*(['\"])(.+?)\1", re.IGNORECASE | re.DOTALL)
 
 
@@ -163,6 +166,11 @@ def _failure_category_for(*, failure_code: str, failed_stage: str) -> str:
         return "timeout"
     if failure_code in {"upstream_rate_limited"}:
         return "rate_limit"
+    # OCR 服务商拒收文件、处理失败（fix/ocr-provider-codes）
+    if failure_code in {"ocr_file_rejected"}:
+        return "input"
+    if failure_code in {"ocr_provider_failed"}:
+        return "provider"
     if failure_code in {
         "upstream_bad_request",
         "source_pdf_missing",
@@ -205,6 +213,8 @@ def _suggestion_for(*, failure_code: str, failure_category: str, provider: str) 
         "runtime_environment_broken": "安装包缺文件或依赖库加载失败，重试不会好转：请升级到最新版或重新安装（Docker 请拉取最新镜像）。",
         "path_too_long": "文件路径超过了系统允许的长度：把 PDF 改个短一点的文件名、或放到层级浅的目录后重新上传；Windows 上也可以开启长路径支持（LongPathsEnabled）。",
         "local_permission_denied": "检查杀毒或安全软件是否拦截了 RetainPDF（可加入白名单）、文件是否被其他程序占用、安装目录和数据目录是否可写；Windows 上可以试试以管理员身份运行。",
+        "ocr_file_rejected": "OCR 服务商拒收了这份文件，原样重试没用：换一个文件，或把 PDF 压缩、拆分后再上传。",
+        "ocr_provider_failed": "OCR 服务商这次没处理成功，稍后重试；反复出现可以换用其他 OCR。",
     }
     if failure_code in suggestions:
         return suggestions[failure_code]
@@ -360,6 +370,15 @@ def _failure_override(exc_chain: list[BaseException], name: str) -> str:
     return ""
 
 
+def _declared_retryable(exc_chain: list[BaseException]) -> bool | None:
+    """异常自己写明的可不可以原样重试（``failure_retryable``，OCR 服务商按业务码写，例如 MinerU -60017 不可重试）。"""
+    for item in exc_chain:
+        value = getattr(item, "failure_retryable", None)
+        if isinstance(value, bool):
+            return value
+    return None
+
+
 _NON_OCR_STAGES = ("translat", "render")
 _GENERIC_PROVIDERS = frozenset({"", GENERIC_OCR_PROVIDER, "translation", "rendering"})
 _FAILED_URL_RE = re.compile(r"\b[45]\d{2} (?:Client|Server) Error\b[^|]*?\bfor url:\s*(\S+)")
@@ -439,6 +458,20 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         error_type = "path_too_long"
         summary = "文件路径过长，超出系统限制"
         retryable = False
+    # —— 声明的 OCR 归类（fix/ocr-provider-codes）：OCR 服务商按业务码写明的（ocr/provider_failures.py），
+    # 比按状态码、文字猜的准（HTTP 200 的业务码没有状态码可猜，400 里也分换文件和参数不对）。
+    elif declared == "ocr_file_rejected":
+        error_type = "ocr_file_rejected"
+        summary = "OCR 服务商拒收了这份文件"
+        retryable = False
+    elif declared == "ocr_provider_failed":
+        error_type = "ocr_provider_failed"
+        summary = "OCR 服务商处理失败"
+        retryable = True
+    elif declared in DECLARED_OCR_FAILURE_CODES:
+        error_type = declared
+        summary = "上游服务拒绝请求" if declared == "upstream_bad_request" else "外部服务请求失败"
+        retryable = declared != "upstream_bad_request"
     elif any(token in lowered for token in ("failed to resolve", "temporary failure in name resolution", "nameresolutionerror", "socket.gaierror")):
         error_type = "dns_resolution_failed"
         summary = "外部服务域名解析失败"
@@ -544,6 +577,9 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         retryable = False
 
     summary = _failure_override(exc_chain, "failure_summary") or summary
+    if declared and declared == error_type:
+        declared_retryable = _declared_retryable(exc_chain)
+        retryable = retryable if declared_retryable is None else declared_retryable
     failure_category = _failure_category_for(failure_code=error_type, failed_stage=stage)
     if provider.strip() and failure_category == "internal" and provider.strip() != "translation":
         failure_category = "provider"

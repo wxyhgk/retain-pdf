@@ -9,7 +9,7 @@ use reqwest::{multipart, Client, Response};
 use serde_json::{json, Value};
 
 use crate::config::PaddleRuntimeConfig;
-use crate::ocr_provider::paddle::errors::PaddleProviderError;
+use crate::ocr_provider::paddle::errors::{PaddleProviderError, PADDLE_TASK_FAILED_CODE};
 use crate::ocr_provider::paddle::models::{
     PaddleJsonlLine, PaddlePollData, PaddlePollEnvelope, PaddleSubmitEnvelope,
 };
@@ -109,17 +109,38 @@ impl PaddleClient {
             .await
             .with_context(|| format!("failed to read upload file {}", file_path.display()))?;
         let optional_payload_json = serde_json::to_string(optional_payload)?;
-        let url = format!("{}/api/v2/ocr/jobs", self.base_url);
         // 上传用单独的、按文件大小放宽的超时，而不是客户端默认的 request_timeout：
         // 慢上行下 5 MB 就要 80 多秒，120s 会把稍大的文件全部判死。
-        // 仍然 send_once 不重试 —— 提交不是幂等的，重传可能在 Paddle 那边建出两个任务。
         let upload_timeout = self
             .runtime
             .upload_timeout_for_bytes(file_bytes.len() as u64);
-        let file_part = multipart::Part::bytes(file_bytes).file_name(file_name);
+        self.retry_rejected_submit(|| {
+            self.submit_local_file_once(
+                &file_name,
+                file_bytes.clone(),
+                model,
+                &optional_payload_json,
+                upload_timeout,
+            )
+        })
+        .await
+    }
+
+    /// 发一次本地文件提交。仍然 send_once 不重试传输错误 —— 提交不是幂等的，响应丢了时重传可能在 Paddle 那边建出两个任务；
+    /// 只有服务商明确拒收（[`PaddleProviderError::submit_retryable`]）才由 [`Self::retry_rejected_submit`] 重交。
+    async fn submit_local_file_once(
+        &self,
+        file_name: &str,
+        file_bytes: Vec<u8>,
+        model: &str,
+        optional_payload_json: &str,
+        upload_timeout: Duration,
+    ) -> Result<PaddleTrace<String>> {
+        let url = format!("{}/api/v2/ocr/jobs", self.base_url);
+        let file_part = multipart::Part::bytes(file_bytes).file_name(file_name.to_string());
         let form = multipart::Form::new()
             .text("model", model.to_string())
-            .text("optionalPayload", optional_payload_json)
+            .text("optionalPayload", optional_payload_json.to_string())
             .part("file", file_part);
         let response = self
             .send_once(
@@ -132,33 +153,7 @@ impl PaddleClient {
                     .send(),
             )
             .await?;
-        let envelope = parse_json_response::<PaddleSubmitEnvelope>("submit", response).await?;
-        if envelope.error_code != 0 {
-            return Err(anyhow::Error::new(PaddleProviderError::provider_error(
-                "submit",
-                envelope.error_code,
-                &envelope.error_msg,
-                normalize_trace_id(&envelope.log_id).as_deref(),
-            )));
-        }
-        let data = envelope.data.ok_or_else(|| {
-            anyhow::Error::new(PaddleProviderError::invalid_response(
-                "submit",
-                "Paddle submit missing data",
-                normalize_trace_id(&envelope.log_id).as_deref(),
-            ))
-        })?;
-        if data.job_id.trim().is_empty() {
-            return Err(anyhow::Error::new(PaddleProviderError::invalid_response(
-                "submit",
-                "Paddle submit returned empty jobId",
-                normalize_trace_id(&envelope.log_id).as_deref(),
-            )));
-        }
-        Ok(PaddleTrace {
-            data: data.job_id,
-            trace_id: normalize_trace_id(&envelope.log_id),
-        })
+        submitted_job_id(parse_json_response::<PaddleSubmitEnvelope>("submit", response).await?)
     }
 
     pub async fn submit_remote_url(
@@ -172,6 +167,11 @@ impl PaddleClient {
             "model": model,
             "optionalPayload": optional_payload,
         });
+        self.retry_rejected_submit(|| self.submit_remote_url_once(&payload))
+            .await
+    }
+
+    async fn submit_remote_url_once(&self, payload: &Value) -> Result<PaddleTrace<String>> {
         let url = format!("{}/api/v2/ocr/jobs", self.base_url);
         let response = self
             .send_once(
@@ -180,40 +180,71 @@ impl PaddleClient {
                     .post(&url)
                     .header(AUTHORIZATION, self.auth_header())
                     .header(CONTENT_TYPE, "application/json")
-                    .json(&payload)
+                    .json(payload)
                     .send(),
             )
             .await?;
-        let envelope = parse_json_response::<PaddleSubmitEnvelope>("submit", response).await?;
-        if envelope.error_code != 0 {
-            return Err(anyhow::Error::new(PaddleProviderError::provider_error(
-                "submit",
-                envelope.error_code,
-                &envelope.error_msg,
-                normalize_trace_id(&envelope.log_id).as_deref(),
-            )));
-        }
-        let data = envelope.data.ok_or_else(|| {
-            anyhow::Error::new(PaddleProviderError::invalid_response(
-                "submit",
-                "Paddle submit missing data",
-                normalize_trace_id(&envelope.log_id).as_deref(),
-            ))
-        })?;
-        if data.job_id.trim().is_empty() {
-            return Err(anyhow::Error::new(PaddleProviderError::invalid_response(
-                "submit",
-                "Paddle submit returned empty jobId",
-                normalize_trace_id(&envelope.log_id).as_deref(),
-            )));
-        }
-        Ok(PaddleTrace {
-            data: data.job_id,
-            trace_id: normalize_trace_id(&envelope.log_id),
-        })
+        submitted_job_id(parse_json_response::<PaddleSubmitEnvelope>("submit", response).await?)
     }
 
+    /// 服务商明确拒收的提交（排队已满 10010、请求太快 429/12002、HTTP 500）退避后重交，
+    /// 次数同 `request_retry_attempts`，第 n 次重交前等 `request_retry_base_delay_millis × 20 × n`（默认 10s、20s）。
+    /// 这几种都没有建出任务，重交不会重复计费；用完还被拒就把最后一次的错误原样交出去。
+    async fn retry_rejected_submit<F, Fut>(&self, mut submit: F) -> Result<PaddleTrace<String>>
+    where
+        F: FnMut() -> Fut,
+        Fut: Future<Output = Result<PaddleTrace<String>>>,
+    {
+        let attempts = self.runtime.request_retry_attempts.max(1);
+        let mut attempt = 1;
+        loop {
+            match submit().await {
+                Err(err)
+                    if attempt < attempts
+                        && err
+                            .downcast_ref::<PaddleProviderError>()
+                            .is_some_and(PaddleProviderError::submit_retryable) =>
+                {
+                    tracing::warn!("Paddle submit rejected, retry {attempt}/{attempts}: {err:#}");
+                    tokio::time::sleep(self.rejection_retry_delay(attempt)).await;
+                    attempt += 1;
+                }
+                other => return other,
+            }
+        }
+    }
+
+    fn rejection_retry_delay(&self, attempt: usize) -> Duration {
+        Duration::from_millis(
+            self.runtime
+                .request_retry_base_delay_millis
+                .saturating_mul(20)
+                .saturating_mul(attempt as u64),
+        )
+    }
+
+    /// 查询任务状态。被限流（HTTP 429 / 12002）时退避后再查（查询是幂等的），次数、等待同提交的重交。
     pub async fn query_job(&self, job_id: &str) -> Result<PaddleTrace<PaddlePollData>> {
+        let attempts = self.runtime.request_retry_attempts.max(1);
+        let mut attempt = 1;
+        loop {
+            match self.query_job_once(job_id).await {
+                Err(err)
+                    if attempt < attempts
+                        && err
+                            .downcast_ref::<PaddleProviderError>()
+                            .is_some_and(PaddleProviderError::poll_rate_limited) =>
+                {
+                    tracing::warn!("Paddle poll rate limited, retry {attempt}/{attempts}: {err:#}");
+                    tokio::time::sleep(self.rejection_retry_delay(attempt)).await;
+                    attempt += 1;
+                }
+                other => return other,
+            }
+        }
+    }
+
+    async fn query_job_once(&self, job_id: &str) -> Result<PaddleTrace<PaddlePollData>> {
         let url = format!("{}/api/v2/ocr/jobs/{}", self.base_url, job_id);
         let response = self
             .send_with_retry("poll", || {
@@ -224,17 +255,33 @@ impl PaddleClient {
             })
             .await?;
         let envelope = parse_json_response::<PaddlePollEnvelope>("poll", response).await?;
+        let trace_id = normalize_trace_id(&envelope.log_id);
+        if envelope.error_code == PADDLE_TASK_FAILED_CODE {
+            // 官方：任务失败时 GET 返回 HTTP 200、code=11003，原因在 data.errorMsg。
+            let reason = envelope
+                .data
+                .as_ref()
+                .map(|data| data.error_msg.trim())
+                .filter(|reason| !reason.is_empty())
+                .unwrap_or(envelope.error_msg.trim())
+                .to_string();
+            return Err(anyhow::Error::new(PaddleProviderError::task_failed_with_code(
+                envelope.error_code,
+                &reason,
+                trace_id.as_deref(),
+            )));
+        }
         if envelope.error_code != 0 {
             return Err(anyhow::Error::new(PaddleProviderError::provider_error(
                 "poll",
                 envelope.error_code,
                 &envelope.error_msg,
-                normalize_trace_id(&envelope.log_id).as_deref(),
+                trace_id.as_deref(),
             )));
         }
         Ok(PaddleTrace {
             data: envelope.data.unwrap_or_default(),
-            trace_id: normalize_trace_id(&envelope.log_id),
+            trace_id,
         })
     }
 
@@ -369,6 +416,37 @@ impl PaddleClient {
             stage, &err, None,
         )))
     }
+}
+
+/// 提交返回包 → 任务号：业务码不是 0 时报 [`PaddleProviderError::provider_error`]，没有 jobId 时报返回结构不对。
+fn submitted_job_id(envelope: PaddleSubmitEnvelope) -> Result<PaddleTrace<String>> {
+    let trace_id = normalize_trace_id(&envelope.log_id);
+    if envelope.error_code != 0 {
+        return Err(anyhow::Error::new(PaddleProviderError::provider_error(
+            "submit",
+            envelope.error_code,
+            &envelope.error_msg,
+            trace_id.as_deref(),
+        )));
+    }
+    let data = envelope.data.ok_or_else(|| {
+        anyhow::Error::new(PaddleProviderError::invalid_response(
+            "submit",
+            "Paddle submit missing data",
+            trace_id.as_deref(),
+        ))
+    })?;
+    if data.job_id.trim().is_empty() {
+        return Err(anyhow::Error::new(PaddleProviderError::invalid_response(
+            "submit",
+            "Paddle submit returned empty jobId",
+            trace_id.as_deref(),
+        )));
+    }
+    Ok(PaddleTrace {
+        data: data.job_id,
+        trace_id,
+    })
 }
 
 fn build_http_client(runtime: &PaddleRuntimeConfig) -> Client {

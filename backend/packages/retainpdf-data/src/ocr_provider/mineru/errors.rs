@@ -210,7 +210,7 @@ pub fn map_provider_error_code(
             trace_id,
         ),
         "-60016" => make_error(
-            OcrErrorCategory::ConversionFailed,
+            OcrErrorCategory::ExportFailed,
             Some("-60016"),
             message,
             Some("文件转换为指定格式失败，可以尝试其他格式导出或重试"),
@@ -284,6 +284,17 @@ pub fn classify_runtime_failure(message: &str, trace_id: Option<&str>) -> OcrPro
         return map_provider_error_code(&code, provider_message, trace_ref);
     }
     let lowered = message.to_ascii_lowercase();
+    // 查询结果 state=failed（「MinerU task failed: <err_msg>」「MinerU batch task failed: …」）：MinerU 解析这份文件失败，
+    // 原因是 err_msg。和 Paddle 任务失败（11003）同归 ParseFailed，任务失败落 ocr_provider_failed。
+    if let Some(reason) = task_failed_reason(message) {
+        return make_error(
+            OcrErrorCategory::ParseFailed,
+            None,
+            reason,
+            Some("MinerU 解析这份文件失败，可以重试一次；仍失败请换用其他 OCR"),
+            trace_ref,
+        );
+    }
     if lowered.contains("timed out") || lowered.contains("timeout") {
         return make_error(
             OcrErrorCategory::PollTimeout,
@@ -318,6 +329,17 @@ pub fn classify_runtime_failure(message: &str, trace_id: Option<&str>) -> OcrPro
         Some("请结合 provider 原始 message、trace_id 和任务状态继续排查"),
         trace_ref,
     )
+}
+
+/// 「MinerU task failed: <err_msg>」「MinerU batch task failed: <err_msg>」里的 err_msg（没写原因时是「unknown error」）。
+fn task_failed_reason(message: &str) -> Option<String> {
+    for marker in ["MinerU batch task failed:", "MinerU task failed:"] {
+        if let Some(start) = message.find(marker) {
+            let rest = message[start + marker.len()..].lines().next().unwrap_or("").trim();
+            return Some(if rest.is_empty() { "unknown error".to_string() } else { rest.to_string() });
+        }
+    }
+    None
 }
 
 #[cfg(test)]
@@ -374,7 +396,7 @@ mod tests {
             ),
             (
                 "-60016",
-                OcrErrorCategory::ConversionFailed,
+                OcrErrorCategory::ExportFailed,
                 "文件转换为指定格式失败，可以尝试其他格式导出或重试",
             ),
             (
@@ -412,6 +434,20 @@ mod tests {
             classify_runtime_failure("MinerU API error -60011: missing upload object", None);
         assert_eq!(mapped.category, OcrErrorCategory::UploadedFileMissing);
         assert_eq!(mapped.provider_code.as_deref(), Some("-60011"));
+    }
+
+    /// 查询结果 state=failed：MinerU 解析失败，原因是 err_msg（以前落 ProviderFailed，任务失败「暂未识别出明确根因」）。
+    #[test]
+    fn failed_task_state_is_a_parse_failure_with_the_providers_reason() {
+        for text in [
+            "MinerU task failed: 文件解析失败",
+            "MinerU batch task failed: 文件解析失败\ncaused by: something",
+        ] {
+            let mapped = classify_runtime_failure(text, Some("trace-9"));
+            assert_eq!(mapped.category, OcrErrorCategory::ParseFailed, "{text}");
+            assert_eq!(mapped.provider_message.as_deref(), Some("文件解析失败"));
+            assert_eq!(mapped.trace_id.as_deref(), Some("trace-9"));
+        }
     }
 
     #[test]

@@ -60,12 +60,19 @@ impl MineruResponseError {
             return false;
         }
         if self.info.provider_code.is_some() {
+            // 官方建议稍后重试的码：-10001、-60007 服务异常，-60009 排队已满，-60008、-60022 读取超时 / 失败，
+            // 以及 -60001 生成上传链接失败、-60010 解析失败、-60016 导出失败、-60020 拆分失败、-60021 读页数失败（2026-11-23 补上）。
             return matches!(
                 self.info.category,
                 OcrErrorCategory::ServiceUnavailable
                     | OcrErrorCategory::QueueFull
                     | OcrErrorCategory::RemoteReadTimeout
                     | OcrErrorCategory::WebReadFailed
+                    | OcrErrorCategory::UploadLinkRequestFailed
+                    | OcrErrorCategory::ParseFailed
+                    | OcrErrorCategory::ExportFailed
+                    | OcrErrorCategory::FileSplitFailed
+                    | OcrErrorCategory::PageCountReadFailed
             );
         }
         matches!(
@@ -114,8 +121,8 @@ mod tests {
     #[test]
     fn retry_policy_uses_codes_not_message_words() {
         for code in [
-            "A0202", "A0211", "-500", "-60006", "-60010", "-60012", "-60017", "-60018", "-60019",
-            "future",
+            "A0202", "A0211", "-500", "-10002", "-60002", "-60003", "-60004", "-60005", "-60006",
+            "-60011", "-60012", "-60013", "-60014", "-60015", "-60017", "-60018", "-60019", "future",
         ] {
             let error = MineruResponseError::from_response(
                 200,
@@ -125,7 +132,9 @@ mod tests {
             );
             assert!(!error.retryable_query(), "{code}");
         }
-        for code in [-10001, -60007, -60008, -60009, -60022] {
+        for code in [
+            -10001, -60001, -60007, -60008, -60009, -60010, -60016, -60020, -60021, -60022,
+        ] {
             let error = MineruResponseError::from_response(
                 200,
                 &serde_json::json!({"code":code,"msg":"服务异常","trace_id":"trace-1"}).to_string(),

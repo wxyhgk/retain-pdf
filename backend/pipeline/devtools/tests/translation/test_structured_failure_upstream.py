@@ -118,18 +118,19 @@ def test_glm_ocr_1113_reports_vendor_as_provider_and_upstream() -> None:
     assert payload["failure_code"] == "upstream_quota_exhausted"
 
 
-def test_glm_ocr_rejection_carries_status_and_code_without_changing_its_class(monkeypatch) -> None:
+def test_glm_ocr_rejection_carries_status_and_code(monkeypatch) -> None:
     class _Once:
         def request(self, *args, **kwargs):
             return _response(401, {"error": {"code": "1000", "message": "身份验证失败"}}, glm_ocr_api.GLM_OCR_API_URL)
 
     with pytest.raises(glm_ocr_api.GlmOcrRequestRejected) as caught:
         glm_ocr_api.parse_pdf(b"%PDF", api_key="secret", session=_Once())
-    assert not hasattr(caught.value, "status_code"), "分类读 status_code；这里只写 upstream_* 属性"
+    # fix/ocr-provider-codes 起「请求被拒」带 status_code：401 归鉴权失败（以前落「暂未识别出明确根因」）
+    assert caught.value.status_code == 401
     structured_errors.set_ocr_vendor("glm_ocr")
     payload = _classify(caught.value, default_stage="provider", provider="ocr")
     assert payload["upstream"] == {"provider": "glm_ocr", "http_status": 401, "code": "1000"}
-    _same_classification_as_plain(caught.value, payload, default_stage="provider", provider="ocr")
+    assert payload["failure_code"] == "auth_failed"
 
 
 def test_paddle_envelope_error_reports_the_error_code() -> None:
@@ -140,7 +141,8 @@ def test_paddle_envelope_error_reports_the_error_code() -> None:
     payload = _classify(caught.value, default_stage="provider", provider="ocr")
     assert payload["provider"] == "paddle"
     assert payload["upstream"] == {"provider": "paddle", "http_status": None, "code": "10003"}
-    _same_classification_as_plain(caught.value, payload, default_stage="provider", provider="ocr")
+    # 10003 文件太大：fix/ocr-provider-codes 起按业务码归「换文件」
+    assert payload["failure_code"] == "ocr_file_rejected"
 
 
 def test_paddle_http_rejection_reads_the_body() -> None:
@@ -195,7 +197,8 @@ def test_mineru_api_error_reports_the_business_code(monkeypatch) -> None:
     structured_errors.set_ocr_vendor("mineru")
     payload = _classify(caught.value, default_stage="provider", provider="ocr")
     assert payload["upstream"] == {"provider": "mineru", "http_status": 200, "code": "-60018"}
-    _same_classification_as_plain(caught.value, payload, default_stage="provider", provider="ocr")
+    # -60018 当日额度：fix/ocr-provider-codes 起 Python 这条路也归额度用完（以前落「暂未识别出明确根因」）
+    assert payload["failure_code"] == "upstream_quota_exhausted"
 
 
 def test_executor_quota_failure_reports_upstream() -> None:

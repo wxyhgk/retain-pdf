@@ -8,6 +8,7 @@ from retainpdf_pipeline.ocr.mineru_provider.mineru_api import create_extract_tas
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import find_extract_result_in_batch
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import poll_until_done
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import query_batch_status
+from retainpdf_pipeline.ocr.mineru_provider.mineru_api import task_failed_error
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import upload_file
 from retainpdf_pipeline.ocr.retry import stepped_poll_interval
 
@@ -100,7 +101,8 @@ def run_local_extract_task(
         if state == "done":
             return {"code": 0, "data": extract_result, "msg": "ok"}
         if state == "failed":
-            raise RuntimeError(f"MinerU batch task failed: {extract_result.get('err_msg', '') or 'unknown error'}")
+            err_msg = extract_result.get("err_msg", "")
+            raise task_failed_error(f"MinerU batch task failed: {err_msg or 'unknown error'}", err_msg)
         elapsed = time.time() - started
         if elapsed > poll_timeout:
             raise TimeoutError(f"Timed out waiting for MinerU batch result: {batch_id}")

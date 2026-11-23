@@ -185,6 +185,18 @@ const CATALOGUE: &[(&str, FailureRecovery)] = &[
         hint: "本机拒绝了文件或网络访问。请检查杀毒或安全软件是否拦截了 RetainPDF（可加入白名单）、文件是否被其他程序占用、\
                安装目录和数据目录是否可写；Windows 上可以试试以管理员身份运行，处理后重试。",
     }),
+
+    // —— OCR 服务商有明确说法的失败（2026-11-23，fix/ocr-provider-codes）：OCR 阶段，没有产物可复用 ——
+    // 两边都会产生：Rust 按 OCR 诊断的分类（job_failure_ocr_provider.rs），Python 按业务码（ocr/provider_failures.py）。
+    ("ocr_file_rejected", FailureRecovery {
+        resume_from: None,
+        hint: "OCR 服务商拒收了这份文件（空文件、损坏、太大、页数太多或格式不支持），原样重试没用。\
+               换一个文件，或把 PDF 压缩、拆分后重新上传。",
+    }),
+    ("ocr_provider_failed", FailureRecovery {
+        resume_from: None,
+        hint: "OCR 服务商这次没处理成功（服务暂时出错、解析失败或任务过期）。稍后重试会从头重新提交 OCR；反复失败可以换用其他 OCR。",
+    }),
 ];
 
 /// 同一种分类在不同阶段恢复方式不同时，按 (分类, 失败阶段) 覆盖上面的表。
