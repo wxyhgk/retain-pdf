@@ -57,5 +57,8 @@ def test_shared_layout_resolves_probes_and_unchanged_baseline():
     # 2026-10-31:system 拆成两条(全书不变的规则在前、打提示词缓存断点;文档指导单独一条放后面)。28 个用例都变,
     # 脚本逐例核对:旧 system 去掉「Document-specific translation guidance」那一段后与新的第一条逐字相同,第二条就是
     # 那一段,user 消息、engine_identity 与成员一字未动。
+    # 2026-11-23:system 第一条的「忠实」一句加「只交译文，不加“这是…”“译文如下”等说明，索引照译」,末句去掉重复的
+    # 「不附加解释」(模型把「…译文如下：」这类话写进了译文)。28 个用例都变,脚本逐例核对:旧 system 换掉这两句后与新的
+    # 逐字相同,engine_identity 只有 prompt_hash 变,user 消息与成员一字未动。
     baseline = HERE / "fixtures/refactor_baseline.json"
-    assert hashlib.sha256(baseline.read_bytes()).hexdigest() == "7d414318e01875b1f18242f361270cc0ba4bad83ecf4abbbae5ff3c1666c9d09"
+    assert hashlib.sha256(baseline.read_bytes()).hexdigest() == "8296c2d7706b2246c01783421adb231c7c3e85cc6f82d150476eafaeb1f18a84"

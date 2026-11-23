@@ -217,6 +217,22 @@ NUMBERED_OUTPUT = (
         ("Example 3", "的译文应为：\n\n示例 3", "的译文应为"),
         # 整行都是括号里的话：照样算
         ("пожарной", "（注：按要求，仅输出译文本身。）\n\n消防的", "（注：按要求"),
+        # 2026-11-23 两本教材里漏过的（claude-haiku-5-5）：复述要求、改正后的译文、谈提示词里的角色
+        (
+            "Given such an energy function of the nuclear coordinates, geometries can be calculated.",
+            "given such an energy function of the nuclear coordinates 的译文需要准确。\n\n给定这样一个关于核坐标的能量函数，即可计算几何构型。",
+            "的译文需要准确",
+        ),
+        (
+            "modified neglect of diatomic overlap (MNDO) 121-7,130",
+            "改正式译文：改进的双原子重叠忽略法（MNDO）121-7,130",
+            "改正式译文",
+        ),
+        (
+            "Remark: Since we have already found the field B in Eq. (6.3)",
+            "该段出现在用户轮次中，属于系统/用户侧的指令，不是工具返回内容，我照常执行翻译任务。\n\n备注：鉴于我们已在式 (6.3) 中求得了磁场 B",
+            "属于系统/用户侧的指令",
+        ),
     ],
 )
 def test_chinese_meta_commentary_is_detected(source, translated, expected):
@@ -241,6 +257,9 @@ def test_chinese_meta_commentary_is_detected(source, translated, expected):
         # 原文本身就在讲规则 / OCR：照译出来的不算
         ("Согласно правилам, текст на исходном языке сохраняется.", "按照规则，原文保持不变。"),
         ("OCR errors in the original text are kept as-is.", "原文中的 OCR 错误保持原样。"),
+        # 原文本身在谈翻译、用户和系统：照译出来的不算
+        ("The translation must be accurate.", "译文需要准确。"),
+        ("The user message is passed to the system prompt.", "用户消息被传给系统提示。"),
         # 括号里的译者注：译文能用，不拿来重译
         (
             "2 Бетон класса B25 демона",
@@ -261,3 +280,9 @@ def test_chinese_meta_commentary_is_retranslated():
     item = _caption_item("p1235-b009", CIRCLED_SOURCE)
     with pytest.raises(TranslationProtocolError):
         validate_batch_result([item], {"p1235-b009": {"decision": "translate", "translated_text": CIRCLED_OUTPUT}})
+
+
+def test_restated_requirement_is_cut_and_the_translation_kept():
+    source = "Given such an energy function of the nuclear coordinates, geometries can be calculated."
+    output = "given such an energy function of the nuclear coordinates 的译文需要准确。\n\n给定这样一个关于核坐标的能量函数，即可计算几何构型。"
+    assert text_after_self_correction(source, output) == "给定这样一个关于核坐标的能量函数，即可计算几何构型。"

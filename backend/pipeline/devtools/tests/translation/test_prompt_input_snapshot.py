@@ -42,11 +42,16 @@ _BUILDERS = [build_single_item_fallback_messages, lambda item: build_messages([i
 # 第四次重录：逐段请求（route 0，两组）改了排法——前后文挪到原文前面并用起止标记括起来，
 # 作答要求放最后一行（原来夹在中间，模型读完一串「后文上下文：……」后自己补了个「译文：」）。
 # direct_typst 的整批请求（route 1）只换了格式示例里占位的那行；placeholder 的整批请求走 JSON，一字未动。
+#
+# 第五次重录（2026-11-23）：系统提示的「忠实」一句改成「不增删；只交译文，不加“这是…”“译文如下”等说明，
+# 索引照译」，末句去掉重复的「不附加解释」（固定提示有 1200 字上限，加一整行会超）。两本教材里
+# claude-haiku-5-5 把「这是一个索引条目列表，页码需保留。译文如下：」「…的译文需要准确。」这类话写进了译文。
+# 四组请求都只有这两句变了（重录前逐字比过）；冻结基线 28 例同样只变这两句和 prompt_hash。
 _DIGESTS = {
-    False: ["84cc32bb5d212f354d3cf051c1084cbee08f6899d559794a66d2c4903dd1f8fe",
-            "e0ff9a772d08d6301c011abcc41d8da089f67345018b17f9da500422dd7bee51"],
-    True: ["60a91bc52d5f721b439d5894140c4f6d8d2b962315d1152777acc78d08bab1a8",
-           "76bcc838cc8ac22aaa308c130aee266b2b4f9771785f3471958f8639b90f73e0"],
+    False: ["20cdb349225152f713a31d90ecd82b43bf90a4b33290c83c300808cebb1364aa",
+            "9aaea30ac6e2c18450924ffae5b39b334e5a90d01d195f4c2a39f5d6474451c4"],
+    True: ["f93f23d23fa342ab387066cc0ce5e019a834f390f7ea705cb5bed22923194f0e",
+           "a02a7172b24f3c4097ae254fe8e04bafc9ee73bb6a3ea9dc8aa537f371ed528e"],
 }
 
 
