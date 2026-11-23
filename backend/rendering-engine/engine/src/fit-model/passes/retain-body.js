@@ -786,7 +786,7 @@
           const using = (node.type === "title" && ctx.roleMeasurers && ctx.roleMeasurers.bold) || ctx.measurer;
           // A stream lays its text out inside its padding (geometry.js).
           const padding = isStream(node) ? constants.STREAM_PADDING_LEFT + constants.STREAM_PADDING_RIGHT : 0;
-          const need = using.naturalWidth(paragraphs[0].prepared, { fontSize: layoutControlFontSize(node) }) + (Number(paragraphs[0].indent) || 0) + padding;
+          const need = using.naturalWidth(paragraphs[0].prepared, { fontSize: layoutControlFontSize(node) }) + (Number(paragraphs[0].indentEm) > 0 ? paragraphs[0].indentEm * layoutControlFontSize(node) : (Number(paragraphs[0].indent) || 0)) + padding;
           const box = textBoxes[index];
           const right = WidenPolicy.widenedRight({
             box, need, neighbours: textBoxes.filter(other => other !== box),

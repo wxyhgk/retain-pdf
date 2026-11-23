@@ -210,6 +210,15 @@ function splitContinuations(input, job, model, { measurer, contentFor }) {
 }
 
 // fitOptions reaches the fitter (e.g. retainTrace).
+// A numbered heading ("2.2 力场能量", "4.32 锥形棒", "A.1 …"): the space after the
+// number becomes an ideographic space, one character as Chinese headings set it.
+// A plain space next to CJK is a quarter em here (the same as CJK–Latin
+// spacing), against about 0.65 em in the source (14e352).
+const HEADING_NUMBER = /^(\s*(?:\d{1,3}(?:\.\d{1,3})*\.?|[A-Z](?:\.\d{1,3})+))[ \t\u00a0]+(?=\S)/;
+function headingNumberSpace(text) {
+  return String(text).replace(HEADING_NUMBER, "$1\u3000");
+}
+
 // A list marker at the start of a translation: (a) （a） a) 1. 1、 (iv) and bullets / dashes,
 // with the spaces after it (group 1).
 const TRANSLATED_MARKER = /^\s*((?:[(（](?:[a-zA-Z]|[ivxIVX]{1,4}|\d{1,2})[)）]|(?:[a-zA-Z]|[ivxIVX]{1,4}|\d{1,2})(?:[)、]|\.(?!\d))|[-•·–▪◦●∙*])[\s\u00a0\u3000]*)(?=\S)/;
@@ -270,7 +279,9 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
   };
   const paragraphOf = (item, text = item.translatedText || item.text) => {
     const hangEm = item.listItem ? hangEmOf(text) : 0;
-    return { runs: runsForText(text), indent: hangEm > 0 ? 0 : (item.indent || 0), ...(hangEm > 0 ? { hangEm } : {}) };
+    if (hangEm > 0) return { runs: runsForText(text), indent: 0, hangEm };
+    // indentEm: a Chinese two-character indent (job-model indentEmOf)
+    return { runs: runsForText(text), indent: item.indent || 0, ...(item.indentEm > 0 ? { indentEm: item.indentEm } : {}) };
   };
   const contentFor = (node, mode) => {
     if (node.kind === "stream") {
@@ -280,7 +291,8 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
       return { paragraphs: node.source.items.map(item => paragraphOf(item)) };
     }
     if (node.source.kind === "text" && node.source.translatedText) {
-      return { paragraphs: [paragraphOf(node.source, node.source.translatedText)] };
+      const text = node.source.type === "title" ? headingNumberSpace(node.source.translatedText) : node.source.translatedText;
+      return { paragraphs: [paragraphOf(node.source, text)] };
     }
     return defaults(node, mode);
   };

@@ -224,6 +224,13 @@ What the switch selects:
   start that far in and the first-line indent is dropped -- the source sets them
   so (14e352's text layer: 150 of 159 multi-line items). Without a marker in the
   translation nothing hangs.
+  A paragraph's first-line indent: the host's `first_line_indent_pt` (from the
+  source PDF) only says the paragraph is indented; one of at least half the
+  block's seed size is set as a Chinese two-character indent (`indentEm` 2,
+  scaled with the size the fitter settles on), a smaller one stays in pt.
+  A numbered heading (`2.2 `, `4.32 `, `A.1 ` at its start, numbers of up to
+  three digits) gets an ideographic space after its number: one character, as
+  Chinese headings set it, where a plain space next to CJK is a quarter em.
 - **`passes/retain-titles.js`** (before the body pass): every heading sized
   on its own box like `solve_title_fit` (fill cap, band ≤ 0.94 × box height,
   title / heading leading). When the host gives the heading's source size
