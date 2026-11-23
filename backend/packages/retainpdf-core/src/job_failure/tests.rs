@@ -449,3 +449,11 @@ fn later_stage_failure_does_not_borrow_a_stale_ocr_error() {
     assert_eq!(failure.category, "placeholder_unstable");
     assert!(failure.upstream.is_none(), "{:?}", failure.upstream);
 }
+
+/// 同一份诊断（Paddle 12001），失败落在 OCR 阶段时照旧归成额度用完。
+#[test]
+fn ocr_stage_quota_error_is_still_quota_exhausted() {
+    let job = ocr_failed_job("ocr_processing", "Paddle HTTP 请求失败");
+    let failure = classify_job_failure(&job).expect("failure");
+    assert_eq!(failure.category, "upstream_quota_exhausted");
+}
