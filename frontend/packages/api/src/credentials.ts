@@ -1,6 +1,6 @@
 import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
-import { buildApiEndpoint } from "./http.js";
+import { attachRequestRef, buildApiEndpoint } from "./http.js";
 
 export type CredentialKind = "translation_api_key" | "ocr_provider_token" | string;
 
@@ -66,7 +66,7 @@ async function credentialRequest<T>(
     ) as CredentialRequestError;
     error.status = response.status;
     error.code = `${envelope?.code || envelope?.error_code || envelope?.error?.code || envelope?.details?.code || ""}`.trim();
-    throw error;
+    throw attachRequestRef(error, response, envelope);
   }
   return unwrapEnvelope<T>(envelope);
 }

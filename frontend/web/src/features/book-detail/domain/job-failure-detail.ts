@@ -11,7 +11,22 @@ import { fetchJobPayload } from "@/platform/api/index.js";
 type JobDetailPayload = {
   error?: unknown;
   log_tail?: unknown;
-  failure?: { raw_excerpt?: unknown; last_log_line?: unknown; raw_diagnostic?: { traceback?: unknown } };
+  failure?: {
+    raw_excerpt?: unknown;
+    last_log_line?: unknown;
+    raw_diagnostic?: { traceback?: unknown };
+    failure_code?: unknown;
+    code?: unknown;
+    failed_stage?: unknown;
+    provider?: unknown;
+    provider_code?: unknown;
+    upstream_host?: unknown;
+    recovery_hint?: unknown;
+  };
+  request_payload?: {
+    ocr?: { provider?: unknown };
+    translation?: { model?: unknown; base_url?: unknown; api_protocol?: unknown };
+  };
 };
 
 const text = (value: unknown): string => (typeof value === "string" ? value.trim() : "");
@@ -39,4 +54,49 @@ export function pickFailureDetailText(payload: unknown): string {
 
 export async function loadJobFailureDetail(jobId: string): Promise<string> {
   return pickFailureDetailText(await fetchJobPayload(jobId));
+}
+
+/** 复制诊断信息时附上的线索：失败码、上游的码和地址、这次用的 OCR 和翻译模型。只取这些，不碰 Key。 */
+export type JobFailureFacts = {
+  failureCode: string;
+  failedStage: string;
+  provider: string;
+  providerCode: string;
+  upstreamHost: string;
+  recoveryHint: string;
+  ocrProvider: string;
+  translationModel: string;
+  /** 翻译接口只留主机名：地址里可能带路径、查询串，没必要整段贴出去。 */
+  translationHost: string;
+  detail: string;
+};
+
+function hostOf(value: unknown): string {
+  try {
+    return new URL(text(value)).host;
+  } catch {
+    return "";
+  }
+}
+
+export function pickFailureFacts(payload: unknown): JobFailureFacts {
+  const detail = ((payload as { data?: JobDetailPayload })?.data ?? (payload as JobDetailPayload)) || {};
+  const failure = detail.failure || {};
+  const request = detail.request_payload || {};
+  return {
+    failureCode: text(failure.failure_code) || text(failure.code),
+    failedStage: text(failure.failed_stage),
+    provider: text(failure.provider),
+    providerCode: text(failure.provider_code),
+    upstreamHost: text(failure.upstream_host),
+    recoveryHint: text(failure.recovery_hint),
+    ocrProvider: text(request.ocr?.provider),
+    translationModel: text(request.translation?.model),
+    translationHost: hostOf(request.translation?.base_url),
+    detail: pickFailureDetailText(payload),
+  };
+}
+
+export async function loadJobFailureFacts(jobId: string): Promise<JobFailureFacts> {
+  return pickFailureFacts(await fetchJobPayload(jobId));
 }

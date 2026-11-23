@@ -24,6 +24,9 @@ import { Ban, Check, ChevronDown, Coins, Copy, LoaderCircle, RotateCcw, Server, 
 
 import { HomeSettingsHubContext } from "@/ui/context/home-services-context.js";
 import { copyText } from "@/platform/utils/clipboard.js";
+import { APP_VERSION } from "@/platform/generated/app-version.js";
+import { getDesktopHost } from "@/platform/desktop/host.js";
+import type { JobFailureFacts } from "../../../domain/job-failure-detail.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
 import {
   failureAdvice,
@@ -44,7 +47,15 @@ export type JobFailureCardProps = {
   loadDetail?: (jobId: string) => Promise<string>;
   /** 这一段自己的按钮（两段都失败时，不在状态行上的那段）。 */
   action?: ReactNode;
+  /** 复制诊断信息时补上失败码、上游的码和地址、这次用的 OCR 和模型。不给就只复制简报。 */
+  loadFacts?: (jobId: string) => Promise<JobFailureFacts>;
 };
+
+/** 「2026.11.22+157.g8ac6d2188 · 桌面版 darwin」：用户贴来的诊断信息要能看出是哪个版本、哪个平台。 */
+function appEnvironment(): string {
+  const desktop = getDesktopHost();
+  return [APP_VERSION, desktop ? `桌面版 ${desktop.platform || ""}`.trim() : "网页版"].filter(Boolean).join(" · ");
+}
 
 export function JobFailureCard({
   failure,
@@ -54,6 +65,7 @@ export function JobFailureCard({
   actionError = "",
   loadDetail,
   action = null,
+  loadFacts,
 }: JobFailureCardProps) {
   const [detail, setDetail] = useState<string>("");
   const [loadingDetail, setLoadingDetail] = useState(false);
@@ -85,10 +97,12 @@ export function JobFailureCard({
   }, [expanded, jobId, loadDetail, loadingDetail]);
 
   const copy = useCallback(async () => {
-    await copyText(failureDiagnosticText({ failure, jobId, detail }));
+    // 取不到详情（离线、任务被删）也照样复制简报。
+    const facts = loadFacts && jobId ? await loadFacts(jobId).catch(() => null) : null;
+    await copyText(failureDiagnosticText({ failure, jobId, detail, facts, environment: appEnvironment() }));
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1600);
-  }, [detail, failure, jobId]);
+  }, [detail, failure, jobId, loadFacts]);
 
   return (
     <section className="book-detail-failure-card" data-job-failure="true" aria-label="失败诊断">

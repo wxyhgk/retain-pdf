@@ -2,7 +2,7 @@
 // （GET/POST /api/v1/backups、POST /api/v1/backups/{id}/restore、DELETE /api/v1/backups/{id}）。
 import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
-import { buildApiEndpoint } from "./http.js";
+import { attachRequestRef, buildApiEndpoint } from "./http.js";
 
 /** auto：每天自动；manual：手动；before-restore：恢复前自动存的；before-upgrade：升级前自动存的。 */
 export type BackupKind = "auto" | "manual" | "before-restore" | "before-upgrade";
@@ -38,13 +38,14 @@ export type BackupRestoreResult = {
 async function readEnvelope<T>(resp: Response, action: string): Promise<T> {
   if (!resp.ok) {
     let message = "";
+    let body: unknown = null;
     try {
-      const body = await resp.json();
-      message = `${body?.message || body?.error?.message || ""}`.trim();
+      body = await resp.json();
+      message = `${(body as any)?.message || (body as any)?.error?.message || ""}`.trim();
     } catch {
       message = "";
     }
-    throw new Error(message || `${action}失败，请稍后重试。(${resp.status})`);
+    throw attachRequestRef(new Error(message || `${action}失败，请稍后重试。(${resp.status})`), resp, body);
   }
   return unwrapEnvelope(await resp.json()) as T;
 }

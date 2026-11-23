@@ -2,7 +2,7 @@
 // 导出 CSV 是二进制出口（transport binary），生成器不管，照旧手写，返回 Response 给下载流程。
 import * as generated from "./generated/glossaries.js";
 import { apiFetch, buildApiHeaders } from "./internal/runtime.js";
-import { buildApiEndpoint } from "./http.js";
+import { attachRequestRef, buildApiEndpoint } from "./http.js";
 import { failWith, submitFailure, type RequestOptions } from "./request.js";
 import type {
   GlossaryCsvParseView,
@@ -64,7 +64,7 @@ export async function exportGlossaryCsv(apiPrefix: string, glossaryId: string): 
   const resp = await apiFetch(buildApiEndpoint(apiPrefix, `glossaries/${encodeURIComponent(normalizedGlossaryId)}/export.csv`), { headers: buildApiHeaders() });
   if (!resp.ok) {
     const text = await resp.text();
-    throw new Error(`导出术语表失败: ${resp.status} ${text || "unknown error"}`);
+    throw attachRequestRef(new Error(`导出术语表失败: ${resp.status} ${text || "unknown error"}`), resp, null);
   }
   return resp;
 }
