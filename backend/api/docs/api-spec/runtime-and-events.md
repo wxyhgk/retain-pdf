@@ -457,6 +457,7 @@ Behavior:
 - `stage` stays machine-readable. Frontend current-stage UI must use job `stage_snapshot`, not events.
 - completed jobs keep historical events; clients should not rely only on the final `finished` event
 - `stage_snapshot` in job detail/list is authoritative for current stage and progress. Clients MUST NOT compute the active stage from `events[*]`.
+- `stage_snapshot.upstream_wait` (optional, 2026-11-23): present while a translation/OCR request is backing off after an upstream 429/529/503; absent once every waiting request resumed. Shape `UpstreamWaitView` in `job-status.v1`. The matching events carry `payload.observation.upstream_wait` and `payload.observation.upstream_wait_transition` (`started` / `ended`); their stage, substage and progress repeat the previous progress event.
 - failed `failure_classified` and `job_terminal` events include `payload.contracts`
   with the same `job_stage_contracts.v1` shape as job detail, so clients can
   explain missing artifacts directly from the event stream.

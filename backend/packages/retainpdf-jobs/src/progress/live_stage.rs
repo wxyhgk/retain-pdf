@@ -24,6 +24,9 @@ pub struct LiveStageSnapshot {
     pub progress_total: Option<i64>,
     pub progress_unit: Option<String>,
     pub background_stages: Vec<LiveStageSnapshot>,
+    /// 选中的那条主线事件 payload 里的 `upstream_wait`（服务商限流等待中）；没有或已结束为 None。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub upstream_wait: Option<crate::views::UpstreamWaitView>,
 }
 
 pub fn load_live_stage_snapshot(

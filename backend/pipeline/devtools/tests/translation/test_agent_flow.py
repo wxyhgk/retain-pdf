@@ -138,8 +138,8 @@ def fake_transport(monkeypatch):
     holder: dict = {}
 
     def install(model: FakeModel) -> FakeModel:
-        def make(api_key: str, *, url: str, **_kwargs):
-            holder["api_key"], holder["url"] = api_key, url
+        def make(api_key: str, *, url: str, on_wait=None, **_kwargs):
+            holder["api_key"], holder["url"], holder["on_wait"] = api_key, url, on_wait
             return model
 
         monkeypatch.setattr(agent_flow, "make_http_transport", make)

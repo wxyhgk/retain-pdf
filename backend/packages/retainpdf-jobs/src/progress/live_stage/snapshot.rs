@@ -57,7 +57,26 @@ pub(crate) fn select_live_stage_snapshot(
         progress_total: counted.and_then(progress_total),
         progress_unit: counted.and_then(progress_unit),
         background_stages: latest_background_stages(items),
+        upstream_wait: if should_keep_progress_stage {
+            None
+        } else {
+            upstream_wait(selected)
+        },
     })
+}
+
+/// 事件 payload 里的服务商限流等待：durable 事件在 `payload.observation.upstream_wait`，
+/// 旧的 JSONL 事件直接在 `payload.upstream_wait`。null、缺字段、形状不对都当没有。
+pub(crate) fn upstream_wait(item: &JobEventRecord) -> Option<crate::views::UpstreamWaitView> {
+    let payload = item.payload.as_ref()?;
+    let value = payload
+        .get("observation")
+        .and_then(|observation| observation.get("upstream_wait"))
+        .or_else(|| payload.get("upstream_wait"))?;
+    if value.is_null() {
+        return None;
+    }
+    serde_json::from_value(value.clone()).ok()
 }
 
 /// Sufficient statistics for the existing selector. This is closed under
@@ -223,6 +242,7 @@ fn snapshot_from_background_event(item: &JobEventRecord) -> LiveStageSnapshot {
         progress_total: progress_total(item),
         progress_unit: progress_unit(item),
         background_stages: Vec::new(),
+        upstream_wait: None,
     }
 }
 

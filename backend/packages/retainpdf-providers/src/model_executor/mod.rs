@@ -38,6 +38,8 @@ pub struct ModelExecutor {
     data_root: PathBuf,
     pools: Mutex<HashMap<String, Arc<Pool>>>,
     limits: Mutex<HashMap<String, Arc<ConnectionLimit>>>,
+    /// 正在等服务商限流（429 退避）的请求：(任务, 请求编号) → 等待信息。只在内存里，查状态时带出去。
+    waits: Arc<std::sync::Mutex<HashMap<(String, String), serde_json::Value>>>,
 }
 struct Pool {
     slots: Arc<ConnectionLimit>,
@@ -99,6 +101,7 @@ impl ModelExecutor {
             data_root,
             pools: Mutex::new(HashMap::new()),
             limits: Mutex::new(HashMap::new()),
+            waits: Arc::new(std::sync::Mutex::new(HashMap::new())),
         })
     }
 
@@ -167,9 +170,35 @@ impl ModelExecutor {
         operation: &str,
     ) -> Result<Option<ModelOperation>, ModelExecutorError> {
         self.authorize(job, token)?;
-        self.db
+        let mut found = self
+            .db
             .get_model_operation(job, operation)
-            .map_err(|_| ModelExecutorError::Internal("model operation lookup failed"))
+            .map_err(|_| ModelExecutorError::Internal("model operation lookup failed"))?;
+        if let Some(op) = found.as_mut().filter(|op| op.status == "running") {
+            op.upstream_wait = self
+                .waits
+                .lock()
+                .unwrap_or_else(|p| p.into_inner())
+                .get(&(job.to_owned(), operation.to_owned()))
+                .cloned();
+        }
+        Ok(found)
+    }
+
+    fn set_wait(
+        waits: &std::sync::Mutex<HashMap<(String, String), serde_json::Value>>,
+        key: &(String, String),
+        wait: Option<serde_json::Value>,
+    ) {
+        let mut waits = waits.lock().unwrap_or_else(|p| p.into_inner());
+        match wait {
+            Some(wait) => {
+                waits.insert(key.clone(), wait);
+            }
+            None => {
+                waits.remove(key);
+            }
+        }
     }
 
     pub fn cancel(
@@ -322,6 +351,12 @@ impl ModelExecutor {
             return Ok(());
         }
         let queue_ms = started.elapsed().as_millis() as u64;
+        let wait_key = (job.to_owned(), request.operation_id.clone());
+        let waits = self.waits.clone();
+        let on_wait = {
+            let key = wait_key.clone();
+            move |wait: Option<serde_json::Value>| Self::set_wait(&waits, &key, wait)
+        };
         let upstream = transport::execute(
             &pool.client,
             &pool.url,
@@ -330,6 +365,7 @@ impl ModelExecutor {
             request,
             queue_ms,
             job,
+            &on_wait,
         );
         let canceled = async {
             loop {
@@ -348,8 +384,10 @@ impl ModelExecutor {
                 let result=result;
                 self.db.finish_model_operation(job,&request.operation_id,result.status,Some(&serde_json::to_value(&result.receipt)?),result.error)?;
             },
-            result=canceled=>{result?;},
+            result=canceled=>{Self::set_wait(&self.waits, &wait_key, None); result?;},
         }
+        // 超时、取消时 sleep 被中途丢下，等待信息兜底清掉。
+        Self::set_wait(&self.waits, &wait_key, None);
         Ok(())
     }
 }

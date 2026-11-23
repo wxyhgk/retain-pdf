@@ -241,6 +241,7 @@ export interface JobStageSnapshotView {
     lane?: string | null;
     stage_detail?: string | null;
     progress: JobProgressView;
+    upstream_wait?: UpstreamWaitView;
 }
 /**
  * common.rs :: JobProgressView。前端 progress_unit / progress_current / progress_total 均由此归一。
@@ -256,6 +257,45 @@ export interface JobProgressView {
      * page|batch|block|step|percent，skip_serializing_if None
      */
     unit?: string | null;
+}
+/**
+ * 这一阶段的请求正在等服务商限流（429 限流 / 529 过载 / 503 暂不可用的退避等待）时才出现；等完字段不出现。前端据此显示「服务商限流，等待中」。2026-11-23 新增，可选。
+ */
+export interface UpstreamWaitView {
+    /**
+     * 服务商 id：翻译 openai / anthropic / deepseek / zhipu / qwen / opencode / custom（按 base_url 域名认，认不出是 custom）；OCR paddle / mineru / glm_ocr。
+     */
+    provider: string;
+    /**
+     * 429、529 或 503。
+     */
+    http_status: number;
+    /**
+     * rate_limited（429）、overloaded（529）、unavailable（503）。
+     */
+    reason?: string | null;
+    /**
+     * 上游错误码（错误体的 error.code / error.type / code），没有为 null。
+     */
+    code?: string | null;
+    /**
+     * 这次打算等的秒数（Retry-After 头或退避）。
+     */
+    retry_after_s?: number | null;
+    /**
+     * retry_after（照响应头）或 backoff（自己退避）。
+     */
+    wait_source?: string | null;
+    /**
+     * 刚失败的是第几次请求（1 起）。
+     */
+    attempt?: number | null;
+    max_attempts?: number | null;
+    started_at?: string | null;
+    /**
+     * 预计等到什么时候（UTC）。同一阶段多个请求同时在等时是最近一次等待的结束时间。
+     */
+    until?: string | null;
 }
 export interface JobStagesView {
     ocr: JobStageRuntimeView;

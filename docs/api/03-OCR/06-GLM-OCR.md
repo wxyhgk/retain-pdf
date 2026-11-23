@@ -49,6 +49,9 @@
 以前所有 429 都按限流退避 5 次（约 114 秒），最后只报 `GLM-OCR rate limited after 5 attempts`，看不出是欠费。
 结构化失败的 `provider_code` 是业务码；5xx 重试用完的报错也带上 `（HTTP 500，code=… message=…）`。
 
+退避等待期间（429 限流、503）任务进度里有 `upstream_wait`（`provider=glm_ocr`、`code` 为业务码，如 `1302`），等完消失，
+见 [查询任务详情](../01-任务/02-查询任务详情.md#服务商限流等待stage_snapshotupstream_wait)（2026-11-23 起；Paddle、MinerU 的 Python 请求同样报）。
+
 ## 运行
 
 在 provider worker（Python）里跑：原文按 10 页一片串行交上去（同步接口，实测 10 页约 12 秒；分片不多花钱，2 路并发也不更快），

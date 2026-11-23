@@ -539,3 +539,47 @@ def test_the_http_transport_retries_network_errors_including_ssl(monkeypatch) ->
     assert transport({"model": "m"})["content"][0]["text"] == "ok"
     assert len(waits) == 2
 
+
+
+def test_the_http_transport_reports_rate_limit_waits(monkeypatch) -> None:
+    """429/529 的退避等待经 on_wait 报出去：开始一次（带状态码、错误类型、秒数），等完一次 None；网络错误不报。"""
+    import email.message
+    import io
+    import urllib.error
+    import urllib.request
+
+    from retainpdf_translation_agent.agent import make_http_transport
+
+    def http_error(code: int, retry_after: str | None) -> urllib.error.HTTPError:
+        headers = email.message.Message()
+        if retry_after:
+            headers["retry-after"] = retry_after
+        body = io.BytesIO(b'{"type":"error","error":{"type":"overloaded_error","message":"busy"}}')
+        return urllib.error.HTTPError("https://example.invalid", code, "x", headers, body)
+
+    failures: list[BaseException] = [http_error(529, "3"), ConnectionResetError("reset")]
+
+    class Reply(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def urlopen(request, timeout):
+        if failures:
+            raise failures.pop(0)
+        return Reply(b'{"content": [{"type": "text", "text": "ok"}]}')
+
+    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    calls: list = []
+    transport = make_http_transport(
+        "k", url="https://example.invalid/v1/messages", sleep=lambda s: calls.append(("sleep", s)), on_wait=calls.append
+    )
+    assert transport({"model": "m"})["content"][0]["text"] == "ok"
+    assert calls[0] == {
+        "http_status": 529, "code": "overloaded_error", "retry_after_s": 3.0, "wait_source": "retry_after",
+        "attempt": 1, "max_attempts": 6,
+    }
+    assert calls[1] == ("sleep", 3.0) and calls[2] is None
+    assert calls[3][0] == "sleep" and len(calls) == 4  # 网络错误照旧退避，不报等待

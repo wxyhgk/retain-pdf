@@ -149,6 +149,38 @@ pub struct JobStageSnapshotView {
     pub lane: Option<String>,
     pub stage_detail: Option<String>,
     pub progress: JobProgressView,
+    /// 这一阶段的请求正在等服务商限流（429/529/503 退避）时才有；等完就没了（字段不出现）。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upstream_wait: Option<UpstreamWaitView>,
+}
+
+/// 服务商限流等待：worker 在阶段观察 payload 的 `upstream_wait` 里报，这里原样带出（缺的字段为 null）。
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
+pub struct UpstreamWaitView {
+    /// 服务商 id：翻译 openai / anthropic / deepseek / zhipu / qwen / opencode / custom，OCR paddle / mineru / glm_ocr。
+    pub provider: String,
+    pub http_status: u16,
+    /// rate_limited（429）、overloaded（529）、unavailable（503）。
+    #[serde(default)]
+    pub reason: Option<String>,
+    /// 上游错误码（错误体里的 error.code / error.type），没有为 null。
+    #[serde(default)]
+    pub code: Option<String>,
+    /// 这次打算等的秒数（Retry-After 或退避）。
+    #[serde(default)]
+    pub retry_after_s: Option<f64>,
+    /// retry_after（照响应头）或 backoff（自己退避）。
+    #[serde(default)]
+    pub wait_source: Option<String>,
+    #[serde(default)]
+    pub attempt: Option<u32>,
+    #[serde(default)]
+    pub max_attempts: Option<u32>,
+    #[serde(default)]
+    pub started_at: Option<String>,
+    /// 预计等到什么时候（UTC ISO 8601）。
+    #[serde(default)]
+    pub until: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

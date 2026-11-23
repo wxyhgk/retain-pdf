@@ -37,6 +37,7 @@ const FROM_JOB_STATUS = [
   "JobStageSnapshotView",
   "JobStageStateView",
   "JobStagesView",
+  "UpstreamWaitView",
 ];
 
 // 第 0 期就在 library-documents.v1 里的两个枚举，说明文字不一样，值要一样。

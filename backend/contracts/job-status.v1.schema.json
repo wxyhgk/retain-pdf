@@ -1504,6 +1504,80 @@
         }
       }
     },
+    "UpstreamWaitView": {
+      "type": "object",
+      "description": "job_types.rs :: UpstreamWaitView。服务商限流等待：worker 在阶段观察 payload 的 upstream_wait 里报（见 pipeline-stdout.v1 的 stage_observation_event.upstream_wait），Rust 取当前选中的主线进度事件原样带出。",
+      "required": [
+        "provider",
+        "http_status"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "description": "服务商 id：翻译 openai / anthropic / deepseek / zhipu / qwen / opencode / custom（按 base_url 域名认，认不出是 custom）；OCR paddle / mineru / glm_ocr。"
+        },
+        "http_status": {
+          "type": "integer",
+          "description": "429、529 或 503。"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "rate_limited（429）、overloaded（529）、unavailable（503）。"
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "上游错误码（错误体的 error.code / error.type / code），没有为 null。"
+        },
+        "retry_after_s": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "这次打算等的秒数（Retry-After 头或退避）。"
+        },
+        "wait_source": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "retry_after（照响应头）或 backoff（自己退避）。"
+        },
+        "attempt": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "刚失败的是第几次请求（1 起）。"
+        },
+        "max_attempts": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "started_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "until": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time",
+          "description": "预计等到什么时候（UTC）。同一阶段多个请求同时在等时是最近一次等待的结束时间。"
+        }
+      }
+    },
     "JobStageSnapshotView": {
       "type": "object",
       "description": "job_types.rs :: JobStageSnapshotView。前端 adaptJobStageSnapshot / buildStageSnapshot 消费全部字段；lane=main|background。",
@@ -1543,6 +1617,10 @@
         },
         "progress": {
           "$ref": "#/definitions/JobProgressView"
+        },
+        "upstream_wait": {
+          "$ref": "#/definitions/UpstreamWaitView",
+          "description": "这一阶段的请求正在等服务商限流（429 限流 / 529 过载 / 503 暂不可用的退避等待）时才出现；等完字段不出现。前端据此显示「服务商限流，等待中」。2026-11-23 新增，可选。"
         }
       }
     },

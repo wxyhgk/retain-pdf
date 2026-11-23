@@ -7,3 +7,4 @@ mod render_contract;
 mod seq_contract;
 mod source_merge;
 mod substage_contract;
+mod upstream_wait;

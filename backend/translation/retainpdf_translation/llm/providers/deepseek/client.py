@@ -10,6 +10,9 @@ from typing import Any
 import requests
 
 from retainpdf_base.local_env import get_secret
+from retainpdf_base.upstream_wait import error_code_from_response as _upstream_error_code
+from retainpdf_base.upstream_wait import upstream_wait_scope as _upstream_wait_scope
+from retainpdf_base.upstream_wait import vendor_for_base_url as _upstream_vendor
 from retainpdf_translation.artifacts import get_active_translation_run_diagnostics
 from retainpdf_translation.artifacts import infer_stage_from_request_label
 from retainpdf_translation.llm.shared import model_wire
@@ -633,7 +636,17 @@ def request_chat_content(
                     f"{request_label}: retrying in {delay_secs:.2f}s ({delay_kind})",
                     flush=True,
                 )
-            time.sleep(delay_secs)
+            # 429/503/529 的退避等待报进阶段进度（服务商限流，等待中），等完报结束；别的错误什么都不做。
+            with _upstream_wait_scope(
+                provider=_upstream_vendor(base_url),
+                http_status=status_code,
+                wait_s=delay_secs,
+                attempt=attempt,
+                max_attempts=attempt_limit,
+                code=_upstream_error_code(exc.response) if isinstance(exc, requests.HTTPError) else "",
+                wait_source=delay_kind,
+            ):
+                time.sleep(delay_secs)
         except BaseException as exc:
             # 上面的 except 只认已知的几类错误。其余（例如 200 + `choices: []` 抛的 IndexError、
             # `choices` 为 null 的 TypeError，或 KeyboardInterrupt）走到这里时请求槽还占着、

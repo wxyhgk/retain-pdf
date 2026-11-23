@@ -12,6 +12,9 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from retainpdf_base.upstream_wait import error_code_from_response
+from retainpdf_base.upstream_wait import upstream_wait_scope
+
 
 RETRY_STATUS_CODES = {408, 429, 500, 502, 503, 504}
 DEFAULT_RETRY_ATTEMPTS_ENV = "RETAIN_HTTP_RETRY_ATTEMPTS"
@@ -124,10 +127,13 @@ def request_with_retry(
     backoff_seconds: float,
     label: str,
     give_up: Callable[[requests.Response], bool] | None = None,
+    upstream_provider: str = "",
     **kwargs: Any,
 ) -> requests.Response:
     """`give_up(response)`：状态码本来该重试（429、5xx）、但响应体说明重试也没用时返回 True（例如智谱 429 里的
-    code=1113 余额不足），这次就不重试，照非重试的 4xx 原样抛 `requests.HTTPError`（带 response）。"""
+    code=1113 余额不足），这次就不重试，照非重试的 4xx 原样抛 `requests.HTTPError`（带 response）。
+    `upstream_provider`：OCR 服务商 id（paddle、mineru、glm_ocr）。给了的话，429/503/529 的退避等待会报进阶段进度
+    （服务商限流，等待中）；下载源文件、图片这类不给，不报。"""
     last_summary: str | None = None
     terminal_error: Exception | None = None
     status_code: int | None = None
@@ -188,7 +194,20 @@ def request_with_retry(
                 f"error={last_summary}; sleep={sleep_seconds:.2f}s",
                 flush=True,
             )
-            time.sleep(sleep_seconds)
+            if upstream_provider:
+                with upstream_wait_scope(
+                    provider=upstream_provider,
+                    http_status=status_code,
+                    wait_s=sleep_seconds,
+                    attempt=attempt,
+                    max_attempts=attempts,
+                    code=error_code_from_response(last_response),
+                    wait_source="retry_after" if retry_after.isdigit() else "backoff",
+                    user_stage="ocr",
+                ):
+                    time.sleep(sleep_seconds)
+            else:
+                time.sleep(sleep_seconds)
     if terminal_error is not None:
         raise terminal_error from None
     assert last_summary is not None

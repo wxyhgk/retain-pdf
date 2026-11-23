@@ -49,6 +49,48 @@ fn elapsed(start: Instant) -> u64 {
     start.elapsed().as_millis() as u64
 }
 
+/// 执行器一个请求最多发几次（第一次被 429 后重试一次）。
+pub(super) const MAX_UPSTREAM_ATTEMPTS: u32 = 2;
+
+/// 翻译服务商 id（和 retainpdf-config 的服务商清单一致），按地址的域名认，认不出是 `custom`。
+pub(super) fn vendor_for_url(url: &url::Url) -> &'static str {
+    let host = url.host_str().unwrap_or("").to_ascii_lowercase();
+    const HOSTS: &[(&str, &str)] = &[
+        ("api.deepseek.com", "deepseek"),
+        ("dashscope.aliyuncs.com", "qwen"),
+        ("dashscope-intl.aliyuncs.com", "qwen"),
+        ("api.openai.com", "openai"),
+        ("api.anthropic.com", "anthropic"),
+        ("open.bigmodel.cn", "zhipu"),
+        ("opencode.ai", "opencode"),
+    ];
+    HOSTS
+        .iter()
+        .find(|(known, _)| host == *known || host.ends_with(&format!(".{known}")))
+        .map(|(_, vendor)| *vendor)
+        .unwrap_or("custom")
+}
+
+/// 429 退避等待开始时的等待信息（字段和 worker 进度里的 `upstream_wait` 一致）。
+fn upstream_wait_info(url: &url::Url, attempt: u32, delay: Duration, from_header: bool) -> Value {
+    let now = chrono::Utc::now();
+    let until = now + chrono::Duration::milliseconds(delay.as_millis().min(i64::MAX as u128) as i64);
+    serde_json::json!({
+        "provider": vendor_for_url(url),
+        "http_status": 429,
+        "reason": "rate_limited",
+        "code": null,
+        "retry_after_s": delay.as_secs_f64(),
+        "wait_source": if from_header { "retry_after" } else { "backoff" },
+        "attempt": attempt,
+        "max_attempts": MAX_UPSTREAM_ATTEMPTS,
+        "started_at": now.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        "until": until.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+    })
+}
+
+/// `on_wait`：429 退避开始时收到等待信息，等完收到 None（调用方另在请求结束时兜底清掉）。
+#[allow(clippy::too_many_arguments)]
 pub(super) async fn execute(
     client: &reqwest::Client,
     url: &url::Url,
@@ -57,6 +99,7 @@ pub(super) async fn execute(
     request: &ModelRequest,
     queue_ms: u64,
     session_id: &str,
+    on_wait: &(dyn Fn(Option<Value>) + Send + Sync),
 ) -> Outcome {
     let start = Instant::now();
     let mut receipt = Receipt {
@@ -117,11 +160,12 @@ pub(super) async fn execute(
                 if status.as_u16() != 429 {
                     return rejected(status.as_u16());
                 }
-                if receipt.upstream_attempts >= 2 {
+                // 真限流：退避等待，等待开始和结束报给 worker（upstream_wait）
+                if receipt.upstream_attempts >= MAX_UPSTREAM_ATTEMPTS {
                     return ("failed", Some("rate_limited"));
                 }
                 let retry_after = retry_after.as_deref();
-                let delay = retry_after
+                let parsed = retry_after
                     .and_then(|v| {
                         v.parse::<u64>().ok().map(Duration::from_secs).or_else(|| {
                             chrono::DateTime::parse_from_rfc2822(v).ok().map(|date| {
@@ -131,8 +175,8 @@ pub(super) async fn execute(
                                 )
                             })
                         })
-                    })
-                    .unwrap_or(Duration::from_secs(1));
+                    });
+                let delay = parsed.unwrap_or(Duration::from_secs(1));
                 // Do not dispatch a retry with no useful remaining deadline.
                 if delay.as_millis()
                     + start.elapsed().as_millis()
@@ -142,7 +186,14 @@ pub(super) async fn execute(
                     return ("failed", Some("rate_limit_deadline"));
                 }
                 receipt.retry_reasons.push("explicit_429");
+                on_wait(Some(upstream_wait_info(
+                    url,
+                    receipt.upstream_attempts,
+                    delay,
+                    parsed.is_some(),
+                )));
                 tokio::time::sleep(delay).await;
+                on_wait(None);
                 continue;
             }
             if !status.is_success() {

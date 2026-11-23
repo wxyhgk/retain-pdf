@@ -33,6 +33,7 @@ pub fn build_job_stage_view(
         .and_then(|snapshot| snapshot.stage_detail.clone())
         .or_else(|| job.stage_detail.clone());
     let progress = build_progress_view(job, live_stage);
+    let upstream_wait = live_stage.and_then(|snapshot| snapshot.upstream_wait.clone());
     let background_snapshots: Vec<JobStageSnapshotView> = live_stage
         .map(|snapshot| {
             snapshot
@@ -51,6 +52,7 @@ pub fn build_job_stage_view(
         lane.clone(),
         stage_detail.clone(),
         progress.clone(),
+        upstream_wait,
     );
     let stages = build_stages_view(
         job,
@@ -109,6 +111,7 @@ fn stage_snapshot_view(snapshot: &LiveStageSnapshot) -> JobStageSnapshotView {
             },
             unit: snapshot.progress_unit.clone(),
         },
+        upstream_wait: None,
     }
 }
 
@@ -120,6 +123,7 @@ fn build_public_stage_snapshot(
     lane: Option<String>,
     stage_detail: Option<String>,
     progress: JobProgressView,
+    upstream_wait: Option<crate::views::UpstreamWaitView>,
 ) -> Option<JobStageSnapshotView> {
     if is_terminal_status(&job.status) {
         return None;
@@ -132,6 +136,7 @@ fn build_public_stage_snapshot(
         lane,
         stage_detail,
         progress,
+        upstream_wait,
     })
 }
 

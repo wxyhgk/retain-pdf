@@ -644,3 +644,64 @@ async fn incomplete_stream_does_not_publish_partial_content() {
     assert!(op.result.unwrap()["content"].is_null());
     task.abort();
 }
+
+#[tokio::test]
+async fn rate_limit_wait_is_visible_in_status_until_the_retry() {
+    let count = Arc::new(AtomicUsize::new(0));
+    let seen = count.clone();
+    let (url, task) = server(Router::new().route(
+        "/v1/chat/completions",
+        post(move || {
+            let seen = seen.clone();
+            async move {
+                if seen.fetch_add(1, Ordering::SeqCst) == 0 {
+                    (StatusCode::TOO_MANY_REQUESTS, [("retry-after", "1")], "slow down").into_response()
+                } else {
+                    Json(successful()).into_response()
+                }
+            }
+        }),
+    ))
+    .await;
+    let f = Fixture::new();
+    let e = &f.executor;
+    let token = e.register_job("j", &profile(&url), 60).unwrap();
+    e.submit("j", &token, request("op")).await.unwrap();
+    let wait = tokio::time::timeout(Duration::from_secs(3), async {
+        loop {
+            let op = e.status("j", &token, "op").unwrap().unwrap();
+            if let Some(wait) = op.upstream_wait {
+                assert_eq!(op.status, "running");
+                return wait;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+    })
+    .await
+    .expect("wait becomes visible while the executor sleeps");
+    assert_eq!(wait["provider"], "custom");
+    assert_eq!(wait["http_status"], 429);
+    assert_eq!(wait["reason"], "rate_limited");
+    assert_eq!(wait["retry_after_s"], 1.0);
+    assert_eq!(wait["wait_source"], "retry_after");
+    assert_eq!(wait["attempt"], 1);
+    assert_eq!(wait["max_attempts"], 2);
+    assert!(wait["until"].as_str().unwrap() > wait["started_at"].as_str().unwrap());
+    let op = terminal(e, "j", &token, "op").await;
+    assert_eq!(op.status, "succeeded");
+    assert!(op.upstream_wait.is_none());
+    assert!(serde_json::to_value(&op).unwrap().get("upstream_wait").is_none());
+    assert!(e.waits.lock().unwrap().is_empty());
+    task.abort();
+}
+
+#[test]
+fn upstream_wait_provider_follows_the_catalogue_hosts() {
+    let vendor = |raw: &str| transport::vendor_for_url(&url::Url::parse(raw).unwrap());
+    assert_eq!(vendor("https://api.deepseek.com/v1"), "deepseek");
+    assert_eq!(vendor("https://dashscope.aliyuncs.com/compatible-mode/v1"), "qwen");
+    assert_eq!(vendor("https://open.bigmodel.cn/api/paas/v4"), "zhipu");
+    assert_eq!(vendor("https://opencode.ai/inference/go/v1"), "opencode");
+    assert_eq!(vendor("https://opencode.ai.example/v1"), "custom");
+    assert_eq!(vendor("http://127.0.0.1:9/v1"), "custom");
+}

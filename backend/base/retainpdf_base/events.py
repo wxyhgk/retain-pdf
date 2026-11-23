@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import copy
 import json
+import threading
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
+from dataclasses import field
 from datetime import datetime
 from datetime import timezone
 from pathlib import Path
@@ -63,6 +66,23 @@ _ACTIVE_PROGRESS_SNAPSHOT: ContextVar[dict[tuple[str, str, str], int] | None] = 
 
 PIPELINE_STAGE_OBSERVATION_SCHEMA = "pipeline_stage_observation_v1"
 PIPELINE_STAGE_OBSERVATION_SCHEMA_VERSION = 1
+
+# 服务商限流等待（upstream_wait）挂在阶段观察 payload 上的键，见 ``retainpdf_base.upstream_wait``。
+UPSTREAM_WAIT_PAYLOAD_KEY = "upstream_wait"
+UPSTREAM_WAIT_TRANSITION_PAYLOAD_KEY = "upstream_wait_transition"
+_STAGE_OBSERVATION_EVENT_TYPES = {"stage_transition", "stage_progress"}
+_BACKGROUND_SUBSTAGES = {"render_prewarm"}
+# 某个阶段还没发过任何阶段观察时，等待事件用的阶段名。
+_DEFAULT_RAW_STAGE_FOR_USER_STAGE = {
+    "ocr": "ocr_processing",
+    "translation": "translating",
+    "render": "rendering",
+}
+
+# 当前进程里最近进入的 writer。翻译请求多在线程池里发，ContextVar 跟不过去；
+# 只有服务商限流等待（``retainpdf_base.upstream_wait``）拿它兜底，别的事件照旧只认 ContextVar。
+_PROCESS_PIPELINE_EVENT_WRITER: "PipelineEventWriter | None" = None
+_PROCESS_WRITER_LOCK = threading.Lock()
 
 
 def semantic_event_type(event_type: str) -> str:
@@ -149,6 +169,12 @@ class PipelineEventWriter:
     workflow: str = ""
     provider: str = ""
     _seq: int = 0
+    # seq 加一、写文件、打 stdout 在一把锁里：等待事件从翻译线程发，Rust 要求 seq 递增（倒退会拒收）。
+    _lock: threading.RLock = field(default_factory=threading.RLock, repr=False, compare=False)
+    # 各 user_stage 最近一条主线阶段观察（等待开始/结束事件照它重发进度，不动进度数字）。
+    _last_main_records: dict[str, dict[str, Any]] = field(default_factory=dict, repr=False, compare=False)
+    # 各 user_stage 正在进行的限流等待：{"count": 同时在等的请求数, "info": 最近一次等待的信息}。
+    _upstream_waits: dict[str, dict[str, Any]] = field(default_factory=dict, repr=False, compare=False)
 
     def __post_init__(self) -> None:
         if not self.path.exists():
@@ -179,6 +205,40 @@ class PipelineEventWriter:
         retry_count: int | None = None,
         elapsed_ms: int | None = None,
         payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        with self._lock:
+            return self._emit_locked(
+                level=level,
+                stage=stage,
+                event_type=event_type,
+                substage=substage,
+                message=message,
+                stage_detail=stage_detail,
+                provider=provider,
+                provider_stage=provider_stage,
+                progress_current=progress_current,
+                progress_total=progress_total,
+                retry_count=retry_count,
+                elapsed_ms=elapsed_ms,
+                payload=payload,
+            )
+
+    def _emit_locked(
+        self,
+        *,
+        level: str,
+        stage: str,
+        event_type: str,
+        substage: str,
+        message: str,
+        stage_detail: str,
+        provider: str,
+        provider_stage: str,
+        progress_current: int | None,
+        progress_total: int | None,
+        retry_count: int | None,
+        elapsed_ms: int | None,
+        payload: dict[str, Any] | None,
     ) -> dict[str, Any]:
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self._seq += 1
@@ -216,31 +276,134 @@ class PipelineEventWriter:
             "elapsed_ms": elapsed_ms,
             "payload": payload_value,
         }
-        if record["event_type"] in {"stage_transition", "stage_progress"}:
+        if record["event_type"] in _STAGE_OBSERVATION_EVENT_TYPES:
             record["schema"] = PIPELINE_STAGE_OBSERVATION_SCHEMA
             record["schema_version"] = PIPELINE_STAGE_OBSERVATION_SCHEMA_VERSION
+            main_lane = record["substage"] not in _BACKGROUND_SUBSTAGES
+            active_wait = self._upstream_waits.get(user_stage) if main_lane else None
+            if active_wait is not None and UPSTREAM_WAIT_PAYLOAD_KEY not in payload_value:
+                # 等待期间别的线程照常报进度：带上等待信息，免得最新一条进度把「等待中」盖掉。
+                record["payload"] = {**payload_value, UPSTREAM_WAIT_PAYLOAD_KEY: dict(active_wait["info"])}
+            if main_lane and user_stage:
+                self._last_main_records[user_stage] = record
         with self.path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(record, ensure_ascii=False))
             handle.write("\n")
         # Stage observations cross the process boundary through stdout. Rust
         # commits them under generation fencing before exposing their event
         # projection. The JSONL file remains a diagnostic/legacy projection.
-        if record["event_type"] in {"stage_transition", "stage_progress"}:
+        if record["event_type"] in _STAGE_OBSERVATION_EVENT_TYPES:
             print(json.dumps(record, ensure_ascii=False), flush=True)
         return record
+
+    def begin_upstream_wait(self, *, user_stage: str, info: dict[str, Any], message: str) -> None:
+        """一个请求开始等服务商限流。同一 user_stage 已经有请求在等时只更新等待信息，不另发事件。"""
+        user_stage = normalize_user_stage(user_stage)
+        with self._lock:
+            state = self._upstream_waits.get(user_stage)
+            if state is not None:
+                state["count"] += 1
+                if str(info.get("until") or "") >= str(state["info"].get("until") or ""):
+                    state["info"] = dict(info)
+                return
+            self._upstream_waits[user_stage] = {"count": 1, "info": dict(info)}
+            self._emit_wait_transition(user_stage=user_stage, info=dict(info), transition="started", message=message)
+
+    def end_upstream_wait(self, *, user_stage: str, message: str) -> None:
+        """一个请求等完了。同一 user_stage 所有在等的请求都等完，才发一条结束事件（upstream_wait=null）。"""
+        user_stage = normalize_user_stage(user_stage)
+        with self._lock:
+            state = self._upstream_waits.get(user_stage)
+            if state is None:
+                return
+            state["count"] -= 1
+            if state["count"] > 0:
+                return
+            self._upstream_waits.pop(user_stage, None)
+            self._emit_wait_transition(user_stage=user_stage, info=None, transition="ended", message=message)
+
+    def active_upstream_wait(self, user_stage: str) -> dict[str, Any] | None:
+        with self._lock:
+            state = self._upstream_waits.get(normalize_user_stage(user_stage))
+            return dict(state["info"]) if state is not None else None
+
+    def _emit_wait_transition(
+        self,
+        *,
+        user_stage: str,
+        info: dict[str, Any] | None,
+        transition: str,
+        message: str,
+    ) -> None:
+        # 照这个阶段最近一条主线观察重发（阶段、子阶段、进度数字、阶段说明都不变），只换 message、
+        # 在 payload 上挂 upstream_wait：Rust 那边进度不倒退、不算「有进展」，前端看 payload 显示等待。
+        base = self._last_main_records.get(user_stage)
+        if base is not None:
+            payload = copy.deepcopy(base.get("payload") or {})
+            stage = str(base.get("stage") or "")
+            substage = str(base.get("substage") or "")
+            stage_detail = str(base.get("stage_detail") or "")
+            provider = str(base.get("provider") or "")
+            provider_stage = str(base.get("provider_stage") or "")
+            progress_current = base.get("progress_current")
+            progress_total = base.get("progress_total")
+            progress_unit = str(base.get("progress_unit") or "")
+        else:
+            payload = {}
+            stage = _DEFAULT_RAW_STAGE_FOR_USER_STAGE.get(user_stage, user_stage)
+            substage = ""
+            stage_detail = ""
+            provider = ""
+            provider_stage = ""
+            progress_current = None
+            progress_total = None
+            progress_unit = ""
+        payload.pop(UPSTREAM_WAIT_TRANSITION_PAYLOAD_KEY, None)
+        payload["user_stage"] = user_stage
+        if progress_unit:
+            payload["progress_unit"] = progress_unit
+        payload[UPSTREAM_WAIT_PAYLOAD_KEY] = info
+        payload[UPSTREAM_WAIT_TRANSITION_PAYLOAD_KEY] = transition
+        self._emit_locked(
+            level="warning" if info is not None else "info",
+            stage=stage,
+            event_type="stage_progress",
+            substage=substage,
+            message=message,
+            stage_detail=stage_detail or message,
+            provider=provider,
+            provider_stage=provider_stage,
+            progress_current=progress_current,
+            progress_total=progress_total,
+            retry_count=None,
+            elapsed_ms=None,
+            payload=payload,
+        )
 
 
 @contextmanager
 def pipeline_event_writer_scope(writer: PipelineEventWriter):
+    global _PROCESS_PIPELINE_EVENT_WRITER
     token = _ACTIVE_PIPELINE_EVENT_WRITER.set(writer)
+    with _PROCESS_WRITER_LOCK:
+        previous_process_writer = _PROCESS_PIPELINE_EVENT_WRITER
+        _PROCESS_PIPELINE_EVENT_WRITER = writer
     try:
         yield writer
     finally:
         _ACTIVE_PIPELINE_EVENT_WRITER.reset(token)
+        with _PROCESS_WRITER_LOCK:
+            if _PROCESS_PIPELINE_EVENT_WRITER is writer:
+                _PROCESS_PIPELINE_EVENT_WRITER = previous_process_writer
 
 
 def get_active_pipeline_event_writer() -> PipelineEventWriter | None:
     return _ACTIVE_PIPELINE_EVENT_WRITER.get()
+
+
+def get_process_pipeline_event_writer() -> PipelineEventWriter | None:
+    """当前上下文的 writer；线程池里拿不到时退回本进程最近进入的 writer（只给限流等待用）。"""
+    return _ACTIVE_PIPELINE_EVENT_WRITER.get() or _PROCESS_PIPELINE_EVENT_WRITER
 
 
 def emit_pipeline_event(

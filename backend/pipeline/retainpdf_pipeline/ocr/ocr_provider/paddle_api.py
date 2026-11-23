@@ -168,6 +168,7 @@ def _request_with_retry(method: str, url: str, *, timeout: int, **kwargs: Any) -
             attempts=_retry_attempts(),
             backoff_seconds=_retry_backoff_seconds(),
             label="Paddle OCR",
+            upstream_provider="paddle",
             **kwargs,
         )
     except RetainRateLimitError as err:
