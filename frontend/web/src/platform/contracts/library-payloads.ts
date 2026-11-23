@@ -54,8 +54,10 @@ export type JobFailureBrief = {
   summary: string;
   root_cause?: string;
   suggestion?: string;
-  /** 上游是谁（mineru / deepseek …）。 */
+  /** 上游是谁（mineru / deepseek …）。OCR 失败是 paddle / mineru / glm_ocr / local（2026-11-23 以前是 ocr）。 */
   provider?: string;
+  /** 上游服务商回的是什么：厂商编号（错误码目录的 vendor id）、HTTP 状态码、厂商的码；不知道的为 null，都不知道时键不出现。 */
+  upstream?: { provider: string | null; http_status: number | null; code: string | null };
 };
 
 export type LibraryCardItem = {

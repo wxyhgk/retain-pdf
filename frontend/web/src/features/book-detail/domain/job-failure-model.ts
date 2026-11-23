@@ -101,6 +101,13 @@ const BY_CATEGORY: Record<string, FailureAdvice> = {
     action: "先确认本机能上网、代理没挂。网络恢复后重试即可。",
     retryLikelyHelps: true,
   },
+  // 2026-11-23 后端加的：内存不够、路径太长、没有权限、软件运行环境坏了（out_of_memory、path_too_long、
+  // local_permission_denied、runtime_environment_broken）。都是这台电脑上的事，原样重试没用。
+  environment: {
+    title: "这台电脑上的环境出了问题",
+    action: "内存不够、文件路径太长、没有权限或软件文件损坏 —— 重试解决不了。看下面的原因：内存不够就关掉别的程序或少翻几页；路径太长就把书名改短；没权限检查安装目录和杀毒软件；软件文件损坏就重新安装。",
+    retryLikelyHelps: false,
+  },
   normalization: {
     title: "整理 OCR 结果时失败",
     action: "OCR 产物的结构不是预期的样子，重跑同一份大概率还是这样。建议换一种解析方式重做 OCR。",
@@ -132,9 +139,26 @@ export function failureSubtitle(failure?: JobFailureBrief | null): string {
   if (!failure) return "";
   const stage = { ocr: "OCR", translation: "翻译", render: "渲染" }[`${failure.stage || ""}`.trim()]
     ?? failure.stage;
-  const provider = `${failure.provider || ""}`.trim();
+  const raw = `${failure.upstream?.provider || failure.provider || ""}`.trim();
+  // 「OCR · ocr」「翻译 · translation」不提供信息，去掉；厂商编号换成用户在设置里看到的名字。
+  const provider = raw === "ocr" || raw === "translation" ? "" : PROVIDER_LABELS[raw] ?? raw;
   return provider ? `${stage} · ${provider}` : `${stage}`;
 }
+
+/** 失败里的厂商编号（错误码目录的 vendor id）→ 设置里显示的名字。 */
+const PROVIDER_LABELS: Readonly<Record<string, string>> = Object.freeze({
+  paddle: "PaddleOCR",
+  mineru: "MinerU",
+  glm_ocr: "GLM-OCR",
+  local: "本机 OCR",
+  openai: "OpenAI",
+  anthropic: "Anthropic",
+  deepseek: "DeepSeek",
+  zhipu: "智谱",
+  qwen: "Qwen",
+  opencode: "OpenCode Go",
+  custom: "自定义接口",
+});
 
 /** 复制给排查用的那段文本。
  *
