@@ -254,7 +254,7 @@ wheels = [
 
 [[package]]
 name = "retainpdf-backend-workspace"
-version = "2026.11.22"
+version = "2026.11.23"
 source = { virtual = "." }
 dependencies = [
     { name = "retainpdf-base" },
@@ -322,7 +322,7 @@ provides-extras = ["test"]
 
 [[package]]
 name = "retainpdf-pipeline"
-version = "2026.11.22"
+version = "2026.11.23"
 source = { editable = "pipeline" }
 dependencies = [
     { name = "pikepdf" },
