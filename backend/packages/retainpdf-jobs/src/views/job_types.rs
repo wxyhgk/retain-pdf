@@ -3,7 +3,7 @@ use serde_json::Value;
 
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::{
-    JobFailureInfo, JobRuntimeInfo, JobStatusKind, OcrProviderDiagnostics, PublicResolvedJobSpec,
+    JobFailureInfo, JobFailureUpstream, JobRuntimeInfo, JobStatusKind, OcrProviderDiagnostics, PublicResolvedJobSpec,
     WorkflowKind,
 };
 
@@ -210,6 +210,9 @@ pub struct JobDiagnosticsView {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub translation_request_recovery: Option<TranslationRequestRecoveryView>,
     pub ocr_ambiguity: Option<OcrAmbiguityView>,
+    /// 上游服务商回的是什么（同任务详情 `failure.upstream`）。不知道时整个键不出现。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upstream: Option<JobFailureUpstream>,
 }
 
 #[derive(Debug, Serialize, Clone, PartialEq, Eq)]
@@ -622,6 +625,9 @@ pub struct JobFailureBriefView {
     /// 上游是谁（mineru / deepseek …），排查时第一眼要看的。
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    /// 上游服务商回的是什么（同任务详情 `failure.upstream`），拿去错误码目录查条目。不知道时整个键不出现。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub upstream: Option<JobFailureUpstream>,
 }
 
 impl JobFailureBriefView {
@@ -648,6 +654,7 @@ impl JobFailureBriefView {
             root_cause: failure.root_cause.clone(),
             suggestion: failure.suggestion.clone(),
             provider: failure.provider.clone(),
+            upstream: failure.upstream.clone(),
         }
     }
 }

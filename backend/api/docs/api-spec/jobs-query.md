@@ -343,6 +343,10 @@ Failure contract:
   - `suggestion`
   - `last_log_line`
   - `raw_excerpt`
+  - `upstream` (2026-11-23, optional): `{provider, http_status, code}` — what the upstream vendor returned; `provider` uses the
+    error-code catalogue ids (`openai`/`anthropic`/`deepseek`/`zhipu`/`qwen`/`opencode`/`custom` for translation, `paddle`/`mineru`/`glm_ocr`
+    for OCR); absent when neither an HTTP status nor a vendor error code is known. Same object in the job list `failure` and `reports/failure`.
+    See `docs/api/08-调试诊断/01-失败结构.md`.
 - `data.failure_diagnostic` is kept as a compatibility projection for older clients and is derived from `data.failure` when formal fields are present
 
 Stage contract readiness:

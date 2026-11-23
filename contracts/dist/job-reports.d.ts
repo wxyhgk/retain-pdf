@@ -17,7 +17,7 @@ export type JsonValue = null | boolean | number | string | JsonValue[] | {
  */
 export type OcrAmbiguityResolutionKind = "bind_existing_receipt" | "accept_duplicate_risk";
 /**
- * job_types.rs :: JobDiagnosticsView。render_diagnostics、translation_request_recovery 没有时整个键不出现；ocr_ambiguity 没有时是 null。
+ * job_types.rs :: JobDiagnosticsView。render_diagnostics、translation_request_recovery、upstream 没有时整个键不出现；ocr_ambiguity 没有时是 null。
  */
 export interface JobDiagnosticsView {
     /**
@@ -45,6 +45,7 @@ export interface JobDiagnosticsView {
      * 只在任务失败 / 已取消、且最近一次 OCR 派发拿不准时才有
      */
     ocr_ambiguity: OcrAmbiguityView | null;
+    upstream?: JobFailureUpstream;
 }
 export interface TranslationRequestRecoveryView {
     status: "clean" | "ambiguous" | "corrupt" | "blocked" | "running" | "paused";
@@ -87,6 +88,23 @@ export interface OcrAmbiguityReceiptFieldView {
      * true 时界面按密码框处理，值不进日志
      */
     secret: boolean;
+}
+/**
+ * 上游服务商回的是什么（同任务详情 failure.upstream），拿去错误码目录查条目；不知道时键不出现。
+ */
+export interface JobFailureUpstream {
+    /**
+     * 错误码目录里的服务商编号。翻译按接口地址认：openai / anthropic / deepseek / zhipu / qwen / opencode，认不出是 custom；OCR：paddle / mineru / glm_ocr（本地 OCR 写它自己的名字）。
+     */
+    provider: string | null;
+    /**
+     * 上游回的 HTTP 状态；没拿到响应（只有业务码，例如 HTTP 200 + code）时可能是 null 或 200。
+     */
+    http_status: number | null;
+    /**
+     * 服务商自己的错误码，原样（数字也写成字符串）：OpenAI error.code（没有时 error.type）、Anthropic error.details.error_code（没有时 error.type）、智谱业务码（1113）、DashScope code、Paddle errorCode / code、MinerU code（-60018）、GLM-OCR error.code。
+     */
+    code: string | null;
 }
 /**
  * reports/quality/mod.rs :: QualitySummaryView。哪份报告缺了，那一段就是 null。

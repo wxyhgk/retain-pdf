@@ -33,6 +33,7 @@ import fitz
 from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.io import save_json
 from retainpdf_base.ocr_stream import OcrStreamWriter
+from retainpdf_base.upstream import upstream_info
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
 from retainpdf_pipeline.ocr.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
 from retainpdf_pipeline.ocr.ocr_provider import paddle_api
@@ -355,7 +356,10 @@ def run_paddle_chunked_to_job_dir(args: SimpleNamespace, *, api=None) -> tuple[P
         )
         stream.publish(json.loads(normalized_json_path.read_text(encoding="utf-8")), done=True)
     except BaseException as error:
-        stream.fail(f"{type(error).__name__}: {str(error).splitlines()[0] if str(error) else ''}")
+        stream.fail(
+            f"{type(error).__name__}: {str(error).splitlines()[0] if str(error) else ''}",
+            upstream=upstream_info(error, context_provider="paddle"),
+        )
         raise
     print(f"job dir: {job_dirs.root}", flush=True)
     return job_dirs.root, source_pdf, provider_result_json_path, normalized_json_path

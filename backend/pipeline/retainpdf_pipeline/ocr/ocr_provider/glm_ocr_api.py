@@ -19,6 +19,8 @@ import os
 import fitz
 import requests
 
+from retainpdf_base.upstream import provider_error_code
+from retainpdf_base.upstream import tag_upstream
 from retainpdf_pipeline.ocr.retry import RetainNetworkError
 from retainpdf_pipeline.ocr.retry import direct_session
 from retainpdf_pipeline.ocr.retry import request_with_retry
@@ -153,6 +155,19 @@ def _error_detail(response: requests.Response | None) -> str:
     return ""
 
 
+def _with_upstream(error: Exception, status: int | str | None, response: requests.Response | None) -> BaseException:
+    """给失败写上上游信息（HTTP 状态、业务码），结构化失败的 ``upstream`` 读它们。
+
+    写 ``upstream_*`` 属性，不写 ``status_code``：失败分类读 ``status_code``，这里不改分类。"""
+    body = None
+    if response is not None:
+        try:
+            body = response.json()
+        except ValueError:
+            body = None
+    return tag_upstream(error, provider="glm_ocr", http_status=status, code=provider_error_code(body))
+
+
 def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | None = None) -> dict:
     """交一份 PDF，返回原始结果（dict）。`api_key` 只进请求头。"""
     if not api_key:
@@ -179,7 +194,11 @@ def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | Non
                 status_code=status or None,
                 provider_code=code,
             ) from None
-        raise GlmOcrRequestRejected(f"GLM-OCR 请求被拒绝 status={status} {_error_detail(err.response)}".strip()) from None
+        raise _with_upstream(
+            GlmOcrRequestRejected(f"GLM-OCR 请求被拒绝 status={status} {_error_detail(err.response)}".strip()),
+            status,
+            err.response,
+        ) from None
     except RetainNetworkError as err:
         suffix = _failure_suffix(err.status_code, err.last_response) if err.status_code else ""
         if err.status_code == 429:
@@ -189,8 +208,12 @@ def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | Non
                 provider_code=_error_code(err.last_response),
             ) from None
         if (err.status_code or 0) >= 500:
-            raise GlmOcrServerError(f"GLM-OCR 请求失败{suffix}：{err}") from None
-        raise RuntimeError(f"GLM-OCR 请求失败{suffix}：{err}") from None
+            raise _with_upstream(
+                GlmOcrServerError(f"GLM-OCR 请求失败{suffix}：{err}"), err.status_code, err.last_response
+            ) from None
+        raise _with_upstream(
+            RuntimeError(f"GLM-OCR 请求失败{suffix}：{err}"), err.status_code, err.last_response
+        ) from None
     try:
         payload = response.json()
     except ValueError:

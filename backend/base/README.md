@@ -12,6 +12,7 @@ RetainPDF Python worker 的底座包：流水线（`retainpdf-pipeline`）和翻
 | `output_layout` | 任务目录里 `source/`、`ocr/`、`translated/`、`rendered/`、`artifacts/`、`logs/` 的名字（可用环境变量改） |
 | `local_env` | 读本地 `.env` 目录里的密钥（默认 `backend/pipeline/.env`，`RETAIN_PDF_ENV_DIR` 可改） |
 | `credentials` | 解析 stage spec 里的 `credential_ref`（现在只支持 `env:<变量名>`） |
+| `upstream` | 任务失败的上游信息 `{provider, http_status, code}`：翻译接口地址 → 错误码目录的服务商编号、各家响应体里的错误码、从异常上读（结构化失败的 `upstream`，见 `docs/api/08-调试诊断/01-失败结构.md`） |
 
 ## 测试
 

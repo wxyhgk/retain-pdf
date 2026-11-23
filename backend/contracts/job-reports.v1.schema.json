@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/job-reports/v1",
   "title": "任务报告契约（Job Reports）",
-  "description": "任务报告 /api/v1/jobs/:job_id/reports/…：失败原因、质量体检卡、翻译诊断（质量问题逐条清单 reports/quality/items 2026-11-14 删了）。生产者：backend/packages/retainpdf-jobs/src/views/job_types.rs（JobDiagnosticsView、OcrAmbiguityView）、reports/quality/mod.rs（QualitySummaryView）、views/translation.rs（TranslationDiagnosticsView）；消费者：@retainpdf/contracts/job-reports 生成 DTO（前端以后用它换掉 frontend/packages/api/src/quality.ts、jobs-actions.ts 里手写的类型）。模型用量在 token-usage.v1（按书、全部；单个任务的 reports/usage 2026-11-14 删了），精修报告 reports/refine 在 refine-report.v1；reports/translation-qa、reports/layout-fit 还没有契约。所有响应为 {code, message, data} 信封，本契约描述 data 部分。键的写法照 Rust 实际序列化：类型是 [\"x\", \"null\"] 的键总在、空时是 null；没写进 required 的返回键是空时整个省掉（不是 null）。查询参数 additionalProperties: false 对应 Rust 的 deny_unknown_fields。JsonValue、TranslationRequestRecoveryView 是 job-status.v1 的副本，OcrAmbiguityResolutionKind 和 job-actions.v1 共用（契约只许本文件内 $ref），contracts/tests/job-shared-definitions-parity.test.mjs 守着结构一致。Rust 侧由 backend/api/src/api_tests/job_actions_reports_contract.rs 对真实接口的返回钉键集合。改契约先改本文件，再重新生成 DTO 并让两端测试变绿。",
+  "description": "任务报告 /api/v1/jobs/:job_id/reports/…：失败原因、质量体检卡、翻译诊断（质量问题逐条清单 reports/quality/items 2026-11-14 删了）。生产者：backend/packages/retainpdf-jobs/src/views/job_types.rs（JobDiagnosticsView、OcrAmbiguityView）、reports/quality/mod.rs（QualitySummaryView）、views/translation.rs（TranslationDiagnosticsView）；消费者：@retainpdf/contracts/job-reports 生成 DTO（前端以后用它换掉 frontend/packages/api/src/quality.ts、jobs-actions.ts 里手写的类型）。模型用量在 token-usage.v1（按书、全部；单个任务的 reports/usage 2026-11-14 删了），精修报告 reports/refine 在 refine-report.v1；reports/translation-qa、reports/layout-fit 还没有契约。所有响应为 {code, message, data} 信封，本契约描述 data 部分。键的写法照 Rust 实际序列化：类型是 [\"x\", \"null\"] 的键总在、空时是 null；没写进 required 的返回键是空时整个省掉（不是 null）。查询参数 additionalProperties: false 对应 Rust 的 deny_unknown_fields。JsonValue、TranslationRequestRecoveryView、JobFailureUpstream 是 job-status.v1 的副本，OcrAmbiguityResolutionKind 和 job-actions.v1 共用（契约只许本文件内 $ref），contracts/tests/job-shared-definitions-parity.test.mjs 守着结构一致。Rust 侧由 backend/api/src/api_tests/job_actions_reports_contract.rs 对真实接口的返回钉键集合。改契约先改本文件，再重新生成 DTO 并让两端测试变绿。",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -39,7 +39,7 @@
   "definitions": {
     "JobDiagnosticsView": {
       "type": "object",
-      "description": "job_types.rs :: JobDiagnosticsView。render_diagnostics、translation_request_recovery 没有时整个键不出现；ocr_ambiguity 没有时是 null。",
+      "description": "job_types.rs :: JobDiagnosticsView。render_diagnostics、translation_request_recovery、upstream 没有时整个键不出现；ocr_ambiguity 没有时是 null。",
       "additionalProperties": false,
       "required": [
         "failure_code",
@@ -114,6 +114,45 @@
             }
           ],
           "description": "只在任务失败 / 已取消、且最近一次 OCR 派发拿不准时才有"
+        },
+        "upstream": {
+          "$ref": "#/definitions/JobFailureUpstream",
+          "description": "上游服务商回的是什么（同任务详情 failure.upstream），拿去错误码目录查条目；不知道时键不出现。"
+        }
+      }
+    },
+    "JobFailureUpstream": {
+      "type": "object",
+      "description": "retainpdf-core models/job/failure.rs :: JobFailureUpstream — 失败时上游服务商回的是什么，拿去错误码目录（GET /api/v1/providers/error-codes）查条目。三个键总在，不知道的是 null；HTTP 状态和错误码都不知道时整个对象不出现。2026-11-23 加。",
+      "required": [
+        "provider",
+        "http_status",
+        "code"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "错误码目录里的服务商编号。翻译按接口地址认：openai / anthropic / deepseek / zhipu / qwen / opencode，认不出是 custom；OCR：paddle / mineru / glm_ocr（本地 OCR 写它自己的名字）。"
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 599,
+          "description": "上游回的 HTTP 状态；没拿到响应（只有业务码，例如 HTTP 200 + code）时可能是 null 或 200。"
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "服务商自己的错误码，原样（数字也写成字符串）：OpenAI error.code（没有时 error.type）、Anthropic error.details.error_code（没有时 error.type）、智谱业务码（1113）、DashScope code、Paddle errorCode / code、MinerU code（-60018）、GLM-OCR error.code。"
         }
       }
     },

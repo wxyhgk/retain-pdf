@@ -28,6 +28,7 @@ const FROM_JOB_STATUS = [
   "InvocationSummaryView",
   "JobActionsView",
   "JobFailureBriefView",
+  "JobFailureUpstream",
   "JobLinksView",
   "JobListInvocationSummaryView",
   "JobListItemView",

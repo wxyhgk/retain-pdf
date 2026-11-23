@@ -448,6 +448,7 @@ mod tests {
             ai_diagnostic: None,
             resume_from: None,
             recovery_hint: None,
+            upstream: None,
         }));
         current.sync_runtime_state();
 

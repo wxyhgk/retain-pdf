@@ -10,6 +10,7 @@ from retainpdf_pipeline.foundation.shared.job_dirs import (
     job_dirs_from_explicit_args,
 )
 from retainpdf_pipeline.foundation.shared.stage_specs import NormalizeStageSpec
+from retainpdf_pipeline.foundation.shared.structured_errors import set_ocr_vendor
 from retainpdf_pipeline.ocr.document_schema.adapters import (
     adapt_path_to_document_v1_with_report,
 )
@@ -136,6 +137,7 @@ def main() -> None:
     if not args.spec.strip():
         raise RuntimeError("normalize worker now requires --spec <normalize.spec.json>")
     spec = NormalizeStageSpec.load(Path(args.spec))
+    set_ocr_vendor(spec.inputs.provider)
     args = _args_from_spec(spec)
     requested_source_json_path = Path(args.source_json).resolve()
     source_json_path = _resolve_source_json_path(spec)

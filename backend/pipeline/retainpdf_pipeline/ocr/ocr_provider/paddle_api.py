@@ -10,6 +10,7 @@ from typing import Callable
 import requests
 
 from retainpdf_base.local_env import get_secret
+from retainpdf_base.upstream import tag_upstream
 from retainpdf_pipeline.ocr.retry import RetainNetworkError
 from retainpdf_pipeline.ocr.retry import RetainRateLimitError
 from retainpdf_pipeline.ocr.retry import direct_session
@@ -276,7 +277,12 @@ def build_optional_payload(model: str) -> dict[str, Any]:
 def _check_envelope(payload: dict[str, Any], *, stage: str) -> dict[str, Any]:
     code, message, trace_id = _error_fields(payload)
     if code:
-        raise _rejected_error(f"Paddle {stage} failed:", code=code, message=message, trace_id=trace_id)
+        # 类型和业务码来自 fix/failure-fallback-classes（12001 当日额度），上游编号来自 feat/failure-upstream
+        raise tag_upstream(
+            _rejected_error(f"Paddle {stage} failed:", code=code, message=message, trace_id=trace_id),
+            provider="paddle",
+            code=code,
+        )
     return payload
 
 

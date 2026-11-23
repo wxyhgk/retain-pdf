@@ -509,6 +509,7 @@ export interface JobFailureInfo {
     raw_error_excerpt: string | null;
     raw_diagnostic: JobRawDiagnostic | null;
     ai_diagnostic: JobAiDiagnostic | null;
+    upstream?: JobFailureUpstream;
 }
 export interface JobRawDiagnostic {
     structured_error_type: string | null;
@@ -522,6 +523,23 @@ export interface JobAiDiagnostic {
     suggestion: string | null;
     confidence: string | null;
     observed_signals: string[];
+}
+/**
+ * 上游服务商回的是什么；不知道时键不出现。
+ */
+export interface JobFailureUpstream {
+    /**
+     * 错误码目录里的服务商编号。翻译按接口地址认：openai / anthropic / deepseek / zhipu / qwen / opencode，认不出是 custom；OCR：paddle / mineru / glm_ocr（本地 OCR 写它自己的名字）。
+     */
+    provider: string | null;
+    /**
+     * 上游回的 HTTP 状态；没拿到响应（只有业务码，例如 HTTP 200 + code）时可能是 null 或 200。
+     */
+    http_status: number | null;
+    /**
+     * 服务商自己的错误码，原样（数字也写成字符串）：OpenAI error.code（没有时 error.type）、Anthropic error.details.error_code（没有时 error.type）、智谱业务码（1113）、DashScope code、Paddle errorCode / code、MinerU code（-60018）、GLM-OCR error.code。
+     */
+    code: string | null;
 }
 export interface JobFailureDiagnosticView {
     failed_stage: string;
@@ -626,7 +644,7 @@ export interface JobListItemView {
     failure?: JobFailureBriefView;
 }
 /**
- * backend/packages/retainpdf-jobs/src/views/job_types.rs :: JobFailureBriefView — 列表里那份精简失败信息。只有失败的任务才带（JobListItemView.failure），成功 / 进行中的任务整个键不出现，不是 null。只放「一眼能判断该怎么办」的几项，不带 raw_excerpt / traceback；要完整错误按需去打任务详情（那边的 failure 是 JobFailureInfo）。root_cause / suggestion / provider 为空时整个键不出现（不是 null）。
+ * backend/packages/retainpdf-jobs/src/views/job_types.rs :: JobFailureBriefView — 列表里那份精简失败信息。只有失败的任务才带（JobListItemView.failure），成功 / 进行中的任务整个键不出现，不是 null。只放「一眼能判断该怎么办」的几项，不带 raw_excerpt / traceback；要完整错误按需去打任务详情（那边的 failure 是 JobFailureInfo）。root_cause / suggestion / provider / upstream 为空时整个键不出现（不是 null）。
  */
 export interface JobFailureBriefView {
     /**
@@ -657,6 +675,24 @@ export interface JobFailureBriefView {
      * 上游是谁（mineru / deepseek …），排查时第一眼要看的；没有时键不出现。
      */
     provider?: string;
+    upstream?: JobFailureUpstream1;
+}
+/**
+ * 上游服务商回的是什么（同任务详情 failure.upstream）；不知道时键不出现。
+ */
+export interface JobFailureUpstream1 {
+    /**
+     * 错误码目录里的服务商编号。翻译按接口地址认：openai / anthropic / deepseek / zhipu / qwen / opencode，认不出是 custom；OCR：paddle / mineru / glm_ocr（本地 OCR 写它自己的名字）。
+     */
+    provider: string | null;
+    /**
+     * 上游回的 HTTP 状态；没拿到响应（只有业务码，例如 HTTP 200 + code）时可能是 null 或 200。
+     */
+    http_status: number | null;
+    /**
+     * 服务商自己的错误码，原样（数字也写成字符串）：OpenAI error.code（没有时 error.type）、Anthropic error.details.error_code（没有时 error.type）、智谱业务码（1113）、DashScope code、Paddle errorCode / code、MinerU code（-60018）、GLM-OCR error.code。
+     */
+    code: string | null;
 }
 export interface JobListInvocationSummaryView {
     stage_spec_count: number;

@@ -5,7 +5,7 @@ mod job_failure_structured;
 #[path = "job_failure_support.rs"]
 mod job_failure_support;
 
-use crate::models::domain::{JobFailureInfo, JobSnapshot, JobStatusKind};
+use crate::models::domain::{JobFailureInfo, JobFailureUpstream, JobSnapshot, JobStatusKind};
 
 use self::job_failure_fallback::{
     auth_failure_suggestion, classify_local_environment_failure, classify_provider_quota_failure,
@@ -39,7 +39,38 @@ fn contains_http_status(haystack: &str, status: &str) -> bool {
 }
 
 pub fn classify_job_failure(job: &JobSnapshot) -> Option<JobFailureInfo> {
-    classify_job_failure_inner(job).map(with_recovery)
+    classify_job_failure_inner(job)
+        .map(with_recovery)
+        .map(|failure| with_ocr_upstream(failure, job))
+}
+
+/// OCR 阶段的失败没从 worker 带来上游信息时，用 OCR 诊断里服务商最后一次报的错补上
+/// （Rust 跑的 Paddle、MinerU 走这条：错误码、HTTP 状态记在 `ocr_provider_diagnostics.last_error`）。
+///
+/// 只认 OCR 阶段：OCR 做完以后翻译、排版失败时，诊断里那条可能是早先一次已经恢复了的错，不能安到别的失败上。
+fn with_ocr_upstream(mut failure: JobFailureInfo, job: &JobSnapshot) -> JobFailureInfo {
+    if failure.upstream.is_some() || !is_ocr_stage(failure.failed_stage_value()) {
+        return failure;
+    }
+    let diagnostics = job
+        .artifacts
+        .as_ref()
+        .and_then(|artifacts| artifacts.ocr_provider_diagnostics.as_ref());
+    let Some(last_error) = diagnostics.and_then(|diag| diag.last_error.as_ref()) else {
+        return failure;
+    };
+    failure.upstream = JobFailureUpstream {
+        provider: provider_name(diagnostics).filter(|name| name != "unknown"),
+        http_status: last_error.http_status,
+        code: last_error.provider_code.clone(),
+    }
+    .normalized();
+    failure
+}
+
+fn is_ocr_stage(stage: &str) -> bool {
+    let stage = stage.trim().to_ascii_lowercase();
+    !(stage.contains("translat") || stage.contains("render") || stage.contains("normaliz"))
 }
 
 /// 统一在出口补上恢复信息,避免每个检测分支各自记得填一遍——那正是以前

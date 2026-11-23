@@ -240,6 +240,7 @@ pub(super) fn reconcile_running_jobs_matching(
                         ai_diagnostic: None,
                         resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
                         recovery_hint: Some(recovery.hint.to_string()),
+                        upstream: None,
                     }));
                 } else if resume_limit_hit {
                     fail_for_auto_resume_limit(&mut job, &detail, &timestamp);
@@ -278,6 +279,7 @@ pub(super) fn reconcile_running_jobs_matching(
                         ai_diagnostic: None,
                         resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
                         recovery_hint: Some(recovery.hint.to_string()),
+                        upstream: None,
                     }));
                 }
                 job.sync_runtime_state();
@@ -394,6 +396,7 @@ fn fail_for_auto_resume_limit(
         ai_diagnostic: None,
         resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
         recovery_hint: Some(recovery.hint.to_string()),
+        upstream: None,
     }));
 }
 

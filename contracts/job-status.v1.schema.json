@@ -1252,6 +1252,45 @@
               "type": "null"
             }
           ]
+        },
+        "upstream": {
+          "$ref": "#/definitions/JobFailureUpstream",
+          "description": "上游服务商回的是什么；不知道时键不出现。"
+        }
+      }
+    },
+    "JobFailureUpstream": {
+      "type": "object",
+      "description": "retainpdf-core models/job/failure.rs :: JobFailureUpstream — 失败时上游服务商回的是什么，拿去错误码目录（GET /api/v1/providers/error-codes）查条目。三个键总在，不知道的是 null；HTTP 状态和错误码都不知道时整个对象不出现。2026-11-23 加。",
+      "required": [
+        "provider",
+        "http_status",
+        "code"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "错误码目录里的服务商编号。翻译按接口地址认：openai / anthropic / deepseek / zhipu / qwen / opencode，认不出是 custom；OCR：paddle / mineru / glm_ocr（本地 OCR 写它自己的名字）。"
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 599,
+          "description": "上游回的 HTTP 状态；没拿到响应（只有业务码，例如 HTTP 200 + code）时可能是 null 或 200。"
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "服务商自己的错误码，原样（数字也写成字符串）：OpenAI error.code（没有时 error.type）、Anthropic error.details.error_code（没有时 error.type）、智谱业务码（1113）、DashScope code、Paddle errorCode / code、MinerU code（-60018）、GLM-OCR error.code。"
         }
       }
     },
@@ -2130,7 +2169,7 @@
     },
     "JobFailureBriefView": {
       "type": "object",
-      "description": "backend/packages/retainpdf-jobs/src/views/job_types.rs :: JobFailureBriefView — 列表里那份精简失败信息。只有失败的任务才带（JobListItemView.failure），成功 / 进行中的任务整个键不出现，不是 null。只放「一眼能判断该怎么办」的几项，不带 raw_excerpt / traceback；要完整错误按需去打任务详情（那边的 failure 是 JobFailureInfo）。root_cause / suggestion / provider 为空时整个键不出现（不是 null）。",
+      "description": "backend/packages/retainpdf-jobs/src/views/job_types.rs :: JobFailureBriefView — 列表里那份精简失败信息。只有失败的任务才带（JobListItemView.failure），成功 / 进行中的任务整个键不出现，不是 null。只放「一眼能判断该怎么办」的几项，不带 raw_excerpt / traceback；要完整错误按需去打任务详情（那边的 failure 是 JobFailureInfo）。root_cause / suggestion / provider / upstream 为空时整个键不出现（不是 null）。",
       "required": [
         "category",
         "stage",
@@ -2165,6 +2204,10 @@
         "provider": {
           "type": "string",
           "description": "上游是谁（mineru / deepseek …），排查时第一眼要看的；没有时键不出现。"
+        },
+        "upstream": {
+          "$ref": "#/definitions/JobFailureUpstream",
+          "description": "上游服务商回的是什么（同任务详情 failure.upstream）；不知道时键不出现。"
         }
       }
     },

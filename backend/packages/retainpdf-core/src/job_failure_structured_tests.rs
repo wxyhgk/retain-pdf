@@ -98,3 +98,75 @@ fn structured_failure_uses_latest_valid_payload_and_ignores_malformed_lines() {
         extract_structured_failure(STRUCTURED_FAILURE_LABEL, &log).expect("latest valid failure");
     assert_eq!(parsed.failed_stage.as_deref(), Some("render"));
 }
+
+fn failed_job(error: String, stage: &str) -> JobSnapshot {
+    let mut job = JobSnapshot::new(
+        "upstream-failure".to_string(),
+        CreateJobInput::default(),
+        vec!["python".to_string()],
+    );
+    job.status = JobStatusKind::Failed;
+    job.stage = Some(stage.to_string());
+    job.error = Some(error);
+    job
+}
+
+/// worker 写的 `upstream` 原样带到任务失败上（前端拿它查错误码目录）。
+#[test]
+fn structured_failure_carries_the_worker_upstream() {
+    let payload = json!({
+        "failed_stage": "provider", "failure_code": "upstream_quota_exhausted",
+        "failure_category": "billing", "summary": "上游账户余额或额度不足（HTTP 429）",
+        "retryable": false, "provider": "glm_ocr", "provider_code": "1113",
+        "upstream": {"provider": "glm_ocr", "http_status": 429, "code": "1113"}
+    });
+    let job = failed_job(format!("{STRUCTURED_FAILURE_LABEL}: {payload}"), "failed");
+    let failure = classify_job_failure(&job).expect("structured failure");
+    let upstream = failure.upstream.expect("upstream");
+    assert_eq!(upstream.provider.as_deref(), Some("glm_ocr"));
+    assert_eq!(upstream.http_status, Some(429));
+    assert_eq!(upstream.code.as_deref(), Some("1113"));
+    assert_eq!(failure.provider.as_deref(), Some("glm_ocr"));
+    assert_eq!(failure.failure_code.as_deref(), Some("upstream_quota_exhausted"));
+}
+
+/// 旧 worker 没有这个键、写成 null、写得不对（不是对象）都当没有，整行照样解析。
+#[test]
+fn missing_null_or_malformed_upstream_is_ignored() {
+    for upstream in [None, Some(json!(null)), Some(json!("429")), Some(json!({"provider": "openai"}))] {
+        let mut payload = json!({
+            "failed_stage": "translation", "failure_code": "upstream_rate_limited",
+            "summary": "外部服务请求被限流", "retryable": true, "provider": "translation"
+        });
+        if let Some(value) = upstream.clone() {
+            payload["upstream"] = value;
+        }
+        let parsed = extract_structured_failure(
+            STRUCTURED_FAILURE_LABEL,
+            &format!("{STRUCTURED_FAILURE_LABEL}: {payload}"),
+        )
+        .unwrap_or_else(|| panic!("{upstream:?}: 整行应当照样解析"));
+        assert!(parsed.upstream.is_none(), "{upstream:?}");
+        assert_eq!(parsed.failure_code.as_deref(), Some("upstream_rate_limited"));
+    }
+}
+
+/// 序列化：有上游信息时三个键都在（不知道的是 null）；没有时整个键不出现。
+#[test]
+fn upstream_serializes_three_keys_or_nothing() {
+    let payload = json!({
+        "failed_stage": "translation", "failure_code": "auth_failed", "summary": "鉴权失败",
+        "retryable": false, "provider": "translation",
+        "upstream": {"provider": "deepseek", "http_status": 401, "code": null}
+    });
+    let job = failed_job(format!("{STRUCTURED_FAILURE_LABEL}: {payload}"), "translation");
+    let value = serde_json::to_value(classify_job_failure(&job).expect("failure")).unwrap();
+    assert_eq!(
+        value["upstream"],
+        json!({"provider": "deepseek", "http_status": 401, "code": null})
+    );
+
+    let plain = failed_job("something totally unexpected".to_string(), "translation");
+    let value = serde_json::to_value(classify_job_failure(&plain).expect("failure")).unwrap();
+    assert!(value.get("upstream").is_none(), "{value}");
+}

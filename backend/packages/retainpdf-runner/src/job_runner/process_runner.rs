@@ -744,6 +744,7 @@ print(json.dumps({
             ai_diagnostic: None,
             resume_from: None,
             recovery_hint: None,
+            upstream: None,
         });
         job.artifacts = Some(JobArtifacts {
             job_root: Some(format!("jobs/{}", job.job_id)),

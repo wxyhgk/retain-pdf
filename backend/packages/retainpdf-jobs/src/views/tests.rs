@@ -369,6 +369,7 @@ fn job_detail_view_exposes_runtime_and_failure_contract() {
         ai_diagnostic: None,
             resume_from: None,
             recovery_hint: None,
+            upstream: None,
     }));
     job.sync_runtime_state();
 

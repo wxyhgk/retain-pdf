@@ -8,6 +8,7 @@ from typing import Any
 
 import requests
 from retainpdf_base.local_env import get_secret
+from retainpdf_base.upstream import tag_upstream
 from retainpdf_pipeline.ocr.retry import RetainNetworkError
 from retainpdf_pipeline.ocr.retry import RetainRateLimitError
 from retainpdf_pipeline.ocr.retry import stepped_poll_interval
@@ -103,11 +104,21 @@ def build_headers(token: str) -> dict[str, str]:
     }
 
 
+def _api_error(data: dict[str, Any], response: requests.Response) -> BaseException:
+    """HTTP 200 但 ``code`` 不是 0：报错文字照旧，另把业务码写进上游信息（结构化失败的 ``upstream``）。"""
+    return tag_upstream(
+        RuntimeError(f"MinerU API error: {data.get('msg', 'unknown error')}"),
+        provider="mineru",
+        http_status=getattr(response, "status_code", None),
+        code=data.get("code"),
+    )
+
+
 def post_json(url: str, headers: dict[str, str], payload: dict[str, Any]) -> dict[str, Any]:
     response = request_mineru("post", url, headers=headers, json=payload, timeout=120)
     data = response.json()
     if data.get("code") != 0:
-        raise RuntimeError(f"MinerU API error: {data.get('msg', 'unknown error')}")
+        raise _api_error(data, response)
     return data
 
 
@@ -115,7 +126,7 @@ def get_json(url: str, headers: dict[str, str]) -> dict[str, Any]:
     response = request_mineru("get", url, headers=headers, timeout=120)
     data = response.json()
     if data.get("code") != 0:
-        raise RuntimeError(f"MinerU API error: {data.get('msg', 'unknown error')}")
+        raise _api_error(data, response)
     return data
 
 

@@ -68,6 +68,7 @@ fn build_job_diagnostics_view(
             render_diagnostics,
             translation_request_recovery,
             ocr_ambiguity,
+            upstream: failure.upstream.clone(),
         },
         None => JobDiagnosticsView {
             failure_code: ocr_ambiguity
@@ -90,6 +91,7 @@ fn build_job_diagnostics_view(
             render_diagnostics,
             translation_request_recovery,
             ocr_ambiguity,
+            upstream: None,
         },
     }
 }

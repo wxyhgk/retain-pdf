@@ -12,6 +12,7 @@ from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
 from retainpdf_pipeline.foundation.shared.stage_specs import ProviderStageSpec
 from retainpdf_pipeline.foundation.shared.stage_specs import build_stage_invocation_metadata
+from retainpdf_pipeline.foundation.shared.structured_errors import set_ocr_vendor
 from retainpdf_base.credentials import resolve_credential_ref
 from retainpdf_pipeline.foundation.shared.tee_output import enable_job_log_capture
 from retainpdf_pipeline.runtime.pipeline.book_pipeline import run_book_pipeline
@@ -395,6 +396,8 @@ def _finish_ocr_only_provider_job(
 def main() -> None:
     parsed = parse_args()
     spec = ProviderStageSpec.load(Path(parsed.spec))
+    # 失败时结构化失败的 provider 写服务商编号（paddle / mineru / glm_ocr …），不是泛称 ocr
+    set_ocr_vendor(normalize_provider_name(spec.ocr.provider))
     stage_spec_schema_version = spec.schema_version
     args = _args_from_spec(spec)
     _materialize_local_source(args)

@@ -11,8 +11,22 @@ from dataclasses import asdict
 from dataclasses import dataclass
 from typing import Any
 
+from retainpdf_base.upstream import llm_vendor_for_url
+from retainpdf_base.upstream import response_body_code
+from retainpdf_base.upstream import upstream_info
+
 
 STRUCTURED_FAILURE_LABEL = "structured failure json"
+# OCR worker 入口传的泛称。worker 读到 stage spec 后用 ``set_ocr_vendor`` 登记真正的服务商（paddle / mineru /
+# glm_ocr …），失败时 ``provider`` 写服务商编号，前端不用再去读 request_payload.ocr.provider。
+GENERIC_OCR_PROVIDER = "ocr"
+_OCR_VENDOR = ""
+
+
+def set_ocr_vendor(vendor: str) -> None:
+    """登记这个 OCR worker 用的服务商（stage spec 里的 ``ocr.provider``）。"""
+    global _OCR_VENDOR
+    _OCR_VENDOR = str(vendor or "").strip().lower()
 
 # Windows 的 MAX_PATH 是 260（含结尾的 NUL），建目录时还要再留 12 个字符给 8.3 文件名，
 # 所以 248 个字符起就可能报「找不到文件」（issue #79 #81：渲染中间文件名带上了很长的论文标题）。
@@ -44,6 +58,8 @@ class StructuredFailure:
     raw_exception_type: str
     raw_exception_message: str
     traceback: str
+    # 上游服务商回的是什么：{provider, http_status, code}，读不出 HTTP 状态和错误码时为 None（JSON 里是 null）。
+    upstream: dict[str, Any] | None = None
 
     def to_json(self) -> str:
         return json.dumps(asdict(self), ensure_ascii=False, separators=(",", ":"))
@@ -344,6 +360,51 @@ def _failure_override(exc_chain: list[BaseException], name: str) -> str:
     return ""
 
 
+_NON_OCR_STAGES = ("translat", "render")
+_GENERIC_PROVIDERS = frozenset({"", GENERIC_OCR_PROVIDER, "translation", "rendering"})
+_FAILED_URL_RE = re.compile(r"\b[45]\d{2} (?:Client|Server) Error\b[^|]*?\bfor url:\s*(\S+)")
+
+
+def _is_ocr_failure_stage(stage: str) -> bool:
+    lowered = str(stage or "").lower()
+    return not any(token in lowered for token in _NON_OCR_STAGES)
+
+
+def _effective_provider(provider: str, *, stage: str) -> str:
+    """OCR worker 的泛称 ``ocr`` 换成登记的服务商编号；翻译、排版阶段的失败（provider-case 一个进程跑全流程时）照旧。"""
+    provider = provider.strip()
+    if provider == GENERIC_OCR_PROVIDER and _OCR_VENDOR and _is_ocr_failure_stage(stage):
+        return _OCR_VENDOR
+    return provider
+
+
+def _upstream_for(
+    exc: BaseException,
+    *,
+    text: str,
+    http_status_code: int | None,
+    provider: str,
+    stage: str,
+) -> dict[str, Any] | None:
+    """失败的上游信息。先看异常本身（属性、响应、``raise ... from`` 接上的原因），再看报错文字
+    （「一个块都没译成」时文字里带着最常见那次上游错误：``429 Client Error … for url: … | response_body={…}``）。"""
+    # OCR 阶段用 OCR 服务商；翻译、排版的泛称（translation / rendering）不是服务商编号，按地址认
+    fallback = provider if provider not in _GENERIC_PROVIDERS and _is_ocr_failure_stage(stage) else ""
+    info = upstream_info(exc, context_provider=fallback)
+    if info is not None:
+        return info
+    code = response_body_code(text)
+    if http_status_code is None and not code:
+        return None
+    match = _FAILED_URL_RE.search(text)
+    vendor = llm_vendor_for_url(match.group(1)) if match else ""
+    return {
+        "provider": fallback or vendor or None,
+        "http_status": http_status_code,
+        "code": code or None,
+    }
+
+
 def classify_exception(exc: BaseException, *, default_stage: str, provider: str = "") -> StructuredFailure:
     raw_traceback = traceback.format_exc()
     exc_type = type(exc).__name__
@@ -492,6 +553,14 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         provider=provider,
     )
     raw_excerpt = _build_raw_excerpt(detail, raw_traceback)
+    reported_provider = _effective_provider(provider, stage=stage)
+    upstream = _upstream_for(
+        exc,
+        text=f"{detail}\n{raw_traceback}",
+        http_status_code=http_status_code,
+        provider=reported_provider,
+        stage=stage,
+    )
 
     return StructuredFailure(
         failed_stage=stage,
@@ -507,10 +576,11 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         detail=detail,
         retryable=retryable,
         upstream_host=upstream_host,
-        provider=provider.strip(),
+        provider=reported_provider,
         raw_exception_type=exc_type,
         raw_exception_message=message,
         traceback=raw_traceback.strip(),
+        upstream=upstream,
     )
 
 

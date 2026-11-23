@@ -90,6 +90,49 @@
 现在翻译侧的错误只带状态码文字（「HTTP 401」），厂商要从接口地址推，Python 结构化失败、Rust 的 `JobFailureInfo`（19 处构造）、
 `job-status.v1` / `job-reports.v1` 两份契约都要改，量不小，另开分支做；做之前前端按上面第 2 步的办法凑合。
 
+---
+
+## 任务失败带上游错误码 `upstream`，OCR 失败的 `provider` 写服务商（feat/failure-upstream）
+
+2026-11-23，用户把错误码缺口交给后端：前端要能把失败的任务对上错误码目录（`GET /api/v1/providers/error-codes`）里的条目。只增不改，旧字段照旧。
+
+新字段 `upstream`（契约定义 `JobFailureUpstream`，`job-status.v1`、`job-reports.v1`、`library-documents.v1` 各一份，结构一样）：
+
+```json
+"upstream": { "provider": "openai", "http_status": 429, "code": "insufficient_quota" }
+```
+
+- 出现在：任务详情 `failure.upstream`、任务列表 / 书的任务列表的 `failure.upstream`（`JobFailureBriefView`）、
+  `GET /jobs/{job_id}/reports/failure` 的 `upstream`（`JobDiagnosticsView`）、失败事件的 `payload.upstream`。
+- 有时三个键都在、不知道的是 `null`；HTTP 状态和错误码都不知道（超时、连不上、本地异常、旧任务）时**整个键不出现**。
+- `provider` 用目录里的服务商编号：翻译 `openai` / `anthropic` / `deepseek` / `zhipu` / `qwen` / `opencode`，认不出的接口地址是 `custom`；
+  OCR `paddle` / `mineru` / `glm_ocr`。`code` 是服务商自己的错误码，原样、字符串（`"1113"`、`"-60018"`、`"insufficient_quota"`）。
+
+怎么查目录条目：`upstream.provider` 对服务商的 `id` → 先按 `upstream.code` 对 `entries[].code`（再看 `aliases`）→ 对不上再按
+`upstream.http_status` 对 `entries[].http_status`。`provider` 是 `custom` / `null`、或者没有 `upstream` 时，照旧按 `failure_code` 显示通用提示。
+三个例子：
+
+| 失败 | `failure.provider` | `failure.upstream` |
+|---|---|---|
+| 翻译 429（OpenAI 额度用完） | `translation` | `{"provider":"openai","http_status":429,"code":"insufficient_quota"}` |
+| GLM-OCR 余额不足 | `glm_ocr` | `{"provider":"glm_ocr","http_status":429,"code":"1113"}` |
+| Paddle 今日额度用完（Rust 那条路） | `paddle` | `{"provider":"paddle","http_status":403,"code":"12001"}` |
+
+另外：OCR 失败的 `failure.provider` 以前是泛称 `ocr`（Python OCR worker 报的），现在是服务商编号（`paddle` / `mineru` / `glm_ocr` / `local`），
+不用再读 `request_payload.ocr.provider`。`job-failure-model.ts`、`diagnostics.ts` 里把 `provider` 原样显示的地方会从「ocr」变成「glm_ocr」这类，
+要不要换成中文名由前端定。
+
+前端要做的：
+1. 契约 DTO 已重新生成（`contracts/dist`），`JobFailureInfo` / `JobFailureBriefView` / `JobDiagnosticsView` 多了可选的 `upstream`；
+   用到 `frontend/packages/api` 生成的请求函数的，照常跑 `generate:client` 看有没有变化。
+2. 失败卡片（`frontend/web/src/features/book-detail/domain/job-failure-model.ts`、`job-detail/domain/dialog/failure-recovery.ts`）：
+   有 `upstream` 时按上面的规则查目录，显示条目的 `user_hint_zh`；`failure-recovery.ts` 里从 `ocr_provider_diagnostics.last_error` 取 `provider_code`
+   的地方可以改读 `failure.upstream.code`（旧的照旧能用）。
+
+细节见 [失败结构](../../api/08-调试诊断/01-失败结构.md) 的「上游信息」一节。走 Rust 模型执行器的翻译失败暂时没有 `upstream`。
+
+---
+
 ## 用翻译接口问一次模型，可以带图片（feat/model-image-input）
 
 2026-11-22，用户要"后端增加一个 api，最好可以发图片"。新接口 `POST /api/v1/providers/translation/ask`（admin），在契约

@@ -21,6 +21,8 @@ import requests
 
 from retainpdf_translation.llm.shared import upstream_error_codes as _codes
 from retainpdf_translation.llm.shared.upstream_error_codes import UpstreamRejection
+from retainpdf_base.upstream import llm_vendor_for_url
+from retainpdf_base.upstream import tag_upstream
 
 
 TRANSIENT_STATUS_CODES = frozenset({408, 429, 500, 502, 503, 504})
@@ -123,6 +125,26 @@ def rejection_kind(exc: BaseException) -> str:
 def rejection_error(message: str, *, response, rejection: UpstreamRejection) -> UpstreamRejected:
     """按认出的种类建错误（``UpstreamQuotaExhausted`` / ``UpstreamAccessDenied``）。"""
     return _REJECTION_CLASSES[rejection.kind](message, response=response, rejection=rejection)
+
+
+def tag_upstream_vendor(exc: BaseException, *, base_url: str) -> BaseException:
+    """在请求失败的异常上记下服务商编号（按配置的接口地址认：openai / anthropic / deepseek / zhipu / qwen / opencode，
+    认不出是 custom），结构化失败的 ``upstream.provider`` 读它。只写 ``upstream_provider``，不影响重试和失败分类。"""
+    vendor = llm_vendor_for_url(base_url)
+    if vendor:
+        try:
+            tag_upstream(exc, provider=vendor)
+        except AttributeError:  # 个别异常类型不让加属性：不记就是了
+            pass
+    return exc
+
+
+def _carry_upstream(source: BaseException, target: BaseException) -> BaseException:
+    """新建的错误接着带上原错误记下的服务商（响应对象照旧传过去，状态码、错误码从响应读）。"""
+    vendor = str(getattr(source, "upstream_provider", "") or "")
+    if vendor:
+        tag_upstream(target, provider=vendor)
+    return target
 
 
 def is_quota_error(exc: BaseException) -> bool:
@@ -262,10 +284,10 @@ def _same_kind_error(rejected: BaseException, message: str) -> requests.HTTPErro
 def skipped_after_credential_rejection_error(rejected: BaseException) -> requests.HTTPError:
     """同一组凭据已被拒过：这次不发请求，直接抛一个同种的错误（各处照旧按 401/402/403、额度用完处理）。"""
     status = http_status_of(rejected)
-    return _same_kind_error(
+    return _carry_upstream(rejected, _same_kind_error(
         rejected,
         f"{rejected} | 同一组 base_url 和 API Key 已被上游{_rejection_reason(rejected)}（{status}），这次没有再发请求",
-    )
+    ))
 
 
 def credential_rejected_error(rejected: BaseException) -> requests.HTTPError:
@@ -295,7 +317,7 @@ def credential_rejected_error(rejected: BaseException) -> requests.HTTPError:
             f"翻译 API Key 被上游拒绝（HTTP {status}），已停止翻译，剩下的块没有再发请求。"
             "请检查 API Key、权限和 base_url 配置后重试"
         )
-    return _same_kind_error(rejected, f"{head} | 第一次被拒：{rejected}")
+    return _carry_upstream(rejected, _same_kind_error(rejected, f"{head} | 第一次被拒：{rejected}"))
 
 
 def raise_if_credential_rejected(run_diagnostics, *, base_url: str, api_key: str) -> None:
@@ -361,4 +383,5 @@ __all__ = [
     "review_retry_delay",
     "skipped_after_credential_rejection_error",
     "upstream_rejection",
+    "tag_upstream_vendor",
 ]
