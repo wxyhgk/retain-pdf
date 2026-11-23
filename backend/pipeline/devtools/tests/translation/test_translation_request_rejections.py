@@ -251,7 +251,7 @@ def test_content_rejection_is_not_retried_and_does_not_stop_the_run(fake) -> Non
 
 @pytest.mark.parametrize("base_url,status,body,message", [
     (OPENAI, 409, _err("", message="Conflict: another request is modifying this resource"), "Conflict: another request is modifying this resource"),
-    (ANTHROPIC, 413, {"type": "error", "error": {"type": "request_too_large", "message": "Request exceeds the maximum allowed number of bytes."}}, "Request exceeds the maximum allowed number of bytes."),
+    (OPENAI, 415, _err("", message="Unsupported media type"), "Unsupported media type"),
     (OPENAI, 422, _err("", message="Unprocessable"), "Unprocessable"),
     (DEEPSEEK, 422, _err("", message="Invalid Parameters " + "x" * 400), "Invalid Parameters " + "x" * 140),
 ])
@@ -266,6 +266,20 @@ def test_other_4xx_are_bad_requests_with_status_and_provider_words(fake, base_ur
     assert failure["summary"].startswith(f"上游服务拒绝请求（{status}）：{message}")
     assert len(failure["summary"]) <= len(f"上游服务拒绝请求（{status}）：") + resilience_max_message()
     assert "SECRET SOURCE TEXT" not in failure["summary"] and "sk-test" not in failure["summary"]
+
+
+def test_anthropic_413_is_request_too_long_not_a_generic_rejection(fake) -> None:
+    """413 是「单次请求太长」（fix/llm-truncation：批量拆单块，单块仍太长保留原文），不是通用的「上游服务拒绝请求」；
+    真走到任务失败时 summary 写明太长。"""
+    from retainpdf_translation.llm.shared.output_limits import UpstreamRequestTooLong
+
+    fake((413, {"type": "error", "error": {"type": "request_too_large", "message": "Request exceeds the maximum allowed number of bytes."}}))
+    with translation_run_diagnostics_scope(_run(ANTHROPIC)):
+        with pytest.raises(UpstreamRequestTooLong) as caught:
+            _ask(ANTHROPIC)
+    failure = _failure(caught.value)
+    assert failure["failure_code"] == "upstream_bad_request" and failure["retryable"] is False
+    assert failure["summary"].startswith("单次请求太长")
 
 
 def resilience_max_message() -> int:
