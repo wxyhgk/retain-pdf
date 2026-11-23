@@ -432,10 +432,16 @@ jobs:
           # 包里不留符号链接：prepare-app 用 fs.cpSync 拷这份 Python，会把相对链接改写成构建机源目录的绝对路径，
           # bin/python3 -> python3.11 到用户机器上成了断链（2026-11-23 Linux 试跑，1044 个链接全是 /home/runner/...）。
           # bin 里的链接（python、python3、pydoc3、idle3、2to3、python3-config）只留 python3，由本体改名而来；
-          # share/terminfo 只给 curses 用，桌面版用不到。
+          # share/terminfo 只给 curses 用，share/man、lib/pkgconfig 只给编译扩展用，桌面版都用不到。
           find "$bundle_root/bin" -maxdepth 1 -type l -delete
           mv "$bundle_root/bin/python3.11" "$bundle_root/bin/python3"
-          rm -rf "$bundle_root/share/terminfo"
+          rm -rf "$bundle_root/share/terminfo" "$bundle_root/share/man" "$bundle_root/lib/pkgconfig"
+          # 新版本万一又带进别的链接：换成它指向的真文件（指向目录的照样整个拷过来），再查一遍。
+          find "$bundle_root" -type l -print0 | while IFS= read -r -d '' link; do
+            target="$(readlink -f "$link")"
+            rm "$link"
+            if [ -d "$target" ]; then cp -a "$target" "$link"; elif [ -e "$target" ]; then cp -a "$target" "$link"; fi
+          done
           leftover_links="$(find "$bundle_root" -type l -print)"
           if [ -n "$leftover_links" ]; then
             echo "bundled Python still has symlinks (prepare-app would turn them into build-machine paths):" >&2
