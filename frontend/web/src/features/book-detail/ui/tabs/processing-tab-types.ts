@@ -19,6 +19,14 @@ export type ProgressSource = {
     stage?: string;
     display_stage?: string;
     stage_detail?: string;
+    /** 请求在等服务商限流 / 过载 / 暂不可用的退避时才有（契约 UpstreamWaitView，2026-11-23）。 */
+    upstream_wait?: {
+      provider?: string;
+      http_status?: number;
+      reason?: string | null;
+      retry_after_s?: number | null;
+      until?: string | null;
+    } | null;
   } | null;
 } | null | undefined;
 

@@ -30,7 +30,7 @@ test("检测参数取自这次真要提交的 payload；只做 OCR、旧的 cred
 
 test("只对 Key、模型、余额这类确定的配置错误提醒；网络抖动、限流不吓人", () => {
   assert.match(translationProbeWarning(unauthorized), /^翻译 API Key 无效。.*去设置里改好翻译 Key/);
-  for (const status of ["model_unavailable", "insufficient_balance", "invalid_input"]) {
+  for (const status of ["model_unavailable", "insufficient_balance", "quota_exceeded", "invalid_input"]) {
     assert.ok(translationProbeWarning({ ok: false, status, summary: "x" }), `${status} 应该提醒`);
   }
   for (const status of ["network_error", "provider_error", "rate_limited", "redirected"]) {

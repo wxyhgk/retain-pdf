@@ -34,7 +34,8 @@ export type ValidateTranslationKey = (payload: {
 }) => Promise<TranslationProbeResult>;
 
 /** 这几种是配置本身错了，翻译时一定还会失败，值得提前说。 */
-const CONFIG_FAILURES: readonly string[] = Object.freeze(["unauthorized", "model_unavailable", "insufficient_balance", "invalid_input"]);
+// quota_exceeded：额度或花费上限用完（2026-11-23 后端检测接口加的，以前误报成「可用（当前被限流）」）。
+const CONFIG_FAILURES: readonly string[] = Object.freeze(["unauthorized", "model_unavailable", "insufficient_balance", "quota_exceeded", "invalid_input"]);
 
 const PASSED_TTL_MS = 10 * 60 * 1000;
 const FAILED_TTL_MS = 60 * 1000;

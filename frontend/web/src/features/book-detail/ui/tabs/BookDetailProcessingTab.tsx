@@ -30,7 +30,7 @@ import { stageDetailWithoutPageCount } from "../../domain/progress-value.js";
 import { assemblyStations, type StationState } from "../../domain/assembly-line-model.js";
 import { resumeStageLabel } from "../../domain/job-resume-model.js";
 import { translationProcessModel } from "../../domain/translation-process-model.js";
-import { liveCountOf, liveStageKey, processingHeadOf, progressOf, unifiedPercentOf } from "./processing-summary-model.js";
+import { liveCountOf, liveStageKey, processingHeadOf, progressOf, unifiedPercentOf, upstreamWaitNoticeOf } from "./processing-summary-model.js";
 import type { BookDetailProcessingTabProps } from "./processing-tab-types.js";
 import { ProcessingHeadTools } from "../panels/processing/ProcessingHeadTools.jsx";
 import { stationActionsOf } from "./processing-station-actions.jsx";
@@ -270,6 +270,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
         <ProcessingHeader
           headline={headline}
           tone={tone}
+          waitNotice={upstreamWaitNoticeOf(ocr, translation, jobTimeline.now)}
           bootstrapping={bootstrapping}
           hud={<ProcessingHud model={hud} bootstrapping={bootstrapping} ocrReuse={Boolean(translation?.ocrReuse) && !hasTranslationJob} />}
           keptOriginBlocks={facts.keptOriginBlocks}

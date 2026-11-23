@@ -15,6 +15,15 @@ import type {
   RunDeepSeekConnectivityCheckOptions,
 } from "./validation.js";
 import { defaultCredentialsStatePort } from "./default-state-port.js";
+import { fetchProviderErrorHint } from "@/platform/api/index.js";
+
+/** 检测失败时按厂商 + 厂商的码（或唯一对得上的 HTTP 状态码）查错误码目录，返回给用户的那句提示；查不到 null。 */
+export type ProviderErrorHintLookup = (target: { vendor: string; code?: string | null; httpStatus?: number | null }) => Promise<string | null>;
+
+const defaultErrorHintLookup: ProviderErrorHintLookup = async ({ vendor, code, httpStatus }) => {
+  const hint = await fetchProviderErrorHint(undefined, { vendor, code: code || "", httpStatus: httpStatus ?? null });
+  return hint?.hint || null;
+};
 import type { CredentialDialogElementsLike } from "./dialog-values.js";
 import type { CredentialsFields, CredentialsStatePort } from "./state.js";
 
@@ -58,6 +67,7 @@ export async function handleBrowserDeepSeekValidate({
   silent = false,
   credentialsStatePort = defaultCredentialsStatePort,
   viewPort,
+  lookupErrorHint = defaultErrorHintLookup,
 }: {
   apiPrefix: string;
   state?: unknown;
@@ -73,6 +83,7 @@ export async function handleBrowserDeepSeekValidate({
     setTopUpVisible: (visible?: boolean) => void;
     setValidationMessage: (message?: string, tone?: string) => void;
   };
+  lookupErrorHint?: ProviderErrorHintLookup;
 }) {
   const {
     apiKeyInput,
@@ -173,10 +184,17 @@ export async function handleBrowserDeepSeekValidate({
   }
   viewPort.setTopUpVisible(false);
   if (!silent) {
-    viewPort.setValidationMessage(
-      result.summary || TRANSLATION_PROVIDER_DEFINITION.validationNetworkMessage,
-      "error",
-    );
+    const summary = result.summary || TRANSLATION_PROVIDER_DEFINITION.validationNetworkMessage;
+    viewPort.setValidationMessage(summary, "error");
+    // 后端分开给了 HTTP 状态码和厂商的码（2026-11-23）：按它们查错误码目录，把「这家服务商说的是什么、该怎么办」接在后面。
+    // 自定义接口认不出是哪家，不查；查不到、查失败都保持上面那句。
+    const vendor = inferTranslationProvider(baseUrl);
+    const code = `${result.provider_code ?? ""}`.trim();
+    const httpStatus = Number(result.http_status) || null;
+    if (vendor !== "custom" && (code || httpStatus)) {
+      const hint = await lookupErrorHint({ vendor, code, httpStatus }).catch(() => null);
+      if (hint && !summary.includes(hint)) viewPort.setValidationMessage(`${summary.replace(/[。.]$/, "")}。${hint}`, "error");
+    }
   }
   return result;
 }

@@ -359,6 +359,40 @@ test("Qwen translation validation uses connectivity only and reports provider na
   assert.deepEqual(messages.at(-1), ["Qwen 可用", "valid"]);
 });
 
+test("检测没通过且有厂商的码：查错误码目录，把服务商的说法接在后面；自定义接口不查", async () => {
+  const lookups = [];
+  const run = (baseUrl, probe) => {
+    const messages = [];
+    return handleBrowserDeepSeekValidate({
+      apiPrefix: "/custom/api",
+      defaultModelApiKey: () => "sk-test",
+      validateDeepSeekToken: async () => probe,
+      credentialsStatePort: { getCredentials: () => ({ modelApiKey: "sk-test" }), resetDeepSeekBalance: () => {} },
+      lookupErrorHint: async (target) => {
+        lookups.push(target);
+        return "智谱账号余额或资源包不足，请充值后再试";
+      },
+      viewPort: {
+        elements: () => ({
+          apiKeyInput: createCredentialNode({ value: "sk-test" }),
+          modelBaseUrlInput: createCredentialNode({ value: baseUrl }),
+          modelNameInput: createCredentialNode({ value: "glm-5.3-flash" }),
+        }),
+        setTopUpVisible: () => {},
+        setValidationMessage: (message, tone) => messages.push([message, tone]),
+      },
+    }).then(() => messages);
+  };
+
+  const zhipu = await run("https://open.bigmodel.cn/api/paas/v4", { ok: false, status: "insufficient_balance", summary: "余额不足。", http_status: 429, provider_code: "1113" });
+  assert.deepEqual(lookups, [{ vendor: "zhipu", code: "1113", httpStatus: 429 }]);
+  assert.deepEqual(zhipu.at(-1), ["余额不足。智谱账号余额或资源包不足，请充值后再试", "error"]);
+
+  const custom = await run("https://llm.example.com/v1", { ok: false, status: "quota_exceeded", summary: "额度用完", http_status: 429, provider_code: "quota" });
+  assert.equal(lookups.length, 1, "自定义接口认不出是哪家，不查");
+  assert.deepEqual(custom.at(-1), ["额度用完", "error"]);
+});
+
 test("validation without a model name says so instead of claiming a full green light", async () => {
   const messages = [];
   const payloads = [];

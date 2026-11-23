@@ -80,8 +80,14 @@ test("认不出的分类也要给得出话来，不能空着", () => {
 });
 
 test("副标题说清是谁、哪一段", () => {
-  assert.equal(failureSubtitle(mineru), "OCR · mineru");
+  assert.equal(failureSubtitle(mineru), "OCR · MinerU", "厂商编号换成设置里看到的名字");
   assert.equal(failureSubtitle({ ...mineru, provider: undefined }), "OCR");
+  assert.equal(failureSubtitle({ ...mineru, provider: "ocr" }), "OCR", "「OCR · ocr」不说明任何事");
+  assert.equal(
+    failureSubtitle({ ...mineru, stage: "translation", provider: "translation", upstream: { provider: "zhipu", http_status: 429, code: "1113" } }),
+    "翻译 · 智谱",
+    "有 upstream 时说是哪家",
+  );
   assert.equal(failureSubtitle({ ...mineru, stage: "translation", provider: "" }), "翻译");
 });
 
@@ -170,7 +176,7 @@ test("主按钮在状态行上，这一块只说它沿用什么、花不花钱�
   assert.equal(body.querySelector("#book-detail-retry-failed-btn"), null, "主按钮挪到状态行了，这里不该再有一个");
   assert.match(body.querySelector("[data-failure-hint]")?.textContent || "", /沿用已有译文/, "要说沿用什么、花不花钱");
   assert.equal(body.querySelector("[data-failure-chip='retry']")?.dataset.retryHelps, "true");
-  assert.match(body.querySelector("[data-failure-chip='source']")?.textContent || "", /OCR · mineru/);
+  assert.match(body.querySelector("[data-failure-chip='source']")?.textContent || "", /OCR · MinerU/);
 });
 
 test("重试解决不了的失败：小标签变成「重试解决不了」，并写出该做什么", () => {
