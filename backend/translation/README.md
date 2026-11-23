@@ -471,14 +471,14 @@ repair profile：
   - **千问额度**：Coding Plan 的 `usage allocated quota exceeded`（约一小时恢复）按额度停；`Throttling.AllocationQuota`（兼容模式下是
     `insufficient_quota`）只有 message 说免费额度用完（free tier / free allocated / free trial / quota exhausted / 免费额度）才按额度停，
     否则照旧当 TPM 限流退避。OpenCode Go 套餐的 `rate-limited`（用量 meter）文档没写超额时回什么，不认。
-  - 其它 4xx（409、413、415、422、405）不重试，结构化失败归 `upstream_bad_request`，`summary`「上游服务拒绝请求（422）：<服务商原话>」，
+  - 其它 4xx（409、415、422、405；413 按下面「单次请求太长」处理）不重试，结构化失败归 `upstream_bad_request`，`summary`「上游服务拒绝请求（422）：<服务商原话>」，
     原话只取响应体的 `error.message`（或顶层 `message`），压成一行、最多 160 字，不取请求正文和整个响应体。
   - agent 引擎：Anthropic 协议的请求按同一个判断，模型不可用抛 `ModelUnavailable`、地区抛 `RegionUnsupported`（都是 `StopRun`，
     停下原因 `model_unavailable` / `region_unsupported`，任务失败分别归 `upstream_model_unavailable` / `auth_failed`），没有分类器时 404
     也当模型不可用；内容审核没过和其它不重试的 4xx 抛 `RequestRejected`（带 `status_code`，归 `upstream_bad_request`）。agent 按页请求，
     内容审核没过时整个 agent 阶段失败，还没有逐块保留原文。
   - Rust 执行器：操作 `error_code` 加 `model_unavailable`、`region_unsupported`（都暂停任务）和 `content_rejected`（不暂停，worker 抛
-    `UpstreamContentRejected`，单块入口保留原文）；409、413、415 归 `provider_rejected_request`（以前 409、413 记成结果不明）。
+    `UpstreamContentRejected`，单块入口保留原文）；409、415 归 `provider_rejected_request`，413 归 `request_too_long`（以前 409、413 记成结果不明）。
 
 - 回答不完整、单次请求太长（`llm/shared/output_limits.py`，2026-11-23）：
   - HTTP 200 但译文没写完——Chat `finish_reason` 是 `length` / `content_filter`（智谱另有 `sensitive`、`network_error`、

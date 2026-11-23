@@ -247,16 +247,17 @@
       "user_hint_zh": "当前网络出口所在地区不受 OpenAI 支持，请更换受支持地区的网络或改用其他服务商。",
       "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "stop_translation",
         "failure_code": "auth_failed",
-        "summary_zh": "按 403 整份停下，归「鉴权失败」，文案让用户检查 Key。",
-        "gap_zh": "正文说的是地区不支持，换 Key 没用；应单独文案「所在地区不支持，换网络或换服务商」。",
-        "priority": "low",
+        "summary_zh": "第一次就整份停下，仍归 auth_failed，但 summary / suggestion 说「所在地区不支持这个翻译服务商，换网络或换服务商，换 API Key 没用」；agent 停下原因 region_unsupported，Rust 执行器 error_code=region_unsupported。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/translation-agent/retainpdf_translation_agent/agent.py"
         ],
         "issues": []
       }
@@ -592,14 +593,17 @@
       "user_hint_zh": "核对模型 ID 和所选项目，确认该项目有此模型权限。",
       "source_url": "https://developers.openai.com/api/docs/guides/rate-limits",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "fail_block",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "模型名写错或没开通时每个块各自失败，最后说不清原因。应和 401/403 一样第一次就整份停下，给「模型不存在」类失败，换模型后从翻译续跑。检测接口已经能认出（model_unavailable）。",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_model_unavailable",
+        "summary_zh": "第一次被拒就整份停下（同一组 Key + 这个模型后面的请求不再发，同一个 Key 的别的模型照常），失败码 upstream_model_unavailable：提示改模型名、开通模型或核对接口地址，从翻译续跑；agent 停下原因 model_unavailable，Rust 执行器 error_code=model_unavailable。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/translation-agent/retainpdf_translation_agent/agent.py"
         ],
         "issues": []
       }
@@ -619,15 +623,20 @@
       "user_hint_zh": "减少每次发送的内容（拆小分块），或换更大上下文的模型。",
       "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
-        "gap_zh": "批量翻译时可以自动拆小批再发。",
-        "priority": "low",
+        "failure_code": null,
+        "summary_zh": "单次请求太长：不再换参数重发同样的请求，批量拆成单块再发，单块仍太长这一块保留原文（死信，degradation_reason=request_too_long，不挡导出），不记凭据、不停整份。Rust 执行器不拆批：记 failed + request_too_long，任务失败 summary 写明「单次请求太长」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/batched_plain.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/single_item_flow.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs",
+          "backend/translation/retainpdf_translation/llm/shared/rust_executor.py"
         ],
         "issues": []
       }
@@ -755,14 +764,18 @@
       "user_hint_zh": "确认没有并发修改后重试。",
       "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "归 upstream_bad_request 一类并带上状态码。",
-        "priority": "low",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "不重试，这一块失败，归 upstream_bad_request；summary 带实际状态码和服务商 error.message（一行、最多 160 字，不含请求正文和 Key）；Rust 执行器记 provider_rejected_request。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/translation-agent/retainpdf_translation_agent/agent.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -782,14 +795,18 @@
       "user_hint_zh": "按文档建议重试一次。",
       "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "归 upstream_bad_request 一类并带上状态码。",
-        "priority": "low",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "不重试，这一块失败，归 upstream_bad_request；summary 带实际状态码和服务商 error.message（一行、最多 160 字，不含请求正文和 Key）；Rust 执行器记 provider_rejected_request。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/translation-agent/retainpdf_translation_agent/agent.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -891,7 +908,7 @@
         "action": "retry",
         "failure_code": null,
         "summary_zh": "Responses 返回 status=failed 带 error 时当作没拿到译文抛错，会重试；重试用完这一块失败。",
-        "gap_zh": "内容策略类失败重试没用，应直接标成「内容审核未过」、保留原文，不再重试。",
+        "gap_zh": "以 4xx 回来时已处理（这一块保留原文、不重试，见 upstream_content_rejected）；Responses API 200 + status=failed 的形态仍当解析错误重试。",
         "priority": "low",
         "code_paths": [
           "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
@@ -939,7 +956,7 @@
         "action": "retry",
         "failure_code": null,
         "summary_zh": "Responses 返回 status=failed 带 error 时当作没拿到译文抛错，会重试；重试用完这一块失败。",
-        "gap_zh": "内容策略类失败重试没用，应直接标成「内容审核未过」、保留原文，不再重试。",
+        "gap_zh": "以 4xx 回来时已处理（这一块保留原文、不重试，见 upstream_content_rejected）；Responses API 200 + status=failed 的形态仍当解析错误重试。",
         "priority": "low",
         "code_paths": [
           "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
@@ -964,7 +981,7 @@
         "action": "retry",
         "failure_code": null,
         "summary_zh": "Responses 返回 status=failed 带 error 时当作没拿到译文抛错，会重试；重试用完这一块失败。",
-        "gap_zh": "内容策略类失败重试没用，应直接标成「内容审核未过」、保留原文，不再重试。",
+        "gap_zh": "以 4xx 回来时已处理（这一块保留原文、不重试，见 upstream_content_rejected）；Responses API 200 + status=failed 的形态仍当解析错误重试。",
         "priority": "low",
         "code_paths": [
           "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
@@ -1332,14 +1349,17 @@
       "user_hint_zh": "调大 max_output_tokens，或减小每次翻译的分块。",
       "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
         "failure_code": null,
-        "summary_zh": "Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。",
-        "gap_zh": "截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。",
-        "priority": "low",
+        "summary_zh": "回答不完整（截断 / 被内容过滤）时不收半截译文：批量留下已用 <<<END>>> 写完的块、其余拆单块重翻；单块重试一次后记这一块失败（degradation_reason=model_output_truncated / model_output_content_filter），收尾补救不成保留原文。Rust 执行器记 failed + output_incomplete（不再记结果不明、不暂停），任务失败 summary 写明「模型回答不完整」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs"
         ],
         "issues": []
       }
@@ -1359,14 +1379,17 @@
       "user_hint_zh": "该段内容被过滤，请改写原文或跳过。",
       "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
         "failure_code": null,
-        "summary_zh": "Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。",
-        "gap_zh": "截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。",
-        "priority": "low",
+        "summary_zh": "回答不完整（截断 / 被内容过滤）时不收半截译文：批量留下已用 <<<END>>> 写完的块、其余拆单块重翻；单块重试一次后记这一块失败（degradation_reason=model_output_truncated / model_output_content_filter），收尾补救不成保留原文。Rust 执行器记 failed + output_incomplete（不再记结果不明、不暂停），任务失败 summary 写明「模型回答不完整」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs"
         ],
         "issues": []
       }
@@ -1386,14 +1409,17 @@
       "user_hint_zh": "缩短对话轮次后重试。",
       "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
         "failure_code": null,
-        "summary_zh": "Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。",
-        "gap_zh": "截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。",
-        "priority": "low",
+        "summary_zh": "回答不完整（截断 / 被内容过滤）时不收半截译文：批量留下已用 <<<END>>> 写完的块、其余拆单块重翻；单块重试一次后记这一块失败（degradation_reason=model_output_truncated / model_output_content_filter），收尾补救不成保留原文。Rust 执行器记 failed + output_incomplete（不再记结果不明、不暂停），任务失败 summary 写明「模型回答不完整」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs"
         ],
         "issues": []
       }
@@ -1413,14 +1439,17 @@
       "user_hint_zh": "无需处理，等待后续响应。",
       "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
         "failure_code": null,
-        "summary_zh": "Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。",
-        "gap_zh": "截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。",
-        "priority": "low",
+        "summary_zh": "回答不完整（截断 / 被内容过滤）时不收半截译文：批量留下已用 <<<END>>> 写完的块、其余拆单块重翻；单块重试一次后记这一块失败（degradation_reason=model_output_truncated / model_output_content_filter），收尾补救不成保留原文。Rust 执行器记 failed + output_incomplete（不再记结果不明、不暂停），任务失败 summary 写明「模型回答不完整」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs"
         ],
         "issues": []
       }
@@ -1440,15 +1469,17 @@
       "user_hint_zh": "调大 max_completion_tokens，或减小分块。",
       "source_url": "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
         "failure_code": null,
-        "summary_zh": "Chat 协议不检查 finish_reason，有文字就收下。",
-        "gap_zh": "finish_reason 为 length / content_filter 时应当这一块没翻成（截断或被过滤），不要把半截译文写进结果。",
-        "priority": "low",
+        "summary_zh": "回答不完整（截断 / 被内容过滤）时不收半截译文：批量留下已用 <<<END>>> 写完的块、其余拆单块重翻；单块重试一次后记这一块失败（degradation_reason=model_output_truncated / model_output_content_filter），收尾补救不成保留原文。Rust 执行器记 failed + output_incomplete（不再记结果不明、不暂停），任务失败 summary 写明「模型回答不完整」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/shared/model_wire.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py"
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs"
         ],
         "issues": []
       }
@@ -1468,15 +1499,17 @@
       "user_hint_zh": "该段内容被过滤，请改写原文或跳过。",
       "source_url": "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
         "failure_code": null,
-        "summary_zh": "Chat 协议不检查 finish_reason，有文字就收下。",
-        "gap_zh": "finish_reason 为 length / content_filter 时应当这一块没翻成（截断或被过滤），不要把半截译文写进结果。",
-        "priority": "low",
+        "summary_zh": "回答不完整（截断 / 被内容过滤）时不收半截译文：批量留下已用 <<<END>>> 写完的块、其余拆单块重翻；单块重试一次后记这一块失败（degradation_reason=model_output_truncated / model_output_content_filter），收尾补救不成保留原文。Rust 执行器记 failed + output_incomplete（不再记结果不明、不暂停），任务失败 summary 写明「模型回答不完整」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/shared/model_wire.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py"
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs"
         ],
         "issues": []
       }
@@ -1553,16 +1586,17 @@
       "user_hint_zh": "当前网络出口所在地区不受 OpenAI 支持，请更换网络或改用其他服务商。",
       "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "stop_translation",
         "failure_code": "auth_failed",
-        "summary_zh": "按 403 整份停下，归「鉴权失败」，文案让用户检查 Key。",
-        "gap_zh": "正文说的是地区不支持，换 Key 没用；应单独文案「所在地区不支持，换网络或换服务商」。",
-        "priority": "low",
+        "summary_zh": "第一次就整份停下，仍归 auth_failed，但 summary / suggestion 说「所在地区不支持这个翻译服务商，换网络或换服务商，换 API Key 没用」；agent 停下原因 region_unsupported，Rust 执行器 error_code=region_unsupported。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/translation-agent/retainpdf_translation_agent/agent.py"
         ],
         "issues": []
       }

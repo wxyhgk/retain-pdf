@@ -197,14 +197,18 @@
       "user_hint_zh": "DeepSeek 不接受某个参数取值，请按错误信息调整模型参数",
       "source_url": "https://api-docs.deepseek.com/quick_start/error_codes",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "归 upstream_bad_request 一类并带上状态码。",
-        "priority": "low",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "不重试，这一块失败，归 upstream_bad_request；summary 带实际状态码和服务商 error.message（一行、最多 160 字，不含请求正文和 Key）；Rust 执行器记 provider_rejected_request。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/translation-agent/retainpdf_translation_agent/agent.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
