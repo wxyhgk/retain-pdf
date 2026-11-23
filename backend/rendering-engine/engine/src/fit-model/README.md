@@ -204,6 +204,20 @@ What the switch selects:
   body paragraphs without a box check), but never onto another node's ink,
   a preserved element, the page edge, or into another text box of the same
   column (a line band outside its box may enter such a box by ≤ 1 pt).
+- **`retain/list-groups.js`** (building the model, before any fitting): OCR
+  cuts a list into one box per item and a box of smaller text into one box per
+  paragraph. Consecutive OCR body items on a page -- list items (starting with
+  `(a)`, `1.`, `-`, `•` …) at the body's source size, or paragraphs of one
+  source size apart from the body's (> max(0.4 pt, 4 %)) -- left-aligned, one
+  under the other within 1.6 em, with nothing else inside their union, become
+  one stream: the union box, one paragraph per item, the source's median gap
+  between items, one cover. They are sized together and a long item uses the
+  room a short one leaves. Then every body stream whose source size is apart
+  from the body's leaves the body group (`detachBody`, marked `sizeClass`) and
+  follows its own source size with the body's leading (step 6 below).
+  Paragraphs continued across boxes (`translations[].flow`) take part in
+  neither. The report lists a group's item ids under `members`; `adapter`
+  counts `listGroups`, `listItemsGrouped`, `sourceSizeDetached`.
 - **`passes/retain-titles.js`** (before the body pass): every heading sized
   on its own box like `solve_title_fit` (fill cap, band ≤ 0.94 × box height,
   title / heading leading). When the host gives the heading's source size

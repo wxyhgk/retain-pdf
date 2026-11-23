@@ -253,6 +253,9 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
     if (node.kind === "stream") {
       return { paragraphs: (node.source.items || []).map(item => ({ runs: runsForText(item.translatedText || item.text), indent: item.indent || 0 })) };
     }
+    if (node.source.kind === "text" && (node.source.items || []).length > 1) {
+      return { paragraphs: node.source.items.map(item => ({ runs: runsForText(item.translatedText || item.text), indent: item.indent || 0 })) };
+    }
     if (node.source.kind === "text" && node.source.translatedText) {
       return { paragraphs: [{ runs: runsForText(node.source.translatedText), indent: node.source.indent || 0 }] };
     }
@@ -294,7 +297,7 @@ function runMeasured(input, options = {}) {
   // Fail before any work when the PDF output cannot find its font files.
   const fonts = output === "pdf" ? { ...findFamily(fontPaths, "Source Han Serif SC"), fallbacks: findFallbacks(fontPaths) } : null;
   const maths = output === "pdf" ? new MathStore(outDir, { files: false }) : new MathStore(outDir, { stamps: true });
-  const { job, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow, measurers } = fitInput(input, { maths, timings });
+  const { job, model, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow, measurers } = fitInput(input, { maths, timings });
 
   let mark = performance.now();
   let painted;
@@ -325,7 +328,7 @@ function runMeasured(input, options = {}) {
   }
   timings.mathjaxMs = Math.round(maths.stats.ms);
 
-  const report = buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow });
+  const report = buildReport({ job, model, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow });
   timings.totalMs = Math.round(performance.now() - started);
   report.timings = timings;
   report.output = output === "pdf" ? { kind: "pdf", layout: "layout.json", stats: outputStats } : { kind: "typst" };
@@ -333,8 +336,15 @@ function runMeasured(input, options = {}) {
   return { report, overlayPdf: path.join(outDir, "overlay.pdf"), outDir };
 }
 
-function buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened = [], continuation = [], titleFollow = null, annotationFollow = null }) {
+function buildReport({ job, model = null, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened = [], continuation = [], titleFollow = null, annotationFollow = null }) {
   const itemFor = (pageIndex, id) => job.translations.get(`${pageIndex}:${blockNumber(id)}`) || null;
+  // streams holding several items (lists grouped by retain/list-groups.js): first id -> all ids
+  const groupMembers = new Map();
+  for (const page of (model && model.pages) || []) {
+    for (const entity of [...page.restoration.streams, ...page.restoration.absoluteBlocks]) {
+      if ((entity.items || []).length > 1) groupMembers.set(String(entity.items[0].id), entity.items.map(item => String(item.id)));
+    }
+  }
   const blocks = [];
   const pages = [];
   fitted.pages.forEach((page, offset) => {
@@ -362,7 +372,9 @@ function buildReport({ job, input, fitted, paint, stats, vectors, maths, painted
         overflow_pt: round(overflowPt),
         overflow_right_pt: round(Math.max(0, inkRight - node.bbox[2])),
         outside_page: rects.some(rect => rect.left < -1e-6 || rect.top < -1e-6 || rect.right > page.width + 1e-6 || rect.bottom > page.height + 1e-6),
-        stop_reason: node.fit?.stopReason || null
+        stop_reason: node.fit?.stopReason || null,
+        // the items of a list set as one stream (retain/list-groups.js)
+        ...(groupMembers.has(String(node.id)) ? { members: groupMembers.get(String(node.id)) } : {})
       });
     }
   });

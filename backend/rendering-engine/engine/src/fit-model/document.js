@@ -250,6 +250,8 @@
         baseFont,
         baseLineRatio: Math.max(1, Number(block.lineHeight || 1.12)),
         lineRatio: Math.max(1, Number(block.lineHeight || 1.12)),
+        // gap between paragraphs, used only by a block of several (retain/list-groups.js)
+        paragraphGap: Math.max(0, Number(block.paragraphGap || .16)),
         pageHeight: Math.max(1, page.height),
         fitBandRatio: CAPTION_TYPES.slice(0, 5).includes(type) && /^(?:table_caption|table_footnote|chart_caption|image_caption|image_footnote)$/i.test(type) ? 0.12 : null,
         style: { fontSize: null, lineRatio: null, width: null, nowrap: false },

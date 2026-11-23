@@ -174,7 +174,9 @@
       }
       const source = node.source || {};
       const item = (source.items || [])[0] || {};
-      const sourceLines = Math.max(0, Number(item.originalLineCount || source.lineCount || node.originalLinesSeed?.originalLineCount || 0));
+      // A stream of several items (a list grouped by retain/list-groups.js) has all their lines.
+      const itemLines = (source.items || []).length > 1 ? source.items.reduce((sum, each) => sum + Number(each.originalLineCount || 0), 0) : Number(item.originalLineCount || 0);
+      const sourceLines = Math.max(0, Number(itemLines || source.lineCount || node.originalLinesSeed?.originalLineCount || 0));
       const height = box.bottom - box.top;
       const seed = Number(node.baseFont) || 8;
       // Source line pitch: given by the host (sourceLinePitch on the stream or
@@ -300,9 +302,9 @@
     function retainScheduleFaithful(node, pageBody, isBody = true) {
       const fact = factsOf(node);
       const source = node.source || {};
-      const item = (source.items || [])[0] || source;
-      const sourceText = String(item.text || "");
-      const translatedText = String(item.translatedText || "");
+      const items = (source.items || []).length ? source.items : [source];
+      const sourceText = items.map(item => String(item.text || "")).join(" ");
+      const translatedText = items.map(item => String(item.translatedText || "")).join("");
       const leadingEm = leadingOf(node);
       const seed = fact.seed;
       const pageArea = Math.max(1, Number(node.page?.width || 0) * Number(node.page?.height || 0));
@@ -604,7 +606,7 @@
     const FOLLOW_SCALE_MIN = 0.8;
     const FOLLOW_SCALE_MAX = 1.4;
     const SAME_AS_BODY_PT = 0.1;
-    function followSourceSizes(nodes, bodyFont, { wholeRole }) {
+    function followSourceSizes(nodes, bodyFont, { wholeRole, bodyLeadingEm = 0 }) {
       const bodySource = Number(run.fitOptions.bodySourceTextFont);
       if (!(bodySource > 0) || !(bodyFont > 0)) return null;
       const sources = nodes.map(node => Number(node.source?.sourceFontSize) || 0);
@@ -620,9 +622,12 @@
       nodes.forEach((node, index) => {
         const source = sources[index] || (wholeRole ? roleSource : 0);
         if (!(source > 0)) return;
-        setStyle(node, sized(source), effectiveLineRatio(node));
+        // A body paragraph set apart for its source size (retain/list-groups.js
+        // separateSourceSizes) keeps the body's leading, not the tight non-body one.
+        const bodyLeading = node.source?.sizeClass && bodyLeadingEm > 0;
+        setStyle(node, sized(source), bodyLeading ? ratioFor(bodyLeadingEm) : effectiveLineRatio(node));
         const decided = nonBodyDecisions.get(node);
-        nonBodyDecisions.set(node, { ...decided, font: layoutControlFontSize(node) });
+        nonBodyDecisions.set(node, { ...decided, font: layoutControlFontSize(node), ...(bodyLeading ? { leadingEm: bodyLeadingEm } : {}) });
         followed += 1;
       });
       return { source: roleSource, target: sized(roleSource), scale: Math.round(scale * 1000) / 1000, nodes: followed };
@@ -632,7 +637,8 @@
     function unifyAnnotations() {
       const bodyFonts = run.scopedNodes(isBodyNode).map(node => layoutControlFontSize(node)).sort((a, b) => a - b);
       const bodyFontCap = bodyFonts.length ? bodyFonts[(bodyFonts.length - 1) >> 1] : 0;
-      const text = followSourceSizes([...nonBodyDecisions.keys()].filter(node => annotationRole(node) === ""), bodyFontCap, { wholeRole: false });
+      const bodyLeadingEm = median(run.scopedNodes(isBodyNode).map(node => leadingOf(node)));
+      const text = followSourceSizes([...nonBodyDecisions.keys()].filter(node => annotationRole(node) === ""), bodyFontCap, { wholeRole: false, bodyLeadingEm });
       if (text) annotationFollow.text = text;
       for (const role of ["caption", "footnote"]) {
         const nodes = [...nonBodyDecisions.keys()].filter(node => annotationRole(node) === role);
