@@ -40,6 +40,7 @@ const CONTENT_TYPES = {
   ".ico": "image/x-icon",
   ".map": "application/json; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
+  ".md": "text/markdown; charset=utf-8",
 };
 
 // 运行配置里名字像密钥的字段（modelApiKey、paddleToken、developerConfig 里的 apiKey……）一律换成占位符，

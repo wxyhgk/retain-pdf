@@ -620,6 +620,8 @@ const desktopFrontendRuntimeEntries = new Set([
   "src",
   "decor",
   "vendor",
+  // 使用说明书（软件里底部「使用说明」打开的 guide/*.md 和截图）
+  "guide",
 ]);
 
 function shouldCopyDesktopFrontendPath(sourcePath) {

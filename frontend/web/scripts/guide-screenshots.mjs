@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// 用户说明书（docs/guide/）的截图：用 mock 数据打开各个页面截图，写到 docs/guide/images/<模块>/<名字>.jpg。
-// 说明书按模块一页（docs/guide/<模块>.md），每张图也归到一个模块（module 就是 features/ 下的目录名）。
+// 用户说明书（frontend/web/guide/）的截图：用 mock 数据打开各个页面截图，写到 guide/images/<模块>/<名字>.jpg。
+// 说明书按模块一页（guide/<模块>.md），每张图也归到一个模块（module 就是 features/ 下的目录名）。
 //   npm --prefix frontend/web run guide:screenshots           # 全部重截
 //   npm --prefix frontend/web run guide:screenshots -- library # 只截模块或名字里带 library 的
 // 全程 mock 模式、冻结时钟、不连后端，截不到真实的书和 Key。界面改了重跑一遍，看 diff 确认再提交。
@@ -13,7 +13,7 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
 const FRONTEND_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
-const OUTPUT_DIR = join(FRONTEND_ROOT, "../../docs/guide/images");
+const OUTPUT_DIR = join(FRONTEND_ROOT, "guide/images");
 const PORT = 40152;
 const FIXED_TIME = new Date("2026-11-20T10:00:00+08:00");
 // 截图里不要 mock 提示条和动画。

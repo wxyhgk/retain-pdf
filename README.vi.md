@@ -77,7 +77,7 @@ Tải gói phù hợp từ [GitHub Releases](https://github.com/wxyhgk/retain-pd
   <img src="resources/brand/readme-gallery/product/library.png" alt="Thư viện trong ứng dụng desktop RetainPDF" width="1000" />
 </p>
 
-Gói macOS đã được Apple ký và công chứng, chạy trên chip Apple (M1 trở lên). Cách điền key và dịch cuốn sách đầu tiên: xem [hướng dẫn sử dụng (tiếng Trung)](docs/guide/README.md).
+Gói macOS đã được Apple ký và công chứng, chạy trên chip Apple (M1 trở lên). Cách điền key và dịch cuốn sách đầu tiên: xem [hướng dẫn sử dụng (tiếng Trung)](frontend/web/guide/README.md).
 
 ### Docker
 
