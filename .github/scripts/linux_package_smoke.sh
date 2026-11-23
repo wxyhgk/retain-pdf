@@ -61,6 +61,8 @@ if grep -Eq 'GLIBC_[0-9.]+.*not found|error while loading shared libraries' "$lo
   echo "FAIL rust_api start (exit $status)"; cat "$log"; failed=1
 else
   echo "ok   rust_api start (exit $status; 124 = still running after 5 s)"
+  # 退出码不是 124 时把它说了什么印出来（容器里没有配置和数据目录，起不来是预期的，要看是不是这个原因）
+  if [ "$status" -ne 124 ]; then sed -n '1,15p' "$log" | sed 's/^/     rust_api: /'; fi
 fi
 
 electron=""
