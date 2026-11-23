@@ -50,7 +50,7 @@ function PaneHead({ section, setupMode, active }: { section: SettingsSection; se
         {section.title || section.label}
         {section.guide ? (
           <a
-            className="app-settings-guide-link"
+            className="settings-guide-link"
             href={userGuideUrl(section.guide)}
             target="_blank"
             rel="noopener noreferrer"

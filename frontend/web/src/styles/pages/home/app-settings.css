@@ -142,34 +142,6 @@
     font-size: var(--ui-text-lg);
     font-weight: 700;
   }
-
-  /* 标题旁的「?」：打开说明书里讲这一栏的那一页。 */
-  & .app-settings-guide-link {
-    display: inline-grid;
-    place-items: center;
-    width: 18px;
-    height: 18px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    color: var(--muted);
-    font-size: var(--ui-text-2xs);
-    font-weight: 600;
-    line-height: 1;
-    text-decoration: none;
-  }
-
-  & .app-settings-guide-link:hover,
-  & .app-settings-guide-link:focus-visible {
-    border-color: var(--ink);
-    color: var(--ink);
-  }
-
-  & p {
-    margin: 4px 0 0;
-    color: var(--muted);
-    font-size: var(--ui-text-2xs);
-    line-height: 1.45;
-  }
 }
 
 @media (max-width: 720px) {
