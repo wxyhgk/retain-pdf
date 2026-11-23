@@ -261,9 +261,38 @@ pub(super) fn contains_render_failure_signal(text: &str) -> bool {
         return true;
     }
 
-    (lowered.contains("no such file or directory")
-        || lowered.contains("the system cannot find the file specified"))
-        && (lowered.contains("typst") || lowered.contains("font"))
+    // 「找不到文件」只有带着渲染阶段的证据才算渲染失败：缺的就是 typst / 字体本身，
+    // 或者 traceback 走在渲染模块里。以前只要全文出现 typst 就算，#135 OCR worker import 期
+    // 缺数据文件（traceback 里有 direct_typst_math.py）就被认成了「排版或编译阶段失败」。
+    let missing_file_lines: Vec<&str> = lowered
+        .lines()
+        .filter(|line| {
+            line.contains("no such file or directory")
+                || line.contains("the system cannot find the file specified")
+        })
+        .collect();
+    if missing_file_lines.is_empty() {
+        return false;
+    }
+    missing_file_lines
+        .iter()
+        .any(|line| line.contains("typst") || line.contains("font"))
+        || has_render_stage_frames(&lowered)
+}
+
+/// traceback 里有渲染阶段的模块（新旧两种目录布局，`/` 和 `\\` 两种分隔符）。
+fn has_render_stage_frames(lowered: &str) -> bool {
+    [
+        "retainpdf_pipeline/render/",
+        "retainpdf_pipeline\\render\\",
+        "retainpdf_pipeline.render",
+        "render_stage.py",
+        "render_only",
+        "/rendering/",
+        "\\rendering\\",
+    ]
+    .iter()
+    .any(|pattern| lowered.contains(pattern))
 }
 
 pub(super) fn extract_upstream_host(haystack: &str) -> Option<String> {

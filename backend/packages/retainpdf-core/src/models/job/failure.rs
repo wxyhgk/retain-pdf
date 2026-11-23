@@ -268,6 +268,12 @@ fn infer_failure_category(failure_code: &str, failed_stage: &str) -> Option<Stri
         "placeholder_unstable" => "translation",
         "render_failed" | "typst_dependency_download_failed" => "render",
         "document_schema_validation_failed" => "normalization",
+        // Rust 兜底认出的 OCR 额度用完（Paddle 12001 等），和 Python 一样记 billing
+        "upstream_quota_exhausted" => "billing",
+        // 本机环境类（2026-11-23），和 Python 的 LOCAL_ENVIRONMENT_FAILURE_CODES 一致
+        "out_of_memory" | "runtime_environment_broken" | "path_too_long" | "local_permission_denied" => {
+            "environment"
+        }
         _ if code.contains("auth") => "auth",
         _ if code.contains("timeout") => "timeout",
         _ if code.contains("dns") || code.contains("network") => "network",

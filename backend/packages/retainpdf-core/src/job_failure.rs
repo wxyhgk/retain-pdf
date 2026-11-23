@@ -1,3 +1,5 @@
+#[path = "job_failure_fallback.rs"]
+mod job_failure_fallback;
 #[path = "job_failure_structured.rs"]
 mod job_failure_structured;
 #[path = "job_failure_support.rs"]
@@ -5,6 +7,9 @@ mod job_failure_support;
 
 use crate::models::domain::{JobFailureInfo, JobSnapshot, JobStatusKind};
 
+use self::job_failure_fallback::{
+    auth_failure_suggestion, classify_local_environment_failure, classify_provider_quota_failure,
+};
 use self::job_failure_structured::{
     classify_provider_auth_failure, classify_structured_failure, extract_structured_failure,
     PythonStructuredFailure,
@@ -96,6 +101,17 @@ fn classify_job_failure_inner(job: &JobSnapshot) -> Option<JobFailureInfo> {
         return Some(provider_failure);
     }
 
+    if let Some(quota_failure) = classify_provider_quota_failure(
+        &failed_stage,
+        diagnostics,
+        job,
+        error,
+        &haystack,
+        raw_diagnostic.as_ref(),
+    ) {
+        return Some(quota_failure);
+    }
+
     if haystack.contains("OCR provider request outcome is ambiguous") {
         return Some(build_failure(
             failed_stage,
@@ -117,6 +133,19 @@ fn classify_job_failure_inner(job: &JobSnapshot) -> Option<JobFailureInfo> {
             first_error_excerpt(error, &haystack),
             raw_diagnostic.clone(),
         ));
+    }
+
+    // 本机环境类（内存、安装包、路径长度、权限）排在按文字、状态码猜的分支前面：
+    // 它们的证据是异常类型本身。#81 路径过长曾被日志里的数字串认成 401/403 鉴权失败。
+    if let Some(environment_failure) = classify_local_environment_failure(
+        job,
+        error,
+        &haystack,
+        &failed_stage,
+        diagnostics,
+        raw_diagnostic.as_ref(),
+    ) {
+        return Some(environment_failure);
     }
 
     if haystack.contains("Failed to resolve")
@@ -262,6 +291,7 @@ fn classify_job_failure_inner(job: &JobSnapshot) -> Option<JobFailureInfo> {
         || haystack.contains("missing or invalid X-API-Key")
         || haystack.contains("Unauthorized")
     {
+        let suggestion = auth_failure_suggestion(&failed_stage, diagnostics);
         return Some(build_failure(
             failed_stage,
             "auth_failed",
@@ -271,7 +301,7 @@ fn classify_job_failure_inner(job: &JobSnapshot) -> Option<JobFailureInfo> {
             false,
             extract_upstream_host(&haystack),
             provider_name(diagnostics),
-            Some("检查 MinerU Token、模型 API Key 或后端 X-API-Key 配置".to_string()),
+            Some(suggestion),
             select_relevant_log_line(
                 job,
                 error,

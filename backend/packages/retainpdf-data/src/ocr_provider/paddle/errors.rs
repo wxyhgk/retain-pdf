@@ -292,6 +292,8 @@ fn sanitize_body_excerpt(text: &str) -> Option<String> {
 fn category_for_provider_code(code: &str) -> Option<OcrErrorCategory> {
     match code.trim() {
         "10010" | "429" => Some(OcrErrorCategory::QueueFull),
+        // 当日解析页数额度用完（官方异步接口，HTTP 403）。不能按 403 归成没权限：用户会以为 Token 不对。
+        "12001" => Some(OcrErrorCategory::QuotaExceeded),
         "401" | "403" => Some(OcrErrorCategory::Unauthorized),
         "404" => Some(OcrErrorCategory::TaskNotFound),
         "408" => Some(OcrErrorCategory::RemoteReadTimeout),
@@ -379,6 +381,29 @@ mod tests {
         );
         assert_eq!(err.info().trace_id.as_deref(), Some("trace-queue"));
         assert!(err.stage_detail().contains("任务提交队列已满"));
+    }
+
+    /// 官方文档：403 + {"code":12001,"msg":…} 是当日额度用完，不是 Token 不对。
+    /// 字段名是 code/msg/traceId，旧写法 errorCode/errorMsg/logId 也认。
+    #[test]
+    fn http_403_with_daily_quota_code_is_quota_not_permission() {
+        for body in [
+            r#"{"traceId":"trace-q","code":12001,"msg":"今日解析页数额度已用完"}"#,
+            r#"{"logId":"trace-q","errorCode":12001,"errorMsg":"今日解析页数额度已用完"}"#,
+        ] {
+            let err = PaddleProviderError::http_status("submit", StatusCode::FORBIDDEN, body, None, None);
+            assert_eq!(err.info().category, OcrErrorCategory::QuotaExceeded, "{body}");
+            assert_eq!(err.info().http_status, Some(403));
+            assert_eq!(err.info().provider_code.as_deref(), Some("12001"));
+            assert_eq!(err.info().trace_id.as_deref(), Some("trace-q"));
+            assert!(err.stage_detail().contains("今日解析页数额度已用完"));
+        }
+        // HTTP 200 包里的业务码走 provider_error，也一样
+        let err = PaddleProviderError::provider_error("submit", 12001, "额度已用完", None);
+        assert_eq!(err.info().category, OcrErrorCategory::QuotaExceeded);
+        // 不带业务码的 403 照旧是没权限
+        let err = PaddleProviderError::http_status("submit", StatusCode::FORBIDDEN, "forbidden", None, None);
+        assert_eq!(err.info().category, OcrErrorCategory::PermissionDenied);
     }
 
     #[test]

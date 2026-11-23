@@ -35,6 +35,80 @@ class PaddleRateLimitError(RetainRateLimitError, PaddleNetworkError):
     pass
 
 
+# 官方异步接口：当日解析页数额度用完（HTTP 403）。不是 Token 不对，换 Key 当天也不一定好。
+PADDLE_DAILY_QUOTA_CODE = 12001
+
+
+class PaddleRequestRejected(requests.HTTPError):
+    """Paddle 明确拒绝了请求：不重试的 4xx，或者 HTTP 200 但包里的 code 不是 0。
+
+    报错文字只带状态码、业务码、服务商原话和 traceId，不带请求地址（签名地址不能进日志）。
+    仍是 `requests.HTTPError`，原来按 HTTPError 接的地方照旧。"""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+        provider_code: str = "",
+        response: Any = None,
+        request: Any = None,
+    ) -> None:
+        super().__init__(message, response=response, request=request)
+        self.status_code = status_code
+        self.provider_code = provider_code
+
+
+class PaddleQuotaExhausted(PaddleRequestRejected):
+    """当日页数额度用完（12001）。类名带 QuotaExhausted，结构化失败归 `upstream_quota_exhausted`（不可重试），
+    不再因为 HTTP 403 被说成「鉴权失败」。"""
+
+    failure_summary = "PaddleOCR 今日解析页数额度已用完（12001）"
+    failure_suggestion = "PaddleOCR 每个账号每天有解析页数额度，次日恢复：明天再试，或换一个 Token、换用其他 OCR。"
+
+
+def _error_fields(payload: Any) -> tuple[int, str, str]:
+    """从 Paddle 的返回包里读 (业务码, 说明, traceId)。官方异步接口是 code/msg/traceId，
+    同步接口和旧写法是 errorCode/errorMsg/logId，两种都认。读不出业务码时为 0。"""
+    if not isinstance(payload, dict):
+        return 0, "", ""
+    code = 0
+    for key in ("errorCode", "code"):
+        try:
+            value = int(payload.get(key) or 0)
+        except (TypeError, ValueError):
+            value = 0
+        if value:
+            code = value
+            break
+    message = str(payload.get("errorMsg") or payload.get("msg") or payload.get("message") or "").strip()
+    trace_id = str(payload.get("logId") or payload.get("traceId") or "").strip()
+    return code, message[:200], trace_id
+
+
+def _rejected_error(
+    summary: str,
+    *,
+    code: int,
+    message: str,
+    trace_id: str,
+    status_code: int | None = None,
+    response: Any = None,
+    request: Any = None,
+) -> PaddleRequestRejected:
+    error_class = PaddleQuotaExhausted if code == PADDLE_DAILY_QUOTA_CODE else PaddleRequestRejected
+    text = f"{summary} code={code or ''} msg={message} logId={trace_id}"
+    if error_class is PaddleQuotaExhausted:
+        text = f"PaddleOCR 今日解析页数额度已用完：{text}"
+    return error_class(
+        text,
+        status_code=status_code,
+        provider_code=str(code) if code else "",
+        response=response,
+        request=request,
+    )
+
+
 def get_paddle_token(*, explicit_value: str = "") -> str:
     return get_secret(
         explicit_value=explicit_value,
@@ -99,6 +173,25 @@ def _request_with_retry(method: str, url: str, *, timeout: int, **kwargs: Any) -
         raise PaddleRateLimitError(str(err)) from err
     except RetainNetworkError as err:
         raise PaddleNetworkError(str(err)) from err
+    except requests.HTTPError as err:
+        # 不重试的 4xx：把服务商的业务码和说明带上（403 可能是 Token 不对，也可能是 12001 当日额度用完）
+        response = err.response
+        try:
+            payload = response.json() if response is not None else None
+        except Exception:  # noqa: BLE001 - 返回体不是 JSON 时只留状态码
+            payload = None
+        code, message, trace_id = _error_fields(payload)
+        if not code:
+            raise
+        raise _rejected_error(
+            str(err),
+            code=code,
+            message=message,
+            trace_id=trace_id,
+            status_code=getattr(response, "status_code", None),
+            response=response,
+            request=err.request,
+        ) from None
 
 
 def build_optional_payload(model: str) -> dict[str, Any]:
@@ -181,10 +274,9 @@ def build_optional_payload(model: str) -> dict[str, Any]:
 
 
 def _check_envelope(payload: dict[str, Any], *, stage: str) -> dict[str, Any]:
-    if int(payload.get("errorCode", 0) or 0) != 0:
-        raise RuntimeError(
-            f"Paddle {stage} failed: code={payload.get('errorCode')} msg={payload.get('errorMsg', '')} logId={payload.get('logId', '')}"
-        )
+    code, message, trace_id = _error_fields(payload)
+    if code:
+        raise _rejected_error(f"Paddle {stage} failed:", code=code, message=message, trace_id=trace_id)
     return payload
 
 

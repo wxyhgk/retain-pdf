@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import errno
+import importlib
 import json
+import os
 import re
 import sys
 import traceback
@@ -10,6 +13,16 @@ from typing import Any
 
 
 STRUCTURED_FAILURE_LABEL = "structured failure json"
+
+# Windows 的 MAX_PATH 是 260（含结尾的 NUL），建目录时还要再留 12 个字符给 8.3 文件名，
+# 所以 248 个字符起就可能报「找不到文件」（issue #79 #81：渲染中间文件名带上了很长的论文标题）。
+WINDOWS_LONG_PATH_CHARS = 248
+_WINDOWS_PATH_RE = re.compile(r"^(?:[A-Za-z]:[\\/]|\\\\)")
+# 本机环境类失败码：和上游服务、文档内容无关，failure_category 记成 environment。
+LOCAL_ENVIRONMENT_FAILURE_CODES = frozenset(
+    {"out_of_memory", "runtime_environment_broken", "path_too_long", "local_permission_denied"}
+)
+_MISSING_PATH_RE = re.compile(r"no such file or directory:\s*(['\"])(.+?)\1", re.IGNORECASE | re.DOTALL)
 
 
 @dataclass
@@ -122,6 +135,8 @@ def _extract_provider_stage(text: str) -> str:
 
 
 def _failure_category_for(*, failure_code: str, failed_stage: str) -> str:
+    if failure_code in LOCAL_ENVIRONMENT_FAILURE_CODES:
+        return "environment"
     if failure_code in {"auth_failed"}:
         return "auth"
     if failure_code in {"upstream_quota_exhausted"}:
@@ -170,6 +185,10 @@ def _suggestion_for(*, failure_code: str, failure_category: str, provider: str) 
         "document_schema_validation_failed": "检查标准化输出是否满足 document.v1 契约，再重新执行后续阶段。",
         "source_pdf_missing": "检查任务工作目录和源 PDF 路径，确认文件存在且可访问。",
         "source_pdf_open_failed": "检查源 PDF 是否损坏或不可读，替换输入文件后重试。",
+        "out_of_memory": "处理这份文档时内存不够用：关掉其他占内存的程序后重试，或把 PDF 拆成页数更少的几份分别翻译。",
+        "runtime_environment_broken": "安装包缺文件或依赖库加载失败，重试不会好转：请升级到最新版或重新安装（Docker 请拉取最新镜像）。",
+        "path_too_long": "文件路径超过了系统允许的长度：把 PDF 改个短一点的文件名、或放到层级浅的目录后重新上传；Windows 上也可以开启长路径支持（LongPathsEnabled）。",
+        "local_permission_denied": "检查杀毒或安全软件是否拦截了 RetainPDF（可加入白名单）、文件是否被其他程序占用、安装目录和数据目录是否可写；Windows 上可以试试以管理员身份运行。",
     }
     if failure_code in suggestions:
         return suggestions[failure_code]
@@ -199,6 +218,132 @@ def _build_raw_excerpt(detail: str, raw_traceback: str) -> str:
     return compact[:277].rstrip() + "..."
 
 
+# —— 本机环境类失败（内存、安装包、路径长度、权限）的判据 ——
+# 这几类和上游服务无关，换 Key、等一会儿都没用；以前全落成「暂未识别出明确根因」，
+# 或者被误认成渲染失败、鉴权失败（#38 #80 #81 #135）。判据优先看异常链里的类型和属性，
+# 文字只认异常类型名和系统错误码这类不会出现在上游返回里的写法。
+
+
+def _exception_chain(exc: BaseException) -> list[BaseException]:
+    chain: list[BaseException] = []
+    current: BaseException | None = exc
+    while current is not None and current not in chain and len(chain) < 16:
+        chain.append(current)
+        current = current.__cause__ or current.__context__
+    return chain
+
+
+def _unescape_path(text: str) -> str:
+    # 异常文字里的路径是 repr：Windows 反斜杠会被转义成两个，再经 JSON 一层又翻倍。
+    while "\\\\" in text:
+        text = text.replace("\\\\", "\\")
+    return text.strip()
+
+
+def _missing_paths(exc_chain: list[BaseException], text: str) -> list[str]:
+    paths: list[str] = []
+    for item in exc_chain:
+        if isinstance(item, FileNotFoundError):
+            for name in (item.filename, item.filename2):
+                if isinstance(name, (str, os.PathLike)):
+                    paths.append(os.fspath(name))
+    paths.extend(_unescape_path(match.group(2)) for match in _MISSING_PATH_RE.finditer(text))
+    return [path for path in paths if path]
+
+
+def _is_out_of_memory(exc_chain: list[BaseException], lowered: str) -> bool:
+    if any(isinstance(item, MemoryError) for item in exc_chain):
+        return True
+    return any(token in lowered for token in ("memoryerror", "cannot allocate memory"))
+
+
+def _install_roots() -> list[str]:
+    """本项目各 Python 包（retainpdf_*）的安装目录。这些目录里的文件缺了，只能是安装包不完整。"""
+    roots: list[str] = []
+    for name, module in list(sys.modules.items()):
+        if "." in name or not name.startswith("retainpdf_"):
+            continue
+        module_file = getattr(module, "__file__", None)
+        if module_file:
+            roots.append(os.path.normcase(os.path.dirname(os.path.abspath(module_file))))
+    return roots
+
+
+def _is_installed_file(path: str) -> bool:
+    normalized = path.replace("\\", "/").lower()
+    if "/site-packages/" in normalized or "/dist-packages/" in normalized:
+        return True
+    try:
+        candidate = os.path.normcase(os.path.abspath(path))
+    except (TypeError, ValueError):
+        return False
+    return any(candidate.startswith(root + os.sep) for root in _install_roots())
+
+
+def _is_runtime_environment_broken(exc_chain: list[BaseException], lowered: str, missing_paths: list[str]) -> bool:
+    """模块导入失败、动态库加载失败、安装包里的数据文件缺失（#7 #135 #143 #162）。"""
+    if any(isinstance(item, ImportError) for item in exc_chain):
+        return True
+    if any(
+        token in lowered
+        for token in (
+            "modulenotfounderror",
+            "no module named",
+            "undefined symbol",
+            "dll load failed",
+            "library not loaded",
+        )
+    ):
+        return True
+    return any(_is_installed_file(path) for path in missing_paths)
+
+
+def _is_path_too_long(exc_chain: list[BaseException], lowered: str, missing_paths: list[str]) -> bool:
+    """路径超长：WinError 206、ENAMETOOLONG，或 Windows 上「找不到文件」而路径已超过上限（#79 #81）。"""
+    for item in exc_chain:
+        if isinstance(item, OSError):
+            if getattr(item, "winerror", None) == 206 or item.errno == errno.ENAMETOOLONG:
+                return True
+    if any(
+        token in lowered
+        for token in (
+            "winerror 206",
+            "file name too long",
+            "filename or extension is too long",
+            "文件名或扩展名太长",
+        )
+    ):
+        return True
+    return any(
+        _WINDOWS_PATH_RE.match(path) and len(path) >= WINDOWS_LONG_PATH_CHARS for path in missing_paths
+    )
+
+
+def _is_local_permission_denied(exc_chain: list[BaseException], lowered: str) -> bool:
+    """本机拒绝了文件或网络访问：权限不足、文件被别的程序占用、安全软件拦截（#38）。
+    不认裸的「permission denied」——上游 403 的说明里也可能这么写。"""
+    if any(isinstance(item, PermissionError) for item in exc_chain):
+        return True
+    return any(
+        token in lowered
+        for token in (
+            "permissionerror",
+            "winerror 32",
+            "being used by another process",
+            "另一个程序正在使用此文件",
+        )
+    )
+
+
+def _failure_override(exc_chain: list[BaseException], name: str) -> str:
+    """异常自己带的用户文案（例如 Paddle 当日额度用完），比按状态码拼出来的通用说法准。"""
+    for item in exc_chain:
+        value = getattr(item, name, "")
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return ""
+
+
 def classify_exception(exc: BaseException, *, default_stage: str, provider: str = "") -> StructuredFailure:
     raw_traceback = traceback.format_exc()
     exc_type = type(exc).__name__
@@ -210,12 +355,28 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
     http_status_code = _http_status_code(exc, f"{detail}\n{raw_traceback}")
     provider_code = _extract_provider_code(f"{detail}\n{raw_traceback}")
     provider_stage = _extract_provider_stage(f"{detail}\n{raw_traceback}")
+    exc_chain = _exception_chain(exc)
+    missing_paths = _missing_paths(exc_chain, f"{detail}\n{raw_traceback}")
 
     error_type = "python_unhandled_exception"
     summary = "任务失败，但暂未识别出明确根因"
     retryable = True
 
-    if any(token in lowered for token in ("failed to resolve", "temporary failure in name resolution", "nameresolutionerror", "socket.gaierror")):
+    # 本机环境类排在最前：它们的证据是异常类型本身，比后面按文字、状态码猜的分支可靠；
+    # 也免得 import 期崩溃因为 traceback 里有 typst 字样被认成渲染失败（#135）。
+    if _is_out_of_memory(exc_chain, lowered):
+        error_type = "out_of_memory"
+        summary = "内存不足，处理中断"
+        retryable = False
+    elif _is_runtime_environment_broken(exc_chain, lowered, missing_paths):
+        error_type = "runtime_environment_broken"
+        summary = "运行环境不完整：缺少模块、依赖库或安装文件"
+        retryable = False
+    elif _is_path_too_long(exc_chain, lowered, missing_paths):
+        error_type = "path_too_long"
+        summary = "文件路径过长，超出系统限制"
+        retryable = False
+    elif any(token in lowered for token in ("failed to resolve", "temporary failure in name resolution", "nameresolutionerror", "socket.gaierror")):
         error_type = "dns_resolution_failed"
         summary = "外部服务域名解析失败"
     elif any(token in lowered for token in ("readtimeout", "connecttimeout", "timed out")):
@@ -275,18 +436,19 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
     elif any(token in lowered for token in ("failed to download package", "packages.typst.org", "downloading @preview/")):
         error_type = "typst_dependency_download_failed"
         summary = "Typst 渲染依赖下载失败"
-    elif any(
-        token in lowered
-        for token in (
-            "typst runtime failed to start",
-            "winerror 193",
-            "winerror 5",
-        )
+    elif "typst runtime failed to start" in lowered or (
+        # WinError 5（拒绝访问）/ 193（不是有效程序）只有和 typst 一起出现才算 typst 起不来；
+        # 别的文件被拒绝访问归下面的本机权限
+        "typst" in lowered and any(token in lowered for token in ("winerror 193", "winerror 5]", "winerror 5)"))
     ):
         error_type = "typst_runtime_failed"
         summary = "Typst 运行时启动失败"
         retryable = False
         stage = "render"
+    elif _is_local_permission_denied(exc_chain, lowered):
+        error_type = "local_permission_denied"
+        summary = "本机权限不足，文件或网络访问被拒绝"
+        retryable = False
     elif any(token in lowered for token in ("typst compile", "typst error", "render failed", "failed to render", "font not found", "missing bundled font")):
         error_type = "render_failed"
         summary = "排版或编译阶段失败"
@@ -313,10 +475,11 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         stage = "normalization"
         retryable = False
 
+    summary = _failure_override(exc_chain, "failure_summary") or summary
     failure_category = _failure_category_for(failure_code=error_type, failed_stage=stage)
     if provider.strip() and failure_category == "internal" and provider.strip() != "translation":
         failure_category = "provider"
-    suggestion = _suggestion_for(
+    suggestion = _failure_override(exc_chain, "failure_suggestion") or _suggestion_for(
         failure_code=error_type,
         failure_category=failure_category,
         provider=provider,
@@ -353,6 +516,10 @@ def emit_structured_failure(exc: BaseException, *, default_stage: str, provider:
 
 
 def run_with_structured_failure(main_fn: Any, *, default_stage: str, provider: str = "") -> None:
+    """跑 worker 主函数，异常归类后打一行结构化失败再退出 1。
+
+    worker 模块要在 `main_fn` 里面 import（见 `run_imported_main`）：import 期的崩溃（缺模块、
+    动态库加载失败、安装包缺数据文件）也得有结构化失败，否则只能靠 Rust 按文字猜（#135 被猜成了渲染失败）。"""
     try:
         main_fn()
     except SystemExit:
@@ -360,3 +527,12 @@ def run_with_structured_failure(main_fn: Any, *, default_stage: str, provider: s
     except Exception as exc:  # noqa: BLE001
         emit_structured_failure(exc, default_stage=default_stage, provider=provider)
         raise SystemExit(1) from None
+
+
+def run_imported_main(module: str, *, default_stage: str, provider: str = "", attr: str = "main") -> None:
+    """在结构化失败的包装里面 import `module` 再调它的 `attr`。"""
+
+    def _main() -> Any:
+        return getattr(importlib.import_module(module), attr)()
+
+    run_with_structured_failure(_main, default_stage=default_stage, provider=provider)
