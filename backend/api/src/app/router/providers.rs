@@ -9,7 +9,7 @@ crate::endpoints! {
     /// 能用的 OCR 服务商
     GET "/api/v1/providers/ocr" => providers::list_ocr_providers, signed by(none);
     /// 各家 OCR、翻译模型服务商的错误码目录（含义、给用户的提示、我们怎么处理），可按种类、厂商、码、HTTP 状态筛
-    GET "/api/v1/providers/error-codes" => providers::list_provider_error_codes, signed by(none);
+    GET "/api/v1/providers/error-codes" => providers::list_provider_error_codes, signed by(web);
     /// 校验 MinerU 的 token
     POST "/api/v1/providers/mineru/validate-token" => providers::validate_mineru_token, admin by(web, cli);
     /// 校验 Paddle 的 token
