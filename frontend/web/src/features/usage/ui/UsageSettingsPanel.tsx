@@ -1,4 +1,4 @@
-// 设置 ·「总用量」：全部书的 token 用量，按月、按模型、按环节。只统计 token，不估算费用。
+// 设置 ·「总用量」：全部书的 token 用量和按标价估的花费，按月、按模型、按环节。
 // 后端算一次很慢：打开过一次之后，再打开先显示上次的数字、后面写「正在更新…」，读好了换上（use-usage 的 keepLast）。
 import { fetchUsageSummary } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
@@ -37,7 +37,7 @@ export function UsageSettingsPanel({
           <UsageSummary model={model} show={["months", "models", "stages"]} />
         </>
       ) : null}
-      <p className="usage-settings-foot">只统计模型 token，不估算费用；删除的书不计入。</p>
+      <p className="usage-settings-foot">花费按服务商公开标价估算，实际以账单为准；删除的书不计入。</p>
     </div>
   );
 }

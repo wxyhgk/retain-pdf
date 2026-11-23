@@ -5,6 +5,7 @@ import { NotifySettingsPanel } from "./NotifySettingsPanel.jsx";
 
 export const notifySettingsSection: SettingsSection = {
   id: "notify",
+  guide: "notify",
   label: "通知",
   Icon: NotifySettingsIcon,
   order: 80,

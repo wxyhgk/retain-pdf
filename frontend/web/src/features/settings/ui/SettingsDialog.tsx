@@ -29,7 +29,7 @@ import {
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import type { DialogStore } from "@/platform/store/dialog-store.js";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
-import { sortSettingsSections, type SettingsSection } from "@/ui/settings/settings-section.js";
+import { sortSettingsSections, userGuideUrl, type SettingsSection } from "@/ui/settings/settings-section.js";
 import { APP_SETTINGS_DIALOG_IDS } from "./settings-dialog-ids.js";
 
 export type SettingsDialogProps = {
@@ -46,7 +46,22 @@ function PaneHead({ section, setupMode, active }: { section: SettingsSection; se
   const subtitle = section.subtitle?.({ active, setupMode }) ?? null;
   return (
     <header className="app-settings-pane-head">
-      <h3>{section.title || section.label}</h3>
+      <h3>
+        {section.title || section.label}
+        {section.guide ? (
+          <a
+            className="app-settings-guide-link"
+            href={userGuideUrl(section.guide)}
+            target="_blank"
+            rel="noopener noreferrer"
+            title="使用说明"
+            aria-label={`${section.label}的使用说明`}
+            data-settings-guide={section.guide}
+          >
+            ?
+          </a>
+        ) : null}
+      </h3>
       {subtitle}
       {section.description ? <p>{section.description}</p> : null}
     </header>

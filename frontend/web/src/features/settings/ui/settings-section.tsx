@@ -5,6 +5,7 @@ import { ThemeAppearancePanel } from "./ThemeAppearancePanel.jsx";
 
 export const appearanceSettingsSection: SettingsSection = {
   id: "appearance",
+  guide: "settings",
   label: "外观",
   Icon: IconPalette,
   order: 90,

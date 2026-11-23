@@ -49,6 +49,7 @@ export function useHomeSettingsSections(): SettingsSection[] {
     const sections: SettingsSection[] = [
       ...(multi ? [{
         id: "account",
+        guide: null,
         label: "账户",
         Icon: AccountSettingsIcon,
         order: 10,
@@ -57,6 +58,7 @@ export function useHomeSettingsSections(): SettingsSection[] {
       }] : []),
       ...(multi && admin ? [{
         id: "admin",
+        guide: null,
         label: "账号管理",
         Icon: AdminSettingsIcon,
         order: 20,
@@ -65,6 +67,7 @@ export function useHomeSettingsSections(): SettingsSection[] {
       }] : []),
       {
         id: "api",
+        guide: "credentials",
         label: "接口设置",
         Icon: CredentialsSettingsIcon,
         order: 30,
@@ -79,6 +82,7 @@ export function useHomeSettingsSections(): SettingsSection[] {
       },
       {
         id: "glossary",
+        guide: "glossaries",
         label: "术语表",
         Icon: GlossariesSettingsIcon,
         order: 40,
@@ -101,6 +105,7 @@ export function useHomeSettingsSections(): SettingsSection[] {
       ...(!multi && isDesktopHostAvailable() ? [lanShareSettingsSection] : []),
       {
         id: "update",
+        guide: "app-update",
         label: "更新",
         Icon: AppUpdateSettingsIcon,
         order: 100,

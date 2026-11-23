@@ -5,6 +5,7 @@ import { UsageSettingsPanel } from "./UsageSettingsPanel.jsx";
 
 export const usageSettingsSection: SettingsSection = {
   id: "usage",
+  guide: "usage",
   label: "总用量",
   Icon: UsageSettingsIcon,
   order: 50,
