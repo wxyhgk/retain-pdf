@@ -77,6 +77,36 @@ test("runOcrTokenValidation writes OCR validation state through credentials stat
   ]]);
 });
 
+test("OCR Token 检测没通过且服务商回了码：接上错误码目录里这家的说法；通过了不查", async () => {
+  const lookups = [];
+  const run = (providerId, probe) => {
+    const messages = [];
+    return runOcrTokenValidation({
+      apiPrefix: "/custom/api",
+      providerId,
+      token: "ocr-token",
+      validateOcrToken: async () => probe,
+      setOcrValidationMessage: (message, tone, id) => messages.push([message, tone, id]),
+      credentialsStatePort: { resetOcrValidationCache() {}, setOcrValidationCache() {} },
+      lookupErrorHint: async (target) => {
+        lookups.push(target);
+        return "今天的免费额度用完了，明天再试或换一个 Token";
+      },
+    }).then(() => messages);
+  };
+
+  const paddle = await run("paddle", { ok: false, status: "provider_error", summary: "PaddleOCR 拒绝了请求", provider_code: "12001", http_status: 429 });
+  assert.deepEqual(lookups, [{ vendor: "paddle", code: "12001", httpStatus: 429 }]);
+  assert.deepEqual(paddle.at(-1), ["PaddleOCR 拒绝了请求。今天的免费额度用完了，明天再试或换一个 Token", "error", "paddle"]);
+
+  await run("mineru", { ok: true, status: "valid", summary: "MinerU 可用", provider_code: null, http_status: 200 });
+  assert.equal(lookups.length, 1, "通过了不查");
+
+  const noCode = await run("glm_ocr", { ok: false, status: "unauthorized", summary: "智谱 API Key 无效" });
+  assert.equal(lookups.length, 1, "没有码也没有状态码不查");
+  assert.deepEqual(noCode.at(-1), ["智谱 API Key 无效", "error", "glm_ocr"]);
+});
+
 test("runOcrTokenValidation does not call validation port without token", async () => {
   let called = false;
   const calls = [];
