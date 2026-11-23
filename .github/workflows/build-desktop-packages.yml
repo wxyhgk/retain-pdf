@@ -336,7 +336,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install -y libarchive-tools
+          sudo apt-get install -y libarchive-tools patchelf
 
       - name: Assemble bundled Typst runtime
         shell: bash
@@ -400,6 +400,11 @@ jobs:
           rsync -aL --delete \
             --exclude '__pycache__' \
             "$python_root"/ "$bundle_root"/
+          # #162：工具缓存的 Python 把 RUNPATH 写死成 /opt/hostedtoolcache/.../lib，用户机器上没有这个目录，
+          # 启动器找不到包里的 libpython3.11，去系统里找到旧的一份（_PyModule_Add 未定义）或干脆起不来。
+          # 先改成 $ORIGIN 相对路径，再用包里的 python3 跑任何东西。
+          python3 .github/scripts/relocate_linux_python_runpath.py relocate \
+            --bundle-root "$bundle_root" --original-root "$python_root"
           "$bundle_root/bin/python3" -m pip install --upgrade pip
           py_minor="$("$bundle_root/bin/python3" - <<'PY'
           import sys
@@ -436,7 +441,9 @@ jobs:
           WRAPPER
           chmod +x "$bundle_root/bin/retainpdf-pipeline"
           "$bundle_root/bin/retainpdf-pipeline" --help
-          ldd "$bundle_root/bin/python3"
+          python3 .github/scripts/relocate_linux_python_runpath.py check \
+            --bundle-root "$bundle_root" --python "$bundle_root/bin/python3"
+          env -u LD_LIBRARY_PATH ldd "$bundle_root/bin/python3"
           bad_refs="$( \
             { ldd "$bundle_root/bin/python3" 2>/dev/null; \
               find "$bundle_root" \( -name '*.so' -o -name '*.dylib' \) -type f -print0 | \
@@ -509,11 +516,18 @@ jobs:
             ldd "$binary" 2>&1 | tee -a "$ldd_log" || true
           }
 
+          # 剪完、拷进 app 的最终目录上再查一遍：RUNPATH 只许 $ORIGIN，清掉 LD_LIBRARY_PATH 跑起来载入的是包里的 libpython（#162）。
+          python3 .github/scripts/relocate_linux_python_runpath.py check \
+            --bundle-root "$backend_root/python" --python "$backend_root/python/bin/python3"
+
+          # setup-python 往 LD_LIBRARY_PATH 里放了工具缓存的 lib，会让下面的 ldd 在构建机上找到包外的 libpython，
+          # 用户机器上没有它；照用户机器的样子查，先清掉。
+          unset LD_LIBRARY_PATH
           libs_path="$(
             find "$backend_root/python" -type d \( -name '.libs' -o -name '*.libs' \) -print | sort | paste -sd ':' -
           )"
           if [ -n "$libs_path" ]; then
-            export LD_LIBRARY_PATH="$libs_path:${LD_LIBRARY_PATH:-}"
+            export LD_LIBRARY_PATH="$libs_path"
           fi
           check_ldd "$backend_root/bin/rust_api"
           check_ldd "$backend_root/typst/bin/typst"
