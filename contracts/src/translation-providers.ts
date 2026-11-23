@@ -13,19 +13,21 @@ export type TranslationProvidersSchema =
   | TranslationModelListView
   | TranslationModelsRequest;
 /**
- * rejected：服务商拒绝了请求（常见：模型不支持看图、模型名不对）；empty：回了但没有文字（可能都用在思考上）。
+ * rejected：服务商拒绝了请求（常见：模型不支持看图、模型名不对）；rate_limited：限流或服务商繁忙，稍后重试；insufficient_balance：欠费、余额不足、套餐到期（2026-11-23 起，以前 429 一律 rate_limited）；quota_exceeded：用量或花费上限，等重置或调上限（2026-11-23 起）；empty：回了但没有文字（可能都用在思考上）。
  */
 export type TranslationModelAskStatus =
   | "ok"
   | "unauthorized"
   | "rejected"
   | "rate_limited"
+  | "insufficient_balance"
+  | "quota_exceeded"
   | "provider_error"
   | "unreachable"
   | "empty"
   | "invalid_input";
 /**
- * unsupported：服务商回 404/405/501，或者回的不是模型列表；unauthorized：401/403；invalid_input：Key 里有放不进请求头的字符；unreachable：连不上、超时；provider_error：别的错误、重定向、列表太大。
+ * unsupported：服务商回 404/405/501，或者回的不是模型列表；unauthorized：401/403；invalid_input：Key 里有放不进请求头的字符；unreachable：连不上、超时；provider_error：别的错误、重定向、列表太大。按业务码认出欠费、额度用完、套餐不含时状态照旧（401/403 是 unauthorized，其余 provider_error），summary 换成具体原因（2026-11-23 起）。
  */
 export type TranslationModelListStatus =
   "ok" | "unsupported" | "unauthorized" | "invalid_input" | "unreachable" | "provider_error";
@@ -104,7 +106,11 @@ export interface TranslationModelAskView {
   images: number;
   elapsed_ms: number;
   /**
-   * 出错时服务商回的 HTTP 状态码。
+   * 服务商回的 HTTP 状态码；没收到回复（连不上、超时、请求没发出）时为 null（2026-11-23 起）。
+   */
+  http_status: number | null;
+  /**
+   * 服务商正文里自己的业务码（智谱 1113、OpenAI insufficient_quota、百炼 Arrearage……），没有时为 null。2026-11-23 以前这里是 HTTP 状态码，现在看 http_status。
    */
   provider_code: string | null;
   /**
@@ -131,7 +137,11 @@ export interface TranslationModelListView {
   base_url: string;
   fetched_at: string;
   /**
-   * 出错时服务商回的 HTTP 状态码。
+   * 出错时服务商回的 HTTP 状态码；成功、没收到回复时为 null（2026-11-23 起）。
+   */
+  http_status: number | null;
+  /**
+   * 服务商正文里自己的业务码（智谱 1113、OpenAI insufficient_quota、百炼 Arrearage、OpenCode 只有消息时是那句话，如 Policy budget exceeded），没有时为 null。2026-11-23 以前这里是 HTTP 状态码，现在看 http_status。
    */
   provider_code: string | null;
   /**

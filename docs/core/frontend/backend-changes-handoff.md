@@ -12,6 +12,30 @@
 
 ---
 
+## 检测接口：HTTP 状态码和厂商业务码分开，429 分清限流和欠费（fix/probe-status-codes）
+
+2026-11-23，用户定：检测接口（`/providers/deepseek/validate-token`、`/providers/{mineru,paddle}/validate-token`、
+`/providers/deepseek/balance`、`/providers/translation/models`、`/providers/translation/ask`）以前把 HTTP 状态码塞进 `provider_code`，
+429 一律当限流——欠费的 Key 检测显示「可用（当前被限流）」。细节见 [Provider 校验接口第 3.1 节](../rust_api/08-Provider%20校验接口.md)。
+
+变了什么：
+- **加** `http_status`（数字或 `null`）：服务商回的 HTTP 状态码，六个接口都有。契约 `translation-providers.v1` 的
+  `TranslationModelListView`、`TranslationModelAskView` 加了这个必有字段。
+- **改含义** `provider_code`：只放服务商自己的业务码（智谱 `"1113"`、OpenAI `"insufficient_quota"`、百炼 `"Arrearage"`、OpenCode
+  `"Policy budget exceeded"`），没有时 `null`；以前是 `"429"`、`"200"` 这样的 HTTP 状态码。查过前端（`frontend/`）、CLI 都不读这几个接口的
+  `provider_code`（任务失败里的 `provider_code` 是另一回事，没动），所以没另起字段。
+- **加 `status` 取值**：校验 Key 加 `quota_exceeded`（`ok: false`，额度或花费上限）；问模型加 `insufficient_balance`、`quota_exceeded`
+  （契约 `TranslationModelAskStatus` 的 enum 加了两个值）。欠费类业务码（429 的智谱 1113、OpenAI credit_balance_exhausted、400 的百炼
+  Arrearage……）现在落已有的 `insufficient_balance`；智谱 1311（套餐不含这个模型）、1315（Key 类型不对）落 `unauthorized`。
+  真正的限流照旧 `rate_limited` + `ok: true`。拉模型列表的 `status` 没加值，只是 `summary` 换成具体原因。
+
+前端要做的：
+1. `frontend/web/src/features/ingest/domain/actions/submit/translation-probe.ts` 第 37 行：
+   旧 `const CONFIG_FAILURES = ["unauthorized", "model_unavailable", "insufficient_balance", "invalid_input"]`，
+   新的加上 `"quota_exceeded"`——不加的话额度用完的 Key 提交时不会弹提醒（设置页照样显示红字，因为 `ok` 是 `false`）。
+2. 契约的 `dist/` 已经重新生成；`frontend/packages/api` 的 `generate:client` 只看接口清单，这次没加接口，不用重新生成。
+3. 调试面板要显示状态码的话改读 `http_status`，`provider_code` 当厂商码显示（可以拿它查错误码目录 `GET /api/v1/providers/error-codes?provider=…&code=…`，见下一节）。
+
 ## 服务商错误码目录，给失败提示用（feat/provider-error-codes）
 
 2026-11-23，用户要「把这些模型的文档的错误码全部爬取下来，然后做成文档，接入 api，方便后面的前端提示」。新接口

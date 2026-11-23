@@ -11,6 +11,7 @@ use super::types::{
     ProviderProbeView,
 };
 use super::url_policy::validate_probe_base_url;
+use crate::upstream_limits::{classify_upstream_limit, upstream_error_code, UpstreamLimit, UpstreamLimitKind};
 
 /// 翻译接口探针。
 ///
@@ -71,6 +72,7 @@ async fn validate_deepseek_token_inner(
             status: "invalid_input",
             summary: "API Key 里有换行、全角空格等不能用的字符，请重新复制粘贴".to_string(),
             retryable: false,
+            http_status: None,
             provider_code: None,
             provider_message: None,
             operator_hint: None,
@@ -120,12 +122,7 @@ async fn validate_deepseek_token_inner(
         return Ok(probe_openai_chat(&client, api_key, model, base_url, checked_at).await);
     };
     let view = match request.send().await {
-        Ok(resp) => classify_deepseek_chat_probe_response(
-            ProbeReply::read(resp).await,
-            model,
-            base_url.clone(),
-            checked_at,
-        ),
+        Ok(resp) => classify_deepseek_chat_probe_response(ProbeReply::read(resp).await, model, base_url.clone(), checked_at),
         Err(err) => classify_deepseek_probe_transport_error(err, base_url.clone(), checked_at),
     };
 
@@ -172,6 +169,8 @@ struct ProbeReply {
     status: reqwest::StatusCode,
     location: Option<String>,
     trace_id: Option<String>,
+    /// 响应头里有没有 `retry-after`：Anthropic 的消费封顶 429 没有，普通限流有。
+    retry_after: bool,
     body: String,
 }
 
@@ -184,8 +183,9 @@ impl ProbeReply {
             .get("x-request-id")
             .and_then(|value| value.to_str().ok())
             .map(|value| value.to_string());
+        let retry_after = response.headers().contains_key(reqwest::header::RETRY_AFTER);
         let body = response.text().await.unwrap_or_default();
-        Self { status, location, trace_id, body }
+        Self { status, location, trace_id, retry_after, body }
     }
 }
 
@@ -261,7 +261,7 @@ fn classify_deepseek_chat_probe_response(
     base_url: String,
     checked_at: String,
 ) -> ProviderProbeView {
-    let ProbeReply { status: status_code, location, trace_id, body: body_text } = reply;
+    let ProbeReply { status: status_code, location, trace_id, retry_after, body: body_text } = reply;
     if status_code.is_redirection() {
         return redirected_view("翻译 API", status_code.as_u16(), location, base_url, checked_at);
     }
@@ -272,7 +272,8 @@ fn classify_deepseek_chat_probe_response(
             status: "valid",
             summary: format!("翻译 API 与模型 {model} 可用"),
             retryable: false,
-            provider_code: Some(status_code.as_u16().to_string()),
+            http_status: Some(status_code.as_u16()),
+            provider_code: None,
             provider_message: Some(format!("chat probe ok: {model}")),
             operator_hint: None,
             trace_id,
@@ -281,20 +282,31 @@ fn classify_deepseek_chat_probe_response(
         };
     }
 
-    // 限流说明 Key 与模型都已被服务商接受，只是此刻配额受限——判成失败会误导用户。
-    if status_code == reqwest::StatusCode::TOO_MANY_REQUESTS {
-        return ProviderProbeView {
-            ok: true,
-            status: "rate_limited",
-            summary: format!("翻译 API 与模型 {model} 可用（当前被限流）"),
-            retryable: false,
-            provider_code: Some(status_code.as_u16().to_string()),
-            provider_message: summarize_deepseek_error_payload(&body_text),
-            operator_hint: Some("服务商正在限流，翻译时建议调低并发数。".to_string()),
-            trace_id,
-            base_url,
-            checked_at,
-        };
+    let (provider_code, limit) = upstream_verdict(status_code.as_u16(), &body_text, retry_after, &base_url);
+    if let Some(limit) = limit {
+        // 限流、过载说明 Key 与模型都已被服务商接受，只是此刻忙——判成失败会误导用户。
+        // 欠费、额度用完、套餐不含这个模型也走 429（智谱 1113、OpenAI insufficient_quota……），这些重试没用，判不可用。
+        if !limit.kind.blocks_use() {
+            let (summary, hint) = if limit.kind == UpstreamLimitKind::Overloaded {
+                (format!("翻译 API 与模型 {model} 可用（服务商当前繁忙）"), "服务商整体过载，和 Key 无关；翻译时会自动等一等再试。")
+            } else {
+                (format!("翻译 API 与模型 {model} 可用（当前被限流）"), "服务商正在限流，翻译时建议调低并发数。")
+            };
+            return ProviderProbeView {
+                ok: true,
+                status: "rate_limited",
+                summary,
+                retryable: false,
+                http_status: Some(status_code.as_u16()),
+                provider_code,
+                provider_message: summarize_deepseek_error_payload(&body_text),
+                operator_hint: Some(hint.to_string()),
+                trace_id,
+                base_url,
+                checked_at,
+            };
+        }
+        return blocked_view(&limit, status_code.as_u16(), provider_code, summarize_deepseek_error_payload(&body_text), trace_id, base_url, checked_at);
     }
 
     let upstream = UpstreamError::parse(&body_text);
@@ -334,12 +346,6 @@ fn classify_deepseek_chat_probe_response(
             format!("模型 {model} 不可用"),
             Some("Key 已通过鉴权，请确认模型名称在该服务商下存在且已开通。".to_string()),
         )
-    } else if status_code == reqwest::StatusCode::PAYMENT_REQUIRED {
-        (
-            "insufficient_balance",
-            "翻译 API 余额不足".to_string(),
-            None,
-        )
     } else if status_code.is_server_error() {
         ("network_error", "翻译 API 连通性校验失败".to_string(), None)
     } else {
@@ -356,7 +362,8 @@ fn classify_deepseek_chat_probe_response(
         summary,
         // 只有网络/服务商瞬时错误值得重试；Key、模型、余额都要用户先改配置。
         retryable: status == "network_error" || (status == "provider_error" && !parameter_rejected),
-        provider_code: Some(status_code.as_u16().to_string()),
+        http_status: Some(status_code.as_u16()),
+        provider_code,
         provider_message,
         operator_hint,
         trace_id,
@@ -386,6 +393,7 @@ pub(crate) async fn query_deepseek_balance_view(
             retryable: false,
             is_available: false,
             balance_infos: vec![],
+            http_status: None,
             provider_code: None,
             provider_message: Some(format!("base_url={base_url}")),
             trace_id: None,
@@ -414,7 +422,7 @@ const ANTHROPIC_VERSION: &str = "2023-06-01";
 pub(super) fn explain_missing_responses_endpoint(
     mut view: ProviderProbeView,
 ) -> ProviderProbeView {
-    let endpoint_missing = matches!(view.provider_code.as_deref(), Some("404") | Some("405"))
+    let endpoint_missing = matches!(view.http_status, Some(404) | Some(405))
         && !view
             .provider_message
             .as_deref()
@@ -505,6 +513,7 @@ async fn classify_deepseek_probe_response(
         .get("x-request-id")
         .and_then(|value| value.to_str().ok())
         .map(|value| value.to_string());
+    let retry_after = response.headers().contains_key(reqwest::header::RETRY_AFTER);
     let body_text = response.text().await.unwrap_or_default();
 
     if status_code.is_success() {
@@ -513,7 +522,8 @@ async fn classify_deepseek_probe_response(
             status: "valid",
             summary: "翻译 API Key 可用".to_string(),
             retryable: false,
-            provider_code: Some(status_code.as_u16().to_string()),
+            http_status: Some(status_code.as_u16()),
+            provider_code: None,
             provider_message: summarize_deepseek_models_payload(&body_text),
             operator_hint: None,
             trace_id,
@@ -522,6 +532,10 @@ async fn classify_deepseek_probe_response(
         };
     }
 
+    let (provider_code, limit) = upstream_verdict(status_code.as_u16(), &body_text, retry_after, &base_url);
+    if let Some(limit) = limit.filter(|limit| limit.kind.blocks_use()) {
+        return blocked_view(&limit, status_code.as_u16(), provider_code, summarize_deepseek_error_payload(&body_text), trace_id, base_url, checked_at);
+    }
     let status = if status_code == reqwest::StatusCode::UNAUTHORIZED
         || status_code == reqwest::StatusCode::FORBIDDEN
     {
@@ -544,7 +558,8 @@ async fn classify_deepseek_probe_response(
         status,
         summary,
         retryable: status != "unauthorized",
-        provider_code: Some(status_code.as_u16().to_string()),
+        http_status: Some(status_code.as_u16()),
+        provider_code,
         provider_message: summarize_deepseek_error_payload(&body_text),
         operator_hint: None,
         trace_id,
@@ -569,6 +584,7 @@ fn classify_deepseek_probe_transport_error(
             status: "invalid_input",
             summary: "请求没法发出，请检查接口地址和 API Key 里有没有多余的字符".to_string(),
             retryable: false,
+            http_status: None,
             provider_code: None,
             provider_message: Some(error_text),
             operator_hint: None,
@@ -590,10 +606,59 @@ fn classify_deepseek_probe_transport_error(
         status: "network_error",
         summary: summary.to_string(),
         retryable: true,
+        http_status: None,
         provider_code: None,
         provider_message: Some(error_text.clone()),
         operator_hint: Some(format!("没有收到服务商的回复，和 Key 无关。底层错误：{error_text}")),
         trace_id: None,
+        base_url,
+        checked_at,
+    }
+}
+
+/// 失败响应里服务商自己的业务码，和「是不是限流 / 欠费 / 额度用完」的结论（见 `crate::upstream_limits`）。
+/// 业务码优先用判断时认出的那个（OpenCode 把「Policy budget exceeded」包在外壳里时，外壳的 type 不算数）。
+pub(super) fn upstream_verdict(
+    http_status: u16,
+    body: &str,
+    retry_after: bool,
+    base_url: &str,
+) -> (Option<String>, Option<UpstreamLimit>) {
+    let host = url::Url::parse(base_url).ok().and_then(|url| url.host_str().map(str::to_string)).unwrap_or_default();
+    let limit = classify_upstream_limit(http_status, body, retry_after, &host);
+    let code = limit.as_ref().and_then(|limit| limit.code.clone()).or_else(|| upstream_error_code(body));
+    (code, limit)
+}
+
+/// 欠费、额度用完、套餐不含这个模型：处理好之前翻译一定失败，重试没用。
+/// `status`：欠费 `insufficient_balance`、额度 `quota_exceeded`、套餐或 Key 类型不对 `unauthorized`（没有权限用）。
+pub(super) fn blocked_status(kind: UpstreamLimitKind) -> &'static str {
+    match kind {
+        UpstreamLimitKind::Billing => "insufficient_balance",
+        UpstreamLimitKind::PlanRestricted => "unauthorized",
+        _ => "quota_exceeded",
+    }
+}
+
+fn blocked_view(
+    limit: &UpstreamLimit,
+    http_status: u16,
+    provider_code: Option<String>,
+    provider_message: Option<String>,
+    trace_id: Option<String>,
+    base_url: String,
+    checked_at: String,
+) -> ProviderProbeView {
+    ProviderProbeView {
+        ok: false,
+        status: blocked_status(limit.kind),
+        summary: format!("翻译 API 不可用：{}", limit.reason_zh),
+        retryable: false,
+        http_status: Some(http_status),
+        provider_code,
+        provider_message,
+        operator_hint: Some("这不是限流，过一会儿重试也没用；处理好之前翻译会失败。".to_string()),
+        trace_id,
         base_url,
         checked_at,
     }
@@ -656,7 +721,8 @@ async fn classify_deepseek_balance_response(
             retryable: false,
             is_available: false,
             balance_infos: vec![],
-            provider_code: Some(status_code.as_u16().to_string()),
+            http_status: Some(status_code.as_u16()),
+            provider_code: None,
             provider_message: redirect_location(&response).map(|target| format!("Location: {target}")),
             trace_id: None,
             base_url,
@@ -698,7 +764,8 @@ async fn classify_deepseek_balance_response(
             retryable: false,
             is_available,
             balance_infos,
-            provider_code: Some(status_code.as_u16().to_string()),
+            http_status: Some(status_code.as_u16()),
+            provider_code: None,
             provider_message: None,
             trace_id,
             base_url,
@@ -731,7 +798,8 @@ async fn classify_deepseek_balance_response(
         retryable: status == "network_error",
         is_available: false,
         balance_infos: vec![],
-        provider_code: Some(status_code.as_u16().to_string()),
+        http_status: Some(status_code.as_u16()),
+        provider_code: upstream_error_code(&body_text),
         provider_message: summarize_deepseek_error_payload(&body_text),
         trace_id,
         base_url,
@@ -751,6 +819,7 @@ fn classify_deepseek_balance_transport_error(
         retryable: true,
         is_available: false,
         balance_infos: vec![],
+        http_status: None,
         provider_code: None,
         provider_message: Some(err.to_string()),
         trace_id: None,

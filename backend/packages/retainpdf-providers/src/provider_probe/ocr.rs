@@ -56,6 +56,7 @@ pub async fn validate_mineru_token_view(
             status: "valid",
             summary: "MinerU Token 可用".to_string(),
             retryable: false,
+            http_status: None,
             provider_code: Some("0".to_string()),
             provider_message: Some("ok".to_string()),
             operator_hint: None,
@@ -97,6 +98,7 @@ pub async fn validate_paddle_token_view(
             status: "valid",
             summary: "Paddle Access Token 可用".to_string(),
             retryable: false,
+            http_status: None,
             provider_code: Some("0".to_string()),
             provider_message: Some("ok".to_string()),
             operator_hint: Some(
@@ -125,7 +127,8 @@ pub(super) fn redirected_view(
         status: "redirected",
         summary: format!("{provider} 返回了重定向（HTTP {http_status}），请检查接口地址"),
         retryable: false,
-        provider_code: Some(http_status.to_string()),
+        http_status: Some(http_status),
+        provider_code: None,
         provider_message: location.map(|target| format!("Location: {target}")),
         operator_hint: Some(
             "校验不跟随重定向，免得把 Key 带到别的地址。常见原因：http 和 https 写反了、地址多了或少了一段路径。"
@@ -184,10 +187,9 @@ pub(super) fn classify_mineru_probe_error(
             status,
             summary,
             retryable,
-            provider_code: info
-                .provider_code
-                .clone()
-                .or_else(|| info.http_status.map(|code| code.to_string())),
+            // 2026-11-23 起业务码和 HTTP 状态码分开放：没有业务码时不再拿 HTTP 状态码顶上。
+            http_status: info.http_status,
+            provider_code: info.provider_code.clone(),
             provider_message: info.provider_message.clone(),
             operator_hint: info.operator_hint.clone(),
             trace_id: info.trace_id.clone(),
@@ -209,6 +211,7 @@ pub(super) fn classify_mineru_probe_error(
                 status: "network_error",
                 summary: summary.to_string(),
                 retryable: true,
+                http_status: None,
                 provider_code: None,
                 provider_message: Some(error_text.clone()),
                 operator_hint: Some(format!("没有收到 MinerU 的回复，和 Token 无关。底层错误：{error_text}")),
@@ -253,6 +256,7 @@ pub(super) fn classify_probe_error(
                 mapped.category,
                 OcrErrorCategory::Unauthorized | OcrErrorCategory::CredentialExpired
             ),
+            http_status: None,
             provider_code: mapped.provider_code,
             provider_message: mapped.provider_message,
             operator_hint: mapped.operator_hint,
@@ -285,6 +289,7 @@ pub(super) fn classify_probe_error(
         status,
         summary: summary.to_string(),
         retryable,
+        http_status: None,
         provider_code,
         provider_message: provider_message.or(Some(error_text.clone())),
         operator_hint: Some(format!("没有拿到能判断 Token 好坏的回复。底层错误：{error_text}")),
@@ -318,7 +323,8 @@ pub(super) fn classify_paddle_probe_error(
                 status: "valid",
                 summary: "Paddle Access Token 可用".to_string(),
                 retryable: false,
-                provider_code: info.provider_code.clone().or(Some("404".to_string())),
+                http_status: info.http_status,
+                provider_code: info.provider_code.clone(),
                 provider_message: info
                     .provider_message
                     .clone()
@@ -355,6 +361,7 @@ pub(super) fn classify_paddle_probe_error(
                 info.category,
                 OcrErrorCategory::Unauthorized | OcrErrorCategory::PermissionDenied
             ),
+            http_status: info.http_status,
             provider_code: info.provider_code.clone(),
             provider_message: info
                 .provider_message
@@ -385,6 +392,7 @@ pub(super) fn classify_paddle_probe_error(
         status,
         summary: summary.to_string(),
         retryable,
+        http_status: None,
         provider_code: None,
         provider_message: Some(error_text.clone()),
         operator_hint: Some(format!("没有拿到能判断 Token 好坏的回复。底层错误：{error_text}")),

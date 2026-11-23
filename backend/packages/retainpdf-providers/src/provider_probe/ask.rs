@@ -22,7 +22,8 @@ use retainpdf_core::config::DeepSeekRuntimeConfig;
 use retainpdf_core::models::domain::now_iso;
 
 use super::deepseek::{
-    anthropic_auth, anthropic_messages_url, normalize_deepseek_base_url, responses_url, ANTHROPIC_DEFAULT_BASE_URL,
+    anthropic_auth, anthropic_messages_url, blocked_status, normalize_deepseek_base_url, responses_url, upstream_verdict,
+    ANTHROPIC_DEFAULT_BASE_URL,
 };
 use super::models::provider_message;
 use super::policy::ProbePolicy;
@@ -81,6 +82,7 @@ pub struct AskUsageView {
 pub struct TranslationModelAskView {
     pub ok: bool,
     /// `ok`、`unauthorized`、`rejected`（请求被服务商拒绝，比如模型不认图片、模型名不对）、`rate_limited`、
+    /// `insufficient_balance`（欠费、余额不足）、`quota_exceeded`（用量或花费上限）、
     /// `provider_error`、`unreachable`、`empty`（服务商回了但没有文字）、`invalid_input`。
     pub status: &'static str,
     pub summary: String,
@@ -92,6 +94,10 @@ pub struct TranslationModelAskView {
     pub usage: Option<AskUsageView>,
     pub images: usize,
     pub elapsed_ms: u64,
+    /// 服务商回的 HTTP 状态码；没收到回复（连不上、超时）时为 null。2026-11-23 起。
+    pub http_status: Option<u16>,
+    /// 服务商自己的业务码（智谱 `1113`、OpenAI `insufficient_quota`……），正文里没有时为 null。
+    /// 2026-11-23 以前这里放的是 HTTP 状态码，改看 `http_status`。
     pub provider_code: Option<String>,
     pub provider_message: Option<String>,
     pub asked_at: String,
@@ -250,6 +256,8 @@ fn answer_usage(protocol: Protocol, body: &Value) -> Option<AskUsageView> {
 
 struct Reply {
     status: u16,
+    /// 响应头里有没有 `retry-after`（分 Anthropic 的限流和消费封顶用）。
+    retry_after: bool,
     body: String,
 }
 
@@ -300,6 +308,7 @@ pub async fn ask_translation_model_view(
         usage: None,
         images: images.len(),
         elapsed_ms: 0,
+        http_status: None,
         provider_code: None,
         provider_message: None,
         asked_at: asked_at.clone(),
@@ -328,9 +337,10 @@ pub async fn ask_translation_model_view(
         async move {
             let response = request.json(&body).send().await?;
             let status = response.status().as_u16();
+            let retry_after = response.headers().contains_key(reqwest::header::RETRY_AFTER);
             let bytes = response.bytes().await?;
             let body = String::from_utf8_lossy(&bytes[..bytes.len().min(MAX_BODY_BYTES)]).into_owned();
-            Ok::<Reply, reqwest::Error>(Reply { status, body })
+            Ok::<Reply, reqwest::Error>(Reply { status, retry_after, body })
         }
     };
     let first = match protocol {
@@ -361,13 +371,29 @@ pub async fn ask_translation_model_view(
             return Ok(view);
         }
     };
+    view.http_status = Some(reply.status);
     if !(200..300).contains(&reply.status) {
-        view.provider_code = Some(reply.status.to_string());
         view.provider_message = provider_message(&reply.body, &api_key);
+        if (300..400).contains(&reply.status) {
+            view.status = "provider_error";
+            view.summary = "接口地址被重定向了；请填重定向以后的地址（为了不把 Key 带到别处，不跟随重定向）".to_string();
+            return Ok(view);
+        }
+        let (provider_code, limit) = upstream_verdict(reply.status, &reply.body, reply.retry_after, &base_url);
+        view.provider_code = provider_code;
+        // 429 不一定是限流：欠费、额度用完、套餐不含这个模型也走 429，按业务码分开（见 crate::upstream_limits）。
+        if let Some(limit) = limit {
+            (view.status, view.summary) = if limit.kind.blocks_use() {
+                (blocked_status(limit.kind), format!("服务商拒绝了：{}（重试没用）", limit.reason_zh))
+            } else if limit.kind == crate::upstream_limits::UpstreamLimitKind::Overloaded {
+                ("rate_limited", "服务商当前繁忙，请稍后重试".to_string())
+            } else {
+                ("rate_limited", "服务商限流，请稍后重试".to_string())
+            };
+            return Ok(view);
+        }
         (view.status, view.summary) = match reply.status {
-            300..=399 => ("provider_error", "接口地址被重定向了；请填重定向以后的地址（为了不把 Key 带到别处，不跟随重定向）".to_string()),
             401 | 403 => ("unauthorized", "API Key 不对，或者没有调用这个模型的权限".to_string()),
-            429 => ("rate_limited", "服务商限流或额度不够，请稍后重试".to_string()),
             400..=499 => (
                 "rejected",
                 if images.is_empty() {
@@ -383,7 +409,6 @@ pub async fn ask_translation_model_view(
     let Ok(body) = serde_json::from_str::<Value>(&reply.body) else {
         view.status = "provider_error";
         view.summary = "服务商返回的不是 JSON".to_string();
-        view.provider_code = Some(reply.status.to_string());
         view.provider_message = provider_message(&reply.body, &api_key);
         return Ok(view);
     };
@@ -458,8 +483,8 @@ mod tests {
 
     #[test]
     fn max_tokens_rejection_is_recognised() {
-        let reply = Reply { status: 400, body: r#"{"error":{"message":"Unsupported parameter: 'max_tokens'. Use 'max_completion_tokens' instead."}}"#.to_string() };
+        let reply = Reply { status: 400, retry_after: false, body: r#"{"error":{"message":"Unsupported parameter: 'max_tokens'. Use 'max_completion_tokens' instead."}}"#.to_string() };
         assert!(rejects_max_tokens(&reply));
-        assert!(!rejects_max_tokens(&Reply { status: 400, body: "model not found".to_string() }));
+        assert!(!rejects_max_tokens(&Reply { status: 400, retry_after: false, body: "model not found".to_string() }));
     }
 }

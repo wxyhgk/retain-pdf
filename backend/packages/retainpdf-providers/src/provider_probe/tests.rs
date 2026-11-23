@@ -707,7 +707,7 @@ async fn probes_never_follow_redirects_or_forward_keys() {
     for (name, view) in &views {
         assert!(!view.ok, "{name}");
         assert_eq!(view.status, "redirected", "{name}: {}", view.summary);
-        assert_eq!(view.provider_code.as_deref(), Some("302"), "{name}");
+        assert_eq!((view.http_status, view.provider_code.as_deref()), (Some(302), None), "{name}");
         assert!(!view.retryable, "{name}");
         assert!(view.summary.contains("重定向"), "{name}: {}", view.summary);
     }
@@ -734,6 +734,7 @@ async fn balance_probe_never_follows_redirects() {
     .await
     .unwrap();
     assert_eq!(view.status, "redirected", "{}", view.summary);
+    assert_eq!((view.http_status, view.provider_code.as_deref()), (Some(302), None));
     assert!(!view.ok);
     assert!(seen.lock().unwrap().is_empty());
 }

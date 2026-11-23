@@ -46,6 +46,7 @@
     "status": "expired",
     "summary": "MinerU Token 已过期",
     "retryable": false,
+    "http_status": 200,
     "provider_code": "A0211",
     "provider_message": "token expired",
     "operator_hint": "更换新 Token",
@@ -59,7 +60,12 @@
 三个校验接口共用这一个结构（Rust 里叫 `ProviderProbeView`，2026-10-22 以前叫 `MineruTokenValidationView`，JSON 没变）。
 
 - `summary` 是给用户看的中文；`operator_hint` 是下一步建议，可能带底层错误原文。
-- `provider_code`：服务商的错误码，没有时是 HTTP 状态码（字符串），连不上时为 `null`。
+- `http_status`（数字，2026-11-23 起）：服务商回的 HTTP 状态码；没收到回复（连不上、超时）时为 `null`。
+  MinerU、Paddle 校验成功时不记状态码，也是 `null`。
+- `provider_code`（字符串）：**服务商自己的业务码**，从正文里读（MinerU `A0211`、Paddle `errorCode`、智谱 `1113`、
+  OpenAI `insufficient_quota`、百炼 `Arrearage`……，怎么读见第 3.1 节）；正文里没有时为 `null`。
+  2026-11-23 以前翻译接口在这里放 HTTP 状态码（`"429"`、成功时 `"200"`），MinerU 没有业务码时也拿 HTTP 状态码顶上，
+  现在 HTTP 状态码只在 `http_status`。前端、CLI 都不读这个字段（2026-11-23 查过），所以直接改了含义，没有另起字段。
 - `provider_message`、`operator_hint` 最多 500 个字符，超出截断并以 `…` 结尾（服务商回一整页错误页时不原样转给前端）。
 - 返回里不会有 Key 原文：Key 只放在请求头里，`base_url` 带账号密码直接 400。
 - 界面判断用 `ok`；`status` 用来给更细的提示，**以后可能加值**，不认识的值按 `ok` + `summary` 处理。
@@ -69,18 +75,59 @@
 | `status` | `ok` | MinerU | Paddle | 翻译接口 | 含义 |
 |---|---|---|---|---|---|
 | `valid` | true | ✓ | ✓ | ✓ | 可用 |
-| `rate_limited` | true | | | ✓ | Key 和模型都被接受了，此刻被限流（429） |
-| `unauthorized` | false | ✓ | ✓ | ✓ | Key / Token 无效或没权限（401、403、MinerU `A0202` 等） |
+| `rate_limited` | true | | | ✓ | Key 和模型都被接受了，此刻被限流或服务商繁忙（429，且业务码不是欠费、额度类，见 3.1） |
+| `unauthorized` | false | ✓ | ✓ | ✓ | Key / Token 无效或没权限（401、403、MinerU `A0202` 等）；套餐不包含这个模型、Key 类型不对（智谱 `1311`、`1315`，虽然是 429）也算 |
 | `expired` | false | ✓ | | | Token 已过期（MinerU `A0211`） |
 | `model_unavailable` | false | | | ✓ | Key 通过了，模型名不存在或没开通；上游指明是别的参数（`error.param` 不是 `model`，或 `code` 是 `unsupported_parameter` / `unsupported_value`）时不算，归 `provider_error` |
-| `insufficient_balance` | false | | | ✓ | 余额不足（402） |
+| `insufficient_balance` | false | | | ✓ | 欠费、余额不足、没订购、套餐到期：402，或业务码是这一类（OpenAI `credit_balance_exhausted`、智谱 `1113`/`1309`/`1314`、百炼 `Arrearage` 等，常是 429 或 400） |
+| `quota_exceeded` | false | | | ✓ | 2026-11-23 起：到了用量或花费上限（OpenAI `insufficient_quota`、Anthropic `enforced_spend_limit_reached`、智谱 `1308`/`1310`/`1316`–`1321`、百炼 `BudgetLimitExceeded`、OpenCode「Policy budget exceeded」等），要等重置或调高上限 |
 | `invalid_input` | false | | | ✓ | Key 里有换行、全角空格等放不进请求头的字符，请求没发出去 |
 | `redirected` | false | ✓ | ✓ | ✓ | 服务商回了 3xx。校验不跟随重定向（第 6 节），请检查地址 |
 | `network_error` | false | ✓ | ✓ | ✓ | 没收到服务商的回复（连不上、超时、中途断开）；Paddle、翻译接口把 5xx 也算这一类 |
 | `provider_error` | false | ✓ | ✓ | ✓ | 服务商回了别的错误，说不清是不是 Key 的问题 |
 
+`insufficient_balance`、`quota_exceeded` 和套餐类的 `unauthorized` 的 `summary` 是「翻译 API 不可用：<原因和下一步>」，
+例如「翻译 API 不可用：智谱账户欠费或余额不足（也没有可用资源包），请充值后再用」；`operator_hint` 是「这不是限流，过一会儿重试也没用；处理好之前翻译会失败。」。
+
 `retryable` 为 `true` 的只会是 `network_error`、`provider_error`（Key、模型、余额、地址的问题都要用户先改配置）；
 `provider_error` 也可能是 `false`，例如服务商不支持 `/responses` 接口，或不收检测请求里的某个参数（`summary` 写明参数名，`provider_message` 末尾带上游错误码）。
+
+### 3.1 业务码和 429（2026-11-23）
+
+HTTP 429 在好几家都不只是限流：OpenAI 的额度用完、智谱欠费 `1113`、百炼 `Arrearage`、Anthropic 的月度消费封顶、
+OpenCode 的工作区预算都走 429。以前翻译接口的校验只看状态码，429 一律报「可用（当前被限流）」，欠费的 Key 也是绿灯。
+现在读正文里的业务码再分，代码在 `backend/packages/retainpdf-providers/src/upstream_limits.rs`
+（`upstream_error_code`、`classify_upstream_limit`，从 `retainpdf-providers` 的门面导出，Rust 里别处要分 429 也用它）。
+
+业务码按这个顺序找，第一个有值的算数：
+
+1. Anthropic 的 `error.details.error_code`；
+2. `error.code`（OpenAI、智谱、百炼兼容模式；数字也认）；
+3. 顶层 `code`（百炼原生协议、Z.ai 的另一种写法）；
+4. `error.type`（Anthropic；OpenAI 计费类只给 type 时）；
+5. 都没有时，消息里有固定说法就用那句话：OpenCode 的 `Policy budget exceeded`、`Insufficient account funds`，
+   百炼 Coding Plan 的 `hour/week/month allocated quota exceeded`。这些说法比码先看（OpenCode 包在 Anthropic 外壳里转发时，外壳的 type 是笼统的限流）。
+
+| 归类 | 码（举例） | 校验 Key 的 `status` |
+|---|---|---|
+| 限流 | 没带码的 429、OpenAI `rate_limit_exceeded`/`slow_down`、Anthropic `rate_limit_error`/`ramp_limit_exceeded`、智谱 `1302`、百炼 `Throttling.*`（过载类除外）、`limit_requests` | `rate_limited`（`ok: true`，「可用（当前被限流）」） |
+| 服务商繁忙 | 智谱 `1305`、百炼 `Throttling.ServiceOverloaded`/`ResourceExhausted`（都是 429） | `rate_limited`（`ok: true`，「可用（服务商当前繁忙）」） |
+| 欠费 | 402；OpenAI `credit_balance_exhausted`；Anthropic `billing_error`、400「Your credit balance is too low」；智谱 `1113`/`1309`/`1314`；百炼 `Arrearage`（400/403）、`CommodityNotPurchased`、`PrepaidBillOverdue`、`PostpaidBillOverdue`；OpenCode「Insufficient account funds」 | `insufficient_balance` |
+| 额度、上限 | OpenAI `insufficient_quota`（code 或 type）、`billing_hard_limit_reached`、`*_spend_limit_exceeded`、`organization_usage_limit_exceeded`；Anthropic `enforced_spend_limit_reached`、400「You have reached your specified … limits」；智谱 `1308`/`1310`/`1313`/`1316`–`1321`；百炼 `BudgetLimitExceeded`、`AllocationQuota.FreeTierOnly`（403）、Coding Plan 的时间窗额度；OpenCode「Policy budget exceeded」 | `quota_exceeded` |
+| 套餐不含、Key 类型不对 | 智谱 `1311`、`1315` | `unauthorized` |
+
+两条特殊规则：
+
+- 百炼兼容模式的 `insufficient_quota` 是 TPS/TPM 限流（`Throttling.AllocationQuota`），和 OpenAI 的同名码意思相反：主机名带
+  `dashscope` 或以 `aliyuncs.com` 结尾时按限流，消息里提到免费额度（free / 免费）时才算额度用完。
+- Anthropic 官方地址（`*.anthropic.com`）回 429 `rate_limit_error`、没有 `details.error_code`、响应头又没有 `retry-after` 时，
+  按消费封顶处理（官方文档的说法）。第三方的 Anthropic 兼容地址不套这条。
+
+认不出的 429 照旧当限流；认不出码的非 429 照原来的分类走（401/403 → `unauthorized`，5xx → `network_error`……）。
+不发额外请求，只看这一次的正文和响应头。只填了 Key 没填模型（走 `GET /models`）时，欠费、额度类照样报不可用，普通 429 照旧是 `provider_error`。
+
+码表来源是各家官方错误码文档（2026-11-23 抓取），和错误码目录（[服务商错误码](../../reference/error-codes/README.md)）同一批数据；
+这里的码表是检测接口自己用的一小份（只收限流、繁忙、欠费、额度、套餐五类），目录改了不会自动跟着变。
 
 ## 4. 余额结果
 
@@ -89,7 +136,7 @@
   "ok": true, "status": "available", "summary": "DeepSeek 余额可用：CNY 12.30", "retryable": false,
   "is_available": true,
   "balance_infos": [{ "currency": "CNY", "total_balance": "12.30", "granted_balance": "0.00", "topped_up_balance": "12.30" }],
-  "provider_code": "200", "provider_message": null, "trace_id": null,
+  "http_status": 200, "provider_code": null, "provider_message": null, "trace_id": null,
   "base_url": "https://api.deepseek.com/v1", "checked_at": "2026-10-22T08:30:00Z"
 }
 ```
@@ -103,6 +150,9 @@
 | `redirected` | 余额接口回了 3xx，没有跟随 |
 | `network_error` | 没收到回复，或 5xx |
 | `provider_error` | 别的 HTTP 错误 |
+
+`http_status`、`provider_code` 和校验结果一样分开放（2026-11-23 起）：`http_status` 是余额接口回的状态码，`provider_code` 是正文里的业务码
+（DeepSeek 基本没有，多数是 `null`；以前这里放 HTTP 状态码）。
 
 ## 5. 地址检查
 
@@ -130,7 +180,7 @@
 
 1. 用户输入或更新 Key / Token，点检测；
 2. 调对应接口，看 `data.ok`，显示 `data.summary`；
-3. 失败时可以补 `operator_hint`；调试模式再补 `provider_code`、`provider_message`、`trace_id`。
+3. 失败时可以补 `operator_hint`；调试模式再补 `http_status`、`provider_code`、`provider_message`、`trace_id`。
 
 ## 8. 拉取翻译接口的模型列表（2026-11-19）
 
@@ -152,7 +202,7 @@
 
 ```json
 { "ok": true, "status": "ok", "summary": "拉到 4 个模型，其中 2 个对话模型", "source": "provider",
-  "base_url": "https://api.deepseek.com/v1", "fetched_at": "…", "provider_code": null, "provider_message": null,
+  "base_url": "https://api.deepseek.com/v1", "fetched_at": "…", "http_status": null, "provider_code": null, "provider_message": null,
   "chat_models": 2,
   "models": [ { "id": "deepseek-flash", "display_name": null, "owned_by": "deepseek", "created": 1760000000,
                 "kind": "chat", "price_provider": "deepseek", "price_basis": "host",
@@ -172,9 +222,13 @@
 | `unauthorized` | 401 / 403 | Key 不对或没有权限 |
 | `invalid_input` | Key 里有换行、全角空格等放不进请求头的字符 | 让用户重新粘贴 |
 | `unreachable` | 连不上、超时、读到一半断开 | 稍后重试 |
-| `provider_error` | 别的错误、重定向、列表太大（8 MB） | 显示 `summary`，调试时看 `provider_code`、`provider_message` |
+| `provider_error` | 别的错误、重定向、列表太大（8 MB） | 显示 `summary`，调试时看 `http_status`、`provider_code`、`provider_message` |
 
 `provider_message` 是服务商的报错原文，截到 500 个字符，里面出现的 Key 换成 `[REDACTED]`。
+
+`http_status` 是出错时服务商回的 HTTP 状态码（成功、没收到回复时为 `null`），`provider_code` 是正文里的业务码（第 3.1 节，没有时 `null`）；
+2026-11-23 以前 `provider_code` 放的是 HTTP 状态码。按业务码认出欠费、额度用完、套餐不含时 `status` 照旧（401/403 是 `unauthorized`，
+其余 `provider_error`），`summary` 换成「服务商说这个 Key 现在不能用：<原因>」。
 
 ## 9. 用翻译接口的配置问一次模型，可以带图片（2026-11-22）
 
@@ -203,18 +257,24 @@
 ```json
 { "ok": true, "status": "ok", "summary": "模型已回答", "base_url": "…", "model": "qwen-vl-max", "protocol": "openai",
   "text": "两张表一样", "usage": { "input_tokens": 812, "output_tokens": 6 }, "images": 1, "elapsed_ms": 2310,
-  "provider_code": null, "provider_message": null, "asked_at": "…" }
+  "http_status": 200, "provider_code": null, "provider_message": null, "asked_at": "…" }
 ```
 
 | `status` | 什么时候 |
 |---|---|
-| `unauthorized` | 401 / 403 |
+| `unauthorized` | 401 / 403；套餐不含这个模型、Key 类型不对（智谱 `1311`、`1315`） |
 | `rejected` | 别的 4xx：常见是模型不支持看图、图片太大、模型名不对（看 `provider_message`） |
-| `rate_limited` | 429 |
+| `rate_limited` | 429 且业务码是限流或服务商繁忙，或没带码（第 3.1 节） |
+| `insufficient_balance` | 2026-11-23 起：欠费、余额不足、没订购、套餐到期（402，或第 3.1 节的欠费类业务码，常是 429） |
+| `quota_exceeded` | 2026-11-23 起：用量或花费上限（第 3.1 节的额度类业务码） |
 | `provider_error` | 5xx、重定向、回的不是 JSON |
 | `unreachable` | 连不上、超时、读到一半断开 |
 | `empty` | 回了但没有文字（可能都用在思考上，调大 `max_tokens`） |
 | `invalid_input` | Key 里有放不进请求头的字符 |
+
+`http_status` 是服务商回的 HTTP 状态码（成功时也有；连不上、超时、请求没发出时为 `null`），`provider_code` 是正文里的业务码（第 3.1 节）。
+以前 429 一律 `rate_limited`、`summary` 是「服务商限流或额度不够」，`provider_code` 放 HTTP 状态码；2026-11-23 起按业务码分开，
+欠费、额度类的 `summary` 是「服务商拒绝了：<原因>（重试没用）」。
 
 Python 这边（翻译、表格 agent 用的 `request_chat_content`）也能带图了：消息的 `content` 写成片段列表（`model_wire.text_part` /
 `model_wire.image_part`），三种协议各自换写法，见 `backend/translation/retainpdf_translation/llm/shared/model_wire.py` 开头。
@@ -227,6 +287,7 @@ Rust 模型执行器（`RETAIN_MODEL_EXECUTOR`）还只收文字，带图的请�
 
 各家上游错误码（含义、给用户的提示、运行期我们怎么处理、和官方说法对不对得上）另有目录接口 `GET /api/v1/providers/error-codes`
 （2026-11-23，signed，契约 `provider-error-codes.v1`），见 [服务商错误码接口](../../api/08-调试诊断/03-服务商错误码.md)、
-[服务商错误码](../../reference/error-codes/README.md)。注意检测接口把 429 一律报成「可用（当前被限流）」，额度类 429 的缺口记在那里。
+[服务商错误码](../../reference/error-codes/README.md)。检测接口以前把 429 一律报成「可用（当前被限流）」，2026-11-23 起按业务码分开（第 3.1 节）；
+运行期翻译那一侧的同类缺口还记在目录里。
 
 方案和取舍见 [服务商探测与用量](../../ops/planning/api-reorg/20261022-服务商探测与用量.md)。
