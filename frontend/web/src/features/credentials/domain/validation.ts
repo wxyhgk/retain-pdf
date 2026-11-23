@@ -3,6 +3,7 @@ import {
   getOcrProviderDefinition,
   TRANSLATION_PROVIDER_DEFINITION,
 } from "@/platform/config/providers.js";
+import { defaultErrorHintLookup, withProviderHint, type ProviderErrorHintLookup } from "./error-hint.js";
 import type {
   CredentialsStatePort,
   OcrValidationCachePayload,
@@ -51,6 +52,8 @@ export interface RunOcrTokenValidationOptions {
   setOcrValidationMessage: (message?: string, tone?: string, providerId?: string) => void;
   showResult?: boolean;
   legacyRuntimePort?: unknown;
+  /** 检测没通过时查服务商错误码目录（见 error-hint.ts）；测试里换成假的。 */
+  lookupErrorHint?: ProviderErrorHintLookup;
 }
 
 export interface RunDeepSeekConnectivityCheckOptions {
@@ -115,6 +118,7 @@ export async function runOcrTokenValidation({
   setOcrValidationMessage,
   showResult = true,
   legacyRuntimePort,
+  lookupErrorHint = defaultErrorHintLookup,
 }: RunOcrTokenValidationOptions) {
   const definition = getOcrProviderDefinition(providerId);
   const normalizedToken = `${token || ""}`.trim();
@@ -153,7 +157,13 @@ export async function runOcrTokenValidation({
     if (showResult) {
       const hint = result.operator_hint ? ` ${result.operator_hint}` : "";
       const message = result.summary || `${definition.label} Token 检测结果：${result.status || "unknown"}`;
-      setOcrValidationMessage(`${message}${hint}`.trim(), result.ok ? "valid" : "error", definition.id);
+      const shown = `${message}${hint}`.trim();
+      setOcrValidationMessage(shown, result.ok ? "valid" : "error", definition.id);
+      // 没通过、服务商回了码（Paddle 12001、智谱 1113……）时，把错误码目录里这家的说法接在后面。
+      if (!result.ok) {
+        const withHint = await withProviderHint(shown, definition.id, result, lookupErrorHint);
+        if (withHint) setOcrValidationMessage(withHint, "error", definition.id);
+      }
     }
     return result;
   } catch (err) {
