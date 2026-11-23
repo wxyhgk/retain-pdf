@@ -14,7 +14,7 @@ RetainPDF 把 PDF 翻译成中文，尽量保留原来的版面：公式、图�
 
 ## 按功能查
 
-每一页对应软件里的一个功能。设置里每一栏标题旁的 **?** 会打开对应的那一页。
+每一页对应软件里的一个功能。软件底部的 **使用说明** 按钮随时能打开这份说明书；设置里每一栏标题旁的 **?** 直接打开讲这一栏的那一页。
 
 | 功能 | 在哪里 |
 | --- | --- |
@@ -35,14 +35,12 @@ RetainPDF 把 PDF 翻译成中文，尽量保留原来的版面：公式、图�
 | [外观和命令行](settings.md) | 设置 → 外观；命令行工具在 设置 → 更新（桌面版） |
 | [更新](app-update.md) | 设置 → 更新（桌面版） |
 
-## 给写说明书的人
-
-- 一个前端模块（`frontend/web/src/features/<模块>`）一页，文件名就是模块名。一个功能只在自己模块那页写，别的页链过去。
-- 设置分区登记里的 `guide` 写模块名，标题旁的「?」就链到 `docs/guide/<模块>.md`。
-- `frontend/web/tests/architecture/user-guide-coverage.test.mjs` 查每个模块都有说明页、每个 `guide` 都有对应的页、每页都列在上面的表里。
-- 截图用演示数据自动生成，不含真实的书和 Key，放在 `images/<模块>/` 下。界面改了重新生成：
-
-  ```bash
-  npm --prefix frontend/web run build
-  npm --prefix frontend/web run guide:screenshots
-  ```
+<!--
+给写说明书的人（这段是注释，软件里和 GitHub 上都不显示）：
+- 一个前端模块（frontend/web/src/features/<模块>）一页，文件名就是模块名。一个功能只在自己模块那页写，别的页链过去。
+- 软件里底部「使用说明」打开的就是这些文件：上面这张表就是左边的目录，页面之间的链接、图片都写相对路径。
+- 设置分区登记里的 guide 写模块名，标题旁的「?」打开说明书的那一页。
+- frontend/web/tests/architecture/user-guide-coverage.test.mjs 查每个模块都有说明页、每个 guide 都有对应的页、每页都列在上面的表里。
+- 截图用演示数据自动生成，不含真实的书和 Key，放在 images/<模块>/ 下。界面改了先 npm --prefix frontend/web run build，
+  再 npm --prefix frontend/web run guide:screenshots。
+-->

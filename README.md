@@ -77,7 +77,7 @@ SCI 论文、图片型 / 扫描版 PDF 与图书教材的原文—译文对照�
   <img src="resources/brand/readme-gallery/product/library.png" alt="RetainPDF 桌面端图书馆" width="1000" />
 </p>
 
-macOS 安装包已经过苹果签名和公证，只支持 Apple 芯片（M1 及以后）。装好后怎么填 Key、翻译第一本书，见 [使用说明书](docs/guide/README.md)。
+macOS 安装包已经过苹果签名和公证，只支持 Apple 芯片（M1 及以后）。装好后怎么填 Key、翻译第一本书，见 [使用说明书](frontend/web/guide/README.md)。
 
 ### Docker 部署
 

@@ -16,6 +16,7 @@ import { useHomeDialogStore, useHomeSettingsHub, useHomeWorkflowDialog } from ".
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { useLibrarySearchBinding } from "@/features/library/index.js";
 import { TRANSLATION_WORKFLOW_DIALOG } from "@/features/ingest/domain.js";
+import { openUserGuide } from "@/features/user-guide/index.js";
 
 // 任务中心浮层入口事件：平台 ?tab= 白名单（platform/navigation/pages.js）没有
 // tasks 键且不可动（别的 agent 领地），故任务中心不做顶栏 Tab，走主页浮层——
@@ -101,6 +102,23 @@ export function AppBottomBar({ showSearch = true, hidden = false }) {
           <path d="M3 12h4l3 8 4-16 3 8h4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         {/* 装饰钩子：同添加钮，皮肤可贴图换装 */}
+        <span className="library-bottom-icon-btn-ornament" aria-hidden="true" />
+      </button>
+
+      <button
+        id="home-user-guide-btn"
+        type="button"
+        className="library-bottom-icon-btn"
+        aria-label="使用说明"
+        title="使用说明"
+        aria-controls="user-guide-dialog"
+        onClick={() => openUserGuide()}
+      >
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.65" />
+          <path d="M9.6 9.6a2.4 2.4 0 1 1 3.4 2.2c-.6.3-1 .8-1 1.5v.4" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
+          <circle cx="12" cy="16.6" r="0.95" fill="currentColor" />
+        </svg>
         <span className="library-bottom-icon-btn-ornament" aria-hidden="true" />
       </button>
 

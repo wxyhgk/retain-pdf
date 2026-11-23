@@ -50,7 +50,7 @@ sudo apt install ./RetainPDF-Linux-<版本>.deb
 ![图书馆](images/library/library.jpg)
 
 - 上方「图书馆」「合集」切换 [书架](library.md) 和 [合集](collections.md)。
-- 底部一排从左到右是：**＋** [添加 PDF](ingest.md)、搜索框、[任务中心](task-center.md)、设置。
+- 底部一排从左到右是：**＋** [添加 PDF](ingest.md)、搜索框、[任务中心](task-center.md)、**使用说明**（就是这份说明书）、设置。
 
 ## 更新
 
@@ -69,4 +69,4 @@ docker compose up -d
 然后用浏览器打开 `http://127.0.0.1:40001`。之后的用法和桌面版一样，从 [接口设置](credentials.md) 开始填 Key。
 
 > 注意：能打开 `40001` 端口的人就能用你填的 Key。默认只有这台机器自己能访问；要给别的电脑用，先看
-> [Docker 部署说明](../../ops/deployment/docker/delivery/README.md) 里关于端口的部分。
+> [Docker 部署说明](https://github.com/wxyhgk/retain-pdf/blob/main/ops/deployment/docker/delivery/README.md) 里关于端口的部分。

@@ -77,7 +77,7 @@ Download the appropriate package from [GitHub Releases](https://github.com/wxyhg
   <img src="resources/brand/readme-gallery/product/library.png" alt="RetainPDF desktop library" width="1000" />
 </p>
 
-The macOS package is signed and notarized by Apple and runs on Apple silicon (M1 and later). For setting up keys and translating your first book, see the [user guide (Chinese)](docs/guide/README.md).
+The macOS package is signed and notarized by Apple and runs on Apple silicon (M1 and later). For setting up keys and translating your first book, see the [user guide (Chinese)](frontend/web/guide/README.md).
 
 ### Docker
 

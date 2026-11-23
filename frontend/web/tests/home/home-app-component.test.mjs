@@ -77,11 +77,15 @@ test("HomeApp：契约 id、idle 链、工作流对话框事件契约与交互",
   //      forceMount),还需要点一次"检查更新"按钮才会挂载。 ----
   clickWithMouseDown(dom, byId(dom, "app-settings-btn"));
   await waitFor(() => byId(dom, "app-update-btn"), "设置对话框打开后 app-update-btn 挂载");
-  // 每栏标题旁的「?」链到说明书里这个模块的那一页（docs/guide/<模块>.md）。
-  const guideLink = dom.window.document.querySelector('[data-settings-panel="api"] [data-settings-guide]');
-  assert.equal(guideLink?.getAttribute("data-settings-guide"), "credentials");
-  assert.equal(guideLink?.getAttribute("href"), "https://github.com/wxyhgk/retain-pdf/blob/main/docs/guide/credentials.md");
-  assert.equal(guideLink?.getAttribute("target"), "_blank");
+  // 每栏标题旁的「?」在软件里打开说明书讲这个模块的那一页（frontend/web/guide/<模块>.md）。
+  const guideButton = dom.window.document.querySelector('[data-settings-panel="api"] [data-settings-guide]');
+  assert.equal(guideButton?.getAttribute("data-settings-guide"), "credentials");
+  const guideRequests = [];
+  const onGuide = (event) => guideRequests.push(event.detail);
+  dom.window.document.addEventListener("retainpdf:open-user-guide", onGuide);
+  guideButton.click();
+  dom.window.document.removeEventListener("retainpdf:open-user-guide", onGuide);
+  assert.deepEqual(guideRequests, [{ page: "credentials", anchor: "" }]);
   clickWithMouseDown(dom, byId(dom, "app-update-btn"));
   await waitFor(() => byId(dom, "app-update-dialog"), "点击检查更新后 app-update-dialog 挂载");
   for (const id of ["app-update-status", "app-update-check-btn"]) {

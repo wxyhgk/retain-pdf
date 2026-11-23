@@ -13,6 +13,7 @@ import { StatusDetailDialog } from "@/features/job-detail/index.js";
 import { ReaderNavigation, SoftReaderHost } from "@/features/reader/index.js";
 import { CollectionDialog } from "@/features/collections/index.js";
 import { JobFinishNotifier, type FinishedJob } from "@/features/notify/index.js";
+import { UserGuideHost } from "@/features/user-guide/index.js";
 import { DownloadToastHost } from "@/ui/download-toast/DownloadToastHost.jsx";
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
@@ -90,6 +91,8 @@ const HOME_OVERLAYS: readonly ComponentType[] = [
   // 只能有一个（sonner 双宿主会重影）。
   DownloadToastHost,
   JobFinishNotifierSlot,
+  // 使用说明书：底部「使用说明」和设置里的「?」打开；第一次打开才下载。放最后，从设置里打开时叠在设置上面。
+  UserGuideHost,
 ];
 
 export function HomeOverlays() {

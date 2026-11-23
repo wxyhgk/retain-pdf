@@ -1,4 +1,4 @@
-/* 设置每栏标题旁的「?」：打开使用说明书里讲这一栏的那一页（docs/guide/<模块>.md）。
+/* 设置每栏标题旁的「?」：在软件里打开使用说明书讲这一栏的那一页（frontend/web/guide/<模块>.md）。
  *
  * @owns settings-guide-link */
 
@@ -13,7 +13,8 @@
   font-size: var(--ui-text-2xs);
   font-weight: 600;
   line-height: 1;
-  text-decoration: none;
+  background: transparent;
+  cursor: pointer;
 }
 
 .settings-guide-link:hover,

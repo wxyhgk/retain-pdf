@@ -6,6 +6,7 @@ import { SettingsDialog } from "@/features/settings/index.js";
 import { useAppEvent } from "@/ui/hooks/use-app-event.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
 import { useHomeSettingsSections } from "./settings-sections.jsx";
+import { openUserGuide } from "@/features/user-guide/index.js";
 
 export function SettingsDialogSlot() {
   const settingsHub = useHomeSettingsHub();
@@ -19,5 +20,5 @@ export function SettingsDialogSlot() {
     settingsHub?.dialogStore?.open?.({ tab: "api", setupMode: Boolean(detail.setupMode) });
   });
 
-  return <SettingsDialog dialogStore={settingsHub.dialogStore} sections={sections} />;
+  return <SettingsDialog dialogStore={settingsHub.dialogStore} sections={sections} onOpenGuide={openUserGuide} />;
 }
