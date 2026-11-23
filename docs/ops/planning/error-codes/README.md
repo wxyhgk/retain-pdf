@@ -4,6 +4,10 @@
 
 失败对象的字段定义和接口在 [失败结构](../../../api/08-调试诊断/01-失败结构.md)、[阶段事件与失败协议](../../../core/rust_api/11-阶段事件与失败协议.md)；服务商原始错误码表在 [PaddleOCR 错误码](../../../reference/ocr/PaddleOCR/错误码.md)、[DeepSeek 错误码](../../../reference/LLM_api/DeepSeek/错误码.md)。
 
+各家错误码的对照表（2026-11-23 起）是数据：`backend/packages/retainpdf-providers/error-codes/`，生成的文档在
+[服务商错误码](../../../reference/error-codes/README.md)（每家一个文件、缺口汇总、RetainPDF 失败码），接口 `GET /api/v1/providers/error-codes`。
+对照表的改动改数据；这里只放整理过程和决定。
+
 | 日期 | 文件 | 内容 |
 |---|---|---|
 | 2026-11-23 | [错误码汇总](./20261123-错误码汇总.md) | 104 个 issue 逐个过一遍 + 代码里的失败分类；GLM-OCR、PaddleOCR、MinerU、OpenAI、Anthropic、DeepSeek、智谱各家的错误码对照表，现有处理和缺口，按用户影响排的待修清单 |
