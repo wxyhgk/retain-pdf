@@ -8,7 +8,7 @@
 // 契约：标题带 data-processing-unified-status；「N 个内容块没能翻译出来」的提醒是 .book-detail-processing-warning。
 
 import type { ReactNode } from "react";
-import { TriangleAlert } from "lucide-react";
+import { Hourglass, TriangleAlert } from "lucide-react";
 
 export type ProcessingHeaderTone = "active" | "done" | "warn" | "failed" | "stopped" | "idle";
 
@@ -23,6 +23,8 @@ export type ProcessingHeaderProps = {
   hud?: ReactNode;
   /** 状态行下面紧跟的一块（指定页码、报错）。 */
   children?: ReactNode;
+  /** 在等服务商限流时的那句话（processing-summary-model 的 upstreamWaitNoticeOf），空串不画。 */
+  waitNotice?: string;
 };
 
 export function ProcessingHeader({
@@ -33,6 +35,7 @@ export function ProcessingHeader({
   tools = null,
   hud = null,
   children = null,
+  waitNotice = "",
 }: ProcessingHeaderProps) {
   const shownTone: ProcessingHeaderTone = bootstrapping ? "idle" : tone;
   return (
@@ -47,6 +50,13 @@ export function ProcessingHeader({
       </header>
 
       {hud}
+
+      {!bootstrapping && waitNotice ? (
+        <p className="book-detail-processing-warning" role="status" data-upstream-wait="true">
+          <Hourglass aria-hidden="true" />
+          {waitNotice}
+        </p>
+      ) : null}
 
       {children}
 

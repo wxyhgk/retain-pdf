@@ -8,6 +8,7 @@ import {
   unitLabelFromProgress,
 } from "../../domain/progress-value.js";
 import type { ProcessingHeaderTone } from "../panels/processing/ProcessingHeader.jsx";
+import { providerLabel } from "../../domain/job-failure-model.js";
 import type {
   BookDetailOcrPanelProps,
   BookDetailTranslationPanelProps,
@@ -67,4 +68,27 @@ export function liveStageKey(item: ProgressSource): "ocr" | "translate" | "rende
   if (stage.startsWith("ocr")) return "ocr";
   if (stage.startsWith("render")) return "render";
   return "translate";
+}
+
+const WAIT_REASONS: Readonly<Record<string, string>> = Object.freeze({
+  rate_limited: "服务商限流",
+  overloaded: "服务商繁忙",
+  unavailable: "服务商暂不可用",
+});
+
+/**
+ * 在跑的任务正在等服务商（429 限流、529 过载、503 暂不可用的退避）时，状态行下面那句话：
+ * 「服务商限流，等待中（智谱，约 23 秒后重试）」。不在等就是空串。没有这句，用户只看到进度卡住。
+ */
+export function upstreamWaitNoticeOf(ocr: BookDetailOcrPanelProps, translation: BookDetailTranslationPanelProps, now: number): string {
+  const source: ProgressSource = ocr && isDocumentJobActive(ocr.job) ? ocr.job : translation?.isActive ? translation.item : null;
+  const wait = source?.stage_snapshot?.upstream_wait;
+  if (!wait) return "";
+  const what = WAIT_REASONS[`${wait.reason || ""}`] || "服务商限流";
+  const name = providerLabel(`${wait.provider || ""}`.trim());
+  const until = Date.parse(`${wait.until || ""}`);
+  const seconds = Number.isFinite(until) ? Math.ceil((until - now) / 1000) : NaN;
+  const left = seconds > 0 ? `约 ${seconds} 秒后重试` : "";
+  const detail = [name, left].filter(Boolean).join("，");
+  return detail ? `${what}，等待中（${detail}）` : `${what}，等待中`;
 }

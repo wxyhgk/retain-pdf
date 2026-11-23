@@ -145,6 +145,11 @@ export function failureSubtitle(failure?: JobFailureBrief | null): string {
   return provider ? `${stage} · ${provider}` : `${stage}`;
 }
 
+/** 厂商编号（错误码目录的 vendor id）→ 设置里显示的名字；认不出的原样返回。 */
+export function providerLabel(id: string): string {
+  return PROVIDER_LABELS[id] ?? id;
+}
+
 /** 失败里的厂商编号（错误码目录的 vendor id）→ 设置里显示的名字。 */
 const PROVIDER_LABELS: Readonly<Record<string, string>> = Object.freeze({
   paddle: "PaddleOCR",
