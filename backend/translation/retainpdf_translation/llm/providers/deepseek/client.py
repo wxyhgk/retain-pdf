@@ -112,7 +112,12 @@ def _request_meta_summary(
     body: dict[str, Any],
     use_stream: bool,
 ) -> str:
-    response_format = body.get("response_format")
+    # Responses 协议的结构化输出在 ``text.format``，不在 ``response_format``：以前日志只看后者，用了 json_object 也印成 none（#163）
+    text = body.get("text")
+    if "response_format" not in body and isinstance(text, dict) and "format" in text:
+        format_field, response_format = "text.format", text.get("format")
+    else:
+        format_field, response_format = "response_format", body.get("response_format")
     response_format_type = (
         str(response_format.get("type", "") or "")
         if isinstance(response_format, dict)
@@ -120,7 +125,7 @@ def _request_meta_summary(
     )
     return (
         f"model={model} messages={len(messages)} message_chars={_message_chars(messages)} "
-        f"body_bytes={_body_bytes(body)} stream={use_stream} response_format={response_format_type or 'none'}"
+        f"body_bytes={_body_bytes(body)} stream={use_stream} {format_field}={response_format_type or 'none'}"
     )
 
 
@@ -353,6 +358,7 @@ def request_chat_content(
                 temperature=temperature if send_temperature else None,
                 response_format=active_response_format,
                 thinking_fields=thinking_fields,
+                requested_format=response_format,
             )
         if anthropic:
             return model_wire.anthropic_body(
