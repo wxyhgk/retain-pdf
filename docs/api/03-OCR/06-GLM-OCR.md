@@ -49,6 +49,16 @@
 以前所有 429 都按限流退避 5 次（约 114 秒），最后只报 `GLM-OCR rate limited after 5 attempts`，看不出是欠费。
 结构化失败的 `provider_code` 是业务码；5xx 重试用完的报错也带上 `（HTTP 500，code=… message=…）`。
 
+429 以外的 4xx（2026-11-23，分支 `fix/ocr-provider-codes`）：照旧第一次就停，现在按状态码归类，`summary` 带业务码和智谱的说明。
+以前这些都落「任务失败，但暂未识别出明确根因」（`python_unhandled_exception`）。业务码 `error.code` 和顶层 `code` 两种写法都认。
+
+| HTTP | 业务码 | 失败分类 | `summary` 例 | `suggestion` |
+|---|---|---|---|---|
+| 401 | `1000`、`1001`、`1003`、`1005` | `auth_failed`（不可重试） | `GLM-OCR 鉴权失败（1000）：身份验证失败` | 按码说智谱 Key：填对没有、没填、Token 过期、要先完成二次认证 |
+| 403 | `1220` | `auth_failed` | `GLM-OCR 鉴权失败（1220）：…` | 当前智谱 API Key 无权调用 GLM-OCR，换用有权限的 Key |
+| 400 | `1210`、`1211`、`1213`、`1214`、`1261` 等 | `upstream_bad_request`（不可重试） | `GLM-OCR 拒绝了请求（1214）：…` | 请求参数被拒，升级到最新版，仍出现请反馈 |
+| 400 | `1301` | `upstream_bad_request` | `GLM-OCR 内容审核拦截了这份文件（1301）：…` | 智谱内容安全审核拒绝处理：换用其他 OCR，或去掉相关页再试 |
+
 退避等待期间（429 限流、503）任务进度里有 `upstream_wait`（`provider=glm_ocr`、`code` 为业务码，如 `1302`），等完消失，
 见 [查询任务详情](../01-任务/02-查询任务详情.md#服务商限流等待stage_snapshotupstream_wait)（2026-11-23 起；Paddle、MinerU 的 Python 请求同样报）。
 

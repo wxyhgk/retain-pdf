@@ -1,5 +1,7 @@
 #[path = "job_failure_fallback.rs"]
 mod job_failure_fallback;
+#[path = "job_failure_ocr_provider.rs"]
+mod job_failure_ocr_provider;
 #[path = "job_failure_structured.rs"]
 mod job_failure_structured;
 #[path = "job_failure_support.rs"]
@@ -168,6 +170,21 @@ fn classify_job_failure_inner(job: &JobSnapshot) -> Option<JobFailureInfo> {
             first_error_excerpt(error, &haystack),
             raw_diagnostic.clone(),
         ));
+    }
+
+    // OCR 服务商有明确分类的错（文件被拒、参数不对、解析失败、排队已满……，fix/ocr-provider-codes）：
+    // 和额度一样只算 OCR 阶段的失败。排在「请求结果不明确」后面：那是这次重试被闸门挡住，诊断里的错是上一次的。
+    if is_ocr_stage(&failed_stage) {
+        if let Some(ocr_failure) = job_failure_ocr_provider::classify_ocr_provider_failure(
+            &failed_stage,
+            diagnostics,
+            job,
+            error,
+            &haystack,
+            raw_diagnostic.as_ref(),
+        ) {
+            return Some(ocr_failure);
+        }
     }
 
     // 本机环境类（内存、安装包、路径长度、权限）排在按文字、状态码猜的分支前面：

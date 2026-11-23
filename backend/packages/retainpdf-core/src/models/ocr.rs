@@ -190,6 +190,10 @@ pub enum OcrErrorCategory {
     ResultDownloadFailed,
     ResultUnpackFailed,
     InvalidProviderResponse,
+    /// MinerU -60016：导出为指定格式失败（官方建议重试）。以前和 -60015（文件转换失败，换文件）同归 `ConversionFailed`。
+    ExportFailed,
+    /// PaddleOCR 11002：任务已过期，要重新提交。
+    TaskExpired,
     Unknown,
 }
 

@@ -96,7 +96,8 @@ fn submit_certainly_not_accepted(err: &anyhow::Error) -> bool {
             return error.is_builder() || (error.is_connect() && !error.is_timeout());
         }
         if let Some(error) = cause.downcast_ref::<PaddleProviderError>() {
-            return error.request_not_sent() || error.info().is_definite_refusal();
+            // 提交收到 HTTP 500 也算没收下（官方：服务端内部错误），客户端已经在提交处重交过
+            return error.submit_definitely_rejected();
         }
         if let Some(error) = cause.downcast_ref::<MineruResponseError>() {
             return error.info.is_definite_refusal();
@@ -185,5 +186,28 @@ mod tests {
         let server_error: anyhow::Error = MineruResponseError::from_response(503, "", None).into();
         assert!(!submit_certainly_not_accepted(&server_error));
         assert!(!submit_certainly_not_accepted(&anyhow::anyhow!("something else")));
+    }
+
+    /// Paddle 提交收到 HTTP 500（官方：服务端内部错误）算没收下：客户端已在提交处重交过，
+    /// 撤销 intent，用户重试不会被「请求结果不明确」挡住。502/503 这类网关错误照旧说不清。
+    #[test]
+    fn paddle_submit_500_is_a_definite_refusal_but_gateway_errors_are_not() {
+        use crate::ocr_provider::paddle::PaddleProviderError;
+        use reqwest::StatusCode;
+        let server: anyhow::Error = PaddleProviderError::http_status(
+            "submit",
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "{}",
+            None,
+            None,
+        )
+        .into();
+        assert!(submit_certainly_not_accepted(&server.context("submit failed")));
+        let gateway: anyhow::Error =
+            PaddleProviderError::http_status("submit", StatusCode::BAD_GATEWAY, "", None, None).into();
+        assert!(!submit_certainly_not_accepted(&gateway));
+        let queue_full: anyhow::Error =
+            PaddleProviderError::provider_error("submit", 10010, "任务提交队列已满", None).into();
+        assert!(submit_certainly_not_accepted(&queue_full));
     }
 }

@@ -11,6 +11,7 @@ import requests
 
 from retainpdf_base.local_env import get_secret
 from retainpdf_base.upstream import tag_upstream
+from retainpdf_pipeline.ocr import provider_failures
 from retainpdf_pipeline.ocr.retry import RetainNetworkError
 from retainpdf_pipeline.ocr.retry import RetainRateLimitError
 from retainpdf_pipeline.ocr.retry import direct_session
@@ -38,6 +39,10 @@ class PaddleRateLimitError(RetainRateLimitError, PaddleNetworkError):
 
 # 官方异步接口：当日解析页数额度用完（HTTP 403）。不是 Token 不对，换 Key 当天也不一定好。
 PADDLE_DAILY_QUOTA_CODE = 12001
+# 官方异步接口：任务解析失败（GET 返回 HTTP 200、code=11003，原因在 data.errorMsg，data.state=failed）。
+PADDLE_TASK_FAILED_CODE = 11003
+# 官方异步接口：任务提交队列已满。服务端明确拒收、没有建出任务，退避后重交不会重复计费。
+PADDLE_QUEUE_FULL_CODE = 10010
 
 
 class PaddleRequestRejected(requests.HTTPError):
@@ -87,6 +92,19 @@ def _error_fields(payload: Any) -> tuple[int, str, str]:
     return code, message[:200], trace_id
 
 
+class PaddleTaskFailed(RuntimeError):
+    """PaddleOCR 解析这份文件失败（轮询到 state=failed，或返回包 code=11003）。归 ``ocr_provider_failed``（可重试），
+    summary 带服务商原话（data.errorMsg）。"""
+
+
+def task_failed_error(text: str, error_msg: str, *, code: object = None) -> PaddleTaskFailed:
+    error = PaddleTaskFailed(text)
+    provider_failures.task_failed("paddle", error_msg or "unknown error", code=code).apply(error)
+    if code:
+        tag_upstream(error, provider="paddle", code=code)
+    return error
+
+
 def _rejected_error(
     summary: str,
     *,
@@ -101,13 +119,18 @@ def _rejected_error(
     text = f"{summary} code={code or ''} msg={message} logId={trace_id}"
     if error_class is PaddleQuotaExhausted:
         text = f"PaddleOCR 今日解析页数额度已用完：{text}"
-    return error_class(
+    error = error_class(
         text,
         status_code=status_code,
         provider_code=str(code) if code else "",
         response=response,
         request=request,
     )
+    # 码表里有的业务码（换文件、参数不对、排队已满、过期……）写明失败码和带原话的 summary（fix/ocr-provider-codes）
+    failure = provider_failures.describe("paddle", code, message) if error_class is PaddleRequestRejected else None
+    if failure is not None:
+        failure.apply(error)
+    return error
 
 
 def get_paddle_token(*, explicit_value: str = "") -> str:
@@ -174,7 +197,11 @@ def _request_with_retry(method: str, url: str, *, timeout: int, **kwargs: Any) -
     except RetainRateLimitError as err:
         raise PaddleRateLimitError(str(err)) from err
     except RetainNetworkError as err:
-        raise PaddleNetworkError(str(err)) from err
+        network_error = PaddleNetworkError(str(err), status_code=err.status_code, last_response=err.last_response)
+        if (err.status_code or 0) >= 500:
+            # 重试用完服务端还回 5xx（提交时 500 = 服务端没收下任务）：「PaddleOCR 服务暂时出错，稍后再试」，可重试
+            provider_failures.server_error("paddle", err.status_code).apply(network_error)
+        raise network_error from err
     except requests.HTTPError as err:
         # 不重试的 4xx：把服务商的业务码和说明带上（403 可能是 Token 不对，也可能是 12001 当日额度用完）
         response = err.response
@@ -287,6 +314,35 @@ def _check_envelope(payload: dict[str, Any], *, stage: str) -> dict[str, Any]:
     return payload
 
 
+def _queue_full_retry_seconds(attempt: int) -> float:
+    """排队已满时第 n 次重交前等多久（默认 10s、20s；和 Rust 客户端一样是退避基数的 20 倍再按次数加长）。"""
+    return _retry_backoff_seconds() * 20 * attempt
+
+
+def _submit_with_queue_retry(send: Callable[[], requests.Response]) -> tuple[str, str]:
+    """发提交请求、读任务号。排队已满（10010）退避后重交，次数同 ``RETAIN_PADDLE_RETRY_ATTEMPTS``；
+    HTTP 500 已经在 ``request_with_retry`` 里重试过。用完还被拒就把最后一次的错误原样交出去
+    （失败码 ``upstream_rate_limited``「PaddleOCR 排队已满或请求太快（10010）」，可重试）。"""
+    attempts = _retry_attempts()
+    attempt = 1
+    while True:
+        try:
+            envelope = _check_envelope(send().json(), stage="submit")
+        except PaddleRequestRejected as err:
+            if err.provider_code != str(PADDLE_QUEUE_FULL_CODE) or attempt >= attempts:
+                raise
+            wait = _queue_full_retry_seconds(attempt)
+            print(f"Paddle OCR submit queue full, retry {attempt}/{attempts}; sleep={wait:.1f}s", flush=True)
+            time.sleep(wait)
+            attempt += 1
+            continue
+        data = dict(envelope.get("data") or {})
+        job_id = str(data.get("jobId", "") or "").strip()
+        if not job_id:
+            raise RuntimeError("Paddle submit returned empty jobId")
+        return job_id, str(envelope.get("logId", "") or envelope.get("traceId", "") or "").strip()
+
+
 def submit_local_file(
     *,
     token: str,
@@ -304,20 +360,16 @@ def submit_local_file(
     }
     if page_ranges.strip():
         form_data["pageRanges"] = page_ranges.strip()
-    response = _request_with_retry(
-        "post",
-        f"{resolved_base}/api/v2/ocr/jobs",
-        headers=build_headers(token),
-        data=form_data,
-        files={"file": (file_path.name, file_bytes)},
-        timeout=120,
+    return _submit_with_queue_retry(
+        lambda: _request_with_retry(
+            "post",
+            f"{resolved_base}/api/v2/ocr/jobs",
+            headers=build_headers(token),
+            data=form_data,
+            files={"file": (file_path.name, file_bytes)},
+            timeout=120,
+        )
     )
-    envelope = _check_envelope(response.json(), stage="submit")
-    data = dict(envelope.get("data") or {})
-    job_id = str(data.get("jobId", "") or "").strip()
-    if not job_id:
-        raise RuntimeError("Paddle submit returned empty jobId")
-    return job_id, str(envelope.get("logId", "") or "").strip()
 
 
 def submit_remote_url(
@@ -337,22 +389,20 @@ def submit_remote_url(
     }
     if page_ranges.strip():
         body["pageRanges"] = page_ranges.strip()
-    response = _request_with_retry(
-        "post",
-        f"{resolved_base}/api/v2/ocr/jobs",
-        headers={**build_headers(token), "Content-Type": "application/json"},
-        json=body,
-        timeout=120,
+    return _submit_with_queue_retry(
+        lambda: _request_with_retry(
+            "post",
+            f"{resolved_base}/api/v2/ocr/jobs",
+            headers={**build_headers(token), "Content-Type": "application/json"},
+            json=body,
+            timeout=120,
+        )
     )
-    envelope = _check_envelope(response.json(), stage="submit")
-    data = dict(envelope.get("data") or {})
-    job_id = str(data.get("jobId", "") or "").strip()
-    if not job_id:
-        raise RuntimeError("Paddle submit returned empty jobId")
-    return job_id, str(envelope.get("logId", "") or "").strip()
 
 
 def query_job(*, token: str, job_id: str, base_url: str = "") -> dict[str, Any]:
+    """查任务状态。任务失败时官方返回 HTTP 200、code=11003（原因在 data.errorMsg）：不当作请求被拒，
+    照旧返回 data 并保证 ``state=failed``、``errorMsg`` 有值，调用方按任务失败处理（分片上传会重交这一片）。"""
     resolved_base = (base_url or PADDLE_BASE_URL).strip().rstrip("/")
     response = _request_with_retry(
         "get",
@@ -360,7 +410,15 @@ def query_job(*, token: str, job_id: str, base_url: str = "") -> dict[str, Any]:
         headers=build_headers(token),
         timeout=120,
     )
-    envelope = _check_envelope(response.json(), stage="poll")
+    payload = response.json()
+    code, message, _trace_id = _error_fields(payload)
+    if code == PADDLE_TASK_FAILED_CODE:
+        data = dict((payload.get("data") if isinstance(payload, dict) else None) or {})
+        data["state"] = "failed"
+        data["errorMsg"] = str(data.get("errorMsg") or message or "").strip()
+        data["errorCode"] = code
+        return data
+    envelope = _check_envelope(payload, stage="poll")
     return dict(envelope.get("data") or {})
 
 
@@ -526,7 +584,10 @@ def poll_until_done(
                 raise RuntimeError("Paddle task finished but resultUrl.jsonUrl is missing")
             return payload, jsonl_url
         if state == "failed":
-            raise RuntimeError(f"Paddle task failed: {payload.get('errorMsg', '') or 'unknown error'}")
+            error_msg = str(payload.get("errorMsg", "") or "").strip()
+            raise task_failed_error(
+                f"Paddle task failed: {error_msg or 'unknown error'}", error_msg, code=payload.get("errorCode")
+            )
         elapsed = time.time() - started
         if elapsed > poll_timeout:
             raise TimeoutError(f"Timed out waiting for Paddle task {job_id}")

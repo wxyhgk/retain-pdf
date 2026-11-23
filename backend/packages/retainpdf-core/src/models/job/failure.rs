@@ -318,6 +318,10 @@ fn infer_failure_category(failure_code: &str, failed_stage: &str) -> Option<Stri
         "document_schema_validation_failed" => "normalization",
         // Rust 兜底认出的 OCR 额度用完（Paddle 12001 等），和 Python 一样记 billing
         "upstream_quota_exhausted" => "billing",
+        // OCR 服务商有明确分类的错（2026-11-23，fix/ocr-provider-codes），和 Python 的 _failure_category_for 一致
+        "ocr_file_rejected" | "upstream_bad_request" => "input",
+        "upstream_rate_limited" => "rate_limit",
+        "ocr_provider_failed" => "provider",
         // 本机环境类（2026-11-23），和 Python 的 LOCAL_ENVIRONMENT_FAILURE_CODES 一致
         "out_of_memory" | "runtime_environment_broken" | "path_too_long" | "local_permission_denied" => {
             "environment"

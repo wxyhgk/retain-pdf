@@ -21,6 +21,7 @@ import requests
 
 from retainpdf_base.upstream import provider_error_code
 from retainpdf_base.upstream import tag_upstream
+from retainpdf_pipeline.ocr import provider_failures
 from retainpdf_pipeline.ocr.retry import RetainNetworkError
 from retainpdf_pipeline.ocr.retry import direct_session
 from retainpdf_pipeline.ocr.retry import request_with_retry
@@ -59,17 +60,21 @@ FAIL_FAST_CODES: dict[str, str] = {
 
 
 class GlmOcrRequestRejected(RuntimeError):
-    """服务端明确拒绝（4xx，429 除外；429 里余额不足这类见子类 `GlmOcrQuotaExhausted`）：key、参数、文件的问题，重试没用。"""
+    """服务端明确拒绝（4xx，429 除外；429 里余额不足这类见子类 `GlmOcrQuotaExhausted`）：key、参数、文件的问题，重试没用。
 
-
-class GlmOcrQuotaExhausted(GlmOcrRequestRejected):
-    """余额、资源包、套餐、用量上限的问题（智谱 429 + `FAIL_FAST_CODES`）：充值、续费或等额度恢复以前重试都会同样失败。
-    类名带 QuotaExhausted，结构化失败归成 `upstream_quota_exhausted`（billing，不可重试）。"""
+    带 `status_code`、`provider_code`（2026-11-23 起，fix/ocr-provider-codes）：结构化失败按状态码认，401/403 归
+    `auth_failed`（以前文字里没有 401 Client Error，落「暂未识别出明确根因」），400 归 `upstream_bad_request`，
+    summary 带业务码和智谱的说明（`ocr/provider_failures.py` 的 `glm_rejection`）。"""
 
     def __init__(self, message: str, *, status_code: int | None = None, provider_code: str = "") -> None:
         super().__init__(message)
         self.status_code = status_code
         self.provider_code = provider_code
+
+
+class GlmOcrQuotaExhausted(GlmOcrRequestRejected):
+    """余额、资源包、套餐、用量上限的问题（智谱 429 + `FAIL_FAST_CODES`）：充值、续费或等额度恢复以前重试都会同样失败。
+    类名带 QuotaExhausted，结构化失败归成 `upstream_quota_exhausted`（billing，不可重试）。"""
 
 
 class GlmOcrRateLimited(RuntimeError):
@@ -117,17 +122,29 @@ def pdf_data_uri(pdf_bytes: bytes) -> str:
 
 
 def _error_code(response: requests.Response | None) -> str:
-    """响应体里的智谱业务码 `error.code`（字符串；读不出时为空）。"""
+    """响应体里的智谱业务码（字符串；读不出时为空）。BigModel 文档写 `error.code`，Z.ai 的 layout-parsing 写顶层 `code`，两种都认。"""
     if response is None:
         return ""
     try:
         body = response.json()
     except ValueError:
         return ""
-    error = body.get("error") if isinstance(body, dict) else None
-    if isinstance(error, dict) and error.get("code") not in (None, ""):
-        return str(error.get("code")).strip()
-    return ""
+    return provider_error_code(body)
+
+
+def _error_message(response: requests.Response | None) -> str:
+    """响应体里智谱的说明（`error.message` 或顶层 `message`）。"""
+    if response is None:
+        return ""
+    try:
+        body = response.json()
+    except ValueError:
+        return ""
+    if not isinstance(body, dict):
+        return ""
+    error = body.get("error")
+    source = error if isinstance(error, dict) else body
+    return str(source.get("message", "") or "").strip()[:200]
 
 
 def _gives_up(response: requests.Response) -> bool:
@@ -158,7 +175,7 @@ def _error_detail(response: requests.Response | None) -> str:
 def _with_upstream(error: Exception, status: int | str | None, response: requests.Response | None) -> BaseException:
     """给失败写上上游信息（HTTP 状态、业务码），结构化失败的 ``upstream`` 读它们。
 
-    写 ``upstream_*`` 属性，不写 ``status_code``：失败分类读 ``status_code``，这里不改分类。"""
+    写 ``upstream_*`` 属性，不改分类；分类读的 ``status_code`` 由抛错的地方自己决定写不写（「请求被拒」写，5xx 不写）。"""
     body = None
     if response is not None:
         try:
@@ -195,11 +212,15 @@ def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | Non
                 status_code=status or None,
                 provider_code=code,
             ) from None
-        raise _with_upstream(
-            GlmOcrRequestRejected(f"GLM-OCR 请求被拒绝 status={status} {_error_detail(err.response)}".strip()),
-            status,
-            err.response,
-        ) from None
+        rejected = GlmOcrRequestRejected(
+            f"GLM-OCR 请求被拒绝 status={status} {_error_detail(err.response)}".strip(),
+            status_code=status or None,
+            provider_code=code,
+        )
+        failure = provider_failures.glm_rejection(status or None, code, _error_message(err.response))
+        if failure is not None:
+            failure.apply(rejected)
+        raise _with_upstream(rejected, status, err.response) from None
     except RetainNetworkError as err:
         suffix = _failure_suffix(err.status_code, err.last_response) if err.status_code else ""
         if err.status_code == 429:

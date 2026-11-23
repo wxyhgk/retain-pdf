@@ -265,8 +265,10 @@ def request_chunks(
                     print(f"paddle-chunks: chunk {chunk.start + 1}-{chunk.end} job={job_id} failed: {data.get('errorMsg', '')}", flush=True)
                     if not chunk.jobs:
                         if chunk.submits >= MAX_SUBMITS_PER_CHUNK:
-                            raise RuntimeError(
-                                f"Paddle 第 {chunk.start + 1}-{chunk.end} 页交了 {chunk.submits} 次都失败：{data.get('errorMsg', '')}"
+                            raise paddle_api.task_failed_error(
+                                f"Paddle 第 {chunk.start + 1}-{chunk.end} 页交了 {chunk.submits} 次都失败：{data.get('errorMsg', '')}",
+                                str(data.get("errorMsg", "") or ""),
+                                code=data.get("errorCode"),
                             )
                         waiting.insert(0, chunk)
         # 防排队卡住：没有等着提交的片了，某片交上去很久还一页没识别，再交一份

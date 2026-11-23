@@ -9,6 +9,7 @@ from typing import Any
 import requests
 from retainpdf_base.local_env import get_secret
 from retainpdf_base.upstream import tag_upstream
+from retainpdf_pipeline.ocr import provider_failures
 from retainpdf_pipeline.ocr.retry import RetainNetworkError
 from retainpdf_pipeline.ocr.retry import RetainRateLimitError
 from retainpdf_pipeline.ocr.retry import stepped_poll_interval
@@ -105,14 +106,34 @@ def build_headers(token: str) -> dict[str, str]:
     }
 
 
+class MinerUApiError(RuntimeError):
+    """HTTP 200 但返回包的 ``code`` 不是 0。``provider_code`` 是业务码（字符串）；码表里有的
+    （``ocr/provider_failures.py``）在异常上写明失败码、summary（带码和服务商原话），结构化失败按它归类。"""
+
+    def __init__(self, message: str, *, provider_code: str = "") -> None:
+        super().__init__(message)
+        self.provider_code = provider_code
+
+
 def _api_error(data: dict[str, Any], response: requests.Response) -> BaseException:
     """HTTP 200 但 ``code`` 不是 0：报错文字照旧，另把业务码写进上游信息（结构化失败的 ``upstream``）。"""
+    code = str(data.get("code", "") or "").strip()
+    message = str(data.get("msg", "") or "").strip()
+    error = MinerUApiError(f"MinerU API error: {message or 'unknown error'}", provider_code=code)
+    failure = provider_failures.describe("mineru", code, message)
+    if failure is not None:
+        failure.apply(error)
     return tag_upstream(
-        RuntimeError(f"MinerU API error: {data.get('msg', 'unknown error')}"),
+        error,
         provider="mineru",
         http_status=getattr(response, "status_code", None),
         code=data.get("code"),
     )
+
+
+def _rejection_retry_seconds(attempt: int) -> float:
+    """官方建议稍后重试的业务码，第 n 次重查前等多久（默认 10s、20s；和 Rust 轮询一样按次数加长）。"""
+    return _retry_backoff_seconds() * 20 * attempt
 
 
 def post_json(url: str, headers: dict[str, str], payload: dict[str, Any]) -> dict[str, Any]:
@@ -124,11 +145,26 @@ def post_json(url: str, headers: dict[str, str], payload: dict[str, Any]) -> dic
 
 
 def get_json(url: str, headers: dict[str, str]) -> dict[str, Any]:
-    response = request_mineru("get", url, headers=headers, timeout=120)
-    data = response.json()
-    if data.get("code") != 0:
-        raise _api_error(data, response)
-    return data
+    """查询（幂等）。业务码是官方建议稍后重试的（``MINERU_RETRYABLE_CODES``，-60010 解析失败、-60020 拆分失败等）时
+    退避后再查，次数同 ``RETAIN_MINERU_RETRY_ATTEMPTS``；用完照旧报错。"""
+    attempts = _retry_attempts()
+    attempt = 1
+    while True:
+        response = request_mineru("get", url, headers=headers, timeout=120)
+        data = response.json()
+        if data.get("code") == 0:
+            return data
+        error = _api_error(data, response)
+        code = str(data.get("code", "") or "").strip()
+        if code not in provider_failures.MINERU_RETRYABLE_CODES or attempt >= attempts:
+            raise error
+        wait = _rejection_retry_seconds(attempt)
+        print(
+            f"MinerU query retry {attempt}/{attempts} code={code} url={sanitize_url_for_log(url)}; sleep={wait:.1f}s",
+            flush=True,
+        )
+        time.sleep(wait)
+        attempt += 1
 
 
 def create_extract_task(
@@ -238,11 +274,21 @@ def poll_until_done(
             return data
         if state == "failed":
             err_msg = data.get("data", {}).get("err_msg", "")
-            raise RuntimeError(f"MinerU task failed: {err_msg or 'unknown error'}")
+            raise task_failed_error(f"MinerU task failed: {err_msg or 'unknown error'}", err_msg)
         elapsed = time.time() - started
         if elapsed > timeout_seconds:
             raise TimeoutError(f"Timed out waiting for MinerU task {task_id}")
         time.sleep(stepped_poll_interval(elapsed, interval_seconds))
+
+
+class MinerUTaskFailed(RuntimeError):
+    """查询结果 state=failed：MinerU 解析这份文件失败，原因是 err_msg。归 ``ocr_provider_failed``（可重试）。"""
+
+
+def task_failed_error(text: str, err_msg: str) -> MinerUTaskFailed:
+    error = MinerUTaskFailed(text)
+    provider_failures.task_failed("mineru", err_msg or "unknown error").apply(error)
+    return error
 
 
 def parse_extra_formats(value: str) -> list[str]:
@@ -355,7 +401,8 @@ def main() -> None:
                 result = {"code": 0, "data": extract_result, "msg": "ok"}
                 break
             if state == "failed":
-                raise RuntimeError(f"MinerU batch task failed: {extract_result.get('err_msg', '') or 'unknown error'}")
+                err_msg = extract_result.get("err_msg", "")
+                raise task_failed_error(f"MinerU batch task failed: {err_msg or 'unknown error'}", err_msg)
             if time.time() - started > args.poll_timeout:
                 raise TimeoutError(f"Timed out waiting for MinerU batch result: {batch_id}")
             time.sleep(args.poll_interval)
