@@ -42,11 +42,15 @@ _BUILDERS = [build_single_item_fallback_messages, lambda item: build_messages([i
 # 第四次重录：逐段请求（route 0，两组）改了排法——前后文挪到原文前面并用起止标记括起来，
 # 作答要求放最后一行（原来夹在中间，模型读完一串「后文上下文：……」后自己补了个「译文：」）。
 # direct_typst 的整批请求（route 1）只换了格式示例里占位的那行；placeholder 的整批请求走 JSON，一字未动。
+#
+# 第五次重录（2026-11-23）：系统提示加了一行「只交译文」（不写对原文或翻译本身的说明，原文是地址、索引、
+# 残句也照翻或照抄）。两本教材里 claude-haiku-5-5 把「这是一个索引条目列表，页码需保留。译文如下：」
+# 「…的译文需要准确。」这类话写进了译文。四组请求都只多了这一行（重录前逐字比过）。
 _DIGESTS = {
-    False: ["84cc32bb5d212f354d3cf051c1084cbee08f6899d559794a66d2c4903dd1f8fe",
-            "e0ff9a772d08d6301c011abcc41d8da089f67345018b17f9da500422dd7bee51"],
-    True: ["60a91bc52d5f721b439d5894140c4f6d8d2b962315d1152777acc78d08bab1a8",
-           "76bcc838cc8ac22aaa308c130aee266b2b4f9771785f3471958f8639b90f73e0"],
+    False: ["17d2dbfe10ab956ba44335297b9379dc8cc5d5d62eb4d55e0cfab1f5329b977f",
+            "edaa481cd6009e97ae6453c8a31cd9da0564056db3851b55265255065176cb76"],
+    True: ["0730cb0019f9e256eda240c777c6dbd57807cf06a2bcff5abdaf6a4ad21de8a7",
+           "b369c03c2439e3b091d165fe0bd3d578410c68c4d362f63dcaefbe4259fb2fb2"],
 }
 
 
