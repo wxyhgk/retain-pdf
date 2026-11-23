@@ -18,7 +18,29 @@ export interface HttpError extends Error {
     errorCode?: string;
     /** 后端错误里的 error.details.reason：409 用它说明为什么不允许（job_active、artifacts_missing…）。 */
     reason?: string;
+    /** 这次请求在后端日志里的编号（见 attachRequestRef）。 */
+    requestRef?: string;
 }
+/**
+ * 这次请求在后端日志里的编号：500 时用信封里的 error.details.error_id（后端日志按它记了完整原因），
+ * 别的用回应头 X-Request-ID（每个回应都带，见 docs/api/00-约定/02-认证与错误.md）。跨域时浏览器可能读不到回应头，就是空。
+ */
+export declare function requestRefOf(resp: {
+    headers?: {
+        get(name: string): string | null;
+    };
+} | null | undefined, payload: unknown): string;
+/**
+ * 把请求编号挂到错误上（requestRef）。后端出错（5xx）时还接在提示后面——「…（编号 1a2b3c）」——
+ * 用户截图、复制报错时就带着它，凭它能在后端日志里找到这一次请求（issue #156 只有一句「读取术语表失败」，没法查）。
+ * 4xx 的提示本身说得清是哪里不对，不加。
+ */
+export declare function attachRequestRef<E extends Error>(error: E, resp: {
+    status?: number;
+    headers?: {
+        get(name: string): string | null;
+    };
+} | null | undefined, payload: unknown): E;
 /** 读后端错误信封里的 error.code 和 error.details.reason，挂到错误对象上。 */
 export declare function attachErrorDetails(error: HttpError, errorPayload: any): HttpError;
 /** 多用户按页额度：建任务时余额不够，后端回 402 + 这个错误码，message 是给用户看的中文。 */

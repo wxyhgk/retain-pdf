@@ -2,7 +2,7 @@
 // （GET/PUT /api/v1/sync、POST /api/v1/sync/run、POST /api/v1/sync/test）。
 import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
-import { buildApiEndpoint } from "./http.js";
+import { attachRequestRef, buildApiEndpoint } from "./http.js";
 
 export type SyncRun = {
   started_at: string;
@@ -76,13 +76,14 @@ export type SyncTestResult = {
 async function readEnvelope<T>(resp: Response, action: string): Promise<T> {
   if (!resp.ok) {
     let message = "";
+    let body: unknown = null;
     try {
-      const body = await resp.json();
-      message = `${body?.message || body?.error?.message || ""}`.trim();
+      body = await resp.json();
+      message = `${(body as any)?.message || (body as any)?.error?.message || ""}`.trim();
     } catch {
       message = "";
     }
-    throw new Error(message || `${action}失败，请稍后重试。(${resp.status})`);
+    throw attachRequestRef(new Error(message || `${action}失败，请稍后重试。(${resp.status})`), resp, body);
   }
   return unwrapEnvelope(await resp.json()) as T;
 }

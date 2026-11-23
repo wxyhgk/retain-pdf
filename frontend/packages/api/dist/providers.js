@@ -1,6 +1,7 @@
 // providers — pure
 import { buildApiEndpoint, submitJson } from "./http.js";
 import * as providers from "./generated/translation-providers.js";
+import * as errorCodes from "./generated/provider-error-codes.js";
 import { serverMessageOr } from "./request.js";
 // 凭据检测都是"用户点了按钮在等结果"的前台请求，必须有上限：后端探针自身
 // 超时 20s（RUST_API_DEEPSEEK_PROBE_TIMEOUT_SECS），这里留 10s 余量兜住
@@ -44,4 +45,32 @@ export async function fetchTranslationProviderModels(apiPrefix, payload) {
     finally {
         clearTimeout(timer);
     }
+}
+/**
+ * 查一条服务商错误码的提示（GET /providers/error-codes，契约 provider-error-codes.v1）。
+ * vendor 是目录里的厂商编号；有业务码按码精确查，只有 HTTP 状态码时只认唯一的一条——同一个 429
+ * 可能是限流也可能是欠费，猜错比不说更糟。查不到返回 null。
+ */
+export async function fetchProviderErrorHint(apiPrefix, target, options) {
+    const vendor = `${target.vendor || ""}`.trim();
+    const code = `${target.code || ""}`.trim();
+    const httpStatus = Number(target.httpStatus) || 0;
+    if (!vendor || (!code && !httpStatus))
+        return null;
+    const view = await errorCodes.listProviderErrorCodes(apiPrefix, {
+        query: code ? { provider: vendor, code } : { provider: vendor, http_status: httpStatus },
+    }, options);
+    const found = view.vendors?.find((item) => item.id === vendor);
+    const entries = found?.entries || [];
+    const entry = code ? entries[0] : entries.length === 1 ? entries[0] : undefined;
+    if (!found || !entry || !entry.user_hint_zh)
+        return null;
+    return {
+        vendor,
+        vendorLabel: found.label || vendor,
+        code: entry.code || "",
+        meaning: entry.meaning_zh || "",
+        hint: entry.user_hint_zh,
+        sourceUrl: entry.source_url || "",
+    };
 }

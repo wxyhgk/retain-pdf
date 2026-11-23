@@ -67,3 +67,10 @@ export async function fetchTranslationProviderModels(apiPrefix: string, payload:
     ],
   };
 }
+
+/** mock 模式没有错误码目录，失败卡片就只显示后端给的说法。 */
+export async function fetchProviderErrorHint(apiPrefix: unknown, target: unknown) {
+  void apiPrefix;
+  void target;
+  return null;
+}

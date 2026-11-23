@@ -19,7 +19,7 @@ import {
   failureDiagnosticText,
   failureSubtitle,
 } from "../../src/features/book-detail/domain/job-failure-model.ts";
-import { pickFailureDetailText } from "../../src/features/book-detail/domain/job-failure-detail.ts";
+import { pickFailureDetailText, pickFailureFacts } from "../../src/features/book-detail/domain/job-failure-detail.ts";
 import { JobFailureCard } from "../../src/features/book-detail/ui/panels/processing/JobFailureCard.tsx";
 import { HomeSettingsHubContext } from "../../src/ui/context/home-services-context.tsx";
 import { makeDom } from "../helpers/dom.mjs";
@@ -97,6 +97,32 @@ test("复制出来的是纯文本，不是 JSON", () => {
   assert.match(text, /可重试: 是/);
   assert.match(text, /MinerU batch task failed/);
   assert.match(text, /完整错误:/);
+});
+
+test("诊断信息带上失败码、上游的码和地址、这次用的 OCR 和模型、版本，不带 Key", () => {
+  const facts = pickFailureFacts({
+    data: {
+      failure: {
+        failure_code: "upstream_quota_exhausted", failed_stage: "ocr", provider: "glm_ocr",
+        provider_code: "1113", upstream_host: "open.bigmodel.cn", recovery_hint: "充值后重试",
+      },
+      request_payload: {
+        ocr: { provider: "glm_ocr" },
+        translation: { model: "glm-5.3-flash", base_url: "https://open.bigmodel.cn/api/paas/v4?x=1", api_key: "sk-secret" },
+      },
+      error: "GLM-OCR quota exhausted",
+    },
+  });
+  assert.equal(facts.translationHost, "open.bigmodel.cn", "翻译接口只留主机名");
+  const text = failureDiagnosticText({ failure: mineru, jobId: "job-9", facts, environment: "2026.11.22 · 桌面版 darwin" });
+  assert.match(text, /版本: 2026\.11\.22 · 桌面版 darwin/);
+  assert.match(text, /失败码: upstream_quota_exhausted/);
+  assert.match(text, /上游: glm_ocr · 码 1113 · open\.bigmodel\.cn/);
+  assert.match(text, /OCR: glm_ocr/);
+  assert.match(text, /翻译模型: glm-5\.3-flash @ open\.bigmodel\.cn/);
+  assert.match(text, /建议: 充值后重试/);
+  assert.match(text, /完整错误:\nGLM-OCR quota exhausted/, "没展开过完整错误时用详情里的");
+  assert.doesNotMatch(text, /sk-secret|api_key/, "不带 Key");
 });
 
 test("没有完整错误时也拼得出来，不会出现空的「完整错误:」段", () => {

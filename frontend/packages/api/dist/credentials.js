@@ -1,6 +1,6 @@
 import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
-import { buildApiEndpoint } from "./http.js";
+import { attachRequestRef, buildApiEndpoint } from "./http.js";
 async function credentialRequest(url, options = {}) {
     const response = await apiFetch(url, {
         ...options,
@@ -15,7 +15,7 @@ async function credentialRequest(url, options = {}) {
         const error = new Error(`${envelope?.message || envelope?.error?.message || "凭据操作失败"}(${response.status})`);
         error.status = response.status;
         error.code = `${envelope?.code || envelope?.error_code || envelope?.error?.code || envelope?.details?.code || ""}`.trim();
-        throw error;
+        throw attachRequestRef(error, response, envelope);
     }
     return unwrapEnvelope(envelope);
 }

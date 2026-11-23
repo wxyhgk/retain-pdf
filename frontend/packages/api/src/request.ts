@@ -3,7 +3,7 @@
 // 状态码和后端回的错误体交出去。方案见 docs/ops/planning/api-client-codegen/。
 
 import { apiFetch, buildApiHeaders, buildApiUrl, unwrapEnvelope } from "./internal/runtime.js";
-import { attachErrorDetails, refusedSubmissionError, type HttpError } from "./http.js";
+import { attachErrorDetails, attachRequestRef, refusedSubmissionError, type HttpError } from "./http.js";
 
 export type QueryValue = string | number | boolean | null | undefined | ReadonlyArray<string | number>;
 
@@ -56,7 +56,7 @@ export async function request<T>({ apiPrefix, method, path, query, body, options
     const payload: any = await resp.json().catch(() => null);
     const error = (options.onError || failWithDetails("请求失败，请稍后重试。"))(resp.status, payload) as HttpError;
     if (error.url === undefined) error.url = url;
-    throw error;
+    throw attachRequestRef(error, resp, payload);
   }
   return unwrapEnvelope<T>(await resp.json());
 }

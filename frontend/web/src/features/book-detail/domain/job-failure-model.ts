@@ -21,6 +21,7 @@
  */
 
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
+import type { JobFailureFacts } from "./job-failure-detail.js";
 
 export type FailureAdvice = {
   /** 一行标题：说清是谁的问题。 */
@@ -144,14 +145,31 @@ export function failureDiagnosticText(input: {
   failure?: JobFailureBrief | null;
   jobId?: string;
   detail?: string;
+  /** 任务详情里的失败码、上游的码和地址、这次用的 OCR 和模型（见 job-failure-detail.ts）。取不到时只用简报。 */
+  facts?: JobFailureFacts | null;
+  /** 软件版本和运行环境，比如「2026.11.22 · 桌面版 darwin」。 */
+  environment?: string;
 }): string {
-  const { failure, jobId, detail } = input;
+  const { failure, jobId, facts, environment } = input;
+  const detail = input.detail || facts?.detail || "";
+  const upstream = [
+    facts?.provider || failure?.provider,
+    facts?.providerCode ? `码 ${facts.providerCode}` : "",
+    facts?.upstreamHost,
+  ].filter(Boolean).join(" · ");
   const lines = [
     `任务: ${jobId || "(未知)"}`,
-    failure ? `分类: ${failure.category} / ${failure.stage}` : "",
-    failure?.provider ? `上游: ${failure.provider}` : "",
+    environment ? `版本: ${environment}` : "",
+    facts?.failureCode ? `失败码: ${facts.failureCode}` : "",
+    failure ? `分类: ${failure.category} / ${facts?.failedStage || failure.stage}` : "",
+    upstream ? `上游: ${upstream}` : "",
+    facts?.ocrProvider ? `OCR: ${facts.ocrProvider}` : "",
+    facts?.translationModel || facts?.translationHost
+      ? `翻译模型: ${[facts?.translationModel, facts?.translationHost].filter(Boolean).join(" @ ")}`
+      : "",
     failure ? `可重试: ${failure.retryable ? "是" : "否"}` : "",
     failure?.root_cause ? `根因: ${failure.root_cause}` : "",
+    facts?.recoveryHint ? `建议: ${facts.recoveryHint}` : "",
     detail ? `\n完整错误:\n${detail}` : "",
   ];
   return lines.filter(Boolean).join("\n");

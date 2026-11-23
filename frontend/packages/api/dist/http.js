@@ -43,6 +43,37 @@ export function summarizeJobRequestContext(payload) {
         parts.push(`source.artifact_job_id=${artifactJobId}`);
     return parts.length > 0 ? ` [${parts.join(", ")}]` : "";
 }
+/**
+ * 这次请求在后端日志里的编号：500 时用信封里的 error.details.error_id（后端日志按它记了完整原因），
+ * 别的用回应头 X-Request-ID（每个回应都带，见 docs/api/00-约定/02-认证与错误.md）。跨域时浏览器可能读不到回应头，就是空。
+ */
+export function requestRefOf(resp, payload) {
+    const details = payload?.error?.details;
+    const errorId = typeof details?.error_id === "string" ? details.error_id.trim() : "";
+    if (errorId)
+        return errorId;
+    try {
+        return `${resp?.headers?.get?.("x-request-id") || ""}`.trim();
+    }
+    catch {
+        return "";
+    }
+}
+/**
+ * 把请求编号挂到错误上（requestRef）。后端出错（5xx）时还接在提示后面——「…（编号 1a2b3c）」——
+ * 用户截图、复制报错时就带着它，凭它能在后端日志里找到这一次请求（issue #156 只有一句「读取术语表失败」，没法查）。
+ * 4xx 的提示本身说得清是哪里不对，不加。
+ */
+export function attachRequestRef(error, resp, payload) {
+    const ref = requestRefOf(resp, payload);
+    if (!ref)
+        return error;
+    error.requestRef = ref;
+    const status = Number(resp?.status);
+    if (status >= 500 && !error.message.includes(ref))
+        error.message = `${error.message}（编号 ${ref}）`;
+    return error;
+}
 /** 读后端错误信封里的 error.code 和 error.details.reason，挂到错误对象上。 */
 export function attachErrorDetails(error, errorPayload) {
     const structured = errorPayload?.error && typeof errorPayload.error === "object" ? errorPayload.error : null;
@@ -195,13 +226,13 @@ export async function submitJson(url, payload, options = {}) {
             const error = new Error(`提交失败: ${resp.status} ${errorPayload.message || JSON.stringify(errorPayload)}${requestContext}`);
             error.status = resp.status;
             error.url = url;
-            throw attachErrorDetails(error, errorPayload);
+            throw attachRequestRef(attachErrorDetails(error, errorPayload), resp, errorPayload);
         }
         const text = await resp.text();
         const error = new Error(`提交失败: ${resp.status} ${text}${requestContext}`);
         error.status = resp.status;
         error.url = url;
-        throw error;
+        throw attachRequestRef(error, resp, null);
     }
     if (resp.status === 204)
         return { ok: true };

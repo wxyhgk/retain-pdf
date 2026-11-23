@@ -2,7 +2,7 @@
 // 给用户看的报错文案不在这里定——各领域的手写函数通过 onError 传进来，生成层只负责把失败的
 // 状态码和后端回的错误体交出去。方案见 docs/ops/planning/api-client-codegen/。
 import { apiFetch, buildApiHeaders, buildApiUrl, unwrapEnvelope } from "./internal/runtime.js";
-import { attachErrorDetails, refusedSubmissionError } from "./http.js";
+import { attachErrorDetails, attachRequestRef, refusedSubmissionError } from "./http.js";
 /** 查询参数按传入顺序编码：undefined、null、空串不发；数组按后端约定用逗号连接（job_ids=a,b）。 */
 export function encodeQuery(query) {
     if (!query)
@@ -38,7 +38,7 @@ export async function request({ apiPrefix, method, path, query, body, options = 
         const error = (options.onError || failWithDetails("请求失败，请稍后重试。"))(resp.status, payload);
         if (error.url === undefined)
             error.url = url;
-        throw error;
+        throw attachRequestRef(error, resp, payload);
     }
     return unwrapEnvelope(await resp.json());
 }

@@ -2,18 +2,19 @@
 // （GET/POST /api/v1/backups、POST /api/v1/backups/{id}/restore、DELETE /api/v1/backups/{id}）。
 import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
-import { buildApiEndpoint } from "./http.js";
+import { attachRequestRef, buildApiEndpoint } from "./http.js";
 async function readEnvelope(resp, action) {
     if (!resp.ok) {
         let message = "";
+        let body = null;
         try {
-            const body = await resp.json();
+            body = await resp.json();
             message = `${body?.message || body?.error?.message || ""}`.trim();
         }
         catch {
             message = "";
         }
-        throw new Error(message || `${action}失败，请稍后重试。(${resp.status})`);
+        throw attachRequestRef(new Error(message || `${action}失败，请稍后重试。(${resp.status})`), resp, body);
     }
     return unwrapEnvelope(await resp.json());
 }
