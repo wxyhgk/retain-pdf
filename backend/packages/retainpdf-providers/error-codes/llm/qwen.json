@@ -31,7 +31,7 @@
     "InternalError.Algo.InvalidParameter（400）既用于输入超长，也用于重复工具调用死循环，看 message（Range of input length / Repetitive tool calls）。",
     "Coding Plan 的五条是错误消息文字，不是独立的码；sk-sp- 开头的套餐 Key 配通用 Base URL 会 401 invalid_api_key。"
   ],
-  "handling_summary_zh": "走翻译请求层（OpenAI 兼容模式 /compatible-mode/v1），只看 HTTP 状态：401/403 整份停下、400 这个请求失败、429/5xx 退避重试、其他 4xx 只算这个请求失败。",
+  "handling_summary_zh": "走翻译请求层（OpenAI 兼容模式 /compatible-mode/v1）：401/403 整份停下、400 这个请求失败、429/5xx 退避重试、其他 4xx 只算这个请求失败。4xx 先读业务码（2026-11-23）：欠费、未订购、预算用完、免费额度用完即停（Arrearage、CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded、AllocationQuota.FreeTierOnly）和 Coding Plan 时段额度用完整份停下，归 upstream_quota_exhausted；兼容模式的 insufficient_quota 是 TPM 限流，照旧退避（message 说免费额度用完的除外）。",
   "notes_zh": [
     "429 歧义：429 下既有可重试的限流/过载（Throttling、Throttling.RateQuota、Throttling.BurstRate、Throttling.Concurrency、Throttling.ServiceOverloaded、Throttling.ResourceExhausted、Throttling.AllocationQuota 的 TPM 场景），也有不可重试的计费类（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded）。OpenAI 兼容页的状态码表里“429 You exceeded your current quota”被描述为“额度超限或者欠费”，而错误码页把 insufficient_quota（Throttling.AllocationQuota）解释为 TPS/TPM 限流，二者说法不一致；同一个 insufficient_quota 下还有“免费额度到期且不支持按量付费”这种不可重试的 message。区分办法：看 error.code，再看 error.message 是否含 free / quota exhausted 一类字样。",
     "欠费的状态码：错误码页把 Arrearage 放在 400 一节，而快速排障表在 403 AccessDenied 一行写“消息涉及欠费时参见 Arrearage”，实际状态码可能是 400 也可能是 403，按 code 判断，不要按状态码判断。",
@@ -243,16 +243,21 @@
       "user_hint_zh": "百炼免费额度已用完，请在控制台关闭“免费额度用完即停”或完成认证并充值",
       "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "stop_translation",
-        "failure_code": "auth_failed",
-        "summary_zh": "按 403 整份停下，归「鉴权失败」。",
-        "gap_zh": "这是免费额度用完，应归 upstream_quota_exhausted，提示开通按量付费或关掉「免费额度用完即停」。",
-        "priority": "medium",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：error.code 是 AllocationQuota.FreeTierOnly（403，不再按 403 归鉴权失败），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -272,15 +277,21 @@
       "user_hint_zh": "阿里云账号欠费，请到“费用与成本”充值；资源包只抵扣特定模型和用量，超出部分仍会扣余额",
       "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "fail_block",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
-        "gap_zh": "欠费走 400（也可能是 403），应按 error.code=Arrearage 归 upstream_quota_exhausted、整份停下、提示充值。",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：error.code 是 Arrearage（400 或 403 都认），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -695,16 +706,18 @@
       "user_hint_zh": "Token 用量速度超过百炼限额，请降低并发或缩小每批内容后重试；若错误信息提到免费额度耗尽，需换模型或开通付费",
       "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "retry",
         "failure_code": "upstream_rate_limited",
-        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃。",
-        "gap_zh": "同一个码也用于「免费额度到期且不支持按量付费」，那种情况重试没用；应再看 error.message（free / quota exhausted 字样）按额度处理。",
-        "priority": "low",
+        "summary_zh": "TPS / TPM 限流照旧退避重试，认 Retry-After，单个请求累计等待超过 300 秒放弃。兼容模式下这个码是 insufficient_quota：百炼地址上只有 message 说免费额度用完（free tier、free quota、免费额度）时才按额度处理——第一次就停、整份翻译停下、归 upstream_quota_exhausted；其余照旧当限流。agent 引擎、Rust 模型执行器和检测接口同样这么分。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs"
         ],
         "issues": []
       }
@@ -808,17 +821,21 @@
       "user_hint_zh": "百炼业务空间未订购，请先订购",
       "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "retry",
-        "failure_code": "upstream_rate_limited",
-        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
-        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded 等），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
-        "priority": "high",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：error.code 是 CommodityNotPurchased（429），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
-          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -838,17 +855,21 @@
       "user_hint_zh": "百炼预付费账单到期，请续费",
       "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "retry",
-        "failure_code": "upstream_rate_limited",
-        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
-        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded 等），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
-        "priority": "high",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：error.code 是 PrepaidBillOverdue（429），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
-          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -868,17 +889,21 @@
       "user_hint_zh": "百炼后付费账单逾期，请到阿里云费用中心处理",
       "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "retry",
-        "failure_code": "upstream_rate_limited",
-        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
-        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded 等），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
-        "priority": "high",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：error.code 是 PostpaidBillOverdue（429），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
-          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -898,17 +923,21 @@
       "user_hint_zh": "百炼预算已用完，请在预算管理里提高预算或关闭“达预算即停”",
       "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "retry",
-        "failure_code": "upstream_rate_limited",
-        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
-        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded 等），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
-        "priority": "high",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：error.code 是 BudgetLimitExceeded（429），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
-          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -1234,16 +1263,21 @@
       "user_hint_zh": "百炼 Coding Plan 的 5 小时额度用完，等额度恢复后再用",
       "source_url": "https://help.aliyun.com/zh/model-studio/coding-plan-faq",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "retry",
-        "failure_code": "upstream_rate_limited",
-        "summary_zh": "只看状态码；若是 429 就当限流退避到 300 秒上限。",
-        "gap_zh": "套餐时段额度用完，要等重置；应按消息文字归额度类、整份停下，提示重置时间。（官方没写这几条的状态码，未核实）",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：message 里有「hour allocated quota exceeded」（Coding Plan 时段额度，不看状态码），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -1261,16 +1295,21 @@
       "user_hint_zh": "百炼 Coding Plan 的周额度用完，等周一重置",
       "source_url": "https://help.aliyun.com/zh/model-studio/coding-plan-faq",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "retry",
-        "failure_code": "upstream_rate_limited",
-        "summary_zh": "只看状态码；若是 429 就当限流退避到 300 秒上限。",
-        "gap_zh": "套餐时段额度用完，要等重置；应按消息文字归额度类、整份停下，提示重置时间。（官方没写这几条的状态码，未核实）",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：message 里有「week allocated quota exceeded」（Coding Plan 时段额度，不看状态码），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -1288,16 +1327,21 @@
       "user_hint_zh": "百炼 Coding Plan 的月额度用完，等订阅日重置",
       "source_url": "https://help.aliyun.com/zh/model-studio/coding-plan-faq",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "retry",
-        "failure_code": "upstream_rate_limited",
-        "summary_zh": "只看状态码；若是 429 就当限流退避到 300 秒上限。",
-        "gap_zh": "套餐时段额度用完，要等重置；应按消息文字归额度类、整份停下，提示重置时间。（官方没写这几条的状态码，未核实）",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：message 里有「month allocated quota exceeded」（Coding Plan 时段额度，不看状态码），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }

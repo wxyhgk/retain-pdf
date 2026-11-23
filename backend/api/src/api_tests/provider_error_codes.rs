@@ -469,11 +469,11 @@ fn readme(view: &ProviderErrorCatalogueView) -> String {
     let _ = writeln!(out, "- 整理过程和 issue 逐条核对见[错误码汇总（2026-11-23）](../../ops/planning/error-codes/20261123-错误码汇总.md)。\n");
 
     let _ = writeln!(out, "## 怎么查一条提示\n");
-    let _ = writeln!(out, "任务失败（`GET /api/v1/jobs/{{job_id}}/reports/failure`，字段见[失败结构](../../api/08-调试诊断/01-失败结构.md)）里有 `failure_code`、`failed_stage`、`provider`、`provider_code`、`upstream_host`：\n");
-    let _ = writeln!(out, "1. **OCR 阶段**：厂商编号用任务详情的 `request_payload.ocr.provider`（`paddle`、`mineru`、`glm_ocr`）——失败里的 `provider` 只有 Rust 认出的 Paddle、MinerU 失败才是厂商名，Python worker 报的是 `ocr`；`provider_code` 是服务商的业务码 → `GET /api/v1/providers/error-codes?provider=<厂商>&code=<provider_code>`，拿条目的 `user_hint_zh`。");
-    let _ = writeln!(out, "2. **翻译阶段**：现在失败里的 `provider` 是 `translation`，多数不带业务码和 HTTP 状态；`upstream_host` 有值时可以对各家的 `hosts` 找到厂商（`open.bigmodel.cn` 在 OCR 阶段是 `glm_ocr`，翻译阶段是 `zhipu`）。");
+    let _ = writeln!(out, "任务失败（`GET /api/v1/jobs/{{job_id}}/reports/failure`、任务详情和列表的 `failure`，字段见[失败结构](../../api/08-调试诊断/01-失败结构.md)）里有 `upstream`：`{{provider, http_status, code}}`，`provider` 就是这里的厂商编号：\n");
+    let _ = writeln!(out, "1. **有 `upstream`**：`GET /api/v1/providers/error-codes?provider=<upstream.provider>&code=<upstream.code>`，对不上再用 `http_status=<upstream.http_status>` 查，拿条目的 `user_hint_zh`。翻译（直连、agent、Rust 模型执行器）和 OCR（Paddle、MinerU、GLM-OCR）失败都带；`provider` 为 `custom` 的是认不出的中转地址，只能按状态码和大类提示。");
+    let _ = writeln!(out, "2. **没有 `upstream`**（没收到服务商回应：连不上、超时，或本地出错）：OCR 失败的 `provider` 是厂商编号（`paddle`、`mineru`、`glm_ocr`），`provider_code` 有值时照上面查；`open.bigmodel.cn` 在 OCR 阶段是 `glm_ocr`，翻译阶段是 `zhipu`。");
     let _ = writeln!(out, "3. **查不到条目**：用 `failure_code` 在 `failure_codes` 里找 `recovery_hint`，或者用条目、失败码对应的大类的 `user_hint_zh` 当通用提示。");
-    let _ = writeln!(out, "4. 条目的 `retainpdf_handling.status` 为 `gap` 时，说明我们现在的分类和官方说法不一致（例如额度用完被说成限流），提示以条目为准。\n");
+    let _ = writeln!(out, "4. 条目的 `retainpdf_handling.status` 为 `gap` 时，说明我们现在的分类和官方说法不一致（例如还没单独归类、落成 `unknown` 或 `python_unhandled_exception`），提示以条目为准。\n");
 
     let _ = writeln!(out, "## 大类\n");
     let _ = writeln!(out, "每条错误码归到一个固定的大类（`category`）。大类对照到 RetainPDF 的失败码（[失败码表](./retainpdf/失败码.md)），第一个是主名，后面是同义的另一种拼法；现在实际落到哪个码看各条的「我们怎么处理」。\n");

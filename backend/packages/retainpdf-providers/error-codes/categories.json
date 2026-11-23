@@ -15,7 +15,7 @@
     "retryable": false,
     "user_hint_zh": "换一个有权限的 Key，或去服务商控制台开通这个模型 / 接口。",
     "failure_codes": ["auth_failed"],
-    "note_zh": "智谱 1311、1315 这类「套餐不含该模型」走 HTTP 429，现在翻译侧被当成限流（见各家的缺口）。"
+    "note_zh": "智谱 1311、1315 这类「套餐不含该模型」走 HTTP 429，翻译侧按业务码第一次就停、整份翻译停下，归 auth_failed（2026-11-23）。GLM-OCR 那边同样的码借用 upstream_quota_exhausted。"
   },
   {
     "id": "region",
@@ -33,7 +33,7 @@
     "retryable": false,
     "user_hint_zh": "去服务商控制台充值或续费；充值前重试会同样失败。",
     "failure_codes": ["upstream_quota_exhausted"],
-    "note_zh": "只有 HTTP 402 和 GLM-OCR 的智谱业务码会落到这里；OpenAI、智谱、百炼走 429、Anthropic 走 400 的欠费现在被当成限流或普通 400（缺口）。"
+    "note_zh": "HTTP 402、GLM-OCR 的智谱业务码，以及翻译请求层按业务码认出的欠费（OpenAI、智谱、百炼走 429，Anthropic 走 400，百炼 Arrearage 走 400 / 403）都落到这里：第一次就停、整份翻译停下（2026-11-23）。"
   },
   {
     "id": "quota",
@@ -42,7 +42,7 @@
     "retryable": false,
     "user_hint_zh": "等额度重置（看服务商给的重置时间）或在控制台调高上限；几分钟内重试没用。",
     "failure_codes": ["upstream_quota_exhausted"],
-    "note_zh": "PaddleOCR 12001 现在被说成「鉴权失败」，MinerU -60018 落「暂未识别出明确根因」（缺口）。"
+    "note_zh": "翻译侧的花费上限、时段额度（OpenAI spend limit、Anthropic 消费封顶、智谱 1308 等、百炼预算和 Coding Plan、OpenCode 预算）、PaddleOCR 12001、MinerU -60018/-60019 都归 upstream_quota_exhausted（2026-11-23）。百炼 Coding Plan 的 usage allocated quota exceeded 还当限流退避（缺口）。"
   },
   {
     "id": "rate_limit",

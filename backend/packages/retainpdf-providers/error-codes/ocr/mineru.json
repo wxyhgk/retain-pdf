@@ -18,7 +18,7 @@
     "任务级失败在查询结果 data.state=failed、data.err_msg。",
     "-60018 是每日解析任务数到上限（不是页数）；每天 1000 页最高优先级额度超了只降优先级、不报错。"
   ],
-  "handling_summary_zh": "Rust 客户端（errors.rs）把官方表里 27 个标准 API 码全部映射到 OcrErrorCategory，每条带中文处理建议（在 OCR 诊断里）；轮询只对 ServiceUnavailable、QueueFull、RemoteReadTimeout、WebReadFailed 和 408/429/5xx 重试（response_error.rs 的 retryable_query）。任务层只认鉴权两类，其余落 unknown。前端 2026-05 起默认不再提供 MinerU（#23、#46、#48），后端仍支持。",
+  "handling_summary_zh": "Rust 客户端（errors.rs）把官方表里 27 个标准 API 码全部映射到 OcrErrorCategory，每条带中文处理建议（在 OCR 诊断里）；轮询只对 ServiceUnavailable、QueueFull、RemoteReadTimeout、WebReadFailed 和 408/429/5xx 重试（response_error.rs 的 retryable_query）。任务层认鉴权两类和 -60018/-60019 当日额度用完（upstream_quota_exhausted），其余落 unknown。前端 2026-05 起默认不再提供 MinerU（#23、#46、#48），后端仍支持。",
   "notes_zh": [
     "官方表 27 个标准 API 码（A0202、A0211、-500、-10001、-10002、-60001~-60022）仓库 errors.rs 全部有映射，含义一致，没有漏码也没有多出的码",
     "可重试性差异：官方对 -60001（上传链接生成失败）、-60010（解析失败）、-60020（拆分失败）、-60021（读页数失败）都建议稍后重试，但 response_error.rs 的 retryable_query 只把 ServiceUnavailable/QueueFull/RemoteReadTimeout/WebReadFailed 当可重试，这四个码会直接失败（-60010 还在测试里被钉成不可重试）；-60016 官方也说可重试，仓库同样不重试",
@@ -121,7 +121,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -174,7 +174,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -228,7 +228,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -255,7 +255,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -282,7 +282,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -309,7 +309,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -336,7 +336,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -468,7 +468,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -495,7 +495,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -549,7 +549,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -576,7 +576,7 @@
         "status": "gap",
         "action": "fail_fast",
         "failure_code": "python_unhandled_exception",
-        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权两类，任务失败落 unknown「暂未识别出明确根因」。",
+        "summary_zh": "有分类和中文建议（在 OCR 诊断里），但任务层只认鉴权、额度两类，其余任务失败落 unknown「暂未识别出明确根因」（失败的 upstream.code 带业务码）。",
         "gap_zh": "加「OCR 分类 → failure_code」的表：文件类归「换文件」，参数类归 upstream_bad_request，summary 带服务商原话。",
         "priority": "medium",
         "code_paths": [
@@ -654,16 +654,16 @@
       "user_hint_zh": "今日 MinerU 解析任务数已用完，明天再试或换一个 Token",
       "source_url": "https://mineru.net/apiManage/docs",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "QuotaExceeded / HtmlQuotaExceeded，「明日再来」的建议只在 OCR 诊断里；任务失败落 unknown。",
-        "gap_zh": "和 Paddle 12001 一起归额度类失败码，文案「今日 OCR 额度已用完，明天再试或换 OCR」。",
-        "priority": "medium",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "不重试。Rust 归 QuotaExceeded / HtmlQuotaExceeded，任务失败归「上游账户余额或额度不足」（upstream_quota_exhausted），summary「MinerU 今日解析额度已用完（-60018）」，建议明天再试或换 Token、换 OCR；失败的 upstream.code 是业务码。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/packages/retainpdf-data/src/ocr_provider/mineru/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/mineru/response_error.rs",
-          "backend/packages/retainpdf-core/src/job_failure_structured.rs"
+          "backend/packages/retainpdf-runner/src/job_runner/ocr_flow/mineru_retry.rs",
+          "backend/packages/retainpdf-core/src/job_failure_fallback.rs"
         ],
         "issues": []
       }
@@ -681,16 +681,16 @@
       "user_hint_zh": "今日 MinerU 网页（HTML）解析额度已用完，明天再试",
       "source_url": "https://mineru.net/apiManage/docs",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "QuotaExceeded / HtmlQuotaExceeded，「明日再来」的建议只在 OCR 诊断里；任务失败落 unknown。",
-        "gap_zh": "和 Paddle 12001 一起归额度类失败码，文案「今日 OCR 额度已用完，明天再试或换 OCR」。",
-        "priority": "medium",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "不重试。Rust 归 QuotaExceeded / HtmlQuotaExceeded，任务失败归「上游账户余额或额度不足」（upstream_quota_exhausted），summary「MinerU 今日解析额度已用完（-60019）」，建议明天再试或换 Token、换 OCR；失败的 upstream.code 是业务码。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/packages/retainpdf-data/src/ocr_provider/mineru/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/mineru/response_error.rs",
-          "backend/packages/retainpdf-core/src/job_failure_structured.rs"
+          "backend/packages/retainpdf-runner/src/job_runner/ocr_flow/mineru_retry.rs",
+          "backend/packages/retainpdf-core/src/job_failure_fallback.rs"
         ],
         "issues": []
       }
