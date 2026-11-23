@@ -60,4 +60,5 @@ pub mod api {
         CreateTagInput, PatchTagInput, SetDocumentTagsInput, TagDeleteResultView, TagListView,
     };
     pub use retainpdf_platform::{BackupItemView, BackupRestoreView, BackupStatusView};
+    pub use retainpdf_providers::{ProviderErrorCatalogueView, ProviderErrorCodesQuery};
 }

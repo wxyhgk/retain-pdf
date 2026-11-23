@@ -6,6 +6,7 @@
 
 - [MinerU API 资料](./mineru_api/README.md)
 - [LLM Provider](./LLM_api/README.md)
+- [服务商错误码](./error-codes/README.md)：各家 OCR、翻译模型服务商的错误码，每家一个文件（含义、给用户的提示、RetainPDF 怎么处理、缺口），从数据生成
 - [字体与排版密度](./font-scaling/README.md)
 - [图标设计与交付物](./icon-design/ICON_BRIEF.md)
 

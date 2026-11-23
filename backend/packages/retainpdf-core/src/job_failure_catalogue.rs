@@ -197,6 +197,11 @@ pub fn recovery_for(category: &str) -> FailureRecovery {
         .unwrap_or_else(unknown_recovery)
 }
 
+/// 恢复目录里登记过的全部分类（2026-11-23，服务商错误码目录用它核对自己的失败码表）。
+pub fn catalogued_failure_codes() -> impl Iterator<Item = &'static str> {
+    CATALOGUE.iter().map(|(key, _)| *key)
+}
+
 /// 按分类和失败阶段查恢复方式：先查 `STAGE_OVERRIDES`，没有再按分类查表。
 pub fn recovery_for_stage(category: &str, failed_stage: &str) -> FailureRecovery {
     let failed_stage = failed_stage.trim();

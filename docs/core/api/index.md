@@ -943,6 +943,8 @@ CSV 表头支持英文和中文别名：
 
 - `GET /api/v1/providers/ocr`（OCR 提供方清单，不分页；契约 `contracts/ocr-providers.v1.schema.json`。选项带 `client_settable`，
   `false` 的只能服务器定、`default` 恒为 `null`）
+- `GET /api/v1/providers/error-codes`（服务商错误码目录，2026-11-23；契约 `contracts/provider-error-codes.v1.schema.json`。可按 `kind`、`provider`、`code`、
+  `http_status` 筛，见 [服务商错误码接口](../../api/08-调试诊断/03-服务商错误码.md)，逐家的表在 [服务商错误码](../../reference/error-codes/README.md)）
 - `POST /api/v1/providers/mineru/validate-token`
 - `POST /api/v1/providers/paddle/validate-token`
 - `POST /api/v1/providers/deepseek/validate-token`
@@ -980,7 +982,7 @@ simple app 通常监听 `42000`，现在只有 `GET /health` 和 `GET /ready`，
 每个接口具体开放给谁，写在后端的接口登记表里，[接口目录](../../api/00-接口目录.md)的“谁能用”一列是准的（`public` / `signed` / `admin` / `closed`，没登记的接口当关闭）；下面按资源概述。
 
 - **开放给网站账号的资源**只有：`account`、`auth`、`collections`、`documents`、`fonts`、`glossaries`、
-  `jobs`、`search`、`uploads`、`usage`（都在 `/api/v1/` 下；书架 `library` 2026-10-22 删了），以及 `GET /api/v1/providers/ocr`。
+  `jobs`、`search`、`uploads`、`usage`（都在 `/api/v1/` 下；书架 `library` 2026-10-22 删了），以及 `GET /api/v1/providers/ocr`、`GET /api/v1/providers/error-codes`。
   不在这里面的接口对网站账号**一律关闭**（回 404，看起来就是没有这个接口），新加的接口也默认关闭。
 - **只给管理员**（普通账号 403）：`credentials`、`sync`、`backups`、`admin`、其余 `providers`、
   `POST /api/v1/fonts/upload`。
