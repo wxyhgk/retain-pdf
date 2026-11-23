@@ -105,8 +105,13 @@ function findNativeDependencies(names) {
   const native = [];
   const queue = names.map((name) => ({ name, from: path.dirname(require.resolve("../package.json")) }));
   while (queue.length) {
-    const { name, from } = queue.shift();
-    const manifestPath = require.resolve(`${name}/package.json`, { paths: [from] });
+    const { name, from, optional } = queue.shift();
+    const manifestPath = findPackageManifest(name, from);
+    if (!manifestPath) {
+      // 可选依赖在这个平台上可能就没装。
+      if (optional) continue;
+      throw new Error(`找不到运行时依赖 ${name}（从 ${from} 往上找 node_modules）`);
+    }
     const dir = path.dirname(manifestPath);
     if (seen.has(dir)) continue;
     seen.set(dir, name);
@@ -114,11 +119,30 @@ function findNativeDependencies(names) {
     if (manifest.gypfile || fs.existsSync(path.join(dir, "binding.gyp")) || containsNodeAddon(dir)) {
       native.push(`${name}@${manifest.version}`);
     }
-    for (const dependency of Object.keys({ ...manifest.dependencies, ...manifest.optionalDependencies })) {
+    for (const dependency of Object.keys(manifest.dependencies || {})) {
       queue.push({ name: dependency, from: dir });
+    }
+    for (const dependency of Object.keys(manifest.optionalDependencies || {})) {
+      queue.push({ name: dependency, from: dir, optional: true });
     }
   }
   return native;
+}
+
+/**
+ * 按 Node 找包的规矩，从 from 往上逐层看 node_modules/<name>/package.json。
+ * 不用 require.resolve(`${name}/package.json`)：包的 package.json 里写了 "exports" 又没导出 ./package.json 时
+ * 会抛 ERR_PACKAGE_PATH_NOT_EXPORTED（qrcode-generator 就是这样，2026-11-23 打包全挂在这一步）。
+ */
+function findPackageManifest(name, from) {
+  let dir = from;
+  for (;;) {
+    const candidate = path.join(dir, "node_modules", name, "package.json");
+    if (fs.existsSync(candidate)) return candidate;
+    const parent = path.dirname(dir);
+    if (parent === dir) return null;
+    dir = parent;
+  }
 }
 
 function containsNodeAddon(dir) {
