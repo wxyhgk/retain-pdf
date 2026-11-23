@@ -103,7 +103,11 @@ test("弹窗：点目录翻页，点正文里的链接翻到那一页的那个�
     await new Promise((resolve) => setTimeout(resolve, 20));
     assert.equal(dom.window.document.getElementById("user-guide-dialog"), null, "没打开前不挂弹窗");
 
-    openUserGuide("credentials");
+    // 宿主的监听是在 effect 里挂上的，机器忙时 render 之后要过一会儿才挂上；没挂上就派的事件会丢，所以弹窗出来前一直派。
+    await waitFor(() => {
+      openUserGuide("credentials");
+      return dom.window.document.getElementById("user-guide-dialog");
+    }, "说明书弹窗打开");
     const article = () => dom.window.document.querySelector(".user-guide-article");
     await waitFor(() => article()?.textContent.includes("填 OCR 和翻译的 Key"), "打开到接口设置那一页");
     assert.equal(article().getAttribute("data-guide-current"), "credentials");
@@ -114,11 +118,22 @@ test("弹窗：点目录翻页，点正文里的链接翻到那一页的那个�
     await waitFor(() => article()?.getAttribute("data-guide-current") === "lan-share" && article().textContent.includes("重置访问码"), "点目录翻到局域网共享");
 
     click(dom, dom.window.document.querySelector('[data-guide-nav="ingest"]'));
-    await waitFor(() => article()?.querySelector('a[data-guide-page="book-detail"][data-guide-anchor="翻译存档的书"]'), "添加 PDF 页里有指到书的详情的链接");
-    click(dom, article().querySelector('a[data-guide-page="book-detail"][data-guide-anchor="翻译存档的书"]'));
-    await waitFor(() => article()?.getAttribute("data-guide-current") === "book-detail" && article().querySelector('[id="翻译存档的书"]'), "点正文里的链接翻到书的详情");
-    const image = article().querySelector("img");
-    assert.equal(image.getAttribute("src"), "http://127.0.0.1:40001/guide/images/book-detail/book-detail.jpg");
+    const modelLink = () => article()?.querySelector('a[data-guide-page="credentials"][data-guide-anchor="模型"]');
+    await waitFor(() => modelLink(), "添加 PDF 页（收起的「每个选项的意思」里）有指到接口设置「模型」的链接");
+    assert.match(article().querySelector("img").getAttribute("src"), /\/guide\/images\/ingest\/add-pdf\.webp$/, "页首是操作动画");
+    assert.ok(article().querySelector("img.user-guide-icon[src$='/guide/icons/plus.svg']"), "步骤里的小图标");
+    click(dom, modelLink());
+    await waitFor(() => article()?.getAttribute("data-guide-current") === "credentials" && article().querySelector('[id="模型"]'), "点正文里的链接翻到接口设置的「模型」");
+    const image = article().querySelector("img:not(.user-guide-icon)");
+    assert.equal(image.getAttribute("src"), "http://127.0.0.1:40001/guide/images/credentials/settings-api.jpg");
+
+    // 标题在收起的「更多说明」里时，跳过去要先展开。
+    click(dom, dom.window.document.querySelector('[data-guide-nav="glossaries"]'));
+    const termsLink = () => article()?.querySelector('a[data-guide-page="book-detail"][data-guide-anchor="术语"]');
+    await waitFor(() => termsLink(), "术语表页有指到书的详情「术语」的链接");
+    click(dom, termsLink());
+    await waitFor(() => article()?.getAttribute("data-guide-current") === "book-detail" && article().querySelector('[id="术语"]'), "翻到书的详情");
+    await waitFor(() => article().querySelector('[id="术语"]').closest("details")?.hasAttribute("open"), "「术语」所在的收起块被展开了");
 
     root.unmount();
   } finally {

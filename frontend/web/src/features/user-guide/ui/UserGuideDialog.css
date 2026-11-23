@@ -198,7 +198,36 @@
   font-weight: 600;
 }
 
-.user-guide-body img {
+.user-guide-body img.user-guide-icon {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  margin: 0 0.1em;
+  border: 0;
+  border-radius: 0;
+  vertical-align: -0.2em;
+}
+
+.user-guide-body details {
+  margin: 14px 0;
+  padding: 2px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md);
+}
+
+.user-guide-body summary {
+  padding: 8px 0;
+  color: var(--muted);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.user-guide-body details[open] summary {
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.user-guide-body img:not(.user-guide-icon) {
   display: block;
   max-width: 100%;
   margin: 6px 0 16px;
