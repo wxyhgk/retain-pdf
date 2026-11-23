@@ -108,6 +108,15 @@ jobs:
       - name: Cargo Workspace Tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" cargo test --locked --workspace --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
 
+      # 模型执行器的测试以前并行跑偶发失败（超时紧，2026-10-16 已放宽）；合并前照旧再单线程跑一遍，
+      # 以前只在本地跑，2026-11-23 合并前检查搬到 CI 后放到这里。
+      - name: Model executor tests (single-threaded)
+        run: |
+          uv run --project "$RETAIN_PDF_SERVICES_ROOT" cargo test --locked --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml" \
+            -p retainpdf-providers model_executor -- --test-threads=1
+          uv run --project "$RETAIN_PDF_SERVICES_ROOT" cargo test --locked --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml" \
+            -p retainpdf-api --lib api_tests::model_executor -- --test-threads=1
+
   frontend:
     needs: scope
     if: needs.scope.outputs.scope == 'full' || needs.scope.outputs.scope == 'frontend'

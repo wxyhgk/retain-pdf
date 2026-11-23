@@ -18,17 +18,29 @@
 
 ## 分支、合并、推送
 
-- 不直接在 `main` 上开发。每件事开一个分支，用 worktree 做，做完留着等确认。
-- 用户说 **"合"** 才在本地合进 `main`；说 **"推送"** 才 push。每次确认只管那一次，不顺延到下一次。
+- 不直接在 `main` 上开发。每件事开一个分支，用 worktree 做，做完留着等确认；只改文档的小事（README 之类）在主检出上切分支就行。
+- 分支做完**推到 GitHub、开草稿 PR**（`gh pr create --draft`），让 CI 跑合并前检查（见下一节）。推分支、开 PR 不用等用户说"推送"，
+  没合的分支在公开仓库里能看到，不用顾虑（2026-11-23 用户定）。
+- 用户说 **"合"** 才在本地合进 `main`；说 **"推送"** 才 push `main`、打 tag。每次确认只管那一次，不顺延到下一次。
+- 推送 `main` 后，已合进去的 PR 会自动变成已合并，再删掉它的远程分支（`git push origin --delete <分支>`）；
+  不合了的分支关掉 PR、删远程分支。
 - 推送后跑 `gh run list --limit 8`，有红的要报出来，不能当作做完。
 - 改了接口行为、事件、数据库结构、产物结构，文档在**同一个分支**里一起改（`docs/api/`、`docs/core/api/`、
   `backend/api/docs/api-spec/` 等）。
 
 ## 合并前必须跑的检查
 
-CI 的 Tests 按 PR 改动选择文档检查、前端检查或全量测试。主分支推送跑全量测试，
-独立后端源码包在打包边界有变化时验证。Web 自动发布和正式发版可以复用同一提交的
-主分支 Tests 成功结果。发布候选可从 main 手动预构建。以下检查本地先跑过再合：
+完整检查在 GitHub 上跑（2026-11-23 起，以前要求本地跑完整套）：
+
+- 分支的草稿 PR 触发 Tests，按改动选择文档检查、前端检查或全量测试；全量包括下面那串命令、前端测试、契约，
+  以及 `model_executor` 单线程再跑一遍。**PR 的 Tests 全绿才算过**，合并说明和开发记录的 validation 写 run 编号。
+- 改了翻译相关（见下面第一条）：再手动触发倒序跑一遍，`gh workflow run translation-offline.yml --ref <分支>`，也要绿。
+- 本地只跑快的：改代码时跑相关的那几个测试；提交前跑两项架构检查（几秒）。
+- **用真 Key、会花钱的测试（真模型、真 OCR）只在本地跑**，不放到 CI；跑之前照旧先问用户。
+- CI 跑不了、或要在本地复现 CI 的失败时，用下面这串命令（worktree 的环境见「本地环境的坑」）。
+
+主分支推送也跑全量测试，独立后端源码包在打包边界有变化时验证。Web 自动发布和正式发版可以复用同一提交的
+主分支 Tests 成功结果。发布候选可从 main 手动预构建。本地完整检查：
 
 ```bash
 python3 backend/api/scripts/check_architecture.py
@@ -40,7 +52,8 @@ backend/.venv/bin/python -m pytest -q .github/scripts/tests   # 文档相对链�
 cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个包漏了 retainpdf-proc、retainpdf-runnerd、retainpdf-cli
 ```
 
-- 改了翻译包 `backend/translation/`、普通翻译引擎包 `backend/translation-classic/`（或它们的 worker 外壳 `backend/pipeline/retainpdf_pipeline/translate/`）：再跑
+- 改了翻译包 `backend/translation/`、普通翻译引擎包 `backend/translation-classic/`（或它们的 worker 外壳 `backend/pipeline/retainpdf_pipeline/translate/`）：
+  CI 上就是上面的 `translation-offline.yml`；本地复现时跑
   `backend/.venv/bin/python backend/pipeline/devtools/run_translation_tests.py`，再用 `--suite translation --reverse`
   倒序跑一遍翻译单测（查模块之间互相污染）。`tests/performance` 的集成测试每个用例都在新进程里跑，顺序影响不到，
   不用倒着再跑（2026-10-30 定，以前整套倒序再跑一遍）。
@@ -59,7 +72,7 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
 - worktree 里没有 `backend/.venv`，跑 Python 和 rust_api 测试前指向主检出的环境：
   `UV_PROJECT_ENVIRONMENT=<主检出>/backend/.venv`，`PATH=<主检出>/backend/.venv/bin:$PATH`
   （rust_api 的部分测试要用 PATH 上的 `retainpdf-pipeline`）。
-- `model_executor` 的测试以前并行跑会偶发失败（测试用的超时太紧，2026-10-16 放宽了），合并前照旧再用 `--test-threads=1` 跑一遍：执行器本身的测试在 `retainpdf-providers` 包里，
+- `model_executor` 的测试以前并行跑会偶发失败（测试用的超时太紧，2026-10-16 放宽了），合并前照旧再用 `--test-threads=1` 跑一遍（CI 的 Tests 里有这一步，本地复现时自己跑）：执行器本身的测试在 `retainpdf-providers` 包里，
   要搭整个应用的几个在 `retainpdf-api` 的 `api_tests::model_executor`。
 - 不要对整个已有文件跑 rustfmt（仓库没有整体格式化过）；从 stdin 喂给 `rustfmt --check` 永远返回 0，不能当检查用。
 - 本地多用户开发栈开着时，pipeline 测试收尾会报"测试污染了仓库的 data/ 目录"，是开发栈写的，CI 上不会出现。
