@@ -8,64 +8,104 @@
   <img src="resources/brand/RetainPDF-github.svg" alt="RetainPDF" width="320" />
 </p>
 
+RetainPDF hiện là dự án mã nguồn mở duy nhất dành cho việc dịch PDF dạng ảnh và bản quét mà vẫn giữ nguyên bố cục, với chất lượng dịch thuật và sắp chữ ngang bằng, thậm chí vượt qua các sản phẩm thương mại cùng loại.
+
+Thuật toán sắp chữ tự phát triển giúp khôi phục công thức phức tạp và bố cục bài báo nhiều cột. Dịch PDF quét, tối ưu cấu trúc PDF, bảo vệ mã nguồn, chiến lược dịch tùy chỉnh và API mở đều được hỗ trợ.
+
+Hệ thống dịch thuật cũng do dự án tự phát triển, với xử lý chuyên biệt cho nội dung chạy qua nhiều cột hoặc nhiều trang, câu bị ngắt và đoạn văn nối tiếp. Hệ thống khôi phục đơn vị ngữ nghĩa hoàn chỉnh trước khi dịch, thay vì dịch từng khung OCR rời rạc và làm mất ngữ cảnh.
+
+Bạn cũng có thể chọn dịch bằng Agent: đọc toàn bộ sách trước để thống nhất thuật ngữ và văn phong, rồi dịch từng trang và rà soát từng đoạn, mỗi thuật ngữ chỉ có một cách dịch trong cả cuốn. Phù hợp với những cuốn sách cần đọc kỹ.
+
+**Công thức nội dòng là lợi thế vượt trội của RetainPDF: công thức, văn bản xung quanh và bố cục nội dòng vẫn được giữ ổn định sau khi dịch—điều mà các dự án dịch PDF mã nguồn mở khác hiện chưa làm được.**
+
+Mã nguồn, API và phương thức triển khai đều hoàn toàn mở, hỗ trợ tự triển khai và phát triển mở rộng.
+
+So sánh năng lực cốt lõi:
+
+| Dự án | PDF quét | Công thức nội dòng phức tạp | Không dịch nhầm mã nguồn | Kiểm soát bảng | Chiến lược dịch tùy chỉnh | Giữ bố cục | Tối ưu dung lượng PDF | Tự động hóa qua API |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PDFMathTranslate | ❌ | ❌ | ❌ | Hạn chế | Hạn chế | Trung bình | Trung bình | ✅ |
+| PolyglotPDF | ❌ | ❌ | ❌ | Hạn chế | Hạn chế | Trung bình | Trung bình | ✅ |
+| Doc2X | ✅ | ✅ | ❌ | Khá | Hạn chế | Tốt | Hạn chế | ❌ Không công khai |
+| RetainPDF | ✅ | ✅ Bảo toàn vượt trội | ✅ | ✅ Tùy chọn | ✅ Theo quy tắc | Tốt | ✅ Liên tục cải thiện | ✅ |
+
+## Giao diện sản phẩm
+
+### Thư viện
+
+Quản lý bài báo, sách và tài liệu quét trong cùng một thư viện; theo dõi trạng thái dịch, bộ sưu tập và mục yêu thích.
+
 <p align="center">
-  <a href="https://github.com/wxyhgk/retain-pdf/releases/latest"><img src="https://img.shields.io/github/v/release/wxyhgk/retain-pdf?label=phi%C3%AAn%20b%E1%BA%A3n&color=2563eb" alt="Release" /></a>
-  <a href="https://github.com/wxyhgk/retain-pdf/releases"><img src="https://img.shields.io/github/downloads/wxyhgk/retain-pdf/total?label=l%C6%B0%E1%BB%A3t%20t%E1%BA%A3i&color=16a34a" alt="Downloads" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f59e0b" alt="MIT" /></a>
-  <a href="https://github.com/wxyhgk/retain-pdf/actions/workflows/tests.yml"><img src="https://github.com/wxyhgk/retain-pdf/actions/workflows/tests.yml/badge.svg?branch=main" alt="Tests" /></a>
-  <a href="https://github.com/wxyhgk/retain-pdf/stargazers"><img src="https://img.shields.io/github/stars/wxyhgk/retain-pdf?style=flat&color=eab308" alt="Stars" /></a>
+  <img src="resources/brand/readme-gallery/product/library.png" alt="Thư viện tài liệu RetainPDF" width="1000" />
 </p>
 
-Công cụ mã nguồn mở dịch PDF mà vẫn giữ nguyên bố cục, dịch được cả PDF quét và PDF dạng ảnh. Dùng ứng dụng desktop, hoặc tự triển khai bằng Docker.
+### Đọc đối chiếu
 
-- **Giữ nguyên bố cục**: công thức, trang nhiều cột, hình ảnh, đầu trang và chân trang vẫn đúng vị trí; công thức nội dòng vẫn ổn định sau khi dịch.
-- **Dịch cả bản quét**: OCR trước rồi mới dịch, có lớp văn bản hay không đều được.
-- **Dịch theo câu hoàn chỉnh**: đoạn bị tách qua cột, qua trang được ghép lại trước khi dịch; mã nguồn, công thức và tên riêng được bảo vệ, bảng thuật ngữ cố định cách dịch.
-- **Dịch bằng Agent**: đọc toàn bộ sách trước để thống nhất thuật ngữ và văn phong, rồi dịch từng trang và rà soát từng đoạn. Chậm hơn và tốn hơn, dành cho những cuốn sách cần đọc kỹ.
+Hiển thị PDF gốc và bản dịch cạnh nhau để kiểm tra công thức, hình ảnh, trích dẫn và vị trí bố cục.
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/translation-examples.webp" alt="Ví dụ bản dịch RetainPDF: bài báo, tài liệu quét, sách giáo khoa" width="1000" />
+  <img src="resources/brand/readme-gallery/product/side-by-side-reader.png" alt="Đọc đối chiếu PDF gốc và bản dịch trong RetainPDF" width="1000" />
 </p>
+
+### Đọc Markdown
+
+Đọc PDF và Markdown cạnh nhau, đồng thời giữ nguyên công thức và hình ảnh.
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/product/side-by-side-reader.png" alt="RetainPDF đọc đối chiếu" width="1000" />
+  <img src="resources/brand/readme-gallery/product/markdown-reader.png" alt="Trình đọc Markdown của RetainPDF" width="1000" />
 </p>
 
-## Tải về
+## Ví dụ bản dịch
 
-Từ [Releases](https://github.com/wxyhgk/retain-pdf/releases/latest):
+Các ví dụ đối chiếu bản gốc và bản dịch cho bài báo khoa học, PDF quét, tài liệu có nhiều công thức và sách:
 
-| Hệ điều hành | Tệp | Ghi chú |
-| --- | --- | --- |
-| macOS | `RetainPDF-Mac-<phiên-bản>.dmg` | Chip Apple (M1 trở lên), đã được ký và công chứng |
-| Windows | `RetainPDF-Windows-<phiên-bản>-Setup.exe` | Nếu thấy “Windows đã bảo vệ máy tính của bạn”, bấm “Thông tin thêm” → “Vẫn chạy” |
-| Linux | `RetainPDF-Linux-<phiên-bản>.deb` | `sudo apt install ./RetainPDF-Linux-<phiên-bản>.deb` |
+<p align="center">
+  <img src="resources/brand/readme-gallery/translation-examples.webp" alt="Ví dụ dịch bài báo, PDF quét và sách bằng RetainPDF" width="1000" />
+</p>
 
-Lần đầu mở, ứng dụng sẽ hỏi key OCR và key dịch. Hỗ trợ PaddleOCR, MinerU, GLM-OCR; DeepSeek, Qwen, Zhipu, OpenAI, Anthropic, OpenCode Go và mọi endpoint tương thích OpenAI hoặc Anthropic ([cách lấy key, tiếng Trung](frontend/web/guide/credentials.md)).
+<p align="center"><sub>Hàng 1: bài báo khoa học · Hàng 2: tài liệu quét và nhiều công thức · Hàng 3: sách và giáo trình</sub></p>
 
-Docker:
+## Bắt đầu nhanh
+
+### Ứng dụng desktop
+
+Tải gói phù hợp từ [GitHub Releases](https://github.com/wxyhgk/retain-pdf/releases/latest):
+
+- Windows: `Setup.exe` (nếu thấy “Windows đã bảo vệ máy tính của bạn”, bấm “Thông tin thêm” → “Vẫn chạy”)
+- macOS: `.dmg` (chip Apple, đã được ký và công chứng)
+- Linux: `.deb` (`sudo apt install ./RetainPDF-Linux-<phiên-bản>.deb`)
+
+Lần đầu mở, ứng dụng sẽ hỏi key OCR và key dịch; từng bước: [hướng dẫn sử dụng (tiếng Trung)](frontend/web/guide/README.md).
+
+### Docker
 
 ```bash
 git clone https://github.com/wxyhgk/retain-pdf.git
 cd retain-pdf/ops/deployment/docker/delivery
-docker compose up -d   # mở http://127.0.0.1:40001
+docker compose up -d
 ```
 
-Xem thêm [hướng dẫn triển khai Docker](ops/deployment/docker/delivery/README.md).
+Sau khi khởi động, mở <http://127.0.0.1:40001>. Để cập nhật:
 
-## Tài liệu
+```bash
+docker compose pull
+docker compose up -d
+```
 
-- [Hướng dẫn sử dụng (tiếng Trung)](frontend/web/guide/README.md): thư viện, dịch, đọc đối chiếu, bảng thuật ngữ, đồng bộ, sao lưu, chia sẻ mạng LAN… cũng có ở mục “使用说明” cuối ứng dụng
-- Phát triển: [hướng dẫn đóng góp](CONTRIBUTING.md) · [tài liệu dự án](docs/README.md) · [hướng dẫn backend](backend/README.md)
+Xem [hướng dẫn triển khai Docker](ops/deployment/docker/delivery/README.md) để biết thêm tùy chọn.
 
 ## Cộng đồng
 
 Nhóm QQ: `1101779791`
 
 <p align="center">
-  <img src="resources/brand/QQ_Group.JPG" alt="Mã QR nhóm QQ RetainPDF" width="200" />
+  <img src="resources/brand/QQ_Group.JPG" alt="Mã QR nhóm QQ RetainPDF" width="280" />
 </p>
+
+## Phát triển
+
+Xem [hướng dẫn đóng góp](CONTRIBUTING.md), [tài liệu dự án](docs/README.md) và [hướng dẫn backend](backend/README.md).
 
 ## Giấy phép
 
-MIT, xem [LICENSE](LICENSE).
+Dự án được phát hành theo giấy phép MIT. Xem toàn bộ nội dung tại [LICENSE](LICENSE).
