@@ -21,6 +21,7 @@ The mirrored files are:
 - `ocr-providers.v1.schema.json`
 - `translation-providers.v1.schema.json`
 - `pipeline-stdout.v1.schema.json`
+- `provider-error-codes.v1.schema.json`
 - `reader-data.v1.schema.json`
 - `refine-report.v1.schema.json`
 - `token-usage.v1.schema.json`
@@ -41,7 +42,7 @@ absent. From the extracted `backend/` root, run:
 python3 contracts/check_parity.py
 ```
 
-This validates that all twenty local contract files exist and contain valid
+This validates that all eighteen local contract files exist and contain valid
 JSON, then explicitly skips upstream parity. In the monorepo, schema changes
 start in `contracts`, are copied byte-for-byte here, and must pass the
 `--require-upstream` gate.

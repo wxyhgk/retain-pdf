@@ -1,0 +1,625 @@
+{
+  "id": "anthropic",
+  "label": "Anthropic",
+  "kind": "llm",
+  "hosts": [
+    "api.anthropic.com"
+  ],
+  "sources": [
+    {
+      "title": "Claude API errors",
+      "url": "https://platform.claude.com/docs/en/api/errors",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Rate limits (spend caps, ramp limits, response headers)",
+      "url": "https://platform.claude.com/docs/en/api/rate-limits",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Streaming messages (error events)",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/streaming",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Stop reasons and fallback",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Context windows (overflow behavior)",
+      "url": "https://platform.claude.com/docs/en/build-with-claude/context-windows",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "API credits for subscribers (credit balance message)",
+      "url": "https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "OAuth reference (billing errors, chat/completions error mapping)",
+      "url": "https://platform.claude.com/docs/en/manage-claude/oauth-apps/oauth-reference",
+      "fetched_at": "2026-11-23"
+    }
+  ],
+  "error_shape_zh": "JSON body {\"type\": \"error\", \"error\": {\"type\", \"message\", \"details\"?: {\"error_code\"}}, \"request_id\"}；error.type 是主分类，Messages API 上更细的原因在 error.details.error_code（如 enforced_spend_limit_reached、ramp_limit_exceeded）。新 type 值可能增加，需兜底。 响应头：request-id（同 body 的 request_id），retry-after（秒；不是所有 429 都有，消费封顶 429 一定没有）， anthropic-ratelimit-{requests,tokens,input-tokens,output-tokens}-{limit,remaining,reset}（reset 为 RFC 3339 时间），Priority Tier 另有 anthropic-priority-{input,output}-tokens-*，快速模式有 anthropic-fast-*。 流式：HTTP 200 之后仍可能来 event: error，data 为 {\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",...}}。 成功响应的 stop_reason ∈ end_turn/max_tokens/stop_sequence/tool_use/pause_turn/refusal/model_context_window_exceeded。 经 Anthropic 的 /v1/chat/completions 兼容端点时，error.type 固定为 invalid_request_error，error.code 放 Anthropic 的错误类型，需按 HTTP 状态 + error.code 判断。",
+  "how_to_distinguish_zh": [
+    "429 的 error.type 都是 rate_limit_error，要看 error.details.error_code：没有或 ramp_limit_exceeded 是限流 / 爬坡（有 retry-after，可重试）；enforced_spend_limit_reached 是月度花费封顶（没有 retry-after，到下月前重试都没用）。没有 details 时，429 又没有 retry-after 头就按额度处理。",
+    "400 也有歧义：自设花费上限到了返回 400 invalid_request_error（message 以 You have reached your specified API usage limits 开头），余额不足是 400 + Your credit balance is too low；只能看 message。402 billing_error 是支付信息问题。",
+    "500 可能是 api_error 也可能是 timeout_error，看 error.type；模型名写错一般是 404 not_found_error，没有单独的 model_not_found。",
+    "HTTP 200 也可能没翻完：看 stop_reason（max_tokens、model_context_window_exceeded、refusal）；流式时 200 之后仍可能来 event: error。"
+  ],
+  "handling_summary_zh": "走翻译请求层的 Anthropic Messages 协议，处理同 OpenAI：401/403 整份停下、402 整份停下归余额不足、400 这个请求失败（拒收 temperature、思考字段时自动降级）、429/5xx/529 退避重试、其他 4xx 只算这个请求失败。只有开发用的直连 agent.py 另外看正文里的 credit balance / billing / quota。",
+  "notes_zh": [
+    "429 有歧义：error.type 都是 rate_limit_error，但可能是 (a) 普通速率限制（有 retry-after，可重试），(b) 爬坡限制 error.details.error_code=ramp_limit_exceeded（有 retry-after，可重试但要慢慢加量）， (c) 档位月度消费封顶 error.details.error_code=enforced_spend_limit_reached（没有 retry-after，重试到下月都无用），(d) Claude Code 工作区的消费上限（带 retry-after）。 区分规则：先看 error.details.error_code；没有该字段时，429 且无 retry-after 头应按额度耗尽处理、不要自动重试。SDK 默认自动重试 2 次，会在封顶 429 上白白重试。",
+    "400 也有歧义：自设消费上限达到时返回 400 invalid_request_error（不是 429），只能靠 message 前缀 'You have reached your specified ... API usage limits' 识别；余额不足 'Your credit balance is too low' 同理只能看 message。",
+    "'Your credit balance is too low...' 的文本出自订阅者 API 额度页面，该页未写 HTTP 状态；400 invalid_request_error 属通用知识。402 billing_error 是另一种情况（支付信息问题）。",
+    "404 not_found_error 是通用的资源不存在，模型名写错时一般也是它，文档没有单独的 model_not_found 码。",
+    "500 可能是 api_error 也可能是 timeout_error，看 error.type。",
+    "OAuth 应用代用户计费时另有 402 billing_error + linked_organization_spend_limit_reached / linked_organization_billing_unavailable、403 user_profile_not_billable 等码，RetainPDF 直连 API Key 不涉及，未收录。",
+    "预填、thinking 配置、tool_choice 等 400 校验错误见错误页 Common validation errors，只列了与翻译最相关的预填一条。",
+    "docs.anthropic.com 无法直接抓取，内容取自当前官方文档站 platform.claude.com（含 .md 与 llms-full.txt）。"
+  ],
+  "issues": [],
+  "related_docs": [],
+  "entries": [
+    {
+      "id": "invalid_request_error",
+      "code": "invalid_request_error",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "请求格式或内容有问题；其他未单列的 4XX 也可能用这个类型。",
+      "meaning_en": "Problem with request format or content; may also be used for other unlisted 4XX.",
+      "user_hint_zh": "看 error.message 指出的字段并修正请求参数。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。拒收 temperature 时自动去掉重发并记住；思考字段不被接受时退下一档。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "specified_api_usage_limits",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到组织或工作区自己设置的消费上限；message 以 \"You have reached your specified API usage limits\"（工作区为 \"...specified workspace API usage limits\"）开头并写明恢复时间。",
+      "meaning_en": "Org/workspace self-set spend limit reached; message starts with 'You have reached your specified (workspace) API usage limits'.",
+      "user_hint_zh": "去 Claude Console 的 Spend limits 提高或取消自设上限，或等恢复时间。",
+      "source_url": "https://platform.claude.com/docs/en/api/rate-limits",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
+        "gap_zh": "这是自设花费上限到了，应按正文（You have reached your specified API usage limits）归额度类、整份停下（开发用直连路径已经认 credit balance）。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "prompt_too_long",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "context_length",
+      "retryable": false,
+      "meaning_zh": "输入本身已超过模型上下文窗口（message 为 \"prompt is too long\"）。",
+      "meaning_en": "Input alone exceeds the context window ('prompt is too long').",
+      "user_hint_zh": "减少每次发送的内容（拆小分块）。",
+      "source_url": "https://platform.claude.com/docs/en/build-with-claude/context-windows",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
+        "gap_zh": "可以拆小批再发，并在文案里说明「单次请求太长」。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "credit_balance_too_low",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "预付余额用完：message 为 \"Your credit balance is too low to access the Anthropic API...\"（文档给出文本，未写状态码；400 为通用知识）。",
+      "meaning_en": "Prepaid credits exhausted: 'Your credit balance is too low to access the Anthropic API...'.",
+      "user_hint_zh": "去 Claude Console 的 Billing 页面购买额度或开启自动充值。",
+      "source_url": "https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
+        "gap_zh": "余额不足走的是 400，应按正文（credit balance is too low）归 upstream_quota_exhausted、整份停下、提示充值。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "prefill_unsupported",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "unsupported",
+      "retryable": false,
+      "meaning_zh": "新模型（Claude 4.6 及以后）不支持 assistant 预填，最后一条必须是 user 消息。",
+      "meaning_en": "Newer models reject assistant prefill; conversation must end with a user message.",
+      "user_hint_zh": "去掉末尾的 assistant 预填，改用结构化输出或 system 指令。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求最后一条总是 user 消息，不用预填。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "authentication_error",
+      "code": "authentication_error",
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": "authentication_error",
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "API Key 有问题（格式错、已吊销或过期）。message 以 \"CORS requests are not allowed\" 开头时是浏览器直连被组织禁止，与密钥无关。",
+      "meaning_en": "API key problem (malformed, revoked, expired); a 'CORS requests are not allowed' message means browser calls are blocked instead.",
+      "user_hint_zh": "核对或重新生成 Anthropic API Key 后再试。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "billing_error",
+      "code": "billing_error",
+      "aliases": [],
+      "http_status": [
+        402
+      ],
+      "type": "billing_error",
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "账单或支付信息有问题。",
+      "meaning_en": "Billing or payment information problem.",
+      "user_hint_zh": "去 Claude Console 检查付款方式和账单信息。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "402 不重试，整份翻译停下，归「上游账户余额不足」，不可重试（agent 引擎报 QuotaExhausted）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "permission_error",
+      "code": "permission_error",
+      "aliases": [],
+      "http_status": [
+        403
+      ],
+      "type": "permission_error",
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "该 API Key 无权使用所请求的资源（模型、功能或工作区）。",
+      "meaning_en": "API key lacks permission for the requested resource.",
+      "user_hint_zh": "在 Claude Console 检查组织权限和工作区设置。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "not_found_error",
+      "code": "not_found_error",
+      "aliases": [],
+      "http_status": [
+        404
+      ],
+      "type": "not_found_error",
+      "category": "model_not_found",
+      "retryable": false,
+      "meaning_zh": "请求的资源不存在；接口路径或资源 ID 错误（模型名写错通常也落在这里）。",
+      "meaning_en": "Requested resource not found; check endpoint path and IDs.",
+      "user_hint_zh": "核对接口地址和模型名称。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "模型名写错或没开通时每个块各自失败，最后说不清原因。应和 401/403 一样第一次就整份停下，给「模型不存在」类失败，换模型后从翻译续跑。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "conflict_error",
+      "code": "conflict_error",
+      "aliases": [],
+      "http_status": [
+        409
+      ],
+      "type": "conflict_error",
+      "category": "other",
+      "retryable": true,
+      "meaning_zh": "请求与资源当前状态冲突（并发修改或唯一值重复）。",
+      "meaning_en": "Request conflicts with the resource's current state.",
+      "user_hint_zh": "解决冲突后再重试。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "Messages 请求不改资源，碰不到 409。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "request_too_large",
+      "code": "request_too_large",
+      "aliases": [],
+      "http_status": [
+        413
+      ],
+      "type": "request_too_large",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "请求体超过字节上限（Messages API 128 MB；第一方 API 在 Cloudflare 层就拒绝）。",
+      "meaning_en": "Request body exceeds the byte limit (Messages API 128 MB).",
+      "user_hint_zh": "减小单次请求体积（少带图片/文件或拆分）。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "归 upstream_bad_request 一类并说明「单次请求太大」。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "rate_limit_error",
+      "code": "rate_limit_error",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "rate_limit_error",
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "触发速率限制（RPM/ITPM/OTPM），通常带 retry-after 头。",
+      "meaning_en": "Rate limit (RPM/ITPM/OTPM) exceeded; usually has retry-after.",
+      "user_hint_zh": "按 retry-after 秒数等待后重试，降低并发。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "enforced_spend_limit_reached",
+      "code": "enforced_spend_limit_reached",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "rate_limit_error",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到所在用量档位的月度消费封顶；error.details.error_code 为此值，且没有 retry-after 头，下月 1 日 00:00 UTC 前持续失败。",
+      "meaning_en": "Usage-tier monthly spend cap reached; error.details.error_code set, no retry-after; fails until next month.",
+      "user_hint_zh": "在 Claude Console 的 Rate limits 页申请升档，或等下月恢复。",
+      "source_url": "https://platform.claude.com/docs/en/api/rate-limits",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.details.error_code（enforced_spend_limit_reached），没有该字段时 429 又没有 retry-after 也按额度处理，按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "ramp_limit_exceeded",
+      "code": "ramp_limit_exceeded",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "rate_limit_error",
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "用量增长太快触发爬坡限制，即使未达速率上限；error.details.error_code 为此值。",
+      "meaning_en": "Usage ramped too fast (ramp limit) even under rate limits; error.details.error_code set.",
+      "user_hint_zh": "按 retry-after 等待，之后每分钟最多加一个台阶慢慢加量。",
+      "source_url": "https://platform.claude.com/docs/en/api/rate-limits",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "api_error",
+      "code": "api_error",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": "api_error",
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "Anthropic 内部意外错误。",
+      "meaning_en": "Unexpected internal error at Anthropic.",
+      "user_hint_zh": "指数退避后重试；持续出现带 request-id 联系支持。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "timeout_error",
+      "code": "timeout_error",
+      "aliases": [],
+      "http_status": [
+        504,
+        500
+      ],
+      "type": "timeout_error",
+      "category": "timeout",
+      "retryable": true,
+      "meaning_zh": "请求处理超时；开始输出前就触及服务端时限时也可能以 500 返回此类型。",
+      "meaning_en": "Request timed out while processing; may also come as 500.",
+      "user_hint_zh": "重试；长输出改用流式或 Message Batches。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "overloaded_error",
+      "code": "overloaded_error",
+      "aliases": [],
+      "http_status": [
+        529
+      ],
+      "type": "overloaded_error",
+      "category": "overloaded",
+      "retryable": true,
+      "meaning_zh": "API 暂时过载（全体用户流量高峰）；流式中途也可能以 error 事件出现。",
+      "meaning_en": "API temporarily overloaded; can also arrive mid-stream as an error event.",
+      "user_hint_zh": "稍等后重试，或暂时换一个模型。",
+      "source_url": "https://platform.claude.com/docs/en/api/errors",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "max_tokens",
+      "code": "max_tokens",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "stop_reason",
+      "category": "context_length",
+      "retryable": false,
+      "meaning_zh": "输出达到 max_tokens 上限被截断。",
+      "meaning_en": "Output reached the max_tokens limit.",
+      "user_hint_zh": "调大 max_tokens，或减小每次翻译的分块。",
+      "source_url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": null,
+        "summary_zh": "只要 content 里有文字就收下，不看 stop_reason；没有文字才抛错重试。",
+        "gap_zh": "stop_reason 为 max_tokens / model_context_window_exceeded 时译文是截断的，应当这一块没翻成。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "model_context_window_exceeded",
+      "code": "model_context_window_exceeded",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "stop_reason",
+      "category": "context_length",
+      "retryable": false,
+      "meaning_zh": "生成填满了模型上下文窗口（Claude 4.5 及以后输入+max_tokens 超窗时会接受请求，到顶后以此停止）。",
+      "meaning_en": "Generation filled the model's context window; treat as truncated.",
+      "user_hint_zh": "按截断处理，减小分块后重试。",
+      "source_url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": null,
+        "summary_zh": "只要 content 里有文字就收下，不看 stop_reason；没有文字才抛错重试。",
+        "gap_zh": "stop_reason 为 max_tokens / model_context_window_exceeded 时译文是截断的，应当这一块没翻成。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "refusal",
+      "code": "refusal",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "stop_reason",
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "安全分类器拒答，按正常 200 返回而非错误；详情看 stop_details。",
+      "meaning_en": "Safety classifiers declined; returned as a normal 200, see stop_details.",
+      "user_hint_zh": "该段内容被拒答，请改写原文、换模型或跳过。",
+      "source_url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "拒答时 content 没有文字，抛错重试；用完后这一块失败、保留原文。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    }
+  ]
+}

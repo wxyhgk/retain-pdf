@@ -56,6 +56,7 @@ mod ocr_dispatch_ownership;
 mod ocr_lifecycle;
 mod providers;
 mod runtime_assets;
+mod provider_error_codes;
 mod provider_probes;
 mod queue_limit;
 mod restore_in_progress;

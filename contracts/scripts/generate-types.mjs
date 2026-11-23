@@ -58,6 +58,11 @@ const TARGETS = [
     rootName: "OcrProvidersSchema",
   },
   {
+    input: "provider-error-codes.v1.schema.json",
+    output: "src/provider-error-codes.ts",
+    rootName: "ProviderErrorCodesSchema",
+  },
+  {
     input: "reader-data.v1.schema.json",
     output: "src/reader-data.ts",
     rootName: "ReaderDataSchema",

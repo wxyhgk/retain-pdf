@@ -1,0 +1,126 @@
+<!-- 由 backend/api/src/api_tests/provider_error_codes.rs 从 backend/packages/retainpdf-providers/error-codes/ 生成，不要手改：
+     UPDATE_ERROR_CODES=1 cargo test -p retainpdf-api --lib provider_error_codes -->
+
+# OpenAI 错误码
+
+翻译模型服务商。接口主机：`api.openai.com`。数据：[`backend/packages/retainpdf-providers/error-codes/llm/openai.json`](../../../../backend/packages/retainpdf-providers/error-codes/llm/openai.json)；接口 `GET /api/v1/providers/error-codes?provider=openai`。回到[错误码索引](../README.md)。
+
+含义、提示都是转述，原文看每条的出处。
+
+## 错误长什么样
+
+HTTP 错误：JSON body {"error": {"message", "type", "param", "code"}}；判断原因优先看 error.code，error.type 是大类（计费类可能都是 insufficient_quota）。 响应头：x-request-id（报障用），openai-processing-ms；Retry-After 只在临时限速 429 / 过载 503 时可能出现； x-ratelimit-limit-requests / x-ratelimit-limit-tokens / x-ratelimit-remaining-requests / x-ratelimit-remaining-tokens / x-ratelimit-reset-requests / x-ratelimit-reset-tokens， 有项目级 token 限额时另有 x-ratelimit-{limit,remaining,reset}-project-tokens。可自带 X-Client-Request-Id（ASCII、≤512 字符，否则 400）。 Responses API：HTTP 200 也可能失败——Response.status ∈ completed/failed/in_progress/cancelled/queued/incomplete；status=failed 时 Response.error = {code, message, param?, type?, misalignment?}（code 为 21 个枚举值之一）； status=incomplete 时看 incomplete_details.reason（max_output_tokens/max_messages/content_filter/steered）。 流式 Responses：失败发 response.failed 事件（内含 status=failed 的 response 与 error），未完成发 response.incomplete，另有顶层 error 事件 {type:"error", code, message, param, sequence_number}。 Chat Completions：choices[].finish_reason ∈ stop/length/tool_calls/content_filter/function_call。
+
+## 同一个状态有几种意思时怎么分
+
+- 先看 error.code，再看 error.type；error.type 是大类，计费类可能都是 insufficient_quota。
+- 429 有两种：error.code 属于计费 / 额度集合（insufficient_quota、credit_balance_exhausted、billing_hard_limit_reached、organization_spend_limit_exceeded、project_spend_limit_exceeded、organization_usage_limit_exceeded）或 error.type=insufficient_quota 时重试没用，要充值或调上限；否则（rate_limit_exceeded、slow_down、没有 code 的 Rate limit reached、带 Retry-After）是真限流，退避重试。Retry-After 不代表计费类错误重试会好。
+- 503 server_is_overloaded（过载）和 429 slow_down（流量涨太快）是近期才拆开的，以前部分接口两种都用 503 + slow_down，要兼容旧码。
+- HTTP 200 也可能失败：Responses 的 status=failed 看 error.code，status=incomplete 看 incomplete_details.reason；Chat 看 choices[].finish_reason（length、content_filter）；流式时错误只在 response.failed / error 事件里。
+
+## RetainPDF 怎么处理
+
+翻译、通读、表格翻译经同一个请求层（OpenAI chat、Responses、Anthropic Messages 三种协议，model_wire.py 组请求）：401/403 整份停下、402 整份停下归余额不足、400 这个请求失败（带三种自动降级）、408/429/5xx/529 退避重试、其他 4xx 只算这个请求失败。只看状态码，不读响应体的 error.code。
+
+共 55 条：有缺口 21 条（高 6、中 1、低 14），碰不到 19 条。缺口按用户影响排的总表见[索引](../README.md#缺口汇总)。
+
+## 错误码
+
+码一栏是服务商返回的码；服务商没有码的，括号里是我们起的编号（接口里的 `id`）。
+
+| 码 | HTTP | 大类 | 可重试 | 含义 | 给用户的提示 | 我们怎么处理 | 对不对得上 | 出处 |
+|---|---|---|---|---|---|---|---|---|
+| （service_tier_not_allowed） | 400 | 请求参数错误（`invalid_request`） | 否 | 请求的 service_tier（服务档位）不被该项目允许；error.param 为 service_tier。省略或设为 auto 时解析出的档位也可能触发。 | 改用项目允许的 service_tier，或在 OpenAI 项目设置里放开该档位。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （invalid_authentication） | 401 | 鉴权失败（`auth`） | 否 | 认证无效：密钥被吊销、不属于所请求的组织/项目，或权限不够。 | 检查 API Key 和组织 ID 是否对应，必要时重新生成密钥。 | 整份翻译停下 → `auth_failed`：不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （incorrect_api_key） | 401 | 鉴权失败（`auth`） | 否 | API Key 不正确（拼写、多余空格、已删除或属于别的组织）。 | 核对或重新生成 OpenAI API Key 后再试。 | 整份翻译停下 → `auth_failed`：不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （no_organization） | 401 | 鉴权失败（`auth`） | 否 | 账号不属于任何组织，无法使用 API。 | 请组织管理员邀请你加入组织，或联系 OpenAI 新建组织。 | 整份翻译停下 → `auth_failed`：不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （ip_not_authorized） | 401 | 没有权限（`permission`） | 否 | 请求来源 IP 不在项目或组织配置的 IP 白名单内。 | 从白名单内的 IP 发请求，或在 OpenAI 后台更新 IP 白名单。 | 整份翻译停下 → `auth_failed`：不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （unsupported_region） | 403 | 地区不支持（`region`） | 否 | 从不受支持的国家、地区或领地访问 API。 | 当前网络出口所在地区不受 OpenAI 支持，请更换受支持地区的网络或改用其他服务商。 | 整份翻译停下 → `auth_failed`：按 403 整份停下，归「鉴权失败」，文案让用户检查 Key。 | **缺口·低**：正文说的是地区不支持，换 Key 没用；应单独文案「所在地区不支持，换网络或换服务商」。 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `credit_balance_exhausted` | 429 | 欠费或余额不足（`billing`） | 否 | 组织的预付费余额已用完。 | 去 OpenAI 后台 Billing 页面充值后再试。 | 退避重试 → `upstream_rate_limited`：只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。 | **缺口·高**：这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （rate_limit_reached） | 429 | 限流（`rate_limit`） | 是 | 请求或 token 发送过快，触发分配的速率限制（Rate limit reached for requests）。 | 降低并发，按 Retry-After 或指数退避等待后重试。 | 退避重试 → `upstream_rate_limited`：退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `slow_down` | 429 | 限流（`rate_limit`） | 是 | 流量增长过快（爬坡限速），即使未超 RPM/TPM 也可能出现。 | 按 Retry-After 等待，降低请求速率后再逐步加量。 | 退避重试 → `upstream_rate_limited`：退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `organization_spend_limit_exceeded` | 429 | 额度或用量上限（`quota`） | 否 | 组织达到自己设置的月度硬性消费上限。 | 在 OpenAI 组织 Limits 设置里提高或取消消费上限，或等月度重置。 | 退避重试 → `upstream_rate_limited`：只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。 | **缺口·高**：这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `project_spend_limit_exceeded` | 429 | 额度或用量上限（`quota`） | 否 | 项目达到自己设置的月度硬性消费上限。 | 在 OpenAI 项目设置里提高或取消该项目的消费上限，或等月度重置。 | 退避重试 → `upstream_rate_limited`：只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。 | **缺口·高**：这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `organization_usage_limit_exceeded` | 429 | 额度或用量上限（`quota`） | 否 | 组织达到 OpenAI 核定的月度用量上限（与自设消费上限不同）。 | 在 OpenAI 后台申请提高核定用量上限，或联系 OpenAI 支持。 | 退避重试 → `upstream_rate_limited`：只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。 | **缺口·高**：这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `server_error` | 500 | 服务端错误（`server`） | 是 | OpenAI 服务端处理请求时出错；Responses 对象 status=failed 时 error.code 也可能是它。 | 稍等后重试；持续出现请查看 status.openai.com。 | 退避重试：退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `server_is_overloaded` | 503 | 服务繁忙（`overloaded`） | 是 | 所请求的模型暂时过载、容量不足。 | 按 Retry-After 等待后重试，或暂时换一个模型。 | 退避重试：退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `insufficient_quota` | 429 | 额度或用量上限（`quota`） | 否 | 额度/配额不足。文档说明计费类错误的 error.type 可能仍是 insufficient_quota，示例代码也把同名 error.code 视为不可重试。 | 去 OpenAI 后台检查余额、充值或提高额度上限。 | 退避重试 → `upstream_rate_limited`：只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。 | **缺口·高**：这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。 | [文档](https://developers.openai.com/api/docs/guides/rate-limits) |
+| `billing_hard_limit_reached` | 429 | 额度或用量上限（`quota`） | 否 | 达到计费硬上限（官方示例代码中作为不可重试的 429 code 出现）。 | 在 OpenAI 后台提高或取消硬性消费上限。 | 退避重试 → `upstream_rate_limited`：只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。 | **缺口·高**：这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。 | [文档](https://developers.openai.com/api/docs/guides/rate-limits) |
+| `model_not_found` | 404 | 模型不存在（`model_not_found`） | 否 | 模型不存在或当前组织/项目/密钥无权使用（模型权限与速率档位无关）。 | 核对模型 ID 和所选项目，确认该项目有此模型权限。 | 只这一块失败 → `python_unhandled_exception`：不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。 | **缺口·中**：模型名写错或没开通时每个块各自失败，最后说不清原因。应和 401/403 一样第一次就整份停下，给「模型不存在」类失败，换模型后从翻译续跑。检测接口已经能认出（model_unavailable）。 | [文档](https://developers.openai.com/api/docs/guides/rate-limits) |
+| `context_length_exceeded` | 400 | 输入或输出太长（`context_length`） | 否 | 输入超过模型上下文窗口。Responses 在 truncation=disabled（默认）时超长直接返回 400。 | 减少每次发送的内容（拆小分块），或换更大上下文的模型。 | 只这一块失败 → `upstream_bad_request`：400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。 | **缺口·低**：批量翻译时可以自动拆小批再发。 | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `invalid_json_schema` | 400 | 请求参数错误（`invalid_request`） | 否 | strict: true 的结构化输出用了不支持的 JSON Schema（如根部 anyOf、缺 additionalProperties:false、字段未全部 required、超出嵌套/数量限制）。 | 按结构化输出支持的 Schema 子集修改，或关闭 strict 改用 json_object。 | 自动改请求重发：strict 结构化输出的 schema 被拒时退到 json_object 再发；agent 的工具 schema 已按 strict 要求改成必填可空（#163 一起修的）。（[#163](https://github.com/wxyhgk/retain-pdf/issues/163)） | 对得上 | [文档](https://developers.openai.com/api/docs/guides/structured-outputs) |
+| （json_mode_requires_json_word） | 400 | 请求参数错误（`invalid_request`） | 否 | JSON mode（format.type=json_object）要求上下文里出现字符串 "JSON"，否则 API 直接报错。 | 在 system/instructions 或用户消息里明确要求输出 JSON。 | 自动改请求重发：Responses 退到 json_object 时在 input 里写明要 JSON，不再挨第二次 400；日志读 text.format（#163 已修）。（[#163](https://github.com/wxyhgk/retain-pdf/issues/163)） | 对得上 | [文档](https://developers.openai.com/api/docs/guides/structured-outputs) |
+| `previous_response_not_found` | 400 | 请求参数错误（`invalid_request`） | 否 | previous_response_id 指向的响应找不到（已过期、未存储或在别处）。 | 去掉 previous_response_id，带完整上下文重新发送。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `websocket_connection_limit_reached` | — | 其他（`other`） | 是 | Responses WebSocket 模式连接已达 60 分钟上限。 | 新开一个 WebSocket 连接继续。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （http_409_conflict） | 409 | 其他（`other`） | 是 | 资源被另一个请求同时修改。 | 确认没有并发修改后重试。 | 只这一块失败 → `python_unhandled_exception`：不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。 | **缺口·低**：归 upstream_bad_request 一类并带上状态码。 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （http_422_unprocessable） | 422 | 其他（`other`） | 是 | 格式正确但服务端无法处理。 | 按文档建议重试一次。 | 只这一块失败 → `python_unhandled_exception`：不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。 | **缺口·低**：归 upstream_bad_request 一类并带上状态码。 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （sdk_timeout） | — | 超时（`timeout`） | 是 | 请求耗时过长，连接被关闭（无 HTTP 状态）。 | 稍后重试；长文本可改用流式。 | 退避重试 → `upstream_timeout`：按超时重试；用完后归「外部服务请求超时」。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| （sdk_connection_error） | — | 其他（`other`） | 是 | 无法连接或无法建立安全连接（网络、代理、证书、防火墙）。 | 检查网络、代理和证书设置后重试。 | 退避重试：连接失败、DNS 失败重试（DNS 失败加重试次数并清 DNS 缓存）；DNS 用完归 dns_resolution_failed。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `rate_limit_exceeded` | 429 | 限流（`rate_limit`） | 是 | 生成过程中触发速率限制（Response.error.code）。也是常见 429 响应体里的 error.code。 | 降低并发，稍后重试。 | 退避重试 → `upstream_rate_limited`：退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。 | 对得上 | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `invalid_prompt` | — | 内容审核（`content_filter`） | 否 | 提示词被判为无效（文档只给枚举值，未说明细节；实践中多与内容策略有关）。 | 检查原文是否含被拦截内容，修改后再试。 | 退避重试：Responses 返回 status=failed 带 error 时当作没拿到译文抛错，会重试；重试用完这一块失败。 | **缺口·低**：内容策略类失败重试没用，应直接标成「内容审核未过」、保留原文，不再重试。 | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `data_residency_mismatch` | — | 没有权限（`permission`） | 否 | 数据驻留设置与请求不符（文档只给枚举值）。 | 检查项目的数据驻留/地区设置。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `bio_policy` | — | 内容审核（`content_filter`） | 否 | 触发生物安全策略被拦截（文档只给枚举值）。 | 该段内容被安全策略拦截，请改写或跳过。 | 退避重试：Responses 返回 status=failed 带 error 时当作没拿到译文抛错，会重试；重试用完这一块失败。 | **缺口·低**：内容策略类失败重试没用，应直接标成「内容审核未过」、保留原文，不再重试。 | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `misalignment_policy_violation` | — | 内容审核（`content_filter`） | 否 | 触发安全审查（error.misalignment 给出说明）。 | 该段内容被安全策略拦截，请改写或跳过。 | 退避重试：Responses 返回 status=failed 带 error 时当作没拿到译文抛错，会重试；重试用完这一块失败。 | **缺口·低**：内容策略类失败重试没用，应直接标成「内容审核未过」、保留原文，不再重试。 | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `vector_store_timeout` | — | 超时（`timeout`） | 是 | 文件检索的向量库超时。 | 稍后重试。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `invalid_image` | — | 文件问题（`file`） | 否 | 输入图片有问题：invalid_image（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `invalid_image_format` | — | 文件问题（`file`） | 否 | 输入图片有问题：invalid_image_format（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `invalid_base64_image` | — | 文件问题（`file`） | 否 | 输入图片有问题：invalid_base64_image（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `invalid_image_url` | — | 文件问题（`file`） | 否 | 输入图片有问题：invalid_image_url（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `image_too_large` | — | 文件问题（`file`） | 否 | 输入图片有问题：image_too_large（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `image_too_small` | — | 文件问题（`file`） | 否 | 输入图片有问题：image_too_small（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `image_parse_error` | — | 文件问题（`file`） | 否 | 输入图片有问题：image_parse_error（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `image_content_policy_violation` | — | 内容审核（`content_filter`） | 否 | 输入图片有问题：image_content_policy_violation（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带图片。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `invalid_image_mode` | — | 文件问题（`file`） | 否 | 输入图片有问题：invalid_image_mode（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `image_file_too_large` | — | 文件问题（`file`） | 否 | 输入图片有问题：image_file_too_large（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `unsupported_image_media_type` | — | 文件问题（`file`） | 否 | 输入图片有问题：unsupported_image_media_type（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `empty_image_file` | — | 文件问题（`file`） | 否 | 输入图片有问题：empty_image_file（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `failed_to_download_image` | — | 文件问题（`file`） | 是 | 输入图片有问题：failed_to_download_image（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `image_file_not_found` | — | 文件问题（`file`） | 否 | 输入图片有问题：image_file_not_found（文档只给枚举值，按名称理解）。 | 检查随请求发送的图片（格式、大小、URL、内容）。 | 碰不到：翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。 | — | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `max_output_tokens` | 200 | 输入或输出太长（`context_length`） | 否 | 输出达到 max_output_tokens 上限被截断。 | 调大 max_output_tokens，或减小每次翻译的分块。 | 只这一块失败：Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。 | **缺口·低**：截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。 | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `content_filter` | 200 | 内容审核（`content_filter`） | 否 | 输出因内容过滤被中止。 | 该段内容被过滤，请改写原文或跳过。 | 只这一块失败：Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。 | **缺口·低**：截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。 | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `max_messages` | 200 | 其他（`other`） | 否 | 达到消息条数上限而未完成。 | 缩短对话轮次后重试。 | 只这一块失败：Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。 | **缺口·低**：截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。 | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `steered` | 200 | 其他（`other`） | 否 | WebSocket 收到 response.steer 后在安全边界停下（服务端可能自动续接）。 | 无需处理，等待后续响应。 | 只这一块失败：Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。 | **缺口·低**：截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。 | [文档](https://developers.openai.com/api/reference/resources/responses/methods/create) |
+| `length` | 200 | 输入或输出太长（`context_length`） | 否 | Chat Completions 输出达到 max tokens 上限被截断。 | 调大 max_completion_tokens，或减小分块。 | 只这一块失败：Chat 协议不检查 finish_reason，有文字就收下。 | **缺口·低**：finish_reason 为 length / content_filter 时应当这一块没翻成（截断或被过滤），不要把半截译文写进结果。 | [文档](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create) |
+| `content_filter` | 200 | 内容审核（`content_filter`） | 否 | Chat Completions 内容被过滤器省略。 | 该段内容被过滤，请改写原文或跳过。 | 只这一块失败：Chat 协议不检查 finish_reason，有文字就收下。 | **缺口·低**：finish_reason 为 length / content_filter 时应当这一块没翻成（截断或被过滤），不要把半截译文写进结果。 | [文档](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create) |
+| `refusal` | 200 | 内容审核（`content_filter`） | 否 | 结构化输出下模型出于安全拒答，返回 refusal 而不是符合 Schema 的 JSON。 | 该段内容被拒答，请改写原文或跳过。 | 退避重试：Responses 的 refusal 当作没拿到译文抛错，重试；用完后这一块失败、保留原文。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/structured-outputs) |
+| `invalid_api_key` | 401 | 鉴权失败（`auth`） | 否 | （通用知识，当前文档未列出）API Key 错误时常见的 error.code，对应文档中的 Incorrect API key provided。 | 核对或重新生成 OpenAI API Key 后再试。 | 整份翻译停下 → `auth_failed`：不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。 | 对得上 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+| `unsupported_country_region_territory` | 403 | 地区不支持（`region`） | 否 | （通用知识，当前文档未列出）地区不受支持时常见的 error.code，对应文档中的 403 Country, region, or territory not supported。 | 当前网络出口所在地区不受 OpenAI 支持，请更换网络或改用其他服务商。 | 整份翻译停下 → `auth_failed`：按 403 整份停下，归「鉴权失败」，文案让用户检查 Key。 | **缺口·低**：正文说的是地区不支持，换 Key 没用；应单独文案「所在地区不支持，换网络或换服务商」。 | [文档](https://developers.openai.com/api/docs/guides/error-codes) |
+
+## 相关代码
+
+- [`backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs`](../../../../backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs)
+- [`backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py`](../../../../backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py)
+- [`backend/translation/retainpdf_translation/llm/providers/deepseek/client.py`](../../../../backend/translation/retainpdf_translation/llm/providers/deepseek/client.py)
+- [`backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py`](../../../../backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py)
+- [`backend/translation/retainpdf_translation/llm/shared/model_wire.py`](../../../../backend/translation/retainpdf_translation/llm/shared/model_wire.py)
+- [`backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py`](../../../../backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py)
+
+## 备注
+
+- 429 有歧义：既可能是临时限速（无 code 的 'Rate limit reached'、rate_limit_exceeded、slow_down，可等待重试），也可能是额度/计费（credit_balance_exhausted、organization_spend_limit_exceeded、project_spend_limit_exceeded、organization_usage_limit_exceeded、insufficient_quota、billing_hard_limit_reached，重试无用）。 区分规则：先看 error.code 是否属于计费/额度集合，或 error.type == insufficient_quota → 不重试、提示充值/调上限；否则（type=rate_limit_error、code=slow_down/rate_limit_exceeded、或有 Retry-After 头）→ 退避重试。文档明确说 Retry-After 不代表计费类错误重试会好。
+- 503 server_is_overloaded（过载）与 429 slow_down（爬坡太快）是近期拆开的（文档称“以前”，未给日期）：过去部分接口两种情况都用 503 + slow_down，视频接口曾用 429 + invalid_request_error + rate_limit_exceeded；文档建议兼容旧码。
+- 当前错误码文档已不列 insufficient_quota 的 code 行，只说 error.type 可能仍是 insufficient_quota；insufficient_quota 与 billing_hard_limit_reached 作为 error.code 只出现在速率限制指南的示例代码里（标为不可重试）。
+- 文档 401/403/500 各行只给了 message 文本、没给 code，所以这些条目 code 为空；invalid_api_key（401, type invalid_request_error）和 unsupported_country_region_territory（403, type request_forbidden）是通用知识/常见实际响应，当前公开文档未出现，source_url 指向最接近的错误码页。
+- context_length_exceeded 作为 code 字符串在当前文档中只出现在 Agents API 的 turn errors 表；Responses/Chat 超长返回 400 由 Responses 参考的 truncation 说明支持，具体 code 字符串属通用知识。model_not_found 出现在速率限制指南的 Model availability 段（未写 HTTP 状态），404 来自 Agents API 错误表与通用知识。
+- Response.error.code 的 21 个枚举值文档只列名字不解释，含义按名称概括；图片类错误翻译场景一般用不到，列出备查。
+- JSON mode 缺 'JSON' 字样的报错，文档只说会报错，未给 code，按 400 invalid_request_error 记录（HTTP 状态属通用知识）。invalid_json_schema 来自结构化输出指南的官方示例（root anyOf 被拒，400）。
+- 流式时 HTTP 已是 200，错误只能从 response.failed / error 事件读出，不能只看状态码。
+- platform.openai.com 无法直接抓取，内容取自官方镜像 developers.openai.com（含 .md 版本与 llms-full.txt）。
+
+## 出处
+
+- [Error codes (OpenAI API guide)](https://developers.openai.com/api/docs/guides/error-codes)（抓取 2026-11-23）
+- [Rate limits (OpenAI API guide)](https://developers.openai.com/api/docs/guides/rate-limits)（抓取 2026-11-23）
+- [Spend limits (OpenAI API guide)](https://developers.openai.com/api/docs/guides/spend-limits)（抓取 2026-11-23）
+- [Structured model outputs (OpenAI API guide)](https://developers.openai.com/api/docs/guides/structured-outputs)（抓取 2026-11-23）
+- [Create a model response (Responses API reference)](https://developers.openai.com/api/reference/resources/responses/methods/create)（抓取 2026-11-23）
+- [Responses streaming events (API reference)](https://developers.openai.com/api/reference/resources/responses/streaming-events)（抓取 2026-11-23）
+- [Chat Completions create (API reference)](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create)（抓取 2026-11-23）
+- [API reference overview (request IDs, headers)](https://developers.openai.com/api/reference/overview)（抓取 2026-11-23）
+- [Agents API errors and recovery (used only for model_not_found / context_length_exceeded wording)](https://developers.openai.com/api/docs/guides/agents-api/errors)（抓取 2026-11-23）
+
+## issue 里见过
+
+- [#161](https://github.com/wxyhgk/retain-pdf/issues/161)：400 unsupported_value（temperature），检测误报「模型不可用」（v2026.11.22 已修）
+- [#163](https://github.com/wxyhgk/retain-pdf/issues/163)：Responses 400「must contain the word 'json'」（2026-11-23 已修）
+- [#26](https://github.com/wxyhgk/retain-pdf/issues/26)：维护者答复：各厂商错误码不一致，要逐家适配

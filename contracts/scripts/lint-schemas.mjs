@@ -18,6 +18,7 @@ const EXPECTED_SCHEMAS = [
   "library-documents.v1.schema.json",
   "ocr-providers.v1.schema.json",
   "pipeline-stdout.v1.schema.json",
+  "provider-error-codes.v1.schema.json",
   "reader-data.v1.schema.json",
   "refine-report.v1.schema.json",
   "token-usage.v1.schema.json",
