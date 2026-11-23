@@ -5,6 +5,7 @@ import { SyncSettingsPanel } from "./SyncSettingsPanel.jsx";
 
 export const syncSettingsSection: SettingsSection = {
   id: "sync",
+  guide: "sync",
   label: "同步",
   Icon: SyncSettingsIcon,
   order: 60,

@@ -134,17 +134,13 @@
   padding-right: 40px; /* 给右上关闭钮让位 */
 
   & h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
     color: var(--ink);
     font-size: var(--ui-text-lg);
     font-weight: 700;
-  }
-
-  & p {
-    margin: 4px 0 0;
-    color: var(--muted);
-    font-size: var(--ui-text-2xs);
-    line-height: 1.45;
   }
 }
 

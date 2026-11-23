@@ -5,6 +5,7 @@ import { BackupPanel } from "./BackupPanel.jsx";
 
 export const backupSettingsSection: SettingsSection = {
   id: "backup",
+  guide: "backup",
   label: "备份",
   Icon: BackupSettingsIcon,
   order: 70,

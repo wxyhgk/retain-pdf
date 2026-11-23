@@ -1,0 +1,23 @@
+/* 设置每栏标题旁的「?」：打开使用说明书里讲这一栏的那一页（docs/guide/<模块>.md）。
+ *
+ * @owns settings-guide-link */
+
+.settings-guide-link {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill);
+  color: var(--muted);
+  font-size: var(--ui-text-2xs);
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.settings-guide-link:hover,
+.settings-guide-link:focus-visible {
+  border-color: var(--ink);
+  color: var(--ink);
+}
