@@ -6,6 +6,7 @@ import { LanSharePanel } from "./LanSharePanel.jsx";
 
 export const lanShareSettingsSection: SettingsSection = {
   id: "lan-share",
+  guide: "lan-share",
   label: "局域网共享",
   Icon: LanShareSettingsIcon,
   order: 65,

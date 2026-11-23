@@ -35,6 +35,7 @@ const CONTENT_TYPES = {
   ".ico": "image/x-icon",
   ".map": "application/json; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
+  ".md": "text/markdown; charset=utf-8",
 };
 
 function createLocalGateway(options = {}) {

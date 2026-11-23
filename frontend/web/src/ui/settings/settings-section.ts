@@ -21,6 +21,12 @@ export type SettingsSection = {
   id: string;
   /** 左边导航上的字。 */
   label: string;
+  /**
+   * 使用说明书里讲这一栏的那一页：写登记这一栏的功能模块名（features/<模块>），对应 frontend/web/guide/<模块>.md，
+   * 标题旁的「?」就在软件里打开那一页。说明书按模块分页，这里不另外维护链接表；没有说明页的（只有已停的多用户版才有的分栏）写 null。
+   * tests/architecture/user-guide-coverage.test.mjs 查每个值都有对应的说明页。
+   */
+  guide: string | null;
   Icon: ComponentType<SVGProps<SVGSVGElement>>;
   /** 导航里的先后，小的在上。按十位留空隙，插新的不用挪别人。 */
   order: number;
@@ -45,3 +51,4 @@ export type SettingsSection = {
 export function sortSettingsSections(sections: readonly SettingsSection[]): SettingsSection[] {
   return [...sections].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id));
 }
+

@@ -20,6 +20,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import {
+  Button,
   Dialog,
   DialogCloseButton,
   DialogContent,
@@ -40,20 +41,41 @@ export type SettingsDialogProps = {
   dialogStore: DialogStore<{ tab?: string; setupMode?: boolean } | null>;
   /** 要显示的分栏。谁能看见由调用方定（多用户的普通用户看不到接口设置等），这里有什么画什么。 */
   sections: readonly SettingsSection[];
+  /** 点标题旁的「?」：打开说明书里讲这一栏的那一页（参数是分栏登记的 guide，即模块名）。不给就不显示「?」。 */
+  onOpenGuide?: (module: string) => void;
 };
 
-function PaneHead({ section, setupMode, active }: { section: SettingsSection; setupMode: boolean; active: boolean }) {
+function PaneHead({ section, setupMode, active, onOpenGuide }: {
+  section: SettingsSection;
+  setupMode: boolean;
+  active: boolean;
+  onOpenGuide?: (module: string) => void;
+}) {
   const subtitle = section.subtitle?.({ active, setupMode }) ?? null;
+  const guide = section.guide;
   return (
     <header className="app-settings-pane-head">
-      <h3>{section.title || section.label}</h3>
+      <h3>
+        {section.title || section.label}
+        {guide && onOpenGuide ? (
+          <Button
+            className="settings-guide-link"
+            title="使用说明"
+            aria-label={`${section.label}的使用说明`}
+            data-settings-guide={guide}
+            onClick={() => onOpenGuide(guide)}
+          >
+            ?
+          </Button>
+        ) : null}
+      </h3>
       {subtitle}
       {section.description ? <p>{section.description}</p> : null}
     </header>
   );
 }
 
-export function SettingsDialog({ dialogStore, sections }: SettingsDialogProps) {
+export function SettingsDialog({ dialogStore, sections, onOpenGuide }: SettingsDialogProps) {
   const visible = useMemo(() => sortSettingsSections(sections), [sections]);
   // 要打开的分栏不在表里（比如普通用户点到「接口设置」），就落到第一个能看的分栏。
   const pickTab = (requested?: string) => (
@@ -147,7 +169,7 @@ export function SettingsDialog({ dialogStore, sections }: SettingsDialogProps) {
                       className={active ? "app-settings-panel is-current" : "app-settings-panel"}
                       data-settings-panel={section.id}
                     >
-                      <PaneHead section={section} setupMode={setupMode} active={active} />
+                      <PaneHead section={section} setupMode={setupMode} active={active} onOpenGuide={onOpenGuide} />
                       {section.lazy === false || active ? section.render(context) : null}
                     </TabsPrimitive.Content>
                   );
