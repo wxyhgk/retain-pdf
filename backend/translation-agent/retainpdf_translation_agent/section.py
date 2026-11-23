@@ -24,6 +24,7 @@ from dataclasses import field
 from dataclasses import replace
 
 from retainpdf_translation_agent.agent import ROLE_TRANSLATOR
+from retainpdf_translation_agent.agent import TRUNCATED_STOP_REASONS
 from retainpdf_translation_agent.agent import TranslationAgent
 from retainpdf_translation_agent.checks import CJK_RE
 from retainpdf_translation_agent.checks import CODE_RE
@@ -625,7 +626,7 @@ def translate_section(
         answer, tail = split_tail(answer)
         tails.append(tail)
         found, notes = parse_section_notes(answer)
-        cut = cut_paragraph(found, {p.n: p.unit.text for p in paragraphs}, hit_limit=stop.get("reason") == "max_tokens")
+        cut = cut_paragraph(found, {p.n: p.unit.text for p in paragraphs}, hit_limit=stop.get("reason") in TRUNCATED_STOP_REASONS)
         failed: list[Paragraph] = []
         for paragraph in paragraphs:
             if paragraph.n in translations and status_of(translations[paragraph.n][1]) != "error":

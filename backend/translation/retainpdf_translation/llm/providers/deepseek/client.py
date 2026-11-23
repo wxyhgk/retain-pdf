@@ -16,6 +16,7 @@ from retainpdf_base.upstream_wait import vendor_for_base_url as _upstream_vendor
 from retainpdf_translation.artifacts import get_active_translation_run_diagnostics
 from retainpdf_translation.artifacts import infer_stage_from_request_label
 from retainpdf_translation.llm.shared import model_wire
+from retainpdf_translation.llm.shared import output_limits as _limits
 from retainpdf_translation.llm.shared import upstream_resilience as _resilience
 from retainpdf_translation.llm.shared.upstream_error_codes import classify_response as classify_upstream_response
 from retainpdf_translation.llm.shared import usage_ledger
@@ -159,6 +160,12 @@ def _raise_for_status_with_context(
     )
     if rejection is not None:
         raise _resilience.rejection_error(message, response=response, rejection=rejection)
+    too_long = _limits.response_request_too_long_code(response)
+    if too_long:
+        # 单次请求太长（output_limits）：不是配置错误，调用方拆小了再发
+        raise _limits.UpstreamRequestTooLong(
+            f"{message} | {_limits.REQUEST_TOO_LONG_HINT}（{too_long}）", response=response, provider_code=too_long
+        )
     raise requests.HTTPError(message, response=response)
 
 
@@ -257,8 +264,15 @@ def _extract_stream_delta_text(data: dict[str, Any]) -> str:
 
 
 def _read_streaming_chat_content(response: requests.Response) -> tuple[str, dict | None]:
+    content, usage, _finish_reason = _read_streaming_chat_response(response)
+    return content, usage
+
+
+def _read_streaming_chat_response(response: requests.Response) -> tuple[str, dict | None, str]:
+    """流式回答 → (文本, 用量, 结束原因)。结束原因取最后一个带 ``finish_reason`` 的块（没有就是空串）。"""
     chunks: list[str] = []
     usage: dict | None = None
+    finish_reason = ""
     for raw_line in response.iter_lines(decode_unicode=True):
         if raw_line is None:
             continue
@@ -276,7 +290,29 @@ def _read_streaming_chat_content(response: requests.Response) -> tuple[str, dict
         chunk_usage = data.get("usage")
         if isinstance(chunk_usage, dict):
             usage = chunk_usage
-    return "".join(chunks), usage
+        for choice in data.get("choices") or []:
+            if isinstance(choice, dict) and choice.get("finish_reason"):
+                finish_reason = str(choice.get("finish_reason") or "")
+    return "".join(chunks), usage, finish_reason
+
+
+def _anthropic_partial_text(data: Any) -> str:
+    blocks = data.get("content") if isinstance(data, dict) else None
+    return "".join(
+        str(block.get("text", "") or "") for block in blocks or [] if isinstance(block, dict) and block.get("type") == "text"
+    )
+
+
+def _responses_partial_text(data: Any) -> str:
+    parts: list[str] = []
+    for item in (data.get("output") if isinstance(data, dict) else None) or []:
+        if isinstance(item, dict) and item.get("type") == "message":
+            parts.extend(
+                str(part.get("text", "") or "")
+                for part in item.get("content") or []
+                if isinstance(part, dict) and part.get("type") == "output_text"
+            )
+    return "".join(parts)
 
 
 def request_chat_content(
@@ -299,6 +335,9 @@ def request_chat_content(
 
     ``protocol`` / ``thinking`` 不给时按阶段入口登记的连接配置（``model_wire.register_connection``），
     都没有就是 OpenAI 协议 + 自动思考，和以前完全一样。
+
+    回答不完整（finish_reason / stop_reason / Responses status 说截断、被内容过滤）抛 ``ModelOutputIncomplete``
+    （``ValueError``，带半截文本），单次请求太长（400 / 413）抛 ``UpstreamRequestTooLong``，见 ``output_limits``。
     """
     from retainpdf_translation.llm.shared.executor_context import execution_enabled, runtime
     if execution_enabled():
@@ -478,22 +517,35 @@ def request_chat_content(
                 use_stream=use_stream,
             )
             # 先取用量、记账，再解析正文：返回了但正文为空 / 被拒答的那次，token 也已经花掉了。
+            # 回答不完整（截断、被内容过滤）的不收半截译文，抛 ModelOutputIncomplete（output_limits）。
             if use_stream:
-                content, usage = _read_streaming_chat_content(response)
+                content, usage, finish_reason = _read_streaming_chat_response(response)
                 _record_usage(usage)
+                incomplete = _limits.chat_finish_incomplete(finish_reason, content)
+                if incomplete is not None:
+                    raise incomplete
                 if not content.strip():
                     raise ValueError("Stream response did not contain any content.")
             elif anthropic:
                 data = response.json()
                 _record_usage(model_wire.anthropic_usage(data))
+                incomplete = _limits.anthropic_incomplete(data, _anthropic_partial_text(data))
+                if incomplete is not None:
+                    raise incomplete
                 content = model_wire.anthropic_content(data)
             elif responses:
                 data = response.json()
                 _record_usage(model_wire.responses_usage(data))
+                incomplete = _limits.responses_incomplete(data, _responses_partial_text(data))
+                if incomplete is not None:
+                    raise incomplete
                 content = model_wire.responses_content(data)
             else:
                 data: dict[str, Any] = response.json()
                 _record_usage(data.get("usage"))
+                incomplete = _limits.chat_completion_incomplete(data)
+                if incomplete is not None:
+                    raise incomplete
                 content = data["choices"][0]["message"]["content"]
             if not send_temperature:
                 # 不带 temperature 成功了：记住这个模型，后面的请求一开始就不带，免得每次先挨一次 400。
@@ -550,6 +602,9 @@ def request_chat_content(
                 )
             if _resilience.rejection_kind(exc):
                 # 余额额度用完、模型不可用、地区不支持、内容审核没过（4xx + 业务码）：不退避、不换思考字段、不退 json_object，第一次就停
+                raise
+            if _limits.is_request_too_long(exc):
+                # 单次请求太长：换思考字段、退 json_object 再发还是一样长，直接交给调用方拆小
                 raise
             rejected_400 = (
                 isinstance(exc, requests.HTTPError)

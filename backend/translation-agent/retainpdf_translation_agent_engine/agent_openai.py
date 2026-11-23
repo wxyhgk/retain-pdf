@@ -21,8 +21,9 @@ agent 包（``retainpdf-translation-agent``）只认 Anthropic 的请求、回�
   一直限流、5xx、网络断 → ``RateLimited``，
   都是 agent 的 ``StopRun``：保存进度、阶段失败，修好重试从断点接着翻。别的错误原样抛。
 
-已知差别：共用请求层只交回文本，拿不到 ``finish_reason``，回答被长度截断时 agent 不知道（Anthropic 下会把最后一块当没交）；
-被截断的半块由 agent 的校验（长度、公式、标记）兜。
+回答不完整（2026-11-23）：共用请求层看 ``finish_reason`` / Responses ``status``，被长度截断、被内容过滤、服务商中途停了时
+抛 ``ModelOutputIncomplete``（带已经写出的半截）。这里把半截照样包回去、``stop_reason`` 写 ``max_tokens``，agent 和 Anthropic
+下一样把最后一块当没交、重翻（以前拿不到 finish_reason，半截译文只能靠校验兜）。
 """
 
 from __future__ import annotations
@@ -40,6 +41,7 @@ from retainpdf_translation.artifacts.aggregator import thread_translation_run_di
 from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared import upstream_resilience
 from retainpdf_translation.llm.shared.executor_context import unit_scope
+from retainpdf_translation.llm.shared.output_limits import ModelOutputIncomplete
 from retainpdf_translation.llm.shared.provider_runtime import request_chat_content
 from retainpdf_translation_agent import AuthFailed
 from retainpdf_translation_agent import ModelUnavailable
@@ -132,15 +134,16 @@ def _drop_nulls(value: Any) -> Any:
     return value
 
 
-def anthropic_response(content: str, *, tool_name: str | None, usage: dict[str, int]) -> dict:
-    """OpenAI 回答的文本 → agent 认的 Anthropic 回答。工具请求的 JSON 解析不了就不交 tool_use（agent 按"没交回"处理）。"""
+def anthropic_response(content: str, *, tool_name: str | None, usage: dict[str, int], stop_reason: str = "end_turn") -> dict:
+    """OpenAI 回答的文本 → agent 认的 Anthropic 回答。工具请求的 JSON 解析不了就不交 tool_use（agent 按"没交回"处理）。
+    ``stop_reason``：回答不完整时是 ``max_tokens``（agent 把最后一块当没交）。"""
     if tool_name is None:
         parts = [{"type": "text", "text": content}]
     else:
         data = _decode_json(content)
         data = _drop_nulls(data) if data is not None else None
         parts = [{"type": "tool_use", "name": tool_name, "input": data}] if data is not None else [{"type": "text", "text": content}]
-    return {"content": parts, "stop_reason": "end_turn", "usage": usage}
+    return {"content": parts, "stop_reason": stop_reason, "usage": usage}
 
 
 def anthropic_usage_fields(token_usage: dict[str, Any]) -> dict[str, int]:
@@ -197,6 +200,7 @@ def make_openai_transport(
             configured_classify_batch_size=0,
         )
         digest = hashlib.sha256(json.dumps(body, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+        stop_reason = "end_turn"
         try:
             with thread_translation_run_diagnostics_scope(diagnostics), unit_scope("agent", [digest]):
                 content = send(
@@ -211,13 +215,20 @@ def make_openai_transport(
                     protocol=protocol,
                     thinking=thinking,
                 )
+        except ModelOutputIncomplete as incomplete:
+            # 截断、被内容过滤：半截照样交回，告诉 agent 回答没写完（和 Anthropic 的 max_tokens 一样处理）
+            content = incomplete.partial_content
+            stop_reason = "max_tokens"
+            print(f"{label}: {incomplete}", flush=True)
         except Exception as error:  # noqa: BLE001 - 换成 agent 的 StopRun，别的原样抛
             stop = _stop_error(error)
             if stop is not None:
                 raise stop from error
             raise
         token_usage = dict(diagnostics.build_summary().get("token_usage") or {})
-        return anthropic_response(content, tool_name=tool_name, usage=anthropic_usage_fields(token_usage))
+        return anthropic_response(
+            content, tool_name=tool_name, usage=anthropic_usage_fields(token_usage), stop_reason=stop_reason
+        )
 
     return transport
 

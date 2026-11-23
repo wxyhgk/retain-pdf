@@ -30,6 +30,10 @@ pub(super) struct Receipt {
     /// 回非 2xx 的服务商编号（`vendor_for_url`，和错误码目录一致，认不出是 `custom`）。
     #[serde(skip_serializing_if = "Option::is_none")]
     pub upstream_provider: Option<&'static str>,
+    /// 上游回答里的 `finish_reason`（`stop`、`length`、`content_filter`……，2026-11-23 加）；回答不完整的那次
+    /// 操作是 `failed` + `output_incomplete`，worker 拿它写明是截断还是被内容过滤（见 `limits`）。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub finish_reason: Option<String>,
 }
 pub(super) struct Outcome {
     pub status: &'static str,
@@ -170,6 +174,11 @@ pub(super) async fn execute(
                     receipt.upstream_code = Some(rejection.code);
                     return ("failed", Some(rejection.error_code()));
                 }
+                // 单次请求太长（400 / 413）：不是参数或 Key 的问题，记认出的码（limits）
+                if let Some(code) = super::limits::request_too_long(status.as_u16(), &body) {
+                    receipt.upstream_code = Some(code);
+                    return ("failed", Some("request_too_long"));
+                }
                 if status.as_u16() != 429 {
                     return rejected(status.as_u16());
                 }
@@ -222,6 +231,8 @@ pub(super) async fn execute(
             .await
             {
                 Ok(()) => ("succeeded", None),
+                // 上游回了话、说没写完：结果是明确的（不是 ambiguous），按失败记
+                Err(code @ "output_incomplete") => ("failed", Some(code)),
                 Err(code) => ("ambiguous", Some(code)),
             };
         }
@@ -356,6 +367,10 @@ async fn read_response(
         // Non-stream timing is whole-response latency, not first token latency.
     } else if !done {
         return Err("stream_missing_done");
+    }
+    receipt.finish_reason = finish.clone();
+    if finish.as_deref().is_some_and(super::limits::incomplete_finish) {
+        return Err("output_incomplete");
     }
     if finish.as_deref() != Some("stop") {
         return Err("response_not_complete");

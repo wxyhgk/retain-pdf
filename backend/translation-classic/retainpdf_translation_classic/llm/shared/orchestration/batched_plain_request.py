@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 
 from retainpdf_translation.artifacts import TranslationDiagnosticsCollector
+from retainpdf_translation.llm.shared.output_limits import UpstreamRequestTooLong
 from retainpdf_translation_classic.llm.result_canonicalizer import canonicalize_batch_result
 from retainpdf_translation_classic.llm.result_validator import validate_batch_result
 from retainpdf_translation_classic.llm.shared.orchestration.common import is_low_risk_deepseek_batch_item
@@ -127,5 +128,26 @@ def emit_batch_transport_single_retry(
             page_idx=item.get("page_idx"),
             severity="warning",
             message=f"Batched request transport failure, retry as single-item path: {type(exc).__name__}",
+            retryable=True,
+        )
+
+
+def emit_batch_output_limit_split(
+    batch: list[dict],
+    *,
+    diagnostics: TranslationDiagnosticsCollector | None,
+    exc: Exception,
+) -> None:
+    """批量请求太长（400 / 413）或回答不完整（截断、被内容过滤）：整批拆成单块重发，诊断里记下原因。"""
+    if diagnostics is None:
+        return
+    kind = "batch_request_too_long_split" if isinstance(exc, UpstreamRequestTooLong) else "batch_output_incomplete_split"
+    for item in batch:
+        diagnostics.emit(
+            kind=kind,
+            item_id=str(item.get("item_id", "") or ""),
+            page_idx=item.get("page_idx"),
+            severity="warning",
+            message=f"Batched request split into single items: {type(exc).__name__}: {exc}"[:500],
             retryable=True,
         )

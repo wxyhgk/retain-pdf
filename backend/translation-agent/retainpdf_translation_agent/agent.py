@@ -49,6 +49,9 @@ from retainpdf_translation_agent.units import merge_groups
 from retainpdf_translation_agent.units import split_units
 
 API_URL = "https://api.anthropic.com/v1/messages"
+# 回答写到上限被截断的 stop_reason：最后一块当没交、重翻。model_context_window_exceeded 是 Claude 4.5 起输入加输出超过上下文窗口、
+# 生成到顶时的结束原因（2026-11-23）；经 OpenAI 协议时，回答被截断、被内容过滤也换成 max_tokens（agent_openai）。
+TRUNCATED_STOP_REASONS = frozenset({"max_tokens", "model_context_window_exceeded"})
 # 以前接续组的原文里用它标出原来在哪里断开、要模型在译文里照放；2026-10-30 起模型只翻整段，不再放。
 # 留着这个记号只为删掉模型照老习惯写进来的（审校改稿里也不许出现）
 BREAK = "[[BREAK]]"
@@ -543,7 +546,7 @@ class TranslationAgent:
         回答被 max_tokens 截断时，最后一块可能只写了一半，当没交（走漏交重翻）。"""
         return parse_answer(
             "".join(part.get("text") or "" for part in response.get("content") or [] if part.get("type") == "text"),
-            truncated=response.get("stop_reason") == "max_tokens",
+            truncated=response.get("stop_reason") in TRUNCATED_STOP_REASONS,
         )
 
     def _payload(self, page: PageInput, records: list[dict], **extra) -> dict:

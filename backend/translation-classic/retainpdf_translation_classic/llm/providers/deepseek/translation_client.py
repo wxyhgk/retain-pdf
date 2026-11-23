@@ -12,6 +12,8 @@ from retainpdf_translation_classic.llm.shared.prompt_building import build_messa
 from retainpdf_translation_classic.llm.shared.prompt_building import build_single_item_fallback_messages
 from retainpdf_translation_classic.llm.result_validator import validate_batch_result
 from retainpdf_translation.llm.validation.errors import PartialBatchTranslationError
+from retainpdf_translation.llm.shared.output_limits import ModelOutputIncomplete
+from retainpdf_translation.llm.shared.output_limits import TRUNCATED
 from retainpdf_translation_classic.llm.result_canonicalizer import canonicalize_batch_result
 from retainpdf_translation.llm.result_payload import result_entry
 from retainpdf_translation.llm.shared.response_parsing import extract_json_text
@@ -28,6 +30,15 @@ TAGGED_ITEM_END_RE = re.compile(r"<<<END>>>")
 # 模型偶尔会在输出末尾损坏闭合标签(实测过 <<<END>>,少一个 >)。内容
 # 完好只是标签残缺时不能丢条目,按残缺形态宽容剥离。
 TAGGED_DAMAGED_END_RE = re.compile(r"\s*<{1,3}END>{0,4}\s*$")
+
+
+def closed_tagged_prefix(content: str) -> str:
+    """截断的批量回答里到最后一个完整 ``<<<END>>>`` 为止的部分（后面写了一半的块不要）；一个完整的都没有交回空串。"""
+    text = content or ""
+    ends = list(TAGGED_ITEM_END_RE.finditer(text))
+    if not ends or not TAGGED_ITEM_OPEN_RE.search(text):
+        return ""
+    return text[: ends[-1].end()]
 
 
 def parse_translation_payload(content: str) -> dict[str, dict[str, str]]:
@@ -249,23 +260,33 @@ def translate_batch_once(
     timeout_s: int = 120,
     http_retry_attempts: int | None = None,
 ) -> dict[str, dict[str, str]]:
-    content = request_chat_content(
-        build_messages(
-            batch,
-            domain_guidance=domain_guidance,
-            mode=mode,
-            response_style="tagged",
-            target_language_name=target_language_name,
-        ),
-        api_key=api_key,
-        model=model,
-        base_url=base_url,
-        temperature=0.2,
-        response_format=None,
-        timeout=timeout_s,
-        request_label=request_label,
-        max_attempts=http_retry_attempts,
-    )
+    truncated: ModelOutputIncomplete | None = None
+    try:
+        content = request_chat_content(
+            build_messages(
+                batch,
+                domain_guidance=domain_guidance,
+                mode=mode,
+                response_style="tagged",
+                target_language_name=target_language_name,
+            ),
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            temperature=0.2,
+            response_format=None,
+            timeout=timeout_s,
+            request_label=request_label,
+            max_attempts=http_retry_attempts,
+        )
+    except ModelOutputIncomplete as exc:
+        # 回答写到上限被截断：已经用 <<<END>>> 写完的块照收，写了一半的和没写到的拆成单块重翻
+        content = closed_tagged_prefix(exc.partial_content) if exc.kind == TRUNCATED else ""
+        if not content:
+            raise
+        truncated = exc
+        if request_label:
+            print(f"{request_label}: batch output truncated, keep fully closed items and retry the rest: {exc}", flush=True)
     result = parse_translation_payload(content)
     result = canonicalize_batch_result(batch, result)
     # Retain only independently validated expected members. Unexpected IDs
@@ -283,6 +304,8 @@ def translate_batch_once(
         else:
             accepted.update(member_result)
     if retry_items:
+        if truncated is not None and not accepted:
+            raise truncated
         raise PartialBatchTranslationError(accepted, retry_items)
     validate_batch_result(batch, result, diagnostics=diagnostics)
     return result
