@@ -93,6 +93,11 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      # Linux 用 cargo zigbuild 按 glibc 2.28 链接（见 build-desktop-packages.yml 的 LINUX_GLIBC_BASELINE）。
+      - name: Install cargo-zigbuild
+        shell: bash
+        run: python -m pip install "cargo-zigbuild==0.24.1" "ziglang==0.15.2"
+
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
@@ -101,7 +106,7 @@ jobs:
 
       - name: Build Rust API for Linux
         shell: bash
-        run: cargo build --release --locked --workspace --bins --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
+        run: cargo zigbuild --release --locked --workspace --bins --target x86_64-unknown-linux-gnu.2.28 --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
 
   warm-macos:
     runs-on: macos-latest

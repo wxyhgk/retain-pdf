@@ -56,6 +56,31 @@ python ops/release/desktop_python_bundle.py install --pip-python /tmp/bundle-ven
 python ops/release/desktop_python_bundle.py check --python /tmp/bundle-venv/bin/python
 ```
 
+### Linux 安装包里的 Python 本体和 glibc 基线（2026-11-23）
+
+Linux 的 `.deb` 以前把构建机 `actions/setup-python` 工具缓存里的 Python 整个拷进来，问题有三个（issue #162）：
+RUNPATH 写死成 `/opt/hostedtoolcache/...`，用户机器上会载到系统里另一份 libpython（`undefined symbol: _PyModule_Add`）；
+它在 `ubuntu-latest`（26.04 一代）上编译，libpython 要 GLIBC_2.38、`termios` 要 2.42，Ubuntu 22.04、Debian 12 起不来；
+`_ssl`、`_sqlite3`、`_ctypes`、`_lzma` 等要系统的 `libssl.so.3`、`libffi.so.8`、`libsqlite3.so.0`……，deb 没声明。
+
+现在（`.github/workflows/build-desktop-packages.yml` 的 Linux job）：
+
+- Python 用 [python-build-standalone](https://github.com/astral-sh/python-build-standalone) 的
+  `cpython-3.11.x-x86_64-unknown-linux-gnu-install_only_stripped`，地址和 SHA256 钉在 workflow 顶部的
+  `LINUX_PYTHON_STANDALONE_URL` / `LINUX_PYTHON_STANDALONE_SHA256`，下载后 `sha256sum -c` 校验。它的解释器静态带着
+  libpython，OpenSSL、SQLite、libffi、xz、bzip2、zlib、uuid 都编在里面，RUNPATH 只有 `$ORIGIN`，只要 GLIBC_2.17。
+  换版本：从那次 release 的 `SHA256SUMS` 抄校验和，小版本和其他平台保持一致（现在 3.11）。
+- 解开后删掉 Tcl/Tk 和 `_tkinter`（RUNPATH 是打包机的 `/tools/deps/lib`）、`_crypt`（唯一要系统 `libcrypt.so.1` 的模块）、
+  `lib/libpython3.*.so*`（解释器已静态带着，只给嵌入用）；第三方包只装 manylinux 轮子（`--only-binary=:all:`）。
+- Rust（`rust_api`、`retain-jobsd`、`retainpdf`）用 `cargo zigbuild --target x86_64-unknown-linux-gnu.2.28` 按 glibc 2.28
+  链接，构建机是哪一代系统都一样；预热 workflow 的命令逐字相同。typst 用的是 musl 静态版，不要 glibc。
+- 打完包解开 `.deb` 跑 `.github/scripts/check_linux_glibc_baseline.py`：每个 ELF 要的 glibc 不许超过
+  `LINUX_GLIBC_BASELINE`（2.28，Debian 10 / RHEL 8 / Ubuntu 20.04 起；Electron 44 自己要 2.25）；自带 Python 下的
+  ELF 只许依赖 glibc 自己的库、`libgcc_s` / `libstdc++` / `libz`（manylinux 允许，dpkg 自己就依赖）和包里自带的文件。
+  轮子升级到更新的 manylinux、有人改回在构建机上编，都会在这一步红。
+- `relocate_linux_python_runpath.py` 留作兜底：`relocate` 去掉非 `$ORIGIN` 的 RUNPATH，`check` 清掉 `LD_LIBRARY_PATH`
+  跑包里的 python3，导入 ssl、sqlite3、ctypes 等。
+
 ## 当前口径
 
 运行时 Python 包：
