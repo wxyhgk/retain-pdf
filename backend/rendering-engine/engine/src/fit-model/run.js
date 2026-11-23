@@ -95,7 +95,8 @@
       // body has settled.
       retainBody.scheduleNonBody();
       retainBody.fitBody(steps.retainSmoothing || null);
-      retainBody.repairNonBody();
+      const annotations = retainBody.repairNonBody();
+      if (typeof fitOptions.onAnnotationFollow === "function") fitOptions.onAnnotationFollow(annotations);
       // The body has settled, usually a little above its source size: headings follow it, so a
       // heading the source set at the body's size (or 1.1 x) is not left smaller (or equal).
       if (retainTitles) {

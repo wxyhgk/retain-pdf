@@ -32,6 +32,7 @@ from retainpdf_pipeline.render.document.pikepdf_overlay import overlay_pdf_pages
 from retainpdf_pipeline.render.document.pikepdf_pages import extract_page_indices_with_pikepdf
 from retainpdf_pipeline.render.layout.inline_content.mode_router import build_item_render_markdown
 from retainpdf_pipeline.render.layout.payload.render_item import seed_render_fields
+from retainpdf_pipeline.render.layout.title_source_size import annotation_source_font_size_pt
 from retainpdf_pipeline.render.layout.title_source_size import body_source_font_size_pt
 from retainpdf_pipeline.render.layout.title_source_size import title_source_font_size_pt
 from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineFailed
@@ -146,8 +147,11 @@ def _translation_items(
                 entry["page_idx"] = int(page_idx)
             entry["translated_text"], preserve = _engine_text_and_lines(item)
             entry["source_text"] = str(entry.get("source_text") or "")
-            # 标题的原文字号（引擎排标题不超过它）；正文的文字层字号（引擎算正文放大了多少，标题跟着放大）
-            source_size = title_source_font_size_pt(item) or body_source_font_size_pt(item)
+            # 标题的原文字号（引擎排标题不超过它）；正文的文字层字号（引擎算正文放大了多少，标题跟着放大）；
+            # 图注、脚注的文字层字号（引擎按它和正文的比例排）
+            source_size = (
+                title_source_font_size_pt(item) or body_source_font_size_pt(item) or annotation_source_font_size_pt(item)
+            )
             if source_size is not None:
                 entry["source_font_size_pt"] = round(source_size, 2)
             indent = float(indents.get(str(entry.get("item_id") or ""), 0.0) or 0.0)
