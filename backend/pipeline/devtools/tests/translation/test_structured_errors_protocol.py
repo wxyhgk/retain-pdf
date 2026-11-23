@@ -79,3 +79,32 @@ def test_rate_limit_errors_are_classified_as_retryable_rate_limit():
     assert payload["failure_category"] == "rate_limit"
     assert payload["retryable"] is True
     assert "限流" in payload["summary"]
+
+
+def test_quota_summary_names_the_real_http_status():
+    """余额不足不一定是 402：GLM-OCR 是 HTTP 429 + 业务码 1113（issue #164）；读不出状态码时不写 402。"""
+
+    class QuotaExhausted(RuntimeError):
+        def __init__(self, message, status_code=None):
+            super().__init__(message)
+            self.status_code = status_code
+
+    def summary(exc):
+        try:
+            raise exc
+        except RuntimeError as caught:
+            return json.loads(classify_exception(caught, default_stage="ocr", provider="glm_ocr").to_json())
+
+    for status, expected in ((402, "上游账户余额不足（402）"), (429, "上游账户余额或额度不足（HTTP 429）"), (None, "上游账户余额或额度不足")):
+        payload = summary(QuotaExhausted("GLM-OCR 调用额度不足（HTTP 429，code=1113 message=余额不足）", status))
+        assert payload["failure_code"] == "upstream_quota_exhausted"
+        assert payload["summary"] == expected
+        assert payload["retryable"] is False
+
+    # OCR 和翻译并行时，翻译那边读到的是 OCR 流里的失败文字，照样归成余额不足而不是限流
+    payload = summary(RuntimeError(
+        "OCR stream failed after 2/10 pages: GlmOcrQuotaExhausted: GLM-OCR 调用额度不足，请检查当前智谱 API Key 对应账号的余额或资源包"
+        "（HTTP 429，code=1113 message=余额不足）"
+    ))
+    assert payload["failure_code"] == "upstream_quota_exhausted"
+    assert payload["provider_code"] == "1113"

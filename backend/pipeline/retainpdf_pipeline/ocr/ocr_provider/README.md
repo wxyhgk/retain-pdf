@@ -274,7 +274,10 @@ CLI 原始 JSON、stdout/stderr 与 `--save_resources` 下载内容保存在
    后面的拼接和翻译不用等 OCR 做完。GLM 串行，就绪的总是前几页。
 
 报错：key 不对、参数不对（4xx，429 除外）直接失败，报服务端的 code 和 message，不带 key；429、5xx、网络错误退避重试
-（`request_with_retry`，5 次，15 秒起，认 `Retry-After`）。`RETAIN_GLM_OCR_API_URL`、`RETAIN_GLM_OCR_TIMEOUT_SECONDS` 可改；不写时单片超时按页数算：60 秒加每页 12 秒（10 页一片 180 秒）。
+（`request_with_retry`，5 次，15 秒起，认 `Retry-After`）。429 先看业务码（2026-11-23，issue #164）：`glm_ocr_api.FAIL_FAST_CODES`
+里的（`1113` 余额不足、套餐过期、时段用量上限这类）通过 `request_with_retry(give_up=…)` 第一次就停，报 `GlmOcrQuotaExhausted`
+（中文原因加 HTTP 状态和业务码，结构化失败归 `upstream_quota_exhausted`）；`1302`、`1305` 照旧重试，用完报 `GlmOcrRateLimited`，
+同样带 HTTP 状态和业务码。码表和用户看到的报错见 `docs/api/03-OCR/06-GLM-OCR.md`。`RETAIN_GLM_OCR_API_URL`、`RETAIN_GLM_OCR_TIMEOUT_SECONDS` 可改；不写时单片超时按页数算：60 秒加每页 12 秒（10 页一片 180 秒）。
 
 ## Paddle 按片并行提交（`paddle_chunked.py`，2026-11-01）
 

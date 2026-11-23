@@ -53,14 +53,6 @@ Hiển thị PDF gốc và bản dịch cạnh nhau để kiểm tra công thứ
   <img src="resources/brand/readme-gallery/product/markdown-reader.png" alt="Trình đọc Markdown của RetainPDF" width="1000" />
 </p>
 
-### Ghi chú đọc sách và AI
-
-Đọc trong Studio: ghi chú của cuốn sách ở giữa, bản gốc và bản dịch nằm ngay bên cạnh, AI ở bên phải. Vừa đọc, vừa ghi, vừa hỏi cùng lúc; gửi một đoạn vào ghi chú chỉ với một cú nhấp, và nhấp vào trích dẫn trong ghi chú để quay lại đúng trang đó.
-
-<p align="center">
-  <img src="resources/brand/readme-gallery/product/ai-assistant.png" alt="Ghi chú đọc sách và AI trong RetainPDF" width="1000" />
-</p>
-
 ## Ví dụ bản dịch
 
 Các ví dụ đối chiếu bản gốc và bản dịch cho bài báo khoa học, PDF quét, tài liệu có nhiều công thức và sách:
@@ -85,11 +77,7 @@ Tải gói phù hợp từ [GitHub Releases](https://github.com/wxyhgk/retain-pd
   <img src="resources/brand/readme-gallery/product/library.png" alt="Thư viện trong ứng dụng desktop RetainPDF" width="1000" />
 </p>
 
-Nếu macOS báo ứng dụng bị hỏng, hãy chuyển ứng dụng vào `/Applications` rồi chạy:
-
-```bash
-sudo xattr -r -d com.apple.quarantine /Applications/RetainPDF.app
-```
+Gói macOS đã được Apple ký và công chứng, chạy trên chip Apple (M1 trở lên). Cách điền key và dịch cuốn sách đầu tiên: xem [hướng dẫn sử dụng (tiếng Trung)](docs/guide/README.md).
 
 ### Docker
 

@@ -4,6 +4,7 @@ import os
 import random
 import time
 from typing import Any
+from typing import Callable
 from urllib.parse import urlsplit
 from urllib.parse import urlunsplit
 
@@ -62,11 +63,19 @@ def sanitize_url_for_log(url: str) -> str:
 
 
 class RetainNetworkError(RuntimeError):
-    """重试用完还失败。`status_code`：最后一次的 HTTP 状态码（超时、连不上时为 None）。"""
+    """重试用完还失败。`status_code`：最后一次的 HTTP 状态码（超时、连不上时为 None）；
+    `last_response`：最后一次的响应（没有时为 None），调用方要从响应体里读服务端错误码时用，不进报错文字。"""
 
-    def __init__(self, message: str = "", *, status_code: int | None = None) -> None:
+    def __init__(
+        self,
+        message: str = "",
+        *,
+        status_code: int | None = None,
+        last_response: requests.Response | None = None,
+    ) -> None:
         super().__init__(message)
         self.status_code = status_code
+        self.last_response = last_response
 
 
 class RetainRateLimitError(RetainNetworkError):
@@ -114,11 +123,15 @@ def request_with_retry(
     attempts: int,
     backoff_seconds: float,
     label: str,
+    give_up: Callable[[requests.Response], bool] | None = None,
     **kwargs: Any,
 ) -> requests.Response:
+    """`give_up(response)`：状态码本来该重试（429、5xx）、但响应体说明重试也没用时返回 True（例如智谱 429 里的
+    code=1113 余额不足），这次就不重试，照非重试的 4xx 原样抛 `requests.HTTPError`（带 response）。"""
     last_summary: str | None = None
     terminal_error: Exception | None = None
     status_code: int | None = None
+    last_response: requests.Response | None = None
     accumulated_rate_limit_wait = 0.0
     for attempt in range(1, attempts + 1):
         try:
@@ -137,10 +150,13 @@ def request_with_retry(
                 f"{type(err).__name__} status={status_code or ''} "
                 f"method={method.upper()} url={sanitize_url_for_log(url)}"
             )
+            last_response = err.response if isinstance(err, requests.HTTPError) else None
             retryable = status_code in RETRY_STATUS_CODES or isinstance(
                 err,
                 (requests.Timeout, requests.ConnectionError),
             )
+            if retryable and give_up is not None and last_response is not None and give_up(last_response):
+                retryable = False
             if not retryable:
                 # Preserve callers' exception/status classification, but raise
                 # outside this handler so no raw exception context survives.
@@ -162,7 +178,9 @@ def request_with_retry(
                 accumulated_rate_limit_wait += sleep_seconds
                 if accumulated_rate_limit_wait > RATE_LIMIT_WAIT_MAX_SECONDS:
                     terminal_error = RetainRateLimitError(
-                        f"{label} rate limited: retry-after budget exceeded for {sanitize_url_for_log(url)}"
+                        f"{label} rate limited (HTTP 429): retry-after budget exceeded for {sanitize_url_for_log(url)}",
+                        status_code=status_code,
+                        last_response=last_response,
                     )
                     break
             print(
@@ -176,9 +194,12 @@ def request_with_retry(
     assert last_summary is not None
     if status_code == 429:
         raise RetainRateLimitError(
-            f"{label} rate limited after {attempts} attempts: {sanitize_url_for_log(url)}"
+            f"{label} rate limited after {attempts} attempts (HTTP 429): {sanitize_url_for_log(url)}",
+            status_code=status_code,
+            last_response=last_response,
         ) from None
     raise RetainNetworkError(
         f"{label} network request failed after {attempts} attempts: {last_summary}",
         status_code=status_code,
+        last_response=last_response,
     ) from None
