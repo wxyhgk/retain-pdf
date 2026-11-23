@@ -76,7 +76,7 @@ async fn the_parent_status_in_the_database_stops_the_child_without_any_cancel_si
     );
 }
 
-/// 假的 Paddle：只数连接，回 500。`on_request` 在回 500 之前执行（用来模拟「请求已经发出去了，
+/// 假的 Paddle：只数连接，回 502。`on_request` 在回 502 之前执行（用来模拟「请求已经发出去了，
 /// 父任务这时才被取消」）。
 async fn counting_server(
     on_request: Option<Box<dyn Fn() + Send + Sync>>,
@@ -100,7 +100,8 @@ async fn counting_server(
                 let mut buf = vec![0_u8; 8192];
                 let _ = socket.read(&mut buf).await;
                 let _ = socket
-                    .write_all(b"HTTP/1.1 500 Internal Server Error\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                    // 502 而不是 500：Paddle 提交收到 500 会在客户端退避重交（fix/ocr-provider-codes），这里只要一次就失败的错
+                    .write_all(b"HTTP/1.1 502 Bad Gateway\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
                     .await;
             });
         }
@@ -191,7 +192,7 @@ async fn a_running_parent_lets_the_child_reach_the_provider() {
     assert_eq!(
         status,
         JobStatusKind::Failed,
-        "假服务商回 500，子任务应当失败"
+        "假服务商回 502，子任务应当失败"
     );
 }
 
