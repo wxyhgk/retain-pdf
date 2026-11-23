@@ -23,7 +23,7 @@
   `TranslationModelListView`、`TranslationModelAskView` 加了这个必有字段。
 - **改含义** `provider_code`：只放服务商自己的业务码（智谱 `"1113"`、OpenAI `"insufficient_quota"`、百炼 `"Arrearage"`、OpenCode
   `"Policy budget exceeded"`），没有时 `null`；以前是 `"429"`、`"200"` 这样的 HTTP 状态码。查过前端（`frontend/`）、CLI 都不读这几个接口的
-  `provider_code`（任务失败里的 `provider_code` 是另一回事，没动），所以没另起字段。
+  `provider_code`（任务失败里的 `provider_code` 是另一回事，没动），所以没另起字段。这是「只增不改」的一次破例，2026-11-23 用户同意；以后改字段含义照旧另起新字段。
 - **加 `status` 取值**：校验 Key 加 `quota_exceeded`（`ok: false`，额度或花费上限）；问模型加 `insufficient_balance`、`quota_exceeded`
   （契约 `TranslationModelAskStatus` 的 enum 加了两个值）。欠费类业务码（429 的智谱 1113、OpenAI credit_balance_exhausted、400 的百炼
   Arrearage……）现在落已有的 `insufficient_balance`；智谱 1311（套餐不含这个模型）、1315（Key 类型不对）落 `unauthorized`。
