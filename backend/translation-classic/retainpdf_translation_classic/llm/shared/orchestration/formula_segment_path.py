@@ -8,6 +8,7 @@ from retainpdf_translation_classic.llm.shared.orchestration.metadata import atta
 from retainpdf_translation_classic.llm.shared.orchestration.metadata import restore_runtime_term_tokens
 from retainpdf_translation_classic.llm.shared.orchestration.segment_routing import translate_single_item_formula_segment_text_with_retries
 import retainpdf_translation_classic.llm.shared.orchestration.terminal_payloads as terminal_payloads
+from retainpdf_translation.llm.shared.upstream_resilience import is_content_rejection
 from retainpdf_translation_classic.llm.shared.orchestration.transport import defer_transport_retry
 
 
@@ -45,6 +46,9 @@ def try_formula_segment_path(
             output_mode_path=["tagged"],
         )
     except Exception as exc:
+        if is_content_rejection(exc):
+            # 内容审核没过：退到纯文本路径再发一遍也一样被拦，交给单块入口保留原文
+            raise
         if is_transport_error_fn(exc):
             if request_label:
                 print(

@@ -10,6 +10,9 @@ Single source of truth for transient vs non-retryable upstream errors:
 - 4xx 先看响应体的业务码（``upstream_error_codes``）：429 / 400 / 403 里的余额、额度、预算用完
   （``UpstreamQuotaExhausted``）和 Key 的套餐不能用这个模型（``UpstreamAccessDenied``）不重试，和 402、401/403 一样
   整份翻译停下。真限流照旧退避、认 Retry-After。
+- 同样按业务码（2026-11-23）：模型不存在 / 没开通和任何 404（``UpstreamModelUnavailable``，归 ``upstream_model_unavailable``）、
+  所在地区不支持（``UpstreamRegionUnsupported``，归 ``auth_failed``、说法是换网络或换服务商）也第一次就整份停下；
+  内容审核没过（``UpstreamContentRejected``）不重试、不停整份，调用方把这一块保留原文。
 """
 
 from __future__ import annotations
@@ -100,7 +103,47 @@ class UpstreamAccessDenied(UpstreamRejected):
     retain_failure_code = "auth_failed"
 
 
-_REJECTION_CLASSES = {_codes.QUOTA: UpstreamQuotaExhausted, _codes.ACCESS: UpstreamAccessDenied}
+class UpstreamModelUnavailable(UpstreamRejected):
+    """模型不存在、名字写错、这个 Key 没开通，或接口地址写错（404）：第一次就整份停下，归 ``upstream_model_unavailable``，
+    改好模型（或接口地址）后从翻译续跑。"""
+
+    kind = _codes.MODEL
+    retain_failure_code = "upstream_model_unavailable"
+
+
+REGION_FAILURE_SUMMARY = "所在地区不支持这个翻译服务商"
+REGION_FAILURE_SUGGESTION = "服务商不向当前网络出口所在的国家或地区提供服务，换 API Key 没用：请换网络（出口地区）或换一个翻译服务商后，从翻译阶段续跑。"
+
+
+class UpstreamRegionUnsupported(UpstreamAccessDenied):
+    """所在地区不支持（OpenAI 403 unsupported_country_region_territory）：整份停下，归 ``auth_failed``，
+    但 ``summary`` / ``suggestion`` 说换网络或换服务商（结构化失败读 ``failure_summary`` / ``failure_suggestion``）。"""
+
+    kind = _codes.REGION
+    failure_summary = REGION_FAILURE_SUMMARY
+    failure_suggestion = REGION_FAILURE_SUGGESTION
+
+
+CONTENT_REJECTED_REASON = "upstream_content_rejected"
+
+
+class UpstreamContentRejected(UpstreamRejected):
+    """内容审核没过（智谱 1301、千问 DataInspectionFailed 等）：原样重试不会通过。不重试、不停整份，
+    调用方把这一块保留原文、在翻译诊断里记「内容审核未过」。万一一路抛到任务失败，归 ``upstream_bad_request``。"""
+
+    kind = _codes.CONTENT
+    retain_failure_code = ""
+    failure_summary = "翻译服务商的内容审核没通过"
+    failure_suggestion = "这段内容触发了服务商的内容安全拦截，原样重试不会通过：可换一个翻译服务商后从翻译阶段续跑。"
+
+
+_REJECTION_CLASSES = {
+    _codes.QUOTA: UpstreamQuotaExhausted,
+    _codes.ACCESS: UpstreamAccessDenied,
+    _codes.MODEL: UpstreamModelUnavailable,
+    _codes.REGION: UpstreamRegionUnsupported,
+    _codes.CONTENT: UpstreamContentRejected,
+}
 
 
 def upstream_rejection(exc: BaseException) -> UpstreamRejection | None:
@@ -112,7 +155,7 @@ def upstream_rejection(exc: BaseException) -> UpstreamRejection | None:
 
 
 def rejection_kind(exc: BaseException) -> str:
-    """``quota`` / ``access`` / 空串。类型本身说了算（``type(exc)(message)`` 丢了 response 也认）。"""
+    """``quota`` / ``access`` / ``model`` / ``region`` / ``content`` / 空串。类型本身说了算（``type(exc)(message)`` 丢了 response 也认）。"""
     kind = getattr(type(exc), "kind", "") if isinstance(exc, UpstreamRejected) else ""
     if kind:
         return kind
@@ -123,7 +166,8 @@ def rejection_kind(exc: BaseException) -> str:
 
 
 def rejection_error(message: str, *, response, rejection: UpstreamRejection) -> UpstreamRejected:
-    """按认出的种类建错误（``UpstreamQuotaExhausted`` / ``UpstreamAccessDenied``）。"""
+    """按认出的种类建错误（``UpstreamQuotaExhausted`` / ``UpstreamAccessDenied`` / ``UpstreamModelUnavailable`` /
+    ``UpstreamRegionUnsupported`` / ``UpstreamContentRejected``）。"""
     return _REJECTION_CLASSES[rejection.kind](message, response=response, rejection=rejection)
 
 
@@ -154,8 +198,30 @@ def is_quota_error(exc: BaseException) -> bool:
 def is_auth_error(exc: BaseException) -> bool:
     kind = rejection_kind(exc)
     if kind:
-        return kind == _codes.ACCESS
+        return kind in {_codes.ACCESS, _codes.REGION}
     return http_status_of(exc) in {401, 403}
+
+
+def is_model_unavailable(exc: BaseException) -> bool:
+    """模型不存在、没开通，或接口地址写错（404）。"""
+    return rejection_kind(exc) == _codes.MODEL
+
+
+def is_content_rejection(exc: BaseException) -> bool:
+    """内容审核没过：不重试，这一块保留原文（不停整份）。"""
+    return rejection_kind(exc) == _codes.CONTENT
+
+
+def content_rejected_error(message: str, *, provider: str = "", code: str = "", http_status: int | None = None) -> UpstreamContentRejected:
+    """没有响应对象时（Rust 执行器那条路）建内容审核没过的错误。"""
+    rejection = UpstreamRejection(
+        kind=_codes.CONTENT,
+        provider=provider,
+        code=code or "content_rejected",
+        reason="内容审核未过",
+        http_status=http_status,
+    )
+    return UpstreamContentRejected(message, rejection=rejection)
 
 
 def is_bad_request_error(exc: BaseException) -> bool:
@@ -213,6 +279,17 @@ def hint_for_status(status: int | None) -> str:
 
 def hint_for_rejection(rejection: UpstreamRejection) -> str:
     """按业务码认出的「重试没用」：说清状态码、服务商的码和该怎么办（给用户看，不含 Key）。"""
+    if rejection.kind == _codes.MODEL:
+        return (
+            f"上游说模型不可用（{rejection.describe()}）：模型名写错、这个 API Key 没开通该模型，或接口地址（base_url）不对；"
+            "请改模型名（或去服务商控制台开通）、检查 base_url；本次直接失败，不再重试。"
+        )
+    if rejection.kind == _codes.REGION:
+        return (
+            f"上游说所在地区不支持（{rejection.describe()}）：换 API Key 没用，请换网络或换翻译服务商；本次直接失败，不再重试。"
+        )
+    if rejection.kind == _codes.CONTENT:
+        return f"内容审核未过（{rejection.describe()}）：原样重试不会通过，这一块保留原文，不再重试。"
     if rejection.kind == _codes.ACCESS:
         return (
             f"上游拒绝（{rejection.describe()}）：这个 API Key 的套餐不能用这个模型，请换模型或换 Key；"
@@ -256,13 +333,26 @@ CREDENTIAL_REJECTION_STATUS_CODES = frozenset({401, 402, 403})
 
 def is_credential_rejection(exc: BaseException) -> bool:
     """这组 base_url + Key 之后的请求注定同样被拒：Key 无效、没权限（401/403）、账户余额不足（402），
-    或业务码说余额、额度用完 / 套餐不能用这个模型（429 等，见 ``upstream_error_codes``）。"""
-    return http_status_of(exc) in CREDENTIAL_REJECTION_STATUS_CODES or bool(rejection_kind(exc))
+    或业务码说余额、额度用完 / 套餐不能用这个模型 / 模型不可用 / 地区不支持（429、404 等，见 ``upstream_error_codes``）。
+    内容审核没过只是这一块，不算。"""
+    kind = rejection_kind(exc)
+    if kind:
+        return kind in _codes.STOP_KINDS
+    return http_status_of(exc) in CREDENTIAL_REJECTION_STATUS_CODES
+
+
+def credential_scope_model(exc: BaseException, model: str) -> str:
+    """记被拒的凭据时带不带模型：模型不可用只是这个模型（审校等别的角色可能用同一个 Key 的另一个模型），其余是整组凭据。"""
+    return str(model or "") if is_model_unavailable(exc) else ""
 
 
 def _rejection_reason(rejected: BaseException) -> str:
     status = http_status_of(rejected)
     kind = rejection_kind(rejected)
+    if kind == _codes.MODEL:
+        return "以模型不可用拒绝"
+    if kind == _codes.REGION:
+        return "以所在地区不支持拒绝"
     if kind == _codes.QUOTA:
         return "账户余额不足" if status == QUOTA_STATUS_CODE else "以余额或额度不足拒绝"
     if status == QUOTA_STATUS_CODE:
@@ -301,6 +391,18 @@ def credential_rejected_error(rejected: BaseException) -> requests.HTTPError:
             f"翻译 API 账户余额或额度不足（{detail}），已停止翻译，剩下的块没有再发请求。"
             "这不是限流，等待重试没用：请充值、提高消费上限或等额度重置后重试"
         )
+    elif kind == _codes.MODEL:
+        detail = rejection.describe() if rejection is not None else f"HTTP {status}"
+        head = (
+            f"翻译模型不可用（{detail}），已停止翻译，剩下的块没有再发请求。"
+            "模型名写错、这个 API Key 没开通该模型，或接口地址（base_url）不对：请在设置里改好后从翻译阶段续跑"
+        )
+    elif kind == _codes.REGION:
+        detail = rejection.describe() if rejection is not None else f"HTTP {status}"
+        head = (
+            f"翻译服务商不支持当前所在地区（{detail}），已停止翻译，剩下的块没有再发请求。"
+            "换 API Key 没用：请换网络或换翻译服务商后重试"
+        )
     elif kind == _codes.ACCESS:
         detail = rejection.describe() if rejection is not None else f"HTTP {status}"
         head = (
@@ -320,14 +422,15 @@ def credential_rejected_error(rejected: BaseException) -> requests.HTTPError:
     return _carry_upstream(rejected, _same_kind_error(rejected, f"{head} | 第一次被拒：{rejected}"))
 
 
-def raise_if_credential_rejected(run_diagnostics, *, base_url: str, api_key: str) -> None:
-    """本次运行里这组凭据被上游以 401/402/403（或额度用完的业务码）拒过，就抛 ``credential_rejected_error``。
+def raise_if_credential_rejected(run_diagnostics, *, base_url: str, api_key: str, model: str = "") -> None:
+    """本次运行里这组凭据被上游以 401/402/403（或额度用完的业务码）拒过，或这个模型被说不可用（``model``），
+    就抛 ``credential_rejected_error``。
 
     ``run_diagnostics`` 为 None（单测直接调阶段函数）时什么都不做。
     """
     if run_diagnostics is None:
         return
-    rejected = run_diagnostics.credential_rejection(base_url=base_url, api_key=api_key)
+    rejected = run_diagnostics.credential_rejection(base_url=base_url, api_key=api_key, model=model)
     if rejected is not None:
         raise credential_rejected_error(rejected)
 
@@ -360,10 +463,16 @@ __all__ = [
     "REVIEW_BACKOFF_CAP_SECS",
     "REVIEW_MAX_RETRIES",
     "TRANSIENT_STATUS_CODES",
+    "CONTENT_REJECTED_REASON",
     "UpstreamAccessDenied",
+    "UpstreamContentRejected",
+    "UpstreamModelUnavailable",
     "UpstreamQuotaExhausted",
+    "UpstreamRegionUnsupported",
     "UpstreamRejected",
+    "content_rejected_error",
     "credential_rejected_error",
+    "credential_scope_model",
     "describe_upstream_error",
     "described_error",
     "hint_for_error",
@@ -372,7 +481,9 @@ __all__ = [
     "http_status_of",
     "is_auth_error",
     "is_bad_request_error",
+    "is_content_rejection",
     "is_credential_rejection",
+    "is_model_unavailable",
     "is_non_retryable_client_error",
     "is_quota_error",
     "is_transient_upstream_error",

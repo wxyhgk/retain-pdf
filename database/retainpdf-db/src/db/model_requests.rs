@@ -259,6 +259,8 @@ impl Db {
                             | "payment_required"
                             | "quota_exhausted"
                             | "provider_rejected_request"
+                            | "model_unavailable"
+                            | "region_unsupported"
                     )
                 ))
         {

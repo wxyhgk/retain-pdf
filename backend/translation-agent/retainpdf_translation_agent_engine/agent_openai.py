@@ -17,7 +17,8 @@ agent 包（``retainpdf-translation-agent``）只认 Anthropic 的请求、回�
 - 用量：共用请求层自己记用量台账（请求标签 ``agent-translate`` / ``agent-read`` / ``agent-review``），这里只把这次请求的
   token 换成 Anthropic 的字段名交回，agent 自己的计数、编辑部事件照常；
 - 错误：Key 被拒（401/403）→ ``AuthFailed``，402 和业务码说余额、额度用完的 429 等 → ``QuotaExhausted``（第一次就停，
-  不当限流退避），一直限流、5xx、网络断 → ``RateLimited``，
+  不当限流退避），模型不可用（404、各家的码）→ ``ModelUnavailable``，地区不支持 → ``RegionUnsupported``，
+  一直限流、5xx、网络断 → ``RateLimited``，
   都是 agent 的 ``StopRun``：保存进度、阶段失败，修好重试从断点接着翻。别的错误原样抛。
 
 已知差别：共用请求层只交回文本，拿不到 ``finish_reason``，回答被长度截断时 agent 不知道（Anthropic 下会把最后一块当没交）；
@@ -41,8 +42,10 @@ from retainpdf_translation.llm.shared import upstream_resilience
 from retainpdf_translation.llm.shared.executor_context import unit_scope
 from retainpdf_translation.llm.shared.provider_runtime import request_chat_content
 from retainpdf_translation_agent import AuthFailed
+from retainpdf_translation_agent import ModelUnavailable
 from retainpdf_translation_agent import QuotaExhausted
 from retainpdf_translation_agent import RateLimited
+from retainpdf_translation_agent import RegionUnsupported
 
 REQUEST_TIMEOUT_SECS = 300
 # 和 legacy 翻译请求一样（translation_client 的翻译请求都是 0.0）；不收 temperature 的模型由共用请求层挨一次 400 后记住、不再带
@@ -156,6 +159,10 @@ def _stop_error(error: BaseException) -> BaseException | None:
     # 先看业务码：429 里的余额、额度用完不是限流（upstream_error_codes），智谱 1311/1315 当 Key 被拒
     if upstream_resilience.is_quota_error(error):
         return QuotaExhausted(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
+    if upstream_resilience.is_model_unavailable(error):
+        return ModelUnavailable(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
+    if upstream_resilience.rejection_kind(error) == "region":
+        return RegionUnsupported(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
     if upstream_resilience.is_auth_error(error):
         return AuthFailed(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
     if status in {429, 500, 502, 503, 504, 529} or isinstance(error, (requests.ConnectionError, requests.Timeout)):

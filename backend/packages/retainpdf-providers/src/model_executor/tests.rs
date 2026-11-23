@@ -331,6 +331,62 @@ async fn quota_429_is_not_retried_and_pauses_the_job() {
     task.abort();
 }
 
+/// 2026-11-23：模型不可用（404）整份停下；内容审核没过只这一个请求失败，任务不暂停，后面的请求照收。
+#[tokio::test]
+async fn model_404_pauses_but_content_rejection_does_not() {
+    let (url, task) = server(Router::new().route(
+        "/v1/chat/completions",
+        post(|| async {
+            (
+                StatusCode::NOT_FOUND,
+                r#"{"error":{"message":"The model `x` does not exist echoed-secret","code":"model_not_found"}}"#,
+            )
+        }),
+    ))
+    .await;
+    let f = Fixture::new();
+    let e = &f.executor;
+    let token = e.register_job("j", &profile(&url), 60).unwrap();
+    e.submit("j", &token, request("op")).await.unwrap();
+    let op = terminal(e, "j", &token, "op").await;
+    assert_eq!(op.status, "failed");
+    assert_eq!(op.error_code.as_deref(), Some("model_unavailable"));
+    let result = op.result.clone().unwrap();
+    assert_eq!(result["upstream_status"], json!(404));
+    assert_eq!(result["upstream_code"], json!("model_not_found"));
+    assert!(!serde_json::to_string(&op).unwrap().contains("echoed-secret"));
+    assert!(e.submit("j", &token, request("other")).await.is_err(), "整份停下：后面的请求不再收");
+    task.abort();
+
+    let count = Arc::new(AtomicUsize::new(0));
+    let seen = count.clone();
+    let (url, task) = server(Router::new().route(
+        "/v1/chat/completions",
+        post(move || {
+            let seen = seen.clone();
+            async move {
+                seen.fetch_add(1, Ordering::SeqCst);
+                (
+                    StatusCode::BAD_REQUEST,
+                    r#"{"error":{"message":"Input data may contain inappropriate content.","code":"DataInspectionFailed"}}"#,
+                )
+            }
+        }),
+    ))
+    .await;
+    let f = Fixture::new();
+    let e = &f.executor;
+    let token = e.register_job("j", &profile(&url), 60).unwrap();
+    e.submit("j", &token, request("op")).await.unwrap();
+    let op = terminal(e, "j", &token, "op").await;
+    assert_eq!(op.status, "failed");
+    assert_eq!(op.error_code.as_deref(), Some("content_rejected"));
+    assert_eq!(count.load(Ordering::SeqCst), 1, "内容审核没过不重试");
+    assert_eq!(op.result.clone().unwrap()["upstream_code"], json!("DataInspectionFailed"));
+    e.submit("j", &token, request("other")).await.expect("内容审核只是这一块：任务不暂停");
+    task.abort();
+}
+
 #[tokio::test]
 async fn provider_rejection_is_masked_and_not_retried() {
     let count = Arc::new(AtomicUsize::new(0));

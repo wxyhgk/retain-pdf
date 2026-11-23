@@ -143,6 +143,7 @@
       "devtools/tests/translation/test_translation_qa.py",
       "devtools/tests/translation/test_translation_quality_checks.py",
       "devtools/tests/translation/test_translation_refine.py",
+      "devtools/tests/translation/test_translation_request_rejections.py",
       "devtools/tests/translation/test_translation_revision.py",
       "devtools/tests/translation/test_translation_route_selection.py",
       "devtools/tests/translation/test_translation_transport_fallbacks.py",
@@ -683,6 +684,7 @@
         "devtools/tests/translation/test_translation_qa.py",
         "devtools/tests/translation/test_translation_quota_codes.py",
         "devtools/tests/translation/test_translation_refine.py",
+        "devtools/tests/translation/test_translation_request_rejections.py",
         "devtools/tests/translation/test_translation_revision.py",
         "devtools/tests/translation/test_translation_validation_protocols.py",
         "devtools/tests/translation/test_upstream_resilience.py",
@@ -719,6 +721,7 @@
         "devtools/tests/translation/test_translation_auth_fail_fast.py",
         "devtools/tests/translation/test_translation_batch_transport.py",
         "devtools/tests/translation/test_translation_quota_codes.py",
+        "devtools/tests/translation/test_translation_request_rejections.py",
         "devtools/tests/translation/test_translation_run_diagnostics.py",
         "devtools/tests/translation/test_translation_transport_fallbacks.py",
         "devtools/tests/translation/test_upstream_resilience.py",
@@ -1016,6 +1019,7 @@
         "devtools/tests/translation/test_translation_repair_agent.py",
         "devtools/tests/translation/test_translation_repair_runner.py",
         "devtools/tests/translation/test_translation_request_journal.py",
+        "devtools/tests/translation/test_translation_request_rejections.py",
         "devtools/tests/translation/test_translation_result_applier_memory.py",
         "devtools/tests/translation/test_translation_review_artifact.py",
         "devtools/tests/translation/test_translation_revision.py",
@@ -1047,7 +1051,8 @@
         "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_agent_openai.py",
         "devtools/tests/translation/test_strict_json_schemas.py",
-        "devtools/tests/translation/test_translation_quota_codes.py"
+        "devtools/tests/translation/test_translation_quota_codes.py",
+        "devtools/tests/translation/test_translation_request_rejections.py"
       ],
       "runtime_required": false,
       "devtool_required": true
@@ -1062,6 +1067,7 @@
         "devtools/tests/translation/test_agent_openai.py",
         "devtools/tests/translation/test_strict_json_schemas.py",
         "devtools/tests/translation/test_translation_quota_codes.py",
+        "devtools/tests/translation/test_translation_request_rejections.py",
         "devtools/tests/translation/test_upstream_wait_events.py"
       ],
       "runtime_required": false,

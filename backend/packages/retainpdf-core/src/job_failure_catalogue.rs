@@ -146,6 +146,12 @@ const CATALOGUE: &[(&str, FailureRecovery)] = &[
     }),
 
     // —— 翻译阶段的具体失败：OCR 产物完好，从翻译续跑 ——
+    // 模型不存在 / 没开通 / 接口地址写错（2026-11-23）：翻译在第一次被拒时整份停下，只在翻译阶段产生
+    ("upstream_model_unavailable", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "翻译模型不可用：模型名写错、这个 API Key 没开通该模型，或接口地址写错。OCR 产物完好，\
+               在设置里改好模型（或开通、核对接口地址）后从翻译阶段续跑，不会重复调用 OCR。",
+    }),
     ("translation_request_ambiguous", FailureRecovery {
         resume_from: Some(ResumeFrom::Translation),
         hint: "重启时有已发出但结果不明的翻译请求，已暂停自动续跑。确认可接受重复请求（可能重复计费）后，从翻译阶段重试。",
@@ -328,6 +334,14 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// 模型不可用只在翻译阶段产生（第一次被拒就整份停下），改好模型后从翻译续跑。
+    #[test]
+    fn model_unavailable_resumes_at_translation() {
+        let recovery = recovery_for_stage("upstream_model_unavailable", "translation");
+        assert_eq!(recovery.resume_from, Some(ResumeFrom::Translation));
+        assert!(recovery.hint.contains("模型"));
     }
 
     /// 目录里不能有重复键——重复的话 `find` 只会命中第一条，后面那条静默失效。

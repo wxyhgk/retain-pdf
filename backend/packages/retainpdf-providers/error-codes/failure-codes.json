@@ -1,6 +1,7 @@
 [
   {"failure_code": "auth_failed", "producer": "both", "summary_zh": "鉴权失败", "retryable": false, "issues": [81], "note_zh": "OCR 阶段只有 Paddle、MinerU 的鉴权两类会映射到这里；建议文字写死「检查 MinerU Token…」，不分服务商。#81 是旧版把渲染失败误判成鉴权失败（现在已不复现）。"},
   {"failure_code": "upstream_quota_exhausted", "producer": "python", "summary_zh": "上游账户余额不足（402）/ 上游账户余额或额度不足", "retryable": false, "issues": [164], "note_zh": "HTTP 402、agent 引擎的 QuotaExhausted、GLM-OCR 的 GlmOcrQuotaExhausted（智谱 429 + 1113、1308–1321 等）。"},
+  {"failure_code": "upstream_model_unavailable", "producer": "python", "summary_zh": "翻译模型不可用（HTTP 404 等）：模型名写错、这个 Key 没开通该模型，或接口地址写错", "retryable": false, "issues": [], "note_zh": "OpenAI model_not_found、Anthropic not_found_error、千问 ModelNotFound 等、智谱 1211，以及任何 404（接口地址写错）；第一次被拒就整份停下，改模型或地址后从翻译续跑。Rust 模型执行器记 error_code=model_unavailable。"},
   {"failure_code": "upstream_rate_limited", "producer": "python", "summary_zh": "外部服务请求被限流", "retryable": true, "issues": [164], "note_zh": "HTTP 429 或报错文字里有 rate limit。和 Rust 的 rate_limited 同义。"},
   {"failure_code": "rate_limited", "producer": "rust", "summary_zh": "上游服务触发限流", "retryable": true, "issues": [], "note_zh": "Rust 兜底按文字认（没有结构化失败时）。"},
   {"failure_code": "upstream_bad_request", "producer": "python", "summary_zh": "上游服务拒绝请求（400）", "retryable": false, "issues": [161, 163], "note_zh": null},

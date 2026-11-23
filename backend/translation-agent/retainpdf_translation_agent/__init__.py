@@ -4,8 +4,11 @@ from retainpdf_translation_agent.agent import BREAK
 from retainpdf_translation_agent.agent import DEFAULT_MODEL
 from retainpdf_translation_agent.agent import PROMPT_VERSION
 from retainpdf_translation_agent.agent import AuthFailed
+from retainpdf_translation_agent.agent import ModelUnavailable
 from retainpdf_translation_agent.agent import QuotaExhausted
 from retainpdf_translation_agent.agent import RateLimited
+from retainpdf_translation_agent.agent import RegionUnsupported
+from retainpdf_translation_agent.agent import RequestRejected
 from retainpdf_translation_agent.agent import StopRun
 from retainpdf_translation_agent.agent import TranslationAgent
 from retainpdf_translation_agent.agent import format_answer
@@ -51,9 +54,12 @@ __all__ = [
     "BlockResult",
     "DocumentRun",
     "Glossary",
+    "ModelUnavailable",
     "PageInput",
     "QuotaExhausted",
     "RateLimited",
+    "RegionUnsupported",
+    "RequestRejected",
     "Reading",
     "RevisionRequest",
     "RunOutcome",

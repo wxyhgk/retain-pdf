@@ -154,7 +154,8 @@ pub(super) async fn execute(
                 receipt.upstream_provider = Some(vendor_for_url(url));
             }
             if status.is_client_error() {
-                // 4xx 先看业务码：429 / 400 / 403 里的余额、额度用完不是限流，重试没用（upstream_codes）
+                // 4xx 先看业务码：429 / 400 / 403 里的余额、额度用完不是限流，重试没用；模型不可用、地区不支持、
+                // 内容审核没过也各有 error_code（upstream_codes）
                 let retry_after = response
                     .headers()
                     .get("retry-after")
@@ -249,7 +250,8 @@ fn rejected(status: u16) -> (&'static str, Option<&'static str>) {
     match status {
         401 | 403 => ("failed", Some("authentication_failed")),
         402 => ("failed", Some("payment_required")),
-        400 | 404 | 405 | 422 => ("failed", Some("provider_rejected_request")),
+        // 404 在前面按业务码归 model_unavailable 了；409、413 也是上游明确拒收，不是结果不明
+        400 | 404 | 405 | 409 | 413 | 415 | 422 => ("failed", Some("provider_rejected_request")),
         300..=399 => ("failed", Some("redirect_rejected")),
         _ => ("ambiguous", Some("upstream_error")),
     }

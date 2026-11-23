@@ -164,7 +164,7 @@ class TranslationRunDiagnostics:
     # 上游以 401/402/403 拒过的凭据（base_url + Key 的摘要）-> 第一次被拒时的异常。Key 失效或余额不足时整份任务的
     # 每个请求都会被拒，记下以后同一组凭据不再发请求，流程在下一个检查点直接失败（见
     # upstream_resilience.credential_rejected_error）。按凭据分开记：审校模型可能用另一组 Key。
-    _credential_rejections: dict[tuple[str, str], BaseException] = field(default_factory=dict, init=False, repr=False)
+    _credential_rejections: dict[tuple[str, str, str], BaseException] = field(default_factory=dict, init=False, repr=False)
     _token_usage: dict[str, int] = field(
         default_factory=lambda: {
             "requests_with_usage": 0,
@@ -204,23 +204,31 @@ class TranslationRunDiagnostics:
             }
 
     @staticmethod
-    def _credential_key(*, base_url: str, api_key: str) -> tuple[str, str]:
+    def _credential_key(*, base_url: str, api_key: str, model: str = "") -> tuple[str, str, str]:
         return (
             str(base_url or "").strip().rstrip("/").lower(),
             hashlib.sha256(str(api_key or "").strip().encode("utf-8")).hexdigest(),
+            str(model or "").strip(),
         )
 
-    def record_credential_rejection(self, *, base_url: str, api_key: str, error: BaseException) -> None:
-        """记下这组凭据被上游以 401/402/403 拒绝；只留第一次的异常。"""
-        key = self._credential_key(base_url=base_url, api_key=api_key)
+    def record_credential_rejection(self, *, base_url: str, api_key: str, error: BaseException, model: str = "") -> None:
+        """记下这组凭据被上游以 401/402/403 拒绝；只留第一次的异常。``model`` 非空时只记这个模型
+        （模型不可用：同一个 Key 的别的模型照常用，见 ``upstream_resilience.credential_scope_model``）。"""
+        key = self._credential_key(base_url=base_url, api_key=api_key, model=model)
         with self._lock:
             self._credential_rejections.setdefault(key, error)
 
-    def credential_rejection(self, *, base_url: str, api_key: str) -> BaseException | None:
-        """这组凭据被拒过就返回第一次被拒时的异常，否则 None。"""
-        key = self._credential_key(base_url=base_url, api_key=api_key)
+    def credential_rejection(self, *, base_url: str, api_key: str, model: str = "") -> BaseException | None:
+        """这组凭据（或这组凭据下的 ``model``）被拒过就返回第一次被拒时的异常，否则 None。"""
+        keys = [self._credential_key(base_url=base_url, api_key=api_key)]
+        if str(model or "").strip():
+            keys.append(self._credential_key(base_url=base_url, api_key=api_key, model=model))
         with self._lock:
-            return self._credential_rejections.get(key)
+            for key in keys:
+                found = self._credential_rejections.get(key)
+                if found is not None:
+                    return found
+        return None
 
     def set_workload(
         self,

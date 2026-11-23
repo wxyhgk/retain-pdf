@@ -12,6 +12,30 @@
 
 ---
 
+## 翻译模型不可用、地区不支持、内容审核没过（fix/llm-request-codes）
+
+2026-11-23，翻译请求层补上剩下的几类「重试没用」，细节见
+[失败结构](../../api/08-调试诊断/01-失败结构.md#翻译请求的模型不可用地区不支持内容审核)。只增不改，字段一个没动：
+
+- **新 `failure_code` `upstream_model_unavailable`**：模型名写错、Key 没开通该模型、接口地址写错（任何 404）。翻译第一次被拒就整份停下，
+  `failure_category=auth`、`retryable=false`、`resume_from=translation`，`summary`「翻译模型不可用（HTTP 404）：模型名写错、这个 Key
+  没开通该模型，或接口地址写错」，`recovery_hint` 后端给。前端按已有规则显示就能用（`auth` 分类会给「去设置换 Key」）。
+- **地区不支持**照旧是 `auth_failed`，但 `summary`「所在地区不支持这个翻译服务商」、`suggestion` 说换网络或换服务商。
+- **内容审核没过**不产生任务失败：那一块保留原文（死信），任务照常完成，算进「N 个块保留原文未翻译」。
+- `upstream_bad_request` 的 `summary` 现在带实际状态码（409、413、422……）和服务商原话，以前固定「上游服务拒绝请求（400）」。
+- 编辑部事件 `run_stopped.reason`（翻译 agent 的停下原因）可能出现两个新值 `model_unavailable`、`region_unsupported`。
+
+前端可以做（不做也不坏，只是说法不够准）：
+1. `frontend/web/src/features/editorial-room/domain/narration.ts` 的 `STOP_REASON_TEXT`：旧的只有 `quota_exhausted`、`auth_failed`、
+   `rate_limited` 三个；新加 `model_unavailable: "模型不可用（名字写错或没开通），改好后可以接着跑"`、
+   `region_unsupported: "服务商不支持当前地区，换网络或换服务商后可以接着跑"`。不加的话这两个值照原样显示英文。
+2. `frontend/web/src/features/book-detail/domain/job-failure-model.ts` 的 `failureAdvice` 只按 `category` 查 `BY_CATEGORY`，
+   `upstream_model_unavailable` 落 `auth`，标题是「凭据被拒」、按钮「去设置换 Key」，下面的 `summary` 写明是模型不可用。
+   失败简报（`JobFailureBriefView`）里没有 `failure_code`，想给这类单独的标题（「翻译模型不可用」「去设置改模型」）需要后端在简报里
+   加一个字段，要的话告诉后端（只增不改）。
+
+---
+
 ## 走 Rust 模型执行器的翻译失败也带 `upstream`（fix/executor-failure-upstream）
 
 2026-11-23，用户定补上 feat/failure-upstream 留下的缺口：任务绑了 `translation.execution_connection`、翻译请求走 Rust 模型执行器时，
