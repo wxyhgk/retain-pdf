@@ -92,7 +92,7 @@ function groupLists(page, entries, paint, options = {}) {
     if (block) {
       return {
         kind: "block", block, bbox: block.bbox, font: Number(block.fontSize) || 0,
-        item: { id: block.id, text: block.text, translatedText: block.translatedText, originalLineCount: Number(block.lineCount) || 1, indent: block.indent || 0 }
+        item: { id: block.id, text: block.text, translatedText: block.translatedText, originalLineCount: Number(block.lineCount) || 1, indent: block.indent || 0, ...(block.listItem ? { listItem: true } : {}) }
       };
     }
     return null;

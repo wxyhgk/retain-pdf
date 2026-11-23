@@ -189,8 +189,9 @@
               width,
               align,
               nowrap: singleNowrap || node.style.nowrap,
-              firstLineIndent: node.refs || singleNowrap ? 0 : Math.max(0, paragraph.indent || 0),
-              hangingIndent: node.refs ? 1.1 * fontSize : 0,
+              // a list item hangs: lines after the first start under the text after its marker
+              firstLineIndent: node.refs || singleNowrap || paragraph.hangEm > 0 ? 0 : Math.max(0, paragraph.indent || 0),
+              hangingIndent: node.refs ? 1.1 * fontSize : (singleNowrap ? 0 : Math.max(0, Number(paragraph.hangEm || 0)) * fontSize),
               text: paragraph.text,
               ...(node.balanceLines && ctx.balance ? { balance: ctx.balance } : {})
             });
