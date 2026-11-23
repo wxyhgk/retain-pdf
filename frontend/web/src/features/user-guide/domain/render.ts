@@ -30,7 +30,7 @@ export function renderGuidePage(markdown: string, page: string, baseUrl: string)
         const src = resolveGuideAsset(token.href, baseUrl);
         const alt = escapeAttr(token.text || "");
         // icons/ 下的是正文里的小图标（和软件界面同一套），跟着文字排在一行里。
-        if (/^(\.\/)?icons\//.test(token.href)) return `<img class="guide-icon" src="${escapeAttr(src)}" alt="${alt}">`;
+        if (/^(\.\/)?icons\//.test(token.href)) return `<img class="user-guide-icon" src="${escapeAttr(src)}" alt="${alt}">`;
         return `<img src="${escapeAttr(src)}" alt="${alt}" loading="lazy">`;
       },
     },
