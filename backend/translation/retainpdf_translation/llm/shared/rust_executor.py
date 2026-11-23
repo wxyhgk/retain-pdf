@@ -17,6 +17,7 @@ import requests
 from requests.adapters import HTTPAdapter
 
 
+from retainpdf_base.upstream import tag_upstream
 from retainpdf_base.upstream_wait import begin_upstream_wait
 from retainpdf_base.upstream_wait import build_wait_info
 from retainpdf_base.upstream_wait import end_upstream_wait
@@ -49,6 +50,20 @@ _FAILED_OPERATION_ERRORS = {
     "payment_required": (ExecutorQuotaExhausted, "上游账户余额不足（HTTP 402）"),
     "authentication_failed": (ExecutorAccessDenied, "上游拒绝了这个 API Key（鉴权失败，或套餐不能用这个模型）"),
 }
+
+
+def _tag_receipt_upstream(error: ExecutorError, operation: dict) -> ExecutorError:
+    """执行器回执里有上游非 2xx（``upstream_provider`` / ``upstream_status`` / ``upstream_code``）时写到报错上，
+    任务失败的 ``upstream`` 从这里来（这条路 Python 拿不到上游响应）。没有就原样返回。"""
+    receipt = operation.get("result") if isinstance(operation.get("result"), dict) else {}
+    status = receipt.get("upstream_status")
+    status = status if isinstance(status, int) and not isinstance(status, bool) else None
+    code = receipt.get("upstream_code")
+    code = str(code) if isinstance(code, str) and code else None
+    if status is None and code is None:
+        return error
+    provider = receipt.get("upstream_provider")
+    return tag_upstream(error, provider=str(provider) if isinstance(provider, str) and provider else "custom", http_status=status, code=code)
 
 
 @dataclass(frozen=True)
@@ -165,7 +180,9 @@ class RustModelExecutorClient:
                         raise AmbiguousModelRequest("executor returned an empty completed response")
                     return ModelReceipt(content, operation_id, {key: value for key, value in receipt.items() if key != "content"})
                 if state == "ambiguous":
-                    raise AmbiguousModelRequest("upstream result unknown; manual retry may incur duplicate billing")
+                    raise _tag_receipt_upstream(
+                        AmbiguousModelRequest("upstream result unknown; manual retry may incur duplicate billing"), operation
+                    )
                 if state == "failed":
                     error_code = str(operation.get("error_code") or "")
                     known = _FAILED_OPERATION_ERRORS.get(error_code)
@@ -177,9 +194,9 @@ class RustModelExecutorClient:
                         error = error_class(f"{reason}（{upstream}error_code={error_code}）；已停止，不再重试")
                         error.status_code = status if isinstance(status, int) else None
                         error.provider_code = str(code or "")
-                        raise error
+                        raise _tag_receipt_upstream(error, operation)
                 if state in {"failed", "cancelled"}:
-                    raise ExecutorError(f"model operation {state}; no automatic upstream retry")
+                    raise _tag_receipt_upstream(ExecutorError(f"model operation {state}; no automatic upstream retry"), operation)
                 if state not in {"queued", "running"}:
                     raise ExecutorUnavailable("unknown executor operation state")
                 if time.monotonic() - started >= self._deadline:

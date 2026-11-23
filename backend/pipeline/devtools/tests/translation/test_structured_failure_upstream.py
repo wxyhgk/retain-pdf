@@ -196,3 +196,27 @@ def test_mineru_api_error_reports_the_business_code(monkeypatch) -> None:
     payload = _classify(caught.value, default_stage="provider", provider="ocr")
     assert payload["upstream"] == {"provider": "mineru", "http_status": 200, "code": "-60018"}
     _same_classification_as_plain(caught.value, payload, default_stage="provider", provider="ocr")
+
+
+def test_executor_quota_failure_reports_upstream() -> None:
+    """走 Rust 模型执行器的翻译失败：执行器回执里的上游信息进 failure.upstream，归类照旧是额度用完。"""
+    from unittest import mock
+
+    from retainpdf_translation.llm.shared.rust_executor import RustModelExecutorClient
+
+    executor = RustModelExecutorClient("http://127.0.0.1:41000", "job", "a" * 64)
+    reply = mock.Mock(status_code=200)
+    reply.json.return_value = {
+        "operation_id": "op",
+        "unit_id": "unit",
+        "status": "failed",
+        "error_code": "quota_exhausted",
+        "result": {"upstream_status": 429, "upstream_code": "insufficient_quota", "upstream_provider": "openai"},
+    }
+    session = mock.Mock()
+    session.request.return_value = reply
+    with mock.patch.object(executor, "_session", return_value=session), pytest.raises(RuntimeError) as caught:
+        executor.request(operation_id="op", unit_id="unit", messages=[{"role": "user", "content": "x"}])
+    payload = _classify(caught.value, default_stage="translation", provider="translation")
+    assert payload["failure_code"] == "upstream_quota_exhausted"
+    assert payload["upstream"] == {"provider": "openai", "http_status": 429, "code": "insufficient_quota"}

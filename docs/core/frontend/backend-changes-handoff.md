@@ -12,6 +12,14 @@
 
 ---
 
+## 走 Rust 模型执行器的翻译失败也带 `upstream`（fix/executor-failure-upstream）
+
+2026-11-23，用户定补上 feat/failure-upstream 留下的缺口：任务绑了 `translation.execution_connection`、翻译请求走 Rust 模型执行器时，
+翻译失败的 `failure.upstream` 以前没有，现在和直连一样有 `{provider, http_status, code}`（`provider` 按接口地址认，认不出是 `custom`）。
+字段、出现的位置都不变，**前端不用改**，按已有的目录查找规则显示就行。执行器没收到上游回应的失败（连不上、本地超时）照旧没有 `upstream`。
+
+---
+
 ## 检测接口：HTTP 状态码和厂商业务码分开，429 分清限流和欠费（fix/probe-status-codes）
 
 2026-11-23，用户定：检测接口（`/providers/deepseek/validate-token`、`/providers/{mineru,paddle}/validate-token`、
@@ -129,7 +137,7 @@
    有 `upstream` 时按上面的规则查目录，显示条目的 `user_hint_zh`；`failure-recovery.ts` 里从 `ocr_provider_diagnostics.last_error` 取 `provider_code`
    的地方可以改读 `failure.upstream.code`（旧的照旧能用）。
 
-细节见 [失败结构](../../api/08-调试诊断/01-失败结构.md) 的「上游信息」一节。走 Rust 模型执行器的翻译失败暂时没有 `upstream`。
+细节见 [失败结构](../../api/08-调试诊断/01-失败结构.md) 的「上游信息」一节。走 Rust 模型执行器的翻译失败以前没有 `upstream`，2026-11-23 补上了（见最上面一节）。
 
 ---
 

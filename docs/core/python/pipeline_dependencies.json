@@ -804,6 +804,7 @@
         "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_domain_prewarm.py",
         "devtools/tests/translation/test_pipeline_events_protocol.py",
+        "devtools/tests/translation/test_rust_executor_client.py",
         "devtools/tests/translation/test_streaming_translation.py",
         "devtools/tests/translation/test_translation_cache.py",
         "devtools/tests/translation/test_translation_editorial.py",

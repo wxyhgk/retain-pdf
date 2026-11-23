@@ -21,11 +21,15 @@ pub(super) struct Receipt {
     pub provider_request_id: Option<String>,
     pub upstream_attempts: u32,
     pub retry_reasons: Vec<&'static str>,
-    /// 按业务码停下时的上游 HTTP 状态和表里的码（见 `upstream_codes`），不是响应体原文。
+    /// 上游最后一次回的非 2xx 状态（成功了就没有）；worker 拿它和下面两项填任务失败的 `upstream`。
     #[serde(skip_serializing_if = "Option::is_none")]
     pub upstream_status: Option<u16>,
+    /// 按业务码停下时表里的码（见 `upstream_codes`），不是响应体原文。
     #[serde(skip_serializing_if = "Option::is_none")]
     pub upstream_code: Option<&'static str>,
+    /// 回非 2xx 的服务商编号（`vendor_for_url`，和错误码目录一致，认不出是 `custom`）。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upstream_provider: Option<&'static str>,
 }
 pub(super) struct Outcome {
     pub status: &'static str,
@@ -141,6 +145,14 @@ pub(super) async fn execute(
                 })
                 .map(str::to_owned);
             let status = response.status();
+            if status.is_success() {
+                // 前面 429 等过、这次成功了：不留上游错
+                receipt.upstream_status = None;
+                receipt.upstream_provider = None;
+            } else {
+                receipt.upstream_status = Some(status.as_u16());
+                receipt.upstream_provider = Some(vendor_for_url(url));
+            }
             if status.is_client_error() {
                 // 4xx 先看业务码：429 / 400 / 403 里的余额、额度用完不是限流，重试没用（upstream_codes）
                 let retry_after = response

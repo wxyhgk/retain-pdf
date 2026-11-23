@@ -449,7 +449,8 @@ repair profile：
   这个模型）抛 `UpstreamAccessDenied`，和 401/403 一样停下，归 `auth_failed`。错误带 `status_code`、`provider_code`、`provider`。
   真限流（OpenAI 没码 / `rate_limit_exceeded` / `slow_down`，Anthropic 带 `retry-after` 的、`ramp_limit_exceeded`，智谱 1302、
   1305，百炼的 `insufficient_quota` 即 TPM 限流）照旧退避、认 Retry-After。agent 引擎两种协议、Rust 执行器
-  （`model_executor/upstream_codes.rs`，操作记 `error_code=quota_exhausted`，回执带 `upstream_status`、`upstream_code`）规则相同，
+  （`model_executor/upstream_codes.rs`，操作记 `error_code=quota_exhausted`，回执带 `upstream_status`、`upstream_code`、`upstream_provider`，
+  worker 写到报错上给任务失败的 `upstream`）规则相同，
   改一处要改另一处。
 
 ## 模式说明
