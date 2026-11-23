@@ -116,7 +116,7 @@ POST   /api/v1/jobs/:job_id/translations/:item_id/replay  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/translations/:item_id/revisions  signed  jobs  by web
 POST   /api/v1/providers/deepseek/balance  admin  providers  by web,cli
 POST   /api/v1/providers/deepseek/validate-token  admin  providers  by web,cli
-GET    /api/v1/providers/error-codes  signed  providers  by none
+GET    /api/v1/providers/error-codes  signed  providers  by web
 POST   /api/v1/providers/mineru/validate-token  admin  providers  by web,cli
 GET    /api/v1/providers/ocr  signed  providers  by none
 POST   /api/v1/providers/paddle/validate-token  admin  providers  by web,cli

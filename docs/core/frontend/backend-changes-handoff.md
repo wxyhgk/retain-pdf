@@ -15,7 +15,7 @@
 ## 服务商错误码目录，给失败提示用（feat/provider-error-codes）
 
 2026-11-23，用户要「把这些模型的文档的错误码全部爬取下来，然后做成文档，接入 api，方便后面的前端提示」。新接口
-`GET /api/v1/providers/error-codes`（signed，登记成 `by(none)`：前端还没接），契约 `provider-error-codes.v1`
+`GET /api/v1/providers/error-codes`（signed，前端 feat/error-diagnostics 接上以后 2026-11-23 登记改成 `by(web)`），契约 `provider-error-codes.v1`
 （`listProviderErrorCodes`、`ProviderErrorCodesQuery`、`ProviderErrorCatalogueView`），细节见
 [服务商错误码接口](../../api/08-调试诊断/03-服务商错误码.md)，逐家的表见 [服务商错误码](../../reference/error-codes/README.md)。
 只增不改，任务失败的字段一个没动。
