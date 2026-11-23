@@ -2,7 +2,7 @@
 // 页面是 guide/<页>.md，打开时才去取、才渲染；页内链接在说明书里翻页，外部链接新窗口打开。
 
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
-import { Dialog, DialogCloseButton, DialogContent, DialogShell, DialogTitle } from "@retainpdf/ui";
+import { Button, Dialog, DialogCloseButton, DialogContent, DialogShell, DialogTitle } from "@retainpdf/ui";
 import { GUIDE_HOME, guideBaseUrl, parseGuideIndex, type GuidePage, type GuideTarget } from "../domain/guide-pages.js";
 import { renderGuidePage } from "../domain/render.js";
 
@@ -11,9 +11,8 @@ type PageState =
   | { status: "ready"; html: string }
   | { status: "error"; message: string };
 
-const pageCache = new Map<string, Promise<string>>();
-
-function fetchGuidePage(baseUrl: string, page: string): Promise<string> {
+/** 取一页 Markdown。cache 是弹窗自己的（弹窗第一次打开后一直挂着），同一页只取一次。 */
+function fetchGuidePage(pageCache: Map<string, Promise<string>>, baseUrl: string, page: string): Promise<string> {
   const url = `${baseUrl}${encodeURIComponent(page)}.md`;
   let pending = pageCache.get(url);
   if (!pending) {
@@ -40,18 +39,19 @@ export function UserGuideDialog({ open, target, onNavigate, onOpenChange }: User
   const [index, setIndex] = useState<GuidePage[]>([]);
   const [state, setState] = useState<PageState>({ status: "loading" });
   const articleRef = useRef<HTMLElement | null>(null);
+  const pageCache = useRef(new Map<string, Promise<string>>()).current;
 
   // 目录：读首页里的那张表。
   useEffect(() => {
     if (!open || index.length) return;
-    fetchGuidePage(baseUrl, GUIDE_HOME).then((readme) => setIndex(parseGuideIndex(readme)), () => {});
-  }, [open, baseUrl, index.length]);
+    fetchGuidePage(pageCache, baseUrl, GUIDE_HOME).then((readme) => setIndex(parseGuideIndex(readme)), () => {});
+  }, [open, baseUrl, index.length, pageCache]);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
     setState({ status: "loading" });
-    fetchGuidePage(baseUrl, target.page).then(
+    fetchGuidePage(pageCache, baseUrl, target.page).then(
       (markdown) => {
         if (!cancelled) setState({ status: "ready", html: renderGuidePage(markdown, target.page, baseUrl) });
       },
@@ -62,7 +62,7 @@ export function UserGuideDialog({ open, target, onNavigate, onOpenChange }: User
     return () => {
       cancelled = true;
     };
-  }, [open, baseUrl, target.page]);
+  }, [open, baseUrl, target.page, pageCache]);
 
   // 换页回到顶上；带锚点的滚到那个标题。
   useEffect(() => {
@@ -92,25 +92,23 @@ export function UserGuideDialog({ open, target, onNavigate, onOpenChange }: User
               <h2>使用说明</h2>
             </DialogTitle>
             <nav className="user-guide-nav" aria-label="说明书目录">
-              <button
-                type="button"
+              <Button
                 className={target.page === GUIDE_HOME ? "is-active" : ""}
                 data-guide-nav={GUIDE_HOME}
                 onClick={() => onNavigate({ page: GUIDE_HOME, anchor: "" })}
               >
                 快速上手
-              </button>
+              </Button>
               {index.map((item) => (
-                <button
+                <Button
                   key={item.page}
-                  type="button"
                   className={target.page === item.page ? "is-active" : ""}
                   data-guide-nav={item.page}
                   title={item.where || undefined}
                   onClick={() => onNavigate({ page: item.page, anchor: "" })}
                 >
                   {item.title}
-                </button>
+                </Button>
               ))}
             </nav>
           </aside>

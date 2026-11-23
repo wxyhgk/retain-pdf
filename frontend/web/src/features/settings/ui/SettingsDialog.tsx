@@ -20,6 +20,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import {
+  Button,
   Dialog,
   DialogCloseButton,
   DialogContent,
@@ -57,8 +58,7 @@ function PaneHead({ section, setupMode, active, onOpenGuide }: {
       <h3>
         {section.title || section.label}
         {guide && onOpenGuide ? (
-          <button
-            type="button"
+          <Button
             className="settings-guide-link"
             title="使用说明"
             aria-label={`${section.label}的使用说明`}
@@ -66,7 +66,7 @@ function PaneHead({ section, setupMode, active, onOpenGuide }: {
             onClick={() => onOpenGuide(guide)}
           >
             ?
-          </button>
+          </Button>
         ) : null}
       </h3>
       {subtitle}

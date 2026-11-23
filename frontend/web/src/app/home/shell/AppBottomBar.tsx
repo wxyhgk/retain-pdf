@@ -17,6 +17,7 @@ import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { useLibrarySearchBinding } from "@/features/library/index.js";
 import { TRANSLATION_WORKFLOW_DIALOG } from "@/features/ingest/domain.js";
 import { openUserGuide } from "@/features/user-guide/index.js";
+import { Button } from "@retainpdf/ui";
 
 // 任务中心浮层入口事件：平台 ?tab= 白名单（platform/navigation/pages.js）没有
 // tasks 键且不可动（别的 agent 领地），故任务中心不做顶栏 Tab，走主页浮层——
@@ -105,9 +106,8 @@ export function AppBottomBar({ showSearch = true, hidden = false }) {
         <span className="library-bottom-icon-btn-ornament" aria-hidden="true" />
       </button>
 
-      <button
-        id="home-user-guide-btn"
-        type="button"
+      <Button
+        id="home-user-guide"
         className="library-bottom-icon-btn"
         aria-label="使用说明"
         title="使用说明"
@@ -120,7 +120,7 @@ export function AppBottomBar({ showSearch = true, hidden = false }) {
           <circle cx="12" cy="16.6" r="0.95" fill="currentColor" />
         </svg>
         <span className="library-bottom-icon-btn-ornament" aria-hidden="true" />
-      </button>
+      </Button>
 
       <button
         id="app-settings-btn"
