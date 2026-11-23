@@ -663,6 +663,7 @@
         "devtools/tests/translation/test_self_correction_leak.py",
         "devtools/tests/translation/test_standalone_fast_path.py",
         "devtools/tests/translation/test_streaming_translation.py",
+        "devtools/tests/translation/test_strict_json_schemas.py",
         "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_translation_auth_fail_fast.py",
         "devtools/tests/translation/test_translation_batch_metrics_contract.py",
@@ -939,6 +940,7 @@
         "devtools/tests/translation/test_self_correction_leak.py",
         "devtools/tests/translation/test_standalone_fast_path.py",
         "devtools/tests/translation/test_streaming_translation.py",
+        "devtools/tests/translation/test_strict_json_schemas.py",
         "devtools/tests/translation/test_style_hint_contract_fields.py",
         "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_term_protection_respects_math.py",
@@ -1025,7 +1027,8 @@
       "test_files": [
         "devtools/tests/agent_lab/test_agent_lab.py",
         "devtools/tests/translation/test_agent_flow.py",
-        "devtools/tests/translation/test_agent_openai.py"
+        "devtools/tests/translation/test_agent_openai.py",
+        "devtools/tests/translation/test_strict_json_schemas.py"
       ],
       "runtime_required": false,
       "devtool_required": true
@@ -1037,7 +1040,8 @@
       "devtool_files": [],
       "test_files": [
         "devtools/tests/translation/test_agent_flow.py",
-        "devtools/tests/translation/test_agent_openai.py"
+        "devtools/tests/translation/test_agent_openai.py",
+        "devtools/tests/translation/test_strict_json_schemas.py"
       ],
       "runtime_required": false,
       "devtool_required": false
@@ -1097,6 +1101,7 @@
         "devtools/tests/translation/test_shared_page_scheduler.py",
         "devtools/tests/translation/test_standalone_fast_path.py",
         "devtools/tests/translation/test_streaming_translation.py",
+        "devtools/tests/translation/test_strict_json_schemas.py",
         "devtools/tests/translation/test_style_hint_contract_fields.py",
         "devtools/tests/translation/test_table_agent.py",
         "devtools/tests/translation/test_term_review.py",

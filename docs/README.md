@@ -1,10 +1,11 @@
 # RetainPDF 文档目录
 
-用户安装、下载和 Docker 部署入口见仓库根目录 [README](../README.md)。
+用户安装、下载和 Docker 部署入口见仓库根目录 [README](../README.md)，装好后怎么用见 [使用说明书](./guide/README.md)。
 本目录是仓库唯一的文档根目录；不要再新建平行的 `doc/` 或模块外文档目录。
 
 ## 入口
 
+- [使用说明书](./guide/README.md)：写给用户的安装、填 Key、翻译、阅读
 - [仓库目录职责](./core/repository-layout.md)：六大职责、共享协议和依赖规则
 - [主线开发文档](./core/README.md)：当前架构、联调、开发与运行约定
 - [API Wiki](./api/README.md)：按接口能力组织的 API 导航

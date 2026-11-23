@@ -46,7 +46,7 @@ Regenerate with:
 | `retainpdf_math` | `retainpdf_math` | yes | yes | `retainpdf_pipeline/render/layout/inline_content/__init__.py`, `retainpdf_pipeline/render/layout/inline_content/core/inline_math.py`, `retainpdf_pipeline/render/layout/inline_content/core/markdown.py` |
 | `retainpdf_translation` | `retainpdf_translation` | yes | yes | `retainpdf_pipeline/entrypoints/diagnose_failure_with_ai.py`, `retainpdf_pipeline/entrypoints/revise_translation_item.py`, `retainpdf_pipeline/ocr/ocr_provider/provider_pipeline.py` |
 | `retainpdf_translation_agent` | `retainpdf_translation_agent` | yes | yes | `devtools/agent_lab/__main__.py`, `devtools/agent_lab/metrics.py`, `devtools/agent_lab/pages.py` |
-| `retainpdf_translation_agent_engine` | `retainpdf_translation_agent_engine` | no | yes | `devtools/tests/translation/test_agent_flow.py`, `devtools/tests/translation/test_agent_openai.py` |
+| `retainpdf_translation_agent_engine` | `retainpdf_translation_agent_engine` | no | yes | `devtools/tests/translation/test_agent_flow.py`, `devtools/tests/translation/test_agent_openai.py`, `devtools/tests/translation/test_strict_json_schemas.py` |
 | `retainpdf_translation_classic` | `retainpdf_translation_classic` | yes | yes | `retainpdf_pipeline/runtime/pipeline/render_only_pipeline.py`, `retainpdf_pipeline/translate/tables_stage.py` |
 | `urllib3` | `urllib3` | yes | no | `retainpdf_pipeline/ocr/retry.py` |
 

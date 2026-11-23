@@ -5,6 +5,10 @@
 - `file` 用 base64 时必须带 `data:application/pdf;base64,` 前缀，否则 400（code 1214）。
 - 3 路并发 × 100 页必吃 429，串行加退避能过。
 - 4xx（401 key 不对、400 参数不对）重试没用，直接失败；429、5xx、网络错误退避重试（`request_with_retry`，认 `Retry-After`）。
+- 429 先看响应体里的业务码 `error.code`（2026-11-23，issue #164）：智谱的 429 不全是限流，`1113` 是余额不足或没有资源包，
+  以前照限流退避 5 次（约 114 秒）才报「rate limited」。`FAIL_FAST_CODES` 里的码（余额、套餐、用量上限这类，
+  按 https://docs.z.ai/api-reference/api-code 的码表）第一次就停，报中文原因、HTTP 状态和业务码；`1302` 请求频率限制、
+  `1305` 服务繁忙和没有业务码的 429 照旧退避重试，最后失败时报 HTTP 状态和业务码。
 """
 
 from __future__ import annotations
@@ -35,9 +39,44 @@ RETRY_BACKOFF_SECONDS = 15.0
 
 _SESSION = direct_session(pool_connections=4, pool_maxsize=4)
 
+_QUOTA_HINT = "请检查当前智谱 API Key 对应账号的余额或资源包"
+_WINDOW_LIMIT = "GLM-OCR 调用已达到当前时段的用量上限，请到服务端说明的重置时间后再试，或检查当前智谱 API Key 对应账号的余额或套餐"
+# 智谱业务码里重试没用的（https://docs.z.ai/api-reference/api-code，2026-11-23 查）：都随 HTTP 429 返回，
+# 但不是“稍后再试”能好的。可恢复的 1302（请求频率限制）、1305（服务繁忙）不在这里，照旧退避重试。
+FAIL_FAST_CODES: dict[str, str] = {
+    "1113": "GLM-OCR 调用额度不足，" + _QUOTA_HINT,
+    "1308": _WINDOW_LIMIT,
+    "1309": "GLM-OCR 所用的智谱套餐已过期，请续费或换用有余额的智谱 API Key",
+    "1310": _WINDOW_LIMIT,
+    "1311": "当前智谱 API Key 的套餐不包含 GLM-OCR，请换用能调用 GLM-OCR 的智谱 API Key",
+    "1313": "当前智谱账号因违反合理使用规则被限制调用，需联系智谱恢复后再试",
+    "1314": "GLM-OCR 所用的智谱企业套餐已过期，请联系企业管理员",
+    "1315": "当前智谱 API Key 只能用于企业编程套餐，请换用能调用 GLM-OCR 的智谱 API Key",
+    **{str(code): _WINDOW_LIMIT for code in range(1316, 1322)},
+}
+
 
 class GlmOcrRequestRejected(RuntimeError):
-    """服务端明确拒绝（4xx，429 除外）：key、参数、文件的问题，重试没用。"""
+    """服务端明确拒绝（4xx，429 除外；429 里余额不足这类见子类 `GlmOcrQuotaExhausted`）：key、参数、文件的问题，重试没用。"""
+
+
+class GlmOcrQuotaExhausted(GlmOcrRequestRejected):
+    """余额、资源包、套餐、用量上限的问题（智谱 429 + `FAIL_FAST_CODES`）：充值、续费或等额度恢复以前重试都会同样失败。
+    类名带 QuotaExhausted，结构化失败归成 `upstream_quota_exhausted`（billing，不可重试）。"""
+
+    def __init__(self, message: str, *, status_code: int | None = None, provider_code: str = "") -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.provider_code = provider_code
+
+
+class GlmOcrRateLimited(RuntimeError):
+    """429 退避重试用完还被限流（业务码 1302、1305 或没有业务码）。"""
+
+    def __init__(self, message: str, *, status_code: int | None = None, provider_code: str = "") -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.provider_code = provider_code
 
 
 class GlmOcrServerError(RuntimeError):
@@ -75,6 +114,31 @@ def pdf_data_uri(pdf_bytes: bytes) -> str:
     return "data:application/pdf;base64," + base64.b64encode(pdf_bytes).decode("ascii")
 
 
+def _error_code(response: requests.Response | None) -> str:
+    """响应体里的智谱业务码 `error.code`（字符串；读不出时为空）。"""
+    if response is None:
+        return ""
+    try:
+        body = response.json()
+    except ValueError:
+        return ""
+    error = body.get("error") if isinstance(body, dict) else None
+    if isinstance(error, dict) and error.get("code") not in (None, ""):
+        return str(error.get("code")).strip()
+    return ""
+
+
+def _gives_up(response: requests.Response) -> bool:
+    """429、5xx 本来要重试；业务码说明重试没用（余额不足这类）时第一次就停。"""
+    return _error_code(response) in FAIL_FAST_CODES
+
+
+def _failure_suffix(status: int | str | None, response: requests.Response | None) -> str:
+    """报错末尾的（HTTP 状态，业务码和服务端说明）。"""
+    detail = _error_detail(response)
+    return f"（HTTP {status or '?'}{'，' + detail if detail else ''}）"
+
+
 def _error_detail(response: requests.Response | None) -> str:
     """服务端报错里的 code、message（不含 key），给用户看为什么被拒。"""
     if response is None:
@@ -102,16 +166,31 @@ def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | Non
             attempts=RETRY_ATTEMPTS,
             backoff_seconds=RETRY_BACKOFF_SECONDS,
             label="GLM-OCR",
+            give_up=_gives_up,
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={"model": GLM_OCR_MODEL, "file": pdf_data_uri(pdf_bytes)},
         )
     except requests.HTTPError as err:
         status = err.response.status_code if err.response is not None else ""
+        code = _error_code(err.response)
+        if code in FAIL_FAST_CODES:
+            raise GlmOcrQuotaExhausted(
+                FAIL_FAST_CODES[code] + _failure_suffix(status, err.response),
+                status_code=status or None,
+                provider_code=code,
+            ) from None
         raise GlmOcrRequestRejected(f"GLM-OCR 请求被拒绝 status={status} {_error_detail(err.response)}".strip()) from None
     except RetainNetworkError as err:
+        suffix = _failure_suffix(err.status_code, err.last_response) if err.status_code else ""
+        if err.status_code == 429:
+            raise GlmOcrRateLimited(
+                f"GLM-OCR 请求被限流，退避重试后仍失败{suffix}：{err}",
+                status_code=429,
+                provider_code=_error_code(err.last_response),
+            ) from None
         if (err.status_code or 0) >= 500:
-            raise GlmOcrServerError(f"GLM-OCR 请求失败：{err}") from None
-        raise RuntimeError(f"GLM-OCR 请求失败：{err}") from None
+            raise GlmOcrServerError(f"GLM-OCR 请求失败{suffix}：{err}") from None
+        raise RuntimeError(f"GLM-OCR 请求失败{suffix}：{err}") from None
     try:
         payload = response.json()
     except ValueError:
@@ -125,6 +204,9 @@ __all__ = [
     "GLM_OCR_API_URL",
     "GLM_OCR_MAX_PAGES_PER_REQUEST",
     "GLM_OCR_MODEL",
+    "FAIL_FAST_CODES",
+    "GlmOcrQuotaExhausted",
+    "GlmOcrRateLimited",
     "GlmOcrRequestRejected",
     "api_url",
     "parse_pdf",

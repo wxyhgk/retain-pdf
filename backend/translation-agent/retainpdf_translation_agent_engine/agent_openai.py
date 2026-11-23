@@ -8,6 +8,9 @@ agent 包（``retainpdf-translation-agent``）只认 Anthropic 的请求、回�
 - 系统提示（Anthropic 的 system 块）→ 一条 system 消息；用户消息原样；
 - 强制用工具交回的请求（通读 ``submit_reading``、审校 ``submit_review``）→ ``response_format`` 按工具的 schema 要 JSON，
   系统提示末尾附上 schema（退到 json_object 的服务商只能靠提示）；回答解析成 JSON 后包成 ``tool_use``；
+  ``response_format`` 里的 schema 换成 OpenAI strict 认的写法（可选字段改成必填、可为 null，``model_wire.strict_json_schema``），
+  并标 ``strict``：OpenAI Responses 按 strict 校验 schema，原样发通读的 schema 会被拒（#163，2026-11-23）；交回的 null 去掉，
+  agent 看到的和以前「没写这个字段」一样；
 - 纯文本请求（初译、重翻、改稿）→ 不带 ``response_format``，回答包成 ``text``；
 - Anthropic 专有的字段（``cache_control``、``thinking``、``output_config``、``max_tokens``、``strict``）不往下传；思考档位
   按任务的 thinking 设置走共用请求层的换算，和 legacy 一样；
@@ -32,6 +35,7 @@ import requests
 
 from retainpdf_translation.artifacts.aggregator import TranslationRunDiagnostics
 from retainpdf_translation.artifacts.aggregator import thread_translation_run_diagnostics_scope
+from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared import upstream_resilience
 from retainpdf_translation.llm.shared.executor_context import unit_scope
 from retainpdf_translation.llm.shared.provider_runtime import request_chat_content
@@ -86,8 +90,13 @@ def openai_request(body: dict) -> tuple[list[dict[str, str]], dict | None, str, 
         return messages, None, PLAIN_LABEL, None
     response_format = {
         "type": "json_schema",
-        # 不用 strict：OpenAI 的 strict 要求每个属性都列进 required，agent 的工具 schema 有可选字段
-        "json_schema": {"name": str(tool["name"]), "schema": tool.get("input_schema") or {}},
+        # strict 要求每个属性都列进 required：agent 的工具 schema 有可选字段（通读的 domain、chapters、note），换成必填、
+        # 可为 null 的写法再发。以前不标 strict、原样发，OpenAI Responses 照样按 strict 校验，通读整个被拒（#163）
+        "json_schema": {
+            "name": str(tool["name"]),
+            "schema": model_wire.strict_json_schema(tool.get("input_schema") or {}),
+            "strict": True,
+        },
     }
     return messages, response_format, TOOL_LABELS.get(str(tool["name"]), PLAIN_LABEL), str(tool["name"])
 
@@ -110,12 +119,22 @@ def _decode_json(text: str) -> dict | None:
     return data if isinstance(data, dict) else None
 
 
+def _drop_nulls(value: Any) -> Any:
+    """strict 下可选字段交回的 null → 去掉这个键（agent 的工具 schema 里没有可为 null 的字段，null 只会是「没写」）。"""
+    if isinstance(value, dict):
+        return {key: _drop_nulls(item) for key, item in value.items() if item is not None}
+    if isinstance(value, list):
+        return [_drop_nulls(item) for item in value]
+    return value
+
+
 def anthropic_response(content: str, *, tool_name: str | None, usage: dict[str, int]) -> dict:
     """OpenAI 回答的文本 → agent 认的 Anthropic 回答。工具请求的 JSON 解析不了就不交 tool_use（agent 按"没交回"处理）。"""
     if tool_name is None:
         parts = [{"type": "text", "text": content}]
     else:
         data = _decode_json(content)
+        data = _drop_nulls(data) if data is not None else None
         parts = [{"type": "tool_use", "name": tool_name, "input": data}] if data is not None else [{"type": "text", "text": content}]
     return {"content": parts, "stop_reason": "end_turn", "usage": usage}
 

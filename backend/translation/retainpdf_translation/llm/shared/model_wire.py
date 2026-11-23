@@ -299,7 +299,72 @@ def _responses_text_format(response_format: dict[str, Any] | None) -> dict[str, 
     return None
 
 
-IMAGE_MEDIA_TYPES = ("image/png", "image/jpeg", "image/webp", "image/gif")
+def strict_json_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    """一份 JSON Schema → OpenAI strict 结构化输出认的写法（2026-11-23，#163）。
+
+    strict 要求每层对象 ``additionalProperties: false``、``properties`` 里的每个键都列进 ``required``；可选字段只能写成
+    「必填、但可以是 null」。这里把原来不在 ``required`` 里的字段改成可为 null（``type`` 加上 ``"null"``，有 ``enum`` 的
+    也加上 ``None``），意思不变：交回 null 就是没写。原 schema 不动，交回一份新的。"""
+    copied = json.loads(json.dumps(schema))
+
+    def nullable(node: Any) -> Any:
+        if not isinstance(node, dict):
+            return node
+        kind = node.get("type")
+        if isinstance(kind, str):
+            node["type"] = [kind, "null"] if kind != "null" else kind
+        elif isinstance(kind, list):
+            if "null" not in kind:
+                node["type"] = [*kind, "null"]
+        else:
+            return {"anyOf": [node, {"type": "null"}]}
+        if isinstance(node.get("enum"), list) and None not in node["enum"]:
+            node["enum"] = [*node["enum"], None]
+        return node
+
+    def close(node: Any) -> None:
+        # 按 schema 的结构走（properties / items / anyOf 等），不按键名乱扫：字段名正好叫 type、properties 也不会认错
+        if not isinstance(node, dict):
+            return
+        properties = node.get("properties")
+        if node.get("type") == "object" or isinstance(properties, dict):
+            properties = properties if isinstance(properties, dict) else {}
+            node["properties"] = properties
+            node["additionalProperties"] = False
+            required = set(node.get("required") or [])
+            for key in list(properties):
+                close(properties[key])
+                if key not in required:
+                    properties[key] = nullable(properties[key])
+            node["required"] = list(properties)
+        close(node.get("items"))
+        for keyword in ("anyOf", "oneOf", "allOf", "prefixItems"):
+            for child in node.get(keyword) or []:
+                close(child)
+        for keyword in ("$defs", "definitions"):
+            for child in (node.get(keyword) or {}).values():
+                close(child)
+
+    close(copied)
+    return copied
+
+
+# Responses 协议下用 json_object 时，OpenAI 要求 ``input`` 里出现 json 这个词（``instructions`` 里的不算），否则 400
+# 「Response input messages must contain the word 'json' in some form」（2026-11-23，#163）。只在 text.format 是
+# json_object 时往 input 最前面加一条 developer 消息；json_schema 和不要 JSON 的请求一个字节都不变。
+RESPONSES_JSON_OBJECT_NOTE = "只输出一个 JSON 对象（json），不要输出 JSON 以外的任何内容。"
+
+
+def _responses_json_object_note(requested_format: dict[str, Any] | None) -> str:
+    """退到 json_object 时给模型的那句要求：原来要的是 json_schema 就把 schema 附上（text.format 里已经没有它了）。"""
+    if isinstance(requested_format, dict) and str(requested_format.get("type", "") or "").strip().lower() == "json_schema":
+        schema = (requested_format.get("json_schema") or {}).get("schema")
+        if isinstance(schema, dict):
+            return f"{RESPONSES_JSON_OBJECT_NOTE}这个对象必须符合下面的 JSON Schema：\n{json.dumps(schema, ensure_ascii=False)}"
+    return RESPONSES_JSON_OBJECT_NOTE
+
+
+IMAGE_MEDIA_TYPES =("image/png", "image/jpeg", "image/webp", "image/gif")
 _DATA_URL_RE = re.compile(r"^data:(?P<media>[\w./+-]+);base64,(?P<data>.*)$", re.S)
 
 
@@ -386,10 +451,14 @@ def responses_body(
     temperature: float | None,
     response_format: dict[str, Any] | None,
     thinking_fields: dict[str, Any],
+    requested_format: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """OpenAI 形状的消息 → Responses API 请求体。
 
     - system 消息合并进 ``instructions``，其余消息原样进 ``input``。
+    - ``text.format`` 是 json_object（服务商不认 json_schema 退下来的，或调用方本来就要 json_object）时，``input`` 最前面
+      加一条 developer 消息要 JSON（OpenAI 只在 input 里找 json 这个词）；``requested_format`` 是调用方原来要的格式，
+      是 json_schema 就把 schema 写进这条消息。
     - ``store: false``：译文不在服务商那边留存。
     - 开了思考（effort 不是 none）时不传 temperature：推理模型只在不思考时才接受它。
       ``temperature=None`` 表示调用方因为服务商拒绝而去掉了它。
@@ -409,10 +478,13 @@ def responses_body(
         turns.append({"role": "assistant" if role == "assistant" else "user", "content": responses_message_content(message.get("content"))})
     if not turns:
         turns.append({"role": "user", "content": "请按系统说明处理。"})
+    text_format = _responses_text_format(response_format)
+    if text_format is not None and text_format.get("type") == "json_object":
+        note = _responses_json_object_note(requested_format or response_format)
+        turns.insert(0, {"role": "developer", "content": note})
     body: dict[str, Any] = {"model": model, "input": turns, "store": False}
     if instructions:
         body["instructions"] = "\n\n".join(instructions)
-    text_format = _responses_text_format(response_format)
     if text_format is not None:
         body["text"] = {"format": text_format}
     if thinking_fields:
@@ -741,11 +813,13 @@ __all__ = [
     "register_connection",
     "register_stage_connections",
     "resolve_profile",
+    "RESPONSES_JSON_OBJECT_NOTE",
     "responses_body",
     "responses_content",
     "responses_message_content",
     "responses_thinking_candidates",
     "responses_url",
     "responses_usage",
+    "strict_json_schema",
     "text_part",
 ]

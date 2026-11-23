@@ -83,6 +83,10 @@ def _http_status_code(exc: BaseException, text: str) -> int | None:
     status_code = getattr(response, "status_code", None)
     if isinstance(status_code, int):
         return status_code
+    # 包过一层的错误（OCR 的 RetainNetworkError、GlmOcrQuotaExhausted 等）自己带着 status_code
+    status_code = getattr(exc, "status_code", None)
+    if isinstance(status_code, int):
+        return status_code
     match = re.search(r"\b([45]\d{2})\s+Client Error\b", text)
     if match:
         return int(match.group(1))
@@ -223,8 +227,14 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         retryable = True
     elif http_status_code == 402 or "quotaexhausted" in lowered:
         # 402 / agent 引擎的 QuotaExhausted：账户余额不足，充值前每次重试都会同样失败
+        # GLM-OCR 的余额不足是 HTTP 429 + 业务码 1113（GlmOcrQuotaExhausted），只有真是 402 才写 402
         error_type = "upstream_quota_exhausted"
-        summary = "上游账户余额不足（402）"
+        if http_status_code == 402:
+            summary = "上游账户余额不足（402）"
+        elif http_status_code is not None:
+            summary = f"上游账户余额或额度不足（HTTP {http_status_code}）"
+        else:
+            summary = "上游账户余额或额度不足"
         retryable = False
     elif http_status_code == 429 or any(token in lowered for token in ("rate limited", "rate limit", "too many requests", "retry-after")):
         error_type = "upstream_rate_limited"

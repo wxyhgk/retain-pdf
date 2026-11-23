@@ -82,9 +82,10 @@ TRANSLATION_BATCH_RESPONSE_SCHEMA = {
                         "properties": {
                             "item_id": {"type": "string"},
                             "translated_text": {"type": "string"},
-                            "decision": {"type": "string"},
+                            # strict 要求每个字段都必填；decision 可以不给，写成可为 null（2026-11-23，#163 顺带查出）
+                            "decision": {"type": ["string", "null"]},
                         },
-                        "required": ["item_id", "translated_text"],
+                        "required": ["item_id", "translated_text", "decision"],
                     },
                 }
             },
