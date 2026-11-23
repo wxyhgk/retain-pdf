@@ -34,6 +34,7 @@
     "watch:js": "node ./scripts/build-js-bundle.mjs --watch",
     "visual:check": "node ./scripts/visual-check.mjs",
     "visual:update": "node ./scripts/visual-check.mjs --update",
+    "guide:screenshots": "node ./scripts/guide-screenshots.mjs",
     "verify": "npm run build && npm run typecheck --ignore-scripts && npm test --ignore-scripts"
   },
   "devDependencies": {

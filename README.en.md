@@ -53,14 +53,6 @@ Read PDF and Markdown side by side while preserving formulas and images.
   <img src="resources/brand/readme-gallery/product/markdown-reader.png" alt="RetainPDF Markdown reader" width="1000" />
 </p>
 
-### Reading notes and AI
-
-Read in Studio: your notes for the book sit in the middle, the original and the translation dock beside them, and the AI is on the right. Read, write and ask at the same time; send a passage to your notes in one click, and click a quote in your notes to jump back to that page.
-
-<p align="center">
-  <img src="resources/brand/readme-gallery/product/ai-assistant.png" alt="RetainPDF reading notes and AI" width="1000" />
-</p>
-
 ## Translation examples
 
 Source-to-translation examples for scientific papers, scanned PDFs, formula-heavy documents, and books:
@@ -85,11 +77,7 @@ Download the appropriate package from [GitHub Releases](https://github.com/wxyhg
   <img src="resources/brand/readme-gallery/product/library.png" alt="RetainPDF desktop library" width="1000" />
 </p>
 
-If macOS reports that the app is damaged, move it to `/Applications` and run:
-
-```bash
-sudo xattr -r -d com.apple.quarantine /Applications/RetainPDF.app
-```
+The macOS package is signed and notarized by Apple and runs on Apple silicon (M1 and later). For setting up keys and translating your first book, see the [user guide (Chinese)](docs/guide/README.md).
 
 ### Docker
 
