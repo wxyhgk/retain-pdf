@@ -309,6 +309,7 @@
             runs: paragraph.runs || [],
             text: runsText(paragraph.runs),
             indent: Number(paragraph.indent || 0),
+            hangEm: Math.max(0, Number(paragraph.hangEm || 0)),
             prepared: measurer.prepare(paragraph.runs || [])
           }));
         }

@@ -218,6 +218,12 @@ What the switch selects:
   Paragraphs continued across boxes (`translations[].flow`) take part in
   neither. The report lists a group's item ids under `members`; `adapter`
   counts `listGroups`, `listItemsGrouped`, `sourceSizeDetached`.
+  A list item (OCR body text whose source starts with a list marker, grouped or
+  not) hangs: its paragraph gets `hangEm`, the width of the translation's marker
+  and the space after it (`(a) `, `（b）`, `1. `, `· ` …), lines after the first
+  start that far in and the first-line indent is dropped -- the source sets them
+  so (14e352's text layer: 150 of 159 multi-line items). Without a marker in the
+  translation nothing hangs.
 - **`passes/retain-titles.js`** (before the body pass): every heading sized
   on its own box like `solve_title_fit` (fill cap, band ≤ 0.94 × box height,
   title / heading leading). When the host gives the heading's source size

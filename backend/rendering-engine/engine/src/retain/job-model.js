@@ -229,7 +229,7 @@ function buildModel(job, options = {}) {
           styleKind: "body_text",
           debugRole: "body_candidate",
           columnKey: String(block.metadata?.provider_column_index_guess || ""),
-          items: [{ id, text: sourceText, translatedText: translated, originalLineCount: lineCount, indent: firstLineIndentOf(item) }]
+          items: [{ id, text: sourceText, translatedText: translated, originalLineCount: lineCount, indent: firstLineIndentOf(item), ...(retain && ListGroups.MARKER.test(sourceText) ? { listItem: true } : {}) }]
         };
         if (retain) stream.sourceLinePitch = pitchFromPdf || pitchFromOcr || 0;
         // The host's text-layer size of this paragraph (source_font_size_pt, the measure headings'
@@ -258,6 +258,7 @@ function buildModel(job, options = {}) {
         fontSize: seed.size,
         lineCount,
         indent: firstLineIndentOf(item),
+        ...(retain && subType === "body" && ListGroups.MARKER.test(sourceText) ? { listItem: true } : {}),
         sourceFontSize: sourceFontSizeOf(item),
         ...(retain ? { sourceLinePitch: pitchFromPdf || pitchFromOcr || 0 } : {})
       });
@@ -402,6 +403,7 @@ function detachBody(model, id) {
       translatable: true, mainTitle: false, fontSize: stream.fontSize, lineCount: Math.max(2, lines),
       ...(several ? { items: stream.items, paragraphGap: stream.paragraphGap } : {}),
       indent: item.indent || 0,
+      ...(item.listItem ? { listItem: true } : {}),
       sizeClass: true,
       ...(stream.sourceTextSize > 0 ? { sourceFontSize: stream.sourceTextSize } : {}),
       ...(stream.sourceLinePitch > 0 ? { sourceLinePitch: stream.sourceLinePitch } : {})

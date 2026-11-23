@@ -210,6 +210,10 @@ function splitContinuations(input, job, model, { measurer, contentFor }) {
 }
 
 // fitOptions reaches the fitter (e.g. retainTrace).
+// A list marker at the start of a translation: (a) （a） a) 1. 1、 (iv) and bullets / dashes,
+// with the spaces after it (group 1).
+const TRANSLATED_MARKER = /^\s*((?:[(（](?:[a-zA-Z]|[ivxIVX]{1,4}|\d{1,2})[)）]|(?:[a-zA-Z]|[ivxIVX]{1,4}|\d{1,2})(?:[)、]|\.(?!\d))|[-•·–▪◦●∙*])[\s\u00a0\u3000]*)(?=\S)/;
+
 function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
   validate(input);
   const job = jobFromInput(input);
@@ -249,15 +253,34 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
 
   const bold = Text.createMeasurer({ metrics: defaultFontTable("bold") });
   const defaults = FitModel.defaultContentFor({ renderMathBox });
+  // A list item (its source starts with a list marker; job-model listItem) hangs:
+  // lines after the first start under the text after the translation's marker,
+  // as the source sets them (14e352: 150 of 159 multi-line items in the text
+  // layer). hangEm = the width of the marker and the space after it.
+  const hangWidths = new Map();
+  const hangEmOf = text => {
+    const match = TRANSLATED_MARKER.exec(String(text || ""));
+    if (!match) return 0;
+    const prefix = match[1];
+    if (!hangWidths.has(prefix)) {
+      const width = probe => base.naturalWidth(base.prepare(runsForText(probe)), { fontSize: 1 });
+      hangWidths.set(prefix, Math.max(0, width(`${prefix}国`) - width("国")));
+    }
+    return hangWidths.get(prefix);
+  };
+  const paragraphOf = (item, text = item.translatedText || item.text) => {
+    const hangEm = item.listItem ? hangEmOf(text) : 0;
+    return { runs: runsForText(text), indent: hangEm > 0 ? 0 : (item.indent || 0), ...(hangEm > 0 ? { hangEm } : {}) };
+  };
   const contentFor = (node, mode) => {
     if (node.kind === "stream") {
-      return { paragraphs: (node.source.items || []).map(item => ({ runs: runsForText(item.translatedText || item.text), indent: item.indent || 0 })) };
+      return { paragraphs: (node.source.items || []).map(item => paragraphOf(item)) };
     }
     if (node.source.kind === "text" && (node.source.items || []).length > 1) {
-      return { paragraphs: node.source.items.map(item => ({ runs: runsForText(item.translatedText || item.text), indent: item.indent || 0 })) };
+      return { paragraphs: node.source.items.map(item => paragraphOf(item)) };
     }
     if (node.source.kind === "text" && node.source.translatedText) {
-      return { paragraphs: [{ runs: runsForText(node.source.translatedText), indent: node.source.indent || 0 }] };
+      return { paragraphs: [paragraphOf(node.source, node.source.translatedText)] };
     }
     return defaults(node, mode);
   };
