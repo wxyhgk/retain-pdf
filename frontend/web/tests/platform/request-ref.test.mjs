@@ -5,7 +5,7 @@
  */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { attachRequestRef, requestRefOf } from "@retainpdf/api/http";
+import { attachRequestRef, requestRefOf } from "../../../packages/api/src/http.ts";
 import { request } from "../../../packages/api/src/request.ts";
 
 const headers = (map) => ({ get: (name) => map[name.toLowerCase()] ?? null });

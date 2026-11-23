@@ -7,6 +7,8 @@
  * `fetchJobPayload` 自带 in-flight 去重，重复点击不会打出多个请求。
  */
 import { fetchJobPayload } from "@/platform/api/index.js";
+import { APP_VERSION } from "@/platform/generated/app-version.js";
+import { getDesktopHost } from "@/platform/desktop/host.js";
 
 type JobDetailPayload = {
   error?: unknown;
@@ -99,4 +101,10 @@ export function pickFailureFacts(payload: unknown): JobFailureFacts {
 
 export async function loadJobFailureFacts(jobId: string): Promise<JobFailureFacts> {
   return pickFailureFacts(await fetchJobPayload(jobId));
+}
+
+/** 「2026.11.22+157.g8ac6d2188 · 桌面版 darwin」：用户贴来的诊断信息要能看出是哪个版本、哪个平台。 */
+export function appEnvironment(): string {
+  const desktop = getDesktopHost();
+  return [APP_VERSION, desktop ? `桌面版 ${desktop.platform || ""}`.trim() : "网页版"].filter(Boolean).join(" · ");
 }
