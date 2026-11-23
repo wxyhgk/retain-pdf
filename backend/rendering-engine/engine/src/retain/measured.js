@@ -267,9 +267,11 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
   let fillPlan = null;
   let widened = [];
   let titleFollow = null;
+  let annotationFollow = null;
   const fitted = fitter.fitDocument(model, {
     bodySourceTextFont: stats.sourceBodyTextFont || undefined,
     onTitleFollow: result => { titleFollow = result; },
+    onAnnotationFollow: result => { annotationFollow = result; },
     retainFillPolicy: input.fill_policy || undefined,
     retainWidenPolicy: input.widen_policy || undefined,
     onFillPlan: planned => { fillPlan = planned; },
@@ -277,7 +279,7 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
     ...fitOptions, mode: "translation", bodyMaxFont, strictSourceFit: PRESET.strictSourceFit, bodyNodeFontCaps: PRESET.fontCaps
   });
   timings.fitMs = Math.round(performance.now() - mark - (maths.stats.ms - mathBefore));
-  return { job, model, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, measurers: { regular: base, bold } };
+  return { job, model, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow, measurers: { regular: base, bold } };
 }
 
 function runMeasured(input, options = {}) {
@@ -292,7 +294,7 @@ function runMeasured(input, options = {}) {
   // Fail before any work when the PDF output cannot find its font files.
   const fonts = output === "pdf" ? { ...findFamily(fontPaths, "Source Han Serif SC"), fallbacks: findFallbacks(fontPaths) } : null;
   const maths = output === "pdf" ? new MathStore(outDir, { files: false }) : new MathStore(outDir, { stamps: true });
-  const { job, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, measurers } = fitInput(input, { maths, timings });
+  const { job, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow, measurers } = fitInput(input, { maths, timings });
 
   let mark = performance.now();
   let painted;
@@ -323,7 +325,7 @@ function runMeasured(input, options = {}) {
   }
   timings.mathjaxMs = Math.round(maths.stats.ms);
 
-  const report = buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow });
+  const report = buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow });
   timings.totalMs = Math.round(performance.now() - started);
   report.timings = timings;
   report.output = output === "pdf" ? { kind: "pdf", layout: "layout.json", stats: outputStats } : { kind: "typst" };
@@ -331,7 +333,7 @@ function runMeasured(input, options = {}) {
   return { report, overlayPdf: path.join(outDir, "overlay.pdf"), outDir };
 }
 
-function buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened = [], continuation = [], titleFollow = null }) {
+function buildReport({ job, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened = [], continuation = [], titleFollow = null, annotationFollow = null }) {
   const itemFor = (pageIndex, id) => job.translations.get(`${pageIndex}:${blockNumber(id)}`) || null;
   const blocks = [];
   const pages = [];
@@ -412,6 +414,7 @@ function buildReport({ job, input, fitted, paint, stats, vectors, maths, painted
     // fit-model/passes/retain-titles.js followBody: headings grown by the body's scale over the
     // source ({ body_source, body_settled, scale, grown, kept }) or null.
     title_follow: titleFollow,
+    annotation_follow: annotationFollow,
     widened: widened.map(entry => ({ id: entry.id, page: entry.page, from: round(entry.from, 2), to: round(entry.to, 2), need: round(entry.need, 2) })),
     fill_policy: fillPlan ? {
       params: fillPlan.params,

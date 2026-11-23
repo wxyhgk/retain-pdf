@@ -245,7 +245,16 @@ What the switch selects:
      back to the book target, so the page anchor and adjacent smoothing
      change little where unify applies (as in retain-pdf);
   6. annotation fonts (`unify_annotation_fonts` + the body cap: caption ≤
-     0.88 ×, footnote ≤ 0.82 × the body median);
+     0.88 ×, footnote ≤ 0.82 × the body median). When the host gives source
+     sizes (`source_font_size_pt` on most of a role's items and on the body
+     paragraphs), each caption or footnote is set at its source size × (settled
+     body / the body's source size) instead, up or down, the scale headings
+     follow too; items without a size take the role's median. Other text set
+     on its own (one-line paragraphs, list items, a chapter heading the OCR
+     took for body text) follows its own size the same way when it has one; a
+     size within 0.1 pt of the body's source is the body size. The safety net
+     still shrinks any that do not fit. Reported as `annotation_follow`
+     (`caption`, `footnote`, `text`);
   7. non-body safety net.
   Every size or leading a rule asks for is checked against the ink collision
   test. On failure: a first line touched by ink from above gets a lower ink
