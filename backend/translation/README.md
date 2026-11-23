@@ -438,6 +438,19 @@ repair profile：
   （402 是「翻译 API 账户余额不足」），结构化失败分别归成 `auth_failed` 和 `upstream_quota_exhausted`，都不可重试。
   在飞的请求照常收完，已译的块照常落盘。只管默认的 legacy 引擎（Python 直接发请求）；agent 引擎和 Rust 执行器
   各自碰到 401/402/403 本来就停。
+- 4xx 先看响应体的业务码（`llm/shared/upstream_error_codes.py`，2026-11-23）：429 不全是限流。余额、额度、预算用完
+  （OpenAI `insufficient_quota`、`credit_balance_exhausted`、`*_spend_limit_exceeded`、`organization_usage_limit_exceeded`、
+  `billing_hard_limit_reached`；Anthropic `details.error_code=enforced_spend_limit_reached`、官方地址没有 `retry-after` 的 429、
+  400 的「credit balance is too low」「reached your specified ... API usage limits」；智谱 1113、1308–1321；千问
+  `CommodityNotPurchased`、`PrepaidBillOverdue`、`PostpaidBillOverdue`、`BudgetLimitExceeded`、`Arrearage`、
+  `AllocationQuota.FreeTierOnly`、Coding Plan 的 hour/week/month allocated quota exceeded；OpenCode「Policy budget exceeded」）
+  抛 `UpstreamQuotaExhausted`：和 402 一样第一次就停、记下凭据、整份翻译停下，归 `upstream_quota_exhausted`，报错写
+  「翻译 API 账户余额或额度不足（HTTP 429，OpenAI 业务码 insufficient_quota：额度不足）……」。智谱 1311、1315（Key 的套餐不能用
+  这个模型）抛 `UpstreamAccessDenied`，和 401/403 一样停下，归 `auth_failed`。错误带 `status_code`、`provider_code`、`provider`。
+  真限流（OpenAI 没码 / `rate_limit_exceeded` / `slow_down`，Anthropic 带 `retry-after` 的、`ramp_limit_exceeded`，智谱 1302、
+  1305，百炼的 `insufficient_quota` 即 TPM 限流）照旧退避、认 Retry-After。agent 引擎两种协议、Rust 执行器
+  （`model_executor/upstream_codes.rs`，操作记 `error_code=quota_exhausted`，回执带 `upstream_status`、`upstream_code`）规则相同，
+  改一处要改另一处。
 
 ## 模式说明
 

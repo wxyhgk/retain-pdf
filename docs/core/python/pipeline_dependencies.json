@@ -680,6 +680,7 @@
         "devtools/tests/translation/test_translation_preparation.py",
         "devtools/tests/translation/test_translation_publication_consistency.py",
         "devtools/tests/translation/test_translation_qa.py",
+        "devtools/tests/translation/test_translation_quota_codes.py",
         "devtools/tests/translation/test_translation_refine.py",
         "devtools/tests/translation/test_translation_revision.py",
         "devtools/tests/translation/test_translation_validation_protocols.py",
@@ -714,6 +715,7 @@
         "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_translation_auth_fail_fast.py",
         "devtools/tests/translation/test_translation_batch_transport.py",
+        "devtools/tests/translation/test_translation_quota_codes.py",
         "devtools/tests/translation/test_translation_run_diagnostics.py",
         "devtools/tests/translation/test_translation_transport_fallbacks.py",
         "devtools/tests/translation/test_upstream_resilience.py"
@@ -997,6 +999,7 @@
         "devtools/tests/translation/test_translation_prompt_protocols.py",
         "devtools/tests/translation/test_translation_qa.py",
         "devtools/tests/translation/test_translation_quality_checks.py",
+        "devtools/tests/translation/test_translation_quota_codes.py",
         "devtools/tests/translation/test_translation_reference_policy.py",
         "devtools/tests/translation/test_translation_refine.py",
         "devtools/tests/translation/test_translation_repair_agent.py",
@@ -1031,7 +1034,8 @@
         "devtools/tests/agent_lab/test_agent_lab.py",
         "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_agent_openai.py",
-        "devtools/tests/translation/test_strict_json_schemas.py"
+        "devtools/tests/translation/test_strict_json_schemas.py",
+        "devtools/tests/translation/test_translation_quota_codes.py"
       ],
       "runtime_required": false,
       "devtool_required": true
@@ -1044,7 +1048,8 @@
       "test_files": [
         "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_agent_openai.py",
-        "devtools/tests/translation/test_strict_json_schemas.py"
+        "devtools/tests/translation/test_strict_json_schemas.py",
+        "devtools/tests/translation/test_translation_quota_codes.py"
       ],
       "runtime_required": false,
       "devtool_required": false

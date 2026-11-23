@@ -138,7 +138,7 @@ def fake_transport(monkeypatch):
     holder: dict = {}
 
     def install(model: FakeModel) -> FakeModel:
-        def make(api_key: str, *, url: str):
+        def make(api_key: str, *, url: str, **_kwargs):
             holder["api_key"], holder["url"] = api_key, url
             return model
 
@@ -409,7 +409,7 @@ def test_a_separate_reviewer_model_does_the_editing_on_its_own_connection(tmp_pa
     monkeypatch.setenv("RETAIN_AGENT_STRUCTURE", "page")  # 第一版（逐页）的两轮；第二版见下一条
     translator, editor = FakeModel(genre="humanities"), FakeModel(genre="humanities")
     by_key = {"sk-job-key": translator, "sk-editor": editor}
-    monkeypatch.setattr(agent_flow, "make_http_transport", lambda api_key, *, url: by_key[api_key])
+    monkeypatch.setattr(agent_flow, "make_http_transport", lambda api_key, *, url, **_kwargs: by_key[api_key])
     ledger = tmp_path / "usage.jsonl"
     monkeypatch.setenv("RETAIN_USAGE_LEDGER", str(ledger))
     execute_translation_request(_request(tmp_path, reviewer_model="claude-editor", reviewer_api_key="sk-editor"))
@@ -428,7 +428,7 @@ def test_humanities_books_are_translated_by_section_by_default(tmp_path: Path, m
     monkeypatch.delenv("RETAIN_AGENT_STRUCTURE", raising=False)
     translator, editor = FakeModel(genre="humanities"), FakeModel(genre="humanities")
     by_key = {"sk-job-key": translator, "sk-editor": editor}
-    monkeypatch.setattr(agent_flow, "make_http_transport", lambda api_key, *, url: by_key[api_key])
+    monkeypatch.setattr(agent_flow, "make_http_transport", lambda api_key, *, url, **_kwargs: by_key[api_key])
     result = execute_translation_request(_request(tmp_path, reviewer_model="claude-editor", reviewer_api_key="sk-editor"))
 
     tools = lambda model: [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies]  # noqa: E731

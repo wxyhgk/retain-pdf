@@ -70,7 +70,7 @@ def review_candidate_pairs(
         except Exception as exc:  # noqa: BLE001 - classification decides retry vs fail-fast
             last_error = exc
             if _resilience.is_non_retryable_client_error(exc):
-                raise type(exc)(_resilience.describe_upstream_error(exc)) from exc
+                raise _resilience.described_error(exc) from exc
             if attempt >= max_retries or not _resilience.is_transient_upstream_error(exc):
                 raise
             delay = _resilience.retry_after_seconds(exc)

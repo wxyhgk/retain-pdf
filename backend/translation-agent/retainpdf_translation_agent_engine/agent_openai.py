@@ -16,7 +16,8 @@ agent 包（``retainpdf-translation-agent``）只认 Anthropic 的请求、回�
   按任务的 thinking 设置走共用请求层的换算，和 legacy 一样；
 - 用量：共用请求层自己记用量台账（请求标签 ``agent-translate`` / ``agent-read`` / ``agent-review``），这里只把这次请求的
   token 换成 Anthropic 的字段名交回，agent 自己的计数、编辑部事件照常；
-- 错误：Key 被拒（401/403）→ ``AuthFailed``，402 → ``QuotaExhausted``，一直限流、5xx、网络断 → ``RateLimited``，
+- 错误：Key 被拒（401/403）→ ``AuthFailed``，402 和业务码说余额、额度用完的 429 等 → ``QuotaExhausted``（第一次就停，
+  不当限流退避），一直限流、5xx、网络断 → ``RateLimited``，
   都是 agent 的 ``StopRun``：保存进度、阶段失败，修好重试从断点接着翻。别的错误原样抛。
 
 已知差别：共用请求层只交回文本，拿不到 ``finish_reason``，回答被长度截断时 agent 不知道（Anthropic 下会把最后一块当没交）；
@@ -152,9 +153,10 @@ def anthropic_usage_fields(token_usage: dict[str, Any]) -> dict[str, int]:
 
 def _stop_error(error: BaseException) -> BaseException | None:
     status = upstream_resilience.http_status_of(error)
+    # 先看业务码：429 里的余额、额度用完不是限流（upstream_error_codes），智谱 1311/1315 当 Key 被拒
     if upstream_resilience.is_quota_error(error):
         return QuotaExhausted(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
-    if status in {401, 403}:
+    if upstream_resilience.is_auth_error(error):
         return AuthFailed(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
     if status in {429, 500, 502, 503, 504, 529} or isinstance(error, (requests.ConnectionError, requests.Timeout)):
         return RateLimited(f"model API still failing: {upstream_resilience.describe_upstream_error(error)}")
