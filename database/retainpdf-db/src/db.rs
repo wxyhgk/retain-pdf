@@ -468,6 +468,7 @@ mod tests {
             ai_diagnostic: None,
             resume_from: None,
             recovery_hint: None,
+            upstream: None,
         }));
 
         db.save_job(&job).expect("save job");

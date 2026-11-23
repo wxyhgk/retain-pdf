@@ -43,6 +43,7 @@ async fn job_events_route_prefers_formal_failure_fields() {
         ai_diagnostic: None,
             resume_from: None,
             recovery_hint: None,
+            upstream: None,
     }));
     state.db.save_job(&job).expect("save job");
     state

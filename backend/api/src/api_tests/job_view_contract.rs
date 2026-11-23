@@ -385,8 +385,8 @@ async fn job_files_view_matches_published_schema() {
 
 /// 失败任务的列表项：`failure` 对着契约里的 `JobFailureBriefView` 核对。
 ///
-/// 两个夹具：一个把简报的 7 个字段全填满（键集合必须等于契约的全部属性），一个只有
-/// 必填项（root_cause / suggestion / provider 整个键不出现，不是 null）。
+/// 两个夹具：一个把简报的 8 个字段全填满（键集合必须等于契约的全部属性），一个只有
+/// 必填项（root_cause / suggestion / provider / upstream 整个键不出现，不是 null）。
 /// 契约 job-status 里的 JobListItemView 要认得这个键（library-books 抄的那份 2026-10-23 删了）。
 #[tokio::test]
 async fn failed_job_list_item_failure_matches_published_schema() {
@@ -417,6 +417,11 @@ async fn failed_job_list_item_failure_matches_published_schema() {
             retryable: true,
             provider: Some("mineru".to_string()),
             suggestion: Some("稍后重试".to_string()),
+            upstream: Some(crate::models::JobFailureUpstream {
+                provider: Some("mineru".to_string()),
+                http_status: Some(200),
+                code: Some("-60018".to_string()),
+            }),
             // 重字段不该出现在列表简报里：契约没有它们，键集合比较会抓到。
             raw_excerpt: Some("Traceback (most recent call last): ...".to_string()),
             ..JobFailureInfo::default()
@@ -470,6 +475,13 @@ async fn failed_job_list_item_failure_matches_published_schema() {
             &format!("job_list[full].failure ({file_name})"),
         );
         assert_definition(&full["failure"], &contract, "JobFailureBriefView", "full.failure");
+        assert_exact_object_keys(
+            &full["failure"]["upstream"],
+            &contract,
+            "JobFailureUpstream",
+            &format!("job_list[full].failure.upstream ({file_name})"),
+        );
+        assert_eq!(full["failure"]["upstream"]["code"], "-60018");
 
         // 只有必填项：键集合 == 契约的 required，可选键整个不出现。
         let required: BTreeSet<String> = definition(&contract, "JobFailureBriefView")["required"]

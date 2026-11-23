@@ -4,7 +4,7 @@ use serde::Deserialize;
 #[path = "job_failure_structured_tests.rs"]
 mod tests;
 
-use crate::models::domain::{JobFailureInfo, JobSnapshot};
+use crate::models::domain::{JobFailureInfo, JobFailureUpstream, JobSnapshot};
 use crate::models::domain::{OcrErrorCategory, OcrProviderDiagnostics};
 
 use super::job_failure_support::{
@@ -46,6 +46,20 @@ pub(super) struct PythonStructuredFailure {
     pub(super) raw_exception_type: Option<String>,
     pub(super) raw_exception_message: Option<String>,
     pub(super) traceback: Option<String>,
+    /// 上游服务商回的是什么（`{provider, http_status, code}`）。旧 worker 没有这个键；
+    /// 写得不对（不是对象）也当没有，不能让整行结构化失败解析不了。
+    #[serde(default, deserialize_with = "lenient_upstream")]
+    pub(super) upstream: Option<JobFailureUpstream>,
+}
+
+fn lenient_upstream<'de, D>(deserializer: D) -> Result<Option<JobFailureUpstream>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = serde_json::Value::deserialize(deserializer)?;
+    Ok(serde_json::from_value::<JobFailureUpstream>(value)
+        .ok()
+        .and_then(JobFailureUpstream::normalized))
 }
 
 impl PythonStructuredFailure {
@@ -146,6 +160,7 @@ pub(super) fn classify_structured_failure(
         .filter(|value| !value.trim().is_empty());
     failure.provider_code = provider_code;
     failure.raw_excerpt = raw_excerpt;
+    failure.upstream = structured.upstream.clone();
     Some(failure.with_formal_fields())
 }
 

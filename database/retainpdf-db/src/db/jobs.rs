@@ -484,6 +484,7 @@ impl Db {
             ai_diagnostic: None,
             resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
             recovery_hint: Some(recovery.hint.to_string()),
+            upstream: None,
         };
         // 运行信息（v33 起）只存进入当前阶段、最后出错的时间；当前阶段、结束原因、最终失败从下面这几列算。
         // 以前这里整块覆盖 runtime_json，连阶段历史一起清空、耗时写成空；现在阶段历史留着，耗时读的时候照常算。

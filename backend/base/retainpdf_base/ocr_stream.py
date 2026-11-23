@@ -13,6 +13,8 @@
   第 1–10 页排队到 46 秒），做完哪片就公布哪片，翻译先翻已经到的页。GLM-OCR 串行，就绪的总是前几页。
   没有 `ready_page_indices` 的清单（这之前写的）就绪的是前 `ready_pages` 页。
 - 结束时 `done=true`，文档就是整份；失败时 `failed=true`、`error` 写原因，读的一方别再等。
+  失败时能读出上游信息的另写 `upstream: {provider, http_status, code}`（2026-11-23 起，没有时不写），
+  翻译那边抛的 `OcrStreamFailed` 带着它，结构化失败的 `upstream` 就是 OCR 服务商回的那次错误。
 """
 
 from __future__ import annotations
@@ -20,10 +22,12 @@ from __future__ import annotations
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 from typing import Callable
 
 from retainpdf_base.io import load_json
 from retainpdf_base.io import save_json_atomic
+from retainpdf_base.upstream import tag_upstream
 
 OCR_STREAM_SCHEMA = "ocr_stream_v1"
 STREAM_DIR_NAME = "stream"
@@ -54,6 +58,8 @@ class OcrStreamState:
     document_path: Path
     # 就绪的页（从 0 数）；不一定连着，见模块说明
     ready_page_indices: frozenset[int] = frozenset()
+    # 失败时 OCR 服务商回的是什么（{provider, http_status, code}），没有时为 None
+    upstream: dict[str, Any] | None = None
 
 
 class OcrStreamWriter:
@@ -76,13 +82,22 @@ class OcrStreamWriter:
         save_json_atomic(document_path(self._ocr_dir), document)
         self._write_manifest(ready=ready, done=done)
 
-    def fail(self, error: str) -> None:
+    def fail(self, error: str, *, upstream: dict[str, Any] | None = None) -> None:
         state = read_ocr_stream(self._ocr_dir)
         ready = sorted(state.ready_page_indices) if state is not None else []
-        self._write_manifest(ready=ready, done=False, failed=True, error=error)
+        self._write_manifest(ready=ready, done=False, failed=True, error=error, upstream=upstream)
 
-    def _write_manifest(self, *, ready: list[int], done: bool, failed: bool = False, error: str = "") -> None:
+    def _write_manifest(
+        self,
+        *,
+        ready: list[int],
+        done: bool,
+        failed: bool = False,
+        error: str = "",
+        upstream: dict[str, Any] | None = None,
+    ) -> None:
         self._seq += 1
+        extra = {"upstream": upstream} if isinstance(upstream, dict) else {}
         save_json_atomic(
             manifest_path(self._ocr_dir),
             {
@@ -97,6 +112,7 @@ class OcrStreamWriter:
                 "error": str(error or "")[:500],
                 "document": f"{STREAM_DIR_NAME}/{DOCUMENT_FILE_NAME}",
                 "updated_at": time.time(),
+                **extra,
             },
         )
 
@@ -118,7 +134,14 @@ def wait_for_ocr_stream(
     while True:
         state = read_ocr_stream(ocr_dir)
         if state is not None and state.failed:
-            raise OcrStreamFailed(f"OCR stream failed after {state.ready_pages}/{state.total_pages} pages: {state.error}")
+            failed = OcrStreamFailed(f"OCR stream failed after {state.ready_pages}/{state.total_pages} pages: {state.error}")
+            upstream = state.upstream or {}
+            raise tag_upstream(
+                failed,
+                provider=str(upstream.get("provider") or ""),
+                http_status=upstream.get("http_status"),
+                code=upstream.get("code"),
+            )
         if state is not None and state.seq > after_seq and state.ready_pages > 0:
             return state
         sleep(poll_seconds)
@@ -147,6 +170,7 @@ def read_ocr_stream(ocr_dir: Path) -> OcrStreamState | None:
         failed=bool(manifest.get("failed")),
         error=str(manifest.get("error") or ""),
         document_path=Path(ocr_dir) / str(manifest.get("document") or f"{STREAM_DIR_NAME}/{DOCUMENT_FILE_NAME}"),
+        upstream=manifest.get("upstream") if isinstance(manifest.get("upstream"), dict) else None,
     )
 
 

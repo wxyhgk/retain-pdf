@@ -42,6 +42,7 @@ from retainpdf_base.io import save_json
 from retainpdf_base.io import save_json_atomic
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
 from retainpdf_base.ocr_stream import OcrStreamWriter
+from retainpdf_base.upstream import upstream_info
 from retainpdf_base.usage_ledger import record_model_usage
 from retainpdf_pipeline.ocr.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_payload_to_document_v1_with_report
@@ -611,7 +612,10 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
         stream.publish(document, done=True)
     except BaseException as error:
         # 读流的一方（翻译）别再等：标成失败，原因只写类型和第一行（不带 key，parse_pdf 的报错本来就不带）
-        stream.fail(f"{type(error).__name__}: {str(error).splitlines()[0] if str(error) else ''}")
+        stream.fail(
+            f"{type(error).__name__}: {str(error).splitlines()[0] if str(error) else ''}",
+            upstream=upstream_info(error, context_provider="glm_ocr"),
+        )
         raise
     usage = payload.get("usage") or {}
     print(f"glm-ocr: done pages={len(payload['layout_details'])} images={len(cropped)} total_tokens={usage.get('total_tokens')}", flush=True)

@@ -293,7 +293,16 @@ async fn failure_report_with_every_optional_key_matches_published_schema() {
         },
     );
     job.status = JobStatusKind::Failed;
-    job.error = Some("translation failed".to_string());
+    // worker 的结构化失败带着 upstream：报告里的 upstream 键也要对着契约核对
+    job.error = Some(format!(
+        "translation failed\n{}: {}",
+        crate::job_failure::STRUCTURED_FAILURE_LABEL,
+        json!({
+            "failed_stage": "translation", "failure_code": "upstream_rate_limited",
+            "summary": "外部服务请求被限流", "retryable": true, "provider": "translation",
+            "upstream": {"provider": "openai", "http_status": 429, "code": "insufficient_quota"}
+        })
+    ));
     seed_ambiguous_translation_request_journal(&state, &job);
     let summary = state.config.data_root.join(format!("jobs/{job_id}/artifacts/pipeline_summary.json"));
     fs::create_dir_all(summary.parent().unwrap()).unwrap();
@@ -310,6 +319,11 @@ async fn failure_report_with_every_optional_key_matches_published_schema() {
     );
     assert_eq!(failure["render_diagnostics"]["engine"], "typst");
     assert!(failure["ocr_ambiguity"].is_null(), "{failure}");
+    assert_exact(&failure["upstream"], &contract, "JobFailureUpstream", "failure.upstream");
+    assert_eq!(
+        failure["upstream"],
+        json!({"provider": "openai", "http_status": 429, "code": "insufficient_quota"})
+    );
 }
 
 #[tokio::test]

@@ -42,7 +42,7 @@ Regenerate with:
 | `pikepdf` | `pikepdf` | yes | yes | `retainpdf_pipeline/render/document/link_relocation.py`, `retainpdf_pipeline/render/document/pikepdf_outline.py`, `retainpdf_pipeline/render/document/pikepdf_overlay.py` |
 | `pytest` | `pytest` | no | yes | `devtools/tests/agent_lab/test_agent_lab.py`, `devtools/tests/agent_lab/test_sample_conference.py`, `devtools/tests/agent_lab/test_sample_essay.py` |
 | `requests` | `requests` | yes | yes | `retainpdf_pipeline/ocr/mineru_provider/mineru_api.py`, `retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py`, `retainpdf_pipeline/ocr/ocr_provider/paddle_api.py` |
-| `retainpdf_base` | `retainpdf_base` | yes | yes | `retainpdf_pipeline/foundation/config/__init__.py`, `retainpdf_pipeline/foundation/shared/job_dirs.py`, `retainpdf_pipeline/ocr/document_schema/normalize_pipeline.py` |
+| `retainpdf_base` | `retainpdf_base` | yes | yes | `retainpdf_pipeline/foundation/config/__init__.py`, `retainpdf_pipeline/foundation/shared/job_dirs.py`, `retainpdf_pipeline/foundation/shared/structured_errors.py` |
 | `retainpdf_math` | `retainpdf_math` | yes | yes | `retainpdf_pipeline/render/layout/inline_content/__init__.py`, `retainpdf_pipeline/render/layout/inline_content/core/inline_math.py`, `retainpdf_pipeline/render/layout/inline_content/core/markdown.py` |
 | `retainpdf_translation` | `retainpdf_translation` | yes | yes | `retainpdf_pipeline/entrypoints/diagnose_failure_with_ai.py`, `retainpdf_pipeline/entrypoints/revise_translation_item.py`, `retainpdf_pipeline/ocr/ocr_provider/provider_pipeline.py` |
 | `retainpdf_translation_agent` | `retainpdf_translation_agent` | yes | yes | `devtools/agent_lab/__main__.py`, `devtools/agent_lab/metrics.py`, `devtools/agent_lab/pages.py` |

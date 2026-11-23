@@ -510,6 +510,7 @@ def request_chat_content(
             return content
         except (requests.RequestException, ValueError, KeyError, json.JSONDecodeError, socket.gaierror) as exc:
             last_error = exc
+            _resilience.tag_upstream_vendor(exc, base_url=normalize_base_url(base_url))
             elapsed = time.perf_counter() - started
             status_code = exc.response.status_code if isinstance(exc, requests.HTTPError) and exc.response is not None else None
             if diagnostics is not None and slot_acquired:

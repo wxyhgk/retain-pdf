@@ -10,6 +10,7 @@ from typing import Callable
 import requests
 
 from retainpdf_base.local_env import get_secret
+from retainpdf_base.upstream import tag_upstream
 from retainpdf_pipeline.ocr.retry import RetainNetworkError
 from retainpdf_pipeline.ocr.retry import RetainRateLimitError
 from retainpdf_pipeline.ocr.retry import direct_session
@@ -182,8 +183,12 @@ def build_optional_payload(model: str) -> dict[str, Any]:
 
 def _check_envelope(payload: dict[str, Any], *, stage: str) -> dict[str, Any]:
     if int(payload.get("errorCode", 0) or 0) != 0:
-        raise RuntimeError(
-            f"Paddle {stage} failed: code={payload.get('errorCode')} msg={payload.get('errorMsg', '')} logId={payload.get('logId', '')}"
+        raise tag_upstream(
+            RuntimeError(
+                f"Paddle {stage} failed: code={payload.get('errorCode')} msg={payload.get('errorMsg', '')} logId={payload.get('logId', '')}"
+            ),
+            provider="paddle",
+            code=payload.get("errorCode"),
         )
     return payload
 

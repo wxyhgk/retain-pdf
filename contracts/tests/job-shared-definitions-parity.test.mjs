@@ -52,6 +52,7 @@ test("job-actions copies of job-status definitions stay structurally identical",
 
 test("job-reports copies of job-status definitions stay structurally identical", () => {
   assertShared(jobReports, jobStatus, [
+    "JobFailureUpstream",
     "JsonValue",
     "TranslationRequestRecoveryView",
   ], "job-reports and job-status");

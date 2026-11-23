@@ -40,6 +40,7 @@ pub(super) fn build_failure(
         // 由 `classify_job_failure` 在出口统一按 category 查目录填充,这里留空。
         resume_from: None,
         recovery_hint: None,
+        upstream: None,
     }
     .with_formal_fields()
 }

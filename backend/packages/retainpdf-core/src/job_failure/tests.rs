@@ -399,3 +399,53 @@ fn classify_job_failure_still_maps_bounded_http_429() {
     let failure = classify_job_failure(&job).expect("failure");
     assert_eq!(failure.category, "rate_limited");
 }
+
+fn ocr_failed_job(stage: &str, error: &str) -> JobSnapshot {
+    use crate::models::domain::{
+        JobArtifacts, OcrErrorCategory, OcrProviderDiagnostics, OcrProviderErrorInfo,
+        OcrProviderKind,
+    };
+    let mut job = JobSnapshot::new(
+        "job-ocr-upstream".to_string(),
+        CreateJobInput::default(),
+        vec!["native-ocr".to_string()],
+    );
+    job.status = JobStatusKind::Failed;
+    job.stage = Some(stage.to_string());
+    job.error = Some(error.to_string());
+    let mut diagnostics = OcrProviderDiagnostics::new(OcrProviderKind::Paddle);
+    diagnostics.last_error = Some(OcrProviderErrorInfo {
+        category: OcrErrorCategory::PermissionDenied,
+        provider_code: Some("12001".to_string()),
+        provider_message: Some("daily quota exceeded".to_string()),
+        http_status: Some(403),
+        ..OcrProviderErrorInfo::default()
+    });
+    job.artifacts = Some(JobArtifacts {
+        ocr_provider_diagnostics: Some(diagnostics),
+        ..JobArtifacts::default()
+    });
+    job
+}
+
+/// Rust 跑的 Paddle、MinerU：OCR 阶段失败时用 OCR 诊断里服务商最后一次报的错补上 upstream，
+/// provider 是服务商编号（不是泛称 ocr）。
+#[test]
+fn ocr_stage_failure_takes_upstream_from_provider_diagnostics() {
+    let job = ocr_failed_job("ocr_processing", "Paddle HTTP 请求失败");
+    let failure = classify_job_failure(&job).expect("failure");
+    assert_eq!(failure.provider.as_deref(), Some("paddle"));
+    let upstream = failure.upstream.expect("upstream from diagnostics");
+    assert_eq!(upstream.provider.as_deref(), Some("paddle"));
+    assert_eq!(upstream.http_status, Some(403));
+    assert_eq!(upstream.code.as_deref(), Some("12001"));
+}
+
+/// OCR 做完以后翻译失败：诊断里那条可能是早先恢复了的错，不能安到翻译失败上。
+#[test]
+fn later_stage_failure_does_not_borrow_a_stale_ocr_error() {
+    let job = ocr_failed_job("translation", "PlaceholderInventoryError: placeholder inventory mismatch");
+    let failure = classify_job_failure(&job).expect("failure");
+    assert_eq!(failure.category, "placeholder_unstable");
+    assert!(failure.upstream.is_none(), "{:?}", failure.upstream);
+}

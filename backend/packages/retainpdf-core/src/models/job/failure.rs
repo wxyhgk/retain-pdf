@@ -37,6 +37,46 @@ pub struct JobFailureInfo {
     /// 给用户看的一句话:这次重试会做什么、要不要再花钱。
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recovery_hint: Option<String>,
+    /// 上游服务商这次回的是什么（服务商编号、HTTP 状态、服务商自己的错误码），前端拿它去错误码目录
+    /// （`GET /api/v1/providers/error-codes`）查条目。不知道时整个键不出现。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub upstream: Option<JobFailureUpstream>,
+}
+
+/// 失败时的上游信息。三个键总在，不知道的是 null。
+///
+/// `provider` 用错误码目录里的服务商编号：翻译按接口地址认 `openai` / `anthropic` / `deepseek` / `zhipu` /
+/// `qwen` / `opencode`，认不出是 `custom`；OCR 是 `paddle` / `mineru` / `glm_ocr`（本地 OCR 写它的名字）。
+/// `code` 是服务商响应体里的错误码原样（OpenAI `error.code`，没有时 `error.type`；Anthropic
+/// `error.details.error_code`，没有时 `error.type`；智谱业务码如 `1113`；DashScope、Paddle、MinerU 的 `code`）。
+#[derive(Debug, Serialize, Deserialize, Clone, Default, PartialEq, Eq)]
+pub struct JobFailureUpstream {
+    #[serde(default)]
+    pub provider: Option<String>,
+    #[serde(default)]
+    pub http_status: Option<u16>,
+    #[serde(default)]
+    pub code: Option<String>,
+}
+
+impl JobFailureUpstream {
+    /// 去掉空白；HTTP 状态和错误码都没有时返回 `None`（只知道服务商、不知道它回了什么，查不了目录）。
+    pub fn normalized(self) -> Option<Self> {
+        let clean = |value: Option<String>| {
+            value
+                .map(|item| item.trim().to_string())
+                .filter(|item| !item.is_empty())
+        };
+        let upstream = Self {
+            provider: clean(self.provider),
+            http_status: self.http_status.filter(|status| *status > 0),
+            code: clean(self.code),
+        };
+        if upstream.http_status.is_none() && upstream.code.is_none() {
+            return None;
+        }
+        Some(upstream)
+    }
 }
 
 impl JobFailureInfo {
@@ -183,6 +223,9 @@ impl JobFailureInfo {
         if self.ai_diagnostic.is_none() {
             self.ai_diagnostic = fallback.ai_diagnostic.clone();
         }
+        if self.upstream.is_none() {
+            self.upstream = fallback.upstream.clone();
+        }
         if !self.retryable && fallback.retryable {
             self.retryable = true;
         }
@@ -241,6 +284,11 @@ impl JobFailureInfo {
             object.insert("root_cause".to_string(), Value::String(value.clone()));
         }
         object.insert("retryable".to_string(), Value::Bool(self.retryable));
+        if let Some(upstream) = self.upstream.as_ref() {
+            if let Ok(value) = serde_json::to_value(upstream) {
+                object.insert("upstream".to_string(), value);
+            }
+        }
         if let Some(value) = self
             .raw_excerpt
             .as_ref()
@@ -317,6 +365,7 @@ mod tests {
             ai_diagnostic: None,
             resume_from: None,
             recovery_hint: None,
+            upstream: None,
         }
         .with_formal_fields();
 
@@ -351,6 +400,7 @@ mod tests {
             ai_diagnostic: None,
             resume_from: None,
             recovery_hint: None,
+            upstream: None,
         };
 
         let payload = failure.write_formal_fields_into_payload(Some(&json!({
