@@ -5,59 +5,74 @@ from __future__ import annotations
 from collections.abc import Callable
 import sys
 
-from retainpdf_pipeline.foundation.shared.structured_errors import run_with_structured_failure
+from retainpdf_pipeline.foundation.shared.structured_errors import run_imported_main
 
 
 def _run_structured(
-    main_fn: Callable[[], object],
+    module: str,
     *,
     default_stage: str,
     provider: str,
 ) -> int:
-    run_with_structured_failure(main_fn, default_stage=default_stage, provider=provider)
+    # worker 模块在结构化失败的包装里面才 import：import 期崩溃（缺模块、安装包缺文件）也有结构化失败
+    run_imported_main(module, default_stage=default_stage, provider=provider)
     return 0
 
 
 def run_book() -> int:
-    from retainpdf_pipeline.translate.entrypoints.from_ocr_pipeline import main
-
-    return _run_structured(main, default_stage="translation", provider="translation")
+    return _run_structured(
+        "retainpdf_pipeline.translate.entrypoints.from_ocr_pipeline",
+        default_stage="translation",
+        provider="translation",
+    )
 
 
 def run_provider_ocr() -> int:
-    from retainpdf_pipeline.ocr.ocr_provider.provider_pipeline import main
-
-    return _run_structured(main, default_stage="provider", provider="ocr")
+    return _run_structured(
+        "retainpdf_pipeline.ocr.ocr_provider.provider_pipeline",
+        default_stage="provider",
+        provider="ocr",
+    )
 
 
 def run_provider_case() -> int:
-    from retainpdf_pipeline.ocr.ocr_provider.provider_pipeline import main
-
-    return _run_structured(main, default_stage="provider", provider="ocr")
+    return _run_structured(
+        "retainpdf_pipeline.ocr.ocr_provider.provider_pipeline",
+        default_stage="provider",
+        provider="ocr",
+    )
 
 
 def run_normalize_ocr() -> int:
-    from retainpdf_pipeline.ocr.document_schema.normalize_pipeline import main
-
-    return _run_structured(main, default_stage="normalization", provider="ocr")
+    return _run_structured(
+        "retainpdf_pipeline.ocr.document_schema.normalize_pipeline",
+        default_stage="normalization",
+        provider="ocr",
+    )
 
 
 def run_translate_from_ocr() -> int:
-    from retainpdf_pipeline.translate.entrypoints.from_ocr_pipeline import main
-
-    return _run_structured(main, default_stage="translation", provider="translation")
+    return _run_structured(
+        "retainpdf_pipeline.translate.entrypoints.from_ocr_pipeline",
+        default_stage="translation",
+        provider="translation",
+    )
 
 
 def run_translate_only() -> int:
-    from retainpdf_pipeline.translate.entrypoints.translate_only_pipeline import main
-
-    return _run_structured(main, default_stage="translation", provider="translation")
+    return _run_structured(
+        "retainpdf_pipeline.translate.entrypoints.translate_only_pipeline",
+        default_stage="translation",
+        provider="translation",
+    )
 
 
 def run_render_only() -> int:
-    from retainpdf_pipeline.runtime.pipeline.render_only_pipeline import main
-
-    return _run_structured(main, default_stage="rendering", provider="rendering")
+    return _run_structured(
+        "retainpdf_pipeline.runtime.pipeline.render_only_pipeline",
+        default_stage="rendering",
+        provider="rendering",
+    )
 
 
 def run_revise_translation_item() -> int:
@@ -102,9 +117,11 @@ def run_diagnose_failure() -> int:
 
 
 def run_layout_docx() -> int:
-    from retainpdf_pipeline.render.output.word.cli import main
-
-    return _run_structured(main, default_stage="rendering", provider="rendering")
+    return _run_structured(
+        "retainpdf_pipeline.render.output.word.cli",
+        default_stage="rendering",
+        provider="rendering",
+    )
 
 
 COMMANDS: dict[str, tuple[Callable[[], int], str]] = {

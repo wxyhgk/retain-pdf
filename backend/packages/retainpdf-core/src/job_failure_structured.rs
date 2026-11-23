@@ -164,6 +164,7 @@ pub(super) fn classify_provider_auth_failure(
     if !auth_related {
         return None;
     }
+    let suggestion = super::job_failure_fallback::auth_failure_suggestion(&failed_stage, diagnostics);
     Some(build_failure(
         failed_stage,
         "auth_failed",
@@ -173,7 +174,7 @@ pub(super) fn classify_provider_auth_failure(
         false,
         extract_upstream_host(haystack),
         provider_name(diagnostics),
-        Some("检查 MinerU Token、模型 API Key 或后端 X-API-Key 配置".to_string()),
+        Some(suggestion),
         last_log_line,
         first_error_excerpt(error, haystack),
         raw_diagnostic_from_text(error, haystack),

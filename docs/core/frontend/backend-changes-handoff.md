@@ -36,6 +36,27 @@
 2. 契约的 `dist/` 已经重新生成；`frontend/packages/api` 的 `generate:client` 只看接口清单，这次没加接口，不用重新生成。
 3. 调试面板要显示状态码的话改读 `http_status`，`provider_code` 当厂商码显示（可以拿它查错误码目录 `GET /api/v1/providers/error-codes?provider=…&code=…`，见下一节）。
 
+---
+
+## 本机环境类失败码、Paddle 当日额度不再说成鉴权失败（fix/failure-fallback-classes）
+
+2026-11-23，用户把错误码缺口交给后端：兜底「暂未识别出明确根因」的几类补上分类。只增不改，字段一个没动，细节见
+[失败结构](../../api/08-调试诊断/01-失败结构.md#本机环境类失败码与-ocr-额度用完)。
+
+新 `failure_code`（四个都 `failure_category=environment`、`retryable=false`、`resume_from=null`，`summary`、`recovery_hint` 后端给）：
+`out_of_memory`（内存不足，#80）、`runtime_environment_broken`（缺模块 / 依赖库 / 安装文件，#7 #135 #143 #162）、
+`path_too_long`（Windows 路径过长，#79 #81）、`local_permission_denied`（本机权限、文件被占用、安全软件拦截，#38）。
+
+改了说法的：
+- PaddleOCR 当日页数额度用完（HTTP 403 + 12001）从 `auth_failed`（Python 路径）/ `unknown`（Rust 路径）改成 `upstream_quota_exhausted`，
+  `summary`「PaddleOCR 今日解析页数额度已用完（12001）」；MinerU 当日额度（-60018/-60019）同样从 `unknown` 改成这个码。
+- OCR worker import 期崩溃不再被认成 `render_failed`；渲染失败的文字兜底要求有渲染阶段的证据。
+- `auth_failed` 的 `suggestion` 按服务商出，不再对 PaddleOCR 用户说「检查 MinerU Token」。
+- Paddle Token 检测（`POST /api/v1/providers/paddle/validate-token`）碰到 12001 时 `status` 从 `unauthorized` 变成 `provider_error`（不再说 Token 无效）。
+
+前端要做的：不用改。失败卡片照旧显示 `summary`、`recovery_hint`；如果有按 `failure_category` 选图标、颜色的地方，多了一个取值 `environment`
+（本机环境问题，换 Key、等一会儿都没用），没处理时按默认样式显示也行。
+
 ## 服务商错误码目录，给失败提示用（feat/provider-error-codes）
 
 2026-11-23，用户要「把这些模型的文档的错误码全部爬取下来，然后做成文档，接入 api，方便后面的前端提示」。新接口

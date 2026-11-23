@@ -8,7 +8,15 @@ from __future__ import annotations
 
 import sys
 
-from retainpdf_pipeline.foundation.shared.structured_errors import run_with_structured_failure
+from retainpdf_pipeline.foundation.shared.structured_errors import run_imported_main
+
+
+# worker 名 → (模块, 默认失败阶段)
+WORKERS: dict[str, tuple[str, str]] = {
+    "provider-ocr": ("retainpdf_pipeline.ocr.ocr_provider.provider_pipeline", "provider"),
+    "provider-case": ("retainpdf_pipeline.ocr.ocr_provider.provider_pipeline", "provider"),
+    "normalize-ocr": ("retainpdf_pipeline.ocr.document_schema.normalize_pipeline", "normalization"),
+}
 
 
 def _usage() -> str:
@@ -27,22 +35,17 @@ def main(argv: list[str] | None = None) -> int:
         print(_usage())
         return 0
     worker, rest = args[0], args[1:]
-    if worker in {"provider-ocr", "provider-case"}:
-        from retainpdf_pipeline.ocr.ocr_provider.provider_pipeline import main as worker_main
-
-        stage, provider = "provider", "ocr"
-    elif worker == "normalize-ocr":
-        from retainpdf_pipeline.ocr.document_schema.normalize_pipeline import main as worker_main
-
-        stage, provider = "normalization", "ocr"
-    else:
+    if worker not in WORKERS:
         print(f"unknown OCR worker: {worker}\n", file=sys.stderr)
         print(_usage(), file=sys.stderr)
         return 2
+    module, stage = WORKERS[worker]
     original_argv = sys.argv
     try:
         sys.argv = [f"retainpdf_pipeline.ocr {worker}", *rest]
-        run_with_structured_failure(worker_main, default_stage=stage, provider=provider)
+        # worker 模块在包装里面才 import：import 期崩溃也要有结构化失败。#135 就是 import 期找不到
+        # 安装包里的数据文件，没有结构化失败，Rust 按 traceback 里的 typst 字样把它猜成了渲染失败。
+        run_imported_main(module, default_stage=stage, provider="ocr")
         return 0
     finally:
         sys.argv = original_argv

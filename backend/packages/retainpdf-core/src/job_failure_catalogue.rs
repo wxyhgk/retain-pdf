@@ -164,6 +164,27 @@ const CATALOGUE: &[(&str, FailureRecovery)] = &[
         resume_from: None,
         hint: "源 PDF 无法打开，可能已损坏或不是有效的 PDF。重试无效，需要重新上传。",
     }),
+
+    // —— 本机环境（2026-11-23）：和上游、文档内容无关，原样重试多半还会失败，先按提示处理 ——
+    // 两边都会产生：Python 按异常类型认，Rust 兜底按文字认（job_failure_fallback.rs）。
+    ("out_of_memory", FailureRecovery {
+        resume_from: None,
+        hint: "处理这份文档时内存不够用。先关掉其他占内存的程序，或把 PDF 拆成页数更少的几份分别翻译；重试会从头开始。",
+    }),
+    ("runtime_environment_broken", FailureRecovery {
+        resume_from: None,
+        hint: "安装包缺文件或依赖库加载失败，重试不会好转。请升级到最新版或重新安装 RetainPDF（Docker 请拉取最新镜像）后再试。",
+    }),
+    ("path_too_long", FailureRecovery {
+        resume_from: None,
+        hint: "文件路径超过了系统允许的长度（Windows 默认约 260 个字符）。把 PDF 改个短一点的文件名、或放到层级浅的目录后重新上传；\
+               也可以在 Windows 里开启长路径支持后重试。",
+    }),
+    ("local_permission_denied", FailureRecovery {
+        resume_from: None,
+        hint: "本机拒绝了文件或网络访问。请检查杀毒或安全软件是否拦截了 RetainPDF（可加入白名单）、文件是否被其他程序占用、\
+               安装目录和数据目录是否可写；Windows 上可以试试以管理员身份运行，处理后重试。",
+    }),
 ];
 
 /// 同一种分类在不同阶段恢复方式不同时，按 (分类, 失败阶段) 覆盖上面的表。

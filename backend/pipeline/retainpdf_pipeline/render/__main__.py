@@ -9,9 +9,12 @@ the runtime layer is what runs refine before rendering and refreshes the transla
 QA afterwards. Calling the bare render worker silently skips both.
 """
 
-from retainpdf_pipeline.foundation.shared.structured_errors import run_with_structured_failure
-from retainpdf_pipeline.runtime.pipeline.render_only_pipeline import main
+from retainpdf_pipeline.foundation.shared.structured_errors import run_imported_main
+
+
+# worker 模块在结构化失败的包装里面才 import：import 期崩溃（缺模块、安装包缺文件）也要有结构化失败。
+WORKER_MODULE = "retainpdf_pipeline.runtime.pipeline.render_only_pipeline"
 
 
 if __name__ == "__main__":
-    run_with_structured_failure(main, default_stage="rendering", provider="rendering")
+    run_imported_main(WORKER_MODULE, default_stage="rendering", provider="rendering")

@@ -21,6 +21,10 @@
   {"failure_code": "process_timeout", "producer": "rust", "summary_zh": "Python worker 执行超时", "retryable": true, "issues": [], "note_zh": null},
   {"failure_code": "worker_process_missing", "producer": "rust", "summary_zh": "执行进程在运行中消失", "retryable": true, "issues": [], "note_zh": "重启恢复时发现。"},
   {"failure_code": "auto_resume_limit_exceeded", "producer": "rust", "summary_zh": "自动续跑次数超过上限", "retryable": true, "issues": [], "note_zh": "重启恢复、运行期巡检的崩溃循环熔断。"},
+  {"failure_code": "out_of_memory", "producer": "both", "summary_zh": "内存不足，处理中断", "retryable": false, "issues": [80], "note_zh": "本机环境类（failure_category=environment，2026-11-23）：异常链里有 MemoryError，或文字里有 Cannot allocate memory。"},
+  {"failure_code": "runtime_environment_broken", "producer": "both", "summary_zh": "运行环境不完整：缺少模块、依赖库或安装文件", "retryable": false, "issues": [7, 135, 143, 162], "note_zh": "本机环境类（2026-11-23）：ImportError / ModuleNotFoundError、undefined symbol、DLL load failed、Library not loaded，或安装包（site-packages、retainpdf_* 包目录）里的文件缺失。worker 模块改在结构化失败的包装里面 import，import 期崩溃也有结构化失败。"},
+  {"failure_code": "path_too_long", "producer": "both", "summary_zh": "文件路径过长，超出系统限制", "retryable": false, "issues": [79, 81], "note_zh": "本机环境类（2026-11-23）：WinError 206、ENAMETOOLONG，或 Windows 上「找不到文件」而路径已有 248 个字符以上。"},
+  {"failure_code": "local_permission_denied", "producer": "both", "summary_zh": "本机权限不足，文件或网络访问被拒绝", "retryable": false, "issues": [38], "note_zh": "本机环境类（2026-11-23）：异常链里有 PermissionError，或 WinError 32（文件被占用）。裸的 permission denied、HTTP 403 不算（那是上游鉴权）。"},
   {"failure_code": "python_unhandled_exception", "producer": "python", "summary_zh": "任务失败，但暂未识别出明确根因", "retryable": true, "issues": [18, 38, 44, 84, 132], "note_zh": "Python 分类器的兜底。很多上游错误（GLM-OCR 的 401/403/400、翻译时的 404/413/422、Paddle 11003）现在都落在这里。"},
   {"failure_code": "unknown", "producer": "rust", "summary_zh": "任务失败，但暂未识别出明确根因", "retryable": true, "issues": [7], "note_zh": "Rust 兜底，不在恢复目录里（按「未识别」处理，重试从头开始）。Paddle、MinerU 除鉴权以外的 OCR 分类都落在这里。"}
 ]
