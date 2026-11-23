@@ -80,15 +80,15 @@
       "user_hint_zh": "GLM-OCR 请求参数不合法（文件需带 data URI 前缀），请升级或反馈问题",
       "source_url": "https://docs.z.ai/api-reference/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "pdf_data_uri() 总是带上 data:application/pdf;base64, 前缀，正常碰不到；碰到时同其他 400：抛 GlmOcrRequestRejected，落「暂未识别出明确根因」。",
-        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
-        "priority": "low",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "归 upstream_bad_request：「GLM-OCR 拒绝了请求（码）：…」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -109,15 +109,15 @@
       "user_hint_zh": "GLM-OCR 请求参数有误，请检查页码范围等参数",
       "source_url": "https://docs.bigmodel.cn/cn/faq/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
-        "priority": "low",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "归 upstream_bad_request：「GLM-OCR 拒绝了请求（码）：…」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -138,15 +138,15 @@
       "user_hint_zh": "GLM-OCR 模型名不对，请确认使用 glm-ocr",
       "source_url": "https://docs.bigmodel.cn/cn/faq/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
-        "priority": "low",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "归 upstream_bad_request：「GLM-OCR 拒绝了请求（码）：…」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -167,15 +167,15 @@
       "user_hint_zh": "GLM-OCR 请求缺少必需参数，请反馈问题",
       "source_url": "https://docs.bigmodel.cn/cn/faq/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
-        "priority": "low",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "归 upstream_bad_request：「GLM-OCR 拒绝了请求（码）：…」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -196,15 +196,15 @@
       "user_hint_zh": "当前智谱 API Key 无权调用 GLM-OCR，请换用有权限的 Key",
       "source_url": "https://docs.bigmodel.cn/cn/faq/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
-        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
-        "priority": "medium",
+        "failure_code": "auth_failed",
+        "summary_zh": "GlmOcrRequestRejected 带上 status_code / provider_code，归 auth_failed：「GLM-OCR 鉴权失败（码）：…」，建议按智谱 API Key 说。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -344,15 +344,15 @@
       "user_hint_zh": "检查智谱 API Key 是否填对、是否已被删除或停用",
       "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
-        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
-        "priority": "medium",
+        "failure_code": "auth_failed",
+        "summary_zh": "GlmOcrRequestRejected 带上 status_code / provider_code，归 auth_failed：「GLM-OCR 鉴权失败（码）：…」，建议按智谱 API Key 说。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -373,15 +373,15 @@
       "user_hint_zh": "没有填写智谱 API Key，请在设置里补上",
       "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
-        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
-        "priority": "medium",
+        "failure_code": "auth_failed",
+        "summary_zh": "GlmOcrRequestRejected 带上 status_code / provider_code，归 auth_failed：「GLM-OCR 鉴权失败（码）：…」，建议按智谱 API Key 说。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -402,15 +402,15 @@
       "user_hint_zh": "智谱鉴权 Token 已过期，请重新生成 API Key 或 Token",
       "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
-        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
-        "priority": "medium",
+        "failure_code": "auth_failed",
+        "summary_zh": "GlmOcrRequestRejected 带上 status_code / provider_code，归 auth_failed：「GLM-OCR 鉴权失败（码）：…」，建议按智谱 API Key 说。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -431,15 +431,15 @@
       "user_hint_zh": "智谱账号要求二次认证，请先登录智谱控制台完成二次认证",
       "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
-        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
-        "priority": "medium",
+        "failure_code": "auth_failed",
+        "summary_zh": "GlmOcrRequestRejected 带上 status_code / provider_code，归 auth_failed：「GLM-OCR 鉴权失败（码）：…」，建议按智谱 API Key 说。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -547,15 +547,15 @@
       "user_hint_zh": "输入内容超过模型上下文长度，请缩小每批翻译的内容或换上下文更长的模型",
       "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。GLM-OCR 按 ≤100 页分片，正常碰不到 1261。",
-        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
-        "priority": "low",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "归 upstream_bad_request：「GLM-OCR 拒绝了请求（码）：…」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
@@ -576,15 +576,15 @@
       "user_hint_zh": "这段内容触发了智谱的内容安全拦截，原样重试不会通过，可跳过该段或换服务商",
       "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "400 应归 upstream_bad_request，文案带业务码，并说明是内容审核。",
-        "priority": "medium",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "归 upstream_bad_request：「GLM-OCR 内容审核拦截了这份文件（1301）：…」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []

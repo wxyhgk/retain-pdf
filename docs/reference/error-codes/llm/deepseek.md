@@ -21,7 +21,7 @@ DeepSeek 只按 HTTP 状态码区分错误，没有单独的业务码表；下�
 
 走翻译请求层（OpenAI chat 协议），默认的翻译服务商。DeepSeek 只按 HTTP 状态区分错误，和我们的请求层规则一一对上；检测接口另外查余额。
 
-共 10 条：有缺口 1 条（高 0、中 0、低 1），碰不到 1 条。缺口按用户影响排的总表见[索引](../README.md#缺口汇总)。
+共 10 条：有缺口 0 条（高 0、中 0、低 0），碰不到 1 条。缺口按用户影响排的总表见[索引](../README.md#缺口汇总)。
 
 ## 错误码
 
@@ -34,7 +34,7 @@ DeepSeek 只按 HTTP 状态码区分错误，没有单独的业务码表；下�
 | （http_402） | 402 | 欠费或余额不足（`billing`） | 否 | 账户余额用完 | DeepSeek 账户余额不足，请充值后再试 | 整份翻译停下 → `upstream_quota_exhausted`：402 不重试，整份翻译停下，归「上游账户余额不足」，不可重试（agent 引擎报 QuotaExhausted）。 | 对得上 | [文档](https://api-docs.deepseek.com/quick_start/error_codes) |
 | （http_408） | 408 | 超时（`timeout`） | 是 | 文件上传太慢导致超时（OCR、语音转文字等接口） | 上传文件到 DeepSeek 超时，检查网络后重试 | 退避重试：退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。 | 对得上 | [文档](https://api-docs.deepseek.com/quick_start/error_codes) |
 | （http_413） | 413 | 文件问题（`file`） | 否 | 上传的文件超过大小限制（OCR、语音转文字等接口） | 文件超过 DeepSeek 的大小上限，请缩小文件 | 碰不到：413 只出在上传文件的接口（OCR、语音），翻译的 chat 请求碰不到。 | — | [文档](https://api-docs.deepseek.com/quick_start/error_codes) |
-| （http_422） | 422 | 请求参数错误（`invalid_request`） | 否 | 请求里有参数取值不合法 | DeepSeek 不接受某个参数取值，请按错误信息调整模型参数 | 只这一块失败 → `python_unhandled_exception`：不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。 | **缺口·低**：归 upstream_bad_request 一类并带上状态码。 | [文档](https://api-docs.deepseek.com/quick_start/error_codes) |
+| （http_422） | 422 | 请求参数错误（`invalid_request`） | 否 | 请求里有参数取值不合法 | DeepSeek 不接受某个参数取值，请按错误信息调整模型参数 | 只这一块失败 → `upstream_bad_request`：不重试，这一块失败，归 upstream_bad_request；summary 带实际状态码和服务商 error.message（一行、最多 160 字，不含请求正文和 Key）；Rust 执行器记 provider_rejected_request。 | 对得上 | [文档](https://api-docs.deepseek.com/quick_start/error_codes) |
 | （http_429） | 429 | 限流（`rate_limit`） | 是 | 请求太快，或超出并发 / QPS 限制 | 触发 DeepSeek 并发限制，请降低并发后重试 | 退避重试 → `upstream_rate_limited`：退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃。DeepSeek 的 429 只表示并发 / 频率限制，余额不足走 402，不会混。（[#56](https://github.com/wxyhgk/retain-pdf/issues/56)） | 对得上 | [文档](https://api-docs.deepseek.com/quick_start/error_codes) |
 | （http_500） | 500 | 服务端错误（`server`） | 是 | DeepSeek 服务端出错 | DeepSeek 服务端出错，稍等后重试；持续出现请联系 DeepSeek | 退避重试：退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。 | 对得上 | [文档](https://api-docs.deepseek.com/quick_start/error_codes) |
 | （http_503） | 503 | 服务繁忙（`overloaded`） | 是 | 流量太大，服务器过载 | DeepSeek 服务繁忙，稍后重试 | 退避重试：退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。 | 对得上 | [文档](https://api-docs.deepseek.com/quick_start/error_codes) |
@@ -42,9 +42,13 @@ DeepSeek 只按 HTTP 状态码区分错误，没有单独的业务码表；下�
 
 ## 相关代码
 
+- [`backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs`](../../../../backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs)
+- [`backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py`](../../../../backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py)
+- [`backend/translation-agent/retainpdf_translation_agent/agent.py`](../../../../backend/translation-agent/retainpdf_translation_agent/agent.py)
 - [`backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py`](../../../../backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py)
 - [`backend/translation/retainpdf_translation/llm/providers/deepseek/client.py`](../../../../backend/translation/retainpdf_translation/llm/providers/deepseek/client.py)
 - [`backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py`](../../../../backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py)
+- [`backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py`](../../../../backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py)
 - [`backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py`](../../../../backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py)
 
 ## 备注

@@ -408,8 +408,9 @@ fn failure_codes_doc(failure_codes: &[RetainpdfFailureCodeView], categories: &[P
     let _ = writeln!(
         out,
         "2. **Rust 兜底**：[`job_failure.rs`]({root}backend/packages/retainpdf-core/src/job_failure.rs) 的 `classify_job_failure_inner`，\
-         没有结构化失败时按错误文字和日志尾巴匹配；OCR 服务商的分类（`OcrErrorCategory`）只有鉴权两类会被用上\
-         （[`job_failure_structured.rs`]({root}backend/packages/retainpdf-core/src/job_failure_structured.rs)）。\n"
+         没有结构化失败时按错误文字和日志尾巴匹配；OCR 阶段失败时按 OCR 诊断里服务商的分类（`OcrErrorCategory`）给失败码：鉴权、额度、文件不合规、参数不对、限流、服务商处理失败\
+         （[`job_failure_structured.rs`]({root}backend/packages/retainpdf-core/src/job_failure_structured.rs)、\
+         [`job_failure_ocr_provider.rs`]({root}backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs)）。\n"
     );
     let _ = writeln!(
         out,

@@ -311,15 +311,17 @@
       "user_hint_zh": "智谱找不到这个模型，请检查模型名称拼写",
       "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "fail_block",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
-        "gap_zh": "模型名写错时每个块各自 400，应第一次就整份停下，提示改模型名后从翻译续跑。",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_model_unavailable",
+        "summary_zh": "第一次被拒就整份停下（同一组 Key + 这个模型后面的请求不再发，同一个 Key 的别的模型照常），失败码 upstream_model_unavailable：提示改模型名、开通模型或核对接口地址，从翻译续跑；agent 停下原因 model_unavailable，Rust 执行器 error_code=model_unavailable。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/translation-agent/retainpdf_translation_agent/agent.py"
         ],
         "issues": []
       }
@@ -593,15 +595,20 @@
       "user_hint_zh": "输入内容超过模型上下文长度，请缩小每批翻译的内容或换上下文更长的模型",
       "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
-        "gap_zh": "可以拆小批再发。",
-        "priority": "low",
+        "failure_code": null,
+        "summary_zh": "单次请求太长：不再换参数重发同样的请求，批量拆成单块再发，单块仍太长这一块保留原文（死信，degradation_reason=request_too_long，不挡导出），不记凭据、不停整份。Rust 执行器不拆批：记 failed + request_too_long，任务失败 summary 写明「单次请求太长」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/batched_plain.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/single_item_flow.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs",
+          "backend/translation/retainpdf_translation/llm/shared/rust_executor.py"
         ],
         "issues": []
       }
@@ -621,15 +628,19 @@
       "user_hint_zh": "这段内容触发了智谱的内容安全拦截，原样重试不会通过，可跳过该段或换服务商",
       "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
-        "gap_zh": "应标成「内容审核未过」，保留原文，不当成配置错误。",
-        "priority": "low",
+        "failure_code": null,
+        "summary_zh": "不重试、不停整份：这一块保留原文（死信，degradation_reason=upstream_content_rejected），翻译诊断记「内容审核未过」；批量请求被拦时退到逐块，只有触发的块保留原文；Rust 执行器 error_code=content_rejected（不暂停）。agent 引擎按页请求，整个 agent 阶段失败。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/translation-agent/retainpdf_translation_agent/agent.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/single_item_flow.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/terminal_payloads.py"
         ],
         "issues": []
       }

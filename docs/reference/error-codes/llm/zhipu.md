@@ -22,7 +22,7 @@
 
 作翻译模型时走翻译请求层（OpenAI 兼容 chat，如 glm-5.3-flash）。4xx 先读业务码（2026-11-23，只认智谱地址）：1113、1308–1310、1313、1314、1316–1321 不再退避，整份停下归 upstream_quota_exhausted；1311、1315 整份停下归 auth_failed；1302 并发、1305 过载照旧当限流退避。规则和 GLM-OCR 那边（见 ocr/glm_ocr）一致。
 
-共 35 条：有缺口 3 条（高 0、中 1、低 2），碰不到 0 条。缺口按用户影响排的总表见[索引](../README.md#缺口汇总)。
+共 35 条：有缺口 0 条（高 0、中 0、低 0），碰不到 0 条。缺口按用户影响排的总表见[索引](../README.md#缺口汇总)。
 
 ## 错误码
 
@@ -38,7 +38,7 @@
 | `1113` | 429 | 欠费或余额不足（`billing`） | 否 | 账户欠费或余额不足，也没有可用资源包 | 检查智谱账号余额或资源包，充值后再重试 | 整份翻译停下 → `upstream_quota_exhausted`：请求层读响应体业务码：智谱地址（bigmodel.cn、z.ai）上 error.code 或顶层 code 是 1113、1308–1310、1313、1314、1316–1321，认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
 | `1200` | 500 | 服务端错误（`server`） | 是 | API 调用失败（笼统的服务端错误） | 智谱接口调用失败，稍后重试；持续出现请联系智谱客服 | 退避重试：退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
 | `1210` | 400 | 请求参数错误（`invalid_request`） | 否 | 请求参数有误 | 请求参数不被智谱接受，请检查模型设置（如温度、最大输出长度）后重试 | 只这一块失败 → `upstream_bad_request`：400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
-| `1211` | 400 | 模型不存在（`model_not_found`） | 否 | 模型不存在，模型代码写错了 | 智谱找不到这个模型，请检查模型名称拼写 | 只这一块失败 → `upstream_bad_request`：400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。 | **缺口·中**：模型名写错时每个块各自 400，应第一次就整份停下，提示改模型名后从翻译续跑。 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
+| `1211` | 400 | 模型不存在（`model_not_found`） | 否 | 模型不存在，模型代码写错了 | 智谱找不到这个模型，请检查模型名称拼写 | 整份翻译停下 → `upstream_model_unavailable`：第一次被拒就整份停下（同一组 Key + 这个模型后面的请求不再发，同一个 Key 的别的模型照常），失败码 upstream_model_unavailable：提示改模型名、开通模型或核对接口地址，从翻译续跑；agent 停下原因 model_unavailable，Rust 执行器 error_code=model_unavailable。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
 | `1212` | 400 | 不支持的参数或调用方式（`unsupported`） | 否 | 当前模型不支持这种调用方式 | 这个智谱模型不支持当前调用方式（如同步/异步/流式），请换模型或换调用方式 | 只这一块失败 → `upstream_bad_request`：400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
 | `1213` | 400 | 请求参数错误（`invalid_request`） | 否 | 缺少某个必填参数 | 请求缺少必填参数，请查看错误信息里提到的字段 | 只这一块失败 → `upstream_bad_request`：400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
 | `1214` | 400 | 请求参数错误（`invalid_request`） | 否 | 某个参数取值非法 | 错误信息里提到的参数取值不合法，请调整后重试 | 只这一块失败 → `upstream_bad_request`：400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
@@ -48,8 +48,8 @@
 | `1222` | 400 | 请求参数错误（`invalid_request`） | 否 | 请求的接口不存在 | 请求地址不对，请检查 Base URL 和接口路径 | 只这一块失败 → `upstream_bad_request`：400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
 | `1230` | 500 | 服务端错误（`server`） | 是 | 接口调用流程中出错 | 智谱服务处理出错，稍后重试；持续出现请联系智谱客服 | 退避重试：退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
 | `1234` | 500 | 服务端错误（`server`） | 是 | 网络错误，响应里附带错误 id | 智谱侧网络错误，稍后重试；持续出现请带上错误 id 联系智谱客服 | 退避重试：退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
-| `1261` | 400 | 输入或输出太长（`context_length`） | 否 | 提示词超长，超过模型上下文 | 输入内容超过模型上下文长度，请缩小每批翻译的内容或换上下文更长的模型 | 只这一块失败 → `upstream_bad_request`：400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。 | **缺口·低**：可以拆小批再发。 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
-| `1301` | 400 | 内容审核（`content_filter`） | 否 | 输入或生成内容被判定可能不安全或敏感，被拦截 | 这段内容触发了智谱的内容安全拦截，原样重试不会通过，可跳过该段或换服务商 | 只这一块失败 → `upstream_bad_request`：400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。 | **缺口·低**：应标成「内容审核未过」，保留原文，不当成配置错误。 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
+| `1261` | 400 | 输入或输出太长（`context_length`） | 否 | 提示词超长，超过模型上下文 | 输入内容超过模型上下文长度，请缩小每批翻译的内容或换上下文更长的模型 | 只这一块失败：单次请求太长：不再换参数重发同样的请求，批量拆成单块再发，单块仍太长这一块保留原文（死信，degradation_reason=request_too_long，不挡导出），不记凭据、不停整份。Rust 执行器不拆批：记 failed + request_too_long，任务失败 summary 写明「单次请求太长」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
+| `1301` | 400 | 内容审核（`content_filter`） | 否 | 输入或生成内容被判定可能不安全或敏感，被拦截 | 这段内容触发了智谱的内容安全拦截，原样重试不会通过，可跳过该段或换服务商 | 只这一块失败：不重试、不停整份：这一块保留原文（死信，degradation_reason=upstream_content_rejected），翻译诊断记「内容审核未过」；批量请求被拦时退到逐块，只有触发的块保留原文；Rust 执行器 error_code=content_rejected（不暂停）。agent 引擎按页请求，整个 agent 阶段失败。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
 | `1302` | 429 | 限流（`rate_limit`） | 是 | 触发账户速率（并发）限制 | 请求太密集，触发了智谱账号的并发限制，请降低并发数后重试 | 退避重试 → `upstream_rate_limited`：退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/rate-limit) |
 | `1305` | 429 | 服务繁忙（`overloaded`） | 是 | 该模型访问量过大，平台级过载保护 | 智谱这个模型当前访问量过大，稍后重试，重试间隔逐步拉长 | 退避重试 → `upstream_rate_limited`：退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/rate-limit) |
 | `1308` | 429 | 额度或用量上限（`quota`） | 否 | 达到某个时间窗口的用量上限，到重置时间后恢复（多见于 Coding Plan） | 已达到智谱套餐的用量上限，等到错误信息里的重置时间后再用，或改用按量付费的标准 Key | 整份翻译停下 → `upstream_quota_exhausted`：请求层读响应体业务码：智谱地址（bigmodel.cn、z.ai）上 error.code 或顶层 code 是 1113、1308–1310、1313、1314、1316–1321，认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。 | 对得上 | [文档](https://docs.bigmodel.cn/cn/api/api-code) |
@@ -68,13 +68,21 @@
 
 ## 相关代码
 
+- [`backend/packages/retainpdf-providers/src/model_executor/limits.rs`](../../../../backend/packages/retainpdf-providers/src/model_executor/limits.rs)
 - [`backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs`](../../../../backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs)
 - [`backend/packages/retainpdf-providers/src/upstream_limits.rs`](../../../../backend/packages/retainpdf-providers/src/upstream_limits.rs)
 - [`backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py`](../../../../backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py)
+- [`backend/translation-agent/retainpdf_translation_agent/agent.py`](../../../../backend/translation-agent/retainpdf_translation_agent/agent.py)
 - [`backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py`](../../../../backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py)
 - [`backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py`](../../../../backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py)
+- [`backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/batched_plain.py`](../../../../backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/batched_plain.py)
+- [`backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py`](../../../../backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py)
+- [`backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/single_item_flow.py`](../../../../backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/single_item_flow.py)
+- [`backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/terminal_payloads.py`](../../../../backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/terminal_payloads.py)
 - [`backend/translation/retainpdf_translation/llm/providers/deepseek/client.py`](../../../../backend/translation/retainpdf_translation/llm/providers/deepseek/client.py)
 - [`backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py`](../../../../backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py)
+- [`backend/translation/retainpdf_translation/llm/shared/output_limits.py`](../../../../backend/translation/retainpdf_translation/llm/shared/output_limits.py)
+- [`backend/translation/retainpdf_translation/llm/shared/rust_executor.py`](../../../../backend/translation/retainpdf_translation/llm/shared/rust_executor.py)
 - [`backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py`](../../../../backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py)
 - [`backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py`](../../../../backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py)
 

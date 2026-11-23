@@ -140,15 +140,20 @@
       "user_hint_zh": "减少每次发送的内容（拆小分块）。",
       "source_url": "https://platform.claude.com/docs/en/build-with-claude/context-windows",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
-        "gap_zh": "可以拆小批再发，并在文案里说明「单次请求太长」。",
-        "priority": "low",
+        "failure_code": null,
+        "summary_zh": "单次请求太长：不再换参数重发同样的请求，批量拆成单块再发，单块仍太长这一块保留原文（死信，degradation_reason=request_too_long，不挡导出），不记凭据、不停整份。Rust 执行器不拆批：记 failed + request_too_long，任务失败 summary 写明「单次请求太长」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/batched_plain.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/single_item_flow.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs",
+          "backend/translation/retainpdf_translation/llm/shared/rust_executor.py"
         ],
         "issues": []
       }
@@ -317,14 +322,17 @@
       "user_hint_zh": "核对接口地址和模型名称。",
       "source_url": "https://platform.claude.com/docs/en/api/errors",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "fail_block",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "模型名写错或没开通时每个块各自失败，最后说不清原因。应和 401/403 一样第一次就整份停下，给「模型不存在」类失败，换模型后从翻译续跑。",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_model_unavailable",
+        "summary_zh": "第一次被拒就整份停下（同一组 Key + 这个模型后面的请求不再发，同一个 Key 的别的模型照常），失败码 upstream_model_unavailable：提示改模型名、开通模型或核对接口地址，从翻译续跑；agent 停下原因 model_unavailable，Rust 执行器 error_code=model_unavailable。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/translation-agent/retainpdf_translation_agent/agent.py"
         ],
         "issues": []
       }
@@ -369,14 +377,20 @@
       "user_hint_zh": "减小单次请求体积（少带图片/文件或拆分）。",
       "source_url": "https://platform.claude.com/docs/en/api/errors",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
-        "gap_zh": "归 upstream_bad_request 一类并说明「单次请求太大」。",
-        "priority": "low",
+        "failure_code": null,
+        "summary_zh": "单次请求太长：不再换参数重发同样的请求，批量拆成单块再发，单块仍太长这一块保留原文（死信，degradation_reason=request_too_long，不挡导出），不记凭据、不停整份。Rust 执行器不拆批：记 failed + request_too_long，任务失败 summary 写明「单次请求太长」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/batched_plain.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/single_item_flow.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs",
+          "backend/translation/retainpdf_translation/llm/shared/rust_executor.py"
         ],
         "issues": []
       }
@@ -571,14 +585,17 @@
       "user_hint_zh": "调大 max_tokens，或减小每次翻译的分块。",
       "source_url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
         "failure_code": null,
-        "summary_zh": "只要 content 里有文字就收下，不看 stop_reason；没有文字才抛错重试。",
-        "gap_zh": "stop_reason 为 max_tokens / model_context_window_exceeded 时译文是截断的，应当这一块没翻成。",
-        "priority": "low",
+        "summary_zh": "回答不完整（截断 / 被内容过滤）时不收半截译文：批量留下已用 <<<END>>> 写完的块、其余拆单块重翻；单块重试一次后记这一块失败（degradation_reason=model_output_truncated / model_output_content_filter），收尾补救不成保留原文。Rust 执行器记 failed + output_incomplete（不再记结果不明、不暂停），任务失败 summary 写明「模型回答不完整」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs"
         ],
         "issues": []
       }
@@ -598,14 +615,17 @@
       "user_hint_zh": "按截断处理，减小分块后重试。",
       "source_url": "https://platform.claude.com/docs/en/build-with-claude/handling-stop-reasons",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_block",
         "failure_code": null,
-        "summary_zh": "只要 content 里有文字就收下，不看 stop_reason；没有文字才抛错重试。",
-        "gap_zh": "stop_reason 为 max_tokens / model_context_window_exceeded 时译文是截断的，应当这一块没翻成。",
-        "priority": "low",
+        "summary_zh": "回答不完整（截断 / 被内容过滤）时不收半截译文：批量留下已用 <<<END>>> 写完的块、其余拆单块重翻；单块重试一次后记这一块失败（degradation_reason=model_output_truncated / model_output_content_filter），收尾补救不成保留原文。Rust 执行器记 failed + output_incomplete（不再记结果不明、不暂停），任务失败 summary 写明「模型回答不完整」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+          "backend/translation/retainpdf_translation/llm/shared/output_limits.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation-classic/retainpdf_translation_classic/llm/shared/orchestration/output_limit_failures.py",
+          "backend/packages/retainpdf-providers/src/model_executor/limits.rs"
         ],
         "issues": []
       }

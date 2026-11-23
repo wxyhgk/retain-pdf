@@ -39,7 +39,7 @@
     "429 在两个接口里意思不同：异步接口 12002 是请求太快（可重试）；同步版面解析接口的 429 是当日页数额度用完（不可重试）。RetainPDF 只用异步接口。",
     "字段名：异步接口是 code / msg / traceId，同步接口是 errorCode / errorMsg / logId；两种都要认（Rust 用 serde alias 都认，Python 的 _check_envelope 只读 errorCode）。"
   ],
-  "handling_summary_zh": "两条代码路径。Rust（整份提交、轮询，平时走这条）：提交只发一次不重试（避免重复计费），轮询、下载只对连接、超时类网络错误重试，不看 HTTP 状态；分类在 errors.rs（OcrErrorCategory），任务层认鉴权两类和 12001 额度用完（upstream_quota_exhausted），其余落 unknown。Python（OCR 和翻译并行、分片上传时）：retry.py 对 408/429/5xx 重试（默认 3 次），其余 4xx 直接失败；不重试的 4xx 和 HTTP 200 包里的错误读出 code/msg（errorCode/errorMsg 也认），抛 PaddleRequestRejected（12001 是 PaddleQuotaExhausted），报错只带状态码、业务码、服务商原话和 traceId，不带签名地址。",
+  "handling_summary_zh": "两条代码路径。Rust（整份提交、轮询，平时走这条）：提交遇排队已满（10010）、429、HTTP 500 退避重交（服务商明确没收下，2026-11-23），其余不重交（避免重复计费）；轮询对网络错误和 429 / 12002 退避再查；分类在 errors.rs（OcrErrorCategory），任务层按分类给失败码（job_failure_ocr_provider.rs）：鉴权 → auth_failed，12001 → upstream_quota_exhausted，文件类 → ocr_file_rejected，参数类 → upstream_bad_request，11002 / 11003 / 500 → ocr_provider_failed。Python（OCR 和翻译并行、分片上传时）：retry.py 对 408/429/5xx 重试（默认 3 次），10010 在提交处重交；不重试的 4xx 和 HTTP 200 包里的错误读出 code/msg（errorCode/errorMsg 也认），抛 PaddleRequestRejected（12001 是 PaddleQuotaExhausted），按业务码给同样的失败码（ocr/provider_failures.py）；报错只带状态码、业务码、服务商原话和 traceId，不带签名地址。",
   "notes_zh": [
     "字段名差异：官方异步接口文档写的是 code/msg/traceId，不是 errorCode/errorMsg/logId；Rust 端 models.rs 和 errors.rs 用 serde alias 两种都认；Python paddle_api.py 的 _error_fields 2026-11-23 起也两种都认（以前 _check_envelope 只读 errorCode，HTTP 200 + code 会漏判）",
     "429 含义分歧：同步接口配额页说 429 = 当日页数额度用完（不可重试）；异步接口里额度用完是 12001 (HTTP 403)，429 对应 12002 请求频率过高（可重试）。仓库 errors.rs 把 429 一律归为 QueueFull（可重试），对同步接口的 429 不对",
@@ -227,17 +227,19 @@
       "user_hint_zh": "PaddleOCR 服务内部出错，请稍后重试；反复出现请联系 PaddleOCR 官方",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "retry",
-        "failure_code": null,
-        "summary_zh": "Rust：提交只发一次不重试（避免重复计费），轮询、下载只对网络错误重试；Python 路径对 5xx 退避重试（默认 3 次）。",
-        "gap_zh": "提交收到 500 时服务端明确没收下任务，可以退避重试几次；最终失败落「暂未识别出明确根因」。",
-        "priority": "low",
+        "failure_code": "ocr_provider_failed",
+        "summary_zh": "提交收到 HTTP 500 算服务商没收下：退避重交，Rust 撤销提交意图（重试不被「结果不明确」挡住）；用完「PaddleOCR 服务暂时出错（HTTP 500），稍后再试」，可重试。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
+          "backend/packages/retainpdf-runner/src/job_runner/ocr_flow/dispatch_journal.rs"
         ],
         "issues": [
           47,
@@ -310,17 +312,17 @@
       "user_hint_zh": "上传的文件是空的，请换一个有效文件",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "Rust 归 InvalidRequest，任务失败文字是「Paddle HTTP 请求失败」，落 unknown（失败的 upstream.code 带业务码）；Python 读出 code/msg，抛 PaddleRequestRejected，报错带业务码和服务商原话，归「上游服务拒绝请求（400）」。",
-        "gap_zh": "Rust 路径任务失败仍落 unknown，应归 upstream_bad_request 并带服务商原话；10003–10005 是「换文件」，两条路径的建议都还是「检查配置」。",
-        "priority": "medium",
+        "failure_code": "ocr_file_rejected",
+        "summary_zh": "归 ocr_file_rejected（input 类，不可重试）：summary「PaddleOCR 拒收了这份文件：<原因>（码）：errorMsg」，建议换文件、压缩或拆分。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py"
         ],
         "issues": []
       }
@@ -340,17 +342,17 @@
       "user_hint_zh": "文件链接无法识别，请检查链接是否正确、可公开访问",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
         "failure_code": "upstream_bad_request",
-        "summary_zh": "Rust 归 InvalidRequest，任务失败文字是「Paddle HTTP 请求失败」，落 unknown（失败的 upstream.code 带业务码）；Python 读出 code/msg，抛 PaddleRequestRejected，报错带业务码和服务商原话，归「上游服务拒绝请求（400）」。",
-        "gap_zh": "Rust 路径任务失败仍落 unknown，应归 upstream_bad_request 并带服务商原话；10003–10005 是「换文件」，两条路径的建议都还是「检查配置」。",
-        "priority": "medium",
+        "summary_zh": "归 upstream_bad_request，summary 带 errorCode 和 errorMsg。Rust、Python 两条路一致。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py"
         ],
         "issues": []
       }
@@ -370,17 +372,17 @@
       "user_hint_zh": "文件太大（本地上传最多 50MB），请压缩或拆分后再试",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "Rust 归 InvalidRequest，任务失败文字是「Paddle HTTP 请求失败」，落 unknown（失败的 upstream.code 带业务码）；Python 读出 code/msg，抛 PaddleRequestRejected，报错带业务码和服务商原话，归「上游服务拒绝请求（400）」。",
-        "gap_zh": "Rust 路径任务失败仍落 unknown，应归 upstream_bad_request 并带服务商原话；10003–10005 是「换文件」，两条路径的建议都还是「检查配置」。",
-        "priority": "medium",
+        "failure_code": "ocr_file_rejected",
+        "summary_zh": "归 ocr_file_rejected（input 类，不可重试）：summary「PaddleOCR 拒收了这份文件：<原因>（码）：errorMsg」，建议换文件、压缩或拆分。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py"
         ],
         "issues": []
       }
@@ -400,17 +402,17 @@
       "user_hint_zh": "文件格式不支持，请转成 PDF 或常见图片格式后再试",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "Rust 归 InvalidRequest，任务失败文字是「Paddle HTTP 请求失败」，落 unknown（失败的 upstream.code 带业务码）；Python 读出 code/msg，抛 PaddleRequestRejected，报错带业务码和服务商原话，归「上游服务拒绝请求（400）」。",
-        "gap_zh": "Rust 路径任务失败仍落 unknown，应归 upstream_bad_request 并带服务商原话；10003–10005 是「换文件」，两条路径的建议都还是「检查配置」。",
-        "priority": "medium",
+        "failure_code": "ocr_file_rejected",
+        "summary_zh": "归 ocr_file_rejected（input 类，不可重试）：summary「PaddleOCR 拒收了这份文件：<原因>（码）：errorMsg」，建议换文件、压缩或拆分。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py"
         ],
         "issues": []
       }
@@ -430,17 +432,17 @@
       "user_hint_zh": "文件无法解析，请检查文件是否损坏后重新上传",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "Rust 归 InvalidRequest，任务失败文字是「Paddle HTTP 请求失败」，落 unknown（失败的 upstream.code 带业务码）；Python 读出 code/msg，抛 PaddleRequestRejected，报错带业务码和服务商原话，归「上游服务拒绝请求（400）」。",
-        "gap_zh": "Rust 路径任务失败仍落 unknown，应归 upstream_bad_request 并带服务商原话；10003–10005 是「换文件」，两条路径的建议都还是「检查配置」。",
-        "priority": "medium",
+        "failure_code": "ocr_file_rejected",
+        "summary_zh": "归 ocr_file_rejected（input 类，不可重试）：summary「PaddleOCR 拒收了这份文件：<原因>（码）：errorMsg」，建议换文件、压缩或拆分。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py"
         ],
         "issues": []
       }
@@ -462,12 +464,14 @@
       "retainpdf_handling": {
         "status": "ok",
         "action": "fail_fast",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "提交前按 max_pages 挡住（默认 999 页），整本翻译超长时分片上传，正常碰不到。",
+        "failure_code": "ocr_file_rejected",
+        "summary_zh": "提交前按 max_pages 挡住（默认 999 页），整本翻译超长时分片上传，正常碰不到；真碰到归 ocr_file_rejected（换文件或拆分）。",
         "gap_zh": null,
         "priority": null,
         "code_paths": [
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_chunked.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_chunked.py",
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py"
         ],
         "issues": [
           50,
@@ -491,17 +495,17 @@
       "user_hint_zh": "所选 PaddleOCR 模型不存在，请检查模型名称",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
         "failure_code": "upstream_bad_request",
-        "summary_zh": "同 10001：Rust 落 unknown（upstream.code 带业务码），Python 归「上游服务拒绝请求（400）」，报错带业务码和服务商原话。",
-        "gap_zh": "是我们自己的请求错，应少见；Rust 路径任务失败仍落 unknown，应归 upstream_bad_request 并带 errorCode / errorMsg。",
-        "priority": "low",
+        "summary_zh": "归 upstream_bad_request，summary 带 errorCode 和 errorMsg。Rust、Python 两条路一致。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py"
         ],
         "issues": []
       }
@@ -521,17 +525,17 @@
       "user_hint_zh": "请求参数不合法，请检查 OCR 选项配置",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
         "failure_code": "upstream_bad_request",
-        "summary_zh": "同 10001：Rust 落 unknown（upstream.code 带业务码），Python 归「上游服务拒绝请求（400）」，报错带业务码和服务商原话。",
-        "gap_zh": "是我们自己的请求错，应少见；Rust 路径任务失败仍落 unknown，应归 upstream_bad_request 并带 errorCode / errorMsg。",
-        "priority": "low",
+        "summary_zh": "归 upstream_bad_request，summary 带 errorCode 和 errorMsg。Rust、Python 两条路一致。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py"
         ],
         "issues": []
       }
@@ -551,17 +555,17 @@
       "user_hint_zh": "同一批次任务太多，请分成多批提交",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
         "failure_code": "upstream_bad_request",
-        "summary_zh": "同 10001：Rust 落 unknown（upstream.code 带业务码），Python 归「上游服务拒绝请求（400）」，报错带业务码和服务商原话。",
-        "gap_zh": "是我们自己的请求错，应少见；Rust 路径任务失败仍落 unknown，应归 upstream_bad_request 并带 errorCode / errorMsg。",
-        "priority": "low",
+        "summary_zh": "归 upstream_bad_request，summary 带 errorCode 和 errorMsg。Rust、Python 两条路一致。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py"
         ],
         "issues": []
       }
@@ -579,17 +583,18 @@
       "user_hint_zh": "PaddleOCR 提交队列已满，请稍后重试",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "fail_fast",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "Rust 认成 QueueFull 但提交不重试，任务直接失败；Python 归「上游服务拒绝请求（400）」且标不可重试。",
-        "gap_zh": "服务端明确拒收、没有重复计费风险，可以在提交处退避重试几次；最终文案「Paddle 排队已满，稍后再试」，标可重试。",
-        "priority": "medium",
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "提交处退避重交（次数同请求重试次数，默认 3 次，等 10 秒、20 秒），用完「PaddleOCR 排队已满或请求太快（10010）：…」，可重试。Rust、Python 一致。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs"
         ],
         "issues": [
           148
@@ -638,17 +643,17 @@
       "user_hint_zh": "OCR 任务已过期，请重新提交",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "fail_fast",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "Rust 归 InvalidRequest，任务落 unknown；Python 归「上游服务拒绝请求（400）」，报错带业务码和服务商原话。",
-        "gap_zh": "文案应说明「任务已过期，重新提交」。",
-        "priority": "low",
+        "failure_code": "ocr_provider_failed",
+        "summary_zh": "「PaddleOCR 任务已过期（11002）」，建议重新提交，可重试。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py"
         ],
         "issues": []
       }
@@ -668,17 +673,17 @@
       "user_hint_zh": "PaddleOCR 解析这份文件失败，可重试一次；仍失败请查看服务端说明或换用其他 OCR",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "fail_fast",
-        "failure_code": "python_unhandled_exception",
-        "summary_zh": "Rust 归 ProviderFailed「Paddle 任务执行失败」，原因只放进 OCR 诊断，任务失败落 unknown；Python 现在 code 和 errorCode 两种字段都认，抛 PaddleRequestRejected（报错带业务码和服务商原话），分片上传时对失败的片重交，仍失败就是「暂未识别出明确根因」。",
-        "gap_zh": "给一个「OCR 服务商解析失败」的失败码，summary 直接带 errorMsg（两条路径现在都落「暂未识别出明确根因」）。",
-        "priority": "medium",
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "ocr_provider_failed",
+        "summary_zh": "任务失败按 state=failed 处理（分片会重交那一片），最终落 ocr_provider_failed，summary 带 data.errorMsg。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs",
+          "backend/pipeline/retainpdf_pipeline/ocr/provider_failures.py",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
           "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_chunked.py"
         ],
         "issues": [
@@ -732,17 +737,15 @@
       "user_hint_zh": "PaddleOCR 请求太频繁，请稍后重试",
       "source_url": "https://ai.baidu.com/ai-doc/AISTUDIO/fml7mozw5",
       "retainpdf_handling": {
-        "status": "gap",
+        "status": "ok",
         "action": "retry",
         "failure_code": "upstream_rate_limited",
-        "summary_zh": "Python 路径退避重试、认 Retry-After，用完归「外部服务请求被限流」；Rust 归 QueueFull，提交、轮询都不按状态码重试。",
-        "gap_zh": "Rust 轮询可以对 429 退避。",
-        "priority": "low",
+        "summary_zh": "Rust 轮询遇 429 / 12002 退避后再查；提交时同 10010 退避重交。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
-          "backend/packages/retainpdf-data/src/ocr_provider/paddle/errors.rs",
           "backend/packages/retainpdf-data/src/ocr_provider/paddle/client.rs",
-          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
-          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+          "backend/packages/retainpdf-core/src/job_failure_ocr_provider.rs"
         ],
         "issues": []
       }
