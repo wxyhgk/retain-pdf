@@ -227,6 +227,9 @@ function buildModel(job, options = {}) {
           items: [{ id, text: sourceText, translatedText: translated, originalLineCount: lineCount, indent: firstLineIndentOf(item) }]
         };
         if (retain) stream.sourceLinePitch = pitchFromPdf || pitchFromOcr || 0;
+        // The host's text-layer size of this paragraph (source_font_size_pt, the measure headings'
+        // source sizes use): headings keep their source ratio to the body (retain-titles followBody).
+        if (retain && sourceFontSizeOf(item) > 0) stream.sourceTextSize = sourceFontSizeOf(item);
         streams.push(stream);
         bodyStreams.push(stream);
         stats.streams += 1;
@@ -321,6 +324,10 @@ function buildModel(job, options = {}) {
   // overlay's ceiling for the shared body font. Seeds above it are clamped so
   // the group does not start over the ceiling.
   const sourceBodyFont = median(bodyStreams.map(stream => stream.fontSize), NaN);
+  // Body size in the source's text layer (median of the paragraphs the host measured; 0 without a
+  // text layer): the same measure as headings' source sizes (source_font_size_pt).
+  const sourceBodyTextFont = median(bodyStreams.map(stream => Number(stream.sourceTextSize) || 0).filter(size => size > 0), 0);
+  stats.sourceBodyTextFont = Number(sourceBodyTextFont.toFixed(2));
   if (Number.isFinite(sourceBodyFont)) {
     stats.sourceBodyFont = Number(sourceBodyFont.toFixed(2));
     // The retain profile keeps every paragraph's own seed (retain-pdf has no

@@ -115,12 +115,12 @@ def test_annotate_reads_the_text_layer_and_falls_back_without_a_pdf(tmp_path: Pa
     title = _heading([18, 40, 200, 66], source_text="Results", translated="结果")
     body = _body([18, 100, 380, 160])
     pages = {0: [title, body]}
-    assert annotate_title_source_font_sizes(pages, pdf_path) == {"pdf": 1, "fit": 0, "none": 0}
+    assert annotate_title_source_font_sizes(pages, pdf_path) == {"pdf": 1, "fit": 0, "none": 0, "body_pdf": 0}
     assert title["source_font_size_pt"] == 18.0 and title["source_font_size_from"] == "pdf"
     assert "source_font_size_pt" not in body
 
     other = _heading([18, 40, 200, 66], source_text="Results", translated="结果")
-    assert annotate_title_source_font_sizes({0: [other]}, tmp_path / "missing.pdf") == {"pdf": 0, "fit": 1, "none": 0}
+    assert annotate_title_source_font_sizes({0: [other]}, tmp_path / "missing.pdf") == {"pdf": 0, "fit": 1, "none": 0, "body_pdf": 0}
     assert other["source_font_size_from"] == "fit"
 
 
@@ -130,3 +130,31 @@ def test_rpr_fit_items_carry_the_source_size_for_titles_only() -> None:
     items = {entry["item_id"]: entry for entry in _translation_items({0: [title, body]})}
     assert items["p001-b001"]["source_font_size_pt"] == 10.9
     assert "source_font_size_pt" not in items["p001-b002"]
+
+
+def test_body_text_layer_size_is_measured_and_passed_to_the_engine(tmp_path: Path) -> None:
+    """正文也量文字层字号（只认 pdf，不反推），随译文条目传给引擎：引擎按正文放大的倍数放大标题（2026-11-22）。"""
+    pdf_path = tmp_path / "source.pdf"
+    document = fitz.open()
+    first = document.new_page(width=400, height=300)
+    first.insert_text((20, 60), "Results", fontsize=12)
+    first.insert_text((20, 120), "The body text of this page is set at ten points.", fontsize=10)
+    second = document.new_page(width=400, height=300)  # 没有标题的页：正文不够时补读
+    second.insert_text((20, 120), "Another paragraph of body text set at ten points.", fontsize=10)
+    document.save(pdf_path)
+    document.close()
+
+    title = _heading([18, 40, 200, 66], source_text="Results", translated="结果")
+    body = {**_body([18, 105, 380, 130]), "source_text": "The body text of this page is set at ten points."}
+    other = {**_body([18, 105, 380, 130]), "item_id": "p002-b001", "page_idx": 1,
+             "source_text": "Another paragraph of body text set at ten points."}
+    unmeasured = {**_body([18, 200, 380, 260]), "item_id": "p001-b003", "block_idx": 3}
+    stats = annotate_title_source_font_sizes({0: [title, body, unmeasured], 1: [other]}, pdf_path)
+    assert stats == {"pdf": 1, "fit": 0, "none": 0, "body_pdf": 2}
+    assert (body["source_font_size_pt"], body["source_font_size_from"]) == (10.0, "pdf")
+    assert other["source_font_size_pt"] == 10.0
+    assert "source_font_size_pt" not in unmeasured  # 框里没字：正文不反推
+    items = {entry["item_id"]: entry for entry in _translation_items({0: [title, body, unmeasured], 1: [other]})}
+    assert items["p001-b001"]["source_font_size_pt"] == 12.0
+    assert items["p001-b002"]["source_font_size_pt"] == 10.0
+    assert "source_font_size_pt" not in items["p001-b003"]

@@ -96,6 +96,12 @@
       retainBody.scheduleNonBody();
       retainBody.fitBody(steps.retainSmoothing || null);
       retainBody.repairNonBody();
+      // The body has settled, usually a little above its source size: headings follow it, so a
+      // heading the source set at the body's size (or 1.1 x) is not left smaller (or equal).
+      if (retainTitles) {
+        const followed = retainTitles.followBody(Select.anyTitle, Select.body, Number(fitOptions.bodySourceTextFont));
+        if (typeof fitOptions.onTitleFollow === "function") fitOptions.onTitleFollow(followed);
+      }
       // Headings were sized from their boxes; now that the body has settled,
       // back them off where their ink still touches something.
       if (retainTitles) retainTitles.backoffTitles(Select.anyTitle);

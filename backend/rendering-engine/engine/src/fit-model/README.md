@@ -209,7 +209,12 @@ What the switch selects:
   title / heading leading). When the host gives the heading's source size
   (`source_font_size_pt` on the translation item, retain-pdf measures it), that
   size is the cap: the heading keeps it and only shrinks to fit, instead of
-  filling a box sized by the source's line count; after the body pass, backed off in 0.25 pt steps
+  filling a box sized by the source's line count. Once the body has settled
+  (`followBody`), headings with a source size grow to source × (settled body /
+  the body's source size: the median `source_font_size_pt` the host gave the
+  body paragraphs), as far as they keep their line count, so the source's
+  heading-to-body ratio holds when the body is set above its source size;
+  without body sizes nothing changes. Then, backed off in 0.25 pt steps
   down to 0.72 × / 0.78 × where its ink still touches something. Titles are
   measured with `measurers.bold` when the host provides it and serialized
   with `fontWeight: "bold"`; the main title is left-aligned.

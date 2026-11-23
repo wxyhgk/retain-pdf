@@ -86,6 +86,41 @@
       }
     }
 
+    // After the body pass: the body is set at its shared size, usually a little above the source
+    // (14e352: 9.96 -> 10.52), while headings were capped at their own source size -- so a heading
+    // the source set at the body's size came out smaller than the body, one set at 1.1 x came out
+    // equal. Each heading with a source size grows to source x (settled body / source body), as far
+    // as it keeps its line count; the collision back-off below still applies. The scale is clamped
+    // to [0.8, 1.4]. -> { body_source, body_settled, scale, grown, kept } or null (no text layer).
+    function followBody(predicate, bodyPredicate, bodySource) {
+      if (!(bodySource > 0)) return null;
+      const bodySizes = run.scopedNodes(bodyPredicate).map(node => layoutControlFontSize(node)).filter(size => size > 0).sort((a, b) => a - b);
+      if (!bodySizes.length) return null;
+      const settled = bodySizes[(bodySizes.length - 1) >> 1];
+      const scale = Math.min(1.4, Math.max(0.8, settled / bodySource));
+      let grown = 0;
+      let kept = 0;
+      const lines = node => geometry.geometry(node).lines.length;
+      for (const node of run.scopedNodes(predicate)) {
+        const sourceFont = Number(node.source?.sourceFontSize);
+        if (!(Number.isFinite(sourceFont) && sourceFont > 0) || !titleState.get(node)) continue;
+        const current = layoutControlFontSize(node);
+        const target = Number((sourceFont * scale).toFixed(2));
+        if (!(target > current + 1e-6)) continue;
+        const linesNow = lines(node);
+        const keepsLines = at => {
+          setStyle(node, at, titleRatioAt(node, at));
+          return lines(node) <= linesNow;
+        };
+        const size = keepsLines(target) ? target : largestPassing(current, target, FONT_STEP, keepsLines);
+        setStyle(node, size, titleRatioAt(node, size));
+        if (size > current + 1e-6) grown += 1;
+        else kept += 1;
+      }
+      const round = value => Number(value.toFixed(3));
+      return { body_source: round(bodySource), body_settled: round(settled), scale: round(scale), grown, kept };
+    }
+
     // The safety net: back off in 0.25pt steps, down to the floor, until the
     // heading's ink touches nothing.
     function backoffTitles(predicate) {
@@ -102,7 +137,7 @@
       }
     }
 
-    return { fitTitles, backoffTitles };
+    return { fitTitles, followBody, backoffTitles };
   }
 
   return { createRetainTitlePass, titleLeadingEm, titleFillMax };
