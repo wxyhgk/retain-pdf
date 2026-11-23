@@ -1,6 +1,7 @@
 //! 服务商：凭据库（`credentials`）、模型调用（`model_executor`、`model_requests_api`）、
 //! 服务商连通性和额度探测（`provider_probe`、`provider_api`）、模型价格（`pricing`，用量汇总估算花费）、
-//! 各家错误码目录（`error_codes`，数据在包里的 `error-codes/`）。
+//! 各家错误码目录（`error_codes`，数据在包里的 `error-codes/`）、
+//! 服务商报错里的业务码和「限流还是欠费」的判断（`upstream_limits`）。
 
 mod credentials;
 mod error_codes;
@@ -10,6 +11,7 @@ mod model_requests_api;
 mod pricing;
 mod provider_api;
 mod provider_probe;
+mod upstream_limits;
 
 // 门面：领域外只能用这里导出的东西，子模块都是私有的（见 BOUNDARIES.md「Domain Facades」）。
 pub use credentials::{
@@ -41,3 +43,4 @@ pub use provider_probe::{
     validate_deepseek_token_view, validate_mineru_token_view, validate_paddle_token_view,
     validate_provider_base_url, PrivateTargets, ProbePolicy,
 };
+pub use upstream_limits::{classify_upstream_limit, upstream_error_code, UpstreamLimit, UpstreamLimitKind};

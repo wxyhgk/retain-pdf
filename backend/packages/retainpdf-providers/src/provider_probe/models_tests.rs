@@ -107,7 +107,7 @@ async fn anthropic_models_are_paged_with_the_anthropic_headers() {
 async fn providers_without_a_model_list_say_so_and_errors_are_redacted() {
     let (missing, _) = fake("/v1/models", vec![(404, "not found".into())]).await;
     let view = list_translation_models_view(request(format!("http://{missing}/v1"), ""), runtime(), policy(), None).await.unwrap();
-    assert_eq!((view.ok, view.status, view.provider_code.as_deref()), (false, "unsupported", Some("404")));
+    assert_eq!((view.ok, view.status, view.http_status, view.provider_code.as_deref()), (false, "unsupported", Some(404), None));
 
     let (html, _) = fake("/v1/models", vec![(200, "<html>relay</html>".into())]).await;
     let view = list_translation_models_view(request(format!("http://{html}/v1"), ""), runtime(), policy(), None).await.unwrap();
@@ -120,7 +120,7 @@ async fn providers_without_a_model_list_say_so_and_errors_are_redacted() {
     let echo = json!({"error": {"message": "invalid key sk-list-models-secret"}}).to_string();
     let (denied, _) = fake("/v1/models", vec![(401, echo)]).await;
     let view = list_translation_models_view(request(format!("http://{denied}/v1"), ""), runtime(), policy(), None).await.unwrap();
-    assert_eq!((view.status, view.provider_code.as_deref()), ("unauthorized", Some("401")));
+    assert_eq!((view.status, view.http_status, view.provider_code.as_deref()), ("unauthorized", Some(401), None));
     assert_eq!(view.provider_message.as_deref(), Some("invalid key [REDACTED]"), "服务商回显的 Key 抹掉");
 
     let (broken, _) = fake("/v1/models", vec![(500, "boom".into())]).await;

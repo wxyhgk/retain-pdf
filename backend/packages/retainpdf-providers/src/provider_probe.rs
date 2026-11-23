@@ -25,3 +25,5 @@ pub use types::{
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod limits_tests;

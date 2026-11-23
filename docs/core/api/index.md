@@ -956,7 +956,9 @@ CSV 表头支持英文和中文别名：
 
 - 请求体里不认识的字段 400；
 - 界面看 `data.ok`，`status` 各家取值不同（MinerU 多一个 `expired`，翻译接口多 `rate_limited`、`model_unavailable`、
-  `insufficient_balance`、`invalid_input`），三家都可能是 `redirected`（服务商回了 3xx，校验不跟随）；
+  `insufficient_balance`、`quota_exceeded`、`invalid_input`），三家都可能是 `redirected`（服务商回了 3xx，校验不跟随）；
+- 2026-11-23 起 HTTP 状态码在 `http_status`（数字），`provider_code` 只放服务商自己的业务码；429 按业务码分清限流和欠费、额度用完
+  （欠费的 Key 不再显示「可用（当前被限流）」），见那篇第 3.1 节；
 - 超时统一 `RUST_API_PROVIDER_PROBE_TIMEOUT_SECS`（默认 20 秒，比前端等的 30 秒短），不重试；
 - 单机模式能校验本机和内网的模型服务，多用户照旧拦；
 - `provider_message`、`operator_hint` 最多 500 字。

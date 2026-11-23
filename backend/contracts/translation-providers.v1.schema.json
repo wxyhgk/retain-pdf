@@ -48,7 +48,7 @@
     "TranslationModelListStatus": {
       "type": "string",
       "enum": ["ok", "unsupported", "unauthorized", "invalid_input", "unreachable", "provider_error"],
-      "description": "unsupported：服务商回 404/405/501，或者回的不是模型列表；unauthorized：401/403；invalid_input：Key 里有放不进请求头的字符；unreachable：连不上、超时；provider_error：别的错误、重定向、列表太大。"
+      "description": "unsupported：服务商回 404/405/501，或者回的不是模型列表；unauthorized：401/403；invalid_input：Key 里有放不进请求头的字符；unreachable：连不上、超时；provider_error：别的错误、重定向、列表太大。按业务码认出欠费、额度用完、套餐不含时状态照旧（401/403 是 unauthorized，其余 provider_error），summary 换成具体原因（2026-11-23 起）。"
     },
     "PriceBasis": {
       "type": [
@@ -160,7 +160,7 @@
     "TranslationModelListView": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["ok", "status", "summary", "source", "base_url", "fetched_at", "provider_code", "provider_message", "models", "chat_models"],
+      "required": ["ok", "status", "summary", "source", "base_url", "fetched_at", "http_status", "provider_code", "provider_message", "models", "chat_models"],
       "properties": {
         "ok": { "type": "boolean" },
         "status": { "$ref": "#/definitions/TranslationModelListStatus" },
@@ -168,7 +168,8 @@
         "source": { "type": "string", "enum": ["provider"] },
         "base_url": { "type": "string", "description": "实际请求的地址（规范过的）。" },
         "fetched_at": { "type": "string" },
-        "provider_code": { "type": ["string", "null"], "description": "出错时服务商回的 HTTP 状态码。" },
+        "http_status": { "type": ["integer", "null"], "minimum": 100, "maximum": 599, "description": "出错时服务商回的 HTTP 状态码；成功、没收到回复时为 null（2026-11-23 起）。" },
+        "provider_code": { "type": ["string", "null"], "description": "服务商正文里自己的业务码（智谱 1113、OpenAI insufficient_quota、百炼 Arrearage、OpenCode 只有消息时是那句话，如 Policy budget exceeded），没有时为 null。2026-11-23 以前这里是 HTTP 状态码，现在看 http_status。" },
         "provider_message": { "type": ["string", "null"], "description": "服务商报错原文，截到 500 字符，里面的 Key 换成 [REDACTED]。" },
         "models": { "type": "array", "items": { "$ref": "#/definitions/TranslationModelView" }, "description": "按 id 排序去重，最多 2000 个；status 不是 ok 时为空。" },
         "chat_models": { "type": "integer", "minimum": 0, "description": "models 里 kind=chat 的个数。" }
@@ -255,12 +256,14 @@
         "unauthorized",
         "rejected",
         "rate_limited",
+        "insufficient_balance",
+        "quota_exceeded",
         "provider_error",
         "unreachable",
         "empty",
         "invalid_input"
       ],
-      "description": "rejected：服务商拒绝了请求（常见：模型不支持看图、模型名不对）；empty：回了但没有文字（可能都用在思考上）。"
+      "description": "rejected：服务商拒绝了请求（常见：模型不支持看图、模型名不对）；rate_limited：限流或服务商繁忙，稍后重试；insufficient_balance：欠费、余额不足、套餐到期（2026-11-23 起，以前 429 一律 rate_limited）；quota_exceeded：用量或花费上限，等重置或调上限（2026-11-23 起）；empty：回了但没有文字（可能都用在思考上）。"
     },
     "AskUsageView": {
       "type": "object",
@@ -300,6 +303,7 @@
         "usage",
         "images",
         "elapsed_ms",
+        "http_status",
         "provider_code",
         "provider_message",
         "asked_at"
@@ -353,12 +357,21 @@
           "type": "integer",
           "minimum": 0
         },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 599,
+          "description": "服务商回的 HTTP 状态码；没收到回复（连不上、超时、请求没发出）时为 null（2026-11-23 起）。"
+        },
         "provider_code": {
           "type": [
             "string",
             "null"
           ],
-          "description": "出错时服务商回的 HTTP 状态码。"
+          "description": "服务商正文里自己的业务码（智谱 1113、OpenAI insufficient_quota、百炼 Arrearage……），没有时为 null。2026-11-23 以前这里是 HTTP 状态码，现在看 http_status。"
         },
         "provider_message": {
           "type": [

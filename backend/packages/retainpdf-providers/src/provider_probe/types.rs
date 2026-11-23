@@ -22,6 +22,10 @@ pub struct ProviderProbeView {
     pub status: &'static str,
     pub summary: String,
     pub retryable: bool,
+    /// 服务商回的 HTTP 状态码；没收到回复（连不上、超时）时为 null（2026-11-23 起）。
+    pub http_status: Option<u16>,
+    /// 服务商自己的业务码（智谱 `1113`、OpenAI `insufficient_quota`、百炼 `Arrearage`、MinerU `A0211`……），
+    /// 正文里没有时为 null。2026-11-23 以前翻译接口在这里放 HTTP 状态码，HTTP 状态码改看 `http_status`。
     pub provider_code: Option<String>,
     pub provider_message: Option<String>,
     pub operator_hint: Option<String>,
@@ -69,6 +73,9 @@ pub struct DeepSeekBalanceView {
     pub retryable: bool,
     pub is_available: bool,
     pub balance_infos: Vec<DeepSeekBalanceInfoView>,
+    /// 余额接口回的 HTTP 状态码；没收到回复时为 null（2026-11-23 起）。
+    pub http_status: Option<u16>,
+    /// 服务商正文里的业务码（DeepSeek 一般没有，多数时候是 null）；2026-11-23 以前这里放 HTTP 状态码。
     pub provider_code: Option<String>,
     pub provider_message: Option<String>,
     pub trace_id: Option<String>,

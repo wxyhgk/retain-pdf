@@ -19,7 +19,7 @@ use retainpdf_api_base::error::AppError;
 use retainpdf_core::config::DeepSeekRuntimeConfig;
 use retainpdf_core::models::domain::now_iso;
 
-use super::deepseek::{anthropic_auth, anthropic_v1_root, normalize_deepseek_base_url, ANTHROPIC_DEFAULT_BASE_URL};
+use super::deepseek::{anthropic_auth, anthropic_v1_root, normalize_deepseek_base_url, upstream_verdict, ANTHROPIC_DEFAULT_BASE_URL};
 use super::policy::{truncate_provider_message, ProbePolicy};
 use super::url_policy::validate_probe_base_url;
 use crate::pricing::{PriceBasis, PriceBook, PriceView};
@@ -69,7 +69,10 @@ pub struct TranslationModelListView {
     pub source: &'static str,
     pub base_url: String,
     pub fetched_at: String,
-    /// 服务商回的 HTTP 状态码（出错时）。
+    /// 服务商回的 HTTP 状态码（出错时；没收到回复时为 null）。2026-11-23 起。
+    pub http_status: Option<u16>,
+    /// 服务商自己的业务码（智谱 `1113`、OpenAI `insufficient_quota`……），正文里没有时为 null。
+    /// 2026-11-23 以前这里放的是 HTTP 状态码，改看 `http_status`。
     pub provider_code: Option<String>,
     /// 服务商的报错原文（截断、抹掉 Key）。
     pub provider_message: Option<String>,
@@ -88,6 +91,7 @@ impl TranslationModelListView {
             source: "provider",
             base_url,
             fetched_at,
+            http_status: None,
             provider_code: None,
             provider_message: None,
             models: Vec::new(),
@@ -201,14 +205,21 @@ async fn fetch_page(
         }
     };
     let status = response.status();
+    let retry_after = response.headers().contains_key(reqwest::header::RETRY_AFTER);
     let bytes = match response.bytes().await {
         Ok(bytes) if bytes.len() <= MAX_BODY_BYTES => bytes,
         Ok(_) => return Fetched::Failed(fail("provider_error", "服务商返回的模型列表太大，没有读")),
         Err(_) => return Fetched::Failed(fail("unreachable", "读服务商的返回时连接断了，请稍后重试")),
     };
     let body = String::from_utf8_lossy(&bytes);
+    let (provider_code, limit) = if status.is_success() || status.is_redirection() {
+        (None, None)
+    } else {
+        upstream_verdict(status.as_u16(), &body, retry_after, base_url)
+    };
     let with_detail = |mut view: TranslationModelListView| {
-        view.provider_code = Some(status.as_u16().to_string());
+        view.http_status = Some(status.as_u16());
+        view.provider_code = provider_code.clone();
         view.provider_message = provider_message(&body, api_key);
         view
     };
@@ -217,6 +228,11 @@ async fn fetch_page(
             "provider_error",
             "接口地址被重定向了；请填重定向以后的地址（为了不把 Key 带到别处，不跟随重定向）",
         )));
+    }
+    // 欠费、额度用完、套餐不含：状态照旧（401/403 是 unauthorized，别的是 provider_error），说明换成具体原因。
+    if let Some(limit) = limit.as_ref().filter(|limit| limit.kind.blocks_use()) {
+        let status_name = if matches!(status.as_u16(), 401 | 403) { "unauthorized" } else { "provider_error" };
+        return Fetched::Failed(with_detail(fail(status_name, &format!("服务商说这个 Key 现在不能用：{}", limit.reason_zh))));
     }
     if matches!(status.as_u16(), 401 | 403) {
         return Fetched::Failed(with_detail(fail("unauthorized", "API Key 不对，或者没有列模型的权限")));
@@ -351,6 +367,7 @@ fn build_view(raw: Vec<RawModel>, base_url: &str, fetched_at: String, prices: Op
         source: "provider",
         base_url: base_url.to_string(),
         fetched_at,
+        http_status: None,
         provider_code: None,
         provider_message: None,
         models,
