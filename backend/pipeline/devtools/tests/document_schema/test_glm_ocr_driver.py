@@ -278,6 +278,113 @@ def test_rejected_request_explains_why_without_leaking_the_key(monkeypatch) -> N
         glm_ocr_api.parse_pdf(b"%PDF", api_key="")
 
 
+# ---- 智谱 429 先看业务码（issue #164，2026-11-23）----
+
+from retainpdf_pipeline.foundation.shared.structured_errors import classify_exception
+from retainpdf_pipeline.ocr import retry as ocr_retry
+
+
+def _zhipu_response(status: int, code: str, message: str, retry_after: str | None = None) -> requests.Response:
+    response = requests.Response()
+    response.status_code = status
+    response.url = glm_ocr_api.GLM_OCR_API_URL
+    response._content = json.dumps({"error": {"code": code, "message": message}}).encode("utf-8")
+    if retry_after is not None:
+        response.headers["Retry-After"] = retry_after
+    return response
+
+
+class _Replay:
+    """按顺序回放响应，记下请求了几次。"""
+
+    def __init__(self, *responses: requests.Response) -> None:
+        self.responses = list(responses)
+        self.calls = 0
+
+    def request(self, *args, **kwargs) -> requests.Response:
+        self.calls += 1
+        return self.responses[min(self.calls, len(self.responses)) - 1]
+
+
+@pytest.fixture
+def sleeps(monkeypatch) -> list[float]:
+    recorded: list[float] = []
+    monkeypatch.setattr(ocr_retry.time, "sleep", recorded.append)
+    monkeypatch.setattr(ocr_retry.random, "uniform", lambda *_: 0.0)
+    return recorded
+
+
+def test_429_with_insufficient_balance_code_fails_at_once_with_status_and_code(sleeps) -> None:
+    session = _Replay(_zhipu_response(429, "1113", "余额不足或无可用资源包,请充值。"))
+    with pytest.raises(glm_ocr_api.GlmOcrQuotaExhausted) as error:
+        glm_ocr_api.parse_pdf(b"%PDF", api_key="secret-key-123", session=session)
+    message = str(error.value)
+    assert session.calls == 1 and sleeps == [], "1113 重试没用，第一次就停，不退避"
+    assert message.startswith("GLM-OCR 调用额度不足，请检查当前智谱 API Key 对应账号的余额或资源包")
+    assert "HTTP 429" in message and "code=1113" in message
+    assert "secret-key-123" not in message
+    assert error.value.status_code == 429 and error.value.provider_code == "1113"
+    assert isinstance(error.value, glm_ocr_api.GlmOcrRequestRejected), "照旧是“被拒绝”，驱动不逐页再发"
+
+    try:
+        raise error.value
+    except glm_ocr_api.GlmOcrQuotaExhausted as exc:
+        failure = classify_exception(exc, default_stage="ocr", provider="glm_ocr")
+    assert failure.failure_code == "upstream_quota_exhausted"
+    assert failure.failure_category == "billing"
+    assert failure.retryable is False
+    assert failure.provider_code == "1113"
+    assert failure.summary == "上游账户余额或额度不足（HTTP 429）"
+
+
+@pytest.mark.parametrize("code", ["1309", "1311", "1313", "1316"])
+def test_other_non_recoverable_429_codes_also_fail_fast(sleeps, code: str) -> None:
+    session = _Replay(_zhipu_response(429, code, "x"))
+    with pytest.raises(glm_ocr_api.GlmOcrQuotaExhausted, match=f"code={code}"):
+        glm_ocr_api.parse_pdf(b"%PDF", api_key="k", session=session)
+    assert session.calls == 1 and sleeps == []
+
+
+@pytest.mark.parametrize("code", ["1302", "1305"])
+def test_recoverable_429_codes_still_back_off_and_honor_retry_after(sleeps, code: str) -> None:
+    ok = requests.Response()
+    ok.status_code = 200
+    ok._content = json.dumps({"layout_details": [[]]}).encode("utf-8")
+    session = _Replay(_zhipu_response(429, code, "slow down", retry_after="7"), _zhipu_response(429, code, "slow down"), ok)
+    payload = glm_ocr_api.parse_pdf(b"%PDF", api_key="k", session=session)
+    assert payload == {"layout_details": [[]]}
+    assert session.calls == 3
+    assert sleeps == [7.0, glm_ocr_api.RETRY_BACKOFF_SECONDS * 2], "先按 Retry-After，再按退避"
+
+
+def test_rate_limited_to_the_end_reports_status_and_business_code(sleeps) -> None:
+    session = _Replay(_zhipu_response(429, "1302", "您的账户已达到速率限制"))
+    with pytest.raises(glm_ocr_api.GlmOcrRateLimited) as error:
+        glm_ocr_api.parse_pdf(b"%PDF", api_key="secret-key-123", session=session)
+    message = str(error.value)
+    assert session.calls == glm_ocr_api.RETRY_ATTEMPTS and len(sleeps) == glm_ocr_api.RETRY_ATTEMPTS - 1
+    assert message.startswith("GLM-OCR 请求被限流，退避重试后仍失败（HTTP 429，code=1302 message=您的账户已达到速率限制）")
+    assert "rate limited after 5 attempts (HTTP 429)" in message
+    assert "secret-key-123" not in message
+    assert error.value.provider_code == "1302"
+
+    try:
+        raise error.value
+    except glm_ocr_api.GlmOcrRateLimited as exc:
+        failure = classify_exception(exc, default_stage="ocr", provider="glm_ocr")
+    assert failure.failure_code == "upstream_rate_limited"
+    assert failure.retryable is True
+    assert failure.provider_code == "1302"
+
+
+def test_server_error_to_the_end_reports_business_code(sleeps) -> None:
+    session = _Replay(_zhipu_response(500, "1234", "网络错误，请稍后重试"))
+    with pytest.raises(glm_ocr_api.GlmOcrServerError) as error:
+        glm_ocr_api.parse_pdf(b"%PDF", api_key="k", session=session)
+    assert session.calls == glm_ocr_api.RETRY_ATTEMPTS
+    assert "（HTTP 500，code=1234 message=网络错误，请稍后重试）" in str(error.value)
+
+
 # ---- 流式公布（OCR 和翻译并行，2026-10-31）----
 
 from retainpdf_base.ocr_stream import read_ocr_stream
