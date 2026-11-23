@@ -8,64 +8,104 @@
   <img src="resources/brand/RetainPDF-github.svg" alt="RetainPDF" width="320" />
 </p>
 
+RetainPDF 是目前唯一面向图片型 / 扫描版 PDF、支持保留排版翻译的开源项目，翻译与排版效果对标甚至超过同类商业产品。
+
+自研字体排版算法，支持复杂公式与多栏论文的版式还原。扫描 PDF 翻译、PDF 结构优化、代码保护、自定义翻译策略和开放 API，一并支持。
+
+翻译系统同样自研，针对跨栏、跨页、断句和段落续接等 PDF 常见难题做了专门处理：先恢复完整语义单元，再进行翻译，避免逐框翻译造成的上下文割裂。
+
+还可以选 Agent 翻译：先通读全书定下术语和文风，再逐页翻译、逐段审校，全书同一个词只有一种译法，适合要认真读的书。
+
+**在行内公式部分 RetainPDF 的断层领先：翻译后仍能稳定保留公式本体、前后文关系与行内排版，这是其他开源 PDF 翻译项目目前做不到的。**
+
+代码、API 与部署方式全部开放，支持自部署和二次开发。
+
+核心能力对比：
+
+| 项目 | 扫描型 PDF | 复杂行内公式 | 代码不误翻 | 表格控制 | 自定义翻译策略 | 排版保留 | PDF 压缩优化 | API 自动化 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PDFMathTranslate | ❌ | ❌ | ❌ | 弱 | 弱 | 一般 | 一般 | ✅ |
+| PolyglotPDF | ❌ | ❌ | ❌ | 弱 | 弱 | 一般 | 一般 | ✅ |
+| Doc2X | ✅ | ✅ | ❌ | 中 | 弱 | 强 | 弱 | ❌ 不开放 |
+| RetainPDF | ✅ | ✅ 强保留 | ✅ | ✅ 可开关 | ✅ 可按规则配置 | 强 | ✅ 持续优化 | ✅ |
+
+## 产品界面
+
+### 图书馆
+
+在一个书架中管理论文、图书和扫描文档，集中查看翻译状态、合集与收藏。
+
 <p align="center">
-  <a href="https://github.com/wxyhgk/retain-pdf/releases/latest"><img src="https://img.shields.io/github/v/release/wxyhgk/retain-pdf?label=%E6%9C%80%E6%96%B0%E7%89%88&color=2563eb" alt="最新版本" /></a>
-  <a href="https://github.com/wxyhgk/retain-pdf/releases"><img src="https://img.shields.io/github/downloads/wxyhgk/retain-pdf/total?label=%E4%B8%8B%E8%BD%BD&color=16a34a" alt="下载量" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-f59e0b" alt="MIT 许可" /></a>
-  <a href="https://github.com/wxyhgk/retain-pdf/actions/workflows/tests.yml"><img src="https://github.com/wxyhgk/retain-pdf/actions/workflows/tests.yml/badge.svg?branch=main" alt="测试" /></a>
-  <a href="https://github.com/wxyhgk/retain-pdf/stargazers"><img src="https://img.shields.io/github/stars/wxyhgk/retain-pdf?style=flat&color=eab308" alt="Star" /></a>
+  <img src="resources/brand/readme-gallery/product/library.png" alt="RetainPDF 图书馆主页" width="1000" />
 </p>
 
-开源的 PDF 保留排版翻译工具，扫描版、图片型 PDF 也能翻。桌面版开箱即用，也可以 Docker 自部署。
+### 原文与译文对照阅读
 
-- **保留排版**：公式、多栏、图表、页眉页脚留在原位，行内公式翻译后照样稳定。
-- **扫描件也能翻**：先 OCR 再翻译，不挑原文件有没有文字层。
-- **按完整的话翻**：跨栏、跨页的段落先拼回来再翻，代码、公式、专有名词不误翻，术语表定译法。
-- **Agent 精翻**：先通读全书定术语和文风，再逐页翻译、逐段审校，全书译法一致；慢一些、贵一些，适合要认真读的书。
-
-<p align="center">
-  <img src="resources/brand/readme-gallery/translation-examples.webp" alt="RetainPDF 翻译效果：SCI 论文、扫描文档、图书教材" width="1000" />
-</p>
+原 PDF 与译文 PDF 同页并排展示，便于核对公式、图表、引用和版面位置。
 
 <p align="center">
   <img src="resources/brand/readme-gallery/product/side-by-side-reader.png" alt="RetainPDF 原文与译文对照阅读" width="1000" />
 </p>
 
-## 下载
+### Markdown 阅读
 
-到 [Releases](https://github.com/wxyhgk/retain-pdf/releases/latest) 下载：
+PDF 与 Markdown 同屏阅读，保留公式和图片。
 
-| 系统 | 文件 | 说明 |
-| --- | --- | --- |
-| macOS | `RetainPDF-Mac-<版本>.dmg` | Apple 芯片（M1 及以后），已签名公证 |
-| Windows | `RetainPDF-Windows-<版本>-Setup.exe` | 提示「Windows 已保护你的电脑」时点「更多信息」→「仍要运行」 |
-| Linux | `RetainPDF-Linux-<版本>.deb` | `sudo apt install ./RetainPDF-Linux-<版本>.deb` |
+<p align="center">
+  <img src="resources/brand/readme-gallery/product/markdown-reader.png" alt="RetainPDF Markdown 阅读" width="1000" />
+</p>
 
-第一次打开会弹出接口设置，填好 OCR 和翻译的 Key 就能用。支持 PaddleOCR、MinerU、GLM-OCR，以及 DeepSeek、Qwen、智谱、OpenAI、Anthropic、OpenCode Go 和兼容 OpenAI / Anthropic 格式的接口（[怎么申请](frontend/web/guide/credentials.md)）。
+## 翻译效果
 
-Docker 部署：
+SCI 论文、图片型 / 扫描版 PDF 与图书教材的原文—译文对照样例：
+
+<p align="center">
+  <img src="resources/brand/readme-gallery/translation-examples.webp" alt="RetainPDF SCI 论文、扫描 PDF 与图书教材翻译效果合集" width="1000" />
+</p>
+
+<p align="center"><sub>第一行：SCI 论文 · 第二行：扫描与公式密集文档 · 第三行：图书教材</sub></p>
+
+## 快速开始
+
+### 桌面端
+
+从 [GitHub Releases](https://github.com/wxyhgk/retain-pdf/releases/latest) 下载对应版本：
+
+- Windows：`Setup.exe`（提示「Windows 已保护你的电脑」时点「更多信息」→「仍要运行」）
+- macOS：`.dmg`（Apple 芯片，已签名公证）
+- Linux：`.deb`（`sudo apt install ./RetainPDF-Linux-<版本>.deb`）
+
+第一次打开会弹出接口设置，填好 OCR 和翻译的 Key 就能开始，一步步怎么做见 [使用说明书](frontend/web/guide/README.md)。
+
+### Docker 部署
 
 ```bash
 git clone https://github.com/wxyhgk/retain-pdf.git
 cd retain-pdf/ops/deployment/docker/delivery
-docker compose up -d   # 打开 http://127.0.0.1:40001
+docker compose up -d
 ```
 
-更多见 [Docker 部署说明](ops/deployment/docker/delivery/README.md)。
+启动后访问 <http://127.0.0.1:40001>。更新服务：
 
-## 文档
+```bash
+docker compose pull
+docker compose up -d
+```
 
-- [使用说明书](frontend/web/guide/README.md)：图书馆、翻译、对照阅读、术语表、同步、备份、局域网共享……软件里点底部「使用说明」也能看
-- 开发：[贡献指南](CONTRIBUTING.md) · [项目文档](docs/README.md) · [后端说明](backend/README.md)
+更多配置见 [Docker 部署说明](ops/deployment/docker/delivery/README.md)。
 
 ## 交流
 
-QQ 群：`1101779791`
+QQ 交流群：`1101779791`
 
 <p align="center">
-  <img src="resources/brand/QQ_Group.JPG" alt="RetainPDF QQ 交流群二维码" width="200" />
+  <img src="resources/brand/QQ_Group.JPG" alt="RetainPDF QQ 交流群二维码" width="280" />
 </p>
+
+## 开发
+
+参阅 [贡献指南](CONTRIBUTING.md)、[项目文档](docs/README.md)和[后端说明](backend/README.md)。
 
 ## License
 
-MIT，见 [LICENSE](LICENSE)。
+This project is distributed under the MIT License. See [LICENSE](LICENSE) for the full text.
