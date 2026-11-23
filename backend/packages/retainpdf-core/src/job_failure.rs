@@ -132,15 +132,19 @@ fn classify_job_failure_inner(job: &JobSnapshot) -> Option<JobFailureInfo> {
         return Some(provider_failure);
     }
 
-    if let Some(quota_failure) = classify_provider_quota_failure(
-        &failed_stage,
-        diagnostics,
-        job,
-        error,
-        &haystack,
-        raw_diagnostic.as_ref(),
-    ) {
-        return Some(quota_failure);
+    // OCR 诊断里那条额度错只算 OCR 阶段的失败：OCR 做完以后翻译、排版才失败时，它可能是早先已经恢复了的错
+    // （fix/failure-fallback-classes 和 feat/failure-upstream 合并后对齐：后者的出口补 upstream 也只看 OCR 阶段）
+    if is_ocr_stage(&failed_stage) {
+        if let Some(quota_failure) = classify_provider_quota_failure(
+            &failed_stage,
+            diagnostics,
+            job,
+            error,
+            &haystack,
+            raw_diagnostic.as_ref(),
+        ) {
+            return Some(quota_failure);
+        }
     }
 
     if haystack.contains("OCR provider request outcome is ambiguous") {

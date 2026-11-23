@@ -15,6 +15,7 @@ from retainpdf_pipeline.foundation.shared import structured_errors
 from retainpdf_pipeline.foundation.shared.structured_errors import classify_exception
 from retainpdf_pipeline.ocr.ocr_provider import glm_ocr_api
 from retainpdf_pipeline.ocr.ocr_provider.paddle_api import _check_envelope
+from retainpdf_pipeline.ocr.ocr_provider.paddle_api import PaddleRequestRejected
 from retainpdf_translation.llm.providers.deepseek import client
 from retainpdf_translation.workflow.checkpoint import NothingTranslatedError
 
@@ -133,7 +134,8 @@ def test_glm_ocr_rejection_carries_status_and_code_without_changing_its_class(mo
 
 def test_paddle_envelope_error_reports_the_error_code() -> None:
     structured_errors.set_ocr_vendor("paddle")
-    with pytest.raises(RuntimeError) as caught:
+    # 返回包里的报错是 PaddleRequestRejected（fix/failure-fallback-classes 起，12001 等要单独归类），不再是 RuntimeError
+    with pytest.raises(PaddleRequestRejected) as caught:
         _check_envelope({"errorCode": 10003, "errorMsg": "file error", "logId": "log-123456"}, stage="submit")
     payload = _classify(caught.value, default_stage="provider", provider="ocr")
     assert payload["provider"] == "paddle"
