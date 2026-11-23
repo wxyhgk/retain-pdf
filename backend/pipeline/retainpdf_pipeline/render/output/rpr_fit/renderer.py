@@ -148,7 +148,7 @@ def _translation_items(
             entry["translated_text"], preserve = _engine_text_and_lines(item)
             entry["source_text"] = str(entry.get("source_text") or "")
             # 标题的原文字号（引擎排标题不超过它）；正文的文字层字号（引擎算正文放大了多少，标题跟着放大）；
-            # 图注、脚注的文字层字号（引擎按它和正文的比例排）
+            # 图注、脚注和单独排的文字的文字层字号（引擎按它和正文的比例排）
             source_size = (
                 title_source_font_size_pt(item) or body_source_font_size_pt(item) or annotation_source_font_size_pt(item)
             )

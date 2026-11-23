@@ -139,7 +139,7 @@ def test_body_text_layer_size_is_measured_and_passed_to_the_engine(tmp_path: Pat
     first = document.new_page(width=400, height=300)
     first.insert_text((20, 60), "Results", fontsize=12)
     first.insert_text((20, 120), "The body text of this page is set at ten points.", fontsize=10)
-    second = document.new_page(width=400, height=300)  # 没有标题的页：正文不够时补读
+    second = document.new_page(width=400, height=300)  # 没有标题的页也读
     second.insert_text((20, 120), "Another paragraph of body text set at ten points.", fontsize=10)
     document.save(pdf_path)
     document.close()

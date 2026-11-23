@@ -589,44 +589,56 @@
 
     // With source sizes (the host measured the source PDF's text layer:
     // fitOptions.bodySourceTextFont for the body, node.source.sourceFontSize
-    // per caption or footnote) the annotations keep the book's own ratio to
-    // the body instead: source x (settled body / source body), up or down,
-    // the same scale the titles follow (retain-titles followBody). Nodes
-    // without a measured size take their role's median. The safety net
-    // (repairNonBody) still shrinks any that do not fit. Returns
-    // { role: { source, target, nodes } } or null without a body source.
-    const ANNOTATION_SCALE_MIN = 0.8;
-    const ANNOTATION_SCALE_MAX = 1.4;
-    function followSourceSizes(role, nodes, bodyFont) {
+    // per item) non-body text keeps the book's own ratio to the body instead:
+    // source x (settled body / source body), up or down, the same scale the
+    // titles follow (retain-titles followBody). A source within
+    // SAME_AS_BODY_PT of the body's source is the body size (text-layer sizes
+    // of one font differ by rounding). The safety net (repairNonBody) still
+    // shrinks any that do not fit.
+    // - captions, footnotes: once most of the role is measured, the whole
+    //   role follows; unmeasured ones take the role's median.
+    // - other non-body text (one-line paragraphs, list items, headings the
+    //   OCR took for body text): only the measured ones follow, the rest keep
+    //   their schedule.
+    // Returns { source, target, scale, nodes } or null.
+    const FOLLOW_SCALE_MIN = 0.8;
+    const FOLLOW_SCALE_MAX = 1.4;
+    const SAME_AS_BODY_PT = 0.1;
+    function followSourceSizes(nodes, bodyFont, { wholeRole }) {
       const bodySource = Number(run.fitOptions.bodySourceTextFont);
       if (!(bodySource > 0) || !(bodyFont > 0)) return null;
       const sources = nodes.map(node => Number(node.source?.sourceFontSize) || 0);
       const measured = sources.filter(size => size > 0);
-      // Too few measured (a scan, or a text layer that does not match the
-      // OCR): keep the per-role unification below.
-      if (measured.length < Math.max(1, nodes.length / 2)) return null;
+      if (!measured.length) return null;
+      // Too few captions measured (a scan, or a text layer that does not
+      // match the OCR): keep the per-role unification.
+      if (wholeRole && measured.length < nodes.length / 2) return null;
       const roleSource = median(measured);
-      const scale = Math.min(ANNOTATION_SCALE_MAX, Math.max(ANNOTATION_SCALE_MIN, bodyFont / bodySource));
+      const scale = Math.min(FOLLOW_SCALE_MAX, Math.max(FOLLOW_SCALE_MIN, bodyFont / bodySource));
+      const sized = source => Math.abs(source - bodySource) <= SAME_AS_BODY_PT ? bodyFont : Math.round(source * scale * 100) / 100;
+      let followed = 0;
       nodes.forEach((node, index) => {
-        const target = Math.round((sources[index] || roleSource) * scale * 100) / 100;
-        setStyle(node, target, effectiveLineRatio(node));
+        const source = sources[index] || (wholeRole ? roleSource : 0);
+        if (!(source > 0)) return;
+        setStyle(node, sized(source), effectiveLineRatio(node));
+        const decided = nonBodyDecisions.get(node);
+        nonBodyDecisions.set(node, { ...decided, font: layoutControlFontSize(node) });
+        followed += 1;
       });
-      return { source: roleSource, target: Math.round(roleSource * scale * 100) / 100, scale: Math.round(scale * 1000) / 1000, nodes: nodes.length };
+      return { source: roleSource, target: sized(roleSource), scale: Math.round(scale * 1000) / 1000, nodes: followed };
     }
 
     const annotationFollow = {};
     function unifyAnnotations() {
       const bodyFonts = run.scopedNodes(isBodyNode).map(node => layoutControlFontSize(node)).sort((a, b) => a - b);
       const bodyFontCap = bodyFonts.length ? bodyFonts[(bodyFonts.length - 1) >> 1] : 0;
+      const text = followSourceSizes([...nonBodyDecisions.keys()].filter(node => annotationRole(node) === ""), bodyFontCap, { wholeRole: false });
+      if (text) annotationFollow.text = text;
       for (const role of ["caption", "footnote"]) {
         const nodes = [...nonBodyDecisions.keys()].filter(node => annotationRole(node) === role);
-        const followed = followSourceSizes(role, nodes, bodyFontCap);
+        const followed = followSourceSizes(nodes, bodyFontCap, { wholeRole: true });
         if (followed) {
           annotationFollow[role] = followed;
-          for (const node of nodes) {
-            const decided = nonBodyDecisions.get(node);
-            nonBodyDecisions.set(node, { ...decided, font: layoutControlFontSize(node) });
-          }
           continue;
         }
         if (nodes.length >= 2) {

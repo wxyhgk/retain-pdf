@@ -17,12 +17,13 @@ rpr_fit 引擎（随译文条目传过去）用同一个值：标题字号不超
 
 正文也量（2026-11-22，只用文字层，不反推）：rpr 引擎把正文统一放大以后，标题按“原文字号 × 正文放大的倍数”跟着放大，
 保持原书里标题和正文的比例（引擎 ``fit-model/passes/retain-titles.js`` 的 followBody）。以前标题只按自己的原文字号封顶，
-正文放大了 5%–10%，和正文一样大的小节标题就排得比正文小（14e352：225 个）。正文只在为标题读过的页上量，
-量到的不够 ``BODY_SAMPLE_TARGET`` 个，再均匀补读至多 ``BODY_EXTRA_PAGES`` 页。
+正文放大了 5%–10%，和正文一样大的小节标题就排得比正文小（14e352：225 个）。
 
 图注、表注、脚注也量（2026-11-23，只用文字层）：以前引擎按 OCR 行高估图注字号，同一本书原文都是 9pt 的图注估出 8.4–10pt，
 统一时又只缩不放，排出来 8.45、8.97、9.1 几档（14e352）。现在每条图注带上原文字号，引擎按“原文字号 × 正文放大的倍数”排
-（``fit-model/passes/retain-body.js`` 的 followSourceSizes），排不下才缩。有图注的页都读。
+（``fit-model/passes/retain-body.js`` 的 followSourceSizes），排不下才缩。不进正文统一字号、单独排的文字（一行的段落、
+列表项、被 OCR 当成正文的章标题）也按各自量到的字号这样排，所以正文不再只抽样，有标题、正文或图注的页都读
+（14e352 的 200 页约 2–5 秒）。
 """
 
 from __future__ import annotations
@@ -48,9 +49,6 @@ FALLBACK_ITERATIONS = 30
 # 文字层里框中的字数和原文字数之比在这个范围外，就当文字层和 OCR 对不上
 TEXT_LAYER_CHAR_RATIO_MIN = 0.5
 TEXT_LAYER_CHAR_RATIO_MAX = 2.0
-# 正文量多少个就够（取中位数），不够时再补读几页
-BODY_SAMPLE_TARGET = 30
-BODY_EXTRA_PAGES = 20
 
 
 def _visible_chars(text: str) -> int:
@@ -163,15 +161,8 @@ def _page_spans(page: fitz.Page) -> list[tuple[list[float], float, str]]:
     return spans
 
 
-def _evenly(pages: list[int], count: int) -> list[int]:
-    if len(pages) <= count:
-        return pages
-    step = len(pages) / count
-    return [pages[int(index * step)] for index in range(count)]
-
-
 def annotate_title_source_font_sizes(translated_pages: dict[int, list[dict]], source_pdf_path: Path | str | None) -> dict[str, int]:
-    """给每个标题条目写上原文字号（原地改），顺带给正文、图注条目量文字层字号。读有标题或图注的页的文字层（正文不够再补几页）；
+    """给每个标题条目写上原文字号（原地改），顺带给正文、图注条目量文字层字号。读有这几类条目的页的文字层；
     读不了 PDF 标题全部按框反推，正文和图注不量。"""
     stats = {"pdf": 0, "fit": 0, "none": 0, "body_pdf": 0, "annotation_pdf": 0}
     title_pages = {
@@ -215,15 +206,12 @@ def annotate_title_source_font_sizes(translated_pages: dict[int, list[dict]], so
                 item[SOURCE_FONT_SIZE_FROM_KEY] = "pdf"
                 stats[key] += 1
 
-    def measure_bodies(spans: list[tuple[list[float], float, str]], items: list[dict]) -> None:
-        measure(spans, items, "body_pdf")
-
     try:
-        for page_idx in sorted(set(title_pages) | set(annotation_pages)):
+        for page_idx in sorted(set(title_pages) | set(body_pages) | set(annotation_pages)):
             items = title_pages.get(page_idx, [])
             spans = page_spans(page_idx)
             if spans:
-                measure_bodies(spans, body_pages.get(page_idx, []))
+                measure(spans, body_pages.get(page_idx, []), "body_pdf")
                 measure(spans, annotation_pages.get(page_idx, []), "annotation_pdf")
             for item in items:
                 size = text_layer_font_size_pt(spans, item) if spans else None
@@ -236,14 +224,6 @@ def annotate_title_source_font_sizes(translated_pages: dict[int, list[dict]], so
                 item[SOURCE_FONT_SIZE_KEY] = size
                 item[SOURCE_FONT_SIZE_FROM_KEY] = origin
                 stats[origin] += 1
-        if document is not None and stats["body_pdf"] < BODY_SAMPLE_TARGET:
-            unread = sorted(page_idx for page_idx in body_pages if page_idx not in title_pages and page_idx not in annotation_pages)
-            for page_idx in _evenly(unread, BODY_EXTRA_PAGES):
-                spans = page_spans(page_idx)
-                if spans:
-                    measure_bodies(spans, body_pages[page_idx])
-                if stats["body_pdf"] >= BODY_SAMPLE_TARGET:
-                    break
     finally:
         if document is not None:
             document.close()
