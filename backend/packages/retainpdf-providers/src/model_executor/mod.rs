@@ -4,6 +4,7 @@ mod policy;
 #[cfg(test)]
 mod tests;
 mod transport;
+mod upstream_codes;
 
 use anyhow::Result;
 pub use policy::{ModelConnection, ModelConnectionPolicy, ModelRequest};

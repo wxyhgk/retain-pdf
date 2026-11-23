@@ -220,6 +220,9 @@ def is_transport_error(exc: Exception) -> bool:
     status = _resilience.http_status_of(exc)
     if status is not None and status in _NON_RETRYABLE_STATUS_CODES:
         return False
+    if _resilience.rejection_kind(exc):
+        # 429 等状态里的余额、额度用完（看业务码，见 upstream_error_codes）：不是限流，重试没用
+        return False
     if isinstance(exc, (requests.Timeout, requests.ConnectionError)):
         return True
     text = str(exc).lower()

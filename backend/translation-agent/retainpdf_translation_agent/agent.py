@@ -192,6 +192,13 @@ class Usage:
 RETRY_STATUSES = {429, 500, 502, 503, 504, 529}
 MAX_ATTEMPTS = 6
 MAX_WAIT_SECONDS = 120.0
+# 读多少响应体来认业务码（报错里只留前 300 字）
+ERROR_BODY_LIMIT = 64 * 1024
+
+# 调用方给的业务码判断：(状态码, 响应体, 响应头, 地址) → ("quota" 或 "auth", 给人看的说明) 或 None（照旧按
+# `classify_http_error`）。429 不全是限流：额度、消费上限用完也是 429，等多久都没用。正式流程由接线层传入翻译共用的
+# 判断（这个包只许用标准库）。
+ErrorClassifier = Callable[[int, str, dict, str], "tuple[str, str] | None"]
 
 
 def classify_http_error(status: int, body: str) -> str:
@@ -223,18 +230,36 @@ def http_transport(body: dict, *, sleep: Callable[[float], None] = time.sleep) -
     return _post(body, key=key, url=API_URL, sleep=sleep)
 
 
-def make_http_transport(api_key: str, *, url: str = API_URL, sleep: Callable[[float], None] = time.sleep) -> Transport:
-    """正式流程用：密钥和地址由调用方给（任务的凭据和 base_url），不读环境变量。"""
+def make_http_transport(
+    api_key: str,
+    *,
+    url: str = API_URL,
+    sleep: Callable[[float], None] = time.sleep,
+    classify: ErrorClassifier | None = None,
+) -> Transport:
+    """正式流程用：密钥和地址由调用方给（任务的凭据和 base_url），不读环境变量。
+    `classify`：先按业务码判断额度用完 / 套餐不能用（见 `ErrorClassifier`），判断不了再按状态码。"""
     if not api_key:
         raise AuthFailed("model API key is empty")
 
     def transport(body: dict) -> dict:
-        return _post(body, key=api_key, url=url or API_URL, sleep=sleep)
+        return _post(body, key=api_key, url=url or API_URL, sleep=sleep, classify=classify)
 
     return transport
 
 
-def _post(body: dict, *, key: str, url: str, sleep: Callable[[float], None]) -> dict:
+def _classify(status: int, body: str, headers, url: str, classify: ErrorClassifier | None) -> tuple[str, str]:
+    """(种类, 说明)；说明只在业务码判断认出来时有（例如「HTTP 429，Anthropic 业务码 …：…」）。"""
+    if classify is not None:
+        found = classify(status, body, dict(headers.items()) if headers else {}, url)
+        if found and found[0] in {"quota", "auth"}:
+            return found[0], str(found[1] or "")
+    return classify_http_error(status, body[:300]), ""
+
+
+def _post(
+    body: dict, *, key: str, url: str, sleep: Callable[[float], None], classify: ErrorClassifier | None = None
+) -> dict:
     """用标准库发请求（不给流水线添依赖）。429、5xx 和网络错误退避重试；额度、密钥问题抛 `StopRun`。"""
     import http.client
     import urllib.error
@@ -250,12 +275,14 @@ def _post(body: dict, *, key: str, url: str, sleep: Callable[[float], None]) -> 
             with urllib.request.urlopen(request, timeout=300) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
-            text = error.read()[:300].decode("utf-8", "replace")
-            kind = classify_http_error(error.code, text)
+            full_text = error.read(ERROR_BODY_LIMIT).decode("utf-8", "replace")
+            text = full_text[:300]
+            kind, detail = _classify(error.code, full_text, error.headers, url, classify)
+            reason = f"{detail} | {text}" if detail else text
             if kind == "quota":
-                raise QuotaExhausted(f"model API HTTP {error.code}: {text}") from None
+                raise QuotaExhausted(f"model API HTTP {error.code}: {reason}") from None
             if kind == "auth":
-                raise AuthFailed(f"model API HTTP {error.code}: {text}") from None
+                raise AuthFailed(f"model API HTTP {error.code}: {reason}") from None
             if kind == "fatal":
                 raise RuntimeError(f"model API HTTP {error.code}: {text}") from None
             retry_after = error.headers.get("retry-after") if error.headers else None

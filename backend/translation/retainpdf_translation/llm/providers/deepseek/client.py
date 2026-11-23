@@ -14,6 +14,7 @@ from retainpdf_translation.artifacts import get_active_translation_run_diagnosti
 from retainpdf_translation.artifacts import infer_stage_from_request_label
 from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared import upstream_resilience as _resilience
+from retainpdf_translation.llm.shared.upstream_error_codes import classify_response as classify_upstream_response
 from retainpdf_translation.llm.shared import usage_ledger
 from retainpdf_translation.llm.providers.deepseek import transport
 from retainpdf_translation.llm.shared.response_parsing import extract_json_text
@@ -143,15 +144,19 @@ def _raise_for_status_with_context(
     response_body = _response_text_excerpt(response) or "<empty>"
     reason = getattr(response, "reason", "") or "Error"
     url = getattr(response, "url", "") or "<unknown-url>"
-    hint = _resilience.hint_for_status(status_code)
+    # 4xx 先看业务码：429 / 400 / 403 里的余额、额度用完不是限流（upstream_error_codes）
+    rejection = classify_upstream_response(response)
+    hint = _resilience.hint_for_rejection(rejection) if rejection is not None else _resilience.hint_for_status(status_code)
     hint_suffix = f" | {hint}" if hint else ""
-    raise requests.HTTPError(
+    message = (
         f"{status_code} Client Error: {reason} for url: {url} | "
         f"response_body={response_body} | "
         f"request_meta={_request_meta_summary(model=model, messages=messages, body=body, use_stream=use_stream)}"
-        f"{hint_suffix}",
-        response=response,
+        f"{hint_suffix}"
     )
+    if rejection is not None:
+        raise _resilience.rejection_error(message, response=response, rejection=rejection)
+    raise requests.HTTPError(message, response=response)
 
 
 def _supports_response_schema_fallback(response_format: dict[str, Any] | None) -> bool:
@@ -403,7 +408,7 @@ def request_chat_content(
         diagnostics.credential_rejection(base_url=base_url, api_key=api_key) if diagnostics is not None else None
     )
     if rejected is not None:
-        # 这组凭据本次运行里已被上游以 401/402/403 拒过（Key 失效、余额不足时每个请求都会被拒）：不再发请求
+        # 这组凭据本次运行里已被上游以 401/402/403 或额度用完的业务码拒过（Key 失效、余额不足时每个请求都会被拒）：不再发请求
         if request_label:
             print(f"{request_label}: skipped, API key already rejected by upstream in this run (HTTP {_resilience.http_status_of(rejected)})", flush=True)
         raise _resilience.skipped_after_credential_rejection_error(rejected)
@@ -537,6 +542,9 @@ def request_chat_content(
                 )
             if diagnostics is not None and _resilience.is_credential_rejection(exc):
                 diagnostics.record_credential_rejection(base_url=base_url, api_key=api_key, error=exc)
+            if _resilience.rejection_kind(exc):
+                # 余额、额度用完（429 / 400 / 403 + 业务码）：不退避、不换思考字段、不退 json_object，第一次就停
+                raise
             rejected_400 = (
                 isinstance(exc, requests.HTTPError)
                 and exc.response is not None

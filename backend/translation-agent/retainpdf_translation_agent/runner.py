@@ -78,6 +78,7 @@ class RunOutcome:
     glossary: Glossary
     pages_done: int
     pages_total: int
+    stop_message: str = ""  # 停下的原因原文（前 300 字，例如「model API HTTP 429: HTTP 429，Anthropic 业务码 …」），给失败说明用
 
 
 class DocumentRun:
@@ -206,7 +207,7 @@ class DocumentRun:
                     self.reading = read_document(self.agent, pages)
                 except StopRun as stop:
                     self._stopped(PageInput(page_label="", blocks=[]), "read", stop, done, len(pages))
-                    return RunOutcome(STOPPED, stop.reason, {}, glossary, 0, len(pages))
+                    return RunOutcome(STOPPED, stop.reason, {}, glossary, 0, len(pages), stop_message=str(stop)[:300])
                 self._log_calls(PageInput(page_label="", blocks=[]), "read", {}, calls_before)
                 self._write_json(self._path("reading.json"), self.reading.to_dict())
                 self._ledger("read", genre=self.reading.genre, name_policy=self.reading.name_policy, terms=len(self.reading.terms), headings=len(self.reading.headings), candidates=self.reading.candidates)
@@ -271,7 +272,7 @@ class DocumentRun:
                 except StopRun as stop:
                     self._log_calls(page, key, context, calls_before)
                     self._stopped(page, key, stop, done, len(pages))
-                    return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
+                    return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages), stop_message=str(stop)[:300])
                 review_report = None
                 if self.review:
                     reviewed = reviewable(units, unit_results)
@@ -287,7 +288,7 @@ class DocumentRun:
                     except StopRun as stop:
                         self._log_calls(page, key, context, calls_before)
                         self._stopped(page, key, stop, done, len(pages))
-                        return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
+                        return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages), stop_message=str(stop)[:300])
                     info["review"] = review_report
                     self._event(
                         "review_done",
@@ -387,7 +388,7 @@ class DocumentRun:
                 except StopRun as stop:
                     self._log_calls(pages[todo[0]], f"{todo[0]:04d}", {}, calls_before)
                     self._stopped(pages[todo[0]], f"{todo[0]:04d}", stop, done, len(pages))
-                    return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
+                    return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages), stop_message=str(stop)[:300])
                 self._log_calls(pages[todo[0]], f"{todo[0]:04d}", {}, calls_before)
                 self._save_glossary(glossary, changes_before)
                 summary = str(outcome.info.get("summary") or "")

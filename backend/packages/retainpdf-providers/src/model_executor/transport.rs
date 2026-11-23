@@ -21,6 +21,11 @@ pub(super) struct Receipt {
     pub provider_request_id: Option<String>,
     pub upstream_attempts: u32,
     pub retry_reasons: Vec<&'static str>,
+    /// 按业务码停下时的上游 HTTP 状态和表里的码（见 `upstream_codes`），不是响应体原文。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upstream_status: Option<u16>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upstream_code: Option<&'static str>,
 }
 pub(super) struct Outcome {
     pub status: &'static str,
@@ -93,14 +98,29 @@ pub(super) async fn execute(
                 })
                 .map(str::to_owned);
             let status = response.status();
-            if status.as_u16() == 429 {
-                if receipt.upstream_attempts >= 2 {
-                    return ("failed", Some("rate_limited"));
-                }
+            if status.is_client_error() {
+                // 4xx 先看业务码：429 / 400 / 403 里的余额、额度用完不是限流，重试没用（upstream_codes）
                 let retry_after = response
                     .headers()
                     .get("retry-after")
-                    .and_then(|v| v.to_str().ok());
+                    .and_then(|v| v.to_str().ok())
+                    .map(str::to_owned);
+                let host = url.host_str().unwrap_or("").to_owned();
+                let body = read_error_body(response, profile.deadlines.idle_ms).await;
+                if let Some(rejection) =
+                    super::upstream_codes::classify(status.as_u16(), &body, retry_after.is_some(), &host)
+                {
+                    receipt.upstream_status = Some(status.as_u16());
+                    receipt.upstream_code = Some(rejection.code);
+                    return ("failed", Some(rejection.error_code()));
+                }
+                if status.as_u16() != 429 {
+                    return rejected(status.as_u16());
+                }
+                if receipt.upstream_attempts >= 2 {
+                    return ("failed", Some("rate_limited"));
+                }
+                let retry_after = retry_after.as_deref();
                 let delay = retry_after
                     .and_then(|v| {
                         v.parse::<u64>().ok().map(Duration::from_secs).or_else(|| {
@@ -121,20 +141,12 @@ pub(super) async fn execute(
                 {
                     return ("failed", Some("rate_limit_deadline"));
                 }
-                drop(response);
                 receipt.retry_reasons.push("explicit_429");
                 tokio::time::sleep(delay).await;
                 continue;
             }
             if !status.is_success() {
-                // Never include raw provider bodies, which can echo input/keys.
-                return match status.as_u16() {
-                    401 | 403 => ("failed", Some("authentication_failed")),
-                    402 => ("failed", Some("payment_required")),
-                    400 | 404 | 405 | 422 => ("failed", Some("provider_rejected_request")),
-                    300..=399 => ("failed", Some("redirect_rejected")),
-                    _ => ("ambiguous", Some("upstream_error")),
-                };
+                return rejected(status.as_u16());
             }
             return match read_response(
                 response,
@@ -167,6 +179,32 @@ pub(super) async fn execute(
         error: outcome.1,
         receipt,
     }
+}
+
+/// Never include raw provider bodies, which can echo input/keys.
+fn rejected(status: u16) -> (&'static str, Option<&'static str>) {
+    match status {
+        401 | 403 => ("failed", Some("authentication_failed")),
+        402 => ("failed", Some("payment_required")),
+        400 | 404 | 405 | 422 => ("failed", Some("provider_rejected_request")),
+        300..=399 => ("failed", Some("redirect_rejected")),
+        _ => ("ambiguous", Some("upstream_error")),
+    }
+}
+
+/// 读 4xx 的响应体（最多 64 KiB，只用来认业务码，不存、不交回）。读不完、超时就用已读到的。
+async fn read_error_body(response: reqwest::Response, idle_ms: u64) -> Vec<u8> {
+    const LIMIT: usize = 64 * 1024;
+    let mut stream = response.bytes_stream();
+    let mut body = Vec::new();
+    while body.len() < LIMIT {
+        match tokio::time::timeout(Duration::from_millis(idle_ms), stream.next()).await {
+            Ok(Some(Ok(chunk))) => body.extend_from_slice(&chunk),
+            _ => break,
+        }
+    }
+    body.truncate(LIMIT);
+    body
 }
 
 async fn read_response(

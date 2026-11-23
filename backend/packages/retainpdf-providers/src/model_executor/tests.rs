@@ -291,6 +291,43 @@ async fn only_429_retries_once() {
 }
 
 #[tokio::test]
+async fn quota_429_is_not_retried_and_pauses_the_job() {
+    // 429 不全是限流：业务码说额度用完（这里是 OpenAI 的 insufficient_quota）就第一次停下，不按 retry-after 再发
+    let count = Arc::new(AtomicUsize::new(0));
+    let seen = count.clone();
+    let (url, task) = server(Router::new().route(
+        "/v1/chat/completions",
+        post(move || {
+            let seen = seen.clone();
+            async move {
+                seen.fetch_add(1, Ordering::SeqCst);
+                (
+                    StatusCode::TOO_MANY_REQUESTS,
+                    [("retry-after", "0")],
+                    r#"{"error":{"message":"You exceeded your current quota echoed-secret","type":"insufficient_quota","code":"insufficient_quota"}}"#,
+                )
+                    .into_response()
+            }
+        }),
+    ))
+    .await;
+    let f = Fixture::new();
+    let e = &f.executor;
+    let token = e.register_job("j", &profile(&url), 60).unwrap();
+    e.submit("j", &token, request("op")).await.unwrap();
+    let op = terminal(e, "j", &token, "op").await;
+    assert_eq!(op.status, "failed");
+    assert_eq!(op.error_code.as_deref(), Some("quota_exhausted"));
+    assert_eq!(count.load(Ordering::SeqCst), 1, "额度用完不重试");
+    let result = op.result.clone().unwrap();
+    assert_eq!(result["upstream_status"], json!(429));
+    assert_eq!(result["upstream_code"], json!("insufficient_quota"));
+    assert!(!serde_json::to_string(&op).unwrap().contains("echoed-secret"));
+    assert!(e.submit("j", &token, request("other")).await.is_err(), "整份停下：后面的请求不再收");
+    task.abort();
+}
+
+#[tokio::test]
 async fn provider_rejection_is_masked_and_not_retried() {
     let count = Arc::new(AtomicUsize::new(0));
     let seen = count.clone();

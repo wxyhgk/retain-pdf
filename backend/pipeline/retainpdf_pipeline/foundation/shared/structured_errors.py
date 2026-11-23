@@ -210,6 +210,8 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
     http_status_code = _http_status_code(exc, f"{detail}\n{raw_traceback}")
     provider_code = _extract_provider_code(f"{detail}\n{raw_traceback}")
     provider_stage = _extract_provider_stage(f"{detail}\n{raw_traceback}")
+    # 翻译请求层按业务码认出来的（429 里的余额、额度用完，智谱 1311/1315 套餐不能用这个模型）在错误类型上写明了归类
+    declared = str(getattr(exc, "retain_failure_code", "") or "")
 
     error_type = "python_unhandled_exception"
     summary = "任务失败，但暂未识别出明确根因"
@@ -225,7 +227,7 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         error_type = "render_failed"
         summary = "排版或编译阶段失败"
         retryable = True
-    elif http_status_code == 402 or "quotaexhausted" in lowered:
+    elif declared == "upstream_quota_exhausted" or http_status_code == 402 or "quotaexhausted" in lowered:
         # 402 / agent 引擎的 QuotaExhausted：账户余额不足，充值前每次重试都会同样失败
         # GLM-OCR 的余额不足是 HTTP 429 + 业务码 1113（GlmOcrQuotaExhausted），只有真是 402 才写 402
         error_type = "upstream_quota_exhausted"
@@ -235,6 +237,11 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
             summary = f"上游账户余额或额度不足（HTTP {http_status_code}）"
         else:
             summary = "上游账户余额或额度不足"
+        retryable = False
+    elif declared == "auth_failed":
+        # 状态码可能是 429（智谱 1311/1315）：先于下面的限流判断
+        error_type = "auth_failed"
+        summary = "鉴权失败"
         retryable = False
     elif http_status_code == 429 or any(token in lowered for token in ("rate limited", "rate limit", "too many requests", "retry-after")):
         error_type = "upstream_rate_limited"

@@ -250,7 +250,10 @@ impl Db {
                 || matches!(
                     error_code,
                     Some(
-                        "authentication_failed" | "payment_required" | "provider_rejected_request"
+                        "authentication_failed"
+                            | "payment_required"
+                            | "quota_exhausted"
+                            | "provider_rejected_request"
                     )
                 ))
         {

@@ -53,6 +53,7 @@ from retainpdf_translation.core.payload.parts.policy_state import mark_policy_sk
 from retainpdf_translation.llm.shared.control_context import TranslationControlContext
 from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared.model_wire import anthropic_usage
+from retainpdf_translation.llm.shared.upstream_error_codes import agent_http_classifier
 from retainpdf_translation.llm.shared.usage_ledger import record_model_usage
 from retainpdf_translation.services.policy import TranslationPolicyConfig
 from retainpdf_translation_agent_engine.agent_openai import make_openai_transport
@@ -119,6 +120,32 @@ FN_TOKEN_RE = re.compile(r"\{\{fn:([^{}]+)\}\}")
 
 class AgentRunStopped(RuntimeError):
     """额度用完、密钥不对、一直限流：进度已保存，修好后重试这个任务会从断点接着翻。"""
+
+    retain_failure_code = ""
+
+
+class AgentQuotaExhausted(AgentRunStopped):
+    """模型 API 的余额、额度、预算用完（402，或 429 等 + 计费业务码）：结构化失败归 ``upstream_quota_exhausted``。"""
+
+    retain_failure_code = "upstream_quota_exhausted"
+
+
+class AgentAuthFailed(AgentRunStopped):
+    """Key 被拒、没权限、套餐不能用这个模型：结构化失败归 ``auth_failed``。"""
+
+    retain_failure_code = "auth_failed"
+
+
+_STOP_ERRORS = {"quota_exhausted": AgentQuotaExhausted, "auth_failed": AgentAuthFailed}
+
+
+def _stopped_error(outcome) -> AgentRunStopped:
+    """停下的原因放进说明：额度用完时带 HTTP 状态和服务商的业务码。"""
+    message = f"translation agent stopped: reason={outcome.stop_reason} pages_done={outcome.pages_done}/{outcome.pages_total}"
+    detail = str(getattr(outcome, "stop_message", "") or "").strip()
+    if detail:
+        message = f"{message} | {detail}"
+    return _STOP_ERRORS.get(outcome.stop_reason, AgentRunStopped)(message)
 
 
 
@@ -585,7 +612,8 @@ def _connection_transport(*, api_key: str, model: str, base_url: str) -> Callabl
     """按阶段入口登记的协议选：Anthropic 走 agent 自己的 Messages 请求，OpenAI 两种协议走共用请求层（agent_openai.py）。"""
     profile = model_wire.registered_profile(base_url=base_url, model=model)
     if profile is None or profile.protocol == model_wire.PROTOCOL_ANTHROPIC:
-        return make_http_transport(api_key, url=messages_url(base_url))
+        # 429 不全是限流：按业务码认出额度用完、消费封顶，第一次就停（upstream_error_codes）
+        return make_http_transport(api_key, url=messages_url(base_url), classify=agent_http_classifier)
     return make_openai_transport(api_key=api_key, model=model, base_url=base_url, protocol=profile.protocol)
 
 
@@ -750,9 +778,7 @@ def translate_book_with_agent(
         if run_diagnostics is not None:
             run_diagnostics.mark_phase_end(SUBSTAGE)
     if outcome.status != "done":
-        raise AgentRunStopped(
-            f"translation agent stopped: reason={outcome.stop_reason} pages_done={outcome.pages_done}/{outcome.pages_total}"
-        )
+        raise _stopped_error(outcome)
     changed = _mark_unanswered(page_payloads)
     if changed:
         save_pages(page_payloads, translation_paths, changed)
@@ -770,6 +796,8 @@ def translate_book_with_agent(
 
 __all__ = [
     "EDITORIAL_EVENTS_RELATIVE_PATH",
+    "AgentAuthFailed",
+    "AgentQuotaExhausted",
     "AgentRunStopped",
     "agent_engine_identity",
     "apply_agent_results",

@@ -28,6 +28,26 @@ class ExecutorUnavailable(ExecutorError):
     """Local receipt unavailable. Do not switch to a direct upstream request."""
 
 
+class ExecutorQuotaExhausted(ExecutorError):
+    """上游说余额、额度、预算用完（402，或 429 等 + 计费业务码，Rust 执行器判断）：整份停下，归 upstream_quota_exhausted。"""
+
+    retain_failure_code = "upstream_quota_exhausted"
+
+
+class ExecutorAccessDenied(ExecutorError):
+    """上游拒绝这个 Key（401/403，或套餐不能用这个模型）：整份停下，归 auth_failed。"""
+
+    retain_failure_code = "auth_failed"
+
+
+# Rust 执行器记在操作上的 error_code（不含响应体、不含 Key）→ 抛哪种错
+_FAILED_OPERATION_ERRORS = {
+    "quota_exhausted": (ExecutorQuotaExhausted, "上游账户余额或额度不足（Rust 执行器按状态码和业务码判断）"),
+    "payment_required": (ExecutorQuotaExhausted, "上游账户余额不足（HTTP 402）"),
+    "authentication_failed": (ExecutorAccessDenied, "上游拒绝了这个 API Key（鉴权失败，或套餐不能用这个模型）"),
+}
+
+
 @dataclass(frozen=True)
 class ModelReceipt:
     content: str
@@ -117,6 +137,18 @@ class RustModelExecutorClient:
                 return ModelReceipt(content, operation_id, {key: value for key, value in receipt.items() if key != "content"})
             if state == "ambiguous":
                 raise AmbiguousModelRequest("upstream result unknown; manual retry may incur duplicate billing")
+            if state == "failed":
+                error_code = str(operation.get("error_code") or "")
+                known = _FAILED_OPERATION_ERRORS.get(error_code)
+                if known is not None:
+                    error_class, reason = known
+                    receipt = operation.get("result") if isinstance(operation.get("result"), dict) else {}
+                    status, code = receipt.get("upstream_status"), receipt.get("upstream_code")
+                    upstream = f"HTTP {status}，业务码 {code}，" if status and code else ""
+                    error = error_class(f"{reason}（{upstream}error_code={error_code}）；已停止，不再重试")
+                    error.status_code = status if isinstance(status, int) else None
+                    error.provider_code = str(code or "")
+                    raise error
             if state in {"failed", "cancelled"}:
                 raise ExecutorError(f"model operation {state}; no automatic upstream retry")
             if state not in {"queued", "running"}:
