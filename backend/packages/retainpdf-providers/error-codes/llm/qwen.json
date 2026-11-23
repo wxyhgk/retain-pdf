@@ -1,0 +1,1361 @@
+{
+  "id": "qwen",
+  "label": "阿里云百炼（千问 / DashScope）",
+  "kind": "llm",
+  "hosts": [
+    "dashscope.aliyuncs.com",
+    "dashscope-intl.aliyuncs.com"
+  ],
+  "sources": [
+    {
+      "title": "错误码 - 大模型服务平台百炼（Model Studio）",
+      "url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "如何通过 OpenAI 接口调用千问模型（含异常响应示例和状态码说明）",
+      "url": "https://help.aliyun.com/zh/model-studio/compatibility-of-openai-with-dashscope",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Coding Plan 常见问题",
+      "url": "https://help.aliyun.com/zh/model-studio/coding-plan-faq",
+      "fetched_at": "2026-11-23"
+    }
+  ],
+  "error_shape_zh": "OpenAI 兼容模式（/compatible-mode/v1）的错误体是 OpenAI 风格：{\"error\": {\"message\": \"...\", \"type\": \"invalid_request_error\", \"param\": null, \"code\": \"invalid_api_key\"}}。错误码文档里写成“A/b”的条目（如 InvalidApiKey/invalid_api_key、Throttling.AllocationQuota/insufficient_quota），斜杠前是 DashScope 原生协议的 code，斜杠后是 OpenAI 兼容模式下 error.code 的取值；文档没给小写别名的码（如 Arrearage）在兼容模式下 code 直接是原生码，文档示例里 Arrearage 的 type 和 code 都是 Arrearage。同一个码下面可能挂多条不同的 message，具体原因要结合 error.message 看。Request ID 是 UUID，在响应头或响应体中；DashScope 原生协议的错误体是顶层 code/message/request_id。错误码页只在 RAG API 的重试表里提到 Retry-After 头，没有说明 OpenAI 兼容端点会不会返回。",
+  "how_to_distinguish_zh": [
+    "兼容模式错误体是 OpenAI 风格 {error: {message, type, param, code}}。文档写成「A / b」的码，斜杠前是 DashScope 原生 code，斜杠后是兼容模式 error.code 的值（数据里放在 code 和 aliases）。",
+    "429 下既有可重试的限流 / 过载（Throttling.*），也有不可重试的计费类（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded）；先看 error.code，再看 error.message 是否含 free / quota exhausted。",
+    "欠费 Arrearage 可能是 400 也可能是 403，按 code 判断，不要按状态码判断。",
+    "InternalError.Algo.InvalidParameter（400）既用于输入超长，也用于重复工具调用死循环，看 message（Range of input length / Repetitive tool calls）。",
+    "Coding Plan 的五条是错误消息文字，不是独立的码；sk-sp- 开头的套餐 Key 配通用 Base URL 会 401 invalid_api_key。"
+  ],
+  "handling_summary_zh": "走翻译请求层（OpenAI 兼容模式 /compatible-mode/v1），只看 HTTP 状态：401/403 整份停下、400 这个请求失败、429/5xx 退避重试、其他 4xx 只算这个请求失败。",
+  "notes_zh": [
+    "429 歧义：429 下既有可重试的限流/过载（Throttling、Throttling.RateQuota、Throttling.BurstRate、Throttling.Concurrency、Throttling.ServiceOverloaded、Throttling.ResourceExhausted、Throttling.AllocationQuota 的 TPM 场景），也有不可重试的计费类（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded）。OpenAI 兼容页的状态码表里“429 You exceeded your current quota”被描述为“额度超限或者欠费”，而错误码页把 insufficient_quota（Throttling.AllocationQuota）解释为 TPS/TPM 限流，二者说法不一致；同一个 insufficient_quota 下还有“免费额度到期且不支持按量付费”这种不可重试的 message。区分办法：看 error.code，再看 error.message 是否含 free / quota exhausted 一类字样。",
+    "欠费的状态码：错误码页把 Arrearage 放在 400 一节，而快速排障表在 403 AccessDenied 一行写“消息涉及欠费时参见 Arrearage”，实际状态码可能是 400 也可能是 403，按 code 判断，不要按状态码判断。",
+    "InternalError.Algo.InvalidParameter 的 HTTP 状态是 400，但同一个码既用于输入超长（context_length），也用于检测到重复工具调用死循环，需要看 message（Range of input length / Repetitive tool calls）。",
+    "ServiceUnavailable 在 500 和 503 两节都出现，含义相同。",
+    "Coding Plan 的五条（hour/week/month/concurrency/usage allocated quota exceeded）在官方文档里是错误消息字符串，不是独立错误码，这里用消息原文当 code，type 标为 coding_plan_message；只有 usage 一条在 Coding Plan FAQ 里写明是 429，其余状态码文档没写。",
+    "OpenAI 兼容页另有一张笼统状态码表：400 Invalid Request Error、401 Invalid API-key provided、429 Rate limit reached、429 You exceeded your current quota、500 服务端错误、503 引擎过载可重试。",
+    "错误码页还列了大量多模态/语音/视频/知识库/Sandbox/RAG/ParseX 专用码（InvalidFile.*、Audio.*、BadRequest.*、KB_*、11900xxx 等），与文本翻译无关，未收录。英文版错误码页（help.aliyun.com/en/model-studio/error-code-start）未单独抓取比对。",
+    "用 sk-sp- 开头的套餐专属 Key 搭配通用 Base URL 会返回 401 invalid_api_key；用通用 Key 调 Token Plan 专属模型返回 403 access_denied。"
+  ],
+  "issues": [],
+  "related_docs": [],
+  "entries": [
+    {
+      "id": "InvalidApiKey",
+      "code": "InvalidApiKey",
+      "aliases": [
+        "invalid_api_key"
+      ],
+      "http_status": [
+        401
+      ],
+      "type": "invalid_request_error",
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "API Key 无效，或 Key 与地域、Base URL 不匹配",
+      "meaning_en": "Invalid API key, or key does not match the region / base URL",
+      "user_hint_zh": "检查百炼 API Key 是否正确、是否已删除，以及 Key 与 Base URL 的地域是否一致（Coding Plan 的 sk-sp- Key 要配专属地址）",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "AccessDenied",
+      "code": "AccessDenied",
+      "aliases": [
+        "access_denied"
+      ],
+      "http_status": [
+        403
+      ],
+      "type": null,
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "访问被拒：无权使用该模型、模型已下线、Key 限定了可用模型范围，或调用方式（同步/异步）不对",
+      "meaning_en": "Access denied: no permission for the model, model retired, key scope restriction, or wrong sync/async mode",
+      "user_hint_zh": "确认这个百炼 Key 有权调用该模型（检查 Key 的访问模型范围），模型没有下线",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "AccessDenied.Unpurchased",
+      "code": "AccessDenied.Unpurchased",
+      "aliases": [],
+      "http_status": [
+        403
+      ],
+      "type": null,
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "还没有开通百炼服务",
+      "meaning_en": "Model Studio service has not been activated",
+      "user_hint_zh": "阿里云账号还没开通百炼，请登录百炼控制台开通（需要实名认证）",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Model.AccessDenied",
+      "code": "Model.AccessDenied",
+      "aliases": [],
+      "http_status": [
+        403
+      ],
+      "type": null,
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "无权调用这个标准模型或自定义模型（常见于子业务空间 Key）",
+      "meaning_en": "No permission for this standard or custom model (often a sub-workspace key)",
+      "user_hint_zh": "当前业务空间没有该模型的调用授权，请在百炼控制台授权，或改用主账号的 Key",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Workspace.AccessDenied",
+      "code": "Workspace.AccessDenied",
+      "aliases": [],
+      "http_status": [
+        403
+      ],
+      "type": null,
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "无权访问该业务空间的模型或应用",
+      "meaning_en": "No permission for models or apps in this workspace",
+      "user_hint_zh": "这个 Key 无权访问对应业务空间，请检查业务空间授权或改用主账号 Key",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Endpoint.AccessDenied",
+      "code": "Endpoint.AccessDenied",
+      "aliases": [],
+      "http_status": [
+        403
+      ],
+      "type": null,
+      "category": "model_not_found",
+      "retryable": false,
+      "meaning_zh": "调用端点被拒，常见原因是调用了已下线的模型快照",
+      "meaning_en": "Endpoint access denied, typically because the model snapshot has been retired",
+      "user_hint_zh": "这个千问模型版本可能已下线，请换成推荐的替代模型",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "按 403 整份停下，归「鉴权失败」。",
+        "gap_zh": "原因是调了已下线的模型快照，文案应提示换模型而不是换 Key。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "AllocationQuota.FreeTierOnly",
+      "code": "AllocationQuota.FreeTierOnly",
+      "aliases": [],
+      "http_status": [
+        403
+      ],
+      "type": null,
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "免费额度已用完，且开了“免费额度用完即停”或账号未认证",
+      "meaning_en": "Free tier exhausted while 'free tier only' is on, or account not verified",
+      "user_hint_zh": "百炼免费额度已用完，请在控制台关闭“免费额度用完即停”或完成认证并充值",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "按 403 整份停下，归「鉴权失败」。",
+        "gap_zh": "这是免费额度用完，应归 upstream_quota_exhausted，提示开通按量付费或关掉「免费额度用完即停」。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Arrearage",
+      "code": "Arrearage",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "Arrearage",
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "Key 所属阿里云账号欠费，访问被拒",
+      "meaning_en": "The Alibaba Cloud account owning the key is in arrears",
+      "user_hint_zh": "阿里云账号欠费，请到“费用与成本”充值；资源包只抵扣特定模型和用量，超出部分仍会扣余额",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
+        "gap_zh": "欠费走 400（也可能是 403），应按 error.code=Arrearage 归 upstream_quota_exhausted、整份停下、提示充值。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "InvalidParameter",
+      "code": "InvalidParameter",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "请求参数或格式不符合要求（具体看 message）",
+      "meaning_en": "Invalid parameter or request format; see the message for details",
+      "user_hint_zh": "请求参数不被百炼接受，请按错误信息调整模型参数（如 max_tokens、temperature、思考模式）",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。拒收 temperature、思考字段、json_schema 时自动降级重发。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "InvalidParameter.NotSupportEnableThinking",
+      "code": "InvalidParameter.NotSupportEnableThinking",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": null,
+      "category": "unsupported",
+      "retryable": false,
+      "meaning_zh": "这个模型不支持 enable_thinking 参数",
+      "meaning_en": "The model does not accept the enable_thinking parameter",
+      "user_hint_zh": "该千问模型不支持思考模式开关，请去掉思考参数或换支持思考的模型",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "auto_adjust",
+        "failure_code": null,
+        "summary_zh": "思考字段不被接受时退下一档（不带思考字段）再发。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "InternalError.Algo.InvalidParameter",
+      "code": "InternalError.Algo.InvalidParameter",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": null,
+      "category": "context_length",
+      "retryable": false,
+      "meaning_zh": "算法侧参数错误，常见为输入长度超过模型上限，也用于检测到重复工具调用死循环",
+      "meaning_en": "Algorithm-side invalid parameter: usually input exceeds the model limit; also used for repeated tool-call loops",
+      "user_hint_zh": "输入超过千问模型的上下文长度，请缩小每批翻译内容或换上下文更长的模型",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
+        "gap_zh": "多半是输入超长，可以拆小批再发。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_parameter_error",
+      "code": "invalid_parameter_error",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": null,
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "OpenAI 兼容接口下，目标模型还没在模型市场开通",
+      "meaning_en": "Via the OpenAI-compatible API, the target model is not activated in the model marketplace",
+      "user_hint_zh": "该模型在百炼模型市场还没开通，请先开通再调用",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
+        "gap_zh": "模型没在模型市场开通是配置问题，应第一次就整份停下，提示去开通。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "DataInspectionFailed",
+      "code": "DataInspectionFailed",
+      "aliases": [
+        "data_inspection_failed"
+      ],
+      "http_status": [
+        400
+      ],
+      "type": null,
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "输入或输出疑似含敏感内容，被内容安全拦截",
+      "meaning_en": "Input or output flagged as inappropriate by content moderation",
+      "user_hint_zh": "这段内容触发了阿里云内容安全拦截，原样重试不会通过，可跳过该段或换服务商",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
+        "gap_zh": "应标成「内容审核未过」，保留原文，不当成配置错误。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "FaqRuleBlocked",
+      "code": "FaqRuleBlocked",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": null,
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "输入或输出命中 FAQ 规则干预被拦截",
+      "meaning_en": "Input or output blocked by an FAQ intervention rule",
+      "user_hint_zh": "内容被百炼的规则干预拦截，请修改内容或检查业务空间的干预规则",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
+        "gap_zh": "应标成「内容审核未过」，保留原文，不当成配置错误。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "InvalidParameter.DataInspection",
+      "code": "InvalidParameter.DataInspection",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": null,
+      "category": "file",
+      "retryable": true,
+      "meaning_zh": "内容审核时下载图片或音频超时",
+      "meaning_en": "Timed out downloading the media resource during moderation",
+      "user_hint_zh": "百炼下载输入的图片或音频超时，请把文件放到国内可访问的存储后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "只在下载图片、音频做审核时出现，翻译请求是纯文本。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "ModelNotFound",
+      "code": "ModelNotFound",
+      "aliases": [
+        "model_not_found"
+      ],
+      "http_status": [
+        404
+      ],
+      "type": null,
+      "category": "model_not_found",
+      "retryable": false,
+      "meaning_zh": "模型不存在、名称写错、在该地域不可用，或未开通",
+      "meaning_en": "Model does not exist, is misspelled, unavailable in this region, or not activated",
+      "user_hint_zh": "检查千问模型名称拼写，确认该模型在当前地域可用且已开通",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "模型名写错或没开通时每个块各自失败，最后说不清原因。应和 401/403 一样第一次就整份停下，给「模型不存在」类失败，换模型后从翻译续跑。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "model_not_supported",
+      "code": "model_not_supported",
+      "aliases": [],
+      "http_status": [
+        404
+      ],
+      "type": null,
+      "category": "unsupported",
+      "retryable": false,
+      "meaning_zh": "该模型不支持 OpenAI 兼容方式调用",
+      "meaning_en": "The model is not available through the OpenAI-compatible mode",
+      "user_hint_zh": "这个模型不能走 OpenAI 兼容接口，请换一个兼容模式支持的千问模型",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "模型名写错或没开通时每个块各自失败，最后说不清原因。应和 401/403 一样第一次就整份停下，给「模型不存在」类失败，换模型后从翻译续跑。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "WorkSpaceNotFound",
+      "code": "WorkSpaceNotFound",
+      "aliases": [],
+      "http_status": [
+        404
+      ],
+      "type": null,
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "Base URL 里的业务空间不存在",
+      "meaning_en": "The workspace in the base URL does not exist",
+      "user_hint_zh": "检查 Base URL 里的业务空间 ID 是否正确，账号是否是该业务空间成员",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "模型名写错或没开通时每个块各自失败，最后说不清原因。应和 401/403 一样第一次就整份停下，给「模型不存在」类失败，换模型后从翻译续跑。Base URL 里的业务空间不对也是同一类配置错误。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "NotFound",
+      "code": "NotFound",
+      "aliases": [],
+      "http_status": [
+        404
+      ],
+      "type": null,
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "要查询或操作的资源不存在，或请求路径不存在",
+      "meaning_en": "Requested resource or request path not found",
+      "user_hint_zh": "请求地址或资源 ID 不对，请检查 Base URL 和接口路径",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "模型名写错或没开通时每个块各自失败，最后说不清原因。应和 401/403 一样第一次就整份停下，给「模型不存在」类失败，换模型后从翻译续跑。Base URL 里的业务空间不对也是同一类配置错误。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Throttling",
+      "code": "Throttling",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "接口调用触发限流（笼统）",
+      "meaning_en": "Generic request throttling",
+      "user_hint_zh": "请求太频繁触发了百炼限流，请降低并发后稍后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Throttling.RateQuota",
+      "code": "Throttling.RateQuota",
+      "aliases": [
+        "limit_requests"
+      ],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "请求次数频率（RPS/RPM）超限",
+      "meaning_en": "Request-count rate limit (RPS/RPM) exceeded",
+      "user_hint_zh": "每分钟请求数超过百炼限额，请降低并发后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Throttling.BurstRate",
+      "code": "Throttling.BurstRate",
+      "aliases": [
+        "limit_burst_rate"
+      ],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "请求量突然陡增，触发稳定性保护（尚未到限流阈值）",
+      "meaning_en": "Request rate ramped up too quickly; stability protection triggered",
+      "user_hint_zh": "请求量增长过快，请平滑发送（逐步增加并发、指数退避）后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Throttling.AllocationQuota",
+      "code": "Throttling.AllocationQuota",
+      "aliases": [
+        "insufficient_quota"
+      ],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "每秒/每分钟 Token 用量（TPS/TPM）超限；也用于免费额度到期且该模型不支持按量付费等配额类情况",
+      "meaning_en": "Token throughput (TPS/TPM) limit exceeded; also used for some quota-exhausted cases",
+      "user_hint_zh": "Token 用量速度超过百炼限额，请降低并发或缩小每批内容后重试；若错误信息提到免费额度耗尽，需换模型或开通付费",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃。",
+        "gap_zh": "同一个码也用于「免费额度到期且不支持按量付费」，那种情况重试没用；应再看 error.message（free / quota exhausted 字样）按额度处理。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Throttling.Concurrency",
+      "code": "Throttling.Concurrency",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "并发请求数超出平台动态分配的上限",
+      "meaning_en": "Concurrent requests exceed the dynamically allocated limit",
+      "user_hint_zh": "百炼并发数超限，稍等后重试，或降低并发",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Throttling.ServiceOverloaded",
+      "code": "Throttling.ServiceOverloaded",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "overloaded",
+      "retryable": true,
+      "meaning_zh": "平台资源过载，暂时处理不了",
+      "meaning_en": "Platform resources are overloaded",
+      "user_hint_zh": "百炼服务繁忙，稍后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "Throttling.ResourceExhausted",
+      "code": "Throttling.ResourceExhausted",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "overloaded",
+      "retryable": true,
+      "meaning_zh": "平台资源饱和，暂时处理不了",
+      "meaning_en": "Platform resources are saturated",
+      "user_hint_zh": "百炼服务繁忙，稍后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "CommodityNotPurchased",
+      "code": "CommodityNotPurchased",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "业务空间还没订购",
+      "meaning_en": "The workspace service has not been purchased",
+      "user_hint_zh": "百炼业务空间未订购，请先订购",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded 等），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "PrepaidBillOverdue",
+      "code": "PrepaidBillOverdue",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "业务空间预付费账单已到期",
+      "meaning_en": "The workspace prepaid bill has expired",
+      "user_hint_zh": "百炼预付费账单到期，请续费",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded 等），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "PostpaidBillOverdue",
+      "code": "PostpaidBillOverdue",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "后付费的模型推理商品已失效",
+      "meaning_en": "The postpaid inference commodity is no longer valid",
+      "user_hint_zh": "百炼后付费账单逾期，请到阿里云费用中心处理",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded 等），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "BudgetLimitExceeded",
+      "code": "BudgetLimitExceeded",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "预算管理里设的预算用完，且开了“达预算即停”",
+      "meaning_en": "Configured budget exhausted with stop-on-budget enabled",
+      "user_hint_zh": "百炼预算已用完，请在预算管理里提高预算或关闭“达预算即停”",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code（CommodityNotPurchased、PrepaidBillOverdue、PostpaidBillOverdue、BudgetLimitExceeded 等），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "InternalError",
+      "code": "InternalError",
+      "aliases": [
+        "internal_error"
+      ],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "服务端内部错误",
+      "meaning_en": "Internal server error",
+      "user_hint_zh": "百炼服务端出错，稍后重试；持续出现请带 Request ID 联系阿里云",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "InternalError.Algo",
+      "code": "InternalError.Algo",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "模型推理服务异常（也可能是模型生成的工具调用 JSON 不合法）",
+      "meaning_en": "Model inference error (may also be invalid tool-call JSON generated by the model)",
+      "user_hint_zh": "千问模型推理出错，先重试；反复出现可换模型",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "InternalError.Timeout",
+      "code": "InternalError.Timeout",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "timeout",
+      "retryable": true,
+      "meaning_zh": "异步任务提交后 3 小时内没出结果，超时",
+      "meaning_en": "Async task produced no result within 3 hours",
+      "user_hint_zh": "百炼异步任务超时，请检查任务状态后再决定是否重新提交",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "只用于异步任务，翻译走同步调用。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "InternalError.Configuration",
+      "code": "InternalError.Configuration",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "服务端配置异常",
+      "meaning_en": "Server-side configuration error",
+      "user_hint_zh": "百炼服务端配置异常，稍后重试或联系阿里云",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "InternalError.DataInspection",
+      "code": "InternalError.DataInspection",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "内容审核服务暂时不可用",
+      "meaning_en": "Content moderation service temporarily unavailable",
+      "user_hint_zh": "百炼内容审核服务暂不可用，稍后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "InternalError.TranslationFailed",
+      "code": "InternalError.TranslationFailed",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "翻译处理失败",
+      "meaning_en": "Translation processing failed",
+      "user_hint_zh": "百炼翻译处理失败，稍后重试；仍失败请检查输入内容",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "SystemError",
+      "code": "SystemError",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "系统错误",
+      "meaning_en": "System error",
+      "user_hint_zh": "百炼系统错误，稍后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "ModelServiceFailed",
+      "code": "ModelServiceFailed",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "调用模型服务失败",
+      "meaning_en": "Failed to call the model service",
+      "user_hint_zh": "千问模型服务调用失败，稍后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "RequestTimeOut",
+      "code": "RequestTimeOut",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "timeout",
+      "retryable": true,
+      "meaning_zh": "请求超时（大模型非流式调用 300 秒超时）",
+      "meaning_en": "Request timed out (300 s limit for non-streaming LLM calls)",
+      "user_hint_zh": "千问请求超过 300 秒超时，可改用流式输出或缩小每批内容后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_timeout",
+        "summary_zh": "按超时重试；用完后归「外部服务请求超时」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "ServiceUnavailable",
+      "code": "ServiceUnavailable",
+      "aliases": [],
+      "http_status": [
+        500,
+        503
+      ],
+      "type": null,
+      "category": "overloaded",
+      "retryable": true,
+      "meaning_zh": "系统容量不足，请求被限流（资源饱和）",
+      "meaning_en": "Requests throttled due to system capacity limits",
+      "user_hint_zh": "百炼服务容量不足，稍后重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "ModelUnavailable",
+      "code": "ModelUnavailable",
+      "aliases": [],
+      "http_status": [
+        503
+      ],
+      "type": null,
+      "category": "overloaded",
+      "retryable": true,
+      "meaning_zh": "模型暂时无法提供服务",
+      "meaning_en": "Model is temporarily unavailable",
+      "user_hint_zh": "这个千问模型暂时不可用，稍后重试或换模型",
+      "source_url": "https://help.aliyun.com/zh/model-studio/error-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "hour allocated quota exceeded",
+      "code": "hour allocated quota exceeded",
+      "aliases": [],
+      "http_status": [],
+      "type": "coding_plan_message",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "Coding Plan 每 5 小时请求额度用完（这是错误消息，不是独立的码）",
+      "meaning_en": "Coding Plan 5-hour request quota used up (a message string, not a separate code)",
+      "user_hint_zh": "百炼 Coding Plan 的 5 小时额度用完，等额度恢复后再用",
+      "source_url": "https://help.aliyun.com/zh/model-studio/coding-plan-faq",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码；若是 429 就当限流退避到 300 秒上限。",
+        "gap_zh": "套餐时段额度用完，要等重置；应按消息文字归额度类、整份停下，提示重置时间。（官方没写这几条的状态码，未核实）",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "week allocated quota exceeded",
+      "code": "week allocated quota exceeded",
+      "aliases": [],
+      "http_status": [],
+      "type": "coding_plan_message",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "Coding Plan 每周额度用完，周一 0 点（UTC+8）重置",
+      "meaning_en": "Coding Plan weekly quota used up; resets Monday 00:00 UTC+8",
+      "user_hint_zh": "百炼 Coding Plan 的周额度用完，等周一重置",
+      "source_url": "https://help.aliyun.com/zh/model-studio/coding-plan-faq",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码；若是 429 就当限流退避到 300 秒上限。",
+        "gap_zh": "套餐时段额度用完，要等重置；应按消息文字归额度类、整份停下，提示重置时间。（官方没写这几条的状态码，未核实）",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "month allocated quota exceeded",
+      "code": "month allocated quota exceeded",
+      "aliases": [],
+      "http_status": [],
+      "type": "coding_plan_message",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "Coding Plan 每月额度用完，订阅日 0 点（UTC+8）重置",
+      "meaning_en": "Coding Plan monthly quota used up; resets on the subscription day",
+      "user_hint_zh": "百炼 Coding Plan 的月额度用完，等订阅日重置",
+      "source_url": "https://help.aliyun.com/zh/model-studio/coding-plan-faq",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码；若是 429 就当限流退避到 300 秒上限。",
+        "gap_zh": "套餐时段额度用完，要等重置；应按消息文字归额度类、整份停下，提示重置时间。（官方没写这几条的状态码，未核实）",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "concurrency allocated quota exceeded",
+      "code": "concurrency allocated quota exceeded",
+      "aliases": [],
+      "http_status": [],
+      "type": "coding_plan_message",
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "Coding Plan 并发数超过平台动态上限",
+      "meaning_en": "Coding Plan concurrency above the dynamic limit",
+      "user_hint_zh": "百炼 Coding Plan 并发超限，降低并发后稍等重试",
+      "source_url": "https://help.aliyun.com/zh/model-studio/coding-plan-faq",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "usage allocated quota exceeded",
+      "code": "usage allocated quota exceeded",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "coding_plan_message",
+      "category": "rate_limit",
+      "retryable": false,
+      "meaning_zh": "Coding Plan 短时间资源消耗过高，被临时限流（通常约一小时恢复）",
+      "meaning_en": "Coding Plan temporarily throttled for high short-term resource usage (about an hour)",
+      "user_hint_zh": "百炼 Coding Plan 短时用量过高被临时限流，约一小时后再试，或把大任务拆小分时段跑",
+      "source_url": "https://help.aliyun.com/zh/model-studio/coding-plan-faq",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "429，当限流退避到 300 秒上限。",
+        "gap_zh": "官方说通常约一小时才恢复，300 秒内重试没用；应按消息文字直接停下，提示一小时后再试。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    }
+  ]
+}

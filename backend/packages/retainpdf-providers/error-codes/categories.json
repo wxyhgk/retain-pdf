@@ -1,0 +1,146 @@
+[
+  {
+    "id": "auth",
+    "label_zh": "鉴权失败",
+    "description_zh": "Key / Token 写错、过期、被吊销，或者没带鉴权头。",
+    "retryable": false,
+    "user_hint_zh": "在设置里检查并更新这家服务商的 API Key / Token，再重试。",
+    "failure_codes": ["auth_failed"],
+    "note_zh": null
+  },
+  {
+    "id": "permission",
+    "label_zh": "没有权限",
+    "description_zh": "Key 是对的，但没有权限用这个模型、接口或业务空间（含套餐不包含该模型、Key 类型不对）。",
+    "retryable": false,
+    "user_hint_zh": "换一个有权限的 Key，或去服务商控制台开通这个模型 / 接口。",
+    "failure_codes": ["auth_failed"],
+    "note_zh": "智谱 1311、1315 这类「套餐不含该模型」走 HTTP 429，现在翻译侧被当成限流（见各家的缺口）。"
+  },
+  {
+    "id": "region",
+    "label_zh": "地区不支持",
+    "description_zh": "从服务商不支持的国家或地区访问。",
+    "retryable": false,
+    "user_hint_zh": "所在地区不能直接用这家服务；换网络环境，或换一家服务商。",
+    "failure_codes": ["auth_failed"],
+    "note_zh": "现在按 403 归「鉴权失败」，文案让用户检查 Key，不准确（缺口）。"
+  },
+  {
+    "id": "billing",
+    "label_zh": "欠费或余额不足",
+    "description_zh": "账户余额用完、欠费、没有资源包，或套餐已到期。",
+    "retryable": false,
+    "user_hint_zh": "去服务商控制台充值或续费；充值前重试会同样失败。",
+    "failure_codes": ["upstream_quota_exhausted"],
+    "note_zh": "只有 HTTP 402 和 GLM-OCR 的智谱业务码会落到这里；OpenAI、智谱、百炼走 429、Anthropic 走 400 的欠费现在被当成限流或普通 400（缺口）。"
+  },
+  {
+    "id": "quota",
+    "label_zh": "额度或用量上限",
+    "description_zh": "到了某个时间窗的用量上限、自设或平台的花费上限、当日页数额度，要等重置或调高上限。",
+    "retryable": false,
+    "user_hint_zh": "等额度重置（看服务商给的重置时间）或在控制台调高上限；几分钟内重试没用。",
+    "failure_codes": ["upstream_quota_exhausted"],
+    "note_zh": "PaddleOCR 12001 现在被说成「鉴权失败」，MinerU -60018 落「暂未识别出明确根因」（缺口）。"
+  },
+  {
+    "id": "rate_limit",
+    "label_zh": "限流",
+    "description_zh": "请求太快、并发太多，或流量涨得太快，触发了速率限制。",
+    "retryable": true,
+    "user_hint_zh": "稍后重试，或在设置里降低并发数。",
+    "failure_codes": ["upstream_rate_limited", "rate_limited"],
+    "note_zh": "Python 流水线叫 upstream_rate_limited，Rust 兜底叫 rate_limited，两个是同一件事。"
+  },
+  {
+    "id": "overloaded",
+    "label_zh": "服务繁忙",
+    "description_zh": "服务商整体过载、队列满、模型暂时不可用，和自己的账户无关。",
+    "retryable": true,
+    "user_hint_zh": "服务商那边忙，过一会儿再试；一直不行可以换一家服务商。",
+    "failure_codes": ["upstream_rate_limited", "rate_limited"],
+    "note_zh": "没有单独的失败码：GLM-OCR 的 1305 重试用完归限流；翻译时过载重试用完只算这一块失败；PaddleOCR 队列满 10010 现在归「上游服务拒绝请求（400）」（缺口）。"
+  },
+  {
+    "id": "server",
+    "label_zh": "服务端错误",
+    "description_zh": "服务商内部出错（5xx 或解析失败），通常是暂时的。",
+    "retryable": true,
+    "user_hint_zh": "稍后重试；反复出现时把任务日志里的报错反馈给服务商或我们。",
+    "failure_codes": ["python_unhandled_exception", "unknown"],
+    "note_zh": "没有专门的失败码，重试用完后落「任务失败，但暂未识别出明确根因」（缺口，见 PaddleOCR 11003、MinerU -60010）。"
+  },
+  {
+    "id": "timeout",
+    "label_zh": "超时",
+    "description_zh": "请求或任务在时限内没有完成，连接被关闭。",
+    "retryable": true,
+    "user_hint_zh": "检查网络后重试；文件已提交给 OCR 服务商时，重试会重新计费。",
+    "failure_codes": ["upstream_timeout"],
+    "note_zh": null
+  },
+  {
+    "id": "invalid_request",
+    "label_zh": "请求参数错误",
+    "description_zh": "请求的格式或参数不符合服务商要求。",
+    "retryable": false,
+    "user_hint_zh": "检查模型配置（模型名、接口地址、协议）是否和服务商的要求一致；重试同样会失败。",
+    "failure_codes": ["upstream_bad_request"],
+    "note_zh": null
+  },
+  {
+    "id": "context_length",
+    "label_zh": "输入或输出太长",
+    "description_zh": "输入超过模型上下文窗口，或输出到了 token 上限被截断。",
+    "retryable": false,
+    "user_hint_zh": "换上下文更长的模型，或在设置里调小每批的块数。",
+    "failure_codes": ["upstream_bad_request"],
+    "note_zh": "HTTP 200 但输出被截断（finish_reason=length、stop_reason=max_tokens）现在会被当成完整译文收下（缺口）。"
+  },
+  {
+    "id": "content_filter",
+    "label_zh": "内容审核",
+    "description_zh": "输入或输出被服务商的内容安全策略拦截，或模型拒答。",
+    "retryable": false,
+    "user_hint_zh": "这一段内容被服务商拦截了，会保留原文；可以换一家服务商重翻这一段。",
+    "failure_codes": ["upstream_bad_request"],
+    "note_zh": null
+  },
+  {
+    "id": "model_not_found",
+    "label_zh": "模型不存在",
+    "description_zh": "模型名写错、模型已下线，或这个账户 / 地域没开通。",
+    "retryable": false,
+    "user_hint_zh": "检查设置里的模型名，或在服务商控制台确认已开通这个模型。",
+    "failure_codes": ["upstream_bad_request"],
+    "note_zh": "现在翻译时的 404 落「任务失败，但暂未识别出明确根因」，每个块各自失败（缺口，计划加一个「模型不存在」类失败码）。"
+  },
+  {
+    "id": "unsupported",
+    "label_zh": "不支持的参数或调用方式",
+    "description_zh": "模型不支持某个参数、文件格式或调用方式，或接口已下线。",
+    "retryable": false,
+    "user_hint_zh": "换一个支持的模型或文件格式；参数类问题 RetainPDF 多数会自动去掉后重发。",
+    "failure_codes": ["upstream_bad_request"],
+    "note_zh": null
+  },
+  {
+    "id": "file",
+    "label_zh": "文件问题",
+    "description_zh": "文件为空、太大、页数太多、损坏或读不了。",
+    "retryable": false,
+    "user_hint_zh": "换一份文件（压缩、拆分或修复后再传）；重试同一份文件没用。",
+    "failure_codes": ["upstream_bad_request"],
+    "note_zh": "OCR 服务商的文件类错误现在多数落「暂未识别出明确根因」（缺口）。"
+  },
+  {
+    "id": "other",
+    "label_zh": "其他",
+    "description_zh": "不属于上面任何一类：任务过期、并发冲突、重试次数上限等。",
+    "retryable": false,
+    "user_hint_zh": "看失败详情里的原始报错；拿不准时把任务日志反馈给我们。",
+    "failure_codes": ["python_unhandled_exception", "unknown"],
+    "note_zh": null
+  }
+]

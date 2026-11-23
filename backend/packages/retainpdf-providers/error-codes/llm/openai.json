@@ -1,0 +1,1547 @@
+{
+  "id": "openai",
+  "label": "OpenAI",
+  "kind": "llm",
+  "hosts": [
+    "api.openai.com"
+  ],
+  "sources": [
+    {
+      "title": "Error codes (OpenAI API guide)",
+      "url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Rate limits (OpenAI API guide)",
+      "url": "https://developers.openai.com/api/docs/guides/rate-limits",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Spend limits (OpenAI API guide)",
+      "url": "https://developers.openai.com/api/docs/guides/spend-limits",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Structured model outputs (OpenAI API guide)",
+      "url": "https://developers.openai.com/api/docs/guides/structured-outputs",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Create a model response (Responses API reference)",
+      "url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Responses streaming events (API reference)",
+      "url": "https://developers.openai.com/api/reference/resources/responses/streaming-events",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Chat Completions create (API reference)",
+      "url": "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "API reference overview (request IDs, headers)",
+      "url": "https://developers.openai.com/api/reference/overview",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Agents API errors and recovery (used only for model_not_found / context_length_exceeded wording)",
+      "url": "https://developers.openai.com/api/docs/guides/agents-api/errors",
+      "fetched_at": "2026-11-23"
+    }
+  ],
+  "error_shape_zh": "HTTP 错误：JSON body {\"error\": {\"message\", \"type\", \"param\", \"code\"}}；判断原因优先看 error.code，error.type 是大类（计费类可能都是 insufficient_quota）。 响应头：x-request-id（报障用），openai-processing-ms；Retry-After 只在临时限速 429 / 过载 503 时可能出现； x-ratelimit-limit-requests / x-ratelimit-limit-tokens / x-ratelimit-remaining-requests / x-ratelimit-remaining-tokens / x-ratelimit-reset-requests / x-ratelimit-reset-tokens， 有项目级 token 限额时另有 x-ratelimit-{limit,remaining,reset}-project-tokens。可自带 X-Client-Request-Id（ASCII、≤512 字符，否则 400）。 Responses API：HTTP 200 也可能失败——Response.status ∈ completed/failed/in_progress/cancelled/queued/incomplete；status=failed 时 Response.error = {code, message, param?, type?, misalignment?}（code 为 21 个枚举值之一）； status=incomplete 时看 incomplete_details.reason（max_output_tokens/max_messages/content_filter/steered）。 流式 Responses：失败发 response.failed 事件（内含 status=failed 的 response 与 error），未完成发 response.incomplete，另有顶层 error 事件 {type:\"error\", code, message, param, sequence_number}。 Chat Completions：choices[].finish_reason ∈ stop/length/tool_calls/content_filter/function_call。",
+  "how_to_distinguish_zh": [
+    "先看 error.code，再看 error.type；error.type 是大类，计费类可能都是 insufficient_quota。",
+    "429 有两种：error.code 属于计费 / 额度集合（insufficient_quota、credit_balance_exhausted、billing_hard_limit_reached、organization_spend_limit_exceeded、project_spend_limit_exceeded、organization_usage_limit_exceeded）或 error.type=insufficient_quota 时重试没用，要充值或调上限；否则（rate_limit_exceeded、slow_down、没有 code 的 Rate limit reached、带 Retry-After）是真限流，退避重试。Retry-After 不代表计费类错误重试会好。",
+    "503 server_is_overloaded（过载）和 429 slow_down（流量涨太快）是近期才拆开的，以前部分接口两种都用 503 + slow_down，要兼容旧码。",
+    "HTTP 200 也可能失败：Responses 的 status=failed 看 error.code，status=incomplete 看 incomplete_details.reason；Chat 看 choices[].finish_reason（length、content_filter）；流式时错误只在 response.failed / error 事件里。"
+  ],
+  "handling_summary_zh": "翻译、通读、表格翻译经同一个请求层（OpenAI chat、Responses、Anthropic Messages 三种协议，model_wire.py 组请求）：401/403 整份停下、402 整份停下归余额不足、400 这个请求失败（带三种自动降级）、408/429/5xx/529 退避重试、其他 4xx 只算这个请求失败。只看状态码，不读响应体的 error.code。",
+  "notes_zh": [
+    "429 有歧义：既可能是临时限速（无 code 的 'Rate limit reached'、rate_limit_exceeded、slow_down，可等待重试），也可能是额度/计费（credit_balance_exhausted、organization_spend_limit_exceeded、project_spend_limit_exceeded、organization_usage_limit_exceeded、insufficient_quota、billing_hard_limit_reached，重试无用）。 区分规则：先看 error.code 是否属于计费/额度集合，或 error.type == insufficient_quota → 不重试、提示充值/调上限；否则（type=rate_limit_error、code=slow_down/rate_limit_exceeded、或有 Retry-After 头）→ 退避重试。文档明确说 Retry-After 不代表计费类错误重试会好。",
+    "503 server_is_overloaded（过载）与 429 slow_down（爬坡太快）是近期拆开的（文档称“以前”，未给日期）：过去部分接口两种情况都用 503 + slow_down，视频接口曾用 429 + invalid_request_error + rate_limit_exceeded；文档建议兼容旧码。",
+    "当前错误码文档已不列 insufficient_quota 的 code 行，只说 error.type 可能仍是 insufficient_quota；insufficient_quota 与 billing_hard_limit_reached 作为 error.code 只出现在速率限制指南的示例代码里（标为不可重试）。",
+    "文档 401/403/500 各行只给了 message 文本、没给 code，所以这些条目 code 为空；invalid_api_key（401, type invalid_request_error）和 unsupported_country_region_territory（403, type request_forbidden）是通用知识/常见实际响应，当前公开文档未出现，source_url 指向最接近的错误码页。",
+    "context_length_exceeded 作为 code 字符串在当前文档中只出现在 Agents API 的 turn errors 表；Responses/Chat 超长返回 400 由 Responses 参考的 truncation 说明支持，具体 code 字符串属通用知识。model_not_found 出现在速率限制指南的 Model availability 段（未写 HTTP 状态），404 来自 Agents API 错误表与通用知识。",
+    "Response.error.code 的 21 个枚举值文档只列名字不解释，含义按名称概括；图片类错误翻译场景一般用不到，列出备查。",
+    "JSON mode 缺 'JSON' 字样的报错，文档只说会报错，未给 code，按 400 invalid_request_error 记录（HTTP 状态属通用知识）。invalid_json_schema 来自结构化输出指南的官方示例（root anyOf 被拒，400）。",
+    "流式时 HTTP 已是 200，错误只能从 response.failed / error 事件读出，不能只看状态码。",
+    "platform.openai.com 无法直接抓取，内容取自官方镜像 developers.openai.com（含 .md 版本与 llms-full.txt）。"
+  ],
+  "issues": [
+    {
+      "number": 161,
+      "summary_zh": "400 unsupported_value（temperature），检测误报「模型不可用」（v2026.11.22 已修）"
+    },
+    {
+      "number": 163,
+      "summary_zh": "Responses 400「must contain the word 'json'」（2026-11-23 已修）"
+    },
+    {
+      "number": 26,
+      "summary_zh": "维护者答复：各厂商错误码不一致，要逐家适配"
+    }
+  ],
+  "related_docs": [],
+  "entries": [
+    {
+      "id": "service_tier_not_allowed",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "请求的 service_tier（服务档位）不被该项目允许；error.param 为 service_tier。省略或设为 auto 时解析出的档位也可能触发。",
+      "meaning_en": "The requested or resolved service tier is not allowed for the project (error.param = service_tier).",
+      "user_hint_zh": "改用项目允许的 service_tier，或在 OpenAI 项目设置里放开该档位。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_authentication",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": null,
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "认证无效：密钥被吊销、不属于所请求的组织/项目，或权限不够。",
+      "meaning_en": "Invalid authentication: revoked key, key from another org/project, or key lacking permission.",
+      "user_hint_zh": "检查 API Key 和组织 ID 是否对应，必要时重新生成密钥。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "incorrect_api_key",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": null,
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "API Key 不正确（拼写、多余空格、已删除或属于别的组织）。",
+      "meaning_en": "Incorrect API key (typo, extra space, deleted, or belongs elsewhere).",
+      "user_hint_zh": "核对或重新生成 OpenAI API Key 后再试。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "no_organization",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": null,
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "账号不属于任何组织，无法使用 API。",
+      "meaning_en": "The account is not a member of any organization.",
+      "user_hint_zh": "请组织管理员邀请你加入组织，或联系 OpenAI 新建组织。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "ip_not_authorized",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": null,
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "请求来源 IP 不在项目或组织配置的 IP 白名单内。",
+      "meaning_en": "Request IP is not on the project/org IP allowlist.",
+      "user_hint_zh": "从白名单内的 IP 发请求，或在 OpenAI 后台更新 IP 白名单。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "unsupported_region",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        403
+      ],
+      "type": null,
+      "category": "region",
+      "retryable": false,
+      "meaning_zh": "从不受支持的国家、地区或领地访问 API。",
+      "meaning_en": "API accessed from an unsupported country, region, or territory.",
+      "user_hint_zh": "当前网络出口所在地区不受 OpenAI 支持，请更换受支持地区的网络或改用其他服务商。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "按 403 整份停下，归「鉴权失败」，文案让用户检查 Key。",
+        "gap_zh": "正文说的是地区不支持，换 Key 没用；应单独文案「所在地区不支持，换网络或换服务商」。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "credit_balance_exhausted",
+      "code": "credit_balance_exhausted",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "insufficient_quota",
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "组织的预付费余额已用完。",
+      "meaning_en": "The organization's prepaid credit balance is used up.",
+      "user_hint_zh": "去 OpenAI 后台 Billing 页面充值后再试。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "rate_limit_reached",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "请求或 token 发送过快，触发分配的速率限制（Rate limit reached for requests）。",
+      "meaning_en": "Requests/tokens sent too fast; assigned rate limit reached.",
+      "user_hint_zh": "降低并发，按 Retry-After 或指数退避等待后重试。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "slow_down",
+      "code": "slow_down",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "rate_limit_error",
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "流量增长过快（爬坡限速），即使未超 RPM/TPM 也可能出现。",
+      "meaning_en": "Traffic ramped up too quickly; can occur even under RPM/TPM limits.",
+      "user_hint_zh": "按 Retry-After 等待，降低请求速率后再逐步加量。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "organization_spend_limit_exceeded",
+      "code": "organization_spend_limit_exceeded",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "insufficient_quota",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "组织达到自己设置的月度硬性消费上限。",
+      "meaning_en": "Organization hit its enforced monthly spend limit.",
+      "user_hint_zh": "在 OpenAI 组织 Limits 设置里提高或取消消费上限，或等月度重置。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "project_spend_limit_exceeded",
+      "code": "project_spend_limit_exceeded",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "insufficient_quota",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "项目达到自己设置的月度硬性消费上限。",
+      "meaning_en": "Project hit its enforced monthly spend limit.",
+      "user_hint_zh": "在 OpenAI 项目设置里提高或取消该项目的消费上限，或等月度重置。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "organization_usage_limit_exceeded",
+      "code": "organization_usage_limit_exceeded",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "insufficient_quota",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "组织达到 OpenAI 核定的月度用量上限（与自设消费上限不同）。",
+      "meaning_en": "Organization reached its OpenAI-assigned monthly usage limit.",
+      "user_hint_zh": "在 OpenAI 后台申请提高核定用量上限，或联系 OpenAI 支持。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "server_error",
+      "code": "server_error",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": null,
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "OpenAI 服务端处理请求时出错；Responses 对象 status=failed 时 error.code 也可能是它。",
+      "meaning_en": "Server-side failure; also a Response error.code when status is failed.",
+      "user_hint_zh": "稍等后重试；持续出现请查看 status.openai.com。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "server_is_overloaded",
+      "code": "server_is_overloaded",
+      "aliases": [],
+      "http_status": [
+        503
+      ],
+      "type": "service_unavailable_error",
+      "category": "overloaded",
+      "retryable": true,
+      "meaning_zh": "所请求的模型暂时过载、容量不足。",
+      "meaning_en": "The requested model is temporarily overloaded.",
+      "user_hint_zh": "按 Retry-After 等待后重试，或暂时换一个模型。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "退避重试（408、429、500、502、503、504、529 在重试名单里）；重试用完后这一块失败，其余块继续。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "insufficient_quota",
+      "code": "insufficient_quota",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "insufficient_quota",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "额度/配额不足。文档说明计费类错误的 error.type 可能仍是 insufficient_quota，示例代码也把同名 error.code 视为不可重试。",
+      "meaning_en": "Quota exhausted; billing errors may carry type insufficient_quota, and samples treat this code as non-retryable.",
+      "user_hint_zh": "去 OpenAI 后台检查余额、充值或提高额度上限。",
+      "source_url": "https://developers.openai.com/api/docs/guides/rate-limits",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "billing_hard_limit_reached",
+      "code": "billing_hard_limit_reached",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": null,
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到计费硬上限（官方示例代码中作为不可重试的 429 code 出现）。",
+      "meaning_en": "Billing hard limit reached (appears in official retry samples as a non-retryable 429 code).",
+      "user_hint_zh": "在 OpenAI 后台提高或取消硬性消费上限。",
+      "source_url": "https://developers.openai.com/api/docs/guides/rate-limits",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
+        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.code / error.type（insufficient_quota 一类），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
+        "priority": "high",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "model_not_found",
+      "code": "model_not_found",
+      "aliases": [],
+      "http_status": [
+        404
+      ],
+      "type": null,
+      "category": "model_not_found",
+      "retryable": false,
+      "meaning_zh": "模型不存在或当前组织/项目/密钥无权使用（模型权限与速率档位无关）。",
+      "meaning_en": "Model does not exist or is not available to this org/project/key.",
+      "user_hint_zh": "核对模型 ID 和所选项目，确认该项目有此模型权限。",
+      "source_url": "https://developers.openai.com/api/docs/guides/rate-limits",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "模型名写错或没开通时每个块各自失败，最后说不清原因。应和 401/403 一样第一次就整份停下，给「模型不存在」类失败，换模型后从翻译续跑。检测接口已经能认出（model_unavailable）。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "context_length_exceeded",
+      "code": "context_length_exceeded",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "context_length",
+      "retryable": false,
+      "meaning_zh": "输入超过模型上下文窗口。Responses 在 truncation=disabled（默认）时超长直接返回 400。",
+      "meaning_en": "Input exceeds the model context window; Responses returns 400 when truncation is disabled.",
+      "user_hint_zh": "减少每次发送的内容（拆小分块），或换更大上下文的模型。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "upstream_bad_request",
+        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
+        "gap_zh": "批量翻译时可以自动拆小批再发。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_json_schema",
+      "code": "invalid_json_schema",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "strict: true 的结构化输出用了不支持的 JSON Schema（如根部 anyOf、缺 additionalProperties:false、字段未全部 required、超出嵌套/数量限制）。",
+      "meaning_en": "strict Structured Outputs schema uses unsupported JSON Schema features.",
+      "user_hint_zh": "按结构化输出支持的 Schema 子集修改，或关闭 strict 改用 json_object。",
+      "source_url": "https://developers.openai.com/api/docs/guides/structured-outputs",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "auto_adjust",
+        "failure_code": null,
+        "summary_zh": "strict 结构化输出的 schema 被拒时退到 json_object 再发；agent 的工具 schema 已按 strict 要求改成必填可空（#163 一起修的）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": [
+          163
+        ]
+      }
+    },
+    {
+      "id": "json_mode_requires_json_word",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "JSON mode（format.type=json_object）要求上下文里出现字符串 \"JSON\"，否则 API 直接报错。",
+      "meaning_en": "JSON mode errors if the string \"JSON\" does not appear anywhere in the context.",
+      "user_hint_zh": "在 system/instructions 或用户消息里明确要求输出 JSON。",
+      "source_url": "https://developers.openai.com/api/docs/guides/structured-outputs",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "auto_adjust",
+        "failure_code": null,
+        "summary_zh": "Responses 退到 json_object 时在 input 里写明要 JSON，不再挨第二次 400；日志读 text.format（#163 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": [
+          163
+        ]
+      }
+    },
+    {
+      "id": "previous_response_not_found",
+      "code": "previous_response_not_found",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "invalid_request_error",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "previous_response_id 指向的响应找不到（已过期、未存储或在别处）。",
+      "meaning_en": "previous_response_id cannot be resolved from available state.",
+      "user_hint_zh": "去掉 previous_response_id，带完整上下文重新发送。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "websocket_connection_limit_reached",
+      "code": "websocket_connection_limit_reached",
+      "aliases": [],
+      "http_status": [],
+      "type": null,
+      "category": "other",
+      "retryable": true,
+      "meaning_zh": "Responses WebSocket 模式连接已达 60 分钟上限。",
+      "meaning_en": "Responses WebSocket connection reached its 60-minute limit.",
+      "user_hint_zh": "新开一个 WebSocket 连接继续。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "http_409_conflict",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        409
+      ],
+      "type": "ConflictError (SDK)",
+      "category": "other",
+      "retryable": true,
+      "meaning_zh": "资源被另一个请求同时修改。",
+      "meaning_en": "Resource was modified by another request.",
+      "user_hint_zh": "确认没有并发修改后重试。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "归 upstream_bad_request 一类并带上状态码。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "http_422_unprocessable",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        422
+      ],
+      "type": "UnprocessableEntityError (SDK)",
+      "category": "other",
+      "retryable": true,
+      "meaning_zh": "格式正确但服务端无法处理。",
+      "meaning_en": "Request well-formed but could not be processed.",
+      "user_hint_zh": "按文档建议重试一次。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试；只算这个请求失败，不会像 401/402/403 那样整份停下；冒到任务层是「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "归 upstream_bad_request 一类并带上状态码。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "sdk_timeout",
+      "code": null,
+      "aliases": [],
+      "http_status": [],
+      "type": "APITimeoutError (SDK)",
+      "category": "timeout",
+      "retryable": true,
+      "meaning_zh": "请求耗时过长，连接被关闭（无 HTTP 状态）。",
+      "meaning_en": "Request took too long and the connection was closed.",
+      "user_hint_zh": "稍后重试；长文本可改用流式。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_timeout",
+        "summary_zh": "按超时重试；用完后归「外部服务请求超时」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "sdk_connection_error",
+      "code": null,
+      "aliases": [],
+      "http_status": [],
+      "type": "APIConnectionError (SDK)",
+      "category": "other",
+      "retryable": true,
+      "meaning_zh": "无法连接或无法建立安全连接（网络、代理、证书、防火墙）。",
+      "meaning_en": "Could not reach the API or establish a secure connection.",
+      "user_hint_zh": "检查网络、代理和证书设置后重试。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "连接失败、DNS 失败重试（DNS 失败加重试次数并清 DNS 缓存）；DNS 用完归 dns_resolution_failed。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "rate_limit_exceeded",
+      "code": "rate_limit_exceeded",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "Response.error.code (status=failed)",
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "生成过程中触发速率限制（Response.error.code）。也是常见 429 响应体里的 error.code。",
+      "meaning_en": "Rate limit hit while generating (Response.error.code); also the usual code on 429 bodies.",
+      "user_hint_zh": "降低并发，稍后重试。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试，认 Retry-After；单个请求累计等待超过 300 秒放弃，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_prompt",
+      "code": "invalid_prompt",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "提示词被判为无效（文档只给枚举值，未说明细节；实践中多与内容策略有关）。",
+      "meaning_en": "Prompt judged invalid (enum only; details undocumented).",
+      "user_hint_zh": "检查原文是否含被拦截内容，修改后再试。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "Responses 返回 status=failed 带 error 时当作没拿到译文抛错，会重试；重试用完这一块失败。",
+        "gap_zh": "内容策略类失败重试没用，应直接标成「内容审核未过」、保留原文，不再重试。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "data_residency_mismatch",
+      "code": "data_residency_mismatch",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "数据驻留设置与请求不符（文档只给枚举值）。",
+      "meaning_en": "Data residency mismatch (enum only).",
+      "user_hint_zh": "检查项目的数据驻留/地区设置。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "bio_policy",
+      "code": "bio_policy",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "触发生物安全策略被拦截（文档只给枚举值）。",
+      "meaning_en": "Blocked by biosecurity policy (enum only).",
+      "user_hint_zh": "该段内容被安全策略拦截，请改写或跳过。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "Responses 返回 status=failed 带 error 时当作没拿到译文抛错，会重试；重试用完这一块失败。",
+        "gap_zh": "内容策略类失败重试没用，应直接标成「内容审核未过」、保留原文，不再重试。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "misalignment_policy_violation",
+      "code": "misalignment_policy_violation",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "触发安全审查（error.misalignment 给出说明）。",
+      "meaning_en": "Blocked by misalignment safety review; see error.misalignment.",
+      "user_hint_zh": "该段内容被安全策略拦截，请改写或跳过。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "Responses 返回 status=failed 带 error 时当作没拿到译文抛错，会重试；重试用完这一块失败。",
+        "gap_zh": "内容策略类失败重试没用，应直接标成「内容审核未过」、保留原文，不再重试。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "vector_store_timeout",
+      "code": "vector_store_timeout",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "timeout",
+      "retryable": true,
+      "meaning_zh": "文件检索的向量库超时。",
+      "meaning_en": "Vector store (file search) timed out.",
+      "user_hint_zh": "稍后重试。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_image",
+      "code": "invalid_image",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：invalid_image（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: invalid_image (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_image_format",
+      "code": "invalid_image_format",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：invalid_image_format（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: invalid_image_format (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_base64_image",
+      "code": "invalid_base64_image",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：invalid_base64_image（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: invalid_base64_image (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_image_url",
+      "code": "invalid_image_url",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：invalid_image_url（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: invalid_image_url (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "image_too_large",
+      "code": "image_too_large",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：image_too_large（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: image_too_large (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "image_too_small",
+      "code": "image_too_small",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：image_too_small（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: image_too_small (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "image_parse_error",
+      "code": "image_parse_error",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：image_parse_error（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: image_parse_error (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "image_content_policy_violation",
+      "code": "image_content_policy_violation",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：image_content_policy_violation（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: image_content_policy_violation (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带图片。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_image_mode",
+      "code": "invalid_image_mode",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：invalid_image_mode（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: invalid_image_mode (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "image_file_too_large",
+      "code": "image_file_too_large",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：image_file_too_large（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: image_file_too_large (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "unsupported_image_media_type",
+      "code": "unsupported_image_media_type",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：unsupported_image_media_type（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: unsupported_image_media_type (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "empty_image_file",
+      "code": "empty_image_file",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：empty_image_file（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: empty_image_file (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "failed_to_download_image",
+      "code": "failed_to_download_image",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": true,
+      "meaning_zh": "输入图片有问题：failed_to_download_image（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: failed_to_download_image (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "image_file_not_found",
+      "code": "image_file_not_found",
+      "aliases": [],
+      "http_status": [],
+      "type": "Response.error.code (status=failed)",
+      "category": "file",
+      "retryable": false,
+      "meaning_zh": "输入图片有问题：image_file_not_found（文档只给枚举值，按名称理解）。",
+      "meaning_en": "Input image problem: image_file_not_found (enum only).",
+      "user_hint_zh": "检查随请求发送的图片（格式、大小、URL、内容）。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "not_applicable",
+        "action": "not_applicable",
+        "failure_code": null,
+        "summary_zh": "翻译请求不带这个参数或功能（service_tier、previous_response_id、WebSocket、文件检索、图片输入），碰不到。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [],
+        "issues": []
+      }
+    },
+    {
+      "id": "max_output_tokens",
+      "code": "max_output_tokens",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "Response.incomplete_details.reason (status=incomplete)",
+      "category": "context_length",
+      "retryable": false,
+      "meaning_zh": "输出达到 max_output_tokens 上限被截断。",
+      "meaning_en": "Output cut off at max_output_tokens.",
+      "user_hint_zh": "调大 max_output_tokens，或减小每次翻译的分块。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": null,
+        "summary_zh": "Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。",
+        "gap_zh": "截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "incomplete.content_filter",
+      "code": "content_filter",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "Response.incomplete_details.reason (status=incomplete)",
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "输出因内容过滤被中止。",
+      "meaning_en": "Output stopped by content filtering.",
+      "user_hint_zh": "该段内容被过滤，请改写原文或跳过。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": null,
+        "summary_zh": "Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。",
+        "gap_zh": "截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "max_messages",
+      "code": "max_messages",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "Response.incomplete_details.reason (status=incomplete)",
+      "category": "other",
+      "retryable": false,
+      "meaning_zh": "达到消息条数上限而未完成。",
+      "meaning_en": "Stopped at the message-count limit.",
+      "user_hint_zh": "缩短对话轮次后重试。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": null,
+        "summary_zh": "Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。",
+        "gap_zh": "截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "steered",
+      "code": "steered",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "Response.incomplete_details.reason (status=incomplete)",
+      "category": "other",
+      "retryable": false,
+      "meaning_zh": "WebSocket 收到 response.steer 后在安全边界停下（服务端可能自动续接）。",
+      "meaning_en": "Stopped at a safe boundary after a WebSocket response.steer.",
+      "user_hint_zh": "无需处理，等待后续响应。",
+      "source_url": "https://developers.openai.com/api/reference/resources/responses/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": null,
+        "summary_zh": "Responses status=incomplete：有部分文字就照常收下（不看 incomplete_details.reason），一点文字都没有才抛错重试。",
+        "gap_zh": "截断的译文会被当成完整译文收下；应在 reason=max_output_tokens / content_filter 时当这一块没翻成。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "length",
+      "code": "length",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "Chat Completions choices[].finish_reason",
+      "category": "context_length",
+      "retryable": false,
+      "meaning_zh": "Chat Completions 输出达到 max tokens 上限被截断。",
+      "meaning_en": "Chat Completions output hit the max tokens limit.",
+      "user_hint_zh": "调大 max_completion_tokens，或减小分块。",
+      "source_url": "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": null,
+        "summary_zh": "Chat 协议不检查 finish_reason，有文字就收下。",
+        "gap_zh": "finish_reason 为 length / content_filter 时应当这一块没翻成（截断或被过滤），不要把半截译文写进结果。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "finish_reason.content_filter",
+      "code": "content_filter",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "Chat Completions choices[].finish_reason",
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "Chat Completions 内容被过滤器省略。",
+      "meaning_en": "Chat Completions content omitted by content filters.",
+      "user_hint_zh": "该段内容被过滤，请改写原文或跳过。",
+      "source_url": "https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_block",
+        "failure_code": null,
+        "summary_zh": "Chat 协议不检查 finish_reason，有文字就收下。",
+        "gap_zh": "finish_reason 为 length / content_filter 时应当这一块没翻成（截断或被过滤），不要把半截译文写进结果。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "refusal",
+      "code": "refusal",
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "Responses output content type / Chat message.refusal",
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "结构化输出下模型出于安全拒答，返回 refusal 而不是符合 Schema 的 JSON。",
+      "meaning_en": "Model refused for safety; a refusal is returned instead of schema JSON.",
+      "user_hint_zh": "该段内容被拒答，请改写原文或跳过。",
+      "source_url": "https://developers.openai.com/api/docs/guides/structured-outputs",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "Responses 的 refusal 当作没拿到译文抛错，重试；用完后这一块失败、保留原文。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/model_wire.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "invalid_api_key",
+      "code": "invalid_api_key",
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": "invalid_request_error",
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "（通用知识，当前文档未列出）API Key 错误时常见的 error.code，对应文档中的 Incorrect API key provided。",
+      "meaning_en": "(General knowledge) common error.code for an incorrect API key.",
+      "user_hint_zh": "核对或重新生成 OpenAI API Key 后再试。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "unsupported_country_region_territory",
+      "code": "unsupported_country_region_territory",
+      "aliases": [],
+      "http_status": [
+        403
+      ],
+      "type": "request_forbidden",
+      "category": "region",
+      "retryable": false,
+      "meaning_zh": "（通用知识，当前文档未列出）地区不受支持时常见的 error.code，对应文档中的 403 Country, region, or territory not supported。",
+      "meaning_en": "(General knowledge) common error.code for unsupported region.",
+      "user_hint_zh": "当前网络出口所在地区不受 OpenAI 支持，请更换网络或改用其他服务商。",
+      "source_url": "https://developers.openai.com/api/docs/guides/error-codes",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "stop_translation",
+        "failure_code": "auth_failed",
+        "summary_zh": "按 403 整份停下，归「鉴权失败」，文案让用户检查 Key。",
+        "gap_zh": "正文说的是地区不支持，换 Key 没用；应单独文案「所在地区不支持，换网络或换服务商」。",
+        "priority": "low",
+        "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
+          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py"
+        ],
+        "issues": []
+      }
+    }
+  ]
+}

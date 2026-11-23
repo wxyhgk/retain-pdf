@@ -1,7 +1,9 @@
 //! 服务商：凭据库（`credentials`）、模型调用（`model_executor`、`model_requests_api`）、
-//! 服务商连通性和额度探测（`provider_probe`、`provider_api`）、模型价格（`pricing`，用量汇总估算花费）。
+//! 服务商连通性和额度探测（`provider_probe`、`provider_api`）、模型价格（`pricing`，用量汇总估算花费）、
+//! 各家错误码目录（`error_codes`，数据在包里的 `error-codes/`）。
 
 mod credentials;
+mod error_codes;
 mod model_executor;
 mod model_provider_headers;
 mod model_requests_api;
@@ -18,6 +20,12 @@ pub use credentials::api::{
     create_credential, delete_credential, get_credential_metadata, list_credentials,
     update_credential, CreateCredentialInput, CredentialDeleteView, CredentialListView,
     CredentialMutationView, DeleteCredentialQuery, ListCredentialQuery, UpdateCredentialInput,
+};
+pub use error_codes::{
+    provider_error_catalogue, FailureProducer, GapPriority, HandlingAction, HandlingStatus,
+    ProviderErrorCatalogueView, ProviderErrorCategory, ProviderErrorCategoryId, ProviderErrorCodesQuery,
+    ProviderErrorEntry, ProviderErrorIssue, ProviderErrorSource, ProviderErrorVendor, ProviderKind,
+    RetainpdfFailureCodeRecord, RetainpdfFailureCodeView, RetainpdfHandling, PROVIDER_ERROR_CODES_SCHEMA,
 };
 pub use model_executor::{ModelConnectionPolicy, ModelExecutor};
 pub use model_requests_api::{ModelConnection, ModelRequest, ModelRequestsApi};

@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/provider-error-codes/v1",
+  "title": "服务商错误码目录（Provider Error Codes）",
+  "description": "GET /api/v1/providers/error-codes 的返回（2026-11-23 起）：各家 OCR 服务商（PaddleOCR、MinerU、GLM-OCR）和翻译模型服务商（OpenAI、Anthropic、DeepSeek、智谱、阿里云百炼、OpenCode）官方文档里的错误码，每条带含义、给用户的提示、RetainPDF 现在怎么处理（对不对得上官方说法），以及上游错误大类 → RetainPDF 失败码（failure_code）的对照。用途：前端拿任务失败里的 provider / provider_code / failure_code 查到这一条，显示更具体的提示。数据的唯一来源是 backend/packages/retainpdf-providers/error-codes/（ocr/<厂商>.json、llm/<厂商>.json 各是一个 ProviderErrorVendor，categories.json 是 ProviderErrorCategory 的数组，failure-codes.json 是 RetainpdfFailureCodeRecord 的数组），Rust 编译时嵌入；文档 docs/reference/error-codes/ 从同一份数据生成。生产者：backend/packages/retainpdf-providers/src/error_codes.rs；backend/api/src/api_tests/provider_error_codes.rs 对真实接口的返回和每个数据文件按本契约校验。消费者：@retainpdf/contracts/provider-error-codes（前端还没接）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。含义、提示都是转述，不是原文；原文看 source_url。改契约先改本文件，再重新生成 DTO 并让两端测试变绿。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/providers/error-codes",
+      "client_name": "listProviderErrorCodes",
+      "query": "ProviderErrorCodesQuery",
+      "output": "ProviderErrorCatalogueView",
+      "rust_view": "ProviderErrorCatalogueView（retainpdf-providers error_codes）",
+      "ts_consumer": "@retainpdf/contracts/provider-error-codes :: ProviderErrorCatalogueView",
+      "note": "多用户模式下登录即可（signed）。不分页。筛选只作用于 vendors 和 vendors[].entries；categories、failure_codes 总是全量。provider 不认识时返回 200、vendors 为空；kind 只能是 ocr / llm，别的值 400；带了 code 或 http_status 时没有命中条目的厂商不返回。"
+    }
+  ],
+  "definitions": {
+    "ProviderErrorCodesQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "type": "string", "enum": ["ocr", "llm"], "description": "只要 OCR 服务商（ocr）或翻译模型服务商（llm）。" },
+        "provider": { "type": "string", "description": "厂商编号，见 ProviderErrorVendor.id（paddle、mineru、glm_ocr、openai、anthropic、deepseek、zhipu、qwen、opencode）。OCR 的编号和建任务时的 ocr.provider 一致（任务失败里的 provider 在 Python worker 报的失败里是 ocr，不是厂商名）。" },
+        "code": { "type": "string", "description": "精确匹配条目的 code、aliases 或 id（区分大小写）。任务失败里的 provider_code 可以直接填进来。" },
+        "http_status": { "type": "integer", "minimum": 100, "maximum": 599, "description": "只要 http_status 里含这个状态码的条目。没有业务码的厂商（DeepSeek）用它查。" }
+      }
+    },
+    "ProviderErrorCatalogueView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "categories", "failure_codes", "vendors"],
+      "properties": {
+        "schema": { "type": "string", "enum": ["provider-error-codes.v1"], "description": "数据版本。" },
+        "categories": { "type": "array", "items": { "$ref": "#/definitions/ProviderErrorCategory" }, "description": "上游错误大类，和它们对应的 RetainPDF 失败码。总是全量。" },
+        "failure_codes": { "type": "array", "items": { "$ref": "#/definitions/RetainpdfFailureCodeView" }, "description": "RetainPDF 自己的任务失败码（任务失败里的 failure_code）。总是全量。" },
+        "vendors": { "type": "array", "items": { "$ref": "#/definitions/ProviderErrorVendor" }, "description": "厂商，先 OCR 后翻译模型，顺序固定。" }
+      }
+    },
+    "ProviderErrorCategoryId": {
+      "type": "string",
+      "enum": ["auth", "permission", "region", "billing", "quota", "rate_limit", "overloaded", "server", "timeout", "invalid_request", "context_length", "content_filter", "model_not_found", "unsupported", "file", "other"],
+      "description": "上游错误大类（固定取值）：auth 鉴权失败；permission 没有权限；region 地区不支持；billing 欠费或余额不足；quota 额度或用量上限；rate_limit 限流；overloaded 服务繁忙；server 服务端错误；timeout 超时；invalid_request 请求参数错误；context_length 输入或输出太长；content_filter 内容审核；model_not_found 模型不存在；unsupported 不支持的参数或调用方式；file 文件问题；other 其他。"
+    },
+    "ProviderErrorCategory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label_zh", "description_zh", "retryable", "user_hint_zh", "failure_codes", "note_zh"],
+      "properties": {
+        "id": { "$ref": "#/definitions/ProviderErrorCategoryId" },
+        "label_zh": { "type": "string" },
+        "description_zh": { "type": "string" },
+        "retryable": { "type": "boolean", "description": "这一类一般能不能靠稍后重试解决。具体条目以条目的 retryable 为准。" },
+        "user_hint_zh": { "type": "string", "description": "没有具体条目时给用户看的通用提示。" },
+        "failure_codes": { "type": "array", "items": { "type": "string" }, "description": "这一类上游错误应该落到的 RetainPDF 失败码，第一个是主名（Python 流水线的拼法），后面是同义的另一种拼法（Rust 兜底）。现在实际落到哪个码看条目的 retainpdf_handling.failure_code。" },
+        "note_zh": { "type": ["string", "null"], "description": "现状和对照不一致的地方。" }
+      }
+    },
+    "RetainpdfFailureCodeRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["failure_code", "producer", "summary_zh", "retryable", "issues", "note_zh"],
+      "properties": {
+        "failure_code": { "type": "string" },
+        "producer": { "type": "string", "enum": ["python", "rust", "both"], "description": "谁会给出这个码：Python 流水线的结构化失败（structured_errors.py）、Rust 的文字兜底和重启恢复，或两边都有。" },
+        "summary_zh": { "type": "string", "description": "任务失败时用户看到的 summary（大致，个别会带状态码）。" },
+        "retryable": { "type": "boolean" },
+        "issues": { "type": "array", "items": { "type": "integer" }, "description": "GitHub issue 里见过的编号（wxyhgk/retain-pdf）。" },
+        "note_zh": { "type": ["string", "null"] }
+      },
+      "description": "数据文件 failure-codes.json 的一行。"
+    },
+    "RetainpdfFailureCodeView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["failure_code", "producer", "summary_zh", "retryable", "issues", "note_zh", "resume_from", "recovery_hint"],
+      "properties": {
+        "failure_code": { "type": "string" },
+        "producer": { "type": "string", "enum": ["python", "rust", "both"] },
+        "summary_zh": { "type": "string" },
+        "retryable": { "type": "boolean" },
+        "issues": { "type": "array", "items": { "type": "integer" } },
+        "note_zh": { "type": ["string", "null"] },
+        "resume_from": { "type": ["string", "null"], "enum": ["translation", "render", null], "description": "从恢复目录（retainpdf-core job_failure_catalogue）查：可以从哪个阶段续跑，null = 整个重跑。个别码在翻译阶段失败时不同（auth_failed），以任务失败里的 resume_from 为准。" },
+        "recovery_hint": { "type": "string", "description": "从恢复目录查的一句话：这次重试会做什么、要不要再花钱。" }
+      },
+      "description": "RetainpdfFailureCodeRecord 加上恢复目录里的 resume_from、recovery_hint。"
+    },
+    "ProviderErrorSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "url", "fetched_at"],
+      "properties": {
+        "title": { "type": "string" },
+        "url": { "type": "string" },
+        "fetched_at": { "type": "string", "description": "抓取日期 YYYY-MM-DD。" }
+      }
+    },
+    "ProviderErrorIssue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["number", "summary_zh"],
+      "properties": {
+        "number": { "type": "integer", "description": "wxyhgk/retain-pdf 的 issue 编号。" },
+        "summary_zh": { "type": "string" }
+      }
+    },
+    "ProviderErrorVendor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label", "kind", "hosts", "sources", "error_shape_zh", "how_to_distinguish_zh", "handling_summary_zh", "notes_zh", "issues", "related_docs", "entries"],
+      "properties": {
+        "id": { "type": "string", "description": "厂商编号。OCR 的编号和建任务时的 ocr.provider 一致。" },
+        "label": { "type": "string" },
+        "kind": { "type": "string", "enum": ["ocr", "llm"] },
+        "hosts": { "type": "array", "items": { "type": "string" }, "description": "接口主机名。任务失败里的 upstream_host 可以用它对到厂商（GLM-OCR 和智谱同一个主机，按失败阶段区分：OCR 阶段是 glm_ocr）。" },
+        "sources": { "type": "array", "items": { "$ref": "#/definitions/ProviderErrorSource" } },
+        "error_shape_zh": { "type": "string", "description": "错误响应长什么样。" },
+        "how_to_distinguish_zh": { "type": "array", "items": { "type": "string" }, "description": "同一个 HTTP 状态有几种意思时怎么分（例如 429 是限流还是额度用完）。" },
+        "handling_summary_zh": { "type": "string", "description": "RetainPDF 对这家的整体处理方式。" },
+        "notes_zh": { "type": "array", "items": { "type": "string" }, "description": "抓取时的备注：文档前后不一致、未核实的地方。" },
+        "issues": { "type": "array", "items": { "$ref": "#/definitions/ProviderErrorIssue" } },
+        "related_docs": { "type": "array", "items": { "type": "string" }, "description": "仓库里另外的相关文档（相对仓库根）。" },
+        "entries": { "type": "array", "items": { "$ref": "#/definitions/ProviderErrorEntry" } }
+      }
+    },
+    "ProviderErrorEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "code", "aliases", "http_status", "type", "category", "retryable", "meaning_zh", "meaning_en", "user_hint_zh", "source_url", "retainpdf_handling"],
+      "properties": {
+        "id": { "type": "string", "description": "厂商内唯一的编号：有码时就是码，没码时是起的名字（例如 OpenAI 的 incorrect_api_key、DeepSeek 的 http_402）。" },
+        "code": { "type": ["string", "null"], "description": "服务商返回的码（业务码、error.code 或 error.type），原样字符串；服务商没有码时为 null（看 http_status 和 meaning）。" },
+        "aliases": { "type": "array", "items": { "type": "string" }, "description": "同一个码的另一种写法（例如百炼 OpenAI 兼容模式下的小写码）。" },
+        "http_status": { "type": "array", "items": { "type": "integer" }, "description": "可能随它出现的 HTTP 状态；官方没写时为空。200 表示请求成功但结果里标了失败或截断。" },
+        "type": { "type": ["string", "null"], "description": "服务商的错误类型或出处（例如 error.type、Response.incomplete_details.reason、async_job）。" },
+        "category": { "$ref": "#/definitions/ProviderErrorCategoryId" },
+        "retryable": { "type": "boolean", "description": "按官方说法，稍后重试有没有用。" },
+        "meaning_zh": { "type": "string" },
+        "meaning_en": { "type": "string" },
+        "user_hint_zh": { "type": "string", "description": "给用户看的提示：该做什么。" },
+        "source_url": { "type": "string" },
+        "retainpdf_handling": { "$ref": "#/definitions/RetainpdfHandling" }
+      }
+    },
+    "RetainpdfHandling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "action", "failure_code", "summary_zh", "gap_zh", "priority", "code_paths", "issues"],
+      "properties": {
+        "status": { "type": "string", "enum": ["ok", "gap", "fixing", "not_applicable"], "description": "和官方说法对不对得上：ok 对得上；gap 有缺口（见 gap_zh）；fixing 有分支在修；not_applicable 我们的用法碰不到。" },
+        "action": { "type": "string", "enum": ["retry", "fail_fast", "stop_translation", "auto_adjust", "fail_block", "not_applicable"], "description": "现在怎么处理：retry 退避重试；fail_fast 不重试、任务失败；stop_translation 整份翻译停下（同一组 Key 后续请求不再发）；auto_adjust 自动改请求重发；fail_block 只这一个请求 / 块失败，其余继续；not_applicable 碰不到。" },
+        "failure_code": { "type": ["string", "null"], "description": "最后落到的任务失败码；不一定导致任务失败（例如只这一块失败）时为 null。" },
+        "summary_zh": { "type": "string" },
+        "gap_zh": { "type": ["string", "null"], "description": "缺口和建议；status 为 ok / not_applicable 时为 null。" },
+        "priority": { "type": ["string", "null"], "enum": ["high", "medium", "low", null], "description": "缺口按用户影响排的优先级。" },
+        "code_paths": { "type": "array", "items": { "type": "string" }, "description": "相关代码（相对仓库根）。" },
+        "issues": { "type": "array", "items": { "type": "integer" } }
+      }
+    }
+  }
+}

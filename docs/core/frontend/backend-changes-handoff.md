@@ -12,6 +12,39 @@
 
 ---
 
+## 服务商错误码目录，给失败提示用（feat/provider-error-codes）
+
+2026-11-23，用户要「把这些模型的文档的错误码全部爬取下来，然后做成文档，接入 api，方便后面的前端提示」。新接口
+`GET /api/v1/providers/error-codes`（signed，登记成 `by(none)`：前端还没接），契约 `provider-error-codes.v1`
+（`listProviderErrorCodes`、`ProviderErrorCodesQuery`、`ProviderErrorCatalogueView`），细节见
+[服务商错误码接口](../../api/08-调试诊断/03-服务商错误码.md)，逐家的表见 [服务商错误码](../../reference/error-codes/README.md)。
+只增不改，任务失败的字段一个没动。
+
+返回什么：
+- `vendors[]`：9 家（`paddle`、`mineru`、`glm_ocr`、`openai`、`anthropic`、`deepseek`、`zhipu`、`qwen`、`opencode`），每家 `entries[]`：
+  `code`（没码时 `null`）、`aliases`、`http_status`、`category`、`retryable`、`meaning_zh`、**`user_hint_zh`（给用户的提示）**、`source_url`，
+  以及 `retainpdf_handling`（我们怎么处理、`status` 为 `gap` 时我们的分类和官方说法不一致）。
+- `categories[]`：16 个大类，各带通用提示 `user_hint_zh` 和对照的 `failure_codes`。
+- `failure_codes[]`：全部 `failure_code`，带 `summary_zh`、`resume_from`、`recovery_hint`。
+- 筛选：`?kind=ocr|llm`、`?provider=`、`?code=`（精确匹配 code / aliases / id）、`?http_status=`。不认识的厂商 200 + 空 `vendors`。
+
+任务失败怎么对到一条提示（现有字段就能做）：
+1. OCR 阶段：厂商编号用任务详情的 `request_payload.ocr.provider`（`paddle` / `mineru` / `glm_ocr`；失败里的 `provider` 只有 Rust 认出的
+   Paddle、MinerU 失败才是厂商名，Python worker 报的是 `ocr`）+ 失败里的 `provider_code` → `?provider=…&code=…`，显示条目的 `user_hint_zh`
+   （例：GLM-OCR 余额不足 `provider_code=1113` → 「智谱账号余额或资源包不足，请充值后再试或换一个有余额的 API Key」）。
+2. 翻译阶段：失败里的 `provider` 是 `translation`，现在多数没有服务商的码和 HTTP 状态；`upstream_host` 有值时对 `vendors[].hosts` 找厂商。
+3. 查不到条目：按 `failure_code` 用 `failure_codes[].recovery_hint`（任务失败里本来就有 `recovery_hint`），或大类的 `user_hint_zh`。
+4. 数据是静态的（编译时嵌入），可以进页面时拉一次全量缓存，不用每次失败都请求。
+
+前端要做的（接的时候再做，不急）：
+1. `npm --prefix frontend/packages/api run generate:client`：契约加了带 `client_name` 的接口，`src/generated/provider-error-codes.ts`
+   要重新生成（不生成 `generate:client:check` 会红；CI 现在不跑这一步）。
+2. 失败卡片上在后端的 `summary` / `recovery_hint` 下面加一行条目的 `user_hint_zh`，放哪、要不要显示 `meaning_zh` 由前端定。
+
+后端还没做、等以后的（第 4 步，没做）：任务失败里加 `upstream: {provider, http_status, code}`，让翻译阶段也能精确对到一条。
+现在翻译侧的错误只带状态码文字（「HTTP 401」），厂商要从接口地址推，Python 结构化失败、Rust 的 `JobFailureInfo`（19 处构造）、
+`job-status.v1` / `job-reports.v1` 两份契约都要改，量不小，另开分支做；做之前前端按上面第 2 步的办法凑合。
+
 ## 用翻译接口问一次模型，可以带图片（feat/model-image-input）
 
 2026-11-22，用户要"后端增加一个 api，最好可以发图片"。新接口 `POST /api/v1/providers/translation/ask`（admin），在契约

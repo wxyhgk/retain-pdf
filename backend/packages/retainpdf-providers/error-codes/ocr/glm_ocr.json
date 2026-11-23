@@ -1,0 +1,1013 @@
+{
+  "id": "glm_ocr",
+  "label": "GLM-OCR（智谱 layout_parsing）",
+  "kind": "ocr",
+  "hosts": [
+    "open.bigmodel.cn",
+    "api.z.ai"
+  ],
+  "sources": [
+    {
+      "title": "GLM-OCR 模型指南（智谱开放平台）",
+      "url": "https://docs.bigmodel.cn/cn/guide/models/vlm/glm-ocr",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "文档解析 API 参考（智谱开放平台）",
+      "url": "https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90.md",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "Layout Parsing API reference（Z.ai）",
+      "url": "https://docs.z.ai/api-reference/tools/layout-parsing.md",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "GLM-OCR guide（Z.ai）",
+      "url": "https://docs.z.ai/guides/vlm/glm-ocr.md",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "API Error Codes（Z.ai）",
+      "url": "https://docs.z.ai/api-reference/api-code",
+      "fetched_at": "2026-11-23"
+    },
+    {
+      "title": "错误码（智谱开放平台）",
+      "url": "https://docs.bigmodel.cn/cn/faq/api-code",
+      "fetched_at": "2026-11-23"
+    }
+  ],
+  "error_shape_zh": "同步接口 POST /api/paas/v4/layout_parsing（open.bigmodel.cn 或 api.z.ai），成功 HTTP 200 直接返回整份结果（id、md_results、layout_details、data_info、usage），没有任务号轮询。失败时 HTTP 状态 + body {error: {code: <字符串业务码>, message}}，业务码用智谱通用码表（12xx 参数类随 400、1220 随 403、11xx/13xx 额度与限流类随 429、500 内部错误）。",
+  "how_to_distinguish_zh": [
+    "429 必须看业务码 error.code：1302、1305 是限流 / 过载（重试）；1113 是余额不足；1308–1321、1309、1311、1313–1315 是套餐、用量上限、Key 类型问题，短时间重试没用。",
+    "错误体有两种写法：BigModel 文档是 {error: {code: \"1113\"（字符串）, message}}，Z.ai 的 layout-parsing OpenAPI 写的是顶层 {code: 1113（整数）, message}。两种都要认；仓库 _error_code 现在只读 error.code，读不到时退回按 HTTP 状态处理。",
+    "码表和智谱通用码表相同（见 llm/zhipu），这里只列 GLM-OCR 场景下碰得到、处理方式和翻译不同的码。"
+  ],
+  "handling_summary_zh": "Python：glm_ocr_api.py 的 parse_pdf 经 retry.py 的 request_with_retry 发请求：408/429/5xx 和网络错误重试 5 次，退避起步 15 秒，认 Retry-After，429 累计等待有上限；429 先看业务码，FAIL_FAST_CODES（1113、1308–1321 等）第一次就停（#164，2026-11-23 已修）；其余 4xx 抛 GlmOcrRequestRejected 不重试；5xx 用完重试后驱动把这一片拆成逐页再发。",
+  "notes_zh": [
+    "GLM-OCR 共用智谱通用码表（见 llm/zhipu）；这里收了 GLM-OCR 碰得到的码，含义同智谱表，处理方式按 GLM-OCR 这条代码路径写。",
+    "1214 与 data URI 前缀的关系官方没写：官方只说 file 支持 URL 或 base64；'裸 base64 会 400/1214、必须带 data:application/pdf;base64, 前缀' 是仓库 glm_ocr_api.py 文档串里记的实测经验（外部 CLI，2026-10-16），code 1214 本身含义（参数值不合法）来自官方码表",
+    "1210/1211/1213/1220 在 GLM-OCR 下的具体触发场景（页码参数、模型名、缺 file、Key 无权限）是按通用含义和 layout_parsing 参数推断，官方没有 OCR 专门说明；仓库对 429 以外的 4xx 一律不重试（GlmOcrRequestRejected），没有逐码区分",
+    "限制：单图 ≤10MB、PDF ≤50MB、支持 PDF/JPG/PNG；页数上限中文 API 参考和中英文指南都写 100 页，但 Z.ai 英文 API 参考写的是 30 页，二者不一致；仓库按 100 页封顶（GLM_OCR_MAX_PAGES_PER_REQUEST=100），默认每片 10 页（RETAIN_GLM_OCR_CHUNK_PAGES），所以实际不受这个分歧影响",
+    "超出大小或页数时会返回哪个业务码，官方没写（推测为 12xx 参数类，未证实，未收录）",
+    "可选参数 start_page_id/end_page_id（最小 1）可指定解析页段；request_id 6-64 字符，user_id 6-128 字符",
+    "错误体结构不一致：Z.ai layout-parsing 的 OpenAPI 写的是顶层 {code: int, message}，而 Z.ai/智谱错误码页写的是 {error: {code: string, message}}；仓库 _error_code 只读 error.code，若真返回顶层 code 会读不到业务码（会退回按 HTTP 状态处理）",
+    "官方只有同步接口，没有 GLM-OCR 的异步/轮询版本；也没写并发和限速，仓库经验是 3 路并发 × 100 页必遇 429，串行 + 退避可过",
+    "仓库还记了一条官方未写的经验：某些超大图纸页会稳定 HTTP 500，拆成单页再发可能通过（GlmOcrServerError，glm_ocr_driver._page_by_page_chunk）",
+    "价格：智谱 0.2 元/百万 tokens（输入输出同价）；Z.ai $0.03/百万 tokens"
+  ],
+  "issues": [
+    {
+      "number": 164,
+      "summary_zh": "智谱 429 / 1113 被当成限流退避 5 次（2026-11-23 已修：额度类第一次就停）"
+    }
+  ],
+  "related_docs": [],
+  "entries": [
+    {
+      "id": "1214",
+      "code": "1214",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "zhipu_business_code",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "参数值不合法；GLM-OCR 下典型情况是 file 传了裸 base64、没带 data:application/pdf;base64, 前缀",
+      "meaning_en": "A parameter value is invalid; for GLM-OCR typically a raw base64 file without the data: URI prefix",
+      "user_hint_zh": "GLM-OCR 请求参数不合法（文件需带 data URI 前缀），请升级或反馈问题",
+      "source_url": "https://docs.z.ai/api-reference/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "pdf_data_uri() 总是带上 data:application/pdf;base64, 前缀，正常碰不到；碰到时同其他 400：抛 GlmOcrRequestRejected，落「暂未识别出明确根因」。",
+        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
+        "priority": "low",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1210",
+      "code": "1210",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "zhipu_business_code",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "调用参数有误（如 start_page_id/end_page_id 等取值不对）",
+      "meaning_en": "Invalid API call parameters",
+      "user_hint_zh": "GLM-OCR 请求参数有误，请检查页码范围等参数",
+      "source_url": "https://docs.bigmodel.cn/cn/faq/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
+        "priority": "low",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1211",
+      "code": "1211",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "zhipu_business_code",
+      "category": "model_not_found",
+      "retryable": false,
+      "meaning_zh": "模型不存在（layout_parsing 只接受 glm-ocr）",
+      "meaning_en": "Model does not exist (layout_parsing only accepts glm-ocr)",
+      "user_hint_zh": "GLM-OCR 模型名不对，请确认使用 glm-ocr",
+      "source_url": "https://docs.bigmodel.cn/cn/faq/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
+        "priority": "low",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1213",
+      "code": "1213",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "zhipu_business_code",
+      "category": "invalid_request",
+      "retryable": false,
+      "meaning_zh": "缺少必需参数（如 model 或 file）",
+      "meaning_en": "A required parameter is missing (e.g. model or file)",
+      "user_hint_zh": "GLM-OCR 请求缺少必需参数，请反馈问题",
+      "source_url": "https://docs.bigmodel.cn/cn/faq/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
+        "priority": "low",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1220",
+      "code": "1220",
+      "aliases": [],
+      "http_status": [
+        403
+      ],
+      "type": "zhipu_business_code",
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "当前 API Key 无权调用该接口（layout_parsing）",
+      "meaning_en": "The API key has no permission for this API (layout_parsing)",
+      "user_hint_zh": "当前智谱 API Key 无权调用 GLM-OCR，请换用有权限的 Key",
+      "source_url": "https://docs.bigmodel.cn/cn/faq/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
+        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1113",
+      "code": "1113",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "账户余额不足或没有资源包（虽是 429 但不是限流）",
+      "meaning_en": "Insufficient balance or no resource package (429 but not a rate limit)",
+      "user_hint_zh": "智谱账号余额或资源包不足，请充值后再试或换一个有余额的 API Key",
+      "source_url": "https://docs.z.ai/api-reference/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1302",
+      "code": "1302",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "rate_limit",
+      "retryable": true,
+      "meaning_zh": "请求频率超限",
+      "meaning_en": "Request rate limit reached",
+      "user_hint_zh": "GLM-OCR 请求太频繁，稍后会自动重试；可减少并发",
+      "source_url": "https://docs.z.ai/api-reference/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试 5 次（起步 15 秒，认 Retry-After，429 累计等待有上限），用完抛 GlmOcrRateLimited，报 HTTP 状态和业务码，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1305",
+      "code": "1305",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "overloaded",
+      "retryable": true,
+      "meaning_zh": "服务访问量过大，暂时繁忙",
+      "meaning_en": "Service temporarily overloaded",
+      "user_hint_zh": "GLM-OCR 服务繁忙，请稍后重试",
+      "source_url": "https://docs.z.ai/api-reference/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": "upstream_rate_limited",
+        "summary_zh": "退避重试 5 次（起步 15 秒，认 Retry-After，429 累计等待有上限），用完抛 GlmOcrRateLimited，报 HTTP 状态和业务码，归「外部服务请求被限流」。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "http_500",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": "no_business_code",
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "服务端内部错误，响应里没有业务码",
+      "meaning_en": "Internal server error with no business code attached",
+      "user_hint_zh": "智谱服务端出错，稍后重试；持续出现请联系智谱客服",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "5xx 重试 5 次；用完抛 GlmOcrServerError，驱动把这一片拆成逐页再发（超大图纸页可能稳定 500）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_driver.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1000",
+      "code": "1000",
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": "zhipu_business_code",
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "身份验证没有通过",
+      "meaning_en": "Authentication failed",
+      "user_hint_zh": "检查智谱 API Key 是否填对、是否已被删除或停用",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
+        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1001",
+      "code": "1001",
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": "zhipu_business_code",
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "请求头里没有带鉴权信息",
+      "meaning_en": "No authentication header was received",
+      "user_hint_zh": "没有填写智谱 API Key，请在设置里补上",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
+        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1003",
+      "code": "1003",
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": "zhipu_business_code",
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "鉴权 Token 已过期",
+      "meaning_en": "The authentication token has expired",
+      "user_hint_zh": "智谱鉴权 Token 已过期，请重新生成 API Key 或 Token",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
+        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1005",
+      "code": "1005",
+      "aliases": [],
+      "http_status": [
+        401
+      ],
+      "type": "zhipu_business_code",
+      "category": "auth",
+      "retryable": false,
+      "meaning_zh": "账号开了二次认证保护，需要先完成二次认证",
+      "meaning_en": "Two-factor authentication is required for this account",
+      "user_hint_zh": "智谱账号要求二次认证，请先登录智谱控制台完成二次认证",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected（「GLM-OCR 请求被拒绝 status=401 code=…」）；分类器认不出（文字里没有 401 Client Error，也没有 unauthorized），落「任务失败，但暂未识别出明确根因」，provider_code 是业务码。",
+        "gap_zh": "应归 auth_failed：GlmOcrRequestRejected 带上 status_code，分类器就能按 401/403 认。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1200",
+      "code": "1200",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": "zhipu_business_code",
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "API 调用失败（笼统的服务端错误）",
+      "meaning_en": "Generic API call failure on the server side",
+      "user_hint_zh": "智谱接口调用失败，稍后重试；持续出现请联系智谱客服",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "5xx 重试 5 次；用完抛 GlmOcrServerError，驱动把这一片拆成逐页再发（超大图纸页可能稳定 500）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_driver.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1230",
+      "code": "1230",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": "zhipu_business_code",
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "接口调用流程中出错",
+      "meaning_en": "Error during API call processing",
+      "user_hint_zh": "智谱服务处理出错，稍后重试；持续出现请联系智谱客服",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "5xx 重试 5 次；用完抛 GlmOcrServerError，驱动把这一片拆成逐页再发（超大图纸页可能稳定 500）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_driver.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1234",
+      "code": "1234",
+      "aliases": [],
+      "http_status": [
+        500
+      ],
+      "type": "zhipu_business_code",
+      "category": "server",
+      "retryable": true,
+      "meaning_zh": "网络错误，响应里附带错误 id",
+      "meaning_en": "Network error, with an error id in the message",
+      "user_hint_zh": "智谱侧网络错误，稍后重试；持续出现请带上错误 id 联系智谱客服",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "5xx 重试 5 次；用完抛 GlmOcrServerError，驱动把这一片拆成逐页再发（超大图纸页可能稳定 500）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_driver.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1261",
+      "code": "1261",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "zhipu_business_code",
+      "category": "context_length",
+      "retryable": false,
+      "meaning_zh": "提示词超长，超过模型上下文",
+      "meaning_en": "Prompt is too long for the model",
+      "user_hint_zh": "输入内容超过模型上下文长度，请缩小每批翻译的内容或换上下文更长的模型",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。GLM-OCR 按 ≤100 页分片，正常碰不到 1261。",
+        "gap_zh": "400 应归 upstream_bad_request，文案带业务码。",
+        "priority": "low",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1301",
+      "code": "1301",
+      "aliases": [],
+      "http_status": [
+        400
+      ],
+      "type": "zhipu_business_code",
+      "category": "content_filter",
+      "retryable": false,
+      "meaning_zh": "输入或生成内容被判定可能不安全或敏感，被拦截",
+      "meaning_en": "Input or generated content was flagged as unsafe or sensitive",
+      "user_hint_zh": "这段内容触发了智谱的内容安全拦截，原样重试不会通过，可跳过该段或换服务商",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "gap",
+        "action": "fail_fast",
+        "failure_code": "python_unhandled_exception",
+        "summary_zh": "不重试，抛 GlmOcrRequestRejected，落「任务失败，但暂未识别出明确根因」。",
+        "gap_zh": "400 应归 upstream_bad_request，文案带业务码，并说明是内容审核。",
+        "priority": "medium",
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "id": "1308",
+      "code": "1308",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到某个时间窗口的用量上限，到重置时间后恢复（多见于 Coding Plan）",
+      "meaning_en": "Usage cap for a time window reached; resets at the stated time (mostly Coding Plan)",
+      "user_hint_zh": "已达到智谱套餐的用量上限，等到错误信息里的重置时间后再用，或改用按量付费的标准 Key",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1309",
+      "code": "1309",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "GLM Coding Plan 套餐已到期",
+      "meaning_en": "The GLM Coding Plan subscription has expired",
+      "user_hint_zh": "智谱 GLM Coding Plan 已到期，请续订，或换成按量付费的标准 API Key",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1310",
+      "code": "1310",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到每周或每月用量上限，到重置时间后恢复",
+      "meaning_en": "Weekly or monthly usage cap reached; resets at the stated time",
+      "user_hint_zh": "已达到智谱套餐的周/月用量上限，等到重置时间，或改用按量付费的标准 Key",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1311",
+      "code": "1311",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "当前订阅套餐不包含这个模型",
+      "meaning_en": "The current subscription plan does not include this model",
+      "user_hint_zh": "当前智谱套餐不能用这个模型，请换套餐内的模型或改用标准 API Key",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，中文原因说明是 Key 的套餐不对（#164 已修）。失败码借用「余额或额度不足」，原因看 summary 里的中文说明。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1313",
+      "code": "1313",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "rate_limit",
+      "retryable": false,
+      "meaning_zh": "使用方式不符合公平使用策略，请求频率被平台限制",
+      "meaning_en": "Usage violates the fair-use policy; request frequency is restricted",
+      "user_hint_zh": "智谱判定使用方式不符合公平使用策略并限了频，需要在智谱个人中心申请解除限制",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1314",
+      "code": "1314",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "billing",
+      "retryable": false,
+      "meaning_zh": "企业套餐已失效",
+      "meaning_en": "The enterprise plan is no longer valid",
+      "user_hint_zh": "智谱企业套餐已失效，请联系企业管理员",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1315",
+      "code": "1315",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "permission",
+      "retryable": false,
+      "meaning_zh": "这个 Key 只能用于企业编程套餐场景",
+      "meaning_en": "This API key is restricted to enterprise coding-plan usage",
+      "user_hint_zh": "这个智谱 Key 是企业编程套餐专用的，请到官网换成对应产品类型的 Key",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，中文原因说明是 Key 的套餐不对（#164 已修）。失败码借用「余额或额度不足」，原因看 summary 里的中文说明。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1316",
+      "code": "1316",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到 5 小时用量上限，且主账号余额不足，无法超额按量付费",
+      "meaning_en": "5-hour usage cap reached and balance too low for pay-as-you-go overage",
+      "user_hint_zh": "智谱套餐 5 小时额度已用完且余额不足，充值或等到重置时间",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1317",
+      "code": "1317",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到 7 天用量上限，且主账号余额不足，无法超额按量付费",
+      "meaning_en": "7-day usage cap reached and balance too low for pay-as-you-go overage",
+      "user_hint_zh": "智谱套餐 7 天额度已用完且余额不足，充值或等到重置时间",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1318",
+      "code": "1318",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到 5 小时用量上限，且子账号月消费已到上限，不能超额付费",
+      "meaning_en": "5-hour usage cap reached and sub-account monthly spend cap hit",
+      "user_hint_zh": "智谱 5 小时额度已用完，子账号月消费也到上限，请联系管理员调整或等到重置时间",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1319",
+      "code": "1319",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到 7 天用量上限，且子账号月消费已到上限，不能超额付费",
+      "meaning_en": "7-day usage cap reached and sub-account monthly spend cap hit",
+      "user_hint_zh": "智谱 7 天额度已用完，子账号月消费也到上限，请联系管理员调整或等到重置时间",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1320",
+      "code": "1320",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到 5 小时用量上限，且企业级月消费已到上限，不能超额付费",
+      "meaning_en": "5-hour usage cap reached and enterprise monthly spend cap hit",
+      "user_hint_zh": "智谱 5 小时额度已用完，企业月消费也到上限，请联系管理员调整或等到重置时间",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "1321",
+      "code": "1321",
+      "aliases": [],
+      "http_status": [
+        429
+      ],
+      "type": "zhipu_business_code",
+      "category": "quota",
+      "retryable": false,
+      "meaning_zh": "达到 7 天用量上限，且企业级月消费已到上限，不能超额付费",
+      "meaning_en": "7-day usage cap reached and enterprise monthly spend cap hit",
+      "user_hint_zh": "智谱 7 天额度已用完，企业月消费也到上限，请联系管理员调整或等到重置时间",
+      "source_url": "https://docs.bigmodel.cn/cn/api/api-code",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "fail_fast",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "在 FAIL_FAST_CODES 里：第一次就停，抛 GlmOcrQuotaExhausted，报中文原因、HTTP 状态和业务码，归「上游账户余额或额度不足」，不可重试（#164 已修）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
+        ],
+        "issues": [
+          164
+        ]
+      }
+    },
+    {
+      "id": "missing_layout_details",
+      "code": null,
+      "aliases": [],
+      "http_status": [
+        200
+      ],
+      "type": "retainpdf_check",
+      "category": "other",
+      "retryable": true,
+      "meaning_zh": "HTTP 200 但返回的不是 JSON，或者没有 layout_details（官方文档没有这一条，是 RetainPDF 自己的检查）。",
+      "meaning_en": "HTTP 200 but the body is not JSON or lacks layout_details (RetainPDF's own check, not in the official docs).",
+      "user_hint_zh": "稍后重试；反复出现时把任务日志里的返回内容反馈给我们。",
+      "source_url": "https://docs.bigmodel.cn/api-reference/%E6%A8%A1%E5%9E%8B-api/%E6%96%87%E6%A1%A3%E8%A7%A3%E6%9E%90.md",
+      "retainpdf_handling": {
+        "status": "ok",
+        "action": "retry",
+        "failure_code": null,
+        "summary_zh": "5xx 重试 5 次；用完抛 GlmOcrServerError，驱动把这一片拆成逐页再发（超大图纸页可能稳定 500）。",
+        "gap_zh": null,
+        "priority": null,
+        "code_paths": [
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/retry.py",
+          "backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/glm_ocr_driver.py"
+        ],
+        "issues": []
+      }
+    }
+  ]
+}

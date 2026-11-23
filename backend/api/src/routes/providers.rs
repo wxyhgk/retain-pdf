@@ -2,9 +2,9 @@ use axum::extract::State;
 use axum::Json;
 
 use crate::error::AppError;
-use crate::models::api::ApiResponse;
+use crate::models::api::{ApiResponse, ProviderErrorCatalogueView, ProviderErrorCodesQuery};
 use crate::ocr_provider::{provider_client_definitions, OcrProviderPublicDefinition};
-use crate::routes::common::{build_provider_route_deps, ApiJson};
+use crate::routes::common::{build_provider_route_deps, ApiJson, ApiQuery};
 use crate::services::providers::{
     self, DeepSeekBalanceView, DeepSeekTokenValidationRequest, MineruTokenValidationRequest,
     ProviderProbeView, PaddleTokenValidationRequest, TranslationModelAskRequest, TranslationModelAskView,
@@ -16,6 +16,13 @@ use crate::AppState;
 pub async fn list_ocr_providers(
 ) -> Result<Json<ApiResponse<Vec<OcrProviderPublicDefinition>>>, AppError> {
     Ok(Json(ApiResponse::ok(provider_client_definitions())))
+}
+
+/// GET /api/v1/providers/error-codes —— 各家服务商的错误码目录（2026-11-23）。静态数据，不碰数据库。
+pub async fn list_provider_error_codes(
+    ApiQuery(query): ApiQuery<ProviderErrorCodesQuery>,
+) -> Result<Json<ApiResponse<ProviderErrorCatalogueView>>, AppError> {
+    Ok(Json(ApiResponse::ok(providers::provider_error_catalogue(&query)?)))
 }
 
 pub async fn validate_mineru_token(
