@@ -30,6 +30,7 @@ const CAPTION_TYPES = {
 };
 
 const VectorObstacles = require("./vector-obstacles");
+const ListGroups = require("./list-groups");
 
 function blockNumber(id) {
   const match = String(id || "").match(/-b0*(\d+)$/);
@@ -137,6 +138,7 @@ function buildModel(job, options = {}) {
   const vectors = new Map();
   const sourceSizes = options.sourceSizes || {};
   const bodyStreams = [];
+  const pageOrders = new Map();
   const maxPages = Number.isFinite(options.maxPages) ? options.maxPages : Infinity;
   const retain = options.typography === "retain";
   // seed "calibrated": text-layer sizes scaled by the document's median ratio
@@ -172,6 +174,8 @@ function buildModel(job, options = {}) {
     const streams = [];
     const absoluteBlocks = [];
     const blocks = [];
+    // translated text in block order, for list grouping (list-groups.js)
+    const order = [];
     for (const block of page.blocks || []) {
       const bbox = (block.bbox || []).map(Number);
       if (bbox.length !== 4 || bbox.some(value => !Number.isFinite(value))) continue;
@@ -209,6 +213,7 @@ function buildModel(job, options = {}) {
         text: visual?.text_rgb || [0.07, 0.07, 0.07]
       };
       blocks.push({ id, translatable: true, translatedText: translated });
+      order.push({ id, flow: Boolean(item.flow), bodyLike: subType === "body" });
       if (seed.from === "pdf") stats.seedsFromPdf += 1;
       else if (seed.from === "geometry") stats.seedsFromGeometry = (stats.seedsFromGeometry || 0) + 1;
       else stats.seedsFromOcr += 1;
@@ -319,6 +324,7 @@ function buildModel(job, options = {}) {
       blocks,
       restoration: { streams, absoluteBlocks }
     });
+    pageOrders.set(pageIndex, order);
   }
   // Source body size (median of the body paragraphs' PDF span sizes): the
   // overlay's ceiling for the shared body font. Seeds above it are clamped so
@@ -328,6 +334,21 @@ function buildModel(job, options = {}) {
   // text layer): the same measure as headings' source sizes (source_font_size_pt).
   const sourceBodyTextFont = median(bodyStreams.map(stream => Number(stream.sourceTextSize) || 0).filter(size => size > 0), 0);
   stats.sourceBodyTextFont = Number(sourceBodyTextFont.toFixed(2));
+  // Retain: a list OCR cut into one box per item becomes one stream, and body
+  // paragraphs set in a size apart from the body's are set on their own
+  // (list-groups.js). options.listGroups / options.sourceSizeClasses: false turn them off.
+  if (retain && options.listGroups !== false) {
+    const groups = [];
+    for (const page of pages) groups.push(...ListGroups.groupLists(page, pageOrders.get(page.index) || [], paint, { bodySourceSize: sourceBodyTextFont, bodyLineHeight: options.bodyLineHeight }));
+    stats.listGroups = groups.length;
+    stats.listItemsGrouped = groups.reduce((sum, group) => sum + group.members.length, 0);
+  }
+  if (retain && options.sourceSizeClasses !== false) {
+    // Paragraphs continued across boxes stay: continuation-balance cuts them among body streams.
+    const flowIds = new Set([...pageOrders.values()].flat().filter(entry => entry.flow).map(entry => String(entry.id)));
+    const { detached } = ListGroups.separateSourceSizes({ pages }, sourceBodyTextFont, id => !flowIds.has(String(id)) && detachBody({ pages }, id));
+    stats.sourceSizeDetached = detached.length;
+  }
   if (Number.isFinite(sourceBodyFont)) {
     stats.sourceBodyFont = Number(sourceBodyFont.toFixed(2));
     // The retain profile keeps every paragraph's own seed (retain-pdf has no
@@ -373,9 +394,17 @@ function detachBody(model, id) {
     if (index < 0) continue;
     const [stream] = page.restoration.streams.splice(index, 1);
     const item = stream.items[0];
+    // a stream of several paragraphs (retain/list-groups.js) keeps them as the block's items
+    const several = stream.items.length > 1;
+    const lines = stream.items.reduce((sum, each) => sum + Number(each.originalLineCount || 0), 0);
     page.restoration.absoluteBlocks.push({
       id, type: "text", kind: "text", bbox: stream.bbox, text: item.text, translatedText: item.translatedText,
-      translatable: true, mainTitle: false, fontSize: stream.fontSize, lineCount: Math.max(2, item.originalLineCount)
+      translatable: true, mainTitle: false, fontSize: stream.fontSize, lineCount: Math.max(2, lines),
+      ...(several ? { items: stream.items, paragraphGap: stream.paragraphGap } : {}),
+      indent: item.indent || 0,
+      sizeClass: true,
+      ...(stream.sourceTextSize > 0 ? { sourceFontSize: stream.sourceTextSize } : {}),
+      ...(stream.sourceLinePitch > 0 ? { sourceLinePitch: stream.sourceLinePitch } : {})
     });
     return true;
   }
