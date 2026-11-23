@@ -286,6 +286,23 @@ const ICONS = {
   batch: "list-checks",
   collections: "layers",
   library: "library-big",
+  sync: "refresh-cw",
+  backup: "archive",
+  notify: "bell",
+  "lan-share": "wifi",
+  appearance: "palette",
+  terminal: "square-terminal",
+  glossary: "book-a",
+  usage: "chart-column",
+  key: "key-round",
+  copy: "copy",
+  qr: "qr-code",
+  bookmark: "bookmark",
+  edit: "pencil",
+  folder: "folder-open",
+  filter: "filter",
+  sort: "arrow-up-down",
+  grid: "layout-grid",
 };
 
 /** lucide 的图标数据。有的名字是别名（circle-help → circle-question-mark），那个文件只转出 default，顺着找到本体。 */

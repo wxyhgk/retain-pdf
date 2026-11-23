@@ -1,5 +1,19 @@
 # 安装和第一次打开
 
+1. 到 [GitHub Releases](https://github.com/wxyhgk/retain-pdf/releases) 下载：Mac 下 `.dmg`，Windows 下 `Setup.exe`，Linux 下 `.deb`
+2. 装好打开，等几秒
+3. 弹出 ![Key](icons/key.svg) 接口设置时，按 [接口设置](credentials.md) 填好 Key，点「保存并启动」
+
+| 碰到 | 怎么办 |
+| --- | --- |
+| Windows 说「已保护你的电脑」 | 点「更多信息」→「仍要运行」 |
+| Mac 只能装在 M1 及以后的机器上 | Intel 的 Mac 用不了 |
+| 想装在服务器、NAS 上 | 用 Docker 网页版，见下面「详细说明」 |
+| 怎么更新 | 见 [更新](app-update.md) |
+
+<details>
+<summary>详细说明</summary>
+
 RetainPDF 有两种用法：
 
 - **桌面版**：下载安装就能用，适合自己一台电脑上用。本说明书主要按桌面版写。
@@ -70,3 +84,5 @@ docker compose up -d
 
 > 注意：能打开 `40001` 端口的人就能用你填的 Key。默认只有这台机器自己能访问；要给别的电脑用，先看
 > [Docker 部署说明](https://github.com/wxyhgk/retain-pdf/blob/main/ops/deployment/docker/delivery/README.md) 里关于端口的部分。
+
+</details>
