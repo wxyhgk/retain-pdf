@@ -1,0 +1,75 @@
+name: Linux Package Trial
+
+# 只打 Linux 包，再装进几个发行版的容器里试启动（2026-11-23 起，#162）。
+# Linux 包的 Python 换成 python-build-standalone、Rust 按 glibc 2.28 链接以后，要真打一次、真装一次才知道行不行：
+# 推到 trial/linux-package 分支就跑，不用跑三平台的预构建，也不碰 main。
+# 和正式发版用同一份 build-desktop-packages.yml（platforms 只给 linux）。
+# 产物不会被发版用到：发版只认 Prebuild Release Candidates 那次运行的 artifact。
+
+"on":
+  push:
+    branches:
+      - "trial/linux-package"
+      - "trial/linux-package/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linux-package-trial-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.declared.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Resolve declared application version
+        id: declared
+        run: python3 .github/scripts/resolve_declared_version.py --github-output "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build-desktop-packages.yml
+    with:
+      version: ${{ needs.prepare.outputs.version }}
+      platforms: linux
+
+  smoke:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - "ubuntu:20.04"
+          - "ubuntu:22.04"
+          - "ubuntu:24.04"
+          - "ubuntu:26.04"
+          - "debian:11"
+          - "debian:12"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download Linux package
+        uses: actions/download-artifact@v7
+        with:
+          name: desktop-linux-${{ github.sha }}
+          path: deb
+
+      - name: Install and start in ${{ matrix.image }}
+        run: |
+          deb="$(ls deb/*.deb | head -1)"
+          test -n "$deb"
+          docker run --rm -v "$PWD:/w" -w /w "${{ matrix.image }}" \
+            bash .github/scripts/linux_package_smoke.sh "/w/$deb"
