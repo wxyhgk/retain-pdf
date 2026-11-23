@@ -18,6 +18,10 @@ export interface ProviderValidationResult {
     total_balance?: string;
   }>;
   is_available?: boolean;
+  /** 服务商回的 HTTP 状态码（2026-11-23 起检测接口都有，可能是 null）。 */
+  http_status?: number | null;
+  /** 服务商自己的业务码（智谱 "1113"、OpenAI "insufficient_quota"），没有时 null；2026-11-23 以前这里放的是 HTTP 状态码。 */
+  provider_code?: string | null;
 }
 
 export interface CredentialsStatePortLike {
