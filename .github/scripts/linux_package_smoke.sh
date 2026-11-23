@@ -20,7 +20,10 @@ echo "== installed: $(dpkg-deb -f "$deb" Package) $(dpkg-deb -f "$deb" Version)"
 echo "== Depends: $(dpkg-deb -f "$deb" Depends)"
 
 package="$(dpkg-deb -f "$deb" Package)"
-python="$(dpkg -L "$package" | grep -m1 '/resources/backend/python/bin/python3$')"
+# 文件清单先落盘再查：pipefail 下 dpkg -L | grep -m1 会因 grep 先退出让 dpkg 吃 SIGPIPE（exit 141）。
+files="$(mktemp)"
+dpkg -L "$package" >"$files"
+python="$(grep -m1 '/resources/backend/python/bin/python3$' "$files")"
 backend="$(dirname "$(dirname "$(dirname "$python")")")"
 echo "== backend root: $backend"
 
@@ -60,7 +63,10 @@ else
   echo "ok   rust_api start (exit $status; 124 = still running after 5 s)"
 fi
 
-electron="$(dpkg -L "$package" | grep -E '^/opt/[^/]+/[^/.]+$' | while read -r f; do [ -x "$f" ] && file -b "$f" 2>/dev/null | grep -q ELF && echo "$f"; done | head -1 || true)"
+electron=""
+while read -r f; do
+  if [ -f "$f" ] && [ -x "$f" ] && file -b "$f" 2>/dev/null | grep -q ELF; then electron="$f"; break; fi
+done < <(grep -E '^/opt/[^/]+/[^/.]+$' "$files" || true)
 if [ -n "$electron" ]; then
   missing="$(ldd "$electron" 2>/dev/null | grep 'not found' || true)"
   if [ -n "$missing" ]; then echo "warn Electron $electron missing libraries (consider deb Depends):"; echo "$missing"; else echo "ok   Electron ldd"; fi
