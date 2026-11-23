@@ -61,12 +61,40 @@ runs:
           exit 1
         fi
 
+    # GitHub 的 Assets 只按文件名字母序排、不能调顺序，latest*.yml 总排在安装包前面；
+    # 说明里放一张三个安装包的下载表，并写明自动更新用的文件不用下（2026-11-23 用户定）。
+    - name: Write release notes download table
+      shell: bash
+      env:
+        RELEASE_VERSION: ${{ inputs.version }}
+        RELEASE_TAG: ${{ inputs.tag }}
+        REPOSITORY: ${{ github.repository }}
+      run: |
+        base="https://github.com/${REPOSITORY}/releases/download/${RELEASE_TAG}"
+        v="$RELEASE_VERSION"
+        notes="$RUNNER_TEMP/desktop-release-notes.md"
+        {
+          echo "## 下载 / Download"
+          echo
+          echo "| 系统 / System | 安装包 / Installer |"
+          echo "| --- | --- |"
+          echo "| Windows | [RetainPDF-Windows-${v}-Setup.exe](${base}/RetainPDF-Windows-${v}-Setup.exe) |"
+          echo "| macOS（Apple 芯片 / Apple silicon） | [RetainPDF-Mac-${v}.dmg](${base}/RetainPDF-Mac-${v}.dmg) |"
+          echo "| Linux | [RetainPDF-Linux-${v}.deb](${base}/RetainPDF-Linux-${v}.deb) |"
+          echo
+          echo '下面 Assets 里的 `latest*.yml`、`.zip`、`.blockmap` 是软件自动更新用的，不用下载；`SHA256SUMS.txt` 用来校验下载的文件。'
+          echo
+          echo 'The `latest*.yml`, `.zip` and `.blockmap` files below are for in-app auto-update; you don'"'"'t need to download them. `SHA256SUMS.txt` lets you verify the downloads.'
+        } > "$notes"
+        cat "$notes"
+
     - name: Publish complete desktop release
       uses: softprops/action-gh-release@v3
       with:
         token: ${{ github.token }}
         tag_name: ${{ inputs.tag }}
         prerelease: ${{ inputs.prerelease == 'true' }}
+        body_path: ${{ runner.temp }}/desktop-release-notes.md
         fail_on_unmatched_files: true
         files: |
           ${{ inputs.assets-dir }}/RetainPDF-Windows-${{ inputs.version }}-Setup.exe

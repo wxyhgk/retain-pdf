@@ -289,6 +289,10 @@ def test_desktop_promotion_verifies_checksums_before_publishing():
     assert verify < tag_check < publish
     assert "verify-desktop" in action and "--check-files" in action and "--require-extras" in action
     assert "fail_on_unmatched_files: true" in action
+    # Release 说明放三个安装包的下载表（Assets 不能排序，2026-11-23）
+    notes = action.index("Write release notes download table")
+    assert tag_check < notes < publish
+    assert "body_path: ${{ runner.temp }}/desktop-release-notes.md" in action
     for job_name in ("publish-desktop-release", "promote-desktop-release"):
         body = job("release-desktop.yml", job_name)
         publish_step = step(body, "Publish desktop release")

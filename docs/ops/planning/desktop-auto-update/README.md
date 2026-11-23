@@ -6,3 +6,4 @@ Windows、Mac 桌面版自己检查、后台下载新版本，下好提示「重
 | 日期 | 文档 | 内容 |
 |---|---|---|
 | 2026-11-22 | [自动更新和 Mac 签名](./20261122-自动更新和Mac签名.md) | 签名放在测试之后的单独 job（sign-macos.yml）；Mac 打包的 Python.framework 修正；Release 多传 latest*.yml、.blockmap、Mac zip；App 内 electron-updater；同一天再发版的编号 |
+| 2026-11-23 | [Release 说明放下载表](./20261123-Release说明放下载表.md) | Assets 不删、不能排序；Release 说明自动放三个安装包的下载表，写明自动更新文件不用下 |
