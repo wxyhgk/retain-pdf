@@ -429,6 +429,19 @@ jobs:
           # 兜底：万一新版本又带进非 $ORIGIN 的 RUNPATH，去掉；下面的 check 只放行 $ORIGIN。
           python3 .github/scripts/relocate_linux_python_runpath.py relocate \
             --bundle-root "$bundle_root" --original-root "$extract_root/python"
+          # 包里不留符号链接：prepare-app 用 fs.cpSync 拷这份 Python，会把相对链接改写成构建机源目录的绝对路径，
+          # bin/python3 -> python3.11 到用户机器上成了断链（2026-11-23 Linux 试跑，1044 个链接全是 /home/runner/...）。
+          # bin 里的链接（python、python3、pydoc3、idle3、2to3、python3-config）只留 python3，由本体改名而来；
+          # share/terminfo 只给 curses 用，桌面版用不到。
+          find "$bundle_root/bin" -maxdepth 1 -type l -delete
+          mv "$bundle_root/bin/python3.11" "$bundle_root/bin/python3"
+          rm -rf "$bundle_root/share/terminfo"
+          leftover_links="$(find "$bundle_root" -type l -print)"
+          if [ -n "$leftover_links" ]; then
+            echo "bundled Python still has symlinks (prepare-app would turn them into build-machine paths):" >&2
+            echo "$leftover_links" >&2
+            exit 1
+          fi
           "$bundle_root/bin/python3" -m pip install --upgrade pip
           py_minor="$("$bundle_root/bin/python3" - <<'PY'
           import sys
@@ -460,7 +473,9 @@ jobs:
           elif [ -x "$SCRIPT_DIR/../python/bin/python3" ]; then
             PYTHON_BIN="$SCRIPT_DIR/../python/bin/python3"
           else
-            PYTHON_BIN="python3"
+            # 不退回系统的 python3：它没装流水线，退回去只会把「包里的 Python 坏了」藏起来（2026-11-23 Linux 试跑）。
+            echo "retainpdf-pipeline: bundled python3 not found next to $SCRIPT_DIR" >&2
+            exit 127
           fi
           exec "$PYTHON_BIN" -m retainpdf_pipeline.entrypoints.console "$@"
           WRAPPER
@@ -600,6 +615,13 @@ jobs:
           fi
           python3 .github/scripts/check_linux_glibc_baseline.py --max "$LINUX_GLIBC_BASELINE" --top 15 \
             --self-contained "$deb_python" "$deb_root"
+          # 最终 deb 里不许有指向构建机的绝对链接（prepare-app 的 fs.cpSync 会这么改写，2026-11-23）。
+          absolute_links="$(find "$deb_root/opt" -type l -lname '/*' -print | head -n 20)"
+          if [ -n "$absolute_links" ]; then
+            echo "absolute symlinks in the deb (they point into the build machine):" >&2
+            echo "$absolute_links" >&2
+            exit 1
+          fi
 
       # 记录安装包身份（版本 / revision / sha256），提升前据此校验。
       - name: Record Linux package manifest

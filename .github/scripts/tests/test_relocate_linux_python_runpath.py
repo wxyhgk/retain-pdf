@@ -10,7 +10,7 @@ SCRIPTS_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = SCRIPTS_ROOT.parent / "workflows"
 sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from relocate_linux_python_runpath import host_specific_entries, relocated_entries
+from relocate_linux_python_runpath import escaping_symlinks, host_specific_entries, relocated_entries
 
 
 TOOLCACHE = Path("/opt/hostedtoolcache/Python/3.11.18/x64")
@@ -96,3 +96,19 @@ def test_linux_bundles_checksummed_python_build_standalone_not_the_toolcache():
                     '"$bundle_root"/lib/libpython*.so*'):
         assert step.index(removed) < step.index('"$bundle_root/bin/python3" -m pip')
     assert "pip install --only-binary=:all: --target" in step
+
+
+def test_symlinks_must_stay_relative_and_inside_the_bundle(tmp_path):
+    # prepare-app 的 fs.cpSync 会把 bin/python3 -> python3.11 改写成构建机上的绝对路径（2026-11-23 Linux 试跑）。
+    bundle = tmp_path / "python"
+    (bundle / "bin").mkdir(parents=True)
+    (bundle / "share").mkdir()
+    (bundle / "bin" / "python3.11").write_text("")
+    (bundle / "bin" / "python3").symlink_to("python3.11")
+    assert escaping_symlinks(bundle) == []
+    (bundle / "bin" / "python").symlink_to(bundle / "bin" / "python3.11")
+    (bundle / "share" / "outside").symlink_to("../../elsewhere")
+    assert escaping_symlinks(bundle) == [
+        f"bin/python -> {bundle / 'bin' / 'python3.11'}",
+        "share/outside -> ../../elsewhere",
+    ]

@@ -154,9 +154,34 @@ def relocate(bundle_root: Path, original_root: Path) -> int:
     return 0
 
 
+def escaping_symlinks(bundle_root: Path) -> list[str]:
+    """包里指向绝对路径、或指出包外的符号链接（相对包根的路径 -> 链接内容）。
+
+    桌面打包的 prepare-app 用 Node 的 fs.cpSync 拷 Python，会把相对链接改写成指向构建机源目录的绝对路径：
+    python-build-standalone 的 bin/python3 -> python3.11 到了用户机器上就成了断链（2026-11-23 Linux 试跑，
+    deb 里 1044 个链接全是 /home/runner/... ）。构建机上那个路径存在，跑起来不出错，只能按链接内容查。
+    """
+    bundle_root = bundle_root.resolve()
+    bad: list[str] = []
+    links: list[Path] = []
+    for directory, dirnames, filenames in os.walk(bundle_root, followlinks=False):
+        for name in [*dirnames, *filenames]:
+            candidate = Path(directory) / name
+            if candidate.is_symlink():
+                links.append(candidate)
+    for path in sorted(links):
+        target = os.readlink(path)
+        resolved = (path.parent / target).resolve() if not os.path.isabs(target) else Path(target)
+        if os.path.isabs(target) or (bundle_root != resolved and bundle_root not in resolved.parents):
+            bad.append(f"{path.relative_to(bundle_root)} -> {target}")
+    return bad
+
+
 def check(bundle_root: Path, python: Path | None) -> int:
     bundle_root = bundle_root.resolve()
     problems: list[str] = []
+    for link in escaping_symlinks(bundle_root):
+        problems.append(f"符号链接指向绝对路径或包外：{link}")
     elf_count = 0
     for path in iter_elf_files(bundle_root):
         elf_count += 1
