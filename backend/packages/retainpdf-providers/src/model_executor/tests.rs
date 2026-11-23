@@ -402,7 +402,15 @@ async fn streaming_aggregates_content_and_usage_but_not_reasoning() {
 
 #[tokio::test]
 async fn empty_and_truncated_responses_are_not_success() {
-    for (content, finish) in [("", "stop"), ("partial", "length")] {
+    // 空回答、结束原因不认识：照旧 ambiguous。截断、被内容过滤（上游明确说没写完）：failed + output_incomplete，
+    // 回执写 finish_reason，半截内容不交回（2026-11-23，以前截断也记 ambiguous）
+    for (content, finish, status, code) in [
+        ("", "stop", "ambiguous", "empty_response"),
+        ("partial", "tool_calls", "ambiguous", "response_not_complete"),
+        ("partial", "length", "failed", "output_incomplete"),
+        ("partial", "content_filter", "failed", "output_incomplete"),
+        ("partial", "sensitive", "failed", "output_incomplete"),
+    ] {
         let (url, task) = server(Router::new().route(
             "/v1/chat/completions",
             post(move || async move {
@@ -415,8 +423,82 @@ async fn empty_and_truncated_responses_are_not_success() {
         let token = e.register_job("j", &profile(&url), 60).unwrap();
         e.submit("j", &token, request("op")).await.unwrap();
         let op = terminal(e, "j", &token, "op").await;
-        assert_eq!(op.status, "ambiguous");
-        assert!(op.result.unwrap()["content"].is_null());
+        assert_eq!(op.status, status, "{finish}");
+        assert_eq!(op.error_code.as_deref(), Some(code), "{finish}");
+        let result = op.result.unwrap();
+        assert!(result["content"].is_null());
+        assert_eq!(result["finish_reason"], json!(finish));
+        task.abort();
+    }
+}
+
+#[tokio::test]
+async fn truncated_stream_is_output_incomplete_and_keeps_the_job_open() {
+    let events = "data: {\"choices\":[{\"delta\":{\"content\":\"半截\"},\"finish_reason\":\"length\"}]}\n\ndata: [DONE]\n\n";
+    let (url, task) =
+        server(Router::new().route("/v1/chat/completions", post(move || async move { events })))
+            .await;
+    let f = Fixture::new();
+    let e = &f.executor;
+    let mut p = profile(&url);
+    p.stream = Some(true);
+    let token = e.register_job("j", &p, 60).unwrap();
+    e.submit("j", &token, request("op")).await.unwrap();
+    let op = terminal(e, "j", &token, "op").await;
+    assert_eq!(op.status, "failed");
+    assert_eq!(op.error_code.as_deref(), Some("output_incomplete"));
+    let result = op.result.unwrap();
+    assert!(result["content"].is_null());
+    assert_eq!(result["finish_reason"], json!("length"));
+    // 不是 ambiguous：没有暂停整份，别的单元照常能提交
+    assert!(e.submit("j", &token, request("other")).await.is_ok());
+    task.abort();
+}
+
+#[tokio::test]
+async fn request_too_long_is_named_and_not_retried() {
+    for (status, body, code) in [
+        (
+            StatusCode::BAD_REQUEST,
+            r#"{"type":"error","error":{"type":"invalid_request_error","message":"prompt is too long: 210000 tokens > 200000 maximum"}}"#,
+            "prompt_too_long",
+        ),
+        (
+            StatusCode::PAYLOAD_TOO_LARGE,
+            r#"{"type":"error","error":{"type":"request_too_large","message":"Request exceeds the maximum size"}}"#,
+            "request_too_large",
+        ),
+        (
+            StatusCode::BAD_REQUEST,
+            r#"{"error":{"code":"1261","message":"Prompt 超长"}}"#,
+            "1261",
+        ),
+    ] {
+        let count = Arc::new(AtomicUsize::new(0));
+        let seen = count.clone();
+        let (url, task) = server(Router::new().route(
+            "/v1/chat/completions",
+            post(move || {
+                let seen = seen.clone();
+                async move {
+                    seen.fetch_add(1, Ordering::SeqCst);
+                    (status, body).into_response()
+                }
+            }),
+        ))
+        .await;
+        let f = Fixture::new();
+        let e = &f.executor;
+        let token = e.register_job("j", &profile(&url), 60).unwrap();
+        e.submit("j", &token, request("op")).await.unwrap();
+        let op = terminal(e, "j", &token, "op").await;
+        assert_eq!(op.status, "failed", "{code}");
+        assert_eq!(op.error_code.as_deref(), Some("request_too_long"), "{code}");
+        assert_eq!(count.load(Ordering::SeqCst), 1, "太长不重试");
+        let result = op.result.unwrap();
+        assert_eq!(result["upstream_status"], json!(status.as_u16()));
+        assert_eq!(result["upstream_code"], json!(code));
+        assert!(!result.to_string().contains("210000"), "响应体原文不进回执");
         task.abort();
     }
 }

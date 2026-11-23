@@ -19,6 +19,9 @@ from retainpdf_translation_classic.llm.shared.orchestration.batched_plain_single
 from retainpdf_translation_classic.llm.shared.orchestration.identical_copy import worth_retrying_identical_copy
 from retainpdf_translation_classic.llm.shared.orchestration.metadata import should_store_translation_result
 from retainpdf_translation.llm.shared.provider_runtime import is_transport_error
+from retainpdf_translation.llm.shared.output_limits import ModelOutputIncomplete
+from retainpdf_translation.llm.shared.output_limits import UpstreamRequestTooLong
+from retainpdf_translation_classic.llm.shared.orchestration.batched_plain_request import emit_batch_output_limit_split
 from retainpdf_translation_classic.llm.providers.deepseek.translation_client import translate_batch_once
 
 
@@ -70,6 +73,11 @@ def _try_direct_batched_plain(
         )
         return result, copied, not copied, True
     except Exception as exc:
+        if isinstance(exc, (UpstreamRequestTooLong, ModelOutputIncomplete)):
+            # 单次请求太长 / 回答不完整：拆成单块再发（单块还太长就保留原文，见 output_limit_failures）
+            emit_batch_output_limit_split(uncached_batch, diagnostics=diagnostics, exc=exc)
+            if request_label:
+                print(f"{request_label}: batched plain {type(exc).__name__}, split into single items: {exc}", flush=True)
         if is_transport_error(exc):
             emit_batch_transport_single_retry(uncached_batch, diagnostics=diagnostics, exc=exc)
             if request_label:

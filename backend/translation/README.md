@@ -453,6 +453,23 @@ repair profile：
   worker 写到报错上给任务失败的 `upstream`）规则相同，
   改一处要改另一处。
 
+- 回答不完整、单次请求太长（`llm/shared/output_limits.py`，2026-11-23）：
+  - HTTP 200 但译文没写完——Chat `finish_reason` 是 `length` / `content_filter`（智谱另有 `sensitive`、`network_error`、
+    `model_context_window_exceeded`，DeepSeek 另有 `insufficient_system_resource`），Responses `status=incomplete`（`max_output_tokens`、
+    `content_filter`，其余原因同样算），Anthropic `stop_reason` 是 `max_tokens` / `model_context_window_exceeded` / `refusal`——
+    以前有文字就收下，现在抛 `ModelOutputIncomplete`（`ValueError`，带半截文本）：批量请求留下已经用 `<<<END>>>` 写完的块、其余拆单块重翻；
+    单块和「回答解析不了」一样重试一次，仍不完整就记失败（`degradation_reason=model_output_truncated` / `model_output_content_filter`，
+    `fallback_to=retry_required`），等收尾补救，补救也不成保留原文记死信。
+  - 单次请求太长——Anthropic 400「prompt is too long」/ 413 `request_too_large`、OpenAI `context_length_exceeded`（兼容接口的
+    「maximum context length」）、智谱 1261、千问 `InternalError.Algo.InvalidParameter`——抛 `UpstreamRequestTooLong`（`HTTPError`，
+    状态码照旧）：不换思考字段、不退 json_object 重发；批量拆成单块再发，单块还太长就保留原文记死信（`degradation_reason=request_too_long`，
+    不再重试、不挡导出）。不记凭据、不让整份翻译停下。
+  - Rust 执行器（`model_executor/limits.rs`，规则同上）照旧 fail-closed、不在 Python 里拆批：回答不完整的操作记 `failed` +
+    `output_incomplete`（以前是 `ambiguous`），回执带 `finish_reason`；太长记 `failed` + `request_too_long`，`upstream_code` 是认出的码。
+    worker 抛 `ExecutorOutputIncomplete` / `ExecutorRequestTooLong`，任务失败的说明写明原因。
+  - agent 引擎：OpenAI 协议下回答不完整换成 `stop_reason=max_tokens` 交给 agent（最后一块当没交、重翻）；Anthropic 下
+    `model_context_window_exceeded` 和 `max_tokens` 一样处理。请求太长 agent 不拆页，照旧按 400 失败。
+
 ## 模式说明
 
 - `fast`

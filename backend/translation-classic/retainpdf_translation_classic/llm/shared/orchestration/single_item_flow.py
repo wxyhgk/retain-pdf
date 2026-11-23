@@ -20,6 +20,10 @@ from retainpdf_translation.llm.shared.control_context import TranslationControlC
 from retainpdf_translation_classic.llm.shared.orchestration.formula_segment_path import try_formula_segment_path
 from retainpdf_translation_classic.llm.shared.orchestration.metadata import attach_result_metadata
 from retainpdf_translation_classic.llm.shared.orchestration.metadata import restore_runtime_term_tokens
+from retainpdf_translation_classic.llm.shared.orchestration.output_limit_failures import model_output_incomplete_payload
+from retainpdf_translation_classic.llm.shared.orchestration.output_limit_failures import request_too_long_payload
+from retainpdf_translation.llm.shared.output_limits import ModelOutputIncomplete
+from retainpdf_translation.llm.shared.output_limits import UpstreamRequestTooLong
 from retainpdf_translation_classic.llm.shared.orchestration.plain_text_retry import PlainTextRetryRuntime
 from retainpdf_translation_classic.llm.shared.orchestration.plain_text_retry import run_plain_text_attempts
 from retainpdf_translation_classic.llm.shared.orchestration.route_selection import select_single_item_route
@@ -121,6 +125,42 @@ def translate_single_item_plain_text_with_retries(
     diagnostics: TranslationDiagnosticsCollector | None = None,
     allow_transport_tail_defer: bool = False,
     deps: SingleItemFlowDeps | None = None,
+) -> dict[str, dict[str, str]]:
+    """单块翻译。各条路径都没收下的「回答不完整」记这一块失败、「单次请求太长」保留原文记死信（output_limit_failures），
+    不往上抛。"""
+    try:
+        return _translate_single_item_plain_text_with_retries(
+            item,
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            request_label=request_label,
+            context=context,
+            diagnostics=diagnostics,
+            allow_transport_tail_defer=allow_transport_tail_defer,
+            deps=deps,
+        )
+    except UpstreamRequestTooLong as exc:
+        return request_too_long_payload(
+            item, exc, context=context, diagnostics=diagnostics, request_label=request_label
+        )
+    except ModelOutputIncomplete as exc:
+        return model_output_incomplete_payload(
+            item, exc, context=context, diagnostics=diagnostics, request_label=request_label
+        )
+
+
+def _translate_single_item_plain_text_with_retries(
+    item: dict,
+    *,
+    api_key: str,
+    model: str,
+    base_url: str,
+    request_label: str,
+    context: TranslationControlContext,
+    diagnostics: TranslationDiagnosticsCollector | None,
+    allow_transport_tail_defer: bool,
+    deps: SingleItemFlowDeps | None,
 ) -> dict[str, dict[str, str]]:
     context = context.scoped_to_item(item)
     item = item_with_runtime_hard_glossary(item, context.glossary_entries)

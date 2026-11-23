@@ -1,5 +1,6 @@
 //! Job-scoped model execution. This module is deliberately not a generic proxy.
 //! Public application routes must never accept a worker-supplied upstream/key.
+mod limits;
 mod policy;
 #[cfg(test)]
 mod tests;

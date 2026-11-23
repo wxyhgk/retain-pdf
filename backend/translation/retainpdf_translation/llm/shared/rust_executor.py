@@ -22,6 +22,8 @@ from retainpdf_base.upstream_wait import begin_upstream_wait
 from retainpdf_base.upstream_wait import build_wait_info
 from retainpdf_base.upstream_wait import end_upstream_wait
 from retainpdf_translation.core.execution_policy import ExecutorError
+from retainpdf_translation.llm.shared.output_limits import CHAT_FINISH_REASONS
+from retainpdf_translation.llm.shared.output_limits import KIND_LABELS
 
 
 class AmbiguousModelRequest(ExecutorError):
@@ -50,6 +52,49 @@ _FAILED_OPERATION_ERRORS = {
     "payment_required": (ExecutorQuotaExhausted, "上游账户余额不足（HTTP 402）"),
     "authentication_failed": (ExecutorAccessDenied, "上游拒绝了这个 API Key（鉴权失败，或套餐不能用这个模型）"),
 }
+
+
+class ExecutorOutputIncomplete(ExecutorError):
+    """上游回了 200 但回答不完整（finish_reason 是 length / content_filter 等，Rust 执行器判断，回执带 ``finish_reason``）。
+
+    执行器这条路照旧 fail-closed：不收半截译文、不另起请求重翻（同一个单元的 repair 只许跟在成功的 primary 后面），
+    整份停下，报错写明是截断还是被内容过滤。"""
+
+    failure_summary = "模型回答不完整（输出到上限被截断或被内容过滤），Rust 执行器没有收下半截译文"
+
+
+class ExecutorRequestTooLong(ExecutorError):
+    """单次请求太长（400 / 413，Rust 执行器按状态码和响应体认，回执的 ``upstream_code`` 是认出的码）。
+
+    执行器这条路照旧 fail-closed（不在 Python 里拆批另起请求），整份停下，报错写明是请求太长、不是配置错误。"""
+
+    failure_summary = "单次请求太长，超过了模型的上下文或请求体上限"
+    failure_suggestion = "在设置里调小每批的块数，或换上下文更长的模型后重试。"
+
+
+def _incomplete_operation_error(error_code: str, operation: dict) -> ExecutorError | None:
+    """回答不完整 / 单次请求太长这两种失败（``output_limits`` 的规则，Rust 侧 ``model_executor/limits.rs``）。"""
+    receipt = operation.get("result") if isinstance(operation.get("result"), dict) else {}
+    if error_code == "output_incomplete":
+        reason = str(receipt.get("finish_reason") or "")
+        kind = CHAT_FINISH_REASONS.get(reason, "incomplete")
+        error = ExecutorOutputIncomplete(
+            f"模型回答不完整（finish_reason={reason or '?'}：{KIND_LABELS.get(kind, KIND_LABELS['incomplete'])}），"
+            "半截译文不收；已停止，不再重试"
+        )
+        error.kind = kind
+        error.finish_reason = reason
+        return error
+    if error_code == "request_too_long":
+        status, code = receipt.get("upstream_status"), receipt.get("upstream_code")
+        error = ExecutorRequestTooLong(
+            f"单次请求太长（HTTP {status or '?'}，{code or 'request_too_long'}），超过模型上下文或请求体上限；"
+            "不是配置错误，已停止，不再重试"
+        )
+        error.status_code = status if isinstance(status, int) else None
+        error.provider_code = str(code or "")
+        return error
+    return None
 
 
 def _tag_receipt_upstream(error: ExecutorError, operation: dict) -> ExecutorError:
@@ -185,6 +230,9 @@ class RustModelExecutorClient:
                     )
                 if state == "failed":
                     error_code = str(operation.get("error_code") or "")
+                    limit_error = _incomplete_operation_error(error_code, operation)
+                    if limit_error is not None:
+                        raise _tag_receipt_upstream(limit_error, operation)
                     known = _FAILED_OPERATION_ERRORS.get(error_code)
                     if known is not None:
                         error_class, reason = known
