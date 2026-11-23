@@ -348,14 +348,21 @@ function buildModel(job, options = {}) {
   stats.sourceBodyTextFont = Number(sourceBodyTextFont.toFixed(2));
   // Retain: a list OCR cut into one box per item becomes one stream, and body
   // paragraphs set in a size apart from the body's are set on their own
-  // (list-groups.js). options.listGroups / options.sourceSizeClasses: false turn them off.
+  // (list-groups.js). options.listGroups: false turns list grouping off.
+  // Setting paragraphs apart by source size is off unless options.sourceSizeClasses
+  // is true (2026-11-23): a paragraph continued across boxes has to stay in the body
+  // group, so a section set smaller than the body came out half at its own size and
+  // half at the body's (a JACS methods section: two paragraphs 9 pt, the third 10 pt),
+  // and set apart it lost the body's fill. Doing it right needs the body pass to size
+  // such paragraphs as a class of their own, continued ones included.
+  const sizeClasses = retain && options.sourceSizeClasses === true;
   if (retain && options.listGroups !== false) {
     const groups = [];
-    for (const page of pages) groups.push(...ListGroups.groupLists(page, pageOrders.get(page.index) || [], paint, { bodySourceSize: sourceBodyTextFont, bodyLineHeight: options.bodyLineHeight }));
+    for (const page of pages) groups.push(...ListGroups.groupLists(page, pageOrders.get(page.index) || [], paint, { bodySourceSize: sourceBodyTextFont, bodyLineHeight: options.bodyLineHeight, sizeRuns: sizeClasses }));
     stats.listGroups = groups.length;
     stats.listItemsGrouped = groups.reduce((sum, group) => sum + group.members.length, 0);
   }
-  if (retain && options.sourceSizeClasses !== false) {
+  if (sizeClasses) {
     // Paragraphs continued across boxes stay: continuation-balance cuts them among body streams.
     const flowIds = new Set([...pageOrders.values()].flat().filter(entry => entry.flow).map(entry => String(entry.id)));
     const { detached } = ListGroups.separateSourceSizes({ pages }, sourceBodyTextFont, id => !flowIds.has(String(id)) && detachBody({ pages }, id));

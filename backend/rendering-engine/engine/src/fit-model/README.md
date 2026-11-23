@@ -212,9 +212,15 @@ What the switch selects:
   under the other within 1.6 em, with nothing else inside their union, become
   one stream: the union box, one paragraph per item, the source's median gap
   between items, one cover. They are sized together and a long item uses the
-  room a short one leaves. Then every body stream whose source size is apart
-  from the body's leaves the body group (`detachBody`, marked `sizeClass`) and
-  follows its own source size with the body's leading (step 6 below).
+  room a short one leaves. With `sourceSizeClasses: true` (off by default since
+  2026-11-23) paragraphs of one source size apart from the body's are grouped
+  the same way and every body stream of such a size leaves the body group
+  (`detachBody`, marked `sizeClass`) and follows its own source size with the
+  body's leading (step 6 below). It is off because a paragraph continued across
+  boxes must stay in the body group: a JACS methods section set at 9 pt came out
+  two paragraphs at 9 pt and the third at the body's 10 pt, and the ones set
+  apart lost the body's fill. Doing it right needs the body pass to size such
+  paragraphs as a class of their own, continued ones included.
   Paragraphs continued across boxes (`translations[].flow`) take part in
   neither. The report lists a group's item ids under `members`; `adapter`
   counts `listGroups`, `listItemsGrouped`, `sourceSizeDetached`.
