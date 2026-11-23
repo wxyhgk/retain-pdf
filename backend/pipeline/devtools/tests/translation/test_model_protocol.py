@@ -492,6 +492,58 @@ def test_responses_structured_output_goes_to_text_format_and_falls_back():
     assert "response_format" not in first
 
 
+def test_responses_json_object_fallback_asks_for_json_inside_input():
+    """#163：退到 json_object 时 OpenAI 只在 input 里找 json 这个词（instructions 不算），否则 400。退下来的那次在 input
+    最前面加一条 developer 消息要 JSON，并附上原来的 schema；系统提示照旧在 instructions。"""
+    schema = {"type": "object", "properties": {"t": {"type": "string"}}, "required": ["t"], "additionalProperties": False}
+    rejected = _response(400, text='{"error":{"message":"Invalid schema for response_format"}}')
+    _, session = _responses_call(
+        [rejected, _response(payload=RESPONSES_OK)],
+        messages=[{"role": "system", "content": "你是译者。"}, {"role": "user", "content": "Translate A"}],
+        response_format={"type": "json_schema", "json_schema": {"name": "batch", "schema": schema, "strict": True}},
+    )
+    first, second = (call.kwargs["json"] for call in session.post.call_args_list)
+    assert first["input"] == [{"role": "user", "content": "Translate A"}], "the json_schema request is unchanged"
+    assert second["instructions"] == first["instructions"] == "你是译者。"
+    assert second["text"] == {"format": {"type": "json_object"}}
+    developer, user = second["input"]
+    assert user == {"role": "user", "content": "Translate A"}
+    assert developer["role"] == "developer"
+    assert "json" in developer["content"].lower()
+    assert developer["content"].startswith(model_wire.RESPONSES_JSON_OBJECT_NOTE)
+    assert '"t": {"type": "string"}' in developer["content"], "the schema dropped from text.format goes into the note"
+
+
+def test_responses_json_object_from_the_start_also_asks_for_json_inside_input():
+    _, session = _responses_call([_response(payload=RESPONSES_OK)], response_format={"type": "json_object"})
+    body = session.post.call_args.kwargs["json"]
+    assert body["text"] == {"format": {"type": "json_object"}}
+    assert body["input"] == [
+        {"role": "developer", "content": model_wire.RESPONSES_JSON_OBJECT_NOTE},
+        {"role": "user", "content": "x"},
+    ]
+
+
+def test_responses_without_json_object_add_no_developer_message():
+    for response_format in (None, {"type": "json_schema", "json_schema": {"name": "r", "schema": {"type": "object"}}}):
+        body = model_wire.responses_body(model="m", messages=[{"role": "user", "content": "x"}], temperature=0.2,
+                                         response_format=response_format, thinking_fields={})
+        assert body["input"] == [{"role": "user", "content": "x"}]
+
+
+def test_a_rejected_responses_request_logs_its_text_format():
+    """#163：Responses 的结构化输出在 text.format，日志以前只看 response_format，印成 none。"""
+    rejected = _response(400, text='{"error":{"message":"bad"}}')
+    with pytest.raises(requests.HTTPError) as caught:
+        _responses_call([rejected], response_format={"type": "json_object"}, max_attempts=1)
+    assert "text.format=json_object" in str(caught.value)
+    assert "response_format=none" not in str(caught.value)
+    with pytest.raises(requests.HTTPError) as caught:
+        _call([rejected], messages=[{"role": "user", "content": "x"}], model="m",
+              base_url="https://llm.example.com/v1", response_format={"type": "json_object"}, max_attempts=1)
+    assert "response_format=json_object" in str(caught.value)
+
+
 @pytest.mark.parametrize("payload,needle", [
     ({"status": "incomplete", "incomplete_details": {"reason": "max_output_tokens"},
       "output": [{"type": "reasoning", "summary": []}]}, "max_output_tokens"),

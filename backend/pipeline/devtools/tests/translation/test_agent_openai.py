@@ -77,7 +77,16 @@ def test_a_tool_request_asks_for_json_and_comes_back_as_tool_use() -> None:
     response = _transport(chat)(_body(tool=READING_TOOL))
 
     call = chat.calls[0]
-    assert call["response_format"] == {"type": "json_schema", "json_schema": {"name": "submit_reading", "schema": READING_TOOL["input_schema"]}}
+    assert call["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "submit_reading",
+            # 可选字段换成必填、可为 null（OpenAI strict 的写法，#163）
+            "schema": {"type": "object", "properties": {"genre": {"type": ["string", "null"]}},
+                       "additionalProperties": False, "required": ["genre"]},
+            "strict": True,
+        },
+    }
     assert call["request_label"] == "agent-read" and call["protocol"] == "openai_responses"
     assert call["api_key"] == "sk-job" and call["model"] == "gpt-test"
     system = call["messages"][0]
@@ -97,6 +106,14 @@ def test_a_plain_request_comes_back_as_text_without_anthropic_only_fields() -> N
                          "request_label", "protocol", "thinking"}
     assert all("cache_control" not in json.dumps(m) for m in call["messages"])
     assert response["content"] == [{"type": "text", "text": "@@ p001-b001\n译文"}]
+
+
+def test_nulls_for_optional_fields_come_back_as_missing_fields() -> None:
+    """strict 下可选字段交回 null：去掉这个键，agent 看到的和以前「没写」一样（#163）。"""
+    answer = json.dumps({"genre": "book", "domain": None,
+                         "terms": [{"source": "field", "target": "田野", "category": "term", "chapters": None, "note": None}]})
+    response = _transport(Chat(answer))(_body(tool=READING_TOOL))
+    assert response["content"][0]["input"] == {"genre": "book", "terms": [{"source": "field", "target": "田野", "category": "term"}]}
 
 
 def test_a_tool_answer_that_is_not_json_is_not_a_tool_call() -> None:
