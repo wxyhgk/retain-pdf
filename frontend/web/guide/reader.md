@@ -1,5 +1,22 @@
 # 阅读和修改译文
 
+书的详情里点 ![对照阅读](icons/read-compare.svg) **对照阅读** 打开。
+
+| 想要 | 怎么做 |
+| --- | --- |
+| 只看原文 / 对照 / 只看译文 | 顶部三个切换，或按 `1` `2` `3` |
+| 在书里找字 | 底部 ![搜索](icons/search.svg)，或 `⌘F` / `Ctrl+F` |
+| 记住这一页 | 底部 ![书签](icons/bookmark.svg) |
+| 复制一段 | 鼠标停在那段上，点 ![复制](icons/copy.svg) |
+| 改一段译文 | 鼠标停在译文那段上，点 ![改](icons/edit.svg)（或按 `E`），改完点「保存」，再点右下「重新排版」 |
+| 看文字版（Markdown） | 右下角 ![工具](icons/grid.svg) → Markdown |
+| 画线做标记 | 右下角 ![工具](icons/grid.svg) → 画笔（或按 `P`） |
+| 下载 PDF | 右上角 ![下载](icons/download.svg) |
+| 看所有快捷键 | 按 `H` |
+
+<details>
+<summary>详细说明</summary>
+
 ## 打开阅读页
 
 在图书馆点一本书，打开 [书的详情](book-detail.md)，左边有两个按钮：
@@ -118,3 +135,5 @@
 | 快捷键说明 | `H` 或 `?` |
 
 光标在输入框里时，这些快捷键不会触发。
+
+</details>

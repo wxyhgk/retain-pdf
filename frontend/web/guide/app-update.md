@@ -1,5 +1,13 @@
 # 更新
 
+桌面版才有。
+
+- **Mac、Windows**：自动下载新版本，提示「重启即可更新」时重启一下就行。想马上查，![设置](icons/settings.svg) → **更新** → **检查更新**。
+- **Linux**：不会自动更新，去 [GitHub Releases](https://github.com/wxyhgk/retain-pdf/releases) 下载新的 `.deb` 再装一遍。
+
+<details>
+<summary>详细说明</summary>
+
 只有桌面版有。
 
 - **macOS、Windows**：软件会自己检查新版本并在后台下载，下好后提示「新版本已下载，重启即可更新」，重启一下就是新版本。
@@ -14,3 +22,5 @@
 连不上 GitHub 时会提示「暂时无法连接 GitHub Releases」，等网络好了再点一次。
 
 这一栏下面还有「命令行工具」，见 [外观和命令行](settings.md#命令行工具)。
+
+</details>

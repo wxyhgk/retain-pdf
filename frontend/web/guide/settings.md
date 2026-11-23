@@ -1,10 +1,19 @@
 # 外观和命令行
 
+![外观](images/settings/appearance.jpg)
+
+| 想要 | 点哪里 |
+| --- | --- |
+| 换配色（含深色） | ![设置](icons/settings.svg) → ![外观](icons/appearance.svg) **外观** |
+| 换译文 PDF 的字体 | 设置 → 外观 → **渲染字体**（一般别改） |
+| 在终端里用 `retainpdf` 命令 | 设置 → 更新 → ![命令行](icons/terminal.svg) **安装命令行工具**（桌面版） |
+
+<details>
+<summary>详细说明</summary>
+
 ## 外观
 
 **设置 → 外观**，改完立即生效，只影响这台电脑。
-
-![外观](images/settings/appearance.jpg)
 
 ### 配色
 
@@ -29,3 +38,5 @@
 2. 打开终端，试试 `retainpdf status`。
 
 终端说找不到命令时，按提示把那一行 `export PATH=…` 加到 `~/.zshrc`，再开一个新终端。
+
+</details>
