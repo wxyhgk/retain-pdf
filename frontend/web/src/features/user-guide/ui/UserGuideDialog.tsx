@@ -70,6 +70,10 @@ export function UserGuideDialog({ open, target, onNavigate, onOpenChange }: User
     const article = articleRef.current;
     if (!article) return;
     const heading = target.anchor ? [...article.querySelectorAll("[id]")].find((node) => node.id === target.anchor) : null;
+    // 标题在收起的「更多说明」里时，先展开再滚过去。
+    for (let node = heading?.parentElement; node && node !== article; node = node.parentElement) {
+      if (node.tagName === "DETAILS") node.setAttribute("open", "");
+    }
     if (heading && typeof heading.scrollIntoView === "function") heading.scrollIntoView({ block: "start" });
     else article.scrollTop = 0;
   }, [state, target.anchor]);

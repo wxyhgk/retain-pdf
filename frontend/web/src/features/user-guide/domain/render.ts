@@ -1,5 +1,5 @@
 // 把说明书的一页 Markdown 画成 HTML：标题带锚点，页内链接换成 data-guide-page（点了在说明书里翻页），
-// 外部链接新窗口打开，图片拼上说明书目录。内容是跟着软件一起发的 guide/*.md，不是用户输入，所以不另做清洗。
+// 外部链接新窗口打开，图片拼上说明书目录，icons/ 下的小图标排在文字里。<details> 这样的 HTML 原样留着（「更多说明」默认收起）。内容是跟着软件一起发的 guide/*.md，不是用户输入，所以不另做清洗。
 
 import { Marked, type Tokens } from "marked";
 import { headingSlug, resolveGuideAsset, resolveGuideLink } from "./guide-pages.js";
@@ -28,7 +28,10 @@ export function renderGuidePage(markdown: string, page: string, baseUrl: string)
       },
       image(token: Tokens.Image) {
         const src = resolveGuideAsset(token.href, baseUrl);
-        return `<img src="${escapeAttr(src)}" alt="${escapeAttr(token.text || "")}" loading="lazy">`;
+        const alt = escapeAttr(token.text || "");
+        // icons/ 下的是正文里的小图标（和软件界面同一套），跟着文字排在一行里。
+        if (/^(\.\/)?icons\//.test(token.href)) return `<img class="guide-icon" src="${escapeAttr(src)}" alt="${alt}">`;
+        return `<img src="${escapeAttr(src)}" alt="${alt}" loading="lazy">`;
       },
     },
   });

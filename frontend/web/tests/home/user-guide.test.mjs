@@ -114,11 +114,22 @@ test("弹窗：点目录翻页，点正文里的链接翻到那一页的那个�
     await waitFor(() => article()?.getAttribute("data-guide-current") === "lan-share" && article().textContent.includes("重置访问码"), "点目录翻到局域网共享");
 
     click(dom, dom.window.document.querySelector('[data-guide-nav="ingest"]'));
-    await waitFor(() => article()?.querySelector('a[data-guide-page="book-detail"][data-guide-anchor="翻译存档的书"]'), "添加 PDF 页里有指到书的详情的链接");
-    click(dom, article().querySelector('a[data-guide-page="book-detail"][data-guide-anchor="翻译存档的书"]'));
-    await waitFor(() => article()?.getAttribute("data-guide-current") === "book-detail" && article().querySelector('[id="翻译存档的书"]'), "点正文里的链接翻到书的详情");
-    const image = article().querySelector("img");
-    assert.equal(image.getAttribute("src"), "http://127.0.0.1:40001/guide/images/book-detail/book-detail.jpg");
+    const modelLink = () => article()?.querySelector('a[data-guide-page="credentials"][data-guide-anchor="模型"]');
+    await waitFor(() => modelLink(), "添加 PDF 页（收起的「每个选项的意思」里）有指到接口设置「模型」的链接");
+    assert.match(article().querySelector("img").getAttribute("src"), /\/guide\/images\/ingest\/add-pdf\.webp$/, "页首是操作动画");
+    assert.ok(article().querySelector("img.guide-icon[src$='/guide/icons/plus.svg']"), "步骤里的小图标");
+    click(dom, modelLink());
+    await waitFor(() => article()?.getAttribute("data-guide-current") === "credentials" && article().querySelector('[id="模型"]'), "点正文里的链接翻到接口设置的「模型」");
+    const image = article().querySelector("img:not(.guide-icon)");
+    assert.equal(image.getAttribute("src"), "http://127.0.0.1:40001/guide/images/credentials/settings-api.jpg");
+
+    // 标题在收起的「更多说明」里时，跳过去要先展开。
+    click(dom, dom.window.document.querySelector('[data-guide-nav="glossaries"]'));
+    const termsLink = () => article()?.querySelector('a[data-guide-page="book-detail"][data-guide-anchor="术语"]');
+    await waitFor(() => termsLink(), "术语表页有指到书的详情「术语」的链接");
+    click(dom, termsLink());
+    await waitFor(() => article()?.getAttribute("data-guide-current") === "book-detail" && article().querySelector('[id="术语"]'), "翻到书的详情");
+    await waitFor(() => article().querySelector('[id="术语"]').closest("details")?.hasAttribute("open"), "「术语」所在的收起块被展开了");
 
     root.unmount();
   } finally {
