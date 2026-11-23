@@ -7,6 +7,9 @@ Linux 包里的 Python 是从构建机 actions/setup-python 的工具缓存整�
 （Ubuntu 26.04，`_ssl` 报 undefined symbol: _PyModule_Add——包里的 lib-dynload 是 3.11.18 的，
 系统那份 libpython 更旧）。
 
+2026-11-23 起包里的 Python 换成 python-build-standalone（解释器静态带着 libpython，RUNPATH 本来就是
+`$ORIGIN`），这个脚本留作兜底：relocate 去掉新版本万一带进来的绝对路径，check 照旧把关。
+
   relocate：把指向原安装目录的 RUNPATH 换成 `$ORIGIN/...`（启动器 → `$ORIGIN/../lib`），
             其他写死的绝对路径去掉；要在用包里的 python3 跑任何东西之前做。
   check：   包里每个 ELF 的 RUNPATH/RPATH 只许是 `$ORIGIN` 开头；再清掉 LD_LIBRARY_PATH
@@ -151,9 +154,34 @@ def relocate(bundle_root: Path, original_root: Path) -> int:
     return 0
 
 
+def escaping_symlinks(bundle_root: Path) -> list[str]:
+    """包里指向绝对路径、或指出包外的符号链接（相对包根的路径 -> 链接内容）。
+
+    桌面打包的 prepare-app 用 Node 的 fs.cpSync 拷 Python，会把相对链接改写成指向构建机源目录的绝对路径：
+    python-build-standalone 的 bin/python3 -> python3.11 到了用户机器上就成了断链（2026-11-23 Linux 试跑，
+    deb 里 1044 个链接全是 /home/runner/... ）。构建机上那个路径存在，跑起来不出错，只能按链接内容查。
+    """
+    bundle_root = bundle_root.resolve()
+    bad: list[str] = []
+    links: list[Path] = []
+    for directory, dirnames, filenames in os.walk(bundle_root, followlinks=False):
+        for name in [*dirnames, *filenames]:
+            candidate = Path(directory) / name
+            if candidate.is_symlink():
+                links.append(candidate)
+    for path in sorted(links):
+        target = os.readlink(path)
+        resolved = (path.parent / target).resolve() if not os.path.isabs(target) else Path(target)
+        if os.path.isabs(target) or (bundle_root != resolved and bundle_root not in resolved.parents):
+            bad.append(f"{path.relative_to(bundle_root)} -> {target}")
+    return bad
+
+
 def check(bundle_root: Path, python: Path | None) -> int:
     bundle_root = bundle_root.resolve()
     problems: list[str] = []
+    for link in escaping_symlinks(bundle_root):
+        problems.append(f"符号链接指向绝对路径或包外：{link}")
     elf_count = 0
     for path in iter_elf_files(bundle_root):
         elf_count += 1

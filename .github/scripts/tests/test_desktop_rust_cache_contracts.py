@@ -60,7 +60,14 @@ def test_warmup_builds_exactly_like_release(release_job, warm_job, shared_key, c
     warm = _steps(_job(WARMUP, warm_job))
     # cargo 命令（target / features / --locked / shell）逐字一致，否则缓存对不上。
     assert warm[cargo_step] == release[cargo_step]
-    assert "cargo build --release --locked" in release[cargo_step]
+    # Linux 用 cargo zigbuild 按 glibc 基线链接（test_check_linux_glibc_baseline 查后缀）。
+    assert re.search(r"cargo (build|zigbuild) --release --locked", release[cargo_step])
+    # zigbuild 要先装上；装法两边一致。
+    if "cargo zigbuild" in release[cargo_step]:
+        assert warm["Install cargo-zigbuild"] == release["Install cargo-zigbuild"]
+        for steps in (release, warm):
+            names = list(steps)
+            assert names.index("Install cargo-zigbuild") < names.index(cargo_step)
     # 工具链安装（含 Windows 的 targets）一致：rustc 版本进缓存 key。
     assert warm["Setup Rust toolchain"] == release["Setup Rust toolchain"]
     # setup-python 会改 PATH / PKG_CONFIG_PATH 等，预热时同样装上，保持环境一致。

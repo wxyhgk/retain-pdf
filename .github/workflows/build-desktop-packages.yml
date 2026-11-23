@@ -34,6 +34,14 @@ env:
   TYPST_VERSION: "0.15.1"
   CMARKER_VERSION: "0.1.10"
   MITEX_VERSION: "0.2.7"
+  # Linux 安装包能装的最旧系统：包里每个 ELF 要的 glibc 都不许超过它（#162 之后）。
+  # 2.28 = Debian 10 / RHEL 8 / Ubuntu 18.10 一代；Electron 44 自己要 2.25，manylinux_2_28 的轮子正好 2.28。
+  # 改它要同时改两处 cargo zigbuild 的 --target 后缀（这里和 desktop-rust-cache-warmup.yml），契约测试会查。
+  LINUX_GLIBC_BASELINE: "2.28"
+  # Linux 包里的 Python 用 python-build-standalone（不依赖系统库、glibc 2.17 起），不再拷构建机工具缓存那份。
+  # 换版本：从 https://github.com/astral-sh/python-build-standalone/releases 的 SHA256SUMS 里抄对应文件的校验和。
+  LINUX_PYTHON_STANDALONE_URL: "https://github.com/astral-sh/python-build-standalone/releases/download/20261110/cpython-3.11.18%2B20261110-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz"
+  LINUX_PYTHON_STANDALONE_SHA256: "3288c54cea3db350052019b3f8b558dd8a3da8afa6fda573f5fd2bcb37635b4a"
 
 jobs:
   build-windows-release:
@@ -306,6 +314,8 @@ jobs:
           cache: "npm"
           cache-dependency-path: package-lock.json
 
+      # Linux 上这份 Python 只给构建机跑脚本、装 cargo-zigbuild 用；装进安装包的是下面
+      # 「Assemble bundled Python runtime」下载的 python-build-standalone。步骤名和预热 workflow 共用（契约测试）。
       - name: Setup Python runtime for desktop bundle
         uses: actions/setup-python@v7
         with:
@@ -318,6 +328,12 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
+      # Rust 用 zig 当链接器，按 glibc 2.28 的符号版本链接（构建机是 26.04 一代，直接 cargo build
+      # 出来的 rust_api 要 GLIBC_2.39，22.04、Debian 12 起不来）。和预热 workflow 逐字一致。
+      - name: Install cargo-zigbuild
+        shell: bash
+        run: python -m pip install "cargo-zigbuild==0.24.1" "ziglang==0.15.2"
+
       # 只读 main 上由 desktop-rust-cache-warmup.yml 预热的依赖缓存：tag 写的缓存
       # 下一个 tag 读不到，写了只白占配额。shared-key 与 cargo build 命令必须和
       # 预热 workflow 保持一致（契约测试会检查）。
@@ -328,9 +344,11 @@ jobs:
           workspaces: ". -> target"
           save-if: false
 
+      # 产物在 target/x86_64-unknown-linux-gnu/release/（不是 target/release/），
+      # 「Build Linux package」用 RUST_API_BINARY 等环境变量告诉 prepare-app。
       - name: Build Rust API for Linux
         shell: bash
-        run: cargo build --release --locked --workspace --bins --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
+        run: cargo zigbuild --release --locked --workspace --bins --target x86_64-unknown-linux-gnu.2.28 --manifest-path "$RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
 
       - name: Install Linux packaging dependencies
         shell: bash
@@ -383,28 +401,53 @@ jobs:
       - name: Assemble bundled Python runtime
         shell: bash
         run: |
-          python_bin="$(python3 -c 'import sys; print(sys.executable)')"
-          python_root="$(PYTHON_BIN="$python_bin" python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          python_bin = Path(os.environ["PYTHON_BIN"]).resolve()
-          print(python_bin.parent.parent)
-          PY
-          )"
+          # #162：以前把 setup-python 工具缓存里的 Python 整个拷进来。那份 RUNPATH 写死成 /opt/hostedtoolcache/...，
+          # 而且是在构建机（26.04 一代）上编的：libpython 要 GLIBC_2.38、termios 要 2.42，ssl/sqlite3/ctypes/lzma
+          # 还要系统的 libssl.so.3、libffi.so.8 等，旧系统装上就起不来，新系统可能载到系统里另一份 libpython。
+          # 现在用 python-build-standalone：解释器静态带着 libpython，OpenSSL、SQLite、libffi、xz、bzip2、zlib、uuid
+          # 都编在里面，RUNPATH 全是 $ORIGIN，只要 glibc 2.17。下载按 SHA256 校验，对不上直接失败。
+          download="$RUNNER_TEMP/python-standalone.tar.gz"
+          extract_root="$RUNNER_TEMP/python-standalone"
           bundle_root="$PWD/$DESKTOP_ROOT/src/runtime/linux/python"
-          echo "Using Python executable: $python_bin"
-          echo "Python runtime root: $python_root"
-          rm -rf "$bundle_root"
-          mkdir -p "$bundle_root"
-          rsync -aL --delete \
-            --exclude '__pycache__' \
-            "$python_root"/ "$bundle_root"/
-          # #162：工具缓存的 Python 把 RUNPATH 写死成 /opt/hostedtoolcache/.../lib，用户机器上没有这个目录，
-          # 启动器找不到包里的 libpython3.11，去系统里找到旧的一份（_PyModule_Add 未定义）或干脆起不来。
-          # 先改成 $ORIGIN 相对路径，再用包里的 python3 跑任何东西。
+          echo "Downloading python-build-standalone from $LINUX_PYTHON_STANDALONE_URL"
+          curl -fsSL --retry 3 "$LINUX_PYTHON_STANDALONE_URL" -o "$download"
+          echo "$LINUX_PYTHON_STANDALONE_SHA256  $download" | sha256sum -c -
+          rm -rf "$extract_root" "$bundle_root"
+          mkdir -p "$extract_root" "$(dirname "$bundle_root")"
+          tar -xzf "$download" -C "$extract_root"
+          mv "$extract_root/python" "$bundle_root"
+          # 用不到、又会带进系统依赖的部分先删掉（剩下的死重由 prepare-app 的 runtime-prune 再剪）：
+          # - Tcl/Tk 和 _tkinter：RUNPATH 是打包机的 /tools/deps/lib，桌面后端不用 GUI；
+          # - _crypt：唯一要系统 libcrypt.so.1 的模块，crypt 已弃用，没人用；
+          # - libpython3.x.so*：bin/python3.x 已经静态带着解释器（--enable-static-libpython-for-interpreter），
+          #   这份 21MB 的共享库只给嵌入用，留着反而可能被当成“包里的 libpython”。
+          rm -rf "$bundle_root"/lib/libtcl* "$bundle_root"/lib/tcl* "$bundle_root"/lib/tk* \
+            "$bundle_root"/lib/itcl* "$bundle_root"/lib/thread* \
+            "$bundle_root"/lib/libpython*.so* \
+            "$bundle_root"/lib/python3.*/lib-dynload/_tkinter.* \
+            "$bundle_root"/lib/python3.*/lib-dynload/_crypt.*
+          # 兜底：万一新版本又带进非 $ORIGIN 的 RUNPATH，去掉；下面的 check 只放行 $ORIGIN。
           python3 .github/scripts/relocate_linux_python_runpath.py relocate \
-            --bundle-root "$bundle_root" --original-root "$python_root"
+            --bundle-root "$bundle_root" --original-root "$extract_root/python"
+          # 包里不留符号链接：prepare-app 用 fs.cpSync 拷这份 Python，会把相对链接改写成构建机源目录的绝对路径，
+          # bin/python3 -> python3.11 到用户机器上成了断链（2026-11-23 Linux 试跑，1044 个链接全是 /home/runner/...）。
+          # bin 里的链接（python、python3、pydoc3、idle3、2to3、python3-config）只留 python3，由本体改名而来；
+          # share/terminfo 只给 curses 用，share/man、lib/pkgconfig 只给编译扩展用，桌面版都用不到。
+          find "$bundle_root/bin" -maxdepth 1 -type l -delete
+          mv "$bundle_root/bin/python3.11" "$bundle_root/bin/python3"
+          rm -rf "$bundle_root/share/terminfo" "$bundle_root/share/man" "$bundle_root/lib/pkgconfig"
+          # 新版本万一又带进别的链接：换成它指向的真文件（指向目录的照样整个拷过来），再查一遍。
+          find "$bundle_root" -type l -print0 | while IFS= read -r -d '' link; do
+            target="$(readlink -f "$link")"
+            rm "$link"
+            if [ -d "$target" ]; then cp -a "$target" "$link"; elif [ -e "$target" ]; then cp -a "$target" "$link"; fi
+          done
+          leftover_links="$(find "$bundle_root" -type l -print)"
+          if [ -n "$leftover_links" ]; then
+            echo "bundled Python still has symlinks (prepare-app would turn them into build-machine paths):" >&2
+            echo "$leftover_links" >&2
+            exit 1
+          fi
           "$bundle_root/bin/python3" -m pip install --upgrade pip
           py_minor="$("$bundle_root/bin/python3" - <<'PY'
           import sys
@@ -413,7 +456,8 @@ jobs:
           )"
           site_packages="$bundle_root/lib/python${py_minor}/site-packages"
           mkdir -p "$site_packages"
-          "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r frontend/desktop/requirements-desktop-posix.txt
+          # 只装 manylinux 轮子，不在构建机上源码编译（编出来的要构建机那代 glibc）；轮子的 glibc 由最后的基线检查兜住。
+          "$bundle_root/bin/python3" -m pip install --only-binary=:all: --target "$site_packages" -r frontend/desktop/requirements-desktop-posix.txt
           # 本仓库的 Python 包：三个平台共用 ops/release/desktop_python_bundle.py（名单取后端工作区成员，
           # --no-deps 避免重复拉原生轮子触发 ldd 门禁）；装完用自带 python3 查模块、翻译引擎入口、第三方库。
           "$bundle_root/bin/python3" ops/release/desktop_python_bundle.py install --pip-python "$bundle_root/bin/python3" --target "$site_packages"
@@ -435,7 +479,9 @@ jobs:
           elif [ -x "$SCRIPT_DIR/../python/bin/python3" ]; then
             PYTHON_BIN="$SCRIPT_DIR/../python/bin/python3"
           else
-            PYTHON_BIN="python3"
+            # 不退回系统的 python3：它没装流水线，退回去只会把「包里的 Python 坏了」藏起来（2026-11-23 Linux 试跑）。
+            echo "retainpdf-pipeline: bundled python3 not found next to $SCRIPT_DIR" >&2
+            exit 127
           fi
           exec "$PYTHON_BIN" -m retainpdf_pipeline.entrypoints.console "$@"
           WRAPPER
@@ -476,7 +522,16 @@ jobs:
         env:
           RETAIN_PDF_VERSION: ${{ steps.version.outputs.version }}
           RETAIN_PDF_DESKTOP_PLATFORM: linux
-        run: npm run dist:linux
+        run: |
+          # cargo zigbuild 的产物在带 target 的目录里，prepare-app 默认只找 target/release/，用它认的环境变量指过去。
+          rust_release="$RETAIN_PDF_SOURCE_ROOT/target/x86_64-unknown-linux-gnu/release"
+          for binary in rust_api retain-jobsd retainpdf; do
+            test -x "$rust_release/$binary" || { echo "missing $rust_release/$binary" >&2; exit 1; }
+          done
+          RUST_API_BINARY="$rust_release/rust_api" \
+          JOBSD_BINARY="$rust_release/retain-jobsd" \
+          RETAINPDF_CLI_BINARY="$rust_release/retainpdf" \
+            npm run dist:linux
 
       - name: Report Linux package sizes
         working-directory: frontend/desktop
@@ -516,7 +571,8 @@ jobs:
             ldd "$binary" 2>&1 | tee -a "$ldd_log" || true
           }
 
-          # 剪完、拷进 app 的最终目录上再查一遍：RUNPATH 只许 $ORIGIN，清掉 LD_LIBRARY_PATH 跑起来载入的是包里的 libpython（#162）。
+          # 剪完、拷进 app 的最终目录上再查一遍：RUNPATH 只许 $ORIGIN，清掉 LD_LIBRARY_PATH 跑得起来、
+          # ssl/sqlite3/ctypes 等能导入，没有载入包外的 libpython（#162）。
           python3 .github/scripts/relocate_linux_python_runpath.py check \
             --bundle-root "$backend_root/python" --python "$backend_root/python/bin/python3"
 
@@ -541,6 +597,35 @@ jobs:
           if grep -Fq 'not found' "$ldd_log"; then
             echo "Bundled Linux native dependency check found missing libraries:" >&2
             grep -F 'not found' "$ldd_log" >&2
+            exit 1
+          fi
+
+      # 解开最终的 .deb，查里面每个 ELF（Electron、rust_api、自带 Python、轮子、typst……）要的 glibc
+      # 都不超过 LINUX_GLIBC_BASELINE：构建机换成更新的系统、轮子升级到更新的 manylinux，这里就红。
+      # 自带 Python 另查只依赖 glibc / GCC 运行时和包里自带的库（以前要系统的 libssl.so.3、libffi.so.8……，
+      # 构建机上都有，ldd 查不出来）。
+      - name: Check Linux glibc baseline
+        shell: bash
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          deb="$DESKTOP_ROOT/linux/RetainPDF-Linux-$PACKAGE_VERSION.deb"
+          deb_root="$RUNNER_TEMP/retainpdf-deb-root"
+          rm -rf "$deb_root"
+          dpkg-deb -x "$deb" "$deb_root"
+          echo "Depends: $(dpkg-deb -f "$deb" Depends)"
+          deb_python="$(find "$deb_root" -type d -path '*/resources/backend/python' -print | head -n 1)"
+          if [ -z "$deb_python" ]; then
+            echo "bundled Python not found in $deb" >&2
+            exit 1
+          fi
+          python3 .github/scripts/check_linux_glibc_baseline.py --max "$LINUX_GLIBC_BASELINE" --top 15 \
+            --self-contained "$deb_python" "$deb_root"
+          # 最终 deb 里不许有指向构建机的绝对链接（prepare-app 的 fs.cpSync 会这么改写，2026-11-23）。
+          absolute_links="$(find "$deb_root/opt" -type l -lname '/*' -print | head -n 20)"
+          if [ -n "$absolute_links" ]; then
+            echo "absolute symlinks in the deb (they point into the build machine):" >&2
+            echo "$absolute_links" >&2
             exit 1
           fi
 
