@@ -172,6 +172,32 @@ class RateLimited(StopRun):
     reason = "rate_limited"
 
 
+class ModelUnavailable(StopRun):
+    """模型不存在、没开通，或接口地址写错（404 等）：每个请求都会一样被拒，停下，改好模型后接着跑。"""
+
+    reason = "model_unavailable"
+
+
+class RegionUnsupported(AuthFailed):
+    """服务商不支持当前所在地区：换 Key 没用，换网络或换服务商。"""
+
+    reason = "region_unsupported"
+
+
+class RequestRejected(RuntimeError):
+    """服务商拒了这次请求、重试没用（400、409、413、422……）。带 ``status_code``，失败分类按它归类；
+    ``content_rejected`` 为 True 时是内容审核没过。"""
+
+    def __init__(self, message: str, *, status_code: int, content_rejected: bool = False):
+        super().__init__(message)
+        self.status_code = status_code
+        self.content_rejected = content_rejected
+        if content_rejected:
+            # 结构化失败读这两个属性（失败码照旧按状态码归 upstream_bad_request）
+            self.failure_summary = f"翻译服务商的内容审核没通过（HTTP {status_code}）"
+            self.failure_suggestion = "这一页触发了服务商的内容安全拦截，原样重试不会通过：可换一个翻译服务商后从翻译阶段续跑。"
+
+
 @dataclass
 class Usage:
     requests: int = 0
@@ -195,18 +221,21 @@ MAX_WAIT_SECONDS = 120.0
 # 读多少响应体来认业务码（报错里只留前 300 字）
 ERROR_BODY_LIMIT = 64 * 1024
 
-# 调用方给的业务码判断：(状态码, 响应体, 响应头, 地址) → ("quota" 或 "auth", 给人看的说明) 或 None（照旧按
-# `classify_http_error`）。429 不全是限流：额度、消费上限用完也是 429，等多久都没用。正式流程由接线层传入翻译共用的
-# 判断（这个包只许用标准库）。
+# 调用方给的业务码判断：(状态码, 响应体, 响应头, 地址) → (种类, 给人看的说明) 或 None（照旧按 `classify_http_error`）。
+# 种类：quota（额度用完）、auth（套餐不能用这个模型）、model（模型不可用）、region（地区不支持）、content（内容审核没过）。
+# 429 不全是限流：额度、消费上限用完也是 429，等多久都没用。正式流程由接线层传入翻译共用的判断（这个包只许用标准库）。
 ErrorClassifier = Callable[[int, str, dict, str], "tuple[str, str] | None"]
 
 
 def classify_http_error(status: int, body: str) -> str:
-    """retry（等一会再试）、quota（额度用完）、auth（密钥不对、没权限）、fatal（请求本身有错）。"""
+    """retry（等一会再试）、quota（额度用完）、auth（密钥不对、没权限）、model（404：模型或接口地址不存在）、
+    fatal（请求本身有错）。"""
     if status in RETRY_STATUSES:
         return "retry"
     if status in {401, 403}:
         return "auth"
+    if status == 404:
+        return "model"
     if status in {400, 402} and ("credit balance" in body.lower() or "billing" in body.lower() or "quota" in body.lower()):
         return "quota"
     return "fatal"
@@ -261,7 +290,7 @@ def _classify(status: int, body: str, headers, url: str, classify: ErrorClassifi
     """(种类, 说明)；说明只在业务码判断认出来时有（例如「HTTP 429，Anthropic 业务码 …：…」）。"""
     if classify is not None:
         found = classify(status, body, dict(headers.items()) if headers else {}, url)
-        if found and found[0] in {"quota", "auth"}:
+        if found and found[0] in {"quota", "auth", "model", "region", "content"}:
             return found[0], str(found[1] or "")
     return classify_http_error(status, body[:300]), ""
 
@@ -311,8 +340,17 @@ def _post(
                 raise QuotaExhausted(f"model API HTTP {error.code}: {reason}") from None
             if kind == "auth":
                 raise AuthFailed(f"model API HTTP {error.code}: {reason}") from None
+            if kind == "model":
+                raise ModelUnavailable(f"model API HTTP {error.code}: {reason}") from None
+            if kind == "region":
+                raise RegionUnsupported(f"model API HTTP {error.code}: {reason}") from None
+            if kind == "content":
+                # 内容审核没过：原样重试不会通过，不重试
+                raise RequestRejected(
+                    f"model API HTTP {error.code}: 内容审核未过 | {reason}", status_code=error.code, content_rejected=True
+                ) from None
             if kind == "fatal":
-                raise RuntimeError(f"model API HTTP {error.code}: {text}") from None
+                raise RequestRejected(f"model API HTTP {error.code}: {text}", status_code=error.code) from None
             retry_after = error.headers.get("retry-after") if error.headers else None
             last_error = f"HTTP {error.code}"
             if error.code in UPSTREAM_WAIT_STATUSES:

@@ -37,6 +37,10 @@ LOCAL_ENVIRONMENT_FAILURE_CODES = frozenset(
     {"out_of_memory", "runtime_environment_broken", "path_too_long", "local_permission_denied"}
 )
 _MISSING_PATH_RE = re.compile(r"no such file or directory:\s*(['\"])(.+?)\1", re.IGNORECASE | re.DOTALL)
+# 上游拒绝了请求、重试没用的 4xx（401/402/403/404/429 另有归类）：归 upstream_bad_request，summary 带状态码和服务商原话
+BAD_REQUEST_STATUS_CODES = frozenset({400, 405, 409, 413, 415, 422})
+# summary 里服务商原话最多多长（只取响应体的 error.message，不取请求、不取整个响应体）
+PROVIDER_MESSAGE_MAX_CHARS = 160
 
 
 @dataclass
@@ -153,7 +157,8 @@ def _extract_provider_stage(text: str) -> str:
 def _failure_category_for(*, failure_code: str, failed_stage: str) -> str:
     if failure_code in LOCAL_ENVIRONMENT_FAILURE_CODES:
         return "environment"
-    if failure_code in {"auth_failed"}:
+    if failure_code in {"auth_failed", "upstream_model_unavailable"}:
+        # 模型不可用也是去设置里改（模型名、接口地址、开通），前端按 auth 给「去设置」入口
         return "auth"
     if failure_code in {"upstream_quota_exhausted"}:
         return "billing"
@@ -193,6 +198,10 @@ def _suggestion_for(*, failure_code: str, failure_category: str, provider: str) 
         "upstream_timeout": "检查网络质量、上游服务负载或适当增大超时后再重试。",
         "upstream_rate_limited": f"{provider_label} 当前限流，请稍后重试或降低并发。",
         "upstream_bad_request": "检查请求参数、输入文件和上游接口约束，修正后再重试。",
+        "upstream_model_unavailable": (
+            "模型名写错、这个 API Key 没开通该模型，或接口地址（base_url）写错：在设置里改好模型名"
+            "（或去服务商控制台开通该模型）、核对接口地址后，从翻译阶段续跑。"
+        ),
         "placeholder_unstable": "检查公式占位符保护链和当前批次输入，必要时缩小批次或切换保守模式。",
         "translation_protocol_shell": "检查翻译提示词与模型返回；该错误通常表示模型输出了 JSON/协议外壳而不是纯译文。",
         "typst_dependency_download_failed": "检查 Typst 依赖源网络连通性，必要时预热依赖或重试。",
@@ -221,6 +230,34 @@ def _suggestion_for(*, failure_code: str, failure_category: str, provider: str) 
         "internal": "查看 traceback 与任务日志，定位未分类的内部异常。",
     }
     return category_suggestions.get(failure_category, "查看 traceback 与任务日志，定位失败根因。")
+
+
+def _provider_message(exc_chain: list[BaseException]) -> str:
+    """异常链上响应体里服务商自己的说法（``error.message`` 或顶层 ``message``），压成一行、截到 160 字。
+    只读 requests 响应：不取请求正文，也不取整个响应体（可能回显原文）。读不到交回空串。"""
+    for item in exc_chain:
+        response = getattr(item, "response", None)
+        if response is None:
+            continue
+        try:
+            body = json.loads(getattr(response, "text", "") or "")
+        except (TypeError, ValueError):
+            continue
+        message: Any = None
+        if isinstance(body, dict):
+            error = body.get("error")
+            if isinstance(error, dict):
+                message = error.get("message")
+            elif isinstance(error, str):
+                message = error
+            if not message:
+                message = body.get("message")
+        if isinstance(message, str) and message.strip():
+            compact = re.sub(r"\s+", " ", message).strip()
+            if len(compact) > PROVIDER_MESSAGE_MAX_CHARS:
+                compact = compact[: PROVIDER_MESSAGE_MAX_CHARS - 1].rstrip() + "…"
+            return compact
+    return ""
 
 
 def _build_raw_excerpt(detail: str, raw_traceback: str) -> str:
@@ -418,7 +455,7 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
     provider_stage = _extract_provider_stage(f"{detail}\n{raw_traceback}")
     exc_chain = _exception_chain(exc)
     missing_paths = _missing_paths(exc_chain, f"{detail}\n{raw_traceback}")
-    # 翻译请求层按业务码认出来的（429 里的余额、额度用完，智谱 1311/1315 套餐不能用这个模型）在错误类型上写明了归类
+    # 翻译请求层按业务码认出来的（429 里的余额、额度用完，智谱 1311/1315 套餐不能用这个模型，模型不可用）在错误类型上写明了归类
     declared = str(getattr(exc, "retain_failure_code", "") or "")
 
     error_type = "python_unhandled_exception"
@@ -465,6 +502,12 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         error_type = "auth_failed"
         summary = "鉴权失败"
         retryable = False
+    elif declared == "upstream_model_unavailable":
+        # 模型不存在 / 没开通（404、智谱 1211 的 400、千问 Endpoint.AccessDenied 的 403……）：第一次就整份停下
+        error_type = "upstream_model_unavailable"
+        status_text = f"HTTP {http_status_code}" if http_status_code is not None else "上游"
+        summary = f"翻译模型不可用（{status_text}）：模型名写错、这个 Key 没开通该模型，或接口地址写错"
+        retryable = False
     elif http_status_code == 429 or any(token in lowered for token in ("rate limited", "rate limit", "too many requests", "retry-after")):
         error_type = "upstream_rate_limited"
         summary = "外部服务请求被限流"
@@ -482,9 +525,12 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         error_type = "auth_failed"
         summary = "鉴权失败"
         retryable = False
-    elif http_status_code == 400:
+    elif http_status_code in BAD_REQUEST_STATUS_CODES:
         error_type = "upstream_bad_request"
-        summary = "上游服务拒绝请求（400）"
+        summary = f"上游服务拒绝请求（{http_status_code}）"
+        provider_message = _provider_message(exc_chain)
+        if provider_message:
+            summary = f"{summary}：{provider_message}"
         retryable = False
     elif any(
         token in lowered

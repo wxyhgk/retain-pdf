@@ -408,7 +408,7 @@ def request_chat_content(
     )
     transport_recovery_started_at: float | None = None
     rejected = (
-        diagnostics.credential_rejection(base_url=base_url, api_key=api_key) if diagnostics is not None else None
+        diagnostics.credential_rejection(base_url=base_url, api_key=api_key, model=model) if diagnostics is not None else None
     )
     if rejected is not None:
         # 这组凭据本次运行里已被上游以 401/402/403 或额度用完的业务码拒过（Key 失效、余额不足时每个请求都会被拒）：不再发请求
@@ -545,9 +545,11 @@ def request_chat_content(
                     flush=True,
                 )
             if diagnostics is not None and _resilience.is_credential_rejection(exc):
-                diagnostics.record_credential_rejection(base_url=base_url, api_key=api_key, error=exc)
+                diagnostics.record_credential_rejection(
+                    base_url=base_url, api_key=api_key, error=exc, model=_resilience.credential_scope_model(exc, model)
+                )
             if _resilience.rejection_kind(exc):
-                # 余额、额度用完（429 / 400 / 403 + 业务码）：不退避、不换思考字段、不退 json_object，第一次就停
+                # 余额额度用完、模型不可用、地区不支持、内容审核没过（4xx + 业务码）：不退避、不换思考字段、不退 json_object，第一次就停
                 raise
             rejected_400 = (
                 isinstance(exc, requests.HTTPError)

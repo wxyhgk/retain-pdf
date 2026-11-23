@@ -38,6 +38,8 @@ from retainpdf_translation_classic.llm.providers.deepseek.translation_client imp
 from retainpdf_translation_classic.llm.providers.deepseek.translation_client import translate_single_item_plain_text
 from retainpdf_translation_classic.llm.providers.deepseek.translation_client import translate_single_item_plain_text_unstructured
 from retainpdf_translation.llm.shared.provider_runtime import unwrap_translation_shell
+from retainpdf_translation.llm.shared.upstream_resilience import is_content_rejection
+import retainpdf_translation_classic.llm.shared.orchestration.terminal_payloads as terminal_payloads
 
 
 def _sentence_level_fallback(
@@ -121,6 +123,50 @@ def translate_single_item_plain_text_with_retries(
     diagnostics: TranslationDiagnosticsCollector | None = None,
     allow_transport_tail_defer: bool = False,
     deps: SingleItemFlowDeps | None = None,
+) -> dict[str, dict[str, str]]:
+    """单块翻译的入口。服务商内容审核没过（``UpstreamContentRejected``）时这一块保留原文、不再重试，
+    翻译诊断记「内容审核未过」（批量请求被拦时，批量路径本来就退到逐块，只有触发拦截的块落到这里）。"""
+    try:
+        return _translate_single_item(
+            item,
+            api_key=api_key,
+            model=model,
+            base_url=base_url,
+            request_label=request_label,
+            context=context,
+            diagnostics=diagnostics,
+            allow_transport_tail_defer=allow_transport_tail_defer,
+            deps=deps,
+        )
+    except Exception as exc:
+        if not is_content_rejection(exc):
+            raise
+        if request_label:
+            print(f"{request_label}: upstream content moderation rejected this block, keep source text: {exc}", flush=True)
+        if diagnostics is not None:
+            diagnostics.emit(
+                kind="upstream_content_rejected",
+                item_id=str(item.get("item_id", "") or ""),
+                page_idx=item.get("page_idx"),
+                severity="warning",
+                message="内容审核未过：服务商拦截了这一块，已保留原文，不再重试",
+                retryable=False,
+                details={"provider_code": str(getattr(exc, "provider_code", "") or ""), "http_status": getattr(exc, "status_code", None)},
+            )
+        return terminal_payloads.content_rejected_payload(item, exc=exc, context=context.scoped_to_item(item))
+
+
+def _translate_single_item(
+    item: dict,
+    *,
+    api_key: str,
+    model: str,
+    base_url: str,
+    request_label: str,
+    context: TranslationControlContext,
+    diagnostics: TranslationDiagnosticsCollector | None,
+    allow_transport_tail_defer: bool,
+    deps: SingleItemFlowDeps | None,
 ) -> dict[str, dict[str, str]]:
     context = context.scoped_to_item(item)
     item = item_with_runtime_hard_glossary(item, context.glossary_entries)
@@ -214,6 +260,9 @@ def translate_single_item_plain_text_with_retries(
                 stable_placeholder_text_fn=flow_deps.stable_placeholder_text_fn,
             )
         except Exception as exc:
+            if is_content_rejection(exc):
+                # 内容审核没过：换一条路再发一遍也一样被拦
+                raise
             if request_label:
                 print(
                     f"{request_label}: tagged-first path failed after {time.perf_counter() - tagged_started:.2f}s, fallback to plain-text path: {type(exc).__name__}: {exc}",

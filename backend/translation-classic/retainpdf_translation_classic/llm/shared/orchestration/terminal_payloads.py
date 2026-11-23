@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import retainpdf_translation.llm.result_payload as result_payload
+from retainpdf_translation.llm.shared.upstream_resilience import CONTENT_REJECTED_REASON
+from retainpdf_translation.llm.shared.upstream_resilience import upstream_rejection
 
 
 def _normalized_failed_route(route_path: list[str]) -> list[str]:
@@ -118,7 +120,37 @@ def translation_failed_payload_for_transport(
     )
 
 
+def content_rejected_payload(
+    item: dict,
+    *,
+    exc: BaseException,
+    context=None,
+    route_path: list[str] | None = None,
+) -> dict[str, dict[str, str]]:
+    """服务商内容审核没过：这一块保留原文（死信，不阻断导出，完成时算进「N 个块保留原文未翻译」），不重试。
+    错误轨迹记服务商、状态码和业务码，不记原文、不记响应体。"""
+    rejection = upstream_rejection(exc)
+    trace: dict[str, object] = {"type": "content_policy", "code": rejection.code if rejection is not None else "content_rejected"}
+    if rejection is not None:
+        trace["provider"] = rejection.provider
+        trace["http_status"] = rejection.http_status
+        trace["message"] = f"内容审核未过：{rejection.describe()}"
+    else:
+        trace["message"] = "内容审核未过"
+    return translation_failed_payload(
+        item,
+        context=context,
+        route_path=list(route_path or ["block_level"]) + ["content_rejected", "dlq"],
+        degradation_reason=CONTENT_REJECTED_REASON,
+        error_taxonomy="content_policy",
+        error_trace=[trace],
+        fallback_to="dead_letter_queue",
+        dead_letter=True,
+    )
+
+
 __all__ = [
+    "content_rejected_payload",
     "intentional_keep_origin_payload",
     "translation_failed_payload",
     "translation_failed_payload_for_transport",

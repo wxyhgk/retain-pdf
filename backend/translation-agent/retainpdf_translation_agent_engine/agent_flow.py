@@ -59,6 +59,8 @@ from retainpdf_translation.llm.shared.control_context import TranslationControlC
 from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared.model_wire import anthropic_usage
 from retainpdf_translation.llm.shared.upstream_error_codes import agent_http_classifier
+from retainpdf_translation.llm.shared.upstream_resilience import REGION_FAILURE_SUGGESTION
+from retainpdf_translation.llm.shared.upstream_resilience import REGION_FAILURE_SUMMARY
 from retainpdf_translation.llm.shared.usage_ledger import record_model_usage
 from retainpdf_translation.services.policy import TranslationPolicyConfig
 from retainpdf_translation_agent_engine.agent_openai import make_openai_transport
@@ -141,7 +143,25 @@ class AgentAuthFailed(AgentRunStopped):
     retain_failure_code = "auth_failed"
 
 
-_STOP_ERRORS = {"quota_exhausted": AgentQuotaExhausted, "auth_failed": AgentAuthFailed}
+class AgentModelUnavailable(AgentRunStopped):
+    """模型不存在、没开通，或接口地址写错（404 等）：结构化失败归 ``upstream_model_unavailable``，改好模型后从翻译续跑。"""
+
+    retain_failure_code = "upstream_model_unavailable"
+
+
+class AgentRegionUnsupported(AgentAuthFailed):
+    """服务商不支持当前所在地区：归 ``auth_failed``，说法是换网络或换服务商（换 Key 没用）。"""
+
+    failure_summary = REGION_FAILURE_SUMMARY
+    failure_suggestion = REGION_FAILURE_SUGGESTION
+
+
+_STOP_ERRORS = {
+    "quota_exhausted": AgentQuotaExhausted,
+    "auth_failed": AgentAuthFailed,
+    "model_unavailable": AgentModelUnavailable,
+    "region_unsupported": AgentRegionUnsupported,
+}
 
 
 def _stopped_error(outcome) -> AgentRunStopped:
@@ -832,7 +852,9 @@ def translate_book_with_agent(
 __all__ = [
     "EDITORIAL_EVENTS_RELATIVE_PATH",
     "AgentAuthFailed",
+    "AgentModelUnavailable",
     "AgentQuotaExhausted",
+    "AgentRegionUnsupported",
     "AgentRunStopped",
     "agent_engine_identity",
     "apply_agent_results",

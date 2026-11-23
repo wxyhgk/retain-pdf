@@ -107,7 +107,7 @@ def run_translation_batch_stage(
     progress_baseline_completed: int | None = None,
 ) -> dict:
     # 翻译 Key 在前面的步骤（领域判断、续句复核……）已被上游拒绝：不开批量翻译，直接失败
-    raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key)
+    raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key, model=model)
     translate_started = time.perf_counter()
     if run_diagnostics is not None:
         run_diagnostics.mark_phase_start("translation_batches")
@@ -166,7 +166,7 @@ def run_translation_batch_stage(
             run_diagnostics.mark_phase_end("translation_batches")
             _record_batch_diagnostics(run_diagnostics, batch_summary)
     # 批次里碰到 401/402/403：在飞的请求收完、已译的块已经落盘，到这里整份失败，不再做尾部修复和补翻
-    raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key)
+    raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key, model=model)
     finished_payload = {
         "pending_items": batch_summary["pending_items"],
         "effective_batch_size": batch_summary["effective_batch_size"],

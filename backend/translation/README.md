@@ -452,6 +452,33 @@ repair profile：
   （`model_executor/upstream_codes.rs`，操作记 `error_code=quota_exhausted`，回执带 `upstream_status`、`upstream_code`、`upstream_provider`，
   worker 写到报错上给任务失败的 `upstream`）规则相同，
   改一处要改另一处。
+- 同一个文件里的另几类「重试没用」（2026-11-23，`fix/llm-request-codes`）：
+  - **模型不可用**：OpenAI `model_not_found`、Anthropic `not_found_error`、千问 `ModelNotFound` / `model_not_found` /
+    `model_not_supported` / `WorkSpaceNotFound` / `Endpoint.AccessDenied`（调了已下线的快照）/ `invalid_parameter_error` 且 message
+    说模型没开通、不存在，智谱 1211，以及**任何 404**（接口地址写错也是 404）。抛 `UpstreamModelUnavailable`，和 401/403 一样
+    第一次就停、整份停下，归 `upstream_model_unavailable`（`failure_category=auth`，前端按它给「去设置」入口；不可重试，`resume_from=translation`：改好模型后
+    从翻译续跑）。只记「这组凭据 + 这个模型」（`record_credential_rejection(model=…)`），同一个 Key 的别的模型（审校等角色）照常用；
+    `raise_if_credential_rejected` 带上 `model` 才会查到。以前每块各自失败，最后说不清原因。
+  - **地区不支持**：OpenAI 403 `unsupported_country_region_territory`，或 403 的 message 说 country / region / territory not supported。
+    抛 `UpstreamRegionUnsupported`（`UpstreamAccessDenied` 的子类），整份停下，失败码照旧 `auth_failed`，但 `summary`「所在地区不支持这个
+    翻译服务商」、`suggestion` 说换网络或换服务商、换 Key 没用（结构化失败读异常上的 `failure_summary` / `failure_suggestion`）。
+  - **内容审核没过**：智谱 1301，千问 `DataInspectionFailed` / `data_inspection_failed` / `FaqRuleBlocked`，OpenAI `invalid_prompt` /
+    `bio_policy` / `misalignment_policy_violation`（4xx 形态）。抛 `UpstreamContentRejected`：不重试、不记凭据、不停整份。普通翻译的
+    单块入口（`translate_single_item_plain_text_with_retries`）接住它，这一块落成死信（`final_status=failed`、
+    `degradation_reason=upstream_content_rejected`、`fallback_to=dead_letter_queue`、`error_taxonomy=content_policy`，错误轨迹记服务商、
+    状态码、业务码），保留原文、不阻断导出、不进收尾补翻，翻译诊断记一条 `upstream_content_rejected`「内容审核未过」。批量请求被拦时
+    批量路径本来就退到逐块，只有触发拦截的那块落死信；tagged-first、公式分段路径碰到它直接交给单块入口，不换路径再发。
+  - **千问额度**：Coding Plan 的 `usage allocated quota exceeded`（约一小时恢复）按额度停；`Throttling.AllocationQuota`（兼容模式下是
+    `insufficient_quota`）只有 message 说免费额度用完（free tier / free allocated / free trial / quota exhausted / 免费额度）才按额度停，
+    否则照旧当 TPM 限流退避。OpenCode Go 套餐的 `rate-limited`（用量 meter）文档没写超额时回什么，不认。
+  - 其它 4xx（409、413、415、422、405）不重试，结构化失败归 `upstream_bad_request`，`summary`「上游服务拒绝请求（422）：<服务商原话>」，
+    原话只取响应体的 `error.message`（或顶层 `message`），压成一行、最多 160 字，不取请求正文和整个响应体。
+  - agent 引擎：Anthropic 协议的请求按同一个判断，模型不可用抛 `ModelUnavailable`、地区抛 `RegionUnsupported`（都是 `StopRun`，
+    停下原因 `model_unavailable` / `region_unsupported`，任务失败分别归 `upstream_model_unavailable` / `auth_failed`），没有分类器时 404
+    也当模型不可用；内容审核没过和其它不重试的 4xx 抛 `RequestRejected`（带 `status_code`，归 `upstream_bad_request`）。agent 按页请求，
+    内容审核没过时整个 agent 阶段失败，还没有逐块保留原文。
+  - Rust 执行器：操作 `error_code` 加 `model_unavailable`、`region_unsupported`（都暂停任务）和 `content_rejected`（不暂停，worker 抛
+    `UpstreamContentRejected`，单块入口保留原文）；409、413、415 归 `provider_rejected_request`（以前 409、413 记成结果不明）。
 
 ## 模式说明
 

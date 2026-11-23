@@ -42,7 +42,7 @@ def table_chat_fn(
     )
 
     def _call(messages: list[dict[str, str]], *, purpose: str, response_format: dict | None = None) -> ChatResult:
-        raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key)
+        raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key, model=model)
         digest = hashlib.sha256(json.dumps([purpose, messages], ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
         before = _usage(run_diagnostics)
         with thread_translation_run_diagnostics_scope(run_diagnostics), unit_scope(purpose, [digest]):

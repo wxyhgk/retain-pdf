@@ -22,6 +22,9 @@ from retainpdf_base.upstream_wait import begin_upstream_wait
 from retainpdf_base.upstream_wait import build_wait_info
 from retainpdf_base.upstream_wait import end_upstream_wait
 from retainpdf_translation.core.execution_policy import ExecutorError
+from retainpdf_translation.llm.shared.upstream_resilience import REGION_FAILURE_SUGGESTION
+from retainpdf_translation.llm.shared.upstream_resilience import REGION_FAILURE_SUMMARY
+from retainpdf_translation.llm.shared.upstream_resilience import content_rejected_error
 
 
 class AmbiguousModelRequest(ExecutorError):
@@ -44,12 +47,29 @@ class ExecutorAccessDenied(ExecutorError):
     retain_failure_code = "auth_failed"
 
 
+class ExecutorModelUnavailable(ExecutorError):
+    """模型不存在、没开通，或接口地址写错（404 等，Rust 执行器按状态码和业务码判断）：整份停下，归 upstream_model_unavailable。"""
+
+    retain_failure_code = "upstream_model_unavailable"
+
+
+class ExecutorRegionUnsupported(ExecutorAccessDenied):
+    """所在地区不支持：整份停下，归 auth_failed，说法是换网络或换服务商（换 Key 没用）。"""
+
+    failure_summary = REGION_FAILURE_SUMMARY
+    failure_suggestion = REGION_FAILURE_SUGGESTION
+
+
 # Rust 执行器记在操作上的 error_code（不含响应体、不含 Key）→ 抛哪种错
 _FAILED_OPERATION_ERRORS = {
     "quota_exhausted": (ExecutorQuotaExhausted, "上游账户余额或额度不足（Rust 执行器按状态码和业务码判断）"),
     "payment_required": (ExecutorQuotaExhausted, "上游账户余额不足（HTTP 402）"),
     "authentication_failed": (ExecutorAccessDenied, "上游拒绝了这个 API Key（鉴权失败，或套餐不能用这个模型）"),
+    "model_unavailable": (ExecutorModelUnavailable, "翻译模型不可用：模型名写错、这个 Key 没开通该模型，或接口地址写错"),
+    "region_unsupported": (ExecutorRegionUnsupported, "翻译服务商不支持当前所在地区（换 Key 没用，请换网络或换服务商）"),
 }
+# 内容审核没过：不是执行器的错，也不停整份——抛请求层的 UpstreamContentRejected，单块入口保留原文
+CONTENT_REJECTED_ERROR_CODE = "content_rejected"
 
 
 def _tag_receipt_upstream(error: ExecutorError, operation: dict) -> ExecutorError:
@@ -185,6 +205,18 @@ class RustModelExecutorClient:
                     )
                 if state == "failed":
                     error_code = str(operation.get("error_code") or "")
+                    if error_code == CONTENT_REJECTED_ERROR_CODE:
+                        receipt = operation.get("result") if isinstance(operation.get("result"), dict) else {}
+                        status, code = receipt.get("upstream_status"), receipt.get("upstream_code")
+                        raise _tag_receipt_upstream(
+                            content_rejected_error(
+                                f"内容审核未过（HTTP {status}，业务码 {code}，error_code={error_code}）；这一块保留原文，不再重试",
+                                provider=str(receipt.get("upstream_provider") or ""),
+                                code=str(code or ""),
+                                http_status=status if isinstance(status, int) else None,
+                            ),
+                            operation,
+                        )
                     known = _FAILED_OPERATION_ERRORS.get(error_code)
                     if known is not None:
                         error_class, reason = known
@@ -196,7 +228,13 @@ class RustModelExecutorClient:
                         error.provider_code = str(code or "")
                         raise _tag_receipt_upstream(error, operation)
                 if state in {"failed", "cancelled"}:
-                    raise _tag_receipt_upstream(ExecutorError(f"model operation {state}; no automatic upstream retry"), operation)
+                    error = ExecutorError(f"model operation {state}; no automatic upstream retry")
+                    receipt = operation.get("result") if isinstance(operation.get("result"), dict) else {}
+                    status = receipt.get("upstream_status")
+                    if state == "failed" and isinstance(status, int) and 400 <= status < 500:
+                        # 上游拒了请求（400、409、413、422……）：带上状态码，结构化失败归 upstream_bad_request
+                        error.status_code = status
+                    raise _tag_receipt_upstream(error, operation)
                 if state not in {"queued", "running"}:
                     raise ExecutorUnavailable("unknown executor operation state")
                 if time.monotonic() - started >= self._deadline:

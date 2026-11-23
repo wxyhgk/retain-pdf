@@ -7,6 +7,13 @@
 
 - ``quota``：余额、额度、预算、套餐到期。和 402 一样：第一次就停，记下这组凭据，结构化失败归 ``upstream_quota_exhausted``。
 - ``access``：这个 Key 的套餐不能用这个模型（智谱 1311、1315）。和 401/403 一样停下，归 ``auth_failed``。
+- ``model``：模型不存在、名字写错、这个 Key 没开通（OpenAI ``model_not_found``、Anthropic ``not_found_error``、千问
+  ``ModelNotFound`` 等、智谱 1211），以及任何 404（接口地址写错也是 404，同样是配置错误）。和 401/403 一样第一次就停，
+  归 ``upstream_model_unavailable``，换模型后从翻译续跑（2026-11-23）。
+- ``region``：所在地区不支持（OpenAI 403 ``unsupported_country_region_territory``）。整份停下，归 ``auth_failed``，
+  但说法是「换网络或换服务商」，换 Key 没用。
+- ``content``：内容审核没过（智谱 1301、千问 ``DataInspectionFailed`` / ``FaqRuleBlocked``、OpenAI ``invalid_prompt`` 等）。
+  不重试、不停整份：只这一块保留原文，翻译诊断里记「内容审核未过」。
 
 各家的码和区分规则（官方文档，2026-11-23 查）：
 
@@ -23,7 +30,17 @@
   ``Arrearage``（400 / 403），``AllocationQuota.FreeTierOnly``（403），Coding Plan 的 hour/week/month allocated quota
   exceeded。百炼地址上的 ``insufficient_quota`` 是 TPM 限流（Throttling.AllocationQuota），照旧退避；message 说免费额度
   用完的除外。
-- OpenCode：429 的 message 是 「Policy budget exceeded」（工作区预算用完）。
+- OpenCode：429 的 message 是 「Policy budget exceeded」（工作区预算用完）。Go 套餐的 ``rate-limited``（用量 meter）
+  文档没写超额时回什么状态和错误体，不认。
+- 千问 Coding Plan 的 ``usage allocated quota exceeded``（短时用量过高，约一小时恢复，300 秒内重试没用）按额度停；
+  ``Throttling.AllocationQuota`` 只有 message 说免费额度用完（free tier、quota exhausted……）的才按额度停。
+- 模型不可用：OpenAI ``model_not_found``（404），Anthropic ``not_found_error``（404），千问 ``ModelNotFound`` /
+  ``model_not_found`` / ``model_not_supported`` / ``WorkSpaceNotFound`` / ``NotFound``（404）、``Endpoint.AccessDenied``
+  （403，调了已下线的模型快照）、``invalid_parameter_error`` 且 message 说模型没开通（400），智谱 1211（400）。
+- 地区：OpenAI 403 ``unsupported_country_region_territory``，或 403 的 message 说 country / region / territory not supported。
+- 内容审核：智谱 1301（400）；千问 ``DataInspectionFailed`` / ``data_inspection_failed`` / ``FaqRuleBlocked``（400）；
+  OpenAI ``invalid_prompt``、``bio_policy``、``misalignment_policy_violation``（以 4xx 回来时；Responses API 200 +
+  ``status=failed`` 那种形态不在这里）。
 
 码只用在 4xx 上；5xx 照旧按状态码。不读、不记 Key；交回的原因不含响应体原文。
 """
@@ -39,6 +56,11 @@ from urllib.parse import urlparse
 
 QUOTA = "quota"
 ACCESS = "access"
+MODEL = "model"
+REGION = "region"
+CONTENT = "content"
+# 这几种认出来后同一组凭据（模型不可用时是凭据 + 模型）注定还会被拒：第一次就整份停下。内容审核只是这一块。
+STOP_KINDS = frozenset({QUOTA, ACCESS, MODEL, REGION})
 
 OPENAI = "openai"
 ANTHROPIC = "anthropic"
@@ -103,12 +125,57 @@ QWEN_QUOTA_MESSAGES = (
 OPENCODE_QUOTA_MESSAGES = (
     ("policy budget exceeded", "policy_budget_exceeded", "工作区预算用完"),
 )
-_FREE_TIER_MARKERS = ("free tier", "free quota", "free allocated", "免费额度")
+QWEN_USAGE_QUOTA_MESSAGES = (
+    ("usage allocated quota exceeded", "usage allocated quota exceeded", "Coding Plan 短时用量过高被限制，约一小时后恢复"),
+)
+_FREE_TIER_MARKERS = ("free tier", "free quota", "free allocated", "free trial", "quota exhausted", "免费额度")
+# 百炼 TPM 限流的码（兼容模式下是 insufficient_quota）：只有 message 说免费额度用完的才是额度
+QWEN_THROTTLE_QUOTA_CODES = ("insufficient_quota", "Throttling.AllocationQuota")
+
+# 模型不存在、没开通（各家独有的码，不看地址）
+MODEL_CODES = {
+    "model_not_found": "模型不存在，或这个 Key 没有权限用它",
+    "not_found_error": "请求的模型或接口不存在",
+    "ModelNotFound": "模型不存在、名字写错、在这个地域不可用或没开通",
+    "model_not_supported": "这个模型不支持 OpenAI 兼容方式调用",
+    "WorkSpaceNotFound": "接口地址里的业务空间不存在",
+    "Endpoint.AccessDenied": "调用端点被拒，多半是这个模型版本已下线",
+}
+ZHIPU_MODEL_CODES = {"1211": "模型不存在，模型名写错了"}
+# 千问 invalid_parameter_error 是笼统的参数错，只有 message 说模型没开通、不存在时才算
+QWEN_MODEL_PARAM_CODE = "invalid_parameter_error"
+_MODEL_MISSING_MARKERS = (
+    "not activated",
+    "has not been activated",
+    "not been opened",
+    "未开通",
+    "model not exist",
+    "model does not exist",
+    "model not found",
+    "does not exist or you do not have access",
+)
+REGION_CODES = {"unsupported_country_region_territory": "所在国家或地区不受支持"}
+_REGION_MARKERS = (
+    "country, region, or territory not supported",
+    "unsupported_country_region_territory",
+    "unsupported region",
+    "not available in your region",
+)
+CONTENT_CODES = {
+    "DataInspectionFailed": "输入或输出被阿里云内容安全拦截",
+    "data_inspection_failed": "输入或输出被阿里云内容安全拦截",
+    "FaqRuleBlocked": "命中 FAQ 规则干预被拦截",
+    "invalid_prompt": "提示词被判为不合规",
+    "bio_policy": "触发生物安全策略被拦截",
+    "misalignment_policy_violation": "触发安全审查被拦截",
+}
+ZHIPU_CONTENT_CODES = {"1301": "输入或生成内容被判定可能不安全或敏感，被拦截"}
 
 
 @dataclass(frozen=True)
 class UpstreamRejection:
-    """认出来的「重试没用」：``kind`` 是 ``quota`` / ``access``，``code`` 是服务商的码（只认 message 时写认出的那段）。"""
+    """认出来的「重试没用」：``kind`` 是 ``quota`` / ``access`` / ``model`` / ``region`` / ``content``，
+    ``code`` 是服务商的码（只认 message 时写认出的那段；没有码的 404 写 ``http_404``）。"""
 
     kind: str
     provider: str
@@ -119,6 +186,11 @@ class UpstreamRejection:
     @property
     def provider_label(self) -> str:
         return PROVIDER_LABELS.get(self.provider, self.provider or "上游")
+
+    @property
+    def stops_run(self) -> bool:
+        """同一组凭据之后的请求注定同样被拒，整份翻译停下（内容审核只是这一块）。"""
+        return self.kind in STOP_KINDS
 
     def describe(self) -> str:
         """「HTTP 429，OpenAI 业务码 insufficient_quota：额度不足」：报错里给用户看的那段，不含响应体原文。"""
@@ -200,7 +272,8 @@ def classify_rejection(
     headers: Mapping[str, Any] | None = None,
     url: str = "",
 ) -> UpstreamRejection | None:
-    """一次上游 4xx 响应是不是「余额、额度用完」或「套餐不能用这个模型」。``body`` 可以是文本、字节或解析好的 dict。"""
+    """一次上游 4xx 响应是不是「重试没用」：余额额度用完、套餐不能用这个模型、模型不可用、地区不支持、内容审核没过。
+    ``body`` 可以是文本、字节或解析好的 dict。"""
     try:
         status = int(status) if status is not None else None
     except (TypeError, ValueError):
@@ -214,6 +287,29 @@ def classify_rejection(
 
     def hit(kind: str, code: str, reason: str, who: str = "") -> UpstreamRejection:
         return UpstreamRejection(kind=kind, provider=who or provider, code=code, reason=reason, http_status=status)
+
+    # 内容审核、地区、模型不可用：各家独有的码，先认（和额度类的码不重叠）
+    if provider == ZHIPU:
+        for code in codes:
+            if code in ZHIPU_CONTENT_CODES:
+                return hit(CONTENT, code, ZHIPU_CONTENT_CODES[code])
+            if code in ZHIPU_MODEL_CODES:
+                return hit(MODEL, code, ZHIPU_MODEL_CODES[code])
+    for code in codes:
+        if code in CONTENT_CODES:
+            return hit(CONTENT, code, CONTENT_CODES[code])
+    if status == 403:
+        for code in codes:
+            if code in REGION_CODES:
+                return hit(REGION, code, REGION_CODES[code], provider or OPENAI)
+        for marker in _REGION_MARKERS:
+            if marker in lowered:
+                return hit(REGION, "unsupported_region", "所在国家或地区不受支持", provider or OPENAI)
+    for code in codes:
+        if code in MODEL_CODES:
+            return hit(MODEL, code, MODEL_CODES[code])
+        if code == QWEN_MODEL_PARAM_CODE and any(marker in lowered for marker in _MODEL_MISSING_MARKERS):
+            return hit(MODEL, code, "模型还没在百炼模型市场开通", provider or QWEN)
 
     # Anthropic：details.error_code 最准；爬坡限流明确是限流
     if detail_code in ANTHROPIC_QUOTA_CODES:
@@ -229,17 +325,17 @@ def classify_rejection(
     for code in codes:
         if code in QWEN_QUOTA_CODES:
             return hit(QUOTA, code, QWEN_QUOTA_CODES[code], QWEN)
-    for marker, code, reason in QWEN_QUOTA_MESSAGES:
+    for marker, code, reason in QWEN_QUOTA_MESSAGES + QWEN_USAGE_QUOTA_MESSAGES:
         if marker in lowered:
             return hit(QUOTA, code, reason, QWEN)
     for code in codes:
-        if code not in OPENAI_QUOTA_CODES:
-            continue
-        if provider == QWEN and code == "insufficient_quota":
+        if code == "Throttling.AllocationQuota" or (provider == QWEN and code == "insufficient_quota"):
             # 百炼的 insufficient_quota 是 Throttling.AllocationQuota（TPM 限流），只有说免费额度用完的才是额度
             if any(marker in lowered for marker in _FREE_TIER_MARKERS):
                 return hit(QUOTA, code, "免费额度用完", QWEN)
             return None
+        if code not in OPENAI_QUOTA_CODES:
+            continue
         return hit(QUOTA, code, OPENAI_QUOTA_CODES[code], provider or OPENAI)
     for marker, code, reason in OPENCODE_QUOTA_MESSAGES:
         if marker in lowered:
@@ -251,6 +347,9 @@ def classify_rejection(
     if status == 429 and provider == ANTHROPIC and not _has_header(headers, "retry-after"):
         # 文档：限流的 429 带 retry-after，消费封顶的不带；没有 details.error_code 时按额度用完停下
         return hit(QUOTA, "429_without_retry_after", "429 没有 retry-after（消费封顶）")
+    if status == 404:
+        # 对话接口回 404：模型名写错 / 没开通，或者接口地址（base_url）写错。哪种都是配置错，每个块都会一样被拒
+        return hit(MODEL, "http_404", "模型或接口地址不存在")
     return None
 
 
@@ -280,16 +379,24 @@ def agent_http_classifier(
     status: int, body: str, headers: Mapping[str, Any] | None, url: str
 ) -> tuple[str, str] | None:
     """给翻译 agent 自己的 Anthropic 请求（``make_http_transport(classify=…)``）用：
-    交回 (``quota`` / ``auth``, 「HTTP 429，Anthropic 业务码 …：…」)，认不出交回 None。"""
+    交回 (``quota`` / ``auth`` / ``model`` / ``region`` / ``content``, 「HTTP 429，Anthropic 业务码 …：…」)，认不出交回 None。"""
     rejection = classify_rejection(status, body, headers=headers, url=url)
     if rejection is None:
         return None
-    return ("quota" if rejection.kind == QUOTA else "auth"), rejection.describe()
+    return _AGENT_KINDS.get(rejection.kind, "auth"), rejection.describe()
+
+
+# 业务码种类 → agent 的种类（``retainpdf_translation_agent.agent._classify`` 认这几个）
+_AGENT_KINDS = {QUOTA: "quota", ACCESS: "auth", MODEL: "model", REGION: "region", CONTENT: "content"}
 
 
 __all__ = [
     "ACCESS",
+    "CONTENT",
+    "MODEL",
     "QUOTA",
+    "REGION",
+    "STOP_KINDS",
     "UpstreamRejection",
     "agent_http_classifier",
     "classify_rejection",
