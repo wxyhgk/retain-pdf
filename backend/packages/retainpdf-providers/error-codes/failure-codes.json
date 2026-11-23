@@ -1,6 +1,6 @@
 [
-  {"failure_code": "auth_failed", "producer": "both", "summary_zh": "鉴权失败", "retryable": false, "issues": [81], "note_zh": "OCR 阶段只有 Paddle、MinerU 的鉴权两类会映射到这里；建议文字写死「检查 MinerU Token…」，不分服务商。#81 是旧版把渲染失败误判成鉴权失败（现在已不复现）。"},
-  {"failure_code": "upstream_quota_exhausted", "producer": "python", "summary_zh": "上游账户余额不足（402）/ 上游账户余额或额度不足", "retryable": false, "issues": [164], "note_zh": "HTTP 402、agent 引擎的 QuotaExhausted、GLM-OCR 的 GlmOcrQuotaExhausted（智谱 429 + 1113、1308–1321 等）。"},
+  {"failure_code": "auth_failed", "producer": "both", "summary_zh": "鉴权失败", "retryable": false, "issues": [81], "note_zh": "OCR 阶段只有 Paddle、MinerU 的鉴权两类会映射到这里；建议按服务商出（2026-11-23 以前写死「检查 MinerU Token…」）。翻译侧智谱 1311、1315（套餐不能用这个模型）也归这里。#81 是旧版把路径过长误判成鉴权失败（现在归 path_too_long）。"},
+  {"failure_code": "upstream_quota_exhausted", "producer": "both", "summary_zh": "上游账户余额不足（402）/ 上游账户余额或额度不足", "retryable": false, "issues": [164], "note_zh": "HTTP 402、agent 引擎的 QuotaExhausted、GLM-OCR 的 GlmOcrQuotaExhausted（智谱 429 + 1113、1308–1321 等）；2026-11-23 起还有翻译请求层按业务码认出的欠费、额度、预算用完（OpenAI、Anthropic、智谱、百炼、OpenCode，Rust 模型执行器同样），PaddleOCR 12001（Python 的 PaddleQuotaExhausted、Rust 兜底）和 MinerU -60018/-60019（Rust 兜底）。"},
   {"failure_code": "upstream_rate_limited", "producer": "python", "summary_zh": "外部服务请求被限流", "retryable": true, "issues": [164], "note_zh": "HTTP 429 或报错文字里有 rate limit。和 Rust 的 rate_limited 同义。"},
   {"failure_code": "rate_limited", "producer": "rust", "summary_zh": "上游服务触发限流", "retryable": true, "issues": [], "note_zh": "Rust 兜底按文字认（没有结构化失败时）。"},
   {"failure_code": "upstream_bad_request", "producer": "python", "summary_zh": "上游服务拒绝请求（400）", "retryable": false, "issues": [161, 163], "note_zh": null},
@@ -14,7 +14,7 @@
   {"failure_code": "document_schema_validation_failed", "producer": "python", "summary_zh": "标准化文档校验失败", "retryable": false, "issues": [], "note_zh": null},
   {"failure_code": "source_pdf_missing", "producer": "both", "summary_zh": "源 PDF 缺失", "retryable": false, "issues": [], "note_zh": null},
   {"failure_code": "source_pdf_open_failed", "producer": "python", "summary_zh": "源 PDF 打开失败", "retryable": false, "issues": [], "note_zh": null},
-  {"failure_code": "render_failed", "producer": "both", "summary_zh": "排版或编译阶段失败", "retryable": false, "issues": [24, 52, 60, 135], "note_zh": "渲染阶段的 FileNotFoundError 在 Python 里标可重试。#135 是 OCR worker import 期崩溃被 Rust 兜底误判成渲染失败，误判路径还在。"},
+  {"failure_code": "render_failed", "producer": "both", "summary_zh": "排版或编译阶段失败", "retryable": false, "issues": [24, 52, 60, 135], "note_zh": "渲染阶段的 FileNotFoundError 在 Python 里标可重试。#135 是 OCR worker import 期崩溃被 Rust 兜底误判成渲染失败；2026-11-23 起 Rust 兜底要求渲染阶段的证据，import 期崩溃归 runtime_environment_broken。"},
   {"failure_code": "typst_dependency_download_failed", "producer": "both", "summary_zh": "Typst 渲染依赖下载失败", "retryable": true, "issues": [], "note_zh": null},
   {"failure_code": "typst_runtime_failed", "producer": "python", "summary_zh": "Typst 运行时启动失败", "retryable": false, "issues": [], "note_zh": null},
   {"failure_code": "process_exit_failed", "producer": "rust", "summary_zh": "Python worker 非零退出", "retryable": true, "issues": [], "note_zh": null},
@@ -25,6 +25,6 @@
   {"failure_code": "runtime_environment_broken", "producer": "both", "summary_zh": "运行环境不完整：缺少模块、依赖库或安装文件", "retryable": false, "issues": [7, 135, 143, 162], "note_zh": "本机环境类（2026-11-23）：ImportError / ModuleNotFoundError、undefined symbol、DLL load failed、Library not loaded，或安装包（site-packages、retainpdf_* 包目录）里的文件缺失。worker 模块改在结构化失败的包装里面 import，import 期崩溃也有结构化失败。"},
   {"failure_code": "path_too_long", "producer": "both", "summary_zh": "文件路径过长，超出系统限制", "retryable": false, "issues": [79, 81], "note_zh": "本机环境类（2026-11-23）：WinError 206、ENAMETOOLONG，或 Windows 上「找不到文件」而路径已有 248 个字符以上。"},
   {"failure_code": "local_permission_denied", "producer": "both", "summary_zh": "本机权限不足，文件或网络访问被拒绝", "retryable": false, "issues": [38], "note_zh": "本机环境类（2026-11-23）：异常链里有 PermissionError，或 WinError 32（文件被占用）。裸的 permission denied、HTTP 403 不算（那是上游鉴权）。"},
-  {"failure_code": "python_unhandled_exception", "producer": "python", "summary_zh": "任务失败，但暂未识别出明确根因", "retryable": true, "issues": [18, 38, 44, 84, 132], "note_zh": "Python 分类器的兜底。很多上游错误（GLM-OCR 的 401/403/400、翻译时的 404/413/422、Paddle 11003）现在都落在这里。"},
-  {"failure_code": "unknown", "producer": "rust", "summary_zh": "任务失败，但暂未识别出明确根因", "retryable": true, "issues": [7], "note_zh": "Rust 兜底，不在恢复目录里（按「未识别」处理，重试从头开始）。Paddle、MinerU 除鉴权以外的 OCR 分类都落在这里。"}
+  {"failure_code": "python_unhandled_exception", "producer": "python", "summary_zh": "任务失败，但暂未识别出明确根因", "retryable": true, "issues": [18, 38, 44, 84, 132], "note_zh": "Python 分类器的兜底。很多上游错误（GLM-OCR 的 401/403/400、翻译时的 404/413/422、Paddle 11003）现在还落在这里。"},
+  {"failure_code": "unknown", "producer": "rust", "summary_zh": "任务失败，但暂未识别出明确根因", "retryable": true, "issues": [7], "note_zh": "Rust 兜底，不在恢复目录里（按「未识别」处理，重试从头开始）。Paddle、MinerU 除鉴权、额度用完以外的 OCR 分类都落在这里。"}
 ]

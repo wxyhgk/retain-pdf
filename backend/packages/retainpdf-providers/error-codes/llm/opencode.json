@@ -49,7 +49,7 @@
     "403 可能是没有 Go 订阅（EntitlementError）、免费模型被非 OpenCode 客户端调用、或 Key 权限不够；看 error.type 和 message。",
     "会把请求转给上游并在协议间翻译，上游原生错误是否透传、以什么形状透传文档没写，遇到未知错误按对应协议的错误形状解析。"
   ],
-  "handling_summary_zh": "中转站，走翻译请求层；接口地址是 opencode.ai 时自动带 x-opencode-session 会话头（#144）。只看 HTTP 状态。",
+  "handling_summary_zh": "中转站，走翻译请求层；接口地址是 opencode.ai 时自动带 x-opencode-session 会话头（#144）。按 HTTP 状态处理，另外 429 的 message 是「Policy budget exceeded」时整份停下归 upstream_quota_exhausted（2026-11-23）。",
   "notes_zh": [
     "文档覆盖很少：没有错误码总表，没有 retry-after / 速率限制头的说明，没有 5xx / 过载 / 超时的说明，也没说明 Go 额度用完时请求返回什么状态码（只知道用量接口 status=rate-limited，以及开启 Extra Usage 后会改扣余额而不是拦截）。",
     "429 歧义：文档里 429 只用于工作区预算（Policy budget exceeded，重试无用）。上游模型服务商的限速 429 是否原样透传、Go 额度耗尽是否也用 429，文档都没写；建议看 message 是否含 'Policy budget exceeded'，否则若有 retry-after 头再按限速处理，并可调用 /inference/go/v1/usage 看哪个 meter 是 rate-limited。",
@@ -261,17 +261,21 @@
       "user_hint_zh": "请工作区管理员在 Console 提高预算，或等预算周期重置；在 Activity › Logs 可看到是哪条策略。",
       "source_url": "https://opencode.ai/docs/console/budgets/",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "retry",
-        "failure_code": "upstream_rate_limited",
-        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
-        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 message（Policy budget exceeded），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
-        "priority": "high",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：429 的 message 里有「Policy budget exceeded」（工作区预算用完；不限地址），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
-          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }

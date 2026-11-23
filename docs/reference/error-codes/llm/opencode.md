@@ -20,9 +20,9 @@ OpenCode 没有统一的错误码文档。已文档化的形状只有两种：(1
 
 ## RetainPDF 怎么处理
 
-中转站，走翻译请求层；接口地址是 opencode.ai 时自动带 x-opencode-session 会话头（#144）。只看 HTTP 状态。
+中转站，走翻译请求层；接口地址是 opencode.ai 时自动带 x-opencode-session 会话头（#144）。按 HTTP 状态处理，另外 429 的 message 是「Policy budget exceeded」时整份停下归 upstream_quota_exhausted（2026-11-23）。
 
-共 8 条：有缺口 2 条（高 1、中 0、低 1），碰不到 0 条。缺口按用户影响排的总表见[索引](../README.md#缺口汇总)。
+共 8 条：有缺口 1 条（高 0、中 0、低 1），碰不到 0 条。缺口按用户影响排的总表见[索引](../README.md#缺口汇总)。
 
 ## 错误码
 
@@ -36,15 +36,19 @@ OpenCode 没有统一的错误码文档。已文档化的形状只有两种：(1
 | （key_permission_insufficient） | 403 | 没有权限（`permission`） | 否 | 请求超出密钥权限，例如受限密钥没有 Models › Request（调用模型）或 Models › Read（列模型）。 | 在 Console 给密钥加上 Models › Request 权限，或换一个权限足够的密钥。 | 整份翻译停下 → `auth_failed`：不重试；记下这组接口地址 + Key 被拒，同一次运行后面的请求不再发，整份翻译停下（agent 引擎同样报 AuthFailed）。换 Key 后可从翻译续跑。 | 对得上 | [文档](https://opencode.ai/docs/console/api/) |
 | （insufficient_account_funds） | 402 | 欠费或余额不足（`billing`） | 否 | 按量付费余额用完（余额不会变负），message 为 "Upstream request failed: Insufficient account funds"。 | 在 OpenCode Console 充值或开启自动充值。 | 整份翻译停下 → `upstream_quota_exhausted`：402 不重试，整份翻译停下，归「上游账户余额不足」，不可重试（agent 引擎报 QuotaExhausted）。 | 对得上 | [文档](https://opencode.ai/docs/console/billing/) |
 | （credit_limit_reached） | 402 | 欠费或余额不足（`billing`） | 否 | 月结（发票）账户达到信用额度，或有发票逾期。 | 在 Console 支付逾期发票或联系 OpenCode 提高信用额度。 | 整份翻译停下 → `upstream_quota_exhausted`：402 不重试，整份翻译停下，归「上游账户余额不足」，不可重试（agent 引擎报 QuotaExhausted）。 | 对得上 | [文档](https://opencode.ai/docs/console/billing/) |
-| （policy_budget_exceeded） | 429 | 额度或用量上限（`quota`） | 否 | 达到工作区预算（成员/服务账号/策略预算），message 为 "Upstream request failed: Policy budget exceeded"；响应不说明是哪个预算，到重置或管理员提额前一直失败。 | 请工作区管理员在 Console 提高预算，或等预算周期重置；在 Activity › Logs 可看到是哪条策略。 | 退避重试 → `upstream_rate_limited`：只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。 | **缺口·高**：这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 message（Policy budget exceeded），按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。 | [文档](https://opencode.ai/docs/console/budgets/) |
+| （policy_budget_exceeded） | 429 | 额度或用量上限（`quota`） | 否 | 达到工作区预算（成员/服务账号/策略预算），message 为 "Upstream request failed: Policy budget exceeded"；响应不说明是哪个预算，到重置或管理员提额前一直失败。 | 请工作区管理员在 Console 提高预算，或等预算周期重置；在 Activity › Logs 可看到是哪条策略。 | 整份翻译停下 → `upstream_quota_exhausted`：请求层读响应体业务码：429 的 message 里有「Policy budget exceeded」（工作区预算用完；不限地址），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。 | 对得上 | [文档](https://opencode.ai/docs/console/budgets/) |
 | `rate-limited` | — | 额度或用量上限（`quota`） | 否 | Go 的 5 小时 / 每周 / 每月用量额度用完（用量接口里对应 meter 的 status 变为 rate-limited，resetsAt 给出重置时间）。超额请求返回的 HTTP 状态和错误体文档没有写明。 | 等 resetsAt 时间重置，或在 Console 的 Go 页面开启 Extra Usage 用余额继续，或升级 Go Plus。 | 退避重试 → `upstream_rate_limited`：Go 的时段额度用完时接口返回什么状态码官方没写；若是 429 就当限流退避到 300 秒上限。 | **缺口·低**：未核实。额度要等 resetsAt 才恢复，应按额度处理；可调 /inference/go/v1/usage 看哪个 meter 是 rate-limited。 | [文档](https://opencode.ai/docs/console/go/) |
 
 ## 相关代码
 
-- [`backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs`](../../../../backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs)
+- [`backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs`](../../../../backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs)
+- [`backend/packages/retainpdf-providers/src/upstream_limits.rs`](../../../../backend/packages/retainpdf-providers/src/upstream_limits.rs)
+- [`backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py`](../../../../backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py)
+- [`backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py`](../../../../backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py)
 - [`backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py`](../../../../backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py)
 - [`backend/translation/retainpdf_translation/llm/providers/deepseek/client.py`](../../../../backend/translation/retainpdf_translation/llm/providers/deepseek/client.py)
 - [`backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py`](../../../../backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py)
+- [`backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py`](../../../../backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py)
 - [`backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py`](../../../../backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py)
 
 ## 备注

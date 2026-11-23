@@ -49,7 +49,7 @@
     "500 可能是 api_error 也可能是 timeout_error，看 error.type；模型名写错一般是 404 not_found_error，没有单独的 model_not_found。",
     "HTTP 200 也可能没翻完：看 stop_reason（max_tokens、model_context_window_exceeded、refusal）；流式时 200 之后仍可能来 event: error。"
   ],
-  "handling_summary_zh": "走翻译请求层的 Anthropic Messages 协议，处理同 OpenAI：401/403 整份停下、402 整份停下归余额不足、400 这个请求失败（拒收 temperature、思考字段时自动降级）、429/5xx/529 退避重试、其他 4xx 只算这个请求失败。只有开发用的直连 agent.py 另外看正文里的 credit balance / billing / quota。",
+  "handling_summary_zh": "走翻译请求层的 Anthropic Messages 协议，处理同 OpenAI：401/403 整份停下、402 整份停下归余额不足、400 这个请求失败（拒收 temperature、思考字段时自动降级）、429/5xx/529 退避重试、其他 4xx 只算这个请求失败。4xx 先读业务码（2026-11-23）：429 的 details.error_code=enforced_spend_limit_reached（或官方地址的 429 不带 retry-after）、400 的 credit balance too low / reached your specified API usage limits 都和 402 一样整份停下，归 upstream_quota_exhausted；ramp_limit_exceeded 照旧当限流。",
   "notes_zh": [
     "429 有歧义：error.type 都是 rate_limit_error，但可能是 (a) 普通速率限制（有 retry-after，可重试），(b) 爬坡限制 error.details.error_code=ramp_limit_exceeded（有 retry-after，可重试但要慢慢加量）， (c) 档位月度消费封顶 error.details.error_code=enforced_spend_limit_reached（没有 retry-after，重试到下月都无用），(d) Claude Code 工作区的消费上限（带 retry-after）。 区分规则：先看 error.details.error_code；没有该字段时，429 且无 retry-after 头应按额度耗尽处理、不要自动重试。SDK 默认自动重试 2 次，会在封顶 429 上白白重试。",
     "400 也有歧义：自设消费上限达到时返回 400 invalid_request_error（不是 429），只能靠 message 前缀 'You have reached your specified ... API usage limits' 识别；余额不足 'Your credit balance is too low' 同理只能看 message。",
@@ -106,15 +106,21 @@
       "user_hint_zh": "去 Claude Console 的 Spend limits 提高或取消自设上限，或等恢复时间。",
       "source_url": "https://platform.claude.com/docs/en/api/rate-limits",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "fail_block",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
-        "gap_zh": "这是自设花费上限到了，应按正文（You have reached your specified API usage limits）归额度类、整份停下（开发用直连路径已经认 credit balance）。",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：400 的 message 里有「reached your specified … API usage limits」，认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -162,15 +168,21 @@
       "user_hint_zh": "去 Claude Console 的 Billing 页面购买额度或开启自动充值。",
       "source_url": "https://platform.claude.com/docs/en/about-claude/api-credits-for-subscribers",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "fail_block",
-        "failure_code": "upstream_bad_request",
-        "summary_zh": "400 不重试，这个请求失败，其余块继续；整份失败时归「上游服务拒绝请求（400）」。",
-        "gap_zh": "余额不足走的是 400，应按正文（credit balance is too low）归 upstream_quota_exhausted、整份停下、提示充值。",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：400 的 message 里有「credit balance is too low」，认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
+          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
@@ -412,17 +424,21 @@
       "user_hint_zh": "在 Claude Console 的 Rate limits 页申请升档，或等下月恢复。",
       "source_url": "https://platform.claude.com/docs/en/api/rate-limits",
       "retainpdf_handling": {
-        "status": "gap",
-        "action": "retry",
-        "failure_code": "upstream_rate_limited",
-        "summary_zh": "只看状态码 429，当限流退避重试，每个请求累计等到 300 秒才放弃，所有并发请求一起空等；最后提示「稍后重试即可，无需改动配置」。检测接口把 429 说成「可用（当前被限流）」。",
-        "gap_zh": "这是额度 / 欠费，不是限流，几分钟内重试没用。应读响应体 error.details.error_code（enforced_spend_limit_reached），没有该字段时 429 又没有 retry-after 也按额度处理，按 402 处理：整份停下、归 upstream_quota_exhausted、提示充值或等重置；检测接口也不能报「可用」。",
-        "priority": "medium",
+        "status": "ok",
+        "action": "stop_translation",
+        "failure_code": "upstream_quota_exhausted",
+        "summary_zh": "请求层读响应体业务码：429 的 error.details.error_code 是 enforced_spend_limit_reached；api.anthropic.com 的 429 没有 retry-after 头时也按这一类（文档：消费封顶的 429 不带，限流的带），认出是余额、额度或预算用完，不再当限流退避或只算这一块失败：第一次就停，记下这组接口地址 + Key，同一次运行后面的请求不再发，整份翻译停下，归「上游账户余额或额度不足」（upstream_quota_exhausted，不可重试），报错和失败的 upstream 带 HTTP 状态和业务码；agent 引擎（OpenAI、Anthropic 两种协议）和 Rust 模型执行器规则相同。检测接口报欠费或额度用完（insufficient_balance / quota_exceeded），不再说「可用（当前被限流）」。",
+        "gap_zh": null,
+        "priority": null,
         "code_paths": [
+          "backend/translation/retainpdf_translation/llm/shared/upstream_error_codes.py",
           "backend/translation/retainpdf_translation/llm/shared/upstream_resilience.py",
           "backend/translation/retainpdf_translation/llm/providers/deepseek/client.py",
-          "backend/translation/retainpdf_translation/llm/providers/deepseek/transport.py",
-          "backend/packages/retainpdf-providers/src/provider_probe/deepseek.rs"
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_openai.py",
+          "backend/translation-agent/retainpdf_translation_agent_engine/agent_flow.py",
+          "backend/packages/retainpdf-providers/src/model_executor/upstream_codes.rs",
+          "backend/packages/retainpdf-providers/src/upstream_limits.rs",
+          "backend/pipeline/retainpdf_pipeline/foundation/shared/structured_errors.py"
         ],
         "issues": []
       }
