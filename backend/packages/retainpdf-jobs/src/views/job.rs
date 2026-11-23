@@ -22,5 +22,5 @@ pub use types::{
     ReaderRegionItemView, ReaderRegionsView, RefineRetryRequest, RetryStageKind, RetryStageRequest,
     EscalatedItemView, LastRefineView, RetryStageSubmissionView, StageActionsView, StageRetryActionLinkView,
     StageRetryActionView, LAST_REFINE_ESCALATED_LIMIT,
-    TranslationRequestRecoveryView,
+    TranslationRequestRecoveryView, UpstreamWaitView,
 };

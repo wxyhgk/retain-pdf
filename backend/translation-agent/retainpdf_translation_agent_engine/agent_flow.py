@@ -25,6 +25,7 @@ from __future__ import annotations
 import os
 
 import hashlib
+import threading
 import json
 import re
 import shutil
@@ -38,6 +39,10 @@ from retainpdf_base.cache_ttl import ttl_seconds
 from retainpdf_base import paths
 from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.events import emit_stage_transition
+from retainpdf_base.upstream_wait import begin_upstream_wait
+from retainpdf_base.upstream_wait import build_wait_info
+from retainpdf_base.upstream_wait import end_upstream_wait
+from retainpdf_base.upstream_wait import vendor_for_base_url
 from retainpdf_translation.artifacts import TranslationRunDiagnostics
 from retainpdf_translation_agent_engine.identity import agent_engine_identity
 from retainpdf_translation.core.item_reader import item_normalized_sub_type
@@ -581,11 +586,36 @@ def _is_anthropic(*, base_url: str, model: str) -> bool:
     return profile is None or profile.protocol == model_wire.PROTOCOL_ANTHROPIC
 
 
+def _upstream_wait_reporter(base_url: str) -> Callable[[dict | None], None]:
+    """Anthropic 协议的请求被服务商限流退避等待时，往任务进度里报「等待中」/「等完了」（OpenAI 两种协议走共用请求层，那边自己报）。"""
+    provider = vendor_for_base_url(base_url)
+    reported = threading.local()
+
+    def on_wait(wait: dict | None) -> None:
+        if wait is None:
+            if getattr(reported, "active", False):
+                reported.active = False
+                end_upstream_wait(user_stage="translation")
+            return
+        info = build_wait_info(
+            provider=provider,
+            http_status=int(wait.get("http_status") or 429),
+            wait_s=float(wait.get("retry_after_s") or 0.0),
+            attempt=wait.get("attempt"),
+            max_attempts=wait.get("max_attempts"),
+            code=str(wait.get("code") or ""),
+            wait_source=str(wait.get("wait_source") or ""),
+        )
+        reported.active = begin_upstream_wait(user_stage="translation", info=info)
+
+    return on_wait
+
+
 def _connection_transport(*, api_key: str, model: str, base_url: str) -> Callable[[dict], dict]:
     """按阶段入口登记的协议选：Anthropic 走 agent 自己的 Messages 请求，OpenAI 两种协议走共用请求层（agent_openai.py）。"""
     profile = model_wire.registered_profile(base_url=base_url, model=model)
     if profile is None or profile.protocol == model_wire.PROTOCOL_ANTHROPIC:
-        return make_http_transport(api_key, url=messages_url(base_url))
+        return make_http_transport(api_key, url=messages_url(base_url), on_wait=_upstream_wait_reporter(base_url))
     return make_openai_transport(api_key=api_key, model=model, base_url=base_url, protocol=profile.protocol)
 
 

@@ -244,3 +244,21 @@ fn stage_observation_example_is_accepted_by_durable_parser() {
     assert_eq!(parsed.substage, "translation_batches");
     assert_eq!(parsed.progress_unit, "block");
 }
+
+#[test]
+fn upstream_wait_example_is_a_stage_observation_carrying_the_wait() {
+    let contract = load_contract();
+    let wait_contract = &contract["stage_observation_event"]["upstream_wait"];
+    let example = wait_contract["example"]
+        .as_str()
+        .expect("upstream wait example");
+    let parsed = super::parse_pipeline_stage_observation_line(example)
+        .expect("upstream wait example must parse as a stage observation");
+    assert_eq!(parsed.event_type, "stage_progress");
+    let wait = &parsed.payload["upstream_wait"];
+    for field in wait_contract["fields"].as_array().expect("fields") {
+        let field = field.as_str().expect("field name");
+        assert!(wait.get(field).is_some(), "example misses upstream_wait.{field}");
+    }
+    assert_eq!(parsed.payload["upstream_wait_transition"], "started");
+}

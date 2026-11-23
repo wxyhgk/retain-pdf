@@ -36,6 +36,10 @@ pub struct ModelOperation {
     pub status: String,
     pub result: Option<Value>,
     pub error_code: Option<String>,
+    /// 执行器正在等服务商限流（429 退避）时的等待信息；不进库，只在内存里，等完就没了。
+    /// worker 轮询时看到它就往任务进度里报「服务商限流，等待中」。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub upstream_wait: Option<Value>,
 }
 
 pub enum ModelReservation {
@@ -212,6 +216,7 @@ impl Db {
                 status,
                 result: result.map(|v| serde_json::from_str(&v)).transpose()?,
                 error_code,
+                upstream_wait: None,
             })
         })
         .transpose()

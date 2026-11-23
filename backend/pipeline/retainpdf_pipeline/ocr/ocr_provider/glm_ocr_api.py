@@ -166,6 +166,7 @@ def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | Non
             attempts=RETRY_ATTEMPTS,
             backoff_seconds=RETRY_BACKOFF_SECONDS,
             label="GLM-OCR",
+            upstream_provider="glm_ocr",
             give_up=_gives_up,
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={"model": GLM_OCR_MODEL, "file": pdf_data_uri(pdf_bytes)},

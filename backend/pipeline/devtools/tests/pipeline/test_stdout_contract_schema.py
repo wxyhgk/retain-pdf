@@ -132,6 +132,20 @@ def test_stage_observation_event_has_real_producer() -> None:
         assert f'"{field}"' in events_source, f"stage producer missing `{field}`"
 
 
+def test_upstream_wait_contract_has_real_producer() -> None:
+    wait_contract = SCHEMA["stage_observation_event"]["upstream_wait"]
+    events_source = (BACKEND_ROOT / "base/retainpdf_base/events.py").read_text(encoding="utf-8")
+    wait_source = (BACKEND_ROOT / "base/retainpdf_base/upstream_wait.py").read_text(encoding="utf-8")
+    assert f'"{wait_contract["payload_key"]}"' in events_source
+    assert f'"{wait_contract["transition_key"]}"' in events_source
+    for transition in wait_contract["transitions"]:
+        assert f'"{transition}"' in events_source
+    for field in wait_contract["fields"]:
+        assert f'"{field}"' in wait_source, f"upstream_wait producer missing `{field}`"
+    example = json.loads(wait_contract["example"])
+    assert sorted(example["payload"]["upstream_wait"]) == sorted(wait_contract["fields"])
+
+
 def test_metric_and_state_lines_have_emit_sites() -> None:
     sources = list(_iter_emit_sources())
 

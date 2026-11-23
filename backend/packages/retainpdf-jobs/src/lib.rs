@@ -84,7 +84,7 @@ pub use views::{
     JobEventListView, JobFailureBriefView,
     JobDeleteResultView, JobFailureDiagnosticView, JobFilesQuery, JobLinksView, JobListInvocationSummaryView,
     JobListItemView, JobListView, JobProgressView, JobReportView, JobResumePlanView,
-    JobStageContractArtifactView, JobStageContractView, JobStageRuntimeView, JobStageSnapshotView,
+    JobStageContractArtifactView, JobStageContractView, JobStageRuntimeView, JobStageSnapshotView, UpstreamWaitView,
     JobStageStateView, JobStagesView, JobSubmissionView, JobTimestampsView,
     LAST_REFINE_ESCALATED_LIMIT, LastRefineView, LayoutDocxQuery, ListDocumentJobsQuery,
     ListJobEventsQuery, ListJobEventsStart, ListJobsQuery, ListTranslationItemsQuery,

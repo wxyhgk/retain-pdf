@@ -17,6 +17,9 @@ import requests
 from requests.adapters import HTTPAdapter
 
 
+from retainpdf_base.upstream_wait import begin_upstream_wait
+from retainpdf_base.upstream_wait import build_wait_info
+from retainpdf_base.upstream_wait import end_upstream_wait
 from retainpdf_translation.core.execution_policy import ExecutorError
 
 
@@ -105,26 +108,56 @@ class RustModelExecutorClient:
         # A single local submit. Caller may explicitly repeat this SAME payload;
         # Rust idempotency protects it even if the first response was lost.
         operation = self._call("POST", payload=payload)
-        while True:
-            if operation.get("operation_id") != operation_id or operation.get("unit_id") != unit_id:
-                raise ExecutorUnavailable("executor receipt identity mismatch")
-            state = operation.get("status")
-            if state == "succeeded":
-                receipt = operation.get("result") or {}
-                content = receipt.get("content")
-                if not isinstance(content, str) or not content.strip():
-                    raise AmbiguousModelRequest("executor returned an empty completed response")
-                return ModelReceipt(content, operation_id, {key: value for key, value in receipt.items() if key != "content"})
-            if state == "ambiguous":
-                raise AmbiguousModelRequest("upstream result unknown; manual retry may incur duplicate billing")
-            if state in {"failed", "cancelled"}:
-                raise ExecutorError(f"model operation {state}; no automatic upstream retry")
-            if state not in {"queued", "running"}:
-                raise ExecutorUnavailable("unknown executor operation state")
-            if time.monotonic() - started >= self._deadline:
-                raise ExecutorUnavailable("local wait deadline reached; inspect the existing operation before retrying")
-            time.sleep(0.15)
-            operation = self._call("GET", f"/{operation_id}")
+        return self._await_operation(operation, operation_id=operation_id, unit_id=unit_id, started=started, wait_state=[False])
+
+    def _report_upstream_wait(self, operation: dict, wait_state: list[bool]) -> None:
+        """执行器在等服务商限流时，操作状态里带 ``upstream_wait``：出现时报开始，消失时报结束（各报一次）。"""
+        wait = operation.get("upstream_wait")
+        if isinstance(wait, dict) and not wait_state[0]:
+            try:
+                info = build_wait_info(
+                    provider=str(wait.get("provider") or "custom"),
+                    http_status=int(wait.get("http_status") or 429),
+                    wait_s=float(wait.get("retry_after_s") or 0.0),
+                    attempt=wait.get("attempt"),
+                    max_attempts=wait.get("max_attempts"),
+                    code=str(wait.get("code") or ""),
+                    wait_source=str(wait.get("wait_source") or ""),
+                )
+            except (TypeError, ValueError):
+                return
+            wait_state[0] = begin_upstream_wait(user_stage="translation", info=info)
+        elif not isinstance(wait, dict) and wait_state[0]:
+            wait_state[0] = False
+            end_upstream_wait(user_stage="translation")
+
+    def _await_operation(self, operation: dict, *, operation_id: str, unit_id: str, started: float, wait_state: list[bool]) -> ModelReceipt:
+        try:
+            while True:
+                self._report_upstream_wait(operation, wait_state)
+                if operation.get("operation_id") != operation_id or operation.get("unit_id") != unit_id:
+                    raise ExecutorUnavailable("executor receipt identity mismatch")
+                state = operation.get("status")
+                if state == "succeeded":
+                    receipt = operation.get("result") or {}
+                    content = receipt.get("content")
+                    if not isinstance(content, str) or not content.strip():
+                        raise AmbiguousModelRequest("executor returned an empty completed response")
+                    return ModelReceipt(content, operation_id, {key: value for key, value in receipt.items() if key != "content"})
+                if state == "ambiguous":
+                    raise AmbiguousModelRequest("upstream result unknown; manual retry may incur duplicate billing")
+                if state in {"failed", "cancelled"}:
+                    raise ExecutorError(f"model operation {state}; no automatic upstream retry")
+                if state not in {"queued", "running"}:
+                    raise ExecutorUnavailable("unknown executor operation state")
+                if time.monotonic() - started >= self._deadline:
+                    raise ExecutorUnavailable("local wait deadline reached; inspect the existing operation before retrying")
+                time.sleep(0.15)
+                operation = self._call("GET", f"/{operation_id}")
+        finally:
+            if wait_state[0]:
+                wait_state[0] = False
+                end_upstream_wait(user_stage="translation")
 
     def cancel(self, operation_id: str) -> bool:
         return self._call("POST", f"/{_identifier(operation_id)}/cancel").get("changed") is True

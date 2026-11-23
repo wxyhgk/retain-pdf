@@ -703,6 +703,7 @@
       "test_files": [
         "devtools/tests/document_schema/test_glm_ocr_driver.py",
         "devtools/tests/document_schema/test_ocr_retry_error_safety.py",
+        "devtools/tests/document_schema/test_ocr_upstream_wait.py",
         "devtools/tests/document_schema/test_paddle_api_retry.py",
         "devtools/tests/translation/test_agent_openai.py",
         "devtools/tests/translation/test_model_protocol.py",
@@ -713,7 +714,8 @@
         "devtools/tests/translation/test_translation_batch_transport.py",
         "devtools/tests/translation/test_translation_run_diagnostics.py",
         "devtools/tests/translation/test_translation_transport_fallbacks.py",
-        "devtools/tests/translation/test_upstream_resilience.py"
+        "devtools/tests/translation/test_upstream_resilience.py",
+        "devtools/tests/translation/test_upstream_wait_events.py"
       ],
       "runtime_required": true,
       "devtool_required": true
@@ -736,6 +738,7 @@
         "retainpdf_pipeline/ocr/ocr_provider/paddle_normalize.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_runner.py",
         "retainpdf_pipeline/ocr/ocr_provider/provider_pipeline.py",
+        "retainpdf_pipeline/ocr/retry.py",
         "retainpdf_pipeline/render/layout/inline_content/fallback/png_renderer.py",
         "retainpdf_pipeline/render/output/rpr_fit/renderer.py",
         "retainpdf_pipeline/render/output/typst/book_renderer.py",
@@ -779,6 +782,7 @@
         "devtools/tests/document_schema/test_backfill_normalized_documents.py",
         "devtools/tests/document_schema/test_glm_ocr_driver.py",
         "devtools/tests/document_schema/test_mineru_token_env.py",
+        "devtools/tests/document_schema/test_ocr_upstream_wait.py",
         "devtools/tests/document_schema/test_paddle_chunked.py",
         "devtools/tests/document_schema/test_pipeline_shared_io_streaming.py",
         "devtools/tests/document_schema/test_stage_spec_book.py",
@@ -795,7 +799,8 @@
         "devtools/tests/translation/test_translation_cache.py",
         "devtools/tests/translation/test_translation_editorial.py",
         "devtools/tests/translation/test_translation_preparation.py",
-        "devtools/tests/translation/test_translation_refine.py"
+        "devtools/tests/translation/test_translation_refine.py",
+        "devtools/tests/translation/test_upstream_wait_events.py"
       ],
       "runtime_required": true,
       "devtool_required": true
@@ -1008,6 +1013,7 @@
         "devtools/tests/translation/test_translation_tail_retry.py",
         "devtools/tests/translation/test_translation_validation_protocols.py",
         "devtools/tests/translation/test_upstream_resilience.py",
+        "devtools/tests/translation/test_upstream_wait_events.py",
         "devtools/tests/translation/test_usage_ledger.py",
         "devtools/tests/translation/test_validation_boundaries.py",
         "devtools/tests/translation/test_zero_translated_failure_cause.py"
@@ -1041,7 +1047,8 @@
       "test_files": [
         "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_agent_openai.py",
-        "devtools/tests/translation/test_strict_json_schemas.py"
+        "devtools/tests/translation/test_strict_json_schemas.py",
+        "devtools/tests/translation/test_upstream_wait_events.py"
       ],
       "runtime_required": false,
       "devtool_required": false

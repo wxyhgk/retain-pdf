@@ -87,6 +87,7 @@ def request_mineru(method: str, url: str, *, timeout: int, **kwargs: Any) -> req
             attempts=_retry_attempts(),
             backoff_seconds=_retry_backoff_seconds(),
             label="MinerU",
+            upstream_provider="mineru",
             **kwargs,
         )
     except RetainRateLimitError as err:

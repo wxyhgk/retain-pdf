@@ -223,18 +223,43 @@ def http_transport(body: dict, *, sleep: Callable[[float], None] = time.sleep) -
     return _post(body, key=key, url=API_URL, sleep=sleep)
 
 
-def make_http_transport(api_key: str, *, url: str = API_URL, sleep: Callable[[float], None] = time.sleep) -> Transport:
-    """正式流程用：密钥和地址由调用方给（任务的凭据和 base_url），不读环境变量。"""
+# 服务商限流（429）、过载（529）、暂不可用（503）时的退避等待会经 `on_wait` 报出去（其余重试不报）。
+UPSTREAM_WAIT_STATUSES = {429, 503, 529}
+
+# 等待回调：开始等时收到 {"http_status", "code", "retry_after_s", "wait_source", "attempt", "max_attempts"}，等完收到 None。
+WaitCallback = Callable[[dict | None], None]
+
+
+def make_http_transport(
+    api_key: str,
+    *,
+    url: str = API_URL,
+    sleep: Callable[[float], None] = time.sleep,
+    on_wait: WaitCallback | None = None,
+) -> Transport:
+    """正式流程用：密钥和地址由调用方给（任务的凭据和 base_url），不读环境变量。
+    `on_wait`：被服务商限流退避等待时，开始等调一次（等待信息），等完调一次（None）；调度拿它往任务进度里报「等待中」。"""
     if not api_key:
         raise AuthFailed("model API key is empty")
 
     def transport(body: dict) -> dict:
-        return _post(body, key=api_key, url=url or API_URL, sleep=sleep)
+        return _post(body, key=api_key, url=url or API_URL, sleep=sleep, on_wait=on_wait)
 
     return transport
 
 
-def _post(body: dict, *, key: str, url: str, sleep: Callable[[float], None]) -> dict:
+def _error_code(text: str) -> str:
+    """Anthropic 错误体 {"type":"error","error":{"type":"rate_limit_error"}} 里的错误类型；解析不了返回空串。"""
+    try:
+        data = json.loads(text)
+    except ValueError:
+        return ""
+    error = data.get("error") if isinstance(data, dict) else None
+    code = error.get("type") or error.get("code") if isinstance(error, dict) else None
+    return str(code)[:64] if isinstance(code, (str, int)) and not isinstance(code, bool) else ""
+
+
+def _post(body: dict, *, key: str, url: str, sleep: Callable[[float], None], on_wait: WaitCallback | None = None) -> dict:
     """用标准库发请求（不给流水线添依赖）。429、5xx 和网络错误退避重试；额度、密钥问题抛 `StopRun`。"""
     import http.client
     import urllib.error
@@ -246,6 +271,8 @@ def _post(body: dict, *, key: str, url: str, sleep: Callable[[float], None]) -> 
     for attempt in range(MAX_ATTEMPTS):
         request = urllib.request.Request(url, data=data, headers=headers, method="POST")
         retry_after = None
+        wait_status = None
+        wait_code = ""
         try:
             with urllib.request.urlopen(request, timeout=300) as response:
                 return json.loads(response.read().decode("utf-8"))
@@ -260,12 +287,31 @@ def _post(body: dict, *, key: str, url: str, sleep: Callable[[float], None]) -> 
                 raise RuntimeError(f"model API HTTP {error.code}: {text}") from None
             retry_after = error.headers.get("retry-after") if error.headers else None
             last_error = f"HTTP {error.code}"
+            if error.code in UPSTREAM_WAIT_STATUSES:
+                wait_status, wait_code = error.code, _error_code(text)
         except (OSError, http.client.HTTPException) as error:
             # 网络层的错（对方没回应就断开、连接被重置……）也退避重试：真实文档实测碰到过 RemoteDisconnected；
             # 2026-11-18 读回答时碰到 ssl.SSLError（record layer failure），它不是 ConnectionError，以前直接把整个阶段弄崩了。
             # OSError 包括 URLError、超时、连接错误和 SSL 错误
             last_error = f"{type(error).__name__}: {error}"
-        sleep(retry_wait(attempt, retry_after))
+        delay = retry_wait(attempt, retry_after)
+        if on_wait is None or wait_status is None:
+            sleep(delay)
+            continue
+        on_wait(
+            {
+                "http_status": wait_status,
+                "code": wait_code,
+                "retry_after_s": delay,
+                "wait_source": "retry_after" if retry_after else "backoff",
+                "attempt": attempt + 1,
+                "max_attempts": MAX_ATTEMPTS,
+            }
+        )
+        try:
+            sleep(delay)
+        finally:
+            on_wait(None)
     raise RateLimited(f"model API still failing after {MAX_ATTEMPTS} attempts: {last_error}")
 
 

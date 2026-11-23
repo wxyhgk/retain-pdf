@@ -12,6 +12,31 @@
 
 ---
 
+## 服务商限流时进度里报「等待中」（feat/upstream-wait-events）
+
+2026-11-23，用户：被限流等待时进度里带出来，前端显示「服务商限流，等待中」，别像卡住了。只加不改，旧字段、旧事件都不变。
+
+后端给的：
+- 任务详情 `GET /api/v1/jobs/{job_id}` 和任务列表（`include_live_stage`）的 `stage_snapshot` 多一个可选字段 `upstream_wait`：
+  翻译或 OCR 请求因为服务商 429（限流）/ 529（过载）/ 503（暂不可用）在退避等待时出现，所有在等的请求等完就**不出现**（不是 null）。
+  形状 `{provider, http_status, reason, code, retry_after_s, wait_source, attempt, max_attempts, started_at, until}`，
+  契约 `job-status.v1` 的 `UpstreamWaitView`（`@retainpdf/contracts/job-status` 重新生成后有 `UpstreamWaitView` 类型）。
+  `provider` 是服务商 id：`openai` / `anthropic` / `deepseek` / `zhipu` / `qwen` / `opencode` / `custom`，OCR `paddle` / `mineru` / `glm_ocr`。
+- 事件流 `GET /api/v1/jobs/{job_id}/progress/events` 多一对进度事件：`payload.observation.upstream_wait_transition` 为
+  `started`（`payload.observation.upstream_wait` 是等待信息）和 `ended`（`upstream_wait: null`）。进度数字、`stage_detail` 和上一条一样。
+- 同一阶段几十个请求同时被限流也只有一对事件；字段在等待期间一直在。
+
+前端要做的（建议）：
+1. 进度卡、书架卡：`stage_snapshot.upstream_wait` 在时，在进度旁显示「服务商限流，等待中」，可加服务商名和倒计时
+   （如「DeepSeek 限流，约 30 秒后重试」，倒计时读 `until`）；`until` 过了字段还在时只显示「等待中」，不要当成卡死或失败。
+   `reason=overloaded` 可写「服务商繁忙」，`unavailable` 写「服务商暂不可用」。字段消失就恢复原样。
+2. 类型：`npm --prefix contracts run generate` 已在后端分支里跑过（`contracts/dist` 已提交）；前端用 `JobStageSnapshotView.upstream_wait` 即可，
+   不用自己拼事件。
+3. 不用改的：进度条、`stage_detail` 照旧。
+
+说明见 [查询任务详情](../../api/01-任务/02-查询任务详情.md#服务商限流等待stage_snapshotupstream_wait)、
+[事件总览](../../api/02-进度事件/01-事件总览.md#服务商限流等待事件2026-11-23)。
+
 ## 用翻译接口问一次模型，可以带图片（feat/model-image-input）
 
 2026-11-22，用户要"后端增加一个 api，最好可以发图片"。新接口 `POST /api/v1/providers/translation/ask`（admin），在契约

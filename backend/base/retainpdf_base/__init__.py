@@ -2,6 +2,7 @@
 
 - contracts    worker stdout 标签与 summary / 事件文件名（pipeline-stdout.v1）
 - events       阶段事件 writer（logs/pipeline_events.jsonl）
+- upstream_wait 服务商限流等待报进阶段进度（upstream_wait）
 - io           JSON 落盘（流式写、原子写）
 - paths        仓库根、输出根与其下的缓存目录
 - output_layout 任务目录里各子目录的名字

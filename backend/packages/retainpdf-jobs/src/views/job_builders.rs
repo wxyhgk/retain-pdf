@@ -266,6 +266,7 @@ fn test_stage_snapshot(job: &JobSnapshot, percent: Option<f64>) -> Option<JobSta
             percent,
             unit: None,
         },
+        upstream_wait: None,
     })
 }
 
