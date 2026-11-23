@@ -270,7 +270,9 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
   };
   const paragraphOf = (item, text = item.translatedText || item.text) => {
     const hangEm = item.listItem ? hangEmOf(text) : 0;
-    return { runs: runsForText(text), indent: hangEm > 0 ? 0 : (item.indent || 0), ...(hangEm > 0 ? { hangEm } : {}) };
+    if (hangEm > 0) return { runs: runsForText(text), indent: 0, hangEm };
+    // indentEm: a Chinese two-character indent (job-model indentEmOf)
+    return { runs: runsForText(text), indent: item.indent || 0, ...(item.indentEm > 0 ? { indentEm: item.indentEm } : {}) };
   };
   const contentFor = (node, mode) => {
     if (node.kind === "stream") {

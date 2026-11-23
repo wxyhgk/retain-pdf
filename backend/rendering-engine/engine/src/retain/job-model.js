@@ -63,6 +63,16 @@ function firstLineIndentOf(item) {
   return Number.isFinite(indent) && indent > 0 ? indent : 0;
 }
 
+// A Chinese paragraph is indented two characters. The source's indent (an
+// English one: 14e352 about 1.7 em, 3bfb0b about 0.9 em once translated) only
+// says that the paragraph is indented; one of at least INDENT_MIN_EM of the
+// block's seed size becomes CJK_INDENT_EM of the size the fitter settles on.
+const CJK_INDENT_EM = 2;
+const INDENT_MIN_EM = 0.5;
+function indentEmOf(indent, seedSize) {
+  return indent > 0 && seedSize > 0 && indent >= INDENT_MIN_EM * seedSize ? CJK_INDENT_EM : 0;
+}
+
 // Source font size (pt) retain-pdf measured for a heading: the median text-layer
 // span size inside its box, else the size at which its source text fills the
 // box. Headings are fitted at or below it (passes/retain-titles.js) instead of
@@ -229,7 +239,7 @@ function buildModel(job, options = {}) {
           styleKind: "body_text",
           debugRole: "body_candidate",
           columnKey: String(block.metadata?.provider_column_index_guess || ""),
-          items: [{ id, text: sourceText, translatedText: translated, originalLineCount: lineCount, indent: firstLineIndentOf(item), ...(retain && ListGroups.MARKER.test(sourceText) ? { listItem: true } : {}) }]
+          items: [{ id, text: sourceText, translatedText: translated, originalLineCount: lineCount, indent: firstLineIndentOf(item), ...(retain && indentEmOf(firstLineIndentOf(item), seed.size) ? { indentEm: indentEmOf(firstLineIndentOf(item), seed.size) } : {}), ...(retain && ListGroups.MARKER.test(sourceText) ? { listItem: true } : {}) }]
         };
         if (retain) stream.sourceLinePitch = pitchFromPdf || pitchFromOcr || 0;
         // The host's text-layer size of this paragraph (source_font_size_pt, the measure headings'
@@ -258,6 +268,7 @@ function buildModel(job, options = {}) {
         fontSize: seed.size,
         lineCount,
         indent: firstLineIndentOf(item),
+        ...(retain && indentEmOf(firstLineIndentOf(item), seed.size) ? { indentEm: indentEmOf(firstLineIndentOf(item), seed.size) } : {}),
         ...(retain && subType === "body" && ListGroups.MARKER.test(sourceText) ? { listItem: true } : {}),
         sourceFontSize: sourceFontSizeOf(item),
         ...(retain ? { sourceLinePitch: pitchFromPdf || pitchFromOcr || 0 } : {})
@@ -403,6 +414,7 @@ function detachBody(model, id) {
       translatable: true, mainTitle: false, fontSize: stream.fontSize, lineCount: Math.max(2, lines),
       ...(several ? { items: stream.items, paragraphGap: stream.paragraphGap } : {}),
       indent: item.indent || 0,
+      ...(item.indentEm ? { indentEm: item.indentEm } : {}),
       ...(item.listItem ? { listItem: true } : {}),
       sizeClass: true,
       ...(stream.sourceTextSize > 0 ? { sourceFontSize: stream.sourceTextSize } : {}),

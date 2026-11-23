@@ -1,5 +1,5 @@
 repo=https://github.com/wxyhgk/retain-pdf-rendering.git
-ref=feat/list-hanging-indent
-commit=95a7d29e398c422425d1a82daab8c10952fca60e
-synced_at=2026-11-23T02:07:22Z
+ref=feat/cjk-paragraph-indent
+commit=ecf14e3a9f23d56acec0ccc5be1c09fd022bfe75
+synced_at=2026-11-23T02:13:34Z
 paths=bin/rpr-retain.js bin/rpr-fit.js bin/rpr-layout-pdf.js bin/rpr-table.js bin/rpr-math-check.js src data/fonts package.json LICENSE
