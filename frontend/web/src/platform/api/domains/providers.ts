@@ -5,6 +5,7 @@ import {
   validatePaddleToken as _canonValidatePaddleToken,
   validateMineruToken as _canonValidateMineruToken,
   fetchTranslationProviderModels as _canonFetchTranslationProviderModels,
+  fetchProviderErrorHint as _canonFetchProviderErrorHint,
 } from "@retainpdf/api/providers";
 import { mockable } from "./_mockable.js";
 
@@ -16,4 +17,5 @@ export const fetchTranslationProviderModels = mockable(
   _canonFetchTranslationProviderModels,
   MockProviders.fetchTranslationProviderModels,
 );
-export type { ProviderModelListView, ProviderModelView } from "@retainpdf/api/providers";
+export const fetchProviderErrorHint = mockable(_canonFetchProviderErrorHint, MockProviders.fetchProviderErrorHint);
+export type { ProviderErrorHint, ProviderModelListView, ProviderModelView } from "@retainpdf/api/providers";

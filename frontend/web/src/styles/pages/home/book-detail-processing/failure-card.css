@@ -90,6 +90,19 @@
   margin-top: 3px;
 }
 
+/* 服务商错误码目录里对应的那条提示：谁家、什么码，加一句该怎么办。 */
+.book-detail-failure-provider {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--ui-text-xs);
+  line-height: 1.55;
+}
+
+.book-detail-failure-provider strong {
+  margin-right: 6px;
+  font-weight: 600;
+}
+
 .book-detail-failure-cause {
   margin: 0;
   padding: 7px 10px;

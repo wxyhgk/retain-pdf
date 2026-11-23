@@ -6,7 +6,7 @@
  *
  * `fetchJobPayload` 自带 in-flight 去重，重复点击不会打出多个请求。
  */
-import { fetchJobPayload } from "@/platform/api/index.js";
+import { fetchJobPayload, fetchProviderErrorHint, type ProviderErrorHint } from "@/platform/api/index.js";
 import { APP_VERSION } from "@/platform/generated/app-version.js";
 import { getDesktopHost } from "@/platform/desktop/host.js";
 
@@ -24,6 +24,8 @@ type JobDetailPayload = {
     provider_code?: unknown;
     upstream_host?: unknown;
     recovery_hint?: unknown;
+    /** 后端以后加的（feat/failure-upstream）：上游是哪家、HTTP 状态码、厂商的码。 */
+    upstream?: { provider?: unknown; http_status?: unknown; code?: unknown };
   };
   request_payload?: {
     ocr?: { provider?: unknown };
@@ -70,8 +72,14 @@ export type JobFailureFacts = {
   translationModel: string;
   /** 翻译接口只留主机名：地址里可能带路径、查询串，没必要整段贴出去。 */
   translationHost: string;
+  /** 拿去查服务商错误码目录的：厂商编号、厂商的码、HTTP 状态码（见 upstreamTarget）。 */
+  upstreamVendor: string;
+  upstreamCode: string;
+  upstreamHttpStatus: number | null;
   detail: string;
 };
+
+const OCR_VENDORS = new Set(["paddle", "mineru", "glm_ocr"]);
 
 function hostOf(value: unknown): string {
   try {
@@ -95,8 +103,39 @@ export function pickFailureFacts(payload: unknown): JobFailureFacts {
     ocrProvider: text(request.ocr?.provider),
     translationModel: text(request.translation?.model),
     translationHost: hostOf(request.translation?.base_url),
+    ...upstreamTarget(failure, request),
     detail: pickFailureDetailText(payload),
   };
+}
+
+/**
+ * 这次失败对到错误码目录的哪家、哪个码。失败里有 upstream（后端 feat/failure-upstream 加的）就用它；
+ * 没有时 OCR 阶段用建任务时的 ocr.provider 加失败里的 provider_code（失败里的 provider 在 Python 报的失败里只是 "ocr"）。
+ * 翻译阶段现在多半没有厂商的码，对不上就不查。
+ */
+function upstreamTarget(failure: NonNullable<JobDetailPayload["failure"]>, request: NonNullable<JobDetailPayload["request_payload"]>) {
+  const upstream = failure.upstream || {};
+  const status = Number(upstream.http_status);
+  const fromUpstream = text(upstream.provider);
+  if (fromUpstream) {
+    return { upstreamVendor: fromUpstream, upstreamCode: text(upstream.code), upstreamHttpStatus: Number.isFinite(status) && status > 0 ? status : null };
+  }
+  const stageIsOcr = text(failure.failed_stage) === "ocr" || OCR_VENDORS.has(text(failure.provider)) || text(failure.provider) === "ocr";
+  const ocrVendor = text(request.ocr?.provider);
+  if (stageIsOcr && OCR_VENDORS.has(ocrVendor)) {
+    return { upstreamVendor: ocrVendor, upstreamCode: text(failure.provider_code), upstreamHttpStatus: null };
+  }
+  return { upstreamVendor: "", upstreamCode: "", upstreamHttpStatus: null };
+}
+
+/** 失败卡片上那一行服务商提示：先取任务详情（和「完整错误」共用、去重），再按厂商和码查错误码目录。 */
+export async function loadJobFailureHint(jobId: string): Promise<ProviderErrorHint | null> {
+  const facts = await loadJobFailureFacts(jobId);
+  return fetchProviderErrorHint(undefined, {
+    vendor: facts.upstreamVendor,
+    code: facts.upstreamCode,
+    httpStatus: facts.upstreamHttpStatus,
+  });
 }
 
 export async function loadJobFailureFacts(jobId: string): Promise<JobFailureFacts> {

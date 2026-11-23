@@ -22,7 +22,7 @@ import { ProcessingHud } from "../panels/processing/ProcessingHud.jsx";
 import { processingHudModel } from "./processing-hud-model.js";
 import { ProcessingActivity, activityLinesOf } from "../panels/processing/ProcessingActivity.jsx";
 import { ProcessingDetails, type ProcessingDetailSection } from "../panels/processing/ProcessingDetails.jsx";
-import { loadJobFailureDetail, loadJobFailureFacts } from "../../domain/job-failure-detail.js";
+import { loadJobFailureDetail, loadJobFailureFacts, loadJobFailureHint } from "../../domain/job-failure-detail.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
 import { hasEditorialRoom, processingFacts } from "../../domain/translation-coverage.js";
 import { documentJobPresentation, isDocumentJobActive } from "../use-document-jobs.js";
@@ -192,6 +192,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           actionError={actionError}
           loadDetail={loadJobFailureDetail}
           loadFacts={loadJobFailureFacts}
+          loadHint={loadJobFailureHint}
         />
       </div>
     ) : null,
@@ -203,6 +204,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           hint={ocrIsPrimary ? ocrRetry?.hint : ""}
           loadDetail={loadJobFailureDetail}
           loadFacts={loadJobFailureFacts}
+          loadHint={loadJobFailureHint}
           // 两段都失败时状态行上是翻译的续跑，OCR 这段自己带一个「重新 OCR」。
           action={!ocrIsPrimary && ocrRetry ? (
             <PrimaryActionButton id="book-detail-ocr-retry" action={ocrRetry} variant="secondary" />

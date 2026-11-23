@@ -19,12 +19,13 @@
  * 列表里那份简报；点「完整错误」时才去打一次 job 详情端点拿完整错误。
  */
 import { Button, IconButton } from "@retainpdf/ui";
-import { useCallback, useContext, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { Ban, Check, ChevronDown, Coins, Copy, LoaderCircle, RotateCcw, Server, Settings2, TriangleAlert } from "lucide-react";
 
 import { HomeSettingsHubContext } from "@/ui/context/home-services-context.js";
 import { copyText } from "@/platform/utils/clipboard.js";
 import { appEnvironment, type JobFailureFacts } from "../../../domain/job-failure-detail.js";
+import type { ProviderErrorHint } from "@/platform/api/index.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
 import {
   failureAdvice,
@@ -47,6 +48,8 @@ export type JobFailureCardProps = {
   action?: ReactNode;
   /** 复制诊断信息时补上失败码、上游的码和地址、这次用的 OCR 和模型。不给就只复制简报。 */
   loadFacts?: (jobId: string) => Promise<JobFailureFacts>;
+  /** 服务商错误码目录里对应的那条提示（「智谱账号余额或资源包不足……」）。不给或查不到就不画。 */
+  loadHint?: (jobId: string) => Promise<ProviderErrorHint | null>;
 };
 
 
@@ -59,11 +62,22 @@ export function JobFailureCard({
   loadDetail,
   action = null,
   loadFacts,
+  loadHint,
 }: JobFailureCardProps) {
   const [detail, setDetail] = useState<string>("");
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [copied, setCopied] = useState(false);
+
+  const [providerHint, setProviderHint] = useState<ProviderErrorHint | null>(null);
+  useEffect(() => {
+    setProviderHint(null);
+    if (!loadHint || !jobId) return undefined;
+    let cancelled = false;
+    // 查不到、网络断了都不打扰：这一行只是锦上添花，下面后端的说法照样在。
+    loadHint(jobId).then((hint) => { if (!cancelled) setProviderHint(hint); }, () => {});
+    return () => { cancelled = true; };
+  }, [jobId, loadHint]);
 
   const advice = failureAdvice(failure);
   // 换 Key 这类要去设置里改的失败，给一个直达「设置 → 接口」的按钮；设置窗口叠在详情上面，存完关掉就回到这里点重试。
@@ -127,6 +141,13 @@ export function JobFailureCard({
           <Settings2 aria-hidden="true" />
           {advice.settingsAction}
         </Button>
+      ) : null}
+
+      {providerHint ? (
+        <p className="book-detail-failure-provider" data-failure-provider-hint={providerHint.vendor} title={providerHint.meaning || undefined}>
+          <strong>{providerHint.vendorLabel}{providerHint.code ? ` ${providerHint.code}` : ""}</strong>
+          {providerHint.hint}
+        </p>
       ) : null}
 
       {/* 后端自己给的根因。它常常就是上游原样抛回来的那句英文，但那句往往比我们
