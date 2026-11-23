@@ -79,7 +79,7 @@ export type JobFailureFacts = {
   detail: string;
 };
 
-const OCR_VENDORS = new Set(["paddle", "mineru", "glm_ocr"]);
+const OCR_VENDORS: readonly string[] = ["paddle", "mineru", "glm_ocr"];
 
 function hostOf(value: unknown): string {
   try {
@@ -120,9 +120,9 @@ function upstreamTarget(failure: NonNullable<JobDetailPayload["failure"]>, reque
   if (fromUpstream) {
     return { upstreamVendor: fromUpstream, upstreamCode: text(upstream.code), upstreamHttpStatus: Number.isFinite(status) && status > 0 ? status : null };
   }
-  const stageIsOcr = text(failure.failed_stage) === "ocr" || OCR_VENDORS.has(text(failure.provider)) || text(failure.provider) === "ocr";
+  const stageIsOcr = text(failure.failed_stage) === "ocr" || OCR_VENDORS.includes(text(failure.provider)) || text(failure.provider) === "ocr";
   const ocrVendor = text(request.ocr?.provider);
-  if (stageIsOcr && OCR_VENDORS.has(ocrVendor)) {
+  if (stageIsOcr && OCR_VENDORS.includes(ocrVendor)) {
     return { upstreamVendor: ocrVendor, upstreamCode: text(failure.provider_code), upstreamHttpStatus: null };
   }
   return { upstreamVendor: "", upstreamCode: "", upstreamHttpStatus: null };
