@@ -135,7 +135,9 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* safe：放得下居中；页比栏宽时靠左排，不然居中会让页往左右各溢出一半，左边那半截滚不到
+   * （scrollLeft 不能是负数；对照 75% 时页左边 163px 永远看不见，可滚距离只有一半，2026-11-24）。 */
+  align-items: safe center;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }

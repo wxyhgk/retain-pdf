@@ -43,6 +43,10 @@
 没有用浏览器原生滚动条：Mac 上原生滚动条平时隐藏、滚动时才出来，还是看不见。
 颜色可以由皮肤改：`--reader-pane-scrollbar-track`、`--reader-pane-scrollbar-thumb`；没设时先用 `--scrollbar-thumb`。
 
+栏用 `align-items: safe center` 排页：放得下时居中；页比栏宽时靠左排。以前是 `center`，页比栏宽时往左右各溢出一半，
+而 `scrollLeft` 不能是负数，左边那半截永远滚不到，可滚的距离也只有一半（对照 75% 时页左边 163px 看不见；
+加了滚动条后用户发现「滚到头不是 PDF 的边」，2026-11-24）。
+
 ## 深色文档
 
 书页黑底白字。底栏有一个半黑圆按钮，快捷键是 `D`。这是全局偏好，不分书，存在本机（`retainpdf:reader:doc-theme:v1`）。

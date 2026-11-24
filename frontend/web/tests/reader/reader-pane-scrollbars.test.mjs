@@ -40,3 +40,10 @@ test("接线：对照网格挂了滚动条，样式贴底、不占高度", () =>
   const built = readFileSync(new URL("../../dist/css/reader.css", import.meta.url), "utf8");
   assert.match(built, /reader-pane-scrollbar-thumb/);
 });
+
+test("栏用 safe center：页比栏宽时靠左排，左右两头都滚得到（居中会让左边那半截滚不到）", () => {
+  const css = readFileSync(new URL("../../../../frontend/packages/reader/styles/react-pdf.css", import.meta.url), "utf8");
+  const rule = css.match(/\.reader-react-pdf-pane \{[^}]*\}/)?.[0] || "";
+  assert.match(rule, /align-items: safe center;/);
+  assert.doesNotMatch(rule, /align-items: center;/);
+});
