@@ -89,6 +89,11 @@
   `RUST_API_ALLOWED_HOSTS` 里的主机名，否则所有地址（含 `/health`、第二个端口）都回 `403`
   （`message` 为 `request host is not allowed`）。监听非回环地址时只有配了 `RUST_API_ALLOWED_HOSTS`
   才查。不带 `Host` 的请求（HTTP/1.0 直连）不查。
+- **Docker 的 web 容器（`40001`）另有一道**（2026-11-24）：容器里后端监听 `0.0.0.0`、上面这条默认不查，而 NGINX 会替
+  没带 key 的请求补上后端 key，两条叠在一起 DNS rebinding 就能拿到全部权限。所以 NGINX 自己按 `Host` 判断：只有
+  `localhost`、IP 字面量和 `RETAINPDF_ALLOWED_HOSTS`（`web.env`）里的主机名才补 key；别的主机名、没带 key 的
+  `/api/` 请求 403（`error.details.reason` 为 `host_not_allowed`），自己带 `X-API-Key` 的照常转发。
+  见 `ops/deployment/docker/nginx.conf.template`、交付包 README。
 
 多用户模式不受这些影响：跨域照旧只认 `RETAIN_ALLOWED_ORIGINS` 并带凭据，不查 `Host`。
 

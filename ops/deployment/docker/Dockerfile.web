@@ -50,6 +50,8 @@ COPY ops/deployment/docker/nginx-mjs.types.conf /etc/nginx/conf.d/mjs.types.conf
 COPY ops/deployment/docker/entrypoint-web.sh /docker-entrypoint.d/99-runtime-config.sh
 # 排在 20-envsubst-on-templates.sh 前面：占位 key 换成 app 生成的那把再展开模板。
 COPY ops/deployment/docker/backend-api-key.envsh /docker-entrypoint.d/15-backend-api-key.envsh
+# 排在 20-envsubst-on-templates.sh 前面：把 RETAINPDF_ALLOWED_HOSTS 写成模板 include 的主机名单（防 DNS rebinding）。
+COPY ops/deployment/docker/allowed-hosts.sh /docker-entrypoint.d/16-retainpdf-allowed-hosts.sh
 
 RUN rm -rf \
   /usr/share/nginx/html/node_modules \
@@ -61,6 +63,7 @@ RUN rm -rf \
   /usr/share/nginx/html/tailwind.config.js \
   /usr/share/nginx/html/.gitignore
 
-RUN chmod +x /docker-entrypoint.d/99-runtime-config.sh /docker-entrypoint.d/15-backend-api-key.envsh
+RUN chmod +x /docker-entrypoint.d/99-runtime-config.sh /docker-entrypoint.d/15-backend-api-key.envsh \
+  /docker-entrypoint.d/16-retainpdf-allowed-hosts.sh
 
 EXPOSE 80
