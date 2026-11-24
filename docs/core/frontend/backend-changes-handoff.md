@@ -14,7 +14,7 @@
 
 ## 防重复提交：续跑查重、`Idempotency-Key` 请求头（feat/job-idempotency）
 
-2026-11-24，只增不改，见 [防重复提交](../../api/00-约定/05-防重复提交.md) 和
+2026-11-24，只增不改，见 [防重复提交](../../api/00-约定/06-防重复提交.md) 和
 [决定记录](../../ops/planning/api-reorg/20261124-防重复提交.md)：
 
 - **续跑、重试出新任务时查重（前端不改也生效）**：`POST /jobs/{id}/actions/resume`（旧名 `rerun`）、`retry-stage`（出新任务时）、
@@ -46,6 +46,24 @@
    - `idempotency_key_reused`：前端自己的 bug（同一个 key 发了不同的请求），记日志、换新 key；给用户看通用的「提交失败，请重试」。
    - 响应头 `Idempotent-Replayed: true` 只是告诉你这是重放，结果和第一次一样，当成功处理就行。
 4. 前端测试：没有钉 `ActionBlockReason` 的测试；如果书籍详情有按 reason 显示文案的表（`job-failure-model.ts` 之类），加上面三个值。
+
+---
+
+## 请求体写错统一回 400，顶层 `code` 的用法（fix/api-error-format）
+
+2026-11-24，**前端不用改**，见 [请求体错误统一回 400](../../ops/planning/api-reorg/20261124-请求体错误统一回400.md)：
+
+- **请求体类型不对、缺必填字段、枚举值不认识：`422 UNPROCESSABLE_ENTITY`（顶层 `42200`）→ `400 BAD_REQUEST`（顶层 `40000`）**，
+  `error.details.reason = "schema_mismatch"`，`message` 没变。所有用 `ApiJson` 收请求体的接口都是（凭据、术语表、改单条译文、
+  任务动作、书库、设置……）。以前已经是 400 的两种也多带一个 reason：不是 JSON `invalid_json`、不认识的字段 `unknown_field`。
+  见 [认证与错误·请求体写错（400）](../../api/00-约定/02-认证与错误.md#请求体写错400)。
+- 核对过 `frontend/`：源码里没有按 `422`、`42200`、`UNPROCESSABLE_ENTITY` 判断的地方。改单条译文**内容**没过检查仍是
+  `422 TRANSLATION_REVISION_REJECTED`（`frontend/packages/api/src/translation-debug.ts` 按 `details.reason` 说人话，照旧能用）；
+  测试里的 422（`tests/shared/translation-debug-client.test.mjs`、`tests/book-detail/edit-translation.test.mjs`、
+  `tests/reader/reader-block-edit.test.mjs`、`tests/shared/document-ocr-client.test.mjs`）都是这个或自己造的假回应，不受影响。
+- **顶层 `code` 现有行为不改**：多数是数字，凭据、书的元数据建议、边翻边看、改单条译文、复用 OCR 建任务、账号这几类是字符串
+  （清单见 [响应格式·顶层 code 的类型](../../api/00-约定/01-响应格式.md#顶层-code-的类型)）。以后前端做分支判断只看
+  `error.code` 和 `error.details.reason`，不要看顶层 `code` 和它的类型；后端以后新加的错误顶层 `code` 一律是数字。
 
 ---
 
@@ -199,7 +217,7 @@
 
 2026-11-23，用户定：检测接口（`/providers/deepseek/validate-token`、`/providers/{mineru,paddle}/validate-token`、
 `/providers/deepseek/balance`、`/providers/translation/models`、`/providers/translation/ask`）以前把 HTTP 状态码塞进 `provider_code`，
-429 一律当限流——欠费的 Key 检测显示「可用（当前被限流）」。细节见 [Provider 校验接口第 3.1 节](../rust_api/08-Provider%20校验接口.md)。
+429 一律当限流——欠费的 Key 检测显示「可用（当前被限流）」。细节见 [Provider 校验接口第 3.1 节](../../api/08-调试诊断/05-服务商校验.md)。
 
 变了什么：
 - **加** `http_status`（数字或 `null`）：服务商回的 HTTP 状态码，六个接口都有。契约 `translation-providers.v1` 的
@@ -347,7 +365,7 @@
 
 2026-11-22，用户要"后端增加一个 api，最好可以发图片"。新接口 `POST /api/v1/providers/translation/ask`（admin），在契约
 `translation-providers.v1` 里（`askTranslationProviderModel`、`TranslationModelAskRequest`、`TranslationModelAskView`），
-细节见 [Provider 校验接口第 9 节](../rust_api/08-Provider%20校验接口.md)。只增不改，别的接口不动。
+细节见 [Provider 校验接口第 9 节](../../api/08-调试诊断/05-服务商校验.md)。只增不改，别的接口不动。
 
 前端要做的：
 1. `npm --prefix frontend/packages/api run generate:client`：契约加了接口，`src/generated/translation-providers.ts` 要重新生成
@@ -458,7 +476,7 @@
 
 ## 从翻译接口拉取模型列表（feat/provider-model-list）
 
-2026-11-19。新接口，只增不改。详见 [Provider 校验接口](../rust_api/08-Provider%20校验接口.md) 第 8 节。
+2026-11-19。新接口，只增不改。详见 [Provider 校验接口](../../api/08-调试诊断/05-服务商校验.md) 第 8 节。
 
 - `POST /api/v1/providers/translation/models`，请求 `{base_url, api_key, api_protocol}`（内联 Key，用完不存）。
 - 返回 `{ok, status, summary, source: "provider", base_url, fetched_at, provider_code, provider_message, chat_models, models}`；
@@ -1274,8 +1292,8 @@ a positive integer`）；`0` 和正数都放行。
 （`contracts/dist/job-status.d.ts`），是 **required**——如果哪里在手工构造
 完整的 `RuntimeInput` 对象，TypeScript 会要求补上，填 `0` 即可。
 
-详见 [任务提交 API](../../../backend/api/docs/api-spec/jobs-submission.md) 的
-Timeout note 一节。
+详见 [创建任务](../../api/01-任务/01-创建任务.md) 的
+「超时」一节。
 
 ---
 
@@ -1300,7 +1318,7 @@ OCR 专用的取消 (`POST /api/v1/ocr/jobs/{job_id}/cancel`) 只在任务还是
 应该继续轮到状态真的变成 `canceled`。这个时序在改动前后都存在（改动前更糟：
 它可能永远不变），只是现在窗口很短。
 
-详见 [任务重试与控制](../../../backend/api/docs/api-spec/jobs-retry-and-control.md#cancel-job)。
+详见 [续跑、取消与 OCR 歧义处理](../../api/06-阶段操作/03-续跑取消与OCR歧义.md)。
 
 ---
 
@@ -1481,7 +1499,7 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
 另外两点留给前端定：
 
 - 设置页说"Key 只存在这个浏览器里"，但提交任务时内联的 Key 会被后端导入凭据库，任务在就一直在服务端（什么时候清见
-  [凭据规范](../../../backend/api/docs/api-spec/credentials.md#when-credentials-imported-by-job-creation-are-removed)）。
+  [凭据](../../api/14-凭据/01-凭据.md#建任务时内联的密钥)）。
   要不要在设置页加"清除服务端保存的密钥"（`GET /credentials` 列出、`DELETE /credentials/{credential_ref}` 删），由前端定。
 - 凭据 `409` 现在可以按 `error.details.reason` 分支，`credentials.ts:75` 读顶层 `code` 的写法照旧能用。
 
@@ -1528,7 +1546,7 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
 ## 服务商密钥校验：超时、重定向、不认识的字段，单机能测本机模型（fix/provider-probes）
 
 2026-10-22。方案见 [服务商探测与用量](../../ops/planning/api-reorg/20261022-服务商探测与用量.md)，接口说明见
-[Provider 校验接口](../rust_api/08-Provider%20校验接口.md)。
+[Provider 校验接口](../../api/08-调试诊断/05-服务商校验.md)。
 
 ### 变了什么
 

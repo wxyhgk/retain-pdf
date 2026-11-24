@@ -25,8 +25,8 @@
 - 推送 `main` 后，已合进去的 PR 会自动变成已合并，再删掉它的远程分支（`git push origin --delete <分支>`）；
   不合了的分支关掉 PR、删远程分支。
 - 推送后跑 `gh run list --limit 8`，有红的要报出来，不能当作做完。
-- 改了接口行为、事件、数据库结构、产物结构，文档在**同一个分支**里一起改（`docs/api/`、`docs/core/api/`、
-  `backend/api/docs/api-spec/` 等）。
+- 改了接口行为、事件、数据库结构、产物结构，文档在**同一个分支**里一起改：对外接口用法以 `docs/api/` 为准（唯一的对外接口说明），
+  内部设计（架构、实现思路）改 `docs/core/api/`；`backend/api/docs/api-spec/`、`backend/api/API_SPEC.md` 不再写内容（2026-11-24）。
 
 ## 合并前必须跑的检查
 

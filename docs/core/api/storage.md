@@ -76,6 +76,15 @@ SQLite 主要承担：
 - `job_artifact_entries`：规范化 artifact manifest，用于下载和列表展示。
 - `events`：结构化事件流。
 - `glossaries`：命名术语表资源。
+- `pipeline_attempts`、`pipeline_stages`、`pipeline_units`、`pipeline_dispatches`：带代次围栏的持久执行状态和外部服务商派发回执
+  （`pipeline_attempts.auto_resume_count` / `auto_resume_progress`，迁移 v27，限制没有进展的自动续跑，见 [任务内部设计](jobs-internals.md)）。
+- 书库的投影（书、合集、标签、全文索引 `blocks_fts` 等），见 [书库内部设计](library-internals.md)。
+- 以前 AI 对话、AI 计算、Agent 文档操作用的表和收藏 `favorites`：2026-11-20 迁移 v31 删了（删前真实库里都是 0 行）。
+
+另外两处：凭据库在受保护的 `DATA_ROOT/secrets/` 下；数据库备份在 `DATA_ROOT/backups/db/`（`<kind>-<UTC 时间>-v<schema>.db.gz`，
+权限 `0600`；2026-10-22 起压缩前先从 `VACUUM INTO` 快照里删掉 WebDAV 密码，恢复时保留正在用的 `sync_state`）。
+`DATA_ROOT/operations/<operation_id>/` 是以前 Agent 文档操作的工作区，2026-11-03 起不再新建。
+用 `originPDF/jsonPDF/transPDF/typstPDF` 或绝对路径存产物的老任务，详情和下载都不再支持，要重跑。
 
 接口返回和数据库记录尽量使用相对路径，运行时再解析到真实文件，避免把机器路径暴露给前端。
 解析时（`retainpdf-core` 的 `resolve_data_path`）相对路径不许带 `..`；旧记录里的绝对路径必须落在 `DATA_ROOT` 里

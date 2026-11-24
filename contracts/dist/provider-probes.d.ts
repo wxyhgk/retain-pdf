@@ -116,7 +116,7 @@ export interface ProviderProbeView {
      */
     ok: boolean;
     /**
-     * 结论的细分。`valid`（可用）、`rate_limited`（可用，此刻被限流或服务商繁忙；`ok` 为 true）、`unauthorized`（Key / Token 无效或没权限，套餐不含这个模型也算）、`expired`（MinerU Token 过期）、`model_unavailable`（Key 通过，模型不存在或没开通）、`insufficient_balance`（欠费、余额不足）、`quota_exceeded`（2026-11-23 起：到了用量或花费上限）、`invalid_input`（Key 里有放不进请求头的字符）、`redirected`（服务商回 3xx，不跟随）、`network_error`（没收到回复；Paddle、翻译接口的 5xx 也算）、`provider_error`（别的错误）。以后可能加值：界面按 `ok` 判断，不认识的 `status` 按 `ok` + `summary` 显示。各家用到哪些见 docs/core/rust_api/08-Provider 校验接口.md 第 3 节。
+     * 结论的细分。`valid`（可用）、`rate_limited`（可用，此刻被限流或服务商繁忙；`ok` 为 true）、`unauthorized`（Key / Token 无效或没权限，套餐不含这个模型也算）、`expired`（MinerU Token 过期）、`model_unavailable`（Key 通过，模型不存在或没开通）、`insufficient_balance`（欠费、余额不足）、`quota_exceeded`（2026-11-23 起：到了用量或花费上限）、`invalid_input`（Key 里有放不进请求头的字符）、`redirected`（服务商回 3xx，不跟随）、`network_error`（没收到回复；Paddle、翻译接口的 5xx 也算）、`provider_error`（别的错误）。以后可能加值：界面按 `ok` 判断，不认识的 `status` 按 `ok` + `summary` 显示。各家用到哪些见 docs/api/08-调试诊断/05-服务商校验.md 第 3 节。
      */
     status: string;
     /**

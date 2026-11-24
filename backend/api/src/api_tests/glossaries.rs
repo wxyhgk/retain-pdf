@@ -142,15 +142,18 @@ async fn put_keeps_top_level_fields_the_request_leaves_out() {
     assert_eq!(data["enabled"], false);
     assert_eq!(data["entry_count"], 1);
 
-    // name、entries 仍必填（缺字段是不合 schema，422）。
-    let (status, _) = send(
+    // name、entries 仍必填（缺字段是不合 schema：400 + schema_mismatch，2026-11-24 以前是 422）。
+    let (status, payload) = send(
         &state,
         "PUT",
         &format!("/api/v1/glossaries/{}", created.glossary_id),
         Some(json!({ "name": "本书术语" })),
     )
     .await;
-    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(payload["code"], 40000);
+    assert_eq!(payload["error"]["code"], "BAD_REQUEST");
+    assert_eq!(payload["error"]["details"]["reason"], "schema_mismatch");
 }
 
 #[tokio::test]

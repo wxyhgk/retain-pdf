@@ -1,5 +1,7 @@
 # 服务总览
 
+内部概览。对外接口用法看 [docs/api/](../../api/README.md)。
+
 ## 端口与入口
 
 - `40001`：Docker 交付前端页面。
@@ -20,7 +22,7 @@ Docker Web 默认 `FRONT_API_BASE=` 为空，前端走同源 `/api/` 代理到�
    指定可复用 OCR 产物时，后端校验通过后直接跳过 OCR。
 4. OCR 新产物或复用产物提供标准化 `document.v1` 与布局数据。
 5. 根据 workflow 进入翻译和/或渲染。
-6. 通过任务详情、actions、artifacts 或 manifest 下载产物。
+6. 通过任务详情的 `actions`、`artifacts` 或 `GET /jobs/{job_id}/files` 下载产物。
 
 正式任务 JSON 只使用分组结构：
 
@@ -40,48 +42,10 @@ Docker Web 默认 `FRONT_API_BASE=` 为空，前端走同源 `/api/` 代理到�
 
 OCR-only 和其他任务一样走 `POST /api/v1/jobs`：先 `POST /api/v1/uploads` 上传 PDF，再用 `workflow: "ocr"`、`source.upload_id` 建任务（原 `POST /api/v1/ocr/jobs` 已于 2026-10-18 删除）。
 
-## 返回包裹
+## 返回包裹和前端读法
 
-成功响应：
-
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": {}
-}
-```
-
-错误响应：
-
-```json
-{
-  "code": 40000,
-  "message": "bad request"
-}
-```
-
-常见错误业务码：
-
-- `40000`：请求错误。
-- `40100`：鉴权失败。
-- `40400`：资源不存在。
-- `40900`：状态冲突。
-- `50000`：服务内部错误（原因只进日志，响应里是 `error.details.error_id` 编号）。
-
-前端会自动 unwrap `{code, message, data}`；新接口文档应继续保持这个包裹格式。
-
-## 前端依赖重点
-
-任务详情页不只依赖 `status`，还会读取：
-
-- `stage` / `stage_detail` / `progress`
-- `runtime.current_stage` / `runtime.stage_history`
-- `actions.download_pdf` / `actions.open_markdown` / `actions.open_markdown_raw` / `actions.download_bundle` / `actions.cancel`
-- `artifacts.pdf` / `artifacts.markdown` / `artifacts.bundle`
-- `failure` / `failure_diagnostic` / `log_tail`
-
-下载和按钮状态应以 `actions.*.enabled`、`artifacts.*.ready`、`GET /jobs/{job_id}/files` 里每一项的 `ready` 为准。
+对外的信封、错误码、详情字段、按钮状态怎么读，都在 docs/api：[响应格式](../../api/00-约定/01-响应格式.md)、
+[查询任务详情](../../api/01-任务/02-查询任务详情.md)、[下载总览](../../api/07-产物下载/01-下载总览.md)。这里不再重复（2026-11-24）。
 
 ## Provider
 

@@ -2,7 +2,10 @@
 
 这套文档面向前端、桌面端和第三方集成方，描述 RetainPDF 后端对外 HTTP API 的稳定契约。
 
-`backend/api/API_SPEC.md` 保留为后端工程规格和实现备忘；本目录按使用场景拆分，作为联调和接入时优先阅读的 Wiki。
+**这里是唯一的对外接口说明**（2026-11-24 起，见 [接口文档以 docs/api 为准](../ops/planning/api-reorg/20261124-接口文档以docs-api为准.md)）：
+改了接口行为就改这里对应的篇。`docs/core/api/` 只放内部设计（架构、实现思路、配置、存储），见
+[后端 API 的内部设计](../core/api/README.md)；`backend/api/API_SPEC.md`、`backend/api/docs/api-spec/` 不再写内容。
+字段级的 JSON Schema 以 [`contracts/`](../../contracts/README.md) 为准。
 
 ## 基础信息
 
@@ -24,15 +27,18 @@
 - [认证与错误](00-约定/02-认证与错误.md)
 - [分页](00-约定/03-分页.md)：所有列表回显 `limit`、给 `has_more`，`limit` 越界返回 400
 - [限制](00-约定/04-限制.md)：请求体大小、上传大小、各列表 `limit` 上限、超时，以及对应的环境变量
-- [防重复提交](00-约定/05-防重复提交.md)：建任务、续跑、重试的 `Idempotency-Key` 请求头，续跑 / 重试的查重（409 `derived_job_active`）
-- [创建任务](01-任务/01-创建任务.md)
+- [健康检查、端口与跨域](00-约定/05-健康检查与跨域.md)：`/health`、`/ready`、第二个端口、单机模式的 CORS 和 `Host` 校验
+- [防重复提交](00-约定/06-防重复提交.md)：建任务、续跑、重试的 `Idempotency-Key` 请求头，续跑 / 重试的查重（409 `derived_job_active`）
+- [创建任务](01-任务/01-创建任务.md)：上传、完整请求、上限、超时、凭据、复用 OCR 产物、返回
 - [查询任务详情](01-任务/02-查询任务详情.md)
 - [任务列表](01-任务/03-任务列表.md)
 - [任务接口分类](01-任务/04-任务接口分类.md)：`/jobs/{job_id}` 下 8 类接口的新地址，以及已删除的旧地址对照
 - [删除任务](01-任务/05-删除任务.md)：`DELETE /jobs/{job_id}`，删一个任务和它的 OCR 子任务，书留着
+- [通用取数](01-任务/06-通用取数.md)：`/jobs/{job_id}/data/{dataset}`，读任务里已有的数据（契约 `job-data.v1`）
 - [事件总览](02-进度事件/01-事件总览.md)
 - [display_stage 与 lane](02-进度事件/02-display-stage与lane.md)
 - [编辑部事件（翻译 agent）](02-进度事件/03-编辑部事件.md)
+- [边翻边看（实时译文）](02-进度事件/04-实时译文.md)：`progress/layout`、`progress/pages/{page}`、`progress/stream`
 - [OCR Provider 列表](03-OCR/01-provider列表.md)
 - [OCR-only 任务](03-OCR/02-OCR-only任务.md)
 - [local_command 插件](03-OCR/04-local-command插件.md)
@@ -47,16 +53,26 @@
 - [翻译事件](04-翻译/07-翻译事件.md)
 - [阶段操作总览](06-阶段操作/01-stage-actions.md)：契约 `job-actions.v1`（能做哪些操作、续跑、取消、重试、OCR 歧义处理）
 - [阶段重试](06-阶段操作/02-retry-stage.md)
+- [续跑、取消与 OCR 歧义处理](06-阶段操作/03-续跑取消与OCR歧义.md)
 - [下载总览](07-产物下载/01-下载总览.md)
 - [失败结构](08-调试诊断/01-失败结构.md)：契约 `job-reports.v1`（失败原因、质量体检卡和清单、翻译诊断）
 - [Translation Debug API](08-调试诊断/02-translation-debug.md)
 - [服务商错误码](08-调试诊断/03-服务商错误码.md)：`GET /providers/error-codes`，契约 `provider-error-codes.v1`（各家 OCR、翻译模型的错误码、给用户的提示、我们怎么处理，可按厂商、码筛）
+- [服务商校验](08-调试诊断/05-服务商校验.md)：MinerU、Paddle、翻译接口的检测，DeepSeek 余额，拉模型列表，问模型
+- [翻译报告](08-调试诊断/06-翻译报告.md)：翻译诊断、质检、精修、排版缩放四份报告
 - [运维指标](08-调试诊断/04-运维指标.md)：`GET /metrics`（要 Key，多用户下只给管理员），Prometheus 文本格式的按接口请求数、状态码分类、耗时直方图和任务数；怎么接 Prometheus
 - [多设备同步](09-同步/01-多设备同步.md)：契约 `platform-settings.v1`（和字体列表、数据库备份、健康检查同一份）
 - [数据库备份](10-备份/01-数据库备份.md)：契约 `platform-settings.v1`
 - [模型用量](11-用量/01-模型用量.md)：`GET /usage`、一本书、一个任务的 token 用量，契约 `token-usage.v1`
-- [服务商密钥校验](../core/rust_api/08-Provider%20校验接口.md)：MinerU、Paddle、翻译接口的检测和 DeepSeek 余额，各家 `status` 取值；契约 `provider-probes.v1`
-- 凭据 `/credentials`：契约 `credentials.v1`；登录状态 `GET /auth/session`：契约 `auth-session.v1`；上传 `POST /uploads` 的返回：契约 `uploads.v1`（2026-11-24）
+- [阅读接口](12-阅读/01-阅读接口.md)：`reader/regions`、`reader/metadata`、`reader/markdown`、详情的 `artifacts` 链接，契约 `reader-data.v1`
+- [书与文档](13-书库/01-书与文档.md)：`/documents`、书的任务列表、阅读入口、译文版本，契约 `library-documents.v1`
+- [合集、标签与检索](13-书库/02-合集标签与检索.md)
+- [元数据建议](13-书库/03-元数据建议.md)
+- [字体与运行资源](13-书库/04-字体与运行资源.md)
+- [凭据](14-凭据/01-凭据.md)：`/credentials`，契约 `credentials.v1`
+- [多用户模式](15-多用户/01-多用户.md)：网站账号能访问什么、页数额度、管理后台、平台设置（商业版已停，代码留着）
+- [服务商密钥校验的细节](08-调试诊断/05-服务商校验.md)：请求体、各家 `status` 取值；契约 `provider-probes.v1`
+- 登录状态 `GET /auth/session`：契约 `auth-session.v1`；上传 `POST /uploads` 的返回：契约 `uploads.v1`（2026-11-24）
 
 ## 当前 API 分区
 

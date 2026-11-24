@@ -17,5 +17,5 @@
 
 先读根目录贡献指南，再按自己要改的模块进入对应子文档。跨模块改动需要同时阅读相关模块文档。
 涉及 HTTP 或 worker 线协议时，还必须阅读
-[`backend/api/API_SPEC.md`](../../../backend/api/API_SPEC.md) 和
+[`docs/api/`](../../api/README.md)（对外接口说明）和
 [`contracts/README.md`](../../../contracts/README.md)，不能只更新 prose。

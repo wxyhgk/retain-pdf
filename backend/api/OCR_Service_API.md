@@ -4,7 +4,7 @@
 
 说明：
 
-- 这是一份 OCR-only 专项说明，正式 API 总入口先看 [RetainPDF 后端 API 总入口](../../docs/core/api/index.md)，运行主链看 [CURRENT_API_MAP](CURRENT_API_MAP.md)
+- 这是一份 OCR-only 专项说明，正式接口说明看 [docs/api/](../../docs/api/README.md)（OCR-only 任务见 [OCR-only 任务](../../docs/api/03-OCR/02-OCR-only任务.md)），运行主链看 [CURRENT_API_MAP](CURRENT_API_MAP.md)
 - 当前 provider 选择看请求里的 `provider` / `ocr.provider`，实际支持集以健康检查和 `OCR_PROVIDER_CONTRACT.md` 为准
 
 它的目标很明确：

@@ -3,8 +3,8 @@
 本目录是 **RetainPDF 跨进程契约的唯一真相源**（JSON Schema）。
 
 这里锁定 wire payload 的结构，不替代完整 HTTP 协议文档。路由、认证、错误、
-下载、恢复和 SSE 行为仍以 `backend/api/API_SPEC.md`、
-`backend/api/docs/api-spec/` 及对应实现契约测试为准。
+下载、恢复和 SSE 行为以 [`docs/api/`](../docs/api/README.md)（唯一的对外接口说明）
+及对应实现契约测试为准。
 
 | 文件 | 作用 | 消费者 | 生产者 |
 |------|------|--------|--------|

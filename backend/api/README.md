@@ -7,7 +7,7 @@
 ## 建议阅读顺序
 
 1. 对外 HTTP API、图书馆接口和前端接入：
-   [`../docs/core/api/index.md`](../../docs/core/api/index.md)；
+   [`docs/api/`](../../docs/api/README.md)（唯一的对外接口说明）；
    全部接口一张表（方法、地址、谁能用、旧地址，从接口登记表生成）：
    [`docs/api/00-接口目录.md`](../../docs/api/00-接口目录.md)
 2. 当前系统到底怎么跑：
@@ -41,10 +41,10 @@
   只看当前团队协作边界，重点回答“改哪里才对，哪些层不能乱穿透”。
 - [`10-Rust 侧 Artifact Boundary.md`](../../docs/core/rust_api/10-Rust%20%E4%BE%A7%20Artifact%20Boundary.md)
   只看 Rust 侧 artifact boundary，重点回答“provider raw / normalized / published artifact / download API 四层各负责什么”。
-- [`../docs/core/api/index.md`](../../docs/core/api/index.md)
+- [`docs/api/`](../../docs/api/README.md)
   只看外部 HTTP 行为，重点回答“接口怎么调、返回什么、哪些字段是正式契约”。
-- [`API_SPEC.md`](API_SPEC.md)
-  Rust API 的实现契约索引；不是前端首读文档，但也不是历史快照。
+- [`docs/core/api/`](../../docs/core/api/README.md)
+  后端 API 的内部设计：运行时、配置、存储、事件怎么存。`API_SPEC.md` 2026-11-24 起只剩指向这两处的说明。
 - [`STAGE_EXECUTION_CONTRACT.md`](STAGE_EXECUTION_CONTRACT.md)
   只看 stage worker 的 spec 协议，重点回答“Rust 如何给 Python 传执行输入”。
 - [`../docs/core/rust_api/11-阶段事件与失败协议.md`](../../docs/core/rust_api/11-%E9%98%B6%E6%AE%B5%E4%BA%8B%E4%BB%B6%E4%B8%8E%E5%A4%B1%E8%B4%A5%E5%8D%8F%E8%AE%AE.md)
@@ -65,7 +65,7 @@
 - 想改后端代码：
   `RUST_API_DIRECTORY_MAP -> RUST_API_ARCHITECTURE -> 10-Rust 侧 Artifact Boundary -> CURRENT_API_MAP -> 对应源码`
 - 想接前端或第三方：
-  `docs/core/api/index.md -> CURRENT_API_MAP`
+  `docs/api/README.md -> CURRENT_API_MAP`
 
 ## 当前查询与事件边界
 

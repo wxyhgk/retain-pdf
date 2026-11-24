@@ -107,9 +107,9 @@ npm --prefix frontend/desktop run verify-frontend-sync
 
 应提醒 AI 检查：
 
-- API 字段是否同步 `docs/core/api/`。
+- API 字段、请求响应、错误码是否同步 `docs/api/`（唯一的对外接口说明）；内部实现思路是否同步 `docs/core/api/`。
 - Rust 边界是否同步 `docs/core/rust_api/`。
-- 实现契约是否同步 `backend/api/docs/api-spec/`，共享 schema 是否保持
+- 共享 schema 是否保持
   `backend/contracts` 与 `contracts` 字节一致。
 - Python 边界是否同步 `docs/core/python/`。
 - 前端、Docker、桌面端端口和命令是否一致。

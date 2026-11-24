@@ -15,7 +15,7 @@ pub struct MineruTokenValidationRequest {
 }
 
 /// 三个密钥校验接口（MinerU、Paddle、翻译接口）共用的返回。以前叫 `MineruTokenValidationView`，
-/// 只改了 Rust 里的名字，JSON 字段不变。各家 `status` 的取值见 `docs/core/rust_api/08-Provider 校验接口.md`。
+/// 只改了 Rust 里的名字，JSON 字段不变。各家 `status` 的取值见 `docs/api/08-调试诊断/05-服务商校验.md`。
 #[derive(Debug, Serialize)]
 pub struct ProviderProbeView {
     pub ok: bool,
