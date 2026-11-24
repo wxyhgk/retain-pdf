@@ -31,8 +31,10 @@ type PdfPageSlotProps = {
     liveTranslationLayout?: LiveTranslationLayoutPage;
     liveTranslationPage?: LiveTranslationPageState;
     showLiveTranslation?: boolean;
+    /** 叠层开着、别的页有译文、这一页还没有：页顶提示「还没翻到」。 */
+    liveTranslationMissing?: boolean;
 };
-declare function PdfPageSlotInner({ pageNumber, width, devicePixelRatio, pane, active, textLayer, syncedMinHeight, onMetrics, cachedAspect, onAspectChange, sentinelRef, regionHighlight, regionTargets, hoveredRegionId, onHoverRegion, liveTranslationLayout, liveTranslationPage, showLiveTranslation, }: PdfPageSlotProps): import("react").JSX.Element;
+declare function PdfPageSlotInner({ pageNumber, width, devicePixelRatio, pane, active, textLayer, syncedMinHeight, onMetrics, cachedAspect, onAspectChange, sentinelRef, regionHighlight, regionTargets, hoveredRegionId, onHoverRegion, liveTranslationLayout, liveTranslationPage, showLiveTranslation, liveTranslationMissing, }: PdfPageSlotProps): import("react").JSX.Element;
 export declare const PdfPageSlot: import("react").MemoExoticComponent<typeof PdfPageSlotInner>;
 export {};
 //# sourceMappingURL=PdfPageSlot.d.ts.map

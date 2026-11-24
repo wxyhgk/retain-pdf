@@ -137,3 +137,59 @@
     animation: none;
   }
 }
+
+/* 页签右边那一组：进度（点它开关叠层）+ 跳到最新；翻完后换成「翻译完成 · 看对照」。 */
+.reader-live-strip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reader-live-translation-toggle.is-done {
+  color: var(--ink, #171719);
+  border-color: color-mix(in srgb, var(--ink, #171719) 16%, transparent);
+  animation: reader-live-translation-arrive 420ms cubic-bezier(.2, .75, .25, 1) both;
+}
+
+/* 叠层开着、这一页还没有译文：页顶一句提示，免得以为叠层坏了。 */
+.reader-live-translation-page-note {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 5;
+  transform: translateX(-50%);
+  max-width: calc(100% - 24px);
+  padding: 5px 11px;
+  border: 1px solid color-mix(in srgb, var(--ink, #171719) 9%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  color: color-mix(in srgb, var(--ink, #171719) 62%, var(--muted, #6f7178));
+  background: color-mix(in srgb, var(--paper, #fff) 92%, transparent);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow-color, #111) 8%, transparent);
+  font-size: var(--ui-text-xs, 11.5px);
+  font-weight: 620;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-live-translation-toggle.is-done {
+    animation: none;
+  }
+}
+
+/* 对照时源栏右上角那句「原文+实时译文叠加」：说明左边叠的是实时译文，右边是最终 PDF。 */
+.reader-source-overlay-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  margin-left: 6px;
+  padding: 0 9px;
+  border-radius: var(--ui-radius-pill, 999px);
+  color: color-mix(in srgb, var(--ink, #171719) 62%, var(--muted, #6f7178));
+  background: color-mix(in srgb, var(--paper, #fff) 90%, transparent);
+  font-size: var(--ui-text-xs, 11px);
+  font-weight: 620;
+  pointer-events: none;
+}

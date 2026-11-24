@@ -69,4 +69,28 @@ export declare function resolveLiveTranslationToggles(input: {
      * 里那条 `&& !assistantOpen`）。 */
     assistantOpen: boolean;
 }): LiveTranslationToggles;
+/** 最近一次有译文落进来的那一页（1 起），一页都没有时为 null。顶栏「跳到最新」跳这里。
+ * 按事件序号取，不按页码取：并发翻译时页不是按顺序出来的。 */
+export declare function latestLiveTranslationPage(state: LiveTranslationState): number | null;
+/** 这一页叠层开着、别的页已经有译文、唯独这页还没有 —— 页面上提示一句「还没翻到」，
+ * 不然用户看到一页原文，分不清是没翻到还是叠层坏了。一页都没有时由整栏的等待提示说，
+ * 任务停了（终态）也不说「会自动出现」。 */
+export declare function liveTranslationPageMissing(state: LiveTranslationState | undefined, pageIdx: number): boolean;
+/** 打开阅读页时要不要直接把实时译文叠上去。
+ *
+ * 从进度页点「实时译文」进来，要看的就是译文；以前默认关着，进来只看到原文，
+ * 得自己找左上角的小按钮。只在还没有最终译文 PDF（sourceViewOnly）时自动打开：
+ * 那时只有一栏原文，不会出现以前「左右都是中文」的问题。 */
+export declare function shouldAutoOpenLiveTranslation(input: {
+    liveTranslationAvailable: boolean;
+    sourceViewOnly: boolean;
+    jobTerminal: boolean;
+}): boolean;
+/** 这次在阅读页里看着它翻完了：顶栏给一个「翻译完成 · 看对照」。
+ * 打开时就已经完成的书不给（没跟实时译文，pagesByPage 是空的）。 */
+export declare function shouldOfferLiveTranslationCompletion(input: {
+    state: LiveTranslationState;
+    sourceViewOnly: boolean;
+    visibleMode: "source" | "compare" | "translated";
+}): boolean;
 //# sourceMappingURL=live-translation-state.d.ts.map

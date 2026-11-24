@@ -3,7 +3,7 @@ import { type ProtectedPdfFile } from "./useProtectedPdfFile.js";
 import type { PageRowHeights } from "./usePageRowSync.js";
 import { type ReaderPaneId } from "./reader-dom-contract.js";
 import { type ReaderMetadata, type ReaderRegion } from "../shared/data/reader-regions.js";
-import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
+import { type LiveTranslationState } from "../shared/data/live-translation-state.js";
 type PdfDocumentPaneProps = {
     pane: ReaderPaneId;
     url?: string;

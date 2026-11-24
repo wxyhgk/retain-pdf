@@ -1,6 +1,8 @@
 import { MOCK_MARKDOWN_CONTENT } from "./constants.js";
 import { getMockJobMarkdown } from "./markdown.js";
 
+import { mockLiveSourcePdfBytes } from "./live-translation.js";
+
 function mockPdfBytes(label = "Mock PDF") {
   const pdf = `%PDF-1.4
 1 0 obj
@@ -60,8 +62,9 @@ export async function fetchMockProtected(url: string) {
       },
     });
   }
-  if (normalized === "mock://source.pdf") {
-    return new Response(mockPdfBytes("Source PDF"), {
+  // 原文用「翻译中看实时译文」那份 4 页样例：叠层的版面和它对得上。
+  if (normalized === "mock://source.pdf" || /\/documents\/[^/]+\/files\/source\.pdf$/.test(normalized)) {
+    return new Response(mockLiveSourcePdfBytes(), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",

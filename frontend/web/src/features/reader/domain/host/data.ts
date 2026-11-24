@@ -41,6 +41,7 @@ import {
   getMockJobMarkdown,
 } from "@/platform/mock/index.js";
 import { getMockReaderRegions } from "@/platform/mock/documents.js";
+import { mockLiveTranslationPort } from "@/platform/mock/live-translation.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { isMockMode } from "@/platform/config/runtime.js";
 import { resolvePdfjsVendorUrl } from "@/platform/runtime/vendor-url.js";
@@ -266,19 +267,23 @@ export const sessionDataPort: ReaderSessionDataPort = {
   resolveReaderArtifactUrl: (item) => resolveReaderArtifactUrl(item as Parameters<typeof readerData.resolveReaderArtifactUrl>[0]),
 };
 
+// mock 模式下换成本地样例（platform/mock/live-translation.ts），不连后端。
 export const liveTranslationPort: ReaderLiveTranslationPort = {
-  fetchLayout: (jobId, options: { signal?: AbortSignal } = {}) =>
-    fetchLiveTranslationLayout(jobId, {
+  fetchLayout: (jobId, options: { signal?: AbortSignal } = {}) => isMockMode()
+    ? mockLiveTranslationPort.fetchLayout(jobId, options)
+    : fetchLiveTranslationLayout(jobId, {
       apiPrefix: API_PREFIX,
       signal: options.signal,
     }),
-  fetchPage: (jobId, pageIdx, options: { signal?: AbortSignal } = {}) =>
-    fetchLiveTranslationPage(jobId, pageIdx, {
+  fetchPage: (jobId, pageIdx, options: { signal?: AbortSignal } = {}) => isMockMode()
+    ? mockLiveTranslationPort.fetchPage(jobId, pageIdx, options)
+    : fetchLiveTranslationPage(jobId, pageIdx, {
       apiPrefix: API_PREFIX,
       signal: options.signal,
     }),
-  streamEvents: (jobId, options) =>
-    streamLiveTranslationEvents(jobId, {
+  streamEvents: (jobId, options) => isMockMode()
+    ? mockLiveTranslationPort.streamEvents(jobId, options)
+    : streamLiveTranslationEvents(jobId, {
       apiPrefix: API_PREFIX,
       afterSeq: options.afterSeq,
       signal: options.signal,
@@ -287,7 +292,9 @@ export const liveTranslationPort: ReaderLiveTranslationPort = {
 };
 
 export async function fetchProtected(url: string, options: RequestInit = {}): Promise<Response> {
-  if (isMockMode() && `${url || ""}`.startsWith("mock://")) {
+  // 文档的原文 PDF 地址是 /api/v1/documents/<id>/files/source.pdf，不是 mock://，也要在 mock 里接住，
+  // 不然翻译中打开阅读页会去请求真的后端。
+  if (isMockMode() && (`${url || ""}`.startsWith("mock://") || /\/documents\/[^/]+\/files\/source\.pdf(?:\?|$)/.test(`${url || ""}`))) {
     return fetchMockProtected(url);
   }
   return fetchApiProtected(url, options);
