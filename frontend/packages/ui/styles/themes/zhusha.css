@@ -1,0 +1,90 @@
+/* 皮肤 zhusha：朱砂手绘 · 米黄纸底、粗墨描边、向右下的实色硬阴影、朱红强调。
+ * 用户给的设计图做的第一套「形状也换」的皮肤：颜色之外，只设全局旋钮（--shape-*）和书卡装饰位，
+ * 整站的按钮、书卡、面板、弹窗、阅读器外围控件一起变成手绘卡片风。
+ * 装饰包：frontend/web/decor/zhusha/（纸纹云纹背景、右下人物）。
+ * 方案：docs/ops/planning/theme-customization/20261124-主题完全可自定义.md
+ */
+
+[data-theme="zhusha"] {
+  /* 纸：米黄底、更浅的卡面 */
+  --bg: #f3e6cf;
+  --paper: #fdf6e8;
+  --surface: rgba(253, 246, 232, 0.9);
+  /* 墨：深褐黑，描边和阴影都用它 */
+  --ink: #2a1f17;
+  --muted: #6e5a48;
+  --line: #d9c7a8;
+
+  /* 朱砂红 */
+  --accent: #c8372d;
+  --accent-weak: rgba(200, 55, 45, 0.12);
+  --selection: #f1dcc0;
+
+  --danger: #b3261e;
+  --danger-weak: rgba(179, 38, 30, 0.12);
+  --ok: #3f7a4a;
+  --ok-weak: rgba(63, 122, 74, 0.12);
+  --warn: #b0761e;
+  --warn-weak: rgba(176, 118, 30, 0.14);
+
+  --gold: #a7782c;
+  --gold-weak: rgba(167, 120, 44, 0.14);
+  --chrome: #2a1f17;
+  --reader-page: #fdf6e8;
+  --shadow-color: #2a1f17;
+
+  /* 主按钮、选中：朱红底、米白字 */
+  --btn-primary-bg: var(--accent);
+  --btn-primary-fg: #fff8ec;
+  --btn-radius: 10px;
+  --panel-radius: 14px;
+
+  /* —— 全局旋钮：粗墨描边 + 实色硬阴影 + 按下压下去 —— */
+  --shape-edge-width: 2px;
+  --shape-edge-color: var(--ink);
+  --shape-shadow-sm: 3px 3px 0 var(--ink);
+  --shape-shadow-md: 5px 5px 0 var(--ink);
+  --shape-shadow-lg: 8px 8px 0 var(--ink);
+  --shape-press-transform: translate(2px, 2px);
+  --shape-press-shadow: 1px 1px 0 var(--ink);
+  --shape-radius-control: 10px;
+  --shape-radius-surface: 12px;
+  --shape-heading-weight: 800;
+
+  /* 书卡：卡面米白、封面嵌在里面留白边，标题加粗 */
+  --card-pad: 7px;
+  --card-bg: var(--paper);
+  --card-cover-radius: 4px;
+  --card-cover-shadow: 0 0 transparent;
+  --card-cover-hover-shadow: 0 0 transparent;
+  --card-title-weight: 700;
+  /* 在读：左上朱红书签丝带（右上有「存档」角标，放右边会压住它），墨线描边；右下朱红折角 */
+  --card-ribbon-display: block;
+  --card-ribbon-color: var(--accent);
+  --card-ribbon-top: -5px;
+  --card-ribbon-right: auto;
+  --card-ribbon-left: 16px;
+  --card-ribbon-filter: drop-shadow(1.5px 0 0 var(--ink)) drop-shadow(-1.5px 0 0 var(--ink)) drop-shadow(0 1.5px 0 var(--ink));
+  --card-fold-size: 18px;
+  --card-fold-color: var(--accent);
+
+  /* 书库标题：下面一道朱红短横，数量框描边 */
+  --heading-accent-width: 44px;
+  --heading-accent-height: 4px;
+  --heading-accent-color: var(--accent);
+  --count-badge-border-width: 2px;
+
+  /* 纸台：卡片直接放在纸上，不再垫一层半透明纸面；两边留宽，露出四角云纹 */
+  --stage-veil: 0%;
+  --stage-shadow: none;
+  --shell-pad-inline: clamp(28px, 9vw, 150px);
+  --shell-pad-inline-narrow: clamp(12px, 3vw, 20px);
+  --header-width: min(1000px, 100%);
+  --stage-width: min(1000px, 100%);
+
+  /* 氛围垫层：背景图自带纸纹，这里只留很淡的一层 */
+  --mat-fiber: color-mix(in srgb, var(--ink) 1.5%, transparent);
+  --mat-fiber-2: color-mix(in srgb, var(--accent) 1%, transparent);
+  --mat-edge: var(--bg);
+  --mat-center: var(--bg);
+}
