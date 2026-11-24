@@ -8,9 +8,13 @@ export function AuthSessionProvider({ session, children }: { session: AuthSessio
   return <AuthSessionContext.Provider value={session}>{children}</AuthSessionContext.Provider>;
 }
 
+// 没有 Provider 时的默认值放模块里：每次 render 新建一个对象，用它当依赖的 effect / memo 就每次都跑，
+// 万一 effect 里又写 store，就是 React #185（更新深度超限）。
+const SINGLE_USER_SESSION: AuthSessionView = Object.freeze({ mode: "single", authenticated: true, user: null });
+
 /** 没有 Provider（测试、单机老入口）时当单机处理。 */
 export function useAuthSession(): AuthSessionView {
-  return useContext(AuthSessionContext) ?? { mode: "single", authenticated: true, user: null };
+  return useContext(AuthSessionContext) ?? SINGLE_USER_SESSION;
 }
 
 // 多用户模式下首页要藏起来的页签（以前是「AI 问答」，2026-11-03 整个删了；机制留着）。

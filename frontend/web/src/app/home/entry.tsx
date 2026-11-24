@@ -66,7 +66,9 @@ async function bootHome() {
   if (desktopMode) {
     await mountedFeature(services.features, "browserCredentialsFeature").ready();
     try {
-      await bootstrapDesktop();
+      await bootstrapDesktop(null, {
+        openSetupDialog: () => services.settingsHub.dialogStore.open({ tab: "api", setupMode: true }),
+      });
     } catch (error) {
       console.error("[desktop] failed to finish desktop bootstrap", error);
     }

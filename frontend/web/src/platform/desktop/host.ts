@@ -45,6 +45,8 @@ export interface DesktopBridge {
   saveDesktopConfig?: (payload?: DesktopConfigPayload) => DesktopIpcResult;
   onStartupProgress?: (callback: (event: unknown) => void) => () => void;
   onUpdateStatus?: (callback: (status: unknown) => void) => () => void;
+  /** 把渲染进程的错误（带组件栈）写进桌面日志；见 platform/desktop/renderer-issue.ts。旧版桌面壳没有。 */
+  reportRendererIssue?: (payload: { type: string; message: string; stack?: string; componentStack?: string }) => void;
   platform?: string;
   [key: string]: unknown;
 }

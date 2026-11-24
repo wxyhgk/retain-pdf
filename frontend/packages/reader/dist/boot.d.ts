@@ -1,8 +1,10 @@
-import { type Root } from "react-dom/client";
+import { type Root, type RootOptions } from "react-dom/client";
 export type ReaderBootOptions = {
     body?: HTMLElement;
     root?: HTMLElement;
     purgeLegacyMarkup?: boolean;
+    /** 传给 createRoot 的选项；宿主用它接出错回调（桌面端把组件栈写进日志）。 */
+    rootOptions?: RootOptions;
 };
 export declare function syncReaderBodyClasses(body?: HTMLElement): void;
 /**
