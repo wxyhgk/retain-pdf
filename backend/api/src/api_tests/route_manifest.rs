@@ -505,3 +505,56 @@ fn contract_paths_normalize_to_registry_style() {
     );
     assert_eq!(normalize_contract_path("/api/v1/documents"), "/api/v1/documents");
 }
+
+/// 前端在用（`by(web)`、`by(desktop)`）却不在任何契约端点表里的接口：(方法, 地址, 为什么不进契约)。
+///
+/// 2026-11-24 起冻结，**只许减不许加**：前端要调的新接口先写进契约（`contracts/` 和 `backend/contracts/`，
+/// 有 JSON 返回的写 schema 和 `client_name`，文件下载写 `transport: binary`），再给前端生成请求函数。
+/// 名单里的接口补上契约以后要从这里删掉（下面的测试会提醒）。旧地址（`old`）不算：契约里只写现用地址。
+///
+/// 设置类第 2 批补完以后（审计时 23 个：凭据 5、服务商校验 4、字体、同步 4、备份 4、健康检查、登录状态、上传、
+/// 两个文件下载），名单是空的。方案见 docs/ops/planning/api-client-codegen/20261124-设置类第2批补完和在用接口冻结.md。
+const IN_USE_WITHOUT_CONTRACT: &[(&str, &str, &str)] = &[];
+
+#[test]
+fn in_use_endpoints_without_contract_only_shrink() {
+    use std::collections::BTreeSet;
+
+    use crate::app::endpoints::User;
+
+    let contracts_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../contracts");
+    let in_contract: BTreeSet<(String, String)> = contract_endpoints(&contracts_dir)
+        .into_iter()
+        .map(|(_, method, _, path)| (method, path))
+        .collect();
+    let uncovered: BTreeSet<(String, String)> = crate::app::registered_endpoints()
+        .iter()
+        .filter(|endpoint| endpoint.replaced_by.is_none())
+        .filter(|endpoint| endpoint.users.iter().any(|user| matches!(user, User::Web | User::Desktop)))
+        .map(|endpoint| (endpoint.method.to_string(), endpoint.path.to_string()))
+        .filter(|key| !in_contract.contains(key))
+        .collect();
+    let listed: BTreeSet<(String, String)> = IN_USE_WITHOUT_CONTRACT
+        .iter()
+        .map(|(method, path, reason)| {
+            assert!(!reason.trim().is_empty(), "IN_USE_WITHOUT_CONTRACT 的 {method} {path} 要写为什么不进契约");
+            (method.to_string(), path.to_string())
+        })
+        .collect();
+    assert_eq!(listed.len(), IN_USE_WITHOUT_CONTRACT.len(), "IN_USE_WITHOUT_CONTRACT 有重复的条目");
+
+    let added: Vec<String> = uncovered.difference(&listed).map(|(m, p)| format!("{m} {p}")).collect();
+    assert!(
+        added.is_empty(),
+        "这些接口前端在用（by web / desktop），但不在任何契约的端点表里：\n  {}\n\
+         先把它写进契约（contracts/ 和 backend/contracts/ 两份；JSON 返回写 schema 和 client_name，文件下载写 transport: binary），\
+         不要加进 IN_USE_WITHOUT_CONTRACT（名单只许减）",
+        added.join("\n  ")
+    );
+    let stale: Vec<String> = listed.difference(&uncovered).map(|(m, p)| format!("{m} {p}")).collect();
+    assert!(
+        stale.is_empty(),
+        "IN_USE_WITHOUT_CONTRACT 里这些已经有契约了（或删了、改成旧地址、不再是前端在用），从名单里删掉：\n  {}",
+        stale.join("\n  ")
+    );
+}
