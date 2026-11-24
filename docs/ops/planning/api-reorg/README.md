@@ -75,6 +75,7 @@ Rust API 接口太多、太散，"牵一发动全身"。这里按日期记录整
 | 2026-11-20 | [加回单个任务的用量](./20261120-加回单个任务的用量.md) | 加回 `reports/usage`（`getJobUsage`）：进度页把书的合计当成这一次的花费，翻过 10 轮的书显示成十几倍；契约 `scope` 加回 `job` |
 | 2026-11-22 | [接口写明负责和调用方](./20261122-接口写明负责和调用方.md) | 登记表每张表写 `owner:`（8 个领域之一），每条必写 `by(…)`（web/desktop/worker/cli/ops/multiuser/none），清单和目录跟着生成，目录开头加统计和 none、multiuser 名单；用量报表拿登记的调用方和按接口计数对账；第一次登记 134 个：web 85、multiuser 24、none 19 |
 | 2026-11-24 | [规矩漏网补齐](./20261124-规矩漏网补齐.md) | 四条规矩的漏网：三处 409 补 `reason`（`version_hidden`、`artifact_is_directory`，补 OCR 产物的 CAS 用 `job_active`/`stale_resolution`）；`POST /jobs`、续跑、书的入口解析请求体的报错不再回显值（状态码不动）；文件出口、删任务、边翻边看的流查询串不认识的参数 400（文件出口登记前端在用的 `version`）；流出错先发 `event: error` 再关；编辑部事件 `limit` 越界 400、回显 `limit` |
+| 2026-11-24 | [防重复提交](./20261124-防重复提交.md) | 续跑、重试出新任务时，同一个源任务已有在排队 / 在跑的派生任务就 409 `derived_job_active`（带 `active_job_id`，新表 `job_derivations`，查和写在同一事务里）；建任务、续跑、重试等 7 个接口接受 `Idempotency-Key`（新表 `idempotency_keys`，成功重放带 `Idempotent-Replayed: true`，处理中 / 换了请求 409，保留 24 小时）；原地重跑已由 RunFence 防住，不动 |
 
 已经确定的：
 

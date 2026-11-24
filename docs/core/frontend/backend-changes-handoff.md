@@ -12,6 +12,43 @@
 
 ---
 
+## 防重复提交：续跑查重、`Idempotency-Key` 请求头（feat/job-idempotency）
+
+2026-11-24，只增不改，见 [防重复提交](../../api/00-约定/05-防重复提交.md) 和
+[决定记录](../../ops/planning/api-reorg/20261124-防重复提交.md)：
+
+- **续跑、重试出新任务时查重（前端不改也生效）**：`POST /jobs/{id}/actions/resume`（旧名 `rerun`）、`retry-stage`（出新任务时）、
+  `resolve-ocr-ambiguity`，如果这个任务已经续跑 / 重试出一个还在排队或在跑的新任务，回 `409`，
+  `error.details.reason = "derived_job_active"`，`error.details.active_job_id` 是那个任务的编号。契约 `job-actions.v1` 的
+  `ActionBlockReason` 加了这个值，`@retainpdf/contracts` 的 dist 已重新生成；`frontend/packages/api` 的生成客户端不用变。
+  前端的 `reason` 分支对不认识的值本来就按「状态不允许，看 message」处理，不改也不会坏（会显示英文 message）。
+- **新请求头 `Idempotency-Key`**（不带时行为完全不变）：`POST /jobs`、`POST /documents/{id}/translate`、`/ocr`、
+  `POST /jobs/{id}/actions/resume`（及 `rerun`）、`retry-stage`、`resolve-ocr-ambiguity` 接受。同一把 key、同一个请求第二次来
+  不再执行，原样回第一次的 2xx 结果并带响应头 `Idempotent-Replayed: true`；上一个还在处理 `409 idempotency_key_in_flight`；
+  同一把 key 换了请求体 `409 idempotency_key_reused`；key 不合法 `400`。记录保留 24 小时。CORS：单机模式请求头照回显、响应头全暴露，
+  不用改；桌面端局域网转发（`frontend/desktop/src/main/lan-share.js`）只去掉几个固定的头，这个头照常转发。
+
+前端要做：
+1. `frontend/packages/api/src/request.ts` 的 `RequestOptions` 加 `headers?: Record<string, string>`，`request()` 发请求时并进去
+   （旧写法：只有 `signal`、`fetchImpl`、`onError`；新写法：多一个 `headers`，生成的客户端函数不用改，它们原样把 `options` 传下去）。
+2. 用户每点一次「翻译 / 续跑 / 重试」生成一个 UUID（`crypto.randomUUID()`），放进 `Idempotency-Key`；**同一次点击的网络重试
+   （包括超时后自动重发）复用同一个**，下一次点击换新的。要改的入口：
+   - `frontend/packages/api/src/jobs-submit.ts` 的 `createJob`（`POST /jobs`）；
+   - `frontend/packages/api/src/documents.ts` 的 `translateDocument`、`ocrDocument`；
+   - `frontend/packages/api/src/jobs-actions.ts` 的 `resumeJob`、`retryJobStage`、`resolveOcrAmbiguity`。
+   旧写法：`actions.resumeJob(apiPrefix, { job_id, body }, { onError: submitFailure() })`；新写法：调用方传进一个 key，
+   `{ onError: submitFailure(), headers: { "Idempotency-Key": key } }`。key 在按钮点击处生成（比如 `libraryController.resumeJob` 一类），
+   重试逻辑拿同一个 key 重发。
+3. 新的 409 原因怎么展示（按 `error.details.reason` 分支，不解析 message）：
+   - `derived_job_active`：「这个任务已经在续跑 / 重试中（任务 {active_job_id}），等它结束或先取消它。」给一个跳到那个任务的链接
+     （书籍详情里就是切到那个任务、刷新任务列表）。按钮不用变灰，`GET /actions` 的 `disabled_code` 里不会有这个值。
+   - `idempotency_key_in_flight`：同一次点击的重发撞上第一次还没处理完，等一两秒用**同一个 key** 再发一次即可，不用提示用户。
+   - `idempotency_key_reused`：前端自己的 bug（同一个 key 发了不同的请求），记日志、换新 key；给用户看通用的「提交失败，请重试」。
+   - 响应头 `Idempotent-Replayed: true` 只是告诉你这是重放，结果和第一次一样，当成功处理就行。
+4. 前端测试：没有钉 `ActionBlockReason` 的测试；如果书籍详情有按 reason 显示文案的表（`job-failure-model.ts` 之类），加上面三个值。
+
+---
+
 ## 失败简报带 `failure_code`，地区不支持单独成码（feat/failure-brief-code）
 
 2026-11-24，只增不改，见 [失败简报带失败码](../../ops/planning/error-codes/20261124-失败简报带失败码.md)：

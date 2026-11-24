@@ -201,6 +201,7 @@ returned `400` here (refine returned `409`); they are all `409` now.
 | `stale_resolution` | `resolution_revision` is stale, or another request already resolved the ambiguity. For an in-place rerun: the job ran again (its run generation changed) after this request read it; reload and retry | resolve-ocr-ambiguity, retry-stage (in-place render / refine), resume/rerun (in-place render) |
 | `no_ocr_dispatch` | job is neither failed nor canceled, or has no ambiguous OCR dispatch | resolve-ocr-ambiguity |
 | `ocr_dispatch_unsupported` | the ambiguous dispatch is for a provider/operation whose receipt cannot be bound | resolve-ocr-ambiguity |
+| `derived_job_active` | (2026-11-24) the source job already has a resumed/retried job (a *new* job derived from it) that is queued or running; wait for it or cancel it. `error.details.active_job_id` names that job. Checked again inside the persisting transaction, so two concurrent requests create only one job. Only for submissions that create a new job; never in `disabled_code` / `reason_code` | resume/rerun (new job), retry-stage (new job), resolve-ocr-ambiguity |
 
 Request fields:
 
@@ -311,6 +312,14 @@ translation request blocks generic rerun with `409` (`reason=ambiguous_ocr_dispa
 `request_journal_corrupt` when the journal is corrupt); the caller must use the
 explicit recovery route described below or `actions/retry-stage` with the documented
 duplicate-risk policy.
+
+Duplicate submissions (2026-11-24): when the resume creates a new job and the source
+job already has a derived job that is queued or running, the POST is `409`
+(`reason=derived_job_active`, `error.details.active_job_id`). These endpoints, and
+`retry-stage` / `resolve-ocr-ambiguity` / `POST /jobs` / the document `translate` and
+`ocr` submissions, also accept an `Idempotency-Key` request header: a repeated key with
+the same request replays the stored 2xx response with `Idempotent-Replayed: true`;
+see [`docs/api/00-约定/05-防重复提交.md`](../../../../docs/api/00-约定/05-防重复提交.md).
 
 ## OCR Dispatch Ambiguity
 

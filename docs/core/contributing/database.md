@@ -55,6 +55,10 @@
 - 进度流 `event_feed_items`（v35 起）：来自 `events` 的条目只存 `source_event_uid`（是哪条原始事件），内容读的时候由任务包
   `progress/event_feed/sync.rs` 的 `project_event` 现算——和导入时是同一个函数；来自任务目录 jsonl 文件的条目照旧存 `payload_json`。
   原始事件按保留期删掉时来源的 revision 会变、进度流随之重建；读的同时被删按「事件流变了」报，前端从头重读。
+- 防重复提交（v38，见 [防重复提交](../../ops/planning/api-reorg/20261124-防重复提交.md)）：`job_derivations` 记续跑、重试、OCR 歧义恢复
+  建的新任务从哪个源任务派生（新任务删了跟着删），`Db::save_derived_job_as_new_run` 在同一个 `BEGIN IMMEDIATE` 事务里查「源任务还有没有
+  排队中 / 运行中的派生任务」和落库；`idempotency_keys` 是 `Idempotency-Key` 请求头的短期记录（保留 24 小时，rust_api 的
+  `app/idempotency.rs` 用，定期清理删过期的）。两张都不同步、不回填。
 - 产物路径一律存相对数据目录的写法（`normalize_job_artifacts_for_storage`）。事件日志 `events_jsonl`、上一份译文 `previous_output_pdf` 2026-11-21 才补上，
   宽松处理：数据目录外的（别的设备同步来的）原样留着、不报错；以前存成本机绝对路径的，`Db::init` 里 `relativize_stored_artifact_paths` 改一次。
 - 增量收缩：`PRAGMA incremental_vacuum` 每还一页返回一行，要用 `maintenance::incremental_vacuum` 走到头（`execute_batch` 只走一步、只还一页）。

@@ -5,6 +5,10 @@
 契约：[`job-actions.v1`](../../../contracts/job-actions.v1.schema.json)（前端类型从 `@retainpdf/contracts/job-actions` 导入，返回 `StageActionsView`；
 续跑计划、续跑、取消、OCR 歧义处理也在这份契约里）。409 的 `error.details.reason` 取值见契约的 `ActionBlockReason`。
 
+续跑 `POST /jobs/{job_id}/actions/resume`（旧名 `rerun`）出新任务时，如果这个任务已经续跑 / 重试出一个还在排队或在跑的新任务，
+回 `409 derived_job_active`，`error.details.active_job_id` 是那个任务：等它结束或先取消它（2026-11-24 起）。续跑、重试、
+OCR 歧义处理都接受 `Idempotency-Key` 请求头。两件事见 [防重复提交](../00-约定/05-防重复提交.md)。
+
 ## 接口
 
 ```http
