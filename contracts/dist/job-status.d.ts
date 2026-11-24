@@ -696,6 +696,10 @@ export interface JobFailureBriefView {
      */
     stage: string;
     /**
+     * 具体失败码，同任务详情 failure.failure_code（auth_failed、upstream_model_unavailable、upstream_region_unsupported……）；category 同一类里要给不同说法时按它分（2026-11-24 加）。没有失败码、或只有旧数据兜底出来的 unknown 时键不出现。
+     */
+    failure_code?: string;
+    /**
      * 能不能重试。
      */
     retryable: boolean;

@@ -10,8 +10,8 @@
 - ``model``：模型不存在、名字写错、这个 Key 没开通（OpenAI ``model_not_found``、Anthropic ``not_found_error``、千问
   ``ModelNotFound`` 等、智谱 1211），以及任何 404（接口地址写错也是 404，同样是配置错误）。和 401/403 一样第一次就停，
   归 ``upstream_model_unavailable``，换模型后从翻译续跑（2026-11-23）。
-- ``region``：所在地区不支持（OpenAI 403 ``unsupported_country_region_territory``）。整份停下，归 ``auth_failed``，
-  但说法是「换网络或换服务商」，换 Key 没用。
+- ``region``：所在地区不支持（OpenAI 403 ``unsupported_country_region_territory``）。整份停下，归 ``upstream_region_unsupported``
+  （2026-11-24 以前归 ``auth_failed``），说法是「换网络或换服务商」，换 Key 没用。
 - ``content``：内容审核没过（智谱 1301、千问 ``DataInspectionFailed`` / ``FaqRuleBlocked``、OpenAI ``invalid_prompt`` 等）。
   不重试、不停整份：只这一块保留原文，翻译诊断里记「内容审核未过」。
 

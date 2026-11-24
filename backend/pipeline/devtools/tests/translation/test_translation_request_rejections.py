@@ -3,7 +3,7 @@
 - 模型不存在 / 没开通（OpenAI ``model_not_found``、Anthropic ``not_found_error``、千问 ``ModelNotFound`` 等、智谱 1211、
   任何 404）：和 401/403 一样第一次就整份停下，归 ``upstream_model_unavailable``，改好模型后从翻译续跑。只记这个模型，
   同一个 Key 的别的模型（审校角色）照常用。
-- 地区不支持（OpenAI 403 ``unsupported_country_region_territory``）：整份停下，归 ``auth_failed``，但说「换网络或换服务商」。
+- 地区不支持（OpenAI 403 ``unsupported_country_region_territory``）：整份停下，归 ``upstream_region_unsupported``（分类照旧 auth），说「换网络或换服务商」。
 - 内容审核没过（智谱 1301、千问 ``DataInspectionFailed`` / ``FaqRuleBlocked``、OpenAI ``invalid_prompt`` 等）：不重试，
   只这一块保留原文（死信），翻译诊断记「内容审核未过」，任务不停。
 - 409 / 413 / 422：归 ``upstream_bad_request``，summary 带状态码和服务商原话（只取 ``error.message``）。
@@ -227,7 +227,8 @@ def test_region_unsupported_stops_with_its_own_wording(fake) -> None:
     with pytest.raises(requests.HTTPError) as stopped:
         resilience.raise_if_credential_rejected(run, base_url=OPENAI, api_key="sk-test")
     failure = _failure(stopped.value)
-    assert failure["failure_code"] == "auth_failed" and failure["retryable"] is False
+    assert failure["failure_code"] == "upstream_region_unsupported" and failure["retryable"] is False
+    assert failure["failure_category"] == "auth"
     assert failure["summary"] == "所在地区不支持这个翻译服务商"
     assert "换网络" in failure["suggestion"] and "换 API Key 没用" in failure["suggestion"]
     assert failure["raw_excerpt"].startswith("翻译服务商不支持当前所在地区（HTTP 403，")
@@ -405,7 +406,7 @@ def test_agent_openai_maps_model_and_region() -> None:
 
 @pytest.mark.parametrize("reason,failure_code,summary", [
     ("model_unavailable", "upstream_model_unavailable", None),
-    ("region_unsupported", "auth_failed", "所在地区不支持这个翻译服务商"),
+    ("region_unsupported", "upstream_region_unsupported", "所在地区不支持这个翻译服务商"),
 ])
 def test_agent_stops_are_classified(reason, failure_code, summary) -> None:
     class Outcome:
@@ -433,7 +434,7 @@ def _executor(error_code: str, result: dict):
 
 @pytest.mark.parametrize("error_code,result,error_class,failure_code", [
     ("model_unavailable", {"upstream_status": 404, "upstream_code": "model_not_found", "upstream_provider": "openai"}, ExecutorModelUnavailable, "upstream_model_unavailable"),
-    ("region_unsupported", {"upstream_status": 403, "upstream_code": "unsupported_country_region_territory", "upstream_provider": "openai"}, ExecutorRegionUnsupported, "auth_failed"),
+    ("region_unsupported", {"upstream_status": 403, "upstream_code": "unsupported_country_region_territory", "upstream_provider": "openai"}, ExecutorRegionUnsupported, "upstream_region_unsupported"),
 ])
 def test_executor_stop_codes(error_code, result, error_class, failure_code) -> None:
     executor, session = _executor(error_code, result)

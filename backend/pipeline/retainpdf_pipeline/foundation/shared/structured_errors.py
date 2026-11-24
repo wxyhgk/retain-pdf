@@ -160,8 +160,9 @@ def _extract_provider_stage(text: str) -> str:
 def _failure_category_for(*, failure_code: str, failed_stage: str) -> str:
     if failure_code in LOCAL_ENVIRONMENT_FAILURE_CODES:
         return "environment"
-    if failure_code in {"auth_failed", "upstream_model_unavailable"}:
-        # 模型不可用也是去设置里改（模型名、接口地址、开通），前端按 auth 给「去设置」入口
+    if failure_code in {"auth_failed", "upstream_model_unavailable", "upstream_region_unsupported"}:
+        # 模型不可用也是去设置里改（模型名、接口地址、开通），前端按 auth 给「去设置」入口；
+        # 地区不支持（2026-11-24 单独成码）同样是重试没用、要换配置，分类照旧 auth，前端按 failure_code 给专门的说法
         return "auth"
     if failure_code in {"upstream_quota_exhausted"}:
         return "billing"
@@ -209,6 +210,9 @@ def _suggestion_for(*, failure_code: str, failure_category: str, provider: str) 
         "upstream_model_unavailable": (
             "模型名写错、这个 API Key 没开通该模型，或接口地址（base_url）写错：在设置里改好模型名"
             "（或去服务商控制台开通该模型）、核对接口地址后，从翻译阶段续跑。"
+        ),
+        "upstream_region_unsupported": (
+            "服务商不向当前网络出口所在的国家或地区提供服务，换 API Key 没用：请换网络（出口地区）或换一个翻译服务商后，从翻译阶段续跑。"
         ),
         "placeholder_unstable": "检查公式占位符保护链和当前批次输入，必要时缩小批次或切换保守模式。",
         "translation_protocol_shell": "检查翻译提示词与模型返回；该错误通常表示模型输出了 JSON/协议外壳而不是纯译文。",
@@ -540,6 +544,11 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         error_type = "upstream_model_unavailable"
         status_text = f"HTTP {http_status_code}" if http_status_code is not None else "上游"
         summary = f"翻译模型不可用（{status_text}）：模型名写错、这个 Key 没开通该模型，或接口地址写错"
+        retryable = False
+    elif declared == "upstream_region_unsupported":
+        # 所在地区不支持（OpenAI 403 unsupported_country_region_territory）：第一次就整份停下；说法由异常上的 failure_summary 覆盖
+        error_type = "upstream_region_unsupported"
+        summary = "所在地区不支持这个翻译服务商"
         retryable = False
     elif http_status_code == 429 or any(token in lowered for token in ("rate limited", "rate limit", "too many requests", "retry-after")):
         error_type = "upstream_rate_limited"

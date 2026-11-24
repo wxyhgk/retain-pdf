@@ -150,8 +150,9 @@ class AgentModelUnavailable(AgentRunStopped):
 
 
 class AgentRegionUnsupported(AgentAuthFailed):
-    """服务商不支持当前所在地区：归 ``auth_failed``，说法是换网络或换服务商（换 Key 没用）。"""
+    """服务商不支持当前所在地区：归 ``upstream_region_unsupported``（2026-11-24 以前归 ``auth_failed``），说法是换网络或换服务商（换 Key 没用）。"""
 
+    retain_failure_code = "upstream_region_unsupported"
     failure_summary = REGION_FAILURE_SUMMARY
     failure_suggestion = REGION_FAILURE_SUGGESTION
 

@@ -646,6 +646,11 @@ pub struct JobFailureBriefView {
     pub category: String,
     /// 失败发生在哪一段：ocr / translation / render
     pub stage: String,
+    /// 具体失败码（同任务详情 `failure.failure_code`：`auth_failed`、`upstream_model_unavailable`、
+    /// `upstream_region_unsupported`……），`category` 同一类里要给不同说法时按它分（2026-11-24 加）。
+    /// 没有失败码、或只有旧数据兜底出来的 `unknown` 时整个键不出现。
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure_code: Option<String>,
     /// 能不能重试。实测 17/17 的失败都是 true —— 这个字段早就有，只是从没传到前端。
     pub retryable: bool,
     /// 一句话结论。
@@ -681,6 +686,13 @@ impl JobFailureBriefView {
         Self {
             category: pick(&failure.failure_category, &failure.category),
             stage: pick(&failure.failed_stage, &failure.stage),
+            // 读库时缺失败码会拿旧的 category 兜底（常是 "unknown"），那种不带
+            failure_code: failure
+                .failure_code
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty() && *value != "unknown")
+                .map(str::to_string),
             retryable: failure.retryable,
             summary: failure.summary.clone(),
             root_cause: failure.root_cause.clone(),

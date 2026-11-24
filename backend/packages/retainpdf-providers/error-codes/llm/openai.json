@@ -249,8 +249,8 @@
       "retainpdf_handling": {
         "status": "ok",
         "action": "stop_translation",
-        "failure_code": "auth_failed",
-        "summary_zh": "第一次就整份停下，仍归 auth_failed，但 summary / suggestion 说「所在地区不支持这个翻译服务商，换网络或换服务商，换 API Key 没用」；agent 停下原因 region_unsupported，Rust 执行器 error_code=region_unsupported。",
+        "failure_code": "upstream_region_unsupported",
+        "summary_zh": "第一次就整份停下，归 upstream_region_unsupported（2026-11-24 以前归 auth_failed），summary / suggestion 说「所在地区不支持这个翻译服务商，换网络或换服务商，换 API Key 没用」；agent 停下原因 region_unsupported，Rust 执行器 error_code=region_unsupported。",
         "gap_zh": null,
         "priority": null,
         "code_paths": [
@@ -1588,8 +1588,8 @@
       "retainpdf_handling": {
         "status": "ok",
         "action": "stop_translation",
-        "failure_code": "auth_failed",
-        "summary_zh": "第一次就整份停下，仍归 auth_failed，但 summary / suggestion 说「所在地区不支持这个翻译服务商，换网络或换服务商，换 API Key 没用」；agent 停下原因 region_unsupported，Rust 执行器 error_code=region_unsupported。",
+        "failure_code": "upstream_region_unsupported",
+        "summary_zh": "第一次就整份停下，归 upstream_region_unsupported（2026-11-24 以前归 auth_failed），summary / suggestion 说「所在地区不支持这个翻译服务商，换网络或换服务商，换 API Key 没用」；agent 停下原因 region_unsupported，Rust 执行器 error_code=region_unsupported。",
         "gap_zh": null,
         "priority": null,
         "code_paths": [

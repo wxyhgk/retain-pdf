@@ -2014,6 +2014,7 @@ async fn document_jobs_list_carries_structured_failure() {
             "category": "unknown",
             "failed_stage": "ocr",
             "failure_category": "provider",
+            "failure_code": "ocr_provider_failed",
             "summary": "任务失败，但暂未识别出明确根因",
             "root_cause": "MinerU batch task failed: parsing failed, please try again later",
             "retryable": true,
@@ -2054,6 +2055,8 @@ async fn document_jobs_list_carries_structured_failure() {
     assert_eq!(failure["stage"], "ocr");
     assert_eq!(failure["retryable"], true, "retryable 没传出来，一键重试就没有依据");
     assert_eq!(failure["provider"], "mineru");
+    // 失败码（2026-11-24 放行，一个短字符串）：同一个 category 里前端按它给不同说法
+    assert_eq!(failure["failure_code"], "ocr_provider_failed");
     assert!(failure["suggestion"].as_str().is_some_and(|s| !s.is_empty()));
     assert!(failure["root_cause"].as_str().is_some_and(|s| s.contains("MinerU")));
 
@@ -2072,7 +2075,14 @@ async fn document_jobs_list_carries_structured_failure() {
     assert_eq!(
         keys,
         [
-            "category", "provider", "retryable", "root_cause", "stage", "suggestion", "summary",
+            "category",
+            "failure_code",
+            "provider",
+            "retryable",
+            "root_cause",
+            "stage",
+            "suggestion",
+            "summary",
         ],
         "列表里那份失败简报的字段集合变了 —— 2 秒一次的轮询不该驮新东西"
     );
