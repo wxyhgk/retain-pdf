@@ -9,6 +9,8 @@ export const STOP_REASON_TEXT: Record<string, string> = {
   quota_exhausted: "额度用完了，充值后可以接着跑",
   auth_failed: "密钥不对，换好后可以接着跑",
   rate_limited: "请求太快被限流，稍后接着跑",
+  model_unavailable: "模型不可用（名字写错或没开通），改好后可以接着跑",
+  region_unsupported: "服务商不支持当前地区，换网络或换服务商后可以接着跑",
 };
 
 // 取值以后端 docs/ops/planning/translation-agent/20261030-编辑部可视化和事件格式.md 为准（只加不改）。
