@@ -230,4 +230,8 @@ test("settings batch 2 platform endpoints carry their client names", () => {
 
 const PLATFORM_ENDPOINTS = [
   ["GET", "/api/v1/fonts", "listFonts", "json", undefined, undefined, "FontListView"],
+  ["GET", "/api/v1/sync", "getSyncStatus", "json", undefined, undefined, "SyncStatusView"],
+  ["PUT", "/api/v1/sync", "updateSyncSettings", "json", "SyncSettingsInput", undefined, "SyncStatusView"],
+  ["POST", "/api/v1/sync/run", "runSyncNow", "json", undefined, undefined, "SyncStatusView"],
+  ["POST", "/api/v1/sync/test", "testSyncTarget", "json", "SyncSettingsInput", undefined, "SyncTestView"],
 ];

@@ -5,7 +5,7 @@
 /**
  * Endpoint input, query, and output DTOs published by platform-settings.v1.schema.json.
  */
-export type PlatformSettingsSchema = FontListView;
+export type PlatformSettingsSchema = FontListView | SyncSettingsInput | SyncStatusView | SyncTestView;
 /**
  * 字体列表（`GET /fonts` 的 data 直接是数组）。
  */
@@ -26,4 +26,167 @@ export interface FontInfo {
      * 至少有一个字体文件还在磁盘上。
      */
     available: boolean;
+}
+/**
+ * models/sync.rs :: SyncSettingsInput（deny_unknown_fields，2026-10-22 起）。字段都可以不写或写 null：不改。
+ */
+export interface SyncSettingsInput {
+    enabled?: boolean | null;
+    /**
+     * 用户选的文件夹（绝对路径）。里面已经是同步文件夹就直接用，否则在里面建 `RetainPDF-Sync` 子目录。空串清除。
+     */
+    folder?: string | null;
+    /**
+     * 这台设备在别的设备上显示的名字。
+     */
+    device_name?: string | null;
+    /**
+     * `folder`（网盘文件夹）或 `webdav`。
+     */
+    transport?: string | null;
+    /**
+     * WebDAV 上的同步文件夹地址（http:// 或 https://）。
+     */
+    webdav_url?: string | null;
+    webdav_username?: string | null;
+    /**
+     * 只写：给了就保存（空串清除），状态里只报告有没有（`webdav_has_password`）。
+     */
+    webdav_password?: string | null;
+}
+/**
+ * models/sync.rs :: SyncStatusView。
+ */
+export interface SyncStatusView {
+    enabled: boolean;
+    /**
+     * `folder` 或 `webdav`。
+     */
+    transport: string;
+    webdav_url: string | null;
+    webdav_username: string | null;
+    /**
+     * 密码只写不读：这里只说有没有保存过。
+     */
+    webdav_has_password: boolean;
+    /**
+     * 用户选的文件夹。
+     */
+    folder: string | null;
+    /**
+     * 实际读写的同步文件夹（folder 本身或其中的 RetainPDF-Sync；WebDAV 时是地址）。
+     */
+    sync_root: string | null;
+    device_id: string | null;
+    device_name: string;
+    /**
+     * 正在同步。
+     */
+    running: boolean;
+    /**
+     * 自动同步的间隔（秒）。
+     */
+    interval_seconds: number;
+    /**
+     * 最近一轮；还没跑过为 null。
+     */
+    last_run: SyncRunView | null;
+    /**
+     * 最近一次整理同步文件夹（默认每天最多一次）；没有为 null。
+     */
+    last_maintenance: SyncMaintenanceView | null;
+    /**
+     * 等待区一共几条。
+     */
+    pending_total: number;
+    /**
+     * 等待区里的前 20 条。
+     */
+    pending: SyncPendingItemView[];
+    peers: SyncPeerView[];
+}
+/**
+ * models/sync.rs :: SyncRunView。最近一轮同步的结果。
+ */
+export interface SyncRunView {
+    started_at: string;
+    finished_at: string;
+    ok: boolean;
+    /**
+     * 失败原因；成功为 null。
+     */
+    error: string | null;
+    /**
+     * 发出去的改动条数。
+     */
+    exported: number;
+    /**
+     * 收到并应用的改动条数（含删除）。
+     */
+    applied: number;
+    deleted: number;
+    files_uploaded: number;
+    files_downloaded: number;
+    rejected: number;
+    /**
+     * 这一轮发现换了同步文件夹，本机书库全部重新发。
+     */
+    folder_changed: boolean;
+    /**
+     * 这一轮发现数据目录是从别处复制来的，换了新设备号。
+     */
+    device_renewed: boolean;
+}
+/**
+ * models/sync.rs :: SyncMaintenanceView。一次整理同步文件夹的结果。
+ */
+export interface SyncMaintenanceView {
+    at: string;
+    segments_compacted: number;
+    packs_retired: number;
+    packs_deleted: number;
+    /**
+     * 删掉的包腾出的空间（字节）。
+     */
+    bytes_freed: number;
+    /**
+     * 为留住还在用的内容重新上传的大小（字节）。
+     */
+    bytes_repacked: number;
+    error: string | null;
+}
+/**
+ * models/sync.rs :: SyncPendingItemView。等待区里的一条：还在等文件或等相关的书、任务同步过来。
+ */
+export interface SyncPendingItemView {
+    kind: string;
+    key: string;
+    reason: string;
+    attempts: number;
+}
+/**
+ * models/sync.rs :: SyncPeerView。同步文件夹里的另一台设备。
+ */
+export interface SyncPeerView {
+    device_id: string;
+    name: string;
+    segments_read: number;
+}
+/**
+ * models/sync.rs :: SyncTestView。
+ */
+export interface SyncTestView {
+    ok: boolean;
+    /**
+     * 测的是哪里（本机路径或不带账号的 WebDAV 地址）。
+     */
+    location: string;
+    /**
+     * 读写一次用了多久；没测成为 null。
+     */
+    latency_ms: number | null;
+    /**
+     * 测不通的原因；通了为 null。
+     */
+    error: string | null;
 }

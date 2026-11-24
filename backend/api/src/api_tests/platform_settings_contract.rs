@@ -26,3 +26,84 @@ async fn font_list_matches_published_schema() {
         assert_exact(item, &contract, "FontInfo", &format!("fonts[{index}]"));
     }
 }
+
+fn temp_folder(name: &str) -> std::path::PathBuf {
+    let dir = std::env::temp_dir().join(format!("retain-sync-contract-{name}-{:016x}", fastrand::u64(..)));
+    std::fs::create_dir_all(&dir).expect("create folder");
+    std::fs::canonicalize(dir).expect("canonical folder")
+}
+
+fn assert_sync_status(value: &serde_json::Value, contract: &serde_json::Value, path: &str) {
+    assert_exact(value, contract, "SyncStatusView", path);
+    if !value["last_run"].is_null() {
+        assert_exact(&value["last_run"], contract, "SyncRunView", &format!("{path}.last_run"));
+    }
+    if !value["last_maintenance"].is_null() {
+        assert_exact(&value["last_maintenance"], contract, "SyncMaintenanceView", &format!("{path}.last_maintenance"));
+    }
+    for (index, peer) in value["peers"].as_array().expect("peers").iter().enumerate() {
+        assert_exact(peer, contract, "SyncPeerView", &format!("{path}.peers[{index}]"));
+    }
+    for (index, item) in value["pending"].as_array().expect("pending").iter().enumerate() {
+        assert_exact(item, contract, "SyncPendingItemView", &format!("{path}.pending[{index}]"));
+    }
+}
+
+/// 两个后端共用一个同步文件夹：b 跑完以后 `peers` 里有 a、`last_run` 有值。
+#[tokio::test]
+async fn sync_views_match_published_schema() {
+    let contract = contract(CONTRACT);
+    let a = test_state("platform-settings-sync-a");
+    let b = test_state("platform-settings-sync-b");
+    let cloud = temp_folder("cloud");
+
+    let off = ok_data(&a, "GET", "/api/v1/sync", None).await;
+    assert_sync_status(&off, &contract, "get(off)");
+
+    let tested = ok_data(&a, "POST", "/api/v1/sync/test", Some(serde_json::json!({ "folder": cloud.to_string_lossy() }))).await;
+    assert_exact(&tested, &contract, "SyncTestView", "test");
+    assert_eq!(tested["ok"], true, "{tested}");
+
+    for (state, name) in [(&a, "Mac A"), (&b, "Mac B")] {
+        let saved = ok_data(
+            state,
+            "PUT",
+            "/api/v1/sync",
+            Some(serde_json::json!({ "folder": cloud.to_string_lossy(), "enabled": true, "device_name": name })),
+        )
+        .await;
+        assert_sync_status(&saved, &contract, "put");
+    }
+    let ran = ok_data(&a, "POST", "/api/v1/sync/run", None).await;
+    assert_sync_status(&ran, &contract, "run(a)");
+    assert!(ran["last_run"].is_object(), "{ran}");
+    let ran = ok_data(&b, "POST", "/api/v1/sync/run", None).await;
+    assert_sync_status(&ran, &contract, "run(b)");
+    assert_eq!(ran["peers"].as_array().map(Vec::len), Some(1), "{ran}");
+}
+
+/// 等待区、整理同步文件夹的结果在上面的流程里不一定出现：拿 serde 写出来的样子核对键集合。
+#[test]
+fn sync_pending_and_maintenance_items_match_published_schema() {
+    use crate::models::api::{SyncMaintenanceView, SyncPendingItemView};
+    let contract = contract(CONTRACT);
+    let pending = serde_json::to_value(SyncPendingItemView {
+        kind: "file".into(),
+        key: "k".into(),
+        reason: "waiting".into(),
+        attempts: 1,
+    })
+    .unwrap();
+    assert_exact(&pending, &contract, "SyncPendingItemView", "pending[0]");
+    let maintenance = serde_json::to_value(SyncMaintenanceView::default()).unwrap();
+    assert_exact(&maintenance, &contract, "SyncMaintenanceView", "last_maintenance");
+}
+
+#[test]
+fn sync_settings_input_accepts_exactly_the_contract_fields() {
+    let contract = contract(CONTRACT);
+    super::library_documents_contract::assert_request_fields_match::<crate::models::api::SyncSettingsInput>(
+        &contract,
+        "SyncSettingsInput",
+    );
+}

@@ -272,6 +272,13 @@ const SETTINGS_TYPES = {
   "platform-settings": [
     "FontInfo",
     "FontListView",
+    "SyncSettingsInput",
+    "SyncTestView",
+    "SyncRunView",
+    "SyncMaintenanceView",
+    "SyncPendingItemView",
+    "SyncPeerView",
+    "SyncStatusView",
   ],
 };
 
