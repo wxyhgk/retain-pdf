@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/token-usage/v1",
   "title": "Model Token Usage Contract",
-  "description": "模型用量（token）汇总：一个任务、一本书、全部（单个任务的 /jobs/:job_id/reports/usage 2026-11-14 删掉、2026-11-20 加回）。成功响应包在 { code, message, data } 里，data 是 UsageSummaryView。数据来自任务台账 artifacts/token-usage.v1.jsonl（流水线每次模型返回追加一行）、助手台账 <data_root>/usage/assistant.v1.jsonl，以及有台账之前的旧任务的诊断与精修报告（只折算得出输入输出，没有缓存 / 思考明细，jobs_estimated_from_reports 数出有几个任务是这么折算的）。删除的书连同任务目录一起删掉，不再计入。界面显示用「万」「亿」：不足 1 万显示原数（千分位），1 万到 1 亿显示一位小数加「万」，1 亿以上两位小数加「亿」。",
+  "description": "模型用量（token）汇总：一个任务、一本书、全部（单个任务的 /jobs/:job_id/reports/usage 2026-11-14 删掉、2026-11-20 加回）。成功响应包在 { code, message, data } 里，data 是 UsageSummaryView。数据来自任务台账 artifacts/token-usage.v1.jsonl（流水线每次模型返回追加一行）、助手台账 <data_root>/usage/assistant.v1.jsonl（AI 助手 2026-11-03 删了，没有写入方：新装恒为空，只读那之前留下的旧记录，保留只为兼容），以及有台账之前的旧任务的诊断与精修报告（只折算得出输入输出，没有缓存 / 思考明细，jobs_estimated_from_reports 数出有几个任务是这么折算的）。删除的书连同任务目录一起删掉，不再计入。界面显示用「万」「亿」：不足 1 万显示原数（千分位），1 万到 1 亿显示一位小数加「万」，1 亿以上两位小数加「亿」。",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -110,7 +110,7 @@
     "UsageStageGroup": {
       "type": "string",
       "enum": ["translation", "preparation", "refine", "assistant", "other"],
-      "description": "界面按它分组：翻译 / 译前准备 / 精修与编辑部 / 助手 / 其它。"
+      "description": "界面按它分组：翻译 / 译前准备 / 精修与编辑部 / 助手 / 其它。assistant（助手）只来自 2026-11-03 以前留下的助手台账，新装恒为空，取值保留只为兼容。"
     },
     "UsageStageView": {
       "type": "object",
@@ -134,7 +134,7 @@
         "unpriced_requests"
       ],
       "properties": {
-        "stage": { "type": "string", "description": "translation、term_prescan、refine_review、assistant_ask 等；新阶段会继续增加，未知的按 label 显示。" },
+        "stage": { "type": "string", "description": "translation、term_prescan、refine_review 等（assistant_ask 只来自 2026-11-03 以前留下的助手台账，保留只为兼容）；新阶段会继续增加，未知的按 label 显示。" },
         "label": { "type": "string", "description": "中文名，例如「审校挑错」。" },
         "group": { "$ref": "#/definitions/UsageStageGroup" },
         "requests": { "type": "integer", "minimum": 0 },

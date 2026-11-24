@@ -3,7 +3,8 @@
 //! 数据来源：
 //! - 任务台账 `<job>/artifacts/token-usage.v1.jsonl`：流水线每次模型返回追加一行（Python
 //!   `retainpdf_base/usage_ledger.py`；路径由 jobsd 经 `RETAIN_USAGE_LEDGER` 给）。
-//! - 助手台账 `<data_root>/usage/assistant.v1.jsonl`：AI 助手每次模型返回追加一行。
+//! - 助手台账 `<data_root>/usage/assistant.v1.jsonl`：以前 AI 助手每次模型返回追加一行；2026-11-03 去掉 RetainPDF
+//!   自己的 AI 以后没有写入方，只读老数据目录里留下的记录，新装恒为空。
 //! - 有台账之前的旧任务：从 `translation_diagnostics.json` 和精修报告（含 `refine_history/`）
 //!   里的 `token_usage` 折算。旧报告丢了思考、精修还丢了缓存，所以这部分只算得出输入输出；
 //!   汇总里单独数出有几个任务是这么折算的。

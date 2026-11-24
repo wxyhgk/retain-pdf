@@ -8,7 +8,13 @@
 
 - Base URL: `/api/v1`
 - 健康检查: `GET /health`
-- 除 `/health` 外，接口默认需要 `X-API-Key`
+- 接口默认需要 `X-API-Key`，下面这些不要（详见 [认证与错误](00-约定/02-认证与错误.md#认证)）：
+  - `GET /health`、`GET /ready`（第二个端口上也有）；
+  - 登录注册 `GET /api/v1/auth/session`、`POST /api/v1/auth/login`、`POST /api/v1/auth/register`；
+  - 模型执行器的三个内部接口 `/api/v1/internal/model/jobs/{job_id}/requests…`：凭只对一个任务有效的能力令牌
+    （`Authorization: Bearer …`），不收 API 密钥。
+  - 上面前五个在接口登记表里是 `public`（[登录和健康检查](00-接口目录/01-登录和健康检查.md)）；登记表的「谁能用」
+    只管多用户模式下网站账号能不能用，不等于要不要 Key。
 - 除文件下载接口外，接口默认返回 JSON 包装对象
 
 ## 快速入口
@@ -17,6 +23,7 @@
 - [响应格式](00-约定/01-响应格式.md)
 - [认证与错误](00-约定/02-认证与错误.md)
 - [分页](00-约定/03-分页.md)：所有列表回显 `limit`、给 `has_more`，`limit` 越界返回 400
+- [限制](00-约定/04-限制.md)：请求体大小、上传大小、各列表 `limit` 上限、超时，以及对应的环境变量
 - [创建任务](01-任务/01-创建任务.md)
 - [查询任务详情](01-任务/02-查询任务详情.md)
 - [任务列表](01-任务/03-任务列表.md)
@@ -81,8 +88,9 @@
 
 ### AI 问答与 PDF operation（已删）
 
-RetainPDF 自己的 AI（`/api/v1/ai/*`：问答、会话、文档操作、终端、运行配置）2026-11-03 删了，产品里只留
-Studio 的 AI。Studio 的 AI 读书用的是普通的只读接口（`/documents/{id}/reading`、`/search`、`/jobs/{id}/reader/*`）。
+RetainPDF 自己的 AI（`/api/v1/ai/*`：问答、会话、文档操作、终端、运行配置）2026-11-03 删了，对应的数据库表
+2026-11-20 也删了（v31）。Studio 2026-11-06 起不再嵌 RetainPDF，也不调这里的接口；RetainPDF 里留下的模型调用只有
+翻译（含翻译 agent）和问模型的调试接口 `POST /providers/translation/ask`。
 
 ### OCR
 
