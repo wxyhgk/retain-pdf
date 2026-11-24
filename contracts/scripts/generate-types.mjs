@@ -82,6 +82,11 @@ const TARGETS = [
     output: "src/translation-revisions.ts",
     rootName: "TranslationRevisionsSchema",
   },
+  {
+    input: "credentials.v1.schema.json",
+    output: "src/credentials.ts",
+    rootName: "CredentialsSchema",
+  },
 ];
 
 const GENERATOR_OPTIONS = {

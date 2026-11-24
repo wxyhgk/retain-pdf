@@ -3,6 +3,7 @@ mod admin_platform;
 mod admin_users;
 mod invites;
 mod credentials;
+mod credentials_contract;
 mod document_metadata;
 mod editorial_events;
 mod file_responses;

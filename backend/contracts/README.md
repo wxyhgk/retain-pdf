@@ -9,6 +9,7 @@ remains testable without the parent monorepo.
 The mirrored files are:
 
 - `create-job.v1.schema.json`
+- `credentials.v1.schema.json`
 - `glossaries.v1.schema.json`
 - `job-actions.v1.schema.json`
 - `job-data.v1.schema.json`

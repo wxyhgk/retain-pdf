@@ -13,6 +13,10 @@
       "types": "./dist/create-job-fields.d.ts",
       "import": "./dist/create-job-fields.js"
     },
+    "./credentials": {
+      "types": "./dist/credentials.d.ts",
+      "import": "./dist/credentials.js"
+    },
     "./glossaries": {
       "types": "./dist/glossaries.d.ts",
       "import": "./dist/glossaries.js"
@@ -70,6 +74,7 @@
       "import": "./dist/translation-revisions.js"
     },
     "./create-job.v1.schema.json": "./create-job.v1.schema.json",
+    "./credentials.v1.schema.json": "./credentials.v1.schema.json",
     "./glossaries.v1.schema.json": "./glossaries.v1.schema.json",
     "./job-actions.v1.schema.json": "./job-actions.v1.schema.json",
     "./job-data.v1.schema.json": "./job-data.v1.schema.json",

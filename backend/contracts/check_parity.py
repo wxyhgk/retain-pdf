@@ -10,6 +10,7 @@ from pathlib import Path
 
 CONTRACT_NAMES = (
     "create-job.v1.schema.json",
+    "credentials.v1.schema.json",
     "glossaries.v1.schema.json",
     "job-actions.v1.schema.json",
     "job-data.v1.schema.json",

@@ -13,8 +13,12 @@ const generatedLibraryDocuments = readFileSync(resolve("src/library-documents.ts
 const generatedOcrProviders = readFileSync(resolve("src/ocr-providers.ts"), "utf8");
 const generatedGlossaries = readFileSync(resolve("src/glossaries.ts"), "utf8");
 const generatedReaderData = readFileSync(resolve("src/reader-data.ts"), "utf8");
+const generatedSettings = Object.fromEntries(
+  ["credentials"].map((name) => [name, readFileSync(resolve(`src/${name}.ts`), "utf8")]),
+);
 const RAW_SCHEMA_EXPORTS = [
   "./create-job.v1.schema.json",
+  "./credentials.v1.schema.json",
   "./glossaries.v1.schema.json",
   "./job-actions.v1.schema.json",
   "./job-data.v1.schema.json",
@@ -40,6 +44,7 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
     [
       "./create-job",
       "./create-job-fields",
+      "./credentials",
       "./glossaries",
       "./job-actions",
       "./job-data",
@@ -239,4 +244,26 @@ test("generated glossaries DTO entry exposes the glossary types", () => {
   }
   assert.match(generatedGlossaries, /items: GlossarySummaryView\[\];/);
   assert.match(generatedGlossaries, /duplicate_count: number;/);
+});
+
+// 设置类第 2 批剩下的组（2026-11-24）：每份契约生成的 DTO 里有这些类型。
+const SETTINGS_TYPES = {
+  credentials: [
+    "CredentialMetadataView",
+    "CredentialListView",
+    "CredentialMutationView",
+    "CredentialDeleteView",
+    "CreateCredentialInput",
+    "UpdateCredentialInput",
+    "DeleteCredentialQuery",
+  ],
+};
+
+test("generated settings DTO entries expose their types", () => {
+  assert.deepEqual(Object.keys(generatedSettings).sort(), Object.keys(SETTINGS_TYPES).sort());
+  for (const [name, typeNames] of Object.entries(SETTINGS_TYPES)) {
+    for (const typeName of typeNames) {
+      assert.match(generatedSettings[name], new RegExp(`export (?:interface|type) ${typeName}\\b`), `${name}: ${typeName}`);
+    }
+  }
 });

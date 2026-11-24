@@ -7,6 +7,7 @@ const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const EXPECTED_DIALECT = "https://json-schema.org/draft/2020-12/schema";
 const EXPECTED_SCHEMAS = [
   "create-job.v1.schema.json",
+  "credentials.v1.schema.json",
   "glossaries.v1.schema.json",
   "job-actions.v1.schema.json",
   "job-data.v1.schema.json",

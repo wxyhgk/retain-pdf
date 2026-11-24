@@ -188,3 +188,18 @@ test("tag endpoints carry their client names", () => {
   assert.ok(documents.definitions.DocumentRecord.required.includes("tags"));
   assert.equal(documents.definitions.ListDocumentsQuery.properties.tag_id.type, "string");
 });
+
+// 设置类第 2 批第 2 组：凭据（credentials.v1，2026-11-24）。前端手写的 listCredentials、createCredential、updateCredential 同名；
+// getCredential、deleteCredential 前端还没有调用方，名字照同一个规则起。
+test("settings batch 2 credentials endpoints carry their client names", () => {
+  const table = read("credentials.v1.schema.json").endpoints.map(({ method, path, client_name, transport, input, query, output }) => [
+    method, path, client_name, transport, input, query, output,
+  ]);
+  assert.deepEqual(table, [
+    ["GET", "/api/v1/credentials", "listCredentials", "json", undefined, undefined, "CredentialListView"],
+    ["POST", "/api/v1/credentials", "createCredential", "json", "CreateCredentialInput", undefined, "CredentialMutationView"],
+    ["GET", "/api/v1/credentials/:credential_ref", "getCredential", "json", undefined, undefined, "CredentialMutationView"],
+    ["PUT", "/api/v1/credentials/:credential_ref", "updateCredential", "json", "UpdateCredentialInput", undefined, "CredentialMutationView"],
+    ["DELETE", "/api/v1/credentials/:credential_ref", "deleteCredential", "json", undefined, "DeleteCredentialQuery", "CredentialDeleteView"],
+  ]);
+});
