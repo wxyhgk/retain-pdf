@@ -47,6 +47,8 @@ test("样式：只反色画布（含换宽度时顶着的旧画布），占位�
   assert.match(css, /\.reader-react-pdf-page-placeholder/);
   assert.match(css, /--reader-overlay-paper: var\(--reader-doc-dark-paper\)/);
   assert.doesNotMatch(css, /ink-layer|\.reader-ink/, "画笔不反色");
+  // react-pdf 页外层内联白底：重画时画布先藏起来，新进视口的页没有旧画面顶着，深色下会闪白（缩放时实测）。
+  assert.match(css, /\[data-reader-doc="dark"\] \.react-pdf__Page \{\s*background-color: var\(--reader-doc-dark-paper\) !important;/);
   const entry = readFileSync(new URL("../../../../frontend/packages/reader/styles/entry.css", import.meta.url), "utf8");
   assert.ok(entry.indexOf('"./doc-theme.css"') > entry.indexOf('"./live-translation.css"'), "要排在实时译文样式后面才盖得住");
   const built = readFileSync(new URL("../../dist/css/reader.css", import.meta.url), "utf8");
