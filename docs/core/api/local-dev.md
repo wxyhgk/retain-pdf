@@ -100,6 +100,10 @@ Docker 中 `ops/deployment/docker/delivery/docker/auth.local.json` 的 `api_keys
 - `RUST_API_DB_REQUIRE_UPGRADE_BACKUP`：数据库结构升级前的备份存不成时不升级、不启动（默认关：记 `error` 照常升级）。
 - `RUST_API_MAX_RUNNING_JOBS`：最大并发任务数。排队的任务按交上来的先后开跑（2026-10-24 起）。
 - `RUST_API_MAX_QUEUED_JOBS`：排队（还没开跑）的任务最多多少个（默认 `1000`，`0` 不限）；满了建任务、原地重跑 429 `queue_full`。
+- `RUST_LOG_FORMAT`：日志格式，`json` 是一行一个 JSON 对象（给日志收集器），没设、空白或 `text` 是文本（默认）；别的取值在 stderr 报一次、用文本，
+  不拦启动。`RUST_LOG` 照旧管级别。
+- `RUST_API_ACCESS_LOG`：开关，开了每个请求按 info 记一行访问日志（方法、路由模板、状态码、耗时、请求编号，目标 `retainpdf_api::access`），
+  默认关（桌面版前端的轮询会把日志刷满）。第一次有请求时读，取值不对在 stderr 报一次、当关，不拦启动。
 
 ## Docker 配置位置
 

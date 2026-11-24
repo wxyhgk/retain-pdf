@@ -21,6 +21,7 @@ mod job_data;
 mod job_loading_errors;
 pub(crate) mod jobs_common;
 mod merged_reading;
+mod metrics;
 mod translation_versions;
 mod model_executor;
 mod jobs_control_contract;

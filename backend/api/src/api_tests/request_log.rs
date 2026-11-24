@@ -106,3 +106,34 @@ async fn every_response_carries_a_request_id_and_plain_client_ids_are_kept() {
         .unwrap();
     assert!(response.headers().contains_key("x-request-id"));
 }
+
+/// `RUST_LOG_FORMAT=json`（main.rs 的 `init_tracing` 同样的设置）：访问日志一行一个 JSON 对象，
+/// 带级别、target、路由模板，请求编号在 `request` span 里。
+#[test]
+fn access_log_lines_are_json_objects_with_the_request_span() {
+    let captured = Captured::default();
+    let writer = captured.clone();
+    let subscriber = tracing_subscriber::fmt()
+        .json()
+        .with_current_span(true)
+        .with_span_list(true)
+        .with_max_level(tracing::Level::INFO)
+        .with_writer(move || writer.clone())
+        .finish();
+    tracing::subscriber::with_default(subscriber, || {
+        tracing::callsite::rebuild_interest_cache();
+        let span = tracing::info_span!("request", method = "GET", path = "/api/v1/jobs/abc", request_id = "req-42");
+        let _entered = span.enter();
+        crate::app::log_access_for_tests("GET", Some("/api/v1/jobs/:job_id"), 404, std::time::Duration::from_millis(12));
+    });
+
+    let logs = String::from_utf8(captured.0.lock().unwrap().clone()).unwrap();
+    let line: serde_json::Value = serde_json::from_str(logs.lines().next().expect("一行访问日志")).expect("JSON");
+    assert_eq!(line["level"], "INFO");
+    assert_eq!(line["target"], "retainpdf_api::access");
+    assert_eq!(line["fields"]["route"], "/api/v1/jobs/:job_id");
+    assert_eq!(line["fields"]["status"], 404);
+    assert_eq!(line["fields"]["latency_ms"], 12);
+    assert_eq!(line["span"]["request_id"], "req-42");
+    assert!(line["timestamp"].is_string());
+}

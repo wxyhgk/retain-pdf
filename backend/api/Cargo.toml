@@ -39,7 +39,7 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 regex = "1"
 zip = { version = "0.6", default-features = false, features = ["deflate"] }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
 lopdf = "0.32"
 fastrand = "2"
 libc = "0.2"

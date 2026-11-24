@@ -58,6 +58,18 @@
 
 ---
 
+## 运维指标 `GET /metrics`、JSON 日志、访问日志开关（feat/request-metrics）
+
+2026-11-24，只加不改，**前端不用改**：
+
+- 新接口 `GET /metrics`（要 Key，多用户下 `admin`，`by(ops)`）：Prometheus 文本格式，给监控抓取，前端不调。
+  见 [运维指标](../../api/08-调试诊断/04-运维指标.md)。
+- 新环境变量 `RUST_LOG_FORMAT=json`（日志一行一个 JSON）、`RUST_API_ACCESS_LOG=1`（每个请求一行访问日志），默认都和以前一样。
+  桌面壳启动后端时不用设。
+- 接口用量文件 `route-usage.json` 多了 `route_stats`，`routes` 没变。
+
+---
+
 ## 翻译模型不可用、地区不支持、内容审核没过（fix/llm-request-codes）
 
 2026-11-23，翻译请求层补上剩下的几类「重试没用」，细节见
