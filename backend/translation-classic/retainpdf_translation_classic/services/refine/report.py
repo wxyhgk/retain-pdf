@@ -1,7 +1,7 @@
 """精修报告 artifacts/refine_report.v1.json（schema refine_report_v1）。
 
 契约：contracts/refine-report.v1.schema.json（backend/contracts/ 下有字节一致的镜像）。
-Rust 原样转发（GET /api/v1/jobs/:job_id/translation/refine-report），终端 agent 读它向用户呈现。
+Rust 原样转发（GET /api/v1/jobs/:job_id/reports/refine；以前读它的终端 agent 2026-11-03 删了，现在登记的调用方是 none）。
 """
 from __future__ import annotations
 
