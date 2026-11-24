@@ -19,7 +19,7 @@ export type TokenUsageSchema =
  */
 export type PriceBasis = "host" | "official_list" | null;
 /**
- * 界面按它分组：翻译 / 译前准备 / 精修与编辑部 / 助手 / 其它。
+ * 界面按它分组：翻译 / 译前准备 / 精修与编辑部 / 助手 / 其它。assistant（助手）只来自 2026-11-03 以前留下的助手台账，新装恒为空，取值保留只为兼容。
  */
 export type UsageStageGroup = "translation" | "preparation" | "refine" | "assistant" | "other";
 
@@ -275,7 +275,7 @@ export interface UsageBucket {
 }
 export interface UsageStageView {
   /**
-   * translation、term_prescan、refine_review、assistant_ask 等；新阶段会继续增加，未知的按 label 显示。
+   * translation、term_prescan、refine_review 等（assistant_ask 只来自 2026-11-03 以前留下的助手台账，保留只为兼容）；新阶段会继续增加，未知的按 label 显示。
    */
   stage: string;
   /**

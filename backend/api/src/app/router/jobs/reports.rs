@@ -8,7 +8,7 @@ crate::endpoints! {
     owner: jobs;
     /// 质量体检卡
     GET "/api/v1/jobs/:job_id/reports/quality" => reports::quality_summary_route, signed by(web);
-    /// 翻译质检（AI 助手、命令行在用）
+    /// 翻译质检（以前 AI 助手、命令行读它，2026-11-03 随 RetainPDF 自己的 AI 删了，现在没有调用方）
     GET "/api/v1/jobs/:job_id/reports/translation-qa" => reports::get_translation_qa, signed by(none);
     /// 翻译诊断
     GET "/api/v1/jobs/:job_id/reports/translation" => reports::get_translation_diagnostics, signed by(web);
