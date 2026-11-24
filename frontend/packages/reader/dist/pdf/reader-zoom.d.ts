@@ -2,6 +2,8 @@ export declare const READER_ZOOM_MIN = 0.25;
 export declare const READER_ZOOM_MAX = 1;
 /** 默认 50%：半屏宽，对照两侧刚好铺满 */
 export declare const READER_ZOOM_DEFAULT = 0.5;
+/** 页宽 = 目标宽 − 这个数（fitContentWidth）；滚轮缩放预览要反推回去。 */
+export declare const READER_PANE_FIT_INSET: number;
 export type ReaderZoomMode = "source" | "translated" | "compare";
 /** 视口窄于这个宽度算「手机」：单栏默认铺满、默认进译文模式（见 reader-initial-mode.ts）。
  *

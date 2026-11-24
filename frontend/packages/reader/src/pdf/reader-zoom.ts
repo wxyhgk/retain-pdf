@@ -16,6 +16,8 @@ export const READER_ZOOM_DEFAULT = 0.5;
 /** 栏内左右 padding 合计 */
 const READER_PANE_PAD_X = 16;
 const READER_PANE_FIT_GUTTER = 8;
+/** 页宽 = 目标宽 − 这个数（fitContentWidth）；滚轮缩放预览要反推回去。 */
+export const READER_PANE_FIT_INSET = READER_PANE_PAD_X + READER_PANE_FIT_GUTTER;
 
 export type ReaderZoomMode = "source" | "translated" | "compare";
 
@@ -87,7 +89,7 @@ export function comparePaneWidth(shellWidth: number): number {
  */
 export function fitContentWidth(containerWidth: number): number {
   const raw = Number(containerWidth) || 0;
-  const available = raw - READER_PANE_PAD_X - READER_PANE_FIT_GUTTER;
+  const available = raw - READER_PANE_FIT_INSET;
   return Math.max(160, Math.floor(available));
 }
 

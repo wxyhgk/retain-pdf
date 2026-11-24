@@ -82,6 +82,16 @@
   cursor: default;
 }
 
+.reader-react-hud-doc-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reader-react-hud-doc-dark[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
 .reader-react-hud-zoom-label {
   min-width: 48px;
   font-size: 12px;

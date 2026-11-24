@@ -5,6 +5,7 @@ import { useReaderSession } from "./use-reader-session.js";
 import { useReaderShell } from "./use-reader-shell.js";
 import { useReaderPaneModel } from "./use-reader-pane-model.js";
 import { useReaderZoom } from "./use-reader-zoom.js";
+import { useReaderWheelZoom } from "./use-reader-wheel-zoom.js";
 import { useReaderModeNavigation } from "./use-reader-mode-navigation.js";
 import { useCurrentPage } from "../pdf/useCurrentPage.js";
 import { usePageRowSync } from "../pdf/usePageRowSync.js";
@@ -174,6 +175,8 @@ export function useReaderReactController(): ReaderReactController {
   });
   const readerContentKey = `${viewStateKey}\u0000${session.jobId}\u0000${session.sourceUrl}\u0000${session.translatedUrl}`;
   const { userZoom, onZoomChange } = useReaderZoom(session.mode, shellRef, viewStateKey);
+  // Ctrl + 滚轮 / 触控板捏合：手势中 CSS 预览，停手才真改缩放（大 PDF 不会每个滚轮事件都重画）。
+  useReaderWheelZoom(shellEl, userZoom, onZoomChange);
 
   const panes = useReaderPaneModel(
     {

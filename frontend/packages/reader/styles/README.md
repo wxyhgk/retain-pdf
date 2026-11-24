@@ -33,6 +33,7 @@ frontend/packages/reader/styles/
 ├── layout.css / chrome.css / content.css / react-pdf.css
 ├── assistant-dock.css / panel-shell.css / finder.css / live-translation.css
 ├── float-markdown.css / hud.css / markdown.css / markdown-blocks.css
+├── doc-theme.css           # 深色文档（书页黑底白字：画布反色滤镜 + 叠层深色纸墨）
 └── dialog-shell.css / reader.utilities.css
 ```
 

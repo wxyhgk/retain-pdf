@@ -1,6 +1,7 @@
 // 底栏：页码（可点跳转）+ 缩放 +/- / 模式默认重置。
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Button } from "@retainpdf/ui";
 import {
   readerViewportWidth,
   READER_ZOOM_DEFAULT,
@@ -136,6 +137,19 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
         />
       ) : null}
       {props.issuesJobId ? <ReaderIssuesControl jobId={props.issuesJobId} currentPage={currentPage} /> : null}
+      {ctx?.toggleDocDark ? (
+        <div className="reader-react-hud-group" aria-label="显示">
+          <Button
+            className="reader-react-hud-btn reader-react-hud-doc-dark"
+            aria-pressed={ctx.docDark ? "true" : "false"}
+            aria-label={ctx.docDark ? "深色文档：开（书页黑底白字），点一下换回白底" : "深色文档：关，点一下书页换成黑底白字"}
+            title={ctx.docDark ? "换回白底黑字（D）" : "深色文档：书页黑底白字（D）"}
+            onClick={ctx.toggleDocDark}
+          >
+            <DocDarkIcon />
+          </Button>
+        </div>
+      ) : null}
       <div className="reader-react-hud-group" aria-label="缩放">
         <button
           type="button"
@@ -169,5 +183,15 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
         <ReaderShortcutsHelp />
       </div>
     </div>
+  );
+}
+
+/** 半边黑的圆：深色文档开关。 */
+function DocDarkIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" />
+    </svg>
   );
 }

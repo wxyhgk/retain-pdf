@@ -1,5 +1,5 @@
 import type { ReaderMode } from "./use-reader-session.js";
-export type ReaderKeyAction = "next-page" | "prev-page" | "first-page" | "last-page" | "zoom-in" | "zoom-out" | "zoom-reset" | "mode-source" | "mode-compare" | "mode-translated";
+export type ReaderKeyAction = "next-page" | "prev-page" | "first-page" | "last-page" | "zoom-in" | "zoom-out" | "zoom-reset" | "mode-source" | "mode-compare" | "mode-translated" | "doc-dark";
 export type ReaderKeyBinding = {
     action: ReaderKeyAction;
     /** 匹配 event.key；单字符（字母/符号）不区分大小写，多字符（方向键等）精确匹配 */
