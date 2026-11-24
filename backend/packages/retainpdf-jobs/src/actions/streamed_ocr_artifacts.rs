@@ -10,6 +10,8 @@ use retainpdf_core::models::domain::{ocr_child_job_id, JobSnapshot, JobStatusKin
 use retainpdf_core::models::JobArtifacts;
 use retainpdf_data::db::Db;
 
+use crate::views::ActionBlockReason;
+
 /// 父任务缺 OCR 产物、OCR 子任务成功了时，子任务的编号和产物。
 fn missing_child_ocr_artifacts(db: &Db, job: &JobSnapshot) -> Option<(String, JobArtifacts)> {
     if !matches!(job.workflow, WorkflowKind::Book | WorkflowKind::Translate) {
@@ -61,8 +63,14 @@ pub(crate) fn adopt_streamed_ocr_artifacts(db: &Db, job: JobSnapshot) -> Result<
         .get_or_insert_with(JobArtifacts::default)
         .copy_ocr_checkpoint_from(&child_id, &child_artifacts);
     if !db.cas_save_job(&job, &["failed", "canceled"])? {
-        return Err(AppError::conflict(format!(
-            "job {} changed while its OCR artifacts were being restored; retry again",
+        // 和原地重跑的 CAS 一样分两种：别的请求已经让它排上队 / 跑起来了（`job_active`），
+        // 还是终态但已经不是读到的那一次（`stale_resolution`，刷新再试）。
+        let restarted = db
+            .get_job(&job.job_id)
+            .is_ok_and(|current| matches!(current.status, JobStatusKind::Queued | JobStatusKind::Running));
+        let reason = if restarted { ActionBlockReason::JobActive } else { ActionBlockReason::StaleResolution };
+        return Err(reason.conflict(format!(
+            "job {} changed while its OCR artifacts were being restored; reload it and retry",
             job.job_id
         )));
     }

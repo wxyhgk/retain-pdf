@@ -105,7 +105,9 @@ pub struct ListJobsQuery {
 }
 
 /// `DELETE /api/v1/jobs/:job_id` 的查询参数（书架删除的旧地址 `DELETE /library/books/:job_id` 2026-10-22 删了）。
+/// 不认识的查询参数 400（2026-11-24 起；前端只带 `force`）。
 #[derive(Debug, Deserialize, Clone, Default)]
+#[serde(deny_unknown_fields)]
 pub struct DeleteJobQuery {
     /// 运行中的任务先取消再删；别的任务还在用它的产物也照删。
     #[serde(default)]
@@ -171,8 +173,9 @@ pub struct ListTranslationItemsQuery {
     pub q: Option<String>,
 }
 
-/// `/jobs/:id/files/…`、`/documents/:id/files/…` 的查询参数。
+/// `/jobs/:id/files/…`、`/documents/:id/files/…` 的查询参数。不认识的参数 400（2026-11-24 起）。
 #[derive(Debug, Deserialize, Default)]
+#[serde(deny_unknown_fields)]
 pub struct JobFilesQuery {
     /// `?download=1`：直接下载（`attachment`）。不带就在浏览器里打开（`inline`）。
     #[serde(default)]
@@ -186,6 +189,9 @@ pub struct JobFilesQuery {
     /// 译文 PDF、对照 PDF、Word 右下角的「logo + RetainPDF」水印（2026-11-20）：默认带，`?watermark=0` 取不带水印的。
     #[serde(default)]
     pub watermark: Option<String>,
+    /// 前端读书的原文时带 `?version=<原文版本>`，只给浏览器缓存分版本用，后端不看（收紧不认识的参数时登记成认识的）。
+    #[serde(default)]
+    pub version: Option<String>,
 }
 
 impl JobFilesQuery {

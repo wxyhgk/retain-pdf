@@ -48,6 +48,8 @@
     },
     "LibraryDeleteQuery": {
       "type": "object",
+      "additionalProperties": false,
+      "description": "不认识的查询参数 400（2026-11-24 起）。",
       "properties": {
         "force": {
           "type": "boolean",

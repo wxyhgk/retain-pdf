@@ -609,6 +609,9 @@ provider、operation、`resolution_revision`、允许的解决方式和需要填
 它不直接携带非持久化模型 token。客户端收到
 `translation_units_committed` 后，再读取对应页面的权威快照；断线后用最后确认的
 `seq` 重连。布局、页面快照和事件身份必须匹配同一 `attempt/generation/page_hash`。
+流开着时后端查询出错（任务被删了、库读不了……），先发一条 `event: error`（没有 `id`，data 是和普通接口一样的错误信封 JSON），
+再关流；以前直接断开（2026-11-24）。不认 `error` 的客户端照旧当作流结束、重连即可。查询串只认 `after_seq`，别的参数 400。
+细节见 [live-translation](../../../backend/api/docs/api-spec/live-translation.md)。
 
 ## 7. 产物与下载
 

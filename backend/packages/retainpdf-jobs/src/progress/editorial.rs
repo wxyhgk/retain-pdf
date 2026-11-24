@@ -11,6 +11,7 @@ use retainpdf_api_base::job_loading::load_supported_job;
 
 use crate::files::{stored_path, StoredFile};
 use crate::query::JobQueries;
+use crate::support::checked_limit;
 use crate::views::{EditorialEventListView, EditorialEventsQuery};
 
 const DEFAULT_LIMIT: u32 = 500;
@@ -22,13 +23,14 @@ impl JobQueries<'_> {
         job_id: &str,
         query: &EditorialEventsQuery,
     ) -> Result<EditorialEventListView, AppError> {
+        // 先查请求（`limit` 越界 400，2026-11-24 起不再静默夹），再读任务。
+        let limit = checked_limit(query.limit.unwrap_or(DEFAULT_LIMIT), MAX_LIMIT)?;
         let job = load_supported_job(self.db, self.data_root, job_id)?;
         let text = match stored_path(&job, self.data_root, StoredFile::AgentEditorialEvents) {
             Some(path) => fs::read_to_string(&path)
                 .map_err(|err| AppError::internal(format!("read editorial events: {err}")))?,
             None => String::new(),
         };
-        let limit = query.limit.unwrap_or(DEFAULT_LIMIT).clamp(1, MAX_LIMIT);
         Ok(read_after(&text, query.after, limit))
     }
 }
@@ -42,7 +44,7 @@ fn read_after(text: &str, after: u64, limit: u32) -> EditorialEventListView {
     let lines: Vec<&str> = complete.lines().collect();
     let total = lines.len() as u64;
     if after >= total {
-        return EditorialEventListView { events: Vec::new(), next_after: total, has_more: false };
+        return EditorialEventListView { events: Vec::new(), next_after: total, has_more: false, limit };
     }
     let start = after as usize;
     let end = (start + limit as usize).min(lines.len());
@@ -51,7 +53,7 @@ fn read_after(text: &str, after: u64, limit: u32) -> EditorialEventListView {
         .filter_map(|line| serde_json::from_str::<serde_json::Value>(line.trim()).ok())
         .filter(|value| value.is_object())
         .collect();
-    EditorialEventListView { events, next_after: end as u64, has_more: end < lines.len() }
+    EditorialEventListView { events, next_after: end as u64, has_more: end < lines.len(), limit }
 }
 
 #[cfg(test)]

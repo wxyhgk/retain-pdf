@@ -404,6 +404,55 @@ async fn live_events_use_the_greater_of_after_seq_and_last_event_id() {
     assert!(first.is_err(), "Last-Event-ID must advance the replay cursor");
 }
 
+/// 流开着时后端查询出错（这里是任务被删了）：先发一条 `event: error`，data 是和普通接口一样的错误信封，再关流。
+#[tokio::test]
+async fn live_events_send_an_error_event_before_closing_on_query_failure() {
+    let state = test_state("live-translation-events-error");
+    let (job, _) = seed_live_translation_job(&state, "error");
+    let committed_seq = state
+        .db
+        .list_translation_commit_events_after(&job.job_id, 0, 10)
+        .expect("list durable translation commits")
+        .into_iter()
+        .map(|record| record.seq)
+        .max()
+        .expect("seeded commit sequence");
+    let db = state.db.clone();
+    let response = build_app(state)
+        .oneshot(
+            Request::builder()
+                .uri(format!("/api/v1/jobs/{}/progress/stream?after_seq={committed_seq}", job.job_id))
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("events request"),
+        )
+        .await
+        .expect("events response");
+    assert_eq!(response.status(), StatusCode::OK);
+    db.delete_job(&job.job_id).expect("delete job under the open stream");
+
+    let mut stream = response.into_body().into_data_stream();
+    let mut text = String::new();
+    while !text.contains("\n\n") {
+        let chunk = tokio::time::timeout(Duration::from_secs(3), stream.next())
+            .await
+            .expect("error event timeout")
+            .expect("stream should send the error event before closing")
+            .expect("event bytes");
+        text.push_str(&String::from_utf8_lossy(&chunk));
+    }
+    assert!(text.lines().any(|line| line == "event: error"), "{text}");
+    assert!(!text.lines().any(|line| line.starts_with("id:")), "报错不动续读位置: {text}");
+    let data = text.lines().find_map(|line| line.strip_prefix("data: ")).expect("SSE data line");
+    let payload: serde_json::Value = serde_json::from_str(data).expect("error envelope JSON");
+    assert_eq!(payload["code"], 40400);
+    assert_eq!(payload["error"]["code"], "NOT_FOUND");
+    assert_eq!(payload["error"]["http_status"], 404);
+    assert!(payload["message"].as_str().unwrap().starts_with("job not found"), "{payload}");
+    let end = tokio::time::timeout(Duration::from_secs(3), stream.next()).await.expect("stream should close");
+    assert!(end.is_none(), "发完 error 就关流");
+}
+
 /// 普通读请求共用的有界执行器（2 个槽）被占满时，边翻边看的流照样能开、能收到已提交的页：
 /// 它的轮询走自己的阻塞线程，不和任务列表、详情抢槽（服务端工程审查 M8）。
 ///

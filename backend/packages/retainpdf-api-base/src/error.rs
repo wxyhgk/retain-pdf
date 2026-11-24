@@ -8,6 +8,15 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use thiserror::Error;
 
+/// serde 报错里「不认识的字段」那一句（``unknown field `x`, expected one of ...``，只带字段名、不带值），
+/// 去掉 serde_json 附在后面的行列号，补上 ` in the request body`。没有这一句返回 `None`。
+pub fn unknown_field_detail(serde_message: &str) -> Option<String> {
+    let start = serde_message.find("unknown field ")?;
+    let detail = &serde_message[start..];
+    let detail = detail.split(" at line ").next().unwrap_or(detail);
+    Some(format!("{detail} in the request body"))
+}
+
 /// 「还没产出」的 `error.details.reason`（404）。见 `docs/api/00-约定/02-认证与错误.md`。
 pub const NOT_READY: &str = "not_ready";
 
@@ -302,6 +311,19 @@ impl AppError {
             error.downcast_ref::<rusqlite::Error>(),
             Some(rusqlite::Error::QueryReturnedNoRows)
         )
+    }
+
+    /// 先收成 JSON（`Value` 或原始字节）再按类型解析的接口，解析失败时回 400，`message` 是 `<context>: <说明>`。
+    /// 说明和 `ApiJson` 提取器同一套：不认识的字段回字段名（``unknown field `x`, expected one of ... in the request body``，
+    /// serde 这句只有名字、不带值）；类型不对、枚举值不认识这类回固定文案，不回 serde 原文——那里面带着用户提交的值。
+    /// 状态码照旧是 400（提取器同类情况是 422，统一状态码另议）。
+    pub fn invalid_json_body(context: &str, error: &serde_json::Error) -> Self {
+        let detail = match error.classify() {
+            serde_json::error::Category::Data => unknown_field_detail(&error.to_string())
+                .unwrap_or_else(|| "request body does not match the expected schema".to_string()),
+            _ => "invalid JSON request body".to_string(),
+        };
+        Self::BadRequest(format!("{context}: {detail}"))
     }
 
     /// 按编号取一条记录失败时翻成接口错误：没有这条记录是 404（消息用 `not_found_msg`），
@@ -921,5 +943,38 @@ mod tests {
         assert_eq!(payload["error"]["code"], "CONFLICT");
         assert_eq!(payload["error"]["http_status"], 409);
         assert_eq!(payload["error"]["details"]["reason"], "ambiguous_request");
+    }
+
+    #[test]
+    fn invalid_json_body_names_unknown_fields_but_never_echoes_values() {
+        #[derive(Debug, serde::Deserialize)]
+        #[serde(deny_unknown_fields)]
+        #[allow(dead_code)]
+        struct Body {
+            count: u32,
+            mode: Mode,
+        }
+        #[derive(Debug, serde::Deserialize)]
+        #[serde(rename_all = "snake_case")]
+        enum Mode {
+            Fast,
+        }
+        let message = |raw: &str| {
+            let error = serde_json::from_str::<Body>(raw).unwrap_err();
+            let error = AppError::invalid_json_body("invalid job payload", &error);
+            assert!(matches!(error, AppError::BadRequest(_)), "状态码照旧 400: {error:?}");
+            error.to_string()
+        };
+        assert_eq!(
+            message(r#"{"count":1,"mode":"fast","extra":"secret-value"}"#),
+            "invalid job payload: unknown field `extra`, expected `count` or `mode` in the request body"
+        );
+        for raw in [r#"{"count":"secret-value","mode":"fast"}"#, r#"{"count":1,"mode":"secret-value"}"#] {
+            assert_eq!(message(raw), "invalid job payload: request body does not match the expected schema");
+        }
+        assert_eq!(message(r#"{"count": secret-value"#), "invalid job payload: invalid JSON request body");
+        let from_value = serde_json::from_value::<Body>(serde_json::json!({"count": 1, "mode": "fast", "x": 1}))
+            .unwrap_err();
+        assert!(AppError::invalid_json_body("ctx", &from_value).to_string().starts_with("ctx: unknown field `x`"));
     }
 }

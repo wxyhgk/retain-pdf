@@ -118,7 +118,7 @@ impl DocumentJobRequest {
     pub fn from_api_value(value: serde_json::Value) -> Result<Self, AppError> {
         let workflow_given = value.get("workflow").is_some();
         let input = CreateJobInput::from_api_value(value)
-            .map_err(|error| AppError::bad_request(format!("invalid job payload: {error}")))?;
+            .map_err(|error| AppError::invalid_json_body("invalid job payload", &error))?;
         Ok(Self { input, workflow_given })
     }
 }
