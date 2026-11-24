@@ -7,12 +7,13 @@ use axum::extract::{FromRequest, FromRequestParts, Json, Multipart, Path, Query,
 use axum::http::{request::Parts, StatusCode};
 use serde::de::DeserializeOwned;
 
-use crate::error::{unknown_field_detail, AppError};
+use crate::error::AppError;
 
 /// JSON extractor whose failures use the public API error envelope.
 ///
-/// 请求体里有不认识的字段（目标类型 `deny_unknown_fields`）返回 400，消息带字段名；
-/// 字段类型不对等其余不合 schema 的情况仍是 422。接口约定见 `docs/api/00-约定/02-认证与错误.md`。
+/// 请求体写错一律 400 + `BAD_REQUEST`，`error.details.reason` 区分：语法错 `invalid_json`、不认识的字段
+/// `unknown_field`（消息带字段名）、类型不对 / 缺字段 / 枚举值不认识 `schema_mismatch`（2026-11-24 以前是 422）。
+/// 接口约定见 `docs/api/00-约定/02-认证与错误.md`「请求体写错（400）」。
 #[derive(Debug)]
 pub struct ApiJson<T>(pub T);
 
@@ -44,17 +45,9 @@ where
     }
 }
 
-/// serde 的 `unknown field `x`, expected one of ...` 只带字段名，不带值，可以原样回给调用方。
-fn unknown_field_message(rejection: &JsonRejection) -> Option<String> {
-    let JsonRejection::JsonDataError(error) = rejection else {
-        return None;
-    };
-    unknown_field_detail(&error.body_text())
-}
-
 
 /// 先收原始字节、做完别的检查（例如先验令牌）再解析请求体的接口用：报错和 [`ApiJson`] 一样
-/// （不是 JSON 415、语法错 400、不认识的字段 400 带字段名、其余不合 schema 422），不回显请求里的值。
+/// （不是 JSON 415；语法错、不认识的字段、其余不合 schema 都是 400，带 reason），不回显请求里的值。
 pub fn parse_json_body<T: DeserializeOwned>(
     headers: &axum::http::HeaderMap,
     body: &[u8],
@@ -73,12 +66,10 @@ pub fn parse_json_body<T: DeserializeOwned>(
         ));
     }
     serde_json::from_slice(body).map_err(|error| match error.classify() {
-        serde_json::error::Category::Data => unknown_field_detail(&error.to_string())
-            .map(AppError::bad_request)
-            .unwrap_or_else(|| {
-                AppError::unprocessable_entity("JSON request body does not match the expected schema")
-            }),
-        _ => AppError::bad_request("invalid JSON request body"),
+        serde_json::error::Category::Data => {
+            AppError::request_body_data_error(None, &error.to_string(), SCHEMA_MISMATCH_MESSAGE)
+        }
+        _ => AppError::request_body_syntax_error(None),
     })
 }
 
@@ -129,15 +120,17 @@ where
     }
 }
 
+/// `ApiJson`、[`parse_json_body`] 对「合法 JSON 但对不上结构」回的固定文案。
+const SCHEMA_MISMATCH_MESSAGE: &str = "JSON request body does not match the expected schema";
+
+/// axum `Json` 提取器的拒绝 → 统一信封。axum 默认对 `JsonDataError` 回 422，这里改成 400
+/// （serde 的 `unknown field `x`, expected one of ...` 只带字段名，不带值，可以原样回给调用方）。
 fn safe_json_rejection(rejection: JsonRejection) -> AppError {
-    if let Some(message) = unknown_field_message(&rejection) {
-        return AppError::bad_request(message);
-    }
     match rejection {
-        JsonRejection::JsonDataError(_) => {
-            AppError::unprocessable_entity("JSON request body does not match the expected schema")
+        JsonRejection::JsonDataError(error) => {
+            AppError::request_body_data_error(None, &error.body_text(), SCHEMA_MISMATCH_MESSAGE)
         }
-        JsonRejection::JsonSyntaxError(_) => AppError::bad_request("invalid JSON request body"),
+        JsonRejection::JsonSyntaxError(_) => AppError::request_body_syntax_error(None),
         JsonRejection::MissingJsonContentType(_) => {
             AppError::unsupported_media_type("expected an application/json request body")
         }
@@ -327,6 +320,14 @@ mod tests {
         assert_eq!(payload["error"]["details"], serde_json::json!({}));
     }
 
+    /// 请求体写错：400 + `BAD_REQUEST`，`error.details.reason` 是 `reason`。
+    fn assert_body_error(payload: &Value, reason: &str) {
+        assert_eq!(payload["code"], 40000);
+        assert_eq!(payload["error"]["code"], "BAD_REQUEST");
+        assert_eq!(payload["error"]["http_status"], 400);
+        assert_eq!(payload["error"]["details"], serde_json::json!({ "reason": reason }));
+    }
+
     #[tokio::test]
     async fn json_rejections_preserve_safe_protocol_statuses() {
         let router = Router::new().route("/json", post(extract_json));
@@ -345,7 +346,7 @@ mod tests {
             .unwrap();
         let (status, payload) = error_payload(syntax).await;
         assert_eq!(status, StatusCode::BAD_REQUEST);
-        assert_error(&payload, 40000, "BAD_REQUEST");
+        assert_body_error(&payload, "invalid_json");
 
         let data = router
             .clone()
@@ -360,8 +361,26 @@ mod tests {
             .await
             .unwrap();
         let (status, payload) = error_payload(data).await;
-        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
-        assert_error(&payload, 42200, "UNPROCESSABLE_ENTITY");
+        assert_eq!(status, StatusCode::BAD_REQUEST, "类型写错是 400，不是 axum 默认的 422");
+        assert_body_error(&payload, "schema_mismatch");
+        assert_eq!(payload["message"], "JSON request body does not match the expected schema");
+        assert!(!payload.to_string().contains("not-a-number"), "不回显提交的值: {payload}");
+
+        let missing = router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method(Method::POST)
+                    .uri("/json")
+                    .header(header::CONTENT_TYPE, "application/json")
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        let (status, payload) = error_payload(missing).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "缺必填字段也是 400");
+        assert_body_error(&payload, "schema_mismatch");
 
         #[derive(Deserialize)]
         #[serde(deny_unknown_fields)]
@@ -384,7 +403,7 @@ mod tests {
             .unwrap();
         let (status, payload) = error_payload(unknown).await;
         assert_eq!(status, StatusCode::BAD_REQUEST, "不认识的字段是请求写错了");
-        assert_error(&payload, 40000, "BAD_REQUEST");
+        assert_body_error(&payload, "unknown_field");
         assert!(payload["message"].as_str().unwrap().starts_with("unknown field `extra`"));
 
         let missing_content_type = router

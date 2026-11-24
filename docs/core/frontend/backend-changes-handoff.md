@@ -12,6 +12,24 @@
 
 ---
 
+## 请求体写错统一回 400，顶层 `code` 的用法（fix/api-error-format）
+
+2026-11-24，**前端不用改**，见 [请求体错误统一回 400](../../ops/planning/api-reorg/20261124-请求体错误统一回400.md)：
+
+- **请求体类型不对、缺必填字段、枚举值不认识：`422 UNPROCESSABLE_ENTITY`（顶层 `42200`）→ `400 BAD_REQUEST`（顶层 `40000`）**，
+  `error.details.reason = "schema_mismatch"`，`message` 没变。所有用 `ApiJson` 收请求体的接口都是（凭据、术语表、改单条译文、
+  任务动作、书库、设置……）。以前已经是 400 的两种也多带一个 reason：不是 JSON `invalid_json`、不认识的字段 `unknown_field`。
+  见 [认证与错误·请求体写错（400）](../../api/00-约定/02-认证与错误.md#请求体写错400)。
+- 核对过 `frontend/`：源码里没有按 `422`、`42200`、`UNPROCESSABLE_ENTITY` 判断的地方。改单条译文**内容**没过检查仍是
+  `422 TRANSLATION_REVISION_REJECTED`（`frontend/packages/api/src/translation-debug.ts` 按 `details.reason` 说人话，照旧能用）；
+  测试里的 422（`tests/shared/translation-debug-client.test.mjs`、`tests/book-detail/edit-translation.test.mjs`、
+  `tests/reader/reader-block-edit.test.mjs`、`tests/shared/document-ocr-client.test.mjs`）都是这个或自己造的假回应，不受影响。
+- **顶层 `code` 现有行为不改**：多数是数字，凭据、书的元数据建议、边翻边看、改单条译文、复用 OCR 建任务、账号这几类是字符串
+  （清单见 [响应格式·顶层 code 的类型](../../api/00-约定/01-响应格式.md#顶层-code-的类型)）。以后前端做分支判断只看
+  `error.code` 和 `error.details.reason`，不要看顶层 `code` 和它的类型；后端以后新加的错误顶层 `code` 一律是数字。
+
+---
+
 ## 失败简报带 `failure_code`，地区不支持单独成码（feat/failure-brief-code）
 
 2026-11-24，只增不改，见 [失败简报带失败码](../../ops/planning/error-codes/20261124-失败简报带失败码.md)：

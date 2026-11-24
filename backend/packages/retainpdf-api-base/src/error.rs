@@ -20,6 +20,15 @@ pub fn unknown_field_detail(serde_message: &str) -> Option<String> {
 /// 「还没产出」的 `error.details.reason`（404）。见 `docs/api/00-约定/02-认证与错误.md`。
 pub const NOT_READY: &str = "not_ready";
 
+/// 请求体写错（400）的 `error.details.reason`，2026-11-24 起有。见 `docs/api/00-约定/02-认证与错误.md`
+/// 「请求体写错（400）」。JSON 语法错、不是 JSON。
+pub const INVALID_JSON: &str = "invalid_json";
+/// 请求体里有接口不认识的字段（目标类型 `deny_unknown_fields`）。
+pub const UNKNOWN_FIELD: &str = "unknown_field";
+/// 请求体是合法 JSON，但和接口要的结构对不上：字段类型不对、缺必填字段、枚举值不认识。
+/// 2026-11-24 以前 `ApiJson` 等提取器对这种情况回 422。
+pub const SCHEMA_MISMATCH: &str = "schema_mismatch";
+
 #[derive(Clone, Debug, Error)]
 pub enum AppError {
     #[error("{0}")]
@@ -220,6 +229,7 @@ impl AppError {
         Self::UnsupportedMediaType(msg.into())
     }
 
+    /// 422。请求体类型、字段写错不要用它：那是 400（[`AppError::request_body_data_error`]）。
     pub fn unprocessable_entity(msg: impl Into<String>) -> Self {
         Self::UnprocessableEntity(msg.into())
     }
@@ -234,6 +244,36 @@ impl AppError {
 
     pub fn conflict(msg: impl Into<String>) -> Self {
         Self::Conflict(msg.into())
+    }
+
+    /// 400,`error.details.reason` 写稳定原因(请求本身写错了,如请求体对不上结构 `schema_mismatch`)。
+    pub fn bad_request_because(reason: &'static str, msg: impl Into<String>) -> Self {
+        Self::Reasoned {
+            status: StatusCode::BAD_REQUEST,
+            message: msg.into(),
+            reason,
+        }
+    }
+
+    /// 请求体不是合法 JSON：400 + [`INVALID_JSON`]。`prefix` 是接口自己的前缀（如 `invalid job payload`），
+    /// 有就拼成 `<prefix>: invalid JSON request body`。
+    pub fn request_body_syntax_error(prefix: Option<&str>) -> Self {
+        Self::bad_request_because(INVALID_JSON, with_prefix(prefix, "invalid JSON request body"))
+    }
+
+    /// 请求体是 JSON、但按类型解析失败（serde 的 Data 类错误）：一律 400（2026-11-24 起，以前提取器回 422）。
+    /// 不认识的字段回字段名（``unknown field `x`, expected one of ... in the request body``，serde 这句只有名字、
+    /// 不带值），reason 是 [`UNKNOWN_FIELD`]；其余（类型不对、缺字段、枚举值不认识）回 `schema_message`
+    /// 这句固定文案，reason 是 [`SCHEMA_MISMATCH`]——serde 原文里带着用户提交的值，不回给调用方。
+    pub fn request_body_data_error(
+        prefix: Option<&str>,
+        serde_message: &str,
+        schema_message: &str,
+    ) -> Self {
+        match unknown_field_detail(serde_message) {
+            Some(detail) => Self::bad_request_because(UNKNOWN_FIELD, with_prefix(prefix, &detail)),
+            None => Self::bad_request_because(SCHEMA_MISMATCH, with_prefix(prefix, schema_message)),
+        }
     }
 
     /// 409,`error.details.reason` 写稳定原因(当前状态不允许这个操作)。
@@ -314,16 +354,17 @@ impl AppError {
     }
 
     /// 先收成 JSON（`Value` 或原始字节）再按类型解析的接口，解析失败时回 400，`message` 是 `<context>: <说明>`。
-    /// 说明和 `ApiJson` 提取器同一套：不认识的字段回字段名（``unknown field `x`, expected one of ... in the request body``，
-    /// serde 这句只有名字、不带值）；类型不对、枚举值不认识这类回固定文案，不回 serde 原文——那里面带着用户提交的值。
-    /// 状态码照旧是 400（提取器同类情况是 422，统一状态码另议）。
+    /// 说明和 reason 跟 `ApiJson` 提取器同一套（[`AppError::request_body_data_error`]、
+    /// [`AppError::request_body_syntax_error`]），不回 serde 原文——那里面带着用户提交的值。
     pub fn invalid_json_body(context: &str, error: &serde_json::Error) -> Self {
-        let detail = match error.classify() {
-            serde_json::error::Category::Data => unknown_field_detail(&error.to_string())
-                .unwrap_or_else(|| "request body does not match the expected schema".to_string()),
-            _ => "invalid JSON request body".to_string(),
-        };
-        Self::BadRequest(format!("{context}: {detail}"))
+        match error.classify() {
+            serde_json::error::Category::Data => Self::request_body_data_error(
+                Some(context),
+                &error.to_string(),
+                "request body does not match the expected schema",
+            ),
+            _ => Self::request_body_syntax_error(Some(context)),
+        }
     }
 
     /// 按编号取一条记录失败时翻成接口错误：没有这条记录是 404（消息用 `not_found_msg`），
@@ -419,6 +460,13 @@ impl AppError {
             error_code,
             reason,
         }
+    }
+}
+
+fn with_prefix(prefix: Option<&str>, detail: &str) -> String {
+    match prefix {
+        Some(prefix) => format!("{prefix}: {detail}"),
+        None => detail.to_string(),
     }
 }
 
@@ -564,8 +612,10 @@ impl IntoResponse for AppError {
                 .into_response();
         }
         if let AppError::Reasoned { status, message, reason } = &self {
-            // 只有 404 / 409 / 429 / 503 有构造方法,信封与对应的普通错误一致。
-            let (code, stable_code) = if *status == StatusCode::NOT_FOUND {
+            // 只有 400 / 404 / 409 / 429 / 503 有构造方法,信封与对应的普通错误一致。
+            let (code, stable_code) = if *status == StatusCode::BAD_REQUEST {
+                (40000, "BAD_REQUEST")
+            } else if *status == StatusCode::NOT_FOUND {
                 (40400, "NOT_FOUND")
             } else if *status == StatusCode::SERVICE_UNAVAILABLE {
                 (50300, "SERVICE_UNAVAILABLE")
@@ -962,7 +1012,10 @@ mod tests {
         let message = |raw: &str| {
             let error = serde_json::from_str::<Body>(raw).unwrap_err();
             let error = AppError::invalid_json_body("invalid job payload", &error);
-            assert!(matches!(error, AppError::BadRequest(_)), "状态码照旧 400: {error:?}");
+            assert!(
+                matches!(&error, AppError::Reasoned { status, .. } if *status == StatusCode::BAD_REQUEST),
+                "状态码是 400: {error:?}"
+            );
             error.to_string()
         };
         assert_eq!(
@@ -976,5 +1029,35 @@ mod tests {
         let from_value = serde_json::from_value::<Body>(serde_json::json!({"count": 1, "mode": "fast", "x": 1}))
             .unwrap_err();
         assert!(AppError::invalid_json_body("ctx", &from_value).to_string().starts_with("ctx: unknown field `x`"));
+    }
+
+    /// 第 13 条（2026-11-24）：请求体写错一律 400 + `BAD_REQUEST`，`error.details.reason` 区分三种情况；
+    /// 顶层 `code` 是数字 40000。
+    #[tokio::test]
+    async fn request_body_errors_are_400_with_reason() {
+        #[derive(Debug, serde::Deserialize)]
+        #[serde(deny_unknown_fields)]
+        #[allow(dead_code)]
+        struct Body {
+            count: u32,
+        }
+        let parse = |raw: &str| {
+            let error = serde_json::from_str::<Body>(raw).unwrap_err();
+            AppError::invalid_json_body("invalid job payload", &error)
+        };
+        for (raw, reason) in [
+            (r#"{"count":"secret-value"}"#, SCHEMA_MISMATCH),
+            (r#"{}"#, SCHEMA_MISMATCH),
+            (r#"{"count":1,"extra":true}"#, UNKNOWN_FIELD),
+            (r#"{"count": secret-value"#, INVALID_JSON),
+        ] {
+            let (status, payload) = response_json(parse(raw)).await;
+            assert_eq!(status, StatusCode::BAD_REQUEST, "{raw}");
+            assert_eq!(payload["code"], 40000, "{raw}");
+            assert_eq!(payload["error"]["code"], "BAD_REQUEST", "{raw}");
+            assert_eq!(payload["error"]["http_status"], 400, "{raw}");
+            assert_eq!(payload["error"]["details"], serde_json::json!({ "reason": reason }), "{raw}");
+            assert!(!payload.to_string().contains("secret-value"), "{payload}");
+        }
     }
 }
