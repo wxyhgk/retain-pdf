@@ -62,10 +62,11 @@ npm test
 python3 scripts/serve_static.py --host 127.0.0.1 --port 40001 --root .
 ```
 
-真实浏览器视觉检查是独立门禁：
+真实浏览器视觉检查是独立门禁（改样式、皮肤、页面结构时跑，用法见 `tests/README.md`）：
 
 ```bash
-npm run visual:check
+npm run build
+npm run visual:check -- --base main
 ```
 
 运行时配置由 `runtime-config.js` 提供默认值；本机覆盖写入被 Git 忽略的 `runtime-config.local.js`，可从 `runtime-config.local.example.js` 开始。不要提交 API Key 或供应商凭据。

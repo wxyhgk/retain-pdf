@@ -1,11 +1,24 @@
 #!/usr/bin/env node
-// 视觉回归基线:对三个页面的关键状态截图,与 tests/visual/baseline 对比。
-//   node scripts/visual-check.mjs           # 对比,差异超阈值则退出码 1,diff 图写入 tests/visual/output
-//   node scripts/visual-check.mjs --update  # 重建基线(确认视觉改动符合预期后运行)
-// 全程 mock 模式、冻结时钟,不依赖后端。基线在本机生成,仅用于本机对比。
+// 视觉回归：每个皮肤 × 每个页面状态截一张图，和基准逐像素比。全程 mock 模式、冻结时钟、不连后端。
+//
+//   npm run visual:check -- --base main      # 推荐：拿 main 上提交的构建产物当基准，和当前构建比
+//   npm run visual:check                     # 和本机存的基准比（tests/visual/baseline/，不进 git）
+//   npm run visual:update                    # 把当前构建存成本机基准
+//
+// 选项：
+//   --base <git 引用>   基准用这个提交里的 frontend/web（dist 是提交进仓库的，不用构建）
+//   --themes a,b        只截这几个皮肤（默认全部：frontend/packages/ui/src/theme/registry.ts）
+//   --states a,b        只截这几个状态（名字见下面 STATES）
+//   --mobile            再加一组 390×844 的手机宽度
+//   --keep              保留基准的临时目录（排查用）
+//
+// 先 `npm run build`：截的是 dist 里打好的包。差异图写到 tests/visual/output/（git 忽略）。
+// 只有本次改动打算改样子的地方，对出来的差异才是预期的；其余任何差异都要先查清再合并。
+// 2026-11-24 起替换旧版（旧版基准是 9 月的、几个状态指向早删掉的 AI 面板，跑不通）。
 
-import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { execFileSync, spawn } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
@@ -13,214 +26,281 @@ import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 
 const FRONTEND_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const REPO_ROOT = dirname(dirname(FRONTEND_ROOT));
 const BASELINE_DIR = join(FRONTEND_ROOT, "tests/visual/baseline");
 const OUTPUT_DIR = join(FRONTEND_ROOT, "tests/visual/output");
-const PORT = 40151;
-const FIXED_TIME = new Date("2026-06-01T10:00:00+08:00");
-const MOCK_JOB_ID = "mock-job-20260415";
-// 允许的差异像素占比(抗锯齿等噪音)
-const DIFF_RATIO_THRESHOLD = 0.001;
+const FIXED_TIME = new Date("2026-11-20T10:00:00+08:00");
+// 差异像素占比超过这个就算不一样。同一份代码连跑两次是 0（2026-11-24 实测 30 张），这里只留一点抗锯齿余量。
+const DIFF_RATIO_THRESHOLD = 0.0005;
+const CONCURRENCY = 3;
+
+const args = process.argv.slice(2);
+const flag = (name) => args.includes(name);
+const option = (name) => {
+  const index = args.indexOf(name);
+  return index >= 0 ? args[index + 1] : undefined;
+};
+const update = flag("--update");
+const baseRef = option("--base");
+
+const HIDE_CSS = `
+  #mock-mode-banner { display: none !important; }
+  *, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }
+`;
+const bookCard = (page) => page.locator("recent-job-card, .library-card, [data-job-id]").first();
 
 const STATES = [
+  { name: "home", url: "/index.html?mock=done", run: async () => {} },
   {
-    name: "home",
-    url: `/index.html?mock=succeeded`,
-    prepare: async (page) => {
-      await page.waitForTimeout(1500);
+    name: "home-list",
+    url: "/index.html?mock=done",
+    run: async (page) => {
+      await page.getByRole("radio", { name: /列表/ }).first().click();
+      await page.waitForTimeout(500);
+    },
+  },
+  {
+    name: "collections",
+    url: "/index.html?mock=done",
+    run: async (page) => {
+      await page.click("#library-top-tab-categories");
+      await page.waitForTimeout(700);
     },
   },
   {
     name: "detail",
-    url: `/detail.html?mock=succeeded&job_id=${MOCK_JOB_ID}`,
-    prepare: async (page) => {
-      await page.waitForTimeout(1200);
-    },
-  },
-  {
-    name: "reader-compare",
-    diffThreshold: 0.008,
-    url: `/reader.html?mock=succeeded`,
-    prepare: async (page) => {
-      await page.waitForSelector(".reader-boot-loading", { state: "attached", timeout: 20000 });
-      // 右栏默认展开会触发 PDF 重排缩放,留足时间让缩放落定再截图(否则 PDF 文本亚像素抖动)
-      await page.waitForTimeout(1800);
-    },
-  },
-  {
-    name: "reader-ai-open",
-    diffThreshold: 0.008,
-    url: `/reader.html?mock=succeeded`,
-    prepare: async (page) => {
-      await page.waitForSelector(".reader-boot-loading", { state: "attached", timeout: 20000 });
-      // 三栏骨架:右栏(AI 问答)默认展开,无需再点开
-      await page.waitForSelector("#reader-ai-drawer.is-open", { timeout: 10000 });
-      // 等待右栏展开引发的 PDF 重排缩放落定,避免亚像素抖动
-      await page.waitForTimeout(1800);
-    },
-  },
-  {
-    name: "status-dialog-failed",
-    url: `/index.html?mock=failed`,
-    prepare: async (page) => {
-      await page.waitForTimeout(1500);
-      await page.locator("recent-job-card, .library-card, [data-job-id]").first().click();
-      await page.waitForTimeout(1000);
-      await page.click("#status-detail-btn");
-      await page.waitForTimeout(800);
-    },
-  },
-  {
-    name: "detail-page-failed",
-    url: `/detail.html?mock=failed&job_id=${MOCK_JOB_ID}`,
-    prepare: async (page) => {
-      await page.waitForTimeout(1200);
-    },
-  },
-  {
-    name: "reader-markdown-open",
-    diffThreshold: 0.008,
-    url: `/reader.html?mock=succeeded`,
-    prepare: async (page) => {
-      await page.waitForSelector(".reader-boot-loading", { state: "attached", timeout: 20000 });
-      await page.click("#reader-markdown-toggle-btn");
-      await page.waitForSelector("#reader-markdown-content:not(.hidden)", { timeout: 10000 });
-      await page.waitForTimeout(600);
-    },
-  },
-  {
-    name: "reader-dialog-embedded",
-    diffThreshold: 0.008,
-    url: `/index.html?mock=done`,
-    prepare: async (page) => {
-      await page.waitForTimeout(1500);
-      await page.locator("recent-job-card, .library-card, [data-job-id]").first().click();
-      await page.waitForTimeout(1000);
-      await page.click("#reader-btn");
-      const frameElement = await page.waitForSelector("iframe[src*='reader.html']", { timeout: 10000 });
-      const frame = await frameElement.contentFrame();
-      await frame.waitForSelector(".reader-boot-loading", { state: "attached", timeout: 20000 });
-      await page.waitForTimeout(800);
-    },
-  },
-  {
-    name: "reader-ai-answer",
-    diffThreshold: 0.008,
-    url: `/reader.html?mock=succeeded`,
-    prepare: async (page) => {
-      await page.waitForSelector(".reader-boot-loading", { state: "attached", timeout: 20000 });
-      // 右栏默认展开,直接提问(不再点击开合按钮)
-      await page.waitForSelector("#reader-ai-drawer.is-open", { timeout: 10000 });
-      await page.fill("#reader-ai-input", "共轭如何影响选择性?");
-      await page.click("#reader-ai-submit-btn");
-      await page.waitForSelector(".reader-ai-citation-item", { timeout: 10000 });
-      await page.waitForTimeout(600);
-    },
-  },
-  {
-    name: "reader-annotations-open",
-    diffThreshold: 0.008,
-    url: `/reader.html?mock=succeeded`,
-    prepare: async (page) => {
-      await page.waitForSelector(".reader-boot-loading", { state: "attached", timeout: 20000 });
-      await page.click("#reader-annotations-toggle-btn");
-      await page.waitForSelector(".reader-annotations-item", { timeout: 10000 });
-      await page.waitForTimeout(600);
-    },
-  },
-  {
-    name: "library-search-island",
-    url: `/index.html?mock=done`,
-    prepare: async (page) => {
-      await page.waitForTimeout(1500);
-      await page.fill("#library-search-input", "化学");
-      await page.waitForSelector(".lib-search-panel", { timeout: 8000 });
-      await page.waitForTimeout(800);
-    },
-  },
-  {
-    name: "status-dialog-translation",
-    url: `/index.html?mock=done`,
-    prepare: async (page) => {
-      await page.waitForTimeout(1500);
-      await page.locator("recent-job-card, .library-card, [data-job-id]").first().click();
-      await page.waitForTimeout(1000);
-      await page.click("#status-detail-btn");
-      await page.waitForTimeout(600);
-      await page.click("#detail-tab-translation");
+    url: "/index.html?mock=done",
+    run: async (page) => {
+      await bookCard(page).click();
       await page.waitForTimeout(900);
+    },
+  },
+  {
+    name: "detail-progress",
+    url: "/index.html?mock=translate",
+    run: async (page) => {
+      await bookCard(page).click();
+      await page.waitForTimeout(700);
+      await page.getByRole("tab", { name: /进度/ }).first().click();
+      await page.waitForTimeout(700);
+    },
+  },
+  {
+    name: "settings",
+    url: "/index.html?mock=done",
+    run: async (page) => {
+      await page.click("[aria-label='设置']");
+      await page.waitForTimeout(900);
+    },
+  },
+  {
+    name: "settings-appearance",
+    url: "/index.html?mock=done",
+    run: async (page) => {
+      await page.click("[aria-label='设置']");
+      await page.click("[data-settings-tab='appearance']");
+      await page.waitForTimeout(900);
+    },
+  },
+  {
+    // 翻译中打开阅读页：mock 的实时译文按 0→2→1→3 逐页出来，等四页都到了再截，前后才能比
+    name: "reader",
+    url: "/index.html?mock=translate",
+    reader: true,
+    run: async (page) => {
+      await bookCard(page).click();
+      await page.waitForTimeout(700);
+      await page.getByRole("tab", { name: /进度/ }).first().click();
+      await page.waitForTimeout(500);
+      await page.getByRole("button", { name: /实时译文/ }).first().click();
     },
   },
 ];
 
-const update = process.argv.includes("--update");
-mkdirSync(BASELINE_DIR, { recursive: true });
-mkdirSync(OUTPUT_DIR, { recursive: true });
+function themeIdsFrom(registrySource) {
+  const block = registrySource.slice(registrySource.indexOf("THEME_REGISTRY"));
+  return [...block.matchAll(/^\s{4}id: "([a-z0-9-]+)",/gm)].map((match) => match[1]);
+}
 
-const server = spawn(
-  "python3",
-  ["scripts/serve_static.py", "--host", "127.0.0.1", "--port", String(PORT), "--root", "."],
-  { cwd: FRONTEND_ROOT, stdio: "ignore" },
-);
-await new Promise((resolve) => setTimeout(resolve, 1200));
+function serve(root, port) {
+  return spawn("python3", ["scripts/serve_static.py", "--host", "127.0.0.1", "--port", String(port), "--root", "."], {
+    cwd: root,
+    stdio: "ignore",
+  });
+}
 
-const browser = await chromium.launch();
-let failures = 0;
-try {
-  for (const state of STATES) {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+async function shoot(browser, port, theme, state, viewport) {
+  let context = null;
+  const errors = [];
+  try {
+    context = await browser.newContext({ viewport });
+    await context.addInitScript((id) => {
+      try { localStorage.setItem("retainpdf.theme", id); } catch {}
+    }, theme);
+    const page = await context.newPage();
+    page.on("pageerror", (error) => errors.push(error.message));
     await page.clock.install({ time: FIXED_TIME });
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    const consoleErrors = [];
-    page.on("pageerror", (error) => consoleErrors.push(error.message));
-    await page.goto(`http://127.0.0.1:${PORT}${state.url}`, { waitUntil: "networkidle" });
-    await state.prepare(page);
-    const shot = await page.screenshot();
-    await page.close();
-
-    if (consoleErrors.length) {
-      console.error(`✖ ${state.name}: 页面异常 ${consoleErrors[0]}`);
-      failures += 1;
-      continue;
+    await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "light" });
+    await page.goto(`http://127.0.0.1:${port}${state.url}`, { waitUntil: "networkidle" });
+    await page.addStyleTag({ content: HIDE_CSS });
+    await page.waitForTimeout(1200);
+    await state.run(page);
+    let target = page;
+    if (state.reader) {
+      await page.waitForTimeout(1200);
+      target = context.pages()[context.pages().length - 1];
+      await target.addStyleTag({ content: HIDE_CSS }).catch(() => {});
+      await target.getByText(/已译 4 \/ 4 页/).first().waitFor({ timeout: 20000 }).catch(() => {});
+      await target.waitForTimeout(800);
     }
+    const shot = await target.screenshot();
+    return { shot, error: errors[0] || "" };
+  } catch (error) {
+    return { shot: null, error: error.message.split("\n")[0] };
+  } finally {
+    await context?.close().catch(() => {});
+  }
+}
 
-    const baselinePath = join(BASELINE_DIR, `${state.name}.png`);
-    if (update || !existsSync(baselinePath)) {
-      writeFileSync(baselinePath, shot);
-      console.log(`● ${state.name}: 基线已${update ? "更新" : "创建"}`);
-      continue;
-    }
-
-    const baseline = PNG.sync.read(readFileSync(baselinePath));
-    const current = PNG.sync.read(shot);
-    if (baseline.width !== current.width || baseline.height !== current.height) {
-      writeFileSync(join(OUTPUT_DIR, `${state.name}.current.png`), shot);
-      console.error(`✖ ${state.name}: 尺寸变化 ${baseline.width}x${baseline.height} -> ${current.width}x${current.height}`);
-      failures += 1;
-      continue;
-    }
-    const diff = new PNG({ width: baseline.width, height: baseline.height });
-    const diffPixels = pixelmatch(baseline.data, current.data, diff.data, baseline.width, baseline.height, {
-      threshold: 0.15,
+async function captureAll(root, port, jobs) {
+  const server = serve(root, port);
+  await new Promise((resolve) => setTimeout(resolve, 1200));
+  // 浏览器进程偶尔会整个退出（2026-11-24 跑 48 张时遇到过），之后每张都会报 Target closed。
+  // 退出了就重启，出错的那张再截一次；仍然出错的照实算失败，不当成「跳过」。
+  let browser = await chromium.launch();
+  let relaunching = null;
+  const live = async () => {
+    if (browser.isConnected()) return browser;
+    relaunching ??= chromium.launch().then((fresh) => {
+      console.log("· 浏览器退出了，已重启");
+      browser = fresh;
+      relaunching = null;
+      return fresh;
     });
-    const ratio = diffPixels / (baseline.width * baseline.height);
-    // 少数以 PDF 画布为主体的状态,pdf.js 文本渲染有 run-to-run 亚像素抗锯齿抖动
-    // (布局本身像素一致,见 diff),放宽阈值以吸收该噪声;其余状态维持严格 0.1%。
-    const stateThreshold = state.diffThreshold ?? DIFF_RATIO_THRESHOLD;
-    if (ratio > stateThreshold) {
-      writeFileSync(join(OUTPUT_DIR, `${state.name}.current.png`), shot);
-      writeFileSync(join(OUTPUT_DIR, `${state.name}.diff.png`), PNG.sync.write(diff));
-      console.error(`✖ ${state.name}: 差异 ${(ratio * 100).toFixed(2)}%(${diffPixels}px),diff 见 tests/visual/output/`);
-      failures += 1;
-    } else {
-      console.log(`✔ ${state.name}: 一致(差异 ${(ratio * 100).toFixed(3)}%)`);
+    return relaunching;
+  };
+  const results = new Map();
+  try {
+    let next = 0;
+    const worker = async () => {
+      while (next < jobs.length) {
+        const job = jobs[next++];
+        let result = await shoot(await live(), port, job.theme, job.state, job.viewport);
+        if (!result.shot) result = await shoot(await live(), port, job.theme, job.state, job.viewport);
+        results.set(job.key, result);
+      }
+    };
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  } finally {
+    await browser.close().catch(() => {});
+    server.kill();
+  }
+  return results;
+}
+
+function compare(basePng, currentPng) {
+  const base = PNG.sync.read(basePng);
+  const current = PNG.sync.read(currentPng);
+  if (base.width !== current.width || base.height !== current.height) return { sizeChanged: true };
+  const diff = new PNG({ width: base.width, height: base.height });
+  const pixels = pixelmatch(base.data, current.data, diff.data, base.width, base.height, { threshold: 0.1 });
+  return { ratio: pixels / (base.width * base.height), diff: PNG.sync.write(diff) };
+}
+
+// —— 要截哪些 ——
+const currentThemes = themeIdsFrom(readFileSync(join(REPO_ROOT, "frontend/packages/ui/src/theme/registry.ts"), "utf8"));
+const themes = option("--themes")?.split(",") ?? currentThemes;
+const stateFilter = option("--states")?.split(",");
+const states = stateFilter ? STATES.filter((state) => stateFilter.includes(state.name)) : STATES;
+const viewports = [{ suffix: "", size: { width: 1280, height: 800 } }];
+if (flag("--mobile")) viewports.push({ suffix: "@mobile", size: { width: 390, height: 844 } });
+const jobs = [];
+for (const theme of themes) {
+  for (const state of states) {
+    for (const viewport of viewports) {
+      jobs.push({ key: `${theme}-${state.name}${viewport.suffix}`, theme, state, viewport: viewport.size });
     }
   }
-} finally {
-  await browser.close();
-  server.kill();
+}
+rmSync(OUTPUT_DIR, { recursive: true, force: true });
+mkdirSync(OUTPUT_DIR, { recursive: true });
+
+// —— 基准 ——
+let baseShots = null;
+let baseThemes = currentThemes;
+let baseDir = null;
+if (baseRef) {
+  baseDir = mkdtempSync(join(tmpdir(), "retainpdf-visual-base-"));
+  // git archive 只导出文件，不建 worktree；dist、vendor、decor 都提交在仓库里，导出来就能直接起服务
+  execFileSync("sh", [
+    "-c",
+    `git -C "$1" archive "$2" frontend/web frontend/packages/ui/src/theme/registry.ts | tar -x -C "$3"`,
+    "sh", REPO_ROOT, baseRef, baseDir,
+  ]);
+  baseThemes = themeIdsFrom(readFileSync(join(baseDir, "frontend/packages/ui/src/theme/registry.ts"), "utf8"));
+  console.log(`基准：${baseRef}`);
+  baseShots = await captureAll(join(baseDir, "frontend/web"), 40171, jobs.filter((job) => baseThemes.includes(job.theme)));
 }
 
-if (failures) {
-  console.error(`\n${failures} 个状态与基线不一致。确认改动符合预期后运行: npm run visual:update`);
-  process.exit(1);
+// —— 当前 ——
+console.log(`当前：工作区的构建产物（${jobs.length} 张）`);
+const currentShots = await captureAll(FRONTEND_ROOT, 40172, jobs);
+
+let failures = 0;
+let skipped = 0;
+if (update) mkdirSync(BASELINE_DIR, { recursive: true });
+for (const job of jobs) {
+  const current = currentShots.get(job.key);
+  if (!current?.shot || current.error) {
+    console.error(`✖ ${job.key}: 当前截图出错 ${current?.error || "没有截到"}`);
+    failures += 1;
+    continue;
+  }
+  if (update) {
+    writeFileSync(join(BASELINE_DIR, `${job.key}.png`), current.shot);
+    continue;
+  }
+  let basePng = null;
+  if (baseShots) {
+    if (!baseThemes.includes(job.theme)) {
+      console.log(`· ${job.key}: 基准里没有这个皮肤（新加的），跳过`);
+      skipped += 1;
+      continue;
+    }
+    const base = baseShots.get(job.key);
+    if (!base?.shot || base.error) {
+      // 基准截不出来不能当作通过：照实算失败，让人去看是基准那边的问题还是脚本的问题
+      console.error(`✖ ${job.key}: 基准截图出错 ${base?.error || "没有截到"}`);
+      failures += 1;
+      continue;
+    }
+    basePng = base.shot;
+  } else {
+    const path = join(BASELINE_DIR, `${job.key}.png`);
+    if (!existsSync(path)) {
+      console.log(`· ${job.key}: 没有本机基准，先跑 visual:update 或用 --base main`);
+      skipped += 1;
+      continue;
+    }
+    basePng = readFileSync(path);
+  }
+  const result = compare(basePng, current.shot);
+  if (result.sizeChanged || result.ratio > DIFF_RATIO_THRESHOLD) {
+    writeFileSync(join(OUTPUT_DIR, `${job.key}.base.png`), basePng);
+    writeFileSync(join(OUTPUT_DIR, `${job.key}.current.png`), current.shot);
+    if (result.diff) writeFileSync(join(OUTPUT_DIR, `${job.key}.diff.png`), result.diff);
+    console.error(`✖ ${job.key}: ${result.sizeChanged ? "尺寸变了" : `差异 ${(result.ratio * 100).toFixed(3)}%`}`);
+    failures += 1;
+  } else {
+    console.log(`✔ ${job.key}`);
+  }
 }
+
+if (baseDir && !flag("--keep")) rmSync(baseDir, { recursive: true, force: true });
+if (update) {
+  console.log(`\n本机基准已更新：${jobs.length - failures} 张，在 tests/visual/baseline/（git 忽略）`);
+} else {
+  console.log(`\n${jobs.length} 张：${jobs.length - failures - skipped} 张一样，${failures} 张不一样，${skipped} 张跳过。`);
+  if (failures) console.log("对比图在 tests/visual/output/（<名字>.base / .current / .diff.png）。");
+}
+process.exit(failures ? 1 : 0);

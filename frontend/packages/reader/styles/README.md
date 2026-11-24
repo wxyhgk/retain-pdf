@@ -57,7 +57,8 @@ npm --prefix frontend/packages/reader run build
 npm --prefix frontend/web run build:css
 npm --prefix frontend/web test -- 'tests/reader/*.test.mjs'
 npm --prefix frontend/web test -- 'tests/architecture/*.test.mjs'
-npm --prefix frontend/web run visual:check
+npm --prefix frontend/web run build
+npm --prefix frontend/web run visual:check -- --base main --states reader
 ```
 
-只有确认实际渲染变化符合预期后才更新视觉基线。
+和 main 比阅读页（每个皮肤一张，翻译中、实时译文出齐后截）；只有打算改的地方允许不一样，用法见 `frontend/web/tests/README.md`。

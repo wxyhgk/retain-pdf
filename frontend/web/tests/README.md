@@ -63,12 +63,19 @@ npm --prefix frontend/web run typecheck
 npm --prefix frontend/web test -- 'tests/architecture/*.test.mjs'
 ```
 
-视觉回归检查与基线更新是独立流程：
+视觉回归检查（改了样式、皮肤、页面结构都要跑）：每个皮肤 × 8 个页面状态截图（首页网格、列表、合集、书籍详情、
+详情进度、设置、设置的外观、翻译中的阅读页），和基准逐像素比。全程 mock 模式，不连后端。
 
 ```sh
-npm --prefix frontend/web run visual:check
-npm --prefix frontend/web run visual:update   # 仅在确认视觉变化符合预期后执行
+npm --prefix frontend/web run build                              # 截的是 dist 里打好的包
+npm --prefix frontend/web run visual:check -- --base main        # 推荐：拿 main 上提交的构建产物当基准
+npm --prefix frontend/web run visual:check -- --base main --mobile   # 再加手机宽度
+npm --prefix frontend/web run visual:check -- --themes zhusha --states home,reader   # 只截一部分
 ```
+
+不一样的会列出来，对比图在 `tests/visual/output/`（`<皮肤>-<状态>.base / .current / .diff.png`）。只有本次打算改样子的
+地方允许不一样，其余差异要查清再合并，并在 PR 里写明哪些是预期的。不带 `--base` 时和本机基准比
+（`visual:update` 存到 `tests/visual/baseline/`，不进 git）。
 
 不要绕过 package script 直接运行普通 `node --test`，否则 TS/TSX、`@/` 和
 `@retainpdf/*` 的测试解析规则不会完整生效。

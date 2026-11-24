@@ -64,6 +64,14 @@ npm run build:web
 npm run verify-frontend-sync --workspace=retain-pdf-desktop
 ```
 
+改了样式、皮肤、页面结构（CSS、主题变量、组件的 DOM）时，再跑视觉回归：每个皮肤 × 8 个页面状态和 main 的构建产物
+逐像素比，只有打算改的地方允许不一样（用法见 [frontend/web/tests/README.md](../../../frontend/web/tests/README.md)）：
+
+```bash
+npm --prefix frontend/web run build
+npm --prefix frontend/web run visual:check -- --base main
+```
+
 前端端到端状态 smoke 会真实提交任务，通常需要本地 Rust API、OCR token、模型 key 和样本 PDF；具备这些条件时再跑：
 
 ```bash
