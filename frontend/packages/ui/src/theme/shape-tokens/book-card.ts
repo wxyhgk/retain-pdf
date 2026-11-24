@@ -36,6 +36,20 @@ export const BOOK_CARD_SHAPE_TOKENS: ShapeToken[] = [
   { name: "--card-title-leading", kind: "number", description: "书卡标题的行高（倍数）", fallback: "1.375" },
   { name: "--card-meta-size", kind: "length", description: "书卡下方「页数 · 日期」的字号", fallback: "10px" },
 
+  // 装饰位：书签丝带（只挂在「在读」的书上）、右下折角。默认不显示。
+  { name: "--card-ribbon-display", kind: "keyword", values: ["block", "none"], description: "书签丝带显不显示：block 显示，none 不显示。只出现在「在读」的书上", fallback: "none" },
+  { name: "--card-ribbon-color", kind: "color", description: "书签丝带的颜色", fallback: "var(--accent)" },
+  { name: "--card-ribbon-width", kind: "length", description: "书签丝带的宽度", fallback: "14px" },
+  { name: "--card-ribbon-height", kind: "length", description: "书签丝带的长度", fallback: "26px" },
+  { name: "--card-ribbon-top", kind: "length", description: "书签丝带离书卡上边的距离，负数会探出书卡", fallback: "-3px" },
+  { name: "--card-ribbon-right", kind: "length", description: "书签丝带离书卡右边的距离", fallback: "12px" },
+  { name: "--card-ribbon-left", kind: "length", description: "书签丝带离书卡左边的距离；右上角的「存档」角标会挡住丝带时，设这个并把 --card-ribbon-right 设成 auto", fallback: "auto" },
+  { name: "--card-ribbon-notch", kind: "length", description: "书签丝带下端燕尾缺口的深度", fallback: "6px" },
+  { name: "--card-ribbon-filter", kind: "filter", description: "书签丝带的描边或投影，写 drop-shadow(...)；不要就写 none", fallback: "none" },
+  { name: "--card-fold-size", kind: "length", description: "书卡右下折角的大小，0 不显示", fallback: "0px" },
+  { name: "--card-fold-color", kind: "color", description: "书卡右下折角的颜色", fallback: "var(--accent)" },
+  { name: "--card-fold-offset", kind: "length", description: "折角离书卡右下角的距离（书卡有描边时可以设成描边粗细的负数，盖住描边）", fallback: "0px" },
+
   // 网格
   { name: "--grid-col-min", kind: "length", description: "书库网格每列的最小宽度（决定一行放几张卡）", fallback: "136px" },
   { name: "--grid-gap-x", kind: "length", description: "书库网格的列间距", fallback: "32px" },

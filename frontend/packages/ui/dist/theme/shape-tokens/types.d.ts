@@ -11,7 +11,11 @@ export type ShapeTokenKind =
 /** 纯数字（字重、倍数） */
  | "number"
 /** transform / translate 值，可以是 none */
- | "transform";
+ | "transform"
+/** CSS filter 值（如 drop-shadow(...)），可以是 none */
+ | "filter"
+/** 只能取 values 里列出的几个词之一（如显示开关 block / none） */
+ | "keyword";
 export type ShapeToken = {
     /** 变量名，带 -- 前缀 */
     name: `--${string}`;
@@ -23,5 +27,7 @@ export type ShapeToken = {
      * 只是给编辑器显示用；真值在 CSS 里。全局旋钮写「各处现在的值」。
      */
     fallback: string;
+    /** kind 为 keyword 时可以取的值 */
+    values?: string[];
 };
 //# sourceMappingURL=types.d.ts.map

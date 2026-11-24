@@ -9,6 +9,8 @@
 /* 卡片根：默认无外框、无底、无内边距（0 / transparent），所以布局和以前一样；皮肤设 --shape-edge-* 或 --card-* 才出现外框。
  * 按下：兜底 scale(0.99)（以前是 active:scale-[0.99]）。 */
 .book-card {
+  /* 给书签丝带、折角（::before / ::after）定位用；本身不改布局。 */
+  position: relative;
   padding: var(--card-pad, 0);
   border: var(--card-border-width, var(--shape-edge-width, 0)) solid var(--card-border-color, var(--shape-edge-color, transparent));
   border-radius: var(--card-radius, var(--shape-radius-surface, 0));
@@ -113,4 +115,39 @@
   text-overflow: clip !important;
   white-space: nowrap !important;
   flex-shrink: 0;
+}
+
+/* —— 装饰位（主题完全可自定义第 3 步）——
+ * 都画在卡片根的伪元素上，不加 DOM、不占位；默认不显示，皮肤设变量才出现，现有皮肤观感不变。
+ * 书签丝带：只挂在「在读」的书上（data-reading-status="reading"），表示正在读。
+ * 折角：每张卡右下角一个三角，纯装饰。 */
+.book-card[data-reading-status="reading"]::before {
+  content: "";
+  display: var(--card-ribbon-display, none);
+  position: absolute;
+  z-index: 3;
+  top: var(--card-ribbon-top, -3px);
+  right: var(--card-ribbon-right, 12px);
+  /* 右上角有「存档」等状态角标，会和丝带叠在一起；皮肤可以把丝带挪到左边：--card-ribbon-left 设值、--card-ribbon-right 设 auto */
+  left: var(--card-ribbon-left, auto);
+  width: var(--card-ribbon-width, 14px);
+  height: var(--card-ribbon-height, 26px);
+  background: var(--card-ribbon-color, var(--accent));
+  /* 下边剪出一个燕尾缺口 */
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% calc(100% - var(--card-ribbon-notch, 6px)), 0 100%);
+  filter: var(--card-ribbon-filter, none);
+  pointer-events: none;
+}
+
+.book-card::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  right: var(--card-fold-offset, 0px);
+  bottom: var(--card-fold-offset, 0px);
+  width: var(--card-fold-size, 0px);
+  height: var(--card-fold-size, 0px);
+  /* 右下角的三角：左上半透明，右下半上色，像纸角往里折了一下 */
+  background: linear-gradient(315deg, var(--card-fold-color, var(--accent)) 50%, transparent 50%);
+  pointer-events: none;
 }
