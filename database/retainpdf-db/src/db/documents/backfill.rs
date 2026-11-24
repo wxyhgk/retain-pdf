@@ -117,17 +117,26 @@ pub(super) fn fts_backfill_targets(db: &Db) -> Result<Vec<String>> {
         }
         let usable = match newer_job_id {
             None => true,
-            Some(job_id) => db
-                .get_job(&job_id)
-                .ok()
-                .and_then(|job| fts_normalized_document(&job, &db.data_root))
-                .is_some(),
+            Some(job_id) => {
+                db.get_job(&job_id).ok().and_then(|job| fts_normalized_document(&job, &db.data_root)).is_some()
+                    && newer_job_feeds_translation(db, &document_id, &job_id)
+            }
         };
         if usable {
             targets.push(document_id);
         }
     }
     Ok(targets)
+}
+
+/// 比索引新的任务会不会把译文放进索引：用户选了旧的译文版本时，更新的任务只提供原文，不算索引过期 ——
+/// 否则那本书每次启动都被判过期、重建出同样的结果。
+fn newer_job_feeds_translation(db: &Db, document_id: &str, job_id: &str) -> bool {
+    let Ok(jobs) = db.list_jobs_for_document(document_id, 500, 0) else { return true };
+    match db.fts_selection(document_id, &jobs) {
+        Ok(selection) => selection.uses_translation_of(job_id),
+        Err(_) => true,
+    }
 }
 
 fn backfill_upload_hashes(db: &Db) -> Result<()> {

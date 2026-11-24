@@ -11,6 +11,7 @@ mod collections;
 mod documents;
 #[cfg(all(test, unix))]
 mod jobs_view_parity_tests;
+mod library_refresh;
 mod media;
 mod merge;
 mod metadata_suggestions;
@@ -37,6 +38,8 @@ pub use api::{
     TranslationVersionView, TranslationVersionsQuery, TranslationVersionsView,
 };
 pub use book_export::export_book_folder;
+pub use book_export::FolderRefreshReport;
+pub use library_refresh::{spawn_library_refresh, LibraryRefreshDeps, LibraryRefreshReport, LibraryRefresher};
 pub use media::{open_document_file, DocumentFile};
 pub use tags::{create_tag_view, delete_tag_view, list_tags_view, patch_tag_view, set_document_tags_view};
 pub use views::{

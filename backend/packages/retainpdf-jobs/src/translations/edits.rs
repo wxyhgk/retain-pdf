@@ -65,6 +65,8 @@ impl<'a> JobsFacade<'a> {
         let item_id = stored_item_id(self.command.control.data_root, &job, item_id);
         let item_id = item_id.as_str();
         let outcome = revise_translation_item(&self.query.replay, &job, item_id, &request).await?;
+        // 全文索引、书文件夹跟着更新（书库的后台对账，提前叫醒它）。
+        retainpdf_data::library_signal::notify_library_changed();
         // 写回已经落盘;登记进数据库,实时译文、页快照和提交事件才看得到新文本。
         // `changed=false` 也对账一次:上次写回成功、登记失败时,重发同一请求就能补上。
         // 登记失败不回滚写回(文件才是权威),由 live_publication 报告,之后的修订或

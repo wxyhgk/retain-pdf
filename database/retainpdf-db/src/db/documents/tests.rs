@@ -944,3 +944,136 @@ fn a_v35_book_reads_the_same_after_the_library_items_migration() {
         assert_eq!(left, 0, "{table}");
     }
 }
+
+/// 两个版本：v1 整本（job-whole），v2 只重翻第 2 页（job-redo，来源版本 v1）。
+fn seed_two_versions(fs: &TestDbFs, db: &Db) -> (String, String, String) {
+    let document_id = seed_document(db, "up-1", b"versioned book");
+    seed_fts_job(db, &fs.data_root, &document_id, "job-whole", "2026-10-01T00:00:00", "job-whole",
+        &[1, 2], &[("one", "旧的第一页"), ("two", "旧的第二页")]);
+    seed_fts_job(db, &fs.data_root, &document_id, "job-redo", "2026-10-02T00:00:00", "job-redo",
+        &[2], &[("two", "新的第二页")]);
+    let v1 = db.create_translation_version(&document_id, None, "translate").unwrap();
+    db.add_job_to_translation_version(&v1, "job-whole").unwrap();
+    let v2 = db.create_translation_version(&document_id, Some(&v1), "retranslate").unwrap();
+    db.add_job_to_translation_version(&v2, "job-redo").unwrap();
+    (document_id, v1, v2)
+}
+
+fn hit_job(db: &Db, query: &str) -> Option<String> {
+    db.search_blocks(query, 10, None).unwrap().first().map(|hit| hit.job_id.clone())
+}
+
+/// 全文索引和阅读器读同一份译文：选了旧版本，搜到的就是旧版本的译文；回到自动又是最新的。
+#[test]
+fn fts_follows_the_chosen_translation_version() {
+    let fs = TestDbFs::new("fts-version");
+    let db = fs.db();
+    db.init().expect("init");
+    let (document_id, v1, v2) = seed_two_versions(&fs, &db);
+
+    db.rebuild_document_fts(&document_id).unwrap();
+    assert_eq!(hit_job(&db, "新的第二页").as_deref(), Some("job-redo"), "自动：逐页取最新");
+    assert!(db.search_blocks("旧的第二页", 10, None).unwrap().is_empty());
+
+    db.set_document_current_translation_version(&document_id, Some(&v1)).unwrap();
+    db.rebuild_document_fts(&document_id).unwrap();
+    assert_eq!(hit_job(&db, "旧的第二页").as_deref(), Some("job-whole"), "选了 v1：读 v1 的译文");
+    assert!(db.search_blocks("新的第二页", 10, None).unwrap().is_empty(), "v1 里没有的译文不进索引");
+    assert_eq!(db.search_blocks("two", 10, None).unwrap().len(), 1, "原文照样只有一份");
+
+    db.set_document_current_translation_version(&document_id, Some(&v2)).unwrap();
+    db.rebuild_document_fts(&document_id).unwrap();
+    assert_eq!(hit_job(&db, "新的第二页").as_deref(), Some("job-redo"), "v2 的页盖住来源版本 v1");
+    assert_eq!(hit_job(&db, "旧的第一页").as_deref(), Some("job-whole"), "v2 没重翻的页沿用 v1");
+
+    // 隐藏版本的任务在自动模式下只提供原文。
+    db.set_document_current_translation_version(&document_id, None).unwrap();
+    db.set_translation_version_hidden(&v2, true).unwrap();
+    db.rebuild_document_fts(&document_id).unwrap();
+    assert_eq!(hit_job(&db, "旧的第二页").as_deref(), Some("job-whole"));
+    assert!(db.search_blocks("新的第二页", 10, None).unwrap().is_empty());
+}
+
+/// 选了旧版本：更新的任务不提供译文，不算索引过期，启动时不能每次都重建一遍。
+#[test]
+fn startup_backfill_does_not_rebuild_for_a_newer_job_outside_the_chosen_version() {
+    let fs = TestDbFs::new("fts-version-backfill");
+    let db = fs.db();
+    db.init().expect("init");
+    let (document_id, v1, _) = seed_two_versions(&fs, &db);
+    db.set_document_current_translation_version(&document_id, Some(&v1)).unwrap();
+    db.set_document_active_job(&document_id, "job-redo", None).expect("active");
+    db.rebuild_document_fts(&document_id).unwrap();
+    db.connect()
+        .unwrap()
+        .execute(
+            "INSERT INTO blocks_fts (document_id, job_id, page_idx, block_id, source_text, translated_text) \
+             VALUES (?1, 'job-whole', 0, 'p001-b9999', 'sentinel', '启动时的哨兵')",
+            params![document_id],
+        )
+        .unwrap();
+    backfill::run(&db).expect("startup");
+    assert!(!db.search_blocks("启动时的哨兵", 10, None).unwrap().is_empty(), "不该重建");
+}
+
+fn stamp_of(db: &Db, document_id: &str) -> DocumentChangeStamp {
+    db.document_change_stamps().unwrap().into_iter().find(|stamp| stamp.document_id == document_id).unwrap()
+}
+
+/// 戳记：正文相关的变了 `content` 变；书目相关的变了只有 `card` 变；在跑的任务不算。
+#[test]
+fn change_stamps_track_content_and_card_separately() {
+    let fs = TestDbFs::new("change-stamps");
+    let db = fs.db();
+    db.init().expect("init");
+    let (document_id, v1, _) = seed_two_versions(&fs, &db);
+    let start = stamp_of(&db, &document_id);
+    assert_eq!(start, stamp_of(&db, &document_id), "什么都没变，戳记不变");
+
+    db.set_document_current_translation_version(&document_id, Some(&v1)).unwrap();
+    let switched = stamp_of(&db, &document_id);
+    assert_ne!(switched.content, start.content, "切换译文版本");
+    assert_eq!(switched.card, start.card);
+
+    // 改译文：写回后登记进 pipeline_units。
+    let conn = db.connect().unwrap();
+    conn.execute(
+        "INSERT INTO pipeline_attempts (job_id, attempt, generation, status, worker_id, created_at, updated_at) \
+         VALUES ('job-whole', 1, 1, 'succeeded', 'w', 't', 't')",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO pipeline_stages (job_id, attempt, stage_key, stage_order, generation, status, created_at, updated_at) \
+         VALUES ('job-whole', 1, 'translate', 1, 1, 'succeeded', 't', 't')",
+        [],
+    )
+    .unwrap();
+    conn.execute(
+        "INSERT INTO pipeline_units (job_id, attempt, stage_key, unit_key, unit_order, generation, status, page_index, page_hash, committed_at, updated_at) \
+         VALUES ('job-whole', 1, 'translate', 'page-1', 1, 2, 'committed', 0, 'h1', 't', '2026-11-24T00:00:00')",
+        [],
+    )
+    .unwrap();
+    let revised = stamp_of(&db, &document_id);
+    assert_ne!(revised.content, switched.content, "登记了一次译文修订");
+    conn.execute("UPDATE pipeline_units SET page_hash = 'h2', updated_at = '2026-11-24T00:01:00'", []).unwrap();
+    assert_ne!(stamp_of(&db, &document_id).content, revised.content, "同一页又改了一次");
+    let revised = stamp_of(&db, &document_id);
+
+    // 在跑的任务不算：翻译进行中不会每轮都变。
+    conn.execute(
+        "INSERT INTO jobs (job_id, workflow, status, created_at, updated_at, command_json, request_json, log_tail_json, document_id) \
+         VALUES ('job-running', 'book', 'running', 't', 't1', '[]', '{}', '[]', ?1)",
+        params![document_id],
+    )
+    .unwrap();
+    assert_eq!(stamp_of(&db, &document_id), revised);
+    conn.execute("UPDATE jobs SET updated_at = 't2' WHERE job_id = 'job-running'", []).unwrap();
+    assert_eq!(stamp_of(&db, &document_id), revised, "在跑任务的进度不改变戳记");
+
+    db.update_document_fields(&document_id, Some("新书名"), None).unwrap();
+    let renamed = stamp_of(&db, &document_id);
+    assert_ne!(renamed.card, revised.card, "改书名");
+    assert_eq!(renamed.content, revised.content, "改书名只动书目那一半");
+}

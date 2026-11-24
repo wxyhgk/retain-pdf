@@ -159,6 +159,7 @@ pub async fn set_document_translation_version(
     let document_id = document_id.to_string();
     tokio::task::spawn_blocking(move || {
         set_current_translation_version(&owned.db, &document_id, input.version_id.as_deref())?;
+        retainpdf_data::library_signal::notify_library_changed();
         versions_view(&owned, &document_id, false)
     })
     .await
@@ -177,6 +178,8 @@ pub async fn patch_document_translation_version(
     let version_id = version_id.to_string();
     tokio::task::spawn_blocking(move || {
         patch_translation_version(&owned.db, &document_id, &version_id, &input)?;
+        // 隐藏或恢复版本会改变自动模式读哪份。
+        retainpdf_data::library_signal::notify_library_changed();
         versions_view(&owned, &document_id, true)
     })
     .await

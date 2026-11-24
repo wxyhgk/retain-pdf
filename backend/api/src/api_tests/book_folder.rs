@@ -167,3 +167,121 @@ async fn a_book_with_nothing_recognised_is_only_listed() {
     assert!(library.contains("book.pdf") || library.contains("| book"), "{library}");
     assert!(library.contains("还没识别"), "{library}");
 }
+
+// ── 后台对账（library_refresh）──────────────────────────────────────────────
+
+fn refresher(state: &crate::AppState) -> crate::services::library::LibraryRefresher {
+    crate::services::library::LibraryRefresher::new(crate::services::library::LibraryRefreshDeps {
+        db: (*state.db).clone(),
+        data_root: state.config.data_root.clone(),
+        python_bin: state.config.python_bin.clone(),
+        pipeline_command: state.config.pipeline_command.clone(),
+    })
+}
+
+/// 在跑完的任务上「改了译文」：页文件换了内容，数据库里这个任务的戳记也变了（真实的 PATCH 会登记进
+/// pipeline_units；这里直接改完成时间，效果一样：戳记变了）。
+fn revise_page_text(state: &crate::AppState, job_id: &str, local_page: u32, text: &str) {
+    let file = state.config.data_root.join(format!("jobs/{job_id}/translated/page-{local_page:03}-deepseek.json"));
+    let mut items: Value = serde_json::from_slice(&fs::read(&file).unwrap()).unwrap();
+    items[0]["translated_text"] = json!(text);
+    // 修改时间要变（区块指纹看大小和修改时间）：内容长度不一样就够了。
+    fs::write(&file, items.to_string()).unwrap();
+    let conn = rusqlite::Connection::open(&state.config.jobs_db_path).unwrap();
+    conn.execute(
+        "UPDATE jobs SET finished_at = ?1 WHERE job_id = ?2",
+        rusqlite::params![format!("2026-11-24T00:00:{:02}", text.len() % 60), job_id],
+    )
+    .unwrap();
+}
+
+#[tokio::test]
+async fn refresh_does_nothing_to_disk_until_the_folder_was_exported_once() {
+    let state = state_with_real_pipeline("book-folder-refresh-off");
+    let document_id = seed_document(&state, &["SRC 1"]);
+    seed_range_job(&state, &document_id, "job-x", "2026-10-01T00:00:00", &[1], &["ZH 1"]);
+    let mut refresher = refresher(&state);
+    let report = refresher.run_once().unwrap();
+    assert_eq!(report.folders, None, "没导出过：不做书文件夹");
+    assert!(report.reindexed.is_empty(), "第一轮只记戳记");
+    assert!(!state.config.data_root.join("books").exists(), "不能替用户建 books/");
+
+    revise_page_text(&state, "job-x", 1, "ZH 1 改过");
+    let report = refresher.run_once().unwrap();
+    assert_eq!(report.reindexed, vec![document_id], "索引对所有用户都跟着更新");
+    assert!(!state.config.data_root.join("books").exists());
+}
+
+#[tokio::test]
+async fn refresh_rewrites_a_changed_book_and_leaves_the_rest_alone() {
+    let state = state_with_real_pipeline("book-folder-refresh");
+    let books = state.config.data_root.join("books");
+    let document_id = seed_document(&state, &["SRC 1"]);
+    seed_range_job(&state, &document_id, "job-x", "2026-10-01T00:00:00", &[1], &["ZH 1"]);
+    let app = build_app(state.clone());
+    assert_eq!(export(&app, json!({})).await["exported"], 1);
+    let dir = book_dirs(&books)[0].clone();
+    assert!(meta(&dir)["change_stamp"].as_str().is_some_and(|stamp| !stamp.is_empty()), "导出时记下戳记");
+    let meta_mtime = || fs::metadata(dir.join("meta.json")).unwrap().modified().unwrap();
+    let library_mtime = || fs::metadata(books.join("library.md")).unwrap().modified().unwrap();
+    let (before_meta, before_library) = (meta_mtime(), library_mtime());
+
+    let mut refresher = refresher(&state);
+    let report = refresher.run_once().unwrap();
+    let folders = report.folders.expect("books/ 在：做书文件夹");
+    assert_eq!((folders.checked, folders.exported, folders.removed), (0, 0, 0), "什么都没变：{folders:?}");
+    assert_eq!((meta_mtime(), library_mtime()), (before_meta, before_library), "没变就不碰文件");
+
+    revise_page_text(&state, "job-x", 1, "ZH 1 改过的译文");
+    let report = refresher.run_once().unwrap();
+    assert_eq!(report.reindexed, vec![document_id.clone()]);
+    let folders = report.folders.unwrap();
+    assert_eq!((folders.checked, folders.exported), (1, 1), "{folders:?}");
+    assert!(all_text(&dir).contains("> ZH 1 改过的译文"), "{}", all_text(&dir));
+
+    // 只改了书目（书名）：文件夹按新名字重写，旧名字的删掉，library.md 跟着变。
+    let (status, _) = call(&app, "PATCH", &format!("/api/v1/documents/{document_id}"), json!({ "title": "Renamed" })).await;
+    assert_eq!(status, StatusCode::OK);
+    let report = refresher.run_once().unwrap();
+    assert!(report.reindexed.is_empty(), "改书名不用重建索引");
+    let dirs = book_dirs(&books);
+    assert_eq!(dirs.len(), 1, "{dirs:?}");
+    assert!(dirs[0].file_name().unwrap().to_string_lossy().starts_with("Renamed-"), "{dirs:?}");
+    assert!(fs::read_to_string(books.join("library.md")).unwrap().contains("Renamed"));
+
+    // 书删了：文件夹也删。
+    let (status, body) = call(&app, "DELETE", &format!("/api/v1/documents/{document_id}"), json!({})).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let report = refresher.run_once().unwrap();
+    assert_eq!(report.folders.unwrap().removed, 1);
+    assert!(book_dirs(&books).is_empty());
+}
+
+#[tokio::test]
+async fn refresh_follows_a_translation_version_switch() {
+    let state = state_with_real_pipeline("book-folder-refresh-version");
+    let books = state.config.data_root.join("books");
+    let document_id = seed_document(&state, &["SRC 1"]);
+    seed_range_job(&state, &document_id, "job-old", "2026-10-01T00:00:00", &[1], &["OLD 1"]);
+    seed_range_job(&state, &document_id, "job-new", "2026-10-02T00:00:00", &[1], &["NEW 1"]);
+    let v1 = state.db.create_translation_version(&document_id, None, "translate").unwrap();
+    state.db.add_job_to_translation_version(&v1, "job-old").unwrap();
+    let v2 = state.db.create_translation_version(&document_id, None, "retranslate").unwrap();
+    state.db.add_job_to_translation_version(&v2, "job-new").unwrap();
+    let app = build_app(state.clone());
+    assert_eq!(export(&app, json!({})).await["exported"], 1);
+    let dir = book_dirs(&books)[0].clone();
+    assert!(all_text(&dir).contains("> NEW 1"), "自动：最新的");
+
+    let mut refresher = refresher(&state);
+    refresher.run_once().unwrap();
+    let (status, body) =
+        call(&app, "PUT", &format!("/api/v1/documents/{document_id}/translation-version"), json!({ "version_id": v1 })).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    let report = refresher.run_once().unwrap();
+    assert_eq!(report.reindexed, vec![document_id.clone()]);
+    assert_eq!(report.folders.unwrap().exported, 1);
+    let text = all_text(&dir);
+    assert!(text.contains("> OLD 1") && !text.contains("NEW 1"), "选了 v1：{text}");
+    assert_eq!(meta(&dir)["reading"]["version_id"], json!(v1));
+}
