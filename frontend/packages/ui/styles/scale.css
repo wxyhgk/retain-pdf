@@ -2,7 +2,7 @@
  *
  * 放在包里而不是 web 的 tokens.css：阅读器入口读的是 packages/reader 自己的 tokens，放这里每个入口都有。
  * 皮肤可以在自己的 [data-theme] 块里覆盖。组件形态变量 --btn-radius、--panel-radius 照旧在
- * web/src/styles/themes/_component-defaults.css，不归这里管。
+ * packages/ui/styles/themes/_component-defaults.css（皮肤管的形态变量），不归这里管。
  *
  * 名字带 ui- 前缀：--text-*、--radius-* 是 Tailwind 自己的主题变量（text-sm、rounded-md 读它们），
  * 同名会把现有的 Tailwind 类改大改小。

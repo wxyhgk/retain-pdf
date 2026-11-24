@@ -1,6 +1,6 @@
 /* 装饰舞台：slot 定位真值。
  *
- * 锚点契约（id/层级带/语义）在 src/shared/decor/slots.ts，此处只负责
+ * 锚点契约（id/层级带/语义）在 src/ui/decor/slots.ts，此处只负责
  * "每个 slot 在哪、多大、什么 z 层"。新增锚点 = slots.ts 登记 + 这里补一条。
  *
  * z 层约定：

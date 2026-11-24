@@ -1,8 +1,8 @@
 // Theme Studio 的 token 注册表（浏览器原生 ES module，不进构建管线）。
 //
 // 真值对照：
-// - 颜色契约：src/styles/themes/_contract.css（必选 20+1）
-// - L3 形态/布局/材质：src/styles/themes/_component-defaults.css
+// - 颜色契约：frontend/packages/ui/styles/themes/_contract.css（必选 20+1）
+// - L3 形态/布局/材质：frontend/packages/ui/styles/themes/_component-defaults.css
 // tests/studio-token-registry.test.mjs 锁住"注册表 token 必须真实存在于
 // src/styles"——契约演进时这里跟着改，不会静默漂移。
 

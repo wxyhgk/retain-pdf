@@ -15,5 +15,5 @@ export const UPDATE_CHECK_CACHE_STORAGE_KEY = "retainpdf:update-check:v1";
 /** navigation：主页 ↔ 阅读器回程状态（sessionStorage）。 */
 export const HOME_RETURN_STORAGE_KEY = "retainpdf.home.return.v1";
 
-/** ui/theme：当前皮肤 id（localStorage）。 */
-export const THEME_STORAGE_KEY = "retainpdf.theme";
+/** 皮肤：当前皮肤 id（localStorage）。真值在 @retainpdf/ui/theme（网页和阅读器共用）。 */
+export { THEME_STORAGE_KEY } from "@retainpdf/ui/theme";

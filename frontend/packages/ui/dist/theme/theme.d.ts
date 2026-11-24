@@ -14,6 +14,7 @@ export declare function getStoredTheme(): ThemeId;
 export declare function getTheme(): ThemeId;
 /** 写入 storage + <html data-theme>，并广播事件 */
 export declare function setTheme(theme: ThemeId): string;
-/** 入口最顶部调用，减少换肤 FOUC */
+/** 只换 <html data-theme> 并广播，不写 storage。 */
+export declare function showTheme(theme: ThemeId): string;
 export declare function bootTheme(): string;
 //# sourceMappingURL=theme.d.ts.map

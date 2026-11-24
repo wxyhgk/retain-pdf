@@ -29,6 +29,5 @@
   "src/platform/config/runtime.ts::let-var::runtimeConfig",
   "src/platform/contracts/credentials-contract.ts::let-var::_defaultCredentialsStatePort",
   "src/platform/utils/download-feedback.ts::let-var::hideTimer",
-  "src/ui/decor/slots.ts::new-collection::SLOT_MAP",
-  "src/ui/theme/theme.ts::let-var::booted"
+  "src/ui/decor/slots.ts::new-collection::SLOT_MAP"
 ]

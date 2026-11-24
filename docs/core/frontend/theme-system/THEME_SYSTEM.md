@@ -61,6 +61,7 @@ shadcn 层继续：
 |----|------|------|
 | `classic` | light | 默认黑白灰 |
 | `jiangnan` | accent | 青砖 · 宣纸 · 铜绿 · 朱砂 |
+| `mojia` | accent | 墨家 · 素绢青铜 |
 | `seacliff` | accent | 海岬雾蓝 · 海石青 |
 | `night` | dark | 黛瓦夜色（`html.theme-dark`） |
 
@@ -91,12 +92,14 @@ CSS：
 
 - Key：`localStorage["retainpdf.theme"]` = `"classic" | "jiangnan" | ...`
 - 启动：尽早读 storage 写到 `<html data-theme>`，避免 FOUC  
-  - 脚本：`frontend/web/src/shared/theme/boot-theme.js`（各 HTML 可内联或入口首行 import）
+  - 首页、详情页：`frontend/web/src/app/shell-boot.ts` 挂载前调 `bootTheme()`
+  - 阅读页：`frontend/packages/reader/src/boot.tsx` 调同一个 `bootTheme()`
+  - 两页同源，共用同一个 localStorage 键，所以皮肤一致
 
 ### 4.3 切换 API（代码）
 
 ```ts
-import { getTheme, setTheme, listThemes } from "./shared/theme/theme";
+import { getTheme, setTheme, listThemes } from "@retainpdf/ui/theme";
 
 setTheme("jiangnan"); // 写 storage + document.documentElement.dataset.theme
 ```
@@ -108,21 +111,27 @@ setTheme("jiangnan"); // 写 storage + document.documentElement.dataset.theme
 ## 5. 文件布局
 
 ```
-docs/core/frontend/web/theme-system/
+docs/core/frontend/theme-system/
   THEME_SYSTEM.md          ← 本文
   skins/
     jiangnan.md            ← 江南色板说明（设计向）
 
+frontend/packages/ui/                ← 网页和阅读器共用（2026-11-24 起只有这一份）
+  styles/themes/
+    _contract.css          ← 必选颜色变量清单
+    _component-defaults.css← 形态变量默认值
+    index.css              ← 全部皮肤入口（经 @retainpdf/ui/themes.css 引入）
+    classic.css …          ← 各皮肤
+  src/theme/
+    registry.ts            ← 皮肤注册表、存储键
+    theme.ts               ← get/set/show/list、bootTheme
+
 frontend/web/src/styles/
-  tokens.css               ← 语义契约 + 默认引入 classic
-  themes/
-    classic.css            ← 当前默认肤色
-    jiangnan.css           ← 江南院落
+  tokens.css               ← 语义契约，@import "@retainpdf/ui/themes.css"
   shadcn-theme.css         ← 仍映射语义 token（皮肤无关）
 
-frontend/web/src/shared/theme/
-  theme.ts                 ← get/set/list + storage
-  boot-theme.ts            ← 同步写 data-theme（防闪）
+frontend/packages/reader/styles/
+  tokens.css               ← 阅读器的 tokens（z-index 等自有），同样引入共享皮肤
 ```
 
 ---
@@ -154,7 +163,7 @@ document.documentElement.dataset.theme = "jiangnan";
 或：
 
 ```js
-// 若已接入 shared/theme
+// 代码里用 @retainpdf/ui/theme
 import { setTheme } from "/…"; // 打包后用设置页
 ```
 

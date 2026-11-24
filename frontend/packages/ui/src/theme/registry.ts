@@ -1,8 +1,9 @@
 // 主题注册表：后期加皮肤 = 追加一项 + 对应 CSS 文件。
 // 组件只读 listThemes() / setTheme()，不要 hardcode 皮肤 id 列表。
 // 设计：docs/core/frontend/theme-system/THEME_SYSTEM.md · ADDING_A_THEME.md
-// 从 frontend/web/src/shared/theme/registry.ts 复制，保证 @retainpdf/reader 自包含
+// 网页和阅读器共用这一份（2026-11-24 起；以前阅读器包里复制了一份，两边会漂）。
 
+/** 当前皮肤 id 存在 localStorage 的键。网页和阅读页同源，靠它共享同一个皮肤。 */
 export const THEME_STORAGE_KEY = "retainpdf.theme";
 export const DEFAULT_THEME_ID = "classic";
 
@@ -49,7 +50,7 @@ export type ThemeDefinition = {
   /**
    * 装饰包名（public 静态目录 decor/<包名>/manifest.json）。
    * 缺省 = 纯配色皮肤，零装饰零额外下载。
-   * 契约：src/shared/decor/contract.ts · docs/core/frontend/theme-system/DECOR_PACKS.md
+   * 契约：frontend/web/src/ui/decor/contract.ts · docs/core/frontend/theme-system/DECOR_PACKS.md
    */
   decorPack?: string;
   /** 所属系列 id（THEME_SERIES），缺省归入 "base" 基础系列 */

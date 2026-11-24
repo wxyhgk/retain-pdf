@@ -22,6 +22,8 @@ function allStylesText() {
     }
   };
   walk(join(PROJECT_ROOT, "src/styles"));
+  // 皮肤 CSS 在 @retainpdf/ui（网页和阅读器共用一份）。
+  walk(join(PROJECT_ROOT, "..", "packages", "ui", "styles", "themes"));
   return chunks.join("\n");
 }
 
