@@ -6,12 +6,16 @@
 //!   （`?api_key=…`）。请求里打的日志都带着这个 span，报错时一眼看出是哪个请求。
 //! - 访问日志的目标是 `retainpdf_api::access`：每个请求结束记一条 debug（默认看不到，`RUST_LOG` 里加
 //!   `retainpdf_api::access=debug` 才有），慢请求（拿到回应头超过 1 秒）记 info。5xx 照旧由 `tower_http` 记 error。
+//! - `RUST_API_ACCESS_LOG=1`（2026-11-24）：每个请求按 info 记一行 `access`，带方法、路由模板（不是具体地址，
+//!   没匹配上的是 `-`）、状态码、耗时、是不是长连接、请求编号。在 `route_usage::record` 里记，那里才拿得到路由模板。
+//!   默认关：桌面版前端的轮询会把日志刷满。
 
+use std::sync::OnceLock;
 use std::time::Duration;
 
 use axum::body::Body;
 use axum::extract::Request;
-use axum::http::{HeaderName, HeaderValue, Response};
+use axum::http::{HeaderMap, HeaderName, HeaderValue, Response};
 use axum::middleware::Next;
 use tower_http::classify::{ServerErrorsAsFailures, SharedClassifier};
 use tower_http::trace::{DefaultOnRequest, TraceLayer};
@@ -56,6 +60,41 @@ fn log_response(response: &Response<Body>, latency: Duration, _span: &tracing::S
     } else {
         tracing::debug!(target: "retainpdf_api::access", status, latency_ms, "request finished");
     }
+}
+
+/// `RUST_API_ACCESS_LOG` 开没开（第一次用到时读一次；取值不对在 stderr 报一次、当关）。
+pub(crate) fn access_log_enabled() -> bool {
+    static ENABLED: OnceLock<bool> = OnceLock::new();
+    *ENABLED.get_or_init(|| retainpdf_core::config::env_vars::env_bool("RUST_API_ACCESS_LOG", false))
+}
+
+/// 请求头里的编号（`assign_request_id` 已经放好）。
+pub(crate) fn request_id_of(headers: &HeaderMap) -> Option<String> {
+    headers
+        .get(&REQUEST_ID_HEADER)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned)
+}
+
+/// 访问日志的一行（`RUST_API_ACCESS_LOG=1` 时每个请求一行）。
+pub(crate) fn log_access(
+    method: &str,
+    route: Option<&str>,
+    status: u16,
+    latency: Duration,
+    streaming: bool,
+    request_id: Option<&str>,
+) {
+    tracing::info!(
+        target: "retainpdf_api::access",
+        method,
+        route = route.unwrap_or("-"),
+        status,
+        latency_ms = latency.as_millis() as u64,
+        streaming,
+        request_id = request_id.unwrap_or_default(),
+        "access"
+    );
 }
 
 /// 给请求定编号（沿用客户端的或生成一个），写进请求头给后面的 span 用，回应头里带回去。

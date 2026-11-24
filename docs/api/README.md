@@ -43,6 +43,7 @@
 - [失败结构](08-调试诊断/01-失败结构.md)：契约 `job-reports.v1`（失败原因、质量体检卡和清单、翻译诊断）
 - [Translation Debug API](08-调试诊断/02-translation-debug.md)
 - [服务商错误码](08-调试诊断/03-服务商错误码.md)：`GET /providers/error-codes`，契约 `provider-error-codes.v1`（各家 OCR、翻译模型的错误码、给用户的提示、我们怎么处理，可按厂商、码筛）
+- [运维指标](08-调试诊断/04-运维指标.md)：`GET /metrics`（要 Key，多用户下只给管理员），Prometheus 文本格式的按接口请求数、状态码分类、耗时直方图和任务数；怎么接 Prometheus
 - [多设备同步](09-同步/01-多设备同步.md)
 - [数据库备份](10-备份/01-数据库备份.md)
 - [模型用量](11-用量/01-模型用量.md)：`GET /usage`、一本书、一个任务的 token 用量，契约 `token-usage.v1`

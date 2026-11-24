@@ -208,6 +208,33 @@ def test_unknown_routes_are_listed_separately(tmp_path: Path, capsys) -> None:
     assert all(not e["key"].startswith("GET /api/v1/removed") for e in report["zero_calls"])
 
 
+def test_route_stats_list_errors_and_slow_routes(tmp_path: Path, capsys) -> None:
+    """2026-11-24 起用量文件多了 route_stats；以前的文件（没有这一项）照样能读。"""
+    repo = make_repo(tmp_path)
+    usage = tmp_path / "u.json"
+    usage.write_text(json.dumps({
+        "since": "2026-11-24T00:00:00Z",
+        "updated_at": "2026-11-24T01:00:00Z",
+        "routes": {"GET /api/v1/jobs/:job_id": 10, "HEAD /api/v1/jobs/:job_id": 2, "POST /api/v1/jobs": 3},
+        "route_stats": {
+            "GET /api/v1/jobs/:job_id": {"status": {"2xx": 8, "5xx": 2}, "latency_ms": {"le_50": 9, "gt_5000": 1},
+                                          "latency_us_sum": 6000000},
+            "HEAD /api/v1/jobs/:job_id": {"status": {"2xx": 2}, "latency_ms": {"le_5000": 1, "le_50": 1}},
+            "POST /api/v1/jobs": {"status": {"2xx": 3}, "latency_ms": {"le_200": 3}},
+        },
+    }), encoding="utf-8")
+    old = write_usage(tmp_path / "old.json", {"GET /api/v1/jobs/:job_id": 5})
+    report = run_json(repo, usage, old, capsys=capsys)
+    assert report["errors_and_slow"] == [
+        {"key": "GET /api/v1/jobs/:job_id", "requests": 12, "4xx": 0, "5xx": 2, "slow": 2},
+    ]
+    assert report["files"][0]["total_calls"] == 15
+
+    assert report_mod.main(["--repo-root", str(repo), str(usage)]) == 0
+    text = capsys.readouterr().out
+    assert "== 有 5xx 或超过 1 秒的接口（1 个" in text
+
+
 def test_text_output_has_chinese_sections(tmp_path: Path, capsys) -> None:
     repo = make_repo(tmp_path)
     usage = write_usage(tmp_path / "u.json", {"GET /api/v1/jobs/:job_id/pdf": 3, "GET /api/v1/gone": 1})

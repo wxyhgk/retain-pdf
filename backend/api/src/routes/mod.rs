@@ -15,6 +15,7 @@ pub mod health;
 pub mod job_helpers;
 pub mod jobs;
 pub mod library_data;
+pub mod metrics;
 pub mod model_requests;
 pub mod providers;
 pub mod tags;

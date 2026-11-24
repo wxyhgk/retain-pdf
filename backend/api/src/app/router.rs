@@ -20,6 +20,7 @@ mod backups;
 mod sync;
 mod ingestion;
 mod jobs;
+mod metrics;
 mod model_requests;
 mod providers;
 mod public;
@@ -45,6 +46,7 @@ pub(crate) fn registered_endpoints() -> Vec<crate::app::endpoints::Endpoint> {
         sync::ENDPOINTS,
         backups::ENDPOINTS,
         model_requests::worker::ENDPOINTS,
+        metrics::ENDPOINTS,
     ]);
     tables.into_iter().flatten().copied().collect()
 }
@@ -128,6 +130,7 @@ fn authenticated_api_routes(state: &AppState) -> Router<AppState> {
         .merge(providers::routes())
         .merge(fonts::routes())
         .merge(runtime_assets::routes())
+        .merge(metrics::routes())
         .method_not_allowed_fallback(method_not_allowed)
         // 先挂的在里层、后跑：先认证（require_api_key），再看能不能访问（enforce_access）。
         .route_layer(middleware::from_fn_with_state(

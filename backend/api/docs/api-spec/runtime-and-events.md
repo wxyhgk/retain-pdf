@@ -375,6 +375,32 @@ mismatch `422`; values from the request are never echoed. Success responses
 are bare JSON (`ModelOperation`, or `{"changed": bool}` for cancel); every error
 uses the unified envelope.
 
+## Metrics
+
+Since 2026-11-24. `GET /metrics` (full API port only, needs `X-API-Key`; multi-user policy `admin`) answers
+Prometheus text format 0.0.4 (`text/plain; version=0.0.4; charset=utf-8`, no JSON envelope):
+
+- `retainpdf_http_requests_total{method,route,status}` (counter): `route` is the registered route template
+  (`/api/v1/jobs/:job_id`), never a concrete URL; `status` is `1xx`…`5xx`, or `unknown` for counts recorded
+  before 2026-11-24 without a status class.
+- `retainpdf_http_request_duration_seconds{method,route}` (histogram, buckets `0.05`, `0.2`, `1`, `5`, `+Inf`):
+  time until the response headers, not the body transfer. Event streams (`text/event-stream`) and WebSocket
+  upgrades are excluded and counted in `retainpdf_http_streaming_requests_total{method,route}` instead.
+- Runtime gauges from the `/health` view: `retainpdf_db_up`, `retainpdf_jobs_queued`, `retainpdf_jobs_running`
+  (omitted when the count cannot be read), `retainpdf_jobsd_status{status}` (always `1`),
+  `retainpdf_disk_free_bytes` (omitted when unknown), `retainpdf_disk_min_free_bytes`, `retainpdf_disk_low`.
+
+Counters are the same numbers as `<data_root>/diagnostics/route-usage.json` (`app/route_usage.rs`): they accumulate
+from the file's `since` and survive restarts. The file gained a `route_stats` map (per key: `status`, `latency_ms`
+buckets `le_50`/`le_200`/`le_1000`/`le_5000`/`gt_5000`, `latency_us_sum`, `streaming`); `routes` is unchanged.
+Scrape setup: `docs/api/08-调试诊断/04-运维指标.md`.
+
+Logging knobs (read by `rust_api` itself, not `retainpdf-core` config): `RUST_LOG_FORMAT=json` prints one JSON object
+per line (`timestamp`, `level`, `target`, `fields`, current `span` and `spans`, so the `request` span's `request_id`
+is included); unset or `text` keeps the text format. `RUST_API_ACCESS_LOG=1` logs one info line per request
+(target `retainpdf_api::access`, message `access`: `method`, `route` template or `-`, `status`, `latency_ms`,
+`streaming`, `request_id`); off by default.
+
 ## Status Model
 
 Job status values:

@@ -56,10 +56,16 @@ curl -H "X-API-Key: your-key" \
 跑任务的日志带 `job{job_id=…}`。
 
 - 拿到回应头超过 1 秒的请求记一条 info：`slow request`（`status`、`latency_ms`），日志目标是 `retainpdf_api::access`。
-- 每个请求都记一条的完整访问日志默认关着：在默认的 `RUST_LOG`（见 `backend/api/src/main.rs` 的 `DEFAULT_LOG_FILTER`）后面加
-  `,retainpdf_api::access=debug`。
+- 每个请求都记一条的完整访问日志默认关着：设 `RUST_API_ACCESS_LOG=1`（2026-11-24 起），每个请求按 info 记一行 `access`，
+  带方法、路由模板（`/api/v1/jobs/:job_id`，没匹配上的是 `-`）、状态码、`latency_ms`、`streaming`（事件流、WebSocket）、`request_id`。
+  以前的办法照样能用：在默认的 `RUST_LOG`（见 `backend/api/src/main.rs` 的 `DEFAULT_LOG_FILTER`）后面加
+  `,retainpdf_api::access=debug`，记的是 `request finished`（只有状态码和耗时）。
+- 日志要交给日志收集器的，设 `RUST_LOG_FORMAT=json`：一行一个 JSON 对象，`timestamp`、`level`、`target`、`fields`，
+  当前 span 在 `span`、外层一串在 `spans`（请求编号在 `request` span 的 `request_id`）。默认照旧是文本。
 - 5xx 照旧由 `tower_http` 记 error。
-- 没有 Prometheus 这类指标接口（单机桌面版用不上）；`GET /health` 有运行时、磁盘、子服务的状态。
+- 错误率、P95 耗时看 `GET /metrics`（2026-11-24 起，要 Key，Prometheus 文本格式，按路由模板分），怎么接见
+  [运维指标](../../api/08-调试诊断/04-运维指标.md)；离线看用 `ops/development/route_usage_report.py`（读同一份计数，列出有 5xx、超过 1 秒的接口）。
+  `GET /health` 有运行时、磁盘、子服务的状态。
 
 ## 机器上设了 HTTP_PROXY / ALL_PROXY
 
