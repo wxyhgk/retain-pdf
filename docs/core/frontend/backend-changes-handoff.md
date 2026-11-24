@@ -12,6 +12,38 @@
 
 ---
 
+## 设置类第 2 批补完：凭据、服务商校验、字体、同步、备份、登录状态、上传进契约（feat/contracts-settings）
+
+2026-11-24。决定见 [设置类第 2 批补完和在用接口冻结](../../ops/planning/api-client-codegen/20261124-设置类第2批补完和在用接口冻结.md)。
+**接口行为没变**，只补了契约和后端测试。
+
+- **前端要做（必须）**：重新生成客户端 `npm --prefix frontend/packages/api run generate:client`。不重新生成，前端测试
+  `tests/contracts/api-client-codegen.test.mjs` 的「src/generated 和契约端点表一致」是红的。会多 4 个文件、19 个函数：
+  - `src/generated/credentials.ts`：`listCredentials`、`createCredential`、`getCredential`、`updateCredential`、`deleteCredential`；
+  - `src/generated/provider-probes.ts`：`validateMineruToken`、`validatePaddleToken`、`validateDeepSeekToken`、`queryDeepSeekBalance`；
+  - `src/generated/platform-settings.ts`：`listFonts`、`getSyncStatus`、`updateSyncSettings`、`runSyncNow`、`testSyncTarget`、
+    `getBackupStatus`、`createBackup`、`deleteBackup`、`restoreBackup`；
+  - `src/generated/auth-session.ts`：`getAuthSession`。
+- 新的类型子路径：`@retainpdf/contracts/credentials`、`/provider-probes`、`/platform-settings`、`/auth-session`、`/uploads`。
+- **前端可以做（一组一组换，不换也不坏）**：
+
+  | 文件 | 旧写法 | 新写法 |
+  |---|---|---|
+  | `frontend/packages/api/src/credentials.ts` | 手写 `credentialRequest` 发 `listCredentials`、`createCredential`、`updateCredential`，类型手写 | 生成的同名函数；类型 `CredentialListView`、`CredentialMutationView`、`CreateCredentialInput`、`UpdateCredentialInput` 从 `@retainpdf/contracts/credentials` 取；要删凭据用 `deleteCredential`（查询 `expected_revision`、`force`） |
+  | `frontend/packages/api/src/providers.ts` | `validateMineruToken` 等 4 个用 `submitJson`，返回 `any` | 生成的同名函数，返回 `ProviderProbeView` / `DeepSeekBalanceView`；30 秒超时照 `fetchTranslationProviderModels` 的写法用 `signal` |
+  | `frontend/packages/api/src/fonts.ts` | `listFonts` 手写，兼容 `{fonts: [...]}` | 生成的 `listFonts`，后端一直回数组（`FontListView = FontInfo[]`） |
+  | `frontend/packages/api/src/sync.ts` | `fetchSyncStatus`、`updateSyncSettings`、`runSyncNow`、`testSyncTarget` 手写 | 生成的 `getSyncStatus`（改了名）和其余 3 个同名函数；类型 `SyncStatusView` 等 |
+  | `frontend/packages/api/src/backups.ts` | `fetchBackupStatus`、`createBackup`、`restoreBackup`、`deleteBackup` 手写；手写的 `BackupStatus` 没有 `last_restore` | 生成的 `getBackupStatus`（改了名）和其余 3 个；`BackupStatusView` 带 `last_restore` |
+  | `frontend/packages/api/src/auth.ts` | `fetchAuthSession` 用自己的 `request` | 生成的 `getAuthSession`；注意它要保留「先不带凭据问一次」的模式切换（`resolveAuthSession`），只换发请求那一步 |
+
+- 不生成函数的：`GET /health`（不在 `/api/v1` 下；契约 `platform-settings.v1` 有返回类型 `HealthView`，`version`、`build` 是可选的，
+  分支 feat/api-response-headers 加）、`POST /uploads`（multipart，返回类型 `UploadView` 在 `@retainpdf/contracts/uploads`）、
+  两个文件下载（`files/output/*name`、`documents/:id/files/:name`，`binary`，照旧用地址）。
+- 以后前端要调的新接口必须先进契约：rust_api 新测试 `in_use_endpoints_without_contract_only_shrink` 查接口登记表里 `by(web)`、
+  `by(desktop)` 的接口都在契约端点表里（名单只许减，现在是空的）。后端加接口时会一起写契约，前端照旧重新生成。
+
+---
+
 ## 翻译模型不可用、地区不支持、内容审核没过（fix/llm-request-codes）
 
 2026-11-23，翻译请求层补上剩下的几类「重试没用」，细节见

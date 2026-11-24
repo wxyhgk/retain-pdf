@@ -949,7 +949,7 @@ CSV 表头支持英文和中文别名：
 - `POST /api/v1/providers/mineru/validate-token`
 - `POST /api/v1/providers/paddle/validate-token`
 - `POST /api/v1/providers/deepseek/validate-token`
-- `POST /api/v1/providers/deepseek/balance`
+- `POST /api/v1/providers/deepseek/balance`（这 4 条 2026-11-24 起有契约 `contracts/provider-probes.v1.schema.json`）
 - `POST /api/v1/providers/translation/models`（从翻译接口拉模型列表，2026-11-19）
 - `POST /api/v1/providers/translation/ask`（用翻译接口的配置问一次模型，可以带图片，最多 4 张、每张 4 MB，请求体上限 24 MB；2026-11-22）
 

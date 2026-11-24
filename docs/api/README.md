@@ -43,10 +43,11 @@
 - [失败结构](08-调试诊断/01-失败结构.md)：契约 `job-reports.v1`（失败原因、质量体检卡和清单、翻译诊断）
 - [Translation Debug API](08-调试诊断/02-translation-debug.md)
 - [服务商错误码](08-调试诊断/03-服务商错误码.md)：`GET /providers/error-codes`，契约 `provider-error-codes.v1`（各家 OCR、翻译模型的错误码、给用户的提示、我们怎么处理，可按厂商、码筛）
-- [多设备同步](09-同步/01-多设备同步.md)
-- [数据库备份](10-备份/01-数据库备份.md)
+- [多设备同步](09-同步/01-多设备同步.md)：契约 `platform-settings.v1`（和字体列表、数据库备份、健康检查同一份）
+- [数据库备份](10-备份/01-数据库备份.md)：契约 `platform-settings.v1`
 - [模型用量](11-用量/01-模型用量.md)：`GET /usage`、一本书、一个任务的 token 用量，契约 `token-usage.v1`
-- [服务商密钥校验](../core/rust_api/08-Provider%20校验接口.md)：MinerU、Paddle、翻译接口的检测和 DeepSeek 余额，各家 `status` 取值
+- [服务商密钥校验](../core/rust_api/08-Provider%20校验接口.md)：MinerU、Paddle、翻译接口的检测和 DeepSeek 余额，各家 `status` 取值；契约 `provider-probes.v1`
+- 凭据 `/credentials`：契约 `credentials.v1`；登录状态 `GET /auth/session`：契约 `auth-session.v1`；上传 `POST /uploads` 的返回：契约 `uploads.v1`（2026-11-24）
 
 ## 当前 API 分区
 
