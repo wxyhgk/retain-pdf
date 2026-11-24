@@ -46,6 +46,8 @@
   --panel-radius: 16px;
   --stage-veil: 92%;
   --ornament-line: color-mix(in srgb, var(--gold) 55%, var(--line));
+  /* 底栏幽灵钮（任务中心 / 使用说明 / 右下动作）描边带一点青铜，与齿轮钮同族 */
+  --bottombar-icon-border-color: color-mix(in srgb, var(--gold) 38%, var(--line));
 
   /* 布局密度（同 jiangnan）：廊道更宽、纸台更窄，给道具让出边翼 */
   --shell-pad-inline: clamp(28px, 6vw, 72px);

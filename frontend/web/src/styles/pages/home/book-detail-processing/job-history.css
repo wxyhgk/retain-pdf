@@ -5,8 +5,10 @@
   display: grid;
   gap: 10px;
   padding: 14px 15px;
+  border: var(--detail-card-border-width, var(--shape-edge-width, 0)) solid var(--detail-card-border-color, var(--shape-edge-color, transparent));
   border-radius: var(--book-detail-processing-radius);
   background: var(--book-detail-processing-surface);
+  box-shadow: var(--detail-card-shadow, var(--shape-shadow-md, none));
 }
 
 /* 默认收起：标题行就是开关，右侧一个小三角。 */

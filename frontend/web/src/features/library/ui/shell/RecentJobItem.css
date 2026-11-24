@@ -14,7 +14,11 @@
 }
 
 @utility recent-jobs-list {
-  @apply grid w-full items-start;
+  @apply grid w-full;
+  /* 对齐方式：兜底 start（和以前的 items-start 一样）；皮肤用搁板时设 stretch，同一行的书卡拉到同高，板就在一条线上。 */
+  align-items: var(--grid-align, start);
+  /* 网格两侧的内边距：兜底 0。搁板每张卡左右各探出半个列间距，皮肤设成列间距的一半，板两头才不会探出网格外。 */
+  padding-inline: var(--grid-pad-x, 0px);
   grid-template-columns: repeat(auto-fill, minmax(var(--grid-col-min, 136px), 1fr));
   gap: var(--grid-gap-y, 34px) var(--grid-gap-x, 32px);
 }

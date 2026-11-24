@@ -30,7 +30,7 @@ function DialogOverlay({ className, level = "base", ...props }) {
     return (_jsx(DialogPrimitive.Overlay, { "data-slot": "dialog-overlay", className: cn("app-dialog-overlay", dialogLevelClass[level], className), ...props }));
 }
 function DialogContent({ className, children, level = "base", overlayClassName, showCloseButton = true, size = "standard", ...props }) {
-    return (_jsxs(DialogPortal, { children: [_jsx(DialogOverlay, { className: overlayClassName, level: level }), _jsxs(DialogPrimitive.Content, { "data-slot": "dialog-content", className: cn("app-dialog-content", dialogSizeClass[size], dialogLevelClass[level], className), ...props, children: [children, showCloseButton ? _jsx(DialogCloseButton, {}) : null] })] }));
+    return (_jsxs(DialogPortal, { children: [_jsx(DialogOverlay, { className: overlayClassName, level: level }), _jsxs(DialogPrimitive.Content, { "data-slot": "dialog-content", className: cn("app-dialog-content", dialogSizeClass[size], dialogLevelClass[level], className), ...props, children: [_jsx("span", { className: "theme-ornament", "data-ornament": "dialog-corner", "aria-hidden": "true" }), children, showCloseButton ? _jsx(DialogCloseButton, {}) : null] })] }));
 }
 function DialogShell({ className, ...props }) {
     return _jsx("div", { "data-slot": "dialog-shell", className: cn("app-dialog-shell", className), ...props });

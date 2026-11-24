@@ -175,3 +175,95 @@ test("图层总数超上限被拒", () => {
   assert.equal(result.ok, false);
   assert.ok(result.errors.some((e) => e.includes("超过上限")));
 });
+
+/* ---------- 装饰位（ornaments） ---------- */
+
+function withOrnaments(ornaments) {
+  return { ...sampleManifest(), ornaments };
+}
+
+test("合法 ornaments 通过校验，各字段原样保留", () => {
+  const m = withOrnaments({
+    "bottom-add": { src: "gear-btn.webp", hideIcon: true, hover: "rotate" },
+    "library-title": { src: "seal/stamp.png", width: 32, height: 32, offsetX: -4, offsetY: 2 },
+    "cover-placeholder": { src: "paper.svg" },
+  });
+  const result = validateDecorManifest(m);
+  assert.deepEqual(result.errors, []);
+  assert.ok(result.ok);
+  assert.equal(result.manifest.ornaments["bottom-add"].hover, "rotate");
+});
+
+test("ornaments 名字不在白名单被拒", () => {
+  const result = validateDecorManifest(withOrnaments({ "made-up-place": { src: "a.webp" } }));
+  assert.equal(result.ok, false);
+  assert.ok(result.errors.some((e) => e.includes("白名单")));
+  assert.equal(validateDecorManifest(withOrnaments([])).ok, false);
+  assert.equal(validateDecorManifest(withOrnaments("x")).ok, false);
+  assert.equal(validateDecorManifest(withOrnaments({ "bottom-add": "gear.webp" })).ok, false);
+});
+
+test("ornaments 路径：绝对路径 / 协议 / .. / 非法字符 / 错误扩展名都被拒", () => {
+  const bad = [
+    "/abs/a.webp",
+    "../a.webp",
+    "a/../b.webp",
+    "https://cdn.evil/a.webp",
+    "data:image/png;base64,AAAA",
+    "a\\b.webp",
+    "a//b.webp",
+    'a".webp',
+    "a).webp",
+    "a b.webp",
+    "a;b.webp",
+    "a'b.webp",
+    "图.webp",
+    "a.jpeg",
+    "a.glb",
+    "",
+    42,
+  ];
+  for (const src of bad) {
+    const result = validateDecorManifest(withOrnaments({ "bottom-add": { src } }));
+    assert.equal(result.ok, false, `应被拒: ${JSON.stringify(src)}`);
+  }
+  const missing = validateDecorManifest(withOrnaments({ "bottom-add": {} }));
+  assert.equal(missing.ok, false);
+});
+
+test("ornaments 数值越界被拒；铺满型装饰位不接受宽高", () => {
+  const cases = [
+    { name: "library-title", patch: { width: 0 } },
+    { name: "library-title", patch: { width: 513 } },
+    { name: "library-title", patch: { height: -1 } },
+    { name: "library-title", patch: { width: "20px" } },
+    { name: "library-title", patch: { width: Number.NaN } },
+    { name: "library-title", patch: { offsetX: 201 } },
+    { name: "library-title", patch: { offsetY: -201 } },
+    { name: "library-title", patch: { offsetX: "3" } },
+    { name: "cover-placeholder", patch: { width: 100 } },
+  ];
+  for (const { name, patch } of cases) {
+    const result = validateDecorManifest(withOrnaments({ [name]: { src: "a.webp", ...patch } }));
+    assert.equal(result.ok, false, `应被拒: ${name} ${JSON.stringify(patch)}`);
+  }
+  // 边界值本身合法
+  const edge = withOrnaments({ "library-title": { src: "a.webp", width: 512, height: 1, offsetX: -200, offsetY: 200 } });
+  assert.equal(validateDecorManifest(edge).ok, true);
+});
+
+test("hideIcon / hover 只给有原图标、可悬停的装饰位", () => {
+  assert.equal(validateDecorManifest(withOrnaments({ "library-title": { src: "a.webp", hideIcon: true } })).ok, false);
+  assert.equal(validateDecorManifest(withOrnaments({ "bottom-add": { src: "a.webp", hideIcon: "yes" } })).ok, false);
+  assert.equal(validateDecorManifest(withOrnaments({ "dialog-corner": { src: "a.webp", hover: "rotate" } })).ok, false);
+  assert.equal(validateDecorManifest(withOrnaments({ "bottom-add": { src: "a.webp", hover: "spin" } })).ok, false);
+  assert.equal(validateDecorManifest(withOrnaments({ "bottom-add": { src: "a.webp", hover: "constructor" } })).ok, false);
+  assert.equal(validateDecorManifest(withOrnaments({ "bottom-add": { src: "a.webp", hideIcon: false } })).ok, true);
+});
+
+test("只挂装饰位的包可以 layers: []；两样都没有仍然被拒", () => {
+  const onlyOrnaments = { version: 1, id: "tiny", layers: [], ornaments: { "reader-bar-left": { src: "a.webp" } } };
+  assert.equal(validateDecorManifest(onlyOrnaments).ok, true);
+  assert.equal(validateDecorManifest({ version: 1, id: "tiny", layers: [] }).ok, false);
+  assert.equal(validateDecorManifest({ version: 1, id: "tiny", layers: [], ornaments: {} }).ok, false);
+});

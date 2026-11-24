@@ -24,17 +24,22 @@ export declare const SHAPE_TOKEN_MODULES: readonly [{
 }, {
     readonly id: "book-card";
     readonly label: "书卡";
-    readonly prefixes: readonly ["--card-", "--grid-", "--listrow-", "--collection-card-"];
+    readonly prefixes: readonly ["--card-", "--grid-", "--listrow-", "--collection-card-", "--shelf-"];
     readonly tokens: ShapeToken[];
 }, {
     readonly id: "surfaces";
     readonly label: "弹窗和浮层";
-    readonly prefixes: readonly ["--dialog-", "--floating-", "--tooltip-", "--toast-"];
+    readonly prefixes: readonly ["--dialog-", "--floating-", "--tooltip-", "--toast-", "--detail-"];
     readonly tokens: ShapeToken[];
 }, {
     readonly id: "reader";
     readonly label: "阅读器";
-    readonly prefixes: readonly ["--reader-chrome-", "--reader-hud-", "--reader-tab-", "--reader-float-"];
+    readonly prefixes: readonly ["--reader-chrome-", "--reader-hud-", "--reader-tab-", "--reader-float-", "--reader-sheet-"];
+    readonly tokens: ShapeToken[];
+}, {
+    readonly id: "details";
+    readonly label: "小细节";
+    readonly prefixes: readonly ["--selection-", "--scrollbar-", "--focus-", "--cursor-", "--check-"];
     readonly tokens: ShapeToken[];
 }];
 export declare const ALL_SHAPE_TOKENS: ShapeToken[];

@@ -67,8 +67,8 @@ export function LibraryTopTabs({ active, onChange }: { active: string; onChange:
           >
             <tab.Icon />
             <span>{tab.label}</span>
-            {/* 装饰钩子：默认无样式零渲染，皮肤可在 CSS 里给 tab 贴图换装 */}
-            <span className="library-top-tab-ornament" aria-hidden="true" />
+            {/* 装饰位钩子：装饰包 manifest 的 ornaments 声明了才显示（top-tab-library / top-tab-collections） */}
+            <span className="theme-ornament" data-ornament={`top-tab-${tab.key === COLLECTIONS_TAB_KEY ? "collections" : tab.key}`} aria-hidden="true" />
           </TabsPrimitive.Trigger>
         ))}
       </TabsPrimitive.List>

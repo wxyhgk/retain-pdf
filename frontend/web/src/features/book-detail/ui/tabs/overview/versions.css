@@ -50,7 +50,7 @@
   gap: 8px;
   margin: 0;
   padding: 8px 10px;
-  border-radius: var(--ui-radius-md);
+  border-radius: var(--detail-note-radius, var(--shape-radius-control, var(--ui-radius-md)));
   background: color-mix(in srgb, var(--accent) 10%, var(--paper));
   color: var(--ink);
   font-size: var(--ui-text-sm);

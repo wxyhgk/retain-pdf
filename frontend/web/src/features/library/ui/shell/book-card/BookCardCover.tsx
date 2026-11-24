@@ -32,7 +32,9 @@ export function BookCardCover({
       {coverUrl ? (
         <img src={coverUrl} alt="" className="h-full w-full bg-paper object-contain" />
       ) : (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted/60 to-background text-muted-foreground/50">
+        <div className="book-cover-placeholder relative flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted/60 to-background text-muted-foreground/50">
+          {/* 装饰位钩子：无封面书的占位图（装饰包 ornaments.cover-placeholder） */}
+          <span className="theme-ornament" data-ornament="cover-placeholder" aria-hidden="true" />
           <IconFile aria-hidden="true" />
           <span className="text-[10px] text-muted-foreground/60">PDF</span>
         </div>

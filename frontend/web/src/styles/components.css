@@ -14,10 +14,12 @@
   input[type="file"],
   textarea,
   select {
-    @apply w-full rounded-[20px] px-4 py-3.5 text-[15px] outline-hidden transition;
-    border: 1px solid transparent;
+    @apply w-full px-4 py-3.5 text-[15px] outline-hidden transition;
+    border: var(--field-border-width, var(--shape-edge-width, 1px)) solid var(--field-border-color, var(--shape-edge-color, transparent));
+    border-radius: var(--field-radius, var(--shape-radius-control, 20px));
     background: var(--bg);
     color: var(--ink);
+    box-shadow: var(--field-shadow, var(--shape-shadow-sm, none));
   }
 
   input[type="text"]:focus,
@@ -27,7 +29,7 @@
   textarea:focus,
   select:focus {
     border-color: var(--accent);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ink) 12%, transparent);
+    box-shadow: var(--field-focus-shadow, var(--field-shadow, var(--shape-shadow-sm, 0 0 0 4px color-mix(in srgb, var(--ink) 12%, transparent))));
     background: var(--paper);
   }
 

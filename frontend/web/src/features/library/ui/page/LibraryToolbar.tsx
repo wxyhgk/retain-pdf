@@ -60,6 +60,8 @@ export function LibraryToolbar({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="library-toolbar-heading flex min-w-0 items-baseline gap-2">
           <span className="library-toolbar-title">全部书库</span>
+          {/* 装饰位钩子：标题旁的印章（装饰包 ornaments.library-title） */}
+          <span className="theme-ornament" data-ornament="library-title" aria-hidden="true" />
           {Number.isFinite(count) ? (
             <span className="library-toolbar-count">{count}</span>
           ) : null}

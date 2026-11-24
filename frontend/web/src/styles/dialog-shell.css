@@ -100,6 +100,7 @@
 
 @utility app-dialog-title {
   @apply m-0 text-lg font-semibold leading-tight;
+  font-family: var(--dialog-title-font, var(--shape-heading-font, inherit));
   font-size: var(--dialog-title-size, var(--text-lg));
   font-weight: var(--dialog-title-weight, var(--shape-heading-weight, var(--font-weight-semibold)));
   color: var(--ink);

@@ -168,4 +168,5 @@
 @import "../pages/home/book-detail-processing/failure-card.css" layer(pages);
 @import "../pages/home/book-detail-processing/job-history.css" layer(pages);
 @import "../pages/home/book-detail-artifacts.css" layer(pages);
-@import "../pages/home/mojia-ornaments.css" layer(pages);
+/* 装饰位通用显示规则（墨家贴面已迁到 decor/mojia/manifest.json 的 ornaments） */
+@import "@retainpdf/ui/ornaments.css" layer(pages);

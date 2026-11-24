@@ -73,28 +73,21 @@
 - 出图：440×520 透明。英雄位（hero）落在书库面板横幅区，
   人物会被纸面压成"水印残影"——布局演变前不入库挂层
 
-### 3.6 `gear-btn.webp`（"添加"按钮贴面 ← 素材 03，不经 manifest）
+### 3.6 `gear-btn.webp`（"添加"按钮贴面 ← 素材 03，manifest `ornaments["bottom-add"]`）
 
 - 出图：**128×125** 透明（40px 钮面的 3x 余量），齿轮紧凑裁边、不雾化
-- 消费方是 `themes/mojia.css` 的 `.library-bottom-icon-btn-ornament` 规则
- *（组件 AppBottomBar 预留的换装钩子），把底栏"+"钮面换成真齿轮、
-  悬停转 45°；不经 manifest、不进舞台图层
-- **注意**：主题 CSS 里以 data: URI 内联此图（112px q80 派生版，约 8KB），
-  图变了要同步重生成内联版。另一个坑：钩子是组件改动，**必须
-  `npm run build:js` 重出 bundle**——只跑 build:css 会出现"皮肤藏起 + 号、
-  钩子元素不存在"的空白钮
+- 走通用装饰位 `bottom-add`（`hideIcon: true` 去掉钮面、藏 + 号，`hover: "rotate"` 悬停转 45°）；
+  写法见 `docs/core/frontend/theme-system/DECOR_PACKS.md`「装饰位（ornaments）」。
+  以前是 `mojia-ornaments.css` 里点名主题 id 的 base64 内联，2026-11-24 已迁成 manifest 声明，直接引这张原图
 
-### 3.7 `tools-btn.webp`（"设置"按钮贴面 ← 素材 06，不经 manifest）
+### 3.7 `tools-btn.webp`（"设置"按钮贴面 ← 素材 06，`ornaments["bottom-settings"]`）
 
-- 出图：**128×128** 透明；主题 CSS 内联 112px q80 派生版（约 6KB）
-- 消费方同齿轮钮：`#app-settings-btn` 的 ornament 钩子；"设置=规矩工具"，悬停轻抬
+- 出图：**128×128** 透明；`hideIcon: true` + `hover: "lift"`（"设置=规矩工具"，悬停轻抬 2px）
 
-### 3.8 `scroll-btn.webp` / `library-btn.webp` / `fav-btn.webp`（顶栏 tab 图标贴面 ← 素材 08 / 11 / 12，不经 manifest）
+### 3.8 `scroll-btn.webp` / `library-btn.webp`（顶栏页签贴面 ← 素材 08 / 11，`ornaments["top-tab-collections"]` / `["top-tab-library"]`）
 
-- 出图：均 **128px** 透明；主题 CSS 内联 96px q80 派生版（各约 3KB）
-- 消费方：`#library-top-tab-{categories,library,favorites}` 的
-  `.library-top-tab-ornament` 钩子（LibraryTopTabs 组件预留），24px 图标位微出血；
-  语义：图书馆=机关书架竹简、合集=竹简卷轴、收藏=入函典藏
+- 出图：均 **128px** 透明，显示成 24px 图标位；语义：图书馆=机关书架竹简、合集=竹简卷轴
+- `fav-btn.webp`（素材 12，入函典藏）是收藏页签用的，收藏页签早已不存在，图留作备用，没有挂
 - **注意**：素材 11 / 12 是 RGB 白底图（非 RGBA），入库前必须抠图：
   `-alpha set -fuzz 9% -fill none -floodfill +2+2 white`（四角各一次）；
   08 等前 10 张素材本身透明，直接 `-trim` 即可

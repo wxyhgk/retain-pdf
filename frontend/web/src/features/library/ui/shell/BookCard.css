@@ -39,22 +39,60 @@
     var(--tw-ring-offset-shadow, 0 0 transparent),
     var(--tw-ring-shadow, 0 0 transparent),
     var(--card-cover-shadow, 0 2px 16px color-mix(in srgb, var(--shadow-color) 7%, transparent));
+  /* 倾斜：用独立属性 rotate，不和悬停的 translate 冲突；兜底 none，不设变量时不生成任何变换。 */
+  rotate: var(--card-tilt, none);
   transition:
     transform 200ms var(--ease-out),
+    rotate 200ms var(--ease-out),
     box-shadow 200ms var(--ease-out);
+}
+
+/* 偶数位用相反方向（--card-tilt-alt，不设就和奇数位一样）。 */
+.book-card:nth-child(even) .book-card-cover {
+  rotate: var(--card-tilt-alt, var(--card-tilt, none));
 }
 
 /* 悬停/聚焦上移 + 加深阴影；批量模式不动（is-batch-mode）。悬停只在支持 hover 的设备上生效，和以前的 group-hover 一样。 */
 @media (hover: hover) {
   .book-card:hover .book-card-cover:not(.is-batch-mode) {
     translate: var(--card-hover-translate, 0 -0.125rem);
+    rotate: var(--card-tilt-hover, var(--card-tilt, none));
     box-shadow: var(--card-cover-hover-shadow, 0 8px 28px color-mix(in srgb, var(--shadow-color) 12%, transparent));
+  }
+
+  .book-card:nth-child(even):hover .book-card-cover:not(.is-batch-mode) {
+    rotate: var(--card-tilt-hover, var(--card-tilt-alt, var(--card-tilt, none)));
   }
 }
 
 .book-card:focus-within .book-card-cover:not(.is-batch-mode) {
   translate: var(--card-hover-translate, 0 -0.125rem);
+  rotate: var(--card-tilt-hover, var(--card-tilt, none));
   box-shadow: var(--card-cover-hover-shadow, 0 8px 28px color-mix(in srgb, var(--shadow-color) 12%, transparent));
+}
+
+.book-card:nth-child(even):focus-within .book-card-cover:not(.is-batch-mode) {
+  rotate: var(--card-tilt-hover, var(--card-tilt-alt, var(--card-tilt, none)));
+}
+
+/* 书脊折痕：封面左侧一条竖向渐变（封面自己的 ::after，overflow:hidden 会裁在封面内）。宽度兜底 0，不设就不出现。
+ * 左缘最深，渐变到透明，再在 70% 处压一道细折线，像书打开处的凹痕。不挡点击；层级低于状态徽标（z-10）和悬停按钮（z-4）。 */
+.book-card-cover::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--card-spine-width, 0px);
+  background: linear-gradient(
+    90deg,
+    var(--card-spine-color, transparent) 0%,
+    transparent 62%,
+    color-mix(in srgb, var(--card-spine-color, transparent) 55%, transparent) 70%,
+    transparent 78%
+  );
+  pointer-events: none;
 }
 
 /* 标题区 */
@@ -64,6 +102,7 @@
 }
 
 .book-card-title {
+  font-family: var(--card-title-font, var(--shape-heading-font, inherit));
   font-size: var(--card-title-size, 0.75rem);
   font-weight: var(--card-title-weight, var(--shape-heading-weight, 600));
   line-height: var(--card-title-leading, 1.375);
@@ -150,4 +189,27 @@
   /* 右下角的三角：左上半透明，右下半上色，像纸角往里折了一下 */
   background: linear-gradient(315deg, var(--card-fold-color, var(--accent)) 50%, transparent 50%);
   pointer-events: none;
+}
+
+/* —— 搁板 ——
+ * 网格是扁平的、没有「行」，所以每张卡在标题区的 ::before 上画一段板，左右各多出半个列间距，相邻的卡拼成整行连续的板。
+ * 标题区不是定位元素，板按卡片根（position: relative）定位：卡片根有描边时，定位基准是内边距框，所以左右、上沿要补上描边粗细。
+ * 板在书卡下方（top: 100% 起算 + --shelf-offset），不占位、不挡点击；板的层级是自动的（不用负 z-index，
+ * 否则会被纸台的底色盖住）。--shelf-offset 取负数时板会盖住书卡底部。
+ * 想让同一行的板对齐到一条线：皮肤把网格的 --grid-align 设成 stretch，每张卡就拉到同高。
+ * 一行里最后几张不满时，板只画到最后一张卡为止；皮肤想让板顶到边，可以设 --grid-pad-x 给网格两侧留出板探出去的空间。 */
+.book-card-body::before {
+  content: "";
+  display: var(--shelf-display, none);
+  position: absolute;
+  pointer-events: none;
+  /* 参与 calc，所以描边粗细要带单位（0px，不是 0） */
+  --shelf-bw: var(--card-border-width, var(--shape-edge-width, 0px));
+  left: calc(-0.5 * var(--grid-gap-x, 32px) - var(--shelf-bw));
+  top: calc(100% + var(--shelf-bw) + var(--shelf-offset, 0px));
+  width: calc(100% + var(--grid-gap-x, 32px) + 2 * var(--shelf-bw));
+  height: var(--shelf-height, 10px);
+  background: var(--shelf-color, var(--muted-surface));
+  border-top: var(--shelf-edge-width, 2px) solid var(--shelf-edge-color, transparent);
+  box-shadow: var(--shelf-shadow, none);
 }

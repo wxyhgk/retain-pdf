@@ -19,6 +19,8 @@
 
 @import "../tokens.css" layer(tokens);
 @import "@retainpdf/ui/primitives.css";
+/* 装饰位：这一页不注入装饰包，只要让钩子 display:none（不占 flex 间距） */
+@import "@retainpdf/ui/ornaments.css" layer(pages);
 @import "../shadcn-theme.css" layer(tokens);
 @import "../base.css" layer(base);
 @import "../core/ambient-surface.css";

@@ -48,7 +48,7 @@
   }
   gap: 9px;
   padding: 12px;
-  border-radius: 16px;
+  border-radius: var(--detail-card-radius, var(--shape-radius-surface, 16px));
 }
 
 #browser-credentials-dialog .desktop-head {
@@ -111,7 +111,7 @@
   #developer-auth-dialog input[type="password"] {
     height: 42px;
     min-height: 42px;
-    border-radius: 16px;
+    border-radius: var(--field-radius, var(--shape-radius-control, 16px));
     padding: 0 14px;
     font-size: 14px;
   }
@@ -129,7 +129,7 @@
   #developer-dialog input[type="number"] {
     height: 42px;
     min-height: 42px;
-    border-radius: 16px;
+    border-radius: var(--field-radius, var(--shape-radius-control, 16px));
     padding: 0 14px;
     font-size: 14px;
   }
@@ -144,7 +144,7 @@
   #browser-credentials-dialog select {
     height: 30px;
     min-height: 30px;
-    border-radius: 9px;
+    border-radius: var(--field-radius, var(--shape-radius-control, 9px));
     padding: 0 10px;
     font-size: 11px;
   }

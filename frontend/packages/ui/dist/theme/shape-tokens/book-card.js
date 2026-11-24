@@ -26,12 +26,20 @@ export const BOOK_CARD_SHAPE_TOKENS = [
     { name: "--card-cover-shadow", kind: "shadow", description: "封面的阴影；不要就写 0 0 transparent", fallback: "0 2px 16px，--shadow-color 7%" },
     { name: "--card-hover-translate", kind: "transform", description: "悬停或聚焦时封面的位移（translate 属性的值），如 0 -4px", fallback: "0 -0.125rem" },
     { name: "--card-cover-hover-shadow", kind: "shadow", description: "悬停或聚焦时封面的阴影", fallback: "0 8px 28px，--shadow-color 12%" },
+    // 封面：倾斜、书页厚度、书脊（书页厚度没有单独变量：在 --card-cover-shadow 里写多层实色偏移阴影，
+    // 如 1px 1px 0 var(--paper), 2px 2px 0 var(--ink), 3px 3px 0 var(--paper), 4px 4px 0 var(--ink)，悬停的阴影同样要写一份）
+    { name: "--card-tilt", kind: "transform", description: "封面的倾斜角度（rotate 属性的值），如 -1.5deg；不倾斜就不设", fallback: "none" },
+    { name: "--card-tilt-alt", kind: "transform", description: "偶数位书卡封面的倾斜角度，通常设成 --card-tilt 的反方向；不设就和 --card-tilt 一样", fallback: "var(--card-tilt, none)" },
+    { name: "--card-tilt-hover", kind: "transform", description: "悬停或聚焦时封面的倾斜角度，写 0deg 就是回正；不设就保持不悬停时的角度", fallback: "和不悬停时一样" },
+    { name: "--card-spine-width", kind: "length", description: "封面左侧书脊折痕的宽度，0 不显示", fallback: "0px" },
+    { name: "--card-spine-color", kind: "color", description: "书脊折痕的颜色（左缘最深，向右渐隐，再有一道细折线）", fallback: "transparent" },
     // 标题区
     { name: "--card-body-gap", kind: "length", description: "封面和标题区的间距", fallback: "0.5rem" },
     { name: "--card-body-pad", kind: "length", description: "标题区的内边距（标题和页数到外框的距离）", fallback: "0" },
     { name: "--card-title-size", kind: "length", description: "书卡标题的字号", fallback: "0.75rem" },
     { name: "--card-title-weight", kind: "number", description: "书卡标题的字重", fallback: "var(--shape-heading-weight, 600)" },
     { name: "--card-title-leading", kind: "number", description: "书卡标题的行高（倍数）", fallback: "1.375" },
+    { name: "--card-title-font", kind: "font", description: "书卡标题的字体", fallback: "var(--shape-heading-font, 继承正文)" },
     { name: "--card-meta-size", kind: "length", description: "书卡下方「页数 · 日期」的字号", fallback: "10px" },
     // 装饰位：书签丝带（只挂在「在读」的书上）、右下折角。默认不显示。
     { name: "--card-ribbon-display", kind: "keyword", values: ["block", "none"], description: "书签丝带显不显示：block 显示，none 不显示。只出现在「在读」的书上", fallback: "none" },
@@ -50,6 +58,17 @@ export const BOOK_CARD_SHAPE_TOKENS = [
     { name: "--grid-col-min", kind: "length", description: "书库网格每列的最小宽度（决定一行放几张卡）", fallback: "136px" },
     { name: "--grid-gap-x", kind: "length", description: "书库网格的列间距", fallback: "32px" },
     { name: "--grid-gap-y", kind: "length", description: "书库网格的行间距", fallback: "34px" },
+    { name: "--grid-align", kind: "keyword", values: ["start", "stretch", "end", "center"], description: "网格里每张书卡在行内的对齐：start 各自按内容高度，stretch 同一行拉到同高（用搁板时设这个，板才在一条线上）", fallback: "start" },
+    { name: "--grid-pad-x", kind: "length", description: "网格左右两侧的内边距；搁板两头会各探出半个列间距，设成 --grid-gap-x 的一半可以不探出网格", fallback: "0px" },
+    // 搁板：每张书卡下面画一段板，左右各多出半个列间距，相邻的卡拼成整行连续的板；最后一行不满时只画到最后一张卡。
+    // 用到板时 --card-border-width（或 --shape-edge-width）要带单位，不能写裸 0。
+    { name: "--shelf-display", kind: "keyword", values: ["block", "none"], description: "搁板显不显示：block 显示，none 不显示", fallback: "none" },
+    { name: "--shelf-height", kind: "length", description: "搁板的厚度（含上沿描边）", fallback: "10px" },
+    { name: "--shelf-color", kind: "color", description: "搁板的颜色", fallback: "var(--muted-surface)" },
+    { name: "--shelf-edge-width", kind: "length", description: "搁板上沿描边的粗细", fallback: "2px" },
+    { name: "--shelf-edge-color", kind: "color", description: "搁板上沿描边的颜色", fallback: "transparent" },
+    { name: "--shelf-shadow", kind: "shadow", description: "搁板的阴影（如板下一道实色偏移阴影）", fallback: "none" },
+    { name: "--shelf-offset", kind: "length", description: "搁板离书卡底边的距离，正数板在书卡下面，负数板会盖住书卡底部", fallback: "0px" },
     // 列表行
     { name: "--listrow-border-width", kind: "length", description: "列表行的描边粗细", fallback: "var(--shape-edge-width, 0)" },
     { name: "--listrow-border-color", kind: "color", description: "列表行的描边颜色", fallback: "var(--shape-edge-color, transparent)" },

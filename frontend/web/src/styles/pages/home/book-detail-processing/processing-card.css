@@ -5,9 +5,10 @@
   display: grid;
   gap: 12px;
   padding: 15px;
-  border: 0;
+  border: var(--detail-card-border-width, var(--shape-edge-width, 0)) solid var(--detail-card-border-color, var(--shape-edge-color, transparent));
   border-radius: var(--book-detail-processing-radius);
   background: var(--book-detail-processing-surface);
+  box-shadow: var(--detail-card-shadow, var(--shape-shadow-md, none));
 }
 
 /* 状态行在 processing-head.css，细节区在 processing-details.css。 */
@@ -112,6 +113,6 @@
   .book-detail-processing-card {
     gap: 10px;
     padding: 12px;
-    border-radius: 18px;
+    border-radius: var(--detail-card-radius, var(--shape-radius-surface, 18px));
   }
 }

@@ -19,7 +19,7 @@
  * 为了 2 条门禁给每次 npm test 加 35% 不划算。门禁比构建步骤便宜得多。
  */
 import { createHash } from "node:crypto";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -64,7 +64,13 @@ export function readerCssSourceFiles() {
       files.add(source.path);
       for (const imported of entryRelativeImports(source.path)) files.add(imported);
     } else {
-      for (const file of cssFilesUnder(source.path)) files.add(file);
+      for (const file of cssFilesUnder(source.path)) {
+        files.add(file);
+        // 包内样式 @import 了包外的共享样式（@retainpdf/ui 的 error-boundary / ornaments）：一并追。
+        for (const imported of entryRelativeImports(file)) {
+          if (existsSync(imported)) files.add(imported);
+        }
+      }
     }
   }
   return [...files].sort();

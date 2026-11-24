@@ -181,6 +181,10 @@ function BookCardImpl({
         />
       </div>
 
+      {/* 装饰位：纸胶带。放在封面区外（封面有 overflow-hidden，会把探出封面边缘的胶带裁掉）、封面之后（叠在封面上）；
+          显示规则和位置由通用装饰位 CSS 管，没样式时是空 span，零尺寸、不占位。 */}
+      <span className="theme-ornament" data-ornament="book-cover-tape" aria-hidden="true" />
+
       <div className="book-card-body flex flex-col gap-0.5">
         <h3
           className="book-card-title recent-job-id line-clamp-2 text-foreground transition-colors group-hover:text-primary"

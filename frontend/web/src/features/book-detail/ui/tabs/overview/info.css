@@ -24,9 +24,10 @@
   column-gap: 10px;
   row-gap: 1px;
   padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
-  border-radius: var(--ui-radius-lg);
+  border: var(--detail-tile-border-width, var(--shape-edge-width, 1px)) solid var(--detail-tile-border-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 55%, transparent)));
+  border-radius: var(--detail-tile-radius, var(--shape-radius-surface, var(--ui-radius-lg)));
   background: var(--paper);
+  box-shadow: var(--detail-tile-shadow, var(--shape-shadow-sm, none));
 }
 
 .book-detail-overview-facts > div:nth-child(n + 4) {
@@ -39,7 +40,7 @@
   place-items: center;
   width: 32px;
   height: 32px;
-  border-radius: var(--ui-radius-md);
+  border-radius: var(--detail-icon-radius, var(--shape-radius-control, var(--ui-radius-md)));
   background: color-mix(in srgb, var(--fact-tint) 13%, var(--paper));
   color: var(--fact-tint);
 }

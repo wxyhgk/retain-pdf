@@ -38,7 +38,8 @@
     },
     "./themes.css": "./styles/themes/index.css",
     "./styles.css": "./dist/styles.css",
-    "./primitives.css": "./styles/primitives.css"
+    "./primitives.css": "./styles/primitives.css",
+    "./ornaments.css": "./styles/ornaments.css"
   },
   "files": [
     "dist",

@@ -8,7 +8,7 @@
 .book-detail-tab-processing {
   /* 卡片表面：处理卡、任务记录同一套底色与圆角。 */
   --book-detail-processing-surface: color-mix(in srgb, var(--bg) 58%, var(--paper));
-  --book-detail-processing-radius: 24px;
+  --book-detail-processing-radius: var(--detail-card-radius, var(--shape-radius-surface, 24px));
   /* 墨色深浅：不同次翻译用深浅区分（1 最深、4 最浅），0 是未翻译的浅底。单色设计，不引入新颜色。 */
   --book-detail-shade-0: color-mix(in srgb, var(--ink) 7%, var(--paper));
   --book-detail-shade-1: color-mix(in srgb, var(--ink) 82%, var(--paper));

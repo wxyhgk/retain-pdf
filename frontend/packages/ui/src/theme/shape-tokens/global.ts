@@ -22,5 +22,6 @@ export const GLOBAL_SHAPE_TOKENS: ShapeToken[] = [
   { name: "--shape-press-shadow", kind: "shadow", description: "按下时的阴影（硬阴影风格一般设成 none，看起来是压下去）", fallback: "和不按时一样" },
   { name: "--shape-radius-control", kind: "length", description: "小控件圆角：输入框、标签、图标按钮", fallback: "各处现在的值" },
   { name: "--shape-radius-surface", kind: "length", description: "面板圆角：书卡、浮层、菜单、卡片", fallback: "各处现在的值" },
+  { name: "--shape-heading-font", kind: "font", description: "标题字体：书库标题、弹窗标题、书卡标题、h1/h2", fallback: "各处现在的字体（h1/h2 用 --font-display，其余继承正文）" },
   { name: "--shape-heading-weight", kind: "number", description: "标题字重", fallback: "各处现在的值（600–700）" },
 ];

@@ -1,0 +1,275 @@
+/* 装饰位（ornament）的通用显示规则：任何主题的装饰包都能在组件预留的位置挂小图。
+ *
+ * 组件里放 <span class="theme-ornament" data-ornament="名字" aria-hidden="true" />，
+ * 装饰包 manifest 的 ornaments 声明图，运行时（web/src/ui/decor/ornament-runtime.ts）把它写成
+ * <html> 上的变量和标记：
+ *   --ornament-<名字> / -w -h -x -y -hover      图、宽高 px、偏移 px、悬停 transform
+ *   data-ornaments="名字 …"                     有图的装饰位（下面每条规则靠它显示）
+ *   data-ornaments-hide="名字 …"                要换掉宿主原图标的装饰位
+ * 没有图时：钩子 display:none，不占位，现有皮肤逐像素不变。
+ * 名字白名单和建议尺寸：web/src/ui/decor/ornaments.ts（这里的默认尺寸要和它一致，有测试核对）。
+ * 首页（home.css）和阅读页（reader entry.css）各引一份，都放在 pages 层，盖得过 Tailwind 工具类。
+ */
+
+.theme-ornament {
+  display: none;
+}
+
+html[data-ornaments] .theme-ornament {
+  width: var(--orn-w, 0);
+  height: var(--orn-h, 0);
+  translate: var(--orn-x, 0px) var(--orn-y, 0px);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  pointer-events: none;
+  transition: transform 0.35s var(--ease-out);
+}
+
+/* 悬停动效：宿主（按钮、页签）被悬停时，钩子套上 manifest 里 hover 指定的 transform */
+html[data-ornaments] :hover > .theme-ornament {
+  transform: var(--orn-hover, none);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-ornaments] .theme-ornament {
+    transition: none;
+  }
+}
+
+/* —— 每个装饰位：有图才显示，宽高偏移来自变量，缺省是建议尺寸 —— */
+html[data-ornaments~="library-title"] .theme-ornament[data-ornament="library-title"] {
+  display: block;
+  background-image: var(--ornament-library-title);
+  --orn-w: var(--ornament-library-title-w, 28px);
+  --orn-h: var(--ornament-library-title-h, 28px);
+  --orn-x: var(--ornament-library-title-x, 0px);
+  --orn-y: var(--ornament-library-title-y, 0px);
+}
+
+html[data-ornaments~="dialog-corner"] .theme-ornament[data-ornament="dialog-corner"] {
+  display: block;
+  background-image: var(--ornament-dialog-corner);
+  --orn-w: var(--ornament-dialog-corner-w, 56px);
+  --orn-h: var(--ornament-dialog-corner-h, 56px);
+  --orn-x: var(--ornament-dialog-corner-x, 0px);
+  --orn-y: var(--ornament-dialog-corner-y, 0px);
+}
+
+html[data-ornaments~="empty-state"] .theme-ornament[data-ornament="empty-state"] {
+  display: block;
+  background-image: var(--ornament-empty-state);
+  --orn-w: var(--ornament-empty-state-w, 96px);
+  --orn-h: var(--ornament-empty-state-h, 96px);
+  --orn-x: var(--ornament-empty-state-x, 0px);
+  --orn-y: var(--ornament-empty-state-y, 0px);
+}
+
+html[data-ornaments~="cover-placeholder"] .theme-ornament[data-ornament="cover-placeholder"] {
+  display: block;
+  background-image: var(--ornament-cover-placeholder);
+  --orn-x: var(--ornament-cover-placeholder-x, 0px);
+  --orn-y: var(--ornament-cover-placeholder-y, 0px);
+}
+
+html[data-ornaments~="bottom-add"] .theme-ornament[data-ornament="bottom-add"] {
+  display: block;
+  background-image: var(--ornament-bottom-add);
+  --orn-w: var(--ornament-bottom-add-w, 46px);
+  --orn-h: var(--ornament-bottom-add-h, 46px);
+  --orn-x: var(--ornament-bottom-add-x, 0px);
+  --orn-y: var(--ornament-bottom-add-y, 0px);
+  --orn-hover: var(--ornament-bottom-add-hover, none);
+}
+
+html[data-ornaments~="bottom-tasks"] .theme-ornament[data-ornament="bottom-tasks"] {
+  display: block;
+  background-image: var(--ornament-bottom-tasks);
+  --orn-w: var(--ornament-bottom-tasks-w, 46px);
+  --orn-h: var(--ornament-bottom-tasks-h, 46px);
+  --orn-x: var(--ornament-bottom-tasks-x, 0px);
+  --orn-y: var(--ornament-bottom-tasks-y, 0px);
+  --orn-hover: var(--ornament-bottom-tasks-hover, none);
+}
+
+html[data-ornaments~="bottom-guide"] .theme-ornament[data-ornament="bottom-guide"] {
+  display: block;
+  background-image: var(--ornament-bottom-guide);
+  --orn-w: var(--ornament-bottom-guide-w, 46px);
+  --orn-h: var(--ornament-bottom-guide-h, 46px);
+  --orn-x: var(--ornament-bottom-guide-x, 0px);
+  --orn-y: var(--ornament-bottom-guide-y, 0px);
+  --orn-hover: var(--ornament-bottom-guide-hover, none);
+}
+
+html[data-ornaments~="bottom-settings"] .theme-ornament[data-ornament="bottom-settings"] {
+  display: block;
+  background-image: var(--ornament-bottom-settings);
+  --orn-w: var(--ornament-bottom-settings-w, 46px);
+  --orn-h: var(--ornament-bottom-settings-h, 46px);
+  --orn-x: var(--ornament-bottom-settings-x, 0px);
+  --orn-y: var(--ornament-bottom-settings-y, 0px);
+  --orn-hover: var(--ornament-bottom-settings-hover, none);
+}
+
+html[data-ornaments~="top-tab-library"] .theme-ornament[data-ornament="top-tab-library"] {
+  display: block;
+  background-image: var(--ornament-top-tab-library);
+  --orn-w: var(--ornament-top-tab-library-w, 24px);
+  --orn-h: var(--ornament-top-tab-library-h, 24px);
+  --orn-x: var(--ornament-top-tab-library-x, 0px);
+  --orn-y: var(--ornament-top-tab-library-y, 0px);
+  --orn-hover: var(--ornament-top-tab-library-hover, none);
+}
+
+html[data-ornaments~="top-tab-collections"] .theme-ornament[data-ornament="top-tab-collections"] {
+  display: block;
+  background-image: var(--ornament-top-tab-collections);
+  --orn-w: var(--ornament-top-tab-collections-w, 24px);
+  --orn-h: var(--ornament-top-tab-collections-h, 24px);
+  --orn-x: var(--ornament-top-tab-collections-x, 0px);
+  --orn-y: var(--ornament-top-tab-collections-y, 0px);
+  --orn-hover: var(--ornament-top-tab-collections-hover, none);
+}
+
+html[data-ornaments~="book-cover-tape"] .theme-ornament[data-ornament="book-cover-tape"] {
+  display: block;
+  background-image: var(--ornament-book-cover-tape);
+  --orn-w: var(--ornament-book-cover-tape-w, 64px);
+  --orn-h: var(--ornament-book-cover-tape-h, 22px);
+  --orn-x: var(--ornament-book-cover-tape-x, 0px);
+  --orn-y: var(--ornament-book-cover-tape-y, 0px);
+}
+
+html[data-ornaments~="reader-bar-left"] .theme-ornament[data-ornament="reader-bar-left"] {
+  display: block;
+  background-image: var(--ornament-reader-bar-left);
+  --orn-w: var(--ornament-reader-bar-left-w, 40px);
+  --orn-h: var(--ornament-reader-bar-left-h, 40px);
+  --orn-x: var(--ornament-reader-bar-left-x, 0px);
+  --orn-y: var(--ornament-reader-bar-left-y, 0px);
+}
+
+html[data-ornaments~="reader-bar-right"] .theme-ornament[data-ornament="reader-bar-right"] {
+  display: block;
+  background-image: var(--ornament-reader-bar-right);
+  --orn-w: var(--ornament-reader-bar-right-w, 40px);
+  --orn-h: var(--ornament-reader-bar-right-h, 40px);
+  --orn-x: var(--ornament-reader-bar-right-x, 0px);
+  --orn-y: var(--ornament-reader-bar-right-y, 0px);
+}
+
+/* —— 定位（按组） —— */
+
+/* 书库标题旁：跟在标题后面 */
+html[data-ornaments] .theme-ornament[data-ornament="library-title"] {
+  flex: none;
+  align-self: center;
+}
+
+/* 弹窗右上角：向外探出，在关闭钮下面（组件里排在最前） */
+html[data-ornaments] .theme-ornament[data-ornament="dialog-corner"] {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  z-index: 0;
+}
+
+/* 空状态：仪器图标上方居中 */
+html[data-ornaments] .theme-ornament[data-ornament="empty-state"] {
+  flex: none;
+}
+
+/* 封面占位：铺满封面区 */
+html[data-ornaments] .theme-ornament[data-ornament="cover-placeholder"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+}
+
+/* 底栏四钮：按钮正中（原来墨家 inset:-4px 的 46px 贴面） */
+html[data-ornaments] .theme-ornament[data-ornament^="bottom-"] {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: calc(-50% + var(--orn-x, 0px)) calc(-50% + var(--orn-y, 0px));
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--ink) 32%, transparent));
+}
+
+/* 顶栏页签：图标位 */
+html[data-ornaments] .theme-ornament[data-ornament^="top-tab-"] {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  translate: var(--orn-x, 0px) calc(-50% + var(--orn-y, 0px));
+  filter: drop-shadow(0 1px 2px color-mix(in srgb, var(--ink) 25%, transparent));
+}
+
+/* 书卡封面纸胶带：压在封面顶边正中，微微倾斜（宿主封面区要 position:relative） */
+html[data-ornaments] .theme-ornament[data-ornament="book-cover-tape"] {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  z-index: 2;
+  rotate: -3deg;
+  translate: calc(-50% + var(--orn-x, 0px)) var(--orn-y, 0px);
+}
+
+/* 阅读器顶栏两端（顶栏是 fixed，是定位基准）：让开左边「目录」和右边下载/关闭托盘 */
+html[data-ornaments] .theme-ornament[data-ornament^="reader-bar-"] {
+  position: absolute;
+  top: 50%;
+  translate: var(--orn-x, 0px) calc(-50% + var(--orn-y, 0px));
+}
+
+html[data-ornaments] .theme-ornament[data-ornament="reader-bar-left"] {
+  left: 72px;
+}
+
+html[data-ornaments] .theme-ornament[data-ornament="reader-bar-right"] {
+  right: calc(var(--reader-tray-width, 150px) + 8px);
+}
+
+@media (max-width: 720px) {
+  html[data-ornaments] .theme-ornament[data-ornament^="reader-bar-"] {
+    display: none;
+  }
+}
+
+/* —— 宿主：钩子是绝对定位的，宿主得是定位基准 —— */
+html[data-ornaments] :is(.library-bottom-icon-btn, .library-top-tab):has(> .theme-ornament) {
+  position: relative;
+}
+
+/* —— hideIcon：用图替换宿主原有的图标 / 底板 —— */
+
+/* 底栏按钮：去掉按钮自己的底、描边、阴影，藏掉 svg，整颗换成这张图 */
+html[data-ornaments-hide~="bottom-add"] .library-bottom-icon-btn:has(> [data-ornament="bottom-add"]),
+html[data-ornaments-hide~="bottom-tasks"] .library-bottom-icon-btn:has(> [data-ornament="bottom-tasks"]),
+html[data-ornaments-hide~="bottom-guide"] .library-bottom-icon-btn:has(> [data-ornament="bottom-guide"]),
+html[data-ornaments-hide~="bottom-settings"] .library-bottom-icon-btn:has(> [data-ornament="bottom-settings"]) {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-ornaments-hide~="bottom-add"] .library-bottom-icon-btn:has(> [data-ornament="bottom-add"]) > svg,
+html[data-ornaments-hide~="bottom-tasks"] .library-bottom-icon-btn:has(> [data-ornament="bottom-tasks"]) > svg,
+html[data-ornaments-hide~="bottom-guide"] .library-bottom-icon-btn:has(> [data-ornament="bottom-guide"]) > svg,
+html[data-ornaments-hide~="bottom-settings"] .library-bottom-icon-btn:has(> [data-ornament="bottom-settings"]) > svg,
+html[data-ornaments-hide~="top-tab-library"] .library-top-tab:has(> [data-ornament="top-tab-library"]) > svg,
+html[data-ornaments-hide~="top-tab-collections"] .library-top-tab:has(> [data-ornament="top-tab-collections"]) > svg {
+  visibility: hidden;
+}
+
+/* 空状态：整块仪器图标换掉 */
+html[data-ornaments-hide~="empty-state"] .empty-state-icon {
+  display: none;
+}
+
+/* 封面占位：藏掉灰底里的 PDF 图标和字（占位容器是 .book-cover-placeholder） */
+html[data-ornaments-hide~="cover-placeholder"] .book-cover-placeholder > :not(.theme-ornament) {
+  visibility: hidden;
+}

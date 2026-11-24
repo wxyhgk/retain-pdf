@@ -24,7 +24,7 @@
   gap: 6px;
   align-items: flex-start;
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--detail-note-radius, var(--shape-radius-control, 8px));
   color: var(--ink);
   background: color-mix(in srgb, var(--warn) 10%, transparent);
   font-size: var(--ui-text-sm);
@@ -135,7 +135,7 @@
   gap: 8px;
   padding: 6px 8px;
   border: 0;
-  border-radius: var(--ui-radius-sm);
+  border-radius: var(--detail-note-radius, var(--shape-radius-control, var(--ui-radius-sm)));
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -212,7 +212,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 8px 10px;
-  border-radius: var(--ui-radius-md);
+  border-radius: var(--detail-note-radius, var(--shape-radius-control, var(--ui-radius-md)));
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   color: var(--ink);
   font-size: var(--ui-text-sm);
@@ -247,7 +247,7 @@
   margin: 0;
   padding: 8px 10px;
   overflow: auto;
-  border-radius: var(--ui-radius-sm);
+  border-radius: var(--detail-note-radius, var(--shape-radius-control, var(--ui-radius-sm)));
   background: color-mix(in srgb, var(--ink) 4%, transparent);
   color: var(--ink);
   font-size: var(--ui-text-md);

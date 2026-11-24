@@ -10,9 +10,10 @@
 
 .book-detail-artifact-group {
   padding: 14px;
-  border: 0;
-  border-radius: 24px;
+  border: var(--detail-card-border-width, var(--shape-edge-width, 0)) solid var(--detail-card-border-color, var(--shape-edge-color, transparent));
+  border-radius: var(--detail-card-radius, var(--shape-radius-surface, 24px));
   background: color-mix(in srgb, var(--bg) 58%, var(--paper));
+  box-shadow: var(--detail-card-shadow, var(--shape-shadow-md, none));
 }
 
 .book-detail-artifact-group-header {
@@ -29,7 +30,7 @@
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  border-radius: 17px;
+  border-radius: var(--detail-icon-radius, var(--shape-radius-control, 17px));
   color: var(--ink);
   background: var(--paper);
   box-shadow: 0 5px 16px color-mix(in srgb, var(--ink) 5%, transparent);
@@ -117,9 +118,10 @@
   align-items: center;
   gap: 9px;
   padding: 8px;
-  border: 0;
-  border-radius: 17px;
+  border: var(--detail-tile-border-width, var(--shape-edge-width, 0)) solid var(--detail-tile-border-color, var(--shape-edge-color, transparent));
+  border-radius: var(--detail-tile-radius, var(--shape-radius-surface, 17px));
   background: var(--paper);
+  box-shadow: var(--detail-tile-shadow, var(--shape-shadow-sm, none));
 }
 
 .book-detail-artifact-item-icon {
@@ -128,7 +130,7 @@
   height: 42px;
   align-items: center;
   justify-content: center;
-  border-radius: 13px;
+  border-radius: var(--detail-icon-radius, var(--shape-radius-control, 13px));
   color: var(--ink);
   background: color-mix(in srgb, var(--bg) 82%, var(--paper));
 }
@@ -188,8 +190,8 @@
 .book-detail-artifact-empty {
   margin: 12px 0 0;
   padding: 9px 11px;
-  border: 1px dashed color-mix(in srgb, var(--line) 65%, transparent);
-  border-radius: var(--ui-radius-lg);
+  border: var(--detail-tile-border-width, var(--shape-edge-width, 1px)) dashed var(--detail-tile-border-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 65%, transparent)));
+  border-radius: var(--detail-tile-radius, var(--shape-radius-surface, var(--ui-radius-lg)));
   color: var(--muted);
   background: var(--paper);
   font-size: 9.5px;
@@ -200,8 +202,8 @@
   /* 它是 grid 子项：不写 min-width 时会被 summary 里那行不换行的说明撑宽，窄屏下把下载按钮挤出去。 */
   min-width: 0;
   padding: 10px 14px;
-  border: 1px dashed color-mix(in srgb, var(--line) 70%, transparent);
-  border-radius: 20px;
+  border: var(--detail-card-border-width, var(--shape-edge-width, 1px)) dashed var(--detail-card-border-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 70%, transparent)));
+  border-radius: var(--detail-card-radius, var(--shape-radius-surface, 20px));
 }
 
 .book-detail-artifact-debug > summary {

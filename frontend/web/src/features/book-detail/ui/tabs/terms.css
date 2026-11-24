@@ -19,7 +19,7 @@
 .book-detail-terms-warning {
   margin: 0 0 8px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--detail-note-radius, var(--shape-radius-control, 8px));
   color: var(--ink);
   background: color-mix(in srgb, var(--warn) 10%, transparent);
   font-size: var(--ui-text-sm);
