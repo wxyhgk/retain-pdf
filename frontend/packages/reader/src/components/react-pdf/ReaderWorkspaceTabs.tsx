@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
-import { Columns2, FileText, Languages, Radio } from "lucide-react";
+import { Button } from "@retainpdf/ui";
+import { ArrowDownToLine, CheckCircle2, Columns2, FileText, Languages, Radio } from "lucide-react";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
 import { useReaderContext } from "./reader-context.js";
 
@@ -26,11 +27,23 @@ export type ReaderWorkspaceTabsProps = {
     visible: boolean;
     state: LiveTranslationState;
     onToggle: () => void;
+    /** 最近译好的那一页（1 起）和跳过去的办法；已经在那一页、或没有时不显示按钮。 */
+    latestPage?: number | null;
+    currentPage?: number;
+    onJumpToLatest?: () => void;
   } | null;
+  /** 这次看着它翻完了：顶栏左边换成「翻译完成 · 看对照」。 */
+  completion?: { onOpenCompare: () => void } | null;
 };
 
 export function liveTranslationStatusCopy(state: LiveTranslationState): string {
-  if (state.connection === "live") return `实时译文 · ${state.pagesByPage.size} 页`;
+  if (state.connection === "live") {
+    // 版面里有几页就是一共几页（OCR 做完才有版面）。
+    const total = state.layoutByPage.size;
+    return total > 0
+      ? `已译 ${state.pagesByPage.size} / ${total} 页`
+      : `已译 ${state.pagesByPage.size} 页`;
+  }
   if (state.connection === "reconnecting") return "实时译文 · 重连中";
   if (state.connection === "unavailable") return "实时译文 · 不可用";
   if (state.connection === "terminal") {
@@ -63,50 +76,82 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
     documentReady,
     onModeChange,
     liveTranslation = null,
+    completion = null,
   } = props;
   const sourceViewOnly = props.sourceViewOnly ?? ctx?.sourceViewOnly ?? false;
   const liveCopy = liveTranslation ? liveTranslationStatusCopy(liveTranslation.state) : "";
   return (
     <header className="reader-workspace-bar">
-      {liveTranslation ? (
-        <button
-          type="button"
-          className={`reader-live-translation-toggle is-${liveTranslation.state.connection}${liveTranslation.visible ? " is-active" : ""}`}
-          aria-pressed={liveTranslation.visible}
-          aria-label={liveTranslation.visible ? "隐藏实时译文" : "显示实时译文"}
-          title={liveTranslation.state.error || liveCopy}
-          onClick={liveTranslation.onToggle}
-        >
-          <Radio size={14} strokeWidth={2.2} aria-hidden />
-          <span className="reader-live-translation-toggle-label">{liveCopy}</span>
-        </button>
-      ) : null}
-      <div className="reader-workspace-tabs" role="tablist" aria-label="阅读工作区">
-        {WORKSPACES.map(({ id, label, Icon }) => {
-          const active = mode === id;
-          const disabled = isReaderWorkspaceDisabled({
-            id,
-            documentReady,
-            sourceViewOnly,
-            liveTranslationAvailable: Boolean(liveTranslation),
-          });
-          return (
+      {/* 进度那一组挂在页签右边（相对这一层定位），页签照旧相对视口居中；
+          以前放在最左边，和「目录」按钮压在一起。 */}
+      <div className="reader-workspace-center">
+        <div className="reader-workspace-tabs" role="tablist" aria-label="阅读工作区">
+          {WORKSPACES.map(({ id, label, Icon }) => {
+            const active = mode === id;
+            const disabled = isReaderWorkspaceDisabled({
+              id,
+              documentReady,
+              sourceViewOnly,
+              liveTranslationAvailable: Boolean(liveTranslation),
+            });
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`reader-workspace-tab${active ? " is-active" : ""}`}
+                role="tab"
+                aria-selected={active}
+                aria-label={label}
+                title={disabled ? `${label} 需要文档任务` : label}
+                disabled={disabled}
+                onClick={() => onModeChange(id)}
+              >
+                <Icon size={15} strokeWidth={2.2} aria-hidden />
+                <span className="reader-workspace-tab-label">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {liveTranslation ? (
+          <div className="reader-live-strip">
             <button
-              key={id}
               type="button"
-              className={`reader-workspace-tab${active ? " is-active" : ""}`}
-              role="tab"
-              aria-selected={active}
-              aria-label={label}
-              title={disabled ? `${label} 需要文档任务` : label}
-              disabled={disabled}
-              onClick={() => onModeChange(id)}
+              className={`reader-live-translation-toggle is-${liveTranslation.state.connection}${liveTranslation.visible ? " is-active" : ""}`}
+              aria-pressed={liveTranslation.visible}
+              aria-label={liveTranslation.visible ? "隐藏实时译文" : "显示实时译文"}
+              title={liveTranslation.state.error
+                || `${liveCopy}，${liveTranslation.visible ? "点一下看原文" : "点一下叠上译文"}`}
+              onClick={liveTranslation.onToggle}
             >
-              <Icon size={15} strokeWidth={2.2} aria-hidden />
-              <span className="reader-workspace-tab-label">{label}</span>
+              <Radio size={14} strokeWidth={2.2} aria-hidden />
+              <span className="reader-live-translation-toggle-label">{liveCopy}</span>
             </button>
-          );
-        })}
+            {liveTranslation.latestPage
+              && liveTranslation.onJumpToLatest
+              && liveTranslation.latestPage !== liveTranslation.currentPage ? (
+                <Button
+                  className="reader-live-translation-toggle reader-live-jump"
+                  aria-label={`跳到最新译好的第 ${liveTranslation.latestPage} 页`}
+                  title={`跳到最新译好的第 ${liveTranslation.latestPage} 页`}
+                  onClick={liveTranslation.onJumpToLatest}
+                >
+                  <ArrowDownToLine size={14} strokeWidth={2.2} aria-hidden />
+                  <span className="reader-live-translation-toggle-label">跳到最新</span>
+                </Button>
+              ) : null}
+          </div>
+        ) : completion ? (
+          <div className="reader-live-strip">
+            <Button
+              className="reader-live-translation-toggle is-done"
+              title="翻译完成，左右对照看最终译文"
+              onClick={completion.onOpenCompare}
+            >
+              <CheckCircle2 size={14} strokeWidth={2.2} aria-hidden />
+              <span className="reader-live-translation-toggle-label">翻译完成 · 看对照</span>
+            </Button>
+          </div>
+        ) : null}
       </div>
     </header>
   );

@@ -29,8 +29,10 @@ def default_api_base() -> str:
     configured = os.environ.get("RETAIN_PDF_FRONTEND_API_BASE", "").strip()
     if configured:
         return configured
+    # 默认连本机的后端。以前监听 0.0.0.0 时默认填的是一台外部服务器的地址，
+    # 演示模式（?mock=）里没被 mock 接住的请求会真的发过去（2026-11-24 改）。
     if DEFAULT_HOST in ("", "0.0.0.0", "::"):
-        return "http://1.94.67.196:41000"
+        return "http://127.0.0.1:41000"
     return f"http://{DEFAULT_HOST}:41000"
 
 

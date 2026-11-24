@@ -34,7 +34,12 @@ const ReaderMarkdownPanel = lazy(() => import("./components/react-pdf/ReaderMark
 import { useReaderPanelSlot } from "./components/react-pdf/use-reader-panel-slot.js";
 
 /** 稳定的空数组：每次渲染新建一个会让每页的标记层白白重算。 */
-import { resolveLiveTranslationToggles } from "./shared/data/live-translation-state.js";
+import {
+  latestLiveTranslationPage,
+  resolveLiveTranslationToggles,
+  shouldAutoOpenLiveTranslation,
+  shouldOfferLiveTranslationCompletion,
+} from "./shared/data/live-translation-state.js";
 import { isEditableReaderBlock } from "./shared/data/block-edit.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderFinder, ReaderFinderToggles, ReaderSearchToggle, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
@@ -205,6 +210,21 @@ export function ReaderAppReactPdf() {
     if (c.session.jobTerminal) setLiveTranslationVisible(false);
   }, [c.session.jobTerminal]);
 
+  // 翻译还在跑、还没有最终译文时，打开就叠上译文（条件见 shouldAutoOpenLiveTranslation）。
+  // 每本书（viewStateKey）只自动开一次：之后用户关掉就是关掉，不再被翻回来。
+  // 上面那个按 viewStateKey 复位成 false 的 effect 写在前面，同一次提交里先跑，这里再打开。
+  const autoLiveOpenedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (autoLiveOpenedKeyRef.current === c.viewStateKey) return;
+    if (!shouldAutoOpenLiveTranslation({
+      liveTranslationAvailable: c.liveTranslationAvailable,
+      sourceViewOnly,
+      jobTerminal: c.session.jobTerminal,
+    })) return;
+    autoLiveOpenedKeyRef.current = c.viewStateKey;
+    setLiveTranslationVisible(true);
+  }, [c.liveTranslationAvailable, c.session.jobTerminal, c.viewStateKey, sourceViewOnly]);
+
   // 阅读模式恢复/持久化：与 anchor/zoom 对齐。sourceViewOnly 时只允许 source。
   // 窄屏没有存档时自动进译文（resolveReaderInitialMode）；停在这个自动默认上时
   // 不写存档，用户换过模式之后照常写（shouldPersistReaderMode）。
@@ -249,6 +269,21 @@ export function ReaderAppReactPdf() {
   const closeAssistant = useCallback(() => {
     setAssistantPanel(null);
   }, []);
+  const latestLivePage = latestLiveTranslationPage(c.liveTranslation);
+  const jumpToLatestLivePage = useCallback(() => {
+    if (latestLivePage) c.goToPage(latestLivePage, "source");
+  }, [c.goToPage, latestLivePage]);
+  // 「翻译完成 · 看对照」：点过、或者自己切到过对照，这本书就不再提示。
+  const [completionDismissedKey, setCompletionDismissedKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (visiblePdfMode === "compare" && c.session.jobTerminal) setCompletionDismissedKey(c.viewStateKey);
+  }, [c.session.jobTerminal, c.viewStateKey, visiblePdfMode]);
+  const offerCompletion = completionDismissedKey !== c.viewStateKey
+    && shouldOfferLiveTranslationCompletion({
+      state: c.liveTranslation,
+      sourceViewOnly,
+      visibleMode: visiblePdfMode,
+    });
   const changeWorkspace = useCallback((next: ReaderWorkspaceMode) => {
     // A running translation can provide the compare workspace before the
     // immutable translated PDF exists. Keep the visible workspace and the
@@ -484,6 +519,15 @@ export function ReaderAppReactPdf() {
             visible: liveTranslationVisible,
             state: c.liveTranslation,
             onToggle: () => setLiveTranslationVisible((visible) => !visible),
+            latestPage: liveTranslationVisible ? latestLivePage : null,
+            currentPage: c.currentPage,
+            onJumpToLatest: jumpToLatestLivePage,
+          } : null}
+          completion={offerCompletion ? {
+            onOpenCompare: () => {
+              setCompletionDismissedKey(c.viewStateKey);
+              changeWorkspace("compare");
+            },
           } : null}
         />
         <ReaderAssistantDock active={assistantPanel} />

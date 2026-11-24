@@ -70,6 +70,8 @@ type PdfPageSlotProps = {
   liveTranslationLayout?: LiveTranslationLayoutPage;
   liveTranslationPage?: LiveTranslationPageState;
   showLiveTranslation?: boolean;
+  /** 叠层开着、别的页有译文、这一页还没有：页顶提示「还没翻到」。 */
+  liveTranslationMissing?: boolean;
 };
 
 function PdfPageSlotInner({
@@ -91,6 +93,7 @@ function PdfPageSlotInner({
   liveTranslationLayout,
   liveTranslationPage,
   showLiveTranslation = pane === "source",
+  liveTranslationMissing = false,
 }: PdfPageSlotProps) {
   // 改过的块（来自阅读器上下文；单测里直接渲染时没有，就不画标记）。
   const readerContext = useReaderContext();
@@ -304,6 +307,11 @@ function PdfPageSlotInner({
           width={width}
           height={naturalHeight}
         />
+      ) : null}
+      {active && showLiveTranslation && liveTranslationMissing ? (
+        <div className="reader-live-translation-page-note" role="note">
+          这一页还没翻到，译好后会自动出现
+        </div>
       ) : null}
       {active && pane === "translated" && pendingEdits?.size ? (
         <EditedTranslationOverlay targets={textHoverTargets} edits={pendingEdits} width={width} excludeId={editingTarget?.itemId} />

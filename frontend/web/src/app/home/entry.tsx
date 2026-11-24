@@ -12,10 +12,11 @@ import {
   loadPersistedConfig,
 } from "@/platform/config/desktop-persistence.js";
 import { bootstrapDesktop } from "@/app/desktop/bootstrap.js";
+import { isMockMode } from "@/platform/config/runtime.js";
 import { AuthErrorScreen, ForcedPasswordScreen, LoginScreen, resolveAuthGate } from "@/features/auth/index.js";
 
-// appUpdateAutoCheckEnabled: true——create-home-composition 默认关闭后台
-// GitHub 自检（测试隔离），生产入口这里显式打开。
+// appUpdateAutoCheckEnabled——create-home-composition 默认关闭后台
+// GitHub 自检（测试隔离），生产入口这里显式打开；演示模式（?mock=）不开，不往外发请求。
 async function bootHome() {
   // 先过登录检查：单机模式直接往下走（和以前一样）；多用户模式没登录 / 要先改密码时，
   // 这一页只显示登录（或改密码）界面，成功后刷新再进来。
@@ -40,7 +41,7 @@ async function bootHome() {
   }
 
   const services = createHomeComposition({
-    appUpdateAutoCheckEnabled: true,
+    appUpdateAutoCheckEnabled: !isMockMode(),
     initialDesktopMode: desktopMode,
     ...(desktopConfig ? {
       loadPersistedBrowserConfig: () => desktopConfig.browserConfig || {},

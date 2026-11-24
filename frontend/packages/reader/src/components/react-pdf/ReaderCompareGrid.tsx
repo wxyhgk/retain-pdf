@@ -268,7 +268,9 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
             liveTranslationPendingLabel={overlayOnSource
               ? liveTranslationPendingCopy(liveTranslation)
               : ""}
-            paneAction={overlayOnSource ? (
+            // 旁边有最终译文那一栏时才标「原文+实时译文叠加」，免得以为左右都是译文；
+            // 只有一栏（翻译中还没有最终 PDF）时不用标。
+            paneAction={overlayOnSource && presentation.showTranslated ? (
               <>
                 {props.sourcePaneAction}
                 <span

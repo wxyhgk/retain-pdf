@@ -45,7 +45,7 @@ import {
   type ReaderMetadata,
   type ReaderRegion,
 } from "../shared/data/reader-regions.js";
-import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
+import { liveTranslationPageMissing, type LiveTranslationState } from "../shared/data/live-translation-state.js";
 
 const OVERSCAN = 5;
 /** Pre-warm/active band: same root margin the old per-slot observer used. */
@@ -596,6 +596,7 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
                       liveTranslationLayout={liveTranslation?.layoutByPage.get(pageNumber - 1)}
                       liveTranslationPage={liveTranslation?.pagesByPage.get(pageNumber - 1)}
                       showLiveTranslation={showLiveTranslation}
+                      liveTranslationMissing={liveTranslationPageMissing(liveTranslation, pageNumber - 1)}
                     />
                   );
                 }

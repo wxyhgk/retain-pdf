@@ -381,7 +381,13 @@ test("reader exposes a discoverable live-translation toggle with transport statu
     ...EMPTY_LIVE_TRANSLATION_STATE,
     connection: "live",
     pagesByPage: new Map([[0, {}]]),
-  }), "实时译文 · 1 页");
+  }), "已译 1 页");
+  assert.equal(liveTranslationStatusCopy({
+    ...EMPTY_LIVE_TRANSLATION_STATE,
+    connection: "live",
+    layoutByPage: new Map([[0, {}], [1, {}], [2, {}]]),
+    pagesByPage: new Map([[0, {}]]),
+  }), "已译 1 / 3 页");
   assert.equal(liveTranslationStatusCopy({
     ...EMPTY_LIVE_TRANSLATION_STATE,
     connection: "unavailable",

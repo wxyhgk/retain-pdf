@@ -164,7 +164,9 @@ export function resolveLiveTranslationToggles(input: {
   const { hasOverlayContent, connection, showSource } = input;
   return {
     topBarPill: hasOverlayContent && connection !== "terminal",
-    sourcePaneToggle: hasOverlayContent && showSource,
+    // 顶栏 pill 在的时候它就是开关（还带进度），源栏不再另放一颗「译文」：
+    // 两颗管同一件事的按钮并排在屏幕上，看着像两个功能。
+    sourcePaneToggle: hasOverlayContent && showSource && connection === "terminal",
     // 和 resolveReaderPaneComposition 的 overlayOnSource 同一套条件，外加
     // 「源文栏得在台面上」——否则叠层没有落脚的地方。
     overlayRenderable: hasOverlayContent
@@ -172,4 +174,50 @@ export function resolveLiveTranslationToggles(input: {
       && input.liveTranslationVisible
       && !input.assistantOpen,
   };
+}
+
+/** 最近一次有译文落进来的那一页（1 起），一页都没有时为 null。顶栏「跳到最新」跳这里。
+ * 按事件序号取，不按页码取：并发翻译时页不是按顺序出来的。 */
+export function latestLiveTranslationPage(state: LiveTranslationState): number | null {
+  let latest: { page: number; seq: number } | null = null;
+  for (const [pageIdx, page] of state.pagesByPage) {
+    if (!latest || page.lastEventSeq > latest.seq) latest = { page: pageIdx + 1, seq: page.lastEventSeq };
+  }
+  return latest ? latest.page : null;
+}
+
+/** 这一页叠层开着、别的页已经有译文、唯独这页还没有 —— 页面上提示一句「还没翻到」，
+ * 不然用户看到一页原文，分不清是没翻到还是叠层坏了。一页都没有时由整栏的等待提示说，
+ * 任务停了（终态）也不说「会自动出现」。 */
+export function liveTranslationPageMissing(state: LiveTranslationState | undefined, pageIdx: number): boolean {
+  if (!state || state.connection === "terminal") return false;
+  if (state.pagesByPage.size === 0) return false;
+  return state.layoutByPage.has(pageIdx) && !state.pagesByPage.has(pageIdx);
+}
+
+/** 打开阅读页时要不要直接把实时译文叠上去。
+ *
+ * 从进度页点「实时译文」进来，要看的就是译文；以前默认关着，进来只看到原文，
+ * 得自己找左上角的小按钮。只在还没有最终译文 PDF（sourceViewOnly）时自动打开：
+ * 那时只有一栏原文，不会出现以前「左右都是中文」的问题。 */
+export function shouldAutoOpenLiveTranslation(input: {
+  liveTranslationAvailable: boolean;
+  sourceViewOnly: boolean;
+  jobTerminal: boolean;
+}): boolean {
+  return input.liveTranslationAvailable && input.sourceViewOnly && !input.jobTerminal;
+}
+
+/** 这次在阅读页里看着它翻完了：顶栏给一个「翻译完成 · 看对照」。
+ * 打开时就已经完成的书不给（没跟实时译文，pagesByPage 是空的）。 */
+export function shouldOfferLiveTranslationCompletion(input: {
+  state: LiveTranslationState;
+  sourceViewOnly: boolean;
+  visibleMode: "source" | "compare" | "translated";
+}): boolean {
+  return input.state.connection === "terminal"
+    && input.state.jobStatus === "succeeded"
+    && input.state.pagesByPage.size > 0
+    && !input.sourceViewOnly
+    && input.visibleMode !== "compare";
 }

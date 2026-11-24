@@ -15,6 +15,14 @@ export type ReaderWorkspaceTabsProps = {
         visible: boolean;
         state: LiveTranslationState;
         onToggle: () => void;
+        /** 最近译好的那一页（1 起）和跳过去的办法；已经在那一页、或没有时不显示按钮。 */
+        latestPage?: number | null;
+        currentPage?: number;
+        onJumpToLatest?: () => void;
+    } | null;
+    /** 这次看着它翻完了：顶栏左边换成「翻译完成 · 看对照」。 */
+    completion?: {
+        onOpenCompare: () => void;
     } | null;
 };
 export declare function liveTranslationStatusCopy(state: LiveTranslationState): string;

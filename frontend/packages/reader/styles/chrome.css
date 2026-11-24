@@ -66,9 +66,42 @@
  * 而那条横向滚动条是刻意藏掉的，于是既看不见也点不到。
  *
  * 那颗按钮是打开实时译文叠加的**唯一入口**（顶栏 pill 在任务终态不渲染）。 */
-.reader-workspace-bar .reader-live-translation-toggle {
+.reader-workspace-center {
+  position: relative;
+  display: inline-flex;
+}
+
+/* 挂在页签右边：不占流式位置，页签照旧居中。以前放在 left 28px，正好压在「目录」上。 */
+.reader-workspace-bar .reader-live-strip {
   position: absolute;
-  left: clamp(12px, 2.2vw, 28px);
+  top: 50%;
+  left: calc(100% + 10px);
+  translate: 0 -50%;
+  white-space: nowrap;
+}
+
+/* 窄屏页签右边放不下（会压到右上角的托盘），挪到顶栏下面居中。 */
+@media (max-width: 720px) {
+  .reader-workspace-bar .reader-live-strip {
+    position: fixed;
+    top: 68px;
+    left: 50%;
+    translate: -50% 0;
+  }
+
+  /* 进度那几个字是这一组的意义所在，窄屏也留着；「跳到最新」只留图标。 */
+  .reader-workspace-bar .reader-live-strip .reader-live-translation-toggle:not(.reader-live-jump) {
+    width: auto;
+    padding: 0 11px;
+  }
+
+  .reader-workspace-bar .reader-live-strip .reader-live-translation-toggle:not(.reader-live-jump) .reader-live-translation-toggle-label {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+  }
 }
 
 .reader-live-translation-toggle {
