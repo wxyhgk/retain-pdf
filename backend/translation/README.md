@@ -460,7 +460,8 @@ repair profile：
     从翻译续跑）。只记「这组凭据 + 这个模型」（`record_credential_rejection(model=…)`），同一个 Key 的别的模型（审校等角色）照常用；
     `raise_if_credential_rejected` 带上 `model` 才会查到。以前每块各自失败，最后说不清原因。
   - **地区不支持**：OpenAI 403 `unsupported_country_region_territory`，或 403 的 message 说 country / region / territory not supported。
-    抛 `UpstreamRegionUnsupported`（`UpstreamAccessDenied` 的子类），整份停下，失败码照旧 `auth_failed`，但 `summary`「所在地区不支持这个
+    抛 `UpstreamRegionUnsupported`（`UpstreamAccessDenied` 的子类），整份停下，失败码 `upstream_region_unsupported`（`failure_category=auth`，不可重试，`resume_from=translation`；
+    2026-11-24 以前归 `auth_failed`，前端只能说成「凭据被拒、去换 Key」），`summary`「所在地区不支持这个
     翻译服务商」、`suggestion` 说换网络或换服务商、换 Key 没用（结构化失败读异常上的 `failure_summary` / `failure_suggestion`）。
   - **内容审核没过**：智谱 1301，千问 `DataInspectionFailed` / `data_inspection_failed` / `FaqRuleBlocked`，OpenAI `invalid_prompt` /
     `bio_policy` / `misalignment_policy_violation`（4xx 形态）。抛 `UpstreamContentRejected`：不重试、不记凭据、不停整份。普通翻译的
@@ -474,7 +475,7 @@ repair profile：
   - 其它 4xx（409、415、422、405；413 按下面「单次请求太长」处理）不重试，结构化失败归 `upstream_bad_request`，`summary`「上游服务拒绝请求（422）：<服务商原话>」，
     原话只取响应体的 `error.message`（或顶层 `message`），压成一行、最多 160 字，不取请求正文和整个响应体。
   - agent 引擎：Anthropic 协议的请求按同一个判断，模型不可用抛 `ModelUnavailable`、地区抛 `RegionUnsupported`（都是 `StopRun`，
-    停下原因 `model_unavailable` / `region_unsupported`，任务失败分别归 `upstream_model_unavailable` / `auth_failed`），没有分类器时 404
+    停下原因 `model_unavailable` / `region_unsupported`，任务失败分别归 `upstream_model_unavailable` / `upstream_region_unsupported`），没有分类器时 404
     也当模型不可用；内容审核没过和其它不重试的 4xx 抛 `RequestRejected`（带 `status_code`，归 `upstream_bad_request`）。agent 按页请求，
     内容审核没过时整个 agent 阶段失败，还没有逐块保留原文。
   - Rust 执行器：操作 `error_code` 加 `model_unavailable`、`region_unsupported`（都暂停任务）和 `content_rejected`（不暂停，worker 抛

@@ -11,7 +11,7 @@ Single source of truth for transient vs non-retryable upstream errors:
   （``UpstreamQuotaExhausted``）和 Key 的套餐不能用这个模型（``UpstreamAccessDenied``）不重试，和 402、401/403 一样
   整份翻译停下。真限流照旧退避、认 Retry-After。
 - 同样按业务码（2026-11-23）：模型不存在 / 没开通和任何 404（``UpstreamModelUnavailable``，归 ``upstream_model_unavailable``）、
-  所在地区不支持（``UpstreamRegionUnsupported``，归 ``auth_failed``、说法是换网络或换服务商）也第一次就整份停下；
+  所在地区不支持（``UpstreamRegionUnsupported``，归 ``upstream_region_unsupported``（2026-11-24 以前归 ``auth_failed``）、说法是换网络或换服务商）也第一次就整份停下；
   内容审核没过（``UpstreamContentRejected``）不重试、不停整份，调用方把这一块保留原文。
 """
 
@@ -116,10 +116,13 @@ REGION_FAILURE_SUGGESTION = "服务商不向当前网络出口所在的国家或
 
 
 class UpstreamRegionUnsupported(UpstreamAccessDenied):
-    """所在地区不支持（OpenAI 403 unsupported_country_region_territory）：整份停下，归 ``auth_failed``，
-    但 ``summary`` / ``suggestion`` 说换网络或换服务商（结构化失败读 ``failure_summary`` / ``failure_suggestion``）。"""
+    """所在地区不支持（OpenAI 403 unsupported_country_region_territory）：整份停下，归 ``upstream_region_unsupported``
+    （2026-11-24 以前归 ``auth_failed``，前端只能说成「凭据被拒、去换 Key」，而换 Key 没用），
+    ``summary`` / ``suggestion`` 说换网络或换服务商（结构化失败读 ``failure_summary`` / ``failure_suggestion``）。
+    仍是 ``UpstreamAccessDenied`` 的子类：停下整份翻译、记凭据被拒的逻辑不变。"""
 
     kind = _codes.REGION
+    retain_failure_code = "upstream_region_unsupported"
     failure_summary = REGION_FAILURE_SUMMARY
     failure_suggestion = REGION_FAILURE_SUGGESTION
 

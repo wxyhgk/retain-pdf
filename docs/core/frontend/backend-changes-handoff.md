@@ -12,6 +12,30 @@
 
 ---
 
+## 失败简报带 `failure_code`，地区不支持单独成码（feat/failure-brief-code）
+
+2026-11-24，只增不改，见 [失败简报带失败码](../../ops/planning/error-codes/20261124-失败简报带失败码.md)：
+
+- **任务列表的失败简报（`JobFailureBriefView`，`GET /jobs`、`GET /documents/{id}/jobs` 的 `failure`）加可选 `failure_code`**，
+  和任务详情 `failure.failure_code` 同一个值；没有失败码或只有旧数据兜底出的 `unknown` 时整个键不出现。契约
+  `job-status.v1`、`library-documents.v1` 已改，`@retainpdf/contracts` 的 dist 已重新生成；`frontend/packages/api` 的生成客户端不用变
+  （`generate:client:check` 是绿的）。
+- **所在地区不支持的失败码从 `auth_failed` 改成 `upstream_region_unsupported`**（新任务；老任务记录不变）。`failure_category` 照旧
+  `auth`、`retryable=false`、`resume_from=translation`，`summary`「所在地区不支持这个翻译服务商」，`recovery_hint` 说换网络或换服务商、换 Key 没用。
+  前端现在按 `category` 显示，不改也不会坏（还是「凭据被拒」那套说法）。
+
+前端要做（这次就是为了这两处）：
+1. `frontend/web/src/features/book-detail/domain/job-failure-model.ts`：`failureAdvice` 先按 `brief.failure_code` 查一张表，查到就用，
+   查不到照旧按 `category` 查 `BY_CATEGORY`。建议两条：
+   - `upstream_model_unavailable`：标题「翻译模型不可用」，说明「模型名写错、这个 Key 没开通该模型，或接口地址写错，原样重试没用。去设置里改好模型后从翻译继续，不会重做 OCR。」，`retryLikelyHelps: false`，`settingsAction: "去设置改模型"`；
+   - `upstream_region_unsupported`：标题「服务商不支持当前地区」，说明「服务商不向当前网络所在的地区提供服务，换 Key 没用。换网络或在设置里换一个翻译服务商后，从翻译继续。」，`retryLikelyHelps: false`，`settingsAction: "去设置换服务商"`。
+   手写的 `JobFailureBrief` 类型（`@/platform/contracts/library-payloads.js`）加 `failure_code?: string`，或换成生成的 `JobFailureBriefView`。
+2. `frontend/web/src/features/editorial-room/domain/narration.ts` 的 `STOP_REASON_TEXT` 加
+   `model_unavailable: "模型不可用（名字写错或没开通），改好后可以接着跑"`、
+   `region_unsupported: "服务商不支持当前地区，换网络或换服务商后可以接着跑"`（上一节 fix/llm-request-codes 就写过，这次一起做）。
+
+---
+
 ## 服务端版本头、安全响应头（feat/api-response-headers）
 
 2026-11-24，只增不改，**前端不用改**，细节见 [认证与错误·版本和安全响应头](../../api/00-约定/02-认证与错误.md#版本和安全响应头)：

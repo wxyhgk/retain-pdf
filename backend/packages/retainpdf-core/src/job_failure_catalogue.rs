@@ -152,6 +152,12 @@ const CATALOGUE: &[(&str, FailureRecovery)] = &[
         hint: "翻译模型不可用：模型名写错、这个 API Key 没开通该模型，或接口地址写错。OCR 产物完好，\
                在设置里改好模型（或开通、核对接口地址）后从翻译阶段续跑，不会重复调用 OCR。",
     }),
+    // 所在地区不支持（2026-11-24 从 auth_failed 分出来）：同样只在翻译阶段产生，换 Key 没用
+    ("upstream_region_unsupported", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "翻译服务商不向当前网络出口所在的地区提供服务，换 API Key 没用。OCR 产物完好，\
+               换网络（出口地区）或在设置里换一个翻译服务商后从翻译阶段续跑，不会重复调用 OCR。",
+    }),
     ("translation_request_ambiguous", FailureRecovery {
         resume_from: Some(ResumeFrom::Translation),
         hint: "重启时有已发出但结果不明的翻译请求，已暂停自动续跑。确认可接受重复请求（可能重复计费）后，从翻译阶段重试。",
@@ -354,6 +360,14 @@ mod tests {
         let recovery = recovery_for_stage("upstream_model_unavailable", "translation");
         assert_eq!(recovery.resume_from, Some(ResumeFrom::Translation));
         assert!(recovery.hint.contains("模型"));
+    }
+
+    /// 地区不支持也只在翻译阶段产生，从翻译续跑；提示里不能叫用户换 Key。
+    #[test]
+    fn region_unsupported_resumes_at_translation_without_suggesting_a_new_key() {
+        let recovery = recovery_for_stage("upstream_region_unsupported", "translation");
+        assert_eq!(recovery.resume_from, Some(ResumeFrom::Translation));
+        assert!(recovery.hint.contains("换 API Key 没用"));
     }
 
     /// 目录里不能有重复键——重复的话 `find` 只会命中第一条，后面那条静默失效。

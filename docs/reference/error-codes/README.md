@@ -28,7 +28,7 @@
 |---|---|---|---|---|---|---|
 | `auth` | 鉴权失败 | Key / Token 写错、过期、被吊销，或者没带鉴权头。 | 否 | `auth_failed` | 在设置里检查并更新这家服务商的 API Key / Token，再重试。 |  |
 | `permission` | 没有权限 | Key 是对的，但没有权限用这个模型、接口或业务空间（含套餐不包含该模型、Key 类型不对）。 | 否 | `auth_failed` | 换一个有权限的 Key，或去服务商控制台开通这个模型 / 接口。 | 智谱 1311、1315 这类「套餐不含该模型」走 HTTP 429，翻译侧按业务码第一次就停、整份翻译停下，归 auth_failed（2026-11-23）。GLM-OCR 那边同样的码借用 upstream_quota_exhausted。 |
-| `region` | 地区不支持 | 从服务商不支持的国家或地区访问。 | 否 | `auth_failed` | 所在地区不能直接用这家服务；换网络环境，或换一家服务商。 | 仍归 auth_failed，但 summary / suggestion 单独说「所在地区不支持，换网络或换服务商，换 Key 没用」（2026-11-23）；恢复提示仍是 auth_failed 的通用说法。 |
+| `region` | 地区不支持 | 从服务商不支持的国家或地区访问。 | 否 | `upstream_region_unsupported` | 所在地区不能直接用这家服务；换网络环境，或换一家服务商。 | 失败码 upstream_region_unsupported（2026-11-24 起；以前归 auth_failed，恢复提示是 auth_failed 的通用说法），分类照旧 auth；summary / suggestion 说「所在地区不支持，换网络或换服务商，换 Key 没用」，恢复提示同样说法。 |
 | `billing` | 欠费或余额不足 | 账户余额用完、欠费、没有资源包，或套餐已到期。 | 否 | `upstream_quota_exhausted` | 去服务商控制台充值或续费；充值前重试会同样失败。 | HTTP 402、GLM-OCR 的智谱业务码，以及翻译请求层按业务码认出的欠费（OpenAI、智谱、百炼走 429，Anthropic 走 400，百炼 Arrearage 走 400 / 403）都落到这里：第一次就停、整份翻译停下（2026-11-23）。 |
 | `quota` | 额度或用量上限 | 到了某个时间窗的用量上限、自设或平台的花费上限、当日页数额度，要等重置或调高上限。 | 否 | `upstream_quota_exhausted` | 等额度重置（看服务商给的重置时间）或在控制台调高上限；几分钟内重试没用。 | 翻译侧的花费上限、时段额度（OpenAI spend limit、Anthropic 消费封顶、智谱 1308 等、百炼预算和 Coding Plan、OpenCode 预算）、PaddleOCR 12001、MinerU -60018/-60019 都归 upstream_quota_exhausted（2026-11-23）。百炼 usage allocated quota exceeded 也按额度停（2026-11-23）。 |
 | `rate_limit` | 限流 | 请求太快、并发太多，或流量涨得太快，触发了速率限制。 | 是 | `upstream_rate_limited`、`rate_limited` | 稍后重试，或在设置里降低并发数。 | Python 流水线叫 upstream_rate_limited，Rust 兜底叫 rate_limited，两个是同一件事。 |
