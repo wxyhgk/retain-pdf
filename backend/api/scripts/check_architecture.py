@@ -177,6 +177,10 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     Path("src/routes/health.rs"): (
         "crate::services::platform",
     ),
+    # GET /metrics：运行时数和 /health 用同一份 build_health_view。
+    Path("src/routes/metrics.rs"): (
+        "crate::services::platform",
+    ),
     Path("src/routes/credentials.rs"): (
         "crate::services::providers",
     ),

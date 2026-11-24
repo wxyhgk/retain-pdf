@@ -31,6 +31,10 @@ rust_api 按路由模板给每个接口计数（`backend/api/src/app/route_usage
 
 HEAD 请求：axum 对 GET 路由自动接 HEAD，用量里记成 `HEAD /路径`。报表把它并入同路径的 GET 计数，
 不当作"不在登记表里"。
+
+出错和慢（2026-11-24 起）：用量文件多了 `route_stats`（每个接口的状态码分类 `status`、耗时分桶 `latency_ms`，
+见 route_usage.rs），报表列出有 5xx 或有超过 1 秒的请求的接口。以前的文件没有这一项，这一节是空的。
+实时看错误率、P95 用 `GET /metrics` 接 Prometheus（docs/api/08-调试诊断/04-运维指标.md）。
 """
 
 from __future__ import annotations
@@ -62,6 +66,8 @@ ENDPOINT_RE = re.compile(
     r"(?:owner\((?P<owner>\w+)\))?\s*"
     r'(?:old\s+"(?P<old>[^"]*)")?\s*;'
 )
+# 超过 1 秒的耗时分桶（route_usage.rs 的 LATENCY_BUCKET_KEYS）
+SLOW_BUCKETS = ("le_5000", "gt_5000")
 # 表头：    owner: jobs;
 TABLE_OWNER_RE = re.compile(r"^\s*owner:\s*(?P<owner>\w+)\s*;", re.MULTILINE)
 
@@ -133,11 +139,20 @@ def discover_usage_files(repo_root: Path) -> list[Path]:
 def load_usage(path: Path) -> dict:
     data = json.loads(path.read_text(encoding="utf-8"))
     routes = data.get("routes") or {}
+    route_stats = data.get("route_stats") or {}
     return {
         "path": path,
         "since": data.get("since", ""),
         "updated_at": data.get("updated_at", ""),
         "routes": {str(key): int(value) for key, value in routes.items()},
+        # 2026-11-24 起才有；以前的文件当空的
+        "route_stats": {
+            str(key): {
+                "status": {str(k): int(v) for k, v in (value.get("status") or {}).items()},
+                "latency_ms": {str(k): int(v) for k, v in (value.get("latency_ms") or {}).items()},
+            }
+            for key, value in route_stats.items()
+        },
     }
 
 
@@ -224,6 +239,23 @@ def build_report(usages: list[dict], labels: list[str], registry: list[Endpoint]
         elif endpoint.users not in (["none"], ["multiuser"]) and entry["total"] == 0 and usages:
             declared_used_but_silent.append(entry)
 
+    # 出错和慢：各文件的 route_stats 合起来，HEAD 并入同路径的 GET
+    merged: dict[str, dict[str, int]] = {}
+    for usage in usages:
+        for key, stats in usage.get("route_stats", {}).items():
+            method, _, path = key.partition(" ")
+            if method == "HEAD" and "GET" in paths_by_method.get(path, set()):
+                key = f"GET {path}"
+            entry = merged.setdefault(key, {"requests": 0, "4xx": 0, "5xx": 0, "slow": 0})
+            entry["requests"] += usage["routes"].get(f"{method} {path}", 0)
+            entry["4xx"] += stats["status"].get("4xx", 0)
+            entry["5xx"] += stats["status"].get("5xx", 0)
+            entry["slow"] += sum(stats["latency_ms"].get(bucket, 0) for bucket in SLOW_BUCKETS)
+    errors_and_slow = sorted(
+        ({"key": key, **entry} for key, entry in merged.items() if entry["5xx"] or entry["slow"]),
+        key=lambda e: (-e["5xx"], -e["slow"], e["key"]),
+    )
+
     with_calls = sorted((e for e in old_entries if e["total"] > 0),
                         key=lambda e: (-e["total"], e["key"]))
     zero_calls = sorted((e for e in old_entries if e["total"] == 0), key=lambda e: e["key"])
@@ -248,6 +280,7 @@ def build_report(usages: list[dict], labels: list[str], registry: list[Endpoint]
         "unknown_routes": unknown_entries,
         "declared_none_but_called": sorted(declared_none_but_called, key=lambda e: (-e["total"], e["key"])),
         "declared_used_but_silent": sorted(declared_used_but_silent, key=lambda e: e["key"]),
+        "errors_and_slow": errors_and_slow,
     }
 
 
@@ -305,6 +338,14 @@ def render_text(report: dict) -> str:
         out.append("  （无）")
     for entry in report["declared_used_but_silent"]:
         out.append(f"  {entry['key']}  by({', '.join(entry['users'])})  [{entry['owner']}]")
+
+    out.append("")
+    out.append(f"== 有 5xx 或超过 1 秒的接口（{len(report['errors_and_slow'])} 个；只统计 2026-11-24 以后记下的）==")
+    if not report["errors_and_slow"]:
+        out.append("  （无）")
+    for entry in report["errors_and_slow"]:
+        out.append(f"  5xx {entry['5xx']:>5}  >1s {entry['slow']:>5}  4xx {entry['4xx']:>5}"
+                   f"  共 {entry['requests']:>7}  {entry['key']}")
     return "\n".join(out) + "\n"
 
 

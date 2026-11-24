@@ -12,6 +12,8 @@
 - 健康检查：`GET /health`
 - 就绪检查：`GET /ready`
 - 业务前缀：`/api/v1`
+- 运维指标：`GET /metrics`（2026-11-24 起，要 `X-API-Key`，多用户下只给管理员）：Prometheus 文本格式的按接口请求数、状态码分类、耗时直方图和任务数，
+  见 [运维指标](../../api/08-调试诊断/04-运维指标.md)；日志开关 `RUST_LOG_FORMAT=json`、`RUST_API_ACCESS_LOG=1` 见 [本地开发配置](local-dev.md)
 - 除下面这些外，接口都要 `X-API-Key`：`GET /health`、`GET /ready`；登录注册（`GET /api/v1/auth/session`、
   `POST /api/v1/auth/login`、`POST /api/v1/auth/register`）；模型执行器的三个内部接口
   `/api/v1/internal/model/jobs/{job_id}/requests…`（凭任务的能力令牌，见

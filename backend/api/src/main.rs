@@ -36,13 +36,42 @@ retainpdf_ingest=info,retainpdf_jobs=info,retainpdf_library=info,retainpdf_platf
 retainpdf_providers=info,\
 retainpdf_config=info,retainpdf_core=info,retainpdf_data=info,retainpdf_db=info,retainpdf_runner=info,retainpdf_proc=info";
 
+/// 日志格式：`RUST_LOG_FORMAT=json` 时每行一个 JSON 对象（`timestamp`、`level`、`target`、`fields`，
+/// 当前 span 在 `span`、外层的一串在 `spans`，请求编号就在 `request` span 的 `request_id` 里），给日志收集器用；
+/// 没设、空白、`text` 照旧是文本。别的取值在 stderr 报一次，用文本。
 fn init_tracing() {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| DEFAULT_LOG_FILTER.into()),
-        )
-        .init();
+    let filter = tracing_subscriber::EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| DEFAULT_LOG_FILTER.into());
+    match log_format(std::env::var("RUST_LOG_FORMAT").ok().as_deref()) {
+        Ok(LogFormat::Json) => tracing_subscriber::fmt()
+            .json()
+            .with_current_span(true)
+            .with_span_list(true)
+            .with_env_filter(filter)
+            .init(),
+        Ok(LogFormat::Text) => tracing_subscriber::fmt().with_env_filter(filter).init(),
+        Err(value) => {
+            eprintln!("环境变量取值不对，先用默认值：RUST_LOG_FORMAT={value:?}（要 text 或 json）");
+            tracing_subscriber::fmt().with_env_filter(filter).init();
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum LogFormat {
+    Text,
+    Json,
+}
+
+fn log_format(value: Option<&str>) -> Result<LogFormat, String> {
+    let Some(value) = value.map(str::trim).filter(|value| !value.is_empty()) else {
+        return Ok(LogFormat::Text);
+    };
+    match value.to_ascii_lowercase().as_str() {
+        "text" => Ok(LogFormat::Text),
+        "json" => Ok(LogFormat::Json),
+        _ => Err(value.to_string()),
+    }
 }
 
 /// Resolve process termination to the graceful shutdown path so supervised
@@ -77,7 +106,16 @@ async fn shutdown_signal() {
 
 #[cfg(test)]
 mod tests {
-    use super::DEFAULT_LOG_FILTER;
+    use super::{log_format, LogFormat, DEFAULT_LOG_FILTER};
+
+    #[test]
+    fn log_format_defaults_to_text() {
+        assert_eq!(log_format(None), Ok(LogFormat::Text));
+        assert_eq!(log_format(Some("  ")), Ok(LogFormat::Text));
+        assert_eq!(log_format(Some("text")), Ok(LogFormat::Text));
+        assert_eq!(log_format(Some("JSON")), Ok(LogFormat::Json));
+        assert_eq!(log_format(Some("yaml")), Err("yaml".to_string()));
+    }
 
     /// rust_api 依赖的每个 `retainpdf-*` 包都要在默认日志过滤里，否则它的 info 日志看不到。
     #[test]
