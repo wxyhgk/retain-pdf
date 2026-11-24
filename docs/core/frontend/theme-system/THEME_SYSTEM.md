@@ -64,6 +64,7 @@ shadcn 层继续：
 | `mojia` | accent | 墨家 · 素绢青铜 |
 | `seacliff` | accent | 海岬雾蓝 · 海石青 |
 | `night` | dark | 黛瓦夜色（`html.theme-dark`） |
+| `zhusha` | accent | 朱砂手绘：米黄纸底 · 粗墨描边 · 朱红硬阴影；第一套连形状一起换的皮肤（二次元系列，装饰包 `decor/zhusha`） |
 
 新增皮肤只需 3 步，见 **[ADDING_A_THEME.md](./ADDING_A_THEME.md)**。
 

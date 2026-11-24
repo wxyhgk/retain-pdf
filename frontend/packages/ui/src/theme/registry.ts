@@ -34,7 +34,7 @@ export const THEME_SERIES: readonly ThemeSeries[] = [
   { id: "base", label: "基础", order: 10 },
   { id: "baijia", label: "诸子百家", order: 20 },
   // 规划中：{ id: "wangchao", label: "王朝", order: 30 },
-  //         { id: "niji", label: "二次元", order: 40 },
+  { id: "niji", label: "二次元", order: 40 },
 ] as const;
 
 export type ThemeDefinition = {
@@ -105,6 +105,22 @@ export const THEME_REGISTRY: readonly ThemeDefinition[] = [
       accent: "#4c6658",
       ink: "#26221b",
       danger: "#b23b32",
+    },
+  },
+  {
+    id: "zhusha",
+    label: "朱砂手绘",
+    description: "米黄纸底 · 粗墨描边 · 朱红硬阴影",
+    group: "accent",
+    order: 40,
+    decorPack: "zhusha",
+    series: "niji",
+    preview: {
+      bg: "#f3e6cf",
+      paper: "#fdf6e8",
+      accent: "#c8372d",
+      ink: "#2a1f17",
+      danger: "#b3261e",
     },
   },
   {

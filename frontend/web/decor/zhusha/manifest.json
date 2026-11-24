@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "id": "zhusha",
+  "layers": [
+    { "type": "image", "slot": "backdrop", "src": "bg.webp", "parallax": 0.02 },
+    { "type": "image", "slot": "right-bottom-fg", "src": "character.webp", "parallax": 0.05 }
+  ]
+}

@@ -91,3 +91,18 @@ test("clickQuote 通过校验并随计划下发,非法值被拒", () => {
   assert.equal(bad.ok, false);
   assert.ok(bad.errors.some((e) => e.includes("clickQuote")));
 });
+
+test("每个注册了装饰包的皮肤：manifest 通过契约校验，引用的图都在、都不超 512KB", async () => {
+  const { THEME_REGISTRY } = await import("../../../packages/ui/src/theme/registry.ts");
+  const { statSync } = await import("node:fs");
+  const packs = THEME_REGISTRY.map((theme) => theme.decorPack).filter(Boolean);
+  assert.ok(packs.includes("zhusha"), "朱砂手绘的装饰包没登记");
+  for (const pack of packs) {
+    const result = planStage(shippedManifest(pack), { assetBase: `decor/${pack}` });
+    assert.deepEqual(result.errors, [], `${pack} 的 manifest 没过契约`);
+    for (const layer of result.plan.layers) {
+      const size = statSync(join(PROJECT_ROOT, layer.src)).size;
+      assert.ok(size <= 512 * 1024, `${layer.src} 有 ${Math.round(size / 1024)}KB，超过 512KB`);
+    }
+  }
+});
