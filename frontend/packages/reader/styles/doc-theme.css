@@ -24,6 +24,13 @@
   background: var(--reader-doc-dark-paper);
 }
 
+/* react-pdf 在页外层写死了内联 background-color: white（Page.js），重画时先把画布藏起来、画好才露出来。
+ * 缩放后新进视口的页没有旧画面顶着（PdfPageSlot 的 keepLastPaint 只管画过的页），这一下露出内联白底，深色下就是闪一下白
+ * （2026-11-24 实测 300 页缩小时 8 帧）。内联样式只能用 !important 盖。 */
+:root[data-reader-doc="dark"] .react-pdf__Page {
+  background-color: var(--reader-doc-dark-paper) !important;
+}
+
 :root[data-reader-doc="dark"] .reader-live-translation-overlay {
   --reader-overlay-paper: var(--reader-doc-dark-paper);
   --reader-overlay-ink: var(--reader-doc-dark-ink);
