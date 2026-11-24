@@ -1,4 +1,5 @@
 pub mod backup;
+pub mod books;
 pub mod compact;
 pub mod config;
 pub mod db_snapshot;

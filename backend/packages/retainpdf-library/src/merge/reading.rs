@@ -156,6 +156,39 @@ pub(crate) fn resolve_reading_target(
     Ok(ReadingTarget::Merged { job_id, merged })
 }
 
+/// 每个文档页取自哪个任务的第几个 OCR 本地页（都从 1 起）；没有任务覆盖的页是 `None`。
+///
+/// 和 [`resolve_reading_target`] 用同一份合并计划。合并目录里的页号、`item_id` 前缀已经改成了文档页号
+/// （`merge_translated_artifacts.py`），书文件夹导出要把它们换回「真正有这一页的任务」的本地页号：改译文、
+/// 全文检索的跳转都按那个任务找。
+pub(crate) fn page_owners(
+    db: &Db,
+    data_root: &Path,
+    document_id: &str,
+    source_pdf: &Path,
+    recorded_page_count: u32,
+    selection: &ReadingSelection,
+) -> Result<Vec<Option<(String, u32)>>, AppError> {
+    let jobs = db.list_jobs_for_document(document_id, 500, 0)?;
+    let sources = select_sources(document_merge_sources(&jobs, data_root), selection);
+    let page_count = book_page_count(Some(source_pdf), recorded_page_count);
+    let ranked: Vec<_> = sources.iter().map(|source| source.ranked.clone()).collect();
+    let plan = merge_plan(page_count, &ranked);
+    Ok(plan
+        .iter()
+        .enumerate()
+        .map(|(index, page)| match page {
+            PageSource::Original => None,
+            PageSource::Job { job_id, .. } => {
+                let source = sources.iter().find(|source| &source.ranked.rank.job_id == job_id)?;
+                let document_page = index as u32 + 1;
+                let local = source.inputs.ocr_page_numbers.iter().position(|page| *page == document_page)?;
+                Some((job_id.clone(), local as u32 + 1))
+            }
+        })
+        .collect())
+}
+
 fn write_sidecar_once(
     merged: &MergedTranslation,
     data_root: &Path,

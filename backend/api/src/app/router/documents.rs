@@ -46,4 +46,6 @@ crate::endpoints! {
     GET "/api/v1/documents/:document_id/jobs" => library_data::list_document_jobs_route, signed by(web);
     /// 全文检索
     GET "/api/v1/search" => library_data::search_blocks_route, signed by(web);
+    /// 把书库导出成给 AI 读的 Markdown 文件夹（`<数据目录>/books/`）；多用户版不开
+    POST "/api/v1/book-folder/export" => library_data::export_book_folder_route, closed by(cli);
 }

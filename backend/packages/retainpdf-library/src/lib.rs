@@ -5,6 +5,7 @@
 
 mod api;
 
+mod book_export;
 mod collection_workspace;
 mod collections;
 mod documents;
@@ -35,10 +36,12 @@ pub use api::{
     DocumentReadingQuery, PatchTranslationVersionInput, SetCurrentTranslationVersionInput,
     TranslationVersionView, TranslationVersionsQuery, TranslationVersionsView,
 };
+pub use book_export::export_book_folder;
 pub use media::{open_document_file, DocumentFile};
 pub use tags::{create_tag_view, delete_tag_view, list_tags_view, patch_tag_view, set_document_tags_view};
 pub use views::{
-    AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, CollectionListView,
+    AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, BookFolderExportFailure,
+    BookFolderExportInput, BookFolderExportView, CollectionListView,
     CollectionMutationResult, CreateCollectionInput, CreateDocumentMetadataSuggestionInput,
     DeleteDocumentQuery, DocumentDeleteResultView, DocumentJobRequest, DocumentListView,
     DocumentMetadataEvidenceView, DocumentMetadataSuggestionApplyView,

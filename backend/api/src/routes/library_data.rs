@@ -11,7 +11,7 @@ use serde_json::Value;
 use crate::auth::Principal;
 use crate::error::AppError;
 use crate::models::api::{
-    ApiResponse, JobFilesQuery, ApplyDocumentMetadataSuggestionInput, CreateDocumentMetadataSuggestionInput,
+    ApiResponse, BookFolderExportInput, BookFolderExportView, JobFilesQuery, ApplyDocumentMetadataSuggestionInput, CreateDocumentMetadataSuggestionInput,
     DocumentDeleteResultView, DocumentJobListView, DocumentJobRequest, DocumentListView,
     DocumentMetadataSuggestionApplyView, DocumentMetadataSuggestionListView,
     DeleteDocumentQuery, DocumentMetadataSuggestionView, DocumentRecord, JobSubmissionView,
@@ -27,7 +27,7 @@ use crate::routes::common::{
 use crate::routes::download_response::file_download_response;
 use crate::services::library::{
     apply_document_metadata_suggestion_view, create_document_metadata_suggestion_view,
-    delete_document_view, document_delete_job_ids_view, document_files, document_reading,
+    delete_document_view, document_delete_job_ids_view, document_files, document_reading, export_book_folder,
     document_translation_coverage, document_translation_versions, patch_document_translation_version,
     set_document_translation_version,
     get_document, list_document_metadata_suggestions_view, list_documents, ocr_document_view,
@@ -78,6 +78,15 @@ pub async fn get_document_reading_route(
 ) -> Result<Json<ApiResponse<DocumentReadingView>>, AppError> {
     let deps = build_library_route_deps(&state);
     Ok(ok_json(document_reading(&deps.library, &document_id, query.version).await?))
+}
+
+/// POST /api/v1/book-folder/export —— 把书库导出成给 AI 读的 Markdown 文件夹（`<数据目录>/books/`）。
+pub async fn export_book_folder_route(
+    State(state): State<AppState>,
+    ApiJson(payload): ApiJson<BookFolderExportInput>,
+) -> Result<Json<ApiResponse<BookFolderExportView>>, AppError> {
+    let deps = build_library_route_deps(&state);
+    Ok(ok_json(export_book_folder(&deps.library, payload).await?))
 }
 
 /// GET /api/v1/documents/:id/translation-versions —— 这本书的译文版本和当前版本（读输出 PDF 页数，放进阻塞线程）。

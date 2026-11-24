@@ -3,7 +3,7 @@
 # cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / none 还没有调用方）。
 # 由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
-# 112 条路径，136 个接口
+# 113 条路径，137 个接口
 GET    /api/v1/account/pages  signed  accounts  by multiuser
 GET    /api/v1/admin/invites  admin  accounts  by multiuser
 POST   /api/v1/admin/invites  admin  accounts  by multiuser
@@ -33,6 +33,7 @@ GET    /api/v1/backups  admin  platform  by web,cli
 POST   /api/v1/backups  admin  platform  by web,cli
 DELETE /api/v1/backups/:backup_id  admin  platform  by web,cli
 POST   /api/v1/backups/:backup_id/restore  admin  platform  by web,cli
+POST   /api/v1/book-folder/export  closed  library  by cli
 GET    /api/v1/collections  signed  library  by web
 POST   /api/v1/collections  signed  library  by web
 DELETE /api/v1/collections/:collection_id  signed  library  by web
