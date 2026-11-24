@@ -186,6 +186,7 @@ GET /api/v1/jobs/files-contract-job/files/output/translated.docx?download=1&wate
   content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
   content-disposition: attachment; filename="zh______layout.docx"; filename*=UTF-8''zh_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_layout.docx
   accept-ranges: bytes
+  content-security-policy: sandbox
   | 33 字节，sha256 4a1122d03508d500
 
 ## 新：Word（默认清晰度）
@@ -194,6 +195,7 @@ GET /api/v1/jobs/files-contract-job/files/output/translated.docx?download=1
   content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
   content-disposition: attachment; filename="zh______layout.docx"; filename*=UTF-8''zh_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_layout.docx
   accept-ranges: bytes
+  content-security-policy: sandbox
   | 32 字节，sha256 cbdccc2f08eafa8b
 
 ## 新：Word（dpi=150）
@@ -202,6 +204,7 @@ GET /api/v1/jobs/files-contract-job/files/output/translated.docx?download=1&dpi=
   content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document
   content-disposition: attachment; filename="zh______layout.docx"; filename*=UTF-8''zh_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_layout.docx
   accept-ranges: bytes
+  content-security-policy: sandbox
   | 32 字节，sha256 52d043cc908a95c1
 
 ## 新：原文 Markdown
@@ -210,6 +213,7 @@ GET /api/v1/jobs/files-contract-job/files/output/ocr.md
   content-type: text/markdown; charset=utf-8
   content-disposition: inline; filename="orig______ocr.md"; filename*=UTF-8''orig_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_ocr.md
   accept-ranges: bytes
+  content-security-policy: sandbox
   | 39 字节，sha256 5be549bc5513125d
 
 ## 新：原文 Markdown + 图片
@@ -218,6 +222,7 @@ GET /api/v1/jobs/files-contract-job/files/output/ocr.zip
   content-type: application/zip
   content-disposition: inline; filename="orig______markdown.zip"; filename*=UTF-8''orig_%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_markdown.zip
   accept-ranges: bytes
+  content-security-policy: sandbox
   | zip
 
 ## 新：Markdown 图片
@@ -225,6 +230,7 @@ GET /api/v1/jobs/files-contract-job/files/output/ocr/images/page-1/fig.png
   status: 200
   content-type: image/png
   accept-ranges: bytes
+  content-security-policy: sandbox
   | 8 字节，sha256 6fc1ef73e2efe0bf
 
 ## 新：全部打包
@@ -234,6 +240,7 @@ GET /api/v1/jobs/files-contract-job/files/output/all.zip?download=1
   content-disposition: attachment; filename="_____bundle.zip"; filename*=UTF-8''%E5%85%89%E8%B0%B1%E7%BB%BC%E8%BF%B0_bundle.zip
   accept-ranges: bytes
   x-job-id: files-contract-job
+  content-security-policy: sandbox
   | zip
 
 ## 新：译文第 1 页预览
@@ -242,6 +249,7 @@ GET /api/v1/jobs/files-contract-job/files/pages/1.jpg
   content-type: image/jpeg
   cache-control: private, max-age=0, must-revalidate
   accept-ranges: bytes
+  content-security-policy: sandbox
   | 20 字节，sha256 63af4870cbd5da14
 
 ## 新：中间产物 规范化文档
@@ -250,6 +258,7 @@ GET /api/v1/jobs/files-contract-job/files/internal/normalized-document.json
   content-type: application/json
   content-disposition: inline; filename="normalized-document.json"; filename*=UTF-8''normalized-document.json
   accept-ranges: bytes
+  content-security-policy: sandbox
   | {
   |   "pages": [],
   |   "schema": "document.v1"
@@ -261,6 +270,7 @@ GET /api/v1/jobs/files-contract-job/files/internal/normalization-report.json
   content-type: application/json
   content-disposition: inline; filename="normalization-report.json"; filename*=UTF-8''normalization-report.json
   accept-ranges: bytes
+  content-security-policy: sandbox
   | {
   |   "normalization": {
   |     "defaults": {
@@ -275,6 +285,7 @@ GET /api/v1/jobs/files-contract-job/files/internal/ocr-provider/result.json
   content-type: application/json
   content-disposition: inline; filename="ocr-provider-result.json"; filename*=UTF-8''ocr-provider-result.json
   accept-ranges: bytes
+  content-security-policy: sandbox
   | {
   |   "layoutParsingResults": []
   | }
@@ -285,6 +296,7 @@ GET /api/v1/jobs/files-contract-job/files/internal/pipeline-summary.json
   content-type: application/json
   content-disposition: inline; filename="pipeline-summary.json"; filename*=UTF-8''pipeline-summary.json
   accept-ranges: bytes
+  content-security-policy: sandbox
   | {
   |   "status": "ok"
   | }
@@ -350,6 +362,7 @@ GET /api/v1/documents/<doc>/files/cover.jpg
   content-type: image/jpeg
   cache-control: private, max-age=0, must-revalidate
   accept-ranges: bytes
+  content-security-policy: sandbox
   | 19 字节，sha256 d5e238020f7eb5e8
 
 ## 新：书的缩略图
@@ -358,6 +371,7 @@ GET /api/v1/documents/<doc>/files/thumbnail.jpg
   content-type: image/jpeg
   cache-control: private, max-age=0, must-revalidate
   accept-ranges: bytes
+  content-security-policy: sandbox
   | 23 字节，sha256 3209301db0cb66de
 
 ## 新：原文第 1 页预览
@@ -366,6 +380,7 @@ GET /api/v1/documents/<doc>/files/pages/1.jpg
   content-type: image/jpeg
   cache-control: private, max-age=0, must-revalidate
   accept-ranges: bytes
+  content-security-policy: sandbox
   | 25 字节，sha256 96581d3dc2db72ba
 
 ## 新报错：没有这个文件

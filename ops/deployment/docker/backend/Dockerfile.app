@@ -295,4 +295,12 @@ EXPOSE 41000 42000
 
 USER retainpdf:retainpdf
 
+# 应用版本和提交号：rust_api 运行时读，给 /health 的 version、build 和回应头 X-RetainPDF-Version
+# （backend/packages/retainpdf-platform/src/version.rs）。放在最后：每个提交的提交号都不同，
+# 放在 Rust 编译层里会让那一层每次都重编。构建工作流传 build-arg（build-docker-images.yml）。
+ARG RETAIN_PDF_VERSION=""
+ARG RETAIN_PDF_BUILD=""
+ENV RETAIN_PDF_VERSION="${RETAIN_PDF_VERSION}" \
+    RETAIN_PDF_BUILD="${RETAIN_PDF_BUILD}"
+
 ENTRYPOINT ["/entrypoint.sh"]

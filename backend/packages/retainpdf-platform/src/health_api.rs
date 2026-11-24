@@ -77,6 +77,11 @@ pub struct HealthView {
     pub jobsd: &'static str,
     pub disk: DiskSpaceView,
     pub time: String,
+    /// 应用版本（构建时注入的 `RETAIN_PDF_VERSION`，和前端 `APP_VERSION` 同一个来源）；没注入是 `0.0.0+unknown`。
+    /// 回应头 `X-RetainPDF-Version` 也是它。2026-11-24 加。
+    pub version: &'static str,
+    /// 构建的提交号（`RETAIN_PDF_BUILD`）；没注入是 `null`。2026-11-24 加。
+    pub build: Option<&'static str>,
 }
 
 #[derive(Debug, Serialize)]
@@ -121,6 +126,8 @@ pub fn build_health_view(deps: &HealthApiDeps<'_>) -> HealthView {
         jobsd: supervisor_status_label(deps.jobsd_status),
         disk: disk_space_view(deps),
         time: now_iso(),
+        version: crate::version::app_version(),
+        build: crate::version::app_build(),
     }
 }
 

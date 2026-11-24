@@ -136,6 +136,8 @@ def test_build_definitions_inject_the_requested_version_everywhere():
     前端 generate-app-version 也优先读它）。"""
     docker = workflow("build-docker-images.yml")
     assert 'echo "RETAIN_PDF_VERSION=${{ inputs.version }}"' in docker
+    # 应用镜像的提交号（/health 的 build，2026-11-24）。
+    assert 'echo "RETAIN_PDF_BUILD=${{ github.sha }}"' in docker
     assert "org.opencontainers.image.version=${{ inputs.version }}" in docker
     assert "--arg version \"$RELEASE_VERSION\"" in docker
     assert "RELEASE_VERSION: ${{ inputs.version }}" in docker
@@ -145,6 +147,9 @@ def test_build_definitions_inject_the_requested_version_everywhere():
     assert "github.ref_name" not in desktop
     assert desktop.count("RELEASE_VERSION_INPUT: ${{ inputs.version }}") == 3
     assert desktop.count("RETAIN_PDF_VERSION: ${{ steps.version.outputs.version }}") == 3
+    # rust_api 把版本、提交号编进去（2026-11-24）：三个平台在 Rust 构建前写进 GITHUB_ENV。
+    assert desktop.count("SERVER_VERSION: ${{ steps.version.outputs.version }}") == 3
+    assert desktop.count('echo "RETAIN_PDF_BUILD=${GITHUB_SHA}" >> "$GITHUB_ENV"') == 3
 
 
 # ---------------------------------------------------------------- artifacts

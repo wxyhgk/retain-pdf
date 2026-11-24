@@ -111,7 +111,16 @@ server {
     client_max_body_size 256m;
   }
 
+  # 页面（静态文件）的安全头，2026-11-24。只写在这个 location 里：nginx 的 add_header 在 location
+  # 里写了就不继承 server 级的；/api/、/health 的回应由后端自己带 nosniff、Referrer-Policy
+  # （再加一遍会重复）。frame-ancestors 'self'：页面只许被同源页面嵌（阅读器 reader.html 在主页的
+  # iframe 里），不上完整 CSP，免得挡住前端的脚本、样式、pdf.js。Referrer-Policy 用 same-origin：
+  # 点到外站（GitHub、服务商文档）不带页面地址；站内照常带（no-referrer 会让同源的非 fetch 表单
+  # POST 的 Origin 变成 null）。
   location / {
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy same-origin always;
+    add_header Content-Security-Policy "frame-ancestors 'self'" always;
     try_files $uri $uri/ /index.html;
   }
 }
