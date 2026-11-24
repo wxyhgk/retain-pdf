@@ -1,6 +1,104 @@
-/* 书架卡右上角状态徽标：完整显示，禁止省略号。（BookCard）
+/* 书架卡（BookCard）和列表行（BookListRow）的形状：外框、封面、标题、按下、悬停。
+ * 每处三层取值 var(--卡片变量, var(--shape-全局旋钮, 现在的值))，不设变量时和以前逐像素一样；变量清单在
+ * packages/ui/src/theme/shape-tokens/book-card.ts。这些样式以前是 BookCard.tsx / BookListRow.tsx 里的 Tailwind 类，
+ * 现在值照搬 Tailwind 生成的（rounded-2xl = 1rem，bg-muted = --muted-surface，text-xs = .75rem/1.375，scale-[.99] 等）。
+ * 普通规则（不在 @layer 里）比 Tailwind 工具类优先，所以搬过来的属性不能在 tsx 里再留一份。
  *
- * @owns book-card */
+ * @owns book-card, book-list-row */
+
+/* 卡片根：默认无外框、无底、无内边距（0 / transparent），所以布局和以前一样；皮肤设 --shape-edge-* 或 --card-* 才出现外框。
+ * 按下：兜底 scale(0.99)（以前是 active:scale-[0.99]）。 */
+.book-card {
+  padding: var(--card-pad, 0);
+  border: var(--card-border-width, var(--shape-edge-width, 0)) solid var(--card-border-color, var(--shape-edge-color, transparent));
+  border-radius: var(--card-radius, var(--shape-radius-surface, 0));
+  background-color: var(--card-bg, transparent);
+  box-shadow: var(--card-shadow, var(--shape-shadow-md, none));
+  transition-property: transform, translate, scale, rotate, box-shadow;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-out);
+}
+
+.book-card:active {
+  transform: var(--card-press-transform, var(--shape-press-transform, scale(0.99)));
+  box-shadow: var(--card-press-shadow, var(--shape-press-shadow, var(--card-shadow, var(--shape-shadow-md, none))));
+}
+
+/* 封面区。box-shadow 里先放 Tailwind 的两个 ring 变量：批量选中时 tsx 仍挂 ring-2 ring-foreground ring-offset-2，
+ * 没挂时这两个变量是 0 0 transparent，和以前 Tailwind 自己拼出来的一样。皮肤想去掉封面阴影，写 0 0 transparent 而不是 none
+ * （none 放进逗号列表里无效，批量选中的环会丢）。 */
+.book-card-cover {
+  width: calc(100% - 2 * var(--card-cover-inset, 0px));
+  margin: var(--card-cover-inset, 0px);
+  border: var(--card-cover-border-width, 0) solid var(--card-cover-border-color, transparent);
+  border-radius: var(--card-cover-radius, var(--shape-radius-surface, 1rem));
+  background-color: var(--card-cover-bg, color-mix(in oklab, var(--muted-surface) 40%, transparent));
+  box-shadow:
+    var(--tw-ring-offset-shadow, 0 0 transparent),
+    var(--tw-ring-shadow, 0 0 transparent),
+    var(--card-cover-shadow, 0 2px 16px color-mix(in srgb, var(--shadow-color) 7%, transparent));
+  transition:
+    transform 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out);
+}
+
+/* 悬停/聚焦上移 + 加深阴影；批量模式不动（is-batch-mode）。悬停只在支持 hover 的设备上生效，和以前的 group-hover 一样。 */
+@media (hover: hover) {
+  .book-card:hover .book-card-cover:not(.is-batch-mode) {
+    translate: var(--card-hover-translate, 0 -0.125rem);
+    box-shadow: var(--card-cover-hover-shadow, 0 8px 28px color-mix(in srgb, var(--shadow-color) 12%, transparent));
+  }
+}
+
+.book-card:focus-within .book-card-cover:not(.is-batch-mode) {
+  translate: var(--card-hover-translate, 0 -0.125rem);
+  box-shadow: var(--card-cover-hover-shadow, 0 8px 28px color-mix(in srgb, var(--shadow-color) 12%, transparent));
+}
+
+/* 标题区 */
+.book-card-body {
+  margin-top: var(--card-body-gap, 0.5rem);
+  padding: var(--card-body-pad, 0);
+}
+
+.book-card-title {
+  font-size: var(--card-title-size, 0.75rem);
+  font-weight: var(--card-title-weight, var(--shape-heading-weight, 600));
+  line-height: var(--card-title-leading, 1.375);
+}
+
+.book-card-meta {
+  font-size: var(--card-meta-size, 10px);
+}
+
+/* 列表行：外框、圆角、阴影、悬停底色、按下。圆角兜底 1rem（以前的 rounded-2xl）。 */
+.book-list-row {
+  border: var(--listrow-border-width, var(--shape-edge-width, 0)) solid var(--listrow-border-color, var(--shape-edge-color, transparent));
+  border-radius: var(--listrow-radius, var(--shape-radius-surface, 1rem));
+  background-color: var(--listrow-bg, transparent);
+  box-shadow: var(--listrow-shadow, var(--shape-shadow-sm, 0 1px 0 color-mix(in srgb, var(--shadow-color) 4%, transparent)));
+}
+
+@media (hover: hover) {
+  .book-list-row:hover {
+    background-color: var(--listrow-hover-bg, color-mix(in oklab, var(--muted-surface) 45%, transparent));
+  }
+}
+
+.book-list-row:active {
+  transform: var(--listrow-press-transform, var(--shape-press-transform, scale(0.99)));
+  box-shadow: var(--listrow-press-shadow, var(--shape-press-shadow, var(--listrow-shadow, var(--shape-shadow-sm, 0 1px 0 color-mix(in srgb, var(--shadow-color) 4%, transparent)))));
+}
+
+/* 列表行左侧的小封面（以前的 rounded-xl = calc(var(--radius) + 4px)、bg-paper）。ring 变量同上。 */
+.book-list-row-cover {
+  border-radius: var(--listrow-cover-radius, var(--shape-radius-surface, calc(var(--radius) + 4px)));
+  background-color: var(--listrow-cover-bg, var(--paper));
+  box-shadow:
+    var(--tw-ring-offset-shadow, 0 0 transparent),
+    var(--tw-ring-shadow, 0 0 transparent),
+    var(--listrow-cover-shadow, 0 2px 10px color-mix(in srgb, var(--shadow-color) 6%, transparent));
+}
 
 /* 书架卡右上角徽标：完整显示「已翻译/馆藏/失败」，禁止省略号 */
 .book-card-status-badge {

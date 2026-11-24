@@ -115,8 +115,8 @@
   max-height: 190px;
   margin: -4px 0 10px;
   padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
+  border: var(--reader-float-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-float-edge-color, var(--shape-edge-color, var(--line)));
+  border-radius: var(--reader-float-radius, var(--shape-radius-surface, 9px));
   overflow-y: auto;
   background: color-mix(in srgb, var(--paper) 96%, transparent);
 }

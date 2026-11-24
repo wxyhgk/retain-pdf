@@ -30,9 +30,9 @@
      以前只给右边留（左 72px、右 300px），页签相对「除去托盘的那块」居中，1440px 下
      往左偏了 114px。托盘收窄（下载收成一颗按钮）之后，两边对称留位放得下。 */
   padding-inline: var(--reader-tray-width, 200px);
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-bottom: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
   background: color-mix(in srgb, var(--paper) 94%, transparent);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--paper) 72%, transparent);
+  box-shadow: var(--reader-chrome-bar-shadow, 0 1px 0 color-mix(in srgb, var(--paper) 72%, transparent));
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -51,8 +51,8 @@
   align-items: center;
   gap: 3px;
   padding: 4px;
-  border: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
-  border-radius: 999px;
+  border: var(--reader-tab-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-tab-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 7%, transparent)));
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
   background: color-mix(in srgb, var(--ink) 3%, transparent);
 }
 
@@ -110,11 +110,11 @@
   gap: 7px;
   min-height: 34px;
   padding: 0 11px;
-  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
-  border-radius: 999px;
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 9%, transparent)));
+  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, 999px));
   color: color-mix(in srgb, var(--ink) 58%, var(--muted));
   background: color-mix(in srgb, var(--paper) 88%, transparent);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--shadow-color) 7%, transparent);
+  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 8px 24px color-mix(in srgb, var(--shadow-color) 7%, transparent)));
   font: inherit;
   font-size: 11.5px;
   font-weight: 650;
@@ -147,7 +147,8 @@
 }
 
 .reader-live-translation-toggle:active {
-  transform: scale(0.97);
+  transform: var(--reader-chrome-press-transform, var(--shape-press-transform, scale(0.97)));
+  box-shadow: var(--reader-chrome-press-shadow, var(--shape-press-shadow, 0 8px 24px color-mix(in srgb, var(--shadow-color) 7%, transparent)));
 }
 
 @keyframes reader-live-translation-pulse {
@@ -179,8 +180,8 @@
   min-width: 34px;
   min-height: 30px;
   padding: 0 11px 0 9px;
-  border: 0;
-  border-radius: 999px;
+  border: var(--reader-tab-edge-width, 0) solid var(--reader-tab-edge-color, transparent);
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
   background: transparent;
   color: color-mix(in srgb, var(--ink) 62%, var(--muted));
   font: inherit;
@@ -222,11 +223,11 @@
 .reader-workspace-tab.is-active {
   background: var(--ink);
   color: var(--paper);
-  box-shadow: 0 2px 7px color-mix(in srgb, var(--ink) 16%, transparent);
+  box-shadow: var(--reader-tab-active-shadow, var(--shape-shadow-sm, 0 2px 7px color-mix(in srgb, var(--ink) 16%, transparent)));
 }
 
 .reader-workspace-tab:active:not(:disabled) {
-  transform: scale(0.97);
+  transform: var(--reader-tab-press-transform, var(--shape-press-transform, scale(0.97)));
 }
 
 .reader-workspace-tab:disabled {
@@ -273,11 +274,11 @@
   gap: 5px;
   min-height: 36px;
   padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  border-radius: 999px;
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, 999px));
   color: color-mix(in srgb, var(--ink) 70%, var(--muted));
   background: color-mix(in srgb, var(--paper) 88%, transparent);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent);
+  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent)));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   font-size: 12px;
@@ -316,10 +317,10 @@
   gap: 2px;
   min-width: 200px;
   padding: 5px;
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  border-radius: 14px;
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: var(--reader-float-radius, var(--shape-radius-surface, 14px));
   background: var(--paper);
-  box-shadow: 0 14px 34px color-mix(in srgb, var(--shadow-color) 16%, transparent);
+  box-shadow: var(--reader-float-card-shadow, var(--shape-shadow-md, 0 14px 34px color-mix(in srgb, var(--shadow-color) 16%, transparent)));
 }
 
 .reader-download-action {
@@ -417,10 +418,10 @@
   min-height: 36px;
   min-width: 36px;
   padding: 0 12px 0 10px;
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  border-radius: 999px;
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, 999px));
   background: color-mix(in srgb, var(--paper) 88%, transparent);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent);
+  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent)));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   color: var(--ink, var(--ink));
@@ -434,12 +435,13 @@
 .reader-close-home-btn:hover,
 .reader-panel-toggle:hover {
   background: var(--paper);
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--shadow-color) 14%, transparent);
+  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 12px 30px color-mix(in srgb, var(--shadow-color) 14%, transparent)));
 }
 
 .reader-close-home-btn:active,
 .reader-panel-toggle:active {
-  transform: scale(0.97);
+  transform: var(--reader-chrome-press-transform, var(--shape-press-transform, scale(0.97)));
+  box-shadow: var(--reader-chrome-press-shadow, var(--shape-press-shadow, 0 12px 30px color-mix(in srgb, var(--shadow-color) 14%, transparent)));
 }
 
 /* 宽屏：图标 + 名字（「Markdown」）；窄屏（≤ 720px）名字收掉，只剩 36px 的圆钮。 */
@@ -543,8 +545,8 @@
 .reader-chrome-tray {
   gap: 2px;
   padding: 3px;
-  border: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
-  border-radius: var(--ui-radius-pill, 999px);
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 7%, transparent)));
+  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, var(--ui-radius-pill, 999px)));
   background: color-mix(in srgb, var(--paper) 92%, var(--ink) 3%);
 }
 
@@ -552,7 +554,7 @@
 .reader-chrome-tray .reader-panel-toggle,
 .reader-chrome-tray .reader-download-trigger {
   min-height: 30px;
-  border-color: transparent;
+  border: 1px solid transparent;
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;

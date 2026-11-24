@@ -25,28 +25,29 @@
   height: 46px;
   padding: 0;
   border: 0;
-  border-radius: var(--ui-radius-pill, 999px);
+  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, var(--ui-radius-pill, 999px)));
   background: var(--ink);
   color: var(--paper);
-  box-shadow: 0 10px 26px color-mix(in srgb, var(--shadow-color, var(--ink)) 26%, transparent);
+  box-shadow: var(--reader-float-shadow, var(--shape-shadow-md, 0 10px 26px color-mix(in srgb, var(--shadow-color, var(--ink)) 26%, transparent)));
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 160ms ease;
 }
 
 .reader-toolball-ball:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 30%, transparent);
+  box-shadow: var(--reader-float-shadow, var(--shape-shadow-md, 0 14px 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 30%, transparent)));
 }
 
 .reader-toolball-ball:active {
-  transform: scale(0.95);
+  transform: var(--reader-float-press-transform, var(--shape-press-transform, scale(0.95)));
+  box-shadow: var(--reader-float-press-shadow, var(--shape-press-shadow, var(--reader-float-shadow, var(--shape-shadow-md, 0 14px 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 30%, transparent)))));
 }
 
 /* 有面板开着、或在对比：小球外面一圈强调色，提醒「这里有东西开着」。 */
 .reader-toolball-ball[data-active="true"] {
   box-shadow:
     0 0 0 3px color-mix(in srgb, var(--accent) 35%, var(--paper)),
-    0 10px 26px color-mix(in srgb, var(--shadow-color, var(--ink)) 26%, transparent);
+    var(--reader-float-shadow, var(--shape-shadow-md, 0 10px 26px color-mix(in srgb, var(--shadow-color, var(--ink)) 26%, transparent)));
 }
 
 .reader-toolball-stack {
@@ -66,11 +67,11 @@
   height: 40px;
   min-height: 40px;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
-  border-radius: var(--ui-radius-pill, 999px);
+  border: var(--reader-float-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-float-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 9%, transparent)));
+  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, var(--ui-radius-pill, 999px)));
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent);
+  box-shadow: var(--reader-float-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent)));
   cursor: pointer;
 }
 
@@ -85,6 +86,11 @@
 .reader-toolball-item:hover,
 .reader-toolball-stack .reader-panel-toggle:hover:not([aria-pressed="true"]) {
   background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+}
+
+.reader-toolball-item:active {
+  transform: var(--reader-float-press-transform, var(--shape-press-transform, none));
+  box-shadow: var(--reader-float-press-shadow, var(--shape-press-shadow, var(--reader-float-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent)))));
 }
 
 .reader-toolball-item[aria-pressed="true"] {

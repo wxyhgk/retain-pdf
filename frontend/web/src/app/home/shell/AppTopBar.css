@@ -78,12 +78,13 @@
    会隐形)——白底 + 细描边 + 轻阴影,成为顶栏中央唯一的浮起小控件。 */
 @utility library-top-tabs {
   display: inline-flex;
-  gap: 3px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color) 6%, transparent);
+  gap: var(--topbar-tabs-gap, 3px);
+  padding: var(--topbar-tabs-padding, 4px);
+  border-radius: var(--topbar-tabs-radius, var(--shape-radius-control, 999px));
+  background: var(--topbar-tabs-bg, var(--paper));
+  border: var(--topbar-tabs-border-width, var(--shape-edge-width, 1px)) solid
+    var(--topbar-tabs-border-color, var(--shape-edge-color, var(--line)));
+  box-shadow: var(--topbar-tabs-shadow, var(--shape-shadow-sm, 0 1px 3px color-mix(in srgb, var(--shadow-color) 6%, transparent)));
 }
 
 /* 选中态用和"添加"按钮同一套实底深色(--ink)强对比。图标化:icon + 短文字
@@ -93,9 +94,14 @@
   align-items: center;
   gap: 6px;
   appearance: none;
-  border: 0;
+  /* 描边默认 0（现在没有）；皮肤设了 --shape-edge-width 或 --topbar-tab-border-width 才出现 */
+  border: var(--topbar-tab-border-width, var(--shape-edge-width, 0)) solid
+    var(--topbar-tab-border-color, var(--shape-edge-color, var(--line)));
   background: transparent;
-  border-radius: var(--btn-radius);
+  border-radius: var(--topbar-tab-radius, var(--shape-radius-control, var(--btn-radius)));
+  /* 阴影用私有变量存一份，按下时没设按下阴影就保持原样 */
+  --library-top-tab-shadow: var(--topbar-tab-shadow, var(--shape-shadow-sm, none));
+  box-shadow: var(--library-top-tab-shadow);
   /* 四 tab（图书馆/合集/收藏/AI）略收紧水平 padding，窄屏不易挤换行 */
   padding: 7px 10px;
   font-size: 13px;
@@ -112,7 +118,7 @@
       display: none;
     }
   }
-  font-weight: 600;
+  font-weight: var(--topbar-tab-weight, 600);
   color: var(--muted);
   cursor: pointer;
   transition: transform 0.12s var(--ease-out), background-color 0.15s ease, color 0.15s ease;
@@ -124,8 +130,10 @@
   }
 
   &.is-active {
-    background: var(--btn-primary-bg);
-    color: var(--btn-primary-fg);
+    background: var(--topbar-tab-active-bg, var(--btn-primary-bg));
+    color: var(--topbar-tab-active-fg, var(--btn-primary-fg));
+    border-color: var(--topbar-tab-active-border-color, var(--topbar-tab-border-color, var(--shape-edge-color, var(--line))));
+    --library-top-tab-shadow: var(--topbar-tab-active-shadow, var(--topbar-tab-shadow, var(--shape-shadow-sm, none)));
   }
 
   &:hover:not(.is-active) {
@@ -134,7 +142,8 @@
   }
 
   &:active {
-    transform: scale(0.96);
+    transform: var(--topbar-tab-press-transform, var(--shape-press-transform, scale(0.96)));
+    box-shadow: var(--topbar-tab-press-shadow, var(--shape-press-shadow, var(--library-top-tab-shadow)));
   }
 }
 

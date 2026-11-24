@@ -28,7 +28,7 @@
 
 @utility download-toast-title {
   font-size: 13px;
-  font-weight: 700;
+  font-weight: var(--toast-title-weight, var(--shape-heading-weight, 700));
   color: var(--ink);
   line-height: 1.3;
 }
@@ -44,7 +44,7 @@
 @utility download-toast-track {
   height: 8px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--toast-track-radius, 999px);
   background: var(--line);
 }
 

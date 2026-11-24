@@ -13,7 +13,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid transparent;
+  border: var(--btn-border-width, var(--shape-edge-width, 1px)) solid transparent;
   border-radius: var(--btn-radius);
   font: inherit;
   font-weight: 600;
@@ -21,7 +21,8 @@
   white-space: nowrap;
   text-decoration: none;
   cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, filter 120ms ease;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, filter 120ms ease,
+    box-shadow 120ms ease, transform 120ms ease;
 }
 
 .ui-button[data-size="sm"] {
@@ -78,6 +79,7 @@
 
 .ui-button[data-variant="primary"],
 .ui-icon-button[data-variant="primary"] {
+  border-color: var(--btn-primary-border, var(--shape-edge-color, transparent));
   background: var(--btn-primary-bg);
   color: var(--btn-primary-fg);
 }
@@ -89,19 +91,20 @@
 
 .ui-button[data-variant="secondary"],
 .ui-icon-button[data-variant="secondary"] {
-  border-color: var(--line);
+  border-color: var(--btn-secondary-border, var(--shape-edge-color, var(--line)));
   background: var(--paper);
   color: var(--ink);
 }
 
 .ui-button[data-variant="secondary"]:hover:not(:disabled),
 .ui-icon-button[data-variant="secondary"]:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-color: var(--btn-secondary-hover-border, var(--shape-edge-color, color-mix(in srgb, var(--accent) 28%, var(--line))));
   color: var(--accent);
 }
 
 .ui-button[data-variant="ghost"],
 .ui-icon-button[data-variant="ghost"] {
+  border-width: 1px;
   background: transparent;
   color: inherit;
 }
@@ -114,14 +117,29 @@
 /* 红色只用于删除和出错：淡红底、红字，深色皮肤下也看得清。 */
 .ui-button[data-variant="danger"],
 .ui-icon-button[data-variant="danger"] {
-  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+  border-color: var(--btn-danger-border, var(--shape-edge-color, color-mix(in srgb, var(--danger) 30%, var(--line))));
   background: var(--danger-weak);
   color: var(--danger);
 }
 
 .ui-button[data-variant="danger"]:hover:not(:disabled),
 .ui-icon-button[data-variant="danger"]:hover:not(:disabled) {
-  border-color: var(--danger);
+  border-color: var(--btn-danger-hover-border, var(--shape-edge-color, var(--danger)));
+}
+
+/* 实体变体（主要、次要、危险）：阴影和按下效果；幽灵按钮不吃。
+ * 不设变量时：没有阴影、不位移，和以前一样。禁用态不位移（:not(:disabled)）。 */
+:is(.ui-button, .ui-icon-button):is([data-variant="primary"], [data-variant="secondary"], [data-variant="danger"]) {
+  box-shadow: var(--btn-shadow, var(--shape-shadow-sm, none));
+}
+
+:is(.ui-button, .ui-icon-button):is([data-variant="primary"], [data-variant="secondary"], [data-variant="danger"]):hover:not(:disabled) {
+  box-shadow: var(--btn-hover-shadow, var(--btn-shadow, var(--shape-shadow-sm, none)));
+}
+
+:is(.ui-button, .ui-icon-button):is([data-variant="primary"], [data-variant="secondary"], [data-variant="danger"]):active:not(:disabled) {
+  transform: var(--btn-press-transform, var(--shape-press-transform, none));
+  box-shadow: var(--btn-press-shadow, var(--shape-press-shadow, var(--btn-shadow, var(--shape-shadow-sm, none))));
 }
 
 /* —— 状态 —— */

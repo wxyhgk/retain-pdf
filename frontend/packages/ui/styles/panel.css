@@ -8,9 +8,10 @@
   gap: 10px;
   min-width: 0;
   padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius-lg);
+  border: var(--panel-border-width, var(--shape-edge-width, 1px)) solid var(--panel-border-color, var(--shape-edge-color, var(--line)));
+  border-radius: var(--panel-surface-radius, var(--shape-radius-surface, var(--ui-radius-lg)));
   background: var(--paper);
+  box-shadow: var(--panel-shadow, var(--shape-shadow-md, none));
 }
 
 .ui-panel-head {

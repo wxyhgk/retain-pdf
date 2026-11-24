@@ -146,7 +146,7 @@ function BookCardImpl({
   return (
     <div
       ref={cardRef}
-      className="book-card recent-job-item group text-left transition-transform duration-150 ease-[var(--ease-out)] active:scale-[0.99]"
+      className="book-card recent-job-item group text-left"
       role="button"
       tabIndex={0}
       data-book-card="true"
@@ -160,11 +160,8 @@ function BookCardImpl({
     >
       <div
         className={cn(
-          "relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-muted/40 shadow-[0_2px_16px_color-mix(in_srgb,var(--shadow-color)_7%,transparent)] transition-[transform,box-shadow] duration-200 ease-[var(--ease-out)]",
-          !batchMode &&
-            "group-hover:-translate-y-0.5 group-hover:shadow-[0_8px_28px_color-mix(in_srgb,var(--shadow-color)_12%,transparent)]",
-          !batchMode &&
-            "group-focus-within:-translate-y-0.5 group-focus-within:shadow-[0_8px_28px_color-mix(in_srgb,var(--shadow-color)_12%,transparent)]",
+          "book-card-cover relative aspect-[3/4] overflow-hidden",
+          batchMode && "is-batch-mode",
           batchMode && selected && "ring-2 ring-foreground ring-offset-2",
         )}
       >
@@ -182,14 +179,14 @@ function BookCardImpl({
         />
       </div>
 
-      <div className="mt-2 flex flex-col gap-0.5">
+      <div className="book-card-body flex flex-col gap-0.5">
         <h3
-          className="book-card-title recent-job-id line-clamp-2 text-xs font-semibold leading-snug text-foreground transition-colors group-hover:text-primary"
+          className="book-card-title recent-job-id line-clamp-2 text-foreground transition-colors group-hover:text-primary"
           title={fullTitle}
         >
           {title}
         </h3>
-        <p className="book-card-meta recent-job-real-id line-clamp-1 text-[10px] text-muted-foreground">
+        <p className="book-card-meta recent-job-real-id line-clamp-1 text-muted-foreground">
           {pageCount} 页 · {updatedAt}
         </p>
       </div>

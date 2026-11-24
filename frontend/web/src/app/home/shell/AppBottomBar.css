@@ -15,14 +15,15 @@
   transform: translateX(-50%);
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--bottombar-gap, 8px);
   max-width: calc(100vw - 24px);
   max-width: calc(100dvw - 24px);
-  padding: 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 82%, transparent);
-  border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
-  box-shadow: 0 18px 46px color-mix(in srgb, var(--ink) 12%, transparent);
+  padding: var(--bottombar-padding, 8px);
+  border-radius: var(--bottombar-radius, var(--shape-radius-control, 999px));
+  background: var(--bottombar-bg, color-mix(in srgb, var(--paper) 82%, transparent));
+  border: var(--bottombar-border-width, var(--shape-edge-width, 1px)) solid
+    var(--bottombar-border-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 88%, transparent)));
+  box-shadow: var(--bottombar-shadow, var(--shape-shadow-md, 0 18px 46px color-mix(in srgb, var(--ink) 12%, transparent)));
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   transition: opacity 0.18s var(--ease-out), transform 0.18s var(--ease-out);
@@ -36,8 +37,8 @@
   }
 
   @media (max-width: 767px) {
-    gap: 6px;
-    padding: 7px;
+    gap: var(--bottombar-gap, 6px);
+    padding: var(--bottombar-padding, 7px);
   }
 }
 
@@ -57,13 +58,16 @@
     height: 40px;
     padding: 0 16px;
     border: 0;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    border-radius: var(--bottombar-search-radius, var(--shape-radius-control, 999px));
+    background: var(--bottombar-search-bg, color-mix(in srgb, var(--bg) 86%, transparent));
     color: var(--ink);
     font-size: 13px;
     font-weight: 500;
     outline: none;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent);
+    /* 描边用内阴影画，粗细和颜色照样吃全局描边旋钮 */
+    box-shadow: inset 0 0 0
+      var(--bottombar-search-border-width, var(--shape-edge-width, 1px))
+      var(--bottombar-search-border-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 70%, transparent)));
     transition: background-color 0.16s ease, box-shadow 0.16s ease;
   }
 
@@ -73,7 +77,9 @@
 
   & input:focus {
     background: color-mix(in srgb, var(--paper) 98%, transparent);
-    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 70%, transparent);
+    box-shadow: inset 0 0 0
+      var(--bottombar-search-focus-width, 1.5px)
+      var(--bottombar-search-focus-color, color-mix(in srgb, var(--accent) 70%, transparent));
   }
 
   @media (max-width: 767px) {
@@ -93,10 +99,14 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: var(--btn-radius);
-  border: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--ink);
+  border-radius: var(--bottombar-icon-radius, var(--shape-radius-control, var(--btn-radius)));
+  border: var(--bottombar-icon-border-width, var(--shape-edge-width, 1px)) solid
+    var(--bottombar-icon-border-color, var(--shape-edge-color, var(--line)));
+  background: var(--bottombar-icon-bg, var(--paper));
+  color: var(--bottombar-icon-fg, var(--ink));
+  /* 阴影存一份私有变量，按下时没设按下阴影就保持原样 */
+  --library-bottom-icon-shadow: var(--bottombar-icon-shadow, var(--shape-shadow-sm, none));
+  box-shadow: var(--library-bottom-icon-shadow);
   cursor: pointer;
   transition: transform 0.12s var(--ease-out), background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
 
@@ -112,7 +122,8 @@
   }
 
   &:active {
-    transform: scale(0.94);
+    transform: var(--bottombar-icon-press-transform, var(--shape-press-transform, scale(0.94)));
+    box-shadow: var(--bottombar-icon-press-shadow, var(--shape-press-shadow, var(--library-bottom-icon-shadow)));
   }
 
   &:focus-visible {
@@ -121,18 +132,18 @@
   }
 
   &.primary {
-    border-color: var(--btn-primary-bg);
-    background: var(--btn-primary-bg);
-    color: var(--btn-primary-fg);
+    border-color: var(--bottombar-primary-border-color, var(--shape-edge-color, var(--bottombar-primary-bg, var(--btn-primary-bg))));
+    background: var(--bottombar-primary-bg, var(--btn-primary-bg));
+    color: var(--bottombar-primary-fg, var(--btn-primary-fg));
   }
 
   &.primary:hover {
-    background: var(--btn-primary-bg);
+    background: var(--bottombar-primary-bg, var(--btn-primary-bg));
     filter: brightness(1.06);
   }
 
   &.primary.is-active {
-    box-shadow: 0 0 0 3px var(--accent-weak);
+    box-shadow: var(--bottombar-primary-active-shadow, 0 0 0 3px var(--accent-weak));
   }
 }
 
@@ -146,16 +157,17 @@
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 6px;
-  padding: 6px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--paper) 82%, transparent);
-  border: 1px solid var(--line);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--shadow-color) 10%, transparent);
+  gap: var(--bottombar-gap, 6px);
+  padding: var(--bottombar-padding, 6px);
+  border-radius: var(--bottombar-radius, var(--shape-radius-control, 999px));
+  background: var(--bottombar-bg, color-mix(in srgb, var(--paper) 82%, transparent));
+  border: var(--bottombar-border-width, var(--shape-edge-width, 1px)) solid
+    var(--bottombar-border-color, var(--shape-edge-color, var(--line)));
+  box-shadow: var(--bottombar-shadow, var(--shape-shadow-md, 0 8px 24px color-mix(in srgb, var(--shadow-color) 10%, transparent)));
   backdrop-filter: blur(8px);
 
   @media (max-width: 767px) {
-    gap: 5px;
+    gap: var(--bottombar-gap, 5px);
   }
 }
 
@@ -167,10 +179,13 @@
   min-width: 48px;
   min-height: 36px;
   padding: 0 13px;
-  border: 1px solid color-mix(in srgb, color-mix(in srgb, var(--line) 85%, var(--muted)) 84%, transparent);
-  border-radius: var(--btn-radius);
-  background: color-mix(in srgb, var(--paper) 74%, transparent);
-  color: var(--ink);
+  border: var(--bottombar-icon-border-width, var(--shape-edge-width, 1px)) solid
+    var(--bottombar-icon-border-color, var(--shape-edge-color, color-mix(in srgb, color-mix(in srgb, var(--line) 85%, var(--muted)) 84%, transparent)));
+  border-radius: var(--bottombar-icon-radius, var(--shape-radius-control, var(--btn-radius)));
+  background: var(--bottombar-icon-bg, color-mix(in srgb, var(--paper) 74%, transparent));
+  color: var(--bottombar-icon-fg, var(--ink));
+  --library-bottom-action-shadow: var(--bottombar-icon-shadow, var(--shape-shadow-sm, none));
+  box-shadow: var(--library-bottom-action-shadow);
   font-size: 13px;
   font-weight: 700;
   line-height: 1;
@@ -181,7 +196,8 @@
   transition: transform 120ms var(--ease-out), background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 
   &:active {
-    transform: scale(0.97);
+    transform: var(--bottombar-icon-press-transform, var(--shape-press-transform, scale(0.97)));
+    box-shadow: var(--bottombar-icon-press-shadow, var(--shape-press-shadow, var(--library-bottom-action-shadow)));
   }
 
   & svg {
@@ -191,9 +207,9 @@
   }
 
   &.primary {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--paper);
+    border-color: var(--bottombar-action-primary-bg, var(--ink));
+    background: var(--bottombar-action-primary-bg, var(--ink));
+    color: var(--bottombar-action-primary-fg, var(--paper));
   }
 
   &:hover {
@@ -203,8 +219,8 @@
   }
 
   &.primary:hover {
-    background: var(--ink);
-    color: var(--paper);
+    background: var(--bottombar-action-primary-bg, var(--ink));
+    color: var(--bottombar-action-primary-fg, var(--paper));
   }
 
   &:focus-visible {
@@ -227,24 +243,24 @@
 
 @utility primary {
   &.library-bottom-action {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--paper);
+    border-color: var(--bottombar-action-primary-bg, var(--ink));
+    background: var(--bottombar-action-primary-bg, var(--ink));
+    color: var(--bottombar-action-primary-fg, var(--paper));
   }
 
   &.library-bottom-action:hover {
-    background: var(--ink);
-    color: var(--paper);
+    background: var(--bottombar-action-primary-bg, var(--ink));
+    color: var(--bottombar-action-primary-fg, var(--paper));
   }
 
   &.home-action-btn {
-    border-color: var(--ink);
-    background: var(--ink);
-    color: var(--paper);
+    border-color: var(--bottombar-action-primary-bg, var(--ink));
+    background: var(--bottombar-action-primary-bg, var(--ink));
+    color: var(--bottombar-action-primary-fg, var(--paper));
   }
 
   &.home-action-btn:hover {
-    background: var(--ink);
-    color: var(--paper);
+    background: var(--bottombar-action-primary-bg, var(--ink));
+    color: var(--bottombar-action-primary-fg, var(--paper));
   }
 }

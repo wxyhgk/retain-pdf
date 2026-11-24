@@ -15,8 +15,8 @@
 
 @utility recent-jobs-list {
   @apply grid w-full items-start;
-  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
-  gap: 34px 32px;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-col-min, 136px), 1fr));
+  gap: var(--grid-gap-y, 34px) var(--grid-gap-x, 32px);
 }
 
 @utility recent-jobs-more-row {

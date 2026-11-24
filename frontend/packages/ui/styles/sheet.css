@@ -20,19 +20,19 @@
   width: min(420px, 100vw);
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 0 0 32px color-mix(in srgb, var(--shadow-color) 18%, transparent);
+  box-shadow: var(--sheet-shadow, var(--shape-shadow-lg, 0 0 32px color-mix(in srgb, var(--shadow-color) 18%, transparent)));
   outline: none;
   animation: ui-sheet-in-right 220ms var(--ease-out, ease-out);
 }
 
 .ui-sheet[data-side="right"] {
   right: 0;
-  border-left: 1px solid var(--line);
+  border-left: var(--sheet-border-width, var(--shape-edge-width, 1px)) solid var(--sheet-border-color, var(--shape-edge-color, var(--line)));
 }
 
 .ui-sheet[data-side="left"] {
   left: 0;
-  border-right: 1px solid var(--line);
+  border-right: var(--sheet-border-width, var(--shape-edge-width, 1px)) solid var(--sheet-border-color, var(--shape-edge-color, var(--line)));
   animation-name: ui-sheet-in-left;
 }
 

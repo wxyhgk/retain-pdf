@@ -134,7 +134,7 @@ function BookListRowImpl({
   return (
     <div
       ref={rowRef}
-      className="recent-job-item group flex w-full cursor-pointer items-start gap-4 rounded-2xl px-3 py-3.5 text-left shadow-[0_1px_0_color-mix(in_srgb,var(--shadow-color)_4%,transparent)] transition duration-150 ease-[var(--ease-out)] hover:bg-muted/45 active:scale-[0.99] sm:px-4"
+      className="book-list-row recent-job-item group flex w-full cursor-pointer items-start gap-4 px-3 py-3.5 text-left transition duration-150 ease-[var(--ease-out)] sm:px-4"
       role="button"
       tabIndex={0}
       data-job-id={item.job_id || ""}
@@ -153,7 +153,7 @@ function BookListRowImpl({
         </div>
       ) : null}
 
-      <div className={cn("relative aspect-[3/4] w-11 shrink-0 overflow-hidden rounded-xl bg-paper shadow-[0_2px_10px_color-mix(in_srgb,var(--shadow-color)_6%,transparent)] sm:w-12", batchMode && selected && "ring-2 ring-foreground ring-offset-2")}>
+      <div className={cn("book-list-row-cover relative aspect-[3/4] w-11 shrink-0 overflow-hidden sm:w-12", batchMode && selected && "ring-2 ring-foreground ring-offset-2")}>
         {coverUrl ? (
           <img src={coverUrl} alt="" className="h-full w-full bg-paper object-contain" />
         ) : (

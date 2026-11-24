@@ -27,10 +27,10 @@
   width: min(460px, calc(50vw - 36px));
   margin: 0;
   padding: 5px;
-  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
-  border-radius: 999px;
+  border: var(--reader-float-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-float-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 9%, transparent)));
+  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, 999px));
   background: color-mix(in srgb, var(--paper) 90%, transparent);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent);
+  box-shadow: var(--reader-float-shadow, var(--shape-shadow-sm, 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent)));
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
@@ -49,7 +49,7 @@
   z-index: 37;
   width: min(460px, calc(50vw - 36px));
   margin: 0;
-  box-shadow: 0 14px 34px color-mix(in srgb, var(--shadow-color) 12%, transparent);
+  box-shadow: var(--reader-float-card-shadow, var(--shape-shadow-md, 0 14px 34px color-mix(in srgb, var(--shadow-color) 12%, transparent)));
 }
 .reader-notes-panel--workspace.is-pane-left .reader-markdown-nav,
 .reader-notes-panel--workspace.is-pane-left .reader-markdown-outline {

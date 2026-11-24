@@ -157,10 +157,10 @@
   @apply inline-flex min-h-12 items-center justify-center px-5 text-[15px] font-semibold no-underline transition;
   /* 形态/主色走 L3 token（themes/_component-defaults.css），皮肤可换按钮气质 */
   border-radius: var(--btn-radius);
-  border: 1px solid transparent;
+  border: var(--btn-border-width, var(--shape-edge-width, 1px)) solid var(--btn-primary-border, var(--shape-edge-color, transparent));
   background: var(--btn-primary-bg);
   color: var(--btn-primary-fg);
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--btn-primary-bg) 22%, transparent);
+  box-shadow: var(--btn-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--btn-primary-bg) 22%, transparent)));
   cursor: pointer;
 
   &:hover {
@@ -171,15 +171,26 @@
     filter: brightness(0.97);
   }
 
+  /* 按下：位移和阴影由皮肤给；不设变量时不位移、阴影不变。禁用态不动。 */
+  &:active:not(:disabled) {
+    transform: var(--btn-press-transform, var(--shape-press-transform, none));
+    box-shadow: var(--btn-press-shadow, var(--shape-press-shadow, var(--btn-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--btn-primary-bg) 22%, transparent)))));
+  }
+
   &.secondary {
     background: var(--paper);
     color: var(--ink);
-    border-color: var(--line);
-    box-shadow: none;
+    border-color: var(--btn-secondary-border, var(--shape-edge-color, var(--line)));
+    box-shadow: var(--btn-shadow, var(--shape-shadow-sm, none));
+  }
+
+  &.secondary:active:not(:disabled) {
+    transform: var(--btn-press-transform, var(--shape-press-transform, none));
+    box-shadow: var(--btn-press-shadow, var(--shape-press-shadow, var(--btn-shadow, var(--shape-shadow-sm, none))));
   }
 
   &.secondary:hover {
-    border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+    border-color: var(--btn-secondary-hover-border, var(--shape-edge-color, color-mix(in srgb, var(--accent) 28%, var(--line))));
     color: var(--accent);
     filter: none;
   }
@@ -187,32 +198,43 @@
   /* 危险操作：删除合集等 */
   &.danger {
     background: var(--danger);
-    border-color: var(--danger);
+    border-color: var(--btn-danger-border, var(--shape-edge-color, var(--danger)));
     color: var(--paper);
-    box-shadow: 0 6px 18px color-mix(in srgb, var(--danger) 22%, transparent);
+    box-shadow: var(--btn-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--danger) 22%, transparent)));
+  }
+
+  &.danger:active:not(:disabled) {
+    transform: var(--btn-press-transform, var(--shape-press-transform, none));
+    box-shadow: var(--btn-press-shadow, var(--shape-press-shadow, var(--btn-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--danger) 22%, transparent)))));
   }
 
   &.secondary.danger {
     background: var(--paper);
     color: var(--danger);
-    border-color: color-mix(in srgb, var(--danger) 40%, var(--line));
-    box-shadow: none;
+    border-color: var(--btn-danger-border, var(--shape-edge-color, color-mix(in srgb, var(--danger) 40%, var(--line))));
+    box-shadow: var(--btn-shadow, var(--shape-shadow-sm, none));
+  }
+
+  &.secondary.danger:active:not(:disabled) {
+    transform: var(--btn-press-transform, var(--shape-press-transform, none));
+    box-shadow: var(--btn-press-shadow, var(--shape-press-shadow, var(--btn-shadow, var(--shape-shadow-sm, none))));
   }
 
   &.secondary.danger:hover {
     background: var(--danger-weak);
-    border-color: var(--danger);
+    border-color: var(--btn-danger-hover-border, var(--shape-edge-color, var(--danger)));
     color: var(--danger);
     filter: none;
   }
 
   &.secondary.danger.is-confirming {
     background: var(--danger);
-    border-color: var(--danger);
+    border-color: var(--btn-danger-border, var(--shape-edge-color, var(--danger)));
     color: var(--paper);
   }
 
-  &:disabled {
+  &:disabled,
+  &.secondary.danger:disabled {
     opacity: 0.5;
     box-shadow: none;
     cursor: not-allowed;

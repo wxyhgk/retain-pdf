@@ -37,18 +37,19 @@
   justify-self: start;
   gap: 2px;
   padding: 2px;
-  border: 1px solid var(--line);
-  border-radius: var(--btn-radius);
+  border: var(--seg-border-width, var(--shape-edge-width, 1px)) solid var(--seg-border-color, var(--shape-edge-color, var(--line)));
+  border-radius: var(--seg-radius, var(--shape-radius-control, var(--btn-radius)));
+  box-shadow: var(--seg-shadow, var(--shape-shadow-sm, none));
 }
 
 /* 排成网格时（columns）：外框换成中等圆角，不然两行的胶囊是一团。 */
 .ui-segmented[data-layout="grid"] {
   display: grid;
-  border-radius: var(--ui-radius-md);
+  border-radius: var(--seg-radius, var(--shape-radius-control, var(--ui-radius-md)));
 }
 
 .ui-segmented[data-layout="grid"] .ui-segmented-option {
-  border-radius: var(--ui-radius-sm);
+  border-radius: var(--seg-option-radius, var(--shape-radius-control, var(--ui-radius-sm)));
 }
 
 .ui-segmented-option {
@@ -59,7 +60,7 @@
   min-height: 28px;
   padding: 0 14px;
   border: 0;
-  border-radius: var(--btn-radius);
+  border-radius: var(--seg-option-radius, var(--shape-radius-control, var(--btn-radius)));
   background: transparent;
   color: var(--muted);
   font: inherit;
@@ -87,8 +88,8 @@
 }
 
 .ui-segmented-option[aria-checked="true"] {
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-fg);
+  background: var(--seg-active-bg, var(--btn-primary-bg));
+  color: var(--seg-active-fg, var(--btn-primary-fg));
 }
 
 .ui-segmented-option:focus-visible {
