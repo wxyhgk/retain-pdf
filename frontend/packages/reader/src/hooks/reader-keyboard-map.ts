@@ -1,7 +1,7 @@
 // 阅读器键位的唯一真源：实现（use-reader-keyboard）按 READER_KEY_BINDINGS 分发，
 // 说明浮层（ReaderShortcutsHelp）按 READER_SHORTCUT_HELP 渲染。
 // j/↓/PageDown 下页 · k/↑/PageUp 上页 · Home/End 首末页
-// +/- 缩放 · 0 重置模式默认缩放 · 1/2/3 原文/对照/译文
+// +/- 缩放 · 0 重置模式默认缩放 · 1/2/3 原文/对照/译文 · D 深色文档
 
 import type { ReaderMode } from "./use-reader-session.js";
 
@@ -15,7 +15,8 @@ export type ReaderKeyAction =
   | "zoom-reset"
   | "mode-source"
   | "mode-compare"
-  | "mode-translated";
+  | "mode-translated"
+  | "doc-dark";
 
 export type ReaderKeyBinding = {
   action: ReaderKeyAction;
@@ -38,6 +39,7 @@ export const READER_KEY_BINDINGS: readonly ReaderKeyBinding[] = [
   { action: "prev-page", keys: ["k", "ArrowUp", "PageUp"], requiresPages: true },
   { action: "first-page", keys: ["Home"], requiresPages: true },
   { action: "last-page", keys: ["End"], requiresPages: true },
+  { action: "doc-dark", keys: ["d"] },
 ];
 
 export type ReaderShortcutHelpItem = {
@@ -67,7 +69,14 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
     items: [
       { actions: ["zoom-in", "zoom-out"], keys: "+ / −", desc: "放大 / 缩小" },
       { actions: ["zoom-reset"], keys: "0", desc: "重置为模式默认" },
+      { actions: [], keys: "Ctrl + 滚轮 · 触控板捏合", desc: "以鼠标所在处为中心放大 / 缩小" },
       { actions: [], keys: "点百分比", desc: "重置为模式默认" },
+    ],
+  },
+  {
+    title: "显示",
+    items: [
+      { actions: ["doc-dark"], keys: "D", desc: "深色文档（书页黑底白字），再按一次换回来" },
     ],
   },
   {

@@ -50,6 +50,7 @@ import { useReaderVersionCompare } from "./hooks/use-reader-version-compare.js";
 import { useFindShortcut } from "./hooks/use-find-shortcut.js";
 import { useReaderBlockEdit, useEditBlockShortcut } from "./hooks/use-reader-block-edit.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
+import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
 
 /** 阅读视图可见台面的判别联合。 */
 export type ReaderPaneComposition = {
@@ -255,7 +256,9 @@ export function ReaderAppReactPdf() {
   const markdownSlot = useReaderPanelSlot(assistantPanel, "markdown");
   // 键盘与 UI 共用同一「可见模式」真源：paneComposition.visibleMode。
   // 「0」重置缩放据此取模式默认，避免与 HUD/网格显示的模式脱节。
+  const { docDark, toggleDocDark } = useReaderDocTheme();
   useReaderKeyboard({
+    toggleDocDark,
     mode: visiblePdfMode,
     sourceOnly: c.sourceOnly,
     setMode: c.setModeKeepingPage,
@@ -435,6 +438,8 @@ export function ReaderAppReactPdf() {
     download: c.download,
     goToPage: c.goToPage,
     assistant: { select: selectAssistant, close: closeAssistant },
+    docDark,
+    toggleDocDark,
   }), [
     c.shell,
     c.userZoom,
@@ -461,6 +466,8 @@ export function ReaderAppReactPdf() {
     c.goToPage,
     selectAssistant,
     closeAssistant,
+    docDark,
+    toggleDocDark,
   ]);
 
   const readerHud = useMemo<ReaderHudContextValue>(() => ({

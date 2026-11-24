@@ -14,9 +14,16 @@ import {
   saveReaderViewState,
 } from "../shared/state/reader-view-state.js";
 
+export type ReaderZoomChangeOptions = {
+  /** 默认 true：按比例把视口中心钉住。滚轮缩放自己按鼠标位置对齐，传 false。 */
+  keepScroll?: boolean;
+};
+
+export type ReaderZoomChange = (zoom: number, options?: ReaderZoomChangeOptions) => void;
+
 export type ReaderZoomApi = {
   userZoom: number;
-  onZoomChange: (zoom: number) => void;
+  onZoomChange: ReaderZoomChange;
   stepZoom: (direction: 1 | -1) => void;
   resetZoom: (mode?: string) => void;
 };
@@ -62,13 +69,14 @@ export function useReaderZoom(
     setUserZoom(next);
   }, [initialMode]);
 
-  const onZoomChange = useCallback((zoom: number) => {
+  const onZoomChange = useCallback<ReaderZoomChange>((zoom, options) => {
     const next = clampReaderZoom(zoom);
     const prev = zoomRef.current;
     if (Math.abs(next - prev) < 0.0005) {
       return;
     }
-    pendingRatioRef.current = next / (prev || 1);
+    pendingRatioRef.current = options?.keepScroll === false ? 1 : next / (prev || 1);
+    zoomRef.current = next;
     chosenRef.current = true;
     saveReaderViewState(persistenceKeyRef.current, { zoom: next });
     setUserZoom(next);

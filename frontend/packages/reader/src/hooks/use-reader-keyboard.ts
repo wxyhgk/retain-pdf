@@ -20,6 +20,8 @@ export type ReaderKeyboardApi = {
   currentPage: number;
   numPages: number;
   goToPage: (page: number) => void;
+  /** 「深色文档」开关（D）；不给就不拦这个键。 */
+  toggleDocDark?: () => void;
   enabled?: boolean;
 };
 
@@ -74,6 +76,7 @@ export function useReaderKeyboard(api: ReaderKeyboardApi) {
     currentPage,
     numPages,
     goToPage,
+    toggleDocDark,
     enabled = true,
   } = api;
 
@@ -103,6 +106,13 @@ export function useReaderKeyboard(api: ReaderKeyboardApi) {
         }
         event.preventDefault();
         setMode(binding.mode);
+        return;
+      }
+
+      if (binding.action === "doc-dark") {
+        if (!toggleDocDark || event.repeat) return;
+        event.preventDefault();
+        toggleDocDark();
         return;
       }
 
@@ -149,5 +159,6 @@ export function useReaderKeyboard(api: ReaderKeyboardApi) {
     currentPage,
     numPages,
     goToPage,
+    toggleDocDark,
   ]);
 }

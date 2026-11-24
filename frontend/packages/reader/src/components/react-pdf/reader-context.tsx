@@ -83,6 +83,9 @@ export type ReaderContextValue = {
     select: (panel: ReaderAssistantPanel) => void;
     close: () => void;
   };
+  /** 「深色文档」：PDF 页黑底白字（hooks/use-reader-doc-theme.ts）。底栏开关读这两个；不给就不显示开关。 */
+  docDark?: boolean;
+  toggleDocDark?: () => void;
 };
 
 export type ReaderHudContextValue = {

@@ -8,6 +8,8 @@ export type ReaderKeyboardApi = {
     currentPage: number;
     numPages: number;
     goToPage: (page: number) => void;
+    /** 「深色文档」开关（D）；不给就不拦这个键。 */
+    toggleDocDark?: () => void;
     enabled?: boolean;
 };
 /** 焦点落在阅读辅助面板（Markdown / AI / 批注 / 终端…）里时，全局快捷键一律不处理。

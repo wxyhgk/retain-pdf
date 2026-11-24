@@ -1,0 +1,30 @@
+/* 深色文档：书页黑底白字（底栏开关 / 快捷键 D，hooks/use-reader-doc-theme.ts 在 <html> 上写 data-reader-doc="dark"）。
+ *
+ * 只给 PDF 画布加反色滤镜（反色后再转 180° 色相，红还是红、蓝还是蓝），不重画 PDF，大文档也是即时切换。
+ * pdf.js 自己的「页面配色」也是画完后给整张画布套滤镜，图片一样会反色，还要重画，所以不用它。
+ * 反色 0.9 而不是 1：纯黑底纯白字太刺眼，底是 #1a1a1a、字是浅灰。
+ *
+ * 叠在书页上、自己画底色的东西（实时译文、改过还没排进 PDF 的译文）不反色，改用下面的深色纸和墨；
+ * 画笔、搜索高亮、悬停框、引用红框保持原来的颜色。皮肤可以覆盖这几个变量。 */
+
+:root[data-reader-doc="dark"] {
+  --reader-doc-dark-filter: invert(0.9) hue-rotate(180deg);
+  --reader-doc-dark-paper: #1a1a1a;
+  --reader-doc-dark-ink: #d4d4d6;
+}
+
+:root[data-reader-doc="dark"] .react-pdf__Page__canvas,
+:root[data-reader-doc="dark"] .reader-react-pdf-kept-paint canvas {
+  filter: var(--reader-doc-dark-filter);
+}
+
+/* 画布出来之前、窗口外的页（只占位不画）也是深色，滚动时不闪白。 */
+:root[data-reader-doc="dark"] .reader-react-pdf-page,
+:root[data-reader-doc="dark"] .reader-react-pdf-page-placeholder {
+  background: var(--reader-doc-dark-paper);
+}
+
+:root[data-reader-doc="dark"] .reader-live-translation-overlay {
+  --reader-overlay-paper: var(--reader-doc-dark-paper);
+  --reader-overlay-ink: var(--reader-doc-dark-ink);
+}
