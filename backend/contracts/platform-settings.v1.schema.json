@@ -51,6 +51,42 @@
       "output": "SyncTestView",
       "rust_view": "SyncTestView",
       "note": "用填的设置（没写的用已保存的）测一次能不能读写，不保存设置。测不通也是 200，看 `ok`。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups",
+      "client_name": "getBackupStatus",
+      "transport": "json",
+      "output": "BackupStatusView",
+      "rust_view": "BackupStatusView",
+      "note": "备份设置、能不能恢复、全部备份（新的在前）、最近一次恢复。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups",
+      "client_name": "createBackup",
+      "transport": "json",
+      "output": "BackupItemView",
+      "rust_view": "BackupItemView",
+      "note": "立即备份一份（`kind` 是 `manual`），等它存完。不带请求体。"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/backups/:backup_id",
+      "client_name": "deleteBackup",
+      "transport": "json",
+      "output": "BackupStatusView",
+      "rust_view": "BackupStatusView",
+      "note": "删一份，回删完以后的状态。没有这份 404。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups/:backup_id/restore",
+      "client_name": "restoreBackup",
+      "transport": "json",
+      "output": "BackupRestoreView",
+      "rust_view": "BackupRestoreView",
+      "note": "用这份替换当前书库数据库，先自动存一份 `before-restore`（恢复错了用它退回）。不带请求体。没有这份 404；不能恢复 409，`error.details.reason` 是 `restore_blocked`（有排队、在跑的任务，`message` 说在等什么）、`backup_damaged`（备份坏了）或 `backup_newer`（备份比现在的程序新）。恢复中别的写请求 409 `restore_in_progress`。"
     }
   ],
   "definitions": {
@@ -460,6 +496,176 @@
           "items": {
             "$ref": "#/definitions/SyncPeerView"
           }
+        }
+      }
+    },
+    "BackupItemView": {
+      "type": "object",
+      "description": "backup/views.rs :: BackupItemView。",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "created_at",
+        "schema_version",
+        "bytes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "备份编号（文件名去掉扩展名），恢复、删除用它。"
+        },
+        "kind": {
+          "type": "string",
+          "description": "`auto`（每天自动）、`manual`（手动）、`before-restore`（恢复前自动存的）、`before-upgrade`（升级前自动存的）。"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "备份时数据库的结构版本。"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "压缩后的大小。"
+        }
+      }
+    },
+    "LastRestoreView": {
+      "type": "object",
+      "description": "backup/views.rs :: LastRestoreView。最近一次恢复（不论成败，2026-10-22 起）。",
+      "additionalProperties": false,
+      "required": [
+        "backup_id",
+        "ok",
+        "safety_backup",
+        "reason",
+        "error",
+        "started_at",
+        "finished_at"
+      ],
+      "properties": {
+        "backup_id": {
+          "type": "string",
+          "description": "要恢复的那份。"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "safety_backup": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "恢复前自动存的那份；没走到那一步（被拒、出错在前）时为 null。"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "被拒时的稳定原因：`restore_blocked`、`backup_damaged`、`backup_newer`（和 409 的 `error.details.reason` 一样）、`not_found`；成功或内部错误为 null。"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "失败时给人看的说明；成功为 null。"
+        },
+        "started_at": {
+          "type": "string"
+        },
+        "finished_at": {
+          "type": "string"
+        }
+      }
+    },
+    "BackupStatusView": {
+      "type": "object",
+      "description": "backup/views.rs :: BackupStatusView。",
+      "additionalProperties": false,
+      "required": [
+        "dir",
+        "auto_interval_hours",
+        "last_auto_at",
+        "running",
+        "restore_blockers",
+        "last_restore",
+        "items"
+      ],
+      "properties": {
+        "dir": {
+          "type": "string",
+          "description": "备份放在哪个目录。"
+        },
+        "auto_interval_hours": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "自动备份间隔（小时）；0 表示关掉了自动备份。"
+        },
+        "last_auto_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "最近一次自动备份；没有为 null。"
+        },
+        "running": {
+          "type": "boolean",
+          "description": "正在备份或恢复。"
+        },
+        "restore_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "现在恢复的话要先等什么；空表示可以恢复。"
+        },
+        "last_restore": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/LastRestoreView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "最近一次恢复（只在内存里，服务重启后为 null）。恢复的请求断开了，刷新后凭它知道结果。"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BackupItemView"
+          },
+          "description": "新的在前。"
+        }
+      }
+    },
+    "BackupRestoreView": {
+      "type": "object",
+      "description": "backup/views.rs :: BackupRestoreView。",
+      "additionalProperties": false,
+      "required": [
+        "restored",
+        "safety_backup",
+        "status"
+      ],
+      "properties": {
+        "restored": {
+          "type": "string",
+          "description": "恢复的那份的编号。"
+        },
+        "safety_backup": {
+          "type": "string",
+          "description": "恢复前自动存的那份（恢复错了用它退回）。"
+        },
+        "status": {
+          "description": "恢复完以后的状态。",
+          "$ref": "#/definitions/BackupStatusView"
         }
       }
     }

@@ -279,6 +279,10 @@ const SETTINGS_TYPES = {
     "SyncPendingItemView",
     "SyncPeerView",
     "SyncStatusView",
+    "BackupItemView",
+    "LastRestoreView",
+    "BackupStatusView",
+    "BackupRestoreView",
   ],
 };
 

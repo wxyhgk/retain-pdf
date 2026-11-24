@@ -234,4 +234,8 @@ const PLATFORM_ENDPOINTS = [
   ["PUT", "/api/v1/sync", "updateSyncSettings", "json", "SyncSettingsInput", undefined, "SyncStatusView"],
   ["POST", "/api/v1/sync/run", "runSyncNow", "json", undefined, undefined, "SyncStatusView"],
   ["POST", "/api/v1/sync/test", "testSyncTarget", "json", "SyncSettingsInput", undefined, "SyncTestView"],
+  ["GET", "/api/v1/backups", "getBackupStatus", "json", undefined, undefined, "BackupStatusView"],
+  ["POST", "/api/v1/backups", "createBackup", "json", undefined, undefined, "BackupItemView"],
+  ["DELETE", "/api/v1/backups/:backup_id", "deleteBackup", "json", undefined, undefined, "BackupStatusView"],
+  ["POST", "/api/v1/backups/:backup_id/restore", "restoreBackup", "json", undefined, undefined, "BackupRestoreView"],
 ];

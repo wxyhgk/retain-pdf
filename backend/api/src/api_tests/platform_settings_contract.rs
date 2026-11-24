@@ -107,3 +107,37 @@ fn sync_settings_input_accepts_exactly_the_contract_fields() {
         "SyncSettingsInput",
     );
 }
+
+fn assert_backup_status(value: &serde_json::Value, contract: &serde_json::Value, path: &str) {
+    assert_exact(value, contract, "BackupStatusView", path);
+    if !value["last_restore"].is_null() {
+        assert_exact(&value["last_restore"], contract, "LastRestoreView", &format!("{path}.last_restore"));
+    }
+    for (index, item) in value["items"].as_array().expect("items").iter().enumerate() {
+        assert_exact(item, contract, "BackupItemView", &format!("{path}.items[{index}]"));
+    }
+}
+
+/// 立即备份、恢复（有了 `last_restore`）、删掉恢复前自动存的那份。
+#[tokio::test]
+async fn backup_views_match_published_schema() {
+    let contract = contract(CONTRACT);
+    let state = test_state("platform-settings-backups");
+    state.db.init().expect("init");
+
+    let empty = ok_data(&state, "GET", "/api/v1/backups", None).await;
+    assert_backup_status(&empty, &contract, "get(empty)");
+
+    let made = ok_data(&state, "POST", "/api/v1/backups", None).await;
+    assert_exact(&made, &contract, "BackupItemView", "create");
+    let id = made["id"].as_str().expect("id").to_string();
+
+    let restored = ok_data(&state, "POST", &format!("/api/v1/backups/{id}/restore"), None).await;
+    assert_exact(&restored, &contract, "BackupRestoreView", "restore");
+    assert_backup_status(&restored["status"], &contract, "restore.status");
+    assert!(restored["status"]["last_restore"].is_object(), "{restored}");
+
+    let safety = restored["safety_backup"].as_str().expect("safety_backup").to_string();
+    let after_delete = ok_data(&state, "DELETE", &format!("/api/v1/backups/{safety}"), None).await;
+    assert_backup_status(&after_delete, &contract, "delete");
+}

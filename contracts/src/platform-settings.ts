@@ -8,12 +8,144 @@
  * Endpoint input, query, and output DTOs published by platform-settings.v1.schema.json.
  */
 export type PlatformSettingsSchema =
-  FontListView | SyncSettingsInput | SyncStatusView | SyncTestView;
+  | BackupItemView
+  | BackupRestoreView
+  | BackupStatusView1
+  | FontListView
+  | SyncSettingsInput
+  | SyncStatusView
+  | SyncTestView;
 /**
  * 字体列表（`GET /fonts` 的 data 直接是数组）。
  */
 export type FontListView = FontInfo[];
 
+/**
+ * backup/views.rs :: BackupItemView。
+ */
+export interface BackupItemView {
+  /**
+   * 备份编号（文件名去掉扩展名），恢复、删除用它。
+   */
+  id: string;
+  /**
+   * `auto`（每天自动）、`manual`（手动）、`before-restore`（恢复前自动存的）、`before-upgrade`（升级前自动存的）。
+   */
+  kind: string;
+  created_at: string;
+  /**
+   * 备份时数据库的结构版本。
+   */
+  schema_version: number;
+  /**
+   * 压缩后的大小。
+   */
+  bytes: number;
+}
+/**
+ * backup/views.rs :: BackupRestoreView。
+ */
+export interface BackupRestoreView {
+  /**
+   * 恢复的那份的编号。
+   */
+  restored: string;
+  /**
+   * 恢复前自动存的那份（恢复错了用它退回）。
+   */
+  safety_backup: string;
+  status: BackupStatusView;
+}
+/**
+ * 恢复完以后的状态。
+ */
+export interface BackupStatusView {
+  /**
+   * 备份放在哪个目录。
+   */
+  dir: string;
+  /**
+   * 自动备份间隔（小时）；0 表示关掉了自动备份。
+   */
+  auto_interval_hours: number;
+  /**
+   * 最近一次自动备份；没有为 null。
+   */
+  last_auto_at: string | null;
+  /**
+   * 正在备份或恢复。
+   */
+  running: boolean;
+  /**
+   * 现在恢复的话要先等什么；空表示可以恢复。
+   */
+  restore_blockers: string[];
+  /**
+   * 最近一次恢复（只在内存里，服务重启后为 null）。恢复的请求断开了，刷新后凭它知道结果。
+   */
+  last_restore: LastRestoreView | null;
+  /**
+   * 新的在前。
+   */
+  items: BackupItemView[];
+}
+/**
+ * backup/views.rs :: LastRestoreView。最近一次恢复（不论成败，2026-10-22 起）。
+ */
+export interface LastRestoreView {
+  /**
+   * 要恢复的那份。
+   */
+  backup_id: string;
+  ok: boolean;
+  /**
+   * 恢复前自动存的那份；没走到那一步（被拒、出错在前）时为 null。
+   */
+  safety_backup: string | null;
+  /**
+   * 被拒时的稳定原因：`restore_blocked`、`backup_damaged`、`backup_newer`（和 409 的 `error.details.reason` 一样）、`not_found`；成功或内部错误为 null。
+   */
+  reason: string | null;
+  /**
+   * 失败时给人看的说明；成功为 null。
+   */
+  error: string | null;
+  started_at: string;
+  finished_at: string;
+}
+/**
+ * backup/views.rs :: BackupStatusView。
+ */
+export interface BackupStatusView1 {
+  /**
+   * 备份放在哪个目录。
+   */
+  dir: string;
+  /**
+   * 自动备份间隔（小时）；0 表示关掉了自动备份。
+   */
+  auto_interval_hours: number;
+  /**
+   * 最近一次自动备份；没有为 null。
+   */
+  last_auto_at: string | null;
+  /**
+   * 正在备份或恢复。
+   */
+  running: boolean;
+  /**
+   * 现在恢复的话要先等什么；空表示可以恢复。
+   */
+  restore_blockers: string[];
+  /**
+   * 最近一次恢复（只在内存里，服务重启后为 null）。恢复的请求断开了，刷新后凭它知道结果。
+   */
+  last_restore: LastRestoreView | null;
+  /**
+   * 新的在前。
+   */
+  items: BackupItemView[];
+}
 /**
  * fonts/service.rs :: FontInfo。
  */
