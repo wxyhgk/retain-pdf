@@ -1,0 +1,480 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc" xml:lang="zh-CN">
+  <title id="title">RetainPDF 功能全景</title>
+  <desc id="desc">RetainPDF 标志居中，四周排列翻译、排版、审校、阅读、导出与部署的独立功能卡片。</desc>
+  <defs>
+    <linearGradient id="feature" x2="0%" y2="100%">
+      <stop stop-color="#f8f8fa" />
+      <stop offset="1" stop-color="#ecedf0" />
+    </linearGradient>
+    <radialGradient id="brand-light" r="72%">
+      <stop stop-color="#fdfdfe" />
+      <stop offset="1" stop-color="#ededf1" />
+    </radialGradient>
+    <clipPath id="focus-scan">
+      <rect width="252" height="224" rx="24" />
+    </clipPath>
+    <clipPath id="focus-columns">
+      <rect width="264" height="224" rx="24" />
+    </clipPath>
+    <clipPath id="focus-quality">
+      <rect width="528" height="228" rx="24" />
+    </clipPath>
+    <clipPath id="focus-formula">
+      <rect width="252" height="204" rx="24" />
+    </clipPath>
+    <clipPath id="focus-flow">
+      <rect width="264" height="204" rx="24" />
+    </clipPath>
+    <clipPath id="focus-parallel-reading">
+      <rect width="528" height="340" rx="24" />
+    </clipPath>
+    <clipPath id="focus-agent">
+      <rect width="386" height="224" rx="24" />
+    </clipPath>
+    <clipPath id="focus-glossary">
+      <rect width="394" height="224" rx="24" />
+    </clipPath>
+    <clipPath id="focus-brand">
+      <rect width="792" height="524" rx="24" />
+    </clipPath>
+    <clipPath id="focus-platforms">
+      <rect width="444" height="260" rx="24" />
+    </clipPath>
+    <clipPath id="focus-deployment">
+      <rect width="336" height="260" rx="24" />
+    </clipPath>
+    <clipPath id="focus-edit">
+      <rect width="528" height="224" rx="24" />
+    </clipPath>
+    <clipPath id="focus-publisher">
+      <rect width="528" height="228" rx="24" />
+    </clipPath>
+    <clipPath id="focus-rerender">
+      <rect width="252" height="204" rx="24" />
+    </clipPath>
+    <clipPath id="focus-history">
+      <rect width="264" height="204" rx="24" />
+    </clipPath>
+    <clipPath id="focus-markdown-link">
+      <rect width="528" height="340" rx="24" />
+    </clipPath>
+  </defs>
+  <rect width="1920" height="1080" fill="white" />
+  <g font-family="Noto Sans CJK SC, PingFang SC, Microsoft YaHei, sans-serif">
+    <g id="scan" transform="translate(24 24)">
+      <rect width="252" height="224" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-scan)">
+        <text x="24" y="49" font-size="31" fill="#18181c" font-weight="700" text-anchor="start">扫描件翻译</text>
+        <g transform="translate(-10 63.5) scale(1.7)">
+          <g transform="translate(47 3) rotate(-7 36 39)">
+            <rect x="0" y="0" width="74" height="82" rx="7" fill="#fff" stroke="#d4d4de" />
+            <rect x="10" y="17" width="50" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="10" y="26" width="48" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="10" y="35" width="53" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="10" y="44" width="42" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="10" y="53" width="48" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="10" y="62" width="32" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+          </g>
+          <path d="M35 26 V12 H51 M107 12 H124 V26 M35 64 V78 H51 M107 78 H124 V64" fill="none" stroke="#d6283f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="251" height="223" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="columns" transform="translate(288 24)">
+      <rect width="264" height="224" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-columns)">
+        <text x="24" y="49" font-size="31" fill="#18181c" font-weight="700" text-anchor="start">多栏版式保留</text>
+        <g transform="translate(-5.6 62.6) scale(1.72)">
+          <g transform="translate(29 7) rotate(-4 51 43)">
+            <rect x="0" y="0" width="102" height="78" rx="7" fill="#fff" stroke="#d4d4de" />
+            <rect x="13" y="13" width="59" height="2.7" rx="1.35" fill="#62626f" stroke="none" />
+            <rect x="13" y="21" width="53" height="2.7" rx="1.35" fill="#62626f" stroke="none" />
+            <rect x="13" y="36" width="31" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="44" width="29" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="52" width="34" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="60" width="24" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="58" y="36" width="30" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="58" y="44" width="30" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="58" y="52" width="27" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="58" y="60" width="32" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <path d="M51 33V65" fill="none" stroke="#d6283f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="263" height="223" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="quality" transform="translate(24 260)">
+      <rect width="528" height="228" rx="24" fill="url(#feature)" />
+      <g clip-path="url(#focus-quality)">
+        <text x="23" y="66" font-size="48" fill="#18181c" font-weight="700" text-anchor="start">超越同类商业产品</text>
+        <text x="25" y="99" font-size="20" fill="#5c5c66" font-weight="400" text-anchor="start">翻译质量与版式还原</text>
+        <g transform="translate(0 16)">
+          <g transform="translate(78 111) rotate(-6 88 57)">
+            <rect x="0" y="0" width="176" height="115" rx="7" fill="#fff" stroke="#d4d4de" />
+            <text x="13" y="23" font-size="12" fill="#686871" font-weight="700" text-anchor="start">原文</text>
+            <rect x="13" y="37" width="137" height="2.7" rx="1.35" fill="#6b6b77" stroke="none" />
+            <rect x="13" y="45" width="113" height="2.7" rx="1.35" fill="#6b6b77" stroke="none" />
+            <rect x="13" y="61" width="58" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="69" width="55" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="77" width="49" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="85" width="51" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="109" y="61" width="53" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="109" y="69" width="49" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="109" y="77" width="52" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="109" y="85" width="43" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="9" y="65" width="71" height="13" rx="3" fill="#f8e4e9" stroke="none" />
+            <rect x="13" y="70" width="60" height="2.7" rx="1.35" fill="#ad6471" stroke="none" />
+          </g>
+          <g transform="translate(277 111) rotate(6 88 57)">
+            <rect x="0" y="0" width="176" height="115" rx="7" fill="#fff" stroke="#d4d4de" />
+            <text x="13" y="23" font-size="12" fill="#686871" font-weight="700" text-anchor="start">译文</text>
+            <rect x="13" y="37" width="137" height="2.7" rx="1.35" fill="#6b6b77" stroke="none" />
+            <rect x="13" y="45" width="113" height="2.7" rx="1.35" fill="#6b6b77" stroke="none" />
+            <rect x="13" y="61" width="58" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="69" width="55" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="77" width="49" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="85" width="51" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="109" y="61" width="53" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="109" y="69" width="49" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="109" y="77" width="52" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="109" y="85" width="43" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="9" y="72" width="71" height="13" rx="3" fill="#f8e4e9" stroke="none" />
+            <rect x="13" y="77" width="60" height="2.7" rx="1.35" fill="#ad6471" stroke="none" />
+          </g>
+          <path d="M252 151h23m-7-6 7 6-7 6" fill="none" stroke="#d6283f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="527" height="227" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="formula" transform="translate(24 500)">
+      <rect width="252" height="204" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-formula)">
+        <text x="24" y="49" font-size="31" fill="#18181c" font-weight="700" text-anchor="start">行内公式保留</text>
+        <g transform="translate(6 62.5) scale(1.5)">
+          <path d="M14 19H147 M14 71H147" fill="none" stroke="#bdbdc7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M14 45H21 M140 45H147" fill="none" stroke="#575762" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+          <text x="80" y="54" font-family="Georgia,serif" font-size="29" font-style="italic" text-anchor="middle" fill="#d6283f">E = mc²</text>
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="251" height="203" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="flow" transform="translate(288 500)">
+      <rect width="264" height="204" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-flow)">
+        <text x="24" y="49" font-size="31" fill="#18181c" font-weight="700" text-anchor="start">跨栏跨页续接</text>
+        <g transform="translate(6.4 59.35) scale(1.57)">
+          <rect x="12" y="27" width="52" height="2.7" rx="1.35" fill="#60606b" stroke="none" />
+          <rect x="12" y="35" width="55" height="2.7" rx="1.35" fill="#60606b" stroke="none" />
+          <rect x="12" y="43" width="49" height="2.7" rx="1.35" fill="#60606b" stroke="none" />
+          <rect x="12" y="51" width="55" height="2.7" rx="1.35" fill="#60606b" stroke="none" />
+          <rect x="95" y="41" width="54" height="2.7" rx="1.35" fill="#60606b" stroke="none" />
+          <rect x="95" y="49" width="47" height="2.7" rx="1.35" fill="#60606b" stroke="none" />
+          <rect x="95" y="57" width="56" height="2.7" rx="1.35" fill="#60606b" stroke="none" />
+          <rect x="95" y="65" width="35" height="2.7" rx="1.35" fill="#60606b" stroke="none" />
+          <path d="M67 52 C84 52 82 42 91 42" fill="none" stroke="#d6283f" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="92" cy="42" r="3" fill="#d6283f" />
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="263" height="203" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="parallel-reading" transform="translate(24 716)">
+      <rect width="528" height="340" rx="24" fill="url(#feature)" />
+      <g clip-path="url(#focus-parallel-reading)">
+        <text x="23" y="57" font-size="40" fill="#18181c" font-weight="700" text-anchor="start">双语对照阅读</text>
+        <text x="25" y="95" font-size="20" fill="#5c5c66" font-weight="400" text-anchor="start">原文与译文同步翻页</text>
+        <g transform="translate(-53 37) scale(1.20)">
+          <g transform="translate(76 71) rotate(0 89 57)">
+            <rect x="0" y="0" width="178" height="115" rx="7" fill="#fff" stroke="#d4d4de" />
+            <text x="13" y="23" font-size="12" fill="#686871" font-weight="700" text-anchor="start">原文 PDF</text>
+            <rect x="13" y="37" width="139" height="2.7" rx="1.35" fill="#6b6b77" stroke="none" />
+            <rect x="13" y="45" width="115" height="2.7" rx="1.35" fill="#6b6b77" stroke="none" />
+            <rect x="13" y="61" width="58" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="69" width="55" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="77" width="49" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="85" width="51" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="111" y="61" width="53" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="111" y="69" width="49" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="111" y="77" width="52" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="111" y="85" width="43" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="9" y="65" width="71" height="13" rx="3" fill="#f8e4e9" stroke="none" />
+            <rect x="13" y="70" width="60" height="2.7" rx="1.35" fill="#ad6471" stroke="none" />
+          </g>
+          <g transform="translate(274 71) rotate(0 89 57)">
+            <rect x="0" y="0" width="178" height="115" rx="7" fill="#fff" stroke="#d4d4de" />
+            <text x="13" y="23" font-size="12" fill="#686871" font-weight="700" text-anchor="start">译文 PDF</text>
+            <rect x="13" y="37" width="139" height="2.7" rx="1.35" fill="#6b6b77" stroke="none" />
+            <rect x="13" y="45" width="115" height="2.7" rx="1.35" fill="#6b6b77" stroke="none" />
+            <rect x="13" y="61" width="58" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="69" width="55" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="77" width="49" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="85" width="51" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="111" y="61" width="53" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="111" y="69" width="49" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="111" y="77" width="52" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="111" y="85" width="43" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="9" y="65" width="71" height="13" rx="3" fill="#f8e4e9" stroke="none" />
+            <rect x="13" y="70" width="60" height="2.7" rx="1.35" fill="#ad6471" stroke="none" />
+          </g>
+          <path d="M252 141h23" fill="none" stroke="#d6283f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="264" cy="141" r="3.3" fill="#d6283f" />
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="527" height="339" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="agent" transform="translate(564 24)">
+      <rect width="386" height="224" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-agent)">
+        <text x="24" y="49" font-size="31" fill="#18181c" font-weight="700" text-anchor="start">Agent 全书翻译</text>
+        <g transform="translate(45 56.75) scale(1.85)">
+          <path d="M25 22 Q51 12 80 26 Q109 12 135 22 V65 Q108 56 80 70 Q52 56 25 65Z" fill="#fff" stroke="#34343c" stroke-width="2.2" />
+          <path d="M80 26v44" fill="none" stroke="#34343c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <rect x="37" y="34" width="30" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+          <rect x="37" y="41" width="32" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+          <rect x="37" y="48" width="26" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+          <rect x="91" y="34" width="30" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+          <rect x="91" y="41" width="28" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+          <rect x="91" y="48" width="31" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+          <circle cx="132" cy="68" r="13" fill="#fff" stroke="#d6283f" stroke-width="2.4" />
+          <path d="M126 68l4 4 8-9" fill="none" stroke="#d6283f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="385" height="223" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="glossary" transform="translate(962 24)">
+      <rect width="394" height="224" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-glossary)">
+        <text x="24" y="49" font-size="31" fill="#18181c" font-weight="700" text-anchor="start">自定义术语表</text>
+        <g transform="translate(49 56.75) scale(1.85)">
+          <g transform="translate(35 9)">
+            <rect x="0" y="0" width="90" height="71" rx="7" fill="#fff" stroke="#d4d4de" />
+            <text x="10" y="20" font-size="11" fill="#18181c" font-weight="700" text-anchor="start">术语表</text>
+            <rect x="10" y="30" width="24" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="10" y="39" width="25" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="10" y="48" width="22" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="47" y="30" width="28" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="47" y="39" width="30" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="47" y="48" width="26" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <path d="M47 56h27" fill="none" stroke="#d6283f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="393" height="223" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="brand" transform="translate(564 260)">
+      <rect width="792" height="524" rx="24" fill="url(#brand-light)" />
+      <g clip-path="url(#focus-brand)">
+        <g opacity=".48" transform="translate(0 65) scale(1 1.12)">
+          <g transform="translate(-95 104) rotate(-12 104 126)">
+            <rect x="0" y="0" width="240" height="280" rx="7" fill="#fff" stroke="#d4d4de" />
+            <rect x="24" y="28" width="158" height="2.7" rx="1.35" fill="#9797a3" stroke="none" />
+            <rect x="24" y="39" width="130" height="2.7" rx="1.35" fill="#9797a3" stroke="none" />
+            <rect x="24" y="71" width="68" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="84" width="79" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="97" width="72" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="110" width="68" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="123" width="73" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="136" width="61" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="149" width="78" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="71" width="79" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="84" width="70" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="97" width="74" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="110" width="67" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="123" width="75" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="136" width="70" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="149" width="64" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="19" y="111" width="94" height="16" rx="4" fill="#fae6eb" stroke="none" />
+            <rect x="24" y="118" width="83" height="2.7" rx="1.35" fill="#ba7b87" stroke="none" />
+          </g>
+          <g transform="translate(651 134) rotate(13 108 128)">
+            <rect x="0" y="0" width="240" height="280" rx="7" fill="#fff" stroke="#d4d4de" />
+            <rect x="24" y="28" width="158" height="2.7" rx="1.35" fill="#9797a3" stroke="none" />
+            <rect x="24" y="39" width="130" height="2.7" rx="1.35" fill="#9797a3" stroke="none" />
+            <rect x="24" y="71" width="68" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="84" width="79" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="97" width="72" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="110" width="68" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="123" width="73" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="136" width="61" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="24" y="149" width="78" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="71" width="79" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="84" width="70" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="97" width="74" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="110" width="67" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="123" width="75" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="136" width="70" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="132" y="149" width="64" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="19" y="111" width="94" height="16" rx="4" fill="#fae6eb" stroke="none" />
+            <rect x="24" y="118" width="83" height="2.7" rx="1.35" fill="#ba7b87" stroke="none" />
+          </g>
+        </g>
+        <g transform="translate(271 72) scale(1.48)">
+          <title>RetainPDF-logo</title>
+          <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+            <g id="RetainPDF-logo" transform="translate(1, 1)" fill="#17171a" fill-rule="nonzero" stroke="#17171a" stroke-width="0.3">
+              <path d="M126.765722,49.0535908 C120.621823,49.0535908 118.493128,43.4211326 118.493128,39.9008462 L118.493128,0 L14.136067,0 C4.85648468,0 0,7.83423736 0,14.4267737 L0,162.662834 C0,171.879583 7.92843431,177 14.6586808,177 L150.028411,177 C159.307994,177 166,170.356259 166,161.945975 L166,47.8502929 L126.765722,48.9895856 L126.765722,49.0535908 Z M154.094602,158.899327 C154.094602,164.95422 148.84297,168.295292 144.866006,168.295292 L19.1582585,168.295292 C13.103586,168.295292 10.40129,162.62443 10.40129,159.155348 L10.40129,18.855934 C10.40129,13.5435018 14.3145205,9.52397483 18.9415649,9.52397483 L108.907625,9.52397483 L108.907625,42.025819 C108.907625,51.6650033 117.18022,56.3373834 125.197881,56.3373834 L154.094602,56.3373834 L154.094602,158.886526 L154.094602,158.899327 Z" id="形状" />
+              <path d="M131.588979,42 L167,42 L125,1 L125,33.0980149 C125,38.2993176 127.757001,42 131.588979,42 Z" id="路径" />
+              <path d="M88.6688103,112.77034 L112,112.77034 L88.7845659,84.6241922 C98.8681672,80.3754764 104.282958,70.9976802 104.282958,61.619884 C104.282958,49.2437448 94.8553055,36 77.6334405,36 L40,36 L40,113 L58.5594855,113 L58.5594855,86.6018227 L70.3536977,86.6018227 L89.7749196,112.795857 L88.6688103,112.77034 L88.6688103,112.77034 Z M58.5594855,49.2947804 L74.829582,49.2947804 C83.2926045,49.2947804 86.8810289,56.6183927 86.8810289,62.0664457 C86.8810289,68.4586578 81.8135048,74.5318973 75.1768489,74.5318973 L58.5594855,74.5318973 L58.5594855,49.2947804 L58.5594855,49.2947804 Z" id="形状" />
+              <polygon id="路径" points="137 129 30 129 30 136 137 136" />
+              <polygon id="路径" points="91 148 30 148 30 154 91 154" />
+            </g>
+          </g>
+        </g>
+        <text x="396" y="413" font-size="78" fill="#18181c" font-weight="700" text-anchor="middle">RetainPDF</text>
+        <text x="396" y="462" font-size="28" fill="#54545e" font-weight="400" text-anchor="middle">高质量 PDF 保留排版翻译工具</text>
+      </g>
+      <rect x="0.5" y="0.5" width="791" height="523" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="platforms" transform="translate(564 796)">
+      <rect width="444" height="260" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-platforms)">
+        <text x="24" y="51" font-size="34" fill="#18181c" font-weight="700" text-anchor="start">全平台支持</text>
+        <g transform="translate(6 2) scale(1.5 1.65)">
+          <g aria-label="macOS" transform="translate(37 55) scale(1.75)" fill="#18181c">
+            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.53 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.57-2.33 4.5-3.74 4.25z" />
+          </g>
+          <g aria-label="Windows" transform="translate(128 60)" fill="#0078d4">
+            <path d="M0 0H15V15H0z M17 0H32V15H17z M0 17H15V32H0z M17 17H32V32H17z" />
+          </g>
+          <g aria-label="Ubuntu" transform="translate(232 76)" fill="#e95420">
+            <circle r="12.5" fill="none" stroke="#e95420" stroke-width="4.5" />
+            <g stroke="#f4f4f6" stroke-width="2.8">
+              <circle cx="14.3" cy="0" r="4.6" />
+              <circle cx="-7.15" cy="-12.38" r="4.6" />
+              <circle cx="-7.15" cy="12.38" r="4.6" />
+            </g>
+          </g>
+          <g fill="#18181c" font-size="15" font-weight="700" text-anchor="middle">
+            <text x="58" y="116">macOS</text>
+            <text x="144" y="116">Windows</text>
+            <text x="232" y="116">Ubuntu</text>
+          </g>
+          <text x="58" y="134" fill="#60606a" font-size="11" text-anchor="middle">Apple 芯片</text>
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="443" height="259" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="deployment" transform="translate(1020 796)">
+      <rect width="336" height="260" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-deployment)">
+        <text x="24" y="51" font-size="34" fill="#18181c" font-weight="700" text-anchor="start">开源自部署</text>
+        <text x="25" y="87" font-size="20" fill="#5c5c66" font-weight="400" text-anchor="start">开放 API · Docker</text>
+        <g transform="translate(8 105) scale(2)">
+          <rect x="35" y="16" width="90" height="25" rx="8" fill="#fff" stroke="#9999a4" />
+          <rect x="35" y="47" width="90" height="25" rx="8" fill="#fff" stroke="#9999a4" />
+          <circle cx="47" cy="28" r="2.7" fill="#d6283f" />
+          <circle cx="47" cy="59" r="2.7" fill="#d6283f" />
+          <path d="M98 28h14 M98 59h14" fill="none" stroke="#a9a9b3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="335" height="259" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="edit" transform="translate(1368 24)">
+      <rect width="528" height="224" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-edit)">
+        <text x="23" y="51" font-size="34" fill="#18181c" font-weight="700" text-anchor="start">译文可编辑</text>
+        <g transform="translate(110 55) scale(1.93)">
+          <g transform="translate(22 10)">
+            <rect x="0" y="0" width="105" height="73" rx="7" fill="#fff" stroke="#d4d4de" />
+            <rect x="12" y="14" width="69" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="12" y="24" width="75" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="12" y="34" width="64" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="12" y="44" width="68" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="12" y="54" width="50" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="9" y="41" width="77" height="14" rx="4" fill="#fae6eb" stroke="none" />
+            <rect x="12" y="47" width="71" height="2.7" rx="1.35" fill="#a83f54" stroke="none" />
+          </g>
+          <path d="M104 62l22-22 6 6-22 22-9 2z" fill="none" stroke="#d6283f" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" />
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="527" height="223" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="publisher" transform="translate(1368 260)">
+      <rect width="528" height="228" rx="24" fill="url(#feature)" />
+      <g clip-path="url(#focus-publisher)">
+        <text x="23" y="66" font-size="49" fill="#18181c" font-weight="700" text-anchor="start">出版社级翻译</text>
+        <text x="25" y="99" font-size="20" fill="#5c5c66" font-weight="400" text-anchor="start">全书术语统一 · 逐段审校</text>
+        <g transform="translate(0 16)">
+          <g transform="translate(281 106) rotate(10 80 63)">
+            <rect x="0" y="0" width="174" height="107" rx="7" fill="#fff" stroke="#d4d4de" />
+            <text x="13" y="23" font-size="12" fill="#18181c" font-weight="700" text-anchor="start">术语表</text>
+            <rect x="13" y="37" width="133" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="46" width="110" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="55" width="126" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="64" width="115" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="13" y="73" width="96" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <path d="M42 67q32 4 65 0" fill="none" stroke="#d6283f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+          <g transform="translate(445 135)">
+            <path d="M0 17l8 8 17-19" fill="none" stroke="#d6283f" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="527" height="227" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="rerender" transform="translate(1368 500)">
+      <rect width="252" height="204" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-rerender)">
+        <text x="24" y="49" font-size="31" fill="#18181c" font-weight="700" text-anchor="start">一键重排</text>
+        <g transform="translate(8.4 63.85) scale(1.47)">
+          <g transform="translate(57 18)">
+            <rect x="0" y="0" width="46" height="55" rx="7" fill="#fff" stroke="#d4d4de" />
+            <rect x="7" y="10" width="30" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="7" y="18" width="30" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="7" y="26" width="26" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="7" y="34" width="31" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+          </g>
+          <path d="M36 47a45 29 0 0 1 81-22l5 8m1-12-1 13-12-2 M126 48a45 29 0 0 1-81 22l-5-8m-1 12 1-13 12 2" fill="none" stroke="#d6283f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="251" height="203" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="history" transform="translate(1632 500)">
+      <rect width="264" height="204" rx="24" fill="#f4f4f6" />
+      <g clip-path="url(#focus-history)">
+        <text x="24" y="49" font-size="31" fill="#18181c" font-weight="700" text-anchor="start">译文版本对比</text>
+        <g transform="translate(8.8 60.7) scale(1.54)">
+          <path d="M38 64H122" fill="none" stroke="#a7a7b0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <circle cx="42" cy="64" r="4" fill="#8d8d97" />
+          <circle cx="80" cy="64" r="4" fill="#d6283f" />
+          <circle cx="118" cy="64" r="4" fill="#8d8d97" />
+          <g transform="translate(58 6)">
+            <rect x="0" y="0" width="45" height="44" rx="7" fill="#fff" stroke="#d4d4de" />
+            <rect x="7" y="10" width="28" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="7" y="17" width="23" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+            <rect x="7" y="24" width="30" height="2.7" rx="1.35" fill="#a4a4ad" stroke="none" />
+          </g>
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="263" height="203" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+    <g id="markdown-link" transform="translate(1368 716)">
+      <rect width="528" height="340" rx="24" fill="url(#feature)" />
+      <g clip-path="url(#focus-markdown-link)">
+        <text x="23" y="57" font-size="38" fill="#18181c" font-weight="700" text-anchor="start">PDF ↔ Markdown</text>
+        <text x="25" y="95" font-size="20" fill="#5c5c66" font-weight="400" text-anchor="start">点击段落，跳到对应页面</text>
+        <g transform="translate(28 121)">
+          <rect width="212" height="180" rx="12" fill="white" stroke="#d4d4de" />
+          <rect x="260" width="212" height="180" rx="12" fill="white" stroke="#d4d4de" />
+          <path d="M1 33h210 M261 33h210" stroke="#e6e6eb" />
+          <g fill="#575761" font-size="14" font-weight="700">
+            <text x="14" y="22">PDF</text>
+            <text x="275" y="22">Markdown</text>
+          </g>
+          <g fill="none" stroke-linecap="round" stroke-width="3">
+            <path d="M16 59h151m-151 18h173m-173 49h154m-154 16h173m-173 16h91 M276 76h163m-163 52h156m-156 16h173m-173 16h101" stroke="#a8a8b2" />
+            <path d="M212 103h48" stroke="#d6283f" />
+          </g>
+          <rect x="12" y="88" width="184" height="26" rx="5" fill="#f9e3e8" />
+          <rect x="272" y="88" width="184" height="26" rx="5" fill="#f9e3e8" />
+          <text x="276" y="61" font-size="14" fill="#45454e">## 方法</text>
+          <g fill="#981f33" font-size="13">
+            <text x="17" y="105">行内公式 E = mc²</text>
+            <text x="277" y="105">行内公式 $E = mc^2$</text>
+          </g>
+          <circle cx="236" cy="103" r="4" fill="#d6283f" />
+        </g>
+      </g>
+      <rect x="0.5" y="0.5" width="527" height="339" rx="23.5" fill="none" stroke="#e6e6eb" />
+    </g>
+  </g>
+</svg>
