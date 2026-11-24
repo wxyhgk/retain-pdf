@@ -4,13 +4,13 @@
 
 对外 HTTP API、图书馆接口、任务接口、产物下载、事件流和删除语义统一看：
 
-- [RetainPDF 后端 API 总入口](../../../docs/core/api/index.md)
+- [docs/api/](../../../docs/api/README.md)（唯一的对外接口说明；[接口目录](../../../docs/api/00-接口目录.md)从接口登记表生成）
 
-Rust API 的详细实现契约按领域维护在：
+内部设计（运行时、配置、存储、事件、实现备忘）看：
 
-- [Rust API Spec 入口](../API_SPEC.md)
-- [分领域实现契约目录](../API_SPEC.md#contract-map)
-- [Reader read-model handoff](api-spec/reader-read-model.md)
+- [docs/core/api/](../../../docs/core/api/README.md)
+
+`API_SPEC.md` 和 `api-spec/` 2026-11-24 起不再写内容，只留指向上面两处的说明。
 
 后端实现和协作边界看：
 
@@ -24,7 +24,6 @@ Rust API 的详细实现契约按领域维护在：
 
 原则：
 
-- `docs/core/api/index.md` 是对外 API 唯一真源。
-- `docs/core/api/index.md` 维护前端与第三方调用所需的公共契约。
-- `backend/api/API_SPEC.md` 及 `backend/api/docs/api-spec/*` 维护更详细的
-  Rust/Python 编排、诊断、恢复和内部 Agent 实现契约，不作为前端首读文档。
+- `docs/api/` 是对外 API 唯一真源，改接口行为就改那里对应的篇（2026-11-24 起）。
+- `docs/core/api/` 只放内部设计：Rust/Python 编排、诊断、恢复的实现思路。
+- `backend/api/API_SPEC.md`、`backend/api/docs/api-spec/` 不再写内容。

@@ -4,13 +4,13 @@
 
 配合主文档使用：
 
-- [RetainPDF 后端 API 总入口](../../docs/core/api/index.md)
+- [docs/api/](../../docs/api/README.md)（对外接口说明）
 - [Rust API README](README.md)
 - [CURRENT_API_MAP](CURRENT_API_MAP.md)
 
 文档约定：
 
-- 这份文档是前端接入示例，不是协议规范源头；正式口径以 `docs/core/api/index.md` 为准
+- 这份文档是前端接入示例，不是协议规范源头；正式口径以 `docs/api/` 为准
 - 前端请求示例统一以分组后的正式请求结构为准
 - 旧版扁平字段已经移除，不再接受
 - 前端只需要关心接口契约，不需要依赖 Rust 内部模块名

@@ -1,76 +1,16 @@
-# Rust API Spec
+# Rust API Spec（入口已迁走）
 
-This file is the entrypoint for the Rust API implementation contract. The
-detailed contract is split by stable backend domain under `docs/api-spec/`.
+2026-11-24 起接口文档以 `docs/api/` 为准，这里不再写接口内容
+（决定见 [接口文档以 docs/api 为准](../../docs/ops/planning/api-reorg/20261124-接口文档以docs-api为准.md)）：
 
-For frontend and third-party integration, the canonical public entrypoint is
-the [RetainPDF backend API index](../../docs/core/api/index.md). The pages linked
-below retain the more detailed Rust/Python orchestration, diagnostics, recovery,
-and internal Agent contracts used by backend maintainers.
+- **对外接口用法**（信封、认证、错误码、各接口的请求响应）：[docs/api/](../../docs/api/README.md)，
+  全部接口见 [接口目录](../../docs/api/00-接口目录.md)（从接口登记表 `src/app/endpoints.rs` 和各路由表生成）。
+- **内部设计**（Rust/Python 分工、配置、存储、事件、实现备忘）：[docs/core/api/](../../docs/core/api/README.md)。
+- 原来按领域拆的 `docs/api-spec/*.md` 已清空，只剩一个 [README](docs/api-spec/README.md)。
 
-## Global HTTP Conventions
+这个文件留着，是因为 `scripts/check_architecture.py` 的 `check_protocol_docs` 会读它，检查里面不出现已经过时的协议写法。
 
-- Base path: `/api/v1`
-- Health path: `/health`
-- Except for raw file download endpoints, responses are JSON.
-- Except for `GET /health`, `GET /ready`, the sign-in routes under
-  `/api/v1/auth/`, and the model-executor worker routes (per-job capability,
-  see [runtime-and-events](docs/api-spec/runtime-and-events.md#model-executor-worker-routes)),
-  endpoints require `X-API-Key` unless a documented internal Agent capability
-  authorizes the exact method and path.
-- `X-API-Key` authenticates access to the Rust API. It is not an OCR provider
-  token or model API key.
-- API paths, stage names, artifact keys, schema versions, and stdout labels are
-  protocol constants rather than deployment configuration.
-
-Successful JSON responses use the shared envelope:
-
-```json
-{
-  "code": 0,
-  "message": "ok",
-  "data": {}
-}
-```
-
-`code = 0` means success. JSON error responses additionally contain the
-authoritative `error = {code, http_status, details}` object. New consumers must
-branch on `error.code`; the top-level `code` and `message`, plus existing
-domain-specific top-level fields, remain as compatibility fields and have no
-declared removal date. Generic and domain-specific code rules are defined in
-[Errors, storage, and implementation notes](docs/api-spec/storage-and-errors.md).
-The same envelope covers JSON, query, typed path, and multipart extractor
-failures, as well as unknown API paths and unsupported methods. Public messages
-are fixed and do not expose framework parsing details. Unknown `/api/...` paths
-currently return `404`; an unsupported method on a matched authenticated route
-still passes through authentication before the `405` response.
-
-Authentication header:
-
-```http
-X-API-Key: your-rust-api-key
-```
-
-Responses never echo raw provider or model credentials. New translation calls
-should use an opaque `credential_ref`; the temporary inline API-key path exists
-only for compatibility. See the detailed credential contract below.
-
-## Contract Map
-
-| Domain | Contents |
-| --- | --- |
-| [Runtime, configuration, and events](docs/api-spec/runtime-and-events.md) | Rust/Python boundary, runtime knobs, status model, queue semantics, historical job events |
-| [Jobs and workflows](docs/api-spec/jobs.md) | Upload, create, OCR reuse, list/detail, stage retry, ambiguity policy, cancel, document-scoped history |
-| [Reader read model](docs/api-spec/reader-read-model.md) | Reader host data ports, identity, coordinates, availability, and durable live recovery |
-| [Reader regions and artifacts](docs/api-spec/artifacts.md) | Reader alignment, artifact JSON, PDF, cover, thumbnail, Markdown, images, bundles |
-| [Glossary resources](docs/api-spec/glossaries.md) | Glossary CRUD, CSV parsing/export, and JSON import |
-| [Translation diagnostics](docs/api-spec/translation-diagnostics.md) | Summary, item index/detail, redaction, and single-item replay |
-| [Credential references](docs/api-spec/credentials.md) | Vault API, CAS revisions, permissions, runtime resolution, and adoption scope |
-| [Live translation overlay](docs/api-spec/live-translation.md) | Durable layout/page snapshots, SSE replay, commit ordering, and producer requirements |
-| [Document metadata suggestions](docs/api-spec/document-metadata.md) | Durable title candidates, OCR role mapping, provenance, and guarded application |
-| [Errors, storage, and implementation notes](docs/api-spec/storage-and-errors.md) | Error shape, code ranges, data-root layout, and backend/worker ownership |
-
-## Related Backend Documents
+## 后端的其它文档
 
 - [Service documentation index](README.md)
 - [Current runtime API map](CURRENT_API_MAP.md)
@@ -80,18 +20,11 @@ only for compatibility. See the detailed credential contract below.
 - [Render options contract](RENDER_OPTIONS_CONTRACT.md)
 - [Rust API directory map](RUST_API_DIRECTORY_MAP.md)
 
-## Maintenance Rules
+## 写接口文档的规矩
 
-- Update the domain page that owns the behavior; do not append new numbered
-  sections to this index.
-- Treat the endpoint tables in `src/app/router/*.rs` (generated into
-  `docs/api/00-接口目录.md`) as the authority for route registration. Endpoint
-  maps in these pages are curated navigation aids and must not be interpreted
-  as additional or planned routes.
-- Keep public HTTP paths and schema identifiers unchanged when moving prose.
-- Cross-domain rules should have one normative home and be linked from other
-  pages instead of copied.
-- Changes to worker/stage payloads must also update their schema and producer /
-  consumer contract tests; documentation alone does not change the protocol.
-- Do not document secrets, absolute runtime paths, signed URLs, or raw provider
-  request bodies in examples.
+- 路由以接口登记表为准（`src/app/router/*.rs` 里的 `endpoints!` 表，生成到 `docs/api/00-接口目录.md`）；文档里的接口清单只是导航，
+  不代表另有或计划中的接口。
+- 一条跨领域的规则只在一个地方写，别处链过去，不要抄。
+- 挪文档时对外的 HTTP 地址和 schema 标识不变。
+- 改 worker / 阶段的数据结构，要同时改 schema 和生产方、消费方的契约测试；只改文档不改变协议。
+- 示例里不写密钥、运行时绝对路径、签名地址、服务商原始请求体。

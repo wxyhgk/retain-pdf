@@ -1237,8 +1237,8 @@ a positive integer`）；`0` 和正数都放行。
 （`contracts/dist/job-status.d.ts`），是 **required**——如果哪里在手工构造
 完整的 `RuntimeInput` 对象，TypeScript 会要求补上，填 `0` 即可。
 
-详见 [任务提交 API](../../../backend/api/docs/api-spec/jobs-submission.md) 的
-Timeout note 一节。
+详见 [创建任务](../../api/01-任务/01-创建任务.md) 的
+「超时」一节。
 
 ---
 
@@ -1263,7 +1263,7 @@ OCR 专用的取消 (`POST /api/v1/ocr/jobs/{job_id}/cancel`) 只在任务还是
 应该继续轮到状态真的变成 `canceled`。这个时序在改动前后都存在（改动前更糟：
 它可能永远不变），只是现在窗口很短。
 
-详见 [任务重试与控制](../../../backend/api/docs/api-spec/jobs-retry-and-control.md#cancel-job)。
+详见 [续跑、取消与 OCR 歧义处理](../../api/06-阶段操作/03-续跑取消与OCR歧义.md)。
 
 ---
 
@@ -1444,7 +1444,7 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
 另外两点留给前端定：
 
 - 设置页说"Key 只存在这个浏览器里"，但提交任务时内联的 Key 会被后端导入凭据库，任务在就一直在服务端（什么时候清见
-  [凭据规范](../../../backend/api/docs/api-spec/credentials.md#when-credentials-imported-by-job-creation-are-removed)）。
+  [凭据](../../api/14-凭据/01-凭据.md#建任务时内联的密钥)）。
   要不要在设置页加"清除服务端保存的密钥"（`GET /credentials` 列出、`DELETE /credentials/{credential_ref}` 删），由前端定。
 - 凭据 `409` 现在可以按 `error.details.reason` 分支，`credentials.ts:75` 读顶层 `code` 的写法照旧能用。
 
