@@ -42,7 +42,8 @@ Errors without a more specific owning-domain code use one of:
 - `BAD_REQUEST`
 - `PAYLOAD_TOO_LARGE`
 - `UNSUPPORTED_MEDIA_TYPE`
-- `UNPROCESSABLE_ENTITY`
+- `UNPROCESSABLE_ENTITY` (no longer produced since 2026-11-24: request-body
+  schema mismatches are `400 BAD_REQUEST` with `reason: "schema_mismatch"`)
 - `NOT_FOUND`
 - `METHOD_NOT_ALLOWED`
 - `CONFLICT`
@@ -61,14 +62,19 @@ The legacy numeric top-level codes continue to use these values and ranges:
 - `409xx` state conflict
 - `41300` request body too large
 - `41500` unsupported request media type
-- `42200` syntactically valid input that does not match the expected schema
+- `42200` (no longer produced since 2026-11-24, see above)
 - `429xx` rate limiting
 - `502xx` upstream errors
 - `503xx` service availability errors
 - `500xx` internal error
 
 These ranges are compatibility metadata, not the new dispatch key. Consumers
-should use `error.code`.
+should use `error.code` and `error.details.reason`, never the top-level `code`
+or its JSON type. A few domains (OCR artifact reuse, credentials, live
+translation, document metadata suggestions, translation revisions, accounts)
+send a string top-level `code`; that stays as is, but every new error uses a
+numeric top-level `code` (HTTP status × 100). The list is in
+`docs/api/00-约定/01-响应格式.md` ("顶层 `code` 的类型").
 
 ### Internal errors
 
@@ -102,9 +108,9 @@ raw rejection details.
 
 | Rejection | HTTP status | Legacy `code` | `error.code` | Public `message` |
 | --- | ---: | ---: | --- | --- |
-| Malformed JSON syntax | 400 | `40000` | `BAD_REQUEST` | `invalid JSON request body` |
-| JSON body has a field the endpoint does not accept (`deny_unknown_fields`) | 400 | `40000` | `BAD_REQUEST` | ``unknown field `<name>`, expected one of ... in the request body`` (field names only, never values) |
-| JSON value does not match the request schema (wrong type, missing field, unknown enum value) | 422 | `42200` | `UNPROCESSABLE_ENTITY` | `JSON request body does not match the expected schema` |
+| Malformed JSON syntax | 400 | `40000` | `BAD_REQUEST` (`reason: "invalid_json"`) | `invalid JSON request body` |
+| JSON body has a field the endpoint does not accept (`deny_unknown_fields`) | 400 | `40000` | `BAD_REQUEST` (`reason: "unknown_field"`) | ``unknown field `<name>`, expected one of ... in the request body`` (field names only, never values) |
+| JSON value does not match the request schema (wrong type, missing field, unknown enum value) | 400 (422 before 2026-11-24) | `40000` | `BAD_REQUEST` (`reason: "schema_mismatch"`) | `JSON request body does not match the expected schema` |
 | Missing JSON content type | 415 | `41500` | `UNSUPPORTED_MEDIA_TYPE` | `expected an application/json request body` |
 | JSON body exceeds the configured limit | 413 | `41300` | `PAYLOAD_TOO_LARGE` | `request body is too large` |
 | Query string has a parameter the endpoint does not accept (`deny_unknown_fields`) | 400 | `40000` | `BAD_REQUEST` | ``unknown field `<name>`, expected one of ... in the query string`` (parameter names only, never values; since 2026-10-22, before that `invalid query parameters`) |

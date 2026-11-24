@@ -75,6 +75,7 @@ Rust API 接口太多、太散，"牵一发动全身"。这里按日期记录整
 | 2026-11-20 | [加回单个任务的用量](./20261120-加回单个任务的用量.md) | 加回 `reports/usage`（`getJobUsage`）：进度页把书的合计当成这一次的花费，翻过 10 轮的书显示成十几倍；契约 `scope` 加回 `job` |
 | 2026-11-22 | [接口写明负责和调用方](./20261122-接口写明负责和调用方.md) | 登记表每张表写 `owner:`（8 个领域之一），每条必写 `by(…)`（web/desktop/worker/cli/ops/multiuser/none），清单和目录跟着生成，目录开头加统计和 none、multiuser 名单；用量报表拿登记的调用方和按接口计数对账；第一次登记 134 个：web 85、multiuser 24、none 19 |
 | 2026-11-24 | [规矩漏网补齐](./20261124-规矩漏网补齐.md) | 四条规矩的漏网：三处 409 补 `reason`（`version_hidden`、`artifact_is_directory`，补 OCR 产物的 CAS 用 `job_active`/`stale_resolution`）；`POST /jobs`、续跑、书的入口解析请求体的报错不再回显值（状态码不动）；文件出口、删任务、边翻边看的流查询串不认识的参数 400（文件出口登记前端在用的 `version`）；流出错先发 `event: error` 再关；编辑部事件 `limit` 越界 400、回显 `limit` |
+| 2026-11-24 | [请求体错误统一回 400](./20261124-请求体错误统一回400.md) | 第 13 条：请求体类型不对、缺字段、枚举值不认识以前多数接口回 axum 默认的 422，统一成 400 `BAD_REQUEST`，`error.details.reason` 区分 `invalid_json`、`unknown_field`、`schema_mismatch`（在 `ApiJson`、`parse_json_body`、`invalid_json_body` 一处转换）；改单条译文内容没过检查的 422 `TRANSLATION_REVISION_REJECTED` 不动。第 12 条：顶层 `code` 现有行为不改，文档列出是字符串的六类，客户端看 `error.code` 和 `reason`，以后新错误一律数字 |
 
 已经确定的：
 

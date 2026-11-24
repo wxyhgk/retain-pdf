@@ -372,8 +372,10 @@ The capability is checked before the request body is parsed, so a request
 without a valid capability only ever gets `401` and learns nothing about the
 body. With a valid capability, body errors follow the shared extractor contract
 in the unified error envelope: missing or non-JSON `Content-Type` `415`, syntax
-error `400`, unknown field `400` (message names the field only), other schema
-mismatch `422`; values from the request are never echoed. Success responses
+error `400` (`reason: "invalid_json"`), unknown field `400` (`reason:
+"unknown_field"`, message names the field only), other schema mismatch `400`
+(`reason: "schema_mismatch"`; `422` before 2026-11-24); values from the request
+are never echoed. Success responses
 are bare JSON (`ModelOperation`, or `{"changed": bool}` for cancel); every error
 uses the unified envelope.
 

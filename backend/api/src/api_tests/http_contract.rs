@@ -52,6 +52,33 @@ fn assert_unified_generic_error(
     expected_legacy_code: i64,
     expected_stable_code: &str,
 ) {
+    assert_unified_error_with_details(
+        snapshot,
+        expected_status,
+        expected_legacy_code,
+        expected_stable_code,
+        json!({}),
+    );
+}
+
+/// 请求体写错（第 13 条，2026-11-24）：400、顶层 `code` 40000、`BAD_REQUEST`，`error.details.reason` 区分情况。
+fn assert_body_error(snapshot: &ErrorResponseSnapshot, reason: &str) {
+    assert_unified_error_with_details(
+        snapshot,
+        StatusCode::BAD_REQUEST,
+        40000,
+        "BAD_REQUEST",
+        json!({ "reason": reason }),
+    );
+}
+
+fn assert_unified_error_with_details(
+    snapshot: &ErrorResponseSnapshot,
+    expected_status: StatusCode,
+    expected_legacy_code: i64,
+    expected_stable_code: &str,
+    expected_details: Value,
+) {
     assert_eq!(snapshot.status, expected_status, "{snapshot:?}");
     assert!(
         snapshot
@@ -76,7 +103,7 @@ fn assert_unified_generic_error(
         i64::from(expected_status.as_u16()),
         "{snapshot:?}"
     );
-    assert_eq!(body["error"]["details"], json!({}), "{snapshot:?}");
+    assert_eq!(body["error"]["details"], expected_details, "{snapshot:?}");
 }
 
 fn assert_safe_unified_generic_error(
@@ -92,6 +119,10 @@ fn assert_safe_unified_generic_error(
         expected_legacy_code,
         expected_stable_code,
     );
+    assert_safe_message(snapshot, expected_message);
+}
+
+fn assert_safe_message(snapshot: &ErrorResponseSnapshot, expected_message: &str) {
     let body: Value = serde_json::from_str(&snapshot.body).expect("parse unified error body");
     assert_eq!(body["message"], expected_message, "{snapshot:?}");
     let public_message = body["message"]
@@ -210,7 +241,7 @@ async fn invalid_job_payload_uses_json_bad_request_envelope() {
     assert!(body.get("data").is_none());
     assert_eq!(body["error"]["code"], "BAD_REQUEST");
     assert_eq!(body["error"]["http_status"], 400);
-    assert_eq!(body["error"]["details"], json!({}));
+    assert_eq!(body["error"]["details"], json!({ "reason": "schema_mismatch" }));
 }
 
 #[tokio::test]
@@ -315,7 +346,7 @@ async fn malformed_axum_json_rejection_uses_unified_error_envelope() {
         .expect("malformed credential response");
     let snapshot = error_response_snapshot(response).await;
 
-    assert_unified_generic_error(&snapshot, StatusCode::BAD_REQUEST, 40000, "BAD_REQUEST");
+    assert_body_error(&snapshot, "invalid_json");
 }
 
 #[tokio::test]
@@ -377,7 +408,8 @@ async fn method_not_allowed_uses_unified_error_envelope() {
 }
 
 #[tokio::test]
-async fn json_data_mismatch_keeps_422_and_redacts_parser_details() {
+/// 第 13 条（2026-11-24）：字段类型写错以前是 axum 默认的 422，现在和其余「请求写错了」一样是 400。
+async fn json_data_mismatch_is_400_and_redacts_parser_details() {
     let response = build_app(test_state("http-contract-json-data-mismatch"))
         .oneshot(
             Request::builder()
@@ -398,13 +430,8 @@ async fn json_data_mismatch_keeps_422_and_redacts_parser_details() {
         .expect("credential schema mismatch response");
     let snapshot = error_response_snapshot(response).await;
 
-    assert_safe_unified_generic_error(
-        &snapshot,
-        StatusCode::UNPROCESSABLE_ENTITY,
-        42200,
-        "UNPROCESSABLE_ENTITY",
-        "JSON request body does not match the expected schema",
-    );
+    assert_body_error(&snapshot, "schema_mismatch");
+    assert_safe_message(&snapshot, "JSON request body does not match the expected schema");
 }
 
 #[tokio::test]

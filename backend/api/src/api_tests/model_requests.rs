@@ -323,9 +323,10 @@ async fn http_worker_body_errors_use_the_api_error_envelope() {
         (
             Some("application/json"),
             r#"{"operation_id":"synthetic-private-storage-marker","unit_id":7}"#,
-            StatusCode::UNPROCESSABLE_ENTITY,
-            42200,
-            "UNPROCESSABLE_ENTITY",
+            // 字段类型写错：2026-11-24 以前 422，现在 400（第 13 条）。
+            StatusCode::BAD_REQUEST,
+            40000,
+            "BAD_REQUEST",
         ),
         (Some("text/plain"), "{}", StatusCode::UNSUPPORTED_MEDIA_TYPE, 41500, "UNSUPPORTED_MEDIA_TYPE"),
         (None, "{}", StatusCode::UNSUPPORTED_MEDIA_TYPE, 41500, "UNSUPPORTED_MEDIA_TYPE"),

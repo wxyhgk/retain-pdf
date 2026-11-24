@@ -35,7 +35,7 @@ Create / update request body:
 }
 ```
 
-- `name` and `entries` are required (missing fields are 422); `entries` is replaced as a whole.
+- `name` and `entries` are required (a missing field is `400` with `error.details.reason = "schema_mismatch"`; before 2026-11-24 it was 422); `entries` is replaced as a whole.
 - `description`, `source_lang`, `target_lang`, `enabled` are optional. When omitted (or `null`), POST uses the
   defaults (`""`, `true`) and **PUT keeps the stored value** (since 2026-10-22; before, PUT cleared them and reset
   `enabled` to `true`).
