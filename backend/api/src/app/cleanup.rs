@@ -18,6 +18,7 @@
 //!   重渲染成功后的上一份译文）：每轮都删，不用设置（用户 2026-10-28 定的）。认哪些在文件包的
 //!   `artifacts/intermediates.rs`；删了以后把任务记录里指向它们的字段清掉再存（文件列表才不再列它们）。
 //! - 打包下载的 zip（`downloads/`，每次请求都重新生成）：一小时以前的删掉。
+//! - `Idempotency-Key` 的记录（`idempotency_keys`，见 `app/idempotency.rs`）：过了 24 小时的删掉，不用设置。
 //!
 //! 排队、在跑的任务引用着的任务目录（它自己的、复用的 OCR 或译文所在的、OCR 子任务写进的父任务目录）这一轮都不碰。
 //!
@@ -134,6 +135,13 @@ pub fn run_cleanup_once(settings: &RetentionSettings, db: &Db, data_root: &Path)
                 settings.orphan_upload_retention_hours
             );
         }
+    }
+
+    // `Idempotency-Key` 的记录保留 24 小时（见 `app/idempotency.rs`）；同一把 key 再来时也会顺手删它自己那条。
+    match db.delete_expired_idempotency_keys(chrono::Utc::now()) {
+        Ok(0) => {}
+        Ok(deleted) => info!("retention cleanup: deleted {deleted} expired Idempotency-Key record(s)"),
+        Err(error) => warn!("retention cleanup: deleting expired Idempotency-Key records failed: {error:#}"),
     }
 
     let busy = busy_job_dirs(db, data_root)?;

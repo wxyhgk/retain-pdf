@@ -7,7 +7,7 @@ crate::endpoints! {
     state: AppState;
     owner: jobs;
     /// 新建任务（翻译、只做 OCR、重新渲染……，按请求里的 workflow 分）
-    POST "/api/v1/jobs" => lifecycle::create_job, signed by(web);
+    POST "/api/v1/jobs" => lifecycle::create_job, signed by(web) [idempotent];
     /// 任务列表
     GET "/api/v1/jobs" => lifecycle::list_jobs, signed by(web);
     /// 任务详情：状态、进度、产物链接、能做的操作

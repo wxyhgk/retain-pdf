@@ -1,5 +1,6 @@
 mod cleanup;
 pub(crate) mod endpoints;
+mod idempotency;
 mod jobs;
 mod request_log;
 mod response_compression;
