@@ -21,10 +21,10 @@
   `frontend/web/src/platform/api/domains/jobs-actions.ts` 的 `ACTION_CONFLICT_MESSAGES` 已经认识这两个。想给隐藏版本一句中文的话，
   切换版本出错时按 `error.details.reason === "version_hidden"` 显示「这个版本已隐藏，先恢复再选」。
 - **查询串不认识的参数 400**：文件出口（`/jobs/{id}/files/…`、`/documents/{id}/files/…`）、`DELETE /jobs/{id}`、`progress/stream`。
-  核对过前端现在带的都认（`download`、`dpi`、`width`、`watermark`、`version`、`force`、`after_seq`）。只有一处死路：
-  `frontend/packages/domain/src/job/actions.ts` 的 `resolveJobMarkdownBundleAction`（`withIncludeJobDir`）和 `artifacts.ts`
-  `resolveManifestArtifactUrl` 的 `includeJobDir` 会加 `?include_job_dir=true`，但它读的那些字段后端早就不返回了，地址总是空串、请求发不出去。
-  以后要是让它拿到地址，带着这个参数会得到 400；建议连同找地址的那串旧字段一起删掉。
+  核对过前端现在带的都认（`download`、`dpi`、`width`、`watermark`、`version`、`include_job_dir`、`force`、`after_seq`）。
+  `include_job_dir`：「下载 Markdown」（`frontend/packages/domain/src/job/actions.ts` 的 `resolveJobMarkdownBundleAction`、
+  `artifacts.ts` 的 `resolveManifestArtifactUrl`）在 `output/ocr.zip` 上带 `?include_job_dir=true`，文件清单里有这一项，
+  前端会话核对过还在用；后端一直不看它，登记成认识的参数，行为不变。前端不用改。
 - **边翻边看的流出错先发 `event: error`**：data 是错误信封 JSON（`code`、`message`、`error.code`、`error.details.reason`），然后流结束。
   现在的 `frontend/packages/api/src/live-translation.ts` 只认 `translation_units_committed`，别的事件跳过，流结束后
   `use-live-translation.ts` 照旧重连，不会出错。想显示原因（比如任务被删了就别再重连）：`parseSseFrame` 之后

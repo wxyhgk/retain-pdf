@@ -577,7 +577,8 @@ async fn wrong_method_without_key_is_still_unauthorized() {
 }
 
 /// 文件出口、删任务、边翻边看的流：查询串里不认识的参数 400（只回参数名、不回值），认识的照常往下走
-/// （这里任务、书都不存在，所以认识的参数走到 404）。前端读原文带的 `?version=` 是认识的。2026-11-24 起。
+/// （这里任务、书都不存在，所以认识的参数走到 404）。前端读原文带的 `?version=`、下载 Markdown 带的
+/// `?include_job_dir=true` 是认识的。2026-11-24 起。
 #[tokio::test]
 async fn unknown_query_parameters_on_files_delete_and_live_stream_are_rejected() {
     let app = build_app(test_state("http-contract-unknown-query"));
@@ -620,6 +621,7 @@ async fn unknown_query_parameters_on_files_delete_and_live_stream_are_rejected()
         ("GET", "/api/v1/jobs/missing-job/files/pages/1.jpg?width=320&dpi=72"),
         ("GET", "/api/v1/documents/missing-doc/files/source.pdf?version=rev-2"),
         ("GET", "/api/v1/documents/missing-doc/files/source.pdf?download=1"),
+        ("GET", "/api/v1/jobs/missing-job/files/output/ocr.zip?include_job_dir=true"),
         ("DELETE", "/api/v1/jobs/missing-job?force=true"),
         ("GET", "/api/v1/jobs/missing-job/progress/stream?after_seq=3"),
     ] {

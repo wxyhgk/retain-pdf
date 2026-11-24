@@ -192,6 +192,10 @@ pub struct JobFilesQuery {
     /// 前端读书的原文时带 `?version=<原文版本>`，只给浏览器缓存分版本用，后端不看（收紧不认识的参数时登记成认识的）。
     #[serde(default)]
     pub version: Option<String>,
+    /// 前端「下载 Markdown」在 `output/ocr.zip` 上带 `?include_job_dir=true`（`@retainpdf/domain` 的
+    /// `resolveJobMarkdownBundleAction`），后端一直不看、zip 里不带任务目录；收紧不认识的参数时登记成认识的，行为不变。
+    #[serde(default)]
+    pub include_job_dir: Option<String>,
 }
 
 impl JobFilesQuery {
