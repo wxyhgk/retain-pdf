@@ -104,6 +104,13 @@ async fn assert_metadata_route(
 
     assert_eq!(response.status(), StatusCode::OK);
     let payload = read_json(response).await;
+    // 契约 reader-data.v1 的 ReaderMetadataView（2026-11-24 起对真实返回钉键集合）。
+    use crate::api_tests::job_view_contract::assert_reader_view;
+    assert_reader_view(&payload["data"], "ReaderMetadataView", "metadata");
+    for pane in ["source", "translated"] {
+        assert_reader_view(&payload["data"][pane], "ReaderDocumentMetadata", &format!("metadata.{pane}"));
+        assert_reader_view(&payload["data"][pane]["pages"][0], "ReaderPageMetadata", &format!("metadata.{pane}.pages[0]"));
+    }
     for (pane, (width, height)) in [("source", source_size), ("translated", translated_size)] {
         assert_eq!(payload["data"][pane]["page_count"], 1);
         let page = &payload["data"][pane]["pages"][0];

@@ -82,7 +82,10 @@ async fn markdown_document_route_returns_content_and_direct_image_links() {
         payload["data"]["images_base_path"],
         "/api/v1/jobs/markdown-document-job/files/output/ocr/images/"
     );
+    // 契约 reader-data.v1 的 MarkdownDocumentView（2026-11-24 起对真实返回钉键集合）。
+    super::job_view_contract::assert_reader_view(&payload["data"], "MarkdownDocumentView", "markdown");
     let image = &payload["data"]["images"][0];
+    super::job_view_contract::assert_reader_view(image, "MarkdownImageView", "markdown.images[0]");
     assert_eq!(image["path"], "images/page-1/imgs/chart a.png");
     assert_eq!(image["content_type"], "image/png");
     assert_eq!(image["size_bytes"], 8);

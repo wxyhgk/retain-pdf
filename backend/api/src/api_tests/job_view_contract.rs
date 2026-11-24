@@ -212,6 +212,25 @@ pub(super) fn assert_definition(value: &Value, contract: &Value, name: &str, pat
     }
 }
 
+/// 对着某份契约核对一个返回：类型、必填键都在、不许有契约外的键（任何一层）。这一层只有契约里不是
+/// `required` 的键（serde `skip_serializing_if` 会整个省掉的）可以不出现，其余键集合要和契约一样。
+pub(super) fn assert_contract_view(value: &Value, file_name: &str, name: &str, path: &str) {
+    let contract = contract(file_name);
+    assert_definition(value, &contract, name, path);
+    let required: BTreeSet<String> = definition(&contract, name)["required"]
+        .as_array()
+        .map(|keys| keys.iter().filter_map(Value::as_str).map(str::to_string).collect())
+        .unwrap_or_default();
+    let optional: Vec<String> = schema_keys(&contract, name).difference(&required).cloned().collect();
+    let optional: Vec<&str> = optional.iter().map(String::as_str).collect();
+    assert_object_keys_allowing_absent(value, &contract, name, path, &optional);
+}
+
+/// 同上，契约是 reader-data.v1（阅读页、实时译文的读模型）。
+pub(super) fn assert_reader_view(value: &Value, name: &str, path: &str) {
+    assert_contract_view(value, "reader-data.v1.schema.json", name, path);
+}
+
 async fn get_data(app: axum::Router, uri: &str) -> Value {
     let response = app
         .oneshot(

@@ -177,7 +177,7 @@ test("translation versions endpoints carry their client names", () => {
 
 test("tag endpoints carry their client names", () => {
   const documents = read("library-documents.v1.schema.json");
-  const table = documents.endpoints.slice(23).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
+  const table = documents.endpoints.slice(23, 28).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
   assert.deepEqual(table, [
     ["GET", "/api/v1/tags", "listTags", "json", undefined, undefined, "TagListView"],
     ["POST", "/api/v1/tags", "createTag", "json", undefined, "CreateTagInput", "TagRecord"],
@@ -186,5 +186,75 @@ test("tag endpoints carry their client names", () => {
     ["PUT", "/api/v1/documents/:document_id/tags", "setDocumentTags", "json", undefined, "SetDocumentTagsInput", "DocumentRecord"],
   ]);
   assert.ok(documents.definitions.DocumentRecord.required.includes("tags"));
+  // 2026-11-24 起端点表最后登记书的文件下载（binary，不生成函数）。
+  assert.deepEqual(documents.endpoints.slice(28).map(({ method, path, client_name, transport, output }) => [method, path, client_name, transport, output]), [
+    ["GET", "/api/v1/documents/:document_id/files/:name", undefined, "binary", undefined],
+  ]);
   assert.equal(documents.definitions.ListDocumentsQuery.properties.tag_id.type, "string");
+});
+
+// 设置类第 2 批第 2 组：凭据（credentials.v1，2026-11-24）。前端手写的 listCredentials、createCredential、updateCredential 同名；
+// getCredential、deleteCredential 前端还没有调用方，名字照同一个规则起。
+test("settings batch 2 credentials endpoints carry their client names", () => {
+  const table = read("credentials.v1.schema.json").endpoints.map(({ method, path, client_name, transport, input, query, output }) => [
+    method, path, client_name, transport, input, query, output,
+  ]);
+  assert.deepEqual(table, [
+    ["GET", "/api/v1/credentials", "listCredentials", "json", undefined, undefined, "CredentialListView"],
+    ["POST", "/api/v1/credentials", "createCredential", "json", "CreateCredentialInput", undefined, "CredentialMutationView"],
+    ["GET", "/api/v1/credentials/:credential_ref", "getCredential", "json", undefined, undefined, "CredentialMutationView"],
+    ["PUT", "/api/v1/credentials/:credential_ref", "updateCredential", "json", "UpdateCredentialInput", undefined, "CredentialMutationView"],
+    ["DELETE", "/api/v1/credentials/:credential_ref", "deleteCredential", "json", undefined, "DeleteCredentialQuery", "CredentialDeleteView"],
+  ]);
+});
+
+// 设置类第 2 批第 3 组：服务商校验（provider-probes.v1）和字体（platform-settings.v1 的 GET /fonts），2026-11-24。
+// 名字和前端手写的（frontend/packages/api/src/providers.ts、fonts.ts）一样。
+test("settings batch 2 provider probe endpoints carry their client names", () => {
+  const table = read("provider-probes.v1.schema.json").endpoints.map(({ method, path, client_name, transport, input, query, output }) => [
+    method, path, client_name, transport, input, query, output,
+  ]);
+  assert.deepEqual(table, [
+    ["POST", "/api/v1/providers/mineru/validate-token", "validateMineruToken", "json", "MineruTokenValidationRequest", undefined, "ProviderProbeView"],
+    ["POST", "/api/v1/providers/paddle/validate-token", "validatePaddleToken", "json", "PaddleTokenValidationRequest", undefined, "ProviderProbeView"],
+    ["POST", "/api/v1/providers/deepseek/validate-token", "validateDeepSeekToken", "json", "DeepSeekTokenValidationRequest", undefined, "ProviderProbeView"],
+    ["POST", "/api/v1/providers/deepseek/balance", "queryDeepSeekBalance", "json", "DeepSeekTokenValidationRequest", undefined, "DeepSeekBalanceView"],
+  ]);
+});
+
+// platform-settings.v1：字体（第 3 组）、同步（第 4 组）、备份（第 5 组）、健康检查。名字照前端手写的，
+// fetchXxx 照术语表的先例改成 getXxx（fetchSyncStatus → getSyncStatus、fetchBackupStatus → getBackupStatus）。
+// /health 不在 /api/v1 下，前端生成器不生成它，所以没有 client_name。
+test("settings batch 2 platform endpoints carry their client names", () => {
+  const table = read("platform-settings.v1.schema.json").endpoints.map(({ method, path, client_name, transport, input, query, output }) => [
+    method, path, client_name, transport, input, query, output,
+  ]);
+  assert.deepEqual(table, PLATFORM_ENDPOINTS);
+});
+
+const PLATFORM_ENDPOINTS = [
+  ["GET", "/api/v1/fonts", "listFonts", "json", undefined, undefined, "FontListView"],
+  ["GET", "/api/v1/sync", "getSyncStatus", "json", undefined, undefined, "SyncStatusView"],
+  ["PUT", "/api/v1/sync", "updateSyncSettings", "json", "SyncSettingsInput", undefined, "SyncStatusView"],
+  ["POST", "/api/v1/sync/run", "runSyncNow", "json", undefined, undefined, "SyncStatusView"],
+  ["POST", "/api/v1/sync/test", "testSyncTarget", "json", "SyncSettingsInput", undefined, "SyncTestView"],
+  ["GET", "/api/v1/backups", "getBackupStatus", "json", undefined, undefined, "BackupStatusView"],
+  ["POST", "/api/v1/backups", "createBackup", "json", undefined, undefined, "BackupItemView"],
+  ["DELETE", "/api/v1/backups/:backup_id", "deleteBackup", "json", undefined, undefined, "BackupStatusView"],
+  ["POST", "/api/v1/backups/:backup_id/restore", "restoreBackup", "json", undefined, undefined, "BackupRestoreView"],
+  ["GET", "/health", undefined, "json", undefined, undefined, "HealthView"],
+];
+
+// 登录状态（auth-session.v1）、上传（uploads.v1），2026-11-24。fetchAuthSession 照术语表的先例叫 getAuthSession。
+// 上传是 multipart，生成器只会发 JSON，所以没有 client_name（网页用 XHR 自己发，要上传进度）。
+test("auth session and upload endpoints", () => {
+  const table = (fileName) => read(fileName).endpoints.map(({ method, path, client_name, transport, input, query, output }) => [
+    method, path, client_name, transport, input, query, output,
+  ]);
+  assert.deepEqual(table("auth-session.v1.schema.json"), [
+    ["GET", "/api/v1/auth/session", "getAuthSession", "json", undefined, undefined, "SessionView"],
+  ]);
+  assert.deepEqual(table("uploads.v1.schema.json"), [
+    ["POST", "/api/v1/uploads", undefined, "json", undefined, undefined, "UploadView"],
+  ]);
 });

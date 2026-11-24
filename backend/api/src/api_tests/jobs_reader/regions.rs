@@ -9,6 +9,20 @@ use crate::api_tests::jobs_common::{read_json, test_state};
 use crate::app::build_app;
 use crate::models::{CreateJobInput, JobArtifacts, JobSnapshot};
 
+fn assert_regions_match_contract(data: &Value, path: &str) {
+    use crate::api_tests::job_view_contract::assert_reader_view;
+    assert_reader_view(data, "ReaderRegionsView", path);
+    for (index, item) in data["items"].as_array().expect("items").iter().enumerate() {
+        let item_path = format!("{path}.items[{index}]");
+        assert_reader_view(item, "ReaderRegionItem", &item_path);
+        for pane in ["source", "translated"] {
+            if item[pane].is_object() {
+                assert_reader_view(&item[pane], "ReaderRegionBox", &format!("{item_path}.{pane}"));
+            }
+        }
+    }
+}
+
 #[tokio::test]
 async fn reader_regions_route_maps_translated_items_to_source_blocks() {
     let state = test_state("reader-regions");
@@ -111,6 +125,8 @@ async fn reader_regions_route_maps_translated_items_to_source_blocks() {
 
     assert_eq!(response.status(), StatusCode::OK);
     let payload = read_json(response).await;
+    // 契约 reader-data.v1 的 ReaderRegionsView（2026-11-24 起对真实返回钉键集合）。
+    assert_regions_match_contract(&payload["data"], "regions");
     assert_eq!(payload["data"]["items"][0]["item_id"], "p008-b0009");
     assert_eq!(payload["data"]["items"][0]["source"]["page"], 8);
     assert_eq!(payload["data"]["items"][0]["translated"]["page"], 8);
@@ -245,6 +261,7 @@ async fn reader_regions_route_returns_normalized_source_blocks_without_translati
     assert_eq!(response.status(), StatusCode::OK);
     let payload = read_json(response).await;
     assert_eq!(payload["data"]["items"].as_array().unwrap().len(), 2);
+    assert_regions_match_contract(&payload["data"], "regions(source only)");
     assert_eq!(payload["data"]["items"][0]["item_id"], "p001-b0000");
     assert_eq!(
         payload["data"]["items"][0]["source"]["text"],

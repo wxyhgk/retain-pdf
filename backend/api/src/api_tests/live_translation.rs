@@ -12,6 +12,7 @@ use crate::app::build_app;
 use crate::db::PipelineUnitCommit;
 use crate::models::{CreateJobInput, JobArtifacts, JobSnapshot};
 
+use super::job_view_contract::assert_reader_view;
 use super::jobs_common::{read_json, test_state};
 
 fn sha256_hex(bytes: &[u8]) -> String {
@@ -176,6 +177,12 @@ async fn live_translation_reads_layout_and_only_hash_matched_checkpoint_page() {
         .expect("layout response");
     assert_eq!(layout_response.status(), StatusCode::OK);
     let layout = read_json(layout_response).await;
+    // 契约 reader-data.v1 的 LiveTranslationLayout（2026-11-24 起对真实返回钉键集合）。
+    assert_reader_view(&layout["data"], "LiveTranslationLayout", "layout");
+    assert_reader_view(&layout["data"]["pages"][0], "LiveTranslationLayoutPage", "layout.pages[0]");
+    let block = &layout["data"]["pages"][0]["blocks"][0];
+    assert_reader_view(block, "LiveTranslationLayoutBlock", "layout.pages[0].blocks[0]");
+    assert_reader_view(&block["typography"], "LiveTranslationTypography", "layout.pages[0].blocks[0].typography");
     assert_eq!(layout["data"]["pages"][0]["page_idx"], 0);
     assert_eq!(layout["data"]["pages"][0]["width"], 625.4);
     assert_eq!(
@@ -218,6 +225,8 @@ async fn live_translation_reads_layout_and_only_hash_matched_checkpoint_page() {
         .expect("page response");
     assert_eq!(page_response.status(), StatusCode::OK);
     let page = read_json(page_response).await;
+    assert_reader_view(&page["data"], "LiveTranslationPageSnapshot", "page");
+    assert_reader_view(&page["data"]["items"][0], "LiveTranslationItem", "page.items[0]");
     assert_eq!(page["data"]["attempt"], 1);
     assert_eq!(page["data"]["page_hash"], sha256_hex(&snapshot));
     assert_eq!(page["data"]["items"].as_array().expect("items").len(), 1);
@@ -362,6 +371,8 @@ async fn live_events_streams_authoritative_commit_with_database_sequence() {
         .find_map(|line| line.strip_prefix("data: "))
         .expect("SSE data line");
     let payload: serde_json::Value = serde_json::from_str(data).expect("SSE event JSON");
+    // 契约 reader-data.v1 的 LiveTranslationCommitEvent（SSE 的 data 行，2026-11-24 起钉键集合）。
+    assert_reader_view(&payload, "LiveTranslationCommitEvent", "stream.data");
     assert_eq!(payload["event"], "translation_units_committed");
     assert_eq!(payload["seq"], sse_id);
     assert!(payload["attempt"].as_u64().is_some());
