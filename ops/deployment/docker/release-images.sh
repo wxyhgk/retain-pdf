@@ -44,6 +44,8 @@ WEB_LATEST_IMAGE="${WEB_REPO}:latest"
 docker build \
   "${build_arg_flags[@]}" \
   --build-arg "TYPST_VERSION=${TYPST_VERSION}" \
+  --build-arg "RETAIN_PDF_VERSION=${VERSION_TAG#v}" \
+  --build-arg "RETAIN_PDF_BUILD=$(git -C "${ROOT_DIR}" rev-parse HEAD 2>/dev/null || true)" \
   -f "${SERVICES_ROOT}/../ops/deployment/docker/backend/Dockerfile.app" \
   -t "${APP_VERSION_IMAGE}" \
   "${SERVICES_ROOT}/.."

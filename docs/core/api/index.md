@@ -67,6 +67,12 @@
 | `ai_service` | 固定 `disabled`：RetainPDF 自己的 AI 服务 2026-11-03 删了，键留着不删（以前和 `jobsd` 一样是监督器状态） |
 | `disk` | 数据目录所在磁盘（2026-10-24 起）：`free_bytes` 剩余可用字节（拿不到是 `null`）、`min_free_bytes` 下限（`RUST_API_MIN_FREE_DISK_MB`，`0` 不查）、`low` 低于下限。低于下限时新上传、新任务 503 `insufficient_storage`；`status` 和 `/ready` 不跟着变（磁盘满了更要能打开页面删任务） |
 | `time` | 服务器时间 |
+| `version` | 应用版本（2026-11-24 起）：构建时注入的 `RETAIN_PDF_VERSION`，和前端 `APP_VERSION` 同一个来源；没注入是 `0.0.0+unknown`。每个回应的 `X-RetainPDF-Version` 头也是它 |
+| `build` | 构建的提交号（2026-11-24 起，`RETAIN_PDF_BUILD`）；没注入是 `null` |
+
+版本和提交号先读运行时的环境变量 `RETAIN_PDF_VERSION`、`RETAIN_PDF_BUILD`（Docker 应用镜像在最后一层 `ENV` 写进去，
+构建工作流传 build-arg），没有再用编译时注入的同名变量（桌面包的 Rust 构建步骤前写进 `GITHUB_ENV`），见
+`backend/packages/retainpdf-platform/src/version.rs`。Rust 包自己的版本（`0.1.0`）不是应用版本。
 
 `GET /ready`（能接请求了）就绪 `200`，不就绪 `503`。**看 HTTP 状态码**（Docker 用 `curl -f`，开发栈等 2xx）。
 `data` 是 `status`（`ready` / `not_ready`）、`components`（`db` 总是必需；jobsd 只在本进程监督它时必需，

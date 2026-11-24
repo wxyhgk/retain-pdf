@@ -325,6 +325,8 @@ Neither route needs `X-API-Key`; both are also served on the simple port.
 | `jobsd` | string | supervisor state of jobsd: `starting`, `healthy`, `unhealthy`, or `unsupervised` |
 | `disk` | object | since 2026-10-24: the disk holding the data directory — `free_bytes` (integer \| `null` when unknown, e.g. on Windows), `min_free_bytes` (`RUST_API_MIN_FREE_DISK_MB`; `0` disables the check), `low` (below the floor). Below the floor, new uploads and new jobs answer `503` with `error.details.reason = "insufficient_storage"`; `status` and `/ready` do not change |
 | `time` | string | server time, ISO 8601 |
+| `version` | string | since 2026-11-24: application version (`RETAIN_PDF_VERSION` injected at build time, same source as the frontend `APP_VERSION`); `"0.0.0+unknown"` when nothing was injected. Every response also carries it as `X-RetainPDF-Version` |
+| `build` | string \| `null` | since 2026-11-24: the commit the server was built from (`RETAIN_PDF_BUILD`); `null` when unknown |
 
 `GET /ready` (readiness) answers `200` when ready and `503` otherwise; decide by
 the HTTP status (Docker uses `curl -f`, the dev stack waits for a 2xx):

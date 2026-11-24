@@ -96,6 +96,17 @@ jobs:
           workspaces: ". -> target"
           save-if: false
 
+      # 服务端版本和提交号编进 rust_api（option_env!，给 /health 的 version、build 和回应头 X-RetainPDF-Version）。
+      # 写进 GITHUB_ENV 而不是写在 cargo 步骤上：cargo 步骤要和预热工作流逐字一致（test_desktop_rust_cache_contracts）；
+      # rust-cache 的缓存键不看 RETAIN_PDF_* 环境变量，只有用到它的工作区包会重编。
+      - name: Export server version for Rust build
+        shell: bash
+        env:
+          SERVER_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          echo "RETAIN_PDF_VERSION=${SERVER_VERSION}" >> "$GITHUB_ENV"
+          echo "RETAIN_PDF_BUILD=${GITHUB_SHA}" >> "$GITHUB_ENV"
+
       - name: Build Rust API for Windows
         shell: pwsh
         run: cargo build --release --locked --workspace --bins --target x86_64-pc-windows-msvc --manifest-path "$env:RETAIN_PDF_SOURCE_ROOT/Cargo.toml"
@@ -343,6 +354,17 @@ jobs:
           shared-key: desktop-release-linux
           workspaces: ". -> target"
           save-if: false
+
+      # 服务端版本和提交号编进 rust_api（option_env!，给 /health 的 version、build 和回应头 X-RetainPDF-Version）。
+      # 写进 GITHUB_ENV 而不是写在 cargo 步骤上：cargo 步骤要和预热工作流逐字一致（test_desktop_rust_cache_contracts）；
+      # rust-cache 的缓存键不看 RETAIN_PDF_* 环境变量，只有用到它的工作区包会重编。
+      - name: Export server version for Rust build
+        shell: bash
+        env:
+          SERVER_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          echo "RETAIN_PDF_VERSION=${SERVER_VERSION}" >> "$GITHUB_ENV"
+          echo "RETAIN_PDF_BUILD=${GITHUB_SHA}" >> "$GITHUB_ENV"
 
       # 产物在 target/x86_64-unknown-linux-gnu/release/（不是 target/release/），
       # 「Build Linux package」用 RUST_API_BINARY 等环境变量告诉 prepare-app。
@@ -702,6 +724,17 @@ jobs:
           shared-key: desktop-release-macos
           workspaces: ". -> target"
           save-if: false
+
+      # 服务端版本和提交号编进 rust_api（option_env!，给 /health 的 version、build 和回应头 X-RetainPDF-Version）。
+      # 写进 GITHUB_ENV 而不是写在 cargo 步骤上：cargo 步骤要和预热工作流逐字一致（test_desktop_rust_cache_contracts）；
+      # rust-cache 的缓存键不看 RETAIN_PDF_* 环境变量，只有用到它的工作区包会重编。
+      - name: Export server version for Rust build
+        shell: bash
+        env:
+          SERVER_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          echo "RETAIN_PDF_VERSION=${SERVER_VERSION}" >> "$GITHUB_ENV"
+          echo "RETAIN_PDF_BUILD=${GITHUB_SHA}" >> "$GITHUB_ENV"
 
       - name: Build Rust API for macOS
         shell: bash
