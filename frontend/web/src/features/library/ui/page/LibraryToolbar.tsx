@@ -58,10 +58,10 @@ export function LibraryToolbar({
   return (
     <div className="mb-4 border-b border-border/10 pb-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-baseline gap-2">
-          <span className="truncate text-[15px] font-semibold tracking-tight text-foreground/90 sm:text-[16px]">全部书库</span>
+        <div className="library-toolbar-heading flex min-w-0 items-baseline gap-2">
+          <span className="library-toolbar-title">全部书库</span>
           {Number.isFinite(count) ? (
-            <span className="inline-flex h-5 shrink-0 items-center rounded-full bg-muted/45 px-2 text-[11px] tabular-nums text-muted-foreground/70">{count}</span>
+            <span className="library-toolbar-count">{count}</span>
           ) : null}
         </div>
 

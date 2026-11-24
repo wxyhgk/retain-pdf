@@ -11,10 +11,7 @@
 @import "../../ui/styles/themes/index.css";
 
 :root {
-  /* 字体与动效与皮肤无关，固定在此 */
-  --font-sans: "SF Pro Display", "SF Pro SC", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif;
-  --font-display: "SF Pro Display", "SF Pro SC", "PingFang SC", sans-serif;
-  --font-mono: "Iosevka", "JetBrains Mono", monospace;
+  /* 字体归皮肤管（2026-11-24 挪进 @retainpdf/ui 的 themes/_component-defaults.css）；动效与皮肤无关，固定在此 */
 
   /* 动效基准曲线 */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);

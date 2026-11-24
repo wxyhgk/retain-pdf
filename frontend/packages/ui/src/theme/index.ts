@@ -2,3 +2,4 @@
 // 皮肤的 CSS 在 ../../styles/themes/，经 @retainpdf/ui/themes.css 引入。
 export * from "./registry.js";
 export * from "./theme.js";
+export * from "./shape-tokens/index.js";

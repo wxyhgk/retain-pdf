@@ -35,7 +35,7 @@
   letter-spacing: -0.01em;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  border-bottom: var(--dialog-divider-width, var(--shape-edge-width, 1px)) solid var(--dialog-divider-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 60%, transparent)));
 }
 
 .book-detail-shell-grid {
@@ -52,7 +52,7 @@
   padding: 22px 18px 22px 22px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  border-right: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  border-right: var(--dialog-divider-width, var(--shape-edge-width, 1px)) solid var(--dialog-divider-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 60%, transparent)));
   background: color-mix(in srgb, var(--bg) 45%, var(--paper));
 }
 
@@ -102,7 +102,7 @@
   display: grid;
   gap: 10px;
   padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
-  border-radius: var(--ui-radius-lg);
+  border: var(--dialog-card-border-width, var(--shape-edge-width, 1px)) solid var(--dialog-card-border-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 72%, transparent)));
+  border-radius: var(--dialog-card-radius, var(--shape-radius-surface, var(--ui-radius-lg)));
   background: color-mix(in srgb, var(--paper) 76%, transparent);
 }

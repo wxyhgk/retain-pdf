@@ -27,8 +27,8 @@
   width: var(--reader-ai-split-width);
   height: 48px;
   padding: 0 12px 0 14px;
-  border-bottom: 1px solid color-mix(in srgb, var(--ink) 7%, transparent);
-  border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-bottom: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 7%, transparent)));
+  border-left: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
   background: color-mix(in srgb, var(--paper) 96%, transparent);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
@@ -142,7 +142,7 @@
 .reader-assistant-dock-tab.is-active {
   color: var(--ink);
   background: var(--paper);
-  box-shadow: 0 1px 5px color-mix(in srgb, var(--shadow-color) 10%, transparent);
+  box-shadow: var(--reader-tab-active-shadow, var(--shape-shadow-sm, 0 1px 5px color-mix(in srgb, var(--shadow-color) 10%, transparent)));
 }
 
 .reader-assistant-dock-close {
@@ -195,7 +195,7 @@
   inset: 108px 0 0 auto;
   width: var(--reader-ai-split-width);
   height: calc(100dvh - 108px);
-  border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-left: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
 }
 
 .reader-react-root.is-assistant-open .reader-notes-panel--workspace .reader-markdown-nav {

@@ -42,13 +42,13 @@
 .ui-select select {
   width: 100%;
   min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius-md);
+  border: var(--field-border-width, var(--shape-edge-width, 1px)) solid var(--field-border-color, var(--shape-edge-color, var(--line)));
+  border-radius: var(--field-radius, var(--shape-radius-control, var(--ui-radius-md)));
   background: var(--paper);
   color: var(--ink);
   font: inherit;
   font-size: var(--ui-text-md);
-  box-shadow: none;
+  box-shadow: var(--field-shadow, var(--shape-shadow-sm, none));
   transition: border-color 120ms ease;
 }
 
@@ -91,7 +91,7 @@
 .ui-select select:focus {
   border-color: var(--accent);
   background: var(--paper);
-  box-shadow: none;
+  box-shadow: var(--field-focus-shadow, var(--field-shadow, var(--shape-shadow-sm, none)));
   outline: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
   outline-offset: 0;
 }

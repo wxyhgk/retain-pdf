@@ -6,6 +6,9 @@
   overflow: hidden;
   pointer-events: none;
   user-select: none;
+  /* 叠层盖在 PDF 页上，用 PDF 页自己的颜色（白底深字），不跟皮肤：深色皮肤下 --paper 是深色，会在白页上出现深色块。 */
+  --reader-overlay-paper: #fff;
+  --reader-overlay-ink: #171719;
 }
 
 .reader-live-translation-waiting {
@@ -20,11 +23,11 @@
   min-height: 34px;
   margin: 18px 16px -52px;
   padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--ink, #171719) 9%, transparent);
-  border-radius: 999px;
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink, #171719) 9%, transparent)));
+  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, 999px));
   color: color-mix(in srgb, var(--ink, #171719) 66%, var(--muted, #6f7178));
   background: color-mix(in srgb, var(--paper, #fff) 92%, transparent);
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color, #111) 9%, transparent);
+  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 10px 28px color-mix(in srgb, var(--shadow-color, #111) 9%, transparent)));
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   font-size: 12px;
@@ -52,8 +55,8 @@
   position: absolute;
   box-sizing: border-box;
   overflow: hidden;
-  color: var(--ink, #171719);
-  background: color-mix(in srgb, var(--paper, #fff) 96%, transparent);
+  color: var(--reader-overlay-ink);
+  background: color-mix(in srgb, var(--reader-overlay-paper) 96%, transparent);
   filter: blur(0);
   opacity: 1;
   transform: translateY(0);
@@ -108,7 +111,7 @@
   position: absolute;
   inset: 0;
   border-radius: 2px;
-  background: color-mix(in srgb, var(--ink, #171719) 7%, transparent);
+  background: color-mix(in srgb, var(--reader-overlay-ink) 7%, transparent);
   animation: reader-live-translation-highlight 900ms ease-out both;
 }
 
@@ -160,11 +163,11 @@
   transform: translateX(-50%);
   max-width: calc(100% - 24px);
   padding: 5px 11px;
-  border: 1px solid color-mix(in srgb, var(--ink, #171719) 9%, transparent);
-  border-radius: var(--ui-radius-pill, 999px);
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink, #171719) 9%, transparent)));
+  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, var(--ui-radius-pill, 999px)));
   color: color-mix(in srgb, var(--ink, #171719) 62%, var(--muted, #6f7178));
   background: color-mix(in srgb, var(--paper, #fff) 92%, transparent);
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow-color, #111) 8%, transparent);
+  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--shadow-color, #111) 8%, transparent)));
   font-size: var(--ui-text-xs, 11.5px);
   font-weight: 620;
   white-space: nowrap;

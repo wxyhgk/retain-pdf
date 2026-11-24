@@ -1,4 +1,6 @@
 /* 合集：视图壳、文件夹头、文件夹卡片与封面堆叠。（CollectionsView / CollectionsGridView / FolderCoverStack）
+ * 文件夹卡片的外框、圆角、阴影走三层取值 var(--collection-card-*, var(--shape-*, 现在的值))，不设变量时样子不变；
+ * 变量清单在 packages/ui/src/theme/shape-tokens/book-card.ts。
  *
  * @owns categories, category
  * @uses library-view */
@@ -115,10 +117,10 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  border: var(--shape-edge-width, 1px) solid var(--shape-edge-color, var(--line));
+  border-radius: var(--collection-card-manage-radius, var(--shape-radius-control, 10px));
   background: color-mix(in srgb, var(--paper) 94%, transparent);
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 14%, transparent);
+  box-shadow: var(--collection-card-manage-shadow, var(--shape-shadow-sm, 0 1px 4px color-mix(in srgb, var(--ink) 14%, transparent)));
   color: var(--ink);
   cursor: pointer;
   opacity: 0;
@@ -146,9 +148,9 @@
   isolation: isolate;
   width: 100%;
   aspect-ratio: 3 / 4;
-  border-radius: 14px;
+  border-radius: var(--collection-card-radius, var(--shape-radius-surface, 14px));
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: var(--collection-card-border-width, var(--shape-edge-width, 1px)) solid var(--collection-card-border-color, var(--shape-edge-color, var(--line)));
   background:
     linear-gradient(
       145deg,
@@ -160,13 +162,13 @@
       color-mix(in srgb, var(--bg) 70%, var(--paper)),
       color-mix(in srgb, var(--line) 55%, var(--bg))
     );
-  box-shadow: 0 10px 24px color-mix(in srgb, var(--ink) 8%, transparent);
+  box-shadow: var(--collection-card-shadow, var(--shape-shadow-md, 0 10px 24px color-mix(in srgb, var(--ink) 8%, transparent)));
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.15s ease;
 
   .category-card-open:hover & {
     transform: translateY(-2px);
-    border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
-    box-shadow: 0 14px 30px color-mix(in srgb, var(--ink) 12%, transparent);
+    border-color: var(--collection-card-hover-border-color, var(--shape-edge-color, color-mix(in srgb, var(--accent) 22%, var(--line))));
+    box-shadow: var(--collection-card-hover-shadow, var(--shape-shadow-md, 0 14px 30px color-mix(in srgb, var(--ink) 12%, transparent)));
   }
 }
 

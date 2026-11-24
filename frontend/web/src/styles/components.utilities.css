@@ -13,25 +13,38 @@
     font-size: 12px;
   }
   font: inherit;
-  @apply inline-flex min-h-12 items-center justify-center rounded-full px-5 text-[15px] font-semibold no-underline transition;
-  border: 1px solid transparent;
+  @apply inline-flex min-h-12 items-center justify-center px-5 text-[15px] font-semibold no-underline transition;
+  /* 以前是 rounded-full（calc(infinity * 1px)），作为最后一层兜底 */
+  border-radius: var(--btn-link-radius, var(--shape-radius-control, calc(infinity * 1px)));
+  border: var(--btn-border-width, var(--shape-edge-width, 1px)) solid var(--btn-primary-border, var(--shape-edge-color, transparent));
   background: var(--accent);
   color: var(--paper);
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 18%, transparent);
+  box-shadow: var(--btn-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--accent) 18%, transparent)));
 
   &:hover {
     filter: brightness(1.05);
   }
 
+  /* 按下：不设变量时不位移、阴影不变。.disabled 已是 pointer-events-none，不会按下。 */
+  &:active {
+    transform: var(--btn-press-transform, var(--shape-press-transform, none));
+    box-shadow: var(--btn-press-shadow, var(--shape-press-shadow, var(--btn-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--accent) 18%, transparent)))));
+  }
+
   &.secondary {
     background: var(--paper);
     color: var(--ink);
-    border-color: var(--line);
-    box-shadow: none;
+    border-color: var(--btn-secondary-border, var(--shape-edge-color, var(--line)));
+    box-shadow: var(--btn-shadow, var(--shape-shadow-sm, none));
+  }
+
+  &.secondary:active {
+    transform: var(--btn-press-transform, var(--shape-press-transform, none));
+    box-shadow: var(--btn-press-shadow, var(--shape-press-shadow, var(--btn-shadow, var(--shape-shadow-sm, none))));
   }
 
   &.secondary:hover {
-    border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+    border-color: var(--btn-secondary-hover-border, var(--shape-edge-color, color-mix(in srgb, var(--accent) 28%, var(--line))));
     color: var(--accent);
     filter: none;
   }
@@ -48,7 +61,7 @@
   .status-card &.secondary {
     background: var(--paper);
     color: var(--ink);
-    border-color: var(--line);
+    border-color: var(--btn-secondary-border, var(--shape-edge-color, var(--line)));
   }
 }
 
@@ -57,25 +70,25 @@
   &.app-button {
     background: var(--paper);
     color: var(--ink);
-    border-color: var(--line);
+    border-color: var(--btn-secondary-border, var(--shape-edge-color, var(--line)));
   }
 
   & .button-link {
     background: var(--paper);
     color: var(--ink);
-    border-color: var(--line);
+    border-color: var(--btn-secondary-border, var(--shape-edge-color, var(--line)));
   }
 
   .status-card &button {
     background: var(--paper);
     color: var(--ink);
-    border-color: var(--line);
+    border-color: var(--btn-secondary-border, var(--shape-edge-color, var(--line)));
   }
 
   .status-card &.button-link {
     background: var(--paper);
     color: var(--ink);
-    border-color: var(--line);
+    border-color: var(--btn-secondary-border, var(--shape-edge-color, var(--line)));
   }
 }
 

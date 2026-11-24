@@ -1,7 +1,78 @@
-/* 底部悬浮搜索条 / 批量操作条。（LibraryBatchToolbar）
+/* 底部悬浮搜索条 / 批量操作条，以及书库标题行的标题和数量。（LibraryBatchToolbar / LibraryToolbar）
  *
- * @owns library-search
+ * @owns library-search, library-toolbar
  * @uses is-batch-mode */
+
+/* 书库标题行的「全部书库」和数量框（LibraryToolbar）。以前是 Tailwind 类，值逐项等价：
+   text-[15px] sm:text-[16px] font-semibold tracking-tight text-foreground/90 truncate。
+   数量框的描边默认是 0（不显示），皮肤设了 --count-badge-border-* 才出现。 */
+@utility library-toolbar-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--heading-font, inherit);
+  font-size: var(--heading-size, 15px);
+  font-weight: var(--heading-weight, var(--shape-heading-weight, 600));
+  letter-spacing: -0.025em;
+  color: var(--heading-color, color-mix(in oklab, var(--foreground) 90%, transparent));
+
+  @media (min-width: 40rem) {
+    font-size: var(--heading-size, 16px);
+  }
+}
+
+/* 标题 + 数量那一行的外壳（原来的 flex min-w-0 items-baseline gap-2 还在 TSX 上）。
+   标题下的短横画在它的 ::after 上：绝对定位，宽高默认 0，不占位，不影响标题的省略号。
+   --heading-accent-offset 是短横离外壳底边的距离，负数往下。 */
+@utility library-toolbar-heading {
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: var(--heading-accent-offset, 0);
+    width: var(--heading-accent-width, 0);
+    height: var(--heading-accent-height, 0);
+    background: var(--heading-accent-color, transparent);
+    pointer-events: none;
+  }
+}
+
+/* 数量框：h-5 px-2 text-[11px] tabular-nums rounded-full bg-muted/45 text-muted-foreground/70 */
+@utility library-toolbar-count {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 1.25rem;
+  padding-inline: 0.5rem;
+  border-radius: var(--count-badge-radius, var(--shape-radius-control, 3.40282e38px));
+  border: var(--count-badge-border-width, var(--shape-edge-width, 0)) solid
+    var(--count-badge-border-color, var(--shape-edge-color, var(--line)));
+  background-color: var(--count-badge-bg, color-mix(in oklab, var(--muted-surface) 45%, transparent));
+  color: var(--count-badge-color, color-mix(in oklab, var(--muted) 70%, transparent));
+  font-size: var(--count-badge-size, 11px);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 批量操作条（LibraryBatchToolbar）：占批量模式下搜索框的位置。
+   以前是 Tailwind 类：flex min-h-[52px] flex-wrap items-center gap-2 rounded-full border bg-paper/82 p-2 pl-4 shadow backdrop-blur-[18px]。 */
+@utility library-search-batchbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 52px;
+  padding: 0.5rem;
+  padding-left: 1rem;
+  border-radius: var(--batchbar-radius, var(--shape-radius-control, 3.40282e38px));
+  border: var(--batchbar-border-width, var(--shape-edge-width, 1px)) solid
+    var(--batchbar-border-color, var(--shape-edge-color, color-mix(in srgb, color-mix(in srgb, var(--line) 85%, var(--muted)) 82%, transparent)));
+  background-color: var(--batchbar-bg, color-mix(in oklab, var(--paper) 82%, transparent));
+  box-shadow: var(--batchbar-shadow, var(--shape-shadow-md, 0 18px 46px color-mix(in srgb, var(--shadow-color) 12%, transparent)));
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
 
 /* 底部悬浮搜索条(LibrarySearchDock.jsx)——挪回底部后是唯一内容,不用再
    和添加/设置按钮共享一条 pill,宽度收窄一档(min(420px, 视口-56px))。 */

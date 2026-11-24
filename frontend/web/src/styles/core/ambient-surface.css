@@ -71,7 +71,9 @@ main.app-shell {
   margin-inline: auto;
   display: flex;
   flex-direction: column;
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--stage-radius, 6px 6px 0 0);
+  /* 描边默认 0（现在没有）；皮肤设了才出现 */
+  border: var(--stage-border-width, 0) solid var(--stage-border-color, var(--line));
   padding: var(--stage-pad);
   /* 台基干净：接近实纸，阴影极轻。宽度/内边距/纱厚/阴影全走 L3 token
    * （themes/_component-defaults.css 默认值，皮肤按需覆盖）——本文件

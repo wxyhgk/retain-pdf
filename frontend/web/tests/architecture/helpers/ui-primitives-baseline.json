@@ -228,7 +228,7 @@
     },
     "../packages/reader/styles/chrome.css": {
       "fontSize": 7,
-      "borderRadius": 8
+      "borderRadius": 2
     },
     "../packages/reader/styles/core/ambient-surface-home.css": {
       "borderRadius": 1
@@ -238,22 +238,22 @@
       "borderRadius": 1
     },
     "../packages/reader/styles/dialog-shell.css": {
-      "borderRadius": 2
+      "borderRadius": 1
     },
     "../packages/reader/styles/float-markdown.css": {
       "fontSize": 2,
-      "borderRadius": 4
+      "borderRadius": 3
     },
     "../packages/reader/styles/hud.css": {
       "fontSize": 16,
-      "borderRadius": 9
+      "borderRadius": 6
     },
     "../packages/reader/styles/layout.css": {
       "fontSize": 1
     },
     "../packages/reader/styles/live-translation.css": {
       "fontSize": 1,
-      "borderRadius": 3
+      "borderRadius": 2
     },
     "../packages/reader/styles/markdown-blocks.css": {
       "fontSize": 4,
@@ -261,7 +261,7 @@
     },
     "../packages/reader/styles/markdown.css": {
       "fontSize": 11,
-      "borderRadius": 11
+      "borderRadius": 10
     },
     "../packages/reader/styles/panel-shell.css": {
       "fontSize": 2
@@ -275,12 +275,11 @@
       "borderRadius": 12
     },
     "src/app/home/shell/AppBottomBar.css": {
-      "fontSize": 4,
-      "borderRadius": 3
+      "fontSize": 4
     },
     "src/app/home/shell/AppTopBar.css": {
       "fontSize": 8,
-      "borderRadius": 3
+      "borderRadius": 2
     },
     "src/app/home/shell/MockModeBanner.css": {
       "fontSize": 3,
@@ -335,7 +334,7 @@
     },
     "src/features/collections/ui/CollectionsView.css": {
       "fontSize": 5,
-      "borderRadius": 3
+      "borderRadius": 1
     },
     "src/features/credentials/ui/CredentialCard.css": {
       "fontSize": 12,
@@ -486,20 +485,15 @@
     "src/styles/components.utilities.css": {
       "fontSize": 4
     },
-    "src/styles/core/ambient-surface.css": {
-      "borderRadius": 1
-    },
     "src/styles/core/decor-stage.css": {
       "fontSize": 2,
       "borderRadius": 2
     },
     "src/styles/core/download-toast.css": {
-      "fontSize": 3,
-      "borderRadius": 1
+      "fontSize": 3
     },
     "src/styles/dialog-shell.css": {
-      "fontSize": 1,
-      "borderRadius": 1
+      "fontSize": 1
     },
     "src/styles/pages.css": {
       "fontSize": 9,

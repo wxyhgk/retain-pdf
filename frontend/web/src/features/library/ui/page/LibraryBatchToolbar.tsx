@@ -53,7 +53,7 @@ export function LibraryBatchToolbar({
 
   return (
     <div className="library-search-dock" aria-label="批量操作工具栏">
-      <div className="flex min-h-[52px] flex-wrap items-center gap-2 rounded-full border border-[color-mix(in_srgb,color-mix(in_srgb,var(--line)_85%,var(--muted))_82%,transparent)] bg-paper/82 p-2 pl-4 shadow-[0_18px_46px_color-mix(in_srgb,var(--shadow-color)_12%,transparent)] backdrop-blur-[18px]">
+      <div className="library-search-batchbar">
         <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={onCancel}>取消</Button>
 
         <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
