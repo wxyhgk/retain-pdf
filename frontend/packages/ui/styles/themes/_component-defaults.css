@@ -15,6 +15,11 @@
  */
 
 :root {
+  /* 字体：皮肤可以换（以前固定在两份 tokens.css 里）。设置里的「字体」是译文 PDF 的渲染字体，跟这里无关。 */
+  --font-sans: "SF Pro Display", "SF Pro SC", "PingFang SC", "Helvetica Neue", "Noto Sans CJK SC", sans-serif;
+  --font-display: "SF Pro Display", "SF Pro SC", "PingFang SC", sans-serif;
+  --font-mono: "Iosevka", "JetBrains Mono", monospace;
+
   --btn-radius: 9999px;
   --btn-primary-bg: var(--accent);
   --btn-primary-fg: var(--paper);
