@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/translation-providers/v1",
   "title": "翻译接口（Translation Providers）",
-  "description": "翻译接口相关的服务端代办（2026-11-19 起）。有两个：从翻译接口拉取模型列表，和用翻译接口的配置问一次模型（可带图片，2026-11-22）——浏览器不能直接调服务商（跨域、Key 不能发出去），后端代发，Key 用完不存、不回显。生产者：backend/packages/retainpdf-providers/src/provider_probe/models.rs（TranslationModelsRequest、TranslationModelListView、TranslationModelView）和 provider_probe/ask.rs（TranslationModelAskRequest、TranslationModelAskView），单价形状是 retainpdf-providers pricing 的 PriceView（和 token-usage.v1 的 PriceView 同形状）；Rust 侧由 backend/api/src/api_tests/provider_probes.rs 对真实接口的返回钉键集合。消费者：@retainpdf/contracts/translation-providers 生成 DTO。成功响应包在 {code, message, data} 里，本契约描述 data 部分。详细规则见 docs/core/rust_api/08-Provider 校验接口.md 第 8 节。",
+  "description": "翻译接口相关的服务端代办（2026-11-19 起）。有两个：从翻译接口拉取模型列表，和用翻译接口的配置问一次模型（可带图片，2026-11-22）——浏览器不能直接调服务商（跨域、Key 不能发出去），后端代发，Key 用完不存、不回显。生产者：backend/packages/retainpdf-providers/src/provider_probe/models.rs（TranslationModelsRequest、TranslationModelListView、TranslationModelView）和 provider_probe/ask.rs（TranslationModelAskRequest、TranslationModelAskView），单价形状是 retainpdf-providers pricing 的 PriceView（和 token-usage.v1 的 PriceView 同形状）；Rust 侧由 backend/api/src/api_tests/provider_probes.rs 对真实接口的返回钉键集合。消费者：@retainpdf/contracts/translation-providers 生成 DTO。成功响应包在 {code, message, data} 里，本契约描述 data 部分。详细规则见 docs/api/08-调试诊断/05-服务商校验.md 第 8 节。",
   "base_path": "/api/v1",
   "endpoints": [
     {

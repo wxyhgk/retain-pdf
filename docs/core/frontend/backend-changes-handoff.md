@@ -180,7 +180,7 @@
 
 2026-11-23，用户定：检测接口（`/providers/deepseek/validate-token`、`/providers/{mineru,paddle}/validate-token`、
 `/providers/deepseek/balance`、`/providers/translation/models`、`/providers/translation/ask`）以前把 HTTP 状态码塞进 `provider_code`，
-429 一律当限流——欠费的 Key 检测显示「可用（当前被限流）」。细节见 [Provider 校验接口第 3.1 节](../rust_api/08-Provider%20校验接口.md)。
+429 一律当限流——欠费的 Key 检测显示「可用（当前被限流）」。细节见 [Provider 校验接口第 3.1 节](../../api/08-调试诊断/05-服务商校验.md)。
 
 变了什么：
 - **加** `http_status`（数字或 `null`）：服务商回的 HTTP 状态码，六个接口都有。契约 `translation-providers.v1` 的
@@ -328,7 +328,7 @@
 
 2026-11-22，用户要"后端增加一个 api，最好可以发图片"。新接口 `POST /api/v1/providers/translation/ask`（admin），在契约
 `translation-providers.v1` 里（`askTranslationProviderModel`、`TranslationModelAskRequest`、`TranslationModelAskView`），
-细节见 [Provider 校验接口第 9 节](../rust_api/08-Provider%20校验接口.md)。只增不改，别的接口不动。
+细节见 [Provider 校验接口第 9 节](../../api/08-调试诊断/05-服务商校验.md)。只增不改，别的接口不动。
 
 前端要做的：
 1. `npm --prefix frontend/packages/api run generate:client`：契约加了接口，`src/generated/translation-providers.ts` 要重新生成
@@ -439,7 +439,7 @@
 
 ## 从翻译接口拉取模型列表（feat/provider-model-list）
 
-2026-11-19。新接口，只增不改。详见 [Provider 校验接口](../rust_api/08-Provider%20校验接口.md) 第 8 节。
+2026-11-19。新接口，只增不改。详见 [Provider 校验接口](../../api/08-调试诊断/05-服务商校验.md) 第 8 节。
 
 - `POST /api/v1/providers/translation/models`，请求 `{base_url, api_key, api_protocol}`（内联 Key，用完不存）。
 - 返回 `{ok, status, summary, source: "provider", base_url, fetched_at, provider_code, provider_message, chat_models, models}`；
@@ -1509,7 +1509,7 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
 ## 服务商密钥校验：超时、重定向、不认识的字段，单机能测本机模型（fix/provider-probes）
 
 2026-10-22。方案见 [服务商探测与用量](../../ops/planning/api-reorg/20261022-服务商探测与用量.md)，接口说明见
-[Provider 校验接口](../rust_api/08-Provider%20校验接口.md)。
+[Provider 校验接口](../../api/08-调试诊断/05-服务商校验.md)。
 
 ### 变了什么
 

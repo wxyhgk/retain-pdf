@@ -70,7 +70,7 @@
 - [字体与运行资源](13-书库/04-字体与运行资源.md)
 - [凭据](14-凭据/01-凭据.md)：`/credentials`，契约 `credentials.v1`
 - [多用户模式](15-多用户/01-多用户.md)：网站账号能访问什么、页数额度、管理后台、平台设置（商业版已停，代码留着）
-- [服务商密钥校验的细节](../core/rust_api/08-Provider%20校验接口.md)：请求体、各家 `status` 取值；契约 `provider-probes.v1`
+- [服务商密钥校验的细节](08-调试诊断/05-服务商校验.md)：请求体、各家 `status` 取值；契约 `provider-probes.v1`
 - 登录状态 `GET /auth/session`：契约 `auth-session.v1`；上传 `POST /uploads` 的返回：契约 `uploads.v1`（2026-11-24）
 
 ## 当前 API 分区
