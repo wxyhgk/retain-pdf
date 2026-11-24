@@ -1,0 +1,304 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/provider-probes/v1",
+  "title": "服务商密钥校验（Provider probes）",
+  "description": "设置里「检测」按钮用的四个接口：MinerU、Paddle、翻译接口的 Key 校验，DeepSeek 余额。都是 POST、admin，用户在等结果的前台请求（前端最多等 30 秒，后端探针超时默认 20 秒）。生产者：backend/packages/retainpdf-providers/src/provider_probe/types.rs（请求和返回类型）、ocr.rs、deepseek.rs（逻辑），backend/api/src/routes/providers.rs（处理函数）。Rust 侧由 backend/api/src/api_tests/provider_probes_contract.rs 对真实接口的返回钉键集合、对请求类型钉字段。消费者：@retainpdf/contracts/provider-probes 生成 DTO 和请求函数（设置类第 2 批第 3 组，2026-11-24）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。必填字段为空、地址不合规（不是 http(s)、带账号密码、多用户模式下指向内网）、请求体里有不认识的字段都是 400；除此以外连不上、Key 不对、服务商报错都是 200，结论在 `ok`、`status` 里。返回里不会有 Key 原文。详见 docs/core/rust_api/08-Provider 校验接口.md。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/providers/mineru/validate-token",
+      "client_name": "validateMineruToken",
+      "transport": "json",
+      "input": "MineruTokenValidationRequest",
+      "output": "ProviderProbeView",
+      "rust_view": "ProviderProbeView",
+      "note": "申请一个上传地址（不上传文件、不建 OCR 任务）来验 Token。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/providers/paddle/validate-token",
+      "client_name": "validatePaddleToken",
+      "transport": "json",
+      "input": "PaddleTokenValidationRequest",
+      "output": "ProviderProbeView",
+      "rust_view": "ProviderProbeView",
+      "note": "查一个随机编号的任务，404 / 任务不存在算鉴权通过。只试一次。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/providers/deepseek/validate-token",
+      "client_name": "validateDeepSeekToken",
+      "transport": "json",
+      "input": "DeepSeekTokenValidationRequest",
+      "output": "ProviderProbeView",
+      "rust_view": "ProviderProbeView",
+      "note": "名字沿用 DeepSeek，实际校验任意翻译接口（OpenAI 兼容、Responses、Anthropic）。`model` 为空时只查模型列表（只验 Key），填了发一次 `max_tokens: 1` 的最小请求。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/providers/deepseek/balance",
+      "client_name": "queryDeepSeekBalance",
+      "transport": "json",
+      "input": "DeepSeekTokenValidationRequest",
+      "output": "DeepSeekBalanceView",
+      "rust_view": "DeepSeekBalanceView",
+      "note": "只在 `base_url` 是 DeepSeek 官方地址时查（发往配置里固定的余额地址，不会把 Key 发到用户填的地址），否则 `status` 是 `unsupported_provider`。请求体和校验共用，`model`、`api_protocol` 收下不用（CLI 四个字段都发）。"
+    }
+  ],
+  "definitions": {
+    "MineruTokenValidationRequest": {
+      "type": "object",
+      "description": "types.rs :: MineruTokenValidationRequest（deny_unknown_fields）。",
+      "additionalProperties": false,
+      "required": [
+        "mineru_token"
+      ],
+      "properties": {
+        "mineru_token": {
+          "type": "string",
+          "description": "必填，空的 400。"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "空着用默认地址（`RUST_API_MINERU_BASE_URL`）。"
+        },
+        "model_version": {
+          "type": "string",
+          "description": "空着是 `vlm`。"
+        }
+      }
+    },
+    "PaddleTokenValidationRequest": {
+      "type": "object",
+      "description": "types.rs :: PaddleTokenValidationRequest（deny_unknown_fields）。",
+      "additionalProperties": false,
+      "required": [
+        "paddle_token"
+      ],
+      "properties": {
+        "paddle_token": {
+          "type": "string",
+          "description": "必填，空的 400。"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "空着用默认地址（`RUST_API_PADDLE_BASE_URL`）。"
+        }
+      }
+    },
+    "DeepSeekTokenValidationRequest": {
+      "type": "object",
+      "description": "types.rs :: DeepSeekTokenValidationRequest（deny_unknown_fields）。翻译接口校验和 DeepSeek 余额共用。",
+      "additionalProperties": false,
+      "required": [
+        "api_key"
+      ],
+      "properties": {
+        "api_key": {
+          "type": "string",
+          "description": "必填，空的 400。只放在请求头里，用完不存。"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "空着用默认翻译地址（`RUST_API_DEEPSEEK_BASE_URL`）；`api_protocol=anthropic` 时默认 `https://api.anthropic.com/v1`。"
+        },
+        "model": {
+          "type": "string",
+          "description": "翻译实际要用的模型名；空的只能验 Key，不能验模型。"
+        },
+        "api_protocol": {
+          "type": "string",
+          "description": "`openai`（默认）、`openai_responses` 或 `anthropic`，探针按翻译实际用的协议发请求。"
+        }
+      }
+    },
+    "ProviderProbeView": {
+      "type": "object",
+      "description": "types.rs :: ProviderProbeView。三个 Key 校验接口共用（2026-10-22 以前叫 MineruTokenValidationView，JSON 没变）。",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "status",
+        "summary",
+        "retryable",
+        "http_status",
+        "provider_code",
+        "provider_message",
+        "operator_hint",
+        "trace_id",
+        "base_url",
+        "checked_at"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean",
+          "description": "能不能用；界面按它判断。"
+        },
+        "status": {
+          "type": "string",
+          "description": "结论的细分。`valid`（可用）、`rate_limited`（可用，此刻被限流或服务商繁忙；`ok` 为 true）、`unauthorized`（Key / Token 无效或没权限，套餐不含这个模型也算）、`expired`（MinerU Token 过期）、`model_unavailable`（Key 通过，模型不存在或没开通）、`insufficient_balance`（欠费、余额不足）、`quota_exceeded`（2026-11-23 起：到了用量或花费上限）、`invalid_input`（Key 里有放不进请求头的字符）、`redirected`（服务商回 3xx，不跟随）、`network_error`（没收到回复；Paddle、翻译接口的 5xx 也算）、`provider_error`（别的错误）。以后可能加值：界面按 `ok` 判断，不认识的 `status` 按 `ok` + `summary` 显示。各家用到哪些见 docs/core/rust_api/08-Provider 校验接口.md 第 3 节。"
+        },
+        "summary": {
+          "type": "string",
+          "description": "给用户看的一句话（中文）。"
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "过一会儿重试可能就好了；只会是 `network_error`、`provider_error`。"
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 599,
+          "description": "服务商回的 HTTP 状态码；没收到回复（连不上、超时）时为 null，MinerU、Paddle 校验成功时也是 null（2026-11-23 起）。"
+        },
+        "provider_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "服务商自己的业务码（MinerU `A0211`、智谱 `1113`、OpenAI `insufficient_quota`、百炼 `Arrearage`……），正文里没有时为 null。2026-11-23 以前这里放 HTTP 状态码，现在看 `http_status`。"
+        },
+        "provider_message": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "服务商报错原文，最多 500 个字符（超出截断、以 … 结尾）。"
+        },
+        "operator_hint": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "下一步建议，可能带底层错误原文；最多 500 个字符。"
+        },
+        "trace_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "服务商给的请求编号，没有为 null。"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "实际请求的地址（规范过的）。"
+        },
+        "checked_at": {
+          "type": "string"
+        }
+      }
+    },
+    "DeepSeekBalanceInfoView": {
+      "type": "object",
+      "description": "types.rs :: DeepSeekBalanceInfoView。金额是 DeepSeek 原样给的字符串。",
+      "additionalProperties": false,
+      "required": [
+        "currency",
+        "total_balance",
+        "granted_balance",
+        "topped_up_balance"
+      ],
+      "properties": {
+        "currency": {
+          "type": "string",
+          "description": "`CNY`、`USD`……"
+        },
+        "total_balance": {
+          "type": "string"
+        },
+        "granted_balance": {
+          "type": "string"
+        },
+        "topped_up_balance": {
+          "type": "string"
+        }
+      }
+    },
+    "DeepSeekBalanceView": {
+      "type": "object",
+      "description": "types.rs :: DeepSeekBalanceView。",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "status",
+        "summary",
+        "retryable",
+        "is_available",
+        "balance_infos",
+        "http_status",
+        "provider_code",
+        "provider_message",
+        "trace_id",
+        "base_url",
+        "checked_at"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "description": "结论的细分。`available`（余额可用）、`insufficient_balance`（余额不足或 402）、`unauthorized`（401、403）、`unsupported_provider`（`base_url` 不是 DeepSeek 官方地址，没有查）、`redirected`、`network_error`（没收到回复或 5xx）、`provider_error`（别的 HTTP 错误）；参数不对时也可能是 `invalid_input`。以后可能加值，界面按 `ok` 判断。"
+        },
+        "summary": {
+          "type": "string",
+          "description": "给用户看的一句话（中文）。"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "is_available": {
+          "type": "boolean",
+          "description": "DeepSeek 说余额够用。"
+        },
+        "balance_infos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DeepSeekBalanceInfoView"
+          },
+          "description": "每种货币一条；没查到为空。"
+        },
+        "http_status": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 599,
+          "description": "余额接口回的 HTTP 状态码；没收到回复时为 null（2026-11-23 起）。"
+        },
+        "provider_code": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "正文里的业务码（DeepSeek 基本没有，多数是 null）；2026-11-23 以前这里放 HTTP 状态码。"
+        },
+        "provider_message": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "服务商报错原文，最多 500 个字符（超出截断、以 … 结尾）。"
+        },
+        "trace_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "base_url": {
+          "type": "string"
+        },
+        "checked_at": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

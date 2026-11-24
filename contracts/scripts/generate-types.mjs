@@ -82,6 +82,31 @@ const TARGETS = [
     output: "src/translation-revisions.ts",
     rootName: "TranslationRevisionsSchema",
   },
+  {
+    input: "credentials.v1.schema.json",
+    output: "src/credentials.ts",
+    rootName: "CredentialsSchema",
+  },
+  {
+    input: "provider-probes.v1.schema.json",
+    output: "src/provider-probes.ts",
+    rootName: "ProviderProbesSchema",
+  },
+  {
+    input: "platform-settings.v1.schema.json",
+    output: "src/platform-settings.ts",
+    rootName: "PlatformSettingsSchema",
+  },
+  {
+    input: "auth-session.v1.schema.json",
+    output: "src/auth-session.ts",
+    rootName: "AuthSessionSchema",
+  },
+  {
+    input: "uploads.v1.schema.json",
+    output: "src/uploads.ts",
+    rootName: "UploadsSchema",
+  },
 ];
 
 const GENERATOR_OPTIONS = {

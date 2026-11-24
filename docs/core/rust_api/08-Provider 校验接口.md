@@ -1,6 +1,8 @@
 # Provider 校验接口
 
-四个接口，都是 `POST`、`admin`（单机模式就是本机用户），用户点了「检测」按钮在等结果的前台请求：
+四个接口，都是 `POST`、`admin`（单机模式就是本机用户），用户点了「检测」按钮在等结果的前台请求。请求和返回有契约
+[`provider-probes.v1`](../../../contracts/provider-probes.v1.schema.json)（2026-11-24；调用函数 `validateMineruToken`、`validatePaddleToken`、
+`validateDeepSeekToken`、`queryDeepSeekBalance`）：
 
 | 接口 | 请求体字段 | 返回 |
 |---|---|---|

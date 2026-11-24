@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/uploads/v1",
+  "title": "上传 PDF（Uploads）",
+  "description": "`POST /api/v1/uploads`：上传一份 PDF，建任务时 `source.upload_id` 写它。请求是 multipart/form-data，不是 JSON，所以端点没有 `input`，也不写 `client_name`（前端生成器只会发 JSON；网页要显示上传进度，用 XHR 自己发，地址从 `buildUploadsEndpoint` 拿）；返回照常是 JSON 信封。signed，不限请求体大小（上限由 `RUST_API_UPLOAD_MAX_BYTES` 管，超了 413）。生产者：backend/packages/retainpdf-ingest/src/uploads/view.rs（UploadView），backend/api/src/routes/uploads.rs（upload_pdf）。Rust 侧由 backend/api/src/api_tests/settings_misc_contract.rs 对真实上传的返回钉键集合。消费者：@retainpdf/contracts/uploads（2026-11-24）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/uploads",
+      "transport": "json",
+      "output": "UploadView",
+      "rust_view": "UploadView",
+      "note": "multipart 字段：`file`（必填，PDF；没有 400 `missing multipart field: file`，给了两个 400）、`developer_mode`（可选，`1`/`true` 算开）。别的字段忽略。上传即建档（`document_id` 是文件字节的 sha256）。不是 PDF、修不好 400，太大 413，页数超上限 400，处理排不上队 503，磁盘剩余空间低于下限 503（`insufficient_storage`）。"
+    }
+  ],
+  "definitions": {
+    "UploadView": {
+      "type": "object",
+      "description": "uploads/view.rs :: UploadView。",
+      "additionalProperties": false,
+      "required": [
+        "upload_id",
+        "document_id",
+        "filename",
+        "bytes",
+        "page_count",
+        "uploaded_at"
+      ],
+      "properties": {
+        "upload_id": {
+          "type": "string",
+          "description": "上传编号；建任务时写进 `source.upload_id`。"
+        },
+        "document_id": {
+          "type": "string",
+          "description": "书的编号（= 文件字节的 sha256）。上传即建档，前端拿它直接打开书籍详情；旧记录没回填时为空串。"
+        },
+        "filename": {
+          "type": "string",
+          "description": "上传时的文件名。"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "page_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uploaded_at": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

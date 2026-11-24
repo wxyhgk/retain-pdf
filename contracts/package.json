@@ -5,6 +5,10 @@
   "description": "RetainPDF versioned JSON Schemas and generated wire DTO types.",
   "type": "module",
   "exports": {
+    "./auth-session": {
+      "types": "./dist/auth-session.d.ts",
+      "import": "./dist/auth-session.js"
+    },
     "./create-job": {
       "types": "./dist/create-job.d.ts",
       "import": "./dist/create-job.js"
@@ -12,6 +16,10 @@
     "./create-job-fields": {
       "types": "./dist/create-job-fields.d.ts",
       "import": "./dist/create-job-fields.js"
+    },
+    "./credentials": {
+      "types": "./dist/credentials.d.ts",
+      "import": "./dist/credentials.js"
     },
     "./glossaries": {
       "types": "./dist/glossaries.d.ts",
@@ -49,9 +57,17 @@
       "types": "./dist/ocr-providers.d.ts",
       "import": "./dist/ocr-providers.js"
     },
+    "./platform-settings": {
+      "types": "./dist/platform-settings.d.ts",
+      "import": "./dist/platform-settings.js"
+    },
     "./provider-error-codes": {
       "types": "./dist/provider-error-codes.d.ts",
       "import": "./dist/provider-error-codes.js"
+    },
+    "./provider-probes": {
+      "types": "./dist/provider-probes.d.ts",
+      "import": "./dist/provider-probes.js"
     },
     "./reader-data": {
       "types": "./dist/reader-data.d.ts",
@@ -69,7 +85,13 @@
       "types": "./dist/translation-revisions.d.ts",
       "import": "./dist/translation-revisions.js"
     },
+    "./uploads": {
+      "types": "./dist/uploads.d.ts",
+      "import": "./dist/uploads.js"
+    },
+    "./auth-session.v1.schema.json": "./auth-session.v1.schema.json",
     "./create-job.v1.schema.json": "./create-job.v1.schema.json",
+    "./credentials.v1.schema.json": "./credentials.v1.schema.json",
     "./glossaries.v1.schema.json": "./glossaries.v1.schema.json",
     "./job-actions.v1.schema.json": "./job-actions.v1.schema.json",
     "./job-data.v1.schema.json": "./job-data.v1.schema.json",
@@ -81,12 +103,15 @@
     "./library-documents.v1.schema.json": "./library-documents.v1.schema.json",
     "./ocr-providers.v1.schema.json": "./ocr-providers.v1.schema.json",
     "./pipeline-stdout.v1.schema.json": "./pipeline-stdout.v1.schema.json",
+    "./platform-settings.v1.schema.json": "./platform-settings.v1.schema.json",
     "./provider-error-codes.v1.schema.json": "./provider-error-codes.v1.schema.json",
+    "./provider-probes.v1.schema.json": "./provider-probes.v1.schema.json",
     "./reader-data.v1.schema.json": "./reader-data.v1.schema.json",
     "./refine-report.v1.schema.json": "./refine-report.v1.schema.json",
     "./token-usage.v1.schema.json": "./token-usage.v1.schema.json",
     "./translation-providers.v1.schema.json": "./translation-providers.v1.schema.json",
-    "./translation-revisions.v1.schema.json": "./translation-revisions.v1.schema.json"
+    "./translation-revisions.v1.schema.json": "./translation-revisions.v1.schema.json",
+    "./uploads.v1.schema.json": "./uploads.v1.schema.json"
   },
   "files": [
     "dist",

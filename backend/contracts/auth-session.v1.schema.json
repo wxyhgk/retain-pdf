@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/auth-session/v1",
+  "title": "登录状态（Auth session）",
+  "description": "`GET /api/v1/auth/session`：现在是单机还是多用户模式、登没登录。页面启动时先问它（不带 Cookie 问一次模式，是多用户再带 Cookie 问一次），据此决定显示不显示登录页。public，不要密钥。生产者：backend/packages/retainpdf-accounts/src/lib.rs（SessionView、AccountUserView、Role），backend/api/src/routes/accounts.rs（session_route）。Rust 侧由 backend/api/src/api_tests/settings_misc_contract.rs 对单机、多用户（登录前后）的真实返回钉键集合。消费者：@retainpdf/contracts/auth-session（2026-11-24）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。多用户版的登录、注册、账号管理接口（by multiuser）不在这里：多用户版 2026-10-16 停了。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/session",
+      "client_name": "getAuthSession",
+      "transport": "json",
+      "output": "SessionView",
+      "rust_view": "SessionView",
+      "note": "单机：`mode=single`、`authenticated=true`、`user` 是固定的本机用户（`user_id` 是 `local`，管理员）。多用户：没登录 `authenticated=false`、`user=null`。老后端没有这个接口（404）就当单机。"
+    }
+  ],
+  "definitions": {
+    "AccountUserView": {
+      "type": "object",
+      "description": "retainpdf-accounts lib.rs :: AccountUserView。",
+      "additionalProperties": false,
+      "required": [
+        "user_id",
+        "username",
+        "role",
+        "must_change_password"
+      ],
+      "properties": {
+        "user_id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "admin",
+            "user"
+          ],
+          "description": "`admin` 或 `user`。"
+        },
+        "must_change_password": {
+          "type": "boolean",
+          "description": "管理员发的初始密码，登录后要先改。"
+        }
+      }
+    },
+    "SessionView": {
+      "type": "object",
+      "description": "retainpdf-accounts lib.rs :: SessionView。",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "authenticated",
+        "user"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "single",
+            "multi"
+          ],
+          "description": "部署模式。"
+        },
+        "authenticated": {
+          "type": "boolean"
+        },
+        "user": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AccountUserView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "没登录为 null。"
+        }
+      }
+    }
+  }
+}

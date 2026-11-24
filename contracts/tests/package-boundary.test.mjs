@@ -13,8 +13,13 @@ const generatedLibraryDocuments = readFileSync(resolve("src/library-documents.ts
 const generatedOcrProviders = readFileSync(resolve("src/ocr-providers.ts"), "utf8");
 const generatedGlossaries = readFileSync(resolve("src/glossaries.ts"), "utf8");
 const generatedReaderData = readFileSync(resolve("src/reader-data.ts"), "utf8");
+const generatedSettings = Object.fromEntries(
+  ["credentials", "provider-probes", "platform-settings", "auth-session", "uploads"].map((name) => [name, readFileSync(resolve(`src/${name}.ts`), "utf8")]),
+);
 const RAW_SCHEMA_EXPORTS = [
+  "./auth-session.v1.schema.json",
   "./create-job.v1.schema.json",
+  "./credentials.v1.schema.json",
   "./glossaries.v1.schema.json",
   "./job-actions.v1.schema.json",
   "./job-data.v1.schema.json",
@@ -26,12 +31,15 @@ const RAW_SCHEMA_EXPORTS = [
   "./library-documents.v1.schema.json",
   "./ocr-providers.v1.schema.json",
   "./pipeline-stdout.v1.schema.json",
+  "./platform-settings.v1.schema.json",
   "./provider-error-codes.v1.schema.json",
+  "./provider-probes.v1.schema.json",
   "./reader-data.v1.schema.json",
   "./refine-report.v1.schema.json",
   "./token-usage.v1.schema.json",
   "./translation-providers.v1.schema.json",
   "./translation-revisions.v1.schema.json",
+  "./uploads.v1.schema.json",
 ];
 
 test("package exposes only explicit DTO and raw schema subpaths", () => {
@@ -40,6 +48,11 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
     [
       "./create-job",
       "./create-job-fields",
+      "./uploads",
+      "./auth-session",
+      "./platform-settings",
+      "./provider-probes",
+      "./credentials",
       "./glossaries",
       "./job-actions",
       "./job-data",
@@ -239,4 +252,53 @@ test("generated glossaries DTO entry exposes the glossary types", () => {
   }
   assert.match(generatedGlossaries, /items: GlossarySummaryView\[\];/);
   assert.match(generatedGlossaries, /duplicate_count: number;/);
+});
+
+// 设置类第 2 批剩下的组（2026-11-24）：每份契约生成的 DTO 里有这些类型。
+const SETTINGS_TYPES = {
+  credentials: [
+    "CredentialMetadataView",
+    "CredentialListView",
+    "CredentialMutationView",
+    "CredentialDeleteView",
+    "CreateCredentialInput",
+    "UpdateCredentialInput",
+    "DeleteCredentialQuery",
+  ],
+  "provider-probes": [
+    "MineruTokenValidationRequest",
+    "PaddleTokenValidationRequest",
+    "DeepSeekTokenValidationRequest",
+    "ProviderProbeView",
+    "DeepSeekBalanceInfoView",
+    "DeepSeekBalanceView",
+  ],
+  "platform-settings": [
+    "FontInfo",
+    "FontListView",
+    "SyncSettingsInput",
+    "SyncTestView",
+    "SyncRunView",
+    "SyncMaintenanceView",
+    "SyncPendingItemView",
+    "SyncPeerView",
+    "SyncStatusView",
+    "BackupItemView",
+    "LastRestoreView",
+    "BackupStatusView",
+    "BackupRestoreView",
+    "DiskSpaceView",
+    "HealthView",
+  ],
+  "auth-session": ["AccountUserView", "SessionView"],
+  uploads: ["UploadView"],
+};
+
+test("generated settings DTO entries expose their types", () => {
+  assert.deepEqual(Object.keys(generatedSettings).sort(), Object.keys(SETTINGS_TYPES).sort());
+  for (const [name, typeNames] of Object.entries(SETTINGS_TYPES)) {
+    for (const typeName of typeNames) {
+      assert.match(generatedSettings[name], new RegExp(`export (?:interface|type) ${typeName}\\b`), `${name}: ${typeName}`);
+    }
+  }
 });

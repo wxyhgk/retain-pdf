@@ -39,6 +39,16 @@ async fn read_pages(app: &axum::Router, document_id: &str, query: &str) -> (Stri
     (pdf_texts(&to_bytes(pdf.into_body(), usize::MAX).await.unwrap()), view)
 }
 
+/// 契约 library-documents.v1 的 TranslationVersionsView（列表、选当前版本、改版本三条接口都回它；2026-11-24 起钉键集合）。
+fn assert_versions_view(value: &Value, path: &str) {
+    use super::job_view_contract::assert_contract_view;
+    const CONTRACT: &str = "library-documents.v1.schema.json";
+    assert_contract_view(value, CONTRACT, "TranslationVersionsView", path);
+    for (index, version) in value["versions"].as_array().expect("versions").iter().enumerate() {
+        assert_contract_view(version, CONTRACT, "TranslationVersionView", &format!("{path}.versions[{index}]"));
+    }
+}
+
 #[tokio::test]
 async fn versions_can_be_listed_switched_renamed_and_hidden() {
     let state = state_with_real_pipeline("translation-versions");
@@ -58,6 +68,7 @@ async fn versions_can_be_listed_switched_renamed_and_hidden() {
     let versions_uri = format!("/api/v1/documents/{document_id}/translation-versions");
 
     let list = ok(request(&app, "GET", &versions_uri).await).await;
+    assert_versions_view(&list, "list");
     assert_eq!(list["current_version_id"], Value::Null, "auto until the user picks one");
     assert_eq!(list["has_newer"], false);
     let rows: Vec<(String, Value, bool, Option<String>)> = list["versions"]
@@ -87,6 +98,7 @@ async fn versions_can_be_listed_switched_renamed_and_hidden() {
 
     // 选第一版：不带参数就读它；有更新的版本，提示
     let list = ok(send(&app, "PUT", &format!("/api/v1/documents/{document_id}/translation-version"), json!({"version_id": v1})).await).await;
+    assert_versions_view(&list, "put");
     assert_eq!((&list["current_version_id"], &list["has_newer"]), (&json!(v1), &json!(true)));
     let (pages, view) = read_pages(&app, &document_id, "").await;
     assert_eq!((pages.as_str(), &view["version_id"]), ("OLD 1|OLD 2|OLD 3", &json!(v1)));
@@ -95,6 +107,7 @@ async fn versions_can_be_listed_switched_renamed_and_hidden() {
 
     // 改名、隐藏第三版：自动模式不再用它
     let list = ok(send(&app, "PATCH", &format!("{versions_uri}/{v3}"), json!({"label": "Haiku 精翻", "hidden": true})).await).await;
+    assert_versions_view(&list, "patch");
     let hidden = list["versions"].as_array().unwrap().iter().find(|v| v["version_id"] == json!(v3)).unwrap().clone();
     assert_eq!((&hidden["name"], &hidden["hidden"]), (&json!("Haiku 精翻"), &json!(true)));
     assert_eq!(ok(request(&app, "GET", &versions_uri).await).await["versions"].as_array().unwrap().len(), 2, "hidden ones are not listed");

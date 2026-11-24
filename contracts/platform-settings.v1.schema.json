@@ -1,0 +1,784 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/platform-settings/v1",
+  "title": "平台设置（字体、同步、备份、健康检查）",
+  "description": "平台领域里前端在用的接口：字体列表 `/api/v1/fonts`、多设备同步 `/api/v1/sync`、数据库备份 `/api/v1/backups`，以及健康检查 `/health`。生产者：backend/packages/retainpdf-platform（fonts/service.rs、backup/views.rs、sync/api.rs、health_api.rs），同步的类型在 backend/packages/retainpdf-core/src/models/sync.rs；处理函数在 backend/api/src/routes/{fonts,sync,backups,health}.rs。Rust 侧由 backend/api/src/api_tests/platform_settings_contract.rs 对真实接口的返回钉键集合、对请求类型钉字段。消费者：@retainpdf/contracts/platform-settings 生成 DTO 和请求函数（设置类第 2 批第 3～5 组，2026-11-24）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。同步、备份是 admin，字体是 signed，健康检查 public。请求体 additionalProperties: false 对应 deny_unknown_fields，多一个键 400。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/fonts",
+      "client_name": "listFonts",
+      "transport": "json",
+      "output": "FontListView",
+      "rust_view": "Vec<FontInfo>",
+      "note": "渲染能用的字体（系统字体加上传的），按字体族排序。直接是数组（不是 `{fonts: [...]}`）。扫描结果缓存 10 分钟，字体目录变了或上传字体时清掉。上传字体 `POST /fonts/upload` 是 multipart，第 3 期再补。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/sync",
+      "client_name": "getSyncStatus",
+      "transport": "json",
+      "output": "SyncStatusView",
+      "rust_view": "SyncStatusView",
+      "note": "同步的设置和状态。没开过同步时 `enabled` 是 false、`folder` 是 null，`device_name` 有默认值。"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/sync",
+      "client_name": "updateSyncSettings",
+      "transport": "json",
+      "input": "SyncSettingsInput",
+      "output": "SyncStatusView",
+      "rust_view": "SyncStatusView",
+      "note": "改设置，没写的字段不变；回改完以后的状态。设置不合规 400（没有同步位置就要开、文件夹是相对路径或不存在或在数据目录里面、WebDAV 地址不是 http(s)……），`message` 写明原因。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sync/run",
+      "client_name": "runSyncNow",
+      "transport": "json",
+      "output": "SyncStatusView",
+      "rust_view": "SyncStatusView",
+      "note": "立即跑一轮并等它跑完，回跑完以后的状态（这一轮的结果在 `last_run`，失败也是 200，看 `last_run.ok`）。不跑时 409，`error.details.reason` 是 `sync_disabled`（开关关着）或 `sync_not_configured`（开着但没填同步位置）。不带请求体。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/sync/test",
+      "client_name": "testSyncTarget",
+      "transport": "json",
+      "input": "SyncSettingsInput",
+      "output": "SyncTestView",
+      "rust_view": "SyncTestView",
+      "note": "用填的设置（没写的用已保存的）测一次能不能读写，不保存设置。测不通也是 200，看 `ok`。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/backups",
+      "client_name": "getBackupStatus",
+      "transport": "json",
+      "output": "BackupStatusView",
+      "rust_view": "BackupStatusView",
+      "note": "备份设置、能不能恢复、全部备份（新的在前）、最近一次恢复。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups",
+      "client_name": "createBackup",
+      "transport": "json",
+      "output": "BackupItemView",
+      "rust_view": "BackupItemView",
+      "note": "立即备份一份（`kind` 是 `manual`），等它存完。不带请求体。"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/backups/:backup_id",
+      "client_name": "deleteBackup",
+      "transport": "json",
+      "output": "BackupStatusView",
+      "rust_view": "BackupStatusView",
+      "note": "删一份，回删完以后的状态。没有这份 404。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/backups/:backup_id/restore",
+      "client_name": "restoreBackup",
+      "transport": "json",
+      "output": "BackupRestoreView",
+      "rust_view": "BackupRestoreView",
+      "note": "用这份替换当前书库数据库，先自动存一份 `before-restore`（恢复错了用它退回）。不带请求体。没有这份 404；不能恢复 409，`error.details.reason` 是 `restore_blocked`（有排队、在跑的任务，`message` 说在等什么）、`backup_damaged`（备份坏了）或 `backup_newer`（备份比现在的程序新）。恢复中别的写请求 409 `restore_in_progress`。"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "transport": "json",
+      "output": "HealthView",
+      "rust_view": "HealthView",
+      "note": "进程活着（public，不要密钥）。地址不在 /api/v1 下，前端生成器只生成 /api/v1 的函数，所以不写 `client_name`；调用方是桌面壳主进程（等后端起来）、网页上传前的连通检查（`fetchProtected(buildApiEndpoint(\"\", \"health\"))`）、CLI 和部署探活。能不能接请求看 `GET /ready`（这份契约不管）。"
+    }
+  ],
+  "definitions": {
+    "FontInfo": {
+      "type": "object",
+      "description": "fonts/service.rs :: FontInfo。",
+      "additionalProperties": false,
+      "required": [
+        "family",
+        "files",
+        "available"
+      ],
+      "properties": {
+        "family": {
+          "type": "string",
+          "description": "字体族名。"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "这个字体族的字体文件（绝对路径）。"
+        },
+        "available": {
+          "type": "boolean",
+          "description": "至少有一个字体文件还在磁盘上。"
+        }
+      }
+    },
+    "FontListView": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FontInfo"
+      },
+      "description": "字体列表（`GET /fonts` 的 data 直接是数组）。"
+    },
+    "SyncSettingsInput": {
+      "type": "object",
+      "description": "models/sync.rs :: SyncSettingsInput（deny_unknown_fields，2026-10-22 起）。字段都可以不写或写 null：不改。",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "folder": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "用户选的文件夹（绝对路径）。里面已经是同步文件夹就直接用，否则在里面建 `RetainPDF-Sync` 子目录。空串清除。"
+        },
+        "device_name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "这台设备在别的设备上显示的名字。"
+        },
+        "transport": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "`folder`（网盘文件夹）或 `webdav`。"
+        },
+        "webdav_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "WebDAV 上的同步文件夹地址（http:// 或 https://）。"
+        },
+        "webdav_username": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "webdav_password": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "只写：给了就保存（空串清除），状态里只报告有没有（`webdav_has_password`）。"
+        }
+      }
+    },
+    "SyncTestView": {
+      "type": "object",
+      "description": "models/sync.rs :: SyncTestView。",
+      "additionalProperties": false,
+      "required": [
+        "ok",
+        "location",
+        "latency_ms",
+        "error"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "location": {
+          "type": "string",
+          "description": "测的是哪里（本机路径或不带账号的 WebDAV 地址）。"
+        },
+        "latency_ms": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "读写一次用了多久；没测成为 null。"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "测不通的原因；通了为 null。"
+        }
+      }
+    },
+    "SyncRunView": {
+      "type": "object",
+      "description": "models/sync.rs :: SyncRunView。最近一轮同步的结果。",
+      "additionalProperties": false,
+      "required": [
+        "started_at",
+        "finished_at",
+        "ok",
+        "error",
+        "exported",
+        "applied",
+        "deleted",
+        "files_uploaded",
+        "files_downloaded",
+        "rejected",
+        "folder_changed",
+        "device_renewed"
+      ],
+      "properties": {
+        "started_at": {
+          "type": "string"
+        },
+        "finished_at": {
+          "type": "string"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "失败原因；成功为 null。"
+        },
+        "exported": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "发出去的改动条数。"
+        },
+        "applied": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "收到并应用的改动条数（含删除）。"
+        },
+        "deleted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "files_uploaded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "files_downloaded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "rejected": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "folder_changed": {
+          "type": "boolean",
+          "description": "这一轮发现换了同步文件夹，本机书库全部重新发。"
+        },
+        "device_renewed": {
+          "type": "boolean",
+          "description": "这一轮发现数据目录是从别处复制来的，换了新设备号。"
+        }
+      }
+    },
+    "SyncMaintenanceView": {
+      "type": "object",
+      "description": "models/sync.rs :: SyncMaintenanceView。一次整理同步文件夹的结果。",
+      "additionalProperties": false,
+      "required": [
+        "at",
+        "segments_compacted",
+        "packs_retired",
+        "packs_deleted",
+        "bytes_freed",
+        "bytes_repacked",
+        "error"
+      ],
+      "properties": {
+        "at": {
+          "type": "string"
+        },
+        "segments_compacted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "packs_retired": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "packs_deleted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bytes_freed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "删掉的包腾出的空间（字节）。"
+        },
+        "bytes_repacked": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "为留住还在用的内容重新上传的大小（字节）。"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "SyncPendingItemView": {
+      "type": "object",
+      "description": "models/sync.rs :: SyncPendingItemView。等待区里的一条：还在等文件或等相关的书、任务同步过来。",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "key",
+        "reason",
+        "attempts"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "key": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "SyncPeerView": {
+      "type": "object",
+      "description": "models/sync.rs :: SyncPeerView。同步文件夹里的另一台设备。",
+      "additionalProperties": false,
+      "required": [
+        "device_id",
+        "name",
+        "segments_read"
+      ],
+      "properties": {
+        "device_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "segments_read": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "SyncStatusView": {
+      "type": "object",
+      "description": "models/sync.rs :: SyncStatusView。",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "transport",
+        "webdav_url",
+        "webdav_username",
+        "webdav_has_password",
+        "folder",
+        "sync_root",
+        "device_id",
+        "device_name",
+        "running",
+        "interval_seconds",
+        "last_run",
+        "last_maintenance",
+        "pending_total",
+        "pending",
+        "peers"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "transport": {
+          "type": "string",
+          "description": "`folder` 或 `webdav`。"
+        },
+        "webdav_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "webdav_username": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "webdav_has_password": {
+          "type": "boolean",
+          "description": "密码只写不读：这里只说有没有保存过。"
+        },
+        "folder": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "用户选的文件夹。"
+        },
+        "sync_root": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "实际读写的同步文件夹（folder 本身或其中的 RetainPDF-Sync；WebDAV 时是地址）。"
+        },
+        "device_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "device_name": {
+          "type": "string"
+        },
+        "running": {
+          "type": "boolean",
+          "description": "正在同步。"
+        },
+        "interval_seconds": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "自动同步的间隔（秒）。"
+        },
+        "last_run": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SyncRunView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "最近一轮；还没跑过为 null。"
+        },
+        "last_maintenance": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SyncMaintenanceView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "最近一次整理同步文件夹（默认每天最多一次）；没有为 null。"
+        },
+        "pending_total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "等待区一共几条。"
+        },
+        "pending": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SyncPendingItemView"
+          },
+          "description": "等待区里的前 20 条。"
+        },
+        "peers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/SyncPeerView"
+          }
+        }
+      }
+    },
+    "BackupItemView": {
+      "type": "object",
+      "description": "backup/views.rs :: BackupItemView。",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "created_at",
+        "schema_version",
+        "bytes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "备份编号（文件名去掉扩展名），恢复、删除用它。"
+        },
+        "kind": {
+          "type": "string",
+          "description": "`auto`（每天自动）、`manual`（手动）、`before-restore`（恢复前自动存的）、`before-upgrade`（升级前自动存的）。"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "备份时数据库的结构版本。"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "压缩后的大小。"
+        }
+      }
+    },
+    "LastRestoreView": {
+      "type": "object",
+      "description": "backup/views.rs :: LastRestoreView。最近一次恢复（不论成败，2026-10-22 起）。",
+      "additionalProperties": false,
+      "required": [
+        "backup_id",
+        "ok",
+        "safety_backup",
+        "reason",
+        "error",
+        "started_at",
+        "finished_at"
+      ],
+      "properties": {
+        "backup_id": {
+          "type": "string",
+          "description": "要恢复的那份。"
+        },
+        "ok": {
+          "type": "boolean"
+        },
+        "safety_backup": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "恢复前自动存的那份；没走到那一步（被拒、出错在前）时为 null。"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "被拒时的稳定原因：`restore_blocked`、`backup_damaged`、`backup_newer`（和 409 的 `error.details.reason` 一样）、`not_found`；成功或内部错误为 null。"
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "失败时给人看的说明；成功为 null。"
+        },
+        "started_at": {
+          "type": "string"
+        },
+        "finished_at": {
+          "type": "string"
+        }
+      }
+    },
+    "BackupStatusView": {
+      "type": "object",
+      "description": "backup/views.rs :: BackupStatusView。",
+      "additionalProperties": false,
+      "required": [
+        "dir",
+        "auto_interval_hours",
+        "last_auto_at",
+        "running",
+        "restore_blockers",
+        "last_restore",
+        "items"
+      ],
+      "properties": {
+        "dir": {
+          "type": "string",
+          "description": "备份放在哪个目录。"
+        },
+        "auto_interval_hours": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "自动备份间隔（小时）；0 表示关掉了自动备份。"
+        },
+        "last_auto_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "最近一次自动备份；没有为 null。"
+        },
+        "running": {
+          "type": "boolean",
+          "description": "正在备份或恢复。"
+        },
+        "restore_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "现在恢复的话要先等什么；空表示可以恢复。"
+        },
+        "last_restore": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/LastRestoreView"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "最近一次恢复（只在内存里，服务重启后为 null）。恢复的请求断开了，刷新后凭它知道结果。"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BackupItemView"
+          },
+          "description": "新的在前。"
+        }
+      }
+    },
+    "BackupRestoreView": {
+      "type": "object",
+      "description": "backup/views.rs :: BackupRestoreView。",
+      "additionalProperties": false,
+      "required": [
+        "restored",
+        "safety_backup",
+        "status"
+      ],
+      "properties": {
+        "restored": {
+          "type": "string",
+          "description": "恢复的那份的编号。"
+        },
+        "safety_backup": {
+          "type": "string",
+          "description": "恢复前自动存的那份（恢复错了用它退回）。"
+        },
+        "status": {
+          "description": "恢复完以后的状态。",
+          "$ref": "#/definitions/BackupStatusView"
+        }
+      }
+    },
+    "DiskSpaceView": {
+      "type": "object",
+      "description": "health_api.rs :: DiskSpaceView。数据目录所在磁盘：只是报告，低于下限时上传、建任务、原地重跑 503（`insufficient_storage`），但 `status` 不跟着变。",
+      "additionalProperties": false,
+      "required": [
+        "free_bytes",
+        "min_free_bytes",
+        "low"
+      ],
+      "properties": {
+        "free_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "剩余可用空间（字节）；拿不到（Windows、没配数据目录）为 null。"
+        },
+        "min_free_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "下限（`RUST_API_MIN_FREE_DISK_MB`）；0 是不查。"
+        },
+        "low": {
+          "type": "boolean",
+          "description": "剩余空间低于下限。"
+        }
+      }
+    },
+    "HealthView": {
+      "type": "object",
+      "description": "health_api.rs :: HealthView。`version`、`build` 由分支 feat/api-response-headers 加（2026-11-24 同时在做），那边合进来以前没有这两个键，所以写成可选。",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "db",
+        "queue_depth",
+        "running_jobs",
+        "provider_backends",
+        "ai_service",
+        "jobsd",
+        "disk",
+        "time"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "`up`，库连不上时 `degraded`。"
+        },
+        "db": {
+          "type": "string",
+          "description": "`ok` 或 `error`。"
+        },
+        "queue_depth": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "排队的任务数；库读不出来为 null。"
+        },
+        "running_jobs": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "在跑的任务数；库读不出来为 null。"
+        },
+        "provider_backends": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "支持的 OCR 服务商编号。"
+        },
+        "ai_service": {
+          "type": "string",
+          "description": "固定 `disabled`（RetainPDF 自己的 AI 服务 2026-11-03 删了，键留着）。"
+        },
+        "jobsd": {
+          "type": "string",
+          "description": "jobsd 监督器的状态：`starting`、`healthy`、`unhealthy`、`unsupervised`（没有受监督的 jobsd）。"
+        },
+        "disk": {
+          "$ref": "#/definitions/DiskSpaceView"
+        },
+        "time": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "description": "应用版本，例如 `2026.11.23`；没注入是 `0.0.0+unknown`。由 feat/api-response-headers 加。"
+        },
+        "build": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "构建的提交号；没注入为 null。由 feat/api-response-headers 加。"
+        }
+      }
+    }
+  }
+}

@@ -16,6 +16,11 @@ async fn get(state: &crate::AppState, uri: &str) -> axum::response::Response {
         .unwrap()
 }
 
+/// 契约 job-data.v1 的两条返回（2026-11-24 起对真实返回钉键集合）。
+fn assert_job_data(value: &serde_json::Value, name: &str, path: &str) {
+    super::job_view_contract::assert_contract_view(value, "job-data.v1.schema.json", name, path);
+}
+
 #[tokio::test]
 async fn job_data_routes_list_and_query_registered_datasets() {
     let state = test_state("job-data-routes");
@@ -33,15 +38,25 @@ async fn job_data_routes_list_and_query_registered_datasets() {
     std::fs::write(paths.translated_dir.join("revisions.v1.jsonl"), rows).unwrap();
 
     let catalog = read_json(get(&state, "/api/v1/jobs/job-data/data").await).await["data"].clone();
+    assert_job_data(&catalog, "JobDataCatalogView", "catalog");
+    for (index, dataset) in catalog["datasets"].as_array().unwrap().iter().enumerate() {
+        assert_job_data(dataset, "JobDataDatasetInfo", &format!("catalog.datasets[{index}]"));
+        for (field_index, field) in dataset["fields"].as_array().unwrap().iter().enumerate() {
+            assert_job_data(field, "JobDataFieldInfo", &format!("catalog.datasets[{index}].fields[{field_index}]"));
+        }
+    }
     let revisions = catalog["datasets"].as_array().unwrap().iter().find(|d| d["name"] == "revisions").unwrap().clone();
     assert_eq!(revisions["available"], true);
 
     let data = read_json(get(&state, "/api/v1/jobs/job-data/data/revisions?source=user&fields=source").await).await["data"].clone();
+    assert_job_data(&data, "JobDataView", "data(rows)");
     assert_eq!(data["total"], 1);
     assert_eq!(data["rows"][0]["reader_item_id"], "p003-b0004");
     assert_eq!(data["rows"][0]["page"], 3);
 
     let groups = read_json(get(&state, "/api/v1/jobs/job-data/data/revisions?group_by=item_id").await).await["data"].clone();
+    assert_job_data(&groups, "JobDataView", "data(groups)");
+    assert_job_data(&groups["groups"][0], "JobDataGroup", "data(groups).groups[0]");
     assert_eq!(groups["groups"][0]["count"], 2);
 
     assert_eq!(get(&state, "/api/v1/jobs/job-data/data/revisions?nope=1").await.status(), StatusCode::BAD_REQUEST);
@@ -68,7 +83,9 @@ async fn job_data_reads_a_merged_reading_job_and_rejects_legacy_layouts() {
     assert_eq!(rows["total"], 1);
     let missing = get(&state, &format!("/api/v1/jobs/{job_id}/data/qa_violations")).await;
     assert_eq!(missing.status(), StatusCode::OK);
-    assert_eq!(read_json(missing).await["data"]["available"], false);
+    let missing = read_json(missing).await["data"].clone();
+    assert_job_data(&missing, "JobDataView", "data(missing)");
+    assert_eq!(missing["available"], false);
 
     // 虚拟 id 格式对、但没有这份合并：和别的读接口一样 404。
     let bogus = format!("merged-{}-fedcba9876543210", "a".repeat(64));

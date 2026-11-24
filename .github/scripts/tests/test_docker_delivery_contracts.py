@@ -569,3 +569,30 @@ def test_desktop_bundle_ships_the_rpr_engine():
     env = _text("frontend/desktop/src/main/backend-env.js")
     assert 'RETAIN_RPR_ENGINE_DIR: path.join(backendRoot, "rendering-engine")' in env
     assert "RETAINPDF_NODE_BIN" in env
+
+
+@pytest.mark.parametrize("relative", [".dockerignore", "backend/.dockerignore"])
+def test_dockerignore_keeps_every_contract_schema(relative: str) -> None:
+    """防密钥的 `**/*credentials*.json` 会挡掉契约 `credentials.v1.schema.json`，web 镜像构建时生成类型就找不到它
+    （2026-11-24 #171）。后面要有放行契约的例外，并且每个契约文件名都不会被不带例外的规则挡住以外的规则挡掉。"""
+    import fnmatch
+
+    lines = [
+        line.strip()
+        for line in _text(relative).splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    assert "**/*credentials*.json" in lines
+    assert "!contracts/*.schema.json" in lines
+    assert lines.index("!contracts/*.schema.json") > lines.index("**/*credentials*.json")
+    schemas = sorted(path.name for path in (REPO_ROOT / "contracts").glob("*.schema.json"))
+    assert "credentials.v1.schema.json" in schemas
+    for name in schemas:
+        excluded = False
+        for rule in lines:
+            negate = rule.startswith("!")
+            pattern = rule[1:] if negate else rule
+            candidates = {f"contracts/{name}", name}
+            if any(fnmatch.fnmatch(candidate, pattern.replace("**/", "")) or fnmatch.fnmatch(candidate, pattern) for candidate in candidates):
+                excluded = not negate
+        assert not excluded, f"{relative} 挡掉了契约 {name}"

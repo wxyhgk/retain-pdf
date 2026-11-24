@@ -10,7 +10,7 @@ use crate::api_tests::jobs_common::{read_json, test_state};
 use crate::app::build_app;
 
 /// 本机的假模型服务：`/v1/chat/completions` 回 200。
-async fn local_model_server() -> std::net::SocketAddr {
+pub(super) async fn local_model_server() -> std::net::SocketAddr {
     let router = axum::Router::new().route(
         "/v1/chat/completions",
         axum::routing::post(|| async { axum::Json(json!({"choices": [{"message": {"content": "p"}}]})) }),
@@ -23,7 +23,7 @@ async fn local_model_server() -> std::net::SocketAddr {
     addr
 }
 
-async fn post_single(state: crate::AppState, uri: &str, body: Value) -> (StatusCode, Value) {
+pub(super) async fn post_single(state: crate::AppState, uri: &str, body: Value) -> (StatusCode, Value) {
     let response = build_app(state)
         .oneshot(
             Request::builder()
@@ -40,7 +40,7 @@ async fn post_single(state: crate::AppState, uri: &str, body: Value) -> (StatusC
     (status, read_json(response).await)
 }
 
-fn no_private_escape(mut state: crate::AppState) -> crate::AppState {
+pub(super) fn no_private_escape(mut state: crate::AppState) -> crate::AppState {
     // 开发机上可能设了 RUST_API_ALLOW_PRIVATE_PROVIDER_URLS=1：测试按默认（没设）来。
     let mut config = (*state.config).clone();
     config.provider_runtime.mineru.allow_private_urls = false;

@@ -9,7 +9,9 @@ from pathlib import Path
 
 
 CONTRACT_NAMES = (
+    "auth-session.v1.schema.json",
     "create-job.v1.schema.json",
+    "credentials.v1.schema.json",
     "glossaries.v1.schema.json",
     "job-actions.v1.schema.json",
     "job-data.v1.schema.json",
@@ -20,6 +22,8 @@ CONTRACT_NAMES = (
     "library-books.v1.schema.json",
     "library-documents.v1.schema.json",
     "ocr-providers.v1.schema.json",
+    "platform-settings.v1.schema.json",
+    "provider-probes.v1.schema.json",
     "translation-providers.v1.schema.json",
     "pipeline-stdout.v1.schema.json",
     "provider-error-codes.v1.schema.json",
@@ -27,6 +31,7 @@ CONTRACT_NAMES = (
     "reader-data.v1.schema.json",
     "token-usage.v1.schema.json",
     "translation-revisions.v1.schema.json",
+    "uploads.v1.schema.json",
 )
 
 CONTRACTS_ROOT = Path(__file__).resolve().parent

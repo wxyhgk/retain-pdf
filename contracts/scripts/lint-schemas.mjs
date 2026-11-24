@@ -6,7 +6,9 @@ import { fileURLToPath } from "node:url";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const EXPECTED_DIALECT = "https://json-schema.org/draft/2020-12/schema";
 const EXPECTED_SCHEMAS = [
+  "auth-session.v1.schema.json",
   "create-job.v1.schema.json",
+  "credentials.v1.schema.json",
   "glossaries.v1.schema.json",
   "job-actions.v1.schema.json",
   "job-data.v1.schema.json",
@@ -18,12 +20,15 @@ const EXPECTED_SCHEMAS = [
   "library-documents.v1.schema.json",
   "ocr-providers.v1.schema.json",
   "pipeline-stdout.v1.schema.json",
+  "platform-settings.v1.schema.json",
   "provider-error-codes.v1.schema.json",
+  "provider-probes.v1.schema.json",
   "reader-data.v1.schema.json",
   "refine-report.v1.schema.json",
   "token-usage.v1.schema.json",
   "translation-providers.v1.schema.json",
   "translation-revisions.v1.schema.json",
+  "uploads.v1.schema.json",
 ];
 
 // 端点表（`endpoints[]`）每条允许的键。拼错的键（比如 `clientName`）在这里就红，不会悄悄被生成器忽略。
