@@ -30,7 +30,9 @@ The current build has no legacy Reader entry. `dist/css/reader-legacy.css`, if p
 ```bash
 npm --prefix frontend/web run build:css
 npm --prefix frontend/web test -- 'tests/architecture/*.test.mjs'
-npm --prefix frontend/web run visual:check
+npm --prefix frontend/web run build
+npm --prefix frontend/web run visual:check -- --base main
 ```
 
-Only update visual baselines after confirming the rendered change is intentional.
+`--base main` screenshots every theme × 8 page states from main's committed build and from the current build, then
+compares them pixel by pixel. Only the parts you meant to change may differ; see `frontend/web/tests/README.md`.

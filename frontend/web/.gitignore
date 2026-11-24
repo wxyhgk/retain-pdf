@@ -1,3 +1,4 @@
 node_modules/
 runtime-config.local.js
 tests/visual/output/
+tests/visual/baseline/
