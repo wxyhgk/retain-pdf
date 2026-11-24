@@ -5,7 +5,8 @@ import { join, relative } from "node:path";
 
 // CSS 字面色值棘轮门禁。
 //
-// 目标状态:src/styles 里除 themes/(皮肤真值)外,不出现任何字面色值
+// 目标状态:src/styles 里不出现任何字面色值(皮肤真值在 packages/ui/styles/themes/,
+// 不在扫描范围内,那里是唯一允许写字面色的地方)
 // (hex / rgb / rgba / hsl),全部走语义变量 var(--ink|--paper|--surface|
 // --shadow-color|…) 或 color-mix 派生——否则装饰主题/深色皮肤下这些
 // 颜色不跟随换肤(night 主题曾因此半坏)。
@@ -18,7 +19,6 @@ import { join, relative } from "node:path";
 
 const PROJECT_ROOT = process.cwd();
 const STYLES_ROOT = join(PROJECT_ROOT, "src/styles");
-const THEMES_ROOT = join(PROJECT_ROOT, "src/styles/themes");
 const BASELINE_PATH = join(PROJECT_ROOT, "tests/helpers/css-color-literals-baseline.json");
 
 // hex 色 / rgb(a) / hsl(a) 函数。CSS 变量名里的数字不含 #,不会误命中。
@@ -28,7 +28,6 @@ function walkCss(dir, out = []) {
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     if (statSync(full).isDirectory()) {
-      if (full === THEMES_ROOT) continue; // 皮肤真值,唯一允许字面色的地方
       walkCss(full, out);
     } else if (name.endsWith(".css")) {
       out.push(full);

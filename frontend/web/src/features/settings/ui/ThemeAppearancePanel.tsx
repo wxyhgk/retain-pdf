@@ -1,5 +1,5 @@
 // 设置 · 外观：主题皮肤切换（注册表驱动，后期加皮肤无需改本文件）
-// 真值：html[data-theme] + localStorage（shared/theme）
+// 真值：html[data-theme] + localStorage（@retainpdf/ui/theme）
 // 字体：渲染字体族（request.render.typst_font_family），持久化至 localStorage 并在创建任务时注入
 
 import { useEffect, useState } from "react";
@@ -10,7 +10,7 @@ import {
   listThemesBySeries,
   setTheme,
   type ThemeId,
-} from "@/ui/theme/theme.js";
+} from "@retainpdf/ui/theme";
 import {
   getStoredFontFamily,
   setStoredFontFamily,
@@ -146,7 +146,7 @@ function FontSelector() {
 export function ThemeAppearancePanel() {
   const [active, setActive] = useState<ThemeId>(() => getTheme());
   // 按产品系列分区（基础/诸子百家/王朝/二次元…），系列注册表见
-  // shared/theme/registry.ts 的 THEME_SERIES——新系列加一行即出新分区
+  // @retainpdf/ui 的 theme/registry.ts 里的 THEME_SERIES——新系列加一行即出新分区
   const groups = listThemesBySeries();
 
   useEffect(() => {

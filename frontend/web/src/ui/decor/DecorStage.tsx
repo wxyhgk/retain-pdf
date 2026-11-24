@@ -10,7 +10,7 @@
 // 契约：./contract.ts · 计划器：./stage-plan.ts · 文档：docs/core/frontend/theme-system/DECOR_PACKS.md
 
 import { useEffect, useRef, useState } from "react";
-import { THEME_CHANGE_EVENT, getTheme, getThemeDefinition } from "../theme/theme.js";
+import { THEME_CHANGE_EVENT, getTheme, getThemeDefinition } from "@retainpdf/ui/theme";
 import { planStage, type StagePlan } from "./stage-plan.js";
 import { defaultDecorManifestPort, type DecorManifestFetchPort } from "./decor-manifest-port.js";
 

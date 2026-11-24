@@ -2,7 +2,7 @@
 import { createRoot, type Root } from "react-dom/client";
 import { ErrorBoundary } from "@retainpdf/ui";
 import { ReaderApp } from "./ReaderApp.js";
-import { bootTheme } from "./shared/theme/theme.js";
+import { bootTheme } from "@retainpdf/ui/theme";
 
 export type ReaderBootOptions = {
   body?: HTMLElement;

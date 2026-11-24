@@ -3,11 +3,12 @@
  * 规则：
  * - 组件 / 工具类只用 var(--bg|--ink|--accent|…) 语义名
  * - 换肤 = 换 data-theme，不改组件
- * - 新增皮肤：themes/<id>.css + themes/index.css 一行 + shared/theme/registry.ts
+ * - 皮肤真值在 frontend/packages/ui/styles/themes/（网页和阅读器共用一份）；
+ *   新增皮肤：themes/<id>.css + themes/index.css 一行 + packages/ui/src/theme/registry.ts
  * - 见 docs/core/frontend/theme-system/ADDING_A_THEME.md
  */
 
-@import "./themes/index.css";
+@import "@retainpdf/ui/themes.css";
 
 :root {
   /* 字体与动效与皮肤无关，固定在此 */

@@ -11,9 +11,11 @@
 复制模板：
 
 ```bash
-cp frontend/web/src/styles/themes/classic.css \
-   frontend/web/src/styles/themes/<id>.css
+cp frontend/packages/ui/styles/themes/classic.css \
+   frontend/packages/ui/styles/themes/<id>.css
 ```
+
+皮肤文件网页和阅读器共用一份，都在 `@retainpdf/ui` 里（2026-11-24 起；以前阅读器包里复制了一份）。
 
 编辑为：
 
@@ -45,7 +47,7 @@ cp frontend/web/src/styles/themes/classic.css \
 }
 ```
 
-**必选变量**见 `frontend/web/src/styles/themes/_contract.css`。
+**必选变量**见 `frontend/packages/ui/styles/themes/_contract.css`。
 
 注意：
 
@@ -54,7 +56,7 @@ cp frontend/web/src/styles/themes/classic.css \
 
 ### 2. 挂进构建
 
-`frontend/web/src/styles/themes/index.css` 增加一行：
+`frontend/packages/ui/styles/themes/index.css` 增加一行：
 
 ```css
 @import "./<id>.css";
@@ -62,7 +64,7 @@ cp frontend/web/src/styles/themes/classic.css \
 
 ### 3. 登记注册表
 
-`frontend/web/src/shared/theme/registry.ts` 的 `THEME_REGISTRY` 数组追加：
+`frontend/packages/ui/src/theme/registry.ts` 的 `THEME_REGISTRY` 数组追加：
 
 ```ts
 {

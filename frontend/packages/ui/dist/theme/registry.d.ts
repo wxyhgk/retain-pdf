@@ -1,3 +1,4 @@
+/** 当前皮肤 id 存在 localStorage 的键。网页和阅读页同源，靠它共享同一个皮肤。 */
 export declare const THEME_STORAGE_KEY = "retainpdf.theme";
 export declare const DEFAULT_THEME_ID = "classic";
 /** 设置页色块预览（与 CSS 皮肤主色一致，仅用于 UI 缩略） */
@@ -34,7 +35,7 @@ export type ThemeDefinition = {
     /**
      * 装饰包名（public 静态目录 decor/<包名>/manifest.json）。
      * 缺省 = 纯配色皮肤，零装饰零额外下载。
-     * 契约：src/shared/decor/contract.ts · docs/core/frontend/theme-system/DECOR_PACKS.md
+     * 契约：frontend/web/src/ui/decor/contract.ts · docs/core/frontend/theme-system/DECOR_PACKS.md
      */
     decorPack?: string;
     /** 所属系列 id（THEME_SERIES），缺省归入 "base" 基础系列 */

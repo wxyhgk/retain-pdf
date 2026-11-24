@@ -32,6 +32,11 @@
       "types": "./dist/components/ui/tooltip.d.ts",
       "import": "./dist/components/ui/tooltip.js"
     },
+    "./theme": {
+      "types": "./dist/theme/index.d.ts",
+      "import": "./dist/theme/index.js"
+    },
+    "./themes.css": "./styles/themes/index.css",
     "./styles.css": "./dist/styles.css",
     "./primitives.css": "./styles/primitives.css"
   },

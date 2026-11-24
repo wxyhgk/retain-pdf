@@ -1,7 +1,7 @@
 # 装饰包（Decor Packs）契约
 
 > 状态：契约 + 图片版舞台已落地（three 引擎未实现，model 层暂走 fallback 图）。
-> 代码真值：`frontend/web/src/shared/decor/{slots,contract,stage-plan}.ts` · `DecorStage.tsx`
+> 代码真值：`frontend/web/src/ui/decor/{slots,contract,stage-plan}.ts` · `DecorStage.tsx`
 > slot 定位：`frontend/web/src/styles/core/decor-stage.css` · 示范包：`frontend/web/decor/jiangnan/`
 > 测试：`frontend/web/tests/decor-contract.test.mjs` · `tests/decor-stage.test.mjs`
 

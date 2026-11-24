@@ -10,6 +10,8 @@ import { join, relative } from "node:path";
 const PROJECT_ROOT = process.cwd();
 const STYLES_ROOT = join(PROJECT_ROOT, "src/styles");
 const READER_STYLES_ROOT = join(PROJECT_ROOT, "..", "packages", "reader", "styles");
+// 皮肤 CSS 网页和阅读器共用一份，在 @retainpdf/ui（2026-11-24 起；以前两边各一份）。
+const UI_THEMES_ROOT = join(PROJECT_ROOT, "..", "packages", "ui", "styles", "themes");
 
 // 递归遍历样式根：此前只 readdirSync 顶层，漏掉了 core/、themes/ 等子目录
 // （以及 web 侧的 entries/reader.css），子目录里的裸全局选择器可以绕过门禁。
@@ -61,17 +63,6 @@ const READER_FILE_EXEMPTIONS = [
       "跨页共享下载 toast 工具类（@utility 生成），类名不带 reader- 前缀以避免宿主 DOM 改名。",
     selectors: [/^\.download-toast/],
   },
-  ...[
-    "classic.css",
-    "jiangnan.css",
-    "mojia.css",
-    "night.css",
-    "seacliff.css",
-  ].map((name) => ({
-    file: `themes/${name}`,
-    reason: "皮肤 token 契约：颜色/形态变量必须写在 :root/[data-theme] 上全局生效。",
-    selectors: [/^\[data-theme/],
-  })),
 ];
 
 const READER_EXEMPTIONS = new Map(
@@ -100,6 +91,13 @@ const GROUPS = [
       /body\.reader/,
       /^:root$/,
     ],
+  },
+  {
+    // 皮肤 token 契约：颜色/形态变量只能写在 :root / [data-theme] 上，全局生效。
+    name: "皮肤（@retainpdf/ui 共享）",
+    root: UI_THEMES_ROOT,
+    files: cssFilesUnder(UI_THEMES_ROOT),
+    allowed: [/^:root$/, /^\[data-theme/],
   },
   {
     name: "detail 页",
@@ -293,14 +291,12 @@ for (const group of GROUPS) {
   });
 }
 
-test("reader 门禁扫描为递归并覆盖 core/、themes/ 与 web 代理入口", () => {
+test("reader 门禁扫描为递归并覆盖 core/ 与 web 代理入口", () => {
   const reader = GROUPS.find((group) => group.name === "reader 页/阅读器组件");
   const rels = new Set(reader.files.map((file) => relative(READER_STYLES_ROOT, file)));
   for (const expected of [
     "core/ambient-surface-reader.css",
     "core/tailwind-theme.css",
-    "themes/classic.css",
-    "themes/index.css",
     "reader.utilities.css",
   ]) {
     assert.ok(rels.has(expected), `递归扫描缺少 reader/styles/${expected}`);

@@ -13,7 +13,7 @@
 **意象**：墨家工坊 · 竹简卷帙 · 青铜机关 · 规矩绳墨。端方、克制、暖素。
 **禁止**：高饱和色、赛博/现代元素、拥挤构图、兵器特写压屏。
 
-配色从皮肤 token 取（`src/styles/themes/mojia.css`）：
+配色从皮肤 token 取（`frontend/packages/ui/styles/themes/mojia.css`）：
 
 | token | 值 | 用途 |
 |---|---|---|
