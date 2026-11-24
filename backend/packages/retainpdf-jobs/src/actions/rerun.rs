@@ -84,9 +84,12 @@ impl<'a> JobsFacade<'a> {
         require_source_glossary(self.command.db, &source_job, &request)?;
         let workflow = request.workflow.clone();
         // 归属（jobs.document_id + 书卡）沿 artifact_job_id 继承；续跑是同一份译文，加进源任务的译文版本。
+        // 源任务已经续跑出一个还在跑的任务时 409 derived_job_active（防双击、网络重试）。
         let job = submit_job(
             &self.command.submit,
-            NewJob::new(request).in_version(VersionLink::JoinVersionOf(&source_job.job_id)),
+            NewJob::new(request)
+                .in_version(VersionLink::JoinVersionOf(&source_job.job_id))
+                .derived_run_of(source_job_id),
         )?;
         Ok(self.build_submission_view(base_url, &job, JobStatusKind::Queued, workflow))
     }

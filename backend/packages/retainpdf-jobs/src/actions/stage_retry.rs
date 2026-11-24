@@ -178,7 +178,8 @@ impl<'a> JobsFacade<'a> {
             request.ambiguous_request_policy == AmbiguousRequestPolicy::AcceptDuplicateRisk;
         let workflow = request_input.workflow.clone();
         let reuses_artifacts = !request_input.source.artifact_job_id.trim().is_empty();
-        let mut new_job = NewJob::new(request_input);
+        // 源任务已经重试 / 续跑出一个还在跑的任务时 409 derived_job_active（防双击、网络重试）。
+        let mut new_job = NewJob::new(request_input).derived_run_of(source_job_id);
         if let Some(dispatch) = ambiguous_ocr.as_ref() {
             new_job = new_job.resolving_ocr_ambiguity(dispatch, "accept_duplicate_risk", None);
         } else if !reuses_artifacts {

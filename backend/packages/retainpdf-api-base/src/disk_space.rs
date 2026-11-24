@@ -76,7 +76,7 @@ mod tests {
         ensure_free_space(&dir, 1, "upload a file").expect("one byte is always there");
         let error = ensure_free_space(&dir, u64::MAX, "create a job").unwrap_err();
         match &error {
-            AppError::Reasoned { status, reason, message } => {
+            AppError::Reasoned { status, reason, message, .. } => {
                 assert_eq!(*status, axum::http::StatusCode::SERVICE_UNAVAILABLE);
                 assert_eq!(*reason, INSUFFICIENT_STORAGE);
                 assert!(message.starts_with("not enough free disk space to create a job"), "{message}");

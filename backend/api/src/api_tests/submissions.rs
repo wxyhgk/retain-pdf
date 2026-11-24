@@ -409,9 +409,16 @@ async fn single_user_cases(recorder: &mut Recorder) {
             ))
         })
         .await;
+    // 同一个源任务已经有在跑的派生任务（上一条建的）：再重试 409 derived_job_active，什么都不建（2026-11-24 起）。
+    recorder
+        .case(&fixture, "POST /jobs/:id/retry-stage  render，源任务已有在跑的派生任务", None, || async {
+            view(jobs.retry_stage_submission(BASE_URL, "src-translated", retry("render", json!({}))))
+        })
+        .await;
+    translated_source(&fixture, "src-translated-render", &upload);
     recorder
         .case(&fixture, "POST /jobs/:id/retry-stage  render（新任务）", None, || async {
-            view(jobs.retry_stage_submission(BASE_URL, "src-translated", retry("render", json!({}))))
+            view(jobs.retry_stage_submission(BASE_URL, "src-translated-render", retry("render", json!({}))))
         })
         .await;
     // 原地重跑会把源任务改成排队中，各用一个源任务。

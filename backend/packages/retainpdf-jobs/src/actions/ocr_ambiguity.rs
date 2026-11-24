@@ -85,11 +85,13 @@ impl<'a> JobsFacade<'a> {
                 let workflow = request_input.workflow.clone();
                 let job = submit_job(
                     &self.command.submit,
-                    NewJob::new(request_input).resolving_ocr_ambiguity(
-                        &source_dispatch,
-                        "bind_existing_receipt",
-                        Some(&receipt),
-                    ),
+                    NewJob::new(request_input)
+                        .derived_run_of(source_job_id)
+                        .resolving_ocr_ambiguity(
+                            &source_dispatch,
+                            "bind_existing_receipt",
+                            Some(&receipt),
+                        ),
                 )?;
                 build_retry_stage_submission_view(
                     base_url,

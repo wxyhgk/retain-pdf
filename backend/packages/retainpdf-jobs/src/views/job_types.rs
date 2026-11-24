@@ -332,6 +332,9 @@ pub enum ActionBlockReason {
     NoOcrDispatch,
     /// 歧义的 OCR 派发属于不支持绑定收据的服务商/操作。
     OcrDispatchUnsupported,
+    /// 这个任务已经续跑 / 重试出一个新任务，那个新任务还在排队或在跑：等它结束或先取消它。
+    /// 409 的 `error.details.active_job_id` 是那个任务的编号（2026-11-24 起）。
+    DerivedJobActive,
 }
 
 impl ActionBlockReason {
@@ -348,6 +351,7 @@ impl ActionBlockReason {
             Self::StaleResolution => "stale_resolution",
             Self::NoOcrDispatch => "no_ocr_dispatch",
             Self::OcrDispatchUnsupported => "ocr_dispatch_unsupported",
+            Self::DerivedJobActive => "derived_job_active",
         }
     }
 

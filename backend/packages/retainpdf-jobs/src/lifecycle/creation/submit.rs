@@ -10,6 +10,10 @@
 //! 4. 明文 key 导入凭据库换成引用，加使用锁，锁到落库之后；
 //! 5. 落库（多用户模式按页预扣）、归到书下、发射。
 //!
+//! 续跑、重试阶段从源任务派生新任务（[`NewJob::derived_run_of`]）：源任务已经有一个排队中 / 运行中的派生任务时
+//! 409 `derived_job_active`（`error.details.active_job_id` 是那个任务），防双击、网络重试建出两个要花钱的任务。
+//! 最前面先看一眼（拒绝时不留副作用），落库时再在同一个事务里查一次（两个请求同时来只建成一个）。
+//!
 //! 任务运行时内部派生的 `{id}-ocr` 子任务不经这里，所以不会重复计费。
 
 use retainpdf_api_base::disk_space::ensure_free_space;
@@ -19,7 +23,8 @@ use retainpdf_data::db::backup::RestoreInProgress;
 use retainpdf_data::db::{NewRunWrite, PipelineDispatchRecord};
 use retainpdf_api_base::error::AppError;
 use retainpdf_data::job_events::{
-    cas_persist_job_as_new_run_with_resources, persist_job_as_new_run_with_resources,
+    cas_persist_job_as_new_run_with_resources, persist_derived_job_as_new_run_with_resources,
+    persist_job_as_new_run_with_resources,
 };
 use retainpdf_core::models::domain::{JobSnapshot, JobStatusKind, WorkflowKind};
 use retainpdf_core::storage_paths::plan_previous_output_pdf_move;
@@ -41,6 +46,7 @@ pub struct NewJob<'a> {
     document_id: Option<&'a str>,
     ocr_recovery: Option<OcrRecovery<'a>>,
     version: VersionLink<'a>,
+    derived_run_of: Option<&'a str>,
 }
 
 /// OCR 请求结果不确定之后的恢复任务：和"源任务那次 OCR 已处理"写在同一个事务里，
@@ -59,6 +65,7 @@ impl<'a> NewJob<'a> {
             document_id: None,
             ocr_recovery: None,
             version: VersionLink::Auto,
+            derived_run_of: None,
         }
     }
 
@@ -72,6 +79,13 @@ impl<'a> NewJob<'a> {
     /// 按上传归不到书时，归属从这个任务继承。
     pub(crate) fn derived_from(mut self, job_id: &'a str) -> Self {
         self.derived_from = Some(job_id);
+        self
+    }
+
+    /// 续跑、重试阶段从 `source_job_id` 派生的新任务：同一个源任务同时只许有一个排队中 / 运行中的派生任务，
+    /// 已经有了就 409 `derived_job_active`（见模块说明）。和 [`NewJob::derived_from`]（归属继承）无关，各设各的。
+    pub(crate) fn derived_run_of(mut self, source_job_id: &'a str) -> Self {
+        self.derived_run_of = Some(source_job_id);
         self
     }
 
@@ -126,6 +140,7 @@ pub fn submit_job(deps: &JobSubmitDeps<'_>, new: NewJob<'_>) -> Result<JobSnapsh
         document_id,
         ocr_recovery,
         version,
+        derived_run_of,
     } = new;
     // 恢复备份期间不建：建出来的行会被换库盖掉，任务目录却留着。守卫拿到落库完（见 `Db::hold_off_restore`）。
     let _no_restore = deps.launcher.db.hold_off_restore().map_err(restore_in_progress)?;
@@ -142,6 +157,12 @@ pub fn submit_job(deps: &JobSubmitDeps<'_>, new: NewJob<'_>) -> Result<JobSnapsh
             return Err(AppError::conflict(format!(
                 "job already exists: {requested_job_id}"
             )));
+        }
+    }
+    // 源任务已经有在跑的派生任务：先拒，不建目录、不导凭据。并发的两个请求都过了这里时，落库那一步再挡一次。
+    if let Some(source_job_id) = derived_run_of {
+        if let Some(active_job_id) = deps.launcher.db.active_derived_job(source_job_id)? {
+            return Err(derived_job_active(source_job_id, &active_job_id));
         }
     }
     let ocr_only = matches!(input.workflow, WorkflowKind::Ocr);
@@ -164,7 +185,13 @@ pub fn submit_job(deps: &JobSubmitDeps<'_>, new: NewJob<'_>) -> Result<JobSnapsh
     let _credential_guard = acquire_job_credential_usage_lock(deps, &job)?;
 
     let job = match ocr_recovery {
-        None => persist_and_launch(&deps.launcher, job, derived_from, None, version)?,
+        None => persist_and_launch(
+            &deps.launcher,
+            job,
+            derived_from,
+            Persist::New { derived_run_of },
+            version,
+        )?,
         Some(recovery) => persist_ocr_recovery(&deps.launcher, job, recovery)?,
     };
     if let Some(document_id) = document_id {
@@ -223,7 +250,25 @@ pub fn relaunch_in_place(
     let _no_restore = deps.db.hold_off_restore().map_err(restore_in_progress)?;
     ensure_free_space(deps.data_root, deps.min_free_disk_bytes, "rerun this job")?;
     ensure_queue_room(deps)?;
-    persist_and_launch(deps, job, None, Some(read_as), VersionLink::Auto)
+    persist_and_launch(deps, job, None, Persist::InPlace(read_as), VersionLink::Auto)
+}
+
+/// 409 `derived_job_active`，`error.details.active_job_id` 是在跑的那个派生任务。
+fn derived_job_active(source_job_id: &str, active_job_id: &str) -> AppError {
+    AppError::conflict_because_with(
+        ActionBlockReason::DerivedJobActive.as_str(),
+        format!(
+            "job {source_job_id} already has a resumed or retried job that is queued or running ({active_job_id}); \
+             wait for it to finish or cancel it first"
+        ),
+        serde_json::json!({ "active_job_id": active_job_id }),
+    )
+}
+
+/// 落库方式：新任务（可能是从某个源任务派生的），或原地重跑已有任务（带读到时的状态和代次）。
+enum Persist<'a> {
+    New { derived_run_of: Option<&'a str> },
+    InPlace(&'a RunFence),
 }
 
 /// 正在恢复备份：409 `restore_in_progress`。
@@ -258,7 +303,7 @@ fn persist_and_launch(
     deps: &JobLaunchDeps<'_>,
     mut job: JobSnapshot,
     derived_from: Option<&str>,
-    in_place: Option<&RunFence>,
+    persist: Persist<'_>,
     version: VersionLink<'_>,
 ) -> Result<JobSnapshot, AppError> {
     if let Some(source) = deps.platform {
@@ -272,17 +317,33 @@ fn persist_and_launch(
     {
         return Err(AppError::ServiceUnavailable("Rust model worker rollout is not enabled; execution_connection will not fall back to Python transport".into()));
     }
-    let previous_pdf_move = in_place
-        .and_then(|_| plan_previous_output_pdf_move(&mut job, deps.data_root, deps.output_root));
+    let previous_pdf_move = matches!(persist, Persist::InPlace(_))
+        .then(|| plan_previous_output_pdf_move(&mut job, deps.data_root, deps.output_root))
+        .flatten();
     // 预扣放在落库之前：余额不够就不留下任务行。原地重跑也经过这里（只重新渲染不计费，
     // 规则见 accounts::page_quota）。
     let reserved = deps.page_quota && retainpdf_accounts::reserve_for_job(deps.db, &job)?;
     // 落库同时把运行代次加一：此后上一次运行遗留的 driver（取消后还在收尾的、成功后还在善后的）
     // 写不进这一次运行的行，也占不住这一次的发射。
-    let persisted = match in_place {
-        None => persist_job_as_new_run_with_resources(deps.db, deps.data_root, deps.output_root, &job)
-            .map_err(AppError::from),
-        Some(fence) => match cas_persist_job_as_new_run_with_resources(
+    let persisted = match persist {
+        Persist::New { derived_run_of: None } => {
+            persist_job_as_new_run_with_resources(deps.db, deps.data_root, deps.output_root, &job)
+                .map_err(AppError::from)
+        }
+        Persist::New { derived_run_of: Some(source_job_id) } => {
+            match persist_derived_job_as_new_run_with_resources(
+                deps.db,
+                deps.data_root,
+                deps.output_root,
+                &job,
+                source_job_id,
+            ) {
+                Ok(Ok(persisted)) => Ok(persisted),
+                Ok(Err(active_job_id)) => Err(derived_job_active(source_job_id, &active_job_id)),
+                Err(error) => Err(error.into()),
+            }
+        }
+        Persist::InPlace(fence) => match cas_persist_job_as_new_run_with_resources(
             deps.db,
             deps.data_root,
             deps.output_root,

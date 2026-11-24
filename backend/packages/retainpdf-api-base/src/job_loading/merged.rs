@@ -185,7 +185,7 @@ mod tests {
         let job_id = virtual_id().format();
         let error = load_virtual_job(&db, &root.0, &job_id).unwrap_err();
         assert!(
-            matches!(&error, AppError::Reasoned { status, reason, message }
+            matches!(&error, AppError::Reasoned { status, reason, message, .. }
                 if *status == StatusCode::NOT_FOUND && *reason == "merged_reading_expired"
                     && *message == format!("job not found: {job_id}")),
             "{error:?}"

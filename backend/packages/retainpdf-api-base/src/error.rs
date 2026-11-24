@@ -102,6 +102,9 @@ pub enum AppError {
         status: StatusCode,
         message: String,
         reason: &'static str,
+        /// 和 `reason` 并列放进 `error.details` 的其它字段（JSON 对象；没有就是 `Null`），
+        /// 例如 `derived_job_active` 带的 `active_job_id`。用 [`AppError::conflict_because_with`] 构造。
+        extra: Value,
     },
     /// 账号、登录、会话的错误（INVALID_CREDENTIALS、ACCOUNT_DISABLED、TOO_MANY_ATTEMPTS……）。
     #[error("{message}")]
@@ -242,6 +245,18 @@ impl AppError {
             status: StatusCode::CONFLICT,
             message: msg.into(),
             reason,
+            extra: Value::Null,
+        }
+    }
+
+    /// 409,`error.details` 除了 `reason` 还带 `extra` 里的字段(`extra` 是 JSON 对象,和 `reason` 重名的键不要用)。
+    /// 例如续跑被拒时带上在跑的派生任务编号 `active_job_id`。
+    pub fn conflict_because_with(reason: &'static str, msg: impl Into<String>, extra: Value) -> Self {
+        Self::Reasoned {
+            status: StatusCode::CONFLICT,
+            message: msg.into(),
+            reason,
+            extra,
         }
     }
 
@@ -251,6 +266,7 @@ impl AppError {
             status: StatusCode::SERVICE_UNAVAILABLE,
             message: msg.into(),
             reason,
+            extra: Value::Null,
         }
     }
 
@@ -260,6 +276,7 @@ impl AppError {
             status: StatusCode::NOT_FOUND,
             message: msg.into(),
             reason,
+            extra: Value::Null,
         }
     }
 
@@ -289,6 +306,7 @@ impl AppError {
             status: StatusCode::TOO_MANY_REQUESTS,
             message: msg.into(),
             reason,
+            extra: Value::Null,
         }
     }
 
@@ -563,7 +581,7 @@ impl IntoResponse for AppError {
             )
                 .into_response();
         }
-        if let AppError::Reasoned { status, message, reason } = &self {
+        if let AppError::Reasoned { status, message, reason, extra } = &self {
             // 只有 404 / 409 / 429 / 503 有构造方法,信封与对应的普通错误一致。
             let (code, stable_code) = if *status == StatusCode::NOT_FOUND {
                 (40400, "NOT_FOUND")
@@ -579,11 +597,15 @@ impl IntoResponse for AppError {
                 Json(ErrorBody {
                     code,
                     message: message.clone(),
-                    error: StructuredError::with_details(
-                        stable_code,
-                        *status,
-                        json!({ "reason": reason }),
-                    ),
+                    error: StructuredError::with_details(stable_code, *status, {
+                        let mut details = json!({ "reason": reason });
+                        if let (Some(target), Value::Object(extra)) = (details.as_object_mut(), extra) {
+                            for (key, value) in extra {
+                                target.entry(key.clone()).or_insert_with(|| value.clone());
+                            }
+                        }
+                        details
+                    }),
                 }),
             )
                 .into_response();
