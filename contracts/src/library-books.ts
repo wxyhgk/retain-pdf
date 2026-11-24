@@ -9,6 +9,9 @@
  */
 export type LibraryBooksSchema = LibraryDeleteQuery | LibraryDeleteResultView;
 
+/**
+ * 不认识的查询参数 400（2026-11-24 起）。
+ */
 export interface LibraryDeleteQuery {
   force?: boolean;
 }

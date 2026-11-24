@@ -102,6 +102,7 @@ async fn versions_can_be_listed_switched_renamed_and_hidden() {
     // 隐藏的不能选
     let refused = send(&app, "PUT", &format!("/api/v1/documents/{document_id}/translation-version"), json!({"version_id": v3})).await;
     assert_eq!(refused.status(), StatusCode::CONFLICT);
+    assert_eq!(read_json(refused).await["error"]["details"]["reason"], "version_hidden");
     // 隐藏当前版本：书回到自动
     let list = ok(send(&app, "PATCH", &format!("{versions_uri}/{v1}"), json!({"hidden": true})).await).await;
     assert_eq!(list["current_version_id"], Value::Null);

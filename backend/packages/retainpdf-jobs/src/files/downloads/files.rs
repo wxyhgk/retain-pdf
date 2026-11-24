@@ -392,9 +392,10 @@ fn locate(deps: &DownloadJobsDeps<'_>, job: &JobSnapshot, file: &JobFile) -> Res
                 return Err(AppError::not_ready(&internal_file_name(key)));
             };
             if !artifact_is_direct_downloadable(&item) {
-                return Err(AppError::conflict(format!(
-                    "artifact is a directory and cannot be streamed directly: {key}"
-                )));
+                return Err(AppError::conflict_because(
+                    "artifact_is_directory",
+                    format!("artifact is a directory and cannot be streamed directly: {key}"),
+                ));
             }
             if !item.ready || !path.is_file() {
                 return Err(AppError::not_ready(&internal_file_name(key)));

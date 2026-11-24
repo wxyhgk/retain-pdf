@@ -26,7 +26,7 @@ pub async fn create_job(
     ApiJson(payload): ApiJson<Value>,
 ) -> Result<Json<ApiResponse<JobSubmissionView>>, AppError> {
     let request = CreateJobInput::from_api_value(payload)
-        .map_err(|e| AppError::bad_request(format!("invalid job payload: {e}")))?;
+        .map_err(|error| AppError::invalid_json_body("invalid job payload", &error))?;
     // 读上传、写库、建目录都是同步的。
     run_state_blocking(&state, "job creation", move |state| {
         let deps = build_jobs_route_deps(state);

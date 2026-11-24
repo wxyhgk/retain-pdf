@@ -28,6 +28,10 @@ export interface EditorialEventListView {
      * 这次只给到 limit 条，后面还有。
      */
     has_more: boolean;
+    /**
+     * 实际生效的 limit（没传是默认 500）。2026-11-24 加。
+     */
+    limit: number;
 }
 /**
  * 一条编辑部事件（editorial.v1），翻译 agent 的调度原样写出。各 type 的字段和取值全集见 docs/ops/planning/translation-agent/20261030-编辑部可视化和事件格式.md，只加不改：不认识的 type、多出来的字段忽略。page 是这次跑的第几页（1 起），通读是 0。
@@ -45,7 +49,7 @@ export interface EditorialEvent {
     [k: string]: JsonValue;
 }
 /**
- * 翻译 agent 编辑部事件按条数续读：after 是上次返回的 next_after，不带从头取。limit 默认 500，夹到 1..2000。
+ * 翻译 agent 编辑部事件按条数续读：after 是上次返回的 next_after，不带从头取。limit 默认 500，范围 1..=2000，越界 400（2026-11-24 以前静默夹）。
  */
 export interface EditorialEventsQuery {
     after?: number;

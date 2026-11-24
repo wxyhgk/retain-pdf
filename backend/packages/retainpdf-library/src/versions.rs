@@ -16,6 +16,9 @@ use retainpdf_data::db::{Db, TranslationVersionRecord};
 use crate::merge::page_count::book_page_count;
 use crate::merge::reading::{document_merge_sources, ReadingSelection};
 
+/// 切到一个已隐藏的版本：409 的 `error.details.reason`（先 `PATCH … {hidden: false}` 恢复再选）。
+pub(crate) const VERSION_HIDDEN: &str = "version_hidden";
+
 /// 来源版本链最多往上找几层（防环、防异常数据）。
 const MAX_CHAIN: usize = 32;
 
@@ -215,7 +218,10 @@ pub(crate) fn set_current_translation_version(db: &Db, document_id: &str, versio
     if let Some(version_id) = version_id {
         let version = version_of_document(db, document_id, version_id)?;
         if version.hidden_at.is_some() {
-            return Err(AppError::conflict("translation version is hidden; restore it before choosing it"));
+            return Err(AppError::conflict_because(
+                VERSION_HIDDEN,
+                "translation version is hidden; restore it before choosing it",
+            ));
         }
     }
     db.set_document_current_translation_version(document_id, version_id)?;

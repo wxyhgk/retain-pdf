@@ -4,6 +4,7 @@ use std::collections::VecDeque;
 use std::convert::Infallible;
 use std::time::Duration;
 
+use axum::body::to_bytes;
 use axum::extract::State;
 use axum::http::{HeaderMap, HeaderName, HeaderValue};
 use axum::response::sse::{Event, KeepAlive, Sse};
@@ -96,6 +97,7 @@ pub async fn get_live_translation_events(
             job_id,
             cursor,
             pending: initial.into(),
+            closed: false,
         },
         next_live_event,
     );
@@ -117,11 +119,16 @@ struct LiveEventStreamState {
     job_id: String,
     cursor: i64,
     pending: VecDeque<LiveTranslationCommitEventView>,
+    /// 已经发过 `event: error`，下一次就结束流。
+    closed: bool,
 }
 
 async fn next_live_event(
     mut state: LiveEventStreamState,
 ) -> Option<(Result<Event, Infallible>, LiveEventStreamState)> {
+    if state.closed {
+        return None;
+    }
     loop {
         if let Some(view) = state.pending.pop_front() {
             state.cursor = view.seq;
@@ -143,10 +150,26 @@ async fn next_live_event(
                     error = %error,
                     "closing live translation event stream after backend query failure"
                 );
-                return None;
+                // 先告诉客户端为什么断（`event: error`，data 是和普通接口一样的错误信封），再关流。
+                state.closed = true;
+                return Some((Ok(stream_error_event(error).await), state));
             }
         }
     }
+}
+
+/// 流里报错用的 `event: error`：data 就是这个错误当普通接口返回时的信封 JSON（`code`、`message`、`error.code`、
+/// `error.details.reason`……）。500 的原因照旧只进日志，信封里只有编号。没有 `id`，不动客户端续读的位置。
+async fn stream_error_event(error: AppError) -> Event {
+    let body = to_bytes(error.into_response().into_body(), 64 * 1024)
+        .await
+        .ok()
+        .and_then(|bytes| String::from_utf8(bytes.to_vec()).ok())
+        .unwrap_or_else(|| {
+            r#"{"code":50000,"message":"internal server error","error":{"code":"INTERNAL","http_status":500,"details":{}}}"#
+                .to_string()
+        });
+    Event::default().event("error").data(body)
 }
 
 /// 边翻边看的流每 750ms 查一次新提交的页。不走 `run_job_query` 的有界执行器：那里只有 2 个槽、所有普通读请求共用，

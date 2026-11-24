@@ -7,7 +7,7 @@ use axum::extract::{FromRequest, FromRequestParts, Json, Multipart, Path, Query,
 use axum::http::{request::Parts, StatusCode};
 use serde::de::DeserializeOwned;
 
-use crate::error::AppError;
+use crate::error::{unknown_field_detail, AppError};
 
 /// JSON extractor whose failures use the public API error envelope.
 ///
@@ -52,12 +52,6 @@ fn unknown_field_message(rejection: &JsonRejection) -> Option<String> {
     unknown_field_detail(&error.body_text())
 }
 
-fn unknown_field_detail(text: &str) -> Option<String> {
-    let start = text.find("unknown field ")?;
-    let detail = &text[start..];
-    let detail = detail.split(" at line ").next().unwrap_or(detail);
-    Some(format!("{detail} in the request body"))
-}
 
 /// 先收原始字节、做完别的检查（例如先验令牌）再解析请求体的接口用：报错和 [`ApiJson`] 一样
 /// （不是 JSON 415、语法错 400、不认识的字段 400 带字段名、其余不合 schema 422），不回显请求里的值。

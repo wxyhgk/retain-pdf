@@ -109,7 +109,8 @@ merge when none is chosen or the chosen one has nothing readable yet; the
 response carries `version_id` (null = auto). Reading a version merges its own
 jobs over its base chain (own pages always win). Hidden versions are skipped by
 the auto merge. Endpoints: `GET .../translation-versions[?include_hidden=true]`,
-`PUT .../translation-version {version_id|null}` (409 for a hidden version),
+`PUT .../translation-version {version_id|null}` (409 for a hidden version,
+`error.details.reason = "version_hidden"` since 2026-11-24),
 `PATCH .../translation-versions/:version_id {label?, hidden?}`; all return
 `TranslationVersionsView`. See `docs/ops/planning/translation-versions/`.
 

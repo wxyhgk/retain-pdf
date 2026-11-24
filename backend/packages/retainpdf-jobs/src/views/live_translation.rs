@@ -65,7 +65,9 @@ pub struct LiveTranslationCommitEventView {
     pub changed_item_ids: Vec<String>,
 }
 
+/// 不认识的查询参数 400（2026-11-24 起；前端只带 `after_seq`，断线续读另看 `Last-Event-ID` 请求头）。
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LiveTranslationEventsQuery {
     #[serde(default)]
     pub after_seq: i64,

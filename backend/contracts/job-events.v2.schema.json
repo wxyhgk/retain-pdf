@@ -293,7 +293,7 @@
     "EditorialEventsQuery": {
       "type": "object",
       "additionalProperties": false,
-      "description": "翻译 agent 编辑部事件按条数续读：after 是上次返回的 next_after，不带从头取。limit 默认 500，夹到 1..2000。",
+      "description": "翻译 agent 编辑部事件按条数续读：after 是上次返回的 next_after，不带从头取。limit 默认 500，范围 1..=2000，越界 400（2026-11-24 以前静默夹）。",
       "properties": {
         "after": {
           "type": "integer",
@@ -302,8 +302,8 @@
         },
         "limit": {
           "type": "integer",
-          "minimum": 0,
-          "maximum": 4294967295,
+          "minimum": 1,
+          "maximum": 2000,
           "default": 500
         }
       }
@@ -340,7 +340,8 @@
       "required": [
         "events",
         "next_after",
-        "has_more"
+        "has_more",
+        "limit"
       ],
       "properties": {
         "events": {
@@ -358,6 +359,12 @@
         "has_more": {
           "type": "boolean",
           "description": "这次只给到 limit 条，后面还有。"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2000,
+          "description": "实际生效的 limit（没传是默认 500）。2026-11-24 加。"
         }
       }
     }

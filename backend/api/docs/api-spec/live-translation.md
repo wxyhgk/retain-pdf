@@ -82,7 +82,26 @@ the authoritative per-job database sequence and event name
 `generation`, `page_idx`, `page_hash`, and `changed_item_ids`. The event is a
 refresh hint, not the translation payload: clients fetch the page endpoint
 after receiving it. Reconnect with `after_seq` or `Last-Event-ID`; when both
-are present the larger value wins. Authentication remains header-based, so a
+are present the larger value wins. Query parameters other than `after_seq` are
+rejected with `400` (``unknown field `<name>`, expected `after_seq` in the query
+string``; since 2026-11-24, before that they were ignored).
+
+If a backend query fails while the stream is open (the job was deleted, the
+database is unavailable, ...), the server sends one final event named `error`
+and then closes the stream (since 2026-11-24; before that it closed without a
+word). The event has no `id`, so it does not move the replay cursor. Its data
+is the same JSON error envelope a normal request would get for that error
+(`code`, `message`, `error.code`, `error.http_status`, `error.details`, with
+`error.details.reason` when the error has one); a `500` carries only
+`error.details.error_id`, never internal detail. Example:
+
+```text
+event: error
+data: {"code":40400,"message":"job not found: …","error":{"code":"NOT_FOUND","http_status":404,"details":{}}}
+```
+
+Clients that do not handle `error` can ignore it: the stream ends right after
+it, exactly as before. Authentication remains header-based, so a
 browser client that cannot attach the configured API-key header to native
 `EventSource` must use authenticated streaming `fetch`.
 

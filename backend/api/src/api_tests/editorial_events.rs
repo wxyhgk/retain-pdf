@@ -60,6 +60,19 @@ async fn editorial_events_are_read_by_count_and_match_the_contract() {
     let page = &page["data"];
     assert_eq!(page["events"][0]["type"], "page_started");
     assert_eq!((page["next_after"].as_u64(), page["has_more"].as_bool()), (Some(2), Some(true)));
+    assert_eq!(page["limit"], 1, "回显实际生效的 limit");
+    assert_eq!(data["limit"], 500, "没传是默认值");
+
+    for bad in ["0", "2001"] {
+        let (status, payload) =
+            get(&state, &format!("/api/v1/jobs/job-editorial-agent/progress/editorial?limit={bad}")).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "limit={bad} 越界 400，不静默夹: {payload}");
+        assert_eq!(payload["message"], "limit must be 1..=2000");
+    }
+    let (status, _) = get(&state, "/api/v1/jobs/job-missing/progress/editorial?limit=0").await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "先查请求再查任务");
+    let (status, payload) = get(&state, "/api/v1/jobs/job-editorial-agent/progress/editorial?limit=2000").await;
+    assert_eq!((status, &payload["data"]["limit"]), (StatusCode::OK, &serde_json::json!(2000)));
 }
 
 #[tokio::test]

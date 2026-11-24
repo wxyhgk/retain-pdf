@@ -203,10 +203,10 @@ async fn invalid_job_payload_uses_json_bad_request_envelope() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let body = read_json(response).await;
     assert_eq!(body["code"], 40000);
-    assert!(body["message"]
-        .as_str()
-        .expect("message")
-        .contains("invalid job payload"));
+    assert_eq!(
+        body["message"], "invalid job payload: request body does not match the expected schema",
+        "不回 serde 原文（里面带着提交的值）"
+    );
     assert!(body.get("data").is_none());
     assert_eq!(body["error"]["code"], "BAD_REQUEST");
     assert_eq!(body["error"]["http_status"], 400);
@@ -574,4 +574,56 @@ async fn wrong_method_without_key_is_still_unauthorized() {
         "UNAUTHORIZED",
         "missing or invalid X-API-Key",
     );
+}
+
+/// 文件出口、删任务、边翻边看的流：查询串里不认识的参数 400（只回参数名、不回值），认识的照常往下走
+/// （这里任务、书都不存在，所以认识的参数走到 404）。前端读原文带的 `?version=` 是认识的。2026-11-24 起。
+#[tokio::test]
+async fn unknown_query_parameters_on_files_delete_and_live_stream_are_rejected() {
+    let app = build_app(test_state("http-contract-unknown-query"));
+    let send = |method: &'static str, uri: &'static str| {
+        let app = app.clone();
+        async move {
+            let response = app
+                .oneshot(
+                    Request::builder()
+                        .method(method)
+                        .uri(uri)
+                        .header("X-API-Key", "test-key")
+                        .body(Body::empty())
+                        .expect("request"),
+                )
+                .await
+                .expect("response");
+            let status = response.status();
+            (status, read_json(response).await)
+        }
+    };
+    for (method, uri, field) in [
+        ("GET", "/api/v1/jobs/missing-job/files/output/translated.pdf?download=1&secret=leak-me", "secret"),
+        ("GET", "/api/v1/jobs/missing-job/files/pages/1.jpg?w=leak-me", "w"),
+        ("GET", "/api/v1/jobs/missing-job/files/internal/translations?x=leak-me", "x"),
+        ("GET", "/api/v1/documents/missing-doc/files/source.pdf?v=leak-me", "v"),
+        ("GET", "/api/v1/documents/missing-doc/files/pages/1.jpg?w=leak-me", "w"),
+        ("DELETE", "/api/v1/jobs/missing-job?forse=leak-me", "forse"),
+        ("GET", "/api/v1/jobs/missing-job/progress/stream?after=leak-me", "after"),
+    ] {
+        let (status, body) = send(method, uri).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{method} {uri}: {body}");
+        let message = body["message"].as_str().expect("message");
+        assert!(message.starts_with(&format!("unknown field `{field}`")), "{method} {uri}: {message}");
+        assert!(message.ends_with("in the query string"), "{message}");
+        assert!(!message.contains("leak-me"), "不回值: {message}");
+    }
+    for (method, uri) in [
+        ("GET", "/api/v1/jobs/missing-job/files/output/translated.docx?download=1&dpi=150&watermark=0"),
+        ("GET", "/api/v1/jobs/missing-job/files/pages/1.jpg?width=320&dpi=72"),
+        ("GET", "/api/v1/documents/missing-doc/files/source.pdf?version=rev-2"),
+        ("GET", "/api/v1/documents/missing-doc/files/source.pdf?download=1"),
+        ("DELETE", "/api/v1/jobs/missing-job?force=true"),
+        ("GET", "/api/v1/jobs/missing-job/progress/stream?after_seq=3"),
+    ] {
+        let (status, body) = send(method, uri).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{method} {uri}: {body}");
+    }
 }
