@@ -143,6 +143,8 @@ jobs:
               fi
             done
             echo "RETAIN_PDF_VERSION=${{ inputs.version }}"
+            # 应用镜像的 /health build 和后端回应头用；网页镜像不读它。
+            echo "RETAIN_PDF_BUILD=${{ github.sha }}"
           } > /tmp/build-args.txt
           {
             echo 'args<<EOF'

@@ -4,6 +4,7 @@ use axum::http::HeaderValue;
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, CorsLayer, ExposeHeaders};
 
 use crate::app::request_log::{assign_request_id, trace_layer};
+use crate::app::response_headers::add_common_headers;
 use crate::app::AppState;
 use crate::auth;
 use crate::config::{AccountsConfig, OriginPolicyConfig};
@@ -65,6 +66,8 @@ pub fn build_app(state: AppState) -> Router {
         // 请求日志和请求编号（见 `request_log.rs`）；编号在日志外面，span 建出来时编号已经定了。
         .layer(trace_layer())
         .layer(middleware::from_fn(assign_request_id))
+        // 所有回应都带的头：nosniff、Referrer-Policy、应用版本（见 `response_headers.rs`），挂在最外层。
+        .layer(middleware::from_fn(add_common_headers))
         .with_state(state)
 }
 
@@ -110,6 +113,8 @@ pub fn build_simple_app(state: AppState) -> Router {
         // 请求日志和请求编号（见 `request_log.rs`）；编号在日志外面，span 建出来时编号已经定了。
         .layer(trace_layer())
         .layer(middleware::from_fn(assign_request_id))
+        // 所有回应都带的头：nosniff、Referrer-Policy、应用版本（见 `response_headers.rs`），挂在最外层。
+        .layer(middleware::from_fn(add_common_headers))
         .with_state(state)
 }
 

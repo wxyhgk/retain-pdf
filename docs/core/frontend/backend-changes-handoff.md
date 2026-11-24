@@ -12,6 +12,26 @@
 
 ---
 
+## 服务端版本头、安全响应头（feat/api-response-headers）
+
+2026-11-24，只增不改，**前端不用改**，细节见 [认证与错误·版本和安全响应头](../../api/00-约定/02-认证与错误.md#版本和安全响应头)：
+
+- **每个回应带 `X-RetainPDF-Version`**（两个端口、出错、预检都有），值是应用版本（`2026.11.23` 这种；构建时没注入是
+  `0.0.0+unknown`），和前端 `APP_VERSION` 同一个来源（`RETAIN_PDF_VERSION`）。`GET /health` 的 `data` 新加 `version`（同一个值）、
+  `build`（提交号，拿不到是 `null`）。Docker 下网页镜像和后端镜像可能升级得不一样，前端以后想提示「网页和后端版本不一致」，
+  可以在任意一个 API 回应上读这个头和 `APP_VERSION` 比（单机模式跨域也能读，CORS 暴露全部头）；任何一边是 `0.0.0+unknown`
+  或带 `+` 的开发版本时别提示。要不要做、做在哪由前端定。
+- **每个回应带 `X-Content-Type-Options: nosniff`、`Referrer-Policy: no-referrer`**。
+- **文件出口带 `Content-Security-Policy: sandbox`，PDF 除外**：任务和书的文件、页预览、术语表 CSV 在浏览器里直接打开时是沙箱页面
+  （不跑脚本）。核对过前端：阅读器的 PDF 用 pdf.js 按段 fetch（`packages/reader/src/pdf/pdf-range-transport.ts`），Markdown 图片用
+  `<img>` / fetch 成 blob（`packages/reader/src/shared/content/markdown-images.ts`），唯一的 iframe 是阅读层 `reader.html`
+  （`web/src/features/reader/ui/SoftReaderHost.tsx`，前端自己的页面，不是 API 地址），都不受影响。详情页「打开译文 PDF」等新标签页
+  链接打开的是 PDF，PDF 没加沙箱，内置查看器照常显示。
+- Docker 的 nginx 给页面加了 `Content-Security-Policy: frame-ancestors 'self'`（只限制谁能嵌，不限制脚本、样式）、nosniff、
+  `Referrer-Policy: same-origin`（点到外站不带页面地址）。阅读层 iframe 是同源，不受影响；别的域名嵌 Docker 版页面会被挡。
+
+---
+
 ## 翻译模型不可用、地区不支持、内容审核没过（fix/llm-request-codes）
 
 2026-11-23，翻译请求层补上剩下的几类「重试没用」，细节见

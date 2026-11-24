@@ -10,7 +10,7 @@ use crate::models::api::{
     GlossaryUpsertInput, ListGlossariesQuery,
 };
 use crate::routes::common::{ok_json, run_glossary_blocking, ApiJson, ApiPath, ApiQuery};
-use crate::routes::job_helpers::set_content_disposition;
+use crate::routes::job_helpers::{set_content_disposition, set_file_sandbox};
 use crate::services::glossaries::{
     create_glossary_view, delete_glossary_view, export_glossary_csv_view, get_glossary_view,
     list_glossaries_view, parse_glossary_csv_view, update_glossary_view,
@@ -82,6 +82,7 @@ pub async fn export_glossary_csv_route(
     )
         .into_response();
     set_content_disposition(&mut response, "attachment", &export.file_name)?;
+    set_file_sandbox(&mut response, "text/csv");
     Ok(response)
 }
 

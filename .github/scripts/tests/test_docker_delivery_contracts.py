@@ -141,6 +141,21 @@ def test_nginx_sse_locations_disable_response_buffering(declaration: str) -> Non
     assert "proxy_read_timeout 1h;" in location
 
 
+def test_nginx_pages_carry_security_headers_without_a_full_csp() -> None:
+    """页面带 nosniff、Referrer-Policy、只有 frame-ancestors 的 CSP（2026-11-24）。只写在 `location /` 里：
+    location 里写了 add_header 就不继承 server 级的；/api/、/health 由后端自己带头，再加会重复。"""
+    nginx = _text("ops/deployment/docker/nginx.conf.template")
+    pages = _nginx_location(nginx, "location / {")
+    assert "add_header X-Content-Type-Options nosniff always;" in pages
+    assert "add_header Referrer-Policy same-origin always;" in pages
+    assert "add_header Content-Security-Policy \"frame-ancestors 'self'\" always;" in pages
+    assert nginx.count("Content-Security-Policy") == 1
+    server_level = nginx[nginx.index("server {"):nginx.index("  location ")]
+    assert "add_header" not in server_level
+    for declaration in ("location /api/ {", "location = /health {"):
+        assert "add_header" not in _nginx_location(nginx, declaration), declaration
+
+
 def test_internal_nginx_preserves_forwarded_client_and_streams_large_requests() -> None:
     nginx = _text("ops/deployment/docker/nginx.conf.template")
     api_location = _nginx_location(nginx, "location /api/ {")

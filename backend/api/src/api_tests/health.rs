@@ -7,7 +7,7 @@ use crate::app::{build_app, build_simple_app};
 use crate::config::JobsRuntimeMode;
 use crate::routes::common::build_health_route_deps;
 use crate::runtime::jobsd_supervisor;
-use crate::services::platform::build_readiness_view;
+use crate::services::platform::{app_build, app_version, build_readiness_view};
 
 #[tokio::test]
 async fn liveness_and_readiness_are_public_on_both_routers() {
@@ -134,6 +134,7 @@ async fn health_reports_null_counts_when_the_jobs_table_cannot_be_read() {
     let body = fetch().await;
     for key in [
         "status", "db", "queue_depth", "running_jobs", "provider_backends", "ai_service", "jobsd", "time",
+        "version", "build",
     ] {
         assert!(body["data"].get(key).is_some(), "/health 少了 {key}: {body}");
     }
@@ -149,4 +150,38 @@ async fn health_reports_null_counts_when_the_jobs_table_cannot_be_read() {
     // 读不出来不是「空闲」：计数给 null。
     assert!(body["data"]["queue_depth"].is_null(), "{body}");
     assert!(body["data"]["running_jobs"].is_null(), "{body}");
+}
+
+/// 2026-11-24：每个回应（两个端口、成功、404、预检）都带 nosniff、Referrer-Policy、`X-RetainPDF-Version`；
+/// `/health` 的 `version`、`build` 和头里的版本是同一个值。
+#[tokio::test]
+async fn every_response_carries_security_headers_and_the_app_version() {
+    for app in [
+        build_app(test_state("headers-full-router")),
+        build_simple_app(test_state("headers-simple-router")),
+    ] {
+        for (method, uri) in [("GET", "/health"), ("GET", "/no-such-route"), ("OPTIONS", "/health")] {
+            let mut request = Request::builder().method(method).uri(uri);
+            if method == "OPTIONS" {
+                request = request
+                    .header("Origin", "http://127.0.0.1:40001")
+                    .header("Access-Control-Request-Method", "GET");
+            }
+            let response = app.clone().oneshot(request.body(Body::empty()).unwrap()).await.unwrap();
+            let headers = response.headers();
+            assert_eq!(headers["x-content-type-options"], "nosniff", "{method} {uri}");
+            assert_eq!(headers["referrer-policy"], "no-referrer", "{method} {uri}");
+            assert_eq!(headers["x-retainpdf-version"], app_version(), "{method} {uri}");
+            // 文件出口才有沙箱 CSP。
+            assert!(headers.get("content-security-policy").is_none(), "{method} {uri}");
+        }
+        let response = app
+            .clone()
+            .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+            .await
+            .unwrap();
+        let body = read_json(response).await;
+        assert_eq!(body["data"]["version"], app_version());
+        assert_eq!(body["data"]["build"], serde_json::json!(app_build()));
+    }
 }

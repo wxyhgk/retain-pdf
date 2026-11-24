@@ -73,10 +73,26 @@ pub async fn stream_file(
         HeaderValue::from_static("Accept-Ranges, Content-Range, Content-Length, X-Job-Id, ETag, Last-Modified"),
     );
     set_validators(&mut response, etag.as_deref(), last_modified.as_deref());
+    set_file_sandbox(&mut response, content_type);
     if let Some(name) = download_name {
         set_content_disposition(&mut response, "attachment", &name)?;
     }
     Ok(response)
+}
+
+/// 文件出口的内容在浏览器里直接打开时当沙箱页面（2026-11-24）：不跑脚本、算独立来源，碰不到同源页面的
+/// key 和存储。产物图片、Markdown 图片按扩展名给类型，万一是 HTML / SVG 也只是静态显示。
+///
+/// PDF 不加：Chrome、Electron 的内置 PDF 查看器在沙箱页面里打不开（详情页「打开译文 PDF」是新标签页直接打开）。
+/// 阅读器用 pdf.js 按段取字节、图片用 `<img>` / fetch，都不受这个头影响。
+pub fn set_file_sandbox(response: &mut Response, content_type: &str) {
+    if content_type.trim_start().to_ascii_lowercase().starts_with("application/pdf") {
+        return;
+    }
+    response.headers_mut().insert(
+        header::CONTENT_SECURITY_POLICY,
+        HeaderValue::from_static("sandbox"),
+    );
 }
 
 fn if_none_match_hits(headers: &HeaderMap, etag: &str) -> bool {

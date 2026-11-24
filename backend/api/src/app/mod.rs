@@ -3,6 +3,7 @@ pub(crate) mod endpoints;
 mod jobs;
 mod request_log;
 mod response_compression;
+mod response_headers;
 mod route_usage;
 mod router;
 mod server;

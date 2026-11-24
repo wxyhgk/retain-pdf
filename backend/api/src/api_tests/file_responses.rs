@@ -28,13 +28,14 @@ pub(super) const JOB: &str = "files-contract-job";
 pub(super) const RUNNING_JOB: &str = "files-contract-running";
 
 /// 只记这些响应头；ETag、Last-Modified、Content-Length 随文件时间和线性化变化，不记。
-const RECORDED_HEADERS: [&str; 6] = [
+const RECORDED_HEADERS: [&str; 7] = [
     "content-type",
     "content-disposition",
     "cache-control",
     "accept-ranges",
     "content-range",
     "x-job-id",
+    "content-security-policy",
 ];
 
 fn write(path: &Path, bytes: &[u8]) {
