@@ -120,15 +120,8 @@ export function restoreZoomAnchor(shell: HTMLElement, anchor: ReaderZoomAnchor |
   const dx = rect.left + anchor.fracX * rect.width - anchor.clientX;
   if (Math.abs(dy) >= 0.5) shell.scrollTop += dy;
   if (Math.abs(dx) >= 0.5) {
-    const scroller = horizontalScroller(el, shell);
-    scroller.scrollLeft += dx;
-    // 对照时另一栏和这一栏页一样大，跟着横移同样的距离。
-    if (scroller !== shell) {
-      for (const other of Array.from(shell.querySelectorAll<HTMLElement>(`[${READER_PANE_ATTR}]`))) {
-        if (other === scroller || other.contains(el) || other.scrollWidth <= other.clientWidth + 1) continue;
-        if (other.querySelector(pageSlotSelector())) other.scrollLeft += dx;
-      }
-    }
+    // 对照时另一栏由 usePaneHorizontalSync 跟着这一栏挪，这里只管鼠标所在的那一栏。
+    horizontalScroller(el, shell).scrollLeft += dx;
   }
 }
 

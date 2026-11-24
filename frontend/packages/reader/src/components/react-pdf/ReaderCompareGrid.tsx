@@ -5,6 +5,7 @@ import type { ProtectedPdfFile } from "../../pdf/useProtectedPdfFile.js";
 import type { PageRowHeights } from "../../pdf/usePageRowSync.js";
 import { READER_ZOOM_DEFAULT } from "../../pdf/reader-zoom.js";
 import { useKeepPageOnResize } from "../../hooks/use-keep-page-on-resize.js";
+import { usePaneHorizontalSync } from "../../hooks/use-pane-horizontal-sync.js";
 import {
   READER_GRID_CLASS,
   READER_SCROLL_SHELL_CLASS,
@@ -225,6 +226,8 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
     : null;
   // 阅读区变宽变窄（开关侧栏、拖分栏）时停在原来那一页，不让页高变化把眼前换成别的页。
   useKeepPageOnResize(shellEl, pageWidthBasis);
+  // 对照时两栏横向一起滚（滚一栏另一栏跟着），两边看的始终是同一块。
+  usePaneHorizontalSync(shellEl, presentation.compareMode);
 
   return (
     <div
