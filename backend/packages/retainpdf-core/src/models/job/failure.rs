@@ -308,6 +308,8 @@ fn infer_failure_category(failure_code: &str, failed_stage: &str) -> Option<Stri
 
     let category = match code.as_str() {
         "auth_failed" => "auth",
+        // 模型不可用、地区不支持也是去设置里改、重试没用，和 Python 的 _failure_category_for 一致（2026-11-24 补）
+        "upstream_model_unavailable" | "upstream_region_unsupported" => "auth",
         "dns_resolution_failed" => "network",
         "ocr_request_ambiguous" => "provider",
         "upstream_timeout" => "timeout",

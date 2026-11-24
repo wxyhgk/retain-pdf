@@ -28,9 +28,9 @@
     "retryable": false,
     "user_hint_zh": "所在地区不能直接用这家服务；换网络环境，或换一家服务商。",
     "failure_codes": [
-      "auth_failed"
+      "upstream_region_unsupported"
     ],
-    "note_zh": "仍归 auth_failed，但 summary / suggestion 单独说「所在地区不支持，换网络或换服务商，换 Key 没用」（2026-11-23）；恢复提示仍是 auth_failed 的通用说法。"
+    "note_zh": "失败码 upstream_region_unsupported（2026-11-24 起；以前归 auth_failed，恢复提示是 auth_failed 的通用说法），分类照旧 auth；summary / suggestion 说「所在地区不支持，换网络或换服务商，换 Key 没用」，恢复提示同样说法。"
   },
   {
     "id": "billing",

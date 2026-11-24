@@ -404,8 +404,8 @@ async fn job_files_view_matches_published_schema() {
 
 /// 失败任务的列表项：`failure` 对着契约里的 `JobFailureBriefView` 核对。
 ///
-/// 两个夹具：一个把简报的 8 个字段全填满（键集合必须等于契约的全部属性），一个只有
-/// 必填项（root_cause / suggestion / provider / upstream 整个键不出现，不是 null）。
+/// 两个夹具：一个把简报的 9 个字段全填满（键集合必须等于契约的全部属性），一个只有
+/// 必填项（failure_code / root_cause / suggestion / provider / upstream 整个键不出现，不是 null）。
 /// 契约 job-status 里的 JobListItemView 要认得这个键（library-books 抄的那份 2026-10-23 删了）。
 #[tokio::test]
 async fn failed_job_list_item_failure_matches_published_schema() {
@@ -431,6 +431,7 @@ async fn failed_job_list_item_failure_matches_published_schema() {
             category: "unknown".to_string(),
             failed_stage: Some("ocr".to_string()),
             failure_category: Some("provider".to_string()),
+            failure_code: Some("upstream_quota_exhausted".to_string()),
             summary: "MinerU 解析失败".to_string(),
             root_cause: Some("parsing failed".to_string()),
             retryable: true,
@@ -450,7 +451,10 @@ async fn failed_job_list_item_failure_matches_published_schema() {
         "job-brief-minimal",
         JobFailureInfo {
             stage: "render".to_string(),
-            category: "render".to_string(),
+            // 旧数据：category 是 unknown、没有失败码。读库时会拿 category 兜底出 failure_code="unknown"，
+            // 简报不带它（分类取 failure_category）
+            category: "unknown".to_string(),
+            failure_category: Some("render".to_string()),
             summary: "渲染失败".to_string(),
             retryable: false,
             ..JobFailureInfo::default()
@@ -501,6 +505,8 @@ async fn failed_job_list_item_failure_matches_published_schema() {
             &format!("job_list[full].failure.upstream ({file_name})"),
         );
         assert_eq!(full["failure"]["upstream"]["code"], "-60018");
+        // 失败码原样带到简报（2026-11-24）：前端在同一个 category 里按它给不同说法
+        assert_eq!(full["failure"]["failure_code"], "upstream_quota_exhausted");
 
         // 只有必填项：键集合 == 契约的 required，可选键整个不出现。
         let required: BTreeSet<String> = definition(&contract, "JobFailureBriefView")["required"]
@@ -521,6 +527,7 @@ async fn failed_job_list_item_failure_matches_published_schema() {
             "JobFailureBriefView",
             "minimal.failure",
         );
+        assert_eq!(minimal["failure"]["category"], "render");
     }
 }
 

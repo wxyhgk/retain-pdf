@@ -56,8 +56,9 @@ class ExecutorModelUnavailable(ExecutorError):
 
 
 class ExecutorRegionUnsupported(ExecutorAccessDenied):
-    """所在地区不支持：整份停下，归 auth_failed，说法是换网络或换服务商（换 Key 没用）。"""
+    """所在地区不支持：整份停下，归 upstream_region_unsupported（2026-11-24 以前归 auth_failed），说法是换网络或换服务商（换 Key 没用）。"""
 
+    retain_failure_code = "upstream_region_unsupported"
     failure_summary = REGION_FAILURE_SUMMARY
     failure_suggestion = REGION_FAILURE_SUGGESTION
 
