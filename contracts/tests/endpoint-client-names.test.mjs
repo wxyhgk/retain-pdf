@@ -177,7 +177,7 @@ test("translation versions endpoints carry their client names", () => {
 
 test("tag endpoints carry their client names", () => {
   const documents = read("library-documents.v1.schema.json");
-  const table = documents.endpoints.slice(23).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
+  const table = documents.endpoints.slice(23, 28).map(({ method, path, client_name, transport, query, input, output }) => [method, path, client_name, transport, query, input, output]);
   assert.deepEqual(table, [
     ["GET", "/api/v1/tags", "listTags", "json", undefined, undefined, "TagListView"],
     ["POST", "/api/v1/tags", "createTag", "json", undefined, "CreateTagInput", "TagRecord"],
@@ -186,6 +186,10 @@ test("tag endpoints carry their client names", () => {
     ["PUT", "/api/v1/documents/:document_id/tags", "setDocumentTags", "json", undefined, "SetDocumentTagsInput", "DocumentRecord"],
   ]);
   assert.ok(documents.definitions.DocumentRecord.required.includes("tags"));
+  // 2026-11-24 起端点表最后登记书的文件下载（binary，不生成函数）。
+  assert.deepEqual(documents.endpoints.slice(28).map(({ method, path, client_name, transport, output }) => [method, path, client_name, transport, output]), [
+    ["GET", "/api/v1/documents/:document_id/files/:name", undefined, "binary", undefined],
+  ]);
   assert.equal(documents.definitions.ListDocumentsQuery.properties.tag_id.type, "string");
 });
 
@@ -238,4 +242,19 @@ const PLATFORM_ENDPOINTS = [
   ["POST", "/api/v1/backups", "createBackup", "json", undefined, undefined, "BackupItemView"],
   ["DELETE", "/api/v1/backups/:backup_id", "deleteBackup", "json", undefined, undefined, "BackupStatusView"],
   ["POST", "/api/v1/backups/:backup_id/restore", "restoreBackup", "json", undefined, undefined, "BackupRestoreView"],
+  ["GET", "/health", undefined, "json", undefined, undefined, "HealthView"],
 ];
+
+// 登录状态（auth-session.v1）、上传（uploads.v1），2026-11-24。fetchAuthSession 照术语表的先例叫 getAuthSession。
+// 上传是 multipart，生成器只会发 JSON，所以没有 client_name（网页用 XHR 自己发，要上传进度）。
+test("auth session and upload endpoints", () => {
+  const table = (fileName) => read(fileName).endpoints.map(({ method, path, client_name, transport, input, query, output }) => [
+    method, path, client_name, transport, input, query, output,
+  ]);
+  assert.deepEqual(table("auth-session.v1.schema.json"), [
+    ["GET", "/api/v1/auth/session", "getAuthSession", "json", undefined, undefined, "SessionView"],
+  ]);
+  assert.deepEqual(table("uploads.v1.schema.json"), [
+    ["POST", "/api/v1/uploads", undefined, "json", undefined, undefined, "UploadView"],
+  ]);
+});

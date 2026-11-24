@@ -9,6 +9,7 @@ from pathlib import Path
 
 
 CONTRACT_NAMES = (
+    "auth-session.v1.schema.json",
     "create-job.v1.schema.json",
     "credentials.v1.schema.json",
     "glossaries.v1.schema.json",
@@ -30,6 +31,7 @@ CONTRACT_NAMES = (
     "reader-data.v1.schema.json",
     "token-usage.v1.schema.json",
     "translation-revisions.v1.schema.json",
+    "uploads.v1.schema.json",
 )
 
 CONTRACTS_ROOT = Path(__file__).resolve().parent

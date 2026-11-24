@@ -141,3 +141,14 @@ async fn backup_views_match_published_schema() {
     let after_delete = ok_data(&state, "DELETE", &format!("/api/v1/backups/{safety}"), None).await;
     assert_backup_status(&after_delete, &contract, "delete");
 }
+
+/// 健康检查：`version`、`build` 由分支 feat/api-response-headers 加，这里允许它们还不在（合进来以后也照样过）。
+#[tokio::test]
+async fn health_view_matches_published_schema() {
+    let contract = contract(CONTRACT);
+    let state = test_state("platform-settings-health");
+    let health = ok_data(&state, "GET", "/health", None).await;
+    super::job_view_contract::assert_definition(&health, &contract, "HealthView", "health");
+    super::job_view_contract::assert_object_keys_allowing_absent(&health, &contract, "HealthView", "health", &["version", "build"]);
+    assert_exact(&health["disk"], &contract, "DiskSpaceView", "health.disk");
+}

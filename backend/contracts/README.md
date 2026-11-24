@@ -8,6 +8,7 @@ remains testable without the parent monorepo.
 
 The mirrored files are:
 
+- `auth-session.v1.schema.json`
 - `create-job.v1.schema.json`
 - `credentials.v1.schema.json`
 - `glossaries.v1.schema.json`
@@ -29,6 +30,7 @@ The mirrored files are:
 - `refine-report.v1.schema.json`
 - `token-usage.v1.schema.json`
 - `translation-revisions.v1.schema.json`
+- `uploads.v1.schema.json`
 
 In the monorepo, `contracts` remains the upstream schema package used by
 frontend consumers. Every mirrored JSON file must remain byte-for-byte equal to
@@ -45,7 +47,7 @@ absent. From the extracted `backend/` root, run:
 python3 contracts/check_parity.py
 ```
 
-This validates that all eighteen local contract files exist and contain valid
+This validates that all twenty-three local contract files exist and contain valid
 JSON, then explicitly skips upstream parity. In the monorepo, schema changes
 start in `contracts`, are copied byte-for-byte here, and must pass the
 `--require-upstream` gate.

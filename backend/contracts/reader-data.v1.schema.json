@@ -68,6 +68,13 @@
       "output": "LiveTranslationCommitEvent",
       "rust_view": "LiveTranslationCommitEventView",
       "ts_consumer": "@retainpdf/contracts/reader-data :: LiveTranslationCommitEvent"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/files/output/*name",
+      "transport": "binary",
+      "rust_view": "文件本身（Content-Type 按扩展名；支持 Range、ETag）",
+      "note": "取一个成品：translated.pdf、side-by-side.pdf、translated.docx、ocr.md、ocr.zip、ocr/images/…、all.zip（地址从 JobFilesView 的 output[].url 拿，不要自己拼）。直接是文件，不带信封；默认在浏览器里打开，`?download=1` 下载。没有这个文件 404。只登记传输方式（2026-11-24），没有 client_name：前端用地址（`jobOutputFilePath`）打开或下载。"
     }
   ],
   "definitions": {

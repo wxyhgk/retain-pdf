@@ -70,7 +70,7 @@
       "transport": "json",
       "output": "DocumentFilesView",
       "rust_view": "DocumentFilesView",
-      "note": "书本身的文件清单。取文件本身走 GET /api/v1/documents/:document_id/files/:name 和 /files/pages/:page，返回的是文件，不在本契约里。"
+      "note": "书本身的文件清单。取文件本身走 GET /api/v1/documents/:document_id/files/:name（端点表最后一条，binary）和 /files/pages/:page（原文页预览图，还没有调用方，没登记），返回的是文件，没有 schema。"
     },
     {
       "method": "GET",
@@ -283,6 +283,13 @@
       "output": "DocumentRecord",
       "rust_view": "DocumentRecord",
       "note": "返回改完的书。书或任何一个标签不存在 404。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/:document_id/files/:name",
+      "transport": "binary",
+      "rust_view": "文件本身（Content-Type 按扩展名；支持 Range、ETag）",
+      "note": "取书的一个文件：source.pdf、cover.jpg、thumbnail.jpg（地址从 DocumentFilesView 拿）。直接是文件，不带信封；默认在浏览器里打开，`?download=1` 下载。不认识的文件名、没有这个文件都是 404。只登记传输方式（2026-11-24），没有 client_name：前端用地址（`documentSourcePdfPath`）打开。"
     }
   ],
   "definitions": {

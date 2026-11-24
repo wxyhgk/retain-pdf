@@ -14,9 +14,10 @@ const generatedOcrProviders = readFileSync(resolve("src/ocr-providers.ts"), "utf
 const generatedGlossaries = readFileSync(resolve("src/glossaries.ts"), "utf8");
 const generatedReaderData = readFileSync(resolve("src/reader-data.ts"), "utf8");
 const generatedSettings = Object.fromEntries(
-  ["credentials", "provider-probes", "platform-settings"].map((name) => [name, readFileSync(resolve(`src/${name}.ts`), "utf8")]),
+  ["credentials", "provider-probes", "platform-settings", "auth-session", "uploads"].map((name) => [name, readFileSync(resolve(`src/${name}.ts`), "utf8")]),
 );
 const RAW_SCHEMA_EXPORTS = [
+  "./auth-session.v1.schema.json",
   "./create-job.v1.schema.json",
   "./credentials.v1.schema.json",
   "./glossaries.v1.schema.json",
@@ -38,6 +39,7 @@ const RAW_SCHEMA_EXPORTS = [
   "./token-usage.v1.schema.json",
   "./translation-providers.v1.schema.json",
   "./translation-revisions.v1.schema.json",
+  "./uploads.v1.schema.json",
 ];
 
 test("package exposes only explicit DTO and raw schema subpaths", () => {
@@ -46,6 +48,8 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
     [
       "./create-job",
       "./create-job-fields",
+      "./uploads",
+      "./auth-session",
       "./platform-settings",
       "./provider-probes",
       "./credentials",
@@ -283,7 +287,11 @@ const SETTINGS_TYPES = {
     "LastRestoreView",
     "BackupStatusView",
     "BackupRestoreView",
+    "DiskSpaceView",
+    "HealthView",
   ],
+  "auth-session": ["AccountUserView", "SessionView"],
+  uploads: ["UploadView"],
 };
 
 test("generated settings DTO entries expose their types", () => {

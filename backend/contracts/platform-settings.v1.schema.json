@@ -87,6 +87,14 @@
       "output": "BackupRestoreView",
       "rust_view": "BackupRestoreView",
       "note": "用这份替换当前书库数据库，先自动存一份 `before-restore`（恢复错了用它退回）。不带请求体。没有这份 404；不能恢复 409，`error.details.reason` 是 `restore_blocked`（有排队、在跑的任务，`message` 说在等什么）、`backup_damaged`（备份坏了）或 `backup_newer`（备份比现在的程序新）。恢复中别的写请求 409 `restore_in_progress`。"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "transport": "json",
+      "output": "HealthView",
+      "rust_view": "HealthView",
+      "note": "进程活着（public，不要密钥）。地址不在 /api/v1 下，前端生成器只生成 /api/v1 的函数，所以不写 `client_name`；调用方是桌面壳主进程（等后端起来）、网页上传前的连通检查（`fetchProtected(buildApiEndpoint(\"\", \"health\"))`）、CLI 和部署探活。能不能接请求看 `GET /ready`（这份契约不管）。"
     }
   ],
   "definitions": {
@@ -666,6 +674,109 @@
         "status": {
           "description": "恢复完以后的状态。",
           "$ref": "#/definitions/BackupStatusView"
+        }
+      }
+    },
+    "DiskSpaceView": {
+      "type": "object",
+      "description": "health_api.rs :: DiskSpaceView。数据目录所在磁盘：只是报告，低于下限时上传、建任务、原地重跑 503（`insufficient_storage`），但 `status` 不跟着变。",
+      "additionalProperties": false,
+      "required": [
+        "free_bytes",
+        "min_free_bytes",
+        "low"
+      ],
+      "properties": {
+        "free_bytes": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "剩余可用空间（字节）；拿不到（Windows、没配数据目录）为 null。"
+        },
+        "min_free_bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "下限（`RUST_API_MIN_FREE_DISK_MB`）；0 是不查。"
+        },
+        "low": {
+          "type": "boolean",
+          "description": "剩余空间低于下限。"
+        }
+      }
+    },
+    "HealthView": {
+      "type": "object",
+      "description": "health_api.rs :: HealthView。`version`、`build` 由分支 feat/api-response-headers 加（2026-11-24 同时在做），那边合进来以前没有这两个键，所以写成可选。",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "db",
+        "queue_depth",
+        "running_jobs",
+        "provider_backends",
+        "ai_service",
+        "jobsd",
+        "disk",
+        "time"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "description": "`up`，库连不上时 `degraded`。"
+        },
+        "db": {
+          "type": "string",
+          "description": "`ok` 或 `error`。"
+        },
+        "queue_depth": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "排队的任务数；库读不出来为 null。"
+        },
+        "running_jobs": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0,
+          "description": "在跑的任务数；库读不出来为 null。"
+        },
+        "provider_backends": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "支持的 OCR 服务商编号。"
+        },
+        "ai_service": {
+          "type": "string",
+          "description": "固定 `disabled`（RetainPDF 自己的 AI 服务 2026-11-03 删了，键留着）。"
+        },
+        "jobsd": {
+          "type": "string",
+          "description": "jobsd 监督器的状态：`starting`、`healthy`、`unhealthy`、`unsupervised`（没有受监督的 jobsd）。"
+        },
+        "disk": {
+          "$ref": "#/definitions/DiskSpaceView"
+        },
+        "time": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "description": "应用版本，例如 `2026.11.23`；没注入是 `0.0.0+unknown`。由 feat/api-response-headers 加。"
+        },
+        "build": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "构建的提交号；没注入为 null。由 feat/api-response-headers 加。"
         }
       }
     }

@@ -13,8 +13,13 @@ function propertyNames(definitionName) {
 }
 
 test("reader data schema publishes the complete independent read surfaces", () => {
+  // 取成品文件（files/output/*name）是 binary，没有 output（2026-11-24 登记）。
+  const binary = contract.endpoints.filter((endpoint) => endpoint.transport === "binary");
+  assert.deepEqual(binary.map(({ method, path, output }) => [method, path, output]), [
+    ["GET", "/api/v1/jobs/:job_id/files/output/*name", undefined],
+  ]);
   assert.deepEqual(
-    contract.endpoints.map((endpoint) => endpoint.output),
+    contract.endpoints.filter((endpoint) => endpoint.transport !== "binary").map((endpoint) => endpoint.output),
     [
       "JobFilesView",
       "MarkdownDocumentView",
@@ -26,7 +31,7 @@ test("reader data schema publishes the complete independent read surfaces", () =
     ],
   );
 
-  for (const definitionName of contract.endpoints.map((endpoint) => endpoint.output)) {
+  for (const definitionName of contract.endpoints.filter((endpoint) => endpoint.output).map((endpoint) => endpoint.output)) {
     assert.ok(Object.hasOwn(definitions, definitionName), `missing ${definitionName}`);
   }
 });

@@ -5,7 +5,7 @@
 /**
  * Endpoint input, query, and output DTOs published by platform-settings.v1.schema.json.
  */
-export type PlatformSettingsSchema = BackupItemView | BackupRestoreView | BackupStatusView1 | FontListView | SyncSettingsInput | SyncStatusView | SyncTestView;
+export type PlatformSettingsSchema = BackupItemView | BackupRestoreView | BackupStatusView1 | FontListView | HealthView | SyncSettingsInput | SyncStatusView | SyncTestView;
 /**
  * 字体列表（`GET /fonts` 的 data 直接是数组）。
  */
@@ -152,6 +152,66 @@ export interface FontInfo {
      * 至少有一个字体文件还在磁盘上。
      */
     available: boolean;
+}
+/**
+ * health_api.rs :: HealthView。`version`、`build` 由分支 feat/api-response-headers 加（2026-11-24 同时在做），那边合进来以前没有这两个键，所以写成可选。
+ */
+export interface HealthView {
+    /**
+     * `up`，库连不上时 `degraded`。
+     */
+    status: string;
+    /**
+     * `ok` 或 `error`。
+     */
+    db: string;
+    /**
+     * 排队的任务数；库读不出来为 null。
+     */
+    queue_depth: number | null;
+    /**
+     * 在跑的任务数；库读不出来为 null。
+     */
+    running_jobs: number | null;
+    /**
+     * 支持的 OCR 服务商编号。
+     */
+    provider_backends: string[];
+    /**
+     * 固定 `disabled`（RetainPDF 自己的 AI 服务 2026-11-03 删了，键留着）。
+     */
+    ai_service: string;
+    /**
+     * jobsd 监督器的状态：`starting`、`healthy`、`unhealthy`、`unsupervised`（没有受监督的 jobsd）。
+     */
+    jobsd: string;
+    disk: DiskSpaceView;
+    time: string;
+    /**
+     * 应用版本，例如 `2026.11.23`；没注入是 `0.0.0+unknown`。由 feat/api-response-headers 加。
+     */
+    version?: string;
+    /**
+     * 构建的提交号；没注入为 null。由 feat/api-response-headers 加。
+     */
+    build?: string | null;
+}
+/**
+ * health_api.rs :: DiskSpaceView。数据目录所在磁盘：只是报告，低于下限时上传、建任务、原地重跑 503（`insufficient_storage`），但 `status` 不跟着变。
+ */
+export interface DiskSpaceView {
+    /**
+     * 剩余可用空间（字节）；拿不到（Windows、没配数据目录）为 null。
+     */
+    free_bytes: number | null;
+    /**
+     * 下限（`RUST_API_MIN_FREE_DISK_MB`）；0 是不查。
+     */
+    min_free_bytes: number;
+    /**
+     * 剩余空间低于下限。
+     */
+    low: boolean;
 }
 /**
  * models/sync.rs :: SyncSettingsInput（deny_unknown_fields，2026-10-22 起）。字段都可以不写或写 null：不改。

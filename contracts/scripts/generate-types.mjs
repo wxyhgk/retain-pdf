@@ -97,6 +97,16 @@ const TARGETS = [
     output: "src/platform-settings.ts",
     rootName: "PlatformSettingsSchema",
   },
+  {
+    input: "auth-session.v1.schema.json",
+    output: "src/auth-session.ts",
+    rootName: "AuthSessionSchema",
+  },
+  {
+    input: "uploads.v1.schema.json",
+    output: "src/uploads.ts",
+    rootName: "UploadsSchema",
+  },
 ];
 
 const GENERATOR_OPTIONS = {
