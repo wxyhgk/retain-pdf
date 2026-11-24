@@ -146,8 +146,7 @@ PATCH /api/v1/jobs/{job_id}/translations/{item_id}
 |---|---|---|
 | 422 | `TRANSLATION_REVISION_REJECTED` | `validation_failed`（带 `details.validation.issues`）、`item_not_translatable`（策略要这块保留原文） |
 | 409 | `TRANSLATION_REVISION_CONFLICT` | `job_running`（任务排队或运行中）、`checkpoint_locked`、`generation_mismatch`（带 `current_generation`）、`translation_not_committed`、`publication_inconsistent`、`group_members_missing`、`translations_owned_by_another_job`（这个任务复用别的任务的译文，去改源任务，带 `source_job_id`）、`read_only_job`（合并阅读的虚拟任务 `merged-…`） |
-| 400 | `BAD_REQUEST` | 请求体有 PATCH 不收的字段（提示里写字段名）、文字超长 |
-| 422 | `UNPROCESSABLE_ENTITY` | 请求体不合 schema（缺 `source` 或取值不对） |
+| 400 | `BAD_REQUEST` | 请求体有 PATCH 不收的字段（`unknown_field`，提示里写字段名）、不合 schema（`schema_mismatch`：缺 `source` 或取值不对，2026-11-24 以前是 `422 UNPROCESSABLE_ENTITY`）、不是 JSON（`invalid_json`）、文字超长 |
 | 404 | `NOT_FOUND` | 任务、条目不存在（普通）；还没有 manifest 时 `reason: "not_ready"` |
 
 写入在后台进程里做完：请求断开不会让它停在半路；超过 120 秒算超时（`500`），写入回滚。
