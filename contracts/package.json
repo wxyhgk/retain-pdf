@@ -53,9 +53,17 @@
       "types": "./dist/ocr-providers.d.ts",
       "import": "./dist/ocr-providers.js"
     },
+    "./platform-settings": {
+      "types": "./dist/platform-settings.d.ts",
+      "import": "./dist/platform-settings.js"
+    },
     "./provider-error-codes": {
       "types": "./dist/provider-error-codes.d.ts",
       "import": "./dist/provider-error-codes.js"
+    },
+    "./provider-probes": {
+      "types": "./dist/provider-probes.d.ts",
+      "import": "./dist/provider-probes.js"
     },
     "./reader-data": {
       "types": "./dist/reader-data.d.ts",
@@ -86,7 +94,9 @@
     "./library-documents.v1.schema.json": "./library-documents.v1.schema.json",
     "./ocr-providers.v1.schema.json": "./ocr-providers.v1.schema.json",
     "./pipeline-stdout.v1.schema.json": "./pipeline-stdout.v1.schema.json",
+    "./platform-settings.v1.schema.json": "./platform-settings.v1.schema.json",
     "./provider-error-codes.v1.schema.json": "./provider-error-codes.v1.schema.json",
+    "./provider-probes.v1.schema.json": "./provider-probes.v1.schema.json",
     "./reader-data.v1.schema.json": "./reader-data.v1.schema.json",
     "./refine-report.v1.schema.json": "./refine-report.v1.schema.json",
     "./token-usage.v1.schema.json": "./token-usage.v1.schema.json",

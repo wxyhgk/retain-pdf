@@ -21,6 +21,8 @@ CONTRACT_NAMES = (
     "library-books.v1.schema.json",
     "library-documents.v1.schema.json",
     "ocr-providers.v1.schema.json",
+    "platform-settings.v1.schema.json",
+    "provider-probes.v1.schema.json",
     "translation-providers.v1.schema.json",
     "pipeline-stdout.v1.schema.json",
     "provider-error-codes.v1.schema.json",

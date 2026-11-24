@@ -14,7 +14,7 @@ const generatedOcrProviders = readFileSync(resolve("src/ocr-providers.ts"), "utf
 const generatedGlossaries = readFileSync(resolve("src/glossaries.ts"), "utf8");
 const generatedReaderData = readFileSync(resolve("src/reader-data.ts"), "utf8");
 const generatedSettings = Object.fromEntries(
-  ["credentials"].map((name) => [name, readFileSync(resolve(`src/${name}.ts`), "utf8")]),
+  ["credentials", "provider-probes", "platform-settings"].map((name) => [name, readFileSync(resolve(`src/${name}.ts`), "utf8")]),
 );
 const RAW_SCHEMA_EXPORTS = [
   "./create-job.v1.schema.json",
@@ -30,7 +30,9 @@ const RAW_SCHEMA_EXPORTS = [
   "./library-documents.v1.schema.json",
   "./ocr-providers.v1.schema.json",
   "./pipeline-stdout.v1.schema.json",
+  "./platform-settings.v1.schema.json",
   "./provider-error-codes.v1.schema.json",
+  "./provider-probes.v1.schema.json",
   "./reader-data.v1.schema.json",
   "./refine-report.v1.schema.json",
   "./token-usage.v1.schema.json",
@@ -44,6 +46,8 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
     [
       "./create-job",
       "./create-job-fields",
+      "./platform-settings",
+      "./provider-probes",
       "./credentials",
       "./glossaries",
       "./job-actions",
@@ -256,6 +260,18 @@ const SETTINGS_TYPES = {
     "CreateCredentialInput",
     "UpdateCredentialInput",
     "DeleteCredentialQuery",
+  ],
+  "provider-probes": [
+    "MineruTokenValidationRequest",
+    "PaddleTokenValidationRequest",
+    "DeepSeekTokenValidationRequest",
+    "ProviderProbeView",
+    "DeepSeekBalanceInfoView",
+    "DeepSeekBalanceView",
+  ],
+  "platform-settings": [
+    "FontInfo",
+    "FontListView",
   ],
 };
 

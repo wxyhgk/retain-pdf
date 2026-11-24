@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/platform-settings/v1",
+  "title": "平台设置（字体、同步、备份、健康检查）",
+  "description": "平台领域里前端在用的接口：字体列表 `/api/v1/fonts`、多设备同步 `/api/v1/sync`、数据库备份 `/api/v1/backups`，以及健康检查 `/health`。生产者：backend/packages/retainpdf-platform（fonts/service.rs、backup/views.rs、sync/api.rs、health_api.rs），同步的类型在 backend/packages/retainpdf-core/src/models/sync.rs；处理函数在 backend/api/src/routes/{fonts,sync,backups,health}.rs。Rust 侧由 backend/api/src/api_tests/platform_settings_contract.rs 对真实接口的返回钉键集合、对请求类型钉字段。消费者：@retainpdf/contracts/platform-settings 生成 DTO 和请求函数（设置类第 2 批第 3～5 组，2026-11-24）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。同步、备份是 admin，字体是 signed，健康检查 public。请求体 additionalProperties: false 对应 deny_unknown_fields，多一个键 400。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/fonts",
+      "client_name": "listFonts",
+      "transport": "json",
+      "output": "FontListView",
+      "rust_view": "Vec<FontInfo>",
+      "note": "渲染能用的字体（系统字体加上传的），按字体族排序。直接是数组（不是 `{fonts: [...]}`）。扫描结果缓存 10 分钟，字体目录变了或上传字体时清掉。上传字体 `POST /fonts/upload` 是 multipart，第 3 期再补。"
+    }
+  ],
+  "definitions": {
+    "FontInfo": {
+      "type": "object",
+      "description": "fonts/service.rs :: FontInfo。",
+      "additionalProperties": false,
+      "required": [
+        "family",
+        "files",
+        "available"
+      ],
+      "properties": {
+        "family": {
+          "type": "string",
+          "description": "字体族名。"
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "这个字体族的字体文件（绝对路径）。"
+        },
+        "available": {
+          "type": "boolean",
+          "description": "至少有一个字体文件还在磁盘上。"
+        }
+      }
+    },
+    "FontListView": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/FontInfo"
+      },
+      "description": "字体列表（`GET /fonts` 的 data 直接是数组）。"
+    }
+  }
+}

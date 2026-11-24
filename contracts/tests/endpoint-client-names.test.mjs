@@ -203,3 +203,31 @@ test("settings batch 2 credentials endpoints carry their client names", () => {
     ["DELETE", "/api/v1/credentials/:credential_ref", "deleteCredential", "json", undefined, "DeleteCredentialQuery", "CredentialDeleteView"],
   ]);
 });
+
+// 设置类第 2 批第 3 组：服务商校验（provider-probes.v1）和字体（platform-settings.v1 的 GET /fonts），2026-11-24。
+// 名字和前端手写的（frontend/packages/api/src/providers.ts、fonts.ts）一样。
+test("settings batch 2 provider probe endpoints carry their client names", () => {
+  const table = read("provider-probes.v1.schema.json").endpoints.map(({ method, path, client_name, transport, input, query, output }) => [
+    method, path, client_name, transport, input, query, output,
+  ]);
+  assert.deepEqual(table, [
+    ["POST", "/api/v1/providers/mineru/validate-token", "validateMineruToken", "json", "MineruTokenValidationRequest", undefined, "ProviderProbeView"],
+    ["POST", "/api/v1/providers/paddle/validate-token", "validatePaddleToken", "json", "PaddleTokenValidationRequest", undefined, "ProviderProbeView"],
+    ["POST", "/api/v1/providers/deepseek/validate-token", "validateDeepSeekToken", "json", "DeepSeekTokenValidationRequest", undefined, "ProviderProbeView"],
+    ["POST", "/api/v1/providers/deepseek/balance", "queryDeepSeekBalance", "json", "DeepSeekTokenValidationRequest", undefined, "DeepSeekBalanceView"],
+  ]);
+});
+
+// platform-settings.v1：字体（第 3 组）、同步（第 4 组）、备份（第 5 组）、健康检查。名字照前端手写的，
+// fetchXxx 照术语表的先例改成 getXxx（fetchSyncStatus → getSyncStatus、fetchBackupStatus → getBackupStatus）。
+// /health 不在 /api/v1 下，前端生成器不生成它，所以没有 client_name。
+test("settings batch 2 platform endpoints carry their client names", () => {
+  const table = read("platform-settings.v1.schema.json").endpoints.map(({ method, path, client_name, transport, input, query, output }) => [
+    method, path, client_name, transport, input, query, output,
+  ]);
+  assert.deepEqual(table, PLATFORM_ENDPOINTS);
+});
+
+const PLATFORM_ENDPOINTS = [
+  ["GET", "/api/v1/fonts", "listFonts", "json", undefined, undefined, "FontListView"],
+];
