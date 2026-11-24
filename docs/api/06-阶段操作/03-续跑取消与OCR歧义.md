@@ -77,6 +77,11 @@ POST /api/v1/jobs/{job_id}/actions/resolve-ocr-ambiguity
   [retry-stage](02-retry-stage.md) 显式接受重复风险。
 - 绑定了 Rust 模型执行器：`model_executor_unsupported`。
 - 原地重渲染时读到之后任务又跑过一次：`stale_resolution`；出新任务时源任务的术语表已删 / 停用：`glossary_missing` / `glossary_disabled`。
+- 出新任务时这个任务已经续跑 / 重试出一个还在排队或在跑的新任务：`derived_job_active`（2026-11-24），`error.details.active_job_id`
+  是那个任务，等它结束或先取消。落库的同一个事务里再查一次，两个请求同时来也只建一个。
+
+续跑（含旧地址 `rerun`）还接受 `Idempotency-Key` 请求头：同一把 key 的重复请求回第一次的结果，带 `Idempotent-Replayed: true`，
+见 [防重复提交](../00-约定/06-防重复提交.md)。
 
 要选阶段、改参数、或接受翻译请求重复的风险，用 [retry-stage](02-retry-stage.md)。
 

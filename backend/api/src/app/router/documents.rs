@@ -33,9 +33,9 @@ crate::endpoints! {
     /// 原文某一页的预览图
     GET "/api/v1/documents/:document_id/files/pages/:page" => library_data::document_page_file_route, signed by(none);
     /// 翻译这本书（建翻译任务，能复用已有的 OCR）
-    POST "/api/v1/documents/:document_id/translate" => library_data::translate_document_route, signed by(web);
+    POST "/api/v1/documents/:document_id/translate" => library_data::translate_document_route, signed by(web) [idempotent];
     /// 给这本书做 OCR
-    POST "/api/v1/documents/:document_id/ocr" => library_data::ocr_document_route, signed by(web);
+    POST "/api/v1/documents/:document_id/ocr" => library_data::ocr_document_route, signed by(web) [idempotent];
     /// 书的元信息建议（书名、作者……）
     GET "/api/v1/documents/:document_id/metadata-suggestions" => library_data::list_document_metadata_suggestions_route, signed by(web);
     /// 生成一条元信息建议

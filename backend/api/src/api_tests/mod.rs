@@ -15,6 +15,7 @@ mod token_usage;
 mod golden_replay;
 mod health;
 mod http_contract;
+mod idempotency;
 mod isolation;
 mod job_actions_reports_contract;
 mod job_view_contract;

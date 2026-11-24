@@ -34,7 +34,7 @@
       "output": "OcrAmbiguityResolutionView",
       "rust_view": "OcrAmbiguityResolutionView",
       "ts_consumer": "@retainpdf/contracts/job-actions :: OcrAmbiguityResolutionView",
-      "note": "OCR 派发结果拿不准时（失败诊断 reports/failure 的 ocr_ambiguity 不为 null）由用户选：绑定已有回执，或接受重复派发。成功后建一个恢复任务（submission.job_id）。409 的 error.details.reason：job_active（任务在跑）、no_ocr_dispatch（没有可处理的歧义：任务不是失败 / 已取消，或没有记录在案的派发）、stale_resolution（resolution_revision 过期，或已被别的请求处理，刷新失败诊断再试）、ocr_dispatch_unsupported（这个服务商 / 操作不支持绑定回执）。回执字段不对 400：bind_existing_receipt 缺必填字段（看 ocr_ambiguity.receipt_fields 的 required）、填了不属于这个服务商 / 操作的字段；accept_duplicate_risk 填了任何回执字段。accept_duplicate_risk 走的是 retry-stage stage=ocr，那边的 409 原因也可能出现。多用户模式下页数额度不够 402，error.code=PAGE_QUOTA_EXCEEDED。"
+      "note": "OCR 派发结果拿不准时（失败诊断 reports/failure 的 ocr_ambiguity 不为 null）由用户选：绑定已有回执，或接受重复派发。成功后建一个恢复任务（submission.job_id）。409 的 error.details.reason：job_active（任务在跑）、no_ocr_dispatch（没有可处理的歧义：任务不是失败 / 已取消，或没有记录在案的派发）、stale_resolution（resolution_revision 过期，或已被别的请求处理，刷新失败诊断再试）、ocr_dispatch_unsupported（这个服务商 / 操作不支持绑定回执）、derived_job_active（这个任务已经续跑 / 重试出一个还在排队或在跑的新任务，error.details.active_job_id 是它的编号）。可以带 Idempotency-Key 请求头防重复提交。回执字段不对 400：bind_existing_receipt 缺必填字段（看 ocr_ambiguity.receipt_fields 的 required）、填了不属于这个服务商 / 操作的字段；accept_duplicate_risk 填了任何回执字段。accept_duplicate_risk 走的是 retry-stage stage=ocr，那边的 409 原因也可能出现。多用户模式下页数额度不够 402，error.code=PAGE_QUOTA_EXCEEDED。"
     },
     {
       "method": "GET",
@@ -55,7 +55,7 @@
       "output": "JobSubmissionView",
       "rust_view": "JobSubmissionView",
       "ts_consumer": "@retainpdf/contracts/job-actions :: JobSubmissionView",
-      "note": "从断点续跑（旧地址 actions/rerun 已登记为旧名，同一个实现）。请求体可以不带或发 {}；只接受换模型 key（见 ResumeJobInput），其它设置一律沿用原任务。能原地重渲染时 job_id 就是原任务，否则是新任务。409 的 error.details.reason：job_active（先取消）、artifacts_missing（没有可复用的断点）、model_executor_unsupported、ambiguous_ocr_dispatch（先用 resolve-ocr-ambiguity）、request_journal_corrupt、ambiguous_translation_request（改用 retry-stage stage=translation + ambiguous_request_policy=accept_duplicate_risk）、stale_resolution（原地重跑时任务在读取后变了，刷新再试）。overrides 写错 400。多用户模式下页数额度不够 402，error.code=PAGE_QUOTA_EXCEEDED。"
+      "note": "从断点续跑（旧地址 actions/rerun 已登记为旧名，同一个实现）。请求体可以不带或发 {}；只接受换模型 key（见 ResumeJobInput），其它设置一律沿用原任务。能原地重渲染时 job_id 就是原任务，否则是新任务。409 的 error.details.reason：job_active（先取消）、artifacts_missing（没有可复用的断点）、model_executor_unsupported、ambiguous_ocr_dispatch（先用 resolve-ocr-ambiguity）、request_journal_corrupt、ambiguous_translation_request（改用 retry-stage stage=translation + ambiguous_request_policy=accept_duplicate_risk）、stale_resolution（原地重跑时任务在读取后变了，刷新再试）、derived_job_active（这个任务已经续跑 / 重试出一个还在排队或在跑的新任务，error.details.active_job_id 是它的编号：等它结束或先取消它；2026-11-24 起）。可以带 Idempotency-Key 请求头防重复提交（见 docs/api/00-约定/06-防重复提交.md）。overrides 写错 400。多用户模式下页数额度不够 402，error.code=PAGE_QUOTA_EXCEEDED。"
     },
     {
       "method": "POST",
@@ -66,7 +66,7 @@
       "output": "RetryStageSubmissionView",
       "rust_view": "RetryStageSubmissionView",
       "ts_consumer": "@retainpdf/contracts/job-actions :: RetryStageSubmissionView",
-      "note": "重试某一个阶段。ocr / translation 一律新建任务；render 默认新建任务，create_new_job=false 时原地重渲染；refine 只支持原地（create_new_job 省略即 false）。请求写错 400：不认识的字段、mode 不是 from_stage、refine 带在别的 stage 上、ocr / translation 给了 create_new_job=false、refine 给了 create_new_job=true、overrides 段名或字段不对。409 的 error.details.reason：job_active、model_executor_unsupported、ambiguous_ocr_dispatch（stage=ocr 且没接受重复风险）、artifacts_missing、translations_not_owned（精修要写回的译文不是这个任务自己的）、request_journal_corrupt、ambiguous_translation_request（stage=translation 且没接受重复风险）、stale_resolution（原地执行时任务在读取后变了）。多用户模式下页数额度不够 402，error.code=PAGE_QUOTA_EXCEEDED。"
+      "note": "重试某一个阶段。ocr / translation 一律新建任务；render 默认新建任务，create_new_job=false 时原地重渲染；refine 只支持原地（create_new_job 省略即 false）。请求写错 400：不认识的字段、mode 不是 from_stage、refine 带在别的 stage 上、ocr / translation 给了 create_new_job=false、refine 给了 create_new_job=true、overrides 段名或字段不对。409 的 error.details.reason：job_active、model_executor_unsupported、ambiguous_ocr_dispatch（stage=ocr 且没接受重复风险）、artifacts_missing、translations_not_owned（精修要写回的译文不是这个任务自己的）、request_journal_corrupt、ambiguous_translation_request（stage=translation 且没接受重复风险）、stale_resolution（原地执行时任务在读取后变了）、derived_job_active（新建任务时：这个任务已经续跑 / 重试出一个还在排队或在跑的新任务，error.details.active_job_id 是它的编号；2026-11-24 起）。可以带 Idempotency-Key 请求头防重复提交（见 docs/api/00-约定/06-防重复提交.md）。多用户模式下页数额度不够 402，error.code=PAGE_QUOTA_EXCEEDED。"
     }
   ],
   "definitions": {
@@ -83,7 +83,8 @@
         "model_executor_unsupported",
         "stale_resolution",
         "no_ocr_dispatch",
-        "ocr_dispatch_unsupported"
+        "ocr_dispatch_unsupported",
+        "derived_job_active"
       ],
       "description": "job_types.rs :: ActionBlockReason。「任务 / 产物的当前状态不允许这个操作」的稳定机器可读原因：操作被拒时放进 409 的 error.details.reason；GET 里是阶段操作的 disabled_code、续跑计划的 reason_code。值只增不改，客户端按它分支，不要解析文字说明。"
     },

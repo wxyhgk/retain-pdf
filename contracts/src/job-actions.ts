@@ -31,7 +31,8 @@ export type ActionBlockReason =
   | "model_executor_unsupported"
   | "stale_resolution"
   | "no_ocr_dispatch"
-  | "ocr_dispatch_unsupported";
+  | "ocr_dispatch_unsupported"
+  | "derived_job_active";
 /**
  * crate::models::common::JobStatusKind
  */

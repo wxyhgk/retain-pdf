@@ -1,5 +1,6 @@
 mod cancel;
 pub(crate) mod common;
+mod derived_dedupe;
 mod reasons;
 mod render_engine;
 mod rerender_keeps_pdf;

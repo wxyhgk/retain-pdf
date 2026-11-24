@@ -170,6 +170,8 @@ pub struct Endpoint {
     pub replaced_by: Option<&'static str>,
     /// 登记在哪个路由文件（模块路径），接口目录按它分组。
     pub module: &'static str,
+    /// 接受 `Idempotency-Key` 请求头（`[idempotent]`，见 `app/idempotency.rs`）。
+    pub idempotent: bool,
 }
 
 /// 写一张登记表，生成 `pub(crate) fn routes()` 和 `pub(crate) const ENDPOINTS`。
@@ -203,7 +205,8 @@ pub struct Endpoint {
 ///   ```
 /// - 访问：`public`、`signed`、`admin`、`closed`。
 /// - 方括号里是附加选项：`unlimited_body` 去掉默认的请求体大小限制（上传文件的接口）；`large_body` 放宽到
-///   `LARGE_BODY_LIMIT_BYTES`（带 base64 图片的 JSON）。
+///   `LARGE_BODY_LIMIT_BYTES`（带 base64 图片的 JSON）；`idempotent` 接受 `Idempotency-Key` 请求头
+///   （会建要花钱的任务的接口，见 `app/idempotency.rs`）。
 #[macro_export]
 macro_rules! endpoints {
     (
@@ -242,6 +245,7 @@ macro_rules! endpoints {
                     summary: $crate::endpoints!(@summary $($doc)*),
                     replaced_by: $crate::endpoints!(@replaced_by $($replaced_by)?),
                     module: module_path!(),
+                    idempotent: $crate::endpoints!(@idempotent $($($flag),*)?),
                 },
             )*
         ];
@@ -254,6 +258,10 @@ macro_rules! endpoints {
     (@method_router DELETE, $handler:path $(, $flag:ident)*) => { $crate::endpoints!(@flags ::axum::routing::delete($handler) $(, $flag)*) };
 
     (@flags $router:expr) => { $router };
+    // 只是登记：`Idempotency-Key` 由 `app/idempotency.rs` 的中间层按登记表处理，这里不挂东西。
+    (@flags $router:expr, idempotent $(, $rest:ident)*) => {
+        $crate::endpoints!(@flags $router $(, $rest)*)
+    };
     (@flags $router:expr, unlimited_body $(, $rest:ident)*) => {
         $crate::endpoints!(@flags $router.layer(::axum::extract::DefaultBodyLimit::disable()) $(, $rest)*)
     };
@@ -261,6 +269,10 @@ macro_rules! endpoints {
     (@flags $router:expr, large_body $(, $rest:ident)*) => {
         $crate::endpoints!(@flags $router.layer(::axum::extract::DefaultBodyLimit::max($crate::app::endpoints::LARGE_BODY_LIMIT_BYTES)) $(, $rest)*)
     };
+
+    (@idempotent) => { false };
+    (@idempotent idempotent $(, $rest:ident)*) => { true };
+    (@idempotent $other:ident $(, $rest:ident)*) => { $crate::endpoints!(@idempotent $($rest),*) };
 
     (@access public) => { $crate::app::endpoints::Access::Public };
     (@access signed) => { $crate::app::endpoints::Access::Signed };

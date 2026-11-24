@@ -11,14 +11,14 @@ crate::endpoints! {
     /// 续跑会从哪里开始
     GET "/api/v1/jobs/:job_id/actions/resume" => actions::get_resume_plan, signed by(web);
     /// 从断点续跑
-    POST "/api/v1/jobs/:job_id/actions/resume" => actions::resume_job, signed by(web);
+    POST "/api/v1/jobs/:job_id/actions/resume" => actions::resume_job, signed by(web) [idempotent];
     // 2026-11-02 以前旧名另有一份一模一样的处理函数 rerun_job，删了，直接用续跑的。
     /// 旧名，和续跑是同一个处理函数
-    POST "/api/v1/jobs/:job_id/actions/rerun" => actions::resume_job, signed by(none) old "/api/v1/jobs/:job_id/actions/resume";
+    POST "/api/v1/jobs/:job_id/actions/rerun" => actions::resume_job, signed by(none) [idempotent] old "/api/v1/jobs/:job_id/actions/resume";
     /// 取消任务
     POST "/api/v1/jobs/:job_id/actions/cancel" => actions::cancel_job, signed by(web);
     /// 重试某一个阶段（OCR、翻译、渲染、精修）
-    POST "/api/v1/jobs/:job_id/actions/retry-stage" => actions::retry_stage, signed by(web);
+    POST "/api/v1/jobs/:job_id/actions/retry-stage" => actions::retry_stage, signed by(web) [idempotent];
     /// OCR 拿不准时由用户选
-    POST "/api/v1/jobs/:job_id/actions/resolve-ocr-ambiguity" => actions::resolve_ocr_ambiguity, signed by(web);
+    POST "/api/v1/jobs/:job_id/actions/resolve-ocr-ambiguity" => actions::resolve_ocr_ambiguity, signed by(web) [idempotent];
 }

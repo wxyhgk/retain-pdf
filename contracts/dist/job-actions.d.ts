@@ -10,7 +10,7 @@ export type WorkflowKind = "book" | "ocr" | "translate" | "render";
 /**
  * job_types.rs :: ActionBlockReason。「任务 / 产物的当前状态不允许这个操作」的稳定机器可读原因：操作被拒时放进 409 的 error.details.reason；GET 里是阶段操作的 disabled_code、续跑计划的 reason_code。值只增不改，客户端按它分支，不要解析文字说明。
  */
-export type ActionBlockReason = "job_active" | "job_not_active" | "artifacts_missing" | "translations_not_owned" | "ambiguous_translation_request" | "ambiguous_ocr_dispatch" | "request_journal_corrupt" | "model_executor_unsupported" | "stale_resolution" | "no_ocr_dispatch" | "ocr_dispatch_unsupported";
+export type ActionBlockReason = "job_active" | "job_not_active" | "artifacts_missing" | "translations_not_owned" | "ambiguous_translation_request" | "ambiguous_ocr_dispatch" | "request_journal_corrupt" | "model_executor_unsupported" | "stale_resolution" | "no_ocr_dispatch" | "ocr_dispatch_unsupported" | "derived_job_active";
 /**
  * crate::models::common::JobStatusKind
  */

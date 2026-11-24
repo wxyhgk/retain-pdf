@@ -4,7 +4,7 @@ use anyhow::Result;
 use serde_json::Value;
 use tracing::warn;
 
-use crate::db::{Db, NewRunWrite};
+use crate::db::{Db, DerivedRunWrite, NewRunWrite};
 use crate::models::api::JobEventRecord;
 use crate::models::domain::{JobRuntimeState, JobSnapshot, JobStatusKind};
 mod derivation;
@@ -82,6 +82,29 @@ pub fn persist_job_as_new_run_with_resources(
     current.run_generation = db.save_job_as_new_run(&current)?;
     emit_job_events_best_effort(db, data_root, output_root, previous.as_ref(), &current);
     Ok(current)
+}
+
+/// 同 [`persist_job_as_new_run_with_resources`]，但这是从 `source_job_id` 派生的新任务（续跑、重试阶段）：
+/// 源任务已经有排队中 / 运行中的派生任务时不写（见 `Db::save_derived_job_as_new_run`），
+/// 返回 `Ok(Err(那个任务的编号))`，不派生事件。
+pub fn persist_derived_job_as_new_run_with_resources(
+    db: &Db,
+    data_root: &Path,
+    output_root: &Path,
+    job: &JobSnapshot,
+    source_job_id: &str,
+) -> Result<std::result::Result<JobSnapshot, String>> {
+    let previous = db.get_job(&job.job_id).ok();
+    let mut current = job.clone();
+    current.sync_runtime_state();
+    match db.save_derived_job_as_new_run(&current, source_job_id)? {
+        DerivedRunWrite::Started(generation) => {
+            current.run_generation = generation;
+            emit_job_events_best_effort(db, data_root, output_root, previous.as_ref(), &current);
+            Ok(Ok(current))
+        }
+        DerivedRunWrite::SourceBusy { active_job_id } => Ok(Err(active_job_id)),
+    }
 }
 
 /// 同 [`persist_job_as_new_run_with_resources`]，但只在库里还是读到时的状态和代次时才写
