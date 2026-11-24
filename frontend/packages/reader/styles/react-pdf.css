@@ -145,6 +145,44 @@
   display: none;
 }
 
+/* 栏内横向滚动条（ReaderPaneScrollbars）：栏原生的横向滚动条长在整本书最底下、还藏掉了，页比栏宽时
+ * （对照超过 50%）在视口底部按每栏的位置画一条。外层贴底、不占高度，只有滑块和轨道接鼠标。 */
+.reader-pane-scrollbars {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  height: 0;
+  z-index: 25;
+  pointer-events: none;
+}
+.reader-pane-scrollbar {
+  position: absolute;
+  bottom: 6px;
+  height: 10px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--reader-pane-scrollbar-track, color-mix(in srgb, var(--ink) 7%, transparent));
+  pointer-events: auto;
+  cursor: var(--cursor-pointer, pointer);
+  touch-action: none;
+}
+.reader-pane-scrollbar-thumb {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  left: 0;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--reader-pane-scrollbar-thumb, var(--scrollbar-thumb, color-mix(in srgb, var(--ink) 38%, transparent)));
+  cursor: grab;
+  transition: background 120ms ease;
+}
+.reader-pane-scrollbar:hover .reader-pane-scrollbar-thumb,
+.reader-pane-scrollbar-thumb:active {
+  background: var(--reader-pane-scrollbar-thumb-active, color-mix(in srgb, var(--ink) 55%, transparent));
+}
+.reader-pane-scrollbar-thumb:active {
+  cursor: grabbing;
+}
+
 /* 源栏右上角动作（如「译文」叠加开关）：放在 pane 内，不随内容滚动。 */
 .reader-react-pdf-pane-action {
   position: absolute;
