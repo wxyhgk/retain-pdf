@@ -17,6 +17,7 @@ import {
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
 import type { ReaderPaneComposition } from "../../ReaderAppReactPdf.js";
 import { useReaderContext } from "./reader-context.js";
+import { ReaderPaneScrollbars } from "./ReaderPaneScrollbars.js";
 import { VersionWatermarks } from "./ReaderVersionCompare.js";
 
 
@@ -308,6 +309,8 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
           />
         ) : null}
       </main>
+      {/* 页比栏宽时（对照超过 50%）每栏底部一条一直看得见的横向滚动条 */}
+      <ReaderPaneScrollbars shellEl={shellEl} />
       {compareVersion ? <VersionWatermarks shellEl={shellEl} left={compareVersion.left} right={compareVersion.right} /> : null}
     </div>
   );
