@@ -4,7 +4,7 @@
 
 - Rust API 是参数契约入口，负责默认值、允许值和基础校验。
 - Python worker 只消费 Rust 写出的 stage spec，不再自己猜默认语义。
-- 新增渲染选项必须先更新这里、`API_SPEC.md`、Rust validation 和 stage spec 写入逻辑。
+- 新增渲染选项必须先更新这里、`docs/api/05-渲染/01-渲染参数.md`、Rust validation 和 stage spec 写入逻辑。
 
 ## 当前字段
 
@@ -81,7 +81,7 @@ Python 的 `pipeline_summary.json` 可以补充运行结果和诊断，但不应
 1. 更新 Rust `RenderInput` 默认值。
 2. 更新 Rust validation。
 3. 更新 stage spec 写入和 Python loader。
-4. 更新 `API_SPEC.md` 和本文档。
+4. 更新 `docs/api/05-渲染/01-渲染参数.md` 和本文档。
 5. 至少增加一个 Rust validation 测试或 stage spec 测试。
 
 不要让 Python 默默接受未知值并回退默认值。未知值应在 Rust API 层直接返回 `400`，这样前端问题能尽早暴露。

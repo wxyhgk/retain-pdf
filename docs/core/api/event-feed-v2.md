@@ -1,5 +1,8 @@
 # Job events v2
 
+> 内部设计。对外的请求参数、返回字段、游标用法看 [事件总览](../../api/02-进度事件/01-事件总览.md)（以它为准）；
+> 这里记的是这次升级的设计：存储、来源合并、恢复、保留和验收。
+
 This is a coordinated, breaking upgrade of `GET /api/v1/jobs/:id/progress/events`
 (the old addresses `/jobs/:id/events` and `/api/v1/ocr/jobs/:id/events` were removed on 2026-10-18). Ship the API, generated contracts, SDK and
 first-party web/desktop clients together. Translation `progress/stream` SSE (formerly `/live-events`) is

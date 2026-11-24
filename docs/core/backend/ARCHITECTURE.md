@@ -121,7 +121,7 @@ sync_cycle -- <数据目录> <同步文件夹>`。
 
 | 边界 | 协议真值 | 关键门禁 |
 | --- | --- | --- |
-| Web/desktop ↔ Rust API | `backend/api/API_SPEC.md` 及 `backend/api/docs/api-spec/` | Rust API contract tests、前端 API tests |
+| Web/desktop ↔ Rust API | `docs/api/`（对外接口说明；内部设计在 `docs/core/api/`） | Rust API contract tests、前端 API tests |
 | monorepo wire DTO | `contracts/*.schema.json` | `npm --prefix contracts test` |
 | 独立后端 schema 镜像 | `backend/contracts/*.schema.json` | `python3 backend/contracts/check_parity.py --require-upstream` |
 | Rust ↔ jobsd | `jobs-control.v1.schema.json` | shell/jobsd 双端 contract lock |

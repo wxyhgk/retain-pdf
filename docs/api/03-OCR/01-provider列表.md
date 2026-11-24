@@ -145,6 +145,20 @@ GLM-OCR 不限、`always`、借 `open.bigmodel.cn` 的 key；Local OCR 不限、
 并行时 OCR 子任务一做完就落终态（`succeeded`/`failed`），不等翻译（2026-11-01 起；以前要等翻译也做完，子任务一直停在
 `normalizing`）。父任务照旧等翻译、渲染。
 
+## 凭据描述和 Paddle 的提交方式
+
+2026-11-24 从 `backend/api/docs/api-spec/jobs-submission.md` 合并过来。
+
+- 每家的 `credential` 对象是「这家要什么凭据」的唯一依据，不要按服务商名字猜：先建一条 `kind` 等于 `credential_kind`
+  的凭据（见 [凭据](../14-凭据/01-凭据.md)），再把编号写进 `ocr.<reference_field>`（就是 `ocr.credential_ref`）。
+  `legacy_inline_field` 是临时兼容的内联字段名（如 `paddle_token`），`field` 是它的旧别名；`env` 是服务器上的环境变量名。
+  不要凭据的服务商 `credential` 为 `null`。
+- Paddle 的 `ocr.options.transport`：`official_http`（默认）或 `official_cli`。`official_cli` 用服务器上另外装的官方
+  `paddleocr api` 命令行，只给纯 OCR 任务（`workflow=ocr`）：它只出 Markdown 和粗粒度结构，没有翻译、渲染要的
+  `bbox` / `prunedResult`，`book`、`translate` 带它 400。选它不会替你装 PaddleOCR，服务器上没有这个命令时报 worker 失败。
+  别的值 400。
+- 旧字段 `paddle_model`、`paddle_api_url` 内置服务商照旧收；新的命令型服务商用 `ocr.options`。
+
 ## 前端规则
 
 - 不要硬编码 provider 参数表。

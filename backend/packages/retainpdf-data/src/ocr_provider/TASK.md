@@ -14,7 +14,7 @@
 允许改动：
 
 - `services/api/crates/retainpdf-data/src/ocr_provider/**`
-- 必要时补 `services/api/API_SPEC.md` 或对应领域文档
+- 必要时补 `docs/api/` 里对应的篇（对外接口说明，2026-11-24 起 `API_SPEC.md` 不再写内容）
 
 不要改：
 

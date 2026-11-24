@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/provider-probes/v1",
   "title": "服务商密钥校验（Provider probes）",
-  "description": "设置里「检测」按钮用的四个接口：MinerU、Paddle、翻译接口的 Key 校验，DeepSeek 余额。都是 POST、admin，用户在等结果的前台请求（前端最多等 30 秒，后端探针超时默认 20 秒）。生产者：backend/packages/retainpdf-providers/src/provider_probe/types.rs（请求和返回类型）、ocr.rs、deepseek.rs（逻辑），backend/api/src/routes/providers.rs（处理函数）。Rust 侧由 backend/api/src/api_tests/provider_probes_contract.rs 对真实接口的返回钉键集合、对请求类型钉字段。消费者：@retainpdf/contracts/provider-probes 生成 DTO 和请求函数（设置类第 2 批第 3 组，2026-11-24）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。必填字段为空、地址不合规（不是 http(s)、带账号密码、多用户模式下指向内网）、请求体里有不认识的字段都是 400；除此以外连不上、Key 不对、服务商报错都是 200，结论在 `ok`、`status` 里。返回里不会有 Key 原文。详见 docs/core/rust_api/08-Provider 校验接口.md。",
+  "description": "设置里「检测」按钮用的四个接口：MinerU、Paddle、翻译接口的 Key 校验，DeepSeek 余额。都是 POST、admin，用户在等结果的前台请求（前端最多等 30 秒，后端探针超时默认 20 秒）。生产者：backend/packages/retainpdf-providers/src/provider_probe/types.rs（请求和返回类型）、ocr.rs、deepseek.rs（逻辑），backend/api/src/routes/providers.rs（处理函数）。Rust 侧由 backend/api/src/api_tests/provider_probes_contract.rs 对真实接口的返回钉键集合、对请求类型钉字段。消费者：@retainpdf/contracts/provider-probes 生成 DTO 和请求函数（设置类第 2 批第 3 组，2026-11-24）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。必填字段为空、地址不合规（不是 http(s)、带账号密码、多用户模式下指向内网）、请求体里有不认识的字段都是 400；除此以外连不上、Key 不对、服务商报错都是 200，结论在 `ok`、`status` 里。返回里不会有 Key 原文。详见 docs/api/08-调试诊断/05-服务商校验.md。",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -137,7 +137,7 @@
         },
         "status": {
           "type": "string",
-          "description": "结论的细分。`valid`（可用）、`rate_limited`（可用，此刻被限流或服务商繁忙；`ok` 为 true）、`unauthorized`（Key / Token 无效或没权限，套餐不含这个模型也算）、`expired`（MinerU Token 过期）、`model_unavailable`（Key 通过，模型不存在或没开通）、`insufficient_balance`（欠费、余额不足）、`quota_exceeded`（2026-11-23 起：到了用量或花费上限）、`invalid_input`（Key 里有放不进请求头的字符）、`redirected`（服务商回 3xx，不跟随）、`network_error`（没收到回复；Paddle、翻译接口的 5xx 也算）、`provider_error`（别的错误）。以后可能加值：界面按 `ok` 判断，不认识的 `status` 按 `ok` + `summary` 显示。各家用到哪些见 docs/core/rust_api/08-Provider 校验接口.md 第 3 节。"
+          "description": "结论的细分。`valid`（可用）、`rate_limited`（可用，此刻被限流或服务商繁忙；`ok` 为 true）、`unauthorized`（Key / Token 无效或没权限，套餐不含这个模型也算）、`expired`（MinerU Token 过期）、`model_unavailable`（Key 通过，模型不存在或没开通）、`insufficient_balance`（欠费、余额不足）、`quota_exceeded`（2026-11-23 起：到了用量或花费上限）、`invalid_input`（Key 里有放不进请求头的字符）、`redirected`（服务商回 3xx，不跟随）、`network_error`（没收到回复；Paddle、翻译接口的 5xx 也算）、`provider_error`（别的错误）。以后可能加值：界面按 `ok` 判断，不认识的 `status` 按 `ok` + `summary` 显示。各家用到哪些见 docs/api/08-调试诊断/05-服务商校验.md 第 3 节。"
         },
         "summary": {
           "type": "string",

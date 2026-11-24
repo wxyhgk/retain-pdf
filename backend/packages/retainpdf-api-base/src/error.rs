@@ -471,7 +471,7 @@ fn with_prefix(prefix: Option<&str>, detail: &str) -> String {
 }
 
 /// 元数据建议接口的顶层码 → (`error.code`, `error.details.reason`)。取值写在
-/// `docs/api/00-约定/02-认证与错误.md`「书的元数据建议」和 `api-spec/document-metadata.md`，只增不改。
+/// `docs/api/00-约定/02-认证与错误.md`「书的元数据建议」和 `docs/api/13-书库/03-元数据建议.md`，只增不改。
 ///
 /// `OCR_JOB_NOT_FOUND` 和建任务复用 OCR 的同名码撞车（那边还带 `can_fallback_to_ocr`），所以顶层
 /// `code` 照旧、`error.code` 换成 `DOCUMENT_METADATA_JOB_NOT_FOUND`，两边的 `reason` 都是 `job_not_found`。
