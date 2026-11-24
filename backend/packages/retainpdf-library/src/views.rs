@@ -301,3 +301,35 @@ pub struct DocumentDeleteResultView {
     pub removed_jobs: Vec<String>,
     pub removed_paths: Vec<String>,
 }
+
+/// POST /api/v1/book-folder/export 的请求体：`document_ids` 不给（或空）就导出整个书库，并删掉已经不在书库里的书的文件夹。
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BookFolderExportInput {
+    #[serde(default)]
+    pub document_ids: Vec<String>,
+}
+
+/// 导出书文件夹的结果。
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct BookFolderExportView {
+    /// 书文件夹所在的目录（`<数据目录>/books`）。
+    pub root: String,
+    /// 这次处理了几本书。
+    pub documents: u32,
+    /// 重新写了的。
+    pub exported: u32,
+    /// 和上次导出一样、没动的。
+    pub unchanged: u32,
+    /// 没有可导出的内容（还没识别）的。
+    pub empty: u32,
+    /// 删掉的文件夹（书删了、书名改了留下的旧文件夹、或者已经没有内容）。
+    pub removed: u32,
+    pub failed: Vec<BookFolderExportFailure>,
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct BookFolderExportFailure {
+    pub document_id: String,
+    pub message: String,
+}

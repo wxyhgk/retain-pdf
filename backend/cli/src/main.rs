@@ -12,11 +12,11 @@ use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
 
-use crate::cmd::{backup, compact, config, db_snapshot, doctor, setup, status, sync};
+use crate::cmd::{backup, books, compact, config, db_snapshot, doctor, setup, status, sync};
 use crate::context::Ctx;
 
 #[derive(Parser)]
-#[command(name = "retainpdf", version, about = "RetainPDF 命令行:配置、状态、环境检查、备份、同步")]
+#[command(name = "retainpdf", version, about = "RetainPDF 命令行:配置、状态、环境检查、备份、同步、书文件夹")]
 struct Cli {
     /// 输出 JSON(给脚本用)
     #[arg(long, global = true)]
@@ -46,6 +46,11 @@ enum Command {
         #[command(subcommand)]
         action: backup::BackupCommand,
     },
+    /// 书文件夹：把书库导出成 Markdown，给 AI 直接读（要后端开着）
+    Books {
+        #[command(subcommand)]
+        action: books::BooksCommand,
+    },
     /// 整理书库数据库、把空间还给磁盘（只在后端没开时用；先自动备份）
     Compact(compact::CompactArgs),
     /// 多设备同步
@@ -69,6 +74,7 @@ fn main() -> ExitCode {
         Command::Status => status::run(&ctx),
         Command::Doctor => doctor::run(&ctx),
         Command::Backup { action } => backup::run(&ctx, action),
+        Command::Books { action } => books::run(&ctx, action),
         Command::Compact(args) => compact::run(&ctx, args),
         Command::Sync { action } => sync::run(&ctx, action),
         Command::DbSnapshot { action } => db_snapshot::run(&ctx, action),

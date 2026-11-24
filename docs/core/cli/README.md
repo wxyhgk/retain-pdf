@@ -70,6 +70,9 @@ retainpdf compact [--drop-events <任务编号>]... [--yes]
                                     给的已结束任务的进度事件现在就清掉、整库压缩并切到增量收缩模式
 retainpdf sync status|run|on|off|test
 retainpdf sync set --folder <文件夹> | --webdav <地址> --user <账号> [--password-stdin] [--device-name <名字>]
+retainpdf books export [--document <书编号>]...
+                                    把书库导出成给 AI 读的 Markdown 文件夹（<数据目录>/books/），只有后端开着时能用；
+                                    格式见 docs/api/13-书库/05-书文件夹.md
 ```
 
 全局参数：`--json`（输出 JSON 给脚本）、`--data <目录>`（数据目录，默认依次取配置、正在运行的后端、
@@ -81,7 +84,7 @@ retainpdf sync set --folder <文件夹> | --webdav <地址> --user <账号> [--p
 ## 后端开着还是没开
 
 同一个数据目录同一时间只能有一个程序写。命令行先看 `run/backend.json`：记录的进程在、数据目录相同、
-`/health` 应答，就把会改东西的命令（备份、恢复、同步）转给后端（`compact` 不转，后端开着时拒绝：压缩要独占数据库）；没有在用这个数据目录的后端时，直接
+`/health` 应答，就把会改东西的命令（备份、恢复、同步）转给后端（`books export` 只能经后端，后端没开时报错；`compact` 不转，后端开着时拒绝：压缩要独占数据库）；没有在用这个数据目录的后端时，直接
 操作数据目录（规则和后端一样：恢复前先备份、有任务在跑时不恢复；同步用 `retainpdf_data::sync::control`，
 与后端同一套）；记录说后端在却连不上时，会改东西的命令拒绝执行。`status`、`doctor` 只读，任何时候都能用。
 

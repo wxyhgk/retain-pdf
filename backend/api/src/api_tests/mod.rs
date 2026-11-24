@@ -10,6 +10,7 @@ mod file_responses;
 mod glossaries;
 mod glossaries_contract;
 mod backups;
+mod book_folder;
 mod sync;
 mod token_usage;
 mod golden_replay;

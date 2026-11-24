@@ -8,7 +8,11 @@ use retainpdf_api_base::error::AppError;
 use retainpdf_files::DerivedArtifactDeps;
 use crate::merge::coverage::{translation_coverage, TranslationCoverageView};
 use crate::merge::page_count::book_page_count;
-use crate::merge::reading::{resolve_reading_target, DocumentReadingView, ReadingTarget};
+use std::path::{Path, PathBuf};
+
+use retainpdf_data::db::Db;
+
+use crate::merge::reading::{resolve_reading_target, DocumentReadingView, ReadingSelection, ReadingTarget};
 use crate::versions::{
     auto_selection, patch_translation_version, set_current_translation_version, translation_versions_view,
     version_selection, PatchTranslationVersionInput, SetCurrentTranslationVersionInput, TranslationVersionsQuery,
@@ -50,41 +54,62 @@ pub async fn document_reading(
     let owned = OwnedReadingDeps::from(deps);
     let document_id = document_id.to_string();
     tokio::task::spawn_blocking(move || {
-        let (document, source_pdf) = document_source(&owned.db, &owned.data_root, &document_id)?;
         let artifact_deps = DerivedArtifactDeps::with_pipeline_command(&owned.python_bin, &owned.pipeline_command);
-        let read = |selection| {
-            resolve_reading_target(
-                &owned.db,
-                &owned.data_root,
-                artifact_deps,
-                &document_id,
-                &source_pdf,
-                document.page_count,
-                &selection,
-            )
-        };
-        let requested = version.as_deref().map(str::trim).filter(|value| !value.is_empty());
-        let (target, version_id) = match requested {
-            Some("auto") => (read(auto_selection(&owned.db, &document_id)?)?, None),
-            Some(version_id) => (read(version_selection(&owned.db, &document_id, version_id)?)?, Some(version_id.to_string())),
-            None => match owned.db.document_current_translation_version(&document_id)? {
-                Some(current) => match version_selection(&owned.db, &document_id, &current) {
-                    Ok(selection) => match read(selection)? {
-                        ReadingTarget::None => (read(auto_selection(&owned.db, &document_id)?)?, None),
-                        target => (target, Some(current)),
-                    },
-                    // 当前版本被删光了任务之类：退回自动
-                    Err(_) => (read(auto_selection(&owned.db, &document_id)?)?, None),
-                },
-                None => (read(auto_selection(&owned.db, &document_id)?)?, None),
-            },
-        };
-        let mut view = target.view(&owned.data_root);
-        view.version_id = version_id;
+        let current = current_reading(&owned.db, &owned.data_root, artifact_deps, &document_id, version.as_deref())?;
+        let mut view = current.target.view(&owned.data_root);
+        view.version_id = current.version_id;
         Ok(view)
     })
     .await
     .map_err(|_| AppError::internal("document reading task failed"))?
+}
+
+/// 一本书现在该读哪份：阅读入口和书文件夹导出（`book_export`）共用这一条规则。
+pub(crate) struct CurrentReading {
+    pub source_pdf: PathBuf,
+    pub target: ReadingTarget,
+    /// 读的是哪个译文版本；`None` = 自动。
+    pub version_id: Option<String>,
+    /// 算出 `target` 用的那个选择（导出要按它重算「每页取自哪个任务」）。
+    pub selection: ReadingSelection,
+}
+
+/// 同步版的阅读入口（要在阻塞线程里调：可能生成合并目录）。规则见 [`document_reading`]。
+pub(crate) fn current_reading(
+    db: &Db,
+    data_root: &Path,
+    artifact_deps: DerivedArtifactDeps<'_>,
+    document_id: &str,
+    version: Option<&str>,
+) -> Result<CurrentReading, AppError> {
+    let (document, source_pdf) = document_source(db, data_root, document_id)?;
+    let read = |selection: &ReadingSelection| {
+        resolve_reading_target(db, data_root, artifact_deps, document_id, &source_pdf, document.page_count, selection)
+    };
+    let auto = || -> Result<(ReadingTarget, Option<String>, ReadingSelection), AppError> {
+        let selection = auto_selection(db, document_id)?;
+        Ok((read(&selection)?, None, selection))
+    };
+    let requested = version.map(str::trim).filter(|value| !value.is_empty());
+    let (target, version_id, selection) = match requested {
+        Some("auto") => auto()?,
+        Some(version_id) => {
+            let selection = version_selection(db, document_id, version_id)?;
+            (read(&selection)?, Some(version_id.to_string()), selection)
+        }
+        None => match db.document_current_translation_version(document_id)? {
+            Some(current) => match version_selection(db, document_id, &current) {
+                Ok(selection) => match read(&selection)? {
+                    ReadingTarget::None => auto()?,
+                    target => (target, Some(current), selection),
+                },
+                // 当前版本被删光了任务之类：退回自动
+                Err(_) => auto()?,
+            },
+            None => auto()?,
+        },
+    };
+    Ok(CurrentReading { source_pdf, target, version_id, selection })
 }
 
 /// GET /documents/:id/translation-coverage：只算合并计划，不生成合并目录。

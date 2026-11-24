@@ -48,7 +48,8 @@ pub mod api {
         summarize_list_invocation,
     };
     pub use retainpdf_library::{
-        AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, CollectionListView,
+        AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, BookFolderExportFailure,
+        BookFolderExportInput, BookFolderExportView, CollectionListView,
         CollectionMutationResult, CreateCollectionInput, CreateDocumentMetadataSuggestionInput,
         DeleteDocumentQuery, DocumentDeleteResultView, DocumentJobRequest, DocumentListView,
         DocumentMetadataEvidenceView, DocumentMetadataSuggestionApplyView,
