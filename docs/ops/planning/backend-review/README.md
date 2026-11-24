@@ -41,3 +41,4 @@
 | 2026-10-31 | [阶段超时按进展计时](./20261031-阶段超时按进展计时.md) | `timeout_seconds` 从"整段时长"改成"多久没有进展"（新的阶段/进度、检查点、产物才算），一直出页就一直跑；另加绝对上限 `RUST_API_WORKER_MAX_RUNTIME_SECS`（默认 24 小时）；模型会话有效期跟着绝对上限走；以前前端默认 1800 秒让一百多页的翻译 agent 任务在半路被杀 |
 | 2026-11-02 | [派生缓存默认保留 14 天](./20261102-派生缓存默认保留14天.md) | 改 10-24 那条的默认：`RUST_API_DERIVED_CACHE_RETENTION_DAYS` 默认 `0` 不清 → 默认 `14`（`0` 照旧关）；删什么不变；data/jobs 里能重建的渲染准备、预热、线性化 PDF 约 270MB |
 | 2026-11-03 | [删掉 RetainPDF 自己的 AI](./20261103-删掉RetainPDF自己的AI.md) | 用户定只留 Studio 的 AI：删 `backend/ai`、`retainpdf-ai`、37 个接口（`/ai/*`、`/internal/agent/*`、画板、合集工作区、agent-versions）、5 份契约、pipeline 文档操作、开发栈和镜像里的 AI 服务；库表留着；健康检查 `ai_service` 键留着值固定；桌面壳归前端一起改 |
+| 2026-11-24 | [Docker 防 DNS rebinding](./20261124-Docker防DNS-rebinding.md) | NGINX 只替 `localhost`、IP 字面量和 `RETAINPDF_ALLOWED_HOSTS` 里的主机名补后端 key，别的 `Host` 不带 key 的 `/api/` 请求 403；用域名访问的部署升级后要配名单 |

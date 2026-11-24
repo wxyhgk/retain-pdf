@@ -13,12 +13,34 @@ map $http_x_forwarded_port $retainpdf_forwarded_port {
   "" "";
 }
 
+# 防 DNS rebinding（2026-11-24）：恶意网页把自己的域名解析到 127.0.0.1 时，浏览器带来的 Host 是那个域名。
+# 只有 Host 是本机名、IP 字面量或 RETAINPDF_ALLOWED_HOSTS 里的名字时，才给没带 key 的请求补后端 key；
+# 名单由 16-retainpdf-allowed-hosts.sh 在启动时写进 allowed-hosts.map。
+map $host $retainpdf_host_allowed {
+  default 0;
+  localhost 1;
+  "~\.localhost$" 1;
+  "~^[0-9]{1,3}(\.[0-9]{1,3}){3}$" 1;
+  # IPv6 字面量必须带冒号：只由 0-9a-f 和点组成的域名（如 abc.cafe）不能算 IP
+  "~^\[?[0-9a-f.]*:[0-9a-f:.]*\]?$" 1;
+  include /etc/nginx/retainpdf/allowed-hosts.map;
+}
+
 # Keep the backend API key on the server side for browser deployments. API
-# clients may still provide their own X-API-Key; the configured proxy key is
-# used only when the incoming request has no key.
-map $http_x_api_key $retainpdf_backend_api_key {
-  default $http_x_api_key;
-  "" "${RETAINPDF_PROXY_API_KEY}";
+# clients may still provide their own X-API-Key (forwarded whatever the Host);
+# the configured proxy key is used only when the incoming request has no key
+# and its Host is allowed.
+map "$retainpdf_host_allowed:$http_x_api_key" $retainpdf_backend_api_key {
+  default "";
+  "1:" "${RETAINPDF_PROXY_API_KEY}";
+  "~^[01]:(?<retainpdf_client_api_key>.+)$" $retainpdf_client_api_key;
+}
+
+# 不认识的 Host、没带 key、而且 NGINX 本来会补 key 时直接 403（不交给后端回 401，免得用自定义域名的人看不懂）。
+# 多用户叠加配置不补 key（RETAINPDF_PROXY_API_KEY 为空），不受影响。
+map "$retainpdf_host_allowed:$http_x_api_key:${RETAINPDF_PROXY_API_KEY}" $retainpdf_reject_host {
+  default 0;
+  "~^0::.+$" 1;
 }
 
 server {
@@ -45,6 +67,10 @@ server {
   # also sends `X-Accel-Buffering: no` on this response, so a proxy without this
   # location still streams it.
   location ~ ^/api/v1/jobs/[^/]+/progress/stream$ {
+    default_type application/json;
+    if ($retainpdf_reject_host) {
+      return 403 '{"code":40300,"message":"request host is not allowed: add this hostname to RETAINPDF_ALLOWED_HOSTS in web.env","error":{"code":"FORBIDDEN","http_status":403,"details":{"reason":"host_not_allowed"}}}';
+    }
     proxy_pass http://app:41000;
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
@@ -63,6 +89,10 @@ server {
   }
 
   location /api/ {
+    default_type application/json;
+    if ($retainpdf_reject_host) {
+      return 403 '{"code":40300,"message":"request host is not allowed: add this hostname to RETAINPDF_ALLOWED_HOSTS in web.env","error":{"code":"FORBIDDEN","http_status":403,"details":{"reason":"host_not_allowed"}}}';
+    }
     proxy_pass http://app:41000;
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
