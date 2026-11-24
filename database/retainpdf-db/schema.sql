@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 37
+-- user_version 38
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -123,6 +123,23 @@ TABLE glossaries
   TRIGGER sync_dirty_glossaries_delete: CREATE TRIGGER sync_dirty_glossaries_delete AFTER DELETE ON glossaries WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('glossary', OLD.glossary_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_glossaries_insert: CREATE TRIGGER sync_dirty_glossaries_insert AFTER INSERT ON glossaries WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('glossary', NEW.glossary_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_glossaries_update: CREATE TRIGGER sync_dirty_glossaries_update AFTER UPDATE ON glossaries WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('glossary', NEW.glossary_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+TABLE idempotency_keys
+  owner_user_id TEXT NOT NULL PRIMARY KEY#1
+  route TEXT NOT NULL PRIMARY KEY#2
+  idempotency_key TEXT NOT NULL PRIMARY KEY#3
+  request_method TEXT NOT NULL
+  request_path TEXT NOT NULL
+  request_body_sha256 TEXT NOT NULL
+  status TEXT NOT NULL
+  response_status INTEGER
+  response_content_type TEXT
+  response_body BLOB
+  created_at TEXT NOT NULL
+  completed_at TEXT
+  expires_at TEXT NOT NULL
+  INDEX idx_idempotency_keys_expires: CREATE INDEX idx_idempotency_keys_expires ON idempotency_keys(expires_at)
+  PRIMARY KEY (owner_user_id, route, idempotency_key)
 
 TABLE invite_codes
   invite_id TEXT PRIMARY KEY#1
@@ -268,6 +285,14 @@ TABLE job_artifact_entries
   TRIGGER sync_dirty_job_artifact_entries_delete: CREATE TRIGGER sync_dirty_job_artifact_entries_delete AFTER DELETE ON job_artifact_entries WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', OLD.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_job_artifact_entries_insert: CREATE TRIGGER sync_dirty_job_artifact_entries_insert AFTER INSERT ON job_artifact_entries WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_job_artifact_entries_update: CREATE TRIGGER sync_dirty_job_artifact_entries_update AFTER UPDATE ON job_artifact_entries WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+TABLE job_derivations
+  job_id TEXT PRIMARY KEY#1
+  source_job_id TEXT NOT NULL
+  created_at TEXT NOT NULL
+  FOREIGN KEY (job_id) REFERENCES jobs(job_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  INDEX idx_job_derivations_source: CREATE INDEX idx_job_derivations_source ON job_derivations(source_job_id)
+  PRIMARY KEY (job_id)
 
 TABLE job_page_charges
   job_id TEXT PRIMARY KEY#1

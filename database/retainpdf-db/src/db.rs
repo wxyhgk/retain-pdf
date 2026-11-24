@@ -35,6 +35,10 @@ mod event_projection_inputs;
 mod events;
 #[path = "db/glossaries.rs"]
 mod glossaries;
+#[path = "db/idempotency_keys.rs"]
+mod idempotency_keys;
+#[path = "db/job_derivations.rs"]
+mod job_derivations;
 #[path = "db/job_writes.rs"]
 mod job_writes;
 #[path = "db/jobs.rs"]
@@ -150,6 +154,10 @@ pub use event_feed::{
 };
 pub use event_projection_inputs::EventProjectionInput;
 pub use job_writes::NewRunWrite;
+pub use idempotency_keys::{
+    IdempotencyClaim, IdempotencyFingerprint, IdempotencyScope, StoredIdempotentResponse,
+};
+pub use job_derivations::DerivedRunWrite;
 pub use jobs::JobListSelection;
 pub use maintenance::CompactReport;
 pub use usage_cache::{UsageCacheEntry, UsageRollupRow};

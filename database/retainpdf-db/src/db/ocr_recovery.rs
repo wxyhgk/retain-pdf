@@ -9,8 +9,9 @@ use anyhow::Result;
 use rusqlite::{params, TransactionBehavior};
 use serde_json::{json, Value};
 
-use crate::models::domain::{now_iso, ocr_child_job_id, JobSnapshot, WorkflowKind};
+use crate::models::domain::{now_iso, ocr_child_job_id, ocr_parent_job_id, JobSnapshot, WorkflowKind};
 
+use super::job_derivations::record_job_derivation;
 use super::job_writes::{persist_prepared_job, prepare_job_write};
 use super::pipeline::{append_state_event, validate_identity, PipelineDispatchRecord};
 use super::Db;
@@ -69,6 +70,11 @@ impl Db {
         }
 
         persist_prepared_job(&tx, prepared)?;
+        // 恢复任务也是从源任务派生的（v38）：之后续跑、重试源任务时看得到它还在跑。
+        // 派发记录在真正调服务商的任务名下（`<源任务>-ocr` 或源任务自己）。
+        let source_job_id =
+            ocr_parent_job_id(&source_dispatch.job_id).unwrap_or(&source_dispatch.job_id);
+        record_job_derivation(&tx, &recovery_job.job_id, source_job_id)?;
         let owner_id = if recovery_job.request_payload.workflow == WorkflowKind::Ocr {
             recovery_job.job_id.clone()
         } else {

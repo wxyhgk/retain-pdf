@@ -178,6 +178,20 @@ fn persist_stage_history(
     Ok(())
 }
 
+/// 把这一行的运行代次加一，返回新的代次（和整行落库在同一个事务里调）。
+pub(super) fn bump_run_generation(tx: &rusqlite::Transaction<'_>, job_id: &str) -> Result<u64> {
+    tx.execute(
+        "UPDATE jobs SET run_generation = run_generation + 1 WHERE job_id = ?1",
+        params![job_id],
+    )?;
+    let generation: i64 = tx.query_row(
+        "SELECT run_generation FROM jobs WHERE job_id = ?1",
+        params![job_id],
+        |row| row.get(0),
+    )?;
+    Ok(generation.max(0) as u64)
+}
+
 impl Db {
     pub fn save_job(&self, job: &JobSnapshot) -> Result<()> {
         let prepared = prepare_job_write(self, job)?;
@@ -199,17 +213,9 @@ impl Db {
         let mut conn = self.connect()?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
         persist_prepared_job(&tx, prepared)?;
-        tx.execute(
-            "UPDATE jobs SET run_generation = run_generation + 1 WHERE job_id = ?1",
-            params![job.job_id],
-        )?;
-        let generation: i64 = tx.query_row(
-            "SELECT run_generation FROM jobs WHERE job_id = ?1",
-            params![job.job_id],
-            |row| row.get(0),
-        )?;
+        let generation = bump_run_generation(&tx, &job.job_id)?;
         tx.commit()?;
-        Ok(generation.max(0) as u64)
+        Ok(generation)
     }
 
     /// 原地重跑开始新的一次运行（`relaunch_in_place`）：只有库里这一行**还是读到时的样子**——状态是
