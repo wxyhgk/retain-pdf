@@ -10,6 +10,10 @@
 // 设计文档：docs/core/frontend/theme-system/DECOR_PACKS.md
 
 import { getDecorSlot, isDecorSlotId, type DecorSlotId } from "./slots.js";
+import { checkOrnaments, isSafeRelativePath, type DecorOrnaments } from "./ornament-contract.js";
+
+export { isSafeRelativePath };
+export type { DecorOrnament, DecorOrnaments } from "./ornament-contract.js";
 
 export const DECOR_MANIFEST_VERSION = 1;
 
@@ -71,6 +75,8 @@ export type DecorManifest = {
   id: string;
   layers: DecorLayer[];
   quote?: DecorQuote;
+  /** 装饰位：组件上挂的小图（名字白名单见 ornaments.ts）。可选；没有 layers 时可以只写它 */
+  ornaments?: DecorOrnaments;
 };
 
 /* ---------- 校验 ---------- */
@@ -85,14 +91,6 @@ const MODEL_EXT_RE = /\.glb$/i;
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
-}
-
-/** 相对路径且不逃逸包目录 */
-function isSafeRelativePath(v: unknown): v is string {
-  if (typeof v !== "string" || !v.trim()) return false;
-  if (v.startsWith("/") || v.includes("..") || v.includes("\\")) return false;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(v)) return false; // http:, data: 等协议
-  return true;
 }
 
 function checkClipName(v: unknown, label: string, errors: string[]) {
@@ -119,8 +117,13 @@ export function validateDecorManifest(input: unknown): DecorManifestValidation {
     errors.push(`id 必须是 kebab-case 包名，收到 ${JSON.stringify(input.id)}`);
   }
 
+  checkOrnaments(input.ornaments, errors);
+
   const layers = input.layers;
-  if (!Array.isArray(layers) || layers.length === 0) {
+  // 只挂装饰位、不要舞台的包（比如只给阅读页贴小图）可以写 layers: []
+  const ornamentsOnly = Array.isArray(layers) && layers.length === 0
+    && isPlainObject(input.ornaments) && Object.keys(input.ornaments).length > 0;
+  if (!Array.isArray(layers) || (layers.length === 0 && !ornamentsOnly)) {
     errors.push("layers 必须是非空数组");
     return { ok: false, manifest: null, errors };
   }

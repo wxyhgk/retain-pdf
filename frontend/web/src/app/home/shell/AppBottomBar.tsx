@@ -58,8 +58,8 @@ export function AppBottomBar({ showSearch = true, hidden = false }) {
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
         </svg>
-        {/* 装饰钩子：默认无样式零渲染（各主题无感），皮肤可在 CSS 里给它贴图换装 */}
-        <span className="library-bottom-icon-btn-ornament" aria-hidden="true" />
+        {/* 装饰位钩子：装饰包 manifest 的 ornaments 声明了才显示，不设不占位（packages/ui/styles/ornaments.css） */}
+        <span className="theme-ornament" data-ornament="bottom-add" aria-hidden="true" />
       </button>
 
       {showSearch ? (
@@ -102,8 +102,8 @@ export function AppBottomBar({ showSearch = true, hidden = false }) {
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M3 12h4l3 8 4-16 3 8h4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        {/* 装饰钩子：同添加钮，皮肤可贴图换装 */}
-        <span className="library-bottom-icon-btn-ornament" aria-hidden="true" />
+        {/* 装饰位钩子，同添加钮 */}
+        <span className="theme-ornament" data-ornament="bottom-tasks" aria-hidden="true" />
       </button>
 
       <Button
@@ -119,7 +119,7 @@ export function AppBottomBar({ showSearch = true, hidden = false }) {
           <path d="M9.6 9.6a2.4 2.4 0 1 1 3.4 2.2c-.6.3-1 .8-1 1.5v.4" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" />
           <circle cx="12" cy="16.6" r="0.95" fill="currentColor" />
         </svg>
-        <span className="library-bottom-icon-btn-ornament" aria-hidden="true" />
+        <span className="theme-ornament" data-ornament="bottom-guide" aria-hidden="true" />
       </Button>
 
       <button
@@ -135,8 +135,8 @@ export function AppBottomBar({ showSearch = true, hidden = false }) {
           <path d="M12 8.5a3.5 3.5 0 1 1 0 7 3.5 3.5 0 0 1 0-7Z" stroke="currentColor" strokeWidth="1.65" />
           <path d="M19.1 13.2c.06-.39.09-.79.09-1.2s-.03-.81-.09-1.2l2.02-1.55-1.9-3.29-2.38.96a8.01 8.01 0 0 0-2.08-1.2L14.4 3.2h-3.8l-.36 2.52c-.75.28-1.45.69-2.08 1.2l-2.38-.96-1.9 3.29L5.9 10.8c-.06.39-.09.79-.09 1.2s.03.81.09 1.2l-2.02 1.55 1.9 3.29 2.38-.96c.63.51 1.33.92 2.08 1.2l.36 2.52h3.8l.36-2.52c.75-.28 1.45-.69 2.08-1.2l2.38.96 1.9-3.29-2.02-1.55Z" stroke="currentColor" strokeWidth="1.45" strokeLinejoin="round" />
         </svg>
-        {/* 装饰钩子：同添加钮，皮肤可贴图换装 */}
-        <span className="library-bottom-icon-btn-ornament" aria-hidden="true" />
+        {/* 装饰位钩子，同添加钮 */}
+        <span className="theme-ornament" data-ornament="bottom-settings" aria-hidden="true" />
       </button>
     </div>
   );

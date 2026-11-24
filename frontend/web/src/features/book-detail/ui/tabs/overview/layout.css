@@ -14,8 +14,10 @@
   display: grid;
   gap: 12px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border: var(--detail-card-border-width, var(--shape-edge-width, 0)) solid var(--detail-card-border-color, var(--shape-edge-color, transparent));
+  border-radius: var(--detail-card-radius, var(--shape-radius-surface, 18px));
   background: color-mix(in srgb, var(--bg) 55%, var(--paper));
+  box-shadow: var(--detail-card-shadow, var(--shape-shadow-md, none));
 }
 
 .book-detail-overview-card-heading {

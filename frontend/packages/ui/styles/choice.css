@@ -16,7 +16,7 @@
   width: 14px;
   height: 14px;
   margin: 0;
-  accent-color: var(--ink);
+  accent-color: var(--check-color, var(--ink));
   cursor: pointer;
 }
 

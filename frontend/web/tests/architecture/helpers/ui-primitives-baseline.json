@@ -308,29 +308,8 @@
       "fontSize": 15,
       "borderRadius": 6
     },
-    "src/features/book-detail/ui/panels/ArtifactQuickDownloads.css": {
-      "borderRadius": 1
-    },
     "src/features/book-detail/ui/shell/BookDetailShell.css": {
       "fontSize": 1
-    },
-    "src/features/book-detail/ui/tabs/BookDetailRightTabs.css": {
-      "borderRadius": 2
-    },
-    "src/features/book-detail/ui/tabs/overview/activity.css": {
-      "borderRadius": 1
-    },
-    "src/features/book-detail/ui/tabs/overview/danger.css": {
-      "borderRadius": 1
-    },
-    "src/features/book-detail/ui/tabs/overview/layout.css": {
-      "borderRadius": 1
-    },
-    "src/features/book-detail/ui/tabs/overview/quality.css": {
-      "borderRadius": 1
-    },
-    "src/features/book-detail/ui/tabs/terms.css": {
-      "borderRadius": 1
     },
     "src/features/collections/ui/CollectionsView.css": {
       "fontSize": 5,
@@ -513,13 +492,10 @@
     },
     "src/styles/pages/home/book-detail-artifacts.css": {
       "fontSize": 5,
-      "borderRadius": 6
+      "borderRadius": 1
     },
     "src/styles/pages/home/book-detail-processing/job-history.css": {
       "borderRadius": 2
-    },
-    "src/styles/pages/home/book-detail-processing/processing-card.css": {
-      "borderRadius": 1
     },
     "src/styles/pages/home/collections.utilities.css": {
       "fontSize": 5,
@@ -543,8 +519,7 @@
       "borderRadius": 4
     },
     "src/styles/pages/home/settings-dialogs.css": {
-      "fontSize": 10,
-      "borderRadius": 4
+      "fontSize": 10
     },
     "src/styles/pages/home/translation-workflow.utilities.css": {
       "fontSize": 19,

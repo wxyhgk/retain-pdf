@@ -6,5 +6,11 @@
     { "type": "image", "slot": "left-top", "src": "kite.webp", "parallax": 0.05 },
     { "type": "image", "slot": "right-bottom-fg", "src": "master.webp", "parallax": 0.06, "clickQuote": "志不强者智不达，言不信者行不果。\n\n兴天下之利，除天下之害。" }
   ],
-  "quote": { "slot": "quote", "text": "兼相爱\n交相利" }
+  "quote": { "slot": "quote", "text": "兼相爱\n交相利" },
+  "ornaments": {
+    "bottom-add": { "src": "gear-btn.webp", "hideIcon": true, "hover": "rotate" },
+    "bottom-settings": { "src": "tools-btn.webp", "hideIcon": true, "hover": "lift" },
+    "top-tab-library": { "src": "library-btn.webp", "hideIcon": true },
+    "top-tab-collections": { "src": "scroll-btn.webp", "hideIcon": true }
+  }
 }

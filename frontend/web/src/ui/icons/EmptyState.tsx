@@ -22,6 +22,8 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div id={id} className={`events-empty empty-state ${className}`.trim()}>
+      {/* 装饰位钩子：空状态插画（装饰包 ornaments.empty-state；hideIcon 时换掉下面的仪器图标） */}
+      <span className="theme-ornament" data-ornament="empty-state" aria-hidden="true" />
       <div className="empty-state-icon" aria-hidden="true">
         <InstrumentIcon name={instrument} size={36} />
       </div>

@@ -2,13 +2,23 @@
  *
  * @owns book-detail */
 
+/* 左栏封面预览的描边、圆角、阴影（以前是 CoverActionsPanel 里的 Tailwind 类
+ * rounded-[16px] border border-border/60 shadow-[…]，值逐字照搬）。放在这里是因为 BookDetailShell.css 已接过主题、
+ * 这个文件比 BookDetailShellResponsive.css 先引入，窄屏的圆角覆盖照旧生效。 */
+.book-detail-cover-preview {
+  border: var(--detail-card-border-width, var(--shape-edge-width, 1px)) solid var(--detail-card-border-color, var(--shape-edge-color, color-mix(in oklab, var(--border) 60%, transparent)));
+  border-radius: var(--detail-card-radius, var(--shape-radius-surface, 16px));
+  box-shadow: var(--detail-card-shadow, var(--shape-shadow-md, 0 16px 36px color-mix(in srgb, var(--shadow-color) 16%, transparent)));
+}
+
 .book-detail-quick-downloads {
   display: grid;
   gap: 7px;
   padding: 9px 10px 10px;
-  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
-  border-radius: var(--ui-radius-lg);
+  border: var(--detail-tile-border-width, var(--shape-edge-width, 1px)) solid var(--detail-tile-border-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 72%, transparent)));
+  border-radius: var(--detail-tile-radius, var(--shape-radius-surface, var(--ui-radius-lg)));
   background: color-mix(in srgb, var(--paper) 76%, transparent);
+  box-shadow: var(--detail-tile-shadow, var(--shape-shadow-sm, none));
 }
 
 .book-detail-quick-downloads > header {
@@ -56,11 +66,12 @@
   display: grid;
   gap: 2px;
   padding: 9px 11px;
-  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
-  border-radius: var(--ui-radius-md);
+  border: var(--detail-tile-border-width, var(--shape-edge-width, 1px)) solid var(--detail-tile-border-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 75%, transparent)));
+  border-radius: var(--detail-tile-radius, var(--shape-radius-surface, var(--ui-radius-md)));
   color: var(--ink);
   text-align: left;
   background: var(--paper);
+  box-shadow: var(--detail-tile-shadow, var(--shape-shadow-sm, none));
   transition:
     border-color 150ms var(--ease-out),
     background-color 150ms var(--ease-out);
@@ -77,13 +88,13 @@
 }
 
 .book-detail-export-settings-option[aria-checked="true"] {
-  border-color: color-mix(in srgb, var(--ink) 38%, var(--line));
+  border-color: var(--detail-tile-active-border-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 38%, var(--line))));
   background: color-mix(in srgb, var(--ink) 5%, var(--paper));
 }
 
 @media (hover: hover) and (pointer: fine) {
   .book-detail-export-settings-option:hover {
-    border-color: color-mix(in srgb, var(--ink) 30%, var(--line));
+    border-color: var(--detail-tile-border-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 30%, var(--line))));
   }
 }
 
@@ -102,11 +113,11 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
-  border-radius: 9px;
+  border: var(--detail-tile-border-width, var(--shape-edge-width, 1px)) solid var(--detail-tile-border-color, var(--shape-edge-color, color-mix(in srgb, var(--line) 75%, transparent)));
+  border-radius: var(--detail-tile-radius, var(--shape-radius-control, 9px));
   color: var(--ink);
   background: var(--paper);
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--shadow-color) 7%, transparent);
+  box-shadow: var(--detail-tile-shadow, var(--shape-shadow-sm, 0 3px 10px color-mix(in srgb, var(--shadow-color) 7%, transparent)));
   transition:
     border-color 150ms var(--ease-out),
     background-color 150ms var(--ease-out),
@@ -116,7 +127,7 @@
 /* 触屏会在点按时触发 hover，导致位移/底色"粘住"。只给精确指针设备。 */
 @media (hover: hover) and (pointer: fine) {
   .book-detail-quick-download-btn:hover:not(:disabled) {
-    border-color: color-mix(in srgb, var(--ink) 34%, var(--line));
+    border-color: var(--detail-tile-border-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 34%, var(--line))));
     background: color-mix(in srgb, var(--ink) 4%, var(--paper));
     transform: translateY(-1px);
   }

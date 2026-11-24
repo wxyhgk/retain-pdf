@@ -40,7 +40,7 @@
   h1,
   h2 {
     margin: 0;
-    font-family: var(--font-display);
+    font-family: var(--shape-heading-font, var(--font-display));
     letter-spacing: -0.03em;
     font-weight: 700;
   }
@@ -54,6 +54,44 @@
   button,
   .button-link {
     font: inherit;
+  }
+
+  /* 小细节（主题第二轮，变量登记在 @retainpdf/ui 的 shape-tokens/details.ts）。
+     约定：变量没设时一律写 revert-layer 兜底，样式回到「没有这条规则」的结果（浏览器默认，或页面层自己的写法）。
+     不能写成 var(--x)：未定义时属性在计算期失效，会变成 unset，::selection 的背景会变透明、选中看不见。 */
+  ::selection {
+    background: var(--selection-bg, revert-layer);
+    color: var(--selection-fg, revert-layer);
+  }
+
+  /* scrollbar-color 要么 auto，要么两个颜色；只设了一半时整条失效，回到系统默认。
+     scrollbar-width 不继承，所以挂在 *；页面层里写了 scrollbar-width 的地方（隐藏滚动条）照旧优先。 */
+  html {
+    scrollbar-color: var(--scrollbar-thumb, auto) var(--scrollbar-track, transparent);
+  }
+
+  * {
+    scrollbar-width: var(--scrollbar-width, revert-layer);
+  }
+
+  /* 只改没有自己写 outline 的控件的系统聚焦环；各处自己写的 :focus-visible 在页面层，优先级更高，不受影响。 */
+  :where(a[href], button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline-width: var(--focus-ring-width, revert-layer);
+    outline-color: var(--focus-ring-color, revert-layer);
+    outline-style: var(--focus-ring-style, revert-layer);
+  }
+
+  :where(input[type="checkbox"], input[type="radio"]) {
+    accent-color: var(--check-color, revert-layer);
+  }
+
+  /* 光标：只管没有自己写 cursor 的元素（页面层里各处的 cursor: pointer 要改成 var(--cursor-pointer, pointer) 才跟着变）。 */
+  body {
+    cursor: var(--cursor-default, revert-layer);
+  }
+
+  :where(a[href], summary, select, label[for], [role="button"], [role="tab"], [role="menuitem"]):not(:disabled, [aria-disabled="true"]) {
+    cursor: var(--cursor-pointer, revert-layer);
   }
 }
 

@@ -75,7 +75,7 @@ export function CoverActionsPanel({
   return (
     <div className="book-detail-cover-actions sticky top-0 space-y-4">
       <div
-        className="book-detail-cover-preview relative mx-auto flex aspect-[3/4] w-full max-w-none items-center justify-center overflow-hidden rounded-[16px] border border-border/60 bg-gradient-to-br from-muted/80 to-muted/30 bg-cover bg-center shadow-[0_16px_36px_color-mix(in_srgb,var(--shadow-color)_16%,transparent)] sm:mx-0"
+        className="book-detail-cover-preview relative mx-auto flex aspect-[3/4] w-full max-w-none items-center justify-center overflow-hidden bg-gradient-to-br from-muted/80 to-muted/30 bg-cover bg-center sm:mx-0"
         style={coverUrl ? { backgroundImage: `url("${coverUrl}")` } : undefined}
         data-cover-processing={processing ? "true" : "false"}
       >

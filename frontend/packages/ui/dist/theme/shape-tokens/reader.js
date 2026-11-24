@@ -1,8 +1,8 @@
 /**
  * 模块：reader（阅读器外围控件）。说明见 docs/ops/planning/theme-customization/20261124-主题完全可自定义.md「模块划分」。
  *
- * 四个前缀：chrome（顶栏、托盘、下载、实时译文胶囊）、tab（顶栏页签和面板 dock 的页签）、hud（底部页码缩放条）、
- * float（右下工具球、目录/搜索卡、各类弹层、画笔条、待提交药丸）。
+ * 五个前缀：chrome（顶栏、托盘、下载、实时译文胶囊）、tab（顶栏页签和面板 dock 的页签）、hud（底部页码缩放条）、
+ * float（右下工具球、目录/搜索卡、各类弹层、画笔条、待提交药丸）、sheet（PDF 页的纸张：描边、阴影、页间距、圆角、阅读区背景纹理）。
  * 不吃这些变量：PDF 页本身、译文叠层、悬停框和区域高亮、搜索高亮色、状态语义色、进度条、markdown 正文。
  * 每处写法：var(--reader-xxx, var(--shape-全局旋钮, 现在的值))。
  */
@@ -36,5 +36,12 @@ export const READER_SHAPE_TOKENS = [
     { name: "--reader-float-radius", kind: "length", description: "目录/搜索卡、各类弹层、下载菜单、浮层面的圆角", fallback: "var(--shape-radius-surface, 12–18px)" },
     { name: "--reader-float-press-transform", kind: "transform", description: "工具球、浮层关闭钮按下时的位移", fallback: "var(--shape-press-transform, scale(0.94–0.95))" },
     { name: "--reader-float-press-shadow", kind: "shadow", description: "工具球按下时的阴影", fallback: "var(--shape-press-shadow, 和不按时一样)" },
+    // —— sheet（PDF 页纸张；描边和阴影画在页槽外面，不改页槽尺寸，译文叠层对得齐）——
+    { name: "--reader-sheet-border-width", kind: "length", description: "每页 PDF 的描边粗细（用 outline 画在页外，不占位）", fallback: "0" },
+    { name: "--reader-sheet-border-color", kind: "color", description: "每页 PDF 的描边颜色", fallback: "transparent" },
+    { name: "--reader-sheet-shadow", kind: "shadow", description: "每页 PDF 外面再加的一层阴影（页自带的淡阴影照旧）", fallback: "none" },
+    { name: "--reader-sheet-gap", kind: "length", description: "PDF 页和页之间的间距", fallback: "12px" },
+    { name: "--reader-sheet-radius", kind: "length", description: "每页 PDF 的圆角（页槽、页、画布一起圆）", fallback: "0" },
+    { name: "--reader-sheet-backdrop", kind: "image", description: "阅读区（页与页之间）的背景纹理，写 url(...) 或渐变，叠在底色上；装饰包用", fallback: "none" },
 ];
 //# sourceMappingURL=reader.js.map

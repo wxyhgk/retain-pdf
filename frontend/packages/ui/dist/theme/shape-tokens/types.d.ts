@@ -14,6 +14,8 @@ export type ShapeTokenKind =
  | "transform"
 /** CSS filter 值（如 drop-shadow(...)），可以是 none */
  | "filter"
+/** 图片：只认 none 或渐变；url() 只能由内置皮肤或装饰包运行时写，用户自定义主题不许写 */
+ | "image"
 /** 只能取 values 里列出的几个词之一（如显示开关 block / none） */
  | "keyword";
 export type ShapeToken = {

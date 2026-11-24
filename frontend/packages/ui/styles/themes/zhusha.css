@@ -5,6 +5,17 @@
  * 方案：docs/ops/planning/theme-customization/20261124-主题完全可自定义.md
  */
 
+/* 标题字体：霞鹜文楷 Medium（OFL-1.1，许可见 frontend/web/decor/zhusha/fonts/OFL-LXGW-WenKai.txt）。
+ * 子集化成 GB2312 一级常用字 + 符号 + ASCII（约 4500 字，960KB woff2）；只有选了这个皮肤、页面上真的用到这个字体时
+ * 浏览器才下载。路径相对构建产物 dist/css/*.css（网页、桌面端、Docker 的目录结构一样）。 */
+@font-face {
+  font-family: "LXGW WenKai";
+  src: url("../../decor/zhusha/fonts/wenkai-medium.woff2") format("woff2");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 [data-theme="zhusha"] {
   /* 纸：米黄底、更浅的卡面 */
   --bg: #f3e6cf;
@@ -81,6 +92,43 @@
   --shell-pad-inline-narrow: clamp(12px, 3vw, 20px);
   --header-width: min(1000px, 100%);
   --stage-width: min(1000px, 100%);
+
+  /* 标题用霞鹜文楷（上面的 @font-face），缺字时落回系统字体 */
+  --shape-heading-font: "LXGW WenKai", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+
+  /* 书架：每排书下面一块搁板，封面轻轻错开倾斜，书页厚度和书脊折痕 */
+  --grid-align: stretch;
+  --grid-pad-x: 16px;
+  --grid-gap-y: 46px;
+  --shelf-display: block;
+  --shelf-height: 12px;
+  --shelf-offset: 5px;
+  --shelf-color: color-mix(in srgb, var(--ink) 12%, var(--paper));
+  --shelf-edge-width: 2px;
+  --shelf-edge-color: var(--ink);
+  --shelf-shadow: 0 3px 0 var(--ink);
+  --card-tilt: -1.2deg;
+  --card-tilt-alt: 1.2deg;
+  --card-tilt-hover: 0deg;
+  --card-spine-width: 10px;
+  --card-spine-color: color-mix(in srgb, var(--ink) 30%, transparent);
+
+  /* 书籍详情：导出选项选中项用朱红描边区分；危险区保留红边 */
+  --detail-tile-active-border-color: var(--accent);
+  --detail-danger-border-color: var(--danger);
+
+  /* 小细节：朱红选区、墨色滚动条、朱红勾选框 */
+  --selection-bg: color-mix(in srgb, var(--accent) 28%, transparent);
+  --selection-fg: var(--ink);
+  --scrollbar-thumb: color-mix(in srgb, var(--ink) 45%, transparent);
+  --scrollbar-track: transparent;
+  --check-color: var(--accent);
+
+  /* 阅读页：PDF 页墨线描边 + 实色硬阴影，像一张张纸 */
+  --reader-sheet-border-width: 2px;
+  --reader-sheet-border-color: var(--ink);
+  --reader-sheet-shadow: 6px 6px 0 var(--ink);
+  --reader-sheet-gap: 22px;
 
   /* 氛围垫层：背景图自带纸纹，这里只留很淡的一层 */
   --mat-fiber: color-mix(in srgb, var(--ink) 1.5%, transparent);

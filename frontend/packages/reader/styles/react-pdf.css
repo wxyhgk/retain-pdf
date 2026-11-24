@@ -19,6 +19,7 @@
   inset: 60px 0 0;
   overflow: auto;
   background: var(--bg, var(--reader-page-bg));
+  background-image: var(--reader-sheet-backdrop, none); /* 阅读区背景纹理，皮肤用 */
   scrollbar-width: none;
   -ms-overflow-style: none;
   transition: right 180ms ease;
@@ -164,7 +165,7 @@
   line-height: 1;
   padding: 6px 10px;
   border-radius: 999px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   backdrop-filter: blur(6px);
   transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
@@ -196,11 +197,15 @@
   }
 }
 
-/* 页槽：父级 flex 居中；只留底边距做页间距 */
+/* 页槽：父级 flex 居中；只留底边距做页间距。
+   纸张描边用 outline、阴影用 box-shadow 画在页槽外面：不占位，页槽宽高（JS 内联）和里面的译文叠层坐标都不变。 */
 .reader-react-pdf-page-slot {
   display: block;
   position: relative;
-  margin: 0 0 12px;
+  margin: 0 0 var(--reader-sheet-gap, 12px);
+  border-radius: var(--reader-sheet-radius, 0);
+  outline: var(--reader-sheet-border-width, 0) solid var(--reader-sheet-border-color, transparent);
+  box-shadow: var(--reader-sheet-shadow, none);
   flex-shrink: 0;
   box-sizing: border-box;
   background: transparent;
@@ -351,7 +356,7 @@
   font-weight: 650;
   line-height: 1;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   pointer-events: auto;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 10%, transparent);
 }
@@ -369,7 +374,7 @@
   font-size: 10.5px;
   line-height: 1;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
   pointer-events: auto;
 }
 
@@ -433,6 +438,7 @@
 .reader-react-pdf-page {
   box-shadow: 0 8px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent);
   background: var(--paper);
+  border-radius: var(--reader-sheet-radius, 0);
 }
 
 /* 不要覆盖 canvas 的 width/height：react-pdf 已按 DPR 设置 CSS 尺寸，
@@ -440,6 +446,7 @@
 .reader-react-pdf-page canvas {
   display: block;
   max-width: none !important;
+  border-radius: var(--reader-sheet-radius, 0);
 }
 /* 宽度在变的时候（拖笔记和书之间的分隔线、开关面板；use-keep-page-on-resize 在壳上挂的类）每页画布一层：
    浏览器搬这一层，不把整页像素每帧重新栅格化一遍。平时不成层：画布上盖着几千个绝对定位的文字块，
@@ -543,7 +550,7 @@
   background: transparent;
   color: var(--paper);
   font: inherit;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 
 .reader-react-error-retry:hover {
@@ -585,7 +592,7 @@
   background: var(--paper, #fff);
   color: var(--ink);
   font: inherit;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 
 .reader-error-notice-retry:hover {
@@ -604,7 +611,7 @@
   color: inherit;
   font-size: 16px;
   line-height: 1;
-  cursor: pointer;
+  cursor: var(--cursor-pointer, pointer);
 }
 
 .reader-error-notice-dismiss:hover {

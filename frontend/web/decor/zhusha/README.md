@@ -9,6 +9,7 @@
 |---|---|---|
 | 颜色、描边、硬阴影、按钮和书卡形状 | 代码（主题变量） | `frontend/packages/ui/styles/themes/zhusha.css` |
 | 书签丝带、书卡折角 | 代码（纯 CSS，不用图） | 同上 |
+| 标题字体（霞鹜文楷 Medium，OFL） | 代码 + 子集化字体文件 | `fonts/wenkai-medium.woff2`（GB2312 一级常用字 + 符号，约 960KB）、`fonts/OFL-LXGW-WenKai.txt` |
 | 背景（纸纹 + 四角云纹）、人物 | **素材，放在本文件夹** | `frontend/web/decor/zhusha/` |
 
 素材到齐之前主题照样能用，只是没有背景图和人物。

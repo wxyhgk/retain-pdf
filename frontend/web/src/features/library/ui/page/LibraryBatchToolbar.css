@@ -10,7 +10,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--heading-font, inherit);
+  font-family: var(--heading-font, var(--shape-heading-font, inherit));
   font-size: var(--heading-size, 15px);
   font-weight: var(--heading-weight, var(--shape-heading-weight, 600));
   letter-spacing: -0.025em;

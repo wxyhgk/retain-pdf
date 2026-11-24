@@ -29,8 +29,8 @@
   scrollbar-width: none;
   gap: 4px;
   padding: 3px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
+  border: var(--detail-tabs-border-width, var(--shape-edge-width, 1px)) solid var(--detail-tabs-border-color, var(--shape-edge-color, var(--line)));
+  border-radius: var(--detail-tabs-radius, var(--shape-radius-control, 11px));
   background: color-mix(in srgb, var(--ink) 4%, transparent);
 }
 
@@ -44,14 +44,14 @@
   min-height: 30px;
   padding: 4px 13px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--detail-tab-radius, var(--shape-radius-control, 8px));
   white-space: nowrap;
   cursor: pointer;
   font-size: var(--ui-text-sm);
   font-weight: 600;
   line-height: 1.2;
-  color: var(--muted) !important;
-  background: transparent !important;
+  color: var(--muted);
+  background: transparent;
   transition:
     background-color 150ms var(--ease-out),
     color 150ms var(--ease-out),
@@ -73,15 +73,15 @@
 
 @media (hover: hover) and (pointer: fine) {
   .book-detail-right-tab:hover {
-    color: var(--ink) !important;
-    background: color-mix(in srgb, var(--ink) 6%, transparent) !important;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--ink) 6%, transparent);
   }
 }
 
 .book-detail-right-tab[data-state="active"],
 .book-detail-right-tab.is-active {
-  color: var(--paper) !important;
-  background: var(--ink) !important;
+  color: var(--paper);
+  background: var(--ink);
 }
 
 .book-detail-right-panel {

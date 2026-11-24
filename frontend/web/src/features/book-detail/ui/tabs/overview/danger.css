@@ -9,8 +9,9 @@
   justify-content: space-between;
   gap: 16px;
   padding: 12px 16px;
-  border: 1px solid color-mix(in srgb, var(--danger) 22%, var(--line));
-  border-radius: 18px;
+  border: var(--detail-card-border-width, var(--shape-edge-width, 1px)) solid var(--detail-danger-border-color, var(--shape-edge-color, color-mix(in srgb, var(--danger) 22%, var(--line))));
+  border-radius: var(--detail-card-radius, var(--shape-radius-surface, 18px));
+  box-shadow: var(--detail-card-shadow, var(--shape-shadow-md, none));
 }
 
 .book-detail-overview-danger > div {

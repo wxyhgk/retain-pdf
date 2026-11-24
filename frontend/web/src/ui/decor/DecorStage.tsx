@@ -12,6 +12,7 @@
 import { useEffect, useRef, useState } from "react";
 import { THEME_CHANGE_EVENT, getTheme, getThemeDefinition } from "@retainpdf/ui/theme";
 import { planStage, type StagePlan } from "./stage-plan.js";
+import { applyOrnaments, clearOrnaments } from "./ornament-runtime.js";
 import { defaultDecorManifestPort, type DecorManifestFetchPort } from "./decor-manifest-port.js";
 
 function currentPack(): string {
@@ -76,7 +77,11 @@ export function DecorStage({ manifestPort, fetchImpl }: DecorStageProps = {}) {
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
       .then((json) => {
         if (!alive) return;
-        const result = planStage(json, { assetBase, reducedMotion: prefersReducedMotion() });
+        const result = planStage(json, {
+          assetBase,
+          reducedMotion: prefersReducedMotion(),
+          baseHref: document.baseURI,
+        });
         if (result.ok) {
           setPlan(result.plan);
         } else {
@@ -93,6 +98,14 @@ export function DecorStage({ manifestPort, fetchImpl }: DecorStageProps = {}) {
       alive = false;
     };
   }, [pack, resolvedPort]);
+
+  // 装饰位：manifest 里的 ornaments 写到 <html>（换主题 / 加载失败 / 卸载时清掉）。
+  // 阅读页没有舞台，由 bootOrnaments 单独拉；这里复用已经拉到的 manifest，不再请求第二遍。
+  useEffect(() => {
+    if (plan) applyOrnaments(plan.ornaments);
+    else clearOrnaments();
+  }, [plan]);
+  useEffect(() => () => clearOrnaments(), []);
 
   // 鼠标视差：rAF 节流，只写宿主 CSS 变量，各层用自己的 parallax 系数消费
   const hasParallax = !!plan?.layers.some((layer) => layer.parallax > 0);
@@ -118,7 +131,7 @@ export function DecorStage({ manifestPort, fetchImpl }: DecorStageProps = {}) {
     };
   }, [hasParallax]);
 
-  if (!plan) return null;
+  if (!plan || (plan.layers.length === 0 && !plan.quote)) return null;
 
   return (
     <div ref={hostRef} className="decor-stage">

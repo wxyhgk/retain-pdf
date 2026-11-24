@@ -4364,75 +4364,79 @@ function ud(e) {
     liveTranslation: a = null,
     completion: s = null
   } = e, i = e.sourceViewOnly ?? (t == null ? void 0 : t.sourceViewOnly) ?? !1, l = a ? cd(a.state) : "";
-  return /* @__PURE__ */ p("header", { className: "reader-workspace-bar", children: /* @__PURE__ */ L("div", { className: "reader-workspace-center", children: [
-    /* @__PURE__ */ p("div", { className: "reader-workspace-tabs", role: "tablist", "aria-label": "阅读工作区", children: ld.map(({ id: c, label: d, Icon: f }) => {
-      const u = n === c, m = dd({
-        id: c,
-        documentReady: r,
-        sourceViewOnly: i,
-        liveTranslationAvailable: !!a
-      });
-      return /* @__PURE__ */ L(
-        "button",
-        {
-          type: "button",
-          className: `reader-workspace-tab${u ? " is-active" : ""}`,
-          role: "tab",
-          "aria-selected": u,
-          "aria-label": d,
-          title: m ? `${d} 需要文档任务` : d,
-          disabled: m,
-          onClick: () => o(c),
-          children: [
-            /* @__PURE__ */ p(f, { size: 15, strokeWidth: 2.2, "aria-hidden": !0 }),
-            /* @__PURE__ */ p("span", { className: "reader-workspace-tab-label", children: d })
-          ]
-        },
-        c
-      );
-    }) }),
-    a ? /* @__PURE__ */ L("div", { className: "reader-live-strip", children: [
-      /* @__PURE__ */ L(
-        "button",
-        {
-          type: "button",
-          className: `reader-live-translation-toggle is-${a.state.connection}${a.visible ? " is-active" : ""}`,
-          "aria-pressed": a.visible,
-          "aria-label": a.visible ? "隐藏实时译文" : "显示实时译文",
-          title: a.state.error || `${l}，${a.visible ? "点一下看原文" : "点一下叠上译文"}`,
-          onClick: a.onToggle,
-          children: [
-            /* @__PURE__ */ p(La, { size: 14, strokeWidth: 2.2, "aria-hidden": !0 }),
-            /* @__PURE__ */ p("span", { className: "reader-live-translation-toggle-label", children: l })
-          ]
-        }
-      ),
-      a.latestPage && a.onJumpToLatest && a.latestPage !== a.currentPage ? /* @__PURE__ */ L(
+  return /* @__PURE__ */ L("header", { className: "reader-workspace-bar", children: [
+    /* @__PURE__ */ p("span", { className: "theme-ornament", "data-ornament": "reader-bar-left", "aria-hidden": "true" }),
+    /* @__PURE__ */ p("span", { className: "theme-ornament", "data-ornament": "reader-bar-right", "aria-hidden": "true" }),
+    /* @__PURE__ */ L("div", { className: "reader-workspace-center", children: [
+      /* @__PURE__ */ p("div", { className: "reader-workspace-tabs", role: "tablist", "aria-label": "阅读工作区", children: ld.map(({ id: c, label: d, Icon: f }) => {
+        const u = n === c, m = dd({
+          id: c,
+          documentReady: r,
+          sourceViewOnly: i,
+          liveTranslationAvailable: !!a
+        });
+        return /* @__PURE__ */ L(
+          "button",
+          {
+            type: "button",
+            className: `reader-workspace-tab${u ? " is-active" : ""}`,
+            role: "tab",
+            "aria-selected": u,
+            "aria-label": d,
+            title: m ? `${d} 需要文档任务` : d,
+            disabled: m,
+            onClick: () => o(c),
+            children: [
+              /* @__PURE__ */ p(f, { size: 15, strokeWidth: 2.2, "aria-hidden": !0 }),
+              /* @__PURE__ */ p("span", { className: "reader-workspace-tab-label", children: d })
+            ]
+          },
+          c
+        );
+      }) }),
+      a ? /* @__PURE__ */ L("div", { className: "reader-live-strip", children: [
+        /* @__PURE__ */ L(
+          "button",
+          {
+            type: "button",
+            className: `reader-live-translation-toggle is-${a.state.connection}${a.visible ? " is-active" : ""}`,
+            "aria-pressed": a.visible,
+            "aria-label": a.visible ? "隐藏实时译文" : "显示实时译文",
+            title: a.state.error || `${l}，${a.visible ? "点一下看原文" : "点一下叠上译文"}`,
+            onClick: a.onToggle,
+            children: [
+              /* @__PURE__ */ p(La, { size: 14, strokeWidth: 2.2, "aria-hidden": !0 }),
+              /* @__PURE__ */ p("span", { className: "reader-live-translation-toggle-label", children: l })
+            ]
+          }
+        ),
+        a.latestPage && a.onJumpToLatest && a.latestPage !== a.currentPage ? /* @__PURE__ */ L(
+          ne,
+          {
+            className: "reader-live-translation-toggle reader-live-jump",
+            "aria-label": `跳到最新译好的第 ${a.latestPage} 页`,
+            title: `跳到最新译好的第 ${a.latestPage} 页`,
+            onClick: a.onJumpToLatest,
+            children: [
+              /* @__PURE__ */ p(Ca, { size: 14, strokeWidth: 2.2, "aria-hidden": !0 }),
+              /* @__PURE__ */ p("span", { className: "reader-live-translation-toggle-label", children: "跳到最新" })
+            ]
+          }
+        ) : null
+      ] }) : s ? /* @__PURE__ */ p("div", { className: "reader-live-strip", children: /* @__PURE__ */ L(
         ne,
         {
-          className: "reader-live-translation-toggle reader-live-jump",
-          "aria-label": `跳到最新译好的第 ${a.latestPage} 页`,
-          title: `跳到最新译好的第 ${a.latestPage} 页`,
-          onClick: a.onJumpToLatest,
+          className: "reader-live-translation-toggle is-done",
+          title: "翻译完成，左右对照看最终译文",
+          onClick: s.onOpenCompare,
           children: [
-            /* @__PURE__ */ p(Ca, { size: 14, strokeWidth: 2.2, "aria-hidden": !0 }),
-            /* @__PURE__ */ p("span", { className: "reader-live-translation-toggle-label", children: "跳到最新" })
+            /* @__PURE__ */ p(Da, { size: 14, strokeWidth: 2.2, "aria-hidden": !0 }),
+            /* @__PURE__ */ p("span", { className: "reader-live-translation-toggle-label", children: "翻译完成 · 看对照" })
           ]
         }
-      ) : null
-    ] }) : s ? /* @__PURE__ */ p("div", { className: "reader-live-strip", children: /* @__PURE__ */ L(
-      ne,
-      {
-        className: "reader-live-translation-toggle is-done",
-        title: "翻译完成，左右对照看最终译文",
-        onClick: s.onOpenCompare,
-        children: [
-          /* @__PURE__ */ p(Da, { size: 14, strokeWidth: 2.2, "aria-hidden": !0 }),
-          /* @__PURE__ */ p("span", { className: "reader-live-translation-toggle-label", children: "翻译完成 · 看对照" })
-        ]
-      }
-    ) }) : null
-  ] }) });
+      ) }) : null
+    ] })
+  ] });
 }
 const fd = Qr(function({ size: t = 24, strokeWidth: n = 2, color: r = "currentColor", className: o, ...a }, s) {
   return /* @__PURE__ */ L(
@@ -8007,7 +8011,7 @@ function mf({ edit: e }) {
     ) : null
   ] });
 }
-const hf = da(() => import("./ReaderMarkdownPanel-B_BQct_t.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
+const hf = da(() => import("./ReaderMarkdownPanel-D4fYJMbt.js").then((e) => ({ default: e.ReaderMarkdownPanel })));
 function pf(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantOpen && e.mode === "compare" ? "source" : e.mode, a = !t && (o === "translated" || o === "compare");
   return {
@@ -8308,4 +8312,4 @@ export {
   xf as r,
   We as u
 };
-//# sourceMappingURL=ReaderApp-Bwy6ZcPM.js.map
+//# sourceMappingURL=ReaderApp-CJPrqN9H.js.map

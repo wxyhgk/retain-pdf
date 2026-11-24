@@ -82,6 +82,9 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
   const liveCopy = liveTranslation ? liveTranslationStatusCopy(liveTranslation.state) : "";
   return (
     <header className="reader-workspace-bar">
+      {/* 装饰位钩子：顶栏两端（装饰包 ornaments.reader-bar-left / reader-bar-right），绝对定位，不占位 */}
+      <span className="theme-ornament" data-ornament="reader-bar-left" aria-hidden="true" />
+      <span className="theme-ornament" data-ornament="reader-bar-right" aria-hidden="true" />
       {/* 进度那一组挂在页签右边（相对这一层定位），页签照旧相对视口居中；
           以前放在最左边，和「目录」按钮压在一起。 */}
       <div className="reader-workspace-center">

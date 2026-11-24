@@ -10,6 +10,7 @@
 
 import { validateDecorManifest } from "./contract.js";
 import { getDecorSlot, type DecorLayerBand, type DecorSlotId } from "./slots.js";
+import { planOrnaments, type OrnamentPlan } from "./ornament-plan.js";
 
 export type StageLayerPlan = {
   key: string;
@@ -34,6 +35,8 @@ export type StageQuotePlan = {
 export type StagePlan = {
   layers: StageLayerPlan[];
   quote: StageQuotePlan | null;
+  /** manifest.ornaments 的注入计划（舞台不画它，DecorStage 交给 applyOrnaments） */
+  ornaments: OrnamentPlan;
 };
 
 export type StagePlanResult =
@@ -45,6 +48,8 @@ export type StagePlanOptions = {
   assetBase: string;
   /** prefers-reduced-motion：parallax 归零（图片版舞台本就不渲染 3D） */
   reducedMotion?: boolean;
+  /** 装饰位图片地址的绝对化基准（运行时传 document.baseURI，见 ornament-runtime.ts） */
+  baseHref?: string;
 };
 
 export function planStage(input: unknown, options: StagePlanOptions): StagePlanResult {
@@ -80,5 +85,7 @@ export function planStage(input: unknown, options: StagePlanOptions): StagePlanR
       }
     : null;
 
-  return { ok: true, plan: { layers, quote }, errors: [] };
+  const ornaments = planOrnaments(manifest.ornaments, { assetBase: base, baseHref: options.baseHref });
+
+  return { ok: true, plan: { layers, quote, ornaments }, errors: [] };
 }

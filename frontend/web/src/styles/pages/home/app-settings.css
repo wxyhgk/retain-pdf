@@ -190,8 +190,9 @@
   gap: 14px;
   max-width: 460px;
   padding: 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius-lg);
+  border: var(--detail-card-border-width, var(--shape-edge-width, 1px)) solid var(--detail-card-border-color, var(--shape-edge-color, var(--line)));
+  border-radius: var(--detail-card-radius, var(--shape-radius-surface, var(--ui-radius-lg)));
+  box-shadow: var(--detail-card-shadow, var(--shape-shadow-md, none));
 
   & p {
     margin: 0;
@@ -233,20 +234,20 @@
   display: grid;
   gap: 8px;
   padding: 8px 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius-lg);
+  border: var(--detail-tile-border-width, var(--shape-edge-width, 1px)) solid var(--detail-tile-border-color, var(--shape-edge-color, var(--line)));
+  border-radius: var(--detail-tile-radius, var(--shape-radius-surface, var(--ui-radius-lg)));
   background: var(--paper);
   text-align: left;
   cursor: pointer;
-  box-shadow: none;
+  box-shadow: var(--detail-tile-shadow, var(--shape-shadow-sm, none));
   transition:
     border-color 150ms var(--ease-out),
     box-shadow 150ms var(--ease-out),
     transform 160ms var(--ease-out);
 
   &:hover {
-    border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
-    box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow-color) 8%, transparent);
+    border-color: var(--detail-tile-border-color, var(--shape-edge-color, color-mix(in srgb, var(--accent) 35%, var(--line))));
+    box-shadow: var(--detail-tile-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--shadow-color) 8%, transparent)));
   }
 
   &:active {
@@ -257,7 +258,7 @@
     border-color: var(--accent);
     box-shadow:
       inset 0 0 0 1px var(--accent),
-      0 6px 18px color-mix(in srgb, var(--shadow-color) 8%, transparent);
+      var(--detail-tile-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--shadow-color) 8%, transparent)));
   }
 }
 

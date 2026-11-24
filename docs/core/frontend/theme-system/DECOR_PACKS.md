@@ -74,6 +74,65 @@ z-index 低 → 高
 }
 ```
 
+## 装饰位（ornaments）
+
+锚点（slots）是整页舞台上的位置；**装饰位**是挂在具体组件上的小图——书库标题旁的印章、弹窗角花、底栏按钮贴面、
+顶栏页签贴面、阅读器顶栏两端等。任何主题的装饰包都能挂，不用改组件、不用写点名主题 id 的 CSS。
+真值：白名单 `web/src/ui/decor/ornaments.ts`，校验 `ornament-contract.ts`，注入 `ornament-plan.ts` / `ornament-runtime.ts`，
+显示规则 `packages/ui/styles/ornaments.css`。
+
+### manifest 写法
+
+```jsonc
+{
+  "version": 1,
+  "id": "mojia",
+  "layers": [ /* 舞台层；只想挂装饰位、不要舞台时可以写 [] */ ],
+  "ornaments": {
+    "bottom-add":      { "src": "gear-btn.webp",  "hideIcon": true, "hover": "rotate" },
+    "bottom-settings": { "src": "tools-btn.webp", "hideIcon": true, "hover": "lift" },
+    "library-title":   { "src": "seal.webp", "width": 32, "height": 32, "offsetX": 4, "offsetY": -2 }
+  }
+}
+```
+
+| 字段 | 说明 |
+|---|---|
+| `src` | 必填。包内相对路径，只许字母、数字、`.` `_` `-` `/`；扩展名 webp/png/svg/avif。不许绝对路径、协议、`..`、引号括号空白 |
+| `width` / `height` | 显示宽高 px，1~512；缺省用下表的建议尺寸。铺满型（`cover-placeholder`）不能写 |
+| `offsetX` / `offsetY` | 相对默认位置的偏移 px，-200~200，右、下为正 |
+| `hideIcon` | `true` = 用这张图替换宿主原图标 / 底板（只有表里「可换」的装饰位能写） |
+| `hover` | `"rotate"` 悬停转 45°，`"lift"` 悬停上抬 2px（只有按钮、页签类能写）；写的是名字，不能写任意 transform |
+
+名字不在白名单、路径不安全、扩展名不对、数值越界都会被 `validateDecorManifest` 拒绝。单个装饰图同样受 512 KB 预算。
+
+### 白名单
+
+| 名字 | 挂在哪 | 建议尺寸 | 默认定位 | hideIcon |
+|---|---|---|---|---|
+| `library-title` | 书库标题「全部书库」旁（LibraryToolbar） | 28×28 | 跟在标题后，垂直居中 | 不可 |
+| `dialog-corner` | 所有弹窗右上角（@retainpdf/ui DialogContent） | 56×56 | 向外探出 4px，在关闭钮下面 | 不可 |
+| `empty-state` | 空状态插画（EmptyState） | 96×96 | 仪器图标上方居中 | 可：整块换掉仪器图标 |
+| `cover-placeholder` | 无封面书的占位（BookCardCover） | 铺满 | 铺满封面区（cover） | 可：藏掉 PDF 图标和字 |
+| `bottom-add` / `bottom-tasks` / `bottom-guide` / `bottom-settings` | 底栏四个按钮 | 46×46 | 按钮正中 | 可：去掉按钮的底、描边、阴影，藏 svg，整颗换成图 |
+| `top-tab-library` / `top-tab-collections` | 顶栏「图书馆」「合集」页签 | 24×24 | 页签左侧图标位 | 可：藏原图标 |
+| `book-cover-tape` | 书卡封面顶边的纸胶带 | 64×22 | 顶边正中，倾斜 -3° | 不可 |
+| `reader-bar-left` / `reader-bar-right` | 阅读器顶栏两端 | 40×40 | 「目录」右边 / 下载关闭托盘左边；≤ 720px 不显示 | 不可 |
+
+### 怎么工作
+
+1. 组件里放钩子 `<span class="theme-ornament" data-ornament="<名字>" aria-hidden="true" />`。不设图时 `display:none`，
+   不占位、不占 flex 间距——**没有装饰位的皮肤逐像素不变**。
+2. 运行时拉当前主题装饰包的 manifest，`planOrnaments` 算出变量，写到 `<html>`：
+   `--ornament-<名字>`（`url("…")`，运行时用 `document.baseURI` 拼成绝对地址，因为 CSS 变量里的相对地址按样式表位置算）、
+   `-w -h -x -y -hover`，再写两个标记 `data-ornaments="名字 …"`（有图的）、`data-ornaments-hide="名字 …"`（要换掉原图标的）。
+   CSS 靠这两个标记决定显示和 hideIcon，因为 CSS 判断不了变量是否存在。换主题时先清旧的再写新的。
+3. 首页：`DecorStage` 拉到 manifest 后顺手注入（不多请求一次）；阅读页没有舞台，入口 `app/reader/entry.tsx`
+   调 `bootOrnaments()`，按当前主题拉 manifest、只注入装饰位，监听 `THEME_CHANGE_EVENT`。
+4. 新增装饰位：`ornaments.ts` 登记 → `ornaments.css` 补一块显示规则（默认尺寸要和白名单一致）→ 组件里放钩子；
+   `tests/shared/decor-ornaments.test.mjs` 核对三处对得上。
+5. `book-cover-tape` 这类需要宿主做定位基准的（封面区要 `position: relative`），宿主自己负责。
+
 ## 硬规则（validateDecorManifest 强制）
 
 | 规则 | 理由 |
@@ -82,7 +141,7 @@ z-index 低 → 高
 | backdrop 禁挂 3D | 性能红线；背景用 image + parallax 以假乱真 |
 | 3D 图层 ≤ 3 | 单画布单 renderer，多了必卡 |
 | 图层总数 ≤ 12 | 防"贴满屏"失控 |
-| src 仅包内相对路径 | 禁止 `..` / 绝对路径 / http: / data: |
+| src 仅包内相对路径 | 禁止 `..` / 绝对路径 / http: / data: / `//`；字符只许 `[A-Za-z0-9._/-]`（装饰位路径会拼进 CSS `url("…")`，必须防注入） |
 | parallax ∈ [0, 0.2] | 视差是点缀不是特技 |
 | quote 只能挂 textCapable 锚点 | 文字排版由舞台统一处理 |
 

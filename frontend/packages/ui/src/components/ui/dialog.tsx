@@ -79,6 +79,9 @@ function DialogContent({
         )}
         {...props}
       >
+        {/* 装饰位钩子：右上角角花（装饰包 ornaments.dialog-corner）。排在最前、绝对定位，
+            在关闭钮下面；不设图时 display:none，不影响 overflow 和布局。 */}
+        <span className="theme-ornament" data-ornament="dialog-corner" aria-hidden="true" />
         {children}
         {showCloseButton ? <DialogCloseButton /> : null}
       </DialogPrimitive.Content>

@@ -3,9 +3,9 @@ import type { ShapeToken } from "./types.js";
 /** 模块：form。说明见 docs/ops/planning/theme-customization/20261124-主题完全可自定义.md「模块划分」。 */
 export const FORM_SHAPE_TOKENS: ShapeToken[] = [
   // 输入框、textarea、下拉（field.css）
-  { name: "--field-border-width", kind: "length", description: "输入框、多行框、下拉的描边粗细", fallback: "var(--shape-edge-width, 1px)" },
+  { name: "--field-border-width", kind: "length", description: "输入框、多行框、下拉的描边粗细（设置、凭据里走全局元素样式的输入框也吃它）", fallback: "var(--shape-edge-width, 1px)" },
   { name: "--field-border-color", kind: "color", description: "输入框、多行框、下拉的描边颜色（聚焦、错误态颜色不受它管）", fallback: "var(--shape-edge-color, var(--line))" },
-  { name: "--field-radius", kind: "length", description: "输入框、多行框、下拉的圆角", fallback: "var(--shape-radius-control, var(--ui-radius-md))" },
+  { name: "--field-radius", kind: "length", description: "输入框、多行框、下拉的圆角（同上，包括设置、凭据对话框里按 id 单独写了圆角的几个）", fallback: "var(--shape-radius-control, var(--ui-radius-md))" },
   { name: "--field-shadow", kind: "shadow", description: "输入框、多行框、下拉平时的阴影", fallback: "var(--shape-shadow-sm, none)" },
   { name: "--field-focus-shadow", kind: "shadow", description: "输入框聚焦时的阴影（不设则和平时一样）", fallback: "var(--field-shadow, var(--shape-shadow-sm, none))" },
   // 分段切换（choice.css）
