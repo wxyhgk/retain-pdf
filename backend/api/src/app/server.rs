@@ -68,6 +68,22 @@ async fn serve_with_shutdown(
         config.cleanup.interval,
     );
 
+    // 书库的后台对账：改了译文、切换了译文版本、同步收进改动后重建全文索引；导出过书文件夹的话刷新它。
+    // 只在真实服务里开（单测里的 build_state 不带后台任务），jobsd 进程不开：books/ 只有 API 进程写。
+    // RUST_API_LIBRARY_REFRESH_SECS（默认 60）；0 = 关掉。
+    let library_refresh_secs = retainpdf_core::config::env_vars::env_u64("RUST_API_LIBRARY_REFRESH_SECS", 60);
+    let _library_refresh_handle = (library_refresh_secs > 0).then(|| {
+        crate::services::library::spawn_library_refresh(
+            crate::services::library::LibraryRefreshDeps {
+                db: (*state.db).clone(),
+                data_root: state.config.data_root.clone(),
+                python_bin: state.config.python_bin.clone(),
+                pipeline_command: state.config.pipeline_command.clone(),
+            },
+            std::time::Duration::from_secs(library_refresh_secs),
+        )
+    });
+
     // 端点使用计数:同样属于运维观测,只在真实服务启动时开,不打扰单测。
     // 计数累加式落盘,重启不清零——要的是跨天的样本。
     // 计数是进程全局的（谁先 init 归谁），单测进程里起真实服务（停机测试）时不开，

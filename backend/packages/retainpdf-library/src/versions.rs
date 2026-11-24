@@ -19,9 +19,6 @@ use crate::merge::reading::{document_merge_sources, ReadingSelection};
 /// 切到一个已隐藏的版本：409 的 `error.details.reason`（先 `PATCH … {hidden: false}` 恢复再选）。
 pub(crate) const VERSION_HIDDEN: &str = "version_hidden";
 
-/// 来源版本链最多往上找几层（防环、防异常数据）。
-const MAX_CHAIN: usize = 32;
-
 /// 只翻一部分页时的来源版本：用户选了当前版本就是它，自动模式取最新的（没隐藏的）版本。
 pub(crate) fn reading_base_version(db: &Db, document_id: &str) -> Result<Option<String>, AppError> {
     let versions = db.list_translation_versions(document_id, false)?;
@@ -42,20 +39,9 @@ fn version_of_document(db: &Db, document_id: &str, version_id: &str) -> Result<T
 
 /// 读这个版本要用的任务，分层：最底下的来源版本在前，这个版本在最后。
 pub(crate) fn version_selection(db: &Db, document_id: &str, version_id: &str) -> Result<ReadingSelection, AppError> {
-    let mut layers = Vec::new();
-    let mut seen = BTreeSet::new();
-    let mut next = Some(version_of_document(db, document_id, version_id)?);
-    while let Some(version) = next.take() {
-        if !seen.insert(version.version_id.clone()) || layers.len() >= MAX_CHAIN {
-            break;
-        }
-        next = match version.base_version_id.as_deref() {
-            Some(base) => db.get_translation_version(base)?.filter(|base| base.document_id == document_id),
-            None => None,
-        };
-        layers.push(version.job_ids);
-    }
-    layers.reverse();
+    let layers = db
+        .translation_version_layers(document_id, version_id)?
+        .ok_or_else(|| AppError::not_found(format!("translation version not found: {version_id}")))?;
     Ok(ReadingSelection::Version { layers })
 }
 

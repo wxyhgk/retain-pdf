@@ -8,6 +8,7 @@ pub use retainpdf_core::{config, job_failure, models, storage_paths};
 pub mod credentials;
 pub use retainpdf_db::db;
 pub mod job_events;
+pub mod library_signal;
 pub mod ocr_provider;
 pub mod runtime_assets;
 pub mod sync;

@@ -77,7 +77,7 @@ pub use admin_users::{OwnerJobRow, UserListPage, UserListQuery, UserListRow, Use
 pub use invites::{InviteRecord, InviteUnavailable, InviteUser};
 pub use ownership::OwnedKind;
 pub use platform_settings::PlatformSettingsRecord;
-pub use documents::DocumentListFilter;
+pub use documents::{DocumentChangeStamp, DocumentListFilter};
 pub use tags::tag_id_for_name;
 pub use translation_versions::TranslationVersionRecord;
 pub use page_quota::{

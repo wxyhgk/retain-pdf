@@ -167,7 +167,9 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
   **不要** 把逻辑写回 `routes/library_*`。
 - 子模块：
   - （书架 `books.rs`、书架列表投影 `book_projection/` 2026-10-22 跟 `/library/books` 一起删了；删任务走任务包的 `JobDeletion`）
+  - `book_export/` — 书文件夹：把书导出成 `<数据目录>/books/` 下的 Markdown 给 AI 读（`POST /book-folder/export`）
   - `collection_workspace.rs` — 合集在磁盘上的目录，只剩删合集时清目录（以前给 AI 服务物化的 agent 工作区 2026-11-03 删了）
+  - `library_refresh.rs` — 书库后台对账：按数据库戳记重建全文索引（按选中的译文版本）、刷新书文件夹（API 进程，`RUST_API_LIBRARY_REFRESH_SECS`）
   - `documents.rs` / `media.rs` — 文档 CRUD 与 source.pdf/cover/thumbnail
   - `translate.rs` — 绑定文档 upload 后调 `JobsFacade::create_submission`
   - `search.rs` — blocks FTS 全文检索

@@ -31,18 +31,23 @@
 //!
 //! # 什么时候重写
 //!
-//! 这一版只在调导出接口时写（`POST /api/v1/book-folder/export`、`retainpdf books export`）。每本书算一个来源指纹
-//! （格式版本、书名、作者、页数、译文版本、参与的任务和它们的区块指纹），和 meta.json 里的一样就不动。
-//! 改译文会改区块指纹，所以再导出一次就会重写。自动重写（改动处记一笔、启动时对账）是后续的事。
+//! - 调导出接口时（`POST /api/v1/book-folder/export`、`retainpdf books export`）。每本书算一个来源指纹
+//!   （格式版本、书名、作者、页数、译文版本、参与的任务和它们的区块指纹），和 meta.json 里的一样就不动。
+//! - 导出过一次（`books/` 在）以后，书库的后台对账（[`crate::library_refresh`]）定时比每本书的数据库戳记
+//!   （`Db::document_change_stamps`，记在 meta.json 的 `change_stamp`），变了才对这本书走一遍上面的导出；
+//!   书删了删文件夹，书目变了重写 `library.md`。改译文、切换译文版本会提前叫醒它。
+//!
+//! 导出接口和后台对账不会同时写：都拿 [`EXPORT_LOCK`]。只有 API 进程写 `books/`（jobsd 不跑对账）。
 
 mod collect;
 mod names;
 mod render;
 mod write;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -50,7 +55,7 @@ use sha2::{Digest, Sha256};
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::api::DocumentRecord;
 use retainpdf_core::models::domain::now_iso;
-use retainpdf_data::db::Db;
+use retainpdf_data::db::{Db, DocumentChangeStamp};
 use retainpdf_files::DerivedArtifactDeps;
 
 use crate::media::document_source;
@@ -69,11 +74,24 @@ pub(crate) const BOOKS_DIR: &str = "books";
 /// 导出格式一变就加一：进了来源指纹，旧文件夹下次导出全部重写。
 const FORMAT_VERSION: u32 = 1;
 
-struct OwnedDeps {
-    db: Db,
-    data_root: PathBuf,
-    python_bin: String,
-    pipeline_command: String,
+/// 导出、后台对账在阻塞线程里要用的那几样。
+pub(crate) struct OwnedDeps {
+    pub(crate) db: Db,
+    pub(crate) data_root: PathBuf,
+    pub(crate) python_bin: String,
+    pub(crate) pipeline_command: String,
+}
+
+/// 同一时间只有一个在写 `books/`（导出接口、后台对账）：开始时要清上次没收尾的临时目录，并发会删掉别人正在写的。
+static EXPORT_LOCK: Mutex<()> = Mutex::new(());
+
+fn export_lock() -> std::sync::MutexGuard<'static, ()> {
+    EXPORT_LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+}
+
+/// 每本书现在的戳记（`content:card`），写进 meta.json 的 `change_stamp`。
+fn folder_stamp(stamp: &DocumentChangeStamp) -> String {
+    format!("{}:{}", stamp.content, stamp.card)
 }
 
 /// POST /api/v1/book-folder/export：导出（或刷新）书文件夹。可能要生成合并阅读的目录，放进阻塞线程。
@@ -99,9 +117,16 @@ enum Outcome {
 }
 
 fn export(owned: &OwnedDeps, input: &BookFolderExportInput) -> Result<BookFolderExportView, AppError> {
+    let _guard = export_lock();
     let books_root = owned.data_root.join(BOOKS_DIR);
     fs::create_dir_all(&books_root)?;
     remove_stale_temporaries(&books_root);
+    let stamps: HashMap<String, String> = owned
+        .db
+        .document_change_stamps()?
+        .iter()
+        .map(|stamp| (stamp.document_id.clone(), folder_stamp(stamp)))
+        .collect();
     let documents = owned.db.list_documents(u32::MAX, 0, None, None, None)?;
     let by_id: BTreeMap<&str, &DocumentRecord> =
         documents.iter().map(|document| (document.document_id.as_str(), document)).collect();
@@ -134,7 +159,7 @@ fn export(owned: &OwnedDeps, input: &BookFolderExportInput) -> Result<BookFolder
 
     for document in targets {
         view.documents += 1;
-        match export_document(owned, &books_root, document) {
+        match export_document(owned, &books_root, document, stamps.get(&document.document_id).map(String::as_str)) {
             Ok((outcome, removed)) => {
                 view.removed += removed;
                 match outcome {
@@ -186,8 +211,14 @@ fn known_fingerprint<'a>(meta: Option<&'a Value>, job_id: &str) -> Option<&'a st
     })
 }
 
-/// 导出一本书。返回结果和删掉了几个旧文件夹。
-fn export_document(owned: &OwnedDeps, books_root: &Path, document: &DocumentRecord) -> Result<(Outcome, u32), AppError> {
+/// 导出一本书。返回结果和删掉了几个旧文件夹。`change_stamp` 是这本书现在的数据库戳记，记进 meta.json
+/// （来源指纹没变、只是戳记变了时也补上，后台对账下次就不再找它）。
+fn export_document(
+    owned: &OwnedDeps,
+    books_root: &Path,
+    document: &DocumentRecord,
+    change_stamp: Option<&str>,
+) -> Result<(Outcome, u32), AppError> {
     let (db, data_root) = (&owned.db, owned.data_root.as_path());
     let document_id = document.document_id.as_str();
     let name = folder_name(&document.title, document_id);
@@ -263,7 +294,12 @@ fn export_document(owned: &OwnedDeps, books_root: &Path, document: &DocumentReco
         ])
         .to_string(),
     );
-    if current_meta.as_ref().and_then(|meta| meta.get("fingerprint")?.as_str()) == Some(fingerprint.as_str()) {
+    if let Some(meta) = current_meta.as_ref().filter(|meta| meta.get("fingerprint").and_then(Value::as_str) == Some(fingerprint.as_str())) {
+        if change_stamp.is_some() && meta.get("change_stamp").and_then(Value::as_str) != change_stamp {
+            let mut meta = meta.clone();
+            meta["change_stamp"] = json!(change_stamp);
+            replace_file(&current_dir, "meta.json", serde_json::to_string_pretty(&meta).unwrap_or_default().as_bytes())?;
+        }
         return Ok((Outcome::Unchanged, remove_others(Some(&current_dir))?));
     }
 
@@ -313,6 +349,7 @@ fn export_document(owned: &OwnedDeps, books_root: &Path, document: &DocumentReco
         "source_only_job_id": fallback_source.as_ref().filter(|_| filled_source_only).map(|source| source.job_id.clone()),
         "sources": role_sources,
         "fingerprint": fingerprint,
+        "change_stamp": change_stamp,
         "generated_at": now_iso(),
         "source_pdf": source_pdf.as_ref().map(|path| path.to_string_lossy().into_owned()),
         "source_pdf_linked": linked,
@@ -325,6 +362,89 @@ fn export_document(owned: &OwnedDeps, books_root: &Path, document: &DocumentReco
     temp.write("meta.json", serde_json::to_string_pretty(&meta).unwrap_or_default().as_bytes())?;
     let published = temp.publish()?;
     Ok((Outcome::Exported, remove_others(Some(&published))?))
+}
+
+/// 后台对账一轮里书文件夹那一半做了什么。
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct FolderRefreshReport {
+    /// 走了一遍导出的书（戳记变了，或者还没有文件夹）。
+    pub checked: u32,
+    /// 其中真的重写了文件夹的。
+    pub exported: u32,
+    /// 删掉的文件夹（书删了、书改名后的旧名字）。
+    pub removed: u32,
+    pub failed: u32,
+}
+
+/// 后台对账：`books/` 在（导出过一次）才做。戳记和 meta.json 的 `change_stamp`（或上一轮记在 `known` 里的）一样的书
+/// 不碰；变了的走一遍 [`export_document`]（来源指纹没变就只补戳记）；书删了删文件夹；书目有变化才重写 `library.md`。
+/// `known` 是进程内记住的「这本书这个戳记已经处理过」，没内容的书（不写文件夹）靠它不每轮重算。
+pub(crate) fn refresh_folders(
+    owned: &OwnedDeps,
+    stamps: &[DocumentChangeStamp],
+    known: &mut HashMap<String, String>,
+) -> Result<Option<FolderRefreshReport>, AppError> {
+    let books_root = owned.data_root.join(BOOKS_DIR);
+    if !books_root.is_dir() {
+        return Ok(None);
+    }
+    let _guard = export_lock();
+    let mut report = FolderRefreshReport::default();
+    let folders = list_book_dirs(&books_root);
+    let mut folder_stamps: HashMap<&str, Option<String>> = HashMap::new();
+    for (dir, document_id) in &folders {
+        let stamp = read_meta(dir).and_then(|meta| meta.get("change_stamp")?.as_str().map(str::to_string));
+        folder_stamps.insert(document_id.as_str(), stamp);
+    }
+    let live: BTreeSet<&str> = stamps.iter().map(|stamp| stamp.document_id.as_str()).collect();
+    let mut index_dirty = known.is_empty();
+    let pending: Vec<&DocumentChangeStamp> = stamps
+        .iter()
+        .filter(|stamp| {
+            let current = folder_stamp(stamp);
+            let recorded = folder_stamps.get(stamp.document_id.as_str()).cloned().flatten();
+            recorded.as_deref() != Some(current.as_str()) && known.get(&stamp.document_id) != Some(&current)
+        })
+        .collect();
+    if !pending.is_empty() {
+        remove_stale_temporaries(&books_root);
+        let documents = owned.db.list_documents(u32::MAX, 0, None, None, None)?;
+        let by_id: BTreeMap<&str, &DocumentRecord> =
+            documents.iter().map(|document| (document.document_id.as_str(), document)).collect();
+        for stamp in pending {
+            let Some(document) = by_id.get(stamp.document_id.as_str()) else { continue };
+            let current = folder_stamp(stamp);
+            report.checked += 1;
+            index_dirty = true;
+            match export_document(owned, &books_root, document, Some(&current)) {
+                Ok((outcome, removed)) => {
+                    report.removed += removed;
+                    if matches!(outcome, Outcome::Exported) {
+                        report.exported += 1;
+                    }
+                    known.insert(stamp.document_id.clone(), current);
+                }
+                Err(error) => {
+                    report.failed += 1;
+                    tracing::warn!(document_id = %stamp.document_id, "book folder refresh failed: {error}");
+                }
+            }
+        }
+    }
+    // 书删了：它的文件夹也删掉。
+    for (dir, document_id) in &folders {
+        if !live.contains(document_id.as_str()) {
+            remove_book_dir(&books_root, dir)?;
+            report.removed += 1;
+            index_dirty = true;
+        }
+    }
+    known.retain(|document_id, _| live.contains(document_id.as_str()));
+    if index_dirty || report.removed > 0 {
+        let documents = owned.db.list_documents(u32::MAX, 0, None, None, None)?;
+        write_index_files(&owned.db, &books_root, &documents)?;
+    }
+    Ok(Some(report))
 }
 
 fn table_cell(text: &str) -> String {
@@ -380,9 +500,17 @@ fn write_index_files(db: &Db, books_root: &Path, documents: &[DocumentRecord]) -
             folder,
         ));
     }
-    replace_file(books_root, "library.md", out.as_bytes())?;
-    replace_file(books_root, "README.md", README.as_bytes())?;
+    replace_file_if_changed(books_root, "library.md", out.as_bytes())?;
+    replace_file_if_changed(books_root, "README.md", README.as_bytes())?;
     Ok(())
+}
+
+/// 内容一样就不动（后台对账每轮都可能调，不该每轮都改文件的修改时间）。
+fn replace_file_if_changed(dir: &Path, name: &str, bytes: &[u8]) -> Result<(), AppError> {
+    if fs::read(dir.join(name)).is_ok_and(|existing| existing == bytes) {
+        return Ok(());
+    }
+    replace_file(dir, name, bytes)
 }
 
 fn replace_file(dir: &Path, name: &str, bytes: &[u8]) -> Result<(), AppError> {

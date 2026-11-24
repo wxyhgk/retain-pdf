@@ -11,6 +11,9 @@ use crate::models::domain::now_iso;
 
 use crate::db::Db;
 
+/// 来源版本链最多往上找几层（防环、防异常数据）。
+const MAX_VERSION_CHAIN: usize = 32;
+
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
 pub struct TranslationVersionRecord {
     pub version_id: String,
@@ -138,6 +141,30 @@ impl Db {
         }
         tx.commit()?;
         Ok(changed > 0)
+    }
+
+    /// 读这个版本要用的任务，分层：最底下的来源版本在前，这个版本在最后（只重翻一部分页时其余页沿用来源版本）。
+    /// 版本不存在或不属于这本书返回 `None`。来源链最多往上找 [`MAX_VERSION_CHAIN`] 层（防环、防异常数据）。
+    /// 阅读入口（书库包 `versions::version_selection`）和全文索引（`rebuild_document_fts`）共用这一条规则。
+    pub fn translation_version_layers(&self, document_id: &str, version_id: &str) -> Result<Option<Vec<Vec<String>>>> {
+        let Some(first) = self.get_translation_version(version_id)?.filter(|version| version.document_id == document_id) else {
+            return Ok(None);
+        };
+        let mut layers = Vec::new();
+        let mut seen = std::collections::BTreeSet::new();
+        let mut next = Some(first);
+        while let Some(version) = next.take() {
+            if !seen.insert(version.version_id.clone()) || layers.len() >= MAX_VERSION_CHAIN {
+                break;
+            }
+            next = match version.base_version_id.as_deref() {
+                Some(base) => self.get_translation_version(base)?.filter(|base| base.document_id == document_id),
+                None => None,
+            };
+            layers.push(version.job_ids);
+        }
+        layers.reverse();
+        Ok(Some(layers))
     }
 
     /// 书的当前版本：None = 自动（逐页取最新）。存在文件上（`item_files.chosen_version_id`，v36 以前是单独一张表），只在本机、不同步。

@@ -45,13 +45,35 @@ impl Db {
         Ok(())
     }
 
-    /// 按这本书**所有**成功任务重建索引（每页取最新的那个，见 `build_document_fts`）。
+    /// 按这本书的成功任务重建索引：译文按用户选的译文版本取（[`Db::fts_selection`]，和阅读入口同一条规则），
+    /// 每页取那份译文里最新的任务；没有译文的页取 OCR 覆盖它的最新任务，只放原文（见 `build_document_fts_selected`）。
     /// 返回写入的行数。
     pub fn rebuild_document_fts(&self, document_id: &str) -> Result<usize> {
         let jobs = self.list_jobs_for_document(document_id, 500, 0)?;
-        let groups = build_document_fts(&jobs, &self.data_root);
+        let selection = self.fts_selection(document_id, &jobs)?;
+        let groups = build_document_fts_selected(&jobs, &self.data_root, &selection);
         self.replace_document_fts_by_job(document_id, &groups)?;
         Ok(groups.iter().map(|(_, rows)| rows.len()).sum())
+    }
+
+    /// 全文索引读哪份译文：书选了译文版本、而且那个版本（连同来源版本链）里有能建索引的翻译任务，就读那个版本；
+    /// 否则自动（逐页取最新，隐藏版本的任务不算）。和阅读入口（书库包 `reading::current_reading`）同一条规则：
+    /// 那边是「选的版本读不出译文就退回自动」，这里是「选的版本里没有成功、OCR 文档还在的翻译任务就退回自动」。
+    pub fn fts_selection(&self, document_id: &str, jobs: &[crate::models::domain::JobSnapshot]) -> Result<FtsSelection> {
+        use crate::models::domain::WorkflowKind;
+        if let Some(current) = self.document_current_translation_version(document_id)? {
+            if let Some(layers) = self.translation_version_layers(document_id, &current)? {
+                let usable = jobs.iter().any(|job| {
+                    job.workflow != WorkflowKind::Ocr
+                        && layers.iter().any(|layer| layer.contains(&job.job_id))
+                        && fts_normalized_document(job, &self.data_root).is_some()
+                });
+                if usable {
+                    return Ok(FtsSelection::Version { layers });
+                }
+            }
+        }
+        Ok(FtsSelection::Auto { excluded: self.hidden_translation_version_jobs(document_id)? })
     }
 
     /// 整体重建某文档的 FTS 行，行可以来自多个任务（见 `build_document_fts`）。
@@ -301,15 +323,57 @@ pub(super) fn fts_normalized_document(
     resolve_normalized_document(job, data_root).filter(|path| path.is_file())
 }
 
+/// 全文索引读哪份译文（见 [`Db::fts_selection`]）。
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FtsSelection {
+    /// 自动：逐页取最新。`excluded`（隐藏版本的任务）不提供译文，只提供原文。
+    Auto { excluded: Vec<String> },
+    /// 一个译文版本：`layers[0]` 是最底下的来源版本，上层的页盖住下层。不在版本里的任务只提供原文。
+    Version { layers: Vec<Vec<String>> },
+}
+
+impl FtsSelection {
+    /// 这个任务在这份选择里的排序键（越大越优先）；`None` = 不提供译文、只提供原文。
+    fn rank_key(&self, job: &crate::models::domain::JobSnapshot) -> Option<String> {
+        match self {
+            Self::Auto { excluded } => (!excluded.contains(&job.job_id)).then(|| job.created_at.clone()),
+            Self::Version { layers } => layers
+                .iter()
+                .position(|layer| layer.contains(&job.job_id))
+                .map(|layer| format!("{layer:04}|{}", job.created_at)),
+        }
+    }
+
+    /// 这个任务的译文会不会进索引：启动回填判断「索引是否过期」用。
+    pub(super) fn uses_translation_of(&self, job_id: &str) -> bool {
+        match self {
+            Self::Auto { excluded } => !excluded.iter().any(|id| id == job_id),
+            Self::Version { layers } => layers.iter().any(|layer| layer.iter().any(|id| id == job_id)),
+        }
+    }
+}
+
+/// 整本书的索引行（自动模式，所有任务都提供译文），见 [`build_document_fts_selected`]。
+pub fn build_document_fts(
+    jobs: &[crate::models::domain::JobSnapshot],
+    data_root: &Path,
+) -> Vec<(String, Vec<FtsBlockRow>)> {
+    build_document_fts_selected(jobs, data_root, &FtsSelection::Auto { excluded: Vec::new() })
+}
+
 /// 整本书的索引行，按提供它们的任务分组：`(job_id, 行)`。
 ///
 /// 行里的 `page_idx` 仍是那个任务自己的本地页号 —— 搜索结果跳转时打开的就是那个任务的那
 /// 一页，锚点对得上。OCR 文档和译文目录从任务记录里取（`normalized_document_json`、
 /// `translations_dir`），不按 `job_root/ocr` 猜：复用 OCR 的任务自己的 `ocr/` 是空的，
 /// 原来这类书全文搜索什么都搜不到。
-pub fn build_document_fts(
+///
+/// `selection` 决定哪些任务提供译文、谁盖住谁：选中的任务按 [`FtsSelection::rank_key`] 排；其余任务只提供原文
+/// （它的行去掉译文，也不算「翻译了这页」），用户选了旧版本时搜到的就是旧版本的译文，和阅读器、书文件夹一致。
+pub fn build_document_fts_selected(
     jobs: &[crate::models::domain::JobSnapshot],
     data_root: &Path,
+    selection: &FtsSelection,
 ) -> Vec<(String, Vec<FtsBlockRow>)> {
     use crate::models::domain::WorkflowKind;
     use crate::storage_paths::resolve_data_path;
@@ -327,7 +391,15 @@ pub fn build_document_fts(
             .as_deref()
             .and_then(|raw| resolve_data_path(data_root, raw).ok())
             .unwrap_or_else(|| data_root.join("jobs").join(&job.job_id).join("translated"));
-        let Ok(rows) = build_fts_rows(&normalized, &translated_dir) else { continue };
+        let Ok(mut rows) = build_fts_rows(&normalized, &translated_dir) else { continue };
+        let rank_key = selection.rank_key(job);
+        if rank_key.is_none() {
+            // 只提供原文：去掉译文，只剩译文的行（原文为空）不要。
+            rows.retain_mut(|row| {
+                row.translated_text.clear();
+                !row.source_text.trim().is_empty()
+            });
+        }
         let max_local = rows.iter().map(|row| row.page_idx).max().unwrap_or(-1);
         // 老任务没记 ocr_page_numbers：那时 OCR 都是整本，本地页 = 文档页 - 1。
         let ocr_pages: Vec<u32> = if artifacts.ocr_page_numbers.is_empty() {
@@ -335,7 +407,7 @@ pub fn build_document_fts(
         } else {
             artifacts.ocr_page_numbers.clone()
         };
-        let translated_pages = if job.workflow == WorkflowKind::Ocr {
+        let translated_pages = if job.workflow == WorkflowKind::Ocr || rank_key.is_none() {
             Vec::new()
         } else {
             retainpdf_core::document_pages::translated_document_pages(
@@ -347,7 +419,7 @@ pub fn build_document_fts(
         };
         candidates.push(FtsCandidate {
             job_id: job.job_id.clone(),
-            created_at: job.created_at.clone(),
+            created_at: rank_key.unwrap_or_else(|| job.created_at.clone()),
             ocr_pages,
             translated_pages,
         });
