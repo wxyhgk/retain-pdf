@@ -115,6 +115,24 @@ const BY_CATEGORY: Record<string, FailureAdvice> = {
   },
 };
 
+/** 分类说得太粗的几个失败码，单独给说法；查不到再按分类。
+ * 2026-11-24 后端在列表的失败简报里加了 failure_code（feat/failure-brief-code）：
+ * 这两个的分类都是 auth，按分类会说成「换 Key」，可换 Key 修不好。 */
+const BY_CODE: Record<string, FailureAdvice> = {
+  upstream_model_unavailable: {
+    title: "翻译模型不可用",
+    action: "模型名写错、这个 Key 没开通该模型，或接口地址写错，原样重试没用。去设置里改好模型后从翻译继续，不会重做 OCR。",
+    retryLikelyHelps: false,
+    settingsAction: "去设置改模型",
+  },
+  upstream_region_unsupported: {
+    title: "服务商不支持当前地区",
+    action: "服务商不向当前网络所在的地区提供服务，换 Key 没用。换网络或在设置里换一个翻译服务商后，从翻译继续。",
+    retryLikelyHelps: false,
+    settingsAction: "去设置换服务商",
+  },
+};
+
 const FALLBACK: FailureAdvice = {
   title: "任务失败",
   action: "可以先用下面的按钮再试一次；仍然失败请复制诊断信息。",
@@ -123,6 +141,8 @@ const FALLBACK: FailureAdvice = {
 
 export function failureAdvice(failure?: JobFailureBrief | null): FailureAdvice {
   if (!failure) return FALLBACK;
+  const byCode = BY_CODE[`${failure.failure_code || ""}`.trim()];
+  if (byCode) return byCode;
   const base = BY_CATEGORY[`${failure.category || ""}`.trim().toLowerCase()] ?? FALLBACK;
   // 后端说不可重试时，不管分类怎么写都不能怂恿用户去点重试。
   // 但分类本来就是「重试没用、该先做别的」（换 Key、换文件、换解析方式）时，它那句说法就是答案，

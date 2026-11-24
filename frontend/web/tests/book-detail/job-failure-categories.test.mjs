@@ -58,3 +58,19 @@ test("兜底仍然在 —— 产生方将来新增分类时界面不能空白", 
   const advice = failureAdvice({ category: "a_brand_new_category", stage: "ocr", retryable: true, summary: "" });
   assert.ok(advice.title && advice.action);
 });
+
+test("模型不可用、地区不支持按失败码给说法，不说成「换 Key」", () => {
+  const model = failureAdvice({ category: "auth", stage: "translation", retryable: false, summary: "", failure_code: "upstream_model_unavailable" });
+  assert.equal(model.title, "翻译模型不可用");
+  assert.equal(model.settingsAction, "去设置改模型");
+  assert.equal(model.retryLikelyHelps, false);
+  const region = failureAdvice({ category: "auth", stage: "translation", retryable: false, summary: "", failure_code: "upstream_region_unsupported" });
+  assert.equal(region.title, "服务商不支持当前地区");
+  assert.match(region.action, /换 Key 没用/);
+  assert.equal(region.settingsAction, "去设置换服务商");
+});
+
+test("不认识的失败码照旧按分类", () => {
+  const advice = failureAdvice({ category: "auth", stage: "ocr", retryable: true, summary: "", failure_code: "auth_failed" });
+  assert.equal(advice.title, "凭据被拒");
+});

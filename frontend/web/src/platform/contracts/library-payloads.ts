@@ -58,6 +58,8 @@ export type JobFailureBrief = {
   provider?: string;
   /** 上游服务商回的是什么：厂商编号（错误码目录的 vendor id）、HTTP 状态码、厂商的码；不知道的为 null，都不知道时键不出现。 */
   upstream?: { provider: string | null; http_status: number | null; code: string | null };
+  /** 和任务详情 failure.failure_code 同值（upstream_model_unavailable …）；没有或只是 unknown 时键不出现（2026-11-24 起）。 */
+  failure_code?: string;
 };
 
 export type LibraryCardItem = {
