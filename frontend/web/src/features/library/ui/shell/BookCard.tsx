@@ -155,6 +155,8 @@ function BookCardImpl({
       data-library-only={libraryOnly ? "true" : "false"}
       data-status={item.status || ""}
       data-updated-at={item.updated_at || ""}
+      // 阅读状态（unread / reading / done）：主题拿它挂装饰，「在读」画书签丝带（BookCard.css）。
+      data-reading-status={item.reading_status || ""}
       onClick={handleCardClick}
       onKeyDown={handleKeyDown}
     >

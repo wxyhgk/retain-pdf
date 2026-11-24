@@ -92,3 +92,10 @@ test("每个变量都写了说明和兜底值", () => {
     .map((token) => token.name);
   assert.deepEqual(missing, []);
 });
+
+test("keyword 类的变量写了可以取哪些值", () => {
+  const missing = ALL_SHAPE_TOKENS
+    .filter((token) => token.kind === "keyword" && !(token.values && token.values.length))
+    .map((token) => token.name);
+  assert.deepEqual(missing, []);
+});
