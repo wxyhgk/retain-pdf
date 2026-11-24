@@ -32,6 +32,32 @@
 
 ---
 
+## 规矩漏网补齐（fix/api-rule-gaps）
+
+2026-11-24，见 [规矩漏网补齐](../../ops/planning/api-reorg/20261124-规矩漏网补齐.md)。**前端不用改**，下面都是可选的：
+
+- **新 409 原因**：`PUT /documents/{id}/translation-version` 选了隐藏的版本带 `version_hidden`；`files/internal/{name}` 是目录带
+  `artifact_is_directory`（正常碰不到）。「从翻译阶段重试」补 OCR 产物时任务变了的 409 现在带 `job_active` / `stale_resolution`，
+  `frontend/web/src/platform/api/domains/jobs-actions.ts` 的 `ACTION_CONFLICT_MESSAGES` 已经认识这两个。想给隐藏版本一句中文的话，
+  切换版本出错时按 `error.details.reason === "version_hidden"` 显示「这个版本已隐藏，先恢复再选」。
+- **查询串不认识的参数 400**：文件出口（`/jobs/{id}/files/…`、`/documents/{id}/files/…`）、`DELETE /jobs/{id}`、`progress/stream`。
+  核对过前端现在带的都认（`download`、`dpi`、`width`、`watermark`、`version`、`include_job_dir`、`force`、`after_seq`）。
+  `include_job_dir`：「下载 Markdown」（`frontend/packages/domain/src/job/actions.ts` 的 `resolveJobMarkdownBundleAction`、
+  `artifacts.ts` 的 `resolveManifestArtifactUrl`）在 `output/ocr.zip` 上带 `?include_job_dir=true`，文件清单里有这一项，
+  前端会话核对过还在用；后端一直不看它，登记成认识的参数，行为不变。前端不用改。
+- **边翻边看的流出错先发 `event: error`**：data 是错误信封 JSON（`code`、`message`、`error.code`、`error.details.reason`），然后流结束。
+  现在的 `frontend/packages/api/src/live-translation.ts` 只认 `translation_units_committed`，别的事件跳过，流结束后
+  `use-live-translation.ts` 照旧重连，不会出错。想显示原因（比如任务被删了就别再重连）：`parseSseFrame` 之后
+  `frame.event === "error"` 时 `JSON.parse(frame.data)`，抛一个带 `error.code` / `http_status` 的 `LiveTranslationApiError`，
+  `404` 时不再重连。
+- **编辑部事件**：返回多 `limit`（默认 500）；`limit` 越界 400（前端不带 `limit`，不受影响）。契约 `job-events.v2` 的
+  `EditorialEventListView` 加了必填 `limit`，`@retainpdf/contracts` 的 dist 已重新生成，`frontend/packages/api` 的生成客户端不用变
+  （`generate:client:check` 是绿的）。
+- **报错文字**：`POST /jobs`、书的 `/translate`、`/ocr` 字段类型不对时 `message` 从 serde 原文改成
+  `invalid job payload: request body does not match the expected schema`（不认识的字段照旧带字段名），状态码照旧 400。
+
+---
+
 ## 翻译模型不可用、地区不支持、内容审核没过（fix/llm-request-codes）
 
 2026-11-23，翻译请求层补上剩下的几类「重试没用」，细节见

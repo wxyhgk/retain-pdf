@@ -33,7 +33,9 @@ test("editorial events are read by count and passed through as editorial.v1 obje
   const { EditorialEventsQuery, EditorialEventListView, EditorialEvent } = schema.definitions;
   assert.equal(EditorialEventsQuery.additionalProperties, false);
   assert.deepEqual(Object.keys(EditorialEventsQuery.properties), ["after", "limit"]);
-  assert.deepEqual(EditorialEventListView.required, ["events", "next_after", "has_more"]);
+  assert.deepEqual(EditorialEventListView.required, ["events", "next_after", "has_more", "limit"]);
+  // 2026-11-24：limit 越界 400、回显实际生效的 limit（以前静默夹到 1..2000）。
+  assert.deepEqual([EditorialEventsQuery.properties.limit.minimum, EditorialEventsQuery.properties.limit.maximum], [1, 2000]);
   assert.equal(EditorialEventListView.additionalProperties, false);
   assert.deepEqual(EditorialEvent.required, ["v", "ts", "type"]);
   assert.equal(EditorialEvent.properties.v.const, "editorial.v1");

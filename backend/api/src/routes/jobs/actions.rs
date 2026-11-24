@@ -58,7 +58,7 @@ fn parse_rerun_overrides(body: &[u8]) -> Result<Value, AppError> {
         return Ok(Value::Null);
     }
     let request: RerunRequest = serde_json::from_slice(body)
-        .map_err(|error| AppError::bad_request(format!("invalid rerun request: {error}")))?;
+        .map_err(|error| AppError::invalid_json_body("invalid rerun request", &error))?;
     const ALLOWED: [&str; 4] = ["api_key", "credential_ref", "reviewer_api_key", "reviewer_credential_ref"];
     match &request.overrides {
         Value::Null => {}

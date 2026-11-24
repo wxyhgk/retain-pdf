@@ -10,6 +10,8 @@ pub struct EditorialEventListView {
     pub next_after: u64,
     /// 后面还有：这次只给到 `limit` 条。
     pub has_more: bool,
+    /// 实际生效的 `limit`（没传是默认 500）。2026-11-24 加。
+    pub limit: u32,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
@@ -18,7 +20,7 @@ pub struct EditorialEventsQuery {
     /// 跳过前面这么多条（上次的 `next_after`），不带是从头取。
     #[serde(default)]
     pub after: u64,
-    /// 一次最多几条，默认 500，最大 2000。
+    /// 一次最多几条，默认 500，范围 1..=2000，越界 400（2026-11-24 以前静默夹）。
     #[serde(default)]
     pub limit: Option<u32>,
 }

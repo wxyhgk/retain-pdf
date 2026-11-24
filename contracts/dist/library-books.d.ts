@@ -6,6 +6,9 @@
  * Endpoint input, query, and output DTOs published by library-books.v1.schema.json.
  */
 export type LibraryBooksSchema = LibraryDeleteQuery | LibraryDeleteResultView;
+/**
+ * 不认识的查询参数 400（2026-11-24 起）。
+ */
 export interface LibraryDeleteQuery {
     force?: boolean;
 }
