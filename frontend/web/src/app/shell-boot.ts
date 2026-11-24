@@ -18,6 +18,7 @@ import { createRoot } from "react-dom/client";
 import { createElement, type ReactNode } from "react";
 import { ErrorBoundary } from "@retainpdf/ui";
 import { bootTheme } from "@retainpdf/ui/theme";
+import { reactRootErrorOptions } from "@/platform/desktop/renderer-issue.js";
 
 export type ShellHostOptions = {
   // home/reader 缺根时兜底创建；detail 保持“缺根即不挂载”的旧语义，默认 false。
@@ -43,8 +44,9 @@ export function resolveShellHost(
 // 不开 StrictMode：见文件头约定。返回卸载函数供测试/HMR 复用同一 document
 // 二次挂载前释放（生产 MPA 不卸载，页面级生命周期即进程级）。
 // 最外层套整页的出错兜底：组件渲染出错时不再整页白屏，换成说明卡（再试一次 / 重新加载 / 复制错误详情）。
+// 出错时组件栈写进桌面日志（见 platform/desktop/renderer-issue.ts）。
 export function mountShellApp(host: HTMLElement, app: ReactNode): () => void {
-  const root = createRoot(host);
+  const root = createRoot(host, reactRootErrorOptions());
   root.render(createElement(ErrorBoundary, { scope: "page" }, app));
   return () => root.unmount();
 }

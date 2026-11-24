@@ -95,6 +95,14 @@ function createIpcPlugin({
     const lineno = payload?.lineno || 0;
     const colno = payload?.colno || 0;
     logDesktopError(`[desktop][renderer-issue] type=${type} file=${filename} line=${lineno} col=${colno} message=${message}`);
+    // React 出错时页面带上调用栈和组件栈（打包保留了组件名），排查时看这两段就知道是哪个组件。
+    const limit = (text) => String(text || "").slice(0, 4000);
+    if (payload?.componentStack) {
+      logDesktopError(`[desktop][renderer-issue] component-stack:${limit(payload.componentStack)}`);
+    }
+    if (payload?.stack) {
+      logDesktopError(`[desktop][renderer-issue] stack:\n${limit(payload.stack)}`);
+    }
   }
 
   function ipc(ctx) {

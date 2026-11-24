@@ -168,6 +168,9 @@ function bundleOptions({ entry, out }) {
       ".tsx": "tsx",
     },
     minify: !watchMode,
+    // 压缩时保留函数、类名：React 报错的组件栈才看得出是哪个组件（桌面日志里排查 #185 这类问题用），
+    // 代价是包大一点（2026-11-24）。
+    keepNames: true,
     sourcemap: watchMode ? "inline" : false,
     logLevel: "info",
     legalComments: "none",

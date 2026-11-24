@@ -9,6 +9,7 @@ import { bootReader } from "@retainpdf/reader/boot";
 import { canonicalizeReaderSearch } from "@/platform/navigation/pages.js";
 import { resolveAuthGate } from "@/features/auth/index.js";
 import { bootOrnaments } from "@/ui/decor/ornament-runtime.js";
+import { reactRootErrorOptions } from "@/platform/desktop/renderer-issue.js";
 
 // 入参走三页统一契约：历史别名 ?page=&blockId= 由 pages 的解析真源归一成
 // 运行时读取的 page_idx/block_id（replaceState，无刷新；无变化则跳过）。
@@ -34,5 +35,5 @@ void resolveAuthGate().then((gate) => {
   }
   // 阅读页没有装饰舞台，只按当前主题的装饰包注入「装饰位」（顶栏两端、弹窗角花），换主题时重注入。
   bootOrnaments();
-  bootReader();
+  bootReader({ rootOptions: reactRootErrorOptions() });
 });

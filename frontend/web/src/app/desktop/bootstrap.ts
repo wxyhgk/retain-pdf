@@ -22,7 +22,17 @@ export function openSetupDialog() {
   }));
 }
 
-export async function bootstrapDesktop(initialConfig = null) {
+export type DesktopBootstrapOptions = {
+  /**
+   * 打开首配窗口。首页入口传「直接写设置弹窗的 store」：发 DOM 事件要等
+   * SettingsDialogSlot 的 useAppEvent 在 effect 里挂上监听，而桌面启动走到这里
+   * 比它早约 25ms，事件发出去没人接，第一次启动的首配窗口就弹不出来（2026-11-24 实测）。
+   * 写 store 不怕早：弹窗挂上后读到的就是「开着」。不传时照旧发事件。
+   */
+  openSetupDialog?: () => void;
+};
+
+export async function bootstrapDesktop(initialConfig = null, options: DesktopBootstrapOptions = {}) {
   setDesktopMode(state, true);
   showDesktopUi();
   const payload = initialConfig || await loadPersistedConfig();
@@ -36,7 +46,7 @@ export async function bootstrapDesktop(initialConfig = null) {
     Boolean(payload.firstRunCompleted) || hasDesktopCredentials(payload.browserConfig),
   );
   if (!isDesktopConfigured(state)) {
-    openSetupDialog();
+    (options.openSetupDialog || openSetupDialog)();
   }
   // 原先 else 分支调 closeSetupDialog()「已配置就关掉可能开着的首配窗」。
   // 那个函数判的是 `dialog.open`——凭据弹窗 React 化后是 Radix 的

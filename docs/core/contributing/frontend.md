@@ -49,6 +49,19 @@ npm run verify-frontend-sync --workspace=retain-pdf-desktop
 
 这个命令会重新构建静态前端、同步到桌面端 bundle，并跑桌面端前端 smoke。
 
+### 桌面端出错排查
+
+桌面端主进程日志是 Electron 用户数据目录下的 `logs/desktop-main.log`（`frontend/desktop/src/main/desktop-logging.js`）。
+目录名跟着应用名走，Windows 在 `%APPDATA%\` 下、Mac 在 `~/Library/Application Support/` 下找 `RetainPDF` 或
+`retain-pdf-desktop`；启动时那行 `[desktop] app ready … userData=` 写着确切路径。页面里的错误都记成 `[desktop][renderer-issue]` 开头的行：
+
+- `type=error` / `unhandledrejection`：window 上没被接住的错误（`frontend/desktop/preload.js`）。
+- `type=react-caught` / `react-uncaught`：React 组件出错（被出错兜底接住、或整棵树卸掉），后面跟 `component-stack:` 和 `stack:` 两段。
+  页面的 React 根都带 `web/src/platform/desktop/renderer-issue.ts` 的 `reactRootErrorOptions()`（首页、详情页走
+  `app/shell-boot.ts`，阅读页走 `bootReader({ rootOptions })`），经桌面桥 `reportRendererIssue` 报给主进程。
+- 生产包压缩过，但打包时保留了函数和类名（`web/scripts/build-js-bundle.mjs` 的 `keepNames`），组件栈里看得到组件名；
+  只给一个数字的 React 报错（例如 #185「更新深度超限」）看组件栈就知道是哪个组件。
+
 ## 改动规则
 
 - 不要只改 `frontend/desktop/app/frontend/**`，应改 `frontend/web/**` 源文件后同步。

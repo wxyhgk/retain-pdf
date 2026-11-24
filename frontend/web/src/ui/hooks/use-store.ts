@@ -20,6 +20,8 @@ export type SnapshotStore<TState> = {
 type EqualityFn<T> = (a: T, b: T) => boolean;
 
 const snapshotCache = new WeakMap<object, unknown>();
+// 每个 store 现在有几个 useStoreSnapshot 在订阅。有人订阅时，缓存由下面的监听回调随 notify 保持最新。
+const liveSubscribers = new WeakMap<object, number>();
 
 function cachedSnapshot<TState>(store: SnapshotStore<TState>): TState {
   if (!snapshotCache.has(store)) {
@@ -62,21 +64,29 @@ export function useStoreSnapshot<TState, TSelected>(
 
   const subscribe = useCallback(
     (onStoreChange: () => void) => {
-      // 订阅建立时先把缓存对齐一次:缓存唯一的写入点在下面的监听回调里,
-      // 所以一个 store 的订阅者全部卸载后,对它的写入会走 notify() 空转
-      // (listener 集合为空),缓存停在卸载那一刻的旧快照。重新挂载时
-      // getSnapshot() 读到过期值,首屏渲染上一次的残留(实测:上传弹窗关掉后
-      // resetUploadSession() 恰好落在这段无订阅者的空窗期,再打开时卡片还显示
-      // 上一份文件名,而业务逻辑读 store 真值,两边对不上)。
-      // 这次刷新发生在挂载的 layout effect 里(两次 render 之间,不是同一次
-      // render 内),不破坏 getSnapshot 在单次 render 内的引用稳定性;
-      // useSyncExternalStore 订阅后会自查 getSnapshot 是否变化,变了就在 paint
-      // 之前补一次渲染,所以用户看不到闪帧。
-      snapshotCache.set(store, store.getSnapshot());
-      return store.subscribe((snapshot) => {
+      // 订阅建立时，缓存可能是过期的：缓存唯一的写入点在下面的监听回调里，
+      // 一个 store 的订阅者全部卸载后，对它的写入会走 notify() 空转（listener 集合为空），
+      // 缓存停在卸载那一刻的旧快照。重新挂载时 getSnapshot() 读到过期值，首屏渲染上一次的残留
+      // （实测：上传弹窗关掉后 resetUploadSession() 恰好落在这段无订阅者的空窗期，再打开时卡片还显示
+      // 上一份文件名，而业务逻辑读 store 真值，两边对不上）。所以这时要对齐一次。
+      //
+      // 只在「没有别的订阅者」时对齐：store.getSnapshot() 每次都返回新克隆，以前每个组件订阅都换一次
+      // 缓存引用，别的已挂载组件读到「快照变了」就补渲染；哪天某个组件每次 render 都重新订阅
+      // （比如 store 是 render 里新建的），就成了订阅→换引用→重渲染→再订阅的死循环，即 React #185。
+      // 有别的订阅者时缓存已经由监听回调保持最新，不用动。
+      const count = liveSubscribers.get(store) || 0;
+      if (count === 0) {
+        snapshotCache.set(store, store.getSnapshot());
+      }
+      liveSubscribers.set(store, count + 1);
+      const unsubscribe = store.subscribe((snapshot) => {
         snapshotCache.set(store, snapshot);
         onStoreChange();
       });
+      return () => {
+        liveSubscribers.set(store, Math.max(0, (liveSubscribers.get(store) || 1) - 1));
+        unsubscribe();
+      };
     },
     [store],
   );
