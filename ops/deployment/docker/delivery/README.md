@@ -195,6 +195,12 @@ http://127.0.0.1:40001
 - `RUST_API_ALLOWED_ORIGINS`（默认不写）
   额外放行跨域的网页来源，逗号分隔，写全 `https://pdf.example.com`。标准部署走 web 容器同源代理，
   用域名访问也不用配；只有页面挂在别的主机、直接跨域调后端时才要写。
+- `RETAINPDF_ALLOWED_HOSTS`（`docker/web.env`，默认不写；2026-11-24 起）
+  用域名或局域网机器名访问页面时写上这些主机名，逗号分隔，例如 `pdf.example.com,nas.local`。web 容器的 NGINX
+  只替 `localhost`、IP 地址和这里列出的主机名补上后端 key：恶意网页把自己的域名解析到 `127.0.0.1`
+  （DNS rebinding）时，浏览器带来的 `Host` 是那个域名，NGINX 不再替它补 key。没列出的主机名访问 `/api/`
+  会得到 403「request host is not allowed」；自己带 `X-API-Key` 的请求照常转发。只用 `127.0.0.1:40001` /
+  `localhost:40001` 访问就不用写。**升级前用域名访问的，升级后要补上这一项**。
 - `RUST_API_ALLOWED_HOSTS`（默认不写）
   允许的 `Host` 主机名，逗号分隔，例如 `pdf.example.com`。容器里后端监听 `0.0.0.0`，不写就不校验 `Host`，
   用域名访问照常；写了就只认这些主机名、`localhost` 和 IP 字面量（防 DNS rebinding），注意把 NGINX
@@ -221,7 +227,8 @@ http://127.0.0.1:40001
 # 使用域名和 NGINX 反向代理
 
 宿主机 NGINX 只需代理到 `127.0.0.1:40001`，不要直接把域名指向
-`41000` 或 `42000`。完整示例位于：
+`41000` 或 `42000`。示例把域名原样作为 `Host` 转给 web 容器，所以要在 `docker/web.env` 里写上
+`RETAINPDF_ALLOWED_HOSTS=pdf.example.com`（换成你的域名），否则 `/api/` 会回 403。完整示例位于：
 
 ```text
 ops/deployment/nginx/retainpdf.example.conf
