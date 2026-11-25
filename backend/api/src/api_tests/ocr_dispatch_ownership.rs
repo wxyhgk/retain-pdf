@@ -228,7 +228,7 @@ async fn book_job_ocr_transport_error_blocks_retry_and_rerun_of_the_parent() {
 
     for (action, body) in [
         ("retry-stage", Some(json!({ "stage": "ocr" }))),
-        ("rerun", None),
+        ("resume", None),
     ] {
         let (status, payload) = call(
             &state,

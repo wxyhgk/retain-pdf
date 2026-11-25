@@ -55,7 +55,7 @@
       "output": "JobSubmissionView",
       "rust_view": "JobSubmissionView",
       "ts_consumer": "@retainpdf/contracts/job-actions :: JobSubmissionView",
-      "note": "从断点续跑（旧地址 actions/rerun 已登记为旧名，同一个实现）。请求体可以不带或发 {}；只接受换模型 key（见 ResumeJobInput），其它设置一律沿用原任务。能原地重渲染时 job_id 就是原任务，否则是新任务。409 的 error.details.reason：job_active（先取消）、artifacts_missing（没有可复用的断点）、model_executor_unsupported、ambiguous_ocr_dispatch（先用 resolve-ocr-ambiguity）、request_journal_corrupt、ambiguous_translation_request（改用 retry-stage stage=translation + ambiguous_request_policy=accept_duplicate_risk）、stale_resolution（原地重跑时任务在读取后变了，刷新再试）、derived_job_active（这个任务已经续跑 / 重试出一个还在排队或在跑的新任务，error.details.active_job_id 是它的编号：等它结束或先取消它；2026-11-24 起）。可以带 Idempotency-Key 请求头防重复提交（见 docs/api/00-约定/06-防重复提交.md）。overrides 写错 400。多用户模式下页数额度不够 402，error.code=PAGE_QUOTA_EXCEEDED。"
+      "note": "从断点续跑（旧地址 actions/rerun 2026-11-25 删了）。请求体可以不带或发 {}；只接受换模型 key（见 ResumeJobInput），其它设置一律沿用原任务。能原地重渲染时 job_id 就是原任务，否则是新任务。409 的 error.details.reason：job_active（先取消）、artifacts_missing（没有可复用的断点）、model_executor_unsupported、ambiguous_ocr_dispatch（先用 resolve-ocr-ambiguity）、request_journal_corrupt、ambiguous_translation_request（改用 retry-stage stage=translation + ambiguous_request_policy=accept_duplicate_risk）、stale_resolution（原地重跑时任务在读取后变了，刷新再试）、derived_job_active（这个任务已经续跑 / 重试出一个还在排队或在跑的新任务，error.details.active_job_id 是它的编号：等它结束或先取消它；2026-11-24 起）。可以带 Idempotency-Key 请求头防重复提交（见 docs/api/00-约定/06-防重复提交.md）。overrides 写错 400。多用户模式下页数额度不够 402，error.code=PAGE_QUOTA_EXCEEDED。"
     },
     {
       "method": "POST",
@@ -182,7 +182,7 @@
           "$ref": "#/definitions/ActionLinkView"
         }
       },
-      "description": "job-status.v1 JobActionsView 的副本。resume：从断点续跑 POST actions/resume；rerun：旧名，和 resume 同值，地址是旧地址 actions/rerun，新代码读 resume。"
+      "description": "job-status.v1 JobActionsView 的副本。resume：从断点续跑 POST actions/resume；rerun：旧名，和 resume 完全同值（地址也是 actions/resume；旧地址 actions/rerun 2026-11-25 删了），新代码读 resume。"
     },
     "JobLinksView": {
       "type": "object",

@@ -87,7 +87,7 @@ async fn rerun_that_cannot_launch_keeps_the_old_pdf_and_the_ocr_child() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri(format!("/api/v1/jobs/{id}/actions/rerun"))
+                .uri(format!("/api/v1/jobs/{id}/actions/resume"))
                 .header("X-API-Key", "test-key")
                 .body(Body::empty())
                 .unwrap(),

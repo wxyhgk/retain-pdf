@@ -55,7 +55,7 @@ async fn rerun_in_place_render_keeps_rpr_engine() {
     let id = "job-render-engine-rerun";
     seed_rpr_job(&state, id);
 
-    let response = post(&state, format!("/api/v1/jobs/{id}/actions/rerun"), None).await;
+    let response = post(&state, format!("/api/v1/jobs/{id}/actions/resume"), None).await;
     assert_eq!(response.status(), StatusCode::OK);
     let job = state.db.get_job(id).expect("rerun job");
     assert_eq!(job.workflow, WorkflowKind::Render);

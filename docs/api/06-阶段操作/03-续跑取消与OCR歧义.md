@@ -8,13 +8,12 @@
 ```http
 GET  /api/v1/jobs/{job_id}/actions/resume
 POST /api/v1/jobs/{job_id}/actions/resume
-POST /api/v1/jobs/{job_id}/actions/rerun            （actions/resume 的旧名）
 POST /api/v1/jobs/{job_id}/actions/cancel
 POST /api/v1/jobs/{job_id}/actions/resolve-ocr-ambiguity
 ```
 
 旧地址 `/resume-plan`、`/resume`、`/rerun`、`/cancel`、`/ocr/resolve-ambiguity` 已于 2026-10-18 删除，对照见
-[任务接口分类](../01-任务/04-任务接口分类.md)。
+[任务接口分类](../01-任务/04-任务接口分类.md)。`actions/resume` 的旧名 `actions/rerun` 2026-11-25 也删了（404）。
 
 ## 续跑
 
@@ -41,8 +40,8 @@ POST /api/v1/jobs/{job_id}/actions/resolve-ocr-ambiguity
 ### 执行续跑
 
 `POST /api/v1/jobs/{job_id}/actions/resume` 执行后端选好的计划，返回 `JobSubmissionView`（同建任务的返回：`job_id`、`status`、
-`workflow`、`ocr_reused`、`source_artifact_job_id`、`stages`、`links`、`actions`）。`actions/rerun` 是同一个处理函数的旧名
-（2026-10-19 起在接口登记表里标成旧地址）；新代码 POST `actions/resume`，读任务视图里的 `actions.resume` 链接（`actions.rerun` 暂时同值）。
+`workflow`、`ocr_reused`、`source_artifact_job_id`、`stages`、`links`、`actions`）。旧名 `actions/rerun`
+2026-11-25 删了；读任务视图里的 `actions.resume` 链接（`actions.rerun` 字段暂时留着，和它完全同值，地址也是 `actions/resume`）。
 
 请求体可以不带（等于 `{}`）。唯一能带的是换模型 key：
 
@@ -80,7 +79,7 @@ POST /api/v1/jobs/{job_id}/actions/resolve-ocr-ambiguity
 - 出新任务时这个任务已经续跑 / 重试出一个还在排队或在跑的新任务：`derived_job_active`（2026-11-24），`error.details.active_job_id`
   是那个任务，等它结束或先取消。落库的同一个事务里再查一次，两个请求同时来也只建一个。
 
-续跑（含旧地址 `rerun`）还接受 `Idempotency-Key` 请求头：同一把 key 的重复请求回第一次的结果，带 `Idempotent-Replayed: true`，
+续跑还接受 `Idempotency-Key` 请求头：同一把 key 的重复请求回第一次的结果，带 `Idempotent-Replayed: true`，
 见 [防重复提交](../00-约定/06-防重复提交.md)。
 
 要选阶段、改参数、或接受翻译请求重复的风险，用 [retry-stage](02-retry-stage.md)。

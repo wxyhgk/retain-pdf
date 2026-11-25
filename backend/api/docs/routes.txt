@@ -3,7 +3,7 @@
 # cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / none 还没有调用方）。
 # 由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
-# 113 条路径，137 个接口
+# 112 条路径，136 个接口
 GET    /api/v1/account/pages  signed  accounts  by multiuser
 GET    /api/v1/admin/invites  admin  accounts  by multiuser
 POST   /api/v1/admin/invites  admin  accounts  by multiuser
@@ -84,7 +84,6 @@ DELETE /api/v1/jobs/:job_id  signed  jobs  by web
 GET    /api/v1/jobs/:job_id  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/actions  signed  jobs  by web
 POST   /api/v1/jobs/:job_id/actions/cancel  signed  jobs  by web
-POST   /api/v1/jobs/:job_id/actions/rerun  signed  jobs  by none
 POST   /api/v1/jobs/:job_id/actions/resolve-ocr-ambiguity  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/actions/resume  signed  jobs  by web
 POST   /api/v1/jobs/:job_id/actions/resume  signed  jobs  by web

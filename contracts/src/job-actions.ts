@@ -136,7 +136,7 @@ export interface JobLinksView {
   cancel_url: string;
 }
 /**
- * job-status.v1 JobActionsView 的副本。resume：从断点续跑 POST actions/resume；rerun：旧名，和 resume 同值，地址是旧地址 actions/rerun，新代码读 resume。
+ * job-status.v1 JobActionsView 的副本。resume：从断点续跑 POST actions/resume；rerun：旧名，和 resume 完全同值（地址也是 actions/resume；旧地址 actions/rerun 2026-11-25 删了），新代码读 resume。
  */
 export interface JobActionsView {
   open_job: ActionLinkView;

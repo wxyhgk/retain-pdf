@@ -12,9 +12,7 @@ crate::endpoints! {
     GET "/api/v1/jobs/:job_id/actions/resume" => actions::get_resume_plan, signed by(web);
     /// 从断点续跑
     POST "/api/v1/jobs/:job_id/actions/resume" => actions::resume_job, signed by(web) [idempotent];
-    // 2026-11-02 以前旧名另有一份一模一样的处理函数 rerun_job，删了，直接用续跑的。
-    /// 旧名，和续跑是同一个处理函数
-    POST "/api/v1/jobs/:job_id/actions/rerun" => actions::resume_job, signed by(none) [idempotent] old "/api/v1/jobs/:job_id/actions/resume";
+    // 旧名 `POST …/actions/rerun`（和续跑同一个处理函数）2026-11-25 删了：前端早改调 resume，10-18 起 0 次调用。
     /// 取消任务
     POST "/api/v1/jobs/:job_id/actions/cancel" => actions::cancel_job, signed by(web);
     /// 重试某一个阶段（OCR、翻译、渲染、精修）

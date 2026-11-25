@@ -1936,3 +1936,11 @@ PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_uplo
 3. 新的 409 `reason`（以前 `details` 是 `{}`）：`legacy_job_unsupported`（很早版本做的任务，读不了产物）、`event_source_not_file`
    （兜底）、`job_exists`（建任务指定的编号已存在，前端不指定编号碰不到）、`tag_name_taken`（改标签名撞名，带 `existing_tag_id`；
    标签接口前端还没接）。可选：给 `legacy_job_unsupported` 一句人话，例如「这是很早的版本做的任务，读不了，请重新上传翻译」。
+
+## 删续跑旧名 `actions/rerun`（2026-11-25，chore/drop-rerun-alias）
+
+`POST /jobs/{job_id}/actions/rerun` 删了（404）。前端早就只调 `actions/resume`（`resumeJob`），不受影响；接受 `Idempotency-Key` 的提交接口
+现在是 6 个（少了 rerun）。任务视图的 `actions.rerun` 字段还在，和 `actions.resume` 完全同值（地址也是 `actions/resume`）。
+
+前端要做（不急）：`frontend/packages/domain/src/job/actions.ts` 里 `actions.rerun?.enabled ?? artifactActions.rerun?.enabled` 的兜底去掉，
+只读 `resume`；去掉以后告诉后端，后端再删 `actions.rerun` 字段。见 [删续跑旧名 rerun](../../ops/planning/api-reorg/20261125-删续跑旧名rerun.md)。
