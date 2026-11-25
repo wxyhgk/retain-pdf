@@ -180,6 +180,36 @@ impl Backend {
         Ok(value.get("data").cloned().unwrap_or(value))
     }
 
+    /// 换一把密钥（`retainpdf mcp` 用 AI 专用密钥）。地址、超时都不变。
+    pub fn with_api_key(&self, api_key: String) -> Result<Self> {
+        let mut runtime = self.runtime.clone();
+        runtime.api_key = api_key;
+        Self::new(runtime)
+    }
+
+    /// 调接口，原样返回状态码和整个 JSON 信封（失败时调用方要看 `error.details`）。连不上才是 `Err`。
+    pub fn call_raw(&self, method: reqwest::Method, path: &str, body: Option<&Value>) -> Result<(u16, Value)> {
+        let mut request = self.client.request(method, self.url(path)).header("X-API-Key", &self.runtime.api_key);
+        if let Some(body) = body {
+            request = request.json(body);
+        }
+        let response = request.send().with_context(|| format!("连不上后端 {}", self.runtime.api_base))?;
+        let status = response.status().as_u16();
+        Ok((status, response.json().unwrap_or(Value::Null)))
+    }
+
+    /// GET 一个文件（页图之类），返回状态码和正文字节；失败时正文是 JSON 信封。
+    pub fn get_bytes(&self, path: &str) -> Result<(u16, Vec<u8>)> {
+        let response = self
+            .client
+            .get(self.url(path))
+            .header("X-API-Key", &self.runtime.api_key)
+            .send()
+            .with_context(|| format!("连不上后端 {}", self.runtime.api_base))?;
+        let status = response.status().as_u16();
+        Ok((status, response.bytes()?.to_vec()))
+    }
+
     pub fn get(&self, path: &str) -> Result<Value> {
         self.call(reqwest::Method::GET, path, None)
     }

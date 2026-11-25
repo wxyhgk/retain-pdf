@@ -73,6 +73,7 @@ retainpdf sync set --folder <文件夹> | --webdav <地址> --user <账号> [--p
 retainpdf books export [--document <书编号>]...
                                     把书库导出成给 AI 读的 Markdown 文件夹（<数据目录>/books/），只有后端开着时能用；
                                     格式见 docs/api/13-书库/05-书文件夹.md
+retainpdf mcp                       给 AI agent 用的 MCP 服务（stdio，由 agent 当子进程起），见下面「MCP 服务」
 ```
 
 全局参数：`--json`（输出 JSON 给脚本）、`--data <目录>`（数据目录，默认依次取配置、正在运行的后端、
@@ -80,6 +81,25 @@ retainpdf books export [--document <书编号>]...
 
 开发用、帮助里不列的：`retainpdf db-snapshot dump --db <库的副本> --out <文件>` 和 `retainpdf db-snapshot diff <前> <后> [--ignore …]`，
 数据库改表结构前后比对读出来的东西，见 [数据库贡献指南](../contributing/database.md)。
+
+## MCP 服务：`retainpdf mcp`
+
+2026-11-25 起。给 AI agent（Claude Code、Codex、Gemini CLI，或以后桌面版的 AI 面板经 ACP 起的 agent）用的 MCP 服务：
+stdio、每行一条 JSON-RPC 2.0 消息，不开端口；协议版本 2025-06-18（客户端要 2025-03-26、2024-11-05 时照它的回）。
+方案见 [AI 怎么拿到书的数据](../../ops/planning/ai-data-access/20261124-AI怎么拿到书的数据.md)。
+
+书的内容 agent 直接读书文件夹（`retainpdf books export` 导出的 `<数据目录>/books/`），这里只有两个工具：
+
+| 工具 | 参数 | 做什么 |
+|---|---|---|
+| `revise_translation` | `job_id`、`item_id`（照抄锚点）、`new_text`、`expected_old_text`（读到的那句译文）、`reason` | `PATCH /jobs/{job_id}/translations/{item_id}`，`source: "agent"`，带 `expected_translated_text`。期间被改过（409 `text_mismatch`）、没过检查、任务在跑时不写，把原因和当前译文 / 问题清单写进结果 |
+| `view_page` | `side`：`source` 给 `document_id` + 书的页码 `page`；`translated` 给 `job_id` + 锚点的 `item_id`（按 `pNNN` 取页）或任务自己的页号 `page`；`width` 240～1600，默认 1000 | 取页图（JPEG），作为图片返回 |
+
+- **密钥**：环境变量 `RETAINPDF_AGENT_KEY`（AI 专用密钥，后端配 `RUST_API_AGENT_KEYS`）优先，没有就用 `run/backend.json` 里的
+  本机密钥。用 AI 专用密钥时只能调登记表里写了 `agent` 的接口，改译文只能记成 `agent`。
+- **后端没开**：照样启动、照样列工具，调工具时回「RetainPDF 没开」；每次调工具都重新找后端，中途打开 RetainPDF 也能用上。
+- 改译文要用户确认：MCP 的工具注解标了不是只读；Claude Code 默认每次调都会问。桌面版 AI 面板对它弹确认（第 4 步）。
+- 接到 Claude Code：`claude mcp add retainpdf -- retainpdf mcp`，再在书文件夹里打开 Claude Code。
 
 ## 后端开着还是没开
 
