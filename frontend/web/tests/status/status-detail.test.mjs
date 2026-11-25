@@ -233,9 +233,9 @@ test("status detail resume actions route UI side effects through view port", asy
       job_id: "job-resume-action",
       status: "failed",
       actions: {
-        rerun: {
+        resume: {
           enabled: true,
-          url: "/api/v1/jobs/job-resume-action/rerun",
+          url: "/api/v1/jobs/job-resume-action/actions/resume",
         },
       },
     },
@@ -244,7 +244,7 @@ test("status detail resume actions route UI side effects through view port", asy
   const textCalls = [];
   const pollingCalls = [];
   const resolveActions = (job) => ({
-    resumeEnabled: job.actions.rerun.enabled,
+    resumeEnabled: job.actions.resume.enabled,
   });
 
   const resumeJobId = syncRerunAction({
@@ -611,7 +611,7 @@ test("status detail rerun: 409 translation ambiguity asks for confirmation, seco
   const jobFor = (jobId) => ({
     job_id: jobId,
     status: "failed",
-    actions: { rerun: { enabled: true, url: `/api/v1/jobs/${jobId}/rerun` } },
+    actions: { resume: { enabled: true, url: `/api/v1/jobs/${jobId}/actions/resume` } },
   });
   let currentJob = jobFor("job-ambiguous");
   const overviews = [];
@@ -635,7 +635,7 @@ test("status detail rerun: 409 translation ambiguity asks for confirmation, seco
     },
     setText: () => {},
     startPolling: (jobId) => calls.push(["poll", jobId]),
-    resolveActions: (job) => ({ resumeEnabled: job.actions.rerun.enabled }),
+    resolveActions: (job) => ({ resumeEnabled: job.actions.resume.enabled }),
   });
 
   // 第一次：通用重跑被 409 拦下 → 不报英文原文，给出二次确认提示，按钮仍可点。
@@ -671,7 +671,7 @@ test("status detail rerun: non-ambiguity errors are still shown as-is", async ()
   const overviews = [];
   await rerunCurrentJob({
     rerunContext: {
-      job: { job_id: "job-x", status: "failed", actions: { rerun: { enabled: true, url: "/r" } } },
+      job: { job_id: "job-x", status: "failed", actions: { resume: { enabled: true, url: "/r" } } },
       resumePlan: null,
     },
     resumeJob: async () => { throw new Error("提交失败: 500 boom"); },

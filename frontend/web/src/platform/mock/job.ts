@@ -204,10 +204,10 @@ export function buildMockJobPayload(scenario = currentMockScenario()): JobLike {
         enabled: false,
         url: "mock://cancel",
       },
-      rerun: {
+      resume: {
         enabled: status === "failed",
         method: "POST",
-        url: "mock://rerun",
+        url: "mock://resume",
       },
       open_markdown: {
         enabled: status === "succeeded",

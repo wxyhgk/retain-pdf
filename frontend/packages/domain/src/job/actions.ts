@@ -63,13 +63,8 @@ export function resolveJobActions(job) {
     || artifactDisplayReady(job, "markdown")
   );
   // 续跑一律发 POST /jobs/:id/actions/resume（resumeJob），这里只判断能不能点。
-  // actions.rerun 是同一个动作的旧名（后端为兼容留着），只在 actions.resume 还没有时拿来判断。
-  const resumeEnabled = Boolean(
-    actions.resume?.enabled
-    ?? artifactActions.resume?.enabled
-    ?? actions.rerun?.enabled
-    ?? artifactActions.rerun?.enabled,
-  );
+  // 只看 actions.resume。旧名 actions.rerun 2026-11-25 起不再读（后端删了 rerun 地址，这个字段随后删）。
+  const resumeEnabled = Boolean(actions.resume?.enabled ?? artifactActions.resume?.enabled);
   return {
     cancelEnabled: Boolean(actions.cancel?.enabled ?? artifactActions.cancel?.enabled ?? (job.status === "queued" || job.status === "running")),
     resumeEnabled,

@@ -359,7 +359,7 @@ test("job detail overview renderer owns state updates and rerun status", () => {
       job: {
         job_id: "job-overview",
         status: "succeeded",
-        actions: { rerun: { enabled: true, url: "/rerun/job-overview" } },
+        actions: { resume: { enabled: true, url: "/resume/job-overview" } },
       },
       manifestPayload: { items: [] },
       resumePlan: { can_resume: true, from_stage: "translation" },
