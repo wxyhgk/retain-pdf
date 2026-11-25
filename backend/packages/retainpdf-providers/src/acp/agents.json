@@ -1,0 +1,58 @@
+{
+  "_doc": "阅读页提问本机 agent 的人工名单，配合 registry-snapshot.json（ACP 官方登记表快照）用。aliases：登记表 id → 对外 id（2026-11-25 前端就用的 claude-code、codex 不变）；names：显示名改写；featured：推荐顺序（没装的也排在前面，前端可以把其余没装的折起来）；hidden：不列的和原因；bins：npx 装好后的命令名（登记表没写，2026-11-26 按 npm 的 bin 核过；有 binary 的用压缩包里的命令名，uvx 的就是包名）；requires：还要 PATH 上另有的命令。方案：docs/ops/planning/reader-ask/20261126-ACP官方登记表.md",
+  "aliases": {
+    "claude-acp": "claude-code",
+    "codex-acp": "codex"
+  },
+  "names": {
+    "claude-acp": "Claude Code"
+  },
+  "featured": [
+    "claude-acp",
+    "codex-acp",
+    "gemini",
+    "pi-acp",
+    "opencode",
+    "qwen-code",
+    "kimi-code",
+    "goose",
+    "github-copilot-cli",
+    "cursor"
+  ],
+  "hidden": {
+    "agoragentic-acp": "付费 agent 市场（USDC 结算），不是读书、写代码的 agent",
+    "antigravity-acp": "压缩包里是 agy_acp_server.par 服务文件，不是装进 PATH 的命令，认不出装没装",
+    "kimi": "Kimi CLI 旧版（Legacy），新的是 kimi-code，装好后命令都叫 kimi",
+    "opencode-v2": "OpenCode 的旧 id，和 opencode 是同一个"
+  },
+  "bins": {
+    "auggie": "auggie",
+    "bob": "bob",
+    "claude-acp": "claude-agent-acp",
+    "cline": "cline",
+    "codebuddy-code": "codebuddy-code",
+    "codex-acp": "codex-acp",
+    "deepagents": "deepagents-acp",
+    "dimcode": "dimcode",
+    "dirac": "dirac",
+    "factory-droid": "droid",
+    "gemini": "gemini",
+    "github-copilot-cli": "copilot",
+    "glm-acp-agent": "glm-acp-agent",
+    "grok-build": "grok",
+    "kilo": "kilo",
+    "kimi-code": "kimi",
+    "minimax-code": "code-acp",
+    "nova": "nova",
+    "pi-acp": "pi-acp",
+    "qoder": "qodercli",
+    "qwen-code": "qwen",
+    "sigit": "sigit"
+  },
+  "requires": {
+    "pi-acp": {
+      "bin": "pi",
+      "package": "@earendil-works/pi-coding-agent"
+    }
+  }
+}

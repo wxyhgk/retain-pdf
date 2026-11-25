@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/ai-agents/v1",
   "title": "阅读页提问的 agent（AI agents）",
-  "description": "阅读页提问（2026-11-25）：列出能用的 agent，和 ACP 桥（WebSocket，一条文字消息就是一条 ACP 的 JSON-RPC 2.0，桥不改协议，只给 session/new、session/load 补 cwd 和 retainpdf 的 MCP 服务）。生产者：backend/packages/retainpdf-providers/src/acp/（列表、闸门、起进程、两头转），backend/api/src/routes/ai.rs（处理函数）；backend/api/src/api_tests/acp_bridge.rs 起真后端测。消费者：@retainpdf/contracts/ai-agents，阅读页的问答窗（ACP 客户端）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。本机 agent（Claude Code、Codex、Gemini CLI）能在本机跑命令，只在单机模式、后端只在本机监听、握手的 Host 是本机地址且没经过代理时能用；服务器上只有自带的那个。详见 docs/api/16-AI/01-阅读页提问.md。",
+  "description": "阅读页提问（2026-11-25）：列出能用的 agent，和 ACP 桥（WebSocket，一条文字消息就是一条 ACP 的 JSON-RPC 2.0，桥不改协议，只给 session/new、session/load 补 cwd 和 retainpdf 的 MCP 服务）。生产者：backend/packages/retainpdf-providers/src/acp/（列表、闸门、起进程、两头转），backend/api/src/routes/ai.rs（处理函数）；backend/api/src/api_tests/acp_bridge.rs 起真后端测。消费者：@retainpdf/contracts/ai-agents，阅读页的问答窗（ACP 客户端）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。本机 agent（2026-11-26 起是 ACP 官方登记表里的那些：Claude Code、Codex、Gemini CLI、pi、OpenCode、Qwen Code……，后端用仓库里的快照，不联网取）能在本机跑命令，只在单机模式、后端只在本机监听、握手的 Host 是本机地址且没经过代理时能用；服务器上只有自带的那个。详见 docs/api/16-AI/01-阅读页提问.md。",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -12,7 +12,7 @@
       "output": "AgentsView",
       "rust_view": "AgentsView",
       "client_name": "listAiAgents",
-      "note": "自带的排第一，后面是本机 agent（装了没有、怎么起）。阅读页提问窗列 agent 用（frontend/web 的 features/reader/domain/ask-port.ts）。"
+      "note": "自带的排第一，后面是本机 agent（装了没有、怎么起）：装了的在前，再按推荐顺序（featured），其余按名字。阅读页提问窗列 agent 用（frontend/web 的 features/reader/domain/ask-port.ts）。"
     },
     {
       "method": "GET",
@@ -28,18 +28,31 @@
       "enum": ["builtin", "local"],
       "description": "builtin：RetainPDF 自带模型（用设置里的模型和密钥，服务器上也能用）；local：本机装的 agent。"
     },
+    "AgentDistribution": {
+      "type": "string",
+      "enum": ["binary", "npx", "uvx"],
+      "description": "本机 agent 怎么发行（怎么装）：binary 下载压缩包、把里面的命令放进 PATH（install_url）；npx 是 npm 包（install 是 npm install -g …）；uvx 是 Python 包（install 是 uv tool install …）。后端都不现场下载。"
+    },
     "AgentView": {
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "name", "kind", "available", "reason"],
       "properties": {
-        "id": { "type": "string", "description": "retainpdf、claude-code、codex、gemini；WebSocket 地址里的 :agent_id。" },
+        "id": { "type": "string", "description": "WebSocket 地址里的 :agent_id。retainpdf 是自带的；本机的是 ACP 官方登记表的 id（pi-acp、opencode、qwen-code……），只有 claude-code（登记表 claude-acp）、codex（codex-acp）沿用 2026-11-25 的写法，握手时登记表 id 也认。" },
         "name": { "type": "string" },
         "kind": { "$ref": "#/definitions/AgentKind" },
         "available": { "type": "boolean" },
         "reason": { "type": "string", "description": "不能用的原因；能用时是空串。" },
         "launch": { "type": "string", "description": "本机 agent 实际怎么起（给用户看），比如 claude-agent-acp、gemini --acp；自带的、没装的没有这个字段。" },
-        "install": { "type": "string", "description": "本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp；自带的没有。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。" }
+        "install": { "type": "string", "description": "本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp、uv tool install fast-agent-acp；自带的、只有压缩包的没有（看 install_url 和 reason）。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。" },
+        "registry_id": { "type": "string", "description": "ACP 官方登记表里的 id（2026-11-26 加）；自带的没有。" },
+        "description": { "type": "string", "description": "登记表里的一句话介绍（英文）。" },
+        "version": { "type": "string", "description": "快照里登记的版本，不是本机装的版本。" },
+        "homepage": { "type": "string", "description": "官网，没有就是代码仓库。" },
+        "license": { "type": "string" },
+        "distribution": { "$ref": "#/definitions/AgentDistribution" },
+        "install_url": { "type": "string", "description": "只有压缩包的 agent：这个平台的下载地址（解压后把命令放进 PATH）。" },
+        "featured": { "type": "boolean", "description": "推荐的几个（Claude Code、Codex、Gemini CLI、pi、OpenCode……）；不推荐的没有这个字段。前端可以把其余没装的折起来。" }
       }
     },
     "LocalAgentsView": {
