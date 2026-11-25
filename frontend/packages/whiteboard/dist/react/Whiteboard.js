@@ -100,8 +100,9 @@ export function Whiteboard({ script: rawScript, step: controlledStep, onStepChan
         let id = 0;
         // 画完这一步就自己停：不要靠别的 effect 去取消它 —— 公式排得很快时（MathJax 已经加载过），
         // 「画完了就取消」的那个 effect 会和这里同一次提交里跑，把刚开始的这一轮取消掉，动画停在第 0 帧。
-        const tick = (now) => {
-            const elapsedMs = now - start;
+        // 用同一个时钟量（不用 requestAnimationFrame 传进来的时间戳：有的环境里两者起点不同）。
+        const tick = () => {
+            const elapsedMs = performance.now() - start;
             setElapsed(elapsedMs);
             if (elapsedMs <= durationRef.current)
                 id = requestAnimationFrame(tick);
