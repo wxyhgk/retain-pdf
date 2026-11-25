@@ -1,4 +1,4 @@
-// Szabo & Ostlund 第 3 章（Hartree-Fock）的讲解脚本（@retainpdf/whiteboard 格式）：学习区「讲给我听」和白板演示页共用。
+// 白板演示页「讲解脚本」用的脚本：Szabo & Ostlund 第 3 章（Hartree-Fock）几个典型卡点（@retainpdf/whiteboard 格式）。
 // 这是草稿，物理内容等用户审。
 // 数字：STO-3G H₂（R = 1.4 a.u.）的轨道能 ε₁ = −0.578、ε₂ = 0.670 Hartree（Szabo 3.5.2）。
 
@@ -8,7 +8,7 @@ export type DemoScript = {
   script: unknown;
 };
 
-export const SZABO_CH3_SCRIPTS: DemoScript[] = [
+export const DEMO_SCRIPTS: DemoScript[] = [
   {
     key: "energy",
     label: "总能量 ≠ 轨道能之和",

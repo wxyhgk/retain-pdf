@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
-export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "side";
+export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "ai";
 export type ReaderWorkspaceMode = "source" | "compare" | "translated";
 export type ReaderWorkspaceTabsProps = {
     mode: ReaderWorkspaceMode;
@@ -23,12 +23,6 @@ export type ReaderWorkspaceTabsProps = {
     /** 这次看着它翻完了：顶栏左边换成「翻译完成 · 看对照」。 */
     completion?: {
         onOpenCompare: () => void;
-    } | null;
-    /** 宿主的第二栏（contracts/side-pane.ts）：多一个页签；开着时前三个页签都不算选中。 */
-    sidePane?: {
-        label: string;
-        active: boolean;
-        onSelect: () => void;
     } | null;
 };
 export declare function liveTranslationStatusCopy(state: LiveTranslationState): string;

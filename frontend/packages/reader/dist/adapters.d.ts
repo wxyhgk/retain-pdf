@@ -3,7 +3,6 @@ import type { createReaderPageConfigPort } from "./runtime/config.js";
 import type { ReaderLiveTranslationPort } from "./contracts/live-translation.js";
 import type { ReaderPdfPort } from "./contracts/pdf.js";
 import type { ReaderSessionDataPort } from "./contracts/session.js";
-import type { ReaderSidePanePort } from "./contracts/side-pane.js";
 export { hasMarkdownContent, loadMarkdownPayloadWithFallback, normalizeMarkdownPayload, } from "./shared/data/markdown-payload.js";
 export type ReaderSessionAdapters = {
     isMockMode?: () => boolean;
@@ -24,8 +23,6 @@ export type ReaderSessionAdapters = {
     pdf?: ReaderPdfPort;
     /** Optional during migration; legacy data/runtime fields remain supported. */
     sessionData?: ReaderSessionDataPort;
-    /** 阅读页的第二栏（顶栏多一个页签，左书右宿主内容）。不给就没有这个页签。 */
-    sidePane?: ReaderSidePanePort;
 };
 export type ReaderMarkdownAdapters = {
     resolveMarkdownAssetUrl: (imagesBaseUrl: unknown, relativePath: unknown) => string;
@@ -62,7 +59,7 @@ export type ReaderAdapters = ReaderSessionAdapters & ReaderMarkdownAdapters & Re
  * 注册层与门禁测试共用，避免手工复制字段集漂移；`satisfies` 保证不引入拼错键。
  * 完整性由紧随其后的编译期断言守护。
  */
-export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "sidePane", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId"];
+export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId"];
 /** 必填（非 `?`）适配键子集，供门禁断言最小注入面。 */
 export declare const READER_REQUIRED_ADAPTER_KEYS: readonly ["resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "fetchDocumentByJobId"];
 export declare function setReaderAdapters(a: ReaderAdapters | null): void;

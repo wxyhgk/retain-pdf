@@ -1,5 +1,4 @@
 import { type ReactNode } from "react";
-import type { MarginMarkersByPage } from "../../hooks/use-reader-side-pane.js";
 import type { ReaderPaneModel } from "../../hooks/use-reader-pane-model.js";
 import type { ReaderDownloadContext } from "../../hooks/use-reader-session.js";
 import type { ReaderMetadata, ReaderRegion } from "../../shared/data/reader-regions.js";
@@ -33,10 +32,6 @@ export type ReaderContextValue = {
     jumpToBlock?: (itemId: string) => void;
     /** 改过的块（阅读页块编号 → 改过几次）：译文栏画小标记，悬停写「改过 N 次」。 */
     revisedBlocks?: ReadonlyMap<string, number>;
-    /** 第二栏开着时宿主给的页边小圆点（按页分好）；关着时是空的。 */
-    marginMarkers?: MarginMarkersByPage;
-    /** 点了页边小圆点：交回给宿主。 */
-    selectMarginMarker?: (key: string) => void;
     /** 译文栏悬停框的「改」：这一段变成编辑框。不能改时不给。 */
     editBlock?: (itemId: string) => void;
     /** 改译文的状态：正在改哪一段（译文栏在那里画编辑框）、写回了还没排进 PDF 的译文（先盖在 PDF 上）。 */

@@ -17,7 +17,6 @@ name: Desktop Frontend Sync
       - "contracts/**"
       - "frontend/packages/ui/**"
       - "frontend/packages/whiteboard/**"
-      - "frontend/packages/learning/**"
   push:
     branches:
       - main
@@ -37,7 +36,6 @@ name: Desktop Frontend Sync
       - "contracts/**"
       - "frontend/packages/ui/**"
       - "frontend/packages/whiteboard/**"
-      - "frontend/packages/learning/**"
   workflow_dispatch: {}
 
 permissions:
