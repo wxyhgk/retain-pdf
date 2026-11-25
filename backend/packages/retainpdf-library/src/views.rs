@@ -8,6 +8,7 @@ use retainpdf_core::models::api::{
 };
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::request::CreateJobInput;
+use retainpdf_data::db::{AskMessageRecord, AskThreadRecord};
 use serde::{Deserialize, Serialize};
 
 fn default_documents_limit() -> u32 {
@@ -282,6 +283,108 @@ pub struct TagListView {
 #[derive(Debug, Serialize)]
 pub struct TagDeleteResultView {
     pub tag_id: String,
+    pub deleted: bool,
+}
+
+// --- 阅读页提问的问答记录（2026-11-25，数据库 v39；校验和上限见 `ask_threads.rs`）---
+
+/// 请求里的锚点：问的是哪儿。和阅读器的 `ReaderAskAnchor` 一一对应（字段名改成下划线）。不认识的字段 400。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AskAnchorInput {
+    /// `source` 原文 / `translated` 译文。
+    pub pane: String,
+    /// 第几页（从 1 起）。
+    pub page: u32,
+    /// 鼠标下面那一块；认不出不给或 null。
+    #[serde(default)]
+    pub item_id: Option<String>,
+    /// 选中的字；不给、null、空串都是没选。下面三个同理。
+    #[serde(default)]
+    pub selection: Option<String>,
+    #[serde(default)]
+    pub source_text: Option<String>,
+    #[serde(default)]
+    pub translated_text: Option<String>,
+    #[serde(default)]
+    pub section: Option<String>,
+    /// 页内位置（占整页的比例，0–1）；没有不给或 null。
+    #[serde(default)]
+    pub point: Option<AskPointInput>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AskPointInput {
+    pub x: f64,
+    pub y: f64,
+}
+
+/// 请求里的一条问或答。不认识的字段 400。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AskMessageInput {
+    /// `user` / `assistant`。
+    pub role: String,
+    pub text: String,
+    /// 思考摘要；没有不给、null 或空串。
+    #[serde(default)]
+    pub thought: Option<String>,
+    /// 用量（JSON 对象，原样存，例如自带 agent 的 `_meta.retainpdf.usage`）；没有不给或 null。
+    #[serde(default)]
+    pub usage: Option<serde_json::Value>,
+}
+
+/// POST /api/v1/documents/:document_id/ask-threads：在书上记一次提问（可以连开头几条问答一起）。不认识的字段 400。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CreateAskThreadInput {
+    /// 用的哪个 agent（`GET /ai/agents` 里的 `id`：`retainpdf`、`claude-code`……）。
+    pub agent_id: String,
+    /// agent 那边的 ACP 会话编号（`session/new` 回的 `sessionId`）；没有不给或 null。
+    #[serde(default)]
+    pub session_id: Option<String>,
+    pub anchor: AskAnchorInput,
+    #[serde(default)]
+    pub messages: Vec<AskMessageInput>,
+}
+
+/// PATCH /api/v1/documents/:document_id/ask-threads/:thread_id：给了的才改。不认识的字段 400。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PatchAskThreadInput {
+    #[serde(default)]
+    pub agent_id: Option<String>,
+    /// 不给 = 不改；null 或空串 = 清掉；字符串 = 换成它。
+    #[serde(default, deserialize_with = "present_or_null")]
+    pub session_id: Option<Option<String>>,
+    /// 整份问答（换掉原来的全部）；标题跟着重算。
+    #[serde(default)]
+    pub messages: Option<Vec<AskMessageInput>>,
+}
+
+/// 字段在就是 `Some`（null 是 `Some(None)`），不在由 `#[serde(default)]` 给 `None`。
+fn present_or_null<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Option<Option<String>>, D::Error> {
+    Option::<String>::deserialize(deserializer).map(Some)
+}
+
+/// GET /api/v1/documents/:document_id/ask-threads：书上的提问（不带问答正文），最近改过的在前。
+#[derive(Debug, Serialize)]
+pub struct AskThreadListView {
+    pub threads: Vec<AskThreadRecord>,
+}
+
+/// 一次提问连同问答：读一次、建、改都回它。
+#[derive(Debug, Serialize)]
+pub struct AskThreadView {
+    #[serde(flatten)]
+    pub thread: AskThreadRecord,
+    pub messages: Vec<AskMessageRecord>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AskThreadDeleteResultView {
+    pub thread_id: String,
     pub deleted: bool,
 }
 

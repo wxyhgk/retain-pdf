@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/ask-threads/v1",
+  "title": "阅读页提问的问答记录（ask threads）",
+  "description": "阅读页提问的第 3 步（2026-11-25）：按书存每次提问（书页上的一个「?」）——锚点（问的是哪儿）、用的 agent 和 ACP 会话编号、问答（正文、思考摘要、用量）。存在数据库（v39 的 ask_threads、ask_messages），挂在书的文件上，删书跟着删；不同步。生产者：backend/packages/retainpdf-library/src/ask_threads.rs（校验、上限）、views.rs（请求和返回类型），database/retainpdf-db/src/db/ask_threads.rs（存取），backend/api/src/routes/ask_threads.rs（处理函数）；backend/api/src/api_tests/ask_threads.rs 钉键集合。消费者：@retainpdf/contracts/ask-threads，阅读页的「?」和问答窗。成功响应包在 {code, message, data} 里，本契约描述 data 部分。端点先不写 client_name：前端生成的请求客户端有漂移检查，等前端接的时候连同生成代码一起加。上限：一本书最多 500 次提问（多了 409 ask_thread_limit）、一次提问最多 200 条问答、一条正文最多 50000 字、一条思考摘要最多 20000 字、一次提问的正文和思考加起来最多 1000000 字节、一条用量写成 JSON 最多 4096 字节；超了 400。锚点里的选中的字（4000 字）、原文和译文（各 8000 字）、章节（200 字）超长截断，不报错。详见 docs/api/16-AI/01-阅读页提问.md。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/:document_id/ask-threads",
+      "transport": "json",
+      "output": "AskThreadListView",
+      "rust_view": "AskThreadListView",
+      "note": "书上的提问，最近改过的在前；不带问答正文（画「?」、列出来用）。不分页（一本书最多 500 次）。没有这本书 404。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/documents/:document_id/ask-threads",
+      "transport": "json",
+      "input": "CreateAskThreadInput",
+      "output": "AskThreadView",
+      "rust_view": "AskThreadView",
+      "note": "记一次提问；可以连开头几条问答一起（第一轮答完再建，一次写完）。标题取第一句问。没有这本书 404；书上已经有 500 次 409，error.details.reason = ask_thread_limit、details.limit = 500；字段不对 400。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/:document_id/ask-threads/:thread_id",
+      "transport": "json",
+      "output": "AskThreadView",
+      "rust_view": "AskThreadView",
+      "note": "一次提问连同问答（按顺序）。不在这本书上 404。"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/documents/:document_id/ask-threads/:thread_id",
+      "transport": "json",
+      "input": "PatchAskThreadInput",
+      "output": "AskThreadView",
+      "rust_view": "AskThreadView",
+      "note": "给了的才改：messages 整份换掉原来的问答（前端每答完一轮把整段对话写一次，重发同一份结果一样），标题跟着重算；agent_id、session_id 换 agent 或重开 ACP 会话时改。updated_at 换成现在。不在这本书上 404。"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/documents/:document_id/ask-threads/:thread_id",
+      "transport": "json",
+      "output": "AskThreadDeleteResultView",
+      "rust_view": "AskThreadDeleteResultView",
+      "note": "删一次提问和它的问答。不在这本书上 404。"
+    }
+  ],
+  "definitions": {
+    "AskPane": {
+      "type": "string",
+      "enum": ["source", "translated"],
+      "description": "在哪一栏问的：source 原文 / translated 译文。"
+    },
+    "AskRole": {
+      "type": "string",
+      "enum": ["user", "assistant"],
+      "description": "user 问 / assistant 答。"
+    },
+    "AskPoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "description": "页内位置，占整页的比例（0–1），画「?」用。",
+      "properties": {
+        "x": { "type": "number", "minimum": 0, "maximum": 1 },
+        "y": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "AskAnchorRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pane", "page", "item_id", "selection", "source_text", "translated_text", "section", "point"],
+      "description": "问的是哪儿（返回里的）。和阅读器的 ReaderAskAnchor 一一对应，字段名改成下划线（itemId → item_id、sourceText → source_text、translatedText → translated_text）。",
+      "properties": {
+        "pane": { "$ref": "#/definitions/AskPane" },
+        "page": { "type": "integer", "minimum": 1, "description": "第几页（从 1 起）。" },
+        "item_id": { "type": ["string", "null"], "description": "鼠标下面那一块；认不出（空白处、没有段落数据）是 null。" },
+        "selection": { "type": "string", "description": "选中的字（「问这段」）；没选是空串。" },
+        "source_text": { "type": "string", "description": "那一块的原文；拿不到是空串。" },
+        "translated_text": { "type": "string", "description": "那一块的译文；拿不到是空串。" },
+        "section": { "type": "string", "description": "所在章节（书签或标题）；没有是空串。" },
+        "point": {
+          "anyOf": [{ "$ref": "#/definitions/AskPoint" }, { "type": "null" }],
+          "description": "页内位置；没有是 null。"
+        }
+      }
+    },
+    "AskAnchorInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pane", "page"],
+      "description": "问的是哪儿（请求里的）。只有 pane、page 必填；其余不给、null 都当没有（字符串当空串）。选中的字超过 4000 字、原文译文各超过 8000 字、章节超过 200 字截断；item_id 最长 200 字，超了 400。",
+      "properties": {
+        "pane": { "$ref": "#/definitions/AskPane" },
+        "page": { "type": "integer", "minimum": 1 },
+        "item_id": { "type": ["string", "null"] },
+        "selection": { "type": ["string", "null"] },
+        "source_text": { "type": ["string", "null"] },
+        "translated_text": { "type": ["string", "null"] },
+        "section": { "type": ["string", "null"] },
+        "point": { "anyOf": [{ "$ref": "#/definitions/AskPoint" }, { "type": "null" }] }
+      }
+    },
+    "AskMessageRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "text", "thought", "usage"],
+      "description": "一条问或答（返回里的）。",
+      "properties": {
+        "role": { "$ref": "#/definitions/AskRole" },
+        "text": { "type": "string", "description": "正文（Markdown）。" },
+        "thought": { "type": ["string", "null"], "description": "思考摘要；没有是 null。" },
+        "usage": {
+          "type": ["object", "null"],
+          "description": "用量，原样存前端给的对象（例如自带 agent 的 _meta.retainpdf.usage：model、input_tokens、output_tokens、cache_read_tokens……）；没有是 null。"
+        }
+      }
+    },
+    "AskMessageInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "text"],
+      "description": "一条问或答（请求里的）。正文最多 50000 字、思考最多 20000 字（只有空白当没有）、用量必须是对象且写成 JSON 最多 4096 字节，超了 400。",
+      "properties": {
+        "role": { "$ref": "#/definitions/AskRole" },
+        "text": { "type": "string" },
+        "thought": { "type": ["string", "null"] },
+        "usage": { "type": ["object", "null"] }
+      }
+    },
+    "AskThreadRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "document_id", "agent_id", "session_id", "title", "anchor", "message_count", "created_at", "updated_at"],
+      "description": "一次提问（不带问答正文）：列表里的一项。",
+      "properties": {
+        "thread_id": { "type": "string", "description": "ask- 开头。" },
+        "document_id": { "type": "string" },
+        "agent_id": { "type": "string", "description": "用的哪个 agent（GET /ai/agents 的 id：retainpdf、claude-code……）。" },
+        "session_id": { "type": ["string", "null"], "description": "agent 那边的 ACP 会话编号（session/new 回的 sessionId）；没有是 null。现在只是记着：重新打开时 agent 那边是新会话（session/load 以后做）。" },
+        "title": { "type": "string", "description": "第一句问，空白压成一个空格，最长 80 字；还没问是空串。" },
+        "anchor": { "$ref": "#/definitions/AskAnchorRecord" },
+        "message_count": { "type": "integer", "minimum": 0 },
+        "created_at": { "type": "string", "description": "RFC 3339（UTC，到秒）。" },
+        "updated_at": { "type": "string", "description": "最后一次改（建、PATCH）的时间。" }
+      }
+    },
+    "AskThreadView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "document_id", "agent_id", "session_id", "title", "anchor", "message_count", "created_at", "updated_at", "messages"],
+      "description": "一次提问连同问答：AskThreadRecord 的全部字段加 messages。读一次、建、改都回它。",
+      "properties": {
+        "thread_id": { "type": "string" },
+        "document_id": { "type": "string" },
+        "agent_id": { "type": "string" },
+        "session_id": { "type": ["string", "null"] },
+        "title": { "type": "string" },
+        "anchor": { "$ref": "#/definitions/AskAnchorRecord" },
+        "message_count": { "type": "integer", "minimum": 0 },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" },
+        "messages": { "type": "array", "items": { "$ref": "#/definitions/AskMessageRecord" }, "description": "按顺序。" }
+      }
+    },
+    "AskThreadListView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["threads"],
+      "properties": {
+        "threads": { "type": "array", "items": { "$ref": "#/definitions/AskThreadRecord" } }
+      }
+    },
+    "CreateAskThreadInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agent_id", "anchor"],
+      "description": "agent_id 1–64 个字母、数字、-、_、.；session_id 最长 256 字，空串当没有。",
+      "properties": {
+        "agent_id": { "type": "string" },
+        "session_id": { "type": ["string", "null"] },
+        "anchor": { "$ref": "#/definitions/AskAnchorInput" },
+        "messages": { "type": "array", "items": { "$ref": "#/definitions/AskMessageInput" }, "description": "开头几条问答；不给是还没有。" }
+      }
+    },
+    "PatchAskThreadInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "给了的才改。session_id：不给不改，null 或空串清掉。messages：整份换掉原来的问答，标题跟着重算。",
+      "properties": {
+        "agent_id": { "type": "string" },
+        "session_id": { "type": ["string", "null"] },
+        "messages": { "type": "array", "items": { "$ref": "#/definitions/AskMessageInput" } }
+      }
+    },
+    "AskThreadDeleteResultView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_id", "deleted"],
+      "properties": {
+        "thread_id": { "type": "string" },
+        "deleted": { "type": "boolean", "enum": [true] }
+      }
+    }
+  }
+}

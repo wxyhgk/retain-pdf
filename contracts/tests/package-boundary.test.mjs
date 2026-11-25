@@ -18,6 +18,7 @@ const generatedSettings = Object.fromEntries(
 );
 const RAW_SCHEMA_EXPORTS = [
   "./ai-agents.v1.schema.json",
+  "./ask-threads.v1.schema.json",
   "./auth-session.v1.schema.json",
   "./create-job.v1.schema.json",
   "./credentials.v1.schema.json",
@@ -50,6 +51,7 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
       "./create-job",
       "./create-job-fields",
       "./ai-agents",
+      "./ask-threads",
       "./uploads",
       "./auth-session",
       "./platform-settings",

@@ -53,6 +53,8 @@ pub fn classify_param(name: &str) -> ParamClass {
         "user_id" | "invite_id" | "backup_id" | "credential_ref" | "operation_id" | "artifact_id" => ParamClass::Nested,
         // agent_id：阅读页提问的 agent，登记表里写死的名字（/ai/agents/:agent_id/acp），不属于哪个用户
         "agent_id" => ParamClass::Nested,
+        // thread_id：书下面的问答记录（/documents/:document_id/ask-threads/:thread_id），处理函数按书查，不在这本书上 404
+        "thread_id" => ParamClass::Nested,
         _ => ParamClass::Unknown,
     }
 }
