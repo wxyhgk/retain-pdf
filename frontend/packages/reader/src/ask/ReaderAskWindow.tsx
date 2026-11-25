@@ -30,11 +30,13 @@ import {
 } from "@assistant-ui/react";
 import { Streamdown } from "streamdown";
 import { createMathPlugin } from "@streamdown/math";
-import { ArrowUp, Brain, ChevronRight, CircleDot, Square, Wrench, X } from "lucide-react";
+import { ArrowUp, Brain, ChevronRight, CircleDot, Copy, Square, Trash2, Wrench, X } from "lucide-react";
 import { Button, Select } from "@retainpdf/ui";
 
-import type { ReaderAskAgent, ReaderAskAnchor, ReaderAskPort } from "../contracts/ask.js";
+import type { ReaderAskAgent, ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
+import { toInitialMessages, toStoredMessages } from "./thread-messages.js";
 import { resolveKatexStylesheetUrl } from "../external.js";
+import { copyReaderText } from "../pdf/ReaderTextHoverLayer.js";
 import { PermissionStore, createAcpChatAdapter } from "./acp-adapter.js";
 import { normalizeMathDelimiters } from "./math-delimiters.js";
 import { turnFooter, type AskSubagent, type AskToolCall, type AskTurn } from "./acp-parts.js";
@@ -143,10 +145,26 @@ function SubagentBlock({ data }: DataMessagePartProps<AskSubagent>): ReactElemen
   );
 }
 
-/** 发出去以后、第一段思考或正文到之前（Claude 要两三秒）：说一声在想，不然像卡住了。 */
+/** 第一段到之前等多久就补一句「还在等」（本机 agent 起进程、模型排队都可能慢），不说的话像卡住了。 */
+export const ASK_SLOW_HINT_MS = 10_000;
+
+/** 发出去以后、第一段思考或正文到之前（Claude 要两三秒）：说一声在想，不然像卡住了；等久了再说一句为什么。 */
 function Waiting(): ReactElement | null {
   const waiting = useAuiState((state) => state.message.status?.type === "running" && state.message.parts.length === 0);
-  return waiting ? <div className="reader-ask-waiting" role="status"><span className="reader-ask-dot" aria-hidden />在想…</div> : null;
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    setSlow(false);
+    if (!waiting) return undefined;
+    const timer = window.setTimeout(() => setSlow(true), ASK_SLOW_HINT_MS);
+    return () => window.clearTimeout(timer);
+  }, [waiting]);
+  if (!waiting) return null;
+  return (
+    <div className="reader-ask-waiting" role="status">
+      <span className="reader-ask-dot" aria-hidden />
+      {slow ? "还在等 agent 回应……" : "在想…"}
+    </div>
+  );
 }
 
 function AnswerFooter({ agentName }: { agentName: string }): ReactElement | null {
@@ -183,6 +201,36 @@ function makeAssistantMessage(agentName: () => string) {
   };
 }
 
+/** 没装的本机 agent：写安装命令（在终端跑一次），可以复制。后端不再现场下载（下到一半会留坏缓存）。 */
+function InstallHints({ agents }: { agents: readonly ReaderAskAgent[] | null }): ReactElement | null {
+  const missing = (agents || []).filter((agent) => agent.available === false && agent.install);
+  const [copied, setCopied] = useState("");
+  if (!missing.length) return null;
+  return (
+    <details className="reader-ask-install">
+      <summary>还能接本机的 {missing.map((agent) => agent.name).join("、")}（要先装）</summary>
+      <ul>
+        {missing.map((agent) => (
+          <li key={agent.id}>
+            <span>{agent.name}</span>
+            <code>{agent.install}</code>
+            <Button
+              className="reader-ask-close"
+              aria-label={`复制「${agent.name}」的安装命令`}
+              title={copied === agent.id ? "已复制" : "复制安装命令，在终端里跑一次"}
+              onClick={async () => {
+                if (await copyReaderText(agent.install || "")) setCopied(agent.id);
+              }}
+            >
+              <Copy size={13} aria-hidden />
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 export type ReaderAskWindowProps = {
   port: ReaderAskPort;
   jobId: string;
@@ -191,16 +239,19 @@ export type ReaderAskWindowProps = {
   onClose: () => void;
   /** 点出处：跳回问的那一处。 */
   onShowAnchor?: () => void;
-  /** 这一处上次问过的对话（assistant-ui 导出的），再打开时接着显示；关窗时用 onSave 存回去。 */
-  saved?: unknown;
-  onSave?: (repository: unknown) => void;
+  /** 这一处之前的问答（问答记录读回来的，或这次打开里问过的），接着显示。 */
+  initialMessages?: readonly ReaderAskMessage[];
+  /** 每答完一轮：整段问答交出去存（问答记录）。 */
+  onTurnDone?: (messages: ReaderAskMessage[], agentId: string) => void;
+  /** 删掉这次提问（书页上的「?」也去掉）。不给就没有删除按钮。 */
+  onDelete?: () => void;
 };
 
 function anchorLabel(anchor: ReaderAskAnchor): string {
   return [`第 ${anchor.page} 页`, anchor.section].filter(Boolean).join(" · ");
 }
 
-export default function ReaderAskWindow({ port, jobId, bookTitle, anchor, onClose, onShowAnchor, saved, onSave }: ReaderAskWindowProps): ReactElement {
+export default function ReaderAskWindow({ port, jobId, bookTitle, anchor, onClose, onShowAnchor, initialMessages, onTurnDone, onDelete }: ReaderAskWindowProps): ReactElement {
   useKatexStylesheet();
   const [agents, setAgents] = useState<ReaderAskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -236,27 +287,22 @@ export default function ReaderAskWindow({ port, jobId, bookTitle, anchor, onClos
     [port, jobId, bookTitle, permissions],
   );
   useEffect(() => () => chat.close(), [chat]);
-  const runtime = useLocalRuntime(chat.adapter as never);
-  // 再打开同一处：把上次的对话导回来（agent 那边是新会话，出处会再带一次）；关窗时导出存回去。
-  const saveRef = useRef(onSave);
-  saveRef.current = onSave;
+  // 之前的问答接着显示（agent 那边是新会话：出处和之前几轮会跟着下一问带过去，见 acp-adapter）。
+  const [initial] = useState(() => toInitialMessages(initialMessages || []));
+  const runtime = useLocalRuntime(chat.adapter as never, { initialMessages: initial as never });
+  // 每答完一轮（running → 停）把整段问答交出去存。
+  const turnDoneRef = useRef(onTurnDone);
+  turnDoneRef.current = onTurnDone;
   useEffect(() => {
-    if (saved) {
-      try {
-        runtime.thread.import(saved as never);
-      } catch {
-        // 导不回来就当新的一次
+    let wasRunning = false;
+    return runtime.thread.subscribe(() => {
+      const state = runtime.thread.getState();
+      if (wasRunning && !state.isRunning) {
+        const stored = toStoredMessages(state.messages as never);
+        if (stored.length) turnDoneRef.current?.(stored, live.current.agentId);
       }
-    }
-    return () => {
-      try {
-        saveRef.current?.(runtime.thread.export());
-      } catch {
-        // 存不了就算了，下次重新问
-      }
-    };
-    // 只在打开、关掉时各做一次。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      wasRunning = state.isRunning;
+    });
   }, [runtime]);
   const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
   const AssistantMessage = useMemo(() => makeAssistantMessage(agentName), [agents]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -307,12 +353,18 @@ export default function ReaderAskWindow({ port, jobId, bookTitle, anchor, onClos
               </option>
             ))}
           </Select>
+          {onDelete ? (
+            <Button className="reader-ask-close" aria-label="删掉这次提问" title="删掉这次提问（书页上的「?」也去掉）" onClick={onDelete}>
+              <Trash2 size={14} aria-hidden />
+            </Button>
+          ) : null}
           <Button className="reader-ask-close" aria-label="关掉" title="关掉（Esc）" onClick={onClose}>
             <X size={15} aria-hidden />
           </Button>
         </header>
         {quote ? <blockquote className="reader-ask-quote">{quote}</blockquote> : null}
         {loadError ? <p className="reader-ask-error">列不出能用的 agent：{loadError}</p> : null}
+        <InstallHints agents={agents} />
         <PermissionContext.Provider value={permissions}>
           <AssistantRuntimeProvider runtime={runtime}>
             <ThreadPrimitive.Root className="reader-ask-thread">

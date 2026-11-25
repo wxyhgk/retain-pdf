@@ -3,12 +3,12 @@
 // 真的 ACP 桥见 docs/ops/planning/reader-ask/；桥好了以后宿主换成 WebSocket 那个端口。
 
 import type { ContentBlock, SessionUpdate } from "@agentclientprotocol/sdk";
-import type { ReaderAskHandlers, ReaderAskPort, ReaderAskSession } from "@retainpdf/reader/contracts";
+import type { ReaderAskHandlers, ReaderAskPort, ReaderAskSession, ReaderAskThread, ReaderAskThreadsPort } from "@retainpdf/reader/contracts";
 
 const AGENTS = [
   { id: "retainpdf", name: "RetainPDF 自带模型", description: "用设置里配好的模型", available: true, acceptsImages: true },
   { id: "claude-code", name: "Claude Code", description: "本机的 Claude Code（ACP）", available: true },
-  { id: "codex", name: "Codex", description: "本机的 Codex（ACP）", available: false, reason: "演示模式：没有装 codex-acp" },
+  { id: "codex", name: "Codex", description: "本机的 Codex（ACP）", available: false, reason: "演示模式：没有装 codex-acp", install: "npm install -g @agentclientprotocol/codex-acp" },
 ];
 
 const ANSWER = [
@@ -110,7 +110,45 @@ function openFakeSession(agentId: string, handlers: ReaderAskHandlers): ReaderAs
   };
 }
 
+// 问答记录存在内存里（刷新就没了），够演示「?」读回来、接着问。
+const threads = new Map<string, ReaderAskThread>();
+let threadSeq = 0;
+
+const mockThreads: ReaderAskThreadsPort = {
+  list: async () => [...threads.values()].map(({ messages: _messages, ...rest }) => rest),
+  get: async (_documentId, threadId) => {
+    const thread = threads.get(threadId);
+    if (!thread) throw new Error("没有这次提问");
+    return thread;
+  },
+  create: async (_documentId, input) => {
+    threadSeq += 1;
+    const thread: ReaderAskThread = {
+      threadId: `demo-${threadSeq}`,
+      agentId: input.agentId,
+      title: input.messages.find((message) => message.role === "user")?.text.slice(0, 40) || "提问",
+      anchor: input.anchor,
+      messageCount: input.messages.length,
+      updatedAt: new Date().toISOString(),
+      messages: input.messages,
+    };
+    threads.set(thread.threadId, thread);
+    return thread;
+  },
+  update: async (_documentId, threadId, input) => {
+    const thread = threads.get(threadId);
+    if (!thread) throw new Error("没有这次提问");
+    const next = { ...thread, agentId: input.agentId || thread.agentId, messages: input.messages, messageCount: input.messages.length, updatedAt: new Date().toISOString() };
+    threads.set(threadId, next);
+    return next;
+  },
+  remove: async (_documentId, threadId) => {
+    threads.delete(threadId);
+  },
+};
+
 export const mockAskPort: ReaderAskPort = {
   listAgents: async () => AGENTS,
   openSession: async ({ agentId }, handlers) => openFakeSession(agentId, handlers),
+  threads: mockThreads,
 };

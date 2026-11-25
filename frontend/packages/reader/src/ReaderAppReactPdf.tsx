@@ -60,7 +60,7 @@ import { ReaderXrefPreview } from "./components/react-pdf/ReaderXrefPreview.js";
 import type { ReaderAskAnchor } from "./contracts/ask.js";
 import { buildAskAnchor, selectedPageText } from "./ask/anchor.js";
 import { readerSessionDataPort } from "./external.js";
-import type { AskMark } from "./ask/ReaderAskMarks.js";
+import { useAskThreads } from "./ask/use-ask-threads.js";
 
 // 提问窗单独一块（assistant-ui、streamdown、KaTeX 都在里面），第一次提问才加载。
 const ReaderAskWindow = lazy(() => import("./ask/ReaderAskWindow.js"));
@@ -444,23 +444,12 @@ export function ReaderAppReactPdf() {
     }
   }, []);
   const [menuAsk, setMenuAsk] = useState<ReaderAskAnchor | null>(null);
-  const [ask, setAsk] = useState<{ anchor: ReaderAskAnchor; key: number } | null>(null);
-  const [askMarks, setAskMarks] = useState<AskMark[]>([]);
-  const askKey = useRef(0);
-  const askHistory = useRef(new Map<number, unknown>());
-  const openAsk = useCallback((anchor: ReaderAskAnchor) => {
-    askKey.current += 1;
-    const key = askKey.current;
-    setAsk({ anchor, key });
-    setAskMarks((marks) => [...marks, { key, anchor }]);
-  }, []);
-  const reopenAsk = useCallback((mark: AskMark) => setAsk({ anchor: mark.anchor, key: mark.key }), []);
-  const closeAsk = useCallback(() => setAsk(null), []);
-  useEffect(() => {
-    setAsk(null);
-    setAskMarks([]);
-    askHistory.current.clear();
-  }, [c.viewStateKey]);
+  // 问过的地方（书页白边的「?」）、开着的那一次、每答完一轮存（问答记录，宿主给了才存后端）。
+  const askThreads = useAskThreads({ port: askPort, documentId: session.documentId || "", resetKey: c.viewStateKey });
+  const askMarks = askThreads.marks;
+  const openAsk = askThreads.ask;
+  const reopenAsk = askThreads.reopen;
+  const ask = askThreads.open;
   const anchorAt = useCallback(
     (target: Element | null, clientX: number, clientY: number, selection: string) => buildAskAnchor({
       pageElement: target?.closest(`[${READER_PAGE_ATTR}]`) ?? null,
@@ -470,8 +459,9 @@ export function ReaderAppReactPdf() {
       selection,
       regions: session.regions,
       bookmarks,
+      metadata: session.readerMetadata,
     }),
-    [regionHover, session.regions, bookmarks],
+    [regionHover, session.regions, bookmarks, session.readerMetadata],
   );
   // 选着书页上的字按 ? → 问这段。只在选着字时拦（不然 ? 照旧是快捷键帮助），捕获阶段先拿到、拦下帮助。
   useEffect(() => {
@@ -725,10 +715,11 @@ export function ReaderAppReactPdf() {
               port={askPort}
               jobId={session.jobId}
               anchor={ask.anchor}
-              onClose={closeAsk}
+              onClose={askThreads.close}
               onShowAnchor={() => c.goToPage(ask.anchor.page, ask.anchor.pane)}
-              saved={askHistory.current.get(ask.key)}
-              onSave={(repository) => askHistory.current.set(ask.key, repository)}
+              initialMessages={ask.initial}
+              onTurnDone={(messages, agentId) => askThreads.save(ask.key, messages, agentId)}
+              onDelete={() => askThreads.remove(ask.key)}
             />
           </Suspense>
         ) : null}

@@ -19,6 +19,8 @@ export type ReaderAskAgent = {
   /** 现在能不能用（本机 agent 在服务器、Docker、局域网上用不了）；不能用时 reason 写原因。 */
   available?: boolean;
   reason?: string;
+  /** 本机 agent 没装时的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp。 */
+  install?: string;
 };
 
 export type ReaderAskHandlers = {
@@ -41,6 +43,37 @@ export type ReaderAskPort = {
   listAgents: () => Promise<ReaderAskAgent[]>;
   /** 开一个会话（session/new）。jobId 给 agent 拿书的数据（retainpdf mcp）用。 */
   openSession: (options: { agentId: string; jobId: string }, handlers: ReaderAskHandlers) => Promise<ReaderAskSession>;
+  /** 问答记录（按书存，书页白边的「?」从这里读）。不给就只记在这次打开里。 */
+  threads?: ReaderAskThreadsPort | null;
+};
+
+/** 存下来的一条问答：问题，或者回答（带思考和用量）。 */
+export type ReaderAskMessage = {
+  role: "user" | "assistant";
+  text: string;
+  thought?: string | null;
+  usage?: Record<string, unknown> | null;
+};
+
+/** 一次提问：问的哪儿、哪个 agent、几条问答。 */
+export type ReaderAskThread = {
+  threadId: string;
+  agentId: string;
+  title: string;
+  anchor: ReaderAskAnchor;
+  messageCount: number;
+  updatedAt: string;
+  /** 只有 get 带。 */
+  messages?: ReaderAskMessage[];
+};
+
+export type ReaderAskThreadsPort = {
+  list: (documentId: string) => Promise<ReaderAskThread[]>;
+  get: (documentId: string, threadId: string) => Promise<ReaderAskThread>;
+  create: (documentId: string, input: { agentId: string; anchor: ReaderAskAnchor; messages: ReaderAskMessage[] }) => Promise<ReaderAskThread>;
+  /** 整段问答一起换掉（每答完一轮写一次）。 */
+  update: (documentId: string, threadId: string, input: { agentId?: string; messages: ReaderAskMessage[] }) => Promise<ReaderAskThread>;
+  remove: (documentId: string, threadId: string) => Promise<void>;
 };
 
 /** 问的是哪儿：书页上的一个位置、一块、或选中的一段字。 */

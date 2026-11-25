@@ -8,6 +8,7 @@ import type { ContentBlock, RequestPermissionRequest, RequestPermissionResponse,
 
 import type { ReaderAskAnchor, ReaderAskPort, ReaderAskSession } from "../contracts/ask.js";
 import { applySessionUpdate, emptyTurn, turnSpeed, type AskPart, type AskTurn } from "./acp-parts.js";
+import { historyText } from "./thread-messages.js";
 
 const QUOTE_LIMIT = 4000;
 
@@ -131,12 +132,28 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
 
   const adapter = {
     async *run({ messages, abortSignal }: RunOptions) {
-      const last = [...messages].reverse().find((message) => message.role === "user");
+      const lastIndex = messages.map((message) => message.role).lastIndexOf("user");
+      const last = lastIndex >= 0 ? messages[lastIndex] : undefined;
       const question = (last?.content || []).map((part) => (part.type === "text" ? part.text || "" : "")).join("\n").trim();
-      const current = await ensureSession();
+      let current: ReaderAskSession;
+      try {
+        current = await ensureSession();
+      } catch (error) {
+        // 连不上（agent 没开、没装、设置不对、握手被拒）：在回答的位置说清楚，不要一片空白。
+        session = null;
+        const message = error instanceof Error ? error.message : String(error);
+        yield {
+          content: [{ type: "text", text: `（连不上这个 agent：${message}）` }] as never,
+          status: { type: "incomplete", reason: "error", error: message },
+        };
+        return;
+      }
       const anchor = options.getAnchor();
       const blocks: ContentBlock[] = [];
       if (!sentAnchor && anchor) blocks.push(...anchorPromptBlocks(anchor, options.jobId, options.bookTitle));
+      // 新会话（重新打开、换了 agent、断线重连）不知道之前聊过什么：带上之前几轮。
+      const earlier = !sentAnchor && lastIndex > 0 ? historyText(messages.slice(0, lastIndex) as never) : "";
+      if (earlier) blocks.push({ type: "text", text: earlier });
       blocks.push({ type: "text", text: question });
       sentAnchor = true;
 
@@ -194,6 +211,11 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       };
       if (failure) {
         const message = failure instanceof Error ? failure.message : String(failure);
+        // 连接断了（agent 退出、桥用 1011 关）：扔掉这个会话，下一问重开（出处会再带一次）。
+        if (/close|closed|1011|disconnect|断/i.test(message)) {
+          session?.close();
+          session = null;
+        }
         yield {
           content: toAssistantParts([...turn.parts, { type: "text", text: `\n\n（出错了：${message}）` }]) as never,
           status: { type: "incomplete", reason: "error", error: message },

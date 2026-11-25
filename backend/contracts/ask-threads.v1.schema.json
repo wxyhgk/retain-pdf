@@ -8,6 +8,7 @@
     {
       "method": "GET",
       "path": "/api/v1/documents/:document_id/ask-threads",
+      "client_name": "listAskThreads",
       "transport": "json",
       "output": "AskThreadListView",
       "rust_view": "AskThreadListView",
@@ -16,6 +17,7 @@
     {
       "method": "POST",
       "path": "/api/v1/documents/:document_id/ask-threads",
+      "client_name": "createAskThread",
       "transport": "json",
       "input": "CreateAskThreadInput",
       "output": "AskThreadView",
@@ -25,6 +27,7 @@
     {
       "method": "GET",
       "path": "/api/v1/documents/:document_id/ask-threads/:thread_id",
+      "client_name": "getAskThread",
       "transport": "json",
       "output": "AskThreadView",
       "rust_view": "AskThreadView",
@@ -33,6 +36,7 @@
     {
       "method": "PATCH",
       "path": "/api/v1/documents/:document_id/ask-threads/:thread_id",
+      "client_name": "updateAskThread",
       "transport": "json",
       "input": "PatchAskThreadInput",
       "output": "AskThreadView",
@@ -42,6 +46,7 @@
     {
       "method": "DELETE",
       "path": "/api/v1/documents/:document_id/ask-threads/:thread_id",
+      "client_name": "deleteAskThread",
       "transport": "json",
       "output": "AskThreadDeleteResultView",
       "rust_view": "AskThreadDeleteResultView",

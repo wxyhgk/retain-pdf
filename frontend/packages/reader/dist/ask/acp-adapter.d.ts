@@ -78,6 +78,14 @@ export declare function createAcpChatAdapter(options: AcpChatOptions): {
     adapter: {
         run({ messages, abortSignal }: RunOptions): AsyncGenerator<{
             content: never;
+            status: {
+                type: string;
+                reason: string;
+                error: string;
+            };
+            metadata?: undefined;
+        } | {
+            content: never;
             metadata: {
                 custom: {
                     turn: AskTurn;

@@ -88,6 +88,35 @@
   white-space: pre-wrap;
 }
 
+.reader-ask-install {
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 12px);
+}
+
+.reader-ask-install summary { cursor: var(--cursor-pointer, pointer); }
+.reader-ask-install ul { margin: 6px 0 0; padding: 0; list-style: none; }
+
+.reader-ask-install li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.reader-ask-install code {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: var(--ui-radius-sm, 4px);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .reader-ask-thread {
   display: flex;
   flex: 1 1 auto;

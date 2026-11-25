@@ -5,8 +5,10 @@ import { readFileSync } from "node:fs";
 
 import { applySessionUpdate, emptyTurn, turnFooter, turnSpeed, usageFromMeta } from "../../../packages/reader/src/ask/acp-parts.ts";
 import { PermissionStore, anchorPromptBlocks, createAcpChatAdapter } from "../../../packages/reader/src/ask/acp-adapter.ts";
-import { buildAskAnchor, sectionForPage } from "../../../packages/reader/src/ask/anchor.ts";
+import { buildAskAnchor, nearestRegion, sectionForPage } from "../../../packages/reader/src/ask/anchor.ts";
+import { normalizeReaderMetadata, normalizeReaderRegions } from "../../../packages/reader/src/shared/data/reader-regions.ts";
 import { normalizeMathDelimiters } from "../../../packages/reader/src/ask/math-delimiters.ts";
+import { historyText, toInitialMessages, toStoredMessages } from "../../../packages/reader/src/ask/thread-messages.ts";
 
 const text = (sessionUpdate, value) => ({ sessionUpdate, content: { type: "text", text: value } });
 
@@ -180,4 +182,73 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
   assert.match(host, /if \(isLanSharedPage\(\)\) return null;/, "局域网共享的页面不给（网关拦了 \/api\/v1\/ai）");
   const vite = readFileSync(new URL("../../../packages/reader/vite.config.ts", import.meta.url), "utf8");
   assert.match(vite, /@assistant-ui\\\/\[\^\/\]\+\|streamdown/, "开源库不打进阅读器 dist");
+});
+
+test("问答记录：assistant-ui 的对话 → 存的问答（问题 / 回答 + 思考 + 用量和用时）；读回来交给 initialMessages，底下一行照样有用量", () => {
+  const turn = { ...emptyTurn(100), firstTokenAt: 1100, lastTokenAt: 2100, usage: { inputTokens: 900, outputTokens: 40, model: "claude-haiku-5-5" } };
+  const stored = toStoredMessages([
+    { role: "user", content: [{ type: "text", text: "这是什么？" }] },
+    { role: "assistant", content: [{ type: "reasoning", text: "先看" }, { type: "reasoning", text: "这一页" }, { type: "text", text: "是哈密顿量。" }], metadata: { custom: { turn, endedAt: 3100 } } },
+    { role: "assistant", content: [], metadata: { custom: {} } },
+    { role: "system", content: [{ type: "text", text: "忽略" }] },
+  ]);
+  assert.deepEqual(stored, [
+    { role: "user", text: "这是什么？" },
+    { role: "assistant", text: "是哈密顿量。", thought: "先看这一页", usage: { inputTokens: 900, outputTokens: 40, model: "claude-haiku-5-5", elapsedMs: 3000, firstTokenMs: 1000 } },
+  ]);
+  const initial = toInitialMessages(stored);
+  assert.deepEqual(initial[0], { role: "user", content: "这是什么？" });
+  assert.deepEqual(initial[1].content, [{ type: "reasoning", text: "先看这一页" }, { type: "text", text: "是哈密顿量。" }]);
+  const { turn: restored, endedAt } = initial[1].metadata.custom;
+  assert.equal(turnFooter(restored, endedAt, "RetainPDF 自带模型"), "RetainPDF 自带模型（claude-haiku-5-5） · 输入 900 · 输出 40 token · 首字 1.0s · 用时 3.0s");
+});
+
+test("新会话的第一问带上之前几轮（重新打开、换 agent、断线以后）；没有就不带；太长从前面截", async () => {
+  assert.equal(historyText([]), "");
+  const earlier = [
+    { role: "user", content: [{ type: "text", text: "Q1" }] },
+    { role: "assistant", content: [{ type: "text", text: "A1" }], metadata: { custom: {} } },
+  ];
+  assert.equal(historyText(earlier), "之前我们在这一处聊过（接着聊）：\n\n我：Q1\n\n你：A1");
+  const long = Array.from({ length: 30 }, (_, index) => ({ role: "user", content: [{ type: "text", text: `问题${index}`.repeat(200) }] }));
+  const text = historyText(long);
+  assert.ok(text.length < 8100);
+  assert.ok(!text.includes("问题0"), "只带最近几条");
+
+  const prompts = [];
+  const port = { listAgents: async () => [], openSession: async (_o, handlers) => ({ prompt: async (blocks) => { prompts.push(blocks); handlers.onUpdate({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "好" } }); return { stopReason: "end_turn" }; }, cancel() {}, close() {} }) };
+  const chat = createAcpChatAdapter({ port, jobId: "j", permissions: new PermissionStore(), getAgentId: () => "a", getAnchor: () => ANCHOR });
+  for await (const _ of chat.adapter.run({ messages: [...earlier, { role: "user", content: [{ type: "text", text: "Q2" }] }], abortSignal: new AbortController().signal })) { /* 收完 */ }
+  assert.equal(prompts[0].length, 3, "出处 + 之前的对话 + 问题");
+  assert.match(prompts[0][1].text, /我：Q1\n\n你：A1/);
+  assert.equal(prompts[0][2].text, "Q2");
+});
+
+test("问答记录接线：读回问过的地方、每答完一轮存、一句没问就关不留「?」、能删", () => {
+  const hook = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-threads.ts", import.meta.url), "utf8");
+  assert.match(hook, /threads\.list\(documentId\)/);
+  assert.match(hook, /threads\.create\(documentId, \{ agentId, anchor: mark\.anchor, messages \}\)/);
+  assert.match(hook, /threads\.update\(documentId, mark\.threadId, \{ agentId, messages \}\)/);
+  assert.match(hook, /if \(mark && !mark\.threadId\) setMarks/);
+  const windowSource = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskWindow.tsx", import.meta.url), "utf8");
+  assert.match(windowSource, /if \(wasRunning && !state\.isRunning\)/, "答完一轮才存");
+  assert.match(windowSource, /useLocalRuntime\(chat\.adapter as never, \{ initialMessages: initial as never \}\)/);
+});
+
+test("悬停还没认出块（鼠标刚移过来、点在两段之间）：按位置找同一页最近的块，太远（超过页高 15%）不算", () => {
+  const box = (bbox) => ({ page: 5, bbox, text: "t" });
+  const regions = normalizeReaderRegions({ items: [
+    { item_id: "top", source: box([50, 100, 550, 200]), translated: box([50, 100, 550, 200]) },
+    { item_id: "mid", source: box([50, 400, 550, 500]), translated: box([50, 400, 550, 500]) },
+    { item_id: "other-page", source: { page: 6, bbox: [50, 400, 550, 500], text: "x" }, translated: { page: 6, bbox: [50, 400, 550, 500], text: "x" } },
+  ] });
+  const doc = { pages: [5, 6].map((page) => ({ page, width: 600, height: 1000 })) };
+  const metadata = normalizeReaderMetadata({ source: doc, translated: doc });
+  assert.equal(nearestRegion(regions, metadata, "source", 5, { x: 0.5, y: 0.45 })?.itemId, "mid", "点在块里");
+  assert.equal(nearestRegion(regions, metadata, "source", 5, { x: 0.5, y: 0.3 })?.itemId, "top", "两段之间取近的");
+  assert.equal(nearestRegion(regions, metadata, "source", 5, { x: 0.5, y: 0.9 }), null, "离最近的块也太远");
+  const pageElement = { getAttribute: (name) => ({ "data-reader-page": "5", "data-reader-pane": "translated" })[name] ?? null, getBoundingClientRect: () => ({ left: 0, top: 0, width: 600, height: 1000 }) };
+  const anchor = buildAskAnchor({ pageElement, clientX: 300, clientY: 300, itemId: null, selection: "", regions, bookmarks: [], metadata });
+  assert.equal(anchor.itemId, "top");
+  assert.equal(anchor.sourceText, "t");
 });
