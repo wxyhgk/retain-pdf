@@ -22,11 +22,45 @@ enum KeyKind {
     Agent,
 }
 
+/// WebSocket 握手（浏览器带不了请求头）的 `?api_key=`。只认升级请求，普通请求照旧只看请求头；请求日志不记查询串。
+fn websocket_query_key(request: &Request<Body>) -> Option<String> {
+    let upgrade = request.headers().get(header::UPGRADE).and_then(|value| value.to_str().ok())?;
+    if !upgrade.eq_ignore_ascii_case("websocket") {
+        return None;
+    }
+    request.uri().query()?.split('&').find_map(|pair| {
+        let (name, value) = pair.split_once('=')?;
+        (name == "api_key").then(|| percent_decode(value)).flatten()
+    })
+}
+
+/// `application/x-www-form-urlencoded` 的值：`+` 是空格，`%XX` 是一个字节；写坏了就不认。
+fn percent_decode(value: &str) -> Option<String> {
+    let bytes = value.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        match bytes[index] {
+            b'+' => out.push(b' '),
+            b'%' => {
+                let hex = std::str::from_utf8(bytes.get(index + 1..index + 3)?).ok()?;
+                out.push(u8::from_str_radix(hex, 16).ok()?);
+                index += 2;
+            }
+            byte => out.push(byte),
+        }
+        index += 1;
+    }
+    String::from_utf8(out).ok()
+}
+
 fn api_key_kind(deps: AuthRouteDeps<'_>, request: &Request<Body>) -> Option<KeyKind> {
+    let from_query = websocket_query_key(request);
     let key = request
         .headers()
         .get("x-api-key")
         .and_then(|value| value.to_str().ok())
+        .or(from_query.as_deref())
         .map(str::trim)
         .filter(|value| !value.is_empty())?;
     if crate::config::api_key_matches(deps.agent_keys, key) {

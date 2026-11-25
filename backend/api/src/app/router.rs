@@ -11,6 +11,7 @@ use crate::config::{AccountsConfig, OriginPolicyConfig};
 use crate::routes::common::{method_not_allowed, request_origin_is_allowed, unknown_route};
 
 mod accounts;
+mod ai;
 mod collections;
 mod credentials;
 mod documents;
@@ -32,6 +33,7 @@ pub(crate) fn registered_endpoints() -> Vec<crate::app::endpoints::Endpoint> {
     let mut tables = vec![
         public::ENDPOINTS,
         accounts::ENDPOINTS,
+        ai::ENDPOINTS,
         credentials::ENDPOINTS,
         providers::ENDPOINTS,
         ingestion::ENDPOINTS,
@@ -123,6 +125,7 @@ pub fn build_simple_app(state: AppState) -> Router {
 fn authenticated_api_routes(state: &AppState) -> Router<AppState> {
     Router::new()
         .merge(accounts::routes())
+        .merge(ai::routes())
         .merge(credentials::routes())
         .merge(ingestion::routes())
         .merge(glossaries::routes())

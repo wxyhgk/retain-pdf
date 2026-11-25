@@ -1,8 +1,9 @@
-//! 服务商：凭据库（`credentials`）、模型调用（`model_executor`、`model_requests_api`）、
+//! 服务商：凭据库（`credentials`）、模型调用（`model_executor`、`model_requests_api`）、阅读页提问的 ACP 桥（`acp`）、
 //! 服务商连通性和额度探测（`provider_probe`、`provider_api`）、模型价格（`pricing`，用量汇总估算花费）、
 //! 各家错误码目录（`error_codes`，数据在包里的 `error-codes/`）、
 //! 服务商报错里的业务码和「限流还是欠费」的判断（`upstream_limits`）。
 
+mod acp;
 mod credentials;
 mod error_codes;
 mod model_executor;
@@ -14,6 +15,10 @@ mod provider_probe;
 mod upstream_limits;
 
 // 门面：领域外只能用这里导出的东西，子模块都是私有的（见 BOUNDARIES.md「Domain Facades」）。
+pub use acp::{
+    agents_view, prepare_agent, run_bridge, AcpConfig, AcpConnectQuery, AgentKind, AgentProcess, AgentView,
+    AgentsView, BridgeOut, LocalAgentsView, SessionDefaults, BUILTIN_AGENT_ID, CLOSE_AGENT_ENDED,
+};
 pub use credentials::{
     acquire_credential_usage_lock, delete_unreferenced_managed_credential,
     get_or_create_managed_credential, CredentialUsageLock,

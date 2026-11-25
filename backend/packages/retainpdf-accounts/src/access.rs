@@ -51,6 +51,8 @@ pub fn classify_param(name: &str) -> ParamClass {
         // 只在管理员路由或已关闭路由里出现。
         // operation_id：内部的模型请求（/internal/model/jobs/:job_id/requests/:operation_id）
         "user_id" | "invite_id" | "backup_id" | "credential_ref" | "operation_id" | "artifact_id" => ParamClass::Nested,
+        // agent_id：阅读页提问的 agent，登记表里写死的名字（/ai/agents/:agent_id/acp），不属于哪个用户
+        "agent_id" => ParamClass::Nested,
         _ => ParamClass::Unknown,
     }
 }

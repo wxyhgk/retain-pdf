@@ -17,6 +17,7 @@ const generatedSettings = Object.fromEntries(
   ["credentials", "provider-probes", "platform-settings", "auth-session", "uploads"].map((name) => [name, readFileSync(resolve(`src/${name}.ts`), "utf8")]),
 );
 const RAW_SCHEMA_EXPORTS = [
+  "./ai-agents.v1.schema.json",
   "./auth-session.v1.schema.json",
   "./create-job.v1.schema.json",
   "./credentials.v1.schema.json",
@@ -48,6 +49,7 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
     [
       "./create-job",
       "./create-job-fields",
+      "./ai-agents",
       "./uploads",
       "./auth-session",
       "./platform-settings",

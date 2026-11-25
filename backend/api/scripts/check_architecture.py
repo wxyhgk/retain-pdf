@@ -145,6 +145,7 @@ ROUTE_RAW_EXTRACTOR_ALLOWLIST = {
 }
 
 ROUTE_STATE_RESOURCE_ALLOWLIST = {
+    Path("src/routes/common/ai.rs"),
     Path("src/routes/common/auth.rs"),
     Path("src/routes/common/credentials.rs"),
     Path("src/routes/common/fonts.rs"),
@@ -162,6 +163,10 @@ ROUTE_STATE_RESOURCE_ALLOWLIST = {
 }
 
 ROUTE_SERVICE_IMPORT_ALLOWLIST = {
+    # 阅读页提问的 agent 列表、ACP 桥（逻辑在 providers 的 acp，2026-11-25）
+    Path("src/routes/ai.rs"): (
+        "crate::services::providers",
+    ),
     Path("src/routes/model_requests.rs"): (
         "crate::services::providers",
     ),
@@ -239,6 +244,10 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     ),
     Path("src/routes/common/providers.rs"): (
         "crate::services::providers::ProviderApiDeps",
+    ),
+    # ACP 桥的后端配置（阅读页提问，2026-11-25）
+    Path("src/routes/common/ai.rs"): (
+        "crate::services::providers",
     ),
     Path("src/routes/common/fonts.rs"): (
         "crate::services::platform::FontApiDeps",
