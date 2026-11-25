@@ -56,6 +56,13 @@ test("用量：ACP 的 used / size / cost，加上 _meta.retainpdf.usage（自�
   assert.deepEqual(usageFromMeta({ retainpdf: { usage: { inputTokens: 10, outputTokens: 5, cachedInputTokens: 8 } } }), { inputTokens: 10, outputTokens: 5, cachedInputTokens: 8 });
   assert.deepEqual(usageFromMeta({ usage: { input_tokens: 3, output_tokens: 2, cache_read_input_tokens: 1, reasoning_tokens: 4 } }), { inputTokens: 3, outputTokens: 2, cachedInputTokens: 1, reasoningTokens: 4 });
   assert.deepEqual(usageFromMeta(null), {});
+  // 自带 agent 的写法（后端 feat/ask-agent，11-25）。
+  assert.deepEqual(
+    usageFromMeta({ retainpdf: { usage: { model: "claude-haiku-5-5", input_tokens: 900, output_tokens: 40, cache_read_tokens: 800, cache_write_tokens: 100, elapsed_ms: 1200 } } }),
+    { inputTokens: 900, outputTokens: 40, cachedInputTokens: 800, cacheWriteTokens: 100, model: "claude-haiku-5-5" },
+  );
+  const withModel = applySessionUpdate(emptyTurn(0), { sessionUpdate: "usage_update", used: 940, size: 200000, _meta: { retainpdf: { usage: { model: "claude-haiku-5-5", input_tokens: 900, output_tokens: 40, cache_read_tokens: 800, cache_write_tokens: 100 } } } }, 1);
+  assert.equal(turnFooter(withModel, null, "RetainPDF 自带模型"), "RetainPDF 自带模型（claude-haiku-5-5） · 输入 900 · 输出 40 token · 缓存命中 800 · 写入缓存 100 · 上下文 0%");
   let turn = emptyTurn(0);
   turn = applySessionUpdate(turn, text("agent_message_chunk", "x".repeat(50)), 1000);
   turn = applySessionUpdate(turn, text("agent_message_chunk", "y".repeat(50)), 3000);

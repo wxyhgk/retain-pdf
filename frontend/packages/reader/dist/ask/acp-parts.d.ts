@@ -50,7 +50,11 @@ export type AskUsage = {
     inputTokens?: number;
     outputTokens?: number;
     cachedInputTokens?: number;
+    /** 写进缓存的 token（Anthropic 的提示缓存）。 */
+    cacheWriteTokens?: number;
     reasoningTokens?: number;
+    /** 实际用的模型（自带 agent 在 _meta.retainpdf.usage.model 里给）。 */
+    model?: string;
 };
 export type AskTurn = {
     parts: AskPart[];

@@ -51,7 +51,11 @@ export type AskUsage = {
   inputTokens?: number;
   outputTokens?: number;
   cachedInputTokens?: number;
+  /** 写进缓存的 token（Anthropic 的提示缓存）。 */
+  cacheWriteTokens?: number;
   reasoningTokens?: number;
+  /** 实际用的模型（自带 agent 在 _meta.retainpdf.usage.model 里给）。 */
+  model?: string;
 };
 
 export type AskTurn = {
@@ -108,12 +112,15 @@ export function usageFromMeta(meta: unknown): Partial<AskUsage> {
   const out: Partial<AskUsage> = {};
   const input = pick("inputTokens", "input_tokens", "promptTokens", "prompt_tokens");
   const output = pick("outputTokens", "output_tokens", "completionTokens", "completion_tokens");
-  const cached = pick("cachedInputTokens", "cachedReadTokens", "cache_read_input_tokens", "cached_tokens");
+  const cached = pick("cachedInputTokens", "cachedReadTokens", "cache_read_tokens", "cache_read_input_tokens", "cached_tokens");
+  const cacheWrite = pick("cacheWriteTokens", "cache_write_tokens", "cache_creation_input_tokens");
   const reasoning = pick("reasoningTokens", "reasoning_tokens", "thoughtTokens");
   if (input !== undefined) out.inputTokens = input;
   if (output !== undefined) out.outputTokens = output;
   if (cached !== undefined) out.cachedInputTokens = cached;
   if (reasoning !== undefined) out.reasoningTokens = reasoning;
+  if (cacheWrite !== undefined) out.cacheWriteTokens = cacheWrite;
+  if (typeof usage.model === "string" && usage.model) out.model = usage.model;
   return out;
 }
 
@@ -212,12 +219,14 @@ export function turnSpeed(turn: AskTurn): AskSpeed {
 /** 回答底下那一行：模型、用量、缓存命中、速度、首字、用时。没有的项不写。 */
 export function turnFooter(turn: AskTurn, finishedAt: number | null, agentName = ""): string {
   const items: string[] = [];
-  if (agentName) items.push(agentName);
   const { usage } = turn;
+  if (agentName) items.push(usage.model ? `${agentName}（${usage.model}）` : agentName);
+  else if (usage.model) items.push(usage.model);
   if (usage.inputTokens !== undefined || usage.outputTokens !== undefined) {
     items.push(`输入 ${usage.inputTokens ?? "?"} · 输出 ${usage.outputTokens ?? "?"} token`);
   }
   if (usage.cachedInputTokens) items.push(`缓存命中 ${usage.cachedInputTokens}`);
+  if (usage.cacheWriteTokens) items.push(`写入缓存 ${usage.cacheWriteTokens}`);
   if (usage.contextUsed !== undefined && usage.contextSize) {
     items.push(`上下文 ${Math.round((usage.contextUsed / usage.contextSize) * 100)}%`);
   }

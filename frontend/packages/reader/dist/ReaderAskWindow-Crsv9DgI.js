@@ -1,23 +1,23 @@
 var H = Object.defineProperty;
 var X = (e, t, s) => t in e ? H(e, t, { enumerable: !0, configurable: !0, writable: !0, value: s }) : e[t] = s;
-var w = (e, t, s) => X(e, typeof t != "symbol" ? t + "" : t, s);
+var v = (e, t, s) => X(e, typeof t != "symbol" ? t + "" : t, s);
 import { jsx as o, jsxs as m } from "react/jsx-runtime";
-import { useState as j, useRef as O, useEffect as E, useMemo as F, createContext as J, useContext as Q, useSyncExternalStore as V } from "react";
+import { useState as j, useRef as B, useEffect as E, useMemo as F, createContext as J, useContext as Q, useSyncExternalStore as V } from "react";
 import { Rnd as G } from "react-rnd";
-import { useLocalRuntime as Y, AssistantRuntimeProvider as Z, ThreadPrimitive as _, ComposerPrimitive as R, MessagePrimitive as z, useAuiState as ee } from "@assistant-ui/react";
+import { useLocalRuntime as Y, AssistantRuntimeProvider as Z, ThreadPrimitive as w, ComposerPrimitive as R, MessagePrimitive as z, useAuiState as ee } from "@assistant-ui/react";
 import { Streamdown as te } from "streamdown";
 import { createMathPlugin as ne } from "@streamdown/math";
 import { X as se, ArrowUp as ae, Square as re, CircleDot as oe, Wrench as ie, Brain as le, ChevronRight as ce } from "lucide-react";
-import { Button as B, Select as de } from "@retainpdf/ui";
-import { r as ue } from "./ReaderApp-BFHkV63F.js";
+import { Button as W, Select as de } from "@retainpdf/ui";
+import { r as ue } from "./ReaderApp-Cc97k5Gc.js";
 function me(e) {
   return { parts: [], usage: {}, startedAt: e, firstTokenAt: null, lastTokenAt: null, chars: 0 };
 }
-function K(e) {
+function D(e) {
   return e.type === "text" ? e.text : e.type === "resource_link" ? e.title || e.name || e.uri : "";
 }
 function he(e) {
-  return (e || []).map((t) => t.type === "content" ? K(t.content) : t.type === "diff" ? `改了 ${t.path}` : "").filter(Boolean).join(`
+  return (e || []).map((t) => t.type === "content" ? D(t.content) : t.type === "diff" ? `改了 ${t.path}` : "").filter(Boolean).join(`
 `);
 }
 function pe(e) {
@@ -27,16 +27,16 @@ function fe(e) {
   return typeof e == "number" && Number.isFinite(e) ? e : void 0;
 }
 function ge(e) {
-  var p;
-  const t = e, s = ((p = t == null ? void 0 : t.retainpdf) == null ? void 0 : p.usage) ?? (t == null ? void 0 : t.usage);
+  var f;
+  const t = e, s = ((f = t == null ? void 0 : t.retainpdf) == null ? void 0 : f.usage) ?? (t == null ? void 0 : t.usage);
   if (!s || typeof s != "object") return {};
-  const r = (...g) => {
-    for (const x of g) {
-      const k = fe(s[x]);
-      if (k !== void 0) return k;
+  const r = (...y) => {
+    for (const k of y) {
+      const x = fe(s[k]);
+      if (x !== void 0) return x;
     }
-  }, n = {}, a = r("inputTokens", "input_tokens", "promptTokens", "prompt_tokens"), u = r("outputTokens", "output_tokens", "completionTokens", "completion_tokens"), h = r("cachedInputTokens", "cachedReadTokens", "cache_read_input_tokens", "cached_tokens"), l = r("reasoningTokens", "reasoning_tokens", "thoughtTokens");
-  return a !== void 0 && (n.inputTokens = a), u !== void 0 && (n.outputTokens = u), h !== void 0 && (n.cachedInputTokens = h), l !== void 0 && (n.reasoningTokens = l), n;
+  }, n = {}, a = r("inputTokens", "input_tokens", "promptTokens", "prompt_tokens"), u = r("outputTokens", "output_tokens", "completionTokens", "completion_tokens"), h = r("cachedInputTokens", "cachedReadTokens", "cache_read_tokens", "cache_read_input_tokens", "cached_tokens"), l = r("cacheWriteTokens", "cache_write_tokens", "cache_creation_input_tokens"), p = r("reasoningTokens", "reasoning_tokens", "thoughtTokens");
+  return a !== void 0 && (n.inputTokens = a), u !== void 0 && (n.outputTokens = u), h !== void 0 && (n.cachedInputTokens = h), p !== void 0 && (n.reasoningTokens = p), l !== void 0 && (n.cacheWriteTokens = l), typeof s.model == "string" && s.model && (n.model = s.model), n;
 }
 function ke(e, t, s) {
   const r = e[e.length - 1];
@@ -47,7 +47,7 @@ function Te(e, t, s) {
   switch (t.sessionUpdate) {
     case "agent_message_chunk":
     case "agent_thought_chunk": {
-      const n = K(t.content);
+      const n = D(t.content);
       if (!n) return e;
       const a = t.sessionUpdate === "agent_message_chunk" ? "text" : "reasoning";
       return {
@@ -60,7 +60,7 @@ function Te(e, t, s) {
     }
     case "tool_call":
     case "tool_call_update": {
-      const n = e.parts.findIndex((k) => k.type === "tool-call" && k.toolCallId === t.toolCallId), a = n >= 0 ? e.parts[n] : null, u = t.status || (a == null ? void 0 : a.artifact.status) || "pending", h = t.rawInput !== void 0 ? t.rawInput : a == null ? void 0 : a.args, l = h && typeof h == "object" ? h : {}, p = t.content != null ? he(t.content) : (a == null ? void 0 : a.artifact.output) || "", g = {
+      const n = e.parts.findIndex((k) => k.type === "tool-call" && k.toolCallId === t.toolCallId), a = n >= 0 ? e.parts[n] : null, u = t.status || (a == null ? void 0 : a.artifact.status) || "pending", h = t.rawInput !== void 0 ? t.rawInput : a == null ? void 0 : a.args, l = h && typeof h == "object" ? h : {}, p = t.content != null ? he(t.content) : (a == null ? void 0 : a.artifact.output) || "", f = {
         type: "tool-call",
         toolCallId: t.toolCallId,
         toolName: t.name || (a == null ? void 0 : a.toolName) || t.kind || "tool",
@@ -75,8 +75,8 @@ function Te(e, t, s) {
           locations: t.locations != null ? pe(t.locations) : (a == null ? void 0 : a.artifact.locations) || [],
           output: p
         }
-      }, x = n >= 0 ? e.parts.map((k, $) => $ === n ? g : k) : [...e.parts, g];
-      return { ...e, parts: x };
+      }, y = n >= 0 ? e.parts.map((k, x) => x === n ? f : k) : [...e.parts, f];
+      return { ...e, parts: y };
     }
     case "plan": {
       const n = e.parts.findIndex((u) => u.type === "data" && u.name === "plan"), a = { type: "data", name: "plan", data: { entries: t.entries } };
@@ -103,17 +103,15 @@ function Te(e, t, s) {
       return e;
   }
 }
-function q(e) {
+function K(e) {
   if (e.firstTokenAt == null || e.lastTokenAt == null) return null;
   const t = (e.lastTokenAt - e.firstTokenAt) / 1e3;
   return t < 0.3 ? null : e.usage.outputTokens ? { value: e.usage.outputTokens / t, unit: "token/s" } : e.chars ? { value: e.chars / t, unit: "字/s" } : null;
 }
 function xe(e, t, s = "") {
-  const r = [];
-  s && r.push(s);
-  const { usage: n } = e;
-  (n.inputTokens !== void 0 || n.outputTokens !== void 0) && r.push(`输入 ${n.inputTokens ?? "?"} · 输出 ${n.outputTokens ?? "?"} token`), n.cachedInputTokens && r.push(`缓存命中 ${n.cachedInputTokens}`), n.contextUsed !== void 0 && n.contextSize && r.push(`上下文 ${Math.round(n.contextUsed / n.contextSize * 100)}%`), n.cost && r.push(`${n.cost.amount.toFixed(4)} ${n.cost.currency}`);
-  const a = q(e);
+  const r = [], { usage: n } = e;
+  s ? r.push(n.model ? `${s}（${n.model}）` : s) : n.model && r.push(n.model), (n.inputTokens !== void 0 || n.outputTokens !== void 0) && r.push(`输入 ${n.inputTokens ?? "?"} · 输出 ${n.outputTokens ?? "?"} token`), n.cachedInputTokens && r.push(`缓存命中 ${n.cachedInputTokens}`), n.cacheWriteTokens && r.push(`写入缓存 ${n.cacheWriteTokens}`), n.contextUsed !== void 0 && n.contextSize && r.push(`上下文 ${Math.round(n.contextUsed / n.contextSize * 100)}%`), n.cost && r.push(`${n.cost.amount.toFixed(4)} ${n.cost.currency}`);
+  const a = K(e);
   return a && r.push(`${a.value.toFixed(a.value >= 10 ? 0 : 1)} ${a.unit}`), e.firstTokenAt != null && r.push(`首字 ${((e.firstTokenAt - e.startedAt) / 1e3).toFixed(1)}s`), t != null && r.push(`用时 ${((t - e.startedAt) / 1e3).toFixed(1)}s`), r.join(" · ");
 }
 const ye = 4e3;
@@ -128,11 +126,11 @@ function Ae(e, t, s = "") {
 }
 class Ne {
   constructor() {
-    w(this, "pending", /* @__PURE__ */ new Map());
-    w(this, "listeners", /* @__PURE__ */ new Set());
-    w(this, "version", 0);
-    w(this, "subscribe", (t) => (this.listeners.add(t), () => this.listeners.delete(t)));
-    w(this, "snapshot", () => this.version);
+    v(this, "pending", /* @__PURE__ */ new Map());
+    v(this, "listeners", /* @__PURE__ */ new Set());
+    v(this, "version", 0);
+    v(this, "subscribe", (t) => (this.listeners.add(t), () => this.listeners.delete(t)));
+    v(this, "snapshot", () => this.version);
   }
   add(t) {
     return new Promise((s) => {
@@ -163,7 +161,7 @@ class Ne {
 function U(e) {
   return e.map((t) => t.type === "tool-call" ? { ...t, args: t.args } : t);
 }
-function Ie(e) {
+function _e(e) {
   const t = e.now ?? (() => performance.now());
   let s = null, r = "", n = null, a = !1;
   const u = async () => {
@@ -179,43 +177,43 @@ function Ie(e) {
   return {
     adapter: {
       async *run({ messages: l, abortSignal: p }) {
-        const g = [...l].reverse().find((i) => i.role === "user"), x = ((g == null ? void 0 : g.content) || []).map((i) => i.type === "text" && i.text || "").join(`
-`).trim(), k = await u(), $ = e.getAnchor(), y = [];
-        !a && $ && y.push(...Ae($, e.jobId, e.bookTitle)), y.push({ type: "text", text: x }), a = !0;
-        let d = me(t()), f = null, T = !1;
+        const f = [...l].reverse().find((i) => i.role === "user"), y = ((f == null ? void 0 : f.content) || []).map((i) => i.type === "text" && i.text || "").join(`
+`).trim(), k = await u(), x = e.getAnchor(), A = [];
+        !a && x && A.push(...Ae(x, e.jobId, e.bookTitle)), A.push({ type: "text", text: y }), a = !0;
+        let d = me(t()), g = null, T = !1;
         n = (i) => {
-          d = Te(d, i, t()), T = !0, f == null || f();
+          d = Te(d, i, t()), T = !0, g == null || g();
         };
-        const A = () => {
+        const N = () => {
           e.permissions.cancelAll(), k.cancel();
         };
-        p.addEventListener("abort", A);
-        let S = !1, N = null, v = "end_turn";
-        k.prompt(y).then(
+        p.addEventListener("abort", N);
+        let S = !1, _ = null, b = "end_turn";
+        k.prompt(A).then(
           (i) => {
-            v = i.stopReason, S = !0, f == null || f();
+            b = i.stopReason, S = !0, g == null || g();
           },
           (i) => {
-            N = i, S = !0, f == null || f();
+            _ = i, S = !0, g == null || g();
           }
         );
         try {
           for (; !S || T; )
-            T || await new Promise((i) => f = i), f = null, T && (T = !1, yield { content: U(d.parts), metadata: { custom: { turn: d } } });
+            T || await new Promise((i) => g = i), g = null, T && (T = !1, yield { content: U(d.parts), metadata: { custom: { turn: d } } });
         } finally {
-          p.removeEventListener("abort", A), n = null;
+          p.removeEventListener("abort", N), n = null;
         }
-        const C = t(), I = q(d), c = {
+        const C = t(), $ = K(d), c = {
           streamStartTime: d.startedAt,
           firstTokenTime: d.firstTokenAt ?? void 0,
           totalStreamTime: C - d.startedAt,
           tokenCount: d.usage.outputTokens,
-          tokensPerSecond: (I == null ? void 0 : I.unit) === "token/s" ? I.value : void 0,
+          tokensPerSecond: ($ == null ? void 0 : $.unit) === "token/s" ? $.value : void 0,
           totalChunks: 0,
           toolCallCount: d.parts.filter((i) => i.type === "tool-call").length
         };
-        if (N) {
-          const i = N instanceof Error ? N.message : String(N);
+        if (_) {
+          const i = _ instanceof Error ? _.message : String(_);
           yield {
             content: U([...d.parts, { type: "text", text: `
 
@@ -227,7 +225,7 @@ function Ie(e) {
         }
         yield {
           content: U(d.parts),
-          status: v === "cancelled" ? { type: "incomplete", reason: "cancelled" } : v === "max_tokens" ? { type: "incomplete", reason: "length" } : { type: "complete", reason: "stop" },
+          status: b === "cancelled" ? { type: "incomplete", reason: "cancelled" } : b === "max_tokens" ? { type: "incomplete", reason: "length" } : { type: "complete", reason: "stop" },
           metadata: { custom: { turn: d, endedAt: C }, timing: c }
         };
       }
@@ -237,34 +235,34 @@ function Ie(e) {
     }
   };
 }
-function be(e) {
+function $e(e) {
   return `${e || ""}`.split(/(```[\s\S]*?(?:```|$))/).map((t, s) => s % 2 ? t : t.replace(/\\\[([\s\S]*?)\\\]/g, (r, n) => `$$${n}$$`).replace(/\\\(([\s\S]*?)\\\)/g, (r, n) => `$${n}$`)).join("");
 }
-const $e = ne({ singleDollarTextMath: !0 }), D = "retainpdf-katex-css";
-function ve() {
+const Ie = ne({ singleDollarTextMath: !0 }), O = "retainpdf-katex-css";
+function be() {
   E(() => {
-    if (typeof document > "u" || document.getElementById(D)) return;
+    if (typeof document > "u" || document.getElementById(O)) return;
     const e = ue();
     if (!e) return;
     const t = document.createElement("link");
-    t.id = D, t.rel = "stylesheet", t.href = e, document.head.appendChild(t);
+    t.id = O, t.rel = "stylesheet", t.href = e, document.head.appendChild(t);
   }, []);
 }
-const W = J(null);
-function we({ text: e, status: t }) {
+const q = J(null);
+function ve({ text: e, status: t }) {
   return /* @__PURE__ */ o(
     te,
     {
       className: "reader-ask-md",
       mode: "streaming",
       isAnimating: (t == null ? void 0 : t.type) === "running",
-      plugins: { math: $e },
+      plugins: { math: Ie },
       controls: !1,
-      children: be(e)
+      children: $e(e)
     }
   );
 }
-function _e({ text: e, status: t }) {
+function we({ text: e, status: t }) {
   const s = (t == null ? void 0 : t.type) === "running";
   return /* @__PURE__ */ m("details", { className: "reader-ask-thought", open: s || void 0, children: [
     /* @__PURE__ */ m("summary", { children: [
@@ -279,7 +277,7 @@ function _e({ text: e, status: t }) {
 const Se = { pending: "等着", in_progress: "进行中", completed: "完成", failed: "失败" };
 function Ce(e) {
   var n;
-  const t = e.artifact || {}, s = Q(W);
+  const t = e.artifact || {}, s = Q(q);
   V((s == null ? void 0 : s.subscribe) ?? (() => () => {
   }), (s == null ? void 0 : s.snapshot) ?? (() => 0));
   const r = s == null ? void 0 : s.get(e.toolCallId);
@@ -294,7 +292,7 @@ function Ce(e) {
     r ? /* @__PURE__ */ m("div", { className: "reader-ask-permission", role: "group", "aria-label": "要你同意", children: [
       /* @__PURE__ */ o("span", { children: "要你同意才继续：" }),
       r.request.options.map((a) => /* @__PURE__ */ o(
-        B,
+        W,
         {
           className: "reader-ask-permission-option",
           "data-kind": a.kind,
@@ -345,8 +343,8 @@ function je(e) {
         z.Parts,
         {
           components: {
-            Text: we,
-            Reasoning: _e,
+            Text: ve,
+            Reasoning: we,
             tools: { Fallback: Ce },
             data: { by_name: { plan: Me, subagent: Pe } }
           }
@@ -360,36 +358,36 @@ function Fe(e) {
   return [`第 ${e.page} 页`, e.section].filter(Boolean).join(" · ");
 }
 function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnchor: a, saved: u, onSave: h }) {
-  ve();
-  const [l, p] = j(null), [g, x] = j(""), [k, $] = j(""), y = O({ agentId: g, anchor: r });
-  y.current = { agentId: g, anchor: r }, E(() => {
+  be();
+  const [l, p] = j(null), [f, y] = j(""), [k, x] = j(""), A = B({ agentId: f, anchor: r });
+  A.current = { agentId: f, anchor: r }, E(() => {
     let c = !1;
     return e.listAgents().then(
       (i) => {
-        c || (p(i), x((M) => {
-          var b;
-          return M || ((b = i.find((P) => P.available !== !1)) == null ? void 0 : b.id) || "";
+        c || (p(i), y((M) => {
+          var I;
+          return M || ((I = i.find((P) => P.available !== !1)) == null ? void 0 : I.id) || "";
         }));
       },
-      (i) => !c && $(i instanceof Error ? i.message : String(i))
+      (i) => !c && x(i instanceof Error ? i.message : String(i))
     ), () => {
       c = !0;
     };
   }, [e]);
-  const d = F(() => new Ne(), []), f = F(
-    () => Ie({
+  const d = F(() => new Ne(), []), g = F(
+    () => _e({
       port: e,
       jobId: t,
       bookTitle: s,
       permissions: d,
-      getAgentId: () => y.current.agentId,
-      getAnchor: () => y.current.anchor
+      getAgentId: () => A.current.agentId,
+      getAnchor: () => A.current.anchor
     }),
     [e, t, s, d]
   );
-  E(() => () => f.close(), [f]);
-  const T = Y(f.adapter), A = O(h);
-  A.current = h, E(() => {
+  E(() => () => g.close(), [g]);
+  const T = Y(g.adapter), N = B(h);
+  N.current = h, E(() => {
     if (u)
       try {
         T.thread.import(u);
@@ -398,30 +396,30 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
     return () => {
       var c;
       try {
-        (c = A.current) == null || c.call(A, T.thread.export());
+        (c = N.current) == null || c.call(N, T.thread.export());
       } catch {
       }
     };
   }, [T]);
   const S = () => {
     var c;
-    return ((c = l == null ? void 0 : l.find((i) => i.id === y.current.agentId)) == null ? void 0 : c.name) || "";
-  }, N = F(() => je(S), [l]);
+    return ((c = l == null ? void 0 : l.find((i) => i.id === A.current.agentId)) == null ? void 0 : c.name) || "";
+  }, _ = F(() => je(S), [l]);
   E(() => {
     const c = (i) => {
-      var b, P;
+      var I, P;
       if (i.key !== "Escape") return;
-      const M = (P = (b = i.target) == null ? void 0 : b.closest) == null ? void 0 : P.call(b, "textarea, input, select");
+      const M = (P = (I = i.target) == null ? void 0 : I.closest) == null ? void 0 : P.call(I, "textarea, input, select");
       M && `${M.value || ""}`.trim() || (i.preventDefault(), n());
     };
     return window.addEventListener("keydown", c), () => window.removeEventListener("keydown", c);
   }, [n]);
-  const v = Math.min(460, (globalThis.innerWidth || 1200) - 32), C = Math.min(620, (globalThis.innerHeight || 800) - 120), I = r.selection || r.sourceText || r.translatedText;
+  const b = Math.min(460, (globalThis.innerWidth || 1200) - 32), C = Math.min(620, (globalThis.innerHeight || 800) - 120), $ = r.selection || r.sourceText || r.translatedText;
   return /* @__PURE__ */ o(
     G,
     {
       className: "reader-ask-window",
-      default: { x: Math.max(16, (globalThis.innerWidth || 1200) - v - 24), y: 72, width: v, height: C },
+      default: { x: Math.max(16, (globalThis.innerWidth || 1200) - b - 24), y: 72, width: b, height: C },
       minWidth: 320,
       minHeight: 280,
       bounds: "window",
@@ -430,15 +428,15 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
       children: /* @__PURE__ */ m("section", { className: "reader-ask", role: "dialog", "aria-label": "提问", children: [
         /* @__PURE__ */ m("header", { className: "reader-ask-head", children: [
           /* @__PURE__ */ o("span", { className: "reader-ask-title", children: "提问" }),
-          /* @__PURE__ */ o(B, { className: "reader-ask-where", title: "回到问的那一处", onClick: a, children: Fe(r) }),
+          /* @__PURE__ */ o(W, { className: "reader-ask-where", title: "回到问的那一处", onClick: a, children: Fe(r) }),
           /* @__PURE__ */ o(
             de,
             {
               size: "sm",
               className: "reader-ask-agent",
               "aria-label": "用哪个 agent",
-              value: g,
-              onChange: (c) => x(c.target.value),
+              value: f,
+              onChange: (c) => y(c.target.value),
               disabled: !(l != null && l.length),
               children: (l || []).map((c) => /* @__PURE__ */ m("option", { value: c.id, disabled: c.available === !1, title: c.reason || c.description || "", children: [
                 c.name,
@@ -446,31 +444,31 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
               ] }, c.id))
             }
           ),
-          /* @__PURE__ */ o(B, { className: "reader-ask-close", "aria-label": "关掉", title: "关掉（Esc）", onClick: n, children: /* @__PURE__ */ o(se, { size: 15, "aria-hidden": !0 }) })
+          /* @__PURE__ */ o(W, { className: "reader-ask-close", "aria-label": "关掉", title: "关掉（Esc）", onClick: n, children: /* @__PURE__ */ o(se, { size: 15, "aria-hidden": !0 }) })
         ] }),
-        I ? /* @__PURE__ */ o("blockquote", { className: "reader-ask-quote", children: I }) : null,
+        $ ? /* @__PURE__ */ o("blockquote", { className: "reader-ask-quote", children: $ }) : null,
         k ? /* @__PURE__ */ m("p", { className: "reader-ask-error", children: [
           "列不出能用的 agent：",
           k
         ] }) : null,
-        /* @__PURE__ */ o(W.Provider, { value: d, children: /* @__PURE__ */ o(Z, { runtime: T, children: /* @__PURE__ */ m(_.Root, { className: "reader-ask-thread", children: [
-          /* @__PURE__ */ m(_.Viewport, { className: "reader-ask-viewport", children: [
-            /* @__PURE__ */ o(_.Empty, { children: /* @__PURE__ */ o("p", { className: "reader-ask-empty", children: "问这一处的问题：哪里看不懂、这个式子怎么来的、这个词什么意思……" }) }),
-            /* @__PURE__ */ o(_.Messages, { components: { UserMessage: ze, AssistantMessage: N } })
+        /* @__PURE__ */ o(q.Provider, { value: d, children: /* @__PURE__ */ o(Z, { runtime: T, children: /* @__PURE__ */ m(w.Root, { className: "reader-ask-thread", children: [
+          /* @__PURE__ */ m(w.Viewport, { className: "reader-ask-viewport", children: [
+            /* @__PURE__ */ o(w.Empty, { children: /* @__PURE__ */ o("p", { className: "reader-ask-empty", children: "问这一处的问题：哪里看不懂、这个式子怎么来的、这个词什么意思……" }) }),
+            /* @__PURE__ */ o(w.Messages, { components: { UserMessage: ze, AssistantMessage: _ } })
           ] }),
           /* @__PURE__ */ m(R.Root, { className: "reader-ask-composer", children: [
             /* @__PURE__ */ o(
               R.Input,
               {
                 className: "reader-ask-input",
-                placeholder: g ? "问点什么（Enter 发送，Shift+Enter 换行）" : "没有能用的 agent",
+                placeholder: f ? "问点什么（Enter 发送，Shift+Enter 换行）" : "没有能用的 agent",
                 autoFocus: !0,
                 rows: 2,
-                disabled: !g
+                disabled: !f
               }
             ),
-            /* @__PURE__ */ o(_.If, { running: !1, children: /* @__PURE__ */ o(R.Send, { className: "reader-ask-send", "aria-label": "发送", title: "发送（Enter）", children: /* @__PURE__ */ o(ae, { size: 15, "aria-hidden": !0 }) }) }),
-            /* @__PURE__ */ o(_.If, { running: !0, children: /* @__PURE__ */ o(R.Cancel, { className: "reader-ask-send", "aria-label": "停下", title: "停下", children: /* @__PURE__ */ o(re, { size: 13, "aria-hidden": !0 }) }) })
+            /* @__PURE__ */ o(w.If, { running: !1, children: /* @__PURE__ */ o(R.Send, { className: "reader-ask-send", "aria-label": "发送", title: "发送（Enter）", children: /* @__PURE__ */ o(ae, { size: 15, "aria-hidden": !0 }) }) }),
+            /* @__PURE__ */ o(w.If, { running: !0, children: /* @__PURE__ */ o(R.Cancel, { className: "reader-ask-send", "aria-label": "停下", title: "停下", children: /* @__PURE__ */ o(re, { size: 13, "aria-hidden": !0 }) }) })
           ] })
         ] }) }) })
       ] })
@@ -480,4 +478,4 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
 export {
   Je as default
 };
-//# sourceMappingURL=ReaderAskWindow-gfvWmiVK.js.map
+//# sourceMappingURL=ReaderAskWindow-Crsv9DgI.js.map
