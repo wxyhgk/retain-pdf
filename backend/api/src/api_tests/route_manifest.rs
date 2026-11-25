@@ -411,6 +411,8 @@ fn agent_key_endpoints_are_pinned() {
             "GET /api/v1/documents/:document_id",
             "GET /api/v1/documents/:document_id/files/pages/:page",
             "GET /api/v1/jobs/:job_id/files/pages/:page",
+            // 2026-11-25 阅读页提问的自带 agent 读书（读一页、找字、目录都从这份来）
+            "GET /api/v1/jobs/:job_id/reader/regions",
             "GET /api/v1/jobs/:job_id/translations/:item_id",
             "GET /api/v1/search",
             "PATCH /api/v1/jobs/:job_id/translations/:item_id",

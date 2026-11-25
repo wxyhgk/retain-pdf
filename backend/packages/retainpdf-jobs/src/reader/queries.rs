@@ -6,6 +6,8 @@ use crate::reader::reader_regions::{
     load_reader_regions_view_for, reader_regions_fingerprint,
 };
 use retainpdf_api_base::job_loading::load_supported_job;
+use retainpdf_core::storage_paths::MergedJobId;
+use retainpdf_files::job_upload_id;
 use crate::query::JobQueries;
 
 impl JobQueries<'_> {
@@ -33,5 +35,16 @@ impl JobQueries<'_> {
     pub fn reader_metadata_view(&self, job_id: &str) -> Result<ReaderMetadataView, AppError> {
         let job = load_supported_job(self.db, self.data_root, job_id)?;
         load_reader_metadata_view(self.data_root, &job)
+    }
+
+    /// 阅读页提问的自带 agent 读哪本书（2026-11-25）：任务在不在（合并阅读的虚拟任务 `merged-…` 也认，和阅读页同一个
+    /// 加载函数，没有就 404），以及它的书编号（原文页图用）；查不到书的任务是 None。
+    pub fn ask_book_document_id(&self, job_id: &str) -> Result<Option<String>, AppError> {
+        let job = load_supported_job(self.db, self.data_root, job_id)?;
+        if let Some(merged) = MergedJobId::parse(job_id) {
+            return Ok(Some(merged.document_id));
+        }
+        let upload = job_upload_id(&job).and_then(|id| self.db.get_upload(id).ok());
+        Ok(crate::presentation::book_document_id(self.db, &job, upload.as_ref()))
     }
 }
