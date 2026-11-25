@@ -3,9 +3,13 @@
 OCR 把一页目录给成一整块、每行的框是估的，翻译后排成左对齐的流水行（页码不再右对齐、小节不缩进、章与章没有间隔），
 跨页的两块目录还会被串成一个接续组。拆成只框标题的小块以后：
 
-- 原书的章号、页码列、页眉不在任何块里，留在原图上不动（排版引擎只换块里的字）；
+- 原书的页眉不在任何块里，留在原图上不动（排版引擎只换块里的字）；章号放进条目的文字里跟着重画；
 - 每条标题按原位置、原缩进放译文，框一直延伸到页码列前面，给译文留宽度；
-- 每条是独立的短块（``structure_role = toc_entry``，不算正文），不参与跨页接续。
+- 每条是独立的短块（``structure_role = toc_entry``，不算正文），不参与跨页接续；
+- 读出页码的条目后面跟一个页码小块（``structure_role = toc_page_label``，框就是页码在原图上的位置），
+  定译就是页码本身（``metadata.fixed_translation``，不发模型请求），排版时擦掉原来的页码、在原处重画。
+  不少书一行的标题、点线、页码是同一条绘字指令，擦标题会把页码一起擦掉（2026-11-25，
+  docs/ops/planning/toc-agent/20261125-目录页码补画.md）；点线引导不补，擦掉就没了。
 
 一行怎么读（2026-11-25 按本机 13 本书修过一轮，见 docs/ops/planning/toc-agent/20261125-拆条目规则修正.md）：
 
@@ -30,6 +34,10 @@ from dataclasses import dataclass, field
 
 TOC_ROLES = frozenset({"toc", "table_of_contents"})
 ENTRY_STRUCTURE_ROLE = "toc_entry"
+# 页码小块：框是页码在原图上的位置，定译就是页码本身，排版时擦掉原来的、在原处重画
+PAGE_LABEL_STRUCTURE_ROLE = "toc_page_label"
+PAGE_LABEL_FIXED_TRANSLATION_SOURCE = "toc_page_label"
+SPLIT_STRUCTURE_ROLES = frozenset({ENTRY_STRUCTURE_ROLE, PAGE_LABEL_STRUCTURE_ROLE})
 # 一行里的片段按 y 中心聚成视觉行
 LINE_Y_TOLERANCE = 3.0
 # 上下标：字号不到这一块中位数的这么多、最多 3 个字
@@ -70,6 +78,8 @@ PAGE_COLUMN_SHARE = 0.6
 HEADER_BAND = 0.1
 HEADER_WORDS = frozenset({"contents", "table of contents", "brief contents", "目录", "目次", "目 录", "содержание"})
 TITLE_RIGHT_GAP = 6.0
+# 页码小块压着别的块超过自己面积的这么多就不要（照旧留原图）
+LABEL_OVERLAP_SHARE = 0.2
 MIN_ENTRIES = 3
 # 每这么多个页码容一处倒退（认错的页码）
 PAGE_DESCENTS_PER = 15
@@ -136,6 +146,7 @@ class TocEntry:
     number_x0: float | None = None  # 章号的左边（有章号时）
     line_boxes: list[list[float]] = field(default_factory=list)  # 标题每一行的框（多行标题）
     page_box: list[float] | None = None  # 页码的框（读出页码时）
+    page_font_size: float | None = None  # 页码的字号（读出页码时）
 
 
 @dataclass
@@ -393,7 +404,8 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
         result.entries.append(TocEntry(title=title, number=number, page_label=page_label, level=0, bbox=bbox,
                                        font_size=sizes[len(sizes) // 2], line_count=len(pending), number_x0=number_x0,
                                        line_boxes=line_boxes,
-                                       page_box=[page_span.x0, page_span.y0, page_span.x1, page_span.y1] if page_span else None))
+                                       page_box=[page_span.x0, page_span.y0, page_span.x1, page_span.y1] if page_span else None,
+                                       page_font_size=page_span.size if page_span else None))
         pending.clear()
         pending_x0.clear()
 
@@ -544,10 +556,54 @@ def _entry_block(parent: dict, entry: TocEntry, block_id: str, right_edge: float
         toc_entry_level=entry.level,
         toc_entry_source_font_size=round(entry.font_size, 2),
         toc_entry_line_count=entry.line_count,
-        # 页码在原图上的框（页码不在条目里；擦原文时它和标题在同一个绘字指令里会被一起擦掉，排版要补画时用）
+        # 页码在原图上的框（页码不在条目里；擦原文时它和标题在同一个绘字指令里会被一起擦掉；后面跟着的页码小块就用这个框在原处重画）
         toc_entry_page_bbox=[round(value, 2) for value in entry.page_box] if entry.page_box else None,
         toc_split_parent_block_id=str(parent.get("block_id") or ""),
         structure_role=ENTRY_STRUCTURE_ROLE,
+        layout_role="toc",
+        semantic_role="unknown",
+    )
+    block["metadata"] = metadata
+    return block
+
+
+def _page_label_block(parent: dict, entry: TocEntry, block_id: str) -> dict | None:
+    """条目的页码小块：框是页码在原图上的位置，文字和定译都是页码本身（不发模型请求）。
+    policy 照抄原目录块（服务商不翻目录时整页照旧不动，页码也不重画）。"""
+    if not entry.page_label or not entry.page_box:
+        return None
+    block = copy.deepcopy({key: value for key, value in parent.items() if key not in ("lines", "segments", "content", "text")})
+    box = [round(float(value), 2) for value in entry.page_box]
+    label = entry.page_label
+    block.update(
+        block_id=block_id,
+        bbox=box,
+        text=label,
+        sub_type="table_of_contents",
+        layout_role="toc",
+        semantic_role="unknown",
+        structure_role=PAGE_LABEL_STRUCTURE_ROLE,
+        block_class="body",
+        geometry={"bbox": list(box)},
+        lines=[{"bbox": list(box), "bbox_precision": "provider_layout",
+                "spans": [{"type": "text", "raw_type": PAGE_LABEL_STRUCTURE_ROLE, "text": label, "bbox": list(box),
+                           "score": None, "bbox_precision": "line"}]}],
+        segments=[{"type": "text", "raw_type": PAGE_LABEL_STRUCTURE_ROLE, "text": label, "bbox": list(box), "score": None,
+                   "bbox_precision": "line"}],
+        content={"kind": "text", "text": label, "line_texts": [label]},
+    )
+    block["tags"] = ["table_of_contents", "toc", PAGE_LABEL_STRUCTURE_ROLE]
+    metadata = dict(block.get("metadata") or {})
+    for key in [key for key in metadata if key.startswith("toc_entry_")]:
+        metadata.pop(key)
+    metadata.update(
+        toc_page_label=label,
+        toc_page_label_source_font_size=round(entry.page_font_size or entry.font_size, 2),
+        toc_split_parent_block_id=str(parent.get("block_id") or ""),
+        # 定译就是页码本身：两个翻译引擎都不发请求（translation 包 workflow/fixed_translations.py）
+        fixed_translation=label,
+        fixed_translation_source=PAGE_LABEL_FIXED_TRANSLATION_SOURCE,
+        structure_role=PAGE_LABEL_STRUCTURE_ROLE,
         layout_role="toc",
         semantic_role="unknown",
     )
@@ -577,30 +633,65 @@ def split_toc_blocks_with_text_layer(document: dict, pdf) -> int:
             right_edge = (result.page_column_x0 - TITLE_RIGHT_GAP) if result.page_column_x0 else float(block["bbox"][2])
             for entry in result.entries:
                 rebuilt.append(_entry_block(block, entry, str(block.get("block_id") or ""), right_edge))
+                label_block = _page_label_block(block, entry, str(block.get("block_id") or ""))
+                if label_block is not None:
+                    rebuilt.append(label_block)
             page_split += 1
         if not page_split:
             continue
+        rebuilt = _drop_crowded_page_labels(rebuilt)
         page["blocks"] = rebuilt
         _renumber_page_blocks(document, page_index, rebuilt)
         split += page_split
     return split
 
 
+def _overlap_area(a: list[float], b: list[float]) -> float:
+    width = min(a[2], b[2]) - max(a[0], b[0])
+    height = min(a[3], b[3]) - max(a[1], b[1])
+    return width * height if width > 0 and height > 0 else 0.0
+
+
+def _drop_crowded_page_labels(blocks: list[dict]) -> list[dict]:
+    """页码小块压着别的块（两成以上）就不要：标题折行、页码紧跟在最后一行字后面时，页码落在条目框里，
+    排版引擎为了不压字会把条目译文缩得很小。这种页码照旧留在原图上（2026-11-25 本机 13 本书里 42 处）。"""
+    kept: list[dict] = []
+    for block in blocks:
+        if block.get("structure_role") == PAGE_LABEL_STRUCTURE_ROLE:
+            box = [float(value) for value in block["bbox"]]
+            area = max((box[2] - box[0]) * (box[3] - box[1]), 1e-6)
+            if any(other is not block and _overlap_area(box, [float(v) for v in other.get("bbox") or [0, 0, 0, 0]])
+                   > LABEL_OVERLAP_SHARE * area for other in blocks):
+                continue
+        kept.append(block)
+    return kept
+
+
 def _renumber_page_blocks(document: dict, page_index: int, blocks: list[dict]) -> None:
     """块号的数字要等于块在本页的位置（各家适配器都这么编号；翻译条目号、渲染引擎配译文都按位置算）。
     拆出条目后整页重编，文档里别处写着的旧块号一起改成新的；拆掉的目录块的号只留在条目的
-    `toc_split_parent_block_id` 里。"""
+    `toc_split_parent_block_id` 里。页码小块记下它跟着的条目（`toc_page_label_entry_block_id`）。"""
     renamed: dict[str, str] = {}
+    last_entry_id = ""
+    label_entries: list[tuple[dict, str]] = []
     for index, block in enumerate(blocks):
         new_id = f"p{page_index + 1:03d}-b{index:04d}"
         old_id = str(block.get("block_id") or "")
-        if block.get("structure_role") != ENTRY_STRUCTURE_ROLE and old_id and old_id != new_id:
+        role = block.get("structure_role")
+        if role not in SPLIT_STRUCTURE_ROLES and old_id and old_id != new_id:
             renamed[old_id] = new_id
         block["block_id"] = new_id
         block["order"] = index
         block["reading_order"] = index
+        if role == ENTRY_STRUCTURE_ROLE:
+            last_entry_id = new_id
+        elif role == PAGE_LABEL_STRUCTURE_ROLE:
+            label_entries.append((block, last_entry_id))
     if renamed:
         _replace_ids(document, renamed)
+    # 换完旧号再写：新号可能和别的块的旧号同名，先写会被换掉
+    for block, entry_id in label_entries:
+        block["metadata"]["toc_page_label_entry_block_id"] = entry_id
 
 
 def _replace_ids(value, renamed: dict[str, str]):
@@ -619,7 +710,7 @@ def _replace_ids(value, renamed: dict[str, str]):
 
 
 def _is_toc_block(block: dict) -> bool:
-    if str(block.get("structure_role") or "").lower() == ENTRY_STRUCTURE_ROLE:
+    if str(block.get("structure_role") or "").lower() in SPLIT_STRUCTURE_ROLES:
         return False
     return (
         str(block.get("structure_role") or "").lower() in TOC_ROLES
@@ -628,4 +719,4 @@ def _is_toc_block(block: dict) -> bool:
     )
 
 
-__all__ = ["ENTRY_STRUCTURE_ROLE", "TocEntry", "TocPageSplit", "split_toc_blocks_with_text_layer", "split_toc_page"]
+__all__ = ["ENTRY_STRUCTURE_ROLE", "PAGE_LABEL_FIXED_TRANSLATION_SOURCE", "PAGE_LABEL_STRUCTURE_ROLE", "TocEntry", "TocPageSplit", "split_toc_blocks_with_text_layer", "split_toc_page"]

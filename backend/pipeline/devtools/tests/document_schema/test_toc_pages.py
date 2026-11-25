@@ -106,14 +106,16 @@ def test_document_blocks_are_replaced_and_renumbered_by_position():
     entries = [block for block in blocks if block["structure_role"] == "toc_entry"]
     assert len(entries) == 6
     first = entries[0]
-    # 章号跟标题一起重画（擦原文按整段文字删，章号常和标题在一段里）；页码不进
+    # 章号跟标题一起重画（擦原文按整段文字删，章号常和标题在一段里）；页码不进条目，另成一个小块
     assert first["text"] == "1 Analyzing the Audience"
     assert first["layout_role"] == "toc" and first["semantic_role"] == "unknown"
     assert first["metadata"]["toc_split_parent_block_id"] == "p001-b0001"
     assert first["metadata"]["toc_entry_page_label"] == "1"
+    # 每条后面紧跟它的页码小块：标题、页码、标题、页码……
+    assert [block["structure_role"] for block in blocks[1:13]] == ["toc_entry", "toc_page_label"] * 6
     # 后面那块挪了号，文档里别处写着的旧号跟着改
-    assert blocks[-1]["text"] == "after" and blocks[-1]["block_id"] == "p001-b0007"
-    assert document["derived"]["refs"] == ["p001-b0007"]
+    assert blocks[-1]["text"] == "after" and blocks[-1]["block_id"] == "p001-b0013"
+    assert document["derived"]["refs"] == ["p001-b0013"]
 
 
 def test_no_text_layer_keeps_the_block():
@@ -293,3 +295,59 @@ def test_entry_blocks_record_where_the_page_number_is():
     page_box = entry["metadata"]["toc_entry_page_bbox"]
     # 页码在条目框右边，不在条目里
     assert page_box[0] >= 350 - 1 and entry["bbox"][2] < page_box[0]
+
+
+# ---- 2026-11-25 页码小块：页码和标题常在同一条绘字指令里，擦标题时一起被擦，排版要在原处重画 ----
+
+
+def test_page_label_blocks_follow_their_entries():
+    document = _document([50, 80, 380, 240])
+    with _toc_pdf() as pdf:
+        split_toc_blocks_with_text_layer(document, pdf)
+    blocks = document["pages"][0]["blocks"]
+    labels = [block for block in blocks if block["structure_role"] == "toc_page_label"]
+    assert [block["text"] for block in labels] == ["1", "3", "13", "15", "15", "35"]
+    for label in labels:
+        index = blocks.index(label)
+        entry = blocks[index - 1]
+        metadata = label["metadata"]
+        # 框就是条目记下的页码框；文字、定译都是页码本身，定译来源单独记（两个翻译引擎都不发请求）
+        assert entry["structure_role"] == "toc_entry"
+        assert label["bbox"] == entry["metadata"]["toc_entry_page_bbox"]
+        assert label["block_id"] == f"p001-b{index:04d}"
+        assert metadata["toc_page_label_entry_block_id"] == entry["block_id"]
+        assert metadata["fixed_translation"] == label["text"] == metadata["toc_page_label"]
+        assert metadata["fixed_translation_source"] == "toc_page_label"
+        assert metadata["toc_split_parent_block_id"] == "p001-b0001"
+        assert metadata["toc_page_label_source_font_size"] == 11.0
+        assert not any(key.startswith("toc_entry_") for key in metadata)
+        assert label["layout_role"] == "toc" and label["semantic_role"] == "unknown"
+        assert label["content"]["text"] == label["text"]
+        assert label["policy"] == {"translate": True}
+        assert label["bbox"][0] >= 349
+
+
+def test_entries_without_a_page_number_get_no_label_and_labels_are_not_split_again():
+    lines = [(60, 100, "1", 11), (90, 100, "First Chapter", 11), (350, 100, "1", 11),
+             (60, 122, "2", 11), (90, 122, "Second Chapter", 11), (350, 122, "9", 11),
+             (60, 144, "3", 11), (90, 144, "Third Chapter Without Number", 11),
+             (60, 166, "4", 11), (90, 166, "Fourth Chapter", 11), (350, 166, "20", 11)]
+    document = _document([50, 80, 380, 200])
+    with _page(lines, width=420, height=600) as pdf:
+        assert split_toc_blocks_with_text_layer(document, pdf) == 1
+        roles = [block["structure_role"] for block in document["pages"][0]["blocks"]]
+        assert roles.count("toc_entry") == 4 and roles.count("toc_page_label") == 3
+        # 再拆一遍（重跑归一化）不动已经拆过的条目和页码小块
+        assert split_toc_blocks_with_text_layer(document, pdf) == 0
+    third = next(b for b in document["pages"][0]["blocks"] if b["text"].startswith("3 "))
+    following = document["pages"][0]["blocks"][document["pages"][0]["blocks"].index(third) + 1]
+    assert following["structure_role"] == "toc_entry"
+
+
+def test_page_labels_inherit_the_toc_block_policy():
+    document = _document([50, 80, 380, 240])
+    document["pages"][0]["blocks"][1]["policy"] = {"translate": False, "translate_reason": "provider_non_body"}
+    with _toc_pdf() as pdf:
+        split_toc_blocks_with_text_layer(document, pdf)
+    labels = [b for b in document["pages"][0]["blocks"] if b["structure_role"] == "toc_page_label"]
+    assert labels and all(b["policy"] == {"translate": False, "translate_reason": "provider_non_body"} for b in labels)

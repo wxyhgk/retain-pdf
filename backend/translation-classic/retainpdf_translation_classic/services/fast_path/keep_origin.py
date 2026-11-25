@@ -74,6 +74,11 @@ def _fast_path_keep_origin_result(item: dict, reason: str) -> dict[str, dict[str
 
 def _is_fast_path_keep_origin_item(item: dict) -> tuple[bool, str]:
     from retainpdf_translation.core.execution_policy import is_standalone_number
+    from retainpdf_translation.core.execution_policy import item_fixed_translation
+    # 翻译开头定好的译文排在最前：目录页码小块的定译就是页码本身（「12」），当成「整块只有一个编号」保留原文的话
+    # 排版不擦也不重画，同一条绘字指令里被标题擦掉的页码就补不回来（2026-11-25）
+    if item_fixed_translation(item) and fixed_translation_for(item):
+        return True, FIXED_TRANSLATION_REASON
     if is_standalone_number(item):
         return True, "skip_standalone_number"
     should_keep, reason = should_fast_path_keep_origin(item)

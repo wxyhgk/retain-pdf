@@ -14,6 +14,10 @@ from retainpdf_pipeline.render.layout.model.render_text import should_skip_displ
 
 RENDER_FIRST_LINE_INDENT_KEY = "_render_first_line_indent_pt"
 RENDER_INNER_BBOX_KEY = "_render_inner_bbox"
+# 译文和原文一样也照样擦掉重画的块：目录条目和它的页码小块（ocr/document_schema/toc_pages.py，2026-11-25）。
+# 原来的页码常和标题、点线在同一条绘字指令里：擦标题时页码一起没了，所以页码要重画；擦页码时标题也一起没了，
+# 所以译文和原文一样的条目（「References」「Index」）也要重画。条目没有译文时页码也不动（layout/payload/toc_page_labels.py）。
+REDRAW_SAME_TEXT_STRUCTURE_ROLES = frozenset({"toc_entry", "toc_page_label"})
 
 
 def render_unit_kind(item: dict) -> str:
@@ -57,6 +61,10 @@ def _has_repeated_aggregate_member_text(items: list[dict]) -> bool:
     return all(member_text == compact_aggregate for member_text in member_texts)
 
 
+def redraws_same_text(item: dict) -> bool:
+    return str(item.get("structure_role") or "").strip().lower() in REDRAW_SAME_TEXT_STRUCTURE_ROLES
+
+
 def seed_render_fields(item: dict) -> None:
     if should_skip_display_math_render(item):
         clear_render_fields(item)
@@ -69,7 +77,7 @@ def seed_render_fields(item: dict) -> None:
         render_text = source_text
     item["render_protected_text"] = (
         render_text
-        if should_render_source_block(item)
+        if should_render_source_block(item) or redraws_same_text(item)
         else "" if same_meaningful_render_text(source_text, render_text) else render_text
     )
     item["render_source_text"] = source_text
