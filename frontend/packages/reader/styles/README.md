@@ -34,6 +34,7 @@ frontend/packages/reader/styles/
 ├── assistant-dock.css / panel-shell.css / finder.css / live-translation.css
 ├── float-markdown.css / hud.css / markdown.css / markdown-blocks.css
 ├── doc-theme.css           # 深色文档（书页黑底白字：画布反色滤镜 + 叠层深色纸墨）
+├── zoom.css                # 放大查看一块（ReaderZoomViewer）：盖在书上的大框、高分辨率重画的那一块
 └── dialog-shell.css / reader.utilities.css
 ```
 
