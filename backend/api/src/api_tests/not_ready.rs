@@ -50,9 +50,6 @@ const RAW_OUTPUTS: &[(&str, &str)] = &[
     ("files/internal/typst/render.pdf", "typst/render.pdf not ready"),
     ("reader/markdown", "markdown not ready"),
     ("reports/translation", "translation report not ready"),
-    ("reports/translation-qa", "translation-qa report not ready"),
-    ("reports/layout-fit", "layout-fit report not ready"),
-    ("reports/refine", "refine report not ready"),
     ("translations/p001-b001", "translation manifest not ready"),
     ("translations/p001-b001/revisions", "translation manifest not ready"),
 ];
@@ -83,7 +80,7 @@ async fn a_job_without_an_output_directory_is_also_not_ready() {
         ("files/output/translated.docx", "translated.docx not ready"),
         ("files/output/all.zip", "all.zip not ready"),
         ("reader/markdown", "markdown not ready"),
-        ("reports/refine", "refine report not ready"),
+        ("reports/translation", "translation report not ready"),
     ] {
         let uri = format!("/api/v1/jobs/{QUEUED_JOB}/{path}");
         let (status, body) = get(&fixture.state, &uri).await;
@@ -127,11 +124,6 @@ async fn summaries_and_lists_stay_200_with_empty_values() {
             assert!(data[section].is_null(), "{uri}: {section} = {}", data[section]);
         }
 
-        let uri = format!("{j}/data");
-        let (status, body) = get(&fixture.state, &uri).await;
-        let data = ok(&uri, status, &body);
-        let datasets = data["datasets"].as_array().expect("datasets");
-        assert!(!datasets.is_empty() && datasets.iter().all(|d| d["available"] == false), "{uri}: {data}");
 
         let uri = format!("{j}/data/qa_violations");
         let (status, body) = get(&fixture.state, &uri).await;

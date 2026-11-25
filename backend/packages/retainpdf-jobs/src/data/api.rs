@@ -9,8 +9,8 @@ use retainpdf_api_base::error::AppError;
 use retainpdf_api_base::job_loading::load_supported_job;
 use retainpdf_core::storage_paths::{resolve_data_path, resolve_job_root};
 
-pub use super::{JobDataCatalogView, JobDataView};
-use super::{catalog, query, JobDataRoots};
+pub use super::JobDataView;
+use super::{query, JobDataRoots};
 
 /// 自己持有数据（Arc + PathBuf），可以搬进阻塞线程。
 #[derive(Clone)]
@@ -42,10 +42,6 @@ fn roots_for(deps: &JobDataApiDeps, job_id: &str) -> Result<Option<JobDataRoots>
         .and_then(|raw| resolve_data_path(&deps.data_root, raw).ok())
         .unwrap_or_else(|| job_root.join("translated"));
     Ok(Some(JobDataRoots { artifacts: job_root.join("artifacts"), translated, logs: job_root.join("logs") }))
-}
-
-pub fn job_data_catalog_view(deps: &JobDataApiDeps, job_id: &str) -> Result<JobDataCatalogView, AppError> {
-    Ok(catalog(job_id, roots_for(deps, job_id)?.as_ref()))
 }
 
 pub fn job_data_view(

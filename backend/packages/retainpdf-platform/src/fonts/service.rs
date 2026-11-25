@@ -8,7 +8,6 @@ use std::time::{Duration, Instant, SystemTime};
 
 use serde::Serialize;
 
-use retainpdf_api_base::error::AppError;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FontInfo {
@@ -53,54 +52,6 @@ pub(crate) fn list_fonts(project_root: &Path, data_root: &Path) -> Vec<FontInfo>
         *cache = Some(FontCache { signature, scanned_at: Instant::now(), fonts: fonts.clone() });
     }
     fonts
-}
-
-fn invalidate_font_cache() {
-    if let Ok(mut cache) = FONT_CACHE.lock() {
-        *cache = None;
-    }
-}
-
-pub(crate) fn save_uploaded_font(
-    data_root: &Path,
-    filename: &str,
-    bytes: &[u8],
-) -> Result<FontInfo, AppError> {
-    let ext = Path::new(filename)
-        .extension()
-        .and_then(|value| value.to_str())
-        .unwrap_or_default()
-        .to_ascii_lowercase();
-    if !FONT_EXTS.contains(&ext.as_str()) {
-        return Err(AppError::bad_request(format!(
-            "unsupported font extension .{ext}; allowed: {}",
-            FONT_EXTS.join(", ")
-        )));
-    }
-
-    let sanitized = Path::new(filename)
-        .file_name()
-        .and_then(|value| value.to_str())
-        .unwrap_or("upload.otf")
-        .replace(['/', '\\'], "_");
-    let data_fonts_dir = data_root.join("fonts");
-    std::fs::create_dir_all(&data_fonts_dir).map_err(|err| AppError::internal(err.to_string()))?;
-    let destination = data_fonts_dir.join(&sanitized);
-    std::fs::write(&destination, bytes).map_err(|err| AppError::internal(err.to_string()))?;
-
-    let _ = Command::new("fc-cache")
-        .arg("-f")
-        .arg(&data_fonts_dir)
-        .output();
-    invalidate_font_cache();
-
-    let family =
-        family_from_file(&destination).unwrap_or_else(|| family_from_filename(&destination));
-    Ok(FontInfo {
-        family: family.trim().to_string(),
-        files: vec![destination.to_string_lossy().to_string()],
-        available: true,
-    })
 }
 
 fn resolve_font_dirs(project_root: &Path, data_root: &Path) -> Vec<PathBuf> {

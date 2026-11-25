@@ -8,6 +8,5 @@ crate::endpoints! {
     owner: platform;
     /// 能用的字体
     GET "/api/v1/fonts" => fonts::list_fonts, signed by(web);
-    /// 上传字体（不限请求体大小）
-    POST "/api/v1/fonts/upload" => fonts::upload_font, admin by(none) [unlimited_body];
+    // 上传字体 `POST /api/v1/fonts/upload` 2026-11-25 删了：没有调用方（10-18 起 0 次）。
 }

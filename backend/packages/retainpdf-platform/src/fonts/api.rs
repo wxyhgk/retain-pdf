@@ -1,8 +1,7 @@
-//! Application facade for font discovery and uploads.
+//! Application facade for font discovery（上传字体的接口 2026-11-25 删了）.
 
 use std::path::Path;
 
-use retainpdf_api_base::error::AppError;
 
 pub use super::service::FontInfo;
 
@@ -22,12 +21,4 @@ impl<'a> FontApiDeps<'a> {
 
 pub fn list_fonts(deps: &FontApiDeps<'_>) -> Vec<FontInfo> {
     super::service::list_fonts(deps.project_root, deps.data_root)
-}
-
-pub fn upload_font(
-    deps: &FontApiDeps<'_>,
-    filename: &str,
-    bytes: &[u8],
-) -> Result<FontInfo, AppError> {
-    super::service::save_uploaded_font(deps.data_root, filename, bytes)
 }

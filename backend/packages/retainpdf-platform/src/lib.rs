@@ -20,7 +20,7 @@ pub use backup::views::{BackupItemView, BackupRestoreView, BackupStatusView, Las
 pub use backup::api::{
     backup_status_view, create_backup_view, delete_backup_view, restore_backup_view, BackupApiDeps,
 };
-pub use fonts::api::{list_fonts, upload_font, FontApiDeps, FontInfo};
+pub use fonts::api::{list_fonts, FontApiDeps, FontInfo};
 pub use runtime_assets::{
     runtime_assets_view, spawn_runtime_assets_prefetch, start_runtime_assets_download, RuntimeAssetView,
     RuntimeAssetsApiDeps, RuntimeAssetsView,

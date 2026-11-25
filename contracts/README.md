@@ -27,7 +27,7 @@
 | `jobs-control.v1.schema.json` | shell↔jobsd 控制面 | `backend/api/src/api_tests/jobs_control_contract.rs` | `backend/jobs/src/contract_lock.rs` |
 | `pipeline-stdout.v1.schema.json` | Python stdout 协议 | `backend/packages/retainpdf-runner/src/job_runner/stdout_parser/contract_lock.rs` | `backend/pipeline` worker 与对应 contract test |
 | `translation-revisions.v1.schema.json` | 译文条目列表 `GET /api/v1/jobs/:job_id/translations`、单条 `GET .../translations/:item_id`、重放一条 `POST .../replay`（不带请求体，第 1b 期）；单块译文修订写回 `PATCH /api/v1/jobs/:job_id/translations/:item_id`、修订历史 `GET .../revisions`、`translated/revisions.v1.jsonl` 行格式与 409/400 结构化错误（内容没过检查 2026-11-25 以前是 422） | 前端任务详情的翻译调试、阅读页编辑、终端 agent | `backend/api/src/api_tests/translation_debug/revisions.rs`、`translation_debug/items_contract.rs`、`backend/translation/retainpdf_translation/workflow/revision.py` |
-| `refine-report.v1.schema.json` | 译后精修报告 `artifacts/refine_report.v1.json` 与 `GET /api/v1/jobs/:job_id/reports/refine`（挑错发现、定点修改的采纳/拒绝及原因、token 用量、精修前后 QA 对比） | `GET .../reports/refine` 的调用方（以前的终端 agent 命令行 `retainpdf-agent` 2026-11-03 删了） | `backend/translation-classic/retainpdf_translation_classic/workflow/refine.py` |
+| `refine-report.v1.schema.json` | 译后精修报告 `artifacts/refine_report.v1.json`（挑错发现、定点修改的采纳/拒绝及原因、token 用量、精修前后 QA 对比）；原样返回它的接口 `GET /api/v1/jobs/:job_id/reports/refine` 2026-11-25 删了 | 通用取数 `job-data.v1` 的 `refine_fixes`、`escalated`、`refine_summary` 读这个文件 | `backend/translation-classic/retainpdf_translation_classic/workflow/refine.py` |
 | `reader-data.v1.schema.json` | Reader 宿主读模型：产物、Markdown、区域、页面元数据、实时译文布局/快照/SSE；取成品文件 `files/output/*name`（`binary`，2026-11-24 登记） | Reader host adapter、后续 `@retainpdf/reader` ports | `backend/api` Reader 查询视图 |
 
 `contracts/*.schema.json` 是 monorepo 上游真值；

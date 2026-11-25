@@ -403,7 +403,6 @@ fn route_policies_come_from_the_registry() {
     assert_eq!(route_policy("GET", "/api/v1/jobs/:job_id/files/internal/*name"), RoutePolicy::AdminOnly);
     assert_eq!(route_policy("GET", "/api/v1/fonts"), RoutePolicy::Signed);
     assert_eq!(route_policy("POST", "/api/v1/providers/deepseek/balance"), RoutePolicy::AdminOnly);
-    assert_eq!(route_policy("POST", "/api/v1/fonts/upload"), RoutePolicy::AdminOnly);
     assert_eq!(route_policy("GET", "/api/v1/credentials/:credential_ref"), RoutePolicy::AdminOnly);
     assert_eq!(route_policy("POST", "/api/v1/backups"), RoutePolicy::AdminOnly);
     assert_eq!(route_policy("POST", "/api/v1/sync/run"), RoutePolicy::AdminOnly);
@@ -412,7 +411,7 @@ fn route_policies_come_from_the_registry() {
     assert_eq!(route_policy("GET", "/api/v1/jobsx"), RoutePolicy::Closed);
     // 地址登记过、方法没登记：取这个地址最严的一种（让网站账号照旧拿到 405，而不是 404）。
     assert_eq!(route_policy("DELETE", "/api/v1/jobs"), RoutePolicy::Signed);
-    assert_eq!(route_policy("GET", "/api/v1/fonts/upload"), RoutePolicy::AdminOnly);
+    assert_eq!(route_policy("GET", "/api/v1/providers/deepseek/balance"), RoutePolicy::AdminOnly);
     // 没登记的接口默认关闭。
     assert_eq!(route_policy("GET", "/api/v1/reports"), RoutePolicy::Closed);
 }

@@ -3,7 +3,7 @@
 # cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / none 还没有调用方）。
 # 由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
-# 112 条路径，136 个接口
+# 107 条路径，131 个接口
 GET    /api/v1/account/pages  signed  accounts  by multiuser
 GET    /api/v1/admin/invites  admin  accounts  by multiuser
 POST   /api/v1/admin/invites  admin  accounts  by multiuser
@@ -67,7 +67,6 @@ PATCH  /api/v1/documents/:document_id/translation-versions/:version_id  signed  
 GET    /api/v1/documents/:document_id/usage  signed  jobs  by web
 GET    /api/v1/documents/:document_id/usage/estimate  signed  jobs  by web
 GET    /api/v1/fonts  signed  platform  by web
-POST   /api/v1/fonts/upload  admin  platform  by none
 GET    /api/v1/glossaries  signed  glossaries  by web
 POST   /api/v1/glossaries  signed  glossaries  by web
 DELETE /api/v1/glossaries/:glossary_id  signed  glossaries  by web
@@ -88,7 +87,6 @@ POST   /api/v1/jobs/:job_id/actions/resolve-ocr-ambiguity  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/actions/resume  signed  jobs  by web
 POST   /api/v1/jobs/:job_id/actions/resume  signed  jobs  by web
 POST   /api/v1/jobs/:job_id/actions/retry-stage  signed  jobs  by web
-GET    /api/v1/jobs/:job_id/data  signed  jobs  by none
 GET    /api/v1/jobs/:job_id/data/:dataset  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/files  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/files/internal/*name  admin  jobs  by ops
@@ -103,11 +101,8 @@ GET    /api/v1/jobs/:job_id/reader/markdown  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reader/metadata  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reader/regions  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reports/failure  signed  jobs  by web
-GET    /api/v1/jobs/:job_id/reports/layout-fit  signed  jobs  by none
 GET    /api/v1/jobs/:job_id/reports/quality  signed  jobs  by web
-GET    /api/v1/jobs/:job_id/reports/refine  signed  jobs  by none
 GET    /api/v1/jobs/:job_id/reports/translation  signed  jobs  by web
-GET    /api/v1/jobs/:job_id/reports/translation-qa  signed  jobs  by none
 GET    /api/v1/jobs/:job_id/reports/usage  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/translations  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/translations/:item_id  signed  jobs  by web
