@@ -6,10 +6,18 @@ export type InkMenuState = {
     page: number;
 } | null;
 /** 右键书页弹出的菜单（钉在鼠标位置，贴边时往里收）。 */
-export declare function ReaderInkMenu({ ink, menu, onClose }: {
+/** 右键菜单画笔那一排上面的一行（阅读页提问：「在这里提问」「问这段」）。 */
+export type InkMenuAction = {
+    key: string;
+    label: string;
+    hint?: string;
+    onSelect: () => void;
+};
+export declare function ReaderInkMenu({ ink, menu, onClose, actions, }: {
     ink: ReaderInk;
     menu: InkMenuState;
     onClose: () => void;
+    actions?: readonly InkMenuAction[];
 }): ReactElement | null;
 /** 画笔模式下左下角常驻的那一条。 */
 export declare function ReaderInkDock({ ink }: {

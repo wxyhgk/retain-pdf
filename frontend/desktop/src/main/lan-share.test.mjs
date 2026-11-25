@@ -130,6 +130,8 @@ test("management endpoints that reach the computer itself are not opened on the 
     ["POST", "/api/v1/providers/mineru/validate-token"],
     ["POST", "/api/v1/providers/deepseek/validate-token"],
     ["POST", "/api/v1/providers/deepseek/balance"],
+    ["GET", "/api/v1/ai/agents"],
+    ["GET", "/api/v1/ai/agents/claude-code/acp?api_key=x"],
     // 绕法：编码、重复斜杠、大小写、点段
     ["PUT", "/api/v1/%73ync"],
     ["PUT", "/api/v1//sync"],

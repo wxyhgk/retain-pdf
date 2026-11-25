@@ -17,6 +17,7 @@ export { fetchProtected } from "@/features/reader/domain.js";
 export {
   resolvePdfjsVendorUrl,
   resolveMarkedVendorUrl,
+  resolveKatexStylesheetUrl,
 } from "@/platform/runtime/vendor-url.js";
 
 // —— Reader 宿主 ports：直连 shared/*，不经历史中转层 ——

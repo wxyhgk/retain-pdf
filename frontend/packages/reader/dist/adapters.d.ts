@@ -9,6 +9,8 @@ export type ReaderSessionAdapters = {
     resolveResourceUrl?: (url: string) => string;
     fetchProtected?: typeof fetch;
     resolvePdfjsVendorUrl?: (relativePath?: string) => string;
+    /** KaTeX 样式表地址（提问窗的公式用，打开时才加载）。 */
+    resolveKatexStylesheetUrl?: () => string;
     defaultReaderDataPort?: ReturnType<typeof createReaderDataPort>;
     defaultReaderPageConfigPort?: ReturnType<typeof createReaderPageConfigPort>;
     resolveReaderAnchor?: (...args: any[]) => any;
@@ -59,7 +61,7 @@ export type ReaderAdapters = ReaderSessionAdapters & ReaderMarkdownAdapters & Re
  * 注册层与门禁测试共用，避免手工复制字段集漂移；`satisfies` 保证不引入拼错键。
  * 完整性由紧随其后的编译期断言守护。
  */
-export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId"];
+export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "resolveKatexStylesheetUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId"];
 /** 必填（非 `?`）适配键子集，供门禁断言最小注入面。 */
 export declare const READER_REQUIRED_ADAPTER_KEYS: readonly ["resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "fetchDocumentByJobId"];
 export declare function setReaderAdapters(a: ReaderAdapters | null): void;

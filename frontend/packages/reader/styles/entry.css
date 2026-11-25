@@ -22,6 +22,8 @@
 @import "../../ui/styles/error-boundary.css" layer(pages);
 /* 装饰位（顶栏两端、弹窗角花）：显示规则在 @retainpdf/ui，变量由阅读页入口按装饰包注入。 */
 @import "../../ui/styles/ornaments.css" layer(pages);
+/* 组件库的下拉框、输入框（提问窗选 agent 用 Select）。 */
+@import "../../ui/styles/field.css" layer(pages);
 /* 阅读器也吃氛围底（PDF 区仍是自己的 --reader-page）— 仅 reader variant，无主页纸台 */
 @import "./core/ambient-surface-reader.css";
 
@@ -48,6 +50,7 @@
 @import "./ink.css" layer(pages);
 /* 深色文档（书页黑底白字），放在 react-pdf / live-translation 后面盖住它们的底色 */
 @import "./zoom.css" layer(pages);
+@import "./ask.css" layer(pages);
 @import "./doc-theme.css" layer(pages);
 /* Markdown 悬浮预览（含 MathJax） */
 @import "./markdown.css" layer(pages);
