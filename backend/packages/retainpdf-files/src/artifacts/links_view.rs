@@ -91,9 +91,6 @@ pub struct JobActionsView {
     pub cancel: ActionLinkView,
     /// 从断点续跑（`POST actions/resume`）。
     pub resume: ActionLinkView,
-    /// 旧名，和 `resume` 完全同值（地址也是 `actions/resume`：旧地址 `actions/rerun` 2026-11-25 删了）。
-    /// 前端 `domain/job/actions.ts` 还拿它当兜底判断，字段先留着。
-    pub rerun: ActionLinkView,
     pub download_pdf: ActionLinkView,
     pub open_markdown: ActionLinkView,
     pub open_markdown_raw: ActionLinkView,
@@ -120,8 +117,7 @@ pub fn build_job_actions(
         open_job: action_link(true, "GET", self_path, base_url),
         open_artifacts: action_link(true, "GET", artifacts_path, base_url),
         cancel: action_link(can_cancel(&job.status), "POST", cancel_path, base_url),
-        resume: action_link(can_rerun(job), "POST", resume_path.clone(), base_url),
-        rerun: action_link(can_rerun(job), "POST", resume_path, base_url),
+        resume: action_link(can_rerun(job), "POST", resume_path, base_url),
         download_pdf: action_link(pdf_ready, "GET", pdf_path, base_url),
         open_markdown: action_link(markdown_ready, "GET", markdown_path, base_url),
         open_markdown_raw: action_link(markdown_ready, "GET", markdown_raw_path, base_url),

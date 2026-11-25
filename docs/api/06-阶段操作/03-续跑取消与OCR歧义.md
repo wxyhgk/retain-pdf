@@ -41,7 +41,7 @@ POST /api/v1/jobs/{job_id}/actions/resolve-ocr-ambiguity
 
 `POST /api/v1/jobs/{job_id}/actions/resume` 执行后端选好的计划，返回 `JobSubmissionView`（同建任务的返回：`job_id`、`status`、
 `workflow`、`ocr_reused`、`source_artifact_job_id`、`stages`、`links`、`actions`）。旧名 `actions/rerun`
-2026-11-25 删了；读任务视图里的 `actions.resume` 链接（`actions.rerun` 字段暂时留着，和它完全同值，地址也是 `actions/resume`）。
+2026-11-25 删了；读任务视图里的 `actions.resume` 链接（旧字段 `actions.rerun` 也在同一天删了）。
 
 请求体可以不带（等于 `{}`）。唯一能带的是换模型 key：
 

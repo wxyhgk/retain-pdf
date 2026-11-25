@@ -218,8 +218,8 @@ fn workflow_contract_uses_expected_route_prefixes() {
         assert_eq!(links.self_path, format!("{prefix}/job-contract"));
         assert_eq!(links.events_path, format!("{prefix}/job-contract/progress/events"));
         assert_eq!(actions.open_job.path, format!("{prefix}/job-contract"));
-        assert_eq!(actions.rerun.path, format!("{prefix}/job-contract/actions/resume"));
-        assert!(!actions.rerun.enabled);
+        assert_eq!(actions.resume.path, format!("{prefix}/job-contract/actions/resume"));
+        assert!(!actions.resume.enabled);
         assert_eq!(
             actions.open_artifacts.path,
             format!("{prefix}/job-contract/files")
@@ -249,10 +249,6 @@ fn job_actions_enable_rerun_for_reusable_checkpoints_only() {
         ..JobArtifacts::default()
     });
     let actions = build_job_actions(&translate_job, "https://api.example", false, false, false);
-    assert!(actions.rerun.enabled);
-    assert_eq!(actions.rerun.method, "POST");
-    assert_eq!(actions.rerun.path, "/api/v1/jobs/job-rerun-ready/actions/resume");
-    // 正名 resume 和旧名 rerun 同值，只是地址不同。
     assert!(actions.resume.enabled);
     assert_eq!(actions.resume.method, "POST");
     assert_eq!(actions.resume.path, "/api/v1/jobs/job-rerun-ready/actions/resume");
@@ -260,7 +256,6 @@ fn job_actions_enable_rerun_for_reusable_checkpoints_only() {
     let mut ocr_job = build_job("ocr-rerun-disabled", WorkflowKind::Ocr);
     ocr_job.artifacts = translate_job.artifacts.clone();
     let actions = build_job_actions(&ocr_job, "https://api.example", false, false, false);
-    assert!(!actions.rerun.enabled);
     assert!(!actions.resume.enabled);
 }
 
