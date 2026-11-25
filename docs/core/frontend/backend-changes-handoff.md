@@ -1948,3 +1948,9 @@ PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_uplo
 3. 新的 409 `reason`（以前 `details` 是 `{}`）：`legacy_job_unsupported`（很早版本做的任务，读不了产物）、`event_source_not_file`
    （兜底）、`job_exists`（建任务指定的编号已存在，前端不指定编号碰不到）、`tag_name_taken`（改标签名撞名，带 `existing_tag_id`；
    标签接口前端还没接）。可选：给 `legacy_job_unsupported` 一句人话，例如「这是很早的版本做的任务，读不了，请重新上传翻译」。
+
+前端已跟上（`feat/idempotent-submit`，2026-11-25）：
+- 第 1 条：`frontend/web/tests/book-detail/edit-translation.test.mjs` 的模拟错误改成 `status: 400`；前端没有按 422 分支的代码。
+- 第 3 条：`@retainpdf/api` 的 `request()` 遇到 `legacy_job_unsupported` 不管调用方给的是哪种文案，都换成
+  「这是很早的版本做的任务，读不了它的文件，请重新上传翻译。」并挂上 `reason`（`http.ts` 的 `explainLegacyJob`），所有生成的请求函数都经过这里。
+  直接拿地址下载的产物（`<a href>`）不经过它。
