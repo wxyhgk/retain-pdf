@@ -52,19 +52,24 @@ fn local_headers() -> HeaderMap {
 #[test]
 fn lists_builtin_and_installed_local_agents() {
     let root = temp_root("list");
+    // 只装了 claude 和 npx、没装适配器：不现场 npx 下载（下到一半断开会留下坏缓存），列成不能用、给安装命令
     fake_command(&root.0, "claude");
     fake_command(&root.0, "npx");
+    fake_command(&root.0, "codex-acp");
     fake_command(&root.0, "gemini");
     let view = agents_view(&config(&root.0));
     assert!(view.local_agents.enabled);
     let by_id = |id: &str| view.agents.iter().find(|agent| agent.id == id).unwrap().clone();
     assert!(by_id("retainpdf").available && by_id("retainpdf").kind == AgentKind::Builtin);
     let claude = by_id("claude-code");
-    assert!(claude.available);
-    assert_eq!(claude.launch.as_deref(), Some("npx -y @agentclientprotocol/claude-agent-acp"));
+    assert!(!claude.available && claude.launch.is_none(), "{claude:?}");
+    assert!(claude.reason.contains("npm install -g @agentclientprotocol/claude-agent-acp"), "{claude:?}");
+    assert_eq!(claude.install.as_deref(), Some("npm install -g @agentclientprotocol/claude-agent-acp"));
     let codex = by_id("codex");
-    assert!(!codex.available && codex.reason.contains("codex"), "{codex:?}");
+    assert!(codex.available && codex.launch.as_deref() == Some("codex-acp"), "{codex:?}");
+    assert!(by_id("retainpdf").install.is_none());
     assert_eq!(by_id("gemini").launch.as_deref(), Some("gemini --acp"));
+    assert_eq!(prepare_agent(&config(&root.0), "claude-code", &local_headers(), &AcpConnectQuery::default()).map(|_| ()).map_err(status).unwrap_err(), 404);
 
     // 服务器上：本机 agent 全关，自带的照样能用
     let mut server = config(&root.0);

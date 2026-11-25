@@ -30,9 +30,13 @@ export interface AgentView {
    */
   reason: string;
   /**
-   * 本机 agent 实际怎么起（给用户看），比如 npx -y @agentclientprotocol/claude-agent-acp；自带的没有这个字段。
+   * 本机 agent 实际怎么起（给用户看），比如 claude-agent-acp、gemini --acp；自带的、没装的没有这个字段。
    */
   launch?: string;
+  /**
+   * 本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp；自带的没有。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。
+   */
+  install?: string;
 }
 export interface LocalAgentsView {
   /**

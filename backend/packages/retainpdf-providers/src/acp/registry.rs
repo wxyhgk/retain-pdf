@@ -2,7 +2,7 @@
 //!
 //! 只起这里写死的命令，参数不收客户端给的。本机 agent 的包名、参数 2026-11-25 前端在 npm 和官方文档核实过：
 //! `@agentclientprotocol/claude-agent-acp`（命令 claude-agent-acp）、`@agentclientprotocol/codex-acp`（codex-acp）；
-//! Gemini CLI 用 `--acp`（`--experimental-acp` 是旧写法，旧版要先升级）。旧的 `@zed-industries/*` 包别用。装法变了改这张表。
+//! Gemini CLI 用 `--acp`（`--experimental-acp` 是旧写法，旧版要先升级）。不现场 npx 下载（见 [`LocalAgent`]），没装的给安装命令。
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
@@ -18,41 +18,40 @@ pub enum AgentKind {
     Local,
 }
 
-/// 一种起法：程序名（在 PATH 里找）、参数；`requires` 是这种起法要求本机已经装好的命令（比如走 npx 的要先装 CLI）。
-struct Launch {
-    program: &'static str,
-    args: &'static [&'static str],
-    requires: Option<&'static str>,
-}
-
+/// 一种本机 agent：直接起的 ACP 命令（在 PATH 里找，不经 shell），没装时告诉用户怎么装。
+///
+/// 2026-11-25 以前没装单独的适配器时用 `npx -y <包>` 现场下载再起：Claude Code 的适配器第一次要下约 384 MB，
+/// 下到一半连接断了，桥结束 npx，`~/.npm/_npx` 里留下只写了一半的可执行文件，之后每次都报 `spawn ... -88`
+/// （macOS EBADMACHO），自己恢复不了（前端真机联调踩到）。现在不再现场下载：没装就列成不能用，`install` 给安装命令。
 struct LocalAgent {
     id: &'static str,
     name: &'static str,
-    /// 按顺序试，第一个能用的就用它。
-    launches: &'static [Launch],
+    program: &'static str,
+    args: &'static [&'static str],
+    install: &'static str,
 }
 
 const LOCAL_AGENTS: &[LocalAgent] = &[
     LocalAgent {
         id: "claude-code",
         name: "Claude Code",
-        launches: &[
-            Launch { program: "claude-agent-acp", args: &[], requires: None },
-            Launch { program: "npx", args: &["-y", "@agentclientprotocol/claude-agent-acp"], requires: Some("claude") },
-        ],
+        program: "claude-agent-acp",
+        args: &[],
+        install: "npm install -g @agentclientprotocol/claude-agent-acp",
     },
     LocalAgent {
         id: "codex",
         name: "Codex",
-        launches: &[
-            Launch { program: "codex-acp", args: &[], requires: None },
-            Launch { program: "npx", args: &["-y", "@agentclientprotocol/codex-acp"], requires: Some("codex") },
-        ],
+        program: "codex-acp",
+        args: &[],
+        install: "npm install -g @agentclientprotocol/codex-acp",
     },
     LocalAgent {
         id: "gemini",
         name: "Gemini CLI",
-        launches: &[Launch { program: "gemini", args: &["--acp"], requires: None }],
+        program: "gemini",
+        args: &["--acp"],
+        install: "npm install -g @google/gemini-cli",
     },
 ];
 
@@ -65,9 +64,12 @@ pub struct AgentView {
     pub available: bool,
     /// 不能用的原因；能用时是空串。
     pub reason: String,
-    /// 本机 agent 实际怎么起（给用户看）；自带的没有。
+    /// 本机 agent 实际怎么起（给用户看）；自带的、没装的没有。
     #[serde(skip_serializing_if = "Option::is_none")]
     pub launch: Option<String>,
+    /// 本机 agent 的安装命令（在终端跑一次）；自带的没有。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub install: Option<String>,
 }
 
 /// 选中的起法：绝对路径的程序和参数。
@@ -98,16 +100,9 @@ fn is_executable(path: &Path) -> bool {
 }
 
 fn resolve_local(agent: &LocalAgent, path_var: Option<&std::ffi::OsStr>) -> Result<ResolvedLaunch, String> {
-    for launch in agent.launches {
-        if launch.requires.is_some_and(|required| find_in_path(required, path_var).is_none()) {
-            continue;
-        }
-        if let Some(program) = find_in_path(launch.program, path_var) {
-            return Ok(ResolvedLaunch { program, args: launch.args.iter().map(|arg| arg.to_string()).collect() });
-        }
-    }
-    let wanted: Vec<&str> = agent.launches.iter().map(|launch| launch.requires.unwrap_or(launch.program)).collect();
-    Err(format!("没找到 {} 命令", wanted.join(" / ")))
+    find_in_path(agent.program, path_var)
+        .map(|program| ResolvedLaunch { program, args: agent.args.iter().map(|arg| arg.to_string()).collect() })
+        .ok_or_else(|| format!("没装 {}：先在终端运行 {}", agent.program, agent.install))
 }
 
 /// 本机 agent 的起法（`id` 不认识返回 None）。
@@ -128,6 +123,7 @@ pub fn list_agents(local_reason: &str, path_var: Option<&std::ffi::OsStr>) -> Ve
         available: true,
         reason: String::new(),
         launch: None,
+        install: None,
     }];
     for agent in LOCAL_AGENTS {
         let (available, reason, launch) = if !local_reason.is_empty() {
@@ -141,7 +137,15 @@ pub fn list_agents(local_reason: &str, path_var: Option<&std::ffi::OsStr>) -> Ve
                 Err(reason) => (false, reason, None),
             }
         };
-        views.push(AgentView { id: agent.id.into(), name: agent.name.into(), kind: AgentKind::Local, available, reason, launch });
+        views.push(AgentView {
+            id: agent.id.into(),
+            name: agent.name.into(),
+            kind: AgentKind::Local,
+            available,
+            reason,
+            launch,
+            install: Some(agent.install.into()),
+        });
     }
     views
 }
