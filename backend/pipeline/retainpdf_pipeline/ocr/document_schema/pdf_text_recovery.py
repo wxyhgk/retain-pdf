@@ -55,6 +55,47 @@ def _line_text(line: dict) -> str:
     return ''.join(chunks).strip()
 
 
+def _standalone_damage(original: str) -> list[bool]:
+    """去掉空白后的每个字符是不是「独立符号位置上的替换字符」。
+
+    替换字符两边紧挨着都是英文字母时是单词中间的坏字（``photore\ufffdsistors``），删掉就对；
+    前后是空格、中文、标点或者在开头结尾时，那里本来是一个独立的符号（变量、希腊字母）。
+    """
+    flags = []
+    for index, char in enumerate(original):
+        if char.isspace():
+            continue
+        if char != '\ufffd':
+            flags.append(False)
+            continue
+        left, right = index - 1, index + 1
+        while left >= 0 and original[left] == '\ufffd':
+            left -= 1
+        while right < len(original) and original[right] == '\ufffd':
+            right += 1
+        in_word = (left >= 0 and right < len(original)
+                   and original[left].isascii() and original[left].isalpha()
+                   and original[right].isascii() and original[right].isalpha())
+        flags.append(not in_word)
+    return flags
+
+
+def _damage_is_filled(original: str, damaged: str, embedded: str) -> bool:
+    """独立符号位置上的替换字符，在文字层里都对上了实际的字符。
+
+    文字层里那个符号本来就没有（变量画成线条、字体没有映射）时，相似度照样很高：
+    「设 \ufffd 为训练图像」对「设 为训练图像」。这时换过去等于把符号删掉，不算恢复（2026-11-25，外部 PR #160 指出）。
+    单词中间多出来的坏字删掉照旧算恢复。``damaged``、``embedded`` 是去掉空白的写法，``original`` 是 OCR 原文。
+    """
+    standalone = _standalone_damage(original)
+    matcher = SequenceMatcher(None, damaged, embedded, autojunk=False)
+    for tag, a0, a1, b0, b1 in matcher.get_opcodes():
+        dropped = tag == 'delete' or (tag == 'replace' and b1 == b0)
+        if dropped and any(standalone[a0:a1]):
+            return False
+    return True
+
+
 def recover_corrupted_pdf_text(document: dict, pdf) -> int:
     """Repair only replacement-character blocks with a close text-layer match.
 
@@ -88,7 +129,10 @@ def recover_corrupted_pdf_text(document: dict, pdf) -> int:
                     damaged_pattern + r'[A-Za-z0-9]{0,3}',
                     unicodedata.normalize('NFKC', compact(plain)),
                 ) is not None
-            close_text = SequenceMatcher(None, original_compact, compact(plain), autojunk=False).ratio() >= 0.8
+            close_text = (
+                SequenceMatcher(None, original_compact, compact(plain), autojunk=False).ratio() >= 0.8
+                and _damage_is_filled(original, original_compact, compact(plain))
+            )
             if not plain or '\ufffd' in plain or not (close_text or formula_match):
                 continue
             restored_lines = [_line_text(line) for line in lines]

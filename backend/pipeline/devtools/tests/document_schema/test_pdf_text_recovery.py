@@ -15,6 +15,26 @@ def test_recovers_only_matching_corrupted_ocr_text():
         assert '\ufffd' in unrelated['text']
 
 
+def test_text_layer_without_the_symbol_is_not_a_recovery():
+    """文字层里那个符号本来就没有（画成线条的变量）：相似度虽高，换过去等于删掉符号，保留 OCR 原文。"""
+    with fitz.open() as pdf:
+        page = pdf.new_page(width=500, height=200)
+        page.insert_text((20, 60), 'Let  be the training image here.', fontsize=12)
+        missing = dict(text='Let \ufffd be the training image here.', bbox=[15, 40, 400, 70])
+        doc = {'pages': [{'blocks': [missing]}]}
+        assert recover_corrupted_pdf_text(doc, pdf) == 0
+        assert missing['text'] == 'Let \ufffd be the training image here.'
+        assert 'metadata' not in missing
+
+    # 不靠空格分隔、紧挨着标点或中文的独立符号也一样（「设\ufffd为」对文字层「设为」；默认字体写不了中文，这里用标点）。
+    with fitz.open() as pdf:
+        page = pdf.new_page(width=500, height=200)
+        page.insert_text((20, 60), 'set  be the training image of the model', fontsize=12)
+        cjk = dict(text='set\ufffd(be the training image of the model', bbox=[15, 40, 400, 70])
+        doc = {'pages': [{'blocks': [cjk]}]}
+        assert recover_corrupted_pdf_text(doc, pdf) == 0
+
+
 def test_embedded_math_preserves_greek_letters_and_subscript_baseline():
     line={'spans':[dict(text='𝜉',size=10,origin=(0,20)),
                    dict(text='(',size=10,origin=(5,20)),
