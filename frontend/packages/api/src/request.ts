@@ -3,7 +3,8 @@
 // 状态码和后端回的错误体交出去。方案见 docs/ops/planning/api-client-codegen/。
 
 import { apiFetch, buildApiHeaders, buildApiUrl, unwrapEnvelope } from "./internal/runtime.js";
-import { attachErrorDetails, attachRequestRef, refusedSubmissionError, type HttpError } from "./http.js";
+import { attachErrorDetails, attachRequestRef, explainLegacyJob, refusedSubmissionError, type HttpError } from "./http.js";
+import { IDEMPOTENCY_KEY_HEADER } from "./idempotency.js";
 
 export type QueryValue = string | number | boolean | null | undefined | ReadonlyArray<string | number>;
 
@@ -13,6 +14,8 @@ export interface RequestOptions {
   fetchImpl?: typeof fetch;
   /** 把失败的响应变成错误对象；不传时用后端的 message 加状态码，并挂上 errorCode、reason。 */
   onError?: (status: number, payload: any) => Error;
+  /** 建任务类请求带的 Idempotency-Key（见 idempotency.ts）；不传就不带这个头。 */
+  idempotencyKey?: string;
 }
 
 export interface RequestSpec {
@@ -46,15 +49,21 @@ export async function request<T>({ apiPrefix, method, path, query, body, options
   const search = encodeQuery(query);
   const url = `${buildApiUrl(apiPrefix, path)}${search ? `?${search}` : ""}`;
   // GET 不带 Content-Type：它不在 CORS 安全列表里，会把每个 GET 都变成预检请求。
+  const extraHeaders: Record<string, string> = options.idempotencyKey
+    ? { [IDEMPOTENCY_KEY_HEADER]: options.idempotencyKey }
+    : {};
   const init: RequestInit = body === undefined
-    ? { headers: buildApiHeaders() }
-    : { headers: { ...buildApiHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body) };
+    ? { headers: buildApiHeaders(extraHeaders) }
+    : { headers: { ...buildApiHeaders(extraHeaders), "Content-Type": "application/json" }, body: JSON.stringify(body) };
   if (method !== "GET") init.method = method;
   if (options.signal) init.signal = options.signal;
   const resp = await (options.fetchImpl || apiFetch)(url, init);
   if (!resp.ok) {
     const payload: any = await resp.json().catch(() => null);
-    const error = (options.onError || failWithDetails("请求失败，请稍后重试。"))(resp.status, payload) as HttpError;
+    const error = explainLegacyJob(
+      (options.onError || failWithDetails("请求失败，请稍后重试。"))(resp.status, payload) as HttpError,
+      payload,
+    );
     if (error.url === undefined) error.url = url;
     throw attachRequestRef(error, resp, payload);
   }

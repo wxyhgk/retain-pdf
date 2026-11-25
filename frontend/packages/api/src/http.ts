@@ -64,6 +64,8 @@ export interface HttpError extends Error {
   reason?: string;
   /** 这次请求在后端日志里的编号（见 attachRequestRef）。 */
   requestRef?: string;
+  /** 409 derived_job_active：这个任务已经续跑 / 重试出来、还在排队或在跑的那个任务（error.details.active_job_id）。 */
+  activeJobId?: string;
 }
 
 /**
@@ -102,6 +104,23 @@ export function attachErrorDetails(error: HttpError, errorPayload: any): HttpErr
   if (code) error.errorCode = code;
   const reason = typeof structured?.details?.reason === "string" ? structured.details.reason.trim() : "";
   if (reason) error.reason = reason;
+  const activeJobId = typeof structured?.details?.active_job_id === "string" ? structured.details.active_job_id.trim() : "";
+  if (activeJobId) error.activeJobId = activeJobId;
+  return error;
+}
+
+/** 409 legacy_job_unsupported：很早的版本做的任务（老的产物目录布局），后端读不了它的产物（2026-11-25 起）。 */
+export const LEGACY_JOB_UNSUPPORTED = "legacy_job_unsupported";
+export const LEGACY_JOB_UNSUPPORTED_MESSAGE = "这是很早的版本做的任务，读不了它的文件，请重新上传翻译。";
+
+/**
+ * 按任务读文件的接口（产物、阅读、报告…）都可能回 legacy_job_unsupported，各处的报错文案是「读取 xx 失败」，
+ * 看不出该怎么办。不管调用方给的是哪种文案，都换成同一句能照着做的话，并挂上 reason。
+ */
+export function explainLegacyJob(error: HttpError, errorPayload: any): HttpError {
+  if (errorPayload?.error?.details?.reason !== LEGACY_JOB_UNSUPPORTED) return error;
+  error.message = LEGACY_JOB_UNSUPPORTED_MESSAGE;
+  error.reason = LEGACY_JOB_UNSUPPORTED;
   return error;
 }
 

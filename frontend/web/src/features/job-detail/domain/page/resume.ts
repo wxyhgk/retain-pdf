@@ -2,7 +2,7 @@ import { firstJobIdFromPayload, firstNonEmpty as firstNonEmptyText } from "@reta
 import { buildDetailPageUrl } from "./routing.js";
 import { describeActionError, retryJobStage } from "@/platform/api/index.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
-import { isAmbiguousTranslationRerunError } from "../dialog/resume-actions.js";
+import { isAlreadyActiveReceipt, isAmbiguousTranslationRerunError } from "../dialog/resume-actions.js";
 import type { JobDetailPageState } from "./page-state.js";
 import type { DetailSetText } from "./page-ports.js";
 import type { createJobDetailResumePort } from "./resume-port.js";
@@ -45,7 +45,9 @@ export function bindRerunButton({
         setText("detail-rerun-status", "恢复任务已提交，但响应中没有 job_id。");
         return;
       }
-      setText("detail-rerun-status", `已创建恢复任务 ${nextJobId}，正在跳转...`);
+      setText("detail-rerun-status", isAlreadyActiveReceipt(payload)
+        ? `已经有一个从这里续跑出来的任务在跑（${nextJobId}），正在跳转...`
+        : `已创建恢复任务 ${nextJobId}，正在跳转...`);
       window.location.href = buildDetailPageUrl(nextJobId);
     } catch (error) {
       const message = (error as { message?: string } | null)?.message || String(error);
@@ -87,7 +89,9 @@ async function retryTranslationWithRisk({
       button.disabled = false;
       return;
     }
-    setText("detail-rerun-status", `已创建重试任务 ${retryJobId}，正在跳转...`);
+    setText("detail-rerun-status", isAlreadyActiveReceipt(retried)
+      ? `已经有一个从这里重试出来的任务在跑（${retryJobId}），正在跳转...`
+      : `已创建重试任务 ${retryJobId}，正在跳转...`);
     window.location.href = buildDetailPageUrl(retryJobId);
     return;
   } catch (retryError) {

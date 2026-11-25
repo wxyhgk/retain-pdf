@@ -47,6 +47,18 @@
    - 响应头 `Idempotent-Replayed: true` 只是告诉你这是重放，结果和第一次一样，当成功处理就行。
 4. 前端测试：没有钉 `ActionBlockReason` 的测试；如果书籍详情有按 reason 显示文案的表（`job-failure-model.ts` 之类），加上面三个值。
 
+前端已跟上（`feat/idempotent-submit`，2026-11-25），和上面的建议有两处不同：
+- key 不从按钮传进来，由 `@retainpdf/api` 的 6 个提交函数（`createJob`、`translateDocument`、`ocrDocument`、`resumeJob`、
+  `retryJobStage`、`resolveOcrAmbiguity`）每次调用自己生成（`src/idempotency.ts` 的 `newIdempotencyKey()`）：前端没有自动重发，
+  一次调用就是一次点击。`RequestOptions` 加的是 `idempotencyKey?: string`，不是通用的 `headers`。
+  `crypto.randomUUID` 只在安全上下文里有（局域网 `http://192.168.x.x` 打开时没有），退回 `getRandomValues` 拼 UUID v4。
+- `derived_job_active` 不提示「等它结束」，直接切到那个任务：网页的 `platform/api/domains/jobs-actions.ts` 把续跑 / 重试的这个 409
+  换成一张指向 `active_job_id` 的回执（`already_active: true`），书籍详情、任务中心、任务详情都照提交成功的路子切过去、跟进度；
+  任务详情的提示写「已经有一个从这里续跑出来的任务在跑（编号），正在跳转」。OCR 歧义处理在 `ocr-ambiguity-recovery.ts` 里同样跟进那个任务。
+  `HttpError` 加了 `activeJobId`。没带 `active_job_id` 时退回提示文案（`describeActionError`）。
+- `idempotency_key_in_flight` / `idempotency_key_reused` 每次一把新 key 碰不到，`in_flight` 只留了一句兜底文案。
+- 测试：`frontend/web/tests/platform/idempotent-submit.test.mjs`。
+
 ---
 
 ## 请求体写错统一回 400，顶层 `code` 的用法（fix/api-error-format）

@@ -2,6 +2,7 @@
 import { buildUploadsEndpoint, submitUploadRequest, summarizeJobRequestContext } from "./http.js";
 import * as generated from "./generated/create-job.js";
 import { submitFailure } from "./request.js";
+import { newIdempotencyKey } from "./idempotency.js";
 import type { CreateJobInput } from "@retainpdf/contracts/create-job";
 
 function isObject(value: unknown): boolean {
@@ -60,6 +61,7 @@ export async function submitJobRequest(apiPrefix: string, payload: unknown): Pro
 // 报错和以前 submitJson 一样：页数额度不够给 PageQuotaError，其余带上 workflow、OCR 服务商、上传编号。
 function createJob(apiPrefix: string, body: Record<string, unknown>): Promise<any> {
   return generated.createJob(apiPrefix, { body: body as unknown as CreateJobInput }, {
+    idempotencyKey: newIdempotencyKey(),
     onError: submitFailure(summarizeJobRequestContext(body)),
   });
 }

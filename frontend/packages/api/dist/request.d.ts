@@ -5,6 +5,8 @@ export interface RequestOptions {
     fetchImpl?: typeof fetch;
     /** 把失败的响应变成错误对象；不传时用后端的 message 加状态码，并挂上 errorCode、reason。 */
     onError?: (status: number, payload: any) => Error;
+    /** 建任务类请求带的 Idempotency-Key（见 idempotency.ts）；不传就不带这个头。 */
+    idempotencyKey?: string;
 }
 export interface RequestSpec {
     apiPrefix: string | undefined;

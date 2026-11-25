@@ -2,6 +2,7 @@
 import { refusedSubmissionError } from "./http.js";
 import * as generated from "./generated/library-documents.js";
 import { failWith, failWithServerMessage } from "./request.js";
+import { newIdempotencyKey } from "./idempotency.js";
 function documentRequestError(fallback, status, payload) {
     // 通用错误把结构化数据放在 payload.error.details；老接口可能直接在 payload.details/data。
     const structured = payload?.error && typeof payload.error === "object" ? payload.error : null;
@@ -98,10 +99,10 @@ export async function deleteDocument(apiPrefix, documentId, { force = false } = 
 }
 export async function translateDocument(apiPrefix, documentId, payload = {}) {
     // 页数额度不够、磁盘空间不够给一句中文（refusedSubmissionError）；复用 OCR 出错时的 reason、can_fallback_to_ocr 由 documentRequestError 挂上。
-    return generated.translateDocument(apiPrefix, { document_id: requireId(documentId, "document_id"), body: payload }, { onError: (status, envelope) => refusedSubmissionError(status, envelope) ?? documentRequestError("发起翻译失败，请稍后重试。", status, envelope) });
+    return generated.translateDocument(apiPrefix, { document_id: requireId(documentId, "document_id"), body: payload }, { idempotencyKey: newIdempotencyKey(), onError: (status, envelope) => refusedSubmissionError(status, envelope) ?? documentRequestError("发起翻译失败，请稍后重试。", status, envelope) });
 }
 export async function ocrDocument(apiPrefix, documentId, payload = {}) {
-    return generated.ocrDocument(apiPrefix, { document_id: requireId(documentId, "document_id"), body: payload }, { onError: (status, envelope) => refusedSubmissionError(status, envelope) ?? failWithServerMessage("发起 OCR 失败，请稍后重试。")(status, envelope) });
+    return generated.ocrDocument(apiPrefix, { document_id: requireId(documentId, "document_id"), body: payload }, { idempotencyKey: newIdempotencyKey(), onError: (status, envelope) => refusedSubmissionError(status, envelope) ?? failWithServerMessage("发起 OCR 失败，请稍后重试。")(status, envelope) });
 }
 export async function submitDocument(apiPrefix, documentId, payload = {}) {
     const workflow = `${payload?.workflow || ""}`.trim().toLowerCase();

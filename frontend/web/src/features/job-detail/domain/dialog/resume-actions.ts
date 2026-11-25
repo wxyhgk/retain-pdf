@@ -120,6 +120,11 @@ export function syncRerunAction({
 // 「translation request outcome is ambiguous」。直接把这串英文报给用户，用户就卡住了
 // （#132）。详情页 page/resume.ts 早有出路：二次确认重复风险后改走
 // retry-stage(translation) + accept_duplicate_risk。弹窗这里给同样的出路。
+/** 续跑 / 重试回执是「已经有一个在跑的派生任务」（platform/api 把 409 derived_job_active 换成了指向它的回执）。 */
+export function isAlreadyActiveReceipt(payload: unknown) {
+  return Boolean((payload as { already_active?: unknown } | null)?.already_active);
+}
+
 export const TRANSLATION_DUPLICATE_RISK_PROMPT =
   "检测到重复翻译风险：部分翻译请求可能已经计费，重跑可能产生重复费用。再点一次按钮确认仍要从翻译阶段重试。";
 
@@ -223,6 +228,8 @@ function finishResubmission({ payload, rerunContext, setText, startPolling, view
     return;
   }
   viewPort.closeDialog();
-  setText?.("error-box", `已创建恢复任务 ${nextJobId}，开始轮询。`);
+  setText?.("error-box", isAlreadyActiveReceipt(payload)
+    ? `已经有一个从这里续跑出来的任务在跑（${nextJobId}），改为跟进它。`
+    : `已创建恢复任务 ${nextJobId}，开始轮询。`);
   startPolling?.(nextJobId);
 }

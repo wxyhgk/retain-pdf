@@ -20,6 +20,8 @@ export interface HttpError extends Error {
     reason?: string;
     /** 这次请求在后端日志里的编号（见 attachRequestRef）。 */
     requestRef?: string;
+    /** 409 derived_job_active：这个任务已经续跑 / 重试出来、还在排队或在跑的那个任务（error.details.active_job_id）。 */
+    activeJobId?: string;
 }
 /**
  * 这次请求在后端日志里的编号：500 时用信封里的 error.details.error_id（后端日志按它记了完整原因），
@@ -43,6 +45,14 @@ export declare function attachRequestRef<E extends Error>(error: E, resp: {
 } | null | undefined, payload: unknown): E;
 /** 读后端错误信封里的 error.code 和 error.details.reason，挂到错误对象上。 */
 export declare function attachErrorDetails(error: HttpError, errorPayload: any): HttpError;
+/** 409 legacy_job_unsupported：很早的版本做的任务（老的产物目录布局），后端读不了它的产物（2026-11-25 起）。 */
+export declare const LEGACY_JOB_UNSUPPORTED = "legacy_job_unsupported";
+export declare const LEGACY_JOB_UNSUPPORTED_MESSAGE = "\u8FD9\u662F\u5F88\u65E9\u7684\u7248\u672C\u505A\u7684\u4EFB\u52A1\uFF0C\u8BFB\u4E0D\u4E86\u5B83\u7684\u6587\u4EF6\uFF0C\u8BF7\u91CD\u65B0\u4E0A\u4F20\u7FFB\u8BD1\u3002";
+/**
+ * 按任务读文件的接口（产物、阅读、报告…）都可能回 legacy_job_unsupported，各处的报错文案是「读取 xx 失败」，
+ * 看不出该怎么办。不管调用方给的是哪种文案，都换成同一句能照着做的话，并挂上 reason。
+ */
+export declare function explainLegacyJob(error: HttpError, errorPayload: any): HttpError;
 /** 多用户按页额度：建任务时余额不够，后端回 402 + 这个错误码，message 是给用户看的中文。 */
 export declare const PAGE_QUOTA_EXCEEDED = "PAGE_QUOTA_EXCEEDED";
 export interface PageQuotaError extends HttpError {
