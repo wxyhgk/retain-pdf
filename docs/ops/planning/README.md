@@ -19,6 +19,7 @@
 - [书按段走、任务目录新结构（2026-11 起）](./book-segments/README.md)
 - [后端插件化（2026-11 起）](./plugin-architecture/README.md)
 - [表格翻译（2026-11 起）](./table-translation/README.md)
+- [目录 agent（2026-11 起）](./toc-agent/README.md)
 - [正文排版（2026-11 起）](./body-typesetting/README.md)
 - [桌面安装包瘦身（2026-11 起）](./desktop-size/README.md)
 - [桌面端自动更新和 Mac 签名（2026-11 起）](./desktop-auto-update/README.md)
