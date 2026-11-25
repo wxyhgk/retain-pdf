@@ -52,6 +52,10 @@ export interface ReviseTranslationItemRequest {
      */
     expected_generation?: number | null;
     /**
+     * Optimistic concurrency by content (since 2026-11-25): the old translation the caller read. Compared under the write lock with the current translation, ignoring whitespace; the display form and the placeholder form both match. A mismatch returns 409 text_mismatch with current_translated_text. For agents that read the book folder and never see a generation.
+     */
+    expected_translated_text?: string | null;
+    /**
      * After a successful write, submit an in-place render retry (same as POST retry-stage {stage: render, create_new_job: false}). When revising several blocks, set it only on the last one or call retry-stage once afterwards.
      */
     rerender?: boolean;

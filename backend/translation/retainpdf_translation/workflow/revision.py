@@ -138,6 +138,8 @@ class RevisionRequest:
     source: str
     reason: str = ""
     expected_generation: int | None = None
+    # 「先读再写」的旧译文：带了就在持锁后和当前译文比，对不上 409 text_mismatch（2026-11-25）。
+    expected_translated_text: str | None = None
 
 
 def translation_revisions_path(translations_dir: Path) -> Path:
@@ -217,12 +219,47 @@ def _normalize_request(request: RevisionRequest) -> RevisionRequest:
         raise RevisionOutcome(
             "invalid", "reason_too_long", f"reason exceeds {MAX_REVISION_REASON_CHARS} characters"
         )
+    expected_text = request.expected_translated_text
+    if expected_text is not None and len(str(expected_text)) > MAX_REVISION_TEXT_CHARS:
+        raise RevisionOutcome(
+            "invalid",
+            "expected_text_too_long",
+            f"expected_translated_text exceeds {MAX_REVISION_TEXT_CHARS} characters",
+        )
     return RevisionRequest(
         item_id=str(request.item_id or "").strip(),
         translated_text=text.strip(),
         source=request.source,
         reason=reason,
         expected_generation=request.expected_generation,
+        expected_translated_text=None if expected_text is None else str(expected_text),
+    )
+
+
+def _without_whitespace(text: str) -> str:
+    return "".join(str(text or "").split())
+
+
+def _check_expected_text(payloads: dict[int, list[dict]], item_id: str, expected: str) -> None:
+    """比对调用方读到的旧译文和当前译文；对不上说明期间有人改过，409 ``text_mismatch``。
+
+    不看空白（书文件夹导出把多行压成一行、首尾空白不算数）；展示形式（行内公式写回）和存储形式
+    （占位符）都认，调用方读到的是哪种都行。``current_translated_text`` 回当前的展示形式，调用方据此重读再改。
+    """
+    _page_idx, item = _find_item(payloads, item_id)
+    stored = str(item.get("protected_translated_text") or item.get("translated_text") or "")
+    shown = str(item.get("translated_text") or stored)
+    expected_forms = {
+        _without_whitespace(expected),
+        _without_whitespace(_protected_form(item, expected, source_text=item_source_text(item))),
+    }
+    if expected_forms & {_without_whitespace(stored), _without_whitespace(shown)}:
+        return
+    raise RevisionOutcome(
+        "conflict",
+        "text_mismatch",
+        "Translation changed since it was read; re-read the current text before revising",
+        current_translated_text=shown,
     )
 
 
@@ -598,6 +635,8 @@ def _revise_locked(
     translation_paths = load_translation_manifest(translations_dir)
     original_bytes = {page_idx: path.read_bytes() for page_idx, path in translation_paths.items()}
     payloads = {page_idx: json.loads(raw) for page_idx, raw in original_bytes.items()}
+    if request.expected_translated_text is not None:
+        _check_expected_text(payloads, request.item_id, request.expected_translated_text)
     prepared = _prepare_revision(payloads, request.item_id, request.translated_text, _load_glossary_entries(job_root))
     page_idx, item = prepared.page_idx, prepared.item
     members = prepared.members
