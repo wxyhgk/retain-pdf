@@ -115,6 +115,25 @@ const STATES = [
       await page.getByRole("button", { name: /实时译文/ }).first().click();
     },
   },
+  {
+    // 学习系统的白板讲解板演示页：最后一步、不放动画（?still=1），公式等 MathJax 排好
+    name: "whiteboard",
+    page: "whiteboard.html",
+    url: "/whiteboard.html?script=energy&step=5&still=1",
+    run: async (page) => {
+      await page.waitForSelector(".wb-board .wb-math svg");
+      await page.waitForTimeout(300);
+    },
+  },
+  {
+    name: "whiteboard-levels",
+    page: "whiteboard.html",
+    url: "/whiteboard.html?script=koopmans&step=3&still=1",
+    run: async (page) => {
+      await page.waitForSelector(".wb-board .wb-levels");
+      await page.waitForTimeout(300);
+    },
+  },
 ];
 
 function themeIdsFrom(registrySource) {
@@ -229,6 +248,8 @@ mkdirSync(OUTPUT_DIR, { recursive: true });
 let baseShots = null;
 let baseThemes = currentThemes;
 let baseDir = null;
+/** 新加的页面（state.page）在基准提交里还没有时不截、不比。 */
+const baseHasPage = (job) => !baseDir || !job.state.page || existsSync(join(baseDir, "frontend/web", job.state.page));
 if (baseRef) {
   baseDir = mkdtempSync(join(tmpdir(), "retainpdf-visual-base-"));
   // git archive 只导出文件，不建 worktree；dist、vendor、decor 都提交在仓库里，导出来就能直接起服务
@@ -239,7 +260,7 @@ if (baseRef) {
   ]);
   baseThemes = themeIdsFrom(readFileSync(join(baseDir, "frontend/packages/ui/src/theme/registry.ts"), "utf8"));
   console.log(`基准：${baseRef}`);
-  baseShots = await captureAll(join(baseDir, "frontend/web"), 40171, jobs.filter((job) => baseThemes.includes(job.theme)));
+  baseShots = await captureAll(join(baseDir, "frontend/web"), 40171, jobs.filter((job) => baseThemes.includes(job.theme) && baseHasPage(job)));
 }
 
 // —— 当前 ——
@@ -264,6 +285,11 @@ for (const job of jobs) {
   if (baseShots) {
     if (!baseThemes.includes(job.theme)) {
       console.log(`· ${job.key}: 基准里没有这个皮肤（新加的），跳过`);
+      skipped += 1;
+      continue;
+    }
+    if (!baseHasPage(job)) {
+      console.log(`· ${job.key}: 基准里还没有 ${job.state.page}（新加的页面），跳过`);
       skipped += 1;
       continue;
     }

@@ -158,6 +158,11 @@ jobs:
       - name: Build @retainpdf/api
         run: npm --prefix frontend/packages/api run build
 
+      - name: Typecheck and build @retainpdf/whiteboard
+        run: |
+          npm --prefix frontend/packages/whiteboard run typecheck
+          npm --prefix frontend/packages/whiteboard run build
+
       - name: Typecheck @retainpdf/reader
         run: npm --prefix frontend/packages/reader run typecheck
 

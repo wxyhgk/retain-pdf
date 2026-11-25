@@ -23,6 +23,7 @@ const PAGES = [
   { html: "detail.html", assets: ["dist/css/detail.css", "dist/detail.bundle.js"] },
   { html: "admin.html", assets: ["dist/css/admin.css", "dist/admin.bundle.js"] },
   { html: "editorial.html", assets: ["dist/css/editorial.css", "dist/editorial.bundle.js"] },
+  { html: "whiteboard.html", assets: ["dist/css/whiteboard.css", "dist/whiteboard.bundle.js"] },
   { html: "reader.html", assets: ["dist/css/reader.css", "dist/reader.bundle.js"] },
 ];
 

@@ -1,0 +1,24 @@
+/* 白板讲解板演示页 CSS 入口 → dist/css/whiteboard.css
+ * 仅 whiteboard.html 加载。白板自己的样式来自 @retainpdf/whiteboard/styles.css（只用皮肤变量）。
+ */
+@import "tailwindcss";
+@import "../core/tailwind-theme.css";
+
+@source "../../../whiteboard.html";
+@source "../../app/whiteboard/**/*.{ts,tsx}";
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
+@source "../../../../packages/whiteboard/src/**/*.{ts,tsx}";
+
+@layer tokens, base, pages;
+
+@import "../tokens.css" layer(tokens);
+@import "@retainpdf/ui/primitives.css";
+@import "@retainpdf/ui/ornaments.css" layer(pages);
+@import "../shadcn-theme.css" layer(tokens);
+@import "../base.css" layer(base);
+
+@import "../components.css";
+@import "../components.utilities.css";
+
+@import "@retainpdf/whiteboard/styles.css" layer(pages);
+@import "../../app/whiteboard/WhiteboardDemo.css" layer(pages);

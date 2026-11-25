@@ -24,10 +24,12 @@ COPY contracts/package.json ./contracts/package.json
 # workspace 集合对不上而失败。
 COPY backend/packages/retainpdf2doc/package.json ./backend/packages/retainpdf2doc/package.json
 COPY frontend/packages/ui/package.json ./frontend/packages/ui/package.json
+COPY frontend/packages/whiteboard/package.json ./frontend/packages/whiteboard/package.json
 RUN npm ci --ignore-scripts
 
 COPY frontend/packages/reader/ ./frontend/packages/reader/
 COPY frontend/packages/ui/ ./frontend/packages/ui/
+COPY frontend/packages/whiteboard/ ./frontend/packages/whiteboard/
 COPY frontend/packages/api/ ./frontend/packages/api/
 COPY frontend/packages/domain/ ./frontend/packages/domain/
 COPY contracts/ ./contracts/
