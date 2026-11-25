@@ -3,11 +3,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { applySessionUpdate, emptyTurn, turnFooter, turnSpeed, usageFromMeta } from "../../../packages/reader/src/ask/acp-parts.ts";
-import { PermissionStore, anchorPromptBlocks, createAcpChatAdapter } from "../../../packages/reader/src/ask/acp-adapter.ts";
+import { applySessionUpdate, closeOpenReasoning, emptyTurn, turnFooter, turnSpeed, usageFromMeta } from "../../../packages/reader/src/ask/acp-parts.ts";
+import { PermissionStore, anchorPromptBlocks, createAcpChatAdapter, imageBlocks } from "../../../packages/reader/src/ask/acp-adapter.ts";
 import { buildAskAnchor, nearestRegion, sectionForPage } from "../../../packages/reader/src/ask/anchor.ts";
 import { normalizeReaderMetadata, normalizeReaderRegions } from "../../../packages/reader/src/shared/data/reader-regions.ts";
-import { normalizeMathDelimiters } from "../../../packages/reader/src/ask/math-delimiters.ts";
 import { historyText, toInitialMessages, toStoredMessages } from "../../../packages/reader/src/ask/thread-messages.ts";
 
 const text = (sessionUpdate, value) => ({ sessionUpdate, content: { type: "text", text: value } });
@@ -149,9 +148,13 @@ test("和 assistant-ui 的适配：第一句带出处、之后不带；边收边
   let agentId = "retainpdf";
   let clock = 0;
   const chat = createAcpChatAdapter({ port, jobId: "job-1", permissions: new PermissionStore(), getAgentId: () => agentId, getAnchor: () => ANCHOR, now: () => (clock += 100) });
+  // 像 assistant-ui 那样：每次把到这一问为止的整段对话传进来。
+  const history = [];
   const ask = async (question) => {
+    history.push({ role: "user", content: [{ type: "text", text: question }] });
     const results = [];
-    for await (const result of chat.adapter.run({ messages: [{ role: "user", content: [{ type: "text", text: question }] }], abortSignal: new AbortController().signal })) results.push(result);
+    for await (const result of chat.adapter.run({ messages: [...history], abortSignal: new AbortController().signal })) results.push(result);
+    history.push({ role: "assistant", content: results.at(-1).content, metadata: { custom: {} } });
     return results;
   };
   const first = await ask("这是什么？");
@@ -166,12 +169,7 @@ test("和 assistant-ui 的适配：第一句带出处、之后不带；边收边
   agentId = "claude-code";
   await ask("换个 agent");
   assert.deepEqual(opened, ["retainpdf", "claude-code"]);
-  assert.equal(prompts[2].length, 2, "换了 agent：新会话，出处再带一次");
-});
-
-test("公式分隔符：\\( \\) → $，\\[ \\] → $$；代码块里的不动", () => {
-  assert.equal(normalizeMathDelimiters("设 \\(x^2\\)，则\n\\[a=b\\]"), "设 $x^2$，则\n$$a=b$$");
-  assert.equal(normalizeMathDelimiters("```\n\\(x\\)\n```"), "```\n\\(x\\)\n```");
+  assert.equal(prompts[2].length, 3, "换了 agent：新会话，出处和之前几轮再带一次");
 });
 
 test("接线：宿主不给端口就没有提问入口；? 只在选着书页上的字时拦（不然照旧是快捷键帮助）；提问窗单独一块、用到才加载", () => {
@@ -185,7 +183,7 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
   assert.match(host, /if \(isMockMode\(\)\) return mockAskPort;/, "演示模式给假 agent");
   assert.match(host, /if \(isLanSharedPage\(\)\) return null;/, "局域网共享的页面不给（网关拦了 \/api\/v1\/ai）");
   const vite = readFileSync(new URL("../../../packages/reader/vite.config.ts", import.meta.url), "utf8");
-  assert.match(vite, /@assistant-ui\\\/\[\^\/\]\+\|streamdown/, "开源库不打进阅读器 dist");
+  assert.match(vite, /@assistant-ui\\\/\[\^\/\]\+\|react-rnd/, "开源库不打进阅读器 dist");
 });
 
 test("问答记录：assistant-ui 的对话 → 存的问答（问题 / 回答 + 思考 + 用量和用时）；读回来交给 initialMessages，底下一行照样有用量", () => {
@@ -236,7 +234,7 @@ test("问答记录接线：读回问过的地方、每答完一轮存、一句�
   assert.match(hook, /if \(mark && !mark\.threadId\) setMarks/);
   const windowSource = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskWindow.tsx", import.meta.url), "utf8");
   assert.match(windowSource, /if \(wasRunning && !state\.isRunning\)/, "答完一轮才存");
-  assert.match(windowSource, /useLocalRuntime\(chat\.adapter as never, \{ initialMessages: initial as never \}\)/);
+  assert.match(windowSource, /useLocalRuntime\(chat\.adapter as never, \{ initialMessages: initial as never, adapters: \{ attachments \} \}\)/);
 });
 
 test("悬停还没认出块（鼠标刚移过来、点在两段之间）：按位置找同一页最近的块，太远（超过页高 15%）不算", () => {
@@ -274,4 +272,52 @@ test("Claude Code 的用量：模型在 _meta[\"_claude/model\"]，分项 token 
   const { turn } = last.metadata.custom;
   assert.deepEqual(turn.usage, { contextUsed: 33185, contextSize: 1000000, model: "claude-opus-5-5", inputTokens: 2, outputTokens: 11, cachedInputTokens: 11727, cacheWriteTokens: 21448 });
   assert.match(turnFooter(turn, null, "Claude Code"), /^Claude Code（claude-opus-5-5） · 输入 2 · 输出 11 token · 缓存命中 11727 · 写入缓存 21448 · 上下文 3%/);
+});
+
+test("整套照搬 assistant-ui 的 Thread：只往里塞工具调用、数据块、等待指示、用量那一行；重新回答 / 改问题时 ACP 会话重开", () => {
+  const windowSource = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskWindow.tsx", import.meta.url), "utf8");
+  assert.match(windowSource, /<Thread components=\{threadComponents\} autoFocus \/>/);
+  assert.match(windowSource, /makeAssistantDataUI\(\{ name: "plan"/);
+  const adapter = readFileSync(new URL("../../../packages/reader/src/ask/acp-adapter.ts", import.meta.url), "utf8");
+  assert.match(adapter, /if \(session && lastIndex !== sessionSeen\)/);
+});
+
+test("重新回答（最后一问再答一次）：ACP 会话重开、第一问带上之前几轮", async () => {
+  const prompts = [];
+  let opened = 0;
+  const port = { listAgents: async () => [], openSession: async (_o, handlers) => { opened += 1; return { prompt: async (blocks) => { prompts.push(blocks); handlers.onUpdate({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "答" } }); return { stopReason: "end_turn" }; }, cancel() {}, close() {} }; } };
+  const chat = createAcpChatAdapter({ port, jobId: "j", permissions: new PermissionStore(), getAgentId: () => "a", getAnchor: () => null });
+  const run = async (messages) => { for await (const _ of chat.adapter.run({ messages, abortSignal: new AbortController().signal })) { /* 收完 */ } };
+  const u = (t) => ({ role: "user", content: [{ type: "text", text: t }] });
+  const a = (t) => ({ role: "assistant", content: [{ type: "text", text: t }], metadata: { custom: {} } });
+  await run([u("Q1")]);
+  await run([u("Q1"), a("A1"), u("Q2")]);
+  assert.equal(opened, 1, "正常往下问：同一个会话");
+  await run([u("Q1"), a("A1"), u("Q2")]);
+  assert.equal(opened, 2, "重新回答 Q2：会话重开");
+  assert.match(prompts[2].map((block) => block.text).join("\n"), /我：Q1\n\n你：A1/, "带上之前几轮");
+});
+
+test("贴的图片 → ACP 的 image 块：消息里的和附件里的都认，不是 data URL 的不发", () => {
+  const blocks = imageBlocks({
+    role: "user",
+    content: [{ type: "text", text: "这张图" }, { type: "image", image: "data:image/png;base64,AAAA" }],
+    attachments: [{ content: [{ type: "image", image: "data:image/jpeg;base64,BBBB" }, { type: "image", image: "https://x/y.png" }] }],
+  });
+  assert.deepEqual(blocks, [{ type: "image", mimeType: "image/png", data: "AAAA" }, { type: "image", mimeType: "image/jpeg", data: "BBBB" }]);
+  assert.deepEqual(imageBlocks(undefined), []);
+});
+
+test("起止时刻（思考写「思考（N 秒）」、工具调用写用时）：思考从第一段起，来了别的内容就收；工具调用完成或失败时收；一轮答完没收的统一收", () => {
+  let turn = emptyTurn(0);
+  turn = applySessionUpdate(turn, text("agent_thought_chunk", "想"), 1, 1000);
+  turn = applySessionUpdate(turn, text("agent_thought_chunk", "想"), 2, 2000);
+  assert.deepEqual(turn.parts[0].timing, { startedAt: 1000 });
+  turn = applySessionUpdate(turn, { sessionUpdate: "tool_call", toolCallId: "t", title: "看", status: "in_progress" }, 3, 4000);
+  assert.deepEqual(turn.parts[0].timing, { startedAt: 1000, completedAt: 4000 }, "来了工具调用：思考收了");
+  assert.deepEqual(turn.parts[1].timing, { startedAt: 4000 });
+  turn = applySessionUpdate(turn, { sessionUpdate: "tool_call_update", toolCallId: "t", status: "completed" }, 4, 6500);
+  assert.deepEqual(turn.parts[1].timing, { startedAt: 4000, completedAt: 6500 });
+  turn = applySessionUpdate(turn, text("agent_thought_chunk", "再想"), 5, 7000);
+  assert.deepEqual(closeOpenReasoning(turn.parts, 9000)[2].timing, { startedAt: 7000, completedAt: 9000 });
 });

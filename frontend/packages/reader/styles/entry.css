@@ -11,6 +11,7 @@
 /* 提问窗用的 assistant-ui 官方组件（src/ask/ui/）：展开收起的动画、「思考中」的流光。 */
 @import "tw-animate-css";
 @import "tw-shimmer";
+@import "@assistant-ui/react-markdown/styles/dot.css";
 
 @source "../src/**/*.{js,jsx,ts,tsx}";
 @source inline("progress-bar download-toast-card");

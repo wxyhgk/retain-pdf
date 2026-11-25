@@ -21,30 +21,55 @@ import type {
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { createAskThread, deleteAskThread, getAskThread, listAiAgents, listAskThreads, updateAskThread } from "@retainpdf/api/ai";
 import { apiBase, frontendApiKey, isLanSharedPage, isMockMode } from "@/platform/config/runtime.js";
-import { savedDefaultTranslationModel, savedTranslationConnections } from "@/platform/config/translation-connections.js";
-import { readStoredTranslationSecret } from "@/platform/api/translation-secret.js";
+import { savedDefaultTranslationModel, savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
+import { loadBrowserStoredConfig, savePersistedBrowserStoredConfig } from "@/platform/config/persisted-config.js";
+import { createCredential, updateCredential } from "@/platform/api/domains/credentials.js";
 import { mockAskPort } from "@/platform/mock/ask-agent.js";
 
 export const BUILTIN_AGENT_ID = "retainpdf";
 
 type AgentRow = { id?: string; name?: string; kind?: string; available?: boolean; reason?: string; launch?: string; install?: string };
 
-/** 自带 agent 的模型配置：设置里默认的翻译模型；没配模型或密钥没存进凭据库时说清楚缺什么。 */
-export function builtinModelQuery(): { query: Record<string, string>; missing: string } {
+function defaultConnection(): TranslationConnection | null {
   const connections = savedTranslationConnections();
   const preferred = savedDefaultTranslationModel();
-  const connection = connections.find((item) => item.model === preferred) || connections[0];
+  return connections.find((item) => item.model === preferred) || connections[0] || null;
+}
+
+/** 自带 agent 的模型配置：设置里默认的翻译模型（密钥另外换成凭据库引用，见 ensureAskCredential）；没配模型时说清楚。 */
+export function builtinModelQuery(): { query: Record<string, string>; missing: string } {
+  const connection = defaultConnection();
   if (!connection) return { query: {}, missing: "设置里还没有配翻译模型" };
-  const credentialRef = `${readStoredTranslationSecret().translationCredentialRef || ""}`.trim();
-  if (!credentialRef) return { query: {}, missing: "翻译模型的密钥还没存进凭据库（在设置里保存一次）" };
   const query: Record<string, string> = {
     model: connection.model,
     base_url: connection.baseUrl,
     api_protocol: connection.apiProtocol || "openai",
-    credential_ref: credentialRef,
   };
   if (connection.thinking && connection.thinking !== "off") query.thinking = connection.thinking;
   return { query, missing: "" };
+}
+
+/**
+ * 后端的 ACP 桥不收明文 key，只收凭据库引用。翻译任务一直是带明文 key 提交的，所以多数人浏览器里没有引用（11-26 用户：「前端还是没接入我们的 agent」）。
+ * 连自带 agent 前：浏览器设置里有翻译密钥的引用就把它更新成当前这把，没有（或引用失效）就存一把新的、把引用记回浏览器设置。
+ */
+async function ensureAskCredential(connection: TranslationConnection): Promise<string> {
+  const current = loadBrowserStoredConfig() as Record<string, unknown>;
+  const existing = `${current.translationCredentialRef || ""}`.trim();
+  const payload = { kind: "translation_api_key", provider: connection.provider, label: "翻译 API", secret: connection.apiKey };
+  if (existing) {
+    try {
+      await updateCredential(API_PREFIX, existing, payload as never);
+      return existing;
+    } catch {
+      // 引用失效（凭据库换了、被删了）：下面新存一把。
+    }
+  }
+  const created = await createCredential(API_PREFIX, payload as never);
+  const ref = `${(created as { credential?: { credential_ref?: string } })?.credential?.credential_ref || ""}`.trim();
+  if (!ref) throw new Error("翻译模型的密钥存不进凭据库");
+  await savePersistedBrowserStoredConfig({ ...current, translationCredentialRef: ref });
+  return ref;
 }
 
 /** 后端的 agent 列表 → 阅读器的；自带的缺配置时标成用不了。 */
@@ -81,9 +106,15 @@ async function listAgents(): Promise<ReaderAskAgent[]> {
   return toReaderAgents(Array.isArray(view?.agents) ? (view.agents as AgentRow[]) : [], builtinModelQuery().missing);
 }
 
-async function openSession({ agentId }: { agentId: string; jobId: string }, handlers: ReaderAskHandlers): Promise<ReaderAskSession> {
+async function openSession({ agentId, jobId }: { agentId: string; jobId: string }, handlers: ReaderAskHandlers): Promise<ReaderAskSession> {
   const extra = agentId === BUILTIN_AGENT_ID ? builtinModelQuery() : { query: {}, missing: "" };
   if (extra.missing) throw new Error(extra.missing);
+  if (agentId === BUILTIN_AGENT_ID) {
+    const connection = defaultConnection();
+    if (connection) extra.query = { ...extra.query, credential_ref: await ensureAskCredential(connection) };
+  }
+  // 自带 agent 自己读书（read_pages / search_book / view_page）：带上阅读页的任务编号（merged-… 也照传）。本机 agent 走 retainpdf mcp，不用。
+  if (agentId === BUILTIN_AGENT_ID && jobId) extra.query = { ...extra.query, job_id: jobId };
   const app = client()
     .onNotification("session/update", ({ params }) => handlers.onUpdate(params.update))
     .onRequest("session/request_permission", ({ params }) => handlers.onPermission(params));

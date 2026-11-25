@@ -20,7 +20,8 @@ import { PROJECT_ROOT, stripCommentsAndStrings, toRelative } from "./helpers/sou
 const BASELINE_PATH = join(PROJECT_ROOT, "tests/architecture/helpers/ui-primitives-baseline.json");
 const UPDATE_ENV = "UPDATE_UI_PRIMITIVES_BASELINE";
 const SCAN_ROOTS = ["src", "../packages/reader/src", "../packages/reader/styles"].map((dir) => join(PROJECT_ROOT, dir));
-const EXCLUDED = ["src/platform/api/mocks/", "src/platform/mock/", "src/platform/generated/"];
+// 照搬的第三方组件（assistant-ui 官方组件、shadcn/ui，MIT）：原样拷进来、方便对着上游更新，不按我们手写控件的规矩算。
+const EXCLUDED = ["src/platform/api/mocks/", "src/platform/mock/", "src/platform/generated/", "../packages/reader/src/ask/ui/"];
 
 const CONTROL_PATTERNS = {
   button: /<button\b/g,

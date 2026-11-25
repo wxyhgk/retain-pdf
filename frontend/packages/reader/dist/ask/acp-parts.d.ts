@@ -1,6 +1,12 @@
 import type { PlanEntry, SessionUpdate } from "@agentclientprotocol/sdk";
+/** 部件的起止时刻（毫秒时间戳，assistant-ui 的 MessagePartTiming）：思考写「思考（N 秒）」、工具调用写用时都靠它。 */
+export type AskTiming = {
+    startedAt: number;
+    completedAt?: number;
+};
 export type AskToolCall = {
     type: "tool-call";
+    timing?: AskTiming;
     toolCallId: string;
     toolName: string;
     args: Record<string, unknown>;
@@ -22,6 +28,7 @@ export type AskPart = {
 } | {
     type: "reasoning";
     text: string;
+    timing?: AskTiming;
 } | AskToolCall | {
     type: "data";
     name: "plan";
@@ -74,8 +81,10 @@ export declare function emptyTurn(now: number): AskTurn;
  * 几种常见写法都认（camelCase / snake_case / Anthropic 的 cache_read_input_tokens）。
  */
 export declare function usageFromMeta(meta: unknown): Partial<AskUsage>;
+/** 还没收尾的思考记上结束（后面来了别的内容，或这一轮答完了）。 */
+export declare function closeOpenReasoning(parts: readonly AskPart[], wall: number): AskPart[];
 /** 一条 session/update 合进这一轮的回答。不认识的更新原样忽略。 */
-export declare function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: number): AskTurn;
+export declare function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: number, wall?: number): AskTurn;
 export type AskSpeed = {
     value: number;
     unit: "token/s" | "字/s";

@@ -7,7 +7,7 @@
 import type { ContentBlock, RequestPermissionRequest, RequestPermissionResponse, SessionUpdate } from "@agentclientprotocol/sdk";
 
 import type { ReaderAskAnchor, ReaderAskPort, ReaderAskSession } from "../contracts/ask.js";
-import { applySessionUpdate, emptyTurn, turnSpeed, usageFromMeta, type AskPart, type AskTurn } from "./acp-parts.js";
+import { applySessionUpdate, closeOpenReasoning, emptyTurn, turnSpeed, usageFromMeta, type AskPart, type AskTurn } from "./acp-parts.js";
 import { historyText } from "./thread-messages.js";
 
 const QUOTE_LIMIT = 4000;
@@ -100,10 +100,24 @@ export type AcpChatOptions = {
   now?: () => number;
 };
 
+type RunPart = { type: string; text?: string; image?: string };
 type RunOptions = {
-  messages: readonly { role: string; content: readonly { type: string; text?: string }[] }[];
+  messages: readonly { role: string; content: readonly RunPart[]; attachments?: readonly { content?: readonly RunPart[] }[] }[];
   abortSignal: AbortSignal;
 };
+
+/** 用户贴的图（assistant-ui 的图片附件，data URL）→ ACP 的 image 内容块。不是 data URL 的不发。 */
+export function imageBlocks(message: RunOptions["messages"][number] | undefined): ContentBlock[] {
+  if (!message) return [];
+  const parts = [...message.content, ...(message.attachments || []).flatMap((attachment) => attachment.content || [])];
+  const blocks: ContentBlock[] = [];
+  for (const part of parts) {
+    if (part.type !== "image" || !part.image) continue;
+    const match = /^data:([^;,]+);base64,(.+)$/.exec(part.image);
+    if (match) blocks.push({ type: "image", mimeType: match[1], data: match[2] });
+  }
+  return blocks;
+}
 
 /** assistant-ui 的 ChatModelAdapter：run 是 async generator，边收边吐当前这一轮的样子。 */
 export function createAcpChatAdapter(options: AcpChatOptions) {
@@ -112,6 +126,8 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
   let sessionAgent = "";
   let onUpdate: ((update: SessionUpdate) => void) | null = null;
   let sentAnchor = false;
+  // 这个会话已经听过几条（问 + 答）。重新回答、改了问题、切到别的版本时，对话和会话里的对不上：开新会话，把到这里为止的带过去。
+  let sessionSeen = 0;
 
   const ensureSession = async () => {
     const agentId = options.getAgentId();
@@ -125,8 +141,9 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       },
     );
     sessionAgent = agentId;
-    // 换了 agent：新会话不知道前面问过什么，出处再带一次。
+    // 新会话（换了 agent、重新回答、断线）不知道前面问过什么，出处再带一次。
     sentAnchor = false;
+    sessionSeen = 0;
     return session;
   };
 
@@ -134,6 +151,10 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
     async *run({ messages, abortSignal }: RunOptions) {
       const lastIndex = messages.map((message) => message.role).lastIndexOf("user");
       const last = lastIndex >= 0 ? messages[lastIndex] : undefined;
+      if (session && lastIndex !== sessionSeen) {
+        session.close();
+        session = null;
+      }
       const question = (last?.content || []).map((part) => (part.type === "text" ? part.text || "" : "")).join("\n").trim();
       let current: ReaderAskSession;
       try {
@@ -154,7 +175,8 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       // 新会话（重新打开、换了 agent、断线重连）不知道之前聊过什么：带上之前几轮。
       const earlier = !sentAnchor && lastIndex > 0 ? historyText(messages.slice(0, lastIndex) as never) : "";
       if (earlier) blocks.push({ type: "text", text: earlier });
-      blocks.push({ type: "text", text: question });
+      blocks.push({ type: "text", text: question || "（看图）" });
+      blocks.push(...imageBlocks(last as never));
       sentAnchor = true;
 
       let turn: AskTurn = emptyTurn(now());
@@ -205,6 +227,8 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
         onUpdate = null;
       }
       const endedAt = now();
+      turn = { ...turn, parts: closeOpenReasoning(turn.parts, Date.now()) };
+      if (!failure) sessionSeen = lastIndex + 2;
       const speed = turnSpeed(turn);
       const timing = {
         streamStartTime: turn.startedAt,

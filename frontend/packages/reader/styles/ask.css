@@ -127,12 +127,10 @@
   min-height: 0;
 }
 
-.reader-ask-viewport {
+/* Thread（assistant-ui 照搬）自己用 Tailwind 排版；这里只让它占满窗口剩下的高度。 */
+.reader-ask-thread > * {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
-  padding: 12px 14px;
-  overscroll-behavior: contain;
 }
 
 .reader-ask-empty,
@@ -148,65 +146,6 @@
   color: var(--danger, var(--ink));
 }
 
-.reader-ask-msg {
-  margin-bottom: 14px;
-  font-size: var(--ui-text-md, 14px);
-  line-height: 1.7;
-}
-
-.reader-ask-msg.is-user {
-  width: fit-content;
-  max-width: 88%;
-  margin-left: auto;
-  padding: 6px 12px;
-  border-radius: var(--ui-radius-md, 10px);
-  background: color-mix(in srgb, var(--accent) 12%, var(--paper));
-  white-space: pre-wrap;
-}
-
-/* 回答（streamdown 出的普通 HTML 元素；它的样式类是 Tailwind 的，这里不用，按元素写）。 */
-.reader-ask-md > :first-child { margin-top: 0; }
-.reader-ask-md > :last-child { margin-bottom: 0; }
-.reader-ask-md p,
-.reader-ask-md ul,
-.reader-ask-md ol { margin: 0.5em 0; }
-.reader-ask-md ul,
-.reader-ask-md ol { padding-left: 1.4em; }
-.reader-ask-md ul { list-style: disc; }
-.reader-ask-md ol { list-style: decimal; }
-.reader-ask-md li { display: list-item; }
-.reader-ask-md h1,
-.reader-ask-md h2,
-.reader-ask-md h3 { margin: 0.8em 0 0.4em; font-size: inherit; font-weight: 700; }
-.reader-ask-md code {
-  padding: 0.1em 0.3em;
-  border-radius: var(--ui-radius-sm, 4px);
-  background: color-mix(in srgb, var(--ink) 7%, transparent);
-  font-size: var(--ui-text-sm, 13px);
-}
-.reader-ask-md pre {
-  overflow-x: auto;
-  padding: 8px 10px;
-  border-radius: var(--ui-radius-sm, 6px);
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
-}
-.reader-ask-md pre code { padding: 0; background: none; }
-.reader-ask-md table { border-collapse: collapse; }
-.reader-ask-md th,
-.reader-ask-md td { padding: 3px 8px; border: 1px solid var(--line); }
-.reader-ask-md .katex-display { overflow-x: auto; overflow-y: hidden; }
-
-/* 思考的正文（assistant-ui 的 Reasoning 里），保留换行。 */
-.reader-ask-thought-body {
-  white-space: pre-wrap;
-  line-height: 1.6;
-}
-
-.reader-ask-plan,
-.reader-ask-subagent {
-  margin: 6px 0 10px;
-}
-
 .reader-ask-footer {
   margin-top: 6px;
   color: var(--muted);
@@ -214,102 +153,37 @@
   font-variant-numeric: tabular-nums;
 }
 
-.reader-ask-composer {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  padding: 8px 10px;
-  border-top: 1px solid var(--line);
-}
-
-.reader-ask-input {
-  flex: 1 1 auto;
-  max-height: 10em;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius-md, 8px);
-  background: var(--paper);
-  color: var(--ink);
-  font: inherit;
-  font-size: var(--ui-text-md, 14px);
-  line-height: 1.5;
-  resize: none;
-}
-
-.reader-ask-input:focus { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 0; }
-
-.reader-ask-send {
-  display: inline-grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: var(--ui-radius-pill, 999px);
-  background: var(--accent);
-  color: var(--paper);
-  cursor: var(--cursor-pointer, pointer);
-}
-
-.reader-ask-send:disabled { opacity: 0.4; cursor: default; }
-
-/* assistant-ui 组件里的按钮（reader-ask-action）、输入框（经 src/ask/ui/controls.tsx 转成 @retainpdf/ui 的 Button / Textarea）。
-   阅读页没引入组件库的按钮样式（缩放、行内改译文的按钮各有各的），这里只管提问窗里的。 */
-.reader-ask .reader-ask-action {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 28px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius-pill, 999px);
-  background: var(--paper);
-  color: var(--ink);
-  font: inherit;
-  font-size: var(--ui-text-sm, 13px);
-  font-weight: 600;
-  cursor: var(--cursor-pointer, pointer);
-}
-
-.reader-ask .reader-ask-action[data-variant="primary"] {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--paper);
-}
-
-.reader-ask .reader-ask-action[data-variant="ghost"] {
-  border-color: transparent;
-  background: transparent;
-}
-
-.reader-ask .reader-ask-action:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 10%, var(--paper));
-}
-
-.reader-ask .reader-ask-action[data-variant="primary"]:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 88%, var(--ink));
-}
-
-.reader-ask .reader-ask-action:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
-
-.reader-ask .ui-textarea {
-  width: 100%;
-  min-height: 56px;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius-md, 8px);
-  background: var(--paper);
-  color: var(--ink);
-  font: inherit;
-  font-size: var(--ui-text-sm, 13px);
-}
-
 .reader-ask .reader-ask-agent select {
   min-height: 28px;
   padding: 0 26px 0 10px;
   font-size: var(--ui-text-sm, 13px);
+}
+
+/* 「在想…」（Thread 的正在回答指示，ReaderAskWindow 的 Waiting）。 */
+.reader-ask-waiting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 13px);
+}
+
+.reader-ask-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--accent);
+  animation: reader-ask-pulse 1s ease-in-out infinite;
+}
+
+@keyframes reader-ask-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-ask-dot { animation: none; }
 }
 
 /* 书页上的「?」：左边白边里。 */

@@ -1,9 +1,10 @@
 /** 阅读页提问的浮动窗口（单独一块，打开时才加载）。
  *
  * - 窗口：react-rnd，标题栏拖动、边角调大小，不出屏幕；Esc / ✕ 关。
- * - 对话：assistant-ui（LocalRuntime + 我们的 ACP 适配，acp-adapter.ts）；回答用 streamdown 渲染（流式 Markdown + KaTeX 公式）。
- * - 思考折叠、工具调用小卡片（要许可时出「允许 / 拒绝」）、计划、子 agent、底下一行用量 / 缓存命中 / 速度 / 用时。
- * 方案：docs/ops/planning/reader-ask/20261125-阅读页提问.md。
+ * - 对话：整套照搬 assistant-ui 官方的 Thread（./ui/elements/thread.aui.tsx：复制、重新回答、改问题、版本切换、回到最下面、
+ *   Markdown + KaTeX、思考、工具调用分组、许可），runtime 是 LocalRuntime + 我们的 ACP 适配（acp-adapter.ts）。
+ * - 我们只往里塞：工具调用（ACP 的许可换成它的 approval）、计划 / 子 agent 的数据块、「在想…」、回答底下的用量那一行。
+ * 方案：docs/ops/planning/reader-ask/20261125-阅读页提问.md；说明：docs/core/frontend/reader-ask.md。
  */
 import {
   createContext,
@@ -18,19 +19,14 @@ import {
 import { Rnd } from "react-rnd";
 import {
   AssistantRuntimeProvider,
-  ComposerPrimitive,
-  MessagePrimitive,
-  ThreadPrimitive,
+  makeAssistantDataUI,
+  SimpleImageAttachmentAdapter,
   useAuiState,
   useLocalRuntime,
   type DataMessagePartProps,
-  type ReasoningMessagePartProps,
-  type TextMessagePartProps,
   type ToolCallMessagePartProps,
 } from "@assistant-ui/react";
-import { Streamdown } from "streamdown";
-import { createMathPlugin } from "@streamdown/math";
-import { ArrowUp, Copy, Square, Trash2, X } from "lucide-react";
+import { Copy, Trash2, X } from "lucide-react";
 import { Button, Select } from "@retainpdf/ui";
 
 import type { ReaderAskAgent, ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
@@ -38,14 +34,12 @@ import { toInitialMessages, toStoredMessages } from "./thread-messages.js";
 import { resolveKatexStylesheetUrl } from "../external.js";
 import { copyReaderText } from "../pdf/ReaderTextHoverLayer.js";
 import { PermissionStore, createAcpChatAdapter } from "./acp-adapter.js";
-import { normalizeMathDelimiters } from "./math-delimiters.js";
-import { ReasoningContent, ReasoningRoot, ReasoningText, ReasoningTrigger } from "./ui/reasoning.js";
-import { ToolFallback } from "./ui/tool-fallback.js";
-import { TodoList, type TodoItem } from "./ui/todo-list.js";
-import { AgentStatus, type AgentState } from "./ui/agent-status.js";
+import { Thread } from "./ui/elements/thread.aui.js";
+import { ToolFallback } from "./ui/elements/tool-fallback.aui.js";
+import { TodoList, type TodoItem } from "./ui/elements/todo-list.js";
+import { AgentStatus, type AgentState } from "./ui/elements/agent-status.js";
 import { turnFooter, type AskSubagent, type AskToolCall, type AskTurn } from "./acp-parts.js";
 
-const MATH = createMathPlugin({ singleDollarTextMath: true });
 const KATEX_LINK_ID = "retainpdf-katex-css";
 
 function useKatexStylesheet() {
@@ -62,44 +56,6 @@ function useKatexStylesheet() {
 }
 
 const PermissionContext = createContext<PermissionStore | null>(null);
-
-function AnswerText({ text, status }: TextMessagePartProps): ReactElement {
-  return (
-    <Streamdown
-      className="reader-ask-md"
-      mode="streaming"
-      isAnimating={status?.type === "running"}
-      plugins={{ math: MATH }}
-      controls={false}
-    >
-      {normalizeMathDelimiters(text)}
-    </Streamdown>
-  );
-}
-
-/** 思考：assistant-ui 官方的 Reasoning（折叠条，思考中标题有流光、写完写用了几秒，展开收起有动画，内容上下渐隐）。 */
-function Thought({ text, status }: ReasoningMessagePartProps): ReactElement {
-  const running = status?.type === "running";
-  const started = useRef<number | null>(null);
-  const [seconds, setSeconds] = useState<number | undefined>(undefined);
-  useEffect(() => {
-    if (running && started.current === null) started.current = Date.now();
-    if (!running && started.current !== null) {
-      setSeconds(Math.max(1, Math.round((Date.now() - started.current) / 1000)));
-      started.current = null;
-    }
-  }, [running]);
-  return (
-    <ReasoningRoot streaming={running} variant="ghost" className="reader-ask-reasoning">
-      <ReasoningTrigger active={running} duration={seconds} label={running ? "思考中" : "思考"} />
-      <ReasoningContent aria-busy={running}>
-        <ReasoningText>
-          <div className="reader-ask-thought-body">{text}</div>
-        </ReasoningText>
-      </ReasoningContent>
-    </ReasoningRoot>
-  );
-}
 
 const ACP_TO_AUI_KIND: Record<string, string> = {
   allow_once: "allow-once",
@@ -179,20 +135,20 @@ function SubagentBlock({ data }: DataMessagePartProps<AskSubagent>): ReactElemen
   );
 }
 
+// 计划、子 agent 是 data 部件：按 assistant-ui 的办法注册渲染（挂在 runtime 里面才生效）。
+const PlanDataUI = makeAssistantDataUI({ name: "plan", render: PlanBlock });
+const SubagentDataUI = makeAssistantDataUI({ name: "subagent", render: SubagentBlock });
+
 /** 第一段到之前等多久就补一句「还在等」（本机 agent 起进程、模型排队都可能慢），不说的话像卡住了。 */
 export const ASK_SLOW_HINT_MS = 10_000;
 
-/** 发出去以后、第一段思考或正文到之前（Claude 要两三秒）：说一声在想，不然像卡住了；等久了再说一句为什么。 */
-function Waiting(): ReactElement | null {
-  const waiting = useAuiState((state) => state.message.status?.type === "running" && state.message.parts.length === 0);
+/** Thread 的「正在回答」指示（还没有任何内容时它会画）：说一声在想；等久了再说一句。 */
+function Waiting(): ReactElement {
   const [slow, setSlow] = useState(false);
   useEffect(() => {
-    setSlow(false);
-    if (!waiting) return undefined;
     const timer = window.setTimeout(() => setSlow(true), ASK_SLOW_HINT_MS);
     return () => window.clearTimeout(timer);
-  }, [waiting]);
-  if (!waiting) return null;
+  }, []);
   return (
     <div className="reader-ask-waiting" role="status">
       <span className="reader-ask-dot" aria-hidden />
@@ -201,38 +157,32 @@ function Waiting(): ReactElement | null {
   );
 }
 
-function AnswerFooter({ agentName }: { agentName: string }): ReactElement | null {
-  const custom = useAuiState((state) => state.message.metadata?.custom) as { turn?: AskTurn; endedAt?: number } | undefined;
-  if (!custom?.turn) return null;
-  const line = turnFooter(custom.turn, custom.endedAt ?? null, agentName);
-  return line ? <div className="reader-ask-footer">{line}</div> : null;
+/** 自带 agent 只认 png / jpeg / webp / gif，单张最好 4MB 以内（Anthropic 单张约 5MB 上限，一条 WebSocket 消息最大 32MB；后端 11-26 说的）。 */
+export const ASK_IMAGE_TYPES = "image/png,image/jpeg,image/webp,image/gif";
+export const ASK_IMAGE_MAX_BYTES = 4 * 1024 * 1024;
+
+class AskImageAttachmentAdapter extends SimpleImageAttachmentAdapter {
+  public override accept = ASK_IMAGE_TYPES;
+
+  public override async add(state: { file: File }) {
+    if (!ASK_IMAGE_TYPES.split(",").includes(state.file.type)) throw new Error("只能贴 PNG、JPEG、WebP、GIF 图片");
+    if (state.file.size > ASK_IMAGE_MAX_BYTES) throw new Error("图片太大（超过 4MB），先压一下再贴");
+    return super.add(state);
+  }
 }
 
-function UserMessage(): ReactElement {
-  return (
-    <MessagePrimitive.Root className="reader-ask-msg is-user">
-      <MessagePrimitive.Parts />
-    </MessagePrimitive.Root>
-  );
-}
-
-function makeAssistantMessage(agentName: () => string) {
-  return function AssistantMessage(): ReactElement {
-    return (
-      <MessagePrimitive.Root className="reader-ask-msg is-assistant">
-        <Waiting />
-        <MessagePrimitive.Parts
-          components={{
-            Text: AnswerText,
-            Reasoning: Thought,
-            tools: { Fallback: ToolCard },
-            data: { by_name: { plan: PlanBlock, subagent: SubagentBlock } },
-          }}
-        />
-        <AnswerFooter agentName={agentName()} />
-      </MessagePrimitive.Root>
-    );
+/** 回答底下的用量那一行（Thread 的 MessageFooter 插槽）。 */
+function makeMessageFooter(agentName: () => string) {
+  return function MessageFooter(): ReactElement | null {
+    const custom = useAuiState((state) => state.message.metadata?.custom) as { turn?: AskTurn; endedAt?: number } | undefined;
+    if (!custom?.turn) return null;
+    const line = turnFooter(custom.turn, custom.endedAt ?? null, agentName());
+    return line ? <div className="reader-ask-footer">{line}</div> : null;
   };
+}
+
+function Welcome(): ReactElement {
+  return <p className="reader-ask-empty">问这一处的问题：哪里看不懂、这个式子怎么来的、这个词什么意思……</p>;
 }
 
 /** 没装的本机 agent：写安装命令（在终端跑一次），可以复制。后端不再现场下载（下到一半会留坏缓存）。 */
@@ -323,7 +273,9 @@ export default function ReaderAskWindow({ port, jobId, bookTitle, anchor, onClos
   useEffect(() => () => chat.close(), [chat]);
   // 之前的问答接着显示（agent 那边是新会话：出处和之前几轮会跟着下一问带过去，见 acp-adapter）。
   const [initial] = useState(() => toInitialMessages(initialMessages || []));
-  const runtime = useLocalRuntime(chat.adapter as never, { initialMessages: initial as never });
+  // 输入框的「+」：贴图片（截图、扫描页、图表）一起问；发出去是 ACP 的 image 块（acp-adapter 的 imageBlocks）。
+  const attachments = useMemo(() => new AskImageAttachmentAdapter(), []);
+  const runtime = useLocalRuntime(chat.adapter as never, { initialMessages: initial as never, adapters: { attachments } });
   // 每答完一轮（running → 停）把整段问答交出去存。
   const turnDoneRef = useRef(onTurnDone);
   turnDoneRef.current = onTurnDone;
@@ -339,7 +291,11 @@ export default function ReaderAskWindow({ port, jobId, bookTitle, anchor, onClos
     });
   }, [runtime]);
   const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
-  const AssistantMessage = useMemo(() => makeAssistantMessage(agentName), [agents]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Thread 要的几样（引用不变，免得它整个重画）。
+  const threadComponents = useMemo(
+    () => ({ ToolFallback: ToolCard, Indicator: Waiting, Welcome, MessageFooter: makeMessageFooter(agentName) }),
+    [agents], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -401,33 +357,11 @@ export default function ReaderAskWindow({ port, jobId, bookTitle, anchor, onClos
         <InstallHints agents={agents} />
         <PermissionContext.Provider value={permissions}>
           <AssistantRuntimeProvider runtime={runtime}>
-            <ThreadPrimitive.Root className="reader-ask-thread">
-              <ThreadPrimitive.Viewport className="reader-ask-viewport">
-                <ThreadPrimitive.Empty>
-                  <p className="reader-ask-empty">问这一处的问题：哪里看不懂、这个式子怎么来的、这个词什么意思……</p>
-                </ThreadPrimitive.Empty>
-                <ThreadPrimitive.Messages components={{ UserMessage, AssistantMessage }} />
-              </ThreadPrimitive.Viewport>
-              <ComposerPrimitive.Root className="reader-ask-composer">
-                <ComposerPrimitive.Input
-                  className="reader-ask-input"
-                  placeholder={agentId ? "问点什么（Enter 发送，Shift+Enter 换行）" : "没有能用的 agent"}
-                  autoFocus
-                  rows={2}
-                  disabled={!agentId}
-                />
-                <ThreadPrimitive.If running={false}>
-                  <ComposerPrimitive.Send className="reader-ask-send" aria-label="发送" title="发送（Enter）">
-                    <ArrowUp size={15} aria-hidden />
-                  </ComposerPrimitive.Send>
-                </ThreadPrimitive.If>
-                <ThreadPrimitive.If running>
-                  <ComposerPrimitive.Cancel className="reader-ask-send" aria-label="停下" title="停下">
-                    <Square size={13} aria-hidden />
-                  </ComposerPrimitive.Cancel>
-                </ThreadPrimitive.If>
-              </ComposerPrimitive.Root>
-            </ThreadPrimitive.Root>
+            <PlanDataUI />
+            <SubagentDataUI />
+            <div className="reader-ask-thread">
+              <Thread components={threadComponents} autoFocus />
+            </div>
           </AssistantRuntimeProvider>
         </PermissionContext.Provider>
       </section>

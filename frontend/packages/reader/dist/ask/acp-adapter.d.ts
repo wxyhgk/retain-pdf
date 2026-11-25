@@ -28,6 +28,7 @@ export declare function toAssistantParts(parts: readonly AskPart[]): ({
 } | {
     type: "reasoning";
     text: string;
+    timing?: import("./acp-parts.js").AskTiming;
 } | {
     type: "data";
     name: "plan";
@@ -40,6 +41,7 @@ export declare function toAssistantParts(parts: readonly AskPart[]): ({
     data: import("./acp-parts.js").AskSubagent;
 } | {
     type: "tool-call";
+    timing?: import("./acp-parts.js").AskTiming;
     toolCallId: string;
     toolName: string;
     argsText: string;
@@ -63,16 +65,23 @@ export type AcpChatOptions = {
     permissions: PermissionStore;
     now?: () => number;
 };
+type RunPart = {
+    type: string;
+    text?: string;
+    image?: string;
+};
 type RunOptions = {
     messages: readonly {
         role: string;
-        content: readonly {
-            type: string;
-            text?: string;
+        content: readonly RunPart[];
+        attachments?: readonly {
+            content?: readonly RunPart[];
         }[];
     }[];
     abortSignal: AbortSignal;
 };
+/** 用户贴的图（assistant-ui 的图片附件，data URL）→ ACP 的 image 内容块。不是 data URL 的不发。 */
+export declare function imageBlocks(message: RunOptions["messages"][number] | undefined): ContentBlock[];
 /** assistant-ui 的 ChatModelAdapter：run 是 async generator，边收边吐当前这一轮的样子。 */
 export declare function createAcpChatAdapter(options: AcpChatOptions): {
     adapter: {

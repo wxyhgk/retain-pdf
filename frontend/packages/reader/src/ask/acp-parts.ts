@@ -16,8 +16,12 @@ import type {
   ToolCallLocation,
 } from "@agentclientprotocol/sdk";
 
+/** 部件的起止时刻（毫秒时间戳，assistant-ui 的 MessagePartTiming）：思考写「思考（N 秒）」、工具调用写用时都靠它。 */
+export type AskTiming = { startedAt: number; completedAt?: number };
+
 export type AskToolCall = {
   type: "tool-call";
+  timing?: AskTiming;
   toolCallId: string;
   toolName: string;
   args: Record<string, unknown>;
@@ -36,7 +40,7 @@ export type AskToolCall = {
 
 export type AskPart =
   | { type: "text"; text: string }
-  | { type: "reasoning"; text: string }
+  | { type: "reasoning"; text: string; timing?: AskTiming }
   | AskToolCall
   | { type: "data"; name: "plan"; data: { entries: PlanEntry[] } }
   | { type: "data"; name: "subagent"; data: AskSubagent };
@@ -129,14 +133,22 @@ export function usageFromMeta(meta: unknown): Partial<AskUsage> {
   return out;
 }
 
-function appendStreamed(parts: AskPart[], type: "text" | "reasoning", text: string): AskPart[] {
+/** 还没收尾的思考记上结束（后面来了别的内容，或这一轮答完了）。 */
+export function closeOpenReasoning(parts: readonly AskPart[], wall: number): AskPart[] {
+  return parts.map((part) => (part.type === "reasoning" && part.timing && part.timing.completedAt === undefined
+    ? { ...part, timing: { ...part.timing, completedAt: wall } }
+    : part));
+}
+
+function appendStreamed(parts: AskPart[], type: "text" | "reasoning", text: string, wall: number): AskPart[] {
   const last = parts[parts.length - 1];
-  if (last && last.type === type) return [...parts.slice(0, -1), { type, text: last.text + text }];
-  return [...parts, { type, text }];
+  if (last && last.type === type) return [...parts.slice(0, -1), { ...last, text: last.text + text }];
+  if (type === "reasoning") return [...parts, { type, text, timing: { startedAt: wall } }];
+  return [...closeOpenReasoning(parts, wall), { type, text }];
 }
 
 /** 一条 session/update 合进这一轮的回答。不认识的更新原样忽略。 */
-export function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: number): AskTurn {
+export function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: number, wall: number = Date.now()): AskTurn {
   switch (update.sessionUpdate) {
     case "agent_message_chunk":
     case "agent_thought_chunk": {
@@ -145,7 +157,7 @@ export function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: nu
       const type = update.sessionUpdate === "agent_message_chunk" ? "text" : "reasoning";
       return {
         ...turn,
-        parts: appendStreamed(turn.parts, type, text),
+        parts: appendStreamed(turn.parts, type, text, wall),
         chars: turn.chars + text.length,
         chunks: (turn.chunks || 0) + 1,
         firstTokenAt: turn.firstTokenAt ?? now,
@@ -160,8 +172,10 @@ export function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: nu
       const rawInput = update.rawInput !== undefined ? update.rawInput : previous?.args;
       const args = rawInput && typeof rawInput === "object" ? (rawInput as Record<string, unknown>) : {};
       const output = update.content != null ? contentText(update.content) : previous?.artifact.output || "";
+      const finished = status === "completed" || status === "failed";
       const next: AskToolCall = {
         type: "tool-call",
+        timing: { startedAt: previous?.timing?.startedAt ?? wall, ...(finished ? { completedAt: previous?.timing?.completedAt ?? wall } : {}) },
         toolCallId: update.toolCallId,
         toolName: update.name || previous?.toolName || update.kind || "tool",
         args,
@@ -176,7 +190,7 @@ export function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: nu
           output,
         },
       };
-      const parts = at >= 0 ? turn.parts.map((part, index) => (index === at ? next : part)) : [...turn.parts, next];
+      const parts = at >= 0 ? turn.parts.map((part, index) => (index === at ? next : part)) : [...closeOpenReasoning(turn.parts, wall), next];
       return { ...turn, parts };
     }
     case "plan": {

@@ -12,8 +12,9 @@
   - 列 agent：`listAiAgents`（`@retainpdf/api/ai`，契约 `ai-agents.v1`）。
   - 连 agent：ACP SDK 的 `client()` + `experimental/ws-client`，WebSocket `/api/v1/ai/agents/{id}/acp?api_key=…`；`initialize` →
     `session/new`（`cwd`、`mcpServers` 空着，桥补书文件夹和 `retainpdf mcp`）→ `session/prompt`，停是 `session/cancel`。
-  - 自带 agent（`retainpdf`）带设置里默认翻译模型的 `model`、`base_url`、`api_protocol`、`thinking` 和凭据库里翻译密钥的引用
-    `credential_ref`（不传明文 key）；缺了在下拉里标「用不了」并写缺什么。后端接口见 `docs/api/16-AI/01-阅读页提问.md`。
+  - 自带 agent（`retainpdf`）带设置里默认翻译模型的 `model`、`base_url`、`api_protocol`、`thinking`、阅读页的 `job_id`（让它自己读书），
+    和凭据库里翻译密钥的引用 `credential_ref`（不传明文 key）。翻译任务一直带明文 key 提交，多数人浏览器里没有引用：连之前把设置里的翻译密钥
+    存进凭据库（有引用就更新成当前这把），引用记回浏览器设置。没配翻译模型才标「用不了」。后端接口见 `docs/api/16-AI/01-阅读页提问.md`。
 
 ## 代码
 
@@ -34,6 +35,14 @@
 拷到 `web/vendor/katex/`，打开提问窗时按宿主给的地址（`resolveKatexStylesheetUrl`）插一个 `<link>`，桌面版离线也能用。
 
 ## 回答怎么画
+
+2026-11-26 起整个对话区照搬 assistant-ui 官方的 Thread（`packages/reader/src/ask/ui/`，28 个文件按上游目录：`elements/`、`utils/`、`hooks/`、`shadcn/`；
+只改引用路径、文字换中文、`markdown-text` 按它的 LaTeX 文档加 remark-math / rehype-katex、`thread.aui` 显式泛型和 `MessageFooter` 插槽，每个文件开头写了改了什么）。
+复制、重新回答、改问题、版本切换、导出 Markdown、回到最下面、工具分组、思考秒数、贴图片都是它的。我们往里塞：工具调用（ACP 许可 → approval）、
+计划 / 子 agent（makeAssistantDataUI）、「在想…」（Indicator）、用量那一行（MessageFooter）、欢迎语（Welcome）。照搬目录不算手写控件棘轮。
+重新回答、改问题、切版本时对话和 ACP 会话里的对不上：适配层关掉旧会话、开新的，带出处和到这里为止的对话。
+贴图片：png / jpeg / webp / gif，4MB 以内（后端：Anthropic 单张约 5MB，一条消息 32MB），发 ACP 的 image 块。
+
 
 2026-11-26 起回答里的几样用 assistant-ui 官方组件（MIT，从 `https://r.assistant-ui.com` 拷进 `packages/reader/src/ask/ui/`，
 只改引用路径、文字换中文，方便对着上游更新）：思考 `reasoning.tsx`、工具调用 `tool-fallback.tsx`、计划 `todo-list.tsx`、子 agent `agent-status.tsx`
