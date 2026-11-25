@@ -78,7 +78,9 @@ def test_anthropic_thinking_text_usage_and_stop(posts):
                       ("usage", {"input_tokens": 920, "cache_read_tokens": 900, "cache_write_tokens": 0, "output_tokens": 42})]
     call = calls[0]
     assert call["url"].startswith("https://api.anthropic.com/v1/messages")
-    assert call["body"]["stream"] is True and call["body"]["thinking"]["type"] == "adaptive"
+    assert call["body"]["stream"] is True
+    # Claude 只给思考摘要，要明说 display=summarized（不写就是 omitted，什么都不发）
+    assert call["body"]["thinking"] == {"type": "adaptive", "display": "summarized"}
 
 
 def test_anthropic_marks_the_previous_answer_for_caching_and_falls_back_on_400(posts):
@@ -88,7 +90,8 @@ def test_anthropic_marks_the_previous_answer_for_caching_and_falls_back_on_400(p
     history = [*MESSAGES, {"role": "assistant", "content": "上一轮的回答"}, {"role": "user", "content": "追问"}]
     fn = engine.make_stream_fn(model="claude-haiku-5-5", base_url="", api_key="sk-test", protocol="anthropic", thinking="high")
     assert ("stop", "max_tokens") in run(fn, history)
-    assert len(calls) == 2 and calls[0]["body"]["thinking"] != calls[1]["body"].get("thinking")
+    # 带 display 的写法被拒，去掉 display 再试
+    assert len(calls) == 2 and calls[0]["body"]["thinking"] == {**calls[1]["body"]["thinking"], "display": "summarized"}
     previous = calls[1]["body"]["messages"][-2]
     assert previous["role"] == "assistant" and previous["content"][-1]["cache_control"] == {"type": "ephemeral"}
 

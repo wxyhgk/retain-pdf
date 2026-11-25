@@ -2,7 +2,7 @@
 
 请求体用翻译底座 ``model_wire`` 的构造函数（和翻译同一套写法、思考档位、图片换写法），再打开流：
 
-- Anthropic Messages：``thinking_delta`` → 思考，``text_delta`` → 正文；用量在 ``message_start`` / ``message_delta``
+- Anthropic Messages：``thinking_delta`` → 思考（Claude 只给摘要，要 ``thinking.display = summarized``），``text_delta`` → 正文；用量在 ``message_start`` / ``message_delta``
   （输入 = input + cache_read + cache_creation）。前几轮的最后一块打 ``cache_control``，接着问时前面的对话按缓存读。
 - OpenAI Chat：``delta.reasoning_content``（DeepSeek、Qwen 这类）→ 思考，``delta.content`` → 正文；
   ``stream_options.include_usage`` 要最后一块带用量，缓存命中在 ``prompt_tokens_details.cached_tokens``（DeepSeek 是
@@ -93,10 +93,22 @@ def _mark_history_cache(body: dict[str, Any]) -> None:
         previous["content"] = blocks
 
 
+def _with_summarized_thinking(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Claude 不给思考原文，只给摘要，而且要 ``thinking.display = summarized`` 才发（不写就是 omitted，什么都不发）。
+    每个开思考的写法先带上它试，不认（400）再去掉；原有的退回顺序不变。"""
+    expanded: list[dict[str, Any]] = []
+    for fields in candidates:
+        thinking = fields.get("thinking")
+        if isinstance(thinking, dict) and thinking.get("type") in ("adaptive", "enabled"):
+            expanded.append({**fields, "thinking": {**thinking, "display": "summarized"}})
+        expanded.append(fields)
+    return expanded
+
+
 def _anthropic(messages, cancel, *, model, base_url, api_key, thinking) -> Iterator[Event]:
     url = model_wire.anthropic_messages_url(base_url or ANTHROPIC_DEFAULT_BASE_URL)
     headers = model_wire.anthropic_headers(api_key)
-    candidates = model_wire.anthropic_thinking_candidates(thinking, model=model)
+    candidates = _with_summarized_thinking(model_wire.anthropic_thinking_candidates(thinking, model=model))
     response = None
     for index, fields in enumerate(candidates):
         body = model_wire.anthropic_body(model=model, messages=messages, temperature=None, response_format=None, thinking_fields=fields)
