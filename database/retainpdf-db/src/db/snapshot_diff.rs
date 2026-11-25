@@ -94,6 +94,14 @@ impl Db {
                     "current_translation_version": self.document_current_translation_version(document_id)?,
                     "hidden_version_jobs": self.hidden_translation_version_jobs(document_id)?,
                     "title_suggestions": self.list_document_metadata_suggestions(document_id, u32::MAX)?,
+                    // v39 起：阅读页提问的问答记录（连同问答）
+                    "ask_threads": self.list_ask_threads(document_id)?
+                        .into_iter()
+                        .map(|thread| {
+                            let messages = self.ask_thread_messages(&thread.thread_id)?;
+                            Ok(json!({ "thread": thread, "messages": messages }))
+                        })
+                        .collect::<Result<Vec<_>>>()?,
                 }),
             )?;
         }

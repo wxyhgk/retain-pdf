@@ -12,6 +12,34 @@
 
 ---
 
+## 阅读页提问：问答记录存后端（feat/ask-records）
+
+2026-11-25，新接口，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「问答记录」、契约 `ask-threads.v1`
+（`@retainpdf/contracts/ask-threads`，src、dist 已生成）。书页上的「?」可以从后端读了，不再只在内存里：
+
+| 方法 | 地址 | 请求体 | 返回 `data` |
+|---|---|---|---|
+| `GET` | `/api/v1/documents/{document_id}/ask-threads` | — | `AskThreadListView`：`{threads: AskThreadRecord[]}`，最近改过的在前，不带问答正文 |
+| `POST` | `/api/v1/documents/{document_id}/ask-threads` | `CreateAskThreadInput`：`{agent_id, session_id?, anchor, messages?}` | `AskThreadView` |
+| `GET` | `/api/v1/documents/{document_id}/ask-threads/{thread_id}` | — | `AskThreadView` |
+| `PATCH` | `/api/v1/documents/{document_id}/ask-threads/{thread_id}` | `PatchAskThreadInput`：`{agent_id?, session_id?, messages?}` | `AskThreadView` |
+| `DELETE` | `/api/v1/documents/{document_id}/ask-threads/{thread_id}` | — | `{thread_id, deleted: true}` |
+
+- `AskThreadRecord`：`thread_id`（`ask-` 开头）、`document_id`、`agent_id`、`session_id`（可 null）、`title`（后端取第一句问，最长 80 字）、
+  `anchor`、`message_count`、`created_at`、`updated_at`。`AskThreadView` 再多 `messages: [{role, text, thought, usage}]`
+  （`role` 是 `user` / `assistant`，`thought`、`usage` 没有是 null；`usage` 原样存，直接放 `_meta.retainpdf.usage`）。
+- `anchor` 就是 `ReaderAskAnchor` 换成下划线：`{pane, page, item_id, selection, source_text, translated_text, section, point}`
+  （`point` 是 `{x, y}` 或 null）。请求里只有 `pane`、`page` 必填，返回里每个键都在。
+- 建议的接法（`packages/reader` 的 `ReaderAskMarks`、web 的 `ask-port.ts`，前端定）：打开书 `GET` 列表画「?」；第一轮答完 `POST`
+  （带上 `messages`）；以后每答完一轮把整段对话 `PATCH` 一次（`messages` 整份换掉，重发同一份没关系）；点「?」`GET` 一次再打开；删「?」`DELETE`。
+- 重新打开时 agent 那边是新会话：把记下的问答带进第一问，拿到新的 `sessionId` 再 `PATCH` `session_id`。自带 agent 的 `session/load` 以后做。
+- 错误：书不在、这次提问不在这本书上 404；书上已有 500 次 409 `ask_thread_limit`；字段不对、超长（一条正文 50000 字、一次提问 200 条 / 1 MB）400。
+- 契约里**没写 `client_name`**（前端生成客户端有漂移检查）：前端接的时候在两份契约（`contracts/`、`backend/contracts/`）的 5 个端点加
+  `client_name`（比如 `listAskThreads`、`createAskThread`、`getAskThread`、`patchAskThread`、`deleteAskThread`），跑 `npm run generate`（contracts）
+  和 `npm run generate:client`，同一个提交。
+
+---
+
 ## 阅读页提问：agent 列表和 ACP 桥（feat/acp-bridge）
 
 2026-11-25，新接口，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md)、契约 `ai-agents.v1`（`@retainpdf/contracts/ai-agents`）：

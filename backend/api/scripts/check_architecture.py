@@ -200,6 +200,10 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     Path("src/routes/tags.rs"): (
         "crate::services::library",
     ),
+    # 阅读页提问的问答记录（书库包的 ask_threads，2026-11-25）
+    Path("src/routes/ask_threads.rs"): (
+        "crate::services::library",
+    ),
     Path("src/routes/uploads.rs"): (
         "crate::services::ingest",
     ),

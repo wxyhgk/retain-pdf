@@ -3,7 +3,7 @@
 # cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / agent AI 专用密钥能调 / none 还没有调用方）。
 # 由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
-# 109 条路径，133 个接口
+# 111 条路径，138 个接口
 GET    /api/v1/account/pages  signed  accounts  by multiuser
 GET    /api/v1/admin/invites  admin  accounts  by multiuser
 POST   /api/v1/admin/invites  admin  accounts  by multiuser
@@ -51,6 +51,11 @@ GET    /api/v1/documents  signed  library  by web,agent
 DELETE /api/v1/documents/:document_id  signed  library  by web
 GET    /api/v1/documents/:document_id  signed  library  by web,agent
 PATCH  /api/v1/documents/:document_id  signed  library  by web
+GET    /api/v1/documents/:document_id/ask-threads  signed  library  by web
+POST   /api/v1/documents/:document_id/ask-threads  signed  library  by web
+DELETE /api/v1/documents/:document_id/ask-threads/:thread_id  signed  library  by web
+GET    /api/v1/documents/:document_id/ask-threads/:thread_id  signed  library  by web
+PATCH  /api/v1/documents/:document_id/ask-threads/:thread_id  signed  library  by web
 GET    /api/v1/documents/:document_id/files  signed  library  by none
 GET    /api/v1/documents/:document_id/files/:name  signed  library  by web
 GET    /api/v1/documents/:document_id/files/pages/:page  signed  library  by agent

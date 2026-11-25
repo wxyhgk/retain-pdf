@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 38
+-- user_version 39
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -12,6 +12,37 @@ TABLE artifacts
   TRIGGER sync_dirty_artifacts_delete: CREATE TRIGGER sync_dirty_artifacts_delete AFTER DELETE ON artifacts WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', OLD.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_artifacts_insert: CREATE TRIGGER sync_dirty_artifacts_insert AFTER INSERT ON artifacts WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_artifacts_update: CREATE TRIGGER sync_dirty_artifacts_update AFTER UPDATE ON artifacts WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+TABLE ask_messages
+  thread_id TEXT NOT NULL PRIMARY KEY#1
+  position INTEGER NOT NULL PRIMARY KEY#2
+  role TEXT NOT NULL
+  text TEXT NOT NULL
+  thought TEXT
+  usage_json TEXT
+  FOREIGN KEY (thread_id) REFERENCES ask_threads(thread_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  PRIMARY KEY (thread_id, position)
+
+TABLE ask_threads
+  thread_id TEXT PRIMARY KEY#1
+  document_id TEXT NOT NULL
+  agent_id TEXT NOT NULL
+  session_id TEXT
+  title TEXT NOT NULL DEFAULT ''
+  pane TEXT NOT NULL
+  page INTEGER NOT NULL
+  item_id TEXT
+  selection TEXT NOT NULL DEFAULT ''
+  source_text TEXT NOT NULL DEFAULT ''
+  translated_text TEXT NOT NULL DEFAULT ''
+  section TEXT NOT NULL DEFAULT ''
+  point_x REAL
+  point_y REAL
+  created_at TEXT NOT NULL
+  updated_at TEXT NOT NULL
+  FOREIGN KEY (document_id) REFERENCES item_files(file_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  INDEX idx_ask_threads_document: CREATE INDEX idx_ask_threads_document ON ask_threads(document_id, updated_at)
+  PRIMARY KEY (thread_id)
 
 CREATE VIRTUAL TABLE blocks_fts USING fts5( document_id UNINDEXED, job_id UNINDEXED, page_idx UNINDEXED, block_id UNINDEXED, source_text, translated_text, tokenize='trigram' )
 

@@ -24,6 +24,7 @@ The mirrored files are:
 - `platform-settings.v1.schema.json`
 - `provider-probes.v1.schema.json`
 - `ai-agents.v1.schema.json`
+- `ask-threads.v1.schema.json`
 - `translation-providers.v1.schema.json`
 - `pipeline-stdout.v1.schema.json`
 - `provider-error-codes.v1.schema.json`

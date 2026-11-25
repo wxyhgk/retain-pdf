@@ -72,6 +72,9 @@
   文件。删一本书删的是条目（`DELETE FROM library_items`），书目、作者、文件、书名建议，以及挂在文件下的译文版本、文件夹成员
   都跟着外键级联删。任务、译文版本、全文索引按文件的内容指纹关联，不直接指向条目。设计见
   [书库条目模型](../../ops/planning/database-redesign/20261121-书库条目模型.md) 和 [第 5a 步的调整](../../ops/planning/database-redesign/20261121-书库条目第5a步.md)。
+- 阅读页提问的问答记录（v39，见 [第 3 步：问答记录](../../ops/planning/reader-ask/20261125-第3步：问答记录.md)）：`ask_threads` 一次提问一行
+  （锚点拆成列：栏、页、块、选中的字、那一块的原文译文、章节、页内位置），`ask_messages` 一条问答一行（用量整块 JSON）。挂在
+  `item_files(file_id)` 上，删书级联删；不同步、没有归属列（跟着书）。比对工具在每本书的 `document` 条目里导出 `ask_threads`。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
 - `db/pipeline/*`：pipeline attempt、dispatch、stage、unit、event 与事务写入；读取和迁移写入不得重新揉回一个大文件。
 

@@ -19,6 +19,8 @@ mod page_quota;
 mod platform_settings;
 #[path = "db/artifacts.rs"]
 mod artifacts;
+#[path = "db/ask_threads.rs"]
+mod ask_threads;
 #[path = "db/backup.rs"]
 pub mod backup;
 #[path = "db/collections.rs"]
@@ -80,6 +82,9 @@ pub use platform_settings::PlatformSettingsRecord;
 pub use documents::{DocumentChangeStamp, DocumentListFilter};
 pub use tags::tag_id_for_name;
 pub use translation_versions::TranslationVersionRecord;
+pub use ask_threads::{
+    AskAnchorRecord, AskMessageRecord, AskPoint, AskThreadChanges, AskThreadCreated, AskThreadRecord, NewAskThread,
+};
 pub use page_quota::{
     BillingSource, PageBalanceWouldGoNegative, PageChargeRecord, PageLedgerEntry, PageReservation,
 };

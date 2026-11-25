@@ -201,6 +201,11 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         name: "duplicate_submissions",
         sql: include_str!("v38_duplicate_submissions.sql"),
     },
+    Migration {
+        version: 39,
+        name: "ask_threads",
+        sql: include_str!("v39_ask_threads.sql"),
+    },
 ];
 
 #[cfg(test)]
