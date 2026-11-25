@@ -158,6 +158,7 @@ def test_checks_and_tidying():
     assert tidy("「1 分析受众。」", number="1") == "分析受众"
     assert tidy("第1章 分析受众", number="1") == "分析受众"
     assert tidy("2 分析受众", number="1") == "2 分析受众"
+    assert tidy("4-2 分析受众", number="4-2") == "分析受众"
     assert check_title("Top 10 Mistakes", "十大错误") == "number_missing"
     assert check_title("Top 10 Mistakes", "10 大错误") == ""
     assert check_title("Using Python", "Using Python") == "not_translated"
@@ -173,6 +174,9 @@ def test_heading_keys_ignore_case_spacing_and_edge_punctuation():
     by_key = {title_key("Choose the right word"): "选对词"}
     assert heading_translation("2.3 Choose the right word", by_key) == "2.3 选对词"
     assert heading_translation("2.3. Choose the right word", by_key) == "2.3 选对词"
+    # 短横编号的书（「4-2」「4–2」）
+    assert heading_translation("4-2 Choose the right word", by_key) == "4-2 选对词"
+    assert heading_translation("4–2 Choose the right word", by_key) == "4–2 选对词"
     assert heading_translation("Choose words", by_key) is None
     # 章、附录前缀；文字层拆开的重音
     by_key = {title_key("General Properties of the Schr ̈odinger Equation"): "薛定谔方程的一般性质", title_key("Matlab Code"): "Matlab 代码"}

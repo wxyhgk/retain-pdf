@@ -1,6 +1,6 @@
 """正文标题对上目录条目：原文一样（不计大小写、空白、首尾标点）就用同一个译名。
 
-正文标题常带章号（「1 Analyzing the Audience」「2.3 Choose the right word」「Chapter 1: Operators」
+正文标题常带章号（「1 Analyzing the Audience」「2.3 Choose the right word」「4-2 Separation」「Chapter 1: Operators」
 「Appendix A Matlab Code」），目录条目的标题不带：去掉开头的章号再比，对上了译文前面照样带章号
 （「1 译名」「第1章 译名」「附录A 译名」）。认不出的（「Chapter 1」这种章号另起一块的、改了措辞的）不碰，交给普通翻译。
 
@@ -11,7 +11,8 @@ from __future__ import annotations
 import re
 import unicodedata
 
-_NUMBER_PREFIX = re.compile(r"^(\d+(?:\.\d+)*)\.?\s+(\S.*)$")
+# 章号「1」「2.3」「4-2」（有的书用短横编号）
+_NUMBER_PREFIX = re.compile(r"^(\d+(?:[.\-–]\d+)*)\.?\s+(\S.*)$")
 _CHAPTER_PREFIX = re.compile(r"^chapter\s+(\d+)\s*[:.\-–—]?\s+(\S.*)$", re.IGNORECASE)
 _APPENDIX_PREFIX = re.compile(r"^appendix\s+([A-Z]|\d+)\s*[:.\-–—]?\s+(\S.*)$", re.IGNORECASE)
 _SPACE_BEFORE_MARK = re.compile(r"\s+(?=[\u0300-\u036f\u00a8\u00b4\u02c6-\u02dd])")
