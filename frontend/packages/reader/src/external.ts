@@ -39,6 +39,7 @@ export const fetchProtected: typeof fetch = (...args: any[]) => {
   const impl = getReaderAdapters()?.fetchProtected ?? fetch;
   return (impl as (...a: any[]) => Promise<Response>)(...args);
 };
+export const resolveKatexStylesheetUrl = (): string => getReaderAdapters()?.resolveKatexStylesheetUrl?.() ?? "";
 export const resolvePdfjsVendorUrl = (relativePath = ""): string =>
   (getReaderAdapters()?.resolvePdfjsVendorUrl as any)?.(relativePath) ?? "";
 

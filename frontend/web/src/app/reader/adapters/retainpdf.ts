@@ -15,6 +15,7 @@ const adapters: ReaderAdapters = {
   // 这里按原样断言，运行时就是同一个函数。
   fetchProtected: ext.fetchProtected as typeof fetch,
   resolvePdfjsVendorUrl: ext.resolvePdfjsVendorUrl,
+  resolveKatexStylesheetUrl: ext.resolveKatexStylesheetUrl,
   defaultReaderDataPort: ext.defaultReaderDataPort,
   liveTranslation: ext.liveTranslationPort,
   pdf: ext.pdfPort,

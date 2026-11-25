@@ -2,6 +2,7 @@ import { type ReactNode } from "react";
 import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
 import type { RegionPdfDocument } from "../../pdf/RegionCanvas.js";
 import type { XrefIndex } from "../../shared/content/reader-xrefs.js";
+import type { AskMark } from "../../ask/ReaderAskMarks.js";
 import type { ReaderPaneModel } from "../../hooks/use-reader-pane-model.js";
 import type { ReaderDownloadContext } from "../../hooks/use-reader-session.js";
 import type { ReaderMetadata, ReaderRegion } from "../../shared/data/reader-regions.js";
@@ -41,6 +42,9 @@ export type ReaderContextValue = {
     onPdfDocument?: (pdf: RegionPdfDocument, pane: "source" | "translated") => void;
     /** 放大查看这一块（悬停框的「放大」、双击图片）。 */
     zoomBlock?: (itemId: string) => void;
+    /** 这次打开里问过的地方（书页左边白边画「?」），点了重新打开那次问答。 */
+    askMarks?: readonly AskMark[];
+    onAskMark?: (mark: AskMark) => void;
     /** 书里的引用（「图 2.1」「式 (3.21)」）认得出去处的那些；文字层把它们包成可悬停、可点的 span。 */
     xrefIndex?: XrefIndex;
     /** 译文栏悬停框的「改」：这一段变成编辑框。不能改时不给。 */

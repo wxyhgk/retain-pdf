@@ -4,6 +4,7 @@ const a = [
   "resolveResourceUrl",
   "fetchProtected",
   "resolvePdfjsVendorUrl",
+  "resolveKatexStylesheetUrl",
   "defaultReaderDataPort",
   "defaultReaderPageConfigPort",
   "resolveReaderAnchor",

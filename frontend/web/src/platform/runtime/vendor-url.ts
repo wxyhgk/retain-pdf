@@ -32,6 +32,10 @@ export function resolveLottieVendorUrl(relativePath = "", options = {}) {
   return resolveVendorUrl(`lottie-web/${normalizeVendorPath(relativePath)}`, options);
 }
 
+export function resolveKatexStylesheetUrl(options = {}) {
+  return resolveVendorUrl("katex/katex.min.css", options);
+}
+
 export function resolveMarkedVendorUrl(options = {}) {
   return resolveVendorUrl("marked/lib/marked.esm.js", options);
 }

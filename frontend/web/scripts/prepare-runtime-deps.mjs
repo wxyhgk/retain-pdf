@@ -55,4 +55,16 @@ copyPackageAssets("marked", [
   "lib/marked.esm.js",
 ]);
 
+// 阅读页提问窗的公式（streamdown + KaTeX）：样式和字体按需加载，桌面版离线也要能用。
+// 只拷 woff2（katex.min.css 里 woff2 排第一，现在的浏览器、Electron 都用它，woff / ttf 用不到）。
+{
+  const katexRoot = ensureDependencyRoot("katex");
+  const target = path.join(vendorRoot, "katex");
+  fs.mkdirSync(path.join(target, "fonts"), { recursive: true });
+  fs.copyFileSync(path.join(katexRoot, "dist/katex.min.css"), path.join(target, "katex.min.css"));
+  for (const name of fs.readdirSync(path.join(katexRoot, "dist/fonts"))) {
+    if (name.endsWith(".woff2")) fs.copyFileSync(path.join(katexRoot, "dist/fonts", name), path.join(target, "fonts", name));
+  }
+}
+
 console.log("frontend runtime deps prepared");

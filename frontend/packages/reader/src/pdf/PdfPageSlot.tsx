@@ -1,6 +1,7 @@
 // 单页：对齐旧 createManualPageElement + setManualPageSize（固定宽高）
 // 对照时 syncedMinHeight 来自 syncReaderPageRows 的 max 高度
 
+import { ReaderAskMarks } from "../ask/ReaderAskMarks.js";
 import { renderXrefText } from "../shared/content/reader-xrefs.js";
 import { readerRegionKindForRegion } from "../shared/data/reader-regions.js";
 import {
@@ -360,6 +361,9 @@ function PdfPageSlotInner({
           height={naturalHeight}
           ink={readerContext.ink}
         />
+      ) : null}
+      {readerContext?.askMarks?.length && readerContext.onAskMark ? (
+        <ReaderAskMarks marks={readerContext.askMarks} page={pageNumber} height={naturalHeight} onOpen={readerContext.onAskMark} />
       ) : null}
       <ReaderTextHoverLayer
         target={active && !readerContext?.ink?.tool && hoveredTextTarget?.itemId !== editingTarget?.itemId ? hoveredTextTarget : null}
