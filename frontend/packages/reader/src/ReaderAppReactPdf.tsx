@@ -51,9 +51,6 @@ import { useFindShortcut } from "./hooks/use-find-shortcut.js";
 import { useReaderBlockEdit, useEditBlockShortcut } from "./hooks/use-reader-block-edit.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
 import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
-import { useReaderSidePane } from "./hooks/use-reader-side-pane.js";
-import { ReaderSidePane } from "./components/react-pdf/ReaderSidePane.js";
-import { getReaderAdapters } from "./adapters.js";
 
 /** 阅读视图可见台面的判别联合。 */
 export type ReaderPaneComposition = {
@@ -171,24 +168,7 @@ export function ReaderAppReactPdf() {
   const modeScopeRef = useRef<string | null>(null);
   const autoModeRef = useRef<ReaderMode | null>(null);
 
-  // 宿主的第二栏（contracts/side-pane.ts）：开合就是「开着哪个面板」里的 side。
-  // 这本书没有（宿主说不出、或换了书）时，存下来的 side 当作没开。
-  const closeSidePane = useCallback(() => setAssistantPanel(null), []);
-  const side = useReaderSidePane({
-    port: getReaderAdapters()?.sidePane,
-    open: assistantPanel === "side",
-    documentId: session.documentId,
-    jobId: session.jobId,
-    currentPage: c.currentPage,
-    regions: session.regions,
-    // 开着第二栏时书只剩一栏：「译文」看译文，「原文」「对照」看原文。
-    pane: c.mode === "translated" ? "translated" : "source",
-    jumpToAnchor: c.jumpToAnchor,
-    close: closeSidePane,
-  });
-  const openPanel = assistantPanel === "side" && !side.available ? null : assistantPanel;
-  const sideOpen = openPanel === "side";
-  const assistantOpen = openPanel !== null;
+  const assistantOpen = assistantPanel !== null;
   // 是否有「可叠加到原文 PDF 上的流式译文内容」：进行中（available）或已完成
   // （实时页仍在 state 里）都成立，供源栏开关显示与叠加判定。
   const hasOverlayContent = c.liveTranslationAvailable
@@ -269,7 +249,7 @@ export function ReaderAppReactPdf() {
     autoModeRef.current = null;
     saveReaderViewState(c.viewStateKey, { mode: c.mode });
   }, [boot.failed, boot.loading, c.mode, c.setModeKeepingPage, c.viewStateKey, sourceViewOnly]);
-  const workspaceView = openPanel || (c.mode === "compare" ? "compare" : "reading");
+  const workspaceView = assistantPanel || (c.mode === "compare" ? "compare" : "reading");
   // 五个包内面板的开合 —— 每个 id 只在这里写一次，open 和挂载闸都从它派生。
   // 原来是「闸一遍、open 一遍」，两处各自合法，抄改时把闸上那个写成别的面板
   // 整套测试全绿而摘录永远打不开。见 use-reader-panel-slot.ts。
@@ -447,8 +427,6 @@ export function ReaderAppReactPdf() {
     regionHover,
     jumpToBlock,
     revisedBlocks,
-    marginMarkers: side.markersByPage,
-    selectMarginMarker: side.selectMarker,
     editBlock: blockEdit.available ? editBlock : undefined,
     blockEdit,
     editShowsSource: visiblePdfMode !== "compare",
@@ -475,8 +453,6 @@ export function ReaderAppReactPdf() {
     regionHover,
     jumpToBlock,
     revisedBlocks,
-    side.markersByPage,
-    side.selectMarker,
     blockEdit,
     editBlock,
     visiblePdfMode,
@@ -545,16 +521,7 @@ export function ReaderAppReactPdf() {
           mode={visiblePdfMode}
           documentReady={Boolean(session.jobId)}
           sourceViewOnly={sourceViewOnly}
-          onModeChange={(next) => {
-            // 第二栏是一个页签：点原文 / 对照 / 译文就离开它。
-            if (sideOpen) closeSidePane();
-            changeWorkspace(next);
-          }}
-          sidePane={side.available ? {
-            label: side.label,
-            active: sideOpen,
-            onSelect: () => setAssistantPanel("side"),
-          } : null}
+          onModeChange={changeWorkspace}
           liveTranslation={liveToggles.topBarPill ? {
             visible: liveTranslationVisible,
             state: c.liveTranslation,
@@ -570,8 +537,7 @@ export function ReaderAppReactPdf() {
             },
           } : null}
         />
-        {/* 第二栏不在 dock 里（顶栏页签开），dock 只认包内面板。 */}
-        <ReaderAssistantDock active={sideOpen ? null : openPanel} />
+        <ReaderAssistantDock active={assistantPanel} />
         {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
         <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={markdownSlot.open} assistantSplit={assistantOpen} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
         {c.showHud ? (
@@ -586,8 +552,7 @@ export function ReaderAppReactPdf() {
         <Suspense fallback={null}>
           {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
         </Suspense>
-        {sideOpen && side.port && side.api ? <ReaderSidePane port={side.port} api={side.api} /> : null}
-        <ReaderToolBall active={sideOpen ? null : openPanel} compare={versionCompare} ink={ink} />
+        <ReaderToolBall active={assistantPanel} compare={versionCompare} ink={ink} />
         <ReaderInkMenu ink={ink} menu={inkMenu} onClose={closeInkMenu} />
         <ReaderInkDock ink={ink} />
         <ReaderPendingEditsPill edit={blockEdit} />

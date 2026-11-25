@@ -19,7 +19,6 @@ const adapters: ReaderAdapters = {
   liveTranslation: ext.liveTranslationPort,
   pdf: ext.pdfPort,
   sessionData: ext.sessionDataPort,
-  sidePane: ext.readerSidePanePort,
   defaultReaderPageConfigPort: ext.defaultReaderPageConfigPort,
   resolveReaderAnchor: ext.resolveReaderAnchor,
   resolveReaderDocumentId: ext.resolveReaderDocumentId,

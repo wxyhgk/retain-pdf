@@ -31,12 +31,8 @@
  */
 /** 包自己渲染的面板。内容在包里，不需要宿主注入。 */
 export declare const READER_BASE_PANEL_IDS: readonly ["markdown"];
-/** 宿主提供内容的面板：不在 dock 里，由顶栏页签打开（`side` = 第二栏，见 contracts/side-pane.ts）。
- * 和包内面板共用「开着哪个面板」这一份状态，所以同一时间只开一个、按书记住、换书不串。 */
-export declare const READER_HOST_PANEL_IDS: readonly ["side"];
-export declare const READER_ASSISTANT_PANEL_IDS: readonly ["markdown", "side"];
+export declare const READER_ASSISTANT_PANEL_IDS: readonly ["markdown"];
 export type ReaderBasePanelId = (typeof READER_BASE_PANEL_IDS)[number];
-export type ReaderHostPanelId = (typeof READER_HOST_PANEL_IDS)[number];
-export type ReaderAssistantPanel = ReaderBasePanelId | ReaderHostPanelId;
+export type ReaderAssistantPanel = ReaderBasePanelId;
 export declare function isReaderAssistantPanel(value: unknown): value is ReaderAssistantPanel;
 //# sourceMappingURL=reader-assistant-panels.d.ts.map

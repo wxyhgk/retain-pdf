@@ -163,11 +163,6 @@ jobs:
           npm --prefix frontend/packages/whiteboard run typecheck
           npm --prefix frontend/packages/whiteboard run build
 
-      - name: Typecheck and build @retainpdf/learning
-        run: |
-          npm --prefix frontend/packages/learning run typecheck
-          npm --prefix frontend/packages/learning run build
-
       - name: Typecheck @retainpdf/reader
         run: npm --prefix frontend/packages/reader run typecheck
 

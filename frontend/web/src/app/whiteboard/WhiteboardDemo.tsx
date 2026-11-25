@@ -5,7 +5,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@retainpdf/ui";
 import { Board, Whiteboard, emptyBoard, useBoardStorage, type BoardDoc } from "@retainpdf/whiteboard";
-import { SZABO_CH3_SCRIPTS as DEMO_SCRIPTS } from "@retainpdf/learning";
+import { DEMO_SCRIPTS } from "./demo-scripts.js";
 import { sampleBoard } from "./board-sample.js";
 
 const BOARD_KEY = "retainpdf:board:demo:v1";
