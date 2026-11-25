@@ -69,7 +69,7 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
   - `config/paths.rs`
     project root、rust_api root、data root、scripts、jobs/uploads/downloads 路径和 runtime 目录创建。
   - `config/auth.rs`
-    `auth.local.json`、`RUST_API_KEYS`、`RUST_API_MAX_RUNNING_JOBS`、`RUST_API_SIMPLE_PORT`。
+    `auth.local.json`、`RUST_API_KEYS`、`RUST_API_AGENT_KEYS`（AI 专用密钥，只从环境变量读）、`RUST_API_MAX_RUNNING_JOBS`、`RUST_API_SIMPLE_PORT`。
   - `config/server.rs`
     `PYTHON_BIN`、`RUST_API_BIND_HOST`、`RUST_API_PORT`。
   - `config/upload.rs`

@@ -93,7 +93,7 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
   写明方法、地址、处理函数、多用户下谁能用（`public`/`signed`/`admin`/`closed`），`///` 写一句话说明，旧地址行尾写 `old "<新地址>"`。
   路由文件里直接写 `.route(` 会让测试红。接口目录（总目录 `docs/api/00-接口目录.md`，各组在 `docs/api/00-接口目录/` 下）和 `docs/routes.txt` 都从表生成（`UPDATE_ROUTES=1`）。
 - 每个接口写明谁负责、谁在用（2026-11-22）：表头 `owner: <领域>;`（8 个领域之一，个别条目行尾 `owner(…)` 另写），每条必写
-  `by(…)`：`web` 前端页面、`desktop` 桌面壳主进程、`worker` Python 流水线、`cli` 命令行、`ops` 运维调试、`multiuser` 只有已停的多用户版、
+  `by(…)`：`web` 前端页面、`desktop` 桌面壳主进程、`worker` Python 流水线、`cli` 命令行、`ops` 运维调试、`multiuser` 只有已停的多用户版、`agent` AI agent（**有运行时效果**：AI 专用密钥只能调标了它的接口）、
   `none` 还没有调用方。不写编译不过。说不出调用方就不加接口；后端先加、调用方随后接的写 `none`，并在交接记录里写清等谁接。
   登记的和实际调用对不对得上，用 `python3 ops/development/route_usage_report.py` 看（按接口计数在 `data/**/diagnostics/route-usage.json`）。
 - 加路由、加 service 前先读 `check_architecture.py` 的规则：处理函数文件（`src/routes/` 下）要 `use crate::services::…`，

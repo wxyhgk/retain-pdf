@@ -7,9 +7,9 @@ crate::endpoints! {
     state: AppState;
     owner: library;
     /// 书列表
-    GET "/api/v1/documents" => library_data::list_documents_route, signed by(web);
+    GET "/api/v1/documents" => library_data::list_documents_route, signed by(web, agent);
     /// 一本书
-    GET "/api/v1/documents/:document_id" => library_data::get_document_route, signed by(web);
+    GET "/api/v1/documents/:document_id" => library_data::get_document_route, signed by(web, agent);
     /// 改书的信息（书名、阅读状态）
     PATCH "/api/v1/documents/:document_id" => library_data::patch_document_route, signed by(web);
     /// 设书的标签（设成正好这几个）
@@ -31,7 +31,7 @@ crate::endpoints! {
     /// 取书的一个文件：source.pdf、cover.jpg、thumbnail.jpg
     GET "/api/v1/documents/:document_id/files/:name" => library_data::document_file_route, signed by(web);
     /// 原文某一页的预览图
-    GET "/api/v1/documents/:document_id/files/pages/:page" => library_data::document_page_file_route, signed by(none);
+    GET "/api/v1/documents/:document_id/files/pages/:page" => library_data::document_page_file_route, signed by(agent);
     /// 翻译这本书（建翻译任务，能复用已有的 OCR）
     POST "/api/v1/documents/:document_id/translate" => library_data::translate_document_route, signed by(web) [idempotent];
     /// 给这本书做 OCR
@@ -45,7 +45,7 @@ crate::endpoints! {
     /// 这本书的任务历史
     GET "/api/v1/documents/:document_id/jobs" => library_data::list_document_jobs_route, signed by(web);
     /// 全文检索
-    GET "/api/v1/search" => library_data::search_blocks_route, signed by(web);
+    GET "/api/v1/search" => library_data::search_blocks_route, signed by(web, agent);
     /// 把书库导出成给 AI 读的 Markdown 文件夹（`<数据目录>/books/`）；多用户版不开
     POST "/api/v1/book-folder/export" => library_data::export_book_folder_route, closed by(cli);
 }

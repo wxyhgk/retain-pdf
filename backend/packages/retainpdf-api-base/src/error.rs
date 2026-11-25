@@ -283,6 +283,17 @@ impl AppError {
         }
     }
 
+    /// 403,`error.details.reason` 写稳定原因(认证过了、但这个身份不许做这件事,如 AI 专用密钥调了没给它开的接口
+    /// `agent_key_not_allowed`)。
+    pub fn forbidden_because(reason: &'static str, msg: impl Into<String>) -> Self {
+        Self::Reasoned {
+            status: StatusCode::FORBIDDEN,
+            message: msg.into(),
+            reason,
+            extra: Value::Null,
+        }
+    }
+
     /// 409,`error.details.reason` 写稳定原因(当前状态不允许这个操作)。
     pub fn conflict_because(reason: &'static str, msg: impl Into<String>) -> Self {
         Self::Reasoned {
@@ -635,9 +646,11 @@ impl IntoResponse for AppError {
                 .into_response();
         }
         if let AppError::Reasoned { status, message, reason, extra } = &self {
-            // 只有 400 / 404 / 409 / 429 / 503 有构造方法,信封与对应的普通错误一致。
+            // 只有 400 / 403 / 404 / 409 / 429 / 503 有构造方法,信封与对应的普通错误一致。
             let (code, stable_code) = if *status == StatusCode::BAD_REQUEST {
                 (40000, "BAD_REQUEST")
+            } else if *status == StatusCode::FORBIDDEN {
+                (40300, "FORBIDDEN")
             } else if *status == StatusCode::NOT_FOUND {
                 (40400, "NOT_FOUND")
             } else if *status == StatusCode::SERVICE_UNAVAILABLE {

@@ -27,6 +27,7 @@ pub(super) fn test_state(test_name: &str) -> AppState {
         python_bin: "python".to_string(),
         simple_port: 41001,
         api_keys: HashSet::new(),
+        agent_keys: HashSet::new(),
         ..dirs.config()
     }))
 }

@@ -10,6 +10,8 @@ use super::env_vars::{env_optional_string, env_usize};
 #[derive(Clone, Debug)]
 pub struct AuthRuntimeConfig {
     pub api_keys: HashSet<String>,
+    /// AI 专用密钥（`RUST_API_AGENT_KEYS`，逗号分隔，可以不设）：只能调接口登记表里标了 `agent` 的接口。
+    pub agent_keys: HashSet<String>,
     pub max_running_jobs: usize,
     pub simple_port: u16,
 }
@@ -27,6 +29,7 @@ impl AuthRuntimeConfig {
         let local_auth = load_local_auth_config(auth_config_path)?;
         Ok(Self {
             api_keys: resolve_api_keys(local_auth.as_ref())?,
+            agent_keys: resolve_agent_keys(),
             max_running_jobs: resolve_max_running_jobs(local_auth.as_ref()),
             simple_port: resolve_simple_port(local_auth.as_ref())?,
         })
@@ -35,9 +38,18 @@ impl AuthRuntimeConfig {
     pub fn from_desktop(simple_port: u16, api_key: String, max_running_jobs: usize) -> Self {
         Self {
             api_keys: [api_key].into_iter().collect(),
+            agent_keys: resolve_agent_keys(),
             max_running_jobs,
             simple_port,
         }
+    }
+
+    /// 同一把 key 既是主密钥又是 AI 专用密钥：拒绝启动。中间件先认 AI 专用密钥（宁可收窄），但配成这样多半是填错了。
+    pub fn validate_agent_keys(&self) -> Result<()> {
+        if self.agent_keys.iter().any(|key| self.api_keys.contains(key)) {
+            bail!("RUST_API_AGENT_KEYS must not reuse a main API key (RUST_API_KEYS / auth.local.json / desktop key)");
+        }
+        Ok(())
     }
 
     pub fn validate_bind_host(&self, host: &str) -> Result<()> {
@@ -45,13 +57,14 @@ impl AuthRuntimeConfig {
         if super::origin_policy::bind_host_is_loopback(host) {
             return Ok(());
         }
-        if self.api_keys.contains("dev-local-key") {
+        if self.api_keys.contains("dev-local-key") || self.agent_keys.contains("dev-local-key") {
             bail!("the default development API key is not allowed for non-loopback listening");
         }
         // 只报长度，不把 key 本身写进报错。
         if let Some(short) = self
             .api_keys
             .iter()
+            .chain(&self.agent_keys)
             .map(|key| key.chars().count())
             .find(|len| *len < MIN_NON_LOOPBACK_API_KEY_CHARS)
         {
@@ -149,6 +162,19 @@ fn resolve_api_keys(local_auth: Option<&LocalAuthConfig>) -> Result<HashSet<Stri
     }
 
     bail!("auth.local.json or RUST_API_KEYS is required and must contain at least one API key")
+}
+
+/// `RUST_API_AGENT_KEYS`：逗号分隔，空的忽略；不设就是没有 AI 专用密钥（2026-11-25）。
+fn resolve_agent_keys() -> HashSet<String> {
+    env_optional_string("RUST_API_AGENT_KEYS")
+        .map(|raw| {
+            raw.split(',')
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(ToOwned::to_owned)
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 fn resolve_max_running_jobs(local_auth: Option<&LocalAuthConfig>) -> usize {
@@ -332,5 +358,24 @@ mod tests {
 
         let config = AuthRuntimeConfig::from_desktop(42000, "c".repeat(64), 4);
         assert_eq!(config.placeholder_key_warning("0.0.0.0"), None);
+    }
+
+    #[test]
+    fn agent_keys_must_not_reuse_a_main_key() {
+        let mut config = AuthRuntimeConfig::from_desktop(42000, "main-key-0123456789".into(), 4);
+        config.agent_keys = ["agent-key-0123456789".to_string()].into_iter().collect();
+        assert!(config.validate_agent_keys().is_ok());
+        config.agent_keys.insert("main-key-0123456789".into());
+        let error = config.validate_agent_keys().unwrap_err().to_string();
+        assert!(error.contains("RUST_API_AGENT_KEYS"), "{error}");
+        assert!(!error.contains("main-key-0123456789"), "不把 key 写进报错: {error}");
+    }
+
+    #[test]
+    fn short_agent_keys_are_refused_for_non_loopback_listening() {
+        let mut config = AuthRuntimeConfig::from_desktop(42000, "c".repeat(64), 4);
+        config.agent_keys = ["short".to_string()].into_iter().collect();
+        assert!(config.validate_bind_host("127.0.0.1").is_ok());
+        assert!(config.validate_bind_host("0.0.0.0").is_err());
     }
 }

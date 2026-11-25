@@ -13,7 +13,7 @@ crate::endpoints! {
     /// 取一个成品：translated.pdf、side-by-side.pdf、translated.docx、ocr.md、ocr.zip、ocr/images/…、all.zip
     GET "/api/v1/jobs/:job_id/files/output/*name" => files::job_output_file, signed by(web);
     /// 译文某一页的预览图（pages/3.jpg）
-    GET "/api/v1/jobs/:job_id/files/pages/:page" => files::job_page_file, signed by(none);
+    GET "/api/v1/jobs/:job_id/files/pages/:page" => files::job_page_file, signed by(agent);
     /// 取一个中间产物（规范化文档、翻译清单、请求日志……），多用户下只给管理员
     GET "/api/v1/jobs/:job_id/files/internal/*name" => files::job_internal_file, admin by(ops);
 }
