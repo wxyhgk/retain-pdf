@@ -34,6 +34,7 @@ frontend/packages/reader/styles/
 ├── assistant-dock.css / panel-shell.css / finder.css / live-translation.css
 ├── float-markdown.css / hud.css / markdown.css / markdown-blocks.css
 ├── doc-theme.css           # 深色文档（书页黑底白字：画布反色滤镜 + 叠层深色纸墨）
+├── side-pane.css           # 第二栏（宿主页签，contracts/side-pane.ts）和书页左边白边里的小圆点
 └── dialog-shell.css / reader.utilities.css
 ```
 

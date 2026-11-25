@@ -35,6 +35,7 @@ import { JSDOM } from "jsdom";
 import {
   READER_ASSISTANT_PANEL_IDS,
   READER_BASE_PANEL_IDS,
+  READER_HOST_PANEL_IDS,
 } from "../../../packages/reader/src/shared/types/reader-assistant-panels.ts";
 import { readerDockTabs } from "../../../packages/reader/src/components/react-pdf/reader-dock-tabs.ts";
 import { ReaderAssistantDock, ReaderPanelToggles } from "../../../packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx";
@@ -66,13 +67,24 @@ const readStyle = (name) => stripComments(readFileSync(
 test("每个面板都在唯一那个启动器的清单里", () => {
   // 从 id 真源 map 出来比，不在这里抄第二份清单 —— 抄的那份漏一个的表现是
   // 「那个面板再也打不开」，而这条测试照样绿。
+  // 包内面板（READER_BASE_PANEL_IDS）都在 dock 里；宿主面板（第二栏）走顶栏页签，见下一条。
   const ids = readerDockTabs(() => true).map((tab) => tab.id);
-  assert.equal(ids.length, READER_ASSISTANT_PANEL_IDS.length, `清单长度对不上: ${ids}`);
-  assert.deepEqual([...ids].sort(), [...READER_ASSISTANT_PANEL_IDS].sort());
+  assert.equal(ids.length, READER_BASE_PANEL_IDS.length, `清单长度对不上: ${ids}`);
+  assert.deepEqual([...ids].sort(), [...READER_BASE_PANEL_IDS].sort());
   // 顺序也来自真源：dock 里 tab 的先后就是这份清单的先后。
-  assert.deepEqual(ids, [...READER_ASSISTANT_PANEL_IDS]);
+  assert.deepEqual(ids, [...READER_BASE_PANEL_IDS]);
+  assert.deepEqual([...READER_ASSISTANT_PANEL_IDS], [...READER_BASE_PANEL_IDS, ...READER_HOST_PANEL_IDS]);
   // 下限而不是等号：加面板不该让这条红。2026-11-03 RetainPDF 自己的 AI（终端）删了，只剩 Markdown。
   assert.ok(ids.length >= 1, `只有 ${ids.length} 个面板，八成漏登记了`);
+});
+
+test("宿主面板（第二栏）不在 dock 里，由顶栏页签打开；打开时 dock 不把它当成自己的面板", () => {
+  const dockIds = readerDockTabs(() => true).map((tab) => tab.id);
+  for (const id of READER_HOST_PANEL_IDS) assert.ok(!dockIds.includes(id), `${id} 不该出现在 dock 里`);
+  assert.match(APP, /sidePane=\{side\.available \? \{/, "顶栏页签只在宿主说这本书有时出现");
+  assert.match(APP, /onSelect: \(\) => setAssistantPanel\("side"\)/);
+  assert.match(APP, /<ReaderAssistantDock active=\{sideOpen \? null : openPanel\} \/>/);
+  assert.match(APP, /sideOpen && side\.port && side\.api \? <ReaderSidePane/);
 });
 
 test("每个面板都有标签和图标 —— 少一样那个 tab 要么空白要么崩", () => {

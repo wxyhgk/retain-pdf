@@ -134,6 +134,19 @@ const STATES = [
       await page.waitForTimeout(300);
     },
   },
+  {
+    // 阅读页第二栏（宿主页签）：演示模式里的占位面板 + 书页左边的小圆点。
+    // page 写的是基准里得有的文件：没有它（第二栏还没合进 main）时跳过不比。
+    name: "reader-side",
+    page: "src/platform/mock/reader-side-pane.tsx",
+    url: "/reader.html?mock=done&job_id=mock-job-20260415",
+    run: async (page) => {
+      await page.click("[data-reader-side-tab]");
+      await page.waitForSelector("[data-mock-side-pane]");
+      await page.waitForSelector("[data-reader-margin-marker]");
+      await page.waitForTimeout(800);
+    },
+  },
 ];
 
 function themeIdsFrom(registrySource) {

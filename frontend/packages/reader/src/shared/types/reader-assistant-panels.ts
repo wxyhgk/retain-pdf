@@ -35,10 +35,17 @@ export const READER_BASE_PANEL_IDS = [
   "markdown",
 ] as const;
 
-export const READER_ASSISTANT_PANEL_IDS = READER_BASE_PANEL_IDS;
+/** 宿主提供内容的面板：不在 dock 里，由顶栏页签打开（`side` = 第二栏，见 contracts/side-pane.ts）。
+ * 和包内面板共用「开着哪个面板」这一份状态，所以同一时间只开一个、按书记住、换书不串。 */
+export const READER_HOST_PANEL_IDS = [
+  "side",
+] as const;
+
+export const READER_ASSISTANT_PANEL_IDS = [...READER_BASE_PANEL_IDS, ...READER_HOST_PANEL_IDS] as const;
 
 export type ReaderBasePanelId = (typeof READER_BASE_PANEL_IDS)[number];
-export type ReaderAssistantPanel = ReaderBasePanelId;
+export type ReaderHostPanelId = (typeof READER_HOST_PANEL_IDS)[number];
+export type ReaderAssistantPanel = ReaderBasePanelId | ReaderHostPanelId;
 
 export function isReaderAssistantPanel(value: unknown): value is ReaderAssistantPanel {
   return (READER_ASSISTANT_PANEL_IDS as readonly unknown[]).includes(value);

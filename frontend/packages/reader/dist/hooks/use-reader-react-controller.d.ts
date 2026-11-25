@@ -6,6 +6,7 @@ import type { ReaderPaneModel } from "./use-reader-pane-model.js";
 import { type ReaderRegion } from "../shared/data/reader-regions.js";
 import { type RevisedBlocks } from "./use-reader-revised-blocks.js";
 import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
+import type { ReaderAnchorJump } from "../contracts/side-pane.js";
 /** 跳到某一段后那一段亮多久：页还在画的那一两秒也算在里面，太短就看不到（读书走查 9）；最后一秒淡出（react-pdf.css）。 */
 export declare const CITATION_HIGHLIGHT_MS = 4500;
 /**
@@ -47,7 +48,8 @@ export type ReaderReactController = {
     currentPage: number;
     goToPage: (page: number, pane?: "source" | "translated") => void;
     activeRegion: ReaderRegion | null;
-    jumpToAnchor: (target: ReaderAnchorTarget, pane?: "source" | "translated") => void;
+    /** 跳过去并把那一块亮一下：找到块 "block"、只翻到页 "page"、页码不对 "none"。 */
+    jumpToAnchor: (target: ReaderAnchorTarget, pane?: "source" | "translated") => ReaderAnchorJump;
     setModeKeepingPage: (next: ReaderMode) => void;
     showHud: boolean;
     download: ReaderSessionState["download"];

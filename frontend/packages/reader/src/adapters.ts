@@ -5,6 +5,7 @@ import type {
 import type { ReaderLiveTranslationPort } from "./contracts/live-translation.js";
 import type { ReaderPdfPort } from "./contracts/pdf.js";
 import type { ReaderSessionDataPort } from "./contracts/session.js";
+import type { ReaderSidePanePort } from "./contracts/side-pane.js";
 export {
   hasMarkdownContent,
   loadMarkdownPayloadWithFallback,
@@ -34,6 +35,8 @@ export type ReaderSessionAdapters = {
   pdf?: ReaderPdfPort;
   /** Optional during migration; legacy data/runtime fields remain supported. */
   sessionData?: ReaderSessionDataPort;
+  /** 阅读页的第二栏（顶栏多一个页签，左书右宿主内容）。不给就没有这个页签。 */
+  sidePane?: ReaderSidePanePort;
 };
 export type ReaderMarkdownAdapters = {
   resolveMarkdownAssetUrl: (imagesBaseUrl: unknown, relativePath: unknown) => string;
@@ -97,6 +100,7 @@ export const READER_ADAPTER_KEYS = [
   "liveTranslation",
   "pdf",
   "sessionData",
+  "sidePane",
   "resolveMarkdownAssetUrl",
   "resolveReaderDownloadUrls",
   "resolveReaderDownloadName",
