@@ -36,6 +36,33 @@ export function zoomRegionIn(region: ReaderRegion, metadata: ReaderMetadata | nu
 
 type ZoomPlace = { page: number; fraction: RegionFraction; /** 高 / 宽 */ aspect: number };
 
+/** 几块合起来画（引用预览：图注 + 图 / 表）：取第一块所在页上各块的并集，别的页的块不算。 */
+export function zoomUnionIn(regions: readonly ReaderRegion[], metadata: ReaderMetadata | null, pane: ZoomPane): ZoomPlace | null {
+  let page = 0;
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  let pageSize: { width: number; height: number } | null = null;
+  for (const region of regions) {
+    const highlight = resolveReaderRegionHighlight(region, metadata, pane);
+    const rect = highlight ? projectReaderRegion(highlight, 1, 1) : null;
+    if (!highlight || !rect) continue;
+    if (!page) {
+      page = highlight.box.page;
+      pageSize = highlight.pageSize;
+    }
+    if (highlight.box.page !== page) continue;
+    left = Math.min(left, rect.left);
+    top = Math.min(top, rect.top);
+    right = Math.max(right, rect.left + rect.width);
+    bottom = Math.max(bottom, rect.top + rect.height);
+  }
+  if (!page || !pageSize) return null;
+  const fraction = padRegion({ left, top, width: right - left, height: bottom - top });
+  return { page, fraction, aspect: (fraction.height * pageSize.height) / Math.max(1e-6, fraction.width * pageSize.width) };
+}
+
 /** 100% 时一栏画多宽：先占满栏宽，太高（高的图、整页的表）就按放得下的高度缩，打开不用先滚。 */
 export function zoomFitWidth(columnWidth: number, availableHeight: number, aspects: readonly number[]): number {
   const tallest = Math.max(0, ...aspects);

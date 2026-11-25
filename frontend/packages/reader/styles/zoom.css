@@ -1,4 +1,5 @@
 /* 放大查看一块（components/react-pdf/ReaderZoomViewer.tsx）：盖在书上的大框，这一块按高分辨率重新画（pdf/RegionCanvas.tsx）。
+ * 引用悬停预览（ReaderXrefPreview.tsx）是小号的同一套，「回到第 N 页」也在这里。
  * 颜色只用皮肤变量；深色文档时画布照书页一样反色（doc-theme.css 的变量）。 */
 
 .reader-zoom {
@@ -118,6 +119,58 @@
 
 :root[data-reader-doc="dark"] .reader-region-canvas {
   background: var(--reader-doc-dark-paper);
+}
+
+.reader-xref-preview {
+  position: fixed;
+  z-index: calc(var(--z-hud, 36) + 4);
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+  background: var(--paper);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 22%, transparent);
+  pointer-events: none;
+}
+
+.reader-xref-preview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 12px);
+  font-weight: 650;
+}
+
+.reader-xref-preview-page {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.reader-xref-back {
+  position: fixed;
+  z-index: calc(var(--z-hud, 36) + 1);
+  left: 16px;
+  bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  white-space: nowrap;
+  cursor: var(--cursor-pointer, pointer);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--shadow-color, var(--ink)) 16%, transparent);
+}
+
+.reader-xref-back:hover {
+  background: color-mix(in srgb, var(--accent) 9%, var(--paper));
 }
 
 @media (max-width: 720px) {

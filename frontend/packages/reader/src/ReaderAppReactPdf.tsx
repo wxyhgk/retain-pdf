@@ -1,6 +1,8 @@
 // 从 frontend/web 迁入的 React-pdf 视图真值，现为 @retainpdf/reader 主入口
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReaderReactController } from "./hooks/use-reader-react-controller.js";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@retainpdf/ui";
 import { useReaderKeyboard } from "./hooks/use-reader-keyboard.js";
 import {
   ReaderAssistantSplitResizeHandle,
@@ -54,6 +56,9 @@ import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
 import type { PdfOutlineNode } from "./pdf/pdf-outline.js";
 import type { RegionPdfDocument } from "./pdf/RegionCanvas.js";
 import { ReaderZoomViewer } from "./components/react-pdf/ReaderZoomViewer.js";
+import { ReaderXrefPreview } from "./components/react-pdf/ReaderXrefPreview.js";
+import { useReaderXrefs } from "./hooks/use-reader-xrefs.js";
+import { buildXrefIndex, type XrefTarget } from "./shared/content/reader-xrefs.js";
 
 /** 稳定的空书签列表（每次新建一个会让目录卡白白重算）。 */
 const NO_BOOKMARKS: PdfOutlineNode[] = [];
@@ -390,6 +395,13 @@ export function ReaderAppReactPdf() {
     };
     return { source: pick("source", sessionFiles.sourceUrl), translated: pick("translated", sessionFiles.translatedUrl) };
   }, [pdfDocsVersion, sessionFiles.sourceUrl, sessionFiles.translatedUrl]);
+  // 书里的引用：去处索引、悬停预览、点了跳、Alt+← 回来。
+  const xrefIndex = useMemo(() => buildXrefIndex(session.regions), [session.regions]);
+  const followXref = useCallback(
+    (target: XrefTarget, pane: "source" | "translated") => c.jumpToAnchor({ block_id: target.itemId }, pane),
+    [c.jumpToAnchor],
+  );
+  const xrefs = useReaderXrefs({ shellEl: c.shell.shellEl, index: xrefIndex, primaryPane: c.panes.primaryPane, follow: followXref });
   const jumpToPageFromFinder = useCallback((page: number) => {
     c.goToPage(page);
     if (finder === "outline" || readerViewportWidth() < 900) setFinder(null);
@@ -472,6 +484,7 @@ export function ReaderAppReactPdf() {
     onPdfOutline,
     onPdfDocument,
     zoomBlock,
+    xrefIndex,
     editBlock: blockEdit.available ? editBlock : undefined,
     blockEdit,
     editShowsSource: visiblePdfMode !== "compare",
@@ -501,6 +514,7 @@ export function ReaderAppReactPdf() {
     onPdfOutline,
     onPdfDocument,
     zoomBlock,
+    xrefIndex,
     blockEdit,
     editBlock,
     visiblePdfMode,
@@ -602,6 +616,14 @@ export function ReaderAppReactPdf() {
         <Suspense fallback={null}>
           {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
         </Suspense>
+        {xrefs.preview ? (
+          <ReaderXrefPreview preview={xrefs.preview} regions={session.regions} metadata={session.readerMetadata} documents={zoomDocuments} />
+        ) : null}
+        {xrefs.canGoBack ? (
+          <Button className="reader-xref-back" title="回到跳之前读到的地方（Alt+←）" onClick={() => xrefs.goBack()}>
+            <ArrowLeft size={14} aria-hidden /> 回到第 {xrefs.backPage} 页
+          </Button>
+        ) : null}
         {zoomItem ? (
           <ReaderZoomViewer
             itemId={zoomItem}
