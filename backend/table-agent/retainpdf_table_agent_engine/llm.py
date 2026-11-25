@@ -15,7 +15,7 @@ from retainpdf_translation.artifacts.aggregator import thread_translation_run_di
 from retainpdf_translation.llm.shared.executor_context import unit_scope
 from retainpdf_translation.llm.shared.provider_runtime import request_chat_content
 from retainpdf_translation.llm.shared.upstream_resilience import raise_if_credential_rejected
-from retainpdf_translation_classic.services.refine.llm import ChatResult
+from retainpdf_table_agent.contract import ChatResult
 
 REQUEST_LABEL = "table-translate"
 REQUEST_TIMEOUT_SECS = 180

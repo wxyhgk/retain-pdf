@@ -10,8 +10,8 @@ from __future__ import annotations
 import re
 from collections import Counter
 
-from retainpdf_translation_classic.services.tables.cells import Cell
-from retainpdf_translation_classic.services.tables.cells import plain
+from retainpdf_table_agent.cells import Cell
+from retainpdf_table_agent.cells import plain
 
 KEEP = "keep"
 _NUMBER = re.compile(r"\d+(?:[.,]\d+)*")

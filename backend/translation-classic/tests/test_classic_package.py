@@ -28,7 +28,19 @@ def test_public_facade_imports_without_the_pipeline() -> None:
     probe = (
         "import sys; sys.modules['retainpdf_pipeline'] = None\n"
         "from retainpdf_translation_classic import public\n"
-        "public.run_refine_for_render; public.translate_table; public.TableTermMemory\n"
+        "public.run_refine_for_render\n"
+        # 表格翻译 2026-11-25 搬进了表格 agent 包（backend/table-agent），门面不再导出
+        "assert not hasattr(public, 'translate_table') and 'TableTermMemory' not in public.__all__\n"
+        "print('ok')\n"
+    )
+    assert _run(probe) == "ok"
+
+
+def test_table_agent_package_stands_alone() -> None:
+    # 表格 agent 的核心不靠流水线、也不靠普通翻译引擎
+    probe = (
+        "import sys; sys.modules['retainpdf_pipeline'] = None; sys.modules['retainpdf_translation_classic'] = None\n"
+        "from retainpdf_table_agent import translate_table, TableTermMemory\n"
         "print('ok')\n"
     )
     assert _run(probe) == "ok"

@@ -18,20 +18,20 @@ from dataclasses import dataclass
 from dataclasses import field
 from typing import Any, Callable
 
-from retainpdf_translation.llm.shared.response_parsing import extract_json_text
-from retainpdf_translation.prompt_loader import load_prompt
-from retainpdf_translation_classic.services.refine.llm import ChatResult
+from retainpdf_table_agent.json_text import extract_json_text
+from retainpdf_table_agent.prompts import load_prompt
+from retainpdf_table_agent.contract import ChatResult
 
-from retainpdf_translation_classic.services.tables.cells import Cell
-from retainpdf_translation_classic.services.tables.cells import Chunk
-from retainpdf_translation_classic.services.tables.cells import plain
-from retainpdf_translation_classic.services.tables.cells import plan_chunks
-from retainpdf_translation_classic.services.tables.cells import render_chunk
-from retainpdf_translation_classic.services.tables.cells import table_cells
-from retainpdf_translation_classic.services.tables.memory import TableTermMemory
-from retainpdf_translation_classic.services.tables.validate import check_cell
-from retainpdf_translation_classic.services.tables.validate import check_consistency
-from retainpdf_translation_classic.services.tables.validate import normalize_source
+from retainpdf_table_agent.cells import Cell
+from retainpdf_table_agent.cells import Chunk
+from retainpdf_table_agent.cells import plain
+from retainpdf_table_agent.cells import plan_chunks
+from retainpdf_table_agent.cells import render_chunk
+from retainpdf_table_agent.cells import table_cells
+from retainpdf_table_agent.memory import TableTermMemory
+from retainpdf_table_agent.validate import check_cell
+from retainpdf_table_agent.validate import check_consistency
+from retainpdf_table_agent.validate import normalize_source
 
 SYSTEM_PROMPT = "table_translate_system.txt"
 PROMPT_VERSION = "table_translate.v1"

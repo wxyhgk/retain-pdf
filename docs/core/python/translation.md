@@ -20,7 +20,8 @@ backend/translation/retainpdf_translation/
 | 包 | 目录 | 管什么 |
 | --- | --- | --- |
 | `retainpdf-translation`（底座） | `backend/translation/retainpdf_translation/` | 读文档、接续段、页面策略、回填、断点、清单、质检、请求层、提示词、用量；执行入口和引擎登记表 `workflow/engines.py` |
-| `retainpdf-translation-classic`（普通翻译引擎，`translation.engine=legacy`） | `backend/translation-classic/retainpdf_translation_classic/` | 批量逐块翻、流式跟着 OCR 翻、乱码重构、修复兜底、译前准备、精修、编辑部、表格翻译、任务记忆、结果缓存 |
+| `retainpdf-translation-classic`（普通翻译引擎，`translation.engine=legacy`） | `backend/translation-classic/retainpdf_translation_classic/` | 批量逐块翻、流式跟着 OCR 翻、乱码重构、修复兜底、译前准备、精修、编辑部、任务记忆、结果缓存 |
+| `retainpdf-table-agent`（表格 agent，2026-11-25 从普通翻译引擎拆出来） | `backend/table-agent`：核心 `retainpdf_table_agent`（只用标准库），接线 `retainpdf_table_agent_engine`（依赖底座） | 表格翻译：一张表一个循环、逐格校验、整表保留原文；流水线表格翻译阶段直接调 |
 | agent 引擎（`translation.engine=agent`） | `backend/translation-agent`：核心 `retainpdf_translation_agent`（只用标准库），接线 `retainpdf_translation_agent_engine`（依赖底座） | 通读、按节翻、审校 |
 
 普通翻译包目录结构和底座一样（下面「目录分层」说的目录在两个包里各有一部分），依赖底座，底座不 import 它。

@@ -9,6 +9,8 @@
     "requests",
     "retainpdf_base",
     "retainpdf_math",
+    "retainpdf_table_agent",
+    "retainpdf_table_agent_engine",
     "retainpdf_translation",
     "retainpdf_translation_agent",
     "retainpdf_translation_classic",
@@ -850,6 +852,32 @@
       "devtool_required": false
     },
     {
+      "import_name": "retainpdf_table_agent",
+      "package_name": "retainpdf_table_agent",
+      "runtime_files": [
+        "retainpdf_pipeline/translate/tables_stage.py"
+      ],
+      "devtool_files": [
+        "devtools/table_agent_eval.py"
+      ],
+      "test_files": [],
+      "runtime_required": true,
+      "devtool_required": true
+    },
+    {
+      "import_name": "retainpdf_table_agent_engine",
+      "package_name": "retainpdf_table_agent_engine",
+      "runtime_files": [
+        "retainpdf_pipeline/translate/tables_stage.py"
+      ],
+      "devtool_files": [
+        "devtools/table_agent_eval.py"
+      ],
+      "test_files": [],
+      "runtime_required": true,
+      "devtool_required": true
+    },
+    {
       "import_name": "retainpdf_translation",
       "package_name": "retainpdf_translation",
       "runtime_files": [
@@ -1084,13 +1112,11 @@
       "import_name": "retainpdf_translation_classic",
       "package_name": "retainpdf_translation_classic",
       "runtime_files": [
-        "retainpdf_pipeline/runtime/pipeline/render_only_pipeline.py",
-        "retainpdf_pipeline/translate/tables_stage.py"
+        "retainpdf_pipeline/runtime/pipeline/render_only_pipeline.py"
       ],
       "devtool_files": [
         "devtools/inspect_translation_repair_candidates.py",
         "devtools/job_debug_runner.py",
-        "devtools/table_agent_eval.py",
         "devtools/translation_repair_runner.py"
       ],
       "test_files": [
@@ -1138,7 +1164,6 @@
         "devtools/tests/translation/test_streaming_translation.py",
         "devtools/tests/translation/test_strict_json_schemas.py",
         "devtools/tests/translation/test_style_hint_contract_fields.py",
-        "devtools/tests/translation/test_table_agent.py",
         "devtools/tests/translation/test_term_review.py",
         "devtools/tests/translation/test_translation_abstract_groups.py",
         "devtools/tests/translation/test_translation_agent_repair_pipeline.py",

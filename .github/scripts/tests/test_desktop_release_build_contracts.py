@@ -58,7 +58,7 @@ def test_desktop_python_bundle_follows_backend_workspace():
     names = [name for name, _ in module.workspace_members(repo / "backend")]
     workspace = tomllib.loads((repo / "backend/pyproject.toml").read_text(encoding="utf-8"))
     assert len(names) == len(workspace["tool"]["uv"]["workspace"]["members"])
-    for required in ("retainpdf-pipeline", "retainpdf-translation-classic", "retainpdf-translation-agent"):
+    for required in ("retainpdf-pipeline", "retainpdf-translation-classic", "retainpdf-translation-agent", "retainpdf-table-agent"):
         assert required in names
     check = (repo / "ops/release/desktop_python_check.py").read_text(encoding="utf-8")
     # 检查要覆盖：每个模块 import、翻译引擎登记表、源码里的第三方 import。

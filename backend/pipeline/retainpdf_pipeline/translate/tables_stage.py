@@ -20,18 +20,19 @@ from typing import Any
 import fitz
 
 from retainpdf_pipeline.ocr.tables import build_table_model
-from retainpdf_translation_classic.public import TABLE_PROMPT_VERSION
-from retainpdf_translation_classic.public import TABLE_STATUS_TRANSLATED
+from retainpdf_table_agent import PROMPT_VERSION as TABLE_PROMPT_VERSION
+from retainpdf_table_agent import STATUS_TRANSLATED as TABLE_STATUS_TRANSLATED
 from retainpdf_translation.public import GlossaryEntry
 from retainpdf_translation.public import credential_rejected_error
 from retainpdf_translation.public import is_credential_rejection
-from retainpdf_translation_classic.public import TableContext
-from retainpdf_translation_classic.public import TableResult
-from retainpdf_translation_classic.public import TableTermMemory
-from retainpdf_translation_classic.public import table_cache_key
-from retainpdf_translation_classic.public import table_chat_fn
-from retainpdf_translation_classic.public import translate_table
-from retainpdf_translation_classic.public import translated_table_html
+# 表格 agent（2026-11-25 从普通翻译包搬进 backend/table-agent）：核心只用标准库，模型调用接在接线包里
+from retainpdf_table_agent import TableContext
+from retainpdf_table_agent import TableResult
+from retainpdf_table_agent import TableTermMemory
+from retainpdf_table_agent import cache_key as table_cache_key
+from retainpdf_table_agent import translate_table
+from retainpdf_table_agent import translated_table_html
+from retainpdf_table_agent_engine import table_chat_fn
 
 TABLES_FILE_NAME = "tables.v1.json"
 TABLES_SCHEMA = "tables.v1"
