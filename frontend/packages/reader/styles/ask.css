@@ -1,0 +1,335 @@
+/* 阅读页提问（src/ask/）：浮动问答窗、书页上的「?」。
+ * 颜色只用皮肤变量；窗口用 react-rnd 定位（它写 transform 和宽高），这里只管里面。 */
+
+.reader-ask-window {
+  z-index: calc(var(--z-hud, 36) + 6);
+}
+
+.reader-ask {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-lg, 14px);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--shadow-color, var(--ink)) 24%, transparent);
+}
+
+.reader-ask-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 14px;
+  border-bottom: 1px solid var(--line);
+  cursor: grab;
+  user-select: none;
+}
+
+.reader-ask-head:active {
+  cursor: grabbing;
+}
+
+.reader-ask-title {
+  font-weight: 700;
+}
+
+.reader-ask-where {
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--ui-text-xs, 12px);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-ask-agent {
+  max-width: 170px;
+  margin-left: auto;
+}
+
+.reader-ask-close {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--muted);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-ask-close:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+.reader-ask-quote {
+  max-height: 4.8em;
+  margin: 0;
+  overflow: hidden;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--paper));
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 13px);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.reader-ask-thread {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.reader-ask-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
+  overscroll-behavior: contain;
+}
+
+.reader-ask-empty,
+.reader-ask-error {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 13px);
+  line-height: 1.6;
+}
+
+.reader-ask-error {
+  padding: 0 14px;
+  color: var(--danger, var(--ink));
+}
+
+.reader-ask-msg {
+  margin-bottom: 14px;
+  font-size: var(--ui-text-md, 14px);
+  line-height: 1.7;
+}
+
+.reader-ask-msg.is-user {
+  width: fit-content;
+  max-width: 88%;
+  margin-left: auto;
+  padding: 6px 12px;
+  border-radius: var(--ui-radius-md, 10px);
+  background: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  white-space: pre-wrap;
+}
+
+/* 回答（streamdown 出的普通 HTML 元素；它的样式类是 Tailwind 的，这里不用，按元素写）。 */
+.reader-ask-md > :first-child { margin-top: 0; }
+.reader-ask-md > :last-child { margin-bottom: 0; }
+.reader-ask-md p,
+.reader-ask-md ul,
+.reader-ask-md ol { margin: 0.5em 0; }
+.reader-ask-md ul,
+.reader-ask-md ol { padding-left: 1.4em; }
+.reader-ask-md ul { list-style: disc; }
+.reader-ask-md ol { list-style: decimal; }
+.reader-ask-md li { display: list-item; }
+.reader-ask-md h1,
+.reader-ask-md h2,
+.reader-ask-md h3 { margin: 0.8em 0 0.4em; font-size: inherit; font-weight: 700; }
+.reader-ask-md code {
+  padding: 0.1em 0.3em;
+  border-radius: var(--ui-radius-sm, 4px);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  font-size: var(--ui-text-sm, 13px);
+}
+.reader-ask-md pre {
+  overflow-x: auto;
+  padding: 8px 10px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.reader-ask-md pre code { padding: 0; background: none; }
+.reader-ask-md table { border-collapse: collapse; }
+.reader-ask-md th,
+.reader-ask-md td { padding: 3px 8px; border: 1px solid var(--line); }
+.reader-ask-md .katex-display { overflow-x: auto; overflow-y: hidden; }
+
+.reader-ask-thought {
+  margin: 4px 0 8px;
+  border-radius: var(--ui-radius-md, 8px);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 13px);
+}
+
+.reader-ask-thought summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  list-style: none;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-ask-thought summary::-webkit-details-marker { display: none; }
+.reader-ask-chevron { margin-left: auto; transition: transform 140ms ease; }
+.reader-ask-thought[open] .reader-ask-chevron { transform: rotate(90deg); }
+
+.reader-ask-thought-body {
+  max-height: 14em;
+  overflow-y: auto;
+  padding: 0 10px 8px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.reader-ask-tool,
+.reader-ask-subagent {
+  margin: 6px 0;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 8px);
+  font-size: var(--ui-text-sm, 13px);
+}
+
+.reader-ask-tool-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reader-ask-tool-title { font-weight: 600; }
+
+.reader-ask-tool-status {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 12px);
+}
+
+.reader-ask-tool[data-status="failed"] .reader-ask-tool-status { color: var(--danger, var(--ink)); }
+.reader-ask-tool-where { margin-top: 2px; color: var(--muted); font-size: var(--ui-text-xs, 12px); }
+
+.reader-ask-tool-output {
+  max-height: 8em;
+  margin: 6px 0 0;
+  overflow: auto;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 12px);
+  white-space: pre-wrap;
+}
+
+.reader-ask-permission {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.reader-ask-permission-option {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-xs, 12px);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-ask-permission-option[data-kind^="allow"] {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--paper));
+}
+
+.reader-ask-plan {
+  margin: 6px 0;
+  padding-left: 0;
+  list-style: none;
+  font-size: var(--ui-text-sm, 13px);
+}
+
+.reader-ask-plan li[data-status="completed"] { color: var(--muted); text-decoration: line-through; }
+
+.reader-ask-footer {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+  font-variant-numeric: tabular-nums;
+}
+
+.reader-ask-composer {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 8px 10px;
+  border-top: 1px solid var(--line);
+}
+
+.reader-ask-input {
+  flex: 1 1 auto;
+  max-height: 10em;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 8px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-md, 14px);
+  line-height: 1.5;
+  resize: none;
+}
+
+.reader-ask-input:focus { outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 0; }
+
+.reader-ask-send {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--accent);
+  color: var(--paper);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-ask-send:disabled { opacity: 0.4; cursor: default; }
+
+/* 书页上的「?」：左边白边里。 */
+.reader-ask-marks {
+  position: absolute;
+  z-index: 6;
+  inset: 0 auto 0 0;
+  width: 0;
+  pointer-events: none;
+}
+
+.reader-ask-mark {
+  position: absolute;
+  left: 4px;
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--accent);
+  font-size: var(--ui-text-xs, 12px);
+  font-weight: 700;
+  pointer-events: auto;
+  cursor: var(--cursor-pointer, pointer);
+  transform: translateY(-50%);
+}

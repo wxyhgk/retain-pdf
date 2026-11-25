@@ -1,3 +1,4 @@
+import type { ReaderAskPort } from "./ask.js";
 import type { ReaderMetadata, ReaderRegion } from "../shared/data/reader-regions.js";
 
 export type ReaderOptionalArtifactErrors = {
@@ -80,6 +81,8 @@ export type ReaderSessionDataPort = {
   fetchRevisionGroups?: (jobId: string) => Promise<unknown>;
   /** 在阅读页里改译文（侧栏「改译文」）。宿主不提供时没有「改」按钮和这个面板。 */
   translationEdit?: ReaderTranslationEditPort | null;
+  /** 阅读页提问（右键「在这里提问 / 问这段」、选中后按 ?），说 ACP。宿主不提供时没有提问入口。 */
+  ask?: ReaderAskPort | null;
   /** 这本书的几份译文（顶栏「对比版本」）。宿主不提供时没有这个按钮。 */
   translationVersions?: ReaderTranslationVersionsPort | null;
   /** 这次任务里要人看一眼的段落（底栏「待处理」）：没翻成的、质检挑出问题的。宿主不提供时没有这个按钮。 */

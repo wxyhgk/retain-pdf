@@ -19,6 +19,8 @@ export type ReaderSessionAdapters = {
   resolveResourceUrl?: (url: string) => string;
   fetchProtected?: typeof fetch;
   resolvePdfjsVendorUrl?: (relativePath?: string) => string;
+  /** KaTeX 样式表地址（提问窗的公式用，打开时才加载）。 */
+  resolveKatexStylesheetUrl?: () => string;
   // 形状直接取自包内 runtime 工厂签名，宿主漏注入/结构漂移在 tsc 阶段暴露。
   defaultReaderDataPort?: ReturnType<typeof createReaderDataPort>;
   defaultReaderPageConfigPort?: ReturnType<typeof createReaderPageConfigPort>;
@@ -86,6 +88,7 @@ export const READER_ADAPTER_KEYS = [
   "resolveResourceUrl",
   "fetchProtected",
   "resolvePdfjsVendorUrl",
+  "resolveKatexStylesheetUrl",
   "defaultReaderDataPort",
   "defaultReaderPageConfigPort",
   "resolveReaderAnchor",

@@ -1,7 +1,8 @@
 import { defineConfig } from "vite";
 import path from "path";
 
-const packageDependencyPattern = /^(?:react|react-dom|react-pdf|pdfjs-dist|mathjax-full|marked|lucide-react|sonner|@retainpdf\/api|@retainpdf\/domain|@retainpdf\/ui)(?:\/.*)?$/;
+// 提问窗的几个开源库（assistant-ui、streamdown、react-rnd、KaTeX、ACP SDK）也不打进 dist：宿主（web 的 esbuild）解析、按需拆块。
+const packageDependencyPattern = /^(?:react|react-dom|react-pdf|pdfjs-dist|mathjax-full|marked|lucide-react|sonner|@retainpdf\/api|@retainpdf\/domain|@retainpdf\/ui|@assistant-ui\/[^/]+|streamdown|@streamdown\/[^/]+|react-rnd|katex|rehype-katex|remark-math|@agentclientprotocol\/sdk)(?:\/.*)?$/;
 
 export default defineConfig({
   build: {
