@@ -499,7 +499,7 @@ async fn translation_retry_requires_explicit_duplicate_risk_acceptance() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri(format!("/api/v1/jobs/{source_job_id}/actions/rerun"))
+                .uri(format!("/api/v1/jobs/{source_job_id}/actions/resume"))
                 .header("X-API-Key", "test-key")
                 .body(Body::empty())
                 .expect("generic rerun request"),

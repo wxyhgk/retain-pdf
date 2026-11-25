@@ -244,7 +244,7 @@ async fn two_range_translations_open_as_one_full_length_book() {
     assert_eq!(metadata.status(), StatusCode::OK);
 
     // 写操作一律拒绝：虚拟 id 不在数据库里
-    for action in ["cancel", "rerun"] {
+    for action in ["cancel", "resume"] {
         let response = request(&app, "POST", &format!("/api/v1/jobs/{job_id}/actions/{action}")).await;
         assert!(
             response.status().is_client_error(),

@@ -91,7 +91,8 @@ pub struct JobActionsView {
     pub cancel: ActionLinkView,
     /// 从断点续跑（`POST actions/resume`）。
     pub resume: ActionLinkView,
-    /// 旧名，和 `resume` 同值，地址是旧地址 `actions/rerun`。前端改读 `resume` 以后删。
+    /// 旧名，和 `resume` 完全同值（地址也是 `actions/resume`：旧地址 `actions/rerun` 2026-11-25 删了）。
+    /// 前端 `domain/job/actions.ts` 还拿它当兜底判断，字段先留着。
     pub rerun: ActionLinkView,
     pub download_pdf: ActionLinkView,
     pub open_markdown: ActionLinkView,
@@ -109,7 +110,6 @@ pub fn build_job_actions(
     let prefix = job.workflow.job_api_prefix();
     let cancel_path = format!("{prefix}/{}/actions/cancel", job.job_id);
     let resume_path = format!("{prefix}/{}/actions/resume", job.job_id);
-    let rerun_path = format!("{prefix}/{}/actions/rerun", job.job_id);
     let pdf_path = job_translated_pdf_path(&job.job_id);
     let markdown_path = job_markdown_view_path(&job.job_id);
     let markdown_raw_path = job_ocr_markdown_path(&job.job_id);
@@ -120,8 +120,8 @@ pub fn build_job_actions(
         open_job: action_link(true, "GET", self_path, base_url),
         open_artifacts: action_link(true, "GET", artifacts_path, base_url),
         cancel: action_link(can_cancel(&job.status), "POST", cancel_path, base_url),
-        resume: action_link(can_rerun(job), "POST", resume_path, base_url),
-        rerun: action_link(can_rerun(job), "POST", rerun_path, base_url),
+        resume: action_link(can_rerun(job), "POST", resume_path.clone(), base_url),
+        rerun: action_link(can_rerun(job), "POST", resume_path, base_url),
         download_pdf: action_link(pdf_ready, "GET", pdf_path, base_url),
         open_markdown: action_link(markdown_ready, "GET", markdown_path, base_url),
         open_markdown_raw: action_link(markdown_ready, "GET", markdown_raw_path, base_url),

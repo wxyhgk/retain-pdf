@@ -112,7 +112,7 @@ async fn rerun_uses_the_current_glossary_plus_the_original_inline_entries() {
     // 建完任务以后改了一个词的译法、删了一个词（例如 AI 终端 term-set）。
     replace_entries(&state, &glossary_id, vec![entry("DNA", "DNA 分子")]);
 
-    let (status, payload) = post(&state, "/api/v1/jobs/job-rerun-glossary-current/actions/rerun".to_string(), json!({})).await;
+    let (status, payload) = post(&state, "/api/v1/jobs/job-rerun-glossary-current/actions/resume".to_string(), json!({})).await;
     assert_eq!(status, StatusCode::OK, "{payload}");
     let rerun_job = state.db.get_job(payload["data"]["job_id"].as_str().unwrap()).expect("rerun job");
     assert_eq!(targets(&rerun_job), pairs(&[("DNA", "DNA 分子"), ("band gap", "带隙")]));
@@ -149,7 +149,7 @@ async fn rerun_after_the_glossary_was_deleted_is_409_glossary_missing() {
     failed_source_with_glossary(&state, "job-rerun-glossary-deleted", &glossary_id, vec![]);
     state.db.delete_glossary(&glossary_id).expect("delete glossary");
 
-    let (status, payload) = post(&state, "/api/v1/jobs/job-rerun-glossary-deleted/actions/rerun".to_string(), json!({})).await;
+    let (status, payload) = post(&state, "/api/v1/jobs/job-rerun-glossary-deleted/actions/resume".to_string(), json!({})).await;
     assert_eq!(status, StatusCode::CONFLICT, "{payload}");
     assert_eq!(payload["error"]["details"]["reason"], "glossary_missing");
 
@@ -189,12 +189,12 @@ async fn old_jobs_without_stored_inline_entries_keep_the_old_behavior() {
     state.db.save_job(&with_inline).expect("save");
     replace_entries(&state, &glossary_id, vec![entry("DNA", "DNA 分子")]);
 
-    let (status, payload) = post(&state, "/api/v1/jobs/job-rerun-glossary-legacy-a/actions/rerun".to_string(), json!({})).await;
+    let (status, payload) = post(&state, "/api/v1/jobs/job-rerun-glossary-legacy-a/actions/resume".to_string(), json!({})).await;
     assert_eq!(status, StatusCode::OK, "{payload}");
     let job = state.db.get_job(payload["data"]["job_id"].as_str().unwrap()).expect("rerun job");
     assert_eq!(targets(&job), pairs(&[("DNA", "DNA 分子")]));
 
-    let (status, payload) = post(&state, "/api/v1/jobs/job-rerun-glossary-legacy-b/actions/rerun".to_string(), json!({})).await;
+    let (status, payload) = post(&state, "/api/v1/jobs/job-rerun-glossary-legacy-b/actions/resume".to_string(), json!({})).await;
     assert_eq!(status, StatusCode::OK, "{payload}");
     let job = state.db.get_job(payload["data"]["job_id"].as_str().unwrap()).expect("rerun job");
     assert_eq!(targets(&job), pairs(&[("DNA", "脱氧核糖核酸"), ("band gap", "带隙")]));

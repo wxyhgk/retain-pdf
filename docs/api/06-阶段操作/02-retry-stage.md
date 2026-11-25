@@ -71,7 +71,7 @@ POST /api/v1/jobs/{job_id}/actions/retry-stage
 
 ## 原地重跑：旧 PDF 怎么处理
 
-`render` 带 `create_new_job=false`、`refine`、以及 `resume`（旧名 `rerun`）选中的原地重渲染，任务编号不变，在原任务上再跑一次：
+`render` 带 `create_new_job=false`、`refine`、以及 `resume` 选中的原地重渲染，任务编号不变，在原任务上再跑一次：
 
 - **落库是 CAS**：只有库里还是读到时的那个终态、那一次运行，才改成 `queued` 开跑。两个请求同时来，只有一个开跑；
   后到的返回 `409`：前一个还在排队/运行是 `job_active`，前一个已经跑完是 `stale_resolution`。不会把已经开跑的那一次盖回 `queued`。

@@ -32,7 +32,7 @@ async fn rerun_route_prefers_render_when_translations_are_available() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/api/v1/jobs/job-rerun-render-source/actions/rerun")
+                .uri("/api/v1/jobs/job-rerun-render-source/actions/resume")
                 .header("X-API-Key", "test-key")
                 .body(Body::empty())
                 .expect("rerun request"),
@@ -79,7 +79,7 @@ async fn rerun_route_uses_book_when_only_ocr_checkpoint_is_available() {
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri("/api/v1/jobs/job-rerun-book-source/actions/rerun")
+                .uri("/api/v1/jobs/job-rerun-book-source/actions/resume")
                 .header("X-API-Key", "test-key")
                 .body(Body::empty())
                 .expect("rerun request"),
@@ -104,7 +104,7 @@ async fn rerun_with_body(state: &crate::AppState, job_id: &str, body: serde_json
         .oneshot(
             Request::builder()
                 .method("POST")
-                .uri(format!("/api/v1/jobs/{job_id}/actions/rerun"))
+                .uri(format!("/api/v1/jobs/{job_id}/actions/resume"))
                 .header("X-API-Key", "test-key")
                 .header("content-type", "application/json")
                 .body(Body::from(body.to_string()))
@@ -169,4 +169,26 @@ async fn rerun_rejects_overrides_other_than_model_keys() {
         let response = rerun_with_body(&state, "job-rerun-bad-overrides", body.clone()).await;
         assert_eq!(response.status(), StatusCode::BAD_REQUEST, "{body}");
     }
+}
+
+/// 旧名 `POST …/actions/rerun` 2026-11-25 删了：任务在也是「没有这个地址」的 404，续跑只走 `actions/resume`。
+#[tokio::test]
+async fn old_rerun_alias_is_gone() {
+    let state = test_state("rerun-alias-gone");
+    failed_book_source(&state, "job-rerun-alias-gone");
+    let response = build_app(state.clone())
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/jobs/job-rerun-alias-gone/actions/rerun")
+                .header("X-API-Key", "test-key")
+                .header("content-type", "application/json")
+                .body(Body::from("{}"))
+                .expect("request"),
+        )
+        .await
+        .expect("response");
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let payload = read_json(response).await;
+    assert_eq!(payload["message"], "route not found", "{payload}");
 }

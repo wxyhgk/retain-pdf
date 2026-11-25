@@ -69,8 +69,8 @@ async fn resuming_again_while_the_resumed_job_runs_is_409_with_its_id() {
         .to_string();
     assert_ne!(derived, source, "续跑出的是新任务");
 
-    // 第二次（双击、网络重试）：409，带着在跑的那个任务；旧名 rerun 一样。
-    for uri in [uri.clone(), format!("/api/v1/jobs/{source}/actions/rerun")] {
+    // 第二次（双击、网络重试）：409，带着在跑的那个任务。
+    for uri in [uri.clone()] {
         let (status, payload) = post(&state, &uri, None).await;
         assert_eq!(status, StatusCode::CONFLICT, "{payload}");
         assert_eq!(payload["code"], 40900);

@@ -341,7 +341,6 @@ mod tests {
                 "POST /api/v1/documents/:document_id/ocr",
                 "POST /api/v1/documents/:document_id/translate",
                 "POST /api/v1/jobs",
-                "POST /api/v1/jobs/:job_id/actions/rerun",
                 "POST /api/v1/jobs/:job_id/actions/resolve-ocr-ambiguity",
                 "POST /api/v1/jobs/:job_id/actions/resume",
                 "POST /api/v1/jobs/:job_id/actions/retry-stage",

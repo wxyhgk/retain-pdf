@@ -81,7 +81,7 @@ async fn running_job_rejects_every_action_with_job_active() {
         let id = format!("job-reasons-active-{index}");
         seed_ready_job(&state, &id, status.clone());
 
-        for action in ["rerun", "resume"] {
+        for action in ["resume"] {
             assert_conflict(&post(&state, &id, action, None).await, "job_active", action);
         }
         for (name, body) in [
@@ -148,7 +148,7 @@ async fn missing_artifacts_reject_with_artifacts_missing() {
     job.status = JobStatusKind::Failed;
     state.db.save_job(&job).expect("save job");
 
-    assert_conflict(&post(&state, id, "rerun", None).await, "artifacts_missing", "rerun");
+    assert_conflict(&post(&state, id, "resume", None).await, "artifacts_missing", "rerun");
     assert_conflict(&post(&state, id, "resume", None).await, "artifacts_missing", "resume");
     for stage in ["ocr", "translation", "render"] {
         assert_conflict(
@@ -213,7 +213,7 @@ async fn ambiguous_requests_reject_with_a_reason_per_kind() {
         "ambiguous_ocr_dispatch",
         "ocr retry",
     );
-    assert_conflict(&post(&state, ocr_id, "rerun", None).await, "ambiguous_ocr_dispatch", "ocr rerun");
+    assert_conflict(&post(&state, ocr_id, "resume", None).await, "ambiguous_ocr_dispatch", "ocr rerun");
 
     // 翻译请求结果不确定：通用续跑和不带 policy 的重试都挡住。
     let id = "job-reasons-ambiguous-translation";
@@ -221,7 +221,7 @@ async fn ambiguous_requests_reject_with_a_reason_per_kind() {
     job.artifacts.as_mut().unwrap().translations_dir = None;
     state.db.save_job(&job).expect("save translation job");
     seed_ambiguous_translation_request_journal(&state, &job);
-    assert_conflict(&post(&state, id, "rerun", None).await, "ambiguous_translation_request", "translation rerun");
+    assert_conflict(&post(&state, id, "resume", None).await, "ambiguous_translation_request", "translation rerun");
     assert_conflict(
         &post(&state, id, "retry-stage", Some(json!({"stage": "translation"}))).await,
         "ambiguous_translation_request",
@@ -262,7 +262,7 @@ async fn corrupt_translation_journal_rejects_with_request_journal_corrupt() {
             "translation retry",
         );
     }
-    assert_conflict(&post(&state, id, "rerun", None).await, "request_journal_corrupt", "rerun");
+    assert_conflict(&post(&state, id, "resume", None).await, "request_journal_corrupt", "rerun");
     let (_, actions) = call(&state, Method::GET, &format!("/api/v1/jobs/{id}/actions"), None).await;
     let translation = stage(&actions, "translation");
     assert_eq!(translation["can_retry"], false);
@@ -365,7 +365,7 @@ async fn canceled_job_with_ambiguous_ocr_dispatch_can_be_resolved() {
     state.db.save_job(&job).expect("save canceled job");
     seed_ambiguous_ocr_dispatch(&state, id, "mineru", "apply_upload_url");
 
-    assert_conflict(&post(&state, id, "rerun", None).await, "ambiguous_ocr_dispatch", "canceled rerun");
+    assert_conflict(&post(&state, id, "resume", None).await, "ambiguous_ocr_dispatch", "canceled rerun");
     let (status, diagnostics) =
         call(&state, Method::GET, &format!("/api/v1/jobs/{id}/reports/failure"), None).await;
     assert_eq!(status, StatusCode::OK);

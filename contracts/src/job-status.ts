@@ -356,7 +356,7 @@ export interface ActionLinkView1 {
   url: string;
 }
 /**
- * 旧名，和 resume 同值，地址是旧地址 actions/rerun。新代码读 resume。
+ * 旧名，和 resume 完全同值（地址也是 actions/resume；旧地址 actions/rerun 2026-11-25 删了）。新代码读 resume。
  */
 export interface ActionLinkView2 {
   enabled: boolean;
