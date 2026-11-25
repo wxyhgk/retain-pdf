@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -25,6 +27,9 @@ from retainpdf_translation.workflow.scheduling.allocation import prefix_cache_wa
 from retainpdf_translation.workflow.scheduling.allocation import provider_adaptive_initial_limit
 from retainpdf_translation.workflow.page_range import resolve_page_range
 from retainpdf_translation.workflow import engines
+from retainpdf_translation.workflow.fixed_translations import apply_fixed_translations
+from retainpdf_translation.workflow.fixed_translations import finish_fixed_translations
+from retainpdf_translation.workflow.fixed_translations import start_fixed_translations
 from typing import Any
 
 if TYPE_CHECKING:
@@ -46,6 +51,8 @@ class TranslationExecutionPlan:
     preparation: Any | None = None
     # 跟着 OCR 翻时建计划那会儿等到的那一版清单（data 是它的前缀文档）；整本翻时为 None。
     ocr_stream: OcrStreamState | None = None
+    # 定好的译文 {块号: 译文}（workflow/fixed_translations.py，目录 agent 给的）；没有就是空，不进指纹。
+    fixed_translations: dict[str, str] | None = None
 
 
 def build_translation_execution_plan(request: TranslationExecutionRequest) -> TranslationExecutionPlan:
@@ -86,6 +93,8 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
         raise RuntimeError("No pages found in OCR JSON.")
 
     start, stop = resolve_page_range(page_count, request.start_page, request.end_page)
+    # 定译（目录 agent）和下面的领域识别、译前准备同时跑，引擎开始翻之前等它
+    fixed_future = start_fixed_translations(getattr(request, "fixed_translations_fn", None), copy.deepcopy(data))
     provider_family = classify_provider_family(base_url=request.base_url, model=request.model)
     journal = TranslationRequestJournal(
         request.output_dir / TRANSLATION_REQUEST_JOURNAL_FILE_NAME,
@@ -132,6 +141,10 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
         glossary_entries=glossary_entries,
         run_diagnostics=run_diagnostics,
     )
+    fixed_translations = finish_fixed_translations(fixed_future)
+    if fixed_translations:
+        applied = apply_fixed_translations(data, fixed_translations)
+        print(f"fixed translations: {applied} blocks", flush=True)
     translation_context = build_translation_context_from_policy(
         policy_config,
         glossary_entries=glossary_entries,
@@ -172,6 +185,7 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
         glossary_entries=glossary_entries,
         preparation=preparation,
         ocr_stream=ocr_stream,
+        fixed_translations=fixed_translations or None,
     )
 
 

@@ -91,6 +91,8 @@ COPY backend/translation-agent/pyproject.toml translation-agent/pyproject.toml
 COPY backend/translation-classic/pyproject.toml translation-classic/pyproject.toml
 # 表格 agent 包（retainpdf-table-agent，2026-11-25 从普通翻译包拆出来）：工作区成员，表格翻译阶段用
 COPY backend/table-agent/pyproject.toml table-agent/pyproject.toml
+# 目录 agent 包（retainpdf-toc-agent，2026-11-25）：工作区成员，翻译阶段 translation.toc=agent 用
+COPY backend/toc-agent/pyproject.toml toc-agent/pyproject.toml
 
 RUN uv export \
     --locked \
@@ -265,7 +267,9 @@ COPY backend/translation-agent /app/services/translation-agent
 COPY backend/translation-classic /app/services/translation-classic
 # 表格 agent 包：核心只用标准库；接线 retainpdf_table_agent_engine 依赖翻译包；提示词随包数据装进去。
 COPY backend/table-agent /app/services/table-agent
-RUN pip install --no-cache-dir --no-deps /app/services/base /app/services/math /app/services/translation-agent /app/services/translation /app/services/translation-classic /app/services/table-agent /app/services/pipeline
+# 目录 agent 包：核心只用标准库；接线 retainpdf_toc_agent_engine 依赖翻译包；提示词随包数据装进去。
+COPY backend/toc-agent /app/services/toc-agent
+RUN pip install --no-cache-dir --no-deps /app/services/base /app/services/math /app/services/translation-agent /app/services/translation /app/services/translation-classic /app/services/table-agent /app/services/toc-agent /app/services/pipeline
 COPY backend/api/auth.local.example.json /app/services/api/auth.local.example.json
 COPY ops/deployment/docker/backend/entrypoint-app.sh /entrypoint.sh
 COPY ops/deployment/docker/backend/api-key.sh /usr/local/lib/retainpdf/api-key.sh

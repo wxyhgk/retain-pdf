@@ -67,6 +67,8 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
   接线 `retainpdf_translation_agent_engine` 依赖翻译包，它的测试在翻译测试里（`test_agent_flow.py`、`test_agent_openai.py`），跑翻译测试。
 - 改了表格 agent 包 `backend/table-agent/`：跑 `python -m pytest backend/table-agent/tests`（核心只许用标准库、提示词一字不改都钉着；
   接线和底座取 JSON 的结果一致也在里面），再跑翻译测试（表格翻译阶段 `tables_stage.py` 的测试在那里）。
+- 改了目录 agent 包 `backend/toc-agent/`：跑 `python -m pytest backend/toc-agent/tests`（核心只许用标准库、提示词和版本号钉着），
+  再跑翻译测试（定译接进翻译 `test_fixed_translations.py`、开关 `test_translation_toc_entries.py` 在那里）。
 - 跑不了的检查，在回复和合并说明里写明没跑、为什么。
 
 ## 本地环境的坑

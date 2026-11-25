@@ -35,6 +35,10 @@ Python 的普通翻译引擎包 `retainpdf-translation-classic`（`backend/trans
 Python 的表格 agent 包 `retainpdf-table-agent`（`backend/table-agent`，2026-11-25 从普通翻译引擎包拆出来）：一张表一个有上限的循环，
 逐格校验，翻不完整表保留原文。核心 `retainpdf_table_agent` 只用标准库（提示词也在包里），接线 `retainpdf_table_agent_engine`
 接翻译底座的模型调用；流水线的表格翻译阶段 `retainpdf_pipeline/translate/tables_stage.py` 直接 import 这两个。
+Python 的目录 agent 包 `retainpdf-toc-agent`（`backend/toc-agent`，2026-11-25 新建）：一本书的目录一次翻完、逐条检查，译名对到正文里同名的标题上，
+作为「定好的译文」交给翻译引擎（目录和正文一字不差、这些块不再发请求）。核心 `retainpdf_toc_agent` 只用标准库，接线 `retainpdf_toc_agent_engine`
+接翻译底座的模型调用、从 document.v1 取条目和标题；流水线 `translate/toc_stage.py` 在 `translation.toc=agent` 时把它交给翻译请求，
+底座 `workflow/fixed_translations.py` 在建计划时和领域识别同时跑它。
 Rust 的底座包 `retainpdf-api-base` 和 Python 的底座包 `retainpdf-base`（`backend/base`，翻译拆包时新建）是两个东西。`retainpdf-api-base`（2026-10-16 新建）是 API 各领域包共用的底座：
 错误类型 `AppError` 和按编号读出任务 `job_loading`，在 `services` 下面一层。
 

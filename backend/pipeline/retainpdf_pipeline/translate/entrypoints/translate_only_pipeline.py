@@ -101,6 +101,7 @@ def _args_from_spec(spec: TranslateStageSpec) -> SimpleNamespace:
         reviewer_api_key=resolve_credential_ref(spec.params.reviewer_credential_ref),
         engine=spec.params.engine,
         tables=spec.params.tables,
+        toc=spec.params.toc,
     )
 
 
@@ -179,6 +180,7 @@ def main() -> None:
             reviewer_api_key=args.reviewer_api_key,
             engine=getattr(args, "engine", "legacy"),
             tables=getattr(args, "tables", "keep"),
+            toc=getattr(args, "toc", "translate"),
             ocr_stream_dir=Path(args.ocr_stream_dir) if args.ocr_stream_dir else None,
             invocation=build_stage_invocation_metadata(
                 stage="translate",

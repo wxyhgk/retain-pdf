@@ -46,6 +46,9 @@ TRANSLATION_SHELL_ALLOWED_FILES = {
     "translation_stage.py",
     # 表格翻译（T3）：正文翻完后翻表格。要同时用流水线的表格模型和翻译包的表格 agent，只能放在外壳这一层
     "tables_stage.py",
+    # 目录 agent（2026-11-25）：translation.toc=agent 时把 backend/toc-agent 交给翻译请求（和普通翻译同步跑）。
+    # 翻译包不认识目录 agent（它依赖翻译包），只能在外壳这一层接
+    "toc_stage.py",
 }
 TRANSLATION_WORKFLOW_ALLOWED_DIRS = {
     "__pycache__",
@@ -80,6 +83,8 @@ TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "revision.py",
     "stages.py",
     "translation_workflow.py",
+    # 定好的译文（目录 agent 给的）：建计划时和领域识别同时算、写进块的元数据，两个引擎共用（2026-11-25），和 prepare.py 同一层
+    "fixed_translations.py",
 }
 TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
     "checkpoint": (
