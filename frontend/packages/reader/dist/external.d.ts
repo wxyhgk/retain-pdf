@@ -11,6 +11,7 @@ export declare const READER_DIALOG_MESSAGES: Readonly<{
 }>;
 export declare const resolveResourceUrl: (url: string) => string;
 export declare const fetchProtected: typeof fetch;
+export declare const resolveKatexStylesheetUrl: () => string;
 export declare const resolvePdfjsVendorUrl: (relativePath?: string) => string;
 type ReaderDataPort = ReturnType<typeof createReaderDataPort>;
 type ReaderPageConfigPort = ReturnType<typeof createReaderPageConfigPort>;

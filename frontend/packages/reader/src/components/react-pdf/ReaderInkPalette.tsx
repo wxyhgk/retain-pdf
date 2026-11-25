@@ -97,7 +97,20 @@ function InkTools({ ink, page = 0, onPick }: { ink: ReaderInk; page?: number; on
 }
 
 /** 右键书页弹出的菜单（钉在鼠标位置，贴边时往里收）。 */
-export function ReaderInkMenu({ ink, menu, onClose }: { ink: ReaderInk; menu: InkMenuState; onClose: () => void }): ReactElement | null {
+/** 右键菜单画笔那一排上面的一行（阅读页提问：「在这里提问」「问这段」）。 */
+export type InkMenuAction = { key: string; label: string; hint?: string; onSelect: () => void };
+
+export function ReaderInkMenu({
+  ink,
+  menu,
+  onClose,
+  actions = [],
+}: {
+  ink: ReaderInk;
+  menu: InkMenuState;
+  onClose: () => void;
+  actions?: readonly InkMenuAction[];
+}): ReactElement | null {
   const root = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!menu) return undefined;
@@ -117,10 +130,31 @@ export function ReaderInkMenu({ ink, menu, onClose }: { ink: ReaderInk; menu: In
   if (!menu) return null;
   const width = 380;
   const left = Math.max(8, Math.min(menu.x, (globalThis.innerWidth || width) - width - 8));
-  const top = Math.max(68, Math.min(menu.y, (globalThis.innerHeight || 600) - 60));
+  const top = Math.max(68, Math.min(menu.y, (globalThis.innerHeight || 600) - 60 - (actions.length ? 40 : 0)));
   return (
-    <div ref={root} className="reader-ink-bar is-menu" role="menu" aria-label="画笔" style={{ left, top }} data-ink-menu="true">
-      <InkTools ink={ink} page={menu.page} onPick={onClose} />
+    <div ref={root} className="reader-ink-menu" style={{ left, top }} data-ink-menu="true">
+      {actions.length ? (
+        <div className="reader-ink-menu-actions" role="menu" aria-label="书页">
+          {actions.map((action) => (
+            <Button
+              key={action.key}
+              className="reader-ink-menu-action"
+              role="menuitem"
+              title={action.hint}
+              onClick={() => {
+                action.onSelect();
+                onClose();
+              }}
+            >
+              {action.label}
+              {action.hint ? <kbd>{action.hint}</kbd> : null}
+            </Button>
+          ))}
+        </div>
+      ) : null}
+      <div className="reader-ink-bar is-menu" role="menu" aria-label="画笔">
+        <InkTools ink={ink} page={menu.page} onPick={onClose} />
+      </div>
     </div>
   );
 }

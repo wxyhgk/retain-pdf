@@ -42,6 +42,7 @@ import {
 } from "@/platform/mock/index.js";
 import { getMockReaderRegions } from "@/platform/mock/documents.js";
 import { mockLiveTranslationPort } from "@/platform/mock/live-translation.js";
+import { readerAskPort } from "../ask-port.js";
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { isMockMode } from "@/platform/config/runtime.js";
 import { resolvePdfjsVendorUrl } from "@/platform/runtime/vendor-url.js";
@@ -160,7 +161,6 @@ async function fetchReaderMetadata(jobId: string, apiPrefix?: string) {
   return fetchApiReaderMetadata(jobId, apiPrefix);
 }
 
-
 export const pdfPort: ReaderPdfPort = {
   // 包端口的入参是 typeof fetch（RequestInfo | URL），宿主 fetchProtected 只接收字符串 URL；
   // 包内调用方也只传字符串，与 app/reader/adapters/retainpdf.ts 的既有断言口径一致。
@@ -256,6 +256,7 @@ export const sessionDataPort: ReaderSessionDataPort = {
     fetchJobData(jobId, API_PREFIX, "revisions", { groupBy: "reader_item_id", limit: 1000 }),
   translationEdit: translationEditPort,
   translationVersions: isMockMode() ? null : translationVersionsPort,
+  ask: readerAskPort,
   loadIssues: isMockMode() ? undefined : loadReaderIssues,
   // 包端口的入参是 typeof fetch（RequestInfo | URL），宿主 fetchProtected 只接收字符串 URL；
   // 包内调用方也只传字符串，与 app/reader/adapters/retainpdf.ts 的既有断言口径一致。
