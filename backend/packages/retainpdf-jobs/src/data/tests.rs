@@ -147,11 +147,6 @@ fn missing_files_are_unavailable_not_errors() {
     let view = query("job", "escalated", Some(&roots), &params(&[])).unwrap();
     assert!(!view.available);
     assert_eq!(view.rows.unwrap().len(), 0);
-    let listing = catalog("job", Some(&roots));
-    assert!(listing.datasets.iter().all(|dataset| !dataset.available));
-    let full = catalog("job", Some(&full_fixture("catalog")));
-    let available: Vec<_> = full.datasets.iter().filter(|d| d.available).map(|d| d.name.as_str()).collect();
-    assert!(available.contains(&"translation_items") && available.contains(&"revisions"), "{available:?}");
 }
 
 #[test]

@@ -39,6 +39,8 @@ struct RegistryFile {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DatasetSpec {
+    /// 登记表里给人看的说明（以前目录接口 `GET /jobs/:id/data` 回给调用方，2026-11-25 删了），代码不读。
+    #[allow(dead_code)]
     pub description: String,
     pub source: SourceSpec,
     #[serde(default)]
@@ -84,6 +86,8 @@ pub struct FieldSpec {
     pub kind: String,
     #[serde(default)]
     pub filter: bool,
+    /// 同上，只给人看。
+    #[allow(dead_code)]
     pub description: String,
 }
 
@@ -361,30 +365,6 @@ fn filterable(spec: &DatasetSpec, name: &str) -> bool {
 // ---------------------------------------------------------------- 查询
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct JobDataFieldInfo {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub kind: String,
-    pub filter: bool,
-    pub description: String,
-}
-
-#[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct JobDataDatasetInfo {
-    pub name: String,
-    pub kind: &'static str,
-    pub description: String,
-    pub available: bool,
-    pub fields: Vec<JobDataFieldInfo>,
-}
-
-#[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct JobDataCatalogView {
-    pub job_id: String,
-    pub datasets: Vec<JobDataDatasetInfo>,
-}
-
-#[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct JobDataGroup {
     pub value: Value,
     pub count: u64,
@@ -410,61 +390,6 @@ pub struct JobDataView {
     pub groups: Option<Vec<JobDataGroup>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub object: Option<Map<String, Value>>,
-}
-
-fn source_available(spec: &DatasetSpec, roots: &JobDataRoots) -> bool {
-    let root = roots.root(&spec.source.root);
-    match spec.source.kind.as_str() {
-        "page_rows" => {
-            let glob = spec.source.glob.as_deref().unwrap_or("*");
-            fs::read_dir(root).is_ok_and(|entries| {
-                entries
-                    .filter_map(Result::ok)
-                    .any(|entry| entry.file_name().to_str().is_some_and(|name| glob_matches(name, glob)))
-            })
-        }
-        _ => spec.source.file.as_deref().is_some_and(|file| root.join(file).is_file()),
-    }
-}
-
-/// `roots` 为 `None`（任务还没有输出目录）时每个数据集都是 `available: false`。
-pub fn catalog(job_id: &str, roots: Option<&JobDataRoots>) -> JobDataCatalogView {
-    JobDataCatalogView {
-        job_id: job_id.to_string(),
-        datasets: registry()
-            .iter()
-            .map(|(name, spec)| {
-                let mut fields: Vec<JobDataFieldInfo> = Vec::new();
-                if is_rows(spec) {
-                    for (identity_name, description) in [
-                        ("item_id", "译文条目编号（三位），改译文、看修订历史用"),
-                        ("reader_item_id", "阅读页块编号（四位），跳转、取框用"),
-                        ("page", "页码（1 起）"),
-                    ] {
-                        fields.push(JobDataFieldInfo {
-                            name: identity_name.into(),
-                            kind: field_kind(spec, identity_name).unwrap_or("string").into(),
-                            filter: true,
-                            description: description.into(),
-                        });
-                    }
-                }
-                fields.extend(spec.fields.iter().map(|(field, field_spec)| JobDataFieldInfo {
-                    name: field.clone(),
-                    kind: field_spec.kind.clone(),
-                    filter: field_spec.filter,
-                    description: field_spec.description.clone(),
-                }));
-                JobDataDatasetInfo {
-                    name: name.clone(),
-                    kind: if is_rows(spec) { "rows" } else { "object" },
-                    description: spec.description.clone(),
-                    available: roots.is_some_and(|roots| source_available(spec, roots)),
-                    fields,
-                }
-            })
-            .collect(),
-    }
 }
 
 fn bad(message: String) -> AppError {

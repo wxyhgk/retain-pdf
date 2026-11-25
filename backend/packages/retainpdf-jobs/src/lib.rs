@@ -36,7 +36,7 @@ mod views;
 
 // 门面：领域外只能用这里导出的东西，子模块都是私有的（见 BOUNDARIES.md「Domain Facades」）。
 pub use data::api::{
-    job_data_catalog_view, job_data_view, JobDataApiDeps, JobDataCatalogView, JobDataView,
+    job_data_view, JobDataApiDeps, JobDataView,
 };
 pub use deps::{
     CommandJobsDeps, ControlDeps, JobSubmitDeps, QueryJobsDeps, ReplayDeps, SnapshotBuildDeps,
@@ -83,7 +83,7 @@ pub use views::{
     EscalatedItemView, GlossaryUsageSummaryView, InvocationSummaryView, JobContractsView, JobDetailView, JobDiagnosticsView, JobEventFeedItem,
     JobEventListView, JobFailureBriefView,
     JobDeleteResultView, JobFailureDiagnosticView, JobFilesQuery, JobLinksView, JobListInvocationSummaryView,
-    JobListItemView, JobListView, JobProgressView, JobReportView, JobResumePlanView,
+    JobListItemView, JobListView, JobProgressView, JobResumePlanView,
     JobStageContractArtifactView, JobStageContractView, JobStageRuntimeView, JobStageSnapshotView, UpstreamWaitView,
     JobStageStateView, JobStagesView, JobSubmissionView, JobTimestampsView,
     LAST_REFINE_ESCALATED_LIMIT, LastRefineView, LayoutDocxQuery, ListDocumentJobsQuery,

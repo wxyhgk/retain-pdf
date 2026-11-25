@@ -9,7 +9,7 @@ use axum::Json;
 use crate::error::AppError;
 use crate::models::api::ApiResponse;
 use crate::routes::common::{build_job_data_route_deps, ok_json, ApiPath, ApiQuery};
-use crate::services::jobs::{job_data_catalog_view, job_data_view, JobDataCatalogView, JobDataView};
+use crate::services::jobs::{job_data_view, JobDataView};
 use crate::AppState;
 
 async fn blocking<T: Send + 'static>(
@@ -18,15 +18,6 @@ async fn blocking<T: Send + 'static>(
     tokio::task::spawn_blocking(work)
         .await
         .map_err(|_| AppError::internal("job data task failed"))?
-}
-
-/// GET /api/v1/jobs/:job_id/data
-pub async fn job_data_catalog_route(
-    State(state): State<AppState>,
-    ApiPath(job_id): ApiPath<String>,
-) -> Result<Json<ApiResponse<JobDataCatalogView>>, AppError> {
-    let deps = build_job_data_route_deps(&state);
-    Ok(ok_json(blocking(move || job_data_catalog_view(&deps, &job_id)).await?))
 }
 
 /// GET /api/v1/jobs/:job_id/data/:dataset?fields=&<字段>=&group_by=&sort=&offset=&limit=

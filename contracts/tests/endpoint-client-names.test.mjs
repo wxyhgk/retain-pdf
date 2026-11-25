@@ -46,6 +46,7 @@ const PHASE_1A_CONTRACTS = new Set([
 // 第 1a 期以后加进这几份契约的端点，名字由各自的 test 钉（编辑部事件：job-events-v2.test.mjs）。
 // 2026-11-14 删掉的三个：getJobUsage（reports/usage，2026-11-20 加回）、listQualityItems（reports/quality/items）、
 // getReaderRegion（reader/regions/:item_id），下面的完整清单和 reader-data-contract.test.mjs 钉着后两个不再出现。
+// 2026-11-25 删掉 listJobDatasets（GET /jobs/:job_id/data，数据集目录），下面的完整清单钉着它不再出现。
 const LATER_NAMES = new Set(["listEditorialEvents"]);
 
 test("phase-1a endpoints carry the client names from the frontend list over the json transport", () => {
@@ -73,7 +74,6 @@ test("phase-1a endpoints carry the client names from the frontend list over the 
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reader/metadata", "getReaderMetadata", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reader/regions", "getReaderRegions", "json"],
     ["token-usage.v1.schema.json", "GET", "/api/v1/usage", "getUsageSummary", "json"],
-    ["job-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/data", "listJobDatasets", "json"],
     ["job-events.v2.schema.json", "GET", "/api/v1/jobs/:job_id/progress/events", "listJobEvents", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/files", "listJobFiles", "json"],
     ["job-status.v1.schema.json", "GET", "/api/v1/jobs", "listJobs", "json"],

@@ -7,36 +7,13 @@
 /**
  * Endpoint input, query, and output DTOs published by job-data.v1.schema.json.
  */
-export type JobDataSchema = JobDataCatalogView | JobDataView | JobDatasetQuery;
+export type JobDataSchema = JobDataView | JobDatasetQuery;
 /**
  * 任意 JSON 值。
  */
 export type JsonValue =
   null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
-export interface JobDataCatalogView {
-  job_id: string;
-  datasets: JobDataDatasetInfo[];
-}
-export interface JobDataDatasetInfo {
-  name: string;
-  kind: "rows" | "object";
-  description: string;
-  /**
-   * 这个任务的文件在不在。
-   */
-  available: boolean;
-  fields: JobDataFieldInfo[];
-}
-export interface JobDataFieldInfo {
-  name: string;
-  type: "string" | "integer" | "number" | "boolean" | "object" | "array" | "any";
-  /**
-   * 能不能用作 <字段>=值 筛选、group_by。
-   */
-  filter: boolean;
-  description: string;
-}
 export interface JobDataView {
   job_id: string;
   dataset: string;

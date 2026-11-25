@@ -36,7 +36,7 @@ async fn an_unreadable_job_row_is_a_server_error_not_a_missing_job() {
 
     let missing = get(&state, "/api/v1/jobs/job-nope").await;
     assert_eq!(missing.status(), StatusCode::NOT_FOUND);
-    for uri in ["/api/v1/jobs/job-bad", "/api/v1/jobs/job-bad/reports/quality", "/api/v1/jobs/job-bad/data"] {
+    for uri in ["/api/v1/jobs/job-bad", "/api/v1/jobs/job-bad/reports/quality", "/api/v1/jobs/job-bad/data/revisions"] {
         let response = get(&state, uri).await;
         assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR, "{uri}");
         let body = read_json(response).await.to_string();

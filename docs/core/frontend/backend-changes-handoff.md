@@ -1944,3 +1944,13 @@ PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_uplo
 
 前端要做（不急）：`frontend/packages/domain/src/job/actions.ts` 里 `actions.rerun?.enabled ?? artifactActions.rerun?.enabled` 的兜底去掉，
 只读 `resume`；去掉以后告诉后端，后端再删 `actions.rerun` 字段。见 [删续跑旧名 rerun](../../ops/planning/api-reorg/20261125-删续跑旧名rerun.md)。
+
+## 第三批删接口（2026-11-25，chore/api-delete-batch3）
+
+删了 `POST /fonts/upload`、`GET /jobs/{job_id}/data`（数据集目录，`listJobDatasets`）、`GET /jobs/{job_id}/reports/translation-qa`、
+`reports/layout-fit`、`reports/refine`，前端都没调。见 [第三批删接口](../../ops/planning/api-reorg/20261125-第三批删接口.md)。
+
+前端要做：
+1. 重新生成请求函数：`frontend/packages/api/src/generated/job-data.ts` 的 `listJobDatasets` 会消失（`getJobDataset` 照旧），不重新生成
+   「src/generated 和契约端点表一致」的检查是红的。契约 `job-data.v1` 删了 `JobDataCatalogView`、`JobDataDatasetInfo`、`JobDataFieldInfo`。
+2. 可选：`frontend/desktop/src/main/lan-share.js` 拦截名单里的 `/api/v1/fonts/upload` 和它的测试可以删（拦一个不存在的地址无害）。

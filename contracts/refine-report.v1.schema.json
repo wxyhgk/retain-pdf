@@ -2,20 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/refine-report/v1",
   "title": "Translation Refine Report Contract",
-  "description": "artifacts/refine_report.v1.json, written by the Python render worker when params.refine.mode != off (review_only or review_and_fix). Refinement runs inside the render stage before rendering: the review pass only locates accuracy errors (six categories), QA major/critical violations are merged in with origin=qa, and in review_and_fix mode only critical/major findings are fixed through replace/insert_after edits executed by the program. An edit is accepted only when every deterministic check passes (same validation as write-back, no new QA violation for the block, length budget, not unchanged); otherwise the original translation is kept and the reason is recorded. Accepted edits are written through translation revisions (source=refine), so revisions.v1.jsonl keeps the previous text. API keys are never written to the report. Rust serves the file verbatim wrapped as JobReportView.",
-  "base_path": "/api/v1",
-  "endpoints": [
-    {
-      "method": "GET",
-      "path": "/api/v1/jobs/:job_id/reports/refine",
-      "output": "RefineReportView",
-      "errors": {
-        "404": "NOT_FOUND: job does not exist (error.details is {}); the job has no refine report yet: error.details.reason = not_ready, message \"refine report not ready\""
-      },
-      "rust_view": "JobReportView",
-      "ts_consumer": "GET /api/v1/jobs/:job_id/reports/refine 的调用方（以前的终端 agent 命令行 retainpdf-agent 2026-11-03 删了）"
-    }
-  ],
+  "description": "artifacts/refine_report.v1.json, written by the Python render worker when params.refine.mode != off (review_only or review_and_fix). Refinement runs inside the render stage before rendering: the review pass only locates accuracy errors (six categories), QA major/critical violations are merged in with origin=qa, and in review_and_fix mode only critical/major findings are fixed through replace/insert_after edits executed by the program. An edit is accepted only when every deterministic check passes (same validation as write-back, no new QA violation for the block, length budget, not unchanged); otherwise the original translation is kept and the reason is recorded. Accepted edits are written through translation revisions (source=refine), so revisions.v1.jsonl keeps the previous text. API keys are never written to the report. The report is a file only: the API endpoint GET /api/v1/jobs/:job_id/reports/refine was removed on 2026-11-25 (no caller since the in-app AI was removed on 2026-11-03).",
   "definitions": {
     "RefineMode": {
       "type": "string",
@@ -452,16 +439,6 @@
             "terminologist": {"$ref": "#/definitions/RefineModelInfo"}
           }
         }
-      }
-    },
-    "RefineReportView": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["job_id", "report"],
-      "description": "data payload of GET /api/v1/jobs/:job_id/reports/refine (JobReportView).",
-      "properties": {
-        "job_id": {"type": "string"},
-        "report": {"$ref": "#/definitions/RefineReport"}
       }
     }
   }

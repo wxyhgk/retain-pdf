@@ -2,19 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/job-data/v1",
   "title": "Job Data Contract",
-  "description": "通用取数接口：任务目录里已有的数据（质检问题、排版块、精修修改、修订记录、术语、事件、用量……）按名字取，不再一个需求开一个接口。datasets 是登记表：前端要读新数据，在这里加一条（文件位置、记录位置、字段），后端照着取，前端照着生成类型，契约测试照着核对。只开放登记过的数据集，路径限定在任务目录里。成功响应包在 { code, message, data } 里。",
+  "description": "通用取数接口：任务目录里已有的数据（质检问题、排版块、精修修改、修订记录、术语、事件、用量……）按名字取，不再一个需求开一个接口。datasets 是登记表：前端要读新数据，在这里加一条（文件位置、记录位置、字段），后端照着取，前端照着生成类型，契约测试照着核对。只开放登记过的数据集，路径限定在任务目录里。成功响应包在 { code, message, data } 里。列出数据集的目录接口 GET /api/v1/jobs/:job_id/data 2026-11-25 删了（没有调用方），有哪些数据集以本文件的 datasets 登记为准。",
   "base_path": "/api/v1",
   "endpoints": [
-    {
-      "method": "GET",
-      "path": "/api/v1/jobs/:job_id/data",
-      "client_name": "listJobDatasets",
-      "transport": "json",
-      "output": "JobDataCatalogView",
-      "note": "这个任务有哪些数据集、文件在不在、有哪些字段。任务还没有输出目录（排队中）时每个数据集 available=false，照样 200。",
-      "rust_view": "services/job_data :: JobDataCatalogView",
-      "ts_consumer": "@retainpdf/contracts/job-data :: JobDataCatalogView"
-    },
     {
       "method": "GET",
       "path": "/api/v1/jobs/:job_id/data/:dataset",
@@ -55,38 +45,6 @@
         { "type": "array", "items": { "$ref": "#/definitions/JsonValue" } },
         { "type": "object", "additionalProperties": { "$ref": "#/definitions/JsonValue" } }
       ]
-    },
-    "JobDataFieldInfo": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["name", "type", "filter", "description"],
-      "properties": {
-        "name": { "type": "string" },
-        "type": { "type": "string", "enum": ["string", "integer", "number", "boolean", "object", "array", "any"] },
-        "filter": { "type": "boolean", "description": "能不能用作 <字段>=值 筛选、group_by。" },
-        "description": { "type": "string" }
-      }
-    },
-    "JobDataDatasetInfo": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["name", "kind", "description", "available", "fields"],
-      "properties": {
-        "name": { "type": "string" },
-        "kind": { "type": "string", "enum": ["rows", "object"] },
-        "description": { "type": "string" },
-        "available": { "type": "boolean", "description": "这个任务的文件在不在。" },
-        "fields": { "type": "array", "items": { "$ref": "#/definitions/JobDataFieldInfo" } }
-      }
-    },
-    "JobDataCatalogView": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["job_id", "datasets"],
-      "properties": {
-        "job_id": { "type": "string" },
-        "datasets": { "type": "array", "items": { "$ref": "#/definitions/JobDataDatasetInfo" } }
-      }
     },
     "JobDataGroup": {
       "type": "object",

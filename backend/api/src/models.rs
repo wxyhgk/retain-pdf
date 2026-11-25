@@ -25,7 +25,7 @@ pub mod api {
         EscalatedItemView, GlossaryUsageSummaryView, InvocationSummaryView, JobContractsView, JobDetailView, JobDiagnosticsView, JobEventFeedItem,
         JobEventListView, JobFailureBriefView,
         JobDeleteResultView, JobFailureDiagnosticView, JobFilesQuery, JobLinksView, JobListInvocationSummaryView,
-        JobListItemView, JobListView, JobProgressView, JobReportView, JobResumePlanView,
+        JobListItemView, JobListView, JobProgressView, JobResumePlanView,
         JobStageContractArtifactView, JobStageContractView, JobStageRuntimeView, JobStageSnapshotView,
         JobStageStateView, JobStagesView, JobSubmissionView, JobTimestampsView,
         LAST_REFINE_ESCALATED_LIMIT, LastRefineView, LayoutDocxQuery, ListDocumentJobsQuery,
