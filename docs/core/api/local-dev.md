@@ -47,6 +47,9 @@ X-API-Key: your-rust-api-key
 - 未设置环境变量时读取 `backend/api/auth.local.json`（可由 `RUST_API_ROOT` 改变位置）。
 - 开发启动器会显式设置 key：未提供 `RUST_API_KEYS` 时，在回环使用开发默认值。
 
+AI 专用密钥 `RUST_API_AGENT_KEYS`（逗号分隔，可以不设）只从环境变量读，不进 `auth.local.json`；它只能调接口登记表里写了
+`agent` 的接口，见 [认证与错误](../../api/00-约定/02-认证与错误.md#ai-专用密钥2026-11-25)。
+
 `RUST_API_SIMPLE_PORT`、`RUST_API_MAX_RUNNING_JOBS` 同样以显式环境变量优先，
 不再被本地文件覆盖。损坏的本地文件仍会阻止启动，不静默忽略配置错误。
 

@@ -4,9 +4,11 @@ use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::Json;
 
+use crate::auth::Principal;
 use crate::error::AppError;
 use crate::models::api::{
     ApiResponse, ListTranslationItemsQuery, ReviseTranslationItemRequest, TranslationDebugItemView,
+    TranslationRevisionSource,
     TranslationDebugListView, TranslationReplayView, TranslationRevisionHistoryView,
     TranslationRevisionView,
 };
@@ -42,10 +44,18 @@ pub async fn get_translation_item(
 
 pub async fn revise_translation_item_route(
     State(state): State<AppState>,
+    principal: Principal,
     ApiPath((job_id, item_id)): ApiPath<(String, String)>,
     headers: HeaderMap,
     ApiJson(request): ApiJson<ReviseTranslationItemRequest>,
 ) -> Result<Json<ApiResponse<TranslationRevisionView>>, AppError> {
+    // AI 专用密钥改的就记成 agent 改的：修订历史里分得清是人改的还是 AI 改的，冒充不了用户。
+    if principal.is_agent() && request.source != TranslationRevisionSource::Agent {
+        return Err(AppError::forbidden_because(
+            "agent_source_required",
+            "revisions made with the agent key must use source \"agent\"",
+        ));
+    }
     revise_translation_item_response(
         build_jobs_route_deps(&state),
         &headers,

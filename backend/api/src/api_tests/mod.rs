@@ -1,4 +1,5 @@
 mod accounts;
+mod agent_key;
 mod admin_platform;
 mod admin_users;
 mod invites;

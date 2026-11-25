@@ -81,6 +81,10 @@ pub enum User {
     Ops,
     /// 只有多用户网站版用（2026-10-16 商业版停了，代码冻结）。
     Multiuser,
+    /// AI agent：`retainpdf mcp` 的工具、拿 AI 专用密钥（`RUST_API_AGENT_KEYS`）的调用方（2026-11-25）。
+    /// 这一类**有运行时效果**：AI 专用密钥只能调登记了 `agent` 的接口，别的 403 `agent_key_not_allowed`
+    /// （`auth::enforce_access`）。其余几类只是记录。
+    Agent,
     /// 还没有调用方。
     None,
 }
@@ -95,9 +99,27 @@ impl User {
             User::Cli => "cli",
             User::Ops => "ops",
             User::Multiuser => "multiuser",
+            User::Agent => "agent",
             User::None => "none",
         }
     }
+}
+
+/// AI 专用密钥能不能调这个方法、这个路由模板：登记表里这一条的 `by(…)` 写了 `agent` 才行。
+/// 没登记的（含方法不对）一律不行。
+pub fn agent_allowed(method: &str, template: &str) -> bool {
+    use std::collections::HashSet;
+    use std::sync::OnceLock;
+    static ALLOWED: OnceLock<HashSet<(&'static str, &'static str)>> = OnceLock::new();
+    ALLOWED
+        .get_or_init(|| {
+            crate::app::registered_endpoints()
+                .iter()
+                .filter(|endpoint| endpoint.users.contains(&User::Agent))
+                .map(|endpoint| (endpoint.method, endpoint.path))
+                .collect()
+        })
+        .contains(&(method, template))
 }
 
 /// 多用户模式下，这个方法、这个路由模板（axum 的 `MatchedPath`）归哪一种访问策略。
@@ -295,6 +317,7 @@ macro_rules! endpoints {
     (@user cli) => { $crate::app::endpoints::User::Cli };
     (@user ops) => { $crate::app::endpoints::User::Ops };
     (@user multiuser) => { $crate::app::endpoints::User::Multiuser };
+    (@user agent) => { $crate::app::endpoints::User::Agent };
     (@user none) => { $crate::app::endpoints::User::None };
 
     (@summary) => { "" };

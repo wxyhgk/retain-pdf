@@ -7,11 +7,13 @@ use crate::config::OriginPolicyConfig;
 
 pub struct AuthRouteDeps<'a> {
     pub api_keys: &'a HashSet<String>,
+    pub agent_keys: &'a HashSet<String>,
 }
 
 pub fn build_auth_route_deps(state: &AppState) -> AuthRouteDeps<'_> {
     AuthRouteDeps {
         api_keys: &state.config.api_keys,
+        agent_keys: &state.config.agent_keys,
     }
 }
 

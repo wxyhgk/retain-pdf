@@ -15,15 +15,27 @@ use crate::AppState;
 #[derive(Clone, Debug)]
 pub struct SessionToken(pub String);
 
-fn has_valid_api_key(deps: AuthRouteDeps<'_>, request: &Request<Body>) -> bool {
-    request
+/// 请求带的 `X-API-Key`：是主密钥、AI 专用密钥，还是都不是。先认 AI 专用密钥（两边配了同一把时宁可收窄；启动时也会拒绝这样配）。
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum KeyKind {
+    Main,
+    Agent,
+}
+
+fn api_key_kind(deps: AuthRouteDeps<'_>, request: &Request<Body>) -> Option<KeyKind> {
+    let key = request
         .headers()
         .get("x-api-key")
         .and_then(|value| value.to_str().ok())
         .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .map(|key| crate::config::api_key_matches(deps.api_keys, key))
-        .unwrap_or(false)
+        .filter(|value| !value.is_empty())?;
+    if crate::config::api_key_matches(deps.agent_keys, key) {
+        Some(KeyKind::Agent)
+    } else if crate::config::api_key_matches(deps.api_keys, key) {
+        Some(KeyKind::Main)
+    } else {
+        None
+    }
 }
 
 /// 从 Cookie 请求头里取会话令牌。
@@ -102,9 +114,13 @@ pub async fn require_api_key(
     }
     let multi = state.config.accounts.mode.is_multi();
 
-    if has_valid_api_key(build_auth_route_deps(&state), &request) {
-        // 单机：钥匙就是本机用户；多用户：钥匙只给内部服务。
-        let principal = if multi { Principal::service() } else { Principal::local() };
+    if let Some(kind) = api_key_kind(build_auth_route_deps(&state), &request) {
+        // 单机：钥匙就是本机用户；多用户：钥匙只给内部服务。AI 专用密钥另算，能调哪些接口在 enforce_access 里收窄。
+        let principal = match kind {
+            KeyKind::Agent => Principal::agent(),
+            KeyKind::Main if multi => Principal::service(),
+            KeyKind::Main => Principal::local(),
+        };
         request.extensions_mut().insert(principal);
         return Ok(next.run(request).await);
     }
@@ -138,6 +154,18 @@ pub async fn enforce_access(
     request: Request<Body>,
     next: Next,
 ) -> Result<Response, AppError> {
+    // AI 专用密钥：只放行接口登记表里 `by(…)` 写了 `agent` 的接口（单机、多用户都一样）。
+    // 地址没匹配上的照常往下走，由路由回 404。
+    if request.extensions().get::<Principal>().is_some_and(Principal::is_agent) {
+        if let Some(template) = matched.as_ref().map(|matched| matched.as_str()) {
+            if !crate::app::endpoints::agent_allowed(request.method().as_str(), template) {
+                return Err(AppError::forbidden_because(
+                    "agent_key_not_allowed",
+                    "this endpoint is not open to the agent key",
+                ));
+            }
+        }
+    }
     let principal = match request.extensions().get::<Principal>() {
         Some(principal) if principal.owner_filter().is_some() => principal.clone(),
         _ => return Ok(next.run(request).await),

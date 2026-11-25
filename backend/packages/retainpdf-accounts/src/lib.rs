@@ -56,6 +56,9 @@ pub enum AuthVia {
     ServiceKey,
     /// 助手的临时授权。
     Capability,
+    /// AI 专用密钥（`RUST_API_AGENT_KEYS`，2026-11-25）：只能调接口登记表里标了 `agent` 的接口，
+    /// 改译文只能 `source: "agent"`。数据照旧是本机用户的。
+    AgentKey,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -73,6 +76,16 @@ impl Principal {
 
     pub fn service() -> Self {
         Self { user_id: "service".into(), username: "service".into(), role: Role::Admin, via: AuthVia::ServiceKey }
+    }
+
+    /// AI 专用密钥：数据看本机用户的（`owner_filter` 是 `None`），能调哪些接口由 `auth::enforce_access` 按登记表收窄。
+    /// 角色给普通用户：万一漏过了收窄，也到不了只给管理员的接口。
+    pub fn agent() -> Self {
+        Self { user_id: LOCAL_USER_ID.into(), username: "agent".into(), role: Role::User, via: AuthVia::AgentKey }
+    }
+
+    pub fn is_agent(&self) -> bool {
+        self.via == AuthVia::AgentKey
     }
 
     pub fn from_user(user: &UserRecord) -> Self {

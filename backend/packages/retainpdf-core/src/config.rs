@@ -121,6 +121,8 @@ pub struct AppConfig {
     pub min_free_disk_bytes: u64,
     pub upload_processing: UploadProcessingConfig,
     pub api_keys: HashSet<String>,
+    /// AI 专用密钥（`RUST_API_AGENT_KEYS`），只能调登记了 `agent` 的接口。
+    pub agent_keys: HashSet<String>,
     pub max_running_jobs: usize,
     pub provider_limits: ProviderLimitsConfig,
     pub provider_runtime: ProviderRuntimeConfig,
@@ -291,6 +293,7 @@ impl AppConfig {
         } = parts;
 
         auth.validate_bind_host(&server.bind_host)?;
+        auth.validate_agent_keys()?;
         if let Some(warning) = auth.placeholder_key_warning(&server.bind_host) {
             eprintln!("{warning}");
         }
@@ -319,6 +322,7 @@ impl AppConfig {
             // Processing overrides also apply to desktop; snapshot once at startup.
             upload_processing: UploadProcessingConfig::from_env(),
             api_keys: auth.api_keys,
+            agent_keys: auth.agent_keys,
             max_running_jobs: auth.max_running_jobs,
             provider_limits,
             provider_runtime,

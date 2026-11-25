@@ -1,6 +1,6 @@
 # 全部 HTTP 路由：方法 路径 多用户下网站账号的访问策略（signed 登录可用 / admin 只给管理员 /
 # closed 关闭 / public 不需要登录） 归哪个领域负责 by 谁在用（web 前端页面 / desktop 桌面壳 / worker Python 流水线 /
-# cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / none 还没有调用方）。
+# cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / agent AI 专用密钥能调 / none 还没有调用方）。
 # 由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
 # 107 条路径，131 个接口
@@ -45,13 +45,13 @@ POST   /api/v1/credentials  admin  providers  by web
 DELETE /api/v1/credentials/:credential_ref  admin  providers  by web
 GET    /api/v1/credentials/:credential_ref  admin  providers  by web
 PUT    /api/v1/credentials/:credential_ref  admin  providers  by web
-GET    /api/v1/documents  signed  library  by web
+GET    /api/v1/documents  signed  library  by web,agent
 DELETE /api/v1/documents/:document_id  signed  library  by web
-GET    /api/v1/documents/:document_id  signed  library  by web
+GET    /api/v1/documents/:document_id  signed  library  by web,agent
 PATCH  /api/v1/documents/:document_id  signed  library  by web
 GET    /api/v1/documents/:document_id/files  signed  library  by none
 GET    /api/v1/documents/:document_id/files/:name  signed  library  by web
-GET    /api/v1/documents/:document_id/files/pages/:page  signed  library  by none
+GET    /api/v1/documents/:document_id/files/pages/:page  signed  library  by agent
 GET    /api/v1/documents/:document_id/jobs  signed  library  by web
 GET    /api/v1/documents/:document_id/metadata-suggestions  signed  library  by web
 POST   /api/v1/documents/:document_id/metadata-suggestions  signed  library  by web
@@ -91,7 +91,7 @@ GET    /api/v1/jobs/:job_id/data/:dataset  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/files  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/files/internal/*name  admin  jobs  by ops
 GET    /api/v1/jobs/:job_id/files/output/*name  signed  jobs  by web
-GET    /api/v1/jobs/:job_id/files/pages/:page  signed  jobs  by none
+GET    /api/v1/jobs/:job_id/files/pages/:page  signed  jobs  by agent
 GET    /api/v1/jobs/:job_id/progress/editorial  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/progress/events  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/progress/layout  signed  jobs  by web
@@ -105,8 +105,8 @@ GET    /api/v1/jobs/:job_id/reports/quality  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reports/translation  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reports/usage  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/translations  signed  jobs  by web
-GET    /api/v1/jobs/:job_id/translations/:item_id  signed  jobs  by web
-PATCH  /api/v1/jobs/:job_id/translations/:item_id  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/translations/:item_id  signed  jobs  by web,agent
+PATCH  /api/v1/jobs/:job_id/translations/:item_id  signed  jobs  by web,agent
 POST   /api/v1/jobs/:job_id/translations/:item_id/replay  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/translations/:item_id/revisions  signed  jobs  by web
 POST   /api/v1/providers/deepseek/balance  admin  providers  by web,cli
@@ -119,7 +119,7 @@ POST   /api/v1/providers/translation/ask  admin  providers  by none
 POST   /api/v1/providers/translation/models  admin  providers  by web
 GET    /api/v1/runtime-assets  signed  platform  by none
 POST   /api/v1/runtime-assets/download  admin  platform  by none
-GET    /api/v1/search  signed  library  by web
+GET    /api/v1/search  signed  library  by web,agent
 GET    /api/v1/sync  admin  platform  by web,cli
 PUT    /api/v1/sync  admin  platform  by web,cli
 POST   /api/v1/sync/run  admin  platform  by web,cli
