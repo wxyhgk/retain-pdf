@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 
 @dataclass(frozen=True)
@@ -17,4 +17,21 @@ class ChatResult:
     usage: dict[str, Any] | None = None
 
 
-__all__ = ["ChatResult"]
+@dataclass(frozen=True)
+class StructureSource:
+    """定结构（G4）要调用方给的：表格框里的文字层、结构初稿、按结构重建表格、原表截图。
+
+    - ``lines``：文字层从上到下的每一行文字（下标就是 L 编号）；
+    - ``draft``：结构初稿（格式见流水线 ``ocr/tables/structure.py``：每格的起始行列和跨度、每行表格占哪几行文字……）；
+    - ``rebuild(draft) -> table.v1``：按改过的结构重新从文字层取格子原文、重算 issues（多带 ``suspect_rows``）；
+    - ``screenshot() -> 消息片段``：原表截图，核心不看内容，原样放进发给模型的 user 消息（调用方定写法，
+      例如 OpenAI Chat 的 ``image_url`` 片段）；拿不到返回 None。只在真要修的时候才调。
+    """
+
+    lines: list[str]
+    draft: dict[str, Any]
+    rebuild: Callable[[dict[str, Any]], dict[str, Any]]
+    screenshot: Callable[[], Any]
+
+
+__all__ = ["ChatResult", "StructureSource"]

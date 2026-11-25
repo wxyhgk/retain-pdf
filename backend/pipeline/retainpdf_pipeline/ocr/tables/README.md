@@ -11,6 +11,9 @@
 - `build_table_model(block, page)`：返回 `table.v1` 字典（`cells` 每格有 `id`、`row`、`col`、`rowspan`、`colspan`、`text`、
   `ocr_text`、`bbox`、`font_size`、`content_kind`、`suggested_action`、`role`；整表有 `confidence`、`issues`）。
 - `content_kind(text)` / `suggested_action(kind)`：数字、化学式、编号、文字的粗分和对应的翻 / 不翻建议。
+- `table_structure(block, page)`（`structure.py`，表格 agent 定结构用，G4）：结构初稿（每格起始行列和跨度、每行表格占哪几行文字）
+  和 `rebuild(draft)`——按 agent 改过的初稿重新从文字层取格子原文、重算 issues（多带 `suspect_rows`、`caption_lines`，
+  表题表注移出去以后框收到表格本体）。初稿原样交回重建和 `build_table_model` 一字不差（评测集 110 张钉着）。
 
 ## 怎么做
 
@@ -19,8 +22,9 @@
    斜着、竖着的字（水印）不要。`symbol_fonts.py` 把符号字体的错码换成页面上画的字（每一项都看图核对过）。
 3. `assemble.py`：文字行对到表格行（动态规划）；列界取竖向空白通道（几乎所有行都没字的地方），找不够时退回按空隙切；
    每个词按位置落进格子。
-4. `model.py`：拼成 `table.v1`；结构可能有错、规则修不了的打上 `issues`（`empty_column`、`row_swallows_rows`、
-   `unassigned_text_lines`、`row_without_text`、`columns_not_found`），交给后面看图裁决。
+4. `model.py`：拼成 `table.v1`（`assemble_table_model`，建表和定结构以后重建共用）；结构可能有错、规则修不了的打上 `issues`
+   （`empty_column`、`row_swallows_rows`、`unassigned_text_lines`、`row_without_text`、`columns_not_found`），交给表格 agent
+   看图定结构（`row_swallows_rows`、`columns_not_found` 这一版修得了）。
 
 ## 不该做什么
 

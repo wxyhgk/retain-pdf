@@ -2,7 +2,9 @@
 
 开关 ``translation.tables``：``keep``（默认，什么都不做）/ ``translate``。
 
-每张表：document.v1 的表格块 + 原文 PDF 那一页 → 表格模型（``ocr/tables``，T1）→ 表格 agent（翻译包）。
+每张表：document.v1 的表格块 + 原文 PDF 那一页 → 表格模型（``ocr/tables``，T1）→ 表格 agent（``backend/table-agent``）。
+- 定结构（G4）：表格模型标了结构不可信、这一版修得了的表（有文字层、OCR 给了网格），先把原表截图和结构给模型，
+  它只能用结构工具改，改完用文字层核对；修好了用修好的结构翻、``model`` 存修好的那份，修不好照旧跳过；
 - 术语记忆：术语表 → 正文翻译的 job-memory → 前面的表，后翻的表查得到；
 - 续跑：上次的 ``tables.v1.json`` 里同一张表（缓存键一样：引擎、提示词版本、格子、表题表注）的结果直接用，不再请求；
 - Key 被上游拒（401/402/403）立刻停整个任务；别的请求错误只让这张表保留原文，原因写进结果。
@@ -20,7 +22,15 @@ from typing import Any
 import fitz
 
 from retainpdf_pipeline.ocr.tables import build_table_model
+from retainpdf_pipeline.ocr.tables import table_structure
 from retainpdf_table_agent import PROMPT_VERSION as TABLE_PROMPT_VERSION
+from retainpdf_table_agent import STRUCTURE_FIXED
+from retainpdf_table_agent import STRUCTURE_PROMPT_VERSION
+from retainpdf_table_agent import StructureResult
+from retainpdf_table_agent import StructureSource
+from retainpdf_table_agent import fix_structure
+from retainpdf_table_agent import needs_structure_fix
+from retainpdf_table_agent import structure_fingerprint
 from retainpdf_table_agent import STATUS_TRANSLATED as TABLE_STATUS_TRANSLATED
 from retainpdf_translation.public import GlossaryEntry
 from retainpdf_translation.public import credential_rejected_error
@@ -33,6 +43,7 @@ from retainpdf_table_agent import cache_key as table_cache_key
 from retainpdf_table_agent import translate_table
 from retainpdf_table_agent import translated_table_html
 from retainpdf_table_agent_engine import table_chat_fn
+from retainpdf_table_agent_engine import table_screenshot_part
 
 TABLES_FILE_NAME = "tables.v1.json"
 TABLES_SCHEMA = "tables.v1"
@@ -82,6 +93,20 @@ def _body_terms(translated_dir: Path) -> list[tuple[str, str]]:
         if isinstance(record, dict) and record.get("prompt_eligible"):
             terms.append((str(record.get("key") or ""), str(record.get("value") or "")))
     return terms
+
+
+def table_structure_source(block: dict, page: fitz.Page) -> StructureSource | None:
+    """定结构要的：文字层、结构初稿、按结构重建（表格模型的规则）、原表截图（用到才截）。没有可改的初稿返回 None。"""
+    structure = table_structure(block, page)
+    if structure is None:
+        return None
+    bbox = structure.bbox
+    return StructureSource(
+        lines=structure.line_texts(),
+        draft=structure.draft(),
+        rebuild=structure.rebuild,
+        screenshot=lambda: table_screenshot_part(page, bbox),
+    )
 
 
 def _previous(path: Path) -> dict[str, dict]:
@@ -136,19 +161,32 @@ def translate_tables(
                     continue
                 table_model = build_table_model(block, pdf[page_index])
                 context = _context(blocks, index)
-                key = table_cache_key(table_model, context, engine=engine)
+                source = table_structure_source(block, pdf[page_index]) if needs_structure_fix(table_model) else None
+                key = table_cache_key(table_model, context, engine=engine,
+                                      structure=structure_fingerprint(source) if source is not None else "")
                 cached = previous.get(key)
                 if cached is not None:
                     result = TableResult.from_dict(cached.get("result") or {})
+                    if (result.structure or {}).get("status") == STRUCTURE_FIXED and isinstance(cached.get("model"), dict):
+                        table_model = cached["model"]  # 修好的结构（格子编号对得上存下的译文）
                     summary["cache_hits"] += 1
                 else:
+                    structure: StructureResult | None = None
                     try:
+                        if source is not None:
+                            structure = fix_structure(table_model, source=source, chat_fn=chat,
+                                                      caption=context.caption, footnotes=context.footnotes)
+                            summary[f"structure:{structure.status}"] += 1
+                            if structure.status == STRUCTURE_FIXED and structure.model is not None:
+                                table_model = structure.model
                         result = translate_table(table_model, chat_fn=chat, memory=memory, context=context)
                     except Exception as error:  # noqa: BLE001 - 一张表失败不连累整本；Key 失效另外判
                         if is_credential_rejection(error):
                             raise credential_rejected_error(error) from error
                         result = TableResult(block_id=str(block.get("block_id") or ""), status="kept",
                                              reason=f"request_failed:{type(error).__name__}")
+                    if structure is not None:
+                        result.structure = structure.as_dict()
                 result.cache_key = key
                 if result.status == TABLE_STATUS_TRANSLATED:
                     for cell_id, translation in result.translations().items():
@@ -180,6 +218,7 @@ def _write(path: Path, entries: list[dict], summary: Counter, *, engine: str) ->
     payload = {
         "schema": TABLES_SCHEMA,
         "prompt_version": TABLE_PROMPT_VERSION,
+        "structure_prompt_version": STRUCTURE_PROMPT_VERSION,
         "engine": engine,
         "summary": dict(summary),
         "tables": entries,
@@ -189,4 +228,4 @@ def _write(path: Path, entries: list[dict], summary: Counter, *, engine: str) ->
     os.replace(temp, path)
 
 
-__all__ = ["TABLES_FILE_NAME", "TABLE_MODES", "translate_tables"]
+__all__ = ["TABLES_FILE_NAME", "TABLE_MODES", "table_structure_source", "translate_tables"]
