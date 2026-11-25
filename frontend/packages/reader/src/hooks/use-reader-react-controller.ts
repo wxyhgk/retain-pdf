@@ -27,7 +27,6 @@ import { useLiveTranslation } from "./use-live-translation.js";
 import { useReaderRevisedBlocks, type RevisedBlocks } from "./use-reader-revised-blocks.js";
 import type { LiveTranslationState } from "../shared/data/live-translation-state.js";
 import { isFinishedJobStatus } from "@retainpdf/domain/job";
-import type { ReaderAnchorJump } from "../contracts/side-pane.js";
 
 /** 跳到某一段后那一段亮多久：页还在画的那一两秒也算在里面，太短就看不到（读书走查 9）；最后一秒淡出（react-pdf.css）。 */
 export const CITATION_HIGHLIGHT_MS = 4500;
@@ -93,8 +92,7 @@ export type ReaderReactController = {
   currentPage: number;
   goToPage: (page: number, pane?: "source" | "translated") => void;
   activeRegion: ReaderRegion | null;
-  /** 跳过去并把那一块亮一下：找到块 "block"、只翻到页 "page"、页码不对 "none"。 */
-  jumpToAnchor: (target: ReaderAnchorTarget, pane?: "source" | "translated") => ReaderAnchorJump;
+  jumpToAnchor: (target: ReaderAnchorTarget, pane?: "source" | "translated") => void;
   setModeKeepingPage: (next: ReaderMode) => void;
   showHud: boolean;
   download: ReaderSessionState["download"];
@@ -253,7 +251,7 @@ export function useReaderReactController(): ReaderReactController {
     return region ? regionBoxForPane(region, panes.primaryPane).page : null;
   }, [session.regions, panes.primaryPane]);
 
-  const jumpToAnchor = useCallback((target: ReaderAnchorTarget, pane?: "source" | "translated"): ReaderAnchorJump => {
+  const jumpToAnchor = useCallback((target: ReaderAnchorTarget, pane?: "source" | "translated") => {
     const targetPane = pane || panes.primaryPane;
     const blockId = typeof target === "object" && target
       ? `${target.block_id || ""}`.trim()
@@ -279,10 +277,9 @@ export function useReaderReactController(): ReaderReactController {
     if (page == null) {
       page = resolveReaderAnchorFallbackPage(target as ReaderAnchorTarget);
     }
-    if (page == null || page < 1) return "none";
+    if (page == null || page < 1) return;
     activateRegion(region);
     goToPage(page, targetPane);
-    return region ? "block" : "page";
   }, [activateRegion, goToPage, panes.primaryPane, session.regions]);
   // 收藏 / 搜索回跳：URL ?page_idx= → 页码（0 基 → 1 基）；
   // 阅读中反向把 currentPage 防抖写回 URL，使分享/刷新回到当前位置。

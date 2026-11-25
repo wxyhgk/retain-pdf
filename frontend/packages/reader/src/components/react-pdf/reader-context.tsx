@@ -4,7 +4,9 @@
 // 倒进一个全局对象。高频变化的 currentPage/numPages 单独立一个 HUD context，
 // 让滚动只重渲染底栏，而不是所有外壳。
 import { createContext, useContext, type ReactNode } from "react";
-import type { MarginMarkersByPage } from "../../hooks/use-reader-side-pane.js";
+import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
+import type { RegionPdfDocument } from "../../pdf/RegionCanvas.js";
+import type { XrefIndex } from "../../shared/content/reader-xrefs.js";
 import type { ReaderPaneModel } from "../../hooks/use-reader-pane-model.js";
 import type { ReaderDownloadContext } from "../../hooks/use-reader-session.js";
 import type {
@@ -46,10 +48,14 @@ export type ReaderContextValue = {
   jumpToBlock?: (itemId: string) => void;
   /** 改过的块（阅读页块编号 → 改过几次）：译文栏画小标记，悬停写「改过 N 次」。 */
   revisedBlocks?: ReadonlyMap<string, number>;
-  /** 第二栏开着时宿主给的页边小圆点（按页分好）；关着时是空的。 */
-  marginMarkers?: MarginMarkersByPage;
-  /** 点了页边小圆点：交回给宿主。 */
-  selectMarginMarker?: (key: string) => void;
+  /** 某一栏的 PDF 读出了自带书签（目录卡用）。 */
+  onPdfOutline?: (outline: PdfOutlineNode[], pane: "source" | "translated") => void;
+  /** 某一栏的 PDF 读好了（放大查看要用它重新画一块）。 */
+  onPdfDocument?: (pdf: RegionPdfDocument, pane: "source" | "translated") => void;
+  /** 放大查看这一块（悬停框的「放大」、双击图片）。 */
+  zoomBlock?: (itemId: string) => void;
+  /** 书里的引用（「图 2.1」「式 (3.21)」）认得出去处的那些；文字层把它们包成可悬停、可点的 span。 */
+  xrefIndex?: XrefIndex;
   /** 译文栏悬停框的「改」：这一段变成编辑框。不能改时不给。 */
   editBlock?: (itemId: string) => void;
   /** 改译文的状态：正在改哪一段（译文栏在那里画编辑框）、写回了还没排进 PDF 的译文（先盖在 PDF 上）。 */

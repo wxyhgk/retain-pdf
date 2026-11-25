@@ -15,7 +15,6 @@ const a = [
   "liveTranslation",
   "pdf",
   "sessionData",
-  "sidePane",
   "resolveMarkdownAssetUrl",
   "resolveReaderDownloadUrls",
   "resolveReaderDownloadName",

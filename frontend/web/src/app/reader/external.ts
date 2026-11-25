@@ -9,8 +9,6 @@
 // —— config / mock / messaging ——
 export { isMockMode } from "@/platform/config/runtime.js";
 export { MOCK_DOCUMENT_SOURCE_PDF_URL } from "@/platform/mock/documents.js";
-// 阅读页第二栏：学习系统的「学习」页签（学习区来自 @retainpdf/learning）。
-export { learningSidePanePort as readerSidePanePort } from "./learning-side-pane.js";
 export { READER_DIALOG_MESSAGES } from "@/features/reader/domain.js";
 
 // —— job / http / vendor ——

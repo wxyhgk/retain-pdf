@@ -13,6 +13,7 @@ export declare function hitTestReaderTextHoverTarget(targets: readonly ReaderTex
 export declare function copyReaderText(text: string): Promise<boolean>;
 export declare const READER_TEXT_HOVER_COPY_CLASS = "reader-text-hover-copy";
 export declare const READER_TEXT_HOVER_EDIT_CLASS = "reader-text-hover-edit";
+export declare const READER_TEXT_HOVER_ZOOM_CLASS = "reader-text-hover-zoom";
 export declare const READER_TEXT_HOVER_ID_CLASS = "reader-text-hover-id";
 /**
  * 框上要不要显示翻译编号（和翻译调试、日志里的 item_id 同一个）：读者用不上，默认不显示；排查翻译问题时在阅读页地址后
@@ -43,7 +44,7 @@ export declare function hoverToolsOutside(rect: ReaderRegionRect, toolsWidth?: n
  * 右栏复制译文 —— 这是 4.1.x 旧引擎里最常用的那个交互，React 引擎替换时丢了。
  * 只有这一种块级交互：双击 / 三击留给浏览器选词选段（以前双击会整块复制，把选词弄坏了）。
  */
-export declare function ReaderTextHoverLayer({ target, pane, revisedCount, onEdit, frameRect, placement, tailTop, }: {
+export declare function ReaderTextHoverLayer({ target, pane, revisedCount, onEdit, onZoom, frameRect, placement, tailTop, }: {
     target: ReaderTextHoverTarget | null;
     /** 框画多大：贴着字的范围（不给就是原块）。 */
     frameRect?: ReaderRegionRect | null;
@@ -56,5 +57,7 @@ export declare function ReaderTextHoverLayer({ target, pane, revisedCount, onEdi
     revisedCount?: number;
     /** 译文栏的「改」：打开侧栏「改译文」改这一块。不给就不画。 */
     onEdit?: (itemId: string) => void;
+    /** 「放大」：盖在书上的大框里高分辨率看这一块（ReaderZoomViewer）。不给就不画。 */
+    onZoom?: (itemId: string) => void;
 }): import("react").JSX.Element;
 //# sourceMappingURL=ReaderTextHoverLayer.d.ts.map
