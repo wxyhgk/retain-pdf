@@ -9029,7 +9029,7 @@ function Nh({
     goBack: C(() => d("back"), [d])
   };
 }
-const Ah = Ho(() => import("./ReaderMarkdownPanel-zzchF8uU.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Lh = Ho(() => import("./ReaderAskWindow-Crsv9DgI.js")), _h = [];
+const Ah = Ho(() => import("./ReaderMarkdownPanel-D2K4b57l.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Lh = Ho(() => import("./ReaderAskWindow-Bpba4KkR.js")), _h = [];
 function xh(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantOpen && e.mode === "compare" ? "source" : e.mode, a = !t && (o === "translated" || o === "compare");
   return {
@@ -9466,4 +9466,4 @@ export {
   Yh as r,
   rt as u
 };
-//# sourceMappingURL=ReaderApp-Cc97k5Gc.js.map
+//# sourceMappingURL=ReaderApp-CL9JXaUM.js.map

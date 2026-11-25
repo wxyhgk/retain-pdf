@@ -7,8 +7,13 @@
 - 书页上右键：画笔那一排上面多一行。没选字是「在这里提问」（问鼠标下面那一块，认不出块就问这一页这个位置）；选着书页上的字是「问这段」。
 - 选着书页上的字按 `?`：同「问这段」。没选字时 `?` 照旧是快捷键帮助（提问在捕获阶段先拿到，只在选着字时拦）。
 - 选中、悬停都**不弹东西**（[以前两次拿掉过选中浮条](../../ops/planning/reader-ask/20261125-阅读页提问.md)）。
-- 宿主不给 `ReaderAskPort` 就没有这些入口。现在只有演示模式给（假 agent，`frontend/web/src/platform/mock/ask-agent.ts`）；
-  后端桥合了以后 web 宿主换成 WebSocket 那个端口。
+- 宿主不给 `ReaderAskPort` 就没有这些入口。web 宿主（`frontend/web/src/features/reader/domain/ask-port.ts`）：演示模式给假 agent
+  （`platform/mock/ask-agent.ts`）；局域网共享打开的页面不给（桌面网关拦了 `/api/v1/ai`）；其余给真的：
+  - 列 agent：`listAiAgents`（`@retainpdf/api/ai`，契约 `ai-agents.v1`）。
+  - 连 agent：ACP SDK 的 `client()` + `experimental/ws-client`，WebSocket `/api/v1/ai/agents/{id}/acp?api_key=…`；`initialize` →
+    `session/new`（`cwd`、`mcpServers` 空着，桥补书文件夹和 `retainpdf mcp`）→ `session/prompt`，停是 `session/cancel`。
+  - 自带 agent（`retainpdf`）带设置里默认翻译模型的 `model`、`base_url`、`api_protocol`、`thinking` 和凭据库里翻译密钥的引用
+    `credential_ref`（不传明文 key）；缺了在下拉里标「用不了」并写缺什么。后端接口见 `docs/api/16-AI/01-阅读页提问.md`。
 
 ## 代码
 
@@ -37,7 +42,7 @@
 
 ## 还没做
 
-- 接真的后端桥（等后端 `feat/acp-bridge` 合并）；自带 agent 的模型配置从设置里的翻译模型取。
+- 真机联调（自带 agent、本机 Claude Code）。
 - 扫描页没字时把那一块的图发过去（agent `acceptsImages` 时）。
 - 问答记录存后端、下次打开还在（ACP `session/load`）；现在重新打开只是界面上接着显示，agent 那边是新会话。
 - 白板：回答以后进白板（[以 PDF 为主体](../../ops/planning/learning-system/20261125-以PDF为主体的提问白板笔记.md)）。

@@ -1,23 +1,23 @@
-var H = Object.defineProperty;
-var X = (e, t, s) => t in e ? H(e, t, { enumerable: !0, configurable: !0, writable: !0, value: s }) : e[t] = s;
-var v = (e, t, s) => X(e, typeof t != "symbol" ? t + "" : t, s);
+var X = Object.defineProperty;
+var J = (e, t, s) => t in e ? X(e, t, { enumerable: !0, configurable: !0, writable: !0, value: s }) : e[t] = s;
+var v = (e, t, s) => J(e, typeof t != "symbol" ? t + "" : t, s);
 import { jsx as o, jsxs as m } from "react/jsx-runtime";
-import { useState as j, useRef as B, useEffect as E, useMemo as F, createContext as J, useContext as Q, useSyncExternalStore as V } from "react";
-import { Rnd as G } from "react-rnd";
-import { useLocalRuntime as Y, AssistantRuntimeProvider as Z, ThreadPrimitive as w, ComposerPrimitive as R, MessagePrimitive as z, useAuiState as ee } from "@assistant-ui/react";
+import { useState as j, useRef as B, useEffect as E, useMemo as F, createContext as Q, useContext as V, useSyncExternalStore as G } from "react";
+import { Rnd as Y } from "react-rnd";
+import { useLocalRuntime as Z, AssistantRuntimeProvider as ee, ThreadPrimitive as w, ComposerPrimitive as R, MessagePrimitive as z, useAuiState as D } from "@assistant-ui/react";
 import { Streamdown as te } from "streamdown";
 import { createMathPlugin as ne } from "@streamdown/math";
 import { X as se, ArrowUp as ae, Square as re, CircleDot as oe, Wrench as ie, Brain as le, ChevronRight as ce } from "lucide-react";
 import { Button as W, Select as de } from "@retainpdf/ui";
-import { r as ue } from "./ReaderApp-Cc97k5Gc.js";
+import { r as ue } from "./ReaderApp-CL9JXaUM.js";
 function me(e) {
   return { parts: [], usage: {}, startedAt: e, firstTokenAt: null, lastTokenAt: null, chars: 0 };
 }
-function D(e) {
+function K(e) {
   return e.type === "text" ? e.text : e.type === "resource_link" ? e.title || e.name || e.uri : "";
 }
 function he(e) {
-  return (e || []).map((t) => t.type === "content" ? D(t.content) : t.type === "diff" ? `改了 ${t.path}` : "").filter(Boolean).join(`
+  return (e || []).map((t) => t.type === "content" ? K(t.content) : t.type === "diff" ? `改了 ${t.path}` : "").filter(Boolean).join(`
 `);
 }
 function pe(e) {
@@ -47,7 +47,7 @@ function Te(e, t, s) {
   switch (t.sessionUpdate) {
     case "agent_message_chunk":
     case "agent_thought_chunk": {
-      const n = D(t.content);
+      const n = K(t.content);
       if (!n) return e;
       const a = t.sessionUpdate === "agent_message_chunk" ? "text" : "reasoning";
       return {
@@ -103,7 +103,7 @@ function Te(e, t, s) {
       return e;
   }
 }
-function K(e) {
+function q(e) {
   if (e.firstTokenAt == null || e.lastTokenAt == null) return null;
   const t = (e.lastTokenAt - e.firstTokenAt) / 1e3;
   return t < 0.3 ? null : e.usage.outputTokens ? { value: e.usage.outputTokens / t, unit: "token/s" } : e.chars ? { value: e.chars / t, unit: "字/s" } : null;
@@ -111,7 +111,7 @@ function K(e) {
 function xe(e, t, s = "") {
   const r = [], { usage: n } = e;
   s ? r.push(n.model ? `${s}（${n.model}）` : s) : n.model && r.push(n.model), (n.inputTokens !== void 0 || n.outputTokens !== void 0) && r.push(`输入 ${n.inputTokens ?? "?"} · 输出 ${n.outputTokens ?? "?"} token`), n.cachedInputTokens && r.push(`缓存命中 ${n.cachedInputTokens}`), n.cacheWriteTokens && r.push(`写入缓存 ${n.cacheWriteTokens}`), n.contextUsed !== void 0 && n.contextSize && r.push(`上下文 ${Math.round(n.contextUsed / n.contextSize * 100)}%`), n.cost && r.push(`${n.cost.amount.toFixed(4)} ${n.cost.currency}`);
-  const a = K(e);
+  const a = q(e);
   return a && r.push(`${a.value.toFixed(a.value >= 10 ? 0 : 1)} ${a.unit}`), e.firstTokenAt != null && r.push(`首字 ${((e.firstTokenAt - e.startedAt) / 1e3).toFixed(1)}s`), t != null && r.push(`用时 ${((t - e.startedAt) / 1e3).toFixed(1)}s`), r.join(" · ");
 }
 const ye = 4e3;
@@ -203,7 +203,7 @@ function _e(e) {
         } finally {
           p.removeEventListener("abort", N), n = null;
         }
-        const C = t(), $ = K(d), c = {
+        const C = t(), $ = q(d), c = {
           streamStartTime: d.startedAt,
           firstTokenTime: d.firstTokenAt ?? void 0,
           totalStreamTime: C - d.startedAt,
@@ -248,7 +248,7 @@ function be() {
     t.id = O, t.rel = "stylesheet", t.href = e, document.head.appendChild(t);
   }, []);
 }
-const q = J(null);
+const H = Q(null);
 function ve({ text: e, status: t }) {
   return /* @__PURE__ */ o(
     te,
@@ -277,8 +277,8 @@ function we({ text: e, status: t }) {
 const Se = { pending: "等着", in_progress: "进行中", completed: "完成", failed: "失败" };
 function Ce(e) {
   var n;
-  const t = e.artifact || {}, s = Q(q);
-  V((s == null ? void 0 : s.subscribe) ?? (() => () => {
+  const t = e.artifact || {}, s = V(H);
+  G((s == null ? void 0 : s.subscribe) ?? (() => () => {
   }), (s == null ? void 0 : s.snapshot) ?? (() => 0));
   const r = s == null ? void 0 : s.get(e.toolCallId);
   return /* @__PURE__ */ m("div", { className: "reader-ask-tool", "data-status": t.status || "pending", children: [
@@ -324,8 +324,17 @@ function Pe({ data: e }) {
     /* @__PURE__ */ o("span", { className: "reader-ask-tool-status", children: e.state === "running" ? "进行中" : e.state === "idle" ? "完成" : e.state })
   ] });
 }
-function Re({ agentName: e }) {
-  const t = ee((r) => {
+function Re() {
+  return D((t) => {
+    var s;
+    return ((s = t.message.status) == null ? void 0 : s.type) === "running" && t.message.parts.length === 0;
+  }) ? /* @__PURE__ */ m("div", { className: "reader-ask-waiting", role: "status", children: [
+    /* @__PURE__ */ o("span", { className: "reader-ask-dot", "aria-hidden": !0 }),
+    "在想…"
+  ] }) : null;
+}
+function ze({ agentName: e }) {
+  const t = D((r) => {
     var n;
     return (n = r.message.metadata) == null ? void 0 : n.custom;
   });
@@ -333,12 +342,13 @@ function Re({ agentName: e }) {
   const s = xe(t.turn, t.endedAt ?? null, e);
   return s ? /* @__PURE__ */ o("div", { className: "reader-ask-footer", children: s }) : null;
 }
-function ze() {
+function je() {
   return /* @__PURE__ */ o(z.Root, { className: "reader-ask-msg is-user", children: /* @__PURE__ */ o(z.Parts, {}) });
 }
-function je(e) {
+function Fe(e) {
   return function() {
     return /* @__PURE__ */ m(z.Root, { className: "reader-ask-msg is-assistant", children: [
+      /* @__PURE__ */ o(Re, {}),
       /* @__PURE__ */ o(
         z.Parts,
         {
@@ -350,14 +360,14 @@ function je(e) {
           }
         }
       ),
-      /* @__PURE__ */ o(Re, { agentName: e() })
+      /* @__PURE__ */ o(ze, { agentName: e() })
     ] });
   };
 }
-function Fe(e) {
+function Le(e) {
   return [`第 ${e.page} 页`, e.section].filter(Boolean).join(" · ");
 }
-function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnchor: a, saved: u, onSave: h }) {
+function Qe({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnchor: a, saved: u, onSave: h }) {
   be();
   const [l, p] = j(null), [f, y] = j(""), [k, x] = j(""), A = B({ agentId: f, anchor: r });
   A.current = { agentId: f, anchor: r }, E(() => {
@@ -386,7 +396,7 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
     [e, t, s, d]
   );
   E(() => () => g.close(), [g]);
-  const T = Y(g.adapter), N = B(h);
+  const T = Z(g.adapter), N = B(h);
   N.current = h, E(() => {
     if (u)
       try {
@@ -404,7 +414,7 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
   const S = () => {
     var c;
     return ((c = l == null ? void 0 : l.find((i) => i.id === A.current.agentId)) == null ? void 0 : c.name) || "";
-  }, _ = F(() => je(S), [l]);
+  }, _ = F(() => Fe(S), [l]);
   E(() => {
     const c = (i) => {
       var I, P;
@@ -416,7 +426,7 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
   }, [n]);
   const b = Math.min(460, (globalThis.innerWidth || 1200) - 32), C = Math.min(620, (globalThis.innerHeight || 800) - 120), $ = r.selection || r.sourceText || r.translatedText;
   return /* @__PURE__ */ o(
-    G,
+    Y,
     {
       className: "reader-ask-window",
       default: { x: Math.max(16, (globalThis.innerWidth || 1200) - b - 24), y: 72, width: b, height: C },
@@ -428,7 +438,7 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
       children: /* @__PURE__ */ m("section", { className: "reader-ask", role: "dialog", "aria-label": "提问", children: [
         /* @__PURE__ */ m("header", { className: "reader-ask-head", children: [
           /* @__PURE__ */ o("span", { className: "reader-ask-title", children: "提问" }),
-          /* @__PURE__ */ o(W, { className: "reader-ask-where", title: "回到问的那一处", onClick: a, children: Fe(r) }),
+          /* @__PURE__ */ o(W, { className: "reader-ask-where", title: "回到问的那一处", onClick: a, children: Le(r) }),
           /* @__PURE__ */ o(
             de,
             {
@@ -451,10 +461,10 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
           "列不出能用的 agent：",
           k
         ] }) : null,
-        /* @__PURE__ */ o(q.Provider, { value: d, children: /* @__PURE__ */ o(Z, { runtime: T, children: /* @__PURE__ */ m(w.Root, { className: "reader-ask-thread", children: [
+        /* @__PURE__ */ o(H.Provider, { value: d, children: /* @__PURE__ */ o(ee, { runtime: T, children: /* @__PURE__ */ m(w.Root, { className: "reader-ask-thread", children: [
           /* @__PURE__ */ m(w.Viewport, { className: "reader-ask-viewport", children: [
             /* @__PURE__ */ o(w.Empty, { children: /* @__PURE__ */ o("p", { className: "reader-ask-empty", children: "问这一处的问题：哪里看不懂、这个式子怎么来的、这个词什么意思……" }) }),
-            /* @__PURE__ */ o(w.Messages, { components: { UserMessage: ze, AssistantMessage: _ } })
+            /* @__PURE__ */ o(w.Messages, { components: { UserMessage: je, AssistantMessage: _ } })
           ] }),
           /* @__PURE__ */ m(R.Root, { className: "reader-ask-composer", children: [
             /* @__PURE__ */ o(
@@ -476,6 +486,6 @@ function Je({ port: e, jobId: t, bookTitle: s, anchor: r, onClose: n, onShowAnch
   );
 }
 export {
-  Je as default
+  Qe as default
 };
-//# sourceMappingURL=ReaderAskWindow-Crsv9DgI.js.map
+//# sourceMappingURL=ReaderAskWindow-Bpba4KkR.js.map

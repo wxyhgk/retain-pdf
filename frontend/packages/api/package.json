@@ -62,6 +62,10 @@
       "types": "./dist/glossaries.d.ts",
       "import": "./dist/glossaries.js"
     },
+    "./ai": {
+      "types": "./dist/ai.d.ts",
+      "import": "./dist/ai.js"
+    },
     "./backups": {
       "types": "./dist/backups.d.ts",
       "import": "./dist/backups.js"
@@ -123,7 +127,9 @@
       "import": "./dist/internal/runtime.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -141,7 +147,9 @@
     "zod": "^3.22.0"
   },
   "peerDependenciesMeta": {
-    "zod": { "optional": true }
+    "zod": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "typescript": "^7.0.2"

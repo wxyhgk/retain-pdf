@@ -176,7 +176,8 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
   assert.match(app, /window\.addEventListener\("keydown", onKey, true\)/);
   assert.match(app, /lazy\(\(\) => import\("\.\/ask\/ReaderAskWindow\.js"\)\)/);
   const host = readFileSync(new URL("../../src/features/reader/domain/ask-port.ts", import.meta.url), "utf8");
-  assert.match(host, /isMockMode\(\) \? mockAskPort : null/, "后端桥没合之前正式环境不给端口");
+  assert.match(host, /if \(isMockMode\(\)\) return mockAskPort;/, "演示模式给假 agent");
+  assert.match(host, /if \(isLanSharedPage\(\)\) return null;/, "局域网共享的页面不给（网关拦了 \/api\/v1\/ai）");
   const vite = readFileSync(new URL("../../../packages/reader/vite.config.ts", import.meta.url), "utf8");
   assert.match(vite, /@assistant-ui\\\/\[\^\/\]\+\|streamdown/, "开源库不打进阅读器 dist");
 });

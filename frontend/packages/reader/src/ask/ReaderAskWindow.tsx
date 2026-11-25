@@ -143,6 +143,12 @@ function SubagentBlock({ data }: DataMessagePartProps<AskSubagent>): ReactElemen
   );
 }
 
+/** 发出去以后、第一段思考或正文到之前（Claude 要两三秒）：说一声在想，不然像卡住了。 */
+function Waiting(): ReactElement | null {
+  const waiting = useAuiState((state) => state.message.status?.type === "running" && state.message.parts.length === 0);
+  return waiting ? <div className="reader-ask-waiting" role="status"><span className="reader-ask-dot" aria-hidden />在想…</div> : null;
+}
+
 function AnswerFooter({ agentName }: { agentName: string }): ReactElement | null {
   const custom = useAuiState((state) => state.message.metadata?.custom) as { turn?: AskTurn; endedAt?: number } | undefined;
   if (!custom?.turn) return null;
@@ -162,6 +168,7 @@ function makeAssistantMessage(agentName: () => string) {
   return function AssistantMessage(): ReactElement {
     return (
       <MessagePrimitive.Root className="reader-ask-msg is-assistant">
+        <Waiting />
         <MessagePrimitive.Parts
           components={{
             Text: AnswerText,

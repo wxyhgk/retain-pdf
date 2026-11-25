@@ -261,6 +261,31 @@
 
 .reader-ask-plan li[data-status="completed"] { color: var(--muted); text-decoration: line-through; }
 
+.reader-ask-waiting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 13px);
+}
+
+.reader-ask-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--accent);
+  animation: reader-ask-pulse 1s ease-in-out infinite;
+}
+
+@keyframes reader-ask-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-ask-dot { animation: none; }
+}
+
 .reader-ask-footer {
   margin-top: 6px;
   color: var(--muted);

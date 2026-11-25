@@ -11,7 +11,8 @@
       "transport": "json",
       "output": "AgentsView",
       "rust_view": "AgentsView",
-      "note": "自带的排第一，后面是本机 agent（装了没有、怎么起）。client_name 等前端接的时候连同 frontend/packages/api 的生成客户端一起加（生成客户端有漂移检查）。"
+      "client_name": "listAiAgents",
+      "note": "自带的排第一，后面是本机 agent（装了没有、怎么起）。阅读页提问窗列 agent 用（frontend/web 的 features/reader/domain/ask-port.ts）。"
     },
     {
       "method": "GET",
