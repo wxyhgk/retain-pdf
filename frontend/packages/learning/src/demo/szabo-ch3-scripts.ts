@@ -1,5 +1,5 @@
-// 白板演示页用的讲解脚本：Szabo & Ostlund 第 3 章（Hartree-Fock）里三个典型卡点。
-// 这是草稿，物理内容等用户审过才进学习系统；现在只用来看白板画得对不对。
+// Szabo & Ostlund 第 3 章（Hartree-Fock）的讲解脚本（@retainpdf/whiteboard 格式）：学习区「讲给我听」和白板演示页共用。
+// 这是草稿，物理内容等用户审。
 // 数字：STO-3G H₂（R = 1.4 a.u.）的轨道能 ε₁ = −0.578、ε₂ = 0.670 Hartree（Szabo 3.5.2）。
 
 export type DemoScript = {
@@ -8,7 +8,7 @@ export type DemoScript = {
   script: unknown;
 };
 
-export const DEMO_SCRIPTS: DemoScript[] = [
+export const SZABO_CH3_SCRIPTS: DemoScript[] = [
   {
     key: "energy",
     label: "总能量 ≠ 轨道能之和",
@@ -132,6 +132,47 @@ export const DEMO_SCRIPTS: DemoScript[] = [
           ops: [
             { op: "write", id: "caveat", text: "近似：轨道不弛豫、没有电子相关", below: "ip", size: "s" },
             { op: "mark", target: "caveat", tone: "wrong", style: "highlight" },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    key: "fock",
+    label: "Fock 算符怎么来的",
+    script: {
+      version: 1,
+      title: "Fock 算符：单电子部分 + 其他电子的平均场",
+      steps: [
+        {
+          id: "split",
+          say: "Fock 算符 = 单电子部分 h，加上所有电子给的平均场 v^HF。",
+          ops: [{ op: "write", id: "f", math: "f(1) = h(1) + v^{\\mathrm{HF}}(1)" }],
+        },
+        {
+          id: "spin",
+          say: "用自旋轨道写，平均场是每个占据自旋轨道的库仑减交换，求和到 N。",
+          ops: [
+            { op: "write", id: "vso", math: "v^{\\mathrm{HF}}(1) = \\sum_{b}^{N} \\left[ J_b(1) - K_b(1) \\right]" },
+            { op: "note", target: "vso", text: "自旋轨道写法：每个电子各算一次" },
+          ],
+        },
+        {
+          id: "closed",
+          say: "闭壳层里每个空间轨道住两个电子：库仑作用两个都算，交换只和同自旋的那一个，所以是 2J − K，求和到 N/2。",
+          ops: [
+            { op: "write", id: "vcs", math: "v^{\\mathrm{HF}}(1) = \\sum_{a}^{N/2} \\left[ 2J_a(1) - K_a(1) \\right]" },
+            { op: "arrow", from: "vso", to: "vcs", label: "按空间轨道合并" },
+            { op: "mark", target: "vcs", tone: "focus" },
+            { op: "note", target: "vcs", text: "库仑 ×2，交换 ×1（只有同自旋）", tone: "focus" },
+          ],
+        },
+        {
+          id: "self",
+          say: "顺带一个好性质：电子和自己的作用里，库仑和交换正好抵消。",
+          ops: [
+            { op: "write", id: "self", math: "\\left[ J_a - K_a \\right] \\chi_a = 0" },
+            { op: "note", target: "self", text: "自相互作用抵消", tone: "correct" },
           ],
         },
       ],

@@ -1,0 +1,429 @@
+/* @retainpdf/learning —— 学习区（阅读页「学习」页签的右栏）。
+ * 颜色只用皮肤变量（--ink / --paper / --ok / --danger / --warn …），深色、朱砂等皮肤自动跟着变。
+ * 状态颜色和书页左边的小圆点是同一套：会了 ok、卡住 danger、疑似误解 warn、未测 muted 空心。 */
+
+.lp-root {
+  --lp-gap: 12px;
+  --lp-known: var(--ok);
+  --lp-stuck: var(--danger);
+  --lp-suspect: var(--warn);
+  --lp-untested: var(--muted);
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: var(--ui-text-base, 14px);
+}
+
+.lp-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lp-chapter {
+  font-size: var(--ui-text-lg, 16px);
+}
+
+.lp-close {
+  margin-left: auto;
+}
+
+.lp-notice {
+  margin: 0;
+  padding: 8px 16px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--ink);
+}
+
+.lp-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 14px 16px 18px;
+}
+
+/* —— 状态点和标签 —— */
+.lp-dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  margin-right: 6px;
+  border: 2px solid var(--lp-tone);
+  border-radius: 50%;
+  background: var(--lp-tone);
+  vertical-align: -1px;
+}
+
+.lp-dot.is-known, .lp-status.is-known, .lp-progress-part.is-known { --lp-tone: var(--lp-known); }
+.lp-dot.is-stuck, .lp-status.is-stuck, .lp-progress-part.is-stuck { --lp-tone: var(--lp-stuck); }
+.lp-dot.is-suspect, .lp-status.is-suspect, .lp-progress-part.is-suspect { --lp-tone: var(--lp-suspect); }
+.lp-dot.is-untested, .lp-status.is-untested, .lp-progress-part.is-untested { --lp-tone: var(--lp-untested); }
+
+.lp-dot.is-untested {
+  background: var(--paper);
+}
+
+.lp-status {
+  display: inline-flex;
+  align-items: center;
+  color: var(--lp-tone);
+  font-size: var(--ui-text-sm, 12px);
+  white-space: nowrap;
+}
+
+/* —— A. 本章地图 —— */
+.lp-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 0 8px;
+  color: var(--muted);
+}
+
+.lp-count {
+  display: inline-flex;
+  align-items: center;
+}
+
+.lp-progress {
+  display: flex;
+  height: 6px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+}
+
+.lp-progress-part {
+  flex-basis: 0;
+  background: var(--lp-tone);
+}
+
+.lp-progress-part.is-untested {
+  background: transparent;
+}
+
+.lp-section + .lp-section {
+  margin-top: 12px;
+}
+
+.lp-section-title {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+  font-weight: 600;
+}
+
+.lp-points {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-point-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--ui-radius-sm, 6px);
+  cursor: pointer;
+}
+
+.lp-point-row:hover,
+.lp-point-row:focus-visible {
+  outline: none;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.lp-point-row.is-on-page {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.lp-point-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.lp-book-link {
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lp-book-link:hover {
+  text-decoration: underline;
+}
+
+.lp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.lp-map-actions {
+  position: sticky;
+  bottom: -18px;
+  padding: 10px 0;
+  background: var(--paper);
+}
+
+/* —— B. 知识点卡 —— */
+.lp-back {
+  margin: -4px 0 8px -8px;
+}
+
+.lp-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.lp-card-head h2 {
+  margin: 0;
+  font-size: var(--ui-text-xl, 20px);
+}
+
+.lp-meta {
+  margin: 6px 0;
+  color: var(--muted);
+}
+
+.lp-summary {
+  margin: 10px 0;
+  line-height: 1.7;
+}
+
+.lp-facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px 12px;
+  margin: 12px 0 0;
+}
+
+.lp-facts dt {
+  color: var(--muted);
+}
+
+.lp-facts dd {
+  margin: 0;
+}
+
+.lp-evidence {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-prereqs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* —— C. 做题 —— */
+.lp-quiz-progress {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.lp-stem {
+  margin: 8px 0 12px;
+  font-size: var(--ui-text-lg, 16px);
+  line-height: 1.6;
+}
+
+.lp-options {
+  display: grid;
+  gap: 8px;
+}
+
+.lp-option {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lp-option:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.lp-option.is-selected {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.lp-option.is-dont-know {
+  color: var(--muted);
+}
+
+.lp-option.is-answer {
+  border-color: var(--ok);
+  background: var(--ok-weak);
+}
+
+.lp-option.is-wrong {
+  border-color: var(--danger);
+  background: var(--danger-weak);
+}
+
+.lp-option:disabled {
+  cursor: default;
+}
+
+.lp-confidence {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  color: var(--muted);
+}
+
+.lp-confidence-value {
+  min-width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.lp-confidence-value.is-selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--paper);
+}
+
+.lp-hints {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-hints li {
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.lp-hints li.is-reveal {
+  border-left-color: var(--danger);
+}
+
+.lp-hint-level {
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.lp-feedback {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--ui-radius-md, 10px);
+  line-height: 1.6;
+}
+
+.lp-feedback.is-correct {
+  background: var(--ok-weak);
+}
+
+.lp-feedback.is-wrong {
+  background: var(--danger-weak);
+}
+
+/* —— D. 讲解、问答 —— */
+.lp-board {
+  margin-top: 4px;
+}
+
+.lp-board .wb-stage {
+  min-height: 220px;
+}
+
+.lp-question {
+  margin: 0 0 10px auto;
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: var(--ui-radius-md, 10px);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  width: fit-content;
+}
+
+.lp-answer p {
+  line-height: 1.7;
+}
+
+.lp-math svg {
+  vertical-align: middle;
+}
+
+.lp-math-raw {
+  font-size: var(--ui-text-sm, 12px);
+}
+
+/* —— 底部：随时提问 —— */
+.lp-askbox {
+  display: grid;
+  gap: 6px;
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.lp-askbox-context {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.lp-askbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lp-askbox-input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+
+.lp-askbox-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}

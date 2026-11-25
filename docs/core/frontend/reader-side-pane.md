@@ -39,6 +39,7 @@
 - `components/react-pdf/ReaderSidePane.tsx`：占 dock 的位置（`ReaderPanelShell`），包错误边界。
 - `pdf/MarginMarkerLayer.tsx`：每页画圆点，和那一块的第一行对齐，同一块上的几个点往下错开；找不到块画在页顶。
 - `ReaderWorkspaceTabs` 的 `sidePane` 属性；样式 `styles/side-pane.css`。
-- 宿主：`frontend/web/src/app/reader/external.ts` 的 `readerSidePanePort`。现在是演示模式里的占位
-  （`src/platform/mock/reader-side-pane.tsx`，只在 mock 里出现），学习系统接进来以后换成它的面板。
+- 宿主：`frontend/web/src/app/reader/external.ts` 的 `readerSidePanePort` = `src/app/reader/learning-side-pane.tsx`，
+  把这个口子接到 `@retainpdf/learning` 的学习区（`LearningPane`）上；阅读器和学习区互不认识，只在这一个文件里对接。
+  学习区要的样式（基础组件、白板、学习区）由 web 的阅读页样式入口 `src/styles/entries/reader.css` 引，阅读器包不引。
 - 测试：`frontend/web/tests/reader/reader-side-pane.test.mjs`；`visual:check` 的 `reader-side` 状态。
