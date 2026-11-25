@@ -184,7 +184,7 @@ async fn errors_and_panics_are_shared_then_retryable() {
                     if panic_work {
                         panic!("synthetic private panic detail");
                     }
-                    Err(AppError::conflict("generation failed"))
+                    Err(AppError::conflict_because("generation_failed", "generation failed"))
                 })
                 .await
         });

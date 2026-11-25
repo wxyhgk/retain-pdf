@@ -260,7 +260,7 @@ fn outcome_from_payload(
             translations_dir,
         }),
         "rejected" => Err(AppError::translation_revision(
-            StatusCode::UNPROCESSABLE_ENTITY,
+            StatusCode::BAD_REQUEST,
             reason,
             message,
             extra(&["validation"]),
@@ -442,7 +442,7 @@ mod tests {
         );
         assert_eq!(
             status(json!({"outcome": "rejected", "reason": "validation_failed"})),
-            StatusCode::UNPROCESSABLE_ENTITY
+            StatusCode::BAD_REQUEST
         );
         assert_eq!(
             status(json!({"outcome": "conflict", "reason": "checkpoint_locked"})),

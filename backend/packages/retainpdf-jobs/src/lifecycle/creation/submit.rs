@@ -154,9 +154,10 @@ pub fn submit_job(deps: &JobSubmitDeps<'_>, new: NewJob<'_>) -> Result<JobSnapsh
             ));
         }
         if deps.launcher.db.get_job(requested_job_id).is_ok() {
-            return Err(AppError::conflict(format!(
-                "job already exists: {requested_job_id}"
-            )));
+            return Err(AppError::conflict_because(
+                "job_exists",
+                format!("job already exists: {requested_job_id}"),
+            ));
         }
     }
     // 源任务已经有在跑的派生任务：先拒，不建目录、不导凭据。并发的两个请求都过了这里时，落库那一步再挡一次。

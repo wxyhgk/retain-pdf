@@ -30,7 +30,7 @@ pub fn load_job_or_404(db: &Db, job_id: &str) -> Result<JobSnapshot, AppError> {
 
 fn ensure_supported_job_layout(data_root: &Path, job: &JobSnapshot) -> Result<(), AppError> {
     if job_uses_legacy_output_layout(job, data_root) || job_uses_legacy_path_storage(job) {
-        return Err(AppError::conflict(LEGACY_JOB_UNSUPPORTED_MESSAGE));
+        return Err(AppError::conflict_because("legacy_job_unsupported", LEGACY_JOB_UNSUPPORTED_MESSAGE));
     }
     Ok(())
 }

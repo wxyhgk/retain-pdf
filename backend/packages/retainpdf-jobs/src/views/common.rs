@@ -76,7 +76,9 @@ pub struct JobLinksView {
     pub cancel_url: String,
 }
 
+/// `GET /api/v1/jobs` 的查询参数。不认识的参数 400（2026-11-25 起，以前悄悄忽略；前端、桌面壳只带下面这些）。
 #[derive(Debug, Deserialize, Clone)]
+#[serde(deny_unknown_fields)]
 pub struct ListJobsQuery {
     /// false reads the persisted job summary only, without importing event
     /// history. Omitted/true preserves the complete live-stage projection.

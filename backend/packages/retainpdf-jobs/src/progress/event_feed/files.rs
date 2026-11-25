@@ -48,7 +48,10 @@ pub(super) fn inspect(path: PathBuf) -> Result<Option<SourceFile>, AppError> {
         Err(error) => return Err(error.into()),
     };
     if !meta.is_file() {
-        return Err(AppError::conflict("pipeline event source is not a file"));
+        return Err(AppError::conflict_because(
+            "event_source_not_file",
+            "pipeline event source is not a file",
+        ));
     }
     Ok(Some(SourceFile {
         path,

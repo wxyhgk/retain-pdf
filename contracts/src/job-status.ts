@@ -746,6 +746,9 @@ export interface JobListInvocationSummaryView {
   stage_spec_count: number;
   unknown_count: number;
 }
+/**
+ * Query string of GET /api/v1/jobs. Unknown parameters are rejected with 400 (since 2026-11-25).
+ */
 export interface ListJobsQuery {
   /**
    * false 只读库里的任务摘要，不导入事件历史（首屏更快）；省略或 true 是完整的实时阶段。

@@ -57,9 +57,11 @@ fn diagnostic_reader_and_debug_queries_reject_legacy_layout_before_reading_artif
     state.db.save_job(&job).expect("save legacy job");
     let queries = JobQueries::new(&state.db, &state.config.data_root);
     for result in query_results(&queries, &job.job_id) {
-        let Err(AppError::Conflict(message)) = result else {
+        let Err(AppError::Reasoned { status, message, reason, .. }) = result else {
             panic!("legacy query must reject unsupported storage");
         };
+        assert_eq!(status, axum::http::StatusCode::CONFLICT);
+        assert_eq!(reason, "legacy_job_unsupported");
         assert_eq!(message, LEGACY_JOB_UNSUPPORTED_MESSAGE);
     }
 }

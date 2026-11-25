@@ -337,21 +337,23 @@ async fn revision_writes_back_and_keeps_page_hash_and_checkpoint_consistent() {
 }
 
 #[tokio::test]
-async fn revision_rejected_by_validation_is_422_and_writes_nothing() {
-    let state = state_with_pipeline("translation-revision-422");
-    let translated = seed_committed_job(&state, "job-revision-422", JobStatusKind::Succeeded);
+async fn revision_rejected_by_validation_is_400_and_writes_nothing() {
+    let state = state_with_pipeline("translation-revision-rejected");
+    let translated = seed_committed_job(&state, "job-revision-rejected", JobStatusKind::Succeeded);
     let before = fs::read(translated.join("page-001-deepseek.json")).expect("page");
 
     let (status, payload) = patch_item(
         &state,
-        "job-revision-422",
+        "job-revision-rejected",
         ITEM_ID,
         json!({"translated_text": "谐振子 $x^2 是模型体系。", "source": "agent"}),
     )
     .await;
 
-    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{payload}");
+    // 2026-11-25 起 400（以前 422）；和请求体写错的 400 靠 error.code 区分（BAD_REQUEST / TRANSLATION_REVISION_REJECTED）。
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{payload}");
     assert_eq!(payload["error"]["code"], "TRANSLATION_REVISION_REJECTED");
+    assert_eq!(payload["code"], "TRANSLATION_REVISION_REJECTED");
     let details = &payload["error"]["details"];
     assert_eq!(details["reason"], "validation_failed");
     assert_eq!(details["validation"]["passed"], false);
@@ -408,7 +410,7 @@ async fn revision_request_shape_is_strict() {
         json!({"translated_text": REVISED_TEXT}),
     ] {
         // 字段值或缺字段不合 schema 走 ApiJson 的统一 400(BAD_REQUEST + reason schema_mismatch,
-        // 2026-11-24 以前是 422),和校验不过的 422 TRANSLATION_REVISION_REJECTED 靠状态码和 error.code 都能区分。
+        // 2026-11-24 以前是 422),和校验不过的 400 TRANSLATION_REVISION_REJECTED 靠 error.code 区分。
         let (status, payload) = patch_item(&state, "job-revision-400", ITEM_ID, body).await;
         assert_eq!(status, StatusCode::BAD_REQUEST, "{payload}");
         assert_eq!(payload["error"]["code"], "BAD_REQUEST");

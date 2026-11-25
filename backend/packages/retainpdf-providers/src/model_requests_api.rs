@@ -41,7 +41,7 @@ impl ModelRequestsApi {
             }
         })?;
         if !matches!(job.status, JobStatusKind::Queued | JobStatusKind::Running) {
-            return Err(AppError::conflict("job is not active"));
+            return Err(AppError::conflict_because("job_not_active", "job is not active"));
         }
         Ok(job)
     }
@@ -98,7 +98,9 @@ fn map_executor_error(error: ModelExecutorError) -> AppError {
     match error {
         ModelExecutorError::Unauthorized => AppError::unauthorized("invalid worker capability"),
         ModelExecutorError::BadRequest(reason) => AppError::bad_request(reason),
-        ModelExecutorError::Conflict(reason) => AppError::conflict(reason),
+        ModelExecutorError::Conflict { reason, message } => {
+            AppError::conflict_because(reason, message)
+        }
         ModelExecutorError::Internal(category) => {
             tracing::error!(category, "model executor internal failure");
             AppError::internal("model executor internal failure")

@@ -59,7 +59,11 @@ pub fn patch_tag_view(deps: &LibraryDeps<'_>, tag_id: &str, payload: &PatchTagIn
         let owner = deps.db.resource_owner(OwnedKind::Tag, tag_id)?;
         if let Some(other) = deps.db.find_tag_by_name(name, owner.as_deref())? {
             if other.tag_id != tag_id {
-                return Err(AppError::conflict(format!("another tag is already named {name}: {}", other.tag_id)));
+                return Err(AppError::conflict_because_with(
+                    "tag_name_taken",
+                    format!("another tag is already named {name}: {}", other.tag_id),
+                    serde_json::json!({ "existing_tag_id": other.tag_id }),
+                ));
             }
         }
     }

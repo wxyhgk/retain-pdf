@@ -2761,6 +2761,8 @@
     },
     "ListJobsQuery": {
       "type": "object",
+      "description": "Query string of GET /api/v1/jobs. Unknown parameters are rejected with 400 (since 2026-11-25).",
+      "additionalProperties": false,
       "properties": {
         "include_live_stage": {
           "type": "boolean",

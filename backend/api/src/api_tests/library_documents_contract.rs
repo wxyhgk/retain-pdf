@@ -279,8 +279,10 @@ async fn book_collection_search_and_delete_views_match_published_schema() {
     assert_exact(&recolored, &contract, "TagRecord", "tag (patched)");
     assert_eq!(recolored["document_count"], 1);
     let other = ok_data(&state, "POST", "/api/v1/tags", Some(json!({ "name": "荧光" }))).await;
-    let (status, _) = send(&state, "PATCH", &format!("/api/v1/tags/{}", other["tag_id"].as_str().unwrap()), Some(json!({ "name": "光谱" }))).await;
+    let (status, payload) = send(&state, "PATCH", &format!("/api/v1/tags/{}", other["tag_id"].as_str().unwrap()), Some(json!({ "name": "光谱" }))).await;
     assert_eq!(status, StatusCode::CONFLICT, "改成别的标签在用的名字");
+    assert_eq!(payload["error"]["details"]["reason"], "tag_name_taken", "{payload}");
+    assert_eq!(payload["error"]["details"]["existing_tag_id"], tag_id, "{payload}");
     let (status, _) = send(&state, "POST", "/api/v1/tags", Some(json!({ "name": "坏颜色", "color": "red" }))).await;
     assert_eq!(status, StatusCode::BAD_REQUEST);
     let (status, _) =
