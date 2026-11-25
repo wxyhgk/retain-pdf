@@ -4,6 +4,6 @@ import {
 } from "@retainpdf/api/job-data";
 import { mockable } from "./_mockable.js";
 
-export type { JobDataCatalogView, JobDataQuery, JobDataView } from "@retainpdf/api/job-data";
+export type { JobDataQuery, JobDataView } from "@retainpdf/api/job-data";
 
 export const fetchJobData = mockable(_canonFetchJobData, MockJobData.fetchJobData);

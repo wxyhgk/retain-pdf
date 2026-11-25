@@ -1,10 +1,10 @@
 // job-data — pure：通用取数接口（契约 job-data.v1）。任务里已有的数据都从这里按数据集名读，
 // 缺哪个数据集请后端在登记表里加一条，不再为每种数据开新接口。
-import type { JobDataCatalogView, JobDatasetQuery, JobDataView } from "@retainpdf/contracts/job-data";
+import type { JobDatasetQuery, JobDataView } from "@retainpdf/contracts/job-data";
 import * as generated from "./generated/job-data.js";
 import { serverMessageOr } from "./request.js";
 
-export type { JobDataCatalogView, JobDataView } from "@retainpdf/contracts/job-data";
+export type { JobDataView } from "@retainpdf/contracts/job-data";
 
 export type JobDataFilterValue = string | number | boolean | ReadonlyArray<string | number>;
 
