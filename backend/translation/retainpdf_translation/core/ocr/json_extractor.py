@@ -79,6 +79,8 @@ ROLE_FOOTNOTE = "footnote"
 ROLE_IMAGE_FOOTNOTE = "image_footnote"
 ROLE_TABLE_FOOTNOTE = "table_footnote"
 ROLE_TABLE_OF_CONTENTS = "table_of_contents"
+# 目录页按文字层拆出来的一条（只框标题，2026-11-25，pipeline 的 ocr/document_schema/toc_pages.py）
+ROLE_TOC_ENTRY = "toc_entry"
 PRIMARY_TRANSLATABLE_STRUCTURE_ROLES = {
     ROLE_BODY,
     ROLE_ABSTRACT,
@@ -100,6 +102,7 @@ PRIMARY_TRANSLATABLE_STRUCTURE_ROLES = {
     ROLE_EXAMPLE_INTRO,
     ROLE_EXAMPLE_LINE,
     ROLE_TABLE_OF_CONTENTS,
+    ROLE_TOC_ENTRY,
 }
 DERIVED_STRUCTURE_ROLE_MAP = {
     "title": ROLE_TITLE,

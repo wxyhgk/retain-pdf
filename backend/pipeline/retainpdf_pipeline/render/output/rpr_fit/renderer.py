@@ -41,6 +41,7 @@ from retainpdf_pipeline.render.output.rpr.engine_cli import run_engine
 from retainpdf_pipeline.render.output.rpr.text import markdown_to_engine_text
 from retainpdf_pipeline.render.output.rpr_fit import formula_check
 from retainpdf_pipeline.render.output.rpr_fit.report import build_rpr_fit_fit_report_payload
+from retainpdf_pipeline.render.output.rpr_fit.toc_entries import toc_entry_layout_document
 from retainpdf_pipeline.render.output.typst.block_renderer import sanitize_typst_markdown_for_compile
 from retainpdf_pipeline.render.output.typst.book_support import prepare_background_work_dir
 from retainpdf_pipeline.render.output.typst.fit_report import record_fit_report_payload
@@ -236,10 +237,15 @@ def build_book_rpr_fit_pdf(
             f"障碍物数据 {len(drawings_text) / 1e6:.0f} MB，超过引擎能读的上限（{DRAWINGS_JSON_MAX_CHARS / 1e6:.0f} MB）",
         )
     (engine_dir / "drawings.json").write_text(drawings_text, encoding="utf-8")
+    # 目录条目：原文两行、译文一行放得下的，排在页码那一行（给引擎一份改了框的文档副本）
+    engine_document_path, toc_last_line_entries = toc_entry_layout_document(
+        Path(document_path), translated_pages, engine_dir
+    )
+    diagnostics["rpr_fit_toc_last_line_entries"] = toc_last_line_entries
     payload = {
         "schema": RPR_FIT_INPUT_SCHEMA,
         "font": {"family": font_family},
-        "document_path": str(Path(document_path).resolve()),
+        "document_path": str(Path(engine_document_path).resolve()),
         "translations_path": "translations.json",
         "visual_profile_path": str(Path(visual_profile_path).resolve())
         if visual_profile_path is not None and Path(visual_profile_path).is_file()

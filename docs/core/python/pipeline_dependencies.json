@@ -453,6 +453,7 @@
         "devtools/tests/document_schema/test_table_eval_set.py",
         "devtools/tests/document_schema/test_table_model.py",
         "devtools/tests/document_schema/test_table_survey.py",
+        "devtools/tests/document_schema/test_toc_pages.py",
         "devtools/tests/ocr_viewer/test_ocr_viewer.py",
         "devtools/tests/pdf_fixtures.py",
         "devtools/tests/rendering/test_angstrom_sanitize.py",
@@ -498,7 +499,8 @@
         "devtools/tests/rendering_support/prewarm_fixtures.py",
         "devtools/tests/source_cleanup_rects.py",
         "devtools/tests/translation/test_agent_flow.py",
-        "devtools/tests/translation/test_domain_prewarm.py"
+        "devtools/tests/translation/test_domain_prewarm.py",
+        "devtools/tests/translation/test_translation_toc_entries.py"
       ],
       "runtime_required": true,
       "devtool_required": true
@@ -1060,6 +1062,7 @@
         "devtools/tests/translation/test_translation_run_diagnostics.py",
         "devtools/tests/translation/test_translation_structured_technical_policy.py",
         "devtools/tests/translation/test_translation_tail_retry.py",
+        "devtools/tests/translation/test_translation_toc_entries.py",
         "devtools/tests/translation/test_translation_validation_protocols.py",
         "devtools/tests/translation/test_upstream_resilience.py",
         "devtools/tests/translation/test_upstream_wait_events.py",

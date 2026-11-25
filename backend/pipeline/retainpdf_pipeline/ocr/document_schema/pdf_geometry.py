@@ -24,6 +24,7 @@ from retainpdf_pipeline.ocr.document_schema.provider_adapters.common.normalize i
     inherit_missing_segment_bboxes,
 )
 from retainpdf_pipeline.ocr.document_schema.toc import build_toc_entries
+from retainpdf_pipeline.ocr.document_schema.toc_pages import split_toc_blocks_with_text_layer
 
 BuildLinesFn = Callable[..., list]
 TightenBBoxFn = Callable[..., list[float]]
@@ -88,6 +89,10 @@ def rescale_document_geometry_to_pdf(document: dict, source_pdf_path: Path) -> d
                         segment["bbox"] = scale_bbox(segment.get("bbox", []), scale_x, scale_y)
             document.setdefault("derived", {})["coordinate_space"] = "pdf_point"
         recover_corrupted_pdf_text(document, pdf)
+        # 目录页：有文字层时拆成只框标题的条目小块（章号、页码列、页眉留在原图上）；读不出条目的照旧一整块
+        split_count = split_toc_blocks_with_text_layer(document, pdf)
+        if split_count:
+            document.setdefault("derived", {})["toc_blocks_split"] = split_count
     finally:
         pdf.close()
     return document
