@@ -202,6 +202,11 @@
           "minimum": 0,
           "description": "Optimistic concurrency: the checkpoint generation the caller last saw. A mismatch returns 409 generation_mismatch with current_generation."
         },
+        "expected_translated_text": {
+          "type": ["string", "null"],
+          "maxLength": 20000,
+          "description": "Optimistic concurrency by content (since 2026-11-25): the old translation the caller read. Compared under the write lock with the current translation, ignoring whitespace; the display form and the placeholder form both match. A mismatch returns 409 text_mismatch with current_translated_text. For agents that read the book folder and never see a generation."
+        },
         "rerender": {
           "type": "boolean",
           "default": false,
@@ -418,6 +423,7 @@
             "job_running",
             "checkpoint_locked",
             "generation_mismatch",
+            "text_mismatch",
             "translation_not_committed",
             "publication_inconsistent",
             "group_members_missing",
@@ -427,6 +433,7 @@
         },
         "validation": { "$ref": "#/definitions/TranslationRevisionValidation" },
         "current_generation": { "type": "integer", "minimum": 0 },
+        "current_translated_text": { "type": "string", "description": "With text_mismatch: the current translation (display form)." },
         "status": { "type": "string" },
         "source_job_id": { "type": "string" }
       }

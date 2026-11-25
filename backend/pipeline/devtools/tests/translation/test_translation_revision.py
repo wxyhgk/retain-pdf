@@ -321,6 +321,35 @@ def test_running_worker_lock_and_stale_generation_are_conflicts(tmp_path):
     assert raised.value.extra["current_generation"] == 7
 
 
+def test_expected_old_text_guards_against_concurrent_edits(tmp_path):
+    """带 expected_translated_text：和当前译文对得上才写（不看空白）；对不上 409 text_mismatch，带当前译文，一个字节都不写。"""
+    translated = _build_job(tmp_path)
+
+    # 书文件夹导出把多行压成一行、首尾空白不算：空白不同照样算对得上。
+    result = revise_translation_item(tmp_path, RevisionRequest(
+        item_id="p001-b001", translated_text="谐振子模型。", source="agent",
+        expected_translated_text="  谐振子是分子振动的\n模型体系。 ",
+    ))
+    assert (result["outcome"], result["changed"]) == ("committed", True)
+
+    # 期间别人改过（拿的还是改之前的旧译文）：拒绝，回当前译文，什么都不动。
+    before = _snapshot(translated)
+    with pytest.raises(RevisionOutcome) as raised:
+        revise_translation_item(tmp_path, RevisionRequest(
+            item_id="p001-b001", translated_text="谐振子是分子振动的经典模型。", source="agent",
+            expected_translated_text="谐振子是分子振动的模型体系。",
+        ))
+    assert (raised.value.outcome, raised.value.reason) == ("conflict", "text_mismatch")
+    assert raised.value.extra["current_translated_text"] == "谐振子模型。"
+    assert _snapshot(translated) == before
+
+    # 不带就和以前一样，不比。
+    result = revise_translation_item(tmp_path, RevisionRequest(
+        item_id="p001-b001", translated_text="谐振子是分子振动的经典模型。", source="user",
+    ))
+    assert result["outcome"] == "committed"
+
+
 def test_uncommitted_translation_cannot_be_revised(tmp_path):
     translated = _build_job(tmp_path)
     path = translated / "translation-checkpoint.v1.json"
@@ -387,6 +416,11 @@ def test_console_subcommand_reports_structured_outcomes(tmp_path, monkeypatch, c
     assert (rejected["outcome"], rejected["reason"]) == ("rejected", "validation_failed")
     invalid = run({"translated_text": "谐振子", "source": "robot"})
     assert (invalid["outcome"], invalid["reason"]) == ("invalid", "invalid_source")
+    mismatch = run({"translated_text": "谐振子", "source": "agent", "expected_translated_text": "不是现在这句"})
+    assert (mismatch["outcome"], mismatch["reason"]) == ("conflict", "text_mismatch")
+    assert mismatch["current_translated_text"] == "谐振子模型。"
+    bad_type = run({"translated_text": "谐振子", "source": "agent", "expected_translated_text": 3})
+    assert (bad_type["outcome"], bad_type["reason"]) == ("invalid", "invalid_request")
 
 
 def _write_replay_spec(job_root: Path) -> None:

@@ -37,6 +37,14 @@ def _optional_int(value: object) -> int | None:
     return value
 
 
+def _optional_str(value: object) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise RevisionOutcome("invalid", "invalid_request", "expected_translated_text must be a string")
+    return value
+
+
 def _request_from_stdin(item_id: str) -> RevisionRequest:
     try:
         payload = json.loads(sys.stdin.read() or "{}")
@@ -50,6 +58,7 @@ def _request_from_stdin(item_id: str) -> RevisionRequest:
         source=str(payload.get("source", "") or ""),
         reason=str(payload.get("reason", "") or ""),
         expected_generation=_optional_int(payload.get("expected_generation")),
+        expected_translated_text=_optional_str(payload.get("expected_translated_text")),
     )
 
 

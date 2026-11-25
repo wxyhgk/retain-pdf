@@ -400,6 +400,36 @@ async fn stale_expected_generation_is_409_with_current_generation() {
     assert_eq!(payload["error"]["details"]["current_generation"], 7);
 }
 
+/// 带读到的旧译文写回（agent 用）：对得上照常写；期间被改过就 409 `text_mismatch`，带当前译文，不写。2026-11-25 起。
+#[tokio::test]
+async fn stale_expected_text_is_409_with_current_text() {
+    let state = state_with_pipeline("translation-revision-expected-text");
+    let translated = seed_committed_job(&state, "job-revision-expected-text", JobStatusKind::Succeeded);
+
+    let (status, payload) = patch_item(
+        &state,
+        "job-revision-expected-text",
+        ITEM_ID,
+        json!({"translated_text": REVISED_TEXT, "source": "agent", "expected_translated_text": ORIGINAL_TEXT}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK, "{payload}");
+    assert_eq!(checkpoint(&translated)["generation"], 8);
+
+    let (status, payload) = patch_item(
+        &state,
+        "job-revision-expected-text",
+        ITEM_ID,
+        json!({"translated_text": "谐振子是又一个说法。", "source": "agent", "expected_translated_text": ORIGINAL_TEXT}),
+    )
+    .await;
+    assert_eq!(status, StatusCode::CONFLICT, "{payload}");
+    assert_eq!(payload["error"]["code"], "TRANSLATION_REVISION_CONFLICT");
+    assert_eq!(payload["error"]["details"]["reason"], "text_mismatch");
+    assert_eq!(payload["error"]["details"]["current_translated_text"], REVISED_TEXT);
+    assert_eq!(checkpoint(&translated)["generation"], 8);
+}
+
 #[tokio::test]
 async fn revision_request_shape_is_strict() {
     let state = state_with_pipeline("translation-revision-400");

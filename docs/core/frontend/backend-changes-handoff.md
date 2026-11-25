@@ -1976,3 +1976,9 @@ PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_uplo
 前端已跟上（`chore/api-client-regen-batch3`，2026-11-25）：两条都做了。`generate:client` 重新生成 `job-data.ts`；手写的
 `frontend/packages/api/src/job-data.ts`、`web/src/platform/api/domains/job-data.ts`、`mocks/job-data.ts` 去掉 `JobDataCatalogView` 的导出和引用；
 `lan-share.js` 拦截名单和 `lan-share.test.mjs` 去掉 `/api/v1/fonts/upload`。
+
+## 改译文可以带读到的旧译文（2026-11-25，feat/revision-expected-text）
+
+`PATCH /jobs/{job_id}/translations/{item_id}` 请求体多了可选的 `expected_translated_text`，对不上 409 `text_mismatch`（带
+`current_translated_text`）。给 agent 用，前端编辑框不用带，**前端不用改**。`REVISION_REASON_MESSAGES` 想覆盖全的话可以加一句
+`text_mismatch: "这段译文刚被别处改过，重新打开再改。"`。契约 `translation-revisions.v1` 已重新生成。

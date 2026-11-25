@@ -121,6 +121,9 @@ PATCH /api/v1/jobs/{job_id}/translations/{item_id}
 - `source`（必填）：`user` / `agent` / `refine`，只记录，不影响校验。
 - `reason`：可选，最长 2000 字。
 - `expected_generation`：可选，调用方上次看到的检查点代次（乐观并发）；对不上 409 `generation_mismatch`，带 `current_generation`。
+- `expected_translated_text`：可选，调用方读到的旧译文（按内容的乐观并发，2026-11-25 起）。在持锁写回前和当前译文比，不看空白，
+  展示形式（行内公式写回）和占位符形式都认；对不上 409 `text_mismatch`，带 `current_translated_text`（当前的展示形式），重读再改。
+  给 agent 用：它读的是书文件夹里的译文，拿不到代次。和 `expected_generation` 可以同时带，两个都要对得上。
 - `rerender`：可选，`true` 时写成功后再提交一次原地重渲染（同 `POST actions/retry-stage {"stage":"render","create_new_job":false}`）。
   连着改好几块时只在最后一个请求上带，或者改完调一次 retry-stage。
 
@@ -145,7 +148,7 @@ PATCH /api/v1/jobs/{job_id}/translations/{item_id}
 | HTTP | `error.code` | `reason` |
 |---|---|---|
 | 400（2026-11-25 以前 422） | `TRANSLATION_REVISION_REJECTED` | `validation_failed`（带 `details.validation.issues`）、`item_not_translatable`（策略要这块保留原文） |
-| 409 | `TRANSLATION_REVISION_CONFLICT` | `job_running`（任务排队或运行中）、`checkpoint_locked`、`generation_mismatch`（带 `current_generation`）、`translation_not_committed`、`publication_inconsistent`、`group_members_missing`、`translations_owned_by_another_job`（这个任务复用别的任务的译文，去改源任务，带 `source_job_id`）、`read_only_job`（合并阅读的虚拟任务 `merged-…`） |
+| 409 | `TRANSLATION_REVISION_CONFLICT` | `job_running`（任务排队或运行中）、`checkpoint_locked`、`generation_mismatch`（带 `current_generation`）、`text_mismatch`（带 `current_translated_text`，2026-11-25 起）、`translation_not_committed`、`publication_inconsistent`、`group_members_missing`、`translations_owned_by_another_job`（这个任务复用别的任务的译文，去改源任务，带 `source_job_id`）、`read_only_job`（合并阅读的虚拟任务 `merged-…`） |
 | 400 | `BAD_REQUEST` | 请求体有 PATCH 不收的字段（`unknown_field`，提示里写字段名）、不合 schema（`schema_mismatch`：缺 `source` 或取值不对，2026-11-24 以前是 `422 UNPROCESSABLE_ENTITY`）、不是 JSON（`invalid_json`）、文字超长 |
 | 404 | `NOT_FOUND` | 任务、条目不存在（普通）；还没有 manifest 时 `reason: "not_ready"` |
 
