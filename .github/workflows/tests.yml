@@ -223,7 +223,7 @@ jobs:
       - name: Check installed command contracts
         run: |
           uv run --project "$RETAIN_PDF_SERVICES_ROOT" retainpdf-pipeline --help
-          uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -c "import retainpdf_base, retainpdf_math, retainpdf_pipeline, retainpdf_translation, retainpdf_translation_agent, retainpdf_translation_classic, retainpdf_table_agent, retainpdf_table_agent_engine, retainpdf_toc_agent, retainpdf_toc_agent_engine"
+          uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -c "import retainpdf_base, retainpdf_math, retainpdf_pipeline, retainpdf_translation, retainpdf_translation_agent, retainpdf_translation_classic, retainpdf_table_agent, retainpdf_table_agent_engine, retainpdf_toc_agent, retainpdf_toc_agent_engine, retainpdf_ask_agent, retainpdf_ask_agent_engine"
 
       - name: Base package tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/base/tests" -q
@@ -245,6 +245,9 @@ jobs:
 
       - name: TOC agent package tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/toc-agent/tests" -q
+
+      - name: Ask agent package tests
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/ask-agent/tests" -q
 
       # 这一步必须排在装 typst 之前——它验证的就是「机器上没有 typst 时单元测试
       # 依然全绿」。#106 把二进制定位移进 try 内之后有 15 个用例悄悄开始依赖

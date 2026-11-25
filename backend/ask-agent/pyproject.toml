@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "retainpdf-ask-agent"
+version = "4.2.6"
+description = "RetainPDF built-in ACP agent for reader questions: streams thinking, answer and token usage from the configured model over stdio"
+requires-python = ">=3.11,<3.12"
+# 核心 retainpdf_ask_agent 不依赖第三方库：模型的流式调用由调用方传进来（函数），测试钉着。
+dependencies = []
+
+[project.optional-dependencies]
+# 接线 retainpdf_ask_agent_engine：三种协议的流式请求（请求体用翻译底座的 model_wire）。后端的 ACP 桥用 python -m retainpdf_ask_agent 起。
+engine = [
+  "retainpdf-translation",
+]
+test = [
+  "pytest==9.0.3",
+]
+
+[tool.uv.sources]
+retainpdf-translation = { workspace = true }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "retainpdf_ask_agent",
+  "retainpdf_ask_agent.prompts",
+  "retainpdf_ask_agent_engine",
+]
+
+[tool.setuptools.package-data]
+"retainpdf_ask_agent.prompts" = ["*.txt"]

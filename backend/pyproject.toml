@@ -4,6 +4,7 @@ version = "2026.11.23"
 description = "RetainPDF backend Python workspace"
 requires-python = ">=3.11,<3.12"
 dependencies = [
+  "retainpdf-ask-agent",
   "retainpdf-base",
   "retainpdf-math",
   "retainpdf-pipeline",
@@ -16,6 +17,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
+  "retainpdf-ask-agent[test]",
   "retainpdf-base[test]",
   "retainpdf-math[test]",
   "retainpdf-pipeline[test]",
@@ -27,6 +29,7 @@ test = [
 ]
 
 [tool.uv.sources]
+retainpdf-ask-agent = { workspace = true }
 retainpdf-base = { workspace = true }
 retainpdf-math = { workspace = true }
 retainpdf-pipeline = { workspace = true }
@@ -38,6 +41,7 @@ retainpdf-translation-classic = { workspace = true }
 
 [tool.uv.workspace]
 members = [
+  "ask-agent",
   "base",
   "math",
   "pipeline",
