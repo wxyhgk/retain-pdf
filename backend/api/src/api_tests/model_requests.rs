@@ -104,7 +104,7 @@ async fn terminal_jobs_reject_submission_without_dispatch() {
         fixture.save_job("job-a", status);
         assert!(matches!(
             fixture.api.submit("job-a", &token, request()).await,
-            Err(AppError::Conflict(_))
+            Err(AppError::Reasoned { reason: "job_not_active", .. })
         ));
         assert!(fixture
             .executor
@@ -362,4 +362,5 @@ async fn http_worker_body_errors_use_the_api_error_envelope() {
     .await;
     assert_eq!(status, StatusCode::CONFLICT, "{payload}");
     assert_eq!(payload["code"], 40900);
+    assert_eq!(payload["error"]["details"]["reason"], "job_not_active");
 }

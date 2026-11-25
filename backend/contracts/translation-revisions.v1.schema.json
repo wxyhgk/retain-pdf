@@ -40,10 +40,9 @@
       "input": "ReviseTranslationItemRequest",
       "output": "TranslationRevisionView",
       "errors": {
-        "400": "BAD_REQUEST: oversized text/reason, malformed item id; request body errors carry error.details.reason: unknown_field, schema_mismatch (missing or unknown source; was 422 UNPROCESSABLE_ENTITY before 2026-11-24), invalid_json",
+        "400": "BAD_REQUEST: oversized text/reason, malformed item id; request body errors carry error.details.reason: unknown_field, schema_mismatch (missing or unknown source; was 422 UNPROCESSABLE_ENTITY before 2026-11-24), invalid_json; TRANSLATION_REVISION_REJECTED (was 422 before 2026-11-25): the new text failed validation, see TranslationRevisionErrorDetails (reason validation_failed / item_not_translatable)",
         "404": "NOT_FOUND: job or item does not exist (error.details is {}); no translation manifest yet: error.details.reason = not_ready, message \"translation manifest not ready\"",
-        "409": "TRANSLATION_REVISION_CONFLICT: see TranslationRevisionErrorDetails.reason",
-        "422": "TRANSLATION_REVISION_REJECTED: see TranslationRevisionErrorDetails.validation"
+        "409": "TRANSLATION_REVISION_CONFLICT: see TranslationRevisionErrorDetails.reason"
       },
       "rust_view": "TranslationRevisionView",
       "ts_consumer": "@retainpdf/contracts/translation-revisions :: TranslationRevisionView"
@@ -408,7 +407,7 @@
     },
     "TranslationRevisionErrorDetails": {
       "type": "object",
-      "description": "error.details of a 409/422 response.",
+      "description": "error.details of a TRANSLATION_REVISION_CONFLICT (409) or TRANSLATION_REVISION_REJECTED (400; 422 before 2026-11-25) response.",
       "required": ["reason"],
       "properties": {
         "reason": {

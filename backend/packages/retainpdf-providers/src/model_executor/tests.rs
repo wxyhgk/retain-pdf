@@ -578,7 +578,10 @@ fn restart_recovery_and_immutable_snapshot() {
     changed.model = "different".into();
     assert!(matches!(
         e.register_job("j", &changed, 60),
-        Err(ModelExecutorError::Conflict(_))
+        Err(ModelExecutorError::Conflict {
+            reason: "model_connection_changed",
+            ..
+        })
     ));
     let new_token = e.register_job("j", &p, 60).unwrap();
     assert!(e.status("j", &token, "op").is_err());

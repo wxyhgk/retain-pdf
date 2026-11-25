@@ -1922,3 +1922,17 @@ Studio（`frontend/studio`）自己的 AI，后端把 RetainPDF 自己的 AI 服
 PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_upload_exempt = true`：整本翻译任务（OCR 之后紧接着翻译）
 按片上传，不看文件大小（后端 2026-11-12 起不再拦，以前超过 100MB 建任务会被拒）；纯 OCR 任务、填了自建服务地址、
 `transport=official_cli` 是整份提交，照旧 100MB。前端 `maxBytes: 0` 对整本翻译是对的，纯 OCR 任务要按 100MB 拦。
+
+## 接口规矩尾巴：409 全带 reason、`GET /jobs` 收紧、改译文不再回 422（2026-11-25，fix/api-rule-tail）
+
+见 [规矩尾巴补完](../../ops/planning/api-reorg/20261125-规矩尾巴补完.md)。都是只增或前端已经不受影响的改动，**前端不改也照常能用**。
+
+1. 改单条译文 `PATCH /jobs/{job_id}/translations/{item_id}` 新译文没过检查：`422` → `400`，`error.code` 照旧
+   `TRANSLATION_REVISION_REJECTED`，`details` 不变。`frontend/packages/api/src/translation-debug.ts` 的 `reviseTranslationItem`
+   按 `details.reason` 出提示，不用改；如果别处（测试、注释）写了 422，顺手改成 400。
+2. `GET /jobs` 查询串里不认识的参数 `400`（以前忽略）。`frontend/packages/api/src/jobs.ts` 的 `listJobs` 带的参数都认识，
+   桌面壳 `backend-http.js` 的 `limit`、`offset` 也认识；以后加参数要先在后端加。契约 `job-status.v1` 的 `ListJobsQuery` 加了
+   `additionalProperties: false`，生成的类型只多一段说明。
+3. 新的 409 `reason`（以前 `details` 是 `{}`）：`legacy_job_unsupported`（很早版本做的任务，读不了产物）、`event_source_not_file`
+   （兜底）、`job_exists`（建任务指定的编号已存在，前端不指定编号碰不到）、`tag_name_taken`（改标签名撞名，带 `existing_tag_id`；
+   标签接口前端还没接）。可选：给 `legacy_job_unsupported` 一句人话，例如「这是很早的版本做的任务，读不了，请重新上传翻译」。

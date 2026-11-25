@@ -245,7 +245,10 @@ impl AppError {
         Self::MethodNotAllowed(msg.into())
     }
 
-    pub fn conflict(msg: impl Into<String>) -> Self {
+    /// 不带 reason 的 409，只留给本文件的测试。409 一律带稳定原因：用 [`AppError::conflict_because`] /
+    /// [`AppError::conflict_because_with`]（2026-11-25 起，最后几处补完后收起来，新代码写不出没有 reason 的 409）。
+    #[cfg(test)]
+    pub(crate) fn conflict(msg: impl Into<String>) -> Self {
         Self::Conflict(msg.into())
     }
 
@@ -447,10 +450,11 @@ impl AppError {
         message: impl Into<String>,
         extra: Value,
     ) -> Self {
-        let code = if status == StatusCode::UNPROCESSABLE_ENTITY {
-            "TRANSLATION_REVISION_REJECTED"
-        } else {
+        // 409 是状态冲突；新译文内容没过检查是 400（2026-11-25 起，以前 422），`error.code` 照旧分两种。
+        let code = if status == StatusCode::CONFLICT {
             "TRANSLATION_REVISION_CONFLICT"
+        } else {
+            "TRANSLATION_REVISION_REJECTED"
         };
         let mut details = json!({ "reason": reason });
         if let (Some(target), Value::Object(extra)) = (details.as_object_mut(), extra) {

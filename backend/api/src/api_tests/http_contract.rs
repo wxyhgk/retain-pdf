@@ -656,3 +656,42 @@ async fn unknown_query_parameters_on_files_delete_and_live_stream_are_rejected()
         assert_eq!(status, StatusCode::NOT_FOUND, "{method} {uri}: {body}");
     }
 }
+
+/// 任务列表 `GET /jobs`：不认识的查询参数 400（只回名字、不回值），`owner` 由路由按当前用户填，
+/// 查询串里带也算不认识；前端、桌面壳会带的参数全认识。2026-11-25 起，以前悄悄忽略。
+#[tokio::test]
+async fn unknown_query_parameters_on_job_list_are_rejected() {
+    let app = build_app(test_state("http-contract-job-list-query"));
+    let send = |uri: String| {
+        let app = app.clone();
+        async move {
+            let response = app
+                .oneshot(
+                    Request::builder()
+                        .method("GET")
+                        .uri(uri)
+                        .header("X-API-Key", "test-key")
+                        .body(Body::empty())
+                        .expect("request"),
+                )
+                .await
+                .expect("response");
+            let status = response.status();
+            (status, read_json(response).await)
+        }
+    };
+    for field in ["scope", "owner", "sort"] {
+        let (status, body) = send(format!("/api/v1/jobs?limit=5&{field}=leak-me")).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{field}: {body}");
+        let message = body["message"].as_str().expect("message");
+        assert!(message.starts_with(&format!("unknown field `{field}`")), "{message}");
+        assert!(!message.contains("leak-me"), "不回值: {message}");
+    }
+    for uri in [
+        "/api/v1/jobs?limit=1&offset=0",
+        "/api/v1/jobs?limit=20&offset=0&status=succeeded&workflow=ocr&provider=paddle&q=book&include_live_stage=false&job_ids=a,b",
+    ] {
+        let (status, body) = send(uri.to_string()).await;
+        assert_eq!(status, StatusCode::OK, "{uri}: {body}");
+    }
+}
