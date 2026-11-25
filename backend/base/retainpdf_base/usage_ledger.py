@@ -50,7 +50,7 @@ _STAGE_PREFIXES: tuple[tuple[str, str], ...] = (
     ("agent-revise", "translation"),
     ("agent-read", "agent_reader"),
     ("agent-review", "agent_review"),
-    # 表格 agent（services/tables）
+    # 表格 agent（backend/table-agent，2026-11-25 以前在普通翻译包的 services/tables）
     ("table-translate", "table_translation"),
     # OCR 识别（GLM-OCR 按 token 计费，2026-11-19 起记账）
     ("ocr ", "ocr"),

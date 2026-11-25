@@ -30,8 +30,11 @@ Python 的翻译 agent 包 `retainpdf-translation-agent`（`backend/translation-
 按重排 agent 的要求改稿，只用标准库；测试系统在 `backend/pipeline/devtools/agent_lab/`。以后的重排 agent 另建 `retainpdf-layout-agent`。
 任务选 `translation.engine=agent` 时由接线 `retainpdf_translation_agent_engine/agent_flow.py` 调（见 [翻译层说明](../python/translation.md)），运行时镜像也装它。接线 2026-11-20 从翻译包挪进这个包（以前翻译包依赖 agent 包，现在反过来：接线依赖翻译包，装 `retainpdf-translation-agent[engine]`；核心照旧只用标准库）。
 Python 的普通翻译引擎包 `retainpdf-translation-classic`（`backend/translation-classic`，2026-11-20 从翻译包拆出来）：批量逐块翻、修复兜底、
-译前准备、精修、编辑部、表格翻译，目录结构和翻译包一样；依赖翻译包，翻译包经引擎登记表 `workflow/engines.py` 延迟加载它，不 import 它。
-流水线的渲染前精修、表格翻译从 `retainpdf_translation_classic.public` 取。
+译前准备、精修、编辑部，目录结构和翻译包一样；依赖翻译包，翻译包经引擎登记表 `workflow/engines.py` 延迟加载它，不 import 它。
+流水线的渲染前精修从 `retainpdf_translation_classic.public` 取。
+Python 的表格 agent 包 `retainpdf-table-agent`（`backend/table-agent`，2026-11-25 从普通翻译引擎包拆出来）：一张表一个有上限的循环，
+逐格校验，翻不完整表保留原文。核心 `retainpdf_table_agent` 只用标准库（提示词也在包里），接线 `retainpdf_table_agent_engine`
+接翻译底座的模型调用；流水线的表格翻译阶段 `retainpdf_pipeline/translate/tables_stage.py` 直接 import 这两个。
 Rust 的底座包 `retainpdf-api-base` 和 Python 的底座包 `retainpdf-base`（`backend/base`，翻译拆包时新建）是两个东西。`retainpdf-api-base`（2026-10-16 新建）是 API 各领域包共用的底座：
 错误类型 `AppError` 和按编号读出任务 `job_loading`，在 `services` 下面一层。
 

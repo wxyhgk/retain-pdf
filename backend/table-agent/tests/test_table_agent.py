@@ -3,16 +3,16 @@ from __future__ import annotations
 
 import json
 
-from retainpdf_translation_classic.services.tables import STATUS_KEPT
-from retainpdf_translation_classic.services.tables import STATUS_SKIPPED
-from retainpdf_translation_classic.services.tables import STATUS_TRANSLATED
-from retainpdf_translation_classic.services.tables import TableContext
-from retainpdf_translation_classic.services.tables import TableTermMemory
-from retainpdf_translation_classic.services.tables import cache_key
-from retainpdf_translation_classic.services.tables import translate_table
-from retainpdf_translation_classic.services.tables import translated_table_html
-from retainpdf_translation_classic.services.tables.cells import plan_chunks
-from retainpdf_translation_classic.services.tables.cells import table_cells
+from retainpdf_table_agent import STATUS_KEPT
+from retainpdf_table_agent import STATUS_SKIPPED
+from retainpdf_table_agent import STATUS_TRANSLATED
+from retainpdf_table_agent import TableContext
+from retainpdf_table_agent import TableTermMemory
+from retainpdf_table_agent import cache_key
+from retainpdf_table_agent import translate_table
+from retainpdf_table_agent import translated_table_html
+from retainpdf_table_agent.cells import plan_chunks
+from retainpdf_table_agent.cells import table_cells
 
 
 def _cell(row: int, col: int, text: str, role: str, kind: str, **span: int) -> dict:

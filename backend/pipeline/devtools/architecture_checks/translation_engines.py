@@ -64,7 +64,6 @@ CLASSIC_MODULES = (
     "services.classification.page_classifier",
     "services.classification.prompting",
     "services.classification.response_parser",
-    "services.tables",
     "services.postprocess",
     "services.memory",
 )

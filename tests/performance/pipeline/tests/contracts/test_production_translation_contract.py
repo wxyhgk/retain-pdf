@@ -1,5 +1,7 @@
 """Production entry contracts run independently of parent-process imports."""
 import json
+import os
+from pathlib import Path
 import hashlib
 import subprocess
 import sys
@@ -34,7 +36,11 @@ def test_probe_environment_does_not_inherit_service_configuration(monkeypatch, t
         monkeypatch.setenv(name, "synthetic-parent-value")
     env = probe_environment("rust", tmp_path)
     assert "synthetic-parent-value" not in env.values()
-    assert env["PYTHONPATH"] == str(PIPELINE)
+    # 只有本仓库自己的包（流水线排第一），不继承外面的 PYTHONPATH（2026-11-25 起不只流水线一个）。
+    paths = env["PYTHONPATH"].split(os.pathsep)
+    assert paths[0] == str(PIPELINE)
+    assert all(Path(path).parent == PIPELINE.parent for path in paths), paths
+    assert any(Path(path).name == "table-agent" for path in paths), paths
     assert env["RETAIN_TRANSLATION_TRANSPORT"] == "rust"
 
 

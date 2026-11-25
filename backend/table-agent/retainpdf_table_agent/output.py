@@ -4,8 +4,8 @@ from __future__ import annotations
 import html
 import re
 
-from retainpdf_translation_classic.services.tables.agent import TableResult
-from retainpdf_translation_classic.services.tables.cells import table_cells
+from retainpdf_table_agent.agent import TableResult
+from retainpdf_table_agent.cells import table_cells
 
 _ALLOWED_TAG = re.compile(r"(</?(?:sup|sub)>)")
 

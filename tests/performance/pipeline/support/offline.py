@@ -6,7 +6,7 @@ import socket
 import sys
 from unittest.mock import patch
 
-from support.paths import HERE, PIPELINE, ROOT
+from support.paths import BACKEND, HERE, PIPELINE, ROOT
 
 
 def child_environment(root):
@@ -14,7 +14,10 @@ def child_environment(root):
                "PATHEXT", "APPDATA", "LOCALAPPDATA", "TMP", "TEMP", "TMPDIR",
                "LANG", "LC_ALL", "TYPST_BIN"}
     env = {key: value for key, value in os.environ.items() if key.upper() in allowed}
-    env.update(PYTHONPATH=str(PIPELINE), PYTHONNOUSERSITE="1",
+    # 本仓库自己的包排在最前（和 run_translation_tests.py 的 test_environment 一样）：在 worktree 里跑时子进程测的是
+    # 这份检出的代码，不是 venv 里以可编辑方式装的主检出那份；新加的包（2026-11-25 的表格 agent 包）没装进 venv 也找得到。
+    own = [PIPELINE] + sorted({init.parent.parent for init in BACKEND.glob("*/retainpdf_*/__init__.py")})
+    env.update(PYTHONPATH=os.pathsep.join(dict.fromkeys(str(path) for path in own)), PYTHONNOUSERSITE="1",
                PYTHONIOENCODING="utf-8", PYTHONUNBUFFERED="1",
                OUTPUT_ROOT=str(Path(root).resolve() / "cache"))
     return env

@@ -12,16 +12,8 @@ _EXPORTS = {
         "retainpdf_translation_classic.workflow.refine",
         "run_refine_for_render",
     ),
-    # 表格翻译（T3）：表格 agent、术语记忆、整表译文、模型调用
-    "TableContext": ("retainpdf_translation_classic.services.tables", "TableContext"),
-    "TableResult": ("retainpdf_translation_classic.services.tables", "TableResult"),
-    "TableTermMemory": ("retainpdf_translation_classic.services.tables", "TableTermMemory"),
-    "TABLE_PROMPT_VERSION": ("retainpdf_translation_classic.services.tables", "PROMPT_VERSION"),
-    "TABLE_STATUS_TRANSLATED": ("retainpdf_translation_classic.services.tables", "STATUS_TRANSLATED"),
-    "table_cache_key": ("retainpdf_translation_classic.services.tables", "cache_key"),
-    "table_chat_fn": ("retainpdf_translation_classic.services.tables.llm", "table_chat_fn"),
-    "translate_table": ("retainpdf_translation_classic.services.tables", "translate_table"),
-    "translated_table_html": ("retainpdf_translation_classic.services.tables", "translated_table_html"),
+    # 表格翻译（T3）2026-11-25 搬进了表格 agent 包 backend/table-agent（retainpdf_table_agent、
+    # retainpdf_table_agent_engine），流水线直接从那里 import。
 }
 
 __all__ = list(_EXPORTS)

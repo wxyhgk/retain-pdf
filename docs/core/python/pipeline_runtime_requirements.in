@@ -5,6 +5,8 @@ pikepdf
 requests
 retainpdf_base
 retainpdf_math
+retainpdf_table_agent
+retainpdf_table_agent_engine
 retainpdf_translation
 retainpdf_translation_agent
 retainpdf_translation_classic
