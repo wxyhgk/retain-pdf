@@ -16,8 +16,9 @@
 
 2026-11-25，新接口，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md)、契约 `ai-agents.v1`（`@retainpdf/contracts/ai-agents`）：
 
-- `GET /api/v1/ai/agents`（`client_name: listAiAgents`）：自带的 + 本机 agent，`available`、`reason`、`launch`；`local_agents.enabled`。
-  `frontend/packages/api` 的生成客户端要重新跑 `npm run generate:client` 才有 `listAiAgents`。
+- `GET /api/v1/ai/agents`：自带的 + 本机 agent，`available`、`reason`、`launch`；`local_agents.enabled`。契约里**先没写 `client_name`**：
+  生成客户端（`frontend/packages/api`）有漂移检查，后端加了名字前端测试就红。前端接的时候在契约里加 `client_name`（比如 `listAiAgents`），
+  两份契约（`contracts/`、`backend/contracts/`）一起改，跑 `npm run generate`（contracts）和 `npm run generate:client`，同一个提交。
 - WebSocket `GET /api/v1/ai/agents/{agent_id}/acp?api_key=…`：ACP 原样转；自带 agent 再带 `model`、`base_url`、`api_protocol`、
   `thinking`、`credential_ref`。握手前就不行的是 HTTP 错误（400 / 403 / 404），连上后 agent 退出关闭码 1011。
 - 自带 agent 本身（Python `retainpdf_ask_agent`）是第 2 步，合进来之前连 `retainpdf` 会马上 1011。
