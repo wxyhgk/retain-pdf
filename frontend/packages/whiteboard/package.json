@@ -34,7 +34,8 @@
   },
   "dependencies": {
     "@retainpdf/ui": "0.1.0",
-    "mathjax-full": "^3.2.1"
+    "mathjax-full": "^3.2.1",
+    "marked": "^18.0.6"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",

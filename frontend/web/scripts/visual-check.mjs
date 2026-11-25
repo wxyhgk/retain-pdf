@@ -119,16 +119,26 @@ const STATES = [
     // 学习系统的白板讲解板演示页：最后一步、不放动画（?still=1），公式等 MathJax 排好
     name: "whiteboard",
     page: "whiteboard.html",
-    url: "/whiteboard.html?script=energy&step=5&still=1",
+    url: "/whiteboard.html?mode=script&script=energy&step=5&still=1",
     run: async (page) => {
       await page.waitForSelector(".wb-board .wb-math svg");
       await page.waitForTimeout(300);
     },
   },
   {
+    name: "whiteboard-board",
+    // 无限白板：三张示例卡片（Markdown + 公式），不读本机存档
+    page: "src/app/whiteboard/board-sample.ts",
+    url: "/whiteboard.html?board=sample",
+    run: async (page) => {
+      await page.waitForSelector(".wbb-card .wbm-math svg");
+      await page.waitForTimeout(300);
+    },
+  },
+  {
     name: "whiteboard-levels",
     page: "whiteboard.html",
-    url: "/whiteboard.html?script=koopmans&step=3&still=1",
+    url: "/whiteboard.html?mode=script&script=koopmans&step=3&still=1",
     run: async (page) => {
       await page.waitForSelector(".wb-board .wb-levels");
       await page.waitForTimeout(300);

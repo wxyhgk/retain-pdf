@@ -55,3 +55,42 @@
     flex-wrap: wrap;
   }
 }
+
+.wbdemo-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.wbdemo-modes {
+  display: flex;
+  gap: 4px;
+}
+
+.wbdemo-boardwrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: calc(100vh - 120px);
+  min-height: 420px;
+}
+
+.wbdemo-boardbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.wbdemo-boardbar > span {
+  flex: 1 1 320px;
+}
+
+.wbdemo-board-canvas {
+  flex: 1 1 auto;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+}

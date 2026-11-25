@@ -5,10 +5,14 @@
 import { exToPx, FONT_SIZE } from "../layout/measure.js";
 let customLoader = null;
 let enginePromise = null;
+/** 已经加载好的引擎：有了它，公式可以同步排（边打边看用）。 */
+let loadedEngine = null;
 export function setWhiteboardMathEngine(loader) {
     customLoader = loader;
     enginePromise = null;
+    loadedEngine = null;
     cache.clear();
+    htmlCache.clear();
 }
 function pickExport(ns, name) {
     const direct = ns[name];
@@ -41,16 +45,56 @@ async function loadDefaultEngine() {
         OutputJax: new SVG({ fontCache: "none" }),
     });
     return {
-        toSvg(tex) {
-            const node = document.convert(tex, { display: true });
+        toSvg(tex, display = true) {
+            const node = document.convert(tex, { display });
             return adaptor.outerHTML(adaptor.firstChild(node));
         },
     };
 }
 function engine() {
-    if (!enginePromise)
-        enginePromise = (customLoader ?? loadDefaultEngine)();
+    if (!enginePromise) {
+        const loading = (customLoader ?? loadDefaultEngine)();
+        enginePromise = loading;
+        loading.then((ready) => {
+            if (enginePromise === loading)
+                loadedEngine = ready;
+        }, () => { });
+    }
     return enginePromise;
+}
+/** 先把公式引擎加载好（之后 mathHtmlNow 能同步排）。 */
+export async function loadMathEngine() {
+    loadedEngine = await engine();
+}
+export function mathEngineReady() {
+    return loadedEngine !== null;
+}
+const htmlCache = new Map();
+const HTML_CACHE_LIMIT = 500;
+/**
+ * 同步把一段 TeX 排成可以放进 HTML 的 SVG（白板上的文字、边打边看的预览）。
+ * 引擎还没加载时返回 null（调用方先 loadMathEngine）；写错时返回 error（MathJax 的说明）。
+ */
+export function mathHtmlNow(tex, display) {
+    if (!loadedEngine)
+        return null;
+    const key = `${display ? "D" : "I"}\u0000${tex}`;
+    const hit = htmlCache.get(key);
+    if (hit)
+        return hit;
+    let result;
+    try {
+        const svg = loadedEngine.toSvg(tex, display);
+        const error = /data-mjx-error="([^"]*)"/.exec(svg)?.[1];
+        result = error ? { error } : { html: sanitizeMathSvg(svg) };
+    }
+    catch (cause) {
+        result = { error: cause instanceof Error ? cause.message : String(cause) };
+    }
+    if (htmlCache.size >= HTML_CACHE_LIMIT)
+        htmlCache.delete(htmlCache.keys().next().value);
+    htmlCache.set(key, result);
+    return result;
 }
 const cache = new Map();
 function cacheKey(tex, size) {
