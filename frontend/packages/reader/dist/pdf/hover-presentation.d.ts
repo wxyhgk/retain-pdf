@@ -1,5 +1,5 @@
 import { type RefObject } from "react";
-import type { ReaderRegionRect } from "../shared/data/reader-regions.js";
+import { type ReaderRegionRect } from "../shared/data/reader-regions.js";
 import type { ReaderTextHoverTarget } from "./ReaderTextHoverLayer.js";
 import { type HoverToolsLayout } from "./hover-tools-placement.js";
 export { inHoverToolsZone, placeHoverTools, tailToolsTop, type HoverToolsLayout } from "./hover-tools-placement.js";

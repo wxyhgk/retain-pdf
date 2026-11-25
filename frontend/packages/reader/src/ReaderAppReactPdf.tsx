@@ -52,6 +52,8 @@ import { useReaderBlockEdit, useEditBlockShortcut } from "./hooks/use-reader-blo
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
 import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
 import type { PdfOutlineNode } from "./pdf/pdf-outline.js";
+import type { RegionPdfDocument } from "./pdf/RegionCanvas.js";
+import { ReaderZoomViewer } from "./components/react-pdf/ReaderZoomViewer.js";
 
 /** 稳定的空书签列表（每次新建一个会让目录卡白白重算）。 */
 const NO_BOOKMARKS: PdfOutlineNode[] = [];
@@ -370,6 +372,24 @@ export function ReaderAppReactPdf() {
     if (translated && translated.url === sessionFiles.translatedUrl && translated.nodes.length) return translated.nodes;
     return NO_BOOKMARKS;
   }, [pdfOutlines, sessionFiles.sourceUrl, sessionFiles.translatedUrl]);
+  // 放大查看：各栏读好的 PDF（按文件记，换文件作废）和开着的那一块。
+  const pdfDocs = useRef<Partial<Record<"source" | "translated", { url: string; pdf: RegionPdfDocument }>>>({});
+  const [pdfDocsVersion, setPdfDocsVersion] = useState(0);
+  const onPdfDocument = useCallback((pdf: RegionPdfDocument, pane: "source" | "translated") => {
+    pdfDocs.current[pane] = { url: outlineUrls.current[pane], pdf };
+    setPdfDocsVersion((version) => version + 1);
+  }, []);
+  const [zoomItem, setZoomItem] = useState<string | null>(null);
+  const zoomBlock = useCallback((itemId: string) => setZoomItem(itemId), []);
+  const closeZoom = useCallback(() => setZoomItem(null), []);
+  useEffect(() => setZoomItem(null), [c.viewStateKey]);
+  const zoomDocuments = useMemo(() => {
+    const pick = (pane: "source" | "translated", url: string) => {
+      const entry = pdfDocs.current[pane];
+      return entry && entry.url === url ? entry.pdf : null;
+    };
+    return { source: pick("source", sessionFiles.sourceUrl), translated: pick("translated", sessionFiles.translatedUrl) };
+  }, [pdfDocsVersion, sessionFiles.sourceUrl, sessionFiles.translatedUrl]);
   const jumpToPageFromFinder = useCallback((page: number) => {
     c.goToPage(page);
     if (finder === "outline" || readerViewportWidth() < 900) setFinder(null);
@@ -450,6 +470,8 @@ export function ReaderAppReactPdf() {
     jumpToBlock,
     revisedBlocks,
     onPdfOutline,
+    onPdfDocument,
+    zoomBlock,
     editBlock: blockEdit.available ? editBlock : undefined,
     blockEdit,
     editShowsSource: visiblePdfMode !== "compare",
@@ -477,6 +499,8 @@ export function ReaderAppReactPdf() {
     jumpToBlock,
     revisedBlocks,
     onPdfOutline,
+    onPdfDocument,
+    zoomBlock,
     blockEdit,
     editBlock,
     visiblePdfMode,
@@ -578,6 +602,17 @@ export function ReaderAppReactPdf() {
         <Suspense fallback={null}>
           {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
         </Suspense>
+        {zoomItem ? (
+          <ReaderZoomViewer
+            itemId={zoomItem}
+            regions={session.regions}
+            metadata={session.readerMetadata}
+            documents={zoomDocuments}
+            panes={visiblePdfMode === "compare" ? ["source", "translated"] : visiblePdfMode === "translated" ? ["translated"] : ["source"]}
+            onNavigate={setZoomItem}
+            onClose={closeZoom}
+          />
+        ) : null}
         <ReaderToolBall active={assistantPanel} compare={versionCompare} ink={ink} />
         <ReaderInkMenu ink={ink} menu={inkMenu} onClose={closeInkMenu} />
         <ReaderInkDock ink={ink} />

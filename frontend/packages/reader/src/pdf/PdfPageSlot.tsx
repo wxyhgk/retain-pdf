@@ -1,6 +1,7 @@
 // 单页：对齐旧 createManualPageElement + setManualPageSize（固定宽高）
 // 对照时 syncedMinHeight 来自 syncReaderPageRows 的 max 高度
 
+import { readerRegionKindForRegion } from "../shared/data/reader-regions.js";
 import {
   memo,
   useEffect,
@@ -242,6 +243,14 @@ function PdfPageSlotInner({
       // placing an interactive overlay above the native text selection layer.
       onPointerMoveCapture={handlePointerMove}
       onPointerDown={handlePointerDown}
+      // 双击图片放大看（文字块的双击留给浏览器选词）。
+      onDoubleClick={(event) => {
+        const zoom = readerContext?.zoomBlock;
+        if (!zoom || readerContext?.ink?.tool || !hoveredTextTarget) return;
+        if (readerRegionKindForRegion(hoveredTextTarget.highlight.region) !== "figure") return;
+        event.preventDefault();
+        zoom(hoveredTextTarget.itemId);
+      }}
       // 触屏抬手也会触发 pointerleave：那时框得留着，不然「复制」一闪就没了。
       onPointerLeave={(event) => {
         if (event.pointerType === "mouse") setHoveredTextId(null);
@@ -352,6 +361,7 @@ function PdfPageSlotInner({
         pane={pane === "translated" ? "translated" : "source"}
         revisedCount={hoveredTextTarget ? revisedBlocks?.get(hoveredTextTarget.itemId) || 0 : 0}
         onEdit={editBlock}
+        onZoom={readerContext?.zoomBlock}
         frameRect={hoverPresentation?.rect}
         placement={hoverPresentation?.placement}
         tailTop={hoverPresentation?.tailTop}

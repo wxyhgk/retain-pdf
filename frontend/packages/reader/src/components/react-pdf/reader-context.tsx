@@ -5,6 +5,7 @@
 // 让滚动只重渲染底栏，而不是所有外壳。
 import { createContext, useContext, type ReactNode } from "react";
 import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
+import type { RegionPdfDocument } from "../../pdf/RegionCanvas.js";
 import type { ReaderPaneModel } from "../../hooks/use-reader-pane-model.js";
 import type { ReaderDownloadContext } from "../../hooks/use-reader-session.js";
 import type {
@@ -48,6 +49,10 @@ export type ReaderContextValue = {
   revisedBlocks?: ReadonlyMap<string, number>;
   /** 某一栏的 PDF 读出了自带书签（目录卡用）。 */
   onPdfOutline?: (outline: PdfOutlineNode[], pane: "source" | "translated") => void;
+  /** 某一栏的 PDF 读好了（放大查看要用它重新画一块）。 */
+  onPdfDocument?: (pdf: RegionPdfDocument, pane: "source" | "translated") => void;
+  /** 放大查看这一块（悬停框的「放大」、双击图片）。 */
+  zoomBlock?: (itemId: string) => void;
   /** 译文栏悬停框的「改」：这一段变成编辑框。不能改时不给。 */
   editBlock?: (itemId: string) => void;
   /** 改译文的状态：正在改哪一段（译文栏在那里画编辑框）、写回了还没排进 PDF 的译文（先盖在 PDF 上）。 */

@@ -13,6 +13,7 @@
 - [上传弹窗（添加 PDF）](./upload-dialog.md) —— 标题、模式、普通 / Agent 翻译、流程条、拖放区，从上到下各是什么
 - [阅读页 Ctrl + 滚轮缩放、深色文档](./reader-zoom-dark.md) —— 手势中只做 CSS 预览、停手才重画，以鼠标为中心；书页黑底白字（底栏开关、D），画布反色、叠层换深色
 - [阅读页画笔](./reader-ink.md) —— 书页上右键出画笔小菜单（Shift+右键是浏览器菜单），P 进出画笔模式，笔迹按页按栏存在本机
+- [阅读页放大看一块](./reader-region-zoom.md) —— 悬停框「放大」、双击图片；这一块按高分辨率重画，对照时原文译文并排，← → 走同类的块
 - [阅读页悬停框的「改」「复制」放哪](./reader-hover-tools.md) —— 候选位置 + 碰撞检测，放框外不挡字，页边窄换图标版
 - [翻译编辑部可视化组件](./editorial-room.md) —— 翻译 agent 各角色分工的动画，editorial.v1 事件回放
 - [白板](../../../frontend/packages/whiteboard/README.md) —— 无限白板（卡片直接写 Markdown，公式好打）和讲解脚本播放器（模型写 JSON 讲解，一步步画）；演示页 `whiteboard.html`，还没接进阅读页，设计见 [学习系统](../../ops/planning/learning-system/README.md)

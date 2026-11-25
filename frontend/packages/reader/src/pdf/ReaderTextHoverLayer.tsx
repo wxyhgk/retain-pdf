@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
-import { Check, Copy, PenLine, X } from "lucide-react";
+import { Check, Copy, PenLine, X, ZoomIn } from "lucide-react";
 import {
   projectReaderRegion,
   readerRegionCopyText,
@@ -15,7 +15,7 @@ export type ReaderTextHoverTarget = {
   rect: ReaderRegionRect;
 };
 
-const HOVER_KINDS = new Set(["text", "formula", "table"]);
+const HOVER_KINDS = new Set(["text", "formula", "table", "figure"]);
 
 export function projectReaderTextHoverTargets(
   regions: readonly ReaderRegionHighlight[],
@@ -23,7 +23,7 @@ export function projectReaderTextHoverTargets(
   height: number,
 ): ReaderTextHoverTarget[] {
   return regions.flatMap((highlight) => {
-    // 正文、行间公式、表格都能悬停复制；图片没有可复制的文字。
+    // 正文、行间公式、表格能悬停复制、放大；图片只能放大（没有可复制的文字）。
     if (!HOVER_KINDS.has(readerRegionKindForRegion(highlight.region))) return [];
     const rect = projectReaderRegion(highlight, width, height);
     return rect ? [{ itemId: highlight.itemId, highlight, rect }] : [];
@@ -84,6 +84,7 @@ export async function copyReaderText(text: string): Promise<boolean> {
 
 export const READER_TEXT_HOVER_COPY_CLASS = "reader-text-hover-copy";
 export const READER_TEXT_HOVER_EDIT_CLASS = "reader-text-hover-edit";
+export const READER_TEXT_HOVER_ZOOM_CLASS = "reader-text-hover-zoom";
 export const READER_TEXT_HOVER_ID_CLASS = "reader-text-hover-id";
 
 /**
@@ -172,6 +173,7 @@ export function ReaderTextHoverLayer({
   pane = "source",
   revisedCount = 0,
   onEdit,
+  onZoom,
   frameRect,
   placement,
   tailTop = 0,
@@ -188,6 +190,8 @@ export function ReaderTextHoverLayer({
   revisedCount?: number;
   /** 译文栏的「改」：打开侧栏「改译文」改这一块。不给就不画。 */
   onEdit?: (itemId: string) => void;
+  /** 「放大」：盖在书上的大框里高分辨率看这一块（ReaderZoomViewer）。不给就不画。 */
+  onZoom?: (itemId: string) => void;
 }) {
   const [state, setState] = useState<CopyState>("idle");
   const [idState, setIdState] = useState<CopyState>("idle");
@@ -270,6 +274,21 @@ export function ReaderTextHoverLayer({
               onClick={copyWith(text, setState)}
             >
               <CopyStateIcon state={state} />
+            </HoverToolButton>
+          ) : null}
+          {onZoom ? (
+            <HoverToolButton
+              className={READER_TEXT_HOVER_ZOOM_CLASS}
+              state="idle"
+              label="放大看这一块"
+              title={kind === "figure" ? "放大看（也可以双击图片）" : "放大看"}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onZoom(target.itemId);
+              }}
+            >
+              <ZoomIn size={13} strokeWidth={2.2} aria-hidden />
             </HoverToolButton>
           ) : null}
         </div>

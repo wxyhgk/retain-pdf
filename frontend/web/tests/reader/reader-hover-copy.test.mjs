@@ -168,9 +168,14 @@ test("只在框外工具条自己那一小块里保持当前框；不再保持�
   assert.match(css, /\.reader-text-hover-layer\s*\{[^}]*z-index:\s*7/);
 });
 
-test("双击 / 三击留给浏览器选词选段：不再整块复制、不清选区", () => {
+test("双击 / 三击留给浏览器选词选段：不再整块复制、不清选区（只有图片双击放大，图里没有字可选）", () => {
   const slot = readFileSync(new URL("../../../../frontend/packages/reader/src/pdf/PdfPageSlot.tsx", import.meta.url), "utf8");
-  assert.doesNotMatch(slot, /onDoubleClick/);
+  const handlers = slot.match(/onDoubleClick=\{[\s\S]*?\n      \}\}/g) || [];
+  assert.ok(handlers.length <= 1, "页面上最多一处双击");
+  for (const handler of handlers) {
+    assert.match(handler, /!== "figure"\) return;/, "不是图片就不管，交给浏览器选词");
+    assert.doesNotMatch(handler, /copy|Clipboard/i, "双击不复制");
+  }
   assert.doesNotMatch(slot, /removeAllRanges/);
 });
 

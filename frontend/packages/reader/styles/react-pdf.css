@@ -374,7 +374,8 @@
 
 /* 「改」「复制」只画图标的圆按钮（名字在悬停提示里，2026-11-20 起）。 */
 .reader-text-hover-tools .reader-text-hover-copy,
-.reader-text-hover-tools .reader-text-hover-edit {
+.reader-text-hover-tools .reader-text-hover-edit,
+.reader-text-hover-tools .reader-text-hover-zoom {
   justify-content: center;
   width: 24px;
   height: 24px;
@@ -383,7 +384,8 @@
 }
 
 .reader-text-hover-copy,
-.reader-text-hover-edit {
+.reader-text-hover-edit,
+.reader-text-hover-zoom {
   display: inline-flex;
   align-items: center;
   min-height: 20px;
@@ -425,7 +427,8 @@
 }
 
 .reader-text-hover-copy:hover,
-.reader-text-hover-edit:hover {
+.reader-text-hover-edit:hover,
+.reader-text-hover-zoom:hover {
   background: color-mix(in srgb, var(--accent) 9%, var(--paper));
   color: var(--ink);
 }
