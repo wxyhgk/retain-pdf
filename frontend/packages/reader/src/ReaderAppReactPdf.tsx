@@ -51,6 +51,10 @@ import { useFindShortcut } from "./hooks/use-find-shortcut.js";
 import { useReaderBlockEdit, useEditBlockShortcut } from "./hooks/use-reader-block-edit.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
 import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
+import type { PdfOutlineNode } from "./pdf/pdf-outline.js";
+
+/** 稳定的空书签列表（每次新建一个会让目录卡白白重算）。 */
+const NO_BOOKMARKS: PdfOutlineNode[] = [];
 
 /** 阅读视图可见台面的判别联合。 */
 export type ReaderPaneComposition = {
@@ -352,6 +356,24 @@ export function ReaderAppReactPdf() {
     if (finder === "outline" || readerViewportWidth() < 900) setFinder(null);
   }, [c.jumpToAnchor, finder]);
   const jumpToBlock = useCallback((itemId: string) => c.jumpToAnchor({ block_id: itemId }), [c.jumpToAnchor]);
+  // PDF 自带的书签（目录卡优先用它）：按栏记，带上是哪个文件的，换书、换文件就作废。原文的优先（译文 PDF 多半没有书签）。
+  const [pdfOutlines, setPdfOutlines] = useState<Partial<Record<"source" | "translated", { url: string; nodes: PdfOutlineNode[] }>>>({});
+  const outlineUrls = useRef({ source: sessionFiles.sourceUrl, translated: sessionFiles.translatedUrl });
+  outlineUrls.current = { source: sessionFiles.sourceUrl, translated: sessionFiles.translatedUrl };
+  const onPdfOutline = useCallback((nodes: PdfOutlineNode[], pane: "source" | "translated") => {
+    setPdfOutlines((current) => ({ ...current, [pane]: { url: outlineUrls.current[pane], nodes } }));
+  }, []);
+  const bookmarks = useMemo(() => {
+    const source = pdfOutlines.source;
+    if (source && source.url === sessionFiles.sourceUrl && source.nodes.length) return source.nodes;
+    const translated = pdfOutlines.translated;
+    if (translated && translated.url === sessionFiles.translatedUrl && translated.nodes.length) return translated.nodes;
+    return NO_BOOKMARKS;
+  }, [pdfOutlines, sessionFiles.sourceUrl, sessionFiles.translatedUrl]);
+  const jumpToPageFromFinder = useCallback((page: number) => {
+    c.goToPage(page);
+    if (finder === "outline" || readerViewportWidth() < 900) setFinder(null);
+  }, [c.goToPage, finder]);
   // 改译文：悬停框里的「改」、按 E 都是把这一段变成编辑框（在译文栏里）。只开着原文栏时先切到对照。
   const blockEdit = useReaderBlockEdit({
     jobId: session.jobId,
@@ -427,6 +449,7 @@ export function ReaderAppReactPdf() {
     regionHover,
     jumpToBlock,
     revisedBlocks,
+    onPdfOutline,
     editBlock: blockEdit.available ? editBlock : undefined,
     blockEdit,
     editShowsSource: visiblePdfMode !== "compare",
@@ -453,6 +476,7 @@ export function ReaderAppReactPdf() {
     regionHover,
     jumpToBlock,
     revisedBlocks,
+    onPdfOutline,
     blockEdit,
     editBlock,
     visiblePdfMode,
@@ -507,6 +531,8 @@ export function ReaderAppReactPdf() {
             onTab={setFinder}
             onClose={() => setFinder(null)}
             onJump={jumpFromFinder}
+            bookmarks={bookmarks}
+            onJumpPage={jumpToPageFromFinder}
             query={findQuery}
             onQuery={setFindQuery}
             term={findTerm}

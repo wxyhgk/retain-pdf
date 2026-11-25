@@ -183,6 +183,7 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
   const translatedFile = props.translatedFile ?? ctx?.translatedFile ?? null;
   const onMetrics = props.onMetrics ?? ctx?.onMetrics;
   const onNumPagesChange = props.onNumPagesChange ?? ctx?.onNumPagesChange;
+  const onPdfOutline = ctx?.onPdfOutline;
   const activeRegion = props.activeRegion ?? ctx?.activeRegion;
   const regions = props.regions ?? ctx?.regions ?? [];
 
@@ -259,6 +260,8 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
                 : "暂无原文 PDF"
             }
             onNumPagesChange={onNumPagesChange}
+            // 「对比版本」把左栏换成另一份译文时不读它的书签。
+            onOutline={compareVersion ? undefined : onPdfOutline}
             activeRegion={activeRegion}
             regions={compareVersion?.regions ?? regions}
             readerMetadata={readerMetadata}
@@ -301,6 +304,7 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
             onMetrics={onMetrics}
             emptyLabel="暂无译文 PDF"
             onNumPagesChange={onNumPagesChange}
+            onOutline={onPdfOutline}
             activeRegion={activeRegion}
             regions={regions}
             readerMetadata={readerMetadata}

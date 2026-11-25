@@ -1,6 +1,7 @@
 // 单栏 PDF：栏不滚动；纵向由共享 scroll shell 负责。
 // 对照等高由父级 usePageRowSync 完成，不做 display:contents。
 
+import { readPdfOutline, type PdfOutlineNode, type PdfOutlineSource } from "./pdf-outline.js";
 import {
   forwardRef,
   memo,
@@ -99,6 +100,8 @@ type PdfDocumentPaneProps = {
   rowHeights?: PageRowHeights;
   onMetrics?: () => void;
   onLoadSuccess?: (info: { numPages: number; pane: ReaderPaneId }) => void;
+  /** PDF 自带的书签（读完才回调；没有书签是空数组）。不给就不读。 */
+  onOutline?: (outline: PdfOutlineNode[], pane: ReaderPaneId) => void;
   onLoadError?: (error: Error, pane: ReaderPaneId) => void;
   onNumPagesChange?: (numPages: number, pane: ReaderPaneId) => void;
   activeRegion?: ReaderRegion | null;
@@ -130,6 +133,7 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
       rowHeights,
       onMetrics,
       onLoadSuccess,
+      onOutline,
       onLoadError,
       onNumPagesChange,
       activeRegion = null,
@@ -430,14 +434,21 @@ const PdfDocumentPaneInner = forwardRef<HTMLElement, PdfDocumentPaneProps>(
     }, [documentIdentity, onNumPagesChange, pane]);
 
     const handleLoadSuccess = useCallback(
-      ({ numPages: pages }: { numPages: number }) => {
+      (pdf: { numPages: number } & Partial<PdfOutlineSource>) => {
         if (activeDocumentIdentityRef.current !== documentIdentity) return;
+        const pages = pdf.numPages;
         setNumPages(pages);
         setDocError("");
         onNumPagesChange?.(pages, pane);
         onLoadSuccess?.({ numPages: pages, pane });
+        // 书签在后台读，读完时文档还是这一份才交出去。
+        if (onOutline && typeof pdf.getOutline === "function") {
+          readPdfOutline(pdf as PdfOutlineSource).then((outline) => {
+            if (activeDocumentIdentityRef.current === documentIdentity) onOutline(outline, pane);
+          }, () => {});
+        }
       },
-      [documentIdentity, onLoadSuccess, onNumPagesChange, pane],
+      [documentIdentity, onLoadSuccess, onOutline, onNumPagesChange, pane],
     );
 
     const handleLoadError = useCallback(
