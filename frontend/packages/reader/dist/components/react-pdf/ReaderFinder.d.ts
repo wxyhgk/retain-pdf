@@ -1,4 +1,5 @@
 import { type ReactElement, type ReactNode } from "react";
+import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
 export type ReaderFinderTab = "outline" | "search";
 /** 顶栏左边的「目录」（只有图标，名字在悬停里）：点开浮着的卡，再点收起。「搜索」在底栏（ReaderSearchToggle）。
  *  children 跟在后面（以前放「对比版本」，2026-11-20 挪进右下角的悬浮小球）。 */
@@ -13,7 +14,7 @@ export declare function ReaderSearchToggle({ open, onToggle }: {
     onToggle: (tab: ReaderFinderTab) => void;
 }): ReactElement;
 /** 块从阅读页的 context 来，眼下的页（目录里标出在哪一节）从 HUD context 来。 */
-export declare function ReaderFinder({ tab, onTab, onClose, onJump, query, onQuery, term, focusSignal, }: {
+export declare function ReaderFinder({ tab, onTab, onClose, onJump, query, onQuery, term, focusSignal, bookmarks, onJumpPage, }: {
     tab: ReaderFinderTab;
     onTab: (tab: ReaderFinderTab) => void;
     onClose: () => void;
@@ -25,5 +26,9 @@ export declare function ReaderFinder({ tab, onTab, onClose, onJump, query, onQue
     term: string;
     /** 每变一次把光标放回搜索框（Cmd/Ctrl+F 在左栏已经开着时）。 */
     focusSignal?: number;
+    /** PDF 自带的书签（有就默认按书签看目录）。 */
+    bookmarks?: readonly PdfOutlineNode[];
+    /** 点书签：跳到那一页。 */
+    onJumpPage?: (page: number) => void;
 }): ReactElement;
 //# sourceMappingURL=ReaderFinder.d.ts.map

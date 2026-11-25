@@ -374,7 +374,8 @@
 
 /* 「改」「复制」只画图标的圆按钮（名字在悬停提示里，2026-11-20 起）。 */
 .reader-text-hover-tools .reader-text-hover-copy,
-.reader-text-hover-tools .reader-text-hover-edit {
+.reader-text-hover-tools .reader-text-hover-edit,
+.reader-text-hover-tools .reader-text-hover-zoom {
   justify-content: center;
   width: 24px;
   height: 24px;
@@ -383,7 +384,8 @@
 }
 
 .reader-text-hover-copy,
-.reader-text-hover-edit {
+.reader-text-hover-edit,
+.reader-text-hover-zoom {
   display: inline-flex;
   align-items: center;
   min-height: 20px;
@@ -425,7 +427,8 @@
 }
 
 .reader-text-hover-copy:hover,
-.reader-text-hover-edit:hover {
+.reader-text-hover-edit:hover,
+.reader-text-hover-zoom:hover {
   background: color-mix(in srgb, var(--accent) 9%, var(--paper));
   color: var(--ink);
 }
@@ -538,6 +541,18 @@
   border-radius: var(--ui-radius-sm, 6px);
   background: color-mix(in srgb, var(--warn) 55%, transparent);
   color: transparent;
+}
+/* 书里的引用（「图 2.1」「式 (3.21)」，shared/content/reader-xrefs.ts 包的 <mark>）：字是透明的，只画一条点线；
+   悬停浮出预览，点了跳过去（hooks/use-reader-xrefs.ts）。 */
+.reader-react-pdf-page .textLayer mark.reader-xref {
+  padding: 0;
+  background: transparent;
+  color: transparent;
+  border-bottom: 1.5px dotted color-mix(in srgb, var(--accent) 70%, transparent);
+  cursor: var(--cursor-pointer, pointer);
+}
+.reader-react-pdf-page .textLayer mark.reader-xref:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
 /* 普通文字使用 PDF 原生选区（只留复制，不弹菜单）。 */
 .reader-react-pdf-page .textLayer ::selection {

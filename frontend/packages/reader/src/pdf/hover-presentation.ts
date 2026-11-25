@@ -6,7 +6,7 @@
 
 import { useLayoutEffect, useState, type RefObject } from "react";
 
-import type { ReaderRegionRect } from "../shared/data/reader-regions.js";
+import { readerRegionKindForRegion, type ReaderRegionRect } from "../shared/data/reader-regions.js";
 import type { ReaderTextHoverTarget } from "./ReaderTextHoverLayer.js";
 import { placeHoverTools, type HoverToolsLayout } from "./hover-tools-placement.js";
 
@@ -75,7 +75,9 @@ export function useHoverPresentation(
     }
     const host = hostRef.current;
     const glyphs = host ? glyphRects(host) : [];
-    const rect = glyphs.length ? tightenHoverRect(target.rect, glyphs) : target.rect;
+    // 图片按整块画框（图里的标注字不算）。
+    const isFigure = readerRegionKindForRegion(target.highlight.region) === "figure";
+    const rect = glyphs.length && !isFigure ? tightenHoverRect(target.rect, glyphs) : target.rect;
     const others = targets.filter((other) => other.itemId !== target.itemId).map((other) => other.rect);
     const pageHeight = host?.clientHeight || Number.POSITIVE_INFINITY;
     setPresentation({ rect, ...placeHoverTools({ frame: rect, others, pageWidth, pageHeight, glyphs }) });

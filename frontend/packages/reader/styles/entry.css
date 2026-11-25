@@ -46,8 +46,8 @@
 @import "./issues.css" layer(pages);
 @import "./toolball.css" layer(pages);
 @import "./ink.css" layer(pages);
-@import "./side-pane.css" layer(pages);
 /* 深色文档（书页黑底白字），放在 react-pdf / live-translation 后面盖住它们的底色 */
+@import "./zoom.css" layer(pages);
 @import "./doc-theme.css" layer(pages);
 /* Markdown 悬浮预览（含 MathJax） */
 @import "./markdown.css" layer(pages);

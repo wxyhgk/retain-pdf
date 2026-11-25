@@ -1,3 +1,5 @@
+import { type PdfOutlineNode } from "./pdf-outline.js";
+import type { RegionPdfDocument } from "./RegionCanvas.js";
 import type { ReactNode } from "react";
 import { type ProtectedPdfFile } from "./useProtectedPdfFile.js";
 import type { PageRowHeights } from "./usePageRowSync.js";
@@ -24,6 +26,10 @@ type PdfDocumentPaneProps = {
         numPages: number;
         pane: ReaderPaneId;
     }) => void;
+    /** PDF 自带的书签（读完才回调；没有书签是空数组）。不给就不读。 */
+    onOutline?: (outline: PdfOutlineNode[], pane: ReaderPaneId) => void;
+    /** PDF 读好了（pdf.js 的文档对象）：放大查看要拿它重新画一块。 */
+    onDocument?: (pdf: RegionPdfDocument, pane: ReaderPaneId) => void;
     onLoadError?: (error: Error, pane: ReaderPaneId) => void;
     onNumPagesChange?: (numPages: number, pane: ReaderPaneId) => void;
     activeRegion?: ReaderRegion | null;

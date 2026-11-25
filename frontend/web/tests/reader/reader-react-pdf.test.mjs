@@ -276,8 +276,7 @@ test("assistant dock keeps the PDF mounted and owns Markdown or AI independently
   );
   assert.match(source, /is-workspace-\$\{workspaceView\}/);
   assert.match(source, /<ReaderCompareGrid/);
-  // 第二栏（宿主页签）开着时 dock 不画自己的 tab 条：只认包内面板。
-  assert.match(source, /<ReaderAssistantDock\s+active=\{sideOpen \? null : openPanel\}/);
+  assert.match(source, /<ReaderAssistantDock\s+active=\{assistantPanel\}/);
   assert.match(source, /assistantOpen \? <ReaderAssistantSplitResizeHandle \/>/);
   assert.match(source, /markdownSplit=\{markdownSlot\.open\}/);
   assert.match(source, /assistantSplit=\{assistantOpen\}/);

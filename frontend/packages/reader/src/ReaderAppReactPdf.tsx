@@ -1,6 +1,8 @@
 // 从 frontend/web 迁入的 React-pdf 视图真值，现为 @retainpdf/reader 主入口
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReaderReactController } from "./hooks/use-reader-react-controller.js";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@retainpdf/ui";
 import { useReaderKeyboard } from "./hooks/use-reader-keyboard.js";
 import {
   ReaderAssistantSplitResizeHandle,
@@ -51,9 +53,15 @@ import { useFindShortcut } from "./hooks/use-find-shortcut.js";
 import { useReaderBlockEdit, useEditBlockShortcut } from "./hooks/use-reader-block-edit.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
 import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
-import { useReaderSidePane } from "./hooks/use-reader-side-pane.js";
-import { ReaderSidePane } from "./components/react-pdf/ReaderSidePane.js";
-import { getReaderAdapters } from "./adapters.js";
+import type { PdfOutlineNode } from "./pdf/pdf-outline.js";
+import type { RegionPdfDocument } from "./pdf/RegionCanvas.js";
+import { ReaderZoomViewer } from "./components/react-pdf/ReaderZoomViewer.js";
+import { ReaderXrefPreview } from "./components/react-pdf/ReaderXrefPreview.js";
+import { useReaderXrefs } from "./hooks/use-reader-xrefs.js";
+import { buildXrefIndex, type XrefTarget } from "./shared/content/reader-xrefs.js";
+
+/** 稳定的空书签列表（每次新建一个会让目录卡白白重算）。 */
+const NO_BOOKMARKS: PdfOutlineNode[] = [];
 
 /** 阅读视图可见台面的判别联合。 */
 export type ReaderPaneComposition = {
@@ -171,24 +179,7 @@ export function ReaderAppReactPdf() {
   const modeScopeRef = useRef<string | null>(null);
   const autoModeRef = useRef<ReaderMode | null>(null);
 
-  // 宿主的第二栏（contracts/side-pane.ts）：开合就是「开着哪个面板」里的 side。
-  // 这本书没有（宿主说不出、或换了书）时，存下来的 side 当作没开。
-  const closeSidePane = useCallback(() => setAssistantPanel(null), []);
-  const side = useReaderSidePane({
-    port: getReaderAdapters()?.sidePane,
-    open: assistantPanel === "side",
-    documentId: session.documentId,
-    jobId: session.jobId,
-    currentPage: c.currentPage,
-    regions: session.regions,
-    // 开着第二栏时书只剩一栏：「译文」看译文，「原文」「对照」看原文。
-    pane: c.mode === "translated" ? "translated" : "source",
-    jumpToAnchor: c.jumpToAnchor,
-    close: closeSidePane,
-  });
-  const openPanel = assistantPanel === "side" && !side.available ? null : assistantPanel;
-  const sideOpen = openPanel === "side";
-  const assistantOpen = openPanel !== null;
+  const assistantOpen = assistantPanel !== null;
   // 是否有「可叠加到原文 PDF 上的流式译文内容」：进行中（available）或已完成
   // （实时页仍在 state 里）都成立，供源栏开关显示与叠加判定。
   const hasOverlayContent = c.liveTranslationAvailable
@@ -269,7 +260,7 @@ export function ReaderAppReactPdf() {
     autoModeRef.current = null;
     saveReaderViewState(c.viewStateKey, { mode: c.mode });
   }, [boot.failed, boot.loading, c.mode, c.setModeKeepingPage, c.viewStateKey, sourceViewOnly]);
-  const workspaceView = openPanel || (c.mode === "compare" ? "compare" : "reading");
+  const workspaceView = assistantPanel || (c.mode === "compare" ? "compare" : "reading");
   // 五个包内面板的开合 —— 每个 id 只在这里写一次，open 和挂载闸都从它派生。
   // 原来是「闸一遍、open 一遍」，两处各自合法，抄改时把闸上那个写成别的面板
   // 整套测试全绿而摘录永远打不开。见 use-reader-panel-slot.ts。
@@ -372,6 +363,49 @@ export function ReaderAppReactPdf() {
     if (finder === "outline" || readerViewportWidth() < 900) setFinder(null);
   }, [c.jumpToAnchor, finder]);
   const jumpToBlock = useCallback((itemId: string) => c.jumpToAnchor({ block_id: itemId }), [c.jumpToAnchor]);
+  // PDF 自带的书签（目录卡优先用它）：按栏记，带上是哪个文件的，换书、换文件就作废。原文的优先（译文 PDF 多半没有书签）。
+  const [pdfOutlines, setPdfOutlines] = useState<Partial<Record<"source" | "translated", { url: string; nodes: PdfOutlineNode[] }>>>({});
+  const outlineUrls = useRef({ source: sessionFiles.sourceUrl, translated: sessionFiles.translatedUrl });
+  outlineUrls.current = { source: sessionFiles.sourceUrl, translated: sessionFiles.translatedUrl };
+  const onPdfOutline = useCallback((nodes: PdfOutlineNode[], pane: "source" | "translated") => {
+    setPdfOutlines((current) => ({ ...current, [pane]: { url: outlineUrls.current[pane], nodes } }));
+  }, []);
+  const bookmarks = useMemo(() => {
+    const source = pdfOutlines.source;
+    if (source && source.url === sessionFiles.sourceUrl && source.nodes.length) return source.nodes;
+    const translated = pdfOutlines.translated;
+    if (translated && translated.url === sessionFiles.translatedUrl && translated.nodes.length) return translated.nodes;
+    return NO_BOOKMARKS;
+  }, [pdfOutlines, sessionFiles.sourceUrl, sessionFiles.translatedUrl]);
+  // 放大查看：各栏读好的 PDF（按文件记，换文件作废）和开着的那一块。
+  const pdfDocs = useRef<Partial<Record<"source" | "translated", { url: string; pdf: RegionPdfDocument }>>>({});
+  const [pdfDocsVersion, setPdfDocsVersion] = useState(0);
+  const onPdfDocument = useCallback((pdf: RegionPdfDocument, pane: "source" | "translated") => {
+    pdfDocs.current[pane] = { url: outlineUrls.current[pane], pdf };
+    setPdfDocsVersion((version) => version + 1);
+  }, []);
+  const [zoomItem, setZoomItem] = useState<string | null>(null);
+  const zoomBlock = useCallback((itemId: string) => setZoomItem(itemId), []);
+  const closeZoom = useCallback(() => setZoomItem(null), []);
+  useEffect(() => setZoomItem(null), [c.viewStateKey]);
+  const zoomDocuments = useMemo(() => {
+    const pick = (pane: "source" | "translated", url: string) => {
+      const entry = pdfDocs.current[pane];
+      return entry && entry.url === url ? entry.pdf : null;
+    };
+    return { source: pick("source", sessionFiles.sourceUrl), translated: pick("translated", sessionFiles.translatedUrl) };
+  }, [pdfDocsVersion, sessionFiles.sourceUrl, sessionFiles.translatedUrl]);
+  // 书里的引用：去处索引、悬停预览、点了跳、Alt+← 回来。
+  const xrefIndex = useMemo(() => buildXrefIndex(session.regions), [session.regions]);
+  const followXref = useCallback(
+    (target: XrefTarget, pane: "source" | "translated") => c.jumpToAnchor({ block_id: target.itemId }, pane),
+    [c.jumpToAnchor],
+  );
+  const xrefs = useReaderXrefs({ shellEl: c.shell.shellEl, index: xrefIndex, primaryPane: c.panes.primaryPane, follow: followXref });
+  const jumpToPageFromFinder = useCallback((page: number) => {
+    c.goToPage(page);
+    if (finder === "outline" || readerViewportWidth() < 900) setFinder(null);
+  }, [c.goToPage, finder]);
   // 改译文：悬停框里的「改」、按 E 都是把这一段变成编辑框（在译文栏里）。只开着原文栏时先切到对照。
   const blockEdit = useReaderBlockEdit({
     jobId: session.jobId,
@@ -447,8 +481,10 @@ export function ReaderAppReactPdf() {
     regionHover,
     jumpToBlock,
     revisedBlocks,
-    marginMarkers: side.markersByPage,
-    selectMarginMarker: side.selectMarker,
+    onPdfOutline,
+    onPdfDocument,
+    zoomBlock,
+    xrefIndex,
     editBlock: blockEdit.available ? editBlock : undefined,
     blockEdit,
     editShowsSource: visiblePdfMode !== "compare",
@@ -475,8 +511,10 @@ export function ReaderAppReactPdf() {
     regionHover,
     jumpToBlock,
     revisedBlocks,
-    side.markersByPage,
-    side.selectMarker,
+    onPdfOutline,
+    onPdfDocument,
+    zoomBlock,
+    xrefIndex,
     blockEdit,
     editBlock,
     visiblePdfMode,
@@ -531,6 +569,8 @@ export function ReaderAppReactPdf() {
             onTab={setFinder}
             onClose={() => setFinder(null)}
             onJump={jumpFromFinder}
+            bookmarks={bookmarks}
+            onJumpPage={jumpToPageFromFinder}
             query={findQuery}
             onQuery={setFindQuery}
             term={findTerm}
@@ -545,16 +585,7 @@ export function ReaderAppReactPdf() {
           mode={visiblePdfMode}
           documentReady={Boolean(session.jobId)}
           sourceViewOnly={sourceViewOnly}
-          onModeChange={(next) => {
-            // 第二栏是一个页签：点原文 / 对照 / 译文就离开它。
-            if (sideOpen) closeSidePane();
-            changeWorkspace(next);
-          }}
-          sidePane={side.available ? {
-            label: side.label,
-            active: sideOpen,
-            onSelect: () => setAssistantPanel("side"),
-          } : null}
+          onModeChange={changeWorkspace}
           liveTranslation={liveToggles.topBarPill ? {
             visible: liveTranslationVisible,
             state: c.liveTranslation,
@@ -570,8 +601,7 @@ export function ReaderAppReactPdf() {
             },
           } : null}
         />
-        {/* 第二栏不在 dock 里（顶栏页签开），dock 只认包内面板。 */}
-        <ReaderAssistantDock active={sideOpen ? null : openPanel} />
+        <ReaderAssistantDock active={assistantPanel} />
         {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
         <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={markdownSlot.open} assistantSplit={assistantOpen} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
         {c.showHud ? (
@@ -586,8 +616,26 @@ export function ReaderAppReactPdf() {
         <Suspense fallback={null}>
           {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
         </Suspense>
-        {sideOpen && side.port && side.api ? <ReaderSidePane port={side.port} api={side.api} /> : null}
-        <ReaderToolBall active={sideOpen ? null : openPanel} compare={versionCompare} ink={ink} />
+        {xrefs.preview ? (
+          <ReaderXrefPreview preview={xrefs.preview} regions={session.regions} metadata={session.readerMetadata} documents={zoomDocuments} />
+        ) : null}
+        {xrefs.canGoBack ? (
+          <Button className="reader-xref-back" title="回到跳之前读到的地方（Alt+←）" onClick={() => xrefs.goBack()}>
+            <ArrowLeft size={14} aria-hidden /> 回到第 {xrefs.backPage} 页
+          </Button>
+        ) : null}
+        {zoomItem ? (
+          <ReaderZoomViewer
+            itemId={zoomItem}
+            regions={session.regions}
+            metadata={session.readerMetadata}
+            documents={zoomDocuments}
+            panes={visiblePdfMode === "compare" ? ["source", "translated"] : visiblePdfMode === "translated" ? ["translated"] : ["source"]}
+            onNavigate={setZoomItem}
+            onClose={closeZoom}
+          />
+        ) : null}
+        <ReaderToolBall active={assistantPanel} compare={versionCompare} ink={ink} />
         <ReaderInkMenu ink={ink} menu={inkMenu} onClose={closeInkMenu} />
         <ReaderInkDock ink={ink} />
         <ReaderPendingEditsPill edit={blockEdit} />

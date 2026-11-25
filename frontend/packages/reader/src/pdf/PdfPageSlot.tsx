@@ -1,6 +1,8 @@
 // 单页：对齐旧 createManualPageElement + setManualPageSize（固定宽高）
 // 对照时 syncedMinHeight 来自 syncReaderPageRows 的 max 高度
 
+import { renderXrefText } from "../shared/content/reader-xrefs.js";
+import { readerRegionKindForRegion } from "../shared/data/reader-regions.js";
 import {
   memo,
   useEffect,
@@ -33,7 +35,6 @@ import {
 import { EditedTranslationOverlay } from "./EditedTranslationOverlay.js";
 import { inHoverToolsZone, useHoverPresentation } from "./hover-presentation.js";
 import { InkLayer } from "./InkLayer.js";
-import { MarginMarkerLayer } from "./MarginMarkerLayer.js";
 import { READER_INLINE_EDIT_CLASS, ReaderInlineBlockEditor } from "./ReaderInlineBlockEditor.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
 import { useReaderContext } from "../components/react-pdf/reader-context.js";
@@ -105,9 +106,13 @@ function PdfPageSlotInner({
   // 左栏搜索的词：文字层里每处命中包一个 <mark>（reader-find.ts 的 highlightFindTerm）。没有词时不给 renderer，
   // react-pdf 照原样画文字层，不多一遍 innerHTML。
   const findTerm = readerContext?.findTerm || "";
+  // 书里的引用（「图 2.1」「式 (3.21)」）包一层 span（reader-xrefs.ts），悬停预览、点了跳过去由 use-reader-xrefs 接。
+  const xrefIndex = readerContext?.xrefIndex;
   const customTextRenderer = useMemo(
-    () => (findTerm ? ({ str }: { str: string }) => highlightFindTerm(str, findTerm) : undefined),
-    [findTerm],
+    () => (xrefIndex?.size
+      ? ({ str }: { str: string }) => renderXrefText(str, xrefIndex, findTerm)
+      : findTerm ? ({ str }: { str: string }) => highlightFindTerm(str, findTerm) : undefined),
+    [findTerm, xrefIndex],
   );
   const aspectRef = useRef(cachedAspect ?? DEFAULT_ASPECT);
   const [aspect, setAspect] = useState(aspectRef.current);
@@ -243,6 +248,14 @@ function PdfPageSlotInner({
       // placing an interactive overlay above the native text selection layer.
       onPointerMoveCapture={handlePointerMove}
       onPointerDown={handlePointerDown}
+      // 双击图片放大看（文字块的双击留给浏览器选词）。
+      onDoubleClick={(event) => {
+        const zoom = readerContext?.zoomBlock;
+        if (!zoom || readerContext?.ink?.tool || !hoveredTextTarget) return;
+        if (readerRegionKindForRegion(hoveredTextTarget.highlight.region) !== "figure") return;
+        event.preventDefault();
+        zoom(hoveredTextTarget.itemId);
+      }}
       // 触屏抬手也会触发 pointerleave：那时框得留着，不然「复制」一闪就没了。
       onPointerLeave={(event) => {
         if (event.pointerType === "mouse") setHoveredTextId(null);
@@ -339,13 +352,6 @@ function PdfPageSlotInner({
           ))}
         </div>
       ) : null}
-      {active && readerContext?.marginMarkers?.get(pageNumber)?.length ? (
-        <MarginMarkerLayer
-          markers={readerContext.marginMarkers.get(pageNumber) ?? []}
-          targets={textHoverTargets}
-          onSelect={readerContext.selectMarginMarker}
-        />
-      ) : null}
       {active && readerContext?.ink ? (
         <InkLayer
           page={pageNumber}
@@ -360,6 +366,7 @@ function PdfPageSlotInner({
         pane={pane === "translated" ? "translated" : "source"}
         revisedCount={hoveredTextTarget ? revisedBlocks?.get(hoveredTextTarget.itemId) || 0 : 0}
         onEdit={editBlock}
+        onZoom={readerContext?.zoomBlock}
         frameRect={hoverPresentation?.rect}
         placement={hoverPresentation?.placement}
         tailTop={hoverPresentation?.tailTop}

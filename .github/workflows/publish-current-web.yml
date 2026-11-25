@@ -32,7 +32,6 @@ name: Publish Current Web Image
       - "contracts/**"
       - "frontend/packages/ui/**"
       - "frontend/packages/whiteboard/**"
-      - "frontend/packages/learning/**"
 
 permissions:
   contents: read
