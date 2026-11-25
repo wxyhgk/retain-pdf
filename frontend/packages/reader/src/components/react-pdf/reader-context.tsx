@@ -6,6 +6,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
 import type { RegionPdfDocument } from "../../pdf/RegionCanvas.js";
+import type { XrefIndex } from "../../shared/content/reader-xrefs.js";
 import type { ReaderPaneModel } from "../../hooks/use-reader-pane-model.js";
 import type { ReaderDownloadContext } from "../../hooks/use-reader-session.js";
 import type {
@@ -53,6 +54,8 @@ export type ReaderContextValue = {
   onPdfDocument?: (pdf: RegionPdfDocument, pane: "source" | "translated") => void;
   /** 放大查看这一块（悬停框的「放大」、双击图片）。 */
   zoomBlock?: (itemId: string) => void;
+  /** 书里的引用（「图 2.1」「式 (3.21)」）认得出去处的那些；文字层把它们包成可悬停、可点的 span。 */
+  xrefIndex?: XrefIndex;
   /** 译文栏悬停框的「改」：这一段变成编辑框。不能改时不给。 */
   editBlock?: (itemId: string) => void;
   /** 改译文的状态：正在改哪一段（译文栏在那里画编辑框）、写回了还没排进 PDF 的译文（先盖在 PDF 上）。 */

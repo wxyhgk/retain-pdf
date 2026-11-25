@@ -16,6 +16,8 @@ type ZoomPlace = {
     fraction: RegionFraction; /** 高 / 宽 */
     aspect: number;
 };
+/** 几块合起来画（引用预览：图注 + 图 / 表）：取第一块所在页上各块的并集，别的页的块不算。 */
+export declare function zoomUnionIn(regions: readonly ReaderRegion[], metadata: ReaderMetadata | null, pane: ZoomPane): ZoomPlace | null;
 /** 100% 时一栏画多宽：先占满栏宽，太高（高的图、整页的表）就按放得下的高度缩，打开不用先滚。 */
 export declare function zoomFitWidth(columnWidth: number, availableHeight: number, aspects: readonly number[]): number;
 /** 书里同一类的块（图和表算一类「图表」，公式一类，文字一类），按阅读顺序。← → 在里面走。 */

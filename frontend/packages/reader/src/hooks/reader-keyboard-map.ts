@@ -118,6 +118,13 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
       { actions: [], keys: "⌘Enter / Ctrl+Enter", desc: "保存" },
     ],
   },
+  {
+    title: "引用（「图 2.1」「式 (3.21)」）",
+    items: [
+      { actions: [], keys: "Alt+←", desc: "点了引用跳过去以后，回到原处" },
+      { actions: [], keys: "Alt+→", desc: "再跳回去" },
+    ],
+  },
 ];
 
 /** 按 event.key 命中第一个绑定；单字符键不区分大小写。 */
