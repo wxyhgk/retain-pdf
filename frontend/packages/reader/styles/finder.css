@@ -255,3 +255,101 @@
   padding: 0;
   justify-content: center;
 }
+
+/* —— 书签：PDF 自带的目录（ReaderBookmarkTree），多级、能折叠 —— */
+.reader-bookmark-tree,
+.reader-bookmark-children {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reader-bookmark-children {
+  padding-left: 14px;
+}
+
+.reader-bookmark-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+/* 层级靠嵌套缩进，书签里不再用标题那套 data-level 的左边距。 */
+.reader-bookmark-entry.reader-finder-entry[data-level] {
+  padding-left: 6px;
+}
+
+.reader-bookmark-entry[data-level="1"] {
+  font-weight: 600;
+}
+
+.reader-bookmark-entry:disabled {
+  cursor: default;
+  color: var(--muted);
+}
+
+.reader-bookmark-toggle,
+.reader-bookmark-spacer {
+  flex: none;
+  width: 22px;
+  height: 28px;
+}
+
+.reader-bookmark-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.reader-bookmark-toggle:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+.reader-bookmark-toggle svg {
+  transition: transform 120ms ease;
+}
+
+.reader-bookmark-toggle.is-open svg {
+  transform: rotate(90deg);
+}
+
+/* 「按书签 / 按标题」 */
+.reader-finder-switch {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 6px;
+  padding: 2px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.reader-finder-switch-option {
+  flex: 1;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  cursor: pointer;
+}
+
+.reader-finder-switch-option[aria-checked="true"] {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-bookmark-toggle svg {
+    transition: none;
+  }
+}
