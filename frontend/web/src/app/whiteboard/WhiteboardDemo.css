@@ -1,0 +1,57 @@
+/* 白板讲解板演示页的排布（白板本身的样式在 @retainpdf/whiteboard/styles.css）。
+ *
+ * @owns wbdemo */
+
+.wbdemo {
+  min-height: 100vh;
+  padding: 24px clamp(16px, 4vw, 48px);
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.wbdemo-head h1 {
+  margin: 0 0 4px;
+  font-size: var(--ui-text-xl);
+}
+
+.wbdemo-head p {
+  margin: 0 0 16px;
+  color: var(--muted);
+}
+
+.wbdemo-body {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.wbdemo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wbdemo-item {
+  justify-content: flex-start;
+}
+
+.wbdemo-item[aria-current="true"] {
+  background: var(--accent-weak);
+  color: var(--ink);
+}
+
+.wbdemo-board {
+  min-height: 520px;
+}
+
+@media (max-width: 720px) {
+  .wbdemo-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wbdemo-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

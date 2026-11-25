@@ -29,6 +29,7 @@
 - [排版 agent（2026-11，整页暂缓；表格排版 agent 写了方案）](./layout-agent/README.md)
 - [模型用量与花费（2026-11 起）](./model-usage/README.md)
 - [导出水印（2026-11）](./export-watermark/README.md)
+- [学习系统（2026-11 起，白板讲解板设计中）](./learning-system/README.md)
 - [数据库整理（2026-11 起）](./database-cleanup/README.md)
 - [数据库重做（2026-11 起）](./database-redesign/README.md)
 - [错误码与报错整理（2026-11 起）](./error-codes/README.md)

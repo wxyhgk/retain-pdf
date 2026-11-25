@@ -99,6 +99,12 @@ const PAGE_BUNDLES = [
     entry: path.join(frontendRoot, "src/app/editorial/entry.tsx"),
     out: "editorial.bundle",
   },
+  // 白板讲解板演示（学习系统，写死的讲解脚本）：whiteboard.html → src/app/whiteboard/entry.tsx → dist/whiteboard.bundle.js
+  {
+    name: "whiteboard",
+    entry: path.join(frontendRoot, "src/app/whiteboard/entry.tsx"),
+    out: "whiteboard.bundle",
+  },
 ];
 
 // mathjax-full/js/components/version.js 在未定义 PACKAGE_VERSION 时会

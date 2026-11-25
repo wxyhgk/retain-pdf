@@ -23,6 +23,8 @@ const ENTRIES = [
   { in: "src/styles/entries/admin.css", out: "dist/css/admin.css" },
   // editorial.html（翻译编辑部演示）→ src/styles/entries/editorial.css → dist/css/editorial.css
   { in: "src/styles/entries/editorial.css", out: "dist/css/editorial.css" },
+  // whiteboard.html（白板讲解板演示）→ src/styles/entries/whiteboard.css → dist/css/whiteboard.css
+  { in: "src/styles/entries/whiteboard.css", out: "dist/css/whiteboard.css" },
 ];
 
 mkdirSync(join(ROOT, "dist/css"), { recursive: true });

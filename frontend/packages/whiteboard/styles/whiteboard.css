@@ -1,0 +1,198 @@
+/* @retainpdf/whiteboard —— 颜色只用皮肤变量（frontend/packages/ui/styles/themes/_contract.css），
+ * 深色、朱砂等皮肤自动跟着变；宿主可以覆盖 --wb-* 单独调白板。 */
+
+.wb-root {
+  --wb-paper: var(--paper);
+  --wb-ink: var(--ink);
+  --wb-muted: var(--muted);
+  --wb-line: var(--line);
+  --wb-focus: var(--accent);
+  --wb-correct: var(--ok);
+  --wb-wrong: var(--danger);
+  --wb-warn: var(--warn);
+  --wb-warn-weak: var(--warn-weak);
+  --wb-stroke: 2.2px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  color: var(--wb-ink);
+  background: var(--wb-paper);
+  border: 1px solid var(--wb-line);
+  border-radius: var(--ui-radius-md);
+  padding: 12px;
+  outline: none;
+}
+
+.wb-root:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wb-focus) 55%, transparent);
+}
+
+.wb-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 160px;
+  overflow-x: auto;
+}
+
+.wb-board {
+  display: block;
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  max-height: 70vh;
+  overflow: visible;
+}
+
+.wb-empty {
+  margin: 0;
+  padding: 24px;
+  color: var(--wb-muted);
+  text-align: center;
+}
+
+/* 文字和公式 */
+.wb-text {
+  fill: var(--wb-ink);
+  font-family: inherit;
+}
+
+.wb-math {
+  color: var(--wb-ink);
+}
+
+.wb-math svg {
+  overflow: visible;
+}
+
+.wb-math-error {
+  fill: var(--wb-wrong);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* 语气：ink 默认墨色，focus 强调色，correct 对，wrong 错 */
+.wb-tone-ink { --wb-tone: var(--wb-ink); }
+.wb-tone-focus { --wb-tone: var(--wb-focus); }
+.wb-tone-correct { --wb-tone: var(--wb-correct); }
+.wb-tone-wrong { --wb-tone: var(--wb-wrong); }
+
+.wb-mark-box,
+.wb-mark-underline {
+  fill: none;
+  stroke: var(--wb-tone);
+  stroke-width: var(--wb-stroke);
+  stroke-linecap: round;
+}
+
+.wb-mark-highlight {
+  fill: color-mix(in srgb, var(--wb-tone) 22%, transparent);
+  stroke: none;
+}
+
+.wb-arrow path {
+  fill: none;
+  stroke: var(--wb-tone);
+  stroke-width: var(--wb-stroke);
+  stroke-linecap: round;
+}
+
+.wb-arrowhead path {
+  fill: var(--wb-tone);
+  stroke: none;
+}
+
+.wb-arrow-label {
+  fill: var(--wb-tone);
+}
+
+.wb-note-leader {
+  fill: none;
+  stroke: var(--wb-tone);
+  stroke-width: 1.2px;
+  stroke-dasharray: 4 4;
+  opacity: 0.7;
+}
+
+.wb-note-text {
+  fill: var(--wb-tone);
+}
+
+.wb-note.wb-tone-ink .wb-note-text {
+  fill: var(--wb-muted);
+}
+
+/* 能级图 */
+.wb-levels-axis {
+  fill: none;
+  stroke: var(--wb-muted);
+  stroke-width: 1.4px;
+}
+
+.wb-levels-caption,
+.wb-level-label {
+  fill: var(--wb-ink);
+}
+
+.wb-levels-caption {
+  fill: var(--wb-muted);
+}
+
+.wb-level-line {
+  fill: none;
+  stroke: var(--wb-ink);
+  stroke-width: 2.6px;
+  stroke-linecap: round;
+}
+
+.wb-electron {
+  fill: none;
+  stroke: var(--wb-focus);
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* 字幕和控制条 */
+.wb-say {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--ui-radius-sm);
+  background: color-mix(in srgb, var(--wb-ink) 5%, transparent);
+  line-height: 1.6;
+}
+
+.wb-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.wb-btn {
+  min-width: 34px;
+}
+
+.wb-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.wb-progress {
+  margin-left: auto;
+  color: var(--wb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-warnings {
+  position: absolute;
+  top: 0;
+  left: 0;
+  margin: 0;
+  padding: 6px 10px;
+  list-style: none;
+  font-size: var(--ui-text-sm);
+  color: var(--wb-ink);
+  background: var(--wb-warn-weak);
+  border: 1px solid var(--wb-warn);
+  border-radius: var(--ui-radius-sm);
+}
