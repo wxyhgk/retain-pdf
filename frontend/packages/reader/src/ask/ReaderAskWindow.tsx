@@ -97,7 +97,7 @@ function ToolCard(props: ToolCallMessagePartProps): ReactElement {
     <div className="reader-ask-tool" data-status={artifact.status || "pending"}>
       <div className="reader-ask-tool-head">
         <Wrench size={13} aria-hidden />
-        <span className="reader-ask-tool-title">{artifact.title || props.toolName}</span>
+        <span className="reader-ask-tool-title" title={artifact.title || props.toolName}>{artifact.title || props.toolName}</span>
         <span className="reader-ask-tool-status">{TOOL_STATUS[artifact.status] || artifact.status}</span>
       </div>
       {artifact.locations?.length ? <div className="reader-ask-tool-where">{artifact.locations.join("、")}</div> : null}

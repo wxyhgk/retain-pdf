@@ -56,11 +56,15 @@
 
 自带 agent（`claude-haiku-5-5`）：思考摘要（英文，Anthropic 生成）先到，首字 2.5–3.3 秒；中文正文、KaTeX 对；追问接得上；
 问答记录存、刷新读回、重新打开追问、删都过。踩到的：SDK 不给 `protocols` 时 Chrome 发子协议 `"undefined"`，桥不回，握手断（前端传 `[]`）；
-悬停没认出块时问题不带文字（加了最近块）。本机 Claude Code 没测成：要先 `npm install -g @agentclientprotocol/claude-agent-acp`。
+悬停没认出块时问题不带文字（加了最近块）。
+
+本机 Claude Code（`npm install -g @agentclientprotocol/claude-agent-acp` 以后）：用的是本机 Claude Code 自己的设置（这次 `claude-opus-5-5`，走用户的订阅）。
+回答整段发来、段数少（所以段数少于 5 不算速度）；分项 token 在 `session/prompt` 结果的 `usage`，模型名在 `_meta["_claude/model"]`；
+会自己调 `retainpdf mcp` 的 `view_page` 看这一页；这次没要许可（shell 命令直接跑了，失败）。
 
 ## 还没做
 
-- 本机 Claude Code、Codex、Gemini 真机试（要先装 ACP 适配器）。
+- 本机 Codex、Gemini 真机试（要先装 ACP 适配器）。
 - 扫描页没字时把那一块的图发过去（agent `acceptsImages` 时）。
 - agent 那边接着上次的会话（ACP `session/load`，后端开了再接）。
 - 白板：回答以后进白板（[以 PDF 为主体](../../ops/planning/learning-system/20261125-以PDF为主体的提问白板笔记.md)）。

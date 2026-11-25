@@ -65,6 +65,8 @@ export type AskTurn = {
     lastTokenAt: number | null;
     /** 正文 + 思考一共多少字（拿不到 token 时估速度用）。 */
     chars: number;
+    /** 收到几段正文 / 思考（一次整段发来的 agent，比如 Claude Code，段数少，算不出速度）。 */
+    chunks: number;
 };
 export declare function emptyTurn(now: number): AskTurn;
 /**
@@ -78,7 +80,9 @@ export type AskSpeed = {
     value: number;
     unit: "token/s" | "字/s";
 } | null;
-/** 出字速度：从第一个字到最后一个字。有输出 token 按 token 算，没有按字数估；不到 0.3 秒不算（太短不准）。 */
+/** 至少收到几段才算速度：一次整段发来的（Claude Code 常这样），首字到末字只有零点几秒，算出来几千 token/s，是假的。 */
+export declare const SPEED_MIN_CHUNKS = 5;
+/** 出字速度：从第一个字到最后一个字。有输出 token 按 token 算，没有按字数估；不到 0.3 秒、段数太少都不算（不准）。 */
 export declare function turnSpeed(turn: AskTurn): AskSpeed;
 /** 回答底下那一行：模型、用量、缓存命中、速度、首字、用时。没有的项不写。 */
 export declare function turnFooter(turn: AskTurn, finishedAt: number | null, agentName?: string): string;

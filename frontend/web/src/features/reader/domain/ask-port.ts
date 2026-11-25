@@ -107,7 +107,8 @@ async function openSession({ agentId }: { agentId: string; jobId: string }, hand
   return {
     prompt: async (blocks) => {
       const result = await agent.request("session/prompt", { sessionId, prompt: blocks });
-      return { stopReason: result.stopReason };
+      const extra = result as { usage?: Record<string, unknown> | null; _meta?: Record<string, unknown> | null };
+      return { stopReason: result.stopReason, usage: extra.usage ?? null, meta: extra._meta ?? null };
     },
     cancel: () => {
       void agent.notify("session/cancel", { sessionId }).catch(() => {});

@@ -25,6 +25,7 @@ test("正文、思考：同类相邻的接着拼，中间插了别的新起一�
   assert.equal(turn.firstTokenAt, 100);
   assert.equal(turn.lastTokenAt, 400);
   assert.equal(turn.chars, 7);
+  assert.equal(turn.chunks, 4);
 });
 
 test("工具调用按 toolCallId 合并：状态、输出、位置跟着更新，失败标 isError", () => {
@@ -68,6 +69,9 @@ test("用量：ACP 的 used / size / cost，加上 _meta.retainpdf.usage（自�
   let turn = emptyTurn(0);
   turn = applySessionUpdate(turn, text("agent_message_chunk", "x".repeat(50)), 1000);
   turn = applySessionUpdate(turn, text("agent_message_chunk", "y".repeat(50)), 3000);
+  assert.equal(turnSpeed(turn), null, "只来了两段（整段发来的 agent）：不算速度");
+  for (let index = 0; index < 3; index += 1) turn = applySessionUpdate(turn, text("agent_message_chunk", ""), 3000);
+  turn = { ...turn, chunks: 5 };
   assert.deepEqual(turnSpeed(turn), { value: 50, unit: "字/s" }, "没有 token 数按字数估");
   turn = applySessionUpdate(turn, { sessionUpdate: "usage_update", used: 50000, size: 200000, cost: { amount: 0.0123, currency: "USD" }, _meta: { retainpdf: { usage: { inputTokens: 4000, outputTokens: 120, cachedInputTokens: 3500 } } } }, 3100);
   assert.deepEqual(turnSpeed(turn), { value: 60, unit: "token/s" });
@@ -75,7 +79,7 @@ test("用量：ACP 的 used / size / cost，加上 _meta.retainpdf.usage（自�
     turnFooter(turn, 3500, "RetainPDF 自带模型"),
     "RetainPDF 自带模型 · 输入 4000 · 输出 120 token · 缓存命中 3500 · 上下文 25% · 0.0123 USD · 60 token/s · 首字 1.0s · 用时 3.5s",
   );
-  assert.equal(turnSpeed({ ...emptyTurn(0), firstTokenAt: 1, lastTokenAt: 100, chars: 9 }), null, "不到 0.3 秒不算速度");
+  assert.equal(turnSpeed({ ...emptyTurn(0), firstTokenAt: 1, lastTokenAt: 100, chars: 9, chunks: 9 }), null, "不到 0.3 秒不算速度");
 });
 
 const ANCHOR = { pane: "translated", page: 56, itemId: "p056-b0003", selection: "", sourceText: "H = -Σ ∇²/2", translatedText: "哈密顿量", section: "2.1 电子问题", point: { x: 0.2, y: 0.4 } };
@@ -251,4 +255,23 @@ test("悬停还没认出块（鼠标刚移过来、点在两段之间）：按�
   const anchor = buildAskAnchor({ pageElement, clientX: 300, clientY: 300, itemId: null, selection: "", regions, bookmarks: [], metadata });
   assert.equal(anchor.itemId, "top");
   assert.equal(anchor.sourceText, "t");
+});
+
+test("Claude Code 的用量：模型在 _meta[\"_claude/model\"]，分项 token 在 session/prompt 结果的 usage 里（cachedReadTokens / cachedWriteTokens），合进这一轮", async () => {
+  assert.deepEqual(usageFromMeta({ "_claude/model": "claude-opus-5-5" }), { model: "claude-opus-5-5" });
+  assert.deepEqual(usageFromMeta({ usage: { inputTokens: 2, outputTokens: 11, cachedReadTokens: 11727, cachedWriteTokens: 21448 } }), { inputTokens: 2, outputTokens: 11, cachedInputTokens: 11727, cacheWriteTokens: 21448 });
+  const port = { listAgents: async () => [], openSession: async (_o, handlers) => ({
+    prompt: async () => {
+      handlers.onUpdate({ sessionUpdate: "usage_update", used: 33185, size: 1000000, _meta: { "_claude/model": "claude-opus-5-5" } });
+      handlers.onUpdate(text("agent_message_chunk", "1+1 等于 2"));
+      return { stopReason: "end_turn", usage: { inputTokens: 2, outputTokens: 11, cachedReadTokens: 11727, cachedWriteTokens: 21448 } };
+    },
+    cancel() {}, close() {},
+  }) };
+  const chat = createAcpChatAdapter({ port, jobId: "j", permissions: new PermissionStore(), getAgentId: () => "claude-code", getAnchor: () => null });
+  let last;
+  for await (const result of chat.adapter.run({ messages: [{ role: "user", content: [{ type: "text", text: "1+1？" }] }], abortSignal: new AbortController().signal })) last = result;
+  const { turn } = last.metadata.custom;
+  assert.deepEqual(turn.usage, { contextUsed: 33185, contextSize: 1000000, model: "claude-opus-5-5", inputTokens: 2, outputTokens: 11, cachedInputTokens: 11727, cacheWriteTokens: 21448 });
+  assert.match(turnFooter(turn, null, "Claude Code"), /^Claude Code（claude-opus-5-5） · 输入 2 · 输出 11 token · 缓存命中 11727 · 写入缓存 21448 · 上下文 3%/);
 });

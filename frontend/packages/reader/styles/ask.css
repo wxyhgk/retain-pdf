@@ -33,7 +33,9 @@
 }
 
 .reader-ask-title {
+  flex: none;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .reader-ask-where {
@@ -52,7 +54,8 @@
 }
 
 .reader-ask-agent {
-  max-width: 170px;
+  flex: 0 1 150px;
+  min-width: 96px;
   margin-left: auto;
 }
 
@@ -237,7 +240,14 @@
   gap: 6px;
 }
 
-.reader-ask-tool-title { font-weight: 600; }
+.reader-ask-tool-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .reader-ask-tool-status {
   margin-left: auto;

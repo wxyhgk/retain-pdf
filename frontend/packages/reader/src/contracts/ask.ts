@@ -32,7 +32,8 @@ export type ReaderAskHandlers = {
 
 export type ReaderAskSession = {
   /** 发一轮（session/prompt），回答过程走 onUpdate，结束时给停的原因。 */
-  prompt: (blocks: ContentBlock[]) => Promise<{ stopReason: StopReason }>;
+  /** 结束时给停的原因；有的 agent（Claude Code）在结果里带这一轮的 token 用量（usage / _meta），一并给。 */
+  prompt: (blocks: ContentBlock[]) => Promise<{ stopReason: StopReason; usage?: Record<string, unknown> | null; meta?: Record<string, unknown> | null }>;
   /** 停（session/cancel）。 */
   cancel: () => void;
   /** 不用了（关窗、换 agent）。 */

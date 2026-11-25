@@ -67,10 +67,12 @@ export type AskTurn = {
   lastTokenAt: number | null;
   /** 正文 + 思考一共多少字（拿不到 token 时估速度用）。 */
   chars: number;
+  /** 收到几段正文 / 思考（一次整段发来的 agent，比如 Claude Code，段数少，算不出速度）。 */
+  chunks: number;
 };
 
 export function emptyTurn(now: number): AskTurn {
-  return { parts: [], usage: {}, startedAt: now, firstTokenAt: null, lastTokenAt: null, chars: 0 };
+  return { parts: [], usage: {}, startedAt: now, firstTokenAt: null, lastTokenAt: null, chars: 0, chunks: 0 };
 }
 
 function blockText(block: ContentBlock): string {
@@ -99,9 +101,11 @@ function numberOr(value: unknown): number | undefined {
  * 几种常见写法都认（camelCase / snake_case / Anthropic 的 cache_read_input_tokens）。
  */
 export function usageFromMeta(meta: unknown): Partial<AskUsage> {
-  const object = meta as { usage?: Record<string, unknown>; retainpdf?: { usage?: Record<string, unknown> } } | null | undefined;
+  const object = meta as { usage?: Record<string, unknown>; retainpdf?: { usage?: Record<string, unknown> }; "_claude/model"?: unknown } | null | undefined;
+  // Claude Code（claude-agent-acp）把模型名放在 _meta["_claude/model"]。
+  const claudeModel = typeof object?.["_claude/model"] === "string" ? (object["_claude/model"] as string) : "";
   const usage = object?.retainpdf?.usage ?? object?.usage;
-  if (!usage || typeof usage !== "object") return {};
+  if (!usage || typeof usage !== "object") return claudeModel ? { model: claudeModel } : {};
   const pick = (...keys: string[]) => {
     for (const key of keys) {
       const value = numberOr(usage[key]);
@@ -113,7 +117,7 @@ export function usageFromMeta(meta: unknown): Partial<AskUsage> {
   const input = pick("inputTokens", "input_tokens", "promptTokens", "prompt_tokens");
   const output = pick("outputTokens", "output_tokens", "completionTokens", "completion_tokens");
   const cached = pick("cachedInputTokens", "cachedReadTokens", "cache_read_tokens", "cache_read_input_tokens", "cached_tokens");
-  const cacheWrite = pick("cacheWriteTokens", "cache_write_tokens", "cache_creation_input_tokens");
+  const cacheWrite = pick("cacheWriteTokens", "cachedWriteTokens", "cache_write_tokens", "cache_creation_input_tokens");
   const reasoning = pick("reasoningTokens", "reasoning_tokens", "thoughtTokens");
   if (input !== undefined) out.inputTokens = input;
   if (output !== undefined) out.outputTokens = output;
@@ -121,6 +125,7 @@ export function usageFromMeta(meta: unknown): Partial<AskUsage> {
   if (reasoning !== undefined) out.reasoningTokens = reasoning;
   if (cacheWrite !== undefined) out.cacheWriteTokens = cacheWrite;
   if (typeof usage.model === "string" && usage.model) out.model = usage.model;
+  else if (claudeModel) out.model = claudeModel;
   return out;
 }
 
@@ -142,6 +147,7 @@ export function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: nu
         ...turn,
         parts: appendStreamed(turn.parts, type, text),
         chars: turn.chars + text.length,
+        chunks: (turn.chunks || 0) + 1,
         firstTokenAt: turn.firstTokenAt ?? now,
         lastTokenAt: now,
       };
@@ -207,9 +213,13 @@ export function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: nu
 
 export type AskSpeed = { value: number; unit: "token/s" | "字/s" } | null;
 
-/** 出字速度：从第一个字到最后一个字。有输出 token 按 token 算，没有按字数估；不到 0.3 秒不算（太短不准）。 */
+/** 至少收到几段才算速度：一次整段发来的（Claude Code 常这样），首字到末字只有零点几秒，算出来几千 token/s，是假的。 */
+export const SPEED_MIN_CHUNKS = 5;
+
+/** 出字速度：从第一个字到最后一个字。有输出 token 按 token 算，没有按字数估；不到 0.3 秒、段数太少都不算（不准）。 */
 export function turnSpeed(turn: AskTurn): AskSpeed {
   if (turn.firstTokenAt == null || turn.lastTokenAt == null) return null;
+  if ((turn.chunks ?? SPEED_MIN_CHUNKS) < SPEED_MIN_CHUNKS) return null;
   const seconds = (turn.lastTokenAt - turn.firstTokenAt) / 1000;
   if (seconds < 0.3) return null;
   if (turn.usage.outputTokens) return { value: turn.usage.outputTokens / seconds, unit: "token/s" };

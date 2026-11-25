@@ -7,7 +7,7 @@
 import type { ContentBlock, RequestPermissionRequest, RequestPermissionResponse, SessionUpdate } from "@agentclientprotocol/sdk";
 
 import type { ReaderAskAnchor, ReaderAskPort, ReaderAskSession } from "../contracts/ask.js";
-import { applySessionUpdate, emptyTurn, turnSpeed, type AskPart, type AskTurn } from "./acp-parts.js";
+import { applySessionUpdate, emptyTurn, turnSpeed, usageFromMeta, type AskPart, type AskTurn } from "./acp-parts.js";
 import { historyText } from "./thread-messages.js";
 
 const QUOTE_LIMIT = 4000;
@@ -176,6 +176,12 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       current.prompt(blocks).then(
         (result) => {
           stopReason = result.stopReason;
+          // 结果里的用量（Claude Code 的 usage、自带 agent 的 _meta.retainpdf.usage）合进这一轮，底下那一行就有分项 token。
+          const extra = { ...usageFromMeta(result.meta), ...usageFromMeta(result.usage ? { usage: result.usage } : null) };
+          if (Object.keys(extra).length) {
+            turn = { ...turn, usage: { ...turn.usage, ...extra } };
+            changed = true;
+          }
           finished = true;
           wake?.();
         },
