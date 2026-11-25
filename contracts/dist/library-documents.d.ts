@@ -899,7 +899,6 @@ export interface JobActionsView {
     open_artifacts: ActionLinkView;
     cancel: ActionLinkView;
     resume: ActionLinkView1;
-    rerun: ActionLinkView2;
     download_pdf: ActionLinkView;
     open_markdown: ActionLinkView;
     open_markdown_raw: ActionLinkView;
@@ -915,15 +914,6 @@ export interface ActionLinkView {
  * 从断点续跑：POST /api/v1/jobs/:job_id/actions/resume。
  */
 export interface ActionLinkView1 {
-    enabled: boolean;
-    method: string;
-    path: string;
-    url: string;
-}
-/**
- * 旧名，和 resume 完全同值（地址也是 actions/resume；旧地址 actions/rerun 2026-11-25 删了）。新代码读 resume。
- */
-export interface ActionLinkView2 {
     enabled: boolean;
     method: string;
     path: string;
