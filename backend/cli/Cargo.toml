@@ -2,7 +2,7 @@
 name = "retainpdf-cli"
 version = "0.1.0"
 edition = "2021"
-description = "RetainPDF 命令行:配置、状态、环境检查、备份、同步"
+description = "RetainPDF 命令行:配置、状态、环境检查、备份、同步、书文件夹、给 AI agent 的 MCP 服务"
 
 [[bin]]
 name = "retainpdf"
@@ -13,6 +13,7 @@ retainpdf-config = { path = "../packages/retainpdf-config" }
 retainpdf-core = { path = "../packages/retainpdf-core" }
 retainpdf-data = { path = "../packages/retainpdf-data" }
 anyhow = "1"
+base64 = "0.22"
 chrono = "0.4"
 clap = { version = "4.5", features = ["derive"] }
 reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
