@@ -33,6 +33,7 @@ import {
 import { EditedTranslationOverlay } from "./EditedTranslationOverlay.js";
 import { inHoverToolsZone, useHoverPresentation } from "./hover-presentation.js";
 import { InkLayer } from "./InkLayer.js";
+import { MarginMarkerLayer } from "./MarginMarkerLayer.js";
 import { READER_INLINE_EDIT_CLASS, ReaderInlineBlockEditor } from "./ReaderInlineBlockEditor.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
 import { useReaderContext } from "../components/react-pdf/reader-context.js";
@@ -337,6 +338,13 @@ function PdfPageSlotInner({
             />
           ))}
         </div>
+      ) : null}
+      {active && readerContext?.marginMarkers?.get(pageNumber)?.length ? (
+        <MarginMarkerLayer
+          markers={readerContext.marginMarkers.get(pageNumber) ?? []}
+          targets={textHoverTargets}
+          onSelect={readerContext.selectMarginMarker}
+        />
       ) : null}
       {active && readerContext?.ink ? (
         <InkLayer

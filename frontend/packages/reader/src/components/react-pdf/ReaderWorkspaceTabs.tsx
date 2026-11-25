@@ -1,10 +1,10 @@
 import type { ReactElement } from "react";
 import { Button } from "@retainpdf/ui";
-import { ArrowDownToLine, CheckCircle2, Columns2, FileText, Languages, Radio } from "lucide-react";
+import { ArrowDownToLine, CheckCircle2, Columns2, FileText, Languages, PanelRight, Radio } from "lucide-react";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
 import { useReaderContext } from "./reader-context.js";
 
-export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "ai";
+export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "side";
 export type ReaderWorkspaceMode = "source" | "compare" | "translated";
 
 // 页签上写着字（窄屏只剩图标，见 chrome.css）：只有图标时看不出哪颗是哪颗。
@@ -34,6 +34,8 @@ export type ReaderWorkspaceTabsProps = {
   } | null;
   /** 这次看着它翻完了：顶栏左边换成「翻译完成 · 看对照」。 */
   completion?: { onOpenCompare: () => void } | null;
+  /** 宿主的第二栏（contracts/side-pane.ts）：多一个页签；开着时前三个页签都不算选中。 */
+  sidePane?: { label: string; active: boolean; onSelect: () => void } | null;
 };
 
 export function liveTranslationStatusCopy(state: LiveTranslationState): string {
@@ -77,6 +79,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
     onModeChange,
     liveTranslation = null,
     completion = null,
+    sidePane = null,
   } = props;
   const sourceViewOnly = props.sourceViewOnly ?? ctx?.sourceViewOnly ?? false;
   const liveCopy = liveTranslation ? liveTranslationStatusCopy(liveTranslation.state) : "";
@@ -90,7 +93,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
       <div className="reader-workspace-center">
         <div className="reader-workspace-tabs" role="tablist" aria-label="阅读工作区">
           {WORKSPACES.map(({ id, label, Icon }) => {
-            const active = mode === id;
+            const active = !sidePane?.active && mode === id;
             const disabled = isReaderWorkspaceDisabled({
               id,
               documentReady,
@@ -114,6 +117,20 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
               </button>
             );
           })}
+          {sidePane ? (
+            <Button
+              className={`reader-workspace-tab reader-workspace-tab--side${sidePane.active ? " is-active" : ""}`}
+              role="tab"
+              aria-selected={sidePane.active}
+              aria-label={sidePane.label}
+              title={sidePane.label}
+              data-reader-side-tab=""
+              onClick={sidePane.onSelect}
+            >
+              <PanelRight size={15} strokeWidth={2.2} aria-hidden />
+              <span className="reader-workspace-tab-label">{sidePane.label}</span>
+            </Button>
+          ) : null}
         </div>
         {liveTranslation ? (
           <div className="reader-live-strip">

@@ -1,0 +1,58 @@
+/* 第二栏（宿主提供的页签，contracts/side-pane.ts）和书页左边白边里的小圆点。
+ * 第二栏占 dock 的位置（panel-shell.css 的 .reader-notes-panel--workspace），这里只管里面。
+ * 圆点颜色只用皮肤语义色：阅读器不知道它们代表什么。 */
+
+.reader-side-pane {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.reader-side-pane-error {
+  margin: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--danger);
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--danger-weak);
+  color: var(--ink);
+}
+
+.reader-margin-markers {
+  position: absolute;
+  z-index: 5;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.reader-margin-marker {
+  --reader-margin-marker-tone: var(--accent);
+  position: absolute;
+  left: 6px;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 2px solid var(--reader-margin-marker-tone);
+  border-radius: 50%;
+  background: var(--reader-margin-marker-tone);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 120ms var(--ease-out);
+}
+
+.reader-margin-marker:hover,
+.reader-margin-marker:focus-visible {
+  transform: scale(1.35);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--reader-margin-marker-tone) 28%, transparent);
+}
+
+.reader-margin-marker.is-ok { --reader-margin-marker-tone: var(--ok); }
+.reader-margin-marker.is-danger { --reader-margin-marker-tone: var(--danger); }
+.reader-margin-marker.is-warn { --reader-margin-marker-tone: var(--warn); }
+.reader-margin-marker.is-accent { --reader-margin-marker-tone: var(--accent); }
+.reader-margin-marker.is-muted { --reader-margin-marker-tone: var(--muted); }
+
+.reader-margin-marker.is-hollow {
+  background: var(--paper);
+}

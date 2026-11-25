@@ -1,0 +1,1 @@
+{"version":3,"file":"ReaderSidePane.d.ts","sourceRoot":"","sources":["../../../src/components/react-pdf/ReaderSidePane.tsx"],"names":[],"mappings":"AAKA,OAAO,KAAK,EAAE,iBAAiB,EAAE,kBAAkB,EAAE,MAAM,8BAA8B,CAAC;AA8B1F,MAAM,MAAM,mBAAmB,GAAG;IAChC,IAAI,EAAE,kBAAkB,CAAC;IACzB,GAAG,EAAE,iBAAiB,CAAC;CACxB,CAAC;AAEF,wBAAgB,cAAc,CAAC,EAAE,IAAI,EAAE,GAAG,EAAE,EAAE,mBAAmB,+BAchE"}
