@@ -231,10 +231,22 @@ mod tests {
     /// 很久（看着像系统对新可执行文件的检查）：并发跑测试时 5 秒内脚本第一行都没跑到，先跑过一次就不再等。
     /// 不预热的话卡死渲染那条会在第一行之前就撞上时限、一个孙进程都没记下（2026-10-22、10-23 合并前
     /// 检查两次红在这里，计时放宽到 5 秒照样红；预热后 12 份测试程序同时跑也不红）。
+    ///
+    /// Linux 上并发跑测试时，别的线程恰好在这一刻 fork，子进程在 exec 之前还拿着这个文件的写句柄，
+    /// 马上执行会报 `ETXTBSY`（Text file busy，2026-11-25 PR #209 的 CI 红在这里）：预热这一次碰上就稍等重试。
     fn fake_script(path: PathBuf, body: &str) -> PathBuf {
         std::fs::write(&path, format!("#!/bin/sh\n[ \"$1\" = --warm ] && exit 0\n{body}")).unwrap();
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
-        let warm = std::process::Command::new(&path).arg("--warm").status().unwrap();
+        let mut attempt = 0;
+        let warm = loop {
+            match std::process::Command::new(&path).arg("--warm").status() {
+                Err(error) if error.kind() == std::io::ErrorKind::ExecutableFileBusy && attempt < 50 => {
+                    attempt += 1;
+                    std::thread::sleep(Duration::from_millis(20));
+                }
+                result => break result.unwrap(),
+            }
+        };
         assert!(warm.success(), "{path:?}");
         path
     }
