@@ -7,7 +7,19 @@ OCR 把一页目录给成一整块、每行的框是估的，翻译后排成左�
 - 每条标题按原位置、原缩进放译文，框一直延伸到页码列前面，给译文留宽度；
 - 每条是独立的短块（``structure_role = toc_entry``，不算正文），不参与跨页接续。
 
-文字层读不出条目（扫描件、页码对不上、条目太少）时什么都不改，照旧是一整块。方案见 docs/ops/planning/toc-agent/。
+一行怎么读（2026-11-25 按本机 13 本书修过一轮，见 docs/ops/planning/toc-agent/20261125-拆条目规则修正.md）：
+
+- 页码：行尾的数字、罗马数字，以及「1-7」「5-35」「57.1」「S2」「A-3」这类；可以是单独的片段，也可以和标题、
+  点线引导（``. . .``、``....``、``…``、``·``）写在同一个片段里（按字的位置切开）。
+  靠得住的页码：在右边一列（块宽右侧 40%），或者前面有点线引导。
+  靠不太住的（紧跟在标题后面、只隔空格的阿拉伯数字）：这一块里这种页码占多数才认（页码不排成一列的目录），
+  认了以后页码倒着走，就不认这种再读一遍。
+- 点线引导是标题和页码之间的空当，从标题里去掉；有点线没页码的行也算一条结束。
+- 章号：行首的「1」「1.2」「4-2」「A-3」「A.」「IV.」；和标题粘在一段里的也拆开（按字的位置）。
+- 新的一条从哪里开始：有章号的行、Appendix/Annexure/Chapter/Part（附录、Приложение 等）开头的行、
+  比正在攒的没章号的那条起点往左缩出去的行；其余没碰到页码的行当成标题折行，接着攒。
+
+文字层读不出条目（扫描件、页码倒退、条目太少、大半条目没有页码）时什么都不改，照旧是一整块。方案见 docs/ops/planning/toc-agent/。
 """
 from __future__ import annotations
 
@@ -20,19 +32,52 @@ TOC_ROLES = frozenset({"toc", "table_of_contents"})
 ENTRY_STRUCTURE_ROLE = "toc_entry"
 # 一行里的片段按 y 中心聚成视觉行
 LINE_Y_TOLERANCE = 3.0
-# 页码：一行最右边、落在块宽右侧这一截的数字或罗马数字
-PAGE_TOKEN_RE = re.compile(r"^(?:\d{1,4}[a-z]?|[ivxlcdm]{1,8})$", re.IGNORECASE)
+# 上下标：字号不到这一块中位数的这么多、最多 3 个字
+SCRIPT_SIZE_RATIO = 0.8
+# 页码：「12」「12a」「S2」「A-3」「1-7」「5-35」「57.1」「16-16.1」，或罗马数字
+_ARABIC_PAGE = r"(?:[A-Z]{1,2}-?)?\d{1,4}[a-z]?(?:[.\-–]\d{1,4}){0,2}"
+_ROMAN_PAGE = (r"(?:(?=[ivxlcdm])m{0,3}(?:cm|cd|d?c{0,3})(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})"
+               r"|(?=[IVXLCDM])M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3}))")
+PAGE_TOKEN_RE = re.compile(rf"^(?:{_ARABIC_PAGE}|{_ROMAN_PAGE})$")
+ARABIC_PAGE_RE = re.compile(rf"^{_ARABIC_PAGE}$")
+PLAIN_PAGE_RE = re.compile(r"^\d{1,4}$")
 PAGE_COLUMN_FRACTION = 0.6
-# 章号：一行最左边、和后面的标题隔开的短编号
-NUMBER_TOKEN_RE = re.compile(r"^(?:\d{1,3}(?:\.\d{1,3})*\.?|[A-Z]\.?|[IVXL]{1,6}\.?)$")
-NUMBER_GAP = 4.0
-# 章号和标题写在同一个片段里（「10 Using Your …」）
-JOINED_NUMBER_RE = re.compile(r"^(\d{1,3}(?:\.\d{1,3})*\.?)\s+(\S.*)$")
+# 点线引导：两个以上的点（中间可以有空格）
+_LEADER_CHARS = r"[.·•…‥⋯∙_]"
+LEADER_ONLY_RE = re.compile(rf"^(?:\s*{_LEADER_CHARS}){{2,}}\s*$")
+# 片段末尾的「标题 + 点线或空格 + 页码」
+TRAILING_PAGE_RE = re.compile(
+    rf"^(?P<head>.*?)(?P<sep>(?:\s*{_LEADER_CHARS}){{2,}}\s*|\s+)(?P<page>{_ARABIC_PAGE}|{_ROMAN_PAGE})\s*$"
+)
+# 标题末尾的点线（夹着零星的短横也算：扫描书文字层的点线里常混着「-」）
+TRAILING_LEADER_RE = re.compile(r"(?:\s*[.·•…‥⋯∙_\-–—]){2,}\s*$")
+# 章号：一行最左边、和后面的标题隔开的短编号（「1」「1.2」「4-2」「A-3」「A.」「IV.」）
+NUMBER_TOKEN_RE = re.compile(r"^(?:\d{1,3}(?:[.\-–]\d{1,3})*\.?|[A-Z](?:[.\-–]\d{1,3})*\.?|[IVXL]{1,6}\.?)$")
+NUMBER_GAP = 4.0  # 字母、罗马数字的章号和标题至少隔这么远（数字章号是单独的片段就算）
+# 章号和标题写在同一个片段里（「10 Using Your …」「4-2 Separation …」「A-3 Tables」）
+JOINED_NUMBER_RE = re.compile(r"^(\s*)(\d{1,3}(?:[.\-–]\d{1,3})*\.?|[A-Z][.\-–]\d{1,3}(?:[.\-–]\d{1,3})*\.?)\s+(\S.*)$")
+# 这些词开头的行另起一条（附录、章、部分），词留在标题里
+LABEL_START_RE = re.compile(
+    r"^(?:appendix|appendices|annex|annexure|attachment|supplement|chapter|part|приложение|глава|раздел|часть"
+    r"|附录|附錄|付録)\b",
+    re.IGNORECASE,
+)
+# 比正在攒的那条起点往左缩出去这么多，就是新的一条
+OUTDENT = 8.0
+# 页码排成一列：这么多的页码左边或右边对齐（±3pt）
+PAGE_COLUMN_SHARE = 0.6
 # 页眉：在页面上面这一截、去掉页码以后只剩这些字
 HEADER_BAND = 0.1
-HEADER_WORDS = frozenset({"contents", "table of contents", "brief contents", "目录", "目次", "目 录"})
+HEADER_WORDS = frozenset({"contents", "table of contents", "brief contents", "目录", "目次", "目 录", "содержание"})
 TITLE_RIGHT_GAP = 6.0
 MIN_ENTRIES = 3
+# 每这么多个页码容一处倒退（认错的页码）
+PAGE_DESCENTS_PER = 15
+# 文字层把重音写成「¨」加字母（「¨o」）：合回一个字
+_SPACING_ACCENTS = {"¨": ("̈", "aeiouyAEIOUY"), "´": ("́", "aeiouycnszAEIOUYCNSZ"),
+                    "ˆ": ("̂", "aeiouAEIOU"), "˜": ("̃", "anoANO"),
+                    "ˇ": ("̌", "cszrnegCSZRNEG"), "˚": ("̊", "auAU")}
+_ACCENT_RE = re.compile("([" + "".join(_SPACING_ACCENTS) + r"])\s?([A-Za-z])")
 
 
 @dataclass
@@ -43,6 +88,7 @@ class _Span:
     x1: float
     y1: float
     size: float
+    chars: tuple = ()  # 每个字的（字，左，右）；和 text 一一对应
 
 
 @dataclass
@@ -52,6 +98,30 @@ class _Line:
     @property
     def y(self) -> float:
         return sum((span.y0 + span.y1) / 2 for span in self.spans) / len(self.spans)
+
+
+@dataclass
+class _ParsedLine:
+    words: list[_Span]  # 标题片段（章号、页码、点线已去掉）
+    number: str = ""
+    number_span: _Span | None = None
+    page_label: str = ""
+    page_span: _Span | None = None
+    page_strength: str = ""  # strong：右边一列或有点线；weak：紧跟标题、只隔空格
+    words_with_page: list[_Span] = field(default_factory=list)  # 不认 weak 页码时用回这一份
+    has_leader: bool = False
+    starts_label: bool = False
+    header: str = ""
+
+    @property
+    def page_x0(self) -> float | None:
+        return self.page_span.x0 if self.page_span is not None else None
+
+    @property
+    def x0(self) -> float | None:
+        if self.number_span is not None:
+            return self.number_span.x0
+        return self.words[0].x0 if self.words else None
 
 
 @dataclass
@@ -65,6 +135,7 @@ class TocEntry:
     line_count: int
     number_x0: float | None = None  # 章号的左边（有章号时）
     line_boxes: list[list[float]] = field(default_factory=list)  # 标题每一行的框（多行标题）
+    page_box: list[float] | None = None  # 页码的框（读出页码时）
 
 
 @dataclass
@@ -74,34 +145,62 @@ class TocPageSplit:
     page_column_x0: float | None = None
 
 
+def _join_accents(text: str) -> str:
+    def repl(match: re.Match) -> str:
+        mark, letters = _SPACING_ACCENTS[match.group(1)]
+        return match.group(2) + mark if match.group(2) in letters else match.group(0)
+
+    return unicodedata.normalize("NFC", _ACCENT_RE.sub(repl, text))
+
+
 def _clean(text: str) -> str:
-    return " ".join(unicodedata.normalize("NFKC", text or "").split())
+    return " ".join(unicodedata.normalize("NFKC", _join_accents(text or "")).split())
 
 
 def _spans_in(pdf_page, bbox: list[float]) -> list[_Span]:
     x0, y0, x1, y1 = bbox
     spans = []
-    for block in pdf_page.get_text("dict").get("blocks", []):
+    for block in pdf_page.get_text("rawdict").get("blocks", []):
         for line in block.get("lines", []):
             for span in line.get("spans", []):
-                text = span.get("text", "")
+                chars = tuple((char.get("c", ""), float(char["bbox"][0]), float(char["bbox"][2]))
+                              for char in span.get("chars", []))
+                text = "".join(char[0] for char in chars) if chars else span.get("text", "")
                 if not text.strip():
                     continue
                 sx0, sy0, sx1, sy1 = span["bbox"]
                 cx, cy = (sx0 + sx1) / 2, (sy0 + sy1) / 2
                 if x0 - 2 <= cx <= x1 + 2 and y0 - 2 <= cy <= y1 + 2:
-                    spans.append(_Span(text, sx0, sy0, sx1, sy1, float(span.get("size") or 0)))
+                    spans.append(_Span(text, sx0, sy0, sx1, sy1, float(span.get("size") or 0), chars))
     return spans
 
 
+def _is_script(span: _Span, median_size: float) -> bool:
+    """上下标（H₂⁺ 的「2」「+」）：字小一圈、只有一两个字。"""
+    return median_size > 0 and span.size < median_size * SCRIPT_SIZE_RATIO and len(span.text.strip()) <= 3
+
+
 def _visual_lines(spans: list[_Span]) -> list[_Line]:
+    sizes = sorted(span.size for span in spans)
+    median_size = sizes[len(sizes) // 2] if sizes else 0.0
+    scripts = [span for span in spans if _is_script(span, median_size)]
     lines: list[_Line] = []
-    for span in sorted(spans, key=lambda item: ((item.y0 + item.y1) / 2, item.x0)):
+    for span in sorted((span for span in spans if not _is_script(span, median_size)),
+                       key=lambda item: ((item.y0 + item.y1) / 2, item.x0)):
         center = (span.y0 + span.y1) / 2
         if lines and abs(lines[-1].y - center) <= LINE_Y_TOLERANCE:
             lines[-1].spans.append(span)
         else:
             lines.append(_Line([span]))
+    # 上下标挂到最近的那一行上（以前自成一行，被当成一条目录）；离哪行都远的照旧自成一行
+    for span in scripts:
+        center = (span.y0 + span.y1) / 2
+        nearest = min(lines, key=lambda line: abs(line.y - center), default=None)
+        if nearest is not None and abs(nearest.y - center) <= median_size:
+            nearest.spans.append(span)
+        else:
+            lines.append(_Line([span]))
+    lines.sort(key=lambda line: line.y)
     for line in lines:
         line.spans.sort(key=lambda item: item.x0)
     return lines
@@ -113,11 +212,28 @@ def _merge_words(spans: list[_Span]) -> list[_Span]:
     for span in spans:
         if merged and span.x0 - merged[-1].x1 <= 2.0:
             last = merged[-1]
+            chars = last.chars + span.chars if len(last.chars) == len(last.text) and len(span.chars) == len(span.text) else ()
             merged[-1] = _Span(last.text + span.text, last.x0, min(last.y0, span.y0), span.x1, max(last.y1, span.y1),
-                               max(last.size, span.size))
+                               max(last.size, span.size), chars)
         else:
             merged.append(span)
     return merged
+
+
+def _slice(span: _Span, start: int, end: int) -> _Span | None:
+    """片段里 [start, end) 这几个字，框按字的位置算（没有逐字位置时按字数估）。"""
+    text = span.text[start:end]
+    if not text.strip():
+        return None
+    if len(span.chars) == len(span.text):
+        chars = span.chars[start:end]
+        visible = [char for char in chars if char[0].strip()] or list(chars)
+        x0, x1 = min(char[1] for char in visible), max(char[2] for char in visible)
+    else:
+        chars = ()
+        width, count = span.x1 - span.x0, max(1, len(span.text))
+        x0, x1 = span.x0 + width * start / count, span.x0 + width * end / count
+    return _Span(text, x0, span.y0, x1, span.y1, span.size, tuple(chars))
 
 
 def _is_header(line: _Line, page_height: float) -> bool:
@@ -128,24 +244,144 @@ def _is_header(line: _Line, page_height: float) -> bool:
     return bool(rest) and " ".join(rest).lower() in HEADER_WORDS
 
 
-def split_toc_page(pdf_page, block_bbox: list[float]) -> TocPageSplit | None:
-    """从文字层读出这一块目录的条目。读不出（没文字层、条目太少、页码倒退）回 None。"""
-    spans = _spans_in(pdf_page, block_bbox)
-    if not spans:
+def _strip_trailing_leaders(words: list[_Span]) -> tuple[list[_Span], bool]:
+    """去掉标题后面的点线：整段都是点线的片段扔掉，片段末尾的点线切掉。"""
+    words = list(words)
+    found = False
+    while words and LEADER_ONLY_RE.match(words[-1].text):
+        words.pop()
+        found = True
+    if words:
+        match = TRAILING_LEADER_RE.search(words[-1].text)
+        if match and LEADER_ONLY_RE.match(re.sub(r"[\-–—]", "", match.group(0)) or ""):
+            head = _slice(words[-1], 0, match.start())
+            words[-1:] = [head] if head is not None else []
+            found = True
+    return words, found
+
+
+def _take_page(words: list[_Span], page_column_from: float) -> tuple[list[_Span], str, _Span | None, str]:
+    """从一行末尾取页码：回（剩下的标题片段，页码，页码片段，strong / weak / 空）。
+    strong：页码在右边一列，或前面有点线；weak：紧跟在标题后面、只隔空格的阿拉伯数字。"""
+    if not words:
+        return words, "", None, ""
+    last = words[-1]
+    whole = _clean(last.text)
+    if PAGE_TOKEN_RE.match(whole):
+        if len(words) == 1:
+            # 只有一个数的行：折行标题的页码单独落到下一行（只认右边一列的）
+            return ([], whole, last, "strong") if last.x0 >= page_column_from else (words, "", None, "")
+        rest, leader = _strip_trailing_leaders(words[:-1])
+        if last.x0 >= page_column_from or leader:
+            return rest, whole, last, "strong"
+        if ARABIC_PAGE_RE.match(whole):
+            return rest, whole, last, "weak"
+        return words, "", None, ""
+    match = TRAILING_PAGE_RE.match(last.text)
+    if not match:
+        return words, "", None, ""
+    leader = bool(LEADER_ONLY_RE.match(match.group("sep")))
+    page = match.group("page")
+    head_text = match.group("head")
+    if not leader and (not PLAIN_PAGE_RE.match(page) or not head_text.strip()):
+        return words, "", None, ""
+    page_span = _slice(last, match.start("page"), match.end("page"))
+    if page_span is None:
+        return words, "", None, ""
+    head = _slice(last, 0, len(head_text)) if head_text.strip() else None
+    rest, more_leader = _strip_trailing_leaders(words[:-1] + ([head] if head is not None else []))
+    if leader or more_leader or page_span.x0 >= page_column_from:
+        return rest, page, page_span, "strong"
+    return rest, page, page_span, "weak"
+
+
+def _take_number(words: list[_Span]) -> tuple[list[_Span], str, _Span | None]:
+    if len(words) >= 2:
+        first = _clean(words[0].text)
+        gap = words[1].x0 - words[0].x1
+        # 数字章号是单独的片段就算（片段之间本来就隔着 2pt 以上）；字母、罗马数字要隔得开，免得把「A」当章号
+        if NUMBER_TOKEN_RE.match(first) and (gap >= NUMBER_GAP or first[0].isdigit()):
+            return words[1:], first, words[0]
+    if words and (joined := JOINED_NUMBER_RE.match(words[0].text)):
+        # 章号和标题在同一个片段里：按字的位置切开（原图上的章号留着不动）
+        first = words[0]
+        number_span = _slice(first, joined.start(2), joined.end(2))
+        title_span = _slice(first, joined.start(3), len(first.text))
+        if number_span is not None and title_span is not None:
+            return [title_span] + words[1:], _clean(joined.group(2)), number_span
+    return words, "", None
+
+
+def _parse_line(line: _Line, page_column_from: float, page_height: float) -> _ParsedLine:
+    if _is_header(line, page_height):
+        return _ParsedLine(words=[], header=_clean(" ".join(span.text for span in line.spans)))
+    words = _merge_words(line.spans)
+    rest, page_label, page_span, strength = _take_page(words, page_column_from)
+    rest, leader = _strip_trailing_leaders(rest)
+    rest, number, number_span = _take_number(rest)
+    with_page = rest
+    if strength == "weak":
+        # 不认这个页码时，数字留在标题里
+        with_page, _number, _span = _take_number(_strip_trailing_leaders(words)[0])
+    first_text = _clean(rest[0].text) if rest else ""
+    starts_label = bool(first_text) and not first_text[0].islower() and bool(LABEL_START_RE.match(first_text))
+    return _ParsedLine(words=rest, number=number, number_span=number_span, page_label=page_label,
+                       page_span=page_span,
+                       page_strength=strength, words_with_page=with_page, has_leader=leader, starts_label=starts_label)
+
+
+def _use_weak_pages(parsed: list[_ParsedLine]) -> bool:
+    """紧跟标题的数字算不算页码：这一块的页码排成一列（大多左边或右边对齐）时不算，排不成一列时算。"""
+    labeled = [line for line in parsed if line.page_strength and line.page_span is not None]
+    if not any(line.page_strength == "weak" for line in labeled):
+        return False
+
+    def aligned(values: list[float]) -> int:
+        return max(sum(1 for other in values if abs(other - value) <= 3) for value in values)
+
+    best = max(aligned([line.page_span.x0 for line in labeled]), aligned([line.page_span.x1 for line in labeled]))
+    return best < len(labeled) * PAGE_COLUMN_SHARE
+
+
+def _page_key(label: str) -> tuple[str, tuple[int, ...]] | None:
+    """页码的比较键：（字母前缀，数字们）；罗马数字不比。"""
+    if not ARABIC_PAGE_RE.match(label):
         return None
-    block_x0, block_x1 = float(block_bbox[0]), float(block_bbox[2])
-    page_column_from = block_x0 + (block_x1 - block_x0) * PAGE_COLUMN_FRACTION
+    prefix = re.match(r"^[A-Z]*", label).group(0)
+    return prefix, tuple(int(item) for item in re.findall(r"\d+", label))
+
+
+def _monotonic(entries: list[TocEntry]) -> bool:
+    """页码不往回走（同一个字母前缀里比）。条目多的页容一处倒退：扫描书的文字层偶尔认错一个页码（149 认成 159），
+    每 15 个页码容一处；索引页、正文被认成目录的，页码来回跳，远不止这些。"""
+    last: dict[str, tuple[int, ...]] = {}
+    labeled = descents = 0
+    for entry in entries:
+        key = _page_key(entry.page_label)
+        if key is None:
+            continue
+        labeled += 1
+        prefix, numbers = key
+        if prefix in last and numbers < last[prefix]:
+            descents += 1
+        last[prefix] = numbers
+    return descents <= labeled // PAGE_DESCENTS_PER
+
+
+def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
     result = TocPageSplit()
     pending: list[tuple[str, _Span | None, list[_Span]]] = []  # 还没碰到页码的多行标题：（章号，章号片段，标题片段）
+    pending_x0: list[float] = []
     page_column_x0s: list[float] = []
 
-    def flush(page_label: str) -> None:
+    def flush(page_label: str, page_span: _Span | None = None) -> None:
         if not pending:
             return
         number = next((item[0] for item in pending if item[0]), "")
         title_spans = [span for _number, _span, spans_ in pending for span in spans_]
         if not title_spans:
             pending.clear()
+            pending_x0.clear()
             return
         title = _clean(" ".join(" ".join(span.text for span in spans_) for _n, _s, spans_ in pending))
         bbox = [min(s.x0 for s in title_spans), min(s.y0 for s in title_spans),
@@ -156,68 +392,119 @@ def split_toc_page(pdf_page, block_bbox: list[float]) -> TocPageSplit | None:
                       for _n, _s, spans_ in pending if spans_]
         result.entries.append(TocEntry(title=title, number=number, page_label=page_label, level=0, bbox=bbox,
                                        font_size=sizes[len(sizes) // 2], line_count=len(pending), number_x0=number_x0,
-                                       line_boxes=line_boxes))
+                                       line_boxes=line_boxes,
+                                       page_box=[page_span.x0, page_span.y0, page_span.x1, page_span.y1] if page_span else None))
         pending.clear()
+        pending_x0.clear()
 
-    for line in _visual_lines(spans):
-        if _is_header(line, float(pdf_page.rect.height)):
-            result.header_lines.append(_clean(" ".join(span.text for span in line.spans)))
+    for line in parsed:
+        if line.header:
+            result.header_lines.append(line.header)
             continue
-        words = _merge_words(line.spans)
-        page_label = ""
-        if len(words) >= 2 and PAGE_TOKEN_RE.match(_clean(words[-1].text)) and words[-1].x0 >= page_column_from:
-            page_label = _clean(words[-1].text)
-            page_column_x0s.append(words[-1].x0)
-            words = words[:-1]
-        number, number_span = "", None
-        if len(words) >= 2 and NUMBER_TOKEN_RE.match(_clean(words[0].text)) and words[1].x0 - words[0].x1 >= NUMBER_GAP:
-            number, number_span = _clean(words[0].text), words[0]
-            words = words[1:]
-        elif words and (joined := JOINED_NUMBER_RE.match(words[0].text.strip())):
-            # 章号和标题在同一个片段里：按字数估出标题从哪里开始（原图上的章号留着不动）
-            first = words[0]
-            raw = first.text.strip()
-            title_start = first.x0 + (first.x1 - first.x0) * (raw.index(joined.group(2)) / max(1, len(raw)))
-            number = joined.group(1)
-            number_span = _Span(number, first.x0, first.y0, title_start, first.y1, first.size)
-            words = [_Span(joined.group(2), title_start, first.y0, first.x1, first.y1, first.size)] + words[1:]
-        if number and pending:
-            flush("")  # 新的一章开始，上面没等到页码的标题单独成一条
-        pending.append((number, number_span, words))
+        words, page_label = line.words, line.page_label
+        if page_label and line.page_strength == "weak" and not use_weak:
+            words, page_label = line.words_with_page, ""
+        if not words and line.number_span is None:
+            if page_label and pending:
+                # 只有页码（或点线加页码）的一行：上面折行的标题到头了
+                if line.page_x0 is not None:
+                    page_column_x0s.append(line.page_x0)
+                flush(page_label, line.page_span)
+            continue
+        x0 = line.x0 if line.x0 is not None else (words[0].x0 if words else 0.0)
+        # 往左缩出去的行：没章号的条目（论文集里标题上面一行作者）到这里结束；带章号的条目折行常从章号列
+        # 甚至更左写起，照旧当折行
+        outdented = bool(pending_x0) and not any(item[0] for item in pending) and pending_x0[0] - x0 > OUTDENT
+        if pending and (line.number or line.starts_label or outdented):
+            flush("")  # 新的一条开始，上面没等到页码的标题单独成一条
+        pending.append((line.number, line.number_span, words))
+        pending_x0.append(x0)
         if page_label:
-            flush(page_label)
+            if line.page_x0 is not None:
+                page_column_x0s.append(line.page_x0)
+            flush(page_label, line.page_span)
+        elif line.has_leader:
+            flush("")  # 有点线没页码：这一条也到头了
     flush("")
-
-    entries = result.entries
-    if len(entries) < MIN_ENTRIES:
-        return None
-    numeric = [int(entry.page_label) for entry in entries if entry.page_label.isdigit()]
-    if any(later < earlier for earlier, later in zip(numeric, numeric[1:])):
-        return None
     result.page_column_x0 = min(page_column_x0s) if page_column_x0s else None
-    _assign_levels(entries)
     return result
 
 
+def _acceptable(result: TocPageSplit) -> bool:
+    entries = result.entries
+    if len(entries) < MIN_ENTRIES:
+        return False
+    # 三分之二以上的条目没有页码的不是目录（项目符号列表、正文段落被认成目录块）；
+    # 论文集的目录每篇下面一行作者、不带页码，占一半上下，照样认
+    labeled = sum(1 for entry in entries if entry.page_label)
+    if labeled < 2 or labeled * 3 < len(entries):
+        return False
+    return _monotonic(entries)
+
+
+def split_toc_page(pdf_page, block_bbox: list[float]) -> TocPageSplit | None:
+    """从文字层读出这一块目录的条目。读不出（没文字层、条目太少、页码倒退）回 None。"""
+    spans = _spans_in(pdf_page, block_bbox)
+    if not spans:
+        return None
+    block_x0, block_x1 = float(block_bbox[0]), float(block_bbox[2])
+    page_column_from = block_x0 + (block_x1 - block_x0) * PAGE_COLUMN_FRACTION
+    page_height = float(pdf_page.rect.height)
+    parsed = [_parse_line(line, page_column_from, page_height) for line in _visual_lines(spans)]
+    use_weak = _use_weak_pages(parsed)
+    result = _group(parsed, use_weak=use_weak)
+    if use_weak and not _acceptable(result):
+        result = _group(parsed, use_weak=False)
+    if not _acceptable(result):
+        return None
+    _assign_levels(result.entries)
+    return result
+
+
+def _number_level(number: str) -> int:
+    """「1」「A」「IV」一级，「1.2」「4-2」「A-3」二级，往下按分隔符数。"""
+    return len(re.findall(r"[.\-–]", number.rstrip("."))) + 1
+
+
 def _assign_levels(entries: list[TocEntry]) -> None:
-    """按起点定级别：章号不带点的是第 1 级、带点的按点数往下；没有章号的看标题从哪里写起——
-    从章号那一列写起的（结论、附录、索引这类后置部分）和章同级，从章标题那一列写起的低一级，再往右缩进的再低一级。
-    这一页没有带章号的条目时，以最左的起点为第 1 级。"""
+    """按起点定级别：有章号的按章号里的分隔符数（「1」一级、「1.2」「4-2」二级）。没有章号的看从哪一列写起：
+    - 在最左的章号列上或更左：一级（结论、附录、索引这类后置部分常和章号同列）；
+    - 和更深一级的章号同一列：就是那一级；
+    - 和某一级的标题同一列：一级章的标题列上的是它的小节（低一级）；二级以下的标题列上的是同级
+      （「习题」「小结」这类没编号的，和带编号的小节并排）；下一级有带编号的条目时也算低一级；
+    - 都对不上：往右缩进的低一级、再缩进的再低一级。
+    这一页没有带章号的条目时，按起点从左到右一列一级。"""
     numbered = [entry for entry in entries if entry.number and entry.number_x0 is not None]
-    number_column = min((entry.number_x0 for entry in numbered), default=None)
-    chapter_title_column = min((entry.bbox[0] for entry in numbered), default=None)
-    left = min(entry.bbox[0] for entry in entries)
+    if not numbered:
+        columns: list[float] = []
+        for x0 in sorted(entry.bbox[0] for entry in entries):
+            if not columns or x0 - columns[-1] > 8:
+                columns.append(x0)
+        for entry in entries:
+            entry.level = 1 + max(index for index, column in enumerate(columns) if entry.bbox[0] >= column - 0.01)
+        return
+    for entry in numbered:
+        entry.level = _number_level(entry.number)
+    levels = sorted({entry.level for entry in numbered})
+    number_columns = {level: min(e.number_x0 for e in numbered if e.level == level) for level in levels}
+    title_columns = {level: min(e.bbox[0] for e in numbered if e.level == level) for level in levels}
+    number_column = min(number_columns.values())
+    chapter_title_column = min(e.bbox[0] for e in numbered)
     for entry in entries:
         if entry.number:
-            entry.level = entry.number.rstrip(".").count(".") + 1 if entry.number[0].isdigit() else 1
             continue
         x0 = entry.bbox[0]
-        if number_column is not None and x0 <= number_column + 4:
+        same_number = [level for level, column in number_columns.items() if abs(x0 - column) <= 4]
+        same_title = [level for level, column in title_columns.items() if abs(x0 - column) <= 4]
+        if x0 <= number_column + 4:
             entry.level = 1
-        elif chapter_title_column is not None:
-            entry.level = 2 + (1 if x0 - chapter_title_column > 8 else 0)
+        elif same_number:
+            entry.level = min(same_number)
+        elif same_title:
+            level = max(same_title)
+            entry.level = level + 1 if level == 1 or (level + 1) in number_columns else level
         else:
-            entry.level = 1 + (1 if x0 - left > 8 else 0)
+            entry.level = 2 + (1 if x0 - chapter_title_column > 8 else 0)
 
 
 def _entry_block(parent: dict, entry: TocEntry, block_id: str, right_edge: float) -> dict:
@@ -257,6 +544,8 @@ def _entry_block(parent: dict, entry: TocEntry, block_id: str, right_edge: float
         toc_entry_level=entry.level,
         toc_entry_source_font_size=round(entry.font_size, 2),
         toc_entry_line_count=entry.line_count,
+        # 页码在原图上的框（页码不在条目里；擦原文时它和标题在同一个绘字指令里会被一起擦掉，排版要补画时用）
+        toc_entry_page_bbox=[round(value, 2) for value in entry.page_box] if entry.page_box else None,
         toc_split_parent_block_id=str(parent.get("block_id") or ""),
         structure_role=ENTRY_STRUCTURE_ROLE,
         layout_role="toc",

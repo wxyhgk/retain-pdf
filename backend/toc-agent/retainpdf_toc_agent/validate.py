@@ -8,7 +8,7 @@ from retainpdf_toc_agent.contract import GlossaryTerm
 _CJK = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 _LETTER_WORD = re.compile(r"[A-Za-z]{2,}")
 _DIGITS = re.compile(r"\d+")
-_LEADING_NUMBER = re.compile(r"^\s*(?:第\s*)?(\d+(?:\.\d+)*)\s*(?:章|节)?[.．、:：]?\s+")
+_LEADING_NUMBER = re.compile(r"^\s*(?:第\s*)?(\d+(?:[.\-–]\d+)*)\s*(?:章|节)?[.．、:：]?\s+")
 MAX_LENGTH_RATIO = 4
 
 REASON_EMPTY = "empty"
