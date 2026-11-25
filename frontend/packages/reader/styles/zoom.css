@@ -1,0 +1,182 @@
+/* 放大查看一块（components/react-pdf/ReaderZoomViewer.tsx）：盖在书上的大框，这一块按高分辨率重新画（pdf/RegionCanvas.tsx）。
+ * 引用悬停预览（ReaderXrefPreview.tsx）是小号的同一套，「回到第 N 页」也在这里。
+ * 颜色只用皮肤变量；深色文档时画布照书页一样反色（doc-theme.css 的变量）。 */
+
+.reader-zoom {
+  position: fixed;
+  z-index: var(--z-dialog, 95);
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.reader-zoom-backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--shadow-color, var(--ink)) 45%, transparent);
+}
+
+.reader-zoom-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1200px, 94vw);
+  max-height: min(880px, 90vh);
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-lg, 14px);
+  background: var(--paper);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--shadow-color, var(--ink)) 30%, transparent);
+  overflow: hidden;
+}
+
+.reader-zoom-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 16px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.reader-zoom-title {
+  font-weight: 650;
+}
+
+.reader-zoom-count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.reader-zoom-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.reader-zoom-level {
+  min-width: 58px;
+  font-variant-numeric: tabular-nums;
+}
+
+.reader-zoom-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper));
+  cursor: grab;
+  overscroll-behavior: contain;
+}
+
+.reader-zoom-body:active {
+  cursor: grabbing;
+}
+
+.reader-zoom-columns {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: max-content;
+  min-width: 100%;
+}
+
+.reader-zoom-column {
+  margin: 0;
+}
+
+.reader-zoom-column figcaption {
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.reader-region-canvas {
+  position: relative;
+  background: var(--reader-page, var(--paper));
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent);
+}
+
+.reader-region-canvas canvas {
+  display: block;
+}
+
+.reader-region-canvas[data-status="loading"] canvas {
+  opacity: 0.35;
+}
+
+.reader-region-canvas-error,
+.reader-zoom-empty {
+  margin: 0;
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
+}
+
+:root[data-reader-doc="dark"] .reader-region-canvas canvas {
+  filter: var(--reader-doc-dark-filter);
+}
+
+:root[data-reader-doc="dark"] .reader-region-canvas {
+  background: var(--reader-doc-dark-paper);
+}
+
+.reader-xref-preview {
+  position: fixed;
+  z-index: calc(var(--z-hud, 36) + 4);
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+  background: var(--paper);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 22%, transparent);
+  pointer-events: none;
+}
+
+.reader-xref-preview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 12px);
+  font-weight: 650;
+}
+
+.reader-xref-preview-page {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.reader-xref-back {
+  position: fixed;
+  z-index: calc(var(--z-hud, 36) + 1);
+  left: 16px;
+  bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  white-space: nowrap;
+  cursor: var(--cursor-pointer, pointer);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--shadow-color, var(--ink)) 16%, transparent);
+}
+
+.reader-xref-back:hover {
+  background: color-mix(in srgb, var(--accent) 9%, var(--paper));
+}
+
+@media (max-width: 720px) {
+  .reader-zoom-panel {
+    width: 100vw;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+}

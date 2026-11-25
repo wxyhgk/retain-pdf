@@ -6,10 +6,4 @@
  */
 @import "tailwindcss";
 @import "../../../../../frontend/packages/reader/styles/entry.css";
-/* 宿主放进阅读页第二栏的东西（学习区）用的样式：基础组件、白板、学习区。阅读器包自己不引它们。 */
-@import "@retainpdf/ui/primitives.css";
-@import "@retainpdf/whiteboard/styles.css" layer(pages);
-@import "@retainpdf/learning/styles.css" layer(pages);
-@source "../../../../packages/learning/src/**/*.{ts,tsx}";
-@source "../../../../packages/whiteboard/src/**/*.{ts,tsx}";
 

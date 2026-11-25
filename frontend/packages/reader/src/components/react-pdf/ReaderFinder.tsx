@@ -9,11 +9,17 @@ import { ListTree, Search, X } from "lucide-react";
 import { Button, Input } from "@retainpdf/ui";
 
 import { currentOutlineIndex, readerOutline, searchReaderRegions, stepFindHit } from "../../shared/content/reader-find.js";
+import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
+import { ReaderBookmarkTree } from "./ReaderBookmarkTree.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
 
 export type ReaderFinderTab = "outline" | "search";
 
 const NO_REGIONS: never[] = [];
+const NO_BOOKMARKS: PdfOutlineNode[] = [];
+
+/** 目录按什么列：PDF 自带的书签，还是 OCR 认出的标题。 */
+type OutlineSource = "bookmarks" | "headings";
 
 /** 顶栏左边的「目录」（只有图标，名字在悬停里）：点开浮着的卡，再点收起。「搜索」在底栏（ReaderSearchToggle）。
  *  children 跟在后面（以前放「对比版本」，2026-11-20 挪进右下角的悬浮小球）。 */
@@ -62,6 +68,8 @@ export function ReaderFinder({
   onQuery,
   term,
   focusSignal = 0,
+  bookmarks = NO_BOOKMARKS,
+  onJumpPage,
 }: {
   tab: ReaderFinderTab;
   onTab: (tab: ReaderFinderTab) => void;
@@ -74,10 +82,18 @@ export function ReaderFinder({
   term: string;
   /** 每变一次把光标放回搜索框（Cmd/Ctrl+F 在左栏已经开着时）。 */
   focusSignal?: number;
+  /** PDF 自带的书签（有就默认按书签看目录）。 */
+  bookmarks?: readonly PdfOutlineNode[];
+  /** 点书签：跳到那一页。 */
+  onJumpPage?: (page: number) => void;
 }): ReactElement {
   const regions = useReaderContext()?.regions ?? NO_REGIONS;
   const currentPage = useReaderHudContext()?.currentPage ?? 1;
   const outline = useMemo(() => readerOutline(regions), [regions]);
+  // 有书签就默认按书签看；两样都有时卡片上能切。
+  const hasBookmarks = bookmarks.length > 0 && Boolean(onJumpPage);
+  const [outlineSource, setOutlineSource] = useState<OutlineSource>("bookmarks");
+  const showBookmarks = hasBookmarks && (outlineSource === "bookmarks" || !outline.length);
   const here = currentOutlineIndex(outline, currentPage);
   const hits = useMemo(() => searchReaderRegions(regions, term), [regions, term]);
   // 回车走到的那一处；换了词从头来。
@@ -130,7 +146,15 @@ export function ReaderFinder({
           <X size={16} strokeWidth={2.1} aria-hidden />
         </Button>
       </header>
-      {tab === "outline" ? (
+      {tab === "outline" && hasBookmarks && outline.length ? (
+        <div className="reader-finder-switch" role="radiogroup" aria-label="目录按什么列">
+          <Button className="reader-finder-switch-option" role="radio" aria-checked={showBookmarks} onClick={() => setOutlineSource("bookmarks")}>按书签</Button>
+          <Button className="reader-finder-switch-option" role="radio" aria-checked={!showBookmarks} onClick={() => setOutlineSource("headings")}>按标题</Button>
+        </div>
+      ) : null}
+      {tab === "outline" && showBookmarks && onJumpPage ? (
+        <ReaderBookmarkTree nodes={bookmarks} currentPage={currentPage} onJumpPage={onJumpPage} />
+      ) : tab === "outline" ? (
         outline.length ? (
           <ol ref={list} className="reader-finder-list">
             {outline.map((entry, index) => (

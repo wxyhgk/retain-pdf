@@ -144,31 +144,6 @@ const STATES = [
       await page.waitForTimeout(300);
     },
   },
-  {
-    // 阅读页「学习」页签：学习区的本章地图（演示模式里是 Szabo 第 3 章的写死数据）。
-    // page 写的是基准里得有的文件：没有它（学习区还没合进 main）时跳过不比。
-    name: "reader-side",
-    page: "src/app/reader/learning-side-pane.tsx",
-    url: "/reader.html?mock=done&job_id=mock-job-20260415",
-    run: async (page) => {
-      await page.click("[data-reader-side-tab]");
-      await page.waitForSelector("[data-lp-screen=map]");
-      await page.waitForTimeout(800);
-    },
-  },
-  {
-    // 学习区做题：从卡点开始 → 测一下，第一题（公式选项等 MathJax 排好）
-    name: "reader-side-quiz",
-    page: "src/app/reader/learning-side-pane.tsx",
-    url: "/reader.html?mock=done&job_id=mock-job-20260415",
-    run: async (page) => {
-      await page.click("[data-reader-side-tab]");
-      await page.getByRole("button", { name: "从卡点开始" }).click();
-      await page.getByRole("button", { name: "测一下" }).click();
-      await page.waitForSelector("[data-lp-screen=quiz] .lp-option .lp-math svg");
-      await page.waitForTimeout(500);
-    },
-  },
 ];
 
 function themeIdsFrom(registrySource) {
