@@ -12,6 +12,19 @@
 
 ---
 
+## 阅读页提问：agent 列表和 ACP 桥（feat/acp-bridge）
+
+2026-11-25，新接口，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md)、契约 `ai-agents.v1`（`@retainpdf/contracts/ai-agents`）：
+
+- `GET /api/v1/ai/agents`（`client_name: listAiAgents`）：自带的 + 本机 agent，`available`、`reason`、`launch`；`local_agents.enabled`。
+  `frontend/packages/api` 的生成客户端要重新跑 `npm run generate:client` 才有 `listAiAgents`。
+- WebSocket `GET /api/v1/ai/agents/{agent_id}/acp?api_key=…`：ACP 原样转；自带 agent 再带 `model`、`base_url`、`api_protocol`、
+  `thinking`、`credential_ref`。握手前就不行的是 HTTP 错误（400 / 403 / 404），连上后 agent 退出关闭码 1011。
+- 自带 agent 本身（Python `retainpdf_ask_agent`）是第 2 步，合进来之前连 `retainpdf` 会马上 1011。
+- 桌面局域网共享拦 `/api/v1/ai`（前端 feat/reader-ask 已加）。
+
+---
+
 ## 目录 agent：建任务的 `translation.toc`（feat/toc-agent）
 
 2026-11-25，只增不改，**前端不用改**，见 [翻译参数](../../api/04-翻译/01-翻译参数.md) 的「目录翻译（`toc`）」：

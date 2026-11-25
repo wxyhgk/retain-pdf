@@ -72,6 +72,7 @@
 - [书文件夹](13-书库/05-书文件夹.md)：`POST /book-folder/export`，把书库导出成给 AI 读的 Markdown（`<数据目录>/books/`）
 - [凭据](14-凭据/01-凭据.md)：`/credentials`，契约 `credentials.v1`
 - [多用户模式](15-多用户/01-多用户.md)：网站账号能访问什么、页数额度、管理后台、平台设置（商业版已停，代码留着）
+- [阅读页提问](16-AI/01-阅读页提问.md)：`/ai/agents` 列 agent、`/ai/agents/{id}/acp` 的 ACP 桥（WebSocket），契约 `ai-agents.v1`
 - [服务商密钥校验的细节](08-调试诊断/05-服务商校验.md)：请求体、各家 `status` 取值；契约 `provider-probes.v1`
 - 登录状态 `GET /auth/session`：契约 `auth-session.v1`；上传 `POST /uploads` 的返回：契约 `uploads.v1`（2026-11-24）
 

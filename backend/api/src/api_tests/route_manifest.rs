@@ -111,6 +111,7 @@ const SECTIONS: &[(&str, &str, &str)] = &[
     ("router::backups", "21-备份和用量", "备份、模型用量"),
     ("router::model_requests", "22-内部-模型调用", "内部：模型调用"),
     ("router::metrics", "23-运维指标", "运维指标（Prometheus）"),
+    ("router::ai", "24-AI", "AI：阅读页提问的 agent 和 ACP 桥"),
 ];
 
 /// 这个路由文件归哪一组（`SECTIONS` 里的下标）。没登记返回 None。

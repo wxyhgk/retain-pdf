@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const EXPECTED_DIALECT = "https://json-schema.org/draft/2020-12/schema";
 const EXPECTED_SCHEMAS = [
+  "ai-agents.v1.schema.json",
   "auth-session.v1.schema.json",
   "create-job.v1.schema.json",
   "credentials.v1.schema.json",

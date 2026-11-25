@@ -1,3 +1,4 @@
+mod acp_bridge;
 mod accounts;
 mod agent_key;
 mod admin_platform;

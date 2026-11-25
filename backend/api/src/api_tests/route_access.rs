@@ -50,6 +50,8 @@ const SIGNED_WITHOUT_OWNED_PARAM: &[(&str, &str)] = &[
     ("/api/v1/collections", "列表按 owner_filter 过滤；新建记 owner_id；parent_id 由中间件核归属"),
     ("/api/v1/documents", "列表按 owner_filter 过滤（library_data::list_documents）"),
     ("/api/v1/fonts", "字体是全站共用的，不含用户数据"),
+    ("/api/v1/ai/agents", "agent 登记表，不含用户数据；多用户模式只有自带的能用"),
+    ("/api/v1/ai/agents/:agent_id/acp", "ACP 桥：自带 agent 用请求里的凭据引用（凭据库按用户分前要再看），本机 agent 多用户下一律关"),
     ("/api/v1/runtime-assets", "字体、Typst 的下载状态是这台机器的，不含用户数据（2026-11-22）"),
     ("/api/v1/glossaries", "列表按 owner_filter 过滤；新建记 owner_id"),
     ("/api/v1/glossaries/parse-csv", "只解析请求里的 CSV，不读不写存储"),

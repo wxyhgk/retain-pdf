@@ -1,3 +1,4 @@
+mod ai;
 mod auth;
 mod blocking;
 mod credentials;
@@ -21,6 +22,7 @@ mod request_url;
 mod response;
 mod uploads;
 
+pub use ai::*;
 pub use auth::*;
 pub use blocking::*;
 pub use credentials::*;

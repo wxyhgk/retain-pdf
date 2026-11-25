@@ -5,6 +5,10 @@
   "description": "RetainPDF versioned JSON Schemas and generated wire DTO types.",
   "type": "module",
   "exports": {
+    "./ai-agents": {
+      "types": "./dist/ai-agents.d.ts",
+      "import": "./dist/ai-agents.js"
+    },
     "./auth-session": {
       "types": "./dist/auth-session.d.ts",
       "import": "./dist/auth-session.js"
@@ -106,6 +110,7 @@
     "./platform-settings.v1.schema.json": "./platform-settings.v1.schema.json",
     "./provider-error-codes.v1.schema.json": "./provider-error-codes.v1.schema.json",
     "./provider-probes.v1.schema.json": "./provider-probes.v1.schema.json",
+    "./ai-agents.v1.schema.json": "./ai-agents.v1.schema.json",
     "./reader-data.v1.schema.json": "./reader-data.v1.schema.json",
     "./refine-report.v1.schema.json": "./refine-report.v1.schema.json",
     "./token-usage.v1.schema.json": "./token-usage.v1.schema.json",

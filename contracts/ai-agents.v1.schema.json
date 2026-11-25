@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/ai-agents/v1",
+  "title": "阅读页提问的 agent（AI agents）",
+  "description": "阅读页提问（2026-11-25）：列出能用的 agent，和 ACP 桥（WebSocket，一条文字消息就是一条 ACP 的 JSON-RPC 2.0，桥不改协议，只给 session/new、session/load 补 cwd 和 retainpdf 的 MCP 服务）。生产者：backend/packages/retainpdf-providers/src/acp/（列表、闸门、起进程、两头转），backend/api/src/routes/ai.rs（处理函数）；backend/api/src/api_tests/acp_bridge.rs 起真后端测。消费者：@retainpdf/contracts/ai-agents，阅读页的问答窗（ACP 客户端）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。本机 agent（Claude Code、Codex、Gemini CLI）能在本机跑命令，只在单机模式、后端只在本机监听、握手的 Host 是本机地址且没经过代理时能用；服务器上只有自带的那个。详见 docs/api/16-AI/01-阅读页提问.md。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/agents",
+      "client_name": "listAiAgents",
+      "transport": "json",
+      "output": "AgentsView",
+      "rust_view": "AgentsView",
+      "note": "自带的排第一，后面是本机 agent（装了没有、怎么起）。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/agents/:agent_id/acp",
+      "transport": "websocket",
+      "rust_view": "routes/ai.rs :: acp_socket",
+      "note": "浏览器用 ?api_key= 认证（只对 WebSocket 握手有效）；来源照 CORS 那套查。自带 agent（retainpdf）要带模型配置：model、base_url、api_protocol（openai / openai_responses / anthropic）、thinking、credential_ref（不收明文 key）。握手前就不行的回 HTTP 错误：没有这个 agent 404、本机 agent 没开或没过闸门 403、模型配置或凭据不对 400。连上以后 agent 退出时关闭码 1011，原因写退出码和 stderr 最后一行。"
+    }
+  ],
+  "definitions": {
+    "AgentKind": {
+      "type": "string",
+      "enum": ["builtin", "local"],
+      "description": "builtin：RetainPDF 自带模型（用设置里的模型和密钥，服务器上也能用）；local：本机装的 agent。"
+    },
+    "AgentView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "kind", "available", "reason"],
+      "properties": {
+        "id": { "type": "string", "description": "retainpdf、claude-code、codex、gemini；WebSocket 地址里的 :agent_id。" },
+        "name": { "type": "string" },
+        "kind": { "$ref": "#/definitions/AgentKind" },
+        "available": { "type": "boolean" },
+        "reason": { "type": "string", "description": "不能用的原因；能用时是空串。" },
+        "launch": { "type": "string", "description": "本机 agent 实际怎么起（给用户看），比如 npx -y @agentclientprotocol/claude-agent-acp；自带的没有这个字段。" }
+      }
+    },
+    "LocalAgentsView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "reason"],
+      "properties": {
+        "enabled": { "type": "boolean", "description": "这台后端能不能起本机 agent（单机、只在本机监听、没设 RUST_API_LOCAL_AGENTS=0）。" },
+        "reason": { "type": "string" }
+      }
+    },
+    "AgentsView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["agents", "local_agents"],
+      "properties": {
+        "agents": { "type": "array", "items": { "$ref": "#/definitions/AgentView" } },
+        "local_agents": { "$ref": "#/definitions/LocalAgentsView" }
+      }
+    }
+  }
+}

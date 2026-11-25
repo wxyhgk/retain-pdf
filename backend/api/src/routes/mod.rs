@@ -1,3 +1,4 @@
+pub mod ai;
 pub mod accounts;
 pub mod admin_invites;
 pub mod admin_platform;
