@@ -4,6 +4,7 @@ requires-python = "==3.11.*"
 
 [manifest]
 members = [
+    "retainpdf-ask-agent",
     "retainpdf-backend-workspace",
     "retainpdf-base",
     "retainpdf-math",
@@ -255,10 +256,31 @@ wheels = [
 ]
 
 [[package]]
+name = "retainpdf-ask-agent"
+version = "4.2.6"
+source = { editable = "ask-agent" }
+
+[package.optional-dependencies]
+engine = [
+    { name = "retainpdf-translation" },
+]
+test = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pytest", marker = "extra == 'test'", specifier = "==9.0.3" },
+    { name = "retainpdf-translation", marker = "extra == 'engine'", editable = "translation" },
+]
+provides-extras = ["engine", "test"]
+
+[[package]]
 name = "retainpdf-backend-workspace"
 version = "2026.11.23"
 source = { virtual = "." }
 dependencies = [
+    { name = "retainpdf-ask-agent" },
     { name = "retainpdf-base" },
     { name = "retainpdf-math" },
     { name = "retainpdf-pipeline" },
@@ -271,6 +293,7 @@ dependencies = [
 
 [package.optional-dependencies]
 test = [
+    { name = "retainpdf-ask-agent", extra = ["test"] },
     { name = "retainpdf-base", extra = ["test"] },
     { name = "retainpdf-math", extra = ["test"] },
     { name = "retainpdf-pipeline", extra = ["test"] },
@@ -283,6 +306,8 @@ test = [
 
 [package.metadata]
 requires-dist = [
+    { name = "retainpdf-ask-agent", editable = "ask-agent" },
+    { name = "retainpdf-ask-agent", extras = ["test"], marker = "extra == 'test'", editable = "ask-agent" },
     { name = "retainpdf-base", editable = "base" },
     { name = "retainpdf-base", extras = ["test"], marker = "extra == 'test'", editable = "base" },
     { name = "retainpdf-math", editable = "math" },
