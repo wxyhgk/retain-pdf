@@ -6,19 +6,24 @@
 import { exToPx, FONT_SIZE, type FontSizeKey, type RenderedMath } from "../layout/measure.js";
 
 export type WhiteboardMathEngine = {
-  /** 返回 MathJax 的 <svg>…</svg> 字符串（尺寸单位 ex）。写错时抛错或返回带 data-mjx-error 的 SVG。 */
-  toSvg(tex: string): string;
+  /** 返回 MathJax 的 <svg>…</svg> 字符串（尺寸单位 ex）。写错时抛错或返回带 data-mjx-error 的 SVG。
+   * display 默认 true（行间公式）；行内公式传 false。 */
+  toSvg(tex: string, display?: boolean): string;
 };
 
 export type WhiteboardMathEngineLoader = () => Promise<WhiteboardMathEngine>;
 
 let customLoader: WhiteboardMathEngineLoader | null = null;
 let enginePromise: Promise<WhiteboardMathEngine> | null = null;
+/** 已经加载好的引擎：有了它，公式可以同步排（边打边看用）。 */
+let loadedEngine: WhiteboardMathEngine | null = null;
 
 export function setWhiteboardMathEngine(loader: WhiteboardMathEngineLoader | null): void {
   customLoader = loader;
   enginePromise = null;
+  loadedEngine = null;
   cache.clear();
+  htmlCache.clear();
 }
 
 function pickExport<T>(ns: Record<string, unknown>, name: string): T {
@@ -51,16 +56,59 @@ async function loadDefaultEngine(): Promise<WhiteboardMathEngine> {
     OutputJax: new SVG({ fontCache: "none" }),
   }) as { convert: (tex: string, options: unknown) => unknown };
   return {
-    toSvg(tex: string) {
-      const node = document.convert(tex, { display: true });
+    toSvg(tex: string, display = true) {
+      const node = document.convert(tex, { display });
       return adaptor.outerHTML(adaptor.firstChild(node));
     },
   };
 }
 
 function engine(): Promise<WhiteboardMathEngine> {
-  if (!enginePromise) enginePromise = (customLoader ?? loadDefaultEngine)();
+  if (!enginePromise) {
+    const loading = (customLoader ?? loadDefaultEngine)();
+    enginePromise = loading;
+    loading.then((ready) => {
+      if (enginePromise === loading) loadedEngine = ready;
+    }, () => {});
+  }
   return enginePromise;
+}
+
+/** 先把公式引擎加载好（之后 mathHtmlNow 能同步排）。 */
+export async function loadMathEngine(): Promise<void> {
+  loadedEngine = await engine();
+}
+
+export function mathEngineReady(): boolean {
+  return loadedEngine !== null;
+}
+
+/** 排在 HTML 文字里的一段公式：保留 MathJax 的 ex 单位（跟着字号走）和基线对齐。 */
+export type MathHtml = { html: string; error?: undefined } | { html?: undefined; error: string };
+
+const htmlCache = new Map<string, MathHtml>();
+const HTML_CACHE_LIMIT = 500;
+
+/**
+ * 同步把一段 TeX 排成可以放进 HTML 的 SVG（白板上的文字、边打边看的预览）。
+ * 引擎还没加载时返回 null（调用方先 loadMathEngine）；写错时返回 error（MathJax 的说明）。
+ */
+export function mathHtmlNow(tex: string, display: boolean): MathHtml | null {
+  if (!loadedEngine) return null;
+  const key = `${display ? "D" : "I"}\u0000${tex}`;
+  const hit = htmlCache.get(key);
+  if (hit) return hit;
+  let result: MathHtml;
+  try {
+    const svg = loadedEngine.toSvg(tex, display);
+    const error = /data-mjx-error="([^"]*)"/.exec(svg)?.[1];
+    result = error ? { error } : { html: sanitizeMathSvg(svg) };
+  } catch (cause) {
+    result = { error: cause instanceof Error ? cause.message : String(cause) };
+  }
+  if (htmlCache.size >= HTML_CACHE_LIMIT) htmlCache.delete(htmlCache.keys().next().value as string);
+  htmlCache.set(key, result);
+  return result;
 }
 
 const cache = new Map<string, RenderedMath>();
