@@ -11,7 +11,109 @@ pub use retainpdf_core::model_connection::{ModelConnection, Provider, Thinking};
 #[serde(deny_unknown_fields)]
 pub struct Message {
     pub role: String,
-    pub content: String,
+    pub content: MessageContent,
+}
+
+/// 一条消息的内容：纯文字是字符串（和以前一字不差，指纹也不变）；带图时是 OpenAI Chat 的片段列表
+/// （`text` + `image_url` 的 data URL），执行器只走 `/chat/completions`，原样发给服务商。2026-11-25 起收图。
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum MessageContent {
+    Text(String),
+    Parts(Vec<ContentPart>),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum ContentPart {
+    Text { text: String },
+    ImageUrl { image_url: ImageUrl },
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ImageUrl {
+    pub url: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+}
+
+impl From<&str> for MessageContent {
+    fn from(text: &str) -> Self {
+        Self::Text(text.to_owned())
+    }
+}
+
+impl From<String> for MessageContent {
+    fn from(text: String) -> Self {
+        Self::Text(text)
+    }
+}
+
+/// 一次请求最多几张图、每张解码后多大（和问模型的接口 `provider_probe/ask.rs` 一样）。
+pub const MAX_REQUEST_IMAGES: usize = 4;
+pub const MAX_IMAGE_BYTES: usize = 4 * 1024 * 1024;
+const MAX_TEXT_BYTES: usize = 512 * 1024;
+const IMAGE_MEDIA_TYPES: [&str; 4] = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+
+/// 只收 data URL（不让服务商替我们去拉外部地址），类型是常见的四种，base64 合法、非空、不超过上限。
+fn valid_image_url(image: &ImageUrl) -> bool {
+    use base64::Engine;
+    let Some(rest) = image.url.strip_prefix("data:") else {
+        return false;
+    };
+    let Some((media_type, data)) = rest.split_once(";base64,") else {
+        return false;
+    };
+    if !IMAGE_MEDIA_TYPES.contains(&media_type)
+        || data.is_empty()
+        || data.len() > MAX_IMAGE_BYTES.div_ceil(3) * 4
+        || image
+            .detail
+            .as_deref()
+            .is_some_and(|d| !matches!(d, "auto" | "low" | "high"))
+    {
+        return false;
+    }
+    base64::engine::general_purpose::STANDARD
+        .decode(data)
+        .is_ok_and(|bytes| !bytes.is_empty() && bytes.len() <= MAX_IMAGE_BYTES)
+}
+
+impl Message {
+    fn text_len(&self) -> usize {
+        match &self.content {
+            MessageContent::Text(text) => text.len(),
+            MessageContent::Parts(parts) => parts
+                .iter()
+                .map(|part| match part {
+                    ContentPart::Text { text } => text.len(),
+                    ContentPart::ImageUrl { .. } => 0,
+                })
+                .sum(),
+        }
+    }
+
+    fn images(&self) -> impl Iterator<Item = &ImageUrl> {
+        let parts = match &self.content {
+            MessageContent::Text(_) => &[][..],
+            MessageContent::Parts(parts) => parts.as_slice(),
+        };
+        parts.iter().filter_map(|part| match part {
+            ContentPart::ImageUrl { image_url } => Some(image_url),
+            ContentPart::Text { .. } => None,
+        })
+    }
+
+    /// 片段列表不能是空的；图只能在用户消息里（system、assistant 只收文字）。
+    fn valid_shape(&self) -> bool {
+        match &self.content {
+            MessageContent::Text(_) => true,
+            MessageContent::Parts(parts) => {
+                !parts.is_empty() && (self.role == "user" || self.images().next().is_none())
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -50,10 +152,14 @@ impl ModelRequest {
             || self
                 .messages
                 .iter()
-                .any(|m| !matches!(m.role.as_str(), "system" | "user" | "assistant"))
-            || self.messages.iter().map(|m| m.content.len()).sum::<usize>() > 512 * 1024
+                .any(|m| !matches!(m.role.as_str(), "system" | "user" | "assistant") || !m.valid_shape())
+            || self.messages.iter().map(Message::text_len).sum::<usize>() > MAX_TEXT_BYTES
         {
             bail!("invalid messages");
+        }
+        let images: Vec<&ImageUrl> = self.messages.iter().flat_map(Message::images).collect();
+        if images.len() > MAX_REQUEST_IMAGES || !images.into_iter().all(valid_image_url) {
+            bail!("invalid images");
         }
         if !self.temperature.is_finite()
             || !(0.0..=2.0).contains(&self.temperature)

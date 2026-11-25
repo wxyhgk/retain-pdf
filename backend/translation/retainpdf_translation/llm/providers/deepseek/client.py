@@ -341,9 +341,9 @@ def request_chat_content(
     """
     from retainpdf_translation.llm.shared.executor_context import execution_enabled, runtime
     if execution_enabled():
-        if model_wire.has_images(messages):
-            # Rust 执行器的请求只收文字消息；带图的请求不能悄悄丢掉图片再发
-            raise ValueError("model executor does not accept image messages yet")
+        if model_wire.has_images(messages) and not model_wire.executor_accepts_images(messages):
+            # Rust 执行器只收 data URL 的图（最多 4 张，2026-11-25 起）；网址图在这里就拒，不让执行器记一次失败
+            raise ValueError("model executor accepts at most 4 data-URL images (png/jpeg/webp/gif) in user messages")
         # Rust owns provider policy, deadlines, concurrency and network retries.
         # No Python slot, HTTP request, API key lookup or direct fallback here.
         # 系统提示现在分两条（不变的规则 + 文档指导）；Rust 执行器照旧收一条

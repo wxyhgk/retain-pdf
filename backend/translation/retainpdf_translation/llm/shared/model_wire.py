@@ -400,6 +400,29 @@ def content_text(content: Any) -> str:
     return "\n\n".join(str(part.get("text") or "") for part in _parts(content) if part.get("type") == "text")
 
 
+EXECUTOR_MAX_IMAGES = 4
+
+
+def executor_accepts_images(messages: list[dict[str, Any]]) -> bool:
+    """Rust 模型执行器收的图：只在用户消息里、只收 data URL（png/jpeg/webp/gif）、一次最多 4 张。
+    大小和 base64 由执行器再查（``model_executor/policy.rs``）。"""
+    count = 0
+    for message in messages:
+        content = message.get("content") if isinstance(message, dict) else None
+        if not isinstance(content, list):
+            continue
+        for part in content:
+            if not isinstance(part, dict) or part.get("type") != "image_url":
+                continue
+            url = _image_url(part)
+            if message.get("role") != "user" or not any(
+                url.startswith(f"data:{media};base64,") for media in IMAGE_MEDIA_TYPES
+            ):
+                return False
+            count += 1
+    return count <= EXECUTOR_MAX_IMAGES
+
+
 def has_images(messages: list[dict[str, Any]]) -> bool:
     return any(
         part.get("type") == "image_url"
@@ -799,6 +822,7 @@ __all__ = [
     "clear_registered_connections",
     "content_text",
     "has_images",
+    "executor_accepts_images",
     "image_part",
     "looks_like_temperature_rejection",
     "anthropic_system_blocks",

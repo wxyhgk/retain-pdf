@@ -864,3 +864,132 @@ fn upstream_wait_provider_follows_the_catalogue_hosts() {
     assert_eq!(vendor("https://opencode.ai.example/v1"), "custom");
     assert_eq!(vendor("http://127.0.0.1:9/v1"), "custom");
 }
+
+fn png_data_url(bytes: usize) -> String {
+    use base64::Engine;
+    let data = base64::engine::general_purpose::STANDARD.encode(vec![7u8; bytes]);
+    format!("data:image/png;base64,{data}")
+}
+
+fn image_message(role: &str, url: String) -> Message {
+    Message {
+        role: role.into(),
+        content: MessageContent::Parts(vec![
+            ContentPart::Text {
+                text: "看这张表".into(),
+            },
+            ContentPart::ImageUrl {
+                image_url: ImageUrl { url, detail: None },
+            },
+        ]),
+    }
+}
+
+#[test]
+fn text_messages_serialize_exactly_as_before() {
+    // 纯文字的请求指纹不能变：已经落库的操作要照旧认出是同一次请求
+    let encoded = serde_json::to_value(request("op").messages).unwrap();
+    assert_eq!(
+        encoded,
+        json!([{"role":"user","content":"sensitive source text"}])
+    );
+    let parsed: Message = serde_json::from_value(json!({"role":"user","content":"x"})).unwrap();
+    assert!(matches!(parsed.content, MessageContent::Text(ref t) if t == "x"));
+}
+
+#[test]
+fn image_parts_are_validated_and_sent_in_chat_shape() {
+    let mut ok = request("op");
+    ok.messages = vec![
+        Message {
+            role: "system".into(),
+            content: "rules".into(),
+        },
+        image_message("user", png_data_url(64)),
+    ];
+    ok.validate().unwrap();
+    let body = profile("http://127.0.0.1/v1").body(&ok);
+    assert_eq!(body["messages"][1]["content"][0], json!({"type":"text","text":"看这张表"}));
+    assert_eq!(body["messages"][1]["content"][1]["type"], "image_url");
+    assert!(body["messages"][1]["content"][1]["image_url"]["url"]
+        .as_str()
+        .unwrap()
+        .starts_with("data:image/png;base64,"));
+    assert!(body["messages"][1]["content"][1]["image_url"].get("detail").is_none());
+
+    let parsed: ModelRequest = serde_json::from_value(json!({
+        "operation_id":"op","unit_id":"op","purpose":"primary","temperature":0.2,
+        "messages":[{"role":"user","content":[{"type":"text","text":"a"},{"type":"image_url","image_url":{"url":png_data_url(8),"detail":"high"}}]}]
+    }))
+    .unwrap();
+    parsed.validate().unwrap();
+
+    let rejected = |messages: Vec<Message>| {
+        let mut r = request("op");
+        r.messages = messages;
+        r.validate().is_err()
+    };
+    // 外部地址、不收的类型、坏 base64、空图、超大图
+    assert!(rejected(vec![image_message("user", "https://example.com/a.png".into())]));
+    assert!(rejected(vec![image_message("user", "data:image/svg+xml;base64,AAAA".into())]));
+    assert!(rejected(vec![image_message("user", "data:image/png;base64,***".into())]));
+    assert!(rejected(vec![image_message("user", "data:image/png;base64,".into())]));
+    assert!(rejected(vec![image_message("user", png_data_url(MAX_IMAGE_BYTES + 1))]));
+    // 图只能在用户消息里；片段列表不能空；一次最多 4 张
+    assert!(rejected(vec![image_message("system", png_data_url(8))]));
+    assert!(rejected(vec![image_message("assistant", png_data_url(8))]));
+    assert!(rejected(vec![Message {
+        role: "user".into(),
+        content: MessageContent::Parts(vec![]),
+    }]));
+    assert!(rejected(
+        (0..=MAX_REQUEST_IMAGES).map(|_| image_message("user", png_data_url(8))).collect()
+    ));
+    // 不认识的片段类型、多出来的字段
+    for bad in [
+        json!({"role":"user","content":[{"type":"input_audio","input_audio":{}}]}),
+        json!({"role":"user","content":[{"type":"text","text":"a","cache_control":{}}]}),
+        json!({"role":"user","content":[{"type":"image_url","image_url":{"url":png_data_url(8),"extra":1}}]}),
+    ] {
+        assert!(serde_json::from_value::<Message>(bad).is_err());
+    }
+    let mut bad_detail = image_message("user", png_data_url(8));
+    if let MessageContent::Parts(parts) = &mut bad_detail.content {
+        parts[1] = ContentPart::ImageUrl {
+            image_url: ImageUrl {
+                url: png_data_url(8),
+                detail: Some("ultra".into()),
+            },
+        };
+    }
+    assert!(rejected(vec![bad_detail]));
+}
+
+#[tokio::test]
+async fn image_request_reaches_the_provider_unchanged() {
+    let seen = Arc::new(std::sync::Mutex::new(None::<Value>));
+    let captured = seen.clone();
+    let (url, task) = server(Router::new().route(
+        "/v1/chat/completions",
+        post(move |Json(body): Json<Value>| {
+            let captured = captured.clone();
+            async move {
+                *captured.lock().unwrap() = Some(body);
+                Json(successful())
+            }
+        }),
+    ))
+    .await;
+    let f = Fixture::new();
+    let e = &f.executor;
+    let token = e.register_job("j", &profile(&url), 60).unwrap();
+    let mut with_image = request("img");
+    let image = png_data_url(32);
+    with_image.messages = vec![image_message("user", image.clone())];
+    e.submit("j", &token, with_image).await.unwrap();
+    let op = terminal(e, "j", &token, "img").await;
+    assert_eq!(op.status, "succeeded");
+    let body = seen.lock().unwrap().clone().unwrap();
+    assert_eq!(body["messages"][0]["content"][1]["image_url"]["url"], image);
+    task.abort();
+}
