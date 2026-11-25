@@ -1134,6 +1134,7 @@
         "devtools/tests/translation/test_strict_json_schemas.py",
         "devtools/tests/translation/test_translation_quota_codes.py",
         "devtools/tests/translation/test_translation_request_rejections.py",
+        "devtools/tests/translation/test_translation_toc_entries.py",
         "devtools/tests/translation/test_upstream_wait_events.py"
       ],
       "runtime_required": false,
@@ -1233,6 +1234,7 @@
         "devtools/tests/translation/test_translation_result_cache_policy.py",
         "devtools/tests/translation/test_translation_route_selection.py",
         "devtools/tests/translation/test_translation_tail_retry.py",
+        "devtools/tests/translation/test_translation_toc_entries.py",
         "devtools/tests/translation/test_translation_validation_protocols.py",
         "devtools/tests/translation/test_validation_boundaries.py"
       ],

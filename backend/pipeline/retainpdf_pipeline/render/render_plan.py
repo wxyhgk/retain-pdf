@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from retainpdf_pipeline.render.layout.title_source_size import annotate_title_source_font_sizes
+from retainpdf_pipeline.render.layout.payload.toc_page_labels import hold_toc_page_labels_of_untranslated_entries
 from retainpdf_pipeline.render.render_inputs import RenderInputs
 from retainpdf_pipeline.render.render_mode import resolve_effective_render_mode
 from retainpdf_pipeline.render.translation_loader import load_translated_pages
@@ -88,6 +89,8 @@ def build_render_plan(
         end_page=end_page,
         render_mode=render_mode,
     )
+    # 目录条目没有译文要排的，它的页码小块也不擦不画（同一条绘字指令，擦页码会把标题擦掉）
+    selected_pages = hold_toc_page_labels_of_untranslated_entries(selected_pages)
     # 标题按原文字号排（Typst 路线和 rpr_fit 引擎同一个值），读原 PDF 的文字层，读不到按框反推
     title_stats = annotate_title_source_font_sizes(selected_pages, render_inputs.source_pdf_path)
     if any(title_stats.values()):
