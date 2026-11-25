@@ -71,7 +71,7 @@ def run_book_pipeline(
     reviewer_api_key: str = "",
     engine: str = "legacy",
     tables: str = "keep",
-    toc: str = "translate",
+    toc: str = "agent",
 ) -> dict:
     total_started = time.perf_counter()
     translation_summary = translate_book_pipeline(

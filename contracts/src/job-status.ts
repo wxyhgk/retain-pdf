@@ -176,6 +176,10 @@ export interface PublicTranslationInput {
    * TRANSLATION_TABLE_MODES：keep（表格保留原文）/ translate（表格 agent 翻表格）。
    */
   tables?: string;
+  /**
+   * TRANSLATION_TOC_MODES：agent（目录 agent，默认）/ translate（目录条目交给普通翻译）。
+   */
+  toc?: string;
   start_page: number;
   end_page: number;
   page_ranges: number[];

@@ -184,7 +184,7 @@ def main() -> None:
             reviewer_api_key=args.reviewer_api_key,
             engine=getattr(args, "engine", "legacy"),
             tables=getattr(args, "tables", "keep"),
-            toc=getattr(args, "toc", "translate"),
+            toc=getattr(args, "toc", "agent"),
             compile_workers=args.compile_workers or None,
             typst_font_family=args.typst_font_family,
             pdf_compress_dpi=args.pdf_compress_dpi,

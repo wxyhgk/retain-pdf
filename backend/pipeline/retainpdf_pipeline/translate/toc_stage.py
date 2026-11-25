@@ -1,7 +1,7 @@
 """目录 agent 接进翻译（2026-11-25）：和普通翻译同步跑。
 
-``translation.toc``：``translate``（默认，目录条目交给普通翻译，和以前一样）/ ``agent``（目录 agent，
-backend/toc-agent）。``agent`` 时给翻译请求一个 ``fixed_translations_fn``：翻译一开头，底座在另一个线程里调它
+``translation.toc``：``agent``（默认，2026-11-25 用户定；目录 agent，backend/toc-agent）/ ``translate``（目录条目交给普通翻译，
+和以前一样）。``agent`` 时给翻译请求一个 ``fixed_translations_fn``：翻译一开头，底座在另一个线程里调它
 （和领域识别同时），它翻完整本书的目录、把译名对到正文里同名的标题上，返回 {块号: 定译}；引擎见了定译的块不再发请求。
 结果和缓存在 ``translated/toc-agent.v1.json``。
 """
@@ -11,11 +11,12 @@ from pathlib import Path
 from typing import Any, Callable
 
 TOC_MODES = ("translate", "agent")
+DEFAULT_TOC_MODE = "agent"
 
 
 def normalize_toc_mode(value: Any) -> str:
-    mode = str(value or "translate").strip().lower()
-    return mode if mode in TOC_MODES else "translate"
+    mode = str(value or DEFAULT_TOC_MODE).strip().lower()
+    return mode if mode in TOC_MODES else DEFAULT_TOC_MODE
 
 
 def toc_fixed_translations_fn(

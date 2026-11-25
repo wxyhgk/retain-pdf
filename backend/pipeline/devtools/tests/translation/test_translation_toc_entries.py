@@ -63,16 +63,17 @@ def test_toc_entries_follow_the_provider_policy():
     assert extract_text_items(document, 0) == []
 
 
-def test_toc_switch_defaults_to_normal_translation(tmp_path):
-    # translation.toc：translate（默认，旧 spec 没有这个键）/ agent（目录 agent 和普通翻译同步跑）
+def test_toc_switch_defaults_to_the_toc_agent(tmp_path):
+    # translation.toc：agent（默认，2026-11-25 用户定；旧 spec 没有这个键也按 agent）/ translate（目录条目交给普通翻译）
     from retainpdf_pipeline.foundation.shared.stage_specs import _preparation_and_reviewer_fields
     from retainpdf_pipeline.translate.toc_stage import normalize_toc_mode
     from retainpdf_pipeline.translate.toc_stage import toc_fixed_translations_fn
 
-    assert _preparation_and_reviewer_fields({})["toc"] == "translate"
-    assert _preparation_and_reviewer_fields({"toc": " Agent "})["toc"] == "agent"
-    assert normalize_toc_mode("whatever") == "translate"
+    assert _preparation_and_reviewer_fields({})["toc"] == "agent"
+    assert _preparation_and_reviewer_fields({"toc": " Translate "})["toc"] == "translate"
+    assert normalize_toc_mode("whatever") == "agent"
     assert toc_fixed_translations_fn(mode="translate", output_dir=tmp_path, api_key="k", model="m", base_url="u") is None
+    assert toc_fixed_translations_fn(mode="agent", output_dir=tmp_path, api_key="k", model="m", base_url="u") is not None
 
 
 def test_toc_agent_mode_gives_the_translation_request_a_fixed_translation_function(tmp_path):

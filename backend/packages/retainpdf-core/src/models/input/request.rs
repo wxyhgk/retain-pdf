@@ -41,7 +41,7 @@ mod contract_tests {
         GlossaryEntryInput, RENDER_ENGINES, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
         TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
         TRANSLATION_PREPARATION_MODES, TRANSLATION_REFINE_MODES, TRANSLATION_API_PROTOCOLS,
-        TRANSLATION_THINKING_LEVELS, TRANSLATION_ENGINES, TRANSLATION_TABLE_MODES,
+        TRANSLATION_THINKING_LEVELS, TRANSLATION_ENGINES, TRANSLATION_TABLE_MODES, TRANSLATION_TOC_MODES,
     };
 
     /// `create-job.v1.schema.json` 是**请求侧**的契约，前端的 payload 构造器按它生成
@@ -366,6 +366,7 @@ mod contract_tests {
             ("TranslationInput", "thinking", TRANSLATION_THINKING_LEVELS),
             ("TranslationInput", "engine", TRANSLATION_ENGINES),
             ("TranslationInput", "tables", TRANSLATION_TABLE_MODES),
+            ("TranslationInput", "toc", TRANSLATION_TOC_MODES),
             ("RenderInput", "engine", RENDER_ENGINES),
         ] {
             assert_eq!(

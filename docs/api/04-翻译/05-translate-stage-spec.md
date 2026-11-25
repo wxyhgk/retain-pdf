@@ -68,6 +68,8 @@ Python 可执行文件由 `PYTHON_BIN` 配置，不再回退到旧脚本。
 
 - `tables`: `keep` / `translate`，默认 `keep`（旧 spec 没有这个 key，按 `keep` 读）。含义见「翻译参数」。provider.stage.v1 的
   `translation` 段带同样的字段。
+- `toc`: `agent` / `translate`，默认 `agent`（2026-11-25；旧 spec 没有这个 key，按 `agent` 读）。含义见「翻译参数」。provider.stage.v1 的
+  `translation` 段带同样的字段。
 
 ## 译前准备与审校字段
 

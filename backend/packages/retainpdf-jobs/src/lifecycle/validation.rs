@@ -8,7 +8,7 @@ use retainpdf_core::models::domain::{
     OcrProviderKind, UploadRecord, RENDER_ENGINES, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
     TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
     TRANSLATION_PREPARATION_MODES, TRANSLATION_REFINE_MODES, TRANSLATION_API_PROTOCOLS,
-    TRANSLATION_THINKING_LEVELS, TRANSLATION_ENGINES, TRANSLATION_TABLE_MODES,
+    TRANSLATION_THINKING_LEVELS, TRANSLATION_ENGINES, TRANSLATION_TABLE_MODES, TRANSLATION_TOC_MODES,
 };
 use retainpdf_core::models::request::{CreateJobInput, OcrInput};
 use retainpdf_data::ocr_provider::{
@@ -247,6 +247,11 @@ pub fn validate_translation_modes(input: &CreateJobInput) -> Result<(), AppError
         "translation.tables",
         &input.translation.tables,
         TRANSLATION_TABLE_MODES,
+    )?;
+    validate_allowed_value(
+        "translation.toc",
+        &input.translation.toc,
+        TRANSLATION_TOC_MODES,
     )?;
     // 审校的两项留空表示沿用翻译模型的设置。
     if !input.translation.reviewer_api_protocol.is_empty() {

@@ -115,6 +115,7 @@ export const CREATE_JOB_SECTION_FIELDS: Readonly<
     "start_page",
     "tables",
     "thinking",
+    "toc",
     "workers",
   ],
 };

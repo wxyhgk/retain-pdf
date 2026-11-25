@@ -47,7 +47,7 @@ def translate_book_pipeline(
     engine: str = "legacy",
     ocr_stream_dir: Path | None = None,
     tables: str = "keep",
-    toc: str = "translate",
+    toc: str = "agent",
 ) -> dict:
     result = execute_translation_request(
         TranslationExecutionRequest(
@@ -83,7 +83,7 @@ def translate_book_pipeline(
             reviewer_api_key=reviewer_api_key,
             engine=engine,
             ocr_stream_dir=ocr_stream_dir,
-            # 目录 agent 和普通翻译同步跑（translate/toc_stage.py）；translate（默认）时为 None，和以前一样
+            # 目录 agent 和普通翻译同步跑（translate/toc_stage.py，默认 agent）；translate 时为 None，和以前一样
             fixed_translations_fn=toc_fixed_translations_fn(
                 mode=toc,
                 output_dir=output_dir,

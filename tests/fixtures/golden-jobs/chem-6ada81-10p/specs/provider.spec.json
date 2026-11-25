@@ -78,6 +78,7 @@
     "skip_title_translation": false,
     "start_page": 0,
     "tables": "keep",
+    "toc": "agent",
     "thinking": "auto",
     "workers": 100
   }

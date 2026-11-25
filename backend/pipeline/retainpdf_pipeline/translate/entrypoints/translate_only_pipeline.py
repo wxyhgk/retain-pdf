@@ -180,7 +180,7 @@ def main() -> None:
             reviewer_api_key=args.reviewer_api_key,
             engine=getattr(args, "engine", "legacy"),
             tables=getattr(args, "tables", "keep"),
-            toc=getattr(args, "toc", "translate"),
+            toc=getattr(args, "toc", "agent"),
             ocr_stream_dir=Path(args.ocr_stream_dir) if args.ocr_stream_dir else None,
             invocation=build_stage_invocation_metadata(
                 stage="translate",
