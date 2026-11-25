@@ -1963,6 +1963,9 @@ PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_uplo
 前端要做（不急）：`frontend/packages/domain/src/job/actions.ts` 里 `actions.rerun?.enabled ?? artifactActions.rerun?.enabled` 的兜底去掉，
 只读 `resume`；去掉以后告诉后端，后端再删 `actions.rerun` 字段。见 [删续跑旧名 rerun](../../ops/planning/api-reorg/20261125-删续跑旧名rerun.md)。
 
+前端已跟上（`chore/drop-rerun-fallback`，2026-11-25）：`resolveJobActions` 只看 `actions.resume`（和 `artifacts.actions.resume`），
+不再读 `actions.rerun`；演示模式的任务数据也改成 `actions.resume`。后端可以删 `actions.rerun` 字段了。
+
 ## 第三批删接口（2026-11-25，chore/api-delete-batch3）
 
 删了 `POST /fonts/upload`、`GET /jobs/{job_id}/data`（数据集目录，`listJobDatasets`）、`GET /jobs/{job_id}/reports/translation-qa`、

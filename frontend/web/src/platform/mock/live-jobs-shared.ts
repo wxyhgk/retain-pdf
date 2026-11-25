@@ -198,10 +198,10 @@ export function buildLiveMockJobPayload(
         enabled: !isDone,
         url: "mock://cancel",
       },
-      rerun: {
+      resume: {
         enabled: false,
         method: "POST",
-        url: "mock://rerun",
+        url: "mock://resume",
       },
       open_markdown: {
         enabled: isDone,

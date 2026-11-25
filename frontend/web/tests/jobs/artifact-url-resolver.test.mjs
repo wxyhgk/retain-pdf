@@ -252,11 +252,12 @@ test("markdown asset resolver keeps special URLs and resolves relative images", 
   assert.equal(artifacts.resolveMarkdownAssetUrl("", "#anchor"), "#anchor");
 });
 
-test("续跑能不能点看 actions.resume，没有时退回旧名 actions.rerun；不再给出 rerun 地址", () => {
+test("续跑能不能点只看 actions.resume；旧名 actions.rerun 不再读，也不给出 rerun 地址", () => {
   const { resolveJobActions } = jobActions;
   assert.equal(resolveJobActions({ actions: { resume: { enabled: true }, rerun: { enabled: false } } }).resumeEnabled, true);
   assert.equal(resolveJobActions({ actions: { resume: { enabled: false }, rerun: { enabled: true } } }).resumeEnabled, false, "resume 说了算");
-  assert.equal(resolveJobActions({ actions: { rerun: { enabled: true, url: "/api/v1/jobs/j/actions/rerun" } } }).resumeEnabled, true, "后端还没给 resume 时看 rerun");
+  assert.equal(resolveJobActions({ actions: { rerun: { enabled: true, url: "/api/v1/jobs/j/actions/resume" } } }).resumeEnabled, false, "只有 rerun 不算（后端 2026-11-25 删了 rerun 地址）");
+  assert.equal(resolveJobActions({ artifacts: { actions: { resume: { enabled: true } } } }).resumeEnabled, true, "artifacts.actions 里的 resume 也认");
   assert.equal(resolveJobActions({ actions: {} }).resumeEnabled, false);
   const resolved = resolveJobActions({ actions: { rerun: { enabled: true, url: "/api/v1/jobs/j/actions/rerun" } } });
   assert.equal("rerun" in resolved, false);
