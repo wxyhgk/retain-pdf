@@ -64,7 +64,7 @@ fn lists_builtin_and_installed_local_agents() {
     assert_eq!(claude.launch.as_deref(), Some("npx -y @agentclientprotocol/claude-agent-acp"));
     let codex = by_id("codex");
     assert!(!codex.available && codex.reason.contains("codex"), "{codex:?}");
-    assert_eq!(by_id("gemini").launch.as_deref(), Some("gemini --experimental-acp"));
+    assert_eq!(by_id("gemini").launch.as_deref(), Some("gemini --acp"));
 
     // 服务器上：本机 agent 全关，自带的照样能用
     let mut server = config(&root.0);
@@ -86,7 +86,7 @@ fn local_agent_handshake_is_gated_and_gets_the_mcp_server() {
     let config = config(&root.0);
     let (process, defaults) = prepare_agent(&config, "gemini", &local_headers(), &AcpConnectQuery::default()).unwrap();
     assert_eq!(process.program, root.0.join("bin").join("gemini"));
-    assert_eq!(process.args, vec!["--experimental-acp"]);
+    assert_eq!(process.args, vec!["--acp"]);
     assert_eq!(defaults.cwd.as_deref(), Some(root.0.join("books").as_path()));
     let server = defaults.mcp_server.unwrap();
     assert_eq!(server["command"], root.0.join("bin").join("retainpdf").to_string_lossy().as_ref());

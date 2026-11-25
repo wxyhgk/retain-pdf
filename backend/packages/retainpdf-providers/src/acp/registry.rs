@@ -1,7 +1,8 @@
 //! 能接的 agent 登记表：自带的（Python `retainpdf_ask_agent`）和本机装的（Claude Code、Codex、Gemini CLI）。
 //!
-//! 只起这里写死的命令，参数不收客户端给的。本机 agent 的包名、参数按 2026-11-25 前端的调研写（没在本机装过核实）；
-//! 装法变了改这张表。
+//! 只起这里写死的命令，参数不收客户端给的。本机 agent 的包名、参数 2026-11-25 前端在 npm 和官方文档核实过：
+//! `@agentclientprotocol/claude-agent-acp`（命令 claude-agent-acp）、`@agentclientprotocol/codex-acp`（codex-acp）；
+//! Gemini CLI 用 `--acp`（`--experimental-acp` 是旧写法，旧版要先升级）。旧的 `@zed-industries/*` 包别用。装法变了改这张表。
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
@@ -51,7 +52,7 @@ const LOCAL_AGENTS: &[LocalAgent] = &[
     LocalAgent {
         id: "gemini",
         name: "Gemini CLI",
-        launches: &[Launch { program: "gemini", args: &["--experimental-acp"], requires: None }],
+        launches: &[Launch { program: "gemini", args: &["--acp"], requires: None }],
     },
 ];
 
