@@ -1,5 +1,5 @@
 // 演示模式的通用取数：每个数据集几条样例，形状照 job-data.v1。
-import type { JobDataCatalogView, JobDataQuery, JobDataView } from "@retainpdf/api/job-data";
+import type { JobDataQuery, JobDataView } from "@retainpdf/api/job-data";
 
 type Row = Record<string, unknown>;
 

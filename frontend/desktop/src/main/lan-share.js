@@ -127,13 +127,12 @@ function replaceSentinels(value, config) {
 
 // 局域网上不开放的接口（2026-11-22，后端提醒：网关替访问者带后端密钥，等于给了电脑主人的权限）。
 // 「全部功能」指看书、上传、翻译、改书库；碰得到电脑本身的管理接口只能在电脑上用：
-// 恢复备份（覆盖数据库）、同步文件夹（能指向电脑上任意路径）、上传字体、下载运行资源、任务内部文件、
+// 恢复备份（覆盖数据库）、同步文件夹（能指向电脑上任意路径）、下载运行资源、任务内部文件、
 // 内部接口、账号管理；密钥库只许读（读接口不含明文），不许改。
 const LAN_BLOCKED = [
   { prefix: "/api/v1/admin" },
   { prefix: "/api/v1/backups" },
   { prefix: "/api/v1/sync" },
-  { prefix: "/api/v1/fonts/upload" },
   { prefix: "/api/v1/runtime-assets/download" },
   { prefix: "/api/v1/internal" },
   { pattern: /^\/api\/v1\/jobs\/[^/]+\/files\/internal(\/|$)/ },

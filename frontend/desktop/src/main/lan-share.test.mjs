@@ -118,7 +118,6 @@ test("management endpoints that reach the computer itself are not opened on the 
     ["GET", "/api/v1/backups"],
     ["PUT", "/api/v1/sync"],
     ["POST", "/api/v1/sync/run"],
-    ["POST", "/api/v1/fonts/upload"],
     ["POST", "/api/v1/runtime-assets/download"],
     ["POST", "/api/v1/internal/model/jobs/j/requests"],
     ["GET", "/api/v1/jobs/j1/files/internal/x.json"],

@@ -1,5 +1,5 @@
 import type { JobDatasetQuery, JobDataView } from "@retainpdf/contracts/job-data";
-export type { JobDataCatalogView, JobDataView } from "@retainpdf/contracts/job-data";
+export type { JobDataView } from "@retainpdf/contracts/job-data";
 export type JobDataFilterValue = string | number | boolean | ReadonlyArray<string | number>;
 export type JobDataQuery = {
     /** 只要这些字段。 */
