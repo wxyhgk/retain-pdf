@@ -10,7 +10,10 @@ mod upstream_codes;
 use anyhow::Result;
 pub use policy::{ModelConnection, ModelConnectionPolicy, ModelRequest};
 #[cfg(test)]
-pub use policy::{Deadlines, Message, Provider, Thinking};
+pub use policy::{
+    ContentPart, Deadlines, ImageUrl, Message, MessageContent, Provider, Thinking, MAX_IMAGE_BYTES,
+    MAX_REQUEST_IMAGES,
+};
 use retainpdf_data::db::{Db, ModelOperation, ModelReservation, ModelSessionConflict};
 use sha2::{Digest, Sha256};
 use std::{

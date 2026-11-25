@@ -148,6 +148,13 @@ OCR 服务商：
 （见 [响应格式](../../api/00-约定/01-响应格式.md#请求本身解析不了)），不回显请求里的值。成功回裸 JSON（`ModelOperation`，取消是
 `{"changed": bool}`），出错是统一信封。时限见 [限制](../../api/00-约定/04-限制.md#时间)。
 
+消息可以带图（2026-11-25 起）：`content` 照旧可以是字符串；带图时是 OpenAI Chat 的片段列表，`{"type":"text","text":…}` 和
+`{"type":"image_url","image_url":{"url":"data:image/png;base64,…","detail"?:"auto|low|high"}}`，执行器只走 `/chat/completions`，原样发给服务商。
+规矩：图只能在 `user` 消息里；只收 data URL（png / jpeg / webp / gif，不收网址）；一次最多 4 张、每张解码后不超过 4 MB；文字合计仍是 512 KB。
+提交接口的请求体上限因此是 `large_body`（24 MB），另外两个照旧 2 MB。纯文字请求序列化出来和以前一字不差，已落库操作的指纹不变；
+库里只存请求的指纹，不存消息内容（图也一样）。Python 这边 `request_chat_content` 在交给执行器前先查一遍（`model_wire.executor_accepts_images`），
+网址图、system 里的图、超过 4 张直接报错，不提交。
+
 ## 运维指标的计数
 
 `/metrics` 的计数和 `<data_root>/diagnostics/route-usage.json`（`app/route_usage.rs`）是同一份数：从文件的 `since` 起累计，重启不丢。

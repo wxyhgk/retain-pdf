@@ -364,3 +364,26 @@ async fn http_worker_body_errors_use_the_api_error_envelope() {
     assert_eq!(payload["code"], 40900);
     assert_eq!(payload["error"]["details"]["reason"], "job_not_active");
 }
+
+#[tokio::test]
+async fn http_worker_accepts_image_sized_bodies_up_to_the_large_limit() {
+    // 带图的请求（base64）比默认 2 MB 大：提交接口挂 large_body。这里图片类型故意不收，
+    // 请求体读进来、走到校验才退 400，不会真的发给服务商。
+    let fixture = Fixture::new("model-api-http-large-body");
+    let token = Some(format!("Bearer {}", fixture.capability("job-a")));
+    let body = |data_len: usize| {
+        json!({
+            "operation_id":"op-a", "unit_id":"unit-a", "purpose":"primary", "temperature":0.2,
+            "messages":[{"role":"user","content":[
+                {"type":"text","text":"看图"},
+                {"type":"image_url","image_url":{"url":format!("data:image/svg+xml;base64,{}", "A".repeat(data_len))}}
+            ]}]
+        })
+        .to_string()
+    };
+    let (status, payload) = raw_submit(&fixture, token.clone(), Some("application/json"), &body(3 * 1024 * 1024)).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{payload}");
+    let too_large = body(crate::app::endpoints::LARGE_BODY_LIMIT_BYTES + 1);
+    let (status, payload) = raw_submit(&fixture, token, Some("application/json"), &too_large).await;
+    assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE, "{payload}");
+}

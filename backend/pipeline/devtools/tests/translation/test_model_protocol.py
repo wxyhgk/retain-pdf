@@ -767,9 +767,36 @@ def test_text_only_messages_are_unchanged():
     assert model_wire.content_text([model_wire.text_part("a"), model_wire.image_part(PNG), model_wire.text_part("b")]) == "a\n\nb"
 
 
-def test_the_rust_executor_refuses_image_messages(monkeypatch):
+def test_the_rust_executor_takes_data_url_images(monkeypatch):
+    # 2026-11-25 起执行器收图：带 data URL 图的消息原样交给执行器（system 照旧并成一条）
+    from retainpdf_translation.llm.shared import executor_context
+
+    seen = {}
+
+    class Runtime:
+        def request(self, messages, **kwargs):
+            seen["messages"] = messages
+            return "ok"
+
+    monkeypatch.setattr(executor_context, "execution_enabled", lambda: True)
+    monkeypatch.setattr(executor_context, "runtime", lambda: Runtime())
+    messages = [{"role": "system", "content": "规则"}, *_image_messages()]
+    assert client.request_chat_content(messages, api_key="k", model="m", base_url="https://example.test/v1") == "ok"
+    assert seen["messages"][0] == {"role": "system", "content": "规则\n\n你是排版检查员。"}
+    assert seen["messages"][1:] == _image_messages()[1:]
+
+
+def test_the_rust_executor_refuses_images_it_cannot_take(monkeypatch):
+    # 网址图、system 里的图、超过 4 张：在 Python 这边就拒，不提交给执行器
     from retainpdf_translation.llm.shared import executor_context
 
     monkeypatch.setattr(executor_context, "execution_enabled", lambda: True)
-    with pytest.raises(ValueError, match="image"):
-        client.request_chat_content(_image_messages(), api_key="k", model="m", base_url="https://example.test/v1")
+    monkeypatch.setattr(executor_context, "runtime", lambda: pytest.fail("must not submit"))
+    url_part = {"type": "image_url", "image_url": {"url": "https://example.test/t.png"}}
+    for messages in (
+        [{"role": "user", "content": [model_wire.text_part("看"), url_part]}],
+        [{"role": "system", "content": [model_wire.image_part(PNG)]}, {"role": "user", "content": "x"}],
+        [{"role": "user", "content": [model_wire.image_part(PNG)] * 5}],
+    ):
+        with pytest.raises(ValueError, match="image"):
+            client.request_chat_content(messages, api_key="k", model="m", base_url="https://example.test/v1")
