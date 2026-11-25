@@ -1,3 +1,4 @@
+import { derivedActiveJobId } from "@/platform/api/index.js";
 import type {
   OcrAmbiguityReceiptField,
   OcrAmbiguityResolutionKind,
@@ -186,6 +187,15 @@ export async function resolveOcrAmbiguityRecovery({
     startPolling?.(nextJobId);
     return { ok: true, conflict: false };
   } catch (error) {
+    // 409 derived_job_active：这个任务已经恢复出一个新任务、还在跑（两个窗口各点了一次），直接跟进它，
+    // 不当作「OCR 状态变了」去刷新诊断。
+    const activeJobId = derivedActiveJobId(error);
+    if (activeJobId) {
+      closeDialog?.();
+      setGlobalError?.("");
+      startPolling?.(activeJobId);
+      return { ok: true, conflict: false };
+    }
     if (isConflictError(error)) {
       setStatus?.("OCR 状态已变化，正在刷新诊断，请重新确认。");
       await refreshDiagnostics?.();

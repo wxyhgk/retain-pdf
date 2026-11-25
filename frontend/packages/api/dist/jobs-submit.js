@@ -2,6 +2,7 @@
 import { buildUploadsEndpoint, submitUploadRequest, summarizeJobRequestContext } from "./http.js";
 import * as generated from "./generated/create-job.js";
 import { submitFailure } from "./request.js";
+import { newIdempotencyKey } from "./idempotency.js";
 function isObject(value) {
     return !!value && typeof value === "object" && !Array.isArray(value);
 }
@@ -56,6 +57,7 @@ export async function submitJobRequest(apiPrefix, payload) {
 // 报错和以前 submitJson 一样：页数额度不够给 PageQuotaError，其余带上 workflow、OCR 服务商、上传编号。
 function createJob(apiPrefix, body) {
     return generated.createJob(apiPrefix, { body: body }, {
+        idempotencyKey: newIdempotencyKey(),
         onError: submitFailure(summarizeJobRequestContext(body)),
     });
 }

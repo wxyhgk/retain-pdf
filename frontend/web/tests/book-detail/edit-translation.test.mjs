@@ -126,7 +126,7 @@ test("改译：读的是持有译文的任务；重翻填进框里；保存带 s
 test("改译：没通过检查时不关窗口，列出原因", async () => {
   const view = await mountPanel({
     replay: () => ({ candidate: null, payload: {} }),
-    revise: () => { throw Object.assign(new Error("新译文没通过检查，没有保存。"), { status: 422, reason: "validation_failed", issues: [{ kind: "math_delimiter_unbalanced", severity: "error", message: "unbalanced $" }, { kind: "english_residue", severity: "warning" }] }); },
+    revise: () => { throw Object.assign(new Error("新译文没通过检查，没有保存。"), { status: 400, reason: "validation_failed", issues: [{ kind: "math_delimiter_unbalanced", severity: "error", message: "unbalanced $" }, { kind: "english_residue", severity: "warning" }] }); },
     onRerender: async () => null,
   });
   const { doc, click } = view;

@@ -47,6 +47,18 @@
    - 响应头 `Idempotent-Replayed: true` 只是告诉你这是重放，结果和第一次一样，当成功处理就行。
 4. 前端测试：没有钉 `ActionBlockReason` 的测试；如果书籍详情有按 reason 显示文案的表（`job-failure-model.ts` 之类），加上面三个值。
 
+前端已跟上（`feat/idempotent-submit`，2026-11-25），和上面的建议有两处不同：
+- key 不从按钮传进来，由 `@retainpdf/api` 的 6 个提交函数（`createJob`、`translateDocument`、`ocrDocument`、`resumeJob`、
+  `retryJobStage`、`resolveOcrAmbiguity`）每次调用自己生成（`src/idempotency.ts` 的 `newIdempotencyKey()`）：前端没有自动重发，
+  一次调用就是一次点击。`RequestOptions` 加的是 `idempotencyKey?: string`，不是通用的 `headers`。
+  `crypto.randomUUID` 只在安全上下文里有（局域网 `http://192.168.x.x` 打开时没有），退回 `getRandomValues` 拼 UUID v4。
+- `derived_job_active` 不提示「等它结束」，直接切到那个任务：网页的 `platform/api/domains/jobs-actions.ts` 把续跑 / 重试的这个 409
+  换成一张指向 `active_job_id` 的回执（`already_active: true`），书籍详情、任务中心、任务详情都照提交成功的路子切过去、跟进度；
+  任务详情的提示写「已经有一个从这里续跑出来的任务在跑（编号），正在跳转」。OCR 歧义处理在 `ocr-ambiguity-recovery.ts` 里同样跟进那个任务。
+  `HttpError` 加了 `activeJobId`。没带 `active_job_id` 时退回提示文案（`describeActionError`）。
+- `idempotency_key_in_flight` / `idempotency_key_reused` 每次一把新 key 碰不到，`in_flight` 只留了一句兜底文案。
+- 测试：`frontend/web/tests/platform/idempotent-submit.test.mjs`。
+
 ---
 
 ## 请求体写错统一回 400，顶层 `code` 的用法（fix/api-error-format）
@@ -1937,6 +1949,12 @@ PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_uplo
    （兜底）、`job_exists`（建任务指定的编号已存在，前端不指定编号碰不到）、`tag_name_taken`（改标签名撞名，带 `existing_tag_id`；
    标签接口前端还没接）。可选：给 `legacy_job_unsupported` 一句人话，例如「这是很早的版本做的任务，读不了，请重新上传翻译」。
 
+前端已跟上（`feat/idempotent-submit`，2026-11-25）：
+- 第 1 条：`frontend/web/tests/book-detail/edit-translation.test.mjs` 的模拟错误改成 `status: 400`；前端没有按 422 分支的代码。
+- 第 3 条：`@retainpdf/api` 的 `request()` 遇到 `legacy_job_unsupported` 不管调用方给的是哪种文案，都换成
+  「这是很早的版本做的任务，读不了它的文件，请重新上传翻译。」并挂上 `reason`（`http.ts` 的 `explainLegacyJob`），所有生成的请求函数都经过这里。
+  直接拿地址下载的产物（`<a href>`）不经过它。
+
 ## 删续跑旧名 `actions/rerun`（2026-11-25，chore/drop-rerun-alias）
 
 `POST /jobs/{job_id}/actions/rerun` 删了（404）。前端早就只调 `actions/resume`（`resumeJob`），不受影响；接受 `Idempotency-Key` 的提交接口
@@ -1954,3 +1972,7 @@ PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_uplo
 1. 重新生成请求函数：`frontend/packages/api/src/generated/job-data.ts` 的 `listJobDatasets` 会消失（`getJobDataset` 照旧），不重新生成
    「src/generated 和契约端点表一致」的检查是红的。契约 `job-data.v1` 删了 `JobDataCatalogView`、`JobDataDatasetInfo`、`JobDataFieldInfo`。
 2. 可选：`frontend/desktop/src/main/lan-share.js` 拦截名单里的 `/api/v1/fonts/upload` 和它的测试可以删（拦一个不存在的地址无害）。
+
+前端已跟上（`chore/api-client-regen-batch3`，2026-11-25）：两条都做了。`generate:client` 重新生成 `job-data.ts`；手写的
+`frontend/packages/api/src/job-data.ts`、`web/src/platform/api/domains/job-data.ts`、`mocks/job-data.ts` 去掉 `JobDataCatalogView` 的导出和引用；
+`lan-share.js` 拦截名单和 `lan-share.test.mjs` 去掉 `/api/v1/fonts/upload`。

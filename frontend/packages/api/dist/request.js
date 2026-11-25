@@ -2,7 +2,8 @@
 // 给用户看的报错文案不在这里定——各领域的手写函数通过 onError 传进来，生成层只负责把失败的
 // 状态码和后端回的错误体交出去。方案见 docs/ops/planning/api-client-codegen/。
 import { apiFetch, buildApiHeaders, buildApiUrl, unwrapEnvelope } from "./internal/runtime.js";
-import { attachErrorDetails, attachRequestRef, refusedSubmissionError } from "./http.js";
+import { attachErrorDetails, attachRequestRef, explainLegacyJob, refusedSubmissionError } from "./http.js";
+import { IDEMPOTENCY_KEY_HEADER } from "./idempotency.js";
 /** 查询参数按传入顺序编码：undefined、null、空串不发；数组按后端约定用逗号连接（job_ids=a,b）。 */
 export function encodeQuery(query) {
     if (!query)
@@ -25,9 +26,12 @@ export async function request({ apiPrefix, method, path, query, body, options = 
     const search = encodeQuery(query);
     const url = `${buildApiUrl(apiPrefix, path)}${search ? `?${search}` : ""}`;
     // GET 不带 Content-Type：它不在 CORS 安全列表里，会把每个 GET 都变成预检请求。
+    const extraHeaders = options.idempotencyKey
+        ? { [IDEMPOTENCY_KEY_HEADER]: options.idempotencyKey }
+        : {};
     const init = body === undefined
-        ? { headers: buildApiHeaders() }
-        : { headers: { ...buildApiHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(body) };
+        ? { headers: buildApiHeaders(extraHeaders) }
+        : { headers: { ...buildApiHeaders(extraHeaders), "Content-Type": "application/json" }, body: JSON.stringify(body) };
     if (method !== "GET")
         init.method = method;
     if (options.signal)
@@ -35,7 +39,7 @@ export async function request({ apiPrefix, method, path, query, body, options = 
     const resp = await (options.fetchImpl || apiFetch)(url, init);
     if (!resp.ok) {
         const payload = await resp.json().catch(() => null);
-        const error = (options.onError || failWithDetails("请求失败，请稍后重试。"))(resp.status, payload);
+        const error = explainLegacyJob((options.onError || failWithDetails("请求失败，请稍后重试。"))(resp.status, payload), payload);
         if (error.url === undefined)
             error.url = url;
         throw attachRequestRef(error, resp, payload);

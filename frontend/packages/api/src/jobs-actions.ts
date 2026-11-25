@@ -6,6 +6,7 @@ import * as actions from "./generated/job-actions.js";
 import * as reports from "./generated/job-reports.js";
 import * as libraryBooks from "./generated/library-books.js";
 import { failWith, failWithDetails, orOnStatus, submitFailure } from "./request.js";
+import { newIdempotencyKey } from "./idempotency.js";
 import type { OcrAmbiguityResolutionView, ResumeJobInput, RetryStageRequest } from "@retainpdf/contracts/job-actions";
 import type { LibraryDeleteResultView } from "@retainpdf/contracts/library-books";
 
@@ -113,7 +114,7 @@ export async function fetchResumePlan(jobId: string, apiPrefix?: string): Promis
 
 /** body 可带 `{ overrides: { translation: { api_key | credential_ref } } }`：续跑出来的新任务用这把 key。 */
 export async function resumeJob(jobId: string, apiPrefix?: string, body: Record<string, unknown> = {}): Promise<any> {
-  return actions.resumeJob(apiPrefix, { job_id: jobId, body: body as ResumeJobInput }, { onError: submitFailure() });
+  return actions.resumeJob(apiPrefix, { job_id: jobId, body: body as ResumeJobInput }, { idempotencyKey: newIdempotencyKey(), onError: submitFailure() });
 }
 
 /**
@@ -149,7 +150,7 @@ export async function resolveOcrAmbiguity(
   apiPrefix: string | undefined,
   request: OcrAmbiguityResolutionRequest,
 ): Promise<OcrAmbiguityResolutionView> {
-  return actions.resolveOcrAmbiguity(apiPrefix, { job_id: jobId, body: request }, { onError: submitFailure() });
+  return actions.resolveOcrAmbiguity(apiPrefix, { job_id: jobId, body: request }, { idempotencyKey: newIdempotencyKey(), onError: submitFailure() });
 }
 
 export async function fetchJobStageActions(jobId: string, apiPrefix?: string): Promise<JobStageActionsView | null> {
@@ -178,7 +179,7 @@ export async function retryJobStage(jobId: string, apiPrefix: string | undefined
     apiPrefix,
     // 字段来自调用方的 payload，只挑了后端认的那几个；类型不对后端回 400。
     { job_id: jobId, body: body as unknown as RetryStageRequest },
-    { onError: submitFailure() },
+    { idempotencyKey: newIdempotencyKey(), onError: submitFailure() },
   );
   const bookMeta: any = payload && typeof payload === "object" ? payload : {};
   const nextJobId = `${result?.job_id || result?.id || jobId}`.trim();
