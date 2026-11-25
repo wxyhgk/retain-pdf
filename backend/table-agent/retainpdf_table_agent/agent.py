@@ -83,12 +83,13 @@ class TableResult:
     chunks: int = 0
     feedback_rounds: int = 0
     cache_key: str = ""
+    structure: dict[str, Any] | None = None  # 定结构（G4）的记录；没走定结构的表没有这一项
 
     def translations(self) -> dict[str, str]:
         return {cell_id: entry["translation"] for cell_id, entry in self.cells.items() if entry.get("translation")}
 
     def as_dict(self) -> dict[str, Any]:
-        return {
+        value = {
             "block_id": self.block_id,
             "status": self.status,
             "reason": self.reason,
@@ -98,6 +99,9 @@ class TableResult:
             "cache_key": self.cache_key,
             "cells": self.cells,
         }
+        if self.structure is not None:
+            value["structure"] = self.structure
+        return value
 
     @classmethod
     def from_dict(cls, value: dict[str, Any]) -> "TableResult":
@@ -110,6 +114,7 @@ class TableResult:
             chunks=int(value.get("chunks") or 0),
             feedback_rounds=int(value.get("feedback_rounds") or 0),
             cache_key=str(value.get("cache_key") or ""),
+            structure=dict(value["structure"]) if isinstance(value.get("structure"), dict) else None,
         )
 
 
@@ -121,9 +126,15 @@ def _coerce(value: Any) -> str:
     return str(value or "")
 
 
-def cache_key(model: dict, context: TableContext, *, engine: str) -> str:
+def cache_key(model: dict, context: TableContext, *, engine: str, structure: str = "") -> str:
+    """同一张表（引擎、提示词版本、格子、表题表注一样）上次的结果可以直接用。
+
+    ``structure``：要先定结构的表，给 ``structure_fingerprint``（定结构的提示词版本 + 初稿 + 文字层）；
+    不定结构的表不给，键和以前一字不差。"""
     cells = [(cell.cell_id, cell.text, cell.role, cell.flag) for cell in table_cells(model)]
     payload = [PROMPT_VERSION, engine, cells, context.caption, context.footnotes, context.mentions[:3]]
+    if structure:
+        payload.append(structure)
     return hashlib.sha256(json.dumps(payload, ensure_ascii=False).encode("utf-8")).hexdigest()
 
 

@@ -10,9 +10,9 @@ from typing import Any
 
 import fitz
 
-from .assemble import _column_of as _column_of_word, _tokens, assign_cells, column_bounds, map_rows
-from .html_grid import drop_caption_rows, parse_html_grid
-from .text_layer import table_text_lines
+from .assemble import RowMapping, _column_of as _column_of_word, _tokens, assign_cells, column_bounds, map_rows
+from .html_grid import HtmlGrid, drop_caption_rows, parse_html_grid
+from .text_layer import TextLine, table_text_lines
 
 TABLE_MODEL_VERSION = "table.v1"
 MIN_WORDS_FOR_TEXT_LAYER = 3
@@ -49,19 +49,22 @@ def suggested_action(kind: str) -> str:
     return "translate" if kind == "text" else "keep"
 
 
-def _roles(cells: list[dict], n_rows: int) -> None:
-    """表头：从第 1 行起、除第一列外没有数字格的行（最多 3 行）；行标签：表头以下的第一列。"""
+def _roles(cells: list[dict], n_rows: int, header_rows: int | None = None) -> None:
+    """表头：从第 1 行起、除第一列外没有数字格的行（最多 3 行）；行标签：表头以下的第一列。
+
+    ``header_rows`` 给了就照它（表格 agent 定结构时看图定的表头行数）。"""
     by_row: dict[int, list[dict]] = {}
     for cell in cells:
         by_row.setdefault(cell["row"], []).append(cell)
-    header_rows = 0
-    for row_index in range(min(3, n_rows)):
-        row = by_row.get(row_index, [])
-        if any(cell["content_kind"] == "numeric" and cell["col"] > 0 for cell in row):
-            break
-        header_rows += 1
-    if header_rows == n_rows:
-        header_rows = min(1, n_rows)
+    if header_rows is None:
+        header_rows = 0
+        for row_index in range(min(3, n_rows)):
+            row = by_row.get(row_index, [])
+            if any(cell["content_kind"] == "numeric" and cell["col"] > 0 for cell in row):
+                break
+            header_rows += 1
+        if header_rows == n_rows:
+            header_rows = min(1, n_rows)
     for cell in cells:
         if not cell["text"].strip():
             cell["role"] = "empty"
@@ -73,15 +76,16 @@ def _roles(cells: list[dict], n_rows: int) -> None:
             cell["role"] = "data"
 
 
-def build_table_model(block: dict, page: fitz.Page) -> dict[str, Any]:
-    """一张表（document.v1 的 table block + 原文 PDF 那一页）→ table.v1。"""
-    bbox = block.get("bbox") or (block.get("geometry") or {}).get("bbox")
-    html = _block_html(block)
-    model: dict[str, Any] = {
+def block_bbox(block: dict) -> Any:
+    return block.get("bbox") or (block.get("geometry") or {}).get("bbox")
+
+
+def empty_table_model(block: dict) -> dict[str, Any]:
+    return {
         "model_version": TABLE_MODEL_VERSION,
         "block_id": block.get("block_id"),
         "page_index": block.get("page_index"),
-        "bbox": bbox,
+        "bbox": block_bbox(block),
         "source_kind": "unknown",
         "structure_source": "ocr_html",
         "n_rows": 0,
@@ -91,7 +95,13 @@ def build_table_model(block: dict, page: fitz.Page) -> dict[str, Any]:
         "confidence": 0.0,
         "issues": [],
     }
-    grid = parse_html_grid(html)
+
+
+def build_table_model(block: dict, page: fitz.Page) -> dict[str, Any]:
+    """一张表（document.v1 的 table block + 原文 PDF 那一页）→ table.v1。"""
+    bbox = block_bbox(block)
+    model = empty_table_model(block)
+    grid = parse_html_grid(_block_html(block))
     for text in drop_caption_rows(grid):
         model["issues"].append("dropped_caption_row")
         model["structure_source"] = "ocr_html+rules"
@@ -106,6 +116,25 @@ def build_table_model(block: dict, page: fitz.Page) -> dict[str, Any]:
         return model
     model["source_kind"] = "text_layer"
     mapping = map_rows(grid, lines)
+    return assemble_table_model(model, grid, lines, mapping)
+
+
+def assemble_table_model(
+    model: dict[str, Any],
+    grid: HtmlGrid,
+    lines: list[TextLine],
+    mapping: RowMapping,
+    *,
+    header_rows: int | None = None,
+    wrapped_rows: frozenset[int] = frozenset(),
+    details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """网格 + 文字层的行 + 每行表格占哪几行文字 → 格子原文、角色、置信度、issues（写进 ``model``）。
+
+    建表格模型和表格 agent 定结构以后重建（``ocr/tables/structure.py``）都走这里。``header_rows``、``wrapped_rows``
+    是定结构时看图定下的：表头几行、哪几行确认是格子里折行（不再标 ``row_swallows_rows``）。``details`` 给了就填上
+    ``suspect_rows``（看起来吞了好几行的行）。
+    """
     bounds = column_bounds(grid, lines, mapping)
     if bounds is None:
         model["issues"].append("columns_not_found")
@@ -138,7 +167,7 @@ def build_table_model(block: dict, page: fitz.Page) -> dict[str, Any]:
                 "suggested_action": suggested_action(kind),
             }
         )
-    _roles(cells, grid.n_rows)
+    _roles(cells, grid.n_rows, header_rows)
     model["cells"] = cells
     model["skipped_lines"] = [lines[index].text for index in mapping.skipped_lines]
     row_score = mapping.matched_rows / grid.n_rows if grid.n_rows else 0.0
@@ -163,11 +192,19 @@ def build_table_model(block: dict, page: fitz.Page) -> dict[str, Any]:
         return len({_column_of_word(word, bounds) for word in lines[line_index].words})
 
     extents = _column_extents(lines, mapping, bounds)
-    for indexes in mapping.row_lines:
+    suspect_rows: list[int] = []
+    for row_index, indexes in enumerate(mapping.row_lines):
+        if row_index in wrapped_rows:
+            continue
         full = [index for index in indexes if _filled_columns(index) >= max(2, (grid.n_cols + 1) // 2)]
         if len(full) >= 2 and not _wrapped_prose_row(lines, indexes, bounds, extents):
-            model["issues"].append("row_swallows_rows")
-            break
+            suspect_rows.append(row_index)
+            if details is None:
+                break
+    if suspect_rows:
+        model["issues"].append("row_swallows_rows")
+    if details is not None:
+        details["suspect_rows"] = suspect_rows
     return model
 
 

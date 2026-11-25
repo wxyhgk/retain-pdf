@@ -1,7 +1,7 @@
 """表格 agent 的模型调用：走翻译共用的 ``request_chat_content``（同一套重试、协议、Rust 执行器开关）。
 
 - 每次请求开一个稳定的单元范围（``table_translate`` + 消息的哈希），Rust 执行器模式下也能发；
-- 请求标签 ``table-translate``，用量台账记成 ``table_translation`` 阶段；
+- 请求标签 ``table-translate``（定结构的请求 ``table-translate-structure``，带原表截图），用量台账都记成 ``table_translation`` 阶段；
 - 同一次运行里这组 Key 被上游 401/402/403 拒过，下一张表直接停（不再一张张去撞）。
 """
 from __future__ import annotations
@@ -18,6 +18,9 @@ from retainpdf_translation.llm.shared.upstream_resilience import raise_if_creden
 from retainpdf_table_agent.contract import ChatResult
 
 REQUEST_LABEL = "table-translate"
+# 定结构（G4）的请求：标签前缀还是 table-translate，用量台账照旧记在表格翻译下
+STRUCTURE_REQUEST_LABEL = "table-translate-structure"
+_LABELS = {"table_structure": STRUCTURE_REQUEST_LABEL}
 REQUEST_TIMEOUT_SECS = 180
 REQUEST_MAX_ATTEMPTS = 2
 
@@ -41,7 +44,7 @@ def table_chat_fn(
         configured_classify_batch_size=0,
     )
 
-    def _call(messages: list[dict[str, str]], *, purpose: str, response_format: dict | None = None) -> ChatResult:
+    def _call(messages: list[dict[str, Any]], *, purpose: str, response_format: dict | None = None) -> ChatResult:
         raise_if_credential_rejected(run_diagnostics, base_url=base_url, api_key=api_key, model=model)
         digest = hashlib.sha256(json.dumps([purpose, messages], ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
         before = _usage(run_diagnostics)
@@ -54,7 +57,7 @@ def table_chat_fn(
                 temperature=0.0,
                 response_format=response_format,
                 timeout=REQUEST_TIMEOUT_SECS,
-                request_label=REQUEST_LABEL,
+                request_label=_LABELS.get(purpose, REQUEST_LABEL),
                 max_attempts=REQUEST_MAX_ATTEMPTS,
                 protocol=protocol or None,
                 thinking=thinking or None,
@@ -70,4 +73,4 @@ def _usage(diagnostics: TranslationRunDiagnostics) -> dict[str, Any]:
     return dict(diagnostics.build_summary().get("token_usage") or {})
 
 
-__all__ = ["REQUEST_LABEL", "table_chat_fn"]
+__all__ = ["REQUEST_LABEL", "STRUCTURE_REQUEST_LABEL", "table_chat_fn"]

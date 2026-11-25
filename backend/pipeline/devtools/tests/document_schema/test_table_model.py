@@ -6,7 +6,9 @@ from pathlib import Path
 
 import fitz
 
-from retainpdf_pipeline.ocr.tables import build_table_model, content_kind
+import json
+
+from retainpdf_pipeline.ocr.tables import build_table_model, content_kind, table_structure
 from retainpdf_pipeline.ocr.tables.html_grid import drop_caption_rows, parse_html_grid
 from retainpdf_pipeline.ocr.tables.symbol_fonts import fix_symbol_char
 from retainpdf_pipeline.ocr.tables.text_layer import table_text_lines
@@ -146,3 +148,58 @@ def test_data_rows_merged_by_ocr_are_still_flagged(tmp_path: Path) -> None:
     page = _page_with(tmp_path, lambda page: _three_column_table(page, lines, step=16))
     model = build_table_model({"block_id": "t", "page_index": 0, "bbox": [40, 85, 390, 160], "text": html}, page)
     assert "row_swallows_rows" in model["issues"]
+
+
+def test_the_structure_draft_rebuilds_the_same_table_model_on_the_eval_set() -> None:
+    """定结构（G4）的初稿原样交回重建，和表格模型一字不差（格子、行列数、置信度、issues）：评测集两家 OCR 共 110 张。"""
+    checked = 0
+    for provider in ("glm_ocr", "paddle"):
+        records = json.loads((table_model_eval.TABLES / "ocr" / f"{provider}.tables.json").read_text(encoding="utf-8"))
+        documents: dict[str, fitz.Document] = {}
+        for record in records:
+            document = documents.setdefault(record["fixture"], fitz.open(table_model_eval.PDFS / record["fixture"]))
+            page = document[record["source_page"] - 1]
+            block = {"block_id": record["block_id"], "page_index": record["source_page"] - 1, "bbox": record["bbox_pt"],
+                     "text": record["html"]}
+            model = build_table_model(block, page)
+            structure = table_structure(block, page)
+            if structure is None:
+                continue
+            rebuilt = structure.rebuild(structure.draft())
+            for key in ("cells", "n_rows", "n_cols", "confidence", "skipped_lines", "issues", "bbox"):
+                assert rebuilt[key] == model[key], (provider, record["block_id"], key)
+            checked += 1
+    assert checked == 110
+
+
+def test_the_rebuild_follows_the_edited_draft_and_moves_the_table_box_off_the_caption(tmp_path: Path) -> None:
+    """表题框进了表格、两行数据被 OCR 并成一行：改过的初稿重建以后格子原文照旧取自文字层，表格的框收到表题下面。"""
+    lines = [["Table 4", "Synthetic", "batches"], ["Batch", "Capacity", "Density"], ["B-01", "268.4", "1.92"],
+             ["B-02", "265.9", "1.95"], ["B-03", "270.2", "1.89"]]
+    html = (
+        "<table><tr><td>Table 4 Synthetic batches Batch</td><td>Capacity</td><td>Density</td></tr>"
+        "<tr><td>B-01 B-02</td><td>268.4 265.9</td><td>1.92 1.95</td></tr>"
+        "<tr><td>B-03</td><td>270.2</td><td>1.89</td></tr></table>"
+    )
+    page = _page_with(tmp_path, lambda page: _three_column_table(page, lines, step=16))
+    block = {"block_id": "t", "page_index": 0, "bbox": [40, 85, 390, 175], "text": html}
+    assert "row_swallows_rows" in build_table_model(block, page)["issues"]
+    structure = table_structure(block, page)
+    draft = structure.draft()
+    assert structure.line_texts()[0] == "Table 4 Synthetic batches" and draft["row_lines"] == [[0, 1], [2, 3], [4]]
+
+    # 核心改出来的样子：L0 移出表格、第 1 行从 L3 切开（新行一列一格）、表头 1 行
+    draft["row_lines"] = [[1], [2], [3], [4]]
+    draft["caption_lines"] = [0]
+    draft["cells"] = [
+        {"row": row, "col": col, "rowspan": 1, "colspan": 1, "ocr_text": ""} for row in range(4) for col in range(3)
+    ]
+    draft["n_rows"], draft["header_rows"] = 4, 1
+    rebuilt = structure.rebuild(draft)
+    assert "row_swallows_rows" not in rebuilt["issues"] and rebuilt["suspect_rows"] == []
+    assert rebuilt["structure_source"] == "ocr_html+agent"
+    assert [cell["text"] for cell in rebuilt["cells"] if cell["row"] == 2] == ["B-02", "265.9", "1.95"]
+    assert [cell["role"] for cell in rebuilt["cells"] if cell["row"] == 0] == ["header"] * 3
+    assert rebuilt["caption_lines"] == ["Table 4 Synthetic batches"]
+    assert 85 < rebuilt["bbox"][1] < 106, "框的上边收到表题和表头之间"
+    assert rebuilt["bbox"][3] == 175

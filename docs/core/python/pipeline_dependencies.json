@@ -302,6 +302,7 @@
         "retainpdf_pipeline/ocr/ocr_provider/paddle_chunked.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_runner.py",
         "retainpdf_pipeline/ocr/tables/model.py",
+        "retainpdf_pipeline/ocr/tables/structure.py",
         "retainpdf_pipeline/ocr/tables/text_layer.py",
         "retainpdf_pipeline/render/analysis/document/builder.py",
         "retainpdf_pipeline/render/analysis/profile/background_coverage.py",
@@ -502,6 +503,7 @@
         "devtools/tests/source_cleanup_rects.py",
         "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_domain_prewarm.py",
+        "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_translation_toc_entries.py"
       ],
       "runtime_required": true,
