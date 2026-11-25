@@ -1,7 +1,9 @@
 """`python -m retainpdf_ask_agent`：后端的 ACP 桥起的自带 agent（stdio）。
 
 模型配置和密钥由桥经环境变量给（`RETAIN_ASK_MODEL`、`RETAIN_ASK_BASE_URL`、`RETAIN_ASK_API_PROTOCOL`、`RETAIN_ASK_THINKING`、
-`RETAIN_ASK_API_KEY`）。stdout 只写协议消息：别的模块的 print 一律改到 stderr。
+`RETAIN_ASK_API_KEY`）。握手带了书（`job_id`）时桥再给读书用的：`RETAIN_ASK_JOB_ID`、`RETAIN_ASK_DOCUMENT_ID`、
+`RETAIN_ASK_BACKEND_URL`（后端自己的回环地址）、`RETAIN_ASK_BACKEND_KEY`（读书用的密钥），有了就给模型读书的工具（`tools.py`）。
+stdout 只写协议消息：别的模块的 print 一律改到 stderr。
 这是接线的入口，要 import 接线包（核心其余文件只用标准库，测试里单独放过这个文件）。
 """
 from __future__ import annotations
@@ -27,6 +29,7 @@ def main() -> int:
         return 2
     protocol = os.environ.get("RETAIN_ASK_API_PROTOCOL", "").strip()
     from retainpdf_ask_agent.server import AskAgent
+    from retainpdf_ask_agent.tools import make_book_tools
     from retainpdf_ask_agent_engine.stream import make_stream_fn
 
     stream_fn = make_stream_fn(
@@ -37,7 +40,13 @@ def main() -> int:
         thinking=os.environ.get("RETAIN_ASK_THINKING", "").strip(),
     )
     context = int(os.environ.get("RETAIN_ASK_CONTEXT_WINDOW", "0") or 0) or DEFAULT_CONTEXT_WINDOW.get(protocol, FALLBACK_CONTEXT_WINDOW)
-    AskAgent(stream_fn, model=model, context_size=context, out=protocol_out).serve(sys.stdin)
+    tools = make_book_tools(
+        job_id=os.environ.get("RETAIN_ASK_JOB_ID", "").strip(),
+        document_id=os.environ.get("RETAIN_ASK_DOCUMENT_ID", "").strip(),
+        base_url=os.environ.get("RETAIN_ASK_BACKEND_URL", "").strip(),
+        api_key=os.environ.get("RETAIN_ASK_BACKEND_KEY", "").strip(),
+    )
+    AskAgent(stream_fn, model=model, context_size=context, out=protocol_out, tools=tools).serve(sys.stdin)
     return 0
 
 

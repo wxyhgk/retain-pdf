@@ -110,3 +110,61 @@ async fn builtin_agent_bridge_relays_and_fills_in_session_new() {
     socket.close(None).await.unwrap();
     server.abort();
 }
+
+/// 自带 agent 读书（2026-11-25）：握手带 `job_id`，桥核过任务在不在，把书、后端地址、读书用的密钥经环境变量交给 agent。
+/// 假的 Python 先把这几个环境变量写成一行 JSON，再回声。
+#[cfg(unix)]
+#[tokio::test]
+async fn builtin_agent_handshake_with_a_book() {
+    use std::os::unix::fs::PermissionsExt;
+    use crate::models::{CreateJobInput, JobSnapshot};
+
+    let (state, root) = state("book");
+    let python = root.join("env-python");
+    std::fs::write(
+        &python,
+        "#!/bin/sh\nprintf '{\"job\":\"%s\",\"doc\":\"%s\",\"url\":\"%s\",\"key\":\"%s\"}\\n' \"$RETAIN_ASK_JOB_ID\" \"$RETAIN_ASK_DOCUMENT_ID\" \"$RETAIN_ASK_BACKEND_URL\" \"$RETAIN_ASK_BACKEND_KEY\"\nexec cat\n",
+    )
+    .unwrap();
+    std::fs::set_permissions(&python, std::fs::Permissions::from_mode(0o755)).unwrap();
+    let mut config = (*state.config).clone();
+    config.python_bin = python.to_string_lossy().into_owned();
+    config.port = 41999;
+    let state = build_state(Arc::new(config)).expect("build state");
+    let job = JobSnapshot::new("job-ask-book".to_string(), CreateJobInput::default(), vec!["python".into()]);
+    state.db.save_job(&job).expect("save job");
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let address = listener.local_addr().unwrap();
+    let app = build_app(state);
+    let server = tokio::spawn(async move { axum::serve(listener, app).await.unwrap() });
+    let base = format!("ws://{address}/api/v1/ai/agents/retainpdf/acp?model=claude-haiku-5-5&api_protocol=anthropic&credential_ref=cred_ask&api_key=test-key");
+    let status_of = |error: tokio_tungstenite::tungstenite::Error| match error {
+        tokio_tungstenite::tungstenite::Error::Http(response) => response.status().as_u16(),
+        other => panic!("expected an HTTP refusal, got {other:?}"),
+    };
+
+    // 没有这个任务 404、编号字符不对 400：都在升级前
+    let missing = tokio_tungstenite::connect_async(format!("{base}&job_id=job-missing")).await.unwrap_err();
+    assert_eq!(status_of(missing), 404);
+    let bad = tokio_tungstenite::connect_async(format!("{base}&job_id=a%2Fb")).await.unwrap_err();
+    assert_eq!(status_of(bad), 400);
+
+    let (mut socket, _) = tokio_tungstenite::connect_async(format!("{base}&job_id=job-ask-book")).await.expect("handshake");
+    let first = tokio::time::timeout(std::time::Duration::from_secs(5), socket.next()).await.unwrap().unwrap().unwrap();
+    let Message::Text(text) = first else { panic!("expected text, got {first:?}") };
+    let env: Value = serde_json::from_str(&text).unwrap();
+    assert_eq!(env["job"], "job-ask-book");
+    assert_eq!(env["url"], "http://127.0.0.1:41999");
+    // 测试配置没有 AI 专用密钥：用本机主密钥读书
+    assert_eq!(env["key"], "test-key");
+    socket.close(None).await.unwrap();
+
+    // 不带 job_id：和以前一样，不给读书的东西
+    let (mut socket, _) = tokio_tungstenite::connect_async(base.clone()).await.expect("handshake");
+    let first = tokio::time::timeout(std::time::Duration::from_secs(5), socket.next()).await.unwrap().unwrap().unwrap();
+    let Message::Text(text) = first else { panic!("expected text, got {first:?}") };
+    assert_eq!(serde_json::from_str::<Value>(&text).unwrap(), json!({"job": "", "doc": "", "url": "", "key": ""}));
+    socket.close(None).await.unwrap();
+    server.abort();
+}

@@ -5,8 +5,27 @@
 最后 `usage_update`（ACP 只有 `used`、`size`，输入 / 输出 / 缓存命中放 `_meta.retainpdf.usage`），再回 `{stopReason}`。
 被 `session/cancel` 叫停的回 `cancelled`，不当错误。
 
-模型调用由调用方给（`stream_fn(messages, cancel)`，产出 `("thought", 文字)`、`("text", 文字)`、`("usage", dict)`、
-`("stop", 原因)`），核心不认识哪家模型；真实的在接线包 `retainpdf_ask_agent_engine`。
+模型调用由调用方给（`stream_fn(messages, cancel, **options)`，产出 `("thought", 文字)`、`("text", 文字)`、`("usage", dict)`、
+`("stop", 原因)`；给了工具时还有 `("tool_call", {id, name, arguments})` 和 `("native", 这一轮要原样带回的东西)`），
+核心不认识哪家模型；真实的在接线包 `retainpdf_ask_agent_engine`。
+
+读书（2026-11-25 起，握手带了书时有 `tools`，见 `tools.py`）。**材料先给，工具一直在，模型自己定**（2026-11-26 用户：
+「你规定死了也不好这样」——不按问题的样子在代码里删工具）：
+
+- 第一次问模型之前，代码把材料放进这一问最前面：带字的问题（选中的字、前端附的那一块原文译文）补所在的节、同页前后几块；
+  不带字的（点在空白处、扫描页、问整本书）取那一页，没有文字层就附页图；问题里写了「第 N 页」也取那一页。系统提示词带页数和目录。
+- 每一问都给同一套工具（`read_pages`、`search_book`、`view_page`），什么时候用只靠提示词引导：材料里有就直接答，答案明显在别处才调，
+  找过就答。效果靠实测看（见方案的「实测」），不对就改提示词或材料，不加代码规则。
+- 只留一个防失控的上限：最多 `MAX_TOOL_ROUNDS` 轮、每轮 `MAX_TOOL_CALLS_PER_ROUND` 个；到了下一轮 `tool_choice = none`，
+  让它照已有的回答。
+
+给了工具时 `options` 是 `{"tools": 工具说明, "tool_choice": "auto" | "none"}`。模型这一轮调了工具，就逐个跑（ACP `tool_call` →
+`tool_call_update`），把结果接在对话后面再问。工具出错、超了上限回给模型（tool 结果），不是 JSON-RPC 错误。
+
+一问之内的消息（中性写法，接线按协议换）：
+- `{"role": "assistant", "content": 文字, "tool_calls": [{"id", "name", "arguments"}], "native": …}`
+- `{"role": "tool", "tool_call_id", "name", "content": 文字, "images": [{"mime_type", "data"}], "is_error": bool}`
+带进下一问的历史只留问和最后的回答文字，工具来回不带。
 """
 from __future__ import annotations
 
@@ -17,15 +36,21 @@ import time
 import uuid
 from dataclasses import dataclass
 from dataclasses import field
-from typing import Any, Callable, Iterable, Iterator, TextIO
+from typing import Any, Callable, Iterable, Iterator, Protocol, TextIO
 
 from retainpdf_ask_agent.convert import prompt_to_content
 from retainpdf_ask_agent.convert import text_only
 from retainpdf_ask_agent.prompts import load_prompt
+from retainpdf_ask_agent.tools import ToolResult
 
 PROTOCOL_VERSION = 1
 AGENT_VERSION = "1"
 SYSTEM_PROMPT = "ask_system.txt"
+# 有书时接在系统提示词后面的那段（工具怎么用）
+TOOLS_PROMPT = "ask_tools.txt"
+# 防失控的上限（不是规则）：最多几轮调工具、一轮最多几个，到了就照已有的回答
+MAX_TOOL_ROUNDS = 4
+MAX_TOOL_CALLS_PER_ROUND = 4
 # 带进下一轮的历史最多几条消息（一问一答两条）；之前的图不带，只带文字
 MAX_HISTORY_MESSAGES = 20
 STOP_REASONS = ("end_turn", "max_tokens", "max_turn_requests", "refusal", "cancelled")
@@ -36,7 +61,20 @@ INTERNAL_ERROR = -32603
 PARSE_ERROR = -32700
 RESOURCE_NOT_FOUND = -32002
 
-StreamFn = Callable[[list[dict[str, Any]], threading.Event], Iterator[tuple[str, Any]]]
+StreamFn = Callable[..., Iterator[tuple[str, Any]]]
+
+
+class Tools(Protocol):
+    """读书的工具（`tools.BookTools`）：说明、给用户看的标题和种类、执行。
+    另外可以有（`BookTools` 都有，测试里的假工具可以没有）：`warm()` 会话开始时在后台先取书；`overview()` 系统提示词里的目录；
+    `prefetch(texts, meta)` 不带字的问题先取好的材料；`background(texts, meta)` 带字的问题补的材料；
+    `carries_text(texts, meta)` 这一问带没带字（只用来挑取哪种材料，不管工具）。"""
+
+    def specs(self) -> list[dict[str, Any]]: ...
+
+    def describe(self, name: str, arguments: dict[str, Any]) -> tuple[str, str]: ...
+
+    def run(self, name: str, arguments: dict[str, Any]) -> ToolResult: ...
 
 
 @dataclass
@@ -48,8 +86,10 @@ class Session:
 
 
 class AskAgent:
-    def __init__(self, stream_fn: StreamFn, *, model: str = "", context_size: int = 0, out: TextIO | None = None):
+    def __init__(self, stream_fn: StreamFn, *, model: str = "", context_size: int = 0, out: TextIO | None = None,
+                 tools: Tools | None = None):
         self.stream_fn = stream_fn
+        self.tools = tools
         self.model = model
         self.context_size = int(context_size or 0)
         self.out = out or sys.stdout
@@ -113,6 +153,10 @@ class AskAgent:
             session = Session(id=f"ask-{uuid.uuid4().hex[:16]}")
             self.sessions[session.id] = session
             self._result(request_id, {"sessionId": session.id})
+            warm = getattr(self.tools, "warm", None)
+            if callable(warm):
+                # 用户打字的时候把书的块取好，第一问不用等
+                threading.Thread(target=warm, daemon=True).start()
         elif method == "session/prompt":
             self._prompt(request_id, params)
         elif method == "session/cancel":
@@ -138,32 +182,104 @@ class AskAgent:
             return
         session.busy = True
         session.cancel.clear()
-        thread = threading.Thread(target=self._answer, args=(request_id, session, parts), daemon=True)
+        meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else None
+        thread = threading.Thread(target=self._answer, args=(request_id, session, parts, meta), daemon=True)
         self._threads = [t for t in self._threads if t.is_alive()] + [thread]
         thread.start()
 
-    def _answer(self, request_id: Any, session: Session, parts: list[dict[str, Any]]) -> None:
-        messages = [{"role": "system", "content": load_prompt(SYSTEM_PROMPT)}, *session.history, {"role": "user", "content": parts}]
-        answer: list[str] = []
-        usage: dict[str, Any] = {}
-        stop_reason = "end_turn"
+    def _plan(self, parts: list[dict[str, Any]], meta: Any) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+        """这一问的系统消息、用户消息（最前面是代码取好的材料），和记进用量的说明（取了什么）。工具不在这里挑：有书就全给。"""
+        system = [{"role": "system", "content": load_prompt(SYSTEM_PROMPT)}]
+        if self.tools is None:
+            return system, parts, {}
+        texts = [str(part.get("text") or "") for part in parts if part.get("type") == "text"]
+        carries_text = getattr(self.tools, "carries_text", None)
+        # 带字的问题那段字已经在了，补节和前后几块；不带字的取那一页（没有文字层附图）
+        name = "background" if callable(carries_text) and carries_text(texts, meta) else "prefetch"
+        fetch = getattr(self.tools, name, None)
         started = time.monotonic()
+        context = None
+        if callable(fetch):
+            try:
+                context = fetch(texts, meta)
+            except Exception:  # noqa: BLE001 - 取不到材料就照常回答
+                context = None
+        info: dict[str, Any] = {}
+        if context is not None and getattr(context, "text", ""):
+            info["context"] = {"kind": name, **getattr(context, "info", {}), "ms": int((time.monotonic() - started) * 1000)}
+            images = [{"type": "image_url", "image_url": {"url": f"data:{mime};base64,{data}"}} for mime, data in context.images]
+            parts = [{"type": "text", "text": context.text}, *images, *parts]
+        system[0]["content"] = f"{system[0]['content']}\n\n{load_prompt(TOOLS_PROMPT)}"
+        overview = getattr(self.tools, "overview", None)
+        book = overview() if callable(overview) else ""
+        if book:
+            system.append({"role": "system", "content": book})
+        return system, parts, info
+
+    def _answer(self, request_id: Any, session: Session, parts: list[dict[str, Any]], meta: Any = None) -> None:
+        started = time.monotonic()
+        system, parts, plan_info = self._plan(parts, meta)
+        messages: list[dict[str, Any]] = [*system, *session.history, {"role": "user", "content": parts}]
+        answer: list[str] = []
+        totals: dict[str, Any] = {}
+        last_round: dict[str, Any] = {}
+        stop_reason = "end_turn"
         first_token_ms: int | None = None
+        rounds = 0
+        tool_count = 0
         try:
-            for kind, value in self.stream_fn(messages, session.cancel):
-                if session.cancel.is_set():
+            while not session.cancel.is_set():
+                rounds += 1
+                # 到了上限就不许再调（tool_choice=none）：读到的就是全部，照这些回答。工具说明照旧带着（对话里有工具来回）
+                options: dict[str, Any] = {}
+                if self.tools is not None:
+                    options = {"tools": self.tools.specs(), "tool_choice": "auto" if rounds <= MAX_TOOL_ROUNDS else "none"}
+                texts: list[str] = []
+                calls: list[dict[str, Any]] = []
+                native: Any = None
+                usage: dict[str, Any] = {}
+                for kind, value in self.stream_fn(messages, session.cancel, **options):
+                    if session.cancel.is_set():
+                        break
+                    if kind in ("thought", "text") and value:
+                        if first_token_ms is None:
+                            first_token_ms = int((time.monotonic() - started) * 1000)
+                        update = "agent_thought_chunk" if kind == "thought" else "agent_message_chunk"
+                        self._update(session.id, {"sessionUpdate": update, "content": {"type": "text", "text": value}})
+                        if kind == "text":
+                            texts.append(value)
+                    elif kind == "tool_call" and isinstance(value, dict) and value.get("name"):
+                        calls.append(value)
+                    elif kind == "native":
+                        native = value
+                    elif kind == "usage" and isinstance(value, dict):
+                        usage.update(value)
+                    elif kind == "stop" and value in STOP_REASONS:
+                        stop_reason = value
+                _add_usage(totals, usage)
+                last_round = usage or last_round
+                answer.extend(texts)
+                if session.cancel.is_set() or not calls or not options or options["tool_choice"] == "none":
                     break
-                if kind in ("thought", "text") and value:
-                    if first_token_ms is None:
-                        first_token_ms = int((time.monotonic() - started) * 1000)
-                    update = "agent_thought_chunk" if kind == "thought" else "agent_message_chunk"
-                    self._update(session.id, {"sessionUpdate": update, "content": {"type": "text", "text": value}})
-                    if kind == "text":
-                        answer.append(value)
-                elif kind == "usage" and isinstance(value, dict):
-                    usage.update(value)
-                elif kind == "stop" and value in STOP_REASONS:
-                    stop_reason = value
+                # 一轮里调了工具：记下这一轮（各家要原样带回的东西在 native 里），逐个跑工具，结果接在后面再问
+                if answer and not answer[-1].endswith("\n"):
+                    # 调工具前说的话和之后的回答之间空一行（前端按正文拼起来）
+                    self._update(session.id, {"sessionUpdate": "agent_message_chunk", "content": {"type": "text", "text": "\n\n"}})
+                    answer.append("\n\n")
+                # 一轮太多的不执行，回给模型一句话（防失控）
+                calls = calls[:MAX_TOOL_CALLS_PER_ROUND] + [
+                    {**call, "_refused": f"一轮最多调 {MAX_TOOL_CALLS_PER_ROUND} 个工具，这个没有执行；照已有的内容回答，或者下一轮再调。"}
+                    for call in calls[MAX_TOOL_CALLS_PER_ROUND:]]
+                messages.append({"role": "assistant", "content": "".join(texts),
+                                 "tool_calls": [{key: call[key] for key in ("id", "name", "arguments") if key in call} for call in calls],
+                                 "native": native})
+                for call in calls:
+                    if session.cancel.is_set():
+                        break
+                    tool_count += 0 if call.get("_refused") else 1
+                    messages.append(self._run_tool(session, call, rounds))
+            if session.cancel.is_set():
+                stop_reason = "cancelled"
         except Exception as error:  # noqa: BLE001 - 模型出错回 JSON-RPC 错误，会话照常能接着问
             session.busy = False
             if session.cancel.is_set():
@@ -171,21 +287,22 @@ class AskAgent:
             else:
                 self._error(request_id, INTERNAL_ERROR, f"{type(error).__name__}: {error}"[:1000])
             return
-        if session.cancel.is_set():
-            stop_reason = "cancelled"
+        text = "".join(answer).strip()
         session.history.extend([
             {"role": "user", "content": text_only(parts) or "（图片）"},
-            *([{"role": "assistant", "content": "".join(answer)}] if answer else []),
+            *([{"role": "assistant", "content": text}] if text else []),
         ])
         del session.history[:-MAX_HISTORY_MESSAGES]
         meta = {
             "model": self.model,
             "elapsed_ms": int((time.monotonic() - started) * 1000),
             **({"first_token_ms": first_token_ms} if first_token_ms is not None else {}),
-            **usage,
+            **totals,
+            **({"rounds": rounds, "tool_calls": tool_count, **plan_info} if self.tools is not None else {}),
         }
-        if usage:
-            used = int(usage.get("input_tokens") or 0) + int(usage.get("output_tokens") or 0)
+        if totals:
+            # used 是上下文占了多少：最后一轮的输入加输出（各轮加起来的是花了多少，在 _meta 里）
+            used = int(last_round.get("input_tokens") or 0) + int(last_round.get("output_tokens") or 0)
             self._update(session.id, {
                 "sessionUpdate": "usage_update",
                 "used": used,
@@ -195,5 +312,72 @@ class AskAgent:
         session.busy = False
         self._result(request_id, {"stopReason": stop_reason, "_meta": {"retainpdf": {"usage": meta}}})
 
+    def _run_tool(self, session: Session, call: dict[str, Any], round_number: int) -> dict[str, Any]:
+        """跑一个工具，前后各发一条 ACP 更新（`tool_call` 进行中 → `tool_call_update` 完成 / 失败），返回给模型的 tool 消息。
+        工具在旁边的线程里跑，叫停时不等它（后端慢的时候取消也立刻生效）。"""
+        assert self.tools is not None
+        call_id = str(call.get("id") or f"call-{uuid.uuid4().hex[:12]}")
+        name = str(call.get("name") or "")
+        arguments = call.get("arguments")
+        if isinstance(arguments, str):
+            try:
+                arguments = json.loads(arguments or "{}")
+            except ValueError:
+                arguments = None
+        if not isinstance(arguments, dict):
+            title, kind = name, "other"
+            result = ToolResult(text="参数不是一个 JSON 对象，没有执行。按工具说明重新给参数。", is_error=True, summary="参数不对")
+        else:
+            title, kind = self.tools.describe(name, arguments)
+            result = None
+        self._update(session.id, {"sessionUpdate": "tool_call", "toolCallId": call_id, "title": title, "kind": kind,
+                                  "status": "in_progress", "rawInput": arguments if isinstance(arguments, dict) else {}})
+        if result is None and call.get("_refused"):
+            result = ToolResult(text=str(call["_refused"]), is_error=True, summary="没有执行：这一轮调的工具太多")
+        if result is None:
+            result = self._call_tool(session, name, arguments)
+        if result is None:  # 叫停了
+            self._update(session.id, {"sessionUpdate": "tool_call_update", "toolCallId": call_id, "status": "failed",
+                                      "content": [_text_content("取消了")]})
+            result = ToolResult(text="用户取消了。", is_error=True)
+        else:
+            self._update(session.id, {"sessionUpdate": "tool_call_update", "toolCallId": call_id,
+                                      "status": "failed" if result.is_error else "completed",
+                                      "content": [_text_content(result.summary or result.text[:200])],
+                                      "_meta": {"retainpdf": {"round": round_number}}})
+        return {"role": "tool", "tool_call_id": call_id, "name": name, "content": result.text,
+                "images": [{"mime_type": mime, "data": data} for mime, data in result.images], "is_error": result.is_error}
 
-__all__ = ["AskAgent", "PROTOCOL_VERSION", "Session", "StreamFn"]
+    def _call_tool(self, session: Session, name: str, arguments: dict[str, Any]) -> ToolResult | None:
+        assert self.tools is not None
+        box: list[ToolResult] = []
+
+        def work() -> None:
+            try:
+                box.append(self.tools.run(name, arguments))
+            except Exception as error:  # noqa: BLE001 - 工具出错回给模型，不当 JSON-RPC 错误
+                box.append(ToolResult(text=f"工具出错：{type(error).__name__}: {error}"[:1000], is_error=True, summary="工具出错"))
+
+        worker = threading.Thread(target=work, daemon=True)
+        worker.start()
+        while worker.is_alive():
+            worker.join(timeout=0.1)
+            if session.cancel.is_set():
+                return None
+        return box[0] if box else ToolResult(text="工具没有结果", is_error=True)
+
+
+def _text_content(text: str) -> dict[str, Any]:
+    return {"type": "content", "content": {"type": "text", "text": text}}
+
+
+def _add_usage(totals: dict[str, Any], usage: dict[str, Any]) -> None:
+    """各轮的 token 加起来（数字的加，别的取最后一次）。"""
+    for key, value in usage.items():
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            totals[key] = totals.get(key, 0) + value
+        else:
+            totals[key] = value
+
+
+__all__ = ["AskAgent", "MAX_TOOL_ROUNDS", "PROTOCOL_VERSION", "Session", "StreamFn", "Tools"]

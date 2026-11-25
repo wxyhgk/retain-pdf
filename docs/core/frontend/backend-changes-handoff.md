@@ -12,6 +12,30 @@
 
 ---
 
+## 阅读页提问：自带 agent 自己读书（feat/ask-agent-tools）
+
+2026-11-25，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「自带 agent 读书」，方案
+[自带 agent 读书](../../ops/planning/reader-ask/20261125-自带agent读书.md)。不改前端，自带 agent 和以前一样只靠出处那段字回答。
+
+前端要改的（`frontend/web/src/features/reader/domain/ask-port.ts` 连 agent 的那段）：
+
+| | 旧写法 | 新写法 |
+|---|---|---|
+| 连自带 agent | `WS /api/v1/ai/agents/retainpdf/acp?api_key=…&model=…&base_url=…&api_protocol=…&thinking=…&credential_ref=…` | 再加 `&job_id=<阅读页的任务编号>`（打开阅读页用的那个，合并阅读的 `merged-…` 照传；要 URL 编码）。本机 agent 不用传 |
+
+- 握手新的错误（升级前，HTTP）：`job_id` 字符不对 `400`，没有这个任务 `404`，多用户下不是自己的 `403`。
+- 连上以后多了 ACP 的工具卡片：代码先把附近的材料给了模型，问这段字本身一般不调工具；问到书里别处（「书里别处怎么用这个词」
+  「第 30 页讲什么」「全书讲什么」）时 agent 会读页、搜书。每个工具一条
+  `tool_call`（`title` 如「读第 5、6 页」「在书里找「Hamiltonian」」，`kind` 是 `read` / `search` / `fetch`，`status: in_progress`）
+  和一条 `tool_call_update`（`completed` / `failed`，`content` 是一句摘要）。按 ACP 画就行，不用许可（不发 `session/request_permission`）。
+- `usage_update` 的 `_meta.retainpdf.usage` 多了 `rounds`、`tool_calls`、`context`（代码自动取了哪些页、几块），
+  token 是各轮加起来的；问答记录里照旧原样存。
+- 可选（以后）：`session/prompt` 的参数里给 `_meta: {retainpdf: {anchor: {page, item_id, selection, source_text, translated_text}}}`
+  （问答记录的锚点写法）。不给时 agent 从 `anchorPromptBlocks` 写的出处里认（最后一行「（RetainPDF 任务 …，块 …，第 … 页）」和
+  「我选中的这段：」「这一块的原文：」「这一块的译文：」），所以**改那段出处的写法前先告诉后端**，或者先改成给 `_meta`。
+
+---
+
 ## 阅读页提问：问答记录存后端（feat/ask-records）
 
 2026-11-25，新接口，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「问答记录」、契约 `ask-threads.v1`

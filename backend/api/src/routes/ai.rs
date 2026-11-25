@@ -11,10 +11,10 @@ use tokio::sync::mpsc;
 
 use crate::error::AppError;
 use crate::models::api::ApiResponse;
-use crate::routes::common::{build_acp_config, websocket_origin_allowed, ApiPath, ApiQuery};
+use crate::routes::common::{build_acp_config, run_job_query, websocket_origin_allowed, ApiPath, ApiQuery};
 use crate::services::providers::{
-    agents_view, prepare_agent, run_bridge, AcpConnectQuery, AgentProcess, AgentsView, BridgeOut,
-    SessionDefaults,
+    agents_view, ask_job_id, prepare_agent, run_bridge, AcpConnectQuery, AgentProcess, AgentsView, AskBook,
+    BridgeOut, SessionDefaults, BUILTIN_AGENT_ID,
 };
 use crate::AppState;
 
@@ -42,8 +42,21 @@ pub async fn acp_socket(
         return Err(AppError::forbidden("origin is not allowed"));
     }
     let config = build_acp_config(&state);
-    let (process, defaults) = prepare_agent(&config, &agent_id, &headers, &query)?;
-    tracing::info!(agent = %agent_id, program = %process.program.display(), "acp bridge: connecting");
+    // 自带 agent 读哪本书：`?job_id=`（阅读页的任务，合并阅读的虚拟任务也行）。没有这个任务 404；多用户下归属由
+    // enforce_access 按查询串里的 job_id 核过了。本机 agent 不看它。
+    let book = match ask_job_id(&query)? {
+        Some(job_id) if agent_id == BUILTIN_AGENT_ID => {
+            let lookup = job_id.clone();
+            let document_id = run_job_query(&state, format!("ask-book:{job_id}"), move |jobs| {
+                jobs.ask_book_document_id(&lookup)
+            })
+            .await?;
+            Some(AskBook { job_id, document_id })
+        }
+        _ => None,
+    };
+    let (process, defaults) = prepare_agent(&config, &agent_id, &headers, &query, book.as_ref())?;
+    tracing::info!(agent = %agent_id, program = %process.program.display(), book = book.is_some(), "acp bridge: connecting");
     Ok(upgrade
         .max_message_size(MAX_MESSAGE_BYTES)
         .max_frame_size(MAX_MESSAGE_BYTES)

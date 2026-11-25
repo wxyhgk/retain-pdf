@@ -1,4 +1,4 @@
-"""核心只用标准库（入口 __main__.py 例外：它是接线的入口）；系统提示词钉住，改了要看一眼。"""
+"""核心只用标准库（入口 __main__.py 例外：它是接线的入口）；系统提示词（含读书工具那段）钉住，改了要看一眼。"""
 from __future__ import annotations
 
 import ast
@@ -10,7 +10,11 @@ from pathlib import Path
 import retainpdf_ask_agent
 
 CORE = Path(retainpdf_ask_agent.__file__).resolve().parent
-PROMPT_SHA256 = "fc97332342d2791d46bc08955ed5da2087db6ad8fc2c97beb3e597abeb1613ad"
+# 2026-11-25 读书：「会附上位置」改成「通常会附上」、自动取的前后文怎么用；另加有书时的工具那段（材料先看，答案明显在别处才调工具）
+PROMPT_SHA256 = {
+    "ask_system.txt": "961be3f06315c4e46375fd73fba7f055d9c51ecc417963ef1a37c7159a1fb106",
+    "ask_tools.txt": "e66979f566404debd434b38629b4884d957391e38fd2d7eec422b40300e705b0",
+}
 
 
 def test_core_imports_only_the_standard_library() -> None:
@@ -30,6 +34,7 @@ def test_core_imports_only_the_standard_library() -> None:
     assert offenders == []
 
 
-def test_system_prompt_is_pinned() -> None:
-    raw = resources.files("retainpdf_ask_agent.prompts").joinpath("ask_system.txt").read_bytes()
-    assert hashlib.sha256(raw).hexdigest() == PROMPT_SHA256
+def test_system_prompts_are_pinned() -> None:
+    for name, digest in PROMPT_SHA256.items():
+        raw = resources.files("retainpdf_ask_agent.prompts").joinpath(name).read_bytes()
+        assert hashlib.sha256(raw).hexdigest() == digest, name

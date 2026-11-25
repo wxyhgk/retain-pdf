@@ -11,11 +11,15 @@ RetainPDF 阅读页提问的自带 agent：在 stdio 上说 [ACP](https://agentc
   输入 / 输出 / 缓存命中 / 思考 token、模型、用时、首字用时放在 `_meta.retainpdf.usage`，`session/prompt` 的结果里也有一份。
 - 一个会话的前几轮（最多 20 条消息，只留文字）带进下一问；Anthropic 在上一轮回答上打缓存断点，OpenAI 兼容的服务商自动前缀缓存。
 - 出错回 JSON-RPC 错误（-32603，服务商的状态码和一句说明），会话照常能接着问；被取消的回 `stopReason: cancelled`。
+- 读书（2026-11-25，握手带了 `job_id`，桥另给 `RETAIN_ASK_JOB_ID`、`RETAIN_ASK_DOCUMENT_ID`、`RETAIN_ASK_BACKEND_URL`、`RETAIN_ASK_BACKEND_KEY`）：
+  经后端的 `reader/regions` 和页图接口读书（`tools.py`，只用标准库）。代码先把材料放进这一问（带字的补所在的节、同页前后各一块；
+  不带字的取那一页，没有文字层附页图；系统提示词加目录），工具（`read_pages` / `search_book` / `view_page`）一直给，用不用由模型按提示词定，
+  只有防失控的上限（4 轮）。方案见 [自带 agent 读书](../../docs/ops/planning/reader-ask/20261125-自带agent读书.md)。
 
 包里两个 Python 包：
 
 - `retainpdf_ask_agent`：核心（ACP 服务端、内容块转换、系统提示词），**只用标准库**；模型的流式调用由调用方传进来
-  （`AskAgent(stream_fn)`，`stream_fn(messages, cancel)` 产出 `("thought" | "text", 文字)`、`("usage", dict)`、`("stop", 原因)`）。
+  （`AskAgent(stream_fn, tools=…)`，`stream_fn(messages, cancel, **options)` 产出 `("thought" | "text", 文字)`、`("usage", dict)`、`("stop", 原因)`，给了工具时还有 `("tool_call", …)`、`("native", …)`）；工具循环也在核心里。
   入口 `__main__.py` 例外（它是接线的入口）。
 - `retainpdf_ask_agent_engine`：三种协议（OpenAI Chat、Responses、Anthropic Messages）的流式请求，请求体用翻译底座的 `model_wire`。
 

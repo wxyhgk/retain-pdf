@@ -106,7 +106,7 @@ GET    /api/v1/jobs/:job_id/progress/pages/:page  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/progress/stream  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reader/markdown  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reader/metadata  signed  jobs  by web
-GET    /api/v1/jobs/:job_id/reader/regions  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reader/regions  signed  jobs  by web,agent
 GET    /api/v1/jobs/:job_id/reports/failure  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reports/quality  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reports/translation  signed  jobs  by web

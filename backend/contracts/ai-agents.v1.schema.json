@@ -19,7 +19,7 @@
       "path": "/api/v1/ai/agents/:agent_id/acp",
       "transport": "websocket",
       "rust_view": "routes/ai.rs :: acp_socket",
-      "note": "浏览器用 ?api_key= 认证（只对 WebSocket 握手有效）；来源照 CORS 那套查。自带 agent（retainpdf）要带模型配置：model、base_url、api_protocol（openai / openai_responses / anthropic）、thinking、credential_ref（不收明文 key）。握手前就不行的回 HTTP 错误：没有这个 agent 404、本机 agent 没开或没过闸门 403、模型配置或凭据不对 400。连上以后 agent 退出时关闭码 1011，原因写退出码和 stderr 最后一行。"
+      "note": "浏览器用 ?api_key= 认证（只对 WebSocket 握手有效）；来源照 CORS 那套查。自带 agent（retainpdf）要带模型配置：model、base_url、api_protocol（openai / openai_responses / anthropic）、thinking、credential_ref（不收明文 key）；再带 job_id（阅读页的任务，合并阅读的虚拟任务也行）就能自己从后端读这本书（2026-11-25），字符不对 400、没有这个任务 404。握手前就不行的回 HTTP 错误：没有这个 agent 或 job_id 的任务 404、本机 agent 没开或没过闸门 403、模型配置或凭据不对 400。连上以后 agent 退出时关闭码 1011，原因写退出码和 stderr 最后一行。"
     }
   ],
   "definitions": {
