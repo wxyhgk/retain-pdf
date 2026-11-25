@@ -41,6 +41,7 @@ def test_probe_environment_does_not_inherit_service_configuration(monkeypatch, t
     assert paths[0] == str(PIPELINE)
     assert all(Path(path).parent == PIPELINE.parent for path in paths), paths
     assert any(Path(path).name == "table-agent" for path in paths), paths
+    assert any(Path(path).name == "toc-agent" for path in paths), paths
     assert env["RETAIN_TRANSLATION_TRANSPORT"] == "rust"
 
 

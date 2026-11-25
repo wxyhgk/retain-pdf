@@ -61,7 +61,7 @@ load_env() {
   export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
   # 默认 SDK 链接不了 C 程序（arm64e.x1），得指到这个。
   export SDKROOT="${SDKROOT:-/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk}"
-  export PYTHONPATH="$REPO/backend/base:$REPO/backend/math:$REPO/backend/pipeline:$REPO/backend/translation:$REPO/backend/translation-agent:$REPO/backend/translation-classic:$REPO/backend/table-agent"
+  export PYTHONPATH="$REPO/backend/base:$REPO/backend/math:$REPO/backend/pipeline:$REPO/backend/translation:$REPO/backend/translation-agent:$REPO/backend/translation-classic:$REPO/backend/table-agent:$REPO/backend/toc-agent"
 }
 
 port_pids() {

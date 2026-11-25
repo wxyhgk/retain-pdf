@@ -12,6 +12,17 @@
 
 ---
 
+## 目录 agent：建任务的 `translation.toc`（feat/toc-agent）
+
+2026-11-25，只增不改，**前端不用改**，见 [翻译参数](../../api/04-翻译/01-翻译参数.md) 的「目录翻译（`toc`）」：
+
+- 契约 `create-job.v1` / `library-documents.v1` 的 `TranslationInput`、`job-status.v1` 的 `PublicTranslationInput` 多一个可选字段
+  `toc`（`agent` 默认 / `translate`），`@retainpdf/contracts` 的 src、dist 已重新生成，`CREATE_JOB_SECTION_FIELDS.translation` 多了 `toc`。
+- 不提交就是 `agent`：目录 agent 和普通翻译同步跑，目录条目和正文同名标题用同一个译名。不用放进界面；以后要给用户关掉的开关，提交 `translate`。
+- 任务详情的请求参数回显 `translation.toc`（老任务回显 `agent`）。
+
+---
+
 ## 防重复提交：续跑查重、`Idempotency-Key` 请求头（feat/job-idempotency）
 
 2026-11-24，只增不改，见 [防重复提交](../../api/00-约定/06-防重复提交.md) 和

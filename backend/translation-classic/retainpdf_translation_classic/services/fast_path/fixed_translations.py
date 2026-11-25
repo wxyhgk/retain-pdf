@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 
 from retainpdf_translation.core.execution_policy import is_isolated_single_unit
+from retainpdf_translation.core.execution_policy import item_fixed_translation
 from retainpdf_translation.core.item_reader import item_source_text
 
 FIXED_TRANSLATION_REASON = "fixed_connective_translation"
@@ -44,6 +45,10 @@ def fixed_translation_for(item: dict) -> str | None:
         return None
     if str(item.get("mixed_literal_action", "") or ""):
         return None
+    # 翻译开头定好的译文（目录 agent 给目录条目和对上的正文标题，底座 workflow/fixed_translations.py）
+    preset = item_fixed_translation(item)
+    if preset:
+        return preset
     match = _WHOLE_BLOCK_RE.fullmatch(item_source_text(item).strip())
     if match is None:
         return None

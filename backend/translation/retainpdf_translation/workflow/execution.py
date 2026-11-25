@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from dataclasses import replace
 from pathlib import Path
 import sys
-from typing import Any
+from typing import Any, Callable
 
 from retainpdf_translation.llm.shared.control_context import normalize_preparation_mode
 from retainpdf_translation.llm.shared.provider_runtime import DEFAULT_BASE_URL
@@ -57,6 +57,10 @@ class TranslationExecutionRequest:
     # OCR 流式公布的目录（任务的 ocr/，见 retainpdf_base.ocr_stream）。给了就跟着 OCR 翻（workflow/streaming_flow.py），
     # 不用等 OCR 做完；source_json_path 是 OCR 最后写的整份文档，这时可能还不存在。
     ocr_stream_dir: Path | None = None
+    # 定好的译文（2026-11-25，目录 agent）：拿整份文档、返回 {块号: 译文}。建计划时和领域识别一起在另一个线程里跑，
+    # 引擎开始翻之前等它；给了定译的块不再发请求（两个引擎都认，见 ``fixed_translations.apply_fixed_translations``）。
+    # 它失败只打日志，照常翻。底座不认识目录 agent，由流水线传进来。
+    fixed_translations_fn: Callable[[dict], dict[str, str]] | None = None
 
 
 TRANSLATION_ENGINES = ("legacy", "agent")

@@ -61,3 +61,37 @@ def test_toc_entries_are_translated_one_by_one():
 def test_toc_entries_follow_the_provider_policy():
     document = _split_document(translate=False)
     assert extract_text_items(document, 0) == []
+
+
+def test_toc_switch_defaults_to_the_toc_agent(tmp_path):
+    # translation.toc：agent（默认，2026-11-25 用户定；旧 spec 没有这个键也按 agent）/ translate（目录条目交给普通翻译）
+    from retainpdf_pipeline.foundation.shared.stage_specs import _preparation_and_reviewer_fields
+    from retainpdf_pipeline.translate.toc_stage import normalize_toc_mode
+    from retainpdf_pipeline.translate.toc_stage import toc_fixed_translations_fn
+
+    assert _preparation_and_reviewer_fields({})["toc"] == "agent"
+    assert _preparation_and_reviewer_fields({"toc": " Translate "})["toc"] == "translate"
+    assert normalize_toc_mode("whatever") == "agent"
+    assert toc_fixed_translations_fn(mode="translate", output_dir=tmp_path, api_key="k", model="m", base_url="u") is None
+    assert toc_fixed_translations_fn(mode="agent", output_dir=tmp_path, api_key="k", model="m", base_url="u") is not None
+
+
+def test_toc_agent_mode_gives_the_translation_request_a_fixed_translation_function(tmp_path):
+    import json as _json
+
+    from retainpdf_toc_agent import ChatResult
+    from retainpdf_pipeline.translate.toc_stage import toc_fixed_translations_fn
+
+    def chat(messages, *, purpose, response_format=None):
+        titles = [row["title"] for row in _json.loads(messages[1]["content"])["entries"]]
+        return ChatResult(_json.dumps({"translations": [{"k": i, "zh": "分析受众"} for i, _ in enumerate(titles)]}, ensure_ascii=False))
+
+    fn = toc_fixed_translations_fn(mode="agent", output_dir=tmp_path, api_key="k", model="m", base_url="u", chat_fn=chat)
+    document = {"pages": [{"blocks": [
+        {"block_id": "p001-b0000", "structure_role": "toc_entry", "content": {"text": "1 Analyzing the Audience"},
+         "policy": {"translate": True}, "metadata": {"toc_entry_number": "1", "toc_entry_level": 1}},
+        {"block_id": "p002-b0000", "structure_role": "heading", "content": {"text": "Analyzing the Audience"},
+         "policy": {"translate": True}, "metadata": {}},
+    ]}]}
+    assert fn(document) == {"p001-b0000": "1 分析受众", "p002-b0000": "分析受众"}
+    assert (tmp_path / "toc-agent.v1.json").exists()

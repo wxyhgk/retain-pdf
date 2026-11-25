@@ -45,6 +45,7 @@ from retainpdf_base.upstream_wait import end_upstream_wait
 from retainpdf_base.upstream_wait import vendor_for_base_url
 from retainpdf_translation.artifacts import TranslationRunDiagnostics
 from retainpdf_translation_agent_engine.identity import agent_engine_identity
+from retainpdf_translation.core.execution_policy import item_fixed_translation
 from retainpdf_translation.core.item_reader import item_normalized_sub_type
 from retainpdf_translation.core.payload import load_translations
 from retainpdf_translation.core.payload.parts.apply import apply_revised_member_text
@@ -426,6 +427,8 @@ def build_agent_pages(
                 group=group,
                 attributes=attributes,
                 formula_before=formula_before.get(item_id, ""),
+                # 翻译开头定好的译文（目录 agent，底座 workflow/fixed_translations.py）：组里的块不给，agent 照旧整段翻
+                fixed_translation=(item_fixed_translation(item) or None) if group is None else None,
             )
             blocks_by_page[home_page.get(item_id, page_idx)].append(block)
 

@@ -9,6 +9,7 @@ from retainpdf_translation.public import TranslationExecutionRequest
 from retainpdf_translation.public import execute_translation_request
 
 from retainpdf_pipeline.translate.tables_stage import translate_tables
+from retainpdf_pipeline.translate.toc_stage import toc_fixed_translations_fn
 
 
 def translate_book_pipeline(
@@ -46,6 +47,7 @@ def translate_book_pipeline(
     engine: str = "legacy",
     ocr_stream_dir: Path | None = None,
     tables: str = "keep",
+    toc: str = "agent",
 ) -> dict:
     result = execute_translation_request(
         TranslationExecutionRequest(
@@ -81,6 +83,16 @@ def translate_book_pipeline(
             reviewer_api_key=reviewer_api_key,
             engine=engine,
             ocr_stream_dir=ocr_stream_dir,
+            # 目录 agent 和普通翻译同步跑（translate/toc_stage.py，默认 agent）；translate 时为 None，和以前一样
+            fixed_translations_fn=toc_fixed_translations_fn(
+                mode=toc,
+                output_dir=output_dir,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                glossary_entries=glossary_entries,
+                skip_titles=skip_title_translation,
+            ),
         )
     )
     if tables == "translate":

@@ -71,6 +71,7 @@ def run_book_pipeline(
     reviewer_api_key: str = "",
     engine: str = "legacy",
     tables: str = "keep",
+    toc: str = "agent",
 ) -> dict:
     total_started = time.perf_counter()
     translation_summary = translate_book_pipeline(
@@ -106,6 +107,7 @@ def run_book_pipeline(
         reviewer_api_key=reviewer_api_key,
         engine=engine,
         tables=tables,
+        toc=toc,
     )
     translate_elapsed = time.perf_counter() - total_started
     diagnostics_path = output_dir.parent / ARTIFACTS_DIR_NAME / "translation_diagnostics.json"

@@ -467,6 +467,10 @@
           "type": "string",
           "description": "TRANSLATION_TABLE_MODES：keep（表格保留原文）/ translate（表格 agent 翻表格）。"
         },
+        "toc": {
+          "type": "string",
+          "description": "TRANSLATION_TOC_MODES：agent（目录 agent，默认）/ translate（目录条目交给普通翻译）。"
+        },
         "start_page": {
           "type": "integer"
         },

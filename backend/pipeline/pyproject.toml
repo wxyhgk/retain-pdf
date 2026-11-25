@@ -29,6 +29,8 @@ dependencies = [
   "retainpdf-translation-agent[engine]",
   # 表格 agent（2026-11-25 从普通翻译包拆出来）：表格翻译阶段直接用，接线在 engine extra
   "retainpdf-table-agent[engine]",
+  # 目录 agent（2026-11-25）：和普通翻译同步跑，给目录条目和对上的正文标题定译（translate/toc_stage.py），接线在 engine extra
+  "retainpdf-toc-agent[engine]",
   "urllib3==2.5.0",
 ]
 
@@ -49,6 +51,7 @@ retainpdf-translation = { workspace = true }
 retainpdf-translation-classic = { workspace = true }
 retainpdf-translation-agent = { workspace = true }
 retainpdf-table-agent = { workspace = true }
+retainpdf-toc-agent = { workspace = true }
 
 [tool.setuptools.packages.find]
 where = ["."]

@@ -8,6 +8,7 @@ dependencies = [
   "retainpdf-math",
   "retainpdf-pipeline",
   "retainpdf-table-agent",
+  "retainpdf-toc-agent",
   "retainpdf-translation",
   "retainpdf-translation-agent",
   "retainpdf-translation-classic",
@@ -19,6 +20,7 @@ test = [
   "retainpdf-math[test]",
   "retainpdf-pipeline[test]",
   "retainpdf-table-agent[test]",
+  "retainpdf-toc-agent[test]",
   "retainpdf-translation[test]",
   "retainpdf-translation-agent[test]",
   "retainpdf-translation-classic[test]",
@@ -29,6 +31,7 @@ retainpdf-base = { workspace = true }
 retainpdf-math = { workspace = true }
 retainpdf-pipeline = { workspace = true }
 retainpdf-table-agent = { workspace = true }
+retainpdf-toc-agent = { workspace = true }
 retainpdf-translation = { workspace = true }
 retainpdf-translation-agent = { workspace = true }
 retainpdf-translation-classic = { workspace = true }
@@ -39,6 +42,7 @@ members = [
   "math",
   "pipeline",
   "table-agent",
+  "toc-agent",
   "translation",
   "translation-agent",
   "translation-classic",

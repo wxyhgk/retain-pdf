@@ -148,6 +148,9 @@ _TRANSLATION_METADATA_BRIDGE_KEYS = {
     "provider_column_layout_mode",
     "column_index_guess",
     "provider_column_index_guess",
+    # 翻译那份的副本：定好的译文（目录 agent，2026-11-25）
+    "fixed_translation",
+    "fixed_translation_source",
 }
 
 

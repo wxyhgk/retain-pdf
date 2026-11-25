@@ -9,6 +9,7 @@ members = [
     "retainpdf-math",
     "retainpdf-pipeline",
     "retainpdf-table-agent",
+    "retainpdf-toc-agent",
     "retainpdf-translation",
     "retainpdf-translation-agent",
     "retainpdf-translation-classic",
@@ -262,6 +263,7 @@ dependencies = [
     { name = "retainpdf-math" },
     { name = "retainpdf-pipeline" },
     { name = "retainpdf-table-agent" },
+    { name = "retainpdf-toc-agent" },
     { name = "retainpdf-translation" },
     { name = "retainpdf-translation-agent" },
     { name = "retainpdf-translation-classic" },
@@ -273,6 +275,7 @@ test = [
     { name = "retainpdf-math", extra = ["test"] },
     { name = "retainpdf-pipeline", extra = ["test"] },
     { name = "retainpdf-table-agent", extra = ["test"] },
+    { name = "retainpdf-toc-agent", extra = ["test"] },
     { name = "retainpdf-translation", extra = ["test"] },
     { name = "retainpdf-translation-agent", extra = ["test"] },
     { name = "retainpdf-translation-classic", extra = ["test"] },
@@ -288,6 +291,8 @@ requires-dist = [
     { name = "retainpdf-pipeline", extras = ["test"], marker = "extra == 'test'", editable = "pipeline" },
     { name = "retainpdf-table-agent", editable = "table-agent" },
     { name = "retainpdf-table-agent", extras = ["test"], marker = "extra == 'test'", editable = "table-agent" },
+    { name = "retainpdf-toc-agent", editable = "toc-agent" },
+    { name = "retainpdf-toc-agent", extras = ["test"], marker = "extra == 'test'", editable = "toc-agent" },
     { name = "retainpdf-translation", editable = "translation" },
     { name = "retainpdf-translation", extras = ["test"], marker = "extra == 'test'", editable = "translation" },
     { name = "retainpdf-translation-agent", editable = "translation-agent" },
@@ -337,6 +342,7 @@ dependencies = [
     { name = "retainpdf-base" },
     { name = "retainpdf-math" },
     { name = "retainpdf-table-agent", extra = ["engine"] },
+    { name = "retainpdf-toc-agent", extra = ["engine"] },
     { name = "retainpdf-translation" },
     { name = "retainpdf-translation-agent", extra = ["engine"] },
     { name = "retainpdf-translation-classic" },
@@ -360,6 +366,7 @@ requires-dist = [
     { name = "retainpdf-base", editable = "base" },
     { name = "retainpdf-math", editable = "math" },
     { name = "retainpdf-table-agent", extras = ["engine"], editable = "table-agent" },
+    { name = "retainpdf-toc-agent", extras = ["engine"], editable = "toc-agent" },
     { name = "retainpdf-translation", editable = "translation" },
     { name = "retainpdf-translation-agent", extras = ["engine"], editable = "translation-agent" },
     { name = "retainpdf-translation-classic", editable = "translation-classic" },
@@ -371,6 +378,26 @@ provides-extras = ["test"]
 name = "retainpdf-table-agent"
 version = "4.2.6"
 source = { editable = "table-agent" }
+
+[package.optional-dependencies]
+engine = [
+    { name = "retainpdf-translation" },
+]
+test = [
+    { name = "pytest" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pytest", marker = "extra == 'test'", specifier = "==9.0.3" },
+    { name = "retainpdf-translation", marker = "extra == 'engine'", editable = "translation" },
+]
+provides-extras = ["engine", "test"]
+
+[[package]]
+name = "retainpdf-toc-agent"
+version = "4.2.6"
+source = { editable = "toc-agent" }
 
 [package.optional-dependencies]
 engine = [

@@ -11,6 +11,7 @@
     "retainpdf_math",
     "retainpdf_table_agent",
     "retainpdf_table_agent_engine",
+    "retainpdf_toc_agent_engine",
     "retainpdf_translation",
     "retainpdf_translation_agent",
     "retainpdf_translation_classic",
@@ -19,6 +20,7 @@
   "test_only_python_packages": [
     "docx",
     "pytest",
+    "retainpdf_toc_agent",
     "retainpdf_translation_agent_engine"
   ],
   "external_commands": {
@@ -880,6 +882,28 @@
       "devtool_required": true
     },
     {
+      "import_name": "retainpdf_toc_agent",
+      "package_name": "retainpdf_toc_agent",
+      "runtime_files": [],
+      "devtool_files": [],
+      "test_files": [
+        "devtools/tests/translation/test_translation_toc_entries.py"
+      ],
+      "runtime_required": false,
+      "devtool_required": false
+    },
+    {
+      "import_name": "retainpdf_toc_agent_engine",
+      "package_name": "retainpdf_toc_agent_engine",
+      "runtime_files": [
+        "retainpdf_pipeline/translate/toc_stage.py"
+      ],
+      "devtool_files": [],
+      "test_files": [],
+      "runtime_required": true,
+      "devtool_required": false
+    },
+    {
       "import_name": "retainpdf_translation",
       "package_name": "retainpdf_translation",
       "runtime_files": [
@@ -948,6 +972,7 @@
         "devtools/tests/translation/test_executor_context.py",
         "devtools/tests/translation/test_final_status_funnel.py",
         "devtools/tests/translation/test_final_untranslated_recovery.py",
+        "devtools/tests/translation/test_fixed_translations.py",
         "devtools/tests/translation/test_formula_protection.py",
         "devtools/tests/translation/test_formula_window_fallbacks.py",
         "devtools/tests/translation/test_garbled_reconstruction_apply.py",
@@ -1102,6 +1127,7 @@
       "test_files": [
         "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_agent_openai.py",
+        "devtools/tests/translation/test_fixed_translations.py",
         "devtools/tests/translation/test_output_limits.py",
         "devtools/tests/translation/test_strict_json_schemas.py",
         "devtools/tests/translation/test_translation_quota_codes.py",
@@ -1138,6 +1164,7 @@
         "devtools/tests/translation/test_direct_typst_protocol_shell.py",
         "devtools/tests/translation/test_execution_boundaries.py",
         "devtools/tests/translation/test_final_untranslated_recovery.py",
+        "devtools/tests/translation/test_fixed_translations.py",
         "devtools/tests/translation/test_formula_segment_routing.py",
         "devtools/tests/translation/test_formula_window_fallbacks.py",
         "devtools/tests/translation/test_garbled_reconstruction_apply.py",

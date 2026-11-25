@@ -103,6 +103,7 @@ export const CREATE_JOB_SECTION_FIELDS = {
         "start_page",
         "tables",
         "thinking",
+        "toc",
         "workers",
     ],
 };

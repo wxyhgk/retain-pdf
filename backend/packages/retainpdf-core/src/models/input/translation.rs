@@ -40,6 +40,10 @@ pub const TRANSLATION_ENGINES: &[&str] = &["legacy", "agent"];
 /// `keep`：表格照旧保留原文（默认，行为和没有这个字段时一样）；`translate`：正文翻完后由表格 agent 逐张翻，
 /// 结果写 `translated/tables.v1.json`。
 pub const TRANSLATION_TABLE_MODES: &[&str] = &["keep", "translate"];
+/// 目录翻译开关（2026-11-25）。权威来源是 Python 的 `retainpdf_pipeline/translate/toc_stage.py` 的 `TOC_MODES`。
+/// `agent`（默认）：目录 agent 和普通翻译同步跑，整本目录一次翻完、译名对到正文标题，作为定译交给引擎；
+/// `translate`：目录条目和别的块一样交给普通翻译。
+pub const TRANSLATION_TOC_MODES: &[&str] = &["translate", "agent"];
 /// 精修的成本上限默认值（0 = 不限）。Python 侧读 render.spec.json 的 `params.refine`。
 ///
 /// 默认审全书、不设上限：选了「精翻」就该整本精修，只审开头几百块等于没说清楚就打了折。
@@ -189,6 +193,9 @@ pub struct TranslationInput {
     /// 表格翻译，见 [`TRANSLATION_TABLE_MODES`]。
     #[serde(default = "default_translation_tables_mode")]
     pub tables: String,
+    /// 目录翻译，见 [`TRANSLATION_TOC_MODES`]。
+    #[serde(default = "default_translation_toc_mode")]
+    pub toc: String,
     #[serde(default)]
     pub start_page: i64,
     #[serde(default = "default_end_page")]
@@ -243,6 +250,7 @@ impl Default for TranslationInput {
             reviewer_thinking: String::new(),
             engine: default_translation_engine(),
             tables: default_translation_tables_mode(),
+            toc: default_translation_toc_mode(),
             start_page: 0,
             end_page: default_end_page(),
             page_ranges: Vec::new(),
@@ -255,6 +263,10 @@ impl Default for TranslationInput {
 
 pub fn default_translation_tables_mode() -> String {
     "keep".to_string()
+}
+
+pub fn default_translation_toc_mode() -> String {
+    "agent".to_string()
 }
 
 pub fn default_translation_context_mode() -> String {
@@ -412,6 +424,24 @@ mod allowed_value_tests {
         assert_eq!(rust_set(TRANSLATION_TABLE_MODES), python);
     }
 
+    const TOC_STAGE_PY: &str =
+        include_str!("../../../../../pipeline/retainpdf_pipeline/translate/toc_stage.py");
+
+    #[test]
+    fn toc_modes_match_python_toc_stage() {
+        let start = TOC_STAGE_PY
+            .find("\nTOC_MODES = (")
+            .expect("toc_stage.py 里找不到 TOC_MODES = (...) —— 写法变了");
+        let body = &TOC_STAGE_PY[start + "\nTOC_MODES = (".len()..];
+        let python: BTreeSet<String> = body[..body.find(')').expect("元组没闭合")]
+            .split(',')
+            .map(|item| item.trim().trim_matches('"').to_string())
+            .filter(|item| !item.is_empty())
+            .collect();
+        assert_eq!(rust_set(TRANSLATION_TOC_MODES), python);
+        assert!(TOC_STAGE_PY.contains(&format!("DEFAULT_TOC_MODE = \"{}\"", default_translation_toc_mode())));
+    }
+
     /// 每个字段的默认值必须在自己的允许值里,否则「什么都不填」会被自己的校验拒掉。
     #[test]
     fn every_default_is_an_allowed_value() {
@@ -431,6 +461,7 @@ mod allowed_value_tests {
             (&input.thinking, TRANSLATION_THINKING_LEVELS, "thinking"),
             (&input.engine, TRANSLATION_ENGINES, "engine"),
             (&input.tables, TRANSLATION_TABLE_MODES, "tables"),
+            (&input.toc, TRANSLATION_TOC_MODES, "toc"),
         ] {
             assert!(
                 allowed.contains(&value.as_str()),

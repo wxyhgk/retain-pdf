@@ -29,6 +29,7 @@ REQUIRED_FILES = (
     "backend/translation-agent/pyproject.toml",
     "backend/translation-classic/pyproject.toml",
     "backend/table-agent/pyproject.toml",
+    "backend/toc-agent/pyproject.toml",
     "backend/config/ocr_providers.json",
     "ops/deployment/docker/backend/Dockerfile.app",
     "resources/fonts/LICENSE-OFL-1.1.txt",

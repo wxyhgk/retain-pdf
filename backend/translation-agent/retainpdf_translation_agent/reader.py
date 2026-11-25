@@ -401,7 +401,11 @@ def apply_reading(reading: Reading, glossary, pages: list[PageInput]) -> list[Pa
         translation = by_text.get(same_text_key(block.text))
         if translation and not any(i["severity"] == "error" for i in check_block(block.text, translation)):
             fixed[block.id] = translation
+    # 调用方已经定了的（目录 agent 给目录条目和对上的标题，2026-11-25）不改：目录和正文按它对齐
     return [
-        replace(page, blocks=[replace(b, fixed_translation=fixed[b.id]) if b.id in fixed and b.translate else b for b in page.blocks])
+        replace(page, blocks=[
+            replace(b, fixed_translation=fixed[b.id]) if b.id in fixed and b.translate and b.fixed_translation is None else b
+            for b in page.blocks
+        ])
         for page in pages
     ]

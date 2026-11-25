@@ -197,6 +197,8 @@ def _preparation_and_reviewer_fields(payload: dict[str, Any]) -> dict[str, str]:
         "reviewer_thinking": str(payload.get("reviewer_thinking", "") or "").strip().lower(),
         "engine": str(payload.get("engine", "legacy") or "legacy").strip().lower(),
         "tables": str(payload.get("tables", "keep") or "keep").strip().lower(),
+        # 目录：agent（默认，目录 agent 和普通翻译同步跑，translate/toc_stage.py）/ translate（目录条目交给普通翻译）
+        "toc": str(payload.get("toc", "agent") or "agent").strip().lower(),
     }
 
 
@@ -247,6 +249,8 @@ class TranslateStageParams:
     engine: str = "legacy"
     # 表格翻译：keep（默认，表格保留原文）/ translate（表格 agent，translate/tables_stage.py）。旧 spec 没有，按 keep 读
     tables: str = "keep"
+    # 目录：agent（默认，目录 agent，translate/toc_stage.py）/ translate。旧 spec 没有，按 agent 读
+    toc: str = "agent"
 
 
 @dataclass(frozen=True)
@@ -718,6 +722,8 @@ class ProviderStageTranslationParams:
     engine: str = "legacy"
     # 表格翻译：keep（默认，表格保留原文）/ translate（表格 agent，translate/tables_stage.py）。旧 spec 没有，按 keep 读
     tables: str = "keep"
+    # 目录：agent（默认，目录 agent，translate/toc_stage.py）/ translate。旧 spec 没有，按 agent 读
+    toc: str = "agent"
 
 
 @dataclass(frozen=True)
@@ -968,6 +974,8 @@ class BookStageTranslationParams:
     engine: str = "legacy"
     # 表格翻译：keep（默认，表格保留原文）/ translate（表格 agent，translate/tables_stage.py）。旧 spec 没有，按 keep 读
     tables: str = "keep"
+    # 目录：agent（默认，目录 agent，translate/toc_stage.py）/ translate。旧 spec 没有，按 agent 读
+    toc: str = "agent"
 
 
 @dataclass(frozen=True)

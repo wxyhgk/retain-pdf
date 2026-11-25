@@ -24,6 +24,14 @@ def strategy():
     return value
 
 
+def item_fixed_translation(item) -> str:
+    """翻译开头定好的译文（目录 agent，workflow/fixed_translations.py 写进块的元数据，抽取时带到 ``item["metadata"]``）。
+    只给自成一个翻译单元的块：续段组成员、带公式 / 受保护片段的块返回空，引擎照旧自己翻。"""
+    metadata = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
+    preset = str(metadata.get("fixed_translation") or "").strip()
+    return preset if preset and is_isolated_single_unit(item) else ""
+
+
 def is_isolated_single_unit(item):
     """本块自己就是一个完整翻译单元：不在续段组里、没有公式 / 受保护片段。
 
