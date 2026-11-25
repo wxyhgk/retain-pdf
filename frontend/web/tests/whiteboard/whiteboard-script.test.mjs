@@ -251,3 +251,28 @@ test("公式：默认引擎（真 mathjax-full）排得出 SVG，尺寸是正数
   assert.ok(!/javascript:/.test(href.svg || ""));
   setWhiteboardMathEngine(null);
 });
+
+test("播放：公式一下子就排好时（MathJax 已经加载过）动画照样走完，不停在第 0 帧", async () => {
+  const { installReaderDom } = await import("../helpers/dom.mjs");
+  const { act } = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { Whiteboard } = await import("../../../packages/whiteboard/src/react/Whiteboard.tsx");
+  const env = installReaderDom();
+  globalThis.performance ??= env.dom.window.performance;
+  setWhiteboardMathEngine(async () => ({ toSvg: () => '<svg width="4ex" height="2ex" viewBox="0 0 4 2"><path d="M0 0"/></svg>' }));
+  try {
+    const holder = document.getElementById("root");
+    const root = createRoot(holder);
+    const script = { version: 1, steps: [{ ops: [{ op: "write", id: "a", math: "f = h + v" }] }] };
+    await act(async () => root.render(createElement(Whiteboard, { script, reducedMotion: false })));
+    const done = () => holder.querySelector(".wb-root")?.getAttribute("data-wb-done") === "true";
+    for (let i = 0; i < 40 && !done(); i += 1) {
+      await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
+    }
+    assert.ok(done(), "这一步画完了");
+    await act(async () => root.unmount());
+  } finally {
+    setWhiteboardMathEngine(null);
+    env.restore();
+  }
+});

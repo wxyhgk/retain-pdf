@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react"
 import { validateScript } from "../script/validate.js";
 import { layoutScript } from "../layout/layout.js";
 import { textWidth, FONT_SIZE, LINE_HEIGHT } from "../layout/measure.js";
-import { frameAt } from "../render/frame.js";
+import { frameAt, stepTimeline } from "../render/frame.js";
 import { cachedMath, prepareMath } from "../math/engine.js";
 import { BoardSvg } from "./BoardSvg.js";
 /** 自动播放时，一步画完后停多久再进下一步。 */
@@ -86,7 +86,9 @@ export function Whiteboard({ script: rawScript, step: controlledStep, onStepChan
     const [playing, setPlaying] = useState(autoPlay);
     const [elapsed, setElapsed] = useState(0);
     const [replayToken, setReplayToken] = useState(0);
-    const frameRef = useRef(0);
+    // 这一步画多久（逐帧刷新到它为止）。
+    const durationRef = useRef(0);
+    durationRef.current = stepTimeline(script.steps[step]?.ops ?? []).total;
     // 换了一步（或重播）就从 0 开始画；画完停住。
     useEffect(() => {
         if (still || !mathReady) {
@@ -95,19 +97,23 @@ export function Whiteboard({ script: rawScript, step: controlledStep, onStepChan
         }
         setElapsed(0);
         const start = performance.now();
+        let id = 0;
+        // 画完这一步就自己停：不要靠别的 effect 去取消它 —— 公式排得很快时（MathJax 已经加载过），
+        // 「画完了就取消」的那个 effect 会和这里同一次提交里跑，把刚开始的这一轮取消掉，动画停在第 0 帧。
         const tick = (now) => {
-            setElapsed(now - start);
-            frameRef.current = requestAnimationFrame(tick);
+            const elapsedMs = now - start;
+            setElapsed(elapsedMs);
+            if (elapsedMs <= durationRef.current)
+                id = requestAnimationFrame(tick);
         };
-        frameRef.current = requestAnimationFrame(tick);
-        return () => cancelAnimationFrame(frameRef.current);
+        id = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(id);
     }, [step, replayToken, still, mathReady]);
     const frame = useMemo(() => frameAt(script, layout, step, elapsed), [script, layout, step, elapsed]);
-    // 画完以后停掉逐帧刷新；自动播放时停一会儿进下一步。
+    // 自动播放：一步画完后停一会儿进下一步。
     useEffect(() => {
         if (!frame.stepDone)
             return undefined;
-        cancelAnimationFrame(frameRef.current);
         if (!playing)
             return undefined;
         if (step >= stepCount - 1) {

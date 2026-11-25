@@ -56,3 +56,28 @@
 .reader-margin-marker.is-hollow {
   background: var(--paper);
 }
+
+/* 第二栏没有 dock 的 tab 条（顶栏页签开它），从顶栏下面直接开始；正文不加内边距、不滚，滚动交给宿主内容自己。 */
+.reader-react-root.is-workspace-side .reader-notes-panel--workspace.reader-side-pane {
+  top: 60px;
+  height: calc(100dvh - 60px);
+}
+
+.reader-side-pane .reader-notes-panel-body {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.reader-side-pane .reader-notes-panel-body > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (max-width: 899px) {
+  .reader-react-root.is-workspace-side .reader-notes-panel--workspace.reader-side-pane {
+    top: 58px;
+    height: calc(100dvh - 58px);
+  }
+}

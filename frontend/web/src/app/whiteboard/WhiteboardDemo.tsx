@@ -4,7 +4,7 @@
 import { useMemo, useState } from "react";
 import { Button } from "@retainpdf/ui";
 import { Whiteboard } from "@retainpdf/whiteboard";
-import { DEMO_SCRIPTS } from "./demo-scripts.js";
+import { SZABO_CH3_SCRIPTS as DEMO_SCRIPTS } from "@retainpdf/learning";
 
 function readParams() {
   const params = new URLSearchParams(globalThis.location?.search || "");
