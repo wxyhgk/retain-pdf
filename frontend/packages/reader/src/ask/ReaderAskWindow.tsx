@@ -30,7 +30,7 @@ import {
 } from "@assistant-ui/react";
 import { Streamdown } from "streamdown";
 import { createMathPlugin } from "@streamdown/math";
-import { ArrowUp, Brain, ChevronRight, CircleDot, Copy, Square, Trash2, Wrench, X } from "lucide-react";
+import { ArrowUp, Copy, Square, Trash2, X } from "lucide-react";
 import { Button, Select } from "@retainpdf/ui";
 
 import type { ReaderAskAgent, ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
@@ -39,6 +39,10 @@ import { resolveKatexStylesheetUrl } from "../external.js";
 import { copyReaderText } from "../pdf/ReaderTextHoverLayer.js";
 import { PermissionStore, createAcpChatAdapter } from "./acp-adapter.js";
 import { normalizeMathDelimiters } from "./math-delimiters.js";
+import { ReasoningContent, ReasoningRoot, ReasoningText, ReasoningTrigger } from "./ui/reasoning.js";
+import { ToolFallback } from "./ui/tool-fallback.js";
+import { TodoList, type TodoItem } from "./ui/todo-list.js";
+import { AgentStatus, type AgentState } from "./ui/agent-status.js";
 import { turnFooter, type AskSubagent, type AskToolCall, type AskTurn } from "./acp-parts.js";
 
 const MATH = createMathPlugin({ singleDollarTextMath: true });
@@ -73,74 +77,104 @@ function AnswerText({ text, status }: TextMessagePartProps): ReactElement {
   );
 }
 
+/** 思考：assistant-ui 官方的 Reasoning（折叠条，思考中标题有流光、写完写用了几秒，展开收起有动画，内容上下渐隐）。 */
 function Thought({ text, status }: ReasoningMessagePartProps): ReactElement {
   const running = status?.type === "running";
+  const started = useRef<number | null>(null);
+  const [seconds, setSeconds] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    if (running && started.current === null) started.current = Date.now();
+    if (!running && started.current !== null) {
+      setSeconds(Math.max(1, Math.round((Date.now() - started.current) / 1000)));
+      started.current = null;
+    }
+  }, [running]);
   return (
-    <details className="reader-ask-thought" open={running || undefined}>
-      <summary>
-        <Brain size={13} aria-hidden /> {running ? "思考中…" : "思考过程"}
-        <ChevronRight size={13} className="reader-ask-chevron" aria-hidden />
-      </summary>
-      <div className="reader-ask-thought-body">{text}</div>
-    </details>
+    <ReasoningRoot streaming={running} variant="ghost" className="reader-ask-reasoning">
+      <ReasoningTrigger active={running} duration={seconds} label={running ? "思考中" : "思考"} />
+      <ReasoningContent aria-busy={running}>
+        <ReasoningText>
+          <div className="reader-ask-thought-body">{text}</div>
+        </ReasoningText>
+      </ReasoningContent>
+    </ReasoningRoot>
   );
 }
 
-const TOOL_STATUS: Record<string, string> = { pending: "等着", in_progress: "进行中", completed: "完成", failed: "失败" };
+const ACP_TO_AUI_KIND: Record<string, string> = {
+  allow_once: "allow-once",
+  allow_always: "allow-always",
+  reject_once: "reject-once",
+  reject_always: "reject-always",
+};
 
+/**
+ * 工具调用：assistant-ui 官方的 ToolFallback（状态图标和流光、用时、展开看参数和结果、许可界面）。
+ * ACP 的状态、等许可换成它认的写法；用户点了许可，回给 agent（PermissionStore）。
+ */
 function ToolCard(props: ToolCallMessagePartProps): ReactElement {
   const artifact = (props.artifact || {}) as AskToolCall["artifact"];
   const store = useContext(PermissionContext);
   useSyncExternalStore(store?.subscribe ?? (() => () => {}), store?.snapshot ?? (() => 0));
   const pending = store?.get(props.toolCallId);
+  const status = pending
+    ? ({ type: "requires-action", reason: "interrupt" } as const)
+    : artifact.status === "failed"
+      ? ({ type: "incomplete", reason: "error" } as const)
+      : artifact.status === "completed"
+        ? ({ type: "complete" } as const)
+        : ({ type: "running" } as const);
+  const approval = pending
+    ? {
+        id: props.toolCallId,
+        prompt: artifact.title || props.toolName,
+        options: pending.request.options.map((option) => ({ id: option.optionId, kind: ACP_TO_AUI_KIND[option.kind] || option.kind, label: option.name })),
+      }
+    : undefined;
+  const respondToApproval = pending
+    ? async (response: { optionId?: string; approved?: boolean }) => {
+        const options = pending.request.options;
+        const chosen = response.optionId
+          ? options.find((option) => option.optionId === response.optionId)
+          : options.find((option) => (response.approved ? option.kind.startsWith("allow") : option.kind.startsWith("reject")));
+        pending.resolve(chosen ? { outcome: { outcome: "selected", optionId: chosen.optionId } } : { outcome: { outcome: "cancelled" } });
+      }
+    : undefined;
+  const where = artifact.locations?.length ? `\n（${artifact.locations.join("、")}）` : "";
   return (
-    <div className="reader-ask-tool" data-status={artifact.status || "pending"}>
-      <div className="reader-ask-tool-head">
-        <Wrench size={13} aria-hidden />
-        <span className="reader-ask-tool-title" title={artifact.title || props.toolName}>{artifact.title || props.toolName}</span>
-        <span className="reader-ask-tool-status">{TOOL_STATUS[artifact.status] || artifact.status}</span>
-      </div>
-      {artifact.locations?.length ? <div className="reader-ask-tool-where">{artifact.locations.join("、")}</div> : null}
-      {artifact.output ? <pre className="reader-ask-tool-output">{artifact.output}</pre> : null}
-      {pending ? (
-        <div className="reader-ask-permission" role="group" aria-label="要你同意">
-          <span>要你同意才继续：</span>
-          {pending.request.options.map((option) => (
-            <Button
-              key={option.optionId}
-              className="reader-ask-permission-option"
-              data-kind={option.kind}
-              onClick={() => pending.resolve({ outcome: { outcome: "selected", optionId: option.optionId } })}
-            >
-              {option.name}
-            </Button>
-          ))}
-        </div>
-      ) : null}
-    </div>
+    <ToolFallback
+      {...props}
+      toolName={artifact.title || props.toolName}
+      status={status as never}
+      isError={artifact.status === "failed"}
+      argsText={props.argsText && props.argsText !== "{}" ? props.argsText : ""}
+      result={artifact.output ? `${artifact.output}${where}` : props.result}
+      approval={approval as never}
+      respondToApproval={respondToApproval as never}
+    />
   );
 }
 
-const PLAN_MARK: Record<string, string> = { pending: "○", in_progress: "◐", completed: "●" };
+const PLAN_STATUS: Record<string, TodoItem["status"]> = { pending: "pending", in_progress: "active", completed: "done" };
 
+/** 计划（ACP plan，整份替换）：assistant-ui 官方的 TodoList（每项状态图标、进度「1/3」、新项进场动画）。 */
 function PlanBlock({ data }: DataMessagePartProps<{ entries: { content: string; status: string }[] }>): ReactElement {
-  return (
-    <ol className="reader-ask-plan" aria-label="计划">
-      {data.entries.map((entry, index) => (
-        <li key={index} data-status={entry.status}>
-          <span aria-hidden>{PLAN_MARK[entry.status] || "○"}</span> {entry.content}
-        </li>
-      ))}
-    </ol>
-  );
+  const items: TodoItem[] = data.entries.map((entry, index) => ({ id: `${index}`, text: entry.content, status: PLAN_STATUS[entry.status] || "pending" }));
+  return <TodoList className="reader-ask-plan" items={items} title="计划" maxVisible={6} />;
 }
 
+/** 子 agent（ACP subagent_update）：assistant-ui 官方的 AgentStatus（小胶囊：进行中 / 等着 / 完成 / 失败）。 */
 function SubagentBlock({ data }: DataMessagePartProps<AskSubagent>): ReactElement {
+  const state: AgentState = data.state === "idle" || data.state === "done" || data.state === "completed"
+    ? "done"
+    : data.state === "failed" || data.state === "error"
+      ? "failed"
+      : data.state === "waiting" || data.state === "paused"
+        ? "waiting"
+        : "working";
   return (
-    <div className="reader-ask-subagent" data-state={data.state}>
-      <CircleDot size={13} aria-hidden /> <strong>{data.title}</strong>
-      {data.description ? <span> · {data.description}</span> : null}
-      <span className="reader-ask-tool-status">{data.state === "running" ? "进行中" : data.state === "idle" ? "完成" : data.state}</span>
+    <div className="reader-ask-subagent">
+      <AgentStatus state={state} trailing={null} label={data.description ? `${data.title} · ${data.description}` : data.title} />
     </div>
   );
 }

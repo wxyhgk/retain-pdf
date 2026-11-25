@@ -8,6 +8,9 @@
  * 本文件由 frontend/web/src/styles/entries/reader.css 代理导入。
  */
 @import "./core/tailwind-theme.css";
+/* 提问窗用的 assistant-ui 官方组件（src/ask/ui/）：展开收起的动画、「思考中」的流光。 */
+@import "tw-animate-css";
+@import "tw-shimmer";
 
 @source "../src/**/*.{js,jsx,ts,tsx}";
 @source inline("progress-bar download-toast-card");

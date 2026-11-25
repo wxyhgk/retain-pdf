@@ -53,6 +53,7 @@ function openFakeSession(agentId: string, handlers: ReaderAskHandlers): ReaderAs
         ],
       });
       send({ sessionUpdate: "tool_call", toolCallId: "view-page", title: `看第 ${page} 页（原文）`, kind: "read", status: "in_progress", locations: [{ path: `第 ${page} 页` }] });
+      send({ sessionUpdate: "subagent_update", sessionId: "demo-sub", title: "查这一章的公式", description: "找式子的出处", state: { state: "running" } } as never);
       await wait(500, signal);
       send({ sessionUpdate: "tool_call_update", toolCallId: "view-page", status: "completed", content: [{ type: "content", content: { type: "text", text: "（页图和这一页的原文、译文）" } }] });
       if (agentId === "claude-code") {
@@ -76,6 +77,7 @@ function openFakeSession(agentId: string, handlers: ReaderAskHandlers): ReaderAs
           { content: "解释这一段", priority: "high", status: "in_progress" },
         ],
       });
+      send({ sessionUpdate: "subagent_update", sessionId: "demo-sub", state: { state: "idle" } } as never);
       let output = 0;
       for (const piece of ANSWER) {
         for (const chunk of piece.match(/[\s\S]{1,12}/g) || []) {

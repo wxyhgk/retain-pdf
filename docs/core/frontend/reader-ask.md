@@ -35,9 +35,15 @@
 
 ## 回答怎么画
 
-- 思考（`agent_thought_chunk`）：折叠块，出字时展开、写完收起。
-- 工具调用（`tool_call` / `tool_call_update`）：小卡片，标题、状态、读到的位置、输出；agent 要许可（`session/request_permission`）时卡片上出它给的几个选项。关窗、停下时没回的许可按取消回掉。
-- 计划（`plan`）：整份替换的清单，做完的划掉。子 agent（`subagent_update`）：一行，标题和状态。
+2026-11-26 起回答里的几样用 assistant-ui 官方组件（MIT，从 `https://r.assistant-ui.com` 拷进 `packages/reader/src/ask/ui/`，
+只改引用路径、文字换中文，方便对着上游更新）：思考 `reasoning.tsx`、工具调用 `tool-fallback.tsx`、计划 `todo-list.tsx`、子 agent `agent-status.tsx`
+（加上它们要的 `collapsible-root`、`surfaces`、`range`）。按钮、输入框经 `ui/controls.tsx` 转到 `@retainpdf/ui`，样式挂 `reader-ask-action`（只在提问窗里）。
+动画靠 `tw-animate-css`、`tw-shimmer`（`styles/entry.css` 引入）。没选 Vercel AI Elements：要 motion 和 streamdown 四个插件，工具组件绑 AI SDK 的消息类型。
+
+- 思考（`agent_thought_chunk`）：Reasoning 折叠条，思考中标题流光、预览区跟着滚，写完收起成「思考（N 秒）」。
+- 工具调用（`tool_call` / `tool_call_update`）：ToolFallback，一行一个（状态图标、用时），展开看参数和结果；agent 要许可（`session/request_permission`）时
+  换成它的 `approval`（allow_once → allow-once……），展开出「允许 / 总是允许 / 不允许」，选了回给 agent。关窗、停下时没回的许可按取消回掉。
+- 计划（`plan`）：TodoList（pending / in_progress / completed → 待办 / 进行中 / 完成，进度「1/3」）。子 agent（`subagent_update`）：AgentStatus 胶囊。
 - 底下一行：agent 名、输入 / 输出 token、缓存命中、上下文占比、费用、速度（有输出 token 按 token/s，没有按字/s 估）、首字、用时。
   分项 token 不在 ACP 标准里，读 `_meta.retainpdf.usage`（自带 agent）或 `_meta.usage`。
 - 模型常写 `\( \)`、`\[ \]`，换成 `$`、`$$` 再给 remark-math（代码块里不动）。

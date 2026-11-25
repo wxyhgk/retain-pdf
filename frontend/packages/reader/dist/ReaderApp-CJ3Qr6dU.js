@@ -9110,7 +9110,7 @@ function Tm({
     goBack: D(() => d("back"), [d])
   };
 }
-const Mm = Fo(() => import("./ReaderMarkdownPanel-DnFYwmTh.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Nm = Fo(() => import("./ReaderAskWindow-kmg4CAqG.js")), Am = [];
+const Mm = Fo(() => import("./ReaderMarkdownPanel-DOLio_0Y.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Nm = Fo(() => import("./ReaderAskWindow-BMkWTh5E.js")), Am = [];
 function Lm(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantOpen && e.mode === "compare" ? "source" : e.mode, a = !t && (o === "translated" || o === "compare");
   return {
@@ -9535,11 +9535,11 @@ function Qm() {
 export {
   Qm as R,
   xm as a,
-  Ym as b,
+  Xm as b,
   Eu as c,
   Zm as d,
   Gm as f,
-  Xm as r,
+  Ym as r,
   rt as u
 };
-//# sourceMappingURL=ReaderApp-jtCWfxgP.js.map
+//# sourceMappingURL=ReaderApp-CJ3Qr6dU.js.map
