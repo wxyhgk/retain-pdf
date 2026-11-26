@@ -9,6 +9,8 @@ pub struct ReplayDeps<'a> {
     pub(crate) python_bin: &'a str,
     pub(crate) pipeline_command: &'a str,
     pub(crate) data_root: &'a Path,
+    /// 用量台账按 `output_root/<任务>` 找（和用量报表同一处），重放调模型也要记进去。
+    pub(crate) output_root: &'a Path,
 }
 
 impl<'a> ReplayDeps<'a> {
@@ -18,6 +20,7 @@ impl<'a> ReplayDeps<'a> {
         python_bin: &'a str,
         pipeline_command: &'a str,
         data_root: &'a Path,
+        output_root: &'a Path,
     ) -> Self {
         Self {
             project_root,
@@ -25,6 +28,7 @@ impl<'a> ReplayDeps<'a> {
             python_bin,
             pipeline_command,
             data_root,
+            output_root,
         }
     }
 }

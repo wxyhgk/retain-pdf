@@ -172,6 +172,7 @@ pub(crate) fn build_jobs_facade_with_launcher(
         &state.config.python_bin,
         &state.config.pipeline_command,
         &state.config.data_root,
+        &state.config.output_root,
     );
     build_jobs_facade(
         CommandJobsDeps::new(state.db.as_ref(), submit, control),

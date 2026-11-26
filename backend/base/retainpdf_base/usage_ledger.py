@@ -10,7 +10,7 @@
 - 那两份分别丢掉了缓存（精修）和思考（全部）；这里把服务商报的都留下。
 - 每行带阶段和模型，汇总时才能按阶段、按模型分。
 
-文件路径由执行进程经环境变量给（``RETAIN_USAGE_LEDGER``，见 Rust ``worker_process.rs``）；
+文件路径由执行进程经环境变量给（``RETAIN_USAGE_LEDGER``，Rust 起子进程统一用 ``storage_paths::usage_ledger_env``）；
 没给（命令行直接跑、单元测试）就不记。写入是一次 ``O_APPEND`` 的整行 write，多线程、
 多进程同时追加也不会交错。
 
