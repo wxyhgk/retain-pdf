@@ -46,7 +46,7 @@ def run_continuation_review(
     review_memo: dict[tuple[str, str], bool] | None = None,
     memo_dir: Path | None = None,
 ) -> None:
-    """`memo_dir`：复核结论落盘的目录（译文目录），给了就先读回上次判过的对、复核完写回去，重试不再重发。"""
+    """`memo_dir`：复核结论落盘的目录（译文目录），给了就先读回上次判过的对、每判完一批写回去，重试不再重发。"""
     review_started = time.perf_counter()
     if memo_dir is not None:
         if review_memo is None:
@@ -71,6 +71,12 @@ def run_continuation_review(
         workers=workers,
         request_chat_content_fn=request_chat_content,
         review_memo=review_memo,
+        # 每判完一批就写一次 memo（原子写）：一批出错、进程被杀时，已经付钱判出的结论不丢（2026-11-26，S11）
+        on_batch_decided=(
+            (lambda memo: save_continuation_review_memo(memo_dir, page_payloads, memo))
+            if memo_dir is not None
+            else None
+        ),
         progress_callback=throttle_progress_callback(
             lambda current, total: emit_stage_progress(
                 stage="continuation_review",
