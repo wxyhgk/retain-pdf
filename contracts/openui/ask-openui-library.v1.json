@@ -1,0 +1,3566 @@
+{
+  "version": 1,
+  "generator": "frontend/packages/ask/scripts/openui-spec.mjs",
+  "root": "Col",
+  "schema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "Col": {
+        "$ref": "#/$defs/Col"
+      },
+      "Row": {
+        "$ref": "#/$defs/Row"
+      },
+      "Box": {
+        "$ref": "#/$defs/Box"
+      },
+      "Grid": {
+        "$ref": "#/$defs/Grid"
+      },
+      "Card": {
+        "$ref": "#/$defs/Card"
+      },
+      "Carousel": {
+        "$ref": "#/$defs/Carousel"
+      },
+      "Popover": {
+        "$ref": "#/$defs/Popover"
+      },
+      "Divider": {
+        "$ref": "#/$defs/Divider"
+      },
+      "Spacer": {
+        "$ref": "#/$defs/Spacer"
+      },
+      "Title": {
+        "$ref": "#/$defs/Title"
+      },
+      "Text": {
+        "$ref": "#/$defs/Text"
+      },
+      "Caption": {
+        "$ref": "#/$defs/Caption"
+      },
+      "Label": {
+        "$ref": "#/$defs/Label"
+      },
+      "Badge": {
+        "$ref": "#/$defs/Badge"
+      },
+      "Link": {
+        "$ref": "#/$defs/Link"
+      },
+      "List": {
+        "$ref": "#/$defs/List"
+      },
+      "ListItem": {
+        "$ref": "#/$defs/ListItem"
+      },
+      "Markdown": {
+        "$ref": "#/$defs/Markdown"
+      },
+      "Quote": {
+        "$ref": "#/$defs/Quote"
+      },
+      "Code": {
+        "$ref": "#/$defs/Code"
+      },
+      "Math": {
+        "$ref": "#/$defs/Math"
+      },
+      "Button": {
+        "$ref": "#/$defs/Button"
+      },
+      "IconButton": {
+        "$ref": "#/$defs/IconButton"
+      },
+      "Pressable": {
+        "$ref": "#/$defs/Pressable"
+      },
+      "Input": {
+        "$ref": "#/$defs/Input"
+      },
+      "TextArea": {
+        "$ref": "#/$defs/TextArea"
+      },
+      "Select": {
+        "$ref": "#/$defs/Select"
+      },
+      "SegmentedControl": {
+        "$ref": "#/$defs/SegmentedControl"
+      },
+      "Slider": {
+        "$ref": "#/$defs/Slider"
+      },
+      "Checkbox": {
+        "$ref": "#/$defs/Checkbox"
+      },
+      "RadioGroup": {
+        "$ref": "#/$defs/RadioGroup"
+      },
+      "DatePicker": {
+        "$ref": "#/$defs/DatePicker"
+      },
+      "Timer": {
+        "$ref": "#/$defs/Timer"
+      },
+      "Form": {
+        "$ref": "#/$defs/Form"
+      },
+      "Icon": {
+        "$ref": "#/$defs/Icon"
+      },
+      "Table": {
+        "$ref": "#/$defs/Table"
+      },
+      "Chart": {
+        "$ref": "#/$defs/Chart"
+      },
+      "Flashcard": {
+        "$ref": "#/$defs/Flashcard"
+      },
+      "Celebration": {
+        "$ref": "#/$defs/Celebration"
+      },
+      "Svg": {
+        "$ref": "#/$defs/Svg"
+      },
+      "Circle": {
+        "$ref": "#/$defs/Circle"
+      },
+      "Ellipse": {
+        "$ref": "#/$defs/Ellipse"
+      },
+      "Rect": {
+        "$ref": "#/$defs/Rect"
+      },
+      "Line": {
+        "$ref": "#/$defs/Line"
+      },
+      "Path": {
+        "$ref": "#/$defs/Path"
+      },
+      "Polyline": {
+        "$ref": "#/$defs/Polyline"
+      },
+      "Polygon": {
+        "$ref": "#/$defs/Polygon"
+      },
+      "SvgText": {
+        "$ref": "#/$defs/SvgText"
+      },
+      "G": {
+        "$ref": "#/$defs/G"
+      },
+      "HtmlView": {
+        "$ref": "#/$defs/HtmlView"
+      }
+    },
+    "required": [
+      "Col",
+      "Row",
+      "Box",
+      "Grid",
+      "Card",
+      "Carousel",
+      "Popover",
+      "Divider",
+      "Spacer",
+      "Title",
+      "Text",
+      "Caption",
+      "Label",
+      "Badge",
+      "Link",
+      "List",
+      "ListItem",
+      "Markdown",
+      "Quote",
+      "Code",
+      "Math",
+      "Button",
+      "IconButton",
+      "Pressable",
+      "Input",
+      "TextArea",
+      "Select",
+      "SegmentedControl",
+      "Slider",
+      "Checkbox",
+      "RadioGroup",
+      "DatePicker",
+      "Timer",
+      "Form",
+      "Icon",
+      "Table",
+      "Chart",
+      "Flashcard",
+      "Celebration",
+      "Svg",
+      "Circle",
+      "Ellipse",
+      "Rect",
+      "Line",
+      "Path",
+      "Polyline",
+      "Polygon",
+      "SvgText",
+      "G",
+      "HtmlView"
+    ],
+    "additionalProperties": false,
+    "$defs": {
+      "Col": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Node"
+            }
+          },
+          "gap": {
+            "type": "number"
+          },
+          "align": {
+            "type": "string",
+            "enum": [
+              "start",
+              "center",
+              "end",
+              "stretch"
+            ]
+          }
+        },
+        "required": [
+          "children"
+        ],
+        "additionalProperties": false,
+        "id": "Col",
+        "description": "Vertical layout. Without gap it spaces blocks like an article."
+      },
+      "Node": {
+        "id": "Node"
+      },
+      "Row": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Node"
+            }
+          },
+          "gap": {
+            "type": "number"
+          },
+          "align": {
+            "type": "string",
+            "enum": [
+              "start",
+              "center",
+              "end",
+              "stretch"
+            ]
+          },
+          "justify": {
+            "type": "string",
+            "enum": [
+              "start",
+              "center",
+              "end",
+              "between"
+            ]
+          },
+          "wrap": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "children"
+        ],
+        "additionalProperties": false,
+        "id": "Row",
+        "description": "Horizontal layout; items are vertically centered."
+      },
+      "Box": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Node"
+            }
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "row",
+              "col"
+            ]
+          },
+          "gap": {
+            "type": "number"
+          },
+          "padding": {
+            "type": "number"
+          },
+          "background": {
+            "$ref": "#/$defs/Color"
+          },
+          "radius": {
+            "$ref": "#/$defs/Radius"
+          },
+          "border": {
+            "type": "boolean"
+          },
+          "width": {
+            "$ref": "#/$defs/Length"
+          },
+          "height": {
+            "$ref": "#/$defs/Length"
+          },
+          "flex": {
+            "type": "number"
+          },
+          "align": {
+            "type": "string",
+            "enum": [
+              "start",
+              "center",
+              "end",
+              "stretch"
+            ]
+          },
+          "justify": {
+            "type": "string",
+            "enum": [
+              "start",
+              "center",
+              "end",
+              "between"
+            ]
+          },
+          "wrap": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false,
+        "id": "Box",
+        "description": "Flex container, a column by default. radius also clips the content."
+      },
+      "Color": {
+        "type": "string",
+        "id": "Color"
+      },
+      "Radius": {
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "sm",
+              "md",
+              "lg",
+              "xl",
+              "full"
+            ]
+          },
+          {
+            "type": "number"
+          }
+        ],
+        "id": "Radius"
+      },
+      "Length": {
+        "anyOf": [
+          {
+            "type": "number"
+          },
+          {
+            "type": "string"
+          }
+        ],
+        "id": "Length"
+      },
+      "Grid": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Node"
+            }
+          },
+          "columns": {
+            "type": "number"
+          },
+          "minChildWidth": {
+            "type": "number"
+          },
+          "gap": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "children"
+        ],
+        "additionalProperties": false,
+        "id": "Grid",
+        "description": "Equal columns, 1 to 12 (default 2). With minChildWidth (px), columns drop on narrow screens."
+      },
+      "Card": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Node"
+            }
+          },
+          "variant": {
+            "type": "string",
+            "enum": [
+              "outline",
+              "soft"
+            ]
+          },
+          "gap": {
+            "type": "number"
+          },
+          "padding": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "children"
+        ],
+        "additionalProperties": false,
+        "id": "Card",
+        "description": "Panel with a border; soft is a filled panel for summaries."
+      },
+      "Carousel": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Node"
+            }
+          },
+          "itemWidth": {
+            "type": "number"
+          },
+          "gap": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "children"
+        ],
+        "additionalProperties": false,
+        "id": "Carousel",
+        "description": "Horizontal row that scrolls and snaps, each child an item itemWidth px wide (default 240): photos, cards, options, days."
+      },
+      "Popover": {
+        "type": "object",
+        "properties": {
+          "trigger": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Node"
+                }
+              }
+            ]
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Node"
+                }
+              }
+            ]
+          }
+        },
+        "required": [
+          "trigger",
+          "content"
+        ],
+        "additionalProperties": false,
+        "id": "Popover",
+        "description": "Shows content in a small panel when the trigger is clicked: a definition, a source, details behind an Icon(\"info\", \"sm\"). The trigger is text or an Icon, never a Button: it is a button already."
+      },
+      "Divider": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "id": "Divider",
+        "description": "A thin horizontal rule between blocks."
+      },
+      "Spacer": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false,
+        "id": "Spacer",
+        "description": "Fills the free space in a Row."
+      },
+      "Title": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "sm",
+              "md",
+              "lg",
+              "xl",
+              "2xl",
+              "3xl"
+            ]
+          },
+          "color": {
+            "$ref": "#/$defs/Color"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false,
+        "id": "Title",
+        "description": "Heading; md for a card title, lg for a section, 2xl for a big number."
+      },
+      "Text": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Node"
+                }
+              }
+            ]
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "xs",
+              "sm",
+              "md",
+              "lg"
+            ]
+          },
+          "color": {
+            "$ref": "#/$defs/Color"
+          },
+          "weight": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "medium",
+              "semibold"
+            ]
+          },
+          "italic": {
+            "type": "boolean"
+          },
+          "lineThrough": {
+            "type": "boolean"
+          },
+          "tabularNums": {
+            "type": "boolean"
+          },
+          "maxLines": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false,
+        "id": "Text",
+        "description": "Paragraph; supports **bold**, *italic*, `code` and [links](https://…). text may be a list mixing strings and inline components: [Icon(\"clock\", \"sm\"), \" 25 min · \", Badge(\"Easy\")]."
+      },
+      "Caption": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "color": {
+            "$ref": "#/$defs/Color"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false,
+        "id": "Caption",
+        "description": "Small secondary text."
+      },
+      "Label": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false,
+        "id": "Label",
+        "description": "Field or group label."
+      },
+      "Badge": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "neutral",
+              "info",
+              "success",
+              "warning",
+              "danger",
+              "purple",
+              "pink"
+            ]
+          },
+          "icon": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false,
+        "id": "Badge",
+        "description": "Pill tag; icon is an optional leading lucide name."
+      },
+      "Link": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "url"
+        ],
+        "additionalProperties": false,
+        "id": "Link",
+        "description": "Opens an http(s) URL in a new tab."
+      },
+      "List": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "$ref": "#/$defs/ListItem"
+                }
+              ]
+            }
+          },
+          "marker": {
+            "type": "string",
+            "enum": [
+              "bullet",
+              "number",
+              "none"
+            ]
+          },
+          "timeline": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false,
+        "id": "List",
+        "description": "timeline joins the markers with a line."
+      },
+      "ListItem": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "marker": {
+            "type": "string"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Node"
+            }
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "additionalProperties": false,
+        "id": "ListItem",
+        "description": "marker replaces the bullet or number, e.g. a time or an emoji."
+      },
+      "Markdown": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false,
+        "id": "Markdown",
+        "description": "Prose with headings, lists, quotes, code and tables."
+      },
+      "Quote": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false,
+        "id": "Quote",
+        "description": "A quotation or a callout with a side rule; cite names the source."
+      },
+      "Code": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "language": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "additionalProperties": false,
+        "id": "Code",
+        "description": "Code block with a copy button."
+      },
+      "Math": {
+        "type": "object",
+        "properties": {
+          "tex": {
+            "type": "string"
+          },
+          "inline": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "tex"
+        ],
+        "additionalProperties": false,
+        "id": "Math",
+        "description": "LaTeX formula, e.g. Math(\"E = mc^2\"); inline true to sit in a Text list."
+      },
+      "Button": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "action": {
+            "$ref": "#/$defs/ActionExpression"
+          },
+          "variant": {
+            "type": "string",
+            "enum": [
+              "solid",
+              "outline",
+              "soft",
+              "ghost"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "danger",
+              "success"
+            ]
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "sm",
+              "md",
+              "lg"
+            ]
+          },
+          "icon": {
+            "type": "string"
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "block": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "additionalProperties": false,
+        "id": "Button",
+        "description": "icon is a lucide name. Without an action it sends its label to the assistant."
+      },
+      "ActionExpression": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "open_url"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "url"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "const": "continue_conversation"
+              },
+              "context": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {}
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        ],
+        "id": "ActionExpression"
+      },
+      "IconButton": {
+        "type": "object",
+        "properties": {
+          "icon": {
+            "type": "string"
+          },
+          "action": {
+            "$ref": "#/$defs/ActionExpression"
+          },
+          "label": {
+            "type": "string"
+          },
+          "variant": {
+            "type": "string",
+            "enum": [
+              "outline",
+              "ghost",
+              "solid"
+            ]
+          }
+        },
+        "required": [
+          "icon"
+        ],
+        "additionalProperties": false,
+        "id": "IconButton",
+        "description": "Round icon-only button; label is read aloud. Needs an action."
+      },
+      "Pressable": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Node"
+            }
+          },
+          "action": {
+            "$ref": "#/$defs/ActionExpression"
+          },
+          "selected": {
+            "type": "boolean"
+          },
+          "padding": {
+            "type": "number"
+          },
+          "background": {
+            "$ref": "#/$defs/Color"
+          },
+          "radius": {
+            "$ref": "#/$defs/Radius"
+          }
+        },
+        "required": [
+          "children"
+        ],
+        "additionalProperties": false,
+        "id": "Pressable",
+        "description": "Makes any content clickable, such as a tile or a swatch. Needs an action."
+      },
+      "Input": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number"
+            ]
+          },
+          "placeholder": {
+            "type": "string"
+          },
+          "rules": {
+            "$ref": "#/$defs/Rules"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false,
+        "id": "Input",
+        "description": "Text or number field; a number field stores numbers, and null when emptied."
+      },
+      "Rules": {
+        "type": "object",
+        "properties": {
+          "required": {
+            "type": "boolean"
+          },
+          "email": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": "boolean"
+          },
+          "numeric": {
+            "type": "boolean"
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "minLength": {
+            "type": "number"
+          },
+          "maxLength": {
+            "type": "number"
+          },
+          "pattern": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false,
+        "id": "Rules"
+      },
+      "TextArea": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "placeholder": {
+            "type": "string"
+          },
+          "rows": {
+            "type": "number"
+          },
+          "rules": {
+            "$ref": "#/$defs/Rules"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false,
+        "id": "TextArea",
+        "description": "Multi-line text field; rows is 2 to 20 (default 3)."
+      },
+      "Select": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "label"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "label": {
+            "type": "string"
+          },
+          "placeholder": {
+            "type": "string"
+          },
+          "rules": {
+            "$ref": "#/$defs/Rules"
+          }
+        },
+        "required": [
+          "value",
+          "options"
+        ],
+        "additionalProperties": false,
+        "id": "Select",
+        "description": "Dropdown, for long option lists."
+      },
+      "SegmentedControl": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "label"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "block": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "value",
+          "options"
+        ],
+        "additionalProperties": false,
+        "id": "SegmentedControl",
+        "description": "2 to 4 short choices in a row."
+      },
+      "Slider": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "number"
+          },
+          "min": {
+            "type": "number"
+          },
+          "max": {
+            "type": "number"
+          },
+          "step": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          },
+          "unit": {
+            "type": "string"
+          },
+          "marks": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "label": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "value",
+                "label"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "value",
+          "min",
+          "max"
+        ],
+        "additionalProperties": false,
+        "id": "Slider",
+        "description": "Shows label and value; unit like \"%\" or \"$\" formats the value."
+      },
+      "Checkbox": {
+        "type": "object",
+        "properties": {
+          "checked": {
+            "type": "boolean"
+          },
+          "label": {
+            "type": "string"
+          },
+          "lineThrough": {
+            "type": "boolean"
+          },
+          "rules": {
+            "$ref": "#/$defs/Rules"
+          }
+        },
+        "required": [
+          "checked",
+          "label"
+        ],
+        "additionalProperties": false,
+        "id": "Checkbox",
+        "description": "lineThrough strikes the label when checked, for to-do lists. rules takes only required."
+      },
+      "RadioGroup": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "value": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "description": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "label"
+                  ],
+                  "additionalProperties": false
+                }
+              ]
+            }
+          },
+          "label": {
+            "type": "string"
+          },
+          "variant": {
+            "type": "string",
+            "enum": [
+              "list",
+              "pills",
+              "cards"
+            ]
+          },
+          "rules": {
+            "$ref": "#/$defs/Rules"
+          }
+        },
+        "required": [
+          "value",
+          "options"
+        ],
+        "additionalProperties": false,
+        "id": "RadioGroup",
+        "description": "pills for short choices; cards for choices that need a description line."
+      },
+      "DatePicker": {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "min": {
+            "type": "string"
+          },
+          "max": {
+            "type": "string"
+          },
+          "rules": {
+            "$ref": "#/$defs/Rules"
+          }
+        },
+        "required": [
+          "value"
+        ],
+        "additionalProperties": false,
+        "id": "DatePicker",
+        "description": "Dates, min and max are \"YYYY-MM-DD\". rules takes only required."
+      },
+      "Timer": {
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "type": "number"
+          },
+          "label": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "seconds"
+        ],
+        "additionalProperties": false,
+        "id": "Timer",
+        "description": "Countdown with start, pause and reset. It counts the bound seconds down to 0, so other statements can react, e.g. $left == 0."
+      },
+      "Form": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/Node"
+            }
+          }
+        },
+        "required": [
+          "children"
+        ],
+        "additionalProperties": false,
+        "id": "Form",
+        "description": "Groups fields; their values go with any @ToAssistant inside, once every field's rules pass."
+      },
+      "Icon": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "string",
+            "enum": [
+              "sm",
+              "md",
+              "lg",
+              "xl"
+            ]
+          },
+          "color": {
+            "$ref": "#/$defs/Color"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false,
+        "id": "Icon",
+        "description": "Lucide icon by name, e.g. \"map-pin\"."
+      },
+      "Table": {
+        "type": "object",
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {}
+            }
+          }
+        },
+        "required": [
+          "columns",
+          "rows"
+        ],
+        "additionalProperties": false,
+        "id": "Table",
+        "description": "Each row lists its cells in column order; a cell may be a component. Number columns align right."
+      },
+      "Chart": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "bar",
+              "line",
+              "area",
+              "pie",
+              "donut",
+              "scatter"
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "propertyNames": {
+                "type": "string"
+              },
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              }
+            }
+          },
+          "x": {
+            "type": "string"
+          },
+          "series": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "number",
+              "percent"
+            ]
+          },
+          "stacked": {
+            "type": "boolean"
+          },
+          "height": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "type",
+          "data"
+        ],
+        "additionalProperties": false,
+        "id": "Chart",
+        "description": "Rows of data; x is the category key (a number key for scatter), series the value keys (default: every number key). format applies to pie and donut only: \"percent\" shows each slice as a share of the total, \"number\" its value. stacked stacks bar and area series. height sets the plot height in px; pie and donut ignore it and size themselves."
+      },
+      "Flashcard": {
+        "type": "object",
+        "properties": {
+          "front": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Node"
+                }
+              }
+            ]
+          },
+          "back": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/Node"
+                }
+              }
+            ]
+          },
+          "hint": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "front",
+          "back"
+        ],
+        "additionalProperties": false,
+        "id": "Flashcard",
+        "description": "Card that flips between front and back when tapped. Put several in a Carousel or Grid."
+      },
+      "Celebration": {
+        "type": "object",
+        "properties": {
+          "when": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "when"
+        ],
+        "additionalProperties": false,
+        "id": "Celebration",
+        "description": "Bursts confetti when its condition turns true, e.g. Celebration($score == 5) at the end of a quiz."
+      },
+      "Svg": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Circle"
+                },
+                {
+                  "$ref": "#/$defs/Ellipse"
+                },
+                {
+                  "$ref": "#/$defs/Rect"
+                },
+                {
+                  "$ref": "#/$defs/Line"
+                },
+                {
+                  "$ref": "#/$defs/Path"
+                },
+                {
+                  "$ref": "#/$defs/Polyline"
+                },
+                {
+                  "$ref": "#/$defs/Polygon"
+                },
+                {
+                  "$ref": "#/$defs/SvgText"
+                },
+                {
+                  "$ref": "#/$defs/G"
+                }
+              ]
+            }
+          },
+          "viewBox": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "width": {
+            "$ref": "#/$defs/Length"
+          },
+          "height": {
+            "$ref": "#/$defs/Length"
+          }
+        },
+        "required": [
+          "children",
+          "viewBox"
+        ],
+        "additionalProperties": false,
+        "id": "Svg",
+        "description": "A drawing for steps, parts, mechanisms, diagrams and layouts. Scales to its width; its shapes take expressions, so state can move them. label says in a few words what it shows, for screen readers: always give one."
+      },
+      "Circle": {
+        "type": "object",
+        "properties": {
+          "cx": {
+            "type": "number"
+          },
+          "cy": {
+            "type": "number"
+          },
+          "r": {
+            "type": "number"
+          },
+          "fill": {
+            "$ref": "#/$defs/Color"
+          },
+          "stroke": {
+            "$ref": "#/$defs/Color"
+          },
+          "strokeWidth": {
+            "type": "number"
+          },
+          "opacity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "cx",
+          "cy",
+          "r"
+        ],
+        "additionalProperties": false,
+        "id": "Circle",
+        "description": "fill defaults to the text color; with only a stroke it stays unfilled."
+      },
+      "Ellipse": {
+        "type": "object",
+        "properties": {
+          "cx": {
+            "type": "number"
+          },
+          "cy": {
+            "type": "number"
+          },
+          "rx": {
+            "type": "number"
+          },
+          "ry": {
+            "type": "number"
+          },
+          "fill": {
+            "$ref": "#/$defs/Color"
+          },
+          "stroke": {
+            "$ref": "#/$defs/Color"
+          },
+          "strokeWidth": {
+            "type": "number"
+          },
+          "opacity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "cx",
+          "cy",
+          "rx",
+          "ry"
+        ],
+        "additionalProperties": false,
+        "id": "Ellipse",
+        "description": "fill defaults to the text color; with only a stroke it stays unfilled."
+      },
+      "Rect": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "width": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "fill": {
+            "$ref": "#/$defs/Color"
+          },
+          "stroke": {
+            "$ref": "#/$defs/Color"
+          },
+          "strokeWidth": {
+            "type": "number"
+          },
+          "opacity": {
+            "type": "number"
+          },
+          "rx": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "width",
+          "height"
+        ],
+        "additionalProperties": false,
+        "id": "Rect",
+        "description": "rx rounds the corners; fill defaults to the text color, and with only a stroke it stays unfilled."
+      },
+      "Line": {
+        "type": "object",
+        "properties": {
+          "x1": {
+            "type": "number"
+          },
+          "y1": {
+            "type": "number"
+          },
+          "x2": {
+            "type": "number"
+          },
+          "y2": {
+            "type": "number"
+          },
+          "stroke": {
+            "$ref": "#/$defs/Color"
+          },
+          "strokeWidth": {
+            "type": "number"
+          },
+          "opacity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "x1",
+          "y1",
+          "x2",
+          "y2"
+        ],
+        "additionalProperties": false,
+        "id": "Line",
+        "description": "Stroked in the text color, 2 wide, unless stroke and strokeWidth are set."
+      },
+      "Path": {
+        "type": "object",
+        "properties": {
+          "d": {
+            "type": "string"
+          },
+          "fill": {
+            "$ref": "#/$defs/Color"
+          },
+          "stroke": {
+            "$ref": "#/$defs/Color"
+          },
+          "strokeWidth": {
+            "type": "number"
+          },
+          "opacity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "d"
+        ],
+        "additionalProperties": false,
+        "id": "Path",
+        "description": "d is SVG path data only (M, L, C, A, Z...), else nothing draws; unfilled unless fill is set."
+      },
+      "Polyline": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "string"
+          },
+          "fill": {
+            "$ref": "#/$defs/Color"
+          },
+          "stroke": {
+            "$ref": "#/$defs/Color"
+          },
+          "strokeWidth": {
+            "type": "number"
+          },
+          "opacity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "points"
+        ],
+        "additionalProperties": false,
+        "id": "Polyline",
+        "description": "points like \"0,0 10,5 20,0\"."
+      },
+      "Polygon": {
+        "type": "object",
+        "properties": {
+          "points": {
+            "type": "string"
+          },
+          "fill": {
+            "$ref": "#/$defs/Color"
+          },
+          "stroke": {
+            "$ref": "#/$defs/Color"
+          },
+          "strokeWidth": {
+            "type": "number"
+          },
+          "opacity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "points"
+        ],
+        "additionalProperties": false,
+        "id": "Polygon",
+        "description": "Closed shape; points like \"0,0 10,5 20,0\". fill defaults to the text color; with only a stroke it stays unfilled."
+      },
+      "SvgText": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "size": {
+            "type": "number"
+          },
+          "fill": {
+            "$ref": "#/$defs/Color"
+          },
+          "anchor": {
+            "type": "string",
+            "enum": [
+              "start",
+              "middle",
+              "end"
+            ]
+          },
+          "weight": {
+            "type": "string",
+            "enum": [
+              "normal",
+              "medium",
+              "semibold"
+            ]
+          }
+        },
+        "required": [
+          "text",
+          "x",
+          "y"
+        ],
+        "additionalProperties": false,
+        "id": "SvgText",
+        "description": "A text label at x, y; anchor sets which end sits on x."
+      },
+      "G": {
+        "type": "object",
+        "properties": {
+          "children": {
+            "type": "array",
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Circle"
+                },
+                {
+                  "$ref": "#/$defs/Ellipse"
+                },
+                {
+                  "$ref": "#/$defs/Rect"
+                },
+                {
+                  "$ref": "#/$defs/Line"
+                },
+                {
+                  "$ref": "#/$defs/Path"
+                },
+                {
+                  "$ref": "#/$defs/Polyline"
+                },
+                {
+                  "$ref": "#/$defs/Polygon"
+                },
+                {
+                  "$ref": "#/$defs/SvgText"
+                }
+              ]
+            }
+          },
+          "transform": {
+            "type": "string"
+          },
+          "opacity": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "children"
+        ],
+        "additionalProperties": false,
+        "id": "G",
+        "description": "Group; transform like \"rotate(30 50 50)\" or \"translate(10 0)\"; one with the wrong number of arguments is dropped."
+      },
+      "HtmlView": {
+        "type": "object",
+        "properties": {
+          "html": {
+            "type": "string"
+          },
+          "height": {
+            "type": "number"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "html"
+        ],
+        "additionalProperties": false,
+        "id": "HtmlView",
+        "description": "Sandboxed HTML page with inline JS, for games and canvas. No network except script CDNs. Fits its content unless height is set."
+      }
+    },
+    "functions": {
+      "Append": {
+        "description": "Copy of the list with item added at the end",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "item": {}
+          },
+          "required": [
+            "list",
+            "item"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Prepend": {
+        "description": "Copy of the list with item added at the start",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "item": {}
+          },
+          "required": [
+            "list",
+            "item"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Concat": {
+        "description": "Joins two lists",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "more": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "required": [
+            "list",
+            "more"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Remove": {
+        "description": "Copy without the items whose field equals value; field \"\" compares the items themselves",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "field": {
+              "type": "string"
+            },
+            "value": {}
+          },
+          "required": [
+            "list",
+            "field",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "RemoveAt": {
+        "description": "Copy without the item at index (0-based; negative counts from the end)",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "index": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "list",
+            "index"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Update": {
+        "description": "Copy where items whose field equals value get setField set to setValue",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "field": {
+              "type": "string"
+            },
+            "value": {},
+            "setField": {
+              "type": "string"
+            },
+            "setValue": {}
+          },
+          "required": [
+            "list",
+            "field",
+            "value",
+            "setField",
+            "setValue"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Toggle": {
+        "description": "Adds item if missing, removes it if present (a set of strings or numbers)",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "item": {}
+          },
+          "required": [
+            "list",
+            "item"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Includes": {
+        "description": "True if the list has item, or the text contains it",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {}
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "item": {}
+          },
+          "required": [
+            "list",
+            "item"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "boolean"
+        }
+      },
+      "Find": {
+        "description": "First item whose field equals value, or null",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "field": {
+              "type": "string"
+            },
+            "value": {}
+          },
+          "required": [
+            "list",
+            "field",
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {}
+      },
+      "IndexOf": {
+        "description": "Index of item in the list, or -1",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "item": {}
+          },
+          "required": [
+            "list",
+            "item"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "Take": {
+        "description": "The first n items; a negative n takes the last n",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "n": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "list",
+            "n"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Slice": {
+        "description": "Items, or characters of text, from start up to end (not included); negative counts from the end",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {}
+                },
+                {
+                  "type": "string"
+                }
+              ]
+            },
+            "start": {
+              "type": "number"
+            },
+            "end": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "list",
+            "start"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {}
+            },
+            {
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "Unique": {
+        "description": "Distinct items in first-seen order",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "required": [
+            "list"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Reverse": {
+        "description": "Copy in reverse order",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "required": [
+            "list"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Range": {
+        "description": "Numbers from start up to end (not included) by step (default 1), e.g. @Range(0, 3) is [0, 1, 2]",
+        "params": {
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "number"
+            },
+            "end": {
+              "type": "number"
+            },
+            "step": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "Pick": {
+        "description": "A random item, or null for an empty list; draws anew each time, so call it inside @Set",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "required": [
+            "list"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {}
+      },
+      "Shuffle": {
+        "description": "Copy in random order; call it inside @Set",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "required": [
+            "list"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Flatten": {
+        "description": "One list from a list of lists, e.g. [[1, 2], [3]] is [1, 2, 3]",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            }
+          },
+          "required": [
+            "list"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Chunk": {
+        "description": "The list cut into lists of size items, e.g. for weeks of 7 days or pages",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "size": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "list",
+            "size"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {}
+          }
+        }
+      },
+      "Pow": {
+        "description": "base raised to exponent",
+        "params": {
+          "type": "object",
+          "properties": {
+            "base": {
+              "type": "number"
+            },
+            "exponent": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "base",
+            "exponent"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "Sqrt": {
+        "description": "Square root; null for a negative number",
+        "params": {
+          "type": "object",
+          "properties": {
+            "number": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "number"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "Random": {
+        "description": "Random number from min to max (integer true: a whole number, max included); draws anew each time, so call it inside @Set",
+        "params": {
+          "type": "object",
+          "properties": {
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "integer": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "min",
+            "max"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "Clamp": {
+        "description": "number kept between min and max",
+        "params": {
+          "type": "object",
+          "properties": {
+            "number": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "number",
+            "min",
+            "max"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "Percent": {
+        "description": "part / total * 100, e.g. @Percent(3, 4) is 75; 0 when total is 0",
+        "params": {
+          "type": "object",
+          "properties": {
+            "part": {
+              "type": "number"
+            },
+            "total": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "part",
+            "total"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "Lerp": {
+        "description": "The value a fraction t of the way from a to b",
+        "params": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": "number"
+            },
+            "b": {
+              "type": "number"
+            },
+            "t": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "a",
+            "b",
+            "t"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "Allocate": {
+        "description": "Splits total in proportion to weights, rounded to decimals (default 2), so the parts add up to exactly total, e.g. @Allocate(100, [1, 1, 1]) is [33.34, 33.33, 33.33]",
+        "params": {
+          "type": "object",
+          "properties": {
+            "total": {
+              "type": "number"
+            },
+            "weights": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "decimals": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "total",
+            "weights"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "Payment": {
+        "description": "Payment per period that repays principal over periods at rate percent per period, e.g. a 30-year loan at 6% a year: @Payment(300000, 6 / 12, 360)",
+        "params": {
+          "type": "object",
+          "properties": {
+            "principal": {
+              "type": "number"
+            },
+            "rate": {
+              "type": "number"
+            },
+            "periods": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "principal",
+            "rate",
+            "periods"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "Convert": {
+        "description": "value from one unit to another: mm cm m km in ft yd mi; mg g kg oz lb st; ml l tsp tbsp floz cup pt qt gal (US); m/s km/h mph kn; m2 km2 ft2 ha acre; c f k",
+        "params": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number"
+            },
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "value",
+            "from",
+            "to"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "Format": {
+        "description": "Number as text: \"number\" 12,345.6, \"currency\" $12,345.68 (currency is a code like \"EUR\"), \"percent\" 45 -> 45%, \"compact\" 1.2M ($1.2M with a currency)",
+        "params": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "number",
+                "currency",
+                "percent",
+                "compact"
+              ]
+            },
+            "decimals": {
+              "type": "number"
+            },
+            "currency": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "value"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Join": {
+        "description": "Joins the items (or their field) into text with sep (default \", \"), skipping nulls",
+        "params": {
+          "type": "object",
+          "properties": {
+            "list": {
+              "type": "array",
+              "items": {}
+            },
+            "sep": {
+              "type": "string"
+            },
+            "field": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "list"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Plural": {
+        "description": "Count and word: @Plural(1, \"guest\") is \"1 guest\", 3 gives \"3 guests\"; plural defaults to word + \"s\"",
+        "params": {
+          "type": "object",
+          "properties": {
+            "n": {
+              "type": "number"
+            },
+            "word": {
+              "type": "string"
+            },
+            "plural": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "n",
+            "word"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Pad": {
+        "description": "Pads the start of value to length with char (default \"0\"), e.g. 7 -> \"07\"",
+        "params": {
+          "type": "object",
+          "properties": {
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "length": {
+              "type": "number"
+            },
+            "char": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "value",
+            "length"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Upper": {
+        "description": "Text in upper case",
+        "params": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Lower": {
+        "description": "Text in lower case",
+        "params": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Trim": {
+        "description": "Text without spaces at the start and end",
+        "params": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Capitalize": {
+        "description": "Each word with a capital first letter, e.g. \"new york\" is \"New York\"",
+        "params": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Split": {
+        "description": "List of the parts of text between sep (default \",\"), each trimmed, empty parts dropped, e.g. @Split(\"a, b,,c\") is [\"a\", \"b\", \"c\"]",
+        "params": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "sep": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "Replace": {
+        "description": "Text with every find replaced by replacement",
+        "params": {
+          "type": "object",
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "find": {
+              "type": "string"
+            },
+            "replacement": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "text",
+            "find",
+            "replacement"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Duration": {
+        "description": "Seconds as text: \"short\" 1h 20m, 4m 05s, 45s (default); \"clock\" 1:20:00, 4:05",
+        "params": {
+          "type": "object",
+          "properties": {
+            "seconds": {
+              "type": "number"
+            },
+            "style": {
+              "type": "string",
+              "enum": [
+                "short",
+                "clock"
+              ]
+            }
+          },
+          "required": [
+            "seconds"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Default": {
+        "description": "value, or fallback when value is null, \"\" or not a number, e.g. an empty number input: @Default($weight, 0)",
+        "params": {
+          "type": "object",
+          "properties": {
+            "value": {},
+            "fallback": {}
+          },
+          "required": [
+            "fallback"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {}
+      },
+      "MixColor": {
+        "description": "The hex color a fraction t of the way from one hex color to another, e.g. @MixColor(\"#ffffff\", \"#0285ff\", 0.5) for a heatmap or a tint",
+        "params": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "type": "string"
+            },
+            "to": {
+              "type": "string"
+            },
+            "t": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "from",
+            "to",
+            "t"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Now": {
+        "description": "The current date and time as an ISO string",
+        "params": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "Today": {
+        "description": "Today's date in the viewer's time zone, as \"YYYY-MM-DD\"",
+        "params": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "FormatDate": {
+        "description": "A date as text: \"date\" Oct 9, 2026 (default), \"short\" Oct 9, \"long\" Friday, October 9, 2026, \"weekday\" Fri, \"month\" Oct 2026, \"time\" 9:30 PM, \"datetime\", \"iso\" 2026-10-09. Dates are \"YYYY-MM-DD\", ISO or a timestamp; \"time\" and \"datetime\" need a timestamp or an ISO date-time, as a plain date has no time",
+        "params": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "style": {
+              "type": "string",
+              "enum": [
+                "date",
+                "short",
+                "long",
+                "weekday",
+                "month",
+                "time",
+                "datetime",
+                "iso"
+              ]
+            }
+          },
+          "required": [
+            "date"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "AddDays": {
+        "description": "The date days later (negative: earlier), as \"YYYY-MM-DD\"",
+        "params": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "days": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "date",
+            "days"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "AddMonths": {
+        "description": "The date months later (negative: earlier), kept within the month (Jan 31 + 1 is Feb 28), as \"YYYY-MM-DD\"; 12 months is a year",
+        "params": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "months": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "date",
+            "months"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "DaysBetween": {
+        "description": "Calendar days from one date to another (negative if to is earlier)",
+        "params": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "to": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          "required": [
+            "from",
+            "to"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "MonthsBetween": {
+        "description": "Whole months from one date to another (negative if to is earlier); @Floor(@MonthsBetween(birthday, @Today()) / 12) is an age",
+        "params": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "to": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          },
+          "required": [
+            "from",
+            "to"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "number"
+        }
+      },
+      "StartOf": {
+        "description": "First day of the date's \"week\" (Monday), \"month\" or \"year\", as \"YYYY-MM-DD\"",
+        "params": {
+          "type": "object",
+          "properties": {
+            "date": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "unit": {
+              "type": "string",
+              "enum": [
+                "week",
+                "month",
+                "year"
+              ]
+            }
+          },
+          "required": [
+            "date",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "string"
+        }
+      },
+      "GroupBy": {
+        "description": "One row per distinct key, in first-seen order; value is agg of field (default \"sum\"), or the row count without a field",
+        "params": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {}
+            },
+            "key": {
+              "type": "string"
+            },
+            "field": {
+              "type": "string"
+            },
+            "agg": {
+              "type": "string",
+              "enum": [
+                "sum",
+                "avg",
+                "count",
+                "min",
+                "max"
+              ]
+            }
+          },
+          "required": [
+            "rows",
+            "key"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "value": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "key",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "Pivot": {
+        "description": "One row per rowKey value, under key, with a column per colKey value holding agg of field, for stacked or grouped charts",
+        "params": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {}
+            },
+            "rowKey": {
+              "type": "string"
+            },
+            "colKey": {
+              "type": "string"
+            },
+            "field": {
+              "type": "string"
+            },
+            "agg": {
+              "type": "string",
+              "enum": [
+                "sum",
+                "avg",
+                "count",
+                "min",
+                "max"
+              ]
+            }
+          },
+          "required": [
+            "rows",
+            "rowKey",
+            "colKey"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string"
+            },
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "Top": {
+        "description": "The n rows with the largest field (\"asc\": the smallest)",
+        "params": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {}
+            },
+            "field": {
+              "type": "string"
+            },
+            "n": {
+              "type": "number"
+            },
+            "direction": {
+              "type": "string",
+              "enum": [
+                "desc",
+                "asc"
+              ]
+            }
+          },
+          "required": [
+            "rows",
+            "field",
+            "n"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Between": {
+        "description": "Rows whose field is from min to max, both included; compares numbers, dates by day (\"YYYY-MM-DD\", ISO or a timestamp), or text. Leave min or max null for an open end",
+        "params": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {}
+            },
+            "field": {
+              "type": "string"
+            },
+            "min": {},
+            "max": {}
+          },
+          "required": [
+            "rows",
+            "field"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Bucket": {
+        "description": "Rows per day, week (from Monday) or month of dateField, in date order, empty periods 0 for sum and count; key is \"YYYY-MM-DD\", or \"YYYY-MM\" for months",
+        "params": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {}
+            },
+            "dateField": {
+              "type": "string"
+            },
+            "unit": {
+              "type": "string",
+              "enum": [
+                "day",
+                "week",
+                "month"
+              ]
+            },
+            "field": {
+              "type": "string"
+            },
+            "agg": {
+              "type": "string",
+              "enum": [
+                "sum",
+                "avg",
+                "count",
+                "min",
+                "max"
+              ]
+            }
+          },
+          "required": [
+            "rows",
+            "dateField",
+            "unit"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ]
+              },
+              "value": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "key",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "Cumulative": {
+        "description": "Copy of the rows with field replaced by its running total (field \"\" for a list of numbers)",
+        "params": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {}
+            },
+            "field": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "rows",
+            "field"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "MovingAvg": {
+        "description": "Copy of the rows with field replaced by the average of its last window values (field \"\" for a list of numbers)",
+        "params": {
+          "type": "object",
+          "properties": {
+            "rows": {
+              "type": "array",
+              "items": {}
+            },
+            "field": {
+              "type": "string"
+            },
+            "window": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "rows",
+            "field",
+            "window"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {}
+        }
+      },
+      "Change": {
+        "description": "Percent change from previous to current, e.g. @Change(120, 100) is 20; null when previous is 0",
+        "params": {
+          "type": "object",
+          "properties": {
+            "current": {
+              "type": "number"
+            },
+            "previous": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "current",
+            "previous"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "Histogram": {
+        "description": "Counts numbers into equal-width bins as {key, value} rows: key is the bin's start, value the count; min and max fix the range, default the data's",
+        "params": {
+          "type": "object",
+          "properties": {
+            "values": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "bins": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "values",
+            "bins"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "value": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "key",
+              "value"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "Stats": {
+        "description": "Summary of numbers, all zeros for an empty list",
+        "params": {
+          "type": "object",
+          "properties": {
+            "values": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "values"
+          ],
+          "additionalProperties": false
+        },
+        "returns": {
+          "type": "object",
+          "properties": {
+            "count": {
+              "type": "number"
+            },
+            "min": {
+              "type": "number"
+            },
+            "max": {
+              "type": "number"
+            },
+            "mean": {
+              "type": "number"
+            },
+            "median": {
+              "type": "number"
+            },
+            "stdev": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "count",
+            "min",
+            "max",
+            "mean",
+            "median",
+            "stdev"
+          ],
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}
