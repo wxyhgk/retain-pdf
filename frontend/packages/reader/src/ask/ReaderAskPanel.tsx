@@ -124,6 +124,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       onFork={main && ask.persistent ? (message) => void ask.fork(message) : undefined}
       onOpenSide={ask.persistent ? (sideId) => void ask.openSide(sideId) : undefined}
       onForgetMemory={ask.forgetMemory}
+      memories={ask.notices}
       onJumpToPage={onJumpToPage}
       pageCount={pageCount}
       katexStylesheetUrl={katex}

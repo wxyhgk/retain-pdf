@@ -29,6 +29,8 @@ export type AskConversationUi = {
   openSide?: (sideId: string) => void;
   /** 「已记住」的撤销。 */
   forget?: (memoryId: string) => Promise<void>;
+  /** 宿主事后查到的记忆（agent 不在工具卡片的 _meta 里报的，比如 RetainPDF + pi），按回答的消息编号。 */
+  memories?: ReadonlyMap<string, readonly AskMemoryNotice[]>;
 };
 
 export const AskConversationContext = createContext<AskConversationUi>({ pending: null, contexts: new Map() });
@@ -104,9 +106,15 @@ type StoredCustom = { stored?: Pick<AskMessage, "id" | "marks"> };
 export function MessageAfter(): ReactElement | null {
   // 选出来的要是 store 里原样的引用（每次新数组会一直重画）：取 content，再挑。
   const content = useAuiState((state) => state.message.content);
-  const memories = useMemo(() => content
-    .map((part) => (part.type === "tool-call" ? (part.artifact as { memory?: AskMemoryNotice } | undefined)?.memory : undefined))
-    .filter((memory): memory is AskMemoryNotice => Boolean(memory)), [content]);
+  const id = useAuiState((state) => state.message.id);
+  const { memories: later } = useContext(AskConversationContext);
+  const extra = later?.get(id);
+  const memories = useMemo(() => {
+    const fromTools = content
+      .map((part) => (part.type === "tool-call" ? (part.artifact as { memory?: AskMemoryNotice } | undefined)?.memory : undefined))
+      .filter((memory): memory is AskMemoryNotice => Boolean(memory));
+    return [...fromTools, ...(extra || []).filter((memory) => !fromTools.some((known) => known.id === memory.id))];
+  }, [content, extra]);
   const compacted = useAuiState((state) => Boolean((state.message.metadata?.custom as StoredCustom | undefined)?.stored?.marks?.compactedBefore));
   if (!memories.length && !compacted) return null;
   return (

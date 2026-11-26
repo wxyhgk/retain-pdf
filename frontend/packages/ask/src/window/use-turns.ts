@@ -10,7 +10,7 @@ type ThreadLike = {
   getState: () => { isRunning: boolean; messages: readonly unknown[] };
 };
 
-type RunInfo = { context: AskContext | null; sessionId?: string; memoryIds: string[] };
+type RunInfo = { context: AskContext | null; sessionId?: string; memoryIds: string[]; startedAt?: number };
 
 type MessageLike = { id?: string; role: string; status?: { type?: string; reason?: string } };
 
@@ -53,7 +53,12 @@ export function useTurns({
         const [answer] = turn ? toStoredMessages([turn.answer] as never) : [];
         if (question && answer) {
           const info = run();
-          handlers.current.onTurn?.({ question, answer, context: info.context, agentId: agentId(), sessionId: info.sessionId, memoryIds: info.memoryIds });
+          const answerId = (turn.answer as MessageLike).id;
+          handlers.current.onTurn?.({
+            question, answer, context: info.context, agentId: agentId(), sessionId: info.sessionId, memoryIds: info.memoryIds,
+            ...(info.startedAt ? { startedAt: info.startedAt } : {}),
+            ...(answerId ? { answerId } : {}),
+          });
         }
       }
       wasRunning = state.isRunning;

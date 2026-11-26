@@ -29,6 +29,8 @@ export type AskConversationUi = {
     openSide?: (sideId: string) => void;
     /** 「已记住」的撤销。 */
     forget?: (memoryId: string) => Promise<void>;
+    /** 宿主事后查到的记忆（agent 不在工具卡片的 _meta 里报的，比如 RetainPDF + pi），按回答的消息编号。 */
+    memories?: ReadonlyMap<string, readonly AskMemoryNotice[]>;
 };
 export declare const AskConversationContext: import("react").Context<AskConversationUi>;
 /** 出处标签上的字：「第 56 页 · 选中 37 字」。 */

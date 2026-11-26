@@ -11,7 +11,7 @@
  * 宿主给什么、能改什么：见包的 README.md。
  */
 import { type ReactElement, type ReactNode } from "react";
-import type { AskContext, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
+import type { AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
 export type AskWindowProps = {
     port: AskPort;
@@ -52,6 +52,8 @@ export type AskWindowProps = {
     onOpenSide?: (sideId: string) => void;
     /** 「已记住」的撤销。不给就不能撤销。 */
     onForgetMemory?: (memoryId: string) => Promise<void>;
+    /** 宿主事后查到的「已记住」（按 onTurn 交出的 answerId）：agent 不在工具卡片 _meta 里报记忆时用。 */
+    memories?: ReadonlyMap<string, readonly AskMemoryNotice[]>;
     /** 只能看（以前按书存的问答）：没有输入框。 */
     readOnly?: boolean;
     /** 删掉这次提问。不给就没有删除按钮。 */

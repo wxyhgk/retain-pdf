@@ -4,8 +4,8 @@
 // - 答完的一轮 → 追加消息的请求（问和答一起，带幂等号、出处、记下的记忆）。
 // 接口见 docs/api/16-AI/02-主对话和记忆.md。
 
-import type { AskMessage, AskMessageContext, AskTurnRecord } from "@retainpdf/ask";
-import type { AskCompactionPointView, AskConversationMessageInput, AskConversationMessageRecord, AskSelectionInput } from "@retainpdf/api/ai";
+import type { AskMemoryNotice, AskMessage, AskMessageContext, AskTurnRecord } from "@retainpdf/ask";
+import type { AskCompactionPointView, AskConversationMessageInput, AskConversationMessageRecord, AskMemoryRecord, AskSelectionInput } from "@retainpdf/api/ai";
 
 import type { ReaderAskAnchor } from "../contracts/ask.js";
 
@@ -91,6 +91,20 @@ export function turnToAppend(turn: AskTurnRecord, documentId: string, clientId: 
       memory_ids: turn.memoryIds.slice(0, 10) as AskConversationMessageInput["memory_ids"],
     },
   ];
+}
+
+/**
+ * agent 不在工具卡片的 _meta 里报记忆（RetainPDF + pi、以后经 retainpdf mcp 的本机 agent）：一轮答完按对话和开始时间查到的，
+ * 去掉已经画过的、不是 agent 记的，换成「已记住」。查询的起点往前让 2 秒（后端的时间到秒、两边钟可能差一点）。
+ */
+export function memoriesSince(startedAt: number): string {
+  return new Date(startedAt - 2000).toISOString().replace(/\.\d+Z$/, "Z");
+}
+
+export function laterMemories(records: readonly AskMemoryRecord[], known: ReadonlySet<string>): AskMemoryNotice[] {
+  return records
+    .filter((memory) => memory.origin === "agent" && memory.status === "active" && !known.has(memory.memory_id))
+    .map((memory) => ({ id: memory.memory_id, scope: memory.scope, text: memory.text, category: memory.category, documentId: memory.document_id, created: true }));
 }
 
 /** 「深挖」点的那条回答在库里是哪条：窗口里带着编号就用它；刚答完还没编号的，按正文从后往前找。 */

@@ -165,6 +165,7 @@ export declare function createAcpChatAdapter(options: AcpChatOptions): {
         context: AskContext | null;
         sessionId?: string;
         memoryIds: string[];
+        startedAt?: number;
     };
     close(): void;
 };

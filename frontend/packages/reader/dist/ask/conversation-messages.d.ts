@@ -1,5 +1,5 @@
-import type { AskMessage, AskMessageContext, AskTurnRecord } from "@retainpdf/ask";
-import type { AskCompactionPointView, AskConversationMessageInput, AskConversationMessageRecord, AskSelectionInput } from "@retainpdf/api/ai";
+import type { AskMemoryNotice, AskMessage, AskMessageContext, AskTurnRecord } from "@retainpdf/ask";
+import type { AskCompactionPointView, AskConversationMessageInput, AskConversationMessageRecord, AskMemoryRecord, AskSelectionInput } from "@retainpdf/api/ai";
 import type { ReaderAskAnchor } from "../contracts/ask.js";
 /** 正在读的书：出处要带的编号。 */
 export type AskBook = {
@@ -15,6 +15,12 @@ export declare function selectionContext(selection: AskConversationMessageRecord
 export declare function recordsToMessages(records: readonly AskConversationMessageRecord[], compactions?: readonly Pick<AskCompactionPointView, "covers_to_seq">[], currentDocumentId?: string): AskMessage[];
 /** 答完的一轮 → 追加消息的请求。clientId 是这一轮的幂等号前缀（网络重试不会追加两次）。 */
 export declare function turnToAppend(turn: AskTurnRecord, documentId: string, clientId: string): AskConversationMessageInput[];
+/**
+ * agent 不在工具卡片的 _meta 里报记忆（RetainPDF + pi、以后经 retainpdf mcp 的本机 agent）：一轮答完按对话和开始时间查到的，
+ * 去掉已经画过的、不是 agent 记的，换成「已记住」。查询的起点往前让 2 秒（后端的时间到秒、两边钟可能差一点）。
+ */
+export declare function memoriesSince(startedAt: number): string;
+export declare function laterMemories(records: readonly AskMemoryRecord[], known: ReadonlySet<string>): AskMemoryNotice[];
 /** 「深挖」点的那条回答在库里是哪条：窗口里带着编号就用它；刚答完还没编号的，按正文从后往前找。 */
 export declare function findForkSource(records: readonly AskConversationMessageRecord[], message: {
     id?: string;

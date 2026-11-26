@@ -1,4 +1,4 @@
-import type { AskMessage, AskTurnRecord } from "@retainpdf/ask";
+import type { AskMemoryNotice, AskMessage, AskTurnRecord } from "@retainpdf/ask";
 import type { AskCompactionPointView, AskConversationMessageRecord, AskConversationRecord } from "@retainpdf/api/ai";
 import type { ReaderAskAnchor, ReaderAskPort } from "../contracts/ask.js";
 import { type AskBook } from "./conversation-messages.js";
@@ -25,6 +25,7 @@ export declare function useAskConversation({ port, book, onAppended }: {
     pending: ReaderAskAnchor;
     setPending: import("react").Dispatch<import("react").SetStateAction<ReaderAskAnchor>>;
     closingSide: "busy" | "failed" | "idle";
+    notices: ReadonlyMap<string, readonly AskMemoryNotice[]>;
     persistent: boolean;
     openMain: () => Promise<void>;
     ask: (anchor: ReaderAskAnchor) => void;

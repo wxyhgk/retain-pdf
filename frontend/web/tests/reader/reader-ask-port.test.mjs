@@ -2,7 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { BUILTIN_AGENT_ID, acpSocketUrl, fromAnchorRecord, fromThreadRecord, toAnchorRecord, toReaderAgents } from "../../src/features/reader/domain/ask-port.ts";
+import { BUILTIN_AGENT_ID, PI_AGENT_ID, acpSocketUrl, withPiConversation, fromAnchorRecord, fromThreadRecord, toAnchorRecord, toReaderAgents } from "../../src/features/reader/domain/ask-port.ts";
 
 test("agent 列表：自带的缺模型配置或密钥引用时标成用不了、写明缺什么；本机 agent 照后端的 available / reason", () => {
   const rows = [
@@ -82,4 +82,12 @@ test("问答记录的请求体带 ACP 的 sessionId（后端删问答、删书�
   assert.equal("session_id" in toCreateThreadBody({ agentId: "retainpdf", anchor, messages }), false);
   assert.deepEqual(toPatchThreadBody({ agentId: "retainpdf-pi", sessionId: "s-2", messages }), { agent_id: "retainpdf-pi", session_id: "s-2", messages: [{ role: "user", text: "Q", thought: null, usage: null }] });
   assert.deepEqual(Object.keys(toPatchThreadBody({ messages })), ["messages"]);
+});
+
+test("RetainPDF + pi：握手带了对话编号就自己取前文（initialize 不报能力，按编号认）；别的 agent、没带对话的不动", () => {
+  const session = { sessionId: "s", capabilities: { memory: true } };
+  assert.deepEqual(withPiConversation(session, PI_AGENT_ID, "conv-1").capabilities, { memory: true, conversation: true });
+  assert.equal(withPiConversation(session, PI_AGENT_ID, ""), session);
+  assert.equal(withPiConversation(session, BUILTIN_AGENT_ID, "conv-1"), session, "自带 agent 自己报能力");
+  assert.equal(withPiConversation(session, "claude-code", "conv-1"), session);
 });

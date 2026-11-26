@@ -6,6 +6,8 @@ import {
   anchorSelection,
   findForkSource,
   forkTitle,
+  laterMemories,
+  memoriesSince,
   recordsToMessages,
   selectionContext,
   turnToAppend,
@@ -99,4 +101,15 @@ test("书页上的「?」：主对话里这本书的问，按出处画在那一�
   assert.deepEqual(mark.anchor, { pane: "source", page: 56, itemId: "p056-b0003", selection: "选的", sourceText: "", translatedText: "", section: "", point: { x: 0.1, y: 0.4 } });
   assert.equal(recordMark(record(2, "user", "没页码"), 8, pointOf), null);
   assert.equal(recordMark(record(3, "assistant", "答", { page: 3 }), 9, pointOf), null, "只画问");
+});
+
+test("agent 不在工具卡片里报记忆（RetainPDF + pi）：一轮答完按对话和开始时间查，起点往前让 2 秒；只算 agent 记的、还有效的、没画过的", () => {
+  assert.equal(memoriesSince(Date.UTC(2026, 10, 26, 10, 0, 5, 300)), "2026-11-26T10:00:03Z");
+  const memory = (id, extra = {}) => ({
+    memory_id: id, scope: "user", document_id: null, category: "style", text: `记忆 ${id}`, status: "active", superseded_by: null, origin: "agent",
+    agent_id: "retainpdf-pi", source_conversation_id: "conv-1", source_message_id: null, source_job_id: null, source_page: null,
+    created_at: "2026-11-26T10:00:04Z", updated_at: "2026-11-26T10:00:04Z", deleted_at: null, ...extra,
+  });
+  const found = laterMemories([memory("m1"), memory("m2", { origin: "user" }), memory("m3", { status: "superseded" }), memory("m4")], new Set(["m4"]));
+  assert.deepEqual(found, [{ id: "m1", scope: "user", text: "记忆 m1", category: "style", documentId: null, created: true }]);
 });

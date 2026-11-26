@@ -177,6 +177,7 @@ export function createAcpChatAdapter(options) {
             // 这条问题第一次发时读宿主的出处，之后重新回答照用那一个（宿主发完就清掉了）。
             const known = last?.id ? asked.get(last.id) : undefined;
             const context = known !== undefined ? known : options.getContext();
+            const startedAt = Date.now();
             if (last?.id && known === undefined) {
                 asked.set(last.id, context);
                 options.onAsked?.(last.id, context);
@@ -249,7 +250,7 @@ export function createAcpChatAdapter(options) {
             turn = { ...turn, parts: closeOpenReasoning(turn.parts, Date.now()) };
             if (!failure)
                 sessionSeen = lastIndex + 2;
-            lastRun = { context, sessionId: current.sessionId, memoryIds: turnMemoryIds(turn.parts) };
+            lastRun = { context, sessionId: current.sessionId, memoryIds: turnMemoryIds(turn.parts), startedAt };
             const speed = turnSpeed(turn);
             const timing = {
                 streamStartTime: turn.startedAt,

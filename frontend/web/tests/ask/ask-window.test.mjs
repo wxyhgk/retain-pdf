@@ -170,6 +170,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     assert.equal(turn.answer.text, "见第 12 页。");
     assert.equal(turn.context.label, "第 56 页 · 2.1", "带着发问时用的出处");
     assert.deepEqual([turn.agentId, turn.sessionId, turn.memoryIds], ["a", "sess-1", []]);
+    assert.ok(turn.answerId && turn.startedAt > 0, "交出回答的消息编号和开始时刻");
     document.querySelector(".ask-fork").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     assert.deepEqual(forks, [{ id: undefined, text: "见第 12 页。" }], "回答底下的「深挖」");
 

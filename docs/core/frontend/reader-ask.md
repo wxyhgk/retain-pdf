@@ -97,6 +97,10 @@ RetainPDF 的自带类 agent 由网页端口合成「模型」一项（设置里
 - 每一问带自己的出处：自带 agent 认 `_meta.retainpdf.selection`（`initialize` 报 `agentCapabilities._meta.retainpdf.selection`），问题前面不写那段字；
   本机 agent 只认字，照旧写。出处的块编号是右键 / 选字时悬停认出的那一块。
 - 新会话的前文：自带 agent 报了 `conversation` 能力就自己取（握手带 `conversation_id`）；别的 agent 第一问前面带上下文接口拼好的 `text`（记忆 + 摘要 + 最近几轮）。
+- RetainPDF + pi（后端 #231）：握手带 `conversation_id` 后自己取前文，但 pi-acp 的 `initialize` 不报 `_meta.retainpdf`，web 端口按编号 `retainpdf-pi`
+  标上 `conversation`（`withPiConversation`），窗口不再拼前几轮；它收不到 `_meta`，出处那段字照写。它的「已记住」不在工具卡片里：一轮答完阅读器按
+  `GET /ai/memories?source_conversation_id=…&created_after=<这一轮开始前 2 秒>` 查 agent 新记的，画在那条回答下面，编号放进追加回答的 `memory_ids`
+  （以后经 `retainpdf mcp` 的本机 agent 也走这条）。
 - 「已记住」：自带 agent 的 `remember` 完成时 `tool_call_update` 的 `_meta.retainpdf.memory`，画在回答正文下面（工具卡片收起来也看得到），撤销调 `DELETE /ai/memories/{id}`；
   这一轮新记的编号追加时放进 `memory_ids`。重新打开窗口时只画回答，不再画「已记住」（工具调用不存）。
 - 「深挖」：回答底下的分叉图标，从这条开副对话（标题从回答第一句截）；副对话的「结束，带回结论」让后端用设置里的模型写结论（最多等 180 秒），

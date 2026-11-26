@@ -68,7 +68,7 @@ function layoutFor(mode, float, dockWidth) {
     return float;
 }
 export default function AskWindow(props) {
-    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
+    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
     useKatexStylesheet(katexStylesheetUrl);
     const [agents, setAgents] = useState(null);
     const [agentId, setAgentId] = useState("");
@@ -138,7 +138,8 @@ export default function AskWindow(props) {
         fork: onFork,
         openSide: onOpenSide,
         forget: onForgetMemory,
-    }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory]);
+        memories,
+    }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories]);
     const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
     // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
     const send = useMemo(() => (text) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);

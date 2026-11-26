@@ -198,6 +198,7 @@ test("agent 报了能力：认结构化出处就不写那段字；自己取前�
   assert.deepEqual(prompts[0].map((block) => block.text), ["这句什么意思？"], "自带 agent 认出处、自己取前文：只发问题");
   assert.deepEqual(metas[0], CONTEXT.meta);
   assert.deepEqual(chat.lastRun().memoryIds, ["mem-1"], "只算新记的");
+  assert.ok(chat.lastRun().startedAt > 0, "这一轮开始的时刻（宿主查事后记的记忆用）");
   // 重新回答：会话重开，出处照用那一问的（宿主早清掉了）。
   capabilities = {};
   await run([q]);

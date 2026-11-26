@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { Rnd } from "react-rnd";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 
-import type { AskAgent, AskConfigOption, AskContext, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
+import type { AskAgent, AskConfigOption, AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
 import { toInitialMessages } from "../acp/messages.js";
 import { PermissionStore, createAcpChatAdapter } from "../acp/adapter.js";
 import { Thread } from "../ui/elements/thread.aui.js";
@@ -120,6 +120,8 @@ export type AskWindowProps = {
   onOpenSide?: (sideId: string) => void;
   /** 「已记住」的撤销。不给就不能撤销。 */
   onForgetMemory?: (memoryId: string) => Promise<void>;
+  /** 宿主事后查到的「已记住」（按 onTurn 交出的 answerId）：agent 不在工具卡片 _meta 里报记忆时用。 */
+  memories?: ReadonlyMap<string, readonly AskMemoryNotice[]>;
   /** 只能看（以前按书存的问答）：没有输入框。 */
   readOnly?: boolean;
   /** 删掉这次提问。不给就没有删除按钮。 */
@@ -133,7 +135,7 @@ export type AskWindowProps = {
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -208,7 +210,8 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     fork: onFork,
     openSide: onOpenSide,
     forget: onForgetMemory,
-  }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory]);
+    memories,
+  }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories]);
   const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
   // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
   const send = useMemo(() => (text: string) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);

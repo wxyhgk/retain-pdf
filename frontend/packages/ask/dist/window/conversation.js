@@ -49,9 +49,15 @@ export function EarlierHistory() {
 export function MessageAfter() {
     // 选出来的要是 store 里原样的引用（每次新数组会一直重画）：取 content，再挑。
     const content = useAuiState((state) => state.message.content);
-    const memories = useMemo(() => content
-        .map((part) => (part.type === "tool-call" ? part.artifact?.memory : undefined))
-        .filter((memory) => Boolean(memory)), [content]);
+    const id = useAuiState((state) => state.message.id);
+    const { memories: later } = useContext(AskConversationContext);
+    const extra = later?.get(id);
+    const memories = useMemo(() => {
+        const fromTools = content
+            .map((part) => (part.type === "tool-call" ? part.artifact?.memory : undefined))
+            .filter((memory) => Boolean(memory));
+        return [...fromTools, ...(extra || []).filter((memory) => !fromTools.some((known) => known.id === memory.id))];
+    }, [content, extra]);
     const compacted = useAuiState((state) => Boolean(state.message.metadata?.custom?.stored?.marks?.compactedBefore));
     if (!memories.length && !compacted)
         return null;

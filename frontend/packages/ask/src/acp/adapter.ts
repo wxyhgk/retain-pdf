@@ -121,7 +121,7 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
   // 这个会话已经带过之前聊过什么（新会话的第一问带一次）。
   let sentHistory = false;
   // 最近答完的一轮：用了哪个出处、哪个会话、记下了哪些记忆（窗口交给宿主存）。
-  let lastRun: { context: AskContext | null; sessionId?: string; memoryIds: string[] } = { context: null, memoryIds: [] };
+  let lastRun: { context: AskContext | null; sessionId?: string; memoryIds: string[]; startedAt?: number } = { context: null, memoryIds: [] };
   // 这个会话已经听过几条（问 + 答）。重新回答、改了问题、切到别的版本时，对话和会话里的对不上：开新会话，把到这里为止的带过去。
   let sessionSeen = 0;
   // 答最近一轮的那个会话的 sessionId（会话之后可能被关掉、重开，存问答记录时要的是答了这一轮的那个）。
@@ -215,6 +215,7 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       // 这条问题第一次发时读宿主的出处，之后重新回答照用那一个（宿主发完就清掉了）。
       const known = last?.id ? asked.get(last.id) : undefined;
       const context = known !== undefined ? known : options.getContext();
+      const startedAt = Date.now();
       if (last?.id && known === undefined) {
         asked.set(last.id, context);
         options.onAsked?.(last.id, context);
@@ -286,7 +287,7 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       const endedAt = now();
       turn = { ...turn, parts: closeOpenReasoning(turn.parts, Date.now()) };
       if (!failure) sessionSeen = lastIndex + 2;
-      lastRun = { context, sessionId: current.sessionId, memoryIds: turnMemoryIds(turn.parts) };
+      lastRun = { context, sessionId: current.sessionId, memoryIds: turnMemoryIds(turn.parts), startedAt };
       const speed = turnSpeed(turn);
       const timing = {
         streamStartTime: turn.startedAt,

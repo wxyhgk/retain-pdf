@@ -29,7 +29,12 @@ export function useTurns({ thread, agentId, run, sessionId, onTurn, onTurnDone, 
                 const [answer] = turn ? toStoredMessages([turn.answer]) : [];
                 if (question && answer) {
                     const info = run();
-                    handlers.current.onTurn?.({ question, answer, context: info.context, agentId: agentId(), sessionId: info.sessionId, memoryIds: info.memoryIds });
+                    const answerId = turn.answer.id;
+                    handlers.current.onTurn?.({
+                        question, answer, context: info.context, agentId: agentId(), sessionId: info.sessionId, memoryIds: info.memoryIds,
+                        ...(info.startedAt ? { startedAt: info.startedAt } : {}),
+                        ...(answerId ? { answerId } : {}),
+                    });
                 }
             }
             wasRunning = state.isRunning;

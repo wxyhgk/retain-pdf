@@ -6,11 +6,11 @@
 // 宿主没给 conversations 端口（演示模式、局域网共享）：只记在这次打开里。
 
 import { useCallback, useRef, useState } from "react";
-import type { AskMessage, AskTurnRecord } from "@retainpdf/ask";
+import type { AskMemoryNotice, AskMessage, AskTurnRecord } from "@retainpdf/ask";
 import type { AskCompactionPointView, AskConversationMessageRecord, AskConversationRecord } from "@retainpdf/api/ai";
 
 import type { ReaderAskAnchor, ReaderAskPort } from "../contracts/ask.js";
-import { findForkSource, forkTitle, recordsToMessages, turnToAppend, type AskBook } from "./conversation-messages.js";
+import { findForkSource, forkTitle, laterMemories, memoriesSince, recordsToMessages, turnToAppend, type AskBook } from "./conversation-messages.js";
 
 const PAGE = 50;
 
@@ -40,12 +40,16 @@ function errorReason(error: unknown): string {
 
 export function useAskConversation({ port, book, onAppended }: { port: ReaderAskPort | null; book: AskBook; onAppended?: (records: AskConversationMessageRecord[]) => void }) {
   const conversations = port?.conversations ?? null;
+  const memories = port?.memories ?? null;
   const [visible, setVisible] = useState(false);
   const [view, setView] = useState<AskConversationView>(EMPTY);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [closingSide, setClosingSide] = useState<"idle" | "busy" | "failed">("idle");
   const [pending, setPending] = useState<ReaderAskAnchor | null>(null);
+  // 一轮答完以后查到的「已记住」（按回答在窗口里的消息编号），和画过的记忆编号。
+  const [notices, setNotices] = useState<ReadonlyMap<string, readonly AskMemoryNotice[]>>(() => new Map());
+  const seenMemories = useRef(new Set<string>());
   const viewRef = useRef(view);
   viewRef.current = view;
   const bookRef = useRef(book);
@@ -106,7 +110,20 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
     const current = viewRef.current;
     const conversation = current.conversation;
     if (!conversations || !conversation) return;
-    const input = turnToAppend(turn, bookRef.current.documentId, newClientId());
+    for (const id of turn.memoryIds) seenMemories.current.add(id);
+    // agent 没在工具卡片里报记忆：按对话和这一轮开始的时间查新记的（RetainPDF + pi）。
+    let memoryIds = turn.memoryIds;
+    if (!memoryIds.length && memories && turn.startedAt) {
+      const found = laterMemories(
+        await memories.list({ source_conversation_id: conversation.conversation_id, created_after: memoriesSince(turn.startedAt) }).catch(() => []),
+        seenMemories.current,
+      );
+      for (const memory of found) seenMemories.current.add(memory.id);
+      memoryIds = found.map((memory) => memory.id);
+      const answerId = turn.answerId;
+      if (found.length && answerId) setNotices((current) => new Map(current).set(answerId, found));
+    }
+    const input = turnToAppend({ ...turn, memoryIds }, bookRef.current.documentId, newClientId());
     let result;
     try {
       result = await conversations.append(conversation.conversation_id, input);
@@ -121,7 +138,7 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
       : state));
     onAppended?.(result.messages);
     if (result.compaction_due && conversation.kind === "main") void conversations.compact(conversation.conversation_id).catch(() => {});
-  }, [conversations, onAppended]);
+  }, [conversations, memories, onAppended]);
 
   const onTurn = useCallback((turn: AskTurnRecord) => {
     void appendTurn(turn).catch((failure) => setError(`这一轮没存上：${failure instanceof Error ? failure.message : String(failure)}`));
@@ -192,6 +209,7 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
     pending,
     setPending,
     closingSide,
+    notices,
     persistent: Boolean(conversations),
     openMain,
     ask,

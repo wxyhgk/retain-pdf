@@ -28,6 +28,16 @@ import { mockAskPort } from "@/platform/mock/ask-agent.js";
 import { askMemoriesPort, createAskConversationsPort } from "./ask-conversations-port.js";
 
 export const BUILTIN_AGENT_ID = "retainpdf";
+export const PI_AGENT_ID = "retainpdf-pi";
+
+/**
+ * RetainPDF + pi（后端 #231）：握手带了对话编号就自己取前文（摘要 + 最近几轮 + 记忆），但 pi-acp 的 initialize 不报 _meta.retainpdf，
+ * 按编号认：标上 conversation，窗口就不再把前几轮拼过去。出处那段字照写（它收不到 _meta）；「已记住」由阅读器一轮答完后查。
+ */
+export function withPiConversation<T extends { capabilities?: Record<string, boolean | undefined> }>(session: T, agentId: string, conversationId?: string): T {
+  if (agentId !== PI_AGENT_ID || !conversationId) return session;
+  return { ...session, capabilities: { ...session.capabilities, conversation: true } };
+}
 
 type AgentRow = { id?: string; name?: string; kind?: string; available?: boolean; reason?: string; launch?: string; install?: string };
 
@@ -174,7 +184,7 @@ async function openSession(
   // 主对话 / 副对话的编号：自带 agent 开会话时自己取前文（记忆 + 摘要 + 最近几轮），记忆的出处也记它。
   if (conversationId) extra.query = { ...extra.query, conversation_id: conversationId };
   // 握手、开会话、发问都在提问窗的包里（@retainpdf/ask/acp）；这里只拼地址：api_key、模型配置和凭据引用、job_id。
-  const session = await openAcpWebSocketSession(acpSocketUrl(apiBase(), agentId, frontendApiKey(), extra.query), handlers);
+  const session = withPiConversation(await openAcpWebSocketSession(acpSocketUrl(apiBase(), agentId, frontendApiKey(), extra.query), handlers), agentId, conversationId);
   // 模型这一项是我们加的（agent 自己报了就用它的）；换模型要换密钥和地址，只能重开会话。别的设置（思考强度……）照 agent 报的、交给 agent 改。
   const own = session.configOptions || [];
   if (own.some((option) => option.category === "model")) return session;

@@ -128,6 +128,10 @@ export type AskTurnRecord = {
     sessionId?: string;
     /** 这一轮「已记住」的记忆编号（工具卡片 _meta 里的，created 为真的）。 */
     memoryIds: string[];
+    /** 这一轮开始的时刻（毫秒时间戳）：agent 不在 _meta 里报记忆时，宿主按它去查这一轮新记的。 */
+    startedAt?: number;
+    /** 回答在窗口里的消息编号：宿主查到的记忆按它交回（AskWindow 的 memories）。 */
+    answerId?: string;
 };
 /** 「已记住」：agent 记下一条记忆（自带 agent 在 remember 工具卡片完成时的 _meta.retainpdf.memory）。 */
 export type AskMemoryNotice = {
