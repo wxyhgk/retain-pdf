@@ -12,6 +12,7 @@ use crate::routes::common::{method_not_allowed, request_origin_is_allowed, unkno
 
 mod accounts;
 mod ai;
+mod ask_conversations;
 mod collections;
 mod credentials;
 mod documents;
@@ -34,6 +35,7 @@ pub(crate) fn registered_endpoints() -> Vec<crate::app::endpoints::Endpoint> {
         public::ENDPOINTS,
         accounts::ENDPOINTS,
         ai::ENDPOINTS,
+        ask_conversations::ENDPOINTS,
         credentials::ENDPOINTS,
         providers::ENDPOINTS,
         ingestion::ENDPOINTS,
@@ -126,6 +128,7 @@ fn authenticated_api_routes(state: &AppState) -> Router<AppState> {
     Router::new()
         .merge(accounts::routes())
         .merge(ai::routes())
+        .merge(ask_conversations::routes())
         .merge(credentials::routes())
         .merge(ingestion::routes())
         .merge(glossaries::routes())

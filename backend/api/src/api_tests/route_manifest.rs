@@ -112,6 +112,7 @@ const SECTIONS: &[(&str, &str, &str)] = &[
     ("router::model_requests", "22-内部-模型调用", "内部：模型调用"),
     ("router::metrics", "23-运维指标", "运维指标（Prometheus）"),
     ("router::ai", "24-AI", "AI：阅读页提问的 agent 和 ACP 桥"),
+    ("router::ask_conversations", "25-AI-对话和记忆", "AI：阅读页提问的主对话、副对话和记忆"),
 ];
 
 /// 这个路由文件归哪一组（`SECTIONS` 里的下标）。没登记返回 None。
@@ -407,6 +408,9 @@ fn agent_key_endpoints_are_pinned() {
     assert_eq!(
         agent,
         [
+            // 2026-11-26 自带 agent 开会话取上下文、记忆工具 remember / search_memories（改、删记忆和动对话是用户的事，不给）
+            "GET /api/v1/ai/ask-conversations/:conversation_id/context",
+            "GET /api/v1/ai/memories",
             "GET /api/v1/documents",
             "GET /api/v1/documents/:document_id",
             "GET /api/v1/documents/:document_id/files/pages/:page",
@@ -416,6 +420,7 @@ fn agent_key_endpoints_are_pinned() {
             "GET /api/v1/jobs/:job_id/translations/:item_id",
             "GET /api/v1/search",
             "PATCH /api/v1/jobs/:job_id/translations/:item_id",
+            "POST /api/v1/ai/memories",
         ]
     );
     for line in &agent {

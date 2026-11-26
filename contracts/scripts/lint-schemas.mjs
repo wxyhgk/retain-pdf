@@ -7,6 +7,7 @@ const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const EXPECTED_DIALECT = "https://json-schema.org/draft/2020-12/schema";
 const EXPECTED_SCHEMAS = [
   "ai-agents.v1.schema.json",
+  "ask-conversations.v1.schema.json",
   "ask-threads.v1.schema.json",
   "auth-session.v1.schema.json",
   "create-job.v1.schema.json",

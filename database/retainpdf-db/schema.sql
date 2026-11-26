@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 39
+-- user_version 40
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -12,6 +12,82 @@ TABLE artifacts
   TRIGGER sync_dirty_artifacts_delete: CREATE TRIGGER sync_dirty_artifacts_delete AFTER DELETE ON artifacts WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', OLD.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_artifacts_insert: CREATE TRIGGER sync_dirty_artifacts_insert AFTER INSERT ON artifacts WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_artifacts_update: CREATE TRIGGER sync_dirty_artifacts_update AFTER UPDATE ON artifacts WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+TABLE ask_conversation_messages
+  message_id TEXT PRIMARY KEY#1
+  conversation_id TEXT NOT NULL
+  seq INTEGER NOT NULL
+  role TEXT NOT NULL
+  text TEXT NOT NULL
+  thought TEXT
+  usage_json TEXT
+  agent_id TEXT
+  side_conversation_id TEXT
+  document_id TEXT
+  job_id TEXT
+  version_id TEXT
+  pane TEXT
+  page INTEGER
+  selection_json TEXT
+  client_message_id TEXT
+  created_at TEXT NOT NULL
+  FOREIGN KEY (conversation_id) REFERENCES ask_conversations(conversation_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  FOREIGN KEY (document_id) REFERENCES item_files(file_id) ON UPDATE NO ACTION ON DELETE SET NULL
+  FOREIGN KEY (side_conversation_id) REFERENCES ask_conversations(conversation_id) ON UPDATE NO ACTION ON DELETE SET NULL
+  INDEX idx_ask_conversation_messages_document: CREATE INDEX idx_ask_conversation_messages_document ON ask_conversation_messages(document_id, page) WHERE document_id IS NOT NULL
+  PRIMARY KEY (message_id)
+  UNIQUE (conversation_id, client_message_id)
+  UNIQUE (conversation_id, seq)
+
+TABLE ask_conversations
+  conversation_id TEXT PRIMARY KEY#1
+  kind TEXT NOT NULL
+  parent_id TEXT
+  forked_from_message_id TEXT
+  status TEXT NOT NULL
+  title TEXT NOT NULL DEFAULT ''
+  summary TEXT
+  document_id TEXT
+  created_at TEXT NOT NULL
+  updated_at TEXT NOT NULL
+  closed_at TEXT
+  FOREIGN KEY (document_id) REFERENCES item_files(file_id) ON UPDATE NO ACTION ON DELETE SET NULL
+  FOREIGN KEY (forked_from_message_id) REFERENCES ask_conversation_messages(message_id) ON UPDATE NO ACTION ON DELETE SET NULL
+  FOREIGN KEY (parent_id) REFERENCES ask_conversations(conversation_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  INDEX idx_ask_conversations_one_open_main: CREATE UNIQUE INDEX idx_ask_conversations_one_open_main ON ask_conversations(kind) WHERE kind = 'main' AND status = 'open'
+  INDEX idx_ask_conversations_parent: CREATE INDEX idx_ask_conversations_parent ON ask_conversations(parent_id, created_at)
+  PRIMARY KEY (conversation_id)
+
+TABLE ask_memories
+  memory_id TEXT PRIMARY KEY#1
+  scope TEXT NOT NULL
+  document_id TEXT
+  category TEXT NOT NULL
+  text TEXT NOT NULL
+  status TEXT NOT NULL
+  superseded_by TEXT
+  origin TEXT NOT NULL
+  agent_id TEXT
+  source_conversation_id TEXT
+  source_message_id TEXT
+  source_job_id TEXT
+  source_page INTEGER
+  created_at TEXT NOT NULL
+  updated_at TEXT NOT NULL
+  deleted_at TEXT
+  FOREIGN KEY (document_id) REFERENCES item_files(file_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  FOREIGN KEY (source_conversation_id) REFERENCES ask_conversations(conversation_id) ON UPDATE NO ACTION ON DELETE SET NULL
+  FOREIGN KEY (source_message_id) REFERENCES ask_conversation_messages(message_id) ON UPDATE NO ACTION ON DELETE SET NULL
+  FOREIGN KEY (superseded_by) REFERENCES ask_memories(memory_id) ON UPDATE NO ACTION ON DELETE SET NULL
+  INDEX idx_ask_memories_document: CREATE INDEX idx_ask_memories_document ON ask_memories(document_id, status, updated_at) WHERE document_id IS NOT NULL
+  INDEX idx_ask_memories_scope: CREATE INDEX idx_ask_memories_scope ON ask_memories(scope, status, updated_at)
+  INDEX idx_ask_memories_source_conversation: CREATE INDEX idx_ask_memories_source_conversation ON ask_memories(source_conversation_id, created_at) WHERE source_conversation_id IS NOT NULL
+  PRIMARY KEY (memory_id)
+  TRIGGER ask_memories_fts_delete: CREATE TRIGGER ask_memories_fts_delete AFTER DELETE ON ask_memories BEGIN DELETE FROM ask_memories_fts WHERE memory_id = old.memory_id; END
+  TRIGGER ask_memories_fts_insert: CREATE TRIGGER ask_memories_fts_insert AFTER INSERT ON ask_memories BEGIN INSERT INTO ask_memories_fts (memory_id, text) VALUES (new.memory_id, new.text); END
+  TRIGGER ask_memories_fts_update: CREATE TRIGGER ask_memories_fts_update AFTER UPDATE OF text ON ask_memories BEGIN DELETE FROM ask_memories_fts WHERE memory_id = old.memory_id; INSERT INTO ask_memories_fts (memory_id, text) VALUES (new.memory_id, new.text); END
+
+CREATE VIRTUAL TABLE ask_memories_fts USING fts5(memory_id UNINDEXED, text, tokenize='trigram')
 
 TABLE ask_messages
   thread_id TEXT NOT NULL PRIMARY KEY#1

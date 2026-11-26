@@ -55,6 +55,9 @@ pub fn classify_param(name: &str) -> ParamClass {
         "agent_id" => ParamClass::Nested,
         // thread_id：书下面的问答记录（/documents/:document_id/ask-threads/:thread_id），处理函数按书查，不在这本书上 404
         "thread_id" => ParamClass::Nested,
+        // conversation_id、memory_id：阅读页提问的对话和记忆（/ai/ask-conversations/:conversation_id、/ai/memories/:memory_id），
+        // 全局的用户数据没有归属列，只出现在多用户下关闭的路由里（2026-11-26）
+        "conversation_id" | "memory_id" => ParamClass::Nested,
         _ => ParamClass::Unknown,
     }
 }

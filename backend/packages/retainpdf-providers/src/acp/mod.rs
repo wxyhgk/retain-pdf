@@ -45,6 +45,9 @@ pub const ASK_ENV_JOB_ID: &str = "RETAIN_ASK_JOB_ID";
 pub const ASK_ENV_DOCUMENT_ID: &str = "RETAIN_ASK_DOCUMENT_ID";
 pub const ASK_ENV_BACKEND_URL: &str = "RETAIN_ASK_BACKEND_URL";
 pub const ASK_ENV_BACKEND_KEY: &str = "RETAIN_ASK_BACKEND_KEY";
+/// 自带 Python agent 接着哪个阅读页提问对话（握手带了 `conversation_id` 才给，2026-11-26）：会话开始时经后端取上下文（记忆、最近几轮），
+/// 记忆的出处也记它。后端地址和密钥（上面两个）有密钥就给，没带书也给（记忆工具要用）。
+pub const ASK_ENV_CONVERSATION_ID: &str = "RETAIN_ASK_CONVERSATION_ID";
 /// `job_id` 最长多少字节（合并阅读的虚拟任务 `merged-<64>-<16>` 是 88）。
 const MAX_JOB_ID_BYTES: usize = 200;
 const ASK_PROTOCOLS: [&str; 3] = ["openai", "openai_responses", "anthropic"];
@@ -133,6 +136,10 @@ pub struct AcpConnectQuery {
     /// 阅读页正在读的任务（合并阅读的虚拟任务 `merged-…` 也行）：给了，自带 agent 就能用工具读这本书。本机 agent 不看它。
     #[serde(default)]
     pub job_id: String,
+    /// 阅读页提问的对话（`/ai/ask-conversations` 的编号，2026-11-26）：给了，自带 Python agent 开会话时自己取上下文、记忆出处记它。
+    /// 别的 agent 不看它。
+    #[serde(default)]
+    pub conversation_id: String,
 }
 
 /// 自带 agent 读的那本书：握手的 `job_id`（路由核过存在、多用户下核过归属）和它的书编号。
@@ -160,6 +167,21 @@ pub fn ask_job_id(query: &AcpConnectQuery) -> Result<Option<String>, AppError> {
         return Err(AppError::bad_request("job_id may only contain letters, digits, '-', '_', '.' and ':'"));
     }
     Ok(Some(job_id.to_string()))
+}
+
+/// 握手里的 `conversation_id`：空的当没给；字符不对 400（只许字母、数字、`-_.:`，它要拼进 agent 调的地址）。
+/// 不查存不存在：agent 取上下文时 404 就当没有前文，照常回答。
+pub fn ask_conversation_id(query: &AcpConnectQuery) -> Result<Option<String>, AppError> {
+    let conversation_id = query.conversation_id.trim();
+    if conversation_id.is_empty() {
+        return Ok(None);
+    }
+    let valid = conversation_id.len() <= MAX_JOB_ID_BYTES
+        && conversation_id.bytes().all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b':'));
+    if !valid {
+        return Err(AppError::bad_request("conversation_id may only contain letters, digits, '-', '_', '.' and ':'"));
+    }
+    Ok(Some(conversation_id.to_string()))
 }
 
 /// 后端自己的地址：监听 `0.0.0.0` / `::`（所有地址）时换成回环地址，IPv6 加方括号。
@@ -273,6 +295,7 @@ fn builtin_process(
     book: Option<&AskBook>,
 ) -> Result<AgentProcess, AppError> {
     let settings = model_settings(config, query)?;
+    let conversation_id = ask_conversation_id(query)?;
     let mut env = vec![
         (ASK_ENV_MODEL.into(), settings.model),
         (ASK_ENV_BASE_URL.into(), settings.base_url),
@@ -280,7 +303,19 @@ fn builtin_process(
         (ASK_ENV_THINKING.into(), settings.thinking),
         (ASK_ENV_API_KEY.into(), settings.secret),
     ];
-    env.extend(book_env(config, book));
+    let book_env = book_env(config, book);
+    let has_backend = !book_env.is_empty();
+    env.extend(book_env);
+    // 记忆工具（remember / search_memories）和取上下文不要书：有密钥就给后端地址和密钥（2026-11-26）
+    if !has_backend {
+        if let Some(key) = reading_key(config) {
+            env.push((ASK_ENV_BACKEND_URL.into(), config.backend_url.clone()));
+            env.push((ASK_ENV_BACKEND_KEY.into(), key));
+        }
+    }
+    if let Some(conversation_id) = conversation_id {
+        env.push((ASK_ENV_CONVERSATION_ID.into(), conversation_id));
+    }
     env.extend(openui::openui_env(config));
     Ok(AgentProcess {
         program: PathBuf::from(&config.python_bin),

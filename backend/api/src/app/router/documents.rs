@@ -1,7 +1,7 @@
 //! 书（文档）：一本 PDF 是一本书，同一本书的多个任务挂在它下面；书本身的文件；全文检索。
 
 use crate::app::AppState;
-use crate::routes::{ask_threads, library_data, tags};
+use crate::routes::{ask_conversations, ask_threads, library_data, tags};
 
 crate::endpoints! {
     state: AppState;
@@ -52,6 +52,8 @@ crate::endpoints! {
     PATCH "/api/v1/documents/:document_id/ask-threads/:thread_id" => ask_threads::patch_ask_thread_route, signed by(web);
     /// 删一次提问
     DELETE "/api/v1/documents/:document_id/ask-threads/:thread_id" => ask_threads::delete_ask_thread_route, signed by(web);
+    /// 这本书上问过的地方：所有阅读页提问对话里属于这本书、有页码的问（画书页上的「?」；全局的对话没有归属，多用户下关闭）
+    GET "/api/v1/documents/:document_id/ask-messages" => ask_conversations::document_ask_messages_route, closed by(none);
     /// 这本书的任务历史
     GET "/api/v1/documents/:document_id/jobs" => library_data::list_document_jobs_route, signed by(web);
     /// 全文检索

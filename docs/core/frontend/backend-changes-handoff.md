@@ -12,6 +12,30 @@
 
 ---
 
+## 阅读页提问：全局主对话、副对话、记忆（feat/ask-main-conversation）
+
+2026-11-26，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md)，方案 [主对话、副对话和记忆](../../ops/planning/reader-ask/20261126-主对话副对话和记忆.md)。
+契约新增 `ask-conversations.v1`（`@retainpdf/contracts/ask-conversations`，端点还没写 `client_name`：前端接的时候连同生成客户端一起加）。
+旧的按书问答记录 `/documents/{id}/ask-threads` 原样留着、**只读保留**（不迁），新的问答不再往里写。
+
+用户定的（2026-11-26）：对话以后端库为正本，agent 只负责回答；一个全局主对话（不按书切），每条消息记自己属于哪本书；副对话结束时结论回到主对话；
+记忆分用户层（每次都带）和书层（按书取），agent 记的时候回答里显示「已记住（撤销）」；阅读页选中时**不弹任何东西**，主窗口只在发问时读当前选区。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| `frontend/web/src/features/reader/domain/ask-port.ts` | 问答记录按书：`listAskThreads(documentId)`、建线程、每答完一轮 `PATCH` 整份 | 打开问答窗 `POST /ai/ask-conversations/main` 拿主对话，`GET …/{id}/messages?limit=` 读历史（往上滚用第一条的 `seq` 当 `before_seq`）；每答完一轮 `POST …/{id}/messages`，问和答一起，问带 `selection`（下一行）、`document_id`、`agent_id`、`client_message_id`（重试安全），答带 `thought`、`usage`、这一轮「已记住」的 `memory_ids` |
+| `frontend/packages/reader/src/ask/ask-context.ts`（`anchorPreamble`）、`contract.ts` 的 `AskContext` | 出处是一段字，新会话第一问前面带一次 | 照旧带那段字（本机 agent 只认字）；另在 `session/prompt` 的 `_meta.retainpdf.selection` 放结构化出处 `{document_id, job_id, translation_version, pane, page, item_ids, selected_text, section?, source_text?, translated_text?, prefix?, suffix?}`（只有 `page` 必填；选区换成块编号由前端做）。自带 agent 的 `initialize` 报了 `agentCapabilities._meta.retainpdf.selection` 时可以不带那段字 |
+| `frontend/packages/ask/src/acp/adapter.ts`（新开会话时把前几轮拼成「我：…你：…」） | 每次新会话都拼文字 | 自带 agent：握手多带 `conversation_id`（主对话或副对话的编号）；它报了 `agentCapabilities._meta.retainpdf.conversation` 就**不再拼**（它自己从后端取记忆和最近几轮）。本机 agent：`GET /ai/ask-conversations/{id}/context?document_id=<书>`，把返回的 `text`（记忆 + 最近几轮）放进新会话第一问前面 |
+| 问答窗的工具卡片 | 照 ACP 画 | `tool_call_update` 的 `_meta.retainpdf.memory` 有值（`{id, scope, text, category, document_id, created, replaced}`）就画成「已记住：……（撤销）」小条，撤销调 `DELETE /ai/memories/{id}`（被它替代的旧记忆会恢复）；`created: false` 是已经记过的，不画撤销 |
+| 副对话（新） | — | 回答上点「深挖」→ `POST /ai/ask-conversations` `{parent_id, forked_from_message_id, title, document_id}`，标题栏面包屑「主对话 › 标题」；结束 → `POST …/{id}/close` `{summary}`（第一期摘要前端给，比如让当前 agent 总结一句；第二期后端生成），回到主对话，返回的 `card`（`role: side_summary`）画成摘要卡片、能展开看副对话（`GET …/{side_id}/messages`） |
+| 书页上的「?」 | `listAskThreads` | 另取 `GET /documents/{id}/ask-messages`（所有对话里属于这本书、有页码的问）；旧的 `ask-threads` 照旧能画、能点开看 |
+| 记忆面板（新） | — | `GET /ai/memories?scope=&document_id=&q=&status=`、`PATCH /ai/memories/{id}`、`DELETE …`；用户自己加 `POST /ai/memories`（`origin` 不给就是 `user`） |
+
+- 本机 agent 记的「已记住」第三期才有（经 `retainpdf mcp`）；到时前端每答完一轮按 `GET /ai/memories?source_conversation_id=…&created_after=…` 补画。
+- 新的错误：`409 ask_conversation_not_open`（往结束了的副对话追加）、`409 ask_main_conversation_open`、`409 ask_memory_limit`、`409 ask_memory_deleted`、
+  `409 ask_conversation_limit`。多用户模式下这批接口 `404`（全局数据没有归属）。
+- 压缩（主对话太长时的摘要、压缩点）第二期做，到时上下文接口的 `summary` 有值、消息分页带压缩点。
+
 ## 删问答、删书时清 pi 会话：问答记录要带上 `session_id`（fix/derived-follow-edits）
 
 2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 问答记录一节的「删除」。删一次提问、删书时，后端按问答记录的

@@ -3,7 +3,7 @@
 # cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / agent AI 专用密钥能调 / none 还没有调用方）。
 # 由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
-# 112 条路径，139 个接口
+# 121 条路径，154 个接口
 GET    /api/v1/account/pages  signed  accounts  by multiuser
 GET    /api/v1/admin/invites  admin  accounts  by multiuser
 POST   /api/v1/admin/invites  admin  accounts  by multiuser
@@ -27,6 +27,20 @@ POST   /api/v1/admin/users/:user_id/role  admin  accounts  by multiuser
 GET    /api/v1/ai/agents  signed  providers  by web
 GET    /api/v1/ai/agents/:agent_id/acp  signed  providers  by web
 POST   /api/v1/ai/agents/:agent_id/install  signed  providers  by none
+GET    /api/v1/ai/ask-conversations  closed  library  by none
+POST   /api/v1/ai/ask-conversations  closed  library  by none
+DELETE /api/v1/ai/ask-conversations/:conversation_id  closed  library  by none
+GET    /api/v1/ai/ask-conversations/:conversation_id  closed  library  by none
+PATCH  /api/v1/ai/ask-conversations/:conversation_id  closed  library  by none
+POST   /api/v1/ai/ask-conversations/:conversation_id/close  closed  library  by none
+GET    /api/v1/ai/ask-conversations/:conversation_id/context  closed  library  by agent
+GET    /api/v1/ai/ask-conversations/:conversation_id/messages  closed  library  by none
+POST   /api/v1/ai/ask-conversations/:conversation_id/messages  closed  library  by none
+POST   /api/v1/ai/ask-conversations/main  closed  library  by none
+GET    /api/v1/ai/memories  closed  library  by agent
+POST   /api/v1/ai/memories  closed  library  by agent
+DELETE /api/v1/ai/memories/:memory_id  closed  library  by none
+PATCH  /api/v1/ai/memories/:memory_id  closed  library  by none
 POST   /api/v1/auth/login  public  accounts  by multiuser
 POST   /api/v1/auth/logout  signed  accounts  by multiuser
 POST   /api/v1/auth/password  signed  accounts  by multiuser
@@ -52,6 +66,7 @@ GET    /api/v1/documents  signed  library  by web,agent
 DELETE /api/v1/documents/:document_id  signed  library  by web
 GET    /api/v1/documents/:document_id  signed  library  by web,agent
 PATCH  /api/v1/documents/:document_id  signed  library  by web
+GET    /api/v1/documents/:document_id/ask-messages  closed  library  by none
 GET    /api/v1/documents/:document_id/ask-threads  signed  library  by web
 POST   /api/v1/documents/:document_id/ask-threads  signed  library  by web
 DELETE /api/v1/documents/:document_id/ask-threads/:thread_id  signed  library  by web

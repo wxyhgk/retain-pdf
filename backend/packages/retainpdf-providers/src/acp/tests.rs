@@ -145,6 +145,7 @@ fn builtin_agent_gets_the_model_config_and_key_through_its_environment() {
         thinking: "low".into(),
         credential_ref: "cred_ask".into(),
         job_id: String::new(),
+        conversation_id: String::new(),
     };
     let (process, _) = prepare_agent(&server, "retainpdf", &HeaderMap::new(), &query, None).unwrap();
     assert_eq!(process.program, PathBuf::from("/usr/bin/python3"));
@@ -154,8 +155,17 @@ fn builtin_agent_gets_the_model_config_and_key_through_its_environment() {
     assert_eq!(env[ASK_ENV_API_PROTOCOL], "anthropic");
     assert_eq!(env[ASK_ENV_THINKING], "low");
     assert_eq!(env[ASK_ENV_API_KEY], "synthetic-secret-value");
-    // 没给书：不给读书的东西（和以前一样只靠 prompt 里的上下文）
-    assert!(!env.contains_key(ASK_ENV_JOB_ID) && !env.contains_key(ASK_ENV_BACKEND_KEY));
+    // 没给书：不给读书的东西（和以前一样只靠 prompt 里的上下文）；后端地址和密钥照给（记忆工具用，2026-11-26），没给对话不给对话编号
+    assert!(!env.contains_key(ASK_ENV_JOB_ID) && !env.contains_key(ASK_ENV_DOCUMENT_ID));
+    assert_eq!((env[ASK_ENV_BACKEND_URL].as_str(), env[ASK_ENV_BACKEND_KEY].as_str()), ("http://127.0.0.1:41000", "agent-a"));
+    assert!(!env.contains_key(ASK_ENV_CONVERSATION_ID));
+    // 握手带了对话：交给 agent；写法不对 400
+    let with_conversation = AcpConnectQuery { conversation_id: " conv-20261126-abc ".into(), ..query.clone() };
+    let (process, _) = prepare_agent(&server, "retainpdf", &HeaderMap::new(), &with_conversation, None).unwrap();
+    let env: std::collections::HashMap<_, _> = process.env.into_iter().collect();
+    assert_eq!(env[ASK_ENV_CONVERSATION_ID], "conv-20261126-abc");
+    let bad_conversation = AcpConnectQuery { conversation_id: "../x".into(), ..query.clone() };
+    assert_eq!(prepare_agent(&server, "retainpdf", &HeaderMap::new(), &bad_conversation, None).map_err(status).unwrap_err(), 400);
 
     let bad = |change: fn(&mut AcpConnectQuery)| {
         let mut query = query.clone();
@@ -363,6 +373,7 @@ fn pi_query() -> AcpConnectQuery {
         thinking: String::new(),
         credential_ref: "cred_ask".into(),
         job_id: "job-1".into(),
+        conversation_id: String::new(),
     }
 }
 

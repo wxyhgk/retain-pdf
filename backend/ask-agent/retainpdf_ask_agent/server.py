@@ -52,12 +52,22 @@ from typing import Any, Callable, Iterable, Iterator, Protocol, TextIO
 
 from retainpdf_ask_agent.convert import prompt_to_content
 from retainpdf_ask_agent.convert import text_only
+from retainpdf_ask_agent.memory import REMEMBER_PER_TURN
+from retainpdf_ask_agent.memory import REMEMBER_TOOL
+from retainpdf_ask_agent.memory import SEARCH_PER_TURN
+from retainpdf_ask_agent.memory import SEARCH_TOOL
+from retainpdf_ask_agent.memory import MemoryTools
+from retainpdf_ask_agent.memory import context_history
 from retainpdf_ask_agent.openui import CHECK_CALLS_PER_TURN
 from retainpdf_ask_agent.openui import CHECK_TOOL
 from retainpdf_ask_agent.openui import SPEC_CALLS_PER_TURN
 from retainpdf_ask_agent.openui import SPEC_TOOL
 from retainpdf_ask_agent.openui import OpenUiTools
 from retainpdf_ask_agent.prompts import load_prompt
+from retainpdf_ask_agent.selection import has_preamble
+from retainpdf_ask_agent.selection import selection_from_meta
+from retainpdf_ask_agent.selection import selection_text
+from retainpdf_ask_agent.selection import with_anchor
 from retainpdf_ask_agent.tools import ToolResult
 
 PROTOCOL_VERSION = 1
@@ -65,11 +75,15 @@ AGENT_VERSION = "1"
 SYSTEM_PROMPT = "ask_system.txt"
 # 有书时接在系统提示词后面的那段（工具怎么用）
 TOOLS_PROMPT = "ask_tools.txt"
+# 有记忆工具时接在后面的那段（什么时候记、什么时候查）
+MEMORY_PROMPT = "ask_memory.txt"
 # 防失控的上限（不是规则）：最多几轮调工具、一轮最多几个，到了就照已有的回答
 MAX_TOOL_ROUNDS = 4
 MAX_TOOL_CALLS_PER_ROUND = 4
-# 一问最多几轮调工具（读书的轮数 + 取说明、检查的次数；每一样各有各的上限，这是总的兜底）
-MAX_TOTAL_ROUNDS = MAX_TOOL_ROUNDS + SPEC_CALLS_PER_TURN + CHECK_CALLS_PER_TURN
+# 一问最多几轮调工具（读书的轮数 + 取说明、检查、记、查记忆的次数；每一样各有各的上限，这是总的兜底）
+MAX_TOTAL_ROUNDS = MAX_TOOL_ROUNDS + SPEC_CALLS_PER_TURN + CHECK_CALLS_PER_TURN + REMEMBER_PER_TURN + SEARCH_PER_TURN
+# 不算「读书」轮数的工具（互动块、记忆各按次数算）
+COUNTED_TOOLS = (SPEC_TOOL, CHECK_TOOL, REMEMBER_TOOL, SEARCH_TOOL)
 # 工具额度用完、下一轮不许再调时，接在最后一个工具结果后面的话
 FINAL_ROUND_NOTE = ("（RetainPDF：这一问调工具的额度用完了，不能再调工具。现在直接给出最后的回答：照已有的内容回答；"
                     "互动块没通过检查就不要放进回答，用文字讲清楚；不用跟用户提工具或额度。）")
@@ -109,16 +123,20 @@ class TurnBudget:
     book_rounds: int = MAX_TOOL_ROUNDS
     spec_calls: int = SPEC_CALLS_PER_TURN
     check_calls: int = CHECK_CALLS_PER_TURN
+    remember_calls: int = REMEMBER_PER_TURN
+    search_calls: int = SEARCH_PER_TURN
     has_book: bool = True
     has_openui: bool = True
+    has_memory: bool = False
 
     def any_left(self) -> bool:
-        return (self.has_book and self.book_rounds > 0) or (self.has_openui and (self.spec_calls > 0 or self.check_calls > 0))
+        return ((self.has_book and self.book_rounds > 0) or (self.has_openui and (self.spec_calls > 0 or self.check_calls > 0))
+                or (self.has_memory and (self.remember_calls > 0 or self.search_calls > 0)))
 
     def admit(self, calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """这一轮的调用：用得上额度的照常，用完了的标 `_refused`（不执行，回给模型一句话）。"""
         admitted: list[dict[str, Any]] = []
-        book_in_round = any(call.get("name") not in (SPEC_TOOL, CHECK_TOOL) and not call.get("_refused") for call in calls)
+        book_in_round = any(call.get("name") not in COUNTED_TOOLS and not call.get("_refused") for call in calls)
         book_ok = self.book_rounds > 0
         if book_in_round and book_ok:
             self.book_rounds -= 1
@@ -140,6 +158,18 @@ class TurnBudget:
                 else:
                     admitted.append({**call, "_refused": f"这一问已经检查了 {CHECK_CALLS_PER_TURN} 次，这次没有执行：还有错就把互动块改简单，"
                                                          "或者不放互动块、用文字回答。"})
+            elif name == REMEMBER_TOOL:
+                if self.remember_calls > 0:
+                    self.remember_calls -= 1
+                    admitted.append(call)
+                else:
+                    admitted.append({**call, "_refused": f"这一问已经记了 {REMEMBER_PER_TURN} 条，这次没有执行：只记最要紧的。"})
+            elif name == SEARCH_TOOL:
+                if self.search_calls > 0:
+                    self.search_calls -= 1
+                    admitted.append(call)
+                else:
+                    admitted.append({**call, "_refused": f"这一问已经查了 {SEARCH_PER_TURN} 次记忆，这次没有执行：照已有的内容回答。"})
             elif book_ok:
                 admitted.append(call)
             else:
@@ -155,12 +185,16 @@ class Session:
     busy: bool = False
     # 用 session/set_config_option 改过的思考档位；None 是没改过（按握手的思考深度）
     thinking_level: str | None = None
+    # 开会话时从后端取的记忆那段（放在系统提示词最后；会话中途不刷新，缓存不失效）
+    memory_text: str = ""
 
 
 class AskAgent:
     def __init__(self, stream_fn: StreamFn, *, model: str = "", context_size: int = 0, out: TextIO | None = None,
-                 tools: Tools | None = None, openui: OpenUiTools | None = None, thinking: dict[str, Any] | None = None):
+                 tools: Tools | None = None, openui: OpenUiTools | None = None, thinking: dict[str, Any] | None = None,
+                 memory: MemoryTools | None = None):
         self.stream_fn = stream_fn
+        self.memory = memory
         self.thinking = thinking if thinking and thinking.get("options") else None
         self.tools = tools
         self.openui = openui
@@ -219,12 +253,20 @@ class AskAgent:
                     "loadSession": False,
                     "promptCapabilities": {"image": True, "audio": False, "embeddedContext": True},
                     "mcpCapabilities": {"http": False, "sse": False},
+                    # 2026-11-26：认 `_meta.retainpdf.selection`（前端可以不在问题前面写那段出处）；`memory`：有记忆工具；
+                    # `conversation`：开会话时自己从后端取前文（前端不用再把前几轮拼成文字带过来）
+                    "_meta": {"retainpdf": {
+                        "selection": True,
+                        "memory": self.memory is not None,
+                        "conversation": bool(self.memory is not None and self.memory.conversation_id),
+                    }},
                 },
                 "agentInfo": {"name": "retainpdf", "title": "RetainPDF 自带模型", "version": AGENT_VERSION},
                 "authMethods": [],
             })
         elif method == "session/new":
             session = Session(id=f"ask-{uuid.uuid4().hex[:16]}")
+            self._load_context(session)
             self.sessions[session.id] = session
             result: dict[str, Any] = {"sessionId": session.id}
             if self.thinking is not None:
@@ -244,6 +286,16 @@ class AskAgent:
                 session.cancel.set()
         elif request_id is not None:
             self._error(request_id, METHOD_NOT_FOUND, f"method not found: {method}")
+
+    def _load_context(self, session: Session) -> None:
+        """握手带了对话：从后端取记忆那段和最近几轮（库是正本，换 agent、重开窗口都能接着聊）；取不到就当没有前文。"""
+        if self.memory is None:
+            return
+        context = self.memory.context()
+        if not context:
+            return
+        session.memory_text = str(context.get("memory_text") or "").strip()
+        session.history = context_history(context)[-MAX_HISTORY_MESSAGES:]
 
     # 思考强度 -----------------------------------------------------------
 
@@ -299,7 +351,10 @@ class AskAgent:
             return
         session.busy = True
         session.cancel.clear()
-        meta = params.get("_meta") if isinstance(params.get("_meta"), dict) else None
+        # 结构化出处（`_meta.retainpdf.selection`）：读书的工具认旧的 `anchor`，换一份给它；记忆的出处也记它
+        meta = with_anchor(params.get("_meta")) if isinstance(params.get("_meta"), dict) else None
+        if self.memory is not None:
+            self.memory.set_turn(selection_from_meta(meta))
         thread = threading.Thread(target=self._answer, args=(request_id, session, parts, meta), daemon=True)
         self._threads = [t for t in self._threads if t.is_alive()] + [thread]
         thread.start()
@@ -311,23 +366,37 @@ class AskAgent:
             prompt = f"{prompt}\n\n{self.openui.intro}"
         if self.tools is not None:
             prompt = f"{prompt}\n\n{load_prompt(TOOLS_PROMPT)}"
+        if self.memory is not None:
+            prompt = f"{prompt}\n\n{load_prompt(MEMORY_PROMPT)}"
         return prompt
 
     def _tool_specs(self) -> list[dict[str, Any]]:
-        return [*(self.tools.specs() if self.tools is not None else []), *(self.openui.specs() if self.openui is not None else [])]
+        return [*(self.tools.specs() if self.tools is not None else []), *(self.openui.specs() if self.openui is not None else []),
+                *(self.memory.specs() if self.memory is not None else [])]
 
     def _owner(self, name: str) -> Any:
         """哪一套工具管这个名字：互动块的归 openui，别的归读书的（没有书时就没人管）。"""
         if self.openui is not None and self.openui.handles(name):
             return self.openui
+        if self.memory is not None and self.memory.handles(name):
+            return self.memory
         return self.tools
 
-    def _plan(self, parts: list[dict[str, Any]], meta: Any) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
-        """这一问的系统消息、用户消息（最前面是代码取好的材料），和记进用量的说明（取了什么）。工具不在这里挑：有书就全给。"""
+    def _plan(self, parts: list[dict[str, Any]], meta: Any, session: Session | None = None
+              ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
+        """这一问的系统消息、用户消息（最前面是代码取好的材料），和记进用量的说明（取了什么）。工具不在这里挑：有书就全给。
+        系统消息的顺序（前面的每个会话都一样，按前缀缓存）：固定的提示词 → 书的目录 → 记忆（会话开始时取的，变得少）。"""
         system = [{"role": "system", "content": self._system_prompt()}]
-        if self.tools is None:
-            return system, parts, {}
         texts = [str(part.get("text") or "") for part in parts if part.get("type") == "text"]
+        selection = selection_from_meta(meta)
+        if selection is not None and not has_preamble(texts):
+            # 前端没在问题前面写出处（它知道我们认 selection）：代码写一段，模型照样看得到选中的字
+            parts = [{"type": "text", "text": selection_text(selection)}, *parts]
+        memory_text = session.memory_text if session is not None else ""
+        if self.tools is None:
+            if memory_text:
+                system.append({"role": "system", "content": memory_text})
+            return system, parts, {}
         carries_text = getattr(self.tools, "carries_text", None)
         # 带字的问题那段字已经在了，补节和前后几块；不带字的取那一页（没有文字层附图）
         name = "background" if callable(carries_text) and carries_text(texts, meta) else "prefetch"
@@ -348,11 +417,13 @@ class AskAgent:
         book = overview() if callable(overview) else ""
         if book:
             system.append({"role": "system", "content": book})
+        if memory_text:
+            system.append({"role": "system", "content": memory_text})
         return system, parts, info
 
     def _answer(self, request_id: Any, session: Session, parts: list[dict[str, Any]], meta: Any = None) -> None:
         started = time.monotonic()
-        system, parts, plan_info = self._plan(parts, meta)
+        system, parts, plan_info = self._plan(parts, meta, session)
         messages: list[dict[str, Any]] = [*system, *session.history, {"role": "user", "content": parts}]
         answer: list[str] = []
         totals: dict[str, Any] = {}
@@ -362,8 +433,9 @@ class AskAgent:
         rounds = 0
         tool_count = 0
         specs = self._tool_specs()
-        budget = TurnBudget(has_book=self.tools is not None, has_openui=self.openui is not None)
+        budget = TurnBudget(has_book=self.tools is not None, has_openui=self.openui is not None, has_memory=self.memory is not None)
         openui_info: dict[str, Any] = {}
+        memory_info: dict[str, Any] = {}
         # 这一问的思考档位：开问时定下（答的中途改档位不影响这一问）。没改过不传，接线按握手的思考深度发
         thinking_level = session.thinking_level
         current_level = self._thinking_level(session)
@@ -428,6 +500,8 @@ class AskAgent:
                     messages.append(tool_message)
                     if call.get("name") in (SPEC_TOOL, CHECK_TOOL):
                         _note_openui(openui_info, call, tool_message)
+                    elif call.get("name") in (REMEMBER_TOOL, SEARCH_TOOL):
+                        _note_memory(memory_info, call, tool_message)
             if session.cancel.is_set():
                 stop_reason = "cancelled"
         except Exception as error:  # noqa: BLE001 - 模型出错回 JSON-RPC 错误，会话照常能接着问
@@ -451,6 +525,7 @@ class AskAgent:
             **totals,
             **({"rounds": rounds, "tool_calls": tool_count, **plan_info} if specs else {}),
             **({"openui": openui_info} if openui_info else {}),
+            **({"memory": memory_info} if memory_info else {}),
         }
         if totals:
             # used 是上下文占了多少：最后一轮的输入加输出（各轮加起来的是花了多少，在 _meta 里）
@@ -495,10 +570,11 @@ class AskAgent:
                                       "content": [_text_content("取消了")]})
             result = ToolResult(text="用户取消了。", is_error=True)
         else:
+            # `remember` 成功的结果带 `{"memory": {...}}`：前端把这张卡片画成「已记住：……（撤销）」
             self._update(session.id, {"sessionUpdate": "tool_call_update", "toolCallId": call_id,
                                       "status": "failed" if result.is_error else "completed",
                                       "content": [_text_content(result.summary or result.text[:200])],
-                                      "_meta": {"retainpdf": {"round": round_number}}})
+                                      "_meta": {"retainpdf": {"round": round_number, **result.meta}}})
         return {"role": "tool", "tool_call_id": call_id, "name": name, "content": result.text,
                 "images": [{"mime_type": mime, "data": data} for mime, data in result.images], "is_error": result.is_error}
 
@@ -547,6 +623,18 @@ def _note_openui(info: dict[str, Any], call: dict[str, Any], tool_message: dict[
             info["check_problems"] = info.get("check_problems", 0) + 1
     if refused:
         info["refused"] = info.get("refused", 0) + 1
+
+
+def _note_memory(info: dict[str, Any], call: dict[str, Any], tool_message: dict[str, Any]) -> None:
+    """记进用量：记了几条（`remembered`，没执行、出错的不算）、查了几次。"""
+    if call.get("_refused"):
+        info["refused"] = info.get("refused", 0) + 1
+    elif call.get("name") == REMEMBER_TOOL:
+        info["remember_calls"] = info.get("remember_calls", 0) + 1
+        if not tool_message.get("is_error"):
+            info["remembered"] = info.get("remembered", 0) + 1
+    else:
+        info["search_calls"] = info.get("search_calls", 0) + 1
 
 
 def _text_content(text: str) -> dict[str, Any]:
