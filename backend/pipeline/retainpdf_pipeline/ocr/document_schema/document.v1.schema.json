@@ -240,6 +240,60 @@
             "type": "string",
             "minLength": 1
           }
+        },
+        "formula_number": {
+          "$ref": "#/$defs/formula_number"
+        },
+        "number_of_block_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "On a formula-number block: the display-formula block this number belongs to (same page)."
+        },
+        "related_block_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Blocks this block is attached to (caption -> figure/table, formula number -> formula)."
+        }
+      }
+    },
+    "formula_number": {
+      "type": "object",
+      "description": "Equation number of a display-formula block. The formula LaTeX itself is left unchanged.",
+      "required": [
+        "text",
+        "label",
+        "source"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Number as printed, e.g. \"(2.19)\"."
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Number without brackets, e.g. \"2.19\"."
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "layout_block",
+            "latex_tag",
+            "pdf_text_layer"
+          ]
+        },
+        "in_latex": {
+          "type": "boolean",
+          "description": "The formula LaTeX already carries a \\tag, so renderers should not add the number again."
+        },
+        "block_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The formula-number block on the same page (source = layout_block)."
         }
       }
     },

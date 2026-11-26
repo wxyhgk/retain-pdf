@@ -7,6 +7,16 @@
   "pages_seen": 2
  },
  "document_id": "glm_ocr_english_paper",
+ "formula_numbers": {
+  "formula_count": 1,
+  "number_block_count": 0,
+  "numbered": {
+   "latex_tag": 0,
+   "layout_block": 0,
+   "pdf_text_layer": 0
+  },
+  "unpaired_number_blocks": {}
+ },
  "provider": "glm_ocr",
  "provider_signals": {
   "pages": [

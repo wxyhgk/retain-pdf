@@ -446,6 +446,7 @@
       "test_files": [
         "devtools/tests/agent_lab/test_sample_essay.py",
         "devtools/tests/agent_lab/test_sample_textbook.py",
+        "devtools/tests/document_schema/test_formula_numbers.py",
         "devtools/tests/document_schema/test_glm_ocr_driver.py",
         "devtools/tests/document_schema/test_mineru_v2_geometry.py",
         "devtools/tests/document_schema/test_normalize_provider_lines.py",
@@ -572,6 +573,7 @@
         "devtools/tests/document_schema/test_canonical_semantics.py",
         "devtools/tests/document_schema/test_document_block_classification.py",
         "devtools/tests/document_schema/test_document_contract_v1.py",
+        "devtools/tests/document_schema/test_formula_numbers.py",
         "devtools/tests/document_schema/test_glm_ocr_driver.py",
         "devtools/tests/document_schema/test_mineru_adapter.py",
         "devtools/tests/document_schema/test_mineru_bundle_zip_guard.py",

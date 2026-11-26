@@ -9,6 +9,16 @@
   "pages_seen": 2
  },
  "document_id": "mineru_content_list_v2",
+ "formula_numbers": {
+  "formula_count": 1,
+  "number_block_count": 0,
+  "numbered": {
+   "latex_tag": 0,
+   "layout_block": 0,
+   "pdf_text_layer": 0
+  },
+  "unpaired_number_blocks": {}
+ },
  "provider": "mineru_content_list_v2",
  "provider_version": "",
  "source_json_path": "content_list_v2.json",

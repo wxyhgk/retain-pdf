@@ -18,6 +18,8 @@ OCR_SHARED_GEOMETRY_MODULES = (
     PACKAGE_ROOT / "ocr" / "document_schema" / "estimated_lines.py",
     PACKAGE_ROOT / "ocr" / "document_schema" / "page_bounds.py",
     PACKAGE_ROOT / "ocr" / "document_schema" / "finalize.py",
+    # 行间公式编号配到公式上（2026-11-26）：各家共用，按 content.kind / structure_role / provenance 认块，不认服务商。
+    PACKAGE_ROOT / "ocr" / "document_schema" / "formula_numbers.py",
 )
 FORBIDDEN_IMPORT_PREFIXES = (
     "retainpdf_pipeline.ocr.ocr_provider",

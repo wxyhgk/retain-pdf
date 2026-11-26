@@ -2,6 +2,16 @@
  "assets": {},
  "derived": {
   "coordinate_space": "pdf_point",
+  "formula_numbers": {
+   "formula_count": 1,
+   "number_block_count": 0,
+   "numbered": {
+    "latex_tag": 0,
+    "layout_block": 0,
+    "pdf_text_layer": 0
+   },
+   "unpaired_number_blocks": {}
+  },
   "notes": "Adapted from MinerU content_list_v2 experimental payload."
  },
  "doc_id": "mineru_content_list_v2",

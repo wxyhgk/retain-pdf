@@ -20,6 +20,16 @@
  },
  "derived": {
   "coordinate_space": "pdf_point",
+  "formula_numbers": {
+   "formula_count": 1,
+   "number_block_count": 0,
+   "numbered": {
+    "latex_tag": 0,
+    "layout_block": 0,
+    "pdf_text_layer": 0
+   },
+   "unpaired_number_blocks": {}
+  },
   "notes": "Adapted from GLM-OCR layout_parsing layout_details (via the PaddleOCR-VL block reader).",
   "provider_data_info": {
    "num_pages": 2

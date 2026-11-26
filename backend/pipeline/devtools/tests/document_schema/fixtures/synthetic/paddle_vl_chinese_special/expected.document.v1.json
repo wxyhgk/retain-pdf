@@ -15,6 +15,16 @@
  },
  "derived": {
   "coordinate_space": "pdf_point",
+  "formula_numbers": {
+   "formula_count": 1,
+   "number_block_count": 1,
+   "numbered": {
+    "latex_tag": 0,
+    "layout_block": 1,
+    "pdf_text_layer": 0
+   },
+   "unpaired_number_blocks": {}
+  },
   "notes": "Adapted from PaddleOCR layoutParsingResults payload.",
   "provider_data_info": {
    "numPages": 2,
@@ -5030,6 +5040,13 @@
      "block_class": "formula",
      "block_id": "p002-b0007",
      "content": {
+      "formula_number": {
+       "block_id": "p002-b0008",
+       "in_latex": false,
+       "label": "1",
+       "source": "layout_block",
+       "text": "(1)"
+      },
       "kind": "formula",
       "line_texts": [
        "L(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2"
@@ -5218,6 +5235,10 @@
       "kind": "text",
       "line_texts": [
        "(1)"
+      ],
+      "number_of_block_id": "p002-b0007",
+      "related_block_ids": [
+       "p002-b0007"
       ],
       "text": "(1)",
       "text_flow": "flow"

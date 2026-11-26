@@ -99,7 +99,9 @@ RetainPDF 策略在 `projection.py:project_mineru_block`。
 - `chart_body` 并入 `image/figure`：适配层无 `chart` kind，`contract_v1` 的资产统计认
   `content.kind∈{image,chart}`，其中 `chart` 实际到不了 MinerU 分支。
 - `page_footnote` 不翻译，而四类 `*_footnote` 翻译（`projection._footnote` 的 `visual` 集合所致）。
-- `formula_number` 为元数据，不与公式块关联。
+- `formula_number` 为元数据，适配器本身不与公式块关联；2026-11-26 起由各家共用的一步（`document_schema/formula_numbers.py`）
+  按几何配到同一页的行间公式上（公式块 `content.formula_number`、编号块 `content.number_of_block_id`），说明见
+  `document_schema/README.md`「行间公式编号」。
 - `index` 容器按 `list` 聚合成正文翻译。
 - 组挂接只认首个 kind∈{image,table,code} 的子块为目标（`_build_page_record.visit_block`），
   且只挂接 `layout_role∈{caption,footnote}` 的 related 块；`caption_target_block_id` /

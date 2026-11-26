@@ -205,10 +205,12 @@
 
 适配器里的顺序（`adapters.py` 的 `adapt_payload_to_document_v1_with_report`）：各家 builder → 补默认值 → 补契约字段 → 把略微超出页边的块夹回页内
 （`page_bounds.py`，每条边超出不超过页面边长的 1%；块的行、片段跟着收进块里；夹过的块 `metadata.page_overflow_clamped` 记原来的框，文档
-`derived` 和报告记 `page_overflow_clamped_block_count`；超得多的不动，照样校验失败。2026-10-29 起，以前一个超出一两点的块就让整份文档校验失败）→ 校验。
+`derived` 和报告记 `page_overflow_clamped_block_count`；超得多的不动，照样校验失败。2026-10-29 起，以前一个超出一两点的块就让整份文档校验失败）
+→ 行间公式编号挂到公式上（`formula_numbers.attach_formula_numbers`：编号块按几何配、没配上的从 LaTeX 的 `\tag` 取，2026-11-26，
+见下面「行间公式编号」）→ 校验。
 
 normalize worker 里的顺序（`normalize_pipeline.py` 的 `build_normalized_artifacts`）：adapter → 缩放到 PDF
-（`pdf_geometry.rescale_document_geometry_to_pdf`）→ 行重建（`pdf_geometry.rebuild_estimated_text_geometry`，估行在 `estimated_lines.py`）→ 重新校验；
+（`pdf_geometry.rescale_document_geometry_to_pdf`；缩放完顺带用原文文字层恢复乱码、给还没有编号的行间公式找编号）→ 行重建（`pdf_geometry.rebuild_estimated_text_geometry`，估行在 `estimated_lines.py`）→ 重新校验；
 后三步收在 `finalize.finalize_normalized_document`，命令型 OCR、MinerU 的 Python 直跑也调它。缩放、补行、估行 2026-10-29 以前在
 `ocr_provider/paddle_normalize.py` 和 `provider_adapters/paddle/content_extract.py` 里（Paddle 专用的位置，却对所有服务商都跑），
 现在在核心包、只依赖文档模型和 `provider_adapters/common/normalize.py`（`devtools/architecture_checks/ocr_layers.py` 钉着：不许导入任何一家的
@@ -609,12 +611,13 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
   稳定内容字段，当前至少包含 `kind` 和 `text`
   - `asset_id` 是向后兼容的主资源 id
   - `asset_ids` 保存块关联的完整资源列表，首项必须等于 `asset_id`
+  - `formula_number`（行间公式块上的编号）、`number_of_block_id`（编号块属于哪个公式），见「行间公式编号」
 - `block_class: str`
   RetainPDF 自己定义的跨 provider 大类：`title/body/formula/image/table/code/caption/footnote/metadata/unknown`
   - `abstract` 归入 `title` 大类，细节保留为 `semantic_role = "abstract"`
   - `formula` 只表示独立行间公式块
   - 行内公式属于文本 block 内的 `segments/spans`，不是 formula block
-  - 公式编号属于 `metadata` 大类，细节为 `structure_role = "formula_number"`
+  - 公式编号属于 `metadata` 大类，细节为 `structure_role = "formula_number"`；它和公式块的关联见「行间公式编号」
 - `layout_role: str`
   显式版面角色
 - `semantic_role: str`
@@ -675,6 +678,50 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 - 新 OCR provider 如果也能稳定产出连续组信息，应优先写入这个字段，而不是把私有 raw 字段直接暴露给下游
 - 现在写这个字段的：Paddle（`paddle/continuation.py`，按 `block_order` / `group_id`）；MinerU 只写跨页段落（2026-10-29 起，
   拆回各页的两半连成一组 `scope=cross_page`，见 `mineru/NORMALIZATION.md` 1.1）
+
+## 行间公式编号
+
+2026-11-26 起（`formula_numbers.py`，方案 `docs/ops/planning/ocr-normalization/20261126-行间公式编号.md`）。三家给编号的方式不同：
+PaddleOCR-VL、MinerU 把编号单独出成一块（Paddle `structure_role = "formula_number"`，MinerU 归成 `metadata`、原始标签
+`provenance.raw_label = "formula_number"`），不和公式关联；GLM-OCR 没有编号块，少数公式把编号识别进 LaTeX（`\tag{2.19}`）。
+归一化按顺序补，和服务商无关：
+
+1. `layout_block`：页内的编号块按几何配到行间公式（`content.kind = "formula"`）上。编号的纵向中心落在公式上下沿各放宽公式高度 0.4 倍的范围里，
+   在公式右侧（也认左侧），水平间隔不超过页宽一半；代价 = 水平间隔 / 页宽 + 0.5 × 纵向偏离 + 左侧加价 0.03，取最小的。
+   中间隔着别的公式、编号、图表或多行段落的不配；编号上下附近的段落盖着编号、却和公式横向不沾边（不同栏）的不配；
+   两个候选的代价差不到 0.02（页宽的 2%）算有歧义，不配；几个编号都挑中同一个公式时，只有一个落在公式上下沿之间就给它，否则都不配；
+   不跨页。编号块的文字要像编号（`(1)`、`(2.19)`、`（3）`、`(A.1)`、`(3a)`），「by Eq. 1.2」这种不配。
+2. `latex_tag`：没配上编号块的公式，LaTeX 里正好一个 `\tag{X}`（显示成 `(X)`）或 `\tag*{X}`（原样显示）时从里面取；几个不同的 `\tag` 不取。
+3. `pdf_text_layer`：缩放到 PDF 之后，还没有编号的公式在原文文字层里找：公式框外、同一行（上下各放宽公式高度 0.2 倍）、一整行就是
+   `(1)`、`(2.19)`、`(3a)`、`(A.1)` 这样带圆括号带数字的字；落在别的块里、中间还有别的字或块、跨栏的不要；左边的编号要求公式右边同一行没有字
+   （不然是列表序号）；两边都找到、或者两个公式找到同一串字的不配。没有文字层的页（扫描件）不做。
+
+同时有编号块和 `\tag` 时以编号块为准（它是版面上单独印出来的、能双向挂上块 id），`in_latex = true` 记着公式原文里已经带了编号。
+
+字段（只增不改：公式原文不动；编号块照旧是 `metadata`、照旧不翻译）：
+
+- 公式块 `content.formula_number`：
+  - `text`：编号原样，例如 `"(2.19)"`（`\tag{2.19}` 记成 `"(2.19)"`，`\tag*{…}` 记里面的原样）
+  - `label`：去掉括号的标签，例如 `"2.19"`
+  - `source`：`layout_block` / `latex_tag` / `pdf_text_layer`
+  - `in_latex`：公式 LaTeX 里已经有 `\tag`（渲染时别再补一遍）
+  - `block_id`：编号块的 id（只有 `layout_block` 有）
+- 编号块 `content.number_of_block_id`：它属于哪个公式块；`content.related_block_ids` 里也追加这个 id（和图注挂图一样）
+- 文档 `derived.formula_numbers`（报告里同名一份）：`formula_count`、`numbered`（按来源计数）、`number_block_count`、
+  `unpaired_number_blocks`（没配上的原因：`not_a_number` / `no_candidate` / `ambiguous` / `formula_contested`）。没有公式也没有编号块的文档不写
+
+校验器查：`formula_number` 只挂在 formula 块上、三个字符串非空、`source` 在三个取值里；`block_id` 和 `number_of_block_id` 在同一页、互相指着。
+
+```json
+{
+  "block_id": "p012-b0007",
+  "content": {
+    "kind": "formula",
+    "text": "E = m c^{2}",
+    "formula_number": {"text": "(2.19)", "label": "2.19", "source": "layout_block", "in_latex": false, "block_id": "p012-b0008"}
+  }
+}
+```
 
 ## `type / sub_type` 约定
 

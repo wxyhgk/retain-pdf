@@ -32,6 +32,16 @@
  },
  "derived": {
   "coordinate_space": "pdf_point",
+  "formula_numbers": {
+   "formula_count": 1,
+   "number_block_count": 0,
+   "numbered": {
+    "latex_tag": 1,
+    "layout_block": 0,
+    "pdf_text_layer": 0
+   },
+   "unpaired_number_blocks": {}
+  },
   "notes": "MinerU middle.json adapted through RetainPDF canonical roles.",
   "provider_signals": {
    "backend": "vlm",
@@ -955,6 +965,12 @@
      "block_class": "formula",
      "block_id": "p001-b0005",
      "content": {
+      "formula_number": {
+       "in_latex": true,
+       "label": "2.3",
+       "source": "latex_tag",
+       "text": "(2.3)"
+      },
       "kind": "formula",
       "line_texts": [
        "\\hat{H}\\psi=E\\psi\\tag{2.3}"
