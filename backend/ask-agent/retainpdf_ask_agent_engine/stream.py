@@ -108,6 +108,21 @@ def _mark_history_cache(body: dict[str, Any]) -> None:
         previous["content"] = blocks
 
 
+# 自适应思考按档位留出回答的预算（2026-11-27）：Claude 新模型用 effort 调思考，思考 token 也算在 max_tokens 里，
+# 原来固定的 16384（model_wire 的默认）在 max 档会被思考全部吃掉，回答是空的（前端真机测：claude-haiku-5-5 max 档
+# 76 秒后 stop_reason=max_tokens）。档位越高上限越高，最多 64000（Haiku 4.5 的输出上限；5 系都是 128K）。
+# 只是上限：用不到不花钱。只管提问，翻译的请求不走这里。
+ADAPTIVE_EFFORT_MAX_TOKENS = {"medium": 24576, "high": 32768, "xhigh": 49152, "max": 64000}
+
+
+def _effort_max_tokens(body: dict[str, Any], fields: dict[str, Any]) -> None:
+    """按这次发的思考档位（``output_config.effort``）把 ``max_tokens`` 抬到 ``ADAPTIVE_EFFORT_MAX_TOKENS``，只抬不降。"""
+    effort = str((fields.get("output_config") or {}).get("effort") or "")
+    floor = ADAPTIVE_EFFORT_MAX_TOKENS.get(effort)
+    if floor and int(body.get("max_tokens") or 0) < floor:
+        body["max_tokens"] = floor
+
+
 def _with_summarized_thinking(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Claude 不给思考原文，只给摘要，而且要 ``thinking.display = summarized`` 才发（不写就是 omitted，什么都不发）。
     每个开思考的写法先带上它试，不认（400）再去掉；原有的退回顺序不变。"""
@@ -188,6 +203,7 @@ def _anthropic(messages, cancel, *, model, base_url, api_key, candidates, tools=
     response = None
     for index, fields in enumerate(candidates):
         body = model_wire.anthropic_body(model=model, messages=prefix, temperature=None, response_format=None, thinking_fields=fields)
+        _effort_max_tokens(body, fields)
         body["stream"] = True
         _mark_history_cache(body)
         if tools:
