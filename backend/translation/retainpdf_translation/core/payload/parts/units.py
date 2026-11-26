@@ -324,7 +324,7 @@ def _member_translation_text(item: dict) -> str:
     )
 
 
-def _group_translation_complete(items: list[dict]) -> bool:
+def group_translation_complete(items: list[dict]) -> bool:
     """A group counts as translated when every member is covered.
 
     Two ways to be covered: (a) all members carry the same group-level
@@ -385,7 +385,7 @@ def pending_translation_items(payload: list[dict], *, deferred_item_ids: frozens
         items = [item for item in items if item.get("should_translate", True)]
         if not items:
             continue
-        if _group_translation_complete(items):
+        if group_translation_complete(items):
             continue
         if items[0].get("continuation_group") and not items[0].get("translation_group_id"):
             # 双栏交错的接续组按栏内阅读顺序拼；要在算夹着的公式之前排，`formulas_before` 和块一一对应。

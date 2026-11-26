@@ -32,6 +32,11 @@
 - 模型判过的对（连 / 不连）写进译文目录的 `continuation-review-memo.json`（`workflow/phases/continuation_memo.py`），
   重试时 runner 跟 `domain-context.json` 一起拷进新任务，判过的对直接用、只把新出现的对交给模型。每对记下两块原文的摘要，
   原文变了（OCR 重做过）就重新判；模型这一批回复解析不了时不记结论，下次照旧复核
+- 续跑（重试、断点接着翻）每次都从头重新分组，和上一轮分得不一样时（上一轮解析不了的那批这次判了「连」、规则的输入变了），
+  已经译好的块不和没译的块拼成一组：`core/orchestration/units.py` 的 `keep_translated_blocks_out_of_mixed_groups`
+  在 `finalize_payload_orchestration_metadata` 第一步把这种组里有译文的块挪出去（`continuation_decision=kept_translated`），
+  没译的块照旧成组。否则整组进待办，断点守卫报 `completed items regressed to pending`、整本失败，而且「连」已经记进 memo，
+  每次重试都在同一处失败（2026-11-26 桌面版 1000 多页的书）。整组都有自己译文、或者整组都没译的组不动，新任务不受影响
 
 这样做的目的很明确：
 

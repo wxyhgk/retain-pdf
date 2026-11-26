@@ -266,6 +266,8 @@ def advance_checkpoint(
         if int(page.get("page_index", -1)) in previous_page_indexes
         for item_id in page.get("pending_item_ids", [])
     }
+    # 续跑重新分组把已译的块和没译的块拼成一组，也会让这里报 regressed（2026-11-26，1000 多页的书）：
+    # 那是分组的事，在 core/orchestration/units.py 的 keep_translated_blocks_out_of_mixed_groups 拆开，这道守卫不放松。
     if payload.get("pages"):
         regressed = current_pending - previous_pending
         if regressed:

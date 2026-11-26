@@ -10,6 +10,8 @@
   页面布局分析，识别单栏/双栏和布局区。
 - `units.py`
   生成和整理 `translation_unit_id`、`skip_reason` 等标准字段。
+  第一步先把重新分出来的接续组里「有译文的块和没译的块拼在一起」的拆开（`keep_translated_blocks_out_of_mixed_groups`，续跑用，
+  见 `services/continuation/README.md`）。
 跨页 continuation review 已迁到 `services/continuation/orchestrator.py`。这一层只保留纯布局和元数据整理。
 
 ## 在总流程中的位置
