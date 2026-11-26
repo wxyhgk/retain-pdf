@@ -29,3 +29,27 @@ test("没有 RetainPDF 自己的 AI 了（2026-11-03）：不给 Rust 的 AI 代
   assert.equal(env.RUST_API_PORT, "41001");
   assert.doesNotMatch(env.PYTHONPATH, /ai_service/);
 });
+
+test("阅读页提问的互动块（OpenUI）：说明文件和检查器的位置指向打包进来的那两个目录（prepare-app.mjs 拷的）", () => {
+  const path = require("node:path");
+  const backendRoot = path.join("/Applications", "RetainPDF.app", "Contents", "Resources", "backend");
+  const env = buildBackendEnv({
+    apiPort: 41001,
+    backendRoot,
+    bundledFontPath: "/f.otf",
+    bundledPythonImportPaths: [],
+    bundledTitleBoldFontPath: "/fb.otf",
+    bundledTypstFontDir: "/fonts",
+    dataRoot: "/data",
+    desktopApiKey: "desktop-key",
+    pythonRuntime: { command: "/python" },
+    rustApiRoot: "/rust-api",
+    scriptsDir: "/pipeline",
+    simplePort: 42001,
+    typstBin: "/typst",
+    typstPackageCachePath: "/typst-cache",
+    typstPackagePath: "/typst-packages",
+  });
+  assert.equal(env.RUST_API_OPENUI_DIR, path.join(backendRoot, "contracts", "openui"));
+  assert.equal(env.RUST_API_OPENUI_CHECK_DIR, path.join(backendRoot, "openui-check"));
+});

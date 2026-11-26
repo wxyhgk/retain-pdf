@@ -790,6 +790,49 @@ if (!frontendOnly) {
   // 成了断链，Mac 签名遍历时 ENOENT（2026-11-22 签名试验）。
   fs.rmSync(path.join(rprEngineDst, "node_modules", ".bin"), { recursive: true, force: true });
 
+  // 阅读页提问回答里的互动块（OpenUI）：前端生成的分层说明（contracts/openui/）和后端的检查器（backend/openui-check，
+  // 纯 JS，只依赖 @openuidev/lang-core）。位置经 RUST_API_OPENUI_DIR / RUST_API_OPENUI_CHECK_DIR 告诉后端（src/main/backend-env.js），
+  // node 用 RUST_API_NODE_DIR 那份。方案：docs/ops/planning/reader-ask/20261126-互动块分层提示词.md。
+  const openuiSpecRoot = path.join(repoRoot, "contracts", "openui");
+  const openuiSpecFiles = ["ask-openui-prompt.v1.json", "ask-openui-library.v1.json"];
+  for (const name of openuiSpecFiles) {
+    if (!fs.existsSync(path.join(openuiSpecRoot, name))) {
+      throw new Error(`missing ${name} in ${openuiSpecRoot}; run npm run generate:openui --workspace @retainpdf/ask`);
+    }
+  }
+  const openuiSpecDst = path.join(outputBackendRoot, "contracts", "openui");
+  fs.rmSync(openuiSpecDst, { recursive: true, force: true });
+  fs.mkdirSync(openuiSpecDst, { recursive: true });
+  for (const name of openuiSpecFiles) fs.copyFileSync(path.join(openuiSpecRoot, name), path.join(openuiSpecDst, name));
+
+  const openuiCheckRoot = path.join(repoRoot, "backend", "openui-check");
+  if (!fs.existsSync(path.join(openuiCheckRoot, "bin", "openui-check.mjs"))) {
+    throw new Error(`missing openui checker at ${openuiCheckRoot}`);
+  }
+  const openuiCheckDeps = Object.keys(
+    JSON.parse(fs.readFileSync(path.join(openuiCheckRoot, "package.json"), "utf8")).dependencies || {},
+  );
+  if (openuiCheckDeps.some((dep) => !fs.existsSync(path.join(openuiCheckRoot, "node_modules", dep, "package.json")))) {
+    const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+    // --ignore-scripts 不能省：lang-core 的 postinstall 是安装统计。遥测环境变量也关上。
+    const installed = spawnSync(npmCommand, ["ci", "--omit=dev", "--ignore-scripts"], {
+      cwd: openuiCheckRoot,
+      stdio: "inherit",
+      shell: process.platform === "win32",
+      env: { ...process.env, OPENUI_TELEMETRY_DISABLED: "1", DO_NOT_TRACK: "1" },
+    });
+    if (installed.status !== 0) {
+      throw new Error(`npm ci failed in ${openuiCheckRoot} (exit ${installed.status})`);
+    }
+  }
+  const openuiCheckDst = path.join(outputBackendRoot, "openui-check");
+  fs.rmSync(openuiCheckDst, { recursive: true, force: true });
+  for (const entry of ["bin", "lib", "node_modules", "package.json"]) {
+    fs.cpSync(path.join(openuiCheckRoot, entry), path.join(openuiCheckDst, entry), { recursive: true, force: true });
+  }
+  // 和 rpr 引擎一样：.bin 是软链接，运行时用不到，签名遍历时可能撞断链。
+  fs.rmSync(path.join(openuiCheckDst, "node_modules", ".bin"), { recursive: true, force: true });
+
   // Keep the bundled layout aligned with main.js and RUST_API_SCRIPTS_DIR.
   const pipelineScriptsRoot = servicesPipelineRoot;
   if (!fs.existsSync(path.join(pipelineScriptsRoot, "pyproject.toml"))) {

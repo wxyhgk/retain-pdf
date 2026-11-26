@@ -59,6 +59,10 @@ function buildBackendEnv(options = {}) {
     RETAINPDF_NODE_BIN: process.execPath,
     // rpr 排版引擎（render.engine = "rpr"）的位置；node 同样是上面的 Electron。
     RETAIN_RPR_ENGINE_DIR: path.join(backendRoot, "rendering-engine"),
+    // 阅读页提问回答里的互动块（OpenUI）：前端生成的分层说明和后端的检查器（prepare-app.mjs 打进来的）。
+    // 桌面版的项目根就是 backendRoot，后端的默认位置（<项目根>/backend/openui-check）对不上，要显式给。
+    RUST_API_OPENUI_DIR: path.join(backendRoot, "contracts", "openui"),
+    RUST_API_OPENUI_CHECK_DIR: path.join(backendRoot, "openui-check"),
     RETAIN_PDF_FONT_PATH: bundledFontPath,
     RETAIN_PDF_TITLE_BOLD_FONT_PATH: bundledTitleBoldFontPath,
     RETAIN_PDF_TYPST_FONT_DIRS: bundledTypstFontDir,
