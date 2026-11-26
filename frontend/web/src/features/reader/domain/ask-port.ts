@@ -6,6 +6,7 @@
 // - 演示模式给假 agent；局域网共享打开的页面不给（桌面网关拦了 /api/v1/ai）。
 
 import { openAcpWebSocketSession } from "@retainpdf/ask/acp";
+import type { AskConfigOption } from "@retainpdf/ask";
 import type {
   ReaderAskAgent,
   ReaderAskAnchor,
@@ -20,7 +21,8 @@ import type {
 import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { createAskThread, deleteAskThread, getAskThread, listAiAgents, listAskThreads, updateAskThread } from "@retainpdf/api/ai";
 import { apiBase, frontendApiKey, isLanSharedPage, isMockMode } from "@/platform/config/runtime.js";
-import { savedDefaultTranslationModel, savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
+import { connectionValue, savedDefaultTranslationModel, savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
+import { TRANSLATION_THINKING_OPTIONS } from "@/platform/config/providers.js";
 import { loadBrowserStoredConfig, savePersistedBrowserStoredConfig } from "@/platform/config/persisted-config.js";
 import { createCredential, updateCredential } from "@/platform/api/domains/credentials.js";
 import { mockAskPort } from "@/platform/mock/ask-agent.js";
@@ -36,8 +38,7 @@ function defaultConnection(): TranslationConnection | null {
 }
 
 /** 自带 agent 的模型配置：设置里默认的翻译模型（密钥另外换成凭据库引用，见 ensureAskCredential）；没配模型时说清楚。 */
-export function builtinModelQuery(): { query: Record<string, string>; missing: string } {
-  const connection = defaultConnection();
+export function builtinModelQuery(connection: TranslationConnection | null = defaultConnection()): { query: Record<string, string>; missing: string } {
   if (!connection) return { query: {}, missing: "设置里还没有配翻译模型" };
   const query: Record<string, string> = {
     model: connection.model,
@@ -112,18 +113,73 @@ async function listAgents(builtinAgentIds: Set<string>): Promise<ReaderAskAgent[
   return toReaderAgents(rows, builtinModelQuery().missing);
 }
 
-async function openSession({ agentId, jobId }: { agentId: string; jobId: string }, handlers: ReaderAskHandlers, builtinAgentIds: ReadonlySet<string>): Promise<ReaderAskSession> {
+/** 自带类 agent 的两项设置（照 ACP 的 configOptions 写，提问窗画成选模型、思考强度）：模型是设置里存的那几条连接，思考强度和设置页同一套档位。 */
+export const BUILTIN_MODEL_CONFIG = "model";
+export const BUILTIN_EFFORT_CONFIG = "effort";
+
+export function builtinConfigOptions(connections: readonly TranslationConnection[], chosen: TranslationConnection, thinking: string): AskConfigOption[] {
+  return [
+    {
+      id: BUILTIN_MODEL_CONFIG,
+      name: "模型",
+      category: "model",
+      type: "select",
+      currentValue: connectionValue(chosen),
+      options: connections.map((connection) => ({ value: connectionValue(connection), name: connection.model, description: connection.label, group: connection.label })),
+    },
+    {
+      id: BUILTIN_EFFORT_CONFIG,
+      name: "思考强度",
+      category: "thought_level",
+      type: "select",
+      currentValue: thinking,
+      options: TRANSLATION_THINKING_OPTIONS.map((option) => ({ value: option.id, name: option.label })),
+    },
+  ];
+}
+
+/** 自带类 agent 用哪条连接、什么思考强度：用户在提问窗选过的优先，没选过用设置里默认的。 */
+export function builtinChoice(connections: readonly TranslationConnection[], config: Readonly<Record<string, string | boolean>> | undefined, fallback: TranslationConnection | null) {
+  const wanted = `${config?.[BUILTIN_MODEL_CONFIG] ?? ""}`;
+  const connection = connections.find((item) => connectionValue(item) === wanted) || fallback;
+  const effort = `${config?.[BUILTIN_EFFORT_CONFIG] ?? ""}`;
+  const thinking = TRANSLATION_THINKING_OPTIONS.some((option) => option.id === effort) ? effort : connection?.thinking || "off";
+  return { connection, thinking };
+}
+
+async function openSession(
+  { agentId, jobId, config }: { agentId: string; jobId: string; config?: Readonly<Record<string, string | boolean>> },
+  handlers: ReaderAskHandlers,
+  builtinAgentIds: ReadonlySet<string>,
+): Promise<ReaderAskSession> {
   const builtin = builtinAgentIds.has(agentId);
-  const extra = builtin ? builtinModelQuery() : { query: {}, missing: "" };
-  if (extra.missing) throw new Error(extra.missing);
-  if (builtin) {
-    const connection = defaultConnection();
-    if (connection) extra.query = { ...extra.query, credential_ref: await ensureAskCredential(connection) };
+  if (!builtin) {
+    // 本机 agent：认证走 api_key，模型、思考强度由它自己的 configOptions 管（窗口开了会话再设）。
+    return openAcpWebSocketSession(acpSocketUrl(apiBase(), agentId, frontendApiKey(), {}), handlers);
   }
+  const connections = savedTranslationConnections();
+  const { connection, thinking } = builtinChoice(connections, config, defaultConnection());
+  const extra = builtinModelQuery(connection);
+  if (extra.missing || !connection) throw new Error(extra.missing || "设置里还没有配翻译模型");
+  if (thinking && thinking !== "off") extra.query = { ...extra.query, thinking };
+  else delete extra.query.thinking;
+  extra.query = { ...extra.query, credential_ref: await ensureAskCredential(connection) };
   // 自带 agent 自己读书（read_pages / search_book / view_page）：带上阅读页的任务编号（merged-… 也照传）。本机 agent 走 retainpdf mcp，不用。
-  if (builtin && jobId) extra.query = { ...extra.query, job_id: jobId };
-  // 握手、开会话、发问都在提问窗的包里（@retainpdf/ask/acp）；这里只拼地址：api_key、自带 agent 的模型配置和凭据引用、job_id。
-  return openAcpWebSocketSession(acpSocketUrl(apiBase(), agentId, frontendApiKey(), extra.query), handlers);
+  if (jobId) extra.query = { ...extra.query, job_id: jobId };
+  // 握手、开会话、发问都在提问窗的包里（@retainpdf/ask/acp）；这里只拼地址：api_key、模型配置和凭据引用、job_id。
+  const session = await openAcpWebSocketSession(acpSocketUrl(apiBase(), agentId, frontendApiKey(), extra.query), handlers);
+  // 模型、思考强度是握手时定的：提问窗改了就重开会话（reopenOnConfigChange）。agent 自己给了设置项就用它的。
+  if (session.configOptions?.length) return session;
+  let options = builtinConfigOptions(connections, connection, thinking);
+  return {
+    ...session,
+    configOptions: options,
+    reopenOnConfigChange: true,
+    setConfigOption: async (configId, value) => {
+      options = options.map((option) => (option.id === configId ? { ...option, currentValue: value } : option));
+      return options;
+    },
+  };
 }
 
 // —— 问答记录（契约 ask-threads.v1）：阅读器用驼峰，接口用下划线 ——

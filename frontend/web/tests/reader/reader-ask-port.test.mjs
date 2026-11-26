@@ -58,3 +58,18 @@ test("自带类 agent 按 kind 认（11-26 后端加了 retainpdf-pi）：缺配
   const source = (await import("node:fs")).readFileSync(new URL("../../src/features/reader/domain/ask-port.ts", import.meta.url), "utf8");
   assert.match(source, /const builtin = builtinAgentIds\.has\(agentId\);/);
 });
+
+test("自带类 agent 的模型和思考强度：模型是设置里存的连接，提问窗选过的优先；思考强度用设置页的档位，认不出的用连接自己的", async () => {
+  const { builtinChoice, builtinConfigOptions } = await import("../../src/features/reader/domain/ask-port.ts");
+  const qwen = { provider: "qwen", label: "通义千问", baseUrl: "https://q", model: "qwen3.8-flash", apiKey: "k1", apiProtocol: "openai", thinking: "off" };
+  const claude = { provider: "anthropic", label: "Anthropic", baseUrl: "https://a", model: "claude-haiku-5-5", apiKey: "k2", apiProtocol: "anthropic", thinking: "low" };
+  assert.deepEqual(builtinChoice([qwen, claude], {}, qwen), { connection: qwen, thinking: "off" });
+  assert.deepEqual(builtinChoice([qwen, claude], { model: "anthropic::claude-haiku-5-5", effort: "high" }, qwen), { connection: claude, thinking: "high" });
+  assert.deepEqual(builtinChoice([qwen, claude], { model: "gone::x", effort: "turbo" }, claude), { connection: claude, thinking: "low" }, "选过的连接删了：用默认的；档位认不出：用连接自己的");
+  const [model, effort] = builtinConfigOptions([qwen, claude], claude, "high");
+  assert.equal(model.category, "model");
+  assert.equal(model.currentValue, "anthropic::claude-haiku-5-5");
+  assert.deepEqual(model.options[0], { value: "qwen::qwen3.8-flash", name: "qwen3.8-flash", description: "通义千问", group: "通义千问" });
+  assert.equal(effort.category, "thought_level");
+  assert.deepEqual(effort.options.map((option) => option.value), ["off", "auto", "low", "medium", "high", "max"]);
+});

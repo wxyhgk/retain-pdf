@@ -81,6 +81,10 @@
 提示词分层（前端生成 `contracts/openui/`，后端的 `openui_spec` / `openui_check` 教 agent），见
 [方案](../../ops/planning/reader-ask/20261126-互动块分层提示词.md) 和 [提问窗包的 README](../../../frontend/packages/ask/README.md)。
 
+2026-11-26 提问窗能**选模型和思考强度**（输入框那一行，assistant-ui 的 ModelSelector）：照 ACP 的 `configOptions`，本机 Claude Code、pi 自己给；
+RetainPDF 的自带类 agent 由网页端口合成两项——模型是设置里存的那几条连接，思考强度用设置页的档位（关闭 / 自动 / 浅 / 中 / 深 / 最深），
+改了下一问按新连接重开会话（`ask-port.ts` 的 `builtinChoice`、`builtinConfigOptions`）。详见[提问窗包的 README](../../../frontend/packages/ask/README.md)。
+
 ## 出处和问答记录
 
 - 右键时悬停框还没认出块（鼠标刚移过来、点在两段之间）：按点的位置找同一页最近的块（超过页高 15% 不算），带它的原文译文，

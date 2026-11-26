@@ -6,7 +6,8 @@
 
 import type { ContentBlock, RequestPermissionRequest, RequestPermissionResponse, SessionUpdate } from "@agentclientprotocol/sdk";
 
-import type { AskPort, AskSession } from "../contract.js";
+import type { AskConfigOption, AskPort, AskSession } from "../contract.js";
+import { normalizeConfigOptions, pendingConfig } from "./config.js";
 import { applySessionUpdate, closeOpenReasoning, emptyTurn, turnSpeed, usageFromMeta, type AskPart, type AskTurn } from "./parts.js";
 import { historyText } from "./messages.js";
 
@@ -77,6 +78,10 @@ export type AcpChatOptions = {
   getPreamble: () => string;
   permissions: PermissionStore;
   now?: () => number;
+  /** agent 的设置项变了（开了新会话、agent 推来 config_option_update、用户改了）。 */
+  onConfig?: (options: AskConfigOption[]) => void;
+  /** 用户选过的值（模型、思考强度……）：每开一个新会话再设一次。 */
+  getDesiredConfig?: () => Readonly<Record<string, string | boolean>>;
 };
 
 type RunPart = { type: string; text?: string; image?: string };
@@ -108,18 +113,60 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
   // 这个会话已经听过几条（问 + 答）。重新回答、改了问题、切到别的版本时，对话和会话里的对不上：开新会话，把到这里为止的带过去。
   let sessionSeen = 0;
 
-  const ensureSession = async () => {
-    const agentId = options.getAgentId();
-    if (session && sessionAgent === agentId) return session;
-    session?.close();
-    session = await options.port.openSession(
-      { agentId },
+  // 正在开的会话（提前开和发问撞在一起时只开一个）。
+  let opening: Promise<AskSession> | null = null;
+
+  const open = async (agentId: string) => {
+    const desired = options.getDesiredConfig?.() || {};
+    const next = await options.port.openSession(
+      { agentId, config: desired },
       {
-        onUpdate: (update) => onUpdate?.(update),
+        onUpdate: (update) => {
+          // 设置项变了（agent 自己改了模型、模式）：交给窗口，不算回答的一部分。
+          if (update.sessionUpdate === "config_option_update") {
+            options.onConfig?.(normalizeConfigOptions((update as { configOptions?: unknown }).configOptions));
+            return;
+          }
+          onUpdate?.(update);
+        },
         onPermission: (request) => options.permissions.add(request),
       },
     );
+    // 用户选过的模型、思考强度：新会话再设一次（agent 不认的值跳过，设不上也不挡着发问）。
+    let config = next.configOptions || [];
+    // 开会话时就定了的（reopenOnConfigChange）不用再设。
+    if (next.setConfigOption && !next.reopenOnConfigChange) {
+      for (const [id, value] of pendingConfig(config, desired)) {
+        try {
+          config = await next.setConfigOption(id, value);
+        } catch {
+          // 设不上就用 agent 现在的。
+        }
+      }
+    }
+    options.onConfig?.(config);
+    return next;
+  };
+
+  const ensureSession = async () => {
+    const agentId = options.getAgentId();
+    if (session && sessionAgent === agentId) return session;
+    if (opening && sessionAgent === agentId) return opening;
+    session?.close();
+    session = null;
     sessionAgent = agentId;
+    opening = open(agentId);
+    try {
+      session = await opening;
+    } finally {
+      opening = null;
+    }
+    if (sessionAgent !== agentId) {
+      // 开的时候用户换了 agent：这个不要了。
+      session.close();
+      session = null;
+      return ensureSession();
+    }
     // 新会话（换了 agent、重新回答、断线）不知道前面问过什么，出处再带一次。
     sentPreamble = false;
     sessionSeen = 0;
@@ -246,6 +293,26 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
 
   return {
     adapter,
+    /** 提前开会话（选了 agent 就开），好拿到模型、思考强度这些设置项。开不了不报错，发问时再说。 */
+    async prepare() {
+      try {
+        await ensureSession();
+      } catch {
+        // 发问时会在回答的位置说清楚为什么连不上。
+      }
+    },
+    /** 改一个设置项：会话开着就马上设；没开就等下次开会话（getDesiredConfig 里有）。 */
+    async setConfig(configId: string, value: string | boolean) {
+      if (!session?.setConfigOption) return false;
+      const current = session;
+      options.onConfig?.(await current.setConfigOption!(configId, value));
+      if (current.reopenOnConfigChange && session === current) {
+        // 设置是开会话时定的：关掉，下一问按新设置重开（之前几轮照样带过去）。
+        current.close();
+        session = null;
+      }
+      return true;
+    },
     close() {
       options.permissions.cancelAll();
       session?.close();

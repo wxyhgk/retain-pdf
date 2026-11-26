@@ -44,12 +44,42 @@ function promptText(blocks: ContentBlock[]): string {
   return blocks.map((block) => (block.type === "text" ? block.text : "")).join("\n");
 }
 
+type FakeConfig = NonNullable<ReaderAskSession["configOptions"]>;
+
+/** 演示用的设置项（照 ACP 的 configOptions）：模型、思考强度；Claude Code 再多一个模式。 */
+function fakeConfig(agentId: string): FakeConfig {
+  const options: FakeConfig = [
+    {
+      id: "model", name: "模型", category: "model", type: "select", currentValue: "haiku",
+      options: [
+        { value: "haiku", name: "Claude Haiku 5.5", description: "快、便宜" },
+        { value: "sonnet", name: "Claude Sonnet 5.5", description: "均衡" },
+        { value: "opus", name: "Claude Opus 5.5", description: "最强" },
+      ],
+    },
+    {
+      id: "effort", name: "思考强度", category: "thought_level", type: "select", currentValue: "medium",
+      options: ["off", "low", "medium", "high", "max"].map((value) => ({ value, name: value })),
+    },
+  ];
+  if (agentId === "claude-code") {
+    options.push({ id: "mode", name: "模式", category: "mode", type: "select", currentValue: "default", options: [{ value: "default", name: "每次问" }, { value: "plan", name: "先出计划" }] });
+  }
+  return options;
+}
+
 function openFakeSession(agentId: string, handlers: ReaderAskHandlers): ReaderAskSession {
   let current = { cancelled: false };
   const send = (update: SessionUpdate) => {
     if (!current.cancelled) handlers.onUpdate(update);
   };
+  let config = fakeConfig(agentId);
   return {
+    configOptions: config,
+    async setConfigOption(configId, value) {
+      config = config.map((option) => (option.id === configId ? { ...option, currentValue: value } : option));
+      return config;
+    },
     async prompt(blocks) {
       const signal = { cancelled: false };
       current = signal;

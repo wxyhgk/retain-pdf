@@ -5,6 +5,7 @@ import { client, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
 import { createWebSocketStream } from "@agentclientprotocol/sdk/experimental/ws-client";
 
 import type { AskHandlers, AskSession } from "../contract.js";
+import { normalizeConfigOptions } from "./config.js";
 
 export type AcpSocketOptions = {
   /** session/new 的 cwd 和 mcpServers。RetainPDF 的桥空着就会自己填书文件夹、补上 retainpdf mcp。 */
@@ -30,8 +31,16 @@ export async function openAcpWebSocketSession(url: string, handlers: AskHandlers
     const detail = error instanceof Error && error.message ? `（${error.message}）` : "";
     throw new Error(`连不上这个 agent：没开、没装，或者设置不对${detail}`);
   }
-  const { sessionId } = await agent.request("session/new", { cwd: options.cwd ?? "", mcpServers: [] });
+  const created = await agent.request("session/new", { cwd: options.cwd ?? "", mcpServers: [] });
+  const { sessionId } = created;
   return {
+    // 模型、思考强度、模式……（ACP 的 configOptions；agent 不给就是空的，窗口不画选择器）。
+    configOptions: normalizeConfigOptions((created as { configOptions?: unknown }).configOptions),
+    setConfigOption: async (configId, value) => {
+      const params = typeof value === "boolean" ? { sessionId, configId, type: "boolean" as const, value } : { sessionId, configId, value };
+      const result = await agent.request("session/set_config_option", params as never);
+      return normalizeConfigOptions((result as { configOptions?: unknown })?.configOptions);
+    },
     prompt: async (blocks) => {
       const result = await agent.request("session/prompt", { sessionId, prompt: blocks });
       const extra = result as { usage?: Record<string, unknown> | null; _meta?: Record<string, unknown> | null };

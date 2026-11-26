@@ -20,6 +20,8 @@ import { AskHeader } from "./AskHeader.js";
 import { AskQuote } from "./AskQuote.js";
 import { AskPageContext } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
+import { AskAgentSettings, AskConfigContext } from "./AskModelPicker.js";
+import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
 const KATEX_LINK_ID = "retainpdf-katex-css";
 /** KaTeX 的样式表（字体）由宿主给地址（桌面版离线也能用），打开窗口时插一个 <link>。 */
 function useKatexStylesheet(href) {
@@ -81,13 +83,31 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
         };
     }, [port]);
     const permissions = useMemo(() => new PermissionStore(), []);
+    // agent 的设置项（模型、思考强度……，ACP 的 configOptions）；用户选过的值按 agent 记在本机浏览器里，新会话再设一次。
+    const [config, setConfig] = useState([]);
     const chat = useMemo(() => createAcpChatAdapter({
         port,
         permissions,
         getAgentId: () => live.current.agentId,
         getPreamble: () => live.current.context.preamble || "",
+        onConfig: setConfig,
+        getDesiredConfig: () => loadDesiredConfig(live.current.agentId),
     }), [port, permissions]);
     useEffect(() => () => chat.close(), [chat]);
+    // 选了 agent 就提前开会话：不用先问一句，就能看到它有哪些模型、思考强度。
+    useEffect(() => {
+        setConfig([]);
+        if (agentId)
+            void chat.prepare();
+    }, [chat, agentId]);
+    const configState = useMemo(() => ({
+        options: config,
+        set: (configId, value) => {
+            saveDesiredConfig(live.current.agentId, configId, value);
+            setConfig((current) => current.map((option) => (option.id === configId ? { ...option, currentValue: value } : option)));
+            void chat.setConfig(configId, value).catch(() => { });
+        },
+    }), [config, chat]);
     // 之前的问答接着显示（agent 那边是新会话：出处和之前几轮会跟着下一问带过去，见 acp-adapter）。
     const [initial] = useState(() => toInitialMessages(initialMessages || []));
     // 输入框的「+」：贴图片（截图、扫描页、图表）一起问；发出去是 ACP 的 image 块（acp-adapter 的 imageBlocks）。
@@ -112,7 +132,7 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
     // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
     const send = useMemo(() => (text) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);
     // Thread 要的几样（引用不变，免得它整个重画）。
-    const threadComponents = useMemo(() => ({ ToolFallback: ToolCard, ToolGroup: AskToolGroup, Indicator: Waiting, Welcome: makeWelcome(send), MessageFooter: makeMessageFooter(agentName) }), [agents, runtime]);
+    const threadComponents = useMemo(() => ({ ToolFallback: ToolCard, ToolGroup: AskToolGroup, Indicator: Waiting, ComposerExtra: AskAgentSettings, Welcome: makeWelcome(send), MessageFooter: makeMessageFooter(agentName) }), [agents, runtime]);
     const pages = useMemo(() => (onJumpToPage ? { pageCount, jump: onJumpToPage } : null), [onJumpToPage, pageCount]);
     useEffect(() => {
         const onKey = (event) => {
@@ -143,5 +163,5 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
                 setDockWidth(element.offsetWidth);
             else
                 setFloat({ x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight });
-        }, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, children: [_jsx(AskHeader, { context: context, agents: agents, agentId: agentId, onAgent: setAgentId, mode: mode, onMode: setMode, onShowContext: onShowContext, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [_jsx(AskQuote, { quote: context.quote }), loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsx("div", { className: "ask-thread", children: _jsx(Thread, { components: threadComponents, autoFocus: true }) })] }) }) })] })] }) }));
+        }, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, children: [_jsx(AskHeader, { context: context, agents: agents, agentId: agentId, onAgent: setAgentId, mode: mode, onMode: setMode, onShowContext: onShowContext, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [_jsx(AskQuote, { quote: context.quote }), loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsx("div", { className: "ask-thread", children: _jsx(Thread, { components: threadComponents, autoFocus: true }) })] }) }) }) })] })] }) }));
 }

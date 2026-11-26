@@ -1,5 +1,5 @@
 import type { ContentBlock, RequestPermissionRequest, RequestPermissionResponse } from "@agentclientprotocol/sdk";
-import type { AskPort } from "../contract.js";
+import type { AskConfigOption, AskPort } from "../contract.js";
 import { type AskPart, type AskTurn } from "./parts.js";
 /** 等用户点的许可请求（按 toolCallId 认；窗口在那张工具卡片上画按钮）。 */
 export type PendingPermission = {
@@ -61,6 +61,10 @@ export type AcpChatOptions = {
     getPreamble: () => string;
     permissions: PermissionStore;
     now?: () => number;
+    /** agent 的设置项变了（开了新会话、agent 推来 config_option_update、用户改了）。 */
+    onConfig?: (options: AskConfigOption[]) => void;
+    /** 用户选过的值（模型、思考强度……）：每开一个新会话再设一次。 */
+    getDesiredConfig?: () => Readonly<Record<string, string | boolean>>;
 };
 type RunPart = {
     type: string;
@@ -146,6 +150,10 @@ export declare function createAcpChatAdapter(options: AcpChatOptions): {
             };
         }, void, unknown>;
     };
+    /** 提前开会话（选了 agent 就开），好拿到模型、思考强度这些设置项。开不了不报错，发问时再说。 */
+    prepare(): Promise<void>;
+    /** 改一个设置项：会话开着就马上设；没开就等下次开会话（getDesiredConfig 里有）。 */
+    setConfig(configId: string, value: string | boolean): Promise<boolean>;
     close(): void;
 };
 export {};

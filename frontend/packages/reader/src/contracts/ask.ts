@@ -11,7 +11,8 @@ export type ReaderAskSession = AskSession;
 export type ReaderAskPort = {
   listAgents: () => Promise<ReaderAskAgent[]>;
   /** 开一个会话（session/new）。jobId 给 agent 拿书的数据（retainpdf mcp）用。 */
-  openSession: (options: { agentId: string; jobId: string }, handlers: ReaderAskHandlers) => Promise<ReaderAskSession>;
+  /** config：用户选过的设置（模型、思考强度……），见 @retainpdf/ask 的 AskPort。 */
+  openSession: (options: { agentId: string; jobId: string; config?: Readonly<Record<string, string | boolean>> }, handlers: ReaderAskHandlers) => Promise<ReaderAskSession>;
   /** 问答记录（按书存，书页白边的「?」从这里读）。不给就只记在这次打开里。 */
   threads?: ReaderAskThreadsPort | null;
 };

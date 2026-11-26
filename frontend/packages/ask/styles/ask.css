@@ -556,3 +556,78 @@
   font-size: var(--ui-text-xs, 11px);
   white-space: pre-wrap;
 }
+
+/* 输入框那一行的 agent 设置（../src/window/AskModelPicker.tsx）：模型和思考强度一个按钮，别的收进「更多」。 */
+.ask-config {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ask-panel .ask-config-trigger {
+  max-width: 220px;
+  height: 26px;
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-panel .ask-config-trigger:hover,
+.ask-panel .ask-config-trigger[data-state="open"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+/* 选模型的弹层（Radix 挂在 body 上）：照搬组件的 bg-accent 在我们的皮肤里是深色，选中、高亮改成浅底。 */
+[data-slot="model-selector-content"] {
+  font-size: var(--ui-text-md, 13px);
+}
+
+[data-slot="model-selector-content"] [cmdk-item][data-selected="true"],
+[data-slot="model-selector-content"] [cmdk-item][aria-selected="true"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+[data-slot="model-selector-effort"] [data-state="checked"] {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.ask-config-more {
+  width: 26px;
+  height: 26px;
+}
+
+.ask-panel .ask-config-effort select {
+  min-height: 26px;
+  padding: 0 22px 0 8px;
+  border: 0;
+  background-color: transparent;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+/* 「更多」弹层（Radix Popover 挂在 body 上，不在 .ask-panel 里面）。 */
+.ask-config-panel {
+  display: grid;
+  gap: 8px;
+  width: 240px;
+  padding: 10px 12px;
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-config-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+/* Radix 弹层（选模型、更多设置）要压在提问窗上面。 */
+[data-radix-popper-content-wrapper]:has([data-slot="model-selector-content"]),
+[data-radix-popper-content-wrapper]:has(.ask-config-panel) {
+  z-index: calc(var(--z-hud, 36) + 10) !important;
+}

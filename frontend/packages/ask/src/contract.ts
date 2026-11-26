@@ -37,8 +37,32 @@ export type AskPromptResult = {
   meta?: Record<string, unknown> | null;
 };
 
+/** agent 的一个设置项（ACP 的 session config option）：模型、思考强度、模式…… */
+export type AskConfigChoice = { value: string; name: string; description?: string; group?: string };
+
+export type AskConfigOption = {
+  id: string;
+  name: string;
+  description?: string;
+  /** ACP 的分类：model（模型）、thought_level（思考强度）、mode（模式），别的照原样。 */
+  category?: string;
+  type: "select" | "boolean";
+  currentValue: string | boolean;
+  /** select 的可选值（分组的已经摊平，group 记组名）。 */
+  options: AskConfigChoice[];
+};
+
 /** 一个 ACP 会话（session/new 开出来的）。 */
 export type AskSession = {
+  /** 开会话时 agent 给的设置项（没有就是没有，窗口不画选择器）。 */
+  configOptions?: AskConfigOption[];
+  /** 改一个设置项（session/set_config_option），返回改完的整份设置项。agent 不支持就不给这个方法。 */
+  setConfigOption?: (configId: string, value: string | boolean) => Promise<AskConfigOption[]>;
+  /**
+   * 设置是开会话时定的（宿主拼进握手参数，比如 RetainPDF 自带 agent 的模型和思考强度）：改了以后关掉这个会话，
+   * 下一问用 openSession 的 config 重开，之前几轮照样带过去。
+   */
+  reopenOnConfigChange?: boolean;
   /** 发一轮（session/prompt），回答过程走 onUpdate。 */
   prompt: (blocks: ContentBlock[]) => Promise<AskPromptResult>;
   /** 停（session/cancel）。 */
@@ -50,7 +74,8 @@ export type AskSession = {
 /** 宿主给窗口的端口：列 agent、开会话。会话要带的东西（书的任务号、模型配置）由宿主自己绑进去。 */
 export type AskPort = {
   listAgents: () => Promise<AskAgent[]>;
-  openSession: (options: { agentId: string }, handlers: AskHandlers) => Promise<AskSession>;
+  /** config 是用户选过的设置（模型、思考强度……，按设置项 id）：开会话时就要定的，宿主拼进握手参数；ACP 能改的，窗口开了会话再设。 */
+  openSession: (options: { agentId: string; config?: Readonly<Record<string, string | boolean>> }, handlers: AskHandlers) => Promise<AskSession>;
 };
 
 /** 存下来的一条问答：问题，或者回答（带思考和用量）。宿主拿去存、下次原样交回来。 */

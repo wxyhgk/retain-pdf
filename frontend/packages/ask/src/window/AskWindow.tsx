@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Rnd } from "react-rnd";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 
-import type { AskAgent, AskContext, AskMessage, AskPort } from "../contract.js";
+import type { AskAgent, AskConfigOption, AskContext, AskMessage, AskPort } from "../contract.js";
 import { toInitialMessages, toStoredMessages } from "../acp/messages.js";
 import { PermissionStore, createAcpChatAdapter } from "../acp/adapter.js";
 import { Thread } from "../ui/elements/thread.aui.js";
@@ -31,6 +31,8 @@ import { AskHeader, type AskWindowMode } from "./AskHeader.js";
 import { AskQuote } from "./AskQuote.js";
 import { AskPageContext, type AskPageJump } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
+import { AskAgentSettings, AskConfigContext, type AskConfigState } from "./AskModelPicker.js";
+import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
 
 const KATEX_LINK_ID = "retainpdf-katex-css";
 
@@ -126,16 +128,33 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
   }, [port]);
 
   const permissions = useMemo(() => new PermissionStore(), []);
+  // agent 的设置项（模型、思考强度……，ACP 的 configOptions）；用户选过的值按 agent 记在本机浏览器里，新会话再设一次。
+  const [config, setConfig] = useState<AskConfigOption[]>([]);
   const chat = useMemo(
     () => createAcpChatAdapter({
       port,
       permissions,
       getAgentId: () => live.current.agentId,
       getPreamble: () => live.current.context.preamble || "",
+      onConfig: setConfig,
+      getDesiredConfig: () => loadDesiredConfig(live.current.agentId),
     }),
     [port, permissions],
   );
   useEffect(() => () => chat.close(), [chat]);
+  // 选了 agent 就提前开会话：不用先问一句，就能看到它有哪些模型、思考强度。
+  useEffect(() => {
+    setConfig([]);
+    if (agentId) void chat.prepare();
+  }, [chat, agentId]);
+  const configState = useMemo<AskConfigState>(() => ({
+    options: config,
+    set: (configId, value) => {
+      saveDesiredConfig(live.current.agentId, configId, value);
+      setConfig((current) => current.map((option) => (option.id === configId ? { ...option, currentValue: value } : option)));
+      void chat.setConfig(configId, value).catch(() => {});
+    },
+  }), [config, chat]);
   // 之前的问答接着显示（agent 那边是新会话：出处和之前几轮会跟着下一问带过去，见 acp-adapter）。
   const [initial] = useState(() => toInitialMessages(initialMessages || []));
   // 输入框的「+」：贴图片（截图、扫描页、图表）一起问；发出去是 ACP 的 image 块（acp-adapter 的 imageBlocks）。
@@ -160,7 +179,7 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
   const send = useMemo(() => (text: string) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);
   // Thread 要的几样（引用不变，免得它整个重画）。
   const threadComponents = useMemo(
-    () => ({ ToolFallback: ToolCard, ToolGroup: AskToolGroup, Indicator: Waiting, Welcome: makeWelcome(send), MessageFooter: makeMessageFooter(agentName) }),
+    () => ({ ToolFallback: ToolCard, ToolGroup: AskToolGroup, Indicator: Waiting, ComposerExtra: AskAgentSettings, Welcome: makeWelcome(send), MessageFooter: makeMessageFooter(agentName) }),
     [agents, runtime], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const pages = useMemo<AskPageJump | null>(() => (onJumpToPage ? { pageCount, jump: onJumpToPage } : null), [onJumpToPage, pageCount]);
@@ -224,6 +243,7 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
           {loadError ? <p className="ask-error">列不出能用的 agent：{loadError}</p> : null}
           <PermissionContext.Provider value={permissions}>
             <AskSendContext.Provider value={send}>
+            <AskConfigContext.Provider value={configState}>
             <AssistantRuntimeProvider runtime={runtime}>
               <PlanDataUI />
               <SubagentDataUI />
@@ -231,6 +251,7 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
                 <Thread components={threadComponents} autoFocus />
               </div>
             </AssistantRuntimeProvider>
+            </AskConfigContext.Provider>
             </AskSendContext.Provider>
           </PermissionContext.Provider>
         </AskPageContext.Provider>

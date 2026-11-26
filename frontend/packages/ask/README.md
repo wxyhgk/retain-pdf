@@ -52,6 +52,19 @@ import type { AskPort, AskContext, AskMessage } from "@retainpdf/ask";
 依赖：`@assistant-ui/react`（对话）、`@assistant-ui/react-markdown` + remark-math / rehype-katex（Markdown 和公式）、
 react-rnd（窗口拖动）、ACP SDK、`@retainpdf/ui`（按钮、下拉框）。
 
+## 选模型、思考强度
+
+输入框那一行（「+」旁边）有 agent 的设置：模型和思考强度用 assistant-ui 的 ModelSelector（`src/ui/elements/model-selector.tsx`，搜索、分组、思考强度一栏），
+别的设置项（模式、快速……）收在「更多」里（`src/window/AskModelPicker.tsx`）。数据照 ACP 的 **session config options**：
+
+- agent 开会话时给 `configOptions`（`category` 是 `model` / `thought_level` / `mode`……），窗口用 `session/set_config_option` 改，agent 推 `config_option_update` 也跟着变。
+  本机 Claude Code、pi 都给（2026-11-26 本机握手看过：Claude Code 有模型、思考强度、快速、ultracode、模式五项）。
+- 选了 agent 就提前开会话（`prepare`），不用先问一句就能看到有哪些模型。
+- 用户选过的值按 agent 记在本机浏览器（`window/config-memory.ts`），新会话开了再设一次（`acp/config.ts` 的 `pendingConfig`）；
+  开会话时也交给宿主（`AskPort.openSession` 的 `config`）。
+- 设置要在握手时定的（`AskSession.reopenOnConfigChange`，RetainPDF 的自带 agent：模型就是设置里存的连接）：改了关掉会话，下一问按新设置重开，之前几轮照样带过去。
+- agent 一个设置项都不给，就什么都不画。
+
 ## 回答里的互动块（OpenUI）
 
 agent 在回答里写 ```` ```openui-lang ```` 代码块，窗口用 [OpenUI](https://github.com/thesysdev/openui) 的渲染器画成界面（滑块、图表、闪卡、公式、示意图……）：

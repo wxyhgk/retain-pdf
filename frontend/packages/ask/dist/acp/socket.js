@@ -2,6 +2,7 @@
 // 宿主拼好地址（认证、模型配置都在查询串里，浏览器的 WebSocket 带不了请求头），这里握手、开会话，返回 AskSession。
 import { client, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
 import { createWebSocketStream } from "@agentclientprotocol/sdk/experimental/ws-client";
+import { normalizeConfigOptions } from "./config.js";
 export async function openAcpWebSocketSession(url, handlers, options = {}) {
     const app = client()
         .onNotification("session/update", ({ params }) => handlers.onUpdate(params.update))
@@ -22,8 +23,16 @@ export async function openAcpWebSocketSession(url, handlers, options = {}) {
         const detail = error instanceof Error && error.message ? `（${error.message}）` : "";
         throw new Error(`连不上这个 agent：没开、没装，或者设置不对${detail}`);
     }
-    const { sessionId } = await agent.request("session/new", { cwd: options.cwd ?? "", mcpServers: [] });
+    const created = await agent.request("session/new", { cwd: options.cwd ?? "", mcpServers: [] });
+    const { sessionId } = created;
     return {
+        // 模型、思考强度、模式……（ACP 的 configOptions；agent 不给就是空的，窗口不画选择器）。
+        configOptions: normalizeConfigOptions(created.configOptions),
+        setConfigOption: async (configId, value) => {
+            const params = typeof value === "boolean" ? { sessionId, configId, type: "boolean", value } : { sessionId, configId, value };
+            const result = await agent.request("session/set_config_option", params);
+            return normalizeConfigOptions(result?.configOptions);
+        },
         prompt: async (blocks) => {
             const result = await agent.request("session/prompt", { sessionId, prompt: blocks });
             const extra = result;
