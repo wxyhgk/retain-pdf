@@ -59,7 +59,7 @@ BACKGROUND_NEIGHBORS = 1
 MAX_BACKGROUND_BLOCK_CHARS = 500
 MAX_BACKGROUND_PAGE_CHARS = 4_000
 BACKGROUND_WAIT_SECS = 1.5
-# 前端附在问题前面的字（frontend/packages/reader/src/ask/acp-adapter.ts 的 anchorPromptBlocks）
+# 前端附在问题前面的字（frontend/packages/reader/src/ask/ask-context.ts 的 anchorPreamble；2026-11-26 以前在 acp-adapter.ts 的 anchorPromptBlocks）
 TEXT_MARKERS = ("我选中的这段：", "这一块的原文：", "这一块的译文：")
 PAGE_IMAGE_WIDTH = 1000
 # 一张图最多多大（Anthropic 一张图 5 MB 封顶，base64 再大三分之一）
@@ -67,7 +67,7 @@ MAX_IMAGE_BYTES = 3_500_000
 REGIONS_TIMEOUT_SECS = 60
 IMAGE_TIMEOUT_SECS = 90
 ID_RE = re.compile(r"^[A-Za-z0-9_.:-]{1,200}$")
-# 前端（frontend/packages/reader/src/ask/acp-adapter.ts 的 anchorPromptBlocks）在第一问前面写的出处，最后一行是
+# 前端（frontend/packages/reader/src/ask/ask-context.ts 的 anchorPreamble；2026-11-26 以前在 acp-adapter.ts 的 anchorPromptBlocks）在第一问前面写的出处，最后一行是
 # 「（RetainPDF 任务 <任务>，块 <块>，第 <页> 页）」；前端以后在 `_meta.retainpdf.anchor` 里直接给就不用认字了
 ANCHOR_MARKER_RE = re.compile(r"（RetainPDF 任务 ([A-Za-z0-9_.:-]+)(?:，块 ([A-Za-z0-9_.:-]+))?，第 (\d{1,5}) 页）")
 PAGE_MENTION_RE = re.compile(r"第\s*(\d{1,5})\s*页|\bpages?\s*(\d{1,5})\b|\bp\.\s*(\d{1,5})\b", re.IGNORECASE)

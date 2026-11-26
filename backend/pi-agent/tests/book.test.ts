@@ -34,7 +34,7 @@ const ITEMS = [
   item("p005-b0000", 5, "Last words.", "结语。"),
 ];
 
-// 前端（acp-adapter.ts 的 anchorPromptBlocks）附在第一问前面的出处
+// 前端（ask-context.ts 的 anchorPreamble）附在第一问前面的出处
 const ANCHOR_WITH_TEXT = "我在读一本书，第 2 页（译文栏）。\n\n这一块的原文：\nThe Hamiltonian operator is Hermitian.\n\n（RetainPDF 任务 job-1，块 p002-b0001，第 2 页）";
 const ANCHOR_NO_TEXT = "我在读一本书，第 4 页（原文栏）。\n\n这一处没有认出文字（可能是扫描页、图或公式），可以去看这一页。\n\n（RetainPDF 任务 job-1，第 4 页）";
 const JPEG = Buffer.from("\xff\xd8\xff fake jpeg", "latin1");

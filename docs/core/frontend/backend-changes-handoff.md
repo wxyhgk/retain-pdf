@@ -115,7 +115,7 @@
 - `usage_update` 的 `_meta.retainpdf.usage` 多了 `rounds`、`tool_calls`、`context`（代码自动取了哪些页、几块），
   token 是各轮加起来的；问答记录里照旧原样存。
 - 可选（以后）：`session/prompt` 的参数里给 `_meta: {retainpdf: {anchor: {page, item_id, selection, source_text, translated_text}}}`
-  （问答记录的锚点写法）。不给时 agent 从 `anchorPromptBlocks` 写的出处里认（最后一行「（RetainPDF 任务 …，块 …，第 … 页）」和
+  （问答记录的锚点写法）。不给时 agent 从 `anchorPreamble`（`frontend/packages/reader/src/ask/ask-context.ts`，2026-11-26 以前是 `acp-adapter.ts` 的 `anchorPromptBlocks`）写的出处里认（最后一行「（RetainPDF 任务 …，块 …，第 … 页）」和
   「我选中的这段：」「这一块的原文：」「这一块的译文：」），所以**改那段出处的写法前先告诉后端**，或者先改成给 `_meta`。
 
 ---
