@@ -13,6 +13,7 @@
   换了文件、模型或分片页数都对不上，不会用错；片的页数不对的结果不存也不用。
 - 每做完一片报一次进度（页），任务的"多久没有进展"超时按它算。
 - 选页（`page_ranges`）：先从原文切出所选页的子 PDF 当原文，和 Rust 那边 Paddle 的做法一致，下游的页号都对得上。
+  子 PDF 逐字节确定（`page_subset_bytes`，2026-11-26）：同样的页切几次 sha256 都一样，选页任务重试也命中断点和共用缓存。
 - 图片：GLM 不回传图片，按块的框从原文裁（`md/images/page-<N>/imgs/img_in_<标签>_box_….jpg`，和 Paddle 的图片放一处，
   阅读页、AI 工具照原样找得到），裁好的路径填进原始结果的 `_images` 给适配器挂到块上。
 - `md/full.md`：GLM 的整份 markdown，图片占位 `![](page=<片内页>,bbox=[…])` 换成本地裁好的图。
@@ -120,8 +121,45 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def page_subset_bytes(source: fitz.Document, page_indices: list[int]) -> bytes:
+    """从原文取这些页（0 起，按给的顺序）拼成一份新 PDF，返回字节。同样的原文、同样的页，每次切出来逐字节一样。
+
+    PyMuPDF 默认每次保存都写一个随机的文件 ID（trailer 里的 `/ID`），切出来的字节次次不同；而选页的子 PDF 的 sha256
+    是 GLM 共用分片缓存、GLM / Paddle 任务内断点（`chunks.json`）和跟着 OCR 翻的续跑指纹的键，字节一变缓存永远不命中，
+    选页任务一重试就整本重付 OCR 费（2026-11-26 状态梳理 N1、问题 S14）。所以 `no_new_id=True` 不写新 ID，
+    元数据也清空（新文档本来就是空的，清一遍防着以后 PyMuPDF 默认写创建、修改时间）。"""
+    with fitz.open() as subset:
+        run_start = previous = None
+        for page_index in page_indices:
+            if previous is not None and page_index == previous + 1:
+                previous = page_index
+                continue
+            if run_start is not None:
+                subset.insert_pdf(source, from_page=run_start, to_page=previous)
+            run_start = previous = page_index
+        if run_start is not None:
+            subset.insert_pdf(source, from_page=run_start, to_page=previous)
+        subset.set_metadata({})
+        return subset.tobytes(no_new_id=True)
+
+
+def write_page_subset(source: fitz.Document, page_indices: list[int], target: Path) -> Path:
+    """`page_subset_bytes` 写到 `target`：先写临时文件再换上，读的一方（渲染、重试）看不到写了一半的文件。"""
+    data = page_subset_bytes(source, page_indices)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(f".{target.name}.{os.getpid()}.tmp")
+    try:
+        temporary.write_bytes(data)
+        os.replace(temporary, target)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return target
+
+
 def prepare_source_pdf(args: SimpleNamespace, source_dir: Path) -> Path:
-    """上传的原文；选了页就切出所选页的子 PDF 当原文。Paddle 按片提交（`paddle_chunked.py`）也用。"""
+    """上传的原文；选了页就切出所选页的子 PDF 当原文。Paddle 按片提交（`paddle_chunked.py`）也用。
+
+    子 PDF 逐字节确定（见 `page_subset_bytes`）：同一份上传、同样的页，重试、新建任务切出来的 sha256 都一样，分片缓存和断点认得出。"""
     raw_path = str(getattr(args, "file_path", "") or "").strip()
     if not raw_path:
         raise RuntimeError("只支持上传的本地文件（不支持 source.file_url）")
@@ -133,12 +171,7 @@ def prepare_source_pdf(args: SimpleNamespace, source_dir: Path) -> Path:
         selected = parse_page_ranges(str(getattr(args, "page_ranges", "") or ""), page_count)
         if len(selected) == page_count:
             return source_pdf
-        subset_path = source_dir / f"{source_pdf.stem}.pages.pdf"
-        with fitz.open() as subset:
-            for page_index in selected:
-                subset.insert_pdf(document, from_page=page_index, to_page=page_index)
-            subset.save(subset_path)
-    return subset_path
+        return write_page_subset(document, selected, source_dir / f"{source_pdf.stem}.pages.pdf")
 
 
 def _chunk_path(raw_dir: Path, index: int, start: int, end: int) -> Path:
@@ -172,9 +205,7 @@ def _chunk_is_complete(payload: dict, expected_pages: int) -> bool:
 
 
 def _chunk_bytes(source: fitz.Document, start: int, end: int) -> bytes:
-    with fitz.open() as subset:
-        subset.insert_pdf(source, from_page=start, to_page=end - 1)
-        return subset.tobytes()
+    return page_subset_bytes(source, list(range(start, end)))
 
 
 def request_chunks(

@@ -8,7 +8,8 @@ Paddle 官方接口是"提交任务 → 轮询 → 全部做完才给结果"，�
 - **防排队卡住**：没有等着提交的片了、某一片提交超过 `RETAIN_PADDLE_HEDGE_SECONDS`（默认 15）秒还一页都没识别，就把同一份再交一次，
   谁先做完用谁（每片最多加交一次，多花的只是这一小份）。
 - 失败的片重交，最多 3 次。
-- 每片的结果存在 `ocr/paddle_raw_chunks/`，按原文 sha256 和分片页数续跑（和 GLM 一样），重跑不再花钱。
+- 每片的结果存在 `ocr/paddle_raw_chunks/`，按原文 sha256 和分片页数续跑（和 GLM 一样），重跑不再花钱。选页时原文是切出来的子 PDF，
+  它和每片的 PDF 都逐字节确定（`glm_ocr_driver.page_subset_bytes`），选页任务重跑也认得出断点。
 - 拼接：各片的 `global_block_id` / `global_group_id` 都从 0 编，原样拼起来不同片的块会被当成同一个接续组
   （Paddle 适配器按 `global_group_id` 分组），所以每片加上「起始页 × 1000」（`ID_STRIDE_PER_PAGE`）。偏移只看片从哪页开始，
   前面的片到没到都一样，先公布的页和最后的整份文档编号一致。跨片的接续 Paddle 不知道，交给翻译那边自己判断。
@@ -39,6 +40,7 @@ from retainpdf_pipeline.ocr.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_N
 from retainpdf_pipeline.ocr.ocr_provider import paddle_api
 from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import chunk_ranges
 from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import prepare_source_pdf
+from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import write_page_subset
 from retainpdf_pipeline.ocr.ocr_provider.paddle_markdown import materialize_paddle_markdown_artifacts
 from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import build_normalized_document_for_paddle
 from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import save_normalized_document_for_paddle
@@ -196,10 +198,8 @@ def request_chunks(
     with fitz.open(source_pdf) as source:
         total = source.page_count
         for index, (start, end) in enumerate(chunk_ranges(total, pages_per_chunk)):
-            path = raw_dir / f"chunk-{index:03d}.pdf"
-            with fitz.open() as subset:
-                subset.insert_pdf(source, from_page=start, to_page=end - 1)
-                subset.save(path)
+            # 每片的 PDF 也逐字节确定（同一片重交、重跑交的是同样的字节），和 GLM 的切法一个函数
+            path = write_page_subset(source, list(range(start, end)), raw_dir / f"chunk-{index:03d}.pdf")
             chunk = _Chunk(index=index, start=start, end=end, path=path)
             if reuse:
                 try:

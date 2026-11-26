@@ -227,6 +227,40 @@ def test_selected_pages_become_the_source(tmp_path: Path, monkeypatch) -> None:
         assert source.page_count == 3
 
 
+def test_cutting_the_same_pages_twice_gives_the_same_bytes(tmp_path: Path) -> None:
+    """选页的子 PDF 逐字节确定（S14）：它的 sha256 是共用分片缓存、任务内断点和跟着 OCR 翻的续跑指纹的键。
+    以前 PyMuPDF 每次保存写一个随机文件 ID，同样的页切两次 sha256 就不同。"""
+    pdf = _pdf(tmp_path / "book.pdf", 6)
+    first = glm_ocr_driver.prepare_source_pdf(_job(tmp_path, pdf, page_ranges="2-3,5", name="a"), tmp_path / "a" / "source")
+    second = glm_ocr_driver.prepare_source_pdf(_job(tmp_path, pdf, page_ranges="5,2-3", name="b"), tmp_path / "b" / "source")
+    assert first != second and first.read_bytes() == second.read_bytes()
+    with fitz.open(first) as subset:
+        assert [subset[i].get_text().split(" body")[0] for i in range(subset.page_count)] == ["Page 2", "Page 3", "Page 5"]
+        assert not any(subset.metadata.get(key) for key in ("creationDate", "modDate", "producer", "creator"))
+    assert not list((tmp_path / "a" / "source").glob(".*.tmp")), "临时文件换上以后不留"
+    # 分片交给服务端的字节也一样
+    with fitz.open(pdf) as source:
+        assert glm_ocr_driver._chunk_bytes(source, 1, 4) == glm_ocr_driver._chunk_bytes(source, 1, 4)
+
+
+def test_a_retried_job_with_selected_pages_reuses_the_chunks_already_paid_for(tmp_path: Path, monkeypatch) -> None:
+    """选页任务 OCR 中途断了，重试（新任务目录）只付剩下的片；以前子 PDF 每次字节不同，共用缓存永远不命中，整本重付。"""
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
+    pdf = _pdf(tmp_path / "book.pdf", 8)
+    first = FakeGlm()
+    with pytest.raises(Interrupted):
+        run_glm_ocr_to_job_dir(_job(tmp_path, pdf, page_ranges="2-6", name="first"), parse=_fails_after(2, first))
+    assert first.calls == [2, 2]
+    retry = FakeGlm()
+    result = run_glm_ocr_to_job_dir(_job(tmp_path, pdf, page_ranges="2-6", name="retry"), parse=retry)
+    assert retry.calls == [1]
+    assert [page["blocks"][0]["text"] for page in _document(result)["pages"]] == [f"Page {n}" for n in range(2, 7)]
+    # 同一个任务目录重跑：任务内断点也认得出
+    again = FakeGlm()
+    run_glm_ocr_to_job_dir(_job(tmp_path, pdf, page_ranges="2-6", name="retry"), parse=again)
+    assert again.calls == []
+
+
 def test_page_ranges_are_validated() -> None:
     assert parse_page_ranges("", 4) == [0, 1, 2, 3]
     assert parse_page_ranges("all", 2) == [0, 1]
