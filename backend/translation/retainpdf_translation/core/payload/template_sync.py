@@ -24,7 +24,11 @@ def setdefault_record_fields(record: dict, defaults: dict) -> bool:
 
 def sync_direct_typst_record_fields(record: dict, *, protected_source_text: str) -> bool:
     changed = False
-    if record.get("protected_source_text") != protected_source_text:
+    # 组成员的 translation_unit_* 是整组的原文（连上以后拼成的整段），不是本块原文：本块原文没变时不动它，
+    # 否则每次读页都把整组原文改回本块原文，续跑和第一次跑完同一个字段含义不同（2026-11-26，S23）
+    source_changed = record.get("protected_source_text") != protected_source_text
+    keep_group_unit = str(record.get("translation_unit_kind", "") or "") == "group" and not source_changed
+    if source_changed:
         record["protected_source_text"] = protected_source_text
         changed = True
     if record.get("mixed_original_protected_source_text") != protected_source_text:
@@ -36,6 +40,8 @@ def sync_direct_typst_record_fields(record: dict, *, protected_source_text: str)
     if record.get("protected_map") != []:
         record["protected_map"] = []
         changed = True
+    if keep_group_unit:
+        return changed
     if record.get("translation_unit_protected_source_text") != protected_source_text:
         record["translation_unit_protected_source_text"] = protected_source_text
         changed = True
