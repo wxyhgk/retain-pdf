@@ -1,12 +1,13 @@
 from __future__ import annotations
-from contextlib import contextmanager
+import contextvars
 import json
 import os
 from pathlib import Path
 import re
-import signal
 import threading
 import time
+from typing import Callable
+from typing import TypeVar
 from retainpdf_translation.llm.shared.executor_context import execution_enabled, unit_scope
 
 import fitz
@@ -42,32 +43,40 @@ class DomainContextTimeoutError(TimeoutError):
     pass
 
 
-@contextmanager
-def _domain_context_deadline(timeout_secs: int):
+T = TypeVar("T")
+
+
+def _call_with_domain_deadline(call: Callable[[], T], timeout_secs: float) -> T:
+    """`call()` 最多等 `timeout_secs` 秒，超时抛 `DomainContextTimeoutError`。
+
+    以前用 `signal.SIGALRM` 打断主线程：Windows 没有这个信号，桌面版 Windows 上每次都在这里抛 AttributeError，
+    领域识别一直被跳过（日志 `sci domain inference skipped: AttributeError: module 'signal' has no attribute 'SIGALRM'`，
+    2026-11-26），而且不在主线程时根本不限时。现在放进一个后台线程等，各平台、各线程都一样。超时后那个请求不会被
+    掐断，但它自己有请求超时（`timeout=min(请求上限, 总时限)`、只试一次），线程是 daemon，不挡进程退出。"""
     if execution_enabled():
         # Do not interrupt receipt polling while Rust may still be generating.
         with unit_scope("domain", ["document-preview"]):
-            yield
-        return
-    if timeout_secs <= 0 or threading.current_thread() is not threading.main_thread():
-        yield
-        return
-    previous_handler = signal.getsignal(signal.SIGALRM)
-    previous_timer = signal.setitimer(signal.ITIMER_REAL, 0)
+            return call()
+    if timeout_secs <= 0:
+        return call()
+    outcome: dict[str, object] = {}
+    finished = threading.Event()
+    context = contextvars.copy_context()
 
-    def _handle_timeout(signum, frame):  # noqa: ANN001
-        del signum, frame
+    def _run() -> None:
+        try:
+            outcome["value"] = context.run(call)
+        except BaseException as exc:  # noqa: BLE001 - 原样交回调用方的线程
+            outcome["error"] = exc
+        finally:
+            finished.set()
+
+    threading.Thread(target=_run, name="domain-infer", daemon=True).start()
+    if not finished.wait(timeout_secs):
         raise DomainContextTimeoutError(f"domain inference exceeded {timeout_secs}s")
-
-    signal.signal(signal.SIGALRM, _handle_timeout)
-    signal.setitimer(signal.ITIMER_REAL, float(timeout_secs))
-    try:
-        yield
-    finally:
-        signal.setitimer(signal.ITIMER_REAL, 0)
-        signal.signal(signal.SIGALRM, previous_handler)
-        if previous_timer[0] > 0:
-            signal.setitimer(signal.ITIMER_REAL, previous_timer[0], previous_timer[1])
+    if "error" in outcome:
+        raise outcome["error"]  # type: ignore[misc]
+    return outcome["value"]  # type: ignore[return-value]
 
 
 def _empty_domain_context(preview_text: str = "") -> dict[str, str]:
@@ -231,8 +240,8 @@ def infer_domain_context_from_preview_text(
         },
     )
     try:
-        with _domain_context_deadline(total_timeout):
-            content = request_chat_content(
+        content = _call_with_domain_deadline(
+            lambda: request_chat_content(
                 messages,
                 api_key=api_key,
                 model=model,
@@ -242,7 +251,9 @@ def infer_domain_context_from_preview_text(
                 timeout=min(DOMAIN_CONTEXT_REQUEST_TIMEOUT_SECS, total_timeout),
                 request_label="domain-infer",
                 max_attempts=1,
-            )
+            ),
+            total_timeout,
+        )
     except DomainContextTimeoutError:
         elapsed_ms = int(round((time.perf_counter() - started) * 1000))
         result = _empty_domain_context(preview_text)
