@@ -36,7 +36,7 @@ const BACKGROUND_NEIGHBORS = 1;
 const MAX_BACKGROUND_BLOCK_CHARS = 500;
 const MAX_BACKGROUND_PAGE_CHARS = 4_000;
 export const BACKGROUND_WAIT_MS = 1_500;
-// 前端附在问题前面的字（frontend/packages/reader/src/ask/acp-adapter.ts 的 anchorPromptBlocks）
+// 前端附在问题前面的字（frontend/packages/reader/src/ask/ask-context.ts 的 anchorPreamble；2026-11-26 以前在 acp-adapter.ts 的 anchorPromptBlocks）
 const TEXT_MARKERS = ["我选中的这段：", "这一块的原文：", "这一块的译文："];
 export const PAGE_IMAGE_WIDTH = 1000;
 // 一张图最多多大（Anthropic 一张图 5 MB 封顶，base64 再大三分之一）
