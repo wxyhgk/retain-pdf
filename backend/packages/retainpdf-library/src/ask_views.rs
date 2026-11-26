@@ -1,7 +1,7 @@
 //! 阅读页提问的主对话、副对话和记忆（2026-11-26，数据库 v40）的请求和返回类型。校验和上限在 `ask_conversations.rs`、
 //! `ask_memories.rs`；接口见 docs/api/16-AI/02-主对话和记忆.md。请求体、查询参数不认识的字段 400。
 
-use retainpdf_data::db::{AskCompactionRecord, AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord};
+use retainpdf_data::db::{AskCompactionRecord, AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord, AskSummaryHit};
 use serde::{Deserialize, Serialize};
 
 /// 结构化出处：这一问问的是哪儿。和 ACP `session/prompt` 的 `_meta.retainpdf.selection` 同一个写法。只有 `page` 必填。
@@ -305,6 +305,9 @@ pub struct ListAskMemoriesQuery {
     pub created_after: Option<String>,
     #[serde(default)]
     pub limit: Option<u32>,
+    /// 给了 `q` 时一起查对话摘要（副对话的结论、生效的压缩摘要），结果在 `summaries`（2026-11-26 第二期，agent 的 search_memories 用）。
+    #[serde(default)]
+    pub include_summaries: Option<bool>,
 }
 
 /// POST /ai/memories：记一条。
@@ -359,6 +362,9 @@ pub struct PatchAskMemoryInput {
 #[derive(Debug, Serialize)]
 pub struct AskMemoryListView {
     pub memories: Vec<AskMemoryRecord>,
+    /// `include_summaries=true` 且给了 `q` 才有：查到的对话摘要，最近的在前，每份最多 1000 字。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summaries: Option<Vec<AskSummaryHit>>,
 }
 
 #[derive(Debug, Serialize)]

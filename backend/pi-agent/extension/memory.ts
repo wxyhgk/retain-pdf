@@ -21,6 +21,10 @@ export const SEARCH_PER_TURN = 2;
 export const MAX_MEMORY_CHARS = 500;
 export const DEFAULT_SEARCH_LIMIT = 8;
 export const MAX_SEARCH_LIMIT = 20;
+// scope=all 时一起查的对话摘要：最多给几份、每份最多几个字（2026-11-26 第二期，和 Python 版一样）
+export const MAX_SUMMARY_HITS = 3;
+export const SUMMARY_HIT_CHARS = 400;
+const SUMMARY_KIND_LABELS: Record<string, string> = { side: "副对话的结论", compaction: "以前对话的摘要" };
 export const RECENT_TURNS = 6;
 const TIMEOUT_MS = 10_000;
 const CONTEXT_TIMEOUT_MS = 3_000;
@@ -56,7 +60,8 @@ export const MEMORY_TOOL_SPECS = [
     name: SEARCH_TOOL,
     label: "查记忆",
     description:
-      "查之前记下的记忆（关于用户的、关于这本书的），系统提示词里没列全或要找某件事时用。"
+      "查之前记下的记忆（关于用户的、关于这本书的），系统提示词里没列全或要找某件事时用；"
+      + "scope=all 时也查以前对话的摘要（副对话的结论、压缩了的旧对话），想知道以前聊过什么也用它。"
       + "空格隔开的几个词都要在同一条里；找不到换个说法再试一次。",
     parameters: {
       type: "object",
@@ -114,6 +119,15 @@ export function memoryLine(memory: Record<string, any>): string {
   const date = String(memory.updated_at ?? "").slice(0, 10);
   const label = CATEGORY_LABELS[String(memory.category ?? "")] ?? "其他";
   return `- [${memory.memory_id}] ${date} ${label}：${String(memory.text ?? "").trim()}`;
+}
+
+/** 查到的对话摘要：`- [副对话的结论] 日期：摘要（太长截断）`。 */
+export function summaryLine(hit: Record<string, any>): string {
+  const date = String(hit.created_at ?? "").slice(0, 10);
+  const label = SUMMARY_KIND_LABELS[String(hit.kind ?? "")] ?? "以前对话的摘要";
+  let text = String(hit.summary ?? "").split(/\s+/).filter(Boolean).join(" ");
+  if ([...text].length > SUMMARY_HIT_CHARS) text = [...text].slice(0, SUMMARY_HIT_CHARS).join("") + "……";
+  return `- [${label}] ${date}：${text}`;
 }
 
 /** 上下文 → 放在第一问前面的那段（摘要 + 最近几轮）；什么都没有是空串。记忆那段另放系统提示词。 */
@@ -229,10 +243,13 @@ export class MemoryTools {
     if (!["user", "book", "all"].includes(scope)) return fail("scope 只能是 user、book 或 all。");
     const limit = Number.isInteger(args.limit) && args.limit >= 1 && args.limit <= MAX_SEARCH_LIMIT ? args.limit : DEFAULT_SEARCH_LIMIT;
     const found: Record<string, any>[] = [];
+    const summaries: Record<string, any>[] = [];
     for (const layer of scope === "all" ? ["user", "book"] : [scope]) {
       const documentId = layer === "book" ? this.documentId : "";
       if (layer === "book" && scope === "all" && !documentId) continue;
       const params = new URLSearchParams({ q: query, scope: layer, limit: String(limit), ...(documentId ? { document_id: documentId } : {}) });
+      // 对话摘要不分层，跟着第一次查一起要
+      if (scope === "all" && layer === "user") params.set("include_summaries", "true");
       let reply;
       try {
         reply = await this.http("GET", `/api/v1/ai/memories?${params}`, null, TIMEOUT_MS);
@@ -242,13 +259,16 @@ export class MemoryTools {
       const [data, problem] = payload(reply);
       if (problem) return fail(`没查成：${problem}`);
       found.push(...((data?.memories as any[]) ?? []).filter((memory) => memory && typeof memory === "object"));
+      summaries.push(...((data?.summaries as any[]) ?? []).filter((hit) => hit && typeof hit === "object"));
     }
-    if (!found.length) return ok(`记忆里没有找到「${query}」。`, "没找到");
+    if (!found.length && !summaries.length) return ok(`记忆里没有找到「${query}」。`, "没找到");
     const lines = found.slice(0, limit).map((memory) => {
       const layer = memory.scope === "user" ? "关于用户" : memory.document_id === this.documentId ? "这本书" : "别的书";
       return `${memoryLine(memory)}（${layer}）`;
     });
-    return ok(lines.join("\n"), `找到 ${Math.min(found.length, limit)} 条`);
+    lines.push(...summaries.slice(0, MAX_SUMMARY_HITS).map(summaryLine));
+    const note = `找到 ${Math.min(found.length, limit)} 条` + (summaries.length ? `、${Math.min(summaries.length, MAX_SUMMARY_HITS)} 份对话摘要` : "");
+    return ok(lines.join("\n"), note);
   }
 }
 

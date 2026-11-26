@@ -54,6 +54,12 @@ class FakeBackend:
         if method == "GET" and path.startswith("/api/v1/ai/memories?"):
             query = urllib.parse.parse_qs(path.split("?", 1)[1])
             scope = query["scope"][0]
+            if query.get("include_summaries") == ["true"]:
+                return _ok({"memories": [MEMORY], "summaries": [
+                    {"kind": "side", "conversation_id": "conv-s", "compaction_id": None, "summary": "结论：交换项只在同自旋之间",
+                     "created_at": "2026-11-21T09:00:00Z"},
+                    {"kind": "compaction", "conversation_id": "conv-1", "compaction_id": "cmp-1", "summary": "长" * 500,
+                     "created_at": "2026-11-22T09:00:00Z"}]})
             if scope == "book":
                 return _ok({"memories": [{**MEMORY, "memory_id": "mem-b", "scope": "book", "document_id": query["document_id"][0],
                                           "category": "term", "text": "Hamiltonian 定译为哈密顿量"}]})
@@ -142,6 +148,21 @@ def test_search_looks_in_the_user_layer_and_this_book() -> None:
     backend.requests.clear()
     MemoryTools(http=backend).run("search_memories", {"query": "结论"})
     assert len(backend.requests) == 1
+
+
+def test_search_all_also_finds_conversation_summaries() -> None:
+    backend = FakeBackend()
+    tools = MemoryTools(http=backend, document_id="doc-1")
+    result = tools.run("search_memories", {"query": "交换项"})
+    paths = [path for _, path, _ in backend.requests]
+    assert sum("include_summaries=true" in path for path in paths) == 1
+    assert "- [副对话的结论] 2026-11-21：结论：交换项只在同自旋之间" in result.text
+    assert "- [以前对话的摘要] 2026-11-22：" + "长" * 400 + "……" in result.text
+    assert result.summary == "找到 2 条、2 份对话摘要"
+    # 只查一层时不带摘要
+    backend.requests.clear()
+    tools.run("search_memories", {"query": "交换项", "scope": "user"})
+    assert not any("include_summaries" in path for _, path, _ in backend.requests)
 
 
 def test_make_memory_tools_needs_a_backend() -> None:

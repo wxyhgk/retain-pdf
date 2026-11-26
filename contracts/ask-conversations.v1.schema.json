@@ -165,7 +165,7 @@
       "query": "ListAskMemoriesQuery",
       "output": "AskMemoryListView",
       "rust_view": "AskMemoryListView",
-      "note": "列、查记忆：最近改过的在前；有 q 时全文检索（trigram，每个词都 ≥3 字走 FTS5、按相关度，否则 LIKE），空格隔开的词都要在。默认只要 active。自带 agent 的 search_memories 也调它（by agent）。"
+      "note": "列、查记忆：最近改过的在前；有 q 时全文检索（trigram，每个词都 ≥3 字走 FTS5、按相关度，否则 LIKE），空格隔开的词都要在。默认只要 active。自带 agent 的 search_memories 也调它（by agent）。 include_summaries=true 时一起查对话摘要（summaries）。"
     },
     {
       "method": "POST",
@@ -1519,6 +1519,10 @@
           "minimum": 1,
           "maximum": 500,
           "description": "默认 100。"
+        },
+        "include_summaries": {
+          "type": "boolean",
+          "description": "2026-11-26 第二期：给了 q 时一起查对话摘要（副对话的结论、每个对话生效的那份压缩摘要；作废的不查），结果在 summaries。agent 的 search_memories 用。"
         }
       }
     },
@@ -1534,6 +1538,54 @@
           "items": {
             "$ref": "#/definitions/AskMemoryRecord"
           }
+        },
+        "summaries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskSummaryHit"
+          },
+          "description": "include_summaries=true 才有（没给 q 是空数组）：查到的对话摘要，最近的在前，条数跟着 limit，每份最多 1000 字。"
+        }
+      }
+    },
+    "AskSummaryHit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "conversation_id",
+        "compaction_id",
+        "summary",
+        "created_at"
+      ],
+      "description": "查记忆时一起查到的一份对话摘要（2026-11-26 第二期）。",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "side",
+            "compaction"
+          ],
+          "description": "side：副对话的结论；compaction：压缩摘要。"
+        },
+        "conversation_id": {
+          "type": "string",
+          "description": "副对话（side）/ 被压缩的对话（compaction）。"
+        },
+        "compaction_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "压缩摘要的编号；副对话的结论是 null。"
+        },
+        "summary": {
+          "type": "string",
+          "description": "摘要正文，最多 1000 字。"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "副对话结束的时间 / 压缩的时间。"
         }
       }
     },

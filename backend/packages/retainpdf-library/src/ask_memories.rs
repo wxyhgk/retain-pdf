@@ -6,7 +6,7 @@
 use retainpdf_api_base::error::AppError;
 use retainpdf_data::db::{AskMemoryCreated, AskMemoryFilter, AskMemoryRecord, AskSettingsRecord, NewAskMemory};
 
-use crate::ask_conversations::checked_id;
+use crate::ask_conversations::{checked_id, truncate_chars};
 use crate::ask_views::{
     AskMemoryCreatedView, AskMemoryListView, CreateAskMemoryInput, ListAskMemoriesQuery, PatchAskMemoryInput, PatchAskSettingsInput,
 };
@@ -53,6 +53,9 @@ fn checked_scope(scope: &str) -> Result<&'static str, AppError> {
     }
 }
 
+/// 查到的对话摘要每份最多交出去多少字（整份最多 8000 字，agent 只要知道聊过什么、在哪）。
+const MAX_SUMMARY_HIT_CHARS: usize = 1000;
+
 pub fn list_ask_memories_view(deps: &LibraryDeps<'_>, query: &ListAskMemoriesQuery) -> Result<AskMemoryListView, AppError> {
     let scope = match query.scope.as_deref().map(str::trim).filter(|scope| !scope.is_empty()) {
         Some(scope) => Some(checked_scope(scope)?),
@@ -88,7 +91,23 @@ pub fn list_ask_memories_view(deps: &LibraryDeps<'_>, query: &ListAskMemoriesQue
         created_after,
         limit,
     };
-    Ok(AskMemoryListView { memories: deps.db.list_ask_memories(&filter)? })
+    let memories = deps.db.list_ask_memories(&filter)?;
+    // 对话摘要（副对话的结论、生效的压缩摘要）：只在给了 q 时查，条数跟着 limit
+    let summaries = match (query.include_summaries, q) {
+        (Some(true), Some(q)) => Some(
+            deps.db
+                .search_ask_summaries(q, limit)?
+                .into_iter()
+                .map(|mut hit| {
+                    hit.summary = truncate_chars(&hit.summary, MAX_SUMMARY_HIT_CHARS);
+                    hit
+                })
+                .collect(),
+        ),
+        (Some(true), None) => Some(Vec::new()),
+        _ => None,
+    };
+    Ok(AskMemoryListView { memories, summaries })
 }
 
 pub fn create_ask_memory_view(deps: &LibraryDeps<'_>, payload: &CreateAskMemoryInput) -> Result<AskMemoryCreatedView, AppError> {

@@ -38,6 +38,19 @@ pub struct NewAskCompaction {
     pub superseded_before: i64,
 }
 
+/// 查记忆时一起查到的对话摘要（2026-11-26 第二期）：副对话的结论，或一个对话现在生效的那份压缩摘要。
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct AskSummaryHit {
+    /// `side`（副对话的结论）/ `compaction`（压缩摘要）。
+    pub kind: String,
+    pub conversation_id: String,
+    /// 压缩摘要的编号；副对话的结论是 None。
+    pub compaction_id: Option<String>,
+    pub summary: String,
+    /// 副对话结束的时间 / 压缩的时间。
+    pub created_at: String,
+}
+
 pub enum AskCompactionInserted {
     Inserted(AskCompactionRecord),
     NotFound,
@@ -108,6 +121,45 @@ impl Db {
             params![conversation_id, after_seq],
             |row| row.get(0),
         )?)
+    }
+
+    /// 在对话摘要里找字（空格隔开的词都要在同一份里，不分大小写的只有英文字母）：副对话的结论、每个对话现在生效的那份压缩摘要
+    /// （旧的那几份已经并进新的了，不再查；作废的不查）。最近的在前。摘要不多，用 LIKE，不建全文索引。
+    pub fn search_ask_summaries(&self, query: &str, limit: u32) -> Result<Vec<AskSummaryHit>> {
+        let terms: Vec<String> = query.split_whitespace().map(|term| term.replace(['%', '_'], "")).filter(|term| !term.is_empty()).collect();
+        if terms.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = self.connect()?;
+        let conditions: Vec<String> = (1..=terms.len()).map(|index| format!("summary LIKE ?{index}")).collect();
+        let sql = format!(
+            "SELECT kind, conversation_id, compaction_id, summary, at FROM (
+                 SELECT 'side' AS kind, c.conversation_id, NULL AS compaction_id, c.summary AS summary,
+                        COALESCE(c.closed_at, c.updated_at) AS at
+                   FROM ask_conversations c WHERE c.summary IS NOT NULL AND c.summary != ''
+                 UNION ALL
+                 SELECT 'compaction', k.conversation_id, k.compaction_id, k.summary, k.created_at
+                   FROM ask_compactions k
+                  WHERE k.superseded_at IS NULL
+                    AND k.covers_to_seq = (SELECT MAX(k2.covers_to_seq) FROM ask_compactions k2
+                                            WHERE k2.conversation_id = k.conversation_id AND k2.superseded_at IS NULL)
+             ) WHERE {} ORDER BY at DESC LIMIT ?{}",
+            conditions.join(" AND "),
+            terms.len() + 1
+        );
+        let mut values: Vec<rusqlite::types::Value> = terms.iter().map(|term| format!("%{term}%").into()).collect();
+        values.push(i64::from(limit.max(1)).into());
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(rusqlite::params_from_iter(values), |row| {
+            Ok(AskSummaryHit {
+                kind: row.get(0)?,
+                conversation_id: row.get(1)?,
+                compaction_id: row.get(2)?,
+                summary: row.get(3)?,
+                created_at: row.get(4)?,
+            })
+        })?;
+        Ok(rows.collect::<rusqlite::Result<Vec<_>>>()?)
     }
 
     /// `seq <= up_to_seq` 的作废消息有几条（存摘要时核对生成期间没人改问）。
@@ -261,6 +313,43 @@ mod tests {
         assert!(matches!(db.insert_ask_compaction(id, &racing).unwrap(), AskCompactionInserted::Stale));
         let fine = NewAskCompaction { covers_to_seq: 9, summary: "x".into(), superseded_before: 4, ..Default::default() };
         assert!(matches!(db.insert_ask_compaction(id, &fine).unwrap(), AskCompactionInserted::Inserted(_)));
+    }
+
+
+    #[test]
+    fn summaries_are_searched_in_side_conclusions_and_the_live_compactions() {
+        let db = db();
+        let main = db.ensure_main_ask_conversation().unwrap();
+        let id = main.conversation_id.as_str();
+        let messages: Vec<_> = (0..8).map(|i| message(if i % 2 == 0 { "user" } else { "assistant" }, "x")).collect();
+        let AskMessagesAppended::Appended(stored) = db.append_ask_conversation_messages(id, &messages, 100).unwrap() else { panic!() };
+        let old = NewAskCompaction { covers_to_seq: 2, summary: "旧摘要：Fock 算符".into(), ..Default::default() };
+        db.insert_ask_compaction(id, &old).unwrap();
+        let live = NewAskCompaction { covers_to_seq: 4, summary: "新摘要：Fock 算符和交换项".into(), ..Default::default() };
+        let AskCompactionInserted::Inserted(live) = db.insert_ask_compaction(id, &live).unwrap() else { panic!() };
+        let side = db
+            .create_side_ask_conversation(&crate::db::NewAskSideConversation {
+                parent_id: id,
+                forked_from_message_id: Some(stored[0].message_id.as_str()),
+                title: "",
+                document_id: None,
+            })
+            .unwrap();
+        let crate::db::AskSideCreated::Created(side) = side else { panic!() };
+        db.close_side_ask_conversation(&side.conversation_id, Some("结论：交换项只在同自旋之间")).unwrap();
+
+        let hits = db.search_ask_summaries("交换项", 10).unwrap();
+        assert_eq!(hits.iter().map(|hit| hit.kind.as_str()).collect::<Vec<_>>(), vec!["side", "compaction"]);
+        assert_eq!(hits[1].compaction_id.as_deref(), Some(live.compaction_id.as_str()));
+        // 旧的那份已经并进新的，不再查；几个词都要在
+        assert_eq!(db.search_ask_summaries("Fock", 10).unwrap().len(), 1);
+        assert!(db.search_ask_summaries("Fock 同自旋", 10).unwrap().is_empty());
+        assert!(db.search_ask_summaries("  ", 10).unwrap().is_empty());
+        assert_eq!(db.search_ask_summaries("交换项", 1).unwrap().len(), 1);
+        // 作废的不查
+        db.supersede_ask_messages_from(id, &stored[2].message_id).unwrap();
+        assert_eq!(db.search_ask_summaries("新摘要", 10).unwrap().len(), 0);
+        assert_eq!(db.search_ask_summaries("旧摘要", 10).unwrap().len(), 1);
     }
 
 }

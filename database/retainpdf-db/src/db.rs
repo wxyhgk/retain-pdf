@@ -88,7 +88,7 @@ pub use platform_settings::PlatformSettingsRecord;
 pub use documents::{DocumentChangeStamp, DocumentListFilter};
 pub use tags::tag_id_for_name;
 pub use translation_versions::TranslationVersionRecord;
-pub use ask_compactions::{AskCompactionInserted, AskCompactionRecord, NewAskCompaction};
+pub use ask_compactions::{AskCompactionInserted, AskCompactionRecord, AskSummaryHit, NewAskCompaction};
 pub use ask_conversations::{
     AskConversationChanges, AskConversationDeleted, AskConversationFilter, AskConversationMessageRecord, AskConversationRecord, AskConversationUpdated,
     AskMessagesAppended, AskMessagesSuperseded, AskSideClosed, AskSideCreated, NewAskConversationMessage, NewAskSideConversation,
