@@ -80,7 +80,7 @@
   `ask_conversations`（`main` / `side`，部分唯一索引保证只有一个 `open` 的主对话；副对话 `parent_id` 级联删）、`ask_conversation_messages`
   （只追加，`seq` 从 1 起，每条记 `document_id` 和结构化出处，书删了置空）、`ask_memories`（`user` / `book` 层，书层挂 `item_files` 级联删，
   状态 active / superseded / deleted，出处的对话、消息删了置空）和它的全文索引 `ask_memories_fts`（trigram，三个触发器维护），
-  以及一行的设置表 `ask_settings`（「让 AI 使用记忆」总开关，没有这一行就是默认开）。开着的主对话不能删（先归档）。全局数据，没有归属列，
+  以及 v41 的一行设置表 `ask_settings`（「让 AI 使用记忆」总开关，没有这一行就是默认开）。开着的主对话不能删（先归档）。全局数据，没有归属列，
   接口多用户下关闭；不同步。比对工具导出 `ask_conversation`（连同全部消息）、`ask_memory` 两类。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
 - `db/pipeline/*`：pipeline attempt、dispatch、stage、unit、event 与事务写入；读取和迁移写入不得重新揉回一个大文件。
