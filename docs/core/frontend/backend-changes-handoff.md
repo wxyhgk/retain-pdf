@@ -12,6 +12,28 @@
 
 ---
 
+## 阅读页提问：自带 agent 报思考档位，会话里能改（feat/ask-thought-level）
+
+2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「思考强度：`configOptions` 和 `session/set_config_option`」
+和「RetainPDF + pi」的「思考强度」。握手参数、契约 `ai-agents.v1` 都没变（ACP 消息不在契约里）。
+
+- `retainpdf`、`retainpdf-pi` 的 `session/new` 结果都带 `configOptions`，只有一项 `{id: "thought_level", category: "thought_level", type: "select", currentValue, options: [{value, name}]}`，
+  `options` 是这个模型实际有的档位、从弱到强（按位置上色正好）。**没有 `category: "model"` 那一项**，模型照旧是前端合成的设置里存的连接，换模型带新握手参数重开会话。
+- `currentValue` 是握手的 `thinking` 换成的档位（换算写在接口文档里，和实际发的请求一致）。
+- `session/set_config_option(configId: "thought_level", value)` 只改下一问，回整份 `configOptions`；`value` 不在 `options` 里回 `-32602`。
+- 认不出的模型（不是 Claude、GPT，也不是 DashScope、DeepSeek、智谱的地址）不报 `configOptions`，前端照现在的做法不显示这一栏。
+
+**前端不用改**：`frontend/packages/ask/src/acp/adapter.ts` 现在的写法（收 `configOptions`、开会话后用 `set_config_option` 设回上次选的、
+不在 `options` 里的跳过、收 `config_option_update`）正好对上。要留意的几处：
+
+| 文件 | 现在 | 要注意 |
+|---|---|---|
+| `frontend/packages/ask/src/acp/config.ts`（读 `configOptions`） | 认 `value` / `name` / `description` | `retainpdf-pi` 的选项带 `description: null`（pi-acp 给的，桥不删）；`retainpdf` 的不带 `description` |
+| 同上 / 记住上次选的档位的地方 | 按 `id` 记一个值 | 两个 agent、不同模型的档位名不一样：Qwen、DeepSeek 在 `retainpdf` 里是 `off` / `on`，在 `retainpdf-pi` 里是 `off` / `high`；GPT-5 是 `minimal`…`high`，GPT-5.1 起是 `none`…`xhigh`。换了模型、值不在新 `options` 里就跳过（现在就是这样） |
+| 同上 | 收 `config_option_update` | `retainpdf` 不发这条（档位只在前端改时变，结果里已经是整份）；`retainpdf-pi` 每次改都会发一条（已去掉模型那项），另有旧写法 `current_mode_update`，不用管 |
+
+---
+
 ## 重试时断点作废有一条事件（fix/regroup-followups）
 
 2026-11-26，只增不改，见 [翻译事件](../../api/04-翻译/07-翻译事件.md) 的「断点不能接着用、已译的页作废」。**前端不改也能用**：

@@ -803,8 +803,181 @@ def looks_like_thinking_rejection(response_text: str) -> bool:
     return any(marker in text for marker in ("thinking", "reasoning", "effort", "output_config", "budget"))
 
 
+# ---------------------------------------------------------------------------
+# 档位表：这个模型有哪些思考档位、每一档怎么换成请求字段（2026-11-26，阅读页提问的思考强度）
+# ---------------------------------------------------------------------------
+#
+# 上面的 ``*_thinking_candidates`` 按设置里统一的 auto / off / low / medium / high / max 换字段（翻译用）；这里反过来按模型列它
+# 实际有的档位（Claude 是 effort 的 low…max，Qwen、DeepSeek 只有开关，GPT 是 reasoning_effort 的 minimal…high），档位名用模型那边的原名。
+# 每一档的字段尽量直接取上面那几个函数的结果，不另写一套；``by_setting`` 把设置里的档位换成这个模型的档位，规则：
+#
+# - 设置那一档的候选字段按顺序找，第一个和某一档的首选字段相同的就是它（OpenAI 的 off 先试 none、不认再试 minimal，
+#   GPT-5 没有 none，就落到 minimal）；
+# - Qwen、DeepSeek 只有开关：off 是关，其余都是开（``_switch_menu``）；
+# - 设置是 auto 而这个模型没有实测规则（什么字段都不加）时，报服务商不带字段时的默认档（``default``），请求照旧什么都不加。
+#
+# 认不出的模型（不是 Claude、GPT，也不是 DashScope、DeepSeek、智谱的地址）没有档位表（``None``），调用方不报这一项。
+
+# Claude 有 xhigh 这一档的模型（Opus 4.7 起；Opus 4.6、Sonnet 4.6 只有 low / medium / high / max）。来源：Claude API 文档的思考档位表，
+# 2026-11-26 查。按子串认：claude-opus-5 也认 claude-opus-5-5。retainpdf-pi 的 models.json 里有同样的名单（acp/pi.rs），测试对齐。
+ANTHROPIC_XHIGH_MODELS = (
+    "claude-fable-5",
+    "claude-mythos-5",
+    "claude-opus-5",
+    "claude-opus-4-7",
+    "claude-opus-4-8",
+    "claude-sonnet-5",
+    "claude-haiku-5-5",
+)
+# 不发思考字段也按自适应思考的 Claude（同一份文档：「Omitting thinking → runs adaptive」）。别的 Claude（Opus 4.6—4.8、Sonnet 4.6、
+# 更老的）不发就不思考，所以档位表多一档 off（什么都不加）。pi.rs 里有同样的名单。
+ANTHROPIC_THINKS_BY_DEFAULT_MODELS = (
+    "claude-fable-5",
+    "claude-mythos-5",
+    "claude-opus-5",
+    "claude-sonnet-5",
+    "claude-haiku-5-5",
+)
+# 不发 effort 时默认 medium 的 Claude（其余默认 high）。claude-haiku-5-5 这一条和上面「自动」档的实测一致。
+ANTHROPIC_MEDIUM_DEFAULT_MODELS = ("claude-opus-5-5", "claude-haiku-5-5")
+
+_GPT_SERIES_RE = re.compile(r"(?:^|/)(?P<name>o[134](?:-|$)|gpt-5(?P<minor>\.\d+)?)")
+
+
+@dataclass(frozen=True)
+class ThinkingLevel:
+    """一档：``value`` 是模型那边的档位名（也当显示名，不翻译），``candidates`` 是按偏好排列的请求字段，最后一个总是 ``{}``。"""
+
+    value: str
+    candidates: tuple[dict[str, Any], ...]
+
+
+@dataclass(frozen=True)
+class ThinkingMenu:
+    """一个模型的档位表。``levels`` 从弱到强；``by_setting`` 把设置里的 auto / off / low / medium / high / max 换成其中一档。"""
+
+    levels: tuple[ThinkingLevel, ...]
+    by_setting: tuple[tuple[str, str], ...]
+
+    def values(self) -> list[str]:
+        return [level.value for level in self.levels]
+
+    def level_for(self, setting: Any) -> str:
+        return dict(self.by_setting)[normalize_thinking(setting)]
+
+    def candidates(self, value: str) -> list[dict[str, Any]]:
+        """这一档的请求字段候选（拷贝）；没有这一档抛 KeyError。"""
+        for level in self.levels:
+            if level.value == value:
+                return json.loads(json.dumps(list(level.candidates)))
+        raise KeyError(value)
+
+
+def _level(value: str, *fields: dict[str, Any]) -> ThinkingLevel:
+    return ThinkingLevel(value=value, candidates=(*fields, {}))
+
+
+def _menu(levels: list[ThinkingLevel], setting_candidates, *, default: str) -> ThinkingMenu:
+    """按开头说的规则配 ``by_setting``。``setting_candidates(设置档位)`` 是翻译那边按设置换字段的函数。"""
+    firsts = {_thinking_key(level.candidates[0]): level.value for level in levels}
+    mapping: list[tuple[str, str]] = []
+    for setting in THINKING_LEVELS:
+        # 候选都对不上（最后落到什么都不加）就是服务商的默认档；什么都不加本身是一档的（不发就不思考的 Claude 的 off）直接对上
+        chosen = next((firsts[_thinking_key(fields)] for fields in setting_candidates(setting) if _thinking_key(fields) in firsts), default)
+        mapping.append((setting, chosen))
+    return ThinkingMenu(levels=tuple(levels), by_setting=tuple(mapping))
+
+
+def _anthropic_menu(model: str) -> ThinkingMenu:
+    name = str(model or "").lower()
+    levels: list[ThinkingLevel] = []
+    if not any(item in name for item in ANTHROPIC_THINKS_BY_DEFAULT_MODELS):
+        levels.append(_level("off"))
+    for effort in ("low", "medium", "high"):
+        levels.append(ThinkingLevel(effort, tuple(anthropic_thinking_candidates(effort, model=model))))
+    if any(item in name for item in ANTHROPIC_XHIGH_MODELS):
+        levels.append(_level(
+            "xhigh",
+            {"thinking": {"type": "adaptive"}, "output_config": {"effort": "xhigh"}},
+            {"thinking": {"type": "adaptive"}, "output_config": {"effort": "high"}},
+        ))
+    levels.append(ThinkingLevel("max", tuple(anthropic_thinking_candidates("max", model=model))))
+    default = "medium" if any(item in name for item in ANTHROPIC_MEDIUM_DEFAULT_MODELS) else "high"
+    return _menu(levels, lambda setting: anthropic_thinking_candidates(setting, model=model), default=default)
+
+
+def _gpt_efforts(model: str) -> tuple[list[str], str] | None:
+    """OpenAI 推理模型的 reasoning_effort 档位和不传时的默认档：o1 / o3 / o4 是 low…high（默认 medium）；GPT-5 是 minimal…high
+    （默认 medium）；GPT-5.1 起是 none…xhigh（默认 none）。认不出（gpt-4o 这类不推理的）是 None。"""
+    match = _GPT_SERIES_RE.search(str(model or "").lower())
+    if not match:
+        return None
+    if match["name"].startswith("o"):
+        return ["low", "medium", "high"], "medium"
+    if match["minor"]:
+        return ["none", "low", "medium", "high", "xhigh"], "none"
+    return ["minimal", "low", "medium", "high"], "medium"
+
+
+def _switch_menu(off: dict[str, Any], on: dict[str, Any], *, auto: str) -> ThinkingMenu:
+    """只有开关的模型（Qwen、DeepSeek）：off 是关，low…max 都是开；auto 按实测规则或服务商默认。"""
+    levels = [_level("off", off), _level("on", on)]
+    mapping = (("auto", auto), ("off", "off"), *((setting, "on") for setting in ("low", "medium", "high", "max")))
+    return ThinkingMenu(levels=tuple(levels), by_setting=mapping)
+
+
+def thinking_menu(*, protocol: Any, model: str, base_url: str) -> ThinkingMenu | None:
+    """这个连接（协议 + 地址 + 模型）的思考档位表；认不出是 None。``base_url`` 要传实际用的地址（OpenAI 协议没填时调用方的默认地址）。
+
+    - Anthropic：low / medium / high / max，Opus 4.7 起的新模型多 xhigh；不发就不思考的模型多 off（什么都不加）。
+      设置的 off 和以前一样换成 low（见 ``anthropic_thinking_candidates``）。
+    - DashScope（Qwen）：off / on（``enable_thinking``）。auto 对 qwen3.8-flash 是 off（实测规则），其余按开（服务商默认）。
+    - DeepSeek：off / on（``thinking.type``）。auto 不加字段：名字带 reasoner 的按开，其余按关（服务商默认）。
+    - 智谱：off / low / medium / high / max（``reasoning_effort``；关思考是 ``thinking.type = disabled``，关不掉的退到 low）。
+    - GPT（按模型名认，OpenAI Chat 和 Responses 都是）：见 ``_gpt_efforts``。
+    """
+    protocol = normalize_protocol(protocol)
+    if protocol == PROTOCOL_ANTHROPIC:
+        return _anthropic_menu(model)
+    host = hostname(base_url)
+    name = str(model or "").strip().lower()
+    if protocol == PROTOCOL_OPENAI and host == "dashscope.aliyuncs.com":
+        auto = "off" if _auto_openai_thinking(model=model, host=host).get("enable_thinking") is False else "on"
+        return _switch_menu({"enable_thinking": False}, {"enable_thinking": True}, auto=auto)
+    if protocol == PROTOCOL_OPENAI and host == "api.deepseek.com":
+        return _switch_menu({"thinking": {"type": "disabled"}}, {"thinking": {"type": "enabled"}},
+                            auto="on" if "reasoner" in name else "off")
+    if protocol == PROTOCOL_OPENAI and host == "open.bigmodel.cn":
+        levels = [_level("off", {"thinking": {"type": "disabled"}}, {"reasoning_effort": "low"})]
+        levels += [_level(effort, {"reasoning_effort": effort}) for effort in ("low", "medium", "high", "max")]
+        # 不传时的默认：glm-5.3-flash 实测是 max（见 _auto_openai_thinking），别的 GLM 按同样算
+        return _menu(levels, lambda setting: openai_thinking_candidates(model=model, base_url=base_url, thinking=setting), default="max")
+    gpt = _gpt_efforts(name)
+    if gpt is None:
+        return None
+    efforts, default = gpt
+    if protocol == PROTOCOL_OPENAI_RESPONSES:
+        levels = [_level(effort, {"reasoning": {"effort": effort}}) for effort in efforts]
+        return _menu(levels, lambda setting: responses_thinking_candidates(model=model, base_url=base_url, thinking=setting), default=default)
+    levels = [_level(effort, {"reasoning_effort": effort}) for effort in efforts]
+    return _menu(levels, lambda setting: openai_thinking_candidates(model=model, base_url=base_url, thinking=setting), default=default)
+
+
+def setting_thinking_candidates(*, protocol: Any, model: str, base_url: str, thinking: Any) -> list[dict[str, Any]]:
+    """按设置里的档位换字段（三种协议分派到上面各自的函数）；和翻译、问答开会话时实际发的一样。"""
+    protocol = normalize_protocol(protocol)
+    if protocol == PROTOCOL_ANTHROPIC:
+        return anthropic_thinking_candidates(normalize_thinking(thinking), model=model)
+    if protocol == PROTOCOL_OPENAI_RESPONSES:
+        return responses_thinking_candidates(model=model, base_url=base_url, thinking=normalize_thinking(thinking))
+    return openai_thinking_candidates(model=model, base_url=base_url, thinking=normalize_thinking(thinking))
+
+
 __all__ = [
     "ANTHROPIC_DEFAULT_MAX_TOKENS",
+    "ANTHROPIC_MEDIUM_DEFAULT_MODELS",
+    "ANTHROPIC_THINKS_BY_DEFAULT_MODELS",
+    "ANTHROPIC_XHIGH_MODELS",
     "ConnectionProfile",
     "IMAGE_MEDIA_TYPES",
     "PROTOCOLS",
@@ -845,5 +1018,9 @@ __all__ = [
     "responses_url",
     "responses_usage",
     "strict_json_schema",
+    "setting_thinking_candidates",
     "text_part",
+    "thinking_menu",
+    "ThinkingLevel",
+    "ThinkingMenu",
 ]

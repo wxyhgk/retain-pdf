@@ -34,14 +34,17 @@ def main() -> int:
     from retainpdf_ask_agent.server import AskAgent
     from retainpdf_ask_agent.tools import make_book_tools
     from retainpdf_ask_agent_engine.stream import make_stream_fn
+    from retainpdf_ask_agent_engine.stream import thinking_options
 
-    stream_fn = make_stream_fn(
-        model=model,
-        base_url=os.environ.get("RETAIN_ASK_BASE_URL", "").strip(),
-        api_key=api_key,
-        protocol=protocol,
-        thinking=os.environ.get("RETAIN_ASK_THINKING", "").strip(),
-    )
+    connection = {
+        "model": model,
+        "base_url": os.environ.get("RETAIN_ASK_BASE_URL", "").strip(),
+        "protocol": protocol,
+        "thinking": os.environ.get("RETAIN_ASK_THINKING", "").strip(),
+    }
+    stream_fn = make_stream_fn(api_key=api_key, **connection)
+    # 这个模型的思考档位（session/new 报成 configOptions，会话里能改）；认不出的模型不报
+    thinking = thinking_options(**connection)
     context = int(os.environ.get("RETAIN_ASK_CONTEXT_WINDOW", "0") or 0) or DEFAULT_CONTEXT_WINDOW.get(protocol, FALLBACK_CONTEXT_WINDOW)
     tools = make_book_tools(
         job_id=os.environ.get("RETAIN_ASK_JOB_ID", "").strip(),
@@ -50,7 +53,7 @@ def main() -> int:
         api_key=os.environ.get("RETAIN_ASK_BACKEND_KEY", "").strip(),
     )
     openui = openui_tools_from_env()
-    AskAgent(stream_fn, model=model, context_size=context, out=protocol_out, tools=tools, openui=openui).serve(sys.stdin)
+    AskAgent(stream_fn, model=model, context_size=context, out=protocol_out, tools=tools, openui=openui, thinking=thinking).serve(sys.stdin)
     return 0
 
 

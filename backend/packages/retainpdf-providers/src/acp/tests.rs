@@ -512,7 +512,9 @@ fn settings_map_onto_pi() {
     assert_eq!(pi_thinking("openai", ""), "off");
     assert_eq!(pi_thinking("openai", "off"), "off");
     assert_eq!(pi_thinking("openai", "Medium"), "medium");
-    assert_eq!(pi_thinking("openai_responses", "max"), "high");
+    // max 照传，模型在 pi 里没有这一档时 pi 自己就近换（GPT 换成 high）；Claude 的 off 和 model_wire 一样是 low
+    assert_eq!(pi_thinking("openai_responses", "max"), "max");
+    assert_eq!(pi_thinking("anthropic", "off"), "low");
     assert_eq!(pi_base_url("anthropic", ""), "https://api.anthropic.com");
     assert_eq!(pi_base_url("anthropic", "https://api.anthropic.com/v1/"), "https://api.anthropic.com");
     assert_eq!(pi_base_url("anthropic", "https://x.example.com/anthropic/v1/messages"), "https://x.example.com/anthropic");
@@ -528,11 +530,23 @@ fn settings_map_onto_pi() {
     };
     let qwen = super::pi::models_json(&settings("openai", "https://dashscope.aliyuncs.com/compatible-mode/v1"));
     assert_eq!(qwen["providers"]["retainpdf"]["api"], "openai-completions");
-    // DashScope 不认 developer 角色（2026-11-26 实测 400）
+    // DashScope 不认 developer 角色（2026-11-26 实测 400）；思考开关是 enable_thinking（pi 的 qwen 写法），只有 off / high 两档
     assert_eq!(qwen["providers"]["retainpdf"]["models"][0]["compat"]["supportsDeveloperRole"], false);
+    assert_eq!(qwen["providers"]["retainpdf"]["models"][0]["compat"]["thinkingFormat"], "qwen");
+    assert_eq!(qwen["providers"]["retainpdf"]["models"][0]["thinkingLevelMap"], serde_json::json!({"minimal": null, "low": null, "medium": null}));
+    let deepseek = super::pi::models_json(&settings("openai", ""));
+    assert_eq!(deepseek["providers"]["retainpdf"]["models"][0]["thinkingLevelMap"], serde_json::json!({"minimal": null, "low": null, "medium": null}));
+    let claude = |model: &str| {
+        let settings = ModelSettings { model: model.into(), ..settings("anthropic", "") };
+        super::pi::models_json(&settings)["providers"]["retainpdf"]["models"][0]["thinkingLevelMap"].clone()
+    };
+    // 新 Claude：low / medium / high / xhigh / max（不发也思考，没有 off）；Sonnet 4.6：off / low / medium / high / max
+    assert_eq!(claude("claude-haiku-5-5"), serde_json::json!({"minimal": null, "off": null, "xhigh": "xhigh", "max": "max"}));
+    assert_eq!(claude("claude-sonnet-4-6"), serde_json::json!({"minimal": null, "max": "max"}));
     let openai = super::pi::models_json(&settings("openai_responses", "https://api.openai.com/v1"));
     assert_eq!(openai["providers"]["retainpdf"]["api"], "openai-responses");
     assert_eq!(openai["providers"]["retainpdf"]["models"][0]["compat"], serde_json::json!({}));
+    assert!(openai["providers"]["retainpdf"]["models"][0].get("thinkingLevelMap").is_none());
     assert!(!qwen.to_string().contains("\"s\""));
 }
 

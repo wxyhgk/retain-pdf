@@ -123,17 +123,59 @@ pub(super) fn pi_view(config: &AcpConfig, local_reason: &str) -> AgentView {
     }
 }
 
-/// 设置里的思考档位 → pi 的 `--thinking`。「自动」（前端「关」时也不传）：Anthropic 用 low（和 Python 版对
-/// claude-haiku-5-5 的自动档一样），其余 off；max 要模型在 pi 里另登记，先按 high。
+/// 设置里的思考档位 → pi 的 `--thinking`（起会话时的档位，会话里能用 ACP 的 `thought_level` 改）。「自动」（前端「关」时也不传）：
+/// Anthropic 用 low（和 Python 版对 claude-haiku-5-5 的自动档一样），其余 off。Anthropic 的 off 也是 low（和 `model_wire` 一样：
+/// Claude 不关思考，用最低的 effort）。这个模型在 pi 里没有的档（Qwen、DeepSeek 只有 off / high，见 [`pi_thinking_levels`]），
+/// pi 起会话时自己就近换一档（`clampThinkingLevel`：先往上找、再往下找）。
 pub(super) fn pi_thinking(protocol: &str, thinking: &str) -> &'static str {
     match thinking.trim().to_ascii_lowercase().as_str() {
+        "off" if protocol == "anthropic" => "low",
         "off" => "off",
         "low" => "low",
         "medium" => "medium",
-        "high" | "max" => "high",
+        "high" => "high",
+        "max" => "max",
         _ if protocol == "anthropic" => "low",
         _ => "off",
     }
+}
+
+/// 有 xhigh 这一档的 Claude（按子串认）。和翻译底座 `model_wire.ANTHROPIC_XHIGH_MODELS` 一样，测试对齐
+/// （`backend/pipeline/devtools/tests/translation/test_thinking_menu.py`）。
+const CLAUDE_XHIGH_MODELS: [&str; 7] =
+    ["claude-fable-5", "claude-mythos-5", "claude-opus-5", "claude-opus-4-7", "claude-opus-4-8", "claude-sonnet-5", "claude-haiku-5-5"];
+/// 不发思考字段也思考的 Claude（关不掉，或关了 400），pi 里去掉 off。和 `model_wire.ANTHROPIC_THINKS_BY_DEFAULT_MODELS` 一样。
+const CLAUDE_THINKS_BY_DEFAULT_MODELS: [&str; 5] = ["claude-fable-5", "claude-mythos-5", "claude-opus-5", "claude-sonnet-5", "claude-haiku-5-5"];
+
+fn host_of(base_url: &str) -> String {
+    url::Url::parse(base_url).ok().and_then(|url| url.host_str().map(str::to_ascii_lowercase)).unwrap_or_default()
+}
+
+/// pi 的 `thinkingLevelMap`：pi 有 off / minimal / low / medium / high / xhigh / max 七档，模型没写的时候报前五档（xhigh、max 要写了才有），
+/// 这里按模型去掉没有的、补上有的，让 pi-acp 报的 `thought_level` 和翻译底座 `model_wire.thinking_menu` 的档位表对上
+/// （值是 null 的那档 pi 不报；字符串是发给服务商的值）：
+/// - Claude：没有 minimal（和 low 一样是 effort low），有 max，新模型有 xhigh；不发也思考的去掉 off → low / medium / high / [xhigh] / max；
+/// - DashScope（Qwen）、DeepSeek 只有开关 → off / high（pi 的 high 就是开：`enable_thinking` / `thinking.type`，不带 effort）；
+/// - 别的（GPT 等）照 pi 的默认。
+pub(super) fn pi_thinking_levels(protocol: &str, model: &str, base_url: &str) -> Option<Value> {
+    if protocol == "anthropic" {
+        let name = model.to_ascii_lowercase();
+        let mut map = serde_json::Map::new();
+        map.insert("minimal".into(), Value::Null);
+        if CLAUDE_THINKS_BY_DEFAULT_MODELS.iter().any(|item| name.contains(item)) {
+            map.insert("off".into(), Value::Null);
+        }
+        if CLAUDE_XHIGH_MODELS.iter().any(|item| name.contains(item)) {
+            map.insert("xhigh".into(), json!("xhigh"));
+        }
+        map.insert("max".into(), json!("max"));
+        return Some(Value::Object(map));
+    }
+    let host = host_of(base_url);
+    if protocol == "openai" && (host == "dashscope.aliyuncs.com" || host == "api.deepseek.com") {
+        return Some(json!({"minimal": null, "low": null, "medium": null}));
+    }
+    None
 }
 
 /// 设置里的地址 → pi 的 `baseUrl`。Anthropic 的 SDK 写法不带 `/v1`（设置里常填 `https://api.anthropic.com/v1`）。
@@ -159,34 +201,43 @@ fn pi_api(protocol: &str) -> &'static str {
 
 /// 模型在 pi 里的兼容开关（都是 2026-11-26 真机核过的）：
 /// - Claude 4.6 以后（claude-haiku-5-5）只认 adaptive 思考，pi 对不认识的模型默认发 `thinking.type: enabled`，回 400；
-/// - OpenAI 兼容的服务（DashScope 的 qwen3.8-flash）不认 `developer` 角色，只有 api.openai.com 认。
+/// - OpenAI 兼容的服务（DashScope 的 qwen3.8-flash）不认 `developer` 角色，只有 api.openai.com 认；
+/// - DashScope 的思考开关是 `enable_thinking`（pi 的 `thinkingFormat: qwen`），不带 `reasoning_effort`。不写的话 pi 按 OpenAI 的写法
+///   发 effort、off 什么都不发，qwen3.8-flash 默认思考，「关」其实没关。
 fn pi_compat(protocol: &str, base_url: &str) -> Value {
     if protocol == "anthropic" {
         return json!({"forceAdaptiveThinking": true});
     }
-    let host = url::Url::parse(base_url).ok().and_then(|url| url.host_str().map(str::to_ascii_lowercase)).unwrap_or_default();
-    if host == "api.openai.com" { json!({}) } else { json!({"supportsDeveloperRole": false}) }
+    match host_of(base_url).as_str() {
+        "api.openai.com" => json!({}),
+        "dashscope.aliyuncs.com" => json!({"supportsDeveloperRole": false, "thinkingFormat": "qwen", "supportsReasoningEffort": false}),
+        _ => json!({"supportsDeveloperRole": false}),
+    }
 }
 
 /// 私有配置目录里的 `models.json`：一个服务商 `retainpdf`、一个模型；`apiKey` 只写环境变量名。
 pub(super) fn models_json(settings: &ModelSettings) -> Value {
     let base_url = pi_base_url(&settings.protocol, &settings.base_url);
     let context = if settings.protocol == "anthropic" { ANTHROPIC_CONTEXT_WINDOW } else { FALLBACK_CONTEXT_WINDOW };
+    let mut model = json!({
+        "id": settings.model,
+        "name": settings.model,
+        "reasoning": true,
+        "input": ["text", "image"],
+        "contextWindow": context,
+        "maxTokens": MAX_OUTPUT_TOKENS,
+        "compat": pi_compat(&settings.protocol, &base_url),
+    });
+    if let Some(levels) = pi_thinking_levels(&settings.protocol, &settings.model, &base_url) {
+        model["thinkingLevelMap"] = levels;
+    }
     json!({
         "providers": {
             PI_PROVIDER: {
                 "baseUrl": base_url,
                 "api": pi_api(&settings.protocol),
                 "apiKey": format!("${ASK_ENV_API_KEY}"),
-                "models": [{
-                    "id": settings.model,
-                    "name": settings.model,
-                    "reasoning": true,
-                    "input": ["text", "image"],
-                    "contextWindow": context,
-                    "maxTokens": MAX_OUTPUT_TOKENS,
-                    "compat": pi_compat(&settings.protocol, &base_url),
-                }],
+                "models": [model],
             }
         }
     })

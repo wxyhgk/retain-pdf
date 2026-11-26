@@ -202,6 +202,7 @@ fn session_defaults(config: &AcpConfig, cwd: &Path) -> SessionDefaults {
     SessionDefaults {
         cwd: Some(cwd.to_path_buf()),
         mcp_server: cli.map(|cli| bridge::retainpdf_mcp_server(&cli, keys.first().map(|key| key.as_str()), &openui_env)),
+        hide_model_option: false,
     }
 }
 
@@ -307,7 +308,8 @@ pub fn prepare_agent(
         check_local_gate(config, headers)?;
         let process = pi::pi_process(config, query, &cwd, book)?;
         // pi-acp 不把 mcpServers 交给 pi，书由扩展自己读，不补 retainpdf mcp
-        return Ok((process, SessionDefaults { cwd: Some(cwd), mcp_server: None }));
+        // pi-acp 报的选模型那一项去掉（模型是设置里存的连接），思考档位照转
+        return Ok((process, SessionDefaults { cwd: Some(cwd), mcp_server: None, hide_model_option: true }));
     } else if registry::is_local_agent(agent_id) {
         check_local_gate(config, headers)?;
         let launch = registry::resolve_local_agent(agent_id, &config.lookup())

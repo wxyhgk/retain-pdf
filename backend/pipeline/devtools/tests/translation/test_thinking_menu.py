@@ -1,0 +1,133 @@
+"""档位表（``model_wire.thinking_menu``，2026-11-26）：每类模型报哪些档、每档发什么字段、设置里的思考深度换成哪一档。
+
+阅读页提问的自带 agent 用它报 ACP 的 ``thought_level``；换算要和按设置发的字段（翻译同一套）对得上。"""
+import re
+from pathlib import Path
+
+import pytest
+
+from retainpdf_translation.llm.shared import model_wire
+
+DASHSCOPE = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+DEEPSEEK = "https://api.deepseek.com/v1"
+OPENAI = "https://api.openai.com/v1"
+BIGMODEL = "https://open.bigmodel.cn/api/paas/v4"
+
+
+def _menu(protocol, model, base_url=""):
+    menu = model_wire.thinking_menu(protocol=protocol, model=model, base_url=base_url)
+    assert menu is not None
+    return menu
+
+
+def _effort(level):
+    return {"thinking": {"type": "adaptive"}, "output_config": {"effort": level}}
+
+
+@pytest.mark.parametrize(("model", "values", "auto"), [
+    # 新模型：不发也思考，有 xhigh；auto 对 haiku-5-5 是实测的 low，其余是不发 effort 时的默认
+    ("claude-haiku-5-5", ["low", "medium", "high", "xhigh", "max"], "low"),
+    ("claude-opus-5-5", ["low", "medium", "high", "xhigh", "max"], "medium"),
+    ("claude-sonnet-5-5", ["low", "medium", "high", "xhigh", "max"], "high"),
+    ("claude-fable-5-2", ["low", "medium", "high", "xhigh", "max"], "high"),
+    # 不发就不思考的：多一档 off（什么都不加），auto 就是它
+    ("claude-opus-4-8", ["off", "low", "medium", "high", "xhigh", "max"], "off"),
+    ("claude-sonnet-4-6", ["off", "low", "medium", "high", "max"], "off"),
+    # 认不出的（中转的别家模型）照 Anthropic 的通用写法
+    ("kimi-k3", ["off", "low", "medium", "high", "max"], "off"),
+])
+def test_claude_levels_and_auto(model, values, auto):
+    menu = _menu("anthropic", model)
+    assert menu.values() == values
+    assert menu.level_for("auto") == auto
+    # 设置的 off 和以前一样是 effort low，其余同名
+    assert [menu.level_for(setting) for setting in ("off", "low", "medium", "high", "max")] == ["low", "low", "medium", "high", "max"]
+
+
+def test_claude_level_fields_are_the_translation_ones():
+    menu = _menu("anthropic", "claude-haiku-5-5")
+    for level in ("low", "medium", "high", "max"):
+        assert menu.candidates(level) == model_wire.anthropic_thinking_candidates(level, model="claude-haiku-5-5")
+    assert menu.candidates("xhigh") == [_effort("xhigh"), _effort("high"), {}]
+    assert _menu("anthropic", "claude-sonnet-4-6").candidates("off") == [{}]
+    with pytest.raises(KeyError):
+        menu.candidates("off")
+
+
+def test_qwen_and_deepseek_are_switches():
+    qwen = _menu("openai", "qwen3.8-flash", DASHSCOPE)
+    assert qwen.values() == ["off", "on"]
+    assert qwen.candidates("off") == [{"enable_thinking": False}, {}]
+    assert qwen.candidates("on") == [{"enable_thinking": True}, {}]
+    # auto：qwen3.8-flash 实测关掉；别的 Qwen 不加字段，按服务商默认开
+    assert qwen.level_for("auto") == "off" and qwen.level_for("high") == "on" and qwen.level_for("off") == "off"
+    assert _menu("openai", "qwen-plus", DASHSCOPE).level_for("auto") == "on"
+    deepseek = _menu("openai", "deepseek-chat", DEEPSEEK)
+    assert deepseek.values() == ["off", "on"]
+    assert deepseek.candidates("on") == [{"thinking": {"type": "enabled"}}, {}]
+    assert deepseek.level_for("auto") == "off" and _menu("openai", "deepseek-reasoner", DEEPSEEK).level_for("auto") == "on"
+
+
+def test_gpt_levels_by_model():
+    gpt5 = _menu("openai", "gpt-5", OPENAI)
+    assert gpt5.values() == ["minimal", "low", "medium", "high"]
+    assert gpt5.candidates("minimal") == [{"reasoning_effort": "minimal"}, {}]
+    # 设置的 off 先试 none（GPT-5 没有），落到 minimal；max 先试 xhigh，落到 high；auto 不传，默认 medium
+    assert [gpt5.level_for(setting) for setting in model_wire.THINKING_LEVELS] == ["medium", "minimal", "low", "medium", "high", "high"]
+    newer = _menu("openai", "gpt-5.5-mini", OPENAI)
+    assert newer.values() == ["none", "low", "medium", "high", "xhigh"]
+    assert newer.level_for("off") == "none" and newer.level_for("max") == "xhigh" and newer.level_for("auto") == "none"
+    responses = _menu("openai_responses", "gpt-5-mini", OPENAI)
+    assert responses.values() == ["minimal", "low", "medium", "high"]
+    assert responses.candidates("high") == [{"reasoning": {"effort": "high"}}, {}]
+    o3 = _menu("openai_responses", "o3", OPENAI)
+    assert o3.values() == ["low", "medium", "high"] and o3.level_for("auto") == "medium"
+    # 经中转（OpenRouter 的写法）也按模型名认
+    assert _menu("openai", "openai/gpt-5", "https://openrouter.ai/api/v1").values() == ["minimal", "low", "medium", "high"]
+
+
+def test_glm_and_unknown_models():
+    glm = _menu("openai", "glm-5.3-flash", BIGMODEL)
+    assert glm.values() == ["off", "low", "medium", "high", "max"]
+    assert glm.candidates("off") == [{"thinking": {"type": "disabled"}}, {"reasoning_effort": "low"}, {}]
+    assert glm.level_for("auto") == "low"
+    assert model_wire.thinking_menu(protocol="openai", model="gpt-4o", base_url=OPENAI) is None
+    assert model_wire.thinking_menu(protocol="openai", model="some-model", base_url="https://llm.example.com/v1") is None
+
+
+MENUS = [
+    ("anthropic", "claude-haiku-5-5", ""), ("anthropic", "claude-opus-5-5", ""), ("anthropic", "claude-opus-4-8", ""),
+    ("anthropic", "claude-sonnet-4-6", ""), ("openai", "glm-5.3-flash", BIGMODEL), ("openai", "glm-5", BIGMODEL),
+    ("openai", "gpt-5", OPENAI), ("openai", "gpt-5.5-mini", OPENAI), ("openai", "o4-mini", OPENAI),
+    ("openai_responses", "gpt-5-mini", OPENAI), ("openai_responses", "gpt-5.5", OPENAI),
+]
+
+
+@pytest.mark.parametrize(("protocol", "model", "base_url"), MENUS)
+def test_the_reported_level_is_what_the_setting_actually_sends(protocol, model, base_url):
+    """设置换成的那一档：设置发的候选里第一个对得上档位的（服务商不认前面的会退到它）；全对不上就是服务商默认档。"""
+    menu = _menu(protocol, model, base_url)
+    for setting in model_wire.THINKING_LEVELS:
+        sent = model_wire.setting_thinking_candidates(protocol=protocol, model=model, base_url=base_url, thinking=setting)
+        first = menu.candidates(menu.level_for(setting))[0]
+        if any(level.candidates[0] in sent for level in menu.levels):
+            # 发的候选里第一个能对上档位的就是它
+            assert first == next(fields for fields in sent if any(level.candidates[0] == fields for level in menu.levels)), setting
+        else:
+            # 候选全对不上，最后什么都不加：报的是服务商默认档（不是由这个设置发出去的字段）
+            assert sent[-1] == {}, setting
+        assert all(level.candidates[-1] == {} for level in menu.levels)
+
+
+def test_pi_models_json_uses_the_same_claude_lists():
+    """retainpdf-pi 的 models.json（acp/pi.rs）按同样的名单给 Claude 开 xhigh、去掉 off。"""
+    repo = Path(__file__).resolve().parents[5]
+    source = (repo / "backend/packages/retainpdf-providers/src/acp/pi.rs").read_text(encoding="utf-8")
+
+    def rust_list(name):
+        match = re.search(rf"const {name}: \[&str; \d+\] =\s*\[(.*?)\];", source, re.S)
+        assert match, name
+        return tuple(re.findall(r'"([^"]+)"', match.group(1)))
+
+    assert rust_list("CLAUDE_XHIGH_MODELS") == model_wire.ANTHROPIC_XHIGH_MODELS
+    assert rust_list("CLAUDE_THINKS_BY_DEFAULT_MODELS") == model_wire.ANTHROPIC_THINKS_BY_DEFAULT_MODELS
