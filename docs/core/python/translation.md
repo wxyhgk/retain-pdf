@@ -53,6 +53,7 @@ document.v1.json
 - `python -m retainpdf_pipeline.translate.entrypoints.domain_prewarm --spec <job_root>/specs/domain-prewarm.spec.json`
   OCR 期间先做识别领域的辅助进程（`domain_prewarm.stage.v1`，不是任务阶段）：提交 OCR 后由 Rust 拉起（只在学术模式、
   走 Python 请求的任务），只读源 PDF 前两页的文本层，结果存进各任务共用的领域缓存，翻译阶段到时"shared cache hit"。
+  选了页的任务不拉起（2026-11-26）：它读的是整份上传，翻译阶段读子 PDF，预览文本不同、缓存对不上。
   不改任务状态、不写事件流，失败或没等到都只是翻译阶段自己问；日志在 `logs/domain-prewarm.log`。
 - `retainpdf-pipeline translate-from-ocr --spec <job_root>/specs/book.spec.json`
   provider/normalize 后继续翻译和渲染的入口之一（顶层垫片已删除，只有包内入口 `backend/pipeline/retainpdf_pipeline/translate/entrypoints/from_ocr_pipeline.py` 和 console 子命令，仅桌面兼容注脚）。
@@ -181,6 +182,9 @@ load document.v1
 OCR 做完的那一轮不扣、全部翻完，再走和整本一次翻一样的收尾（`book_flow.finish_book_translation`）。
 
 - 断点：归一化文档每轮在变，指纹按原文 PDF 的 sha256 认；新到的页不算"已完成的块又变回待翻"。
+- 选了页（`ocr.page_ranges`）的任务不会走到这里（Rust `ocr_streams_pages`，2026-11-26）：spec 里的原文是整份上传，
+  和按子 PDF 编页的 OCR 文档对不上。以前走过这条路、留下的断点指纹记的是整份上传的哈希，之后都是先 OCR 后翻译、按子 PDF 认，
+  接不上，第一次重试会从头翻（那份断点里的表格、页码标签本来就是按错的页做的）。
 - agent 引擎、开了译前准备的：要整本，等 OCR 做完再按整本翻（`execution._wait_for_whole_document_if_needed`）。
 - OCR 失败（清单 `failed=true`）时等的一方抛 `OcrStreamFailed`。阶段耗时在诊断里按轮累加。
 

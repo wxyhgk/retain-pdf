@@ -141,6 +141,7 @@ GLM-OCR 不限、`always`、借 `open.bigmodel.cn` 的 key；Local OCR 不限、
   OCR 子任务的进度 `substage` 是 `paddle_chunks`（`progress_current/total` = 已识别页 / 总页）。
   自建 Paddle 服务、远程地址的原文、官方命令行照旧整份提交、做完再翻。
 - 其余服务商照旧先 OCR、再翻译。
+- 选了页（`ocr.page_ranges` 不是空、也不是 `all`）的任务都不并行，先 OCR、再翻译（2026-11-26 起；并行时翻译读的整份上传和按子 PDF 编页的 OCR 文档页号对不上）。
 
 并行时 OCR 子任务一做完就落终态（`succeeded`/`failed`），不等翻译（2026-11-01 起；以前要等翻译也做完，子任务一直停在
 `normalizing`）。父任务照旧等翻译、渲染。

@@ -26,7 +26,8 @@ use crate::job_runner::stage_contract::{
 pub(super) struct StreamingTranslationInputs {
     /// OCR 最后会写的整份归一化文档（`ocr/normalized/document.v1.json`），翻译收尾时用。
     pub(super) normalized_path: PathBuf,
-    /// 上传的原文（OCR 子任务从它复制一份到任务目录；领域识别、断点指纹读它）。
+    /// 上传的原文（OCR 子任务从它复制一份到任务目录；领域识别、断点指纹读它）。选了页的任务不跟着 OCR 翻
+    /// （`ocr_streams_pages`），所以这里的整份上传和 OCR 文档一页一页对得上。
     pub(super) source_pdf_path: PathBuf,
     /// OCR 流式公布的目录（任务的 `ocr/`，清单在 `ocr/stream/`）。
     pub(super) ocr_stream_dir: PathBuf,
