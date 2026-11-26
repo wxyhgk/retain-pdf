@@ -35,6 +35,10 @@ export function listAskConversationMessages(apiPrefix, conversationId, query = {
 export function appendAskConversationMessages(apiPrefix, conversationId, body, options) {
     return generated.appendAskConversationMessages(apiPrefix, { conversation_id: conversationId, body }, options);
 }
+/** 改一条已发出的问（或重新回答）：这条问和它之后的作废，之后用改后的问重问、追加时带 edited_from。 */
+export function supersedeAskConversationMessage(apiPrefix, conversationId, messageId, options) {
+    return generated.supersedeAskConversationMessage(apiPrefix, { conversation_id: conversationId, message_id: messageId }, options);
+}
 /** 压缩：后端用设置里的模型把旧的几轮压成摘要。 */
 export function createAskCompaction(apiPrefix, conversationId, connection, options) {
     return generated.createAskCompaction(apiPrefix, { conversation_id: conversationId, body: { connection } }, options);

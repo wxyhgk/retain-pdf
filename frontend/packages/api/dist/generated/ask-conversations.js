@@ -37,6 +37,10 @@ export function listAskConversationMessages(apiPrefix, args, options) {
 export function appendAskConversationMessages(apiPrefix, args, options) {
     return request({ apiPrefix, method: "POST", path: `ai/ask-conversations/${encodePathParam(args.conversation_id)}/messages`, body: args.body, options });
 }
+/** POST /api/v1/ai/ask-conversations/:conversation_id/messages/:message_id/supersede */
+export function supersedeAskConversationMessage(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "POST", path: `ai/ask-conversations/${encodePathParam(args.conversation_id)}/messages/${encodePathParam(args.message_id)}/supersede`, options });
+}
 /** POST /api/v1/ai/ask-conversations/:conversation_id/compactions */
 export function createAskCompaction(apiPrefix, args, options) {
     return request({ apiPrefix, method: "POST", path: `ai/ask-conversations/${encodePathParam(args.conversation_id)}/compactions`, body: args.body, options });

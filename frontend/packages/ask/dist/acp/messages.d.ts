@@ -26,10 +26,11 @@ export declare function toInitialMessages(messages: readonly AskMessage[]): ({
     content: string;
     metadata?: {
         custom: {
-            context: import("../contract.js").AskMessageContext;
-            turn?: undefined;
-            endedAt?: undefined;
-            stored?: undefined;
+            context?: import("../contract.js").AskMessageContext;
+            rewrote?: {
+                question: string;
+                answer?: string;
+            };
         };
     };
 } | {
@@ -38,10 +39,11 @@ export declare function toInitialMessages(messages: readonly AskMessage[]): ({
     content: string;
     metadata?: {
         custom: {
-            context: import("../contract.js").AskMessageContext;
-            turn?: undefined;
-            endedAt?: undefined;
-            stored?: undefined;
+            context?: import("../contract.js").AskMessageContext;
+            rewrote?: {
+                question: string;
+                answer?: string;
+            };
         };
     };
 } | {
@@ -68,7 +70,6 @@ export declare function toInitialMessages(messages: readonly AskMessage[]): ({
     };
     metadata: {
         custom: {
-            context?: undefined;
             turn: AskTurn;
             endedAt: number;
             stored: {
@@ -79,6 +80,10 @@ export declare function toInitialMessages(messages: readonly AskMessage[]): ({
                         title?: string;
                     };
                     compactedBefore?: boolean;
+                    rewrote?: {
+                        question: string;
+                        answer?: string;
+                    };
                 };
             };
         };
@@ -107,7 +112,6 @@ export declare function toInitialMessages(messages: readonly AskMessage[]): ({
     };
     metadata: {
         custom: {
-            context?: undefined;
             turn: AskTurn;
             endedAt: number;
             stored: {
@@ -118,6 +122,10 @@ export declare function toInitialMessages(messages: readonly AskMessage[]): ({
                         title?: string;
                     };
                     compactedBefore?: boolean;
+                    rewrote?: {
+                        question: string;
+                        answer?: string;
+                    };
                 };
             };
         };

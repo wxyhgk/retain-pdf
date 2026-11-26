@@ -305,3 +305,46 @@ test("起止时刻（思考写「思考（N 秒）」、工具调用写用时）
   turn = applySessionUpdate(turn, text("agent_thought_chunk", "再想"), 5, 7000);
   assert.deepEqual(closeOpenReasoning(turn.parts, 9000)[2].timing, { startedAt: 7000, completedAt: 9000 });
 });
+
+test("改一条已发出的问 / 重新回答：落在已有位置上的问先交给宿主（后端作废它和之后的），会话重开，照用原来的出处；宿主报错就不问", async () => {
+  const prompts = [];
+  let opened = 0;
+  const port = { listAgents: async () => [], openSession: async (_o, handlers) => { opened += 1; return { prompt: async (blocks, meta) => { prompts.push({ blocks, meta }); handlers.onUpdate(text("agent_message_chunk", "答")); return { stopReason: "end_turn" }; }, cancel() {}, close() {} }; } };
+  const rewrites = [];
+  let refuse = false;
+  const chat = createAcpChatAdapter({
+    port,
+    permissions: new PermissionStore(),
+    getAgentId: () => "a",
+    getContext: () => null,
+    initialIds: ["msg-1", "msg-2"],
+    onRewrite: async (id) => {
+      rewrites.push(id);
+      if (refuse) throw new Error("对话结束了");
+      return id === "msg-1" ? CONTEXT : null;
+    },
+  });
+  const runAll = async (messages) => { const out = []; for await (const result of chat.adapter.run({ messages, abortSignal: new AbortController().signal })) out.push(result); return out; };
+  const u = (id, t) => ({ id, role: "user", content: [{ type: "text", text: t }] });
+  const a = (id, t) => ({ id, role: "assistant", content: [{ type: "text", text: t }], metadata: { custom: {} } });
+  // 往下接着问：不算改。
+  await runAll([u("msg-1", "Q1"), a("msg-2", "A1"), u("u3", "Q2")]);
+  assert.deepEqual(rewrites, []);
+  assert.equal(chat.lastRun().editedFrom, undefined);
+  // 改了第一问（新编号落在 0 号位）：交出原来那条，照用它的出处，会话重开。
+  await runAll([u("u9", "Q1 改过")]);
+  assert.deepEqual(rewrites, ["msg-1"]);
+  assert.equal(opened, 2);
+  assert.deepEqual(prompts.at(-1).meta, CONTEXT.meta, "照用原来那一问的出处");
+  assert.deepEqual([chat.lastRun().questionId, chat.lastRun().editedFrom], ["u9", "msg-1"]);
+  // 重新回答（同一条问）：也算改，交出它自己。
+  await runAll([u("u9", "Q1 改过")]);
+  assert.deepEqual(rewrites, ["msg-1", "u9"]);
+  assert.equal(chat.lastRun().editedFrom, "u9");
+  // 宿主作废不了：不问，错误写在回答的位置。
+  refuse = true;
+  const before = prompts.length;
+  const out = await runAll([u("u9", "Q1 改过")]);
+  assert.equal(prompts.length, before);
+  assert.match(out.at(-1).content[0].text, /改不了这一问：对话结束了/);
+});

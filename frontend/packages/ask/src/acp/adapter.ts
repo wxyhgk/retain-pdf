@@ -5,64 +5,15 @@
 // - agent 要许可 → 记在 permissions 里，窗口画「允许 / 拒绝」，用户点了才回给 agent。
 // 会话在第一次发问时才开；换 agent、重新回答、改问题时关掉旧的重开。
 
-import type { ContentBlock, RequestPermissionRequest, RequestPermissionResponse, SessionUpdate } from "@agentclientprotocol/sdk";
+import type { ContentBlock, SessionUpdate } from "@agentclientprotocol/sdk";
 
 import type { AskConfigOption, AskContext, AskPort, AskSession } from "../contract.js";
 import { normalizeConfigOptions, pendingConfig } from "./config.js";
 import { applySessionUpdate, closeOpenReasoning, emptyTurn, turnMemoryIds, turnSpeed, usageFromMeta, type AskPart, type AskTurn } from "./parts.js";
 import { historyText } from "./messages.js";
+import type { PermissionStore } from "./permissions.js";
 
-/** 等用户点的许可请求（按 toolCallId 认；窗口在那张工具卡片上画按钮）。 */
-export type PendingPermission = {
-  request: RequestPermissionRequest;
-  resolve: (response: RequestPermissionResponse) => void;
-};
-
-export class PermissionStore {
-  private pending = new Map<string, PendingPermission>();
-  private listeners = new Set<() => void>();
-  private version = 0;
-
-  add(request: RequestPermissionRequest): Promise<RequestPermissionResponse> {
-    return new Promise((resolve) => {
-      const key = request.toolCall.toolCallId;
-      this.pending.set(key, {
-        request,
-        resolve: (response) => {
-          this.pending.delete(key);
-          this.bump();
-          resolve(response);
-        },
-      });
-      this.bump();
-    });
-  }
-
-  get(toolCallId: string): PendingPermission | undefined {
-    return this.pending.get(toolCallId);
-  }
-
-  all(): PendingPermission[] {
-    return [...this.pending.values()];
-  }
-
-  /** 关窗 / 停下时，没回的都按取消回掉，agent 不会一直等。 */
-  cancelAll(): void {
-    for (const item of [...this.pending.values()]) item.resolve({ outcome: { outcome: "cancelled" } });
-  }
-
-  subscribe = (listener: () => void) => {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  };
-
-  snapshot = () => this.version;
-
-  private bump() {
-    this.version += 1;
-    for (const listener of this.listeners) listener();
-  }
-}
+export { PermissionStore, type PendingPermission } from "./permissions.js";
 
 /** 一轮回答 → assistant-ui 的 content parts。 */
 export function toAssistantParts(parts: readonly AskPart[]) {
@@ -81,6 +32,13 @@ export type AcpChatOptions = {
   now?: () => number;
   /** agent 的设置项变了（开了新会话、agent 推来 config_option_update、用户改了）。 */
   onConfig?: (options: AskConfigOption[]) => void;
+  /** 窗口打开时已经在对话里的消息编号（按顺序）：改了其中一条问、重新回答时，知道改的是哪条。 */
+  initialIds?: readonly string[];
+  /**
+   * 改了一条已经发过的问（或重新回答）：先交给宿主（后端把那条和它之后的作废），再开新会话用改后的问去问。
+   * 返回那一问原来的出处（这一问照用）；抛错就不问了，错误写在回答的位置。
+   */
+  onRewrite?: (questionId: string) => Promise<AskContext | null | void>;
   /** 发问那一刻：哪条问题带了哪个出处（窗口在问题上面画小标签）。 */
   onAsked?: (messageId: string, context: AskContext | null) => void;
   /** 用户选过的值（模型、思考强度……）：每开一个新会话再设一次。 */
@@ -121,7 +79,9 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
   // 这个会话已经带过之前聊过什么（新会话的第一问带一次）。
   let sentHistory = false;
   // 最近答完的一轮：用了哪个出处、哪个会话、记下了哪些记忆（窗口交给宿主存）。
-  let lastRun: { context: AskContext | null; sessionId?: string; memoryIds: string[]; startedAt?: number } = { context: null, memoryIds: [] };
+  let lastRun: { context: AskContext | null; sessionId?: string; memoryIds: string[]; startedAt?: number; questionId?: string; editedFrom?: string } = { context: null, memoryIds: [] };
+  // 对话里现在这条路上的消息编号（问 + 答）：这一问落在已有的位置上，就是改了那条问。
+  let path: string[] = [...(options.initialIds || [])];
   // 这个会话已经听过几条（问 + 答）。重新回答、改了问题、切到别的版本时，对话和会话里的对不上：开新会话，把到这里为止的带过去。
   let sessionSeen = 0;
   // 答最近一轮的那个会话的 sessionId（会话之后可能被关掉、重开，存问答记录时要的是答了这一轮的那个）。
@@ -199,6 +159,23 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
         session = null;
       }
       const question = (last?.content || []).map((part) => (part.type === "text" ? part.text || "" : "")).join("\n").trim();
+      // 改了一条已经发过的问（或重新回答）：宿主先让后端作废它和之后的，再开新会话（前文里就没有作废的了）。
+      const replaced = lastIndex >= 0 && lastIndex < path.length ? path[lastIndex] : undefined;
+      if (replaced && options.onRewrite) {
+        try {
+          const original = await options.onRewrite(replaced);
+          if (original && last?.id && !asked.has(last.id)) {
+            asked.set(last.id, original);
+            options.onAsked?.(last.id, original);
+          }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          yield { content: [{ type: "text", text: `（改不了这一问：${message}）` }] as never, status: { type: "incomplete", reason: "error", error: message } };
+          return;
+        }
+        session?.close();
+        session = null;
+      }
       let current: AskSession;
       try {
         current = await ensureSession();
@@ -287,7 +264,12 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       const endedAt = now();
       turn = { ...turn, parts: closeOpenReasoning(turn.parts, Date.now()) };
       if (!failure) sessionSeen = lastIndex + 2;
-      lastRun = { context, sessionId: current.sessionId, memoryIds: turnMemoryIds(turn.parts), startedAt };
+      lastRun = {
+        context, sessionId: current.sessionId, memoryIds: turnMemoryIds(turn.parts), startedAt,
+        ...(last?.id ? { questionId: last.id } : {}),
+        ...(replaced ? { editedFrom: replaced } : {}),
+      };
+      path = [...messages.slice(0, lastIndex + 1).map((message) => message.id || ""), "(回答)"];
       const speed = turnSpeed(turn);
       const timing = {
         streamStartTime: turn.startedAt,

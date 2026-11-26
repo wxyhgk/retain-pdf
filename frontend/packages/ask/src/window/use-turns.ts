@@ -10,7 +10,7 @@ type ThreadLike = {
   getState: () => { isRunning: boolean; messages: readonly unknown[] };
 };
 
-type RunInfo = { context: AskContext | null; sessionId?: string; memoryIds: string[]; startedAt?: number };
+type RunInfo = { context: AskContext | null; sessionId?: string; memoryIds: string[]; startedAt?: number; questionId?: string; editedFrom?: string };
 
 type MessageLike = { id?: string; role: string; status?: { type?: string; reason?: string } };
 
@@ -58,6 +58,8 @@ export function useTurns({
             question, answer, context: info.context, agentId: agentId(), sessionId: info.sessionId, memoryIds: info.memoryIds,
             ...(info.startedAt ? { startedAt: info.startedAt } : {}),
             ...(answerId ? { answerId } : {}),
+            ...(info.questionId ? { questionId: info.questionId } : {}),
+            ...(info.editedFrom ? { editedFrom: info.editedFrom } : {}),
           });
         }
       }

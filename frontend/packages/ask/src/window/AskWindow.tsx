@@ -120,6 +120,8 @@ export type AskWindowProps = {
   onOpenSide?: (sideId: string) => void;
   /** 「已记住」的撤销。不给就不能撤销。 */
   onForgetMemory?: (memoryId: string) => Promise<void>;
+  /** 改了一条已经发过的问 / 重新回答（窗口里的编号）：宿主先作废它和之后的，返回那一问原来的出处。不给就照旧只在窗口里分叉。 */
+  onRewrite?: (questionId: string) => Promise<AskContext | null | void>;
   /** 宿主事后查到的「已记住」（按 onTurn 交出的 answerId）：agent 不在工具卡片 _meta 里报记忆时用。 */
   memories?: ReadonlyMap<string, readonly AskMemoryNotice[]>;
   /** 只能看（以前按书存的问答）：没有输入框。 */
@@ -135,13 +137,13 @@ export type AskWindowProps = {
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
   const [loadError, setLoadError] = useState("");
-  const live = useRef({ agentId, context, onContextUsed });
-  live.current = { agentId, context, onContextUsed };
+  const live = useRef({ agentId, context, onContextUsed, onRewrite });
+  live.current = { agentId, context, onContextUsed, onRewrite };
   // 发出去的问题问的是哪儿（按消息编号；画问题上面的小标签）。
   const [asked, setAsked] = useState<ReadonlyMap<string, AskMessageContext>>(() => new Map());
 
@@ -169,6 +171,8 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       permissions,
       getAgentId: () => live.current.agentId,
       getContext: () => live.current.context,
+      initialIds: (initialMessages || []).map((message) => message.id || ""),
+      onRewrite: async (questionId) => live.current.onRewrite?.(questionId),
       onAsked: (messageId, used) => {
         if (!used) return;
         setAsked((current) => new Map(current).set(messageId, { page: used.page, label: used.label, data: used.meta }));

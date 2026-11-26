@@ -56,6 +56,7 @@
 }
 
 .ask-question-where,
+.ask-question-rewrote,
 .ask-pending-label {
   display: inline-flex;
   flex: none;
@@ -74,6 +75,7 @@
 }
 
 .ask-question-where:hover,
+.ask-question-rewrote:hover,
 .ask-pending-label:hover {
   color: var(--ink);
 }
@@ -1127,4 +1129,27 @@
 .ask-panel[data-readonly="1"] .aui-user-action-bar-wrapper,
 .ask-panel[data-readonly="1"] .aui-assistant-action-bar-root {
   display: none;
+}
+
+/* 改过的问：「改过」点开看原来的问和答。 */
+.ask-question-rewrote {
+  grid-column: 2;
+  justify-self: end;
+  margin-bottom: -4px;
+}
+
+.ask-question-original {
+  grid-column: 2;
+  justify-self: end;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+  line-height: 1.6;
+}
+
+.ask-question-original p {
+  margin: 0;
+  overflow-wrap: anywhere;
 }

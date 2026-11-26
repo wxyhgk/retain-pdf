@@ -117,7 +117,12 @@ export type AskMessage = {
    * side_summary：副对话结束时回到主对话的结论卡片（画成卡片，能展开看副对话）；
    * compacted：这条之前的都压缩成了摘要（这条后面画一条分隔线）。
    */
-  marks?: { sideSummary?: { sideId: string | null; title?: string }; compactedBefore?: boolean };
+  marks?: {
+    sideSummary?: { sideId: string | null; title?: string };
+    compactedBefore?: boolean;
+    /** 这一问是改过的（以前的问答作废了，原文留着）：问题上面画「改过」，点开看原来的。 */
+    rewrote?: { question: string; answer?: string };
+  };
 };
 
 /** 答完的一轮：问题和回答、问的时候带的出处、谁答的、这一轮记下的记忆编号。宿主拿去追加。 */
@@ -134,6 +139,10 @@ export type AskTurnRecord = {
   startedAt?: number;
   /** 回答在窗口里的消息编号：宿主查到的记忆按它交回（AskWindow 的 memories）。 */
   answerId?: string;
+  /** 问题在窗口里的消息编号（宿主记下它在库里是哪条，之后改这一问时认得）。 */
+  questionId?: string;
+  /** 这一问改自哪条（窗口里的编号；重新回答时就是它自己）：宿主追加时带 edited_from。 */
+  editedFrom?: string;
 };
 
 /** 「已记住」：agent 记下一条记忆（自带 agent 在 remember 工具卡片完成时的 _meta.retainpdf.memory）。 */

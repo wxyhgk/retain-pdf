@@ -8,7 +8,7 @@
  */
 import { createContext, useContext, useMemo, useState, type ReactElement } from "react";
 import { useAuiState } from "@assistant-ui/react";
-import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, Undo2, X } from "lucide-react";
+import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, PencilLine, Undo2, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
 import type { AskContext, AskMemoryNotice, AskMessage, AskMessageContext } from "../contract.js";
@@ -66,14 +66,37 @@ export function PendingContextBar(): ReactElement | null {
   );
 }
 
-/** 问题上面：这一问问的是哪儿。 */
+/** 问题上面：这一问改过（「改过」，点开看原来的问和答）。 */
+function RewroteTag({ rewrote }: { rewrote: { question: string; answer?: string } }): ReactElement {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button className="ask-question-rewrote" title="这一问改过，原来的问答作废了（原文留着）" onClick={() => setOpen((value) => !value)}>
+        <PencilLine size={11} aria-hidden />
+        改过
+      </Button>
+      {open ? (
+        <div className="ask-question-original">
+          <p>原来问的：{rewrote.question}</p>
+          {rewrote.answer ? <p>原来的回答：{rewrote.answer}</p> : null}
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+/** 问题上面：这一问问的是哪儿；改过的再画「改过」。 */
 export function QuestionContextTag(): ReactElement | null {
   const { contexts, showContext } = useContext(AskConversationContext);
   const id = useAuiState((state) => state.message.id);
-  const stored = useAuiState((state) => (state.message.metadata?.custom as { context?: AskMessageContext } | undefined)?.context);
-  const context = stored || contexts.get(id);
-  if (!context) return null;
+  const custom = useAuiState((state) => state.message.metadata?.custom) as { context?: AskMessageContext; rewrote?: { question: string; answer?: string } } | undefined;
+  const context = custom?.context || contexts.get(id);
+  const rewrote = custom?.rewrote;
+  if (!context && !rewrote) return null;
+  if (!context) return <RewroteTag rewrote={rewrote!} />;
   return (
+    <>
+    {rewrote ? <RewroteTag rewrote={rewrote} /> : null}
     <Button
       className="ask-question-where"
       title={showContext ? `回到问的那一处：${context.label}` : context.label}
@@ -83,6 +106,7 @@ export function QuestionContextTag(): ReactElement | null {
       <MapPin size={11} aria-hidden />
       {contextChipText(context)}
     </Button>
+    </>
   );
 }
 

@@ -9,7 +9,7 @@ import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-run
  */
 import { createContext, useContext, useMemo, useState } from "react";
 import { useAuiState } from "@assistant-ui/react";
-import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, Undo2, X } from "lucide-react";
+import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, PencilLine, Undo2, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 import { AskQuote } from "./AskQuote.js";
 export const AskConversationContext = createContext({ pending: null, contexts: new Map() });
@@ -28,15 +28,23 @@ export function PendingContextBar() {
     const hasQuote = Boolean(pending.quote?.selection || pending.quote?.source || pending.quote?.translated);
     return (_jsxs("div", { className: "ask-pending", "data-open": open ? "1" : "0", children: [_jsxs("div", { className: "ask-pending-chip", children: [_jsx(MapPin, { size: 12, "aria-hidden": true }), _jsx(Button, { className: "ask-pending-label", title: hasQuote ? "看引的那段" : pending.label, onClick: () => setOpen((value) => !value), disabled: !hasQuote, children: contextChipText(pending) }), clearPending ? (_jsx(Button, { className: "ask-icon ask-pending-clear", "aria-label": "\u8FD9\u4E00\u95EE\u4E0D\u5E26\u51FA\u5904", title: "\u8FD9\u4E00\u95EE\u4E0D\u5E26\u51FA\u5904", onClick: clearPending, children: _jsx(X, { size: 12, "aria-hidden": true }) })) : null] }), open && hasQuote ? _jsx(AskQuote, { quote: pending.quote }) : null] }));
 }
-/** 问题上面：这一问问的是哪儿。 */
+/** 问题上面：这一问改过（「改过」，点开看原来的问和答）。 */
+function RewroteTag({ rewrote }) {
+    const [open, setOpen] = useState(false);
+    return (_jsxs(_Fragment, { children: [_jsxs(Button, { className: "ask-question-rewrote", title: "\u8FD9\u4E00\u95EE\u6539\u8FC7\uFF0C\u539F\u6765\u7684\u95EE\u7B54\u4F5C\u5E9F\u4E86\uFF08\u539F\u6587\u7559\u7740\uFF09", onClick: () => setOpen((value) => !value), children: [_jsx(PencilLine, { size: 11, "aria-hidden": true }), "\u6539\u8FC7"] }), open ? (_jsxs("div", { className: "ask-question-original", children: [_jsxs("p", { children: ["\u539F\u6765\u95EE\u7684\uFF1A", rewrote.question] }), rewrote.answer ? _jsxs("p", { children: ["\u539F\u6765\u7684\u56DE\u7B54\uFF1A", rewrote.answer] }) : null] })) : null] }));
+}
+/** 问题上面：这一问问的是哪儿；改过的再画「改过」。 */
 export function QuestionContextTag() {
     const { contexts, showContext } = useContext(AskConversationContext);
     const id = useAuiState((state) => state.message.id);
-    const stored = useAuiState((state) => state.message.metadata?.custom?.context);
-    const context = stored || contexts.get(id);
-    if (!context)
+    const custom = useAuiState((state) => state.message.metadata?.custom);
+    const context = custom?.context || contexts.get(id);
+    const rewrote = custom?.rewrote;
+    if (!context && !rewrote)
         return null;
-    return (_jsxs(Button, { className: "ask-question-where", title: showContext ? `回到问的那一处：${context.label}` : context.label, onClick: showContext ? () => showContext(context) : undefined, disabled: !showContext, children: [_jsx(MapPin, { size: 11, "aria-hidden": true }), contextChipText(context)] }));
+    if (!context)
+        return _jsx(RewroteTag, { rewrote: rewrote });
+    return (_jsxs(_Fragment, { children: [rewrote ? _jsx(RewroteTag, { rewrote: rewrote }) : null, _jsxs(Button, { className: "ask-question-where", title: showContext ? `回到问的那一处：${context.label}` : context.label, onClick: showContext ? () => showContext(context) : undefined, disabled: !showContext, children: [_jsx(MapPin, { size: 11, "aria-hidden": true }), contextChipText(context)] })] }));
 }
 /** 消息最上面：「看更早的」。 */
 export function EarlierHistory() {

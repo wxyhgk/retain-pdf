@@ -1,5 +1,5 @@
 import type { RequestOptions } from "./request.js";
-import type { AppendAskMessagesInput, AppendAskMessagesView, AskCompactionListView, AskContextQuery, AskContextView, AskConversationDeleteResultView, AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord, AskMessagePageView, AskModelConnectionInput, AskSettingsRecord, CloseAskConversationInput, CloseAskConversationView, CreateAskCompactionView, CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput } from "@retainpdf/contracts/ask-conversations";
+import type { AppendAskMessagesInput, AppendAskMessagesView, AskCompactionListView, AskContextQuery, AskContextView, AskConversationDeleteResultView, AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord, AskMessagePageView, AskModelConnectionInput, AskSettingsRecord, CloseAskConversationInput, CloseAskConversationView, CreateAskCompactionView, CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput, SupersedeAskMessagesView } from "@retainpdf/contracts/ask-conversations";
 export type * from "@retainpdf/contracts/ask-conversations";
 type Prefix = string | undefined;
 /** 取或建当前的全局主对话（幂等）。 */
@@ -18,6 +18,8 @@ export declare function closeAskConversation(apiPrefix: Prefix, conversationId: 
 export declare function listAskConversationMessages(apiPrefix: Prefix, conversationId: string, query?: ListAskMessagesQuery, options?: RequestOptions): Promise<AskMessagePageView>;
 /** 追加一轮（问和答一起，client_message_id 重试安全）。 */
 export declare function appendAskConversationMessages(apiPrefix: Prefix, conversationId: string, body: AppendAskMessagesInput, options?: RequestOptions): Promise<AppendAskMessagesView>;
+/** 改一条已发出的问（或重新回答）：这条问和它之后的作废，之后用改后的问重问、追加时带 edited_from。 */
+export declare function supersedeAskConversationMessage(apiPrefix: Prefix, conversationId: string, messageId: string, options?: RequestOptions): Promise<SupersedeAskMessagesView>;
 /** 压缩：后端用设置里的模型把旧的几轮压成摘要。 */
 export declare function createAskCompaction(apiPrefix: Prefix, conversationId: string, connection: AskModelConnectionInput, options?: RequestOptions): Promise<CreateAskCompactionView>;
 export declare function listAskCompactions(apiPrefix: Prefix, conversationId: string, options?: RequestOptions): Promise<AskCompactionListView>;

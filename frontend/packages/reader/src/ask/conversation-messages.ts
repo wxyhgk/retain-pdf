@@ -33,6 +33,20 @@ export function anchorSelection(anchor: ReaderAskAnchor, book: AskBook): AskSele
   return selection;
 }
 
+/** 库里的出处 → 书上的位置（重新回答、改一问时照用原来的出处；画书页上的「?」）。point 由宿主按块算。 */
+export function selectionAnchor(selection: NonNullable<AskConversationMessageRecord["selection"]>, point: ReaderAskAnchor["point"] = null): ReaderAskAnchor {
+  return {
+    pane: selection.pane === "source" ? "source" : "translated",
+    page: selection.page,
+    itemId: selection.item_ids?.[0] ?? null,
+    selection: selection.selected_text || "",
+    sourceText: selection.source_text || "",
+    translatedText: selection.translated_text || "",
+    section: selection.section || "",
+    point,
+  };
+}
+
 /** 问题上面的小标签：「第 56 页 · 2.1 节」；别的书里问的写「别的书」，点了不跳。 */
 export function selectionContext(selection: AskConversationMessageRecord["selection"], currentDocumentId: string): AskMessageContext | null {
   if (!selection?.page) return null;
@@ -41,17 +55,45 @@ export function selectionContext(selection: AskConversationMessageRecord["select
   return { page: selection.page, label, data: selection };
 }
 
-/** 库里的消息 → 提问窗的消息。side_summary 画成结论卡片；seq 正好是压缩点的那条后面画分隔线。 */
+/** 一条改过的问原来问的、原来答的（作废的那条问和紧跟它的回答）。 */
+function rewroteFrom(records: readonly AskConversationMessageRecord[], editedFrom: string | null | undefined) {
+  if (!editedFrom) return undefined;
+  const at = records.findIndex((record) => record.message_id === editedFrom);
+  if (at < 0) return undefined;
+  const answer = records[at + 1]?.role === "assistant" ? plainSnippet(records[at + 1]!.text) : "";
+  return { question: records[at]!.text, ...(answer ? { answer } : {}) };
+}
+
+/** 回答的开头一小段纯文字（去掉代码块、行间公式、Markdown 记号），给「改过」点开看。 */
+export function plainSnippet(markdown: string, limit = 160): string {
+  const text = markdown
+    .replace(/```[\s\S]*?(```|$)/g, " ")
+    .replace(/\$\$[\s\S]*?\$\$/g, " … ")
+    .replace(/[*_`#>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const chars = [...text];
+  return chars.length > limit ? `${chars.slice(0, limit).join("")}…` : text;
+}
+
+/**
+ * 库里的消息 → 提问窗的消息。作废的（改过一问以后）不画，改后的问上面画「改过」；side_summary 画成结论卡片；
+ * seq 正好是压缩点的那条后面画分隔线。
+ */
 export function recordsToMessages(
   records: readonly AskConversationMessageRecord[],
   compactions: readonly Pick<AskCompactionPointView, "covers_to_seq">[] = [],
   currentDocumentId = "",
 ): AskMessage[] {
   const cut = new Set(compactions.map((point) => point.covers_to_seq));
-  return records.map((record) => {
+  return records.filter((record) => !record.superseded_at).map((record) => {
     const compacted = cut.has(record.seq) ? { compactedBefore: true } : {};
     if (record.role === "user") {
-      return { id: record.message_id, role: "user", text: record.text, context: selectionContext(record.selection, currentDocumentId) };
+      const rewrote = rewroteFrom(records, record.edited_from);
+      return {
+        id: record.message_id, role: "user", text: record.text, context: selectionContext(record.selection, currentDocumentId),
+        ...(rewrote ? { marks: { rewrote } } : {}),
+      };
     }
     if (record.role === "side_summary") {
       return {
@@ -72,15 +114,15 @@ export function recordsToMessages(
   });
 }
 
-/** 答完的一轮 → 追加消息的请求。clientId 是这一轮的幂等号前缀（网络重试不会追加两次）。 */
-export function turnToAppend(turn: AskTurnRecord, documentId: string, clientId: string): AskConversationMessageInput[] {
+/** 答完的一轮 → 追加消息的请求。clientId 是这一轮的幂等号前缀（网络重试不会追加两次）；editedFrom 是改的那条问（库里的编号）。 */
+export function turnToAppend(turn: AskTurnRecord, documentId: string, clientId: string, editedFrom?: string | null): AskConversationMessageInput[] {
   const selection = (turn.context?.meta as { retainpdf?: { selection?: AskSelectionInput } } | undefined)?.retainpdf?.selection ?? null;
   // 两处都给又不一样后端回 400：出处里有书就以出处为准。
   const book = selection?.document_id || documentId || null;
   const common = { agent_id: turn.agentId || null, document_id: book };
   const usage = turn.answer.usage && JSON.stringify(turn.answer.usage).length <= 4096 ? turn.answer.usage : null;
   return [
-    { ...common, role: "user", text: clip(turn.question.text, TEXT_LIMIT), selection, client_message_id: `${clientId}-q` },
+    { ...common, role: "user", text: clip(turn.question.text, TEXT_LIMIT), selection, client_message_id: `${clientId}-q`, ...(editedFrom ? { edited_from: editedFrom } : {}) },
     {
       ...common,
       role: "assistant",

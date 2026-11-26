@@ -37,7 +37,7 @@ export declare const AskConversationContext: import("react").Context<AskConversa
 export declare function contextChipText(context: AskContext | AskMessageContext): string;
 /** 输入框上面：下一问带的出处。 */
 export declare function PendingContextBar(): ReactElement | null;
-/** 问题上面：这一问问的是哪儿。 */
+/** 问题上面：这一问问的是哪儿；改过的再画「改过」。 */
 export declare function QuestionContextTag(): ReactElement | null;
 /** 消息最上面：「看更早的」。 */
 export declare function EarlierHistory(): ReactElement | null;

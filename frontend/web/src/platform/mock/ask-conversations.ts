@@ -47,6 +47,7 @@ function push(conversationId: string, input: PushInput): AskConversationMessageR
     thought: input.thought ?? null, usage: input.usage ?? null, agent_id: input.agent_id ?? null, side_conversation_id: input.side_conversation_id ?? null,
     document_id: input.document_id ?? selection?.document_id ?? null, job_id: selection?.job_id ?? null, version_id: selection?.translation_version ?? null,
     pane: selection?.pane ?? null, page: selection?.page ?? null, selection: selection as never, client_message_id: input.client_message_id ?? null, created_at: now(),
+    superseded_at: null, edited_from: input.edited_from ?? null,
   };
   list.push(record);
   conversations.set(conversationId, { ...conversation, message_count: list.length, last_seq: record.seq, updated_at: record.created_at });
@@ -61,6 +62,18 @@ export const mockAskConversations: ReaderAskConversationsPort = {
     const all = messages.get(conversationId)!.filter((message) => !page.beforeSeq || message.seq < page.beforeSeq);
     const limit = page.limit || 50;
     return { conversation_id: conversationId, messages: all.slice(-limit), has_more: all.length > limit, compactions: [] } as never;
+  },
+  supersede: async (conversationId, messageId) => {
+    const list = messages.get(conversationId) || [];
+    const at = list.findIndex((message) => message.message_id === messageId);
+    if (at < 0) throw new Error("没有这条消息");
+    const ids: string[] = [];
+    for (const message of list.slice(at)) {
+      if (message.superseded_at) continue;
+      message.superseded_at = now();
+      ids.push(message.message_id);
+    }
+    return { conversation: must(conversationId), superseded_message_ids: ids, superseded_compaction_ids: [] };
   },
   append: async (conversationId, input) => {
     const conversation = must(conversationId);
@@ -90,7 +103,7 @@ export const mockAskConversations: ReaderAskConversationsPort = {
     return record;
   },
   compact: async () => {},
-  bookMessages: async (documentId) => [...messages.values()].flat().filter((message) => message.role === "user" && message.page && (!message.document_id || message.document_id === documentId)),
+  bookMessages: async (documentId) => [...messages.values()].flat().filter((message) => message.role === "user" && message.page && !message.superseded_at && (!message.document_id || message.document_id === documentId)),
   forgetMemory: async () => {},
 };
 

@@ -68,13 +68,13 @@ function layoutFor(mode, float, dockWidth) {
     return float;
 }
 export default function AskWindow(props) {
-    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
+    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
     useKatexStylesheet(katexStylesheetUrl);
     const [agents, setAgents] = useState(null);
     const [agentId, setAgentId] = useState("");
     const [loadError, setLoadError] = useState("");
-    const live = useRef({ agentId, context, onContextUsed });
-    live.current = { agentId, context, onContextUsed };
+    const live = useRef({ agentId, context, onContextUsed, onRewrite });
+    live.current = { agentId, context, onContextUsed, onRewrite };
     // 发出去的问题问的是哪儿（按消息编号；画问题上面的小标签）。
     const [asked, setAsked] = useState(() => new Map());
     useEffect(() => {
@@ -97,6 +97,8 @@ export default function AskWindow(props) {
         permissions,
         getAgentId: () => live.current.agentId,
         getContext: () => live.current.context,
+        initialIds: (initialMessages || []).map((message) => message.id || ""),
+        onRewrite: async (questionId) => live.current.onRewrite?.(questionId),
         onAsked: (messageId, used) => {
             if (!used)
                 return;

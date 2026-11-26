@@ -50,6 +50,14 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
   // 一轮答完以后查到的「已记住」（按回答在窗口里的消息编号），和画过的记忆编号。
   const [notices, setNotices] = useState<ReadonlyMap<string, readonly AskMemoryNotice[]>>(() => new Map());
   const seenMemories = useRef(new Set<string>());
+  // 窗口里的消息编号 → 库里的编号（刚追加的；读回来的两边一样），改一问时认得改的是哪条。
+  const storedIds = useRef(new Map<string, string>());
+  const resolveId = (windowId: string | undefined): string | null => {
+    if (!windowId) return null;
+    const mapped = storedIds.current.get(windowId);
+    if (mapped) return mapped;
+    return viewRef.current.records.some((record) => record.message_id === windowId) ? windowId : null;
+  };
   const viewRef = useRef(view);
   viewRef.current = view;
   const bookRef = useRef(book);
@@ -123,7 +131,7 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
       const answerId = turn.answerId;
       if (found.length && answerId) setNotices((current) => new Map(current).set(answerId, found));
     }
-    const input = turnToAppend({ ...turn, memoryIds }, bookRef.current.documentId, newClientId());
+    const input = turnToAppend({ ...turn, memoryIds }, bookRef.current.documentId, newClientId(), resolveId(turn.editedFrom));
     let result;
     try {
       result = await conversations.append(conversation.conversation_id, input);
@@ -133,12 +141,34 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
       await conversations.reopen(conversation.conversation_id);
       result = await conversations.append(conversation.conversation_id, input);
     }
+    const [question, answer] = result.messages;
+    if (turn.questionId && question) storedIds.current.set(turn.questionId, question.message_id);
+    if (turn.answerId && answer) storedIds.current.set(turn.answerId, answer.message_id);
     setView((state) => (state.conversation?.conversation_id === conversation.conversation_id
       ? { ...state, conversation: result.conversation, records: [...state.records, ...result.messages] }
       : state));
     onAppended?.(result.messages);
     if (result.compaction_due && conversation.kind === "main") void conversations.compact(conversation.conversation_id).catch(() => {});
   }, [conversations, memories, onAppended]);
+
+  /**
+   * 窗口里改了一条已发出的问 / 重新回答：让后端把它和之后的作废（已经作废的不算错），返回那一问原来的出处。
+   * 不在库里的（没存上的、出错的那一轮）不管。
+   */
+  const rewrite = useCallback(async (windowId: string) => {
+    const conversation = viewRef.current.conversation;
+    const messageId = resolveId(windowId);
+    if (!conversations || !conversation || !messageId) return null;
+    try {
+      await conversations.supersede(conversation.conversation_id, messageId);
+    } catch (failure) {
+      if (!/ask_message_superseded/.test(errorReason(failure))) throw failure;
+    }
+    const record = viewRef.current.records.find((entry) => entry.message_id === messageId);
+    const at = viewRef.current.records.findIndex((entry) => entry.message_id === messageId);
+    setView((state) => ({ ...state, records: state.records.map((entry, index) => (index >= at && at >= 0 && !entry.superseded_at ? { ...entry, superseded_at: "now" } : entry)) }));
+    return record?.selection ?? null;
+  }, [conversations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onTurn = useCallback((turn: AskTurnRecord) => {
     void appendTurn(turn).catch((failure) => setError(`这一轮没存上：${failure instanceof Error ? failure.message : String(failure)}`));
@@ -216,6 +246,7 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
     close: useCallback(() => setVisible(false), []),
     loadEarlier,
     onTurn,
+    rewrite,
     fork,
     openSide,
     backToMain,

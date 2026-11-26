@@ -1,24 +1,8 @@
-import type { ContentBlock, RequestPermissionRequest, RequestPermissionResponse } from "@agentclientprotocol/sdk";
+import type { ContentBlock } from "@agentclientprotocol/sdk";
 import type { AskConfigOption, AskContext, AskPort } from "../contract.js";
 import { type AskPart, type AskTurn } from "./parts.js";
-/** 等用户点的许可请求（按 toolCallId 认；窗口在那张工具卡片上画按钮）。 */
-export type PendingPermission = {
-    request: RequestPermissionRequest;
-    resolve: (response: RequestPermissionResponse) => void;
-};
-export declare class PermissionStore {
-    private pending;
-    private listeners;
-    private version;
-    add(request: RequestPermissionRequest): Promise<RequestPermissionResponse>;
-    get(toolCallId: string): PendingPermission | undefined;
-    all(): PendingPermission[];
-    /** 关窗 / 停下时，没回的都按取消回掉，agent 不会一直等。 */
-    cancelAll(): void;
-    subscribe: (listener: () => void) => () => boolean;
-    snapshot: () => number;
-    private bump;
-}
+import type { PermissionStore } from "./permissions.js";
+export { PermissionStore, type PendingPermission } from "./permissions.js";
 /** 一轮回答 → assistant-ui 的 content parts。 */
 export declare function toAssistantParts(parts: readonly AskPart[]): ({
     type: "text";
@@ -64,6 +48,13 @@ export type AcpChatOptions = {
     now?: () => number;
     /** agent 的设置项变了（开了新会话、agent 推来 config_option_update、用户改了）。 */
     onConfig?: (options: AskConfigOption[]) => void;
+    /** 窗口打开时已经在对话里的消息编号（按顺序）：改了其中一条问、重新回答时，知道改的是哪条。 */
+    initialIds?: readonly string[];
+    /**
+     * 改了一条已经发过的问（或重新回答）：先交给宿主（后端把那条和它之后的作废），再开新会话用改后的问去问。
+     * 返回那一问原来的出处（这一问照用）；抛错就不问了，错误写在回答的位置。
+     */
+    onRewrite?: (questionId: string) => Promise<AskContext | null | void>;
     /** 发问那一刻：哪条问题带了哪个出处（窗口在问题上面画小标签）。 */
     onAsked?: (messageId: string, context: AskContext | null) => void;
     /** 用户选过的值（模型、思考强度……）：每开一个新会话再设一次。 */
@@ -166,7 +157,8 @@ export declare function createAcpChatAdapter(options: AcpChatOptions): {
         sessionId?: string;
         memoryIds: string[];
         startedAt?: number;
+        questionId?: string;
+        editedFrom?: string;
     };
     close(): void;
 };
-export {};

@@ -34,6 +34,8 @@ export function useTurns({ thread, agentId, run, sessionId, onTurn, onTurnDone, 
                         question, answer, context: info.context, agentId: agentId(), sessionId: info.sessionId, memoryIds: info.memoryIds,
                         ...(info.startedAt ? { startedAt: info.startedAt } : {}),
                         ...(answerId ? { answerId } : {}),
+                        ...(info.questionId ? { questionId: info.questionId } : {}),
+                        ...(info.editedFrom ? { editedFrom: info.editedFrom } : {}),
                     });
                 }
             }

@@ -11,6 +11,8 @@ type RunInfo = {
     sessionId?: string;
     memoryIds: string[];
     startedAt?: number;
+    questionId?: string;
+    editedFrom?: string;
 };
 /** 最后一问和它的回答；回答出错（连不上、断线）不算一轮。 */
 export declare function lastTurn(messages: readonly unknown[]): {

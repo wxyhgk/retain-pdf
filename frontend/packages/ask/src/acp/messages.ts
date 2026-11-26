@@ -64,7 +64,8 @@ export function toInitialMessages(messages: readonly AskMessage[]) {
   return messages.map((message) => {
     const id = message.id ? { id: message.id } : {};
     if (message.role === "user") {
-      return { ...id, role: "user" as const, content: message.text, ...(message.context ? { metadata: { custom: { context: message.context } } } : {}) };
+      const custom = { ...(message.context ? { context: message.context } : {}), ...(message.marks?.rewrote ? { rewrote: message.marks.rewrote } : {}) };
+      return { ...id, role: "user" as const, content: message.text, ...(Object.keys(custom).length ? { metadata: { custom } } : {}) };
     }
     const usage = (message.usage || {}) as AskUsage & { elapsedMs?: number; firstTokenMs?: number; thoughtMs?: number };
     // 思考用时放回思考那一段的起止（标题照样写「思考 · 1.2s」）。

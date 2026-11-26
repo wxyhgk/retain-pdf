@@ -32,6 +32,7 @@ export declare function useAskConversation({ port, book, onAppended }: {
     close: () => void;
     loadEarlier: () => Promise<void>;
     onTurn: (turn: AskTurnRecord) => void;
+    rewrite: (windowId: string) => Promise<import("@retainpdf/contracts/ask-conversations").AskSelectionRecord>;
     fork: (message: {
         id?: string;
         text: string;

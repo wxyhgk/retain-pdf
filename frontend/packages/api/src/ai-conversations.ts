@@ -29,6 +29,7 @@ import type {
   PatchAskConversationInput,
   PatchAskMemoryInput,
   PatchAskSettingsInput,
+  SupersedeAskMessagesView,
 } from "@retainpdf/contracts/ask-conversations";
 
 export type * from "@retainpdf/contracts/ask-conversations";
@@ -76,6 +77,11 @@ export function listAskConversationMessages(apiPrefix: Prefix, conversationId: s
 /** 追加一轮（问和答一起，client_message_id 重试安全）。 */
 export function appendAskConversationMessages(apiPrefix: Prefix, conversationId: string, body: AppendAskMessagesInput, options?: RequestOptions): Promise<AppendAskMessagesView> {
   return generated.appendAskConversationMessages(apiPrefix, { conversation_id: conversationId, body }, options);
+}
+
+/** 改一条已发出的问（或重新回答）：这条问和它之后的作废，之后用改后的问重问、追加时带 edited_from。 */
+export function supersedeAskConversationMessage(apiPrefix: Prefix, conversationId: string, messageId: string, options?: RequestOptions): Promise<SupersedeAskMessagesView> {
+  return generated.supersedeAskConversationMessage(apiPrefix, { conversation_id: conversationId, message_id: messageId }, options);
 }
 
 /** 压缩：后端用设置里的模型把旧的几轮压成摘要。 */

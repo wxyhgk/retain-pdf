@@ -1,4 +1,4 @@
-import type { AppendAskMessagesInput, AppendAskMessagesView, AskCompactionListView, AskContextQuery, AskContextView, AskConversationDeleteResultView, AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord, AskMessagePageView, AskSettingsRecord, CloseAskConversationInput, CloseAskConversationView, CreateAskCompactionInput, CreateAskCompactionView, CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput } from "@retainpdf/contracts/ask-conversations";
+import type { AppendAskMessagesInput, AppendAskMessagesView, AskCompactionListView, AskContextQuery, AskContextView, AskConversationDeleteResultView, AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord, AskMessagePageView, AskSettingsRecord, CloseAskConversationInput, CloseAskConversationView, CreateAskCompactionInput, CreateAskCompactionView, CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput, SupersedeAskMessagesView } from "@retainpdf/contracts/ask-conversations";
 import { type RequestOptions } from "../request.js";
 /** POST /api/v1/ai/ask-conversations/main */
 export declare function getMainAskConversation(apiPrefix: string | undefined, _args?: Record<string, never>, options?: RequestOptions): Promise<AskConversationRecord>;
@@ -38,6 +38,11 @@ export declare function appendAskConversationMessages(apiPrefix: string | undefi
     conversation_id: string;
     body: AppendAskMessagesInput;
 }, options?: RequestOptions): Promise<AppendAskMessagesView>;
+/** POST /api/v1/ai/ask-conversations/:conversation_id/messages/:message_id/supersede */
+export declare function supersedeAskConversationMessage(apiPrefix: string | undefined, args: {
+    conversation_id: string;
+    message_id: string;
+}, options?: RequestOptions): Promise<SupersedeAskMessagesView>;
 /** POST /api/v1/ai/ask-conversations/:conversation_id/compactions */
 export declare function createAskCompaction(apiPrefix: string | undefined, args: {
     conversation_id: string;

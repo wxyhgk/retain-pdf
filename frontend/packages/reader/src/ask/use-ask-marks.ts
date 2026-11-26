@@ -8,6 +8,7 @@ import type { AskConversationMessageRecord } from "@retainpdf/api/ai";
 
 import type { ReaderAskAnchor, ReaderAskPort } from "../contracts/ask.js";
 import type { AskMark } from "./ReaderAskMarks.js";
+import { selectionAnchor } from "./conversation-messages.js";
 
 export type AskPointOf = (itemId: string | null, pane: "source" | "translated", page: number) => { x: number; y: number } | null;
 
@@ -18,16 +19,7 @@ export function recordMark(record: AskConversationMessageRecord, key: number, po
   if (record.role !== "user" || !page) return null;
   const pane = (record.pane ?? selection?.pane) === "source" ? "source" : "translated";
   const itemId = selection?.item_ids?.[0] ?? null;
-  const anchor: ReaderAskAnchor = {
-    pane,
-    page,
-    itemId,
-    selection: selection?.selected_text || "",
-    sourceText: selection?.source_text || "",
-    translatedText: selection?.translated_text || "",
-    section: selection?.section || "",
-    point: pointOf(itemId, pane, page),
-  };
+  const anchor: ReaderAskAnchor = selectionAnchor({ item_ids: [], ...selection, page, pane }, pointOf(itemId, pane, page));
   return { key, anchor, messageId: record.message_id, title: record.text.slice(0, 80) };
 }
 

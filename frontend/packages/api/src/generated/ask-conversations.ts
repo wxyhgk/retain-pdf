@@ -28,6 +28,7 @@ import type {
   PatchAskConversationInput,
   PatchAskMemoryInput,
   PatchAskSettingsInput,
+  SupersedeAskMessagesView,
 } from "@retainpdf/contracts/ask-conversations";
 import { encodePathParam, request, type RequestOptions } from "../request.js";
 
@@ -110,6 +111,15 @@ export function appendAskConversationMessages(
   options?: RequestOptions,
 ): Promise<AppendAskMessagesView> {
   return request<AppendAskMessagesView>({ apiPrefix, method: "POST", path: `ai/ask-conversations/${encodePathParam(args.conversation_id)}/messages`, body: args.body, options });
+}
+
+/** POST /api/v1/ai/ask-conversations/:conversation_id/messages/:message_id/supersede */
+export function supersedeAskConversationMessage(
+  apiPrefix: string | undefined,
+  args: { conversation_id: string; message_id: string },
+  options?: RequestOptions,
+): Promise<SupersedeAskMessagesView> {
+  return request<SupersedeAskMessagesView>({ apiPrefix, method: "POST", path: `ai/ask-conversations/${encodePathParam(args.conversation_id)}/messages/${encodePathParam(args.message_id)}/supersede`, options });
 }
 
 /** POST /api/v1/ai/ask-conversations/:conversation_id/compactions */

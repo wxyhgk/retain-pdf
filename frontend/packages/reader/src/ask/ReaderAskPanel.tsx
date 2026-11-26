@@ -10,7 +10,7 @@ import { Button } from "@retainpdf/ui";
 import type { ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
 import { resolveKatexStylesheetUrl } from "../external.js";
 import { bindAskPort, toAskContext } from "./ask-context.js";
-import { anchorSelection, type AskBook } from "./conversation-messages.js";
+import { anchorSelection, selectionAnchor, type AskBook } from "./conversation-messages.js";
 import { ReaderMemoryPanel } from "./ReaderMemoryPanel.js";
 import type { useAskConversation } from "./use-ask-conversation.js";
 
@@ -124,6 +124,11 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       onFork={main && ask.persistent ? (message) => void ask.fork(message) : undefined}
       onOpenSide={ask.persistent ? (sideId) => void ask.openSide(sideId) : undefined}
       onForgetMemory={ask.forgetMemory}
+      onRewrite={ask.persistent ? async (questionId) => {
+        // 改一问、重新回答：后端作废它和之后的；这一问照用原来的出处。
+        const selection = await ask.rewrite(questionId);
+        return selection ? toAskContext(selectionAnchor(selection), jobId, bookTitle, { ...selection, item_ids: selection.item_ids || [] }) : null;
+      } : undefined}
       memories={ask.notices}
       onJumpToPage={onJumpToPage}
       pageCount={pageCount}

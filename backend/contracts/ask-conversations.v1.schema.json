@@ -95,6 +95,7 @@
     {
       "method": "POST",
       "path": "/api/v1/ai/ask-conversations/:conversation_id/messages/:message_id/supersede",
+      "client_name": "supersedeAskConversationMessage",
       "transport": "json",
       "output": "SupersedeAskMessagesView",
       "rust_view": "SupersedeAskMessagesView",

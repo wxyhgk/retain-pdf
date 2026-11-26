@@ -16,6 +16,7 @@ import {
   listAskConversationMessages,
   listAskMemories,
   listDocumentAskMessages,
+  supersedeAskConversationMessage,
   updateAskConversation,
   updateAskMemory,
   updateAskSettings,
@@ -33,6 +34,7 @@ export function createAskConversationsPort(connection: () => Promise<AskModelCon
       ...(page.beforeSeq ? { before_seq: page.beforeSeq } : {}),
       ...(page.limit ? { limit: page.limit } : {}),
     }),
+    supersede: (conversationId, messageId) => supersedeAskConversationMessage(API_PREFIX, conversationId, messageId),
     append: (conversationId, messages) => appendAskConversationMessages(API_PREFIX, conversationId, { messages: messages as never }),
     contextText: async (conversationId, documentId) => {
       const context = await getAskConversationContext(API_PREFIX, conversationId, documentId ? { document_id: documentId } : {});

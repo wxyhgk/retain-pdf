@@ -1,5 +1,5 @@
 import type { AskAgent, AskHandlers, AskMessage, AskSession } from "@retainpdf/ask";
-import type { AppendAskMessagesView, AskConversationMessageInput, AskConversationMessageRecord, AskConversationRecord, AskMemoryCreatedView, AskMemoryRecord, AskMessagePageView, AskSettingsRecord, CloseAskConversationView, CreateAskMemoryInput, CreateAskSideConversationInput, ListAskMemoriesQuery, PatchAskMemoryInput } from "@retainpdf/api/ai";
+import type { AppendAskMessagesView, AskConversationMessageInput, AskConversationMessageRecord, AskConversationRecord, AskMemoryCreatedView, AskMemoryRecord, AskMessagePageView, AskSettingsRecord, CloseAskConversationView, CreateAskMemoryInput, CreateAskSideConversationInput, ListAskMemoriesQuery, PatchAskMemoryInput, SupersedeAskMessagesView } from "@retainpdf/api/ai";
 /** 能用的 agent。和提问窗的 AskAgent 是同一个东西。 */
 export type ReaderAskAgent = AskAgent;
 export type ReaderAskHandlers = AskHandlers;
@@ -43,6 +43,8 @@ export type ReaderAskConversationsPort = {
         beforeSeq?: number;
         limit?: number;
     }) => Promise<AskMessagePageView>;
+    /** 改一条已发出的问（重新回答也是）：这条问和它之后的作废，之后追加改后的问带 edited_from。 */
+    supersede: (conversationId: string, messageId: string) => Promise<SupersedeAskMessagesView>;
     /** 追加一轮（问和答一起）。返回 compaction_due 时宿主自己去压（compact）。 */
     append: (conversationId: string, messages: AskConversationMessageInput[]) => Promise<AppendAskMessagesView>;
     /** 新会话第一问前面带的前文（上下文接口拼好的 text：记忆 + 摘要 + 最近几轮）；给不认结构的本机 agent。 */

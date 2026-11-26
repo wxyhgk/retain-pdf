@@ -8,6 +8,7 @@ import {
   forkTitle,
   laterMemories,
   memoriesSince,
+  plainSnippet,
   recordsToMessages,
   selectionContext,
   turnToAppend,
@@ -112,4 +113,21 @@ test("agent 不在工具卡片里报记忆（RetainPDF + pi）：一轮答完按
   });
   const found = laterMemories([memory("m1"), memory("m2", { origin: "user" }), memory("m3", { status: "superseded" }), memory("m4")], new Set(["m4"]));
   assert.deepEqual(found, [{ id: "m1", scope: "user", text: "记忆 m1", category: "style", documentId: null, created: true }]);
+});
+
+test("改过一问：作废的不画，改后的问上面画「改过」（点开看原来的问和答）；追加时问带 edited_from", () => {
+  const messages = recordsToMessages([
+    record(1, "user", "原来的问", { superseded_at: "2026-11-26T10:01:00Z" }),
+    record(2, "assistant", "原来的答", { superseded_at: "2026-11-26T10:01:00Z" }),
+    record(3, "user", "改后的问", { edited_from: "msg-1" }),
+    record(4, "assistant", "新的答"),
+  ]);
+  assert.deepEqual(messages.map((message) => message.id), ["msg-3", "msg-4"]);
+  assert.deepEqual(messages[0].marks, { rewrote: { question: "原来的问", answer: "原来的答" } });
+  const turn = { question: { role: "user", text: "改后的问" }, answer: { role: "assistant", text: "答" }, context: null, agentId: "a", memoryIds: [] };
+  const [question] = turnToAppend(turn, "doc-1", "c-9", "msg-1");
+  assert.equal(question.edited_from, "msg-1");
+  assert.equal(turnToAppend(turn, "doc-1", "c-9")[0].edited_from, undefined, "没改过不带");
+  assert.equal(plainSnippet("**结论**：是 $x$。\n\n$$\nE=mc^2\n$$\n\n```openui-lang\nroot = Col()\n```\n后面"), "结论：是 $x$。 … 后面");
+  assert.equal(plainSnippet("一".repeat(200)).length, 161);
 });
