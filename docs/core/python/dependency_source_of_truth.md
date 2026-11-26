@@ -10,6 +10,9 @@ Python 后端按可部署单元维护依赖：
 
 - 各服务运行时依赖：对应成员的 `project.dependencies`
 - 各服务测试依赖：对应成员的 `project.optional-dependencies.test`
+- 可选功能的依赖：成员的其他 extra。现在只有 pipeline 的 `scan-ocr`（`rapidocr`、`onnxruntime`，扫描件的公式编号截图识别，2026-11-26）：
+  后端工作区依赖 `retainpdf-pipeline[scan-ocr]`，开发环境、CI、Docker（`uv export` 工作区）都装；生成的 Docker 清单带上它，
+  桌面清单只放必装依赖（没装时这一步自己跳过）
 - Python 版本：
   `project.requires-python`
 - 非 Python 二进制依赖：
