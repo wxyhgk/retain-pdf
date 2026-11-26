@@ -23,12 +23,16 @@ test("胶囊滑块：几档都行、键盘和点轨道换档、颜色按位置�
     document.body.appendChild(host);
     const root = createRoot(host);
     const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+    // 机器忙（整套测试并发跑）时 React 落地慢：等到条件成立，最多 2 秒。
+    const until = async (check) => {
+      for (let index = 0; index < 100 && !check(); index += 1) await settle();
+    };
     const draw = (value, list = levels) => root.render(React.createElement(EffortSlider, { levels: list, value, onChange: (id) => changes.push(id), colorAt: (index, count) => `c${index}/${count}` }));
 
-    draw("low");
-    await settle();
     const slider = () => document.querySelector("[data-slot=effort-slider]");
     const input = () => slider().querySelector("input[type=range]");
+    draw("low");
+    await until(() => slider()?.querySelector(".aui-effort-slider-in")?.textContent === "low");
     assert.equal(input().getAttribute("max"), "3", "agent 给四档就四档");
     assert.equal(input().getAttribute("aria-valuetext"), "low");
     assert.equal(slider().querySelector(".aui-effort-slider-in").textContent, "low", "名字照 agent 给的");
@@ -39,39 +43,40 @@ test("胶囊滑块：几档都行、键盘和点轨道换档、颜色按位置�
     let leaked = 0;
     document.addEventListener("keydown", () => (leaked += 1));
     input().dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
-    await settle();
+    await until(() => changes.length === 1);
     assert.deepEqual(changes, ["high"], "→ 往强一档");
     assert.equal(leaked, 0, "方向键不传给外面（弹层里的模型列表也听方向键）");
     input().dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "End", bubbles: true }));
+    await until(() => changes.length === 2);
     input().dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Home", bubbles: true }));
-    await settle();
+    await until(() => changes.length === 3);
     assert.deepEqual(changes, ["high", "max", "off"]);
 
     // 不是拖（读屏软件、点轨道没按住）：落到最近一档。
     changes.length = 0;
     draw("off");
-    await settle();
+    await until(() => input().getAttribute("aria-valuetext") === "off");
     const setValue = Object.getOwnPropertyDescriptor(dom.window.HTMLInputElement.prototype, "value").set;
     setValue.call(input(), "1.7");
     input().dispatchEvent(new dom.window.Event("input", { bubbles: true }));
-    await settle();
+    await until(() => changes.length === 1);
     assert.deepEqual(changes, ["high"]);
 
     // 外面改了（agent 推来的）：跟着跳，不回调。
     changes.length = 0;
     draw("max");
-    await settle();
+    await until(() => input().getAttribute("aria-valuetext") === "max");
     assert.equal(input().getAttribute("aria-valuetext"), "max");
     assert.equal(slider().style.getPropertyValue("--effort-progress"), "1");
     assert.deepEqual(changes, []);
 
     // 两档（Qwen 的开 / 关）也行；只有一档没得选，不画。
     draw("on", [{ id: "off", name: "关" }, { id: "on", name: "开" }]);
-    await settle();
+    await until(() => input().getAttribute("aria-valuetext") === "开");
     assert.equal(input().getAttribute("max"), "1");
     assert.equal(input().getAttribute("aria-valuetext"), "开");
     draw("x", [{ id: "x", name: "x" }]);
-    await settle();
+    await until(() => slider() === null);
     assert.equal(slider(), null);
     root.unmount();
     await new Promise((resolve) => setTimeout(resolve, 100));

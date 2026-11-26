@@ -33,12 +33,14 @@ export type ReaderAskThreadsPort = {
     get: (documentId: string, threadId: string) => Promise<ReaderAskThread>;
     create: (documentId: string, input: {
         agentId: string;
+        sessionId?: string;
         anchor: ReaderAskAnchor;
         messages: ReaderAskMessage[];
     }) => Promise<ReaderAskThread>;
     /** 整段问答一起换掉（每答完一轮写一次）。 */
     update: (documentId: string, threadId: string, input: {
         agentId?: string;
+        sessionId?: string;
         messages: ReaderAskMessage[];
     }) => Promise<ReaderAskThread>;
     remove: (documentId: string, threadId: string) => Promise<void>;

@@ -124,11 +124,11 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
             if (wasRunning && !state.isRunning) {
                 const stored = toStoredMessages(state.messages);
                 if (stored.length)
-                    turnDoneRef.current?.(stored, live.current.agentId);
+                    turnDoneRef.current?.(stored, live.current.agentId, chat.sessionId());
             }
             wasRunning = state.isRunning;
         });
-    }, [runtime]);
+    }, [runtime, chat]);
     const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
     // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
     const send = useMemo(() => (text) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);

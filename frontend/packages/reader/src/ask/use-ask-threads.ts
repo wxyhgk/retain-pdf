@@ -66,23 +66,25 @@ export function useAskThreads({ port, documentId, resetKey }: { port: ReaderAskP
     }
   }, [threads, documentId]);
 
-  const save = useCallback((key: number, messages: ReaderAskMessage[], agentId: string) => {
+  // sessionId：答这一轮的 ACP 会话。后端删问答、删书时按它清 agent 自己存的会话文件（retainpdf-pi），换了会话就带新的。
+  const save = useCallback((key: number, messages: ReaderAskMessage[], agentId: string, sessionId?: string) => {
+    const session = sessionId ? { sessionId } : {};
     cache.current.set(key, messages);
     if (!threads || !documentId) return;
     const mark = marksRef.current.find((entry) => entry.key === key);
     if (!mark) return;
     if (mark.threadId) {
-      threads.update(documentId, mark.threadId, { agentId, messages }).catch(() => {});
+      threads.update(documentId, mark.threadId, { agentId, ...session, messages }).catch(() => {});
       return;
     }
     if (creating.current.has(key)) return;
     creating.current.add(key);
-    threads.create(documentId, { agentId, anchor: mark.anchor, messages }).then(
+    threads.create(documentId, { agentId, ...session, anchor: mark.anchor, messages }).then(
       (thread) => {
         setMarks((current) => current.map((entry) => (entry.key === key ? { ...entry, threadId: thread.threadId, title: thread.title } : entry)));
         // 新建期间又答完了一轮：补存最新的。
         const latest = cache.current.get(key);
-        if (latest && latest.length > messages.length) threads.update(documentId, thread.threadId, { agentId, messages: latest }).catch(() => {});
+        if (latest && latest.length > messages.length) threads.update(documentId, thread.threadId, { agentId, ...session, messages: latest }).catch(() => {});
       },
       () => {
         // 存不上（比如一本书满 500 次）：这次打开里照样在，关了书就没了。

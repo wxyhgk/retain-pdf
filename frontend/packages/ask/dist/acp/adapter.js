@@ -83,6 +83,8 @@ export function createAcpChatAdapter(options) {
     let sentPreamble = false;
     // 这个会话已经听过几条（问 + 答）。重新回答、改了问题、切到别的版本时，对话和会话里的对不上：开新会话，把到这里为止的带过去。
     let sessionSeen = 0;
+    // 答最近一轮的那个会话的 sessionId（会话之后可能被关掉、重开，存问答记录时要的是答了这一轮的那个）。
+    let answeredBy;
     // 正在开的会话（提前开和发问撞在一起时只开一个）。
     let opening = null;
     const open = async (agentId) => {
@@ -193,6 +195,7 @@ export function createAcpChatAdapter(options) {
             let finished = false;
             let failure = null;
             let stopReason = "end_turn";
+            answeredBy = current.sessionId;
             current.prompt(blocks).then((result) => {
                 stopReason = result.stopReason;
                 // 结果里的用量（Claude Code 的 usage、自带 agent 的 _meta.retainpdf.usage）合进这一轮，底下那一行就有分项 token。
@@ -286,6 +289,8 @@ export function createAcpChatAdapter(options) {
             }
             return true;
         },
+        /** 答最近一轮的会话的 sessionId（agent 没给就没有）。 */
+        sessionId: () => answeredBy,
         close() {
             options.permissions.cancelAll();
             session?.close();

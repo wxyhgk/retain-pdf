@@ -15,7 +15,7 @@ export type ReaderAskPanelProps = {
   /** 点标题栏的页码：跳回问的那一处。 */
   onShowAnchor?: () => void;
   initialMessages?: readonly ReaderAskMessage[];
-  onTurnDone?: (messages: ReaderAskMessage[], agentId: string) => void;
+  onTurnDone?: (messages: ReaderAskMessage[], agentId: string, sessionId?: string) => void;
   onDelete?: () => void;
   onJumpToPage?: (page: number) => void;
   pageCount?: number;

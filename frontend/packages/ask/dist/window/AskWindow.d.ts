@@ -21,7 +21,8 @@ export type AskWindowProps = {
     /** 这一处之前的问答（宿主存的），接着显示。 */
     initialMessages?: readonly AskMessage[];
     /** 每答完一轮：整段问答交出去存。 */
-    onTurnDone?: (messages: AskMessage[], agentId: string) => void;
+    /** sessionId 是答这一轮的 ACP 会话（agent 没给就没有），存问答记录时带上。 */
+    onTurnDone?: (messages: AskMessage[], agentId: string, sessionId?: string) => void;
     /** 删掉这次提问。不给就没有删除按钮。 */
     onDelete?: () => void;
     /** 回答里的页码点了跳到那一页。不给页码就不能点。 */

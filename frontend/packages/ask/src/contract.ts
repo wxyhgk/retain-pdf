@@ -54,6 +54,8 @@ export type AskConfigOption = {
 
 /** 一个 ACP 会话（session/new 开出来的）。 */
 export type AskSession = {
+  /** ACP session/new 回的 sessionId。宿主存问答记录时带上（后端删问答、删书时按它清 agent 自己存的会话文件）。 */
+  sessionId?: string;
   /** 开会话时 agent 给的设置项（没有就是没有，窗口不画选择器）。 */
   configOptions?: AskConfigOption[];
   /** 改一个设置项（session/set_config_option），返回改完的整份设置项。agent 不支持就不给这个方法。 */

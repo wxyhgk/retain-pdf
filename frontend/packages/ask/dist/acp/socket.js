@@ -26,6 +26,7 @@ export async function openAcpWebSocketSession(url, handlers, options = {}) {
     const created = await agent.request("session/new", { cwd: options.cwd ?? "", mcpServers: [] });
     const { sessionId } = created;
     return {
+        sessionId,
         // 模型、思考强度、模式……（ACP 的 configOptions；agent 不给就是空的，窗口不画选择器）。
         configOptions: normalizeConfigOptions(created.configOptions),
         setConfigOption: async (configId, value) => {

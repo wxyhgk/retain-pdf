@@ -720,7 +720,7 @@ export function ReaderAppReactPdf() {
               onJumpToPage={(page) => c.goToPage(page, ask.anchor.pane)}
               pageCount={panes.hudNumPages || 0}
               initialMessages={ask.initial}
-              onTurnDone={(messages, agentId) => askThreads.save(ask.key, messages, agentId)}
+              onTurnDone={(messages, agentId, sessionId) => askThreads.save(ask.key, messages, agentId, sessionId)}
               onDelete={() => askThreads.remove(ask.key)}
             />
           </Suspense>

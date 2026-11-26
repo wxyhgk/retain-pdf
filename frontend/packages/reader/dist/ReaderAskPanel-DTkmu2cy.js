@@ -1,7 +1,7 @@
 import { jsx as f } from "react/jsx-runtime";
 import { useMemo as l } from "react";
 import x from "@retainpdf/ask/window";
-import { r as a } from "./ReaderApp-DckwODmA.js";
+import { r as a } from "./ReaderApp-BP1shg2L.js";
 const d = 4e3;
 function o(e, t = d) {
   const s = `${e || ""}`.trim();
@@ -38,4 +38,4 @@ function P({ port: e, jobId: t, bookTitle: s, anchor: i, onShowAnchor: n, ...u }
 export {
   P as default
 };
-//# sourceMappingURL=ReaderAskPanel-CDQJbsFy.js.map
+//# sourceMappingURL=ReaderAskPanel-DTkmu2cy.js.map

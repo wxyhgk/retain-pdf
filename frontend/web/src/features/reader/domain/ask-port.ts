@@ -231,18 +231,30 @@ function toMessageInputs(messages: readonly ReaderAskMessage[]) {
   return messages.map((message) => ({ role: message.role, text: message.text, thought: message.thought ?? null, usage: message.usage ?? null }));
 }
 
+/** 建问答记录的请求体。session_id 是 ACP 的 sessionId：后端删问答、删书时按它清 retainpdf-pi 的会话文件（别的 agent 带上也不碍事）。 */
+export function toCreateThreadBody(input: Parameters<ReaderAskThreadsPort["create"]>[1]) {
+  return {
+    agent_id: input.agentId,
+    ...(input.sessionId ? { session_id: input.sessionId } : {}),
+    anchor: toAnchorRecord(input.anchor),
+    messages: toMessageInputs(input.messages),
+  };
+}
+
+/** 改问答记录的请求体：给了的才改（agent 换了、会话重开了带新的）。 */
+export function toPatchThreadBody(input: Parameters<ReaderAskThreadsPort["update"]>[2]) {
+  return {
+    ...(input.agentId ? { agent_id: input.agentId } : {}),
+    ...(input.sessionId ? { session_id: input.sessionId } : {}),
+    messages: toMessageInputs(input.messages),
+  };
+}
+
 const askThreadsPort: ReaderAskThreadsPort = {
   list: async (documentId) => ((await listAskThreads(API_PREFIX, documentId)).threads || []).map((row) => fromThreadRecord(row as ThreadRow)),
   get: async (documentId, threadId) => fromThreadRecord((await getAskThread(API_PREFIX, documentId, threadId)) as ThreadRow),
-  create: async (documentId, input) => fromThreadRecord((await createAskThread(API_PREFIX, documentId, {
-    agent_id: input.agentId,
-    anchor: toAnchorRecord(input.anchor),
-    messages: toMessageInputs(input.messages),
-  } as never)) as ThreadRow),
-  update: async (documentId, threadId, input) => fromThreadRecord((await updateAskThread(API_PREFIX, documentId, threadId, {
-    ...(input.agentId ? { agent_id: input.agentId } : {}),
-    messages: toMessageInputs(input.messages),
-  } as never)) as ThreadRow),
+  create: async (documentId, input) => fromThreadRecord((await createAskThread(API_PREFIX, documentId, toCreateThreadBody(input) as never)) as ThreadRow),
+  update: async (documentId, threadId, input) => fromThreadRecord((await updateAskThread(API_PREFIX, documentId, threadId, toPatchThreadBody(input) as never)) as ThreadRow),
   remove: async (documentId, threadId) => {
     await deleteAskThread(API_PREFIX, documentId, threadId);
   },

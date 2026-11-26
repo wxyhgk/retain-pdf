@@ -73,3 +73,13 @@ test("自带类 agent 的模型：就是设置里存的连接，提问窗选过�
   const source = (await import("node:fs")).readFileSync(new URL("../../src/features/reader/domain/ask-port.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /TRANSLATION_THINKING_OPTIONS/, "思考档位不写死在前端");
 });
+
+test("问答记录的请求体带 ACP 的 sessionId（后端删问答、删书时按它清 pi 的会话文件）；没有就不带，改的时候给了才改", async () => {
+  const { toCreateThreadBody, toPatchThreadBody } = await import("../../src/features/reader/domain/ask-port.ts");
+  const anchor = fromAnchorRecord({ pane: "source", page: 3 });
+  const messages = [{ role: "user", text: "Q" }];
+  assert.equal(toCreateThreadBody({ agentId: "retainpdf-pi", sessionId: "s-1", anchor, messages }).session_id, "s-1");
+  assert.equal("session_id" in toCreateThreadBody({ agentId: "retainpdf", anchor, messages }), false);
+  assert.deepEqual(toPatchThreadBody({ agentId: "retainpdf-pi", sessionId: "s-2", messages }), { agent_id: "retainpdf-pi", session_id: "s-2", messages: [{ role: "user", text: "Q", thought: null, usage: null }] });
+  assert.deepEqual(Object.keys(toPatchThreadBody({ messages })), ["messages"]);
+});

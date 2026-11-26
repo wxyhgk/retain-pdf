@@ -118,6 +118,8 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
   let sentPreamble = false;
   // 这个会话已经听过几条（问 + 答）。重新回答、改了问题、切到别的版本时，对话和会话里的对不上：开新会话，把到这里为止的带过去。
   let sessionSeen = 0;
+  // 答最近一轮的那个会话的 sessionId（会话之后可能被关掉、重开，存问答记录时要的是答了这一轮的那个）。
+  let answeredBy: string | undefined;
 
   // 正在开的会话（提前开和发问撞在一起时只开一个）。
   let opening: Promise<AskSession> | null = null;
@@ -228,6 +230,7 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       let finished = false;
       let failure: unknown = null;
       let stopReason = "end_turn";
+      answeredBy = current.sessionId;
       current.prompt(blocks).then(
         (result) => {
           stopReason = result.stopReason;
@@ -320,6 +323,8 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       }
       return true;
     },
+    /** 答最近一轮的会话的 sessionId（agent 没给就没有）。 */
+    sessionId: () => answeredBy,
     close() {
       options.permissions.cancelAll();
       session?.close();

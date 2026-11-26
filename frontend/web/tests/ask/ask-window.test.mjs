@@ -101,6 +101,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
         { id: "codex", name: "Codex", available: false, install: "npm install -g codex-acp" },
       ],
       openSession: async ({ agentId }, handlers) => ({
+        sessionId: "sess-1",
         prompt: async (blocks) => {
           prompts.push({ agentId, blocks });
           handlers.onUpdate({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "见第 12 页。" } });
@@ -112,6 +113,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     };
     const jumps = [];
     let closed = 0;
+    const turns = [];
     const host = document.createElement("div");
     document.body.appendChild(host);
     const root = createRoot(host);
@@ -128,6 +130,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
       context: { page: 56, label: "第 56 页 · 2.1", quote: { source: "where $ M_{A} $ is the mass", translated: "其中质量" }, preamble: "我在读一本书，第 56 页。" },
       onClose: () => (closed += 1),
       onJumpToPage: (page) => jumps.push(page),
+      onTurnDone: (messages, agentId, sessionId) => turns.push({ count: messages.length, agentId, sessionId }),
       pageCount: 100,
     }));
     await until(() => document.querySelector(".ask-starter") && /RetainPDF 自带模型/.test(document.querySelector(".ask-agent-trigger")?.getAttribute("title") || ""), "常问按钮和 agent 列表");
@@ -142,6 +145,8 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     assert.equal(prompts[0].blocks[0].text, "我在读一本书，第 56 页。", "第一问前面带宿主给的出处");
     document.querySelector(".aui-md-p .ask-page").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     assert.deepEqual(jumps, [12]);
+    await until(() => turns.length, "答完一轮交出去存");
+    assert.deepEqual(turns.at(-1), { count: 2, agentId: "a", sessionId: "sess-1" }, "存问答记录时带上答这一轮的 ACP 会话");
 
     const button = (label) => [...document.querySelectorAll(".ask-head button")].find((element) => element.getAttribute("aria-label") === label);
     button("贴到右边").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));

@@ -64,8 +64,9 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
 test("问答记录接线：读回问过的地方、每答完一轮存、一句没问就关不留「?」、能删", () => {
   const hook = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-threads.ts", import.meta.url), "utf8");
   assert.match(hook, /threads\.list\(documentId\)/);
-  assert.match(hook, /threads\.create\(documentId, \{ agentId, anchor: mark\.anchor, messages \}\)/);
-  assert.match(hook, /threads\.update\(documentId, mark\.threadId, \{ agentId, messages \}\)/);
+  assert.match(hook, /threads\.create\(documentId, \{ agentId, \.\.\.session, anchor: mark\.anchor, messages \}\)/);
+  assert.match(hook, /threads\.update\(documentId, mark\.threadId, \{ agentId, \.\.\.session, messages \}\)/);
+  assert.match(hook, /const session = sessionId \? \{ sessionId \} : \{\}/, "带上答这一轮的 ACP 会话（后端删问答时清 pi 的会话文件）");
   assert.match(hook, /if \(mark && !mark\.threadId\) setMarks/);
 });
 

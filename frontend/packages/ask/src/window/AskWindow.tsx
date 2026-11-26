@@ -94,7 +94,8 @@ export type AskWindowProps = {
   /** 这一处之前的问答（宿主存的），接着显示。 */
   initialMessages?: readonly AskMessage[];
   /** 每答完一轮：整段问答交出去存。 */
-  onTurnDone?: (messages: AskMessage[], agentId: string) => void;
+  /** sessionId 是答这一轮的 ACP 会话（agent 没给就没有），存问答记录时带上。 */
+  onTurnDone?: (messages: AskMessage[], agentId: string, sessionId?: string) => void;
   /** 删掉这次提问。不给就没有删除按钮。 */
   onDelete?: () => void;
   /** 回答里的页码点了跳到那一页。不给页码就不能点。 */
@@ -170,11 +171,11 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
       const state = runtime.thread.getState();
       if (wasRunning && !state.isRunning) {
         const stored = toStoredMessages(state.messages as never);
-        if (stored.length) turnDoneRef.current?.(stored, live.current.agentId);
+        if (stored.length) turnDoneRef.current?.(stored, live.current.agentId, chat.sessionId());
       }
       wasRunning = state.isRunning;
     });
-  }, [runtime]);
+  }, [runtime, chat]);
   const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
   // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
   const send = useMemo(() => (text: string) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);

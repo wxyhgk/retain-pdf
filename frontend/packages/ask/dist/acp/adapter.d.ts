@@ -154,6 +154,8 @@ export declare function createAcpChatAdapter(options: AcpChatOptions): {
     prepare(): Promise<void>;
     /** 改一个设置项：会话开着就马上设；没开就等下次开会话（getDesiredConfig 里有）。 */
     setConfig(configId: string, value: string | boolean): Promise<boolean>;
+    /** 答最近一轮的会话的 sessionId（agent 没给就没有）。 */
+    sessionId: () => string;
     close(): void;
 };
 export {};

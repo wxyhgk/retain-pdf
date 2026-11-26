@@ -14,7 +14,7 @@ export declare function useAskThreads({ port, documentId, resetKey }: {
     open: OpenAsk;
     ask: (anchor: ReaderAskAnchor) => void;
     reopen: (mark: AskMark) => Promise<void>;
-    save: (key: number, messages: ReaderAskMessage[], agentId: string) => void;
+    save: (key: number, messages: ReaderAskMessage[], agentId: string, sessionId?: string) => void;
     remove: (key: number) => void;
     close: () => void;
     persistent: boolean;
