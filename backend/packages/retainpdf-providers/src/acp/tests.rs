@@ -42,6 +42,8 @@ fn config(root: &Path) -> AcpConfig {
         path_var: Some(root.join("bin").into_os_string()),
         current_exe: Some(root.join("bin").join("rust_api")),
         backend_root: Some(root.join("backend")),
+        agents_dir: root.join(AGENTS_DIR_NAME),
+        node_dir: None,
     }
 }
 
@@ -291,7 +293,7 @@ fn old_ids_stay_and_registry_ids_are_aliases() {
     assert_eq!(by_old.program, root.0.join("bin").join("claude-agent-acp"));
 
     // 不列的（付费市场、旧 id）列表里没有，也起不了
-    for hidden in ["agoragentic-acp", "opencode-v2", "kimi", "antigravity-acp"] {
+    for hidden in ["agoragentic-acp", "opencode-v2", "kimi"] {
         assert!(view.agents.iter().all(|agent| agent.registry_id.as_deref() != Some(hidden)), "{hidden}");
         assert_eq!(prepare_agent(&config, hidden, &local_headers(), &AcpConnectQuery::default(), None).map(|_| ()).map_err(status).unwrap_err(), 404, "{hidden}");
     }
@@ -315,7 +317,8 @@ fn binary_agents_use_the_archive_command_for_this_platform() {
     let root = temp_root("binary");
     fake_command(&root.0, "goose");
     let path = root.0.join("bin").into_os_string();
-    let views = registry::list_agents_on(&catalog, "linux-x86_64", "", Some(&path));
+    let lookup = registry::Lookup { path_var: Some(&path), ..Default::default() };
+    let views = registry::list_agents_on(&catalog, "linux-x86_64", "", &lookup);
     let ids: Vec<&str> = views.iter().map(|agent| agent.id.as_str()).collect();
     // 这个平台没有压缩包的、npx 又没核过命令名的不列
     assert_eq!(ids, ["retainpdf", "goose", "cursor"]);
@@ -327,7 +330,7 @@ fn binary_agents_use_the_archive_command_for_this_platform() {
     assert_eq!(cursor.install_url.as_deref(), Some("https://example.com/cursor.tar.gz"));
     assert!(cursor.reason.contains("cursor-agent") && cursor.reason.contains("https://example.com/cursor.tar.gz"), "{cursor:?}");
     // 本机 agent 关着：一律不能用，原因是闸门的
-    let views = registry::list_agents_on(&catalog, "darwin-aarch64", "多用户模式不起本机 agent", Some(&path));
+    let views = registry::list_agents_on(&catalog, "darwin-aarch64", "多用户模式不起本机 agent", &lookup);
     assert_eq!(views.len(), 3);
     assert!(views[1..].iter().all(|agent| !agent.available && agent.reason == "多用户模式不起本机 agent"));
 }

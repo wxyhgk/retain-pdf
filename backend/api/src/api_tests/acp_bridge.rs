@@ -62,6 +62,31 @@ async fn lists_agents_with_the_builtin_one_first() {
     assert!(body["data"]["local_agents"]["enabled"].is_boolean());
 }
 
+/// 代装本机 agent（2026-11-26）：闸门同 ACP 桥的本机 agent。这里只测进不去的几种，真装在 providers 的 acp 测试里（假 npm、本机压缩包）。
+#[cfg(unix)]
+#[tokio::test]
+async fn install_endpoint_is_gated_like_local_agents() {
+    let (state, _) = state("install");
+    let app = build_app(state);
+    let post = |path: &str, host: &str| {
+        Request::post(path).header("x-api-key", "test-key").header("host", host).body(Body::empty()).unwrap()
+    };
+    // 局域网地址打开的页面不装
+    let response = app.clone().oneshot(post("/api/v1/ai/agents/pi-acp/install", "192.168.1.5:41000")).await.unwrap();
+    assert_eq!(response.status(), StatusCode::FORBIDDEN);
+    // 不认识的 404，自带的不用装 400
+    let response = app.clone().oneshot(post("/api/v1/ai/agents/bash/install", "127.0.0.1:41000")).await.unwrap();
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    let response = app.clone().oneshot(post("/api/v1/ai/agents/retainpdf/install", "127.0.0.1:41000")).await.unwrap();
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+    // 没带密钥 401
+    let response = app
+        .oneshot(Request::post("/api/v1/ai/agents/pi-acp/install").header("host", "127.0.0.1").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
 #[cfg(unix)]
 #[tokio::test]
 async fn query_key_only_counts_for_websocket_handshakes() {

@@ -6,7 +6,7 @@
 import type { ReaderAskMessage } from "../contracts/ask.js";
 import { emptyTurn, type AskTurn, type AskUsage } from "./acp-parts.js";
 
-type PartLike = { type: string; text?: string };
+type PartLike = { type: string; text?: string; timing?: { startedAt?: number; completedAt?: number } };
 type MessageLike = { role: string; content: readonly PartLike[]; metadata?: { custom?: Record<string, unknown> } };
 
 const HISTORY_MESSAGES = 12;
@@ -25,6 +25,18 @@ function storedUsage(turn: AskTurn | undefined, endedAt: number | undefined): Re
   return Object.keys(usage).length ? usage : null;
 }
 
+/** 这一轮思考了多久（各段思考的起止加起来）；没有计时就是 null。 */
+function thinkingMs(content: readonly PartLike[]): number | null {
+  let total = 0;
+  let seen = false;
+  for (const part of content) {
+    if (part.type !== "reasoning" || part.timing?.startedAt == null || part.timing.completedAt == null) continue;
+    total += part.timing.completedAt - part.timing.startedAt;
+    seen = true;
+  }
+  return seen ? Math.round(total) : null;
+}
+
 export function toStoredMessages(messages: readonly MessageLike[]): ReaderAskMessage[] {
   const out: ReaderAskMessage[] = [];
   for (const message of messages) {
@@ -36,7 +48,9 @@ export function toStoredMessages(messages: readonly MessageLike[]): ReaderAskMes
       const text = joinParts(message.content, "text");
       const thought = joinParts(message.content, "reasoning");
       if (!text && !thought) continue;
-      out.push({ role: "assistant", text, thought: thought || null, usage: storedUsage(custom?.turn, custom?.endedAt) });
+      const usage = storedUsage(custom?.turn, custom?.endedAt);
+      const thoughtMs = thinkingMs(message.content);
+      out.push({ role: "assistant", text, thought: thought || null, usage: thoughtMs != null ? { ...usage, thoughtMs } : usage });
     }
   }
   return out;
@@ -46,12 +60,14 @@ export function toStoredMessages(messages: readonly MessageLike[]): ReaderAskMes
 export function toInitialMessages(messages: readonly ReaderAskMessage[]) {
   return messages.map((message) => {
     if (message.role === "user") return { role: "user" as const, content: message.text };
-    const usage = (message.usage || {}) as AskUsage & { elapsedMs?: number; firstTokenMs?: number };
+    const usage = (message.usage || {}) as AskUsage & { elapsedMs?: number; firstTokenMs?: number; thoughtMs?: number };
+    // 思考用时放回思考那一段的起止（标题照样写「思考 · 1.2s」）。
+    const thoughtTiming = typeof usage.thoughtMs === "number" ? { timing: { startedAt: 0, completedAt: usage.thoughtMs } } : {};
     const turn: AskTurn = { ...emptyTurn(0), usage, firstTokenAt: usage.firstTokenMs ?? null };
     return {
       role: "assistant" as const,
       content: [
-        ...(message.thought ? [{ type: "reasoning" as const, text: message.thought }] : []),
+        ...(message.thought ? [{ type: "reasoning" as const, text: message.thought, ...thoughtTiming }] : []),
         { type: "text" as const, text: message.text },
       ],
       status: { type: "complete" as const, reason: "stop" as const },

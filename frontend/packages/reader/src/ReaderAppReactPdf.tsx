@@ -717,6 +717,8 @@ export function ReaderAppReactPdf() {
               anchor={ask.anchor}
               onClose={askThreads.close}
               onShowAnchor={() => c.goToPage(ask.anchor.page, ask.anchor.pane)}
+              onJumpToPage={(page) => c.goToPage(page, ask.anchor.pane)}
+              pageCount={panes.hudNumPages || 0}
               initialMessages={ask.initial}
               onTurnDone={(messages, agentId) => askThreads.save(ask.key, messages, agentId)}
               onDelete={() => askThreads.remove(ask.key)}

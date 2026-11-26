@@ -12,6 +12,38 @@
 
 ---
 
+## 阅读页提问：后端代装本机 agent，桌面版默认装上 pi 和 Claude Code（feat/acp-agent-install）
+
+2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「代装本机 agent」，方案
+[本机 agent 默认安装](../../ops/planning/reader-ask/20261126-本机agent默认安装.md)。**不改前端也能用**：列表形状不变，
+只多一个 `install_status`；推荐名单里 Google Antigravity（`antigravity-acp`）换下 Gemini CLI（`gemini` 照旧列出，`featured` 没了）。
+新接口 `POST /api/v1/ai/agents/:agent_id/install` 登记的是 `by(none)`，前端、桌面接上以后改成 `by(web)` / `by(desktop)`。
+
+### 桌面版（`frontend/desktop`）要做的
+
+| 文件 | 旧写法 | 新写法 |
+|---|---|---|
+| `frontend/desktop/src/main/backend-env.js` 的 `buildBackendEnv` | 没有 | 加 `RUST_API_ACP_DEFAULT_INSTALL: "1"`：后端启动后在后台把 pi（连 pi-acp）和 Claude Code 的适配器装进 `<数据目录>/acp-agents/`（用户自己已经装在 PATH 上的不装），不挡启动 |
+| 同上 | 没有 | 加 `RUST_API_NODE_DIR: <自带 Node 的目录>`：放 `node`、`npm` 的那一层（macOS / Linux 是 Node 发行包的 `bin/`，Windows 是放 `node.exe`、`npm.cmd` 的根；给发行包的根后端也认）。没设时后端用 PATH 上的 npm；PATH 上也没有，pi-acp 就不能代装（`install_status.reason` 说找不到 npm），Claude Code 的适配器在 macOS / Linux 改走压缩包 |
+| 打包脚本（`frontend/desktop/scripts/prepare-app.mjs` 一带） | 不带 Node（Word 导出、rpr 用 Electron 当 node） | 带一份官方 Node，**≥ 22.19**（pi 1.6.1 要），按平台放进资源目录。想省体积也可以用 Electron 当 node：目录里放一个叫 `node` 的小脚本（`ELECTRON_RUN_AS_NODE=1 exec <Electron> "$@"`）加一份 npm 包的 `npm`；Windows 上 npm 的 `.cmd` 外壳找 node 的方式不同，不建议 |
+
+- 后端起 npm 和起托管的 npm 包时会把这个目录放在子进程 PATH 最前面（npm 包的入口是 `#!/usr/bin/env node`），桌面壳不用另外改 PATH。
+- 第一次装 pi + pi-acp 约 170 MB（本机 75 秒），Claude Code 的适配器更大；npm 缓存用用户的 `~/.npm`。
+- macOS 上后端用 reqwest 下的压缩包不带隔离属性（quarantine），解开就能起。
+
+### 前端页面要做的（建议）
+
+| 文件 | 旧写法 | 新写法 |
+|---|---|---|
+| `frontend/web/src/features/reader/domain/ask-port.ts` 的 `AgentRow` | 没有 `install_status` | 另有可选的 `install_status: {state, managed, installable, method?, installed_version?, error?, reason?}`；`state` 是 `missing` / `installing` / `installed` / `failed` |
+| 同上，没装的 agent | 显示 `install`（终端命令）或 `install_url` | `install_status.installable` 为 true 时给一个「安装」按钮：`POST /api/v1/ai/agents/{id}/install`（没有请求体，回 202 / 200，`data` 是这个 agent 的新样子），之后每 2 秒左右 `GET /ai/agents` 直到 `state` 不是 `installing`；`failed` 显示 `error`，可以再点；`installable` 为 false 时照旧显示 `install` / `install_url`，`reason` 可以做成提示 |
+| `frontend/packages/api`（生成客户端） | 只有 `listAiAgents` | 契约里新接口没写 `client_name`，前端按自己的命名加（比如 `installAiAgent`），再 `npm --prefix frontend/packages/api run generate:client` |
+| `frontend/web/src/platform/mock/ask-agent.ts`（可选） | 没有安装状态 | 演示模式可以给一个 agent 带 `installable: true` 试按钮 |
+
+- 安装接口的闸门和起本机 agent 一样：只有本机地址打开的页面能装（局域网共享、经过代理 403），多用户、服务器上一律 403。
+  不认识的 404、自带的 400、后端不能代装 409（`error.details.reason = "agent_not_installable"`，`message` 是原因）。
+- 状态只在后端内存里：后端重启后正在装的会停（下次再装会清掉半成品），失败原因没了。
+
 ## 阅读页提问：第二个自带 agent「RetainPDF + pi」（feat/pi-agent）
 
 2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「RetainPDF + pi」，方案

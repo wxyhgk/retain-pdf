@@ -15,97 +15,197 @@
   border-radius: var(--ui-radius-lg, 14px);
   background: var(--paper);
   color: var(--ink);
+  font-size: var(--ui-text-md, 13px);
   box-shadow: 0 18px 48px color-mix(in srgb, var(--shadow-color, var(--ink)) 24%, transparent);
 }
 
+/* 贴右边：右上右下不要圆角，只留左边框；放大：照旧圆角。 */
+.reader-ask[data-mode="dock"] {
+  border-width: 0 0 0 1px;
+  border-radius: 0;
+  box-shadow: -8px 0 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 12%, transparent);
+}
+
 .reader-ask-head {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 8px 8px 14px;
+  gap: 4px;
+  padding: 6px 6px 6px 12px;
   border-bottom: 1px solid var(--line);
   cursor: grab;
   user-select: none;
+}
+
+.reader-ask[data-mode="dock"] .reader-ask-head,
+.reader-ask[data-mode="full"] .reader-ask-head {
+  cursor: default;
 }
 
 .reader-ask-head:active {
   cursor: grabbing;
 }
 
-.reader-ask-title {
+.reader-ask-logo {
   flex: none;
-  font-weight: 700;
-  white-space: nowrap;
+  color: var(--accent);
+}
+
+.reader-ask-head-gap {
+  flex: 1 1 auto;
 }
 
 .reader-ask-where {
-  min-width: 0;
-  overflow: hidden;
-  padding: 2px 8px;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 7px 2px 5px;
   border: 0;
   border-radius: var(--ui-radius-pill, 999px);
   background: color-mix(in srgb, var(--ink) 6%, transparent);
   color: var(--muted);
   font: inherit;
-  font-size: var(--ui-text-xs, 12px);
+  font-size: var(--ui-text-xs, 11px);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  text-overflow: ellipsis;
   cursor: var(--cursor-pointer, pointer);
 }
 
+.reader-ask-where:hover {
+  color: var(--ink);
+}
+
 .reader-ask-agent {
-  flex: 0 1 150px;
-  min-width: 96px;
-  margin-left: auto;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 132px;
+}
+
+.reader-ask .reader-ask-agent select {
+  min-height: 26px;
+  padding: 0 22px 0 8px;
+  overflow: hidden;
+  font-size: var(--ui-text-sm, 12px);
+  text-overflow: ellipsis;
 }
 
 .reader-ask-close {
   display: inline-grid;
+  flex: none;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 0;
   border-radius: var(--ui-radius-sm, 6px);
   background: transparent;
   color: var(--muted);
+  list-style: none;
   cursor: var(--cursor-pointer, pointer);
 }
 
-.reader-ask-close:hover {
+.reader-ask-close::-webkit-details-marker { display: none; }
+
+.reader-ask-close:hover,
+.reader-ask-close[data-active="true"],
+.reader-ask-install[open] > .reader-ask-close {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--ink);
 }
 
+/* 顶上引的那段：默认两行，展开看全；公式用 KaTeX 画。 */
 .reader-ask-quote {
-  max-height: 4.8em;
-  margin: 0;
-  overflow: hidden;
-  padding: 8px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 6px 6px 6px 12px;
   border-bottom: 1px solid var(--line);
   border-left: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
   background: color-mix(in srgb, var(--accent) 5%, var(--paper));
   color: var(--muted);
-  font-size: var(--ui-text-sm, 13px);
+  font-size: var(--ui-text-sm, 12px);
   line-height: 1.6;
+}
+
+.reader-ask-quote-text {
+  display: -webkit-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
+.reader-ask-quote[data-open="true"] .reader-ask-quote-text {
+  display: block;
+  max-height: 40vh;
+  overflow-y: auto;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+/* KaTeX 默认放大 1.21 倍，引的那段很小，跟着字号走。 */
+.reader-ask-quote-math .katex {
+  font-size: inherit;
+}
+
+.reader-ask-quote-tools {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.reader-ask-quote-tools .reader-ask-close {
+  width: 22px;
+  height: 22px;
+}
+
+.reader-ask-quote-toggle svg {
+  transition: transform 160ms ease;
+}
+
+.reader-ask-quote[data-open="true"] .reader-ask-quote-toggle svg {
+  transform: rotate(180deg);
+}
+
+/* 没装的本机 agent：插头图标，点开是一个小浮层。 */
 .reader-ask-install {
-  padding: 6px 14px;
-  border-bottom: 1px solid var(--line);
-  color: var(--muted);
-  font-size: var(--ui-text-xs, 12px);
+  position: static;
+  flex: none;
 }
 
-.reader-ask-install summary { cursor: var(--cursor-pointer, pointer); }
-.reader-ask-install ul { margin: 6px 0 0; padding: 0; list-style: none; }
+.reader-ask-install > ul {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 4px);
+  right: 8px;
+  left: 8px;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+  background: var(--paper);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color, var(--ink)) 18%, transparent);
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+  list-style: none;
+  cursor: default;
+}
 
 .reader-ask-install li {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 4px 0;
+  gap: 6px;
+  margin: 2px 0;
+}
+
+.reader-ask-install li > span {
+  flex: none;
+  color: var(--ink);
 }
 
 .reader-ask-install code {
@@ -118,6 +218,7 @@
   color: var(--ink);
   text-overflow: ellipsis;
   white-space: nowrap;
+  user-select: text;
 }
 
 .reader-ask-thread {
@@ -147,17 +248,215 @@
 }
 
 .reader-ask-footer {
-  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin: 4px 0 0 8px;
   color: var(--muted);
-  font-size: var(--ui-text-xs, 11px);
+  font-size: var(--ui-text-2xs, 10px);
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.reader-ask-footer:hover {
+  opacity: 1;
+}
+
+.reader-ask-footer-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.reader-ask-footer-item[data-key="model"] {
+  max-width: 14em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 回答和工具调用里能点的页码。 */
+.reader-ask-page {
+  display: inline;
+  margin: 0 1px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 4px);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: inherit;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-ask-page:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* 工具调用：一行一个（ask-blocks 的 ToolCard），点开看结果和参数。 */
+.reader-ask-tool {
+  margin: 2px 0;
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.reader-ask-tool > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 6px;
+  border-radius: var(--ui-radius-sm, 6px);
+  color: var(--muted);
+  list-style: none;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-ask-tool > summary::-webkit-details-marker { display: none; }
+
+.reader-ask-tool > summary:hover {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--ink);
+}
+
+.reader-ask-tool-icon { flex: none; }
+
+.reader-ask-tool-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-ask-tool-sum {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-ask-tool-sum::before {
+  content: "· ";
+}
+
+.reader-ask-tool-state {
+  display: inline-grid;
+  flex: none;
+  margin-left: auto;
+  place-items: center;
+}
+
+.reader-ask-tool[data-status="completed"] .reader-ask-tool-state { color: var(--success, var(--accent)); }
+.reader-ask-tool[data-status="failed"] .reader-ask-tool-state { color: var(--danger, var(--ink)); }
+
+.reader-ask-tool-time {
+  flex: none;
+  font-size: var(--ui-text-2xs, 10px);
   font-variant-numeric: tabular-nums;
 }
 
-.reader-ask .reader-ask-agent select {
-  min-height: 28px;
-  padding: 0 26px 0 10px;
-  font-size: var(--ui-text-sm, 13px);
+.reader-ask-tool-detail {
+  max-height: 16em;
+  margin: 2px 0 6px 25px;
+  overflow: auto;
+  padding: 6px 8px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
+
+.reader-ask-spin {
+  animation: reader-ask-spin 0.8s linear infinite;
+}
+
+@keyframes reader-ask-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 工具分组的标题：几种工具的图标 + 一个的写标题 + 次数。 */
+.reader-ask-toolgroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.reader-ask-toolgroup-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-ask-toolgroup-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 空白时的常问。 */
+.reader-ask-starters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: auto 0 12px;
+}
+
+.reader-ask-starter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-ask-starter:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  color: var(--ink);
+}
+
+/* 照搬的 Thread 用 Tailwind 的 rem 字号，在提问窗里偏大：统一按窗口的字号缩一档。 */
+.reader-ask .aui-composer-input,
+.reader-ask .aui-edit-composer-input {
+  min-height: 0;
+  font-size: var(--ui-text-md, 13px);
+  line-height: 1.6;
+}
+
+.reader-ask .aui-md-h1 { font-size: var(--ui-text-lg, 16px); }
+.reader-ask .aui-md-h2 { font-size: var(--ui-text-base, 14px); }
+.reader-ask .aui-md-h3,
+.reader-ask .aui-md-h4 { font-size: var(--ui-text-md, 13px); }
+.reader-ask .aui-md-h5,
+.reader-ask .aui-md-h6 { font-size: var(--ui-text-sm, 12px); }
+.reader-ask .aui-md-p { margin: 0.6em 0; line-height: 1.7; }
+.reader-ask .aui-md-pre { font-size: var(--ui-text-sm, 12px); }
+.reader-ask .aui-reasoning-trigger,
+.reader-ask .aui-message-error-root,
+.reader-ask .aui-action-bar-more-item { font-size: var(--ui-text-sm, 12px); }
+.reader-ask .aui-reasoning-trigger svg { width: 14px; height: 14px; }
+
+/* 长的独立公式横着滚，不撑破窗口。 */
+.reader-ask .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+
 
 /* 「在想…」（Thread 的正在回答指示，ReaderAskWindow 的 Waiting）。 */
 .reader-ask-waiting {
@@ -166,7 +465,7 @@
   gap: 8px;
   padding: 4px 8px;
   color: var(--muted);
-  font-size: var(--ui-text-sm, 13px);
+  font-size: var(--ui-text-sm, 12px);
 }
 
 .reader-ask-dot {
@@ -183,7 +482,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reader-ask-dot { animation: none; }
+  .reader-ask-dot,
+  .reader-ask-spin { animation: none; }
 }
 
 /* 书页上的「?」：左边白边里。 */

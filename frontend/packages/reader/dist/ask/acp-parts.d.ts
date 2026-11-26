@@ -95,4 +95,14 @@ export declare const SPEED_MIN_CHUNKS = 5;
 export declare function turnSpeed(turn: AskTurn): AskSpeed;
 /** 回答底下那一行：模型、用量、缓存命中、速度、首字、用时。没有的项不写。 */
 export declare function turnFooter(turn: AskTurn, finishedAt: number | null, agentName?: string): string;
+/** 用量那一行的一项：图标认 key，字尽量短，悬停（title）写全。 */
+export type FooterItem = {
+    key: "model" | "input" | "output" | "cacheRead" | "cacheWrite" | "context" | "cost" | "speed" | "firstToken" | "elapsed";
+    text: string;
+    title: string;
+};
+/** 1234 → 1.2k，1234567 → 1.2M。 */
+export declare function compactNumber(value: number): string;
+/** 回答底下那一行（图标版）：和 turnFooter 同样的几项，没有的不出。 */
+export declare function turnFooterItems(turn: AskTurn, finishedAt: number | null, agentName?: string): FooterItem[];
 //# sourceMappingURL=acp-parts.d.ts.map

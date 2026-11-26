@@ -1,4 +1,4 @@
-//! AI：阅读页提问的 agent（列表、ACP 桥）。逻辑在 providers 领域的 `acp`。
+//! AI：阅读页提问的 agent（列表、ACP 桥、代装本机 agent）。逻辑在 providers 领域的 `acp`。
 
 use crate::app::AppState;
 use crate::routes::ai;
@@ -10,4 +10,6 @@ crate::endpoints! {
     GET "/api/v1/ai/agents" => ai::list_agents, signed by(web);
     /// 阅读页提问的 ACP 桥（WebSocket，一条文字消息一条 JSON-RPC；浏览器用 `?api_key=` 认证）
     GET "/api/v1/ai/agents/:agent_id/acp" => ai::acp_socket, signed by(web);
+    /// 把本机 agent 装进后端自己的安装目录（npm 包或核过 sha256 的压缩包，后台装；闸门同 ACP 桥的本机 agent）
+    POST "/api/v1/ai/agents/:agent_id/install" => ai::install_agent, signed by(none);
 }

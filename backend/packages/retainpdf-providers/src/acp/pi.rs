@@ -75,7 +75,7 @@ fn pi_files(config: &AcpConfig) -> Result<PiFiles, String> {
 }
 
 fn pi_install(config: &AcpConfig) -> Result<PiInstall, NotReady> {
-    match registry::resolve_local_agent_and_requirement(PI_ACP_ID, config.path_var.as_deref()) {
+    match registry::resolve_local_agent_and_requirement(PI_ACP_ID, &config.lookup()) {
         Some(Ok((launch, Some(pi)))) => Ok(PiInstall { pi_acp: launch.program, pi_acp_args: launch.args, pi_acp_env: launch.env, pi }),
         Some(Ok((_, None))) => Err(("没找到 pi".into(), Some("npm install -g @earendil-works/pi-coding-agent".into()))),
         Some(Err((reason, install))) => Err((reason, install)),
@@ -117,6 +117,8 @@ pub(super) fn pi_view(config: &AcpConfig, local_reason: &str) -> AgentView {
         distribution: None,
         install_url: None,
         featured: false,
+        // 自带类：不由后端代装（pi-acp、pi 的安装状态看本机 agent 列表里的 pi-acp）
+        install_status: None,
     }
 }
 

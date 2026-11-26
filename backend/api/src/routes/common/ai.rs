@@ -2,7 +2,7 @@
 use axum::http::{header, HeaderMap};
 
 use crate::app::AppState;
-use crate::services::providers::{loopback_base_url, AcpConfig};
+use crate::services::providers::{loopback_base_url, AcpConfig, AGENTS_DIR_NAME, NODE_DIR_ENV};
 
 use super::request_origin_is_allowed;
 
@@ -21,6 +21,8 @@ pub fn build_acp_config(state: &AppState) -> AcpConfig {
         current_exe: std::env::current_exe().ok(),
         // retainpdf-pi 的扩展、包装脚本和自带 agent 的提示词在仓库的 backend/ 下
         backend_root: Some(config.project_root.join("backend")).filter(|dir| dir.is_dir()),
+        agents_dir: config.data_root.join(AGENTS_DIR_NAME),
+        node_dir: std::env::var_os(NODE_DIR_ENV).filter(|dir| !dir.is_empty()).map(std::path::PathBuf::from),
     }
 }
 

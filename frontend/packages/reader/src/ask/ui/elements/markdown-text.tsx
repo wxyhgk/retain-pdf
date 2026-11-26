@@ -1,6 +1,7 @@
 // 照搬 assistant-ui 官方组件（MIT，https://r.assistant-ui.com；shadcn/ 下是 shadcn/ui，MIT）。只改了引用路径（@/ 别名换成相对路径）。
 // 别的不改，方便对着上游更新；我们的改动写在外面（ReaderAskWindow.tsx）。
-// RetainPDF 的改动（按 assistant-ui 的 LaTeX 文档加 remark-math / rehype-katex 和 normalizeMathDelimiters；打字光标的 dot.css 改在 styles/entry.css 里引入）。
+// RetainPDF 的改动（按 assistant-ui 的 LaTeX 文档加 remark-math / rehype-katex 和 normalizeMathDelimiters；打字光标的 dot.css 改在 styles/entry.css 里引入；
+// 加 remarkPageCitations，a 组件认出页码链接画成能点的页码标签（../../page-citations.ts、../../AskPageLink.tsx））。
 
 
 import {
@@ -21,6 +22,8 @@ import { CheckIcon, CopyIcon } from "lucide-react";
 import { TooltipIconButton } from "./tooltip-icon-button.js";
 import { useCopyToClipboard } from "../hooks/use-copy-to-clipboard.js";
 import { cn } from "../lib/utils.js";
+import { pageFromHref, remarkPageCitations } from "../../page-citations.js";
+import { AskPageLink } from "../../AskPageLink.js";
 
 type MarkdownTextProps = Partial<TextMessagePartProps> & {
   components?: Parameters<typeof memoizeMarkdownComponents>[0];
@@ -63,7 +66,7 @@ const MarkdownTextImpl: FC<MarkdownTextProps> = ({
 
   return (
     <MarkdownTextPrimitive
-      remarkPlugins={[remarkGfm, remarkMath]}
+      remarkPlugins={[remarkGfm, remarkMath, remarkPageCitations]}
       rehypePlugins={[rehypeKatex]}
       preprocess={normalizeMathDelimiters}
       className="aui-md"
@@ -164,7 +167,10 @@ const defaultComponents = memoizeMarkdownComponents({
       {...props}
     />
   ),
-  a: ({ className, ...props }) => (
+  a: ({ className, ...props }) => {
+    const page = pageFromHref(props.href);
+    if (page) return <AskPageLink page={page}>{props.children}</AskPageLink>;
+    return (
     <a
       className={cn(
         "aui-md-a text-primary hover:text-primary/80 underline underline-offset-2",
@@ -172,7 +178,8 @@ const defaultComponents = memoizeMarkdownComponents({
       )}
       {...props}
     />
-  ),
+    );
+  },
   blockquote: ({ className, ...props }) => (
     <blockquote
       className={cn(
