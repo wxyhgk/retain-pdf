@@ -7,7 +7,7 @@ from pathlib import Path
 from retainpdf_translation.core.ocr.models import TextItem
 from retainpdf_translation.core.payload.parts.translation_units import refresh_payload_translation_units
 
-from .template_contract import sanitize_loaded_translation_record
+from .template_contract import loaded_translation_suspects
 from .template_contract import validate_translation_payload_contract
 from .template_records import build_translation_record
 from .template_sync import append_missing_translation_records
@@ -72,14 +72,14 @@ def load_translations(translation_path: Path, *, strict_contract: bool = True) -
 
 
 def migrate_translations(translation_path: Path, *, strict_contract: bool = True) -> list[dict]:
-    """Explicitly normalize a persisted payload and atomically save any changes."""
+    """Explicitly normalize a persisted payload and atomically save any changes.
+
+    只整理翻译单元（接续组），不动已有译文：可疑译文（`$` 不成对、JSON 壳）只打一行日志（S02、T-N11）。"""
 
     with translation_path.open("r", encoding="utf-8") as f:
         payload = json.load(f)
     changed = False
-    for record in payload:
-        if isinstance(record, dict):
-            changed = sanitize_loaded_translation_record(record) or changed
+    _log_suspect_translations(translation_path, payload)
     if refresh_payload_translation_units(payload, preserve_external_groups=True):
         changed = True
     if strict_contract:
@@ -87,6 +87,19 @@ def migrate_translations(translation_path: Path, *, strict_contract: bool = True
     if changed:
         save_translations(translation_path, payload)
     return payload
+
+
+def _log_suspect_translations(translation_path: Path, payload: object) -> None:
+    if not isinstance(payload, list):
+        return
+    suspects = [
+        f"{record.get('item_id', '')}({','.join(kinds)})"
+        for record in payload
+        if isinstance(record, dict) and (kinds := loaded_translation_suspects(record))
+    ]
+    if suspects:
+        preview = ", ".join(suspects[:8]) + (f" … (+{len(suspects) - 8})" if len(suspects) > 8 else "")
+        print(f"translation load: {translation_path.name} keeps {len(suspects)} suspect translations as is: {preview}", flush=True)
 
 
 def save_translations(translation_path: Path, payload: list[dict]) -> None:

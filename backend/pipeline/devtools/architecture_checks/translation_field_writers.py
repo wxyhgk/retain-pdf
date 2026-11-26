@@ -48,7 +48,6 @@ PAYLOAD_FIELD_WRITER_ALLOWLIST: dict[str, frozenset[str]] = {
             "translation/retainpdf_translation/core/payload/parts/result_status.py",  # diagnostics dict
             "translation/retainpdf_translation/core/payload/parts/apply.py",  # result metadata(邻段泄漏降级)
             "translation/retainpdf_translation/core/payload/parts/result_entries.py",  # result metadata
-            "translation/retainpdf_translation/core/payload/template_contract.py",  # frozen-debt
             "translation/retainpdf_translation/artifacts/io.py",  # frozen-debt: 诊断产物
             "translation/retainpdf_translation/artifacts/status.py",  # frozen-debt: 诊断产物
             "translation-classic/retainpdf_translation_classic/llm/placeholder_transform.py",  # result metadata
