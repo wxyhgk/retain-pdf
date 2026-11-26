@@ -36,6 +36,7 @@
 - [主题完全可自定义（2026-11 起）](./theme-customization/README.md)
 - [AI 拿书的数据（2026-11 起）](./ai-data-access/README.md)
 - [翻译状态管理（2026-11 起）](./translation-state/README.md)
+- [后端状态管理（2026-11 起，设计待定）](./state-management/README.md)
 - [架构与 API 契约任务台账](./architecture_tasks.csv)
 - [2026-04-15 Rust API 去耦任务清单](./250415_task.csv)
 - [2026-04-16 Normalize/翻译持续试错台账](./260416.csv)
