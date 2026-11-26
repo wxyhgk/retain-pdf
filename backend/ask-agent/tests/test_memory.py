@@ -36,11 +36,14 @@ CONTEXT = {
 
 
 class FakeBackend:
-    def __init__(self, context=None):
+    def __init__(self, context=None, memory_enabled=True):
         self.requests = []
         self.context = context
+        self.memory_enabled = memory_enabled
 
     def __call__(self, method, path, body, timeout):
+        if path == "/api/v1/ai/ask-settings":
+            return _ok({"memory_enabled": self.memory_enabled, "updated_at": None})
         self.requests.append((method, path, body))
         if path.startswith("/api/v1/ai/ask-conversations/"):
             return _ok(self.context) if self.context is not None else (404, b'{"message":"not found"}')
@@ -245,3 +248,24 @@ def test_remember_card_carries_the_memory_and_the_per_turn_budget_holds() -> Non
     assert sum(1 for method, path, _ in backend.requests if method == "POST") == REMEMBER_PER_TURN
     result = next(line for line in _lines(out) if line.get("id") == 2)["result"]
     assert result["_meta"]["retainpdf"]["usage"]["memory"] == {"remember_calls": 3, "remembered": 3, "refused": 1}
+
+
+def test_tools_refuse_when_the_user_turned_memory_off() -> None:
+    backend = FakeBackend(memory_enabled=False)
+    tools = MemoryTools(http=backend, conversation_id="conv-1", document_id="doc-1")
+    remembered = tools.run("remember", {"text": "用户要先看结论", "scope": "user"})
+    searched = tools.run("search_memories", {"query": "结论"})
+    assert remembered.is_error and "关掉了「让 AI 使用记忆」" in remembered.text and "没有记" in remembered.text
+    assert searched.is_error and "没有查" in searched.text and searched.summary == "用户关掉了记忆"
+    assert backend.requests == []  # 关着不发记、查的请求
+    # 后端没开（看不了设置）：当开着，请求自己报错
+    def down(*_args):
+        raise OSError("connection refused")
+    assert MemoryTools(http=down).enabled() is True
+    # 开关和请求撞上：后端回 409 ask_memory_disabled 也当关着
+    def racing(method, path, body, timeout):
+        if path == "/api/v1/ai/ask-settings":
+            return _ok({"memory_enabled": True})
+        return 409, json.dumps({"code": 40900, "message": "off", "error": {"details": {"reason": "ask_memory_disabled"}}}).encode()
+    raced = MemoryTools(http=racing).run("remember", {"text": "x", "scope": "user"})
+    assert raced.is_error and raced.summary == "用户关掉了记忆"

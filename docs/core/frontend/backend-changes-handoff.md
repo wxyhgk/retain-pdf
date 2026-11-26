@@ -30,10 +30,12 @@
 | 副对话（新） | — | 回答上点「深挖」→ `POST /ai/ask-conversations` `{parent_id, forked_from_message_id, title, document_id}`，标题栏面包屑「主对话 › 标题」；结束 → `POST …/{id}/close` `{summary}`（第一期摘要前端给，比如让当前 agent 总结一句；第二期后端生成），回到主对话，返回的 `card`（`role: side_summary`）画成摘要卡片、能展开看副对话（`GET …/{side_id}/messages`） |
 | 书页上的「?」 | `listAskThreads` | 另取 `GET /documents/{id}/ask-messages`（所有对话里属于这本书、有页码的问）；旧的 `ask-threads` 照旧能画、能点开看 |
 | 记忆面板（新） | — | `GET /ai/memories?scope=&document_id=&q=&status=`、`PATCH /ai/memories/{id}`、`DELETE …`；用户自己加 `POST /ai/memories`（`origin` 不给就是 `user`） |
+| 设置里「让 AI 使用记忆」（新，用户 11-26 定） | — | 开关读 `GET /ai/ask-settings` 的 `memory_enabled`（默认开），改 `PATCH /ai/ask-settings` `{memory_enabled}`。存在后端库里，**不要**放进浏览器设置。关掉以后后端和自带 agent 自己就不读不记；前端只需在记忆面板上说明「AI 现在用不到这些记忆」，已经记下的照常能看、改、删 |
+| 主对话的「删除」（用户 11-26 定） | — | 界面上只给「归档并开新的主对话」（`PATCH …/{id}` `{status: "archived"}` 再 `POST …/main`）；只有归档过的主对话才给「删除」。删开着的主对话后端回 `409 ask_main_conversation_open`。副对话随时能删 |
 
 - 本机 agent 记的「已记住」第三期才有（经 `retainpdf mcp`）；到时前端每答完一轮按 `GET /ai/memories?source_conversation_id=…&created_after=…` 补画。
-- 新的错误：`409 ask_conversation_not_open`（往结束了的副对话追加）、`409 ask_main_conversation_open`、`409 ask_memory_limit`、`409 ask_memory_deleted`、
-  `409 ask_conversation_limit`。多用户模式下这批接口 `404`（全局数据没有归属）。
+- 新的错误：`409 ask_conversation_not_open`（往结束了的副对话追加）、`409 ask_main_conversation_open`（重开旧主对话时已有开着的；删开着的主对话）、
+  `409 ask_memory_limit`、`409 ask_memory_deleted`、`409 ask_memory_disabled`（「让 AI 使用记忆」关着时 agent 记记忆）、`409 ask_conversation_limit`。多用户模式下这批接口 `404`（全局数据没有归属）。
 - 压缩（主对话太长时的摘要、压缩点）第二期做，到时上下文接口的 `summary` 有值、消息分页带压缩点。
 
 ---

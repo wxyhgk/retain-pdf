@@ -9,14 +9,14 @@ use crate::models::api::{
     AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord, AskMessagePageView,
     CloseAskConversationInput, CloseAskConversationView, CreateAskMemoryInput, CreateAskSideConversationInput,
     DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput,
-    PatchAskMemoryInput,
+    PatchAskMemoryInput, AskSettingsRecord, PatchAskSettingsInput,
 };
 use crate::routes::common::{ok_json, run_library_blocking, ApiJson, ApiPath, ApiQuery};
 use crate::services::library::{
     append_ask_messages_view, ask_context_view, close_ask_conversation_view, create_ask_memory_view,
     create_side_ask_conversation_view, delete_ask_conversation_view, delete_ask_memory_view, document_ask_messages_view,
     ensure_main_ask_conversation_view, get_ask_conversation_view, list_ask_conversations_view, list_ask_memories_view,
-    list_ask_messages_view, patch_ask_conversation_view, patch_ask_memory_view,
+    list_ask_messages_view, patch_ask_conversation_view, patch_ask_memory_view, get_ask_settings_view, patch_ask_settings_view,
 };
 use crate::AppState;
 
@@ -134,4 +134,15 @@ pub async fn delete_memory_route(
     ApiPath(memory_id): ApiPath<String>,
 ) -> Reply<AskMemoryRecord> {
     Ok(ok_json(run_library_blocking(&state, move |library| delete_ask_memory_view(library, &memory_id)).await?))
+}
+
+pub async fn get_settings_route(State(state): State<AppState>) -> Reply<AskSettingsRecord> {
+    Ok(ok_json(run_library_blocking(&state, get_ask_settings_view).await?))
+}
+
+pub async fn patch_settings_route(
+    State(state): State<AppState>,
+    ApiJson(payload): ApiJson<PatchAskSettingsInput>,
+) -> Reply<AskSettingsRecord> {
+    Ok(ok_json(run_library_blocking(&state, move |library| patch_ask_settings_view(library, &payload)).await?))
 }

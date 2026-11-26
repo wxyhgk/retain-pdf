@@ -11,6 +11,15 @@ use crate::models::domain::{build_job_id, now_iso};
 
 use super::Db;
 
+/// 阅读页提问的设置（`ask_settings` 一行；没有这一行是默认）。
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct AskSettingsRecord {
+    /// 「让 AI 使用记忆」总开关，默认开。
+    pub memory_enabled: bool,
+    /// 最后一次改的时间；没改过是 None。
+    pub updated_at: Option<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct AskMemoryRecord {
     pub memory_id: String,
@@ -110,6 +119,31 @@ fn squeezed(text: &str) -> String {
 }
 
 impl Db {
+    /// 阅读页提问的设置；没存过是默认（记忆开着）。
+    pub fn ask_settings(&self) -> Result<AskSettingsRecord> {
+        let conn = self.connect()?;
+        let row: Option<(i64, String)> = conn
+            .query_row("SELECT memory_enabled, updated_at FROM ask_settings WHERE id = 1", [], |row| Ok((row.get(0)?, row.get(1)?)))
+            .optional()?;
+        Ok(match row {
+            Some((enabled, updated_at)) => AskSettingsRecord { memory_enabled: enabled != 0, updated_at: Some(updated_at) },
+            None => AskSettingsRecord { memory_enabled: true, updated_at: None },
+        })
+    }
+
+    /// 改「让 AI 使用记忆」开关，回改完的设置。
+    pub fn set_ask_memory_enabled(&self, enabled: bool) -> Result<AskSettingsRecord> {
+        {
+            let conn = self.connect()?;
+            conn.execute(
+                "INSERT INTO ask_settings (id, memory_enabled, updated_at) VALUES (1, ?1, ?2)
+                 ON CONFLICT(id) DO UPDATE SET memory_enabled = excluded.memory_enabled, updated_at = excluded.updated_at",
+                params![i64::from(enabled), now_iso()],
+            )?;
+        }
+        self.ask_settings()
+    }
+
     /// 记一条（见 [`AskMemoryCreated`]）。`max_active`：这一层（书层按书）最多几条 active。
     /// 出处的对话、消息不在库里（删了）就当没给。
     pub fn create_ask_memory(&self, new: &NewAskMemory, max_active: i64) -> Result<AskMemoryCreated> {

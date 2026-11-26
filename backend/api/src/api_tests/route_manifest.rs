@@ -410,6 +410,7 @@ fn agent_key_endpoints_are_pinned() {
         [
             // 2026-11-26 自带 agent 开会话取上下文、记忆工具 remember / search_memories（改、删记忆和动对话是用户的事，不给）
             "GET /api/v1/ai/ask-conversations/:conversation_id/context",
+            "GET /api/v1/ai/ask-settings",
             "GET /api/v1/ai/memories",
             "GET /api/v1/documents",
             "GET /api/v1/documents/:document_id",

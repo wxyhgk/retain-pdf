@@ -7,6 +7,10 @@ use crate::routes::ask_conversations;
 crate::endpoints! {
     state: AppState;
     owner: library;
+    /// 阅读页提问的设置（「让 AI 使用记忆」总开关）；自带 agent 每次调记忆工具前看一眼
+    GET "/api/v1/ai/ask-settings" => ask_conversations::get_settings_route, closed by(agent);
+    /// 改阅读页提问的设置
+    PATCH "/api/v1/ai/ask-settings" => ask_conversations::patch_settings_route, closed by(none);
     /// 取或建当前的全局主对话（同一时间只有一个开着的）
     POST "/api/v1/ai/ask-conversations/main" => ask_conversations::ensure_main_conversation_route, closed by(none);
     /// 列对话（主对话、副对话，可按种类、状态、主对话筛）
@@ -17,7 +21,7 @@ crate::endpoints! {
     GET "/api/v1/ai/ask-conversations/:conversation_id" => ask_conversations::get_conversation_route, closed by(none);
     /// 改对话：标题、归档主对话、再开副对话
     PATCH "/api/v1/ai/ask-conversations/:conversation_id" => ask_conversations::patch_conversation_route, closed by(none);
-    /// 删对话（连同消息和它的副对话；记忆留着）
+    /// 删对话（连同消息和它的副对话；记忆留着）；开着的主对话不能删，先归档
     DELETE "/api/v1/ai/ask-conversations/:conversation_id" => ask_conversations::delete_conversation_route, closed by(none);
     /// 结束副对话：给了结论就回填到主对话（一张摘要卡片）
     POST "/api/v1/ai/ask-conversations/:conversation_id/close" => ask_conversations::close_conversation_route, closed by(none);

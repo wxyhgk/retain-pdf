@@ -99,6 +99,11 @@ TABLE ask_messages
   FOREIGN KEY (thread_id) REFERENCES ask_threads(thread_id) ON UPDATE NO ACTION ON DELETE CASCADE
   PRIMARY KEY (thread_id, position)
 
+TABLE ask_settings
+  id INTEGER PRIMARY KEY#1
+  memory_enabled INTEGER NOT NULL DEFAULT 1
+  updated_at TEXT NOT NULL
+
 TABLE ask_threads
   thread_id TEXT PRIMARY KEY#1
   document_id TEXT NOT NULL

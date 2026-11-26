@@ -16,6 +16,7 @@ use crate::app::{build_app, build_state};
 use crate::models::api::{
     AppendAskMessagesInput, AskContextQuery, AskConversationMessageInput, AskSelectionInput, CloseAskConversationInput, CreateAskMemoryInput, CreateAskSideConversationInput,
     ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput,
+    PatchAskSettingsInput,
 };
 use crate::test_support::config::TestDirs;
 
@@ -50,6 +51,61 @@ fn request_bodies_and_queries_accept_exactly_the_contract_fields() {
     assert_request_fields_match::<ListAskMemoriesQuery>(&contract, "ListAskMemoriesQuery");
     assert_request_fields_match::<CreateAskMemoryInput>(&contract, "CreateAskMemoryInput");
     assert_request_fields_match::<PatchAskMemoryInput>(&contract, "PatchAskMemoryInput");
+    assert_request_fields_match::<PatchAskSettingsInput>(&contract, "PatchAskSettingsInput");
+}
+
+/// 2026-11-26 用户定：主对话只能先归档再删；副对话不受限制。
+#[tokio::test]
+async fn the_open_main_conversation_cannot_be_deleted_until_archived() {
+    let state = test_state("ask-conversations-delete-main");
+    let main = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", None).await;
+    let main_id = main["conversation_id"].as_str().unwrap().to_string();
+    let side = ok_data(&state, "POST", "/api/v1/ai/ask-conversations", Some(json!({ "parent_id": main_id }))).await;
+    let side_id = side["conversation_id"].as_str().unwrap().to_string();
+
+    let (status, payload) = send(&state, "DELETE", &format!("/api/v1/ai/ask-conversations/{main_id}"), None).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{payload}");
+    assert_eq!(payload["error"]["details"]["reason"], "ask_main_conversation_open");
+    // 开着的副对话照删
+    ok_data(&state, "DELETE", &format!("/api/v1/ai/ask-conversations/{side_id}"), None).await;
+    ok_data(&state, "PATCH", &format!("/api/v1/ai/ask-conversations/{main_id}"), Some(json!({ "status": "archived" }))).await;
+    let deleted = ok_data(&state, "DELETE", &format!("/api/v1/ai/ask-conversations/{main_id}"), None).await;
+    assert_eq!(deleted["deleted"], true);
+}
+
+/// 「让 AI 使用记忆」总开关：默认开；关掉后上下文不带记忆、agent 记不了，用户自己加、列表照常，已经记下的都留着。
+#[tokio::test]
+async fn the_memory_switch_hides_memories_from_the_ai_and_stops_agent_writes() {
+    let state = test_state("ask-settings");
+    let contract = contract(CONTRACT);
+    let settings = ok_data(&state, "GET", "/api/v1/ai/ask-settings", None).await;
+    assert_definition(&settings, &contract, "AskSettingsRecord", "settings");
+    assert_exact_object_keys(&settings, &contract, "AskSettingsRecord", "settings");
+    assert_eq!((settings["memory_enabled"].as_bool(), settings["updated_at"].clone()), (Some(true), Value::Null));
+    ok_data(&state, "POST", "/api/v1/ai/memories", Some(json!({ "scope": "user", "text": "用户要先看结论", "origin": "agent" }))).await;
+    let main = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", None).await;
+    let context_uri = format!("/api/v1/ai/ask-conversations/{}/context", main["conversation_id"].as_str().unwrap());
+    let on = ok_data(&state, "GET", &context_uri, None).await;
+    assert_eq!((on["memory_enabled"].as_bool(), on["memories"]["user"].as_array().unwrap().len()), (Some(true), 1));
+
+    let off = ok_data(&state, "PATCH", "/api/v1/ai/ask-settings", Some(json!({ "memory_enabled": false }))).await;
+    assert_eq!(off["memory_enabled"], false);
+    assert!(off["updated_at"].is_string());
+    let context = ok_data(&state, "GET", &context_uri, None).await;
+    assert_eq!(context["memory_enabled"], false);
+    assert_eq!((context["memories"]["user"].as_array().unwrap().len(), context["memory_text"].as_str()), (0, Some("")));
+    let (status, payload) =
+        send(&state, "POST", "/api/v1/ai/memories", Some(json!({ "scope": "user", "text": "用户是化学专业的", "origin": "agent" }))).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{payload}");
+    assert_eq!(payload["error"]["details"]["reason"], "ask_memory_disabled");
+    // 用户自己加照常；已经记下的都在
+    ok_data(&state, "POST", "/api/v1/ai/memories", Some(json!({ "scope": "user", "text": "用户是化学专业的" }))).await;
+    assert_eq!(ok_data(&state, "GET", "/api/v1/ai/memories", None).await["memories"].as_array().unwrap().len(), 2);
+    // 什么都不给：回现在的；不认识的字段 400
+    assert_eq!(ok_data(&state, "PATCH", "/api/v1/ai/ask-settings", Some(json!({}))).await["memory_enabled"], false);
+    let (status, _) = send(&state, "PATCH", "/api/v1/ai/ask-settings", Some(json!({ "memory": false }))).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(ok_data(&state, "PATCH", "/api/v1/ai/ask-settings", Some(json!({ "memory_enabled": true }))).await["memory_enabled"], true);
 }
 
 #[tokio::test]
@@ -338,6 +394,8 @@ async fn agent_key_reads_context_and_writes_memories_only() {
 
     let (status, body) = call(&state, AGENT_KEY, "GET", &format!("/api/v1/ai/ask-conversations/{main_id}/context"), None).await;
     assert_eq!(status, StatusCode::OK, "{body}");
+    let (status, body) = call(&state, AGENT_KEY, "GET", "/api/v1/ai/ask-settings", None).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
     let (status, body) =
         call(&state, AGENT_KEY, "POST", "/api/v1/ai/memories", Some(json!({ "scope": "user", "text": "用户是化学专业的", "origin": "agent" })))
             .await;
@@ -349,6 +407,7 @@ async fn agent_key_reads_context_and_writes_memories_only() {
     for (method, uri) in [
         ("DELETE", format!("/api/v1/ai/memories/{memory_id}")),
         ("PATCH", format!("/api/v1/ai/memories/{memory_id}")),
+        ("PATCH", "/api/v1/ai/ask-settings".to_string()),
         ("POST", "/api/v1/ai/ask-conversations/main".to_string()),
         ("POST", format!("/api/v1/ai/ask-conversations/{main_id}/messages")),
         ("GET", format!("/api/v1/ai/ask-conversations/{main_id}/messages")),

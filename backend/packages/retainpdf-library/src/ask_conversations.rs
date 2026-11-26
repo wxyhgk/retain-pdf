@@ -8,7 +8,7 @@
 use retainpdf_api_base::error::AppError;
 use retainpdf_data::db::{
     AskConversationChanges, AskConversationFilter, AskConversationMessageRecord, AskConversationRecord, AskConversationUpdated,
-    AskMemoryFilter, AskMemoryRecord, AskMessagesAppended, AskSideClosed, AskSideCreated, NewAskConversationMessage,
+    AskConversationDeleted, AskMemoryFilter, AskMemoryRecord, AskMessagesAppended, AskSideClosed, AskSideCreated, NewAskConversationMessage,
     NewAskSideConversation,
 };
 
@@ -306,10 +306,17 @@ pub fn delete_ask_conversation_view(
     deps: &LibraryDeps<'_>,
     conversation_id: &str,
 ) -> Result<AskConversationDeleteResultView, AppError> {
-    if !deps.db.delete_ask_conversation(conversation_id)? {
-        return Err(not_found(conversation_id));
+    match deps.db.delete_ask_conversation(conversation_id)? {
+        AskConversationDeleted::Deleted => {
+            Ok(AskConversationDeleteResultView { conversation_id: conversation_id.to_string(), deleted: true })
+        }
+        AskConversationDeleted::NotFound => Err(not_found(conversation_id)),
+        // 2026-11-26 用户定：主对话只能先归档（界面上是「归档并开新的主对话」）再删
+        AskConversationDeleted::MainStillOpen => Err(AppError::conflict_because(
+            "ask_main_conversation_open",
+            format!("ask conversation {conversation_id} is the open main conversation; archive it before deleting"),
+        )),
     }
-    Ok(AskConversationDeleteResultView { conversation_id: conversation_id.to_string(), deleted: true })
 }
 
 pub fn close_ask_conversation_view(
@@ -511,9 +518,15 @@ pub fn ask_context_view(deps: &LibraryDeps<'_>, conversation_id: &str, query: &A
         },
         _ => None,
     };
-    let user = deps.db.list_ask_memories(&AskMemoryFilter { scope: Some("user"), limit: 500, ..Default::default() })?;
+    // 「让 AI 使用记忆」关着：不带记忆（已经记下的都留着）
+    let memory_enabled = deps.db.ask_settings()?.memory_enabled;
+    let user = if memory_enabled {
+        deps.db.list_ask_memories(&AskMemoryFilter { scope: Some("user"), limit: 500, ..Default::default() })?
+    } else {
+        Vec::new()
+    };
     let (user, user_omitted) = memories_within(user, MAX_USER_MEMORY_CHARS);
-    let (book, book_omitted) = match document_id.as_deref() {
+    let (book, book_omitted) = match document_id.as_deref().filter(|_| memory_enabled) {
         Some(document_id) => {
             let book = deps.db.list_ask_memories(&AskMemoryFilter {
                 scope: Some("book"),
@@ -529,7 +542,7 @@ pub fn ask_context_view(deps: &LibraryDeps<'_>, conversation_id: &str, query: &A
     let memory_text = memory_text(&memories);
     let history = history_text(parent.as_ref(), &messages, omitted_messages);
     let text = [memory_text.as_str(), history.as_str()].iter().filter(|part| !part.is_empty()).cloned().collect::<Vec<_>>().join("\n\n");
-    Ok(AskContextView { conversation, summary: None, parent, messages, omitted_messages, memories, memory_text, text })
+    Ok(AskContextView { conversation, memory_enabled, summary: None, parent, messages, omitted_messages, memories, memory_text, text })
 }
 
 #[cfg(test)]

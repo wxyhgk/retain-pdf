@@ -111,6 +111,13 @@ pub enum AskConversationUpdated {
     AnotherOpenMain,
 }
 
+pub enum AskConversationDeleted {
+    Deleted,
+    NotFound,
+    /// 开着的主对话：先归档再删。
+    MainStillOpen,
+}
+
 pub enum AskSideClosed {
     /// 结束了；给了摘要时另有回到主对话的卡片。
     Closed(AskConversationRecord, Option<AskConversationMessageRecord>),
@@ -419,10 +426,19 @@ impl Db {
         Ok(AskConversationUpdated::Updated(record))
     }
 
-    /// 删一个对话（消息、它的副对话跟着删；记忆留着，出处置空）。没有返回 false。
-    pub fn delete_ask_conversation(&self, conversation_id: &str) -> Result<bool> {
-        let conn = self.connect()?;
-        Ok(conn.execute("DELETE FROM ask_conversations WHERE conversation_id = ?1", params![conversation_id])? > 0)
+    /// 删一个对话（消息、它的副对话跟着删；记忆留着，出处置空）。开着的主对话不删（2026-11-26 用户定：主对话只能先归档再删）。
+    pub fn delete_ask_conversation(&self, conversation_id: &str) -> Result<AskConversationDeleted> {
+        let mut conn = self.connect()?;
+        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let Some(current) = load_conversation(&tx, conversation_id)? else {
+            return Ok(AskConversationDeleted::NotFound);
+        };
+        if current.kind == "main" && current.status == "open" {
+            return Ok(AskConversationDeleted::MainStillOpen);
+        }
+        tx.execute("DELETE FROM ask_conversations WHERE conversation_id = ?1", params![conversation_id])?;
+        tx.commit()?;
+        Ok(AskConversationDeleted::Deleted)
     }
 
     /// 结束一个副对话：状态 `closed`。给了摘要就记下，并在主对话末尾追加一条 `side_summary` 卡片（主对话不是 open 时不追加）。

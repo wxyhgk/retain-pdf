@@ -148,3 +148,14 @@ fn editing_and_deleting_keep_the_row_and_undo_restores_the_replaced_one() {
     assert_eq!(db.delete_ask_memory(&new.memory_id).unwrap().unwrap().status, "deleted");
     let _ = std::fs::remove_dir_all(root);
 }
+
+#[test]
+fn the_memory_switch_defaults_to_on_and_is_saved() {
+    let (root, db) = fixture("settings");
+    assert_eq!(db.ask_settings().unwrap(), AskSettingsRecord { memory_enabled: true, updated_at: None });
+    let off = db.set_ask_memory_enabled(false).unwrap();
+    assert!(!off.memory_enabled && off.updated_at.is_some());
+    assert!(!db.ask_settings().unwrap().memory_enabled);
+    assert!(db.set_ask_memory_enabled(true).unwrap().memory_enabled);
+    let _ = std::fs::remove_dir_all(root);
+}
