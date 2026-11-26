@@ -58,7 +58,7 @@ Regenerate with:
 | `retainpdf_translation_agent` | `retainpdf_translation_agent` | yes | yes | `devtools/agent_lab/__main__.py`, `devtools/agent_lab/metrics.py`, `devtools/agent_lab/pages.py` |
 | `retainpdf_translation_agent_engine` | `retainpdf_translation_agent_engine` | no | yes | `devtools/tests/translation/test_agent_flow.py`, `devtools/tests/translation/test_agent_openai.py`, `devtools/tests/translation/test_fixed_translations.py` |
 | `retainpdf_translation_classic` | `retainpdf_translation_classic` | yes | yes | `retainpdf_pipeline/runtime/pipeline/render_only_pipeline.py` |
-| `urllib3` | `urllib3` | yes | no | `retainpdf_pipeline/ocr/retry.py` |
+| `urllib3` | `urllib3` | yes | yes | `retainpdf_pipeline/ocr/retry.py` |
 
 ## Dependency Sources
 

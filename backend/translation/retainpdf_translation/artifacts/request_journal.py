@@ -15,7 +15,85 @@ TRANSLATION_REQUEST_JOURNAL_FILE_NAME = "translation-request-journal.v1.jsonl"
 _SCHEMA = "translation_request_journal_v1"
 _SCHEMA_VERSION = 1
 _GROUP_COMMIT_WINDOW_SECONDS = 0.005
-_TERMINAL_OUTCOMES = {"succeeded", "rejected", "invalid_response", "ambiguous"}
+# failed_not_sent：连接都没建成，请求没发出去（连接被拒、DNS 失败、建连超时，见 client.py 的 _request_never_left）。
+# 和别的终态一样把 dispatch 配上；只有 ambiguous 和没配上的 dispatch 算「结果不明」，Rust 那边同一个判据
+# （retainpdf-core 的 translation_request_journal.rs）。
+_TERMINAL_OUTCOMES = {"succeeded", "rejected", "invalid_response", "failed_not_sent", "ambiguous"}
+
+
+class RequestDispatchStopped(RuntimeError):
+    """进程正在退出排空（``begin_request_drain``），不再放新请求出去。"""
+
+
+class _DispatchGate:
+    """本进程所有请求日志共用的闸门：退出时不再放新请求出去，并数还在途的请求。
+
+    「在途」从 dispatch 落盘之前算起，到 terminal 落盘（或写失败）为止。排空开始以后，想发新请求的线程
+    停在 ``enter`` 里不再往下走：不写 dispatch、不发请求，也不抛错（抛错会让调用方把块记成失败、写进断点）。
+    进程等在途的请求回来以后自己退出（``workflow/shutdown_drain.py``），停住的线程随进程一起结束。
+    """
+
+    def __init__(self) -> None:
+        self._condition = threading.Condition()
+        self._draining = False
+        self._released = False
+        self._live = 0
+
+    def enter(self) -> None:
+        with self._condition:
+            while self._draining and not self._released:
+                self._condition.wait()
+            if self._draining:
+                raise RequestDispatchStopped("translation worker is shutting down; request not dispatched")
+            self._live += 1
+
+    def leave(self) -> None:
+        with self._condition:
+            self._live = max(0, self._live - 1)
+            self._condition.notify_all()
+
+    def begin_drain(self) -> int:
+        with self._condition:
+            self._draining = True
+            return self._live
+
+    def live(self) -> int:
+        with self._condition:
+            return self._live
+
+    def wait_idle(self, timeout: float) -> bool:
+        with self._condition:
+            return self._condition.wait_for(lambda: self._live == 0, timeout=max(0.0, timeout))
+
+    def release_stopped_for_tests(self) -> None:
+        """只给测试用：让停在闸门上的线程抛 ``RequestDispatchStopped`` 出来（正式运行时进程直接退出）。"""
+        with self._condition:
+            self._released = True
+            self._condition.notify_all()
+
+    def reset_for_tests(self) -> None:
+        with self._condition:
+            self._draining = False
+            self._released = False
+            self._live = 0
+            self._condition.notify_all()
+
+
+_DISPATCH_GATE = _DispatchGate()
+
+
+def begin_request_drain() -> int:
+    """开始退出排空：之后不再有新请求发出去。返回这时还在途的请求数。"""
+    return _DISPATCH_GATE.begin_drain()
+
+
+def inflight_request_count() -> int:
+    return _DISPATCH_GATE.live()
+
+
+def wait_for_inflight_requests(timeout: float) -> bool:
+    """等在途的请求都写上终态，最多 ``timeout`` 秒。等到了返回 True。"""
+    return _DISPATCH_GATE.wait_idle(timeout)
 
 
 class TranslationRequestJournal:
@@ -36,6 +114,8 @@ class TranslationRequestJournal:
         self._flush_in_progress = False
         self._failure: BaseException | None = None
         self._closed = False
+        # 本进程发出、还没写终态的 dispatch（不含从旧日志继承来的），终态写完从闸门的在途数里减掉
+        self._live_tokens: set[str] = set()
         self._open_dispatches, ambiguous_keys, active_ambiguous_keys, valid_size = (
             self._load_existing_state()
         )
@@ -136,9 +216,15 @@ class TranslationRequestJournal:
                 "prior_ambiguous": prior_ambiguous,
             }
         )
-        self._append_durable(event)
+        _DISPATCH_GATE.enter()
+        try:
+            self._append_durable(event)
+        except BaseException:
+            _DISPATCH_GATE.leave()
+            raise
         with self._condition:
             self._open_dispatches[request_token] = request_key
+            self._live_tokens.add(request_token)
         return request_token
 
     def record_terminal(
@@ -162,7 +248,15 @@ class TranslationRequestJournal:
             event["status_code"] = int(status_code)
         if error_class:
             event["error_class"] = str(error_class)[:120]
-        self._append_durable(event)
+        try:
+            self._append_durable(event)
+        finally:
+            # 写失败也不再算在途：请求已经结束，没写上的终态让这条 dispatch 留成「结果不明」
+            with self._condition:
+                was_live = request_token in self._live_tokens
+                self._live_tokens.discard(request_token)
+            if was_live:
+                _DISPATCH_GATE.leave()
         with self._condition:
             self._open_dispatches.pop(request_token, None)
             if outcome == "ambiguous":

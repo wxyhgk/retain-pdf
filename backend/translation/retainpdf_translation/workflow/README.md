@@ -8,6 +8,9 @@
 
 - `execution.py`
   对外请求对象和执行入口。
+- `shutdown_drain.py`
+  翻译期间收到 SIGTERM（运行时退出、取消、超时）先排空：不再派发新请求，在途的模型请求最多等 2 秒回来、写上终态再退出，
+  没回来的留成结果不明（2026-11-26，状态管理 Z1）。`execution.py` 包在整个翻译外面。
 - `execution_plan.py`
   根据 OCR JSON、策略配置、术语表、上下文和 provider 诊断配置生成不可变执行计划。
 - `execution_runner.py`
