@@ -11,7 +11,10 @@ def run_cold_import_probe(test_file: str, probe: str, *args: str) -> None:
     """Run a named probe in a fresh interpreter, with a bounded lifetime.
 
     Isolated mode ignores inherited Python paths and startup customization;
-    only this checkout's pipeline and test directory are added explicitly.
+    only this checkout's pipeline, its sibling ``retainpdf_*`` packages and the
+    test directory are added explicitly (in a worktree the shared venv's
+    editable installs point at the main checkout; 2026-11-26 the store started
+    importing ``retainpdf_base.io`` and the probe picked up the wrong copy).
     subprocess.run kills and reaps the child on timeout.
     """
     path = Path(test_file).resolve()
@@ -22,7 +25,8 @@ def run_cold_import_probe(test_file: str, probe: str, *args: str) -> None:
             "-c",
             "import pathlib, runpy, sys; "
             "path = pathlib.Path(sys.argv[1]); "
-            "sys.path[:0] = [str(path.parents[3]), str(path.parent)]; "
+            "packages = sorted({str(init.parent.parent) for init in path.parents[4].glob('*/retainpdf_*/__init__.py')}); "
+            "sys.path[:0] = [str(path.parents[3]), *packages, str(path.parent)]; "
             "namespace = runpy.run_path(str(path)); "
             "namespace[sys.argv[2]](*sys.argv[3:])",
             str(path),

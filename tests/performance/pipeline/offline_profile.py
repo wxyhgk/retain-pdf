@@ -27,7 +27,7 @@ TARGETS = {
     "page_policy": ("/workflow/phases/policy.py", "run_page_policy_stage"),
     "batch_stage": ("/workflow/phases/batch_translation.py", "run_translation_batch_stage"),
     "apply_results": ("/services/results/applier.py", "_apply_translated_results"),
-    "page_write": ("/core/payload/translations.py", "_atomic_write_json"),
+    "page_write": ("/core/payload/translations.py", "save_translations"),
     "checkpoint_commit": ("/workflow/checkpoint/session.py", "_persist"),
     "garbled_repair": ("/workflow/phases/repair.py", "run_garbled_reconstruction_stage"),
     "agent_repair": ("/workflow/phases/repair.py", "run_agent_repair_stage"),
