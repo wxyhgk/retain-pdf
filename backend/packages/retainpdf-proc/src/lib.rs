@@ -168,9 +168,95 @@ pub fn worker_process_exists(pid: u32) -> bool {
     io::Error::last_os_error().raw_os_error() == Some(libc::EPERM)
 }
 
-#[cfg(not(unix))]
+/// Windows：`OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)` 打开，`GetExitCodeProcess` 还是 `STILL_ACTIVE` 就算活着。
+///
+/// 以前这里恒为 false（S03）：取消时认不出自己的 worker、jobsd 的 terminate 接口回 404、启动对账和退出清理
+/// 把在跑的任务都当成已死，库里写成 Canceled 了 worker 还在调模型花钱。
+///
+/// - 打不开且是 `ERROR_ACCESS_DENIED`：进程在，只是不让查（和 unix 的 `EPERM` 一样算活着）；别的错误
+///   （没有这个 pid 是 `ERROR_INVALID_PARAMETER`）算不在。
+/// - 进程退出后只要还有人握着句柄（比如还没 `wait()` 的 `Child`），pid 仍然能打开，但退出码已经不是
+///   `STILL_ACTIVE`，照样判不在；也就没有 unix 那种「僵尸当活着」的问题。
+/// - 进程恰好以退出码 259（`STILL_ACTIVE`）退出会被误判成活着，Windows 上这是公认的边角，我们的 worker 不这么退出。
+#[cfg(windows)]
+pub fn worker_process_exists(pid: u32) -> bool {
+    windows_process::exists(pid)
+}
+
+#[cfg(not(any(unix, windows)))]
 pub fn worker_process_exists(_pid: u32) -> bool {
     false
+}
+
+/// Windows 上按 pid 打开进程查状态、读启动时间（[`worker_process_exists`]、[`identity::process_start`]）。
+#[cfg(windows)]
+pub(crate) mod windows_process {
+    use windows_sys::Win32::Foundation::{
+        CloseHandle, GetLastError, ERROR_ACCESS_DENIED, FILETIME, HANDLE, STILL_ACTIVE,
+    };
+    use windows_sys::Win32::System::Threading::{
+        GetExitCodeProcess, GetProcessTimes, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+
+    /// 打开的进程句柄，离开作用域就关。
+    struct ProcessHandle(HANDLE);
+
+    impl Drop for ProcessHandle {
+        fn drop(&mut self) {
+            // SAFETY：句柄由 `OpenProcess` 成功返回，只在这里关一次。
+            unsafe {
+                CloseHandle(self.0);
+            }
+        }
+    }
+
+    /// 打开失败时带上 `GetLastError`，调用方据此区分「不在」和「不让查」。
+    fn open(pid: u32) -> Result<ProcessHandle, u32> {
+        // SAFETY：按文档传参；返回空句柄表示失败，紧接着读 GetLastError。
+        let handle = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) };
+        if handle.is_null() {
+            return Err(unsafe { GetLastError() });
+        }
+        Ok(ProcessHandle(handle))
+    }
+
+    pub(crate) fn exists(pid: u32) -> bool {
+        if pid == 0 {
+            // pid 0 是系统空闲进程，不会是我们的 worker。
+            return false;
+        }
+        let handle = match open(pid) {
+            Ok(handle) => handle,
+            Err(error) => return error == ERROR_ACCESS_DENIED,
+        };
+        let mut code = 0u32;
+        // SAFETY：句柄有效，`code` 是可写的 u32。
+        if unsafe { GetExitCodeProcess(handle.0, &mut code) } == 0 {
+            // 打开了却读不到退出码：保守当活着，别把在跑的 worker 当成已死。
+            return true;
+        }
+        code == STILL_ACTIVE as u32
+    }
+
+    /// 进程创建时刻，FILETIME（1601-01-01 起的 100 纳秒数）。进程不在、不让查时 None。
+    pub(crate) fn creation_time(pid: u32) -> Option<u64> {
+        if pid == 0 {
+            return None;
+        }
+        let handle = open(pid).ok()?;
+        let mut creation = FILETIME::default();
+        let mut exit = FILETIME::default();
+        let mut kernel = FILETIME::default();
+        let mut user = FILETIME::default();
+        // SAFETY：句柄有效，四个出参都是可写的 FILETIME。
+        let ok =
+            unsafe { GetProcessTimes(handle.0, &mut creation, &mut exit, &mut kernel, &mut user) };
+        if ok == 0 {
+            return None;
+        }
+        let ticks = (u64::from(creation.dwHighDateTime) << 32) | u64::from(creation.dwLowDateTime);
+        (ticks != 0).then_some(ticks)
+    }
 }
 
 pub async fn terminate_job_process_tree(
@@ -321,6 +407,49 @@ fn terminate_job_process_tree_windows(pid: u32) -> Result<()> {
         return Ok(());
     }
     Err(anyhow!("taskkill failed for pid={pid}"))
+}
+
+#[cfg(all(test, windows))]
+mod windows_process_tests {
+    use super::worker_process_exists;
+
+    #[test]
+    fn current_process_exists() {
+        assert!(worker_process_exists(std::process::id()));
+    }
+
+    #[test]
+    fn absurd_pid_does_not_exist() {
+        // Windows 的 pid 是 4 的倍数，奇数号不会有进程。
+        assert!(!worker_process_exists(999_999));
+        assert!(!worker_process_exists(0));
+    }
+
+    #[test]
+    fn exited_child_does_not_exist_even_while_its_handle_is_held() {
+        let mut child = std::process::Command::new("cmd")
+            .args(["/C", "exit 0"])
+            .spawn()
+            .unwrap();
+        let pid = child.id();
+        child.wait().unwrap();
+        // `child` 还握着句柄，pid 没被回收，但进程已经退出。
+        assert!(!worker_process_exists(pid));
+        drop(child);
+    }
+
+    #[test]
+    fn running_child_exists_until_killed() {
+        let mut child = std::process::Command::new("cmd")
+            .args(["/C", "ping -n 30 127.0.0.1 > NUL"])
+            .spawn()
+            .unwrap();
+        let pid = child.id();
+        assert!(worker_process_exists(pid));
+        assert!(super::kill_std_child_process_tree(&mut child));
+        child.wait().unwrap();
+        assert!(!worker_process_exists(pid));
+    }
 }
 
 #[cfg(all(test, unix))]
