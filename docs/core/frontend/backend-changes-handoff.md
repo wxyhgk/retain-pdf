@@ -12,6 +12,21 @@
 
 ---
 
+## 删问答、删书时清 pi 会话：问答记录要带上 `session_id`（fix/derived-follow-edits）
+
+2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 问答记录一节的「删除」。删一次提问、删书时，后端按问答记录的
+`session_id` 删 `retainpdf-pi` 存在 `<数据目录>/ask-pi/sessions/` 下的会话文件（整段对话的第二份）。**现在前端建、改问答记录都不带
+`session_id`，库里全是空的，这条清理一个也对不上**——会话文件照旧只增不删。接口、契约没变（`session_id` 一直是可选字段）。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| `frontend/web/src/features/reader/domain/ask-port.ts` 的 `askThreadsPort.create` / `update` | `{agent_id, anchor, messages}` / `{agent_id?, messages}` | 加 `session_id`：ACP `session/new` 回的 `sessionId`（同一次提问换了会话就带新的） |
+| `frontend/packages/reader/src/ask/use-ask-threads.ts` 调 `threads.create` / `threads.update` 的两处 | 只传 `agentId`、`anchor`、`messages` | 把当前会话的 `sessionId` 一起传给端口（端口的输入类型加一个可选的 `sessionId`） |
+
+其它 agent（`retainpdf`、本机 Claude Code、Codex）带上也没关系：后端只在 pi 的会话目录里按会话头认，对不上就不动。
+
+---
+
 ## 阅读页提问：自带 agent 报思考档位，会话里能改（feat/ask-thought-level）
 
 2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「思考强度：`configOptions` 和 `session/set_config_option`」
