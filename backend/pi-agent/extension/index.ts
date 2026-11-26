@@ -19,11 +19,16 @@
  * L0 由包装脚本接在系统提示词里。上限和 Python 版一样分开算：读书最多 4 轮（一轮里调了读书的工具算一轮），
  * 取说明最多 2 次、检查最多 3 次。
  *
+ * 记忆和前文（2026-11-26 第二期，`memory.ts`）：桥给了后端地址和密钥就注册 `remember`、`search_memories`（不要书），
+ * 每一问最多记 3 次、查 2 次（和 Python 版 TurnBudget 一样，不算读书的轮数）；给了对话编号就在开会话时取上下文：
+ * 记忆那段放进系统提示词一节 `memory`（最后），摘要和最近几轮放在这个会话第一问的最前面。
+ *
  * 不 import pi 的包（工具参数写成普通 JSON Schema），测试时能用假的 `pi` 对象直接跑。
  */
-import { BookTools, makeBookTools, MAX_READ_PAGES, MAX_SEARCH_LIMIT, DEFAULT_SEARCH_LIMIT, splitPrompt, toolTitle } from "./book.ts";
+import { anchorFromTexts, BookTools, makeBookTools, MAX_READ_PAGES, MAX_SEARCH_LIMIT, DEFAULT_SEARCH_LIMIT, splitPrompt, toolTitle } from "./book.ts";
 import type { ToolResult } from "./book.ts";
 import { CHECK_CALLS_PER_TURN, CHECK_TOOL, makeOpenUiTools, OPENUI_TOOL_SPECS, OPENUI_TOOLS, OpenUiTools, SPEC_CALLS_PER_TURN, SPEC_TOOL } from "./openui.ts";
+import { historyText, makeMemoryTools, MEMORY_TOOL_SPECS, MEMORY_TOOLS, MemoryTools, REMEMBER_PER_TURN, REMEMBER_TOOL, SEARCH_PER_TURN, SEARCH_TOOL } from "./memory.ts";
 
 export const BOOK_TOOLS = ["read_pages", "search_book", "view_page"];
 // 防失控的上限（不是规则）：和 Python 版 server.py 的 MAX_TOOL_ROUNDS / MAX_TOOL_CALLS_PER_ROUND 一样
@@ -120,6 +125,8 @@ export class RoundGuard {
   lastBookRound = 0;
   specCalls = 0;
   checkCalls = 0;
+  rememberCalls = 0;
+  searchCalls = 0;
   allowed: string[];
 
   constructor(allowed: string[] = [...BOOK_TOOLS, ...OPENUI_TOOLS]) {
@@ -133,6 +140,8 @@ export class RoundGuard {
     this.lastBookRound = 0;
     this.specCalls = 0;
     this.checkCalls = 0;
+    this.rememberCalls = 0;
+    this.searchCalls = 0;
   }
 
   startTurn(): void {
@@ -166,6 +175,20 @@ export class RoundGuard {
         return { block: true, reason: `这一问已经检查了 ${CHECK_CALLS_PER_TURN} 次，这次没有执行：还有错就把互动块改简单，或者不放互动块、用文字回答。` };
       }
       this.checkCalls += 1;
+      return undefined;
+    }
+    if (toolName === REMEMBER_TOOL) {
+      if (this.rememberCalls >= REMEMBER_PER_TURN) {
+        return { block: true, reason: `这一问已经记了 ${REMEMBER_PER_TURN} 条，这次没有记：挑最要紧的，下一问再记。` };
+      }
+      this.rememberCalls += 1;
+      return undefined;
+    }
+    if (toolName === SEARCH_TOOL) {
+      if (this.searchCalls >= SEARCH_PER_TURN) {
+        return { block: true, reason: `这一问已经查了 ${SEARCH_PER_TURN} 次记忆，这次没有执行：照已有的回答。` };
+      }
+      this.searchCalls += 1;
       return undefined;
     }
     // 读书：一轮里第一次调读书的工具时算一轮
@@ -202,15 +225,16 @@ export function readEnv(env: NodeJS.ProcessEnv = process.env) {
   };
 }
 
-/** pi 的扩展入口。`book`、`openui` 给了就用它们（测试），不然按环境变量建。 */
+/** pi 的扩展入口。`book`、`openui`、`memory` 给了就用它们（测试），不然按环境变量建。 */
 export default function retainpdfBook(
   pi: any,
   book: BookTools | null = makeBookTools(readEnv()),
   openui: OpenUiTools | null = makeOpenUiTools(),
+  memory: MemoryTools | null = makeMemoryTools(),
 ): void {
-  const guard = new RoundGuard([...BOOK_TOOLS, ...(openui ? OPENUI_TOOLS : [])]);
+  const guard = new RoundGuard([...BOOK_TOOLS, ...(openui ? OPENUI_TOOLS : []), ...(memory ? MEMORY_TOOLS : [])]);
 
-  // 锁：不管有没有书，只放行读书的三个工具（和互动块的两个）
+  // 锁：不管有没有书，只放行读书的三个工具（和互动块、记忆的两个）
   pi.on("tool_call", (event: { toolName: string }) => guard.check(event.toolName));
   pi.on("agent_start", () => guard.startRun());
   pi.on("turn_start", () => guard.startTurn());
@@ -226,35 +250,77 @@ export default function retainpdfBook(
     }
   }
 
-  if (!book) return; // 没有书：不给读书的工具，只靠问题里附的上下文
-
-  for (const spec of TOOL_SPECS) {
-    pi.registerTool({
-      ...spec,
-      prepareArguments: (raw: unknown) => prepareArguments(spec.name, raw),
-      async execute(_toolCallId: string, params: Record<string, any>) {
-        return toPiResult(await book.run(spec.name, params));
-      },
-    });
+  if (memory) {
+    for (const spec of MEMORY_TOOL_SPECS) {
+      pi.registerTool({
+        ...spec,
+        async execute(_toolCallId: string, params: Record<string, any>) {
+          return toPiResult(await memory.run(spec.name, params));
+        },
+      });
+    }
   }
 
-  // 用户打字的时候把书的块取好，第一问不用等
-  pi.on("session_start", () => book.warm());
+  if (book) {
+    for (const spec of TOOL_SPECS) {
+      pi.registerTool({
+        ...spec,
+        prepareArguments: (raw: unknown) => prepareArguments(spec.name, raw),
+        async execute(_toolCallId: string, params: Record<string, any>) {
+          return toPiResult(await book.run(spec.name, params));
+        },
+      });
+    }
+  }
+  if (!book && !memory) return; // 没有书也没有后端：只靠问题里附的上下文
 
-  // 材料先给：放在这一问最前面（和 Python 版一样，系统提示词说的「消息最前面……那段」）
-  pi.on("input", async (event: { text: string; images?: unknown[]; source?: string }) => {
-    if (event.source === "extension") return { action: "continue" };
-    const context = await contextFor(book, event.text || "");
-    if (!context) return { action: "continue" };
-    return { action: "transform", text: `${context.text}\n\n${event.text}`, images: [...context.images, ...(event.images ?? [])] };
+  // 用户打字的时候把书的块取好、把对话的上下文取好，第一问不用等
+  pi.on("session_start", () => {
+    book?.warm();
+    void memory?.context();
   });
 
-  // 系统提示词加一节：这本书的页数和目录
+  // 第一问前面放前文（摘要 + 最近几轮），每一问前面放书里取的材料（和 Python 版一样，系统提示词说的「消息最前面……那段」）。
+  // 续接的旧会话（pi 的会话文件里已经有消息）不再给前文：它第一问前面已经有过了
+  let historyGiven = false;
+  pi.on("input", async (event: { text: string; images?: unknown[]; source?: string }, ctx?: any) => {
+    if (event.source === "extension") return { action: "continue" };
+    const texts = splitPrompt(event.text || "");
+    if (memory) memory.page = anchorFromTexts(texts, memory.jobId)?.page ?? null;
+    const parts: string[] = [];
+    if (memory && !historyGiven) {
+      historyGiven = true;
+      if (!sessionHasMessages(ctx)) {
+        const history = historyText(await memory.context());
+        if (history) parts.push(history);
+      }
+    }
+    const context = book ? await contextFor(book, event.text || "") : null;
+    if (context) parts.push(context.text);
+    if (!parts.length) return { action: "continue" };
+    return { action: "transform", text: `${parts.join("\n\n")}\n\n${event.text}`, images: [...(context?.images ?? []), ...(event.images ?? [])] };
+  });
+
+  // 系统提示词加两节：这本书的页数和目录、RetainPDF 记下的关于用户和这本书的事（放最后）
   pi.on("before_agent_start", async (event: { systemPromptOptions?: { sections?: Record<string, string> } }) => {
-    const overview = await book.overview();
-    if (overview && event.systemPromptOptions?.sections) event.systemPromptOptions.sections.book = overview;
+    const sections = event.systemPromptOptions?.sections;
+    if (!sections) return undefined;
+    const overview = book ? await book.overview() : null;
+    if (overview) sections.book = overview;
+    const memoryText = String((await memory?.context())?.memory_text ?? "").trim();
+    if (memoryText) sections.memory = memoryText;
     return undefined;
   });
+}
+
+/** pi 的会话里已经有消息没有（续接旧会话）；看不了当没有。 */
+export function sessionHasMessages(ctx: any): boolean {
+  try {
+    const entries = ctx?.sessionManager?.getEntries?.();
+    return Array.isArray(entries) && entries.some((entry: any) => entry?.type === "message");
+  } catch {
+    return false;
+  }
 }
 
 export { toolTitle, TOOL_SPECS };

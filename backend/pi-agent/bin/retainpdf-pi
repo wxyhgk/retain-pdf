@@ -6,7 +6,8 @@
 # - 提示词：沿用 Python 自带 agent 的 ask_system.txt；桥给了互动块的 L0（RETAIN_PI_OPENUI_INTRO，桥从
 #   contracts/openui/ask-openui-prompt.v1.json 的 intro 写进私有配置目录的文件）就接在后面；有书时再加 ask_tools.txt（工具怎么用）。
 #   顺序和 Python 版一样：ask_system → L0 → ask_tools；
-# - 工具：只开我们扩展里读书的三个和互动块的两个（openui_spec、openui_check；-nbt 关掉 read/bash/edit/write，
+# - 工具：只开我们扩展里读书的三个、互动块的两个（openui_spec、openui_check）和记忆的两个（remember、search_memories，
+#   2026-11-26 第二期；桥给了后端地址和密钥就接 ask_memory.txt，和 Python 版一样；-nbt 关掉 read/bash/edit/write，
 #   --tools 白名单，--no-mcp 不连 MCP）；
 # - 不读用户的东西：-ne 不加载自动发现的扩展（-e 给的照样加载），-ns / -np 不加载 skill、提示词模板，
 #   -nc 不读 AGENTS.md / CLAUDE.md，-na 不信任工作目录里的 .pi/；--offline 不联网更新模型目录；
@@ -39,7 +40,7 @@ set -- "$@" \
   --system-prompt "$RETAIN_PI_PROMPTS_DIR/ask_system.txt" \
   --extension "$here/extension/index.ts" \
   --no-builtin-tools \
-  --tools read_pages,search_book,view_page,openui_spec,openui_check \
+  --tools read_pages,search_book,view_page,openui_spec,openui_check,remember,search_memories \
   --no-mcp \
   --no-extensions \
   --no-skills \
@@ -55,6 +56,10 @@ fi
 
 if [ -n "${RETAIN_ASK_JOB_ID:-}" ] && [ -n "${RETAIN_ASK_BACKEND_URL:-}" ]; then
   set -- "$@" --append-system-prompt "$RETAIN_PI_PROMPTS_DIR/ask_tools.txt"
+fi
+
+if [ -n "${RETAIN_ASK_BACKEND_URL:-}" ] && [ -n "${RETAIN_ASK_BACKEND_KEY:-}" ]; then
+  set -- "$@" --append-system-prompt "$RETAIN_PI_PROMPTS_DIR/ask_memory.txt"
 fi
 
 exec "$RETAIN_PI_BIN" "$@"

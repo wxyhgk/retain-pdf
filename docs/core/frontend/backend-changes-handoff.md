@@ -12,6 +12,16 @@
 
 ---
 
+## RetainPDF + pi 也有记忆和前文（feat/pi-ask-memory）
+
+2026-11-26，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「RetainPDF + pi 怎么用」。契约没改。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| 阅读页提问的握手（连 `retainpdf-pi`） | 只给 `retainpdf` 带 `conversation_id` | `retainpdf-pi` 也带 `conversation_id`；带了以后它自己取前文（摘要 + 最近几轮 + 记忆），前端不要再把前几轮拼成文字带过去。pi-acp 的 `initialize` 没有 `_meta.retainpdf`，按 agent 编号认 |
+| 每一问 | `retainpdf` 用 `_meta.retainpdf.selection` | `retainpdf-pi` 收不到 `_meta`：照旧在问题前面写那段可读出处（「（RetainPDF 任务 …，第 N 页）」） |
+| 「已记住（撤销）」 | 看 `tool_call_update` 的 `_meta.retainpdf.memory` | `retainpdf-pi` 的卡片没有这个：一问答完后 `GET /api/v1/ai/memories?source_conversation_id=<对话>&created_after=<这一问开始的时间>`，有就画「已记住：……（撤销）」，编号放进追加回答的 `memory_ids`。工具名一样（`remember`、`search_memories`） |
+
 ## 阅读页提问第二期：压缩主对话、后端写副对话结论（feat/ask-compaction）
 
 2026-11-26，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「压缩」。契约 `ask-conversations.v1` 只加字段和两个端点（没写 `client_name`）。

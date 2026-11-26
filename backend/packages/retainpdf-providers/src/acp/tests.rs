@@ -359,7 +359,7 @@ fn fake_pi_agent(root: &Path) {
     std::fs::create_dir_all(backend.join("ask-agent/retainpdf_ask_agent/prompts")).unwrap();
     std::fs::write(backend.join("pi-agent/bin/retainpdf-pi"), "#!/bin/sh\n").unwrap();
     std::fs::write(backend.join("pi-agent/extension/index.ts"), "export default () => {};\n").unwrap();
-    for name in ["ask_system.txt", "ask_tools.txt"] {
+    for name in ["ask_system.txt", "ask_tools.txt", "ask_memory.txt"] {
         std::fs::write(backend.join("ask-agent/retainpdf_ask_agent/prompts").join(name), "prompt").unwrap();
     }
 }
@@ -481,7 +481,7 @@ fn retainpdf_pi_handshake_is_gated_and_launches_pi_acp_through_the_wrapper() {
     let settings: serde_json::Value = serde_json::from_slice(&std::fs::read(agent_dir.join("settings.json")).unwrap()).unwrap();
     assert_eq!(
         settings["defaultTools"],
-        serde_json::json!(["read_pages", "search_book", "view_page", "openui_spec", "openui_check"])
+        serde_json::json!(["read_pages", "search_book", "view_page", "openui_spec", "openui_check", "remember", "search_memories"])
     );
     assert_eq!(settings["cacheWarming"], "off");
     assert_eq!(settings["defaultProjectTrust"], "never");
@@ -492,9 +492,15 @@ fn retainpdf_pi_handshake_is_gated_and_launches_pi_acp_through_the_wrapper() {
         assert!(!text.contains("synthetic-secret-value"), "{text}");
     }
 
-    // 没给书：不给读书的东西
+    // 没给书：不给读书的东西，但记忆和取上下文不要书，照样给后端地址和密钥（2026-11-26 第二期，和 Python 版一样）
     let (process, _) = prepare_agent(&config, PI_AGENT_ID, &local_headers(), &pi_query(), None).unwrap();
-    assert!(process.env.iter().all(|(name, _)| name != ASK_ENV_JOB_ID && name != ASK_ENV_BACKEND_KEY));
+    assert!(process.env.iter().all(|(name, _)| name != ASK_ENV_JOB_ID));
+    assert!(process.env.iter().any(|(name, _)| name == ASK_ENV_BACKEND_KEY));
+    assert!(process.env.iter().all(|(name, _)| name != ASK_ENV_CONVERSATION_ID));
+    // 握手带了对话：交给 pi（扩展开会话时自己取上下文、记忆出处记它）
+    let with_conversation = AcpConnectQuery { conversation_id: "conv-20261126-a1".into(), ..pi_query() };
+    let (process, _) = prepare_agent(&config, PI_AGENT_ID, &local_headers(), &with_conversation, None).unwrap();
+    assert!(process.env.iter().any(|(name, value)| name == ASK_ENV_CONVERSATION_ID && value == "conv-20261126-a1"));
 }
 
 #[cfg(unix)]
