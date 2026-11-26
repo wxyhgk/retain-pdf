@@ -29,7 +29,9 @@ pub use constants::{
     TRANSLATION_MANIFEST_FILE_NAME, TRANSLATION_REQUEST_JOURNAL_FILE_NAME,
     AGENT_EDITORIAL_EVENTS_RELATIVE_PATH,
 };
-pub use job_paths::{attach_job_paths, build_job_paths, JobPaths};
+pub use job_paths::{
+    attach_job_paths, build_job_paths, usage_ledger_env, JobPaths, USAGE_JOB_ID_ENV, USAGE_LEDGER_ENV,
+};
 pub use merged_job::{is_merged_job_id, MergedJobId};
 pub use path_ops::{
     data_path_is_absolute, job_uses_legacy_output_layout, job_uses_legacy_path_storage,

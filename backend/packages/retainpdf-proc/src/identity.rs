@@ -7,6 +7,8 @@
 //! - Linux：`/proc/<pid>/stat` 第 22 个字段 starttime（开机以来的时钟滴答），再带上本次开机的
 //!   `boot_id`，重启机器后同号同滴答也认不错。
 //! - macOS：`proc_pidinfo(PROC_PIDTBSDINFO)` 的 `pbi_start_tvsec/usec`（墙上时间，微秒）。
+//! - Windows：`GetProcessTimes` 的创建时刻（FILETIME，100 纳秒一格，墙上时间）。pid 在最后一个句柄关掉之前
+//!   不会被复用，复用后创建时刻一定不同。
 //! - 别的平台读不到，返回 None（调用方按「没有身份信息」处理）。
 
 /// 一个进程的启动时刻。
@@ -111,7 +113,23 @@ mod platform {
     }
 }
 
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(windows)]
+mod platform {
+    use super::ProcessStart;
+
+    /// FILETIME 的起点 1601-01-01 到 Unix 纪元之间的 100 纳秒数。
+    const FILETIME_UNIX_EPOCH: u64 = 116_444_736_000_000_000;
+
+    pub(super) fn process_start(pid: u32) -> Option<ProcessStart> {
+        let ticks = crate::windows_process::creation_time(pid)?;
+        Some(ProcessStart {
+            token: format!("windows:{ticks}"),
+            started_unix_secs: ticks.saturating_sub(FILETIME_UNIX_EPOCH) as f64 / 10_000_000.0,
+        })
+    }
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "macos", windows)))]
 mod platform {
     use super::ProcessStart;
 
@@ -133,7 +151,7 @@ mod tests {
         assert_eq!(platform::parse_start_ticks("garbage"), None);
     }
 
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    #[cfg(any(target_os = "linux", target_os = "macos", windows))]
     #[test]
     fn identity_is_stable_for_the_same_process_and_matches_itself() {
         let pid = std::process::id();
@@ -149,7 +167,7 @@ mod tests {
         assert!(start.started_unix_secs > now - 86_400.0 * 30.0, "{start:?}");
     }
 
-    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    #[cfg(any(target_os = "linux", target_os = "macos", windows))]
     #[test]
     fn identity_of_a_different_process_does_not_match() {
         // 「号被复用」：同一个 pid 现在是另一个进程，启动时间不同。
@@ -157,8 +175,14 @@ mod tests {
         // Linux 的启动时间按时钟滴答记（通常 10ms 一格）。测试进程刚起来就派子进程，两个会落在同一格、
         // 分不出来（CI 上就这样红过），先等几格再派。
         std::thread::sleep(std::time::Duration::from_millis(50));
+        #[cfg(not(windows))]
         let mut child = std::process::Command::new("sleep")
             .arg("5")
+            .spawn()
+            .unwrap();
+        #[cfg(windows)]
+        let mut child = std::process::Command::new("cmd")
+            .args(["/C", "ping -n 6 127.0.0.1 > NUL"])
             .spawn()
             .unwrap();
         let other = process_identity(child.id()).expect("child identity");
