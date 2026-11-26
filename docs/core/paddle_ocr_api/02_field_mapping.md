@@ -66,6 +66,11 @@
 | `algorithm` | `code` | `code_block` | `code` |
 | `display_formula` | `formula` | `display_formula` | `formula` |
 
+`formula_number` 块照旧不翻译；2026-11-26 起归一化按几何把它配到同一页的行间公式上：公式块 `content.formula_number`
+（`text`、`label`、`source = layout_block`、`in_latex`、`block_id`），编号块 `content.number_of_block_id`。规则见
+`backend/pipeline/retainpdf_pipeline/ocr/document_schema/README.md`「行间公式编号」。我们不靠 Paddle Markdown 的
+`showFormulaNumber`（它只在阅读顺序里公式的下一块正好是编号时拼 `\tag*{…}`）。
+
 ## `derived` 映射
 
 当前 `derived` 主要由 provider 规则生成，见：

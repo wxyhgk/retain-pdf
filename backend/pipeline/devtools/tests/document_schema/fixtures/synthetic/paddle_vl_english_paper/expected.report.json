@@ -7,6 +7,16 @@
   "pages_seen": 3
  },
  "document_id": "paddle_vl_english_paper",
+ "formula_numbers": {
+  "formula_count": 1,
+  "number_block_count": 1,
+  "numbered": {
+   "latex_tag": 0,
+   "layout_block": 1,
+   "pdf_text_layer": 0
+  },
+  "unpaired_number_blocks": {}
+ },
  "provider": "paddle",
  "provider_signals": {
   "pages": [

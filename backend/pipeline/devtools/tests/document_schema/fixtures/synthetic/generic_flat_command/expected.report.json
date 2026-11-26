@@ -10,6 +10,16 @@
   "pages_seen": 2
  },
  "document_id": "generic_flat_command",
+ "formula_numbers": {
+  "formula_count": 1,
+  "number_block_count": 0,
+  "numbered": {
+   "latex_tag": 0,
+   "layout_block": 0,
+   "pdf_text_layer": 0
+  },
+  "unpaired_number_blocks": {}
+ },
  "provider": "generic_flat_ocr",
  "provider_version": "",
  "source_json_path": "payload.json",

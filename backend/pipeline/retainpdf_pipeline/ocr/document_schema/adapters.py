@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 from typing import Callable
 
 from retainpdf_pipeline.ocr.document_schema.page_bounds import clamp_page_overflow
 from retainpdf_pipeline.ocr.document_schema.contract_v1 import enrich_document_contract_v1
+from retainpdf_pipeline.ocr.document_schema.formula_numbers import attach_formula_numbers
 from retainpdf_pipeline.ocr.document_schema.defaults import apply_document_defaults_with_report
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GENERIC_FLAT_OCR
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GLM_OCR
@@ -182,6 +184,8 @@ def adapt_payload_to_document_v1_with_report(
     upgraded = enrich_document_contract_v1(upgraded)
     # 取整误差让块超出页边一两个单位：夹回页内，不让一个块的误差让整份文档校验失败（超得多的照样报错）。
     page_overflow_clamped = clamp_page_overflow(upgraded)
+    # 行间公式编号：编号块按几何配到公式上、没配上的从 LaTeX 的 `\tag` 取（文字层兜底在缩放到 PDF 之后，见 pdf_geometry）。
+    formula_numbers = attach_formula_numbers(upgraded)
     report = {
         "source_json_path": str(source_json_path),
         "document_id": document_id,
@@ -192,6 +196,8 @@ def adapt_payload_to_document_v1_with_report(
     }
     if page_overflow_clamped:
         report["page_overflow_clamped_block_count"] = page_overflow_clamped
+    if formula_numbers["formula_count"] or formula_numbers["number_block_count"]:
+        report["formula_numbers"] = deepcopy(formula_numbers)
     provider_signals = dict((upgraded.get("derived") or {}).get("provider_signals") or {})
     if provider_signals:
         report["provider_signals"] = provider_signals

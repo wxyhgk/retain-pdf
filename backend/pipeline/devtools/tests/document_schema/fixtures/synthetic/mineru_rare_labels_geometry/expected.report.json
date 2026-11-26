@@ -15,6 +15,16 @@
   "pages_seen": 4
  },
  "document_id": "mineru_rare_labels_geometry",
+ "formula_numbers": {
+  "formula_count": 3,
+  "number_block_count": 3,
+  "numbered": {
+   "latex_tag": 0,
+   "layout_block": 3,
+   "pdf_text_layer": 0
+  },
+  "unpaired_number_blocks": {}
+ },
  "provider": "mineru",
  "provider_signals": {
   "backend": "pipeline",

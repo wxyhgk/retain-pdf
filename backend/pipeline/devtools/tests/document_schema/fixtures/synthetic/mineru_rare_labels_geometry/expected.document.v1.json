@@ -37,6 +37,16 @@
  },
  "derived": {
   "coordinate_space": "pdf_point",
+  "formula_numbers": {
+   "formula_count": 3,
+   "number_block_count": 3,
+   "numbered": {
+    "latex_tag": 0,
+    "layout_block": 3,
+    "pdf_text_layer": 0
+   },
+   "unpaired_number_blocks": {}
+  },
   "notes": "MinerU middle.json adapted through RetainPDF canonical roles.",
   "provider_signals": {
    "backend": "pipeline",
@@ -1758,6 +1768,13 @@
      "block_class": "formula",
      "block_id": "p001-b0007",
      "content": {
+      "formula_number": {
+       "block_id": "p001-b0008",
+       "in_latex": false,
+       "label": "1",
+       "source": "layout_block",
+       "text": "(1)"
+      },
       "kind": "formula",
       "line_texts": [
        "\\frac{\\partial n}{\\partial t}=D_{\\parallel}\\nabla_{\\parallel}^{2}n+D_{\\perp}\\frac{\\partial^{2}n}{\\partial z^{2}}-\\gamma n"
@@ -1893,6 +1910,10 @@
       "kind": "text",
       "line_texts": [
        "(1)"
+      ],
+      "number_of_block_id": "p001-b0007",
+      "related_block_ids": [
+       "p001-b0007"
       ],
       "text": "(1)",
       "text_flow": "flow"
@@ -4093,6 +4114,13 @@
      "block_class": "formula",
      "block_id": "p002-b0004",
      "content": {
+      "formula_number": {
+       "block_id": "p002-b0005",
+       "in_latex": false,
+       "label": "2",
+       "source": "layout_block",
+       "text": "(2)"
+      },
       "kind": "formula",
       "line_texts": [
        "\\sigma^{2}(t)=\\sigma_{0}^{2}+2Dt"
@@ -4228,6 +4256,10 @@
       "kind": "text",
       "line_texts": [
        "(2)"
+      ],
+      "number_of_block_id": "p002-b0004",
+      "related_block_ids": [
+       "p002-b0004"
       ],
       "text": "(2)",
       "text_flow": "flow"
@@ -7345,6 +7377,13 @@
      "block_class": "formula",
      "block_id": "p003-b0006",
      "content": {
+      "formula_number": {
+       "block_id": "p003-b0007",
+       "in_latex": false,
+       "label": "3",
+       "source": "layout_block",
+       "text": "(3)"
+      },
       "kind": "formula",
       "line_texts": [
        "\\mathcal{A}=\\frac{D_{\\parallel}}{D_{\\perp}}\\propto\\exp\\left(\\frac{2L}{\\lambda}\\right)"
@@ -7480,6 +7519,10 @@
       "kind": "text",
       "line_texts": [
        "(3)"
+      ],
+      "number_of_block_id": "p003-b0006",
+      "related_block_ids": [
+       "p003-b0006"
       ],
       "text": "(3)",
       "text_flow": "flow"

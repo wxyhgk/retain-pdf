@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from pathlib import Path
 
 from retainpdf_pipeline.ocr.document_schema.validator import build_validation_report
@@ -47,6 +48,9 @@ def refresh_report_for_final_document(report: dict, document: dict) -> dict:
     )
     if provider_signals:
         refreshed["provider_signals"] = provider_signals
+    formula_numbers = (document.get("derived") or {}).get("formula_numbers")
+    if isinstance(formula_numbers, dict):
+        refreshed["formula_numbers"] = deepcopy(formula_numbers)
     return refreshed
 
 

@@ -8,6 +8,7 @@ from pathlib import Path
 from retainpdf_pipeline.ocr.document_schema.classification import (
     derive_block_class,
 )
+from retainpdf_pipeline.ocr.document_schema.formula_numbers import FORMULA_NUMBER_SOURCES
 from retainpdf_pipeline.ocr.document_schema.version import (
     DOCUMENT_SCHEMA_FILE_NAME,
     DOCUMENT_SCHEMA_NAME,
@@ -115,6 +116,16 @@ def _validate_content(path: str, content: dict) -> None:
         primary_asset_id = str(content.get("asset_id", "") or "")
         if primary_asset_id and primary_asset_id != content["asset_ids"][0]:
             _fail(f"{path}.asset_ids[0]", "must match primary asset_id")
+    if "formula_number" in content:
+        _validate_formula_number(f"{path}.formula_number", content["formula_number"], kind=content["kind"])
+    if "number_of_block_id" in content:
+        _expect_type(f"{path}.number_of_block_id", content["number_of_block_id"], str)
+        if not content["number_of_block_id"]:
+            _fail(f"{path}.number_of_block_id", "expected non-empty string")
+    if "related_block_ids" in content:
+        _expect_type(f"{path}.related_block_ids", content["related_block_ids"], list)
+        for index, block_id in enumerate(content["related_block_ids"]):
+            _expect_type(f"{path}.related_block_ids[{index}]", block_id, str)
     if "toc_entries" in content:
         _expect_type(f"{path}.toc_entries", content["toc_entries"], list)
         for index, entry in enumerate(content["toc_entries"]):
@@ -131,6 +142,57 @@ def _validate_content(path: str, content: dict) -> None:
                 _expect_type(f"{path}.toc_entries[{index}].line_index", entry["line_index"], int)
             if "bbox" in entry:
                 _validate_bbox(f"{path}.toc_entries[{index}].bbox", entry["bbox"])
+
+
+def _validate_formula_number(path: str, record, *, kind: str) -> None:
+    """行间公式的编号（`formula_numbers.py`）：只挂在 formula 块上。"""
+    _expect_type(path, record, dict)
+    if kind != "formula":
+        _fail(path, f"only formula blocks carry a formula number, got content kind '{kind}'")
+    for key in ("text", "label", "source"):
+        if key not in record:
+            _fail(path, f"missing key '{key}'")
+        _expect_type(f"{path}.{key}", record[key], str)
+        if not record[key]:
+            _fail(f"{path}.{key}", "expected non-empty string")
+    if record["source"] not in FORMULA_NUMBER_SOURCES:
+        _fail(f"{path}.source", f"unexpected formula number source '{record['source']}'")
+    if "in_latex" in record:
+        _expect_type(f"{path}.in_latex", record["in_latex"], bool)
+    if "block_id" in record:
+        _expect_type(f"{path}.block_id", record["block_id"], str)
+        if not record["block_id"]:
+            _fail(f"{path}.block_id", "expected non-empty string")
+
+
+def _validate_formula_number_links(path: str, page: dict) -> None:
+    """公式上记的编号块、编号块上记的公式都在同一页，且互相指着。"""
+    blocks = {
+        str(block.get("block_id", "")): block
+        for block in page.get("blocks", []) or []
+        if isinstance(block, dict)
+    }
+    for index, block in enumerate(page.get("blocks", []) or []):
+        content = block.get("content", {}) or {}
+        record = content.get("formula_number")
+        if isinstance(record, dict) and record.get("block_id"):
+            number = blocks.get(record["block_id"])
+            if number is None:
+                _fail(f"{path}.blocks[{index}].content.formula_number.block_id", f"no block '{record['block_id']}' on this page")
+            if (number.get("content", {}) or {}).get("number_of_block_id") != block.get("block_id"):
+                _fail(
+                    f"{path}.blocks[{index}].content.formula_number.block_id",
+                    "the number block must point back with content.number_of_block_id",
+                )
+        target_id = content.get("number_of_block_id")
+        if target_id:
+            target = blocks.get(target_id)
+            target_record = ((target or {}).get("content", {}) or {}).get("formula_number")
+            if not isinstance(target_record, dict) or target_record.get("block_id") != block.get("block_id"):
+                _fail(
+                    f"{path}.blocks[{index}].content.number_of_block_id",
+                    f"formula block '{target_id}' on this page must point back with content.formula_number.block_id",
+                )
 
 
 def _validate_policy(path: str, policy: dict) -> None:
@@ -423,6 +485,7 @@ def _validate_page(path: str, page: dict, *, page_index: int) -> None:
             page_width=float(page["width"]),
             page_height=float(page["height"]),
         )
+    _validate_formula_number_links(path, page)
 
 
 def validate_document_payload(data: dict) -> None:
