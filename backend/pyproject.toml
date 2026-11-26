@@ -7,7 +7,8 @@ dependencies = [
   "retainpdf-ask-agent",
   "retainpdf-base",
   "retainpdf-math",
-  "retainpdf-pipeline",
+  # scan-ocr：扫描件的公式编号截图识别（rapidocr + onnxruntime），Docker、CI、开发环境都装
+  "retainpdf-pipeline[scan-ocr]",
   "retainpdf-table-agent",
   "retainpdf-toc-agent",
   "retainpdf-translation",

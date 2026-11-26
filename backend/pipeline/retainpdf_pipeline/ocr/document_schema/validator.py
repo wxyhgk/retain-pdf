@@ -163,6 +163,12 @@ def _validate_formula_number(path: str, record, *, kind: str) -> None:
         _expect_type(f"{path}.block_id", record["block_id"], str)
         if not record["block_id"]:
             _fail(f"{path}.block_id", "expected non-empty string")
+    if "repaired" in record:
+        _expect_type(f"{path}.repaired", record["repaired"], bool)
+    if "repaired_from" in record:
+        _expect_type(f"{path}.repaired_from", record["repaired_from"], str)
+        if not record.get("repaired"):
+            _fail(f"{path}.repaired_from", "only a repaired number keeps repaired_from")
 
 
 def _validate_formula_number_links(path: str, page: dict) -> None:

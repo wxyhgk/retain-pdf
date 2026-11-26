@@ -20,6 +20,8 @@ OCR_SHARED_GEOMETRY_MODULES = (
     PACKAGE_ROOT / "ocr" / "document_schema" / "finalize.py",
     # 行间公式编号配到公式上（2026-11-26）：各家共用，按 content.kind / structure_role / provenance 认块，不认服务商。
     PACKAGE_ROOT / "ocr" / "document_schema" / "formula_numbers.py",
+    # 扫描件的公式编号截图识别（2026-11-26）：只认页面图和公式块的框，引擎（rapidocr）用到时才导入。
+    PACKAGE_ROOT / "ocr" / "document_schema" / "formula_number_ocr.py",
 )
 FORBIDDEN_IMPORT_PREFIXES = (
     "retainpdf_pipeline.ocr.ocr_provider",

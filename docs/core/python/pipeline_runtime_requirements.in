@@ -2,6 +2,7 @@ Pillow
 PyMuPDF
 fontTools
 pikepdf
+rapidocr
 requests
 retainpdf_base
 retainpdf_math

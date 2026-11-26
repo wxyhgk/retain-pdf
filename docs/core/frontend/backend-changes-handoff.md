@@ -28,10 +28,9 @@
 | `frontend/desktop/scripts/prepare-app.mjs`（拷 rpr 引擎那一段旁边） | 不带 | 把仓库的 `contracts/openui/ask-openui-prompt.v1.json`、`ask-openui-library.v1.json` 拷到 `path.join(outputBackendRoot, "contracts", "openui")` |
 | 同上 | 不带 | 带检查器：在 `backend/openui-check` 里 `npm ci --omit=dev --ignore-scripts`（环境变量加 `OPENUI_TELEMETRY_DISABLED=1`、`DO_NOT_TRACK=1`；**`--ignore-scripts` 不能省**，lang-core 的 postinstall 是安装统计），把 `bin/`、`lib/`、`node_modules/`、`package.json` 拷到 `path.join(outputBackendRoot, "openui-check")`，再删掉 `node_modules/.bin`（和 rpr 引擎一样，免得签名遍历撞断链）。依赖都是纯 JS（lang-core 1.2.0、ci-info、zod），和平台无关 |
 | `frontend/desktop/src/main/backend-env.js` 的 `buildBackendEnv` | 没有 | 加 `RUST_API_OPENUI_DIR: path.join(backendRoot, "contracts", "openui")`、`RUST_API_OPENUI_CHECK_DIR: path.join(backendRoot, "openui-check")`（桌面版的项目根就是 `backendRoot`，后端的默认位置 `<项目根>/backend/openui-check` 对不上，要显式给） |
+| 同上 | （`RUST_API_NODE_DIR` 见上一节「代装本机 agent」） | 检查器用同一个 Node：先找 `RUST_API_NODE_DIR`，再找 PATH。Node ≥ 20 就行。用 Electron 当 node 的那种小脚本（`ELECTRON_RUN_AS_NODE=1 exec <Electron> "$@"`）也能跑 |
 
 - Node（2026-11-26 补，fix/openui-node-fallback）：桌面版不用为检查器另带 Node。后端找 node 的顺序是 `RUST_API_NODE_DIR` → `RETAINPDF_NODE_BIN`（桌面版已经指向 Electron 本体，排版引擎、Word 导出同一个变量）→ PATH；三处起检查器时都带 `ELECTRON_RUN_AS_NODE=1`。
-
-| 同上 | （`RUST_API_NODE_DIR` 见上一节「代装本机 agent」） | 检查器用同一个 Node：先找 `RUST_API_NODE_DIR`，再找 PATH。Node ≥ 20 就行。用 Electron 当 node 的那种小脚本（`ELECTRON_RUN_AS_NODE=1 exec <Electron> "$@"`）也能跑 |
 
 ### 前端页面要做的（可选）
 
@@ -40,6 +39,39 @@
 | 提问窗的工具卡片（`frontend/packages/ask`） | 只有读书的工具 | 多两种卡片：`retainpdf` 的 `title` 是「取互动块说明：core、components:inputs」（`kind: "read"`）和「检查互动块」（`kind: "other"`），摘要是「core、components:inputs（约 1874 token）」「没问题」「2 处问题：unknown-component、type-mismatch」；`retainpdf-pi` 的 `title` 是工具名 `openui_spec` / `openui_check`；本机 agent 由它自己定（Claude Code 一般是 `mcp__retainpdf__openui_check`）。可以折叠成一行或不显示 |
 | 用量那一行（可选） | — | `_meta.retainpdf.usage.openui`：`spec_calls`、`sections`、`check_calls`、`check_problems`、`refused`（这一问调过互动块的工具才有） |
 | 「让它修」 | — | 照旧把解析错误作为下一问发回去就行；自带 agent 每一问取说明、检查的额度重算（取 2 次、查 3 次），下一问模型会重新取说明再改 |
+
+## 扫描件的行间公式编号：CPU 小模型截图识别（feat/formula-number-ocr-crop）
+
+2026-11-26，只增不改，方案 [扫描件公式编号小模型](../../ops/planning/ocr-normalization/20261126-扫描件公式编号小模型.md)。
+document.v1 的 `content.formula_number.source` 多一个取值 `ocr_crop`，可选多两个字段 `repaired`、`repaired_from`（见
+`backend/pipeline/retainpdf_pipeline/ocr/document_schema/README.md`「行间公式编号」）。**网页前端不用改**（还没读这个字段）。
+
+新依赖 `rapidocr==3.10.0`、`onnxruntime==1.32.0` 是 `retainpdf-pipeline[scan-ocr]` 这个 extra：后端工作区（开发环境、CI、Docker）装上了；
+桌面的依赖清单由 `sync_backend_python_requirements.py` 只按必装依赖生成，**这次没变**。桌面不装也能跑：这一步跳过，
+`derived.formula_numbers.ocr_crop.skipped = "ocr_engine_unavailable"`，归一化、翻译照常（`ops/release/desktop_python_check.py` 已把 `rapidocr`
+登记成可选 import）。桌面要用这个功能时：
+
+| 文件 | 旧写法 | 新写法 |
+|---|---|---|
+| `.github/scripts/sync_backend_python_requirements.py` 的三个 `frontend/desktop/requirements-desktop-*.txt` 目标 | `_render_requirements(pipeline_runtime, …)` | 和 Docker 一样用 `docker_runtime`（必装 + `scan-ocr` extra），再跑一遍脚本生成 |
+| 生成出来的 `frontend/desktop/requirements-desktop-{posix,windows,macos}.txt` | 到 `urllib3==2.5.0` 为止 | 多两行 `onnxruntime==1.32.0`、`rapidocr==3.10.0`（pip 再带上 numpy、opencv-python-headless、shapely、pyclipper、omegaconf、PyYAML、tqdm、colorlog、six、protobuf、flatbuffers） |
+
+体积（新增的这些包）：
+
+| 平台 | 轮子（下载） | 装好以后 |
+|---|---|---|
+| macOS arm64 | 约 100 MB（onnxruntime 22.5、opencv 25.8、rapidocr 27.3、numpy 5.5–15） | 本机实测约 215 MB（onnxruntime 80、cv2 67、rapidocr 32 含 31 MB 模型、numpy 24、shapely 5） |
+| Linux x86_64 | 约 138 MB（opencv 63.7、onnxruntime 27.8、rapidocr 27.3、numpy 16.9） | 实测约 350 MB（解开 manylinux_2_28 轮子） |
+| Windows x64 | 约 106 MB（opencv 47.8、rapidocr 27.3、onnxruntime 16.7、numpy 12.6） | 没量，估 250 MB 上下 |
+
+要注意的：
+
+- onnxruntime 1.32.0 **没有 macOS x86_64（Intel）轮子**；opencv-python-headless 5.1.0.95 的 macOS 轮子要 **macOS 15** 起。
+  桌面要支持 Intel Mac 或更老的 macOS，得给桌面另钉 opencv 4.x（rapidocr 要 ≥ 4.5.1.48）、Intel 上不装 onnxruntime（这一步跳过）。
+- Linux 安装包只装 manylinux 轮子（`--only-binary=:all:`）：上面几个都有 manylinux_2_28 的轮子，glibc 基线检查（2.28）应该过，没实测。
+- 模型用 rapidocr 包里自带的（PP-OCRv6 small 检测 + 识别，约 31 MB），不联网下载，不用另外打包。
+
+---
 
 ## 阅读页提问：后端代装本机 agent，桌面版默认装上 pi 和 Claude Code（feat/acp-agent-install）
 
