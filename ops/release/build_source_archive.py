@@ -31,6 +31,12 @@ REQUIRED_FILES = (
     "backend/table-agent/pyproject.toml",
     "backend/toc-agent/pyproject.toml",
     "backend/ask-agent/pyproject.toml",
+    # 阅读页提问的互动块（2026-11-26）：说明文件（前端生成、后端只读）和检查器的 Node 包（依赖构建时 npm ci --ignore-scripts）
+    "contracts/openui/ask-openui-prompt.v1.json",
+    "contracts/openui/ask-openui-library.v1.json",
+    "backend/openui-check/package.json",
+    "backend/openui-check/package-lock.json",
+    "backend/openui-check/bin/openui-check.mjs",
     "backend/config/ocr_providers.json",
     "ops/deployment/docker/backend/Dockerfile.app",
     "resources/fonts/LICENSE-OFL-1.1.txt",

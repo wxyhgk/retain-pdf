@@ -19,6 +19,11 @@
 - 只留一个防失控的上限：最多 `MAX_TOOL_ROUNDS` 轮、每轮 `MAX_TOOL_CALLS_PER_ROUND` 个；到了下一轮 `tool_choice = none`，
   让它照已有的回答。
 
+互动块（2026-11-26，见 `openui.py`）：有说明文件就开（不管有没有书），系统提示词在 `ask_system.txt` 后面接 L0（`intro`），
+工具多 `openui_spec`、`openui_check`，和读书的工具并列。上限分开算（[`TurnBudget`]）：读书照旧最多 `MAX_TOOL_ROUNDS` 轮
+（一轮里调了读书的工具算一轮）；取说明最多 `SPEC_CALLS_PER_TURN` 次、检查最多 `CHECK_CALLS_PER_TURN` 次（按次数算）；
+超了的那一个不执行、回一句话。三样都用完、或者总轮数到了 `MAX_TOTAL_ROUNDS`，下一轮 `tool_choice = none`。
+
 给了工具时 `options` 是 `{"tools": 工具说明, "tool_choice": "auto" | "none"}`。模型这一轮调了工具，就逐个跑（ACP `tool_call` →
 `tool_call_update`），把结果接在对话后面再问。工具出错、超了上限回给模型（tool 结果），不是 JSON-RPC 错误。
 
@@ -40,6 +45,11 @@ from typing import Any, Callable, Iterable, Iterator, Protocol, TextIO
 
 from retainpdf_ask_agent.convert import prompt_to_content
 from retainpdf_ask_agent.convert import text_only
+from retainpdf_ask_agent.openui import CHECK_CALLS_PER_TURN
+from retainpdf_ask_agent.openui import CHECK_TOOL
+from retainpdf_ask_agent.openui import SPEC_CALLS_PER_TURN
+from retainpdf_ask_agent.openui import SPEC_TOOL
+from retainpdf_ask_agent.openui import OpenUiTools
 from retainpdf_ask_agent.prompts import load_prompt
 from retainpdf_ask_agent.tools import ToolResult
 
@@ -51,6 +61,11 @@ TOOLS_PROMPT = "ask_tools.txt"
 # 防失控的上限（不是规则）：最多几轮调工具、一轮最多几个，到了就照已有的回答
 MAX_TOOL_ROUNDS = 4
 MAX_TOOL_CALLS_PER_ROUND = 4
+# 一问最多几轮调工具（读书的轮数 + 取说明、检查的次数；每一样各有各的上限，这是总的兜底）
+MAX_TOTAL_ROUNDS = MAX_TOOL_ROUNDS + SPEC_CALLS_PER_TURN + CHECK_CALLS_PER_TURN
+# 工具额度用完、下一轮不许再调时，接在最后一个工具结果后面的话
+FINAL_ROUND_NOTE = ("（RetainPDF：这一问调工具的额度用完了，不能再调工具。现在直接给出最后的回答：照已有的内容回答；"
+                    "互动块没通过检查就不要放进回答，用文字讲清楚；不用跟用户提工具或额度。）")
 # 带进下一轮的历史最多几条消息（一问一答两条）；之前的图不带，只带文字
 MAX_HISTORY_MESSAGES = 20
 STOP_REASONS = ("end_turn", "max_tokens", "max_turn_requests", "refusal", "cancelled")
@@ -78,6 +93,51 @@ class Tools(Protocol):
 
 
 @dataclass
+class TurnBudget:
+    """一问之内的工具上限：读书按轮（一轮里调了读书的工具算一轮），取说明、检查按次。"""
+
+    book_rounds: int = MAX_TOOL_ROUNDS
+    spec_calls: int = SPEC_CALLS_PER_TURN
+    check_calls: int = CHECK_CALLS_PER_TURN
+    has_book: bool = True
+    has_openui: bool = True
+
+    def any_left(self) -> bool:
+        return (self.has_book and self.book_rounds > 0) or (self.has_openui and (self.spec_calls > 0 or self.check_calls > 0))
+
+    def admit(self, calls: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """这一轮的调用：用得上额度的照常，用完了的标 `_refused`（不执行，回给模型一句话）。"""
+        admitted: list[dict[str, Any]] = []
+        book_in_round = any(call.get("name") not in (SPEC_TOOL, CHECK_TOOL) and not call.get("_refused") for call in calls)
+        book_ok = self.book_rounds > 0
+        if book_in_round and book_ok:
+            self.book_rounds -= 1
+        for call in calls:
+            name = call.get("name")
+            if call.get("_refused"):
+                admitted.append(call)
+            elif name == SPEC_TOOL:
+                if self.spec_calls > 0:
+                    self.spec_calls -= 1
+                    admitted.append(call)
+                else:
+                    admitted.append({**call, "_refused": f"这一问已经取了 {SPEC_CALLS_PER_TURN} 次说明，这次没有执行：用已经取到的说明写，"
+                                                         "或者不写互动块、用文字回答。"})
+            elif name == CHECK_TOOL:
+                if self.check_calls > 0:
+                    self.check_calls -= 1
+                    admitted.append(call)
+                else:
+                    admitted.append({**call, "_refused": f"这一问已经检查了 {CHECK_CALLS_PER_TURN} 次，这次没有执行：还有错就把互动块改简单，"
+                                                         "或者不放互动块、用文字回答。"})
+            elif book_ok:
+                admitted.append(call)
+            else:
+                admitted.append({**call, "_refused": f"读书的工具这一问已经用了 {MAX_TOOL_ROUNDS} 轮，这次没有执行：照已有的内容回答。"})
+        return admitted
+
+
+@dataclass
 class Session:
     id: str
     history: list[dict[str, Any]] = field(default_factory=list)
@@ -87,9 +147,10 @@ class Session:
 
 class AskAgent:
     def __init__(self, stream_fn: StreamFn, *, model: str = "", context_size: int = 0, out: TextIO | None = None,
-                 tools: Tools | None = None):
+                 tools: Tools | None = None, openui: OpenUiTools | None = None):
         self.stream_fn = stream_fn
         self.tools = tools
+        self.openui = openui
         self.model = model
         self.context_size = int(context_size or 0)
         self.out = out or sys.stdout
@@ -187,9 +248,27 @@ class AskAgent:
         self._threads = [t for t in self._threads if t.is_alive()] + [thread]
         thread.start()
 
+    def _system_prompt(self) -> str:
+        """系统提示词：`ask_system.txt`，有互动块接 L0，有书再接读书工具那段。每个会话一样（走缓存）。"""
+        prompt = load_prompt(SYSTEM_PROMPT)
+        if self.openui is not None:
+            prompt = f"{prompt}\n\n{self.openui.intro}"
+        if self.tools is not None:
+            prompt = f"{prompt}\n\n{load_prompt(TOOLS_PROMPT)}"
+        return prompt
+
+    def _tool_specs(self) -> list[dict[str, Any]]:
+        return [*(self.tools.specs() if self.tools is not None else []), *(self.openui.specs() if self.openui is not None else [])]
+
+    def _owner(self, name: str) -> Any:
+        """哪一套工具管这个名字：互动块的归 openui，别的归读书的（没有书时就没人管）。"""
+        if self.openui is not None and self.openui.handles(name):
+            return self.openui
+        return self.tools
+
     def _plan(self, parts: list[dict[str, Any]], meta: Any) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
         """这一问的系统消息、用户消息（最前面是代码取好的材料），和记进用量的说明（取了什么）。工具不在这里挑：有书就全给。"""
-        system = [{"role": "system", "content": load_prompt(SYSTEM_PROMPT)}]
+        system = [{"role": "system", "content": self._system_prompt()}]
         if self.tools is None:
             return system, parts, {}
         texts = [str(part.get("text") or "") for part in parts if part.get("type") == "text"]
@@ -209,7 +288,6 @@ class AskAgent:
             info["context"] = {"kind": name, **getattr(context, "info", {}), "ms": int((time.monotonic() - started) * 1000)}
             images = [{"type": "image_url", "image_url": {"url": f"data:{mime};base64,{data}"}} for mime, data in context.images]
             parts = [{"type": "text", "text": context.text}, *images, *parts]
-        system[0]["content"] = f"{system[0]['content']}\n\n{load_prompt(TOOLS_PROMPT)}"
         overview = getattr(self.tools, "overview", None)
         book = overview() if callable(overview) else ""
         if book:
@@ -227,13 +305,20 @@ class AskAgent:
         first_token_ms: int | None = None
         rounds = 0
         tool_count = 0
+        specs = self._tool_specs()
+        budget = TurnBudget(has_book=self.tools is not None, has_openui=self.openui is not None)
+        openui_info: dict[str, Any] = {}
         try:
             while not session.cancel.is_set():
                 rounds += 1
                 # 到了上限就不许再调（tool_choice=none）：读到的就是全部，照这些回答。工具说明照旧带着（对话里有工具来回）
                 options: dict[str, Any] = {}
-                if self.tools is not None:
-                    options = {"tools": self.tools.specs(), "tool_choice": "auto" if rounds <= MAX_TOOL_ROUNDS else "none"}
+                if specs:
+                    more = rounds <= MAX_TOTAL_ROUNDS and budget.any_left()
+                    options = {"tools": specs, "tool_choice": "auto" if more else "none"}
+                    if not more and messages[-1].get("role") == "tool":
+                        # 额度用完、不许再调：在最后一个工具结果后面说一句，让它直接答（实测 qwen3.8-flash 不说就在正文里反复想调工具）
+                        messages[-1] = {**messages[-1], "content": f"{messages[-1].get('content') or ''}\n\n{FINAL_ROUND_NOTE}"}
                 texts: list[str] = []
                 calls: list[dict[str, Any]] = []
                 native: Any = None
@@ -270,6 +355,8 @@ class AskAgent:
                 calls = calls[:MAX_TOOL_CALLS_PER_ROUND] + [
                     {**call, "_refused": f"一轮最多调 {MAX_TOOL_CALLS_PER_ROUND} 个工具，这个没有执行；照已有的内容回答，或者下一轮再调。"}
                     for call in calls[MAX_TOOL_CALLS_PER_ROUND:]]
+                # 读书、取说明、检查各有各的额度，用完的不执行
+                calls = budget.admit(calls)
                 messages.append({"role": "assistant", "content": "".join(texts),
                                  "tool_calls": [{key: call[key] for key in ("id", "name", "arguments") if key in call} for call in calls],
                                  "native": native})
@@ -277,7 +364,10 @@ class AskAgent:
                     if session.cancel.is_set():
                         break
                     tool_count += 0 if call.get("_refused") else 1
-                    messages.append(self._run_tool(session, call, rounds))
+                    tool_message = self._run_tool(session, call, rounds)
+                    messages.append(tool_message)
+                    if call.get("name") in (SPEC_TOOL, CHECK_TOOL):
+                        _note_openui(openui_info, call, tool_message)
             if session.cancel.is_set():
                 stop_reason = "cancelled"
         except Exception as error:  # noqa: BLE001 - 模型出错回 JSON-RPC 错误，会话照常能接着问
@@ -298,7 +388,8 @@ class AskAgent:
             "elapsed_ms": int((time.monotonic() - started) * 1000),
             **({"first_token_ms": first_token_ms} if first_token_ms is not None else {}),
             **totals,
-            **({"rounds": rounds, "tool_calls": tool_count, **plan_info} if self.tools is not None else {}),
+            **({"rounds": rounds, "tool_calls": tool_count, **plan_info} if specs else {}),
+            **({"openui": openui_info} if openui_info else {}),
         }
         if totals:
             # used 是上下文占了多少：最后一轮的输入加输出（各轮加起来的是花了多少，在 _meta 里）
@@ -315,7 +406,6 @@ class AskAgent:
     def _run_tool(self, session: Session, call: dict[str, Any], round_number: int) -> dict[str, Any]:
         """跑一个工具，前后各发一条 ACP 更新（`tool_call` 进行中 → `tool_call_update` 完成 / 失败），返回给模型的 tool 消息。
         工具在旁边的线程里跑，叫停时不等它（后端慢的时候取消也立刻生效）。"""
-        assert self.tools is not None
         call_id = str(call.get("id") or f"call-{uuid.uuid4().hex[:12]}")
         name = str(call.get("name") or "")
         arguments = call.get("arguments")
@@ -328,12 +418,15 @@ class AskAgent:
             title, kind = name, "other"
             result = ToolResult(text="参数不是一个 JSON 对象，没有执行。按工具说明重新给参数。", is_error=True, summary="参数不对")
         else:
-            title, kind = self.tools.describe(name, arguments)
+            owner = self._owner(name)
+            title, kind = owner.describe(name, arguments) if owner is not None else (name, "other")
             result = None
         self._update(session.id, {"sessionUpdate": "tool_call", "toolCallId": call_id, "title": title, "kind": kind,
                                   "status": "in_progress", "rawInput": arguments if isinstance(arguments, dict) else {}})
         if result is None and call.get("_refused"):
-            result = ToolResult(text=str(call["_refused"]), is_error=True, summary="没有执行：这一轮调的工具太多")
+            # 卡片上的一句：第一个句号前（「这一问已经检查了 3 次，这次没有执行」「一轮最多调 4 个工具，这个没有执行」……）
+            refused = str(call["_refused"])
+            result = ToolResult(text=refused, is_error=True, summary=refused.split("：")[0].split("；")[0][:200])
         if result is None:
             result = self._call_tool(session, name, arguments)
         if result is None:  # 叫停了
@@ -349,12 +442,15 @@ class AskAgent:
                 "images": [{"mime_type": mime, "data": data} for mime, data in result.images], "is_error": result.is_error}
 
     def _call_tool(self, session: Session, name: str, arguments: dict[str, Any]) -> ToolResult | None:
-        assert self.tools is not None
+        owner = self._owner(name)
+        if owner is None:
+            names = "、".join(str(spec.get("name")) for spec in self._tool_specs())
+            return ToolResult(text=f"没有工具 {name}；能用的是 {names}。", is_error=True, summary=f"没有工具 {name}"[:200])
         box: list[ToolResult] = []
 
         def work() -> None:
             try:
-                box.append(self.tools.run(name, arguments))
+                box.append(owner.run(name, arguments))
             except Exception as error:  # noqa: BLE001 - 工具出错回给模型，不当 JSON-RPC 错误
                 box.append(ToolResult(text=f"工具出错：{type(error).__name__}: {error}"[:1000], is_error=True, summary="工具出错"))
 
@@ -365,6 +461,31 @@ class AskAgent:
             if session.cancel.is_set():
                 return None
         return box[0] if box else ToolResult(text="工具没有结果", is_error=True)
+
+
+def _note_openui(info: dict[str, Any], call: dict[str, Any], tool_message: dict[str, Any]) -> None:
+    """记进用量：取了几次、哪几段，检查了几次、几次没过（实测看模型会不会先取说明、能不能改对）。"""
+    arguments = call.get("arguments")
+    if isinstance(arguments, str):
+        try:
+            arguments = json.loads(arguments or "{}")
+        except ValueError:
+            arguments = {}
+    arguments = arguments if isinstance(arguments, dict) else {}
+    refused = bool(call.get("_refused"))
+    if call.get("name") == SPEC_TOOL:
+        info["spec_calls"] = info.get("spec_calls", 0) + (0 if refused else 1)
+        sections = arguments.get("sections")
+        sections = [sections] if isinstance(sections, str) else sections if isinstance(sections, list) else []
+        if not refused:
+            info["sections"] = [*info.get("sections", []), *[str(item) for item in sections]]
+    else:
+        info["check_calls"] = info.get("check_calls", 0) + (0 if refused else 1)
+        content = str(tool_message.get("content") or "")
+        if not refused and not content.startswith("没问题"):
+            info["check_problems"] = info.get("check_problems", 0) + 1
+    if refused:
+        info["refused"] = info.get("refused", 0) + 1
 
 
 def _text_content(text: str) -> dict[str, Any]:
@@ -380,4 +501,4 @@ def _add_usage(totals: dict[str, Any], usage: dict[str, Any]) -> None:
             totals[key] = value
 
 
-__all__ = ["AskAgent", "MAX_TOOL_ROUNDS", "PROTOCOL_VERSION", "Session", "StreamFn", "Tools"]
+__all__ = ["AskAgent", "MAX_TOOL_ROUNDS", "MAX_TOTAL_ROUNDS", "PROTOCOL_VERSION", "Session", "StreamFn", "Tools", "TurnBudget"]

@@ -44,6 +44,8 @@ fn config(root: &Path) -> AcpConfig {
         backend_root: Some(root.join("backend")),
         agents_dir: root.join(AGENTS_DIR_NAME),
         node_dir: None,
+        openui_dir: None,
+        openui_check_dir: None,
     }
 }
 
@@ -465,7 +467,10 @@ fn retainpdf_pi_handshake_is_gated_and_launches_pi_acp_through_the_wrapper() {
     assert_eq!(provider["models"][0]["id"], "claude-haiku-5-5");
     assert_eq!(provider["models"][0]["compat"]["forceAdaptiveThinking"], true);
     let settings: serde_json::Value = serde_json::from_slice(&std::fs::read(agent_dir.join("settings.json")).unwrap()).unwrap();
-    assert_eq!(settings["defaultTools"], serde_json::json!(["read_pages", "search_book", "view_page"]));
+    assert_eq!(
+        settings["defaultTools"],
+        serde_json::json!(["read_pages", "search_book", "view_page", "openui_spec", "openui_check"])
+    );
     assert_eq!(settings["cacheWarming"], "off");
     assert_eq!(settings["defaultProjectTrust"], "never");
     assert_eq!(settings["enableInstallTelemetry"], false);
@@ -528,4 +533,107 @@ fn settings_map_onto_pi() {
     assert_eq!(openai["providers"]["retainpdf"]["api"], "openai-responses");
     assert_eq!(openai["providers"]["retainpdf"]["models"][0]["compat"], serde_json::json!({}));
     assert!(!qwen.to_string().contains("\"s\""));
+}
+
+// ---------- 互动块（OpenUI，2026-11-26） ----------
+
+/// 假的 contracts/openui（说明文件只要 version 和 intro）、检查器包、自带的 Node。
+#[cfg(unix)]
+fn fake_openui(root: &Path, config: &mut AcpConfig) {
+    use std::os::unix::fs::PermissionsExt;
+    let contracts = root.join("contracts/openui");
+    std::fs::create_dir_all(&contracts).unwrap();
+    std::fs::write(contracts.join("ask-openui-prompt.v1.json"), r#"{"version": 1, "intro": "  ## 互动块\n先 openui_spec  ", "sections": []}"#).unwrap();
+    std::fs::write(contracts.join("ask-openui-library.v1.json"), "{}").unwrap();
+    let check = root.join("backend/openui-check");
+    std::fs::create_dir_all(check.join("bin")).unwrap();
+    std::fs::write(check.join("bin/openui-check.mjs"), "").unwrap();
+    let node_dir = root.join("node/bin");
+    std::fs::create_dir_all(&node_dir).unwrap();
+    std::fs::write(node_dir.join("node"), "#!/bin/sh\n").unwrap();
+    std::fs::set_permissions(node_dir.join("node"), std::fs::Permissions::from_mode(0o755)).unwrap();
+    config.openui_dir = default_openui_dir(None, root);
+    config.openui_check_dir = default_openui_check_dir(None, root);
+    config.node_dir = Some(root.join("node"));
+}
+
+#[test]
+fn openui_dirs_come_from_the_environment_or_the_project_root() {
+    let root = temp_root("openui-dirs");
+    assert_eq!(default_openui_dir(None, &root.0), None, "missing directories are None");
+    std::fs::create_dir_all(root.0.join("contracts/openui")).unwrap();
+    std::fs::create_dir_all(root.0.join("backend/openui-check")).unwrap();
+    assert_eq!(default_openui_dir(None, &root.0), Some(root.0.join("contracts/openui")));
+    assert_eq!(default_openui_check_dir(None, &root.0), Some(root.0.join("backend/openui-check")));
+    let elsewhere = root.0.join("books");
+    assert_eq!(default_openui_dir(Some(elsewhere.as_os_str()), Path::new("/nonexistent")), Some(elsewhere.clone()));
+    assert_eq!(default_openui_check_dir(Some(std::ffi::OsStr::new("")), &root.0), Some(root.0.join("backend/openui-check")));
+}
+
+#[cfg(unix)]
+#[test]
+fn all_three_kinds_of_agent_get_the_openui_files() {
+    let root = temp_root("openui");
+    write_vault(&root.0);
+    fake_pi_agent(&root.0);
+    fake_command(&root.0, "pi-acp");
+    fake_command(&root.0, "pi");
+    fake_command(&root.0, "retainpdf");
+    fake_command(&root.0, "gemini");
+    let mut config = config(&root.0);
+    fake_openui(&root.0, &mut config);
+    let expected = [
+        ("RETAIN_OPENUI_PROMPT", root.0.join("contracts/openui/ask-openui-prompt.v1.json")),
+        ("RETAIN_OPENUI_LIBRARY", root.0.join("contracts/openui/ask-openui-library.v1.json")),
+        ("RETAIN_OPENUI_CHECK", root.0.join("backend/openui-check/bin/openui-check.mjs")),
+        ("RETAIN_OPENUI_NODE", root.0.join("node/bin/node")),
+    ];
+
+    // 自带 retainpdf：进程环境
+    let (process, _) = prepare_agent(&config, BUILTIN_AGENT_ID, &local_headers(), &pi_query(), None).unwrap();
+    let env: std::collections::HashMap<_, _> = process.env.into_iter().collect();
+    for (name, path) in &expected {
+        assert_eq!(env[*name], path.to_string_lossy(), "{name}");
+    }
+
+    // retainpdf-pi：进程环境，外加 L0 写进私有配置目录（去掉首尾空白）
+    let (process, _) = prepare_agent(&config, PI_AGENT_ID, &local_headers(), &pi_query(), None).unwrap();
+    let env: std::collections::HashMap<_, _> = process.env.iter().cloned().collect();
+    let agent_dir = process.scratch_dir.clone().unwrap();
+    assert_eq!(env["RETAIN_PI_OPENUI_INTRO"], agent_dir.join("openui-intro.md").to_string_lossy());
+    assert_eq!(std::fs::read_to_string(agent_dir.join("openui-intro.md")).unwrap(), "## 互动块\n先 openui_spec");
+    assert_eq!(env["RETAIN_OPENUI_CHECK"], expected[2].1.to_string_lossy());
+
+    // 本机 agent：补进 session/new 的 retainpdf mcp 的 env
+    let (_, defaults) = prepare_agent(&config, "gemini", &local_headers(), &AcpConnectQuery::default(), None).unwrap();
+    let server = defaults.mcp_server.unwrap();
+    let mcp_env: Vec<(String, String)> = server["env"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|item| (item["name"].as_str().unwrap().to_string(), item["value"].as_str().unwrap().to_string()))
+        .collect();
+    assert_eq!(mcp_env[0], ("RETAINPDF_AGENT_KEY".to_string(), "agent-a".to_string()));
+    for (name, path) in &expected {
+        assert!(mcp_env.contains(&(name.to_string(), path.to_string_lossy().into_owned())), "{name}");
+    }
+
+    // 没有自带的 Node：用 PATH 上的；PATH 上也没有就不给 RETAIN_OPENUI_NODE（agent 自己再找）
+    let mut no_node = config.clone();
+    no_node.node_dir = None;
+    let (process, _) = prepare_agent(&no_node, BUILTIN_AGENT_ID, &local_headers(), &pi_query(), None).unwrap();
+    assert!(process.env.iter().all(|(name, _)| name != "RETAIN_OPENUI_NODE"));
+    fake_command(&root.0, "node");
+    let (process, _) = prepare_agent(&no_node, BUILTIN_AGENT_ID, &local_headers(), &pi_query(), None).unwrap();
+    assert!(process.env.contains(&("RETAIN_OPENUI_NODE".to_string(), root.0.join("bin/node").to_string_lossy().into_owned())));
+
+    // 说明文件读不到（或不是 v1）：什么都不给，pi 也不写 L0
+    std::fs::write(root.0.join("contracts/openui/ask-openui-prompt.v1.json"), r#"{"version": 2, "intro": "x"}"#).unwrap();
+    let (process, _) = prepare_agent(&config, PI_AGENT_ID, &local_headers(), &pi_query(), None).unwrap();
+    assert!(process.env.iter().all(|(name, _)| !name.starts_with("RETAIN_OPENUI_") && name != "RETAIN_PI_OPENUI_INTRO"));
+    assert!(!process.scratch_dir.unwrap().join("openui-intro.md").exists());
+    let mut none = config.clone();
+    none.openui_dir = None;
+    let (_, defaults) = prepare_agent(&none, "gemini", &local_headers(), &AcpConnectQuery::default(), None).unwrap();
+    assert_eq!(defaults.mcp_server.unwrap()["env"].as_array().unwrap().len(), 1);
 }

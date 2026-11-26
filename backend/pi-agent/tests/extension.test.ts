@@ -4,7 +4,7 @@ import { test } from "node:test";
 
 import { BookTools } from "../extension/book.ts";
 import type { HttpGet } from "../extension/book.ts";
-import retainpdfBook, { BOOK_TOOLS, MAX_TOOL_CALLS_PER_ROUND, MAX_TOOL_ROUNDS, prepareArguments, RoundGuard } from "../extension/index.ts";
+import retainpdfBook, { BOOK_TOOLS, MAX_TOOL_CALLS_PER_ROUND, MAX_TOOL_ROUNDS, MAX_TOTAL_ROUNDS, prepareArguments, RoundGuard } from "../extension/index.ts";
 
 const ITEMS = [
   { item_id: "p001-b0000", source: { page: 1, text: "Quantum Chemistry" }, translated: { page: 1, text: "量子化学" }, sub_type: "title", heading_level: 1 },
@@ -83,19 +83,21 @@ test("without a book: no tools, but the lock is still there", async () => {
 });
 
 test("only the book tools run, and runaway tool loops are capped", () => {
-  const guard = new RoundGuard();
-  for (const name of ["bash", "read", "edit", "write", "mcp__x__y"]) assert.equal(guard.check(name)?.block, true, name);
+  const guard = new RoundGuard(BOOK_TOOLS);
+  for (const name of ["bash", "read", "edit", "write", "mcp__x__y", "openui_spec"]) assert.equal(guard.check(name)?.block, true, name);
   guard.startRun();
   guard.startTurn();
   for (let call = 0; call < MAX_TOOL_CALLS_PER_ROUND; call += 1) assert.equal(guard.check("read_pages"), undefined);
   assert.ok(guard.check("search_book")?.reason.includes(`一轮最多调 ${MAX_TOOL_CALLS_PER_ROUND} 个`));
-  for (let round = 1; round < MAX_TOOL_ROUNDS; round += 1) guard.startTurn();
-  assert.equal(guard.check("read_pages"), undefined);
+  // 读书按轮算：一轮里调了读书的工具算一轮
+  for (let round = 1; round < MAX_TOOL_ROUNDS; round += 1) {
+    guard.startTurn();
+    assert.equal(guard.check("read_pages"), undefined);
+  }
   guard.startTurn();
   const over = guard.check("read_pages");
-  assert.ok(over?.block && !over.terminate && over.reason.includes(`最多调 ${MAX_TOOL_ROUNDS} 轮`));
-  guard.startTurn();
-  guard.startTurn();
+  assert.ok(over?.block && !over.terminate && over.reason.includes(`已经用了 ${MAX_TOOL_ROUNDS} 轮`));
+  for (let round = 0; round < MAX_TOTAL_ROUNDS + 2; round += 1) guard.startTurn();
   assert.equal(guard.check("read_pages")?.terminate, true);
   // 下一问重新算
   guard.startRun();

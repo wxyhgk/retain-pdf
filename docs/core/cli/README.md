@@ -88,7 +88,7 @@ retainpdf mcp                       给 AI agent 用的 MCP 服务（stdio，由
 stdio、每行一条 JSON-RPC 2.0 消息，不开端口；协议版本 2025-06-18（客户端要 2025-03-26、2024-11-05 时照它的回）。
 方案见 [AI 怎么拿到书的数据](../../ops/planning/ai-data-access/20261124-AI怎么拿到书的数据.md)。
 
-书的内容 agent 直接读书文件夹（`retainpdf books export` 导出的 `<数据目录>/books/`），这里只有两个工具：
+书的内容 agent 直接读书文件夹（`retainpdf books export` 导出的 `<数据目录>/books/`），这里只有两个工具（阅读页提问时另有互动块的两个，见下面）：
 
 | 工具 | 参数 | 做什么 |
 |---|---|---|
@@ -100,6 +100,10 @@ stdio、每行一条 JSON-RPC 2.0 消息，不开端口；协议版本 2025-06-1
 - **后端没开**：照样启动、照样列工具，调工具时回「RetainPDF 没开」；每次调工具都重新找后端，中途打开 RetainPDF 也能用上。
 - 改译文要用户确认：MCP 的工具注解标了不是只读；Claude Code 默认每次调都会问。桌面版 AI 面板对它弹确认（第 4 步）。
 - 接到 Claude Code：`claude mcp add retainpdf -- retainpdf mcp`，再在书文件夹里打开 Claude Code。
+- **阅读页提问时多两个工具**（2026-11-26）：ACP 桥补进 `session/new` 的这个 MCP 在 `env` 里另给 `RETAIN_OPENUI_PROMPT`、
+  `RETAIN_OPENUI_LIBRARY`、`RETAIN_OPENUI_CHECK`、`RETAIN_OPENUI_NODE`；有了就在 `instructions` 后面接互动块的 L0，多 `openui_spec`
+  （取说明）、`openui_check`（起 Node 跑检查器）两个工具，不调后端。自己在终端里配的 `retainpdf mcp` 没有这些变量，照旧两个工具。
+  说明见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「回答里的互动块」。
 
 ## 后端开着还是没开
 

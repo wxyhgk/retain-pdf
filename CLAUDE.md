@@ -72,6 +72,11 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
 - 改了「RetainPDF + pi」`backend/pi-agent/`（pi 扩展、包装脚本）：跑 `node --test backend/pi-agent/tests/`（读书工具和 Python 版 `tools.py`
   同一套断言；`pi-acp.test.ts` 真起 pi-acp + 包装脚本 + pi、模型和后端是假的，本机没装 pi 就跳过，换 pi 版本用 `RETAIN_PI_TEST_PI=<pi>`），
   再跑 `cargo test -p retainpdf-providers acp`（桥起它的那段在 `acp/pi.rs`）。改了 `backend/ask-agent` 的 `tools.py`、提示词，pi 扩展照搬的那份也跟着改、跑它。
+- 改了阅读页提问的互动块（OpenUI）：检查器包 `backend/openui-check/` 先 `npm ci --ignore-scripts --prefix backend/openui-check`
+  （`--ignore-scripts` 不能省：lang-core 的 postinstall 是安装统计）再 `npm test --prefix backend/openui-check`；三处工具（Python
+  `backend/ask-agent/retainpdf_ask_agent/openui.py`、pi `backend/pi-agent/extension/openui.ts`、`retainpdf mcp` 的 `backend/cli/src/cmd/mcp_openui.rs`）
+  回给模型的话一字一样，改一处三处都改，跑 ask-agent、pi-agent 的测试和 `cargo test -p retainpdf-cli mcp`、`cargo test -p retainpdf-providers acp`。
+  没装检查器的依赖时真起检查器的几条会跳过。`contracts/openui/` 的两个文件是前端生成的，后端不改。
 - 改了目录 agent 包 `backend/toc-agent/`：跑 `python -m pytest backend/toc-agent/tests`（核心只许用标准库、提示词和版本号钉着），
   再跑翻译测试（定译接进翻译 `test_fixed_translations.py`、开关 `test_translation_toc_entries.py` 在那里）。
 - 跑不了的检查，在回复和合并说明里写明没跑、为什么。
