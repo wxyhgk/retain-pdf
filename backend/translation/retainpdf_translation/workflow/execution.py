@@ -16,6 +16,7 @@ from retainpdf_translation.workflow.execution_runner import run_translation_exec
 from retainpdf_translation.workflow.execution_plan import TranslationExecutionPlan
 from retainpdf_translation.workflow.checkpoint.store import CheckpointStore
 from retainpdf_translation.workflow.checkpoint.contract import translation_checkpoint_path
+from retainpdf_translation.workflow.shutdown_drain import sigterm_drains_inflight_requests
 
 
 @dataclass(frozen=True)
@@ -122,6 +123,13 @@ def execute_translation_request(request: TranslationExecutionRequest) -> dict:
         # 译前准备（术语预扫、术语审定）的结果用不上，跑了只是白花钱
         request = replace(request, math_mode="direct_typst", preparation="off")
     request = _wait_for_whole_document_if_needed(request)
+    # 翻译期间收到 SIGTERM（运行时退出、取消、超时）：不再派发新请求，在途的等回来写上终态再退出（shutdown_drain）
+    with sigterm_drains_inflight_requests():
+        return _execute_with_owned_output(request)
+
+
+def _execute_with_owned_output(request: TranslationExecutionRequest) -> dict:
+    from retainpdf_translation.llm.shared.executor_context import raise_if_executor_failed
     # Own output before opening its journal or performing domain inference.
     store = CheckpointStore(translation_checkpoint_path(request.output_dir))
     store.acquire()

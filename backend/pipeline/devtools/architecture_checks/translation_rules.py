@@ -85,6 +85,8 @@ TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "translation_workflow.py",
     # 定好的译文（目录 agent 给的）：建计划时和领域识别同时算、写进块的元数据，两个引擎共用（2026-11-25），和 prepare.py 同一层
     "fixed_translations.py",
+    # 翻译期间收到 SIGTERM 先排空在途的模型请求再退出（状态管理 Z1，2026-11-26），execution.py 包在整个翻译外面
+    "shutdown_drain.py",
 }
 TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
     "checkpoint": (

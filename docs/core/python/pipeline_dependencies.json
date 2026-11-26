@@ -757,6 +757,7 @@
         "devtools/tests/translation/test_translation_quota_codes.py",
         "devtools/tests/translation/test_translation_request_rejections.py",
         "devtools/tests/translation/test_translation_run_diagnostics.py",
+        "devtools/tests/translation/test_translation_shutdown_drain.py",
         "devtools/tests/translation/test_translation_transport_fallbacks.py",
         "devtools/tests/translation/test_upstream_resilience.py",
         "devtools/tests/translation/test_upstream_wait_events.py"
@@ -1115,6 +1116,7 @@
         "devtools/tests/translation/test_translation_revision.py",
         "devtools/tests/translation/test_translation_route_selection.py",
         "devtools/tests/translation/test_translation_run_diagnostics.py",
+        "devtools/tests/translation/test_translation_shutdown_drain.py",
         "devtools/tests/translation/test_translation_structured_technical_policy.py",
         "devtools/tests/translation/test_translation_tail_retry.py",
         "devtools/tests/translation/test_translation_toc_entries.py",
@@ -1276,7 +1278,9 @@
         "retainpdf_pipeline/ocr/retry.py"
       ],
       "devtool_files": [],
-      "test_files": [],
+      "test_files": [
+        "devtools/tests/translation/test_translation_shutdown_drain.py"
+      ],
       "runtime_required": true,
       "devtool_required": false
     }

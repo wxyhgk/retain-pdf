@@ -8,6 +8,7 @@ import time
 from typing import Any
 
 import requests
+import urllib3
 
 from retainpdf_base.local_env import get_secret
 from retainpdf_base.upstream_wait import error_code_from_response as _upstream_error_code
@@ -91,11 +92,34 @@ def _request_journal_key(*, endpoint: str, body: dict[str, Any]) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
+def _request_never_left(exc: BaseException) -> bool:
+    """连接都没建成（连接被拒、DNS 解析失败、建连超时、连不上代理）：请求一个字节都没发出去，服务商没收到、不会计费。
+
+    宁严勿宽，只认 urllib3 自己判为「服务器肯定没收到」的那类（``Retry._is_connection_error``：
+    ``ConnectTimeoutError`` 及其子类 ``NewConnectionError``、``NameResolutionError``，代理错误看它包着的原错误），
+    外加直接抛出来的 ``socket.gaierror``。建连以后才出的错（对方关连接、读超时、TLS 出错）都可能已经发出去、
+    已经计费，照旧算结果不明。
+    """
+    if isinstance(exc, socket.gaierror):
+        return True
+    if not isinstance(exc, requests.ConnectionError):
+        return False
+    reason = exc.args[0] if exc.args else None
+    if isinstance(reason, urllib3.exceptions.MaxRetryError):
+        reason = reason.reason
+    if isinstance(reason, urllib3.exceptions.ProxyError):
+        reason = reason.original_error
+    return isinstance(reason, urllib3.exceptions.ConnectTimeoutError)
+
+
 def _request_journal_outcome(exc: Exception) -> str:
     if isinstance(exc, requests.HTTPError) and exc.response is not None:
         return "rejected"
     if isinstance(exc, (ValueError, KeyError, json.JSONDecodeError)):
         return "invalid_response"
+    if _request_never_left(exc):
+        # 请求日志里和「结果不明」分开：没发出去的不用用户确认重复计费（状态管理设计 S20、L-D2）
+        return "failed_not_sent"
     return "ambiguous"
 
 

@@ -5,6 +5,10 @@ from .aggregator import infer_stage_from_request_label
 from .aggregator import translation_run_diagnostics_scope
 from .request_journal import TRANSLATION_REQUEST_JOURNAL_FILE_NAME
 from .request_journal import TranslationRequestJournal
+from .request_journal import RequestDispatchStopped
+from .request_journal import begin_request_drain
+from .request_journal import inflight_request_count
+from .request_journal import wait_for_inflight_requests
 from .models import ErrorTaxonomy
 from .models import FinalStatus
 from .models import TranslationDiagnostic
@@ -27,6 +31,10 @@ __all__ = [
     "TranslationDiagnosticsCollector",
     "TranslationRunDiagnostics",
     "TranslationRequestJournal",
+    "RequestDispatchStopped",
+    "begin_request_drain",
+    "inflight_request_count",
+    "wait_for_inflight_requests",
     "TRANSLATION_REQUEST_JOURNAL_FILE_NAME",
     "blocking_untranslated_items",
     "has_translation_artifact",

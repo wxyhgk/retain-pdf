@@ -12,15 +12,16 @@ class _TeeTextIO:
         self.encoding = getattr(original, "encoding", "utf-8")
 
     def write(self, data):
-        written = self._original.write(data)
+        # 先写日志文件：运行时退出时 Rust 已经不读 stdout，写原流会碰上断开的管道（翻译排空期间，
+        # 见 retainpdf_translation/workflow/shutdown_drain.py），这时日志文件里至少还有这一行
         if not self._mirror.closed:
             self._mirror.write(data)
-        return written
+        return self._original.write(data)
 
     def flush(self) -> None:
-        self._original.flush()
         if not self._mirror.closed:
             self._mirror.flush()
+        self._original.flush()
 
     def isatty(self) -> bool:
         return bool(getattr(self._original, "isatty", lambda: False)())

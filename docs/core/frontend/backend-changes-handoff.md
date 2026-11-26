@@ -2215,3 +2215,10 @@ PaddleOCR 返回 `max_file_bytes = 104857600`（100MB）和 `limits.chunked_uplo
 `PATCH /jobs/{job_id}/translations/{item_id}` 请求体多了可选的 `expected_translated_text`，对不上 409 `text_mismatch`（带
 `current_translated_text`）。给 agent 用，前端编辑框不用带，**前端不用改**。`REVISION_REASON_MESSAGES` 想覆盖全的话可以加一句
 `text_mismatch: "这段译文刚被别处改过，重新打开再改。"`。契约 `translation-revisions.v1` 已重新生成。
+
+## 退出时停 worker、在途请求排空（2026-11-26，fix/shutdown-inflight）
+
+后端状态管理第 0 步 Z1。打包桌面版退出时 jobsd 现在会停掉自己起的 worker（以前 worker 成孤儿接着花钱）；翻译收到 SIGTERM 后
+最多等 2 秒让在途请求回来、写上终态再退出；连接都没建成的请求记 `failed_not_sent`，不算结果不明。效果是退出再打开、断网以后，
+落 `translation_request_ambiguous` 要用户确认的任务变少。**前端不用改**：没有新字段、新状态（「待确认」状态是第 1 步的事），
+桌面壳给后端的 10 秒退出时限没变（`frontend/desktop/src/main/graceful-stop.js`），后端在 7 秒左右收完。

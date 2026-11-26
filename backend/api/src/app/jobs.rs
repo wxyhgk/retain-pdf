@@ -7,7 +7,7 @@ use crate::db::Db;
 use crate::job_runner::{
     acquire_runtime_owner_lock, adopt_unlinked_job_sources, fail_unlaunched_job, launch_job,
     reconcile_stale_running_jobs, recover_jobs_after_database_restore, requeue_stuck_queued_jobs,
-    spawn_driverless_job_sweeper, spawn_job, terminate_running_workers_on_shutdown, ProcessRuntimeDeps,
+    spawn_driverless_job_sweeper, spawn_job, stop_owned_workers_after_runtime_shutdown, ProcessRuntimeDeps,
     RuntimeOwnerLock,
 };
 use crate::services::jobs::{
@@ -28,43 +28,18 @@ pub(super) fn acquire_owned_runtime_lock(config: &AppConfig) -> Result<Option<Ru
     acquire_runtime_owner_lock(&config.jobs_db_path).map(Some)
 }
 
-/// 进程内模式的后端退出时停掉还在跑的 worker（用户 2026-10-24 定，见
-/// `terminate_running_workers_on_shutdown`）。要在 tokio 运行时停掉以后调（`main.rs`）：driver 不再写库。
+/// 进程内模式的后端退出时停掉还在跑的 worker（用户 2026-10-24 定，见 runner 的 `shutdown_workers`）。
+/// 要在 tokio 运行时停掉以后调（`main.rs`）：driver 不再写库。
 ///
 /// 停机返回时运行时锁已经放了，这里重新拿一次：拿不到说明新的运行时已经接手（例如马上重开了应用），
-/// 库里 running 任务的 worker 可能是它的，一个都不碰。远端模式不管（worker 归 jobsd）。
+/// 库里 running 任务的 worker 可能是它的，一个都不碰。远端模式不管：worker 归 jobsd，jobsd 退出时自己停
+/// （`backend/jobs/src/main.rs`）。worker 被停以后，下次启动请求日志干净的自动续跑；翻译留下了结果不明的
+/// 请求的不自动续跑，等用户确认。
 pub fn stop_owned_workers_after_shutdown(config: &AppConfig) {
     if config.jobs_service.is_remote() {
         return;
     }
-    let _lock = match acquire_runtime_owner_lock_after_release(&config.jobs_db_path) {
-        Ok(lock) => lock,
-        Err(error) => {
-            tracing::warn!("shutdown: runtime lock is held by another process; leaving its workers alone: {error:#}");
-            return;
-        }
-    };
-    let db = Db::new(config.jobs_db_path.clone(), config.data_root.clone());
-    match terminate_running_workers_on_shutdown(config, &db) {
-        Ok(0) => {}
-        Ok(count) => tracing::info!("shutdown: terminated {count} running worker(s); they resume on next start"),
-        Err(error) => tracing::warn!("shutdown: could not list running workers: {error:#}"),
-    }
-}
-
-/// 停机时自己刚放掉运行时锁，马上重新拿：在 1 秒内反复试，过了还拿不到才算别的运行时在用。
-///
-/// 锁是 flock，挂在打开的文件上。别的线程这时正好 fork 子进程的话，子进程在 exec 之前也拿着这个文件，
-/// 锁跟着它多留一会儿；只试一次就会把自己的 worker 当成别人的、一个都不停（并发跑测试时偶发，2026-11-04）。
-fn acquire_runtime_owner_lock_after_release(jobs_db_path: &std::path::Path) -> Result<RuntimeOwnerLock> {
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
-    loop {
-        match acquire_runtime_owner_lock(jobs_db_path) {
-            Ok(lock) => return Ok(lock),
-            Err(error) if std::time::Instant::now() >= deadline => return Err(error),
-            Err(_) => std::thread::sleep(std::time::Duration::from_millis(20)),
-        }
-    }
+    stop_owned_workers_after_runtime_shutdown(config, None);
 }
 
 pub(super) fn reconcile_owned_runtime(config: &AppConfig, db: &Db) -> Result<usize> {

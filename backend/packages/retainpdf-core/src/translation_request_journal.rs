@@ -5,7 +5,9 @@
 //! 共同依赖的核心包里。
 //!
 //! 约定：dispatch 记录先落盘（fsync）再发请求，terminal 记录在拿到响应或确定失败后补上；
-//! 只有 dispatch 没有 terminal 表示「结果不明」，绝不当作成功。
+//! 只有 dispatch 没有 terminal（或 terminal 是 `ambiguous`）表示「结果不明」，绝不当作成功。
+//! 其余终态（`succeeded`、`rejected`、`invalid_response`、连接都没建成的 `failed_not_sent`）都算有结论。
+//! 进程退出时 Python 先把在途请求等回来写上终态（`workflow/shutdown_drain.py`），等不回来的留成结果不明。
 
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
@@ -394,6 +396,32 @@ mod tests {
             parse_translation_request_journal(&path).corrupt_detail,
             Some("translation request journal contract is unsupported")
         );
+        let _ = std::fs::remove_file(path);
+    }
+
+    /// Python 把「连接都没建成」记成 `failed_not_sent`（2026-11-26，状态管理 Z1）：和别的终态一样配上 dispatch，
+    /// 不算结果不明、不挡自动续跑；同一时间另一个没配上的 dispatch 照旧挡。
+    #[test]
+    fn failed_not_sent_closes_the_dispatch_like_any_other_terminal() {
+        let path = test_path("not-sent");
+        std::fs::write(
+            &path,
+            format!(
+                "{}{}",
+                line("dispatch", "t1", "k1", ""),
+                line("terminal", "t1", "k1", "failed_not_sent")
+            ),
+        )
+        .expect("write journal");
+        let state = parse_translation_request_journal(&path);
+        assert_eq!(state.status, "clean");
+        assert_eq!(state.unresolved_dispatches, 0);
+        assert_eq!(state.historical_ambiguous_request_keys, 0);
+        assert!(!state.requires_confirmation);
+        append(&path, &line("dispatch", "t2", "k2", ""));
+        let state = parse_translation_request_journal(&path);
+        assert_eq!(state.status, "ambiguous", "退出时还在途、没写上终态的请求照旧要确认");
+        assert!(state.requires_confirmation);
         let _ = std::fs::remove_file(path);
     }
 
