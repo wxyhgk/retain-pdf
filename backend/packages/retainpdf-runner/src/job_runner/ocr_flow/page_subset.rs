@@ -207,6 +207,21 @@ mod tests {
         assert_eq!(saved.get_pages().len(), 3);
     }
 
+    /// 同一份上传、同样的页，切两次逐字节一样（S14）：子 PDF 的哈希会被当成断点、缓存的键用（Python 那边 PyMuPDF 的切法
+    /// 以前每次写随机文件 ID，见 `glm_ocr_driver.page_subset_bytes`），这里钉住 lopdf 的切法本来就是确定的。
+    #[test]
+    fn cutting_the_same_pages_twice_gives_the_same_bytes() {
+        let dir = temp_dir("page-subset-determinism");
+        let upload_path = dir.join("input.pdf");
+        build_test_pdf(&upload_path, 6);
+
+        let first = prepare_uploaded_source_pdf(&upload_path, &dir.join("a"), "2-3,5").expect("first");
+        let second = prepare_uploaded_source_pdf(&upload_path, &dir.join("b"), "5,2-3").expect("second");
+
+        assert_ne!(first.path, second.path);
+        assert_eq!(std::fs::read(&first.path).unwrap(), std::fs::read(&second.path).unwrap());
+    }
+
     #[test]
     fn prepare_uploaded_source_pdf_keeps_provider_range_for_full_book() {
         let dir = temp_dir("page-subset-full");

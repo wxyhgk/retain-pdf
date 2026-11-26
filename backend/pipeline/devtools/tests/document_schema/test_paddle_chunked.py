@@ -171,13 +171,13 @@ def test_merge_offsets_global_ids_so_chunks_do_not_share_continuation_groups() -
     assert [p["prunedResult"]["parsing_res_list"][0]["global_group_id"] for p in with_placeholder["layoutParsingResults"][3:]] == [3000, 3001]
 
 
-def _job(tmp_path: Path, pdf: Path) -> SimpleNamespace:
-    root = tmp_path / "job"
+def _job(tmp_path: Path, pdf: Path, *, page_ranges: str = "", name: str = "job") -> SimpleNamespace:
+    root = tmp_path / name
     names = ("source", "ocr", "translated", "rendered", "artifacts", "logs")
     for name in names:
         (root / name).mkdir(parents=True, exist_ok=True)
     return SimpleNamespace(
-        file_path=str(pdf), page_ranges="", paddle_token="t", paddle_model="", paddle_api_url="", job_root=str(root),
+        file_path=str(pdf), page_ranges=page_ranges, paddle_token="t", paddle_model="", paddle_api_url="", job_root=str(root),
         **{f"{name}_dir": str(root / name) for name in names},
     )
 
@@ -211,3 +211,25 @@ def test_stream_keeps_pages_in_place_and_lists_the_ready_ones(tmp_path: Path, mo
             assert document["pages"][index] == final["pages"][index], f"第 {index + 1} 页先公布的和最后的不一样"
     state = read_ocr_stream(Path(job.ocr_dir))
     assert state.done and state.ready_pages == 25
+
+
+def test_a_rerun_with_selected_pages_does_not_submit_the_finished_chunks_again(tmp_path: Path, monkeypatch) -> None:
+    """选页时原文是切出来的子 PDF，断点（`chunks.json`）按它的 sha256 认；子 PDF 和每片的 PDF 逐字节确定（S14），
+    同一个任务目录重跑不再交已经做完的片。以前子 PDF 每次字节不同，断点永远作废、整本重交。"""
+    monkeypatch.setenv(paddle_chunked.HEDGE_SECONDS_ENV, "100")
+    pdf = _pdf(tmp_path / "book.pdf", 30)
+    first = FakePaddle({})
+    api = {"submit": first.submit, "query": first.query, "download": first.download, "sleep": first.sleep, "clock": first.clock}
+    _root, source, _result, _normalized = paddle_chunked.run_paddle_chunked_to_job_dir(_job(tmp_path, pdf, page_ranges="3-27"), api=api)
+    assert sorted(first.submits) == [0, 1, 2]
+    with fitz.open(source) as subset:
+        assert subset.page_count == 25
+    raw = tmp_path / "job" / "ocr" / paddle_chunked.RAW_DIR_NAME
+    chunk_pdfs = {path.name: path.read_bytes() for path in raw.glob("chunk-*.pdf")}
+    subset_bytes = source.read_bytes()
+    again = FakePaddle({})
+    api = {"submit": again.submit, "query": again.query, "download": again.download, "sleep": again.sleep, "clock": again.clock}
+    _root, source, _result, _normalized = paddle_chunked.run_paddle_chunked_to_job_dir(_job(tmp_path, pdf, page_ranges="3-27"), api=api)
+    assert again.submits == []
+    assert source.read_bytes() == subset_bytes
+    assert {path.name: path.read_bytes() for path in raw.glob("chunk-*.pdf")} == chunk_pdfs

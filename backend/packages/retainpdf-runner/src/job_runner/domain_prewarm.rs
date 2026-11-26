@@ -35,9 +35,13 @@ pub(super) struct DomainPrewarmProcess {
 }
 
 /// 要不要拉起：只有学术模式（识别领域只在 sci 下做）、走 Python 请求、有翻译 key 的任务。
+///
+/// 选了页的不拉起（2026-11-26，S15）：预热读的是整份上传的前两页，翻译阶段读的是切出来的子 PDF 的前两页，
+/// 缓存按预览文本认，两边对不上，预热那一次请求白花钱，翻译照样自己再问一次。
 fn wanted(job: &JobRuntimeState) -> bool {
     job.request_payload.translation.mode == "sci"
         && job.request_payload.translation.execution_connection.is_none()
+        && !job.ocr_selects_pages()
 }
 
 /// 拉起识别领域进程；不需要或任何一步失败都返回 None（只记日志）。
@@ -153,5 +157,12 @@ mod tests {
             .unwrap(),
         );
         assert!(!wanted(&executor), "the Rust model executor owns model requests");
+
+        let mut selected = runtime_job();
+        selected.request_payload.translation.mode = "sci".to_string();
+        selected.request_payload.ocr.page_ranges = "3-5".to_string();
+        assert!(!wanted(&selected), "预热读整份上传，翻译读子 PDF，缓存对不上");
+        selected.request_payload.ocr.page_ranges = "all".to_string();
+        assert!(wanted(&selected));
     }
 }

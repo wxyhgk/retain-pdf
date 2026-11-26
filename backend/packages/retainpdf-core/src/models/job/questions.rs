@@ -59,13 +59,27 @@ impl JobRecord {
         &self.request_payload.ocr
     }
 
+    /// 请求里选了页（`ocr.page_ranges` 不是空串、也不是 `all`）。选了的话 OCR 认的原文是切出来的子 PDF，
+    /// OCR 文档的第 n 页是子 PDF 的第 n 页，不是上传文件的第 n 页。只看请求、不读文件：写成「1-全部页数」也算选了页。
+    pub fn ocr_selects_pages(&self) -> bool {
+        non_empty(&self.request_payload.ocr.page_ranges).is_some_and(|ranges| !ranges.eq_ignore_ascii_case("all"))
+    }
+
     /// OCR 会不会一片片公布已做完的页（`ocr/stream/`，契约在 Python 的 `retainpdf_base/ocr_stream.py`）。
     /// 会的话整本任务的翻译不用等 OCR 做完，跟着它翻（2026-10-31，OCR 和翻译并行）。
     /// GLM-OCR；Paddle 官方云服务、官方 HTTP、上传的文件（2026-11-01 起按片并行提交，`paddle_chunked.py`）。
     /// 自建的 Paddle 服务（填了 `paddle_api_url`）不算：同时跑几个任务、排队怎样都只在官方服务上量过，照旧由 Rust 整份提交
     /// （那条路还有派发意向记录，进程死在提交途中重启后不会重复提交）。
+    ///
+    /// 选了页（`ocr_selects_pages`）的不跟着翻，先 OCR 后翻译（2026-11-26，S15）。跟着翻时翻译拿到的原文是整份上传，
+    /// 子 PDF 要等 OCR worker 开跑才切出来；OCR 文档却按子 PDF 编页，表格结构、agent 的页码标签、领域识别都读错页，
+    /// 续跑指纹记的也是整份上传的哈希、重试翻译时拿子 PDF 比，断点必然作废。先 OCR 后翻译那条路翻译拿的是 OCR 记下的
+    /// 子 PDF（`artifacts.source_pdf`），本来就对。
     pub fn ocr_streams_pages(&self) -> bool {
         use crate::config::provider_config::{configured_streams_pages, StreamsPages};
+        if self.ocr_selects_pages() {
+            return false;
+        }
         let ocr = &self.request_payload.ocr;
         // 会不会一片片公布写在服务商清单的 `streams_pages` 里，不再按服务商名字判断。
         match configured_streams_pages(&ocr.provider) {
@@ -303,5 +317,24 @@ mod tests {
         job.request_payload.source.source_url.clear();
         job.request_payload.ocr.provider = "mineru".to_string();
         assert!(!job.ocr_streams_pages());
+    }
+
+    /// 选了页的不跟着 OCR 翻（S15）：跟着翻时翻译拿的是整份上传，OCR 文档按切出来的子 PDF 编页，页号错位。
+    #[test]
+    fn selecting_pages_turns_off_streaming() {
+        let mut job = job();
+        job.request_payload.ocr.provider = "glm_ocr".to_string();
+        for whole_book in ["", "  ", "all", " ALL "] {
+            job.request_payload.ocr.page_ranges = whole_book.to_string();
+            assert!(!job.ocr_selects_pages(), "{whole_book:?} 是整本");
+            assert!(job.ocr_streams_pages(), "{whole_book:?} 是整本，照旧跟着翻");
+        }
+        for selected in ["1-3", "2, 5-7", "1"] {
+            job.request_payload.ocr.page_ranges = selected.to_string();
+            assert!(job.ocr_selects_pages());
+            assert!(!job.ocr_streams_pages(), "{selected:?} 选了页，先 OCR 后翻译");
+        }
+        job.request_payload.ocr.provider = "paddle".to_string();
+        assert!(!job.ocr_streams_pages(), "Paddle 按片提交也一样");
     }
 }
