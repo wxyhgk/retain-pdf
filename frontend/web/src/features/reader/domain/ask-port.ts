@@ -72,13 +72,18 @@ async function ensureAskCredential(connection: TranslationConnection): Promise<s
   return ref;
 }
 
+/** 自带类 agent（kind 是 builtin：retainpdf、11-26 起还有 retainpdf-pi）：握手要带模型配置、凭据引用、job_id。 */
+export function isBuiltinAgentRow(row: AgentRow): boolean {
+  return row.kind === "builtin" || row.id === BUILTIN_AGENT_ID;
+}
+
 /** 后端的 agent 列表 → 阅读器的；自带的缺配置时标成用不了。 */
 export function toReaderAgents(rows: readonly AgentRow[], builtinMissing: string): ReaderAskAgent[] {
   return rows
     .filter((row) => row && row.id)
     .map((row) => {
       const id = `${row.id}`;
-      const builtin = id === BUILTIN_AGENT_ID;
+      const builtin = isBuiltinAgentRow(row);
       const available = row.available !== false && !(builtin && builtinMissing);
       return {
         id,
@@ -101,20 +106,23 @@ export function acpSocketUrl(base: string, agentId: string, apiKey: string, extr
   return url.toString();
 }
 
-async function listAgents(): Promise<ReaderAskAgent[]> {
+async function listAgents(builtinAgentIds: Set<string>): Promise<ReaderAskAgent[]> {
   const view = await listAiAgents(API_PREFIX);
-  return toReaderAgents(Array.isArray(view?.agents) ? (view.agents as AgentRow[]) : [], builtinModelQuery().missing);
+  const rows = Array.isArray(view?.agents) ? (view.agents as AgentRow[]) : [];
+  for (const row of rows) if (row?.id && isBuiltinAgentRow(row)) builtinAgentIds.add(`${row.id}`);
+  return toReaderAgents(rows, builtinModelQuery().missing);
 }
 
-async function openSession({ agentId, jobId }: { agentId: string; jobId: string }, handlers: ReaderAskHandlers): Promise<ReaderAskSession> {
-  const extra = agentId === BUILTIN_AGENT_ID ? builtinModelQuery() : { query: {}, missing: "" };
+async function openSession({ agentId, jobId }: { agentId: string; jobId: string }, handlers: ReaderAskHandlers, builtinAgentIds: ReadonlySet<string>): Promise<ReaderAskSession> {
+  const builtin = builtinAgentIds.has(agentId);
+  const extra = builtin ? builtinModelQuery() : { query: {}, missing: "" };
   if (extra.missing) throw new Error(extra.missing);
-  if (agentId === BUILTIN_AGENT_ID) {
+  if (builtin) {
     const connection = defaultConnection();
     if (connection) extra.query = { ...extra.query, credential_ref: await ensureAskCredential(connection) };
   }
   // 自带 agent 自己读书（read_pages / search_book / view_page）：带上阅读页的任务编号（merged-… 也照传）。本机 agent 走 retainpdf mcp，不用。
-  if (agentId === BUILTIN_AGENT_ID && jobId) extra.query = { ...extra.query, job_id: jobId };
+  if (builtin && jobId) extra.query = { ...extra.query, job_id: jobId };
   const app = client()
     .onNotification("session/update", ({ params }) => handlers.onUpdate(params.update))
     .onRequest("session/request_permission", ({ params }) => handlers.onPermission(params));
@@ -222,7 +230,17 @@ const askThreadsPort: ReaderAskThreadsPort = {
   },
 };
 
-const realAskPort: ReaderAskPort = { listAgents, openSession, threads: askThreadsPort };
+function createRealAskPort(): ReaderAskPort {
+  // 列表里见过的自带类 agent（openSession 只拿到 id）。没列过也认 retainpdf。
+  const builtinAgentIds = new Set<string>([BUILTIN_AGENT_ID]);
+  return {
+    listAgents: () => listAgents(builtinAgentIds),
+    openSession: (options, handlers) => openSession(options, handlers, builtinAgentIds),
+    threads: askThreadsPort,
+  };
+}
+
+const realAskPort: ReaderAskPort = createRealAskPort();
 
 function pickAskPort(): ReaderAskPort | null {
   if (isMockMode()) return mockAskPort;

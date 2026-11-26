@@ -46,3 +46,15 @@ test("问答记录：出处驼峰 ↔ 下划线来回不丢；空的写成 null�
   assert.deepEqual(thread.messages, [{ role: "user", text: "Q", thought: null, usage: null }, { role: "assistant", text: "A", thought: "想", usage: { outputTokens: 3 } }]);
   assert.equal("messages" in fromThreadRecord({ thread_id: "t2", agent_id: "a", title: "", anchor: record, message_count: 0, updated_at: "" }), false, "列表里的不带问答");
 });
+
+test("自带类 agent 按 kind 认（11-26 后端加了 retainpdf-pi）：缺配置照样标用不了；握手带模型配置也按 kind，不只认 retainpdf", async () => {
+  const { isBuiltinAgentRow } = await import("../../src/features/reader/domain/ask-port.ts");
+  const rows = [{ id: "retainpdf-pi", name: "RetainPDF · pi", kind: "builtin", available: true }];
+  assert.equal(isBuiltinAgentRow(rows[0]), true);
+  assert.equal(isBuiltinAgentRow({ id: "retainpdf" }), true, "没给 kind 的旧后端照旧认");
+  assert.equal(isBuiltinAgentRow({ id: "claude-code", kind: "local" }), false);
+  const [pi] = toReaderAgents(rows, "设置里还没有配翻译模型");
+  assert.deepEqual([pi.available, pi.reason, pi.acceptsImages], [false, "设置里还没有配翻译模型", true]);
+  const source = (await import("node:fs")).readFileSync(new URL("../../src/features/reader/domain/ask-port.ts", import.meta.url), "utf8");
+  assert.match(source, /const builtin = builtinAgentIds\.has\(agentId\);/);
+});
