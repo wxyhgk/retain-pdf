@@ -68,6 +68,9 @@ pub struct AskConversationMessageInput {
     /// 改后重问（2026-11-26 第二期）：被改的那条问的编号，要先 `POST …/messages/{它}/supersede` 作废。只有 `user` 能带。
     #[serde(default)]
     pub edited_from: Option<String>,
+    /// 答这条的 agent 会话（ACP 的 `sessionId`，最长 256 字；v44）。删对话时据此删掉 agent 自己存的那份（retainpdf-pi 的会话文件）。
+    #[serde(default)]
+    pub session_id: Option<String>,
 }
 
 /// POST /ai/ask-conversations/:conversation_id/messages：追加一轮（问和答一起）。

@@ -226,6 +226,11 @@ pub(super) const MIGRATIONS: &[Migration] = &[
         name: "ask_message_edits",
         sql: include_str!("v43_ask_message_edits.sql"),
     },
+    Migration {
+        version: 44,
+        name: "ask_message_sessions",
+        sql: include_str!("v44_ask_message_sessions.sql"),
+    },
 ];
 
 #[cfg(test)]

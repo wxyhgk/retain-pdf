@@ -161,6 +161,44 @@ async fn editing_a_question_supersedes_it_and_what_followed() {
     assert_eq!(superseded, vec![false, false, true, true, false, false]);
 }
 
+/// 删对话：这个对话和它的副对话里消息记着的 agent 会话（v44 `session_id`），没有别处在用的就删掉 pi 的会话文件；
+/// 还有别的对话记着同一个会话的留着（2026-11-26，前端真机测出来删了对话 pi 的会话文件还在）。
+#[tokio::test]
+async fn deleting_a_conversation_removes_its_pi_session_files() {
+    let state = test_state("ask-conversations-pi-sessions");
+    let sessions = state.config.data_root.join("ask-pi").join("sessions");
+    std::fs::create_dir_all(&sessions).unwrap();
+    let write = |session_id: &str| {
+        let path = sessions.join(format!("2026-11-26T08-00-00-000Z_{session_id}.jsonl"));
+        let header = json!({ "type": "session", "version": 3, "id": session_id, "timestamp": "2026-11-26T08:00:00.000Z", "cwd": "/books/x" });
+        std::fs::write(&path, format!("{header}\n")).unwrap();
+        path
+    };
+    let (main_s, side_s, shared_s) = ("019ab000-0000-7000-8000-00000000000a", "019ab000-0000-7000-8000-00000000000b", "019ab000-0000-7000-8000-00000000000c");
+    let files = [write(main_s), write(side_s), write(shared_s)];
+
+    let main = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", None).await;
+    let main_id = main["conversation_id"].as_str().unwrap().to_string();
+    let turn = |session_id: &str| json!({"messages": [
+        {"role": "user", "text": "问", "session_id": session_id}, {"role": "assistant", "text": "答", "session_id": session_id}]});
+    let appended = ok_data(&state, "POST", &format!("/api/v1/ai/ask-conversations/{main_id}/messages"), Some(turn(main_s))).await;
+    assert_eq!(appended["messages"][1]["session_id"], main_s);
+    ok_data(&state, "POST", &format!("/api/v1/ai/ask-conversations/{main_id}/messages"), Some(turn(shared_s))).await;
+    let side = ok_data(&state, "POST", "/api/v1/ai/ask-conversations", Some(json!({ "parent_id": main_id }))).await;
+    let side_id = side["conversation_id"].as_str().unwrap().to_string();
+    ok_data(&state, "POST", &format!("/api/v1/ai/ask-conversations/{side_id}/messages"), Some(turn(side_s))).await;
+    // 另一个主对话也记着 shared_s（比如同一个 pi 会话里换过对话）
+    ok_data(&state, "PATCH", &format!("/api/v1/ai/ask-conversations/{main_id}"), Some(json!({ "status": "archived" }))).await;
+    let other = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", None).await;
+    let other_id = other["conversation_id"].as_str().unwrap().to_string();
+    ok_data(&state, "POST", &format!("/api/v1/ai/ask-conversations/{other_id}/messages"), Some(turn(shared_s))).await;
+
+    ok_data(&state, "DELETE", &format!("/api/v1/ai/ask-conversations/{main_id}"), None).await;
+    assert!(!files[0].exists(), "主对话的 pi 会话文件该删");
+    assert!(!files[1].exists(), "副对话跟着删，它的 pi 会话文件也该删");
+    assert!(files[2].exists(), "别的对话还记着这个会话，不能删");
+}
+
 /// 2026-11-26 用户定：主对话只能先归档再删；副对话不受限制。
 #[tokio::test]
 async fn the_open_main_conversation_cannot_be_deleted_until_archived() {

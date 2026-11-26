@@ -13,7 +13,7 @@ use retainpdf_data::db::{
 };
 
 use crate::ask_compactions::{compaction_due, latest_compaction, summarize_side, AskSummarizer};
-use crate::ask_threads::{MAX_MESSAGE_TEXT_CHARS, MAX_THOUGHT_CHARS, MAX_USAGE_BYTES};
+use crate::ask_threads::{forget_agent_sessions, MAX_MESSAGE_TEXT_CHARS, MAX_SESSION_ID_CHARS, MAX_THOUGHT_CHARS, MAX_USAGE_BYTES};
 use crate::ask_views::{
     AppendAskMessagesInput, AppendAskMessagesView, AskContextMemoriesView, AskContextParentView, AskContextQuery, AskContextView,
     AskCompactionPointView, AskConversationDeleteResultView, AskConversationListView, AskConversationMessageInput, AskMessagePageView,
@@ -176,6 +176,10 @@ fn checked_message(message: &AskConversationMessageInput, index: usize) -> Resul
         .flatten()
         .collect();
     let edited_from = checked_id(message.edited_from.as_deref(), "edited_from")?;
+    let session_id = message.session_id.as_deref().map(str::trim).filter(|id| !id.is_empty());
+    if session_id.is_some_and(|id| id.chars().count() > MAX_SESSION_ID_CHARS) {
+        return Err(AppError::bad_request(format!("messages[{index}].session_id must be at most {MAX_SESSION_ID_CHARS} characters")));
+    }
     if edited_from.is_some() && message.role != "user" {
         return Err(AppError::bad_request(format!("messages[{index}].edited_from is only for user messages")));
     }
@@ -209,6 +213,7 @@ fn checked_message(message: &AskConversationMessageInput, index: usize) -> Resul
         client_message_id: client_message_id.map(str::to_string),
         memory_ids,
         edited_from,
+        session_id: session_id.map(str::to_string),
     })
 }
 
@@ -314,7 +319,9 @@ pub fn delete_ask_conversation_view(
     conversation_id: &str,
 ) -> Result<AskConversationDeleteResultView, AppError> {
     match deps.db.delete_ask_conversation(conversation_id)? {
-        AskConversationDeleted::Deleted => {
+        AskConversationDeleted::Deleted { session_ids } => {
+            // 删掉 agent 自己存的那份（retainpdf-pi 的会话文件）；还有别处记着同一个会话的留着
+            forget_agent_sessions(deps, session_ids);
             Ok(AskConversationDeleteResultView { conversation_id: conversation_id.to_string(), deleted: true })
         }
         AskConversationDeleted::NotFound => Err(not_found(conversation_id)),
@@ -674,6 +681,7 @@ mod tests {
             client_message_id: Some(" c-1 ".into()),
             memory_ids: vec![],
             edited_from: None,
+            session_id: None,
         }
     }
 
@@ -727,6 +735,7 @@ mod tests {
             created_at: String::new(),
             superseded_at: None,
             edited_from: None,
+            session_id: None,
         }
     }
 

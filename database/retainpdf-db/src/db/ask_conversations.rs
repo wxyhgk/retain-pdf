@@ -59,6 +59,8 @@ pub struct AskConversationMessageRecord {
     pub superseded_at: Option<String>,
     /// 改后重问的那条问指回被改的那条（v43）。
     pub edited_from: Option<String>,
+    /// 答这条的 agent 会话（ACP 会话编号，v44）；删对话时据此删 agent 自己存的那份。
+    pub session_id: Option<String>,
 }
 
 /// 要追加的一条消息（调用方校验过）。`memory_ids`：这条回答里记下的记忆，出处还空着的补上这条消息。
@@ -80,6 +82,7 @@ pub struct NewAskConversationMessage {
     pub memory_ids: Vec<String>,
     /// 改后重问：被改的那条（要是这个对话里已经作废的问）。
     pub edited_from: Option<String>,
+    pub session_id: Option<String>,
 }
 
 /// 开副对话要的东西（调用方校验过）。
@@ -118,7 +121,8 @@ pub enum AskConversationUpdated {
 }
 
 pub enum AskConversationDeleted {
-    Deleted,
+    /// 删了；带上这个对话（和它的副对话）里消息记着的 agent 会话编号，调用方去删 agent 自己存的那份。
+    Deleted { session_ids: Vec<String> },
     NotFound,
     /// 开着的主对话：先归档再删。
     MainStillOpen,
@@ -161,7 +165,7 @@ const CONVERSATION_COLUMNS: &str = "c.conversation_id, c.kind, c.parent_id, c.fo
      (SELECT COALESCE(MAX(seq), 0) FROM ask_conversation_messages m WHERE m.conversation_id = c.conversation_id)";
 
 const MESSAGE_COLUMNS: &str = "message_id, conversation_id, seq, role, text, thought, usage_json, agent_id, side_conversation_id,
-     document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at, superseded_at, edited_from";
+     document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at, superseded_at, edited_from, session_id";
 
 fn row_to_conversation(row: &rusqlite::Row<'_>) -> rusqlite::Result<AskConversationRecord> {
     Ok(AskConversationRecord {
@@ -206,6 +210,7 @@ fn row_to_message(row: &rusqlite::Row<'_>) -> rusqlite::Result<AskConversationMe
         created_at: row.get(16)?,
         superseded_at: row.get(17)?,
         edited_from: row.get(18)?,
+        session_id: row.get(19)?,
     })
 }
 
@@ -273,8 +278,8 @@ fn insert_message(conn: &Connection, conversation_id: &str, message: &NewAskConv
     conn.execute(
         "INSERT INTO ask_conversation_messages (message_id, conversation_id, seq, role, text, thought, usage_json, agent_id,
              side_conversation_id, document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at,
-             edited_from)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
+             edited_from, session_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
         params![
             message_id,
             conversation_id,
@@ -294,6 +299,7 @@ fn insert_message(conn: &Connection, conversation_id: &str, message: &NewAskConv
             message.client_message_id,
             now_iso(),
             message.edited_from,
+            message.session_id,
         ],
     )?;
     for memory_id in &message.memory_ids {
@@ -462,9 +468,20 @@ impl Db {
         if current.kind == "main" && current.status == "open" {
             return Ok(AskConversationDeleted::MainStillOpen);
         }
+        // 这个对话和它的副对话（跟着外键删）里记着的 agent 会话
+        let session_ids = {
+            let mut stmt = tx.prepare(
+                "SELECT DISTINCT session_id FROM ask_conversation_messages
+                 WHERE session_id IS NOT NULL
+                   AND conversation_id IN (SELECT conversation_id FROM ask_conversations WHERE conversation_id = ?1 OR parent_id = ?1)
+                 ORDER BY session_id",
+            )?;
+            let rows = stmt.query_map(params![conversation_id], |row| row.get::<_, String>(0))?;
+            rows.collect::<rusqlite::Result<Vec<_>>>()?
+        };
         tx.execute("DELETE FROM ask_conversations WHERE conversation_id = ?1", params![conversation_id])?;
         tx.commit()?;
-        Ok(AskConversationDeleted::Deleted)
+        Ok(AskConversationDeleted::Deleted { session_ids })
     }
 
     /// 结束一个副对话：状态 `closed`。给了摘要就记下，并在主对话末尾追加一条 `side_summary` 卡片（主对话不是 open 时不追加）。

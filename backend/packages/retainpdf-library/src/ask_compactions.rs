@@ -224,6 +224,7 @@ mod tests {
             created_at: String::new(),
             superseded_at: None,
             edited_from: None,
+            session_id: None,
         }
     }
 
@@ -283,6 +284,7 @@ mod tests {
             client_message_id: None,
             memory_ids: vec![],
             edited_from: None,
+            session_id: None,
         };
         AppendAskMessagesInput { messages: vec![message("user"), message("assistant")] }
     }
