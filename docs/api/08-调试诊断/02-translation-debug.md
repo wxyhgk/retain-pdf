@@ -164,6 +164,9 @@ GET /api/v1/jobs/{job_id}/translations/{item_id}/revisions
 记录：`revision_id`（`rev-` 加 32 位十六进制）、`item_id`、`page_idx`、`translation_unit_id`、`ts`、`source`、`reason`、
 `previous_text`、`new_text`、`previous_final_status`、`validation`（摘要：`passed`、`error_count`、`warning_count`、`issue_kinds`）、
 `previous_generation`、`generation`、`page_hashes`。条目不存在是普通 404（不是空列表，免得编号拼错时静默成功）。
+`source` 除了 PATCH 收的三种，还可能是 `maintenance`（2026-11-26 起）：维护工具改记块状态、不改文字（例如把没东西可翻的失败块
+改记成保留原文），这种记录多一个 `final_status`（改后的状态），`previous_text`、`new_text` 是改前改后的译文（多半都是空串）；
+不算用户手改，「改过 N 处」不计它。
 
 ## Replay
 

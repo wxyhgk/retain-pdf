@@ -43,6 +43,7 @@ import shutil
 import signal
 import tempfile
 import uuid
+from collections.abc import Callable
 from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
@@ -73,6 +74,8 @@ TRANSLATION_REVISION_SCHEMA_VERSION = 1
 TRANSLATION_REVISION_INTENT_FILE_NAME = ".translation-revision-intent.v1.json"
 TRANSLATION_REVISION_INTENT_SCHEMA = "translation_revision_intent_v1"
 REVISION_SOURCES = ("user", "agent", "refine")
+# 维护工具改记块状态（``commit_item_maintenance``）写进修订日志的来源；不在 REVISION_SOURCES 里，修订接口不收它
+MAINTENANCE_REVISION_SOURCE = "maintenance"
 MAX_REVISION_TEXT_CHARS = 20000
 MAX_REVISION_REASON_CHARS = 2000
 
@@ -410,13 +413,12 @@ def _log_has_revision(revisions_path: Path, revision_id: str) -> bool:
     return False
 
 
-def _append_revision_record(revisions_path: Path, original: bytes, record: dict[str, Any]) -> None:
+def _append_revision_records(revisions_path: Path, original: bytes, records: list[dict[str, Any]]) -> None:
     _atomic_write_bytes(
         revisions_path,
         original
         + (b"" if not original or original.endswith(b"\n") else b"\n")
-        + json.dumps(record, ensure_ascii=False).encode("utf-8")
-        + b"\n",
+        + b"".join(json.dumps(record, ensure_ascii=False).encode("utf-8") + b"\n" for record in records),
     )
 
 
@@ -435,12 +437,14 @@ def recover_incomplete_revision(translations_dir: Path, store: CheckpointStore) 
         return None
     try:
         intent = json.loads(raw)
-        record = intent["record"]
-        revision_id = str(intent["revision_id"])
+        # 一次提交多条修订（维护工具）时在 records 里；以前的意图记录只有 record
+        records = list(intent.get("records") or [intent["record"]])
         previous_sha = str(intent["previous_checkpoint_sha256"])
         new_generation = int(intent["new_generation"])
-        record_hashes = dict(record["page_hashes"])
-        valid = intent.get("schema") == TRANSLATION_REVISION_INTENT_SCHEMA
+        record_hashes: dict[str, Any] = {}
+        for record in records:
+            record_hashes.update(dict(record["page_hashes"]))
+        valid = intent.get("schema") == TRANSLATION_REVISION_INTENT_SCHEMA and bool(records)
     except (ValueError, KeyError, TypeError):
         valid = False
     if not valid:
@@ -464,8 +468,9 @@ def recover_incomplete_revision(translations_dir: Path, store: CheckpointStore) 
     ):
         # 前滚:checkpoint 已提交,只差日志(和意图记录的清理)。
         _restore_pages(store, checkpoint)
-        if not _log_has_revision(revisions_path, revision_id):
-            _append_revision_record(revisions_path, _read_revision_lines(revisions_path), record)
+        missing = [record for record in records if not _log_has_revision(revisions_path, str(record.get("revision_id", "")))]
+        if missing:
+            _append_revision_records(revisions_path, _read_revision_lines(revisions_path), missing)
         outcome = "rolled_forward"
     elif _sha256(checkpoint_bytes) == previous_sha:
         # 回退:checkpoint 没动过,页文件按它记录的那一版换回去。
@@ -598,13 +603,15 @@ def revise_translation_item(job_root: Path, request: RevisionRequest) -> dict[st
         store.close()
 
 
-def _revise_locked(
-    job_root: Path,
+def _load_publication_locked(
     translations_dir: Path,
     store: CheckpointStore,
-    request: RevisionRequest,
-) -> dict[str, Any]:
-    checkpoint_path = store.path
+    *,
+    expected_generation: int | None = None,
+) -> tuple[dict[str, Any], dict[int, Path], dict[int, bytes], dict[int, list[dict]]]:
+    """持锁后读出已提交的译文：先收尾上一次没写完的写回，核对页文件和 checkpoint（页文件领先时用快照换回去）。
+    返回 checkpoint、各页路径、各页原始字节、各页记录。"""
+
     try:
         recover_incomplete_revision(translations_dir, store)
     except (RuntimeError, OSError) as exc:
@@ -613,13 +620,13 @@ def _revise_locked(
             "publication_inconsistent",
             f"Could not recover the interrupted translation revision: {exc}",
         ) from exc
-    checkpoint = _load_committed_checkpoint(checkpoint_path)
+    checkpoint = _load_committed_checkpoint(store.path)
     generation = int(checkpoint["generation"])
-    if request.expected_generation is not None and request.expected_generation != generation:
+    if expected_generation is not None and expected_generation != generation:
         raise RevisionOutcome(
             "conflict",
             "generation_mismatch",
-            f"Translation changed since generation {request.expected_generation}; current is {generation}",
+            f"Translation changed since generation {expected_generation}; current is {generation}",
             current_generation=generation,
         )
     try:
@@ -635,6 +642,113 @@ def _revise_locked(
     translation_paths = load_translation_manifest(translations_dir)
     original_bytes = {page_idx: path.read_bytes() for page_idx, path in translation_paths.items()}
     payloads = {page_idx: json.loads(raw) for page_idx, raw in original_bytes.items()}
+    return checkpoint, translation_paths, original_bytes, payloads
+
+
+def commit_item_maintenance(
+    job_root: Path,
+    mutate: Callable[[dict[int, list[dict]]], list[dict[str, Any]]],
+) -> dict[str, Any]:
+    """维护工具改记块的状态（不改译文文字，例如 ``reclassify --apply`` 把没东西可翻的失败块改记成保留原文），
+    走和单块修订同一条提交路：持锁、意图记录、页文件、新 generation 的快照、checkpoint、修订日志一起前进。
+    以前维护工具直接改页文件：渲染按 checkpoint 的页哈希校验读不出，下一次修订又被快照悄悄换回去（2026-11-26，S22）。
+
+    ``mutate(各页记录)`` 在副本上原地改，返回改了的块 ``[{"item_id": …, "reason": …}]``；什么都没改时不写盘。
+    每块记一条 ``source="maintenance"`` 的修订记录（不算用户手改），Rust 按记录里的页哈希把新页登记进实时译文读模型。
+    """
+
+    job_root = Path(job_root).resolve()
+    translations_dir = job_root / "translated"
+    store = CheckpointStore(translation_checkpoint_path(translations_dir))
+    try:
+        store.acquire()
+    except RuntimeError as exc:
+        raise RevisionOutcome("conflict", "checkpoint_locked", str(exc)) from exc
+    try:
+        with _sigterm_rolls_back():
+            checkpoint, translation_paths, original_bytes, payloads = _load_publication_locked(translations_dir, store)
+            generation = int(checkpoint["generation"])
+            revised = copy.deepcopy(payloads)
+            changes = list(mutate(revised) or [])
+            if not changes:
+                return {"outcome": "unchanged", "changed": False, "generation": generation, "revisions": [], "page_hashes": {}}
+            before = {
+                str(item.get("item_id", "") or ""): (page_idx, item)
+                for page_idx, items in payloads.items()
+                for item in items
+                if isinstance(item, dict)
+            }
+            after = {
+                str(item.get("item_id", "") or ""): item
+                for items in revised.values()
+                for item in items
+                if isinstance(item, dict)
+            }
+            changed_pages = sorted({before[str(change["item_id"])][0] for change in changes})
+
+            def make_records(new_generation: int, page_hashes: dict[str, str]) -> list[dict[str, Any]]:
+                records = []
+                ts = now_iso()
+                for change in changes:
+                    item_id = str(change["item_id"])
+                    page_idx, previous = before[item_id]
+                    current = after[item_id]
+                    page_name = translation_paths[page_idx].name
+                    records.append({
+                        "schema": TRANSLATION_REVISION_SCHEMA,
+                        "schema_version": TRANSLATION_REVISION_SCHEMA_VERSION,
+                        "revision_id": f"rev-{uuid.uuid4().hex}",
+                        "item_id": item_id,
+                        "page_idx": page_idx,
+                        "translation_unit_id": str(current.get("translation_unit_id", "") or ""),
+                        "ts": ts,
+                        "source": MAINTENANCE_REVISION_SOURCE,
+                        "reason": str(change.get("reason", "") or ""),
+                        "previous_text": str(previous.get("protected_translated_text") or previous.get("translated_text") or ""),
+                        "new_text": str(current.get("protected_translated_text") or current.get("translated_text") or ""),
+                        "previous_final_status": str(previous.get("final_status", "") or ""),
+                        "final_status": str(current.get("final_status", "") or ""),
+                        "validation": {"passed": True, "error_count": 0, "warning_count": 0, "issue_kinds": []},
+                        "previous_generation": generation,
+                        "generation": new_generation,
+                        "page_hashes": {page_name: page_hashes[page_name]},
+                    })
+                return records
+
+            new_generation, records = _commit_revised_pages(
+                translations_dir=translations_dir,
+                store=store,
+                checkpoint=checkpoint,
+                translation_paths=translation_paths,
+                original_bytes=original_bytes,
+                revised=revised,
+                changed_pages=changed_pages,
+                make_records=make_records,
+            )
+            page_hashes: dict[str, str] = {}
+            for record in records:
+                page_hashes.update(record["page_hashes"])
+            return {
+                "outcome": "committed",
+                "changed": True,
+                "generation": new_generation,
+                "revisions": records,
+                "page_hashes": page_hashes,
+            }
+    finally:
+        store.close()
+
+
+def _revise_locked(
+    job_root: Path,
+    translations_dir: Path,
+    store: CheckpointStore,
+    request: RevisionRequest,
+) -> dict[str, Any]:
+    checkpoint, translation_paths, original_bytes, payloads = _load_publication_locked(
+        translations_dir, store, expected_generation=request.expected_generation
+    )
+    generation = int(checkpoint["generation"])
     if request.expected_translated_text is not None:
         _check_expected_text(payloads, request.item_id, request.expected_translated_text)
     prepared = _prepare_revision(payloads, request.item_id, request.translated_text, _load_glossary_entries(job_root))
@@ -676,37 +790,77 @@ def _revise_locked(
     changed_pages = sorted(
         {page_idx, *(member_page for member_page, _member in members)}
     )
+
+    def make_records(new_generation: int, page_hashes: dict[str, str]) -> list[dict[str, Any]]:
+        return [{
+            "schema": TRANSLATION_REVISION_SCHEMA,
+            "schema_version": TRANSLATION_REVISION_SCHEMA_VERSION,
+            "revision_id": revision_id,
+            "item_id": request.item_id,
+            "page_idx": page_idx,
+            "translation_unit_id": item_view["translation_unit_id"],
+            "ts": now_iso(),
+            "source": request.source,
+            "reason": request.reason,
+            "previous_text": previous_text,
+            "new_text": new_text,
+            "previous_final_status": str(item.get("final_status", "") or ""),
+            "validation": {
+                key: validation[key] for key in ("passed", "error_count", "warning_count")
+            }
+            | {"issue_kinds": sorted({issue["kind"] for issue in validation["issues"]})},
+            "previous_generation": generation,
+            "generation": new_generation,
+            "page_hashes": page_hashes,
+        }]
+
+    new_generation, [record] = _commit_revised_pages(
+        translations_dir=translations_dir,
+        store=store,
+        checkpoint=checkpoint,
+        translation_paths=translation_paths,
+        original_bytes=original_bytes,
+        revised=revised,
+        changed_pages=changed_pages,
+        make_records=make_records,
+    )
+    return {
+        "outcome": "committed",
+        "changed": True,
+        "item": item_view,
+        "generation": new_generation,
+        "validation": validation,
+        "revision": record,
+        "page_hashes": record["page_hashes"],
+    }
+
+
+def _commit_revised_pages(
+    *,
+    translations_dir: Path,
+    store: CheckpointStore,
+    checkpoint: dict[str, Any],
+    translation_paths: dict[int, Path],
+    original_bytes: dict[int, bytes],
+    revised: dict[int, list[dict]],
+    changed_pages: list[int],
+    make_records: Callable[[int, dict[str, str]], list[dict[str, Any]]],
+) -> tuple[int, list[dict[str, Any]]]:
+    """按文件头的顺序提交一次写回（调用方已持锁、已核对过页文件和 checkpoint）：意图记录 → 页文件 → 新快照 →
+    checkpoint（提交点）→ 修订日志 → 删意图记录。``make_records(新 generation, 改过的页 → 哈希)`` 给出要追加的修订记录，
+    一次提交可以有多条（维护工具一次改记多块），共用同一个 generation。返回新 generation 和这些记录。"""
+
+    checkpoint_path = store.path
+    generation = int(checkpoint["generation"])
     new_bytes = {idx: _page_bytes(revised[idx]) for idx in changed_pages}
     new_generation = generation + 1
+    page_hashes = {translation_paths[idx].name: _sha256(new_bytes[idx]) for idx in changed_pages}
+    records = make_records(new_generation, page_hashes)
     revisions_path = translation_revisions_path(translations_dir)
     original_checkpoint = checkpoint_path.read_bytes()
     original_revisions = _read_revision_lines(revisions_path)
     new_snapshot_dir = _snapshot_dir(translations_dir, new_generation)
     snapshot_preexisted = new_snapshot_dir.exists()
-
-    record = {
-        "schema": TRANSLATION_REVISION_SCHEMA,
-        "schema_version": TRANSLATION_REVISION_SCHEMA_VERSION,
-        "revision_id": revision_id,
-        "item_id": request.item_id,
-        "page_idx": page_idx,
-        "translation_unit_id": item_view["translation_unit_id"],
-        "ts": now_iso(),
-        "source": request.source,
-        "reason": request.reason,
-        "previous_text": previous_text,
-        "new_text": new_text,
-        "previous_final_status": str(item.get("final_status", "") or ""),
-        "validation": {
-            key: validation[key] for key in ("passed", "error_count", "warning_count")
-        }
-        | {"issue_kinds": sorted({issue["kind"] for issue in validation["issues"]})},
-        "previous_generation": generation,
-        "generation": new_generation,
-        "page_hashes": {
-            translation_paths[idx].name: _sha256(new_bytes[idx]) for idx in changed_pages
-        },
-    }
 
     # 回退要用当前 generation 的快照:没有就现在补(硬链接,几乎不花时间)。
     store.snapshot_pages(copy.deepcopy(checkpoint))
@@ -716,14 +870,17 @@ def _revise_locked(
         json.dumps(
             {
                 "schema": TRANSLATION_REVISION_INTENT_SCHEMA,
-                "revision_id": revision_id,
+                "revision_id": records[0]["revision_id"],
                 "previous_generation": generation,
                 "new_generation": new_generation,
                 "previous_checkpoint_sha256": _sha256(original_checkpoint),
                 "old_page_hashes": {
                     translation_paths[idx].name: _sha256(original_bytes[idx]) for idx in changed_pages
                 },
-                "record": record,
+                "page_hashes": page_hashes,
+                # 只有一条时和以前的意图记录一样；多条时 records 里是全部
+                "record": records[0],
+                "records": records,
             },
             ensure_ascii=False,
         ).encode("utf-8"),
@@ -754,7 +911,7 @@ def _revise_locked(
         }
         store.snapshot_pages(checkpoint)
         store.save(checkpoint)
-        _append_revision_record(revisions_path, original_revisions, record)
+        _append_revision_records(revisions_path, original_revisions, records)
     except BaseException:
         _rollback(
             translation_paths=translation_paths,
@@ -779,15 +936,7 @@ def _revise_locked(
     # 修订不经过 worker stdout,要等 Rust 在本命令返回后把新 page_hash 登记进数据库
     # (live_translation/revisions.rs),登记成功前读模型要的还是旧快照。登记完成后
     # 由 Rust 清掉不再被引用的旧 generation;登记失败时它们留着,读模型照旧可读。
-    return {
-        "outcome": "committed",
-        "changed": True,
-        "item": item_view,
-        "generation": new_generation,
-        "validation": validation,
-        "revision": record,
-        "page_hashes": record["page_hashes"],
-    }
+    return new_generation, records
 
 
 def _rollback(
@@ -828,6 +977,7 @@ def load_item_revisions(translations_dir: Path, item_id: str) -> list[dict[str, 
 
 
 __all__ = [
+    "MAINTENANCE_REVISION_SOURCE",
     "REVISION_SOURCES",
     "RevisionOutcome",
     "RevisionPreview",
@@ -835,6 +985,7 @@ __all__ = [
     "RevisionTerminated",
     "TRANSLATION_REVISIONS_FILE_NAME",
     "TRANSLATION_REVISION_INTENT_FILE_NAME",
+    "commit_item_maintenance",
     "load_item_revisions",
     "preview_translation_revision",
     "recover_incomplete_revision",
