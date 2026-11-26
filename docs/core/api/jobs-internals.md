@@ -62,6 +62,9 @@
   - 连接都没建成的请求（连接被拒、DNS 失败、建连超时、连不上代理）终态记 `failed_not_sent`，不算结果不明，断网时不再逼用户确认；
     建连以后才断的（对方关连接、读超时、TLS 出错）照旧 `ambiguous`。判据在 `client.py` 的 `_request_never_left`。
   - Windows 上 Rust 用 `taskkill /T /F` 停 worker，没有 SIGTERM 可接，在途请求照旧当场留成结果不明（和以前一样）。
+- 启动对账逐个任务隔离错误（2026-11-26，状态管理 Z5 / S10）：一个任务对账时写库出错（库忙、磁盘满），记一条 warn 日志
+  （`runtime reconciliation failed for job …; skipped it`）、跳过它，接着处理下一个；父任务已终态的 OCR 子任务收尾也一样。
+  以前用 `?` 直接返回，整轮中止，后面的任务都不对账，jobsd 起不来。跳过的任务留在原状态，下次启动或运行期巡检再对账。
 - 启动恢复和运行期的「没人在跑」巡检，按 pipeline attempt 数「连续几次放回排队、两次之间没有任何新进度（没提交新单元、没完成新阶段）」。
   到 `MAX_AUTO_RESUMES_WITHOUT_PROGRESS`（3）次后，下次再发现它中断就落 `failed` / `auto_resume_limit_exceeded`
   （`failure_category=internal`、`failed_stage=startup_recovery`、`retryable=true`、`resume_from=null`），不再续跑。

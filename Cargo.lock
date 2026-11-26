@@ -1880,6 +1880,7 @@ dependencies = [
  "retainpdf-core",
  "retainpdf-data",
  "retainpdf-proc",
+ "rusqlite",
  "serde",
  "serde_json",
  "sha2",
