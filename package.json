@@ -41,6 +41,12 @@
     "worker-f": "0.1.20",
     "@openuidev/intelligent-ui-library": {
       "katex": "^0.19.1"
+    },
+    "rehype-katex": {
+      "katex": "^0.19.1"
+    },
+    "micromark-extension-math": {
+      "katex": "^0.19.1"
     }
   }
 }
