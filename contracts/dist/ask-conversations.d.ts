@@ -5,7 +5,7 @@
 /**
  * Endpoint input, query, and output DTOs published by ask-conversations.v1.schema.json.
  */
-export type AskConversationsSchema = AppendAskMessagesInput | AppendAskMessagesView | AskContextQuery | AskContextView | AskConversationDeleteResultView | AskConversationListView | AskConversationRecord | AskMemoryCreatedView | AskMemoryListView | AskMemoryRecord | AskMessagePageView | CloseAskConversationInput | CloseAskConversationView | CreateAskMemoryInput | CreateAskSideConversationInput | DocumentAskMessagesView | ListAskConversationsQuery | ListAskMemoriesQuery | ListAskMessagesQuery | PatchAskConversationInput | PatchAskMemoryInput;
+export type AskConversationsSchema = AppendAskMessagesInput | AppendAskMessagesView | AskContextQuery | AskContextView | AskConversationDeleteResultView | AskConversationListView | AskConversationRecord | AskMemoryCreatedView | AskMemoryListView | AskMemoryRecord | AskMessagePageView | AskSettingsRecord | CloseAskConversationInput | CloseAskConversationView | CreateAskMemoryInput | CreateAskSideConversationInput | DocumentAskMessagesView | ListAskConversationsQuery | ListAskMemoriesQuery | ListAskMessagesQuery | PatchAskConversationInput | PatchAskMemoryInput | PatchAskSettingsInput;
 /**
  * source 原文栏 / translated 译文栏。
  */
@@ -333,6 +333,10 @@ export interface AskContextQuery {
 export interface AskContextView {
     conversation: AskConversationRecord;
     /**
+     * 「让 AI 使用记忆」开着没有；关着时 memories 是空的、memory_text 是空串。
+     */
+    memory_enabled: boolean;
+    /**
      * 压缩摘要（第二期）；现在总是 null。
      */
     summary: string | null;
@@ -451,6 +455,19 @@ export interface AskMessagePageView {
     messages: AskConversationMessageRecord[];
     has_more: boolean;
 }
+/**
+ * 阅读页提问的设置（存在库里，后端和 agent 都认；不是浏览器里的设置）。
+ */
+export interface AskSettingsRecord {
+    /**
+     * 「让 AI 使用记忆」总开关，默认开。
+     */
+    memory_enabled: boolean;
+    /**
+     * 最后一次改的时间；没改过 null。
+     */
+    updated_at: string | null;
+}
 export interface CloseAskConversationInput {
     /**
      * 结论，最多 8000 字；给了就回填到主对话。
@@ -560,4 +577,10 @@ export interface PatchAskConversationInput {
 export interface PatchAskMemoryInput {
     text?: string;
     category?: AskMemoryCategory;
+}
+/**
+ * 给了的才改；什么都不给回现在的。
+ */
+export interface PatchAskSettingsInput {
+    memory_enabled?: boolean;
 }

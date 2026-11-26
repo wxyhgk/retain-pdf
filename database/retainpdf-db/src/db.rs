@@ -87,10 +87,10 @@ pub use documents::{DocumentChangeStamp, DocumentListFilter};
 pub use tags::tag_id_for_name;
 pub use translation_versions::TranslationVersionRecord;
 pub use ask_conversations::{
-    AskConversationChanges, AskConversationFilter, AskConversationMessageRecord, AskConversationRecord, AskConversationUpdated,
+    AskConversationChanges, AskConversationDeleted, AskConversationFilter, AskConversationMessageRecord, AskConversationRecord, AskConversationUpdated,
     AskMessagesAppended, AskSideClosed, AskSideCreated, NewAskConversationMessage, NewAskSideConversation,
 };
-pub use ask_memories::{AskMemoryCreated, AskMemoryFilter, AskMemoryRecord, NewAskMemory};
+pub use ask_memories::{AskMemoryCreated, AskMemoryFilter, AskMemoryRecord, AskSettingsRecord, NewAskMemory};
 pub use ask_threads::{
     AskAnchorRecord, AskMessageRecord, AskPoint, AskThreadChanges, AskThreadCreated, AskThreadRecord, NewAskThread,
 };

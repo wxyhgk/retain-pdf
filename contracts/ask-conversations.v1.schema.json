@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/ask-conversations/v1",
   "title": "阅读页提问的主对话、副对话和记忆（ask conversations）",
-  "description": "2026-11-26（数据库 v40）：一个全局主对话一直延续，副对话从主对话某条消息分出来、结束时结论回到主对话；每条消息记自己属于哪本书和结构化出处（任务、译文版本、页、块、选中的字），只追加；记忆分用户层和书层，带出处和状态（active / superseded / deleted）。库是正本，agent 只负责回答。存在数据库（ask_conversations、ask_conversation_messages、ask_memories、ask_memories_fts），不同步。v39 的按书问答记录（ask-threads.v1）只读保留，不迁。生产者：backend/packages/retainpdf-library/src/ask_conversations.rs、ask_memories.rs（校验、上限、拼上下文）、ask_views.rs（请求和返回类型），database/retainpdf-db/src/db/ask_conversations.rs、ask_memories.rs（存取），backend/api/src/routes/ask_conversations.rs（处理函数）；backend/api/src/api_tests/ask_conversations.rs 钉键集合。消费者：@retainpdf/contracts/ask-conversations，阅读页的问答窗、记忆面板；自带 agent（backend/ask-agent 的 memory.py）调 context、memories。多用户模式下这批接口关闭（全局的数据没有归属）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。端点先不写 client_name：前端生成的请求客户端有漂移检查，等前端接的时候连同生成代码一起加。AcpMemoryNotice 不是接口返回，是 ACP 消息里的 _meta。详见 docs/api/16-AI/02-主对话和记忆.md。",
+  "description": "2026-11-26（数据库 v40）：一个全局主对话一直延续，副对话从主对话某条消息分出来、结束时结论回到主对话；每条消息记自己属于哪本书和结构化出处（任务、译文版本、页、块、选中的字），只追加；记忆分用户层和书层，带出处和状态（active / superseded / deleted），「让 AI 使用记忆」总开关（ask_settings，默认开）。主对话只能先归档再删。库是正本，agent 只负责回答。存在数据库（ask_conversations、ask_conversation_messages、ask_memories、ask_memories_fts），不同步。v39 的按书问答记录（ask-threads.v1）只读保留，不迁。生产者：backend/packages/retainpdf-library/src/ask_conversations.rs、ask_memories.rs（校验、上限、拼上下文）、ask_views.rs（请求和返回类型），database/retainpdf-db/src/db/ask_conversations.rs、ask_memories.rs（存取），backend/api/src/routes/ask_conversations.rs（处理函数）；backend/api/src/api_tests/ask_conversations.rs 钉键集合。消费者：@retainpdf/contracts/ask-conversations，阅读页的问答窗、记忆面板；自带 agent（backend/ask-agent 的 memory.py）调 context、memories。多用户模式下这批接口关闭（全局的数据没有归属）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。端点先不写 client_name：前端生成的请求客户端有漂移检查，等前端接的时候连同生成代码一起加。AcpMemoryNotice 不是接口返回，是 ACP 消息里的 _meta。详见 docs/api/16-AI/02-主对话和记忆.md。",
   "base_path": "/api/v1",
   "endpoints": [
     {
@@ -54,7 +54,7 @@
       "transport": "json",
       "output": "AskConversationDeleteResultView",
       "rust_view": "AskConversationDeleteResultView",
-      "note": "删对话：消息、它的副对话跟着删；记忆留着（出处置空）；副对话回到主对话的摘要卡片留着（side_conversation_id 置空）。没有 404。"
+      "note": "删对话：消息、它的副对话跟着删；记忆留着（出处置空）；副对话回到主对话的摘要卡片留着（side_conversation_id 置空）。开着的主对话不能删，409 ask_main_conversation_open：先归档（界面上只给「归档并开新的主对话」）；副对话不受限制。没有 404。"
     },
     {
       "method": "POST",
@@ -94,6 +94,23 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/ai/ask-settings",
+      "transport": "json",
+      "output": "AskSettingsRecord",
+      "rust_view": "AskSettingsRecord",
+      "note": "阅读页提问的设置：现在只有「让 AI 使用记忆」总开关 memory_enabled（默认开）。自带 agent 每次调记忆工具前看一眼（by agent）。"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/ai/ask-settings",
+      "transport": "json",
+      "input": "PatchAskSettingsInput",
+      "output": "AskSettingsRecord",
+      "rust_view": "AskSettingsRecord",
+      "note": "改设置，给了的才改，回改完的。memory_enabled 关掉：上下文不带记忆，agent 记（409 ask_memory_disabled）、查都不行；已经记下的都留着，用户在记忆面板里照常看、改、删、加。"
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/documents/:document_id/ask-messages",
       "transport": "json",
       "output": "DocumentAskMessagesView",
@@ -116,7 +133,7 @@
       "input": "CreateAskMemoryInput",
       "output": "AskMemoryCreatedView",
       "rust_view": "AskMemoryCreatedView",
-      "note": "记一条：同层同书去掉空白后一模一样的 active 记忆已经有了就回那条（created false）；replaces 的旧条标 superseded。书层要 document_id（书不在 404），用户层不能给；replaces 没有或已删 400；每层 active 的到上限（用户层 200，书层每本书 500）409 ask_memory_limit。自带 agent 的 remember 也调它（by agent，origin agent）。"
+      "note": "记一条：「让 AI 使用记忆」关着时 origin agent 的 409 ask_memory_disabled（用户自己加照常）；同层同书去掉空白后一模一样的 active 记忆已经有了就回那条（created false）；replaces 的旧条标 superseded。书层要 document_id（书不在 404），用户层不能给；replaces 没有或已删 400；每层 active 的到上限（用户层 200，书层每本书 500）409 ask_memory_limit。自带 agent 的 remember 也调它（by agent，origin agent）。"
     },
     {
       "method": "PATCH",
@@ -1034,11 +1051,44 @@
         }
       }
     },
+    "AskSettingsRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "memory_enabled",
+        "updated_at"
+      ],
+      "description": "阅读页提问的设置（存在库里，后端和 agent 都认；不是浏览器里的设置）。",
+      "properties": {
+        "memory_enabled": {
+          "type": "boolean",
+          "description": "「让 AI 使用记忆」总开关，默认开。"
+        },
+        "updated_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "最后一次改的时间；没改过 null。"
+        }
+      }
+    },
+    "PatchAskSettingsInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "给了的才改；什么都不给回现在的。",
+      "properties": {
+        "memory_enabled": {
+          "type": "boolean"
+        }
+      }
+    },
     "AskContextView": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "conversation",
+        "memory_enabled",
         "summary",
         "parent",
         "messages",
@@ -1050,6 +1100,10 @@
       "properties": {
         "conversation": {
           "$ref": "#/definitions/AskConversationRecord"
+        },
+        "memory_enabled": {
+          "type": "boolean",
+          "description": "「让 AI 使用记忆」开着没有；关着时 memories 是空的、memory_text 是空串。"
         },
         "summary": {
           "type": [

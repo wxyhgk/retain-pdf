@@ -47,16 +47,17 @@ pub use ask_conversations::{
     list_ask_conversations_view, list_ask_messages_view, patch_ask_conversation_view,
 };
 pub use ask_memories::{
-    create_ask_memory_view, delete_ask_memory_view, get_ask_memory_view, list_ask_memories_view, patch_ask_memory_view,
+    create_ask_memory_view, delete_ask_memory_view, get_ask_memory_view, get_ask_settings_view, list_ask_memories_view,
+    patch_ask_memory_view, patch_ask_settings_view,
 };
 /// 对话、记忆的记录就是接口返回的形状（和问答记录一样直接序列化库里的行）。
-pub use retainpdf_data::db::{AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord};
+pub use retainpdf_data::db::{AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord, AskSettingsRecord};
 pub use ask_views::{
     AppendAskMessagesInput, AppendAskMessagesView, AskContextMemoriesView, AskContextParentView, AskContextQuery, AskContextView,
     AskConversationDeleteResultView, AskConversationListView, AskConversationMessageInput, AskMemoryCreatedView,
     AskMemoryListView, AskMessagePageView, AskSelectionInput, CloseAskConversationInput, CloseAskConversationView,
     CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery,
-    ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput,
+    ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput,
 };
 pub use ask_threads::{
     create_ask_thread_view, delete_ask_thread_view, get_ask_thread_view, list_ask_threads_view, patch_ask_thread_view,

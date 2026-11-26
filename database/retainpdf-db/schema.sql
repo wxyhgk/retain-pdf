@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 40
+-- user_version 41
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -98,6 +98,11 @@ TABLE ask_messages
   usage_json TEXT
   FOREIGN KEY (thread_id) REFERENCES ask_threads(thread_id) ON UPDATE NO ACTION ON DELETE CASCADE
   PRIMARY KEY (thread_id, position)
+
+TABLE ask_settings
+  id INTEGER PRIMARY KEY#1
+  memory_enabled INTEGER NOT NULL DEFAULT 1
+  updated_at TEXT NOT NULL
 
 TABLE ask_threads
   thread_id TEXT PRIMARY KEY#1

@@ -169,10 +169,10 @@ fn side_conversations_hang_on_main_and_close_with_a_summary_card() {
     let sides = db.list_ask_conversations(&AskConversationFilter { parent_id: Some(&main.conversation_id), ..Default::default() }).unwrap();
     assert_eq!(sides.len(), 1);
     // 删副对话：卡片留着、指向置空
-    assert!(db.delete_ask_conversation(&side.conversation_id).unwrap());
+    assert!(matches!(db.delete_ask_conversation(&side.conversation_id).unwrap(), AskConversationDeleted::Deleted));
     let main_messages = db.list_ask_conversation_messages(&main.conversation_id, None, 10).unwrap();
     assert_eq!((main_messages.len(), main_messages[2].side_conversation_id.clone()), (3, None));
-    assert!(!db.delete_ask_conversation(&side.conversation_id).unwrap());
+    assert!(matches!(db.delete_ask_conversation(&side.conversation_id).unwrap(), AskConversationDeleted::NotFound));
     let _ = std::fs::remove_dir_all(root);
 }
 
@@ -195,7 +195,11 @@ fn deleting_a_conversation_keeps_memories_and_appending_links_them() {
     let linked = db.get_ask_memory(&memory.memory_id).unwrap().unwrap();
     assert_eq!(linked.source_message_id.as_deref(), Some(messages[1].message_id.as_str()));
 
-    assert!(db.delete_ask_conversation(&main.conversation_id).unwrap());
+    // 开着的主对话不删；归档以后才能删
+    assert!(matches!(db.delete_ask_conversation(&main.conversation_id).unwrap(), AskConversationDeleted::MainStillOpen));
+    db.update_ask_conversation(&main.conversation_id, &AskConversationChanges { status: Some("archived"), ..Default::default() })
+        .unwrap();
+    assert!(matches!(db.delete_ask_conversation(&main.conversation_id).unwrap(), AskConversationDeleted::Deleted));
     let kept = db.get_ask_memory(&memory.memory_id).unwrap().unwrap();
     assert_eq!((kept.status.as_str(), kept.source_conversation_id.clone(), kept.source_message_id.clone()), ("active", None, None));
     let _ = std::fs::remove_dir_all(root);

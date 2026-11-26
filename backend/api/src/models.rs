@@ -66,6 +66,7 @@ pub mod api {
         AskMessagePageView, CloseAskConversationInput, CloseAskConversationView, CreateAskMemoryInput,
         CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery,
         ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, AskConversationMessageInput, AskSelectionInput,
+        AskSettingsRecord, PatchAskSettingsInput,
     };
     pub use retainpdf_platform::{BackupItemView, BackupRestoreView, BackupStatusView};
     pub use retainpdf_providers::{ProviderErrorCatalogueView, ProviderErrorCodesQuery};

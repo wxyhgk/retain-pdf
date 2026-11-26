@@ -11,6 +11,8 @@
     `tool_call_update` 的 `_meta.retainpdf`，前端画成「已记住：……（撤销）」。
   - `search_memories(query, scope?, limit?)`：`GET /ai/memories?q=…`；书层默认只查当前这本书。
 - 每一问的额度在 `server.py` 的 `TurnBudget`：记 `REMEMBER_PER_TURN` 次、查 `SEARCH_PER_TURN` 次。
+- 「让 AI 使用记忆」总开关（`GET /ai/ask-settings` 的 `memory_enabled`，2026-11-26 用户定，默认开）：每次调这两个工具前看一眼，
+  关着就不发请求、回「用户关掉了记忆」；开会话时后端的上下文本来就不带记忆。看不了（后端没开）当开着，请求自己会报错。
 """
 from __future__ import annotations
 
@@ -24,6 +26,7 @@ from typing import Any, Callable
 from retainpdf_ask_agent.tools import ToolResult
 from retainpdf_ask_agent.tools import tool_error
 
+DISABLED_NOTE = "用户在设置里关掉了「让 AI 使用记忆」，这次没有{}。照常回答，不用再调记忆的工具；用户要你记的话，告诉他先在设置里打开。"
 REMEMBER_TOOL = "remember"
 SEARCH_TOOL = "search_memories"
 REMEMBER_PER_TURN = 3
@@ -158,7 +161,18 @@ class MemoryTools:
     def _book(self) -> str:
         return self._turn.get("document_id") or self.document_id
 
+    def enabled(self) -> bool:
+        """「让 AI 使用记忆」开着没有；看不了当开着。"""
+        try:
+            status, raw = self.http("GET", "/api/v1/ai/ask-settings", None, TIMEOUT_SECS)
+        except OSError:
+            return True
+        data, problem = _payload(status, raw)
+        return problem != "" or not isinstance(data, dict) or data.get("memory_enabled") is not False
+
     def run(self, name: str, arguments: dict[str, Any]) -> ToolResult:
+        if self.handles(name) and not self.enabled():
+            return ToolResult(text=DISABLED_NOTE.format("记" if name == REMEMBER_TOOL else "查"), is_error=True, summary="用户关掉了记忆")
         if name == REMEMBER_TOOL:
             return self._remember(arguments)
         if name == SEARCH_TOOL:
@@ -199,6 +213,8 @@ class MemoryTools:
         except OSError as error:
             return tool_error(f"连不上 RetainPDF 后端，没记上：{error}")
         data, problem = _payload(status, raw)
+        if "ask_memory_disabled" in problem:
+            return ToolResult(text=DISABLED_NOTE.format("记"), is_error=True, summary="用户关掉了记忆")
         if problem or not isinstance(data, dict) or not isinstance(data.get("memory"), dict):
             return tool_error(f"没记上：{problem or '后端回的不对'}")
         memory = data["memory"]

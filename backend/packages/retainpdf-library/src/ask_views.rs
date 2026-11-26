@@ -192,6 +192,8 @@ pub struct AskContextParentView {
 #[derive(Debug, Serialize)]
 pub struct AskContextView {
     pub conversation: AskConversationRecord,
+    /// 「让 AI 使用记忆」开着没有；关着时 `memories` 是空的、`memory_text` 是空串，agent 也不能记、不能查。
+    pub memory_enabled: bool,
     /// 压缩摘要（第二期）；现在总是 null。
     pub summary: Option<String>,
     pub parent: Option<AskContextParentView>,
@@ -265,6 +267,15 @@ pub struct CreateAskMemoryInput {
     /// 替代哪一条（旧的标 superseded）。
     #[serde(default)]
     pub replaces: Option<String>,
+}
+
+/// PATCH /ai/ask-settings：给了的才改。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PatchAskSettingsInput {
+    /// 「让 AI 使用记忆」总开关。
+    #[serde(default)]
+    pub memory_enabled: Option<bool>,
 }
 
 #[derive(Debug, Deserialize)]

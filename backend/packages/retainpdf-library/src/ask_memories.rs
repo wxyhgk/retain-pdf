@@ -4,10 +4,12 @@
 //! 方案见 docs/ops/planning/reader-ask/20261126-主对话副对话和记忆.md，接口见 docs/api/16-AI/02-主对话和记忆.md。
 
 use retainpdf_api_base::error::AppError;
-use retainpdf_data::db::{AskMemoryCreated, AskMemoryFilter, AskMemoryRecord, NewAskMemory};
+use retainpdf_data::db::{AskMemoryCreated, AskMemoryFilter, AskMemoryRecord, AskSettingsRecord, NewAskMemory};
 
 use crate::ask_conversations::checked_id;
-use crate::ask_views::{AskMemoryCreatedView, AskMemoryListView, CreateAskMemoryInput, ListAskMemoriesQuery, PatchAskMemoryInput};
+use crate::ask_views::{
+    AskMemoryCreatedView, AskMemoryListView, CreateAskMemoryInput, ListAskMemoriesQuery, PatchAskMemoryInput, PatchAskSettingsInput,
+};
 use crate::LibraryDeps;
 
 /// 一条最多几个字（一条记一件事）。
@@ -102,6 +104,13 @@ pub fn create_ask_memory_view(deps: &LibraryDeps<'_>, payload: &CreateAskMemoryI
         "agent" => "agent",
         _ => return Err(AppError::bad_request("origin must be user or agent")),
     };
+    // 「让 AI 使用记忆」关着：agent 不能记（用户在记忆面板里自己加照常）
+    if origin == "agent" && !deps.db.ask_settings()?.memory_enabled {
+        return Err(AppError::conflict_because(
+            "ask_memory_disabled",
+            "the user turned off memory for the AI (ask settings memory_enabled = false); nothing was remembered",
+        ));
+    }
     if payload.source_page == Some(0) {
         return Err(AppError::bad_request("source_page must be at least 1"));
     }
@@ -134,6 +143,19 @@ pub fn create_ask_memory_view(deps: &LibraryDeps<'_>, payload: &CreateAskMemoryI
             format!("already {limit} active {scope} memories; delete some or use replaces"),
             serde_json::json!({ "limit": limit, "scope": scope }),
         )),
+    }
+}
+
+/// GET /ai/ask-settings：阅读页提问的设置（现在只有「让 AI 使用记忆」）。
+pub fn get_ask_settings_view(deps: &LibraryDeps<'_>) -> Result<AskSettingsRecord, AppError> {
+    Ok(deps.db.ask_settings()?)
+}
+
+/// PATCH /ai/ask-settings：给了的才改；什么都没给回现在的。
+pub fn patch_ask_settings_view(deps: &LibraryDeps<'_>, payload: &PatchAskSettingsInput) -> Result<AskSettingsRecord, AppError> {
+    match payload.memory_enabled {
+        Some(enabled) => Ok(deps.db.set_ask_memory_enabled(enabled)?),
+        None => Ok(deps.db.ask_settings()?),
     }
 }
 
