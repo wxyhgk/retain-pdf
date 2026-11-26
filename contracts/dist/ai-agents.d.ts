@@ -7,7 +7,7 @@
  */
 export type AiAgentsSchema = AgentView | AgentsView;
 /**
- * builtin：RetainPDF 自带模型（用设置里的模型和密钥，服务器上也能用）；local：本机装的 agent。
+ * builtin：用设置里的模型和密钥的自带 agent——retainpdf（Python，服务器上也能用）和 retainpdf-pi（2026-11-26 加：本机装的 pi 加 RetainPDF 的读书扩展，和本机 agent 同一道闸门，没装 pi-acp / pi 时不能用、给 install）；local：本机装的 agent。
  */
 export type AgentKind = "builtin" | "local";
 /**
@@ -20,7 +20,7 @@ export type AgentDistribution = "binary" | "npx" | "uvx";
 export type InstallState = "missing" | "installing" | "installed" | "failed";
 export interface AgentView {
     /**
-     * WebSocket 地址里的 :agent_id。retainpdf 是自带的；本机的是 ACP 官方登记表的 id（pi-acp、opencode、qwen-code……），只有 claude-code（登记表 claude-acp）、codex（codex-acp）沿用 2026-11-25 的写法，握手时登记表 id 也认。
+     * WebSocket 地址里的 :agent_id。retainpdf、retainpdf-pi 是自带的；本机的是 ACP 官方登记表的 id（pi-acp、opencode、qwen-code……），只有 claude-code（登记表 claude-acp）、codex（codex-acp）沿用 2026-11-25 的写法，握手时登记表 id 也认。
      */
     id: string;
     name: string;
@@ -35,7 +35,7 @@ export interface AgentView {
      */
     launch?: string;
     /**
-     * 本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp、uv tool install fast-agent-acp；自带的、只有压缩包的没有（看 install_url 和 reason）。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。
+     * 本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp、uv tool install fast-agent-acp；retainpdf、只有压缩包的没有（看 install_url 和 reason）；retainpdf-pi 没装 pi-acp / pi 时给它们的安装命令。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。
      */
     install?: string;
     /**

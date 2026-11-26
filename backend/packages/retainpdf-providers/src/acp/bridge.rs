@@ -36,6 +36,19 @@ pub struct AgentProcess {
     /// 加在继承来的环境变量上（本机 agent 要 PATH、HOME 和它自己的登录状态）。
     pub env: Vec<(String, String)>,
     pub cwd: Option<PathBuf>,
+    /// 这次连接专用的临时目录（`retainpdf-pi` 的私有 pi 配置目录）：连接结束时删掉。
+    pub scratch_dir: Option<PathBuf>,
+}
+
+/// 连接结束（不管怎么结束的）时删掉这次连接的临时目录。
+struct ScratchDir(Option<PathBuf>);
+
+impl Drop for ScratchDir {
+    fn drop(&mut self) {
+        if let Some(dir) = self.0.take() {
+            let _ = std::fs::remove_dir_all(dir);
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -116,6 +129,7 @@ pub async fn run_bridge(
     mut incoming: mpsc::Receiver<String>,
     outgoing: mpsc::Sender<BridgeOut>,
 ) {
+    let _scratch = ScratchDir(process.scratch_dir.clone());
     let mut command = Command::new(&process.program);
     command
         .args(&process.args)
@@ -272,7 +286,7 @@ mod tests {
         // cat 当回声 agent：发进去什么就原样回来，正好看到桥改过的 session/new
         let (to_bridge, incoming) = mpsc::channel(8);
         let (outgoing, mut from_bridge) = mpsc::channel(8);
-        let process = AgentProcess { program: "/bin/cat".into(), args: vec![], env: vec![], cwd: None };
+        let process = AgentProcess { program: "/bin/cat".into(), args: vec![], env: vec![], cwd: None, scratch_dir: None };
         let task = tokio::spawn(run_bridge(process, defaults(), incoming, outgoing));
         to_bridge.send(r#"{"jsonrpc":"2.0","id":1,"method":"session/new","params":{"cwd":"","mcpServers":[]}}"#.into()).await.unwrap();
         let BridgeOut::Text(echo) = from_bridge.recv().await.unwrap() else { panic!("expected text") };
@@ -294,6 +308,7 @@ mod tests {
             args: vec!["-c".into(), "echo '{\"jsonrpc\":\"2.0\",\"method\":\"hello\"}'; echo 'No module named retainpdf_ask_agent' >&2; exit 3".into()],
             env: vec![],
             cwd: None,
+            scratch_dir: None,
         };
         let task = tokio::spawn(run_bridge(process, SessionDefaults::default(), incoming, outgoing));
         assert_eq!(from_bridge.recv().await.unwrap(), BridgeOut::Text(r#"{"jsonrpc":"2.0","method":"hello"}"#.into()));
@@ -304,10 +319,23 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn the_scratch_dir_is_removed_when_the_connection_ends() {
+        let dir = std::env::temp_dir().join(format!("retainpdf-acp-scratch-{}-{}", std::process::id(), fastrand::u64(..)));
+        std::fs::create_dir_all(dir.join("agent")).unwrap();
+        std::fs::write(dir.join("agent").join("models.json"), "{}").unwrap();
+        let (_to_bridge, incoming) = mpsc::channel(8);
+        let (outgoing, mut from_bridge) = mpsc::channel(8);
+        let process = AgentProcess { program: "/nonexistent/agent".into(), args: vec![], env: vec![], cwd: None, scratch_dir: Some(dir.clone()) };
+        run_bridge(process, SessionDefaults::default(), incoming, outgoing).await;
+        assert!(matches!(from_bridge.recv().await.unwrap(), BridgeOut::Close { .. }));
+        assert!(!dir.exists());
+    }
+
+    #[tokio::test]
     async fn missing_program_closes_right_away() {
         let (_to_bridge, incoming) = mpsc::channel(8);
         let (outgoing, mut from_bridge) = mpsc::channel(8);
-        let process = AgentProcess { program: "/nonexistent/agent".into(), args: vec![], env: vec![], cwd: None };
+        let process = AgentProcess { program: "/nonexistent/agent".into(), args: vec![], env: vec![], cwd: None, scratch_dir: None };
         run_bridge(process, SessionDefaults::default(), incoming, outgoing).await;
         assert!(matches!(from_bridge.recv().await.unwrap(), BridgeOut::Close { code: CLOSE_AGENT_ENDED, reason } if reason.contains("起不来")));
     }

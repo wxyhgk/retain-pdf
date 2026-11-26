@@ -13,8 +13,9 @@ use crate::error::AppError;
 use crate::models::api::ApiResponse;
 use crate::routes::common::{build_acp_config, run_job_query, websocket_origin_allowed, ApiPath, ApiQuery};
 use crate::services::providers::{
-    agents_view, ask_job_id, install_agent as start_agent_install, prepare_agent, run_bridge, AcpConnectQuery, AgentProcess,
-    AgentView, AgentsView, AskBook, BridgeOut, InstallState, SessionDefaults, BUILTIN_AGENT_ID,
+    agents_view, ask_job_id, is_builtin_agent, prepare_agent, run_bridge, AcpConnectQuery, AgentProcess, AgentsView,
+    AskBook, BridgeOut, SessionDefaults, install_agent as start_agent_install, AgentView, InstallState,
+    BUILTIN_AGENT_ID,
 };
 use crate::AppState;
 
@@ -60,10 +61,10 @@ pub async fn acp_socket(
         return Err(AppError::forbidden("origin is not allowed"));
     }
     let config = build_acp_config(&state);
-    // 自带 agent 读哪本书：`?job_id=`（阅读页的任务，合并阅读的虚拟任务也行）。没有这个任务 404；多用户下归属由
-    // enforce_access 按查询串里的 job_id 核过了。本机 agent 不看它。
+    // 自带 agent（retainpdf、retainpdf-pi）读哪本书：`?job_id=`（阅读页的任务，合并阅读的虚拟任务也行）。没有这个任务 404；
+    // 多用户下归属由 enforce_access 按查询串里的 job_id 核过了。本机 agent 不看它。
     let book = match ask_job_id(&query)? {
-        Some(job_id) if agent_id == BUILTIN_AGENT_ID => {
+        Some(job_id) if is_builtin_agent(&agent_id) => {
             let lookup = job_id.clone();
             let document_id = run_job_query(&state, format!("ask-book:{job_id}"), move |jobs| {
                 jobs.ask_book_document_id(&lookup)

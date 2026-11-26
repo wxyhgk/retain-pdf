@@ -405,6 +405,31 @@ pub(super) fn resolve_local_agent(id: &str, lookup: &Lookup) -> Option<Result<Re
     find_agent(catalog(), id, &platform).map(|agent| resolve_agent(agent, &platform, lookup))
 }
 
+/// 本机 agent 的起法，加上它还要的那个命令的路径（pi-acp 要 pi）；没装时是原因和安装命令。`retainpdf-pi` 用（2026-11-26），
+/// 「装了没有」和本机 agent 列表同一套判断。
+pub(super) fn resolve_local_agent_and_requirement(
+    id: &str,
+    lookup: &Lookup,
+) -> Option<Result<(ResolvedLaunch, Option<PathBuf>), (String, Option<String>)>> {
+    let platform = current_platform();
+    let agent = find_agent(catalog(), id, &platform)?;
+    Some(match resolve_agent(agent, &platform, lookup) {
+        Ok(launch) => {
+            // 后端代装的（托管目录）：要的命令和它装在同一个 `.bin` 里；否则在 PATH 上找
+            let requirement = agent.requires.as_ref().and_then(|requirement| {
+                launch
+                    .managed_version
+                    .as_ref()
+                    .and_then(|_| launch.program.parent())
+                    .and_then(|bin_dir| super::install::command_in(bin_dir, &requirement.bin))
+                    .or_else(|| find_in_path(&requirement.bin, lookup.path_var))
+            });
+            Ok((launch, requirement))
+        }
+        Err(reason) => Err((reason, agent.install_command(lookup.path_var))),
+    })
+}
+
 pub fn is_local_agent(id: &str) -> bool {
     find_agent(catalog(), id, &current_platform()).is_some()
 }

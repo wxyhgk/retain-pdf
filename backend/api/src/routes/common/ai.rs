@@ -19,6 +19,8 @@ pub fn build_acp_config(state: &AppState) -> AcpConfig {
         local_agents_flag: std::env::var("RUST_API_LOCAL_AGENTS").ok(),
         path_var: std::env::var_os("PATH"),
         current_exe: std::env::current_exe().ok(),
+        // retainpdf-pi 的扩展、包装脚本和自带 agent 的提示词在仓库的 backend/ 下
+        backend_root: Some(config.project_root.join("backend")).filter(|dir| dir.is_dir()),
         agents_dir: config.data_root.join(AGENTS_DIR_NAME),
         node_dir: std::env::var_os(NODE_DIR_ENV).filter(|dir| !dir.is_empty()).map(std::path::PathBuf::from),
     }

@@ -166,7 +166,7 @@ fn version_dirs(root: &Path, preferred: &str) -> Vec<(String, PathBuf)> {
 }
 
 /// 目录里的命令（Windows 上 npm 的 `.bin` 是 `<命令>.cmd`）。
-fn command_in(dir: &Path, name: &str) -> Option<PathBuf> {
+pub(super) fn command_in(dir: &Path, name: &str) -> Option<PathBuf> {
     let names: Vec<String> =
         if cfg!(windows) { vec![format!("{name}.cmd"), format!("{name}.exe"), name.to_string()] } else { vec![name.to_string()] };
     names.into_iter().map(|name| dir.join(name)).find(|path| is_executable(path))

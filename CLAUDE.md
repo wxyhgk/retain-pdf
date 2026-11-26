@@ -69,6 +69,9 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
   接线和底座取 JSON 的结果一致也在里面），再跑翻译测试（表格翻译阶段 `tables_stage.py` 的测试在那里）。
 - 改了阅读页提问的自带 agent 包 `backend/ask-agent/`：跑 `python -m pytest backend/ask-agent/tests`（核心只许用标准库、系统提示词钉着；
   三种协议的流式解析用假 HTTP，入口用本机假模型服务真起子进程）。后端的 ACP 桥（`retainpdf-providers` 的 `acp`）另跑 `cargo test -p retainpdf-providers acp`。
+- 改了「RetainPDF + pi」`backend/pi-agent/`（pi 扩展、包装脚本）：跑 `node --test backend/pi-agent/tests/`（读书工具和 Python 版 `tools.py`
+  同一套断言；`pi-acp.test.ts` 真起 pi-acp + 包装脚本 + pi、模型和后端是假的，本机没装 pi 就跳过，换 pi 版本用 `RETAIN_PI_TEST_PI=<pi>`），
+  再跑 `cargo test -p retainpdf-providers acp`（桥起它的那段在 `acp/pi.rs`）。改了 `backend/ask-agent` 的 `tools.py`、提示词，pi 扩展照搬的那份也跟着改、跑它。
 - 改了目录 agent 包 `backend/toc-agent/`：跑 `python -m pytest backend/toc-agent/tests`（核心只许用标准库、提示词和版本号钉着），
   再跑翻译测试（定译接进翻译 `test_fixed_translations.py`、开关 `test_translation_toc_entries.py` 在那里）。
 - 跑不了的检查，在回复和合并说明里写明没跑、为什么。

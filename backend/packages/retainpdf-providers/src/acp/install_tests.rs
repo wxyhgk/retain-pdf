@@ -34,6 +34,7 @@ fn config(root: &Path) -> AcpConfig {
         local_agents_flag: None,
         path_var: Some(root.join("bin").into_os_string()),
         current_exe: None,
+        backend_root: None,
         agents_dir: root.join(AGENTS_DIR_NAME),
         node_dir: None,
     }
