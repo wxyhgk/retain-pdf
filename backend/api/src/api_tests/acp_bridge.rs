@@ -148,7 +148,7 @@ async fn builtin_agent_handshake_with_a_book() {
     let python = root.join("env-python");
     std::fs::write(
         &python,
-        "#!/bin/sh\nprintf '{\"job\":\"%s\",\"doc\":\"%s\",\"url\":\"%s\",\"key\":\"%s\"}\\n' \"$RETAIN_ASK_JOB_ID\" \"$RETAIN_ASK_DOCUMENT_ID\" \"$RETAIN_ASK_BACKEND_URL\" \"$RETAIN_ASK_BACKEND_KEY\"\nexec cat\n",
+        "#!/bin/sh\nprintf '{\"job\":\"%s\",\"doc\":\"%s\",\"url\":\"%s\",\"key\":\"%s\",\"conversation\":\"%s\"}\\n' \"$RETAIN_ASK_JOB_ID\" \"$RETAIN_ASK_DOCUMENT_ID\" \"$RETAIN_ASK_BACKEND_URL\" \"$RETAIN_ASK_BACKEND_KEY\" \"$RETAIN_ASK_CONVERSATION_ID\"\nexec cat\n",
     )
     .unwrap();
     std::fs::set_permissions(&python, std::fs::Permissions::from_mode(0o755)).unwrap();
@@ -185,11 +185,23 @@ async fn builtin_agent_handshake_with_a_book() {
     assert_eq!(env["key"], "test-key");
     socket.close(None).await.unwrap();
 
-    // 不带 job_id：和以前一样，不给读书的东西
+    // 不带 job_id：不给读书的东西；后端地址和密钥照给（记忆工具和取上下文不要书，2026-11-26）
     let (mut socket, _) = tokio_tungstenite::connect_async(base.clone()).await.expect("handshake");
     let first = tokio::time::timeout(std::time::Duration::from_secs(5), socket.next()).await.unwrap().unwrap().unwrap();
     let Message::Text(text) = first else { panic!("expected text, got {first:?}") };
-    assert_eq!(serde_json::from_str::<Value>(&text).unwrap(), json!({"job": "", "doc": "", "url": "", "key": ""}));
+    assert_eq!(
+        serde_json::from_str::<Value>(&text).unwrap(),
+        json!({"job": "", "doc": "", "url": "http://127.0.0.1:41999", "key": "test-key", "conversation": ""})
+    );
     socket.close(None).await.unwrap();
+
+    // 带 conversation_id：交给 agent（不查存不存在）；写法不对 400
+    let (mut socket, _) = tokio_tungstenite::connect_async(format!("{base}&conversation_id=conv-20261126-abc")).await.expect("handshake");
+    let first = tokio::time::timeout(std::time::Duration::from_secs(5), socket.next()).await.unwrap().unwrap().unwrap();
+    let Message::Text(text) = first else { panic!("expected text, got {first:?}") };
+    assert_eq!(serde_json::from_str::<Value>(&text).unwrap()["conversation"], "conv-20261126-abc");
+    socket.close(None).await.unwrap();
+    let bad = tokio_tungstenite::connect_async(format!("{base}&conversation_id=a%2Fb")).await.unwrap_err();
+    assert_eq!(status_of(bad), 400);
     server.abort();
 }
