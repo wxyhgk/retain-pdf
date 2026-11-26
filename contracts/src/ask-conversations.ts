@@ -33,7 +33,8 @@ export type AskConversationsSchema =
   | ListAskMessagesQuery
   | PatchAskConversationInput
   | PatchAskMemoryInput
-  | PatchAskSettingsInput;
+  | PatchAskSettingsInput
+  | SupersedeAskMessagesView;
 /**
  * source 原文栏 / translated 译文栏。
  */
@@ -185,6 +186,10 @@ export interface AskConversationMessageInput {
     | [string, string, string, string, string, string, string, string]
     | [string, string, string, string, string, string, string, string, string]
     | [string, string, string, string, string, string, string, string, string, string];
+  /**
+   * 2026-11-26：改后重问——被改的那条问的编号（要先 POST …/messages/{message_id}/supersede 作废）。只有 user 能带；不是这个对话里作废的问 400。
+   */
+  edited_from?: string | null;
 }
 /**
  * 结构化出处（请求里的）：这一问问的是哪儿。和 ACP session/prompt 的 _meta.retainpdf.selection 同一个写法。只有 page 必填；编号类字段 1–200 个字母、数字、-_.:；空串当没给。pane 不认识、page 出范围 400；几段字超长截断。
@@ -357,6 +362,14 @@ export interface AskConversationMessageRecord {
    */
   client_message_id: string | null;
   created_at: string;
+  /**
+   * 2026-11-26（v43）：作废的时间——改了这条或它之前的一条问、从那里重问；作废的原文留着，界面折叠，上下文、压缩、「问过的地方」不看。没作废 null。
+   */
+  superseded_at: string | null;
+  /**
+   * 2026-11-26（v43）：改后重问的那条问指回被改的那条；别的 null。
+   */
+  edited_from: string | null;
 }
 /**
  * 结构化出处（返回里的）：整理过的，只有有值的键（document_id、job_id、translation_version、pane、selected_text、section、source_text、translated_text、prefix、suffix 没有就不出现）。
@@ -398,6 +411,10 @@ export interface AskCompactionRecord {
     | null;
   model: string;
   created_at: string;
+  /**
+   * 2026-11-26（v43）：作废的时间（改了它盖过的一条问）；作废的不生效、不在消息分页的压缩点里。没作废 null。
+   */
+  superseded_at: string | null;
 }
 /**
  * 不认识的参数 400。
@@ -538,7 +555,7 @@ export interface AskMessagePageView {
   messages: AskConversationMessageRecord[];
   has_more: boolean;
   /**
-   * 这个对话所有的压缩点（不只这一页的），按 covers_to_seq 从小到大；前端在那条后面画「之前的已压缩，点开看原文」。没压过是空的。
+   * 这个对话所有生效的压缩点（不只这一页的；作废的不在），按 covers_to_seq 从小到大；前端在那条后面画「之前的已压缩，点开看原文」。没压过是空的。
    */
   compactions: AskCompactionPointView[];
 }
@@ -716,4 +733,12 @@ export interface PatchAskMemoryInput {
  */
 export interface PatchAskSettingsInput {
   memory_enabled?: boolean;
+}
+/**
+ * 改后重问的第一步（2026-11-26 第二期）：从这条问起作废了哪些消息、哪些压缩摘要（按 seq / covers_to_seq 从小到大）。
+ */
+export interface SupersedeAskMessagesView {
+  conversation: AskConversationRecord;
+  superseded_message_ids: string[];
+  superseded_compaction_ids: string[];
 }

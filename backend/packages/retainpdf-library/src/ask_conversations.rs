@@ -8,7 +8,7 @@
 use retainpdf_api_base::error::AppError;
 use retainpdf_data::db::{
     AskConversationChanges, AskConversationFilter, AskConversationMessageRecord, AskConversationRecord, AskConversationUpdated,
-    AskConversationDeleted, AskMemoryFilter, AskMemoryRecord, AskMessagesAppended, AskSideClosed, AskSideCreated, NewAskConversationMessage,
+    AskConversationDeleted, AskMemoryFilter, AskMemoryRecord, AskMessagesAppended, AskMessagesSuperseded, AskSideClosed, AskSideCreated, NewAskConversationMessage,
     NewAskSideConversation,
 };
 
@@ -19,7 +19,7 @@ use crate::ask_views::{
     AskCompactionPointView, AskConversationDeleteResultView, AskConversationListView, AskConversationMessageInput, AskMessagePageView,
     AskSelectionInput,
     CloseAskConversationInput, CloseAskConversationView, CreateAskSideConversationInput, DocumentAskMessagesView,
-    ListAskConversationsQuery, ListAskMessagesQuery, PatchAskConversationInput,
+    ListAskConversationsQuery, ListAskMessagesQuery, PatchAskConversationInput, SupersedeAskMessagesView,
 };
 use crate::LibraryDeps;
 
@@ -175,6 +175,10 @@ fn checked_message(message: &AskConversationMessageInput, index: usize) -> Resul
         .into_iter()
         .flatten()
         .collect();
+    let edited_from = checked_id(message.edited_from.as_deref(), "edited_from")?;
+    if edited_from.is_some() && message.role != "user" {
+        return Err(AppError::bad_request(format!("messages[{index}].edited_from is only for user messages")));
+    }
     let document_id = checked_id(message.document_id.as_deref(), "document_id")?;
     let (selection, checked) = match &message.selection {
         Some(selection) => {
@@ -204,6 +208,7 @@ fn checked_message(message: &AskConversationMessageInput, index: usize) -> Resul
         selection,
         client_message_id: client_message_id.map(str::to_string),
         memory_ids,
+        edited_from,
     })
 }
 
@@ -373,6 +378,7 @@ pub fn list_ask_messages_view(
         .db
         .list_ask_compactions(conversation_id)?
         .into_iter()
+        .filter(|record| record.superseded_at.is_none())
         .map(|record| AskCompactionPointView {
             compaction_id: record.compaction_id,
             covers_to_seq: record.covers_to_seq,
@@ -411,6 +417,39 @@ pub fn append_ask_messages_view(
             "ask_conversation_limit",
             format!("ask conversation {conversation_id} already holds {MAX_MESSAGES_PER_CONVERSATION} messages"),
             serde_json::json!({ "limit": MAX_MESSAGES_PER_CONVERSATION }),
+        )),
+        AskMessagesAppended::BadEditedFrom => Err(AppError::bad_request(
+            "edited_from must be a superseded question in this conversation (POST …/messages/{message_id}/supersede first)",
+        )),
+    }
+}
+
+/// POST /ai/ask-conversations/:conversation_id/messages/:message_id/supersede：改后重问的第一步（2026-11-26 用户定
+/// 「后面的作废，从这里重问」）。这条问和它之后的消息、盖过它的压缩摘要标作废（原文留着）；前端再开新会话（上下文已经不带作废的）
+/// 用改后的问去问，答完照常追加一轮，问那条带 `edited_from`。
+pub fn supersede_ask_messages_view(
+    deps: &LibraryDeps<'_>,
+    conversation_id: &str,
+    message_id: &str,
+) -> Result<SupersedeAskMessagesView, AppError> {
+    match deps.db.supersede_ask_messages_from(conversation_id, message_id)? {
+        AskMessagesSuperseded::Superseded { conversation, message_ids, compaction_ids } => Ok(SupersedeAskMessagesView {
+            conversation,
+            superseded_message_ids: message_ids,
+            superseded_compaction_ids: compaction_ids,
+        }),
+        AskMessagesSuperseded::NotFound => Err(not_found(conversation_id)),
+        AskMessagesSuperseded::NotOpen => Err(AppError::conflict_because(
+            "ask_conversation_not_open",
+            format!("ask conversation {conversation_id} is closed or archived; reopen it first"),
+        )),
+        AskMessagesSuperseded::MessageNotInConversation => {
+            Err(AppError::not_found(format!("message {message_id} is not in ask conversation {conversation_id}")))
+        }
+        AskMessagesSuperseded::NotUser => Err(AppError::bad_request("only a question (role user) can be edited and asked again")),
+        AskMessagesSuperseded::AlreadySuperseded => Err(AppError::conflict_because(
+            "ask_message_superseded",
+            format!("message {message_id} was already superseded"),
         )),
     }
 }
@@ -536,19 +575,20 @@ pub fn ask_context_view(deps: &LibraryDeps<'_>, conversation_id: &str, query: &A
     // 压过的：给生效的那份摘要 + 它之后的最近几轮（被替代的那些不再当前文交出去，原文还在库里）
     let compaction = latest_compaction(deps, conversation_id)?;
     let covered = compaction.as_ref().map(|record| record.covers_to_seq).unwrap_or(0);
+    // 作废的（改过的问和它之后的，v43）不当前文
     let fetched: Vec<_> = deps
         .db
-        .list_ask_conversation_messages(conversation_id, None, turns * 2)?
+        .list_live_ask_conversation_messages(conversation_id, None, turns * 2)?
         .into_iter()
         .filter(|message| message.seq > covered)
         .collect();
     let messages = recent_messages(fetched, MAX_RECENT_CHARS).0;
-    let omitted_messages = (conversation.message_count - covered - messages.len() as i64).max(0);
+    let omitted_messages = (deps.db.count_live_ask_messages_after(conversation_id, covered)? - messages.len() as i64).max(0);
     // 副对话：带主对话到分叉那条为止的最近几轮
     let parent = match (&conversation.parent_id, &conversation.forked_from_message_id) {
         (Some(parent_id), Some(fork_id)) => match deps.db.get_ask_conversation_message(fork_id)? {
             Some(fork) => {
-                let before = deps.db.list_ask_conversation_messages(parent_id, Some(fork.seq + 1), turns * 2)?;
+                let before = deps.db.list_live_ask_conversation_messages(parent_id, Some(fork.seq + 1), turns * 2)?;
                 Some(AskContextParentView { conversation_id: parent_id.clone(), messages: recent_messages(before, MAX_RECENT_CHARS / 2).0 })
             }
             None => None,
@@ -633,6 +673,7 @@ mod tests {
             selection: Some(selection(3)),
             client_message_id: Some(" c-1 ".into()),
             memory_ids: vec![],
+            edited_from: None,
         }
     }
 
@@ -684,6 +725,8 @@ mod tests {
             selection: None,
             client_message_id: None,
             created_at: String::new(),
+            superseded_at: None,
+            edited_from: None,
         }
     }
 

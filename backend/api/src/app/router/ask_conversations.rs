@@ -29,6 +29,8 @@ crate::endpoints! {
     GET "/api/v1/ai/ask-conversations/:conversation_id/messages" => ask_conversations::list_messages_route, closed by(none);
     /// 追加一轮（问和答一起，每条带结构化出处；只追加不覆盖）
     POST "/api/v1/ai/ask-conversations/:conversation_id/messages" => ask_conversations::append_messages_route, closed by(none);
+    /// 改后重问的第一步：从这条问起作废（它和之后的消息、盖过它的压缩摘要；原文留着），改后的问再照常追加、带 edited_from
+    POST "/api/v1/ai/ask-conversations/:conversation_id/messages/:message_id/supersede" => ask_conversations::supersede_messages_route, closed by(none);
     /// 压缩：后端用设置里的模型把上一份摘要之后、最近几轮之前的消息压成一份新摘要（原始消息不删）
     POST "/api/v1/ai/ask-conversations/:conversation_id/compactions" => ask_conversations::create_compaction_route, closed by(none);
     /// 一个对话所有的压缩摘要（旧的也在）

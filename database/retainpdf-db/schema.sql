@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 42
+-- user_version 43
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -21,6 +21,7 @@ TABLE ask_compactions
   sources_json TEXT
   model TEXT NOT NULL DEFAULT ''
   created_at TEXT NOT NULL
+  superseded_at TEXT
   FOREIGN KEY (conversation_id) REFERENCES ask_conversations(conversation_id) ON UPDATE NO ACTION ON DELETE CASCADE
   INDEX idx_ask_compactions_conversation: CREATE INDEX idx_ask_compactions_conversation ON ask_compactions(conversation_id, covers_to_seq)
   PRIMARY KEY (compaction_id)
@@ -43,6 +44,8 @@ TABLE ask_conversation_messages
   selection_json TEXT
   client_message_id TEXT
   created_at TEXT NOT NULL
+  superseded_at TEXT
+  edited_from TEXT
   FOREIGN KEY (conversation_id) REFERENCES ask_conversations(conversation_id) ON UPDATE NO ACTION ON DELETE CASCADE
   FOREIGN KEY (document_id) REFERENCES item_files(file_id) ON UPDATE NO ACTION ON DELETE SET NULL
   FOREIGN KEY (side_conversation_id) REFERENCES ask_conversations(conversation_id) ON UPDATE NO ACTION ON DELETE SET NULL

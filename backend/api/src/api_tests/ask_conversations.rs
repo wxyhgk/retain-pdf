@@ -99,6 +99,68 @@ async fn compactions_refuse_when_nothing_to_compact_and_pages_carry_the_points()
     assert!(context["summary"].is_null() && context["summary_covers_to_seq"].is_null());
 }
 
+/// 改后重问（2026-11-26 用户定「后面的作废，从这里重问」）：从一条问起作废，上下文不带作废的，改后的问带 edited_from 追加。
+#[tokio::test]
+async fn editing_a_question_supersedes_it_and_what_followed() {
+    let state = test_state("ask-conversations-edit");
+    let contract = contract(CONTRACT);
+    let main = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", None).await;
+    let id = main["conversation_id"].as_str().unwrap().to_string();
+    let mut asked = Vec::new();
+    for turn in ["一", "二"] {
+        let appended = ok_data(
+            &state,
+            "POST",
+            &format!("/api/v1/ai/ask-conversations/{id}/messages"),
+            Some(json!({"messages": [{"role": "user", "text": format!("问{turn}")}, {"role": "assistant", "text": format!("答{turn}")}]})),
+        )
+        .await;
+        asked.push(appended["messages"][0]["message_id"].as_str().unwrap().to_string());
+    }
+    let answer_two = {
+        let page = ok_data(&state, "GET", &format!("/api/v1/ai/ask-conversations/{id}/messages"), None).await;
+        page["messages"][3]["message_id"].as_str().unwrap().to_string()
+    };
+    let supersede = |message_id: &str| format!("/api/v1/ai/ask-conversations/{id}/messages/{message_id}/supersede");
+    let (status, _) = send(&state, "POST", &supersede(&answer_two), None).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "only a question can be edited");
+    let (status, _) = send(&state, "POST", &supersede("msg-missing"), None).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+
+    let done = ok_data(&state, "POST", &supersede(&asked[1]), None).await;
+    assert_definition(&done, &contract, "SupersedeAskMessagesView", "superseded");
+    assert_eq!(done["superseded_message_ids"], json!([asked[1], answer_two]));
+    let (status, payload) = send(&state, "POST", &supersede(&asked[1]), None).await;
+    assert_eq!(status, StatusCode::CONFLICT);
+    assert_eq!(payload["error"]["details"]["reason"], "ask_message_superseded");
+
+    let context = ok_data(&state, "GET", &format!("/api/v1/ai/ask-conversations/{id}/context"), None).await;
+    assert_eq!(context["messages"].as_array().unwrap().len(), 2);
+    assert!(!context["text"].as_str().unwrap().contains("问二"));
+
+    let (status, _) = send(
+        &state,
+        "POST",
+        &format!("/api/v1/ai/ask-conversations/{id}/messages"),
+        Some(json!({"messages": [{"role": "user", "text": "问二（改）", "edited_from": asked[0]}]})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "edited_from must point at a superseded question");
+    let appended = ok_data(
+        &state,
+        "POST",
+        &format!("/api/v1/ai/ask-conversations/{id}/messages"),
+        Some(json!({"messages": [{"role": "user", "text": "问二（改）", "edited_from": asked[1]}, {"role": "assistant", "text": "新答"}]})),
+    )
+    .await;
+    assert_definition(&appended, &contract, "AppendAskMessagesView", "appended");
+    assert_eq!(appended["messages"][0]["edited_from"], asked[1].as_str());
+    let page = ok_data(&state, "GET", &format!("/api/v1/ai/ask-conversations/{id}/messages"), None).await;
+    assert_definition(&page, &contract, "AskMessagePageView", "page");
+    let superseded: Vec<bool> = page["messages"].as_array().unwrap().iter().map(|message| !message["superseded_at"].is_null()).collect();
+    assert_eq!(superseded, vec![false, false, true, true, false, false]);
+}
+
 /// 2026-11-26 用户定：主对话只能先归档再删；副对话不受限制。
 #[tokio::test]
 async fn the_open_main_conversation_cannot_be_deleted_until_archived() {

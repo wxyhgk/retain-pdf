@@ -81,7 +81,15 @@
       "input": "AppendAskMessagesInput",
       "output": "AppendAskMessagesView",
       "rust_view": "AppendAskMessagesView",
-      "note": "追加 1–10 条（一轮问答一起），只追加不覆盖；client_message_id 在这个对话里重复的不再追加、回原来那条（网络重试安全）。对话结束了或归档了 409 ask_conversation_not_open；超过 50000 条 409 ask_conversation_limit；没有 404；字段不对 400。"
+      "note": "追加 1–10 条（一轮问答一起），只追加不覆盖；client_message_id 在这个对话里重复的不再追加、回原来那条（网络重试安全）。对话结束了或归档了 409 ask_conversation_not_open；超过 50000 条 409 ask_conversation_limit；没有 404；字段不对 400。 改后重问的问带 edited_from（指向作废的那条）。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id/messages/:message_id/supersede",
+      "transport": "json",
+      "output": "SupersedeAskMessagesView",
+      "rust_view": "SupersedeAskMessagesView",
+      "note": "2026-11-26 第二期，改一条已发出的问（用户定「后面的作废，从这里重问」）：这条问和它之后还没作废的消息、盖过它的压缩摘要标作废（原文留着）。不收请求体。前端再开新会话（上下文已经不带作废的）用改后的问去问，答完照常追加一轮、问那条带 edited_from。只能从 user 起 400；已经作废 409 ask_message_superseded；对话结束了或归档了 409 ask_conversation_not_open；对话或消息不在 404。"
     },
     {
       "method": "POST",
@@ -499,7 +507,9 @@
         "page",
         "selection",
         "client_message_id",
-        "created_at"
+        "created_at",
+        "superseded_at",
+        "edited_from"
       ],
       "description": "一条消息。",
       "properties": {
@@ -609,6 +619,20 @@
         },
         "created_at": {
           "type": "string"
+        },
+        "superseded_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "2026-11-26（v43）：作废的时间——改了这条或它之前的一条问、从那里重问；作废的原文留着，界面折叠，上下文、压缩、「问过的地方」不看。没作废 null。"
+        },
+        "edited_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "2026-11-26（v43）：改后重问的那条问指回被改的那条；别的 null。"
         }
       }
     },
@@ -792,6 +816,13 @@
           },
           "maxItems": 10,
           "description": "这条回答里记下的记忆（「已记住」的编号）：出处还空着的补上这条消息。"
+        },
+        "edited_from": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "2026-11-26：改后重问——被改的那条问的编号（要先 POST …/messages/{message_id}/supersede 作废）。只有 user 能带；不是这个对话里作废的问 400。"
         }
       }
     },
@@ -1054,7 +1085,7 @@
           "items": {
             "$ref": "#/definitions/AskCompactionPointView"
           },
-          "description": "这个对话所有的压缩点（不只这一页的），按 covers_to_seq 从小到大；前端在那条后面画「之前的已压缩，点开看原文」。没压过是空的。"
+          "description": "这个对话所有生效的压缩点（不只这一页的；作废的不在），按 covers_to_seq 从小到大；前端在那条后面画「之前的已压缩，点开看原文」。没压过是空的。"
         }
       }
     },
@@ -1090,7 +1121,8 @@
         "summary",
         "sources",
         "model",
-        "created_at"
+        "created_at",
+        "superseded_at"
       ],
       "description": "一份压缩摘要（2026-11-26 第二期，数据库 v42）。covers_to_seq 最大的那份生效，旧的留着。",
       "properties": {
@@ -1143,6 +1175,13 @@
         },
         "created_at": {
           "type": "string"
+        },
+        "superseded_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "2026-11-26（v43）：作废的时间（改了它盖过的一条问）；作废的不生效、不在消息分页的压缩点里。没作废 null。"
         }
       }
     },
@@ -1203,6 +1242,33 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/AskCompactionRecord"
+          }
+        }
+      }
+    },
+    "SupersedeAskMessagesView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation",
+        "superseded_message_ids",
+        "superseded_compaction_ids"
+      ],
+      "description": "改后重问的第一步（2026-11-26 第二期）：从这条问起作废了哪些消息、哪些压缩摘要（按 seq / covers_to_seq 从小到大）。",
+      "properties": {
+        "conversation": {
+          "$ref": "#/definitions/AskConversationRecord"
+        },
+        "superseded_message_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "superseded_compaction_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
           }
         }
       }

@@ -65,6 +65,9 @@ pub struct AskConversationMessageInput {
     /// 这条回答里记下的记忆（出处还空着的补上这条消息）。
     #[serde(default)]
     pub memory_ids: Vec<String>,
+    /// 改后重问（2026-11-26 第二期）：被改的那条问的编号，要先 `POST …/messages/{它}/supersede` 作废。只有 `user` 能带。
+    #[serde(default)]
+    pub edited_from: Option<String>,
 }
 
 /// POST /ai/ask-conversations/:conversation_id/messages：追加一轮（问和答一起）。
@@ -180,9 +183,17 @@ pub struct AskMessagePageView {
     pub messages: Vec<AskConversationMessageRecord>,
     /// 前面还有没有更早的（再用第一条的 `seq` 当 `before_seq` 取）。
     pub has_more: bool,
-    /// 这个对话所有的压缩点（不只这一页的），按 `covers_to_seq` 从小到大：`seq <= covers_to_seq` 的消息已经被那份摘要替代
+    /// 这个对话所有生效的压缩点（不只这一页的；作废的不在），按 `covers_to_seq` 从小到大：`seq <= covers_to_seq` 的消息已经被那份摘要替代
     /// （原文还在），前端在那条后面画「之前的已压缩，点开看原文」。没压过是空的。
     pub compactions: Vec<AskCompactionPointView>,
+}
+
+/// 「从这条问起作废」（改后重问）的返回：作废了哪些消息、哪些压缩摘要。
+#[derive(Debug, Serialize)]
+pub struct SupersedeAskMessagesView {
+    pub conversation: AskConversationRecord,
+    pub superseded_message_ids: Vec<String>,
+    pub superseded_compaction_ids: Vec<String>,
 }
 
 /// 一个压缩点（不带摘要正文；正文在 GET …/compactions）。

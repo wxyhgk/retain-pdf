@@ -12,6 +12,17 @@
 
 ---
 
+## 阅读页提问：改一条已发出的问（feat/ask-edit-message）
+
+2026-11-26，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「改一条已发出的问」。用户定：后面的作废，从这里重问。
+契约 `ask-conversations.v1` 加了字段和一个端点（没写 `client_name`）。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| 主对话里的问（编辑按钮） | 没有 | 点「编辑」改完提交：先 `POST /api/v1/ai/ask-conversations/{id}/messages/{message_id}/supersede`，再开新会话（自带 agent 取的上下文已经不带作废的）用改后的问去问，答完照常追加一轮，问那条带 `edited_from: <被改的那条>` |
+| 消息列表 | 每条都画 | 消息多了 `superseded_at`、`edited_from`：`superseded_at` 不是 null 的折叠成「已改写，点开看原来的」；`edited_from` 有值的问可以标「已编辑」。分页的 `compactions` 只剩生效的压缩点 |
+| 书上的「?」 | 照旧 | 不用改：作废的问后端已经不回 |
+
 ## 阅读页提问第二期：压缩主对话、后端写副对话结论（feat/ask-compaction）
 
 2026-11-26，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「压缩」。契约 `ask-conversations.v1` 只加字段和两个端点（没写 `client_name`）。

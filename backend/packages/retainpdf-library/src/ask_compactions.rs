@@ -93,24 +93,26 @@ pub fn create_ask_compaction_view(
     if !(MIN_SUMMARY_CHARS..=MAX_SUMMARY_CHARS).contains(&max_chars) {
         return Err(AppError::bad_request(format!("max_chars must be between {MIN_SUMMARY_CHARS} and {MAX_SUMMARY_CHARS}")));
     }
-    let conversation = deps.db.get_ask_conversation(conversation_id)?.ok_or_else(|| not_found(conversation_id))?;
+    deps.db.get_ask_conversation(conversation_id)?.ok_or_else(|| not_found(conversation_id))?;
     let previous = deps.db.latest_ask_compaction(conversation_id)?;
     let covered = previous.as_ref().map(|record| record.covers_to_seq).unwrap_or(0);
-    let covers_to_seq = conversation.last_seq - KEEP_RECENT_MESSAGES;
-    if covers_to_seq <= covered {
+    // 上一份摘要之后、要留着的最近几条之前的那段；作废的（改过的问和它之后的）不算（v43）
+    let mut messages: Vec<_> = deps
+        .db
+        .list_live_ask_conversation_messages(conversation_id, None, MAX_MESSAGES_PER_SUMMARY + KEEP_RECENT_MESSAGES as u32)?
+        .into_iter()
+        .filter(|message| message.seq > covered)
+        .collect();
+    if messages.len() <= KEEP_RECENT_MESSAGES as usize {
         return Err(AppError::conflict_because(
             "ask_compaction_nothing",
             format!("nothing to compact: the last {KEEP_RECENT_MESSAGES} messages always stay as they are"),
         ));
     }
-    // 上一份摘要之后、要留着的最近几条之前的那段（seq 在 (covered, covers_to_seq]）
-    let messages: Vec<_> = deps
-        .db
-        .list_ask_conversation_messages(conversation_id, Some(covers_to_seq + 1), MAX_MESSAGES_PER_SUMMARY)?
-        .into_iter()
-        .filter(|message| message.seq > covered)
-        .collect();
-    let covers_to_seq = messages.last().map(|message| message.seq).unwrap_or(covers_to_seq);
+    messages.truncate(messages.len() - KEEP_RECENT_MESSAGES as usize);
+    let covers_to_seq = messages.last().map(|message| message.seq).expect("at least one message to compact");
+    // 生成摘要要等模型：先记下这段里作废的有几条，存的时候变了（中途有人改了问）就不存
+    let superseded_before = deps.db.superseded_ask_messages_up_to(conversation_id, covers_to_seq)?;
     let request = serde_json::json!({
         "kind": "compaction",
         "previous_summary": previous.as_ref().map(|record| record.summary.as_str()),
@@ -119,7 +121,7 @@ pub fn create_ask_compaction_view(
     });
     let summary = summarize(&payload.connection, &request)?;
     let sources = sources_of(&messages);
-    let new = NewAskCompaction { covers_to_seq, summary, sources, model: payload.connection.model.trim().to_string() };
+    let new = NewAskCompaction { covers_to_seq, summary, sources, model: payload.connection.model.trim().to_string(), superseded_before };
     let compaction = match deps.db.insert_ask_compaction(conversation_id, &new)? {
         AskCompactionInserted::Inserted(record) => record,
         AskCompactionInserted::NotFound => return Err(not_found(conversation_id)),
@@ -148,7 +150,7 @@ pub(crate) fn summarize_side(
     summarize: &AskSummarizer<'_>,
 ) -> Result<Option<String>, AppError> {
     checked_connection(connection)?;
-    let messages = deps.db.list_ask_conversation_messages(conversation_id, None, MAX_MESSAGES_PER_SUMMARY)?;
+    let messages = deps.db.list_live_ask_conversation_messages(conversation_id, None, MAX_MESSAGES_PER_SUMMARY)?;
     if messages.is_empty() {
         // 什么都没聊：只结束，不回填空卡片
         return Ok(None);
@@ -220,6 +222,8 @@ mod tests {
             selection: None,
             client_message_id: None,
             created_at: String::new(),
+            superseded_at: None,
+            edited_from: None,
         }
     }
 
@@ -230,7 +234,7 @@ mod tests {
 
     use crate::ask_conversations::{
         append_ask_messages_view, ask_context_view, close_ask_conversation_view, create_side_ask_conversation_view,
-        ensure_main_ask_conversation_view, list_ask_messages_view,
+        ensure_main_ask_conversation_view, list_ask_messages_view, supersede_ask_messages_view,
     };
     use crate::ask_views::{
         AppendAskMessagesInput, AskContextQuery, AskConversationMessageInput, CloseAskConversationInput, CreateAskSideConversationInput,
@@ -278,6 +282,7 @@ mod tests {
             selection: None,
             client_message_id: None,
             memory_ids: vec![],
+            edited_from: None,
         };
         AppendAskMessagesInput { messages: vec![message("user"), message("assistant")] }
     }
@@ -335,6 +340,67 @@ mod tests {
         assert_eq!(request["previous_summary"], "摘要1");
         assert_eq!(request["messages"][0]["seq"], 7);
         assert_eq!(list_ask_compactions_view(&deps, id).unwrap().compactions.len(), 2);
+    }
+
+    /// 改后重问（v43）：从一条问起作废，上下文、压缩点、「问过的地方」不再看作废的；改后的问带 edited_from 追加；
+    /// 再压缩时跳过作废的。
+    #[test]
+    fn editing_a_question_supersedes_it_and_what_followed() {
+        let fixture = Fixture::new();
+        let deps = fixture.deps();
+        let id = ensure_main_ask_conversation_view(&deps).unwrap().conversation_id;
+        for i in 0..9 {
+            append_ask_messages_view(&deps, &id, &turn(&format!("第{i}轮"))).unwrap();
+        }
+        let summarize = |_: &AskModelConnectionInput, request: &serde_json::Value| {
+            Ok(format!("摘要（{} 条）", request["messages"].as_array().unwrap().len()))
+        };
+        let input = CreateAskCompactionInput { connection: connection(), max_chars: None };
+        assert_eq!(create_ask_compaction_view(&deps, &id, &input, &summarize).unwrap().compaction.covers_to_seq, 6);
+
+        // 改第 3 轮的问（seq 5）：seq 5–18 作废，盖到 6 的摘要作废
+        let page = list_ask_messages_view(&deps, &id, &ListAskMessagesQuery::default()).unwrap();
+        let asked = &page.messages[4];
+        assert_eq!((asked.seq, asked.role.as_str()), (5, "user"));
+        let error = supersede_ask_messages_view(&deps, &id, &page.messages[5].message_id).unwrap_err();
+        assert!(format!("{error:?}").contains("role user"), "{error:?}");
+        let done = supersede_ask_messages_view(&deps, &id, &asked.message_id).unwrap();
+        assert_eq!(done.superseded_message_ids.len(), 14);
+        assert_eq!(done.superseded_compaction_ids.len(), 1);
+        let again = supersede_ask_messages_view(&deps, &id, &asked.message_id).unwrap_err();
+        assert!(format!("{again:?}").contains("ask_message_superseded"), "{again:?}");
+
+        let context = ask_context_view(&deps, &id, &AskContextQuery::default()).unwrap();
+        assert_eq!(context.summary, None);
+        assert_eq!(context.messages.iter().map(|message| message.seq).collect::<Vec<_>>(), vec![1, 2, 3, 4]);
+        assert_eq!(context.omitted_messages, 0);
+        let page = list_ask_messages_view(&deps, &id, &ListAskMessagesQuery::default()).unwrap();
+        assert_eq!(page.messages.len(), 18, "the originals stay");
+        assert!(page.compactions.is_empty());
+        assert_eq!(list_ask_compactions_view(&deps, &id).unwrap().compactions.len(), 1);
+
+        // 改后的问：只有 user 能带 edited_from，要指向作废的那条
+        let mut edited = turn("改过的问");
+        edited.messages[1].edited_from = Some(asked.message_id.clone());
+        assert!(append_ask_messages_view(&deps, &id, &edited).is_err());
+        edited.messages[1].edited_from = None;
+        edited.messages[0].edited_from = Some(page.messages[0].message_id.clone());
+        assert!(append_ask_messages_view(&deps, &id, &edited).is_err());
+        edited.messages[0].edited_from = Some(asked.message_id.clone());
+        let appended = append_ask_messages_view(&deps, &id, &edited).unwrap();
+        assert_eq!(appended.messages[0].seq, 19);
+        assert_eq!(appended.messages[0].edited_from.as_deref(), Some(asked.message_id.as_str()));
+
+        // 再聊几轮后压缩：作废的不进摘要，最近 12 条（没作废的）留着
+        for i in 0..6 {
+            append_ask_messages_view(&deps, &id, &turn(&format!("新第{i}轮"))).unwrap();
+        }
+        let created = create_ask_compaction_view(&deps, &id, &input, &summarize).unwrap();
+        assert_eq!(created.compaction.summary, "摘要（6 条）");
+        assert_eq!(created.compaction.covers_to_seq, 20);
+        let context = ask_context_view(&deps, &id, &AskContextQuery::default()).unwrap();
+        assert_eq!(context.summary_covers_to_seq, Some(20));
+        assert!(context.messages.iter().all(|message| message.seq > 20 && message.superseded_at.is_none()));
     }
 
     /// 上一份摘要之后超过 40000 字：追加的返回说该压了。

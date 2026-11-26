@@ -91,7 +91,7 @@ pub use translation_versions::TranslationVersionRecord;
 pub use ask_compactions::{AskCompactionInserted, AskCompactionRecord, NewAskCompaction};
 pub use ask_conversations::{
     AskConversationChanges, AskConversationDeleted, AskConversationFilter, AskConversationMessageRecord, AskConversationRecord, AskConversationUpdated,
-    AskMessagesAppended, AskSideClosed, AskSideCreated, NewAskConversationMessage, NewAskSideConversation,
+    AskMessagesAppended, AskMessagesSuperseded, AskSideClosed, AskSideCreated, NewAskConversationMessage, NewAskSideConversation,
 };
 pub use ask_memories::{AskMemoryCreated, AskMemoryFilter, AskMemoryRecord, AskSettingsRecord, NewAskMemory};
 pub use ask_threads::{
