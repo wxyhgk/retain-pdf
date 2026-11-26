@@ -12,6 +12,7 @@
 
 use std::collections::HashSet;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{Context, Result};
 use axum::extract::{Path, State};
@@ -27,7 +28,8 @@ use retainpdf_runner::job_runner::{
     acquire_runtime_owner_lock, clear_cancel_request_with_registry, launch_job as launch_new_run,
     reconcile_stale_running_jobs, registered_running_worker, request_cancel_with_registry,
     requeue_stuck_queued_jobs, spawn_driverless_job_sweeper, spawn_job,
-    terminate_job_process_tree, ProcessRuntimeDeps,
+    stop_owned_workers_after_runtime_shutdown, terminate_job_process_tree, ProcessRuntimeDeps,
+    RuntimeOwnerLock,
 };
 
 #[cfg(test)]
@@ -212,19 +214,70 @@ fn build_router(state: JobsdState) -> Router {
         .with_state(state)
 }
 
-/// 手建 runtime 而不是 `#[tokio::main]`,只为显式设定 worker 栈大小。
+/// 手建 runtime 而不是 `#[tokio::main]`,只为显式设定 worker 栈大小,
+/// 以及退出时先停掉 runtime、再停 worker（和进程内模式的 rust_api 一样）。
 /// 见 [`JOB_WORKER_THREAD_STACK_BYTES`]:默认的 2 MiB 会让 book 工作流栈溢出,
 /// 而溢出杀死的是整个 jobsd 进程,不只是那一个 job。
 fn main() -> Result<()> {
-    tokio::runtime::Builder::new_multi_thread()
+    let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .thread_stack_size(JOB_WORKER_THREAD_STACK_BYTES)
         .build()
-        .context("build jobsd runtime")?
-        .block_on(run())
+        .context("build jobsd runtime")?;
+    let stopped = runtime.block_on(run());
+    // 先停 runtime：driver、读 stdout 的任务不再跑，下面被终止的 worker 不会被当成失败写进库。
+    // 最多等 1 秒（spawn_blocking 里的任务不等，进程马上就退出）。
+    runtime.shutdown_timeout(Duration::from_secs(1));
+    let stopped = stopped?;
+    // 退出时停掉自己起的 worker（用户 2026-10-24、11-26 定）。以前 jobsd 收到 SIGTERM 直接死、监督者没了就
+    // `exit(0)`，worker 成了孤儿，接着花模型的钱，直到下次启动才被对账杀掉（状态管理设计 S04）。
+    // 运行时锁一直拿到停完：停的过程中别的运行时接手不了，也就不会去对账这些 worker。
+    stop_owned_workers_after_runtime_shutdown(&stopped.config, Some(stopped.runtime_owner));
+    Ok(())
 }
 
-async fn run() -> Result<()> {
+/// `run` 正常结束（收到停机信号）后交回来的东西：停 worker 要用的配置和还拿着的运行时锁。
+struct Stopped {
+    config: Arc<AppConfig>,
+    runtime_owner: RuntimeOwnerLock,
+}
+
+/// 等到该停的时候：SIGTERM（监督者 rust_api 退出时组杀、`docker stop`、systemd）、Ctrl-C，或者监督者
+/// 被强杀（不在了，没人会再给 SIGTERM）。返回原因，只用来写日志。
+async fn shutdown_requested() -> &'static str {
+    tokio::select! {
+        reason = termination_signal() => reason,
+        _ = retainpdf_proc::wait_for_supervisor_exit() => "supervisor process exited",
+    }
+}
+
+#[cfg(unix)]
+async fn termination_signal() -> &'static str {
+    use tokio::signal::unix::{signal, SignalKind};
+
+    match signal(SignalKind::terminate()) {
+        Ok(mut terminate) => {
+            tokio::select! {
+                _ = tokio::signal::ctrl_c() => "received Ctrl-C",
+                _ = terminate.recv() => "received SIGTERM",
+            }
+        }
+        Err(error) => {
+            tracing::warn!("failed to install SIGTERM handler: {error}");
+            let _ = tokio::signal::ctrl_c().await;
+            "received Ctrl-C"
+        }
+    }
+}
+
+/// Windows 没有 SIGTERM：桌面壳用 `taskkill /T /F` 连 worker 一起强杀，不走这里；Ctrl-C 照样有序停。
+#[cfg(not(unix))]
+async fn termination_signal() -> &'static str {
+    let _ = tokio::signal::ctrl_c().await;
+    "received Ctrl-C"
+}
+
+async fn run() -> Result<Stopped> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
@@ -248,7 +301,7 @@ async fn run() -> Result<()> {
 
     // 端口只挡得住同一个端口上的二次启动；同一个任务库上的另一个运行时（进程内模式的 rust_api、
     // 换了端口的 jobsd）靠运行时锁挡。拿不到就退出，不对账——对账会杀掉那个运行时正在管的 worker。
-    let _runtime_owner = acquire_runtime_owner_lock(&config.jobs_db_path)?;
+    let runtime_owner = acquire_runtime_owner_lock(&config.jobs_db_path)?;
 
     let db = Arc::new(Db::new(
         config.jobs_db_path.clone(),
@@ -287,16 +340,18 @@ async fn run() -> Result<()> {
     let _driverless_sweep_handle = spawn_driverless_job_sweeper(state.runtime_deps());
 
     tracing::info!("retain-jobsd listening on {bind_host}:{port}");
+    let config = state.config.clone();
     tokio::select! {
-        served = axum::serve(listener, build_router(state)) => served.context("serve")?,
-        _ = retainpdf_proc::wait_for_supervisor_exit() => {
-            // 监督者（rust_api）被强杀：没人再给我们派活，继续活着只会占住端口，
-            // 让下一次启动绑定失败。与被组杀时的 SIGTERM 同语义——立即退出，
-            // 不等运行时收尾（spawn_blocking 中的任务会让 runtime drop 卡住）。
-            // 残留的 worker 由下次启动的 reconcile_stale_running_jobs 回收。
-            tracing::warn!("supervisor process exited; retain-jobsd shutting down");
-            std::process::exit(0);
+        served = axum::serve(listener, build_router(state)) => {
+            // 正常不会走到这里（serve 只在监听出错时返回）；照样按停机收尾，停掉 worker 再退出。
+            if let Err(error) = served {
+                tracing::error!("retain-jobsd serve failed: {error:#}");
+            }
+        }
+        reason = shutdown_requested() => {
+            // 不等还开着的连接：壳那边已经在退出，launch/cancel 这些请求丢了也没关系。
+            tracing::warn!("{reason}; retain-jobsd stopping its workers and shutting down");
         }
     }
-    Ok(())
+    Ok(Stopped { config, runtime_owner })
 }

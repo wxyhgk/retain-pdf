@@ -76,6 +76,20 @@ fn spawn_child(app: &AppConfig) -> std::io::Result<Child> {
     cmd.spawn()
 }
 
+/// 停 jobsd 时给它多久（SIGTERM 之后，过了就 SIGKILL）。jobsd 收到 SIGTERM 要先停自己的 tokio 运行时
+/// （最多 1 秒）、必要时重新拿运行时锁，再给每个 worker `worker_terminate_grace_secs` 的宽限（Python 翻译借这段
+/// 把在途请求等回来，见 `shutdown_drain.py`）。只给 worker 那么长的话，jobsd 会在停 worker 的半路被 SIGKILL，
+/// 不肯退的 worker 等不到 SIGKILL、又成了孤儿，所以多给 [`JOBSD_SHUTDOWN_OVERHEAD_SECS`]。
+///
+/// 桌面壳给 rust_api 10 秒（`frontend/desktop/src/main/graceful-stop.js`）：rust_api 等连接（最多
+/// `shutdown_grace_secs` 3 秒）和停 jobsd 同时进行，之后停自己的运行时 1 秒，默认合计最多约 3 + 3 + 1 = 7 秒。
+fn jobsd_stop_grace_secs(worker_terminate_grace_secs: u64) -> u64 {
+    worker_terminate_grace_secs.saturating_add(JOBSD_SHUTDOWN_OVERHEAD_SECS)
+}
+
+/// 见 [`jobsd_stop_grace_secs`]：jobsd 停运行时（1 秒）、重新拿锁（最多 1 秒）再加 1 秒余量。
+const JOBSD_SHUTDOWN_OVERHEAD_SECS: u64 = 3;
+
 async fn terminate_child(child: &mut Child, grace_secs: u64) {
     if terminate_child_process_tree(child, grace_secs)
         .await
@@ -111,7 +125,7 @@ async fn run_once(
     shutdown: &mut watch::Receiver<bool>,
 ) -> RunOutcome {
     set_status(JOBSD_STATUS_STARTING);
-    let grace = app.job_runner.worker_terminate_grace_secs;
+    let grace = jobsd_stop_grace_secs(app.job_runner.worker_terminate_grace_secs);
 
     let mut child = match spawn_child(app) {
         Ok(child) => child,
@@ -230,6 +244,22 @@ pub fn spawn_jobsd_supervisor(
         set_status(JOBSD_STATUS_DISABLED);
         tracing::info!("jobsd_supervisor: stopped");
     }))
+}
+
+#[cfg(test)]
+mod grace_tests {
+    /// 停 jobsd 的宽限要盖得住 jobsd 自己停 worker 的那段（运行时 1 秒 + worker 宽限），默认还要落在桌面壳的 10 秒以内。
+    #[test]
+    fn jobsd_gets_longer_than_its_workers_and_the_default_fits_the_desktop_budget() {
+        // 默认值：`RUST_API_WORKER_TERMINATE_GRACE_SECS` 3 秒、`RUST_API_SHUTDOWN_GRACE_SECS` 3 秒，桌面壳 10 秒。
+        let (worker_grace, http_drain, api_runtime_shutdown, desktop_budget) = (3, 3, 1, 10);
+        let jobsd_grace = super::jobsd_stop_grace_secs(worker_grace);
+        assert!(jobsd_grace >= worker_grace + 2, "{jobsd_grace}");
+        assert!(
+            jobsd_grace.max(http_drain) + api_runtime_shutdown < desktop_budget,
+            "rust_api 停 jobsd 的总时间要留在桌面壳给的 10 秒以内"
+        );
+    }
 }
 
 #[cfg(all(test, unix))]

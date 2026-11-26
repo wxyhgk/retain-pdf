@@ -286,7 +286,7 @@ fn second_in_process_api_on_the_same_data_exits_without_touching_live_workers() 
 }
 
 /// 进程内模式的后端收到 SIGTERM（桌面版退出、`docker stop`、开发栈停掉）：退出时把还在跑的 worker 停掉，
-/// 任务行留在 running，下次启动由启动对账续跑。以前 worker 在后台接着跑、接着花钱，直到下次启动才被杀。
+/// 任务行留在 running，下次启动由启动对账接手（请求日志干净的续跑）。以前 worker 在后台接着跑、接着花钱，直到下次启动才被杀。
 ///
 /// 反证方式：把 `main.rs` 里的 `stop_owned_workers_after_shutdown(&config)` 去掉，这个测试必须变红。
 #[test]

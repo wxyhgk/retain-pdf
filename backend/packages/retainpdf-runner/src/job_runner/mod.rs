@@ -52,7 +52,9 @@ pub(crate) use runtime_state::{
 pub use stage_contract::{
     translation_artifacts_are_ready, translation_checkpoint_candidate_is_ready,
 };
-pub use shutdown_workers::terminate_running_workers_on_shutdown;
+pub use shutdown_workers::{
+    stop_owned_workers_after_runtime_shutdown, terminate_running_workers_on_shutdown,
+};
 pub use startup_recovery::reconcile_stale_running_jobs;
 pub use startup_recovery::requeue_stuck_queued_jobs;
 pub use worker_process::{
