@@ -12,21 +12,21 @@
       "output": "AgentsView",
       "rust_view": "AgentsView",
       "client_name": "listAiAgents",
-      "note": "自带的排第一，后面是本机 agent（装了没有、怎么起）：装了的在前，再按推荐顺序（featured），其余按名字。阅读页提问窗列 agent 用（frontend/web 的 features/reader/domain/ask-port.ts）。"
+      "note": "自带的排最前（retainpdf，2026-11-26 起第二行是 retainpdf-pi），后面是本机 agent（装了没有、怎么起）：装了的在前，再按推荐顺序（featured），其余按名字。阅读页提问窗列 agent 用（frontend/web 的 features/reader/domain/ask-port.ts）。"
     },
     {
       "method": "GET",
       "path": "/api/v1/ai/agents/:agent_id/acp",
       "transport": "websocket",
       "rust_view": "routes/ai.rs :: acp_socket",
-      "note": "浏览器用 ?api_key= 认证（只对 WebSocket 握手有效）；来源照 CORS 那套查。自带 agent（retainpdf）要带模型配置：model、base_url、api_protocol（openai / openai_responses / anthropic）、thinking、credential_ref（不收明文 key）；再带 job_id（阅读页的任务，合并阅读的虚拟任务也行）就能自己从后端读这本书（2026-11-25），字符不对 400、没有这个任务 404。握手前就不行的回 HTTP 错误：没有这个 agent 或 job_id 的任务 404、本机 agent 没开或没过闸门 403、模型配置或凭据不对 400。连上以后 agent 退出时关闭码 1011，原因写退出码和 stderr 最后一行。"
+      "note": "浏览器用 ?api_key= 认证（只对 WebSocket 握手有效）；来源照 CORS 那套查。自带 agent（retainpdf、retainpdf-pi，即 kind 为 builtin 的）要带模型配置：model、base_url、api_protocol（openai / openai_responses / anthropic）、thinking、credential_ref（不收明文 key）；再带 job_id（阅读页的任务，合并阅读的虚拟任务也行）就能自己从后端读这本书（2026-11-25），字符不对 400、没有这个任务 404。握手前就不行的回 HTTP 错误：没有这个 agent 或 job_id 的任务 404、本机 agent 没开或没过闸门 403、模型配置或凭据不对 400。连上以后 agent 退出时关闭码 1011，原因写退出码和 stderr 最后一行。"
     }
   ],
   "definitions": {
     "AgentKind": {
       "type": "string",
       "enum": ["builtin", "local"],
-      "description": "builtin：RetainPDF 自带模型（用设置里的模型和密钥，服务器上也能用）；local：本机装的 agent。"
+      "description": "builtin：用设置里的模型和密钥的自带 agent——retainpdf（Python，服务器上也能用）和 retainpdf-pi（2026-11-26 加：本机装的 pi 加 RetainPDF 的读书扩展，和本机 agent 同一道闸门，没装 pi-acp / pi 时不能用、给 install）；local：本机装的 agent。"
     },
     "AgentDistribution": {
       "type": "string",
@@ -38,13 +38,13 @@
       "additionalProperties": false,
       "required": ["id", "name", "kind", "available", "reason"],
       "properties": {
-        "id": { "type": "string", "description": "WebSocket 地址里的 :agent_id。retainpdf 是自带的；本机的是 ACP 官方登记表的 id（pi-acp、opencode、qwen-code……），只有 claude-code（登记表 claude-acp）、codex（codex-acp）沿用 2026-11-25 的写法，握手时登记表 id 也认。" },
+        "id": { "type": "string", "description": "WebSocket 地址里的 :agent_id。retainpdf、retainpdf-pi 是自带的；本机的是 ACP 官方登记表的 id（pi-acp、opencode、qwen-code……），只有 claude-code（登记表 claude-acp）、codex（codex-acp）沿用 2026-11-25 的写法，握手时登记表 id 也认。" },
         "name": { "type": "string" },
         "kind": { "$ref": "#/definitions/AgentKind" },
         "available": { "type": "boolean" },
         "reason": { "type": "string", "description": "不能用的原因；能用时是空串。" },
         "launch": { "type": "string", "description": "本机 agent 实际怎么起（给用户看），比如 claude-agent-acp、gemini --acp；自带的、没装的没有这个字段。" },
-        "install": { "type": "string", "description": "本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp、uv tool install fast-agent-acp；自带的、只有压缩包的没有（看 install_url 和 reason）。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。" },
+        "install": { "type": "string", "description": "本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp、uv tool install fast-agent-acp；retainpdf、只有压缩包的没有（看 install_url 和 reason）；retainpdf-pi 没装 pi-acp / pi 时给它们的安装命令。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。" },
         "registry_id": { "type": "string", "description": "ACP 官方登记表里的 id（2026-11-26 加）；自带的没有。" },
         "description": { "type": "string", "description": "登记表里的一句话介绍（英文）。" },
         "version": { "type": "string", "description": "快照里登记的版本，不是本机装的版本。" },

@@ -6,8 +6,12 @@
 //!   握手带了书（`job_id`，[`AskBook`]）时自带 agent 另拿到读书用的后端地址和密钥（2026-11-25，
 //!   docs/ops/planning/reader-ask/20261125-自带agent读书.md）；
 //! - [`run_bridge`]：连上以后两头转。
+//!
+//! 自带的有两个（2026-11-26）：`retainpdf`（Python `retainpdf_ask_agent`）和 `retainpdf-pi`（pi-acp + pi + 我们的扩展，
+//! 见 [`pi`]，方案 docs/ops/planning/reader-ask/20261126-RetainPDF加pi.md）。两个都用设置里的模型，握手参数一样。
 mod bridge;
 mod gate;
+mod pi;
 mod registry;
 
 use std::collections::HashSet;
@@ -18,6 +22,7 @@ use retainpdf_api_base::error::AppError;
 use serde::{Deserialize, Serialize};
 
 pub use bridge::{run_bridge, AgentProcess, BridgeOut, SessionDefaults, CLOSE_AGENT_ENDED};
+pub use pi::PI_AGENT_ID;
 pub use registry::{AgentDistribution, AgentKind, AgentView, BUILTIN_AGENT_ID};
 
 /// 自带 agent 的模型配置、密钥交给子进程的环境变量（Python `retainpdf_ask_agent` 读）。
@@ -54,6 +59,8 @@ pub struct AcpConfig {
     pub path_var: Option<std::ffi::OsString>,
     /// 后端自己的可执行文件（同目录找 `retainpdf` 命令行）。
     pub current_exe: Option<PathBuf>,
+    /// 仓库的 `backend/` 目录（`retainpdf-pi` 在这里找 `pi-agent/` 和自带 agent 的提示词）；没有就列成不能用。
+    pub backend_root: Option<PathBuf>,
 }
 
 impl AcpConfig {
@@ -76,10 +83,10 @@ pub struct AgentsView {
 
 pub fn agents_view(config: &AcpConfig) -> AgentsView {
     let reason = config.local_reason();
-    AgentsView {
-        agents: registry::list_agents(&reason, config.path_var.as_deref()),
-        local_agents: LocalAgentsView { enabled: reason.is_empty(), reason },
-    }
+    let mut agents = registry::list_agents(&reason, config.path_var.as_deref());
+    // 自带的两个排最前：retainpdf、retainpdf-pi
+    agents.insert(1.min(agents.len()), pi::pi_view(config, &reason));
+    AgentsView { agents, local_agents: LocalAgentsView { enabled: reason.is_empty(), reason } }
 }
 
 /// 握手的查询参数。`api_key` 由认证那一层读，这里不用；自带 agent 的模型配置在这里。
@@ -105,6 +112,11 @@ pub struct AcpConnectQuery {
 pub struct AskBook {
     pub job_id: String,
     pub document_id: Option<String>,
+}
+
+/// 这个 agent 用不用设置里的模型、读不读书（握手的 model、credential_ref、job_id 给它）：自带的两个。
+pub fn is_builtin_agent(agent_id: &str) -> bool {
+    agent_id == BUILTIN_AGENT_ID || agent_id == PI_AGENT_ID
 }
 
 /// 握手里的 `job_id`：空的当没给（自带 agent 和以前一样只靠 prompt 里的上下文）；字符不对 400
@@ -164,12 +176,16 @@ fn session_defaults(config: &AcpConfig, cwd: &Path) -> SessionDefaults {
     }
 }
 
-fn builtin_process(
-    config: &AcpConfig,
-    query: &AcpConnectQuery,
-    cwd: &Path,
-    book: Option<&AskBook>,
-) -> Result<AgentProcess, AppError> {
+/// 自带 agent（Python 的和 pi 的）用的模型配置：握手的 model / base_url / api_protocol / thinking，密钥从凭据库按引用取。
+pub(crate) struct ModelSettings {
+    pub model: String,
+    pub base_url: String,
+    pub protocol: String,
+    pub thinking: String,
+    pub secret: String,
+}
+
+fn model_settings(config: &AcpConfig, query: &AcpConnectQuery) -> Result<ModelSettings, AppError> {
     let model = query.model.trim();
     if model.is_empty() || model.len() > 256 {
         return Err(AppError::bad_request("model is required for the built-in agent"));
@@ -191,30 +207,56 @@ fn builtin_process(
     }
     let credential = retainpdf_data::credentials::resolve_credential(&config.data_root, credential_ref, TRANSLATION_CREDENTIAL_KIND)
         .map_err(|error| AppError::bad_request(format!("credential_ref cannot be used: {error}")))?;
-    let mut env = vec![
-        (ASK_ENV_MODEL.into(), model.into()),
-        (ASK_ENV_BASE_URL.into(), base_url.into()),
-        (ASK_ENV_API_PROTOCOL.into(), protocol.into()),
-        (ASK_ENV_THINKING.into(), query.thinking.trim().into()),
-        (ASK_ENV_API_KEY.into(), credential.secret),
-    ];
-    if let Some(book) = book {
-        match reading_key(config) {
-            Some(key) => {
-                env.push((ASK_ENV_JOB_ID.into(), book.job_id.clone()));
-                env.push((ASK_ENV_DOCUMENT_ID.into(), book.document_id.clone().unwrap_or_default()));
-                env.push((ASK_ENV_BACKEND_URL.into(), config.backend_url.clone()));
-                env.push((ASK_ENV_BACKEND_KEY.into(), key));
-            }
-            // 没有任何密钥（不该发生：认证都过不了）就不给工具
-            None => tracing::warn!("acp bridge: no key for the built-in agent to read the book; it gets no tools"),
+    Ok(ModelSettings {
+        model: model.into(),
+        base_url: base_url.into(),
+        protocol: protocol.into(),
+        thinking: query.thinking.trim().into(),
+        secret: credential.secret,
+    })
+}
+
+/// 读书用的环境变量（书、后端地址、读书密钥）；没有书、没有密钥就不给。
+fn book_env(config: &AcpConfig, book: Option<&AskBook>) -> Vec<(String, String)> {
+    let Some(book) = book else {
+        return Vec::new();
+    };
+    match reading_key(config) {
+        Some(key) => vec![
+            (ASK_ENV_JOB_ID.into(), book.job_id.clone()),
+            (ASK_ENV_DOCUMENT_ID.into(), book.document_id.clone().unwrap_or_default()),
+            (ASK_ENV_BACKEND_URL.into(), config.backend_url.clone()),
+            (ASK_ENV_BACKEND_KEY.into(), key),
+        ],
+        // 没有任何密钥（不该发生：认证都过不了）就不给工具
+        None => {
+            tracing::warn!("acp bridge: no key for the built-in agent to read the book; it gets no tools");
+            Vec::new()
         }
     }
+}
+
+fn builtin_process(
+    config: &AcpConfig,
+    query: &AcpConnectQuery,
+    cwd: &Path,
+    book: Option<&AskBook>,
+) -> Result<AgentProcess, AppError> {
+    let settings = model_settings(config, query)?;
+    let mut env = vec![
+        (ASK_ENV_MODEL.into(), settings.model),
+        (ASK_ENV_BASE_URL.into(), settings.base_url),
+        (ASK_ENV_API_PROTOCOL.into(), settings.protocol),
+        (ASK_ENV_THINKING.into(), settings.thinking),
+        (ASK_ENV_API_KEY.into(), settings.secret),
+    ];
+    env.extend(book_env(config, book));
     Ok(AgentProcess {
         program: PathBuf::from(&config.python_bin),
         args: vec!["-m".into(), registry::BUILTIN_AGENT_MODULE.into()],
         env,
         cwd: Some(cwd.to_path_buf()),
+        scratch_dir: None,
     })
 }
 
@@ -230,22 +272,34 @@ pub fn prepare_agent(
     let cwd = books_dir(&config.data_root);
     let process = if agent_id == BUILTIN_AGENT_ID {
         builtin_process(config, query, &cwd, book)?
+    } else if agent_id == PI_AGENT_ID {
+        // pi 起的是本机装的 pi-acp、pi：和本机 agent 同一道闸门
+        check_local_gate(config, headers)?;
+        let process = pi::pi_process(config, query, &cwd, book)?;
+        // pi-acp 不把 mcpServers 交给 pi，书由扩展自己读，不补 retainpdf mcp
+        return Ok((process, SessionDefaults { cwd: Some(cwd), mcp_server: None }));
     } else if registry::is_local_agent(agent_id) {
-        let reason = config.local_reason();
-        if !reason.is_empty() {
-            return Err(AppError::forbidden(reason));
-        }
-        if let Some(reason) = gate::handshake_reason(headers) {
-            return Err(AppError::forbidden(reason));
-        }
+        check_local_gate(config, headers)?;
         let launch = registry::resolve_local_agent(agent_id, config.path_var.as_deref())
             .expect("is_local_agent checked")
             .map_err(AppError::not_found)?;
-        AgentProcess { program: launch.program, args: launch.args, env: launch.env, cwd: Some(cwd.clone()) }
+        AgentProcess { program: launch.program, args: launch.args, env: launch.env, cwd: Some(cwd.clone()), scratch_dir: None }
     } else {
         return Err(AppError::not_found(format!("unknown agent {agent_id:?}")));
     };
     Ok((process, session_defaults(config, &cwd)))
+}
+
+/// 本机 agent 的闸门（整个后端 + 这次握手），`retainpdf-pi` 也走它。
+fn check_local_gate(config: &AcpConfig, headers: &HeaderMap) -> Result<(), AppError> {
+    let reason = config.local_reason();
+    if !reason.is_empty() {
+        return Err(AppError::forbidden(reason));
+    }
+    if let Some(reason) = gate::handshake_reason(headers) {
+        return Err(AppError::forbidden(reason));
+    }
+    Ok(())
 }
 
 #[cfg(test)]

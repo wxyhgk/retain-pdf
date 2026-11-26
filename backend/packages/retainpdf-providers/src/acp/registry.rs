@@ -349,6 +349,23 @@ pub fn resolve_local_agent(id: &str, path_var: Option<&std::ffi::OsStr>) -> Opti
     find_agent(catalog(), id, &platform).map(|agent| resolve_agent(agent, &platform, path_var))
 }
 
+/// 本机 agent 的起法，加上它还要的那个命令的路径（pi-acp 要 pi）；没装时是原因和安装命令。`retainpdf-pi` 用（2026-11-26），
+/// 「装了没有」和本机 agent 列表同一套判断。
+pub fn resolve_local_agent_and_requirement(
+    id: &str,
+    path_var: Option<&std::ffi::OsStr>,
+) -> Option<Result<(ResolvedLaunch, Option<PathBuf>), (String, Option<String>)>> {
+    let platform = current_platform();
+    let agent = find_agent(catalog(), id, &platform)?;
+    Some(match resolve_agent(agent, &platform, path_var) {
+        Ok(launch) => {
+            let requirement = agent.requires.as_ref().and_then(|requirement| find_in_path(&requirement.bin, path_var));
+            Ok((launch, requirement))
+        }
+        Err(reason) => Err((reason, agent.install_command(path_var))),
+    })
+}
+
 pub fn is_local_agent(id: &str) -> bool {
     find_agent(catalog(), id, &current_platform()).is_some()
 }
