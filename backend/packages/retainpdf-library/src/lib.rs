@@ -46,7 +46,7 @@ pub use ask_compactions::{create_ask_compaction_view, list_ask_compactions_view,
 pub use ask_conversations::{
     append_ask_messages_view, ask_context_view, close_ask_conversation_view, create_side_ask_conversation_view,
     delete_ask_conversation_view, document_ask_messages_view, ensure_main_ask_conversation_view, get_ask_conversation_view,
-    list_ask_conversations_view, list_ask_messages_view, patch_ask_conversation_view,
+    list_ask_conversations_view, list_ask_messages_view, patch_ask_conversation_view, supersede_ask_messages_view,
 };
 pub use ask_memories::{
     create_ask_memory_view, delete_ask_memory_view, get_ask_memory_view, get_ask_settings_view, list_ask_memories_view,
@@ -63,6 +63,7 @@ pub use ask_views::{
     AskMemoryListView, AskMessagePageView, AskSelectionInput, CloseAskConversationInput, CloseAskConversationView,
     CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery,
     ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput,
+    SupersedeAskMessagesView,
 };
 pub use ask_threads::{
     create_ask_thread_view, delete_ask_thread_view, get_ask_thread_view, list_ask_threads_view, patch_ask_thread_view,

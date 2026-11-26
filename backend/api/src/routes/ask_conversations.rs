@@ -10,7 +10,7 @@ use crate::models::api::{
     CloseAskConversationInput, CloseAskConversationView, CreateAskMemoryInput, CreateAskSideConversationInput,
     DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput,
     PatchAskMemoryInput, AskSettingsRecord, PatchAskSettingsInput, AskCompactionListView, CreateAskCompactionInput,
-    CreateAskCompactionView,
+    CreateAskCompactionView, SupersedeAskMessagesView,
 };
 use crate::routes::common::{ask_summarizer, ok_json, run_library_blocking, ApiJson, ApiPath, ApiQuery};
 use crate::services::library::{
@@ -18,7 +18,7 @@ use crate::services::library::{
     create_side_ask_conversation_view, delete_ask_conversation_view, delete_ask_memory_view, document_ask_messages_view,
     ensure_main_ask_conversation_view, get_ask_conversation_view, list_ask_conversations_view, list_ask_memories_view,
     list_ask_messages_view, patch_ask_conversation_view, patch_ask_memory_view, get_ask_settings_view, patch_ask_settings_view,
-    create_ask_compaction_view, list_ask_compactions_view,
+    create_ask_compaction_view, list_ask_compactions_view, supersede_ask_messages_view,
 };
 use crate::AppState;
 
@@ -112,6 +112,15 @@ pub async fn append_messages_route(
 ) -> Reply<AppendAskMessagesView> {
     Ok(ok_json(
         run_library_blocking(&state, move |library| append_ask_messages_view(library, &conversation_id, &payload)).await?,
+    ))
+}
+
+pub async fn supersede_messages_route(
+    State(state): State<AppState>,
+    ApiPath((conversation_id, message_id)): ApiPath<(String, String)>,
+) -> Reply<SupersedeAskMessagesView> {
+    Ok(ok_json(
+        run_library_blocking(&state, move |library| supersede_ask_messages_view(library, &conversation_id, &message_id)).await?,
     ))
 }
 

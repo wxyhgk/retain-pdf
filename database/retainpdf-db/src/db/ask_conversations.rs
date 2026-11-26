@@ -55,6 +55,10 @@ pub struct AskConversationMessageRecord {
     pub selection: Option<serde_json::Value>,
     pub client_message_id: Option<String>,
     pub created_at: String,
+    /// 作废的时间（v43：改了这条或它之前的一条问，从那里重问）；没作废是 None。作废的原文留着，上下文、压缩不看。
+    pub superseded_at: Option<String>,
+    /// 改后重问的那条问指回被改的那条（v43）。
+    pub edited_from: Option<String>,
 }
 
 /// 要追加的一条消息（调用方校验过）。`memory_ids`：这条回答里记下的记忆，出处还空着的补上这条消息。
@@ -74,6 +78,8 @@ pub struct NewAskConversationMessage {
     pub selection: Option<serde_json::Value>,
     pub client_message_id: Option<String>,
     pub memory_ids: Vec<String>,
+    /// 改后重问：被改的那条（要是这个对话里已经作废的问）。
+    pub edited_from: Option<String>,
 }
 
 /// 开副对话要的东西（调用方校验过）。
@@ -131,6 +137,22 @@ pub enum AskMessagesAppended {
     /// 对话不是 open（结束了、归档了）。
     NotOpen,
     TooMany,
+    /// `edited_from` 不是这个对话里已经作废的问。
+    BadEditedFrom,
+}
+
+/// 「从这条起作废」的结果。
+pub enum AskMessagesSuperseded {
+    /// 作废了这些消息和压缩摘要（按 `seq` 从小到大）。
+    Superseded { conversation: AskConversationRecord, message_ids: Vec<String>, compaction_ids: Vec<String> },
+    NotFound,
+    NotOpen,
+    /// 消息不在这个对话里。
+    MessageNotInConversation,
+    /// 只能从一条问（`user`）起作废。
+    NotUser,
+    /// 这条已经作废了。
+    AlreadySuperseded,
 }
 
 const CONVERSATION_COLUMNS: &str = "c.conversation_id, c.kind, c.parent_id, c.forked_from_message_id, c.status, c.title, c.summary,
@@ -139,7 +161,7 @@ const CONVERSATION_COLUMNS: &str = "c.conversation_id, c.kind, c.parent_id, c.fo
      (SELECT COALESCE(MAX(seq), 0) FROM ask_conversation_messages m WHERE m.conversation_id = c.conversation_id)";
 
 const MESSAGE_COLUMNS: &str = "message_id, conversation_id, seq, role, text, thought, usage_json, agent_id, side_conversation_id,
-     document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at";
+     document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at, superseded_at, edited_from";
 
 fn row_to_conversation(row: &rusqlite::Row<'_>) -> rusqlite::Result<AskConversationRecord> {
     Ok(AskConversationRecord {
@@ -182,6 +204,8 @@ fn row_to_message(row: &rusqlite::Row<'_>) -> rusqlite::Result<AskConversationMe
         selection: json_column(row.get(14)?),
         client_message_id: row.get(15)?,
         created_at: row.get(16)?,
+        superseded_at: row.get(17)?,
+        edited_from: row.get(18)?,
     })
 }
 
@@ -248,8 +272,9 @@ fn insert_message(conn: &Connection, conversation_id: &str, message: &NewAskConv
     let selection = message.selection.as_ref().map(serde_json::to_string).transpose()?;
     conn.execute(
         "INSERT INTO ask_conversation_messages (message_id, conversation_id, seq, role, text, thought, usage_json, agent_id,
-             side_conversation_id, document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+             side_conversation_id, document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at,
+             edited_from)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
         params![
             message_id,
             conversation_id,
@@ -268,6 +293,7 @@ fn insert_message(conn: &Connection, conversation_id: &str, message: &NewAskConv
             selection,
             message.client_message_id,
             now_iso(),
+            message.edited_from,
         ],
     )?;
     for memory_id in &message.memory_ids {
@@ -502,6 +528,14 @@ impl Db {
         if current.message_count + messages.len() as i64 > max_messages {
             return Ok(AskMessagesAppended::TooMany);
         }
+        for edited_from in messages.iter().filter_map(|message| message.edited_from.as_deref()) {
+            let edited = load_message(&tx, edited_from)?;
+            if !edited.is_some_and(|edited| {
+                edited.conversation_id == conversation_id && edited.role == "user" && edited.superseded_at.is_some()
+            }) {
+                return Ok(AskMessagesAppended::BadEditedFrom);
+            }
+        }
         let mut out = Vec::with_capacity(messages.len());
         for message in messages {
             out.push(insert_message(&tx, conversation_id, message)?);
@@ -511,7 +545,57 @@ impl Db {
         Ok(AskMessagesAppended::Appended(out))
     }
 
-    /// 一页消息：`seq < before_seq`（不给是到最后）的最后 `limit` 条，按 `seq` 从小到大。
+    /// 从一条问起作废（v43，改后重问）：这条和它之后还没作废的消息、盖过这条的压缩摘要（`covers_to_seq >= 这条的 seq`）都标作废。
+    /// 一个事务；对话要是 open 的。
+    pub fn supersede_ask_messages_from(&self, conversation_id: &str, message_id: &str) -> Result<AskMessagesSuperseded> {
+        let mut conn = self.connect()?;
+        let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let Some(current) = load_conversation(&tx, conversation_id)? else {
+            return Ok(AskMessagesSuperseded::NotFound);
+        };
+        if current.status != "open" {
+            return Ok(AskMessagesSuperseded::NotOpen);
+        }
+        let Some(message) = load_message(&tx, message_id)?.filter(|message| message.conversation_id == conversation_id) else {
+            return Ok(AskMessagesSuperseded::MessageNotInConversation);
+        };
+        if message.role != "user" {
+            return Ok(AskMessagesSuperseded::NotUser);
+        }
+        if message.superseded_at.is_some() {
+            return Ok(AskMessagesSuperseded::AlreadySuperseded);
+        }
+        let ids = |sql: &str| -> Result<Vec<String>> {
+            let mut stmt = tx.prepare(sql)?;
+            let rows = stmt.query_map(params![conversation_id, message.seq], |row| row.get(0))?;
+            Ok(rows.collect::<rusqlite::Result<Vec<String>>>()?)
+        };
+        let message_ids = ids(
+            "SELECT message_id FROM ask_conversation_messages
+             WHERE conversation_id = ?1 AND seq >= ?2 AND superseded_at IS NULL ORDER BY seq",
+        )?;
+        let compaction_ids = ids(
+            "SELECT compaction_id FROM ask_compactions
+             WHERE conversation_id = ?1 AND covers_to_seq >= ?2 AND superseded_at IS NULL ORDER BY covers_to_seq",
+        )?;
+        let now = now_iso();
+        tx.execute(
+            "UPDATE ask_conversation_messages SET superseded_at = ?1
+             WHERE conversation_id = ?2 AND seq >= ?3 AND superseded_at IS NULL",
+            params![now, conversation_id, message.seq],
+        )?;
+        tx.execute(
+            "UPDATE ask_compactions SET superseded_at = ?1
+             WHERE conversation_id = ?2 AND covers_to_seq >= ?3 AND superseded_at IS NULL",
+            params![now, conversation_id, message.seq],
+        )?;
+        touch(&tx, conversation_id)?;
+        let conversation = load_conversation(&tx, conversation_id)?.context("reload ask conversation")?;
+        tx.commit()?;
+        Ok(AskMessagesSuperseded::Superseded { conversation, message_ids, compaction_ids })
+    }
+
+    /// 一页消息：`seq < before_seq`（不给是到最后）的最后 `limit` 条，按 `seq` 从小到大。作废的也在（带 `superseded_at`）。
     pub fn list_ask_conversation_messages(
         &self,
         conversation_id: &str,
@@ -529,6 +613,35 @@ impl Db {
         Ok(messages)
     }
 
+    /// 和 `list_ask_conversation_messages` 一样，但只要没作废的（上下文、压缩、副对话结论用）。
+    pub fn list_live_ask_conversation_messages(
+        &self,
+        conversation_id: &str,
+        before_seq: Option<i64>,
+        limit: u32,
+    ) -> Result<Vec<AskConversationMessageRecord>> {
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT {MESSAGE_COLUMNS} FROM ask_conversation_messages
+             WHERE conversation_id = ?1 AND seq < ?2 AND superseded_at IS NULL
+             ORDER BY seq DESC LIMIT ?3"
+        ))?;
+        let rows = stmt.query_map(params![conversation_id, before_seq.unwrap_or(i64::MAX), limit as i64], row_to_message)?;
+        let mut messages = rows.collect::<rusqlite::Result<Vec<_>>>()?;
+        messages.reverse();
+        Ok(messages)
+    }
+
+    /// `seq > after_seq` 的没作废的消息有几条（上下文算「更早的几条没带」）。
+    pub fn count_live_ask_messages_after(&self, conversation_id: &str, after_seq: i64) -> Result<i64> {
+        let conn = self.connect()?;
+        Ok(conn.query_row(
+            "SELECT COUNT(*) FROM ask_conversation_messages WHERE conversation_id = ?1 AND seq > ?2 AND superseded_at IS NULL",
+            params![conversation_id, after_seq],
+            |row| row.get(0),
+        )?)
+    }
+
     pub fn get_ask_conversation_message(&self, message_id: &str) -> Result<Option<AskConversationMessageRecord>> {
         let conn = self.connect()?;
         load_message(&conn, message_id)
@@ -539,7 +652,7 @@ impl Db {
         let conn = self.connect()?;
         let mut stmt = conn.prepare(&format!(
             "SELECT {MESSAGE_COLUMNS} FROM ask_conversation_messages
-             WHERE document_id = ?1 AND role = 'user' AND page IS NOT NULL
+             WHERE document_id = ?1 AND role = 'user' AND page IS NOT NULL AND superseded_at IS NULL
              ORDER BY page, created_at, message_id LIMIT ?2"
         ))?;
         let rows = stmt.query_map(params![document_id, limit as i64], row_to_message)?;
