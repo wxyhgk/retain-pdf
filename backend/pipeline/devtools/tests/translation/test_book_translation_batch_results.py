@@ -46,7 +46,8 @@ def test_duplicate_plain_items_are_collapsed_and_expanded_with_item_diagnostics(
     assert expanded["b"]["translation_diagnostics"]["page_idx"] == 1
 
 
-def test_duplicate_plain_items_keep_origin_when_representative_result_failed() -> None:
+def test_duplicate_plain_items_share_the_failure_when_representative_result_failed() -> None:
+    """代表块没翻成：副本跟着记同样的失败、留在待办里，不再记成「模型判保留原文」（2026-11-26，S21）。"""
     pending = [
         _item("a", "A", block_type="image_caption", page_idx=0),
         _item("b", "A", block_type="image_caption", page_idx=1),
@@ -59,18 +60,40 @@ def test_duplicate_plain_items_keep_origin_when_representative_result_failed() -
                 "decision": "translate",
                 "translated_text": "",
                 "final_status": "failed",
-                "translation_diagnostics": {"item_id": "a", "page_idx": 0},
+                "translation_diagnostics": {"item_id": "a", "page_idx": 0, "degradation_reason": "transport_timeout"},
             }
         },
         duplicate_items_by_rep_id=duplicates,
     )
 
-    assert expanded["b"]["final_status"] == "kept_origin"
+    assert expanded["b"]["final_status"] == "failed"
+    assert expanded["b"]["decision"] == "translate"
     assert expanded["b"]["translation_diagnostics"]["item_id"] == "b"
     assert expanded["b"]["translation_diagnostics"]["page_idx"] == 1
+    assert expanded["b"]["translation_diagnostics"]["degradation_reason"] == "transport_timeout"
+    assert expanded["b"]["translation_diagnostics"]["error_trace"][-1]["code"] == "duplicate_representative_failed"
+    assert "fast_path_keep_origin" not in expanded["b"]["translation_diagnostics"].get("route_path", [])
+    assert expanded["a"]["translation_diagnostics"]["item_id"] == "a", "代表块自己的结果不被改动"
+
+
+def test_duplicate_plain_items_keep_origin_when_representative_was_kept_origin() -> None:
+    """代表块被判保留原文（同一段原文）：副本照旧保留原文。"""
+    pending = [
+        _item("a", "A", block_type="image_caption", page_idx=0),
+        _item("b", "A", block_type="image_caption", page_idx=1),
+    ]
+    _unique, duplicates = _dedupe_pending_items(pending)
+
+    expanded = _expand_duplicate_results(
+        {"a": {"decision": "keep_origin", "translated_text": "", "final_status": "kept_origin",
+               "translation_diagnostics": {"item_id": "a", "page_idx": 0}}},
+        duplicate_items_by_rep_id=duplicates,
+    )
+
+    assert expanded["b"]["final_status"] == "kept_origin"
+    assert expanded["b"]["translation_diagnostics"]["item_id"] == "b"
     assert expanded["b"]["translation_diagnostics"]["fallback_to"] == "keep_origin"
     assert "fast_path_keep_origin" in expanded["b"]["translation_diagnostics"]["route_path"]
-    assert expanded["b"]["translation_diagnostics"]["degradation_reason"] == "duplicate_representative_not_expandable"
 
 
 def test_translate_pending_units_uses_readonly_memory_snapshot_by_default(monkeypatch, tmp_path: Path) -> None:
