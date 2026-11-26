@@ -7,6 +7,15 @@ from .final_status import set_final_status
 
 
 KEEP_ORIGIN_LABEL = "skip_model_keep_origin"
+# agent 引擎在页面策略之后自己标的保留原文（`agent_flow.skip_nothing_to_translate`、`skip_back_matter`，
+# 以及 `reclassify` 按同一条规则改记的）。页面策略不会再标它们，续跑时 reset_policy_state 打回「要翻」就会报 regressed（S01）。
+# 暂时按标签认；状态管理第 2 步换成结果里的 owner 字段（docs/ops/planning/state-management/20261126-后端状态管理设计.md）。
+ENGINE_KEEP_ORIGIN_LABELS = frozenset({
+    "skip_no_prose",
+    "skip_citation_only",
+    "skip_running_header",
+    "skip_back_matter_index",
+})
 
 
 def preserve_source_as_translation(item: dict) -> None:
@@ -53,6 +62,7 @@ def mark_translation_failed_policy_state(item: dict) -> None:
 
 __all__ = [
     "FAILED_STATUS",
+    "ENGINE_KEEP_ORIGIN_LABELS",
     "KEEP_ORIGIN_LABEL",
     "KEPT_ORIGIN_STATUS",
     "mark_keep_origin",
