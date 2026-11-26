@@ -55,7 +55,8 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
   assert.match(wiring, /if \(!picked\.text \|\| !picked\.element \|\| !picked\.rect\) return null;/);
   assert.match(wiring, /window\.addEventListener\("keydown", onKey, true\)/);
   assert.match(wiring, /lazy\(\(\) => import\("\.\/ReaderAskPanel\.js"\)\)/);
-  assert.match(wiring, /const panel: ReactElement \| null = port && \(ask\.visible \|\| legacy\)/);
+  assert.match(wiring, /const panel: ReactElement \| null = port && \(\(ask\.visible && ready\) \|\| legacy\)/);
+  assert.match(wiring, /const ready = !ask\.persistent \|\| Boolean\(ask\.view\.conversation\) \|\| Boolean\(ask\.error\);/, "主对话读回来才画窗口（不白开一个会话）");
   assert.match(wiring, /menuActions = port && menuAnchor \?/);
   const host = readFileSync(new URL("../../src/features/reader/domain/ask-port.ts", import.meta.url), "utf8");
   assert.match(host, /if \(isMockMode\(\)\) return mockAskPort;/, "演示模式给假 agent");

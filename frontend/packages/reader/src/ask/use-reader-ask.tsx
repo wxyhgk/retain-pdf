@@ -159,7 +159,9 @@ export function useReaderAsk({
       setLegacy(null);
     } : undefined,
   } : null;
-  const panel: ReactElement | null = port && (ask.visible || legacy) ? (
+  // 主对话还没读回来时先不画窗口：不然先画一个空窗口、开一个会话，读回来换成主对话又重开一个（白开一个会话，11-27 真机看到）。
+  const ready = !ask.persistent || Boolean(ask.view.conversation) || Boolean(ask.error);
+  const panel: ReactElement | null = port && ((ask.visible && ready) || legacy) ? (
     <Suspense fallback={null}>
       <ReaderAskPanel
         port={port}
