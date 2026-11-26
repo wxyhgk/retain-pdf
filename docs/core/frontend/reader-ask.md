@@ -82,8 +82,8 @@
 [方案](../../ops/planning/reader-ask/20261126-互动块分层提示词.md) 和 [提问窗包的 README](../../../frontend/packages/ask/README.md)。
 
 2026-11-26 提问窗能**选模型和思考强度**（输入框那一行，assistant-ui 的 ModelSelector）：照 ACP 的 `configOptions`，本机 Claude Code、pi 自己给；
-RetainPDF 的自带类 agent 由网页端口合成两项——模型是设置里存的那几条连接，思考强度用设置页的档位（关闭 / 自动 / 浅 / 中 / 深 / 最深），
-改了下一问按新连接重开会话（`ask-port.ts` 的 `builtinChoice`、`builtinConfigOptions`）。详见[提问窗包的 README](../../../frontend/packages/ask/README.md)。
+RetainPDF 的自带类 agent 由网页端口合成「模型」一项（设置里存的那几条连接，换了下一问按新连接重开会话，`ask-port.ts` 的 `builtinModelOption`）；
+思考强度不在前端编（每个模型支持的档位不一样），由后端的自带 agent 按当前模型报 `thought_level`（后端 `feat/ask-thought-level`），报了才显示。详见[提问窗包的 README](../../../frontend/packages/ask/README.md)。
 
 ## 出处和问答记录
 

@@ -22,7 +22,6 @@ import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { createAskThread, deleteAskThread, getAskThread, listAiAgents, listAskThreads, updateAskThread } from "@retainpdf/api/ai";
 import { apiBase, frontendApiKey, isLanSharedPage, isMockMode } from "@/platform/config/runtime.js";
 import { connectionValue, savedDefaultTranslationModel, savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
-import { TRANSLATION_THINKING_OPTIONS } from "@/platform/config/providers.js";
 import { loadBrowserStoredConfig, savePersistedBrowserStoredConfig } from "@/platform/config/persisted-config.js";
 import { createCredential, updateCredential } from "@/platform/api/domains/credentials.js";
 import { mockAskPort } from "@/platform/mock/ask-agent.js";
@@ -113,38 +112,27 @@ async function listAgents(builtinAgentIds: Set<string>): Promise<ReaderAskAgent[
   return toReaderAgents(rows, builtinModelQuery().missing);
 }
 
-/** 自带类 agent 的两项设置（照 ACP 的 configOptions 写，提问窗画成选模型、思考强度）：模型是设置里存的那几条连接，思考强度和设置页同一套档位。 */
+/**
+ * 自带类 agent 的「模型」设置（照 ACP 的 configOptions 写，提问窗画成选模型）：就是设置里存的那几条连接——用户自己的数据。
+ * 思考强度不在这里编：每个模型支持的档位不一样，由 agent 按当前模型自己报（ACP 的 thought_level），报了才显示。
+ */
 export const BUILTIN_MODEL_CONFIG = "model";
-export const BUILTIN_EFFORT_CONFIG = "effort";
 
-export function builtinConfigOptions(connections: readonly TranslationConnection[], chosen: TranslationConnection, thinking: string): AskConfigOption[] {
-  return [
-    {
-      id: BUILTIN_MODEL_CONFIG,
-      name: "模型",
-      category: "model",
-      type: "select",
-      currentValue: connectionValue(chosen),
-      options: connections.map((connection) => ({ value: connectionValue(connection), name: connection.model, description: connection.label, group: connection.label })),
-    },
-    {
-      id: BUILTIN_EFFORT_CONFIG,
-      name: "思考强度",
-      category: "thought_level",
-      type: "select",
-      currentValue: thinking,
-      options: TRANSLATION_THINKING_OPTIONS.map((option) => ({ value: option.id, name: option.label })),
-    },
-  ];
+export function builtinModelOption(connections: readonly TranslationConnection[], chosen: TranslationConnection): AskConfigOption {
+  return {
+    id: BUILTIN_MODEL_CONFIG,
+    name: "模型",
+    category: "model",
+    type: "select",
+    currentValue: connectionValue(chosen),
+    options: connections.map((connection) => ({ value: connectionValue(connection), name: connection.model, description: connection.label, group: connection.label })),
+  };
 }
 
-/** 自带类 agent 用哪条连接、什么思考强度：用户在提问窗选过的优先，没选过用设置里默认的。 */
-export function builtinChoice(connections: readonly TranslationConnection[], config: Readonly<Record<string, string | boolean>> | undefined, fallback: TranslationConnection | null) {
+/** 自带类 agent 用哪条连接：用户在提问窗选过的优先，没选过（或那条删了）用设置里默认的。 */
+export function builtinConnection(connections: readonly TranslationConnection[], config: Readonly<Record<string, string | boolean>> | undefined, fallback: TranslationConnection | null): TranslationConnection | null {
   const wanted = `${config?.[BUILTIN_MODEL_CONFIG] ?? ""}`;
-  const connection = connections.find((item) => connectionValue(item) === wanted) || fallback;
-  const effort = `${config?.[BUILTIN_EFFORT_CONFIG] ?? ""}`;
-  const thinking = TRANSLATION_THINKING_OPTIONS.some((option) => option.id === effort) ? effort : connection?.thinking || "off";
-  return { connection, thinking };
+  return connections.find((item) => connectionValue(item) === wanted) || fallback;
 }
 
 async function openSession(
@@ -158,26 +146,30 @@ async function openSession(
     return openAcpWebSocketSession(acpSocketUrl(apiBase(), agentId, frontendApiKey(), {}), handlers);
   }
   const connections = savedTranslationConnections();
-  const { connection, thinking } = builtinChoice(connections, config, defaultConnection());
+  const connection = builtinConnection(connections, config, defaultConnection());
+  // 思考强度先照设置里这条连接的（握手参数 thinking）；agent 报了 thought_level 以后，提问窗改它走 session/set_config_option。
   const extra = builtinModelQuery(connection);
   if (extra.missing || !connection) throw new Error(extra.missing || "设置里还没有配翻译模型");
-  if (thinking && thinking !== "off") extra.query = { ...extra.query, thinking };
-  else delete extra.query.thinking;
   extra.query = { ...extra.query, credential_ref: await ensureAskCredential(connection) };
   // 自带 agent 自己读书（read_pages / search_book / view_page）：带上阅读页的任务编号（merged-… 也照传）。本机 agent 走 retainpdf mcp，不用。
   if (jobId) extra.query = { ...extra.query, job_id: jobId };
   // 握手、开会话、发问都在提问窗的包里（@retainpdf/ask/acp）；这里只拼地址：api_key、模型配置和凭据引用、job_id。
   const session = await openAcpWebSocketSession(acpSocketUrl(apiBase(), agentId, frontendApiKey(), extra.query), handlers);
-  // 模型、思考强度是握手时定的：提问窗改了就重开会话（reopenOnConfigChange）。agent 自己给了设置项就用它的。
-  if (session.configOptions?.length) return session;
-  let options = builtinConfigOptions(connections, connection, thinking);
+  // 模型这一项是我们加的（agent 自己报了就用它的）；换模型要换密钥和地址，只能重开会话。别的设置（思考强度……）照 agent 报的、交给 agent 改。
+  const own = session.configOptions || [];
+  if (own.some((option) => option.category === "model")) return session;
+  let model = builtinModelOption(connections, connection);
   return {
     ...session,
-    configOptions: options,
-    reopenOnConfigChange: true,
+    configOptions: [model, ...own],
+    reopenOnConfigChange: (configId) => configId === BUILTIN_MODEL_CONFIG,
     setConfigOption: async (configId, value) => {
-      options = options.map((option) => (option.id === configId ? { ...option, currentValue: value } : option));
-      return options;
+      if (configId === BUILTIN_MODEL_CONFIG) {
+        model = { ...model, currentValue: value };
+        return [model, ...own];
+      }
+      const next = session.setConfigOption ? await session.setConfigOption(configId, value) : own;
+      return [model, ...next.filter((option) => option.category !== "model")];
     },
   };
 }

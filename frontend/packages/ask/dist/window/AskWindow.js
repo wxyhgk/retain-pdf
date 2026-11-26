@@ -20,7 +20,8 @@ import { AskHeader } from "./AskHeader.js";
 import { AskQuote } from "./AskQuote.js";
 import { AskPageContext } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
-import { AskAgentSettings, AskConfigContext } from "./AskModelPicker.js";
+import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand } from "./AskModelPicker.js";
+import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
 const KATEX_LINK_ID = "retainpdf-katex-css";
 /** KaTeX 的样式表（字体）由宿主给地址（桌面版离线也能用），打开窗口时插一个 <link>。 */
@@ -161,10 +162,15 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
         return () => window.removeEventListener("resize", onResize);
     }, []);
     const rect = layoutFor(mode, float, dockWidth);
+    // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
+    const effort = currentEffort(config);
+    const currentAgent = agents?.find((agent) => agent.id === agentId);
+    const brand = currentModelBrand(config) || (currentAgent ? brandFor(currentAgent.id, currentAgent.name) : "");
+    const tint = (effort ? { "--ask-effort-color": effort.color } : {});
     return (_jsx(Rnd, { className: "ask-window", position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: (_event, data) => setFloat((current) => ({ ...current, x: data.x, y: data.y })), onResizeStop: (_event, _direction, element, _delta, position) => {
             if (mode === "dock")
                 setDockWidth(element.offsetWidth);
             else
                 setFloat({ x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight });
-        }, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, children: [_jsx(AskHeader, { context: context, agents: agents, agentId: agentId, onAgent: setAgentId, mode: mode, onMode: setMode, onShowContext: onShowContext, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [_jsx(AskQuote, { quote: context.quote }), loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsx("div", { className: "ask-thread", children: _jsx(Thread, { components: threadComponents, autoFocus: true }) })] }) }) }) })] })] }) }));
+        }, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { context: context, agents: agents, agentId: agentId, onAgent: setAgentId, mode: mode, onMode: setMode, onShowContext: onShowContext, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [_jsx(AskQuote, { quote: context.quote }), loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", children: [brand ? (_jsx("div", { className: "ask-watermark", "aria-hidden": true, children: _jsx(BrandIcon, { brand: brand, size: 200 }) })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) })] })] }) }));
 }

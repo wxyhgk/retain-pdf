@@ -55,13 +55,15 @@ react-rnd（窗口拖动）、ACP SDK、`@retainpdf/ui`（按钮、下拉框）�
 ## 选模型、思考强度
 
 输入框那一行（「+」旁边）有 agent 的设置，都是 assistant-ui 的 ModelSelector（`src/ui/elements/model-selector.tsx`）：
-模型是一个按钮（前面是厂商图标，点开是带搜索、分组的列表），思考强度是旁边一排胶囊（`ModelSelectorEffort`），
+一个按钮写「模型 · 思考强度」（前面是厂商图标），点开是带搜索、分组的模型列表，底下一排思考强度（`ModelSelectorEffort`），
 别的设置项（模式、快速……）收在「更多」里（`src/window/AskModelPicker.tsx`）。
 
 - **图标多、字少**：标题栏选 agent 只有图标（自带模型是书本、retainpdf-pi 是 π，别的按名字认厂商，`src/window/BrandIcon.tsx`）；
   回答底下的用量只是一个图标，点开才是模型、token、缓存、速度、首字、用时。厂商图标来自 [lobe-icons](https://github.com/lobehub/lobe-icons)（MIT，
   `@lobehub/icons-static-svg`，开发依赖），`npm run generate:icons` 挑用得上的生成 `src/window/brand-icons.generated.ts`。
-- **思考强度的颜色**：不认档位的值，只看它在 agent 给的列表里排第几（第一档灰，往后绿 → 橙 → 红，`effortColor`）；档位的名字也照 agent 给的，不翻译。
+- **思考强度**：档位、名字都照 agent 报的（ACP `thought_level`），前端不编、不翻译。颜色只看档位在列表里排第几（第一档灰，往后绿 → 橙 → 红，`effortColor`）；
+  开了思考（不是第一档）时，输入框的边框、光晕、发送按钮和整个窗口的边框都染上这个颜色（`AskWindow` 写 `--ask-effort-color`、`data-effort`）。
+- **模型水印**：对话区背景正中放当前模型厂商的标志（很淡、在字后面、点不到；没有模型这一项就用 agent 的）。
 - 开着弹层时 Esc 只关弹层，不关窗。数据照 ACP 的 **session config options**：
 
 - agent 开会话时给 `configOptions`（`category` 是 `model` / `thought_level` / `mode`……），窗口用 `session/set_config_option` 改，agent 推 `config_option_update` 也跟着变。
@@ -69,7 +71,7 @@ react-rnd（窗口拖动）、ACP SDK、`@retainpdf/ui`（按钮、下拉框）�
 - 选了 agent 就提前开会话（`prepare`），不用先问一句就能看到有哪些模型。
 - 用户选过的值按 agent 记在本机浏览器（`window/config-memory.ts`），新会话开了再设一次（`acp/config.ts` 的 `pendingConfig`）；
   开会话时也交给宿主（`AskPort.openSession` 的 `config`）。
-- 设置要在握手时定的（`AskSession.reopenOnConfigChange`，RetainPDF 的自带 agent：模型就是设置里存的连接）：改了关掉会话，下一问按新设置重开，之前几轮照样带过去。
+- 有的设置要在握手时定（`AskSession.reopenOnConfigChange`，可以按设置项判断。RetainPDF 的自带 agent：「模型」就是设置里存的连接，换了要换密钥和地址）：改了关掉会话，下一问按新设置重开，之前几轮照样带过去；别的设置（思考强度）照常 `session/set_config_option`。
 - agent 一个设置项都不给，就什么都不画。
 
 ## 回答里的互动块（OpenUI）

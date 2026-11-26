@@ -59,7 +59,7 @@ function fakeConfig(agentId: string): FakeConfig {
     },
     {
       id: "effort", name: "思考强度", category: "thought_level", type: "select", currentValue: "medium",
-      options: [["off", "不思考"], ["low", "低"], ["medium", "中"], ["high", "高"], ["max", "最高"]].map(([value, name]) => ({ value, name })),
+      options: ["off", "low", "medium", "high", "max"].map((value) => ({ value, name: value })),
     },
   ];
   if (agentId === "claude-code") {

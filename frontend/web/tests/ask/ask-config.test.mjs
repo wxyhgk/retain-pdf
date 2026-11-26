@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 import { normalizeConfigOptions, pendingConfig } from "../../../packages/ask/src/acp/config.ts";
 import { PermissionStore, createAcpChatAdapter } from "../../../packages/ask/src/acp/adapter.ts";
-import { effortColor, splitConfig, toModelOptions } from "../../../packages/ask/src/window/AskModelPicker.tsx";
+import { currentEffort, currentModelBrand, effortColor, splitConfig, toModelOptions } from "../../../packages/ask/src/window/AskModelPicker.tsx";
 
 /** 本机 Claude Code 适配器（claude-agent-acp）session/new 真给的样子（2026-11-26 本机握手抄的，选项删短了）。 */
 const CLAUDE_CODE = [
@@ -136,4 +136,56 @@ test("设置是开会话时定的（reopenOnConfigChange，自带 agent）：改
   await run([u("Q1"), a("答"), u("Q2")]);
   assert.deepEqual(opens, [{}, { model: "b" }], "第二个会话按新设置开");
   assert.match(prompts[1], /出处[\s\S]*我：Q1\n\n你：答[\s\S]*Q2/, "新会话带出处和之前几轮");
+});
+
+test("窗口的颜色和水印：当前思考强度的颜色（第一档算没开），当前模型的厂商", () => {
+  const options = normalizeConfigOptions(CLAUDE_CODE);
+  assert.deepEqual(currentEffort(options), { color: effortColor(1, 3), on: true }, "high 在 low / high / max 里排第二");
+  const off = options.map((option) => (option.id === "effort" ? { ...option, currentValue: "low" } : option));
+  assert.deepEqual(currentEffort(off), { color: "var(--muted)", on: false });
+  assert.equal(currentEffort(options.filter((option) => option.category !== "thought_level")), null);
+  assert.equal(currentModelBrand(options), "claude", "opus → Claude 的标志");
+  const qwen = [{ id: "model", name: "模型", category: "model", type: "select", currentValue: "qwen::qwen3.8-flash", options: [{ value: "qwen::qwen3.8-flash", name: "qwen3.8-flash", group: "通义千问" }] }];
+  assert.equal(currentModelBrand(qwen), "qwen");
+  assert.equal(currentModelBrand([]), "");
+});
+
+test("按设置项判断要不要重开：换模型重开，思考强度直接交给 agent 改；新会话把选过的思考强度再设一次", async () => {
+  const opens = [];
+  const sets = [];
+  let closes = 0;
+  const port = {
+    listAgents: async () => [],
+    openSession: async (options) => {
+      opens.push(options.config);
+      let config = normalizeConfigOptions([
+        { id: "model", name: "模型", category: "model", type: "select", currentValue: options.config?.model || "a", options: [{ value: "a", name: "A" }, { value: "b", name: "B" }] },
+        { id: "thought", name: "思考", category: "thought_level", type: "select", currentValue: "low", options: [{ value: "low", name: "low" }, { value: "high", name: "high" }] },
+      ]);
+      return {
+        configOptions: config,
+        reopenOnConfigChange: (id) => id === "model",
+        setConfigOption: async (id, value) => {
+          sets.push([id, value]);
+          return (config = config.map((option) => (option.id === id ? { ...option, currentValue: value } : option)));
+        },
+        prompt: async () => ({ stopReason: "end_turn" }),
+        cancel() {},
+        close() { closes += 1; },
+      };
+    },
+  };
+  let desired = {};
+  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "retainpdf", getPreamble: () => "", getDesiredConfig: () => desired, onConfig: () => {} });
+  await chat.prepare();
+  desired = { thought: "high" };
+  await chat.setConfig("thought", "high");
+  assert.equal(closes, 0, "改思考强度不重开");
+  assert.deepEqual(sets, [["thought", "high"]]);
+  desired = { thought: "high", model: "b" };
+  await chat.setConfig("model", "b");
+  assert.equal(closes, 1, "换模型重开");
+  await chat.prepare();
+  assert.deepEqual(opens.at(-1), { thought: "high", model: "b" }, "新会话按新模型开");
+  assert.deepEqual(sets.at(-1), ["thought", "high"], "新会话把选过的思考强度再设一次（模型那项是握手定的，不再设）");
 });

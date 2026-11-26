@@ -8,7 +8,7 @@
  * - 回答和工具调用里的页码能点（page-citations.ts、AskPageLink.tsx），点了交给宿主跳页。
  * 宿主给什么、能改什么：见包的 README.md。
  */
-import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement } from "react";
 import { Rnd } from "react-rnd";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 
@@ -31,7 +31,8 @@ import { AskHeader, type AskWindowMode } from "./AskHeader.js";
 import { AskQuote } from "./AskQuote.js";
 import { AskPageContext, type AskPageJump } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
-import { AskAgentSettings, AskConfigContext, type AskConfigState } from "./AskModelPicker.js";
+import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand, type AskConfigState } from "./AskModelPicker.js";
+import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
 
 const KATEX_LINK_ID = "retainpdf-katex-css";
@@ -209,6 +210,11 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
     return () => window.removeEventListener("resize", onResize);
   }, []);
   const rect = layoutFor(mode, float, dockWidth);
+  // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
+  const effort = currentEffort(config);
+  const currentAgent = agents?.find((agent) => agent.id === agentId);
+  const brand = currentModelBrand(config) || (currentAgent ? brandFor(currentAgent.id, currentAgent.name) : "");
+  const tint = (effort ? { "--ask-effort-color": effort.color } : {}) as CSSProperties;
 
   return (
     <Rnd
@@ -228,7 +234,7 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
         else setFloat({ x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight });
       }}
     >
-      <section className="ask-panel" role="dialog" aria-label="提问" data-mode={mode}>
+      <section className="ask-panel" role="dialog" aria-label="提问" data-mode={mode} data-effort={effort?.on ? "on" : "off"} style={tint}>
         <AskHeader
           context={context}
           agents={agents}
@@ -250,6 +256,11 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
               <PlanDataUI />
               <SubagentDataUI />
               <div className="ask-thread">
+                {brand ? (
+                  <div className="ask-watermark" aria-hidden>
+                    <BrandIcon brand={brand} size={200} />
+                  </div>
+                ) : null}
                 <Thread components={threadComponents} autoFocus />
               </div>
             </AssistantRuntimeProvider>

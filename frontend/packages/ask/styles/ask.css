@@ -566,45 +566,88 @@
   color: var(--accent);
 }
 
-/* 思考强度的胶囊（ModelSelectorEffort 拿到弹层外面用）：一条浅底长胶囊，选中的那档是白底小胶囊。 */
-.ask-panel .ask-effort {
-  gap: 4px;
-  padding: 0 0 0 4px;
-  border-top: 0;
-  color: var(--muted);
-}
-
-.ask-panel .ask-effort [role="radiogroup"] {
-  gap: 0;
-  padding: 2px;
-  border-radius: var(--ui-radius-pill, 999px);
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
-}
-
-.ask-panel .ask-effort [role="radio"] {
-  padding: 2px 8px;
-  border-radius: var(--ui-radius-pill, 999px);
-  color: var(--muted);
-  font-size: var(--ui-text-xs, 11px);
-  line-height: 1.5;
-  white-space: nowrap;
-}
-
-.ask-panel .ask-effort [role="radio"]:hover {
-  background: transparent;
-  color: var(--ink);
-}
-
-/* 选中的那档按它在 agent 给的列表里的位置上色（AskModelPicker 的 effortColor 写进 --ask-effort-color）。 */
-.ask-panel .ask-effort [role="radio"][data-state="checked"] {
+/* 选模型弹层底下那一排思考强度（弹层挂在 body 上，颜色变量由 EffortRow 自己带）：选中那档按它在 agent 列表里的位置上色。 */
+.ask-effort [role="radio"][data-state="checked"] {
   background: color-mix(in srgb, var(--ask-effort-color, var(--ink)) 16%, var(--paper));
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent);
   color: color-mix(in srgb, var(--ask-effort-color, var(--ink)) 80%, var(--ink));
   font-weight: 600;
 }
 
-.ask-panel .ask-effort > span {
+.ask-effort > span {
   color: var(--ask-effort-color, var(--muted));
+}
+
+/* 按钮上「模型 · 档位」的档位跟着上色。 */
+.ask-panel .ask-config-trigger [data-slot="model-selector-value"] > .text-muted-foreground,
+.ask-panel .ask-config-effort-name {
+  color: var(--ask-effort-color, var(--muted));
+  font-weight: 600;
+}
+
+/* 思考强度染输入框和周围（AskWindow 写 --ask-effort-color、data-effort）：开了思考，输入框边框、光晕、发送按钮、窗口边框都带上这个颜色，越强越暖。 */
+.ask-panel {
+  transition: border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.ask-panel[data-effort="on"] {
+  border-color: color-mix(in srgb, var(--ask-effort-color) 35%, var(--line));
+  box-shadow:
+    0 18px 48px color-mix(in srgb, var(--shadow-color, var(--ink)) 24%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--ask-effort-color) 18%, transparent),
+    0 0 36px -6px color-mix(in srgb, var(--ask-effort-color) 35%, transparent);
+}
+
+.ask-panel [data-slot="aui_composer-shell"] {
+  transition: border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.ask-panel[data-effort="on"] [data-slot="aui_composer-shell"] {
+  border-color: color-mix(in srgb, var(--ask-effort-color) 60%, var(--line));
+  background: color-mix(in srgb, var(--ask-effort-color) 4%, var(--paper));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--ask-effort-color) 14%, transparent),
+    0 8px 28px -10px color-mix(in srgb, var(--ask-effort-color) 55%, transparent);
+}
+
+.ask-panel[data-effort="on"] .aui-composer-send:not(:disabled) {
+  background: var(--ask-effort-color);
+  color: var(--paper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-panel,
+  .ask-panel [data-slot="aui_composer-shell"] { transition: none; }
+}
+
+/* 聊天背景的水印：当前模型厂商的标志，很淡、在字后面、点不到。 */
+.ask-thread {
+  position: relative;
+}
+
+.ask-watermark {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 96px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0.07;
+  filter: grayscale(0.2);
+  user-select: none;
+}
+
+.ask-watermark .ask-brand,
+.ask-watermark svg {
+  width: min(48%, 220px);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.ask-panel .ask-thread > .aui-thread-root,
+.ask-panel .ask-thread .aui-thread-root {
+  position: relative;
+  z-index: 1;
+  background: transparent;
 }
 
 /* 输入框那一行放不下时（窗口窄）换行，不挤掉发送按钮。 */

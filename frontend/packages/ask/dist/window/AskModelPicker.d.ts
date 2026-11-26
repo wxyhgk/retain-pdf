@@ -1,6 +1,6 @@
-/** 输入框那一行的 agent 设置（Thread 的 ComposerExtra 插槽）：都是 assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
- * 模型是一个按钮（点开是带搜索、分组的列表），思考强度是旁边一排胶囊（ModelSelectorEffort，一点就切）；
- * 别的设置项（模式、快速……）收在「更多」里。
+/** 输入框那一行的 agent 设置（Thread 的 ComposerExtra 插槽）：assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
+ * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下一排思考强度（ModelSelectorEffort）；
+ * 别的设置项（模式、快速……）收在「更多」里。思考强度的颜色还染输入框和周围、模型厂商的标志做聊天背景的水印（AskWindow）。
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts），agent 不给就什么都不画。
  */
 import { type ReactElement } from "react";
@@ -24,4 +24,11 @@ export declare function toModelOptions(model: AskConfigOption, thought: AskConfi
  * 第一档是灰的；往后从绿（--ok）过渡到橙（--warn）再到红（--danger），agent 给几档就分几段。
  */
 export declare function effortColor(index: number, count: number): string;
+/** 当前思考强度的颜色（按它在 agent 列表里的位置）；没有思考强度这一项是 null。第一档（index 0）算「没开」。 */
+export declare function currentEffort(options: readonly AskConfigOption[]): {
+    color: string;
+    on: boolean;
+} | null;
+/** 当前模型的厂商（水印用）；没有模型这一项是空串。 */
+export declare function currentModelBrand(options: readonly AskConfigOption[]): string;
 export declare function AskAgentSettings(): ReactElement | null;

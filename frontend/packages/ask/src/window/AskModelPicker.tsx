@@ -1,6 +1,6 @@
-/** 输入框那一行的 agent 设置（Thread 的 ComposerExtra 插槽）：都是 assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
- * 模型是一个按钮（点开是带搜索、分组的列表），思考强度是旁边一排胶囊（ModelSelectorEffort，一点就切）；
- * 别的设置项（模式、快速……）收在「更多」里。
+/** 输入框那一行的 agent 设置（Thread 的 ComposerExtra 插槽）：assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
+ * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下一排思考强度（ModelSelectorEffort）；
+ * 别的设置项（模式、快速……）收在「更多」里。思考强度的颜色还染输入框和周围、模型厂商的标志做聊天背景的水印（AskWindow）。
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts），agent 不给就什么都不画。
  */
 import { createContext, useContext, type CSSProperties, type ReactElement } from "react";
@@ -15,7 +15,6 @@ import {
   ModelSelectorRoot,
   ModelSelectorSearch,
   ModelSelectorTrigger,
-  ModelSelectorValue,
 } from "../ui/elements/model-selector.js";
 import type { ModelOption } from "../ui/utils/model-selection.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
@@ -88,11 +87,27 @@ export function effortColor(index: number, count: number): string {
   return `color-mix(in srgb, var(--danger) ${Math.round(((t - 0.5) / 0.5) * 100)}%, var(--warn))`;
 }
 
-/** 思考强度的胶囊（ModelSelectorEffort）：图标代替「思考」两个字，悬停写全；选中的那档按它在列表里的位置上色。 */
-function EffortCapsule({ thought }: { thought: AskConfigOption }): ReactElement {
+/** 当前思考强度的颜色（按它在 agent 列表里的位置）；没有思考强度这一项是 null。第一档（index 0）算「没开」。 */
+export function currentEffort(options: readonly AskConfigOption[]): { color: string; on: boolean } | null {
+  const { thought } = splitConfig(options);
+  if (!thought) return null;
+  const index = thought.options.findIndex((choice) => choice.value === `${thought.currentValue}`);
+  return { color: effortColor(index, thought.options.length), on: index > 0 };
+}
+
+/** 当前模型的厂商（水印用）；没有模型这一项是空串。 */
+export function currentModelBrand(options: readonly AskConfigOption[]): string {
+  const { model } = splitConfig(options);
+  if (!model) return "";
+  const choice = model.options.find((entry) => entry.value === `${model.currentValue}`);
+  return brandFor(`${model.currentValue}`, choice?.name, choice?.group);
+}
+
+/** 弹层里那一排思考强度：图标代替「思考」两个字；选中那档的颜色（弹层挂在 body 上，拿不到窗口上的变量，自己带）。 */
+function EffortRow({ thought }: { thought: AskConfigOption }): ReactElement {
   const index = thought.options.findIndex((choice) => choice.value === `${thought.currentValue}`);
   const style = { "--ask-effort-color": effortColor(index, thought.options.length) } as CSSProperties;
-  return <ModelSelectorEffort className="ask-effort" style={style} label={<Brain size={13} aria-label="思考强度" />} title={`思考强度：${thought.options[index]?.name ?? ""}`} />;
+  return <ModelSelectorEffort className="ask-effort" style={style} label={<Brain size={13} aria-label="思考强度" />} />;
 }
 
 export function AskAgentSettings(): ReactElement | null {
@@ -108,24 +123,28 @@ export function AskAgentSettings(): ReactElement | null {
           onValueChange={(value) => state.set(model.id, value)}
           {...(thought ? { effort: `${thought.currentValue}`, onEffortChange: (value: string) => state.set(thought.id, value) } : {})}
         >
-          <ModelSelectorTrigger variant="ghost" size="sm" className="ask-config-trigger">
-            <ModelSelectorValue showEffort={false} />
-          </ModelSelectorTrigger>
+          <ModelSelectorTrigger variant="ghost" size="sm" className="ask-config-trigger" />
           <ModelSelectorContent side="top" searchable={model.options.length > 8}>
             {model.options.length > 8 ? <ModelSelectorSearch /> : null}
             <ModelSelectorList />
+            {thought ? <EffortRow thought={thought} /> : null}
           </ModelSelectorContent>
-          {thought ? <EffortCapsule thought={thought} /> : null}
         </ModelSelectorRoot>
       ) : thought ? (
-        // 只有思考强度、没有模型可选：拿思考强度当唯一的「模型」喂给 ModelSelector，只画胶囊。
+        // 只有思考强度、没有模型可选：拿思考强度当唯一的「模型」喂给 ModelSelector，按钮只写档位，弹层只有那一排。
         <ModelSelectorRoot
           models={[{ id: "_", name: "", efforts: toModelOptions({ ...thought, options: [{ value: "_", name: "" }] }, thought)[0].efforts }]}
           value="_"
           effort={`${thought.currentValue}`}
           onEffortChange={(value: string) => state.set(thought.id, value)}
         >
-          <EffortCapsule thought={thought} />
+          <ModelSelectorTrigger variant="ghost" size="sm" className="ask-config-trigger">
+            <Brain size={13} aria-hidden />
+            <span className="ask-config-effort-name">{thought.options.find((choice) => choice.value === `${thought.currentValue}`)?.name}</span>
+          </ModelSelectorTrigger>
+          <ModelSelectorContent side="top">
+            <EffortRow thought={thought} />
+          </ModelSelectorContent>
         </ModelSelectorRoot>
       ) : null}
       <OtherSettings options={rest} set={state.set} />

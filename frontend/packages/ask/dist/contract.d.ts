@@ -49,10 +49,10 @@ export type AskSession = {
     /** 改一个设置项（session/set_config_option），返回改完的整份设置项。agent 不支持就不给这个方法。 */
     setConfigOption?: (configId: string, value: string | boolean) => Promise<AskConfigOption[]>;
     /**
-     * 设置是开会话时定的（宿主拼进握手参数，比如 RetainPDF 自带 agent 的模型和思考强度）：改了以后关掉这个会话，
-     * 下一问用 openSession 的 config 重开，之前几轮照样带过去。
+     * 哪些设置是开会话时定的（宿主拼进握手参数，比如 RetainPDF 自带 agent 的模型——换模型要换密钥和地址）：
+     * 改了这些就关掉会话，下一问用 openSession 的 config 重开，之前几轮照样带过去。true 是所有设置都这样；不给是都能直接改。
      */
-    reopenOnConfigChange?: boolean;
+    reopenOnConfigChange?: boolean | ((configId: string) => boolean);
     /** 发一轮（session/prompt），回答过程走 onUpdate。 */
     prompt: (blocks: ContentBlock[]) => Promise<AskPromptResult>;
     /** 停（session/cancel）。 */

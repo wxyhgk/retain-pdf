@@ -69,6 +69,11 @@ export function imageBlocks(message) {
     }
     return blocks;
 }
+/** 这项设置是不是开会话时定的（改了要重开会话）。 */
+function needsReopen(session, configId) {
+    const rule = session.reopenOnConfigChange;
+    return typeof rule === "function" ? rule(configId) : Boolean(rule);
+}
 /** assistant-ui 的 ChatModelAdapter：run 是 async generator，边收边吐当前这一轮的样子。 */
 export function createAcpChatAdapter(options) {
     const now = options.now ?? (() => performance.now());
@@ -95,9 +100,11 @@ export function createAcpChatAdapter(options) {
         });
         // 用户选过的模型、思考强度：新会话再设一次（agent 不认的值跳过，设不上也不挡着发问）。
         let config = next.configOptions || [];
-        // 开会话时就定了的（reopenOnConfigChange）不用再设。
-        if (next.setConfigOption && !next.reopenOnConfigChange) {
+        // 开会话时就定了的（reopenOnConfigChange）不用再设，别的再设一次。
+        if (next.setConfigOption) {
             for (const [id, value] of pendingConfig(config, desired)) {
+                if (needsReopen(next, id))
+                    continue;
                 try {
                     config = await next.setConfigOption(id, value);
                 }
@@ -272,7 +279,7 @@ export function createAcpChatAdapter(options) {
                 return false;
             const current = session;
             options.onConfig?.(await current.setConfigOption(configId, value));
-            if (current.reopenOnConfigChange && session === current) {
+            if (needsReopen(current, configId) && session === current) {
                 // 设置是开会话时定的：关掉，下一问按新设置重开（之前几轮照样带过去）。
                 current.close();
                 session = null;

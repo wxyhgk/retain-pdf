@@ -1,13 +1,13 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-/** 输入框那一行的 agent 设置（Thread 的 ComposerExtra 插槽）：都是 assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
- * 模型是一个按钮（点开是带搜索、分组的列表），思考强度是旁边一排胶囊（ModelSelectorEffort，一点就切）；
- * 别的设置项（模式、快速……）收在「更多」里。
+/** 输入框那一行的 agent 设置（Thread 的 ComposerExtra 插槽）：assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
+ * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下一排思考强度（ModelSelectorEffort）；
+ * 别的设置项（模式、快速……）收在「更多」里。思考强度的颜色还染输入框和周围、模型厂商的标志做聊天背景的水印（AskWindow）。
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts），agent 不给就什么都不画。
  */
 import { createContext, useContext } from "react";
 import { Brain, SlidersHorizontal } from "lucide-react";
 import { Select } from "@retainpdf/ui";
-import { ModelSelectorContent, ModelSelectorEffort, ModelSelectorList, ModelSelectorRoot, ModelSelectorSearch, ModelSelectorTrigger, ModelSelectorValue, } from "../ui/elements/model-selector.js";
+import { ModelSelectorContent, ModelSelectorEffort, ModelSelectorList, ModelSelectorRoot, ModelSelectorSearch, ModelSelectorTrigger, } from "../ui/elements/model-selector.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/shadcn/popover.js";
 export const AskConfigContext = createContext(null);
@@ -50,16 +50,32 @@ export function effortColor(index, count) {
         return `color-mix(in srgb, var(--warn) ${Math.round((t / 0.5) * 100)}%, var(--ok))`;
     return `color-mix(in srgb, var(--danger) ${Math.round(((t - 0.5) / 0.5) * 100)}%, var(--warn))`;
 }
-/** 思考强度的胶囊（ModelSelectorEffort）：图标代替「思考」两个字，悬停写全；选中的那档按它在列表里的位置上色。 */
-function EffortCapsule({ thought }) {
+/** 当前思考强度的颜色（按它在 agent 列表里的位置）；没有思考强度这一项是 null。第一档（index 0）算「没开」。 */
+export function currentEffort(options) {
+    const { thought } = splitConfig(options);
+    if (!thought)
+        return null;
+    const index = thought.options.findIndex((choice) => choice.value === `${thought.currentValue}`);
+    return { color: effortColor(index, thought.options.length), on: index > 0 };
+}
+/** 当前模型的厂商（水印用）；没有模型这一项是空串。 */
+export function currentModelBrand(options) {
+    const { model } = splitConfig(options);
+    if (!model)
+        return "";
+    const choice = model.options.find((entry) => entry.value === `${model.currentValue}`);
+    return brandFor(`${model.currentValue}`, choice?.name, choice?.group);
+}
+/** 弹层里那一排思考强度：图标代替「思考」两个字；选中那档的颜色（弹层挂在 body 上，拿不到窗口上的变量，自己带）。 */
+function EffortRow({ thought }) {
     const index = thought.options.findIndex((choice) => choice.value === `${thought.currentValue}`);
     const style = { "--ask-effort-color": effortColor(index, thought.options.length) };
-    return _jsx(ModelSelectorEffort, { className: "ask-effort", style: style, label: _jsx(Brain, { size: 13, "aria-label": "\u601D\u8003\u5F3A\u5EA6" }), title: `思考强度：${thought.options[index]?.name ?? ""}` });
+    return _jsx(ModelSelectorEffort, { className: "ask-effort", style: style, label: _jsx(Brain, { size: 13, "aria-label": "\u601D\u8003\u5F3A\u5EA6" }) });
 }
 export function AskAgentSettings() {
     const state = useContext(AskConfigContext);
     if (!state?.options.length)
         return null;
     const { model, thought, rest } = splitConfig(state.options);
-    return (_jsxs("div", { className: "ask-config", children: [model ? (_jsxs(ModelSelectorRoot, { models: toModelOptions(model, thought), value: `${model.currentValue}`, onValueChange: (value) => state.set(model.id, value), ...(thought ? { effort: `${thought.currentValue}`, onEffortChange: (value) => state.set(thought.id, value) } : {}), children: [_jsx(ModelSelectorTrigger, { variant: "ghost", size: "sm", className: "ask-config-trigger", children: _jsx(ModelSelectorValue, { showEffort: false }) }), _jsxs(ModelSelectorContent, { side: "top", searchable: model.options.length > 8, children: [model.options.length > 8 ? _jsx(ModelSelectorSearch, {}) : null, _jsx(ModelSelectorList, {})] }), thought ? _jsx(EffortCapsule, { thought: thought }) : null] })) : thought ? (_jsx(ModelSelectorRoot, { models: [{ id: "_", name: "", efforts: toModelOptions({ ...thought, options: [{ value: "_", name: "" }] }, thought)[0].efforts }], value: "_", effort: `${thought.currentValue}`, onEffortChange: (value) => state.set(thought.id, value), children: _jsx(EffortCapsule, { thought: thought }) })) : null, _jsx(OtherSettings, { options: rest, set: state.set })] }));
+    return (_jsxs("div", { className: "ask-config", children: [model ? (_jsxs(ModelSelectorRoot, { models: toModelOptions(model, thought), value: `${model.currentValue}`, onValueChange: (value) => state.set(model.id, value), ...(thought ? { effort: `${thought.currentValue}`, onEffortChange: (value) => state.set(thought.id, value) } : {}), children: [_jsx(ModelSelectorTrigger, { variant: "ghost", size: "sm", className: "ask-config-trigger" }), _jsxs(ModelSelectorContent, { side: "top", searchable: model.options.length > 8, children: [model.options.length > 8 ? _jsx(ModelSelectorSearch, {}) : null, _jsx(ModelSelectorList, {}), thought ? _jsx(EffortRow, { thought: thought }) : null] })] })) : thought ? (_jsxs(ModelSelectorRoot, { models: [{ id: "_", name: "", efforts: toModelOptions({ ...thought, options: [{ value: "_", name: "" }] }, thought)[0].efforts }], value: "_", effort: `${thought.currentValue}`, onEffortChange: (value) => state.set(thought.id, value), children: [_jsxs(ModelSelectorTrigger, { variant: "ghost", size: "sm", className: "ask-config-trigger", children: [_jsx(Brain, { size: 13, "aria-hidden": true }), _jsx("span", { className: "ask-config-effort-name", children: thought.options.find((choice) => choice.value === `${thought.currentValue}`)?.name })] }), _jsx(ModelSelectorContent, { side: "top", children: _jsx(EffortRow, { thought: thought }) })] })) : null, _jsx(OtherSettings, { options: rest, set: state.set })] }));
 }
