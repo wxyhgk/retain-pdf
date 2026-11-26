@@ -1800,6 +1800,7 @@ dependencies = [
  "retainpdf-data",
  "retainpdf-files",
  "retainpdf-jobs",
+ "retainpdf-providers",
  "rusqlite",
  "serde",
  "serde_json",

@@ -237,10 +237,35 @@ pub fn delete_ask_thread_view(
     document_id: &str,
     thread_id: &str,
 ) -> Result<AskThreadDeleteResultView, AppError> {
+    let session_id = deps.db.get_ask_thread(document_id, thread_id)?.and_then(|thread| thread.session_id);
     if !deps.db.delete_ask_thread(document_id, thread_id)? {
         return Err(thread_not_found(document_id, thread_id));
     }
+    forget_agent_sessions(deps, session_id.into_iter().collect());
     Ok(AskThreadDeleteResultView { thread_id: thread_id.to_string(), deleted: true })
+}
+
+/// 提问删了（或书删了）以后，删掉 agent 自己存的那份对话：现在只有 `retainpdf-pi`，会话文件在
+/// `<数据目录>/ask-pi/sessions/`（2026-11-26，S53）。还有别的提问记着同一个会话的留着；没记会话编号的
+/// 老提问对不上，留着。在库里的行删除提交之后调，删不掉只记日志。
+pub(crate) fn forget_agent_sessions(deps: &LibraryDeps<'_>, session_ids: Vec<String>) {
+    let unused: Vec<String> = session_ids
+        .into_iter()
+        .filter(|session_id| match deps.db.ask_session_in_use(session_id) {
+            Ok(in_use) => !in_use,
+            Err(error) => {
+                tracing::warn!(%session_id, %error, "cannot check whether an ask session is still used; keeping it");
+                false
+            }
+        })
+        .collect();
+    if unused.is_empty() {
+        return;
+    }
+    let result = retainpdf_providers::remove_pi_sessions(deps.data_root, &unused);
+    if result.failed > 0 {
+        tracing::warn!(failed = result.failed, removed = result.removed, "some pi session files were not removed");
+    }
 }
 
 #[cfg(test)]

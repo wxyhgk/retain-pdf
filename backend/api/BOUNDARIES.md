@@ -214,7 +214,7 @@ crates (`retainpdf-api-base`, `retainpdf-core`, `retainpdf-data`; `retainpdf-job
 `retainpdf-proc` and the job runtime `retainpdf-runner` behind `runtime_gateway`) and on
 the crates of extracted domains below it (`retainpdf-accounts` uses
 `retainpdf-providers`, `retainpdf-ingest` uses `retainpdf-accounts`, `retainpdf-jobs` uses
-accounts, files, glossaries and providers, `retainpdf-library` uses files and jobs). Such a use is written with the crate name
+accounts, files, glossaries and providers, `retainpdf-library` uses files, jobs and providers). Such a use is written with the crate name
 (`retainpdf_providers::…`); `check_domain_dependency_direction` counts it as a
 domain edge just like `crate::services::providers::…`.
 
@@ -226,13 +226,16 @@ new edge and an edge nothing uses any more):
 library ─▶ jobs ─▶ accounts ─▶ providers
    │        ├────────────────▶ providers
    │        ├─▶ glossaries
-   └────────┴─▶ files
+   ├────────┴─▶ files
+   └──────────────────────────▶ providers
 
 ingest ─▶ accounts
 ```
 
 `accounts → providers` exists because platform settings (in `accounts`) test
-provider connectivity. `check_service_dependency_cycles` also stays on, now at
+provider connectivity. `library → providers` exists because deleting an ask
+thread or a book also removes the pi agent's session files
+(`remove_pi_sessions`, 2026-11-26). `check_service_dependency_cycles` also stays on, now at
 domain level. `library::merge` (merged reading) depends on `files` and `jobs`,
 never the other way: building the merged directory lives in
 `services/library/merge/build.rs`, and reading a virtual job lives in

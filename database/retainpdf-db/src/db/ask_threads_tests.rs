@@ -154,3 +154,30 @@ fn deleting_the_book_deletes_its_threads_and_messages() {
     assert_eq!(left, (0, 0));
     std::fs::remove_dir_all(root).ok();
 }
+
+#[test]
+fn session_ids_of_a_book_and_whether_a_session_is_still_used() {
+    let (root, db) = fixture("sessions");
+    let (a, b) = (book(&db, "u1"), book(&db, "u2"));
+    let anchor = anchor(1);
+    let new = |document_id: &'_ str, session_id: Option<&'static str>| {
+        created(
+            db.create_ask_thread(
+                &NewAskThread { document_id, agent_id: "retainpdf-pi", session_id, title: "", anchor: &anchor, messages: &[] },
+                10,
+            )
+            .unwrap(),
+        )
+    };
+    let first = new(&a, Some("s-1"));
+    new(&a, Some("s-1"));
+    new(&a, Some("s-2"));
+    new(&a, None);
+    new(&b, Some("s-3"));
+    assert_eq!(db.ask_thread_session_ids(&a).unwrap(), vec!["s-1".to_string(), "s-2".to_string()]);
+    assert!(db.delete_ask_thread(&a, &first.thread_id).unwrap());
+    assert!(db.ask_session_in_use("s-1").unwrap(), "还有一次提问记着 s-1");
+    assert!(db.ask_session_in_use("s-3").unwrap());
+    assert!(!db.ask_session_in_use("s-9").unwrap());
+    std::fs::remove_dir_all(root).ok();
+}

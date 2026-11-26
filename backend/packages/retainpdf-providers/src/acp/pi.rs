@@ -266,6 +266,83 @@ fn pi_data_dir(config: &AcpConfig) -> PathBuf {
     config.data_root.join("ask-pi")
 }
 
+/// pi 的会话目录 `<数据目录>/ask-pi/sessions/`。
+fn pi_sessions_dir(data_root: &Path) -> PathBuf {
+    data_root.join("ask-pi").join("sessions")
+}
+
+/// 删 pi 会话文件的结果：删了几个，几个删不掉（只记日志）。
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct PiSessionsRemoved {
+    pub removed: usize,
+    pub failed: usize,
+}
+
+/// 会话头最多读多少字节（pi 的会话头一行，几百字节）。
+const SESSION_HEADER_MAX_BYTES: u64 = 16 * 1024;
+
+/// 一个 `.jsonl` 会话文件第一行的会话编号（`{"type":"session","id":…}`，pi-acp 也是按它认会话的）。
+fn pi_session_header_id(path: &Path) -> Option<String> {
+    use std::io::{BufRead, Read};
+    let file = std::fs::File::open(path).ok()?;
+    let mut first = String::new();
+    std::io::BufReader::new(file.take(SESSION_HEADER_MAX_BYTES)).read_line(&mut first).ok()?;
+    let header: Value = serde_json::from_str(first.trim()).ok()?;
+    if header.get("type").and_then(Value::as_str) != Some("session") {
+        return None;
+    }
+    header.get("id").and_then(Value::as_str).map(str::to_string)
+}
+
+fn collect_session_files(dir: &Path, depth: usize, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        // 不跟符号链接：只看 pi 自己写的普通文件和目录。
+        let Ok(kind) = entry.file_type() else { continue };
+        let path = entry.path();
+        if kind.is_dir() && depth < 4 {
+            collect_session_files(&path, depth + 1, out);
+        } else if kind.is_file() && path.extension().is_some_and(|ext| ext == "jsonl") {
+            out.push(path);
+        }
+    }
+}
+
+/// 删掉这些 ACP 会话在 pi 会话目录里的会话文件（整段对话的第二份），删问答、删书时调（2026-11-26，S53）。
+///
+/// ACP 的会话编号就是 pi 会话头里的 `id`（pi-acp `session/new` 回的是 pi 的会话编号），文件名是
+/// `<时间>_<编号>.jsonl`。按会话头认，不按文件名猜；只看 `ask-pi/sessions/` 下面的普通文件，别的 agent
+/// 的会话（本机 Claude Code、Codex 存在它们自己那里）碰不到。pi-acp 的会话对照表
+/// （`ask-pi/home/.pi/pi-acp/session-map.json`，只有编号和路径）不改：它可能正被连接着的 pi-acp 写，
+/// 留下的条目指向不在的文件，`session/load` 会报找不到。
+pub fn remove_pi_sessions(data_root: &Path, session_ids: &[String]) -> PiSessionsRemoved {
+    let wanted: std::collections::HashSet<&str> =
+        session_ids.iter().map(|id| id.trim()).filter(|id| !id.is_empty()).collect();
+    let mut result = PiSessionsRemoved::default();
+    if wanted.is_empty() {
+        return result;
+    }
+    let mut files = Vec::new();
+    collect_session_files(&pi_sessions_dir(data_root), 0, &mut files);
+    for path in files {
+        let matches = pi_session_header_id(&path).is_some_and(|id| wanted.contains(id.as_str()));
+        if !matches {
+            continue;
+        }
+        match std::fs::remove_file(&path) {
+            Ok(()) => result.removed += 1,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => {
+                result.failed += 1;
+                tracing::warn!(path = %path.display(), %error, "cannot remove pi session file");
+            }
+        }
+    }
+    result
+}
+
 /// 扫掉没被删掉的旧连接目录（握手后没升级成 WebSocket 的那种）。
 fn sweep_stale_connections(dir: &Path) {
     let Ok(entries) = std::fs::read_dir(dir) else {
@@ -302,7 +379,7 @@ pub(super) fn pi_process(
 
     let root = pi_data_dir(config);
     let home = root.join("home");
-    let sessions = root.join("sessions");
+    let sessions = pi_sessions_dir(&config.data_root);
     let connections = root.join("connections");
     sweep_stale_connections(&connections);
     let agent_dir = connections.join(format!(

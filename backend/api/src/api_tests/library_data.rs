@@ -1919,6 +1919,10 @@ async fn delete_document_rolls_back_rows_and_keeps_files_when_a_step_fails() {
     let job_root = state.config.output_root.join("job-atomic");
     fs::create_dir_all(&job_root).expect("job root");
     fs::write(job_root.join("full.md"), b"artifact").expect("artifact");
+    // 书的缓存目录（合并阅读、封面…）也只能在提交之后删。
+    let document_cache = state.config.data_root.join("documents").join(&document_id);
+    fs::create_dir_all(document_cache.join("merged")).expect("document cache");
+    fs::write(document_cache.join("cover.jpg"), b"jpeg").expect("cover");
 
     // 让删书(条目行)必定失败(模拟 DB 忙、约束冲突、进程被杀等真实中断)。
     conn.execute_batch(
@@ -1968,6 +1972,63 @@ async fn delete_document_rolls_back_rows_and_keeps_files_when_a_step_fails() {
         job_root.join("full.md").exists(),
         "DB 没删成时不得已经把产物文件删了"
     );
+    assert!(
+        document_cache.join("cover.jpg").exists(),
+        "DB 没删成时不得已经把书的缓存目录删了"
+    );
+}
+
+/// 删书连同 `data/documents/<书>/` 一起删：合并阅读（整本合并 PDF + 译文，可能很大）、封面、缩略图、页预览。
+/// 以前只删任务目录、下载包和上传目录，这个目录永远没人删（合并目录只在同一本书再生成时清）（S51）。
+/// 别的书的目录不动；书的编号就是原文的内容哈希，一本书一个目录。
+#[tokio::test]
+async fn deleting_a_book_removes_its_document_cache_directory() {
+    let state = test_state("library-delete-document-cache");
+    let app = build_app(state.clone());
+    let document_id = seed_document(&state, b"delete document cache");
+    let other_id = seed_document(&state, b"another book keeps its cache");
+    let documents = state.config.data_root.join("documents");
+    let cache = documents.join(&document_id);
+    for relative in [
+        "merged/0123456789abcdef/rendered/merged-translated.pdf",
+        "merged/0123456789abcdef/translated/page-001.json",
+        "cover.jpg",
+        "thumbnail.jpg",
+        "pages/p0001-w1200-d0.jpg",
+    ] {
+        let path = cache.join(relative);
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, b"cache").unwrap();
+    }
+    let other_cache = documents.join(&other_id).join("thumbnail.jpg");
+    fs::create_dir_all(other_cache.parent().unwrap()).unwrap();
+    fs::write(&other_cache, b"jpeg").unwrap();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .method("DELETE")
+                .uri(format!("/api/v1/documents/{document_id}"))
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("delete response");
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload = json_response(response).await;
+    assert_eq!(payload["data"]["deleted"], true);
+    assert!(!cache.exists(), "书的缓存目录还在：{}", cache.display());
+    assert!(
+        payload["data"]["removed_paths"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|path| path.as_str() == Some(cache.to_string_lossy().as_ref())),
+        "removed_paths 里要有书的缓存目录: {payload}"
+    );
+    assert!(other_cache.exists(), "别的书的缓存不能动");
+    assert!(documents.is_dir(), "documents/ 本身不能删");
 }
 
 /// 失败的结构化信息必须出现在**列表**里。

@@ -183,6 +183,80 @@ async fn threads_belong_to_their_book_and_go_with_it() {
     assert_eq!(left, 0);
 }
 
+/// pi 在 `<数据目录>/ask-pi/sessions/` 下写的会话文件：`<时间>_<会话编号>.jsonl`，第一行是会话头（`id` 就是 ACP 的会话编号）。
+fn write_pi_session(state: &crate::AppState, relative_dir: &str, session_id: &str) -> std::path::PathBuf {
+    let dir = state.config.data_root.join("ask-pi").join("sessions").join(relative_dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join(format!("2026-11-26T08-00-00-000Z_{session_id}.jsonl"));
+    let header = json!({ "type": "session", "version": 3, "id": session_id, "timestamp": "2026-11-26T08:00:00.000Z", "cwd": "/books/x" });
+    std::fs::write(&path, format!("{header}\n{{\"type\":\"message\",\"text\":\"整段对话\"}}\n")).unwrap();
+    path
+}
+
+async fn create_pi_thread(state: &crate::AppState, book: &str, session_id: &str) -> String {
+    let created = ok_data(
+        state,
+        "POST",
+        &format!("/api/v1/documents/{book}/ask-threads"),
+        Some(json!({ "agent_id": "retainpdf-pi", "session_id": session_id, "anchor": anchor() })),
+    )
+    .await;
+    created["thread_id"].as_str().unwrap().to_string()
+}
+
+/// 删一次提问，pi 的会话文件（整段对话）跟着删；还有别的提问记着同一个会话时留着；
+/// 没有提问记着的会话文件不动（S53）。
+#[tokio::test]
+async fn deleting_a_thread_removes_its_pi_session_file() {
+    let state = test_state("ask-threads-pi-session");
+    let book = seed_document(&state, b"ask-threads-pi-a");
+    let (s1, s2, stray) = (
+        "019ab000-0000-7000-8000-000000000001",
+        "019ab000-0000-7000-8000-000000000002",
+        "019ab000-0000-7000-8000-000000000009",
+    );
+    let s1_file = write_pi_session(&state, "", s1);
+    let s2_file = write_pi_session(&state, "--books-x--", s2);
+    let stray_file = write_pi_session(&state, "", stray);
+    let first = create_pi_thread(&state, &book, s1).await;
+    let shares_s1 = create_pi_thread(&state, &book, s1).await;
+    let second = create_pi_thread(&state, &book, s2).await;
+
+    ok_data(&state, "DELETE", &format!("/api/v1/documents/{book}/ask-threads/{second}"), None).await;
+    assert!(!s2_file.exists(), "删了提问，pi 的会话文件还在");
+
+    ok_data(&state, "DELETE", &format!("/api/v1/documents/{book}/ask-threads/{first}"), None).await;
+    assert!(s1_file.exists(), "还有提问记着这个会话，不能删");
+    ok_data(&state, "DELETE", &format!("/api/v1/documents/{book}/ask-threads/{shares_s1}"), None).await;
+    assert!(!s1_file.exists(), "最后一个记着它的提问删了，会话文件该删");
+
+    assert!(stray_file.exists(), "没有提问记着的会话文件不动");
+}
+
+/// 删书：这本书所有提问的 pi 会话一起删，别的书的不动（S53）。
+#[tokio::test]
+async fn deleting_a_book_removes_the_pi_sessions_of_its_threads() {
+    let state = test_state("ask-threads-pi-book");
+    let book = seed_document(&state, b"ask-threads-pi-book-a");
+    let other = seed_document(&state, b"ask-threads-pi-book-b");
+    let (mine_a, mine_b, theirs) = (
+        "019ab000-0000-7000-8000-00000000000a",
+        "019ab000-0000-7000-8000-00000000000b",
+        "019ab000-0000-7000-8000-00000000000c",
+    );
+    let files = [write_pi_session(&state, "", mine_a), write_pi_session(&state, "", mine_b)];
+    let theirs_file = write_pi_session(&state, "", theirs);
+    create_pi_thread(&state, &book, mine_a).await;
+    create_pi_thread(&state, &book, mine_b).await;
+    create_pi_thread(&state, &other, theirs).await;
+
+    ok_data(&state, "DELETE", &format!("/api/v1/documents/{book}"), None).await;
+    for file in &files {
+        assert!(!file.exists(), "删书后 pi 会话还在：{}", file.display());
+    }
+    assert!(theirs_file.exists(), "别的书的会话不能动");
+}
+
 #[tokio::test]
 async fn bad_requests_and_limits_are_refused() {
     let state = test_state("ask-threads-validation");

@@ -682,3 +682,33 @@ fn openui_node_falls_back_to_the_desktop_electron_binary() {
     config.node_bin = Some(root.0.join("missing"));
     assert_eq!(super::openui::find_node(&config), Some(path_dir.join("node")));
 }
+
+/// 删 pi 会话按会话头的 `id` 认，不按文件名猜；只删 `ask-pi/sessions/` 下的普通 `.jsonl`（S53）。
+#[test]
+fn pi_sessions_are_removed_by_their_header_id_only() {
+    let root = Root(std::env::temp_dir().join(format!("retain-pi-sessions-{:016x}", fastrand::u64(..))));
+    let sessions = root.0.join("ask-pi").join("sessions");
+    let nested = sessions.join("--books--");
+    std::fs::create_dir_all(&nested).unwrap();
+    let write = |path: PathBuf, id: &str| {
+        std::fs::write(&path, format!("{{\"type\":\"session\",\"version\":3,\"id\":\"{id}\",\"cwd\":\"/b\"}}\n{{\"type\":\"message\"}}\n")).unwrap();
+        path
+    };
+    let flat = write(sessions.join("2026-11-26T08-00-00-000Z_s-1.jsonl"), "s-1");
+    let deep = write(nested.join("2026-11-26T08-00-01-000Z_s-1.jsonl"), "s-1");
+    // 文件名像 s-2，会话头是别的：不删
+    let misnamed = write(sessions.join("2026-11-26T08-00-02-000Z_s-2.jsonl"), "s-other");
+    let unrelated = write(sessions.join("2026-11-26T08-00-03-000Z_s-3.jsonl"), "s-3");
+    let not_jsonl = sessions.join("s-1.json");
+    std::fs::write(&not_jsonl, "{\"type\":\"session\",\"id\":\"s-1\"}\n").unwrap();
+    let outside = root.0.join("elsewhere.jsonl");
+    write(outside.clone(), "s-1");
+
+    let result = remove_pi_sessions(&root.0, &["s-1".to_string(), "s-2".to_string(), " ".to_string()]);
+    assert_eq!(result, PiSessionsRemoved { removed: 2, failed: 0 });
+    assert!(!flat.exists() && !deep.exists());
+    assert!(misnamed.exists() && unrelated.exists() && not_jsonl.exists() && outside.exists());
+    // 没有会话目录、空名单都不是错
+    assert_eq!(remove_pi_sessions(&root.0.join("none"), &["s-3".to_string()]), PiSessionsRemoved::default());
+    assert_eq!(remove_pi_sessions(&root.0, &[]), PiSessionsRemoved::default());
+}
