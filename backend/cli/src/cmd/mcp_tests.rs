@@ -189,3 +189,190 @@ fn tools_report_a_stopped_backend_instead_of_failing_the_session() {
     assert_eq!(result["isError"], true);
     assert!(text_of(&result).contains("RetainPDF 没开"));
 }
+
+// ---------- 互动块（OpenUI，2026-11-26） ----------
+
+mod openui {
+    use std::path::{Path, PathBuf};
+    use std::rc::Rc;
+    use std::time::Duration;
+
+    use serde_json::{json, Value};
+
+    use super::super::openui::{check_result, checker_command, run_checker, CheckOutcome, Checker, OpenUi, MAX_CHECK_OUTPUT_BYTES};
+    use super::{call, server, text_of, Fake};
+
+    fn repo() -> PathBuf {
+        Path::new(env!("CARGO_MANIFEST_DIR")).ancestors().nth(2).unwrap().to_path_buf()
+    }
+
+    fn prompt() -> PathBuf {
+        repo().join("contracts/openui/ask-openui-prompt.v1.json")
+    }
+
+    fn library() -> PathBuf {
+        repo().join("contracts/openui/ask-openui-library.v1.json")
+    }
+
+    fn script() -> PathBuf {
+        repo().join("backend/openui-check/bin/openui-check.mjs")
+    }
+
+    /// 前端演示模式的那段程序（MOCK_OPENUI_BLOCK），解析器挑不出错。
+    fn good_program() -> String {
+        std::fs::read_to_string(repo().join("backend/openui-check/tests/fixtures/good-program.txt")).unwrap()
+    }
+
+    fn node() -> Option<PathBuf> {
+        let name = if cfg!(windows) { "node.exe" } else { "node" };
+        std::env::split_paths(&std::env::var_os("PATH")?).map(|dir| dir.join(name)).find(|path| path.is_file())
+    }
+
+    /// 真起检查器要 node 和 backend/openui-check 的依赖；没有就跳过（CI 的 Tests 装了）。
+    fn real_checker_ready() -> bool {
+        node().is_some() && repo().join("backend/openui-check/node_modules/@openuidev/lang-core").is_dir()
+    }
+
+    fn openui() -> OpenUi {
+        OpenUi::load(&prompt(), Some(library()), Some(script()), node()).expect("contract file loads")
+    }
+
+    fn intro() -> String {
+        let payload: Value = serde_json::from_slice(&std::fs::read(prompt()).unwrap()).unwrap();
+        payload["intro"].as_str().unwrap().trim().to_string()
+    }
+
+    fn section(id: &str) -> String {
+        let payload: Value = serde_json::from_slice(&std::fs::read(prompt()).unwrap()).unwrap();
+        payload["sections"].as_array().unwrap().iter().find(|item| item["id"] == id).unwrap()["text"].as_str().unwrap().trim().to_string()
+    }
+
+    #[test]
+    fn with_openui_the_instructions_carry_l0_and_two_more_tools_are_listed() {
+        let fake = Rc::new(Fake::default());
+        let server = server(&fake).with_openui(Some(openui()));
+        let init = server.handle_line(r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"#).unwrap();
+        let instructions = init["result"]["instructions"].as_str().unwrap();
+        assert!(instructions.starts_with("RetainPDF 书库。"));
+        assert!(instructions.ends_with(&format!("\n\n{}", intro())));
+        let tools = server.handle_line(r#"{"jsonrpc":"2.0","id":2,"method":"tools/list"}"#).unwrap();
+        let names: Vec<_> = tools["result"]["tools"].as_array().unwrap().iter().map(|tool| tool["name"].as_str().unwrap()).collect();
+        assert_eq!(names, ["revise_translation", "view_page", "openui_spec", "openui_check"]);
+
+        // 取说明：认识的、多段（按给的顺序、去重）、不认识的
+        let one = call(&server, "openui_spec", json!({"sections": ["core"]}));
+        assert_eq!((text_of(&one), one["isError"].clone()), (section("core"), json!(false)));
+        let many = call(&server, "openui_spec", json!({"sections": ["components:inputs", "core", "components:inputs"]}));
+        assert_eq!(text_of(&many), format!("{}\n\n{}", section("components:inputs"), section("core")));
+        let unknown = call(&server, "openui_spec", json!({"sections": ["components:image"]}));
+        assert_eq!(unknown["isError"], true);
+        assert!(text_of(&unknown).starts_with("不认识的段：`components:image`。可取的段：\n- `core`："));
+        let mixed = call(&server, "openui_spec", json!({"sections": ["core", "nope"]}));
+        assert!(text_of(&mixed).contains("（不认识的段：`nope`，没有取。可取的段：`core`、"));
+        assert_eq!(call(&server, "openui_spec", json!({"sections": []}))["isError"], true);
+        assert!(fake.calls.borrow().is_empty(), "互动块的工具不碰后端");
+    }
+
+    #[test]
+    fn without_openui_nothing_changes() {
+        let fake = Rc::new(Fake::default());
+        let server = server(&fake);
+        let init = server.handle_line(r#"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}"#).unwrap();
+        assert!(!init["result"]["instructions"].as_str().unwrap().contains("openui"));
+        let reply = server.handle_line(r#"{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"openui_spec","arguments":{}}}"#).unwrap();
+        assert_eq!(reply["error"]["code"], -32602);
+        assert!(OpenUi::load(Path::new("/nonexistent.json"), None, None, None).is_none());
+    }
+
+    #[test]
+    fn the_real_checker_passes_the_demo_block_and_names_unknown_components() {
+        if !real_checker_ready() {
+            eprintln!("skip: needs node and backend/openui-check/node_modules");
+            return;
+        }
+        let fake = Rc::new(Fake::default());
+        let server = server(&fake).with_openui(Some(openui()));
+        let good = call(&server, "openui_check", json!({"program": good_program()}));
+        assert_eq!((text_of(&good), good["isError"].clone()), ("没问题。".to_string(), json!(false)));
+        for (program, name, statement) in [("root = Col([t])\nt = Titel(\"x\")", "Titel", "t"), ("root = Col([i])\ni = Image(\"https://example.com/a.png\")", "Image", "i")] {
+            let result = call(&server, "openui_check", json!({"program": program}));
+            let text = text_of(&result);
+            assert_eq!(result["isError"], false, "检查出问题不算工具出错");
+            assert!(text.contains(&format!("1. [unknown-component] {statement}：Unknown component \"{name}\"")), "{text}");
+            assert!(text.contains("Available components: Col, Row"), "{text}");
+        }
+    }
+
+    #[test]
+    fn check_when_node_is_missing_or_not_configured() {
+        let missing = Checker { node: "/nonexistent/node".into(), script: script(), library: library(), timeout: Duration::from_secs(5) };
+        let result = check_result(Some(|program: &str| run_checker(&missing, program)), Some(&json!(good_program())), Duration::from_secs(5), "");
+        assert!(text_of(&result).starts_with("检查器起不来（Node.js："), "{result}");
+        assert_eq!(result["isError"], true);
+        let no_node = OpenUi::load(&prompt(), Some(library()), Some(script()), Some("/nonexistent/node".into())).unwrap();
+        let result = no_node.call("openui_check", &json!({"program": good_program()}));
+        assert!(text_of(&result).starts_with("检查器用不了（没找到 Node.js）"), "{result}");
+        assert_eq!(no_node.call("openui_spec", &json!({"sections": ["core"]}))["isError"], false);
+        let never = Some(|_: &str| -> CheckOutcome { panic!("should not start") });
+        assert!(text_of(&check_result(never, Some(&json!("x".repeat(40_001))), Duration::from_secs(1), "")).starts_with("程序太长"));
+        let never = Some(|_: &str| -> CheckOutcome { panic!("should not start") });
+        assert_eq!(check_result(never, Some(&json!("  ")), Duration::from_secs(1), "")["isError"], true);
+    }
+
+    #[test]
+    fn check_reports_timeouts_oversized_output_and_garbage() {
+        let timeout = check_result(Some(|_: &str| CheckOutcome::Timeout), Some(&json!("x")), Duration::from_millis(500), "");
+        assert!(text_of(&timeout).starts_with("检查超时（0.5 秒）"));
+        let big = check_result(Some(|_: &str| CheckOutcome::Done(Some(0), vec![b'x'; MAX_CHECK_OUTPUT_BYTES + 1])), Some(&json!("x")), Duration::from_secs(1), "");
+        assert!(text_of(&big).contains("输出太大"));
+        let garbage = check_result(Some(|_: &str| CheckOutcome::Done(Some(0), b"hello\n".to_vec())), Some(&json!("x")), Duration::from_secs(1), "");
+        assert!(text_of(&garbage).starts_with("检查器没有回结果（退出码 0）"));
+        let fatal = check_result(
+            Some(|_: &str| CheckOutcome::Done(Some(2), r#"{"ok":false,"fatal":"读不了组件库 x"}"#.as_bytes().to_vec())),
+            Some(&json!("x")),
+            Duration::from_secs(1),
+            "",
+        );
+        assert!(text_of(&fatal).starts_with("检查器用不了：读不了组件库 x"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn a_real_timeout_kills_the_checker() {
+        let dir = std::env::temp_dir().join(format!("retainpdf-openui-{}-{}", std::process::id(), line!()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("slow.sh"), "sleep 30\n").unwrap();
+        let slow = Checker { node: "/bin/sh".into(), script: dir.join("slow.sh"), library: library(), timeout: Duration::from_millis(300) };
+        let started = std::time::Instant::now();
+        assert!(matches!(run_checker(&slow, "x"), CheckOutcome::Timeout));
+        assert!(started.elapsed() < Duration::from_secs(10));
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn the_checker_runs_with_telemetry_off() {
+        let checker = Checker { node: "/bin/sh".into(), script: "/s".into(), library: library(), timeout: Duration::from_secs(5) };
+        let command = checker_command(&checker);
+        let envs: Vec<(String, Option<String>)> = command
+            .get_envs()
+            .map(|(name, value)| (name.to_string_lossy().into_owned(), value.map(|value| value.to_string_lossy().into_owned())))
+            .collect();
+        assert!(envs.contains(&("OPENUI_TELEMETRY_DISABLED".into(), Some("1".into()))));
+        assert!(envs.contains(&("DO_NOT_TRACK".into(), Some("1".into()))));
+        assert!(envs.contains(&("OPENUI_RUNTIME_TELEMETRY_ENABLED".into(), None)), "removed even when the parent has it");
+
+        // 子进程里真看到的：假检查器（sh 脚本）把它们写进 text
+        let dir = std::env::temp_dir().join(format!("retainpdf-openui-{}-{}", std::process::id(), line!()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("env.sh"),
+            "cat >/dev/null\nprintf '{\"ok\":true,\"errors\":[],\"text\":\"%s|%s|%s\"}\\n' \"$OPENUI_TELEMETRY_DISABLED\" \"$DO_NOT_TRACK\" \"${OPENUI_RUNTIME_TELEMETRY_ENABLED-unset}\"\n",
+        )
+        .unwrap();
+        let checker = Checker { node: "/bin/sh".into(), script: dir.join("env.sh"), library: library(), timeout: Duration::from_secs(5) };
+        let result = check_result(Some(|program: &str| run_checker(&checker, program)), Some(&json!("x")), Duration::from_secs(5), "");
+        assert_eq!(text_of(&result), "1|1|unset");
+        let _ = std::fs::remove_dir_all(dir);
+    }
+}

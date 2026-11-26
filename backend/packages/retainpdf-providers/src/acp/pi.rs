@@ -32,7 +32,8 @@ const ASK_PROMPTS_DIR: &str = "ask-agent/retainpdf_ask_agent/prompts";
 const ASK_PROMPT_FILES: [&str; 2] = ["ask_system.txt", "ask_tools.txt"];
 /// models.json 里的服务商名（`--model retainpdf/<模型>`）。
 pub(super) const PI_PROVIDER: &str = "retainpdf";
-pub(super) const PI_TOOLS: [&str; 3] = ["read_pages", "search_book", "view_page"];
+/// 读书的三个和互动块的两个（互动块的只在桥给了说明文件时由扩展注册，白名单里一直有）。
+pub(super) const PI_TOOLS: [&str; 5] = ["read_pages", "search_book", "view_page", "openui_spec", "openui_check"];
 /// 没被连接结束时删掉的私有配置目录，多久以后扫掉。
 const STALE_CONNECTION_AGE: Duration = Duration::from_secs(2 * 24 * 3600);
 /// 和 Python 版 `__main__.py` 一样估上下文窗口。
@@ -264,6 +265,8 @@ pub(super) fn pi_process(
     }
     write_json(&agent_dir.join("models.json"), &models_json(&settings)).map_err(io_error)?;
     write_json(&agent_dir.join("settings.json"), &settings_json(&settings, thinking, &sessions)).map_err(io_error)?;
+    // 互动块的 L0：写进私有配置目录，包装脚本用 --append-system-prompt 接在 ask_system.txt 后面
+    let openui_intro = super::openui::write_intro(config, &agent_dir).map_err(io_error)?;
 
     let path = |path: &Path| path.to_string_lossy().into_owned();
     let mut env = install.pi_acp_env;
@@ -286,6 +289,8 @@ pub(super) fn pi_process(
         env.push(("RETAIN_PI_USER_HOME".into(), user_home.to_string_lossy().into_owned()));
     }
     env.extend(book_env(config, book));
+    env.extend(openui_intro);
+    env.extend(super::openui::openui_env(config));
     Ok(AgentProcess {
         program: install.pi_acp,
         args: install.pi_acp_args,

@@ -60,11 +60,13 @@ pub struct SessionDefaults {
 }
 
 /// `retainpdf mcp` 的 ACP 写法（stdio MCP 服务：绝对路径、不经 shell，环境变量是 `{name, value}` 数组）。
-pub fn retainpdf_mcp_server(cli: &Path, agent_key: Option<&str>) -> Value {
+/// `extra_env` 是互动块的说明文件、检查器的位置（`openui::openui_env`），有了 MCP 就多 L0 和两个工具。
+pub fn retainpdf_mcp_server(cli: &Path, agent_key: Option<&str>, extra_env: &[(String, String)]) -> Value {
     let env: Vec<Value> = agent_key
         .filter(|key| !key.is_empty())
         .map(|key| json!({"name": AGENT_KEY_ENV, "value": key}))
         .into_iter()
+        .chain(extra_env.iter().map(|(name, value)| json!({"name": name, "value": value})))
         .collect();
     json!({"name": MCP_SERVER_NAME, "command": cli.to_string_lossy(), "args": ["mcp"], "env": env})
 }
@@ -234,7 +236,7 @@ mod tests {
     fn defaults() -> SessionDefaults {
         SessionDefaults {
             cwd: Some(PathBuf::from("/data/books")),
-            mcp_server: Some(retainpdf_mcp_server(Path::new("/opt/retainpdf/retainpdf"), Some("agent-key"))),
+            mcp_server: Some(retainpdf_mcp_server(Path::new("/opt/retainpdf/retainpdf"), Some("agent-key"), &[])),
         }
     }
 
@@ -271,7 +273,12 @@ mod tests {
         assert_eq!(serde_json::from_str::<Value>(&prepare_client_message(prompt, &defaults())).unwrap(), serde_json::from_str::<Value>(prompt).unwrap());
         assert_eq!(prepare_client_message("not json\nline", &defaults()), "not json line");
         // 没有 AI 专用密钥时不带 env
-        assert_eq!(retainpdf_mcp_server(Path::new("/r"), None)["env"], json!([]));
+        assert_eq!(retainpdf_mcp_server(Path::new("/r"), None, &[])["env"], json!([]));
+        let with_openui = retainpdf_mcp_server(Path::new("/r"), Some("k"), &[("RETAIN_OPENUI_PROMPT".into(), "/c/p.json".into())]);
+        assert_eq!(
+            with_openui["env"],
+            json!([{"name": AGENT_KEY_ENV, "value": "k"}, {"name": "RETAIN_OPENUI_PROMPT", "value": "/c/p.json"}])
+        );
     }
 
     #[test]

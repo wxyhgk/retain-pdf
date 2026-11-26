@@ -5,6 +5,9 @@
 //!   期间被改过就拒）；
 //! - `view_page`：取原文页或译文页的图，给读不了 PDF 的 agent 看排版、公式、图表。
 //!
+//! 阅读页提问时（2026-11-26，`mcp_openui.rs`）：桥在 `env` 里给了互动块的说明文件和检查器，就在 `instructions` 后面接上 L0，
+//! 多 `openui_spec`、`openui_check` 两个工具（不调后端）。
+//!
 //! 密钥：环境变量 `RETAINPDF_AGENT_KEY`（AI 专用密钥，后端 `RUST_API_AGENT_KEYS`）优先，没有就用 `backend.json` 里的主密钥。
 //! 后端没开时照样启动、照样列出工具，调工具时再找后端（用户中途打开 RetainPDF 也能用上）。
 //! stdout 只写协议消息；出错说明写进工具结果，日志写 stderr。
@@ -18,6 +21,10 @@ use base64::Engine;
 use serde_json::{json, Value};
 
 use crate::context::{BackendState, Ctx};
+
+#[path = "mcp_openui.rs"]
+pub mod openui;
+use openui::OpenUi;
 
 /// 这一版按 2025-06-18 写；客户端要的是下面认识的旧版本就回它要的。
 const PROTOCOL_VERSION: &str = "2025-06-18";
@@ -69,7 +76,7 @@ fn connect(json: bool, data: Option<PathBuf>) -> std::result::Result<Box<dyn Tra
 
 pub fn run(ctx: &Ctx, data: Option<PathBuf>) -> Result<ExitCode> {
     let json = ctx.json;
-    let server = Server::new(move || connect(json, data.clone()));
+    let server = Server::new(move || connect(json, data.clone())).with_openui(OpenUi::from_env());
     let stdin = std::io::stdin();
     let mut stdout = std::io::stdout().lock();
     for line in stdin.lock().lines() {
@@ -88,6 +95,8 @@ pub fn run(ctx: &Ctx, data: Option<PathBuf>) -> Result<ExitCode> {
 
 pub struct Server<F> {
     connect: F,
+    /// 互动块（桥给了说明文件才有）。
+    openui: Option<OpenUi>,
 }
 
 impl<F> Server<F>
@@ -95,7 +104,12 @@ where
     F: Fn() -> std::result::Result<Box<dyn Transport>, String>,
 {
     pub fn new(connect: F) -> Self {
-        Self { connect }
+        Self { connect, openui: None }
+    }
+
+    pub fn with_openui(mut self, openui: Option<OpenUi>) -> Self {
+        self.openui = openui;
+        self
     }
 
     /// 一行消息进来，要回就回一条（通知不回）。
@@ -112,9 +126,9 @@ where
         };
         let params = message.get("params").cloned().unwrap_or(Value::Null);
         Some(match method {
-            "initialize" => result_reply(id, initialize(&params)),
+            "initialize" => result_reply(id, initialize(&params, self.openui.as_ref())),
             "ping" => result_reply(id, json!({})),
-            "tools/list" => result_reply(id, json!({ "tools": tool_definitions() })),
+            "tools/list" => result_reply(id, json!({ "tools": self.tool_definitions() })),
             "tools/call" => match self.call_tool(&params) {
                 Ok(result) => result_reply(id, result),
                 Err((code, message)) => error_reply(id, code, &message),
@@ -123,9 +137,23 @@ where
         })
     }
 
+    fn tool_definitions(&self) -> Value {
+        let mut tools = tool_definitions();
+        if self.openui.is_some() {
+            if let Some(list) = tools.as_array_mut() {
+                list.extend(OpenUi::tool_definitions());
+            }
+        }
+        tools
+    }
+
     fn call_tool(&self, params: &Value) -> std::result::Result<Value, (i64, String)> {
         let name = params.get("name").and_then(Value::as_str).unwrap_or_default();
         let arguments = params.get("arguments").cloned().unwrap_or_else(|| json!({}));
+        if let Some(openui) = self.openui.as_ref().filter(|_| OpenUi::handles(name)) {
+            // 互动块的两个工具不调后端
+            return Ok(openui.call(name, &arguments));
+        }
         let run = |work: &dyn Fn(&dyn Transport) -> Value| -> Value {
             match (self.connect)() {
                 Ok(transport) => work(transport.as_ref()),
@@ -146,14 +174,18 @@ where
     }
 }
 
-fn initialize(params: &Value) -> Value {
+fn initialize(params: &Value, openui: Option<&OpenUi>) -> Value {
     let requested = params.get("protocolVersion").and_then(Value::as_str).unwrap_or(PROTOCOL_VERSION);
     let version = if KNOWN_PROTOCOL_VERSIONS.contains(&requested) { requested } else { PROTOCOL_VERSION };
+    let instructions = match openui {
+        Some(openui) => format!("{INSTRUCTIONS}\n\n{}", openui.intro()),
+        None => INSTRUCTIONS.to_string(),
+    };
     json!({
         "protocolVersion": version,
         "capabilities": { "tools": { "listChanged": false } },
         "serverInfo": { "name": "retainpdf", "title": "RetainPDF", "version": env!("CARGO_PKG_VERSION") },
-        "instructions": INSTRUCTIONS,
+        "instructions": instructions,
     })
 }
 
