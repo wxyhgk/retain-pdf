@@ -106,6 +106,15 @@ async fn serve_with_shutdown(
         );
     }
 
+    // 桌面版设了 RUST_API_ACP_DEFAULT_INSTALL=1：本机 agent 开着时在后台把默认名单（pi、Claude Code 的适配器）里没装的装上。单测不开。
+    if !cfg!(test) {
+        let flag = std::env::var(crate::services::providers::DEFAULT_INSTALL_ENV).ok();
+        let _ = crate::services::providers::spawn_default_installs(
+            crate::routes::common::build_acp_config(&state),
+            flag.as_deref(),
+        );
+    }
+
     let sync_service = state.sync.clone();
     let backup_service = state.backup.clone();
     let app = build_app(state.clone());

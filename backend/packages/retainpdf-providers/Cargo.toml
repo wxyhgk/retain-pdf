@@ -13,6 +13,7 @@ base64 = "0.22"
 axum = "0.7"
 chrono = { version = "0.4", features = ["serde", "clock"] }
 fastrand = "2"
+flate2 = "1"
 futures-util = "0.3"
 getrandom = "0.2"
 libc = "0.2"
@@ -22,8 +23,10 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.11.0"
+tar = { version = "0.4", default-features = false }
 thiserror = "1"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1"
 url = "2"
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
 
