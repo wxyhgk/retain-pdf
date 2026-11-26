@@ -12,6 +12,32 @@
 
 ---
 
+## 阅读页提问：回答里的互动块，后端给三类 agent 加 L0 和两个工具（feat/ask-openui）
+
+2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「回答里的互动块」，方案
+[互动块后端实现](../../ops/planning/reader-ask/20261126-互动块后端实现.md)。接口、握手参数、契约都没变；`contracts/openui/` 的两个文件照旧由前端生成、后端只读。
+**前端不改也能用**：自带的两个 agent 和本机 agent（经 `retainpdf mcp`）的系统提示词都带了 L0，回答里会出现 ```` ```openui-lang ```` 代码块，前端已经会画。
+
+### 桌面版（`frontend/desktop`）要做的
+
+不做时：桌面版里 `contracts/openui/` 找不到，互动块整个不开（没有 L0、没有工具，回答照旧）；找得到说明文件但没有检查器或 Node 时，
+`openui_spec` 能用，`openui_check` 回「检查器用不了」，模型照说明写、不检查。
+
+| 文件 | 旧写法 | 新写法 |
+|---|---|---|
+| `frontend/desktop/scripts/prepare-app.mjs`（拷 rpr 引擎那一段旁边） | 不带 | 把仓库的 `contracts/openui/ask-openui-prompt.v1.json`、`ask-openui-library.v1.json` 拷到 `path.join(outputBackendRoot, "contracts", "openui")` |
+| 同上 | 不带 | 带检查器：在 `backend/openui-check` 里 `npm ci --omit=dev --ignore-scripts`（环境变量加 `OPENUI_TELEMETRY_DISABLED=1`、`DO_NOT_TRACK=1`；**`--ignore-scripts` 不能省**，lang-core 的 postinstall 是安装统计），把 `bin/`、`lib/`、`node_modules/`、`package.json` 拷到 `path.join(outputBackendRoot, "openui-check")`，再删掉 `node_modules/.bin`（和 rpr 引擎一样，免得签名遍历撞断链）。依赖都是纯 JS（lang-core 1.2.0、ci-info、zod），和平台无关 |
+| `frontend/desktop/src/main/backend-env.js` 的 `buildBackendEnv` | 没有 | 加 `RUST_API_OPENUI_DIR: path.join(backendRoot, "contracts", "openui")`、`RUST_API_OPENUI_CHECK_DIR: path.join(backendRoot, "openui-check")`（桌面版的项目根就是 `backendRoot`，后端的默认位置 `<项目根>/backend/openui-check` 对不上，要显式给） |
+| 同上 | （`RUST_API_NODE_DIR` 见上一节「代装本机 agent」） | 检查器用同一个 Node：先找 `RUST_API_NODE_DIR`，再找 PATH。Node ≥ 20 就行。用 Electron 当 node 的那种小脚本（`ELECTRON_RUN_AS_NODE=1 exec <Electron> "$@"`）也能跑 |
+
+### 前端页面要做的（可选）
+
+| 文件 | 旧写法 | 新写法 |
+|---|---|---|
+| 提问窗的工具卡片（`frontend/packages/ask`） | 只有读书的工具 | 多两种卡片：`retainpdf` 的 `title` 是「取互动块说明：core、components:inputs」（`kind: "read"`）和「检查互动块」（`kind: "other"`），摘要是「core、components:inputs（约 1874 token）」「没问题」「2 处问题：unknown-component、type-mismatch」；`retainpdf-pi` 的 `title` 是工具名 `openui_spec` / `openui_check`；本机 agent 由它自己定（Claude Code 一般是 `mcp__retainpdf__openui_check`）。可以折叠成一行或不显示 |
+| 用量那一行（可选） | — | `_meta.retainpdf.usage.openui`：`spec_calls`、`sections`、`check_calls`、`check_problems`、`refused`（这一问调过互动块的工具才有） |
+| 「让它修」 | — | 照旧把解析错误作为下一问发回去就行；自带 agent 每一问取说明、检查的额度重算（取 2 次、查 3 次），下一问模型会重新取说明再改 |
+
 ## 阅读页提问：后端代装本机 agent，桌面版默认装上 pi 和 Claude Code（feat/acp-agent-install）
 
 2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「代装本机 agent」，方案
