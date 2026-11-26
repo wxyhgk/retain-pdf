@@ -30,7 +30,7 @@ use self::translation_flow_support::finalize_parent_after_ocr;
 use super::attach_job_paths;
 use super::domain_prewarm::{start_domain_prewarm, DOMAIN_PREWARM_FINISH_TIMEOUT};
 use super::ocr_flow::{execute_ocr_job, execute_ocr_job_streaming, sync_parent_with_ocr_child};
-use super::ocr_stream::{ensure_ocr_stream_done, mark_ocr_stream_failed};
+use super::ocr_stream::{clear_failed_ocr_stream, ensure_ocr_stream_done, mark_ocr_stream_failed};
 use super::render_prepare::{start_render_prepare, RENDER_PREPARE_FINISH_TIMEOUT};
 use super::pipeline_plan::{PipelinePlan, PipelineStage};
 use super::ProcessRuntimeDeps;
@@ -299,6 +299,10 @@ async fn run_ocr_and_translation_together(
         ocr_stream_dir: parent_job_paths.ocr_dir.clone(),
     };
     let render_follows = plan.next_after(PipelineStage::Translate) == Some(PipelineStage::Render);
+    // 上一轮留下的失败清单先清掉，不然翻译一开跑就读到它、立刻退出（S46）。清不掉只记日志，照旧拉起。
+    if let Err(err) = clear_failed_ocr_stream(&parent_job_paths.ocr_dir) {
+        tracing::warn!(job_id = %parent_job_id, error = %format!("{err:#}"), "failed to clear stale failed ocr stream");
+    }
     let ocr = Box::pin(async {
         let result = execute_ocr_job_streaming(
             deps.clone(),

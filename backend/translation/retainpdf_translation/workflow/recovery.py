@@ -13,11 +13,11 @@ import shutil
 from copy import deepcopy
 from pathlib import Path
 
+from retainpdf_base.io import save_json_atomic
 from retainpdf_translation.core.orchestration.zones import (
     annotate_payload_layout_zones,
 )
 from retainpdf_translation.core.payload.manifest import (
-    _atomic_write_json,
     load_translation_manifest,
 )
 from retainpdf_translation.workflow.checkpoint.contract import (
@@ -192,12 +192,12 @@ def prepare_relocated_translation_copy(
         raise ValueError("Translation checkpoint is missing its durable identity")
 
     shutil.copytree(source, output)
-    _atomic_write_json(output / "ocr/normalized/document.v1.json", normalized_document)
-    _atomic_write_json(output / "ocr/normalized/document.v1.report.json", normalization_report)
+    save_json_atomic(output / "ocr/normalized/document.v1.json", normalized_document)
+    save_json_atomic(output / "ocr/normalized/document.v1.report.json", normalization_report)
     for page, items in payloads.items():
-        _atomic_write_json(paths[page], items)
+        save_json_atomic(paths[page], items)
     for relative, payload in references.items():
-        _atomic_write_json(output / relative, payload)
+        save_json_atomic(output / relative, payload)
     pages, progress = project_progress(
         output_dir=output / "translated",
         page_payloads=payloads,

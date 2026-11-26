@@ -28,6 +28,7 @@ from retainpdf_pipeline.ocr.mineru_provider.contracts import (
     MINERU_UNPACK_DIR_NAME,
 )
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import request_mineru
+from retainpdf_base.io import replace_file
 from retainpdf_base.io import save_json
 from retainpdf_pipeline.ocr.source_json import (
     resolve_preferred_source_json_path,
@@ -255,7 +256,7 @@ def _hardlink_or_copy(source: Path, target: Path) -> None:
             ) as handle:
                 temp_path = Path(handle.name)
             shutil.copy2(source, temp_path)
-            os.replace(temp_path, target)
+            replace_file(temp_path, target)
         finally:
             if temp_path is not None:
                 temp_path.unlink(missing_ok=True)

@@ -11,10 +11,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
-import tempfile
 from pathlib import Path
 from typing import Any, Callable, Iterable
+
+from retainpdf_base.io import save_json_atomic
 
 from retainpdf_toc_agent import PROMPT_VERSION
 from retainpdf_toc_agent import GlossaryTerm
@@ -85,11 +85,7 @@ def _read_cached(path: Path, digest: str) -> dict | None:
 
 
 def _write(path: Path, payload: dict) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=path.parent, prefix=".toc-agent-", delete=False) as stream:
-        json.dump(payload, stream, ensure_ascii=False, indent=2)
-        temporary = Path(stream.name)
-    os.replace(temporary, path)
+    save_json_atomic(path, payload)
 
 
 def glossary_terms(entries: Iterable[Any]) -> list[GlossaryTerm]:

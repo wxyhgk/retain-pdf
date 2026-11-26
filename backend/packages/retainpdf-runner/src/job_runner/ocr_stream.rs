@@ -3,7 +3,7 @@
 //! 契约在 Python 的 `retainpdf_base/ocr_stream.py`：OCR provider（GLM-OCR、Paddle）每做完一片写一版清单，跟着 OCR 翻的翻译
 //! worker 读它；OCR 在 Python 里失败时自己会标 `failed`。但 OCR 进程被杀（超时、空闲超时、崩了）就来不及写，翻译会一直等
 //! 下一版清单，直到它自己的"多久没有进展"超时（默认半小时）。所以 OCR 子任务一结束、又不是成功，driver 就补标一次失败，
-//! 翻译 worker 读到就退出。
+//! 翻译 worker 读到就退出。OCR 成了却没标完成时补标 `done`；拉起 OCR 和翻译之前清掉上一轮失败的清单。
 
 use std::path::Path;
 
@@ -78,13 +78,45 @@ pub(super) fn ensure_ocr_stream_done(ocr_dir: &Path) -> Result<()> {
     write_manifest(&path, &manifest)
 }
 
+/// 拉起流式 OCR 和翻译之前：上一轮留下的清单是 `failed` 的就删掉（2026-11-26，Z5 / S46）。
+///
+/// 不删的话，跟着 OCR 的翻译一开跑就读到上一轮的失败、立刻退出，新一轮 OCR 还没来得及公布第一版。Python 的
+/// `OcrStreamWriter` 开跑时也清一次，但它在 OCR 进程里，和翻译进程谁先谁后说不准，所以这里在两个进程拉起之前先清。
+/// 没写完的旧清单（进程被杀）留着：新一轮的 seq 接着它往下数。
+pub(super) fn clear_failed_ocr_stream(ocr_dir: &Path) -> Result<()> {
+    let path = ocr_dir.join(MANIFEST_RELATIVE_PATH);
+    let previous: Value = std::fs::read(&path)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .unwrap_or(Value::Null);
+    if previous.get("failed").and_then(Value::as_bool) != Some(true) {
+        return Ok(());
+    }
+    match std::fs::remove_file(&path) {
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(error) => Err(error).with_context(|| format!("remove failed {}", path.display())),
+    }
+}
+
 fn write_manifest(path: &Path, manifest: &Value) -> Result<()> {
     let parent = path.parent().context("ocr stream manifest has no parent")?;
     std::fs::create_dir_all(parent)?;
-    let tmp = parent.join(".manifest.json.tmp");
-    std::fs::write(&tmp, serde_json::to_vec_pretty(manifest)?)?;
-    std::fs::rename(&tmp, path).with_context(|| format!("replace {}", path.display()))?;
-    Ok(())
+    // 临时文件名每次不同（以前固定 `.manifest.json.tmp`）：上一次留下的、另一个写者正在写的都碰不到这一次。
+    let tmp = parent.join(format!(
+        ".manifest.json.{}.{:016x}.tmp",
+        std::process::id(),
+        fastrand::u64(..)
+    ));
+    let written = std::fs::write(&tmp, serde_json::to_vec_pretty(manifest)?)
+        .map_err(anyhow::Error::from)
+        .and_then(|()| {
+            std::fs::rename(&tmp, path).with_context(|| format!("replace {}", path.display()))
+        });
+    if written.is_err() {
+        let _ = std::fs::remove_file(&tmp);
+    }
+    written
 }
 
 fn chrono_like_now() -> f64 {
@@ -157,6 +189,44 @@ mod tests {
         // 已经 done 的不动
         ensure_ocr_stream_done(dir.as_path()).unwrap();
         assert_eq!(read(dir.as_path())["seq"], 3);
+    }
+
+    /// 以前临时文件名固定是 `.manifest.json.tmp`：上一次写到一半留下的（这里用同名目录模拟占着）、或者两个写者同时写，
+    /// 都会让这一次写失败或互相踩。临时文件名要每次不同。
+    #[test]
+    fn a_leftover_temporary_does_not_block_the_next_manifest_write() {
+        let dir = temp_dir("leftover-tmp");
+        std::fs::create_dir_all(dir.join("stream/.manifest.json.tmp")).unwrap();
+        mark_ocr_stream_failed(dir.as_path(), "killed").unwrap();
+        assert_eq!(read(dir.as_path())["failed"], true);
+        let leftovers: Vec<_> = std::fs::read_dir(dir.join("stream"))
+            .unwrap()
+            .filter_map(|entry| entry.ok())
+            .map(|entry| entry.file_name().to_string_lossy().into_owned())
+            .filter(|name| name.ends_with(".tmp") && name != ".manifest.json.tmp")
+            .collect();
+        assert!(leftovers.is_empty(), "临时文件没换上也没删掉: {leftovers:?}");
+    }
+
+    /// 拉起之前只清上一轮失败的清单；没写完的（被杀的）、做完的都留着，新一轮的 seq 接着它数。
+    #[test]
+    fn only_a_failed_manifest_is_cleared_before_a_new_streaming_run() {
+        let failed = temp_dir("clear-failed");
+        std::fs::write(
+            failed.join(MANIFEST_RELATIVE_PATH),
+            r#"{"schema":"ocr_stream_v1","seq":3,"ready_pages":1,"total_pages":3,"done":false,"failed":true}"#,
+        )
+        .unwrap();
+        clear_failed_ocr_stream(failed.as_path()).unwrap();
+        assert!(!failed.join(MANIFEST_RELATIVE_PATH).exists());
+
+        let unfinished = temp_dir("keep-unfinished");
+        let body = r#"{"schema":"ocr_stream_v1","seq":4,"ready_pages":2,"total_pages":3,"done":false,"failed":false}"#;
+        std::fs::write(unfinished.join(MANIFEST_RELATIVE_PATH), body).unwrap();
+        clear_failed_ocr_stream(unfinished.as_path()).unwrap();
+        assert_eq!(read(unfinished.as_path())["seq"], 4);
+
+        clear_failed_ocr_stream(temp_dir("clear-missing").as_path()).unwrap();
     }
 
     #[test]

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import json
-import os
 import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+
+from retainpdf_base.io import atomic_write_text
 
 from retainpdf_translation_classic.services.memory.candidates import extract_term_candidates
 from retainpdf_translation_classic.services.memory.constants import MAX_PRESERVE_HINT_RECORDS
@@ -189,13 +190,11 @@ class JobMemoryStore:
 
     def save(self, memory: JobMemory) -> None:
         memory.trim()
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        tmp_path = self.path.with_name(f"{self.path.name}.tmp-{os.getpid()}-{threading.get_ident()}")
-        tmp_path.write_text(
+        atomic_write_text(
+            self.path,
             json.dumps(memory.to_dict(), ensure_ascii=False, indent=2, sort_keys=True),
-            encoding="utf-8",
+            durable=False,
         )
-        tmp_path.replace(self.path)
 
     def summary(self) -> str:
         with self._lock:

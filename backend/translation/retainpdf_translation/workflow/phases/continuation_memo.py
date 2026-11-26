@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from pathlib import Path
 
+from retainpdf_base.io import save_json_atomic
 from retainpdf_translation.services.policy.soft_hints import normalized_source_text
 
 CONTINUATION_REVIEW_MEMO_FILE_NAME = "continuation-review-memo.json"
@@ -52,9 +52,7 @@ def save_continuation_review_memo(
         if digest is not None:
             pairs.append({"prev_item_id": key[0], "next_item_id": key[1], "digest": digest, "join": bool(join)})
     path = Path(output_dir) / CONTINUATION_REVIEW_MEMO_FILE_NAME
-    temp = path.with_name(f".{path.name}.tmp")
-    temp.write_text(json.dumps({"schema": _SCHEMA, "pairs": pairs}, ensure_ascii=False), encoding="utf-8")
-    os.replace(temp, path)
+    save_json_atomic(path, {"schema": _SCHEMA, "pairs": pairs}, indent=None)
 
 
 def _items_by_id(page_payloads: dict[int, list[dict]]) -> dict[str, dict]:

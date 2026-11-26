@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import threading
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -161,6 +162,46 @@ def monotonic_progress_current(
     return current
 
 
+def _drop_partial_tail_and_count_lines(path: Path) -> int:
+    """打开事件文件追加之前：截掉末尾没写完的半行（进程在写一行时被杀），返回完整的非空行数，下一条的 seq 接着它数。
+
+    照翻译请求日志 ``request_journal._load_existing_state`` 的写法（2026-11-26，Z5 / S29）。以前不截：半行和下一条
+    记录粘成一行，行数从此比用过的 seq 少 1，同一个 attempt 第二次续跑时发出的 seq 和上一次重复，Rust 判倒退
+    （``db/pipeline/stages.rs``：同一任务、attempt、阶段内 ``producer_seq`` 必须严格递增），整本失败。
+    截掉的半行从没打到 stdout（每条先整行落盘、再打印），Rust 没见过它的 seq，重用不会倒退。
+    """
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return 0
+    valid_size = len(raw) if not raw or raw.endswith(b"\n") else raw.rfind(b"\n") + 1
+    if valid_size != len(raw):
+        try:
+            with path.open("r+b") as handle:
+                handle.truncate(valid_size)
+                handle.flush()
+                os.fsync(handle.fileno())
+        except OSError:
+            # 截不掉就在前面补一个换行，至少不让下一条粘到半行上；半行算作一行，seq 只会多不会少。
+            _append_line(path, "")
+            return sum(1 for line in raw.split(b"\n") if line.strip())
+    return sum(1 for line in raw[:valid_size].split(b"\n") if line.strip())
+
+
+def _append_line(path: Path, text: str) -> None:
+    """整行（带换行）一次 ``write`` 追加：并发追加同一个文件的进程（并行 OCR 时 OCR 子进程和父任务）不会交错成半行。"""
+    data = (text + "\n").encode("utf-8") if text else b"\n"
+    flags = os.O_WRONLY | os.O_APPEND | os.O_CREAT | getattr(os, "O_BINARY", 0)
+    fd = os.open(path, flags, 0o666)
+    try:
+        view = memoryview(data)
+        while view:
+            written = os.write(fd, view)
+            view = view[written:]
+    finally:
+        os.close(fd)
+
+
 @dataclass
 class PipelineEventWriter:
     job_id: str
@@ -177,13 +218,7 @@ class PipelineEventWriter:
     _upstream_waits: dict[str, dict[str, Any]] = field(default_factory=dict, repr=False, compare=False)
 
     def __post_init__(self) -> None:
-        if not self.path.exists():
-            return
-        try:
-            with self.path.open("r", encoding="utf-8") as handle:
-                self._seq = sum(1 for line in handle if line.strip())
-        except OSError:
-            self._seq = 0
+        self._seq = _drop_partial_tail_and_count_lines(self.path)
 
     @property
     def path(self) -> Path:
@@ -286,9 +321,7 @@ class PipelineEventWriter:
                 record["payload"] = {**payload_value, UPSTREAM_WAIT_PAYLOAD_KEY: dict(active_wait["info"])}
             if main_lane and user_stage:
                 self._last_main_records[user_stage] = record
-        with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(record, ensure_ascii=False))
-            handle.write("\n")
+        _append_line(self.path, json.dumps(record, ensure_ascii=False))
         # Stage observations cross the process boundary through stdout. Rust
         # commits them under generation fencing before exposing their event
         # projection. The JSONL file remains a diagnostic/legacy projection.

@@ -14,12 +14,12 @@
 from __future__ import annotations
 
 import json
-import os
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 import fitz
+from retainpdf_base.io import atomic_write_text
 
 from retainpdf_pipeline.ocr.tables import build_table_model
 from retainpdf_pipeline.ocr.tables import table_structure
@@ -223,9 +223,7 @@ def _write(path: Path, entries: list[dict], summary: Counter, *, engine: str) ->
         "summary": dict(summary),
         "tables": entries,
     }
-    temp = path.with_suffix(".json.tmp")
-    temp.write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    os.replace(temp, path)
+    atomic_write_text(path, json.dumps(payload, ensure_ascii=False, indent=1) + "\n")
 
 
 __all__ = ["TABLES_FILE_NAME", "TABLE_MODES", "table_structure_source", "translate_tables"]

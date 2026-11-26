@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -257,14 +258,14 @@ def test_ensure_translation_template_prunes_removed_records(tmp_path) -> None:
 def test_export_translation_template_uses_same_directory_atomic_replace(tmp_path, monkeypatch) -> None:
     path = tmp_path / "page-001-deepseek.json"
     item = _text_item("p001-b001")
-    real_replace = translations_module.os.replace
+    real_replace = os.replace
     replace_calls: list[tuple[Path, Path]] = []
 
     def capture_replace(src, dst):
         replace_calls.append((Path(src), Path(dst)))
         real_replace(src, dst)
 
-    monkeypatch.setattr(translations_module.os, "replace", capture_replace)
+    monkeypatch.setattr(os, "replace", capture_replace)
 
     export_translation_template([item], path, page_idx=0, math_mode="direct_typst")
 

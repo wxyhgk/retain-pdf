@@ -39,6 +39,7 @@ from retainpdf_base import paths
 from retainpdf_base.cache_ttl import prune_expired_once
 from retainpdf_base.cache_ttl import ttl_seconds
 from retainpdf_base.events import emit_stage_progress
+from retainpdf_base.io import atomic_write_bytes
 from retainpdf_base.io import save_json
 from retainpdf_base.io import save_json_atomic
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
@@ -145,14 +146,7 @@ def page_subset_bytes(source: fitz.Document, page_indices: list[int]) -> bytes:
 
 def write_page_subset(source: fitz.Document, page_indices: list[int], target: Path) -> Path:
     """`page_subset_bytes` 写到 `target`：先写临时文件再换上，读的一方（渲染、重试）看不到写了一半的文件。"""
-    data = page_subset_bytes(source, page_indices)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    temporary = target.with_name(f".{target.name}.{os.getpid()}.tmp")
-    try:
-        temporary.write_bytes(data)
-        os.replace(temporary, target)
-    finally:
-        temporary.unlink(missing_ok=True)
+    atomic_write_bytes(target, page_subset_bytes(source, page_indices), durable=False)
     return target
 
 
@@ -638,8 +632,8 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
         normalized_report_json_path = normalized_json_path.with_name(DOCUMENT_SCHEMA_REPORT_FILE_NAME)
         normalized_json_path.parent.mkdir(parents=True, exist_ok=True)
         document, report = _normalize(payload, document_id=document_id, source_json_path=provider_result_json_path, source_pdf=source_pdf)
-        save_json(normalized_json_path, document)
-        save_json(normalized_report_json_path, report)
+        save_json_atomic(normalized_json_path, document)
+        save_json_atomic(normalized_report_json_path, report)
         stream.publish(document, done=True)
     except BaseException as error:
         # 读流的一方（翻译）别再等：标成失败，原因只写类型和第一行（不带 key，parse_pdf 的报错本来就不带）

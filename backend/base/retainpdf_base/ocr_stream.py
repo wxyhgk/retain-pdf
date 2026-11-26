@@ -6,7 +6,8 @@
 
 - `ocr/stream/document.v1.json`：document.v1（已缩放到原文 PDF，就绪的页和最后的整份文档逐页一致）。页按原位置放：
   第 n 页就是 `pages[n]`；还没做完的页是占位的空页（没有块），读的一方只读就绪的页。
-- `ocr/stream/manifest.json`：`schema=ocr_stream_v1`、`seq`（每公布一次加 1）、`ready_page_indices`（就绪的页，从 0 数、升序）、
+- `ocr/stream/manifest.json`：`schema=ocr_stream_v1`、`seq`（每公布一次加 1；同一目录再跑一次时接着旧清单往下数，
+  旧清单是失败的开跑时清掉，Rust 拉起 OCR 和翻译之前也清一次）、`ready_page_indices`（就绪的页，从 0 数、升序）、
   `ready_pages`（就绪的页数）、`total_pages`、`done`、`failed`、`error`。
   两个文件都原子写（先写临时文件再改名），读的一方任何时候读到的都是完整的一版。先写文档、后写清单：清单说就绪的页，文档里一定有。
 - 就绪的页不一定连着（2026-11-01 起）：Paddle 按片并行提交，后面的片常比第一片先做完（实测第 21–34 页 7 秒做完，
@@ -67,8 +68,13 @@ class OcrStreamWriter:
         self._ocr_dir = Path(ocr_dir)
         self._provider = provider
         self._total_pages = int(total_pages)
-        self._seq = 0
         stream_dir(self._ocr_dir).mkdir(parents=True, exist_ok=True)
+        # 同一个目录以前跑过（进程被杀、重跑 OCR）：seq 接着旧清单往下数，读的一方只认比它见过的新的那一版；
+        # 旧清单是失败的就清掉，免得新一轮还没公布第一版时，读的一方读到旧的失败直接退出（2026-11-26，Z5 / S46）。
+        previous = read_ocr_stream(self._ocr_dir)
+        self._seq = previous.seq if previous is not None else 0
+        if previous is not None and previous.failed:
+            manifest_path(self._ocr_dir).unlink(missing_ok=True)
 
     def publish(self, document: dict, *, done: bool = False, ready_page_indices=None) -> None:
         """`ready_page_indices` 不给就是文档里的全部页（前几页连着做完的写法）；给了就只有这些页就绪，其余是占位页。"""

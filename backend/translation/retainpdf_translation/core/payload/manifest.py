@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from pathlib import Path
 
+from retainpdf_base.io import save_json_atomic
 
 TRANSLATION_MANIFEST_FILE_NAME = "translation-manifest.json"
 TRANSLATION_MANIFEST_SCHEMA = "translation_manifest_v1"
@@ -22,41 +21,6 @@ def _relative_payload_path(translations_dir: Path, translation_path: Path) -> st
         raise RuntimeError(
             f"Translation payload path must be under translations_dir: {translation_path}"
         )
-
-
-def _atomic_write_json(path: Path, payload: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        dir=path.parent,
-        text=True,
-    )
-    tmp_path = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, path)
-        _fsync_parent_dir(path)
-    except Exception:
-        try:
-            tmp_path.unlink()
-        except FileNotFoundError:
-            pass
-        raise
-
-
-def _fsync_parent_dir(path: Path) -> None:
-    try:
-        dir_fd = os.open(path.parent, os.O_RDONLY)
-    except OSError:
-        return
-    try:
-        os.fsync(dir_fd)
-    finally:
-        os.close(dir_fd)
 
 
 def write_translation_manifest(
@@ -86,7 +50,7 @@ def write_translation_manifest(
         payload["glossary"] = glossary
     if summary:
         payload.update(summary)
-    _atomic_write_json(manifest_path, payload)
+    save_json_atomic(manifest_path, payload)
     # Prune overflow page payloads that are no longer in manifest (e.g., rerun with smaller page range)
     try:
         allowed = {p.resolve() for p in translation_paths.values()}

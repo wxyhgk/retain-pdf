@@ -4,14 +4,15 @@ import json
 from pathlib import Path
 from typing import Any
 
+from retainpdf_base.io import atomic_write
+
 
 def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = path.with_suffix(path.suffix + ".tmp")
-    with tmp_path.open("w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2, sort_keys=True)
-        f.write("\n")
-    tmp_path.replace(path)
+    atomic_write(
+        path,
+        lambda handle: (json.dump(payload, handle, ensure_ascii=False, indent=2, sort_keys=True), handle.write("\n")),
+        durable=False,
+    )
 
 
 def relative_to_manifest(manifest_path: Path, path: Path) -> str:

@@ -16,7 +16,7 @@ from retainpdf_pipeline.ocr.document_schema.pdf_geometry import (  # noqa: F401
 )
 from retainpdf_pipeline.ocr.document_schema.reporting import build_normalization_summary
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_PADDLE
-from retainpdf_base.io import save_json
+from retainpdf_base.io import save_json_atomic
 
 
 AdaptDocumentFn = Callable[..., tuple[dict, dict]]
@@ -76,7 +76,7 @@ def save_normalized_document_for_paddle(
     adapt_document: AdaptDocumentFn = adapt_path_to_document_v1_with_report,
     build_lines: BuildLinesFn = build_paddle_lines,
     tighten_text_bbox: TightenBBoxFn = tighten_paddle_text_bbox,
-    save_json_file: SaveJsonFn = save_json,
+    save_json_file: SaveJsonFn = save_json_atomic,
 ) -> None:
     try:
         normalized_document, normalization_report = build_normalized_document_for_paddle(

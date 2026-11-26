@@ -9,11 +9,10 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
-import tempfile
 from collections import defaultdict
 from pathlib import Path
 
+from retainpdf_base.io import save_json_atomic
 from retainpdf_pipeline.ocr.document_schema.adapters import (
     adapt_path_to_document_v1_with_report,
 )
@@ -48,28 +47,7 @@ def build_block_mapping(old: dict, new: dict) -> dict[str, dict]:
 
 def _write_repair_summary(path: Path, result: dict) -> None:
     """Publish this tool's audit summary without exposing a partial JSON file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(
-        prefix=f".{path.name}.", suffix=".tmp", dir=path.parent
-    )
-    temporary = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(result, handle, ensure_ascii=False, indent=2)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temporary, path)
-        try:
-            dir_fd = os.open(path.parent, os.O_RDONLY)
-        except OSError:
-            return
-        try:
-            os.fsync(dir_fd)
-        finally:
-            os.close(dir_fd)
-    except Exception:
-        temporary.unlink(missing_ok=True)
-        raise
+    save_json_atomic(path, result)
 
 
 def prepare_repaired_job(source: Path, output: Path) -> dict:

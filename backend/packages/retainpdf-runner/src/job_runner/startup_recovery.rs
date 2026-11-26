@@ -86,264 +86,30 @@ pub(super) fn reconcile_running_jobs_matching(
 ) -> Result<usize> {
     let running_jobs = db.list_job_process_records_with_status(&JobStatusKind::Running)?;
     let mut reconciled = 0usize;
+    let mut skipped = 0usize;
     for job_record in running_jobs {
         if !include(&job_record) {
             continue;
         }
-        // 杀之前核对身份：库里的 pid 可能早就归了别的进程（长时间宕机、重启机器之后），
-        // 只凭 `kill(pid, 0)` 会把它整组杀掉。见 worker_identity.rs。
-        let reason = match classify_process_record(&job_record) {
-            Some((pid, RecordedWorker::Ours)) => StaleReason::Orphaned(pid),
-            Some((pid, RecordedWorker::Gone)) => StaleReason::Dead(pid),
-            Some((pid, RecordedWorker::NotOurs)) => {
-                warn!(
-                    "runtime startup: recorded worker pid={pid} of job {} now belongs to another process (pid reused); leaving it alone",
-                    job_record.job_id
-                );
-                StaleReason::Reused(pid)
-            }
-            None => StaleReason::NoPid,
-        };
-
-        if let StaleReason::Orphaned(pid) = reason {
-            warn!(
-                "runtime startup found live orphaned worker process pid={pid} for job {} still running; terminating its process tree before recovering job state",
-                job_record.job_id
-            );
-            if let Err(error) = terminate_job_process_tree_blocking(
-                pid,
-                config.job_runner.worker_terminate_grace_secs,
-                config.job_runner.worker_terminate_poll_ms,
-            ) {
-                warn!(
-                    "failed to terminate orphaned worker process pid={pid} for job {}: {error:#}",
-                    job_record.job_id
-                );
-            }
-        }
-
-        let (detail, failure_category, failure_code) = match reason {
-            StaleReason::Orphaned(pid) => (
-                format!(
-                    "任务运行时启动时发现遗留 running 任务，worker 进程 {pid} 仍在运行（孤儿进程），已终止该进程"
-                ),
-                "worker_orphaned_after_restart",
-                "worker_orphaned_after_restart",
-            ),
-            StaleReason::Dead(pid) => (
-                format!("任务运行时启动时发现遗留 running 任务，但 worker 进程 {pid} 已不存在"),
-                "worker_process_missing",
-                "worker_process_missing",
-            ),
-            StaleReason::Reused(pid) => (
-                format!(
-                    "任务运行时启动时发现遗留 running 任务，worker 已不存在：库里记的 pid {pid} 现在属于别的进程（pid 已被复用），没有终止它"
-                ),
-                "worker_process_missing",
-                "worker_process_missing",
-            ),
-            StaleReason::NoPid => (
-                "任务运行时启动时发现遗留 running 任务，但未记录 worker pid".to_string(),
-                "worker_process_missing",
-                "worker_process_missing",
-            ),
-        };
-        let timestamp = now_iso();
-        let has_attempt = db.has_running_pipeline_attempt(&job_record.job_id)?;
-        // 翻译阶段有「已发出、没有终态」的请求时不自动续跑：续跑的 Python 会把它们
-        // 原样再发一遍，用户没机会拒绝重复计费。手动重试要确认重复风险，自动路径同理。
-        let ambiguous_translation = if has_attempt {
-            ambiguous_translation_requests(config, db, &job_record.job_id)?
-        } else {
-            None
-        };
-        let resumable = has_attempt && ambiguous_translation.is_none();
-        // 自动续跑计数（启动恢复和运行期巡检都走这里）：超过上限就不再续跑。
-        let resume_tally = if resumable {
-            db.next_auto_resume_tally(&job_record.job_id)?
-        } else {
-            None
-        };
-        let resume_limit_hit =
-            resume_tally.is_some_and(|tally| tally.count > MAX_AUTO_RESUMES_WITHOUT_PROGRESS);
-        let resumable = resumable && !resume_limit_hit;
-        match db.get_job(&job_record.job_id) {
-            Ok(mut job) => {
-                job.updated_at = timestamp.clone();
-                job.pid = None;
-                let committed_render_output = restore_committed_render_output(
-                    &mut job,
-                    committed_render_output_path(db, &job_record.job_id)?,
-                );
-                if committed_render_output {
-                    job.append_log(&format!("WARN: {detail}"));
-                    job.append_log(
-                        "INFO: committed render output recovered; task completed without rerender",
-                    );
-                    job.status = JobStatusKind::Succeeded;
-                    job.stage = Some("finished".to_string());
-                    job.stage_detail =
-                        Some("runtime restart recovered committed render output".to_string());
-                    job.error = None;
-                    job.finished_at = Some(timestamp.clone());
-                    job.replace_failure_info(None);
-                } else if resumable {
-                    job.append_log(&format!("WARN: {detail}"));
-                    job.append_log(
-                        "INFO: durable pipeline checkpoint found; job requeued for automatic resume",
-                    );
-                    job.status = JobStatusKind::Queued;
-                    job.stage_detail = Some(
-                        "runtime restart recovered durable checkpoint; waiting to resume"
-                            .to_string(),
-                    );
-                    job.error = None;
-                    job.finished_at = None;
-                    job.replace_failure_info(None);
-                } else if let Some(journal) = ambiguous_translation.as_ref() {
-                    let summary = format!(
-                        "重启前翻译阶段有 {} 个已发出但结果不明的上游请求（journal 状态 {}），不自动续跑",
-                        journal.unresolved_dispatches.max(journal.active_ambiguous_request_keys),
-                        journal.status
-                    );
-                    job.append_log(&format!("WARN: {detail}"));
-                    job.append_log(&format!("ERROR: {summary}"));
-                    job.status = JobStatusKind::Failed;
-                    job.stage = Some("failed".to_string());
-                    job.stage_detail = Some(summary.clone());
-                    job.error = Some(summary.clone());
-                    job.finished_at = Some(timestamp.clone());
-                    let recovery = retainpdf_core::job_failure_catalogue::recovery_for(
-                        AMBIGUOUS_TRANSLATION_CATEGORY,
-                    );
-                    job.replace_failure_info(Some(JobFailureInfo {
-                        stage: "translation".to_string(),
-                        category: AMBIGUOUS_TRANSLATION_CATEGORY.to_string(),
-                        code: None,
-                        failed_stage: Some("translation".to_string()),
-                        failure_code: Some(AMBIGUOUS_TRANSLATION_CATEGORY.to_string()),
-                        failure_category: Some("translation".to_string()),
-                        provider_stage: None,
-                        provider_code: None,
-                        summary: "重启时翻译请求的结果不明，已暂停自动续跑".to_string(),
-                        root_cause: Some(summary.clone()),
-                        retryable: true,
-                        upstream_host: None,
-                        provider: None,
-                        suggestion: Some(
-                            "确认可接受重复请求（可能重复计费）后，用 retry-stage（translation）并带 ambiguous_request_policy=accept_duplicate_risk 重试".to_string(),
-                        ),
-                        last_log_line: Some(summary.clone()),
-                        raw_excerpt: Some(summary.clone()),
-                        raw_error_excerpt: Some(summary.clone()),
-                        raw_diagnostic: None,
-                        ai_diagnostic: None,
-                        resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
-                        recovery_hint: Some(recovery.hint.to_string()),
-                        upstream: None,
-                    }));
-                } else if resume_limit_hit {
-                    fail_for_auto_resume_limit(&mut job, &detail, &timestamp);
-                } else {
-                    job.append_log(&format!("ERROR: {detail}"));
-                    job.status = JobStatusKind::Failed;
-                    job.stage = Some("failed".to_string());
-                    job.stage_detail =
-                        Some("runtime startup stale running job recovered".to_string());
-                    job.error = Some(detail.clone());
-                    job.finished_at = Some(timestamp.clone());
-                    // 查目录而不是写死:新增失败类型只该改 job_failure_catalogue 一处。
-                    let recovery =
-                        retainpdf_core::job_failure_catalogue::recovery_for(failure_category);
-                    job.replace_failure_info(Some(JobFailureInfo {
-                        stage: "startup_recovery".to_string(),
-                        category: failure_category.to_string(),
-                        code: None,
-                        failed_stage: Some("startup_recovery".to_string()),
-                        failure_code: Some(failure_code.to_string()),
-                        failure_category: Some("internal".to_string()),
-                        provider_stage: None,
-                        provider_code: None,
-                        summary: "任务运行时启动时回收了遗留 running 任务".to_string(),
-                        root_cause: Some(detail.clone()),
-                        retryable: true,
-                        upstream_host: None,
-                        provider: None,
-                        suggestion: Some(
-                            "该任务对应的 worker 已不在运行；请重新提交或手动重试".to_string(),
-                        ),
-                        last_log_line: Some(detail.clone()),
-                        raw_excerpt: Some(detail.clone()),
-                        raw_error_excerpt: Some(detail.clone()),
-                        raw_diagnostic: None,
-                        ai_diagnostic: None,
-                        resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
-                        recovery_hint: Some(recovery.hint.to_string()),
-                        upstream: None,
-                    }));
-                }
-                job.sync_runtime_state();
-                // 落库前再确认一次没人接手；用 CAS（只认 running），万一这一瞬间 driver 起来
-                // 改了行，就让它的结果算数，不去覆盖。
-                if !include(&job_record)
-                    || !cas_persist_job_with_resources(
-                        db,
-                        &config.data_root,
-                        &config.output_root,
-                        &job,
-                        &["running"],
-                    )?
-                {
-                    warn!(
-                        "stale running job {} changed under reconciliation; left as is",
-                        job_record.job_id
-                    );
-                    continue;
-                }
-                if committed_render_output {
-                    db.finish_latest_pipeline_attempt(&job_record.job_id, "succeeded")?;
-                } else if ambiguous_translation.is_some() || resume_limit_hit {
-                    // 任务已落 Failed：attempt 必须收尾，否则它还会出现在自动续跑名单里。
-                    db.finish_latest_pipeline_attempt(&job_record.job_id, "failed")?;
-                } else if job.status == JobStatusKind::Queued {
-                    if let Some(tally) = resume_tally.as_ref() {
-                        db.record_auto_resume(&job_record.job_id, tally)?;
-                    }
-                }
-                // 终态不是 run_job 写的,书卡和全文索引要在这里补(重新排队的不是终态,不动)。
-                if matches!(job.status, JobStatusKind::Succeeded | JobStatusKind::Failed) {
-                    maintain_document_for_terminal(
-                        config,
-                        db,
-                        &job_record.job_id,
-                        job.upload_id.as_deref(),
-                        &job.status,
-                    );
-                }
-            }
+        // 逐个任务隔离错误（S10）：一个任务对账时写库出错（库忙、磁盘满），只记日志、跳过它，接着处理下一个；
+        // 不能让整轮中止，更不能让 jobsd 起不来。跳过的任务留在原状态，下次启动或运行期巡检再对账。
+        match reconcile_one_running_job(config, db, include, &job_record) {
+            Ok(true) => reconciled += 1,
+            Ok(false) => {}
             Err(error) => {
+                skipped += 1;
                 warn!(
-                    "runtime startup reconciliation fell back to raw DB recovery for {}: {}",
-                    job_record.job_id, error
-                );
-                db.recover_stale_running_job(&job_record.job_id, &detail, &timestamp)?;
-                maintain_document_for_terminal(
-                    config,
-                    db,
-                    &job_record.job_id,
-                    None,
-                    &JobStatusKind::Failed,
+                    "runtime reconciliation failed for job {}; skipped it and continued with the next job: {error:#}",
+                    job_record.job_id
                 );
             }
         }
-        reconciled += 1;
-        warn!(
-            "recovered stale running job during runtime startup: {} resumable={resumable}",
-            job_record.job_id
-        );
     }
     if reconciled > 0 {
         warn!("runtime startup reconciliation recovered {reconciled} stale running job(s)");
+    }
+    if skipped > 0 {
+        warn!("runtime reconciliation skipped {skipped} running job(s) after errors; they stay as they are until the next reconciliation");
     }
     // 放在上面的循环之后：那一轮会把当时在跑的父任务判成 queued（随后恢复）或 failed，
     // 判完再看哪些子任务的父任务已经终态。
@@ -351,6 +117,266 @@ pub(super) fn reconcile_running_jobs_matching(
         settle_orphaned_ocr_children(config, db)?;
     }
     Ok(reconciled)
+}
+
+/// 对账一个遗留 running 任务。返回 `Ok(false)` 表示落库前发现别人接手了，原样留着；出错由调用方记日志、跳过。
+fn reconcile_one_running_job(
+    config: &AppConfig,
+    db: &Db,
+    include: &dyn Fn(&JobProcessRecord) -> bool,
+    job_record: &JobProcessRecord,
+) -> Result<bool> {
+    // 杀之前核对身份：库里的 pid 可能早就归了别的进程（长时间宕机、重启机器之后），
+    // 只凭 `kill(pid, 0)` 会把它整组杀掉。见 worker_identity.rs。
+    let reason = match classify_process_record(job_record) {
+        Some((pid, RecordedWorker::Ours)) => StaleReason::Orphaned(pid),
+        Some((pid, RecordedWorker::Gone)) => StaleReason::Dead(pid),
+        Some((pid, RecordedWorker::NotOurs)) => {
+            warn!(
+                "runtime startup: recorded worker pid={pid} of job {} now belongs to another process (pid reused); leaving it alone",
+                job_record.job_id
+            );
+            StaleReason::Reused(pid)
+        }
+        None => StaleReason::NoPid,
+    };
+
+    if let StaleReason::Orphaned(pid) = reason {
+        warn!(
+            "runtime startup found live orphaned worker process pid={pid} for job {} still running; terminating its process tree before recovering job state",
+            job_record.job_id
+        );
+        if let Err(error) = terminate_job_process_tree_blocking(
+            pid,
+            config.job_runner.worker_terminate_grace_secs,
+            config.job_runner.worker_terminate_poll_ms,
+        ) {
+            warn!(
+                "failed to terminate orphaned worker process pid={pid} for job {}: {error:#}",
+                job_record.job_id
+            );
+        }
+    }
+
+    let (detail, failure_category, failure_code) = match reason {
+        StaleReason::Orphaned(pid) => (
+            format!(
+                "任务运行时启动时发现遗留 running 任务，worker 进程 {pid} 仍在运行（孤儿进程），已终止该进程"
+            ),
+            "worker_orphaned_after_restart",
+            "worker_orphaned_after_restart",
+        ),
+        StaleReason::Dead(pid) => (
+            format!("任务运行时启动时发现遗留 running 任务，但 worker 进程 {pid} 已不存在"),
+            "worker_process_missing",
+            "worker_process_missing",
+        ),
+        StaleReason::Reused(pid) => (
+            format!(
+                "任务运行时启动时发现遗留 running 任务，worker 已不存在：库里记的 pid {pid} 现在属于别的进程（pid 已被复用），没有终止它"
+            ),
+            "worker_process_missing",
+            "worker_process_missing",
+        ),
+        StaleReason::NoPid => (
+            "任务运行时启动时发现遗留 running 任务，但未记录 worker pid".to_string(),
+            "worker_process_missing",
+            "worker_process_missing",
+        ),
+    };
+    let timestamp = now_iso();
+    let has_attempt = db.has_running_pipeline_attempt(&job_record.job_id)?;
+    // 翻译阶段有「已发出、没有终态」的请求时不自动续跑：续跑的 Python 会把它们
+    // 原样再发一遍，用户没机会拒绝重复计费。手动重试要确认重复风险，自动路径同理。
+    let ambiguous_translation = if has_attempt {
+        ambiguous_translation_requests(config, db, &job_record.job_id)?
+    } else {
+        None
+    };
+    let resumable = has_attempt && ambiguous_translation.is_none();
+    // 自动续跑计数（启动恢复和运行期巡检都走这里）：超过上限就不再续跑。
+    let resume_tally = if resumable {
+        db.next_auto_resume_tally(&job_record.job_id)?
+    } else {
+        None
+    };
+    let resume_limit_hit =
+        resume_tally.is_some_and(|tally| tally.count > MAX_AUTO_RESUMES_WITHOUT_PROGRESS);
+    let resumable = resumable && !resume_limit_hit;
+    match db.get_job(&job_record.job_id) {
+        Ok(mut job) => {
+            job.updated_at = timestamp.clone();
+            job.pid = None;
+            let committed_render_output = restore_committed_render_output(
+                &mut job,
+                committed_render_output_path(db, &job_record.job_id)?,
+            );
+            if committed_render_output {
+                job.append_log(&format!("WARN: {detail}"));
+                job.append_log(
+                    "INFO: committed render output recovered; task completed without rerender",
+                );
+                job.status = JobStatusKind::Succeeded;
+                job.stage = Some("finished".to_string());
+                job.stage_detail =
+                    Some("runtime restart recovered committed render output".to_string());
+                job.error = None;
+                job.finished_at = Some(timestamp.clone());
+                job.replace_failure_info(None);
+            } else if resumable {
+                job.append_log(&format!("WARN: {detail}"));
+                job.append_log(
+                    "INFO: durable pipeline checkpoint found; job requeued for automatic resume",
+                );
+                job.status = JobStatusKind::Queued;
+                job.stage_detail = Some(
+                    "runtime restart recovered durable checkpoint; waiting to resume"
+                        .to_string(),
+                );
+                job.error = None;
+                job.finished_at = None;
+                job.replace_failure_info(None);
+            } else if let Some(journal) = ambiguous_translation.as_ref() {
+                let summary = format!(
+                    "重启前翻译阶段有 {} 个已发出但结果不明的上游请求（journal 状态 {}），不自动续跑",
+                    journal.unresolved_dispatches.max(journal.active_ambiguous_request_keys),
+                    journal.status
+                );
+                job.append_log(&format!("WARN: {detail}"));
+                job.append_log(&format!("ERROR: {summary}"));
+                job.status = JobStatusKind::Failed;
+                job.stage = Some("failed".to_string());
+                job.stage_detail = Some(summary.clone());
+                job.error = Some(summary.clone());
+                job.finished_at = Some(timestamp.clone());
+                let recovery = retainpdf_core::job_failure_catalogue::recovery_for(
+                    AMBIGUOUS_TRANSLATION_CATEGORY,
+                );
+                job.replace_failure_info(Some(JobFailureInfo {
+                    stage: "translation".to_string(),
+                    category: AMBIGUOUS_TRANSLATION_CATEGORY.to_string(),
+                    code: None,
+                    failed_stage: Some("translation".to_string()),
+                    failure_code: Some(AMBIGUOUS_TRANSLATION_CATEGORY.to_string()),
+                    failure_category: Some("translation".to_string()),
+                    provider_stage: None,
+                    provider_code: None,
+                    summary: "重启时翻译请求的结果不明，已暂停自动续跑".to_string(),
+                    root_cause: Some(summary.clone()),
+                    retryable: true,
+                    upstream_host: None,
+                    provider: None,
+                    suggestion: Some(
+                        "确认可接受重复请求（可能重复计费）后，用 retry-stage（translation）并带 ambiguous_request_policy=accept_duplicate_risk 重试".to_string(),
+                    ),
+                    last_log_line: Some(summary.clone()),
+                    raw_excerpt: Some(summary.clone()),
+                    raw_error_excerpt: Some(summary.clone()),
+                    raw_diagnostic: None,
+                    ai_diagnostic: None,
+                    resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
+                    recovery_hint: Some(recovery.hint.to_string()),
+                    upstream: None,
+                }));
+            } else if resume_limit_hit {
+                fail_for_auto_resume_limit(&mut job, &detail, &timestamp);
+            } else {
+                job.append_log(&format!("ERROR: {detail}"));
+                job.status = JobStatusKind::Failed;
+                job.stage = Some("failed".to_string());
+                job.stage_detail =
+                    Some("runtime startup stale running job recovered".to_string());
+                job.error = Some(detail.clone());
+                job.finished_at = Some(timestamp.clone());
+                // 查目录而不是写死:新增失败类型只该改 job_failure_catalogue 一处。
+                let recovery =
+                    retainpdf_core::job_failure_catalogue::recovery_for(failure_category);
+                job.replace_failure_info(Some(JobFailureInfo {
+                    stage: "startup_recovery".to_string(),
+                    category: failure_category.to_string(),
+                    code: None,
+                    failed_stage: Some("startup_recovery".to_string()),
+                    failure_code: Some(failure_code.to_string()),
+                    failure_category: Some("internal".to_string()),
+                    provider_stage: None,
+                    provider_code: None,
+                    summary: "任务运行时启动时回收了遗留 running 任务".to_string(),
+                    root_cause: Some(detail.clone()),
+                    retryable: true,
+                    upstream_host: None,
+                    provider: None,
+                    suggestion: Some(
+                        "该任务对应的 worker 已不在运行；请重新提交或手动重试".to_string(),
+                    ),
+                    last_log_line: Some(detail.clone()),
+                    raw_excerpt: Some(detail.clone()),
+                    raw_error_excerpt: Some(detail.clone()),
+                    raw_diagnostic: None,
+                    ai_diagnostic: None,
+                    resume_from: recovery.resume_from.map(|s| s.as_str().to_string()),
+                    recovery_hint: Some(recovery.hint.to_string()),
+                    upstream: None,
+                }));
+            }
+            job.sync_runtime_state();
+            // 落库前再确认一次没人接手；用 CAS（只认 running），万一这一瞬间 driver 起来
+            // 改了行，就让它的结果算数，不去覆盖。
+            if !include(job_record)
+                || !cas_persist_job_with_resources(
+                    db,
+                    &config.data_root,
+                    &config.output_root,
+                    &job,
+                    &["running"],
+                )?
+            {
+                warn!(
+                    "stale running job {} changed under reconciliation; left as is",
+                    job_record.job_id
+                );
+                return Ok(false);
+            }
+            if committed_render_output {
+                db.finish_latest_pipeline_attempt(&job_record.job_id, "succeeded")?;
+            } else if ambiguous_translation.is_some() || resume_limit_hit {
+                // 任务已落 Failed：attempt 必须收尾，否则它还会出现在自动续跑名单里。
+                db.finish_latest_pipeline_attempt(&job_record.job_id, "failed")?;
+            } else if job.status == JobStatusKind::Queued {
+                if let Some(tally) = resume_tally.as_ref() {
+                    db.record_auto_resume(&job_record.job_id, tally)?;
+                }
+            }
+            // 终态不是 run_job 写的,书卡和全文索引要在这里补(重新排队的不是终态,不动)。
+            if matches!(job.status, JobStatusKind::Succeeded | JobStatusKind::Failed) {
+                maintain_document_for_terminal(
+                    config,
+                    db,
+                    &job_record.job_id,
+                    job.upload_id.as_deref(),
+                    &job.status,
+                );
+            }
+        }
+        Err(error) => {
+            warn!(
+                "runtime startup reconciliation fell back to raw DB recovery for {}: {}",
+                job_record.job_id, error
+            );
+            db.recover_stale_running_job(&job_record.job_id, &detail, &timestamp)?;
+            maintain_document_for_terminal(
+                config,
+                db,
+                &job_record.job_id,
+                None,
+                &JobStatusKind::Failed,
+            );
+        }
+    }
+    warn!(
+        "recovered stale running job during runtime startup: {} resumable={resumable}",
+        job_record.job_id
+    );
+    Ok(true)
 }
 
 /// 自动续跑次数超过上限：按失败收尾，写清原因（前端照 failure 的 summary / suggestion 显示）。
@@ -439,7 +465,13 @@ fn settle_orphaned_ocr_children(config: &AppConfig, db: &Db) -> Result<usize> {
             child.finished_at = Some(timestamp);
             child.append_log(&format!("WARN: {detail}"));
             child.sync_runtime_state();
-            persist_job_with_resources(db, &config.data_root, &config.output_root, &child)?;
+            // 一个子任务写不进去只跳过它（S10），别的子任务照常收尾。
+            if let Err(error) =
+                persist_job_with_resources(db, &config.data_root, &config.output_root, &child)
+            {
+                warn!("runtime startup failed to settle orphaned ocr child {child_id}; skipped: {error:#}");
+                continue;
+            }
         }
         let status = match child.status {
             JobStatusKind::Succeeded => "succeeded",
@@ -457,7 +489,9 @@ fn settle_orphaned_ocr_children(config: &AppConfig, db: &Db) -> Result<usize> {
                 warn!("runtime startup failed to mark OCR dispatch of {child_id} ambiguous: {error:#}");
             }
         }
-        db.finish_latest_pipeline_attempt(child_id, status)?;
+        if let Err(error) = db.finish_latest_pipeline_attempt(child_id, status) {
+            warn!("runtime startup failed to finish the attempt of orphaned ocr child {child_id}; skipped: {error:#}");
+        }
     }
     if !children.is_empty() {
         warn!(
@@ -813,6 +847,46 @@ mod tests {
             db.get_document(&document_id).unwrap().active_job_id.as_deref(),
             Some("only")
         );
+    }
+
+    /// 回归（S10 / J-N4）：启动对账时某一个任务的写入出错（库忙、磁盘满），只跳过这个任务、记日志，
+    /// 后面的任务照常对账，父任务已终态的 OCR 子任务也照常收尾，整轮不报错（jobsd 不能因此起不来）。
+    #[test]
+    fn startup_recovery_skips_a_job_whose_write_fails_and_reconciles_the_rest() {
+        use crate::models::domain::JobStatusKind::*;
+        let deps = crate::job_runner::process_runner::tests::test_runtime_deps(1);
+        let db = deps.db.as_ref();
+        // 按 updated_at 倒序处理：出错的那个排在前面，修之前后面的任务一个都对账不到。
+        for (job_id, updated_at) in [("a-bad", "2026-11-02T00:00:00"), ("b-good", "2026-11-01T00:00:00")] {
+            let mut job = JobSnapshot::new(job_id.to_string(), CreateJobInput::default(), vec![]);
+            job.status = Running;
+            job.stage = Some("translating".to_string());
+            job.updated_at = updated_at.to_string();
+            db.save_job(&job).expect("save job");
+            db.acquire_pipeline_attempt(job_id, &format!("attempt:{job_id}"), "translate", 0)
+                .expect("attempt");
+        }
+        save(db, "p-done", Succeeded);
+        save(db, "p-done-ocr", Succeeded);
+        db.acquire_pipeline_attempt("p-done-ocr", "native-ocr:1:p-done-ocr", "ocr", 0).unwrap();
+        // 只让 a-bad 的 attempt 行写不进去（自动续跑计数那一步）。
+        rusqlite::Connection::open(&deps.config.jobs_db_path)
+            .expect("open jobs db")
+            .execute_batch(
+                "CREATE TRIGGER fail_one_attempt BEFORE UPDATE ON pipeline_attempts \
+                 WHEN NEW.job_id = 'a-bad' \
+                 BEGIN SELECT RAISE(ABORT, 'injected attempt write failure'); END;",
+            )
+            .expect("install failure trigger");
+
+        let recovered = super::reconcile_stale_running_jobs(&deps.config, db)
+            .expect("一个任务对账出错不能让整轮报错");
+
+        assert_eq!(recovered, 1, "只算对账成功的那个");
+        assert_eq!(db.get_job("b-good").unwrap().status, Queued, "出错任务后面的任务没被对账");
+        assert!(db.list_resumable_pipeline_job_ids().unwrap().contains(&"b-good".to_string()));
+        assert!(!db.has_running_pipeline_attempt("p-done-ocr").unwrap(), "子任务收尾被跳过了");
+        let _ = fs::remove_dir_all(deps.config.project_root.clone());
     }
 
     /// 自成进程组的 sleep，和真实 worker 一样（`configure_child_process`），组杀只会打到它。

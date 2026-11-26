@@ -30,12 +30,14 @@ pub(super) fn pipeline_source_root() -> PathBuf {
 }
 
 /// 修订写回的代码在翻译包里(`retainpdf_translation`),同样要钉到这棵源码树,
-/// 否则 worktree 里测的是主检出的旧代码。
+/// 否则 worktree 里测的是主检出的旧代码。底座包(`retainpdf_base`,原子写在那里)也一样。
 pub(super) fn python_path() -> String {
+    let backend = Path::new(env!("CARGO_MANIFEST_DIR")).join("..");
     format!(
-        "{}:{}",
+        "{}:{}:{}",
         pipeline_source_root().display(),
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../translation").display()
+        backend.join("translation").display(),
+        backend.join("base").display()
     )
 }
 

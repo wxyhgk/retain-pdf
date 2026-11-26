@@ -103,6 +103,8 @@ TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
         # pending_item_count 却不为零把 validating 崩掉。方向是 workflow -> artifacts,
         # 与 phases 层已有的那条一致。
         "retainpdf_translation.artifacts",
+        # 断点、页快照的原子写和换名（Windows 退避重试）只有底座包一份（状态管理 Z5，2026-11-26）。
+        "retainpdf_base.io",
     ),
     "phases": (
         "retainpdf_translation.workflow.phases",
@@ -121,6 +123,8 @@ TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_translation.services.policy",
         "retainpdf_translation.services.postprocess",
         "retainpdf_base.events",
+        # 接续复核 memo 的原子写（状态管理 Z5，2026-11-26）。
+        "retainpdf_base.io",
     ),
     "scheduling": (
         "retainpdf_translation.workflow.scheduling",

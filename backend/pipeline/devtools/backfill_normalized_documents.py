@@ -12,12 +12,10 @@ import argparse
 import hashlib
 import json
 import math
-import os
 from pathlib import Path
 import re
 import sqlite3
 import sys
-import tempfile
 import time
 from typing import Any, Iterable
 
@@ -33,6 +31,7 @@ from retainpdf_pipeline.ocr.document_schema.normalize_pipeline import build_norm
 from retainpdf_pipeline.ocr.document_schema.normalize_pipeline import normalized_artifact_paths
 from retainpdf_pipeline.ocr.document_schema.normalize_pipeline import write_normalized_artifacts
 from retainpdf_pipeline.ocr.document_schema.reporting import build_normalization_summary
+from retainpdf_base.io import atomic_write_bytes
 from retainpdf_base.io import save_json_atomic
 from retainpdf_pipeline.ocr.ocr_provider.paddle_runner import apply_cli_normalization_report_semantics
 from retainpdf_translation.public import load_translation_manifest
@@ -504,18 +503,7 @@ def _write_normalized_artifacts_with_rollback(
 
 
 def _atomic_write_bytes(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".rollback", dir=path.parent)
-    tmp_path = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "wb") as handle:
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(tmp_path, path)
-    except Exception:
-        tmp_path.unlink(missing_ok=True)
-        raise
+    atomic_write_bytes(path, content)
 
 
 def _backfill_markdown(
