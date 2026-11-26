@@ -63,7 +63,21 @@ fn file_stamp(path: &Path) -> Result<String, AppError> {
         .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
         .map(|elapsed| elapsed.as_nanos())
         .unwrap_or(0);
-    Ok(format!("{}|{}|{}", path.display(), meta.len(), modified))
+    // 断点、页文件都是「写临时文件再换名」：每次提交都是新 inode。只看大小和修改时间不够——同一个时钟刻度里
+    // 连续两次提交、长度又一样时两者都不变（CI 上踩到过）；unix 上加 inode 就分得开。Windows 没有稳定的
+    // 文件号接口，退回大小加时间（NTFS 的时间精度是 100ns，同一刻度连提两次的机会很小）。
+    Ok(format!("{}|{}|{}|{}", path.display(), meta.len(), modified, file_identity(&meta)))
+}
+
+#[cfg(unix)]
+fn file_identity(meta: &std::fs::Metadata) -> u64 {
+    use std::os::unix::fs::MetadataExt;
+    meta.ino()
+}
+
+#[cfg(not(unix))]
+fn file_identity(_meta: &std::fs::Metadata) -> u64 {
+    0
 }
 
 /// 每个任务去哪读产物，按 job_id 索引。

@@ -808,6 +808,7 @@
         "retainpdf_pipeline/render/output/typst/sanitize.py",
         "retainpdf_pipeline/render/output/typst/shared.py",
         "retainpdf_pipeline/render/output/typst/source_pages.py",
+        "retainpdf_pipeline/render/output/word/backgrounds.py",
         "retainpdf_pipeline/render/pdf_structure_profile/io.py",
         "retainpdf_pipeline/render/prepare/store.py",
         "retainpdf_pipeline/render/render_stage.py",
