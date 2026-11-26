@@ -10,13 +10,17 @@ export type AiAgentsSchema = AgentsView;
  * builtin：RetainPDF 自带模型（用设置里的模型和密钥，服务器上也能用）；local：本机装的 agent。
  */
 export type AgentKind = "builtin" | "local";
+/**
+ * 本机 agent 怎么发行（怎么装）：binary 下载压缩包、把里面的命令放进 PATH（install_url）；npx 是 npm 包（install 是 npm install -g …）；uvx 是 Python 包（install 是 uv tool install …）。后端都不现场下载。
+ */
+export type AgentDistribution = "binary" | "npx" | "uvx";
 export interface AgentsView {
     agents: AgentView[];
     local_agents: LocalAgentsView;
 }
 export interface AgentView {
     /**
-     * retainpdf、claude-code、codex、gemini；WebSocket 地址里的 :agent_id。
+     * WebSocket 地址里的 :agent_id。retainpdf 是自带的；本机的是 ACP 官方登记表的 id（pi-acp、opencode、qwen-code……），只有 claude-code（登记表 claude-acp）、codex（codex-acp）沿用 2026-11-25 的写法，握手时登记表 id 也认。
      */
     id: string;
     name: string;
@@ -31,9 +35,35 @@ export interface AgentView {
      */
     launch?: string;
     /**
-     * 本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp；自带的没有。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。
+     * 本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp、uv tool install fast-agent-acp；自带的、只有压缩包的没有（看 install_url 和 reason）。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。
      */
     install?: string;
+    /**
+     * ACP 官方登记表里的 id（2026-11-26 加）；自带的没有。
+     */
+    registry_id?: string;
+    /**
+     * 登记表里的一句话介绍（英文）。
+     */
+    description?: string;
+    /**
+     * 快照里登记的版本，不是本机装的版本。
+     */
+    version?: string;
+    /**
+     * 官网，没有就是代码仓库。
+     */
+    homepage?: string;
+    license?: string;
+    distribution?: AgentDistribution;
+    /**
+     * 只有压缩包的 agent：这个平台的下载地址（解压后把命令放进 PATH）。
+     */
+    install_url?: string;
+    /**
+     * 推荐的几个（Claude Code、Codex、Gemini CLI、pi、OpenCode……）；不推荐的没有这个字段。前端可以把其余没装的折起来。
+     */
+    featured?: boolean;
 }
 export interface LocalAgentsView {
     /**

@@ -216,3 +216,116 @@ fn backend_url_is_the_loopback_address() {
     assert_eq!(loopback_base_url("::1", 8), "http://[::1]:8");
     assert_eq!(loopback_base_url("localhost", 8), "http://localhost:8");
 }
+
+#[cfg(unix)]
+#[test]
+fn registry_agents_are_detected_on_path_with_their_fixed_args_and_env() {
+    let root = temp_root("registry");
+    let config = config(&root.0);
+    let by_id = |id: &str| agents_view(&config).agents.into_iter().find(|agent| agent.id == id);
+
+    // pi-acp 要 PATH 上另有 pi：只装了适配器时说清楚还缺什么
+    fake_command(&root.0, "pi-acp");
+    let pi = by_id("pi-acp").unwrap();
+    assert!(!pi.available && pi.reason.contains("pi") && pi.reason.contains("@earendil-works/pi-coding-agent"), "{pi:?}");
+    assert_eq!(pi.install.as_deref(), Some("npm install -g @earendil-works/pi-coding-agent pi-acp"));
+    assert_eq!(pi.registry_id.as_deref(), Some("pi-acp"));
+    assert_eq!(pi.distribution, Some(AgentDistribution::Npx));
+    assert!(pi.featured && pi.homepage.is_some() && pi.version.is_some());
+    assert_eq!(prepare_agent(&config, "pi-acp", &local_headers(), &AcpConnectQuery::default(), None).map(|_| ()).map_err(status).unwrap_err(), 404);
+    fake_command(&root.0, "pi");
+    let pi = by_id("pi-acp").unwrap();
+    assert!(pi.available && pi.launch.as_deref() == Some("pi-acp"), "{pi:?}");
+    assert_eq!(pi.install.as_deref(), Some("npm install -g pi-acp"));
+    let (process, defaults) = prepare_agent(&config, "pi-acp", &local_headers(), &AcpConnectQuery::default(), None).unwrap();
+    assert_eq!(process.program, root.0.join("bin").join("pi-acp"));
+    assert!(process.args.is_empty() && process.env.is_empty());
+    assert_eq!(defaults.cwd.as_deref(), Some(root.0.join("books").as_path()));
+    // 闸门照旧：局域网地址不起
+    let mut lan = HeaderMap::new();
+    lan.insert("host", HeaderValue::from_static("192.168.1.5:41000"));
+    assert_eq!(prepare_agent(&config, "pi-acp", &lan, &AcpConnectQuery::default(), None).map(|_| ()).map_err(status).unwrap_err(), 403);
+
+    // 登记表的固定参数和环境变量（droid 关自动更新）
+    fake_command(&root.0, "droid");
+    let (process, _) = prepare_agent(&config, "factory-droid", &local_headers(), &AcpConnectQuery::default(), None).unwrap();
+    assert_eq!(process.args, vec!["exec", "--output-format", "acp-daemon"]);
+    let env: std::collections::HashMap<_, _> = process.env.into_iter().collect();
+    assert_eq!(env["DROID_DISABLE_AUTO_UPDATE"], "true");
+
+    // uvx 的命令名就是包名，安装命令是 uv tool install
+    let fast = by_id("fast-agent").unwrap();
+    assert!(!fast.available && fast.reason.contains("fast-agent-acp"), "{fast:?}");
+    assert_eq!(fast.install.as_deref(), Some("uv tool install fast-agent-acp"));
+    assert_eq!(fast.distribution, Some(AgentDistribution::Uvx));
+
+    // 装了的排在前面（自带的之后），再按推荐顺序
+    fake_command(&root.0, "qwen");
+    let agents = agents_view(&config).agents;
+    let ids: Vec<&str> = agents.iter().map(|agent| agent.id.as_str()).collect();
+    assert_eq!(&ids[..4], ["retainpdf", "pi-acp", "qwen-code", "factory-droid"], "{ids:?}");
+    assert_eq!(agents[2].launch.as_deref(), Some("qwen --acp --experimental-skills"));
+    let first_missing = agents.iter().position(|agent| !agent.available).unwrap();
+    assert_eq!(agents[first_missing].id, "claude-code");
+    assert!(agents[first_missing..].iter().all(|agent| !agent.available));
+}
+
+#[cfg(unix)]
+#[test]
+fn old_ids_stay_and_registry_ids_are_aliases() {
+    let root = temp_root("alias");
+    fake_command(&root.0, "claude-agent-acp");
+    let config = config(&root.0);
+    let view = agents_view(&config);
+    let claude = view.agents.iter().find(|agent| agent.id == "claude-code").unwrap();
+    assert_eq!(claude.name, "Claude Code");
+    assert_eq!(claude.registry_id.as_deref(), Some("claude-acp"));
+    assert_eq!(view.agents.iter().find(|agent| agent.id == "codex").unwrap().registry_id.as_deref(), Some("codex-acp"));
+    // 登记表 id 不另列一行，但握手时也认
+    assert!(view.agents.iter().all(|agent| agent.id != "claude-acp" && agent.id != "codex-acp"));
+    let (by_old, _) = prepare_agent(&config, "claude-code", &local_headers(), &AcpConnectQuery::default(), None).unwrap();
+    let (by_registry, _) = prepare_agent(&config, "claude-acp", &local_headers(), &AcpConnectQuery::default(), None).unwrap();
+    assert_eq!(by_old.program, by_registry.program);
+    assert_eq!(by_old.program, root.0.join("bin").join("claude-agent-acp"));
+
+    // 不列的（付费市场、旧 id）列表里没有，也起不了
+    for hidden in ["agoragentic-acp", "opencode-v2", "kimi", "antigravity-acp"] {
+        assert!(view.agents.iter().all(|agent| agent.registry_id.as_deref() != Some(hidden)), "{hidden}");
+        assert_eq!(prepare_agent(&config, hidden, &local_headers(), &AcpConnectQuery::default(), None).map(|_| ()).map_err(status).unwrap_err(), 404, "{hidden}");
+    }
+    // 自带的 id 不会被登记表占掉
+    assert_eq!(view.agents.iter().filter(|agent| agent.id == BUILTIN_AGENT_ID).count(), 1);
+}
+
+#[cfg(unix)]
+#[test]
+fn binary_agents_use_the_archive_command_for_this_platform() {
+    let registry = r#"{"agents":[
+        {"id":"goose","name":"goose","version":"1.0.0","description":"d","website":"https://goose.example","distribution":{"binary":{
+            "linux-x86_64":{"archive":"https://example.com/goose-linux.tar.gz","cmd":"./goose","args":["acp"],"env":{"GOOSE_X":"1"}},
+            "darwin-aarch64":{"archive":"https://example.com/goose-mac.tar.gz","cmd":"./goose","args":["acp"]}}}},
+        {"id":"cursor","name":"Cursor","distribution":{"binary":{
+            "linux-x86_64":{"archive":"https://example.com/cursor.tar.gz","cmd":"./dist-package/cursor-agent","args":["acp"]}}}},
+        {"id":"mac-only","name":"Mac only","distribution":{"binary":{
+            "darwin-aarch64":{"archive":"https://example.com/m.zip","cmd":"./m"}}}},
+        {"id":"npx-unknown","name":"No bin","distribution":{"npx":{"package":"x@1"}}}]}"#;
+    let catalog = registry::build_catalog(registry, "{}").unwrap();
+    let root = temp_root("binary");
+    fake_command(&root.0, "goose");
+    let path = root.0.join("bin").into_os_string();
+    let views = registry::list_agents_on(&catalog, "linux-x86_64", "", Some(&path));
+    let ids: Vec<&str> = views.iter().map(|agent| agent.id.as_str()).collect();
+    // 这个平台没有压缩包的、npx 又没核过命令名的不列
+    assert_eq!(ids, ["retainpdf", "goose", "cursor"]);
+    let goose = &views[1];
+    assert!(goose.available && goose.launch.as_deref() == Some("goose acp"), "{goose:?}");
+    assert_eq!(goose.distribution, Some(AgentDistribution::Binary));
+    let cursor = &views[2];
+    assert!(!cursor.available && cursor.install.is_none(), "{cursor:?}");
+    assert_eq!(cursor.install_url.as_deref(), Some("https://example.com/cursor.tar.gz"));
+    assert!(cursor.reason.contains("cursor-agent") && cursor.reason.contains("https://example.com/cursor.tar.gz"), "{cursor:?}");
+    // 本机 agent 关着：一律不能用，原因是闸门的
+    let views = registry::list_agents_on(&catalog, "darwin-aarch64", "多用户模式不起本机 agent", Some(&path));
+    assert_eq!(views.len(), 3);
+    assert!(views[1..].iter().all(|agent| !agent.available && agent.reason == "多用户模式不起本机 agent"));
+}

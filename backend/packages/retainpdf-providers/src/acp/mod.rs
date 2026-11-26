@@ -18,7 +18,7 @@ use retainpdf_api_base::error::AppError;
 use serde::{Deserialize, Serialize};
 
 pub use bridge::{run_bridge, AgentProcess, BridgeOut, SessionDefaults, CLOSE_AGENT_ENDED};
-pub use registry::{AgentKind, AgentView, BUILTIN_AGENT_ID};
+pub use registry::{AgentDistribution, AgentKind, AgentView, BUILTIN_AGENT_ID};
 
 /// 自带 agent 的模型配置、密钥交给子进程的环境变量（Python `retainpdf_ask_agent` 读）。
 pub const ASK_ENV_MODEL: &str = "RETAIN_ASK_MODEL";
@@ -241,7 +241,7 @@ pub fn prepare_agent(
         let launch = registry::resolve_local_agent(agent_id, config.path_var.as_deref())
             .expect("is_local_agent checked")
             .map_err(AppError::not_found)?;
-        AgentProcess { program: launch.program, args: launch.args, env: vec![], cwd: Some(cwd.clone()) }
+        AgentProcess { program: launch.program, args: launch.args, env: launch.env, cwd: Some(cwd.clone()) }
     } else {
         return Err(AppError::not_found(format!("unknown agent {agent_id:?}")));
     };

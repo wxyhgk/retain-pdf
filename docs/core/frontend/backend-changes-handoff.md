@@ -12,6 +12,30 @@
 
 ---
 
+## 阅读页提问：本机 agent 改从 ACP 官方登记表来（feat/acp-registry）
+
+2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「能用哪些 agent」，方案
+[ACP 官方登记表](../../ops/planning/reader-ask/20261126-ACP官方登记表.md)。**不改前端也能用**：`GET /api/v1/ai/agents` 还是那个形状，
+`claude-code`、`codex`、`gemini` 三个 id 不变，只是本机 agent 从 3 个变成 42 个（pi、OpenCode、Qwen Code、Kimi Code、goose、Copilot、Cursor……），
+装了的排在前面。
+
+前端要改的（建议）：
+
+| 文件 | 旧写法 | 新写法 |
+|---|---|---|
+| `frontend/web/src/features/reader/domain/ask-port.ts` 的 `AgentRow` | `{id, name, kind, available, reason, launch, install}` | 另有可选的 `registry_id`、`description`（英文一句）、`version`、`homepage`、`license`、`distribution`（`binary` / `npx` / `uvx`）、`install_url`、`featured` |
+| 同上，列 agent | 全列 | 42 个太长：只展开 `available` 的和 `featured` 的（推荐 10 个），其余没装的折进「更多」 |
+| 同上，没装的提示 | 显示 `install`（安装命令） | 只有压缩包的 agent（goose、Cursor、OpenCode……）没有 `install`，给 `install_url`（下载地址）；`reason` 里也写了「下载……解压，把 X 放进 PATH」。`homepage` 可以做成「说明」链接 |
+| `frontend/web/src/platform/mock/ask-agent.ts`（可选） | 三个 agent | 演示模式可以加一个 pi，用 `registry_id`、`featured` 试折叠 |
+
+- 握手地址不变；登记表 id 也认（`/ai/agents/claude-acp/acp` 等于 `claude-code`），前端继续用列表里的 `id` 就行。
+- 实测：Gemini CLI 个人版 `session/new` 回 `-32000`（Google 停了个人版 Code Assist，要换 API key 或迁 Antigravity）；Grok 回
+  `Authentication required`（要 ACP 的 `authenticate`）。这两种错误桥原样转，问答窗把 JSON-RPC 错误的 `message` 显示出来就好。
+- pi（`pi-acp`）不收桥补的 `retainpdf` MCP 服务，读不了书，只靠出处那段字回答。
+- `docs/core/frontend/reader-ask.md` 里「本机 Claude Code / Codex / Gemini」的说法，前端改时顺带更新。
+
+---
+
 ## 阅读页提问：自带 agent 自己读书（feat/ask-agent-tools）
 
 2026-11-25，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「自带 agent 读书」，方案
