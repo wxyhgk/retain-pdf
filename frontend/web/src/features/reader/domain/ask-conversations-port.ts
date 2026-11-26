@@ -1,19 +1,24 @@
 // 阅读页提问的主对话、副对话、记忆（契约 ask-conversations.v1）：阅读器的 conversations 端口接到生成的请求函数上。
 // 接口见 docs/api/16-AI/02-主对话和记忆.md。压缩主对话、副对话结论由后端用设置里那条模型写（connection 由 ask-port 给）。
 
-import type { ReaderAskConversationsPort } from "@retainpdf/reader/contracts";
+import type { ReaderAskConversationsPort, ReaderAskMemoriesPort } from "@retainpdf/reader/contracts";
 import {
   appendAskConversationMessages,
   closeAskConversation,
   createAskCompaction,
+  createAskMemory,
   createAskSideConversation,
   deleteAskMemory,
   getAskConversation,
   getAskConversationContext,
+  getAskSettings,
   getMainAskConversation,
   listAskConversationMessages,
+  listAskMemories,
   listDocumentAskMessages,
   updateAskConversation,
+  updateAskMemory,
+  updateAskSettings,
   type AskModelConnectionInput,
 } from "@retainpdf/api/ai";
 
@@ -52,3 +57,13 @@ export function createAskConversationsPort(connection: () => Promise<AskModelCon
     },
   };
 }
+
+/** 记忆面板：列、加、改、删，「让 AI 使用记忆」开关（后端库里一行）。 */
+export const askMemoriesPort: ReaderAskMemoriesPort = {
+  list: async (query) => (await listAskMemories(API_PREFIX, query)).memories || [],
+  create: (input) => createAskMemory(API_PREFIX, input),
+  update: (memoryId, input) => updateAskMemory(API_PREFIX, memoryId, input),
+  remove: (memoryId) => deleteAskMemory(API_PREFIX, memoryId),
+  settings: () => getAskSettings(API_PREFIX),
+  setEnabled: (enabled) => updateAskSettings(API_PREFIX, { memory_enabled: enabled }),
+};

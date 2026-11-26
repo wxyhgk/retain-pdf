@@ -1,5 +1,5 @@
 import type { AskAgent, AskHandlers, AskMessage, AskSession } from "@retainpdf/ask";
-import type { AppendAskMessagesView, AskConversationMessageInput, AskConversationMessageRecord, AskConversationRecord, AskMessagePageView, CloseAskConversationView, CreateAskSideConversationInput } from "@retainpdf/api/ai";
+import type { AppendAskMessagesView, AskConversationMessageInput, AskConversationMessageRecord, AskConversationRecord, AskMemoryCreatedView, AskMemoryRecord, AskMessagePageView, AskSettingsRecord, CloseAskConversationView, CreateAskMemoryInput, CreateAskSideConversationInput, ListAskMemoriesQuery, PatchAskMemoryInput } from "@retainpdf/api/ai";
 /** 能用的 agent。和提问窗的 AskAgent 是同一个东西。 */
 export type ReaderAskAgent = AskAgent;
 export type ReaderAskHandlers = AskHandlers;
@@ -19,6 +19,19 @@ export type ReaderAskPort = {
     threads?: ReaderAskThreadsPort | null;
     /** 全局主对话、副对话、记忆（2026-11-26，docs/api/16-AI/02-主对话和记忆.md）。不给就只记在这次打开里。 */
     conversations?: ReaderAskConversationsPort | null;
+    /** 记忆面板、「让 AI 使用记忆」开关。不给就没有记忆面板。 */
+    memories?: ReaderAskMemoriesPort | null;
+};
+/** 记忆（用户层、书层）和「让 AI 使用记忆」总开关（存在后端库里，不在浏览器设置里）。类型就是契约 ask-conversations.v1 的。 */
+export type ReaderAskMemoriesPort = {
+    list: (query: ListAskMemoriesQuery) => Promise<AskMemoryRecord[]>;
+    /** 用户自己加（origin 不给就是 user）。 */
+    create: (input: CreateAskMemoryInput) => Promise<AskMemoryCreatedView>;
+    update: (memoryId: string, input: PatchAskMemoryInput) => Promise<AskMemoryRecord>;
+    /** 删（被它替代的旧条恢复）。 */
+    remove: (memoryId: string) => Promise<AskMemoryRecord>;
+    settings: () => Promise<AskSettingsRecord>;
+    setEnabled: (enabled: boolean) => Promise<AskSettingsRecord>;
 };
 /** 主对话、副对话（后端库是正本）。类型就是契约 ask-conversations.v1 的。 */
 export type ReaderAskConversationsPort = {

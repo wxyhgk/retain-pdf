@@ -1,16 +1,17 @@
 /** 阅读页的提问窗：把主对话（use-ask-conversation）、下一问的出处、任务号、跳页、KaTeX 地址接到 @retainpdf/ask 的 AskWindow 上。
  * 单独一块，第一次提问才加载。以前按书存的问答（只读）也用它看。 */
-import { useMemo, type ReactElement } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import AskWindow from "@retainpdf/ask/window";
 import type { AskMessageContext } from "@retainpdf/ask";
 import type { AskSelectionRecord } from "@retainpdf/api/ai";
-import { Archive, ChevronRight, Loader2 } from "lucide-react";
+import { Archive, BookmarkCheck, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
 import type { ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
 import { resolveKatexStylesheetUrl } from "../external.js";
 import { bindAskPort, toAskContext } from "./ask-context.js";
 import { anchorSelection, type AskBook } from "./conversation-messages.js";
+import { ReaderMemoryPanel } from "./ReaderMemoryPanel.js";
 import type { useAskConversation } from "./use-ask-conversation.js";
 
 type AskState = ReturnType<typeof useAskConversation>;
@@ -57,6 +58,7 @@ function Breadcrumb({ ask }: { ask: AskState }): ReactElement {
 }
 
 export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy }: ReaderAskPanelProps): ReactElement {
+  const [memoryOpen, setMemoryOpen] = useState(false);
   const conversation = ask.view.conversation;
   const bound = legacy ? null : conversation ? { id: conversation.conversation_id, documentId: book.documentId } : null;
   const askPort = useMemo(() => bindAskPort(port, jobId, bound), [port, jobId, bound?.id, bound?.documentId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -88,7 +90,9 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
     );
   }
   const main = conversation?.kind === "main";
+  const memories = port.memories ?? null;
   return (
+    <>
     <AskWindow
       key={ask.view.key}
       port={askPort}
@@ -97,11 +101,18 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       onContextClear={() => ask.setPending(null)}
       onClose={ask.close}
       title={<Breadcrumb ask={ask} />}
-      headerActions={main && ask.persistent ? (
-        <Button className="ask-icon" aria-label="归档主对话" title="归档这个主对话，开一个新的（归档的还在，记忆不受影响）" onClick={() => void ask.archiveMain()}>
-          <Archive size={14} aria-hidden />
-        </Button>
-      ) : null}
+      headerActions={<>
+        {memories ? (
+          <Button className="ask-icon" aria-label="记忆" title="记忆：AI 记下的、你自己加的（能关掉）" onClick={() => setMemoryOpen(true)}>
+            <BookmarkCheck size={14} aria-hidden />
+          </Button>
+        ) : null}
+        {main && ask.persistent ? (
+          <Button className="ask-icon" aria-label="归档主对话" title="归档这个主对话，开一个新的（归档的还在，记忆不受影响）" onClick={() => void ask.archiveMain()}>
+            <Archive size={14} aria-hidden />
+          </Button>
+        ) : null}
+      </>}
       footer={<>
         {ask.error ? <p className="ask-error">{ask.error}</p> : null}
         <SideBar ask={ask} />
@@ -117,5 +128,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       pageCount={pageCount}
       katexStylesheetUrl={katex}
     />
+    {memories ? <ReaderMemoryPanel port={memories} documentId={book.documentId} open={memoryOpen} onOpenChange={setMemoryOpen} /> : null}
+    </>
   );
 }

@@ -26,6 +26,10 @@
 @import "../../ui/styles/ornaments.css" layer(pages);
 /* 组件库的下拉框、输入框（提问窗选 agent 用 Select）。 */
 @import "../../ui/styles/field.css" layer(pages);
+/* 组件库的按钮（带 variant 的）、勾选框、分段、侧边抽屉（提问窗的记忆面板用）。 */
+@import "../../ui/styles/button.css" layer(pages);
+@import "../../ui/styles/choice.css" layer(pages);
+@import "../../ui/styles/sheet.css" layer(pages);
 /* 阅读器也吃氛围底（PDF 区仍是自己的 --reader-page）— 仅 reader variant，无主页纸台 */
 @import "./core/ambient-surface-reader.css";
 
@@ -54,6 +58,7 @@
 @import "./zoom.css" layer(pages);
 @import "../../ask/styles/ask.css" layer(pages);
 @import "./ask-marks.css" layer(pages);
+@import "./ask-memory.css" layer(pages);
 @import "./doc-theme.css" layer(pages);
 /* Markdown 悬浮预览（含 MathJax） */
 @import "./markdown.css" layer(pages);

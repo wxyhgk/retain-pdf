@@ -1,0 +1,82 @@
+/* 记忆面板（src/ask/ReaderMemoryPanel.tsx，提问窗标题栏的记忆图标打开）：开关、分层、搜、加、一条一行。 */
+.reader-memory {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.reader-memory-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 13px);
+  line-height: 1.6;
+}
+
+.reader-memory-note[data-tone="error"] {
+  color: var(--danger, var(--ink));
+}
+
+.reader-memory-add,
+.reader-memory-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reader-memory-add > input,
+.reader-memory-edit > input {
+  flex: 1;
+  min-width: 0;
+}
+
+.reader-memory-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reader-memory-row {
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.reader-memory-text {
+  margin: 0 0 4px;
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 13px);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.reader-memory-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.reader-memory-gap {
+  flex: 1;
+}
+
+.reader-memory-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--muted);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-memory-icon:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}

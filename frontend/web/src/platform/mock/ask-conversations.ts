@@ -1,8 +1,8 @@
 // 演示模式的主对话、副对话（阅读页提问）：存在内存里（刷新就没了），照后端的规矩：主对话只有一个开着的、
 // 消息只追加、幂等号重复回原来那条、副对话结束时主对话末尾追加结论卡片。够演示「?」、深挖、结论卡片、看更早的。
 
-import type { ReaderAskConversationsPort } from "@retainpdf/reader/contracts";
-import type { AskConversationMessageInput, AskConversationMessageRecord, AskConversationRecord } from "@retainpdf/api/ai";
+import type { ReaderAskConversationsPort, ReaderAskMemoriesPort } from "@retainpdf/reader/contracts";
+import type { AskConversationMessageInput, AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord } from "@retainpdf/api/ai";
 
 const conversations = new Map<string, AskConversationRecord>();
 const messages = new Map<string, AskConversationMessageRecord[]>();
@@ -92,4 +92,48 @@ export const mockAskConversations: ReaderAskConversationsPort = {
   compact: async () => {},
   bookMessages: async (documentId) => [...messages.values()].flat().filter((message) => message.role === "user" && message.page && (!message.document_id || message.document_id === documentId)),
   forgetMemory: async () => {},
+};
+
+// 记忆也在内存里：两条演示用的，照后端的规矩（删了标 deleted、列表默认只看 active）。
+const memories: AskMemoryRecord[] = [
+  { scope: "user", category: "style", text: "先给结论，再讲推导", origin: "agent" },
+  { scope: "user", category: "background", text: "读的是量子化学，熟悉线性代数", origin: "user" },
+].map((entry, index) => ({
+  memory_id: `mem-demo-seed-${index + 1}`, scope: entry.scope as AskMemoryRecord["scope"], document_id: null, category: entry.category as AskMemoryRecord["category"],
+  text: entry.text, status: "active", superseded_by: null, origin: entry.origin as AskMemoryRecord["origin"], agent_id: entry.origin === "agent" ? "retainpdf" : null,
+  source_conversation_id: null, source_message_id: null, source_job_id: null, source_page: null, created_at: now(), updated_at: now(), deleted_at: null,
+}));
+let memoryEnabled = true;
+
+export const mockAskMemories: ReaderAskMemoriesPort = {
+  list: async (query) => memories.filter((memory) => memory.status === "active"
+    && (!query.scope || memory.scope === query.scope)
+    && (!query.document_id || memory.document_id === query.document_id)
+    && (!query.q || memory.text.includes(query.q))),
+  create: async (input) => {
+    const memory: AskMemoryRecord = {
+      memory_id: nextId("mem"), scope: input.scope, document_id: input.document_id ?? null, category: input.category ?? "other", text: input.text, status: "active",
+      superseded_by: null, origin: input.origin ?? "user", agent_id: null, source_conversation_id: null, source_message_id: null, source_job_id: null, source_page: null,
+      created_at: now(), updated_at: now(), deleted_at: null,
+    };
+    memories.unshift(memory);
+    return { memory, created: true, replaced: null };
+  },
+  update: async (memoryId, input) => {
+    const memory = memories.find((entry) => entry.memory_id === memoryId);
+    if (!memory) throw new Error("没有这条记忆");
+    Object.assign(memory, { ...(input.text ? { text: input.text } : {}), ...(input.category ? { category: input.category } : {}), updated_at: now() });
+    return memory;
+  },
+  remove: async (memoryId) => {
+    const memory = memories.find((entry) => entry.memory_id === memoryId);
+    if (!memory) throw new Error("没有这条记忆");
+    Object.assign(memory, { status: "deleted", deleted_at: now() });
+    return memory;
+  },
+  settings: async () => ({ memory_enabled: memoryEnabled, updated_at: null }),
+  setEnabled: async (enabled) => {
+    memoryEnabled = enabled;
+    return { memory_enabled: enabled, updated_at: now() };
+  },
 };

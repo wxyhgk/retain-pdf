@@ -25,7 +25,7 @@ import { connectionValue, savedDefaultTranslationModel, savedTranslationConnecti
 import { loadBrowserStoredConfig, savePersistedBrowserStoredConfig } from "@/platform/config/persisted-config.js";
 import { createCredential, updateCredential } from "@/platform/api/domains/credentials.js";
 import { mockAskPort } from "@/platform/mock/ask-agent.js";
-import { createAskConversationsPort } from "./ask-conversations-port.js";
+import { askMemoriesPort, createAskConversationsPort } from "./ask-conversations-port.js";
 
 export const BUILTIN_AGENT_ID = "retainpdf";
 
@@ -288,6 +288,7 @@ function createRealAskPort(): ReaderAskPort {
     openSession: (options, handlers) => openSession(options, handlers, builtinAgentIds),
     threads: askThreadsPort,
     conversations: createAskConversationsPort(askModelConnection),
+    memories: askMemoriesPort,
   };
 }
 

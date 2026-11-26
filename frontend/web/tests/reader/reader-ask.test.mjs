@@ -77,6 +77,11 @@ test("主对话接线：打开取主对话、读最近一页；每答完一轮�
   const marks = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-marks.ts", import.meta.url), "utf8");
   assert.match(marks, /port\.threads\?\.list\(documentId\)/, "以前按书存的照旧画");
   assert.match(marks, /port\.conversations\?\.bookMessages\(documentId\)/);
+  const panel = readFileSync(new URL("../../../packages/reader/src/ask/ReaderMemoryPanel.tsx", import.meta.url), "utf8");
+  assert.match(panel, /port\.setEnabled\(next\)/, "「让 AI 使用记忆」存在后端，不在浏览器设置里");
+  assert.match(panel, /AI 现在用不到这些记忆/, "关着时说清楚");
+  const entry = readFileSync(new URL("../../../packages/reader/styles/entry.css", import.meta.url), "utf8");
+  assert.match(entry, /ui\/styles\/sheet\.css/, "阅读页引了抽屉的样式（记忆面板）");
 });
 
 test("悬停还没认出块（鼠标刚移过来、点在两段之间）：按位置找同一页最近的块，太远（超过页高 15%）不算", () => {

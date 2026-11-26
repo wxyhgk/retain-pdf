@@ -9201,7 +9201,7 @@ function _h({ port: e, documentId: t, resetKey: n, pointOf: r }) {
   }, [t]), u = C((f) => a((d) => d.filter((m) => m.key !== f)), []);
   return { marks: o, addRecords: l, removeMark: u };
 }
-const Ah = zo(() => import("./ReaderAskPanel-Dgaqyev_.js"));
+const Ah = zo(() => import("./ReaderAskPanel-CTovdRMN.js"));
 function Lh({
   port: e,
   documentId: t,
@@ -9400,7 +9400,7 @@ function Oh({
     goBack: C(() => d("back"), [d])
   };
 }
-const $h = zo(() => import("./ReaderMarkdownPanel-C6c1b42M.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Fh = [];
+const $h = zo(() => import("./ReaderMarkdownPanel-CmzNm4BW.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Fh = [];
 function Bh(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantOpen && e.mode === "compare" ? "source" : e.mode, a = !t && (o === "translated" || o === "compare");
   return {
@@ -9792,4 +9792,4 @@ export {
   ap as r,
   et as u
 };
-//# sourceMappingURL=ReaderApp-DMyvMgeZ.js.map
+//# sourceMappingURL=ReaderApp-WIfbLXhv.js.map
