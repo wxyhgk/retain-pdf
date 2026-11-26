@@ -115,7 +115,8 @@ export function specResult(prompt: OpenUiPrompt, raw: unknown): ToolResult {
 
 /** 起 openui-check 的环境变量：关掉 lang-core 的遥测。 */
 export function checkEnv(base: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
-  const env: NodeJS.ProcessEnv = { ...base, ...TELEMETRY_ENV };
+  // ELECTRON_RUN_AS_NODE：桌面版的 node 可能是 Electron 本体（RETAINPDF_NODE_BIN），对真的 node 没影响
+  const env: NodeJS.ProcessEnv = { ...base, ...TELEMETRY_ENV, ELECTRON_RUN_AS_NODE: "1" };
   delete env[TELEMETRY_ENABLE_ENV];
   return env;
 }

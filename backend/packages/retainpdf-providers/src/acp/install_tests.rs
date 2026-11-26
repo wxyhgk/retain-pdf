@@ -37,6 +37,7 @@ fn config(root: &Path) -> AcpConfig {
         backend_root: None,
         agents_dir: root.join(AGENTS_DIR_NAME),
         node_dir: None,
+        node_bin: None,
         openui_dir: None,
         openui_check_dir: None,
     }

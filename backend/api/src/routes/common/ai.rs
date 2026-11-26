@@ -3,7 +3,7 @@ use axum::http::{header, HeaderMap};
 
 use crate::app::AppState;
 use crate::services::providers::{
-    default_openui_check_dir, default_openui_dir, loopback_base_url, AcpConfig, AGENTS_DIR_NAME, NODE_DIR_ENV, OPENUI_CHECK_DIR_ENV,
+    default_openui_check_dir, default_openui_dir, loopback_base_url, AcpConfig, AGENTS_DIR_NAME, NODE_BIN_ENV, NODE_DIR_ENV, OPENUI_CHECK_DIR_ENV,
     OPENUI_DIR_ENV,
 };
 
@@ -26,6 +26,7 @@ pub fn build_acp_config(state: &AppState) -> AcpConfig {
         backend_root: Some(config.project_root.join("backend")).filter(|dir| dir.is_dir()),
         agents_dir: config.data_root.join(AGENTS_DIR_NAME),
         node_dir: std::env::var_os(NODE_DIR_ENV).filter(|dir| !dir.is_empty()).map(std::path::PathBuf::from),
+        node_bin: std::env::var_os(NODE_BIN_ENV).filter(|bin| !bin.is_empty()).map(std::path::PathBuf::from),
         // 互动块：说明文件（contracts/openui）和检查器（backend/openui-check），桌面版、Docker 用环境变量指过来
         openui_dir: default_openui_dir(std::env::var_os(OPENUI_DIR_ENV).as_deref(), &config.project_root),
         openui_check_dir: default_openui_check_dir(std::env::var_os(OPENUI_CHECK_DIR_ENV).as_deref(), &config.project_root),

@@ -44,6 +44,7 @@ fn config(root: &Path) -> AcpConfig {
         backend_root: Some(root.join("backend")),
         agents_dir: root.join(AGENTS_DIR_NAME),
         node_dir: None,
+        node_bin: None,
         openui_dir: None,
         openui_check_dir: None,
     }
@@ -636,4 +637,34 @@ fn all_three_kinds_of_agent_get_the_openui_files() {
     none.openui_dir = None;
     let (_, defaults) = prepare_agent(&none, "gemini", &local_headers(), &AcpConnectQuery::default(), None).unwrap();
     assert_eq!(defaults.mcp_server.unwrap()["env"].as_array().unwrap().len(), 1);
+}
+
+/// openui-check 的 node：`RUST_API_NODE_DIR` → `RETAINPDF_NODE_BIN`（桌面版的 Electron 本体）→ PATH（2026-11-26）。
+#[test]
+#[cfg(unix)]
+fn openui_node_falls_back_to_the_desktop_electron_binary() {
+    use std::os::unix::fs::PermissionsExt;
+    let root = temp_root("openui-node-order");
+    let mut config = config(&root.0);
+    let electron = root.0.join("Electron");
+    std::fs::write(&electron, "#!/bin/sh\n").unwrap();
+    std::fs::set_permissions(&electron, std::fs::Permissions::from_mode(0o755)).unwrap();
+    // PATH 上也有一个 node：Electron 优先
+    let path_dir = root.0.join("path-bin");
+    std::fs::create_dir_all(&path_dir).unwrap();
+    std::fs::write(path_dir.join("node"), "#!/bin/sh\n").unwrap();
+    std::fs::set_permissions(path_dir.join("node"), std::fs::Permissions::from_mode(0o755)).unwrap();
+    config.path_var = Some(path_dir.clone().into_os_string());
+    config.node_bin = Some(electron.clone());
+    assert_eq!(super::openui::find_node(&config), Some(electron.clone()));
+    // 自带的 Node 目录优先于 Electron
+    let node_dir = root.0.join("node/bin");
+    std::fs::create_dir_all(&node_dir).unwrap();
+    std::fs::write(node_dir.join("node"), "#!/bin/sh\n").unwrap();
+    config.node_dir = Some(root.0.join("node"));
+    assert_eq!(super::openui::find_node(&config), Some(node_dir.join("node")));
+    // 都没有、或 Electron 路径不存在：退回 PATH
+    config.node_dir = None;
+    config.node_bin = Some(root.0.join("missing"));
+    assert_eq!(super::openui::find_node(&config), Some(path_dir.join("node")));
 }

@@ -32,6 +32,8 @@ pub const ENV_PROMPT: &str = "RETAIN_OPENUI_PROMPT";
 pub const ENV_LIBRARY: &str = "RETAIN_OPENUI_LIBRARY";
 pub const ENV_CHECK: &str = "RETAIN_OPENUI_CHECK";
 pub const ENV_NODE: &str = "RETAIN_OPENUI_NODE";
+/// 桌面版的 Electron 本体（排版引擎、Word 导出同一个变量）。
+pub const NODE_BIN_ENV: &str = "RETAINPDF_NODE_BIN";
 /// pi 的包装脚本读：L0 的文件（桥写在这次连接的私有配置目录里）。
 pub const ENV_PI_INTRO: &str = "RETAIN_PI_OPENUI_INTRO";
 pub const PI_INTRO_FILE: &str = "openui-intro.md";
@@ -51,7 +53,8 @@ fn pick_dir(env_value: Option<&std::ffi::OsStr>, fallback: PathBuf) -> Option<Pa
     dir.is_dir().then_some(dir)
 }
 
-/// 起 openui-check 用的 node：`RUST_API_NODE_DIR` 里的，没有就 PATH 上的。
+/// 起 openui-check 用的 node：`RUST_API_NODE_DIR` 里的 → `RETAINPDF_NODE_BIN`（桌面版是 Electron 本体，起检查器的三处都带
+/// `ELECTRON_RUN_AS_NODE=1`，对真的 node 没影响）→ PATH 上的。桌面版普通用户的 PATH 上多半没有 node（2026-11-26 前端提出）。
 pub(super) fn find_node(config: &AcpConfig) -> Option<PathBuf> {
     let name = if cfg!(windows) { "node.exe" } else { "node" };
     if let Some(dir) = config.node_dir.as_deref() {
@@ -59,6 +62,9 @@ pub(super) fn find_node(config: &AcpConfig) -> Option<PathBuf> {
         if node.is_file() {
             return Some(node);
         }
+    }
+    if let Some(bin) = config.node_bin.as_deref().filter(|bin| bin.is_file()) {
+        return Some(bin.to_path_buf());
     }
     find_in_path(name, config.path_var.as_deref())
 }

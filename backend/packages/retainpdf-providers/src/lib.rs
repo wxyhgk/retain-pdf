@@ -20,7 +20,7 @@ pub use acp::{
     AcpConnectQuery, AgentDistribution, AgentKind, AgentProcess, AgentView, AgentsView, AskBook, BridgeOut,
     LocalAgentsView, SessionDefaults, BUILTIN_AGENT_ID, CLOSE_AGENT_ENDED, PI_AGENT_ID, install_agent,
     spawn_default_installs, AgentInstallView, InstallMethod, InstallState, AGENTS_DIR_NAME, DEFAULT_INSTALL_ENV,
-    NODE_DIR_ENV, default_openui_check_dir, default_openui_dir, OPENUI_CHECK_DIR_ENV, OPENUI_DIR_ENV,
+    NODE_DIR_ENV, NODE_BIN_ENV, default_openui_check_dir, default_openui_dir, OPENUI_CHECK_DIR_ENV, OPENUI_DIR_ENV,
 };
 pub use credentials::{
     acquire_credential_usage_lock, delete_unreferenced_managed_credential,
