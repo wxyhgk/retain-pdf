@@ -1,0 +1,20 @@
+{
+  "name": "retainpdf-openui-check",
+  "version": "1.0.0",
+  "private": true,
+  "description": "阅读页提问的 openui_check：用 @openuidev/lang-core 解析 OpenUI Lang 程序，报出组件名、参数等错误（stdin 收程序，stdout 出 JSON）",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "retainpdf-openui-check": "bin/openui-check.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@openuidev/lang-core": "1.2.0"
+  }
+}

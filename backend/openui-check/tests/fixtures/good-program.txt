@@ -1,0 +1,8 @@
+root = Col([title, formula, slider, chart, last], 3)
+$n = 4
+title = Title("迭代几次，能量就稳住了", "md")
+formula = Math("E_k = E_\infty + (E_0 - E_\infty)\,2^{-k}")
+slider = Slider($n, 1, 10, 1, "迭代次数")
+rows = @Each(@Range(1, $n + 1), "k", {k: k, E: @Round(-1.13 + 0.4 * @Pow(0.5, k), 4)})
+chart = Chart("line", rows, "k", ["E"], null, null, 180)
+last = Caption("第 " + $n + " 次：E = " + rows[$n - 1].E + " Hartree")
