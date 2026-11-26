@@ -11,15 +11,25 @@
 ```tsx
 import AskWindow from "@retainpdf/ask/window";          // 懒加载：lazy(() => import("@retainpdf/ask/window"))
 import { openAcpWebSocketSession } from "@retainpdf/ask/acp";
-import type { AskPort, AskContext, AskMessage } from "@retainpdf/ask";
+import type { AskPort, AskContext, AskMessage, AskTurnRecord } from "@retainpdf/ask";
 
 <AskWindow
-  port={port}                       // AskPort：listAgents() 列 agent；openSession({ agentId }, handlers) 开一个 ACP 会话
-  context={context}                 // AskContext：问的是哪儿——页码、悬停写全的位置、引用（原文 / 译文 / 选中）、发给 agent 的出处
+  port={port}                       // AskPort：listAgents() 列 agent；openSession({ agentId }, handlers) 开一个 ACP 会话；conversationPreamble() 新会话的前文
+  context={pending}                 // AskContext | null：下一问带的出处（输入框上面的小标签、那段字、_meta）；发问那一刻读
+  onContextUsed={() => setPending(null)}  // 发出去了：宿主清掉，不然下一问还带
+  onContextClear={() => setPending(null)} // 小标签上的 ×
   onClose={close}
-  onShowContext={backToWhereAsked}  // 点标题栏的页码
-  initialMessages={saved}           // 之前存的问答，接着显示
-  onTurnDone={(messages, agentId) => save(messages)}  // 每答完一轮，整段交出去存
+  title={<Breadcrumb />}            // 标题栏左边（主对话 / 副对话）
+  headerActions={<ArchiveButton />} // 标题栏右边多放的按钮
+  footer={<SideBar />}              // 对话下面多放的一条
+  onShowContext={(context) => goTo(context)}  // 点问题上面的小标签
+  initialMessages={saved}           // 之前存的问答，接着显示（id、问题的 context、结论卡片 / 压缩点的 marks）
+  earlier={{ loading, load }}       // 「看更早的」；没有更早的给 null
+  onTurn={(turn: AskTurnRecord) => append(turn)}  // 每答完一轮：问题、回答、出处、会话、这一轮记下的记忆
+  onFork={(message) => openSide(message)}         // 回答底下的「深挖」；不给就没有
+  onOpenSide={(sideId) => showSide(sideId)}       // 结论卡片上的「看副对话」
+  onForgetMemory={(id) => forget(id)}             // 「已记住」的撤销
+  readOnly={false}                  // 只能看（没有输入框）
   onDelete={remove}                 // 不给就没有删除按钮
   onJumpToPage={(page) => goTo(page)}  // 回答里的页码点了
   pageCount={481}                   // 越界的数字不当页码
@@ -29,9 +39,13 @@ import type { AskPort, AskContext, AskMessage } from "@retainpdf/ask";
 
 - **`AskPort.openSession`** 一般就是拼好 WebSocket 地址交给 `openAcpWebSocketSession(url, handlers)`；会话要带的东西
   （RetainPDF 的任务号、模型配置、凭据引用）由宿主绑进地址或闭包里，窗口不管。
-- **`AskContext.preamble`** 是新会话第一问前面带给 agent 的一段字。换 agent、重新回答、断线重连后会再带一次，后面跟着之前几轮。
-  RetainPDF 的阅读页在 `packages/reader/src/ask/ask-context.ts` 里拼；**后端的自带 agent 按它最后一行解析任务号和块号，格式别改**。
-- **`AskMessage`** 是存的格式（`role`、`text`、`thought`、`usage`）。后端 `ask-threads.v1` 按这个存，字段只增不改。
+- **`AskContext`** 是一问的出处：`preamble` 写在这一问前面（agent 报了 `capabilities.selection` 就不写，它认 `meta`），`meta` 放进
+  `session/prompt` 的 `_meta`。重新回答照用那一问的出处。RetainPDF 的阅读页在 `packages/reader/src/ask/ask-context.ts` 里拼；
+  **后端的自带 agent 按 preamble 最后一行解析任务号和块号，格式别改**。
+- **新会话的前文**：agent 报了 `capabilities.conversation`（自己取）就不带；宿主给了 `AskPort.conversationPreamble` 用它；不然拼窗口里看得到的前几轮。
+- **`AskSession.capabilities`** 是 `initialize` 里的 `agentCapabilities._meta.retainpdf`（`selection`、`conversation`、`memory`），`socket.ts` 读。
+- **`AskMessage`** 是存的格式（`role`、`text`、`thought`、`usage`，2026-11-26 加 `id`、`context`、`marks`）。字段只增不改。
+- **「已记住」**：工具卡片完成时 `_meta.retainpdf.memory` 有值，回答正文下面画「已记住：……（撤销）」（`src/window/conversation.tsx`）。
 
 ## 里面有什么
 

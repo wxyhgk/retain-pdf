@@ -55,7 +55,8 @@
   flex: 1 1 auto;
 }
 
-.ask-where {
+.ask-question-where,
+.ask-pending-label {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -72,7 +73,8 @@
   cursor: var(--cursor-pointer, pointer);
 }
 
-.ask-where:hover {
+.ask-question-where:hover,
+.ask-pending-label:hover {
   color: var(--ink);
 }
 
@@ -922,4 +924,207 @@
 
 [data-radix-popper-content-wrapper]:has(.ask-usage-panel) {
   z-index: calc(var(--z-hud, 36) + 10) !important;
+}
+
+/* —— 主对话（2026-11-26）：标题、下一问的出处、问题上面的小标签、看更早的、深挖、结论卡片、压缩点、已记住、副对话的「结束」 —— */
+.ask-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 13px);
+  font-weight: 600;
+}
+
+.ask-crumbs {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 2px;
+  color: var(--muted);
+}
+
+.ask-crumb {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ask-crumbs .ask-crumb {
+  color: var(--ink);
+}
+
+.ask-crumb-link {
+  flex: none;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-crumb-link:hover {
+  color: var(--ink);
+}
+
+.ask-question-where[disabled],
+.ask-pending-label[disabled] {
+  cursor: default;
+}
+
+.ask-question-where {
+  grid-column: 2;
+  justify-self: end;
+  max-width: 100%;
+  margin-bottom: -4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ask-pending {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ask-pending-chip {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  color: var(--muted);
+}
+
+.ask-pending-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ask-pending .ask-quote {
+  margin: 0;
+}
+
+.ask-earlier {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.ask-earlier-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--ui-text-xs, 11px);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-earlier-more:hover {
+  color: var(--ink);
+}
+
+.ask-after {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 8px 0;
+}
+
+.ask-compacted {
+  margin-top: 6px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--line);
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+  text-align: center;
+}
+
+.ask-memory {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  margin: 2px 0;
+  padding: 3px 6px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-memory[data-state="undone"] {
+  background: transparent;
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.ask-memory-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ask-memory-undo {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--ui-text-xs, 11px);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-memory-undo:hover {
+  color: var(--ink);
+}
+
+.ask-side-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-side-bar > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.ask-side-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+/* 只读（以前按书存的问答）：没有输入框。 */
+.ask-panel[data-readonly="1"] .aui-composer-root,
+.ask-panel[data-readonly="1"] .aui-user-action-bar-wrapper,
+.ask-panel[data-readonly="1"] .aui-assistant-action-bar-root {
+  display: none;
 }

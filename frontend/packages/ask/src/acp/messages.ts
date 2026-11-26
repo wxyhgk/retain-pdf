@@ -56,22 +56,29 @@ export function toStoredMessages(messages: readonly MessageLike[]): AskMessage[]
   return out;
 }
 
-/** 重新打开：交给 assistant-ui（ThreadMessageLike）。用量放回 metadata，回答底下那一行照样画（没有速度、首字照存的写）。 */
+/**
+ * 重新打开：交给 assistant-ui（ThreadMessageLike）。用量放回 metadata，回答底下那一行照样画（没有速度、首字照存的写）。
+ * 宿主的编号当消息编号；问题的出处、回答的标记（结论卡片、压缩点）放 metadata.custom，插槽从那里读。
+ */
 export function toInitialMessages(messages: readonly AskMessage[]) {
   return messages.map((message) => {
-    if (message.role === "user") return { role: "user" as const, content: message.text };
+    const id = message.id ? { id: message.id } : {};
+    if (message.role === "user") {
+      return { ...id, role: "user" as const, content: message.text, ...(message.context ? { metadata: { custom: { context: message.context } } } : {}) };
+    }
     const usage = (message.usage || {}) as AskUsage & { elapsedMs?: number; firstTokenMs?: number; thoughtMs?: number };
     // 思考用时放回思考那一段的起止（标题照样写「思考 · 1.2s」）。
     const thoughtTiming = typeof usage.thoughtMs === "number" ? { timing: { startedAt: 0, completedAt: usage.thoughtMs } } : {};
     const turn: AskTurn = { ...emptyTurn(0), usage, firstTokenAt: usage.firstTokenMs ?? null };
     return {
+      ...id,
       role: "assistant" as const,
       content: [
         ...(message.thought ? [{ type: "reasoning" as const, text: message.thought, ...thoughtTiming }] : []),
         { type: "text" as const, text: message.text },
       ],
       status: { type: "complete" as const, reason: "stop" as const },
-      metadata: { custom: { turn, endedAt: usage.elapsedMs ?? undefined } },
+      metadata: { custom: { turn, endedAt: usage.elapsedMs ?? undefined, stored: { id: message.id, marks: message.marks } } },
     };
   });
 }

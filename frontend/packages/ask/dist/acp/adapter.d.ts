@@ -1,5 +1,5 @@
 import type { ContentBlock, RequestPermissionRequest, RequestPermissionResponse } from "@agentclientprotocol/sdk";
-import type { AskConfigOption, AskPort } from "../contract.js";
+import type { AskConfigOption, AskContext, AskPort } from "../contract.js";
 import { type AskPart, type AskTurn } from "./parts.js";
 /** 等用户点的许可请求（按 toolCallId 认；窗口在那张工具卡片上画按钮）。 */
 export type PendingPermission = {
@@ -51,18 +51,21 @@ export declare function toAssistantParts(parts: readonly AskPart[]): ({
         status: "pending" | "in_progress" | "completed" | "failed";
         locations: string[];
         output: string;
+        memory?: import("../contract.js").AskMemoryNotice;
     };
     args: never;
 })[];
 export type AcpChatOptions = {
     port: AskPort;
     getAgentId: () => string;
-    /** 新会话第一问前面带的出处（宿主写好的一段字）；空的不带。 */
-    getPreamble: () => string;
+    /** 这一问问的是哪儿（发问那一刻读）；没有是 null。 */
+    getContext: () => AskContext | null;
     permissions: PermissionStore;
     now?: () => number;
     /** agent 的设置项变了（开了新会话、agent 推来 config_option_update、用户改了）。 */
     onConfig?: (options: AskConfigOption[]) => void;
+    /** 发问那一刻：哪条问题带了哪个出处（窗口在问题上面画小标签）。 */
+    onAsked?: (messageId: string, context: AskContext | null) => void;
     /** 用户选过的值（模型、思考强度……）：每开一个新会话再设一次。 */
     getDesiredConfig?: () => Readonly<Record<string, string | boolean>>;
 };
@@ -73,6 +76,7 @@ type RunPart = {
 };
 type RunOptions = {
     messages: readonly {
+        id?: string;
         role: string;
         content: readonly RunPart[];
         attachments?: readonly {
@@ -156,6 +160,12 @@ export declare function createAcpChatAdapter(options: AcpChatOptions): {
     setConfig(configId: string, value: string | boolean): Promise<boolean>;
     /** 答最近一轮的会话的 sessionId（agent 没给就没有）。 */
     sessionId: () => string;
+    /** 最近答完的一轮：用的出处、会话、这一轮记下的记忆编号。 */
+    lastRun: () => {
+        context: AskContext | null;
+        sessionId?: string;
+        memoryIds: string[];
+    };
     close(): void;
 };
 export {};

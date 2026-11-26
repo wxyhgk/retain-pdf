@@ -1,7 +1,9 @@
 // 照搬 assistant-ui 官方组件（MIT，https://r.assistant-ui.com；shadcn/ 下是 shadcn/ui，MIT）。只改了引用路径（@/ 别名换成相对路径）。
 // 别的不改，方便对着上游更新；我们的改动写在外面（../window/）。
 // RetainPDF 的改动（groupPartByType 显式写泛型（本机 TS 只从第一组推断）；ThreadComponents 加 MessageFooter 插槽（回答底下复制、重新回答那一排的用量图标）；界面文字换中文；
-// 思考用时不取整；「回到最下面」挪到右边、变小（原来居中压在正文上）；边距收紧、输入框提示缩短（提问窗窄）。
+// 思考用时不取整；「回到最下面」挪到右边、变小（原来居中压在正文上）；边距收紧、输入框提示缩短（提问窗窄）；
+// 2026-11-26 加四个插槽：HistoryTop（消息上面：「更早的」）、ComposerTop（输入框上面：这一问的出处）、UserMessageTop（问题上面：问的是哪儿）、
+// MessageAfter（回答正文下面：「已记住」、压缩点）。
 
 import {
   ComposerAddAttachment,
@@ -136,6 +138,14 @@ export type ThreadComponents = {
   ComposerExtra?: ComponentType | undefined;
   /** RetainPDF：回答底下操作条下面再放一样东西（用量那一行）。 */
   MessageFooter?: ComponentType | undefined;
+  /** RetainPDF：消息列表最上面（「看更早的」）。 */
+  HistoryTop?: ComponentType | undefined;
+  /** RetainPDF：输入框上面（这一问带的出处）。 */
+  ComposerTop?: ComponentType | undefined;
+  /** RetainPDF：问题上面（这一问问的是哪儿）。 */
+  UserMessageTop?: ComponentType | undefined;
+  /** RetainPDF：回答正文下面、操作条上面（「已记住」、压缩点）。 */
+  MessageAfter?: ComponentType | undefined;
 };
 
 const messageGroupBy = groupPartByType<ThreadGroupKey>({
@@ -229,7 +239,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
   isEmpty,
   autoFocus,
 }) => {
-  const { Welcome = ThreadWelcome } = useContext(ThreadComponentsContext);
+  const { Welcome = ThreadWelcome, HistoryTop, ComposerTop } = useContext(ThreadComponentsContext);
 
   return (
     <ThreadPrimitive.Root
@@ -261,6 +271,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
           </AuiIf>
 
           <ThreadLoadEarlier />
+          {HistoryTop ? <HistoryTop /> : null}
 
           <div
             data-slot="aui_message-group"
@@ -280,6 +291,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
           >
             <ThreadScrollToBottom />
             <ThreadFollowupSuggestions />
+            {ComposerTop ? <ComposerTop /> : null}
             <Composer autoFocus={autoFocus} />
             <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}>
               <ThreadSuggestions />
@@ -709,6 +721,7 @@ const AssistantMessage: FC = () => {
     ReasoningGroup,
     TaskGroup: TaskGroupComponent,
     MessageFooter,
+    MessageAfter,
   } = useContext(ThreadComponentsContext);
   const groupBy = TaskGroupComponent ? taskAwareGroupBy : messageGroupBy;
 
@@ -801,6 +814,7 @@ const AssistantMessage: FC = () => {
         <MessageError />
       </div>
 
+      {MessageAfter ? <MessageAfter /> : null}
       <div
         data-slot="aui_assistant-message-footer"
         className={cn("ms-2 flex items-center", ACTION_BAR_HEIGHT)}
@@ -911,12 +925,14 @@ const UserImagePart: ImageMessagePartComponent = (part) => (
 );
 
 const UserMessage: FC = () => {
+  const { UserMessageTop } = useContext(ThreadComponentsContext);
   return (
     <MessagePrimitive.Root
       data-slot="aui_user-message-root"
       className="fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto] [&:where(>*)]:col-start-2"
       data-role="user"
     >
+      {UserMessageTop ? <UserMessageTop /> : null}
       <UserMessageAttachments />
 
       <div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">

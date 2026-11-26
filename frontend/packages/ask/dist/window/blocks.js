@@ -146,21 +146,20 @@ const FOOTER_ICONS = {
     firstToken: Timer,
     elapsed: Clock,
 };
-/** 回答底下的用量（Thread 的 MessageFooter 插槽，和复制、重新回答在同一排）：只一个图标，点开看模型、token、缓存、速度、用时。 */
-export function makeMessageFooter(agentName) {
+/** 回答底下的用量（Thread 的 MessageFooter 插槽，和复制、重新回答在同一排）：只一个图标，点开看模型、token、缓存、速度、用时。Extra 跟在后面（深挖……）。 */
+export function makeMessageFooter(agentName, Extra) {
     return function MessageFooter() {
         const custom = useAuiState((state) => state.message.metadata?.custom);
-        if (!custom?.turn)
-            return null;
-        const items = turnFooterItems(custom.turn, custom.endedAt ?? null, agentName());
+        const items = custom?.turn ? turnFooterItems(custom.turn, custom.endedAt ?? null, agentName()) : [];
+        const extra = Extra ? _jsx(Extra, {}) : null;
         if (!items.length)
-            return null;
+            return extra;
         const model = items.find((item) => item.key === "model");
         const elapsed = items.find((item) => item.key === "elapsed");
-        return (_jsxs(Popover, { children: [_jsx(PopoverTrigger, { className: "ask-icon ask-usage-trigger", "aria-label": "\u8FD9\u4E00\u8F6E\u7684\u7528\u91CF", title: ["用量", elapsed?.title].filter(Boolean).join(" · "), children: model ? _jsx(BrandIcon, { brand: brandFor(model.text, model.title), size: 13, title: model.title }) : _jsx(Activity, { size: 13, "aria-hidden": true }) }), _jsx(PopoverContent, { align: "start", side: "top", className: "ask-usage-panel", children: items.map((item) => {
-                        const Icon = FOOTER_ICONS[item.key];
-                        return (_jsxs("div", { className: "ask-usage-row", "data-key": item.key, children: [item.key === "model" ? _jsx(BrandIcon, { brand: brandFor(item.text, item.title), size: 13 }) : _jsx(Icon, { size: 13, "aria-hidden": true }), _jsx("span", { children: item.title })] }, item.key));
-                    }) })] }));
+        return (_jsxs(_Fragment, { children: [_jsxs(Popover, { children: [_jsx(PopoverTrigger, { className: "ask-icon ask-usage-trigger", "aria-label": "\u8FD9\u4E00\u8F6E\u7684\u7528\u91CF", title: ["用量", elapsed?.title].filter(Boolean).join(" · "), children: model ? _jsx(BrandIcon, { brand: brandFor(model.text, model.title), size: 13, title: model.title }) : _jsx(Activity, { size: 13, "aria-hidden": true }) }), _jsx(PopoverContent, { align: "start", side: "top", className: "ask-usage-panel", children: items.map((item) => {
+                                const Icon = FOOTER_ICONS[item.key];
+                                return (_jsxs("div", { className: "ask-usage-row", "data-key": item.key, children: [item.key === "model" ? _jsx(BrandIcon, { brand: brandFor(item.text, item.title), size: 13 }) : _jsx(Icon, { size: 13, "aria-hidden": true }), _jsx("span", { children: item.title })] }, item.key));
+                            }) })] }), extra] }));
     };
 }
 /** 空白时：几个常问，点一下直接问。 */

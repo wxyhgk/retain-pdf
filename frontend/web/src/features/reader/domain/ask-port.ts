@@ -19,12 +19,13 @@ import type {
 } from "@retainpdf/reader/contracts";
 
 import { API_PREFIX } from "@/platform/config/api-constants.js";
-import { createAskThread, deleteAskThread, getAskThread, listAiAgents, listAskThreads, updateAskThread } from "@retainpdf/api/ai";
+import { createAskThread, deleteAskThread, getAskThread, listAiAgents, listAskThreads, updateAskThread, type AskModelConnectionInput } from "@retainpdf/api/ai";
 import { apiBase, frontendApiKey, isLanSharedPage, isMockMode } from "@/platform/config/runtime.js";
 import { connectionValue, savedDefaultTranslationModel, savedTranslationConnections, type TranslationConnection } from "@/platform/config/translation-connections.js";
 import { loadBrowserStoredConfig, savePersistedBrowserStoredConfig } from "@/platform/config/persisted-config.js";
 import { createCredential, updateCredential } from "@/platform/api/domains/credentials.js";
 import { mockAskPort } from "@/platform/mock/ask-agent.js";
+import { createAskConversationsPort } from "./ask-conversations-port.js";
 
 export const BUILTIN_AGENT_ID = "retainpdf";
 
@@ -135,8 +136,25 @@ export function builtinConnection(connections: readonly TranslationConnection[],
   return connections.find((item) => connectionValue(item) === wanted) || fallback;
 }
 
+/**
+ * 设置里那条模型连接（握手、压缩、副对话结论同一套字段，密钥只给凭据库编号）；没配模型是 null。
+ * 后端用它压缩主对话、写副对话结论（docs/api/16-AI/02-主对话和记忆.md）。
+ */
+export async function askModelConnection(): Promise<AskModelConnectionInput | null> {
+  const connection = defaultConnection();
+  const { query, missing } = builtinModelQuery(connection);
+  if (missing || !connection) return null;
+  return {
+    model: query.model!,
+    base_url: query.base_url || "",
+    api_protocol: (query.api_protocol || "openai") as AskModelConnectionInput["api_protocol"],
+    thinking: query.thinking || "",
+    credential_ref: await ensureAskCredential(connection),
+  };
+}
+
 async function openSession(
-  { agentId, jobId, config }: { agentId: string; jobId: string; config?: Readonly<Record<string, string | boolean>> },
+  { agentId, jobId, conversationId, config }: { agentId: string; jobId: string; conversationId?: string; config?: Readonly<Record<string, string | boolean>> },
   handlers: ReaderAskHandlers,
   builtinAgentIds: ReadonlySet<string>,
 ): Promise<ReaderAskSession> {
@@ -153,6 +171,8 @@ async function openSession(
   extra.query = { ...extra.query, credential_ref: await ensureAskCredential(connection) };
   // 自带 agent 自己读书（read_pages / search_book / view_page）：带上阅读页的任务编号（merged-… 也照传）。本机 agent 走 retainpdf mcp，不用。
   if (jobId) extra.query = { ...extra.query, job_id: jobId };
+  // 主对话 / 副对话的编号：自带 agent 开会话时自己取前文（记忆 + 摘要 + 最近几轮），记忆的出处也记它。
+  if (conversationId) extra.query = { ...extra.query, conversation_id: conversationId };
   // 握手、开会话、发问都在提问窗的包里（@retainpdf/ask/acp）；这里只拼地址：api_key、模型配置和凭据引用、job_id。
   const session = await openAcpWebSocketSession(acpSocketUrl(apiBase(), agentId, frontendApiKey(), extra.query), handlers);
   // 模型这一项是我们加的（agent 自己报了就用它的）；换模型要换密钥和地址，只能重开会话。别的设置（思考强度……）照 agent 报的、交给 agent 改。
@@ -267,6 +287,7 @@ function createRealAskPort(): ReaderAskPort {
     listAgents: () => listAgents(builtinAgentIds),
     openSession: (options, handlers) => openSession(options, handlers, builtinAgentIds),
     threads: askThreadsPort,
+    conversations: createAskConversationsPort(askModelConnection),
   };
 }
 

@@ -125,28 +125,53 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
       }
       assert.fail(`等不到：${label}`);
     };
-    root.render(React.createElement(AskWindow, {
-      port,
-      context: { page: 56, label: "第 56 页 · 2.1", quote: { source: "where $ M_{A} $ is the mass", translated: "其中质量" }, preamble: "我在读一本书，第 56 页。" },
-      onClose: () => (closed += 1),
-      onJumpToPage: (page) => jumps.push(page),
-      onTurnDone: (messages, agentId, sessionId) => turns.push({ count: messages.length, agentId, sessionId }),
-      pageCount: 100,
-    }));
+    const records = [];
+    const forks = [];
+    const CONTEXT = { page: 56, label: "第 56 页 · 2.1", quote: { source: "where $ M_{A} $ is the mass", translated: "其中质量" }, preamble: "我在读一本书，第 56 页。", meta: { retainpdf: { selection: { page: 56 } } } };
+    // 宿主：下一问的出处发出去就清掉。
+    function Host() {
+      const [context, setContext] = React.useState(CONTEXT);
+      return React.createElement(AskWindow, {
+        port,
+        context,
+        onContextUsed: () => setContext(null),
+        onContextClear: () => setContext(null),
+        onClose: () => (closed += 1),
+        onJumpToPage: (page) => jumps.push(page),
+        onTurnDone: (messages, agentId, sessionId) => turns.push({ count: messages.length, agentId, sessionId }),
+        onTurn: (turn) => records.push(turn),
+        onFork: (message) => forks.push(message),
+        pageCount: 100,
+      });
+    }
+    root.render(React.createElement(Host));
     await until(() => document.querySelector(".ask-starter") && /RetainPDF 自带模型/.test(document.querySelector(".ask-agent-trigger")?.getAttribute("title") || ""), "常问按钮和 agent 列表");
     const panel = document.querySelector(".ask-panel");
     assert.equal(panel.getAttribute("data-mode"), "float");
-    assert.ok(document.querySelector(".ask-quote .katex"), "引用里的公式画出来了");
+    assert.equal(document.querySelector(".ask-pending-label")?.textContent, "第 56 页 · 2.1", "输入框上面是下一问带的出处");
+    assert.equal(document.querySelector(".ask-quote"), null, "引的那段收着");
+    document.querySelector(".ask-pending-label").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await until(() => document.querySelector(".ask-quote .katex"), "点开出处：引用里的公式画出来了");
     assert.ok(document.querySelector('.ask-install summary[aria-label="还能接的本机 agent"]'), "没装的 agent 收在插头图标里");
 
     document.querySelector(".ask-starter").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await until(() => document.querySelector(".aui-md-p .ask-page"), "回答里的页码");
     assert.equal(prompts.length, 1);
-    assert.equal(prompts[0].blocks[0].text, "我在读一本书，第 56 页。", "第一问前面带宿主给的出处");
+    assert.equal(prompts[0].blocks[0].text, "我在读一本书，第 56 页。", "这一问前面带宿主给的出处");
+    await until(() => !document.querySelector(".ask-pending"), "发出去以后出处清掉");
+    assert.equal(document.querySelector(".ask-question-where")?.textContent, "第 56 页 · 2.1", "问题上面写问的是哪儿");
     document.querySelector(".aui-md-p .ask-page").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     assert.deepEqual(jumps, [12]);
     await until(() => turns.length, "答完一轮交出去存");
     assert.deepEqual(turns.at(-1), { count: 2, agentId: "a", sessionId: "sess-1" }, "存问答记录时带上答这一轮的 ACP 会话");
+    await until(() => records.length, "这一轮交给宿主追加");
+    const turn = records.at(-1);
+    assert.equal(turn.question.role, "user");
+    assert.equal(turn.answer.text, "见第 12 页。");
+    assert.equal(turn.context.label, "第 56 页 · 2.1", "带着发问时用的出处");
+    assert.deepEqual([turn.agentId, turn.sessionId, turn.memoryIds], ["a", "sess-1", []]);
+    document.querySelector(".ask-fork").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    assert.deepEqual(forks, [{ id: undefined, text: "见第 12 页。" }], "回答底下的「深挖」");
 
     const button = (label) => [...document.querySelectorAll(".ask-head button")].find((element) => element.getAttribute("aria-label") === label);
     button("贴到右边").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));

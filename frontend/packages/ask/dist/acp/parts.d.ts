@@ -1,4 +1,5 @@
 import type { PlanEntry, SessionUpdate } from "@agentclientprotocol/sdk";
+import type { AskMemoryNotice } from "../contract.js";
 /** 部件的起止时刻（毫秒时间戳，assistant-ui 的 MessagePartTiming）：思考写「思考（N 秒）」、工具调用写用时都靠它。 */
 export type AskTiming = {
     startedAt: number;
@@ -20,6 +21,8 @@ export type AskToolCall = {
         status: "pending" | "in_progress" | "completed" | "failed";
         locations: string[];
         output: string;
+        /** 「已记住」：自带 agent 的 remember 完成时 _meta.retainpdf.memory 给的那条记忆。 */
+        memory?: AskMemoryNotice;
     };
 };
 export type AskPart = {
@@ -76,6 +79,10 @@ export type AskTurn = {
     chunks: number;
 };
 export declare function emptyTurn(now: number): AskTurn;
+/** tool_call_update 的 _meta.retainpdf.memory → 「已记住」；编号、字没有就不算。 */
+export declare function memoryFromMeta(meta: unknown): AskMemoryNotice | undefined;
+/** 这一轮记下的记忆编号（新记的；早就记过的不算）。 */
+export declare function turnMemoryIds(parts: readonly AskPart[]): string[];
 /**
  * `_meta` 里的分项 token：RetainPDF 自带 agent 放在 `_meta.retainpdf.usage`（后端 2026-11-25 定），别的 agent 可能放 `_meta.usage`；
  * 几种常见写法都认（camelCase / snake_case / Anthropic 的 cache_read_input_tokens）。

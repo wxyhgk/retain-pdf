@@ -4,13 +4,22 @@
 import { client, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
 import { createWebSocketStream } from "@agentclientprotocol/sdk/experimental/ws-client";
 
-import type { AskHandlers, AskSession } from "../contract.js";
+import type { AskAgentCapabilities, AskHandlers, AskSession } from "../contract.js";
 import { normalizeConfigOptions } from "./config.js";
 
 export type AcpSocketOptions = {
   /** session/new 的 cwd 和 mcpServers。RetainPDF 的桥空着就会自己填书文件夹、补上 retainpdf mcp。 */
   cwd?: string;
 };
+
+/** initialize 结果里的 agentCapabilities._meta.retainpdf（自带 agent 报，见 docs/api/16-AI/02-主对话和记忆.md）；只认布尔值。 */
+export function retainpdfCapabilities(initialized: unknown): AskAgentCapabilities {
+  const raw = (initialized as { agentCapabilities?: { _meta?: { retainpdf?: Record<string, unknown> } } } | null)?.agentCapabilities?._meta?.retainpdf;
+  if (!raw || typeof raw !== "object") return {};
+  const out: AskAgentCapabilities = {};
+  for (const key of ["selection", "conversation", "memory"] as const) if (raw[key] === true) out[key] = true;
+  return out;
+}
 
 export async function openAcpWebSocketSession(url: string, handlers: AskHandlers, options: AcpSocketOptions = {}): Promise<AskSession> {
   const app = client()
@@ -21,11 +30,13 @@ export async function openAcpWebSocketSession(url: string, handlers: AskHandlers
   const connection = app.connect(createWebSocketStream(url, { protocols: [], cookies: "omit" }));
   const agent = connection.agent;
   // 连接断了（RetainPDF 的桥在 agent 退出时用 1011 关，原因里有退出码和 stderr 最后一行）：没答完的请求会被拒，消息照原样给用户看。
+  let capabilities: AskAgentCapabilities = {};
   try {
-    await agent.request("initialize", {
+    const initialized = await agent.request("initialize", {
       protocolVersion: PROTOCOL_VERSION,
       clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
     });
+    capabilities = retainpdfCapabilities(initialized);
   } catch (error) {
     connection.close();
     const detail = error instanceof Error && error.message ? `（${error.message}）` : "";
@@ -35,6 +46,7 @@ export async function openAcpWebSocketSession(url: string, handlers: AskHandlers
   const { sessionId } = created;
   return {
     sessionId,
+    capabilities,
     // 模型、思考强度、模式……（ACP 的 configOptions；agent 不给就是空的，窗口不画选择器）。
     configOptions: normalizeConfigOptions((created as { configOptions?: unknown }).configOptions),
     setConfigOption: async (configId, value) => {
@@ -42,8 +54,9 @@ export async function openAcpWebSocketSession(url: string, handlers: AskHandlers
       const result = await agent.request("session/set_config_option", params as never);
       return normalizeConfigOptions((result as { configOptions?: unknown })?.configOptions);
     },
-    prompt: async (blocks) => {
-      const result = await agent.request("session/prompt", { sessionId, prompt: blocks });
+    prompt: async (blocks, meta) => {
+      const params = meta && Object.keys(meta).length ? { sessionId, prompt: blocks, _meta: meta } : { sessionId, prompt: blocks };
+      const result = await agent.request("session/prompt", params);
       const extra = result as { usage?: Record<string, unknown> | null; _meta?: Record<string, unknown> | null };
       return { stopReason: result.stopReason, usage: extra.usage ?? null, meta: extra._meta ?? null };
     },

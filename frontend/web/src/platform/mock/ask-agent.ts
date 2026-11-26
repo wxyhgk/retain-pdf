@@ -5,6 +5,8 @@
 import type { ContentBlock, SessionUpdate } from "@agentclientprotocol/sdk";
 import type { ReaderAskHandlers, ReaderAskPort, ReaderAskSession, ReaderAskThread, ReaderAskThreadsPort } from "@retainpdf/reader/contracts";
 
+import { mockAskConversations } from "./ask-conversations.js";
+
 const AGENTS = [
   { id: "retainpdf", name: "RetainPDF 自带模型", description: "用设置里配好的模型", available: true, acceptsImages: true },
   { id: "claude-code", name: "Claude Code", description: "本机的 Claude Code（ACP）", available: true },
@@ -74,7 +76,10 @@ function openFakeSession(agentId: string, handlers: ReaderAskHandlers): ReaderAs
     if (!current.cancelled) handlers.onUpdate(update);
   };
   let config = fakeConfig(agentId);
+  let memories = 0;
   return {
+    // 自带 agent 认结构化出处、自己取前文、有记忆工具（演示「已记住（撤销）」）。
+    ...(agentId === "retainpdf" ? { capabilities: { selection: true, conversation: true, memory: true } } : {}),
     configOptions: config,
     async setConfigOption(configId, value) {
       config = config.map((option) => (option.id === configId ? { ...option, currentValue: value } : option));
@@ -102,6 +107,18 @@ function openFakeSession(agentId: string, handlers: ReaderAskHandlers): ReaderAs
       send({ sessionUpdate: "tool_call", toolCallId: "search", title: "在书里找「Fock」", kind: "search", status: "in_progress", rawInput: { query: "Fock" } });
       await wait(300, signal);
       send({ sessionUpdate: "tool_call_update", toolCallId: "search", status: "completed", content: [{ type: "content", content: { type: "text", text: "「Fock」3 处，第 2、3 页" } }] });
+      if (agentId === "retainpdf") {
+        // 记一条（照自带 agent：编号写进库以后才有，放在完成的 tool_call_update 的 _meta 上）。
+        memories += 1;
+        const text = `用户在读第 ${page} 页，关心 Hartree-Fock 的推导`;
+        send({ sessionUpdate: "tool_call", toolCallId: `remember-${memories}`, title: `记住：${text}`, kind: "other", status: "in_progress" });
+        await wait(200, signal);
+        send({
+          sessionUpdate: "tool_call_update", toolCallId: `remember-${memories}`, status: "completed",
+          content: [{ type: "content", content: { type: "text", text: `已记住：${text}` } }],
+          _meta: { retainpdf: { memory: { id: `mem-demo-${memories}`, scope: "book", text, category: "progress", document_id: null, created: true, replaced: null } } },
+        } as never);
+      }
       if (agentId === "claude-code") {
         // Claude Code 想把要点记进笔记：先要许可。
         send({ sessionUpdate: "tool_call", toolCallId: "note", title: "把要点记到这本书的笔记里", kind: "edit", status: "pending" });
@@ -199,4 +216,5 @@ export const mockAskPort: ReaderAskPort = {
   listAgents: async () => AGENTS,
   openSession: async ({ agentId }, handlers) => openFakeSession(agentId, handlers),
   threads: mockThreads,
+  conversations: mockAskConversations,
 };

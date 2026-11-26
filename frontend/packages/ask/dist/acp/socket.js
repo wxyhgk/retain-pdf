@@ -3,6 +3,17 @@
 import { client, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
 import { createWebSocketStream } from "@agentclientprotocol/sdk/experimental/ws-client";
 import { normalizeConfigOptions } from "./config.js";
+/** initialize 结果里的 agentCapabilities._meta.retainpdf（自带 agent 报，见 docs/api/16-AI/02-主对话和记忆.md）；只认布尔值。 */
+export function retainpdfCapabilities(initialized) {
+    const raw = initialized?.agentCapabilities?._meta?.retainpdf;
+    if (!raw || typeof raw !== "object")
+        return {};
+    const out = {};
+    for (const key of ["selection", "conversation", "memory"])
+        if (raw[key] === true)
+            out[key] = true;
+    return out;
+}
 export async function openAcpWebSocketSession(url, handlers, options = {}) {
     const app = client()
         .onNotification("session/update", ({ params }) => handlers.onUpdate(params.update))
@@ -12,11 +23,13 @@ export async function openAcpWebSocketSession(url, handlers, options = {}) {
     const connection = app.connect(createWebSocketStream(url, { protocols: [], cookies: "omit" }));
     const agent = connection.agent;
     // 连接断了（RetainPDF 的桥在 agent 退出时用 1011 关，原因里有退出码和 stderr 最后一行）：没答完的请求会被拒，消息照原样给用户看。
+    let capabilities = {};
     try {
-        await agent.request("initialize", {
+        const initialized = await agent.request("initialize", {
             protocolVersion: PROTOCOL_VERSION,
             clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
         });
+        capabilities = retainpdfCapabilities(initialized);
     }
     catch (error) {
         connection.close();
@@ -27,6 +40,7 @@ export async function openAcpWebSocketSession(url, handlers, options = {}) {
     const { sessionId } = created;
     return {
         sessionId,
+        capabilities,
         // 模型、思考强度、模式……（ACP 的 configOptions；agent 不给就是空的，窗口不画选择器）。
         configOptions: normalizeConfigOptions(created.configOptions),
         setConfigOption: async (configId, value) => {
@@ -34,8 +48,9 @@ export async function openAcpWebSocketSession(url, handlers, options = {}) {
             const result = await agent.request("session/set_config_option", params);
             return normalizeConfigOptions(result?.configOptions);
         },
-        prompt: async (blocks) => {
-            const result = await agent.request("session/prompt", { sessionId, prompt: blocks });
+        prompt: async (blocks, meta) => {
+            const params = meta && Object.keys(meta).length ? { sessionId, prompt: blocks, _meta: meta } : { sessionId, prompt: blocks };
+            const result = await agent.request("session/prompt", params);
             const extra = result;
             return { stopReason: result.stopReason, usage: extra.usage ?? null, meta: extra._meta ?? null };
         },

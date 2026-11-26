@@ -1,10 +1,10 @@
-// 提问窗的标题栏：图标为主。问的那一处（页码小标签，点了回去）、选 agent、没装的 agent（插头图标，点开看安装命令）、
+// 提问窗的标题栏：图标为主。标题（主对话 / 副对话的面包屑）、选 agent、没装的 agent（插头图标，点开看安装命令）、
 // 浮动 / 贴右边 / 放大、删、关。字都放悬停提示里。
-import type { ReactElement } from "react";
-import { Copy, Maximize2, MapPin, MessageCircleQuestion, Minimize2, PanelRight, PanelRightClose, Plug, Trash2, X } from "lucide-react";
+import type { ReactElement, ReactNode } from "react";
+import { Copy, Maximize2, MessageCircleQuestion, Minimize2, PanelRight, PanelRightClose, Plug, Trash2, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
-import type { AskAgent, AskContext } from "../contract.js";
+import type { AskAgent } from "../contract.js";
 import { useCopyToClipboard } from "../ui/hooks/use-copy-to-clipboard.js";
 import { ModelSelectorContent, ModelSelectorRoot, ModelSelectorTrigger } from "../ui/elements/model-selector.js";
 import type { ModelOption } from "../ui/utils/model-selection.js";
@@ -77,31 +77,31 @@ function AgentPicker({ agents, agentId, onAgent }: { agents: readonly AskAgent[]
 }
 
 export type AskHeaderProps = {
-  context: AskContext;
+  /** 左边的标题（主对话 / 副对话的面包屑）。 */
+  title?: ReactNode;
+  /** 右边多放的按钮（记忆、归档……）。 */
+  actions?: ReactNode;
   agents: readonly AskAgent[] | null;
   agentId: string;
   onAgent: (id: string) => void;
   mode: AskWindowMode;
   onMode: (mode: AskWindowMode) => void;
-  onShowContext?: () => void;
   onDelete?: () => void;
   onClose: () => void;
 };
 
-export function AskHeader({ context, agents, agentId, onAgent, mode, onMode, onShowContext, onDelete, onClose }: AskHeaderProps): ReactElement {
+export function AskHeader({ title, actions, agents, agentId, onAgent, mode, onMode, onDelete, onClose }: AskHeaderProps): ReactElement {
   return (
     <header className="ask-head" onDoubleClick={(event) => {
       if ((event.target as HTMLElement).closest("button, select, summary, .ui-select")) return;
       onMode(mode === "full" ? "float" : "full");
     }}>
       <MessageCircleQuestion size={15} className="ask-logo" aria-label="提问" />
-      <Button className="ask-where" title={context.label ? `回到问的那一处：${context.label}` : "回到问的那一处"} onClick={onShowContext}>
-        <MapPin size={11} aria-hidden />
-        {context.page ?? ""}
-      </Button>
+      {title ? <div className="ask-title">{title}</div> : null}
       <AgentPicker agents={agents} agentId={agentId} onAgent={onAgent} />
       <InstallMenu agents={agents} />
       <span className="ask-head-gap" />
+      {actions}
       <Button
         className="ask-icon"
         aria-label={mode === "dock" ? "改回浮动" : "贴到右边"}
@@ -119,7 +119,7 @@ export function AskHeader({ context, agents, agentId, onAgent, mode, onMode, onS
         {mode === "full" ? <Minimize2 size={14} aria-hidden /> : <Maximize2 size={14} aria-hidden />}
       </Button>
       {onDelete ? (
-        <Button className="ask-icon" aria-label="删掉这次提问" title="删掉这次提问（书页上的「?」也去掉）" onClick={onDelete}>
+        <Button className="ask-icon" aria-label="删掉" title="删掉" onClick={onDelete}>
           <Trash2 size={14} aria-hidden />
         </Button>
       ) : null}

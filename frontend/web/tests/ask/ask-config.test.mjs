@@ -80,7 +80,7 @@ test("适配层：提前开会话交出设置项并把用户选过的再设一�
     port,
     permissions: new PermissionStore(),
     getAgentId: () => "claude-code",
-    getPreamble: () => "",
+    getContext: () => null,
     onConfig: (options) => seen.push(options.map((option) => `${option.id}=${option.currentValue}`).join(",")),
     getDesiredConfig: () => ({ model: "haiku" }),
   });
@@ -126,7 +126,7 @@ test("设置是开会话时定的（reopenOnConfigChange，自带 agent）：改
     },
   };
   let desired = {};
-  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "retainpdf", getPreamble: () => "出处", getDesiredConfig: () => desired, onConfig: () => {} });
+  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "retainpdf", getContext: () => ({ label: "x", preamble: "出处" }), getDesiredConfig: () => desired, onConfig: () => {} });
   const run = async (messages) => { for await (const _ of chat.adapter.run({ messages, abortSignal: new AbortController().signal })) { /* 收完 */ } };
   const u = (t) => ({ role: "user", content: [{ type: "text", text: t }] });
   const a = (t) => ({ role: "assistant", content: [{ type: "text", text: t }], metadata: { custom: {} } });
@@ -135,7 +135,7 @@ test("设置是开会话时定的（reopenOnConfigChange，自带 agent）：改
   await chat.setConfig("model", "b");
   await run([u("Q1"), a("答"), u("Q2")]);
   assert.deepEqual(opens, [{}, { model: "b" }], "第二个会话按新设置开");
-  assert.match(prompts[1], /出处[\s\S]*我：Q1\n\n你：答[\s\S]*Q2/, "新会话带出处和之前几轮");
+  assert.match(prompts[1], /我：Q1\n\n你：答[\s\S]*出处[\s\S]*Q2/, "新会话带之前几轮和这一问的出处");
 });
 
 test("窗口的颜色和水印：当前思考强度的颜色（第一档算没开），当前模型的厂商", () => {
@@ -176,7 +176,7 @@ test("按设置项判断要不要重开：换模型重开，思考强度直接�
     },
   };
   let desired = {};
-  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "retainpdf", getPreamble: () => "", getDesiredConfig: () => desired, onConfig: () => {} });
+  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "retainpdf", getContext: () => null, getDesiredConfig: () => desired, onConfig: () => {} });
   await chat.prepare();
   desired = { thought: "high" };
   await chat.setConfig("thought", "high");

@@ -29,6 +29,14 @@ export type ThreadComponents = {
     ComposerExtra?: ComponentType | undefined;
     /** RetainPDF：回答底下操作条下面再放一样东西（用量那一行）。 */
     MessageFooter?: ComponentType | undefined;
+    /** RetainPDF：消息列表最上面（「看更早的」）。 */
+    HistoryTop?: ComponentType | undefined;
+    /** RetainPDF：输入框上面（这一问带的出处）。 */
+    ComposerTop?: ComponentType | undefined;
+    /** RetainPDF：问题上面（这一问问的是哪儿）。 */
+    UserMessageTop?: ComponentType | undefined;
+    /** RetainPDF：回答正文下面、操作条上面（「已记住」、压缩点）。 */
+    MessageAfter?: ComponentType | undefined;
 };
 export type ThreadProps = {
     components?: ThreadComponents | undefined;

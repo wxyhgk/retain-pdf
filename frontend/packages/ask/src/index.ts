@@ -5,13 +5,17 @@
 
 export type {
   AskAgent,
+  AskAgentCapabilities,
   AskConfigChoice,
   AskConfigOption,
   AskContext,
   AskHandlers,
+  AskMemoryNotice,
   AskMessage,
+  AskMessageContext,
   AskPort,
   AskPromptResult,
   AskQuote,
   AskSession,
+  AskTurnRecord,
 } from "./contract.js";

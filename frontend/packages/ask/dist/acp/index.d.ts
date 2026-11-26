@@ -1,1 +1,1 @@
-export { openAcpWebSocketSession, type AcpSocketOptions } from "./socket.js";
+export { openAcpWebSocketSession, retainpdfCapabilities, type AcpSocketOptions } from "./socket.js";

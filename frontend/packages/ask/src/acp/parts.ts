@@ -16,6 +16,8 @@ import type {
   ToolCallLocation,
 } from "@agentclientprotocol/sdk";
 
+import type { AskMemoryNotice } from "../contract.js";
+
 /** 部件的起止时刻（毫秒时间戳，assistant-ui 的 MessagePartTiming）：思考写「思考（N 秒）」、工具调用写用时都靠它。 */
 export type AskTiming = { startedAt: number; completedAt?: number };
 
@@ -35,6 +37,8 @@ export type AskToolCall = {
     status: "pending" | "in_progress" | "completed" | "failed";
     locations: string[];
     output: string;
+    /** 「已记住」：自带 agent 的 remember 完成时 _meta.retainpdf.memory 给的那条记忆。 */
+    memory?: AskMemoryNotice;
   };
 };
 
@@ -94,6 +98,34 @@ function contentText(content: readonly ToolCallContent[] | null | undefined): st
 
 function locationText(locations: readonly ToolCallLocation[] | null | undefined): string[] {
   return (locations || []).map((location) => (location.line != null ? `${location.path}:${location.line}` : location.path));
+}
+
+function withMemory(memory: AskMemoryNotice | undefined) {
+  return memory ? { memory } : {};
+}
+
+/** tool_call_update 的 _meta.retainpdf.memory → 「已记住」；编号、字没有就不算。 */
+export function memoryFromMeta(meta: unknown): AskMemoryNotice | undefined {
+  const raw = (meta as { retainpdf?: { memory?: Record<string, unknown> } } | null | undefined)?.retainpdf?.memory;
+  if (!raw || typeof raw !== "object" || typeof raw.id !== "string" || !raw.id || typeof raw.text !== "string") return undefined;
+  return {
+    id: raw.id,
+    scope: typeof raw.scope === "string" ? raw.scope : "user",
+    text: raw.text,
+    ...(typeof raw.category === "string" ? { category: raw.category } : {}),
+    documentId: typeof raw.document_id === "string" ? raw.document_id : null,
+    created: raw.created !== false,
+  };
+}
+
+/** 这一轮记下的记忆编号（新记的；早就记过的不算）。 */
+export function turnMemoryIds(parts: readonly AskPart[]): string[] {
+  const ids: string[] = [];
+  for (const part of parts) {
+    if (part.type !== "tool-call" || !part.artifact.memory?.created) continue;
+    if (!ids.includes(part.artifact.memory.id)) ids.push(part.artifact.memory.id);
+  }
+  return ids;
 }
 
 function numberOr(value: unknown): number | undefined {
@@ -188,6 +220,7 @@ export function applySessionUpdate(turn: AskTurn, update: SessionUpdate, now: nu
           status,
           locations: update.locations != null ? locationText(update.locations) : previous?.artifact.locations || [],
           output,
+          ...withMemory(memoryFromMeta((update as { _meta?: unknown })._meta) ?? previous?.artifact.memory),
         },
       };
       const parts = at >= 0 ? turn.parts.map((part, index) => (index === at ? next : part)) : [...closeOpenReasoning(turn.parts, wall), next];

@@ -49,11 +49,14 @@ test("拼出处：页、栏、页内位置、悬停认出的块、章节（书�
 
 test("接线：宿主不给端口就没有提问入口；? 只在选着书页上的字时拦（不然照旧是快捷键帮助）；提问窗单独一块、用到才加载", () => {
   const app = readFileSync(new URL("../../../packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url), "utf8");
-  assert.match(app, /actions=\{askPort && menuAsk \?/);
-  assert.match(app, /\{askPort && ask \? \(/);
-  assert.match(app, /if \(!picked\.text \|\| !picked\.element \|\| !picked\.rect\) return;/);
-  assert.match(app, /window\.addEventListener\("keydown", onKey, true\)/);
-  assert.match(app, /lazy\(\(\) => import\("\.\/ask\/ReaderAskPanel\.js"\)\)/);
+  assert.match(app, /actions=\{readerAsk\.menuActions\}/);
+  assert.match(app, /\{readerAsk\.panel\}/);
+  const wiring = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
+  assert.match(wiring, /if \(!picked\.text \|\| !picked\.element \|\| !picked\.rect\) return null;/);
+  assert.match(wiring, /window\.addEventListener\("keydown", onKey, true\)/);
+  assert.match(wiring, /lazy\(\(\) => import\("\.\/ReaderAskPanel\.js"\)\)/);
+  assert.match(wiring, /const panel: ReactElement \| null = port && \(ask\.visible \|\| legacy\)/);
+  assert.match(wiring, /menuActions = port && menuAnchor \?/);
   const host = readFileSync(new URL("../../src/features/reader/domain/ask-port.ts", import.meta.url), "utf8");
   assert.match(host, /if \(isMockMode\(\)\) return mockAskPort;/, "演示模式给假 agent");
   assert.match(host, /if \(isLanSharedPage\(\)\) return null;/, "局域网共享的页面不给（网关拦了 \/api\/v1\/ai）");
@@ -61,13 +64,19 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
   assert.match(vite, /@retainpdf\\\/ask/, "提问窗的包不打进阅读器 dist");
 });
 
-test("问答记录接线：读回问过的地方、每答完一轮存、一句没问就关不留「?」、能删", () => {
-  const hook = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-threads.ts", import.meta.url), "utf8");
-  assert.match(hook, /threads\.list\(documentId\)/);
-  assert.match(hook, /threads\.create\(documentId, \{ agentId, \.\.\.session, anchor: mark\.anchor, messages \}\)/);
-  assert.match(hook, /threads\.update\(documentId, mark\.threadId, \{ agentId, \.\.\.session, messages \}\)/);
-  assert.match(hook, /const session = sessionId \? \{ sessionId \} : \{\}/, "带上答这一轮的 ACP 会话（后端删问答时清 pi 的会话文件）");
-  assert.match(hook, /if \(mark && !mark\.threadId\) setMarks/);
+test("主对话接线：打开取主对话、读最近一页；每答完一轮追加（该压了就压）；结束了的副对话接着问先再开；窗口开着时书页上选字更新下一问的出处", () => {
+  const hook = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-conversation.ts", import.meta.url), "utf8");
+  assert.match(hook, /const main = await conversations\.main\(\);/);
+  assert.match(hook, /conversations\.messages\(conversation\.conversation_id, \{ limit: PAGE/);
+  assert.match(hook, /conversations\.append\(conversation\.conversation_id, input\)/);
+  assert.match(hook, /if \(result\.compaction_due && conversation\.kind === "main"\) void conversations\.compact/);
+  assert.match(hook, /ask_conversation_not_open/);
+  const wiring = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
+  assert.match(wiring, /document\.addEventListener\("selectionchange", onChange\)/);
+  assert.match(wiring, /if \(anchor && anchor\.selection !== used\.current\) setPending\(anchor\)/, "发出去的那段不再带第二次");
+  const marks = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-marks.ts", import.meta.url), "utf8");
+  assert.match(marks, /port\.threads\?\.list\(documentId\)/, "以前按书存的照旧画");
+  assert.match(marks, /port\.conversations\?\.bookMessages\(documentId\)/);
 });
 
 test("悬停还没认出块（鼠标刚移过来、点在两段之间）：按位置找同一页最近的块，太远（超过页高 15%）不算", () => {

@@ -229,16 +229,17 @@ const FOOTER_ICONS: Record<FooterItem["key"], IconType> = {
   elapsed: Clock,
 };
 
-/** 回答底下的用量（Thread 的 MessageFooter 插槽，和复制、重新回答在同一排）：只一个图标，点开看模型、token、缓存、速度、用时。 */
-export function makeMessageFooter(agentName: () => string) {
+/** 回答底下的用量（Thread 的 MessageFooter 插槽，和复制、重新回答在同一排）：只一个图标，点开看模型、token、缓存、速度、用时。Extra 跟在后面（深挖……）。 */
+export function makeMessageFooter(agentName: () => string, Extra?: ComponentType) {
   return function MessageFooter(): ReactElement | null {
     const custom = useAuiState((state) => state.message.metadata?.custom) as { turn?: AskTurn; endedAt?: number } | undefined;
-    if (!custom?.turn) return null;
-    const items = turnFooterItems(custom.turn, custom.endedAt ?? null, agentName());
-    if (!items.length) return null;
+    const items = custom?.turn ? turnFooterItems(custom.turn, custom.endedAt ?? null, agentName()) : [];
+    const extra = Extra ? <Extra /> : null;
+    if (!items.length) return extra;
     const model = items.find((item) => item.key === "model");
     const elapsed = items.find((item) => item.key === "elapsed");
     return (
+      <>
       <Popover>
         <PopoverTrigger className="ask-icon ask-usage-trigger" aria-label="这一轮的用量" title={["用量", elapsed?.title].filter(Boolean).join(" · ")}>
           {model ? <BrandIcon brand={brandFor(model.text, model.title)} size={13} title={model.title} /> : <Activity size={13} aria-hidden />}
@@ -255,6 +256,8 @@ export function makeMessageFooter(agentName: () => string) {
           })}
         </PopoverContent>
       </Popover>
+      {extra}
+      </>
     );
   };
 }

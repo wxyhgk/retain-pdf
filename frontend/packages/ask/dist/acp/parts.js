@@ -26,6 +26,34 @@ function contentText(content) {
 function locationText(locations) {
     return (locations || []).map((location) => (location.line != null ? `${location.path}:${location.line}` : location.path));
 }
+function withMemory(memory) {
+    return memory ? { memory } : {};
+}
+/** tool_call_update 的 _meta.retainpdf.memory → 「已记住」；编号、字没有就不算。 */
+export function memoryFromMeta(meta) {
+    const raw = meta?.retainpdf?.memory;
+    if (!raw || typeof raw !== "object" || typeof raw.id !== "string" || !raw.id || typeof raw.text !== "string")
+        return undefined;
+    return {
+        id: raw.id,
+        scope: typeof raw.scope === "string" ? raw.scope : "user",
+        text: raw.text,
+        ...(typeof raw.category === "string" ? { category: raw.category } : {}),
+        documentId: typeof raw.document_id === "string" ? raw.document_id : null,
+        created: raw.created !== false,
+    };
+}
+/** 这一轮记下的记忆编号（新记的；早就记过的不算）。 */
+export function turnMemoryIds(parts) {
+    const ids = [];
+    for (const part of parts) {
+        if (part.type !== "tool-call" || !part.artifact.memory?.created)
+            continue;
+        if (!ids.includes(part.artifact.memory.id))
+            ids.push(part.artifact.memory.id);
+    }
+    return ids;
+}
 function numberOr(value) {
     return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
@@ -126,6 +154,7 @@ export function applySessionUpdate(turn, update, now, wall = Date.now()) {
                     status,
                     locations: update.locations != null ? locationText(update.locations) : previous?.artifact.locations || [],
                     output,
+                    ...withMemory(memoryFromMeta(update._meta) ?? previous?.artifact.memory),
                 },
             };
             const parts = at >= 0 ? turn.parts.map((part, index) => (index === at ? next : part)) : [...closeOpenReasoning(turn.parts, wall), next];

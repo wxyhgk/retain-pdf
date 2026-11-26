@@ -45,7 +45,7 @@ export declare class AskImageAttachmentAdapter extends SimpleImageAttachmentAdap
         file: File;
     }): Promise<import("@assistant-ui/core").PendingAttachment>;
 }
-/** 回答底下的用量（Thread 的 MessageFooter 插槽，和复制、重新回答在同一排）：只一个图标，点开看模型、token、缓存、速度、用时。 */
-export declare function makeMessageFooter(agentName: () => string): () => ReactElement | null;
+/** 回答底下的用量（Thread 的 MessageFooter 插槽，和复制、重新回答在同一排）：只一个图标，点开看模型、token、缓存、速度、用时。Extra 跟在后面（深挖……）。 */
+export declare function makeMessageFooter(agentName: () => string, Extra?: ComponentType): () => ReactElement | null;
 export declare function makeWelcome(send: (text: string) => void): () => ReactElement;
 export {};

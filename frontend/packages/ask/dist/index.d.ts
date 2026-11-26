@@ -1,1 +1,1 @@
-export type { AskAgent, AskConfigChoice, AskConfigOption, AskContext, AskHandlers, AskMessage, AskPort, AskPromptResult, AskQuote, AskSession, } from "./contract.js";
+export type { AskAgent, AskAgentCapabilities, AskConfigChoice, AskConfigOption, AskContext, AskHandlers, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskPromptResult, AskQuote, AskSession, AskTurnRecord, } from "./contract.js";

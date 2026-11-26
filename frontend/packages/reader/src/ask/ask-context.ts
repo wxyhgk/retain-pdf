@@ -2,6 +2,7 @@
 // 纯函数，测试在 frontend/web/tests/reader/reader-ask.test.mjs。
 
 import type { AskContext, AskPort } from "@retainpdf/ask";
+import type { AskSelectionInput } from "@retainpdf/api/ai";
 
 import type { ReaderAskAnchor, ReaderAskPort } from "../contracts/ask.js";
 
@@ -25,7 +26,8 @@ export function anchorPreamble(anchor: ReaderAskAnchor, jobId: string, bookTitle
   return lines.join("\n");
 }
 
-export function toAskContext(anchor: ReaderAskAnchor, jobId: string, bookTitle = ""): AskContext {
+/** selection 给了就放进这一问的 _meta.retainpdf.selection（自带 agent 认结构化出处，追加消息也存它）。 */
+export function toAskContext(anchor: ReaderAskAnchor, jobId: string, bookTitle = "", selection?: AskSelectionInput): AskContext {
   return {
     page: anchor.page,
     label: [`第 ${anchor.page} 页`, anchor.section].filter(Boolean).join(" · "),
@@ -36,13 +38,19 @@ export function toAskContext(anchor: ReaderAskAnchor, jobId: string, bookTitle =
       prefer: anchor.pane === "translated" ? "translated" : "source",
     },
     preamble: anchorPreamble(anchor, jobId, bookTitle),
+    ...(selection ? { meta: { retainpdf: { selection } } } : {}),
   };
 }
 
-/** 阅读页的端口 → 提问窗的端口：开会话时绑上这本书的任务号（自带 agent 拿它读书）。 */
-export function bindAskPort(port: ReaderAskPort, jobId: string): AskPort {
+/**
+ * 阅读页的端口 → 提问窗的端口：开会话时绑上这本书的任务号（自带 agent 拿它读书）和对话编号（自带 agent 自己取前文）。
+ * 本机 agent 不认对话：新会话第一问前面带上下文接口拼好的前文（conversationPreamble）。
+ */
+export function bindAskPort(port: ReaderAskPort, jobId: string, conversation?: { id: string; documentId: string } | null): AskPort {
+  const conversations = port.conversations;
   return {
     listAgents: () => port.listAgents(),
-    openSession: (options, handlers) => port.openSession({ ...options, jobId }, handlers),
+    openSession: (options, handlers) => port.openSession({ ...options, jobId, ...(conversation ? { conversationId: conversation.id } : {}) }, handlers),
+    ...(conversation && conversations ? { conversationPreamble: () => conversations.contextText(conversation.id, conversation.documentId) } : {}),
   };
 }

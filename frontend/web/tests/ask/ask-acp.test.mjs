@@ -11,6 +11,8 @@ const text = (sessionUpdate, value) => ({ sessionUpdate, content: { type: "text"
 
 /** 宿主给的出处（阅读页拼的那段字，见 packages/reader/src/ask/ask-context.ts）。 */
 const PREAMBLE = "我在读一本书，第 56 页（译文栏）。";
+const SELECTION = { page: 56, pane: "translated", item_ids: ["p056-b0003"] };
+const CONTEXT = { page: 56, label: "第 56 页", preamble: PREAMBLE, meta: { retainpdf: { selection: SELECTION } } };
 
 test("正文、思考：同类相邻的接着拼，中间插了别的新起一段；记首字、末字时间和字数", () => {
   let turn = emptyTurn(0);
@@ -98,16 +100,18 @@ test("许可：等用户点；关窗 / 停下时没回的都按取消回掉", as
   assert.ok(changes >= 4);
 });
 
-test("和 assistant-ui 的适配：第一句带出处、之后不带；边收边吐；停的原因 → 状态；换 agent 重开会话、出处再带", async () => {
+test("和 assistant-ui 的适配：带了出处的那一问前面写那段字、_meta 放结构化出处（发出去宿主就清掉）；边收边吐；停的原因 → 状态；换 agent 重开会话、带上之前几轮", async () => {
   const prompts = [];
+  const metas = [];
   const opened = [];
   const port = {
     listAgents: async () => [],
     openSession: async ({ agentId }, handlers) => {
       opened.push(agentId);
       return {
-        prompt: async (blocks) => {
+        prompt: async (blocks, meta) => {
           prompts.push(blocks);
+          metas.push(meta);
           handlers.onUpdate(text("agent_message_chunk", "好"));
           await new Promise((resolve) => setTimeout(resolve, 5));
           handlers.onUpdate(text("agent_message_chunk", "的"));
@@ -120,11 +124,23 @@ test("和 assistant-ui 的适配：第一句带出处、之后不带；边收边
   };
   let agentId = "retainpdf";
   let clock = 0;
-  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => agentId, getPreamble: () => PREAMBLE, now: () => (clock += 100) });
+  let pending = CONTEXT;
+  const asked = [];
+  const chat = createAcpChatAdapter({
+    port,
+    permissions: new PermissionStore(),
+    getAgentId: () => agentId,
+    getContext: () => pending,
+    onAsked: (id, context) => {
+      asked.push([id, context?.label ?? null]);
+      pending = null;
+    },
+    now: () => (clock += 100),
+  });
   // 像 assistant-ui 那样：每次把到这一问为止的整段对话传进来。
   const history = [];
   const ask = async (question) => {
-    history.push({ role: "user", content: [{ type: "text", text: question }] });
+    history.push({ id: `u${history.length}`, role: "user", content: [{ type: "text", text: question }] });
     const results = [];
     for await (const result of chat.adapter.run({ messages: [...history], abortSignal: new AbortController().signal })) results.push(result);
     history.push({ role: "assistant", content: results.at(-1).content, metadata: { custom: {} } });
@@ -137,12 +153,56 @@ test("和 assistant-ui 的适配：第一句带出处、之后不带；边收边
   assert.equal(first.at(-1).content[0].text, "好的");
   assert.deepEqual(first.at(-1).status, { type: "complete", reason: "stop" });
   assert.ok(first.at(-1).metadata.timing.totalStreamTime > 0);
+  assert.deepEqual(metas[0], { retainpdf: { selection: SELECTION } }, "结构化出处放进 session/prompt 的 _meta");
+  assert.deepEqual(chat.lastRun().context, CONTEXT, "这一轮用的出处交给宿主存");
   await ask("再说一遍");
-  assert.equal(prompts[1].length, 1, "追问不再带出处");
+  assert.equal(prompts[1].length, 1, "追问不再带出处（宿主清掉了）");
+  assert.equal(metas[1], undefined);
+  assert.deepEqual(asked, [["u0", "第 56 页"], ["u2", null]], "每条问题第一次发时交出它带的出处");
   agentId = "claude-code";
   await ask("换个 agent");
   assert.deepEqual(opened, ["retainpdf", "claude-code"]);
-  assert.equal(prompts[2].length, 3, "换了 agent：新会话，出处和之前几轮再带一次");
+  assert.equal(prompts[2].length, 2, "换了 agent：新会话，之前几轮带一次");
+  assert.match(prompts[2][0].text, /我：这是什么？/);
+});
+
+test("agent 报了能力：认结构化出处就不写那段字；自己取前文就不拼之前几轮；宿主给了前文（上下文接口）用它；重新回答照用那一问的出处；这一轮记下的记忆交出去", async () => {
+  const prompts = [];
+  const metas = [];
+  let capabilities = { selection: true, conversation: true };
+  const port = {
+    listAgents: async () => [],
+    conversationPreamble: async () => "【记忆和前文】",
+    openSession: async (_o, handlers) => ({
+      capabilities,
+      sessionId: "s",
+      prompt: async (blocks, meta) => {
+        prompts.push(blocks);
+        metas.push(meta);
+        handlers.onUpdate({ sessionUpdate: "tool_call", toolCallId: "r1", title: "记住：要先看结论", kind: "other", status: "in_progress" });
+        handlers.onUpdate({ sessionUpdate: "tool_call_update", toolCallId: "r1", status: "completed", _meta: { retainpdf: { memory: { id: "mem-1", scope: "user", text: "要先看结论", created: true } } } });
+        handlers.onUpdate({ sessionUpdate: "tool_call", toolCallId: "r2", title: "记住：旧的", kind: "other", status: "in_progress" });
+        handlers.onUpdate({ sessionUpdate: "tool_call_update", toolCallId: "r2", status: "completed", _meta: { retainpdf: { memory: { id: "mem-0", scope: "user", text: "旧的", created: false } } } });
+        handlers.onUpdate(text("agent_message_chunk", "答"));
+        return { stopReason: "end_turn" };
+      },
+      cancel() {},
+      close() {},
+    }),
+  };
+  let pending = CONTEXT;
+  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "retainpdf", getContext: () => pending, onAsked: () => { pending = null; } });
+  const run = async (messages) => { for await (const _ of chat.adapter.run({ messages, abortSignal: new AbortController().signal })) { /* 收完 */ } };
+  const q = { id: "q1", role: "user", content: [{ type: "text", text: "这句什么意思？" }] };
+  await run([q]);
+  assert.deepEqual(prompts[0].map((block) => block.text), ["这句什么意思？"], "自带 agent 认出处、自己取前文：只发问题");
+  assert.deepEqual(metas[0], CONTEXT.meta);
+  assert.deepEqual(chat.lastRun().memoryIds, ["mem-1"], "只算新记的");
+  // 重新回答：会话重开，出处照用那一问的（宿主早清掉了）。
+  capabilities = {};
+  await run([q]);
+  assert.deepEqual(prompts[1].map((block) => block.text), ["【记忆和前文】", PREAMBLE, "这句什么意思？"], "本机 agent：宿主给的前文 + 出处那段字 + 问题");
+  assert.deepEqual(metas[1], CONTEXT.meta);
 });
 
 test("问答记录：assistant-ui 的对话 → 存的问答（问题 / 回答 + 思考 + 用量和用时）；读回来交给 initialMessages，底下一行照样有用量", () => {
@@ -178,10 +238,11 @@ test("新会话的第一问带上之前几轮（重新打开、换 agent、断�
 
   const prompts = [];
   const port = { listAgents: async () => [], openSession: async (_o, handlers) => ({ prompt: async (blocks) => { prompts.push(blocks); handlers.onUpdate({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "好" } }); return { stopReason: "end_turn" }; }, cancel() {}, close() {} }) };
-  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "a", getPreamble: () => PREAMBLE });
+  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "a", getContext: () => CONTEXT });
   for await (const _ of chat.adapter.run({ messages: [...earlier, { role: "user", content: [{ type: "text", text: "Q2" }] }], abortSignal: new AbortController().signal })) { /* 收完 */ }
-  assert.equal(prompts[0].length, 3, "出处 + 之前的对话 + 问题");
-  assert.match(prompts[0][1].text, /我：Q1\n\n你：A1/);
+  assert.equal(prompts[0].length, 3, "之前的对话 + 出处 + 问题");
+  assert.match(prompts[0][0].text, /我：Q1\n\n你：A1/);
+  assert.equal(prompts[0][1].text, PREAMBLE);
   assert.equal(prompts[0][2].text, "Q2");
 });
 
@@ -196,7 +257,7 @@ test("Claude Code 的用量：模型在 _meta[\"_claude/model\"]，分项 token 
     },
     cancel() {}, close() {},
   }) };
-  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "claude-code", getPreamble: () => "" });
+  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "claude-code", getContext: () => null });
   let last;
   for await (const result of chat.adapter.run({ messages: [{ role: "user", content: [{ type: "text", text: "1+1？" }] }], abortSignal: new AbortController().signal })) last = result;
   const { turn } = last.metadata.custom;
@@ -208,7 +269,7 @@ test("重新回答（最后一问再答一次）：ACP 会话重开、第一问�
   const prompts = [];
   let opened = 0;
   const port = { listAgents: async () => [], openSession: async (_o, handlers) => { opened += 1; return { prompt: async (blocks) => { prompts.push(blocks); handlers.onUpdate({ sessionUpdate: "agent_message_chunk", content: { type: "text", text: "答" } }); return { stopReason: "end_turn" }; }, cancel() {}, close() {} }; } };
-  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "a", getPreamble: () => "" });
+  const chat = createAcpChatAdapter({ port, permissions: new PermissionStore(), getAgentId: () => "a", getContext: () => null });
   const run = async (messages) => { for await (const _ of chat.adapter.run({ messages, abortSignal: new AbortController().signal })) { /* 收完 */ } };
   const u = (t) => ({ role: "user", content: [{ type: "text", text: t }] });
   const a = (t) => ({ role: "assistant", content: [{ type: "text", text: t }], metadata: { custom: {} } });

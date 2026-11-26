@@ -2,6 +2,15 @@
 // 宿主不给这个端口时，阅读页没有提问入口。方案见 docs/ops/planning/reader-ask/；提问窗说明见 frontend/packages/ask/README.md。
 
 import type { AskAgent, AskHandlers, AskMessage, AskSession } from "@retainpdf/ask";
+import type {
+  AppendAskMessagesView,
+  AskConversationMessageInput,
+  AskConversationMessageRecord,
+  AskConversationRecord,
+  AskMessagePageView,
+  CloseAskConversationView,
+  CreateAskSideConversationInput,
+} from "@retainpdf/api/ai";
 
 /** 能用的 agent。和提问窗的 AskAgent 是同一个东西。 */
 export type ReaderAskAgent = AskAgent;
@@ -12,9 +21,39 @@ export type ReaderAskPort = {
   listAgents: () => Promise<ReaderAskAgent[]>;
   /** 开一个会话（session/new）。jobId 给 agent 拿书的数据（retainpdf mcp）用。 */
   /** config：用户选过的设置（模型、思考强度……），见 @retainpdf/ask 的 AskPort。 */
-  openSession: (options: { agentId: string; jobId: string; config?: Readonly<Record<string, string | boolean>> }, handlers: ReaderAskHandlers) => Promise<ReaderAskSession>;
-  /** 问答记录（按书存，书页白边的「?」从这里读）。不给就只记在这次打开里。 */
+  /** conversationId：主对话或副对话的编号，自带 agent 握手带上（自己取前文、记忆出处记它）。 */
+  openSession: (options: { agentId: string; jobId: string; conversationId?: string; config?: Readonly<Record<string, string | boolean>> }, handlers: ReaderAskHandlers) => Promise<ReaderAskSession>;
+  /** 以前按书存的问答记录（2026-11-26 起只读：书页上照旧画、能点开看，不再往里写）。 */
   threads?: ReaderAskThreadsPort | null;
+  /** 全局主对话、副对话、记忆（2026-11-26，docs/api/16-AI/02-主对话和记忆.md）。不给就只记在这次打开里。 */
+  conversations?: ReaderAskConversationsPort | null;
+};
+
+/** 主对话、副对话（后端库是正本）。类型就是契约 ask-conversations.v1 的。 */
+export type ReaderAskConversationsPort = {
+  /** 取或建当前的全局主对话。 */
+  main: () => Promise<AskConversationRecord>;
+  get: (conversationId: string) => Promise<AskConversationRecord>;
+  /** 消息分页（seq < beforeSeq 的最后 limit 条）。 */
+  messages: (conversationId: string, page?: { beforeSeq?: number; limit?: number }) => Promise<AskMessagePageView>;
+  /** 追加一轮（问和答一起）。返回 compaction_due 时宿主自己去压（compact）。 */
+  append: (conversationId: string, messages: AskConversationMessageInput[]) => Promise<AppendAskMessagesView>;
+  /** 新会话第一问前面带的前文（上下文接口拼好的 text：记忆 + 摘要 + 最近几轮）；给不认结构的本机 agent。 */
+  contextText: (conversationId: string, documentId: string) => Promise<string>;
+  /** 开副对话（「深挖」）。 */
+  fork: (input: CreateAskSideConversationInput) => Promise<AskConversationRecord>;
+  /** 结束副对话：不给 summary 时让后端用设置里的模型写结论（没配模型就只结束）。 */
+  close: (conversationId: string, summary?: string) => Promise<CloseAskConversationView>;
+  /** 再开结束了的副对话。 */
+  reopen: (conversationId: string) => Promise<AskConversationRecord>;
+  /** 归档主对话（之后再取主对话会建新的）。 */
+  archive: (conversationId: string) => Promise<AskConversationRecord>;
+  /** 主对话太长了：让后端用设置里的模型压缩（没配模型不压）。失败不用管，下次再试。 */
+  compact: (conversationId: string) => Promise<void>;
+  /** 这本书上问过的地方（书页上的「?」）。 */
+  bookMessages: (documentId: string) => Promise<AskConversationMessageRecord[]>;
+  /** 撤销「已记住」。 */
+  forgetMemory: (memoryId: string) => Promise<void>;
 };
 
 /** 存下来的一条问答（问题，或者回答带思考和用量）。和提问窗的 AskMessage 是同一个东西。 */

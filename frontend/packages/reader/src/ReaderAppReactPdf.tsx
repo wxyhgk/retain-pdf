@@ -57,13 +57,10 @@ import type { PdfOutlineNode } from "./pdf/pdf-outline.js";
 import type { RegionPdfDocument } from "./pdf/RegionCanvas.js";
 import { ReaderZoomViewer } from "./components/react-pdf/ReaderZoomViewer.js";
 import { ReaderXrefPreview } from "./components/react-pdf/ReaderXrefPreview.js";
-import type { ReaderAskAnchor } from "./contracts/ask.js";
-import { buildAskAnchor, selectedPageText } from "./ask/anchor.js";
 import { readerSessionDataPort } from "./external.js";
-import { useAskThreads } from "./ask/use-ask-threads.js";
+import { useReaderAsk } from "./ask/use-reader-ask.js";
 
 // 提问窗单独一块（assistant-ui、streamdown、KaTeX 都在里面），第一次提问才加载。
-const ReaderAskPanel = lazy(() => import("./ask/ReaderAskPanel.js"));
 import { useReaderXrefs } from "./hooks/use-reader-xrefs.js";
 import { buildXrefIndex, type XrefTarget } from "./shared/content/reader-xrefs.js";
 
@@ -435,7 +432,10 @@ export function ReaderAppReactPdf() {
   useInkShortcuts(ink);
   const [inkMenu, setInkMenu] = useState<InkMenuState>(null);
   const closeInkMenu = useCallback(() => setInkMenu(null), []);
-  // 阅读页提问（docs/ops/planning/reader-ask/）：宿主给了 ACP 端口才有。右键「在这里提问 / 问这段」，书页上选着字时按 ? 也行。
+  // 「对比版本」：选了一份就切到对照（左栏放那一份）；切走对照（只看原文 / 译文）就不对比了。
+  const versionCompare = useReaderVersionCompare({ documentId: session.documentId, jobId: session.jobId });
+  // 阅读页提问（docs/ops/planning/reader-ask/）：宿主给了 ACP 端口才有。右键「在这里提问 / 问这段」，书页上选着字时按 ? 也行；
+  // 对着一个全局主对话，书页上的「?」是这本书上问过的地方（ask/use-reader-ask）。
   const askPort = useMemo(() => {
     try {
       return readerSessionDataPort().ask ?? null;
@@ -443,46 +443,21 @@ export function ReaderAppReactPdf() {
       return null;
     }
   }, []);
-  const [menuAsk, setMenuAsk] = useState<ReaderAskAnchor | null>(null);
-  // 问过的地方（书页白边的「?」）、开着的那一次、每答完一轮存（问答记录，宿主给了才存后端）。
-  const askThreads = useAskThreads({ port: askPort, documentId: session.documentId || "", resetKey: c.viewStateKey });
-  const askMarks = askThreads.marks;
-  const openAsk = askThreads.ask;
-  const reopenAsk = askThreads.reopen;
-  const ask = askThreads.open;
-  const anchorAt = useCallback(
-    (target: Element | null, clientX: number, clientY: number, selection: string) => buildAskAnchor({
-      pageElement: target?.closest(`[${READER_PAGE_ATTR}]`) ?? null,
-      clientX,
-      clientY,
-      itemId: regionHover.get().itemId,
-      selection,
-      regions: session.regions,
-      bookmarks,
-      metadata: session.readerMetadata,
-    }),
-    [regionHover, session.regions, bookmarks, session.readerMetadata],
-  );
-  // 选着书页上的字按 ? → 问这段。只在选着字时拦（不然 ? 照旧是快捷键帮助），捕获阶段先拿到、拦下帮助。
-  useEffect(() => {
-    if (!askPort) return undefined;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "?" || event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented) return;
-      const target = event.target as HTMLElement | null;
-      if (target?.closest?.("input, textarea, select, [contenteditable='true']")) return;
-      const picked = selectedPageText(globalThis.getSelection?.() ?? null);
-      if (!picked.text || !picked.element || !picked.rect) return;
-      const anchor = anchorAt(picked.element, picked.rect.left + picked.rect.width / 2, picked.rect.top + picked.rect.height / 2, picked.text);
-      if (!anchor) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      openAsk(anchor);
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [askPort, anchorAt, openAsk]);
-  // 「对比版本」：选了一份就切到对照（左栏放那一份）；切走对照（只看原文 / 译文）就不对比了。
-  const versionCompare = useReaderVersionCompare({ documentId: session.documentId, jobId: session.jobId });
+  const readerAsk = useReaderAsk({
+    port: askPort,
+    documentId: session.documentId || "",
+    jobId: session.jobId,
+    versionId: versionCompare.readingVersionId || null,
+    regions: session.regions,
+    metadata: session.readerMetadata,
+    bookmarks,
+    hoveredItemId: () => regionHover.get().itemId,
+    resetKey: c.viewStateKey,
+    goToPage: c.goToPage,
+    pageCount: panes.hudNumPages || 0,
+  });
+  const askMarks = readerAsk.marks;
+  const reopenAsk = readerAsk.onMark;
   const comparedUrl = versionCompare.compared?.url || "";
   useEffect(() => {
     if (comparedUrl && visiblePdfMode !== "compare") changeWorkspace("compare");
@@ -613,10 +588,7 @@ export function ReaderAppReactPdf() {
           const menu = inkMenuFromContextMenu(event);
           if (!menu) return;
           event.preventDefault();
-          if (askPort) {
-            const picked = selectedPageText(globalThis.getSelection?.() ?? null);
-            setMenuAsk(anchorAt(event.target as Element, event.clientX, event.clientY, picked.element ? picked.text : ""));
-          }
+          readerAsk.captureMenu(event.target as Element, event.clientX, event.clientY);
           setInkMenu(menu);
         }}
       >
@@ -701,30 +673,9 @@ export function ReaderAppReactPdf() {
           ink={ink}
           menu={inkMenu}
           onClose={closeInkMenu}
-          actions={askPort && menuAsk ? [{
-            key: "ask",
-            label: menuAsk.selection ? "问这段" : "在这里提问",
-            hint: menuAsk.selection ? "?" : undefined,
-            onSelect: () => openAsk(menuAsk),
-          }] : []}
+          actions={readerAsk.menuActions}
         />
-        {askPort && ask ? (
-          <Suspense fallback={null}>
-            <ReaderAskPanel
-              key={ask.key}
-              port={askPort}
-              jobId={session.jobId}
-              anchor={ask.anchor}
-              onClose={askThreads.close}
-              onShowAnchor={() => c.goToPage(ask.anchor.page, ask.anchor.pane)}
-              onJumpToPage={(page) => c.goToPage(page, ask.anchor.pane)}
-              pageCount={panes.hudNumPages || 0}
-              initialMessages={ask.initial}
-              onTurnDone={(messages, agentId, sessionId) => askThreads.save(ask.key, messages, agentId, sessionId)}
-              onDelete={() => askThreads.remove(ask.key)}
-            />
-          </Suspense>
-        ) : null}
+        {readerAsk.panel}
         <ReaderInkDock ink={ink} />
         <ReaderPendingEditsPill edit={blockEdit} />
         <DownloadToastHost />

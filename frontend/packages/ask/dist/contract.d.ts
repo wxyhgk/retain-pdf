@@ -42,10 +42,23 @@ export type AskConfigOption = {
     /** select 的可选值（分组的已经摊平，group 记组名）。 */
     options: AskConfigChoice[];
 };
+/**
+ * agent 在 initialize 里报的 RetainPDF 能力（agentCapabilities._meta.retainpdf，自带 agent 才有）：
+ * selection —— 认 session/prompt 的 _meta 里的结构化出处，问题前面可以不写那段字；
+ * conversation —— 握手带了对话编号，开会话时自己取前文（记忆 + 最近几轮），窗口不再把前几轮拼成字带过去；
+ * memory —— 有记忆工具（记下的在工具卡片的 _meta 里，窗口画「已记住（撤销）」）。
+ */
+export type AskAgentCapabilities = {
+    selection?: boolean;
+    conversation?: boolean;
+    memory?: boolean;
+};
 /** 一个 ACP 会话（session/new 开出来的）。 */
 export type AskSession = {
     /** ACP session/new 回的 sessionId。宿主存问答记录时带上（后端删问答、删书时按它清 agent 自己存的会话文件）。 */
     sessionId?: string;
+    /** agent 报的 RetainPDF 能力（见 AskAgentCapabilities）；本机 agent 没有。 */
+    capabilities?: AskAgentCapabilities;
     /** 开会话时 agent 给的设置项（没有就是没有，窗口不画选择器）。 */
     configOptions?: AskConfigOption[];
     /** 改一个设置项（session/set_config_option），返回改完的整份设置项。agent 不支持就不给这个方法。 */
@@ -55,8 +68,8 @@ export type AskSession = {
      * 改了这些就关掉会话，下一问用 openSession 的 config 重开，之前几轮照样带过去。true 是所有设置都这样；不给是都能直接改。
      */
     reopenOnConfigChange?: boolean | ((configId: string) => boolean);
-    /** 发一轮（session/prompt），回答过程走 onUpdate。 */
-    prompt: (blocks: ContentBlock[]) => Promise<AskPromptResult>;
+    /** 发一轮（session/prompt），回答过程走 onUpdate。meta 放进 session/prompt 的 _meta（这一问的结构化出处）。 */
+    prompt: (blocks: ContentBlock[], meta?: Record<string, unknown>) => Promise<AskPromptResult>;
     /** 停（session/cancel）。 */
     cancel: () => void;
     /** 不用了（关窗、换 agent、重新回答）。 */
@@ -70,6 +83,18 @@ export type AskPort = {
         agentId: string;
         config?: Readonly<Record<string, string | boolean>>;
     }, handlers: AskHandlers) => Promise<AskSession>;
+    /**
+     * 新会话的第一问前面带的「之前聊过什么」（宿主拼好的一段字，比如后端上下文接口的 text：记忆 + 摘要 + 最近几轮）。
+     * agent 自己会取前文（capabilities.conversation）时不调。不给就用窗口里看得到的前几轮拼。
+     */
+    conversationPreamble?: () => Promise<string>;
+};
+/** 问题上方的小标签：这一问问的是哪儿（点了回到那一处）。 */
+export type AskMessageContext = {
+    page?: number;
+    label: string;
+    /** 宿主自己认的东西（比如结构化出处），点标签时原样交回。 */
+    data?: unknown;
 };
 /** 存下来的一条问答：问题，或者回答（带思考和用量）。宿主拿去存、下次原样交回来。 */
 export type AskMessage = {
@@ -77,6 +102,42 @@ export type AskMessage = {
     text: string;
     thought?: string | null;
     usage?: Record<string, unknown> | null;
+    /** 宿主那边的编号（比如后端的 message_id）；「深挖」时交回。 */
+    id?: string;
+    /** 问题问的是哪儿（只有问题有）。 */
+    context?: AskMessageContext | null;
+    /**
+     * side_summary：副对话结束时回到主对话的结论卡片（画成卡片，能展开看副对话）；
+     * compacted：这条之前的都压缩成了摘要（这条后面画一条分隔线）。
+     */
+    marks?: {
+        sideSummary?: {
+            sideId: string | null;
+            title?: string;
+        };
+        compactedBefore?: boolean;
+    };
+};
+/** 答完的一轮：问题和回答、问的时候带的出处、谁答的、这一轮记下的记忆编号。宿主拿去追加。 */
+export type AskTurnRecord = {
+    question: AskMessage;
+    answer: AskMessage;
+    /** 发问时用的出处（AskContext）；没带是 null。 */
+    context: AskContext | null;
+    agentId: string;
+    sessionId?: string;
+    /** 这一轮「已记住」的记忆编号（工具卡片 _meta 里的，created 为真的）。 */
+    memoryIds: string[];
+};
+/** 「已记住」：agent 记下一条记忆（自带 agent 在 remember 工具卡片完成时的 _meta.retainpdf.memory）。 */
+export type AskMemoryNotice = {
+    id: string;
+    scope: string;
+    text: string;
+    category?: string;
+    documentId?: string | null;
+    /** 假的是早就记过一模一样的（没有新记，不画撤销）。 */
+    created: boolean;
 };
 /** 顶上引的那段。有原文也有译文、又没选字时能切换。 */
 export type AskQuote = {
@@ -93,6 +154,8 @@ export type AskContext = {
     /** 悬停写全的位置，比如「第 56 页 · 2.1.1 Atomic Units」。 */
     label: string;
     quote?: AskQuote;
-    /** 新会话第一问前面带给 agent 的出处（一段字）。换 agent、重新回答、断线重连后会再带一次。 */
+    /** 这一问前面带给 agent 的出处（一段字）。agent 认结构化出处（capabilities.selection）时不带。 */
     preamble?: string;
+    /** 放进这一问 session/prompt 的 _meta（宿主的结构化出处，比如 {retainpdf: {selection}}）。 */
+    meta?: Record<string, unknown>;
 };

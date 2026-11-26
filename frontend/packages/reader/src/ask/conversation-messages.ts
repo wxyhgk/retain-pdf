@@ -1,0 +1,112 @@
+// 主对话（后端库是正本）和提问窗之间的转换，纯函数，测试在 frontend/web/tests/reader/reader-ask-conversation.test.mjs：
+// - 书上的位置 → 结构化出处（追加消息的 selection、session/prompt 的 _meta.retainpdf.selection，同一个写法）；
+// - 库里的消息 → 提问窗的 AskMessage（问题上面的小标签、副对话的结论卡片、压缩点）；
+// - 答完的一轮 → 追加消息的请求（问和答一起，带幂等号、出处、记下的记忆）。
+// 接口见 docs/api/16-AI/02-主对话和记忆.md。
+
+import type { AskMessage, AskMessageContext, AskTurnRecord } from "@retainpdf/ask";
+import type { AskCompactionPointView, AskConversationMessageInput, AskConversationMessageRecord, AskSelectionInput } from "@retainpdf/api/ai";
+
+import type { ReaderAskAnchor } from "../contracts/ask.js";
+
+/** 正在读的书：出处要带的编号。 */
+export type AskBook = { documentId: string; jobId: string; versionId: string | null };
+
+const TEXT_LIMIT = 50000;
+const THOUGHT_LIMIT = 20000;
+
+function clip(text: string | null | undefined, limit: number): string {
+  const value = `${text || ""}`;
+  return value.length > limit ? value.slice(0, limit) : value;
+}
+
+/** 书上的位置 → 结构化出处（只放有值的；块编号前端认出来的那一块）。 */
+export function anchorSelection(anchor: ReaderAskAnchor, book: AskBook): AskSelectionInput {
+  const selection: AskSelectionInput = { page: anchor.page, pane: anchor.pane, item_ids: anchor.itemId ? [anchor.itemId] : [] };
+  if (book.documentId) selection.document_id = book.documentId;
+  if (book.jobId) selection.job_id = book.jobId;
+  if (book.versionId) selection.translation_version = book.versionId;
+  if (anchor.selection) selection.selected_text = anchor.selection;
+  if (anchor.section) selection.section = anchor.section;
+  if (anchor.sourceText) selection.source_text = anchor.sourceText;
+  if (anchor.translatedText) selection.translated_text = anchor.translatedText;
+  return selection;
+}
+
+/** 问题上面的小标签：「第 56 页 · 2.1 节」；别的书里问的写「别的书」，点了不跳。 */
+export function selectionContext(selection: AskConversationMessageRecord["selection"], currentDocumentId: string): AskMessageContext | null {
+  if (!selection?.page) return null;
+  const elsewhere = Boolean(selection.document_id && currentDocumentId && selection.document_id !== currentDocumentId);
+  const label = [elsewhere ? "别的书" : "", `第 ${selection.page} 页`, selection.section || ""].filter(Boolean).join(" · ");
+  return { page: selection.page, label, data: selection };
+}
+
+/** 库里的消息 → 提问窗的消息。side_summary 画成结论卡片；seq 正好是压缩点的那条后面画分隔线。 */
+export function recordsToMessages(
+  records: readonly AskConversationMessageRecord[],
+  compactions: readonly Pick<AskCompactionPointView, "covers_to_seq">[] = [],
+  currentDocumentId = "",
+): AskMessage[] {
+  const cut = new Set(compactions.map((point) => point.covers_to_seq));
+  return records.map((record) => {
+    const compacted = cut.has(record.seq) ? { compactedBefore: true } : {};
+    if (record.role === "user") {
+      return { id: record.message_id, role: "user", text: record.text, context: selectionContext(record.selection, currentDocumentId) };
+    }
+    if (record.role === "side_summary") {
+      return {
+        id: record.message_id,
+        role: "assistant",
+        text: `**深挖的结论**\n\n${record.text}`,
+        marks: { sideSummary: { sideId: record.side_conversation_id }, ...compacted },
+      };
+    }
+    return {
+      id: record.message_id,
+      role: "assistant",
+      text: record.text,
+      thought: record.thought,
+      usage: (record.usage as Record<string, unknown> | null) ?? null,
+      ...(compacted.compactedBefore ? { marks: compacted } : {}),
+    };
+  });
+}
+
+/** 答完的一轮 → 追加消息的请求。clientId 是这一轮的幂等号前缀（网络重试不会追加两次）。 */
+export function turnToAppend(turn: AskTurnRecord, documentId: string, clientId: string): AskConversationMessageInput[] {
+  const selection = (turn.context?.meta as { retainpdf?: { selection?: AskSelectionInput } } | undefined)?.retainpdf?.selection ?? null;
+  // 两处都给又不一样后端回 400：出处里有书就以出处为准。
+  const book = selection?.document_id || documentId || null;
+  const common = { agent_id: turn.agentId || null, document_id: book };
+  const usage = turn.answer.usage && JSON.stringify(turn.answer.usage).length <= 4096 ? turn.answer.usage : null;
+  return [
+    { ...common, role: "user", text: clip(turn.question.text, TEXT_LIMIT), selection, client_message_id: `${clientId}-q` },
+    {
+      ...common,
+      role: "assistant",
+      text: clip(turn.answer.text, TEXT_LIMIT),
+      thought: turn.answer.thought ? clip(turn.answer.thought, THOUGHT_LIMIT) : null,
+      usage,
+      client_message_id: `${clientId}-a`,
+      memory_ids: turn.memoryIds.slice(0, 10) as AskConversationMessageInput["memory_ids"],
+    },
+  ];
+}
+
+/** 「深挖」点的那条回答在库里是哪条：窗口里带着编号就用它；刚答完还没编号的，按正文从后往前找。 */
+export function findForkSource(records: readonly AskConversationMessageRecord[], message: { id?: string; text: string }): string | null {
+  if (message.id && records.some((record) => record.message_id === message.id)) return message.id;
+  const text = message.text.trim();
+  for (let index = records.length - 1; index >= 0; index -= 1) {
+    const record = records[index]!;
+    if (record.role === "assistant" && record.text.trim() === text) return record.message_id;
+  }
+  return null;
+}
+
+/** 副对话的标题：从那条回答的第一句截。 */
+export function forkTitle(text: string): string {
+  const first = text.replace(/[#*_`>]/g, "").replace(/\s+/g, " ").trim().split(/(?<=[。！？.!?])/)[0] || "";
+  const short = [...first].slice(0, 30).join("");
+  return `深挖：${short}${[...first].length > 30 ? "…" : ""}`;
+}

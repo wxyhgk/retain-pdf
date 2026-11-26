@@ -4,9 +4,14 @@
 
 ## 入口
 
+2026-11-26 起提问窗对着一个**全局主对话**（接口 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md)，方案
+[主对话、副对话和记忆](../../ops/planning/reader-ask/20261126-主对话副对话和记忆.md)）：不再是「书上一处一个窗口」，换书、换 agent 都接着聊，
+每一问带自己的出处。
+
 - 书页上右键：画笔那一排上面多一行。没选字是「在这里提问」（问鼠标下面那一块，认不出块就问这一页这个位置）；选着书页上的字是「问这段」。
 - 选着书页上的字按 `?`：同「问这段」。没选字时 `?` 照旧是快捷键帮助（提问在捕获阶段先拿到，只在选着字时拦）。
-- 选中、悬停都**不弹东西**（[以前两次拿掉过选中浮条](../../ops/planning/reader-ask/20261125-阅读页提问.md)）。
+- 选中、悬停都**不弹东西**（[以前两次拿掉过选中浮条](../../ops/planning/reader-ask/20261125-阅读页提问.md)）。窗口开着时在书页上选字，
+  只是更新输入框上面那条出处（「第 56 页 · 选中 37 字」，× 去掉，点开看引的那段）；发出去以后清掉，同一段不会再带第二次。
 - 宿主不给 `ReaderAskPort` 就没有这些入口。web 宿主（`frontend/web/src/features/reader/domain/ask-port.ts`）：演示模式给假 agent
   （`platform/mock/ask-agent.ts`）；局域网共享打开的页面不给（桌面网关拦了 `/api/v1/ai`）；其余给真的：
   - 列 agent：`listAiAgents`（`@retainpdf/api/ai`，契约 `ai-agents.v1`）。
@@ -24,13 +29,15 @@
 
 | 文件 | 干什么 |
 |---|---|
-| `packages/reader/src/contracts/ask.ts` | 阅读页的端口：`listAgents`、`openSession({ agentId, jobId })`、`threads`（问答记录）；`ReaderAskAnchor`（问的是书上哪儿）。agent、会话、问答的类型就是 `@retainpdf/ask` 的 |
+| `packages/reader/src/contracts/ask.ts` | 阅读页的端口：`listAgents`、`openSession({ agentId, jobId, conversationId })`、`conversations`（主对话、副对话，类型就是契约 `ask-conversations.v1` 的）、`threads`（以前按书存的问答，只读）；`ReaderAskAnchor`（问的是书上哪儿） |
 | `packages/reader/src/ask/anchor.ts` | 右键 / `?` 那一刻拼出处：栏、页、页内位置、悬停认出的块、选中的字、章节（书签优先，没有就前面最近的标题） |
-| `packages/reader/src/ask/ask-context.ts` | 书上的位置 → 提问窗的 `AskContext`（页码、位置、引用、发给 agent 的出处 `anchorPreamble`）；端口开会话时绑上任务号 |
-| `packages/reader/src/ask/ReaderAskPanel.tsx` | 把上面这些接到 `@retainpdf/ask/window` 的 `AskWindow` 上；**单独一块，第一次提问才加载** |
-| `packages/reader/src/ask/ReaderAskMarks.tsx`、`styles/ask-marks.css` | 书页左边白边的「?」：这本书问过的地方，点了重新打开那次问答 |
-| `packages/reader/src/ask/use-ask-threads.ts` | 问答记录：打开书读回问过的地方；每答完一轮整段存（第一次 POST，之后 PATCH）；一句没问就关不留「?」；删 |
-| `web/src/features/reader/domain/ask-port.ts` | 宿主端口：列 agent（`GET /api/v1/ai/agents`），拼 WebSocket 地址（api_key；自带类 agent 再带模型配置、凭据引用、job_id）交给 `@retainpdf/ask/acp` 的 `openAcpWebSocketSession`；问答记录接口 |
+| `packages/reader/src/ask/ask-context.ts` | 书上的位置 → 提问窗的 `AskContext`（页码、位置、引用、发给 agent 的那段字 `anchorPreamble`、`_meta.retainpdf.selection`）；端口开会话时绑上任务号和对话编号，本机 agent 的前文取上下文接口的 `text` |
+| `packages/reader/src/ask/conversation-messages.ts` | 纯函数：书上的位置 → 结构化出处；库里的消息 → 提问窗（问题上的小标签、副对话结论卡片、压缩点）；答完一轮 → 追加请求（问和答一起、幂等号、`memory_ids`）；「深挖」认那条回答 |
+| `packages/reader/src/ask/use-ask-conversation.ts` | 主对话：打开取主对话、读最近 50 条，「看更早的」再往前取；每答完一轮追加（`compaction_due` 就让后端压）；「深挖」开副对话、「结束」让后端写结论；归档主对话 |
+| `packages/reader/src/ask/use-ask-marks.ts`、`ReaderAskMarks.tsx`、`styles/ask-marks.css` | 书页左边白边的「?」：主对话里这本书的问（`GET /documents/{id}/ask-messages`，画在问的那一块上沿，点了打开主对话），以前按书存的（点了只读地看那一次） |
+| `packages/reader/src/ask/use-reader-ask.tsx` | 接到阅读页上：右键菜单、`?` 键、窗口开着时跟着书页选区更新出处、「?」点了开哪个、懒加载的 `ReaderAskPanel` |
+| `packages/reader/src/ask/ReaderAskPanel.tsx` | 把上面这些接到 `@retainpdf/ask/window` 的 `AskWindow` 上（标题栏的面包屑「主对话 › 副对话」、副对话的「结束，带回结论」）；**单独一块，第一次提问才加载** |
+| `web/src/features/reader/domain/ask-port.ts`、`ask-conversations-port.ts` | 宿主端口：列 agent（`GET /api/v1/ai/agents`），拼 WebSocket 地址（api_key；自带类 agent 再带模型配置、凭据引用、job_id、`conversation_id`）交给 `@retainpdf/ask/acp` 的 `openAcpWebSocketSession`；主对话接口（压缩、副对话结论带设置里那条模型连接） |
 
 提问窗包里的文件（`packages/ask/src/`）：`acp/parts.ts`（`session/update` → 回答的各部分）、`acp/adapter.ts`（接 assistant-ui）、
 `acp/messages.ts`（存的问答）、`acp/socket.ts`（连 ACP）、`window/`（窗口、标题栏、引用、工具调用这几块、能点的页码）、`ui/`（照搬的 assistant-ui）。
@@ -85,12 +92,20 @@
 RetainPDF 的自带类 agent 由网页端口合成「模型」一项（设置里存的那几条连接，换了下一问按新连接重开会话，`ask-port.ts` 的 `builtinModelOption`）；
 思考强度不在前端编（每个模型支持的档位不一样），由后端的自带 agent 按当前模型报 `thought_level`（后端 `feat/ask-thought-level`），报了才显示。详见[提问窗包的 README](../../../frontend/packages/ask/README.md)。
 
-## 出处和问答记录
+## 出处和对话
+
+- 每一问带自己的出处：自带 agent 认 `_meta.retainpdf.selection`（`initialize` 报 `agentCapabilities._meta.retainpdf.selection`），问题前面不写那段字；
+  本机 agent 只认字，照旧写。出处的块编号是右键 / 选字时悬停认出的那一块。
+- 新会话的前文：自带 agent 报了 `conversation` 能力就自己取（握手带 `conversation_id`）；别的 agent 第一问前面带上下文接口拼好的 `text`（记忆 + 摘要 + 最近几轮）。
+- 「已记住」：自带 agent 的 `remember` 完成时 `tool_call_update` 的 `_meta.retainpdf.memory`，画在回答正文下面（工具卡片收起来也看得到），撤销调 `DELETE /ai/memories/{id}`；
+  这一轮新记的编号追加时放进 `memory_ids`。重新打开窗口时只画回答，不再画「已记住」（工具调用不存）。
+- 「深挖」：回答底下的分叉图标，从这条开副对话（标题从回答第一句截）；副对话的「结束，带回结论」让后端用设置里的模型写结论（最多等 180 秒），
+  回到主对话末尾是一张结论卡片，卡片底下「看副对话」。结束了的副对话接着问会先再开它。
+- 归档主对话：标题栏的归档图标，之后开一个新的主对话（只露归档，不露删除，用户 11-26 定）。
 
 - 右键时悬停框还没认出块（鼠标刚移过来、点在两段之间）：按点的位置找同一页最近的块（超过页高 15% 不算），带它的原文译文，
   不然问题里一个字都没有，模型只会说「看不到」（11-25 真机联调踩到）。
-- 问答记录（后端 `ask-threads.v1`，按书存，一本最多 500 次）：宿主的 `port.threads` 驼峰 ↔ 接口下划线；存不上照样能问，只是关了书就没了。
-- agent 那边每次打开是新会话（ACP 的 `session/load` 后端还没开）：第一问前面带出处和之前最近 12 条（最多 8000 字）。
+- 以前按书存的问答（后端 `ask-threads.v1`）2026-11-26 起只读：书页上照旧画「?」，点了在窗口里只读地看（没有输入框），能删；新的问题都进主对话。
 - 本机 agent 没装：后端不再现场 npx 下载（下到一半会留坏缓存，见 11-25 联调），列表里 `available: false` 带 `install`；标题栏的插头图标
   点开是安装命令，能复制（11-26 前是窗口里单独一行「还能接本机的……（要先装）」）。
 
