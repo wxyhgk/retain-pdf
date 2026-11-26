@@ -88,6 +88,12 @@ test("pi-acp + wrapper + pi + extension: locked down and reads the book", { skip
   const [backend, backendUrl] = await listen((request, response) => {
     backendSeen.push([request.url ?? "", request.headers["x-api-key"] as string | undefined]);
     response.writeHead(200, { "content-type": "application/json" });
+    // 开会话取的上下文（记忆和前文，2026-11-26 第二期）；别的都当读书的块
+    if ((request.url ?? "").startsWith("/api/v1/ai/ask-conversations/conv-1/context?")) {
+      response.end(JSON.stringify({ code: 0, data: { summary: "之前聊了交换项。", messages: [{ role: "user", text: "交换项是什么？", page: 1 }],
+        memory_text: "【RetainPDF 记下的关于用户的事】\n- [mem-u] 2026-11-20 回答风格：用户要先看结论" } }));
+      return;
+    }
     response.end(JSON.stringify({ code: 0, data: { items: ITEMS } }));
   });
   const root = mkdtempSync(join(tmpdir(), "retainpdf-pi-test-"));
@@ -100,7 +106,7 @@ test("pi-acp + wrapper + pi + extension: locked down and reads the book", { skip
       compat: { supportsDeveloperRole: false } }] } } }));
   writeFileSync(join(agentDir, "settings.json"), JSON.stringify({
     defaultProvider: "retainpdf", defaultModel: "fake-model", defaultThinkingLevel: "off", enabledModels: ["retainpdf/fake-model"],
-    defaultTools: ["read_pages", "search_book", "view_page", "openui_spec", "openui_check"], defaultProjectTrust: "never", sessionDir: sessions,
+    defaultTools: ["read_pages", "search_book", "view_page", "openui_spec", "openui_check", "remember", "search_memories"], defaultProjectTrust: "never", sessionDir: sessions,
     cacheWarming: "off", enableInstallTelemetry: false, enableSkillCommands: false, quietStartup: true }));
   // 桥从说明文件取 L0 写进私有配置目录（acp/openui.rs）
   writeFileSync(join(agentDir, "openui-intro.md"), OPENUI_INTRO);
@@ -128,6 +134,7 @@ test("pi-acp + wrapper + pi + extension: locked down and reads the book", { skip
       RETAIN_ASK_DOCUMENT_ID: "doc1",
       RETAIN_ASK_BACKEND_URL: backendUrl,
       RETAIN_ASK_BACKEND_KEY: "reading-key",
+      RETAIN_ASK_CONVERSATION_ID: "conv-1",
       RETAIN_PI_OPENUI_INTRO: join(agentDir, "openui-intro.md"),
       RETAIN_OPENUI_PROMPT: join(OPENUI, "ask-openui-prompt.v1.json"),
       RETAIN_OPENUI_LIBRARY: join(OPENUI, "ask-openui-library.v1.json"),
@@ -164,9 +171,11 @@ test("pi-acp + wrapper + pi + extension: locked down and reads the book", { skip
     const answer = await request("session/prompt", { sessionId, prompt: [{ type: "text", text: anchor }, { type: "text", text: "下一句呢？" }] });
     assert.equal(answer.result?.stopReason, "end_turn", JSON.stringify(answer) + stderr);
 
-    // 模型看到的：只有三个读书工具和互动块的两个；系统提示词是自带 agent 那份（加工具说明和目录）；材料在问题前面
+    // 模型看到的：只有三个读书工具、互动块和记忆的各两个；系统提示词是自带 agent 那份（加工具说明、记忆说明、目录和记下的事）；
+    // 前文和材料在问题前面
     const first = modelRequests[0];
-    assert.deepEqual(first.tools.map((tool: any) => tool.function.name).sort(), ["openui_check", "openui_spec", "read_pages", "search_book", "view_page"]);
+    assert.deepEqual(first.tools.map((tool: any) => tool.function.name).sort(),
+      ["openui_check", "openui_spec", "read_pages", "remember", "search_book", "search_memories", "view_page"]);
     const system = first.messages.find((message: any) => message.role === "system");
     const systemText = typeof system.content === "string" ? system.content : JSON.stringify(system.content);
     assert.ok(systemText.startsWith(readFileSync(join(PROMPTS, "ask_system.txt"), "utf8").trim().slice(0, 40)), systemText.slice(0, 200));
@@ -176,9 +185,13 @@ test("pi-acp + wrapper + pi + extension: locked down and reads the book", { skip
     assert.ok(introAt > 0 && introAt < systemText.indexOf("read_pages 一次读几页"), "the OpenUI intro sits between ask_system and ask_tools");
     assert.ok(systemText.includes("用户正在读的书共 2 页"), "the book overview is in the system prompt");
     assert.ok(!/AGENTS\.md|coding assistant/i.test(systemText));
+    // 记忆：ask_memory.txt 接在 ask_tools 后面，记下的事在最后
+    assert.ok(systemText.indexOf("你有记忆：remember") > systemText.indexOf("read_pages 一次读几页"), "ask_memory.txt is appended after ask_tools");
+    assert.ok(systemText.indexOf("用户要先看结论") > systemText.indexOf("用户正在读的书共 2 页"), "the memories come after the book overview");
     const user = first.messages.find((message: any) => message.role === "user");
     const userText = typeof user.content === "string" ? user.content : user.content.map((part: any) => part.text ?? "").join("");
-    assert.ok(userText.startsWith("【RetainPDF 从书里取的背景"), userText.slice(0, 120));
+    assert.ok(userText.startsWith("【之前对话的摘要】\n之前聊了交换项。\n\n【我们之前的对话（最近几轮）】\n\n我（第 1 页）：交换项是什么？"), userText.slice(0, 120));
+    assert.ok(userText.includes("【RetainPDF 从书里取的背景"), userText.slice(0, 300));
     assert.ok(userText.includes("[p002-b0001]") && userText.includes("下一句呢？"));
 
     // 第二轮：bash 被拦下，read_pages 读了书（宽松的页码 "2" 也认）

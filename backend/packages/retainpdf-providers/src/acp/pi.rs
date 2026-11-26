@@ -19,7 +19,7 @@ use retainpdf_api_base::error::AppError;
 use serde_json::{json, Value};
 
 use super::registry::{self, AgentKind, AgentView};
-use super::{book_env, model_settings, AcpConfig, AcpConnectQuery, AgentProcess, AskBook, ModelSettings, ASK_ENV_API_KEY, ASK_ENV_MODEL};
+use super::{model_settings, AcpConfig, AcpConnectQuery, AgentProcess, AskBook, ModelSettings, ASK_ENV_API_KEY, ASK_ENV_MODEL};
 
 pub const PI_AGENT_ID: &str = "retainpdf-pi";
 /// 登记表里的 pi 适配器（找它和它要的 pi）。
@@ -29,11 +29,12 @@ const PI_WRAPPER: &str = "pi-agent/bin/retainpdf-pi";
 const PI_EXTENSION: &str = "pi-agent/extension/index.ts";
 /// 提示词沿用 Python 自带 agent 的那两份，不另抄一份。
 const ASK_PROMPTS_DIR: &str = "ask-agent/retainpdf_ask_agent/prompts";
-const ASK_PROMPT_FILES: [&str; 2] = ["ask_system.txt", "ask_tools.txt"];
+const ASK_PROMPT_FILES: [&str; 3] = ["ask_system.txt", "ask_tools.txt", "ask_memory.txt"];
 /// models.json 里的服务商名（`--model retainpdf/<模型>`）。
 pub(super) const PI_PROVIDER: &str = "retainpdf";
 /// 读书的三个和互动块的两个（互动块的只在桥给了说明文件时由扩展注册，白名单里一直有）。
-pub(super) const PI_TOOLS: [&str; 5] = ["read_pages", "search_book", "view_page", "openui_spec", "openui_check"];
+pub(super) const PI_TOOLS: [&str; 7] =
+    ["read_pages", "search_book", "view_page", "openui_spec", "openui_check", "remember", "search_memories"];
 /// 没被连接结束时删掉的私有配置目录，多久以后扫掉。
 const STALE_CONNECTION_AGE: Duration = Duration::from_secs(2 * 24 * 3600);
 /// 和 Python 版 `__main__.py` 一样估上下文窗口。
@@ -416,7 +417,8 @@ pub(super) fn pi_process(
     if let Some(user_home) = std::env::var_os("HOME").filter(|home| !home.is_empty()) {
         env.push(("RETAIN_PI_USER_HOME".into(), user_home.to_string_lossy().into_owned()));
     }
-    env.extend(book_env(config, book));
+    // 读书、记忆、取上下文（2026-11-26 第二期：pi 也拿后端地址和密钥、对话编号，和 Python 版同一套）
+    env.extend(super::ask_backend_env(config, book, super::ask_conversation_id(query)?));
     env.extend(openui_intro);
     env.extend(super::openui::openui_env(config));
     Ok(AgentProcess {

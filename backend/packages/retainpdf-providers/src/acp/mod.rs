@@ -290,6 +290,22 @@ fn book_env(config: &AcpConfig, book: Option<&AskBook>) -> Vec<(String, String)>
     }
 }
 
+/// 自带 agent（Python 的和 pi 的）要的后端那几个环境变量：读书的（有书时）、记忆和取上下文的（不要书，有密钥就给后端地址和密钥），
+/// 握手带了对话时再给 `RETAIN_ASK_CONVERSATION_ID`（2026-11-26）。
+pub(super) fn ask_backend_env(config: &AcpConfig, book: Option<&AskBook>, conversation_id: Option<String>) -> Vec<(String, String)> {
+    let mut env = book_env(config, book);
+    if env.is_empty() {
+        if let Some(key) = reading_key(config) {
+            env.push((ASK_ENV_BACKEND_URL.into(), config.backend_url.clone()));
+            env.push((ASK_ENV_BACKEND_KEY.into(), key));
+        }
+    }
+    if let Some(conversation_id) = conversation_id {
+        env.push((ASK_ENV_CONVERSATION_ID.into(), conversation_id));
+    }
+    env
+}
+
 fn builtin_process(
     config: &AcpConfig,
     query: &AcpConnectQuery,
@@ -305,19 +321,7 @@ fn builtin_process(
         (ASK_ENV_THINKING.into(), settings.thinking),
         (ASK_ENV_API_KEY.into(), settings.secret),
     ];
-    let book_env = book_env(config, book);
-    let has_backend = !book_env.is_empty();
-    env.extend(book_env);
-    // 记忆工具（remember / search_memories）和取上下文不要书：有密钥就给后端地址和密钥（2026-11-26）
-    if !has_backend {
-        if let Some(key) = reading_key(config) {
-            env.push((ASK_ENV_BACKEND_URL.into(), config.backend_url.clone()));
-            env.push((ASK_ENV_BACKEND_KEY.into(), key));
-        }
-    }
-    if let Some(conversation_id) = conversation_id {
-        env.push((ASK_ENV_CONVERSATION_ID.into(), conversation_id));
-    }
+    env.extend(ask_backend_env(config, book, conversation_id));
     env.extend(openui::openui_env(config));
     Ok(AgentProcess {
         program: PathBuf::from(&config.python_bin),

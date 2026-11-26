@@ -148,3 +148,16 @@
 - 前端要跟着改（交接里写了）：现在只给 `id === "retainpdf"` 带模型配置，`retainpdf-pi` 点了会 400，要改成按 `kind === "builtin"` 判断。
 - Windows：包装脚本是 sh，先列成不能用。要支持得另写 `.cmd` 或换成 Node 入口。
 - 用户想自己改 agent 时，是直接改 `backend/pi-agent/extension/`，还是另给一个「用户扩展目录」（`-e` 多加一个用户目录、或开 `--skill`）——先没开，开了就绕过了上面的锁。
+
+## 第二期：记忆和前文（2026-11-26，feat/pi-ask-memory）
+
+和自带 agent 同一套（[主对话和记忆](20261126-主对话副对话和记忆.md)），新文件 `extension/memory.ts`：
+
+- 桥（`acp/mod.rs` 的 `ask_backend_env`，Python 版和 pi 共用）给 pi 后端地址和密钥（没带书也给）、`RETAIN_ASK_CONVERSATION_ID`。
+- 工具 `remember`、`search_memories`：说明、参数、额度、总开关和 Python 版一字一样（测试起 Python 对比）；包装脚本 `--tools` 白名单、
+  桥写的 `defaultTools` 加上这两个，有后端时接 `ask_memory.txt`；`agent_id` 记成 `retainpdf-pi`。
+- 前文：开会话取 `context`，`memory_text` 放进系统提示词一节 `memory`（目录那节后面）；摘要和最近几轮写成文字放在**第一问前面**——pi 的
+  会话历史扩展塞不进去。续接 pi 旧会话（会话文件里已有消息）不再放。
+- 和 Python 版不一样的：pi-acp 不转发 `_meta`，出处只能从前端写在问题里的那段认（`selection` 到不了）；「已记住」卡片没有
+  `_meta.retainpdf.memory`，前端按 `source_conversation_id` + `created_after` 取这一问新记的。
+
