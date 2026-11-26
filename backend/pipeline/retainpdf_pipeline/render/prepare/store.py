@@ -16,7 +16,6 @@ import hashlib
 import json
 import os
 import shutil
-import tempfile
 import time
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -24,6 +23,8 @@ from datetime import datetime
 from datetime import timezone
 from pathlib import Path
 from typing import Any
+
+from retainpdf_base.io import save_json_atomic
 
 PREPARE_DIR_NAME = "render_prepare"
 STEP_MANIFEST_SCHEMA = "render_prepare_step_v1"
@@ -68,15 +69,7 @@ def fingerprint(inputs: dict[str, Any]) -> str:
 
 
 def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(payload, handle, ensure_ascii=False, indent=2)
-        os.replace(tmp_name, path)
-    except BaseException:
-        Path(tmp_name).unlink(missing_ok=True)
-        raise
+    save_json_atomic(path, payload, durable=False)
 
 
 @contextmanager

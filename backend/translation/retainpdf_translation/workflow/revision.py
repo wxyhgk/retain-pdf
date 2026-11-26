@@ -41,7 +41,6 @@ import json
 import os
 import shutil
 import signal
-import tempfile
 import uuid
 from collections.abc import Callable
 from collections.abc import Iterator
@@ -49,6 +48,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from retainpdf_base.io import atomic_write_bytes
 from retainpdf_translation.core.item_reader import item_source_text
 from retainpdf_translation.core.payload.manifest import load_translation_manifest
 from retainpdf_translation.core.payload.parts.apply import apply_revised_member_text
@@ -165,21 +165,7 @@ def _fsync_dir(path: Path) -> None:
 
 
 def _atomic_write_bytes(path: Path, data: bytes) -> None:
-    fd, tmp_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
-    tmp_path = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "wb") as handle:
-            handle.write(data)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(tmp_path, path)
-        _fsync_dir(path.parent)
-    except BaseException:
-        try:
-            tmp_path.unlink()
-        except FileNotFoundError:
-            pass
-        raise
+    atomic_write_bytes(path, data)
 
 
 def _page_bytes(items: list[dict]) -> bytes:

@@ -15,6 +15,7 @@ from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GENERIC_FL
 from retainpdf_pipeline.ocr.ocr_provider.types import OcrProviderResult
 from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.io import save_json
+from retainpdf_base.io import save_json_atomic
 
 LOCAL_OCR_COMMAND_ENV = "RETAIN_LOCAL_OCR_COMMAND"
 LOCAL_OCR_RAW_PROVIDER_ENV = "RETAIN_OCR_RAW_PROVIDER"
@@ -149,7 +150,7 @@ def run_local_command_ocr_to_job_dir(args: SimpleNamespace) -> OcrProviderResult
 
     validation = validate_saved_document_path(normalized_json_path)
     if not normalized_report_json_path.exists():
-        save_json(
+        save_json_atomic(
             normalized_report_json_path,
             {
                 "provider": "local",
@@ -262,8 +263,8 @@ def _materialize_normalized_document_from_local_raw(
     # 原始输出的坐标按 OCR 自己的页面尺寸给（Paddle 是像素），和正式的 normalize worker 一样缩放到原文 PDF。
     # 命令自己写好的 document.v1.json 不动：契约要求它已经是 PDF 点。
     document, report = finalize_normalized_document(document, report, source_pdf_path)
-    save_json(normalized_json_path, document)
-    save_json(normalized_report_json_path, report)
+    save_json_atomic(normalized_json_path, document)
+    save_json_atomic(normalized_report_json_path, report)
     if not provider_result_json_path.exists() and source_json_path != provider_result_json_path:
         save_json(
             provider_result_json_path,

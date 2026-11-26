@@ -1,4 +1,5 @@
 import json
+import os
 import tempfile
 from pathlib import Path
 
@@ -54,14 +55,14 @@ def test_write_translation_manifest_uses_same_directory_atomic_replace(tmp_path,
     payload_path = translations_dir / "custom-page-001.json"
     payload_path.parent.mkdir(parents=True)
     _write_payload(payload_path, "manifest text")
-    real_replace = manifest_module.os.replace
+    real_replace = os.replace
     replace_calls: list[tuple[Path, Path]] = []
 
     def capture_replace(src, dst):
         replace_calls.append((Path(src), Path(dst)))
         real_replace(src, dst)
 
-    monkeypatch.setattr(manifest_module.os, "replace", capture_replace)
+    monkeypatch.setattr(os, "replace", capture_replace)
 
     manifest_path = write_translation_manifest(translations_dir, {0: payload_path})
 

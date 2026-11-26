@@ -3,6 +3,7 @@ from __future__ import annotations
 from argparse import Namespace
 from pathlib import Path
 
+from retainpdf_base.io import save_json_atomic
 from retainpdf_pipeline.foundation.shared.job_dirs import JobDirs
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_path_to_document_v1_with_report
@@ -52,8 +53,8 @@ def _materialize_normalized_document(
         normalization_report,
         source_pdf_path,
     )
-    save_json(normalized_json_path, normalized_document, compact=True)
-    save_json(normalized_report_json_path, normalization_report)
+    save_json_atomic(normalized_json_path, normalized_document, compact=True)
+    save_json_atomic(normalized_report_json_path, normalization_report)
     # The adapter already validated the document; reuse its report instead of
     # re-reading and re-validating the saved file.
     report = normalization_report["validation"]

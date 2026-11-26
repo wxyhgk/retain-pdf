@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 from copy import deepcopy
 from pathlib import Path
 
@@ -64,7 +65,7 @@ def test_repair_summary_is_atomic_and_cleans_failed_temporary_file(tmp_path: Pat
     def fail_replace(*args):
         raise OSError("simulated replace failure")
 
-    monkeypatch.setattr(repair.os, "replace", fail_replace)
+    monkeypatch.setattr(os, "replace", fail_replace)
     with pytest.raises(OSError, match="simulated replace failure"):
         repair._write_repair_summary(path, {"provider_calls": 0})
     assert path.read_text(encoding="utf-8") == "original summary"

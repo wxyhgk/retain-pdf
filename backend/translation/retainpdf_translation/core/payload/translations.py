@@ -1,9 +1,8 @@
 from __future__ import annotations
 import json
-import os
-import tempfile
 from pathlib import Path
 
+from retainpdf_base.io import save_json_atomic
 from retainpdf_translation.core.ocr.models import TextItem
 from retainpdf_translation.core.payload.parts.translation_units import refresh_payload_translation_units
 
@@ -12,41 +11,6 @@ from .template_contract import validate_translation_payload_contract
 from .template_records import build_translation_record
 from .template_sync import append_missing_translation_records
 from .template_sync import sync_translation_record
-
-
-def _atomic_write_json(path: Path, payload: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_name = tempfile.mkstemp(
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        dir=path.parent,
-        text=True,
-    )
-    tmp_path = Path(tmp_name)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False, indent=2)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp_path, path)
-        _fsync_parent_dir(path)
-    except Exception:
-        try:
-            tmp_path.unlink()
-        except FileNotFoundError:
-            pass
-        raise
-
-
-def _fsync_parent_dir(path: Path) -> None:
-    try:
-        dir_fd = os.open(path.parent, os.O_RDONLY)
-    except OSError:
-        return
-    try:
-        os.fsync(dir_fd)
-    finally:
-        os.close(dir_fd)
 
 
 def export_translation_template(
@@ -58,7 +22,7 @@ def export_translation_template(
 ) -> None:
     del page_idx
     payload = [build_translation_record(item, math_mode=math_mode) for item in items]
-    _atomic_write_json(output_path, payload)
+    save_json_atomic(output_path, payload)
 
 
 def load_translations(translation_path: Path, *, strict_contract: bool = True) -> list[dict]:
@@ -103,7 +67,7 @@ def _log_suspect_translations(translation_path: Path, payload: object) -> None:
 
 
 def save_translations(translation_path: Path, payload: list[dict]) -> None:
-    _atomic_write_json(translation_path, payload)
+    save_json_atomic(translation_path, payload)
 
 
 def ensure_translation_template(

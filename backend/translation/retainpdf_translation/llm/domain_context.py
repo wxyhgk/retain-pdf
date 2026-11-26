@@ -15,6 +15,7 @@ import fitz
 from retainpdf_translation.prompt_loader import load_prompt
 
 from retainpdf_base.events import emit_stage_progress
+from retainpdf_base.io import save_json_atomic
 from retainpdf_base.events import emit_stage_transition
 from retainpdf_translation.llm.shared.provider_runtime import request_chat_content
 from retainpdf_translation.llm.shared.structured_models import DOMAIN_CONTEXT_RESPONSE_SCHEMA
@@ -193,10 +194,7 @@ def _store_shared_domain_context(preview_text: str, *, model: str, context: dict
         return
     path = _shared_domain_context_path(preview_text, model=model)
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path = path.with_suffix(f".{os.getpid()}.tmp")
-        temp_path.write_text(json.dumps(context, ensure_ascii=False, indent=2), encoding="utf-8")
-        os.replace(temp_path, path)
+        save_json_atomic(path, context, durable=False)
     except Exception:
         return
 
@@ -326,7 +324,7 @@ def infer_domain_context(
 def save_domain_context(output_dir: Path, context: dict[str, str]) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
     path = output_dir / DOMAIN_CONTEXT_FILE_NAME
-    path.write_text(json.dumps(context, ensure_ascii=False, indent=2), encoding="utf-8")
+    save_json_atomic(path, context)
     return path
 
 

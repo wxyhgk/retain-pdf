@@ -767,3 +767,26 @@ def test_a_streamed_attempt_is_not_resumed_when_the_book_or_the_parameters_chang
         retry = replace(retry, source_pdf_path=source_pdf)
     with pytest.raises(ResumeCandidateFingerprintMismatch):
         TranslationCheckpointSession.acquire(retry, _plan())
+
+
+def test_pruning_old_snapshots_is_best_effort(tmp_path: Path, monkeypatch, caplog) -> None:
+    """删旧一代页快照失败（Windows 上被杀毒软件占着）只记日志，不让任务失败（2026-11-26，Z5；上轮审查 E 的 F7）。"""
+    import retainpdf_translation.workflow.checkpoint.store as store_module
+
+    store = CheckpointStore(tmp_path / "translation-checkpoint.json")
+    snapshots = tmp_path / ".translation-checkpoints"
+    for generation in (1, 2):
+        (snapshots / f"generation-{generation}").mkdir(parents=True)
+
+    def locked(path, *args, **kwargs):
+        raise PermissionError(13, "The process cannot access the file", str(path))
+
+    monkeypatch.setattr(store_module.shutil, "rmtree", locked)
+    with caplog.at_level("WARNING"):
+        store.prune_snapshots(2)
+    assert (snapshots / "generation-1").is_dir()
+    assert "generation-1" in caplog.text
+
+    monkeypatch.undo()
+    store.prune_snapshots(2)
+    assert sorted(path.name for path in snapshots.iterdir()) == ["generation-2"]

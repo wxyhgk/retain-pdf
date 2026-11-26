@@ -4,12 +4,12 @@ import hashlib
 import json
 import os
 import re
-import tempfile
 import threading
 import time
 from pathlib import Path
 
 from retainpdf_base import paths
+from retainpdf_base.io import save_json_atomic
 from retainpdf_math.spans import has_balanced_inline_math_delimiters
 
 from retainpdf_translation.core.context import build_item_context
@@ -139,33 +139,7 @@ def _ensure_shard_dir(path: Path) -> None:
 
 def _atomic_write_cache_payload(path: Path, payload: dict[str, str]) -> None:
     _ensure_shard_dir(path)
-    fd, temp_name = tempfile.mkstemp(
-        prefix=f".{path.name}.",
-        suffix=".tmp",
-        dir=path.parent,
-        text=True,
-    )
-    temp_path = Path(temp_name)
-    try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
-            json.dump(payload, handle, ensure_ascii=False)
-            handle.flush()
-            os.fsync(handle.fileno())
-        os.replace(temp_path, path)
-        try:
-            dir_fd = os.open(path.parent, os.O_RDONLY)
-        except OSError:
-            return
-        try:
-            os.fsync(dir_fd)
-        finally:
-            os.close(dir_fd)
-    except Exception:
-        try:
-            temp_path.unlink()
-        except FileNotFoundError:
-            pass
-        raise
+    save_json_atomic(path, payload, indent=None)
 
 
 def _unit_cache_ttl_seconds() -> float:

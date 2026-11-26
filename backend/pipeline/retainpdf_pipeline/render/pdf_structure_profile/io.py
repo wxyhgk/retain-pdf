@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from retainpdf_base.io import atomic_write
 from retainpdf_pipeline.render.pdf_structure_profile.contracts import PdfStructureDocumentProfile
 from retainpdf_pipeline.render.pdf_structure_profile.manifest import pdf_structure_profile_from_manifest
 from retainpdf_pipeline.render.pdf_structure_profile.manifest import pdf_structure_profile_to_manifest
@@ -16,12 +17,12 @@ def pdf_structure_profile_path_from_prewarm_manifest(prewarm_manifest_path: Path
 
 
 def write_pdf_structure_profile(path: Path, profile: PdfStructureDocumentProfile) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = path.with_suffix(path.suffix + ".tmp")
-    with tmp_path.open("w", encoding="utf-8") as f:
-        json.dump(pdf_structure_profile_to_manifest(profile), f, ensure_ascii=False, indent=2, sort_keys=True)
-        f.write("\n")
-    tmp_path.replace(path)
+    payload = pdf_structure_profile_to_manifest(profile)
+    atomic_write(
+        path,
+        lambda handle: (json.dump(payload, handle, ensure_ascii=False, indent=2, sort_keys=True), handle.write("\n")),
+        durable=False,
+    )
 
 
 def read_pdf_structure_profile(path: Path) -> PdfStructureDocumentProfile | None:

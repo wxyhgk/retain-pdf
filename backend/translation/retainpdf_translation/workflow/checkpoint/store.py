@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import shutil
 import tempfile
 from pathlib import Path
 from typing import Any
+
+from retainpdf_base.io import fsync_parent_dir
+from retainpdf_base.io import replace_file
+from retainpdf_base.io import save_json_atomic
 
 try:  # POSIX file locking; missing on Windows.
     import fcntl
@@ -17,6 +22,8 @@ try:  # Windows file locking; missing on POSIX.
     import msvcrt
 except ImportError:  # pragma: no cover - POSIX fallback
     msvcrt = None  # type: ignore[assignment]
+
+_LOGGER = logging.getLogger(__name__)
 
 CHECKPOINT_LOCK_FILE_NAME = ".translation-checkpoint.lock"
 CHECKPOINT_SNAPSHOTS_DIR_NAME = ".translation-checkpoints"
@@ -81,27 +88,7 @@ class CheckpointStore:
             raise RuntimeError(f"Invalid translation checkpoint: {self.path}") from exc
 
     def save(self, payload: object) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp_name = tempfile.mkstemp(
-            prefix=f".{self.path.name}.",
-            suffix=".tmp",
-            dir=self.path.parent,
-            text=True,
-        )
-        tmp_path = Path(tmp_name)
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                json.dump(payload, handle, ensure_ascii=False, indent=2)
-                handle.flush()
-                os.fsync(handle.fileno())
-            os.replace(tmp_path, self.path)
-            _fsync_parent_dir(self.path)
-        except Exception:
-            try:
-                tmp_path.unlink()
-            except FileNotFoundError:
-                pass
-            raise
+        save_json_atomic(self.path, payload)
 
     def restore_committed_pages(self, payload: dict[str, Any]) -> None:
         """Restore page files that are ahead of the last checkpoint marker.
@@ -176,16 +163,25 @@ class CheckpointStore:
                     f"Translation checkpoint snapshot hash mismatch: {target}"
                 )
             page["snapshot_path"] = target.relative_to(self.path.parent).as_posix()
-        _fsync_parent_dir(snapshot_dir / ".sentinel")
+        fsync_parent_dir(snapshot_dir / ".sentinel")
 
     def prune_snapshots(self, generation: int) -> None:
+        """删掉旧一代的页快照。尽力而为：删不掉（Windows 上被占着）只记日志，下次提交再删，不让任务失败。"""
         snapshots_root = self.path.parent / CHECKPOINT_SNAPSHOTS_DIR_NAME
         if not snapshots_root.is_dir():
             return
         keep = f"generation-{int(generation)}"
-        for candidate in snapshots_root.iterdir():
+        try:
+            candidates = list(snapshots_root.iterdir())
+        except OSError as exc:
+            _LOGGER.warning("translation checkpoint: cannot list snapshots in %s: %s", snapshots_root, exc)
+            return
+        for candidate in candidates:
             if candidate.name != keep and candidate.is_dir() and not candidate.is_symlink():
-                shutil.rmtree(candidate)
+                try:
+                    shutil.rmtree(candidate)
+                except OSError as exc:
+                    _LOGGER.warning("translation checkpoint: cannot prune old snapshot %s: %s", candidate, exc)
 
     def close(self) -> None:
         if self._lock_handle is None:
@@ -195,17 +191,6 @@ class CheckpointStore:
         finally:
             self._lock_handle.close()
             self._lock_handle = None
-
-
-def _fsync_parent_dir(path: Path) -> None:
-    try:
-        dir_fd = os.open(path.parent, os.O_RDONLY)
-    except OSError:
-        return
-    try:
-        os.fsync(dir_fd)
-    finally:
-        os.close(dir_fd)
 
 
 def _safe_page_name(relative: str) -> str:
@@ -249,8 +234,8 @@ def _replace_with_snapshot(snapshot: Path, target: Path) -> None:
             os.link(snapshot, tmp_path)
         except OSError:
             shutil.copy2(snapshot, tmp_path)
-        os.replace(tmp_path, target)
-        _fsync_parent_dir(target)
+        replace_file(tmp_path, target)
+        fsync_parent_dir(target)
     except Exception:
         try:
             tmp_path.unlink()
