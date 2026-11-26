@@ -13,3 +13,4 @@ export declare function getAskThread(apiPrefix: string | undefined, documentId: 
 /** 换掉整段问答（每答完一轮写一次）、换 agent、记会话号。 */
 export declare function updateAskThread(apiPrefix: string | undefined, documentId: string, threadId: string, body: PatchAskThreadInput, options?: RequestOptions): Promise<AskThreadView>;
 export declare function deleteAskThread(apiPrefix: string | undefined, documentId: string, threadId: string, options?: RequestOptions): Promise<AskThreadDeleteResultView>;
+export * from "./ai-conversations.js";

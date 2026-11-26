@@ -25,3 +25,4 @@ export function updateAskThread(apiPrefix, documentId, threadId, body, options) 
 export function deleteAskThread(apiPrefix, documentId, threadId, options) {
     return threads.deleteAskThread(apiPrefix, { document_id: documentId, thread_id: threadId }, options);
 }
+export * from "./ai-conversations.js";

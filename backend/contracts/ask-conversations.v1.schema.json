@@ -2,12 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "retainpdf/contracts/ask-conversations/v1",
   "title": "阅读页提问的主对话、副对话和记忆（ask conversations）",
-  "description": "2026-11-26（数据库 v40）：一个全局主对话一直延续，副对话从主对话某条消息分出来、结束时结论回到主对话；每条消息记自己属于哪本书和结构化出处（任务、译文版本、页、块、选中的字），只追加；记忆分用户层和书层，带出处和状态（active / superseded / deleted），「让 AI 使用记忆」总开关（ask_settings，默认开）。主对话只能先归档再删。库是正本，agent 只负责回答。存在数据库（ask_conversations、ask_conversation_messages、ask_memories、ask_memories_fts），不同步。v39 的按书问答记录（ask-threads.v1）只读保留，不迁。生产者：backend/packages/retainpdf-library/src/ask_conversations.rs、ask_memories.rs（校验、上限、拼上下文）、ask_views.rs（请求和返回类型），database/retainpdf-db/src/db/ask_conversations.rs、ask_memories.rs（存取），backend/api/src/routes/ask_conversations.rs（处理函数）；backend/api/src/api_tests/ask_conversations.rs 钉键集合。消费者：@retainpdf/contracts/ask-conversations，阅读页的问答窗、记忆面板；自带 agent（backend/ask-agent 的 memory.py）调 context、memories。多用户模式下这批接口关闭（全局的数据没有归属）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。端点先不写 client_name：前端生成的请求客户端有漂移检查，等前端接的时候连同生成代码一起加。AcpMemoryNotice 不是接口返回，是 ACP 消息里的 _meta。详见 docs/api/16-AI/02-主对话和记忆.md。",
+  "description": "2026-11-26（数据库 v40）：一个全局主对话一直延续，副对话从主对话某条消息分出来、结束时结论回到主对话；每条消息记自己属于哪本书和结构化出处（任务、译文版本、页、块、选中的字），只追加；记忆分用户层和书层，带出处和状态（active / superseded / deleted），「让 AI 使用记忆」总开关（ask_settings，默认开）。主对话只能先归档再删。库是正本，agent 只负责回答。存在数据库（ask_conversations、ask_conversation_messages、ask_memories、ask_memories_fts），不同步。v39 的按书问答记录（ask-threads.v1）只读保留，不迁。生产者：backend/packages/retainpdf-library/src/ask_conversations.rs、ask_memories.rs（校验、上限、拼上下文）、ask_views.rs（请求和返回类型），database/retainpdf-db/src/db/ask_conversations.rs、ask_memories.rs（存取），backend/api/src/routes/ask_conversations.rs（处理函数）；backend/api/src/api_tests/ask_conversations.rs 钉键集合。消费者：@retainpdf/contracts/ask-conversations，阅读页的问答窗、记忆面板；自带 agent（backend/ask-agent 的 memory.py）调 context、memories。多用户模式下这批接口关闭（全局的数据没有归属）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。端点的 client_name 是前端接的时候加的（2026-11-26），生成的请求函数在 frontend/packages/api/src/generated/ask-conversations.ts，有漂移检查。AcpMemoryNotice 不是接口返回，是 ACP 消息里的 _meta。详见 docs/api/16-AI/02-主对话和记忆.md。",
   "base_path": "/api/v1",
   "endpoints": [
     {
       "method": "POST",
       "path": "/api/v1/ai/ask-conversations/main",
+      "client_name": "getMainAskConversation",
       "transport": "json",
       "output": "AskConversationRecord",
       "rust_view": "AskConversationRecord",
@@ -16,6 +17,7 @@
     {
       "method": "GET",
       "path": "/api/v1/ai/ask-conversations",
+      "client_name": "listAskConversations",
       "transport": "json",
       "query": "ListAskConversationsQuery",
       "output": "AskConversationListView",
@@ -25,6 +27,7 @@
     {
       "method": "POST",
       "path": "/api/v1/ai/ask-conversations",
+      "client_name": "createAskSideConversation",
       "transport": "json",
       "input": "CreateAskSideConversationInput",
       "output": "AskConversationRecord",
@@ -34,6 +37,7 @@
     {
       "method": "GET",
       "path": "/api/v1/ai/ask-conversations/:conversation_id",
+      "client_name": "getAskConversation",
       "transport": "json",
       "output": "AskConversationRecord",
       "rust_view": "AskConversationRecord",
@@ -42,6 +46,7 @@
     {
       "method": "PATCH",
       "path": "/api/v1/ai/ask-conversations/:conversation_id",
+      "client_name": "updateAskConversation",
       "transport": "json",
       "input": "PatchAskConversationInput",
       "output": "AskConversationRecord",
@@ -51,6 +56,7 @@
     {
       "method": "DELETE",
       "path": "/api/v1/ai/ask-conversations/:conversation_id",
+      "client_name": "deleteAskConversation",
       "transport": "json",
       "output": "AskConversationDeleteResultView",
       "rust_view": "AskConversationDeleteResultView",
@@ -59,6 +65,7 @@
     {
       "method": "POST",
       "path": "/api/v1/ai/ask-conversations/:conversation_id/close",
+      "client_name": "closeAskConversation",
       "transport": "json",
       "input": "CloseAskConversationInput",
       "output": "CloseAskConversationView",
@@ -68,6 +75,7 @@
     {
       "method": "GET",
       "path": "/api/v1/ai/ask-conversations/:conversation_id/messages",
+      "client_name": "listAskConversationMessages",
       "transport": "json",
       "query": "ListAskMessagesQuery",
       "output": "AskMessagePageView",
@@ -77,6 +85,7 @@
     {
       "method": "POST",
       "path": "/api/v1/ai/ask-conversations/:conversation_id/messages",
+      "client_name": "appendAskConversationMessages",
       "transport": "json",
       "input": "AppendAskMessagesInput",
       "output": "AppendAskMessagesView",
@@ -86,6 +95,7 @@
     {
       "method": "POST",
       "path": "/api/v1/ai/ask-conversations/:conversation_id/compactions",
+      "client_name": "createAskCompaction",
       "transport": "json",
       "input": "CreateAskCompactionInput",
       "output": "CreateAskCompactionView",
@@ -95,6 +105,7 @@
     {
       "method": "GET",
       "path": "/api/v1/ai/ask-conversations/:conversation_id/compactions",
+      "client_name": "listAskCompactions",
       "transport": "json",
       "output": "AskCompactionListView",
       "rust_view": "AskCompactionListView",
@@ -103,6 +114,7 @@
     {
       "method": "GET",
       "path": "/api/v1/ai/ask-conversations/:conversation_id/context",
+      "client_name": "getAskConversationContext",
       "transport": "json",
       "query": "AskContextQuery",
       "output": "AskContextView",
@@ -112,6 +124,7 @@
     {
       "method": "GET",
       "path": "/api/v1/ai/ask-settings",
+      "client_name": "getAskSettings",
       "transport": "json",
       "output": "AskSettingsRecord",
       "rust_view": "AskSettingsRecord",
@@ -120,6 +133,7 @@
     {
       "method": "PATCH",
       "path": "/api/v1/ai/ask-settings",
+      "client_name": "updateAskSettings",
       "transport": "json",
       "input": "PatchAskSettingsInput",
       "output": "AskSettingsRecord",
@@ -129,6 +143,7 @@
     {
       "method": "GET",
       "path": "/api/v1/documents/:document_id/ask-messages",
+      "client_name": "listDocumentAskMessages",
       "transport": "json",
       "output": "DocumentAskMessagesView",
       "rust_view": "DocumentAskMessagesView",
@@ -137,6 +152,7 @@
     {
       "method": "GET",
       "path": "/api/v1/ai/memories",
+      "client_name": "listAskMemories",
       "transport": "json",
       "query": "ListAskMemoriesQuery",
       "output": "AskMemoryListView",
@@ -146,6 +162,7 @@
     {
       "method": "POST",
       "path": "/api/v1/ai/memories",
+      "client_name": "createAskMemory",
       "transport": "json",
       "input": "CreateAskMemoryInput",
       "output": "AskMemoryCreatedView",
@@ -155,6 +172,7 @@
     {
       "method": "PATCH",
       "path": "/api/v1/ai/memories/:memory_id",
+      "client_name": "updateAskMemory",
       "transport": "json",
       "input": "PatchAskMemoryInput",
       "output": "AskMemoryRecord",
@@ -164,6 +182,7 @@
     {
       "method": "DELETE",
       "path": "/api/v1/ai/memories/:memory_id",
+      "client_name": "deleteAskMemory",
       "transport": "json",
       "output": "AskMemoryRecord",
       "rust_view": "AskMemoryRecord",

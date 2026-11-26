@@ -42,3 +42,5 @@ export function updateAskThread(apiPrefix: string | undefined, documentId: strin
 export function deleteAskThread(apiPrefix: string | undefined, documentId: string, threadId: string, options?: RequestOptions): Promise<AskThreadDeleteResultView> {
   return threads.deleteAskThread(apiPrefix, { document_id: documentId, thread_id: threadId }, options);
 }
+
+export * from "./ai-conversations.js";
