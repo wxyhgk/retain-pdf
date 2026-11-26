@@ -244,18 +244,31 @@ struct Stopped {
 
 /// 等到该停的时候：SIGTERM（监督者 rust_api 退出时组杀、`docker stop`、systemd）、Ctrl-C，或者监督者
 /// 被强杀（不在了，没人会再给 SIGTERM）。返回原因，只用来写日志。
-async fn shutdown_requested() -> &'static str {
+async fn shutdown_requested(terminate: TerminateSignal) -> &'static str {
     tokio::select! {
-        reason = termination_signal() => reason,
+        reason = termination_signal(terminate) => reason,
         _ = retainpdf_proc::wait_for_supervisor_exit() => "supervisor process exited",
     }
 }
 
+/// SIGTERM 的处理要在开端口之前装好（2026-11-26）：端口一开，监督者（和测试）就当 jobsd 起来了、随时会发 SIGTERM；
+/// 装好之前到的 SIGTERM 走默认动作，jobsd 直接死、自己起的 worker 成孤儿。`signal()` 一调就登记，不用等第一次 poll。
 #[cfg(unix)]
-async fn termination_signal() -> &'static str {
-    use tokio::signal::unix::{signal, SignalKind};
+type TerminateSignal = std::io::Result<tokio::signal::unix::Signal>;
+#[cfg(not(unix))]
+type TerminateSignal = ();
 
-    match signal(SignalKind::terminate()) {
+#[cfg(unix)]
+fn install_terminate_signal() -> TerminateSignal {
+    tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+}
+
+#[cfg(not(unix))]
+fn install_terminate_signal() -> TerminateSignal {}
+
+#[cfg(unix)]
+async fn termination_signal(terminate: TerminateSignal) -> &'static str {
+    match terminate {
         Ok(mut terminate) => {
             tokio::select! {
                 _ = tokio::signal::ctrl_c() => "received Ctrl-C",
@@ -272,7 +285,7 @@ async fn termination_signal() -> &'static str {
 
 /// Windows 没有 SIGTERM：桌面壳用 `taskkill /T /F` 连 worker 一起强杀，不走这里；Ctrl-C 照样有序停。
 #[cfg(not(unix))]
-async fn termination_signal() -> &'static str {
+async fn termination_signal(_terminate: TerminateSignal) -> &'static str {
     let _ = tokio::signal::ctrl_c().await;
     "received Ctrl-C"
 }
@@ -288,6 +301,9 @@ async fn run() -> Result<Stopped> {
     if let Err(error) = retainpdf_proc::kill_descendants_on_exit() {
         tracing::warn!("could not tie worker processes to this process's lifetime: {error}");
     }
+
+    // 开端口之前装好 SIGTERM（见 `install_terminate_signal`）
+    let terminate = install_terminate_signal();
 
     let config = Arc::new(AppConfig::from_env().context("load config")?);
     let port = config.jobs_service.port;
@@ -348,7 +364,7 @@ async fn run() -> Result<Stopped> {
                 tracing::error!("retain-jobsd serve failed: {error:#}");
             }
         }
-        reason = shutdown_requested() => {
+        reason = shutdown_requested(terminate) => {
             // 不等还开着的连接：壳那边已经在退出，launch/cancel 这些请求丢了也没关系。
             tracing::warn!("{reason}; retain-jobsd stopping its workers and shutting down");
         }
