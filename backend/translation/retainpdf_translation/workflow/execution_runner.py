@@ -4,6 +4,7 @@ import re
 from collections import Counter
 from typing import TYPE_CHECKING
 from retainpdf_translation.llm.shared.executor_context import raise_if_executor_failed
+from retainpdf_base.events import emit_pipeline_event
 
 from retainpdf_translation.artifacts import aggregate_payload_diagnostics
 from retainpdf_translation.artifacts import blocking_untranslated_items
@@ -76,6 +77,36 @@ def _clean_sample(parts: list[str]) -> str:
     return " | ".join(kept)
 
 
+_DISCARD_REASON_TEXT = {
+    "document_changed": "原文（规范化文档）变了",
+    "source_pdf_changed": "原文 PDF 变了",
+    "parameters_changed": "翻译参数变了：模式、规则、术语表、模型、引擎或页范围",
+}
+
+
+def _warn_resume_checkpoint_discarded(mismatch: ResumeCandidateFingerprintMismatch) -> None:
+    """跨任务续跑时上一个任务的断点对不上、已译的页被丢掉：发一条警告事件，带上原因（审查一级第 2 条）。
+
+    以前只往 stdout 打一行，用户在任务页上看不到，只看到进度从 0 重新开始。走阶段观察（stage_progress）：
+    只有这一类事件会经 stdout 交给 Rust 记进任务事件；level=warning 记在 pipeline-events.jsonl 里，
+    Rust 的阶段观察不带 level，所以原因同时写在 message 和 payload 的 `resume_checkpoint_discarded` 上。"""
+    reason_text = _DISCARD_REASON_TEXT.get(mismatch.reason, "断点指纹对不上")
+    emit_pipeline_event(
+        level="warning",
+        stage="translating",
+        substage="checkpoint_resume",
+        event_type="stage_progress",
+        message=f"上一个任务的翻译断点不能接着用（{reason_text}），已译的页作废，这次从头翻",
+        payload={
+            "user_stage": "translation",
+            "resume_checkpoint_discarded": {
+                "source_attempt_id": mismatch.source_attempt_id,
+                "reason": mismatch.reason,
+            },
+        },
+    )
+
+
 def _record_committed_pages(pages):
     diagnostics = get_active_translation_run_diagnostics()
     if diagnostics is not None:
@@ -108,9 +139,11 @@ def run_translation_execution_plan(
             store=checkpoint_store,
         )
         print(
-            "book: copied translation checkpoint fingerprint mismatch; starting a fresh attempt",
+            "book: copied translation checkpoint fingerprint mismatch "
+            f"(reason={mismatch.reason}, source_attempt={mismatch.source_attempt_id}); starting a fresh attempt",
             flush=True,
         )
+        _warn_resume_checkpoint_discarded(mismatch)
         checkpoint_session = TranslationCheckpointSession.acquire(request, plan, store=checkpoint_store)
 
     plan.run_diagnostics.set_checkpoint_metrics_provider(checkpoint_session.metrics)

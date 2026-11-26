@@ -23,6 +23,7 @@ from .contract import (
     changed_item_ids_by_page as diff_changed_item_ids_by_page,
 )
 from .identity import build_translation_identity
+from .identity import legacy_translation_identities
 from .identity import resumes_streamed_attempt
 from .store import CheckpointStore
 
@@ -36,11 +37,27 @@ if TYPE_CHECKING:
 
 
 class ResumeCandidateFingerprintMismatch(RuntimeError):
-    def __init__(self, source_attempt_id: str) -> None:
+    def __init__(self, source_attempt_id: str, reason: str = "fingerprint_changed") -> None:
         super().__init__(
-            "Copied translation checkpoint fingerprint does not match the new attempt"
+            f"Copied translation checkpoint fingerprint does not match the new attempt ({reason})"
         )
         self.source_attempt_id = source_attempt_id
+        # 为什么对不上：document_changed（规范化文档变了）、source_pdf_changed（跟着 OCR 翻的原文 PDF 变了）、
+        # parameters_changed（翻译参数变了：模式、规则、术语表、模型、引擎、页范围……）、fingerprint_changed（别的）
+        self.reason = reason
+
+
+def fingerprint_mismatch_reason(previous: dict[str, Any], identity: dict[str, Any]) -> str:
+    """旧断点和这一次的指纹哪一部分对不上（给丢弃断点时的警告用，不参与判断）。"""
+    for key, reason in (
+        ("normalized_document_sha256", "document_changed"),
+        ("ocr_stream_source_pdf_sha256", "source_pdf_changed"),
+    ):
+        if key in previous and key in identity and previous.get(key) != identity.get(key):
+            return reason
+    if previous.get("parameters_sha256") != identity.get("parameters_sha256"):
+        return "parameters_changed"
+    return "fingerprint_changed"
 
 
 def _timed(stage: str):
@@ -60,9 +77,12 @@ class TranslationCheckpointSession:
         identity: dict[str, Any],
         attempt_id: str,
         source_pdf_path: str | Path | None = None,
+        legacy_identities: Callable[[], list[dict[str, Any]]] | None = None,
     ) -> None:
         self.output_dir = Path(output_dir)
         self.identity = identity
+        # 旧算法的指纹（模型产出还在指纹里的时候），只在新指纹对不上时才算，见 identity.legacy_translation_identities
+        self.legacy_identities = legacy_identities
         self.attempt_id = attempt_id
         self.source_pdf_path = source_pdf_path
         self.store = CheckpointStore(translation_checkpoint_path(self.output_dir))
@@ -114,6 +134,7 @@ class TranslationCheckpointSession:
             identity=build_translation_identity(request, plan),
             attempt_id=output_dir.parent.name or output_dir.name,
             source_pdf_path=getattr(request, "source_pdf_path", None),
+            legacy_identities=lambda: legacy_translation_identities(request, plan),
         )
         if store is None:
             session.store.acquire()
@@ -137,15 +158,24 @@ class TranslationCheckpointSession:
         )
         if previous is not None:
             self.store.restore_committed_pages(previous)
-        if (
-            previous is not None
-            and previous.get("fingerprint") != self.identity["fingerprint"]
-            and not resumes_streamed_attempt(previous, self.identity, self.source_pdf_path)
-        ):
-            previous_attempt = str(previous.get("attempt_id", "") or "")
-            if previous_attempt and previous_attempt != self.attempt_id:
-                raise ResumeCandidateFingerprintMismatch(previous_attempt)
-            raise RuntimeError("Translation checkpoint fingerprint mismatch within the same attempt")
+        if previous is not None and not self._resumes(previous, self.identity):
+            legacy = next(
+                (
+                    candidate
+                    for candidate in (self.legacy_identities() if self.legacy_identities is not None else [])
+                    if self._resumes(previous, candidate)
+                ),
+                None,
+            )
+            if legacy is None:
+                previous_attempt = str(previous.get("attempt_id", "") or "")
+                reason = fingerprint_mismatch_reason(previous, self.identity)
+                if previous_attempt and previous_attempt != self.attempt_id:
+                    raise ResumeCandidateFingerprintMismatch(previous_attempt, reason)
+                raise RuntimeError(f"Translation checkpoint fingerprint mismatch within the same attempt ({reason})")
+            # 旧断点按旧算法记的指纹（领域识别结果、定译还在指纹里）：只是模型产出变了，照常续跑。
+            # 下面 new_checkpoint 带上这一次的 identity、_persist 落盘，断点从此记新指纹。
+            print("book: translation checkpoint fingerprint upgraded to the input-only identity", flush=True)
         if previous is not None:
             self._replay_durable_checkpoint(previous)
         self.payload = new_checkpoint(
@@ -154,6 +184,11 @@ class TranslationCheckpointSession:
             previous=previous,
         )
         self._persist(committed_pages=[])
+
+    def _resumes(self, previous: dict[str, Any], identity: dict[str, Any]) -> bool:
+        return previous.get("fingerprint") == identity["fingerprint"] or resumes_streamed_attempt(
+            previous, identity, self.source_pdf_path
+        )
 
     @_timed("update")
     def update(

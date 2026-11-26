@@ -5,7 +5,7 @@
 - 标题：``structure_role`` 是 ``heading`` / ``document_title``（GLM-OCR 的章标题）且要翻的块。``skip_titles`` 为真（任务设了不翻标题）时不给标题定译。
 - 带公式的不碰（定译是纯文字，会把公式弄丢），交给普通翻译。
 - 缓存 ``toc-agent.v1.json``：输入（条目、标题、术语表、模型、提示词版本）一样就直接用上次的结果，续跑不再发请求，
-  定译不变（它进翻译 checkpoint 的指纹）。
+  定译不变。定译不进翻译 checkpoint 的指纹（2026-11-26 起，见 ``retainpdf_translation/workflow/checkpoint/identity.py``）。
 """
 from __future__ import annotations
 

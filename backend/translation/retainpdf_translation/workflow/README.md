@@ -36,6 +36,11 @@
   队列分配、tail retry、失败兜底、页序、指标。`batch_runner.py` 用它跑顺序或并行的批次 worker。
 - `checkpoint/`
   断点续翻：身份、准备、续跑、提交前检查、存储。
+  续跑指纹（`identity.py`）只由输入决定（原文、页范围、模式、规则、术语表、模型、引擎），领域识别结果（`domain_context`）
+  和目录 agent 的定译不进指纹（2026-11-26）：它们是模型产出，第一次失败、下次成功或者换任务目录重跑都会变，以前一变就整本
+  作废重翻或者永远报 fingerprint mismatch。已有断点按旧算法再对一遍（`legacy_translation_identities`，猜几种旧的领域识别
+  结果和有没有定译），对上了照常续跑、改记新指纹。跨任务续跑真对不上要丢已译页时发一条 warning 级的阶段事件
+  （payload `resume_checkpoint_discarded`，带原因），不再只打一行 stdout。
 
 ## 其他文件
 

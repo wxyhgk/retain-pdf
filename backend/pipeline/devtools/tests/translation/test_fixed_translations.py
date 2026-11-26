@@ -1,4 +1,4 @@
-"""定好的译文（2026-11-25，目录 agent）：翻译开头和领域识别同时算，写进块的元数据，两个引擎都不再发请求；进 checkpoint 指纹。"""
+"""定好的译文（2026-11-25，目录 agent）：翻译开头和领域识别同时算，写进块的元数据，两个引擎都不再发请求。不进 checkpoint 指纹（2026-11-26 起，模型产出不进指纹，见 test_checkpoint_identity_model_outputs.py）。"""
 from __future__ import annotations
 
 import json
@@ -68,7 +68,7 @@ def test_plan_runs_the_function_off_thread_and_marks_blocks(tmp_path: Path) -> N
     assert [item_fixed_translation(item.__dict__) for item in items] == ["1 分析受众", "分析受众", ""]
 
 
-def test_fingerprint_changes_only_when_there_are_fixed_translations(tmp_path: Path) -> None:
+def test_fixed_translations_do_not_change_the_fingerprint(tmp_path: Path) -> None:
     plain = _request(tmp_path)
     without = build_translation_identity(plain, build_translation_execution_plan(plain))
     failed = _request(tmp_path, lambda document: (_ for _ in ()).throw(RuntimeError("model down")))
@@ -77,7 +77,10 @@ def test_fingerprint_changes_only_when_there_are_fixed_translations(tmp_path: Pa
     assert plan.fixed_translations is None
     assert build_translation_identity(failed, plan) == without
     fixed = _request(tmp_path, lambda document: {"p001-b0000": "1 分析受众"})
-    assert build_translation_identity(fixed, build_translation_execution_plan(fixed))["fingerprint"] != without["fingerprint"]
+    # 有定译也一样：定译是模型产出，下一次可能失败或者不逐字节一致，进了指纹就会让已译的页整本作废
+    with_fixed = build_translation_execution_plan(fixed)
+    assert with_fixed.fixed_translations == {"p001-b0000": "1 分析受众"}
+    assert build_translation_identity(fixed, with_fixed) == without
 
 
 def _item(**extra) -> dict:
