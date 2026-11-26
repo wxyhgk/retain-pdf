@@ -12,6 +12,14 @@
 
 ---
 
+## 重试时断点作废有一条事件（fix/regroup-followups）
+
+2026-11-26，只增不改，见 [翻译事件](../../api/04-翻译/07-翻译事件.md) 的「断点不能接着用、已译的页作废」。**前端不改也能用**：
+它是一条普通的进度事件，`message` 会照常显示。想醒目提示「这次是从头翻的」，读 `payload.observation.resume_checkpoint_discarded`
+（`source_attempt_id`、`reason`），不要按 `message` 关键词判断。
+
+---
+
 ## 阅读页提问：回答里的互动块，后端给三类 agent 加 L0 和两个工具（feat/ask-openui）
 
 2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「回答里的互动块」，方案

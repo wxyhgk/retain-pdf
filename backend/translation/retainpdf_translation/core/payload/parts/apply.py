@@ -114,6 +114,17 @@ def apply_group_translated_entry(
 ) -> None:
     if not items:
         return
+    # 只按要翻的成员切分。发给模型的整段只拼了要翻的成员（`units.pending_translation_items` 先滤掉
+    # should_translate=False 的块再拼原文），可 `refresh_payload_translation_units` 分组时不看要不要翻，
+    # 这里收到的 items 里会夹着不翻的成员。以前按全部成员切，分给不翻成员的那一段随后被清空，
+    # 要翻的成员拼起来比模型给的整段少一截（2026-11-26 审查第 7 条）。不翻的成员照旧清掉译文字段。
+    active = [item for item in items if item.get("should_translate", True)]
+    for item in items:
+        if not item.get("should_translate", True):
+            clear_translation_fields(item)
+    if not active:
+        return
+    items = active
     metadata = extract_result_metadata(raw_result)
     decision, protected_translated_text = normalize_result_entry(raw_result)
     protected_translated_text, metadata = with_sanitized_translation(protected_translated_text, metadata)
@@ -150,9 +161,6 @@ def apply_group_translated_entry(
     # 再把剩下那块原样抄回英文（20261014022104-4120a5 p001-b0013）。
     member_chunks = split_group_protected_translation(protected_translated_text, items)
     for item, member_protected_text in zip(items, member_chunks):
-        if not item.get("should_translate", True):
-            clear_translation_fields(item)
-            continue
         item["translation_unit_protected_translated_text"] = protected_translated_text
         item["translation_unit_translated_text"] = restored
         item["group_protected_translated_text"] = protected_translated_text
@@ -263,6 +271,19 @@ def apply_revised_member_text(item: dict, protected_text: str, *, single_unit: b
             or item.get("formula_map", []),
         )
     set_final_status(item, TRANSLATED_STATUS)
+
+
+def apply_detached_member_text(item: dict) -> None:
+    """挪出接续组的块（续跑重新分组，`core/orchestration/units.py` 的 `keep_translated_blocks_out_of_mixed_groups`）：
+    单元译文换成它自己那一段（成员级译文），整组的译文字段清掉。
+
+    挪出来以后它是单块单元，渲染、续跑判「有没有译文」看的都是单元和成员两层；单元上还挂着上一轮整组的译文时，
+    排版会拿整组译文（Typst 路线不再按框重新切），同一段排两遍（2026-11-26 审查第 8 条）。
+    成员级是空的（上一轮切分时整段放进了别的成员，`group_split` 遇到 `$` 不成对就这样）由调用方决定，这里不管。"""
+    item["translation_unit_protected_translated_text"] = str(item.get("protected_translated_text") or "")
+    item["translation_unit_translated_text"] = str(item.get("translated_text") or "")
+    item["group_protected_translated_text"] = ""
+    item["group_translated_text"] = ""
 
 
 _CJK_RE = re.compile(r"[⺀-鿿　-〿＀-￯]")

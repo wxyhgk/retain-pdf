@@ -18,6 +18,7 @@ from retainpdf_translation.core.ocr.json_extractor import get_page_count
 from retainpdf_translation.core.ocr.json_extractor import load_ocr_json
 from retainpdf_translation.services.policy import TranslationPolicyConfig
 from retainpdf_translation.services.policy import build_book_translation_policy_config
+from retainpdf_translation.services.policy import extract_ocr_preview_text
 from retainpdf_translation.services.context.session_context import build_translation_context_from_policy
 from retainpdf_translation.services.terms import GlossaryEntry
 from retainpdf_translation.services.terms import normalize_glossary_entries
@@ -53,6 +54,9 @@ class TranslationExecutionPlan:
     ocr_stream: OcrStreamState | None = None
     # 定好的译文 {块号: 译文}（workflow/fixed_translations.py，目录 agent 给的）；没有就是空，不进指纹。
     fixed_translations: dict[str, str] | None = None
+    # OCR 前两页的文字：领域识别抛异常时记下的那段预览（services/policy/config.py）。只给断点按旧算法对账用
+    # （workflow/checkpoint/identity.py 的 legacy_translation_identities；checkpoint 层不能 import services.policy）。
+    ocr_preview_text: str = ""
 
 
 def build_translation_execution_plan(request: TranslationExecutionRequest) -> TranslationExecutionPlan:
@@ -186,6 +190,7 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
         preparation=preparation,
         ocr_stream=ocr_stream,
         fixed_translations=fixed_translations or None,
+        ocr_preview_text=extract_ocr_preview_text(data, max_pages=2),
     )
 
 

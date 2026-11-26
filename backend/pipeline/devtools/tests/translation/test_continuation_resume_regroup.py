@@ -11,6 +11,8 @@
 
 拆开上一轮复核连上的组（「规则那一遍清掉上一轮的拼接」）不会出事：成员的译文还在 `translation_unit_*` 和自己的字段上，
 这里也钉住。
+
+后面几条是审查第 8 条补的：上一轮整组一起译完的单元不拆开，只把没译的块挪出去；必须拆开时，挪出来的块只留它自己那一段。
 """
 from __future__ import annotations
 
@@ -21,9 +23,12 @@ from pathlib import Path
 import pytest
 
 from retainpdf_translation.core.orchestration.units import KEPT_TRANSLATED_DECISION
+from retainpdf_translation.core.orchestration.units import finalize_payload_orchestration_metadata
 from retainpdf_translation.core.orchestration.units import keep_translated_blocks_out_of_mixed_groups
 from retainpdf_translation.core.payload import save_translations
+from retainpdf_translation.core.payload.parts.apply import apply_group_translated_entry
 from retainpdf_translation.core.payload.parts.apply import apply_translated_text_map
+from retainpdf_translation.core.payload.parts.units import pending_translation_items
 from retainpdf_translation.workflow import prepare as prepare_module
 from retainpdf_translation.workflow.checkpoint.contract import advance_checkpoint
 from retainpdf_translation.workflow.checkpoint.contract import new_checkpoint
@@ -341,3 +346,87 @@ def test_a_member_that_policy_keeps_in_the_original_does_not_count_as_untranslat
     kept = _group_member("p001-b002", "cg-001-001", translated=False) | {"should_translate": False}
     assert keep_translated_blocks_out_of_mixed_groups([translated, kept]) == 0
     assert translated["continuation_group"] == "cg-001-001"
+
+
+def _pending(flat: list[dict], tmp_path: Path) -> set[str]:
+    path = tmp_path / "page-001.json"
+    save_translations(path, flat)
+    page_records, _progress = project_progress(output_dir=tmp_path, page_payloads={0: flat}, translation_paths={0: path})
+    return {item_id for page in page_records for item_id in page["pending_item_ids"]}
+
+
+def _unit_translated_together(*, empty_second_slice: bool) -> tuple[dict, dict]:
+    """a、b 上一轮作为一组整段译完。`empty_second_slice`：译文里 `$` 不成对，切分时整段放进 a、b 那一段是空的
+    （`group_split` 的既有行为）。"""
+    a = _item(0, 0, "The results of the experiment were", "middle")
+    b = _item(0, 1, "surprisingly consistent with the theory.", "middle")
+    for item in (a, b):
+        item["math_mode"] = "direct_typst"
+        item["continuation_group"] = "cg-001-001"
+    finalize_payload_orchestration_metadata([a, b])
+    assert a["translation_unit_id"].startswith("__cg__:")
+    apply_group_translated_entry([a, b], "实验结果 $x 和理论一致。" if empty_second_slice else "实验结果出人意料地和理论一致。")
+    assert bool(b["translated_text"]) is not empty_second_slice
+    return a, b
+
+
+@pytest.mark.parametrize("empty_second_slice", [True, False])
+def test_a_unit_translated_together_stays_together_when_an_untranslated_block_joins(
+    tmp_path: Path, empty_second_slice: bool
+) -> None:
+    """续跑时又有一块没译的 c 拼进来：a、b 留在一起（照旧是一个译完的单元），只把 c 挪出去单独翻。
+    以前 a、b 一块块挪出去，b 那一段是空的时候渲染退回整组译文，同一段排两遍。"""
+    a, b = _unit_translated_together(empty_second_slice=empty_second_slice)
+    unit_text = a["translation_unit_protected_translated_text"]
+    before = _pending([a, b], tmp_path)
+    c = _item(0, 2, "More text follows here that is not translated yet.", "middle")
+    for item in (a, b, c):
+        item["continuation_group"] = "cg-001-001"
+    flat = [a, b, c]
+
+    finalize_payload_orchestration_metadata(flat)
+
+    assert a["continuation_group"] == b["continuation_group"] != ""
+    assert c["continuation_group"] == ""
+    assert a["translation_unit_kind"] == b["translation_unit_kind"] == "group"
+    assert a["translation_unit_member_ids"] == b["translation_unit_member_ids"] == [a["item_id"], b["item_id"]]
+    assert a["translation_unit_protected_translated_text"] == b["translation_unit_protected_translated_text"] == unit_text
+    assert [unit["item_id"] for unit in pending_translation_items(flat)] == [c["item_id"]]
+    assert before == set()
+    assert _pending(flat, tmp_path) == {c["item_id"]}
+
+
+def test_a_block_moved_out_of_its_unit_keeps_only_its_own_slice(tmp_path: Path) -> None:
+    """拆不回原来的单元（a 没跟着进新组）：b 挪出来以后单元译文换成它自己那一段，渲染不再拿整组译文。"""
+    from retainpdf_pipeline.render.layout.model.render_text import render_protected_translation_text
+
+    a, b = _unit_translated_together(empty_second_slice=False)
+    unit_text = a["translation_unit_protected_translated_text"]
+    a["continuation_group"] = ""
+    c = _item(0, 2, "More text follows here that is not translated yet.", "middle")
+    b["continuation_group"] = c["continuation_group"] = "cg-001-002"
+    flat = [a, b, c]
+
+    finalize_payload_orchestration_metadata(flat)
+
+    assert b["continuation_group"] == "" and b["continuation_decision"] == KEPT_TRANSLATED_DECISION
+    assert b["translation_unit_protected_translated_text"] == b["protected_translated_text"] != unit_text
+    assert render_protected_translation_text(b) == b["protected_translated_text"]
+    assert _pending(flat, tmp_path) == {c["item_id"]}
+
+
+def test_a_block_with_an_empty_slice_that_cannot_rejoin_its_unit_still_counts_as_translated(tmp_path: Path) -> None:
+    """拆不回原来的单元、它自己那一段又是空的：照旧算译完，不改成待办。它的内容在 a 那一段里，再翻一遍内容会重复；
+    它在旧断点里是已完成的，改成待办守卫会报 regressed、整本失败。"""
+    a, b = _unit_translated_together(empty_second_slice=True)
+    unit_text = b["translation_unit_protected_translated_text"]
+    a["continuation_group"] = ""
+    c = _item(0, 2, "More text follows here that is not translated yet.", "middle")
+    b["continuation_group"] = c["continuation_group"] = "cg-001-002"
+    flat = [a, b, c]
+
+    finalize_payload_orchestration_metadata(flat)
+
+    assert b["continuation_group"] == ""
+    assert b["translation_unit_protected_translated_text"] == unit_text
+    assert _pending(flat, tmp_path) == {c["item_id"]}
