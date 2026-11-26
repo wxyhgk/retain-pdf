@@ -339,6 +339,41 @@ def test_the_console_subcommand_runs_end_to_end(tiny_job: Path, tmp_path: Path):
     assert out.exists(), f"子命令没有产出文件\nstdout={proc.stdout}\nstderr={proc.stderr[-500:]}"
 
 
+def test_exports_with_and_without_watermark_each_read_their_own_spec(
+    tiny_job: Path, tmp_path: Path, monkeypatch,
+):
+    """带水印和不带水印的两份（同一个 dpi）能同时导出（Rust 那边是两个缓存键），以前共用
+    `rendered/docx/layout-spec.json`：后写的规格被先跑的那份读走，不带水印的 docx 带上了水印，
+    而且一直被当成新鲜缓存（R3）。规格要一次一份、用完删掉。"""
+    from retainpdf_pipeline.render.output.word import exporter
+
+    monkeypatch.setattr(exporter, "_resolve_node", lambda: "node")
+    monkeypatch.setattr(exporter, "_resolve_cli", lambda: Path("cli.mjs"))
+    watermarked: dict[str, bool] = {}
+
+    def fake_run(argv, **_kwargs):
+        spec_path, out = Path(argv[2]), Path(argv[3])
+        if not watermarked:
+            # 不带水印的这份写完规格、还没交给 node 时，带水印的那份写完了自己的规格。
+            watermarked["started"] = True
+            exporter.export_layout_docx(
+                job_root=tiny_job, output_path=tmp_path / "wm.docx", dpi=72, watermark=True,
+            )
+        spec = json.loads(spec_path.read_text(encoding="utf-8"))
+        watermarked[out.name] = "watermark" in spec
+        out.write_bytes(b"docx")
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(exporter.subprocess, "run", fake_run)
+    exporter.export_layout_docx(
+        job_root=tiny_job, output_path=tmp_path / "plain.docx", dpi=72, watermark=False,
+    )
+    assert watermarked["wm.docx"] is True
+    assert watermarked["plain.docx"] is False, "不带水印的那份读到了带水印的规格"
+    leftovers = sorted(path.name for path in (tiny_job / "rendered" / "docx").glob("*.json"))
+    assert leftovers == [], f"规格用完要删：{leftovers}"
+
+
 def test_the_subcommand_is_listed_in_usage():
     """没注册进 COMMANDS 的话，Rust 那边拿到的是 exit code 2 加一句 unknown command。"""
     from retainpdf_pipeline.entrypoints import console

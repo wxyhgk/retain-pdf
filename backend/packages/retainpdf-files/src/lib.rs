@@ -18,7 +18,7 @@ pub use artifacts::{
 };
 pub use derived_artifacts::{
     document_artifacts_dir, document_page_preview_path, job_artifacts_dir_path,
-    job_page_preview_file_name, DerivedArtifactDeps,
+    job_page_preview_file_name, remove_document_artifacts_dir, DerivedArtifactDeps,
 };
 // 成功任务目录里纯重复文件的清理（定期清理调）。
 pub use artifacts::{

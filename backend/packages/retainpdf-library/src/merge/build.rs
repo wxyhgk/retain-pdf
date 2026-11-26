@@ -16,8 +16,8 @@
 //! 不能沿用 `cached_output_is_fresh` 的 mtime 比较：删掉一个较新的任务后，剩下所有输入
 //! 都比产物旧，它会继续返回包含已删任务的旧合并结果；改了拼接代码也不会失效。指纹里
 //! 放的是「这次合并由什么决定」—— 合并器版本、源 PDF、每页取自哪个任务的哪一页、每个
-//! 被引用任务的输出 PDF / 译文 manifest / OCR 文档的大小和修改时间、OCR 页号表。任何一项
-//! 变了就是一个新目录。
+//! 被引用任务的输出 PDF / 译文 manifest / 译文断点 / OCR 文档的大小和修改时间、OCR 页号表。
+//! 任何一项变了就是一个新目录。断点是为手改译文加的（2026-11-26，S34）：手改只换页文件和断点。
 //!
 //! 目录名不可变还有一个好处：用户正在下载旧的合并结果时，新的合并不会把它从脚下替换掉
 //! （断点续传不会拼出半新半旧的 PDF）。旧目录在新目录发布后按**最后一次被读**的时间清理
@@ -42,6 +42,7 @@ use sha2::{Digest, Sha256};
 
 use retainpdf_api_base::error::AppError;
 use retainpdf_api_base::job_loading::{mark_merged_used, merged_last_used, MergedTranslation};
+use retainpdf_core::storage_paths::{TRANSLATION_CHECKPOINT_FILE_NAME, TRANSLATION_MANIFEST_FILE_NAME};
 use retainpdf_files::{document_artifacts_dir, DerivedArtifactDeps};
 
 use super::plan::PageSource;
@@ -62,7 +63,21 @@ fn file_stamp(path: &Path) -> Result<String, AppError> {
         .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
         .map(|elapsed| elapsed.as_nanos())
         .unwrap_or(0);
-    Ok(format!("{}|{}|{}", path.display(), meta.len(), modified))
+    // 断点、页文件都是「写临时文件再换名」：每次提交都是新 inode。只看大小和修改时间不够——同一个时钟刻度里
+    // 连续两次提交、长度又一样时两者都不变（CI 上踩到过）；unix 上加 inode 就分得开。Windows 没有稳定的
+    // 文件号接口，退回大小加时间（NTFS 的时间精度是 100ns，同一刻度连提两次的机会很小）。
+    Ok(format!("{}|{}|{}|{}", path.display(), meta.len(), modified, file_identity(&meta)))
+}
+
+#[cfg(unix)]
+fn file_identity(meta: &std::fs::Metadata) -> u64 {
+    use std::os::unix::fs::MetadataExt;
+    meta.ino()
+}
+
+#[cfg(not(unix))]
+fn file_identity(_meta: &std::fs::Metadata) -> u64 {
+    0
 }
 
 /// 每个任务去哪读产物，按 job_id 索引。
@@ -107,9 +122,16 @@ pub(crate) fn merge_fingerprint(
         let manifest = inputs
             .translations_dir
             .as_ref()
-            .map(|dir| dir.join("translation-manifest.json"));
+            .map(|dir| dir.join(TRANSLATION_MANIFEST_FILE_NAME));
+        // 手改译文（`translation-revise`）只改页文件和断点、不动 manifest 和 PDF（S34）。断点每次提交都
+        // 原子换掉（generation 加一），只取它的文件戳（不读页文件、不解析几 MB 的断点 JSON）就知道译文变没变。
+        let checkpoint = inputs
+            .translations_dir
+            .as_ref()
+            .map(|dir| dir.join(TRANSLATION_CHECKPOINT_FILE_NAME));
         for (label, path) in [
             ("manifest", manifest.as_deref()),
+            ("checkpoint", checkpoint.as_deref()),
             ("document", inputs.normalized_document.as_deref()),
         ] {
             match path.filter(|path| path.is_file()) {

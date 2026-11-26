@@ -249,6 +249,27 @@ impl Db {
         Ok(record)
     }
 
+    /// 这本书上的提问记着的 agent 会话编号（去重；没记的不算）。删书前取，删完按它清 pi 的会话文件。
+    pub fn ask_thread_session_ids(&self, document_id: &str) -> Result<Vec<String>> {
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT session_id FROM ask_threads
+             WHERE document_id = ?1 AND session_id IS NOT NULL AND session_id != '' ORDER BY session_id",
+        )?;
+        let ids = stmt.query_map(params![document_id], |row| row.get::<_, String>(0))?.collect::<rusqlite::Result<_>>()?;
+        Ok(ids)
+    }
+
+    /// 还有没有提问（任何一本书上）记着这个会话。
+    pub fn ask_session_in_use(&self, session_id: &str) -> Result<bool> {
+        let conn = self.connect()?;
+        Ok(conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM ask_threads WHERE session_id = ?1)",
+            params![session_id],
+            |row| row.get::<_, bool>(0),
+        )?)
+    }
+
     /// 删一次提问（问答跟着外键删）；不在这本书上返回 false。
     pub fn delete_ask_thread(&self, document_id: &str, thread_id: &str) -> Result<bool> {
         let conn = self.connect()?;

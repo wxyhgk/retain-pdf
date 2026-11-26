@@ -11,7 +11,7 @@ use sha2::{Digest, Sha256};
 
 use super::clock::{iso_ms, Hlc};
 use super::files::{
-    checked_relative, entity_files, file_hash, has_content, path_outside_data_root, remove_file,
+    checked_relative, entity_files, file_hash, has_content, local_only_file, path_outside_data_root, remove_file,
 };
 use super::folder::{hex, FolderBackend};
 use super::store::{Backend, BlobLocation, DeviceState, Segment, SyncStore, SYNC_FORMAT_VERSION};
@@ -883,7 +883,9 @@ impl SyncEngine {
         Ok(Some(Target { rows: Some(rows), files, clocks, clock }))
     }
 
-    fn apply(&self, record: &ChangeRecord, state: Option<&SyncEntityState>, target: Target) -> Result<Considered> {
+    fn apply(&self, record: &ChangeRecord, state: Option<&SyncEntityState>, mut target: Target) -> Result<Considered> {
+        // 旧版本设备发来的书的缓存(合并阅读、页预览)不收:本机自己会重建。
+        target.files.retain(|file| !local_only_file(&record.kind, &record.key, &file.path));
         // 先确认文件内容都到了,再动磁盘和数据库。
         let mut missing = Vec::new();
         for file in &target.files {
@@ -940,6 +942,7 @@ impl SyncEngine {
         let mut removed = 0;
         for old in state.map(|s| s.files.as_slice()).unwrap_or(&[]) {
             if keep.contains(old.path.as_str())
+                || local_only_file(&record.kind, &record.key, &old.path)
                 || self.db.sync_file_shared(&old.path, &record.kind, &record.key)?
             {
                 continue;

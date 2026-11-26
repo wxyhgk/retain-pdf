@@ -10,6 +10,7 @@ retainpdf-core = { path = "../retainpdf-core" }
 retainpdf-data = { path = "../retainpdf-data" }
 retainpdf-files = { path = "../retainpdf-files" }
 retainpdf-jobs = { path = "../retainpdf-jobs" }
+retainpdf-providers = { path = "../retainpdf-providers" }
 axum = "0.7"
 fastrand = "2"
 lopdf = "0.32"

@@ -19,6 +19,7 @@ pub use acp::{
     agents_view, ask_job_id, is_builtin_agent, loopback_base_url, prepare_agent, run_bridge, AcpConfig,
     AcpConnectQuery, AgentDistribution, AgentKind, AgentProcess, AgentView, AgentsView, AskBook, BridgeOut,
     LocalAgentsView, SessionDefaults, BUILTIN_AGENT_ID, CLOSE_AGENT_ENDED, PI_AGENT_ID, install_agent,
+    remove_pi_sessions, PiSessionsRemoved,
     spawn_default_installs, AgentInstallView, InstallMethod, InstallState, AGENTS_DIR_NAME, DEFAULT_INSTALL_ENV,
     NODE_DIR_ENV, NODE_BIN_ENV, default_openui_check_dir, default_openui_dir, OPENUI_CHECK_DIR_ENV, OPENUI_DIR_ENV,
 };

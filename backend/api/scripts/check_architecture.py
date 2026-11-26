@@ -1434,6 +1434,8 @@ ALLOWED_DOMAIN_DEPENDENCIES = {
     ("jobs", "providers"),
     ("library", "files"),
     ("library", "jobs"),
+    # 删问答、删书时清掉 pi 存的会话文件（`remove_pi_sessions`，2026-11-26 S53）；服务商在最下面，不会成环。
+    ("library", "providers"),
 }
 
 

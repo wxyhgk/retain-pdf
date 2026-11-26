@@ -167,6 +167,8 @@ pub fn delete_document(
     ensure_no_dependents(deps.db, &jobs, force)?;
 
     let uploads = deps.db.uploads_for_document(document_id)?;
+    // 问答记录随书级联删，记着的 agent 会话编号要在删之前取出来。
+    let ask_sessions = deps.db.ask_thread_session_ids(document_id)?;
 
     // 先一次性提交所有 DB 删除,再动磁盘。
     //
@@ -188,6 +190,13 @@ pub fn delete_document(
         .delete_document_cascade(document_id, &removed_jobs, &upload_ids)?;
 
     let mut removed_paths = Vec::new();
+    // 书的缓存目录（合并阅读、封面、缩略图、页预览）：库里的行删了才删，删不掉只记日志（S51）。
+    match retainpdf_files::remove_document_artifacts_dir(deps.data_root, document_id) {
+        Ok(Some(path)) => removed_paths.push(path.to_string_lossy().into_owned()),
+        Ok(None) => {}
+        Err(error) => tracing::warn!(%document_id, %error, "cannot remove the document cache directory"),
+    }
+    crate::ask_threads::forget_agent_sessions(deps, ask_sessions);
     for job in &jobs {
         removed_paths.extend(job_deletion(deps).remove_job_files(&job.job_id)?);
     }

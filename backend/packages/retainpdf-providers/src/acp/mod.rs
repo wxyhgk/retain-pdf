@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 pub use bridge::{run_bridge, AgentProcess, BridgeOut, SessionDefaults, CLOSE_AGENT_ENDED};
 pub use install::{AgentInstallView, InstallMethod, InstallState, AGENTS_DIR_NAME, DEFAULT_INSTALL_ENV, NODE_DIR_ENV};
 pub use openui::{default_openui_check_dir, default_openui_dir, NODE_BIN_ENV, OPENUI_CHECK_DIR_ENV, OPENUI_DIR_ENV};
-pub use pi::PI_AGENT_ID;
+pub use pi::{remove_pi_sessions, PiSessionsRemoved, PI_AGENT_ID};
 pub use registry::{AgentDistribution, AgentKind, AgentView, BUILTIN_AGENT_ID};
 
 /// 自带 agent 的模型配置、密钥交给子进程的环境变量（Python `retainpdf_ask_agent` 读）。

@@ -49,3 +49,49 @@ fn the_renderer_version_is_part_of_the_cache_key() {
     // 正对照：DPI 也还在，别把一个挤掉另一个。
     assert!(suffix.contains("dpi"), "缓存键里没有 DPI 了");
 }
+
+/// 手改译文只原子改写 `translated/` 里的页文件和断点（`revision.py`），`rerender` 默认关：两个 PDF 都不变。
+/// 正文却是 Python 从 `translated/` 的 manifest 和页文件读的（`word/job_io.py`），新鲜度以前只看两个 PDF，
+/// 改了译文下载的 Word 还是旧的；只翻译、没有译文 PDF 的任务永远不更新（S34、A-R1）。
+#[test]
+fn revising_the_translation_by_hand_makes_the_cached_docx_stale() {
+    let root = std::env::temp_dir().join(format!("retain-word-inputs-{:016x}", fastrand::u64(..)));
+    let translated = root.join("job").join("translated");
+    std::fs::create_dir_all(&translated).unwrap();
+    let source_pdf = root.join("source.pdf");
+    let translated_pdf = root.join("translated.pdf");
+    std::fs::write(&source_pdf, b"%PDF source").unwrap();
+    std::fs::write(&translated_pdf, b"%PDF translated").unwrap();
+    std::fs::write(translated.join("translation-manifest.json"), br#"{"pages":[{"path":"page-001.json"}]}"#).unwrap();
+    std::fs::write(translated.join("page-001.json"), br#"[{"translated_text":"old"}]"#).unwrap();
+    let checkpoint = translated.join("translation-checkpoint.v1.json");
+    std::fs::write(&checkpoint, br#"{"generation":3}"#).unwrap();
+
+    for translated_pdf in [Some(translated_pdf.as_path()), None] {
+        let output = root.join(format!("out-{}.docx", translated_pdf.is_some()));
+        let inputs = layout_docx_inputs(&root.join("job"), &source_pdf, translated_pdf);
+        let inputs: Vec<&Path> = inputs.iter().map(PathBuf::as_path).collect();
+        super::super::side_by_side::build_with_command(&output, "layout-docx", Duration::from_secs(30), &inputs, |temporary| {
+            let mut command = std::process::Command::new("/bin/sh");
+            command.arg("-c").arg("printf docx > \"$0\"").arg(temporary);
+            command
+        })
+        .unwrap();
+        assert!(cached_output_is_fresh(&output, &inputs).unwrap());
+
+        // 和 Python 一样：写临时文件再换名；manifest、两个 PDF 都不动。
+        std::fs::write(translated.join(".page.tmp"), br#"[{"translated_text":"new"}]"#).unwrap();
+        std::fs::rename(translated.join(".page.tmp"), translated.join("page-001.json")).unwrap();
+        let generation = std::fs::read_to_string(&checkpoint).unwrap();
+        std::fs::write(translated.join(".checkpoint.tmp"), format!("{generation} ")).unwrap();
+        std::fs::rename(translated.join(".checkpoint.tmp"), &checkpoint).unwrap();
+
+        let inputs = layout_docx_inputs(&root.join("job"), &source_pdf, translated_pdf);
+        let inputs: Vec<&Path> = inputs.iter().map(PathBuf::as_path).collect();
+        assert!(
+            !cached_output_is_fresh(&output, &inputs).unwrap(),
+            "改了译文，Word 必须重新导出（有没有译文 PDF 都一样）: translated_pdf={translated_pdf:?}"
+        );
+    }
+    std::fs::remove_dir_all(root).unwrap();
+}
