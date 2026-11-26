@@ -69,8 +69,12 @@ services/jobs -> job_runner -> worker_command / ocr_provider / db facade
 - `runtime_owner.rs`：任务库旁的运行时独占锁（`jobs.db.runtime-owner.lock`）。进程内模式的 rust_api、retain-jobsd 在启动对账之前拿，
   拿不到就退出，不去对账别的运行时正在管的任务。
 - `worker_identity.rs`：库里记的 worker pid 还是不是我们的 worker（spawn 时记的进程身份对不对得上；没有身份信息的老行按启动时间粗判）。
-- `shutdown_workers.rs`：进程内模式的后端退出时终止库里 running 任务还活着的 worker（核对身份、并行终止），不改库，
-  下次启动由启动对账接手。`main.rs` 先停 tokio 运行时（driver 不再写库）、重新拿运行时锁（拿不到就不碰），再调它。
+- `shutdown_workers.rs`：任务运行时退出时终止库里 running 任务还活着的 worker（核对身份、并行终止），不改库，
+  下次启动由启动对账接手：请求日志干净的自动续跑，翻译留下了结果不明的请求的不自动续跑、等用户确认。两种形态都走
+  `stop_owned_workers_after_runtime_shutdown`，都先停 tokio 运行时（driver 不再写库）：
+  - 进程内模式：rust_api 的 `main.rs` 在 `serve` 返回后调，运行时锁已经放了，重新拿（拿不到就不碰）；
+  - retain-jobsd（打包桌面版、开发栈）：收到 SIGTERM、Ctrl-C，或者发现监督者没了，`main.rs` 拿着运行时锁调（2026-11-26 起；
+    以前 jobsd 直接死或 `exit(0)`，worker 成孤儿接着花钱）。rust_api 的监督器停 jobsd 时给它 `worker_terminate_grace_secs` + 3 秒。
   启动对账、运行期巡检、取消、jobsd 的 terminate 杀进程之前都走这里，不要再只凭 `worker_process_exists` 就组杀。
 
 取舍见 `docs/ops/planning/api-reorg/20261019-worker进程身份与运行时独占.md`。

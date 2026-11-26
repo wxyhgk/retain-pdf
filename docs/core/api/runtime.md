@@ -74,6 +74,8 @@ API key：`RUST_API_KEYS` 设了就用它（空值报错），没设才读 `auth
 
 - `RUST_API_MAX_RUNNING_JOBS`：同时跑几个任务，默认 `4`；`RUST_API_QUEUE_POLL_INTERVAL_MS`：排队轮询间隔，默认 `250`。
 - `RUST_API_WORKER_TERMINATE_GRACE_SECS`：SIGTERM 后等多久再 SIGKILL，默认 `3`；`RUST_API_WORKER_TERMINATE_POLL_MS`：等 worker 退出的轮询间隔，默认 `100`。
+- `RETAIN_TRANSLATION_SHUTDOWN_DRAIN_SECONDS`（Python worker 读）：翻译期间收到 SIGTERM 后，最多等在途的模型请求回来多少秒再退出（默认 `2`，范围 0–30），
+  要比上面的 `RUST_API_WORKER_TERMINATE_GRACE_SECS` 短，否则会被 SIGKILL 截断。见 [任务内部设计](jobs-internals.md) 的「退出时在途的请求」。
 - `RUST_API_WORKER_OUTPUT_DRAIN_SECS`：worker 退出后，stdout 读取方多久没读到新行就放弃，默认 `30`（stderr 是总共等多久）。
   stdout 还在消化积压时会一直等，最多这个值的 20 倍——每一行都要落库，打了几千行进度就退出的 worker 可能留下一串积压，
   最后一行才是 `output_pdf` 的发布（2026-11-04）。正常都是瞬间结束；设上限是因为调了 `setsid()` 的孙进程躲过进程组击杀、

@@ -53,6 +53,15 @@
 
 - 运行时重启后，停在翻译阶段、请求日志里有「已发出、没有终态」的请求的任务不自动续跑（续跑会把这些请求原样再发一遍），
   落成 `failed` / `translation_request_ambiguous`（`resume_from=translation`）；日志干净或还没有日志的照旧自动续跑。渲染、精修阶段不看日志。
+- 退出时在途的请求（2026-11-26，状态管理第 0 步 Z1）：
+  - 运行时（进程内模式的 rust_api、retain-jobsd）退出时停掉自己的 worker：先停 tokio 运行时，再给 worker SIGTERM，
+    宽限 `RUST_API_WORKER_TERMINATE_GRACE_SECS`（默认 3 秒）后 SIGKILL。打包桌面版走 jobsd，以前不停。
+  - Python 翻译收到 SIGTERM 不再当场死：不派发新请求，最多等 `RETAIN_TRANSLATION_SHUTDOWN_DRAIN_SECONDS`（默认 2 秒）让在途请求回来、
+    在请求日志里写上终态，然后退出（码 143）。宽限到了还没回来的留成「结果不明」，下次启动照上一条**不自动续跑、等用户确认**（用户定，
+    不做「歧义少就自动续跑」）。取消、超时也走这条（多等最多 2 秒）。
+  - 连接都没建成的请求（连接被拒、DNS 失败、建连超时、连不上代理）终态记 `failed_not_sent`，不算结果不明，断网时不再逼用户确认；
+    建连以后才断的（对方关连接、读超时、TLS 出错）照旧 `ambiguous`。判据在 `client.py` 的 `_request_never_left`。
+  - Windows 上 Rust 用 `taskkill /T /F` 停 worker，没有 SIGTERM 可接，在途请求照旧当场留成结果不明（和以前一样）。
 - 启动恢复和运行期的「没人在跑」巡检，按 pipeline attempt 数「连续几次放回排队、两次之间没有任何新进度（没提交新单元、没完成新阶段）」。
   到 `MAX_AUTO_RESUMES_WITHOUT_PROGRESS`（3）次后，下次再发现它中断就落 `failed` / `auto_resume_limit_exceeded`
   （`failure_category=internal`、`failed_stage=startup_recovery`、`retryable=true`、`resume_from=null`），不再续跑。
