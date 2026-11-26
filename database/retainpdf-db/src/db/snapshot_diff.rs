@@ -63,7 +63,17 @@ impl Db {
         let secrets: Vec<String> = secrets.into_iter().collect();
         let mut out = OrderedSink { sink, secrets, last: None, count: 0 };
 
-        // 类别按字母顺序：collection、document、event_feed、glossary、job、job_events、job_pipeline、list、tag、upload。
+        // 类别按字母顺序：ask_conversation、ask_memory、collection、document、event_feed、glossary、job、job_events、job_pipeline、list、tag、upload。
+        // v40 起：阅读页提问的对话（连同全部消息）和记忆（各种状态都导）。
+        for conversation_id in self.ask_conversation_ids()? {
+            let Some(conversation) = self.get_ask_conversation(&conversation_id)? else { continue };
+            let messages = self.list_ask_conversation_messages(&conversation_id, None, u32::MAX)?;
+            out.emit("ask_conversation", &conversation_id, json!({ "conversation": conversation, "messages": messages }))?;
+        }
+        for memory_id in self.ask_memory_ids()? {
+            let Some(memory) = self.get_ask_memory(&memory_id)? else { continue };
+            out.emit("ask_memory", &memory_id, serde_json::to_value(memory)?)?;
+        }
         let mut collections = self.list_collections()?;
         collections.sort_by(|a, b| a.collection_id.cmp(&b.collection_id));
         for collection in collections {

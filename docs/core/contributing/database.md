@@ -75,6 +75,12 @@
 - 阅读页提问的问答记录（v39，见 [第 3 步：问答记录](../../ops/planning/reader-ask/20261125-第3步：问答记录.md)）：`ask_threads` 一次提问一行
   （锚点拆成列：栏、页、块、选中的字、那一块的原文译文、章节、页内位置），`ask_messages` 一条问答一行（用量整块 JSON）。挂在
   `item_files(file_id)` 上，删书级联删；不同步、没有归属列（跟着书）。比对工具在每本书的 `document` 条目里导出 `ask_threads`。
+  2026-11-26 起只读保留（新的问答进 v40 的主对话）。
+- 阅读页提问的主对话、副对话和记忆（v40，见 [主对话、副对话和记忆](../../ops/planning/reader-ask/20261126-主对话副对话和记忆.md)）：
+  `ask_conversations`（`main` / `side`，部分唯一索引保证只有一个 `open` 的主对话；副对话 `parent_id` 级联删）、`ask_conversation_messages`
+  （只追加，`seq` 从 1 起，每条记 `document_id` 和结构化出处，书删了置空）、`ask_memories`（`user` / `book` 层，书层挂 `item_files` 级联删，
+  状态 active / superseded / deleted，出处的对话、消息删了置空）和它的全文索引 `ask_memories_fts`（trigram，三个触发器维护）。全局数据，没有归属列，
+  接口多用户下关闭；不同步。比对工具导出 `ask_conversation`（连同全部消息）、`ask_memory` 两类。
 - `db/documents/*`：文档、搜索、回填和文档行读取。（AI 对话、AI 计算、AI 改写文档和收藏的表、模块 2026-11-20 删了，v31）
 - `db/pipeline/*`：pipeline attempt、dispatch、stage、unit、event 与事务写入；读取和迁移写入不得重新揉回一个大文件。
 
