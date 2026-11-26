@@ -10,6 +10,10 @@
 - OpenAI Responses：``response.reasoning_summary_text.delta`` → 思考（要了 ``reasoning.summary = auto``），
   ``response.output_text.delta`` → 正文，``response.completed`` 带用量。
 
+思考档位（2026-11-26）：没改过档位时按握手的思考深度换字段（``model_wire.setting_thinking_candidates``，和翻译一样）；会话里改过的
+（``thinking_level``）按档位表 ``model_wire.thinking_menu`` 发那一档。三种协议都按候选顺序发，服务商回 400 就换下一种写法，最后不加思考字段。
+``thinking_options`` 给核心报 ``configOptions`` 用的档位和当前档。
+
 取消：每读一行看一次取消标记，叫停就关掉连接返回。HTTP 出错抛 ``RuntimeError``（服务商的状态码和一句说明，不带 key）。
 
 工具（读书，2026-11-25）：核心给了 ``tools``（名字、说明、JSON Schema）和 ``tool_choice``（``auto`` / ``none``）时按各家写法带上，
@@ -176,10 +180,10 @@ def _mark_last_message(body: dict[str, Any]) -> None:
         last["content"] = blocks
 
 
-def _anthropic(messages, cancel, *, model, base_url, api_key, thinking, tools=None, tool_choice=None) -> Iterator[Event]:
+def _anthropic(messages, cancel, *, model, base_url, api_key, candidates, tools=None, tool_choice=None) -> Iterator[Event]:
     url = model_wire.anthropic_messages_url(base_url or ANTHROPIC_DEFAULT_BASE_URL)
     headers = model_wire.anthropic_headers(api_key)
-    candidates = _with_summarized_thinking(model_wire.anthropic_thinking_candidates(thinking, model=model))
+    candidates = _with_summarized_thinking(candidates)
     prefix, suffix = _split_tool_turns(messages)
     response = None
     for index, fields in enumerate(candidates):
@@ -314,17 +318,28 @@ def _parse_arguments(raw: str) -> Any:
         return raw  # 核心认出不是对象，回给模型说参数不对
 
 
-def _openai_chat(messages, cancel, *, model, base_url, api_key, thinking, tools=None, tool_choice=None) -> Iterator[Event]:
+def _post_first_accepted(url: str, headers: dict[str, str], bodies: list[dict[str, Any]]) -> requests.Response:
+    """按思考字段的候选依次发：服务商回 400（多半是不认这种思考写法）就换下一个，最后一个（不加思考字段）的错误照常报。"""
+    response = None
+    for index, body in enumerate(bodies):
+        response = requests.post(url, headers=headers, json=body, stream=True, timeout=(CONNECT_TIMEOUT_SECS, READ_TIMEOUT_SECS))
+        if response.status_code == 400 and index < len(bodies) - 1:
+            response.close()
+            continue
+        break
+    assert response is not None
+    return response
+
+
+def _openai_chat(messages, cancel, *, model, base_url, api_key, candidates, tools=None, tool_choice=None) -> Iterator[Event]:
     base_url = base_url or DEFAULT_BASE_URL
     url = chat_completions_url(base_url)
     headers = build_headers(api_key, base_url)
-    fields = model_wire.openai_thinking_candidates(model=model, base_url=base_url, thinking=thinking)[0]
-    body = {"model": model, "messages": _chat_messages(messages), "stream": True,
-            "stream_options": {"include_usage": True}, **fields}
+    base = {"model": model, "messages": _chat_messages(messages), "stream": True, "stream_options": {"include_usage": True}}
     if tools:
-        body["tools"] = _openai_tool_specs(tools)
-        body["tool_choice"] = tool_choice or "auto"
-    response = requests.post(url, headers=headers, json=body, stream=True, timeout=(CONNECT_TIMEOUT_SECS, READ_TIMEOUT_SECS))
+        base["tools"] = _openai_tool_specs(tools)
+        base["tool_choice"] = tool_choice or "auto"
+    response = _post_first_accepted(url, headers, [{**base, **fields} for fields in candidates])
     if response.status_code >= 400:
         raise _http_error(response)
     usage: dict[str, int] = {}
@@ -394,24 +409,26 @@ def _responses_tool_turns(suffix: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return items
 
 
-def _openai_responses(messages, cancel, *, model, base_url, api_key, thinking, tools=None, tool_choice=None) -> Iterator[Event]:
+def _openai_responses(messages, cancel, *, model, base_url, api_key, candidates, tools=None, tool_choice=None) -> Iterator[Event]:
     base_url = base_url or DEFAULT_BASE_URL
     url = model_wire.responses_url(base_url)
     headers = build_headers(api_key, base_url)
-    fields = copy.deepcopy(model_wire.responses_thinking_candidates(model=model, base_url=base_url, thinking=thinking)[0])
     prefix, suffix = _split_tool_turns(messages)
-    body = model_wire.responses_body(model=model, messages=model_wire.merge_system_messages(prefix), temperature=None,
-                                     response_format=None, thinking_fields=fields)
-    body["stream"] = True
-    if isinstance(body.get("reasoning"), dict) and body["reasoning"].get("effort") not in (None, "none"):
-        body["reasoning"]["summary"] = "auto"
-    if tools:
-        body["input"] += _responses_tool_turns(suffix)
-        # strict 默认是真，要所有参数都必填；我们的参数有可选的
-        body["tools"] = [{"type": "function", "name": tool["name"], "description": tool["description"],
-                          "parameters": tool["parameters"], "strict": False} for tool in tools]
-        body["tool_choice"] = tool_choice or "auto"
-    response = requests.post(url, headers=headers, json=body, stream=True, timeout=(CONNECT_TIMEOUT_SECS, READ_TIMEOUT_SECS))
+    bodies = []
+    for fields in candidates:
+        body = model_wire.responses_body(model=model, messages=model_wire.merge_system_messages(prefix), temperature=None,
+                                         response_format=None, thinking_fields=copy.deepcopy(fields))
+        body["stream"] = True
+        if isinstance(body.get("reasoning"), dict) and body["reasoning"].get("effort") not in (None, "none"):
+            body["reasoning"]["summary"] = "auto"
+        if tools:
+            body["input"] += _responses_tool_turns(suffix)
+            # strict 默认是真，要所有参数都必填；我们的参数有可选的
+            body["tools"] = [{"type": "function", "name": tool["name"], "description": tool["description"],
+                              "parameters": tool["parameters"], "strict": False} for tool in tools]
+            body["tool_choice"] = tool_choice or "auto"
+        bodies.append(body)
+    response = _post_first_accepted(url, headers, bodies)
     if response.status_code >= 400:
         raise _http_error(response)
     called = False
@@ -445,10 +462,35 @@ def _openai_responses(messages, cancel, *, model, base_url, api_key, thinking, t
         yield "native", {"protocol": "openai_responses"}
 
 
+def _profile(*, model: str, base_url: str, protocol: str, thinking: str) -> model_wire.ConnectionProfile:
+    return model_wire.resolve_profile(base_url=base_url or DEFAULT_BASE_URL, model=model, protocol=protocol or None, thinking=thinking or None)
+
+
+def _wire_base_url(protocol: str, base_url: str) -> str:
+    """换思考字段时按哪个地址认服务商：OpenAI 两种协议没填地址时用默认的（DeepSeek），和真发请求的地址一样。"""
+    return base_url if protocol == model_wire.PROTOCOL_ANTHROPIC else (base_url or DEFAULT_BASE_URL)
+
+
+def thinking_options(*, model: str, base_url: str, protocol: str = "", thinking: str = "") -> dict[str, Any] | None:
+    """给核心的思考档位：``{"options": [{"value", "name"}], "current": 握手的思考深度对应的那一档}``（档位表见 ``model_wire.thinking_menu``）。
+    认不出的模型是 None（不报这一项）。"""
+    profile = _profile(model=model, base_url=base_url, protocol=protocol, thinking=thinking)
+    menu = model_wire.thinking_menu(protocol=profile.protocol, model=model, base_url=_wire_base_url(profile.protocol, base_url))
+    if menu is None:
+        return None
+    return {"options": [{"value": value, "name": value} for value in menu.values()], "current": menu.level_for(profile.thinking)}
+
+
 def make_stream_fn(*, model: str, base_url: str, api_key: str, protocol: str = "", thinking: str = ""):
-    """按连接配置给核心一个 ``stream_fn(messages, cancel)``。"""
-    profile = model_wire.resolve_profile(base_url=base_url or DEFAULT_BASE_URL, model=model, protocol=protocol or None, thinking=thinking or None)
-    options = {"model": model, "base_url": base_url, "api_key": api_key, "thinking": profile.thinking}
+    """按连接配置给核心一个 ``stream_fn(messages, cancel, *, tools=None, tool_choice=None, thinking_level=None)``。
+
+    ``thinking_level`` 是会话里用 ``session/set_config_option`` 改过的档位（``thinking_options`` 报的值之一）：给了就按档位表发那一档的字段；
+    没给按握手的思考深度发（和翻译同一套换法，``auto`` 对没实测过的模型什么都不加）。"""
+    profile = _profile(model=model, base_url=base_url, protocol=protocol, thinking=thinking)
+    wire_base_url = _wire_base_url(profile.protocol, base_url)
+    menu = model_wire.thinking_menu(protocol=profile.protocol, model=model, base_url=wire_base_url)
+    initial = model_wire.setting_thinking_candidates(protocol=profile.protocol, model=model, base_url=wire_base_url, thinking=profile.thinking)
+    options = {"model": model, "base_url": base_url, "api_key": api_key}
     if profile.protocol == model_wire.PROTOCOL_ANTHROPIC:
         target = _anthropic
     elif profile.protocol == model_wire.PROTOCOL_OPENAI_RESPONSES:
@@ -457,10 +499,14 @@ def make_stream_fn(*, model: str, base_url: str, api_key: str, protocol: str = "
         target = _openai_chat
 
     def stream(messages: list[dict[str, Any]], cancel: threading.Event, *, tools: list[dict[str, Any]] | None = None,
-               tool_choice: str | None = None) -> Iterator[Event]:
-        return target(messages, cancel, tools=tools, tool_choice=tool_choice, **options)
+               tool_choice: str | None = None, thinking_level: str | None = None) -> Iterator[Event]:
+        if thinking_level and menu is not None:
+            candidates = menu.candidates(thinking_level)
+        else:
+            candidates = copy.deepcopy(initial)
+        return target(messages, cancel, tools=tools, tool_choice=tool_choice, candidates=candidates, **options)
 
     return stream
 
 
-__all__ = ["make_stream_fn"]
+__all__ = ["make_stream_fn", "thinking_options"]

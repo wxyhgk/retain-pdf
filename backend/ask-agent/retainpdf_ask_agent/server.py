@@ -1,6 +1,7 @@
 """自带 agent 的 ACP 服务端：stdio，每行一条 JSON-RPC 2.0（后端的 ACP 桥起它、两头转）。
 
-实现的方法：`initialize`、`session/new`、`session/prompt`、`session/cancel`（通知）；别的请求回 -32601，不认识的通知不理。
+实现的方法：`initialize`、`session/new`、`session/set_config_option`、`session/prompt`、`session/cancel`（通知）；别的请求回 -32601，
+不认识的通知不理。
 `session/prompt` 在后台线程里跑：边收模型的流边发 `session/update`——思考 `agent_thought_chunk`、正文 `agent_message_chunk`，
 最后 `usage_update`（ACP 只有 `used`、`size`，输入 / 输出 / 缓存命中放 `_meta.retainpdf.usage`），再回 `{stopReason}`。
 被 `session/cancel` 叫停的回 `cancelled`，不当错误。
@@ -31,6 +32,12 @@
 - `{"role": "assistant", "content": 文字, "tool_calls": [{"id", "name", "arguments"}], "native": …}`
 - `{"role": "tool", "tool_call_id", "name", "content": 文字, "images": [{"mime_type", "data"}], "is_error": bool}`
 带进下一问的历史只留问和最后的回答文字，工具来回不带。
+
+思考强度（2026-11-26，ACP 的 session config options）：调用方给了 `thinking`（`{"options": [{"value", "name"}], "current"}`，
+档位是这个模型实际有的，从弱到强，见接线 `thinking_options`）时，`session/new` 的结果带 `configOptions`（一项
+`id = category = "thought_level"`）。`session/set_config_option(configId="thought_level", value)` 只改这个会话下一问的档位，
+不重开会话，回整份 `configOptions`；不认识的 `configId`、不在 `options` 里的 `value` 回 -32602。改过档位后问模型时 `options` 多
+`thinking_level`（没改过不带，按握手的思考深度发）。不报 `category = "model"`：模型是用户在设置里存的连接，换模型重开会话。
 """
 from __future__ import annotations
 
@@ -75,6 +82,9 @@ INVALID_PARAMS = -32602
 INTERNAL_ERROR = -32603
 PARSE_ERROR = -32700
 RESOURCE_NOT_FOUND = -32002
+# ACP session config option：思考强度这一项的 id 和 category
+THOUGHT_LEVEL = "thought_level"
+THOUGHT_LEVEL_NAME = "思考"
 
 StreamFn = Callable[..., Iterator[tuple[str, Any]]]
 
@@ -143,12 +153,15 @@ class Session:
     history: list[dict[str, Any]] = field(default_factory=list)
     cancel: threading.Event = field(default_factory=threading.Event)
     busy: bool = False
+    # 用 session/set_config_option 改过的思考档位；None 是没改过（按握手的思考深度）
+    thinking_level: str | None = None
 
 
 class AskAgent:
     def __init__(self, stream_fn: StreamFn, *, model: str = "", context_size: int = 0, out: TextIO | None = None,
-                 tools: Tools | None = None, openui: OpenUiTools | None = None):
+                 tools: Tools | None = None, openui: OpenUiTools | None = None, thinking: dict[str, Any] | None = None):
         self.stream_fn = stream_fn
+        self.thinking = thinking if thinking and thinking.get("options") else None
         self.tools = tools
         self.openui = openui
         self.model = model
@@ -213,11 +226,16 @@ class AskAgent:
         elif method == "session/new":
             session = Session(id=f"ask-{uuid.uuid4().hex[:16]}")
             self.sessions[session.id] = session
-            self._result(request_id, {"sessionId": session.id})
+            result: dict[str, Any] = {"sessionId": session.id}
+            if self.thinking is not None:
+                result["configOptions"] = self._config_options(session)
+            self._result(request_id, result)
             warm = getattr(self.tools, "warm", None)
             if callable(warm):
                 # 用户打字的时候把书的块取好，第一问不用等
                 threading.Thread(target=warm, daemon=True).start()
+        elif method == "session/set_config_option":
+            self._set_config_option(request_id, params)
         elif method == "session/prompt":
             self._prompt(request_id, params)
         elif method == "session/cancel":
@@ -226,6 +244,44 @@ class AskAgent:
                 session.cancel.set()
         elif request_id is not None:
             self._error(request_id, METHOD_NOT_FOUND, f"method not found: {method}")
+
+    # 思考强度 -----------------------------------------------------------
+
+    def _thinking_level(self, session: Session) -> str | None:
+        if self.thinking is None:
+            return None
+        return session.thinking_level or str(self.thinking.get("current") or "")
+
+    def _config_options(self, session: Session) -> list[dict[str, Any]]:
+        if self.thinking is None:
+            return []
+        return [{
+            "id": THOUGHT_LEVEL,
+            "name": THOUGHT_LEVEL_NAME,
+            "category": THOUGHT_LEVEL,
+            "type": "select",
+            "currentValue": self._thinking_level(session),
+            "options": [{"value": str(option["value"]), "name": str(option.get("name") or option["value"])}
+                        for option in self.thinking["options"]],
+        }]
+
+    def _set_config_option(self, request_id: Any, params: dict[str, Any]) -> None:
+        session = self.sessions.get(str(params.get("sessionId") or ""))
+        if session is None:
+            self._error(request_id, RESOURCE_NOT_FOUND, "unknown session")
+            return
+        config_id = params.get("configId")
+        if self.thinking is None or config_id != THOUGHT_LEVEL:
+            self._error(request_id, INVALID_PARAMS, f"unknown config option: {config_id}")
+            return
+        value = params.get("value")
+        allowed = [str(option["value"]) for option in self.thinking["options"]]
+        if not isinstance(value, str) or value not in allowed:
+            self._error(request_id, INVALID_PARAMS, f"{THOUGHT_LEVEL} must be one of {', '.join(allowed)}")
+            return
+        # 正在答的这一问不受影响（开问时已经定了档位），下一问起用新的
+        session.thinking_level = value
+        self._result(request_id, {"configOptions": self._config_options(session)})
 
     # 一问 ---------------------------------------------------------------
 
@@ -308,6 +364,9 @@ class AskAgent:
         specs = self._tool_specs()
         budget = TurnBudget(has_book=self.tools is not None, has_openui=self.openui is not None)
         openui_info: dict[str, Any] = {}
+        # 这一问的思考档位：开问时定下（答的中途改档位不影响这一问）。没改过不传，接线按握手的思考深度发
+        thinking_level = session.thinking_level
+        current_level = self._thinking_level(session)
         try:
             while not session.cancel.is_set():
                 rounds += 1
@@ -319,11 +378,12 @@ class AskAgent:
                     if not more and messages[-1].get("role") == "tool":
                         # 额度用完、不许再调：在最后一个工具结果后面说一句，让它直接答（实测 qwen3.8-flash 不说就在正文里反复想调工具）
                         messages[-1] = {**messages[-1], "content": f"{messages[-1].get('content') or ''}\n\n{FINAL_ROUND_NOTE}"}
+                stream_options = {**options, **({"thinking_level": thinking_level} if thinking_level else {})}
                 texts: list[str] = []
                 calls: list[dict[str, Any]] = []
                 native: Any = None
                 usage: dict[str, Any] = {}
-                for kind, value in self.stream_fn(messages, session.cancel, **options):
+                for kind, value in self.stream_fn(messages, session.cancel, **stream_options):
                     if session.cancel.is_set():
                         break
                     if kind in ("thought", "text") and value:
@@ -385,6 +445,7 @@ class AskAgent:
         del session.history[:-MAX_HISTORY_MESSAGES]
         meta = {
             "model": self.model,
+            **({"thinking_level": current_level} if current_level else {}),
             "elapsed_ms": int((time.monotonic() - started) * 1000),
             **({"first_token_ms": first_token_ms} if first_token_ms is not None else {}),
             **totals,
@@ -501,4 +562,4 @@ def _add_usage(totals: dict[str, Any], usage: dict[str, Any]) -> None:
             totals[key] = value
 
 
-__all__ = ["AskAgent", "MAX_TOOL_ROUNDS", "MAX_TOTAL_ROUNDS", "PROTOCOL_VERSION", "Session", "StreamFn", "Tools", "TurnBudget"]
+__all__ = ["AskAgent", "MAX_TOOL_ROUNDS", "MAX_TOTAL_ROUNDS", "PROTOCOL_VERSION", "Session", "StreamFn", "THOUGHT_LEVEL", "Tools", "TurnBudget"]

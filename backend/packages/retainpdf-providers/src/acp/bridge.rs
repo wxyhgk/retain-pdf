@@ -2,10 +2,11 @@
 //!
 //! 两头原样转，只改一处：客户端发的 `session/new`、`session/load`，`cwd` 空着就填默认的（书文件夹），
 //! `mcpServers` 里没有 `retainpdf` 就补上（`retainpdf mcp`，带 AI 专用密钥）。
+//! `retainpdf-pi` 另有一处（[`ConfigFilter`]）：pi-acp 报的会话设置（ACP session config options）去掉选模型那一项。
 //! 连接断了结束 agent；agent 退出了关连接（1011，原因写退出码和 stderr 最后一行）。
 //!
 //! 和 WebSocket 之间用两个通道：`incoming` 是客户端发来的文字消息，`outgoing` 是要发给客户端的（测试里直接接通道）。
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::{Arc, Mutex};
@@ -57,6 +58,116 @@ pub struct SessionDefaults {
     pub cwd: Option<PathBuf>,
     /// 补进 `mcpServers` 的那一项（[`retainpdf_mcp_server`]）；None 就不补。
     pub mcp_server: Option<Value>,
+    /// `retainpdf-pi`：去掉 pi-acp 报的选模型那一项，查思考档位（[`ConfigFilter`]）。
+    pub hide_model_option: bool,
+}
+
+/// ACP session config option 里思考强度、模型那两项的 id（pi-acp 0.0.35 就用这两个，category 同名）。
+const THOUGHT_LEVEL: &str = "thought_level";
+const MODEL_OPTION: &str = "model";
+/// JSON-RPC：参数不对。
+const INVALID_PARAMS: i64 = -32602;
+
+/// `retainpdf-pi` 的会话设置过滤（2026-11-26）。pi-acp 0.0.35 在 `session/new`、`session/load`、`session/set_config_option` 的结果和
+/// `config_option_update` 通知里报两项：`category = "model"`（pi 看得到的模型）和 `category = "thought_level"`（pi 的思考档位）。
+/// 自带 agent 的模型是用户在设置里存的连接，换模型是前端带新的握手参数重开会话；这里报了模型，前端就会改用这份，所以：
+///
+/// - 去掉 `category`（或 `id`）是 `model` 的那一项，以及结果里 ACP 的旧写法 `models`（unstable 的选模型）；
+/// - 思考档位的显示名去掉 pi-acp 加的 `Thinking: ` 前缀，只留档位名（和 `retainpdf` 一样用原名）；
+/// - 记下每个会话报过的思考档位：客户端改成不在里面的值、改模型（`session/set_config_option` 的 `model`、`session/set_model`），
+///   桥直接回 -32602，不转给 pi-acp（pi 会把不认识的档位悄悄夹到最近的一档，改模型能换到 pi 别处登记的模型）。
+#[derive(Debug, Default)]
+pub struct ConfigFilter {
+    /// 会话 → 报过的思考档位。
+    levels: HashMap<String, Vec<String>>,
+    /// 还没回的请求（编号的 JSON 写法）→ 会话：`session/load`、`session/set_config_option` 的结果里没有 sessionId。
+    pending: HashMap<String, String>,
+}
+
+impl ConfigFilter {
+    /// 客户端发来的一条：要拦下就返回给客户端的错误回复（一行 JSON），否则记下要跟踪的请求、返回 None（照常转给 agent）。
+    pub fn check_client(&mut self, text: &str) -> Option<String> {
+        let message: Value = serde_json::from_str(text).ok()?;
+        let method = message.get("method").and_then(Value::as_str)?;
+        let id = message.get("id")?.clone();
+        let params = message.get("params").cloned().unwrap_or(Value::Null);
+        let session = params.get("sessionId").and_then(Value::as_str).unwrap_or("").to_string();
+        let reject = |text: String| Some(json!({"jsonrpc": "2.0", "id": id, "error": {"code": INVALID_PARAMS, "message": text}}).to_string());
+        match method {
+            "session/set_model" | "session/unstable_set_model" => {
+                return reject("the model is the connection chosen in RetainPDF settings; reconnect to change it".into());
+            }
+            "session/set_config_option" => {
+                let config_id = params.get("configId").and_then(Value::as_str).unwrap_or("");
+                if config_id == MODEL_OPTION {
+                    return reject("the model is the connection chosen in RetainPDF settings; reconnect to change it".into());
+                }
+                if config_id == THOUGHT_LEVEL {
+                    if let Some(levels) = self.levels.get(&session) {
+                        let value = params.get("value").and_then(Value::as_str);
+                        if !value.is_some_and(|value| levels.iter().any(|level| level == value)) {
+                            return reject(format!("{THOUGHT_LEVEL} must be one of {}", levels.join(", ")));
+                        }
+                    }
+                }
+                self.pending.insert(id.to_string(), session);
+            }
+            "session/load" => {
+                self.pending.insert(id.to_string(), session);
+            }
+            _ => {}
+        }
+        None
+    }
+
+    /// agent 发来的一行：改过就返回新的一行，不用改返回 None（原样转）。
+    pub fn filter_agent(&mut self, line: &str) -> Option<String> {
+        let mut message: Value = serde_json::from_str(line).ok()?;
+        let session = if message.get("method").and_then(Value::as_str) == Some("session/update") {
+            let update = message.pointer("/params/update")?;
+            if update.get("sessionUpdate").and_then(Value::as_str) != Some("config_option_update") {
+                return None;
+            }
+            message.pointer("/params/sessionId").and_then(Value::as_str).unwrap_or("").to_string()
+        } else {
+            let id = message.get("id")?.to_string();
+            let pending = self.pending.remove(&id);
+            let result = message.get("result")?;
+            if result.get("configOptions").is_none() && result.get("models").is_none() {
+                return None;
+            }
+            result.get("sessionId").and_then(Value::as_str).map(str::to_string).or(pending).unwrap_or_default()
+        };
+        let target = if message.get("method").is_some() { message.pointer_mut("/params/update")? } else { message.get_mut("result")? };
+        let object = target.as_object_mut()?;
+        object.remove("models");
+        if let Some(options) = object.get_mut("configOptions").and_then(Value::as_array_mut) {
+            options.retain(|option| {
+                let is = |key: &str| option.get(key).and_then(Value::as_str) == Some(MODEL_OPTION);
+                !is("category") && !is("id")
+            });
+            for option in options.iter_mut() {
+                let thought = option.get("category").and_then(Value::as_str) == Some(THOUGHT_LEVEL)
+                    || option.get("id").and_then(Value::as_str) == Some(THOUGHT_LEVEL);
+                if !thought {
+                    continue;
+                }
+                let mut values = Vec::new();
+                for choice in option.get_mut("options").and_then(Value::as_array_mut).into_iter().flatten() {
+                    let Some(value) = choice.get("value").and_then(Value::as_str).map(str::to_string) else { continue };
+                    let bare = choice.get("name").and_then(Value::as_str).map(|name| name.strip_prefix("Thinking: ").unwrap_or(name).to_string());
+                    if let Some(bare) = bare {
+                        choice["name"] = Value::String(bare);
+                    }
+                    values.push(value);
+                }
+                if !session.is_empty() {
+                    self.levels.insert(session.clone(), values);
+                }
+            }
+        }
+        Some(message.to_string())
+    }
 }
 
 /// `retainpdf mcp` 的 ACP 写法（stdio MCP 服务：绝对路径、不经 shell，环境变量是 `{name, value}` 数组）。
@@ -174,10 +285,18 @@ pub async fn run_bridge(
 
     let mut stdout_lines = BufReader::new(stdout).lines();
     let mut client_gone = false;
+    let mut filter = defaults.hide_model_option.then(ConfigFilter::default);
     loop {
         tokio::select! {
             message = incoming.recv() => match message {
                 Some(text) => {
+                    if let Some(reply) = filter.as_mut().and_then(|filter| filter.check_client(&text)) {
+                        if outgoing.send(BridgeOut::Text(reply)).await.is_err() {
+                            client_gone = true;
+                            break;
+                        }
+                        continue;
+                    }
                     let line = prepare_client_message(&text, &defaults);
                     if stdin.write_all(line.as_bytes()).await.is_err()
                         || stdin.write_all(b"\n").await.is_err()
@@ -196,6 +315,7 @@ pub async fn run_bridge(
                     if line.trim().is_empty() {
                         continue;
                     }
+                    let line = filter.as_mut().and_then(|filter| filter.filter_agent(&line)).unwrap_or(line);
                     if outgoing.send(BridgeOut::Text(line)).await.is_err() {
                         client_gone = true;
                         break;
@@ -237,6 +357,7 @@ mod tests {
         SessionDefaults {
             cwd: Some(PathBuf::from("/data/books")),
             mcp_server: Some(retainpdf_mcp_server(Path::new("/opt/retainpdf/retainpdf"), Some("agent-key"), &[])),
+            hide_model_option: false,
         }
     }
 
@@ -279,6 +400,73 @@ mod tests {
             with_openui["env"],
             json!([{"name": AGENT_KEY_ENV, "value": "k"}, {"name": "RETAIN_OPENUI_PROMPT", "value": "/c/p.json"}])
         );
+    }
+
+    /// pi-acp 0.0.35 报的样子（2026-11-26 真机抓的，换成短的）。
+    fn pi_config_options(current: &str) -> Value {
+        json!([
+            {"type": "select", "id": "model", "category": "model", "name": "Model", "currentValue": "retainpdf/m",
+             "options": [{"value": "retainpdf/m", "name": "retainpdf/m", "description": null}]},
+            {"type": "select", "id": "thought_level", "category": "thought_level", "name": "Thinking", "currentValue": current,
+             "options": [{"value": "off", "name": "Thinking: off", "description": null}, {"value": "high", "name": "Thinking: high", "description": null}]}
+        ])
+    }
+
+    #[test]
+    fn pi_config_options_drop_the_model_and_bad_levels_are_refused() {
+        let mut filter = ConfigFilter::default();
+        assert!(filter.check_client(r#"{"jsonrpc":"2.0","id":1,"method":"session/new","params":{"cwd":"/a"}}"#).is_none());
+        let new = json!({"jsonrpc": "2.0", "id": 1, "result": {"sessionId": "s1", "configOptions": pi_config_options("off"),
+                         "models": {"availableModels": [], "currentModelId": "retainpdf/m"}, "modes": {"currentModeId": "off"}}});
+        let out: Value = serde_json::from_str(&filter.filter_agent(&new.to_string()).unwrap()).unwrap();
+        let options = out["result"]["configOptions"].as_array().unwrap();
+        assert_eq!(options.len(), 1);
+        assert_eq!(options[0]["category"], "thought_level");
+        assert_eq!(options[0]["options"], json!([{"value": "off", "name": "off", "description": null}, {"value": "high", "name": "high", "description": null}]));
+        assert!(out["result"].get("models").is_none() && out["result"]["modes"]["currentModeId"] == "off");
+
+        // 不在档位里的值、改模型：桥直接回 -32602，不转给 pi-acp
+        let bad = filter.check_client(r#"{"jsonrpc":"2.0","id":2,"method":"session/set_config_option","params":{"sessionId":"s1","configId":"thought_level","value":"max"}}"#);
+        let bad: Value = serde_json::from_str(&bad.unwrap()).unwrap();
+        assert_eq!((bad["id"].clone(), bad["error"]["code"].clone()), (json!(2), json!(INVALID_PARAMS)));
+        assert!(bad["error"]["message"].as_str().unwrap().contains("off, high"));
+        for model in [
+            r#"{"jsonrpc":"2.0","id":3,"method":"session/set_config_option","params":{"sessionId":"s1","configId":"model","value":"x/y"}}"#,
+            r#"{"jsonrpc":"2.0","id":4,"method":"session/set_model","params":{"sessionId":"s1","modelId":"x/y"}}"#,
+        ] {
+            assert!(filter.check_client(model).is_some());
+        }
+        // 在档位里的照转；结果（没有 sessionId）和通知里的模型那项也去掉
+        assert!(filter.check_client(r#"{"jsonrpc":"2.0","id":"5","method":"session/set_config_option","params":{"sessionId":"s1","configId":"thought_level","value":"high"}}"#).is_none());
+        let notify = json!({"jsonrpc": "2.0", "method": "session/update", "params": {"sessionId": "s1",
+                            "update": {"sessionUpdate": "config_option_update", "configOptions": pi_config_options("high")}}});
+        let out: Value = serde_json::from_str(&filter.filter_agent(&notify.to_string()).unwrap()).unwrap();
+        assert_eq!(out["params"]["update"]["configOptions"].as_array().unwrap().len(), 1);
+        let result = json!({"jsonrpc": "2.0", "id": "5", "result": {"configOptions": pi_config_options("high")}});
+        let out: Value = serde_json::from_str(&filter.filter_agent(&result.to_string()).unwrap()).unwrap();
+        assert_eq!(out["result"]["configOptions"][0]["currentValue"], "high");
+        // 别的消息不动
+        let chunk = r#"{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s1","update":{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"hi"}}}}"#;
+        assert!(filter.filter_agent(chunk).is_none());
+        assert!(filter.check_client("not json").is_none());
+        // 没见过档位的会话不拦（交给 agent 自己判断）
+        assert!(filter.check_client(r#"{"jsonrpc":"2.0","id":6,"method":"session/set_config_option","params":{"sessionId":"other","configId":"thought_level","value":"max"}}"#).is_none());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn the_pi_filter_answers_refused_requests_itself() {
+        let (to_bridge, incoming) = mpsc::channel(8);
+        let (outgoing, mut from_bridge) = mpsc::channel(8);
+        let process = AgentProcess { program: "/bin/cat".into(), args: vec![], env: vec![], cwd: None, scratch_dir: None };
+        let defaults = SessionDefaults { hide_model_option: true, ..SessionDefaults::default() };
+        let task = tokio::spawn(run_bridge(process, defaults, incoming, outgoing));
+        // cat 把改模型的请求原样回来就说明转过去了；桥自己回的是错误
+        to_bridge.send(r#"{"jsonrpc":"2.0","id":7,"method":"session/set_config_option","params":{"sessionId":"s","configId":"model","value":"x"}}"#.into()).await.unwrap();
+        let BridgeOut::Text(reply) = from_bridge.recv().await.unwrap() else { panic!("expected text") };
+        assert_eq!(serde_json::from_str::<Value>(&reply).unwrap()["error"]["code"], INVALID_PARAMS);
+        drop(to_bridge);
+        tokio::time::timeout(std::time::Duration::from_secs(5), task).await.unwrap().unwrap();
     }
 
     #[test]
