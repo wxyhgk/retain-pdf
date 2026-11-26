@@ -1,0 +1,8 @@
+/* @retainpdf/ask 的 Tailwind 部分：照搬的 assistant-ui 组件（src/ui/）用 Tailwind 类，宿主的 Tailwind 编译要扫到这个包的源码。
+ * 宿主在自己的 Tailwind 入口里不带 layer 引入这一份（展开收起的动画、「思考中」的流光、打字光标），
+ * 再按 layer(pages) 引入 ask.css。主题变量（--color-muted 等 shadcn 名字）由宿主给。 */
+@import "tw-animate-css";
+@import "tw-shimmer";
+@import "@assistant-ui/react-markdown/styles/dot.css";
+
+@source "../src/**/*.{ts,tsx}";

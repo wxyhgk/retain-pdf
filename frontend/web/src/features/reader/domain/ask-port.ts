@@ -5,8 +5,7 @@
 //   自带 agent（retainpdf）再带模型配置：设置里默认的翻译模型（地址、模型、协议、思考）和凭据库里翻译密钥的引用（不传明文 key）。
 // - 演示模式给假 agent；局域网共享打开的页面不给（桌面网关拦了 /api/v1/ai）。
 
-import { client, PROTOCOL_VERSION } from "@agentclientprotocol/sdk";
-import { createWebSocketStream } from "@agentclientprotocol/sdk/experimental/ws-client";
+import { openAcpWebSocketSession } from "@retainpdf/ask/acp";
 import type {
   ReaderAskAgent,
   ReaderAskAnchor,
@@ -123,37 +122,8 @@ async function openSession({ agentId, jobId }: { agentId: string; jobId: string 
   }
   // 自带 agent 自己读书（read_pages / search_book / view_page）：带上阅读页的任务编号（merged-… 也照传）。本机 agent 走 retainpdf mcp，不用。
   if (builtin && jobId) extra.query = { ...extra.query, job_id: jobId };
-  const app = client()
-    .onNotification("session/update", ({ params }) => handlers.onUpdate(params.update))
-    .onRequest("session/request_permission", ({ params }) => handlers.onPermission(params));
-  // protocols 要明确给空数组：SDK 不给时传 undefined，Chrome 会把它当成子协议 "undefined" 发出去，桥不回这个头，握手就断（2026-11-25 真机联调踩到）。
-  // cookies 不用：认证走 api_key。
-  const connection = app.connect(createWebSocketStream(acpSocketUrl(apiBase(), agentId, frontendApiKey(), extra.query), { protocols: [], cookies: "omit" }));
-  const agent = connection.agent;
-  // 连接断了（agent 退出时桥用 1011 关，原因里有退出码和 stderr 最后一行）：没答完的请求会被拒，消息照原样给用户看。
-  try {
-    await agent.request("initialize", {
-      protocolVersion: PROTOCOL_VERSION,
-      clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false },
-    });
-  } catch (error) {
-    connection.close();
-    const detail = error instanceof Error && error.message ? `（${error.message}）` : "";
-    throw new Error(`连不上这个 agent：没开、没装，或者设置不对${detail}`);
-  }
-  // cwd 空着、mcpServers 空着：桥会填书文件夹、补上 retainpdf mcp。
-  const { sessionId } = await agent.request("session/new", { cwd: "", mcpServers: [] });
-  return {
-    prompt: async (blocks) => {
-      const result = await agent.request("session/prompt", { sessionId, prompt: blocks });
-      const extra = result as { usage?: Record<string, unknown> | null; _meta?: Record<string, unknown> | null };
-      return { stopReason: result.stopReason, usage: extra.usage ?? null, meta: extra._meta ?? null };
-    },
-    cancel: () => {
-      void agent.notify("session/cancel", { sessionId }).catch(() => {});
-    },
-    close: () => connection.close(),
-  };
+  // 握手、开会话、发问都在提问窗的包里（@retainpdf/ask/acp）；这里只拼地址：api_key、自带 agent 的模型配置和凭据引用、job_id。
+  return openAcpWebSocketSession(acpSocketUrl(apiBase(), agentId, frontendApiKey(), extra.query), handlers);
 }
 
 // —— 问答记录（契约 ask-threads.v1）：阅读器用驼峰，接口用下划线 ——

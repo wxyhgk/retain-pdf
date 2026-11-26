@@ -1,36 +1,8 @@
-import type { ContentBlock, RequestPermissionRequest, RequestPermissionResponse, SessionUpdate, StopReason } from "@agentclientprotocol/sdk";
-/** 能用的 agent（RetainPDF 自带的、本机装了的 Claude Code / Codex / Gemini …）。 */
-export type ReaderAskAgent = {
-    id: string;
-    name: string;
-    description?: string;
-    /** 能不能收图片（扫描页没字时发那一块的图）。 */
-    acceptsImages?: boolean;
-    /** 现在能不能用（本机 agent 在服务器、Docker、局域网上用不了）；不能用时 reason 写原因。 */
-    available?: boolean;
-    reason?: string;
-    /** 本机 agent 没装时的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp。 */
-    install?: string;
-};
-export type ReaderAskHandlers = {
-    /** agent 发来的 session/update（思考、正文、工具调用、计划、用量……）。 */
-    onUpdate: (update: SessionUpdate) => void;
-    /** agent 要许可（session/request_permission）：等用户点，返回选了哪个，或取消。 */
-    onPermission: (request: RequestPermissionRequest) => Promise<RequestPermissionResponse>;
-};
-export type ReaderAskSession = {
-    /** 发一轮（session/prompt），回答过程走 onUpdate，结束时给停的原因。 */
-    /** 结束时给停的原因；有的 agent（Claude Code）在结果里带这一轮的 token 用量（usage / _meta），一并给。 */
-    prompt: (blocks: ContentBlock[]) => Promise<{
-        stopReason: StopReason;
-        usage?: Record<string, unknown> | null;
-        meta?: Record<string, unknown> | null;
-    }>;
-    /** 停（session/cancel）。 */
-    cancel: () => void;
-    /** 不用了（关窗、换 agent）。 */
-    close: () => void;
-};
+import type { AskAgent, AskHandlers, AskMessage, AskSession } from "@retainpdf/ask";
+/** 能用的 agent。和提问窗的 AskAgent 是同一个东西。 */
+export type ReaderAskAgent = AskAgent;
+export type ReaderAskHandlers = AskHandlers;
+export type ReaderAskSession = AskSession;
 export type ReaderAskPort = {
     listAgents: () => Promise<ReaderAskAgent[]>;
     /** 开一个会话（session/new）。jobId 给 agent 拿书的数据（retainpdf mcp）用。 */
@@ -41,13 +13,8 @@ export type ReaderAskPort = {
     /** 问答记录（按书存，书页白边的「?」从这里读）。不给就只记在这次打开里。 */
     threads?: ReaderAskThreadsPort | null;
 };
-/** 存下来的一条问答：问题，或者回答（带思考和用量）。 */
-export type ReaderAskMessage = {
-    role: "user" | "assistant";
-    text: string;
-    thought?: string | null;
-    usage?: Record<string, unknown> | null;
-};
+/** 存下来的一条问答（问题，或者回答带思考和用量）。和提问窗的 AskMessage 是同一个东西。 */
+export type ReaderAskMessage = AskMessage;
 /** 一次提问：问的哪儿、哪个 agent、几条问答。 */
 export type ReaderAskThread = {
     threadId: string;

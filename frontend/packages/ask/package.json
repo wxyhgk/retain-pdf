@@ -1,0 +1,66 @@
+{
+  "name": "@retainpdf/ask",
+  "version": "0.1.0",
+  "private": false,
+  "description": "RetainPDF 提问窗：ACP（Agent Client Protocol）对话窗口，接 RetainPDF 自带 agent 和本机 Claude Code / Codex / pi（说明见 README.md）",
+  "type": "module",
+  "sideEffects": [
+    "./styles/*.css"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./window": {
+      "types": "./dist/window/index.d.ts",
+      "import": "./dist/window/index.js"
+    },
+    "./acp": {
+      "types": "./dist/acp/index.d.ts",
+      "import": "./dist/acp/index.js"
+    },
+    "./styles/ask.css": "./styles/ask.css",
+    "./styles/tailwind.css": "./styles/tailwind.css"
+  },
+  "files": [
+    "dist",
+    "styles"
+  ],
+  "scripts": {
+    "clean": "node ./scripts/clean-dist.mjs",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "dev": "tsc --watch -p tsconfig.json",
+    "prepack": "npm run build"
+  },
+  "peerDependencies": {
+    "lucide-react": "^0.400.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "^2.12.0",
+    "@assistant-ui/react": "^0.15.38",
+    "@assistant-ui/react-markdown": "^0.14.26",
+    "@retainpdf/ui": "0.1.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "katex": "^0.19.1",
+    "radix-ui": "^1.8.1",
+    "react-rnd": "^10.5.3",
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "tailwind-merge": "^3.7.1",
+    "tw-animate-css": "^1.4.0",
+    "tw-shimmer": "^0.4.14"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "^7.0.2"
+  }
+}

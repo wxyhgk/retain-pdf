@@ -18,29 +18,31 @@
 
 ## 代码
 
+2026-11-26 起提问窗拆成独立的包 **`frontend/packages/ask`（`@retainpdf/ask`）**，能整个交给别人（或别的 AI）改：
+它不认识书和阅读页，接口、目录、规矩见 [它的 README](../../../frontend/packages/ask/README.md)，边界由
+`frontend/web/tests/architecture/ask-package-boundary.test.mjs` 守着。阅读器里只留「书上的哪儿」和问答记录：
+
 | 文件 | 干什么 |
 |---|---|
-| `packages/reader/src/contracts/ask.ts` | 端口：`listAgents`、`openSession`（ACP 会话：`prompt`、`cancel`、`close`，回调 `onUpdate`、`onPermission`）；`ReaderAskAnchor`（问的是哪儿） |
+| `packages/reader/src/contracts/ask.ts` | 阅读页的端口：`listAgents`、`openSession({ agentId, jobId })`、`threads`（问答记录）；`ReaderAskAnchor`（问的是书上哪儿）。agent、会话、问答的类型就是 `@retainpdf/ask` 的 |
 | `packages/reader/src/ask/anchor.ts` | 右键 / `?` 那一刻拼出处：栏、页、页内位置、悬停认出的块、选中的字、章节（书签优先，没有就前面最近的标题） |
-| `packages/reader/src/ask/acp-parts.ts` | ACP `session/update` → 一轮回答的各部分：正文、思考、工具调用、计划、子 agent、用量；速度和底下那一行 |
-| `packages/reader/src/ask/acp-adapter.ts` | 接 assistant-ui 的 `LocalRuntime`：第一句前面带出处；边收边吐；许可等用户点；换 agent 重开会话 |
-| `packages/reader/src/ask/ReaderAskWindow.tsx` | 浮动窗口（react-rnd）+ assistant-ui 的对话、输入框 + streamdown 渲染回答（KaTeX 公式）；**单独一块，第一次提问才加载** |
-| `packages/reader/src/ask/AskHeader.tsx` | 标题栏（图标为主，字放悬停）：问的那一处（页码，点了回去）、选 agent（「RetainPDF 自带模型」短写成「自带模型」）、没装的 agent（插头图标，点开是安装命令）、贴右边 / 放大、删、关 |
-| `packages/reader/src/ask/AskQuote.tsx` | 顶上引的那段：OCR 原文的 `$…$` 用 KaTeX 画；默认两行，点开看全；有原文也有译文的能切换 |
-| `packages/reader/src/ask/ask-blocks.tsx` | 往 Thread 里塞的几块：工具调用一行一个、工具分组（图标 + 次数）、计划、子 agent、「在想…」、用量（图标）、常问 |
-| `packages/reader/src/ask/page-citations.ts`、`AskPageLink.tsx` | 回答和工具调用里的页码能点：「（第 12 页）」「第 56、58 页」「p. 12」里的数字，点了阅读页跳过去 |
-| `packages/reader/src/ask/ReaderAskMarks.tsx` | 书页左边白边的「?」：这本书问过的地方，点了重新打开那次问答 |
+| `packages/reader/src/ask/ask-context.ts` | 书上的位置 → 提问窗的 `AskContext`（页码、位置、引用、发给 agent 的出处 `anchorPreamble`）；端口开会话时绑上任务号 |
+| `packages/reader/src/ask/ReaderAskPanel.tsx` | 把上面这些接到 `@retainpdf/ask/window` 的 `AskWindow` 上；**单独一块，第一次提问才加载** |
+| `packages/reader/src/ask/ReaderAskMarks.tsx`、`styles/ask-marks.css` | 书页左边白边的「?」：这本书问过的地方，点了重新打开那次问答 |
 | `packages/reader/src/ask/use-ask-threads.ts` | 问答记录：打开书读回问过的地方；每答完一轮整段存（第一次 POST，之后 PATCH）；一句没问就关不留「?」；删 |
-| `packages/reader/src/ask/thread-messages.ts` | assistant-ui 的对话 ↔ 存的问答（问题 / 回答 + 思考 + 用量和用时）；新会话第一问带上之前几轮 |
-| `packages/reader/styles/ask.css` | 窗口、回答（streamdown 出的是普通元素，按元素写样式，不用它的 Tailwind 类）、「?」 |
+| `web/src/features/reader/domain/ask-port.ts` | 宿主端口：列 agent（`GET /api/v1/ai/agents`），拼 WebSocket 地址（api_key；自带类 agent 再带模型配置、凭据引用、job_id）交给 `@retainpdf/ask/acp` 的 `openAcpWebSocketSession`；问答记录接口 |
 
-开源库（assistant-ui、streamdown、`@streamdown/math`、react-rnd、KaTeX、ACP SDK）在阅读器的 `vite.config.ts` 里是 external，
+提问窗包里的文件（`packages/ask/src/`）：`acp/parts.ts`（`session/update` → 回答的各部分）、`acp/adapter.ts`（接 assistant-ui）、
+`acp/messages.ts`（存的问答）、`acp/socket.ts`（连 ACP）、`window/`（窗口、标题栏、引用、工具调用这几块、能点的页码）、`ui/`（照搬的 assistant-ui）。
+测试在 `frontend/web/tests/ask/`。
+
+开源库（assistant-ui、react-rnd、KaTeX、ACP SDK）都是 `@retainpdf/ask` 的依赖；阅读器的 `vite.config.ts` 把 `@retainpdf/ask` 当 external，
 由 web 的 esbuild 打包、拆块：提问窗那一块约 940KB，不提问的人不加载。KaTeX 的样式和 woff2 字体由 `prepare-runtime-deps.mjs`
 拷到 `web/vendor/katex/`，打开提问窗时按宿主给的地址（`resolveKatexStylesheetUrl`）插一个 `<link>`，桌面版离线也能用。
 
 ## 回答怎么画
 
-2026-11-26 起整个对话区照搬 assistant-ui 官方的 Thread（`packages/reader/src/ask/ui/`，28 个文件按上游目录：`elements/`、`utils/`、`hooks/`、`shadcn/`；
+2026-11-26 起整个对话区照搬 assistant-ui 官方的 Thread（现在在 `packages/ask/src/ui/`，28 个文件按上游目录：`elements/`、`utils/`、`hooks/`、`shadcn/`；
 只改引用路径、文字换中文、`markdown-text` 按它的 LaTeX 文档加 remark-math / rehype-katex、`thread.aui` 显式泛型和 `MessageFooter` 插槽，每个文件开头写了改了什么）。
 复制、重新回答、改问题、版本切换、导出 Markdown、回到最下面、工具分组、思考秒数、贴图片都是它的。我们往里塞：工具调用（ACP 许可 → approval）、
 计划 / 子 agent（makeAssistantDataUI）、「在想…」（Indicator）、用量那一行（MessageFooter）、欢迎语（Welcome）。照搬目录不算手写控件棘轮。
@@ -48,10 +50,10 @@
 贴图片：png / jpeg / webp / gif，4MB 以内（后端：Anthropic 单张约 5MB，一条消息 32MB），发 ACP 的 image 块。
 
 
-2026-11-26 起回答里的几样用 assistant-ui 官方组件（MIT，从 `https://r.assistant-ui.com` 拷进 `packages/reader/src/ask/ui/`，
+2026-11-26 起回答里的几样用 assistant-ui 官方组件（MIT，从 `https://r.assistant-ui.com` 拷进 `packages/ask/src/ui/`（当时在阅读器包里），
 只改引用路径、文字换中文，方便对着上游更新）：思考 `reasoning.tsx`、工具调用 `tool-fallback.tsx`、计划 `todo-list.tsx`、子 agent `agent-status.tsx`
 （加上它们要的 `collapsible-root`、`surfaces`、`range`）。按钮、输入框经 `ui/controls.tsx` 转到 `@retainpdf/ui`，样式挂 `reader-ask-action`（只在提问窗里）。
-动画靠 `tw-animate-css`、`tw-shimmer`（`styles/entry.css` 引入）。没选 Vercel AI Elements：要 motion 和 streamdown 四个插件，工具组件绑 AI SDK 的消息类型。
+动画靠 `tw-animate-css`、`tw-shimmer`（`packages/ask/styles/tailwind.css`，阅读器的 `styles/entry.css` 引入）。没选 Vercel AI Elements：要 motion 和 streamdown 四个插件，工具组件绑 AI SDK 的消息类型。
 
 - 思考（`agent_thought_chunk`）：Reasoning 折叠条，思考中标题流光、预览区跟着滚，写完收起成「思考（N 秒）」。
 - 工具调用（`tool_call` / `tool_call_update`）：ToolFallback，一行一个（状态图标、用时），展开看参数和结果；agent 要许可（`session/request_permission`）时
