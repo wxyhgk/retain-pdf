@@ -38,6 +38,8 @@ on:
       - 'frontend/desktop/package.json'
       - 'frontend/**/package.json'
       - 'contracts/package.json'
+      - 'contracts/openui/**'
+      - 'backend/openui-check/**'
       - 'ops/deployment/docker/Dockerfile.web'
       - 'ops/deployment/docker/entrypoint-web.sh'
       - 'ops/deployment/docker/nginx-mjs.types.conf'

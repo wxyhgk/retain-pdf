@@ -251,13 +251,23 @@ jobs:
       - name: TOC agent package tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/toc-agent/tests" -q
 
-      - name: Ask agent package tests
-        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/ask-agent/tests" -q
-
-      - name: Setup Node (pi agent)
+      - name: Setup Node (openui-check, pi agent)
         uses: actions/setup-node@v6
         with:
           node-version: "22.22.0"
+
+      # 阅读页提问的互动块检查器（backend/openui-check，@openuidev/lang-core 1.2.0）。--ignore-scripts：lang-core 的
+      # postinstall 是安装统计。装在自带 agent 的测试之前：ask-agent、pi-agent 的测试真起它（没装会跳过那几条）。
+      - name: Install and test openui-check
+        env:
+          OPENUI_TELEMETRY_DISABLED: "1"
+          DO_NOT_TRACK: "1"
+        run: |
+          npm ci --ignore-scripts --prefix "$RETAIN_PDF_SERVICES_ROOT/openui-check"
+          npm test --prefix "$RETAIN_PDF_SERVICES_ROOT/openui-check"
+
+      - name: Ask agent package tests
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/ask-agent/tests" -q
 
       # backend/pi-agent（RetainPDF + pi 的扩展，TS，Node 直接去掉类型跑）。真起 pi-acp + pi 的那条（pi-acp.test.ts）
       # CI 上没装 pi，会跳过；本机装了就跑。

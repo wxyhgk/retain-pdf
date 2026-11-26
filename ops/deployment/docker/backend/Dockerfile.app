@@ -183,6 +183,21 @@ RUN test -f engine/bin/rpr-retain.js \
     && test -f node_modules/fontkit/package.json \
     && node -e 'require("./engine/src/retain/run"); require("./engine/src/retain/measured"); require("fontkit")'
 
+# 阅读页提问的互动块检查器（openui_check，2026-11-26）：backend/openui-check 是纯 JS（@openuidev/lang-core 1.2.0，
+# 依赖 ci-info、zod 也是纯 JS），和 rprengine 一样钉在构建机架构上装一次，由运行时的 node 去跑。
+# --ignore-scripts：lang-core 的 postinstall 是安装统计；再显式关一次遥测。装完用说明文件旁边的组件库跑一遍冒烟。
+FROM --platform=$BUILDPLATFORM node:22-bookworm-slim AS openuicheck
+ENV OPENUI_TELEMETRY_DISABLED=1 DO_NOT_TRACK=1
+WORKDIR /build/openui-check
+COPY backend/openui-check/package.json backend/openui-check/package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+COPY backend/openui-check/bin ./bin
+COPY backend/openui-check/lib ./lib
+COPY contracts/openui /build/contracts/openui
+RUN printf 'root = Col([t])\nt = Title("x")' \
+    | node bin/openui-check.mjs --library /build/contracts/openui/ask-openui-library.v1.json \
+    | grep -q '"ok":true'
+
 # 运行时用的 node：按目标架构拉取官方镜像，只取二进制，不在里面执行任何命令。
 FROM node:22-bookworm-slim AS noderuntime
 
@@ -218,7 +233,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     MITEX_VERSION=${MITEX_VERSION} \
     RUST_API_BIND_HOST=0.0.0.0 \
     RUST_API_PORT=41000 \
-    RUST_API_SIMPLE_PORT=42000
+    RUST_API_SIMPLE_PORT=42000 \
+    RUST_API_OPENUI_DIR=/app/contracts/openui \
+    RUST_API_OPENUI_CHECK_DIR=/app/services/openui-check
 
 WORKDIR /app
 
@@ -257,6 +274,9 @@ COPY --from=noderuntime /usr/local/bin/node /usr/local/bin/node
 COPY --from=docbuilder /build/backend/packages/retainpdf2doc/dist /app/services/retainpdf2doc/dist
 COPY --from=docbuilder /build/backend/packages/retainpdf2doc/assets /app/services/retainpdf2doc/assets
 COPY --from=rprengine /build/rendering-engine /app/services/rendering-engine
+# 阅读页提问的互动块：说明文件（前端生成、后端只读，ACP 桥按 RUST_API_OPENUI_DIR 找）和检查器（RUST_API_OPENUI_CHECK_DIR）
+COPY contracts/openui /app/contracts/openui
+COPY --from=openuicheck /build/openui-check /app/services/openui-check
 # 底座包（阶段事件、JSON 落盘、路径、本地密钥）：pipeline 依赖它。
 COPY backend/base /app/services/base
 # 公式包（LaTeX 登记表、公式检查）：pipeline 依赖它；登记表 json 随包数据装进去。
