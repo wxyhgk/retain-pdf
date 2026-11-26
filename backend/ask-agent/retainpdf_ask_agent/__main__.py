@@ -3,6 +3,8 @@
 模型配置和密钥由桥经环境变量给（`RETAIN_ASK_MODEL`、`RETAIN_ASK_BASE_URL`、`RETAIN_ASK_API_PROTOCOL`、`RETAIN_ASK_THINKING`、
 `RETAIN_ASK_API_KEY`）。握手带了书（`job_id`）时桥再给读书用的：`RETAIN_ASK_JOB_ID`、`RETAIN_ASK_DOCUMENT_ID`、
 `RETAIN_ASK_BACKEND_URL`（后端自己的回环地址）、`RETAIN_ASK_BACKEND_KEY`（读书用的密钥），有了就给模型读书的工具（`tools.py`）。
+记忆（2026-11-26，`memory.py`）：有后端地址和密钥就给 `remember` / `search_memories`（不要书）；握手带了对话时桥另给
+`RETAIN_ASK_CONVERSATION_ID`，开会话时从后端取记忆和最近几轮。
 互动块（`openui.py`）：桥给 `RETAIN_OPENUI_PROMPT`、`RETAIN_OPENUI_LIBRARY`、`RETAIN_OPENUI_CHECK`、`RETAIN_OPENUI_NODE`，
 说明文件读得到就开（系统提示词带 L0，多两个工具），读不到照常回答。
 stdout 只写协议消息：别的模块的 print 一律改到 stderr。
@@ -30,6 +32,7 @@ def main() -> int:
         print("retainpdf_ask_agent: RETAIN_ASK_MODEL and RETAIN_ASK_API_KEY are required", file=sys.stderr)
         return 2
     protocol = os.environ.get("RETAIN_ASK_API_PROTOCOL", "").strip()
+    from retainpdf_ask_agent.memory import make_memory_tools
     from retainpdf_ask_agent.openui import openui_tools_from_env
     from retainpdf_ask_agent.server import AskAgent
     from retainpdf_ask_agent.tools import make_book_tools
@@ -53,7 +56,15 @@ def main() -> int:
         api_key=os.environ.get("RETAIN_ASK_BACKEND_KEY", "").strip(),
     )
     openui = openui_tools_from_env()
-    AskAgent(stream_fn, model=model, context_size=context, out=protocol_out, tools=tools, openui=openui, thinking=thinking).serve(sys.stdin)
+    memory = make_memory_tools(
+        base_url=os.environ.get("RETAIN_ASK_BACKEND_URL", "").strip(),
+        api_key=os.environ.get("RETAIN_ASK_BACKEND_KEY", "").strip(),
+        conversation_id=os.environ.get("RETAIN_ASK_CONVERSATION_ID", "").strip(),
+        document_id=os.environ.get("RETAIN_ASK_DOCUMENT_ID", "").strip(),
+        job_id=os.environ.get("RETAIN_ASK_JOB_ID", "").strip(),
+    )
+    AskAgent(stream_fn, model=model, context_size=context, out=protocol_out, tools=tools, openui=openui, thinking=thinking,
+             memory=memory).serve(sys.stdin)
     return 0
 
 

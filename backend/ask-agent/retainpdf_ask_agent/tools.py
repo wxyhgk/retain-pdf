@@ -78,12 +78,15 @@ HttpGet = Callable[[str, float], tuple[int, str, bytes]]
 
 @dataclass
 class ToolResult:
-    """一次工具调用的结果：`text` 给模型，`images` 是 (MIME, base64) 跟着给模型看，`summary` 是给用户看的一句（ACP 工具卡片）。"""
+    """一次工具调用的结果：`text` 给模型，`images` 是 (MIME, base64) 跟着给模型看，`summary` 是给用户看的一句（ACP 工具卡片），
+    `meta` 跟着卡片给前端。"""
 
     text: str
     images: list[tuple[str, str]] = field(default_factory=list)
     is_error: bool = False
     summary: str = ""
+    # 放进 ACP `tool_call_update` 的 `_meta.retainpdf` 的东西（2026-11-26：`remember` 的 `{"memory": {...}}`）
+    meta: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
