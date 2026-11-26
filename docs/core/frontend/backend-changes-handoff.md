@@ -12,6 +12,34 @@
 
 ---
 
+## 阅读页提问：第二个自带 agent「RetainPDF + pi」（feat/pi-agent）
+
+2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「RetainPDF + pi」，方案
+[RetainPDF 加 pi](../../ops/planning/reader-ask/20261126-RetainPDF加pi.md)。`GET /api/v1/ai/agents` 的第二行多了
+`{"id": "retainpdf-pi", "name": "RetainPDF + pi", "kind": "builtin", …}`：用设置里的模型，agent 是本机装的 pi（加我们的读书扩展）。
+只在本机 agent 的闸门里能用（单机、本机打开），没装 pi-acp / pi 时 `available: false`，`reason`、`install` 和本机 agent 一样。
+
+**不改前端时**：列表里会显示这一行，但前端现在只给 `id === "retainpdf"` 带模型配置，点了它握手缺 `model` / `credential_ref`，回 `400`。
+
+前端要改的：
+
+| 文件 | 旧写法 | 新写法 |
+|---|---|---|
+| `frontend/web/src/features/reader/domain/ask-port.ts` 的 `toReaderAgents` | `const builtin = id === BUILTIN_AGENT_ID` | `const builtin = row.kind === "builtin"`（两个自带的都「用设置里的翻译模型」、都要设置里配了模型；`acceptsImages` 也是两个都 `true`） |
+| 同上，`openSession` | `agentId === BUILTIN_AGENT_ID` 时才带 `builtinModelQuery()`、`credential_ref`（`ensureAskCredential`）、`job_id` | 按列表里这一行的 `kind === "builtin"` 判断（`openSession` 拿不到行的话，可以先认 `agentId === "retainpdf" \|\| agentId === "retainpdf-pi"`），三样都带上 |
+| 同上，`description` | 自带的写「用设置里的翻译模型」 | `retainpdf-pi` 可以用后端给的 `description`（「用设置里的模型，agent 骨架是本机装的 pi……」），或写「用设置里的翻译模型（pi）」 |
+| `frontend/web/tests/reader/reader-ask-port.test.mjs`（可选） | 只有 `retainpdf` 一个 builtin | 加一行 `retainpdf-pi`，测它也带模型配置 |
+
+连上以后和 `retainpdf` 的差别（pi-acp 0.0.35 的行为，问答窗照 ACP 画就行）：
+
+- 工具卡片的 `title` 是工具名（`read_pages`、`search_book`、`view_page`），`kind` 是 `other`；`rawInput` 是模型给的参数，可以照 Python 版自己拼「读第 5、6 页」。
+- 没有 `_meta.retainpdf.usage`：`usage_update` 只有 `used` / `size`，`session/prompt` 的结果只有 `stopReason`，用量那一行只能显示上下文占了多少。
+- 多了 `session_info_update`（会话标题，pi-acp 取问题开头）和 `available_commands_update`（pi-acp 的斜杠命令：`compact`、`export`……），不用显示。
+- `initialize` 回 `loadSession: true`（pi 的会话存在后端的 `<数据目录>/ask-pi/sessions`），以后做「重新打开接着问」可以用 `session/load`。
+- 模型要是想调别的工具（bash 之类）会看到一张 `kind: "execute"` 的失败卡片（「Tool bash not found」），这是被锁住了，不是出错。
+
+---
+
 ## 阅读页提问：本机 agent 改从 ACP 官方登记表来（feat/acp-registry）
 
 2026-11-26，只增不改，见 [阅读页提问](../../api/16-AI/01-阅读页提问.md) 的「能用哪些 agent」，方案
