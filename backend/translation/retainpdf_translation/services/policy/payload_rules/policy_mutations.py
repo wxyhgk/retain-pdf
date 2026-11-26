@@ -11,6 +11,7 @@ from retainpdf_translation.core.item_reader import item_policy_translate
 from retainpdf_translation.core.item_reader import item_structure_role
 
 from retainpdf_translation.core.payload.parts.common import RESETTABLE_LABEL_PREFIXES
+from retainpdf_translation.core.payload.parts.policy_state import ENGINE_KEEP_ORIGIN_LABELS
 from retainpdf_translation.core.payload.parts.policy_state import KEEP_ORIGIN_LABEL
 from retainpdf_translation.core.payload.parts.policy_state import KEPT_ORIGIN_STATUS
 from retainpdf_translation.core.payload.parts.policy_state import mark_policy_skip
@@ -38,8 +39,10 @@ def reset_policy_state(payload: list[dict]) -> int:
         # A completed model/fast-path decision is a translation result, not
         # a temporary page-policy label. Resetting it on resume would reopen
         # committed work before the batch fast path can run again.
+        # agent 引擎自己标的保留原文同理：页面策略不会再标一次，打回「要翻」续跑必报 regressed（S01）。
+        # 只认这几个标签，不是「凡 kept_origin 都不动」：页面策略自己的 skip（标题、参考文献区……）续跑时照旧重判。
         if (
-            label == KEEP_ORIGIN_LABEL
+            (label == KEEP_ORIGIN_LABEL or label in ENGINE_KEEP_ORIGIN_LABELS)
             and item.get("final_status") == KEPT_ORIGIN_STATUS
             and item.get("should_translate") is False
         ):

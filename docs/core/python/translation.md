@@ -213,6 +213,10 @@ OCR 做完的那一轮不扣、全部翻完，再走和整本一次翻一样的�
   把失败块按同一条规则改记，不用重翻。`--apply` 走修订的提交入口（`workflow/revision.py` 的 `commit_item_maintenance`）：
   持断点的锁，页文件、断点页哈希和快照、修订日志（每块一条 `source=maintenance`）一起前进；断点还没提交时拒绝（2026-11-26，
   以前直接改页文件，渲染按断点哈希读不出、下次修订被快照换回去）。质检本来只查译好的块，失败、保留原文的块都不进 `qa_violations`。
+  这几个标签登记在 `core/payload/parts/policy_state.py::ENGINE_KEEP_ORIGIN_LABELS`：续跑时页面策略的 `reset_policy_state` 和模型定的
+  `skip_model_keep_origin` 一样不打回「要翻」（`final_status=kept_origin` 且 `should_translate=False` 才算；2026-11-26，以前打回后
+  `update("policy_ready")` 报 regressed，每次重试都死在这里）。页面策略自己的 skip（标题、参考文献区……）续跑时照旧重判。
+  引擎新加保留原文的标签要登记进去，`test_agent_flow.py` 扫源码钉着。
 - agent 交回 `fallback_source` 的块：`mark_translation_failed_policy_state` + 死信诊断（`fallback_to=dead_letter_queue`，
   `degradation_reason=agent_fallback_source`），不卡发布门槛。
 - 额度用完、密钥不对、一直限流（agent 的 `StopRun`）：抛 `AgentRunStopped`，阶段失败，进度留着，重试时从断点接着翻、已缓存的请求不再花钱。
@@ -240,6 +244,12 @@ OCR 做完的那一轮不扣、全部翻完，再走和整本一次翻一样的�
    direct_typst 下 `$` 不成对时整段放进第一个框，不切。agent 引擎一样（`translation-agent` 的 `units.py`、`breaks.py`）。
    只按要翻的成员切：组里夹着不翻的块（`should_translate=False`）时它不分译文，以前分给它的那一段被扔掉、译文少一截
    （`core/payload/parts/apply.py::apply_group_translated_entry`，2026-11-26）。
+
+续跑读页不改已有译文（`core/payload/translations.py::migrate_translations`，2026-11-26）：`$` 不成对、译文字段是模型的 JSON 壳，
+只打一行 `translation load: … keeps N suspect translations as is` 日志，不清字段、不写回磁盘。以前清空 6 个译文字段并落盘，
+`` `echo $HOME` `` 这种 agent 放过的译文也被抹掉，块变回待办，断点报 regressed。「`$` 成对没有」只有一份判定
+`retainpdf_math.spans.has_balanced_inline_math_delimiters`（行内代码里的 `$`、`\$` 不算），classic 的质量校验、请求缓存、读页日志共用；
+agent 核心只许用标准库，`checks.dollars_balanced` 是抄本，`test_dollar_balance.py` 钉着两边一致、代码外面不成对的照样拦。
 
 续跑时重新分组（`core/orchestration/units.py::keep_translated_blocks_out_of_mixed_groups`，2026-11-26）：上一轮整组一起译完的单元
 （成员记着同一段整组译文、而且都在新组里）留在一起，只把没译的块挪出去另外成组；拆不回原单元的块挪出来时单元译文换成它自己那一段，

@@ -37,6 +37,34 @@ def test_reset_policy_does_not_freeze_unfinished_keep_origin_label(final_status:
     assert item["final_status"] == final_status
 
 
+@pytest.mark.parametrize(
+    "label", ["skip_no_prose", "skip_citation_only", "skip_running_header", "skip_back_matter_index"]
+)
+def test_reset_policy_keeps_engine_owned_keep_origin(label: str) -> None:
+    """S01：agent 引擎在页面策略之后自己标的保留原文，续跑的页面策略不打回「要翻」（页面策略不会再标一次，会报 regressed）。"""
+    item = {"policy_translate": True, "source_text": "35. Keenan 2013, xxiv."}
+    mark_policy_skip(item, label)
+    expected = dict(item)
+
+    assert reset_policy_state([item]) == 0
+    assert all(item[key] == value for key, value in expected.items())
+
+
+@pytest.mark.parametrize(("should_translate", "final_status"), [(True, "kept_origin"), (False, ""), (False, "failed")])
+def test_reset_policy_reopens_inconsistent_engine_keep_origin(should_translate: bool, final_status: str) -> None:
+    item = {
+        "policy_translate": True,
+        "classification_label": "skip_no_prose",
+        "should_translate": should_translate,
+        "skip_reason": "skip_no_prose",
+        "final_status": final_status,
+    }
+
+    assert reset_policy_state([item]) == 1
+    assert item["should_translate"] is True
+    assert item["classification_label"] == ""
+
+
 def test_reset_policy_still_recomputes_page_policy_labels() -> None:
     item = {"policy_translate": True}
     mark_policy_skip(item, "skip_title")

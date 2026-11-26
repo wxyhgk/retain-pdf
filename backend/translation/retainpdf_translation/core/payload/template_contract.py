@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-import re
+
+from retainpdf_math.spans import has_balanced_inline_math_delimiters
+from retainpdf_translation.core.payload.parts.result_entries import unwrap_json_translated_text
 
 
 TRANSLATED_TEXT_FIELDS = (
@@ -12,7 +14,6 @@ TRANSLATED_TEXT_FIELDS = (
     "group_protected_translated_text",
     "group_translated_text",
 )
-UNESCAPED_INLINE_DOLLAR_RE = re.compile(r"(?<!\\)\$")
 REQUIRED_CONTRACT_FIELDS = (
     "block_kind",
     "layout_role",
@@ -26,44 +27,16 @@ REQUIRED_CONTRACT_FIELDS = (
 )
 
 
-def unwrap_json_translated_text(text: str) -> tuple[str, str] | None:
-    import json
+def loaded_translation_suspects(record: dict) -> list[str]:
+    """读页时看出来的可疑译文：`json_shell`（译文字段是模型的 JSON 壳）、`math_delimiter_unbalanced`（`$` 不成对）。
 
-    raw = str(text or "").strip()
-    if not raw.startswith("{") or ("translated_text" not in raw and "translations" not in raw):
-        return None
-    try:
-        payload = json.loads(raw)
-    except Exception:
-        return None
-    if not isinstance(payload, dict):
-        return None
-    if "translated_text" in payload:
-        decision = str(payload.get("decision", "translate") or "translate").strip() or "translate"
-        translated_text = str(payload.get("translated_text", "") or "").strip()
-        return decision, translated_text
-    translations = payload.get("translations", [])
-    if not isinstance(translations, list) or len(translations) != 1 or not isinstance(translations[0], dict):
-        return None
-    decision = str(translations[0].get("decision", "translate") or "translate").strip() or "translate"
-    translated_text = str(translations[0].get("translated_text", "") or "").strip()
-    return decision, translated_text
-
-
-def has_balanced_inline_math_delimiters(text: str) -> bool:
-    return len(UNESCAPED_INLINE_DOLLAR_RE.findall(text or "")) % 2 == 0
-
-
-def sanitize_loaded_translation_record(record: dict) -> bool:
-    changed = False
-    for field in TRANSLATED_TEXT_FIELDS:
-        current = str(record.get(field, "") or "").strip()
-        unwrapped = unwrap_json_translated_text(current)
-        if unwrapped is None:
-            continue
-        decision, translated_text = unwrapped
-        record[field] = "" if decision == "keep_origin" else translated_text
-        changed = True
+    只看不改（2026-11-26，S02、T-N11）：以前这里清空 6 个译文字段并写回磁盘，`$` 数法又不排除行内代码，
+    `` `echo $HOME` `` 这种 agent 校验放过的译文也被抹掉，块变回待办、断点报 regressed；JSON 壳里 keep_origin 的只清了译文、
+    `final_status` 还是 translated。写入时（`normalize_result_entry`）早就解壳，校验也拦 `$` 不成对，盘上有的只会是老版本留下的，
+    不需要迁移。以后由续跑的调和步骤标 `quality=suspect`、低优先级重翻（状态管理设计第 2 步）。"""
+    suspects: list[str] = []
+    if any(unwrap_json_translated_text(str(record.get(field, "") or "")) is not None for field in TRANSLATED_TEXT_FIELDS):
+        suspects.append("json_shell")
     if str(record.get("math_mode", "") or "").strip() == "direct_typst":
         translated_text = str(
             record.get("translation_unit_protected_translated_text")
@@ -73,14 +46,8 @@ def sanitize_loaded_translation_record(record: dict) -> bool:
             or ""
         ).strip()
         if translated_text and not has_balanced_inline_math_delimiters(translated_text):
-            for field in TRANSLATED_TEXT_FIELDS:
-                if record.get(field):
-                    record[field] = ""
-                    changed = True
-            if record.get("final_status"):
-                record["final_status"] = ""
-                changed = True
-    return changed
+            suspects.append("math_delimiter_unbalanced")
+    return suspects
 
 
 def missing_contract_fields(record: dict) -> list[str]:

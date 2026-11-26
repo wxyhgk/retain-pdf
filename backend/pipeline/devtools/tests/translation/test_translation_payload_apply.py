@@ -335,7 +335,8 @@ def test_load_translations_is_byte_preserving_for_legacy_payload(tmp_path) -> No
     assert path.read_bytes() == original
 
 
-def test_migrate_translations_sanitizes_persisted_json_shell(tmp_path) -> None:
+def test_migrate_translations_leaves_persisted_json_shell_alone(tmp_path, capsys) -> None:
+    """2026-11-26（S02、T-N11）：读页不再解壳改写译文，只打日志；写入时（normalize_result_entry）早就解壳了。"""
     path = tmp_path / "page-030-deepseek.json"
     path.write_text(
         """
@@ -352,9 +353,10 @@ def test_migrate_translations_sanitizes_persisted_json_shell(tmp_path) -> None:
 
     payload = migrate_translations(path, strict_contract=False)
 
-    assert payload[0]["translated_text"] == "(1) 计算效率、成本与精度。"
-    assert payload[0]["protected_translated_text"] == "(1) 计算效率、成本与精度。"
-    assert "translations" not in path.read_text(encoding="utf-8")
+    assert payload[0]["translated_text"].startswith('{"translations"')
+    assert payload[0]["protected_translated_text"].startswith('{"translated_text"')
+    assert '\\"translations\\"' in path.read_text(encoding="utf-8")
+    assert "p030-b010(json_shell)" in capsys.readouterr().out
 
 
 def test_load_translations_preserves_persisted_external_group_metadata(tmp_path) -> None:

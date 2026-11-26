@@ -67,6 +67,12 @@ _WORD_INSIDE_RE = re.compile(r"[A-Za-z]{3,}")
 _UNESCAPED_DOLLAR_RE = re.compile(r"(?<!\\)\$")
 
 
+def dollars_balanced(text: str) -> bool:
+    """未转义的 `$` 成对（`\\$` 是字面美元符，行内代码里的 `$` 不算）。和 `retainpdf_math.spans.has_balanced_inline_math_delimiters`
+    是同一条规则（classic 校验、读页日志用那一份）；核心只许用标准库，所以抄一份，翻译测试 `test_dollar_balance.py` 钉着两边一致。"""
+    return len(_UNESCAPED_DOLLAR_RE.findall(CODE_RE.sub(" ", text or ""))) % 2 == 0
+
+
 def _opens_formula(text: str, start: int) -> bool:
     close = _UNESCAPED_DOLLAR_RE.search(text, start + 1)
     if close is None:
@@ -227,7 +233,7 @@ def check_block(source: str, translation: str | None) -> list[dict]:
     # 公式不和原文逐个比（2026-10-31 用户定）：模型把 "$n_{L}^{max}$" 写成 "n_L^max"、数字挪进公式，以前判错、重翻两次还不合格就退回原文，
     # 整段英文比公式写得不像糟得多。只查 `$` 成对——不成对的话后面整段都会被当成公式排。模型顺手改了一点点的公式照旧换回原文写法（restore_formulas）
     src_formulas = Counter(_formula_key(f) for f in FORMULA_RE.findall(CODE_RE.sub(" ", source)))
-    if len(re.findall(r"(?<!\\)\$", CODE_RE.sub(" ", translation))) % 2:
+    if not dollars_balanced(translation):
         issues.append(_issue("formula_unbalanced", "error", "`$` 不成对"))
     lost_code = Counter(CODE_RE.findall(source)) - Counter(CODE_RE.findall(translation))
     if lost_code:

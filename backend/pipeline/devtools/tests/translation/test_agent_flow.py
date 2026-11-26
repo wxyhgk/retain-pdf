@@ -226,6 +226,47 @@ def test_a_stopped_run_fails_the_stage_and_resumes_without_paying_again(tmp_path
     assert tools == ["plain_text", "submit_review"], "only page 2 is requested again"
 
 
+def test_a_stopped_run_with_engine_kept_blocks_resumes_past_policy_ready(tmp_path: Path, fake_transport) -> None:
+    """S01（2026-11-26）：agent 引擎在页面策略之后自己标的保留原文（这里是只有引注的 `skip_citation_only`）已经进了断点；
+    续跑时页面策略的 reset_policy_state 把它打回「要翻」，`update("policy_ready")` 报 regressed，每次重试都死在这里。"""
+    request = _request(tmp_path)
+    document = json.loads(request.source_json_path.read_text(encoding="utf-8"))
+    document["pages"][0]["blocks"].append(_block(0, 3, "body", "35. Keenan 2013, xxiv.", [50, 250, 550, 280]))
+    request.source_json_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
+
+    fake_transport(FakeModel(stop_after=3))  # 通读 + 第 1 页翻译 + 第 1 页审校，第 2 页时额度用完
+    with pytest.raises(agent_flow.AgentRunStopped, match="quota_exhausted"):
+        execute_translation_request(request)
+    note = _pages(tmp_path / "translated")["p001-b003"]
+    assert (note["should_translate"], note["final_status"], note["skip_reason"]) == (False, "kept_origin", "skip_citation_only")
+
+    model = fake_transport(FakeModel())
+    execute_translation_request(request)
+    tools = [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies]
+    assert tools == ["plain_text", "submit_review"], "只补第 2 页"
+    items = _pages(tmp_path / "translated")
+    note = items["p001-b003"]
+    assert (note["should_translate"], note["final_status"], note["classification_label"]) == (False, "kept_origin", "skip_citation_only")
+    assert items["p002-b001"]["final_status"] == "translated"
+
+
+def test_every_engine_keep_origin_label_survives_the_policy_reset() -> None:
+    """引擎和 reclassify 标保留原文用的每个标签都要登记在 ENGINE_KEEP_ORIGIN_LABELS，否则续跑时页面策略把它打回「要翻」（S01）。"""
+    import inspect
+
+    from retainpdf_translation.core.payload.parts.policy_state import ENGINE_KEEP_ORIGIN_LABELS
+    from retainpdf_translation_agent import checks
+    from retainpdf_translation_agent_engine import reclassify
+
+    labels = set(re.findall(r'mark_policy_skip\(item, "(skip_\w+)"\)', inspect.getsource(agent_flow)))
+    labels |= set(re.findall(r'return "(skip_\w+)"', inspect.getsource(checks.nothing_to_translate)))
+    assert labels == {"skip_no_prose", "skip_citation_only", "skip_running_header", "skip_back_matter_index"}
+    assert labels <= ENGINE_KEEP_ORIGIN_LABELS
+    # 其余地方只用 nothing_to_translate 给的原因
+    assert "mark_policy_skip(item, reason)" in inspect.getsource(reclassify)
+    assert "mark_policy_skip(item, reason)" in inspect.getsource(agent_flow.skip_nothing_to_translate)
+
+
 def test_agent_engine_skips_translation_preparation(tmp_path: Path, fake_transport) -> None:
     """agent 自带通读：请求里带了 preparation 也不跑术语预扫、术语审定（不重复花钱）。"""
     model = fake_transport(FakeModel())
