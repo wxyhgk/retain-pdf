@@ -71,3 +71,14 @@ test("深浅色按提问窗底色判断：亮度 < 0.45 算深色", async () => 
   assert.ok(luminance("rgba(20, 22, 28, 1)") < 0.1);
   assert.equal(luminance("transparent"), null);
 });
+
+test("闪卡不写 hint 时显示中文「点一下翻面」（组件库默认是英文 Tap to flip），写了就用写的", async () => {
+  const React = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { askOpenUILibrary, FLASHCARD_HINT } = await import("../../../packages/ask/src/openui/library.ts");
+  const Card = askOpenUILibrary.components.Flashcard.component;
+  const html = renderToStaticMarkup(React.createElement(Card, { props: { front: "正面", back: "背面" }, renderNode: (node) => node }));
+  assert.match(html, new RegExp(FLASHCARD_HINT));
+  assert.doesNotMatch(html, /Tap to flip/);
+  assert.match(renderToStaticMarkup(React.createElement(Card, { props: { front: "正面", back: "背面", hint: "翻过来看" }, renderNode: (node) => node })), /翻过来看/);
+});

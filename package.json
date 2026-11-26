@@ -38,6 +38,9 @@
     "electron@44.4.3": true
   },
   "overrides": {
-    "worker-f": "0.1.20"
+    "worker-f": "0.1.20",
+    "@openuidev/intelligent-ui-library": {
+      "katex": "^0.19.1"
+    }
   }
 }

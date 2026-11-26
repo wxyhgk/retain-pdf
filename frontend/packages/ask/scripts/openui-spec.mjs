@@ -60,6 +60,7 @@ const OUR_RULES = [
   "Write every user-facing string inside the block in Simplified Chinese, unless the user writes in another language.",
   "Do not use image URLs or videos: the reader may be offline. Draw with Svg instead. Use HtmlView only for an animation or game that Svg cannot do.",
   "An @ToAssistant message becomes the user's next question: write it as a short first-person sentence in Chinese.",
+  "Strings inside the block are not LaTeX: never write $...$ in Text, Title, Flashcard or any other string. Put every formula in Math(tex), or Math(tex, true) inside a Text list for an inline formula.",
 ];
 
 function keepRule(rule) {
@@ -89,6 +90,8 @@ function intro(sections) {
 回答照常用简体中文 Markdown。讲公式、数据、步骤、参数变化、要记住的要点时，如果一个能动手的小界面比文字更清楚（拖滑块看结果怎么变、闪卡、对比表、图表、示意图、分步演示），可以在回答里插一个互动块：用 \`\`\`${FENCE} 代码块包住一段 OpenUI Lang 程序，阅读页会把它画成能操作的界面。不需要就别写；一个回答最多一两个互动块。
 
 写之前先用 openui_spec 取说明（一次取齐要用的几段，取过的不用再取）：第一次一定要取 \`core\`，再按要用的组件和函数取对应的段。写完先用 openui_check 检查，有错改完再放进回答。
+
+互动块里的字符串不认 \`$…$\`，下划线还会被当成斜体：公式（包括带下标、上标的符号）一律用 \`Math("…")\` 组件（行内用 \`Math("…", true)\` 放进 Text 的列表里）。没取过说明、没检查过的互动块不要写。
 
 可取的段：
 ${catalog}`;
