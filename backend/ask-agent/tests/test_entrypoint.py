@@ -71,3 +71,35 @@ def test_a_question_end_to_end_over_stdio():
         assert server.bodies[0]["model"] == "fake-model" and server.bodies[0]["stream"] is True  # type: ignore[attr-defined]
     finally:
         server.shutdown()
+
+
+def test_the_bridge_environment_turns_on_interactive_blocks():
+    """桥给的 `RETAIN_OPENUI_*` → 系统提示词带 L0、工具多 openui_spec / openui_check（没有书也有）。"""
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[3]
+    server = ThreadingHTTPServer(("127.0.0.1", 0), FakeModel)
+    server.bodies = []  # type: ignore[attr-defined]
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    env = _env(f"http://127.0.0.1:{server.server_address[1]}/v1")
+    env.update({"RETAIN_OPENUI_PROMPT": str(repo / "contracts/openui/ask-openui-prompt.v1.json"),
+                "RETAIN_OPENUI_LIBRARY": str(repo / "contracts/openui/ask-openui-library.v1.json"),
+                "RETAIN_OPENUI_CHECK": str(repo / "backend/openui-check/bin/openui-check.mjs"),
+                "RETAIN_OPENUI_NODE": sys.executable})
+    try:
+        process = subprocess.Popen([sys.executable, "-m", "retainpdf_ask_agent"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, text=True, encoding="utf-8", env=env)
+        process.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 1, "method": "session/new", "params": {}}) + "\n")
+        process.stdin.flush()
+        session = json.loads(process.stdout.readline())["result"]["sessionId"]
+        process.stdin.write(json.dumps({"jsonrpc": "2.0", "id": 2, "method": "session/prompt",
+                                        "params": {"sessionId": session, "prompt": [{"type": "text", "text": "打个招呼"}]}}) + "\n")
+        process.stdin.close()
+        process.stdout.read()
+        process.wait(timeout=30)
+    finally:
+        server.shutdown()
+    body = server.bodies[0]  # type: ignore[attr-defined]
+    assert [tool["function"]["name"] for tool in body["tools"]] == ["openui_spec", "openui_check"]
+    intro = json.loads((repo / "contracts/openui/ask-openui-prompt.v1.json").read_text(encoding="utf-8"))["intro"].strip()
+    assert body["messages"][0]["content"].endswith(intro)
