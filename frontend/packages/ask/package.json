@@ -35,7 +35,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dev": "tsc --watch -p tsconfig.json",
     "prepack": "npm run build",
-    "generate:openui": "node ./scripts/openui-spec.mjs"
+    "generate:openui": "node ./scripts/openui-spec.mjs",
+    "generate:icons": "node ./scripts/brand-icons.mjs"
   },
   "peerDependencies": {
     "lucide-react": "^0.400.0",
@@ -64,6 +65,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@lobehub/icons-static-svg": "^1.106.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "typescript": "^7.0.2"

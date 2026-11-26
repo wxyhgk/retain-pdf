@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 
 import { normalizeConfigOptions, pendingConfig } from "../../../packages/ask/src/acp/config.ts";
 import { PermissionStore, createAcpChatAdapter } from "../../../packages/ask/src/acp/adapter.ts";
-import { effortName, splitConfig, toModelOptions } from "../../../packages/ask/src/window/AskModelPicker.tsx";
+import { effortColor, splitConfig, toModelOptions } from "../../../packages/ask/src/window/AskModelPicker.tsx";
 
 /** 本机 Claude Code 适配器（claude-agent-acp）session/new 真给的样子（2026-11-26 本机握手抄的，选项删短了）。 */
 const CLAUDE_CODE = [
@@ -29,15 +29,24 @@ test("用户选过的值：只设和现在不一样、agent 又认的", () => {
   assert.deepEqual(pendingConfig(options, { model: "haiku", effort: "high", mode: "nope", gone: "x", flag: false }), [["model", "haiku"], ["flag", false]]);
 });
 
-test("选择器：模型、思考强度分出来，别的进「更多」；每个模型带同一份思考档位，名字换中文", () => {
+test("选择器：模型、思考强度分出来，别的进「更多」；每个模型带同一份思考档位，档位和名字都照 agent 给的", () => {
   const { model, thought, rest } = splitConfig(normalizeConfigOptions(CLAUDE_CODE));
   assert.equal(model.id, "model");
   assert.equal(thought.id, "effort");
   assert.deepEqual(rest.map((option) => option.id), ["fast", "mode", "flag"]);
   const models = toModelOptions(model, thought);
-  assert.deepEqual(models[1], { id: "opus", name: "Opus", efforts: [{ id: "low", name: "低" }, { id: "high", name: "高" }, { id: "max", name: "最高" }] });
-  assert.equal(effortName("xhigh", "XHigh"), "很高");
-  assert.equal(effortName("turbo", "Turbo"), "Turbo", "认不出的照 agent 给的名字");
+  const { icon, ...opus } = models[1];
+  assert.ok(icon, "模型带厂商图标");
+  assert.deepEqual(opus, { id: "opus", name: "Opus", efforts: [{ id: "low", name: "Low" }, { id: "high", name: "High" }, { id: "max", name: "Max" }] });
+});
+
+test("思考强度的颜色只看档位在 agent 列表里的位置：第一档灰，往后绿 → 橙 → 红，几档都行", () => {
+  assert.equal(effortColor(0, 5), "var(--muted)");
+  assert.equal(effortColor(1, 5), "color-mix(in srgb, var(--warn) 50%, var(--ok))");
+  assert.equal(effortColor(2, 5), "color-mix(in srgb, var(--warn) 100%, var(--ok))");
+  assert.equal(effortColor(4, 5), "color-mix(in srgb, var(--danger) 100%, var(--warn))");
+  assert.equal(effortColor(1, 2), "color-mix(in srgb, var(--danger) 100%, var(--warn))", "两档：第二档就是最强");
+  assert.equal(effortColor(-1, 3), "var(--muted)", "当前值不在列表里");
 });
 
 test("适配层：提前开会话交出设置项并把用户选过的再设一次；agent 推来的变化也交出去；发问用同一个会话", async () => {

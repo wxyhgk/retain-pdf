@@ -136,7 +136,10 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
     const pages = useMemo(() => (onJumpToPage ? { pageCount, jump: onJumpToPage } : null), [onJumpToPage, pageCount]);
     useEffect(() => {
         const onKey = (event) => {
-            if (event.key !== "Escape")
+            if (event.key !== "Escape" || event.defaultPrevented)
+                return;
+            // 开着弹层（选 agent、选模型、用量、更多设置）时 Esc 只关弹层，不关窗。
+            if (document.querySelector("[data-radix-popper-content-wrapper]"))
                 return;
             const typing = event.target?.closest?.("textarea, input, select");
             if (typing && `${typing.value || ""}`.trim())

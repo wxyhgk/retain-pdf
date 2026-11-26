@@ -2,10 +2,13 @@
 // 浮动 / 贴右边 / 放大、删、关。字都放悬停提示里。
 import type { ReactElement } from "react";
 import { Copy, Maximize2, MapPin, MessageCircleQuestion, Minimize2, PanelRight, PanelRightClose, Plug, Trash2, X } from "lucide-react";
-import { Button, Select } from "@retainpdf/ui";
+import { Button } from "@retainpdf/ui";
 
 import type { AskAgent, AskContext } from "../contract.js";
 import { useCopyToClipboard } from "../ui/hooks/use-copy-to-clipboard.js";
+import { ModelSelectorContent, ModelSelectorRoot, ModelSelectorTrigger } from "../ui/elements/model-selector.js";
+import type { ModelOption } from "../ui/utils/model-selection.js";
+import { AgentIcon } from "./BrandIcon.js";
 
 export type AskWindowMode = "float" | "dock" | "full";
 
@@ -48,6 +51,31 @@ function InstallMenu({ agents }: { agents: readonly AskAgent[] | null }): ReactE
   );
 }
 
+/** 选 agent：按钮上只有图标（悬停写名字），点开是带图标的列表（assistant-ui 的 ModelSelector，agent 多时能搜）。没装的灰着。 */
+export function agentOptions(agents: readonly AskAgent[]): ModelOption[] {
+  return agents.map((agent) => ({
+    id: agent.id,
+    name: shortAgentName(agent.name),
+    ...(agent.available === false ? { description: agent.reason || "没装" } : agent.description ? { description: agent.description } : {}),
+    disabled: agent.available === false,
+    keywords: [agent.name],
+    icon: <AgentIcon id={agent.id} name={agent.name} />,
+  }));
+}
+
+function AgentPicker({ agents, agentId, onAgent }: { agents: readonly AskAgent[] | null; agentId: string; onAgent: (id: string) => void }): ReactElement {
+  const list = agents || [];
+  const current = list.find((agent) => agent.id === agentId);
+  return (
+    <ModelSelectorRoot models={agentOptions(list)} value={agentId} onValueChange={onAgent}>
+      <ModelSelectorTrigger variant="ghost" size="sm" className="ask-agent-trigger" aria-label={current ? `用的 agent：${current.name}` : "选 agent"} title={current?.name || "选 agent"} disabled={!list.length}>
+        {current ? <AgentIcon id={current.id} name={current.name} size={16} /> : null}
+      </ModelSelectorTrigger>
+      <ModelSelectorContent align="start" searchable={list.length > 8} className="ask-agent-list" />
+    </ModelSelectorRoot>
+  );
+}
+
 export type AskHeaderProps = {
   context: AskContext;
   agents: readonly AskAgent[] | null;
@@ -71,21 +99,7 @@ export function AskHeader({ context, agents, agentId, onAgent, mode, onMode, onS
         <MapPin size={11} aria-hidden />
         {context.page ?? ""}
       </Button>
-      <Select
-        size="sm"
-        className="ask-agent"
-        aria-label="用哪个 agent"
-        title={agents?.find((agent) => agent.id === agentId)?.name || ""}
-        value={agentId}
-        onChange={(event) => onAgent(event.target.value)}
-        disabled={!agents?.length}
-      >
-        {(agents || []).map((agent) => (
-          <option key={agent.id} value={agent.id} disabled={agent.available === false} title={agent.reason || agent.description || ""}>
-            {shortAgentName(agent.name)}{agent.available === false ? "（没装）" : ""}
-          </option>
-        ))}
-      </Select>
+      <AgentPicker agents={agents} agentId={agentId} onAgent={onAgent} />
       <InstallMenu agents={agents} />
       <span className="ask-head-gap" />
       <Button

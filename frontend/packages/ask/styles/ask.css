@@ -247,35 +247,6 @@
   color: var(--danger, var(--ink));
 }
 
-.ask-footer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 10px;
-  margin: 4px 0 0 8px;
-  color: var(--muted);
-  font-size: var(--ui-text-2xs, 10px);
-  font-variant-numeric: tabular-nums;
-  opacity: 0.8;
-}
-
-.ask-footer:hover {
-  opacity: 1;
-}
-
-.ask-footer-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  white-space: nowrap;
-  cursor: default;
-}
-
-.ask-footer-item[data-key="model"] {
-  max-width: 14em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
 /* 回答和工具调用里能点的页码。 */
 .ask-page {
   display: inline;
@@ -595,6 +566,57 @@
   color: var(--accent);
 }
 
+/* 思考强度的胶囊（ModelSelectorEffort 拿到弹层外面用）：一条浅底长胶囊，选中的那档是白底小胶囊。 */
+.ask-panel .ask-effort {
+  gap: 4px;
+  padding: 0 0 0 4px;
+  border-top: 0;
+  color: var(--muted);
+}
+
+.ask-panel .ask-effort [role="radiogroup"] {
+  gap: 0;
+  padding: 2px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.ask-panel .ask-effort [role="radio"] {
+  padding: 2px 8px;
+  border-radius: var(--ui-radius-pill, 999px);
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.ask-panel .ask-effort [role="radio"]:hover {
+  background: transparent;
+  color: var(--ink);
+}
+
+/* 选中的那档按它在 agent 给的列表里的位置上色（AskModelPicker 的 effortColor 写进 --ask-effort-color）。 */
+.ask-panel .ask-effort [role="radio"][data-state="checked"] {
+  background: color-mix(in srgb, var(--ask-effort-color, var(--ink)) 16%, var(--paper));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent);
+  color: color-mix(in srgb, var(--ask-effort-color, var(--ink)) 80%, var(--ink));
+  font-weight: 600;
+}
+
+.ask-panel .ask-effort > span {
+  color: var(--ask-effort-color, var(--muted));
+}
+
+/* 输入框那一行放不下时（窗口窄）换行，不挤掉发送按钮。 */
+.ask-panel .aui-composer-action-wrapper {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ask-config {
+  flex-wrap: wrap;
+}
+
 .ask-config-more {
   width: 26px;
   height: 26px;
@@ -629,5 +651,69 @@
 /* Radix 弹层（选模型、更多设置）要压在提问窗上面。 */
 [data-radix-popper-content-wrapper]:has([data-slot="model-selector-content"]),
 [data-radix-popper-content-wrapper]:has(.ask-config-panel) {
+  z-index: calc(var(--z-hud, 36) + 10) !important;
+}
+
+/* agent、模型的品牌图标（../src/window/BrandIcon.tsx）：彩色的是 <img>，单色的用 mask 跟着字的颜色走。 */
+.ask-brand {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
+.ask-brand-mono {
+  background-color: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+/* 标题栏选 agent：只有图标。 */
+.ask-panel .ask-agent-trigger {
+  height: 26px;
+  gap: 2px;
+  padding: 0 4px 0 6px;
+  color: var(--ink);
+}
+
+.ask-panel .ask-agent-trigger:hover,
+.ask-panel .ask-agent-trigger[data-state="open"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+/* 回答底下的用量：一个图标，点开是一张小表。 */
+.ask-usage-trigger {
+  width: 26px;
+  height: 26px;
+  margin-left: 2px;
+}
+
+.ask-usage-panel {
+  display: grid;
+  gap: 6px;
+  width: auto;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 10px 12px;
+  font-size: var(--ui-text-sm, 12px);
+  font-variant-numeric: tabular-nums;
+}
+
+.ask-usage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+}
+
+.ask-usage-row svg {
+  flex: none;
+  color: var(--muted);
+}
+
+[data-radix-popper-content-wrapper]:has(.ask-usage-panel) {
   z-index: calc(var(--z-hud, 36) + 10) !important;
 }

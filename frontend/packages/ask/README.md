@@ -54,8 +54,15 @@ react-rnd（窗口拖动）、ACP SDK、`@retainpdf/ui`（按钮、下拉框）�
 
 ## 选模型、思考强度
 
-输入框那一行（「+」旁边）有 agent 的设置：模型和思考强度用 assistant-ui 的 ModelSelector（`src/ui/elements/model-selector.tsx`，搜索、分组、思考强度一栏），
-别的设置项（模式、快速……）收在「更多」里（`src/window/AskModelPicker.tsx`）。数据照 ACP 的 **session config options**：
+输入框那一行（「+」旁边）有 agent 的设置，都是 assistant-ui 的 ModelSelector（`src/ui/elements/model-selector.tsx`）：
+模型是一个按钮（前面是厂商图标，点开是带搜索、分组的列表），思考强度是旁边一排胶囊（`ModelSelectorEffort`），
+别的设置项（模式、快速……）收在「更多」里（`src/window/AskModelPicker.tsx`）。
+
+- **图标多、字少**：标题栏选 agent 只有图标（自带模型是书本、retainpdf-pi 是 π，别的按名字认厂商，`src/window/BrandIcon.tsx`）；
+  回答底下的用量只是一个图标，点开才是模型、token、缓存、速度、首字、用时。厂商图标来自 [lobe-icons](https://github.com/lobehub/lobe-icons)（MIT，
+  `@lobehub/icons-static-svg`，开发依赖），`npm run generate:icons` 挑用得上的生成 `src/window/brand-icons.generated.ts`。
+- **思考强度的颜色**：不认档位的值，只看它在 agent 给的列表里排第几（第一档灰，往后绿 → 橙 → 红，`effortColor`）；档位的名字也照 agent 给的，不翻译。
+- 开着弹层时 Esc 只关弹层，不关窗。数据照 ACP 的 **session config options**：
 
 - agent 开会话时给 `configOptions`（`category` 是 `model` / `thought_level` / `mode`……），窗口用 `session/set_config_option` 改，agent 推 `config_option_update` 也跟着变。
   本机 Claude Code、pi 都给（2026-11-26 本机握手看过：Claude Code 有模型、思考强度、快速、ultracode、模式五项）。

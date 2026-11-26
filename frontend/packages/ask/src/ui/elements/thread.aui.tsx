@@ -1,6 +1,6 @@
 // 照搬 assistant-ui 官方组件（MIT，https://r.assistant-ui.com；shadcn/ 下是 shadcn/ui，MIT）。只改了引用路径（@/ 别名换成相对路径）。
 // 别的不改，方便对着上游更新；我们的改动写在外面（../window/）。
-// RetainPDF 的改动（groupPartByType 显式写泛型（本机 TS 只从第一组推断）；ThreadComponents 加 MessageFooter 插槽（回答底下的用量那一行）；界面文字换中文；
+// RetainPDF 的改动（groupPartByType 显式写泛型（本机 TS 只从第一组推断）；ThreadComponents 加 MessageFooter 插槽（回答底下复制、重新回答那一排的用量图标）；界面文字换中文；
 // 思考用时不取整；「回到最下面」挪到右边、变小（原来居中压在正文上）；边距收紧、输入框提示缩短（提问窗窄）。
 
 import {
@@ -807,8 +807,8 @@ const AssistantMessage: FC = () => {
       >
         <BranchPicker />
         <AssistantActionBar />
+        {MessageFooter ? <MessageFooter /> : null}
       </div>
-      {MessageFooter ? <MessageFooter /> : null}
     </MessagePrimitive.Root>
   );
 };

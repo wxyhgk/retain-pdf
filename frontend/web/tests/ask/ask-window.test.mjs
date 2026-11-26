@@ -130,7 +130,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
       onJumpToPage: (page) => jumps.push(page),
       pageCount: 100,
     }));
-    await until(() => document.querySelector(".ask-starter") && document.querySelector(".ask-agent select")?.value === "a", "常问按钮和 agent 列表");
+    await until(() => document.querySelector(".ask-starter") && /RetainPDF 自带模型/.test(document.querySelector(".ask-agent-trigger")?.getAttribute("title") || ""), "常问按钮和 agent 列表");
     const panel = document.querySelector(".ask-panel");
     assert.equal(panel.getAttribute("data-mode"), "float");
     assert.ok(document.querySelector(".ask-quote .katex"), "引用里的公式画出来了");
@@ -151,6 +151,13 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     await settle();
     assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "full");
 
+    // 开着弹层时 Esc 只关弹层，不关窗。
+    const popper = document.createElement("div");
+    popper.setAttribute("data-radix-popper-content-wrapper", "");
+    document.body.appendChild(popper);
+    window.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    assert.equal(closed, 0, "有弹层时不关窗");
+    popper.remove();
     window.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     assert.equal(closed, 1);
     root.unmount();

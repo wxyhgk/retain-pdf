@@ -4,10 +4,12 @@ import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-run
  */
 import { createContext, useContext, useEffect, useState, useSyncExternalStore } from "react";
 import { SimpleImageAttachmentAdapter, useAuiState } from "@assistant-ui/react";
-import { ArrowDown, ArrowUp, BookOpen, Check, Clock, Coins, Cpu, DatabaseZap, Eye, Gauge, Globe, HardDriveUpload, Languages, Loader2, Pencil, PieChart, Search, Sigma, Sparkles, Terminal, Timer, Wrench, X, } from "lucide-react";
+import { Activity, ArrowDown, ArrowUp, BookOpen, Check, Clock, Coins, Cpu, DatabaseZap, Eye, Gauge, Globe, HardDriveUpload, Languages, Loader2, Pencil, PieChart, Search, Sigma, Sparkles, Terminal, Timer, Wrench, X, } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 import { turnFooterItems } from "../acp/parts.js";
 import { AskPageText } from "./AskPageLink.js";
+import { BrandIcon, brandFor } from "./BrandIcon.js";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/shadcn/popover.js";
 import { ToolFallback } from "../ui/elements/tool-fallback.aui.js";
 import { ToolGroupContent, ToolGroupRoot, ToolGroupTrigger } from "../ui/elements/tool-group.aui.js";
 import { TodoList } from "../ui/elements/todo-list.js";
@@ -144,7 +146,7 @@ const FOOTER_ICONS = {
     firstToken: Timer,
     elapsed: Clock,
 };
-/** 回答底下的用量（Thread 的 MessageFooter 插槽）：图标 + 短数字，悬停看全。 */
+/** 回答底下的用量（Thread 的 MessageFooter 插槽，和复制、重新回答在同一排）：只一个图标，点开看模型、token、缓存、速度、用时。 */
 export function makeMessageFooter(agentName) {
     return function MessageFooter() {
         const custom = useAuiState((state) => state.message.metadata?.custom);
@@ -153,10 +155,12 @@ export function makeMessageFooter(agentName) {
         const items = turnFooterItems(custom.turn, custom.endedAt ?? null, agentName());
         if (!items.length)
             return null;
-        return (_jsx("div", { className: "ask-footer", children: items.map((item) => {
-                const Icon = FOOTER_ICONS[item.key];
-                return (_jsxs("span", { className: "ask-footer-item", "data-key": item.key, title: item.title, children: [_jsx(Icon, { size: 11, "aria-hidden": true }), item.text] }, item.key));
-            }) }));
+        const model = items.find((item) => item.key === "model");
+        const elapsed = items.find((item) => item.key === "elapsed");
+        return (_jsxs(Popover, { children: [_jsx(PopoverTrigger, { className: "ask-icon ask-usage-trigger", "aria-label": "\u8FD9\u4E00\u8F6E\u7684\u7528\u91CF", title: ["用量", elapsed?.title].filter(Boolean).join(" · "), children: model ? _jsx(BrandIcon, { brand: brandFor(model.text, model.title), size: 13, title: model.title }) : _jsx(Activity, { size: 13, "aria-hidden": true }) }), _jsx(PopoverContent, { align: "start", side: "top", className: "ask-usage-panel", children: items.map((item) => {
+                        const Icon = FOOTER_ICONS[item.key];
+                        return (_jsxs("div", { className: "ask-usage-row", "data-key": item.key, children: [item.key === "model" ? _jsx(BrandIcon, { brand: brandFor(item.text, item.title), size: 13 }) : _jsx(Icon, { size: 13, "aria-hidden": true }), _jsx("span", { children: item.title })] }, item.key));
+                    }) })] }));
     };
 }
 /** 空白时：几个常问，点一下直接问。 */
