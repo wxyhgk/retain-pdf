@@ -47,6 +47,8 @@ MAX_CHECK_OUTPUT_BYTES = 256 * 1024
 # 起 openui-check 时设上 / 去掉的环境变量（lang-core 的遥测）
 TELEMETRY_ENV = {"OPENUI_TELEMETRY_DISABLED": "1", "DO_NOT_TRACK": "1"}
 TELEMETRY_ENABLE_ENV = "OPENUI_RUNTIME_TELEMETRY_ENABLED"
+# 桌面版的 node 可能是 Electron 本体（`RETAINPDF_NODE_BIN`），要这个才按 node 跑；对真的 node 没影响
+ELECTRON_NODE_ENV = {"ELECTRON_RUN_AS_NODE": "1"}
 
 # 桥给的环境变量（`backend/packages/retainpdf-providers/src/acp/openui.rs`）
 ENV_PROMPT = "RETAIN_OPENUI_PROMPT"
@@ -153,6 +155,7 @@ def check_env(base: dict[str, str] | None = None) -> dict[str, str]:
     env = dict(os.environ if base is None else base)
     env.pop(TELEMETRY_ENABLE_ENV, None)
     env.update(TELEMETRY_ENV)
+    env.update(ELECTRON_NODE_ENV)
     return env
 
 

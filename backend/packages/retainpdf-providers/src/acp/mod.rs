@@ -30,7 +30,7 @@ use serde::{Deserialize, Serialize};
 
 pub use bridge::{run_bridge, AgentProcess, BridgeOut, SessionDefaults, CLOSE_AGENT_ENDED};
 pub use install::{AgentInstallView, InstallMethod, InstallState, AGENTS_DIR_NAME, DEFAULT_INSTALL_ENV, NODE_DIR_ENV};
-pub use openui::{default_openui_check_dir, default_openui_dir, OPENUI_CHECK_DIR_ENV, OPENUI_DIR_ENV};
+pub use openui::{default_openui_check_dir, default_openui_dir, NODE_BIN_ENV, OPENUI_CHECK_DIR_ENV, OPENUI_DIR_ENV};
 pub use pi::PI_AGENT_ID;
 pub use registry::{AgentDistribution, AgentKind, AgentView, BUILTIN_AGENT_ID};
 
@@ -74,6 +74,9 @@ pub struct AcpConfig {
     pub agents_dir: PathBuf,
     /// 桌面版自带的 Node（`RUST_API_NODE_DIR`）：代装 npm 包、起托管的 npm 包、跑互动块的检查器时用。
     pub node_dir: Option<PathBuf>,
+    /// `RETAINPDF_NODE_BIN`：桌面版指向 Electron 本体（排版引擎、Word 导出也用它，起子进程时带 `ELECTRON_RUN_AS_NODE=1`）；
+    /// 没有 `RUST_API_NODE_DIR` 时 openui-check 退回用它（2026-11-26）。
+    pub node_bin: Option<PathBuf>,
     /// 互动块的说明文件目录（`contracts/openui/`，[`default_openui_dir`]）；没有就不开互动块。
     pub openui_dir: Option<PathBuf>,
     /// 互动块的检查器包（`backend/openui-check/`，[`default_openui_check_dir`]）；没有时 `openui_check` 回「检查器用不了」。

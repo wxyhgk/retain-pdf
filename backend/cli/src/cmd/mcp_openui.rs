@@ -231,6 +231,8 @@ pub fn checker_command(checker: &Checker) -> Command {
         command.env(name, value);
     }
     command.env_remove(TELEMETRY_ENABLE_ENV);
+    // 桌面版的 node 可能是 Electron 本体（`RETAINPDF_NODE_BIN`），要这个才按 node 跑；对真的 node 没影响
+    command.env("ELECTRON_RUN_AS_NODE", "1");
     command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
     command
 }

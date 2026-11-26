@@ -28,6 +28,9 @@
 | `frontend/desktop/scripts/prepare-app.mjs`（拷 rpr 引擎那一段旁边） | 不带 | 把仓库的 `contracts/openui/ask-openui-prompt.v1.json`、`ask-openui-library.v1.json` 拷到 `path.join(outputBackendRoot, "contracts", "openui")` |
 | 同上 | 不带 | 带检查器：在 `backend/openui-check` 里 `npm ci --omit=dev --ignore-scripts`（环境变量加 `OPENUI_TELEMETRY_DISABLED=1`、`DO_NOT_TRACK=1`；**`--ignore-scripts` 不能省**，lang-core 的 postinstall 是安装统计），把 `bin/`、`lib/`、`node_modules/`、`package.json` 拷到 `path.join(outputBackendRoot, "openui-check")`，再删掉 `node_modules/.bin`（和 rpr 引擎一样，免得签名遍历撞断链）。依赖都是纯 JS（lang-core 1.2.0、ci-info、zod），和平台无关 |
 | `frontend/desktop/src/main/backend-env.js` 的 `buildBackendEnv` | 没有 | 加 `RUST_API_OPENUI_DIR: path.join(backendRoot, "contracts", "openui")`、`RUST_API_OPENUI_CHECK_DIR: path.join(backendRoot, "openui-check")`（桌面版的项目根就是 `backendRoot`，后端的默认位置 `<项目根>/backend/openui-check` 对不上，要显式给） |
+
+- Node（2026-11-26 补，fix/openui-node-fallback）：桌面版不用为检查器另带 Node。后端找 node 的顺序是 `RUST_API_NODE_DIR` → `RETAINPDF_NODE_BIN`（桌面版已经指向 Electron 本体，排版引擎、Word 导出同一个变量）→ PATH；三处起检查器时都带 `ELECTRON_RUN_AS_NODE=1`。
+
 | 同上 | （`RUST_API_NODE_DIR` 见上一节「代装本机 agent」） | 检查器用同一个 Node：先找 `RUST_API_NODE_DIR`，再找 PATH。Node ≥ 20 就行。用 Electron 当 node 的那种小脚本（`ELECTRON_RUN_AS_NODE=1 exec <Electron> "$@"`）也能跑 |
 
 ### 前端页面要做的（可选）
