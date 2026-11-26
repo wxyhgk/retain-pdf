@@ -187,6 +187,10 @@ OCR 做完的那一轮不扣、全部翻完，再走和整本一次翻一样的�
   接不上，第一次重试会从头翻（那份断点里的表格、页码标签本来就是按错的页做的）。
 - agent 引擎、开了译前准备的：要整本，等 OCR 做完再按整本翻（`execution._wait_for_whole_document_if_needed`）。
 - OCR 失败（清单 `failed=true`）时等的一方抛 `OcrStreamFailed`。阶段耗时在诊断里按轮累加。
+- 同一个任务目录再跑一次流式 OCR（2026-11-26，状态管理 Z5 / S46）：清单的 `seq` 接着旧清单往下数（`OcrStreamWriter` 开跑时读旧清单），
+  读的一方只认比它见过的新的那一版；旧清单是 `failed` 的开跑时清掉。Rust 拉起 OCR 和翻译之前也清一次
+  （`ocr_stream.rs` 的 `clear_failed_ocr_stream`），因为两个进程谁先起来说不准。Rust 补标清单时的临时文件名每次不同（以前固定 `.manifest.json.tmp`）。
+  眼下的执行路径碰不到这种情形（流式时父任务的 attempt 一建就是翻译阶段，续跑不重跑 OCR），是给以后「原地重跑 OCR」留的。
 
 ### 翻译引擎 agent（`translation.engine=agent`）
 
