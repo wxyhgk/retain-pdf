@@ -106,6 +106,33 @@ fn the_fingerprint_changes_when_a_participating_translation_manifest_is_rewritte
     assert_ne!(before, merge_fingerprint(&source, &plan, &coverages).unwrap());
 }
 
+/// 手改译文（`translation-revise`）只原子改写页文件和断点（generation 加一），manifest 和 PDF 都不动
+/// （`rerender=false` 是默认）。指纹以前不含断点，合并目录里拷过去的旧页文件一直被读：阅读器里改了一处，
+/// 重新打开还是旧译文（S34、A-L1）。
+#[test]
+fn the_fingerprint_changes_when_a_participating_translation_is_revised_by_hand() {
+    let dir = Dir::new();
+    let source = dir.file("source.pdf", b"src");
+    let a = dir.file("a.pdf", b"a");
+    let translated = dir.0.join("translated");
+    std::fs::create_dir(&translated).unwrap();
+    std::fs::write(translated.join("translation-manifest.json"), b"{\"pages\": []}").unwrap();
+    std::fs::write(translated.join("page-001.json"), b"[{\"translated_text\": \"old\"}]").unwrap();
+    let checkpoint = translated.join("translation-checkpoint.v1.json");
+    std::fs::write(&checkpoint, b"{\"generation\": 3}").unwrap();
+    let mut coverage = cov("a", &a, &[1]);
+    coverage.1.translations_dir = Some(translated.clone());
+    let coverages = jobs([coverage]);
+    let plan = [job("a", 0)];
+    let before = merge_fingerprint(&source, &plan, &coverages).unwrap();
+    // 和 Python 一样：页文件、断点都是写临时文件再换名；manifest 不动。
+    std::fs::write(translated.join(".page.tmp"), b"[{\"translated_text\": \"new\"}]").unwrap();
+    std::fs::rename(translated.join(".page.tmp"), translated.join("page-001.json")).unwrap();
+    std::fs::write(translated.join(".checkpoint.tmp"), b"{\"generation\": 4}").unwrap();
+    std::fs::rename(translated.join(".checkpoint.tmp"), &checkpoint).unwrap();
+    assert_ne!(before, merge_fingerprint(&source, &plan, &coverages).unwrap(), "改了译文，合并目录必须重建");
+}
+
 #[test]
 fn unreferenced_jobs_do_not_affect_the_fingerprint() {
     // 一个被完全盖掉的旧任务被重写，不该让合并结果重新生成。

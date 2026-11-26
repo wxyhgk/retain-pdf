@@ -16,8 +16,8 @@
 //! 不能沿用 `cached_output_is_fresh` 的 mtime 比较：删掉一个较新的任务后，剩下所有输入
 //! 都比产物旧，它会继续返回包含已删任务的旧合并结果；改了拼接代码也不会失效。指纹里
 //! 放的是「这次合并由什么决定」—— 合并器版本、源 PDF、每页取自哪个任务的哪一页、每个
-//! 被引用任务的输出 PDF / 译文 manifest / OCR 文档的大小和修改时间、OCR 页号表。任何一项
-//! 变了就是一个新目录。
+//! 被引用任务的输出 PDF / 译文 manifest / 译文断点 / OCR 文档的大小和修改时间、OCR 页号表。
+//! 任何一项变了就是一个新目录。断点是为手改译文加的（2026-11-26，S34）：手改只换页文件和断点。
 //!
 //! 目录名不可变还有一个好处：用户正在下载旧的合并结果时，新的合并不会把它从脚下替换掉
 //! （断点续传不会拼出半新半旧的 PDF）。旧目录在新目录发布后按**最后一次被读**的时间清理
@@ -42,6 +42,7 @@ use sha2::{Digest, Sha256};
 
 use retainpdf_api_base::error::AppError;
 use retainpdf_api_base::job_loading::{mark_merged_used, merged_last_used, MergedTranslation};
+use retainpdf_core::storage_paths::{TRANSLATION_CHECKPOINT_FILE_NAME, TRANSLATION_MANIFEST_FILE_NAME};
 use retainpdf_files::{document_artifacts_dir, DerivedArtifactDeps};
 
 use super::plan::PageSource;
@@ -107,9 +108,16 @@ pub(crate) fn merge_fingerprint(
         let manifest = inputs
             .translations_dir
             .as_ref()
-            .map(|dir| dir.join("translation-manifest.json"));
+            .map(|dir| dir.join(TRANSLATION_MANIFEST_FILE_NAME));
+        // 手改译文（`translation-revise`）只改页文件和断点、不动 manifest 和 PDF（S34）。断点每次提交都
+        // 原子换掉（generation 加一），只取它的文件戳（不读页文件、不解析几 MB 的断点 JSON）就知道译文变没变。
+        let checkpoint = inputs
+            .translations_dir
+            .as_ref()
+            .map(|dir| dir.join(TRANSLATION_CHECKPOINT_FILE_NAME));
         for (label, path) in [
             ("manifest", manifest.as_deref()),
+            ("checkpoint", checkpoint.as_deref()),
             ("document", inputs.normalized_document.as_deref()),
         ] {
             match path.filter(|path| path.is_file()) {

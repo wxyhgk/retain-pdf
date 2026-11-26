@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::domain::JobSnapshot;
+use retainpdf_core::storage_paths::{TRANSLATION_CHECKPOINT_FILE_NAME, TRANSLATION_MANIFEST_FILE_NAME};
 
 use super::{cached_output_is_fresh, job_artifacts_dir, DerivedArtifactDeps};
 
@@ -53,6 +54,27 @@ impl LayoutDocxOptions {
     }
 }
 
+/// 这份 docx 由哪些文件决定（新鲜度的输入）。
+///
+/// - 源 PDF：背景图。
+/// - 译文 PDF（在的时候）：收敛后的字号和行距是从它里面读回来的（见 Python 侧
+///   `typography_readback`），它一重渲染这份 docx 就过期了。不在的时候导出走 `html_fit`。
+/// - `job_root/translated/` 的 manifest 和断点：正文是 Python 从这里的 manifest 和页文件读的
+///   （`word/job_io.py`）。手改译文只原子换掉页文件和断点（generation 加一），PDF 都不动（S34，
+///   2026-11-26 以前只看两个 PDF，改了译文下载的还是旧 Word）。断点每次提交都换，取它的戳就够，
+///   不用一页页取页文件的戳。没有断点的老任务，戳记成「不在」，和以前一样只跟着 manifest 变。
+fn layout_docx_inputs(job_root: &Path, source_pdf: &Path, translated_pdf: Option<&Path>) -> Vec<PathBuf> {
+    let translated = job_root.join(TRANSLATED_DIR_NAME);
+    let mut inputs = vec![source_pdf.to_path_buf()];
+    inputs.extend(translated_pdf.map(Path::to_path_buf));
+    inputs.push(translated.join(TRANSLATION_MANIFEST_FILE_NAME));
+    inputs.push(translated.join(TRANSLATION_CHECKPOINT_FILE_NAME));
+    inputs
+}
+
+/// 和 Python `word/job_io.py` 读的目录一致（`job_root / "translated"`）。
+const TRANSLATED_DIR_NAME: &str = "translated";
+
 pub fn ensure_layout_docx(
     deps: DerivedArtifactDeps<'_>,
     data_root: &Path,
@@ -67,11 +89,8 @@ pub fn ensure_layout_docx(
         &job.job_id,
         &options.cache_suffix(),
     ));
-    // 译文 PDF 在的时候也算输入:收敛后的字号和行距是从它里面读回来的（见 Python 侧
-    // `typography_readback`），它一重渲染这份 docx 就过期了。不在的时候导出走
-    // `html_fit`，只跟着源 PDF 和译文变。
-    let mut inputs: Vec<&Path> = vec![source_pdf];
-    inputs.extend(translated_pdf);
+    let inputs = layout_docx_inputs(job_root, source_pdf, translated_pdf);
+    let inputs: Vec<&Path> = inputs.iter().map(PathBuf::as_path).collect();
     if !cached_output_is_fresh(&output_docx, &inputs)? {
         super::side_by_side::build_with_command(
             &output_docx,

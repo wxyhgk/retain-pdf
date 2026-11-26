@@ -20,6 +20,7 @@ import json
 import os
 import shutil
 import subprocess
+import uuid
 from pathlib import Path
 
 import fitz
@@ -250,10 +251,17 @@ def export_layout_docx(
         translated_pdf=translated_pdf,
         watermark=watermark,
     )
-    # 规格落在背景图旁边:规格里的图片路径是相对这个目录的。
-    spec_path = base_dir / "layout-spec.json"
+    # 规格落在背景图旁边:规格里的图片路径是相对这个目录的。一次导出一份、用完删：带水印和不带水印的
+    # 两份（同一个 dpi）会同时导出，以前共用 `layout-spec.json`，先跑的那份读到后写的规格（R3）。
+    spec_path = base_dir / f"layout-spec-{os.getpid()}-{uuid.uuid4().hex}.json"
     spec_path.write_text(json.dumps(spec, ensure_ascii=False), encoding="utf-8")
+    try:
+        return _run_document_builder(node, cli, spec_path, output_path)
+    finally:
+        spec_path.unlink(missing_ok=True)
 
+
+def _run_document_builder(node: str, cli: Path, spec_path: Path, output_path: Path) -> Path:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ)
     # 桌面应用会把 node 指向 Electron 本体，必须带上这个它才以 Node 模式启动。
