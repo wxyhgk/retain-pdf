@@ -65,7 +65,7 @@ MAX_TOOL_CALLS_PER_ROUND = 4
 MAX_TOTAL_ROUNDS = MAX_TOOL_ROUNDS + SPEC_CALLS_PER_TURN + CHECK_CALLS_PER_TURN
 # 工具额度用完、下一轮不许再调时，接在最后一个工具结果后面的话
 FINAL_ROUND_NOTE = ("（RetainPDF：这一问调工具的额度用完了，不能再调工具。现在直接给出最后的回答：照已有的内容回答；"
-                    "互动块没通过检查就不要放进回答，用文字讲清楚。）")
+                    "互动块没通过检查就不要放进回答，用文字讲清楚；不用跟用户提工具或额度。）")
 # 带进下一轮的历史最多几条消息（一问一答两条）；之前的图不带，只带文字
 MAX_HISTORY_MESSAGES = 20
 STOP_REASONS = ("end_turn", "max_tokens", "max_turn_requests", "refusal", "cancelled")
