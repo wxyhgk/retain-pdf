@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Callable
 
 from retainpdf_translation.core.orchestration.units import finalize_orchestration_metadata_by_page
+from retainpdf_translation.llm.shared import upstream_resilience as _resilience
+from retainpdf_translation.llm.shared.executor_context import execution_enabled
 from retainpdf_translation.core.orchestration.units import finalize_payload_orchestration_metadata
 from retainpdf_translation.core.orchestration.zones import annotate_payload_layout_zones
 from retainpdf_translation.services.continuation.pairs import apply_candidate_pair_joins
@@ -66,9 +68,12 @@ def review_candidate_continuation_pairs(
     request_chat_content_fn: Callable[..., str],
     progress_callback: Callable[[int, int], None] | None = None,
     review_memo: dict[tuple[str, str], bool] | None = None,
+    on_batch_decided: Callable[[dict[tuple[str, str], bool]], None] | None = None,
 ) -> int:
     """`review_memo`：（前块, 后块）→ 模型判没判连上。OCR 和翻译并行时每来一批页都要在已知的页上重算一遍
-    （规则那一遍会清掉上一轮的拼接），判过的对直接用记下的结论，只把新出现的对交给模型（`workflow/streaming_flow.py`）。"""
+    （规则那一遍会清掉上一轮的拼接），判过的对直接用记下的结论，只把新出现的对交给模型（`workflow/streaming_flow.py`）。
+
+    `on_batch_decided(review_memo)`：每判完一批、memo 有了新结论就调一次，调用方在这里落盘。"""
     flat_payload = [item for page_idx in sorted(page_payloads) for item in page_payloads[page_idx]]
     pairs = candidate_continuation_pairs(flat_payload)
     boundary_pairs = _filter_boundary_candidate_pairs(flat_payload, pairs)
@@ -106,54 +111,80 @@ def review_candidate_continuation_pairs(
     batches = chunked(review_pairs, max(1, batch_size))
     approved: list[tuple[str, str]] = list(auto_join_pairs)
 
-    # 模型明确判过的对（连 / 不连）。解析不了的那批不在里面：不能记成「不连」，下次照旧交给模型
-    decided: dict[tuple[str, str], bool] = {}
-
-    def _run_review(batch_pairs: list[dict], index: int) -> list[tuple[str, str]]:
+    def _run_review(batch_pairs: list[dict], index: int) -> dict[tuple[str, str], bool]:
+        """返回这一批模型明确判过的对（连 / 不连）。解析不了的对不在里面：不能记成「不连」，下次照旧交给模型。"""
         labeled_pairs = []
         for offset, pair in enumerate(batch_pairs, start=1):
             pair = dict(pair)
             pair["pair_id"] = f"pair-{index:03d}-{offset:03d}"
             labeled_pairs.append(pair)
-        reviewed = review_candidate_pairs(
-            labeled_pairs,
-            api_key=api_key,
-            model=model,
-            base_url=base_url,
-            request_label=f"continuation-review {index}/{len(batches)}",
-            request_chat_content_fn=request_chat_content_fn,
-        )
+        request_label = f"continuation-review {index}/{len(batches)}"
+        try:
+            reviewed = review_candidate_pairs(
+                labeled_pairs,
+                api_key=api_key,
+                model=model,
+                base_url=base_url,
+                request_label=request_label,
+                request_chat_content_fn=request_chat_content_fn,
+            )
+        except Exception as exc:  # noqa: BLE001 - 只放过暂时性错误，其余照旧往外抛
+            if not _review_failure_is_advisory(exc):
+                raise
+            # 复核只是顾问：一批碰上暂时性上游错误（重试已用完）时，这一批的候选对维持规则那一遍的结论（不连），
+            # 也不记进 memo，下次照旧交给模型；别的批付钱判出的结论照常生效（2026-11-26，S11）
+            print(
+                f"{request_label}: continuation review gave up after transient upstream errors, "
+                f"keeping rule decisions for {len(labeled_pairs)} pairs: {type(exc).__name__}: {exc}",
+                flush=True,
+            )
+            return {}
         pair_map = {pair["pair_id"]: pair for pair in labeled_pairs}
-        for pair_id, decision in reviewed.items():
-            if pair_id in pair_map:
-                decided[_pair_key(pair_map[pair_id])] = decision == "join"
-        return [
-            (pair_map[pair_id]["prev_item_id"], pair_map[pair_id]["next_item_id"])
+        return {
+            _pair_key(pair_map[pair_id]): decision == "join"
             for pair_id, decision in reviewed.items()
-            if decision == "join" and pair_id in pair_map
-        ]
+            if pair_id in pair_map
+        }
+
+    def _record(batch_decided: dict[tuple[str, str], bool]) -> None:
+        """每判完一批就记下来：连上的进 approved，结论进 memo 并当场落盘（不等全部批做完）。"""
+        approved.extend(key for key, join in batch_decided.items() if join)
+        if review_memo is not None and batch_decided:
+            review_memo.update(batch_decided)
+            if on_batch_decided is not None:
+                on_batch_decided(review_memo)
 
     completed_batches = 0
     if workers <= 1 or len(batches) == 1:
         for index, batch in enumerate(batches, start=1):
-            approved.extend(_run_review(batch, index))
+            _record(_run_review(batch, index))
             completed_batches += 1
             if progress_callback is not None:
                 progress_callback(completed_batches, len(batches))
     else:
+        first_error: BaseException | None = None
         with ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
             futures = {
                 executor.submit(_run_review, batch, index): index
                 for index, batch in enumerate(batches, start=1)
             }
             for future in as_completed(futures):
-                approved.extend(future.result())
+                try:
+                    batch_decided = future.result()
+                except Exception as exc:  # noqa: BLE001 - 先把其余已在跑的批收完、记下，再抛第一个错
+                    if first_error is None:
+                        first_error = exc
+                        for pending in futures:
+                            pending.cancel()
+                    continue
+                # 出错以后还在跑的批照样付了钱，结论照样记下（只是不再拼接，整本照旧失败）
+                _record(batch_decided)
                 completed_batches += 1
-                if progress_callback is not None:
+                if progress_callback is not None and first_error is None:
                     progress_callback(completed_batches, len(batches))
+        if first_error is not None:
+            raise first_error
 
-    if review_memo is not None:
-        review_memo.update(decided)
     applied = apply_candidate_pair_joins(flat_payload, approved)
     annotate_layout_zones_by_page(page_payloads)
     finalize_orchestration_metadata_by_page(page_payloads)
@@ -161,6 +192,16 @@ def review_candidate_continuation_pairs(
         save_pages_fn(page_payloads, translation_paths)
         print(f"book: continuation review approved={applied} items from pairs={len(approved)}", flush=True)
     return applied
+
+
+def _review_failure_is_advisory(exc: BaseException) -> bool:
+    """这一批的失败能不能只当「这一批没判」：暂时性上游错误（超时、429、5xx、连接断开，重试已用完）可以。
+    余额、Key、权限这类不重试的错照旧往外抛；走 Rust 模型执行器时，失败记在执行器里、整本都会停，也照旧往外抛。"""
+    if execution_enabled():
+        return False
+    if _resilience.is_non_retryable_client_error(exc):
+        return False
+    return _resilience.is_transient_upstream_error(exc)
 
 
 def _pair_key(pair: dict) -> tuple[str, str]:

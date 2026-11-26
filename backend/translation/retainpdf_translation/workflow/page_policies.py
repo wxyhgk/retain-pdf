@@ -99,6 +99,7 @@ def review_and_apply_continuations(
     request_chat_content_fn: Callable[..., str],
     progress_callback=None,
     review_memo: dict[tuple[str, str], bool] | None = None,
+    on_batch_decided=None,
 ) -> None:
     review_candidate_continuation_pairs(
         page_payloads=page_payloads,
@@ -111,6 +112,7 @@ def review_and_apply_continuations(
         request_chat_content_fn=request_chat_content_fn,
         progress_callback=progress_callback,
         review_memo=review_memo,
+        on_batch_decided=on_batch_decided,
     )
 
 

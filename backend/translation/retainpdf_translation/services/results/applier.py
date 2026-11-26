@@ -47,7 +47,13 @@ def expand_duplicate_results(
         rep_payload = translated.get(rep_id)
         if not rep_payload:
             continue
+        if _is_keep_origin_result(rep_payload):
+            expanded.update(_kept_origin_duplicate_results(rep_payload, duplicate_items))
+            continue
         if not _is_duplicate_expandable_result(rep_payload):
+            # 代表块这次没翻成（超时、校验不过、内容审核……）：副本跟代表块同命，记成同样的失败，留在待办里，
+            # 尾部重试、最终补救、续跑、「重翻死信」都还会再翻它；同一次运行里代表块后来翻成了，副本也跟着拿到译文。
+            # 以前记成「模型判保留原文」（`skip_model_keep_origin`、`should_translate=False`），永远救不回来（2026-11-26，S21）
             expanded.update(_failed_duplicate_results(rep_payload, duplicate_items))
             continue
         for duplicate_item in duplicate_items:
@@ -56,6 +62,14 @@ def expand_duplicate_results(
                 item=duplicate_item,
             )
     return expanded
+
+
+def _is_keep_origin_result(payload: dict[str, str]) -> bool:
+    """代表块被判保留原文（模型的 keep_origin 决定，或者策略保留）：同一段原文的副本同样保留。"""
+    final_status = str(payload.get("final_status", "") or "").strip()
+    if final_status == FinalStatus.FAILED.value:
+        return False
+    return final_status == FinalStatus.KEPT_ORIGIN.value or str(payload.get("decision", "") or "").strip() == "keep_origin"
 
 
 def _is_duplicate_expandable_result(payload: dict[str, str]) -> bool:
@@ -76,6 +90,28 @@ def _is_duplicate_expandable_result(payload: dict[str, str]) -> bool:
 
 
 def _failed_duplicate_results(rep_payload: dict[str, str], duplicate_items: list[dict]) -> dict[str, dict[str, str]]:
+    """副本照抄代表块的失败结果（改成副本自己的 item_id、页号），轨迹里多记一条「跟着代表块失败」。"""
+    failed: dict[str, dict[str, str]] = {}
+    for duplicate_item in duplicate_items:
+        payload = _clone_result_for_item(rep_payload, item=duplicate_item)
+        diagnostics = dict(payload.get("translation_diagnostics") or {})
+        error_trace = diagnostics.get("error_trace")
+        diagnostics["item_id"] = duplicate_item.get("item_id", "")
+        diagnostics["page_idx"] = duplicate_item.get("page_idx")
+        diagnostics["error_trace"] = [
+            *(error_trace if isinstance(error_trace, list) else []),
+            {
+                "type": "dedupe",
+                "code": "duplicate_representative_failed",
+                "message": "Duplicate item shares the failed result of its representative and stays pending for retry.",
+            },
+        ]
+        payload["translation_diagnostics"] = diagnostics
+        failed[str(duplicate_item.get("item_id", "") or "")] = payload
+    return failed
+
+
+def _kept_origin_duplicate_results(rep_payload: dict[str, str], duplicate_items: list[dict]) -> dict[str, dict[str, str]]:
     source_diagnostics = dict(rep_payload.get("translation_diagnostics") or {})
     source_reason = str(source_diagnostics.get("degradation_reason", "") or "").strip()
     error_trace = source_diagnostics.get("error_trace")

@@ -136,9 +136,9 @@ def _write_json(path: Path, payload: object) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def _build_job(root: Path) -> Path:
+def _build_job(root: Path, pages: dict[int, list[dict]] | None = None) -> Path:
     translated = root / "translated"
-    pages = _pages()
+    pages = _pages() if pages is None else pages
     paths = {idx: translated / f"page-{idx + 1:03d}-deepseek.json" for idx in pages}
     for idx, items in pages.items():
         _write_json(paths[idx], items)
@@ -765,3 +765,96 @@ def test_sigterm_rolls_the_revision_back_in_process(tmp_path):
     child.wait(timeout=20)
     # 子命令入口装了 SIGTERM 处理:走进程内回滚,不是被信号直接带走。
     assert _snapshot(translated) == before
+
+
+# ---- 维护工具改记块状态走同一个提交入口（2026-11-26，S22；状态梳理 T-N8）----
+# `reclassify --apply` 以前直接改页文件：不推进断点的页哈希、不建快照、不记修订。之后重排版按断点哈希校验读不出，
+# 用户改一处译文时修订发现页领先断点，用旧快照把整页换回去，改记悄悄作废。
+
+
+def _job_with_citation_failure(root: Path) -> Path:
+    pages = _pages()
+    citation = _single("p001-b004", 0, 4, "35. Brown-Saracino 2014, 43.", "")
+    citation["final_status"] = "failed"
+    citation["translation_diagnostics"] = {"final_status": "failed", "fallback_to": "dead_letter_queue", "dead_letter": True}
+    pages[0].append(citation)
+    return _build_job(root, pages)
+
+
+def test_reclassify_apply_commits_through_the_checkpoint(tmp_path):
+    from retainpdf_translation_agent_engine.reclassify import reclassify_failed_blocks
+
+    translated = _job_with_citation_failure(tmp_path)
+    assert load_translated_pages(translated)
+
+    changes = reclassify_failed_blocks(translated, apply=True)
+
+    assert [change["item_id"] for change in changes] == ["p001-b004"]
+    # 渲染按断点的页哈希校验读得出，读到的是改记后的状态
+    item = _items_by_id(translated)["p001-b004"]
+    assert (item["final_status"], item["should_translate"]) == ("kept_origin", False)
+    _assert_publication_consistent(translated)
+    checkpoint = _checkpoint(translated)
+    assert checkpoint["generation"] == 8
+    # 修订日志记一条维护记录（不算用户手改），带页哈希，Rust 据此登记新页
+    [record] = load_item_revisions(translated, "p001-b004")
+    assert (record["source"], record["previous_final_status"], record["final_status"]) == ("maintenance", "failed", "kept_origin")
+    assert record["reason"] == "reclassify: skip_citation_only"
+    assert record["page_hashes"] == {"page-001-deepseek.json": checkpoint["pages"][0]["page_hash"]}
+    assert record["generation"] == 8
+
+    # 之后用户改一处译文：改记不会被快照换回去
+    revise_translation_item(tmp_path, RevisionRequest(
+        item_id="p001-b001", translated_text="谐振子是描述分子振动的模型体系。", source="user",
+    ))
+    assert _items_by_id(translated)["p001-b004"]["final_status"] == "kept_origin"
+    assert reclassify_failed_blocks(translated, apply=True) == []
+
+
+def test_reclassify_apply_refuses_an_uncommitted_checkpoint(tmp_path):
+    from retainpdf_translation_agent_engine.reclassify import main
+    from retainpdf_translation_agent_engine.reclassify import reclassify_failed_blocks
+
+    translated = _job_with_citation_failure(tmp_path)
+    checkpoint = _checkpoint(translated)
+    checkpoint.update(status="in_progress", phase="translating")
+    (translated / "translation-checkpoint.v1.json").write_text(json.dumps(checkpoint), encoding="utf-8")
+    before = _snapshot(translated)
+
+    with pytest.raises(RevisionOutcome) as caught:
+        reclassify_failed_blocks(translated, apply=True)
+    assert caught.value.reason == "translation_not_committed"
+    assert main([str(tmp_path), "--apply"]) == 1
+    assert _snapshot(translated) == before, "拒绝时一个字节都不写"
+
+
+def test_an_interrupted_maintenance_commit_rolls_forward_with_every_record(tmp_path, monkeypatch):
+    """一次提交多条记录时进程在写修订日志前被杀：下次进来按意图记录前滚，两条都补进日志。"""
+    from retainpdf_translation_agent_engine.reclassify import reclassify_failed_blocks
+
+    pages = _pages()
+    for page_idx, item_id in ((0, "p001-b004"), (1, "p002-b002")):
+        citation = _single(item_id, page_idx, 4, "35. Brown-Saracino 2014, 43.", "")
+        citation["final_status"] = "failed"
+        pages[page_idx].append(citation)
+    translated = _build_job(tmp_path, pages)
+
+    def killed(*_args, **_kwargs):
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(revision_module, "_append_revision_records", killed)
+    monkeypatch.setattr(revision_module, "_rollback", lambda **_kwargs: None)
+    with pytest.raises(KeyboardInterrupt):
+        reclassify_failed_blocks(translated, apply=True)
+    monkeypatch.undo()
+    assert (translated / revision_module.TRANSLATION_REVISION_INTENT_FILE_NAME).exists()
+
+    store = CheckpointStore(translated / "translation-checkpoint.v1.json")
+    store.acquire()
+    try:
+        assert revision_module.recover_incomplete_revision(translated, store) == "rolled_forward"
+    finally:
+        store.close()
+    assert [r["item_id"] for r in load_item_revisions(translated, "p001-b004")] == ["p001-b004"]
+    assert [r["item_id"] for r in load_item_revisions(translated, "p002-b002")] == ["p002-b002"]
+    _assert_publication_consistent(translated)

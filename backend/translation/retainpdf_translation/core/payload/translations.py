@@ -141,7 +141,9 @@ def ensure_translation_template(
         existing_item_ids=existing_item_ids,
         math_mode=math_mode,
     ) or changed
-    if refresh_payload_translation_units(payload):
+    # 这里只有一页：跨页接续组在这一页只有一个成员，不带 preserve_external_groups 会被降成单块、清掉组层译文并写回磁盘，
+    # 之后整本刷新只补回组号（2026-11-26，S23）。和开头 migrate_translations 一样保留跨页组。
+    if refresh_payload_translation_units(payload, preserve_external_groups=True):
         changed = True
     if changed:
         save_translations(output_path, payload)
