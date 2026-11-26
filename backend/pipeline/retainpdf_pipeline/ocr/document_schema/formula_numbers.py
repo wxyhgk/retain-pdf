@@ -1,14 +1,19 @@
 """行间公式编号：把编号挂到对应的行间公式块上（2026-11-26，方案见
-`docs/ops/planning/ocr-normalization/20261126-行间公式编号.md`）。
+`docs/ops/planning/ocr-normalization/20261126-行间公式编号.md`、`20261126-扫描件公式编号小模型.md`）。
 
 三家给编号的方式不一样：PaddleOCR-VL、MinerU 把编号单独出成一块（`formula_number`），不和公式关联；GLM-OCR 没有编号块，
-少数公式把编号识别进 LaTeX（`\\tag{2.19}`），其余的编号丢了。这里和服务商无关，三个来源按顺序补：
+少数公式把编号识别进 LaTeX（`\\tag{2.19}`），其余的编号丢了。这里和服务商无关，四个来源按顺序补：
 
 1. `layout_block`：页内的编号块按几何配到公式上（`attach_formula_numbers`，适配器出块、补完契约字段、夹回页内之后跑，
    坐标还是 OCR 自己的单位，所有阈值按页宽、公式高度的比例算）。
 2. `latex_tag`：没配上编号块的公式，LaTeX 里正好一个 `\\tag{…}` / `\\tag*{…}` 时从里面取（同一步）。
 3. `pdf_text_layer`：还没有编号的公式，原文 PDF 有文字层时在公式右侧（或左侧）同一行找 `(1)`、`(2.19)`、`(3a)`、`(A.1)`
    这样的一行字（`attach_formula_numbers_from_pdf_text`，缩放到 PDF 的点之后跑）。扫描件没有文字层，不做。
+4. `ocr_crop`：页上取不出文字（扫描件）时，把公式右边（或左边）同一行截成窄条，用 CPU 上的小 OCR 模型找字、认字
+   （`formula_number_ocr.py`，紧跟第 3 步）。
+
+识别出来的编号丢了章号后面的点（`(57)`、`(5 20)`）时，按全书的阅读顺序、前后编号正好接得上才补回（`repair_formula_number_separators`，
+记 `repaired: true`）。
 
 同时有编号块和 `\\tag` 时以编号块为准：它是版面上单独印出来的那串字、能双向挂上块 id；LaTeX 里的 `\\tag` 是公式识别顺手
 认出来的，`in_latex` 记着公式原文里已经带了编号（渲染时别再补一遍）。
@@ -30,7 +35,10 @@ import re
 SOURCE_LAYOUT_BLOCK = "layout_block"
 SOURCE_LATEX_TAG = "latex_tag"
 SOURCE_PDF_TEXT_LAYER = "pdf_text_layer"
-FORMULA_NUMBER_SOURCES = (SOURCE_LAYOUT_BLOCK, SOURCE_LATEX_TAG, SOURCE_PDF_TEXT_LAYER)
+SOURCE_OCR_CROP = "ocr_crop"
+FORMULA_NUMBER_SOURCES = (SOURCE_LAYOUT_BLOCK, SOURCE_LATEX_TAG, SOURCE_PDF_TEXT_LAYER, SOURCE_OCR_CROP)
+# 补分隔符只对「认出来的」编号做：文字层是原文的字，照原样。
+REPAIRABLE_SOURCES = (SOURCE_LAYOUT_BLOCK, SOURCE_LATEX_TAG, SOURCE_OCR_CROP)
 
 # 编号块的纵向中心要落在公式上下沿各放宽「公式高度 × 这个比例」的范围里。
 VERTICAL_TOLERANCE_RATIO = 0.4
@@ -150,6 +158,7 @@ def _new_summary() -> dict:
         "numbered": {source: 0 for source in FORMULA_NUMBER_SOURCES},
         "number_block_count": 0,
         "unpaired_number_blocks": {},
+        "repaired": 0,
     }
 
 
@@ -436,12 +445,6 @@ def _text_layer_candidates(
     ]
     # 公式框外、同一行的字（左右两边）；公式框里的字是公式本身，不碰（上标 `(2)` 之类会误认）。
     outside = [word for word in band_words if word[0] >= fx1 - 1.0 or word[2] <= fx0 + 1.0]
-    number_blocks = [box for box in (_bbox(b) for b in blocks if is_formula_number_block(b)) if box]
-    other_blocks = [
-        (block, box)
-        for block, box in ((b, _bbox(b)) for b in blocks)
-        if box is not None and block is not formula and not is_formula_number_block(block)
-    ]
     found = []
     for line in _word_lines(outside):
         parsed = parse_number_text(line["text"], strict=True)
@@ -452,14 +455,7 @@ def _text_layer_candidates(
         gap = box[0] - fx1 if side == "right" else fx0 - box[2]
         if gap > MAX_GAP_RATIO * page_width:
             continue
-        # 编号块已经框着这串字：由编号块那一步管（那里没配上就是有歧义，这里不另配）。
-        if any(_inside(box, number_box) or _overlap_area(box, number_box) > 0 for number_box in number_blocks):
-            continue
-        # 落在别的块里（正文里引用 `(1)`、右栏的段落）：不是这个公式的编号。整块就是这个编号的文字块除外。
-        covering = [block for block, other in other_blocks if _overlap_area(box, other) > 0]
-        if any(parse_number_text(_text(block), strict=True) is None for block in covering):
-            continue
-        # 公式和编号之间同一行上还有别的字或别的块：跨栏或者是别的内容。
+        # 公式和编号之间同一行上还有别的字：跨栏或者是别的内容。
         x_from, x_to = (fx1, box[0]) if side == "right" else (box[2], fx0)
         line_cy = (box[1] + box[3]) / 2
         half = max(1e-6, (box[3] - box[1]) / 2)
@@ -475,30 +471,99 @@ def _text_layer_candidates(
         ):
             # 左边的「(1)」、公式右边同一行还有字（OCR 只框了半行）：是列表的序号，不是编号。
             continue
-        covering_ids = {id(block) for block in covering}
-        if _crosses_other_block(
-            blockers=[other for block, other in other_blocks if id(block) not in covering_ids],
-            x_from=x_from,
-            x_to=x_to,
-            y_center=line_cy,
-            half_band=max(1e-6, half / 2),
-        ):
-            continue
-        if _different_column(
-            number_box=box,
-            formula_box=formula_box,
-            paragraphs=[other for block, other in other_blocks if _is_paragraph_like(block, other, box)],
-            near=COLUMN_EVIDENCE_RATIO * page_height,
-        ):
+        if number_position_blocked(box=box, side=side, formula=formula, blocks=blocks, page_height=page_height):
             continue
         found.append((parsed[0], parsed[1], box, side))
     return found
+
+
+def number_position_blocked(
+    *,
+    box: list[float],
+    side: str,
+    formula: dict,
+    blocks: list[dict],
+    page_height: float,
+) -> bool:
+    """页上找到的一串编号（PDF 的点，在公式 `side` 一侧）该不该放弃：文字层兜底和截图识别共用这几条。
+
+    - 编号块已经框着它：由编号块那一步管（那里没配上就是有歧义，这里不另配）；
+    - 落在别的块里（正文里引用 `(1)`、右栏的段落）：不是这个公式的编号，整块就是这个编号的文字块除外；
+    - 公式和编号之间同一行上隔着别的块，或者编号和公式不在同一栏。
+    """
+    formula_box = _bbox(formula)
+    if formula_box is None:
+        return True
+    fx0, _fy0, fx1, _fy1 = formula_box
+    number_blocks = [other for other in (_bbox(b) for b in blocks if is_formula_number_block(b)) if other]
+    if any(_inside(box, number_box) or _overlap_area(box, number_box) > 0 for number_box in number_blocks):
+        return True
+    other_blocks = [
+        (block, other)
+        for block, other in ((b, _bbox(b)) for b in blocks)
+        if other is not None and block is not formula and not is_formula_number_block(block)
+    ]
+    covering = [block for block, other in other_blocks if _overlap_area(box, other) > 0]
+    if any(parse_number_text(_text(block), strict=True) is None for block in covering):
+        return True
+    x_from, x_to = (fx1, box[0]) if side == "right" else (box[2], fx0)
+    half = max(1e-6, (box[3] - box[1]) / 2)
+    covering_ids = {id(block) for block in covering}
+    if _crosses_other_block(
+        blockers=[other for block, other in other_blocks if id(block) not in covering_ids],
+        x_from=x_from,
+        x_to=x_to,
+        y_center=(box[1] + box[3]) / 2,
+        half_band=max(1e-6, half / 2),
+    ):
+        return True
+    return _different_column(
+        number_box=box,
+        formula_box=formula_box,
+        paragraphs=[other for block, other in other_blocks if _is_paragraph_like(block, other, box)],
+        near=COLUMN_EVIDENCE_RATIO * page_height,
+    )
 
 
 def _overlap_area(a: list[float], b: list[float]) -> float:
     width = min(a[2], b[2]) - max(a[0], b[0])
     height = min(a[3], b[3]) - max(a[1], b[1])
     return width * height if width > 0 and height > 0 else 0.0
+
+
+def block_bbox(block: dict) -> list[float] | None:
+    """块的框（`geometry.bbox`，没有就 `bbox`）；不是合法的框返回 None。"""
+    return _bbox(block)
+
+
+def page_size(page: dict) -> tuple[float, float]:
+    """页面宽高；没写就按块的最右、最下边估。"""
+    return _page_size(page, [block for block in page.get("blocks", []) or [] if isinstance(block, dict)])
+
+
+def pending_formulas(blocks: list[dict]) -> list[dict]:
+    """还没有编号的行间公式块。"""
+    return [
+        block
+        for block in blocks
+        if is_formula_block(block) and not isinstance((block.get("content") or {}).get("formula_number"), dict)
+    ]
+
+
+def attach_found_number(formula: dict, *, text: str, label: str, source: str) -> None:
+    """页上找到的编号（文字层、截图识别，没有编号块）挂到公式上。"""
+    _attach(
+        formula,
+        _number_record(text=text, label=label, source=source, in_latex=latex_tag_number(_text(formula)) is not None),
+    )
+
+
+def count_numbered(document: dict, source: str, count: int) -> None:
+    """文档 `derived.formula_numbers.numbered[source]` 加上 `count`。"""
+    summary = (document.get("derived") or {}).get("formula_numbers")
+    if count and isinstance(summary, dict):
+        numbered = summary.setdefault("numbered", {})
+        numbered[source] = int(numbered.get(source, 0)) + count
 
 
 def attach_formula_numbers_from_pdf_text(document: dict, pdf) -> int:
@@ -512,11 +577,7 @@ def attach_formula_numbers_from_pdf_text(document: dict, pdf) -> int:
         if page_index >= len(pdf):
             break
         blocks = [block for block in page.get("blocks", []) or [] if isinstance(block, dict)]
-        pending = [
-            block
-            for block in blocks
-            if is_formula_block(block) and not isinstance((block.get("content") or {}).get("formula_number"), dict)
-        ]
+        pending = pending_formulas(blocks)
         if not pending:
             continue
         words = pdf[page_index].get_text("words")
@@ -537,33 +598,217 @@ def attach_formula_numbers_from_pdf_text(document: dict, pdf) -> int:
             if len(claimed) != 1:
                 continue
             formula, text, label = claimed[0]
-            _attach(
-                formula,
-                _number_record(
-                    text=text,
-                    label=label,
-                    source=SOURCE_PDF_TEXT_LAYER,
-                    in_latex=latex_tag_number(_text(formula)) is not None,
-                ),
-            )
+            attach_found_number(formula, text=text, label=label, source=SOURCE_PDF_TEXT_LAYER)
             attached += 1
-    if attached:
-        summary = (document.get("derived") or {}).get("formula_numbers")
-        if isinstance(summary, dict):
-            numbered = summary.setdefault("numbered", {})
-            numbered[SOURCE_PDF_TEXT_LAYER] = int(numbered.get(SOURCE_PDF_TEXT_LAYER, 0)) + attached
+    count_numbered(document, SOURCE_PDF_TEXT_LAYER, attached)
     return attached
+
+
+# ---- 补回丢了的分隔符（`(57)` → `(5.7)`） --------------------------------------------------------------
+
+# 「章.序」编号：`5.7`、`5-37`、`6.46b`。
+_CHAPTER_NUMBER_RE = re.compile(r"^(\d{1,3})([.\-])(\d{1,4})([a-z]?)$")
+# 丢了分隔符的：`57`、`510`、`57a`（一串数字），`5 20`（点认成了空格，截图识别记成一个空格）。
+_JOINED_NUMBER_RE = re.compile(r"^(\d{2,5})([a-z]?)$")
+_SPACED_NUMBER_RE = re.compile(r"^(\d{1,3}) (\d{1,4})([a-z]?)$")
+# 一段连着的待补编号最多这么多个（再长就不猜了）。
+MAX_REPAIR_RUN = 12
+
+
+def _chapter_number(label: str) -> tuple[int, int, str, str] | None:
+    """`5.7` → (章 5, 序 7, 字母 "", 分隔符 ".")。"""
+    match = _CHAPTER_NUMBER_RE.match(label)
+    if not match or (len(match.group(3)) > 1 and match.group(3).startswith("0")):
+        return None
+    return int(match.group(1)), int(match.group(3)), match.group(4), match.group(2)
+
+
+def _separator_splits(label: str) -> list[tuple[int, int, str]] | None:
+    """丢了分隔符的编号能拆成哪几种 (章, 序, 字母)；不是这种编号返回 None。"""
+    spaced = _SPACED_NUMBER_RE.match(label)
+    if spaced:
+        chapter, sequence, letter = spaced.groups()
+        pieces = [(chapter, sequence)]
+    else:
+        joined = _JOINED_NUMBER_RE.match(label)
+        if not joined:
+            return None
+        digits, letter = joined.groups()
+        pieces = [(digits[:cut], digits[cut:]) for cut in range(1, len(digits))]
+    splits = []
+    for chapter, sequence in pieces:
+        if chapter.startswith("0") or sequence.startswith("0") or len(chapter) > 3:
+            continue
+        splits.append((int(chapter), int(sequence), letter))
+    return splits
+
+
+def _follows(previous: tuple[int, int, str], current: tuple[int, int, str]) -> bool:
+    """`current` 正好接在 `previous` 后面：同章序号加一（5.6 → 5.7、5.6b → 5.7、5.6 → 5.7a），同号字母往后一个
+    （5.6a → 5.6b），或者下一章从 1 开始（5.54 → 6.1）。"""
+    c0, s0, l0 = previous
+    c1, s1, l1 = current
+    if c1 == c0 and s1 == s0 + 1:
+        return l1 in ("", "a")
+    if c1 == c0 and s1 == s0 and l0:
+        return l1 == chr(ord(l0) + 1)
+    return c1 == c0 + 1 and s1 == 1 and l1 in ("", "a")
+
+
+def _reading_sequence(document: dict) -> list[dict]:
+    """全书带编号的公式块，按页、页内阅读顺序排好。"""
+    blocks = []
+    for page in document.get("pages", []) or []:
+        page_blocks = [block for block in page.get("blocks", []) or [] if isinstance(block, dict)]
+        ordered = sorted(
+            enumerate(page_blocks),
+            key=lambda item: (
+                item[1].get("reading_order") if isinstance(item[1].get("reading_order"), int) else item[0],
+                item[0],
+            ),
+        )
+        for _index, block in ordered:
+            if is_formula_block(block) and isinstance((block.get("content") or {}).get("formula_number"), dict):
+                blocks.append(block)
+    return blocks
+
+
+def _rebracket(text: str, label: str) -> str:
+    raw = str(text or "").strip()
+    if raw and raw[0] in _OPEN and raw[-1] in _CLOSE:
+        return f"{raw[0]}{label}{raw[-1]}"
+    return f"({label})"
+
+
+def repair_formula_number_separators(
+    document: dict,
+    *,
+    sources: tuple[str, ...] = REPAIRABLE_SOURCES,
+    drop_sources: tuple[str, ...] = (SOURCE_OCR_CROP,),
+) -> tuple[int, int]:
+    """认出来的编号丢了章号后面的点（`(57)`、`(5 20)`、`(510)`）：按全书阅读顺序，前后的编号都是「章.序」、
+    而且只有一种拆法能让前一个、这几个、后一个正好一个接一个（`_follows`），就补成 `(5.7)`，记 `repaired: true`
+    和原来的 `repaired_from`。返回 (补了几个, 去掉几个)。
+
+    规则（宁可不配也不配错）：
+    - 只看 `sources` 来源的编号（默认编号块、`\\tag`、截图识别；文字层是原文的字，不动）；
+    - 连着几个丢了点的一起补（`5.6, (57), (58), 5.9`），前后都得有「章.序」编号、分隔符一样，拆法要唯一；
+    - 接不上：一串数字（`(57)`）照原样留着，除非它夹在同一章的两个「章.序」编号中间（那它肯定丢了点、又补不回来）；
+      中间是空格的（`(5 20)`）不是能印出来的编号，都不留。去掉只对 `drop_sources` 来源做（默认只有截图识别），
+      别的来源照原样留着。
+    - 文档 `derived.formula_numbers` 的 `repaired` 加上补了的个数，去掉的从 `numbered` 里减掉、记进 `ocr_crop.rejected.unrepaired`。
+    """
+    sequence = _reading_sequence(document)
+    records = [block["content"]["formula_number"] for block in sequence]
+    candidates = [
+        str(record.get("source", "")) in sources
+        and not record.get("repaired")
+        and _separator_splits(str(record.get("label", ""))) is not None
+        for record in records
+    ]
+    repaired = 0
+    dropped = 0
+    index = 0
+    while index < len(records):
+        if not candidates[index]:
+            index += 1
+            continue
+        end = index
+        while end < len(records) and candidates[end]:
+            end += 1
+        before = _neighbour_anchor(records, index - 1)
+        after = _neighbour_anchor(records, end)
+        fixed = _repair_run(records[index:end], before, after)
+        repaired += fixed
+        if not fixed:
+            same_chapter = before is not None and after is not None and before[0] == after[0]
+            for block, record in zip(sequence[index:end], records[index:end]):
+                source = str(record.get("source", ""))
+                if source not in drop_sources:
+                    continue
+                label = str(record.get("label", ""))
+                if _SPACED_NUMBER_RE.match(label) or (same_chapter and _JOINED_NUMBER_RE.match(label)):
+                    del block["content"]["formula_number"]
+                    dropped += 1
+                    _count_dropped(document, source)
+        index = end
+    summary = (document.get("derived") or {}).get("formula_numbers")
+    if isinstance(summary, dict) and (repaired or "repaired" in summary):
+        summary["repaired"] = int(summary.get("repaired", 0)) + repaired
+    return repaired, dropped
+
+
+def _neighbour_anchor(records: list[dict], position: int) -> tuple[int, int, str, str] | None:
+    if not 0 <= position < len(records):
+        return None
+    return _chapter_number(str(records[position].get("label", "")))
+
+
+def _repair_run(
+    run: list[dict],
+    before: tuple[int, int, str, str] | None,
+    after: tuple[int, int, str, str] | None,
+) -> int:
+    """连着的一段丢了点的编号，夹在 `before`、`after` 两个「章.序」编号中间：只有一种拆法能一个接一个时补上。"""
+    if before is None or after is None or before[3] != after[3] or len(run) > MAX_REPAIR_RUN:
+        return 0
+    options = [_separator_splits(str(record.get("label", ""))) or [] for record in run]
+    solutions: list[list[tuple[int, int, str]]] = []
+
+    def search(previous: tuple[int, int, str], chosen: list[tuple[int, int, str]]) -> None:
+        if len(solutions) > 1:
+            return
+        if len(chosen) == len(options):
+            if _follows(previous, after[:3]):
+                solutions.append(list(chosen))
+            return
+        for option in options[len(chosen)]:
+            if _follows(previous, option):
+                search(option, [*chosen, option])
+
+    search(before[:3], [])
+    if len(solutions) != 1:
+        return 0
+    separator = before[3]
+    for record, (chapter, sequence, letter) in zip(run, solutions[0]):
+        label = f"{chapter}{separator}{sequence}{letter}"
+        record["repaired_from"] = record.get("text", "")
+        record["text"] = _rebracket(str(record.get("text", "")), label)
+        record["label"] = label
+        record["repaired"] = True
+    return len(run)
+
+
+def _count_dropped(document: dict, source: str) -> None:
+    summary = (document.get("derived") or {}).get("formula_numbers")
+    if not isinstance(summary, dict):
+        return
+    numbered = summary.setdefault("numbered", {})
+    numbered[source] = max(0, int(numbered.get(source, 0)) - 1)
+    if source == SOURCE_OCR_CROP:
+        stats = summary.setdefault(SOURCE_OCR_CROP, {})
+        rejected = stats.setdefault("rejected", {})
+        rejected["unrepaired"] = int(rejected.get("unrepaired", 0)) + 1
 
 
 __all__ = [
     "FORMULA_NUMBER_SOURCES",
+    "REPAIRABLE_SOURCES",
     "SOURCE_LATEX_TAG",
     "SOURCE_LAYOUT_BLOCK",
+    "SOURCE_OCR_CROP",
     "SOURCE_PDF_TEXT_LAYER",
     "attach_formula_numbers",
     "attach_formula_numbers_from_pdf_text",
+    "attach_found_number",
+    "block_bbox",
+    "count_numbered",
     "is_formula_block",
     "is_formula_number_block",
     "latex_tag_number",
+    "number_position_blocked",
+    "page_size",
     "parse_number_text",
+    "pending_formulas",
+    "repair_formula_number_separators",
 ]

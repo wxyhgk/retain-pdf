@@ -35,6 +35,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# 扫描件（页上没有文字层）的行间公式编号：CPU 上跑的小 OCR 模型截图识别（2026-11-26，
+# ocr/document_schema/formula_number_ocr.py）。用 rapidocr 包里自带的 PP-OCRv6 small 检测、识别模型，不联网下载。
+# 做成 extra 而不是必装：没装时这一步跳过（统计里记 ocr_engine_unavailable），翻译和归一化照常。
+# 后端工作区（Docker、CI、开发环境）装上它；桌面安装包的依赖清单另由前端接（docs/core/frontend/backend-changes-handoff.md）。
+scan-ocr = [
+  "onnxruntime==1.32.0",
+  "rapidocr==3.10.0",
+]
 test = [
   "pytest==9.0.3",
   # 只用来在测试里检查产出的 docx；文档现在由 retainpdf2doc（Node）生成。

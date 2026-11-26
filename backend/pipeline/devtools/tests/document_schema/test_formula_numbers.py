@@ -103,7 +103,7 @@ def test_number_block_on_the_right_is_attached_both_ways() -> None:
     assert number["structure_role"] == "formula_number"
     assert number["policy"]["translate"] is False
     summary = document["derived"]["formula_numbers"]
-    assert summary["numbered"] == {"layout_block": 1, "latex_tag": 0, "pdf_text_layer": 0}
+    assert summary["numbered"] == {"layout_block": 1, "latex_tag": 0, "pdf_text_layer": 0, "ocr_crop": 0}
     assert summary["unpaired_number_blocks"] == {}
     assert report["formula_numbers"] == summary
 
@@ -217,9 +217,10 @@ def test_formula_without_any_number_is_left_alone() -> None:
     assert "formula_number" not in _formulas(document)[0]["content"]
     assert document["derived"]["formula_numbers"] == {
         "formula_count": 1,
-        "numbered": {"layout_block": 0, "latex_tag": 0, "pdf_text_layer": 0},
+        "numbered": {"layout_block": 0, "latex_tag": 0, "pdf_text_layer": 0, "ocr_crop": 0},
         "number_block_count": 0,
         "unpaired_number_blocks": {},
+        "repaired": 0,
     }
 
 

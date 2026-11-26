@@ -210,7 +210,8 @@
 见下面「行间公式编号」）→ 校验。
 
 normalize worker 里的顺序（`normalize_pipeline.py` 的 `build_normalized_artifacts`）：adapter → 缩放到 PDF
-（`pdf_geometry.rescale_document_geometry_to_pdf`；缩放完顺带用原文文字层恢复乱码、给还没有编号的行间公式找编号）→ 行重建（`pdf_geometry.rebuild_estimated_text_geometry`，估行在 `estimated_lines.py`）→ 重新校验；
+（`pdf_geometry.rescale_document_geometry_to_pdf`；缩放完顺带用原文文字层恢复乱码、给还没有编号的行间公式找编号，扫描件的页截图认编号、
+补回认丢了的点）→ 行重建（`pdf_geometry.rebuild_estimated_text_geometry`，估行在 `estimated_lines.py`）→ 重新校验；
 后三步收在 `finalize.finalize_normalized_document`，命令型 OCR、MinerU 的 Python 直跑也调它。缩放、补行、估行 2026-10-29 以前在
 `ocr_provider/paddle_normalize.py` 和 `provider_adapters/paddle/content_extract.py` 里（Paddle 专用的位置，却对所有服务商都跑），
 现在在核心包、只依赖文档模型和 `provider_adapters/common/normalize.py`（`devtools/architecture_checks/ocr_layers.py` 钉着：不许导入任何一家的
@@ -681,7 +682,8 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 
 ## 行间公式编号
 
-2026-11-26 起（`formula_numbers.py`，方案 `docs/ops/planning/ocr-normalization/20261126-行间公式编号.md`）。三家给编号的方式不同：
+2026-11-26 起（`formula_numbers.py`、`formula_number_ocr.py`，方案 `docs/ops/planning/ocr-normalization/20261126-行间公式编号.md`、
+`20261126-扫描件公式编号小模型.md`）。三家给编号的方式不同：
 PaddleOCR-VL、MinerU 把编号单独出成一块（Paddle `structure_role = "formula_number"`，MinerU 归成 `metadata`、原始标签
 `provenance.raw_label = "formula_number"`），不和公式关联；GLM-OCR 没有编号块，少数公式把编号识别进 LaTeX（`\tag{2.19}`）。
 归一化按顺序补，和服务商无关：
@@ -695,6 +697,20 @@ PaddleOCR-VL、MinerU 把编号单独出成一块（Paddle `structure_role = "fo
 3. `pdf_text_layer`：缩放到 PDF 之后，还没有编号的公式在原文文字层里找：公式框外、同一行（上下各放宽公式高度 0.2 倍）、一整行就是
    `(1)`、`(2.19)`、`(3a)`、`(A.1)` 这样带圆括号带数字的字；落在别的块里、中间还有别的字或块、跨栏的不要；左边的编号要求公式右边同一行没有字
    （不然是列表序号）；两边都找到、或者两个公式找到同一串字的不配。没有文字层的页（扫描件）不做。
+4. `ocr_crop`（`formula_number_ocr.py`，紧跟第 3 步）：页上一个字都取不出来（和第 3 步同一个口径）、页面又不是空白的页，还没有编号的公式截图识别。
+   每页按页宽约 2000 像素灰度渲染一次；公式右边同一行（上下各放宽公式高度 15%、至少 4 像素，横向从公式右边缘 +4 像素到页宽 97%）
+   截一条窄图只做检测，取离公式最近的字框，四边扩 6 像素切出来只做识别；整段是 `(1.2)`、`(1.3a)`、`(A.1)`、`(5-37)`（全角括号也认）才收。
+   右边一个字框都没有才看左边。离公式最近的字框和别的字挨着（横向间隔不到 1.5 倍字高）不收；字框（四边收进 0.2 倍字高）落在别的块里、
+   和公式之间隔着别的块、跨栏的不收（和第 3 步同一套规则）；两个公式认到同一个字框都不收。
+   引擎是 rapidocr 包里自带的 PP-OCRv6 small 检测、识别模型（ONNX，CPU），先核对 sha256、不联网下载；`rapidocr`、`onnxruntime` 是
+   `retainpdf-pipeline[scan-ocr]` 这个 extra，没装、模型不对、加载失败都跳过这一步（记原因），归一化照常。环境变量
+   `RETAINPDF_FORMULA_NUMBER_OCR=0` 关掉。
+
+最后补分隔符（`repair_formula_number_separators`）：认出来的编号（`layout_block`、`latex_tag`、`ocr_crop`；文字层是原文的字，不动）丢了
+章号后面的点——`(57)`、`(510)`，或者点认成空格、逗号的 `(5 20)`——按全书阅读顺序，连着的一段夹在前后两个「章.序」编号中间、分隔符一样、
+只有一种拆法能一个接一个（序号加一、同号字母往后一个 `5.6a → 5.6b`、或者下一章从 1 开始 `5.54 → 6.1`）时，补成 `(5.7)`，记 `repaired`。
+补不上时：截图识别读出的 `(5 20)` 去掉；一串数字的 `(58)` 夹在同一章的两个「章.序」编号中间也去掉（肯定丢了点），别的照原样留着；
+别的来源照原样留着。
 
 同时有编号块和 `\tag` 时以编号块为准（它是版面上单独印出来的、能双向挂上块 id），`in_latex = true` 记着公式原文里已经带了编号。
 
@@ -703,14 +719,21 @@ PaddleOCR-VL、MinerU 把编号单独出成一块（Paddle `structure_role = "fo
 - 公式块 `content.formula_number`：
   - `text`：编号原样，例如 `"(2.19)"`（`\tag{2.19}` 记成 `"(2.19)"`，`\tag*{…}` 记里面的原样）
   - `label`：去掉括号的标签，例如 `"2.19"`
-  - `source`：`layout_block` / `latex_tag` / `pdf_text_layer`
+  - `source`：`layout_block` / `latex_tag` / `pdf_text_layer` / `ocr_crop`
   - `in_latex`：公式 LaTeX 里已经有 `\tag`（渲染时别再补一遍）
   - `block_id`：编号块的 id（只有 `layout_block` 有）
+  - `repaired`、`repaired_from`：分隔符是按前后编号补回来的（`true`），和补之前读到的样子（`"(57)"`）；没补过的没有这两个字段
 - 编号块 `content.number_of_block_id`：它属于哪个公式块；`content.related_block_ids` 里也追加这个 id（和图注挂图一样）
 - 文档 `derived.formula_numbers`（报告里同名一份）：`formula_count`、`numbered`（按来源计数）、`number_block_count`、
-  `unpaired_number_blocks`（没配上的原因：`not_a_number` / `no_candidate` / `ambiguous` / `formula_contested`）。没有公式也没有编号块的文档不写
+  `unpaired_number_blocks`（没配上的原因：`not_a_number` / `no_candidate` / `ambiguous` / `formula_contested`）、`repaired`（补了分隔符的个数）。
+  截图识别要做的时候（有页上取不出字、又不是空白的页，页上有没配上的公式）另有 `ocr_crop`：`pages`、`formulas`（试了几个公式）、
+  `rejected`（没收的原因计数：`no_text` 两边都没有字、`crowded` 挨着别的字、`not_a_number` 不像编号、`other_block` 落在别的块里或跨栏、
+  `contested` 两个公式认到同一串字、`ocr_error` 识别出错、`unrepaired` 点补不回去被去掉），引擎用不了时 `skipped`
+  （`ocr_engine_unavailable` 没装 / import 失败、`ocr_model_unavailable` 包里没有钉住的模型、`ocr_engine_failed` 加载失败、`disabled` 关掉了）。
+  没有公式也没有编号块的文档不写
 
-校验器查：`formula_number` 只挂在 formula 块上、三个字符串非空、`source` 在三个取值里；`block_id` 和 `number_of_block_id` 在同一页、互相指着。
+校验器查：`formula_number` 只挂在 formula 块上、三个字符串非空、`source` 在四个取值里、`repaired` 是布尔、`repaired_from` 只在补过的上有；
+`block_id` 和 `number_of_block_id` 在同一页、互相指着。
 
 ```json
 {
@@ -721,6 +744,12 @@ PaddleOCR-VL、MinerU 把编号单独出成一块（Paddle `structure_role = "fo
     "formula_number": {"text": "(2.19)", "label": "2.19", "source": "layout_block", "in_latex": false, "block_id": "p012-b0008"}
   }
 }
+```
+
+扫描件上截图认出来、补过点的：
+
+```json
+{"text": "(5.7)", "label": "5.7", "source": "ocr_crop", "in_latex": false, "repaired": true, "repaired_from": "(57)"}
 ```
 
 ## `type / sub_type` 约定

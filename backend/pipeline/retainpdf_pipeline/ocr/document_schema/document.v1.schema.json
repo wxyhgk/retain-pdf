@@ -283,7 +283,8 @@
           "enum": [
             "layout_block",
             "latex_tag",
-            "pdf_text_layer"
+            "pdf_text_layer",
+            "ocr_crop"
           ]
         },
         "in_latex": {
@@ -294,6 +295,14 @@
           "type": "string",
           "minLength": 1,
           "description": "The formula-number block on the same page (source = layout_block)."
+        },
+        "repaired": {
+          "type": "boolean",
+          "description": "The separator was restored from the neighbouring numbers, e.g. OCR read (57) between (5.6) and (5.8)."
+        },
+        "repaired_from": {
+          "type": "string",
+          "description": "The number as read before the separator was restored (only when repaired)."
         }
       }
     },

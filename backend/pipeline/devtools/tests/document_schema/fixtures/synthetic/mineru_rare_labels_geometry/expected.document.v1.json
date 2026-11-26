@@ -43,8 +43,10 @@
    "numbered": {
     "latex_tag": 0,
     "layout_block": 3,
+    "ocr_crop": 0,
     "pdf_text_layer": 0
    },
+   "repaired": 0,
    "unpaired_number_blocks": {}
   },
   "notes": "MinerU middle.json adapted through RetainPDF canonical roles.",

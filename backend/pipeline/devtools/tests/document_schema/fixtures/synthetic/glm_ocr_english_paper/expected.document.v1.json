@@ -26,8 +26,10 @@
    "numbered": {
     "latex_tag": 0,
     "layout_block": 0,
+    "ocr_crop": 0,
     "pdf_text_layer": 0
    },
+   "repaired": 0,
    "unpaired_number_blocks": {}
   },
   "notes": "Adapted from GLM-OCR layout_parsing layout_details (via the PaddleOCR-VL block reader).",

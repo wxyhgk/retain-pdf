@@ -12,6 +12,10 @@ except ModuleNotFoundError:  # pragma: no cover
     tomllib = None
 
 
+# pipeline 的 extra，后端工作区（backend/pyproject.toml 依赖 retainpdf-pipeline[scan-ocr]，Docker 用 uv export 装）带着：
+# Docker 的两份清单也带上。桌面的清单只放必装的，要不要带由前端定（docs/core/frontend/backend-changes-handoff.md）。
+DOCKER_PIPELINE_EXTRAS = ("scan-ocr",)
+
 DESKTOP_MACOS_EXTRA_HEADER = [
     "# Legacy compatibility copy. CI should stay aligned with requirements-desktop-posix.txt.",
 ]
@@ -42,6 +46,14 @@ def parse_args() -> argparse.Namespace:
         help="Fail if generated files differ from checked-in files.",
     )
     return parser.parse_args()
+
+
+def _load_optional_group(pyproject_path: Path, extra: str) -> list[str]:
+    text = pyproject_path.read_text(encoding="utf-8")
+    if tomllib is None:
+        return _load_arrays_fallback(text).get(f"project.optional-dependencies.{extra}", [])
+    optional = (tomllib.loads(text).get("project") or {}).get("optional-dependencies") or {}
+    return [str(item).strip() for item in optional.get(extra) or [] if str(item).strip()]
 
 
 def _load_dependency_groups(pyproject_path: Path) -> tuple[list[str], list[str]]:
@@ -83,6 +95,15 @@ def _without_workspace_packages(requirements: list[str], workspace: set[str]) ->
 
 
 def _load_dependency_groups_fallback(text: str, pyproject_path: Path) -> tuple[list[str], list[str]]:
+    arrays = _load_arrays_fallback(text)
+    runtime = arrays.get("project.dependencies", [])
+    test = arrays.get("project.optional-dependencies.test", [])
+    if not runtime:
+        raise RuntimeError(f"No project.dependencies found in {pyproject_path}")
+    return runtime, test
+
+
+def _load_arrays_fallback(text: str) -> dict[str, list[str]]:
     lines = text.splitlines()
     section = ""
     current_array: str | None = None
@@ -117,11 +138,7 @@ def _load_dependency_groups_fallback(text: str, pyproject_path: Path) -> tuple[l
             current_array = None
             continue
         arrays[current_array].append(line.rstrip(",").strip().strip('"').strip("'"))
-    runtime = arrays.get("project.dependencies", [])
-    test = arrays.get("project.optional-dependencies.test", [])
-    if not runtime:
-        raise RuntimeError(f"No project.dependencies found in {pyproject_path}")
-    return runtime, test
+    return arrays
 
 
 def _render_requirements(
@@ -172,15 +189,18 @@ def main() -> None:
     pipeline_runtime, pipeline_test = (
         _without_workspace_packages(group, workspace) for group in _load_dependency_groups(pipeline_path)
     )
-    pipeline_with_test = pipeline_runtime + pipeline_test
+    docker_runtime = pipeline_runtime + [
+        requirement for extra in DOCKER_PIPELINE_EXTRAS for requirement in _load_optional_group(pipeline_path, extra)
+    ]
+    docker_with_test = docker_runtime + pipeline_test
 
     targets = {
         repo_root / "ops" / "deployment" / "docker" / "requirements-app.txt": _render_requirements(
-            pipeline_runtime,
+            docker_runtime,
             source=pipeline_source,
         ),
         repo_root / "ops" / "deployment" / "docker" / "requirements-test.txt": _render_requirements(
-            pipeline_with_test,
+            docker_with_test,
             source=pipeline_source,
         ),
         repo_root / "frontend" / "desktop" / "requirements-desktop-posix.txt": _render_requirements(
