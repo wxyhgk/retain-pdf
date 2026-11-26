@@ -1,10 +1,10 @@
 import { jsxs as _, jsx as b } from "react/jsx-runtime";
 import { useEffect as Y, useRef as T, useState as z, useMemo as De } from "react";
 import { Search as Le, ChevronUp as Ae, ChevronDown as Ue, ListTree as Se } from "lucide-react";
-import { d as pe, b as se, f as fe, u as xe } from "./ReaderApp-DncUM5SR.js";
+import { d as pe, b as se, f as fe, u as xe } from "./ReaderApp-DckwODmA.js";
 import { e as me, m as ze, a as we } from "./markdown-math-XkF5urpn.js";
 import { n as Pe } from "./markdown-payload-kK3ewW_I.js";
-import { r as Te, b as qe } from "./reader-blocks-BxElLvLX.js";
+import { r as Te, b as qe } from "./reader-blocks-DasBcCfQ.js";
 const ve = "h1, h2, h3, h4, h5, h6, p, li, td, th, blockquote, pre";
 function Ne(t) {
   t.querySelectorAll(".reader-markdown-search-hit, .reader-markdown-search-hit-active").forEach((e) => {
@@ -824,4 +824,4 @@ export {
   Ve as isProtectedMarkdownAssetUrl,
   be as startMarkdownImageLoading
 };
-//# sourceMappingURL=ReaderMarkdownPanel-CoMCuDWb.js.map
+//# sourceMappingURL=ReaderMarkdownPanel-Wqelsyty.js.map

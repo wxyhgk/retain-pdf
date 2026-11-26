@@ -6,7 +6,7 @@
 //
 // 老后端没有 reading_order —— 这时返回 null，面板退回整篇 full.md。
 
-import type { ReaderRegion } from "../data/reader-regions.js";
+import { extractReaderFormulaLatex, type ReaderRegion } from "../data/reader-regions.js";
 
 export type ReaderMdBlockKind =
   | "heading"
@@ -120,6 +120,12 @@ export function readerMdBlockMarkdown(block: ReaderMdBlock, language: ReaderMdLa
   if (block.kind === "heading") {
     const level = Math.min(Math.max(block.level, 1), 6);
     return `${"#".repeat(level)} ${text.replace(/\s*\n\s*/g, " ")}`;
+  }
+  if (block.kind === "formula") {
+    // 公式块整条交给 MathJax：MinerU 给的是没包 $$ 的裸 LaTeX，按裸 LaTeX 片段去认会在空格处切断
+    // （`\frac {a}{b}`、`\left( … \right)`），渲染失败。已经包了 $$ / \[ \] / ```latex 的先剥掉，不包两层。
+    const latex = extractReaderFormulaLatex(text);
+    return latex ? `$$\n${latex}\n$$` : "";
   }
   return text;
 }

@@ -9,7 +9,7 @@ import { requireAdapter as Ct, getReaderAdapters as xe } from "./adapters.js";
 import { resolveReaderDownloadName as is, resolveReaderDownloadUrls as ls, READER_PROGRESS_COPY as Ze, trimString as un, READER_DOWNLOAD_ACTIONS as cs, disabledReason as us } from "./runtime/state.js";
 import { r as ds, b as fs } from "./page-config-Ct7qR5rm.js";
 import { documentSourcePdfPath as xn, isFinishedJobStatus as qt } from "@retainpdf/domain/job";
-import { n as Bo, d as hs, f as kn, k as _r, b as ms, c as ps, j as De, p as zt, g as gs, l as Gt, i as bs } from "./reader-regions-B6o2DsPy.js";
+import { n as Bo, d as hs, f as kn, k as _r, b as ms, c as ps, j as De, p as zt, g as gs, l as Gt, i as bs } from "./reader-regions-BmqHsJ-I.js";
 import { fetchDocumentReading as ys } from "@retainpdf/api/documents";
 import { isReaderTransportError as vs, createReaderTransportError as ws } from "./contracts.js";
 import { X as kt, PenLine as er, ZoomIn as Ss, Check as jo, Copy as ks, ChevronUp as Is, ChevronDown as Ho, History as Rs, LoaderCircle as Ps, Pin as Es, LogOut as Ts, FileText as Uo, Columns2 as Wo, Languages as Ko, Radio as Ms, ArrowDownToLine as Ns, CheckCircle2 as As, Keyboard as Ls, Download as _s, ListOrdered as xs, TriangleAlert as Ds, ChevronRight as Vo, ListTree as Cs, Search as zs, GitCompareArrows as Os, LayoutGrid as $s, Highlighter as Fs, Eraser as Bs, Undo2 as js, Trash2 as Hs, ChevronLeft as Us, Minus as Ws, Plus as Ks, ArrowLeft as Vs } from "lucide-react";
@@ -9110,7 +9110,7 @@ function Tm({
     goBack: D(() => d("back"), [d])
   };
 }
-const Mm = Fo(() => import("./ReaderMarkdownPanel-CoMCuDWb.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Nm = Fo(() => import("./ReaderAskPanel-czBueFeX.js")), Am = [];
+const Mm = Fo(() => import("./ReaderMarkdownPanel-Wqelsyty.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Nm = Fo(() => import("./ReaderAskPanel-CDQJbsFy.js")), Am = [];
 function Lm(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantOpen && e.mode === "compare" ? "source" : e.mode, a = !t && (o === "translated" || o === "compare");
   return {
@@ -9543,4 +9543,4 @@ export {
   Xm as r,
   ot as u
 };
-//# sourceMappingURL=ReaderApp-DncUM5SR.js.map
+//# sourceMappingURL=ReaderApp-DckwODmA.js.map

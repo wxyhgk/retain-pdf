@@ -24,7 +24,12 @@ function withFormulaLabel(markdown: string, label: string): string {
   const tag = label.replace(/^\s*\(\s*|\s*\)\s*$/g, "").trim();
   if (!tag) return markdown;
   const trimmed = markdown.trimEnd();
-  if (trimmed.endsWith("$$") && trimmed.length > 4) return `${trimmed.slice(0, -2).trimEnd()} \\tag{${tag}}$$`;
+  if (trimmed.endsWith("$$") && trimmed.length > 4) {
+    const body = trimmed.slice(0, -2).trimEnd();
+    // MinerU 的公式自己带 \tag{1}，再加一个 MathJax 会报 Multiple \tag。
+    if (/\\tag\s*\{/.test(body)) return trimmed;
+    return `${body} \\tag{${tag}}\n$$`;
+  }
   return `${trimmed} ${label.trim()}`;
 }
 

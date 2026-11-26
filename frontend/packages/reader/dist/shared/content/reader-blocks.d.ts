@@ -1,4 +1,4 @@
-import type { ReaderRegion } from "../data/reader-regions.js";
+import { type ReaderRegion } from "../data/reader-regions.js";
 export type ReaderMdBlockKind = "heading" | "paragraph" | "formula" | "figure" | "table" | "caption" | "reference" | "footnote" | "meta";
 export type ReaderMdBlock = {
     /** 第一块的 itemId，同时当 React key 和点击跳转目标。 */

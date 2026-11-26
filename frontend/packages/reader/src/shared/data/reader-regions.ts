@@ -182,6 +182,9 @@ export function readerRegionKind(regionType: string): ReaderRegionKind {
 export function readerRegionKindForRegion(region: ReaderRegion): ReaderRegionKind {
   const declared = readerRegionKind(region.regionType);
   if (declared !== "region") return declared;
+  // MinerU 的行间公式：region_type 是 unknown，却带一张公式截图（asset）和整条裸 LaTeX。
+  // sub_type 说了是公式就按公式算，不能因为有图片资源归成图片（Windows 2026.11.23 的悬停层不认图片，公式整条悬停不到）。
+  if (`${region.subType || ""}`.trim().toLowerCase() === "display_formula") return "formula";
   if (region.assetIds.length || region.assetUrls.length) return "figure";
   const content = `${region.markdown || region.source.text || region.translated.text || ""}`.trim();
   if (/^<table(?:\s|>)/i.test(content) || /\n\s*\|?\s*:?-{3,}/.test(content)) return "table";

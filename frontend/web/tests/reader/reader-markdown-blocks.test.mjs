@@ -88,7 +88,7 @@ test("没有译文的块（公式、参考文献）在译文视图里显示原�
   const blocks = buildReaderMdBlocks(normalizeReaderRegions(PAYLOAD));
   const formula = blocks.find((block) => block.kind === "formula");
   assert.equal(formula.hasTranslation, false);
-  assert.equal(readerMdBlockMarkdown(formula, "translated"), "$$ H = T + V $$");
+  assert.equal(readerMdBlockMarkdown(formula, "translated"), "$$\nH = T + V\n$$");
   assert.equal(formula.label, "(1)", "公式编号应挂在紧挨着的公式上");
 });
 

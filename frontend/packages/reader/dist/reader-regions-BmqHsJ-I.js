@@ -1,12 +1,12 @@
 const N = /^p0*(\d+)-b0*(\d+)$/i;
-function $(n) {
+function y(n) {
   const t = N.exec(`${n || ""}`.trim());
   return t ? `p${Number(t[1])}-b${Number(t[2])}` : `${n || ""}`.trim();
 }
 function g(n) {
   return n && typeof n == "object" && !Array.isArray(n) ? n : null;
 }
-function R(n) {
+function m(n) {
   const t = g(n);
   return t && "data" in t ? t.data : n;
 }
@@ -14,7 +14,7 @@ function h(n) {
   const t = Number(n);
   return Number.isFinite(t) && t > 0 ? t : null;
 }
-function y(n) {
+function $(n) {
   const t = g(n);
   if (!t || !Array.isArray(t.bbox) || t.bbox.length !== 4) return null;
   const e = t.bbox.map(Number);
@@ -46,10 +46,10 @@ function A(n) {
   const r = (n == null ? void 0 : n.translated_block_text) ?? (n == null ? void 0 : n.translatedBlockText);
   return typeof r == "string" && r && (t.translatedBlockText = r), t;
 }
-function T(n) {
-  const t = R(n), e = g(t), s = Array.isArray(t) ? t : Array.isArray(e == null ? void 0 : e.items) ? e.items : [], o = [];
+function S(n) {
+  const t = m(n), e = g(t), s = Array.isArray(t) ? t : Array.isArray(e == null ? void 0 : e.items) ? e.items : [], o = [];
   for (const a of s) {
-    const r = g(a), u = `${(r == null ? void 0 : r.item_id) || (r == null ? void 0 : r.itemId) || ""}`.trim(), l = y(r == null ? void 0 : r.source), i = y(r == null ? void 0 : r.translated);
+    const r = g(a), u = `${(r == null ? void 0 : r.item_id) || (r == null ? void 0 : r.itemId) || ""}`.trim(), l = $(r == null ? void 0 : r.source), i = $(r == null ? void 0 : r.translated);
     !u || !l || !i || o.push({
       itemId: u,
       source: l,
@@ -68,23 +68,24 @@ function C(n) {
   const t = `${n || ""}`.trim().toLowerCase().replace(/[\s-]+/g, "_");
   return t.includes("formula") || t.includes("equation") ? "formula" : t.includes("table") ? "table" : t.includes("figure") || t.includes("image") || t.includes("chart") || t.includes("seal") ? "figure" : t.includes("text") || t.includes("title") || t.includes("paragraph") || t.includes("reference") || t.includes("caption") ? "text" : "region";
 }
-function M(n) {
+function R(n) {
   const t = C(n.regionType);
   if (t !== "region") return t;
+  if (`${n.subType || ""}`.trim().toLowerCase() === "display_formula") return "formula";
   if (n.assetIds.length || n.assetUrls.length) return "figure";
   const e = `${n.markdown || n.source.text || n.translated.text || ""}`.trim();
   return /^<table(?:\s|>)/i.test(e) || /\n\s*\|?\s*:?-{3,}/.test(e) ? "table" : /^\$\$[\s\S]+\$\$$/.test(e) || /^\\\[[\s\S]+\\\]$/.test(e) || /^\\begin\{(?:equation|align|gather|multline)\*?\}/.test(e) ? "formula" : e ? "text" : t;
 }
 function F(n) {
-  const t = M(n);
+  const t = R(n);
   return t === "formula" || t === "table" || t === "figure";
 }
 function k(n, t) {
-  return `${m(n, t).text || n.markdown || ""}`.trim();
+  return `${M(n, t).text || n.markdown || ""}`.trim();
 }
 function z(n, t) {
   const e = k(n, t) || (t === "translated" ? `${n.source.text || ""}`.trim() : "");
-  return M(n) === "formula" ? B(e) : e;
+  return R(n) === "formula" ? B(e) : e;
 }
 function B(n) {
   let t = `${n || ""}`.trim();
@@ -118,15 +119,15 @@ function w(n) {
   };
 }
 function U(n) {
-  const t = g(R(n));
+  const t = g(m(n));
   return {
     source: w(t == null ? void 0 : t.source),
     translated: w(t == null ? void 0 : t.translated)
   };
 }
 function I(n, t) {
-  const e = $(t);
-  return e && n.find((s) => $(s.itemId) === e) || null;
+  const e = y(t);
+  return e && n.find((s) => y(s.itemId) === e) || null;
 }
 function b(n) {
   return `${n || ""}`.normalize("NFKC").toLocaleLowerCase().replace(/[\p{P}\p{S}\s]+/gu, "").trim();
@@ -137,7 +138,7 @@ function L(n) {
   const e = t.split(/\n\s*\n/g).map(b).filter(Boolean), s = t.split(">").map(b).filter(Boolean), o = [...e.reverse(), ...s.reverse(), b(t)];
   return [...new Set(o)].filter((a) => a.length >= 16);
 }
-function S(n, t) {
+function T(n, t) {
   if (!n || !t) return 0;
   if (n.includes(t)) return 1e4 + t.length;
   const e = Math.min(72, t.length);
@@ -163,7 +164,7 @@ function v(n, t) {
     let c = 0;
     for (const p of s)
       for (const d of f)
-        c = Math.max(c, S(d, p));
+        c = Math.max(c, T(d, p));
     c > u ? (r = i, u = c, l = !1) : c > 0 && c === u && (l = !0);
   }
   return u > 0 && !l ? r : null;
@@ -197,12 +198,12 @@ function O(n, t, e) {
     return !!l && (l === s || s.endsWith(`/${l}`) || l.endsWith(`/${s}`));
   })) || null;
 }
-function m(n, t) {
+function M(n, t) {
   return t === "translated" ? n.translated : n.source;
 }
 function K(n, t, e) {
   if (!n || !t) return null;
-  const s = m(n, e), o = e === "translated" ? t.translated : t.source || t.translated, a = o == null ? void 0 : o.pages.find((r) => r.page === s.page);
+  const s = M(n, e), o = e === "translated" ? t.translated : t.source || t.translated, a = o == null ? void 0 : o.pages.find((r) => r.page === s.page);
   return a ? { itemId: n.itemId, region: n, box: s, pageSize: a } : null;
 }
 function P(n, t, e) {
@@ -213,7 +214,7 @@ function P(n, t, e) {
   return p <= c || x <= d ? null : { left: c, top: d, width: p - c, height: x - d };
 }
 export {
-  $ as a,
+  y as a,
   O as b,
   v as c,
   U as d,
@@ -222,11 +223,11 @@ export {
   z as g,
   C as h,
   F as i,
-  M as j,
-  m as k,
+  R as j,
+  M as k,
   K as l,
-  T as n,
+  S as n,
   P as p,
   k as r
 };
-//# sourceMappingURL=reader-regions-B6o2DsPy.js.map
+//# sourceMappingURL=reader-regions-BmqHsJ-I.js.map
