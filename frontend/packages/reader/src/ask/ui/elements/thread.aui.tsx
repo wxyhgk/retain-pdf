@@ -1,6 +1,7 @@
 // 照搬 assistant-ui 官方组件（MIT，https://r.assistant-ui.com；shadcn/ 下是 shadcn/ui，MIT）。只改了引用路径（@/ 别名换成相对路径）。
 // 别的不改，方便对着上游更新；我们的改动写在外面（ReaderAskWindow.tsx）。
-// RetainPDF 的改动（groupPartByType 显式写泛型（本机 TS 只从第一组推断）；ThreadComponents 加 MessageFooter 插槽（回答底下的用量那一行）；界面文字换中文）。
+// RetainPDF 的改动（groupPartByType 显式写泛型（本机 TS 只从第一组推断）；ThreadComponents 加 MessageFooter 插槽（回答底下的用量那一行）；界面文字换中文；
+// 思考用时不取整；「回到最下面」挪到右边、变小（原来居中压在正文上）；边距收紧、输入框提示缩短（提问窗窄）。
 
 import {
   ComposerAddAttachment,
@@ -107,7 +108,7 @@ const shouldShowComposerResume = (s: AssistantState) =>
 const reasoningDuration = (timing: ThreadGroupPart["timing"]) =>
   timing?.completedAt === undefined
     ? undefined
-    : Math.round((timing.completedAt - timing.startedAt) / 1000);
+    : (timing.completedAt - timing.startedAt) / 1000;
 
 /**
  * Optional component overrides for the thread. `AssistantMessage` and
@@ -237,8 +238,8 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
         ["--thread-max-width" as string]: "44rem",
         ["--composer-bg" as string]:
           "color-mix(in oklab, var(--color-muted) 30%, transparent)",
-        ["--composer-radius" as string]: "1rem",
-        ["--composer-padding" as string]: "8px",
+        ["--composer-radius" as string]: "0.75rem",
+        ["--composer-padding" as string]: "6px",
       }}
     >
       <ThreadPrimitive.Viewport
@@ -248,7 +249,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
       >
         <div
           className={cn(
-            "mx-auto flex w-full max-w-(--thread-max-width) flex-1 flex-col px-4 pt-4",
+            "mx-auto flex w-full max-w-(--thread-max-width) flex-1 flex-col px-3 pt-3",
             isEmpty && "justify-center",
           )}
         >
@@ -263,7 +264,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
 
           <div
             data-slot="aui_message-group"
-            className="mb-14 flex flex-col gap-y-6 empty:hidden"
+            className="mb-10 flex flex-col gap-y-4 empty:hidden"
           >
             <ThreadPrimitive.Messages>
               {() => <ThreadMessage />}
@@ -272,7 +273,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
 
           <ThreadPrimitive.ViewportFooter
             className={cn(
-              "aui-thread-viewport-footer bg-background flex flex-col gap-4 overflow-visible pb-4 md:pb-6",
+              "aui-thread-viewport-footer bg-background flex flex-col gap-3 overflow-visible pb-3",
               !isEmpty &&
                 "sticky bottom-0 mt-auto rounded-t-(--composer-radius)",
             )}
@@ -478,7 +479,7 @@ const ThreadScrollToBottom: FC = () => {
       <TooltipIconButton
         tooltip="回到最下面"
         variant="outline"
-        className="aui-thread-scroll-to-bottom dark:border-border dark:bg-background dark:hover:bg-accent absolute -top-12 z-10 self-center rounded-full p-4 disabled:invisible"
+        className="aui-thread-scroll-to-bottom dark:border-border dark:bg-background dark:hover:bg-accent absolute -top-9 end-0 z-10 size-7 rounded-full p-0 disabled:invisible"
       >
         <ArrowDownIcon />
       </TooltipIconButton>
@@ -540,12 +541,13 @@ const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
         >
           <ComposerAttachments />
           <ComposerPrimitive.Input
-            placeholder="问点什么（Enter 发送，Shift+Enter 换行）"
+            placeholder="问点什么…"
             className="aui-composer-input caret-primary placeholder:text-muted-foreground/60 max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none"
             rows={1}
             autoFocus={autoFocus}
             enterKeyHint="send"
             aria-label="输入问题"
+            title="Enter 发送，Shift+Enter 换行"
           />
           <ComposerAction />
         </div>

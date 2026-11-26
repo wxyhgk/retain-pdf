@@ -3,6 +3,10 @@ import { type AskTurn } from "./acp-parts.js";
 type PartLike = {
     type: string;
     text?: string;
+    timing?: {
+        startedAt?: number;
+        completedAt?: number;
+    };
 };
 type MessageLike = {
     role: string;
@@ -21,6 +25,14 @@ export declare function toInitialMessages(messages: readonly ReaderAskMessage[])
 } | {
     role: "assistant";
     content: ({
+        timing: {
+            startedAt: number;
+            completedAt: number;
+        };
+        type: "reasoning";
+        text: string;
+    } | {
+        timing?: undefined;
         type: "reasoning";
         text: string;
     } | {

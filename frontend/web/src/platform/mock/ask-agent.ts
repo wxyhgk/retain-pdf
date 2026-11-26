@@ -18,7 +18,8 @@ const ANSWER = [
   "$$\n\\hat f(1)\\,\\chi_a(1) = \\varepsilon_a\\,\\chi_a(1)\n$$\n\n",
   "其中 Fock 算符 $\\hat f = \\hat h + \\sum_b (\\hat J_b - \\hat K_b)$，",
   "$\\hat J_b$ 是库仑算符，$\\hat K_b$ 是交换算符。\n\n",
-  "1. 先猜一组轨道；\n2. 用它们算出 $\\hat f$；\n3. 解本征方程得到新轨道，重复直到自洽。\n",
+  "1. 先猜一组轨道；\n2. 用它们算出 $\\hat f$；\n3. 解本征方程得到新轨道，重复直到自洽。\n\n",
+  "书里第 2、3 页也用到这个近似（见 p. 4）。\n",
 ];
 
 const THOUGHT = ["读者问的是这一块……", "先看这一页讲到哪了，", "再用最少的公式把意思讲清楚。"];
@@ -52,10 +53,13 @@ function openFakeSession(agentId: string, handlers: ReaderAskHandlers): ReaderAs
           { content: "解释这一段", priority: "high", status: "pending" },
         ],
       });
-      send({ sessionUpdate: "tool_call", toolCallId: "view-page", title: `看第 ${page} 页（原文）`, kind: "read", status: "in_progress", locations: [{ path: `第 ${page} 页` }] });
       send({ sessionUpdate: "subagent_update", sessionId: "demo-sub", title: "查这一章的公式", description: "找式子的出处", state: { state: "running" } } as never);
+      send({ sessionUpdate: "tool_call", toolCallId: "view-page", title: `看第 ${page} 页（原文）`, kind: "read", status: "in_progress", locations: [{ path: `第 ${page} 页` }] });
       await wait(500, signal);
       send({ sessionUpdate: "tool_call_update", toolCallId: "view-page", status: "completed", content: [{ type: "content", content: { type: "text", text: "（页图和这一页的原文、译文）" } }] });
+      send({ sessionUpdate: "tool_call", toolCallId: "search", title: "在书里找「Fock」", kind: "search", status: "in_progress", rawInput: { query: "Fock" } });
+      await wait(300, signal);
+      send({ sessionUpdate: "tool_call_update", toolCallId: "search", status: "completed", content: [{ type: "content", content: { type: "text", text: "「Fock」3 处，第 2、3 页" } }] });
       if (agentId === "claude-code") {
         // Claude Code 想把要点记进笔记：先要许可。
         send({ sessionUpdate: "tool_call", toolCallId: "note", title: "把要点记到这本书的笔记里", kind: "edit", status: "pending" });

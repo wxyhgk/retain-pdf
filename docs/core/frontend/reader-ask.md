@@ -25,6 +25,10 @@
 | `packages/reader/src/ask/acp-parts.ts` | ACP `session/update` → 一轮回答的各部分：正文、思考、工具调用、计划、子 agent、用量；速度和底下那一行 |
 | `packages/reader/src/ask/acp-adapter.ts` | 接 assistant-ui 的 `LocalRuntime`：第一句前面带出处；边收边吐；许可等用户点；换 agent 重开会话 |
 | `packages/reader/src/ask/ReaderAskWindow.tsx` | 浮动窗口（react-rnd）+ assistant-ui 的对话、输入框 + streamdown 渲染回答（KaTeX 公式）；**单独一块，第一次提问才加载** |
+| `packages/reader/src/ask/AskHeader.tsx` | 标题栏（图标为主，字放悬停）：问的那一处（页码，点了回去）、选 agent（「RetainPDF 自带模型」短写成「自带模型」）、没装的 agent（插头图标，点开是安装命令）、贴右边 / 放大、删、关 |
+| `packages/reader/src/ask/AskQuote.tsx` | 顶上引的那段：OCR 原文的 `$…$` 用 KaTeX 画；默认两行，点开看全；有原文也有译文的能切换 |
+| `packages/reader/src/ask/ask-blocks.tsx` | 往 Thread 里塞的几块：工具调用一行一个、工具分组（图标 + 次数）、计划、子 agent、「在想…」、用量（图标）、常问 |
+| `packages/reader/src/ask/page-citations.ts`、`AskPageLink.tsx` | 回答和工具调用里的页码能点：「（第 12 页）」「第 56、58 页」「p. 12」里的数字，点了阅读页跳过去 |
 | `packages/reader/src/ask/ReaderAskMarks.tsx` | 书页左边白边的「?」：这本书问过的地方，点了重新打开那次问答 |
 | `packages/reader/src/ask/use-ask-threads.ts` | 问答记录：打开书读回问过的地方；每答完一轮整段存（第一次 POST，之后 PATCH）；一句没问就关不留「?」；删 |
 | `packages/reader/src/ask/thread-messages.ts` | assistant-ui 的对话 ↔ 存的问答（问题 / 回答 + 思考 + 用量和用时）；新会话第一问带上之前几轮 |
@@ -58,14 +62,27 @@
 - 模型常写 `\( \)`、`\[ \]`，换成 `$`、`$$` 再给 remark-math（代码块里不动）。
 - 发出去到第一段之前显示「在想…」，超过 10 秒改成「还在等 agent 回应……」。连不上（没开、设置不对、握手被拒）在回答位置写原因；连接断了下一问重开会话。
 
+2026-11-26 第二轮细节（用户：「太粗糙了」「多用 icon，少写文字，字体变小」）：
+
+- **页码能点**：回答正文（remark 插件把页码换成链接，`markdown-text` 的 `a` 认出来画成页码标签）、工具调用的标题和结果都认。
+  只认 1…总页数；自带 agent 的系统提示词本来就要求引用写「（第 12 页）」，所以不用改后端。块级定位（带块编号）以后再说。
+- **顶上引的那段**：公式渲染、两行截断不再拦腰切、展开、原文 / 译文切换。
+- **工具调用**：不再是「用了 1 个工具」：只有一个时直接一行（kind 图标、标题、结果摘要、状态、用时，点开看全文和参数）；
+  连着几个时组标题是用到的几种图标和「×N」，正在跑的写它的标题。等许可的照旧用 ToolFallback 的许可界面。
+- **思考用时**：写成「思考 · 0.8s」，不到 1 秒也写（上游取整成 0 就不显示）；用时存进问答记录（`usage.thoughtMs`），重新打开照样有。
+- **窗口**：浮动、贴右边（占满右侧，左边框拖宽窄）、放大三种；双击标题栏放大 / 还原。长的独立公式横着滚，不撑破窗口。
+- **字号**：整窗 `--ui-text-md`（13px），照搬 Thread 的 Tailwind rem 字号在 `ask.css` 里压一档（标题、输入框、代码、思考条）。
+- **用量**：一排图标 + 短数字（3.8k、2%、6.6s），悬停写全（`turnFooterItems`）。
+- **空白时**：三个常问（讲讲这段、式子怎么来的、译文准不准），点了直接问。「回到最下面」挪到右边、变小，不压正文。
+
 ## 出处和问答记录
 
 - 右键时悬停框还没认出块（鼠标刚移过来、点在两段之间）：按点的位置找同一页最近的块（超过页高 15% 不算），带它的原文译文，
   不然问题里一个字都没有，模型只会说「看不到」（11-25 真机联调踩到）。
 - 问答记录（后端 `ask-threads.v1`，按书存，一本最多 500 次）：宿主的 `port.threads` 驼峰 ↔ 接口下划线；存不上照样能问，只是关了书就没了。
 - agent 那边每次打开是新会话（ACP 的 `session/load` 后端还没开）：第一问前面带出处和之前最近 12 条（最多 8000 字）。
-- 本机 agent 没装：后端不再现场 npx 下载（下到一半会留坏缓存，见 11-25 联调），列表里 `available: false` 带 `install`；问答窗「还能接本机的……（要先装）」
-  展开是安装命令，能复制。
+- 本机 agent 没装：后端不再现场 npx 下载（下到一半会留坏缓存，见 11-25 联调），列表里 `available: false` 带 `install`；标题栏的插头图标
+  点开是安装命令，能复制（11-26 前是窗口里单独一行「还能接本机的……（要先装）」）。
 
 ## 真机联调（2026-11-25）
 
@@ -82,4 +99,5 @@
 - 本机 Codex、Gemini 真机试（要先装 ACP 适配器）。
 - 扫描页没字时把那一块的图发过去（agent `acceptsImages` 时）。
 - agent 那边接着上次的会话（ACP `session/load`，后端开了再接）。
+- 追问建议（ACP `prompt_suggestions_update`）、换模型 / 思考强度（`config_option_update`、`session/set_model`）、本书提问列表。
 - 白板：回答以后进白板（[以 PDF 为主体](../../ops/planning/learning-system/20261125-以PDF为主体的提问白板笔记.md)）。

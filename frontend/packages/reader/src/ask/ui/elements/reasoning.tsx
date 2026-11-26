@@ -1,6 +1,6 @@
 // 照搬 assistant-ui 官方组件（MIT，https://r.assistant-ui.com；shadcn/ 下是 shadcn/ui，MIT）。只改了引用路径（@/ 别名换成相对路径）。
 // 别的不改，方便对着上游更新；我们的改动写在外面（ReaderAskWindow.tsx）。
-// RetainPDF 的改动（提示文字换中文）。
+// RetainPDF 的改动（提示文字换中文；用时写成「思考 · 0.8s」，不到 1 秒也写（原来取整成 0 就不显示））。
 
 import {
   createContext,
@@ -183,7 +183,7 @@ function ReasoningTrigger({
   duration?: number | undefined;
   label?: ReactNode;
 }) {
-  const durationText = duration ? `（${duration} 秒）` : "";
+  const durationText = duration === undefined ? "" : ` · ${duration < 10 ? duration.toFixed(1) : Math.round(duration)}s`;
 
   return (
     <CollapsibleTrigger

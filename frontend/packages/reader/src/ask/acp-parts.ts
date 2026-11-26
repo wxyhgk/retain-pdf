@@ -261,3 +261,44 @@ export function turnFooter(turn: AskTurn, finishedAt: number | null, agentName =
   if (finishedAt != null) items.push(`用时 ${((finishedAt - turn.startedAt) / 1000).toFixed(1)}s`);
   return items.join(" · ");
 }
+
+/** 用量那一行的一项：图标认 key，字尽量短，悬停（title）写全。 */
+export type FooterItem = { key: "model" | "input" | "output" | "cacheRead" | "cacheWrite" | "context" | "cost" | "speed" | "firstToken" | "elapsed"; text: string; title: string };
+
+/** 1234 → 1.2k，1234567 → 1.2M。 */
+export function compactNumber(value: number): string {
+  if (value < 1000) return String(Math.round(value));
+  if (value < 1_000_000) return `${(value / 1000).toFixed(value < 10_000 ? 1 : 0)}k`;
+  return `${(value / 1_000_000).toFixed(1)}M`;
+}
+
+/** 回答底下那一行（图标版）：和 turnFooter 同样的几项，没有的不出。 */
+export function turnFooterItems(turn: AskTurn, finishedAt: number | null, agentName = ""): FooterItem[] {
+  const items: FooterItem[] = [];
+  const { usage } = turn;
+  const model = usage.model || "";
+  if (model || agentName) items.push({ key: "model", text: model || agentName, title: model && agentName ? `${agentName}（${model}）` : model || agentName });
+  if (usage.inputTokens !== undefined) items.push({ key: "input", text: compactNumber(usage.inputTokens), title: `输入 ${usage.inputTokens} token` });
+  if (usage.outputTokens !== undefined) items.push({ key: "output", text: compactNumber(usage.outputTokens), title: `输出 ${usage.outputTokens} token` });
+  if (usage.cachedInputTokens) items.push({ key: "cacheRead", text: compactNumber(usage.cachedInputTokens), title: `缓存命中 ${usage.cachedInputTokens} token` });
+  if (usage.cacheWriteTokens) items.push({ key: "cacheWrite", text: compactNumber(usage.cacheWriteTokens), title: `写入缓存 ${usage.cacheWriteTokens} token` });
+  if (usage.contextUsed !== undefined && usage.contextSize) {
+    const percent = Math.round((usage.contextUsed / usage.contextSize) * 100);
+    items.push({ key: "context", text: `${percent}%`, title: `上下文用了 ${percent}%（${usage.contextUsed} / ${usage.contextSize} token）` });
+  }
+  if (usage.cost) items.push({ key: "cost", text: `${usage.cost.currency === "USD" ? "$" : ""}${usage.cost.amount.toFixed(usage.cost.amount < 0.1 ? 4 : 2)}`, title: `花费 ${usage.cost.amount} ${usage.cost.currency}` });
+  const speed = turnSpeed(turn);
+  if (speed) {
+    const value = speed.value.toFixed(speed.value >= 10 ? 0 : 1);
+    items.push({ key: "speed", text: `${value}/s`, title: `出字速度 ${value} ${speed.unit}` });
+  }
+  if (turn.firstTokenAt != null) {
+    const seconds = ((turn.firstTokenAt - turn.startedAt) / 1000).toFixed(1);
+    items.push({ key: "firstToken", text: `${seconds}s`, title: `首字 ${seconds} 秒` });
+  }
+  if (finishedAt != null) {
+    const seconds = ((finishedAt - turn.startedAt) / 1000).toFixed(1);
+    items.push({ key: "elapsed", text: `${seconds}s`, title: `用时 ${seconds} 秒` });
+  }
+  return items;
+}
