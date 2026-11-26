@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-LYFPWNTH.js";var r=[["path",{d:"M3 2h18",key:"15qxfx"}],["rect",{width:"18",height:"12",x:"3",y:"6",rx:"2",key:"1439r6"}],["path",{d:"M3 22h18",key:"8prr45"}]],a=e("gallery-vertical",r);export{r as a,a as b};

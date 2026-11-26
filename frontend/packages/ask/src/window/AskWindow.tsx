@@ -30,6 +30,7 @@ import {
 import { AskHeader, type AskWindowMode } from "./AskHeader.js";
 import { AskQuote } from "./AskQuote.js";
 import { AskPageContext, type AskPageJump } from "./AskPageLink.js";
+import { AskSendContext } from "./ask-send.js";
 
 const KATEX_LINK_ID = "retainpdf-katex-css";
 
@@ -155,8 +156,8 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
     });
   }, [runtime]);
   const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
-  // 常问点一下直接发出去。
-  const send = (text: string) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] });
+  // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
+  const send = useMemo(() => (text: string) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);
   // Thread 要的几样（引用不变，免得它整个重画）。
   const threadComponents = useMemo(
     () => ({ ToolFallback: ToolCard, ToolGroup: AskToolGroup, Indicator: Waiting, Welcome: makeWelcome(send), MessageFooter: makeMessageFooter(agentName) }),
@@ -222,6 +223,7 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
           <AskQuote quote={context.quote} />
           {loadError ? <p className="ask-error">列不出能用的 agent：{loadError}</p> : null}
           <PermissionContext.Provider value={permissions}>
+            <AskSendContext.Provider value={send}>
             <AssistantRuntimeProvider runtime={runtime}>
               <PlanDataUI />
               <SubagentDataUI />
@@ -229,6 +231,7 @@ export default function AskWindow({ port, context, onClose, onShowContext, initi
                 <Thread components={threadComponents} autoFocus />
               </div>
             </AssistantRuntimeProvider>
+            </AskSendContext.Provider>
           </PermissionContext.Provider>
         </AskPageContext.Provider>
       </section>

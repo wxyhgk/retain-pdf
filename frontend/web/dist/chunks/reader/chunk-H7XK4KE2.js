@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-LYFPWNTH.js";var c=[["path",{d:"M10 9v7",key:"ylp826"}],["path",{d:"M14 6v10",key:"1jy4vg"}],["circle",{cx:"17.5",cy:"12.5",r:"3.5",key:"1a9481"}],["circle",{cx:"6.5",cy:"12.5",r:"3.5",key:"2jlv1r"}]],o=e("case-lower",c);export{c as a,o as b};

@@ -1,0 +1,1 @@
+import{a as c}from"./chunk-LYFPWNTH.js";var e=[["path",{d:"M14 4v16H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z",key:"1m5n7q"}],["circle",{cx:"14",cy:"12",r:"8",key:"1pag6k"}]],r=c("rectangle-circle",e);export{e as a,r as b};

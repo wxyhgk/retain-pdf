@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-LYFPWNTH.js";var t=[["rect",{width:"18",height:"18",x:"3",y:"3",rx:"2",key:"afitv7"}],["path",{d:"m15 9-6 6",key:"1uzhvr"}],["path",{d:"M9 9h.01",key:"1q5me6"}],["path",{d:"M15 15h.01",key:"lqbp3k"}]],a=e("square-percent",t);export{t as a,a as b};

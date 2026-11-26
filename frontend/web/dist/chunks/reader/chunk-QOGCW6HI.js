@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-LYFPWNTH.js";var o=[["rect",{width:"18",height:"18",x:"3",y:"3",rx:"2",key:"afitv7"}],["path",{d:"m16 10-4 4-4-4",key:"894hmk"}]],r=e("square-chevron-down",o);export{o as a,r as b};

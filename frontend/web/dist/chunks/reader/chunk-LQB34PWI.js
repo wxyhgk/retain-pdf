@@ -1,0 +1,1 @@
+import{a as p}from"./chunk-4QNJ55ET.js";a.displayName="hpkp";a.aliases=[];function a(e){e.languages.hpkp={directive:{pattern:/\b(?:includeSubDomains|max-age|pin-sha256|preload|report-to|report-uri|strict)(?=[\s;=]|$)/i,alias:"property"},operator:/=/,punctuation:/;/}}p(a,"hpkp");export{a};

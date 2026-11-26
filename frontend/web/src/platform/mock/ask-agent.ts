@@ -11,6 +11,16 @@ const AGENTS = [
   { id: "codex", name: "Codex", description: "本机的 Codex（ACP）", available: false, reason: "演示模式：没有装 codex-acp", install: "npm install -g @agentclientprotocol/codex-acp" },
 ];
 
+/** 演示回答里的互动块（OpenUI Lang）：拖滑块改迭代次数，看能量怎么收敛。测试里用组件库的解析器检查它没错（tests/ask/ask-openui.test.mjs）。 */
+export const MOCK_OPENUI_BLOCK = String.raw`root = Col([title, formula, slider, chart, last], 3)
+$n = 4
+title = Title("迭代几次，能量就稳住了", "md")
+formula = Math("E_k = E_\infty + (E_0 - E_\infty)\,2^{-k}")
+slider = Slider($n, 1, 10, 1, "迭代次数")
+rows = @Each(@Range(1, $n + 1), "k", {k: k, E: @Round(-1.13 + 0.4 * @Pow(0.5, k), 4)})
+chart = Chart("line", rows, "k", ["E"], null, null, 180)
+last = Caption("第 " + $n + " 次：E = " + rows[$n - 1].E + " Hartree")`;
+
 const ANSWER = [
   "这一段说的是 **Hartree-Fock 近似**：把多电子波函数近似成一个 Slater 行列式，",
   "每个电子只感受其他电子的*平均*场。\n\n",
@@ -19,7 +29,9 @@ const ANSWER = [
   "其中 Fock 算符 $\\hat f = \\hat h + \\sum_b (\\hat J_b - \\hat K_b)$，",
   "$\\hat J_b$ 是库仑算符，$\\hat K_b$ 是交换算符。\n\n",
   "1. 先猜一组轨道；\n2. 用它们算出 $\\hat f$；\n3. 解本征方程得到新轨道，重复直到自洽。\n\n",
-  "书里第 2、3 页也用到这个近似（见 p. 4）。\n",
+  "书里第 2、3 页也用到这个近似（见 p. 4）。\n\n",
+  "拖一下看迭代几次能量就稳住：\n\n",
+  ...("```openui-lang\n" + MOCK_OPENUI_BLOCK + "\n```\n").split(/(?<=\n)/),
 ];
 
 const THOUGHT = ["读者问的是这一块……", "先看这一页讲到哪了，", "再用最少的公式把意思讲清楚。"];

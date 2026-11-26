@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-LYFPWNTH.js";var c=[["ellipse",{cx:"12",cy:"11",rx:"3",ry:"2",key:"1b2qxu"}],["ellipse",{cx:"12",cy:"12.5",rx:"10",ry:"8.5",key:"h8emeu"}]],r=e("torus",c);export{c as a,r as b};

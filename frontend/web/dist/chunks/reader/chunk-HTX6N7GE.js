@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-LYFPWNTH.js";var c=[["path",{d:"M20 4L9 15",key:"1qkx8z"}],["path",{d:"M21 19L3 19",key:"100sma"}],["path",{d:"M9 15L4 10",key:"9zxff7"}]],o=e("check-line",c);export{c as a,o as b};

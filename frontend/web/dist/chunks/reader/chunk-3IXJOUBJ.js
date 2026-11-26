@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-4QNJ55ET.js";a.displayName="arff";a.aliases=[];function a(t){t.languages.arff={comment:/%.*/,string:{pattern:/(["'])(?:\\.|(?!\1)[^\\\r\n])*\1/,greedy:!0},keyword:/@(?:attribute|data|end|relation)\b/i,number:/\b\d+(?:\.\d+)?\b/,punctuation:/[{},]/}}e(a,"arff");export{a};

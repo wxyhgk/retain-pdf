@@ -1,0 +1,1 @@
+import{a as n,b as a}from"./chunk-4QNJ55ET.js";var e=a((o,s)=>{function t(i){return{aliases:["pycon"],contains:[{className:"meta",starts:{end:/ |$/,starts:{end:"$",subLanguage:"python"}},variants:[{begin:/^>>>(?=[ ]|$)/},{begin:/^\.\.\.(?=[ ]|$)/}]}]}}n(t,"pythonRepl");s.exports=t});export default e();

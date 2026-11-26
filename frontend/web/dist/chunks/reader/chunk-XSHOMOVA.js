@@ -1,0 +1,1 @@
+import{a as t}from"./chunk-LYFPWNTH.js";var e=[["rect",{width:"8",height:"6",x:"5",y:"4",rx:"1",key:"nzclkv"}],["rect",{width:"8",height:"6",x:"11",y:"14",rx:"1",key:"4tytwb"}]],r=t("ungroup",e);export{e as a,r as b};

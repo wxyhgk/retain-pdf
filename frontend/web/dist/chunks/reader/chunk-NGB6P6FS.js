@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-4QNJ55ET.js";a.displayName="hsts";a.aliases=[];function a(s){s.languages.hsts={directive:{pattern:/\b(?:includeSubDomains|max-age|preload)(?=[\s;=]|$)/i,alias:"property"},operator:/=/,punctuation:/;/}}e(a,"hsts");export{a};

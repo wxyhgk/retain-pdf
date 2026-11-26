@@ -1,0 +1,1 @@
+import{a as o}from"./chunk-LYFPWNTH.js";var d=[["path",{d:"M9 14 4 9l5-5",key:"102s5s"}],["path",{d:"M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11",key:"f3b9sd"}]],t=o("undo-2",d);export{d as a,t as b};

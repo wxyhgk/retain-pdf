@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-LYFPWNTH.js";var t=[["path",{d:"M16 5H3",key:"m91uny"}],["path",{d:"M16 12H3",key:"1a2rj7"}],["path",{d:"M16 19H3",key:"zzsher"}],["path",{d:"M21 5h.01",key:"wa75ra"}],["path",{d:"M21 12h.01",key:"msek7k"}],["path",{d:"M21 19h.01",key:"qvbq2j"}]],o=e("table-of-contents",t);export{t as a,o as b};

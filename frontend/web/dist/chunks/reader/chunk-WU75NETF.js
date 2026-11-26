@@ -1,0 +1,1 @@
+import{a as t}from"./chunk-LYFPWNTH.js";var e=[["path",{d:"M14 12h2v8",key:"c1fccl"}],["path",{d:"M14 20h4",key:"lzx1xo"}],["path",{d:"M6 12h4",key:"a4o3ry"}],["path",{d:"M6 20h4",key:"1i6q5t"}],["path",{d:"M8 20V8a4 4 0 0 1 7.464-2",key:"wk9t6r"}]],o=t("ligature",e);export{e as a,o as b};

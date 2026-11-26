@@ -2,7 +2,8 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 // 照搬 assistant-ui 官方组件（MIT，https://r.assistant-ui.com；shadcn/ 下是 shadcn/ui，MIT）。只改了引用路径（@/ 别名换成相对路径）。
 // 别的不改，方便对着上游更新；我们的改动写在外面（../window/）。
 // RetainPDF 的改动（按 assistant-ui 的 LaTeX 文档加 remark-math / rehype-katex 和 normalizeMathDelimiters；打字光标的 dot.css 改在 styles/entry.css 里引入；
-// 加 remarkPageCitations，a 组件认出页码链接画成能点的页码标签（../../window/page-citations.ts、../../window/AskPageLink.tsx））。
+// 加 remarkPageCitations，a 组件认出页码链接画成能点的页码标签（../../window/page-citations.ts、../../window/AskPageLink.tsx）；
+// ```openui-lang 代码块默认画成互动块（../../window/openui-fence.tsx））。
 import { MarkdownTextPrimitive, normalizeMathDelimiters, memoizeMarkdownComponents, useIsMarkdownCodeBlock, } from "@assistant-ui/react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -14,6 +15,7 @@ import { useCopyToClipboard } from "../hooks/use-copy-to-clipboard.js";
 import { cn } from "../lib/utils.js";
 import { pageFromHref, remarkPageCitations } from "../../window/page-citations.js";
 import { AskPageLink } from "../../window/AskPageLink.js";
+import { OPENUI_COMPONENTS_BY_LANGUAGE } from "../../window/openui-fence.js";
 const isShallowEqual = (a, b) => a !== undefined &&
     b !== undefined &&
     Object.keys(a).length === Object.keys(b).length &&
@@ -37,7 +39,7 @@ const MarkdownTextImpl = ({ components, componentsByLanguage, }) => {
             ...memoizeMarkdownComponents(stableComponents),
         };
     }, [stableComponents]);
-    return (_jsx(MarkdownTextPrimitive, { remarkPlugins: [remarkGfm, remarkMath, remarkPageCitations], rehypePlugins: [rehypeKatex], preprocess: normalizeMathDelimiters, className: "aui-md", components: markdownComponents, componentsByLanguage: stableComponentsByLanguage, defer: true }));
+    return (_jsx(MarkdownTextPrimitive, { remarkPlugins: [remarkGfm, remarkMath, remarkPageCitations], rehypePlugins: [rehypeKatex], preprocess: normalizeMathDelimiters, className: "aui-md", components: markdownComponents, componentsByLanguage: stableComponentsByLanguage ?? OPENUI_COMPONENTS_BY_LANGUAGE, defer: true }));
 };
 export const MarkdownText = memo(MarkdownTextImpl);
 const CodeHeader = ({ language, code }) => {

@@ -11,6 +11,18 @@ const outdir = path.join(frontendRoot, "dist");
 // --watch: esbuild context 增量重建(开发态:sourcemap 开、minify 关)
 const watchMode = process.argv.includes("--watch");
 
+// 提问窗互动块用的 OpenUI 组件库（@openuidev/intelligent-ui-library）的公式组件在 JS 里 import 了 KaTeX 的 CSS（带一堆字体）。
+// 我们的 KaTeX 样式和 woff2 字体由宿主托管（web/vendor/katex，提问窗打开时插 <link>），这里把这一处 import 当成空的。
+function ignoreKatexCssImportPlugin() {
+  return {
+    name: "ignore-katex-css-import",
+    setup(build) {
+      build.onResolve({ filter: /^katex\/dist\/katex(\.min)?\.css$/ }, (args) => ({ path: args.path, namespace: "ignored-katex-css" }));
+      build.onLoad({ filter: /.*/, namespace: "ignored-katex-css" }, () => ({ contents: "", loader: "js" }));
+    },
+  };
+}
+
 // 导入路径仍写 .js/.jsx（兼容存量 import），解析时映射到 .ts/.tsx。
 // TypeScript bundler 约定：import "./foo.js" 可对应 foo.ts。
 function jsToTsResolvePlugin() {
@@ -164,7 +176,7 @@ function bundleOptions({ entry, out }) {
     nodePaths: [path.join(frontendRoot, "node_modules")],
     // Reader 与其它 workspace 包一样只通过 package.json exports 消费；
     // 禁止在宿主构建里维护第二份 subpath→源码路径映射。
-    plugins: [jsToTsResolvePlugin()],
+    plugins: [jsToTsResolvePlugin(), ignoreKatexCssImportPlugin()],
     define: {
       PACKAGE_VERSION: JSON.stringify(resolveMathJaxPackageVersion()),
     },

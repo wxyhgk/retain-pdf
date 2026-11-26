@@ -1,0 +1,1 @@
+import{a as o}from"./chunk-LYFPWNTH.js";var t=[["circle",{cx:"12",cy:"12",r:"3",key:"1v7zrd"}],["line",{x1:"3",x2:"9",y1:"12",y2:"12",key:"1dyftd"}],["line",{x1:"15",x2:"21",y1:"12",y2:"12",key:"oup4p8"}]],i=o("git-commit-horizontal",t);export{t as a,i as b};

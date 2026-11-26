@@ -1,0 +1,1 @@
+import{a as o}from"./chunk-LYFPWNTH.js";var e=[["path",{d:"m15.55 8.45 5.138 2.087a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063L8.45 15.551",key:"1qoshx"}],["path",{d:"M22 2 2 22",key:"y4kqgn"}],["path",{d:"m6.816 11.528-2.779-6.84a.495.495 0 0 1 .651-.651l6.84 2.779",key:"mymuvk"}]],a=o("mouse-pointer-2-off",e);export{e as a,a as b};

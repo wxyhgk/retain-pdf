@@ -48,3 +48,26 @@ test("后端的 openui_check 用的规格：对的程序没错；写错组件名
   const bad = parser.parse('root = Col([t, x])\nt = Titel("迭代")\nx = Image("http://a/b.png", "a")').meta.errors;
   assert.deepEqual(bad.map((error) => [error.code, error.component]), [["unknown-component", "Titel"], ["unknown-component", "Image"]]);
 });
+
+test("演示模式的互动块是对的程序（组件库的解析器挑不出错）", async () => {
+  const { MOCK_OPENUI_BLOCK } = await import("../../src/platform/mock/ask-agent.ts");
+  const { schema, root } = JSON.parse(readFileSync(LIBRARY_FILE, "utf8"));
+  assert.deepEqual(createParser(schema, root).parse(MOCK_OPENUI_BLOCK).meta.errors, []);
+});
+
+test("互动块的按钮：@ToAssistant 带上表单里填的值；@OpenUrl 只开 http(s)；「让它修」把错误一条条发回去", async () => {
+  const { actionMessage, safeUrl, fixMessage } = await import("../../../packages/ask/src/openui/OpenUIBlock.tsx");
+  assert.equal(actionMessage({ humanFriendlyMessage: "帮我出几道题", formState: { 难度: "中", 题数: 5, 空: "" } }), "帮我出几道题\n（难度：中；题数：5）");
+  assert.equal(actionMessage({ humanFriendlyMessage: "再讲一遍" }), "再讲一遍");
+  assert.equal(safeUrl("https://example.com/a"), "https://example.com/a");
+  assert.equal(safeUrl("javascript:alert(1)"), null);
+  assert.equal(safeUrl("data:text/html,x"), null);
+  assert.match(fixMessage([{ statementId: "t", message: "Unknown component \"Titel\"" }]), /按下面的错误改一下[\s\S]*- t：Unknown component "Titel"/);
+});
+
+test("深浅色按提问窗底色判断：亮度 < 0.45 算深色", async () => {
+  const { luminance } = await import("../../../packages/ask/src/window/openui-fence.tsx");
+  assert.ok(luminance("rgb(250, 248, 243)") > 0.9);
+  assert.ok(luminance("rgba(20, 22, 28, 1)") < 0.1);
+  assert.equal(luminance("transparent"), null);
+});

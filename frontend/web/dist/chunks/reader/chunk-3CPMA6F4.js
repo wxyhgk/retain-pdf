@@ -1,0 +1,1 @@
+import{a as t}from"./chunk-4QNJ55ET.js";e.displayName="gcode";e.aliases=[];function e(a){a.languages.gcode={comment:/;.*|\B\(.*?\)\B/,string:{pattern:/"(?:""|[^"])*"/,greedy:!0},keyword:/\b[GM]\d+(?:\.\d+)?\b/,property:/\b[A-Z]/,checksum:{pattern:/(\*)\d+/,lookbehind:!0,alias:"number"},punctuation:/[:*]/}}t(e,"gcode");export{e as a};

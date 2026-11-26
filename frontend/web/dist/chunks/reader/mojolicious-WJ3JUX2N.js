@@ -1,0 +1,1 @@
+import{a as e,b as u}from"./chunk-4QNJ55ET.js";var s=u((i,n)=>{function a(g){return{name:"Mojolicious",subLanguage:"xml",contains:[{className:"meta",begin:"^__(END|DATA)__$"},{begin:"^\\s*%{1,2}={0,2}",end:"$",subLanguage:"perl"},{begin:"<%{1,2}={0,2}",end:"={0,1}%>",subLanguage:"perl",excludeBegin:!0,excludeEnd:!0}]}}e(a,"mojolicious");n.exports=a});export default s();

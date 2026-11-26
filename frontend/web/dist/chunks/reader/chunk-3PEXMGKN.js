@@ -1,0 +1,1 @@
+import{a as r}from"./chunk-4QNJ55ET.js";var c=document.createElement("i");function a(t){let n="&"+t+";";c.innerHTML=n;let e=c.textContent;return e.charCodeAt(e.length-1)===59&&t!=="semi"||e===n?!1:e}r(a,"decodeNamedCharacterReference");export{a};

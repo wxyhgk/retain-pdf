@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-LYFPWNTH.js";var o=[["path",{d:"m12 17-5-5 5-5",key:"1s3y5u"}],["path",{d:"M22 18v-2a4 4 0 0 0-4-4H7",key:"1fcyog"}],["path",{d:"m7 17-5-5 5-5",key:"1ed8i2"}]],a=e("reply-all",o);export{o as a,a as b};

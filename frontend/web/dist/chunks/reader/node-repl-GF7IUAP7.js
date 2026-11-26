@@ -1,0 +1,1 @@
+import{a,b as n}from"./chunk-4QNJ55ET.js";var t=n((i,e)=>{function s(r){return{name:"Node REPL",contains:[{className:"meta",starts:{end:/ |$/,starts:{end:"$",subLanguage:"javascript"}},variants:[{begin:/^>(?=[ ]|$)/},{begin:/^\.\.\.(?=[ ]|$)/}]}]}}a(s,"nodeRepl");e.exports=s});export default t();

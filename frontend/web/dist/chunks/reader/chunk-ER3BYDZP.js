@@ -1,0 +1,1 @@
+import{a as c}from"./chunk-LYFPWNTH.js";var e=[["circle",{cx:"12",cy:"12",r:"4",key:"4exip2"}],["path",{d:"M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8",key:"7n84p3"}]],o=c("at-sign",e);export{e as a,o as b};

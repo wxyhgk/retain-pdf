@@ -1,0 +1,1 @@
+import{a as n,b as e}from"./chunk-4QNJ55ET.js";var s=e((r,t)=>{function i(a){return{name:"VBScript in HTML",subLanguage:"xml",contains:[{begin:"<%",end:"%>",subLanguage:"vbscript"}]}}n(i,"vbscriptHtml");t.exports=i});export default s();

@@ -77,6 +77,10 @@
 - **用量**：一排图标 + 短数字（3.8k、2%、6.6s），悬停写全（`turnFooterItems`）。
 - **空白时**：三个常问（讲讲这段、式子怎么来的、译文准不准），点了直接问。「回到最下面」挪到右边、变小，不压正文。
 
+2026-11-26 回答里可以有**互动块**（OpenUI）：```` ```openui-lang ```` 代码块画成能动手的界面，一直开，去掉 `Image`、YouTube（留 HtmlView）；
+提示词分层（前端生成 `contracts/openui/`，后端的 `openui_spec` / `openui_check` 教 agent），见
+[方案](../../ops/planning/reader-ask/20261126-互动块分层提示词.md) 和 [提问窗包的 README](../../../frontend/packages/ask/README.md)。
+
 ## 出处和问答记录
 
 - 右键时悬停框还没认出块（鼠标刚移过来、点在两段之间）：按点的位置找同一页最近的块（超过页高 15% 不算），带它的原文译文，

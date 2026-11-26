@@ -1,0 +1,1 @@
+import{a as t}from"./chunk-LYFPWNTH.js";var a=[["path",{d:"M6 5h12",key:"fvfigv"}],["path",{d:"M4 12h10",key:"oujl3d"}],["path",{d:"M12 19h8",key:"baeox8"}]],o=t("chart-no-axes-gantt",a);export{a,o as b};

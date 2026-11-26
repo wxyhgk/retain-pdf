@@ -1,0 +1,1 @@
+import{a as e}from"./chunk-LYFPWNTH.js";var t=[["path",{d:"M16 5H3",key:"m91uny"}],["path",{d:"M16 12H3",key:"1a2rj7"}],["path",{d:"M9 19H3",key:"s61nz1"}],["path",{d:"m16 16-3 3 3 3",key:"117b85"}],["path",{d:"M21 5v12a2 2 0 0 1-2 2h-6",key:"hey24a"}]],d=e("list-end",t);export{t as a,d as b};
