@@ -1,5 +1,5 @@
 // 真起 pi-acp + 包装脚本 + pi + 我们的扩展，模型和后端都是本机假的（不花钱）。看整条链：
-// 只声明三个读书工具、模型要 bash 被拦下、读书走后端、材料放在问题前面、系统提示词是自带 agent 那份、密钥不落盘、不碰用户的 ~/.pi。
+// 只声明三个读书工具和互动块的两个、模型要 bash 被拦下、读书走后端、材料放在问题前面、系统提示词是自带 agent 那份、密钥不落盘、不碰用户的 ~/.pi。
 //
 // 本机没装 pi-acp、pi 就跳过（CI 上没装）。换 pi 版本测：RETAIN_PI_TEST_PI=<pi 可执行文件> node --test backend/pi-agent/tests/
 import assert from "node:assert/strict";
@@ -16,6 +16,8 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PI_AGENT = resolve(HERE, "..");
 const PROMPTS = resolve(PI_AGENT, "../ask-agent/retainpdf_ask_agent/prompts");
+const OPENUI = resolve(PI_AGENT, "../../contracts/openui");
+const OPENUI_INTRO = JSON.parse(readFileSync(join(OPENUI, "ask-openui-prompt.v1.json"), "utf8")).intro.trim();
 const SECRET = "synthetic-model-key-0123456789";
 
 function which(name: string): string | null {
@@ -98,8 +100,10 @@ test("pi-acp + wrapper + pi + extension: locked down and reads the book", { skip
       compat: { supportsDeveloperRole: false } }] } } }));
   writeFileSync(join(agentDir, "settings.json"), JSON.stringify({
     defaultProvider: "retainpdf", defaultModel: "fake-model", defaultThinkingLevel: "off", enabledModels: ["retainpdf/fake-model"],
-    defaultTools: ["read_pages", "search_book", "view_page"], defaultProjectTrust: "never", sessionDir: sessions,
+    defaultTools: ["read_pages", "search_book", "view_page", "openui_spec", "openui_check"], defaultProjectTrust: "never", sessionDir: sessions,
     cacheWarming: "off", enableInstallTelemetry: false, enableSkillCommands: false, quietStartup: true }));
+  // 桥从说明文件取 L0 写进私有配置目录（acp/openui.rs）
+  writeFileSync(join(agentDir, "openui-intro.md"), OPENUI_INTRO);
 
   const child = spawn(PI_ACP!, [], {
     cwd: books,
@@ -124,6 +128,10 @@ test("pi-acp + wrapper + pi + extension: locked down and reads the book", { skip
       RETAIN_ASK_DOCUMENT_ID: "doc1",
       RETAIN_ASK_BACKEND_URL: backendUrl,
       RETAIN_ASK_BACKEND_KEY: "reading-key",
+      RETAIN_PI_OPENUI_INTRO: join(agentDir, "openui-intro.md"),
+      RETAIN_OPENUI_PROMPT: join(OPENUI, "ask-openui-prompt.v1.json"),
+      RETAIN_OPENUI_LIBRARY: join(OPENUI, "ask-openui-library.v1.json"),
+      RETAIN_OPENUI_CHECK: resolve(PI_AGENT, "../openui-check/bin/openui-check.mjs"),
     },
   });
   let stderr = "";
@@ -156,13 +164,16 @@ test("pi-acp + wrapper + pi + extension: locked down and reads the book", { skip
     const answer = await request("session/prompt", { sessionId, prompt: [{ type: "text", text: anchor }, { type: "text", text: "下一句呢？" }] });
     assert.equal(answer.result?.stopReason, "end_turn", JSON.stringify(answer) + stderr);
 
-    // 模型看到的：只有三个读书工具；系统提示词是自带 agent 那份（加工具说明和目录）；材料在问题前面
+    // 模型看到的：只有三个读书工具和互动块的两个；系统提示词是自带 agent 那份（加工具说明和目录）；材料在问题前面
     const first = modelRequests[0];
-    assert.deepEqual(first.tools.map((tool: any) => tool.function.name).sort(), ["read_pages", "search_book", "view_page"]);
+    assert.deepEqual(first.tools.map((tool: any) => tool.function.name).sort(), ["openui_check", "openui_spec", "read_pages", "search_book", "view_page"]);
     const system = first.messages.find((message: any) => message.role === "system");
     const systemText = typeof system.content === "string" ? system.content : JSON.stringify(system.content);
     assert.ok(systemText.startsWith(readFileSync(join(PROMPTS, "ask_system.txt"), "utf8").trim().slice(0, 40)), systemText.slice(0, 200));
     assert.ok(systemText.includes("read_pages 一次读几页"), "ask_tools.txt is appended");
+    // 互动块的 L0 接在 ask_system 后面、ask_tools 前面（和 Python 版一样）
+    const introAt = systemText.indexOf(OPENUI_INTRO.slice(0, 30));
+    assert.ok(introAt > 0 && introAt < systemText.indexOf("read_pages 一次读几页"), "the OpenUI intro sits between ask_system and ask_tools");
     assert.ok(systemText.includes("用户正在读的书共 2 页"), "the book overview is in the system prompt");
     assert.ok(!/AGENTS\.md|coding assistant/i.test(systemText));
     const user = first.messages.find((message: any) => message.role === "user");
