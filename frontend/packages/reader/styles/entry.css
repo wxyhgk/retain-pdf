@@ -8,10 +8,8 @@
  * 本文件由 frontend/web/src/styles/entries/reader.css 代理导入。
  */
 @import "./core/tailwind-theme.css";
-/* 提问窗用的 assistant-ui 官方组件（src/ask/ui/）：展开收起的动画、「思考中」的流光。 */
-@import "tw-animate-css";
-@import "tw-shimmer";
-@import "@assistant-ui/react-markdown/styles/dot.css";
+/* 提问窗（@retainpdf/ask）的 Tailwind 部分：动画、流光、打字光标，并扫它的源码。 */
+@import "../../ask/styles/tailwind.css";
 
 @source "../src/**/*.{js,jsx,ts,tsx}";
 @source inline("progress-bar download-toast-card");
@@ -54,7 +52,8 @@
 @import "./ink.css" layer(pages);
 /* 深色文档（书页黑底白字），放在 react-pdf / live-translation 后面盖住它们的底色 */
 @import "./zoom.css" layer(pages);
-@import "./ask.css" layer(pages);
+@import "../../ask/styles/ask.css" layer(pages);
+@import "./ask-marks.css" layer(pages);
 @import "./doc-theme.css" layer(pages);
 /* Markdown 悬浮预览（含 MathJax） */
 @import "./markdown.css" layer(pages);

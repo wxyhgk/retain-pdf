@@ -1,8 +1,8 @@
 import { defineConfig } from "vite";
 import path from "path";
 
-// 提问窗的几个开源库（assistant-ui 及其 Markdown / KaTeX、radix、react-rnd、ACP SDK）也不打进 dist：宿主（web 的 esbuild）解析、按需拆块。
-const packageDependencyPattern = /^(?:react|react-dom|react-pdf|pdfjs-dist|mathjax-full|marked|lucide-react|sonner|@retainpdf\/api|@retainpdf\/domain|@retainpdf\/ui|@assistant-ui\/[^/]+|react-rnd|katex|rehype-katex|remark-math|remark-gfm|zustand|radix-ui|class-variance-authority|clsx|tailwind-merge|@agentclientprotocol\/sdk)(?:\/.*)?$/;
+// 提问窗（@retainpdf/ask）和别的 workspace 包一样不打进 dist：宿主（web 的 esbuild）解析、按需拆块。
+const packageDependencyPattern = /^(?:react|react-dom|react-pdf|pdfjs-dist|mathjax-full|marked|lucide-react|sonner|@retainpdf\/api|@retainpdf\/domain|@retainpdf\/ui|@retainpdf\/ask|zustand)(?:\/.*)?$/;
 
 export default defineConfig({
   build: {

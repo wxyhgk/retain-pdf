@@ -163,6 +163,11 @@ jobs:
           npm --prefix frontend/packages/whiteboard run typecheck
           npm --prefix frontend/packages/whiteboard run build
 
+      - name: Typecheck and build @retainpdf/ask
+        run: |
+          npm --prefix frontend/packages/ask run typecheck
+          npm --prefix frontend/packages/ask run build
+
       - name: Typecheck @retainpdf/reader
         run: npm --prefix frontend/packages/reader run typecheck
 
@@ -248,6 +253,16 @@ jobs:
 
       - name: Ask agent package tests
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/ask-agent/tests" -q
+
+      - name: Setup Node (pi agent)
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.22.0"
+
+      # backend/pi-agent（RetainPDF + pi 的扩展，TS，Node 直接去掉类型跑）。真起 pi-acp + pi 的那条（pi-acp.test.ts）
+      # CI 上没装 pi，会跳过；本机装了就跑。
+      - name: Pi agent extension tests
+        run: node --test "$RETAIN_PDF_SERVICES_ROOT/pi-agent/tests/*.test.ts"
 
       # 这一步必须排在装 typst 之前——它验证的就是「机器上没有 typst 时单元测试
       # 依然全绿」。#106 把二进制定位移进 try 内之后有 15 个用例悄悄开始依赖

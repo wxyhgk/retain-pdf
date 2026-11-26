@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "@retainpdf/api": "0.1.0",
+    "@retainpdf/ask": "0.1.0",
     "@retainpdf/contracts": "0.1.0",
     "@retainpdf/domain": "0.1.0",
     "@retainpdf/reader": "0.1.0",

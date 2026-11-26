@@ -3,7 +3,7 @@
 //! 方案：docs/ops/planning/reader-ask/20261125-后端ACP桥和自带agent.md。
 use axum::extract::ws::{CloseFrame, Message, WebSocket, WebSocketUpgrade};
 use axum::extract::State;
-use axum::http::HeaderMap;
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::Response;
 use axum::Json;
 use futures_util::{SinkExt, StreamExt};
@@ -13,8 +13,9 @@ use crate::error::AppError;
 use crate::models::api::ApiResponse;
 use crate::routes::common::{build_acp_config, run_job_query, websocket_origin_allowed, ApiPath, ApiQuery};
 use crate::services::providers::{
-    agents_view, ask_job_id, prepare_agent, run_bridge, AcpConnectQuery, AgentProcess, AgentsView, AskBook,
-    BridgeOut, SessionDefaults, BUILTIN_AGENT_ID,
+    agents_view, ask_job_id, is_builtin_agent, prepare_agent, run_bridge, AcpConnectQuery, AgentProcess, AgentsView,
+    AskBook, BridgeOut, SessionDefaults, install_agent as start_agent_install, AgentView, InstallState,
+    BUILTIN_AGENT_ID,
 };
 use crate::AppState;
 
@@ -30,6 +31,24 @@ pub async fn list_agents(State(state): State<AppState>) -> Result<Json<ApiRespon
     Ok(Json(ApiResponse::ok(view)))
 }
 
+/// POST /api/v1/ai/agents/:agent_id/install —— 把本机 agent 装进后端自己的安装目录（2026-11-26）。后台装，马上返回这个
+/// agent 现在的样子：开始装了或正在装回 202（`install_status.state` 是 `installing`），已经装好了回 200。
+/// 方案：docs/ops/planning/reader-ask/20261126-本机agent默认安装.md。
+pub async fn install_agent(
+    State(state): State<AppState>,
+    ApiPath(agent_id): ApiPath<String>,
+    headers: HeaderMap,
+) -> Result<(StatusCode, Json<ApiResponse<AgentView>>), AppError> {
+    if !websocket_origin_allowed(&state, &headers) {
+        return Err(AppError::forbidden("origin is not allowed"));
+    }
+    let config = build_acp_config(&state);
+    let view = start_agent_install(&config, &agent_id, &headers)?;
+    let installing = view.install_status.as_ref().is_some_and(|status| status.state == InstallState::Installing);
+    let code = if installing { StatusCode::ACCEPTED } else { StatusCode::OK };
+    Ok((code, Json(ApiResponse::ok(view))))
+}
+
 /// GET /api/v1/ai/agents/:agent_id/acp —— ACP 桥（WebSocket）：一条文字消息就是一条 JSON-RPC 2.0。
 pub async fn acp_socket(
     State(state): State<AppState>,
@@ -42,10 +61,10 @@ pub async fn acp_socket(
         return Err(AppError::forbidden("origin is not allowed"));
     }
     let config = build_acp_config(&state);
-    // 自带 agent 读哪本书：`?job_id=`（阅读页的任务，合并阅读的虚拟任务也行）。没有这个任务 404；多用户下归属由
-    // enforce_access 按查询串里的 job_id 核过了。本机 agent 不看它。
+    // 自带 agent（retainpdf、retainpdf-pi）读哪本书：`?job_id=`（阅读页的任务，合并阅读的虚拟任务也行）。没有这个任务 404；
+    // 多用户下归属由 enforce_access 按查询串里的 job_id 核过了。本机 agent 不看它。
     let book = match ask_job_id(&query)? {
-        Some(job_id) if agent_id == BUILTIN_AGENT_ID => {
+        Some(job_id) if is_builtin_agent(&agent_id) => {
             let lookup = job_id.clone();
             let document_id = run_job_query(&state, format!("ask-book:{job_id}"), move |jobs| {
                 jobs.ask_book_document_id(&lookup)

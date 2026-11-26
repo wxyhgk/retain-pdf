@@ -5,22 +5,22 @@
 /**
  * Endpoint input, query, and output DTOs published by ai-agents.v1.schema.json.
  */
-export type AiAgentsSchema = AgentsView;
+export type AiAgentsSchema = AgentView | AgentsView;
 /**
- * builtin：RetainPDF 自带模型（用设置里的模型和密钥，服务器上也能用）；local：本机装的 agent。
+ * builtin：用设置里的模型和密钥的自带 agent——retainpdf（Python，服务器上也能用）和 retainpdf-pi（2026-11-26 加：本机装的 pi 加 RetainPDF 的读书扩展，和本机 agent 同一道闸门，没装 pi-acp / pi 时不能用、给 install）；local：本机装的 agent。
  */
 export type AgentKind = "builtin" | "local";
 /**
- * 本机 agent 怎么发行（怎么装）：binary 下载压缩包、把里面的命令放进 PATH（install_url）；npx 是 npm 包（install 是 npm install -g …）；uvx 是 Python 包（install 是 uv tool install …）。后端都不现场下载。
+ * 本机 agent 怎么发行（怎么装）：binary 下载压缩包、把里面的命令放进 PATH（install_url）；npx 是 npm 包（install 是 npm install -g …）；uvx 是 Python 包（install 是 uv tool install …）。起 agent 时后端都不现场下载；要后端代装走 POST /ai/agents/:agent_id/install（2026-11-26）。
  */
 export type AgentDistribution = "binary" | "npx" | "uvx";
-export interface AgentsView {
-    agents: AgentView[];
-    local_agents: LocalAgentsView;
-}
+/**
+ * missing 没装（安装目录和 PATH 上都没有）；installing 后端正在装；installed 装好了（安装目录里或 PATH 上）；failed 上一次代装失败（看 error），可以再装。
+ */
+export type InstallState = "missing" | "installing" | "installed" | "failed";
 export interface AgentView {
     /**
-     * WebSocket 地址里的 :agent_id。retainpdf 是自带的；本机的是 ACP 官方登记表的 id（pi-acp、opencode、qwen-code……），只有 claude-code（登记表 claude-acp）、codex（codex-acp）沿用 2026-11-25 的写法，握手时登记表 id 也认。
+     * WebSocket 地址里的 :agent_id。retainpdf、retainpdf-pi 是自带的；本机的是 ACP 官方登记表的 id（pi-acp、opencode、qwen-code……），只有 claude-code（登记表 claude-acp）、codex（codex-acp）沿用 2026-11-25 的写法，握手时登记表 id 也认。
      */
     id: string;
     name: string;
@@ -35,7 +35,7 @@ export interface AgentView {
      */
     launch?: string;
     /**
-     * 本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp、uv tool install fast-agent-acp；自带的、只有压缩包的没有（看 install_url 和 reason）。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。
+     * 本机 agent 的安装命令（在终端跑一次），比如 npm install -g @agentclientprotocol/claude-agent-acp、uv tool install fast-agent-acp；retainpdf、只有压缩包的没有（看 install_url 和 reason）；retainpdf-pi 没装 pi-acp / pi 时给它们的安装命令。2026-11-25 起后端不再现场 npx 下载（下到一半断开会留下坏缓存）。
      */
     install?: string;
     /**
@@ -61,9 +61,44 @@ export interface AgentView {
      */
     install_url?: string;
     /**
-     * 推荐的几个（Claude Code、Codex、Gemini CLI、pi、OpenCode……）；不推荐的没有这个字段。前端可以把其余没装的折起来。
+     * 推荐的几个（Claude Code、Codex、Google Antigravity、pi、OpenCode……，2026-11-26 起 Antigravity 换下 Gemini CLI）；不推荐的没有这个字段。前端可以把其余没装的折起来。
      */
     featured?: boolean;
+    install_status?: AgentInstallView;
+}
+/**
+ * 2026-11-26 加：安装状态（装没装、装在哪、后端能不能代装、装到哪一步）。自带的、本机 agent 关着（local_agents.enabled 为 false）时没有这个字段。
+ */
+export interface AgentInstallView {
+    state: InstallState;
+    /**
+     * 装在后端自己的安装目录里；false 是没装，或者是用户自己装在 PATH 上的。
+     */
+    managed: boolean;
+    /**
+     * 后端能代装（POST /ai/agents/:agent_id/install）。
+     */
+    installable: boolean;
+    /**
+     * 托管的是怎么装的；没装的是后端会怎么装。不能代装、又不是托管的没有这个字段。
+     */
+    method?: "npm" | "binary";
+    /**
+     * 安装目录里装的版本（托管的才有）。
+     */
+    installed_version?: string;
+    /**
+     * state 是 failed 时的原因（npm 输出的最后几行、sha256 对不上……）。
+     */
+    error?: string;
+    /**
+     * installable 为 false 时：为什么不能代装。
+     */
+    reason?: string;
+}
+export interface AgentsView {
+    agents: AgentView[];
+    local_agents: LocalAgentsView;
 }
 export interface LocalAgentsView {
     /**

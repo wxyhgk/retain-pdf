@@ -63,7 +63,7 @@ import { readerSessionDataPort } from "./external.js";
 import { useAskThreads } from "./ask/use-ask-threads.js";
 
 // 提问窗单独一块（assistant-ui、streamdown、KaTeX 都在里面），第一次提问才加载。
-const ReaderAskWindow = lazy(() => import("./ask/ReaderAskWindow.js"));
+const ReaderAskPanel = lazy(() => import("./ask/ReaderAskPanel.js"));
 import { useReaderXrefs } from "./hooks/use-reader-xrefs.js";
 import { buildXrefIndex, type XrefTarget } from "./shared/content/reader-xrefs.js";
 
@@ -710,13 +710,15 @@ export function ReaderAppReactPdf() {
         />
         {askPort && ask ? (
           <Suspense fallback={null}>
-            <ReaderAskWindow
+            <ReaderAskPanel
               key={ask.key}
               port={askPort}
               jobId={session.jobId}
               anchor={ask.anchor}
               onClose={askThreads.close}
               onShowAnchor={() => c.goToPage(ask.anchor.page, ask.anchor.pane)}
+              onJumpToPage={(page) => c.goToPage(page, ask.anchor.pane)}
+              pageCount={panes.hudNumPages || 0}
               initialMessages={ask.initial}
               onTurnDone={(messages, agentId) => askThreads.save(ask.key, messages, agentId)}
               onDelete={() => askThreads.remove(ask.key)}

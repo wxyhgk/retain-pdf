@@ -1,0 +1,53 @@
+#!/bin/sh
+# RetainPDF + pi（阅读页提问的 retainpdf-pi，2026-11-26）：pi-acp 起 pi 时用这个脚本（后端的 ACP 桥把
+# PI_ACP_PI_COMMAND 指向它）。pi-acp 给的参数（--mode rpc --no-themes [--session 文件]）原样传下去，后面加上锁定的参数：
+#
+# - 模型：--model retainpdf/<模型> --thinking <档位>（服务商 retainpdf 在桥写的私有 models.json 里，密钥只在环境变量）；
+# - 提示词：沿用 Python 自带 agent 的 ask_system.txt；有书时再加 ask_tools.txt（工具怎么用）；
+# - 工具：只开我们扩展里读书的三个（-nbt 关掉 read/bash/edit/write，--tools 白名单，--no-mcp 不连 MCP）；
+# - 不读用户的东西：-ne 不加载自动发现的扩展（-e 给的照样加载），-ns / -np 不加载 skill、提示词模板，
+#   -nc 不读 AGENTS.md / CLAUDE.md，-na 不信任工作目录里的 .pi/；--offline 不联网更新模型目录；
+# - 会话放在 <数据目录>/ask-pi/sessions。
+#
+# 环境变量由桥给（backend/packages/retainpdf-providers/src/acp/pi.rs），缺了就不起。
+# 每个参数 2026-11-26 在 pi 1.1.0 和 1.6.1 上核过（两版 --help 里都有，见方案「pi 版本」）。
+set -eu
+
+for name in RETAIN_PI_BIN RETAIN_PI_PROMPTS_DIR RETAIN_PI_SESSION_DIR RETAIN_ASK_MODEL RETAIN_PI_THINKING; do
+  eval "value=\${$name:-}"
+  if [ -z "$value" ]; then
+    echo "retainpdf-pi: $name is not set (start it through the RetainPDF ACP bridge)" >&2
+    exit 2
+  fi
+done
+
+here=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+
+# pi-acp 的 HOME 是私有的（它的会话对照表不碰用户的 ~/.pi）；pi 换回用户的 HOME：pi 的安装器把 Node 放在
+# ~/.local/share/pi-node，找不到就起不来。pi 的配置目录照旧是私有的（PI_CODING_AGENT_DIR）。
+if [ -n "${RETAIN_PI_USER_HOME:-}" ]; then
+  HOME=$RETAIN_PI_USER_HOME
+  export HOME
+fi
+
+set -- "$@" \
+  --model "retainpdf/$RETAIN_ASK_MODEL" \
+  --thinking "$RETAIN_PI_THINKING" \
+  --system-prompt "$RETAIN_PI_PROMPTS_DIR/ask_system.txt" \
+  --extension "$here/extension/index.ts" \
+  --no-builtin-tools \
+  --tools read_pages,search_book,view_page \
+  --no-mcp \
+  --no-extensions \
+  --no-skills \
+  --no-prompt-templates \
+  --no-context-files \
+  --no-approve \
+  --offline \
+  --session-dir "$RETAIN_PI_SESSION_DIR"
+
+if [ -n "${RETAIN_ASK_JOB_ID:-}" ] && [ -n "${RETAIN_ASK_BACKEND_URL:-}" ]; then
+  set -- "$@" --append-system-prompt "$RETAIN_PI_PROMPTS_DIR/ask_tools.txt"
+fi
+
+exec "$RETAIN_PI_BIN" "$@"

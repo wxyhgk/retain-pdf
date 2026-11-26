@@ -6,7 +6,7 @@
 //   - CSS 里写死的 font-size、border-radius（不是 var(--…)）；
 //   - 按钮一类的类名（*-btn、*-button）：只许用登记过的，新造的报错。
 // 不在 baseline 的文件（含新文件）必须是 0；在 baseline 的不许涨；降了就要拧紧（只减不增）。
-// 扫描 web 的 src 和阅读器包（src、styles）；基础组件自己（packages/ui）不算。
+// 扫描 web 的 src、阅读器包和提问窗包（src、styles）；基础组件自己（packages/ui）和提问窗照搬的 assistant-ui（packages/ask/src/ui）不算。
 //
 // 迁完一块后运行 `UPDATE_UI_PRIMITIVES_BASELINE=1 node --import ./tests/helpers/register-jsx.mjs --test tests/architecture/ui-primitives-ratchet.test.mjs`
 // 重新生成 baseline。baseline: tests/architecture/helpers/ui-primitives-baseline.json
@@ -19,9 +19,9 @@ import { PROJECT_ROOT, stripCommentsAndStrings, toRelative } from "./helpers/sou
 
 const BASELINE_PATH = join(PROJECT_ROOT, "tests/architecture/helpers/ui-primitives-baseline.json");
 const UPDATE_ENV = "UPDATE_UI_PRIMITIVES_BASELINE";
-const SCAN_ROOTS = ["src", "../packages/reader/src", "../packages/reader/styles"].map((dir) => join(PROJECT_ROOT, dir));
+const SCAN_ROOTS = ["src", "../packages/reader/src", "../packages/reader/styles", "../packages/ask/src", "../packages/ask/styles"].map((dir) => join(PROJECT_ROOT, dir));
 // 照搬的第三方组件（assistant-ui 官方组件、shadcn/ui，MIT）：原样拷进来、方便对着上游更新，不按我们手写控件的规矩算。
-const EXCLUDED = ["src/platform/api/mocks/", "src/platform/mock/", "src/platform/generated/", "../packages/reader/src/ask/ui/"];
+const EXCLUDED = ["src/platform/api/mocks/", "src/platform/mock/", "src/platform/generated/", "../packages/ask/src/ui/"];
 
 const CONTROL_PATTERNS = {
   button: /<button\b/g,

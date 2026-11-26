@@ -21,6 +21,8 @@ const SCAN_ROOTS = [
   "packages/ui/src",
   "packages/reader/styles",
   "packages/reader/src",
+  "packages/ask/styles",
+  "packages/ask/src",
 ].map((p) => join(FRONTEND, p));
 
 function sourceText() {

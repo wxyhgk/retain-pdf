@@ -41,6 +41,9 @@ fn config(root: &Path) -> AcpConfig {
         local_agents_flag: None,
         path_var: Some(root.join("bin").into_os_string()),
         current_exe: Some(root.join("bin").join("rust_api")),
+        backend_root: Some(root.join("backend")),
+        agents_dir: root.join(AGENTS_DIR_NAME),
+        node_dir: None,
     }
 }
 
@@ -263,9 +266,10 @@ fn registry_agents_are_detected_on_path_with_their_fixed_args_and_env() {
     fake_command(&root.0, "qwen");
     let agents = agents_view(&config).agents;
     let ids: Vec<&str> = agents.iter().map(|agent| agent.id.as_str()).collect();
-    assert_eq!(&ids[..4], ["retainpdf", "pi-acp", "qwen-code", "factory-droid"], "{ids:?}");
-    assert_eq!(agents[2].launch.as_deref(), Some("qwen --acp --experimental-skills"));
-    let first_missing = agents.iter().position(|agent| !agent.available).unwrap();
+    // retainpdf-pi 紧跟在 retainpdf 后面（这里没放 backend/pi-agent，不能用）
+    assert_eq!(&ids[..5], ["retainpdf", "retainpdf-pi", "pi-acp", "qwen-code", "factory-droid"], "{ids:?}");
+    assert_eq!(agents[3].launch.as_deref(), Some("qwen --acp --experimental-skills"));
+    let first_missing = agents.iter().skip(2).position(|agent| !agent.available).unwrap() + 2;
     assert_eq!(agents[first_missing].id, "claude-code");
     assert!(agents[first_missing..].iter().all(|agent| !agent.available));
 }
@@ -289,7 +293,7 @@ fn old_ids_stay_and_registry_ids_are_aliases() {
     assert_eq!(by_old.program, root.0.join("bin").join("claude-agent-acp"));
 
     // 不列的（付费市场、旧 id）列表里没有，也起不了
-    for hidden in ["agoragentic-acp", "opencode-v2", "kimi", "antigravity-acp"] {
+    for hidden in ["agoragentic-acp", "opencode-v2", "kimi"] {
         assert!(view.agents.iter().all(|agent| agent.registry_id.as_deref() != Some(hidden)), "{hidden}");
         assert_eq!(prepare_agent(&config, hidden, &local_headers(), &AcpConnectQuery::default(), None).map(|_| ()).map_err(status).unwrap_err(), 404, "{hidden}");
     }
@@ -313,7 +317,8 @@ fn binary_agents_use_the_archive_command_for_this_platform() {
     let root = temp_root("binary");
     fake_command(&root.0, "goose");
     let path = root.0.join("bin").into_os_string();
-    let views = registry::list_agents_on(&catalog, "linux-x86_64", "", Some(&path));
+    let lookup = registry::Lookup { path_var: Some(&path), ..Default::default() };
+    let views = registry::list_agents_on(&catalog, "linux-x86_64", "", &lookup);
     let ids: Vec<&str> = views.iter().map(|agent| agent.id.as_str()).collect();
     // 这个平台没有压缩包的、npx 又没核过命令名的不列
     assert_eq!(ids, ["retainpdf", "goose", "cursor"]);
@@ -325,7 +330,202 @@ fn binary_agents_use_the_archive_command_for_this_platform() {
     assert_eq!(cursor.install_url.as_deref(), Some("https://example.com/cursor.tar.gz"));
     assert!(cursor.reason.contains("cursor-agent") && cursor.reason.contains("https://example.com/cursor.tar.gz"), "{cursor:?}");
     // 本机 agent 关着：一律不能用，原因是闸门的
-    let views = registry::list_agents_on(&catalog, "darwin-aarch64", "多用户模式不起本机 agent", Some(&path));
+    let views = registry::list_agents_on(&catalog, "darwin-aarch64", "多用户模式不起本机 agent", &lookup);
     assert_eq!(views.len(), 3);
     assert!(views[1..].iter().all(|agent| !agent.available && agent.reason == "多用户模式不起本机 agent"));
+}
+
+// ---------- retainpdf-pi（2026-11-26） ----------
+
+/// 仓库里 retainpdf-pi 要的文件：包装脚本、扩展、自带 agent 的两份提示词。
+#[cfg(unix)]
+fn fake_pi_agent(root: &Path) {
+    let backend = root.join("backend");
+    std::fs::create_dir_all(backend.join("pi-agent/bin")).unwrap();
+    std::fs::create_dir_all(backend.join("pi-agent/extension")).unwrap();
+    std::fs::create_dir_all(backend.join("ask-agent/retainpdf_ask_agent/prompts")).unwrap();
+    std::fs::write(backend.join("pi-agent/bin/retainpdf-pi"), "#!/bin/sh\n").unwrap();
+    std::fs::write(backend.join("pi-agent/extension/index.ts"), "export default () => {};\n").unwrap();
+    for name in ["ask_system.txt", "ask_tools.txt"] {
+        std::fs::write(backend.join("ask-agent/retainpdf_ask_agent/prompts").join(name), "prompt").unwrap();
+    }
+}
+
+#[cfg(unix)]
+fn pi_query() -> AcpConnectQuery {
+    AcpConnectQuery {
+        model: "claude-haiku-5-5".into(),
+        base_url: "https://api.anthropic.com/v1".into(),
+        api_protocol: "anthropic".into(),
+        thinking: String::new(),
+        credential_ref: "cred_ask".into(),
+        job_id: "job-1".into(),
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn retainpdf_pi_is_listed_as_builtin_and_says_what_is_missing() {
+    let root = temp_root("pi-list");
+    let config = config(&root.0);
+    let pi_row = |config: &AcpConfig| agents_view(config).agents.into_iter().find(|agent| agent.id == PI_AGENT_ID).unwrap();
+
+    // 没装 pi-acp、pi：给登记表里的安装命令（两个一起装）
+    fake_pi_agent(&root.0);
+    let row = pi_row(&config);
+    assert_eq!(row.kind, AgentKind::Builtin);
+    assert!(!row.available && row.reason.contains("pi-acp"), "{row:?}");
+    assert_eq!(row.install.as_deref(), Some("npm install -g @earendil-works/pi-coding-agent pi-acp"));
+    // 只装了 pi-acp：说清楚还缺 pi
+    fake_command(&root.0, "pi-acp");
+    let row = pi_row(&config);
+    assert!(!row.available && row.reason.contains("@earendil-works/pi-coding-agent"), "{row:?}");
+    // 都装了：能用，排在 retainpdf 后面
+    fake_command(&root.0, "pi");
+    let view = agents_view(&config);
+    assert_eq!(view.agents[1].id, PI_AGENT_ID);
+    assert!(view.agents[1].available && view.agents[1].reason.is_empty() && view.agents[1].install.is_none(), "{:?}", view.agents[1]);
+    let json = serde_json::to_value(&view.agents[1]).unwrap();
+    assert_eq!(json["kind"], "builtin");
+    assert!(json.get("launch").is_none() && json.get("registry_id").is_none());
+
+    // 安装包没带 backend/pi-agent
+    let mut no_files = config.clone();
+    no_files.backend_root = None;
+    assert!(pi_row(&no_files).reason.contains("backend/pi-agent"));
+    // 服务器上：和本机 agent 一样关着（Python 的 retainpdf 照样能用）
+    let mut server = config.clone();
+    server.listens_on_loopback = false;
+    let view = agents_view(&server);
+    let row = view.agents.iter().find(|agent| agent.id == PI_AGENT_ID).unwrap();
+    assert!(!row.available && row.reason == view.local_agents.reason);
+    assert!(view.agents[0].available);
+}
+
+#[cfg(unix)]
+#[test]
+fn retainpdf_pi_handshake_is_gated_and_launches_pi_acp_through_the_wrapper() {
+    let root = temp_root("pi-launch");
+    write_vault(&root.0);
+    fake_pi_agent(&root.0);
+    fake_command(&root.0, "pi-acp");
+    fake_command(&root.0, "pi");
+    let config = config(&root.0);
+    let book = AskBook { job_id: "job-1".into(), document_id: Some("doc-1".into()) };
+    assert!(is_builtin_agent(PI_AGENT_ID) && is_builtin_agent(BUILTIN_AGENT_ID) && !is_builtin_agent("pi-acp"));
+
+    // 闸门：局域网地址、经过代理、多用户、关了本机 agent 都不起
+    let mut lan = HeaderMap::new();
+    lan.insert("host", HeaderValue::from_static("192.168.1.5:41000"));
+    assert_eq!(prepare_agent(&config, PI_AGENT_ID, &lan, &pi_query(), Some(&book)).map(|_| ()).map_err(status).unwrap_err(), 403);
+    let mut proxied = local_headers();
+    proxied.insert("x-forwarded-for", HeaderValue::from_static("192.168.1.9"));
+    assert_eq!(prepare_agent(&config, PI_AGENT_ID, &proxied, &pi_query(), Some(&book)).map(|_| ()).map_err(status).unwrap_err(), 403);
+    let mut off = config.clone();
+    off.local_agents_flag = Some("0".into());
+    assert_eq!(prepare_agent(&off, PI_AGENT_ID, &local_headers(), &pi_query(), Some(&book)).map(|_| ()).map_err(status).unwrap_err(), 403);
+    // 模型配置和自带的一样要
+    let mut no_credential = pi_query();
+    no_credential.credential_ref.clear();
+    assert_eq!(prepare_agent(&config, PI_AGENT_ID, &local_headers(), &no_credential, Some(&book)).map(|_| ()).map_err(status).unwrap_err(), 400);
+    assert!(!root.0.join("ask-pi/connections").exists() || std::fs::read_dir(root.0.join("ask-pi/connections")).unwrap().next().is_none());
+
+    let (process, defaults) = prepare_agent(&config, PI_AGENT_ID, &local_headers(), &pi_query(), Some(&book)).unwrap();
+    assert_eq!(process.program, root.0.join("bin").join("pi-acp"));
+    assert!(process.args.is_empty());
+    assert_eq!(process.cwd.as_deref(), Some(root.0.join("books").as_path()));
+    // pi-acp 不把 MCP 交给 pi：不补 retainpdf mcp
+    assert!(defaults.mcp_server.is_none());
+    assert_eq!(defaults.cwd.as_deref(), Some(root.0.join("books").as_path()));
+    let env: std::collections::HashMap<_, _> = process.env.iter().cloned().collect();
+    assert_eq!(env["PI_ACP_PI_COMMAND"], root.0.join("backend/pi-agent/bin/retainpdf-pi").to_string_lossy());
+    assert_eq!(env["RETAIN_PI_BIN"], root.0.join("bin/pi").to_string_lossy());
+    assert_eq!(env["RETAIN_PI_PROMPTS_DIR"], root.0.join("backend/ask-agent/retainpdf_ask_agent/prompts").to_string_lossy());
+    assert_eq!(env["RETAIN_PI_THINKING"], "low");
+    assert_eq!(env["HOME"], root.0.join("ask-pi/home").to_string_lossy());
+    assert_eq!(env["RETAIN_PI_SESSION_DIR"], root.0.join("ask-pi/sessions").to_string_lossy());
+    assert_eq!(env["PI_OFFLINE"], "1");
+    assert_eq!(env["PI_TELEMETRY"], "0");
+    assert_eq!(env[ASK_ENV_MODEL], "claude-haiku-5-5");
+    assert_eq!(env[ASK_ENV_API_KEY], "synthetic-secret-value");
+    assert_eq!(env[ASK_ENV_JOB_ID], "job-1");
+    assert_eq!(env[ASK_ENV_DOCUMENT_ID], "doc-1");
+    assert_eq!(env[ASK_ENV_BACKEND_KEY], "agent-a");
+
+    // 私有配置目录：models.json 只有 retainpdf 一家、密钥只写变量名；settings.json 关掉保温、统计、项目信任；没有 auth.json
+    let agent_dir = process.scratch_dir.clone().unwrap();
+    assert_eq!(env["PI_CODING_AGENT_DIR"], agent_dir.to_string_lossy());
+    assert!(agent_dir.starts_with(root.0.join("ask-pi/connections")));
+    let models: serde_json::Value = serde_json::from_slice(&std::fs::read(agent_dir.join("models.json")).unwrap()).unwrap();
+    let provider = &models["providers"]["retainpdf"];
+    assert_eq!(models["providers"].as_object().unwrap().len(), 1);
+    assert_eq!(provider["baseUrl"], "https://api.anthropic.com");
+    assert_eq!(provider["api"], "anthropic-messages");
+    assert_eq!(provider["apiKey"], "$RETAIN_ASK_API_KEY");
+    assert_eq!(provider["models"][0]["id"], "claude-haiku-5-5");
+    assert_eq!(provider["models"][0]["compat"]["forceAdaptiveThinking"], true);
+    let settings: serde_json::Value = serde_json::from_slice(&std::fs::read(agent_dir.join("settings.json")).unwrap()).unwrap();
+    assert_eq!(settings["defaultTools"], serde_json::json!(["read_pages", "search_book", "view_page"]));
+    assert_eq!(settings["cacheWarming"], "off");
+    assert_eq!(settings["defaultProjectTrust"], "never");
+    assert_eq!(settings["enableInstallTelemetry"], false);
+    assert!(!agent_dir.join("auth.json").exists());
+    for entry in std::fs::read_dir(&agent_dir).unwrap() {
+        let text = std::fs::read_to_string(entry.unwrap().path()).unwrap();
+        assert!(!text.contains("synthetic-secret-value"), "{text}");
+    }
+
+    // 没给书：不给读书的东西
+    let (process, _) = prepare_agent(&config, PI_AGENT_ID, &local_headers(), &pi_query(), None).unwrap();
+    assert!(process.env.iter().all(|(name, _)| name != ASK_ENV_JOB_ID && name != ASK_ENV_BACKEND_KEY));
+}
+
+#[cfg(unix)]
+#[test]
+fn stale_pi_connection_dirs_are_swept() {
+    let root = temp_root("pi-sweep");
+    write_vault(&root.0);
+    fake_pi_agent(&root.0);
+    fake_command(&root.0, "pi-acp");
+    fake_command(&root.0, "pi");
+    let old = root.0.join("ask-pi/connections/1-old");
+    std::fs::create_dir_all(&old).unwrap();
+    let three_days_ago = std::time::SystemTime::now() - std::time::Duration::from_secs(3 * 24 * 3600);
+    std::fs::File::open(&old).unwrap().set_modified(three_days_ago).unwrap();
+    let fresh = root.0.join("ask-pi/connections/2-fresh");
+    std::fs::create_dir_all(&fresh).unwrap();
+    prepare_agent(&config(&root.0), PI_AGENT_ID, &local_headers(), &pi_query(), None).unwrap();
+    assert!(!old.exists() && fresh.exists());
+}
+
+#[test]
+fn settings_map_onto_pi() {
+    use super::pi::{pi_base_url, pi_thinking};
+    assert_eq!(pi_thinking("anthropic", ""), "low");
+    assert_eq!(pi_thinking("anthropic", "auto"), "low");
+    assert_eq!(pi_thinking("openai", ""), "off");
+    assert_eq!(pi_thinking("openai", "off"), "off");
+    assert_eq!(pi_thinking("openai", "Medium"), "medium");
+    assert_eq!(pi_thinking("openai_responses", "max"), "high");
+    assert_eq!(pi_base_url("anthropic", ""), "https://api.anthropic.com");
+    assert_eq!(pi_base_url("anthropic", "https://api.anthropic.com/v1/"), "https://api.anthropic.com");
+    assert_eq!(pi_base_url("anthropic", "https://x.example.com/anthropic/v1/messages"), "https://x.example.com/anthropic");
+    assert_eq!(pi_base_url("openai", ""), "https://api.deepseek.com/v1");
+    assert_eq!(pi_base_url("openai", "https://dashscope.aliyuncs.com/compatible-mode/v1/"), "https://dashscope.aliyuncs.com/compatible-mode/v1");
+
+    let settings = |protocol: &str, base_url: &str| ModelSettings {
+        model: "m".into(),
+        base_url: base_url.into(),
+        protocol: protocol.into(),
+        thinking: String::new(),
+        secret: "s".into(),
+    };
+    let qwen = super::pi::models_json(&settings("openai", "https://dashscope.aliyuncs.com/compatible-mode/v1"));
+    assert_eq!(qwen["providers"]["retainpdf"]["api"], "openai-completions");
+    // DashScope 不认 developer 角色（2026-11-26 实测 400）
+    assert_eq!(qwen["providers"]["retainpdf"]["models"][0]["compat"]["supportsDeveloperRole"], false);
+    let openai = super::pi::models_json(&settings("openai_responses", "https://api.openai.com/v1"));
+    assert_eq!(openai["providers"]["retainpdf"]["api"], "openai-responses");
+    assert_eq!(openai["providers"]["retainpdf"]["models"][0]["compat"], serde_json::json!({}));
+    assert!(!qwen.to_string().contains("\"s\""));
 }

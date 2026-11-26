@@ -1,0 +1,12 @@
+{
+  "name": "retainpdf-pi-agent",
+  "private": true,
+  "description": "RetainPDF + pi：阅读页提问用 pi 做 agent 的扩展和包装脚本（pi 用 jiti 直接加载 TS，不编译）",
+  "type": "module",
+  "engines": {
+    "node": ">=22.19"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.ts"
+  }
+}

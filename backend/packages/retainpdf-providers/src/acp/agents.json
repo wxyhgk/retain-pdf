@@ -1,5 +1,5 @@
 {
-  "_doc": "阅读页提问本机 agent 的人工名单，配合 registry-snapshot.json（ACP 官方登记表快照）用。aliases：登记表 id → 对外 id（2026-11-25 前端就用的 claude-code、codex 不变）；names：显示名改写；featured：推荐顺序（没装的也排在前面，前端可以把其余没装的折起来）；hidden：不列的和原因；bins：npx 装好后的命令名（登记表没写，2026-11-26 按 npm 的 bin 核过；有 binary 的用压缩包里的命令名，uvx 的就是包名）；requires：还要 PATH 上另有的命令。方案：docs/ops/planning/reader-ask/20261126-ACP官方登记表.md",
+  "_doc": "阅读页提问本机 agent 的人工名单，配合 registry-snapshot.json（ACP 官方登记表快照）用。aliases：登记表 id → 对外 id（2026-11-25 前端就用的 claude-code、codex 不变）；names：显示名改写；featured：推荐顺序（没装的也排在前面，前端可以把其余没装的折起来）；hidden：不列的和原因；bins：npx 装好后的命令名（登记表没写，2026-11-26 按 npm 的 bin 核过；有 binary 的用压缩包里的命令名，uvx 的就是包名）；requires：还要 PATH 上另有的命令（version 是代装时钉的版本）；default_install：桌面版默认装上的（后端设了 RUST_API_ACP_DEFAULT_INSTALL=1 时启动后在后台装进 <数据目录>/acp-agents/）。方案：docs/ops/planning/reader-ask/20261126-ACP官方登记表.md、docs/ops/planning/reader-ask/20261126-本机agent默认安装.md",
   "aliases": {
     "claude-acp": "claude-code",
     "codex-acp": "codex"
@@ -10,7 +10,7 @@
   "featured": [
     "claude-acp",
     "codex-acp",
-    "gemini",
+    "antigravity-acp",
     "pi-acp",
     "opencode",
     "qwen-code",
@@ -21,7 +21,6 @@
   ],
   "hidden": {
     "agoragentic-acp": "付费 agent 市场（USDC 结算），不是读书、写代码的 agent",
-    "antigravity-acp": "压缩包里是 agy_acp_server.par 服务文件，不是装进 PATH 的命令，认不出装没装",
     "kimi": "Kimi CLI 旧版（Legacy），新的是 kimi-code，装好后命令都叫 kimi",
     "opencode-v2": "OpenCode 的旧 id，和 opencode 是同一个"
   },
@@ -52,7 +51,12 @@
   "requires": {
     "pi-acp": {
       "bin": "pi",
-      "package": "@earendil-works/pi-coding-agent"
+      "package": "@earendil-works/pi-coding-agent",
+      "version": "1.6.1"
     }
-  }
+  },
+  "default_install": [
+    "pi-acp",
+    "claude-acp"
+  ]
 }

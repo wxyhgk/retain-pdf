@@ -6,9 +6,11 @@
 //! 方案：docs/ops/planning/reader-ask/20261126-ACP官方登记表.md。
 //!
 //! 只起快照里有的 agent，命令名、参数、环境变量都是快照和名单里写死的，不收客户端给的。
-//! 「装了」就是 PATH 上有那个命令（不经 shell）：binary 发行的是压缩包里的命令名，npx 的查名单 `bins`
-//! （登记表没写，按 npm 的 bin 核过），uvx 的就是包名。不现场 npx / uvx 下载（见 [`resolve_agent`]），没装的给安装办法。
+//! 「装了」先看后端自己的安装目录（2026-11-26，[`super::install`]，`<数据目录>/acp-agents/`），再看 PATH 上有没有那个命令
+//! （不经 shell）：binary 发行的是压缩包里的命令名，npx 的查名单 `bins`（登记表没写，按 npm 的 bin 核过），uvx 的就是包名。
+//! 不现场 npx / uvx 下载（见 [`resolve_agent`]），没装的给安装办法，能代装的由 `POST /ai/agents/:agent_id/install` 装进安装目录。
 use std::collections::{BTreeMap, HashMap};
+use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
@@ -75,22 +77,26 @@ struct RegistryDistribution {
 }
 
 #[derive(Clone, Debug, Deserialize)]
-struct BinaryTarget {
-    archive: String,
-    cmd: String,
+pub(super) struct BinaryTarget {
+    pub(super) archive: String,
+    pub(super) cmd: String,
     #[serde(default)]
-    args: Vec<String>,
+    pub(super) args: Vec<String>,
     #[serde(default)]
-    env: BTreeMap<String, String>,
+    pub(super) env: BTreeMap<String, String>,
+    /// 压缩包的 sha256（代装时核对；登记表有几个没给，那几个不代装）。
+    #[serde(default)]
+    pub(super) sha256: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
-struct PackageTarget {
-    package: String,
+pub(super) struct PackageTarget {
+    /// 带版本：`pi-acp@0.0.35`（npm）、`fast-agent-acp==0.10.66`（uv）。
+    pub(super) package: String,
     #[serde(default)]
-    args: Vec<String>,
+    pub(super) args: Vec<String>,
     #[serde(default)]
-    env: BTreeMap<String, String>,
+    pub(super) env: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -107,36 +113,58 @@ struct Overrides {
     bins: HashMap<String, String>,
     #[serde(default)]
     requires: HashMap<String, Requirement>,
+    /// 桌面版默认装上的（登记表 id，2026-11-26）：后端设了 `RUST_API_ACP_DEFAULT_INSTALL=1` 时启动后在后台装。
+    #[serde(default)]
+    default_install: Vec<String>,
 }
 
-/// 还要 PATH 上另有的命令（pi-acp 要 `pi`）。
+/// 还要 PATH 上另有的命令（pi-acp 要 `pi`）。代装时装进同一个目录。
 #[derive(Clone, Debug, Deserialize)]
-struct Requirement {
-    bin: String,
-    package: String,
+pub(super) struct Requirement {
+    pub(super) bin: String,
+    pub(super) package: String,
+    /// 代装时用的版本（不写就装最新的）；终端安装命令不带版本。
+    #[serde(default)]
+    pub(super) version: Option<String>,
+}
+
+impl Requirement {
+    /// 代装时交给 npm 的写法：`@earendil-works/pi-coding-agent@1.6.1`。
+    pub(super) fn spec(&self) -> String {
+        match self.version.as_deref().map(str::trim).filter(|version| !version.is_empty()) {
+            Some(version) => format!("{}@{version}", self.package),
+            None => self.package.clone(),
+        }
+    }
 }
 
 // ---------- 合起来的目录 ----------
 
 /// 登记表里的一个 agent（已套上名单）。
 #[derive(Debug)]
-struct CatalogAgent {
+pub(super) struct CatalogAgent {
     /// 对外 id（WebSocket 地址里的 `:agent_id`）：名单 `aliases` 改写过的，没改写就是登记表 id。
-    id: String,
-    registry_id: String,
+    pub(super) id: String,
+    pub(super) registry_id: String,
     name: String,
-    version: String,
+    pub(super) version: String,
     description: String,
     homepage: Option<String>,
     license: Option<String>,
     /// 在名单 `featured` 里的位置。
     featured: Option<usize>,
-    binary: BTreeMap<String, BinaryTarget>,
-    npx: Option<PackageTarget>,
+    pub(super) binary: BTreeMap<String, BinaryTarget>,
+    pub(super) npx: Option<PackageTarget>,
     uvx: Option<PackageTarget>,
     /// npx 装好后的命令名（名单 `bins`）。
-    npx_bin: Option<String>,
-    requires: Option<Requirement>,
+    pub(super) npx_bin: Option<String>,
+    pub(super) requires: Option<Requirement>,
+}
+
+impl CatalogAgent {
+    pub(super) fn has_uvx(&self) -> bool {
+        self.uvx.is_some()
+    }
 }
 
 /// 一种起法：在 PATH 里找 `bin`，带上固定的参数和环境变量。
@@ -151,9 +179,21 @@ struct Candidate {
 #[derive(Debug)]
 pub(super) struct Catalog {
     agents: Vec<CatalogAgent>,
+    /// 名单 `default_install`（登记表 id）。
+    pub(super) default_install: Vec<String>,
 }
 
-fn catalog() -> &'static Catalog {
+/// 找本机 agent 要看的地方：后端自己的安装目录、桌面版自带的 Node（起托管的 npm 包时放进 PATH）、PATH。
+#[derive(Clone, Copy, Debug, Default)]
+pub(super) struct Lookup<'a> {
+    pub(super) path_var: Option<&'a OsStr>,
+    /// `<数据目录>/acp-agents`；None 就只看 PATH。
+    pub(super) agents_dir: Option<&'a Path>,
+    /// `RUST_API_NODE_DIR`。
+    pub(super) node_dir: Option<&'a Path>,
+}
+
+pub(super) fn catalog() -> &'static Catalog {
     static CATALOG: OnceLock<Catalog> = OnceLock::new();
     CATALOG.get_or_init(|| build_catalog(REGISTRY_SNAPSHOT, AGENT_OVERRIDES).expect("acp registry snapshot and agents.json are valid"))
 }
@@ -192,7 +232,7 @@ pub(super) fn build_catalog(registry: &str, overrides: &str) -> Result<Catalog, 
             return Err(format!("duplicate agent id {}", agent.id));
         }
     }
-    Ok(Catalog { agents })
+    Ok(Catalog { agents, default_install: overrides.default_install })
 }
 
 /// 本机的平台在登记表 `binary` 里的写法：`darwin-aarch64`、`linux-x86_64`、`linux-x86_64-musl`、`windows-x86_64`……
@@ -221,7 +261,7 @@ fn package_name(spec: &str) -> &str {
     }
 }
 
-fn env_pairs(env: &BTreeMap<String, String>) -> Vec<(String, String)> {
+pub(super) fn env_pairs(env: &BTreeMap<String, String>) -> Vec<(String, String)> {
     env.iter().map(|(name, value)| (name.clone(), value.clone())).collect()
 }
 
@@ -254,7 +294,7 @@ impl CatalogAgent {
     }
 
     /// 一条装好的命令（npm / uv）；只有压缩包的没有。还要另有的命令（pi-acp 要 pi）PATH 上没有时一起装。
-    fn install_command(&self, path_var: Option<&std::ffi::OsStr>) -> Option<String> {
+    fn install_command(&self, path_var: Option<&OsStr>) -> Option<String> {
         if let (Some(npx), Some(_)) = (&self.npx, &self.npx_bin) {
             let mut packages = Vec::new();
             if let Some(requirement) = self.requires.as_ref().filter(|requirement| find_in_path(&requirement.bin, path_var).is_none()) {
@@ -271,12 +311,16 @@ impl CatalogAgent {
     }
 
     /// 没装时怎么跟用户说。
-    fn missing_reason(&self, platform: &str, candidates: &[Candidate], path_var: Option<&std::ffi::OsStr>) -> String {
+    fn missing_reason(&self, platform: &str, candidates: &[Candidate], lookup: &Lookup) -> String {
         let bin = candidates.first().map(|candidate| candidate.bin.as_str()).unwrap_or(&self.registry_id);
-        if let Some(install) = self.install_command(path_var) {
+        if let Some(install) = self.install_command(lookup.path_var) {
             return format!("没装 {bin}：先在终端运行 {install}");
         }
         let archive = self.install_url(platform).unwrap_or_default();
+        // 压缩包 RetainPDF 能代装（快照里有 sha256）：先说能代装（2026-11-26）
+        if lookup.agents_dir.is_some() && super::install::install_plan(self, platform, lookup).is_ok() {
+            return format!("没装 {}：RetainPDF 可以替你下载安装（{archive}）", self.name);
+        }
         match &self.homepage {
             Some(homepage) => format!("没装 {bin}：下载 {archive} 解压，把 {bin} 放进 PATH（说明见 {homepage}）"),
             None => format!("没装 {bin}：下载 {archive} 解压，把 {bin} 放进 PATH"),
@@ -291,17 +335,19 @@ pub struct ResolvedLaunch {
     pub args: Vec<String>,
     pub env: Vec<(String, String)>,
     pub distribution: AgentDistribution,
+    /// 装在后端自己的安装目录里时是那个版本目录名；PATH 上找到的是 None。
+    pub managed_version: Option<String>,
 }
 
 /// 在 PATH 里找可执行文件（不经 shell）。
-pub fn find_in_path(program: &str, path_var: Option<&std::ffi::OsStr>) -> Option<PathBuf> {
+pub fn find_in_path(program: &str, path_var: Option<&OsStr>) -> Option<PathBuf> {
     let path_var = path_var?;
     std::env::split_paths(path_var)
         .map(|dir| dir.join(program))
         .find(|candidate| is_executable(candidate))
 }
 
-fn is_executable(path: &Path) -> bool {
+pub(super) fn is_executable(path: &Path) -> bool {
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
@@ -313,16 +359,20 @@ fn is_executable(path: &Path) -> bool {
     }
 }
 
-/// 找装好的那个起法。不现场 npx / uvx 下载：2026-11-25 以前没装单独的适配器时用 `npx -y <包>` 现场下载再起，
+/// 找装好的那个起法：先看后端自己的安装目录，再看 PATH。不现场 npx / uvx 下载：2026-11-25 以前没装单独的适配器时用 `npx -y <包>` 现场下载再起，
 /// Claude Code 的适配器第一次要下约 384 MB，下到一半连接断了，桥结束 npx，`~/.npm/_npx` 里留下只写了一半的
 /// 可执行文件，之后每次都报 `spawn ... -88`（macOS EBADMACHO），自己恢复不了。现在没装就列成不能用、给安装办法。
-fn resolve_agent(agent: &CatalogAgent, platform: &str, path_var: Option<&std::ffi::OsStr>) -> Result<ResolvedLaunch, String> {
+pub(super) fn resolve_agent(agent: &CatalogAgent, platform: &str, lookup: &Lookup) -> Result<ResolvedLaunch, String> {
+    if let Some(managed) = super::install::managed_launch(agent, platform, lookup) {
+        return Ok(managed);
+    }
+    let path_var = lookup.path_var;
     let candidates = agent.candidates(platform);
     let found = candidates
         .iter()
         .find_map(|candidate| find_in_path(&candidate.bin, path_var).map(|program| (candidate, program)));
     let Some((candidate, program)) = found else {
-        return Err(agent.missing_reason(platform, &candidates, path_var));
+        return Err(agent.missing_reason(platform, &candidates, lookup));
     };
     if let Some(requirement) = &agent.requires {
         if find_in_path(&requirement.bin, path_var).is_none() {
@@ -332,10 +382,16 @@ fn resolve_agent(agent: &CatalogAgent, platform: &str, path_var: Option<&std::ff
             ));
         }
     }
-    Ok(ResolvedLaunch { program, args: candidate.args.clone(), env: candidate.env.clone(), distribution: candidate.distribution })
+    Ok(ResolvedLaunch {
+        program,
+        args: candidate.args.clone(),
+        env: candidate.env.clone(),
+        distribution: candidate.distribution,
+        managed_version: None,
+    })
 }
 
-fn find_agent<'a>(catalog: &'a Catalog, id: &str, platform: &str) -> Option<&'a CatalogAgent> {
+pub(super) fn find_agent<'a>(catalog: &'a Catalog, id: &str, platform: &str) -> Option<&'a CatalogAgent> {
     // 对外 id 和登记表 id 都认（claude-code 和 claude-acp 是同一个）
     catalog
         .agents
@@ -344,9 +400,34 @@ fn find_agent<'a>(catalog: &'a Catalog, id: &str, platform: &str) -> Option<&'a 
 }
 
 /// 本机 agent 的起法（`id` 不认识、这个平台起不了返回 None）。
-pub fn resolve_local_agent(id: &str, path_var: Option<&std::ffi::OsStr>) -> Option<Result<ResolvedLaunch, String>> {
+pub(super) fn resolve_local_agent(id: &str, lookup: &Lookup) -> Option<Result<ResolvedLaunch, String>> {
     let platform = current_platform();
-    find_agent(catalog(), id, &platform).map(|agent| resolve_agent(agent, &platform, path_var))
+    find_agent(catalog(), id, &platform).map(|agent| resolve_agent(agent, &platform, lookup))
+}
+
+/// 本机 agent 的起法，加上它还要的那个命令的路径（pi-acp 要 pi）；没装时是原因和安装命令。`retainpdf-pi` 用（2026-11-26），
+/// 「装了没有」和本机 agent 列表同一套判断。
+pub(super) fn resolve_local_agent_and_requirement(
+    id: &str,
+    lookup: &Lookup,
+) -> Option<Result<(ResolvedLaunch, Option<PathBuf>), (String, Option<String>)>> {
+    let platform = current_platform();
+    let agent = find_agent(catalog(), id, &platform)?;
+    Some(match resolve_agent(agent, &platform, lookup) {
+        Ok(launch) => {
+            // 后端代装的（托管目录）：要的命令和它装在同一个 `.bin` 里；否则在 PATH 上找
+            let requirement = agent.requires.as_ref().and_then(|requirement| {
+                launch
+                    .managed_version
+                    .as_ref()
+                    .and_then(|_| launch.program.parent())
+                    .and_then(|bin_dir| super::install::command_in(bin_dir, &requirement.bin))
+                    .or_else(|| find_in_path(&requirement.bin, lookup.path_var))
+            });
+            Ok((launch, requirement))
+        }
+        Err(reason) => Err((reason, agent.install_command(lookup.path_var))),
+    })
 }
 
 pub fn is_local_agent(id: &str) -> bool {
@@ -389,6 +470,9 @@ pub struct AgentView {
     /// 推荐的几个（名单 `featured`）；前端可以把其余没装的折起来。
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub featured: bool,
+    /// 2026-11-26 加：安装状态（装没装、装在哪、能不能让后端代装、装到哪一步）。自带的、本机 agent 关着时没有。
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub install_status: Option<super::install::AgentInstallView>,
 }
 
 fn builtin_view() -> AgentView {
@@ -408,22 +492,26 @@ fn builtin_view() -> AgentView {
         distribution: None,
         install_url: None,
         featured: false,
+        install_status: None,
     }
 }
 
-fn local_view(agent: &CatalogAgent, local_reason: &str, platform: &str, path_var: Option<&std::ffi::OsStr>) -> AgentView {
+pub(super) fn local_view(agent: &CatalogAgent, local_reason: &str, platform: &str, lookup: &Lookup) -> AgentView {
     let candidates = agent.candidates(platform);
-    let install = agent.install_command(path_var);
+    let install = agent.install_command(lookup.path_var);
     let preferred = if install.is_some() {
         candidates.iter().find(|candidate| candidate.distribution != AgentDistribution::Binary)
     } else {
         candidates.first()
     };
     let mut distribution = preferred.map(|candidate| candidate.distribution);
+    let mut install_status = None;
     let (available, reason, launch) = if !local_reason.is_empty() {
         (false, local_reason.to_string(), None)
     } else {
-        match resolve_agent(agent, platform, path_var) {
+        let resolved = resolve_agent(agent, platform, lookup);
+        install_status = Some(super::install::install_view(agent, platform, lookup, &resolved));
+        match resolved {
             Ok(resolved) => {
                 distribution = Some(resolved.distribution);
                 let program = resolved.program.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();
@@ -448,21 +536,22 @@ fn local_view(agent: &CatalogAgent, local_reason: &str, platform: &str, path_var
         license: agent.license.clone(),
         distribution,
         featured: agent.featured.is_some(),
+        install_status,
     }
 }
 
 /// 列出所有 agent：自带的排第一，本机的能用的在前，再按推荐顺序，其余按名字。
 /// `local_reason` 不空时本机 agent 一律不能用（服务器、多用户、监听非回环……）。
-pub fn list_agents(local_reason: &str, path_var: Option<&std::ffi::OsStr>) -> Vec<AgentView> {
-    list_agents_on(catalog(), &current_platform(), local_reason, path_var)
+pub(super) fn list_agents(local_reason: &str, lookup: &Lookup) -> Vec<AgentView> {
+    list_agents_on(catalog(), &current_platform(), local_reason, lookup)
 }
 
-pub(super) fn list_agents_on(catalog: &Catalog, platform: &str, local_reason: &str, path_var: Option<&std::ffi::OsStr>) -> Vec<AgentView> {
+pub(super) fn list_agents_on(catalog: &Catalog, platform: &str, local_reason: &str, lookup: &Lookup) -> Vec<AgentView> {
     let mut locals: Vec<(Option<usize>, AgentView)> = catalog
         .agents
         .iter()
         .filter(|agent| agent.runs_on(platform))
-        .map(|agent| (agent.featured, local_view(agent, local_reason, platform, path_var)))
+        .map(|agent| (agent.featured, local_view(agent, local_reason, platform, lookup)))
         .collect();
     locals.sort_by(|(rank_a, a), (rank_b, b)| {
         (!a.available, rank_a.unwrap_or(usize::MAX), a.name.to_lowercase())
@@ -489,7 +578,8 @@ mod tests {
             .chain(overrides.featured.iter())
             .chain(overrides.hidden.keys())
             .chain(overrides.bins.keys())
-            .chain(overrides.requires.keys());
+            .chain(overrides.requires.keys())
+            .chain(overrides.default_install.iter());
         for id in named {
             assert!(registry_ids.contains(&id.as_str()), "agents.json names {id}, which is not in the registry snapshot");
         }
@@ -499,6 +589,18 @@ mod tests {
             assert_eq!(agent.registry_id, registry_id);
         }
         assert!(catalog.agents.iter().all(|agent| !overrides.hidden.contains_key(&agent.registry_id)));
+        // 默认装的不能是不列的，而且要有 npm 包（桌面版带 Node 装）；用户 2026-11-26 定了 pi 和 Claude Code
+        assert_eq!(catalog.default_install, ["pi-acp", "claude-acp"]);
+        for id in &catalog.default_install {
+            let agent = catalog.agents.iter().find(|agent| &agent.registry_id == id).unwrap();
+            assert!(agent.npx.is_some() && agent.npx_bin.is_some(), "{id}");
+        }
+        // 代装 pi-acp 时连 pi 一起装，版本钉住
+        let pi = catalog.agents.iter().find(|agent| agent.registry_id == "pi-acp").unwrap();
+        assert_eq!(pi.requires.as_ref().unwrap().spec(), "@earendil-works/pi-coding-agent@1.6.1");
+        // 推荐名单里 Gemini CLI 换成 Antigravity（2026-11-26），Gemini 照旧列出
+        assert_eq!(&overrides.featured[..3], ["claude-acp", "codex-acp", "antigravity-acp"]);
+        assert!(catalog.agents.iter().any(|agent| agent.id == "gemini" && agent.featured.is_none()));
         // 只有 npx 的都核过命令名（没核过的这个平台上列不出来）
         for agent in &catalog.agents {
             if agent.binary.is_empty() && agent.uvx.is_none() {
