@@ -2,7 +2,7 @@
 use axum::http::{header, HeaderMap};
 
 use crate::app::AppState;
-use crate::services::providers::{loopback_base_url, AcpConfig};
+use crate::services::providers::{loopback_base_url, AcpConfig, AGENTS_DIR_NAME, NODE_DIR_ENV};
 
 use super::request_origin_is_allowed;
 
@@ -19,6 +19,8 @@ pub fn build_acp_config(state: &AppState) -> AcpConfig {
         local_agents_flag: std::env::var("RUST_API_LOCAL_AGENTS").ok(),
         path_var: std::env::var_os("PATH"),
         current_exe: std::env::current_exe().ok(),
+        agents_dir: config.data_root.join(AGENTS_DIR_NAME),
+        node_dir: std::env::var_os(NODE_DIR_ENV).filter(|dir| !dir.is_empty()).map(std::path::PathBuf::from),
     }
 }
 

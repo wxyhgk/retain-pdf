@@ -16,9 +16,10 @@ mod upstream_limits;
 
 // 门面：领域外只能用这里导出的东西，子模块都是私有的（见 BOUNDARIES.md「Domain Facades」）。
 pub use acp::{
-    agents_view, ask_job_id, loopback_base_url, prepare_agent, run_bridge, AcpConfig, AcpConnectQuery, AgentDistribution, AgentKind,
-    AgentProcess, AgentView, AgentsView, AskBook, BridgeOut, LocalAgentsView, SessionDefaults, BUILTIN_AGENT_ID,
-    CLOSE_AGENT_ENDED,
+    agents_view, ask_job_id, install_agent, loopback_base_url, prepare_agent, run_bridge, spawn_default_installs, AcpConfig,
+    AcpConnectQuery, AgentDistribution, AgentInstallView, AgentKind, AgentProcess, AgentView, AgentsView, AskBook, BridgeOut,
+    InstallMethod, InstallState, LocalAgentsView, SessionDefaults, AGENTS_DIR_NAME, BUILTIN_AGENT_ID, CLOSE_AGENT_ENDED,
+    DEFAULT_INSTALL_ENV, NODE_DIR_ENV,
 };
 pub use credentials::{
     acquire_credential_usage_lock, delete_unreferenced_managed_credential,
