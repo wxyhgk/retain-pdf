@@ -209,7 +209,7 @@ test("HomeApp：契约 id、idle 链、工作流对话框事件契约与交互",
   host.remove();
 });
 
-test("HomeApp：顶部图书馆/合集分栏 + 分类管理对话框", async () => {
+test("HomeApp：顶部图书馆/合集分栏 + 分类管理对话框", async (t) => {
   const host = dom.window.document.createElement("div");
   host.id = "home-root-categories";
   dom.window.document.body.appendChild(host);
@@ -218,6 +218,12 @@ test("HomeApp：顶部图书馆/合集分栏 + 分类管理对话框", async () 
   services.initialize();
 
   const root = createRoot(host);
+  // 失败了也要卸载：留着的这一棵和下一个用例新挂的那棵 id 一样，byId 会点到这棵上，后面的用例跟着红、甚至卡住。
+  t.after(() => {
+    root.unmount();
+    services.dispose();
+    host.remove();
+  });
   root.render(React.createElement(HomeApp, { services }));
   await waitFor(() => byId(dom, "app-shell"), "HomeApp 首帧渲染");
   await wait(0);
@@ -249,16 +255,15 @@ test("HomeApp：顶部图书馆/合集分栏 + 分类管理对话框", async () 
   assert.equal(byId(dom, "collection-delete-btn"), null, "新建模式不应有删除按钮");
   clickWithMouseDown(dom, byId(dom, "collection-manage-close-btn"));
   await waitFor(() => byId(dom, "collection-manage-dialog") === null, "关闭按钮点击后对话框卸载");
+  // 对话框卸载后，Radix 隔一个宏任务才把焦点还给打开前的元素（use-dialog-return-focus），这里是「合集」tab；
+  // Radix Tabs 拿到焦点就切过去。不等这一拍就点「图书馆」，晚到的焦点会把它切回合集（CI 上反复卡在这一步）。
+  await wait(0);
 
   // ---- 切回图书馆:合集卸载,图书馆网格与搜索框恢复 ----
   clickWithMouseDown(dom, byId(dom, "library-top-tab-library"));
   await waitFor(() => byId(dom, "library-view") !== null, "切回图书馆");
   assert.equal(byId(dom, "categories-view"), null, "切回图书馆后合集视图应卸载");
   assert.ok(byId(dom, "library-search-input"), "切回图书馆后搜索框应恢复");
-
-  root.unmount();
-  services.dispose();
-  host.remove();
 });
 
 test("HomeApp：分类管理对话框快速切换编辑目标不被迟到响应覆盖(回归)", async () => {
@@ -411,8 +416,9 @@ test("CollectionDialog：切到另一个合集时先清掉上一个的勾选，�
   harness.cleanup();
 });
 
-test("HomeApp：任务中心开着时切顶栏 tab，舞台跟着换", async () => {
+test("HomeApp：任务中心开着时切顶栏 tab，舞台跟着换", async (t) => {
   const harness = await mountCollectionDialogHarness("home-root-tasks-tab", {});
+  t.after(() => harness.cleanup());
   dom.window.document.dispatchEvent(new dom.window.Event("retainpdf:open-task-center"));
   await waitFor(() => byId(dom, "task-center-back-btn") !== null, "任务中心打开");
 
@@ -421,7 +427,6 @@ test("HomeApp：任务中心开着时切顶栏 tab，舞台跟着换", async () 
   assert.equal(byId(dom, "task-center-back-btn"), null, "切 tab 后任务中心应关闭");
   clickWithMouseDown(dom, byId(dom, "library-top-tab-library"));
   await waitFor(() => byId(dom, "library-view") !== null, "切回图书馆");
-  harness.cleanup();
 });
 
 test("HomeApp：3b 回调桥接口定型(蓝图 §4)", () => {
