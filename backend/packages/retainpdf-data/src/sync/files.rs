@@ -57,6 +57,40 @@ fn excluded_in_job(relative: &str) -> bool {
     relative.starts_with("rendered/") && relative.matches('/').count() == 1 && name.ends_with(".zip")
 }
 
+#[cfg(test)]
+thread_local! {
+    /// 测试里扮演旧版本设备（书的同步实体连缓存一起发）。只影响本线程，引擎在调用线程里同步跑。
+    pub(super) static LEGACY_SENDS_DOCUMENT_CACHES: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// 书目录里不带的东西（相对 `documents/<书>/`，2026-11-26 S52）：本机能重建的缓存。合并阅读 `merged/`
+/// （目录名是本机算的指纹，带本机路径和文件时间，别的设备用不上；整本合并 PDF + 译文很大）、页预览 `pages/`。
+/// 封面、缩略图照旧带上（书架要用、很小）。书目录里现在没有用户写的东西。
+const DOCUMENT_EXCLUDED_PREFIXES: &[&str] = &["merged/", "pages/"];
+
+fn excluded_in_document(relative: &str) -> bool {
+    if DOCUMENT_EXCLUDED_PREFIXES.iter().any(|prefix| relative.starts_with(prefix)) {
+        return true;
+    }
+    let name = relative.rsplit('/').next().unwrap_or(relative);
+    (name.starts_with('.') && (name.contains(".tmp") || name.ends_with(".lock")))
+        || name.ends_with(".tmp")
+        || name.ends_with(".part")
+}
+
+/// 收到的文件清单里只该留在本机的（旧版本设备还会把书的缓存一起发来）：不写进本机，本机同名的也不按
+/// 清单删——本机的合并目录少了文件、目录还在，阅读会把它当成完整的。
+pub(super) fn local_only_file(kind: &str, key: &str, path: &str) -> bool {
+    match kind {
+        "document" => path
+            .strip_prefix("documents/")
+            .and_then(|rest| rest.strip_prefix(key))
+            .and_then(|rest| rest.strip_prefix('/'))
+            .is_some_and(excluded_in_document),
+        _ => false,
+    }
+}
+
 /// 检查并转换收到的相对路径。
 pub(super) fn checked_relative(path: &str) -> Result<PathBuf> {
     let candidate = Path::new(path);
@@ -187,6 +221,16 @@ fn walk(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
+/// `path` 相对 `dir` 的路径（`/` 分隔）；不在 `dir` 下为 None。
+fn relative_in(dir: &Path, path: &Path) -> Option<String> {
+    path.strip_prefix(dir).ok().map(|p| {
+        p.components()
+            .map(|c| c.as_os_str().to_string_lossy().to_string())
+            .collect::<Vec<_>>()
+            .join("/")
+    })
+}
+
 fn text<'a>(rows: &'a SyncRows, table: &str, column: &str) -> Option<&'a str> {
     rows.get(table)?.first()?.get(column)?.as_str()
 }
@@ -202,7 +246,18 @@ pub(super) fn entity_files(data_root: &Path, kind: &str, key: &str, rows: &SyncR
                 }
             }
         }
-        "document" => walk(&data_root.join("documents").join(key), &mut out)?,
+        "document" => {
+            let dir = data_root.join("documents").join(key);
+            let mut found = Vec::new();
+            walk(&dir, &mut found)?;
+            #[cfg(test)]
+            let legacy = LEGACY_SENDS_DOCUMENT_CACHES.with(std::cell::Cell::get);
+            #[cfg(not(test))]
+            let legacy = false;
+            out.extend(found.into_iter().filter(|path| {
+                legacy || !relative_in(&dir, path).is_some_and(|relative| excluded_in_document(&relative))
+            }));
+        }
         "job" => {
             let job_dir = data_root.join("jobs").join(key);
             let mut found = Vec::new();
@@ -230,13 +285,7 @@ pub(super) fn entity_files(data_root: &Path, kind: &str, key: &str, rows: &SyncR
                 walk(&dir, &mut found)?;
             }
             for path in found {
-                let in_job = path.strip_prefix(&job_dir).ok().map(|p| {
-                    p.components()
-                        .map(|c| c.as_os_str().to_string_lossy().to_string())
-                        .collect::<Vec<_>>()
-                        .join("/")
-                });
-                match in_job {
+                match relative_in(&job_dir, &path) {
                     Some(relative) if excluded_in_job(&relative) => {}
                     _ => out.push(path),
                 }

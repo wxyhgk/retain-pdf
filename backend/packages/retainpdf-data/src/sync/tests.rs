@@ -1386,3 +1386,72 @@ fn settings_that_fail_validation_change_nothing() {
     fs::remove_dir_all(root).unwrap();
     fs::remove_dir_all(folder).unwrap();
 }
+
+/// 书的缓存（合并阅读、页预览）只留在本机：合并目录名是本机算的指纹（带本机路径和文件时间），别的设备用不上，
+/// 整本合并 PDF + 译文又大；页预览按需重建（S52）。封面、缩略图照旧带上（书架要用、很小）。
+#[test]
+fn a_books_merged_reading_and_page_previews_stay_on_this_device() {
+    let (base, folder, devices) = setup(&["a", "b"]);
+    let (a, b) = (&devices[0], &devices[1]);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    let merged = format!("documents/{DOC}/merged/0123456789abcdef/rendered/merged-translated.pdf");
+    let building = format!("documents/{DOC}/merged/.building-0123456789abcdef-1/translated/page-001.json");
+    let page = format!("documents/{DOC}/pages/p0001-w1200-d0.jpg");
+    a.write(&merged, b"%PDF merged on a");
+    a.write(&building, b"half");
+    a.write(&page, b"page preview on a");
+    a.write(&format!("documents/{DOC}/cover.jpg"), b"cover");
+
+    a.sync();
+    let got = b.sync();
+    assert_eq!((got.applied, got.pending, got.rejected), (3, 0, 0), "{got:?}");
+    assert!(b.root.join(format!("documents/{DOC}/thumbnail.jpg")).is_file());
+    assert!(b.root.join(format!("documents/{DOC}/cover.jpg")).is_file());
+    for path in [&merged, &building, &page] {
+        assert!(!b.root.join(path).exists(), "{path} 不该同步过去");
+        let sha = sha256_file(&a.root.join(path)).unwrap();
+        assert!(!pack_entries(&folder).contains(&sha), "{path} 不该打包进同步文件夹");
+    }
+    fs::remove_dir_all(base).unwrap();
+}
+
+/// 旧版本设备还会把缓存一起发来：收的一边不写它们、不报错；本机自己的缓存（哪怕以前作为旧版本发出去过、
+/// 记在同步状态里）也不会因为对方新发来的文件清单里没有它们而被删（删了合并目录里的文件，目录还在，
+/// 阅读会读到半个目录）。
+#[test]
+fn caches_from_an_older_device_are_ignored_and_this_devices_own_caches_survive() {
+    let (base, _folder, devices) = setup(&["a", "b"]);
+    let (a, b) = (&devices[0], &devices[1]);
+    a.add_book(DOC, JOB, UPLOAD, "succeeded");
+    a.sync();
+    b.sync();
+
+    // b 是旧版本：本机生成了合并目录和页预览，改了阅读状态，书连缓存一起发出去。
+    let b_merged = format!("documents/{DOC}/merged/bbbbbbbbbbbbbbbb/rendered/merged-translated.pdf");
+    let b_page = format!("documents/{DOC}/pages/p0002-w1200-d0.jpg");
+    b.write(&b_merged, b"%PDF merged on b");
+    b.write(&b_page, b"page preview on b");
+    b.conn().execute("UPDATE item_files SET reading_status = 'reading' WHERE file_id = ?1", params![DOC]).unwrap();
+    super::files::LEGACY_SENDS_DOCUMENT_CACHES.with(|legacy| legacy.set(true));
+    let sent = b.sync();
+    super::files::LEGACY_SENDS_DOCUMENT_CACHES.with(|legacy| legacy.set(false));
+    assert_eq!(sent.exported, 1, "{sent:?}");
+
+    let got = a.sync();
+    assert_eq!((got.applied, got.pending, got.rejected), (1, 0, 0), "{got:?}");
+    assert_eq!(a.text("SELECT reading_status FROM library_documents WHERE document_id = ?1", DOC).as_deref(), Some("reading"));
+    for path in [&b_merged, &b_page] {
+        assert!(!a.root.join(path).exists(), "旧版本发来的缓存 {path} 不该写进本机");
+    }
+
+    // a（新版本）改了书名发过去：b 本机的缓存还在。
+    a.conn().execute("UPDATE item_references SET title = 'Renamed on A' WHERE item_id = ?1", params![DOC]).unwrap();
+    a.sync();
+    let got = b.sync();
+    assert_eq!((got.applied, got.pending, got.rejected), (1, 0, 0), "{got:?}");
+    assert_eq!(b.text("SELECT title FROM library_documents WHERE document_id = ?1", DOC).as_deref(), Some("Renamed on A"));
+    for path in [&b_merged, &b_page] {
+        assert!(b.root.join(path).is_file(), "本机的缓存 {path} 被同步删了");
+    }
+    fs::remove_dir_all(base).unwrap();
+}
