@@ -20,6 +20,7 @@ mod install;
 mod openui;
 mod pi;
 mod registry;
+mod summarize;
 
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -33,6 +34,7 @@ pub use install::{AgentInstallView, InstallMethod, InstallState, AGENTS_DIR_NAME
 pub use openui::{default_openui_check_dir, default_openui_dir, NODE_BIN_ENV, OPENUI_CHECK_DIR_ENV, OPENUI_DIR_ENV};
 pub use pi::{remove_pi_sessions, PiSessionsRemoved, PI_AGENT_ID};
 pub use registry::{AgentDistribution, AgentKind, AgentView, BUILTIN_AGENT_ID};
+pub use summarize::{summarize_ask_conversation, AskSummary};
 
 /// 自带 agent 的模型配置、密钥交给子进程的环境变量（Python `retainpdf_ask_agent` 读）。
 pub const ASK_ENV_MODEL: &str = "RETAIN_ASK_MODEL";

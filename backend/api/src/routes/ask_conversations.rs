@@ -9,14 +9,16 @@ use crate::models::api::{
     AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord, AskMessagePageView,
     CloseAskConversationInput, CloseAskConversationView, CreateAskMemoryInput, CreateAskSideConversationInput,
     DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput,
-    PatchAskMemoryInput, AskSettingsRecord, PatchAskSettingsInput,
+    PatchAskMemoryInput, AskSettingsRecord, PatchAskSettingsInput, AskCompactionListView, CreateAskCompactionInput,
+    CreateAskCompactionView,
 };
-use crate::routes::common::{ok_json, run_library_blocking, ApiJson, ApiPath, ApiQuery};
+use crate::routes::common::{ask_summarizer, ok_json, run_library_blocking, ApiJson, ApiPath, ApiQuery};
 use crate::services::library::{
     append_ask_messages_view, ask_context_view, close_ask_conversation_view, create_ask_memory_view,
     create_side_ask_conversation_view, delete_ask_conversation_view, delete_ask_memory_view, document_ask_messages_view,
     ensure_main_ask_conversation_view, get_ask_conversation_view, list_ask_conversations_view, list_ask_memories_view,
     list_ask_messages_view, patch_ask_conversation_view, patch_ask_memory_view, get_ask_settings_view, patch_ask_settings_view,
+    create_ask_compaction_view, list_ask_compactions_view,
 };
 use crate::AppState;
 
@@ -69,9 +71,30 @@ pub async fn close_conversation_route(
     ApiPath(conversation_id): ApiPath<String>,
     ApiJson(payload): ApiJson<CloseAskConversationInput>,
 ) -> Reply<CloseAskConversationView> {
+    let summarize = ask_summarizer(&state);
     Ok(ok_json(
-        run_library_blocking(&state, move |library| close_ask_conversation_view(library, &conversation_id, &payload)).await?,
+        run_library_blocking(&state, move |library| close_ask_conversation_view(library, &conversation_id, &payload, &summarize))
+            .await?,
     ))
+}
+
+pub async fn create_compaction_route(
+    State(state): State<AppState>,
+    ApiPath(conversation_id): ApiPath<String>,
+    ApiJson(payload): ApiJson<CreateAskCompactionInput>,
+) -> Reply<CreateAskCompactionView> {
+    let summarize = ask_summarizer(&state);
+    Ok(ok_json(
+        run_library_blocking(&state, move |library| create_ask_compaction_view(library, &conversation_id, &payload, &summarize))
+            .await?,
+    ))
+}
+
+pub async fn list_compactions_route(
+    State(state): State<AppState>,
+    ApiPath(conversation_id): ApiPath<String>,
+) -> Reply<AskCompactionListView> {
+    Ok(ok_json(run_library_blocking(&state, move |library| list_ask_compactions_view(library, &conversation_id)).await?))
 }
 
 pub async fn list_messages_route(

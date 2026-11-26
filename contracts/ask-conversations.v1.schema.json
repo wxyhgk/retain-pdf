@@ -84,6 +84,23 @@
       "note": "追加 1–10 条（一轮问答一起），只追加不覆盖；client_message_id 在这个对话里重复的不再追加、回原来那条（网络重试安全）。对话结束了或归档了 409 ask_conversation_not_open；超过 50000 条 409 ask_conversation_limit；没有 404；字段不对 400。"
     },
     {
+      "method": "POST",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id/compactions",
+      "transport": "json",
+      "input": "CreateAskCompactionInput",
+      "output": "CreateAskCompactionView",
+      "rust_view": "CreateAskCompactionView",
+      "note": "2026-11-26 第二期：后端用 connection 这条模型把「上一份摘要 + 它之后、最近 12 条之前的消息」压成一份新摘要，替代 seq <= covers_to_seq（原始消息不删，最近 12 条原样留着）。没东西可压 409 ask_compaction_nothing；别的请求先压完了 409 ask_compaction_stale；模型出错 502 ask_summarize_failed；对话不存在 404。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id/compactions",
+      "transport": "json",
+      "output": "AskCompactionListView",
+      "rust_view": "AskCompactionListView",
+      "note": "2026-11-26 第二期：一个对话所有的压缩摘要（旧的也在），按 covers_to_seq 从小到大；前端点压缩点「看原文」时，原文照旧从消息分页取。"
+    },
+    {
       "method": "GET",
       "path": "/api/v1/ai/ask-conversations/:conversation_id/context",
       "transport": "json",
@@ -800,7 +817,8 @@
       "additionalProperties": false,
       "required": [
         "conversation",
-        "messages"
+        "messages",
+        "compaction_due"
       ],
       "properties": {
         "conversation": {
@@ -812,6 +830,10 @@
             "$ref": "#/definitions/AskConversationMessageRecord"
           },
           "description": "追加的（幂等号重复的是原来那条），按 seq。"
+        },
+        "compaction_due": {
+          "type": "boolean",
+          "description": "上一份压缩摘要之后的消息超过 40000 字，该压了：前端有模型配置就随手 POST …/compactions；没配模型可以不管。"
         }
       }
     },
@@ -870,6 +892,52 @@
             "null"
           ],
           "description": "结论，最多 8000 字；给了就回填到主对话。"
+        },
+        "summarize_with": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AskModelConnectionInput"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "2026-11-26 第二期：没给 summary 时，用这条模型让后端把副对话总结成结论卡片再回填；summary 和它都没给就只结束、不回填。模型出错 502（error.details.reason = ask_summarize_failed）。"
+        }
+      }
+    },
+    "AskModelConnectionInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "model",
+        "credential_ref"
+      ],
+      "description": "后端生成摘要（压缩主对话、副对话结论）用哪条模型：和问答握手同一套字段，就是用户设置里那条连接。密钥只给凭据库里的编号。",
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "base_url": {
+          "type": "string",
+          "description": "不给按协议的默认地址。"
+        },
+        "api_protocol": {
+          "type": "string",
+          "enum": [
+            "",
+            "openai",
+            "openai_responses",
+            "anthropic"
+          ],
+          "description": "不给按 openai。"
+        },
+        "thinking": {
+          "type": "string",
+          "description": "设置里的思考档位（auto / off / low / medium / high / max）；摘要一般不用深想。"
+        },
+        "credential_ref": {
+          "type": "string"
         }
       }
     },
@@ -965,7 +1033,8 @@
       "required": [
         "conversation_id",
         "messages",
-        "has_more"
+        "has_more",
+        "compactions"
       ],
       "properties": {
         "conversation_id": {
@@ -979,6 +1048,162 @@
         },
         "has_more": {
           "type": "boolean"
+        },
+        "compactions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskCompactionPointView"
+          },
+          "description": "这个对话所有的压缩点（不只这一页的），按 covers_to_seq 从小到大；前端在那条后面画「之前的已压缩，点开看原文」。没压过是空的。"
+        }
+      }
+    },
+    "AskCompactionPointView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compaction_id",
+        "covers_to_seq",
+        "created_at"
+      ],
+      "description": "一个压缩点：seq <= covers_to_seq 的消息已经被那份摘要替代（原文还在）。",
+      "properties": {
+        "compaction_id": {
+          "type": "string"
+        },
+        "covers_to_seq": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "created_at": {
+          "type": "string"
+        }
+      }
+    },
+    "AskCompactionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "compaction_id",
+        "conversation_id",
+        "covers_to_seq",
+        "summary",
+        "sources",
+        "model",
+        "created_at"
+      ],
+      "description": "一份压缩摘要（2026-11-26 第二期，数据库 v42）。covers_to_seq 最大的那份生效，旧的留着。",
+      "properties": {
+        "compaction_id": {
+          "type": "string"
+        },
+        "conversation_id": {
+          "type": "string"
+        },
+        "covers_to_seq": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "summary": {
+          "type": "string"
+        },
+        "sources": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "document_id",
+                  "pages"
+                ],
+                "properties": {
+                  "document_id": {
+                    "type": "string"
+                  },
+                  "pages": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "这段涉及的书和页；没有是 null。"
+        },
+        "model": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        }
+      }
+    },
+    "CreateAskCompactionInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "connection"
+      ],
+      "properties": {
+        "connection": {
+          "$ref": "#/definitions/AskModelConnectionInput"
+        },
+        "max_chars": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 100,
+          "maximum": 8000,
+          "description": "摘要最多多少字，不给 2000。"
+        }
+      }
+    },
+    "CreateAskCompactionView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation",
+        "compaction",
+        "compaction_due"
+      ],
+      "properties": {
+        "conversation": {
+          "$ref": "#/definitions/AskConversationRecord"
+        },
+        "compaction": {
+          "$ref": "#/definitions/AskCompactionRecord"
+        },
+        "compaction_due": {
+          "type": "boolean",
+          "description": "压完以后还该不该再压（一般是 false）。"
+        }
+      }
+    },
+    "AskCompactionListView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation_id",
+        "compactions"
+      ],
+      "properties": {
+        "conversation_id": {
+          "type": "string"
+        },
+        "compactions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskCompactionRecord"
+          }
         }
       }
     },
@@ -1090,6 +1315,7 @@
         "conversation",
         "memory_enabled",
         "summary",
+        "summary_covers_to_seq",
         "parent",
         "messages",
         "omitted_messages",
@@ -1110,7 +1336,15 @@
             "string",
             "null"
           ],
-          "description": "压缩摘要（第二期）；现在总是 null。"
+          "description": "生效的那份压缩摘要（2026-11-26 第二期）；没压过是 null。有的话 messages 只是它之后的最近几轮，text 里也带「之前对话的摘要」一段。"
+        },
+        "summary_covers_to_seq": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "那份摘要替代到第几条（seq <= 它）；没压过是 null。"
         },
         "parent": {
           "anyOf": [

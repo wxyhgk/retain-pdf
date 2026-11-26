@@ -12,10 +12,12 @@ use retainpdf_data::db::{
     NewAskSideConversation,
 };
 
+use crate::ask_compactions::{compaction_due, latest_compaction, summarize_side, AskSummarizer};
 use crate::ask_threads::{MAX_MESSAGE_TEXT_CHARS, MAX_THOUGHT_CHARS, MAX_USAGE_BYTES};
 use crate::ask_views::{
     AppendAskMessagesInput, AppendAskMessagesView, AskContextMemoriesView, AskContextParentView, AskContextQuery, AskContextView,
-    AskConversationDeleteResultView, AskConversationListView, AskConversationMessageInput, AskMessagePageView, AskSelectionInput,
+    AskCompactionPointView, AskConversationDeleteResultView, AskConversationListView, AskConversationMessageInput, AskMessagePageView,
+    AskSelectionInput,
     CloseAskConversationInput, CloseAskConversationView, CreateAskSideConversationInput, DocumentAskMessagesView,
     ListAskConversationsQuery, ListAskMessagesQuery, PatchAskConversationInput,
 };
@@ -319,15 +321,30 @@ pub fn delete_ask_conversation_view(
     }
 }
 
+/// 结束副对话。给了 `summary` 就用它；没给但给了 `summarize_with`，就先让后端用那条模型总结（第二期），再结束、回填。
+/// 不是副对话、对话不存在时不去调模型。
 pub fn close_ask_conversation_view(
     deps: &LibraryDeps<'_>,
     conversation_id: &str,
     payload: &CloseAskConversationInput,
+    summarize: &AskSummarizer<'_>,
 ) -> Result<CloseAskConversationView, AppError> {
-    let summary = payload.summary.as_deref().map(str::trim).filter(|summary| !summary.is_empty());
-    if summary.is_some_and(|summary| summary.chars().count() > MAX_SUMMARY_CHARS) {
+    let given = payload.summary.as_deref().map(str::trim).filter(|summary| !summary.is_empty());
+    if given.is_some_and(|summary| summary.chars().count() > MAX_SUMMARY_CHARS) {
         return Err(AppError::bad_request(format!("summary must be at most {MAX_SUMMARY_CHARS} characters")));
     }
+    let generated = match (given, &payload.summarize_with) {
+        (None, Some(connection)) => {
+            let conversation = conversation_or_404(deps, conversation_id)?;
+            if conversation.kind != "side" {
+                return Err(AppError::bad_request("only side conversations can be closed"));
+            }
+            summarize_side(deps, conversation_id, connection, summarize)?
+                .map(|summary| summary.chars().take(MAX_SUMMARY_CHARS).collect::<String>())
+        }
+        _ => None,
+    };
+    let summary = given.or(generated.as_deref());
     match deps.db.close_side_ask_conversation(conversation_id, summary)? {
         AskSideClosed::Closed(conversation, card) => Ok(CloseAskConversationView { conversation, card }),
         AskSideClosed::NotFound => Err(not_found(conversation_id)),
@@ -352,7 +369,17 @@ pub fn list_ask_messages_view(
     if has_more {
         messages.remove(0);
     }
-    Ok(AskMessagePageView { conversation_id: conversation_id.to_string(), messages, has_more })
+    let compactions = deps
+        .db
+        .list_ask_compactions(conversation_id)?
+        .into_iter()
+        .map(|record| AskCompactionPointView {
+            compaction_id: record.compaction_id,
+            covers_to_seq: record.covers_to_seq,
+            created_at: record.created_at,
+        })
+        .collect();
+    Ok(AskMessagePageView { conversation_id: conversation_id.to_string(), messages, has_more, compactions })
 }
 
 pub fn append_ask_messages_view(
@@ -370,9 +397,11 @@ pub fn append_ask_messages_view(
         .map(|(index, message)| checked_message(message, index))
         .collect::<Result<Vec<_>, _>>()?;
     match deps.db.append_ask_conversation_messages(conversation_id, &messages, MAX_MESSAGES_PER_CONVERSATION)? {
-        AskMessagesAppended::Appended(messages) => {
-            Ok(AppendAskMessagesView { conversation: conversation_or_404(deps, conversation_id)?, messages })
-        }
+        AskMessagesAppended::Appended(messages) => Ok(AppendAskMessagesView {
+            conversation: conversation_or_404(deps, conversation_id)?,
+            messages,
+            compaction_due: compaction_due(deps, conversation_id)?,
+        }),
         AskMessagesAppended::NotFound => Err(not_found(conversation_id)),
         AskMessagesAppended::NotOpen => Err(AppError::conflict_because(
             "ask_conversation_not_open",
@@ -504,9 +533,17 @@ pub fn ask_context_view(deps: &LibraryDeps<'_>, conversation_id: &str, query: &A
         return Err(AppError::bad_request(format!("recent_turns must be between 1 and {MAX_RECENT_TURNS}")));
     }
     let document_id = checked_id(query.document_id.as_deref(), "document_id")?;
-    let fetched = deps.db.list_ask_conversation_messages(conversation_id, None, turns * 2)?;
+    // 压过的：给生效的那份摘要 + 它之后的最近几轮（被替代的那些不再当前文交出去，原文还在库里）
+    let compaction = latest_compaction(deps, conversation_id)?;
+    let covered = compaction.as_ref().map(|record| record.covers_to_seq).unwrap_or(0);
+    let fetched: Vec<_> = deps
+        .db
+        .list_ask_conversation_messages(conversation_id, None, turns * 2)?
+        .into_iter()
+        .filter(|message| message.seq > covered)
+        .collect();
     let messages = recent_messages(fetched, MAX_RECENT_CHARS).0;
-    let omitted_messages = conversation.message_count - messages.len() as i64;
+    let omitted_messages = (conversation.message_count - covered - messages.len() as i64).max(0);
     // 副对话：带主对话到分叉那条为止的最近几轮
     let parent = match (&conversation.parent_id, &conversation.forked_from_message_id) {
         (Some(parent_id), Some(fork_id)) => match deps.db.get_ask_conversation_message(fork_id)? {
@@ -540,9 +577,28 @@ pub fn ask_context_view(deps: &LibraryDeps<'_>, conversation_id: &str, query: &A
     };
     let memories = AskContextMemoriesView { user, user_omitted, book, book_omitted };
     let memory_text = memory_text(&memories);
+    let summary = compaction.map(|record| record.summary);
+    let summary_text = summary.as_deref().map(|summary| format!("【之前对话的摘要】\n{summary}")).unwrap_or_default();
     let history = history_text(parent.as_ref(), &messages, omitted_messages);
-    let text = [memory_text.as_str(), history.as_str()].iter().filter(|part| !part.is_empty()).cloned().collect::<Vec<_>>().join("\n\n");
-    Ok(AskContextView { conversation, memory_enabled, summary: None, parent, messages, omitted_messages, memories, memory_text, text })
+    let text = [memory_text.as_str(), summary_text.as_str(), history.as_str()]
+        .iter()
+        .filter(|part| !part.is_empty())
+        .cloned()
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    let summary_covers_to_seq = (covered > 0).then_some(covered);
+    Ok(AskContextView {
+        conversation,
+        memory_enabled,
+        summary,
+        summary_covers_to_seq,
+        parent,
+        messages,
+        omitted_messages,
+        memories,
+        memory_text,
+        text,
+    })
 }
 
 #[cfg(test)]

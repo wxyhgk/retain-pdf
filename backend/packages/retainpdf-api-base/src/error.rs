@@ -369,6 +369,16 @@ impl AppError {
         Self::BadGateway(msg.into())
     }
 
+    /// 502,`error.details.reason` 写稳定原因(我们去调的上游出错了,如压缩对话时模型没回摘要 `ask_summarize_failed`)。
+    pub fn bad_gateway_because(reason: &'static str, msg: impl Into<String>) -> Self {
+        Self::Reasoned {
+            status: StatusCode::BAD_GATEWAY,
+            message: msg.into(),
+            reason,
+            extra: Value::Null,
+        }
+    }
+
     pub fn service_unavailable(msg: impl Into<String>) -> Self {
         Self::ServiceUnavailable(msg.into())
     }

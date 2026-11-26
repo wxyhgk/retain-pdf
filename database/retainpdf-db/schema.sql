@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 41
+-- user_version 42
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -12,6 +12,18 @@ TABLE artifacts
   TRIGGER sync_dirty_artifacts_delete: CREATE TRIGGER sync_dirty_artifacts_delete AFTER DELETE ON artifacts WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', OLD.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_artifacts_insert: CREATE TRIGGER sync_dirty_artifacts_insert AFTER INSERT ON artifacts WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
   TRIGGER sync_dirty_artifacts_update: CREATE TRIGGER sync_dirty_artifacts_update AFTER UPDATE ON artifacts WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('job', NEW.job_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END
+
+TABLE ask_compactions
+  compaction_id TEXT PRIMARY KEY#1
+  conversation_id TEXT NOT NULL
+  covers_to_seq INTEGER NOT NULL
+  summary TEXT NOT NULL
+  sources_json TEXT
+  model TEXT NOT NULL DEFAULT ''
+  created_at TEXT NOT NULL
+  FOREIGN KEY (conversation_id) REFERENCES ask_conversations(conversation_id) ON UPDATE NO ACTION ON DELETE CASCADE
+  INDEX idx_ask_compactions_conversation: CREATE INDEX idx_ask_compactions_conversation ON ask_compactions(conversation_id, covers_to_seq)
+  PRIMARY KEY (compaction_id)
 
 TABLE ask_conversation_messages
   message_id TEXT PRIMARY KEY#1

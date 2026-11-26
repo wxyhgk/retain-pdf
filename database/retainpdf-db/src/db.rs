@@ -19,6 +19,8 @@ mod page_quota;
 mod platform_settings;
 #[path = "db/artifacts.rs"]
 mod artifacts;
+#[path = "db/ask_compactions.rs"]
+mod ask_compactions;
 #[path = "db/ask_conversations.rs"]
 mod ask_conversations;
 #[path = "db/ask_memories.rs"]
@@ -86,6 +88,7 @@ pub use platform_settings::PlatformSettingsRecord;
 pub use documents::{DocumentChangeStamp, DocumentListFilter};
 pub use tags::tag_id_for_name;
 pub use translation_versions::TranslationVersionRecord;
+pub use ask_compactions::{AskCompactionInserted, AskCompactionRecord, NewAskCompaction};
 pub use ask_conversations::{
     AskConversationChanges, AskConversationDeleted, AskConversationFilter, AskConversationMessageRecord, AskConversationRecord, AskConversationUpdated,
     AskMessagesAppended, AskSideClosed, AskSideCreated, NewAskConversationMessage, NewAskSideConversation,

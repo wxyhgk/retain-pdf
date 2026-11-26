@@ -10,6 +10,7 @@
 export type AskConversationsSchema =
   | AppendAskMessagesInput
   | AppendAskMessagesView
+  | AskCompactionListView
   | AskContextQuery
   | AskContextView
   | AskConversationDeleteResultView
@@ -22,6 +23,8 @@ export type AskConversationsSchema =
   | AskSettingsRecord
   | CloseAskConversationInput
   | CloseAskConversationView
+  | CreateAskCompactionInput
+  | CreateAskCompactionView
   | CreateAskMemoryInput
   | CreateAskSideConversationInput
   | DocumentAskMessagesView
@@ -241,6 +244,10 @@ export interface AppendAskMessagesView {
    * 追加的（幂等号重复的是原来那条），按 seq。
    */
   messages: AskConversationMessageRecord[];
+  /**
+   * 上一份压缩摘要之后的消息超过 40000 字，该压了：前端有模型配置就随手 POST …/compactions；没配模型可以不管。
+   */
+  compaction_due: boolean;
 }
 /**
  * 一个对话（不带消息）。
@@ -368,6 +375,30 @@ export interface AskSelectionRecord {
   prefix?: string;
   suffix?: string;
 }
+export interface AskCompactionListView {
+  conversation_id: string;
+  compactions: AskCompactionRecord[];
+}
+/**
+ * 一份压缩摘要（2026-11-26 第二期，数据库 v42）。covers_to_seq 最大的那份生效，旧的留着。
+ */
+export interface AskCompactionRecord {
+  compaction_id: string;
+  conversation_id: string;
+  covers_to_seq: number;
+  summary: string;
+  /**
+   * 这段涉及的书和页；没有是 null。
+   */
+  sources:
+    | {
+        document_id: string;
+        pages: number[];
+      }[]
+    | null;
+  model: string;
+  created_at: string;
+}
 /**
  * 不认识的参数 400。
  */
@@ -385,9 +416,13 @@ export interface AskContextView {
    */
   memory_enabled: boolean;
   /**
-   * 压缩摘要（第二期）；现在总是 null。
+   * 生效的那份压缩摘要（2026-11-26 第二期）；没压过是 null。有的话 messages 只是它之后的最近几轮，text 里也带「之前对话的摘要」一段。
    */
   summary: string | null;
+  /**
+   * 那份摘要替代到第几条（seq <= 它）；没压过是 null。
+   */
+  summary_covers_to_seq: number | null;
   parent: AskContextParentView | null;
   /**
    * 最近几轮（不分书），按 seq。
@@ -502,6 +537,18 @@ export interface AskMessagePageView {
   conversation_id: string;
   messages: AskConversationMessageRecord[];
   has_more: boolean;
+  /**
+   * 这个对话所有的压缩点（不只这一页的），按 covers_to_seq 从小到大；前端在那条后面画「之前的已压缩，点开看原文」。没压过是空的。
+   */
+  compactions: AskCompactionPointView[];
+}
+/**
+ * 一个压缩点：seq <= covers_to_seq 的消息已经被那份摘要替代（原文还在）。
+ */
+export interface AskCompactionPointView {
+  compaction_id: string;
+  covers_to_seq: number;
+  created_at: string;
 }
 /**
  * 阅读页提问的设置（存在库里，后端和 agent 都认；不是浏览器里的设置）。
@@ -521,10 +568,48 @@ export interface CloseAskConversationInput {
    * 结论，最多 8000 字；给了就回填到主对话。
    */
   summary?: string | null;
+  /**
+   * 2026-11-26 第二期：没给 summary 时，用这条模型让后端把副对话总结成结论卡片再回填；summary 和它都没给就只结束、不回填。模型出错 502（error.details.reason = ask_summarize_failed）。
+   */
+  summarize_with?: AskModelConnectionInput | null;
+}
+/**
+ * 后端生成摘要（压缩主对话、副对话结论）用哪条模型：和问答握手同一套字段，就是用户设置里那条连接。密钥只给凭据库里的编号。
+ */
+export interface AskModelConnectionInput {
+  model: string;
+  /**
+   * 不给按协议的默认地址。
+   */
+  base_url?: string;
+  /**
+   * 不给按 openai。
+   */
+  api_protocol?: "" | "openai" | "openai_responses" | "anthropic";
+  /**
+   * 设置里的思考档位（auto / off / low / medium / high / max）；摘要一般不用深想。
+   */
+  thinking?: string;
+  credential_ref: string;
 }
 export interface CloseAskConversationView {
   conversation: AskConversationRecord;
   card: AskConversationMessageRecord | null;
+}
+export interface CreateAskCompactionInput {
+  connection: AskModelConnectionInput;
+  /**
+   * 摘要最多多少字，不给 2000。
+   */
+  max_chars?: number | null;
+}
+export interface CreateAskCompactionView {
+  conversation: AskConversationRecord;
+  compaction: AskCompactionRecord;
+  /**
+   * 压完以后还该不该再压（一般是 false）。
+   */
+  compaction_due: boolean;
 }
 export interface CreateAskMemoryInput {
   scope: AskMemoryScope;
