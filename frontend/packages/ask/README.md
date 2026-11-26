@@ -45,7 +45,7 @@ import type { AskPort, AskContext, AskMessage } from "@retainpdf/ask";
 | `src/window/` | 窗口（`AskWindow.tsx`）、标题栏、顶上引的那段、工具调用 / 计划 / 用量这几块（`blocks.tsx`）、能点的页码 |
 | `src/openui/` | 回答里的互动块：```` ```openui-lang ```` 代码块用 OpenUI 的渲染器画成能动手的界面（`OpenUIBlock.tsx`，单独一块懒加载）；组件库去掉了 `Image`、YouTube（`library.ts`） |
 | `scripts/openui-spec.mjs` | 从同一个组件库生成给后端的分层说明 `contracts/openui/`（`npm run generate:openui`）；组件库或 OpenUI 升级了要重新生成 |
-| `src/ui/` | **照搬** assistant-ui 官方组件（MIT，https://r.assistant-ui.com）。每个文件开头写了改了什么，别处不动，方便对着上游更新 |
+| `src/ui/` | **照搬** assistant-ui 官方组件（MIT，https://r.assistant-ui.com）；思考强度滑块 `elements/effort-slider.tsx` 改自 [zanwei/claude-model-selector](https://github.com/zanwei/claude-model-selector)（MIT）。每个文件开头写了改了什么，别处不动，方便对着上游更新 |
 | `styles/ask.css` | 窗口的样式。颜色、字号、圆角只用宿主的皮肤变量（`--paper`、`--ink`、`--ui-text-*`、`--ui-radius-*`） |
 | `styles/tailwind.css` | 照搬组件要的 Tailwind 部分（动画、流光、打字光标，并扫这个包的源码） |
 
@@ -55,13 +55,13 @@ react-rnd（窗口拖动）、ACP SDK、`@retainpdf/ui`（按钮、下拉框）�
 ## 选模型、思考强度
 
 输入框那一行（「+」旁边）有 agent 的设置，都是 assistant-ui 的 ModelSelector（`src/ui/elements/model-selector.tsx`）：
-一个按钮写「模型 · 思考强度」（前面是厂商图标），点开是带搜索、分组的模型列表，底下一排思考强度（`ModelSelectorEffort`），
+一个按钮写「模型 · 思考强度」（前面是厂商图标），点开是带搜索、分组的模型列表，底下是思考强度的胶囊滑块（`src/ui/elements/effort-slider.tsx`，仿 Claude 桌面版：拖到刻度附近会吸过去，松手弹到最近一档；方向键、Home、End 也能换），
 别的设置项（模式、快速……）收在「更多」里（`src/window/AskModelPicker.tsx`）。
 
 - **图标多、字少**：标题栏选 agent 只有图标（自带模型是书本、retainpdf-pi 是 π，别的按名字认厂商，`src/window/BrandIcon.tsx`）；
   回答底下的用量只是一个图标，点开才是模型、token、缓存、速度、首字、用时。厂商图标来自 [lobe-icons](https://github.com/lobehub/lobe-icons)（MIT，
   `@lobehub/icons-static-svg`，开发依赖），`npm run generate:icons` 挑用得上的生成 `src/window/brand-icons.generated.ts`。
-- **思考强度**：档位、名字都照 agent 报的（ACP `thought_level`），前端不编、不翻译。颜色只看档位在列表里排第几（第一档灰，往后绿 → 橙 → 红，`effortColor`）；
+- **思考强度**：档位、名字都照 agent 报的（ACP `thought_level`），前端不编、不翻译。颜色只看档位在列表里排第几（第一档灰，往后绿 → 橙 → 红，`effortColor`），滑块走过的那段轨道从灰渐到这个颜色；只有一档不画滑块；
   开了思考（不是第一档）时，输入框的边框、光晕、发送按钮和整个窗口的边框都染上这个颜色（`AskWindow` 写 `--ask-effort-color`、`data-effort`）。
 - **模型水印**：对话区背景正中放当前模型厂商的标志（很淡、在字后面、点不到；没有模型这一项就用 agent 的）。
 - 开着弹层时 Esc 只关弹层，不关窗。数据照 ACP 的 **session config options**：

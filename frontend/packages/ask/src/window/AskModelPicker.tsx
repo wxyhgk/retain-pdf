@@ -1,16 +1,16 @@
 /** 输入框那一行的 agent 设置（Thread 的 ComposerExtra 插槽）：assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
- * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下一排思考强度（ModelSelectorEffort）；
+ * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下是思考强度的胶囊滑块（../ui/elements/effort-slider.tsx，仿 Claude 桌面版）；
  * 别的设置项（模式、快速……）收在「更多」里。思考强度的颜色还染输入框和周围、模型厂商的标志做聊天背景的水印（AskWindow）。
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts），agent 不给就什么都不画。
  */
-import { createContext, useContext, type CSSProperties, type ReactElement } from "react";
-import { Brain, SlidersHorizontal } from "lucide-react";
+import { createContext, useContext, type ReactElement } from "react";
+import { Brain, SlidersHorizontal, Sparkles, Zap } from "lucide-react";
 import { Select } from "@retainpdf/ui";
 
 import type { AskConfigOption } from "../contract.js";
+import { EffortSlider } from "../ui/elements/effort-slider.js";
 import {
   ModelSelectorContent,
-  ModelSelectorEffort,
   ModelSelectorList,
   ModelSelectorRoot,
   ModelSelectorSearch,
@@ -103,11 +103,21 @@ export function currentModelBrand(options: readonly AskConfigOption[]): string {
   return brandFor(`${model.currentValue}`, choice?.name, choice?.group);
 }
 
-/** 弹层里那一排思考强度：图标代替「思考」两个字；选中那档的颜色（弹层挂在 body 上，拿不到窗口上的变量，自己带）。 */
-function EffortRow({ thought }: { thought: AskConfigOption }): ReactElement {
-  const index = thought.options.findIndex((choice) => choice.value === `${thought.currentValue}`);
-  const style = { "--ask-effort-color": effortColor(index, thought.options.length) } as CSSProperties;
-  return <ModelSelectorEffort className="ask-effort" style={style} label={<Brain size={13} aria-label="思考强度" />} />;
+/** 弹层里的思考强度：胶囊滑块，档位和名字照 agent 给的，颜色按档位位置（effortColor）；左右两头用图标（快 / 想得深）。 */
+function EffortRow({ thought, set }: { thought: AskConfigOption; set: AskConfigState["set"] }): ReactElement {
+  return (
+    <EffortSlider
+      className="ask-effort"
+      levels={thought.options.map((choice) => ({ id: choice.value, name: choice.name, ...(choice.description ? { description: choice.description } : {}) }))}
+      value={`${thought.currentValue}`}
+      onChange={(value) => set(thought.id, value)}
+      colorAt={effortColor}
+      label={<Brain size={13} aria-label={thought.name || "思考强度"} />}
+      start={<Zap size={12} aria-label="更快" />}
+      end={<Sparkles size={12} aria-label="想得更深" />}
+      aria-label={thought.name || "思考强度"}
+    />
+  );
 }
 
 export function AskAgentSettings(): ReactElement | null {
@@ -127,11 +137,11 @@ export function AskAgentSettings(): ReactElement | null {
           <ModelSelectorContent side="top" searchable={model.options.length > 8}>
             {model.options.length > 8 ? <ModelSelectorSearch /> : null}
             <ModelSelectorList />
-            {thought ? <EffortRow thought={thought} /> : null}
+            {thought ? <EffortRow thought={thought} set={state.set} /> : null}
           </ModelSelectorContent>
         </ModelSelectorRoot>
       ) : thought ? (
-        // 只有思考强度、没有模型可选：拿思考强度当唯一的「模型」喂给 ModelSelector，按钮只写档位，弹层只有那一排。
+        // 只有思考强度、没有模型可选：拿思考强度当唯一的「模型」喂给 ModelSelector，按钮只写档位，弹层只有滑块。
         <ModelSelectorRoot
           models={[{ id: "_", name: "", efforts: toModelOptions({ ...thought, options: [{ value: "_", name: "" }] }, thought)[0].efforts }]}
           value="_"
@@ -143,7 +153,7 @@ export function AskAgentSettings(): ReactElement | null {
             <span className="ask-config-effort-name">{thought.options.find((choice) => choice.value === `${thought.currentValue}`)?.name}</span>
           </ModelSelectorTrigger>
           <ModelSelectorContent side="top">
-            <EffortRow thought={thought} />
+            <EffortRow thought={thought} set={state.set} />
           </ModelSelectorContent>
         </ModelSelectorRoot>
       ) : null}

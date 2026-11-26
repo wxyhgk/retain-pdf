@@ -561,20 +561,183 @@
   color: var(--ink);
 }
 
-[data-slot="model-selector-effort"] [data-state="checked"] {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  color: var(--accent);
+/* 选模型弹层底下的思考强度胶囊滑块（../src/ui/elements/effort-slider.tsx，改自 zanwei/claude-model-selector，MIT）。
+ * 弹层挂在 body 上，颜色变量组件自己带：--effort-color 当前那档、--effort-top-color 最强那档、--effort-progress 0~1。 */
+.aui-effort-slider {
+  --effort-thumb-w: 22px;
+  --effort-thumb-h: 22px;
+  --effort-pad: 1px;
+  padding: 10px 12px 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
 }
 
-/* 选模型弹层底下那一排思考强度（弹层挂在 body 上，颜色变量由 EffortRow 自己带）：选中那档按它在 agent 列表里的位置上色。 */
-.ask-effort [role="radio"][data-state="checked"] {
-  background: color-mix(in srgb, var(--ask-effort-color, var(--ink)) 16%, var(--paper));
-  color: color-mix(in srgb, var(--ask-effort-color, var(--ink)) 80%, var(--ink));
+.aui-effort-slider-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+}
+
+.aui-effort-slider-stage {
+  display: inline-grid;
+  color: color-mix(in srgb, var(--effort-color) 85%, var(--ink));
   font-weight: 600;
+  transition: color 180ms ease;
 }
 
-.ask-effort > span {
-  color: var(--ask-effort-color, var(--muted));
+.aui-effort-slider-stage > span {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+}
+
+/* 换档：新的从下面（往强）或上面（往弱）淡入，旧的反方向淡出，原作 180ms、错开 24ms。 */
+.aui-effort-slider-in[data-animate="true"] {
+  animation: aui-effort-in 180ms cubic-bezier(0.2, 0, 0, 1) 24ms both;
+}
+
+.aui-effort-slider-out {
+  animation: aui-effort-out 180ms cubic-bezier(0.2, 0, 0, 1) both;
+  pointer-events: none;
+}
+
+.aui-effort-slider-in[data-forward="false"] { --effort-enter-y: -3px; }
+.aui-effort-slider-out[data-forward="false"] { --effort-exit-y: 3px; }
+
+@keyframes aui-effort-in {
+  from { opacity: 0; transform: translateY(var(--effort-enter-y, 3px)); filter: blur(2px); }
+}
+
+@keyframes aui-effort-out {
+  to { opacity: 0; transform: translateY(var(--effort-exit-y, -3px)); filter: blur(2px); }
+}
+
+.aui-effort-slider-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.aui-effort-slider-track-shell {
+  position: relative;
+  height: 32px;
+  margin-top: 4px;
+}
+
+.aui-effort-slider-track {
+  position: absolute;
+  inset: 5px 0;
+  overflow: hidden;
+  border-radius: var(--ui-radius-md, 10px);
+  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+/* 走过的那段：从灰渐到当前那档的颜色；到最强那档整条亮起来。 */
+.aui-effort-slider-fill {
+  position: absolute;
+  inset: 0 auto 0 var(--effort-pad);
+  width: calc((100% - var(--effort-pad) * 2 - var(--effort-thumb-w)) * var(--effort-progress, 0) + var(--effort-thumb-w) * 0.5);
+  border-radius: var(--ui-radius-md, 10px) 0 0 var(--ui-radius-md, 10px);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--muted) 14%, var(--paper)), color-mix(in srgb, var(--effort-color) 38%, var(--paper)));
+  pointer-events: none;
+}
+
+.aui-effort-slider-ticks {
+  position: absolute;
+  inset: 0 calc(var(--effort-pad) + var(--effort-thumb-w) * 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.aui-effort-slider-ticks > span {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  transition: opacity 180ms ease;
+}
+
+.aui-effort-slider-ticks > span[data-passed="true"] {
+  opacity: 0;
+}
+
+.aui-effort-slider-ticks > span:last-child {
+  background: var(--effort-top-color);
+  opacity: 1;
+}
+
+.aui-effort-slider-range {
+  position: absolute;
+  inset: 0 var(--effort-pad);
+  width: calc(100% - var(--effort-pad) * 2);
+  height: 100%;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.aui-effort-slider-range::-webkit-slider-runnable-track {
+  height: var(--effort-thumb-h);
+  border: 0;
+  background: transparent;
+}
+
+.aui-effort-slider-range::-moz-range-track {
+  height: var(--effort-thumb-h);
+  border: 0;
+  background: transparent;
+}
+
+.aui-effort-slider-range::-webkit-slider-thumb {
+  width: var(--effort-thumb-w);
+  height: var(--effort-thumb-h);
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid color-mix(in srgb, var(--effort-color) 45%, var(--line));
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent), 0 4px 10px color-mix(in srgb, var(--effort-color) 22%, transparent);
+  transition: transform 150ms ease-out, border-color 180ms ease;
+}
+
+.aui-effort-slider-range::-moz-range-thumb {
+  width: var(--effort-thumb-w);
+  height: var(--effort-thumb-h);
+  border: 1px solid color-mix(in srgb, var(--effort-color) 45%, var(--line));
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent), 0 4px 10px color-mix(in srgb, var(--effort-color) 22%, transparent);
+  transition: transform 150ms ease-out, border-color 180ms ease;
+}
+
+.aui-effort-slider-range:active::-webkit-slider-thumb { transform: scale(0.96); }
+.aui-effort-slider-range:active::-moz-range-thumb { transform: scale(0.96); }
+
+.aui-effort-slider-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--effort-color) 30%, transparent), 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.aui-effort-slider-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--effort-color) 30%, transparent), 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aui-effort-slider-in,
+  .aui-effort-slider-out { animation: none; }
+  .aui-effort-slider-out { display: none; }
+  .aui-effort-slider-stage,
+  .aui-effort-slider-ticks > span,
+  .aui-effort-slider-range::-webkit-slider-thumb,
+  .aui-effort-slider-range::-moz-range-thumb { transition: none; }
 }
 
 /* 按钮上「模型 · 档位」的档位跟着上色。 */
