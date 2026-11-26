@@ -1,0 +1,291 @@
+//! 阅读页提问的主对话、副对话和记忆（2026-11-26，数据库 v40）的请求和返回类型。校验和上限在 `ask_conversations.rs`、
+//! `ask_memories.rs`；接口见 docs/api/16-AI/02-主对话和记忆.md。请求体、查询参数不认识的字段 400。
+
+use retainpdf_data::db::{AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord};
+use serde::{Deserialize, Serialize};
+
+/// 结构化出处：这一问问的是哪儿。和 ACP `session/prompt` 的 `_meta.retainpdf.selection` 同一个写法。只有 `page` 必填。
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AskSelectionInput {
+    /// 书（`item_files.file_id`，接口里的 `document_id`）。
+    #[serde(default)]
+    pub document_id: Option<String>,
+    /// 阅读页正在读的任务（合并阅读的 `merged-…` 也行）。
+    #[serde(default)]
+    pub job_id: Option<String>,
+    /// 译文版本编号；读原文、没有版本时不给或 null。
+    #[serde(default)]
+    pub translation_version: Option<String>,
+    /// `source` 原文 / `translated` 译文。
+    #[serde(default)]
+    pub pane: Option<String>,
+    /// 第几页（从 1 起）。
+    pub page: u32,
+    /// 选区落在哪几块（前端按选区换算）。
+    #[serde(default)]
+    pub item_ids: Vec<String>,
+    #[serde(default)]
+    pub selected_text: Option<String>,
+    #[serde(default)]
+    pub section: Option<String>,
+    #[serde(default)]
+    pub source_text: Option<String>,
+    #[serde(default)]
+    pub translated_text: Option<String>,
+    /// 选区前后的几个字（换版本、重翻后重新定位用）。
+    #[serde(default)]
+    pub prefix: Option<String>,
+    #[serde(default)]
+    pub suffix: Option<String>,
+}
+
+/// 追加的一条消息。
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AskConversationMessageInput {
+    /// `user` / `assistant`（摘要卡片 `side_summary` 只由结束副对话写）。
+    pub role: String,
+    pub text: String,
+    #[serde(default)]
+    pub thought: Option<String>,
+    #[serde(default)]
+    pub usage: Option<serde_json::Value>,
+    /// 问的时候选的 / 答这条的 agent。
+    #[serde(default)]
+    pub agent_id: Option<String>,
+    /// 这条属于哪本书（问的时候在读的书）；不给时取 `selection.document_id`。
+    #[serde(default)]
+    pub document_id: Option<String>,
+    #[serde(default)]
+    pub selection: Option<AskSelectionInput>,
+    /// 幂等号：同一个对话里重复的不再追加，回原来那条。
+    #[serde(default)]
+    pub client_message_id: Option<String>,
+    /// 这条回答里记下的记忆（出处还空着的补上这条消息）。
+    #[serde(default)]
+    pub memory_ids: Vec<String>,
+}
+
+/// POST /ai/ask-conversations/:conversation_id/messages：追加一轮（问和答一起）。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AppendAskMessagesInput {
+    pub messages: Vec<AskConversationMessageInput>,
+}
+
+/// POST /ai/ask-conversations：开副对话。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CreateAskSideConversationInput {
+    /// 主对话。
+    pub parent_id: String,
+    #[serde(default)]
+    pub forked_from_message_id: Option<String>,
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub document_id: Option<String>,
+}
+
+/// PATCH /ai/ask-conversations/:conversation_id：给了的才改。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PatchAskConversationInput {
+    #[serde(default)]
+    pub title: Option<String>,
+    /// 主对话 `open` / `archived`；副对话另有 `closed`。
+    #[serde(default)]
+    pub status: Option<String>,
+}
+
+/// POST /ai/ask-conversations/:conversation_id/close：结束副对话。
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CloseAskConversationInput {
+    /// 结论；给了就回填到主对话（一张 `side_summary` 卡片）。
+    #[serde(default)]
+    pub summary: Option<String>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ListAskConversationsQuery {
+    #[serde(default)]
+    pub kind: Option<String>,
+    #[serde(default)]
+    pub status: Option<String>,
+    #[serde(default)]
+    pub parent_id: Option<String>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ListAskMessagesQuery {
+    /// 只要 `seq` 比它小的（往前翻页）；不给是最后一页。
+    #[serde(default)]
+    pub before_seq: Option<i64>,
+    #[serde(default)]
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AskContextQuery {
+    /// 当前在读的书：带上这本书的书层记忆。
+    #[serde(default)]
+    pub document_id: Option<String>,
+    /// 最近几轮（1–20，默认 6）。
+    #[serde(default)]
+    pub recent_turns: Option<u32>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AskConversationListView {
+    pub conversations: Vec<AskConversationRecord>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AskMessagePageView {
+    pub conversation_id: String,
+    pub messages: Vec<AskConversationMessageRecord>,
+    /// 前面还有没有更早的（再用第一条的 `seq` 当 `before_seq` 取）。
+    pub has_more: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AppendAskMessagesView {
+    pub conversation: AskConversationRecord,
+    pub messages: Vec<AskConversationMessageRecord>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CloseAskConversationView {
+    pub conversation: AskConversationRecord,
+    /// 回到主对话的摘要卡片；没给摘要（或主对话不是 open）是 null。
+    pub card: Option<AskConversationMessageRecord>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AskConversationDeleteResultView {
+    pub conversation_id: String,
+    pub deleted: bool,
+}
+
+/// 开新会话用的记忆：用户层每次都带，书层是当前这本书的；各有字数上限，放不下的条数在 `*_omitted`。
+#[derive(Debug, Serialize)]
+pub struct AskContextMemoriesView {
+    pub user: Vec<AskMemoryRecord>,
+    pub user_omitted: usize,
+    pub book: Vec<AskMemoryRecord>,
+    pub book_omitted: usize,
+}
+
+/// 副对话的主对话前文（到分叉那条为止的最近几轮）。
+#[derive(Debug, Serialize)]
+pub struct AskContextParentView {
+    pub conversation_id: String,
+    pub messages: Vec<AskConversationMessageRecord>,
+}
+
+/// GET /ai/ask-conversations/:conversation_id/context。
+#[derive(Debug, Serialize)]
+pub struct AskContextView {
+    pub conversation: AskConversationRecord,
+    /// 压缩摘要（第二期）；现在总是 null。
+    pub summary: Option<String>,
+    pub parent: Option<AskContextParentView>,
+    /// 最近几轮（不分书），按 `seq` 从小到大。
+    pub messages: Vec<AskConversationMessageRecord>,
+    /// 更早的还有几条没带。
+    pub omitted_messages: i64,
+    pub memories: AskContextMemoriesView,
+    /// 记忆那段（给模型看的写法），放进系统提示词；没有记忆是空串。
+    pub memory_text: String,
+    /// 整份拼好的文字（记忆 + 前文），给不认结构的本机 agent 放进第一问前面；什么都没有是空串。
+    pub text: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct DocumentAskMessagesView {
+    pub document_id: String,
+    pub messages: Vec<AskConversationMessageRecord>,
+}
+
+// --- 记忆 ---
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ListAskMemoriesQuery {
+    #[serde(default)]
+    pub scope: Option<String>,
+    #[serde(default)]
+    pub document_id: Option<String>,
+    /// 全文检索（空格隔开的词都要在）。
+    #[serde(default)]
+    pub q: Option<String>,
+    /// `active`（默认）/ `superseded` / `deleted` / `all`。
+    #[serde(default)]
+    pub status: Option<String>,
+    #[serde(default)]
+    pub source_conversation_id: Option<String>,
+    /// 只要这个时间之后记的（前端每答完一轮补画「已记住」用）。
+    #[serde(default)]
+    pub created_after: Option<String>,
+    #[serde(default)]
+    pub limit: Option<u32>,
+}
+
+/// POST /ai/memories：记一条。
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CreateAskMemoryInput {
+    /// `user` / `book`。
+    pub scope: String,
+    /// 书层必填，用户层不给。
+    #[serde(default)]
+    pub document_id: Option<String>,
+    /// 默认 `other`。
+    #[serde(default)]
+    pub category: Option<String>,
+    pub text: String,
+    /// `user`（默认，用户在记忆面板里加的）/ `agent`。
+    #[serde(default)]
+    pub origin: Option<String>,
+    #[serde(default)]
+    pub agent_id: Option<String>,
+    #[serde(default)]
+    pub source_conversation_id: Option<String>,
+    #[serde(default)]
+    pub source_message_id: Option<String>,
+    #[serde(default)]
+    pub source_job_id: Option<String>,
+    #[serde(default)]
+    pub source_page: Option<u32>,
+    /// 替代哪一条（旧的标 superseded）。
+    #[serde(default)]
+    pub replaces: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PatchAskMemoryInput {
+    #[serde(default)]
+    pub text: Option<String>,
+    #[serde(default)]
+    pub category: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AskMemoryListView {
+    pub memories: Vec<AskMemoryRecord>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AskMemoryCreatedView {
+    pub memory: AskMemoryRecord,
+    /// false：同层同书已经有一模一样的一条，回的是那条。
+    pub created: bool,
+    /// 被替代的那条的编号。
+    pub replaced: Option<String>,
+}

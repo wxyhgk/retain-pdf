@@ -1,5 +1,6 @@
 pub mod ai;
 pub mod accounts;
+pub mod ask_conversations;
 pub mod ask_threads;
 pub mod admin_invites;
 pub mod admin_platform;

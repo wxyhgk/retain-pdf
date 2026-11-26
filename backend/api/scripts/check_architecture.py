@@ -204,6 +204,10 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     Path("src/routes/ask_threads.rs"): (
         "crate::services::library",
     ),
+    # 阅读页提问的主对话、副对话和记忆（书库包的 ask_conversations、ask_memories，2026-11-26）
+    Path("src/routes/ask_conversations.rs"): (
+        "crate::services::library",
+    ),
     Path("src/routes/uploads.rs"): (
         "crate::services::ingest",
     ),

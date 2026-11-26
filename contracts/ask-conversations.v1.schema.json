@@ -1,0 +1,1340 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/ask-conversations/v1",
+  "title": "阅读页提问的主对话、副对话和记忆（ask conversations）",
+  "description": "2026-11-26（数据库 v40）：一个全局主对话一直延续，副对话从主对话某条消息分出来、结束时结论回到主对话；每条消息记自己属于哪本书和结构化出处（任务、译文版本、页、块、选中的字），只追加；记忆分用户层和书层，带出处和状态（active / superseded / deleted）。库是正本，agent 只负责回答。存在数据库（ask_conversations、ask_conversation_messages、ask_memories、ask_memories_fts），不同步。v39 的按书问答记录（ask-threads.v1）只读保留，不迁。生产者：backend/packages/retainpdf-library/src/ask_conversations.rs、ask_memories.rs（校验、上限、拼上下文）、ask_views.rs（请求和返回类型），database/retainpdf-db/src/db/ask_conversations.rs、ask_memories.rs（存取），backend/api/src/routes/ask_conversations.rs（处理函数）；backend/api/src/api_tests/ask_conversations.rs 钉键集合。消费者：@retainpdf/contracts/ask-conversations，阅读页的问答窗、记忆面板；自带 agent（backend/ask-agent 的 memory.py）调 context、memories。多用户模式下这批接口关闭（全局的数据没有归属）。成功响应包在 {code, message, data} 里，本契约描述 data 部分。端点先不写 client_name：前端生成的请求客户端有漂移检查，等前端接的时候连同生成代码一起加。AcpMemoryNotice 不是接口返回，是 ACP 消息里的 _meta。详见 docs/api/16-AI/02-主对话和记忆.md。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/ask-conversations/main",
+      "transport": "json",
+      "output": "AskConversationRecord",
+      "rust_view": "AskConversationRecord",
+      "note": "取或建当前的全局主对话：有开着的就回它，没有就建一条空的（幂等，同一时间只有一个 open 的主对话）。不收请求体。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/ask-conversations",
+      "transport": "json",
+      "query": "ListAskConversationsQuery",
+      "output": "AskConversationListView",
+      "rust_view": "AskConversationListView",
+      "note": "列对话：主对话在前，同类按最近改过的在前。kind、status、parent_id 筛；值不对 400。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/ask-conversations",
+      "transport": "json",
+      "input": "CreateAskSideConversationInput",
+      "output": "AskConversationRecord",
+      "rust_view": "AskConversationRecord",
+      "note": "开副对话：parent_id 必须是主对话（副对话不嵌套，400）；forked_from_message_id 要是主对话里的消息（400）；没有父对话 404；document_id 的书不在 404。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id",
+      "transport": "json",
+      "output": "AskConversationRecord",
+      "rust_view": "AskConversationRecord",
+      "note": "一个对话；没有 404。"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id",
+      "transport": "json",
+      "input": "PatchAskConversationInput",
+      "output": "AskConversationRecord",
+      "rust_view": "AskConversationRecord",
+      "note": "给了的才改：title；status（主对话 open / archived，副对话另有 closed）。归档主对话以后再取主对话会建新的；重新打开一个旧主对话时已经有开着的 409 ask_main_conversation_open；主对话改成 closed 400。"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id",
+      "transport": "json",
+      "output": "AskConversationDeleteResultView",
+      "rust_view": "AskConversationDeleteResultView",
+      "note": "删对话：消息、它的副对话跟着删；记忆留着（出处置空）；副对话回到主对话的摘要卡片留着（side_conversation_id 置空）。没有 404。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id/close",
+      "transport": "json",
+      "input": "CloseAskConversationInput",
+      "output": "CloseAskConversationView",
+      "rust_view": "CloseAskConversationView",
+      "note": "结束副对话（status closed）。给了 summary 就记下，并在主对话末尾追加一条 side_summary 卡片（主对话不是 open 时不追加）；已经结束的再给 summary 再追加一张。主对话 400；没有 404。第二期起不给 summary 时由后端用模型生成。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id/messages",
+      "transport": "json",
+      "query": "ListAskMessagesQuery",
+      "output": "AskMessagePageView",
+      "rust_view": "AskMessagePageView",
+      "note": "消息分页：seq 比 before_seq 小的最后 limit 条（默认 50，1–200），按 seq 从小到大；has_more 说前面还有没有。没有这个对话 404。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id/messages",
+      "transport": "json",
+      "input": "AppendAskMessagesInput",
+      "output": "AppendAskMessagesView",
+      "rust_view": "AppendAskMessagesView",
+      "note": "追加 1–10 条（一轮问答一起），只追加不覆盖；client_message_id 在这个对话里重复的不再追加、回原来那条（网络重试安全）。对话结束了或归档了 409 ask_conversation_not_open；超过 50000 条 409 ask_conversation_limit；没有 404；字段不对 400。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/ask-conversations/:conversation_id/context",
+      "transport": "json",
+      "query": "AskContextQuery",
+      "output": "AskContextView",
+      "rust_view": "AskContextView",
+      "note": "开新会话用的上下文：用户层记忆（约 3000 字）、document_id 那本书的书层记忆（约 2000 字）、最近 recent_turns 轮（默认 6，1–20，最多 16000 字，不分书）、副对话另有主对话到分叉为止的前文；memory_text 放进系统提示词，text 是整份拼好的文字（给不认结构的本机 agent）。自带 agent 用 AI 专用密钥调（by agent）。没有 404。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/documents/:document_id/ask-messages",
+      "transport": "json",
+      "output": "DocumentAskMessagesView",
+      "rust_view": "DocumentAskMessagesView",
+      "note": "这本书上问过的地方：所有对话里属于这本书、有页码的问（role user），按页再按时间，最多 2000 条（画书页上的「?」）。没有这本书 404。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ai/memories",
+      "transport": "json",
+      "query": "ListAskMemoriesQuery",
+      "output": "AskMemoryListView",
+      "rust_view": "AskMemoryListView",
+      "note": "列、查记忆：最近改过的在前；有 q 时全文检索（trigram，每个词都 ≥3 字走 FTS5、按相关度，否则 LIKE），空格隔开的词都要在。默认只要 active。自带 agent 的 search_memories 也调它（by agent）。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/ai/memories",
+      "transport": "json",
+      "input": "CreateAskMemoryInput",
+      "output": "AskMemoryCreatedView",
+      "rust_view": "AskMemoryCreatedView",
+      "note": "记一条：同层同书去掉空白后一模一样的 active 记忆已经有了就回那条（created false）；replaces 的旧条标 superseded。书层要 document_id（书不在 404），用户层不能给；replaces 没有或已删 400；每层 active 的到上限（用户层 200，书层每本书 500）409 ask_memory_limit。自带 agent 的 remember 也调它（by agent，origin agent）。"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/ai/memories/:memory_id",
+      "transport": "json",
+      "input": "PatchAskMemoryInput",
+      "output": "AskMemoryRecord",
+      "rust_view": "AskMemoryRecord",
+      "note": "改字、类别（给了的才改，updated_at 换成现在）。删了的 409 ask_memory_deleted；没有 404。"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/ai/memories/:memory_id",
+      "transport": "json",
+      "output": "AskMemoryRecord",
+      "rust_view": "AskMemoryRecord",
+      "note": "删（撤销）一条：标 deleted（行留着，列表默认看不到，模型看不到）；被它替代的旧条恢复成 active。再删一次原样返回。没有 404。"
+    }
+  ],
+  "definitions": {
+    "AskPane": {
+      "type": "string",
+      "enum": [
+        "source",
+        "translated"
+      ],
+      "description": "source 原文栏 / translated 译文栏。"
+    },
+    "AskConversationKind": {
+      "type": "string",
+      "enum": [
+        "main",
+        "side"
+      ],
+      "description": "main 全局主对话（同一时间只有一个 open 的）/ side 副对话（从主对话某条消息分出来，不嵌套）。"
+    },
+    "AskConversationStatus": {
+      "type": "string",
+      "enum": [
+        "open",
+        "closed",
+        "archived"
+      ],
+      "description": "主对话 open / archived；副对话 open / closed（结束了）/ archived。"
+    },
+    "AskMessageRole": {
+      "type": "string",
+      "enum": [
+        "user",
+        "assistant",
+        "side_summary"
+      ],
+      "description": "user 问 / assistant 答 / side_summary 副对话结束时回到主对话的摘要卡片（只由结束副对话写）。"
+    },
+    "AskMemoryScope": {
+      "type": "string",
+      "enum": [
+        "user",
+        "book"
+      ],
+      "description": "user 关于用户（偏好、背景、回答风格，每次都带）/ book 关于某本书（读到哪、术语、结论，按书取）。"
+    },
+    "AskMemoryCategory": {
+      "type": "string",
+      "enum": [
+        "preference",
+        "background",
+        "style",
+        "progress",
+        "term",
+        "conclusion",
+        "other"
+      ],
+      "description": "偏好 / 背景 / 回答风格 / 进度 / 术语 / 结论 / 其他。"
+    },
+    "AskMemoryStatus": {
+      "type": "string",
+      "enum": [
+        "active",
+        "superseded",
+        "deleted"
+      ],
+      "description": "active 在用 / superseded 被新的一条替代（superseded_by）/ deleted 用户删了、撤销了（行留着，模型看不到）。"
+    },
+    "AskMemoryOrigin": {
+      "type": "string",
+      "enum": [
+        "agent",
+        "user"
+      ],
+      "description": "agent 模型用 remember 记的 / user 用户在记忆面板里加的。"
+    },
+    "AskSelectionInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "page"
+      ],
+      "description": "结构化出处（请求里的）：这一问问的是哪儿。和 ACP session/prompt 的 _meta.retainpdf.selection 同一个写法。只有 page 必填；编号类字段 1–200 个字母、数字、-_.:；空串当没给。pane 不认识、page 出范围 400；几段字超长截断。",
+      "properties": {
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "书（item_files.file_id）。"
+        },
+        "job_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "阅读页正在读的任务（merged-… 也行）。"
+        },
+        "translation_version": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "译文版本编号；读原文、没有版本时 null。"
+        },
+        "pane": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AskPane"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100000,
+          "description": "第几页（从 1 起）。"
+        },
+        "item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 50,
+          "description": "选区落在哪几块（前端按选区换算；后端不碰坐标）。空的、重复的去掉。"
+        },
+        "selected_text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "选中的字；超过 4000 字截断。"
+        },
+        "section": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "所在章节；超过 200 字截断。"
+        },
+        "source_text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "那一块的原文；超过 8000 字截断。"
+        },
+        "translated_text": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "那一块的译文；超过 8000 字截断。"
+        },
+        "prefix": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "选区前面几个字（换版本、重翻后重新定位）；超过 200 字截断。"
+        },
+        "suffix": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "选区后面几个字；超过 200 字截断。"
+        }
+      }
+    },
+    "AskSelectionRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "page",
+        "item_ids"
+      ],
+      "description": "结构化出处（返回里的）：整理过的，只有有值的键（document_id、job_id、translation_version、pane、selected_text、section、source_text、translated_text、prefix、suffix 没有就不出现）。",
+      "properties": {
+        "document_id": {
+          "type": "string"
+        },
+        "job_id": {
+          "type": "string"
+        },
+        "translation_version": {
+          "type": "string"
+        },
+        "pane": {
+          "$ref": "#/definitions/AskPane"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "item_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "selected_text": {
+          "type": "string"
+        },
+        "section": {
+          "type": "string"
+        },
+        "source_text": {
+          "type": "string"
+        },
+        "translated_text": {
+          "type": "string"
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        }
+      }
+    },
+    "AskConversationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation_id",
+        "kind",
+        "parent_id",
+        "forked_from_message_id",
+        "status",
+        "title",
+        "summary",
+        "document_id",
+        "message_count",
+        "last_seq",
+        "created_at",
+        "updated_at",
+        "closed_at"
+      ],
+      "description": "一个对话（不带消息）。",
+      "properties": {
+        "conversation_id": {
+          "type": "string",
+          "description": "conv- 开头。"
+        },
+        "kind": {
+          "$ref": "#/definitions/AskConversationKind"
+        },
+        "parent_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "副对话的主对话；主对话 null。"
+        },
+        "forked_from_message_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "副对话从主对话哪条消息分出来；没给或那条删了 null。"
+        },
+        "status": {
+          "$ref": "#/definitions/AskConversationStatus"
+        },
+        "title": {
+          "type": "string",
+          "description": "副对话的话题；主对话空串。"
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "副对话结束时的结论；没有 null。"
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "副对话主要讲哪本书；没有或书删了 null。"
+        },
+        "message_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "last_seq": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "最后一条消息的 seq；没有消息是 0。"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "RFC 3339（UTC，到秒）。"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "最后一次改（追加消息、改标题状态、结束）的时间。"
+        },
+        "closed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "副对话结束的时间；没结束（或再开了）null。"
+        }
+      }
+    },
+    "AskConversationMessageRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "message_id",
+        "conversation_id",
+        "seq",
+        "role",
+        "text",
+        "thought",
+        "usage",
+        "agent_id",
+        "side_conversation_id",
+        "document_id",
+        "job_id",
+        "version_id",
+        "pane",
+        "page",
+        "selection",
+        "client_message_id",
+        "created_at"
+      ],
+      "description": "一条消息。",
+      "properties": {
+        "message_id": {
+          "type": "string",
+          "description": "msg- 开头。"
+        },
+        "conversation_id": {
+          "type": "string"
+        },
+        "seq": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "对话里第几条，从 1 起。"
+        },
+        "role": {
+          "$ref": "#/definitions/AskMessageRole"
+        },
+        "text": {
+          "type": "string",
+          "description": "正文（Markdown）；side_summary 是副对话的结论。"
+        },
+        "thought": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "思考摘要；没有 null。"
+        },
+        "usage": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "用量，原样存（自带 agent 的 _meta.retainpdf.usage）；没有 null。"
+        },
+        "agent_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "问的时候选的 / 答这条的 agent；主对话不绑 agent，每条自己记。"
+        },
+        "side_conversation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "side_summary 指回的副对话；副对话删了 null。"
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "这条属于哪本书（问的时候在读的书）；没有或书删了 null。"
+        },
+        "job_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "出处的任务（只是编号，任务删了也留着）。"
+        },
+        "version_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "出处的译文版本编号（即出处的 translation_version）。"
+        },
+        "pane": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AskPane"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "出处的页；画书页上的「?」。"
+        },
+        "selection": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AskSelectionRecord"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "整个结构化出处；没有 null。"
+        },
+        "client_message_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "追加时给的幂等号。"
+        },
+        "created_at": {
+          "type": "string"
+        }
+      }
+    },
+    "AskMemoryRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "memory_id",
+        "scope",
+        "document_id",
+        "category",
+        "text",
+        "status",
+        "superseded_by",
+        "origin",
+        "agent_id",
+        "source_conversation_id",
+        "source_message_id",
+        "source_job_id",
+        "source_page",
+        "created_at",
+        "updated_at",
+        "deleted_at"
+      ],
+      "description": "一条记忆。",
+      "properties": {
+        "memory_id": {
+          "type": "string",
+          "description": "mem- 开头。"
+        },
+        "scope": {
+          "$ref": "#/definitions/AskMemoryScope"
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "书层的书；用户层 null。删书时书层记忆跟着删。"
+        },
+        "category": {
+          "$ref": "#/definitions/AskMemoryCategory"
+        },
+        "text": {
+          "type": "string",
+          "description": "一件事，最多 500 字。"
+        },
+        "status": {
+          "$ref": "#/definitions/AskMemoryStatus"
+        },
+        "superseded_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "替代它的那条；没有 null。"
+        },
+        "origin": {
+          "$ref": "#/definitions/AskMemoryOrigin"
+        },
+        "agent_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "哪个 agent 记的；用户自己加的 null。"
+        },
+        "source_conversation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "出处：哪个对话（删了 null）。"
+        },
+        "source_message_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "出处：哪条消息（追加消息时 memory_ids 补上；删了 null）。"
+        },
+        "source_job_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "出处：哪个任务。"
+        },
+        "source_page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "出处：第几页。"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "最后一次改（改字、被替代、删、恢复）的时间；给模型看的日期取它。"
+        },
+        "deleted_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "删的时间；没删 null。"
+        }
+      }
+    },
+    "AskConversationMessageInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "text"
+      ],
+      "description": "追加的一条（请求里的）。",
+      "properties": {
+        "role": {
+          "type": "string",
+          "enum": [
+            "user",
+            "assistant"
+          ]
+        },
+        "text": {
+          "type": "string",
+          "description": "最多 50000 字。"
+        },
+        "thought": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "最多 20000 字；只有空白当没有。"
+        },
+        "usage": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "必须是对象，写成 JSON 最多 4096 字节。"
+        },
+        "agent_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "这条属于哪本书；不给取 selection.document_id，两个都给又不一样 400。书不在库里当没有书。"
+        },
+        "selection": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AskSelectionInput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "client_message_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "幂等号，最长 128 字。"
+        },
+        "memory_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 10,
+          "description": "这条回答里记下的记忆（「已记住」的编号）：出处还空着的补上这条消息。"
+        }
+      }
+    },
+    "AppendAskMessagesInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "messages"
+      ],
+      "properties": {
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskConversationMessageInput"
+          },
+          "minItems": 1,
+          "maxItems": 10
+        }
+      }
+    },
+    "AppendAskMessagesView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation",
+        "messages"
+      ],
+      "properties": {
+        "conversation": {
+          "$ref": "#/definitions/AskConversationRecord"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskConversationMessageRecord"
+          },
+          "description": "追加的（幂等号重复的是原来那条），按 seq。"
+        }
+      }
+    },
+    "CreateAskSideConversationInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "parent_id"
+      ],
+      "properties": {
+        "parent_id": {
+          "type": "string",
+          "description": "主对话。"
+        },
+        "forked_from_message_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "title": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "话题，空白压成一个空格，最多 200 字。"
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "PatchAskConversationInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "给了的才改。",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/AskConversationStatus"
+        }
+      }
+    },
+    "CloseAskConversationInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "结论，最多 8000 字；给了就回填到主对话。"
+        }
+      }
+    },
+    "CloseAskConversationView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation",
+        "card"
+      ],
+      "properties": {
+        "conversation": {
+          "$ref": "#/definitions/AskConversationRecord"
+        },
+        "card": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AskConversationMessageRecord"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "AskConversationDeleteResultView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation_id",
+        "deleted"
+      ],
+      "properties": {
+        "conversation_id": {
+          "type": "string"
+        },
+        "deleted": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "AskConversationListView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversations"
+      ],
+      "properties": {
+        "conversations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskConversationRecord"
+          }
+        }
+      }
+    },
+    "ListAskConversationsQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "不认识的参数 400。",
+      "properties": {
+        "kind": {
+          "$ref": "#/definitions/AskConversationKind"
+        },
+        "status": {
+          "$ref": "#/definitions/AskConversationStatus"
+        },
+        "parent_id": {
+          "type": "string"
+        }
+      }
+    },
+    "ListAskMessagesQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "不认识的参数 400。",
+      "properties": {
+        "before_seq": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200
+        }
+      }
+    },
+    "AskMessagePageView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation_id",
+        "messages",
+        "has_more"
+      ],
+      "properties": {
+        "conversation_id": {
+          "type": "string"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskConversationMessageRecord"
+          }
+        },
+        "has_more": {
+          "type": "boolean"
+        }
+      }
+    },
+    "AskContextQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "不认识的参数 400。",
+      "properties": {
+        "document_id": {
+          "type": "string",
+          "description": "当前在读的书：带上它的书层记忆。"
+        },
+        "recent_turns": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20
+        }
+      }
+    },
+    "AskContextMemoriesView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user",
+        "user_omitted",
+        "book",
+        "book_omitted"
+      ],
+      "description": "最近改过的在前，到字数上限为止；放不下的条数在 *_omitted。",
+      "properties": {
+        "user": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskMemoryRecord"
+          }
+        },
+        "user_omitted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "book": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskMemoryRecord"
+          }
+        },
+        "book_omitted": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "AskContextParentView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation_id",
+        "messages"
+      ],
+      "description": "副对话的主对话前文：到分叉那条为止的最近几轮。",
+      "properties": {
+        "conversation_id": {
+          "type": "string"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskConversationMessageRecord"
+          }
+        }
+      }
+    },
+    "AskContextView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "conversation",
+        "summary",
+        "parent",
+        "messages",
+        "omitted_messages",
+        "memories",
+        "memory_text",
+        "text"
+      ],
+      "properties": {
+        "conversation": {
+          "$ref": "#/definitions/AskConversationRecord"
+        },
+        "summary": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "压缩摘要（第二期）；现在总是 null。"
+        },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AskContextParentView"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskConversationMessageRecord"
+          },
+          "description": "最近几轮（不分书），按 seq。"
+        },
+        "omitted_messages": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "更早的还有几条没带。"
+        },
+        "memories": {
+          "$ref": "#/definitions/AskContextMemoriesView"
+        },
+        "memory_text": {
+          "type": "string",
+          "description": "记忆那段（给模型看的写法：- [编号] 日期 类别：内容），放进系统提示词；没有记忆是空串。"
+        },
+        "text": {
+          "type": "string",
+          "description": "整份拼好的文字（记忆 + 前文），给不认结构的本机 agent 放进第一问前面；什么都没有是空串。"
+        }
+      }
+    },
+    "DocumentAskMessagesView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "document_id",
+        "messages"
+      ],
+      "properties": {
+        "document_id": {
+          "type": "string"
+        },
+        "messages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskConversationMessageRecord"
+          }
+        }
+      }
+    },
+    "ListAskMemoriesQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "不认识的参数 400。",
+      "properties": {
+        "scope": {
+          "$ref": "#/definitions/AskMemoryScope"
+        },
+        "document_id": {
+          "type": "string"
+        },
+        "q": {
+          "type": "string",
+          "description": "全文检索，最多 200 字。"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "superseded",
+            "deleted",
+            "all"
+          ],
+          "description": "默认 active。"
+        },
+        "source_conversation_id": {
+          "type": "string"
+        },
+        "created_after": {
+          "type": "string",
+          "description": "只要这个时间之后记的（RFC 3339；前端每答完一轮补画「已记住」用）。"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 500,
+          "description": "默认 100。"
+        }
+      }
+    },
+    "AskMemoryListView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "memories"
+      ],
+      "properties": {
+        "memories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AskMemoryRecord"
+          }
+        }
+      }
+    },
+    "CreateAskMemoryInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "text"
+      ],
+      "properties": {
+        "scope": {
+          "$ref": "#/definitions/AskMemoryScope"
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "category": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AskMemoryCategory"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "默认 other。"
+        },
+        "text": {
+          "type": "string",
+          "description": "1–500 字（去掉首尾空白）。"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AskMemoryOrigin"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "默认 user。"
+        },
+        "agent_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_conversation_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "不在库里（删了）当没给。"
+        },
+        "source_message_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "不在库里当没给。"
+        },
+        "source_job_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_page": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "replaces": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "替代哪一条（旧的标 superseded）。"
+        }
+      }
+    },
+    "AskMemoryCreatedView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "memory",
+        "created",
+        "replaced"
+      ],
+      "properties": {
+        "memory": {
+          "$ref": "#/definitions/AskMemoryRecord"
+        },
+        "created": {
+          "type": "boolean",
+          "description": "false：已经有一模一样的一条，回的是那条。"
+        },
+        "replaced": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "被替代的那条的编号。"
+        }
+      }
+    },
+    "PatchAskMemoryInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "给了的才改。",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/AskMemoryCategory"
+        }
+      }
+    },
+    "AcpMemoryNotice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "scope",
+        "text",
+        "category",
+        "document_id",
+        "created",
+        "replaced"
+      ],
+      "description": "不是接口返回：自带 agent 的 remember 成功时，ACP tool_call_update（status completed）的 _meta.retainpdf.memory。前端把这张工具卡片画成「已记住：……（撤销）」。",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "记忆编号（mem-…），撤销调 DELETE /ai/memories/{id}。"
+        },
+        "scope": {
+          "$ref": "#/definitions/AskMemoryScope"
+        },
+        "text": {
+          "type": "string"
+        },
+        "category": {
+          "$ref": "#/definitions/AskMemoryCategory"
+        },
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created": {
+          "type": "boolean",
+          "description": "false：已经有一模一样的一条（没有新记）。"
+        },
+        "replaced": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "被替代的那条；撤销时它会恢复。"
+        }
+      }
+    }
+  }
+}

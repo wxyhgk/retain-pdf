@@ -61,6 +61,11 @@ pub mod api {
         CreateTagInput, PatchTagInput, SetDocumentTagsInput, TagDeleteResultView, TagListView,
         AskAnchorInput, AskMessageInput, AskPointInput, AskThreadDeleteResultView, AskThreadListView, AskThreadView,
         CreateAskThreadInput, PatchAskThreadInput,
+        AppendAskMessagesInput, AppendAskMessagesView, AskContextQuery, AskContextView, AskConversationDeleteResultView,
+        AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord,
+        AskMessagePageView, CloseAskConversationInput, CloseAskConversationView, CreateAskMemoryInput,
+        CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery,
+        ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, AskConversationMessageInput, AskSelectionInput,
     };
     pub use retainpdf_platform::{BackupItemView, BackupRestoreView, BackupStatusView};
     pub use retainpdf_providers::{ProviderErrorCatalogueView, ProviderErrorCodesQuery};

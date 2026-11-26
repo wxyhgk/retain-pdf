@@ -9,6 +9,10 @@
       "types": "./dist/ai-agents.d.ts",
       "import": "./dist/ai-agents.js"
     },
+    "./ask-conversations": {
+      "types": "./dist/ask-conversations.d.ts",
+      "import": "./dist/ask-conversations.js"
+    },
     "./ask-threads": {
       "types": "./dist/ask-threads.d.ts",
       "import": "./dist/ask-threads.js"
@@ -115,6 +119,7 @@
     "./provider-error-codes.v1.schema.json": "./provider-error-codes.v1.schema.json",
     "./provider-probes.v1.schema.json": "./provider-probes.v1.schema.json",
     "./ai-agents.v1.schema.json": "./ai-agents.v1.schema.json",
+    "./ask-conversations.v1.schema.json": "./ask-conversations.v1.schema.json",
     "./ask-threads.v1.schema.json": "./ask-threads.v1.schema.json",
     "./reader-data.v1.schema.json": "./reader-data.v1.schema.json",
     "./refine-report.v1.schema.json": "./refine-report.v1.schema.json",

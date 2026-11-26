@@ -93,6 +93,11 @@ const TARGETS = [
     rootName: "AiAgentsSchema",
   },
   {
+    input: "ask-conversations.v1.schema.json",
+    output: "src/ask-conversations.ts",
+    rootName: "AskConversationsSchema",
+  },
+  {
     input: "ask-threads.v1.schema.json",
     output: "src/ask-threads.ts",
     rootName: "AskThreadsSchema",
