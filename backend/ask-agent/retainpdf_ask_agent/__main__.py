@@ -8,6 +8,8 @@
 互动块（`openui.py`）：桥给 `RETAIN_OPENUI_PROMPT`、`RETAIN_OPENUI_LIBRARY`、`RETAIN_OPENUI_CHECK`、`RETAIN_OPENUI_NODE`，
 说明文件读得到就开（系统提示词带 L0，多两个工具），读不到照常回答。
 stdout 只写协议消息：别的模块的 print 一律改到 stderr。
+`python -m retainpdf_ask_agent summarize`（2026-11-26 第二期，`summarize.py`）：一次性压一段对话，stdin 一个 JSON、stdout 一行 JSON，
+模型配置同上（压缩用户设置里那条模型；书、记忆、互动块都不要）。
 这是接线的入口，要 import 接线包（核心其余文件只用标准库，测试里单独放过这个文件）。
 """
 from __future__ import annotations
@@ -18,6 +20,32 @@ import sys
 # 上下文窗口（ACP usage_update 的 size）；没给就按协议估个常见值
 DEFAULT_CONTEXT_WINDOW = {"anthropic": 200_000}
 FALLBACK_CONTEXT_WINDOW = 128_000
+
+
+def summarize_main(protocol_out, connection: dict[str, str], api_key: str) -> int:
+    """`summarize` 子命令：stdin 一个 JSON → stdout 一行 JSON（`{"summary", "usage"}`，出错 `{"error"}`、退出码 1）。"""
+    import json
+
+    from retainpdf_ask_agent.summarize import SummarizeError
+    from retainpdf_ask_agent.summarize import summarize
+    from retainpdf_ask_agent_engine.stream import make_stream_fn
+
+    try:
+        request = json.loads(sys.stdin.read() or "{}")
+        if not isinstance(request, dict):
+            raise SummarizeError("stdin must be a JSON object")
+        result = summarize(request, make_stream_fn(api_key=api_key, **connection))
+    except (SummarizeError, json.JSONDecodeError) as error:
+        protocol_out.write(json.dumps({"error": str(error)}, ensure_ascii=False) + "\n")
+        protocol_out.flush()
+        return 1
+    except Exception as error:  # 模型请求出错：照样回一行 JSON，后端好转述
+        protocol_out.write(json.dumps({"error": f"{type(error).__name__}: {error}"}, ensure_ascii=False) + "\n")
+        protocol_out.flush()
+        return 1
+    protocol_out.write(json.dumps(result, ensure_ascii=False) + "\n")
+    protocol_out.flush()
+    return 0
 
 
 def main() -> int:
@@ -32,6 +60,17 @@ def main() -> int:
         print("retainpdf_ask_agent: RETAIN_ASK_MODEL and RETAIN_ASK_API_KEY are required", file=sys.stderr)
         return 2
     protocol = os.environ.get("RETAIN_ASK_API_PROTOCOL", "").strip()
+    if sys.argv[1:2] == ["summarize"]:
+        return summarize_main(
+            protocol_out,
+            {
+                "model": model,
+                "base_url": os.environ.get("RETAIN_ASK_BASE_URL", "").strip(),
+                "protocol": protocol,
+                "thinking": os.environ.get("RETAIN_ASK_THINKING", "").strip(),
+            },
+            api_key,
+        )
     from retainpdf_ask_agent.memory import make_memory_tools
     from retainpdf_ask_agent.openui import openui_tools_from_env
     from retainpdf_ask_agent.server import AskAgent

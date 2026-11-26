@@ -23,12 +23,16 @@ crate::endpoints! {
     PATCH "/api/v1/ai/ask-conversations/:conversation_id" => ask_conversations::patch_conversation_route, closed by(none);
     /// 删对话（连同消息和它的副对话；记忆留着）；开着的主对话不能删，先归档
     DELETE "/api/v1/ai/ask-conversations/:conversation_id" => ask_conversations::delete_conversation_route, closed by(none);
-    /// 结束副对话：给了结论就回填到主对话（一张摘要卡片）
+    /// 结束副对话：给了结论（或给了模型让后端总结）就回填到主对话（一张摘要卡片）
     POST "/api/v1/ai/ask-conversations/:conversation_id/close" => ask_conversations::close_conversation_route, closed by(none);
     /// 对话的消息（按 seq 往前翻页）
     GET "/api/v1/ai/ask-conversations/:conversation_id/messages" => ask_conversations::list_messages_route, closed by(none);
     /// 追加一轮（问和答一起，每条带结构化出处；只追加不覆盖）
     POST "/api/v1/ai/ask-conversations/:conversation_id/messages" => ask_conversations::append_messages_route, closed by(none);
+    /// 压缩：后端用设置里的模型把上一份摘要之后、最近几轮之前的消息压成一份新摘要（原始消息不删）
+    POST "/api/v1/ai/ask-conversations/:conversation_id/compactions" => ask_conversations::create_compaction_route, closed by(none);
+    /// 一个对话所有的压缩摘要（旧的也在）
+    GET "/api/v1/ai/ask-conversations/:conversation_id/compactions" => ask_conversations::list_compactions_route, closed by(none);
     /// 开新会话用的上下文：用户层和当前书的记忆、最近几轮、拼好的文字
     GET "/api/v1/ai/ask-conversations/:conversation_id/context" => ask_conversations::context_route, closed by(agent);
     /// 记忆：列、全文检索（按层、书、状态筛）

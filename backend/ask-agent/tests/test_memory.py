@@ -269,3 +269,13 @@ def test_tools_refuse_when_the_user_turned_memory_off() -> None:
         return 409, json.dumps({"code": 40900, "message": "off", "error": {"details": {"reason": "ask_memory_disabled"}}}).encode()
     raced = MemoryTools(http=racing).run("remember", {"text": "x", "scope": "user"})
     assert raced.is_error and raced.summary == "用户关掉了记忆"
+
+
+def test_context_history_puts_the_compaction_summary_first() -> None:
+    """压过的（2026-11-26 第二期）：摘要放在最前面，和第一条用户消息并成一条（各家要求从用户开始、一问一答交替）。"""
+    context = {"summary": "之前聊了 Fock 算符。", "messages": [{"role": "user", "text": "接着问"}, {"role": "assistant", "text": "接着答"}]}
+    history = context_history(context)
+    assert history[0] == {"role": "user", "content": "【之前对话的摘要】\n之前聊了 Fock 算符。\n\n接着问"}
+    assert history[1]["role"] == "assistant"
+    only_answers = {"summary": "S", "messages": [{"role": "assistant", "text": "答"}]}
+    assert context_history(only_answers) == [{"role": "user", "content": "【之前对话的摘要】\nS"}]

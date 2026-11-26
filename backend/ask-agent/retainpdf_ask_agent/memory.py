@@ -298,6 +298,10 @@ def _message_text(message: dict[str, Any]) -> str:
     return text
 
 
+# 上下文里压缩摘要那一段的标题（和后端拼给本机 agent 的 `text` 同一个写法）
+SUMMARY_HEADING = "【之前对话的摘要】"
+
+
 def context_history(context: dict[str, Any] | None) -> list[dict[str, Any]]:
     """上下文里的最近几轮 → 会话历史（只有文字）：副对话先接主对话的前文；摘要卡片当用户那边的一条；同一边连着的并成一条；
     开头是回答的去掉（各家都要求从用户开始）。"""
@@ -319,6 +323,14 @@ def context_history(context: dict[str, Any] | None) -> list[dict[str, Any]]:
             history.append({"role": role, "content": text})
     while history and history[0]["role"] != "user":
         history.pop(0)
+    # 压过的（2026-11-26 第二期）：生效的那份摘要放在最前面，替代被压掉的那些轮；最近几轮原样在后面
+    summary = str(context.get("summary") or "").strip()
+    if summary:
+        lead = f"{SUMMARY_HEADING}\n{summary}"
+        if history and history[0]["role"] == "user":
+            history[0] = {"role": "user", "content": f"{lead}\n\n{history[0]['content']}"}
+        else:
+            history.insert(0, {"role": "user", "content": lead})
     return history
 
 

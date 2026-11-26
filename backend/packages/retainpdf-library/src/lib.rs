@@ -5,6 +5,7 @@
 
 mod api;
 
+mod ask_compactions;
 mod ask_conversations;
 mod ask_memories;
 mod ask_threads;
@@ -41,6 +42,7 @@ pub use api::{
     DocumentReadingQuery, PatchTranslationVersionInput, SetCurrentTranslationVersionInput,
     TranslationVersionView, TranslationVersionsQuery, TranslationVersionsView,
 };
+pub use ask_compactions::{create_ask_compaction_view, list_ask_compactions_view, AskSummarizer};
 pub use ask_conversations::{
     append_ask_messages_view, ask_context_view, close_ask_conversation_view, create_side_ask_conversation_view,
     delete_ask_conversation_view, document_ask_messages_view, ensure_main_ask_conversation_view, get_ask_conversation_view,
@@ -51,9 +53,12 @@ pub use ask_memories::{
     patch_ask_memory_view, patch_ask_settings_view,
 };
 /// 对话、记忆的记录就是接口返回的形状（和问答记录一样直接序列化库里的行）。
-pub use retainpdf_data::db::{AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord, AskSettingsRecord};
+pub use retainpdf_data::db::{
+    AskCompactionRecord, AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord, AskSettingsRecord,
+};
 pub use ask_views::{
-    AppendAskMessagesInput, AppendAskMessagesView, AskContextMemoriesView, AskContextParentView, AskContextQuery, AskContextView,
+    AppendAskMessagesInput, AppendAskMessagesView, AskCompactionListView, AskCompactionPointView, AskContextMemoriesView,
+    AskModelConnectionInput, CreateAskCompactionInput, CreateAskCompactionView, AskContextParentView, AskContextQuery, AskContextView,
     AskConversationDeleteResultView, AskConversationListView, AskConversationMessageInput, AskMemoryCreatedView,
     AskMemoryListView, AskMessagePageView, AskSelectionInput, CloseAskConversationInput, CloseAskConversationView,
     CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery,

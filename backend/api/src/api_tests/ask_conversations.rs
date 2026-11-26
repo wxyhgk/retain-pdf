@@ -16,7 +16,7 @@ use crate::app::{build_app, build_state};
 use crate::models::api::{
     AppendAskMessagesInput, AskContextQuery, AskConversationMessageInput, AskSelectionInput, CloseAskConversationInput, CreateAskMemoryInput, CreateAskSideConversationInput,
     ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput,
-    PatchAskSettingsInput,
+    PatchAskSettingsInput, AskModelConnectionInput, CreateAskCompactionInput,
 };
 use crate::test_support::config::TestDirs;
 
@@ -52,6 +52,51 @@ fn request_bodies_and_queries_accept_exactly_the_contract_fields() {
     assert_request_fields_match::<CreateAskMemoryInput>(&contract, "CreateAskMemoryInput");
     assert_request_fields_match::<PatchAskMemoryInput>(&contract, "PatchAskMemoryInput");
     assert_request_fields_match::<PatchAskSettingsInput>(&contract, "PatchAskSettingsInput");
+    assert_request_fields_match::<AskModelConnectionInput>(&contract, "AskModelConnectionInput");
+    assert_request_fields_match::<CreateAskCompactionInput>(&contract, "CreateAskCompactionInput");
+}
+
+/// 第二期（2026-11-26）：压缩接口。没东西可压时 409、不调模型；列压缩摘要；消息分页带压缩点（空的）；追加的返回带 compaction_due。
+/// 真压一次要模型，走书库包里用假的总结函数的测试（`ask_compactions.rs`）。
+#[tokio::test]
+async fn compactions_refuse_when_nothing_to_compact_and_pages_carry_the_points() {
+    let state = test_state("ask-conversations-compactions");
+    let contract = contract(CONTRACT);
+    let main = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", None).await;
+    let id = main["conversation_id"].as_str().unwrap().to_string();
+    let appended = ok_data(
+        &state,
+        "POST",
+        &format!("/api/v1/ai/ask-conversations/{id}/messages"),
+        Some(json!({"messages": [{"role": "user", "text": "问"}, {"role": "assistant", "text": "答"}]})),
+    )
+    .await;
+    assert_definition(&appended, &contract, "AppendAskMessagesView", "appended");
+    assert_eq!(appended["compaction_due"], false);
+    let connection = json!({"model": "m", "credential_ref": "cred-missing"});
+    let (status, payload) =
+        send(&state, "POST", &format!("/api/v1/ai/ask-conversations/{id}/compactions"), Some(json!({"connection": connection}))).await;
+    assert_eq!(status, StatusCode::CONFLICT, "{payload}");
+    assert_eq!(payload["error"]["details"]["reason"], "ask_compaction_nothing");
+    let (status, _) = send(
+        &state,
+        "POST",
+        &format!("/api/v1/ai/ask-conversations/{id}/compactions"),
+        Some(json!({"connection": connection, "max_chars": 5})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    let (status, _) = send(&state, "POST", "/api/v1/ai/ask-conversations/conv-missing/compactions", Some(json!({"connection": connection}))).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    let listed = ok_data(&state, "GET", &format!("/api/v1/ai/ask-conversations/{id}/compactions"), None).await;
+    assert_definition(&listed, &contract, "AskCompactionListView", "listed");
+    assert_eq!(listed["compactions"], json!([]));
+    let page = ok_data(&state, "GET", &format!("/api/v1/ai/ask-conversations/{id}/messages"), None).await;
+    assert_definition(&page, &contract, "AskMessagePageView", "page");
+    assert_eq!(page["compactions"], json!([]));
+    let context = ok_data(&state, "GET", &format!("/api/v1/ai/ask-conversations/{id}/context"), None).await;
+    assert_definition(&context, &contract, "AskContextView", "context");
+    assert!(context["summary"].is_null() && context["summary_covers_to_seq"].is_null());
 }
 
 /// 2026-11-26 用户定：主对话只能先归档再删；副对话不受限制。

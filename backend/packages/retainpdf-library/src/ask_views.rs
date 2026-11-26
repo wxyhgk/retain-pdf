@@ -1,7 +1,7 @@
 //! 阅读页提问的主对话、副对话和记忆（2026-11-26，数据库 v40）的请求和返回类型。校验和上限在 `ask_conversations.rs`、
 //! `ask_memories.rs`；接口见 docs/api/16-AI/02-主对话和记忆.md。请求体、查询参数不认识的字段 400。
 
-use retainpdf_data::db::{AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord};
+use retainpdf_data::db::{AskCompactionRecord, AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord};
 use serde::{Deserialize, Serialize};
 
 /// 结构化出处：这一问问的是哪儿。和 ACP `session/prompt` 的 `_meta.retainpdf.selection` 同一个写法。只有 `page` 必填。
@@ -106,6 +106,35 @@ pub struct CloseAskConversationInput {
     /// 结论；给了就回填到主对话（一张 `side_summary` 卡片）。
     #[serde(default)]
     pub summary: Option<String>,
+    /// 没给 `summary` 时，用这条模型让后端自己总结（2026-11-26 第二期）；两个都没给就只结束、不回填。
+    #[serde(default)]
+    pub summarize_with: Option<AskModelConnectionInput>,
+}
+
+/// 后端生成摘要（压缩主对话、副对话结论）用哪条模型：和问答握手同一套字段，就是用户设置里那条连接。
+/// 密钥只给 `credential_ref`（凭据库里的编号），不收明文。
+#[derive(Debug, Default, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AskModelConnectionInput {
+    pub model: String,
+    #[serde(default)]
+    pub base_url: String,
+    /// `openai` / `openai_responses` / `anthropic`；不给按 `openai`。
+    #[serde(default)]
+    pub api_protocol: String,
+    #[serde(default)]
+    pub thinking: String,
+    pub credential_ref: String,
+}
+
+/// POST /ai/ask-conversations/:conversation_id/compactions：把上一份摘要之后、最近几轮之前的消息压成一份新摘要。
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CreateAskCompactionInput {
+    pub connection: AskModelConnectionInput,
+    /// 摘要最多多少字（100–8000，不给 2000）。
+    #[serde(default)]
+    pub max_chars: Option<u32>,
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -151,12 +180,39 @@ pub struct AskMessagePageView {
     pub messages: Vec<AskConversationMessageRecord>,
     /// 前面还有没有更早的（再用第一条的 `seq` 当 `before_seq` 取）。
     pub has_more: bool,
+    /// 这个对话所有的压缩点（不只这一页的），按 `covers_to_seq` 从小到大：`seq <= covers_to_seq` 的消息已经被那份摘要替代
+    /// （原文还在），前端在那条后面画「之前的已压缩，点开看原文」。没压过是空的。
+    pub compactions: Vec<AskCompactionPointView>,
+}
+
+/// 一个压缩点（不带摘要正文；正文在 GET …/compactions）。
+#[derive(Debug, Serialize)]
+pub struct AskCompactionPointView {
+    pub compaction_id: String,
+    pub covers_to_seq: i64,
+    pub created_at: String,
 }
 
 #[derive(Debug, Serialize)]
 pub struct AppendAskMessagesView {
     pub conversation: AskConversationRecord,
     pub messages: Vec<AskConversationMessageRecord>,
+    /// 上一份摘要之后的消息太长了（超过阈值），该压了：前端有模型配置就随手 `POST …/compactions`。没配模型可以不管。
+    pub compaction_due: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreateAskCompactionView {
+    pub conversation: AskConversationRecord,
+    pub compaction: AskCompactionRecord,
+    /// 压完以后还该不该再压（一般是 false）。
+    pub compaction_due: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AskCompactionListView {
+    pub conversation_id: String,
+    pub compactions: Vec<AskCompactionRecord>,
 }
 
 #[derive(Debug, Serialize)]
@@ -194,8 +250,10 @@ pub struct AskContextView {
     pub conversation: AskConversationRecord,
     /// 「让 AI 使用记忆」开着没有；关着时 `memories` 是空的、`memory_text` 是空串，agent 也不能记、不能查。
     pub memory_enabled: bool,
-    /// 压缩摘要（第二期）；现在总是 null。
+    /// 生效的那份压缩摘要（2026-11-26 第二期）；没压过是 null。有的话 `messages` 只是它之后的最近几轮。
     pub summary: Option<String>,
+    /// 那份摘要替代到第几条（`seq <= summary_covers_to_seq`）；没压过是 null。
+    pub summary_covers_to_seq: Option<i64>,
     pub parent: Option<AskContextParentView>,
     /// 最近几轮（不分书），按 `seq` 从小到大。
     pub messages: Vec<AskConversationMessageRecord>,

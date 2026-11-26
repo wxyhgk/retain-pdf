@@ -2,8 +2,10 @@
 use axum::http::{header, HeaderMap};
 
 use crate::app::AppState;
+use crate::error::AppError;
+use crate::models::api::AskModelConnectionInput;
 use crate::services::providers::{
-    default_openui_check_dir, default_openui_dir, loopback_base_url, AcpConfig, AGENTS_DIR_NAME, NODE_BIN_ENV, NODE_DIR_ENV, OPENUI_CHECK_DIR_ENV,
+    summarize_ask_conversation, AcpConnectQuery, default_openui_check_dir, default_openui_dir, loopback_base_url, AcpConfig, AGENTS_DIR_NAME, NODE_BIN_ENV, NODE_DIR_ENV, OPENUI_CHECK_DIR_ENV,
     OPENUI_DIR_ENV,
 };
 
@@ -45,4 +47,21 @@ pub fn websocket_origin_allowed(state: &AppState, headers: &HeaderMap) -> bool {
             .is_ok_and(|origin| state.config.accounts.allowed_origins.iter().any(|allowed| allowed == origin));
     }
     request_origin_is_allowed(&state.config.origin_policy, headers, origin)
+}
+
+/// 阅读页提问第二期（2026-11-26）：后端生成摘要（压缩主对话、副对话结论）用的那一步——拿「哪条模型」去起 summarize 子命令。
+/// 书库那边（`ask_compactions.rs`）只认这个闭包，不碰 ACP 桥的配置；在阻塞线程里调（子进程要等模型）。
+pub fn ask_summarizer(state: &AppState) -> impl Fn(&AskModelConnectionInput, &serde_json::Value) -> Result<String, AppError> + Send + 'static {
+    let config = build_acp_config(state);
+    move |connection, request| {
+        let query = AcpConnectQuery {
+            model: connection.model.clone(),
+            base_url: connection.base_url.clone(),
+            api_protocol: connection.api_protocol.clone(),
+            thinking: connection.thinking.clone(),
+            credential_ref: connection.credential_ref.clone(),
+            ..Default::default()
+        };
+        summarize_ask_conversation(&config, &query, request).map(|summary| summary.summary)
+    }
 }

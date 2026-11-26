@@ -12,6 +12,18 @@
 
 ---
 
+## 阅读页提问第二期：压缩主对话、后端写副对话结论（feat/ask-compaction）
+
+2026-11-26，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「压缩」。契约 `ask-conversations.v1` 只加字段和两个端点（没写 `client_name`）。
+用户定的：库是正本，压缩和副对话结论都由**后端**用设置里那条模型生成，和当前用的是哪个 agent 无关。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| `frontend/web/src/features/reader/domain/ask-port.ts`（追加一轮） | 只看 `messages` | 返回多了 `compaction_due`：为 `true` 且设置里有模型时，随手 `POST /api/v1/ai/ask-conversations/{id}/compactions`，body `{connection: {model, base_url, api_protocol, thinking, credential_ref}}`（和自带 agent 握手同一套）。不用等它，失败（`409 ask_compaction_nothing` / `ask_compaction_stale`、`502 ask_summarize_failed`）下次再试 |
+| 消息列表 | 只有消息 | 分页返回多了 `compactions: [{compaction_id, covers_to_seq, created_at}]`（所有压缩点）：在 `seq == covers_to_seq` 那条后面画「之前的已压缩，点开看原文」；点开看摘要正文用 `GET …/compactions`，原文照旧在消息分页里 |
+| 副对话「结束」 | 前端给 `summary` | 可以改成只给 `summarize_with`（同上的 `connection`），后端总结成卡片再回填；给了 `summary` 照旧用它。后端要等模型（最多 180 秒），按钮要有进行中的样子；`502 ask_summarize_failed` 时副对话没结束，可以重试或让用户自己写 |
+| 本机 agent 的上下文 | `context.text` | 不用改：压过以后 `text` 里多一段「【之前对话的摘要】」，`summary`、`summary_covers_to_seq` 也在结构化字段里 |
+
 ## 阅读页提问：全局主对话、副对话、记忆（feat/ask-main-conversation）
 
 2026-11-26，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md)，方案 [主对话、副对话和记忆](../../ops/planning/reader-ask/20261126-主对话副对话和记忆.md)。
