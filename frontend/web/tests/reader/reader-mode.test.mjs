@@ -66,7 +66,7 @@ test("原来 FAB 菜单里的东西一个都没丢", () => {
   // 当年那份菜单里有 Markdown 和 AI 问答两样。AI 问答面板后来整个删了（阅读页
   // 只留一扇 AI 的门，就是终端里的 agent），所以这里只能要求 Markdown ——
   // 把已经删掉的功能写进「没丢」的清单，守的是一个不存在的东西。
-  const ids = readerDockTabs(() => true).map((tab) => tab.id);
+  const ids = readerDockTabs().map((tab) => tab.id);
   assert.ok(ids.includes("markdown"), `markdown 不在启动器清单里: ${ids}`);
 });
 

@@ -22,8 +22,8 @@
  * 现在只有 dock 一个启动器，这份清单就是它的全部内容。
  *
  * 这个文件**没有任何依赖**（不碰 React、不碰 lucide、不碰适配器），因为
- * shared/state 的 view-state 也要用它 —— 带图标的完整规格在
- * components/react-pdf/reader-base-panels.ts。
+ * shared/state 的 view-state 也要用它 —— 带图标的完整规格由扩展在定义里带（ReaderExtension.panels，
+ * 2026-11-27 起；Markdown 的在 extensions/builtin/markdown.tsx）。
  *
  * 2026-11-03 起只剩 Markdown：RetainPDF 自己的 AI（宿主槽位面板「AI」= agent 终端、画板）删了；批注、摘录
  * 更早就没了。存着的旧面板 id（"terminal"）读回来不认，当没开（isReaderAssistantPanel）。下面这套「多面板」

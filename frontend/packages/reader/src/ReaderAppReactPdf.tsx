@@ -1,7 +1,7 @@
 // 从 frontend/web 迁入的 React-pdf 视图真值，现为 @retainpdf/reader 主入口。
 // 2026-11-27 拆开：这里只把各块接起来（谁和谁共享什么状态、context、渲染顺序）；各块的状态和 effect 在 ./app/ 下，
 // 可见台面的纯函数在 app/pane-composition.ts（这里照旧导出，老的引用不用改）。
-import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useReaderReactController } from "./hooks/use-reader-react-controller.js";
 import { useReaderKeyboard } from "./hooks/use-reader-keyboard.js";
 import {
@@ -23,7 +23,6 @@ import {
   type ReaderContextValue,
   type ReaderHudContextValue,
 } from "./components/react-pdf/reader-context.js";
-import { useReaderPanelSlot } from "./components/react-pdf/use-reader-panel-slot.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderSearchToggle } from "./components/react-pdf/ReaderFinder.js";
 import { ReaderToolBall } from "./components/react-pdf/ReaderToolBall.js";
@@ -59,7 +58,6 @@ export {
   type ReaderPaneComposition,
 } from "./app/pane-composition.js";
 
-const ReaderMarkdownPanel = lazy(() => import("./components/react-pdf/ReaderMarkdownPanel.js").then((m) => ({ default: m.ReaderMarkdownPanel })));
 
 export function ReaderAppReactPdf() {
   const c = useReaderReactController();
@@ -75,10 +73,6 @@ export function ReaderAppReactPdf() {
   const { liveTranslationVisible, setLiveTranslationVisible, paneComposition, liveToggles, sourceViewOnly, visiblePdfMode } = useLiveTranslationOverlay(c, assistantOpen);
   useReaderModePersistence(c, sourceViewOnly);
   const workspaceView = assistantPanel || (c.mode === "compare" ? "compare" : "reading");
-  // 五个包内面板的开合 —— 每个 id 只在这里写一次，open 和挂载闸都从它派生。
-  // 原来是「闸一遍、open 一遍」，两处各自合法，抄改时把闸上那个写成别的面板
-  // 整套测试全绿而摘录永远打不开。见 use-reader-panel-slot.ts。
-  const markdownSlot = useReaderPanelSlot(assistantPanel, "markdown");
   // 键盘与 UI 共用同一「可见模式」真源：paneComposition.visibleMode。
   // 「0」重置缩放据此取模式默认，避免与 HUD/网格显示的模式脱节。
   const { docDark, toggleDocDark } = useReaderDocTheme();
@@ -162,7 +156,10 @@ export function ReaderAppReactPdf() {
     resetKey: c.viewStateKey,
     hoveredItemId: () => regionHover.get().itemId,
     goToPage: c.goToPage,
-  }), [session.documentId, session.jobId, versionCompare.readingVersionId, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages, c.viewStateKey, regionHover, c.goToPage]);
+    sourceOnly: c.sourceOnly,
+    activePanel: assistantPanel,
+    closePanel: closeAssistant,
+  }), [session.documentId, session.jobId, versionCompare.readingVersionId, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages, c.viewStateKey, regionHover, c.goToPage, c.sourceOnly, assistantPanel, closeAssistant]);
   const [contributionStore] = useState(createContributionStore);
   const contributions = useReaderContributionsOf(contributionStore);
   const pageLayers = useMemo(() => collectPageLayers(contributions), [contributions]);
@@ -301,7 +298,7 @@ export function ReaderAppReactPdf() {
           />
           <ReaderAssistantDock active={assistantPanel} />
           {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
-          <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={markdownSlot.open} assistantSplit={assistantOpen} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
+          <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={assistantOpen} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
           {c.showHud ? (
             <ReaderZoomHud
               mode={visiblePdfMode}
@@ -311,9 +308,6 @@ export function ReaderAppReactPdf() {
               searchSlot={<ReaderSearchToggle open={finder} onToggle={toggleFinder} />}
             />
           ) : null}
-          <Suspense fallback={null}>
-            {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
-          </Suspense>
           <ReaderOverlays
             session={session}
             xrefs={xrefs}

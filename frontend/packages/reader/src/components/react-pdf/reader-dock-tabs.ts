@@ -8,25 +8,20 @@
  *
  */
 import type { LucideIcon } from "lucide-react";
-
 import type { ReaderAssistantPanel } from "../../shared/types/reader-assistant-panels.js";
-import { READER_BASE_PANELS } from "./reader-base-panels.js";
+import { BUILTIN_READER_EXTENSIONS } from "../../extensions/builtin.js";
+import type { ReaderExtension } from "../../extensions/types.js";
 
 export type ReaderDockTab = {
   id: ReaderAssistantPanel;
   label: string;
   short: string;
   Icon: LucideIcon;
-  /** 没有任务时禁用并说明原因。槽位面板一律 false：它们是否可用由宿主决定 */
+  /** 没有任务时禁用并说明原因。 */
   needsJob: boolean;
 };
 
-export function readerDockTabs(): readonly ReaderDockTab[] {
-  return READER_BASE_PANELS.map(({ id, label, short, Icon, needsJob }) => ({
-    id: id as ReaderAssistantPanel,
-    label,
-    short,
-    Icon,
-    needsJob,
-  }));
+/** 2026-11-27 起面板由扩展在定义里带（ReaderExtension.panels），按扩展顺序；以前是 reader-base-panels.ts 一张表。 */
+export function readerDockTabs(extensions: readonly ReaderExtension[] = BUILTIN_READER_EXTENSIONS): readonly ReaderDockTab[] {
+  return extensions.flatMap((extension) => (extension.panels ?? []).map(({ id, label, short, Icon, needsJob }) => ({ id, label, short, Icon, needsJob })));
 }

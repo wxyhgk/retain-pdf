@@ -1,6 +1,8 @@
 import type { ComponentType, ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
 import type { ReaderMetadata, ReaderRegion } from "../shared/data/reader-regions.js";
+import type { ReaderAssistantPanel } from "../shared/types/reader-assistant-panels.js";
 /** 扩展能看到、能用的阅读页：正在读的书、书的块和目录、几个动作。阅读页状态变了就换一个新对象。 */
 export type ReaderApi = {
     documentId: string;
@@ -16,6 +18,11 @@ export type ReaderApi = {
     /** 悬停框现在认出的块。 */
     hoveredItemId: () => string | null;
     goToPage: (page: number, pane?: "source" | "translated") => void;
+    /** 纯本地 PDF（没有任务）：要任务的功能（Markdown……）用不了。 */
+    sourceOnly: boolean;
+    /** 开着哪个面板（扩展定义里 panels 的 id），没开是 null。 */
+    activePanel: ReaderAssistantPanel | null;
+    closePanel: () => void;
 };
 /** 右键书页的那一下：点在哪个元素、屏幕坐标、第几页（认不出是 0）。 */
 export type ReaderMenuContext = {
@@ -51,6 +58,21 @@ export type ReaderContribution = {
     shortcuts?: readonly ReaderShortcut[];
 };
 /**
+ * 扩展的一个面板（右边停靠的那种，同一时间只开一个）：启动器（右下角小球）上一颗按钮、开着时顶上的 tab。
+ * 写在扩展定义上、不走运行时登记：面板开没开要按书存、重开阅读页恢复，id 必须是 shared/types/reader-assistant-panels 里登记过的
+ * （类型上就卡住）；面板内容由扩展自己画（看 useReaderApi().activePanel）。
+ */
+export type ReaderPanelTab = {
+    id: ReaderAssistantPanel;
+    /** 按钮、tab 上的字。 */
+    label: string;
+    /** 窄的时候的缩写。 */
+    short: string;
+    Icon: LucideIcon;
+    /** 没有任务（纯本地 PDF）时禁用并说明原因。 */
+    needsJob: boolean;
+};
+/**
  * 一个扩展：一个组件，挂在阅读页根节点里浮层的位置，用 useReaderApi() 读阅读页、useReaderContribution() 登记贡献。
  * 它画出来的就是它盖在阅读页上的东西（浮动窗口……），没有就 return null。浮层不放进贡献表：那样扩展里每变一下都要经表让整个阅读页重画
  * （2026-11-27 真机试出来过：表 → 阅读页重画 → 扩展重画 → 新元素又登记，React #185 死循环）。
@@ -59,5 +81,6 @@ export type ReaderExtension = {
     id: string;
     title: string;
     Component: ComponentType;
+    panels?: readonly ReaderPanelTab[];
 };
 //# sourceMappingURL=types.d.ts.map

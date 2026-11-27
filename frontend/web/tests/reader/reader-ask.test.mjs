@@ -54,7 +54,7 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
   assert.match(app, /<ReaderExtensionOutlets extensions=\{BUILTIN_READER_EXTENSIONS\} \/>/);
   assert.doesNotMatch(app, /useReaderAsk|readerAsk\./, "阅读页不再直接接提问");
   const { BUILTIN_READER_EXTENSIONS } = await import("../../../packages/reader/src/extensions/builtin.ts");
-  assert.deepEqual(BUILTIN_READER_EXTENSIONS.map((extension) => [extension.id, extension.title]), [["ask", "提问"]]);
+  assert.ok(BUILTIN_READER_EXTENSIONS.some((extension) => extension.id === "ask" && extension.title === "提问"), "提问不在内置扩展里");
   const extension = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskExtension.tsx", import.meta.url), "utf8");
   assert.match(extension, /const contribution = useMemo<ReaderContribution>\(\(\) => \(enabled \? \{/, "没端口就什么都不登记");
   const wiring = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");

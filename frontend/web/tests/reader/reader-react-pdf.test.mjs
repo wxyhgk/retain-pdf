@@ -278,7 +278,7 @@ test("assistant dock keeps the PDF mounted and owns Markdown or AI independently
   assert.match(source, /<ReaderCompareGrid/);
   assert.match(source, /<ReaderAssistantDock\s+active=\{assistantPanel\}/);
   assert.match(source, /assistantOpen \? <ReaderAssistantSplitResizeHandle \/>/);
-  assert.match(source, /markdownSplit=\{markdownSlot\.open\}/);
+  assert.match(source, /markdownSplit=\{assistantOpen\}/);
   assert.match(source, /assistantSplit=\{assistantOpen\}/);
   assert.match(source, /modeControls=\{null\}/);
   assert.doesNotMatch(source, /<ReaderPaneSelector/);

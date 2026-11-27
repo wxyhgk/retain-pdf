@@ -66,7 +66,7 @@ const readStyle = (name) => stripComments(readFileSync(
 test("每个面板都在唯一那个启动器的清单里", () => {
   // 从 id 真源 map 出来比，不在这里抄第二份清单 —— 抄的那份漏一个的表现是
   // 「那个面板再也打不开」，而这条测试照样绿。
-  const ids = readerDockTabs(() => true).map((tab) => tab.id);
+  const ids = readerDockTabs().map((tab) => tab.id);
   assert.equal(ids.length, READER_ASSISTANT_PANEL_IDS.length, `清单长度对不上: ${ids}`);
   assert.deepEqual([...ids].sort(), [...READER_ASSISTANT_PANEL_IDS].sort());
   // 顺序也来自真源：dock 里 tab 的先后就是这份清单的先后。
@@ -76,12 +76,12 @@ test("每个面板都在唯一那个启动器的清单里", () => {
 });
 
 test("每个面板都有标签和图标 —— 少一样那个 tab 要么空白要么崩", () => {
-  for (const tab of readerDockTabs(() => true)) {
+  for (const tab of readerDockTabs()) {
     assert.ok(tab.label && tab.label.trim(), `${tab.id} 没有标签`);
     assert.ok(tab.short && tab.short.trim(), `${tab.id} 没有竖条上的缩写`);
     assert.ok(tab.Icon, `${tab.id} 没有图标`);
   }
-  const shorts = readerDockTabs(() => true).map((tab) => tab.short);
+  const shorts = readerDockTabs().map((tab) => tab.short);
   assert.equal(new Set(shorts).size, shorts.length, `竖条缩写有重复: ${shorts}`);
 });
 
@@ -104,55 +104,31 @@ test("**只有一个**启动器：右下角的悬浮小球（2026-11-20 起，�
   assert.match(all, /\.reader-react-root\.is-assistant-open \.reader-toolball\s*\{[^}]*right:/);
 });
 
-/** 阅读页里每个包内面板的开合插槽声明：变量名 → 面板 id。
- *
- * 面板 id 在阅读页里只写这一处（见 use-reader-panel-slot.ts）。所以「哪个 tab
- * 接到哪个面板」这件事可以**当账来对**：每个 id 恰好一个插槽、每个插槽的
- * `.open` 恰好被一个面板消费。抄改写错的表现一定是某个插槽被用了两次、另一个
- * 一次都没用到。 */
-function panelSlots() {
-  return [...APP.matchAll(/const (\w+) = useReaderPanelSlot\(assistantPanel, "([a-z-]+)"\)/g)]
-    .map(([, name, id]) => ({ name, id }));
-}
+/** 2026-11-27 起面板由扩展带：扩展定义里的 panels 给启动器，扩展组件自己画面板、看 api.activePanel 开没开。
+ * 所以「tab 接到了面板上」「懒加载的闸守的是它自己」这两件事落在每个带面板的扩展文件里，逐个对账。 */
+const PANEL_EXTENSIONS = [
+  { file: "extensions/builtin/markdown.tsx", spec: "MARKDOWN_PANEL", panel: "ReaderMarkdownPanel" },
+];
 
-test("每个面板的 tab 真的接到了那个面板上 —— 不是「tab 在、点了没东西」", () => {
-  // 这条是补上来的：反证时把摘录的 `open` 改成写死的 false（tab 还在、点了
-  // 打不开），**整个 2000 条的套件全绿**。启动器清单那几条只证明 tab 在，
-  // 证明不了 tab 接到了东西 —— 而这正是要修的那类缺陷本身。
-  //
-  // 包自己渲染的面板逐个对账；宿主槽位面板的同一条由
-  // reader-host-panel-wiring.test.mjs 真渲染一遍盖住（它以前谁也没守，
-  // 把壳里的 `active === panel.id` 改成 `active === "terminal"` 全套绿）。
-  const slots = panelSlots();
-  assert.deepEqual(
-    [...slots.map((slot) => slot.id)].sort(),
-    [...READER_BASE_PANEL_IDS].sort(),
-    `面板插槽和 id 真源对不上：${slots.map((slot) => slot.id)}`,
-  );
-  assert.equal(new Set(slots.map((slot) => slot.id)).size, slots.length, "同一个面板声明了两次插槽");
-  for (const { name, id } of slots) {
-    const used = APP.split(`open={${name}.open}`).length - 1;
-    assert.equal(used, 1, `${id} 的插槽被 ${used} 个面板当作 open —— 不是 1 就是接错了人`);
+test("每个面板的 tab 真的接到了那个面板上 —— 不是「tab 在、点了没东西」", async () => {
+  // 反证（11-06）：把面板的 open 改成写死的 false（tab 还在、点了打不开），当时整个 2000 条的套件全绿。
+  const { BUILTIN_READER_EXTENSIONS } = await import("../../../packages/reader/src/extensions/builtin.ts");
+  const declared = BUILTIN_READER_EXTENSIONS.flatMap((extension) => (extension.panels ?? []).map((panel) => panel.id));
+  assert.deepEqual([...declared].sort(), [...READER_BASE_PANEL_IDS].sort(), `扩展带的面板和 id 真源对不上：${declared}`);
+  assert.equal(PANEL_EXTENSIONS.length, declared.length, "有面板的扩展没进上面那张对账表");
+  for (const { file, spec, panel } of PANEL_EXTENSIONS) {
+    const source = readFileSync(new URL(`../../../packages/reader/src/${file}`, import.meta.url), "utf8");
+    assert.match(source, new RegExp(`const open = api\\.activePanel === ${spec}\\.id;`), `${file} 的 open 没看自己那个面板`);
+    assert.match(source, new RegExp(`<${panel} open=\\{open\\}`), `${file} 画的面板没用那个 open`);
   }
 });
 
 test("懒加载面板的挂载闸守的就是它自己那个面板", () => {
-  // 闸和面板用了不同的插槽是个抄改出来的错：闸是单调 latch，面板会变成
-  // 「先开过另一个面板才打得开」，而 tsc 和上面那条都不会红。
-  //
-  // 上一版这条只校验「闸上那个 id 在别处有 open 绑定」—— 把摘录的闸换成
-  // "markdown"，那条绑定被 Markdown 面板自己满足了，全套 2049 条全绿（复查实测）。
-  const names = new Set(panelSlots().map((slot) => slot.name));
-  const latched = [...APP.matchAll(/\{(\w+)\.mounted \? ([\s\S]*?) : null\}/g)];
-  // AI 问答面板删掉之后只剩 Markdown 一个懒加载面板。下限保持 1：这条守的是
-  // 「闸和面板不能接错人」，不是「有几个闸」。
-  assert.ok(latched.length >= 1, `只找到 ${latched.length} 个挂载闸，正则八成没匹配上`);
-  for (const [, name, jsx] of latched) {
-    assert.ok(names.has(name), `挂载闸用了没声明过的插槽 ${name}`);
-    assert.ok(
-      jsx.includes(`open={${name}.open}`),
-      `挂载闸用的是 ${name}，它守着的面板 open 却来自另一个插槽 —— 闸和面板对不上`,
-    );
+  // 闸是单调 latch：闸和面板用的不是同一个 open，面板就成了「先开过另一个面板才打得开」（11-06 复查实测全绿过）。
+  for (const { file } of PANEL_EXTENSIONS) {
+    const source = readFileSync(new URL(`../../../packages/reader/src/${file}`, import.meta.url), "utf8");
+    assert.match(source, /const mounted = useMountedSinceFirstOpen\(open\);/, `${file} 的闸不是跟着自己那个 open`);
+    assert.match(source, /if \(!mounted\) return null;/, `${file} 没在第一次打开前跳过（懒加载形同虚设）`);
   }
 });
 
@@ -204,7 +180,7 @@ test("启动器的两种形态都真的渲染出可点的东西", () => {
   // 宿主适配器没注册时只有 base 面板，但它们必须一个不少地画出来。
   // 从真源取，不在这里抄 —— 抄的那份漏一个，这条照样绿。
   for (const id of READER_BASE_PANEL_IDS) {
-    const label = readerDockTabs(() => false).find((tab) => tab.id === id)?.label;
+    const label = readerDockTabs().find((tab) => tab.id === id)?.label;
     assert.ok(rail.includes(`打开${label}`), `顶栏上没有${label}的按钮`);
     assert.ok(dock.includes(`>${label}<`), `tab 条上没有${label}`);
   }
@@ -294,7 +270,7 @@ test("8 个 tab 放不下时有降级，而不是溢出", () => {
 
 /** 渲染一次启动器，读出「每个入口点不点得动」。
  *
- * 读的是真渲染出来的 button.disabled，不是 reader-base-panels.ts 里那张表 ——
+ * 读的是真渲染出来的 button.disabled，不是扩展定义里 panels 那张表 ——
  * 抄那张表的话，抄错和实现错长得一模一样。 */
 function launcherDisabledState(active) {
   const html = renderToStaticMarkup(
@@ -322,7 +298,7 @@ test("needsJob 真的会让入口点不动 —— 它是启动器上唯一的禁
   // 按 base 面板的 id 真源筛。不能用 `needsJob !== undefined` —— readerDockTabs
   // 给宿主槽位面板也填了 needsJob: false，那样会把终端筛进来，而这个 helper
   // 根本没渲染它（没注册适配器），断言会拿到 undefined。
-  const base = readerDockTabs(() => true)
+  const base = readerDockTabs()
     .filter((tab) => READER_BASE_PANEL_IDS.includes(tab.id));
   assert.ok(base.length > 0, "一个 base 面板都没有，这条测试等于不存在");
 
