@@ -60,7 +60,10 @@ export type ReaderAssistantDockProps = {
 
 /** 顶栏托盘里的面板按钮（图标 + 名字；窄屏只剩图标，名字在悬停里）：点了开、再点收；没有任务时禁用并说明原因。
  *  2026-11-20 以前宽屏也只有图标，不悬停看不出是「Markdown」。 */
-export function ReaderPanelToggles(props: Pick<ReaderAssistantDockProps, "active" | "sourceOnly" | "onSelect" | "onClose">): ReactElement {
+export function ReaderPanelToggles(props: Pick<ReaderAssistantDockProps, "active" | "sourceOnly" | "onSelect" | "onClose"> & {
+  /** 只画这几个（小球里按扩展分开排）；不给是全部。 */
+  tabs?: readonly ReaderDockTab[];
+}): ReactElement {
   const ctx = useReaderContext();
   const { active } = props;
   const sourceOnly = props.sourceOnly ?? ctx?.sourceOnly ?? false;
@@ -68,7 +71,7 @@ export function ReaderPanelToggles(props: Pick<ReaderAssistantDockProps, "active
   const onClose = props.onClose ?? ctx?.assistant.close ?? (() => {});
   return (
     <>
-      {readerDockTabs().map(({ id, label, Icon, needsJob }) => {
+      {(props.tabs ?? readerDockTabs()).map(({ id, label, Icon, needsJob }) => {
         const open = active === id;
         const disabled = needsJob && sourceOnly;
         const name = open ? `收起${label}` : `打开${label}`;

@@ -3,6 +3,7 @@ import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
 import type { RegionPdfDocument } from "../../pdf/RegionCanvas.js";
 import type { XrefIndex } from "../../shared/content/reader-xrefs.js";
 import type { ReaderPageLayer } from "../../extensions/registry.js";
+import type { ReaderComparedDocument } from "../../extensions/types.js";
 import type { ReaderPaneModel } from "../../hooks/use-reader-pane-model.js";
 import type { ReaderDownloadContext } from "../../hooks/use-reader-session.js";
 import type { ReaderMetadata, ReaderRegion } from "../../shared/data/reader-regions.js";
@@ -57,19 +58,7 @@ export type ReaderContextValue = {
     /** 画笔：笔迹和当前工具（hooks/use-reader-ink.ts）；每页的 InkLayer 画出来、画笔模式下接住拖动。 */
     ink?: ReaderInk;
     /** 「对比版本」：左栏换成这一份译文（地址、块；块的 source 已换成那一份的译文）。null = 左栏照常是原文。 */
-    compareVersion?: {
-        url: string;
-        regions: ReaderRegion[];
-        /** 两栏书页上的水印：左边对比的那份、右边正在读的那份。 */
-        left: {
-            name: string;
-            createdAt: string;
-        };
-        right: {
-            name: string;
-            createdAt: string;
-        };
-    } | null;
+    compareVersion?: ReaderComparedDocument | null;
     /**
      * 真源语义 =「无 job」：判断 Markdown / AI / 收藏等需要任务的能力。
      * 仅 FAB 工具禁用等「无 job」场景取用；不要用它判断能否并排。

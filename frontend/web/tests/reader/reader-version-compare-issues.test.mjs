@@ -85,6 +85,17 @@ test("悬浮小球：点开是 Markdown 和「对比版本」两颗图标；点�
   const { createRoot } = await import("react-dom/client");
   const { act } = React;
   const { ReaderToolBall } = await import("../../../packages/reader/src/components/react-pdf/ReaderToolBall.tsx");
+  // 2026-11-27 起「对比版本」是扩展：按钮经贡献表进小球。这里用扩展自己的那颗按钮登记进一张表。
+  const { compareToolbarItem } = await import("../../../packages/reader/src/extensions/builtin/compare.tsx");
+  const { createContributionStore, ReaderExtensionsProvider } = await import("../../../packages/reader/src/extensions/registry.tsx");
+  const store = createContributionStore();
+  const api = { documentId: "d", jobId: "j1", versionId: "tv-a", translationVersions: [], regions: [], metadata: null, bookmarks: [], pageCount: 1, resetKey: "k",
+    hoveredItemId: () => null, goToPage() {}, sourceOnly: false, activePanel: null, closePanel() {}, visibleMode: "source", setWorkspace() {} };
+  const ball = (available) => {
+    const item = compareToolbarItem(compare(available));
+    store.set("compare", "对比版本", { toolbarItems: item ? [item] : [] });
+    return React.createElement(ReaderExtensionsProvider, { api, store }, React.createElement(ReaderToolBall, { active: null }));
+  };
   const compare = (available) => ({
     available,
     versions: [{ versionId: "tv-a", name: "精翻 · a", createdAt: "", status: "succeeded", jobIds: ["j1"] }],
@@ -94,7 +105,7 @@ test("悬浮小球：点开是 Markdown 和「对比版本」两颗图标；点�
   const root = createRoot(dom.window.document.getElementById("root"));
   const doc = dom.window.document;
   const click = async (el) => { await act(async () => { el.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); }); };
-  await act(async () => { root.render(React.createElement(ReaderToolBall, { active: null, compare: compare(true) })); });
+  await act(async () => { root.render(ball(true)); });
   assert.equal(doc.querySelector(".reader-toolball-stack"), null, "一开始收着");
   await click(doc.querySelector(".reader-toolball-ball"));
   assert.ok(doc.querySelector(".reader-toolball-stack .reader-panel-toggle"), "Markdown 在小球里");
@@ -102,7 +113,7 @@ test("悬浮小球：点开是 Markdown 和「对比版本」两颗图标；点�
   assert.ok(doc.querySelector(".reader-version-compare-menu"), "版本列表弹出来");
   await act(async () => { doc.getElementById("page").dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
   assert.equal(doc.querySelector(".reader-toolball-stack"), null, "点外面收起");
-  await act(async () => { root.render(React.createElement(ReaderToolBall, { active: null, compare: compare(false) })); });
+  await act(async () => { root.render(ball(false)); });
   await click(doc.querySelector(".reader-toolball-ball"));
   assert.equal(doc.querySelector('[data-toolball-item="compare"]'), null, "只有一份译文时没有对比");
   root.unmount();

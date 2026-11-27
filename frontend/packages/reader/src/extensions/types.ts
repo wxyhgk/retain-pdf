@@ -6,6 +6,7 @@ import type { LucideIcon } from "lucide-react";
 import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
 import type { ReaderMetadata, ReaderRegion } from "../shared/data/reader-regions.js";
 import type { ReaderAssistantPanel } from "../shared/types/reader-assistant-panels.js";
+import type { ReaderVersionOption } from "../contracts/session.js";
 
 /** 扩展能看到、能用的阅读页：正在读的书、书的块和目录、几个动作。阅读页状态变了就换一个新对象。 */
 export type ReaderApi = {
@@ -13,6 +14,8 @@ export type ReaderApi = {
   jobId: string;
   /** 正在读的译文版本；没有是 null。 */
   versionId: string | null;
+  /** 这本书的几份译文（宿主给了版本端口才有）。 */
+  translationVersions: readonly ReaderVersionOption[];
   regions: readonly ReaderRegion[];
   metadata: ReaderMetadata | null;
   bookmarks: readonly PdfOutlineNode[];
@@ -27,6 +30,10 @@ export type ReaderApi = {
   /** 开着哪个面板（扩展定义里 panels 的 id），没开是 null。 */
   activePanel: ReaderAssistantPanel | null;
   closePanel: () => void;
+  /** 现在看的是原文 / 对照 / 译文。 */
+  visibleMode: "source" | "compare" | "translated";
+  /** 切原文 / 对照 / 译文（保持读到的页）。 */
+  setWorkspace: (mode: "source" | "compare" | "translated") => void;
 };
 
 /** 右键书页的那一下：点在哪个元素、屏幕坐标、第几页（认不出是 0）。 */
@@ -37,6 +44,27 @@ export type ReaderMenuItem = { key: string; label: string; hint?: string; onSele
 
 /** 每一页上叠一层（页边的标记之类）：页码和这一页的原始高度（PDF 点）。 */
 export type ReaderPageLayerProps = { page: number; height: number };
+
+/** 右下角小球里的一颗按钮。给了 popup 的点了在小球旁边弹出它（done 收起），没给的点了调 onClick 再收起小球。 */
+export type ReaderToolbarItem = {
+  key: string;
+  label: string;
+  /** 悬停说明；不给用 label。 */
+  title?: string;
+  Icon: LucideIcon;
+  /** 按下的样子（开着、正在用）；小球本身也会跟着亮。 */
+  pressed?: boolean;
+  onClick?: () => void;
+  popup?: (done: () => void) => ReactNode;
+};
+
+/** 对照时左栏换成的另一份 PDF（对比版本）：地址、块（source 已换成那一份的字）、两栏书页上的水印。 */
+export type ReaderComparedDocument = {
+  url: string;
+  regions: ReaderRegion[];
+  left: { name: string; createdAt: string };
+  right: { name: string; createdAt: string };
+};
 
 /** 快捷键说明里列出来的一条（扩展自己监听按键，这里只是说明）。 */
 export type ReaderShortcut = { keys: string; desc: string };
@@ -49,6 +77,10 @@ export type ReaderContribution = {
   pageLayer?: (props: ReaderPageLayerProps) => ReactNode;
   /** 快捷键说明里单独一组，组名是扩展的 title。 */
   shortcuts?: readonly ReaderShortcut[];
+  /** 右下角小球里的按钮，按扩展顺序（带面板的扩展，面板按钮跟在它的按钮后面）。 */
+  toolbarItems?: readonly ReaderToolbarItem[];
+  /** 对照时左栏换成这一份；同时有几个扩展给，用第一个。 */
+  comparedDocument?: ReaderComparedDocument | null;
 };
 
 /**

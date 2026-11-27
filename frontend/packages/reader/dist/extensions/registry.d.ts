@@ -1,5 +1,5 @@
 import { type ReactElement, type ReactNode } from "react";
-import type { ReaderApi, ReaderContribution, ReaderExtension, ReaderMenuContext, ReaderMenuItem, ReaderShortcut } from "./types.js";
+import type { ReaderApi, ReaderComparedDocument, ReaderContribution, ReaderExtension, ReaderMenuContext, ReaderMenuItem, ReaderShortcut } from "./types.js";
 export type ReaderContributionEntry = {
     id: string;
     title: string;
@@ -20,6 +20,8 @@ export type ReaderPageLayer = {
     render: NonNullable<ReaderContribution["pageLayer"]>;
 };
 export declare function collectPageLayers(contributions: ReaderContributions): ReaderPageLayer[];
+/** 对照时左栏换成的那一份：第一个给了的扩展。 */
+export declare function pickComparedDocument(contributions: ReaderContributions): ReaderComparedDocument | null;
 export declare function collectShortcutGroups(contributions: ReaderContributions): {
     title: string;
     items: readonly ReaderShortcut[];

@@ -12,7 +12,7 @@ import {
   type ReactNode,
 } from "react";
 
-import type { ReaderApi, ReaderContribution, ReaderExtension, ReaderMenuContext, ReaderMenuItem, ReaderShortcut } from "./types.js";
+import type { ReaderApi, ReaderComparedDocument, ReaderContribution, ReaderExtension, ReaderMenuContext, ReaderMenuItem, ReaderShortcut } from "./types.js";
 
 export type ReaderContributionEntry = { id: string; title: string; contribution: ReaderContribution };
 export type ReaderContributions = readonly ReaderContributionEntry[];
@@ -68,6 +68,12 @@ export type ReaderPageLayer = { id: string; render: NonNullable<ReaderContributi
 
 export function collectPageLayers(contributions: ReaderContributions): ReaderPageLayer[] {
   return contributions.flatMap(({ id, contribution }) => (contribution.pageLayer ? [{ id, render: contribution.pageLayer }] : []));
+}
+
+/** 对照时左栏换成的那一份：第一个给了的扩展。 */
+export function pickComparedDocument(contributions: ReaderContributions): ReaderComparedDocument | null {
+  for (const { contribution } of contributions) if (contribution.comparedDocument) return contribution.comparedDocument;
+  return null;
 }
 
 export function collectShortcutGroups(contributions: ReaderContributions): { title: string; items: readonly ReaderShortcut[] }[] {

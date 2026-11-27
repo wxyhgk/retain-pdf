@@ -39,6 +39,7 @@ import { BUILTIN_READER_EXTENSIONS } from "./extensions/builtin.js";
 import {
   collectMenuItems,
   collectPageLayers,
+  pickComparedDocument,
   createContributionStore,
   ReaderExtensionOutlets,
   ReaderExtensionsProvider,
@@ -46,7 +47,7 @@ import {
 } from "./extensions/registry.js";
 import type { ReaderApi, ReaderMenuItem } from "./extensions/types.js";
 import { useReaderBlockEditing } from "./app/use-reader-block-editing.js";
-import { useReaderCompareVersion } from "./app/use-reader-compare-version.js";
+import { useReaderTranslationVersions } from "./hooks/use-reader-version-compare.js";
 import { useReaderFinder } from "./app/use-reader-finder.js";
 import { useReaderModePersistence } from "./app/use-reader-mode-persistence.js";
 import { useReaderPdfAssets } from "./app/use-reader-pdf-assets.js";
@@ -141,14 +142,14 @@ export function ReaderAppReactPdf() {
   useInkShortcuts(ink);
   const [inkMenu, setInkMenu] = useState<InkMenuState>(null);
   const closeInkMenu = useCallback(() => setInkMenu(null), []);
-  // 「对比版本」（app/use-reader-compare-version）。
-  const { versionCompare, compareVersion } = useReaderCompareVersion(c, visiblePdfMode, changeWorkspace);
-  // 阅读页提问（app/use-reader-app-ask → ask/use-reader-ask）。
+  // 这本书的几份译文、正在读哪一份（提问记读的是哪份；对比版本扩展列出来挑）。
+  const translationVersions = useReaderTranslationVersions({ documentId: session.documentId, jobId: session.jobId });
   // 贡献表（extensions/）：扩展读的阅读页接口、它们登记的右键菜单项 / 每页一层 / 浮层 / 快捷键说明。
   const readerApi = useMemo<ReaderApi>(() => ({
     documentId: session.documentId || "",
     jobId: session.jobId,
-    versionId: versionCompare.readingVersionId || null,
+    versionId: translationVersions.readingVersionId || null,
+    translationVersions: translationVersions.versions,
     regions: session.regions,
     metadata: session.readerMetadata,
     bookmarks,
@@ -159,10 +160,17 @@ export function ReaderAppReactPdf() {
     sourceOnly: c.sourceOnly,
     activePanel: assistantPanel,
     closePanel: closeAssistant,
-  }), [session.documentId, session.jobId, versionCompare.readingVersionId, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages, c.viewStateKey, regionHover, c.goToPage, c.sourceOnly, assistantPanel, closeAssistant]);
+    visibleMode: visiblePdfMode,
+    setWorkspace: changeWorkspace,
+  }), [
+    session.documentId, session.jobId, translationVersions, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages,
+    c.viewStateKey, regionHover, c.goToPage, c.sourceOnly, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace,
+  ]);
   const [contributionStore] = useState(createContributionStore);
   const contributions = useReaderContributionsOf(contributionStore);
   const pageLayers = useMemo(() => collectPageLayers(contributions), [contributions]);
+  // 对照时左栏换成的那一份（对比版本扩展给的）。
+  const compareVersion = useMemo(() => pickComparedDocument(contributions), [contributions]);
   // 右键那一下各扩展给的菜单项（右键时算好，菜单开着时不再变）。
   const [menuItems, setMenuItems] = useState<readonly ReaderMenuItem[]>([]);
   const readerContext = useMemo<ReaderContextValue>(() => ({
@@ -317,7 +325,7 @@ export function ReaderAppReactPdf() {
             closeZoom={closeZoom}
             visiblePdfMode={visiblePdfMode}
           />
-          <ReaderToolBall active={assistantPanel} compare={versionCompare} ink={ink} />
+          <ReaderToolBall active={assistantPanel} ink={ink} />
           <ReaderInkMenu
             ink={ink}
             menu={inkMenu}
