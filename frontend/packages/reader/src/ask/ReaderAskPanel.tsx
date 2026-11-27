@@ -1,9 +1,9 @@
 /** 阅读页的提问窗：把主对话（use-ask-conversation）、下一问的出处、任务号、跳页、KaTeX 地址接到 @retainpdf/ask 的 AskWindow 上。
  * 单独一块，第一次提问才加载。以前按书存的问答（只读）也用它看。 */
 import { useMemo, useState, type ReactElement } from "react";
-import AskWindow from "@retainpdf/ask/window";
+import AskWindow, { AskSpinner } from "@retainpdf/ask/window";
 import type { AskAnswerAction, AskAttachTool, AskContextOffer, AskMessageContext } from "@retainpdf/ask";
-import { BookmarkCheck, Loader2 } from "lucide-react";
+import { BookmarkCheck } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
 import type { ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
@@ -47,12 +47,12 @@ export type ReaderAskPanelProps = {
 function SideBar({ ask }: { ask: AskState }): ReactElement | null {
   const side = ask.view.conversation;
   if (side?.kind !== "side") return null;
-  if (side.status !== "open") return <p className="ask-side-bar" data-state="closed">这个副对话已经结束，结论在主对话里；接着问会重新打开它。</p>;
+  if (side.status !== "open") return <p className="reader-ask-side-bar" data-state="closed">这个副对话已经结束，结论在主对话里；接着问会重新打开它。</p>;
   return (
-    <div className="ask-side-bar" data-state={ask.closingSide}>
+    <div className="reader-ask-side-bar" data-state={ask.closingSide}>
       <span>{ask.closingSide === "busy" ? "正在把这段来回总结成结论……" : ask.closingSide === "failed" ? "结论没写成（模型出错或没配模型）。" : "聊完了？结论会带回主对话。"}</span>
-      <Button className="ask-side-close" onClick={() => void ask.closeSide()} disabled={ask.closingSide === "busy"}>
-        {ask.closingSide === "busy" ? <Loader2 size={12} className="ask-spin" aria-hidden /> : null}
+      <Button className="reader-ask-side-close" onClick={() => void ask.closeSide()} disabled={ask.closingSide === "busy"}>
+        {ask.closingSide === "busy" ? <AskSpinner /> : null}
         {ask.closingSide === "failed" ? "再试一次" : "结束，带回结论"}
       </Button>
     </div>
@@ -95,7 +95,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
         key={`legacy:${legacy.anchor.page}:${legacy.messages.length}`}
         port={askPort}
         context={null}
-        title={<span className="ask-crumb" title="2026-11-26 以前按书存的提问，只能看；新的问题都在主对话里">以前的提问 · 第 {legacy.anchor.page} 页</span>}
+        title={<span className="reader-ask-crumb" title="2026-11-26 以前按书存的提问，只能看；新的问题都在主对话里">以前的提问 · 第 {legacy.anchor.page} 页</span>}
         initialMessages={legacy.messages}
         readOnly
         onClose={legacy.onClose}
@@ -130,7 +130,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
         onSelect: () => setMemoryOpen(true),
       }] : undefined}
       footer={<>
-        {ask.error ? <p className="ask-error">{ask.error}</p> : null}
+        {ask.error ? <p className="reader-ask-error">{ask.error}</p> : null}
         <SideBar ask={ask} />
       </>}
       onShowContext={showContext}

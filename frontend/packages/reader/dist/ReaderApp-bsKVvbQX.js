@@ -5399,7 +5399,7 @@ function $f({ port: e, documentId: t, resetKey: n, pointOf: r }) {
   }, [t]), u = _((f) => a((d) => d.filter((h) => h.key !== f)), []);
   return { marks: o, addRecords: l, removeMark: u };
 }
-const Of = Uo(() => import("./ReaderAskPanel-D9ZqQLFa.js"));
+const Of = Uo(() => import("./ReaderAskPanel-BY_vDbJH.js"));
 function zf({
   port: e,
   documentId: t,
@@ -6034,7 +6034,7 @@ function pm(e) {
   const t = N(!1);
   return e && (t.current = !0), t.current;
 }
-const gm = Uo(() => import("./ReaderMarkdownPanel-7MmUKIjR.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Ka = { id: "markdown", label: "Markdown", short: "MD", Icon: hm, needsJob: !0 };
+const gm = Uo(() => import("./ReaderMarkdownPanel-BPzObkfm.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Ka = { id: "markdown", label: "Markdown", short: "MD", Icon: hm, needsJob: !0 };
 function bm() {
   const e = Zt(), t = e.activePanel === Ka.id;
   return pm(t) ? /* @__PURE__ */ p(Ho, { fallback: null, children: /* @__PURE__ */ p(gm, { open: t, jobId: e.jobId, sourceOnly: e.sourceOnly, side: "right", onClose: e.closePanel }) }) : null;
@@ -10454,4 +10454,4 @@ export {
   Dg as s,
   tt as u
 };
-//# sourceMappingURL=ReaderApp-D2Ok_Qvi.js.map
+//# sourceMappingURL=ReaderApp-bsKVvbQX.js.map

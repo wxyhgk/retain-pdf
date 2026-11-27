@@ -8,7 +8,9 @@
   margin-left: 2px;
 }
 
+/* 压在提问窗上面（Radix 把外面那层的 z-index 照这层设）。 */
 .ask-usage-panel {
+  z-index: var(--ask-z-popover, 60);
   display: grid;
   gap: 6px;
   width: auto;
@@ -29,8 +31,4 @@
 .ask-usage-row svg {
   flex: none;
   color: var(--muted);
-}
-
-[data-radix-popper-content-wrapper]:has(.ask-usage-panel) {
-  z-index: calc(var(--z-hud, 36) + 10) !important;
 }

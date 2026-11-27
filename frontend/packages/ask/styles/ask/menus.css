@@ -91,3 +91,11 @@
   color: var(--muted);
   font-size: var(--ui-text-xs, 11px);
 }
+
+/* 一项右边再放的一点东西（以前的对话的条数）。 */
+.ask-head-menu-trailing {
+  flex: none;
+  align-self: center;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}

@@ -154,3 +154,52 @@ test("提问窗每一份样式顶层没有写两处的选择器（2026-11-27：�
     assert.deepEqual(twice, [], `${name} 里这些选择器写了不止一处，并到一处：${twice.join("、")}`);
   }
 });
+
+test("提问窗的样式不从外面改照搬组件（2026-11-27）：不写 .aui-*（自己的思考滑块 .aui-effort-* 除外）、[data-slot]、[cmdk-*]、Radix 弹层外壳、Tailwind 工具类、!important", () => {
+  const banned = [
+    [/\.aui-(?!effort)[a-z]/, ".aui-*（照搬的 assistant-ui 组件的类名：改它的 className）"],
+    [/\[data-slot/, "[data-slot]（照搬组件的内部标记）"],
+    [/\[cmdk-/, "[cmdk-*]（cmdk 的内部标记）"],
+    [/data-radix-popper/, "Radix 弹层外壳（z-index 写在我们自己的弹层类上，Radix 会照着设外壳）"],
+    [/\.text-muted-foreground|\.bg-accent/, "Tailwind 工具类当选择器"],
+    [/!important/, "!important"],
+  ];
+  const found = [];
+  for (const { name, css } of askStyleFiles()) {
+    for (const [pattern, why] of banned) if (pattern.test(css)) found.push(`${name}：${why}`);
+  }
+  assert.deepEqual(found, [], `提问窗的样式又伸进照搬组件里了：${found.join("；")}`);
+});
+
+test("提问窗不认识宿主的层级（2026-11-27）：z-index 只写 var(--ask-z-*, 默认)，阅读页在 ask-host.css 里设", () => {
+  for (const { name, css } of askStyleFiles()) {
+    for (const match of css.matchAll(/z-index:\s*([^;]+);/g)) {
+      const value = match[1].trim();
+      assert.ok(/^var\(--ask-z-[a-z]+, \d+\)$/.test(value) || /^-?\d$/.test(value), `${name} 的 z-index: ${value}（窗口、弹层的层级要走 --ask-z-*；组件里面的 0 / 1 / 2 这种可以）`);
+      assert.doesNotMatch(value, /--z-hud|--z-chrome/, `${name} 用了宿主的层级变量`);
+    }
+  }
+  const host = readFileSync(new URL("../../../packages/reader/styles/ask-host.css", import.meta.url), "utf8");
+  for (const name of ["--ask-z-float", "--ask-z-dock", "--ask-z-popover"]) assert.match(host, new RegExp(`${name}:`), `阅读页没设 ${name}`);
+});
+
+test("阅读页不写提问窗的类名（2026-11-27）：要用的东西从 @retainpdf/ask/window 拿组件（AskHeadMenuItem、AskSpinner），自己的样式用 reader-ask-*", () => {
+  const owned = new Set();
+  for (const { css } of askStyleFiles()) for (const match of css.matchAll(/\.(ask-[a-z][\w-]*)/g)) owned.add(match[1]);
+  const readerRoot = new URL("../../../packages/reader/src/", import.meta.url);
+  const used = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir)) {
+      const full = join(dir, entry);
+      if (statSync(full).isDirectory()) walk(full);
+      else if (/\.tsx?$/.test(entry)) {
+        const source = readFileSync(full, "utf8");
+        for (const match of source.matchAll(/className=(?:"([^"]*)"|\{`([^`]*)`\})/g)) {
+          for (const klass of (match[1] || match[2] || "").split(/\s+/)) if (owned.has(klass)) used.push(`${relative(fileURLToPath(readerRoot), full)}：${klass}`);
+        }
+      }
+    }
+  };
+  walk(fileURLToPath(readerRoot));
+  assert.deepEqual(used, [], `阅读页直接写了提问窗的类名：${used.join("；")}`);
+});

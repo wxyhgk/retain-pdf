@@ -54,6 +54,29 @@ export function AskHeadMenu({ label, title, className, children, onOpenChange }:
   );
 }
 
+/** 下拉里的一项：左边图标、名字（下面一行灰的说明）、右边可以再放一点东西（条数）。宿主的下拉（阅读页的对话菜单）也用它，不用直接写这里的类名。 */
+export function AskHeadMenuItem({ icon, label, hint, trailing, current, disabled, onClick }: {
+  icon?: ReactNode;
+  label: ReactNode;
+  hint?: ReactNode;
+  trailing?: ReactNode;
+  /** 现在看的就是这一项。 */
+  current?: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}): ReactElement {
+  return (
+    <Button className="ask-head-menu-item" data-current={current ? "true" : undefined} disabled={disabled} onClick={onClick}>
+      {icon ? <span className="ask-head-menu-icon">{icon}</span> : null}
+      <span className="ask-head-menu-text">
+        <span>{label}</span>
+        {hint ? <small>{hint}</small> : null}
+      </span>
+      {trailing ? <small className="ask-head-menu-trailing">{trailing}</small> : null}
+    </Button>
+  );
+}
+
 /** 「···」里的一项。 */
 export type AskHeaderMenuItem = {
   key: string;
@@ -70,20 +93,16 @@ export function AskMoreMenu({ items }: { items: readonly AskHeaderMenuItem[] }):
   return (
     <AskHeadMenu className="ask-more" title={`更多：${items.map((item) => item.label).join("、")}`} label={<MoreHorizontal size={15} aria-hidden />}>
       {(close) => items.map((item) => (
-        <Button
+        <AskHeadMenuItem
           key={item.key}
-          className="ask-head-menu-item"
+          icon={item.icon}
+          label={item.label}
+          hint={item.hint}
           onClick={() => {
             close();
             item.onSelect();
           }}
-        >
-          {item.icon ? <span className="ask-head-menu-icon">{item.icon}</span> : null}
-          <span className="ask-head-menu-text">
-            <span>{item.label}</span>
-            {item.hint ? <small>{item.hint}</small> : null}
-          </span>
-        </Button>
+        />
       ))}
     </AskHeadMenu>
   );

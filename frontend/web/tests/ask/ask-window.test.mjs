@@ -342,8 +342,10 @@ test("贴右边是页面的一栏（2026-11-27）：从顶栏下沿（60）起�
   assert.match(win, /className=\{`ask-window ask-window--\$\{mode\}`\}/);
   // 2026-11-27 起 ask.css 按组件拆开：窗口外框（层级、贴右边、思考染边）在 ask/window.css。
   const css = readFileSync(new URL("../../../packages/ask/styles/ask/window.css", import.meta.url), "utf8");
-  const dockZ = /\.ask-window\.ask-window--dock\s*\{[^}]*z-index:\s*(\d+)/.exec(css);
-  assert.ok(dockZ && Number(dockZ[1]) < 35, "贴右边压在阅读页顶栏（z-index 35）下面");
+  // 层级由宿主定：提问窗写 var(--ask-z-dock)，阅读页设成顶栏（--z-chrome，35）减一。
+  assert.match(css, /\.ask-window\.ask-window--dock\s*\{[^}]*z-index:\s*var\(--ask-z-dock,/);
+  const host = readFileSync(new URL("../../../packages/reader/styles/ask-host.css", import.meta.url), "utf8");
+  assert.match(host, /--ask-z-dock:\s*calc\(var\(--z-chrome, 35\) - 1\);/, "贴右边压在阅读页顶栏下面");
   // 发光那条在 dock 覆盖之前，dock 覆盖写在后面：同样权重后写的赢。
   const glow = css.indexOf('.ask-panel[data-effort="on"] {');
   const dockGlow = css.indexOf('.ask-panel[data-mode="dock"][data-effort="on"] {');

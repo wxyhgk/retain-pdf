@@ -133,38 +133,7 @@
   color: var(--ink);
 }
 
-.ask-crumbs {
-  display: inline-flex;
-  min-width: 0;
-  align-items: center;
-  gap: 2px;
-  color: var(--muted);
-}
-
-.ask-crumb {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ask-crumbs .ask-crumb {
-  color: var(--ink);
-}
-
-.ask-crumb-link {
-  flex: none;
-  padding: 0 2px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  cursor: var(--cursor-pointer, pointer);
-}
-
-.ask-crumb-link:hover {
-  color: var(--ink);
-}
-
+/* —— 主对话（2026-11-26）：下一问的出处、问题上面的小标签、看更早的、深挖、结论卡片、压缩点、已记住 —— */
 .ask-question-where[disabled],
 .ask-pending-label[disabled] {
   cursor: default;
@@ -313,44 +282,6 @@
   color: var(--ink);
 }
 
-.ask-side-bar {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 6px 14px;
-  border-top: 1px solid var(--line);
-  color: var(--muted);
-  font-size: var(--ui-text-sm, 12px);
-}
-
-.ask-side-bar > span {
-  flex: 1;
-  min-width: 0;
-}
-
-.ask-side-close {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--ui-radius-pill, 999px);
-  background: var(--paper);
-  color: var(--ink);
-  font: inherit;
-  cursor: var(--cursor-pointer, pointer);
-}
-
-/* 只读（以前按书存的问答）：没有输入框。 */
-.ask-panel[data-readonly="1"] .aui-composer-root,
-.ask-panel[data-readonly="1"] .aui-user-action-bar-wrapper,
-.ask-panel[data-readonly="1"] .aui-assistant-action-bar-root {
-  display: none;
-}
-
 /* 改过的问：「改过」点开看原来的问和答。 */
 .ask-question-rewrote {
   grid-column: 2;
@@ -456,4 +387,11 @@
   background: color-mix(in srgb, var(--warn) 10%, var(--paper));
   color: color-mix(in srgb, var(--warn) 55%, var(--ink));
   font-size: var(--ui-text-xs, 11px);
+}
+
+/* 回答里长的独立公式（KaTeX）横着滚，不撑破窗口。只读（以前的对话）不画输入框和操作条，见照搬的 thread.aui.tsx 的 readOnly。 */
+.ask-panel .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
 }

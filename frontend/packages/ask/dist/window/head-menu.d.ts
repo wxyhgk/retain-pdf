@@ -11,6 +11,17 @@ export type AskHeadMenuProps = {
     onOpenChange?: (open: boolean) => void;
 };
 export declare function AskHeadMenu({ label, title, className, children, onOpenChange }: AskHeadMenuProps): ReactElement;
+/** 下拉里的一项：左边图标、名字（下面一行灰的说明）、右边可以再放一点东西（条数）。宿主的下拉（阅读页的对话菜单）也用它，不用直接写这里的类名。 */
+export declare function AskHeadMenuItem({ icon, label, hint, trailing, current, disabled, onClick }: {
+    icon?: ReactNode;
+    label: ReactNode;
+    hint?: ReactNode;
+    trailing?: ReactNode;
+    /** 现在看的就是这一项。 */
+    current?: boolean;
+    disabled?: boolean;
+    onClick: () => void;
+}): ReactElement;
 /** 「···」里的一项。 */
 export type AskHeaderMenuItem = {
     key: string;

@@ -249,8 +249,9 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       MessageAfter,
       prepareSend: answerQuote.prepareSend,
       UserText,
+      readOnly,
     }),
-    [agents, runtime, answerQuote.prepareSend], // eslint-disable-line react-hooks/exhaustive-deps
+    [agents, runtime, answerQuote.prepareSend, readOnly], // eslint-disable-line react-hooks/exhaustive-deps
   );
   // 宿主的「带上……」按钮、塞进来的附件（attach-tools.tsx）。
   const { attachUi, attachError } = useHostAttachments(runtime, attachTools, attachRequest);

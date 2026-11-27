@@ -157,7 +157,8 @@ export default function AskWindow(props) {
         MessageAfter,
         prepareSend: answerQuote.prepareSend,
         UserText,
-    }), [agents, runtime, answerQuote.prepareSend]);
+        readOnly,
+    }), [agents, runtime, answerQuote.prepareSend, readOnly]);
     // 宿主的「带上……」按钮、塞进来的附件（attach-tools.tsx）。
     const { attachUi, attachError } = useHostAttachments(runtime, attachTools, attachRequest);
     const pages = useMemo(() => (onJumpToPage ? { pageCount, jump: onJumpToPage } : null), [onJumpToPage, pageCount]);

@@ -34,12 +34,16 @@ export function AskHeadMenu({ label, title, className, children, onOpenChange })
     const close = () => setOpen(false);
     return (_jsxs("details", { ref: root, className: `ask-head-menu${className ? ` ${className}` : ""}`, open: open, onToggle: (event) => setOpen(event.currentTarget.open), children: [_jsx("summary", { "aria-label": title, title: title, children: label }), _jsx("div", { className: "ask-head-menu-body", children: typeof children === "function" ? children(close) : children })] }));
 }
+/** 下拉里的一项：左边图标、名字（下面一行灰的说明）、右边可以再放一点东西（条数）。宿主的下拉（阅读页的对话菜单）也用它，不用直接写这里的类名。 */
+export function AskHeadMenuItem({ icon, label, hint, trailing, current, disabled, onClick }) {
+    return (_jsxs(Button, { className: "ask-head-menu-item", "data-current": current ? "true" : undefined, disabled: disabled, onClick: onClick, children: [icon ? _jsx("span", { className: "ask-head-menu-icon", children: icon }) : null, _jsxs("span", { className: "ask-head-menu-text", children: [_jsx("span", { children: label }), hint ? _jsx("small", { children: hint }) : null] }), trailing ? _jsx("small", { className: "ask-head-menu-trailing", children: trailing }) : null] }));
+}
 /** 标题栏右边的「···」：不常用的（阅读页：记忆）。没有项就不画。 */
 export function AskMoreMenu({ items }) {
     if (!items.length)
         return null;
-    return (_jsx(AskHeadMenu, { className: "ask-more", title: `更多：${items.map((item) => item.label).join("、")}`, label: _jsx(MoreHorizontal, { size: 15, "aria-hidden": true }), children: (close) => items.map((item) => (_jsxs(Button, { className: "ask-head-menu-item", onClick: () => {
+    return (_jsx(AskHeadMenu, { className: "ask-more", title: `更多：${items.map((item) => item.label).join("、")}`, label: _jsx(MoreHorizontal, { size: 15, "aria-hidden": true }), children: (close) => items.map((item) => (_jsx(AskHeadMenuItem, { icon: item.icon, label: item.label, hint: item.hint, onClick: () => {
                 close();
                 item.onSelect();
-            }, children: [item.icon ? _jsx("span", { className: "ask-head-menu-icon", children: item.icon }) : null, _jsxs("span", { className: "ask-head-menu-text", children: [_jsx("span", { children: item.label }), item.hint ? _jsx("small", { children: item.hint }) : null] })] }, item.key))) }));
+            } }, item.key))) }));
 }

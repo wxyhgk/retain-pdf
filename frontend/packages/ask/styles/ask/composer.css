@@ -91,14 +91,6 @@
   text-overflow: ellipsis;
 }
 
-/* 照搬的 Thread 用 Tailwind 的 rem 字号，在提问窗里偏大：统一按窗口的字号缩一档。 */
-.ask-panel .aui-composer-input,
-.ask-panel .aui-edit-composer-input {
-  min-height: 0;
-  font-size: var(--ui-text-md, 13px);
-  line-height: 1.6;
-}
-
 /* 输入框那一行的 agent 设置（../src/window/AskModelPicker.tsx）：模型和思考强度一个按钮，别的收进「更多」。 */
 .ask-config {
   display: flex;
@@ -123,15 +115,10 @@
   color: var(--ink);
 }
 
-/* 选模型的弹层（Radix 挂在 body 上）：照搬组件的 bg-accent 在我们的皮肤里是深色，选中、高亮改成浅底。 */
-[data-slot="model-selector-content"] {
-  font-size: var(--ui-text-md, 13px);
-}
-
-[data-slot="model-selector-content"] [cmdk-item][data-selected="true"],
-[data-slot="model-selector-content"] [cmdk-item][aria-selected="true"] {
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
-  color: var(--ink);
+/* 「谁来答」的弹层（Radix 挂在 body 上）：压在提问窗上面。Radix 把弹层外面那层的 z-index 照里面这层的设，所以写在我们自己的类上就行
+ * （以前用 [data-radix-popper-content-wrapper]:has(...) 加 !important 去压外层）。字号、选中的底色在照搬的 model-selector.tsx 里。 */
+.ask-answerer-popover {
+  z-index: var(--ask-z-popover, 60);
 }
 
 /* 选模型弹层底下的思考强度胶囊滑块（../src/ui/elements/effort-slider.tsx，改自 zanwei/claude-model-selector，MIT）。
@@ -390,38 +377,9 @@
 }
 
 /* 按钮上「模型 · 档位」的档位跟着上色。 */
-.ask-panel .ask-config-trigger [data-slot="model-selector-value"] > .text-muted-foreground,
 .ask-panel .ask-config-effort-name {
   color: var(--ask-effort-color, var(--muted));
   font-weight: 600;
-}
-
-/* 思考强度染输入框和发送按钮（AskWindow 在窗口上写 --ask-effort-color、data-effort）；窗口边框跟着染的那两条在 window.css。 */
-.ask-panel [data-slot="aui_composer-shell"] {
-  transition: border-color 240ms ease, box-shadow 240ms ease;
-}
-
-.ask-panel[data-effort="on"] [data-slot="aui_composer-shell"] {
-  border-color: color-mix(in srgb, var(--ask-effort-color) 60%, var(--line));
-  background: color-mix(in srgb, var(--ask-effort-color) 4%, var(--paper));
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--ask-effort-color) 14%, transparent),
-    0 8px 28px -10px color-mix(in srgb, var(--ask-effort-color) 55%, transparent);
-}
-
-.ask-panel[data-effort="on"] .aui-composer-send:not(:disabled) {
-  background: var(--ask-effort-color);
-  color: var(--paper);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ask-panel [data-slot="aui_composer-shell"] { transition: none; }
-}
-
-/* 输入框那一行放不下时（窗口窄）换行，不挤掉发送按钮（.ask-config 自己也换行）。 */
-.ask-panel .aui-composer-action-wrapper {
-  flex-wrap: wrap;
-  gap: 4px;
 }
 
 .ask-config-more {
@@ -440,6 +398,7 @@
 
 /* 「更多」弹层（Radix Popover 挂在 body 上，不在 .ask-panel 里面）。 */
 .ask-config-panel {
+  z-index: var(--ask-z-popover, 60);
   display: grid;
   gap: 8px;
   width: 240px;
@@ -453,12 +412,6 @@
   align-items: center;
   gap: 8px;
   color: var(--muted);
-}
-
-/* Radix 弹层（选模型、更多设置）要压在提问窗上面。 */
-[data-radix-popper-content-wrapper]:has([data-slot="model-selector-content"]),
-[data-radix-popper-content-wrapper]:has(.ask-config-panel) {
-  z-index: calc(var(--z-hud, 36) + 10) !important;
 }
 
 /* 思考强度下面的两行字（AskModelPicker 的 EffortRow）：当前档的说明（快慢、花费），这一项本身的说明（档位是猜的时写「不一定起作用」）。 */
