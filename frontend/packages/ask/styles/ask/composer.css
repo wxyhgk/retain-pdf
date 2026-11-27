@@ -376,10 +376,21 @@
   .ask-effort-switch-toggle > span { transition: none; }
 }
 
-/* 按钮上「模型 · 档位」的档位跟着上色。 */
+/* 按钮上「模型 · 档位」的档位：灰字；思考开着时前面一个小点（2026-11-28 收口：以前整段字跟着思考强度上色）。 */
 .ask-panel .ask-config-effort-name {
-  color: var(--ask-effort-color, var(--muted));
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.ask-panel[data-effort="on"] .ask-config-effort-name::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--ask-effort-color);
 }
 
 .ask-config-more {

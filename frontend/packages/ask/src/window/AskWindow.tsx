@@ -11,6 +11,7 @@
  * 宿主给什么、能改什么：见包的 README.md。
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Rnd } from "react-rnd";
 import { Maximize2 } from "lucide-react";
 import { Button } from "@retainpdf/ui";
@@ -37,11 +38,11 @@ import type { AskHeaderMenuItem } from "./head-menu.js";
 import type { AskWindowMode } from "./AskHeader.js";
 import { AskPageContext, type AskPageJump } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
-import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand, type AskConfigState } from "./AskModelPicker.js";
-import { BrandIcon, brandFor } from "./BrandIcon.js";
+import { AskAgentSettings, AskConfigContext, currentEffort, type AskConfigState } from "./AskModelPicker.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
 import { loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
 import { useWindowLayout, type AskDockInsets } from "./use-window-layout.js";
+import { HostedDock } from "./dock-host.js";
 import { useWideBlocks } from "./wide-blocks.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag, type AskConversationUi } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
@@ -140,12 +141,14 @@ export type AskWindowProps = {
   onLayout?: (layout: { mode: AskWindowMode; width: number }) => void;
   /** 宿主右边停了别的东西（阅读页的 Markdown 面板）：变成 true 的那一下，贴右边的窗口变回浮动。 */
   dockTaken?: boolean;
-  /** 贴右边时上下让出宿主的栏（阅读页：顶栏、底栏的高）；不给是上 60、下 0。 */
+  /** 贴右边时上下让出宿主的栏（阅读页：顶栏、底栏的高）；不给是上 60、下 0。宿主给了 dockHost 时用不着。 */
   dockInsets?: AskDockInsets;
+  /** 宿主的停靠栏（阅读页 .reader-dock 里那一格）：贴右边时窗口画进去，是页面的一栏而不是浮窗；不给就照旧浮在右边。 */
+  dockHost?: HTMLElement | null;
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, headerMenu, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken, dockInsets } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, headerMenu, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken, dockInsets, dockHost } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -284,28 +287,14 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
   }, []);
   // 「谁来答」里的 agent 那一排（agent-row.tsx，输入框那颗按钮的弹层里）。
   const agentsUi = useMemo<AskAgentsState | null>(() => (agents?.length ? { agents, agentId, onAgent: chooseAgent } : null), [agents, agentId, chooseAgent]);
-  // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
+  // 思考强度（ask.css 读 --ask-effort-color、data-effort）：开着时输入框一圈细边、按钮上一个小点。
+  // 2026-11-28 收口回黑白纸墨：聊天区正中的彩色模型水印、输入框大片发光、窗口边发光都去掉了。
   const effort = currentEffort(config);
-  const shownAgent = agents?.find((agent) => agent.id === agentId);
-  const brand = currentModelBrand(config) || (shownAgent ? brandFor(shownAgent.id, shownAgent.name) : "");
   const tint = (effort ? { "--ask-effort-color": effort.color } : {}) as CSSProperties;
+  const hosted = mode === "dock" && Boolean(dockHost);
 
-  return (
-    <Rnd
-      className={`ask-window ask-window--${mode}`}
-      position={{ x: rect.x, y: rect.y }}
-      size={{ width: rect.width, height: rect.height }}
-      minWidth={320}
-      minHeight={280}
-      bounds="window"
-      dragHandleClassName="ask-head"
-      cancel=".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-head-menu-body"
-      disableDragging={mode !== "float"}
-      enableResizing={mode === "full" ? false : mode === "dock" ? { left: true } : true}
-      onDragStop={layout.onDragStop}
-      onResizeStop={layout.onResizeStop}
-    >
-      <section className="ask-panel" role="dialog" aria-label="提问" data-mode={mode} data-readonly={readOnly ? "1" : undefined} data-effort={effort?.on ? "on" : "off"} style={tint}>
+  const panel = (
+      <section className="ask-panel" role="dialog" aria-label="提问" data-mode={mode} data-hosted={hosted ? "true" : undefined} data-readonly={readOnly ? "1" : undefined} data-effort={effort?.on ? "on" : "off"} style={tint}>
         <AskHeader
           title={title}
           actions={headerActions}
@@ -329,11 +318,6 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
               <PlanDataUI />
               <SubagentDataUI />
               <div className="ask-thread" ref={threadRoot}>
-                {brand ? (
-                  <div className="ask-watermark" aria-hidden>
-                    <BrandIcon brand={brand} size={200} />
-                  </div>
-                ) : null}
                 {wideBlocks && mode !== "full" ? (
                   <Button className="ask-wide-open" title="有公式或表格太宽，要横着滚：放大窗口看" onClick={() => layout.changeMode("full")}>
                     <Maximize2 size={12} aria-hidden /> 放大看
@@ -352,6 +336,28 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
           {footer}
         </AskPageContext.Provider>
       </section>
+  );
+
+  // 贴右边、宿主给了停靠栏：画进去，是页面的一栏。
+  if (hosted && dockHost) {
+    return createPortal(<HostedDock width={rect.width} onResize={layout.resizeDock}>{panel}</HostedDock>, dockHost);
+  }
+  return (
+    <Rnd
+      className={`ask-window ask-window--${mode}`}
+      position={{ x: rect.x, y: rect.y }}
+      size={{ width: rect.width, height: rect.height }}
+      minWidth={320}
+      minHeight={280}
+      bounds="window"
+      dragHandleClassName="ask-head"
+      cancel=".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-head-menu-body"
+      disableDragging={mode !== "float"}
+      enableResizing={mode === "full" ? false : mode === "dock" ? { left: true } : true}
+      onDragStop={layout.onDragStop}
+      onResizeStop={layout.onResizeStop}
+    >
+      {panel}
     </Rnd>
   );
 }

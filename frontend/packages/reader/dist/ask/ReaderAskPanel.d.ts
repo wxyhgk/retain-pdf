@@ -39,6 +39,8 @@ export type ReaderAskPanelProps = {
     }) => void;
     /** 阅读页右边停着面板（Markdown）：刚停上时贴右边的提问窗变回浮动。 */
     dockTaken?: boolean;
+    /** 阅读页右边停靠栏里放面板的元素：贴右边时提问窗画进去。 */
+    dockHost?: HTMLElement | null;
     /** 以前按书存的一次提问（只读看）；给了就不画主对话。 */
     legacy?: {
         anchor: ReaderAskAnchor;
@@ -47,6 +49,6 @@ export type ReaderAskPanelProps = {
         onDelete?: () => void;
     } | null;
 };
-export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, dockTaken, onEditBlock, canEditBlock, attachTools, attachRequest, contextOffer }: ReaderAskPanelProps): ReactElement;
+export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, dockTaken, dockHost, onEditBlock, canEditBlock, attachTools, attachRequest, contextOffer }: ReaderAskPanelProps): ReactElement;
 export {};
 //# sourceMappingURL=ReaderAskPanel.d.ts.map

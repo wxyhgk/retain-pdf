@@ -6,6 +6,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
+import { Minus, Plus } from "lucide-react";
 import {
   readerViewportWidth,
   READER_ZOOM_DEFAULT,
@@ -161,7 +162,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           disabled={!canZoomOut}
           onClick={() => onZoomChange(stepReaderZoom(userZoom, -1))}
         >
-          −
+          <Minus size={14} strokeWidth={2.2} aria-hidden />
         </button>
         <button
           type="button"
@@ -179,7 +180,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           disabled={!canZoomIn}
           onClick={() => onZoomChange(stepReaderZoom(userZoom, 1))}
         >
-          +
+          <Plus size={14} strokeWidth={2.2} aria-hidden />
         </button>
       </div>
       </div>

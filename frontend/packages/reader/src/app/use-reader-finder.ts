@@ -1,8 +1,8 @@
 // 左栏（目录 / 搜索 / 书签 / 待处理）：开着哪一页签、钉没钉住、搜索词（防抖）、Cmd/Ctrl+F、点了跳（从 ReaderAppReactPdf 拆出，2026-11-27）。
 //
 // 两种摆法（2026-11-27）：默认浮在书页上（11-20 用户要的「目录最好是悬浮的」：点卡外、Esc、在目录里点一条都收起）；
-// 栏头「钉住」以后是左边一整栏，书页区往右让（--reader-stage-left），点书、Esc 都不收。钉没钉、钉住时开着哪一页签记在本机，
-// 下次打开阅读页照旧。窄屏（< 900px）钉住也当浮着（让了书就没地方了）。
+// 栏头「钉住」以后是中间工作区横排里实占的一栏，点书、Esc 都不收。钉没钉、哪一页签记在本机；
+// 打开阅读页时左栏总是收着（2026-11-28），展开时照记住的摆法。窄屏（< 900px）钉住也当浮着（让了书就没地方了）。
 import { useCallback, useEffect, useState } from "react";
 
 import type { ReaderFinderTab } from "../components/react-pdf/ReaderFinder.js";
@@ -51,8 +51,9 @@ function useWideEnough(): boolean {
 
 export function useReaderFinder(c: ReaderReactController) {
   const [memory] = useState(loadSidebarMemory);
-  // 开着哪一页签，null 收着。钉住、上次开着时一进来就开着。
-  const [finder, setFinderState] = useState<ReaderFinderTab | null>(memory.pinned && memory.open ? memory.tab : null);
+  // 开着哪一页签，null 收着。一进来总是收着（2026-11-28 用户：默认不占左边 300px，给书页留足宽度；点开关或 ⌘F 才展开）；
+  // 钉没钉、上次看的哪一页签照旧记着，展开时用。
+  const [finder, setFinderState] = useState<ReaderFinderTab | null>(null);
   const [lastTab, setLastTab] = useState<ReaderFinderTab>(memory.tab);
   const [pinnedChoice, setPinnedChoice] = useState(memory.pinned);
   const wide = useWideEnough();

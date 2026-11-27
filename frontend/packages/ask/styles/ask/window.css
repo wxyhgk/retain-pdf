@@ -25,39 +25,48 @@
   color: var(--ink);
   font-size: var(--ui-text-md, 13px);
   box-shadow: 0 18px 48px color-mix(in srgb, var(--shadow-color, var(--ink)) 24%, transparent);
-  /* 思考强度染窗口边（下面 data-effort 那几条）时渐变过去。 */
-  transition: border-color 240ms ease, box-shadow 240ms ease;
 }
 
-/* 贴右边：右上右下不要圆角，只留左边框；放大：照旧圆角。 */
+/* 贴右边：右上右下不要圆角，只留左边一根线，没有投影（2026-11-28：以前往左一片 32px 的投影，看着像独立浮窗）。放大照旧圆角。 */
 .ask-panel[data-mode="dock"] {
   border-width: 0 0 0 1px;
   border-radius: 0;
-  box-shadow: -8px 0 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 12%, transparent);
+  box-shadow: none;
 }
 
-/* 思考强度（AskWindow 在窗口上写 --ask-effort-color、data-effort）：染窗口边，越强越暖；
- * 再定几个颜色变量，照搬的输入框外壳、发送键在自己的 className 里读（thread.aui.tsx，没定时照原样）。
- * 以前从这里用 .ask-panel[data-effort] [data-slot=aui_composer-shell] 伸进照搬组件里改。 */
+/* 画进宿主的停靠栏（AskWindow 的 dockHost，阅读页的 .reader-dock）：铺满那一格，左边那根线是宿主停靠栏自己的，这里不再画。 */
+.ask-window.ask-window--hosted {
+  position: absolute;
+  inset: 0;
+  z-index: var(--ask-z-dock, 40);
+}
+
+.ask-panel[data-hosted="true"] {
+  border-width: 0;
+}
+
+/* 左边缘那条拖宽窄的线（dock-host.tsx）：平时看不见，悬停时出一根细线。 */
+.ask-dock-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  z-index: 2;
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.ask-dock-resizer:hover,
+.ask-dock-resizer:active {
+  background: color-mix(in srgb, var(--ink) 14%, transparent);
+}
+
+/* 思考强度（AskWindow 在窗口上写 --ask-effort-color、data-effort）：开着时只给输入框一圈细边（照搬的输入框外壳在自己的
+ * className 里读 --ask-composer-edge，thread.aui.tsx），按钮上一个小点（composer.css）。
+ * 2026-11-28 收口回黑白纸墨：以前还染窗口边、四面发光、输入框底色、大片光晕和发送键，看着像独立浮窗，都去掉了。 */
 .ask-panel[data-effort="on"] {
-  --ask-composer-edge: color-mix(in srgb, var(--ask-effort-color) 60%, var(--line));
-  --ask-composer-bg: color-mix(in srgb, var(--ask-effort-color) 4%, var(--paper));
-  --ask-composer-glow: 0 0 0 3px color-mix(in srgb, var(--ask-effort-color) 14%, transparent), 0 8px 28px -10px color-mix(in srgb, var(--ask-effort-color) 55%, transparent);
-  --ask-send-bg: var(--ask-effort-color);
-  --ask-send-fg: var(--paper);
-  --ask-send-hover: var(--ask-effort-color);
-  border-color: color-mix(in srgb, var(--ask-effort-color) 35%, var(--line));
-  box-shadow:
-    0 18px 48px color-mix(in srgb, var(--shadow-color, var(--ink)) 24%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--ask-effort-color) 18%, transparent),
-    0 0 36px -6px color-mix(in srgb, var(--ask-effort-color) 35%, transparent);
-}
-
-/* 贴右边是页面的一栏：外框不发光，照旧只有左边一根线和往左的淡阴影；思考强度的颜色只留在输入框和发送按钮上
- * （以前这条写在 dock 那条后面、同样的权重，把 dock 的阴影换成四面红光，贴边的面板看着像悬在半空的弹窗）。 */
-.ask-panel[data-mode="dock"][data-effort="on"] {
-  border-color: var(--line);
-  box-shadow: -8px 0 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 12%, transparent);
+  --ask-composer-edge: color-mix(in srgb, var(--ask-effort-color) 28%, var(--line));
 }
 
 .ask-head {
@@ -156,31 +165,13 @@
   .ask-spin { animation: none; }
 }
 
-/* 聊天背景的水印：当前模型厂商的标志，很淡、在字后面、点不到。 */
-.ask-watermark {
-  position: absolute;
-  z-index: 0;
-  inset: 0 0 96px;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-  opacity: 0.07;
-  filter: grayscale(0.2);
-  user-select: none;
-}
-
-.ask-watermark .ask-brand,
-.ask-watermark svg {
-  width: min(48%, 220px);
-  height: auto;
-  aspect-ratio: 1;
-}
-
 /* agent、模型的品牌图标（../src/window/BrandIcon.tsx）：彩色的是 <img>，单色的用 mask 跟着字的颜色走。 */
 .ask-brand {
   display: inline-block;
   flex: none;
   vertical-align: middle;
+  /* 黑白纸墨：彩色的厂商标志也画成灰的（2026-11-28 收口）。 */
+  filter: grayscale(1);
 }
 
 .ask-brand-mono {
@@ -203,6 +194,3 @@
   font-weight: 600;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ask-panel { transition: none; }
-}

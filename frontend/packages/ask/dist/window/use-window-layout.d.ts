@@ -22,5 +22,6 @@ export declare function useWindowLayout(onLayout?: (layout: {
     changeMode: (next: AskWindowMode) => void;
     onDragStop: (_event: unknown, data: DraggableData) => void;
     onResizeStop: (_event: unknown, _direction: unknown, element: HTMLElement, _delta: ResizableDelta, position: Position) => void;
+    resizeDock: (width: number, done: boolean) => void;
 };
 export {};

@@ -42,6 +42,7 @@ export function useReaderAsk({
   currentPage,
   visibleMode,
   activePanel = null,
+  panelHost = null,
 }: {
   port: ReaderAskPort | null;
   documentId: string;
@@ -64,6 +65,8 @@ export function useReaderAsk({
   visibleMode: "source" | "compare" | "translated";
   /** 阅读页右边停着的面板（Markdown）；停上了提问窗就不贴右边（右边只停一个）。 */
   activePanel?: string | null;
+  /** 阅读页右边停靠栏里放面板的元素：提问窗贴右边时画进去。 */
+  panelHost?: HTMLElement | null;
 }) {
   const book = useMemo(() => ({ documentId, jobId, versionId }), [documentId, jobId, versionId]);
   const pointOf = useCallback((itemId: string | null, pane: "source" | "translated", page: number) => {
@@ -279,11 +282,11 @@ export function useReaderAsk({
   } : null), [editBlock, jumpToBlock]);
   const canEditBlock = useCallback((itemId: string) => isEditableReaderBlock(regions, itemId), [regions]);
 
-  // 提问窗贴右边：书页让出那么宽（不盖住正在读的字）。窄屏（让了以后书页不到 480px）不让，照旧盖在上面。
+  // 提问窗贴右边：画进阅读页右边停靠栏（dockHost），停靠栏那么宽、书页自然让开（2026-11-28 起是页面的一栏，不是浮窗）。
+  // 窄屏停靠栏铺满中间工作区（assistant-dock.css），所以不再按宽度判断让不让。
   const [docked, setDocked] = useState(0);
   const onLayout = useCallback(({ mode, width }: { mode: string; width: number }) => {
-    const viewport = globalThis.innerWidth || 0;
-    setDocked(mode === "dock" && viewport - width >= 480 ? Math.round(width) : 0);
+    setDocked(mode === "dock" ? Math.round(width) : 0);
   }, []);
   const ready = !ask.persistent || Boolean(ask.view.conversation) || Boolean(ask.error);
   const panel: ReactElement | null = port && ((ask.visible && ready) || legacy) ? (
@@ -299,6 +302,7 @@ export function useReaderAsk({
         pageCount={pageCount}
         onLayout={onLayout}
         dockTaken={activePanel !== null}
+        dockHost={panelHost}
         onEditBlock={onEditBlock}
         canEditBlock={canEditBlock}
         attachTools={attachTools}

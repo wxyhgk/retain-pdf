@@ -31,9 +31,63 @@
   justify-content: flex-end;
 }
 
-/* 底栏一行 36px：按钮收到 26px 高。 */
-.reader-bottombar .reader-react-hud-btn {
+/* 底栏按钮一套（2026-11-28 收口）：高 26、图标 14px、轻字 12px，图标和字在同一条基线上；左中右三段一个密度。 */
+.reader-bottombar .reader-react-hud-btn,
+.reader-bottombar .reader-react-hud-page-btn {
+  display: inline-flex;
+  white-space: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   height: 26px;
+  min-width: 26px;
+  padding: 0 6px;
+  font-size: var(--ui-text-sm, 12px);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.reader-bottombar svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+/* 按钮上的轻字（书签、收藏）：灰一点，悬停跟着变深。 */
+.reader-bottombar-label {
+  color: var(--muted);
+}
+
+.reader-bottombar .reader-react-hud-btn:hover .reader-bottombar-label,
+.reader-bottombar .reader-react-hud-btn[aria-pressed="true"] .reader-bottombar-label {
+  color: var(--ink);
+}
+
+/* 「收藏」入口点开的小卡（功能还在做，只说一句）。 */
+.reader-favorites {
+  position: relative;
+  display: inline-flex;
+}
+
+.reader-favorites-card {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  display: grid;
+  gap: 4px;
+  width: 240px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
+  border-radius: var(--reader-float-radius, var(--ui-radius-md, 8px));
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--ui-text-xs, 11px);
+  line-height: 1.6;
+}
+
+.reader-favorites-card p {
+  margin: 0;
+  color: var(--muted);
 }
 
 .reader-react-hud-modes {
@@ -252,15 +306,17 @@
 /* —— 书签（ReaderBookmarkControl）：页码旁一个「给这一页加书签」。书签列表 2026-11-27 挪进左栏（finder.css）。 —— */
 .reader-bookmarks {
   position: relative;
-}
-
-.reader-bookmark-toggle {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 2px;
 }
 
-.reader-bookmark-toggle.is-marked {
+/* 底栏「书签」（类名和左栏书签树的展开箭头 .reader-bookmark-toggle 分开，那个只有 22px 宽）。 */
+.reader-bookmark-mark {
+  white-space: nowrap;
+}
+
+.reader-bookmark-mark.is-marked {
   color: var(--ink);
 }
 

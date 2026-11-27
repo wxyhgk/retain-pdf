@@ -12,6 +12,7 @@ import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-run
  * 宿主给什么、能改什么：见包的 README.md。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Rnd } from "react-rnd";
 import { Maximize2 } from "lucide-react";
 import { Button } from "@retainpdf/ui";
@@ -24,11 +25,11 @@ import { AskHeader } from "./AskHeader.js";
 import { AskAgentsContext } from "./agent-row.js";
 import { AskPageContext } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
-import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand } from "./AskModelPicker.js";
-import { BrandIcon, brandFor } from "./BrandIcon.js";
+import { AskAgentSettings, AskConfigContext, currentEffort } from "./AskModelPicker.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
 import { loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
 import { useWindowLayout } from "./use-window-layout.js";
+import { HostedDock } from "./dock-host.js";
 import { useWideBlocks } from "./wide-blocks.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
@@ -57,7 +58,7 @@ const SubagentDataUI = makeAssistantDataUI({ name: "subagent", render: SubagentB
 // 测试和别处照旧从这里取。
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
 export default function AskWindow(props) {
-    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, headerMenu, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken, dockInsets } = props;
+    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, headerMenu, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken, dockInsets, dockHost } = props;
     useKatexStylesheet(katexStylesheetUrl);
     const [agents, setAgents] = useState(null);
     const [agentId, setAgentId] = useState("");
@@ -189,10 +190,15 @@ export default function AskWindow(props) {
     }, []);
     // 「谁来答」里的 agent 那一排（agent-row.tsx，输入框那颗按钮的弹层里）。
     const agentsUi = useMemo(() => (agents?.length ? { agents, agentId, onAgent: chooseAgent } : null), [agents, agentId, chooseAgent]);
-    // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
+    // 思考强度（ask.css 读 --ask-effort-color、data-effort）：开着时输入框一圈细边、按钮上一个小点。
+    // 2026-11-28 收口回黑白纸墨：聊天区正中的彩色模型水印、输入框大片发光、窗口边发光都去掉了。
     const effort = currentEffort(config);
-    const shownAgent = agents?.find((agent) => agent.id === agentId);
-    const brand = currentModelBrand(config) || (shownAgent ? brandFor(shownAgent.id, shownAgent.name) : "");
     const tint = (effort ? { "--ask-effort-color": effort.color } : {});
-    return (_jsx(Rnd, { className: `ask-window ask-window--${mode}`, position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-head-menu-body", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: layout.onDragStop, onResizeStop: layout.onResizeStop, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, menu: headerMenu, mode: mode, onMode: layout.changeMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, attachError ? _jsx("p", { className: "ask-error", children: attachError }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AskAgentsContext.Provider, { value: agentsUi, children: _jsx(AttachToolsContext.Provider, { value: attachUi, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [brand ? (_jsx("div", { className: "ask-watermark", "aria-hidden": true, children: _jsx(BrandIcon, { brand: brand, size: 200 }) })) : null, wideBlocks && mode !== "full" ? (_jsxs(Button, { className: "ask-wide-open", title: "\u6709\u516C\u5F0F\u6216\u8868\u683C\u592A\u5BBD\uFF0C\u8981\u6A2A\u7740\u6EDA\uFF1A\u653E\u5927\u7A97\u53E3\u770B", onClick: () => layout.changeMode("full"), children: [_jsx(Maximize2, { size: 12, "aria-hidden": true }), " \u653E\u5927\u770B"] })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }) }) }), footer] })] }) }));
+    const hosted = mode === "dock" && Boolean(dockHost);
+    const panel = (_jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-hosted": hosted ? "true" : undefined, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, menu: headerMenu, mode: mode, onMode: layout.changeMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, attachError ? _jsx("p", { className: "ask-error", children: attachError }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AskAgentsContext.Provider, { value: agentsUi, children: _jsx(AttachToolsContext.Provider, { value: attachUi, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [wideBlocks && mode !== "full" ? (_jsxs(Button, { className: "ask-wide-open", title: "\u6709\u516C\u5F0F\u6216\u8868\u683C\u592A\u5BBD\uFF0C\u8981\u6A2A\u7740\u6EDA\uFF1A\u653E\u5927\u7A97\u53E3\u770B", onClick: () => layout.changeMode("full"), children: [_jsx(Maximize2, { size: 12, "aria-hidden": true }), " \u653E\u5927\u770B"] })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }) }) }), footer] })] }));
+    // 贴右边、宿主给了停靠栏：画进去，是页面的一栏。
+    if (hosted && dockHost) {
+        return createPortal(_jsx(HostedDock, { width: rect.width, onResize: layout.resizeDock, children: panel }), dockHost);
+    }
+    return (_jsx(Rnd, { className: `ask-window ask-window--${mode}`, position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-head-menu-body", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: layout.onDragStop, onResizeStop: layout.onResizeStop, children: panel }));
 }

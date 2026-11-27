@@ -155,8 +155,9 @@
   outline: none;
 }
 
-/* 右边停靠栏（ReaderAppReactPdf 的 .reader-dock，2026-11-28 起三行壳层）：中间工作区横排里实占一栏，宽度是分栏线拖出来的
- * --reader-ai-split-width；上面是 tab 条和关闭，下面 .reader-dock-body 放面板（扩展从 api.panelHost 拿、用 createPortal 画进来）。
+/* 右边停靠栏（ReaderAppReactPdf 的 .reader-dock，2026-11-28 起三行壳层）：中间工作区横排里实占一栏。
+ * 放 Markdown 面板时宽度是分栏线拖出来的 --reader-ai-split-width，上面是 tab 条和关闭；放贴右边的提问窗时宽度写在元素上
+ * （提问窗自己记、左边缘拖）。下面 .reader-dock-body 放面板（扩展从 api.panelHost 拿、用 createPortal 画进来）。
  * 面板关了这一栏 hidden（不卸掉：Markdown 面板留着滚动位置）。以前 tab 条、面板各自 fixed 盖在书页右半边，书页区靠 --reader-stage-right 让。 */
 .reader-dock {
   display: flex;
@@ -169,6 +170,11 @@
   background: var(--paper);
 }
 
+/* 放贴右边的提问窗：宽度是提问窗自己记的（ReaderAppReactPdf 写 --reader-dock-width）。 */
+.reader-dock[data-dock="extension"] {
+  width: var(--reader-dock-width, var(--reader-ai-split-width));
+}
+
 .reader-dock[hidden] {
   display: none;
 }
@@ -179,14 +185,10 @@
   min-height: 0;
 }
 
-/* 给贴右边的提问窗留的空位（宽度写在元素上）：书页自然让开，提问窗本身是它自己摆的浮层，正好落在这一栏上。 */
-.reader-dock-spacer {
-  flex: none;
-}
-
 /* 窄屏（< 900px）面板铺满中间工作区：盖在书页上（书页那么窄也没法读）。 */
 @media (max-width: 899px) {
-  .reader-dock {
+  .reader-dock,
+  .reader-dock[data-dock="extension"] {
     position: absolute;
     inset: 0;
     z-index: 30;

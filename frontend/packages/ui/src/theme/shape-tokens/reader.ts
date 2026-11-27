@@ -12,11 +12,9 @@ export const READER_SHAPE_TOKENS: ShapeToken[] = [
   // —— chrome ——
   { name: "--reader-chrome-edge-width", kind: "length", description: "顶栏、托盘、下载按钮和菜单、目录搜索分组、实时译文胶囊的描边粗细", fallback: "var(--shape-edge-width, 1px)" },
   { name: "--reader-chrome-edge-color", kind: "color", description: "同上这些的描边颜色", fallback: "var(--shape-edge-color, 墨色 7–9% 透明)" },
-  { name: "--reader-chrome-shadow", kind: "shadow", description: "顶栏右上角的下载、关闭、面板按钮和实时译文胶囊的阴影（含悬停时）", fallback: "var(--shape-shadow-sm, 0 10px 28px 的淡阴影)" },
+  { name: "--reader-chrome-shadow", kind: "shadow", description: "实时译文那几块浮条的阴影（顶栏按钮 2026-11-28 起是平的，不再用它）", fallback: "var(--shape-shadow-sm, 0 10px 28px 的淡阴影)" },
   { name: "--reader-chrome-bar-shadow", kind: "shadow", description: "顶栏整条的底部阴影", fallback: "0 1px 0 纸色 72% 透明" },
   { name: "--reader-chrome-radius", kind: "length", description: "托盘、下载/关闭按钮、画笔条、待提交药丸等胶囊的圆角", fallback: "var(--shape-radius-control, 999px)" },
-  { name: "--reader-chrome-press-transform", kind: "transform", description: "顶栏按钮和实时译文胶囊按下时的位移", fallback: "var(--shape-press-transform, scale(0.97))" },
-  { name: "--reader-chrome-press-shadow", kind: "shadow", description: "顶栏按钮按下时的阴影", fallback: "var(--shape-press-shadow, 和不按时一样)" },
   // —— tab ——
   { name: "--reader-tab-edge-width", kind: "length", description: "顶栏「原文 / 对照 / 译文」页签的描边粗细；分组外框也用它", fallback: "页签 0；分组外框 var(--shape-edge-width, 1px)" },
   { name: "--reader-tab-edge-color", kind: "color", description: "页签和分组外框的描边颜色", fallback: "页签透明；分组外框 var(--shape-edge-color, 墨色 7% 透明)" },

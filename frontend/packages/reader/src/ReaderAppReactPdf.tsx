@@ -1,7 +1,7 @@
 // 从 frontend/web 迁入的 React-pdf 视图真值，现为 @retainpdf/reader 主入口。
 // 2026-11-27 拆开：这里只把各块接起来（谁和谁共享什么状态、context、渲染顺序）；各块的状态和 effect 在 ./app/ 下，
 // 可见台面的纯函数在 app/pane-composition.ts（这里照旧导出，老的引用不用改）。
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import { useReaderReactController } from "./hooks/use-reader-react-controller.js";
 import { useReaderKeyboard } from "./hooks/use-reader-keyboard.js";
 import {
@@ -296,14 +296,19 @@ export function ReaderAppReactPdf() {
               <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
               <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
             </div>
-            {/* 右边停靠栏：面板开着时实占一栏（宽度拖分栏线改），扩展把面板画进 .reader-dock-body（api.panelHost）。
-                面板关了这一栏只是藏起来不卸掉：Markdown 面板第一次打开后一直挂着，留着滚动位置。 */}
-            <aside className="reader-dock" hidden={!assistantOpen} aria-label="阅读辅助面板">
+            {/* 右边停靠栏：Markdown 面板开着、或提问窗贴右边时实占一栏，扩展把面板画进 .reader-dock-body（api.panelHost）。
+                同一时间只停一个（useRightDockSlot）。Markdown 的宽度拖分栏线改（--reader-ai-split-width），提问窗的宽度它自己记、
+                左边缘拖（reserveRight）。都没开时这一栏只是藏起来不卸掉：Markdown 面板第一次打开后一直挂着，留着滚动位置。 */}
+            <aside
+              className="reader-dock"
+              hidden={!sideDocked}
+              data-dock={assistantOpen ? "panel" : reserveRight ? "extension" : undefined}
+              style={!assistantOpen && reserveRight ? ({ "--reader-dock-width": `${reserveRight}px` } as CSSProperties) : undefined}
+              aria-label="阅读辅助面板"
+            >
               <ReaderAssistantDock active={assistantPanel} />
               <div className="reader-dock-body" ref={setPanelHost} />
             </aside>
-            {/* 扩展的浮层贴右边（提问窗贴右边）：占一栏一样宽的空位，书页自然让开；提问窗本身照旧是它自己摆的浮层。 */}
-            {reserveRight ? <div className="reader-dock-spacer" style={{ width: reserveRight }} aria-hidden="true" /> : null}
           </div>
           {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
           <ReaderZoomHud

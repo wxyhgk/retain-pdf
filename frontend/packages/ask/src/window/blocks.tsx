@@ -243,8 +243,9 @@ export function makeMessageFooter(agentName: () => string, Extra?: ComponentType
     return (
       <>
       <Popover>
-        <PopoverTrigger className="ask-icon ask-usage-trigger" aria-label="这一轮的用量" title={["用量", elapsed?.title].filter(Boolean).join(" · ")}>
-          {model ? <BrandIcon brand={brandFor(model.text, model.title)} size={13} title={model.title} /> : <Activity size={13} aria-hidden />}
+        <PopoverTrigger className="ask-icon ask-usage-trigger" aria-label="这一轮的用量" title={["用量", model?.title, elapsed?.title].filter(Boolean).join(" · ")}>
+          {/* 2026-11-28 收口回黑白：不再用模型厂商的彩色标志，一个灰的图标；哪个模型写在点开的小表里。 */}
+          <Activity size={13} aria-hidden />
         </PopoverTrigger>
         <PopoverContent align="start" side="top" className="ask-usage-panel">
           {items.map((item) => {

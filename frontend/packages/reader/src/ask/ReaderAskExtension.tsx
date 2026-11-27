@@ -39,6 +39,7 @@ function ReaderAskExtension(): ReactElement | null {
     currentPage: api.currentPage,
     visibleMode: api.visibleMode,
     activePanel: api.activePanel,
+    panelHost: api.panelHost,
   });
   const { marks, onMark, menuItems, panel, overlay, cropping, toggleCrop, enabled, toggle, showing, reserveRight } = ask;
   const contribution = useMemo<ReaderContribution>(() => (enabled ? {

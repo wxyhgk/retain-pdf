@@ -227,7 +227,7 @@
       "borderRadius": 3
     },
     "../packages/reader/styles/chrome.css": {
-      "fontSize": 7,
+      "fontSize": 4,
       "borderRadius": 2
     },
     "../packages/reader/styles/core/ambient-surface-home.css": {

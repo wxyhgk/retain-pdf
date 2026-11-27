@@ -74,7 +74,7 @@ export function ReaderShortcutsHelp() {
         title="快捷键（H 或 ?）"
         onClick={() => setOpen((v) => !v)}
       >
-        <Keyboard className="reader-react-shortcuts-icon" size={16} strokeWidth={2.25} aria-hidden />
+        <Keyboard className="reader-react-shortcuts-icon" size={14} strokeWidth={2.2} aria-hidden />
       </button>
       {open ? (
         <div

@@ -158,7 +158,7 @@ export function makeMessageFooter(agentName, Extra) {
             return extra;
         const model = items.find((item) => item.key === "model");
         const elapsed = items.find((item) => item.key === "elapsed");
-        return (_jsxs(_Fragment, { children: [_jsxs(Popover, { children: [_jsx(PopoverTrigger, { className: "ask-icon ask-usage-trigger", "aria-label": "\u8FD9\u4E00\u8F6E\u7684\u7528\u91CF", title: ["用量", elapsed?.title].filter(Boolean).join(" · "), children: model ? _jsx(BrandIcon, { brand: brandFor(model.text, model.title), size: 13, title: model.title }) : _jsx(Activity, { size: 13, "aria-hidden": true }) }), _jsx(PopoverContent, { align: "start", side: "top", className: "ask-usage-panel", children: items.map((item) => {
+        return (_jsxs(_Fragment, { children: [_jsxs(Popover, { children: [_jsx(PopoverTrigger, { className: "ask-icon ask-usage-trigger", "aria-label": "\u8FD9\u4E00\u8F6E\u7684\u7528\u91CF", title: ["用量", model?.title, elapsed?.title].filter(Boolean).join(" · "), children: _jsx(Activity, { size: 13, "aria-hidden": true }) }), _jsx(PopoverContent, { align: "start", side: "top", className: "ask-usage-panel", children: items.map((item) => {
                                 const Icon = FOOTER_ICONS[item.key];
                                 return (_jsxs("div", { className: "ask-usage-row", "data-key": item.key, children: [item.key === "model" ? _jsx(BrandIcon, { brand: brandFor(item.text, item.title), size: 13 }) : _jsx(Icon, { size: 13, "aria-hidden": true }), _jsx("span", { children: item.title })] }, item.key));
                             }) })] }), extra] }));

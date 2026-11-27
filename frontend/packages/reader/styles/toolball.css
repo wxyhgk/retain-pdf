@@ -29,17 +29,18 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-width: 30px;
-  min-height: 30px;
-  height: 30px;
-  padding: 0 8px;
+  min-width: 32px;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 9px;
   border: 0;
-  border-radius: var(--reader-hud-key-radius, var(--shape-radius-control, 999px));
+  /* 和顶栏别的按钮同一种圆角（chrome.css 的「顶栏按钮一套」）；底栏里的照底栏按钮（下面）。 */
+  border-radius: var(--reader-chrome-radius, var(--ui-radius-md, 8px));
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
-  color: var(--ink);
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
   font: inherit;
   font-size: var(--ui-text-sm, 12px);
   font-weight: 600;
@@ -48,8 +49,11 @@
 
 .reader-bar-tools.is-bottom .reader-bar-tool,
 .reader-bar-tools.is-bottom .reader-bar-tool-caret {
+  min-width: 26px;
   min-height: 26px;
   height: 26px;
+  padding: 0 6px;
+  border-radius: var(--reader-hud-key-radius, var(--ui-radius-md, 8px));
 }
 
 /* ▾ 紧贴在主按钮右边，窄一点。 */

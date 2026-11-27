@@ -335,7 +335,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
   }
 });
 
-test("贴右边是页面的一栏（2026-11-27）：上下让出宿主的栏（默认上 60、下 0）、压在顶栏下面、外框不随思考强度发光、× 不贴边", async () => {
+test("贴右边是页面的一栏（2026-11-27；11-28 画进宿主的停靠栏）：上下让出宿主的栏（默认上 60、下 0）、压在顶栏下面、没有投影和发光、× 不贴边", async () => {
   const { DEFAULT_DOCK_INSETS } = await import("../../../packages/ask/src/window/use-window-layout.ts");
   assert.deepEqual(DEFAULT_DOCK_INSETS, { top: 60, bottom: 0 });
   const layout = readFileSync(new URL("../../../packages/ask/src/window/use-window-layout.ts", import.meta.url), "utf8");
@@ -349,11 +349,21 @@ test("贴右边是页面的一栏（2026-11-27）：上下让出宿主的栏（�
   assert.match(css, /\.ask-window\.ask-window--dock\s*\{[^}]*z-index:\s*var\(--ask-z-dock,/);
   const host = readFileSync(new URL("../../../packages/reader/styles/ask-host.css", import.meta.url), "utf8");
   assert.match(host, /--ask-z-dock:\s*calc\(var\(--z-chrome, 35\) - 1\);/, "贴右边压在阅读页顶栏下面");
-  // 发光那条在 dock 覆盖之前，dock 覆盖写在后面：同样权重后写的赢。
-  const glow = css.indexOf('.ask-panel[data-effort="on"] {');
-  const dockGlow = css.indexOf('.ask-panel[data-mode="dock"][data-effort="on"] {');
-  assert.ok(glow >= 0 && dockGlow > glow, "贴右边的外框覆盖写在发光那条后面");
-  assert.doesNotMatch(css.slice(dockGlow, css.indexOf("}", dockGlow)), /ask-effort-color/, "贴右边的外框不带思考强度的颜色");
+  // 2026-11-28 收口回黑白纸墨：贴右边没有投影；思考强度只给输入框一圈细边，不染窗口边、不发光、不染发送键。
+  const block = (selector) => {
+    const at = css.indexOf(`${selector} {`);
+    assert.ok(at >= 0, `${selector} 没写`);
+    return css.slice(at, css.indexOf("}", at));
+  };
+  assert.match(block('.ask-panel[data-mode="dock"]'), /box-shadow:\s*none/);
+  const effort = block('.ask-panel[data-effort="on"]');
+  assert.match(effort, /--ask-composer-edge:/);
+  assert.doesNotMatch(effort, /box-shadow|border-color|--ask-composer-glow|--ask-composer-bg|--ask-send-/, "思考强度只留输入框细边");
+  assert.doesNotMatch(css, /\.ask-watermark/, "聊天区正中的彩色水印去掉了");
+  assert.doesNotMatch(win, /ask-watermark/);
+  // 宿主给了停靠栏（dockHost）时画进去，铺满那一格、层级照贴右边。
+  assert.match(win, /if \(hosted && dockHost\) \{\s*return createPortal\(<HostedDock/);
+  assert.match(block(".ask-window.ask-window--hosted"), /z-index:\s*var\(--ask-z-dock,/);
   assert.match(css, /\.ask-panel\[data-mode="dock"\] \.ask-head\s*\{[^}]*padding-right:\s*10px/);
 });
 

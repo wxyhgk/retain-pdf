@@ -70,17 +70,17 @@ test("底栏加书签、左栏「书签」页签列出来：两处同步，点�
     React.createElement(ReaderBookmarkList, { scope, regions, currentPage: 8, numPages: 20, onJumpPage: (page) => jumps.push(page) }),
   ));
   const doc = dom.window.document;
-  const toggle = await waitFor(() => doc.querySelector(".reader-bookmark-toggle"), "书签按钮");
+  const toggle = await waitFor(() => doc.querySelector(".reader-bookmark-mark"), "书签按钮");
   assert.equal(toggle.getAttribute("aria-pressed"), "false");
   assert.match(doc.querySelector(".reader-finder-empty").textContent, /还没有书签/);
   assert.equal(doc.querySelector(".reader-bookmark-list-btn"), null, "底栏不再有书签列表按钮");
   clickWithMouseDown(dom, toggle);
-  await waitFor(() => doc.querySelector('.reader-bookmark-toggle[aria-pressed="true"]'), "加上了");
+  await waitFor(() => doc.querySelector('.reader-bookmark-mark[aria-pressed="true"]'), "加上了");
   const jump = await waitFor(() => doc.querySelector(".reader-bookmark-jump"), "左栏列表跟着有了");
   assert.match(jump.textContent, /引言.*8/);
   clickWithMouseDown(dom, jump);
   assert.deepEqual(jumps, [8]);
   clickWithMouseDown(dom, doc.querySelector(".reader-bookmark-remove"));
-  await waitFor(() => doc.querySelector('.reader-bookmark-toggle[aria-pressed="false"]'), "左栏删了，底栏跟着变回没书签");
+  await waitFor(() => doc.querySelector('.reader-bookmark-mark[aria-pressed="false"]'), "左栏删了，底栏跟着变回没书签");
   root.unmount();
 });

@@ -5,7 +5,7 @@ import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
 import type { RegionPdfDocument } from "../pdf/RegionCanvas.js";
 import { type ReaderMetadata, type ReaderRegion } from "../shared/data/reader-regions.js";
 import type { AskMark } from "./ReaderAskMarks.js";
-export declare function useReaderAsk({ port, documentId, jobId, versionId, regions, metadata, bookmarks, hoveredItemId, resetKey, goToPage, pageCount, editBlock, jumpToBlock, pdfDocuments, currentPage, visibleMode, activePanel, }: {
+export declare function useReaderAsk({ port, documentId, jobId, versionId, regions, metadata, bookmarks, hoveredItemId, resetKey, goToPage, pageCount, editBlock, jumpToBlock, pdfDocuments, currentPage, visibleMode, activePanel, panelHost, }: {
     port: ReaderAskPort | null;
     documentId: string;
     jobId: string;
@@ -30,6 +30,8 @@ export declare function useReaderAsk({ port, documentId, jobId, versionId, regio
     visibleMode: "source" | "compare" | "translated";
     /** 阅读页右边停着的面板（Markdown）；停上了提问窗就不贴右边（右边只停一个）。 */
     activePanel?: string | null;
+    /** 阅读页右边停靠栏里放面板的元素：提问窗贴右边时画进去。 */
+    panelHost?: HTMLElement | null;
 }): {
     marks: AskMark[];
     onMark: (mark: AskMark) => Promise<void>;

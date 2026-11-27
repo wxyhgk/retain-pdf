@@ -72,6 +72,11 @@ export function useWindowLayout(onLayout?: (layout: { mode: AskWindowMode; width
   useEffect(() => {
     listener.current?.({ mode, width: rect.width });
   }, [mode, rect.width]);
+  // 宿主给了停靠栏（AskWindow 的 dockHost）时，左边那条线拖宽窄：拖的时候跟着变，松手记住。
+  const resizeDock = useCallback((width: number, done: boolean) => {
+    setDockWidth(width);
+    if (done) saveWindowMemory({ dockWidth: width });
+  }, []);
   const onDragStop = useCallback((_event: unknown, data: DraggableData) => setFloat((current) => {
     const next = { ...current, x: data.x, y: data.y };
     saveWindowMemory({ float: next });
@@ -87,5 +92,5 @@ export function useWindowLayout(onLayout?: (layout: { mode: AskWindowMode; width
       saveWindowMemory({ float: next });
     }
   }, [mode]);
-  return { mode, rect, changeMode, onDragStop, onResizeStop };
+  return { mode, rect, changeMode, onDragStop, onResizeStop, resizeDock };
 }

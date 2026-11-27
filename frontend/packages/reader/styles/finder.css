@@ -7,25 +7,30 @@
   gap: 2px;
 }
 
+/* 顶栏左段的左栏开关：和顶栏别的按钮一套（chrome.css 的「顶栏按钮一套」：高 32、同一种圆角、透明底）。 */
 .reader-finder-toggle {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 34px;
-  padding: 0 11px 0 9px;
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  border-radius: var(--ui-radius-pill, 999px);
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  color: color-mix(in srgb, var(--ink) 70%, var(--muted));
+  height: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--reader-chrome-radius, var(--ui-radius-md, 8px));
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
   font: inherit;
   font-size: var(--ui-text-md, 13px);
   font-weight: 600;
   cursor: pointer;
 }
 
-.reader-finder-toggle:hover,
+.reader-finder-toggle:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
 .reader-finder-toggle[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
   color: var(--ink);
 }
 
@@ -214,18 +219,6 @@
   font-size: var(--ui-text-md, 13px);
 }
 
-/* 顶栏左段里的左栏开关：和顶栏别的按钮一个样子，没有边框、阴影，悬停 / 开着是浅墨底。 */
-.reader-finder-toggles .reader-finder-toggle {
-  height: 32px;
-  border-color: transparent;
-  background: transparent;
-}
-
-.reader-finder-toggles .reader-finder-toggle:hover,
-.reader-finder-toggles .reader-finder-toggle[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--ink) 7%, transparent);
-}
-
 /* 钉在左边（2026-11-27）：中间工作区横排里最左边实占的一栏，书页区自然变窄。
  * 窄屏钉不住（use-reader-finder 的 SIDEBAR_PIN_MIN_VIEWPORT），所以不用另写 @media。 */
 .reader-react-root {
@@ -262,9 +255,10 @@
   height: 15px;
   margin-left: 4px;
   padding: 0 4px;
+  /* 黑白灰：墨色小圆底、纸色字（2026-11-28 收口，以前是黄色 --warn）。 */
   border-radius: var(--ui-radius-pill, 999px);
-  background: color-mix(in srgb, var(--warn) 18%, transparent);
-  color: color-mix(in srgb, var(--warn) 80%, var(--ink));
+  background: color-mix(in srgb, var(--ink) 72%, transparent);
+  color: var(--paper);
   font-size: var(--ui-text-2xs, 10px);
   font-weight: 700;
   line-height: 1;
@@ -334,7 +328,7 @@
 }
 
 .reader-finder-toggles .reader-finder-toggle {
-  width: 34px;
+  width: 32px;
   padding: 0;
   justify-content: center;
 }

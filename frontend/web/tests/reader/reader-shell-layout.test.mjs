@@ -1,5 +1,5 @@
 /** 阅读页的三行壳层（2026-11-28）：顶栏、中间工作区、底栏是根节点竖排的三行，两条栏全宽、实占位，书页只在中间那一行里；
- * 中间工作区横排：左栏（钉住时）、书页区、右边停靠栏或给贴右边的提问窗留的空位，谁多宽由 flex 排。
+ * 中间工作区横排：左栏（钉住时）、书页区、右边停靠栏（Markdown 或贴右边的提问窗，11-28 起提问窗也画进这一栏），谁多宽由 flex 排。
  *
  * 以前是全屏堆叠：顶栏 fixed 盖在书页上，底栏、小球浮在书页底部，书页区用 --reader-stage-left / --reader-stage-right 算让谁，
  * 两条提示按视口宽减面板宽去居中（那时这份测试叫 reader-dock-centering，专门算这些偏移对不对）。
@@ -75,18 +75,19 @@ test("不再拿偏移算谁让谁：样式里没有 --reader-stage-*、--reader-
   }
 });
 
-test("页面结构：顶栏 → 中间工作区（左栏、书页区、右边停靠栏 / 空位）→ 底栏；书页区里只有书页和它的加载、出错", () => {
+test("页面结构：顶栏 → 中间工作区（左栏、书页区、右边停靠栏）→ 底栏；书页区里只有书页和它的加载、出错", () => {
   const app = read("src/ReaderAppReactPdf.tsx");
-  const order = ["<ReaderWorkspaceTabs", '<div className="reader-workspace">', "<ReaderFinderArea", '<div className="reader-stage">', "<ReaderCompareGrid", "<ReaderReactBoot", '<aside className="reader-dock"', 'className="reader-dock-spacer"', "<ReaderZoomHud"];
+  const order = ["<ReaderWorkspaceTabs", '<div className="reader-workspace">', "<ReaderFinderArea", '<div className="reader-stage">', "<ReaderCompareGrid", "<ReaderReactBoot", "<aside", 'className="reader-dock"', 'className="reader-dock-body"', "<ReaderZoomHud"];
   let last = -1;
   for (const part of order) {
     const at = app.indexOf(part);
     assert.ok(at > last, `${part} 不在该在的位置`);
     last = at;
   }
-  const stage = app.slice(app.indexOf('<div className="reader-stage">'), app.indexOf('<aside className="reader-dock"'));
+  const stage = app.slice(app.indexOf('<div className="reader-stage">'), app.indexOf('className="reader-dock"'));
   assert.doesNotMatch(stage, /<ReaderZoomHud|<ReaderBarTools/, "书页区里又放了底栏或工具");
-  assert.match(app, /<div className="reader-dock-spacer" style=\{\{ width: reserveRight \}\}/, "给贴右边的提问窗留的空位要和它一样宽");
+  // 2026-11-28：提问窗贴右边也画进这一栏（和 Markdown 共用），停靠栏照它的宽度；不再另留空位。
+  assert.match(app, /style=\{!assistantOpen && reserveRight \? \(\{ "--reader-dock-width": `\$\{reserveRight\}px` \} as CSSProperties\) : undefined\}/, "提问窗贴右边时停靠栏和它一样宽");
   assert.match(app, /<div className="reader-dock-body" ref=\{setPanelHost\} \/>/, "面板画进停靠栏（api.panelHost）");
   assert.equal(declaration(["assistant-dock.css"], ".reader-dock", "width"), "var(--reader-ai-split-width)");
 });
@@ -98,4 +99,31 @@ test("书页区里的两条提示：按书页区居中（left: 50% + translateX(
     assert.match(declaration(["react-pdf.css"], selector, "transform"), /translateX\(-50%\)/);
     assert.match(declaration(["react-pdf.css"], selector, "max-width"), /calc\(100% - 32px\)/);
   }
+});
+
+test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待处理角标不用黄色；顶栏按钮一套平的 32px；底栏书签、收藏带轻字", () => {
+  // 左栏：打开阅读页总是收着（上次钉住、开着也一样），点开关或 ⌘F 才展开。
+  assert.match(read("src/app/use-reader-finder.ts"), /useState<ReaderFinderTab \| null>\(null\)/);
+  for (const selector of [".reader-finder-toggle-badge", ".reader-finder-tab-count"]) {
+    assert.doesNotMatch(`${declaration(["finder.css"], selector, "background")} ${declaration(["finder.css"], selector, "color")}`, /--warn/, `${selector} 还是黄色`);
+  }
+  // 顶栏：返回、左栏开关、面板按钮、下载、提问都是 32px 高、同一种圆角、透明底；没有描边、阴影、毛玻璃。
+  for (const selector of [".reader-close-home-btn", ".reader-panel-toggle", ".reader-download-trigger"]) {
+    assert.equal(declaration(["chrome.css"], selector, "height"), "32px", `${selector} 高`);
+    assert.equal(declaration(["chrome.css"], selector, "box-shadow"), null, `${selector} 还有阴影`);
+    assert.equal(declaration(["chrome.css"], selector, "border"), "0");
+  }
+  assert.equal(declaration(["finder.css"], ".reader-finder-toggle", "height"), "32px");
+  assert.equal(declaration(["toolball.css"], ".reader-bar-tool", "height"), "32px");
+  const radius = declaration(["chrome.css"], ".reader-close-home-btn", "border-radius");
+  assert.equal(declaration(["finder.css"], ".reader-finder-toggle", "border-radius"), radius);
+  assert.equal(declaration(["toolball.css"], ".reader-bar-tool", "border-radius"), radius);
+  assert.doesNotMatch(css("chrome.css"), /backdrop-filter|min-height:\s*36px/, "顶栏还留着浮动胶囊的毛玻璃、36px 高");
+  assert.match(read("src/ReaderAppReactPdf.tsx"), /<span className="reader-workspace-title"/, "顶栏左段的书名");
+  // 底栏：书签带轻字、紧挨着「收藏」入口；图标都是 14px，按钮 26px 高。
+  const bookmark = read("src/components/react-pdf/ReaderBookmarkControl.tsx");
+  assert.match(bookmark, /<span className="reader-bottombar-label">\{marked \? "已加书签" : "书签"\}<\/span>\s*<\/button>\s*<ReaderFavoritesEntry \/>/);
+  assert.match(bookmark, /<span className="reader-bottombar-label">收藏<\/span>/);
+  assert.equal(declaration(["hud.css"], ".reader-bottombar svg", "width"), "14px");
+  assert.equal(declaration(["hud.css"], ".reader-bottombar .reader-react-hud-btn", "height"), "26px");
 });

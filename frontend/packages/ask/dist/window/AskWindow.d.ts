@@ -89,7 +89,9 @@ export type AskWindowProps = {
     }) => void;
     /** 宿主右边停了别的东西（阅读页的 Markdown 面板）：变成 true 的那一下，贴右边的窗口变回浮动。 */
     dockTaken?: boolean;
-    /** 贴右边时上下让出宿主的栏（阅读页：顶栏、底栏的高）；不给是上 60、下 0。 */
+    /** 贴右边时上下让出宿主的栏（阅读页：顶栏、底栏的高）；不给是上 60、下 0。宿主给了 dockHost 时用不着。 */
     dockInsets?: AskDockInsets;
+    /** 宿主的停靠栏（阅读页 .reader-dock 里那一格）：贴右边时窗口画进去，是页面的一栏而不是浮窗；不给就照旧浮在右边。 */
+    dockHost?: HTMLElement | null;
 };
 export default function AskWindow(props: AskWindowProps): ReactElement;
