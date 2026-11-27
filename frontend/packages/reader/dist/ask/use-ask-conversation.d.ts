@@ -45,6 +45,8 @@ export declare function useAskConversation({ port, book, onAppended }: {
     backToMain: () => Promise<void>;
     closeSide: () => Promise<void>;
     archiveMain: () => Promise<void>;
+    listArchived: () => Promise<any[] | AskConversationRecord[]>;
+    viewArchived: (record: AskConversationRecord) => Promise<void>;
     forgetMemory: (memoryId: string) => Promise<void>;
 };
 //# sourceMappingURL=use-ask-conversation.d.ts.map

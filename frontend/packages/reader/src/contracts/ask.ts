@@ -83,6 +83,8 @@ export type ReaderAskConversationsPort = {
   reopen: (conversationId: string) => Promise<AskConversationRecord>;
   /** 归档主对话（之后再取主对话会建新的）。 */
   archive: (conversationId: string) => Promise<AskConversationRecord>;
+  /** 这本书归档了的主对话（新的在前；没有书是全局的那些）。不给就没有「以前的对话」。 */
+  archived?: (documentId: string) => Promise<AskConversationRecord[]>;
   /** 主对话太长了：让后端用设置里的模型压缩（没配模型不压）。失败不用管，下次再试。 */
   compact: (conversationId: string) => Promise<void>;
   /** 这本书上问过的地方（书页上的「?」）。 */

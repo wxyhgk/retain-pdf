@@ -105,3 +105,58 @@
   margin-top: 4px;
   color: var(--ink);
 }
+
+/* 提问窗标题栏（ReaderAskPanel，2026-11-27）：归档前的确认、「以前的对话」列表。下拉沿用 .ask-install 的样子。 */
+.reader-ask-confirm {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink);
+  font-size: var(--ui-text-xs, 11px);
+}
+.reader-ask-confirm-yes,
+.reader-ask-confirm-no {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--ui-text-xs, 11px);
+}
+.reader-ask-confirm-yes {
+  border-color: color-mix(in srgb, var(--danger, #b42318) 45%, var(--line));
+  color: var(--danger, #b42318);
+}
+.reader-ask-history > ul {
+  max-height: 280px;
+  overflow: auto;
+}
+.reader-ask-history-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 4px);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+.reader-ask-history-item:hover,
+.reader-ask-history-item[data-current="true"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.reader-ask-history-item > small {
+  flex: none;
+  color: var(--muted);
+}
+.reader-ask-history-note {
+  padding: 4px 6px;
+  color: var(--muted);
+}

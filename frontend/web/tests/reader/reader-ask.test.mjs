@@ -193,3 +193,23 @@ test("同一问带几处（11-27）：第一处进 _meta 和出处，另外几�
   const { MAX_EXTRAS } = await import("../../../packages/reader/src/ask/use-ask-conversation.ts");
   assert.equal(MAX_EXTRAS, 2, "一问最多三处");
 });
+
+test("归档（11-27）：先在标题栏里确认；「以前的对话」列这本书归档了的主对话，点了只读地看，「主对话」回到现在这条", async () => {
+  const { mockAskConversations } = await import("../../src/platform/mock/ask-conversations.ts");
+  const first = await mockAskConversations.main("doc-archive-test");
+  await mockAskConversations.archive(first.conversation_id);
+  const second = await mockAskConversations.main("doc-archive-test");
+  assert.notEqual(second.conversation_id, first.conversation_id, "归档以后再取是新的");
+  const archived = await mockAskConversations.archived("doc-archive-test");
+  assert.deepEqual(archived.map((record) => record.conversation_id), [first.conversation_id]);
+  assert.deepEqual(await mockAskConversations.archived("doc-other"), [], "别的书的不列");
+  const panel = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskPanel.tsx", import.meta.url), "utf8");
+  assert.match(panel, /<span>归档并开新的？<\/span>/, "归档先确认");
+  assert.match(panel, /\{main && ask\.persistent \? <ArchiveButton onArchive=\{ask\.archiveMain\} \/> : null\}/);
+  assert.match(panel, /readOnly=\{archived\}/, "归档了的只能看");
+  const hook = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-conversation.ts", import.meta.url), "utf8");
+  assert.match(hook, /await load\(record, viewRef\.current\.main\);/, "看归档的时，面包屑的「主对话」还是现在这条");
+  assert.match(hook, /if \(!conversations \|\| \(shown\?\.kind === "main" && shown\.status !== "archived"\)\) return;/, "看着归档的时候再问：回到现在的主对话");
+  const host = readFileSync(new URL("../../src/features/reader/domain/ask-conversations-port.ts", import.meta.url), "utf8");
+  assert.match(host, /listAskConversations\(API_PREFIX, \{ kind: "main", status: "archived"/);
+});

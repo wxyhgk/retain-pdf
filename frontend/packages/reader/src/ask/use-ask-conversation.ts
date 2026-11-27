@@ -92,7 +92,9 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
 
   const openMain = useCallback(async () => {
     setVisible(true);
-    if (!conversations || viewRef.current.conversation?.kind === "main") return;
+    const shown = viewRef.current.conversation;
+    // 正看着一个归档了的（「以前的对话」）：回到这本书现在的主对话。
+    if (!conversations || (shown?.kind === "main" && shown.status !== "archived")) return;
     setLoading(true);
     setError("");
     try {
@@ -244,6 +246,19 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
     }
   }, [conversations, backToMain]);
 
+  /** 「以前的对话」：这本书归档了的主对话。 */
+  const listArchived = useCallback(async () => (conversations?.archived ? conversations.archived(bookRef.current.documentId) : []), [conversations]);
+  /** 只读地看一个归档了的主对话；标题栏「主对话」回到现在这条。 */
+  const viewArchived = useCallback(async (record: AskConversationRecord) => {
+    setError("");
+    setPending(null);
+    try {
+      await load(record, viewRef.current.main);
+    } catch (failure) {
+      setError(`打不开这个对话：${failure instanceof Error ? failure.message : String(failure)}`);
+    }
+  }, [load, setPending]);
+
   /** 归档主对话，开一个新的。 */
   const archiveMain = useCallback(async () => {
     const main = viewRef.current.main;
@@ -276,6 +291,8 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
     backToMain,
     closeSide,
     archiveMain,
+    listArchived,
+    viewArchived,
     forgetMemory: conversations ? conversations.forgetMemory : undefined,
   };
 }

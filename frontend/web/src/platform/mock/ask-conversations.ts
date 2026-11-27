@@ -99,6 +99,9 @@ export const mockAskConversations: ReaderAskConversationsPort = {
     conversations.set(conversationId, record);
     return record;
   },
+  archived: async (documentId) => [...conversations.values()]
+    .filter((record) => record.kind === "main" && record.status === "archived" && (record.document_id || "") === (documentId || ""))
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at)),
   archive: async (conversationId) => {
     const record = { ...must(conversationId), status: "archived" as const };
     conversations.set(conversationId, record);
