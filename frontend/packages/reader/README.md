@@ -32,6 +32,14 @@ RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、阅�
 
 新功能先在 `app/` 下写成一个 hook / 组件，主组件里只加调用和渲染位置。
 
+## 扩展和贡献表（`src/extensions/`）
+
+功能也可以写成**扩展**（2026-11-27 起，提问是第一个；方案见 `docs/ops/planning/reader-redesign/20261127-阅读页贡献表.md`）：
+一个组件，挂在阅读页根节点里浮层的位置，画出来的就是它的浮层；用 `useReaderApi()` 读阅读页（书、块、目录、页数、跳页），
+用 `useReaderContribution()` 往贡献表登记右键菜单项（`menuItems`）、每页一层（`pageLayer`）、快捷键说明（`shortcuts`）。
+加一个扩展：写组件，在 `extensions/builtin.ts` 的列表里加一行。一个扩展出错只丢掉它自己。
+
+
 ## 宿主契约
 
 本包不直接依赖 `frontend/web/src/js/*`。宿主通过 `ReaderAdapters` 注入：

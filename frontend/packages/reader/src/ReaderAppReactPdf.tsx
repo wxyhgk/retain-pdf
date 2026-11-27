@@ -36,7 +36,16 @@ import { buildXrefIndex, type XrefTarget } from "./shared/content/reader-xrefs.j
 import { ReaderFinderArea } from "./app/ReaderFinderArea.js";
 import { ReaderOverlays } from "./app/ReaderOverlays.js";
 import { useLiveTranslationControls, useLiveTranslationOverlay } from "./app/use-live-translation-overlay.js";
-import { useReaderAppAsk } from "./app/use-reader-app-ask.js";
+import { BUILTIN_READER_EXTENSIONS } from "./extensions/builtin.js";
+import {
+  collectMenuItems,
+  collectPageLayers,
+  createContributionStore,
+  ReaderExtensionOutlets,
+  ReaderExtensionsProvider,
+  useReaderContributionsOf,
+} from "./extensions/registry.js";
+import type { ReaderApi, ReaderMenuItem } from "./extensions/types.js";
 import { useReaderBlockEditing } from "./app/use-reader-block-editing.js";
 import { useReaderCompareVersion } from "./app/use-reader-compare-version.js";
 import { useReaderFinder } from "./app/use-reader-finder.js";
@@ -141,9 +150,24 @@ export function ReaderAppReactPdf() {
   // 「对比版本」（app/use-reader-compare-version）。
   const { versionCompare, compareVersion } = useReaderCompareVersion(c, visiblePdfMode, changeWorkspace);
   // 阅读页提问（app/use-reader-app-ask → ask/use-reader-ask）。
-  const readerAsk = useReaderAppAsk(c, { bookmarks, regionHover, readingVersionId: versionCompare.readingVersionId });
-  const askMarks = readerAsk.marks;
-  const reopenAsk = readerAsk.onMark;
+  // 贡献表（extensions/）：扩展读的阅读页接口、它们登记的右键菜单项 / 每页一层 / 浮层 / 快捷键说明。
+  const readerApi = useMemo<ReaderApi>(() => ({
+    documentId: session.documentId || "",
+    jobId: session.jobId,
+    versionId: versionCompare.readingVersionId || null,
+    regions: session.regions,
+    metadata: session.readerMetadata,
+    bookmarks,
+    pageCount: panes.hudNumPages || 0,
+    resetKey: c.viewStateKey,
+    hoveredItemId: () => regionHover.get().itemId,
+    goToPage: c.goToPage,
+  }), [session.documentId, session.jobId, versionCompare.readingVersionId, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages, c.viewStateKey, regionHover, c.goToPage]);
+  const [contributionStore] = useState(createContributionStore);
+  const contributions = useReaderContributionsOf(contributionStore);
+  const pageLayers = useMemo(() => collectPageLayers(contributions), [contributions]);
+  // 右键那一下各扩展给的菜单项（右键时算好，菜单开着时不再变）。
+  const [menuItems, setMenuItems] = useState<readonly ReaderMenuItem[]>([]);
   const readerContext = useMemo<ReaderContextValue>(() => ({
     bindShell: c.shell.bindShell,
     shellEl: c.shell.shellEl,
@@ -169,8 +193,7 @@ export function ReaderAppReactPdf() {
     onPdfDocument,
     zoomBlock,
     xrefIndex,
-    askMarks,
-    onAskMark: reopenAsk,
+    pageLayers,
     editBlock: blockEdit.available ? editBlock : undefined,
     blockEdit,
     editShowsSource: visiblePdfMode !== "compare",
@@ -201,8 +224,7 @@ export function ReaderAppReactPdf() {
     onPdfDocument,
     zoomBlock,
     xrefIndex,
-    askMarks,
-    reopenAsk,
+    pageLayers,
     blockEdit,
     editBlock,
     visiblePdfMode,
@@ -234,84 +256,86 @@ export function ReaderAppReactPdf() {
   ].filter(Boolean).join(" ");
 
   return (
-    <ReaderProvider value={readerContext} hud={readerHud}>
-      <div
-        className={rootClasses}
-        data-reader-engine="react-pdf"
-        data-reader-workspace={workspaceView}
-        data-ink-mode={ink.tool || undefined}
-        onContextMenu={(event) => {
-          const menu = inkMenuFromContextMenu(event);
-          if (!menu) return;
-          event.preventDefault();
-          readerAsk.captureMenu(event.target as Element, event.clientX, event.clientY);
-          setInkMenu(menu);
-        }}
-      >
-        <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
-        <ReaderFinderArea state={finderState} bookmarks={bookmarks} />
-        {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
-            原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
-        <div className="reader-chrome-tray">
-          <ReaderDownloadActions />
-          <ReaderCloseHome onBeforeClose={session.prepareClose} />
-        </div>
-        <ReaderWorkspaceTabs
-          mode={visiblePdfMode}
-          documentReady={Boolean(session.jobId)}
-          sourceViewOnly={sourceViewOnly}
-          onModeChange={changeWorkspace}
-          liveTranslation={liveToggles.topBarPill ? {
-            visible: liveTranslationVisible,
-            state: c.liveTranslation,
-            onToggle: () => setLiveTranslationVisible((visible) => !visible),
-            latestPage: liveTranslationVisible ? latestLivePage : null,
-            currentPage: c.currentPage,
-            onJumpToLatest: jumpToLatestLivePage,
-          } : null}
-          completion={offerCompletion ? {
-            onOpenCompare: () => {
-              setCompletionDismissedKey(c.viewStateKey);
-              changeWorkspace("compare");
-            },
-          } : null}
-        />
-        <ReaderAssistantDock active={assistantPanel} />
-        {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
-        <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={markdownSlot.open} assistantSplit={assistantOpen} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
-        {c.showHud ? (
-          <ReaderZoomHud
+    <ReaderExtensionsProvider api={readerApi} store={contributionStore}>
+      <ReaderProvider value={readerContext} hud={readerHud}>
+        <div
+          className={rootClasses}
+          data-reader-engine="react-pdf"
+          data-reader-workspace={workspaceView}
+          data-ink-mode={ink.tool || undefined}
+          onContextMenu={(event) => {
+            const menu = inkMenuFromContextMenu(event);
+            if (!menu) return;
+            event.preventDefault();
+            setMenuItems(collectMenuItems(contributions, { target: event.target as Element, clientX: event.clientX, clientY: event.clientY, page: menu.page }));
+            setInkMenu(menu);
+          }}
+        >
+          <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
+          <ReaderFinderArea state={finderState} bookmarks={bookmarks} />
+          {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
+              原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
+          <div className="reader-chrome-tray">
+            <ReaderDownloadActions />
+            <ReaderCloseHome onBeforeClose={session.prepareClose} />
+          </div>
+          <ReaderWorkspaceTabs
             mode={visiblePdfMode}
-            modeControls={null}
-            bookmarkScope={c.viewStateKey}
-            issuesJobId={c.sourceOnly ? "" : session.jobId}
-            searchSlot={<ReaderSearchToggle open={finder} onToggle={toggleFinder} />}
+            documentReady={Boolean(session.jobId)}
+            sourceViewOnly={sourceViewOnly}
+            onModeChange={changeWorkspace}
+            liveTranslation={liveToggles.topBarPill ? {
+              visible: liveTranslationVisible,
+              state: c.liveTranslation,
+              onToggle: () => setLiveTranslationVisible((visible) => !visible),
+              latestPage: liveTranslationVisible ? latestLivePage : null,
+              currentPage: c.currentPage,
+              onJumpToLatest: jumpToLatestLivePage,
+            } : null}
+            completion={offerCompletion ? {
+              onOpenCompare: () => {
+                setCompletionDismissedKey(c.viewStateKey);
+                changeWorkspace("compare");
+              },
+            } : null}
           />
-        ) : null}
-        <Suspense fallback={null}>
-          {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
-        </Suspense>
-        <ReaderOverlays
-          session={session}
-          xrefs={xrefs}
-          zoomDocuments={zoomDocuments}
-          zoomItem={zoomItem}
-          setZoomItem={setZoomItem}
-          closeZoom={closeZoom}
-          visiblePdfMode={visiblePdfMode}
-        />
-        <ReaderToolBall active={assistantPanel} compare={versionCompare} ink={ink} />
-        <ReaderInkMenu
-          ink={ink}
-          menu={inkMenu}
-          onClose={closeInkMenu}
-          actions={readerAsk.menuActions}
-        />
-        {readerAsk.panel}
-        <ReaderInkDock ink={ink} />
-        <ReaderPendingEditsPill edit={blockEdit} />
-        <DownloadToastHost />
-      </div>
-    </ReaderProvider>
+          <ReaderAssistantDock active={assistantPanel} />
+          {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
+          <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={markdownSlot.open} assistantSplit={assistantOpen} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
+          {c.showHud ? (
+            <ReaderZoomHud
+              mode={visiblePdfMode}
+              modeControls={null}
+              bookmarkScope={c.viewStateKey}
+              issuesJobId={c.sourceOnly ? "" : session.jobId}
+              searchSlot={<ReaderSearchToggle open={finder} onToggle={toggleFinder} />}
+            />
+          ) : null}
+          <Suspense fallback={null}>
+            {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
+          </Suspense>
+          <ReaderOverlays
+            session={session}
+            xrefs={xrefs}
+            zoomDocuments={zoomDocuments}
+            zoomItem={zoomItem}
+            setZoomItem={setZoomItem}
+            closeZoom={closeZoom}
+            visiblePdfMode={visiblePdfMode}
+          />
+          <ReaderToolBall active={assistantPanel} compare={versionCompare} ink={ink} />
+          <ReaderInkMenu
+            ink={ink}
+            menu={inkMenu}
+            onClose={closeInkMenu}
+            actions={menuItems}
+          />
+          <ReaderExtensionOutlets extensions={BUILTIN_READER_EXTENSIONS} />
+          <ReaderInkDock ink={ink} />
+          <ReaderPendingEditsPill edit={blockEdit} />
+          <DownloadToastHost />
+        </div>
+      </ReaderProvider>
+    </ReaderExtensionsProvider>
   );
 }

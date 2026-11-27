@@ -1,10 +1,11 @@
-// 阅读页提问接到阅读页上的那一层（ReaderAppReactPdf 只调这一个）：
+// 阅读页提问接到阅读页上的那一层（扩展 ask/ReaderAskExtension 只调这一个，2026-11-27 起经贡献表接进阅读页）：
 // - 问的是哪儿：右键（「在这里提问 / 问这段」）、选着书页上的字按 ?；窗口开着时在书页上选字，下一问就带上它（不弹任何东西）。
 // - 书页上的「?」（use-ask-marks）：主对话里的点了打开主对话，以前按书存的只读地看。
 // - 提问窗（ReaderAskPanel，第一次提问才加载）。
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 
 import type { ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
+import type { ReaderMenuContext, ReaderMenuItem } from "../extensions/types.js";
 import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
 import { READER_PAGE_ATTR } from "../pdf/reader-dom-contract.js";
 import { projectReaderRegion, resolveReaderRegionHighlight, type ReaderMetadata, type ReaderRegion } from "../shared/data/reader-regions.js";
@@ -135,19 +136,18 @@ export function useReaderAsk({
     void ask.openMain();
   }, [port, documentId, ask.openMain]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** 右键菜单里的「在这里提问 / 问这段」。 */
-  const [menuAnchor, setMenuAnchor] = useState<ReaderAskAnchor | null>(null);
-  const captureMenu = useCallback((target: Element, clientX: number, clientY: number) => {
-    if (!port) return;
+  /** 右键菜单里的「在这里提问 / 问这段」：右键那一下就记下问的是哪儿（选着书页上的字就问这段）。 */
+  const menuItems = useCallback((context: ReaderMenuContext): ReaderMenuItem[] => {
+    if (!port) return [];
     const picked = selectedPageText(globalThis.getSelection?.() ?? null);
-    setMenuAnchor(anchorAt(target, clientX, clientY, picked.element ? picked.text : ""));
-  }, [port, anchorAt]);
-  const menuActions = port && menuAnchor ? [{
-    key: "ask",
-    label: menuAnchor.selection ? "问这段" : "在这里提问",
-    hint: menuAnchor.selection ? "?" : undefined,
-    onSelect: () => openAsk(menuAnchor),
-  }] : [];
+    const anchor = anchorAt(context.target, context.clientX, context.clientY, picked.element ? picked.text : "");
+    return anchor ? [{
+      key: "ask",
+      label: anchor.selection ? "问这段" : "在这里提问",
+      hint: anchor.selection ? "?" : undefined,
+      onSelect: () => openAsk(anchor),
+    }] : [];
+  }, [port, anchorAt, openAsk]);
 
   const legacyView = legacy ? {
     anchor: legacy.anchor,
@@ -176,5 +176,5 @@ export function useReaderAsk({
     </Suspense>
   ) : null;
 
-  return { marks: marks.marks, onMark, captureMenu, menuActions, panel, open: ask.openMain };
+  return { marks: marks.marks, onMark, menuItems, panel, open: ask.openMain, enabled: Boolean(port) };
 }

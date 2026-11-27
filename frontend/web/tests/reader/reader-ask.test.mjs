@@ -47,17 +47,23 @@ test("拼出处：页、栏、页内位置、悬停认出的块、章节（书�
   assert.equal(buildAskAnchor({ pageElement: null, clientX: 0, clientY: 0, itemId: null, selection: "", regions, bookmarks }), null);
 });
 
-test("接线：宿主不给端口就没有提问入口；? 只在选着书页上的字时拦（不然照旧是快捷键帮助）；提问窗单独一块、用到才加载", () => {
+test("接线：宿主不给端口就没有提问入口；? 只在选着书页上的字时拦（不然照旧是快捷键帮助）；提问窗单独一块、用到才加载", async () => {
+  // 2026-11-27 起提问是贡献表里的内置扩展：阅读页只画表（右键菜单项、每页一层、浮层），不再直接接提问。
   const app = readFileSync(new URL("../../../packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url), "utf8");
-  assert.match(app, /actions=\{readerAsk\.menuActions\}/);
-  assert.match(app, /\{readerAsk\.panel\}/);
+  assert.match(app, /actions=\{menuItems\}/);
+  assert.match(app, /<ReaderExtensionOutlets extensions=\{BUILTIN_READER_EXTENSIONS\} \/>/);
+  assert.doesNotMatch(app, /useReaderAsk|readerAsk\./, "阅读页不再直接接提问");
+  const { BUILTIN_READER_EXTENSIONS } = await import("../../../packages/reader/src/extensions/builtin.ts");
+  assert.deepEqual(BUILTIN_READER_EXTENSIONS.map((extension) => [extension.id, extension.title]), [["ask", "提问"]]);
+  const extension = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskExtension.tsx", import.meta.url), "utf8");
+  assert.match(extension, /const contribution = useMemo<ReaderContribution>\(\(\) => \(enabled \? \{/, "没端口就什么都不登记");
   const wiring = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
   assert.match(wiring, /if \(!picked\.text \|\| !picked\.element \|\| !picked\.rect\) return null;/);
   assert.match(wiring, /window\.addEventListener\("keydown", onKey, true\)/);
   assert.match(wiring, /lazy\(\(\) => import\("\.\/ReaderAskPanel\.js"\)\)/);
   assert.match(wiring, /const panel: ReactElement \| null = port && \(\(ask\.visible && ready\) \|\| legacy\)/);
   assert.match(wiring, /const ready = !ask\.persistent \|\| Boolean\(ask\.view\.conversation\) \|\| Boolean\(ask\.error\);/, "主对话读回来才画窗口（不白开一个会话）");
-  assert.match(wiring, /menuActions = port && menuAnchor \?/);
+  assert.match(wiring, /const menuItems = useCallback\(\(context: ReaderMenuContext\): ReaderMenuItem\[\] => \{\n    if \(!port\) return \[\];/);
   const host = readFileSync(new URL("../../src/features/reader/domain/ask-port.ts", import.meta.url), "utf8");
   assert.match(host, /if \(isMockMode\(\)\) return mockAskPort;/, "演示模式给假 agent");
   assert.match(host, /if \(isLanSharedPage\(\)\) return null;/, "局域网共享的页面不给（网关拦了 \/api\/v1\/ai）");

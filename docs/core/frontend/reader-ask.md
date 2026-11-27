@@ -37,7 +37,8 @@
 | `packages/reader/src/ask/conversation-messages.ts` | 纯函数：书上的位置 → 结构化出处；库里的消息 → 提问窗（问题上的小标签、副对话结论卡片、压缩点）；答完一轮 → 追加请求（问和答一起、幂等号、`memory_ids`）；「深挖」认那条回答 |
 | `packages/reader/src/ask/use-ask-conversation.ts` | 主对话：打开取主对话、读最近 50 条，「看更早的」再往前取；每答完一轮追加（`compaction_due` 就让后端压）；「深挖」开副对话、「结束」让后端写结论；归档主对话 |
 | `packages/reader/src/ask/use-ask-marks.ts`、`ReaderAskMarks.tsx`、`styles/ask-marks.css` | 书页左边白边的「?」：主对话里这本书的问（`GET /documents/{id}/ask-messages`，画在问的那一块上沿，点了打开主对话），以前按书存的（点了只读地看那一次） |
-| `packages/reader/src/ask/use-reader-ask.tsx` | 接到阅读页上：右键菜单、`?` 键、窗口开着时跟着书页选区更新出处、「?」点了开哪个、懒加载的 `ReaderAskPanel` |
+| `packages/reader/src/ask/ReaderAskExtension.tsx` | 提问作为阅读页的内置扩展（2026-11-27 起，[阅读页贡献表](../../ops/planning/reader-redesign/20261127-阅读页贡献表.md)）：往贡献表登记右键菜单项、每页的「?」、快捷键说明，提问窗是它自己画的；阅读页主组件不再直接接提问 |
+| `packages/reader/src/ask/use-reader-ask.tsx` | 提问的接线：右键菜单项（右键那一下算）、`?` 键、窗口开着时跟着书页选区更新出处、「?」点了开哪个、懒加载的 `ReaderAskPanel` |
 | `packages/reader/src/ask/ReaderAskPanel.tsx` | 把上面这些接到 `@retainpdf/ask/window` 的 `AskWindow` 上（标题栏的面包屑「主对话 › 副对话」、副对话的「结束，带回结论」）；**单独一块，第一次提问才加载** |
 | `web/src/features/reader/domain/ask-port.ts`、`ask-conversations-port.ts` | 宿主端口：列 agent（`GET /api/v1/ai/agents`），拼 WebSocket 地址（api_key；自带类 agent 再带模型配置、凭据引用、job_id、`conversation_id`）交给 `@retainpdf/ask/acp` 的 `openAcpWebSocketSession`；主对话接口（压缩、副对话结论带设置里那条模型连接） |
 

@@ -1,5 +1,6 @@
 import { type ReactElement } from "react";
 import type { ReaderAskPort } from "../contracts/ask.js";
+import type { ReaderMenuContext, ReaderMenuItem } from "../extensions/types.js";
 import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
 import { type ReaderMetadata, type ReaderRegion } from "../shared/data/reader-regions.js";
 import type { AskMark } from "./ReaderAskMarks.js";
@@ -19,14 +20,9 @@ export declare function useReaderAsk({ port, documentId, jobId, versionId, regio
 }): {
     marks: AskMark[];
     onMark: (mark: AskMark) => Promise<void>;
-    captureMenu: (target: Element, clientX: number, clientY: number) => void;
-    menuActions: {
-        key: string;
-        label: string;
-        hint: string;
-        onSelect: () => void;
-    }[];
+    menuItems: (context: ReaderMenuContext) => ReaderMenuItem[];
     panel: ReactElement<unknown, string | import("react").JSXElementConstructor<any>>;
     open: () => Promise<void>;
+    enabled: boolean;
 };
 //# sourceMappingURL=use-reader-ask.d.ts.map
