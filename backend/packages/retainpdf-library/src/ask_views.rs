@@ -80,6 +80,15 @@ pub struct AppendAskMessagesInput {
     pub messages: Vec<AskConversationMessageInput>,
 }
 
+/// POST /ai/ask-conversations/main 的请求体（可以不带；2026-11-27 起主对话按书分）。
+#[derive(Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EnsureAskMainConversationInput {
+    /// 取或建这本书开着的主对话；不给是全局那条（不属于哪本书的）。
+    #[serde(default)]
+    pub document_id: Option<String>,
+}
+
 /// POST /ai/ask-conversations：开副对话。
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -152,6 +161,9 @@ pub struct ListAskConversationsQuery {
     pub status: Option<String>,
     #[serde(default)]
     pub parent_id: Option<String>,
+    /// 只要这本书的：主对话是这本书的那条（含归档的），副对话是开在这本书的。
+    #[serde(default)]
+    pub document_id: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize)]

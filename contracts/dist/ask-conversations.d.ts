@@ -5,7 +5,7 @@
 /**
  * Endpoint input, query, and output DTOs published by ask-conversations.v1.schema.json.
  */
-export type AskConversationsSchema = AppendAskMessagesInput | AppendAskMessagesView | AskCompactionListView | AskContextQuery | AskContextView | AskConversationDeleteResultView | AskConversationListView | AskConversationRecord | AskMemoryCreatedView | AskMemoryListView | AskMemoryRecord | AskMessagePageView | AskSettingsRecord | CloseAskConversationInput | CloseAskConversationView | CreateAskCompactionInput | CreateAskCompactionView | CreateAskMemoryInput | CreateAskSideConversationInput | DocumentAskMessagesView | ListAskConversationsQuery | ListAskMemoriesQuery | ListAskMessagesQuery | PatchAskConversationInput | PatchAskMemoryInput | PatchAskSettingsInput | SupersedeAskMessagesView;
+export type AskConversationsSchema = AppendAskMessagesInput | AppendAskMessagesView | AskCompactionListView | AskContextQuery | AskContextView | AskConversationDeleteResultView | AskConversationListView | AskConversationRecord | AskMemoryCreatedView | AskMemoryListView | AskMemoryRecord | AskMessagePageView | AskSettingsRecord | CloseAskConversationInput | CloseAskConversationView | CreateAskCompactionInput | CreateAskCompactionView | CreateAskMemoryInput | CreateAskSideConversationInput | DocumentAskMessagesView | EnsureAskMainConversationInput | ListAskConversationsQuery | ListAskMemoriesQuery | ListAskMessagesQuery | PatchAskConversationInput | PatchAskMemoryInput | PatchAskSettingsInput | SupersedeAskMessagesView;
 /**
  * source 原文栏 / translated 译文栏。
  */
@@ -659,12 +659,25 @@ export interface DocumentAskMessagesView {
     messages: AskConversationMessageRecord[];
 }
 /**
+ * POST /ai/ask-conversations/main 的请求体，可以不带（2026-11-27 起主对话按书分）。
+ */
+export interface EnsureAskMainConversationInput {
+    /**
+     * 取或建这本书开着的主对话；不给是全局那条（不属于哪本书的）。
+     */
+    document_id?: string | null;
+}
+/**
  * 不认识的参数 400。
  */
 export interface ListAskConversationsQuery {
     kind?: AskConversationKind;
     status?: AskConversationStatus;
     parent_id?: string;
+    /**
+     * 只要这本书的：主对话是这本书的那条（含归档的），副对话是开在这本书的。
+     */
+    document_id?: string;
 }
 /**
  * 不认识的参数 400。

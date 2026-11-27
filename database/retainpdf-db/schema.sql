@@ -1,7 +1,7 @@
 -- 现在每张表的完整样子：新建空库跑完 schema/base.sql、LEGACY_COLUMNS 和全部编号迁移以后的结果。
 -- 测试生成，不要手改：UPDATE_SCHEMA=1 cargo test -p retainpdf-db schema_snapshot
 -- 主键写成 PRIMARY KEY#n（复合主键里的第几列）；FTS5 自己的影子表不单列。
--- user_version 44
+-- user_version 45
 
 TABLE artifacts
   job_id TEXT PRIMARY KEY#1
@@ -71,7 +71,8 @@ TABLE ask_conversations
   FOREIGN KEY (document_id) REFERENCES item_files(file_id) ON UPDATE NO ACTION ON DELETE SET NULL
   FOREIGN KEY (forked_from_message_id) REFERENCES ask_conversation_messages(message_id) ON UPDATE NO ACTION ON DELETE SET NULL
   FOREIGN KEY (parent_id) REFERENCES ask_conversations(conversation_id) ON UPDATE NO ACTION ON DELETE CASCADE
-  INDEX idx_ask_conversations_one_open_main: CREATE UNIQUE INDEX idx_ask_conversations_one_open_main ON ask_conversations(kind) WHERE kind = 'main' AND status = 'open'
+  INDEX idx_ask_conversations_main_document: CREATE INDEX idx_ask_conversations_main_document ON ask_conversations(document_id, status) WHERE kind = 'main'
+  INDEX idx_ask_conversations_one_open_main: CREATE UNIQUE INDEX idx_ask_conversations_one_open_main ON ask_conversations(COALESCE(document_id, '')) WHERE kind = 'main' AND status = 'open'
   INDEX idx_ask_conversations_parent: CREATE INDEX idx_ask_conversations_parent ON ask_conversations(parent_id, created_at)
   PRIMARY KEY (conversation_id)
 
@@ -314,6 +315,7 @@ TABLE item_files
   INDEX idx_item_files_added_at: CREATE INDEX idx_item_files_added_at ON item_files(added_at DESC)
   INDEX idx_item_files_item: CREATE INDEX idx_item_files_item ON item_files(item_id)
   PRIMARY KEY (file_id)
+  TRIGGER ask_main_archive_before_document_delete: CREATE TRIGGER ask_main_archive_before_document_delete BEFORE DELETE ON item_files BEGIN UPDATE ask_conversations SET status = 'archived', updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE kind = 'main' AND status = 'open' AND document_id = old.file_id; END
   TRIGGER item_files_item_required_insert: CREATE TRIGGER item_files_item_required_insert BEFORE INSERT ON item_files WHEN NEW.item_id IS NULL BEGIN SELECT RAISE(ABORT, 'item_files.item_id is required'); END
   TRIGGER item_files_item_required_update: CREATE TRIGGER item_files_item_required_update BEFORE UPDATE OF item_id ON item_files WHEN NEW.item_id IS NULL BEGIN SELECT RAISE(ABORT, 'item_files.item_id is required'); END
   TRIGGER sync_dirty_item_files_delete: CREATE TRIGGER sync_dirty_item_files_delete AFTER DELETE ON item_files WHEN NOT EXISTS (SELECT 1 FROM sync_apply_guard) BEGIN INSERT INTO sync_dirty(kind, entity_key, changed_at) VALUES('document', OLD.item_id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) ON CONFLICT(kind, entity_key) DO UPDATE SET changed_at = excluded.changed_at; END

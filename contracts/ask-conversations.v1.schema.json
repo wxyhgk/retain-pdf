@@ -10,9 +10,10 @@
       "path": "/api/v1/ai/ask-conversations/main",
       "client_name": "getMainAskConversation",
       "transport": "json",
+      "input": "EnsureAskMainConversationInput",
       "output": "AskConversationRecord",
       "rust_view": "AskConversationRecord",
-      "note": "取或建当前的全局主对话：有开着的就回它，没有就建一条空的（幂等，同一时间只有一个 open 的主对话）。不收请求体。"
+      "note": "取或建开着的主对话：带了 document_id 是这本书的（2026-11-27 起主对话按书分，每本书同一时间只有一个 open 的），书不在 404；不带（或不带请求体）是全局那条（不属于哪本书的，同一时间只有一个 open 的）。有开着的就回它，没有就建一条空的（幂等）。"
     },
     {
       "method": "GET",
@@ -22,7 +23,7 @@
       "query": "ListAskConversationsQuery",
       "output": "AskConversationListView",
       "rust_view": "AskConversationListView",
-      "note": "列对话：主对话在前，同类按最近改过的在前。kind、status、parent_id 筛；值不对 400。"
+      "note": "列对话：主对话在前，同类按最近改过的在前。kind、status、parent_id、document_id 筛；值不对 400。"
     },
     {
       "method": "POST",
@@ -51,7 +52,7 @@
       "input": "PatchAskConversationInput",
       "output": "AskConversationRecord",
       "rust_view": "AskConversationRecord",
-      "note": "给了的才改：title；status（主对话 open / archived，副对话另有 closed）。归档主对话以后再取主对话会建新的；重新打开一个旧主对话时已经有开着的 409 ask_main_conversation_open；主对话改成 closed 400。"
+      "note": "给了的才改：title；status（主对话 open / archived，副对话另有 closed）。归档主对话以后再取主对话会建新的；重新打开一个旧主对话时同一本书（没有书的是全局那条）已经有开着的 409 ask_main_conversation_open；主对话改成 closed 400。"
     },
     {
       "method": "DELETE",
@@ -900,6 +901,20 @@
         }
       }
     },
+    "EnsureAskMainConversationInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "POST /ai/ask-conversations/main 的请求体，可以不带（2026-11-27 起主对话按书分）。",
+      "properties": {
+        "document_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "取或建这本书开着的主对话；不给是全局那条（不属于哪本书的）。"
+        }
+      }
+    },
     "CreateAskSideConversationInput": {
       "type": "object",
       "additionalProperties": false,
@@ -1072,6 +1087,10 @@
         },
         "parent_id": {
           "type": "string"
+        },
+        "document_id": {
+          "type": "string",
+          "description": "只要这本书的：主对话是这本书的那条（含归档的），副对话是开在这本书的。"
         }
       }
     },

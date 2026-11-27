@@ -81,6 +81,7 @@ const APPLIED_CHECKS: &[(i64, &str)] = &[
     // v43 加列（ADD COLUMN 不能重跑）：消息上已经有 edited_from 就当跑过了
     (43, "SELECT COUNT(*) FROM pragma_table_info('ask_conversation_messages') WHERE name = 'edited_from'"),
     (44, "SELECT COUNT(*) FROM pragma_table_info('ask_conversation_messages') WHERE name = 'session_id'"),
+    (45, "SELECT COUNT(*) FROM sqlite_master WHERE type = 'trigger' AND name = 'ask_main_archive_before_document_delete'"),
 ];
 
 /// 从这个版本起不再补 `LEGACY_COLUMNS`（v33 删了其中的 `jobs.runtime_json`）。

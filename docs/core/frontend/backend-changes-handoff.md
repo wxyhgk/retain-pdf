@@ -12,6 +12,19 @@
 
 ---
 
+## 阅读页提问：主对话按书分（feat/ask-main-per-book）
+
+2026-11-27，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「主对话按书分」，决定 [主对话按书分](../../ops/planning/reader-ask/20261127-主对话按书分.md)。
+用户反馈「主对话串了，好几个 pdf 打开都是同一个聊天框」，定为每本书一个主对话、用户层记忆照旧共用。契约 `ask-conversations.v1`：
+`getMainAskConversation` 多了可选的请求体 `EnsureAskMainConversationInput {document_id?}`，`ListAskConversationsQuery` 多 `document_id`。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| 打开提问窗取主对话（`POST /api/v1/ai/ask-conversations/main`） | 不带请求体，所有书同一条 | 在书里带 `{"document_id": "<这本书>"}`，取或建这本书开着的主对话；没在书里（或不想分书）照旧不带，是全局那条。**老后端不认 `document_id`（请求体不认识的字段 400），前后端一起合** |
+| 归档、「归档并开新的主对话」 | 归档全局那条 | 归档的是这本书的主对话，再取就是这本书新的一条；别的书不受影响。`409 ask_main_conversation_open` 现在按书算 |
+| 历史 / 归档列表（`GET /api/v1/ai/ask-conversations`） | `kind`、`status`、`parent_id` 筛 | 要只看这本书的加 `document_id=<书>`（主对话是这本书的、副对话是开在这本书的）；返回的主对话 `document_id` 是它属于哪本书（`null` 是全局那条） |
+| 升级后的旧数据 | — | 以前那条全局主对话按书拆开了：每本书里问过的在那本书的主对话里，没有书的留在全局那条（不用前端做什么） |
+
 ## 阅读页提问：消息记 agent 会话、删对话清 pi 会话文件（fix/ask-conversation-pi-sessions）
 
 2026-11-27，只增不改。前端真机测出来的：删了对话，`retainpdf-pi` 的会话文件还在。

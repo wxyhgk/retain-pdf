@@ -1,6 +1,8 @@
 //! 阅读页提问的主对话、副对话和记忆（2026-11-26，数据库 v40）。业务逻辑在书库包的 `ask_conversations.rs`、`ask_memories.rs`。
 
+use axum::body::Bytes;
 use axum::extract::State;
+use axum::http::HeaderMap;
 use axum::Json;
 
 use crate::error::AppError;
@@ -10,13 +12,13 @@ use crate::models::api::{
     CloseAskConversationInput, CloseAskConversationView, CreateAskMemoryInput, CreateAskSideConversationInput,
     DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput,
     PatchAskMemoryInput, AskSettingsRecord, PatchAskSettingsInput, AskCompactionListView, CreateAskCompactionInput,
-    CreateAskCompactionView, SupersedeAskMessagesView,
+    CreateAskCompactionView, EnsureAskMainConversationInput, SupersedeAskMessagesView,
 };
-use crate::routes::common::{ask_summarizer, ok_json, run_library_blocking, ApiJson, ApiPath, ApiQuery};
+use crate::routes::common::{ask_summarizer, ok_json, parse_json_body, run_library_blocking, ApiJson, ApiPath, ApiQuery};
 use crate::services::library::{
     append_ask_messages_view, ask_context_view, close_ask_conversation_view, create_ask_memory_view,
     create_side_ask_conversation_view, delete_ask_conversation_view, delete_ask_memory_view, document_ask_messages_view,
-    ensure_main_ask_conversation_view, get_ask_conversation_view, list_ask_conversations_view, list_ask_memories_view,
+    ensure_book_main_ask_conversation_view, get_ask_conversation_view, list_ask_conversations_view, list_ask_memories_view,
     list_ask_messages_view, patch_ask_conversation_view, patch_ask_memory_view, get_ask_settings_view, patch_ask_settings_view,
     create_ask_compaction_view, list_ask_compactions_view, supersede_ask_messages_view,
 };
@@ -24,8 +26,15 @@ use crate::AppState;
 
 type Reply<T> = Result<Json<ApiResponse<T>>, AppError>;
 
-pub async fn ensure_main_conversation_route(State(state): State<AppState>) -> Reply<AskConversationRecord> {
-    Ok(ok_json(run_library_blocking(&state, ensure_main_ask_conversation_view).await?))
+/// 请求体可以不带（以前就不带，照旧是全局那条）；带了按 JSON 读 `{document_id}`（2026-11-27 起主对话按书分）。
+pub async fn ensure_main_conversation_route(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    body: Bytes,
+) -> Reply<AskConversationRecord> {
+    let payload: EnsureAskMainConversationInput =
+        if body.iter().all(u8::is_ascii_whitespace) { EnsureAskMainConversationInput::default() } else { parse_json_body(&headers, &body)? };
+    Ok(ok_json(run_library_blocking(&state, move |library| ensure_book_main_ask_conversation_view(library, &payload)).await?))
 }
 
 pub async fn list_conversations_route(
