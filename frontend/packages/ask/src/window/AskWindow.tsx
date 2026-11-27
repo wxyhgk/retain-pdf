@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { Rnd } from "react-rnd";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 
-import type { AskAgent, AskAnswerAction, AskConfigOption, AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
+import type { AskAgent, AskAnswerAction, AskAttachTool, AskConfigOption, AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
 import { toInitialMessages } from "../acp/messages.js";
 import { PermissionStore, createAcpChatAdapter } from "../acp/adapter.js";
 import { Thread } from "../ui/elements/thread.aui.js";
@@ -29,15 +29,18 @@ import {
   makeMessageFooter,
   makeWelcome,
 } from "./blocks.js";
-import { AskHeader, type AskWindowMode } from "./AskHeader.js";
+import { AskHeader } from "./AskHeader.js";
+import type { AskWindowMode } from "./AskHeader.js";
 import { AskPageContext, type AskPageJump } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
 import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand, type AskConfigState } from "./AskModelPicker.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
-import { fitRect, loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
+import { loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
+import { useWindowLayout } from "./use-window-layout.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag, type AskConversationUi } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
+import { AttachTools, AttachToolsContext, useHostAttachments } from "./attach-tools.js";
 import { useTurns } from "./use-turns.js";
 
 const KATEX_LINK_ID = "retainpdf-katex-css";
@@ -54,42 +57,22 @@ function useKatexStylesheet(href: string | undefined) {
   }, [href]);
 }
 
+/** 输入框那一行：宿主的「带上……」按钮，再是 agent 的设置（模型、思考强度）。 */
+function ComposerExtra(): ReactElement {
+  return (
+    <>
+      <AttachTools />
+      <AskAgentSettings />
+    </>
+  );
+}
+
 // 计划、子 agent 是 data 部件：按 assistant-ui 的办法注册渲染（挂在 runtime 里面才生效）。
 const PlanDataUI = makeAssistantDataUI({ name: "plan", render: PlanBlock });
 const SubagentDataUI = makeAssistantDataUI({ name: "subagent", render: SubagentBlock });
 
 // 测试和别处照旧从这里取。
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
-
-/** 贴右边时顶上让出宿主页面的顶栏（RetainPDF 阅读页的顶栏约 64px）。 */
-const DOCK_TOP = 64;
-const DOCK_WIDTH = 440;
-
-type Rect = { x: number; y: number; width: number; height: number };
-
-function viewport() {
-  return { width: globalThis.innerWidth || 1200, height: globalThis.innerHeight || 800 };
-}
-
-function floatRect(): Rect {
-  const remembered = loadWindowMemory().float;
-  if (remembered) return fitRect(remembered, viewport());
-  const { width: vw, height: vh } = viewport();
-  const width = Math.min(500, vw - 32);
-  const height = Math.min(640, vh - 120);
-  return { x: Math.max(16, vw - width - 24), y: 72, width, height };
-}
-
-/** 三种摆法的位置：浮动用自己记的；贴右边占满右侧（宽可以拖）；放大差不多占满屏。 */
-function layoutFor(mode: AskWindowMode, float: Rect, dockWidth: number): Rect {
-  const { width: vw, height: vh } = viewport();
-  if (mode === "dock") {
-    const width = Math.min(dockWidth, vw - 16);
-    return { x: vw - width, y: DOCK_TOP, width, height: vh - DOCK_TOP };
-  }
-  if (mode === "full") return { x: 16, y: 16, width: vw - 32, height: vh - 32 };
-  return float;
-}
 
 export type AskWindowProps = {
   port: AskPort;
@@ -138,6 +121,10 @@ export type AskWindowProps = {
   pageCount?: number;
   /** KaTeX 样式表的地址（宿主自己托管字体）；不给就不插，公式靠宿主页面已有的样式。 */
   katexStylesheetUrl?: string;
+  /** 输入框那一行宿主加的「带上……」按钮（阅读页：带上这一页的截图）。 */
+  attachTools?: readonly AskAttachTool[];
+  /** 宿主从外面塞进来的附件（框选截图）：id 变了就加进输入框。 */
+  attachRequest?: { id: number; files: readonly File[] } | null;
   /** 回答底下宿主加的动作（阅读页：「改这段译文」），只出在问题带着出处、宿主认这处的回答下面。 */
   answerAction?: AskAnswerAction;
   /** 窗口摆法变了（贴右边时宽多少）：宿主据此给书页让出右边（不盖字）。 */
@@ -145,7 +132,7 @@ export type AskWindowProps = {
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -241,7 +228,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       ToolFallback: ToolCard,
       ToolGroup: AskToolGroup,
       Indicator: Waiting,
-      ComposerExtra: AskAgentSettings,
+      ComposerExtra: ComposerExtra,
       Welcome: makeWelcome(send),
       MessageFooter: makeMessageFooter(agentName, ConversationFooter),
       HistoryTop: EarlierHistory,
@@ -253,6 +240,8 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     }),
     [agents, runtime, answerQuote.prepareSend], // eslint-disable-line react-hooks/exhaustive-deps
   );
+  // 宿主的「带上……」按钮、塞进来的附件（attach-tools.tsx）。
+  const { attachUi, attachError } = useHostAttachments(runtime, attachTools, attachRequest);
   const pages = useMemo<AskPageJump | null>(() => (onJumpToPage ? { pageCount, jump: onJumpToPage } : null), [onJumpToPage, pageCount]);
 
   useEffect(() => {
@@ -269,34 +258,13 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // 摆法：浮动记自己的位置大小；贴右边记宽度；窗口大小变了重新排。都记在本机（window-memory.ts），重开照旧；放大不记。
-  const [mode, setMode] = useState<AskWindowMode>(() => loadWindowMemory().mode || "float");
-  const [float, setFloat] = useState<Rect>(floatRect);
-  const [dockWidth, setDockWidth] = useState(() => loadWindowMemory().dockWidth || DOCK_WIDTH);
+  // 摆法（浮动 / 贴右边 / 放大）和记住它（use-window-layout.ts）。
+  const layout = useWindowLayout(onLayout);
+  const { mode, rect } = layout;
   const chooseAgent = useCallback((id: string) => {
     setAgentId(id);
     saveWindowMemory({ agentId: id });
   }, []);
-  const changeMode = useCallback((next: AskWindowMode) => {
-    // 放大以后「还原」回到放大之前的摆法（可能是贴右边），不一律回浮动。
-    setMode((current) => {
-      const target = current === "full" && next === "float" ? loadWindowMemory().mode || "float" : next;
-      if (target !== "full") saveWindowMemory({ mode: target });
-      return target;
-    });
-  }, []);
-  const [, setResized] = useState(0);
-  useEffect(() => {
-    const onResize = () => setResized((value) => value + 1);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-  const rect = layoutFor(mode, float, dockWidth);
-  const layoutListener = useRef(onLayout);
-  layoutListener.current = onLayout;
-  useEffect(() => {
-    layoutListener.current?.({ mode, width: rect.width });
-  }, [mode, rect.width]);
   // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
   const effort = currentEffort(config);
   const shownAgent = agents?.find((agent) => agent.id === agentId);
@@ -315,21 +283,8 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       cancel=".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul"
       disableDragging={mode !== "float"}
       enableResizing={mode === "full" ? false : mode === "dock" ? { left: true } : true}
-      onDragStop={(_event, data) => setFloat((current) => {
-        const next = { ...current, x: data.x, y: data.y };
-        saveWindowMemory({ float: next });
-        return next;
-      })}
-      onResizeStop={(_event, _direction, element, _delta, position) => {
-        if (mode === "dock") {
-          setDockWidth(element.offsetWidth);
-          saveWindowMemory({ dockWidth: element.offsetWidth });
-        } else if (mode === "float") {
-          const next = { x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight };
-          setFloat(next);
-          saveWindowMemory({ float: next });
-        }
-      }}
+      onDragStop={layout.onDragStop}
+      onResizeStop={layout.onResizeStop}
     >
       <section className="ask-panel" role="dialog" aria-label="提问" data-mode={mode} data-readonly={readOnly ? "1" : undefined} data-effort={effort?.on ? "on" : "off"} style={tint}>
         <AskHeader
@@ -339,16 +294,18 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
           agentId={agentId}
           onAgent={chooseAgent}
           mode={mode}
-          onMode={changeMode}
+          onMode={layout.changeMode}
           onDelete={onDelete}
           onClose={onClose}
         />
         <AskPageContext.Provider value={pages}>
           {loadError ? <p className="ask-error">列不出能用的 agent：{loadError}</p> : null}
+          {attachError ? <p className="ask-error">{attachError}</p> : null}
           <AskConversationContext.Provider value={conversationUi}>
           <PermissionContext.Provider value={permissions}>
             <AskSendContext.Provider value={send}>
             <AskConfigContext.Provider value={configState}>
+            <AttachToolsContext.Provider value={attachUi}>
             <AnswerQuoteProvider value={answerQuote.ui}>
             <AssistantRuntimeProvider runtime={runtime}>
               <PlanDataUI />
@@ -363,6 +320,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
               </div>
             </AssistantRuntimeProvider>
             </AnswerQuoteProvider>
+            </AttachToolsContext.Provider>
             </AskConfigContext.Provider>
             </AskSendContext.Provider>
           </PermissionContext.Provider>

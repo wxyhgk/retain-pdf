@@ -6,6 +6,7 @@
 export type {
   AskAgent,
   AskAnswerAction,
+  AskAttachTool,
   AskAgentCapabilities,
   AskConfigChoice,
   AskConfigOption,

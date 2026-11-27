@@ -35,8 +35,11 @@ function ReaderAskExtension(): ReactElement | null {
     pageCount: api.pageCount,
     editBlock: api.editBlock,
     jumpToBlock: api.jumpToBlock,
+    pdfDocuments: api.pdfDocuments,
+    currentPage: api.currentPage,
+    visibleMode: api.visibleMode,
   });
-  const { marks, onMark, menuItems, panel, enabled, toggle, showing, reserveRight } = ask;
+  const { marks, onMark, menuItems, panel, overlay, cropping, enabled, toggle, showing, reserveRight } = ask;
   const contribution = useMemo<ReaderContribution>(() => (enabled ? {
     toolbarItems: [{
       key: "ask",
@@ -52,9 +55,11 @@ function ReaderAskExtension(): ReactElement | null {
       : undefined,
     shortcuts: SHORTCUTS,
     reserveRight,
-  } : {}), [enabled, menuItems, marks, onMark, toggle, showing, reserveRight]);
+    // 「截一块问」时占着书页上的指针：不出悬停框、不选字。
+    takesPointer: cropping,
+  } : {}), [enabled, menuItems, marks, onMark, toggle, showing, reserveRight, cropping]);
   useReaderContribution(contribution);
-  return panel;
+  return <>{panel}{overlay}</>;
 }
 
 export const readerAskExtension: ReaderExtension = { id: "ask", title: "提问", Component: ReaderAskExtension };

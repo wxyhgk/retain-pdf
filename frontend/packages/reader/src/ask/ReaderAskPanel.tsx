@@ -2,7 +2,7 @@
  * 单独一块，第一次提问才加载。以前按书存的问答（只读）也用它看。 */
 import { useMemo, useState, type ReactElement } from "react";
 import AskWindow from "@retainpdf/ask/window";
-import type { AskAnswerAction, AskMessageContext } from "@retainpdf/ask";
+import type { AskAnswerAction, AskAttachTool, AskMessageContext } from "@retainpdf/ask";
 import { Archive, BookmarkCheck, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
@@ -29,6 +29,10 @@ export type ReaderAskPanelProps = {
   onEditBlock?: ((itemId: string, draft: string | null) => void) | null;
   /** 这一块能不能改（表格这类不能改）。 */
   canEditBlock?: (itemId: string) => boolean;
+  /** 输入框那一行的「带上这一页」。 */
+  attachTools?: readonly AskAttachTool[];
+  /** 「截一块问」截好的图：id 变了就加进输入框。 */
+  attachRequest?: { id: number; files: readonly File[] } | null;
   /** 窗口摆法变了（贴右边时宽多少）：阅读页给书页让出右边。 */
   onLayout?: (layout: { mode: string; width: number }) => void;
   /** 以前按书存的一次提问（只读看）；给了就不画主对话。 */
@@ -62,7 +66,7 @@ function Breadcrumb({ ask }: { ask: AskState }): ReactElement {
   );
 }
 
-export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, onEditBlock, canEditBlock }: ReaderAskPanelProps): ReactElement {
+export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, onEditBlock, canEditBlock, attachTools, attachRequest }: ReaderAskPanelProps): ReactElement {
   const [memoryOpen, setMemoryOpen] = useState(false);
   const conversation = ask.view.conversation;
   const bound = legacy ? null : conversation ? { id: conversation.conversation_id, documentId: book.documentId } : null;
@@ -155,6 +159,8 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       katexStylesheetUrl={katex}
       onLayout={onLayout}
       answerAction={answerAction}
+      attachTools={attachTools}
+      attachRequest={attachRequest}
     />
     {memories ? <ReaderMemoryPanel port={memories} glossaries={port.glossaries} documentId={book.documentId} open={memoryOpen} onOpenChange={setMemoryOpen} /> : null}
     </>

@@ -1,6 +1,6 @@
 // 阅读页这一侧的贡献表接线（2026-11-27 从 ReaderAppReactPdf 拆出）：给扩展看的阅读页接口（useReaderApi），
 // 阅读页自己建的那张表，以及从表里收拢出来、阅读页各处要用的东西。
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 import type { ReaderAssistantPanel } from "../components/react-pdf/index.js";
 import {
@@ -46,6 +46,9 @@ export function useReaderExtensionHost(
   },
 ) {
   const { session, panes } = c;
+  const pageNow = useRef(c.currentPage);
+  pageNow.current = c.currentPage;
+  const currentPage = useCallback(() => pageNow.current, []);
   const readerApi = useMemo<ReaderApi>(() => ({
     documentId: session.documentId || "",
     jobId: session.jobId,
@@ -68,6 +71,7 @@ export function useReaderExtensionHost(
     primaryPane: c.panes.primaryPane,
     pdfDocuments: zoomDocuments,
     editBlock,
+    currentPage,
   }), [
     session.documentId, session.jobId, translationVersions, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages,
     c.viewStateKey, regionHover, c.goToPage, c.sourceOnly, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace,

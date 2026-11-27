@@ -30,6 +30,8 @@ export type ReaderApi = {
   goToPage: (page: number, pane?: "source" | "translated") => void;
   /** 跳到某一块（读到的位置记进阅读历史）。 */
   jumpToBlock: (itemId: string, pane?: ReaderPaneId) => void;
+  /** 现在读到第几页（读的时候才取，不跟着翻页重画扩展）。 */
+  currentPage: () => number;
   /** 把这一块的译文变成编辑框（只开着原文时先切到对照）；draft 给了就先填进去（存之前还能改）。这本书现在不能改（没译文、在处理、拼出来的书）是 null；表格这类不能改的块什么都不做。 */
   editBlock: ((itemId: string, draft?: string) => void) | null;
   /** 书页的滚动外壳（扩展在它上面接事件：悬停预览……）；还没挂上是 null。 */

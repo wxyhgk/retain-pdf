@@ -160,3 +160,20 @@ test("术语记忆加进术语表（11-27）：一句话拆成原文和译法；
   const host = readFileSync(new URL("../../src/features/reader/domain/ask-glossary-port.ts", import.meta.url), "utf8");
   assert.match(host, /expected_updated_at: current\.updated_at/, "整份保存带 updated_at，不盖掉别处的改动");
 });
+
+test("截图带进提问（11-27）：拖出的一块换成占这一页的比例（夹在页内，太小不算）；文件名；右键多「截一块问」；输入框那一行「带上这一页」", async () => {
+  const { dragRegion, regionImageName, FULL_PAGE } = await import("../../../packages/reader/src/pdf/region-image.ts");
+  const page = { left: 100, top: 50, width: 400, height: 600 };
+  assert.deepEqual(dragRegion(page, { x: 300, y: 350 }, { x: 140, y: 110 }), { left: 0.1, top: 0.1, width: 0.4, height: 0.4 }, "反着拖也行");
+  const clipped = dragRegion(page, { x: 0, y: 0 }, { x: 300, y: 350 });
+  assert.deepEqual([clipped.left, clipped.top], [0, 0], "拖出页外夹回来");
+  assert.equal(dragRegion(page, { x: 200, y: 200 }, { x: 203, y: 204 }), null, "只是点了一下");
+  assert.equal(regionImageName(12, FULL_PAGE), "第12页.png");
+  assert.equal(regionImageName(12, { left: 0.1, top: 0.1, width: 0.2, height: 0.2 }), "第12页-截图.png");
+  const wiring = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
+  assert.match(wiring, /key: "crop",\n      label: "截一块问",/);
+  assert.match(wiring, /label: "带上这一页",/);
+  assert.match(wiring, /blob = await renderRegionImage\(pdf, page, region\);/, "有 pdf.js 文档就重新画");
+  const extension = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskExtension.tsx", import.meta.url), "utf8");
+  assert.match(extension, /takesPointer: cropping,/, "截图时占着指针");
+});

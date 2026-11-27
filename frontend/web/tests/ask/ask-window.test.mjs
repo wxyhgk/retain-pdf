@@ -190,6 +190,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
         onTurn: (turn) => records.push(turn),
         onFork: (message) => forks.push(message),
         onLayout: (layout) => layouts.push(layout),
+        attachTools: [{ key: "page", label: "带上这一页", title: "带上这一页", icon: null, run: async () => new File([new Uint8Array([137, 80, 78, 71])], "第56页.png", { type: "image/png" }) }],
         answerAction: { label: "改这段译文", title: "改", available: (target) => target.page === 56, run: (target, answer) => actions.push({ page: target.page, data: target.data, ...answer }) },
         pageCount: 100,
       });
@@ -254,6 +255,16 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     document.dispatchEvent(new dom.window.Event("selectionchange"));
     await settle(300);
     assert.equal(document.querySelector(".ask-reply-quote"), null, "选区还在也不再冒出来");
+
+    // 11-27：输入框那一行宿主的「带上这一页」：截图当附件跟下一问发出去（ACP 的 image 块）。
+    document.querySelector('.ask-attach-tool[aria-label="带上这一页"]').dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await until(() => document.querySelector('[class*="aui-attachment"]'), "截图进了输入框");
+    Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, "value").set.call(input, "图里是什么？");
+    input.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+    await settle();
+    document.querySelector(".aui-composer-send").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await until(() => prompts.length === 3, "第三问发出去");
+    assert.ok(prompts[2].blocks.some((block) => block.type === "image" && block.mimeType === "image/png"), "截图作为 image 块发出去");
 
     const button = (label) => [...document.querySelectorAll(".ask-head button")].find((element) => element.getAttribute("aria-label") === label);
     button("贴到右边").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));

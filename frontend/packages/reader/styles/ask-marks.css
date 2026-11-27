@@ -27,3 +27,50 @@
   cursor: var(--cursor-pointer, pointer);
   transform: translateY(-50%);
 }
+
+/* 「截一块问」的罩子（src/ask/ReaderAskCrop.tsx）：盖住整个阅读页接鼠标，十字光标，拖出来的框。 */
+.reader-ask-crop {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--z-hud, 36) + 20);
+  cursor: crosshair;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  touch-action: none;
+  user-select: none;
+}
+
+.reader-ask-crop-hint {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--ui-text-sm, 13px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.reader-ask-crop-box {
+  position: fixed;
+  border: 1.5px solid var(--accent, #2563eb);
+  background: color-mix(in srgb, var(--accent, #2563eb) 10%, transparent);
+  pointer-events: none;
+}
+
+.reader-ask-crop-error {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  z-index: calc(var(--z-hud, 36) + 20);
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--danger, #b42318);
+  color: #fff;
+  font-size: var(--ui-text-sm, 13px);
+  transform: translateX(-50%);
+  cursor: pointer;
+}

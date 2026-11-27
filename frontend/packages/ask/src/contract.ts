@@ -103,6 +103,15 @@ export type AskMessageContext = {
   data?: unknown;
 };
 
+/** 输入框那一行宿主加的「带上……」按钮：点了宿主给一张图（截图），当附件跟下一问发出去；给 null 是不加。 */
+export type AskAttachTool = {
+  key: string;
+  label: string;
+  title: string;
+  icon: import("react").ReactNode;
+  run: () => Promise<File | null>;
+};
+
 /**
  * 回答底下宿主加的一个动作（阅读页：「改这段译文」），只出在问题带着出处、available 认这处的回答下面。
  * 点了交回问的那一处、这条回答的全文、窗口里正选着的回答里的字（没有是 ""），宿主自己挑要用的那段。

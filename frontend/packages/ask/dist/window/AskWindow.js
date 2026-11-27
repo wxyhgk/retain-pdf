@@ -1,4 +1,4 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 /** 提问窗（@retainpdf/ask/window；宿主懒加载这一块）。
  *
  * - 窗口：react-rnd。三种摆法：浮动（标题栏拖动、边角调大小）、贴右边（占满右侧，左边框拖宽窄）、放大；双击标题栏放大 / 还原。
@@ -24,9 +24,11 @@ import { AskSendContext } from "./ask-send.js";
 import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand } from "./AskModelPicker.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
-import { fitRect, loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
+import { loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
+import { useWindowLayout } from "./use-window-layout.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
+import { AttachTools, AttachToolsContext, useHostAttachments } from "./attach-tools.js";
 import { useTurns } from "./use-turns.js";
 const KATEX_LINK_ID = "retainpdf-katex-css";
 /** KaTeX 的样式表（字体）由宿主给地址（桌面版离线也能用），打开窗口时插一个 <link>。 */
@@ -41,39 +43,17 @@ function useKatexStylesheet(href) {
         document.head.appendChild(link);
     }, [href]);
 }
+/** 输入框那一行：宿主的「带上……」按钮，再是 agent 的设置（模型、思考强度）。 */
+function ComposerExtra() {
+    return (_jsxs(_Fragment, { children: [_jsx(AttachTools, {}), _jsx(AskAgentSettings, {})] }));
+}
 // 计划、子 agent 是 data 部件：按 assistant-ui 的办法注册渲染（挂在 runtime 里面才生效）。
 const PlanDataUI = makeAssistantDataUI({ name: "plan", render: PlanBlock });
 const SubagentDataUI = makeAssistantDataUI({ name: "subagent", render: SubagentBlock });
 // 测试和别处照旧从这里取。
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
-/** 贴右边时顶上让出宿主页面的顶栏（RetainPDF 阅读页的顶栏约 64px）。 */
-const DOCK_TOP = 64;
-const DOCK_WIDTH = 440;
-function viewport() {
-    return { width: globalThis.innerWidth || 1200, height: globalThis.innerHeight || 800 };
-}
-function floatRect() {
-    const remembered = loadWindowMemory().float;
-    if (remembered)
-        return fitRect(remembered, viewport());
-    const { width: vw, height: vh } = viewport();
-    const width = Math.min(500, vw - 32);
-    const height = Math.min(640, vh - 120);
-    return { x: Math.max(16, vw - width - 24), y: 72, width, height };
-}
-/** 三种摆法的位置：浮动用自己记的；贴右边占满右侧（宽可以拖）；放大差不多占满屏。 */
-function layoutFor(mode, float, dockWidth) {
-    const { width: vw, height: vh } = viewport();
-    if (mode === "dock") {
-        const width = Math.min(dockWidth, vw - 16);
-        return { x: vw - width, y: DOCK_TOP, width, height: vh - DOCK_TOP };
-    }
-    if (mode === "full")
-        return { x: 16, y: 16, width: vw - 32, height: vh - 32 };
-    return float;
-}
 export default function AskWindow(props) {
-    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction } = props;
+    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest } = props;
     useKatexStylesheet(katexStylesheetUrl);
     const [agents, setAgents] = useState(null);
     const [agentId, setAgentId] = useState("");
@@ -163,7 +143,7 @@ export default function AskWindow(props) {
         ToolFallback: ToolCard,
         ToolGroup: AskToolGroup,
         Indicator: Waiting,
-        ComposerExtra: AskAgentSettings,
+        ComposerExtra: ComposerExtra,
         Welcome: makeWelcome(send),
         MessageFooter: makeMessageFooter(agentName, ConversationFooter),
         HistoryTop: EarlierHistory,
@@ -173,6 +153,8 @@ export default function AskWindow(props) {
         prepareSend: answerQuote.prepareSend,
         UserText,
     }), [agents, runtime, answerQuote.prepareSend]);
+    // 宿主的「带上……」按钮、塞进来的附件（attach-tools.tsx）。
+    const { attachUi, attachError } = useHostAttachments(runtime, attachTools, attachRequest);
     const pages = useMemo(() => (onJumpToPage ? { pageCount, jump: onJumpToPage } : null), [onJumpToPage, pageCount]);
     useEffect(() => {
         const onKey = (event) => {
@@ -190,53 +172,17 @@ export default function AskWindow(props) {
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [onClose]);
-    // 摆法：浮动记自己的位置大小；贴右边记宽度；窗口大小变了重新排。都记在本机（window-memory.ts），重开照旧；放大不记。
-    const [mode, setMode] = useState(() => loadWindowMemory().mode || "float");
-    const [float, setFloat] = useState(floatRect);
-    const [dockWidth, setDockWidth] = useState(() => loadWindowMemory().dockWidth || DOCK_WIDTH);
+    // 摆法（浮动 / 贴右边 / 放大）和记住它（use-window-layout.ts）。
+    const layout = useWindowLayout(onLayout);
+    const { mode, rect } = layout;
     const chooseAgent = useCallback((id) => {
         setAgentId(id);
         saveWindowMemory({ agentId: id });
     }, []);
-    const changeMode = useCallback((next) => {
-        // 放大以后「还原」回到放大之前的摆法（可能是贴右边），不一律回浮动。
-        setMode((current) => {
-            const target = current === "full" && next === "float" ? loadWindowMemory().mode || "float" : next;
-            if (target !== "full")
-                saveWindowMemory({ mode: target });
-            return target;
-        });
-    }, []);
-    const [, setResized] = useState(0);
-    useEffect(() => {
-        const onResize = () => setResized((value) => value + 1);
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
-    }, []);
-    const rect = layoutFor(mode, float, dockWidth);
-    const layoutListener = useRef(onLayout);
-    layoutListener.current = onLayout;
-    useEffect(() => {
-        layoutListener.current?.({ mode, width: rect.width });
-    }, [mode, rect.width]);
     // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
     const effort = currentEffort(config);
     const shownAgent = agents?.find((agent) => agent.id === agentId);
     const brand = currentModelBrand(config) || (shownAgent ? brandFor(shownAgent.id, shownAgent.name) : "");
     const tint = (effort ? { "--ask-effort-color": effort.color } : {});
-    return (_jsx(Rnd, { className: "ask-window", position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: (_event, data) => setFloat((current) => {
-            const next = { ...current, x: data.x, y: data.y };
-            saveWindowMemory({ float: next });
-            return next;
-        }), onResizeStop: (_event, _direction, element, _delta, position) => {
-            if (mode === "dock") {
-                setDockWidth(element.offsetWidth);
-                saveWindowMemory({ dockWidth: element.offsetWidth });
-            }
-            else if (mode === "float") {
-                const next = { x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight };
-                setFloat(next);
-                saveWindowMemory({ float: next });
-            }
-        }, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, agents: agents, agentId: agentId, onAgent: chooseAgent, mode: mode, onMode: changeMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [brand ? (_jsx("div", { className: "ask-watermark", "aria-hidden": true, children: _jsx(BrandIcon, { brand: brand, size: 200 }) })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }), footer] })] }) }));
+    return (_jsx(Rnd, { className: "ask-window", position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: layout.onDragStop, onResizeStop: layout.onResizeStop, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, agents: agents, agentId: agentId, onAgent: chooseAgent, mode: mode, onMode: layout.changeMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, attachError ? _jsx("p", { className: "ask-error", children: attachError }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AttachToolsContext.Provider, { value: attachUi, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [brand ? (_jsx("div", { className: "ask-watermark", "aria-hidden": true, children: _jsx(BrandIcon, { brand: brand, size: 200 }) })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }) }), footer] })] }) }));
 }

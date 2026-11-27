@@ -11,8 +11,8 @@
  * 宿主给什么、能改什么：见包的 README.md。
  */
 import { type ReactElement, type ReactNode } from "react";
-import type { AskAnswerAction, AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
-import { type AskWindowMode } from "./AskHeader.js";
+import type { AskAnswerAction, AskAttachTool, AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
+import type { AskWindowMode } from "./AskHeader.js";
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
 export type AskWindowProps = {
     port: AskPort;
@@ -67,6 +67,13 @@ export type AskWindowProps = {
     pageCount?: number;
     /** KaTeX 样式表的地址（宿主自己托管字体）；不给就不插，公式靠宿主页面已有的样式。 */
     katexStylesheetUrl?: string;
+    /** 输入框那一行宿主加的「带上……」按钮（阅读页：带上这一页的截图）。 */
+    attachTools?: readonly AskAttachTool[];
+    /** 宿主从外面塞进来的附件（框选截图）：id 变了就加进输入框。 */
+    attachRequest?: {
+        id: number;
+        files: readonly File[];
+    } | null;
     /** 回答底下宿主加的动作（阅读页：「改这段译文」），只出在问题带着出处、宿主认这处的回答下面。 */
     answerAction?: AskAnswerAction;
     /** 窗口摆法变了（贴右边时宽多少）：宿主据此给书页让出右边（不盖字）。 */
