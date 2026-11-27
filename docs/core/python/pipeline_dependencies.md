@@ -24,6 +24,7 @@ Regenerate with:
 
 ## Test-only Python Packages
 
+- `certifi`
 - `docx`
 - `pytest`
 - `retainpdf_toc_agent`
@@ -41,6 +42,7 @@ Regenerate with:
 | Import | Package | Runtime | Test | Example refs |
 | --- | --- | --- | --- | --- |
 | `PIL` | `Pillow` | yes | yes | `retainpdf_pipeline/ocr/document_schema/formula_number_ocr.py`, `retainpdf_pipeline/render/layout/inline_content/fallback/png_renderer.py`, `retainpdf_pipeline/render/source/background/extract.py` |
+| `certifi` | `certifi` | no | yes | `devtools/tests/translation/test_agent_flow.py` |
 | `docx` | `docx` | no | yes | `devtools/tests/rendering/test_word_export.py` |
 | `fitz` | `PyMuPDF` | yes | yes | `retainpdf_pipeline/ocr/document_schema/formula_number_ocr.py`, `retainpdf_pipeline/ocr/document_schema/pdf_geometry.py`, `retainpdf_pipeline/ocr/document_schema/pdf_text_recovery.py` |
 | `fontTools` | `fontTools` | yes | no | `retainpdf_pipeline/foundation/config/fonts.py` |

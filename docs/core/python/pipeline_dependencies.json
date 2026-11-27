@@ -19,6 +19,7 @@
     "urllib3"
   ],
   "test_only_python_packages": [
+    "certifi",
     "docx",
     "pytest",
     "retainpdf_toc_agent",
@@ -284,6 +285,17 @@
       ],
       "runtime_required": true,
       "devtool_required": true
+    },
+    {
+      "import_name": "certifi",
+      "package_name": "certifi",
+      "runtime_files": [],
+      "devtool_files": [],
+      "test_files": [
+        "devtools/tests/translation/test_agent_flow.py"
+      ],
+      "runtime_required": false,
+      "devtool_required": false
     },
     {
       "import_name": "docx",
