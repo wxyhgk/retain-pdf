@@ -28,6 +28,7 @@
 - [译文版本（2026-11 起）](./translation-versions/README.md)
 - [排版 agent（2026-11，整页暂缓；表格排版 agent 写了方案）](./layout-agent/README.md)
 - [模型用量与花费（2026-11 起）](./model-usage/README.md)
+- [按页卖翻译的订阅（2026-11 起，未开工）](./translation-subscription/README.md)
 - [导出水印（2026-11）](./export-watermark/README.md)
 - [学习系统（2026-11 起，白板讲解板设计中）](./learning-system/README.md)
 - [数据库整理（2026-11 起）](./database-cleanup/README.md)
