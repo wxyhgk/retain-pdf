@@ -128,6 +128,32 @@ fn messages_append_in_order_are_idempotent_and_page_backwards() {
     let _ = std::fs::remove_dir_all(root);
 }
 
+/// v46：一问带的另外几处出处按顺序存、读回来；没有的读出来是空数组（老消息、回答都是）；「问过的地方」也带上。
+#[test]
+fn extra_selections_round_trip_and_show_in_the_book_marks() {
+    let (root, db) = fixture("extra-selections");
+    let document = book(&db, "up-1");
+    let main = db.ensure_main_ask_conversation().unwrap();
+    let id = main.conversation_id.as_str();
+    let mut question = ask("这三处是一回事吗", Some(&document), Some(2), Some("c-1"));
+    question.extra_selections = vec![
+        serde_json::json!({"page": 5, "item_ids": ["p5-b1"], "selected_text": "第二处"}),
+        serde_json::json!({"page": 9, "item_ids": [], "selected_text": "第三处"}),
+    ];
+    let saved = appended(db.append_ask_conversation_messages(id, &[question, answer("是")], 100).unwrap());
+    assert_eq!(saved[0].extra_selections.iter().map(|s| s["page"].as_u64().unwrap()).collect::<Vec<_>>(), vec![5, 9]);
+    assert!(saved[1].extra_selections.is_empty());
+    let raw: Option<String> = db
+        .connect()
+        .unwrap()
+        .query_row("SELECT extra_selections_json FROM ask_conversation_messages WHERE message_id = ?1", [&saved[1].message_id], |row| row.get(0))
+        .unwrap();
+    assert_eq!(raw, None, "no extra places are stored as NULL");
+    let marks = db.list_document_ask_messages(&document, 100).unwrap();
+    assert_eq!(marks[0].extra_selections[1]["selected_text"], "第三处");
+    let _ = std::fs::remove_dir_all(root);
+}
+
 #[test]
 fn side_conversations_hang_on_main_and_close_with_a_summary_card() {
     let (root, db) = fixture("side");

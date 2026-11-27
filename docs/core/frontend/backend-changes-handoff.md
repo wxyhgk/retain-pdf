@@ -12,6 +12,17 @@
 
 ---
 
+## 阅读页提问：一问带多处出处（feat/ask-extra-selections）
+
+2026-11-27，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「消息」。前端交接的第 2 件（`docs/ops/planning/reader-ask/20261127-提问窗七处改进.md`「交给后端」）：
+「再加一段」的另外几处以前只在发给 agent 的那段字里（`AskContext.extra`），没进消息，书页上只有第一处画「?」、重开或改问时丢了。
+契约 `ask-conversations.v1`：`AskConversationMessageInput` 和 `AskConversationMessageRecord` 都多了 `extra_selections`（数据库 v46）。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| 追加一轮（`POST /api/v1/ai/ask-conversations/{id}/messages`）的问 | 只带第一处 `selection` | 另外几处按顺序放进 `extra_selections: AskSelectionInput[]`（最多 4 处，写法和 `selection` 一样）；第一处照旧是 `selection`。只有问能带，要先有 `selection`，写了 `document_id` 的要是同一本书，不然 `400`。**老后端不认这个字段（400），前后端一起合** |
+| 书上画「?」（`GET /api/v1/documents/{id}/ask-messages`）、重开对话、改问 | 只用 `selection` / `page` | 每条问多了 `extra_selections: AskSelectionRecord[]`（没有是 `[]`），每处也画「?」、改问时还原。按页排的是第一处的页 |
+
 ## 阅读页提问：主对话按书分（feat/ask-main-per-book）
 
 2026-11-27，只增不改（前端已接：`feat/ask-main-per-book-web`，取主对话带这本书的 `document_id`、换书清掉窗口），见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「主对话按书分」，决定 [主对话按书分](../../ops/planning/reader-ask/20261127-主对话按书分.md)。
