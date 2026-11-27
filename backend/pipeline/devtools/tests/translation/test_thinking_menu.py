@@ -68,6 +68,26 @@ def test_qwen_and_deepseek_are_switches():
     assert deepseek.level_for("auto") == "off" and _menu("openai", "deepseek-reasoner", DEEPSEEK).level_for("auto") == "on"
 
 
+@pytest.mark.parametrize("model", ["Qwen3.8-27B-Uncensored", "qwen/qwen3-32b", "Qwen3-30B-A3B"])
+def test_qwen3_on_other_hosts_is_a_switch(model):
+    """自己部署、中转的 Qwen3 按名字认（2026-11-27，用户自定义的 Qwen3.8-27B-Uncensored 以前没有档位）：两种写法一起发，回 400 再一个一个试。"""
+    menu = _menu("openai", model, "http://127.0.0.1:8000/v1")
+    assert menu.values() == ["off", "on"]
+    assert menu.candidates("off") == [
+        {"enable_thinking": False, "chat_template_kwargs": {"enable_thinking": False}},
+        {"chat_template_kwargs": {"enable_thinking": False}},
+        {"enable_thinking": False},
+        {},
+    ]
+    assert menu.candidates("on")[0] == {"enable_thinking": True, "chat_template_kwargs": {"enable_thinking": True}}
+    assert menu.level_for("auto") == "on" and menu.level_for("off") == "off" and menu.level_for("max") == "on"
+
+
+@pytest.mark.parametrize("model", ["Qwen3-235B-A22B-Instruct-2507", "qwen3-30b-a3b-thinking-2507", "qwen3-coder-plus", "qwen2.5-72b-instruct"])
+def test_qwen_without_switch_is_unknown(model):
+    assert model_wire.thinking_menu(protocol="openai", model=model, base_url="http://127.0.0.1:8000/v1") is None
+
+
 def test_gpt_levels_by_model():
     gpt5 = _menu("openai", "gpt-5", OPENAI)
     assert gpt5.values() == ["minimal", "low", "medium", "high"]
