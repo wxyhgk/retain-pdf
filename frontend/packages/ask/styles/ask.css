@@ -1217,3 +1217,31 @@
 .ask-offer-action:hover {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
 }
+
+/* 太宽的公式、表格（window/wide-blocks.ts）：缩一点放得下就缩（style.zoom）；再宽横着滚，右边淡出一点提示还有，
+ * 对话区右上角一个「放大看」（窗口放大）。 */
+.ask-panel [data-wide="scroll"] {
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+.ask-panel [data-wide="scroll"]:hover {
+  mask-image: none;
+}
+.ask-wide-open {
+  position: absolute;
+  z-index: 2;
+  top: 6px;
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.ask-wide-open:hover {
+  color: var(--ink);
+}

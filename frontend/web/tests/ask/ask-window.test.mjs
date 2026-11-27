@@ -120,6 +120,18 @@ test("另外几处出处（11-27）：认结构化出处的 agent 不带第一�
   assert.match(adapter, /const extra = `\$\{context\?\.extra \|\| ""\}`\.trim\(\);\n      if \(extra\) blocks\.push\(\{ type: "text", text: extra \}\);/);
 });
 
+test("太宽的公式、表格（11-27）：宽得不多缩到放得下，再宽横着滚（窗口里给「放大看」）", async () => {
+  const { fitPlan, MIN_FIT } = await import("../../../packages/ask/src/window/wide-blocks.ts");
+  assert.deepEqual(fitPlan(400, 420), { mode: "fits", zoom: 1 });
+  assert.deepEqual(fitPlan(421, 420), { mode: "fits", zoom: 1 }, "差一像素不算");
+  assert.deepEqual(fitPlan(600, 420), { mode: "fit", zoom: 0.7 });
+  assert.equal(fitPlan(900, 420).mode, "scroll", "缩到一半以下字太小，照旧横着滚");
+  assert.ok(Math.abs(MIN_FIT - 2 / 3) < 1e-9);
+  assert.deepEqual(fitPlan(500, 0), { mode: "fits", zoom: 1 }, "还没排版（量不出宽）不动");
+  const window = readFileSync(new URL("../../../packages/ask/src/window/AskWindow.tsx", import.meta.url), "utf8");
+  assert.match(window, /\{wideBlocks && mode !== "full" \? \(/, "放大了就不用再提示");
+});
+
 test("窗口记忆（11-27）：默认 agent 是上次用的（还能用才算）；记的浮动位置挪回屏幕里", () => {
   const agents = [{ id: "a", available: true }, { id: "pi", available: true }, { id: "codex", available: false }];
   assert.equal(pickAgent(agents, "pi"), "pi", "上次用的");

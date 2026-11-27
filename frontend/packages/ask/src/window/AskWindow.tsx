@@ -12,6 +12,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { Rnd } from "react-rnd";
+import { Maximize2 } from "lucide-react";
+import { Button } from "@retainpdf/ui";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 
 import type { AskAgent, AskAnswerAction, AskAttachTool, AskConfigOption, AskContext, AskContextOffer, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
@@ -38,6 +40,7 @@ import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
 import { loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
 import { useWindowLayout } from "./use-window-layout.js";
+import { useWideBlocks } from "./wide-blocks.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag, type AskConversationUi } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
 import { AttachTools, AttachToolsContext, useHostAttachments } from "./attach-tools.js";
@@ -264,6 +267,8 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
   // 摆法（浮动 / 贴右边 / 放大）和记住它（use-window-layout.ts）。
   const layout = useWindowLayout(onLayout);
   const { mode, rect } = layout;
+  // 太宽的公式、表格：缩一点放得下就缩，再宽就横着滚、给一个「放大看」（wide-blocks.ts）。
+  const wideBlocks = useWideBlocks(threadRoot);
   const chooseAgent = useCallback((id: string) => {
     setAgentId(id);
     saveWindowMemory({ agentId: id });
@@ -318,6 +323,11 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
                   <div className="ask-watermark" aria-hidden>
                     <BrandIcon brand={brand} size={200} />
                   </div>
+                ) : null}
+                {wideBlocks && mode !== "full" ? (
+                  <Button className="ask-wide-open" title="有公式或表格太宽，要横着滚：放大窗口看" onClick={() => layout.changeMode("full")}>
+                    <Maximize2 size={12} aria-hidden /> 放大看
+                  </Button>
                 ) : null}
                 <Thread components={threadComponents} autoFocus />
               </div>

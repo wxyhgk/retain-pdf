@@ -13,6 +13,8 @@ import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-run
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Rnd } from "react-rnd";
+import { Maximize2 } from "lucide-react";
+import { Button } from "@retainpdf/ui";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 import { toInitialMessages } from "../acp/messages.js";
 import { PermissionStore, createAcpChatAdapter } from "../acp/adapter.js";
@@ -26,6 +28,7 @@ import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
 import { loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
 import { useWindowLayout } from "./use-window-layout.js";
+import { useWideBlocks } from "./wide-blocks.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
 import { AttachTools, AttachToolsContext, useHostAttachments } from "./attach-tools.js";
@@ -176,6 +179,8 @@ export default function AskWindow(props) {
     // 摆法（浮动 / 贴右边 / 放大）和记住它（use-window-layout.ts）。
     const layout = useWindowLayout(onLayout);
     const { mode, rect } = layout;
+    // 太宽的公式、表格：缩一点放得下就缩，再宽就横着滚、给一个「放大看」（wide-blocks.ts）。
+    const wideBlocks = useWideBlocks(threadRoot);
     const chooseAgent = useCallback((id) => {
         setAgentId(id);
         saveWindowMemory({ agentId: id });
@@ -185,5 +190,5 @@ export default function AskWindow(props) {
     const shownAgent = agents?.find((agent) => agent.id === agentId);
     const brand = currentModelBrand(config) || (shownAgent ? brandFor(shownAgent.id, shownAgent.name) : "");
     const tint = (effort ? { "--ask-effort-color": effort.color } : {});
-    return (_jsx(Rnd, { className: "ask-window", position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: layout.onDragStop, onResizeStop: layout.onResizeStop, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, agents: agents, agentId: agentId, onAgent: chooseAgent, mode: mode, onMode: layout.changeMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, attachError ? _jsx("p", { className: "ask-error", children: attachError }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AttachToolsContext.Provider, { value: attachUi, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [brand ? (_jsx("div", { className: "ask-watermark", "aria-hidden": true, children: _jsx(BrandIcon, { brand: brand, size: 200 }) })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }) }), footer] })] }) }));
+    return (_jsx(Rnd, { className: "ask-window", position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: layout.onDragStop, onResizeStop: layout.onResizeStop, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, agents: agents, agentId: agentId, onAgent: chooseAgent, mode: mode, onMode: layout.changeMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, attachError ? _jsx("p", { className: "ask-error", children: attachError }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AttachToolsContext.Provider, { value: attachUi, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [brand ? (_jsx("div", { className: "ask-watermark", "aria-hidden": true, children: _jsx(BrandIcon, { brand: brand, size: 200 }) })) : null, wideBlocks && mode !== "full" ? (_jsxs(Button, { className: "ask-wide-open", title: "\u6709\u516C\u5F0F\u6216\u8868\u683C\u592A\u5BBD\uFF0C\u8981\u6A2A\u7740\u6EDA\uFF1A\u653E\u5927\u7A97\u53E3\u770B", onClick: () => layout.changeMode("full"), children: [_jsx(Maximize2, { size: 12, "aria-hidden": true }), " \u653E\u5927\u770B"] })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }) }), footer] })] }) }));
 }
