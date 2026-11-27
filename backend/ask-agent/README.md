@@ -25,6 +25,10 @@ RetainPDF 阅读页提问的自带 agent：在 stdio 上说 [ACP](https://agentc
   `openui_check`（起 Node 跑 `@openuidev/lang-core` 的解析器，关掉遥测），没有书也有。额度和读书分开：取说明 2 次、检查 3 次。
   方案见 [互动块后端实现](../../docs/ops/planning/reader-ask/20261126-互动块后端实现.md)。
 
+- 改译（2026-11-27）：用户问译文准不准、要改译时，系统提示词让模型把建议的整段译文单独放进 ```` ```译文 ```` 代码块（只放译文）。
+  前端回答底下的「改这段译文」取最后一个 `译文` / `translation` / `zh` / `zh-CN` 代码块，填进那一块的编辑框，用户自己保存。
+  pi（`backend/pi-agent`）用的是同一个 `ask_system.txt`，不用另改。
+
 包里两个 Python 包：
 
 - `retainpdf_ask_agent`：核心（ACP 服务端、内容块转换、系统提示词），**只用标准库**；模型的流式调用由调用方传进来
