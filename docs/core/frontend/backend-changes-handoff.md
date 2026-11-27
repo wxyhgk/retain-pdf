@@ -17,8 +17,8 @@
 2026-11-27，只增不改。用户：「自带的 ai 对话为什么只有两个开和关的思考模式？太诡异了」「思考部分让后端去搞」。见 [阅读页提问](../../api/16-AI/01-阅读页提问.md)
 的「思考强度」。握手参数、契约都没变（ACP 消息不在契约里）。
 
-- `configOptions` 的 `options[].name` 是中文了（不思考 / 思考 / 极浅 / 浅 / 中 / 深 / 很深 / 最深），多了 `options[].description`（一句说明快慢和花费），
-  这一项也多了 `description`。前端临时换中文的那段（name 等于 value 时）可以不要了，照报的显示。
+- `configOptions` 的 `options[].name` 是给用户看的英文名（Off / On / Minimal / Low / Medium / High / XHigh / Max，首字母大写；用户：「思考不要用中文!」），
+  这一项的 `name` 是 `Thinking`；多了 `options[].description`（一句中文说明快慢和花费），这一项也多了 `description`。前端临时换中文的那段可以不要了，照报的显示。
 - DashScope 的 Qwen 从两档变五档：`off` / `low` / `medium` / `high` / `max`（按思考预算）。自己部署的 Qwen3、认不出的模型照旧两档。
 - 记住上次选的：用户在提问窗里改了档位，后端按模型连接记下，下次开会话 `currentValue` 就是它（设置里的思考深度不变）。前端开会话后用
   `set_config_option` 设回上次选的那段照旧能用，不冲突。

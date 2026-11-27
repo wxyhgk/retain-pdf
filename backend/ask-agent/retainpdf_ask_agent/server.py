@@ -39,7 +39,7 @@
 不重开会话，回整份 `configOptions`；不认识的 `configId`、不在 `options` 里的 `value` 回 -32602。改过档位后问模型时 `options` 多
 `thinking_level`（没改过不带，按握手的思考深度发）。不报 `category = "model"`：模型是用户在设置里存的连接，换模型重开会话。
 
-2026-11-27 用户：「只有开和关……太诡异了」。每档报中文名和一句说明（`options[].name` / `description`，这一项也有 `description`）；
+2026-11-27 用户：「只有开和关……太诡异了」。每档报英文名（Off / On / Low …，用户：「思考不要用中文!」）和一句中文说明（`options[].name` / `description`，这一项也有 `description`）；
 改了档位调用方给的 `remember_thinking` 记下（下次开会话默认这一档，读写在接线的 `thinking_choice.py`）；每问答完 `_meta.retainpdf.usage.thinking`
 报 `{level, thought}`（这一问有没有真的思考：收到思考内容、思考 token 大于 0、或者正文里有 `<think>`），档位是猜的（`thinking.guessed`）、
 开了思考却没思考时再带 `notice`（一句给用户看的话）。
@@ -103,7 +103,7 @@ PARSE_ERROR = -32700
 RESOURCE_NOT_FOUND = -32002
 # ACP session config option：思考强度这一项的 id 和 category
 THOUGHT_LEVEL = "thought_level"
-THOUGHT_LEVEL_NAME = "思考"
+THOUGHT_LEVEL_NAME = "Thinking"
 # 档位是猜的模型开了思考、这一问却没见思考时给用户看的话（`_meta.retainpdf.usage.thinking.notice`）
 THINKING_NOT_SEEN_NOTICE = "这一问没收到思考内容：这个服务可能不认思考开关，开不开都一样。"
 
