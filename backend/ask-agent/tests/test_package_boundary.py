@@ -11,8 +11,9 @@ import retainpdf_ask_agent
 
 CORE = Path(retainpdf_ask_agent.__file__).resolve().parent
 # 2026-11-25 读书：「会附上位置」改成「通常会附上」、自动取的前后文怎么用；另加有书时的工具那段（材料先看，答案明显在别处才调工具）
+# 2026-11-27 改译：建议的整段译文放进 ```译文 代码块（前端回答下的「改这段译文」取它填进编辑框）
 PROMPT_SHA256 = {
-    "ask_system.txt": "961be3f06315c4e46375fd73fba7f055d9c51ecc417963ef1a37c7159a1fb106",
+    "ask_system.txt": "083c199c5ec21f7c6875fcf7fc4ae6a21d5343c356bbeb88f3f41801c5c0bbbc",
     "ask_tools.txt": "e66979f566404debd434b38629b4884d957391e38fd2d7eec422b40300e705b0",
 }
 
