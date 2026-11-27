@@ -6,6 +6,7 @@ from retainpdf_translation_agent.agent import PROMPT_VERSION
 from retainpdf_translation_agent.agent import AuthFailed
 from retainpdf_translation_agent.agent import ModelUnavailable
 from retainpdf_translation_agent.agent import QuotaExhausted
+from retainpdf_translation_agent.agent import NetworkFailed
 from retainpdf_translation_agent.agent import RateLimited
 from retainpdf_translation_agent.agent import RegionUnsupported
 from retainpdf_translation_agent.agent import RequestRejected
@@ -55,6 +56,7 @@ __all__ = [
     "DocumentRun",
     "Glossary",
     "ModelUnavailable",
+    "NetworkFailed",
     "PageInput",
     "QuotaExhausted",
     "RateLimited",

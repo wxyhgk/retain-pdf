@@ -610,3 +610,56 @@ def test_the_http_transport_reports_rate_limit_waits(monkeypatch) -> None:
     }
     assert calls[1] == ("sleep", 3.0) and calls[2] is None
     assert calls[3][0] == "sleep" and len(calls) == 4  # 网络错误照旧退避，不报等待
+
+
+def test_the_http_transport_stops_at_once_on_certificate_errors(monkeypatch) -> None:
+    """证书验证不过：第一次就停（`NetworkFailed`），不白等 6 轮退避（2026-11-27 桌面版缺根证书时每次都这样）。"""
+    import ssl
+    import urllib.error
+    import urllib.request
+
+    import pytest
+
+    from retainpdf_translation_agent.agent import NetworkFailed, make_http_transport
+
+    calls: list = []
+
+    def urlopen(request, timeout, context=None):
+        calls.append(1)
+        raise urllib.error.URLError(ssl.SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed"))
+
+    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    waits: list[float] = []
+    with pytest.raises(NetworkFailed) as stopped:
+        make_http_transport("k", url="https://example.invalid/v1/messages", sleep=waits.append)({"model": "m"})
+    assert stopped.value.reason == "network_error"
+    assert "CERTIFICATE_VERIFY_FAILED" in str(stopped.value)
+    assert calls == [1] and waits == []
+
+
+def test_the_http_transport_reports_network_errors_as_network_not_rate_limits(monkeypatch) -> None:
+    """一直连不上：重试用完报 `NetworkFailed`（以前报成 `RateLimited`）；最后一次是 429 的照旧是 `RateLimited`。"""
+    import io
+    import urllib.error
+    import urllib.request
+
+    import pytest
+
+    from retainpdf_translation_agent.agent import MAX_ATTEMPTS, NetworkFailed, RateLimited, make_http_transport
+
+    def refused(request, timeout, context=None):
+        raise urllib.error.URLError(ConnectionRefusedError(61, "Connection refused"))
+
+    monkeypatch.setattr(urllib.request, "urlopen", refused)
+    waits: list[float] = []
+    with pytest.raises(NetworkFailed) as stopped:
+        make_http_transport("k", url="https://example.invalid/v1/messages", sleep=waits.append)({"model": "m"})
+    assert "Connection refused" in str(stopped.value) and len(waits) == MAX_ATTEMPTS
+
+    def limited(request, timeout, context=None):
+        raise urllib.error.HTTPError("https://example.invalid", 429, "Too Many Requests", {}, io.BytesIO(b"{}"))
+
+    monkeypatch.setattr(urllib.request, "urlopen", limited)
+    with pytest.raises(RateLimited) as limited_stop:
+        make_http_transport("k", url="https://example.invalid/v1/messages", sleep=lambda s: None)({"model": "m"})
+    assert not isinstance(limited_stop.value, NetworkFailed)

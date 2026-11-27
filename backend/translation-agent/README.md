@@ -60,7 +60,7 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   同一译法两块报过才升审定，两种译法打架记歧义单；同一章两处声明同词异义，加一条只管这一章的术语。程序抓"全称 (缩写)"。
 - `context.py`：每页固定大小的上下文包（默认约 7000 token）：风格、术语、保留原文、缩写、相邻页、摘要，超了按顺序砍。
 - `runner.py`：调度。逐页建上下文包、翻、把译者报的术语交给术语表（块要过校验、原文要有这个词），写 `pages/`、
-  `glossary/vN.json`、`ledger.jsonl`、`progress.json`；`StopRun`（额度用完、密钥不对、一直限流）时保存进度停下。
+  `glossary/vN.json`、`ledger.jsonl`、`progress.json`；`StopRun`（额度用完、密钥不对、一直限流、网络连不上；网络的是 `NetworkFailed`，2026-11-27 以前也报成限流，证书验证不过第一次就停）时保存进度停下。
 - `reader.py`：翻译前通读。程序挑候选（反复出现的词组、专名）加全部标题和样张，一次请求定体裁、人名规则（理工保留原文、人文"中文译名（原文）"）、
   文风说明、全文统一的术语和人名、标题和目录的译法；`DocumentRun(read_first=True)` 用它。
 - `review.py`：审校。每页正文类块交给审校只开问题单（错译、漏译添加、数字术语、不通顺、语气偏离），逐字引用原文译文，
