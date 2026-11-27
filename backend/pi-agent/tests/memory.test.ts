@@ -16,7 +16,7 @@ const ASK_AGENT = join(dirname(fileURLToPath(import.meta.url)), "../../ask-agent
 
 type Call = { method: string; path: string; body: any };
 
-function backend(options: { enabled?: boolean; memories?: any[]; context?: any } = {}) {
+function backend(options: { enabled?: boolean; memories?: any[]; summaries?: any[]; context?: any } = {}) {
   const calls: Call[] = [];
   const http: HttpCall = async (method, path, body) => {
     calls.push({ method, path, body });
@@ -26,8 +26,11 @@ function backend(options: { enabled?: boolean; memories?: any[]; context?: any }
       return { status: 200, json: { code: 0, data: { created: true, replaced: body.replaces ?? null, memory: { memory_id: "mem-1", ...body } } } };
     }
     if (method === "GET" && path.startsWith("/api/v1/ai/memories?")) {
-      const scope = new URLSearchParams(path.split("?")[1]).get("scope");
-      return { status: 200, json: { code: 0, data: { memories: (options.memories ?? []).filter((memory) => memory.scope === scope) } } };
+      const params = new URLSearchParams(path.split("?")[1]);
+      const scope = params.get("scope");
+      const memories = (options.memories ?? []).filter((memory) => memory.scope === scope);
+      const summaries = params.get("include_summaries") === "true" ? { summaries: options.summaries ?? [] } : {};
+      return { status: 200, json: { code: 0, data: { memories, ...summaries } } };
     }
     if (path.startsWith("/api/v1/ai/ask-conversations/conv-1/context?")) {
       return options.context ? { status: 200, json: { code: 0, data: options.context } } : { status: 404, json: { message: "not found" } };
@@ -117,6 +120,21 @@ test("search looks in the user layer and this book, and says where each one is f
   assert.equal((await new MemoryTools({ http: http2 }).run("search_memories", { query: "无" })).text, "记忆里没有找到「无」。");
   assert.equal(calls2.filter((call) => call.path.startsWith("/api/v1/ai/memories?")).length, 1);
   assert.equal((await memory.run("search_memories", { query: " " })).isError, true);
+});
+
+test("search with scope all also lists conversation summaries, cut short", async () => {
+  const { http, calls } = backend({ summaries: [
+    { kind: "side", conversation_id: "conv-s", compaction_id: null, summary: "结论：交换项\n只在同自旋之间", created_at: "2026-11-21T09:00:00Z" },
+    { kind: "compaction", conversation_id: "conv-1", compaction_id: "cmp-1", summary: "长".repeat(500), created_at: "2026-11-22T09:00:00Z" },
+  ] });
+  const memory = new MemoryTools({ http, documentId: "doc1" });
+  const found = await memory.run("search_memories", { query: "交换项" });
+  assert.equal(found.text, `- [副对话的结论] 2026-11-21：结论：交换项 只在同自旋之间\n- [以前对话的摘要] 2026-11-22：${"长".repeat(400)}……`);
+  assert.equal(found.summary, "找到 0 条、2 份对话摘要");
+  assert.equal(calls.filter((call) => call.path.includes("include_summaries=true")).length, 1);
+  calls.length = 0;
+  await memory.run("search_memories", { query: "交换项", scope: "book" });
+  assert.ok(!calls.some((call) => call.path.includes("include_summaries")));
 });
 
 test("with memory turned off neither tool sends anything", async () => {

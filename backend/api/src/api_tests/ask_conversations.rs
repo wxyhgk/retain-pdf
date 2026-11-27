@@ -199,6 +199,28 @@ async fn deleting_a_conversation_removes_its_pi_session_files() {
     assert!(files[2].exists(), "别的对话还记着这个会话，不能删");
 }
 
+/// search_memories 也查对话摘要（第二期）：`include_summaries=true` 时 `summaries` 里有副对话的结论；不给就没有这个字段。
+#[tokio::test]
+async fn memory_search_can_include_conversation_summaries() {
+    let state = test_state("ask-memories-summaries");
+    let contract = contract(CONTRACT);
+    let main = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", None).await;
+    let main_id = main["conversation_id"].as_str().unwrap().to_string();
+    let side = ok_data(&state, "POST", "/api/v1/ai/ask-conversations", Some(json!({ "parent_id": main_id }))).await;
+    let side_id = side["conversation_id"].as_str().unwrap().to_string();
+    ok_data(&state, "POST", &format!("/api/v1/ai/ask-conversations/{side_id}/close"), Some(json!({"summary": "结论：交换项只在同自旋之间"}))).await;
+
+    let found = ok_data(&state, "GET", "/api/v1/ai/memories?q=%E4%BA%A4%E6%8D%A2%E9%A1%B9&include_summaries=true", None).await;
+    assert_definition(&found, &contract, "AskMemoryListView", "found");
+    assert_eq!(found["summaries"][0]["kind"], "side");
+    assert_eq!(found["summaries"][0]["conversation_id"], side_id.as_str());
+    assert!(found["summaries"][0]["compaction_id"].is_null());
+    let plain = ok_data(&state, "GET", "/api/v1/ai/memories?q=%E4%BA%A4%E6%8D%A2%E9%A1%B9", None).await;
+    assert!(plain.get("summaries").is_none());
+    let no_query = ok_data(&state, "GET", "/api/v1/ai/memories?include_summaries=true", None).await;
+    assert_eq!(no_query["summaries"], json!([]));
+}
+
 /// 2026-11-26 用户定：主对话只能先归档再删；副对话不受限制。
 #[tokio::test]
 async fn the_open_main_conversation_cannot_be_deleted_until_archived() {

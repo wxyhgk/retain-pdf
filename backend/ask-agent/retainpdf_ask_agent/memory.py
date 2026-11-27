@@ -9,7 +9,8 @@
   - `remember(text, scope, category?, replaces?)`：`POST /ai/memories`（`origin: agent`，出处是这个对话、这一问的书和页）。
     成功的结果多带一份 `meta`（`{"memory": {id, scope, text, category, document_id, replaced}}`），`server.py` 把它放进
     `tool_call_update` 的 `_meta.retainpdf`，前端画成「已记住：……（撤销）」。
-  - `search_memories(query, scope?, limit?)`：`GET /ai/memories?q=…`；书层默认只查当前这本书。
+  - `search_memories(query, scope?, limit?)`：`GET /ai/memories?q=…`；书层默认只查当前这本书。`scope=all` 时一起查对话摘要
+    （`include_summaries=true`：副对话的结论、生效的压缩摘要，2026-11-26 第二期），最多 3 份、每份截到 400 字。
 - 每一问的额度在 `server.py` 的 `TurnBudget`：记 `REMEMBER_PER_TURN` 次、查 `SEARCH_PER_TURN` 次。
 - 「让 AI 使用记忆」总开关（`GET /ai/ask-settings` 的 `memory_enabled`，2026-11-26 用户定，默认开）：每次调这两个工具前看一眼，
   关着就不发请求、回「用户关掉了记忆」；开会话时后端的上下文本来就不带记忆。看不了（后端没开）当开着，请求自己会报错。
@@ -34,6 +35,10 @@ SEARCH_PER_TURN = 2
 MAX_MEMORY_CHARS = 500
 DEFAULT_SEARCH_LIMIT = 8
 MAX_SEARCH_LIMIT = 20
+# scope=all 时一起查的对话摘要：最多给几份、每份最多几个字（2026-11-26 第二期）
+MAX_SUMMARY_HITS = 3
+SUMMARY_HIT_CHARS = 400
+SUMMARY_KIND_LABELS = {"side": "副对话的结论", "compaction": "以前对话的摘要"}
 RECENT_TURNS = 6
 TIMEOUT_SECS = 10
 CONTEXT_TIMEOUT_SECS = 3
@@ -67,7 +72,8 @@ TOOL_SPECS: list[dict[str, Any]] = [
     },
     {
         "name": SEARCH_TOOL,
-        "description": "查之前记下的记忆（关于用户的、关于这本书的），系统提示词里没列全或要找某件事时用。"
+        "description": "查之前记下的记忆（关于用户的、关于这本书的），系统提示词里没列全或要找某件事时用；"
+                       "scope=all 时也查以前对话的摘要（副对话的结论、压缩了的旧对话），想知道以前聊过什么也用它。"
                        "空格隔开的几个词都要在同一条里；找不到换个说法再试一次。",
         "parameters": {
             "type": "object",
@@ -120,6 +126,16 @@ def memory_line(memory: dict[str, Any]) -> str:
     date = str(memory.get("updated_at") or "")[:10]
     label = CATEGORY_LABELS.get(str(memory.get("category") or ""), "其他")
     return f"- [{memory.get('memory_id')}] {date} {label}：{str(memory.get('text') or '').strip()}"
+
+
+def summary_line(hit: dict[str, Any]) -> str:
+    """查到的对话摘要：`- [副对话的结论] 日期：摘要（太长截断）`。"""
+    date = str(hit.get("created_at") or "")[:10]
+    label = SUMMARY_KIND_LABELS.get(str(hit.get("kind") or ""), "以前对话的摘要")
+    text = " ".join(str(hit.get("summary") or "").split())
+    if len(text) > SUMMARY_HIT_CHARS:
+        text = text[:SUMMARY_HIT_CHARS] + "……"
+    return f"- [{label}] {date}：{text}"
 
 
 class MemoryTools:
@@ -251,22 +267,30 @@ class MemoryTools:
         limit = arguments.get("limit")
         limit = limit if isinstance(limit, int) and not isinstance(limit, bool) and 1 <= limit <= MAX_SEARCH_LIMIT else DEFAULT_SEARCH_LIMIT
         found: list[dict[str, Any]] = []
+        summaries: list[dict[str, Any]] = []
         layers = ["user", "book"] if scope == "all" else [scope]
         for layer in layers:
             document_id = self._book() if layer == "book" else ""
             if layer == "book" and scope == "all" and not document_id:
                 continue
-            data, problem = self._get("/api/v1/ai/memories", {"q": query, "scope": layer, "document_id": document_id, "limit": limit})
+            params = {"q": query, "scope": layer, "document_id": document_id, "limit": limit}
+            if scope == "all" and layer == "user":
+                params["include_summaries"] = "true"  # 对话摘要不分层，跟着第一次查一起要
+            data, problem = self._get("/api/v1/ai/memories", params)
             if problem:
                 return tool_error(f"没查成：{problem}")
             found.extend(memory for memory in (data or {}).get("memories") or [] if isinstance(memory, dict))
-        if not found:
+            summaries.extend(hit for hit in (data or {}).get("summaries") or [] if isinstance(hit, dict))
+        if not found and not summaries:
             return ToolResult(text=f"记忆里没有找到「{query}」。", summary="没找到")
         lines = []
         for memory in found[:limit]:
             layer = "关于用户" if memory.get("scope") == "user" else ("这本书" if memory.get("document_id") == self._book() else "别的书")
             lines.append(f"{memory_line(memory)}（{layer}）")
-        return ToolResult(text="\n".join(lines), summary=f"找到 {min(len(found), limit)} 条")
+        lines.extend(summary_line(hit) for hit in summaries[:MAX_SUMMARY_HITS])
+        shown = min(len(found), limit)
+        note = f"找到 {shown} 条" + (f"、{min(len(summaries), MAX_SUMMARY_HITS)} 份对话摘要" if summaries else "")
+        return ToolResult(text="\n".join(lines), summary=note)
 
     # 开会话的上下文 ------------------------------------------------------
 

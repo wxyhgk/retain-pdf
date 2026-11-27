@@ -557,6 +557,35 @@ export interface AskMemoryCreatedView {
 }
 export interface AskMemoryListView {
   memories: AskMemoryRecord[];
+  /**
+   * include_summaries=true 才有（没给 q 是空数组）：查到的对话摘要，最近的在前，条数跟着 limit，每份最多 1000 字。
+   */
+  summaries?: AskSummaryHit[];
+}
+/**
+ * 查记忆时一起查到的一份对话摘要（2026-11-26 第二期）。
+ */
+export interface AskSummaryHit {
+  /**
+   * side：副对话的结论；compaction：压缩摘要。
+   */
+  kind: "side" | "compaction";
+  /**
+   * 副对话（side）/ 被压缩的对话（compaction）。
+   */
+  conversation_id: string;
+  /**
+   * 压缩摘要的编号；副对话的结论是 null。
+   */
+  compaction_id: string | null;
+  /**
+   * 摘要正文，最多 1000 字。
+   */
+  summary: string;
+  /**
+   * 副对话结束的时间 / 压缩的时间。
+   */
+  created_at: string;
 }
 export interface AskMessagePageView {
   conversation_id: string;
@@ -714,6 +743,10 @@ export interface ListAskMemoriesQuery {
    * 默认 100。
    */
   limit?: number;
+  /**
+   * 2026-11-26 第二期：给了 q 时一起查对话摘要（副对话的结论、每个对话生效的那份压缩摘要；作废的不查），结果在 summaries。agent 的 search_memories 用。
+   */
+  include_summaries?: boolean;
 }
 /**
  * 不认识的参数 400。
