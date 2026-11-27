@@ -1,9 +1,9 @@
 // 阅读页提问的主对话、副对话、记忆（契约 ask-conversations.v1，2026-11-26）：走生成的请求函数，这里只把参数摆顺手。
 // 用法见 docs/api/16-AI/02-主对话和记忆.md；从 ./ai 导出。
 import * as generated from "./generated/ask-conversations.js";
-/** 取或建当前的全局主对话（幂等）。 */
-export function getMainAskConversation(apiPrefix, options) {
-    return generated.getMainAskConversation(apiPrefix, {}, options);
+/** 取或建主对话（幂等）：给了书是这本书开着的那条（2026-11-27 起按书分），不给是全局那条。 */
+export function getMainAskConversation(apiPrefix, documentId, options) {
+    return generated.getMainAskConversation(apiPrefix, { body: documentId ? { document_id: documentId } : {} }, options);
 }
 export function listAskConversations(apiPrefix, query = {}, options) {
     return generated.listAskConversations(apiPrefix, { query }, options);

@@ -28,7 +28,7 @@ import { API_PREFIX } from "@/platform/config/api-constants.js";
 /** connection：设置里那条模型连接（没配是 null）。 */
 export function createAskConversationsPort(connection: () => Promise<AskModelConnectionInput | null>): ReaderAskConversationsPort {
   return {
-    main: () => getMainAskConversation(API_PREFIX),
+    main: (documentId) => getMainAskConversation(API_PREFIX, documentId || null),
     get: (conversationId) => getAskConversation(API_PREFIX, conversationId),
     messages: (conversationId, page = {}) => listAskConversationMessages(API_PREFIX, conversationId, {
       ...(page.beforeSeq ? { before_seq: page.beforeSeq } : {}),

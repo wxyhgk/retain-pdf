@@ -55,7 +55,9 @@ function push(conversationId: string, input: PushInput): AskConversationMessageR
 }
 
 export const mockAskConversations: ReaderAskConversationsPort = {
-  main: async () => [...conversations.values()].find((record) => record.kind === "main" && record.status === "open") || create("main"),
+  // 和后端一样按书分（2026-11-27）：这本书开着的那条，没有就建。
+  main: async (documentId) => [...conversations.values()].find((record) => record.kind === "main" && record.status === "open" && record.document_id === (documentId || null))
+    || create("main", { document_id: documentId || null }),
   get: async (conversationId) => must(conversationId),
   messages: async (conversationId, page = {}) => {
     must(conversationId);

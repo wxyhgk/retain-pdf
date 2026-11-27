@@ -1,7 +1,9 @@
-import type { AppendAskMessagesInput, AppendAskMessagesView, AskCompactionListView, AskContextQuery, AskContextView, AskConversationDeleteResultView, AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord, AskMessagePageView, AskSettingsRecord, CloseAskConversationInput, CloseAskConversationView, CreateAskCompactionInput, CreateAskCompactionView, CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput, SupersedeAskMessagesView } from "@retainpdf/contracts/ask-conversations";
+import type { AppendAskMessagesInput, AppendAskMessagesView, AskCompactionListView, AskContextQuery, AskContextView, AskConversationDeleteResultView, AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord, AskMessagePageView, AskSettingsRecord, CloseAskConversationInput, CloseAskConversationView, CreateAskCompactionInput, CreateAskCompactionView, CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, EnsureAskMainConversationInput, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput, SupersedeAskMessagesView } from "@retainpdf/contracts/ask-conversations";
 import { type RequestOptions } from "../request.js";
 /** POST /api/v1/ai/ask-conversations/main */
-export declare function getMainAskConversation(apiPrefix: string | undefined, _args?: Record<string, never>, options?: RequestOptions): Promise<AskConversationRecord>;
+export declare function getMainAskConversation(apiPrefix: string | undefined, args: {
+    body: EnsureAskMainConversationInput;
+}, options?: RequestOptions): Promise<AskConversationRecord>;
 /** GET /api/v1/ai/ask-conversations */
 export declare function listAskConversations(apiPrefix: string | undefined, args?: {
     query?: ListAskConversationsQuery;

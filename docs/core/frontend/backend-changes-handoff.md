@@ -14,7 +14,7 @@
 
 ## 阅读页提问：主对话按书分（feat/ask-main-per-book）
 
-2026-11-27，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「主对话按书分」，决定 [主对话按书分](../../ops/planning/reader-ask/20261127-主对话按书分.md)。
+2026-11-27，只增不改（前端已接：`feat/ask-main-per-book-web`，取主对话带这本书的 `document_id`、换书清掉窗口），见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「主对话按书分」，决定 [主对话按书分](../../ops/planning/reader-ask/20261127-主对话按书分.md)。
 用户反馈「主对话串了，好几个 pdf 打开都是同一个聊天框」，定为每本书一个主对话、用户层记忆照旧共用。契约 `ask-conversations.v1`：
 `getMainAskConversation` 多了可选的请求体 `EnsureAskMainConversationInput {document_id?}`，`ListAskConversationsQuery` 多 `document_id`。
 
