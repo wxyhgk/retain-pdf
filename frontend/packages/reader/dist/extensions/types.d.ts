@@ -84,8 +84,11 @@ export type ReaderToolbarItem = {
     /** 悬停说明；不给用 label。 */
     title?: string;
     Icon: LucideIcon;
-    /** 放哪：顶栏右边（打开面板、换看法的：提问、Markdown、对比版本，默认）或底栏右边（在书页上动手的：画笔、截图）。 */
-    place?: "top" | "bottom";
+    /** 画在 Icon 的位置上的东西（画笔：当前笔色的小圆点，2026-11-28）；不给画 Icon。 */
+    mark?: ReactNode;
+    /** 放哪：顶栏右边（打开面板的：提问、Markdown，默认）、底栏右边（在书页上动手的：画笔、截图），
+     *  或顶栏中间「对照」后面的 ▾（换对照的看法：对比版本，2026-11-28 从顶栏右边挪过来）。 */
+    place?: "top" | "bottom" | "compare";
     /** 按下的样子（开着、正在用）。 */
     pressed?: boolean;
     onClick?: () => void;

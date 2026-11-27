@@ -248,7 +248,8 @@
   gap: 5px;
   min-width: 34px;
   min-height: 30px;
-  padding: 0 11px 0 9px;
+  /* 只有字（2026-11-28 去掉了字前面的图标），左右一样宽。 */
+  padding: 0 14px;
   border: var(--reader-tab-edge-width, 0) solid var(--reader-tab-edge-color, transparent);
   border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
   background: transparent;
@@ -264,23 +265,10 @@
   white-space: nowrap;
 }
 
-/* 窄到放不下字（两边给托盘留了位）：只剩图标，字留给读屏。 */
+/* 窄屏：字照旧（没有图标可退了），两边收窄一点。 */
 @media (max-width: 639px) {
   .reader-workspace-tab {
-    gap: 0;
-    width: 34px;
-    padding: 0;
-  }
-
-  .reader-workspace-tab-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
+    padding: 0 9px;
   }
 }
 
@@ -314,13 +302,10 @@
   display: none;
 }
 
-.reader-download-trigger-caret {
-  opacity: 0.6;
-  transition: transform 130ms ease;
-}
-
-.reader-download-actions[open] .reader-download-trigger-caret {
-  transform: rotate(180deg);
+/* 「下载」只是一个图标按钮（2026-11-28：去掉了旁边的 ▾，点了照旧弹出原文 / 对照 / 译文 PDF）。 */
+.reader-download-trigger {
+  width: 32px;
+  padding: 0;
 }
 
 .reader-download-menu {

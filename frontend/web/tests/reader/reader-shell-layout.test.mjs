@@ -127,3 +127,20 @@ test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待改个�
   assert.equal(declaration(["hud.css"], ".reader-bottombar svg", "width"), "14px");
   assert.equal(declaration(["hud.css"], ".reader-bottombar .reader-react-hud-btn", "height"), "26px");
 });
+
+test("顶栏、底栏做减法（2026-11-28）：页签只有字；右边只有提问 / Markdown 胶囊和一个下载图标；对比版本在「对照」后面；底栏 ● 画笔、截图、?；目录不再切书页左边", () => {
+  const tabs = read("src/components/react-pdf/ReaderWorkspaceTabs.tsx");
+  assert.doesNotMatch(tabs, /<Icon\b|FileText|Columns2|Languages/, "页签前面不再有图标");
+  assert.match(tabs, /\{id === "compare" \? props\.compareExtra : null\}/, "对比版本紧跟在「对照」后面");
+  assert.match(read("src/ReaderAppReactPdf.tsx"), /compareExtra=\{<ReaderBarTools place="compare" \/>\}/);
+  assert.match(read("src/extensions/builtin/compare.tsx"), /place: "compare",/);
+  assert.match(declaration(["toolball.css"], ".reader-bar-tools.is-top", "border-radius"), /--reader-tab-radius/, "右边胶囊和页签胶囊一个圆角");
+  assert.equal(declaration(["toolball.css"], ".reader-bar-tools.is-top", "background"), declaration(["chrome.css"], ".reader-workspace-tabs", "background"), "和页签胶囊一个底色");
+  const download = read("src/components/react-pdf/ReaderDownloadActions.tsx");
+  assert.doesNotMatch(download, /ChevronDown|reader-download-trigger-caret/, "下载只是一个图标");
+  assert.match(read("src/extensions/builtin/ink.tsx"), /mark: <span className="reader-ink-dot" style=\{\{ background: `var\(--\$\{ink\.color\}\)` \}\} aria-hidden \/>/, "画笔前面是当前笔色的小圆点");
+  const help = read("src/components/react-pdf/ReaderShortcutsHelp.tsx");
+  assert.doesNotMatch(help, /Keyboard className|from "lucide-react"/, "快捷键不再是键盘方框图标");
+  assert.match(help, /<span className="reader-react-shortcuts-mark" aria-hidden>\?<\/span>/);
+  assert.doesNotMatch(css("toc-minimap.css"), /reader-react-scroll-shell/, "目录不再切书页左边");
+});

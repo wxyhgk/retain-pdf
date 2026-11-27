@@ -203,11 +203,9 @@
   color: var(--muted, var(--muted));
 }
 
-/* 快捷键帮助 */
+/* 快捷键帮助：不再用竖线隔开（2026-11-28，底栏左右对称，左边书签、收藏之间也没有线）。 */
 .reader-react-hud-help {
   margin-left: 2px;
-  padding-left: 6px;
-  border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
 .reader-react-shortcuts {
   position: relative;
@@ -299,8 +297,18 @@
   justify-content: center;
   padding: 0 6px;
 }
-.reader-react-shortcuts-icon {
+/* 「?」字（2026-11-28 代替键盘方框图标）：和底栏的字一样轻。 */
+.reader-react-shortcuts-mark {
   display: block;
+  color: var(--muted);
+  font-size: var(--ui-text-md, 13px);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.reader-react-shortcuts-btn:hover .reader-react-shortcuts-mark,
+.reader-react-shortcuts-btn.is-active .reader-react-shortcuts-mark {
+  color: var(--ink);
 }
 
 /* —— 书签（ReaderBookmarkControl）：页码旁一个「给这一页加书签」。书签列表 2026-11-27 挪进左栏（finder.css）。 —— */

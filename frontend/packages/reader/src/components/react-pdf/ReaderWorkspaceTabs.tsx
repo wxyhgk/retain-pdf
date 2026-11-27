@@ -1,17 +1,17 @@
-import type { ReactElement, ReactNode } from "react";
+import { Fragment, type ReactElement, type ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
-import { ArrowDownToLine, CheckCircle2, Columns2, FileText, Languages, Radio } from "lucide-react";
+import { ArrowDownToLine, CheckCircle2, Radio } from "lucide-react";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
 import { useReaderContext } from "./reader-context.js";
 
 export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "ai";
 export type ReaderWorkspaceMode = "source" | "compare" | "translated";
 
-// 页签上写着字（窄屏只剩图标，见 chrome.css）：只有图标时看不出哪颗是哪颗。
+// 只写字（2026-11-28：以前字前面各有一个图标，三个方框图标挨着，重复感最强，去掉了）。
 const WORKSPACES = [
-  { id: "source", label: "原文", Icon: FileText },
-  { id: "compare", label: "对照", Icon: Columns2 },
-  { id: "translated", label: "译文", Icon: Languages },
+  { id: "source", label: "原文" },
+  { id: "compare", label: "对照" },
+  { id: "translated", label: "译文" },
 ] as const;
 
 export type ReaderWorkspaceTabsProps = {
@@ -38,6 +38,8 @@ export type ReaderWorkspaceTabsProps = {
   start?: ReactNode;
   /** 顶栏右段。 */
   end?: ReactNode;
+  /** 「对照」后面紧跟的东西（对比版本的 ▾，ReaderBarTools place="compare"；只有一份译文时没有）。 */
+  compareExtra?: ReactNode;
 };
 
 export function liveTranslationStatusCopy(state: LiveTranslationState): string {
@@ -93,7 +95,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
       {/* 进度那一组挂在页签右边（相对这一层定位），页签照旧居中（左右两段同宽的网格）。 */}
       <div className="reader-workspace-center">
         <div className="reader-workspace-tabs" role="tablist" aria-label="阅读工作区">
-          {WORKSPACES.map(({ id, label, Icon }) => {
+          {WORKSPACES.map(({ id, label }) => {
             const active = mode === id;
             const disabled = isReaderWorkspaceDisabled({
               id,
@@ -102,8 +104,8 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
               liveTranslationAvailable: Boolean(liveTranslation),
             });
             return (
+              <Fragment key={id}>
               <button
-                key={id}
                 type="button"
                 className={`reader-workspace-tab${active ? " is-active" : ""}`}
                 role="tab"
@@ -113,9 +115,10 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
                 disabled={disabled}
                 onClick={() => onModeChange(id)}
               >
-                <Icon size={15} strokeWidth={2.2} aria-hidden />
                 <span className="reader-workspace-tab-label">{label}</span>
               </button>
+              {id === "compare" ? props.compareExtra : null}
+              </Fragment>
             );
           })}
         </div>

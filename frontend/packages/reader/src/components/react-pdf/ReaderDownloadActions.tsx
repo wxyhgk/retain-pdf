@@ -18,7 +18,7 @@
  * 要悬停才看得到）。用原生 <details>：三路按钮一直在 DOM 里（id 不变，下载委托和
  * 测试都认它们），只是收起时不显示。
  */
-import { ChevronDown, Columns2, Download, FileText, Languages } from "lucide-react";
+import { Columns2, Download, FileText, Languages } from "lucide-react";
 import { useEffect, useRef, type ReactElement } from "react";
 
 import {
@@ -80,7 +80,6 @@ export function ReaderDownloadActions(props: ReaderDownloadActionsProps): ReactE
       <summary className="reader-download-trigger" aria-label="下载 PDF" title="下载 PDF">
         <Download size={15} strokeWidth={2.1} aria-hidden />
         <span className="reader-download-trigger-label">下载</span>
-        <ChevronDown size={13} strokeWidth={2.2} aria-hidden className="reader-download-trigger-caret" />
       </summary>
       <div className="reader-download-menu" role="group" aria-label="下载 PDF">
         {downloadItems.map((action) => {

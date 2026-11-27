@@ -1,10 +1,11 @@
 // 顶栏右边、底栏右边的工具（2026-11-28 起三行壳层：顶栏、底栏都是全宽实占位的栏）。按钮来自贡献表，按 place 分：
-// - 顶栏（place 不写或 "top"）：打开面板、换看法的——提问、对比版本，后面跟着扩展带的面板（Markdown）；图标加字，窄屏只剩图标；
-// - 底栏（"bottom"）：在书页上动手的——画笔（旁边 ▾ 弹出笔型、颜色、撤销，平时不展开）、截图；只有图标。
+// - 顶栏右边（place 不写或 "top"）：打开面板的——提问，后面跟着扩展带的面板（Markdown）；包在一个浅灰胶囊里，和中间的页签胶囊呼应；
+// - 底栏右边（"bottom"）：在书页上动手的——● 画笔 ▾（笔色小圆点，▾ 弹出笔型、颜色、撤销）、截图；轻图标 + 短字，和底栏左边的书签、收藏一个密度；
+// - 「对照」后面（"compare"）：换对照看法的——对比版本，只画一个 ▾（2026-11-28 从顶栏右边挪过来，那里只留提问 / Markdown）。
 // 带 popup 的点了弹出（顶栏往下弹、底栏往上弹），点外面、Esc 收起。提问排第一（11-27 那 7 条意见里第 1 条是「入口太隐蔽」）。
 //
 // 以前（11-20）是右下角一颗黑色小球、（11-27）是底栏浮条里竖线后面一组，都浮在书页上。
-// 2026-09 删过一个圆钮：两个启动器各管一半，开着面板时圆钮被 CSS 藏掉、里面的功能进不去。这里两组各管各的，面板开着时都在。
+// 2026-09 删过一个圆钮：两个启动器各管一半，开着面板时圆钮被 CSS 藏掉、里面的功能进不去。这里几组各管各的，面板开着时都在。
 import { Fragment, useEffect, useRef, useState, type ReactElement } from "react";
 import { ChevronDown } from "lucide-react";
 import { Button } from "@retainpdf/ui";
@@ -26,7 +27,7 @@ function toolOrder(extensions: readonly ReaderExtension[]): readonly ReaderExten
   return [...extensions].sort((a, b) => rank(a) - rank(b));
 }
 
-export type ReaderBarPlace = "top" | "bottom";
+export type ReaderBarPlace = "top" | "bottom" | "compare";
 
 export function ReaderBarTools({
   place,
@@ -85,7 +86,7 @@ export function ReaderBarTools({
           return (
             <span key={key} className="reader-bar-tool-group" data-has-dropdown={item.dropdown ? "true" : undefined}>
               <Button
-                className="reader-bar-tool"
+                className={place === "compare" ? "reader-bar-tool reader-bar-tool-compare" : "reader-bar-tool"}
                 aria-label={item.label}
                 title={item.title || item.label}
                 aria-pressed={Boolean(item.pressed) || menu === `${key}:popup`}
@@ -100,8 +101,14 @@ export function ReaderBarTools({
                   close();
                 }}
               >
-                <Icon size={15} strokeWidth={2.1} aria-hidden />
-                {place === "top" ? <span className="reader-bar-tool-label">{item.label}</span> : null}
+                {place === "compare" ? (
+                  <ChevronDown size={13} strokeWidth={2.2} aria-hidden />
+                ) : (
+                  <>
+                    {item.mark ?? <Icon size={place === "bottom" ? 14 : 15} strokeWidth={2.1} aria-hidden />}
+                    <span className="reader-bar-tool-label">{item.label}</span>
+                  </>
+                )}
               </Button>
               {item.dropdown ? (
                 <Button
@@ -125,7 +132,7 @@ export function ReaderBarTools({
   if (!groups.length) return null;
 
   return (
-    <div className={`reader-bar-tools is-${place}`} ref={root} role="group" aria-label={place === "top" ? "面板和看法" : "书页工具"}>
+    <div className={`reader-bar-tools is-${place}`} ref={root} role="group" aria-label={place === "top" ? "面板" : place === "compare" ? "对比版本" : "书页工具"}>
       {groups}
       {opened ? <div className="reader-bar-tools-popup">{opened}</div> : null}
     </div>

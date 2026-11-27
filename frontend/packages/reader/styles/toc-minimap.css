@@ -1,16 +1,7 @@
 /* 书页区左缘的目录（ReaderTocMinimap.tsx，2026-11-28 照原型 reader-prototype.html）：
  * 平时一排极淡的短横线，竖着居中贴在书页区左边；移上去（或 Tab 到、光标在过滤框里）换成目录卡。
  * 只用墨色的深浅：没有彩色，当前节墨色、当前章深灰、别的淡灰。 */
-/* 有目录时书页往右让出一条边（照原型：短横线落在书页外的空白里，不压在纸上）。书页的滚动容器量的是自己的宽，
- * 适应宽度、放不放得下对照都跟着算。底色和滚动容器一样。 */
-.reader-stage:has(> .reader-toc-minimap) {
-  background: var(--bg, var(--reader-page-bg));
-}
-
-.reader-stage:has(> .reader-toc-minimap) .reader-react-scroll-shell {
-  left: 48px;
-}
-
+/* 短横线直接浮在整块阅读区背景的左边缘，书页不让位（2026-11-28：以前有目录时滚动容器左边硬切 48px，留下一道缝）。 */
 .reader-toc-minimap {
   position: absolute;
   top: 50%;
@@ -257,10 +248,6 @@
 @container reader-stage (max-width: 420px) {
   .reader-toc-minimap {
     left: 4px;
-  }
-
-  .reader-stage:has(> .reader-toc-minimap) .reader-react-scroll-shell {
-    left: 28px;
   }
 
   .reader-toc-card {

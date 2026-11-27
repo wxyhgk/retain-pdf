@@ -25,6 +25,8 @@ export function inkContribution(ink: ReaderInk): ReaderContribution {
       label: "画笔",
       title: "画笔（P；书页上右键也能选笔和颜色）",
       Icon: PenLine,
+      // 底栏左右同密度（2026-11-28）：画笔前面是当前笔色的小圆点，不画钢笔线框图。
+      mark: <span className="reader-ink-dot" style={{ background: `var(--${ink.color})` }} aria-hidden />,
       place: "bottom",
       pressed: Boolean(ink.tool),
       onClick: () => ink.setTool(ink.tool ? null : "pen"),

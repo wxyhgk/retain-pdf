@@ -267,6 +267,7 @@ export function ReaderAppReactPdf() {
             documentReady={Boolean(session.jobId)}
             sourceViewOnly={sourceViewOnly}
             onModeChange={changeWorkspace}
+            compareExtra={<ReaderBarTools place="compare" />}
             liveTranslation={liveToggles.topBarPill ? {
               visible: liveTranslationVisible,
               state: c.liveTranslation,

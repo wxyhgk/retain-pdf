@@ -1,7 +1,8 @@
 /* 顶栏右边、底栏右边的工具（ReaderBarTools.tsx，2026-11-28 起三行壳层）：
- * 顶栏（.is-top）：提问、对比版本、Markdown 面板——图标加字（窄屏只剩图标），按下是浅墨底；
- * 底栏（.is-bottom）：画笔 ▾、截图——只有图标，▾ 是旁边一颗小按钮，弹出笔型、颜色、撤销。
- * 弹出的东西：顶栏往下弹，底栏往上弹，右边对齐。黑白灰纸墨，不加彩色。
+ * 顶栏（.is-top）：提问、Markdown——包在一个浅灰胶囊里（和中间的页签胶囊呼应），开着的那颗是纸色底；窄屏只剩图标；
+ * 「对照」后面（.is-compare）：对比版本的 ▾；
+ * 底栏（.is-bottom）：● 画笔 ▾、截图——轻图标（画笔是笔色小圆点）+ 短字，和底栏左边的书签、收藏一个密度。
+ * 弹出的东西：顶栏往下弹，底栏往上弹。黑白灰纸墨，不加彩色（画笔的小圆点是笔本身的颜色）。
  * 文件名沿用 toolball.css（入口 CSS 按文件名引；以前是右下角悬浮小球、后来的底栏浮条工具）。 */
 
 .reader-bar-tools {
@@ -11,10 +12,67 @@
   gap: 2px;
 }
 
+/* 顶栏右边的胶囊：边框、底色、圆角和中间的页签胶囊（chrome.css 的 .reader-workspace-tabs）一样。 */
 .reader-bar-tools.is-top {
-  margin-right: 4px;
-  padding-right: 8px;
-  border-right: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  margin-right: 6px;
+  padding: 3px;
+  border: var(--reader-tab-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-tab-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 7%, transparent)));
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.reader-bar-tools.is-top .reader-bar-tool,
+.reader-bar-tools.is-top .reader-panel-toggle {
+  min-height: 28px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  color: var(--muted);
+}
+
+.reader-bar-tools.is-top .reader-bar-tool[aria-pressed="true"],
+.reader-bar-tools.is-top .reader-panel-toggle[aria-pressed="true"],
+.reader-bar-tools.is-top .reader-panel-toggle[aria-pressed="true"]:hover {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color, var(--ink)) 12%, transparent);
+}
+
+.reader-bar-tools.is-top .reader-bar-tool:hover:not([aria-pressed="true"]),
+.reader-bar-tools.is-top .reader-panel-toggle:hover:not([aria-pressed="true"]) {
+  background: transparent;
+  color: var(--ink);
+}
+
+/* 「对照」后面的 ▾（对比版本）：在页签胶囊里，窄、和页签一样高。 */
+.reader-bar-tools.is-compare {
+  display: inline-flex;
+}
+
+.reader-bar-tools.is-compare .reader-bar-tool-compare {
+  min-width: 20px;
+  min-height: 30px;
+  height: 30px;
+  margin-left: -2px;
+  padding: 0 4px;
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  color: var(--muted);
+}
+
+.reader-bar-tools.is-compare .reader-bar-tools-popup {
+  top: calc(100% + 12px);
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 画笔前面当前笔色的小圆点。 */
+.reader-ink-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ui-radius-pill, 999px);
 }
 
 .reader-bar-tool-group {
@@ -47,13 +105,25 @@
   cursor: var(--cursor-pointer, pointer);
 }
 
+/* 底栏：轻图标 + 短字，和底栏左边的书签、收藏一套（hud.css 的「底栏按钮一套」：高 26、图标 14、字 12 500、灰字）。 */
 .reader-bar-tools.is-bottom .reader-bar-tool,
 .reader-bar-tools.is-bottom .reader-bar-tool-caret {
   min-width: 26px;
   min-height: 26px;
   height: 26px;
+  gap: 4px;
   padding: 0 6px;
   border-radius: var(--reader-hud-key-radius, var(--ui-radius-md, 8px));
+  font-weight: 500;
+}
+
+.reader-bar-tools.is-bottom .reader-bar-tool-label {
+  color: var(--muted);
+}
+
+.reader-bar-tools.is-bottom .reader-bar-tool:hover .reader-bar-tool-label,
+.reader-bar-tools.is-bottom .reader-bar-tool[aria-pressed="true"] .reader-bar-tool-label {
+  color: var(--ink);
 }
 
 /* ▾ 紧贴在主按钮右边，窄一点。 */
@@ -91,7 +161,7 @@
   color: var(--ink);
 }
 
-/* 窄屏：顶栏的工具只剩图标，名字在悬停里。 */
+/* 窄屏：顶栏、底栏的工具只剩图标（画笔剩小圆点），名字在悬停里。 */
 @media (max-width: 900px) {
   .reader-bar-tool-label,
   .reader-bar-tools .reader-panel-toggle-label {
