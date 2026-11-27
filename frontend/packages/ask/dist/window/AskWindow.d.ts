@@ -1,7 +1,7 @@
 /** 提问窗（@retainpdf/ask/window；宿主懒加载这一块）。
  *
  * - 窗口：react-rnd。三种摆法：浮动（标题栏拖动、边角调大小）、贴右边（占满右侧，左边框拖宽窄）、放大；双击标题栏放大 / 还原。
- *   Esc / ✕ 关。标题栏见 AskHeader.tsx（图标为主）。
+ *   Esc / ✕ 关。标题栏见 AskHeader.tsx（对话、「···」、窗口摆法）；谁来答（agent、模型、思考）在输入框那颗按钮（AskModelPicker.tsx）。
  * - 一直延续的对话（2026-11-26 主对话）：输入框上面是下一问带的出处、问题上面是问的哪儿、「深挖」、「已记住（撤销）」，见 conversation.tsx；
  *   每答完一轮交给宿主追加（use-turns.ts）。回答里选字，下一问引用那段（answer-quote.tsx）。
  * - 对话：整套照搬 assistant-ui 官方的 Thread（../ui/elements/thread.aui.tsx：复制、重新回答、改问题、版本切换、回到最下面、
@@ -12,6 +12,7 @@
  */
 import { type ReactElement, type ReactNode } from "react";
 import type { AskAnswerAction, AskAttachTool, AskContext, AskContextOffer, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
+import type { AskHeaderMenuItem } from "./head-menu.js";
 import type { AskWindowMode } from "./AskHeader.js";
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
 export type AskWindowProps = {
@@ -27,8 +28,10 @@ export type AskWindowProps = {
     onClose: () => void;
     /** 标题栏左边（主对话 / 副对话的面包屑）。 */
     title?: ReactNode;
-    /** 标题栏右边多放的按钮（记忆、归档……）。 */
+    /** 标题栏右边多放的按钮（旧写法；不常用的放 headerMenu）。 */
     headerActions?: ReactNode;
+    /** 标题栏「···」里的项（不常用的：阅读页的记忆）。 */
+    headerMenu?: readonly AskHeaderMenuItem[];
     /** 对话下面、输入框外面多放的一条（副对话的「结束」）。 */
     footer?: ReactNode;
     /** 点问题上面的小标签：回到问的那一处。 */

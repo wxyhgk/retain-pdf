@@ -69,14 +69,14 @@ export type ReaderPageLayerProps = {
   active: boolean;
 };
 
-/** 右下角小球里的一颗按钮。给了 popup 的点了在小球旁边弹出它（done 收起），没给的点了调 onClick 再收起小球。 */
+/** 底栏工具（ReaderHudTools，2026-11-27 以前是右下角小球）里的一颗按钮。给了 popup 的点了在底栏上面弹出它（done 收起），没给的点了调 onClick。 */
 export type ReaderToolbarItem = {
   key: string;
   label: string;
   /** 悬停说明；不给用 label。 */
   title?: string;
   Icon: LucideIcon;
-  /** 按下的样子（开着、正在用）；小球本身也会跟着亮。 */
+  /** 按下的样子（开着、正在用）；窄屏收成「···」时它也带个点。 */
   pressed?: boolean;
   onClick?: () => void;
   popup?: (done: () => void) => ReactNode;
@@ -105,19 +105,19 @@ export type ReaderContribution = {
   takesPointer?: boolean;
   /** 快捷键说明里单独一组，组名是扩展的 title。 */
   shortcuts?: readonly ReaderShortcut[];
-  /** 右下角小球里的按钮，按扩展顺序（带面板的扩展，面板按钮跟在它的按钮后面）。 */
+  /** 底栏工具里的按钮，按扩展顺序（提问排第一；带面板的扩展，面板按钮跟在它的按钮后面）。 */
   toolbarItems?: readonly ReaderToolbarItem[];
   /** 书页文字层里一段字要标出来的几段（包成 <mark>，class 和 data-* 属性由扩展定）；几个扩展的合在一起，重叠的先到的赢。 */
   textMarks?: (text: string) => readonly ReaderTextMark[];
   /** 对照时左栏换成这一份；同时有几个扩展给，用第一个。 */
   comparedDocument?: ReaderComparedDocument | null;
-  /** 书页右边让出多宽（px）：扩展自己画的浮层贴在右边时（提问窗贴右边），书页区（连同底栏、小球）往左让，不被盖住；几个扩展给，取最大。
+  /** 书页右边让出多宽（px）：扩展自己画的浮层贴在右边时（提问窗贴右边），书页区（连同底栏）往左让，不被盖住；几个扩展给，取最大。
    * 右边只停一个：这个值从 0 变成正数时，阅读页关掉停着的面板；之后面板又打开了（activePanel 从 null 变成有），扩展要自己挪开。 */
   reserveRight?: number;
 };
 
 /**
- * 扩展的一个面板（右边停靠的那种，同一时间只开一个）：启动器（右下角小球）上一颗按钮、开着时顶上的 tab。
+ * 扩展的一个面板（右边停靠的那种，同一时间只开一个）：启动器（底栏工具）上一颗按钮、开着时顶上的 tab。
  * 写在扩展定义上、不走运行时登记：面板开没开要按书存、重开阅读页恢复，id 必须是 shared/types/reader-assistant-panels 里登记过的
  * （类型上就卡住）；面板内容由扩展自己画（看 useReaderApi().activePanel）。
  */

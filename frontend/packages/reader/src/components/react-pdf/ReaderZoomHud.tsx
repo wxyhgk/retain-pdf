@@ -1,4 +1,4 @@
-// 底栏：页码（可点跳转）、给这一页加书签、深色文档、缩放 +/- / 模式默认重置、快捷键。
+// 底栏：页码（可点跳转）、给这一页加书签、深色文档、缩放 +/- / 模式默认重置、快捷键；竖线后面是工具（toolsSlot：提问、画笔、Markdown、对比版本）。
 // 2026-11-27 起搜索、书签列表、待处理挪进左栏（ReaderFinder），这里只留眼下这一页、这一屏的事。
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -33,6 +33,8 @@ export type ReaderZoomHudProps = {
   bookmarkScope?: string;
   /** 页码后面放的按钮（宿主自己加；阅读页 2026-11-27 起不放，搜索在左栏）。 */
   searchSlot?: ReactNode;
+  /** 最右边、竖线后面那组工具（阅读页：ReaderHudTools，提问、画笔、Markdown、对比版本；2026-11-27 起取代右下角的小球）。 */
+  toolsSlot?: ReactNode;
 };
 
 export function ReaderZoomHud(props: ReaderZoomHudProps) {
@@ -178,6 +180,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
       <div className="reader-react-hud-group reader-react-hud-help" aria-label="帮助">
         <ReaderShortcutsHelp />
       </div>
+      {props.toolsSlot}
     </div>
   );
 }

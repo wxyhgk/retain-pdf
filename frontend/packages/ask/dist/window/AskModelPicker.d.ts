@@ -1,7 +1,8 @@
-/** 输入框那一行的 agent 设置（Thread 的 ComposerExtra 插槽）：assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
- * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下是思考强度的胶囊滑块（../ui/elements/effort-slider.tsx，仿 Claude 桌面版）；
+/** 输入框那一行的「谁来答」（Thread 的 ComposerExtra 插槽）：assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
+ * 一个按钮写「模型 · 思考」，点开从上到下是 agent 那一排（agent-row.tsx，2026-11-27 从标题栏挪来，没装的也在这里）、带搜索的模型列表、
+ * 思考强度（几档的是胶囊滑块，../ui/elements/effort-slider.tsx，仿 Claude 桌面版；只有开 / 关的是开关）；
  * 别的设置项（模式、快速……）收在「更多」里。思考强度的颜色还染输入框和周围、模型厂商的标志做聊天背景的水印（AskWindow）。
- * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts），agent 不给就什么都不画。
+ * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts）和宿主列出的 agent。
  *
  * 只有两档的思考强度（Qwen3、DeepSeek 这类模型只能开 / 关，2026-11-27）画成一个开关，不画两格的滑块；
  * agent 没给档位起名字（名字就是值，自带 agent 报的 off / on / low …）时换成中文（levelName）。
@@ -47,4 +48,8 @@ export declare function EffortRow({ thought, set }: {
     thought: AskConfigOption;
     set: AskConfigState["set"];
 }): ReactElement;
+/**
+ * 输入框那一行的「谁来答」（2026-11-27）：一颗按钮写「模型 · 思考」，点开从上到下是 agent（AgentRow）、这个 agent 的模型、思考。
+ * agent 给不出模型时按钮写 agent 名；agent 什么设置都不给时弹层里只有 agent 那一排。只有一个 agent、也没有设置时不画。
+ */
 export declare function AskAgentSettings(): ReactElement | null;

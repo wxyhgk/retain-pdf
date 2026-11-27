@@ -78,14 +78,14 @@ test("N / Shift+N：接着上一次跳到的走，到头绕回；还没跳过从
   assert.equal(stepIssue([], -1, 1, false), -1);
 });
 
-test("悬浮小球：点开是 Markdown 和「对比版本」两颗图标；点对比弹版本列表；只有一份译文时没有对比；点外面收起", async () => {
+test("底栏工具（2026-11-27 起取代悬浮小球）：Markdown 和「对比版本」在一排；点对比弹版本列表；只有一份译文时没有对比；点外面收起", async () => {
   const { makeDom } = await import("../helpers/dom.mjs");
   const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div><div id='page'></div></body></html>" });
   const React = await import("react");
   const { createRoot } = await import("react-dom/client");
   const { act } = React;
-  const { ReaderToolBall } = await import("../../../packages/reader/src/components/react-pdf/ReaderToolBall.tsx");
-  // 2026-11-27 起「对比版本」是扩展：按钮经贡献表进小球。这里用扩展自己的那颗按钮登记进一张表。
+  const { ReaderHudTools } = await import("../../../packages/reader/src/components/react-pdf/ReaderHudTools.tsx");
+  // 2026-11-27 起「对比版本」是扩展：按钮经贡献表进底栏工具。这里用扩展自己的那颗按钮登记进一张表。
   const { compareToolbarItem } = await import("../../../packages/reader/src/extensions/builtin/compare.tsx");
   const { createContributionStore, ReaderExtensionsProvider } = await import("../../../packages/reader/src/extensions/registry.tsx");
   const store = createContributionStore();
@@ -94,7 +94,7 @@ test("悬浮小球：点开是 Markdown 和「对比版本」两颗图标；点�
   const ball = (available) => {
     const item = compareToolbarItem(compare(available));
     store.set("compare", "对比版本", { toolbarItems: item ? [item] : [] });
-    return React.createElement(ReaderExtensionsProvider, { api, store }, React.createElement(ReaderToolBall, { active: null }));
+    return React.createElement(ReaderExtensionsProvider, { api, store }, React.createElement(ReaderHudTools, { active: null }));
   };
   const compare = (available) => ({
     available,
@@ -106,16 +106,17 @@ test("悬浮小球：点开是 Markdown 和「对比版本」两颗图标；点�
   const doc = dom.window.document;
   const click = async (el) => { await act(async () => { el.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); }); };
   await act(async () => { root.render(ball(true)); });
-  assert.equal(doc.querySelector(".reader-toolball-stack"), null, "一开始收着");
-  await click(doc.querySelector(".reader-toolball-ball"));
-  assert.ok(doc.querySelector(".reader-toolball-stack .reader-panel-toggle"), "Markdown 在小球里");
-  await click(doc.querySelector('[data-toolball-item="compare"]'));
-  assert.ok(doc.querySelector(".reader-version-compare-menu"), "版本列表弹出来");
+  assert.ok(doc.querySelector(".reader-hud-tools-row .reader-panel-toggle"), "Markdown 在底栏工具那一排");
+  assert.equal(doc.querySelector(".reader-hud-tools-stack"), null, "窄屏那一列平时不出");
+  await click(doc.querySelector('.reader-hud-tools-row [data-hud-tool="compare"]'));
+  assert.ok(doc.querySelector(".reader-hud-tools-popup .reader-version-compare-menu"), "版本列表弹在底栏上面");
+  assert.equal(doc.querySelector('[data-hud-tool="compare"]').getAttribute("aria-expanded"), "true", "开着弹出时底栏不自动收起（use-hud-autohide 看 aria-expanded）");
   await act(async () => { doc.getElementById("page").dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
-  assert.equal(doc.querySelector(".reader-toolball-stack"), null, "点外面收起");
+  assert.equal(doc.querySelector(".reader-version-compare-menu"), null, "点外面收起");
+  await click(doc.querySelector(".reader-hud-tools-more"));
+  assert.ok(doc.querySelector(".reader-hud-tools-stack .reader-panel-toggle"), "窄屏的「···」点开往上一列");
   await act(async () => { root.render(ball(false)); });
-  await click(doc.querySelector(".reader-toolball-ball"));
-  assert.equal(doc.querySelector('[data-toolball-item="compare"]'), null, "只有一份译文时没有对比");
+  assert.equal(doc.querySelector('[data-hud-tool="compare"]'), null, "只有一份译文时没有对比");
   root.unmount();
   dom.window.close();
 });

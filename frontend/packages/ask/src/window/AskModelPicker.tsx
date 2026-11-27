@@ -1,7 +1,8 @@
-/** 输入框那一行的 agent 设置（Thread 的 ComposerExtra 插槽）：assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
- * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下是思考强度的胶囊滑块（../ui/elements/effort-slider.tsx，仿 Claude 桌面版）；
+/** 输入框那一行的「谁来答」（Thread 的 ComposerExtra 插槽）：assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
+ * 一个按钮写「模型 · 思考」，点开从上到下是 agent 那一排（agent-row.tsx，2026-11-27 从标题栏挪来，没装的也在这里）、带搜索的模型列表、
+ * 思考强度（几档的是胶囊滑块，../ui/elements/effort-slider.tsx，仿 Claude 桌面版；只有开 / 关的是开关）；
  * 别的设置项（模式、快速……）收在「更多」里。思考强度的颜色还染输入框和周围、模型厂商的标志做聊天背景的水印（AskWindow）。
- * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts），agent 不给就什么都不画。
+ * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts）和宿主列出的 agent。
  *
  * 只有两档的思考强度（Qwen3、DeepSeek 这类模型只能开 / 关，2026-11-27）画成一个开关，不画两格的滑块；
  * agent 没给档位起名字（名字就是值，自带 agent 报的 off / on / low …）时换成中文（levelName）。
@@ -10,7 +11,7 @@ import { createContext, useContext, type ReactElement } from "react";
 import { Brain, SlidersHorizontal, Sparkles, Zap } from "lucide-react";
 import { Button, Select } from "@retainpdf/ui";
 
-import type { AskConfigOption } from "../contract.js";
+import type { AskAgent, AskConfigOption } from "../contract.js";
 import { EffortSlider } from "../ui/elements/effort-slider.js";
 import {
   ModelSelectorContent,
@@ -20,7 +21,8 @@ import {
   ModelSelectorTrigger,
 } from "../ui/elements/model-selector.js";
 import type { ModelOption } from "../ui/utils/model-selection.js";
-import { BrandIcon, brandFor } from "./BrandIcon.js";
+import { AgentIcon, BrandIcon, brandFor } from "./BrandIcon.js";
+import { AgentRow, AskAgentsContext, shortAgentName } from "./agent-row.js";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/shadcn/popover.js";
 
 export type AskConfigState = {
@@ -185,47 +187,64 @@ export function EffortRow({ thought, set }: { thought: AskConfigOption; set: Ask
   );
 }
 
+/** 按钮上写的：自带的（宿主排第一的）agent 只写模型名；别的 agent 写「Claude Code · Opus」，一眼看出谁在答。 */
+function answererLabel(agent: AskAgent | undefined, lead: boolean, modelName: string): string {
+  const agentName = agent ? shortAgentName(agent.name) : "";
+  if (!modelName) return agentName;
+  return agent && !lead ? `${agentName} · ${modelName}` : modelName;
+}
+
+/**
+ * 输入框那一行的「谁来答」（2026-11-27）：一颗按钮写「模型 · 思考」，点开从上到下是 agent（AgentRow）、这个 agent 的模型、思考。
+ * agent 给不出模型时按钮写 agent 名；agent 什么设置都不给时弹层里只有 agent 那一排。只有一个 agent、也没有设置时不画。
+ */
 export function AskAgentSettings(): ReactElement | null {
   const state = useContext(AskConfigContext);
-  if (!state?.options.length) return null;
-  const { model, thought, rest } = splitConfig(state.options);
+  const who = useContext(AskAgentsContext);
+  const options = state?.options ?? [];
+  const agents = who?.agents ?? [];
+  const agent = agents.find((entry) => entry.id === who?.agentId);
+  const canChooseAgent = Boolean(who && agents.length > 1);
+  if (!options.length && !canChooseAgent) return null;
+  const set = state?.set ?? (() => {});
+  const { model, thought, rest } = splitConfig(options);
+  const lead = !agent || agents[0]?.id === agent.id;
+  // 没有模型可选：拿 agent 自己当唯一的「模型」喂给 ModelSelector（按钮写 agent 名，弹层里不列模型）。
+  const models = model
+    ? toModelOptions(model, thought)
+    : [{ id: "_", name: agent ? shortAgentName(agent.name) : "", icon: agent ? <AgentIcon id={agent.id} name={agent.name} /> : undefined, ...(thought ? { efforts: toModelOptions({ ...thought, options: [{ value: "_", name: "" }] }, thought)[0].efforts } : {}) }];
+  const value = model ? `${model.currentValue}` : "_";
+  const selected = models.find((entry) => entry.id === value);
+  const thoughtIndex = thought ? thought.options.findIndex((choice) => choice.value === `${thought.currentValue}`) : -1;
+  const effortLabel = thought && thoughtIndex >= 0 ? triggerLevelName(thought, thoughtIndex) : "";
+  const label = answererLabel(agent, lead, model ? selected?.name || "" : "");
   return (
     <div className="ask-config">
-      {model ? (
-        <ModelSelectorRoot
-          models={toModelOptions(model, thought)}
-          value={`${model.currentValue}`}
-          onValueChange={(value) => state.set(model.id, value)}
-          {...(thought ? { effort: `${thought.currentValue}`, onEffortChange: (value: string) => state.set(thought.id, value) } : {})}
+      <ModelSelectorRoot
+        models={models}
+        value={value}
+        onValueChange={(next) => { if (model) set(model.id, next); }}
+        {...(thought ? { effort: `${thought.currentValue}`, onEffortChange: (next: string) => set(thought.id, next) } : {})}
+      >
+        <ModelSelectorTrigger
+          variant="ghost"
+          size="sm"
+          className="ask-config-trigger"
+          aria-label={`谁来答：${[agent?.name, model ? selected?.name : "", effortLabel].filter(Boolean).join(" · ")}`}
+          title={`谁来答：${[agent?.name, model ? selected?.name : "", effortLabel].filter(Boolean).join(" · ")}`}
         >
-          <ModelSelectorTrigger variant="ghost" size="sm" className="ask-config-trigger" />
-          <ModelSelectorContent side="top" searchable={model.options.length > 8}>
-            {model.options.length > 8 ? <ModelSelectorSearch /> : null}
-            <ModelSelectorList />
-            {thought ? <EffortRow thought={thought} set={state.set} /> : null}
-          </ModelSelectorContent>
-        </ModelSelectorRoot>
-      ) : thought ? (
-        // 只有思考强度、没有模型可选：拿思考强度当唯一的「模型」喂给 ModelSelector，按钮只写档位，弹层只有滑块。
-        <ModelSelectorRoot
-          models={[{ id: "_", name: "", efforts: toModelOptions({ ...thought, options: [{ value: "_", name: "" }] }, thought)[0].efforts }]}
-          value="_"
-          effort={`${thought.currentValue}`}
-          onEffortChange={(value: string) => state.set(thought.id, value)}
-        >
-          <ModelSelectorTrigger variant="ghost" size="sm" className="ask-config-trigger">
-            <Brain size={13} aria-hidden />
-            <span className="ask-config-effort-name">{(() => {
-              const index = thought.options.findIndex((choice) => choice.value === `${thought.currentValue}`);
-              return index >= 0 ? triggerLevelName(thought, index) || "不思考" : "";
-            })()}</span>
-          </ModelSelectorTrigger>
-          <ModelSelectorContent side="top">
-            <EffortRow thought={thought} set={state.set} />
-          </ModelSelectorContent>
-        </ModelSelectorRoot>
-      ) : null}
-      <OtherSettings options={rest} set={state.set} />
+          {selected?.icon ? <span className="ask-config-icon">{selected.icon}</span> : null}
+          <span className="ask-config-label">{label}</span>
+          {effortLabel ? <span className="ask-config-effort-name">{effortLabel}</span> : null}
+        </ModelSelectorTrigger>
+        <ModelSelectorContent side="top" searchable={Boolean(model && model.options.length > 8)} className="ask-answerer-popover">
+          {who ? <AgentRow agents={agents} agentId={who.agentId} onAgent={who.onAgent} /> : null}
+          {model && model.options.length > 8 ? <ModelSelectorSearch /> : null}
+          {model ? <ModelSelectorList /> : null}
+          {thought ? <EffortRow thought={thought} set={set} /> : null}
+        </ModelSelectorContent>
+      </ModelSelectorRoot>
+      <OtherSettings options={rest} set={set} />
     </div>
   );
 }

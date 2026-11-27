@@ -1,8 +1,8 @@
 import { type ReactElement } from "react";
 import type { ReaderExtension } from "../../extensions/types.js";
 import type { ReaderAssistantPanel } from "./reader-assistant-types.js";
-export declare function ReaderToolBall({ active, extensions, }: {
+export declare function ReaderHudTools({ active, extensions: registered, }: {
     active: ReaderAssistantPanel | null;
     extensions?: readonly ReaderExtension[];
-}): ReactElement;
-//# sourceMappingURL=ReaderToolBall.d.ts.map
+}): ReactElement | null;
+//# sourceMappingURL=ReaderHudTools.d.ts.map

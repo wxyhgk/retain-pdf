@@ -1,77 +1,45 @@
-/* 右下角的悬浮小球（ReaderToolBall.tsx）：面板（Markdown）和「对比版本」的唯一入口。
- * 点开往上一列圆形图标按钮，名字在悬停里；「对比版本」的列表弹在这一列左边。
- * 面板开着时不藏（2026-09 删掉的那个圆钮就是被 is-assistant-open 藏掉、里面的功能进不去）。
- * 在书页区（.reader-stage）里按它的右下角摆：右边停着面板时自然在面板左边，不用另算。 */
+/* 底栏右边那组工具（ReaderHudTools.tsx，2026-11-27 起取代右下角的悬浮小球）：提问、画笔、Markdown、对比版本……
+ * 和页码、缩放同一条底栏，竖线隔开；按下（面板开着、画笔模式、在对比）是浅墨底。
+ * 书页区窄时一排放不下：收成一颗「···」，点开往上一列（下面的容器查询，书页区是 .reader-stage）。
+ * 文件名沿用 toolball.css（入口 CSS 按文件名引）。 */
 
-.reader-toolball {
-  position: absolute;
-  right: 22px;
-  bottom: 20px;
-  z-index: calc(var(--z-hud, 36) + 3);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+.reader-hud-tools {
+  position: relative;
+  margin-left: 2px;
+  padding-left: 6px;
+  border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
-.reader-toolball-ball {
+.reader-hud-tools-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.reader-hud-tool,
+.reader-hud-tools .reader-panel-toggle,
+.reader-hud-tools-more {
   display: inline-grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
-  padding: 0;
+  min-width: 32px;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 8px;
   border: 0;
-  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, var(--ui-radius-pill, 999px)));
-  background: var(--ink);
-  color: var(--paper);
-  box-shadow: var(--reader-float-shadow, var(--shape-shadow-md, 0 10px 26px color-mix(in srgb, var(--shadow-color, var(--ink)) 26%, transparent)));
-  cursor: pointer;
-  transition: transform 140ms ease, box-shadow 160ms ease;
-}
-
-.reader-toolball-ball:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--reader-float-shadow, var(--shape-shadow-md, 0 14px 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 30%, transparent)));
-}
-
-.reader-toolball-ball:active {
-  transform: var(--reader-float-press-transform, var(--shape-press-transform, scale(0.95)));
-  box-shadow: var(--reader-float-press-shadow, var(--shape-press-shadow, var(--reader-float-shadow, var(--shape-shadow-md, 0 14px 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 30%, transparent)))));
-}
-
-/* 有面板开着、或在对比：小球外面一圈强调色，提醒「这里有东西开着」。 */
-.reader-toolball-ball[data-active="true"] {
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--accent) 35%, var(--paper)),
-    var(--reader-float-shadow, var(--shape-shadow-md, 0 10px 26px color-mix(in srgb, var(--shadow-color, var(--ink)) 26%, transparent)));
-}
-
-.reader-toolball-stack {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  animation: reader-toolball-up 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
-}
-
-.reader-toolball-stack .reader-panel-toggle,
-.reader-toolball-item {
-  display: inline-grid;
-  place-items: center;
-  width: 40px;
-  min-width: 40px;
-  height: 40px;
-  min-height: 40px;
-  padding: 0;
-  border: var(--reader-float-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-float-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 9%, transparent)));
-  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, var(--ui-radius-pill, 999px)));
-  background: var(--paper);
+  border-radius: var(--reader-hud-key-radius, var(--shape-radius-control, 999px));
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   color: var(--ink);
-  box-shadow: var(--reader-float-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent)));
-  cursor: pointer;
 }
 
-.reader-toolball-stack .reader-panel-toggle-label {
+.reader-hud-tools .reader-panel-toggle svg {
+  width: 15px;
+  height: 15px;
+}
+
+.reader-hud-tools .reader-panel-toggle-label {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -79,34 +47,66 @@
   clip: rect(0, 0, 0, 0);
 }
 
-.reader-toolball-item:hover,
-.reader-toolball-stack .reader-panel-toggle:hover:not([aria-pressed="true"]) {
-  background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+.reader-hud-tools .reader-panel-toggle:hover:not([aria-pressed="true"]) {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  box-shadow: none;
 }
 
-.reader-toolball-item:active {
-  transform: var(--reader-float-press-transform, var(--shape-press-transform, none));
-  box-shadow: var(--reader-float-press-shadow, var(--shape-press-shadow, var(--reader-float-shadow, var(--shape-shadow-sm, 0 6px 18px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent)))));
+.reader-hud-tool[aria-pressed="true"],
+.reader-hud-tools .reader-panel-toggle[aria-pressed="true"],
+.reader-hud-tools .reader-panel-toggle[aria-pressed="true"]:hover,
+.reader-hud-tools-more[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink);
 }
 
-.reader-toolball-item[aria-pressed="true"] {
-  background: var(--ink);
-  color: var(--paper);
+/* 「···」平时不出；窄的时候一排收掉、出「···」。有面板开着时它带个小点。 */
+.reader-hud-tools-more {
+  display: none;
+  position: relative;
 }
 
-/* 「对比版本」的列表：弹在这一列左边，底边和小球对齐。 */
-.reader-toolball .reader-version-compare-menu {
+.reader-hud-tools-more[aria-pressed="true"]::after {
+  content: "";
   position: absolute;
-  top: auto;
-  right: 58px;
-  bottom: 0;
-  left: auto;
+  top: 4px;
+  right: 6px;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--accent);
 }
 
-@keyframes reader-toolball-up {
+.reader-hud-tools-stack {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 14px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border: var(--reader-hud-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-hud-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: var(--reader-float-radius, var(--shape-radius-surface, var(--ui-radius-lg, 14px)));
+  background: var(--paper);
+  box-shadow: var(--reader-hud-shadow, var(--shape-shadow-md, 0 10px 28px color-mix(in srgb, var(--shadow-color, var(--ink)) 12%, transparent)));
+  animation: reader-hud-tools-up 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* 带弹出的按钮（对比版本的列表）：弹在底栏上面，右边和这组对齐。 */
+.reader-hud-tools-popup {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 14px);
+}
+
+.reader-hud-tools-popup .reader-version-compare-menu {
+  position: static;
+}
+
+@keyframes reader-hud-tools-up {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.96);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -114,9 +114,17 @@
   }
 }
 
-/* 书页区窄（左栏钉住又开着右边的面板时只剩四百来宽）：底栏居中放不下小球，小球抬到底栏上面，不叠在一起。 */
-@container reader-stage (max-width: 560px) {
-  .reader-toolball {
-    bottom: 76px;
+@media (prefers-reduced-motion: reduce) {
+  .reader-hud-tools-stack { animation: none; }
+}
+
+/* 书页区窄（手机、左栏钉住又开着右边面板）：一排收成「···」。 */
+@container reader-stage (max-width: 640px) {
+  .reader-hud-tools-row {
+    display: none;
+  }
+
+  .reader-hud-tools-more {
+    display: inline-grid;
   }
 }

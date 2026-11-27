@@ -1,5 +1,5 @@
 // 「对比版本」作为内置扩展（2026-11-27）：对照阅读的左栏换成这本书另一份译文，和右边正在读的这份逐段对着看。
-// 登记小球里的「对比版本」按钮（点了弹版本列表）、对照时左栏换成的那一份（comparedDocument）。
+// 登记底栏工具里的「对比版本」按钮（点了弹版本列表）、对照时左栏换成的那一份（comparedDocument）。
 // 选了一份就切到对照；自己切走对照（只看原文 / 译文）就不对比了。
 import { useEffect, useMemo } from "react";
 import { GitCompareArrows } from "lucide-react";
@@ -9,7 +9,7 @@ import { useReaderVersionCompare, type VersionCompare } from "../../hooks/use-re
 import { useReaderApi, useReaderContribution } from "../registry.js";
 import type { ReaderComparedDocument, ReaderContribution, ReaderExtension, ReaderToolbarItem } from "../types.js";
 
-/** 小球里的那颗按钮：这本书只有一份译文（或宿主没给版本端口）就没有。 */
+/** 底栏工具里的那颗按钮：这本书只有一份译文（或宿主没给版本端口）就没有。 */
 export function compareToolbarItem(compare: VersionCompare): ReaderToolbarItem | null {
   if (!compare.available) return null;
   return {

@@ -123,8 +123,249 @@
 .ask-icon::-webkit-details-marker { display: none; }
 
 .ask-icon:hover,
-.ask-icon[data-active="true"],
-.ask-install[open] > .ask-icon {
+.ask-icon[data-active="true"] {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+/* 顶上引的那段：默认两行，展开看全；公式用 KaTeX 画。 */
+.ask-quote {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 6px 6px 6px 12px;
+  border-bottom: 1px solid var(--line);
+  border-left: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--paper));
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+  line-height: 1.6;
+}
+
+.ask-quote-text {
+  display: -webkit-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ask-quote[data-open="true"] .ask-quote-text {
+  display: block;
+  max-height: 40vh;
+  overflow-y: auto;
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+}
+
+/* KaTeX 默认放大 1.21 倍，引的那段很小，跟着字号走。 */
+.ask-quote-math .katex {
+  font-size: inherit;
+}
+
+.ask-quote-tools {
+  display: flex;
+  flex: none;
+  gap: 2px;
+}
+
+.ask-quote-tools .ask-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.ask-quote-toggle svg {
+  transition: transform 160ms ease;
+}
+
+.ask-quote[data-open="true"] .ask-quote-toggle svg {
+  transform: rotate(180deg);
+}
+
+/* 标题栏的下拉（head-menu.tsx，2026-11-27）：左边对话菜单、右边「···」。<details> 做的，下拉铺在标题栏下面（左右各留 8px）。 */
+.ask-head-menu {
+  position: static;
+  flex: none;
+  min-width: 0;
+}
+
+.ask-head-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: var(--ui-radius-sm, 6px);
+  color: color-mix(in srgb, var(--ink) 70%, var(--muted));
+  list-style: none;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-head-menu > summary::-webkit-details-marker { display: none; }
+
+.ask-head-menu > summary:hover,
+.ask-head-menu[open] > summary {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+.ask-head-menu-body {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 4px);
+  right: 8px;
+  left: 8px;
+  display: grid;
+  gap: 2px;
+  max-height: min(420px, 60vh);
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+  background: var(--paper);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color, var(--ink)) 18%, transparent);
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 12px);
+  cursor: default;
+}
+
+.ask-head-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-head-menu-item:hover,
+.ask-head-menu-item[data-current="true"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.ask-head-menu-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ask-head-menu-icon {
+  display: inline-flex;
+  flex: none;
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+.ask-head-menu-text {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 1px;
+}
+
+.ask-head-menu-text > small {
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+/* 「谁来答」弹层最上面那一排 agent（agent-row.tsx）。 */
+.ask-answerer {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ask-answerer-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.ask-answerer-agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ask-answerer-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 12px);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-answerer-agent[aria-checked="true"] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--paper));
+  font-weight: 600;
+}
+
+.ask-answerer-agent[data-missing="true"] {
+  color: var(--muted);
+  border-style: dashed;
+}
+
+.ask-answerer-agent > small {
+  color: var(--muted);
+  font-size: var(--ui-text-2xs, 10px);
+}
+
+.ask-answerer-install {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.ask-answerer-install code {
+  flex: 1 1 160px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: var(--ui-radius-sm, 4px);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 输入框那颗「谁来答」按钮：图标、名字（长了截断）、思考档位。 */
+.ask-config-icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.ask-config-label {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+.ask-icon::-webkit-details-marker { display: none; }
+
+.ask-icon:hover,
+.ask-icon[data-active="true"] {
   background: color-mix(in srgb, var(--ink) 8%, transparent);
   color: var(--ink);
 }
@@ -971,19 +1212,6 @@
   -webkit-mask-position: center;
   -webkit-mask-repeat: no-repeat;
   -webkit-mask-size: contain;
-}
-
-/* 标题栏选 agent：只有图标。 */
-.ask-panel .ask-agent-trigger {
-  height: 26px;
-  gap: 2px;
-  padding: 0 4px 0 6px;
-  color: var(--ink);
-}
-
-.ask-panel .ask-agent-trigger:hover,
-.ask-panel .ask-agent-trigger[data-state="open"] {
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
 }
 
 /* 回答底下的用量：一个图标，点开是一张小表。 */

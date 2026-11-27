@@ -106,57 +106,88 @@
   color: var(--ink);
 }
 
-/* 提问窗标题栏（ReaderAskPanel，2026-11-27）：归档前的确认、「以前的对话」列表。下拉沿用 .ask-install 的样子。 */
+/* 提问窗标题栏左边的对话菜单（ReaderAskConversationMenu，2026-11-27）：开新对话前的确认、「以前的对话」列表。
+ * 下拉本身是 @retainpdf/ask 的 .ask-head-menu。 */
+.reader-ask-conversations > summary {
+  max-width: 220px;
+  font-weight: 600;
+}
+
+.reader-ask-conversations .ask-crumb {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .reader-ask-confirm {
-  display: inline-flex;
-  flex: none;
+  display: flex;
   align-items: center;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 8px;
   color: var(--ink);
   font-size: var(--ui-text-xs, 11px);
 }
+
+.reader-ask-confirm > span {
+  flex: 1 1 auto;
+}
+
 .reader-ask-confirm-yes,
 .reader-ask-confirm-no {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 1px 8px;
+  height: 24px;
+  padding: 0 8px;
   border: 1px solid var(--line);
-  border-radius: var(--ui-radius-pill, 999px);
+  border-radius: var(--ui-radius-sm, 6px);
   background: var(--paper);
   color: var(--ink);
   font-size: var(--ui-text-xs, 11px);
+  cursor: var(--cursor-pointer, pointer);
 }
+
 .reader-ask-confirm-yes {
-  border-color: color-mix(in srgb, var(--danger, #b42318) 45%, var(--line));
-  color: var(--danger, #b42318);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  color: var(--accent);
 }
-.reader-ask-history > ul {
-  max-height: 280px;
-  overflow: auto;
+
+.reader-ask-history {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
 }
-.reader-ask-history-item {
+
+.reader-ask-history:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.reader-ask-history-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
-  padding: 4px 6px;
-  border: 0;
-  border-radius: var(--ui-radius-sm, 4px);
-  background: transparent;
-  color: var(--ink);
-  text-align: left;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 2px 8px 4px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
 }
-.reader-ask-history-item:hover,
-.reader-ask-history-item[data-current="true"] {
-  background: color-mix(in srgb, var(--ink) 6%, transparent);
+
+.reader-ask-history-item {
+  align-items: center;
 }
+
 .reader-ask-history-item > small {
   flex: none;
   color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
 }
+
 .reader-ask-history-note {
-  padding: 4px 6px;
+  margin: 0;
+  padding: 4px 8px;
   color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
 }

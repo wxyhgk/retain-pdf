@@ -85,26 +85,27 @@ test("每个面板都有标签和图标 —— 少一样那个 tab 要么空白�
   assert.equal(new Set(shorts).size, shorts.length, `竖条缩写有重复: ${shorts}`);
 });
 
-test("**只有一个**启动器：右下角的悬浮小球（2026-11-20 起，顶栏按钮太多挪进来）；以前那个可拖圆钮连同它的 CSS 不回来", () => {
+test("**只有一个**启动器：底栏右边的工具（2026-11-20 起是右下角的悬浮小球，11-27 并进底栏）；以前那个可拖圆钮连同它的 CSS 不回来", () => {
   // 先证明「另一个东西存在」：启动器本身的样式必须真的在，否则下面那条
   // 「圆钮不存在」在任何情况下都绿（整份 CSS 都被删掉时也绿）。
   const all = allStyles();
   assert.match(all, /\.reader-panel-toggle\b/, "启动器的按钮样式没了");
-  assert.match(all, /\.reader-toolball\b/, "悬浮小球的样式没了");
+  assert.match(all, /\.reader-hud-tools\b/, "底栏工具的样式没了");
+  assert.doesNotMatch(all, /\.reader-toolball\b/, "悬浮小球又回来了：两个启动器");
   assert.doesNotMatch(all, /\.reader-assistant-rail\b/, "右侧竖条又回来了");
-  const ball = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderToolBall.tsx", import.meta.url), "utf8");
-  assert.match(ball, /<ReaderPanelToggles\b/, "面板按钮不在小球里");
-  assert.match(APP, /<ReaderToolBall\b/, "阅读页没挂小球");
+  const tools = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderHudTools.tsx", import.meta.url), "utf8");
+  assert.match(tools, /<ReaderPanelToggles\b/, "面板按钮不在底栏工具里");
+  assert.match(APP, /toolsSlot=\{<ReaderHudTools\b/, "阅读页底栏没挂工具");
   const tray = APP.slice(APP.indexOf('className="reader-chrome-tray"'), APP.indexOf("</div>", APP.indexOf('className="reader-chrome-tray"')));
   assert.doesNotMatch(tray, /<ReaderPanelToggles\b/, "顶栏托盘里又有一份面板按钮：两个启动器");
   assert.match(all, /\.reader-assistant-dock-tabs\b/, "启动器的 tab 条样式没了");
   assert.doesNotMatch(all, /\.reader-fab\b/, "旧圆钮的 CSS 又回来了");
   assert.doesNotMatch(APP, /ReaderFab|fabActiveTool/, "阅读页又挂了旧圆钮");
-  // 面板开着时小球在面板左边，不藏（旧圆钮就是被 is-assistant-open 藏掉的）：2026-11-27 起小球在书页区（.reader-stage）里，
-  // 书页区让出面板的宽度，小球跟着在左边；面板开着时也不许有规则把它藏掉。
-  assert.match(all, /\.reader-toolball\s*\{[^}]*position:\s*absolute/);
+  // 面板开着时工具在面板左边，不藏（旧圆钮就是被 is-assistant-open 藏掉的）：工具在底栏里、底栏在书页区（.reader-stage）里，
+  // 书页区让出面板的宽度，底栏跟着在左边；宽屏面板开着时不许有规则把它们藏掉。（窄屏面板铺满整屏时底栏照旧藏，关面板用面板头上的 ×。）
   assert.match(all, /\.reader-react-root\.is-assistant-open\s*\{[^}]*--reader-stage-right:/);
-  assert.doesNotMatch(all, /is-assistant-open[^{]*\.reader-(?:toolball|stage)\s*\{[^}]*(?:display:\s*none|visibility:\s*hidden|opacity:\s*0)/);
+  const wide = all.replace(/@media \(max-width: 899px\)\s*\{[\s\S]*?\n\}/g, "");
+  assert.doesNotMatch(wide, /is-assistant-open[^{]*\.reader-(?:hud-tools|react-hud|stage)\s*\{[^}]*(?:display:\s*none|visibility:\s*hidden|opacity:\s*0)/);
 });
 
 /** 2026-11-27 起面板由扩展带：扩展定义里的 panels 给启动器，扩展组件自己画面板、看 api.activePanel 开没开。
@@ -139,7 +140,7 @@ test("懒加载面板的挂载闸守的就是它自己那个面板", () => {
 
 const LAUNCHER_SELECTORS = [
   ".reader-panel-toggle",
-  ".reader-toolball",
+  ".reader-hud-tools",
   ".reader-assistant-dock-header",
   ".reader-assistant-dock-tabs",
   ".reader-assistant-dock-tab",

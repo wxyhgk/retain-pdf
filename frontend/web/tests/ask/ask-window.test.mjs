@@ -219,14 +219,16 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
       });
     }
     root.render(React.createElement(Host));
-    await until(() => document.querySelector(".ask-starter") && /RetainPDF 自带模型/.test(document.querySelector(".ask-agent-trigger")?.getAttribute("title") || ""), "常问按钮和 agent 列表");
+    // 11-27：「谁来答」在输入框那颗按钮上（agent 不给模型时按钮写 agent 名），标题栏不再选 agent。
+    await until(() => document.querySelector(".ask-starter") && /谁来答：RetainPDF 自带模型/.test(document.querySelector(".ask-config-trigger")?.getAttribute("title") || ""), "常问按钮和「谁来答」");
+    assert.equal(document.querySelector(".ask-head .ask-config-trigger, .ask-head [aria-label^='用的 agent']"), null, "标题栏不再有选 agent");
     const panel = document.querySelector(".ask-panel");
     assert.equal(panel.getAttribute("data-mode"), "float");
     assert.equal(document.querySelector(".ask-pending-label")?.textContent, "第 56 页 · 2.1", "输入框上面是下一问带的出处");
     assert.equal(document.querySelector(".ask-quote"), null, "引的那段收着");
     document.querySelector(".ask-pending-label").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await until(() => document.querySelector(".ask-quote .katex"), "点开出处：引用里的公式画出来了");
-    assert.ok(document.querySelector('.ask-install summary[aria-label="还能接的本机 agent"]'), "没装的 agent 收在插头图标里");
+    assert.equal(document.querySelector(".ask-install"), null, "没装的 agent 不再是标题栏的插头图标（在「谁来答」里）");
     // 11-27：带着出处时常问在输入框上面（不只是空对话时才有），空白处不再重复一排。
     assert.equal(document.querySelectorAll(".ask-starters").length, 1);
     assert.ok(document.querySelector(".ask-pending-starters .ask-starter"), "常问跟着出处");
@@ -347,4 +349,49 @@ test("贴右边是页面的一栏（2026-11-27）：从顶栏下沿（60）起�
   assert.ok(glow >= 0 && dockGlow > glow, "贴右边的外框覆盖写在发光那条后面");
   assert.doesNotMatch(css.slice(dockGlow, css.indexOf("}", dockGlow)), /ask-effort-color/, "贴右边的外框不带思考强度的颜色");
   assert.match(css, /\.ask-panel\[data-mode="dock"\] \.ask-head\s*\{[^}]*padding-right:\s*10px/);
+});
+
+test("「谁来答」的 agent 那一排（2026-11-27 从标题栏挪进输入框按钮的弹层）：能用的点了换，没装的写「要先装」、点了给安装命令；只有一个 agent 不画", async () => {
+  const dom = new JSDOM("<!doctype html><html><body><div id='root'></div></body></html>", { url: "http://localhost/" });
+  const keys = ["window", "document", "navigator", "HTMLElement", "Element", "Node", "Event", "MouseEvent"];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  for (const key of keys) Object.defineProperty(globalThis, key, { value: dom.window[key], configurable: true, writable: true });
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  try {
+    const React = await import("react");
+    const { act } = React;
+    const { createRoot } = await import("react-dom/client");
+    const { AgentRow } = await import("../../../packages/ask/src/window/agent-row.tsx");
+    const chosen = [];
+    const agents = [
+      { id: "retainpdf", name: "RetainPDF 自带模型", available: true },
+      { id: "claude-code", name: "Claude Code", available: true },
+      { id: "codex", name: "Codex", available: false, install: "npm install -g codex-acp" },
+    ];
+    const root = createRoot(document.getElementById("root"));
+    await act(async () => root.render(React.createElement(AgentRow, { agents, agentId: "retainpdf", onAgent: (id) => chosen.push(id) })));
+    const buttons = [...document.querySelectorAll(".ask-answerer-agent")];
+    assert.deepEqual(buttons.map((button) => button.textContent), ["自带模型", "Claude Code", "Codex要先装"]);
+    assert.equal(buttons[0].getAttribute("aria-checked"), "true");
+    await act(async () => buttons[1].dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    assert.deepEqual(chosen, ["claude-code"]);
+    await act(async () => buttons[2].dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    assert.deepEqual(chosen, ["claude-code"], "没装的点了不换");
+    assert.match(document.querySelector(".ask-answerer-install").textContent, /npm install -g codex-acp/);
+    await act(async () => root.render(React.createElement(AgentRow, { agents: agents.slice(0, 1), agentId: "retainpdf", onAgent: () => {} })));
+    assert.equal(document.querySelector(".ask-answerer"), null, "只有一个 agent：不画这一排");
+    await act(async () => root.unmount());
+  } finally {
+    for (const [key, value] of Object.entries(previous)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
+    dom.window.close();
+  }
+});
+
+test("标题栏（2026-11-27 按「对话」收拾）：左边标题、右边「···」和窗口摆法；不常用的进「···」，点一项收起再做", async () => {
+  const header = readFileSync(new URL("../../../packages/ask/src/window/AskHeader.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(header, /AgentPicker|InstallMenu|Plug/, "选 agent、插头不在标题栏");
+  assert.match(header, /<AskMoreMenu items=\{menu\} \/>/);
+  const menu = readFileSync(new URL("../../../packages/ask/src/window/head-menu.tsx", import.meta.url), "utf8");
+  assert.match(menu, /if \(!items\.length\) return null;/, "没有项就不画「···」");
+  assert.match(menu, /event\.preventDefault\(\);\s*setOpen\(false\);/, "Esc 只收下拉、不关窗");
 });

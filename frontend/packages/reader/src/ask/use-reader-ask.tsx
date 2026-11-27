@@ -311,7 +311,7 @@ export function useReaderAsk({
     </>
   ) : null;
 
-  /** 小球里的「提问」：开着就关，关着就打开这本书的主对话（不带出处，问整本书、翻以前的对话）。 */
+  /** 底栏工具里的「提问」：开着就关，关着就打开这本书的主对话（不带出处，问整本书、翻以前的对话）。 */
   const showing = (ask.visible && ready) || Boolean(legacy);
   const closeAsk = ask.close;
   const toggle = useCallback(() => {

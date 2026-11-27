@@ -194,7 +194,7 @@ test("同一问带几处（11-27）：第一处进 _meta 和出处，另外几�
   assert.equal(MAX_EXTRAS, 2, "一问最多三处");
 });
 
-test("归档（11-27）：先在标题栏里确认；「以前的对话」列这本书归档了的主对话，点了只读地看，「主对话」回到现在这条", async () => {
+test("归档（11-27）：先确认；「以前的对话」列这本书归档了的主对话，点了只读地看，「主对话」回到现在这条", async () => {
   const { mockAskConversations } = await import("../../src/platform/mock/ask-conversations.ts");
   const first = await mockAskConversations.main("doc-archive-test");
   await mockAskConversations.archive(first.conversation_id);
@@ -204,12 +204,68 @@ test("归档（11-27）：先在标题栏里确认；「以前的对话」列这
   assert.deepEqual(archived.map((record) => record.conversation_id), [first.conversation_id]);
   assert.deepEqual(await mockAskConversations.archived("doc-other"), [], "别的书的不列");
   const panel = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskPanel.tsx", import.meta.url), "utf8");
-  assert.match(panel, /<span>归档并开新的？<\/span>/, "归档先确认");
-  assert.match(panel, /\{main && ask\.persistent \? <ArchiveButton onArchive=\{ask\.archiveMain\} \/> : null\}/);
+  // 2026-11-27 起「归档」「以前的对话」收进标题栏左边的对话菜单（ReaderAskConversationMenu，下面一条测试真画出来）。
+  assert.match(panel, /<ReaderAskConversationMenu ask=\{ask\} canArchive=\{main\}/);
   assert.match(panel, /readOnly=\{archived\}/, "归档了的只能看");
   const hook = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-conversation.ts", import.meta.url), "utf8");
   assert.match(hook, /await load\(record, viewRef\.current\.main\);/, "看归档的时，面包屑的「主对话」还是现在这条");
   assert.match(hook, /if \(!conversations \|\| \(shown\?\.kind === "main" && shown\.status !== "archived"\)\) return;/, "看着归档的时候再问：回到现在的主对话");
   const host = readFileSync(new URL("../../src/features/reader/domain/ask-conversations-port.ts", import.meta.url), "utf8");
   assert.match(host, /listAskConversations\(API_PREFIX, \{ kind: "main", status: "archived"/);
+});
+
+test("对话菜单（2026-11-27）：「主对话 ▾」里开个新对话（先问一句）、列以前的对话（点了只读看）；看着以前的 / 副对话时有「回主对话」", async () => {
+  const { JSDOM } = await import("jsdom");
+  const dom = new JSDOM("<!doctype html><html><body><div id='root'></div></body></html>", { url: "http://localhost/" });
+  const keys = ["window", "document", "navigator", "HTMLElement", "HTMLDetailsElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "PointerEvent"];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  for (const key of keys) Object.defineProperty(globalThis, key, { value: dom.window[key], configurable: true, writable: true });
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  try {
+    const React = await import("react");
+    const { act } = React;
+    const { createRoot } = await import("react-dom/client");
+    const { ReaderAskConversationMenu, conversationLabel } = await import("../../../packages/reader/src/ask/ReaderAskConversationMenu.tsx");
+    const calls = [];
+    const old = { conversation_id: "c-old", kind: "main", status: "archived", title: "主对话", updated_at: "2026-11-20T10:00:00Z", message_count: 12 };
+    const ask = (conversation) => ({
+      persistent: true,
+      view: { conversation },
+      listArchived: async () => [old],
+      viewArchived: async (record) => calls.push(["view", record.conversation_id]),
+      archiveMain: async () => { calls.push(["archive"]); },
+      backToMain: async () => calls.push(["back"]),
+    });
+    assert.equal(conversationLabel({ kind: "main", status: "open" }), "主对话");
+    assert.equal(conversationLabel({ kind: "side", status: "open", title: "Fock 算符" }), "副对话 · Fock 算符");
+    assert.equal(conversationLabel(old), "以前的对话 · 2026-11-20");
+    const root = createRoot(document.getElementById("root"));
+    await act(async () => root.render(React.createElement(ReaderAskConversationMenu, { ask: ask({ conversation_id: "c-now", kind: "main", status: "open" }), canArchive: true, canList: true })));
+    const details = document.querySelector(".reader-ask-conversations");
+    assert.match(details.querySelector("summary").textContent, /主对话/);
+    await act(async () => { details.open = true; details.dispatchEvent(new dom.window.Event("toggle")); });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+    const body = document.querySelector(".ask-head-menu-body");
+    assert.match(body.textContent, /开个新对话/);
+    assert.match(body.textContent, /2026-11-20.*12 条/, "以前的对话列出来");
+    assert.doesNotMatch(body.textContent, /回主对话/, "在主对话里不出「回主对话」");
+    const newButton = [...body.querySelectorAll("button")].find((button) => /开个新对话/.test(button.textContent));
+    await act(async () => newButton.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    assert.deepEqual(calls, [], "先问一句，不直接开");
+    assert.match(document.querySelector(".reader-ask-confirm").textContent, /现在这段收起来，开个新的？/);
+    await act(async () => document.querySelector(".reader-ask-confirm-yes").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    assert.deepEqual(calls, [["archive"]]);
+    await act(async () => root.render(React.createElement(ReaderAskConversationMenu, { ask: ask(old), canArchive: false, canList: true })));
+    await act(async () => { details.open = true; details.dispatchEvent(new dom.window.Event("toggle")); });
+    assert.match(document.querySelector(".reader-ask-conversations summary").textContent, /以前的对话 · 2026-11-20/);
+    const back = [...document.querySelectorAll(".ask-head-menu-body button")].find((button) => /回主对话/.test(button.textContent));
+    assert.ok(back, "看着以前的对话：有「回主对话」");
+    assert.doesNotMatch(document.querySelector(".ask-head-menu-body").textContent, /开个新对话/);
+    await act(async () => back.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    assert.deepEqual(calls.at(-1), ["back"]);
+    await act(async () => root.unmount());
+  } finally {
+    for (const [key, value] of Object.entries(previous)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
+    dom.window.close();
+  }
 });

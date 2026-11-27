@@ -14,6 +14,8 @@ export type ReaderZoomHudProps = {
     bookmarkScope?: string;
     /** 页码后面放的按钮（宿主自己加；阅读页 2026-11-27 起不放，搜索在左栏）。 */
     searchSlot?: ReactNode;
+    /** 最右边、竖线后面那组工具（阅读页：ReaderHudTools，提问、画笔、Markdown、对比版本；2026-11-27 起取代右下角的小球）。 */
+    toolsSlot?: ReactNode;
 };
 export declare function ReaderZoomHud(props: ReaderZoomHudProps): import("react").JSX.Element;
 //# sourceMappingURL=ReaderZoomHud.d.ts.map

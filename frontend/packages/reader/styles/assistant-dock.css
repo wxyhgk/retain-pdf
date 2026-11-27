@@ -158,7 +158,7 @@
   outline: none;
 }
 
-/* 面板停在右边：书页区让出面板那么宽（.reader-stage 用这个变量；书页、底栏、小球都在书页区里）。 */
+/* 面板停在右边：书页区让出面板那么宽（.reader-stage 用这个变量；书页、底栏都在书页区里）。 */
 .reader-react-root.is-assistant-open {
   --reader-stage-right: var(--reader-ai-split-width);
 }

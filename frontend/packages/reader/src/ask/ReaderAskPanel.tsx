@@ -1,16 +1,16 @@
 /** 阅读页的提问窗：把主对话（use-ask-conversation）、下一问的出处、任务号、跳页、KaTeX 地址接到 @retainpdf/ask 的 AskWindow 上。
  * 单独一块，第一次提问才加载。以前按书存的问答（只读）也用它看。 */
-import { useEffect, useMemo, useState, type ReactElement } from "react";
+import { useMemo, useState, type ReactElement } from "react";
 import AskWindow from "@retainpdf/ask/window";
 import type { AskAnswerAction, AskAttachTool, AskContextOffer, AskMessageContext } from "@retainpdf/ask";
-import type { AskConversationRecord } from "@retainpdf/api/ai";
-import { Archive, BookmarkCheck, ChevronRight, History, Loader2 } from "lucide-react";
+import { BookmarkCheck, Loader2 } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
 import type { ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
 import { resolveKatexStylesheetUrl } from "../external.js";
 import { bindAskPort, toAskContext } from "./ask-context.js";
 import { anchorSelection, contextBlock, contextSelection, selectionAnchor, suggestedTranslation, type AskBook } from "./conversation-messages.js";
+import { ReaderAskConversationMenu } from "./ReaderAskConversationMenu.js";
 import { ReaderMemoryPanel } from "./ReaderMemoryPanel.js";
 import type { useAskConversation } from "./use-ask-conversation.js";
 
@@ -56,117 +56,6 @@ function SideBar({ ask }: { ask: AskState }): ReactElement | null {
         {ask.closingSide === "failed" ? "再试一次" : "结束，带回结论"}
       </Button>
     </div>
-  );
-}
-
-/** 归档了的主对话叫什么：有自己的标题写标题，日期是最后一次说话那天。 */
-function archivedLabel(record: AskConversationRecord): string {
-  const title = record.title && record.title !== "主对话" ? `${record.title} · ` : "";
-  return `${title}${record.updated_at.slice(0, 10)}`;
-}
-
-function Breadcrumb({ ask }: { ask: AskState }): ReactElement {
-  const conversation = ask.view.conversation;
-  if (conversation?.kind === "main" && conversation.status === "archived") {
-    return (
-      <span className="ask-crumbs">
-        <Button className="ask-crumb-link" title="回这本书现在的主对话" onClick={() => void ask.backToMain()}>主对话</Button>
-        <ChevronRight size={11} aria-hidden />
-        <span className="ask-crumb" title={`归档了的主对话，只能看（${conversation.message_count} 条）`}>以前的对话 · {archivedLabel(conversation)}</span>
-      </span>
-    );
-  }
-  if (conversation?.kind !== "side") return <span className="ask-crumb" title="一直延续的主对话：换书、换 agent 都接着聊">主对话</span>;
-  return (
-    <span className="ask-crumbs">
-      <Button className="ask-crumb-link" title="回主对话（副对话留着，之后能回来）" onClick={() => void ask.backToMain()}>主对话</Button>
-      <ChevronRight size={11} aria-hidden />
-      <span className="ask-crumb" title={conversation.title}>{conversation.title || "副对话"}</span>
-    </span>
-  );
-}
-
-/** 归档：先在标题栏里问一句（以前点了就归档，手滑就丢了这一长串）；归档的在「以前的对话」里还能看。 */
-function ArchiveButton({ onArchive }: { onArchive: () => Promise<void> }): ReactElement {
-  const [confirming, setConfirming] = useState(false);
-  const [busy, setBusy] = useState(false);
-  useEffect(() => {
-    if (!confirming) return undefined;
-    const timer = setTimeout(() => setConfirming(false), 6000);
-    return () => clearTimeout(timer);
-  }, [confirming]);
-  if (!confirming) {
-    return (
-      <Button className="ask-icon" aria-label="归档主对话" title="归档这个主对话，开一个新的（归档的在「以前的对话」里还能看，记忆不受影响）" onClick={() => setConfirming(true)}>
-        <Archive size={14} aria-hidden />
-      </Button>
-    );
-  }
-  return (
-    <span className="reader-ask-confirm" role="group" aria-label="确认归档">
-      <span>归档并开新的？</span>
-      <Button
-        className="reader-ask-confirm-yes"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            await onArchive();
-          } finally {
-            setBusy(false);
-            setConfirming(false);
-          }
-        }}
-      >
-        {busy ? <Loader2 size={12} className="ask-spin" aria-hidden /> : null}
-        归档
-      </Button>
-      <Button className="reader-ask-confirm-no" onClick={() => setConfirming(false)}>取消</Button>
-    </span>
-  );
-}
-
-/** 「以前的对话」：这本书归档了的主对话，点一个只读地看。 */
-function ArchivedMenu({ ask }: { ask: AskState }): ReactElement {
-  const [open, setOpen] = useState(false);
-  const [list, setList] = useState<AskConversationRecord[] | null>(null);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    if (!open) return undefined;
-    let cancelled = false;
-    setError("");
-    ask.listArchived().then(
-      (records) => !cancelled && setList(records),
-      (failure) => !cancelled && setError(failure instanceof Error ? failure.message : String(failure)),
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-  const shown = ask.view.conversation?.conversation_id;
-  return (
-    <details className="ask-install reader-ask-history" open={open} onToggle={(event) => setOpen((event.currentTarget as HTMLDetailsElement).open)}>
-      <summary className="ask-icon" aria-label="以前的对话" title="以前的对话：这本书归档了的主对话">
-        <History size={14} aria-hidden />
-      </summary>
-      <ul>
-        {error ? <li className="reader-ask-history-note">{error}</li> : list === null ? <li className="reader-ask-history-note">在读……</li> : list.length ? list.map((record) => (
-          <li key={record.conversation_id}>
-            <Button
-              className="reader-ask-history-item"
-              data-current={record.conversation_id === shown ? "true" : undefined}
-              onClick={() => {
-                setOpen(false);
-                void ask.viewArchived(record);
-              }}
-            >
-              <span>{archivedLabel(record)}</span>
-              <small>{record.message_count} 条</small>
-            </Button>
-          </li>
-        )) : <li className="reader-ask-history-note">这本书还没有归档过的对话。</li>}
-      </ul>
-    </details>
   );
 }
 
@@ -232,16 +121,14 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       onContextClear={() => ask.setPending(null)}
       onClose={ask.close}
       readOnly={archived}
-      title={<Breadcrumb ask={ask} />}
-      headerActions={<>
-        {memories ? (
-          <Button className="ask-icon" aria-label="记忆" title="记忆：AI 记下的、你自己加的（能关掉）" onClick={() => setMemoryOpen(true)}>
-            <BookmarkCheck size={14} aria-hidden />
-          </Button>
-        ) : null}
-        {ask.persistent && port.conversations?.archived ? <ArchivedMenu ask={ask} /> : null}
-        {main && ask.persistent ? <ArchiveButton onArchive={ask.archiveMain} /> : null}
-      </>}
+      title={<ReaderAskConversationMenu ask={ask} canArchive={main} canList={Boolean(port.conversations?.archived)} />}
+      headerMenu={memories ? [{
+        key: "memory",
+        label: "记忆",
+        hint: "AI 记住的关于你和这本书的事，能改、删、关掉",
+        icon: <BookmarkCheck size={14} aria-hidden />,
+        onSelect: () => setMemoryOpen(true),
+      }] : undefined}
       footer={<>
         {ask.error ? <p className="ask-error">{ask.error}</p> : null}
         <SideBar ask={ask} />

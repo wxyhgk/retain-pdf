@@ -135,18 +135,19 @@ test("三条浮动 chrome 都靠 translateX(-50%) 居中 —— 下面按中心�
   }
 });
 
-test("书页区按 --reader-stage-right 让出右边；底栏、小球、滚动壳都在书页区里", () => {
+test("书页区按 --reader-stage-right / left 让出两边；底栏（连同工具）、滚动壳都在书页区里", () => {
   const inset = declaration(["react-pdf.css"], ".reader-stage", "inset");
   assert.ok(inset, ".reader-stage 没有 inset");
   assert.match(inset, /var\(--reader-stage-right\)/);
   assert.match(inset, /var\(--reader-stage-left\)/);
   assert.equal(declaration(["hud.css"], ".reader-react-hud", "position"), "absolute");
-  assert.equal(declaration(["toolball.css"], ".reader-toolball", "position"), "absolute");
+  // 2026-11-27 起右下角的小球并进底栏（ReaderHudTools 放在底栏的 toolsSlot）。
+  assert.equal(declaration(["toolball.css"], ".reader-hud-tools", "position"), "relative");
   const app = readFileSync(fileURLToPath(new URL("../../../../frontend/packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url)), "utf8");
   const stage = app.slice(app.indexOf('<div className="reader-stage">'));
   const end = stage.indexOf("</div>");
   assert.ok(end > 0, "没有书页区");
-  for (const part of ["<ReaderCompareGrid", "<ReaderZoomHud", "<ReaderToolBall"]) {
+  for (const part of ["<ReaderCompareGrid", "<ReaderZoomHud", "toolsSlot={<ReaderHudTools"]) {
     const at = stage.indexOf(part);
     assert.ok(at > 0 && at < end, `${part} 不在书页区里`);
   }

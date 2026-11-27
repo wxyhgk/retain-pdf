@@ -1,7 +1,7 @@
 /** 提问窗（@retainpdf/ask/window；宿主懒加载这一块）。
  *
  * - 窗口：react-rnd。三种摆法：浮动（标题栏拖动、边角调大小）、贴右边（占满右侧，左边框拖宽窄）、放大；双击标题栏放大 / 还原。
- *   Esc / ✕ 关。标题栏见 AskHeader.tsx（图标为主）。
+ *   Esc / ✕ 关。标题栏见 AskHeader.tsx（对话、「···」、窗口摆法）；谁来答（agent、模型、思考）在输入框那颗按钮（AskModelPicker.tsx）。
  * - 一直延续的对话（2026-11-26 主对话）：输入框上面是下一问带的出处、问题上面是问的哪儿、「深挖」、「已记住（撤销）」，见 conversation.tsx；
  *   每答完一轮交给宿主追加（use-turns.ts）。回答里选字，下一问引用那段（answer-quote.tsx）。
  * - 对话：整套照搬 assistant-ui 官方的 Thread（../ui/elements/thread.aui.tsx：复制、重新回答、改问题、版本切换、回到最下面、
@@ -32,6 +32,8 @@ import {
   makeWelcome,
 } from "./blocks.js";
 import { AskHeader } from "./AskHeader.js";
+import { AskAgentsContext, type AskAgentsState } from "./agent-row.js";
+import type { AskHeaderMenuItem } from "./head-menu.js";
 import type { AskWindowMode } from "./AskHeader.js";
 import { AskPageContext, type AskPageJump } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
@@ -90,8 +92,10 @@ export type AskWindowProps = {
   onClose: () => void;
   /** 标题栏左边（主对话 / 副对话的面包屑）。 */
   title?: ReactNode;
-  /** 标题栏右边多放的按钮（记忆、归档……）。 */
+  /** 标题栏右边多放的按钮（旧写法；不常用的放 headerMenu）。 */
   headerActions?: ReactNode;
+  /** 标题栏「···」里的项（不常用的：阅读页的记忆）。 */
+  headerMenu?: readonly AskHeaderMenuItem[];
   /** 对话下面、输入框外面多放的一条（副对话的「结束」）。 */
   footer?: ReactNode;
   /** 点问题上面的小标签：回到问的那一处。 */
@@ -139,7 +143,7 @@ export type AskWindowProps = {
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, headerMenu, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -275,6 +279,8 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     setAgentId(id);
     saveWindowMemory({ agentId: id });
   }, []);
+  // 「谁来答」里的 agent 那一排（agent-row.tsx，输入框那颗按钮的弹层里）。
+  const agentsUi = useMemo<AskAgentsState | null>(() => (agents?.length ? { agents, agentId, onAgent: chooseAgent } : null), [agents, agentId, chooseAgent]);
   // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
   const effort = currentEffort(config);
   const shownAgent = agents?.find((agent) => agent.id === agentId);
@@ -290,7 +296,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       minHeight={280}
       bounds="window"
       dragHandleClassName="ask-head"
-      cancel=".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul"
+      cancel=".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-head-menu-body"
       disableDragging={mode !== "float"}
       enableResizing={mode === "full" ? false : mode === "dock" ? { left: true } : true}
       onDragStop={layout.onDragStop}
@@ -300,9 +306,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
         <AskHeader
           title={title}
           actions={headerActions}
-          agents={agents}
-          agentId={agentId}
-          onAgent={chooseAgent}
+          menu={headerMenu}
           mode={mode}
           onMode={layout.changeMode}
           onDelete={onDelete}
@@ -315,6 +319,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
           <PermissionContext.Provider value={permissions}>
             <AskSendContext.Provider value={send}>
             <AskConfigContext.Provider value={configState}>
+            <AskAgentsContext.Provider value={agentsUi}>
             <AttachToolsContext.Provider value={attachUi}>
             <AnswerQuoteProvider value={answerQuote.ui}>
             <AssistantRuntimeProvider runtime={runtime}>
@@ -336,6 +341,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
             </AssistantRuntimeProvider>
             </AnswerQuoteProvider>
             </AttachToolsContext.Provider>
+            </AskAgentsContext.Provider>
             </AskConfigContext.Provider>
             </AskSendContext.Provider>
           </PermissionContext.Provider>

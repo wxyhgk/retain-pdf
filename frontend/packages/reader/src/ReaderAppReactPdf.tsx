@@ -24,7 +24,7 @@ import {
   type ReaderHudContextValue,
 } from "./components/react-pdf/reader-context.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
-import { ReaderToolBall } from "./components/react-pdf/ReaderToolBall.js";
+import { ReaderHudTools } from "./components/react-pdf/ReaderHudTools.js";
 import { ReaderPageMenu, pageMenuFromContextMenu, type ReaderPageMenuState } from "./components/react-pdf/ReaderPageMenu.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
 import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
@@ -284,7 +284,7 @@ export function ReaderAppReactPdf() {
           />
           <ReaderAssistantDock active={assistantPanel} />
           {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
-          {/* 书页区：顶栏以下、右边停着的东西以左（--reader-stage-right）。书页、底栏、小球都在里面按它自己定位，
+          {/* 书页区：顶栏以下、左右停着的东西之间（--reader-stage-left / --reader-stage-right）。书页、底栏（连同工具）都在里面按它自己定位，
               不再各自拿视口宽减面板宽去算。 */}
           <div className="reader-stage">
             <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
@@ -293,9 +293,9 @@ export function ReaderAppReactPdf() {
                 mode={visiblePdfMode}
                 modeControls={null}
                 bookmarkScope={c.viewStateKey}
+                toolsSlot={<ReaderHudTools active={assistantPanel} />}
               />
             ) : null}
-            <ReaderToolBall active={assistantPanel} />
           </div>
           <ReaderOverlays
             session={session}

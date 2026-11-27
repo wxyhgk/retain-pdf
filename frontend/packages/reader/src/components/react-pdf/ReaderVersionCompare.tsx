@@ -1,4 +1,4 @@
-// 「对比版本」的界面：悬浮小球里的版本列表（选一份放左栏、用左边这份、退出对比），和对比时两栏书页上淡淡的水印
+// 「对比版本」的界面：底栏工具里点开的版本列表（选一份放左栏、用左边这份、退出对比），和对比时两栏书页上淡淡的水印
 // （RetainPDF 标记 + 模型名大字 + 「对比 / 正在读 · 方式 · 时间」小字，2026-11-20 起代替书页上方那一条文字）。
 // 数据和动作在 hooks/use-reader-version-compare.ts。
 import { useLayoutEffect, useState, type ReactElement } from "react";
@@ -22,7 +22,7 @@ export function splitVersionName(name: string): { engine: string; model: string 
   return at > 0 ? { engine: name.slice(0, at), model: name.slice(at + 3) } : { engine: "", model: name };
 }
 
-/** 小球里「对比版本」点开的那张卡。 */
+/** 底栏工具里「对比版本」点开的那张卡。 */
 export function VersionCompareMenu({ compare, onDone }: { compare: VersionCompare; onDone: () => void }): ReactElement {
   return (
     <div className="reader-version-compare-menu" role="dialog" aria-label="选一份译文放在左边对照">

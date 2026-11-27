@@ -169,3 +169,12 @@ RetainPDF 的自带类 agent 由网页端口合成「模型」一项（设置里
 - agent 那边接着上次的会话（ACP `session/load`，后端开了再接）。
 - 追问建议（ACP `prompt_suggestions_update`）、换模型 / 思考强度（`config_option_update`、`session/set_model`）、本书提问列表。
 - 白板：回答以后进白板（[以 PDF 为主体](../../ops/planning/learning-system/20261125-以PDF为主体的提问白板笔记.md)）。
+
+## 2026-11-27 标题栏和「谁来答」
+
+按使用者收拾了一遍（[方案](../../ops/planning/reader-redesign/20261127-按使用者收拾提问窗标题栏和底栏.md)）：
+
+- 标题栏只剩「主对话 ▾」（`ReaderAskConversationMenu`：开个新对话、以前的对话、回主对话）、「···」（记忆）、贴边、放大、关。
+  以前的面包屑、「以前的对话」图标、「归档」图标、选 agent、插头都收掉了。
+- 「谁来答」只在输入框那颗按钮：弹层最上面一排 agent（没装的点了给安装命令），下面模型、思考。只有两档的思考画成开关。
+- 入口：底栏右边工具里的「提问」（排第一），右下角的小球没了。
