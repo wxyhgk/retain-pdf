@@ -103,3 +103,26 @@ test("挂扩展：扩展画的浮层画出来；一个扩展出错只丢掉它�
     env.restore();
   }
 });
+
+test("文字层标记（textMarks）：几个扩展的合在一起，重叠的先到的赢，只认 data-* 属性，搜索词照旧在段里高亮，转义", async () => {
+  const { renderMarkedText } = await import("../../../packages/reader/src/shared/content/reader-text-marks.ts");
+  const { collectTextMarks } = await registry();
+  const text = "see Figure 2 and <x> Eq 3";
+  const marks = collectTextMarks([
+    { id: "xrefs", title: "引用", contribution: { textMarks: () => [{ start: 4, end: 12, className: "reader-xref", attrs: { "data-xref": "figure:2", onclick: "x()" } }] } },
+    { id: "other", title: "别的", contribution: { textMarks: () => [{ start: 8, end: 14, className: "other" }, { start: 21, end: 25, className: "eq" }] } },
+    { id: "broken", title: "坏的", contribution: { textMarks: () => { throw new Error("boom"); } } },
+  ]);
+  const original = console.error;
+  console.error = () => {};
+  try {
+    assert.equal(
+      renderMarkedText(text, marks(text), "and"),
+      'see <mark class="reader-xref" data-xref="figure:2">Figure 2</mark> <mark class="reader-find-mark">and</mark> &lt;x&gt; <mark class="eq">Eq 3</mark>',
+    );
+  } finally {
+    console.error = original;
+  }
+  assert.equal(collectTextMarks([{ id: "a", title: "", contribution: {} }]), null, "没人给就不改文字层");
+  assert.equal(renderMarkedText("a<b", [], ""), "a&lt;b");
+});

@@ -1,4 +1,5 @@
 import { type ReactElement, type ReactNode } from "react";
+import type { ReaderTextMark } from "../shared/content/reader-text-marks.js";
 import type { ReaderApi, ReaderComparedDocument, ReaderContribution, ReaderExtension, ReaderMenuContext, ReaderMenuItem, ReaderShortcut } from "./types.js";
 export type ReaderContributionEntry = {
     id: string;
@@ -20,6 +21,8 @@ export type ReaderPageLayer = {
     render: NonNullable<ReaderContribution["pageLayer"]>;
 };
 export declare function collectPageLayers(contributions: ReaderContributions): ReaderPageLayer[];
+/** 几个扩展的文字层标记合成一个函数（没人给是 null，书页就不用自定义文字层）。 */
+export declare function collectTextMarks(contributions: ReaderContributions): ((text: string) => ReaderTextMark[]) | null;
 /** 对照时左栏换成的那一份：第一个给了的扩展。 */
 export declare function pickComparedDocument(contributions: ReaderContributions): ReaderComparedDocument | null;
 export declare function collectShortcutGroups(contributions: ReaderContributions): {

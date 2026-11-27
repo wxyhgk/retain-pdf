@@ -1,7 +1,7 @@
 // 单页：对齐旧 createManualPageElement + setManualPageSize（固定宽高）
 // 对照时 syncedMinHeight 来自 syncReaderPageRows 的 max 高度
 
-import { renderXrefText } from "../shared/content/reader-xrefs.js";
+import { renderMarkedText } from "../shared/content/reader-text-marks.js";
 import { readerRegionKindForRegion } from "../shared/data/reader-regions.js";
 import {
   Fragment,
@@ -107,13 +107,13 @@ function PdfPageSlotInner({
   // 左栏搜索的词：文字层里每处命中包一个 <mark>（reader-find.ts 的 highlightFindTerm）。没有词时不给 renderer，
   // react-pdf 照原样画文字层，不多一遍 innerHTML。
   const findTerm = readerContext?.findTerm || "";
-  // 书里的引用（「图 2.1」「式 (3.21)」）包一层 span（reader-xrefs.ts），悬停预览、点了跳过去由 use-reader-xrefs 接。
-  const xrefIndex = readerContext?.xrefIndex;
+  // 扩展标出来的几段（贡献表的 textMarks，例如书里的引用「图 2.1」）包成 <mark>（reader-text-marks.ts）；悬停、点了怎样由扩展自己接。
+  const textMarks = readerContext?.textMarks;
   const customTextRenderer = useMemo(
-    () => (xrefIndex?.size
-      ? ({ str }: { str: string }) => renderXrefText(str, xrefIndex, findTerm)
+    () => (textMarks
+      ? ({ str }: { str: string }) => renderMarkedText(str, textMarks(str), findTerm)
       : findTerm ? ({ str }: { str: string }) => highlightFindTerm(str, findTerm) : undefined),
-    [findTerm, xrefIndex],
+    [findTerm, textMarks],
   );
   const aspectRef = useRef(cachedAspect ?? DEFAULT_ASPECT);
   const [aspect, setAspect] = useState(aspectRef.current);

@@ -7,6 +7,9 @@ import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
 import type { ReaderMetadata, ReaderRegion } from "../shared/data/reader-regions.js";
 import type { ReaderAssistantPanel } from "../shared/types/reader-assistant-panels.js";
 import type { ReaderVersionOption } from "../contracts/session.js";
+import type { ReaderPaneId } from "../pdf/reader-dom-contract.js";
+import type { RegionPdfDocument } from "../pdf/RegionCanvas.js";
+import type { ReaderTextMark } from "../shared/content/reader-text-marks.js";
 
 /** 扩展能看到、能用的阅读页：正在读的书、书的块和目录、几个动作。阅读页状态变了就换一个新对象。 */
 export type ReaderApi = {
@@ -25,6 +28,14 @@ export type ReaderApi = {
   /** 悬停框现在认出的块。 */
   hoveredItemId: () => string | null;
   goToPage: (page: number, pane?: "source" | "translated") => void;
+  /** 跳到某一块（读到的位置记进阅读历史）。 */
+  jumpToBlock: (itemId: string, pane?: ReaderPaneId) => void;
+  /** 书页的滚动外壳（扩展在它上面接事件：悬停预览……）；还没挂上是 null。 */
+  shellEl: HTMLElement | null;
+  /** 主栏（单栏时就是那一栏，对照时是原文栏）。 */
+  primaryPane: ReaderPaneId;
+  /** 各栏读好的 PDF（画某一块的放大图、预览用）；还没读好是 null。 */
+  pdfDocuments: { source: RegionPdfDocument | null; translated: RegionPdfDocument | null };
   /** 纯本地 PDF（没有任务）：要任务的功能（Markdown……）用不了。 */
   sourceOnly: boolean;
   /** 开着哪个面板（扩展定义里 panels 的 id），没开是 null。 */
@@ -79,6 +90,8 @@ export type ReaderContribution = {
   shortcuts?: readonly ReaderShortcut[];
   /** 右下角小球里的按钮，按扩展顺序（带面板的扩展，面板按钮跟在它的按钮后面）。 */
   toolbarItems?: readonly ReaderToolbarItem[];
+  /** 书页文字层里一段字要标出来的几段（包成 <mark>，class 和 data-* 属性由扩展定）；几个扩展的合在一起，重叠的先到的赢。 */
+  textMarks?: (text: string) => readonly ReaderTextMark[];
   /** 对照时左栏换成这一份；同时有几个扩展给，用第一个。 */
   comparedDocument?: ReaderComparedDocument | null;
 };

@@ -30,8 +30,6 @@ import { ReaderInkDock, ReaderInkMenu, inkMenuFromContextMenu, useInkShortcuts, 
 import { useReaderInk } from "./hooks/use-reader-ink.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
 import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
-import { useReaderXrefs } from "./hooks/use-reader-xrefs.js";
-import { buildXrefIndex, type XrefTarget } from "./shared/content/reader-xrefs.js";
 import { ReaderFinderArea } from "./app/ReaderFinderArea.js";
 import { ReaderOverlays } from "./app/ReaderOverlays.js";
 import { useLiveTranslationControls, useLiveTranslationOverlay } from "./app/use-live-translation-overlay.js";
@@ -39,6 +37,7 @@ import { BUILTIN_READER_EXTENSIONS } from "./extensions/builtin.js";
 import {
   collectMenuItems,
   collectPageLayers,
+  collectTextMarks,
   pickComparedDocument,
   createContributionStore,
   ReaderExtensionOutlets,
@@ -126,15 +125,9 @@ export function ReaderAppReactPdf() {
   const finderState = useReaderFinder(c);
   const { finder, toggleFinder, findTerm } = finderState;
   const jumpToBlock = useCallback((itemId: string) => c.jumpToAnchor({ block_id: itemId }), [c.jumpToAnchor]);
+  const jumpToBlockIn = useCallback((itemId: string, pane?: "source" | "translated") => c.jumpToAnchor({ block_id: itemId }, pane), [c.jumpToAnchor]);
   // PDF 自带的书签、各栏读好的 PDF 和放大查看（app/use-reader-pdf-assets）。
   const { bookmarks, onPdfOutline, onPdfDocument, zoomItem, setZoomItem, zoomBlock, closeZoom, zoomDocuments } = useReaderPdfAssets(c);
-  // 书里的引用：去处索引、悬停预览、点了跳、Alt+← 回来。
-  const xrefIndex = useMemo(() => buildXrefIndex(session.regions), [session.regions]);
-  const followXref = useCallback(
-    (target: XrefTarget, pane: "source" | "translated") => c.jumpToAnchor({ block_id: target.itemId }, pane),
-    [c.jumpToAnchor],
-  );
-  const xrefs = useReaderXrefs({ shellEl: c.shell.shellEl, index: xrefIndex, primaryPane: c.panes.primaryPane, follow: followXref });
   // 改译文（app/use-reader-block-editing）。
   const { blockEdit, editBlock, revisedBlocks } = useReaderBlockEditing(c, visiblePdfMode, regionHover);
   // 画笔：笔迹按书存在本机（hooks/use-reader-ink），右键书页出小菜单，P 进出画笔模式。
@@ -162,15 +155,22 @@ export function ReaderAppReactPdf() {
     closePanel: closeAssistant,
     visibleMode: visiblePdfMode,
     setWorkspace: changeWorkspace,
+    jumpToBlock: jumpToBlockIn,
+    shellEl: c.shell.shellEl,
+    primaryPane: c.panes.primaryPane,
+    pdfDocuments: zoomDocuments,
   }), [
     session.documentId, session.jobId, translationVersions, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages,
     c.viewStateKey, regionHover, c.goToPage, c.sourceOnly, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace,
+    jumpToBlockIn, c.shell.shellEl, c.panes.primaryPane, zoomDocuments,
   ]);
   const [contributionStore] = useState(createContributionStore);
   const contributions = useReaderContributionsOf(contributionStore);
   const pageLayers = useMemo(() => collectPageLayers(contributions), [contributions]);
   // 对照时左栏换成的那一份（对比版本扩展给的）。
   const compareVersion = useMemo(() => pickComparedDocument(contributions), [contributions]);
+  // 扩展给的文字层标记（交叉引用……）。
+  const textMarks = useMemo(() => collectTextMarks(contributions), [contributions]);
   // 右键那一下各扩展给的菜单项（右键时算好，菜单开着时不再变）。
   const [menuItems, setMenuItems] = useState<readonly ReaderMenuItem[]>([]);
   const readerContext = useMemo<ReaderContextValue>(() => ({
@@ -197,7 +197,7 @@ export function ReaderAppReactPdf() {
     onPdfOutline,
     onPdfDocument,
     zoomBlock,
-    xrefIndex,
+    textMarks,
     pageLayers,
     editBlock: blockEdit.available ? editBlock : undefined,
     blockEdit,
@@ -228,7 +228,7 @@ export function ReaderAppReactPdf() {
     onPdfOutline,
     onPdfDocument,
     zoomBlock,
-    xrefIndex,
+    textMarks,
     pageLayers,
     blockEdit,
     editBlock,
@@ -318,7 +318,6 @@ export function ReaderAppReactPdf() {
           ) : null}
           <ReaderOverlays
             session={session}
-            xrefs={xrefs}
             zoomDocuments={zoomDocuments}
             zoomItem={zoomItem}
             setZoomItem={setZoomItem}

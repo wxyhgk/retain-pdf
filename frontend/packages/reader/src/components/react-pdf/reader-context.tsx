@@ -6,7 +6,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
 import type { RegionPdfDocument } from "../../pdf/RegionCanvas.js";
-import type { XrefIndex } from "../../shared/content/reader-xrefs.js";
+import type { ReaderTextMark } from "../../shared/content/reader-text-marks.js";
 import type { ReaderPageLayer } from "../../extensions/registry.js";
 import type { ReaderComparedDocument } from "../../extensions/types.js";
 import type { ReaderPaneModel } from "../../hooks/use-reader-pane-model.js";
@@ -58,8 +58,8 @@ export type ReaderContextValue = {
   zoomBlock?: (itemId: string) => void;
   /** 扩展登记的每页一层（贡献表的 pageLayer，例如提问的「?」），按扩展顺序叠在书页上。 */
   pageLayers?: readonly ReaderPageLayer[];
-  /** 书里的引用（「图 2.1」「式 (3.21)」）认得出去处的那些；文字层把它们包成可悬停、可点的 span。 */
-  xrefIndex?: XrefIndex;
+  /** 扩展给的文字层标记（贡献表的 textMarks 合在一起，例如交叉引用）：书页文字层把这些段包成 <mark>。没人给是 null。 */
+  textMarks?: ((text: string) => readonly ReaderTextMark[]) | null;
   /** 译文栏悬停框的「改」：这一段变成编辑框。不能改时不给。 */
   editBlock?: (itemId: string) => void;
   /** 改译文的状态：正在改哪一段（译文栏在那里画编辑框）、写回了还没排进 PDF 的译文（先盖在 PDF 上）。 */

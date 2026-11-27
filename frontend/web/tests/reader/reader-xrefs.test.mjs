@@ -98,9 +98,11 @@ test("预览放哪：下面放得下放下面，否则放上面；左右不出�
   assert.deepEqual(placeXrefPreview({ left: 900, top: 700, right: 960, bottom: 720 }, { width: 300, height: 200 }, viewport), { left: 692, top: 492 });
 });
 
-test("接线：页面文字层用 renderXrefText；Alt+← 只有真的走了才拦（不然照旧是浏览器后退）；点之前选了字不跳", () => {
+test("接线：引用是扩展，经贡献表的 textMarks 进书页文字层；Alt+← 只有真的走了才拦（不然照旧是浏览器后退）；点之前选了字不跳", () => {
   const slot = readFileSync(new URL("../../../packages/reader/src/pdf/PdfPageSlot.tsx", import.meta.url), "utf8");
-  assert.match(slot, /renderXrefText\(str, xrefIndex, findTerm\)/);
+  assert.match(slot, /renderMarkedText\(str, textMarks\(str\), findTerm\)/);
+  const extension = readFileSync(new URL("../../../packages/reader/src/extensions/builtin/xrefs.tsx", import.meta.url), "utf8");
+  assert.match(extension, /textMarks: index\.size \? \(text\) => xrefTextMarks\(text, index\) : undefined,/);
   const hook = readFileSync(new URL("../../../packages/reader/src/hooks/use-reader-xrefs.ts", import.meta.url), "utf8");
   assert.match(hook, /if \(moved\) event\.preventDefault\(\);/);
   assert.match(hook, /getSelection\?\.\(\) \|\| ""\}`\.trim\(\)\) return;/);

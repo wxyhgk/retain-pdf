@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 
+import type { ReaderTextMark } from "../shared/content/reader-text-marks.js";
 import type { ReaderApi, ReaderComparedDocument, ReaderContribution, ReaderExtension, ReaderMenuContext, ReaderMenuItem, ReaderShortcut } from "./types.js";
 
 export type ReaderContributionEntry = { id: string; title: string; contribution: ReaderContribution };
@@ -68,6 +69,20 @@ export type ReaderPageLayer = { id: string; render: NonNullable<ReaderContributi
 
 export function collectPageLayers(contributions: ReaderContributions): ReaderPageLayer[] {
   return contributions.flatMap(({ id, contribution }) => (contribution.pageLayer ? [{ id, render: contribution.pageLayer }] : []));
+}
+
+/** 几个扩展的文字层标记合成一个函数（没人给是 null，书页就不用自定义文字层）。 */
+export function collectTextMarks(contributions: ReaderContributions): ((text: string) => ReaderTextMark[]) | null {
+  const sources = contributions.flatMap(({ id, contribution }) => (contribution.textMarks ? [{ id, marks: contribution.textMarks }] : []));
+  if (!sources.length) return null;
+  return (text) => sources.flatMap(({ id, marks }) => {
+    try {
+      return [...marks(text)];
+    } catch (error) {
+      console.error(`[reader] 扩展 ${id} 的文字层标记出错`, error);
+      return [];
+    }
+  });
 }
 
 /** 对照时左栏换成的那一份：第一个给了的扩展。 */

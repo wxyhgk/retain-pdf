@@ -3,6 +3,7 @@
 import { readerAskExtension } from "../ask/ReaderAskExtension.js";
 import { readerCompareExtension } from "./builtin/compare.js";
 import { readerMarkdownExtension } from "./builtin/markdown.js";
+import { readerXrefsExtension } from "./builtin/xrefs.js";
 import type { ReaderExtension } from "./types.js";
 
-export const BUILTIN_READER_EXTENSIONS: readonly ReaderExtension[] = [readerMarkdownExtension, readerCompareExtension, readerAskExtension];
+export const BUILTIN_READER_EXTENSIONS: readonly ReaderExtension[] = [readerMarkdownExtension, readerCompareExtension, readerXrefsExtension, readerAskExtension];
