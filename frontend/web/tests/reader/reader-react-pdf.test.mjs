@@ -115,12 +115,14 @@ test("reader workspace bar keeps only three icon-only reading modes", () => {
     onModeChange() {},
   }));
   assert.match(markup, /aria-label="阅读工作区"/);
-  assert.match(markup, />原文</);
-  assert.match(markup, />对照</);
-  assert.match(markup, />译文</);
+  // 2026-11-28 起只画图标，名字在 aria-label / title 里。
+  assert.match(markup, /aria-label="原文"/);
+  assert.match(markup, /aria-label="对照"/);
+  assert.match(markup, /aria-label="译文"/);
   assert.doesNotMatch(markup, />Markdown</);
   assert.doesNotMatch(markup, />AI</);
-  assert.match(markup, /reader-workspace-tab-label/);
+  assert.doesNotMatch(markup, /reader-workspace-tab-label/);
+  assert.equal((markup.match(/<svg/g) || []).length, 3, "三个页签各一个图标");
   assert.match(markup, /aria-selected="true"[^>]*aria-label="对照"/);
 });
 

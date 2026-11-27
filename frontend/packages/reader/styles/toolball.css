@@ -1,7 +1,8 @@
 /* 顶栏右边、底栏右边的工具（ReaderBarTools.tsx，2026-11-28 起三行壳层）：
- * 顶栏（.is-top）：提问、Markdown——包在一个浅灰胶囊里（和中间的页签胶囊呼应），开着的那颗是纸色底；窄屏只剩图标；
+ * 顶栏（.is-top）：提问、Markdown——包在一个浅灰胶囊里（和中间的页签胶囊呼应），开着的那颗是纸色底；
  * 「对照」后面（.is-compare）：对比版本的 ▾；
- * 底栏（.is-bottom）：● 画笔 ▾、截图——轻图标（画笔是笔色小圆点）+ 短字，和底栏左边的书签、收藏一个密度。
+ * 底栏（.is-bottom）：画笔 ▾（钢笔右下角笔色小点）、截图。
+ * 两条栏只有图标，一个尺寸一种线宽（bar-icon.ts），名字在悬停里（2026-11-28）。
  * 弹出的东西：顶栏往下弹，底栏往上弹。黑白灰纸墨，不加彩色（画笔的小圆点是笔本身的颜色）。
  * 文件名沿用 toolball.css（入口 CSS 按文件名引；以前是右下角悬浮小球、后来的底栏浮条工具）。 */
 
@@ -23,9 +24,11 @@
 
 .reader-bar-tools.is-top .reader-bar-tool,
 .reader-bar-tools.is-top .reader-panel-toggle {
-  min-height: 28px;
-  height: 28px;
-  padding: 0 10px;
+  width: 30px;
+  min-width: 30px;
+  min-height: 30px;
+  height: 30px;
+  padding: 0;
   border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
   color: var(--muted);
 }
@@ -66,13 +69,20 @@
   transform: translateX(-50%);
 }
 
-/* 画笔前面当前笔色的小圆点。 */
+/* 画笔：钢笔图标右下角一个当前笔色的小点（描一圈纸色，压在线条上也分得清）。 */
+.reader-ink-mark {
+  position: relative;
+  display: inline-flex;
+}
+
 .reader-ink-dot {
-  display: inline-block;
-  flex: none;
-  width: 8px;
-  height: 8px;
+  position: absolute;
+  right: -2px;
+  bottom: -1px;
+  width: 6px;
+  height: 6px;
   border-radius: var(--ui-radius-pill, 999px);
+  box-shadow: 0 0 0 1.5px var(--paper);
 }
 
 .reader-bar-tool-group {
@@ -111,19 +121,8 @@
   min-width: 26px;
   min-height: 26px;
   height: 26px;
-  gap: 4px;
-  padding: 0 6px;
+  padding: 0 5px;
   border-radius: var(--reader-hud-key-radius, var(--ui-radius-md, 8px));
-  font-weight: 500;
-}
-
-.reader-bar-tools.is-bottom .reader-bar-tool-label {
-  color: var(--muted);
-}
-
-.reader-bar-tools.is-bottom .reader-bar-tool:hover .reader-bar-tool-label,
-.reader-bar-tools.is-bottom .reader-bar-tool[aria-pressed="true"] .reader-bar-tool-label {
-  color: var(--ink);
 }
 
 /* ▾ 紧贴在主按钮右边，窄一点。 */
@@ -141,11 +140,6 @@
   color: var(--muted);
 }
 
-.reader-bar-tools .reader-panel-toggle svg {
-  width: 15px;
-  height: 15px;
-}
-
 .reader-bar-tool:hover,
 .reader-bar-tool-caret:hover,
 .reader-bar-tools .reader-panel-toggle:hover:not([aria-pressed="true"]) {
@@ -159,18 +153,6 @@
 .reader-bar-tools .reader-panel-toggle[aria-pressed="true"]:hover {
   background: color-mix(in srgb, var(--ink) 10%, transparent);
   color: var(--ink);
-}
-
-/* 窄屏：顶栏、底栏的工具只剩图标（画笔剩小圆点），名字在悬停里。 */
-@media (max-width: 900px) {
-  .reader-bar-tool-label,
-  .reader-bar-tools .reader-panel-toggle-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
 }
 
 /* 弹出的东西（对比版本的列表、画笔的笔型颜色）：顶栏往下、底栏往上，右边对齐。 */

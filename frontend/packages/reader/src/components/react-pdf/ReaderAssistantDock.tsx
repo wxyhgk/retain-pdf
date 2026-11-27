@@ -22,6 +22,7 @@
  * 需要 JS 才能表达的东西。
  */
 import { X } from "lucide-react";
+import { BAR_ICON } from "./bar-icon.js";
 import type { ReactElement } from "react";
 import { useReaderContext } from "./reader-context.js";
 import { readerDockTabs, type ReaderDockTab } from "./reader-dock-tabs.js";
@@ -86,8 +87,7 @@ export function ReaderPanelToggles(props: Pick<ReaderAssistantDockProps, "active
             disabled={disabled}
             onClick={() => (open ? onClose() : onSelect(id))}
           >
-            <Icon className="reader-close-home-icon" size={18} strokeWidth={2.25} aria-hidden />
-            <span className="reader-panel-toggle-label" aria-hidden="true">{label}</span>
+            <Icon className="reader-close-home-icon" {...BAR_ICON} aria-hidden />
           </button>
         );
       })}

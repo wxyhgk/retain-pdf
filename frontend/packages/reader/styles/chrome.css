@@ -246,10 +246,10 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-width: 34px;
+  /* 只有图标（2026-11-28；名字在悬停里，bar-icon.ts）：方的。 */
+  width: 34px;
   min-height: 30px;
-  /* 只有字（2026-11-28 去掉了字前面的图标），左右一样宽。 */
-  padding: 0 14px;
+  padding: 0;
   border: var(--reader-tab-edge-width, 0) solid var(--reader-tab-edge-color, transparent);
   border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
   background: transparent;
@@ -259,17 +259,6 @@
   font-weight: 650;
   cursor: pointer;
   transition: background 130ms ease, color 130ms ease, transform 100ms ease;
-}
-
-.reader-workspace-tab-label {
-  white-space: nowrap;
-}
-
-/* 窄屏：字照旧（没有图标可退了），两边收窄一点。 */
-@media (max-width: 639px) {
-  .reader-workspace-tab {
-    padding: 0 9px;
-  }
 }
 
 .reader-workspace-tab:hover:not(:disabled) {
@@ -375,18 +364,6 @@
 
 .reader-download-action.is-busy {
   opacity: 0.6;
-}
-
-/* 窄屏「Markdown」这类面板按钮的字收掉，只留图标（「下载」的字一直收着）。 */
-@media (max-width: 720px) {
-  .reader-download-trigger-label,
-  .reader-panel-toggle-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
 }
 
 .reader-boot-loading {

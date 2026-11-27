@@ -2,7 +2,7 @@
 // 登记右键「在这里提问 / 问这段」、书页白边上的「?」、顶栏右边的「提问」（不带出处地打开这本书的主对话：问整本书、翻以前的对话、开记忆）、底栏右边的「截图」、
 // 快捷键说明（选着字按 ? 在 use-reader-ask 里自己监听）；提问窗是这个组件自己画的浮层。
 import { useMemo, type ReactElement } from "react";
-import { Crop, MessageCircleQuestion } from "lucide-react";
+import { MessageCircle, Scan } from "lucide-react";
 
 import { readerSessionDataPort } from "../external.js";
 import { useReaderApi, useReaderContribution } from "../extensions/registry.js";
@@ -47,7 +47,7 @@ function ReaderAskExtension(): ReactElement | null {
       key: "ask",
       label: "提问",
       title: "提问：问整本书、翻这本书以前的对话（问某一段：书页上右键，或选字按 ?）",
-      Icon: MessageCircleQuestion,
+      Icon: MessageCircle,
       pressed: showing,
       onClick: toggle,
     }, {
@@ -55,7 +55,7 @@ function ReaderAskExtension(): ReactElement | null {
       key: "crop",
       label: "截图",
       title: "截图：在书页上框出一块，带进提问（Esc 取消）",
-      Icon: Crop,
+      Icon: Scan,
       place: "bottom",
       pressed: cropping,
       onClick: toggleCrop,

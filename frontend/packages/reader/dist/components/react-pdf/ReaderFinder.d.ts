@@ -1,6 +1,6 @@
 import { type ReactElement, type ReactNode } from "react";
 export type ReaderFinderTab = "search" | "bookmarks" | "issues";
-/** 顶栏左段的「搜索」（照原型：放大镜 + 「搜索」+ 待改几处的灰数字）：开 / 收左栏，开的是上次那一页签。
+/** 顶栏左段的「搜索」（放大镜 + 待改几处的灰数字；2026-11-28 起两条栏只用图标，「搜索」两个字去掉）：开 / 收左栏，开的是上次那一页签。
  *  children 跟在后面（以前放「对比版本」，2026-11-20 挪进右下角的悬浮小球）。 */
 export declare function ReaderFinderToggles({ open, onToggle, issueCount, children, }: {
     open: ReaderFinderTab | null;

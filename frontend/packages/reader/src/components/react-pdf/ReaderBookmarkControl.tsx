@@ -1,9 +1,10 @@
 // 底栏左边：「书签」（给当前页加 / 取消书签，按书存在本机，见 reader-bookmarks.ts；书签列表在左栏「书签」页签）和紧挨着的「收藏」入口。
-// 2026-11-28 收口：两颗都带轻字标签，不再是左下角一个孤零零的图标。「收藏」功能还没做，点开只说一句还在做（用户要先留入口）。
+// 2026-11-28 两条栏只用图标（bar-icon.ts，名字在悬停里）。「收藏」功能还没做，点开只说一句还在做（用户要先留入口）。
 
 import { useEffect, useRef, useState } from "react";
-import { Star } from "lucide-react";
+import { Bookmark, Star } from "lucide-react";
 import { Button } from "@retainpdf/ui";
+import { BAR_ICON } from "./bar-icon.js";
 
 import { useReaderBookmarks } from "../../hooks/use-reader-bookmarks.js";
 import type { ReaderRegion } from "../../shared/data/reader-regions.js";
@@ -15,12 +16,9 @@ export type ReaderBookmarkControlProps = {
   regions?: readonly ReaderRegion[];
 };
 
+/** 书签图标：加过书签的页填实。 */
 export function BookmarkIcon({ filled }: { filled: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill={filled ? "currentColor" : "none"}>
-      <path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3.6L6 20V5.5a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-    </svg>
-  );
+  return <Bookmark {...BAR_ICON} fill={filled ? "currentColor" : "none"} aria-hidden />;
 }
 
 export function ReaderBookmarkControl({ scope, currentPage, numPages, regions }: ReaderBookmarkControlProps) {
@@ -40,7 +38,6 @@ export function ReaderBookmarkControl({ scope, currentPage, numPages, regions }:
         onClick={() => toggle(page)}
       >
         <BookmarkIcon filled={marked} />
-        <span className="reader-bottombar-label">{marked ? "已加书签" : "书签"}</span>
       </button>
       <ReaderFavoritesEntry />
     </div>
@@ -72,11 +69,11 @@ function ReaderFavoritesEntry() {
         className="reader-react-hud-btn reader-favorites-toggle"
         aria-expanded={open}
         aria-haspopup="dialog"
+        aria-label="收藏"
         title="收藏（还在做）"
         onClick={() => setOpen((value) => !value)}
       >
-        <Star size={14} strokeWidth={2} aria-hidden />
-        <span className="reader-bottombar-label">收藏</span>
+        <Star {...BAR_ICON} aria-hidden />
       </Button>
       {open ? (
         <div className="reader-favorites-card reader-floating-surface" role="dialog" aria-label="收藏">

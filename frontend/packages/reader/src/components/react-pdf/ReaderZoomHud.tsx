@@ -6,7 +6,8 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
-import { Minus, Plus } from "lucide-react";
+import { Contrast, Minus, Plus } from "lucide-react";
+import { BAR_ICON } from "./bar-icon.js";
 import {
   readerViewportWidth,
   READER_ZOOM_DEFAULT,
@@ -150,7 +151,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
             title={ctx.docDark ? "换回白底黑字（D）" : "深色文档：书页黑底白字（D）"}
             onClick={ctx.toggleDocDark}
           >
-            <DocDarkIcon />
+            <Contrast {...BAR_ICON} aria-hidden />
           </Button>
         </div>
       ) : null}
@@ -162,7 +163,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           disabled={!canZoomOut}
           onClick={() => onZoomChange(stepReaderZoom(userZoom, -1))}
         >
-          <Minus size={14} strokeWidth={2.2} aria-hidden />
+          <Minus {...BAR_ICON} aria-hidden />
         </button>
         <button
           type="button"
@@ -180,7 +181,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           disabled={!canZoomIn}
           onClick={() => onZoomChange(stepReaderZoom(userZoom, 1))}
         >
-          <Plus size={14} strokeWidth={2.2} aria-hidden />
+          <Plus {...BAR_ICON} aria-hidden />
         </button>
       </div>
       </div>
@@ -194,12 +195,3 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
   );
 }
 
-/** 半边黑的圆：深色文档开关。 */
-function DocDarkIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-      <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" />
-    </svg>
-  );
-}

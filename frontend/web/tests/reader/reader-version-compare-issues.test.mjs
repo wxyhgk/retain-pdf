@@ -78,7 +78,7 @@ test("N / Shift+N：接着上一次跳到的走，到头绕回；还没跳过从
   assert.equal(stepIssue([], -1, 1, false), -1);
 });
 
-test("顶栏、底栏的工具（2026-11-28 三行壳层）：顶栏右边只有面板（Markdown），「对比版本」是「对照」后面的 ▾，点了往下弹版本列表、点外面收起，只有一份译文时没有；底栏只有放在底栏的（● 画笔 ▾，带字），▾ 弹出它的选项", async () => {
+test("顶栏、底栏的工具（2026-11-28 三行壳层）：顶栏右边只有面板（Markdown），「对比版本」是「对照」后面的 ▾，点了往下弹版本列表、点外面收起，只有一份译文时没有；底栏只有放在底栏的（画笔 ▾，只有图标），▾ 弹出它的选项", async () => {
   const { makeDom } = await import("../helpers/dom.mjs");
   const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div><div id='page'></div></body></html>" });
   const React = await import("react");
@@ -124,8 +124,8 @@ test("顶栏、底栏的工具（2026-11-28 三行壳层）：顶栏右边只有
   await act(async () => { doc.getElementById("page").dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
   assert.equal(doc.querySelector(".reader-version-compare-menu"), null, "点外面收起");
   const inkButton = bottom.querySelector('[data-bar-tool="ink"]');
-  assert.ok(inkButton.querySelector(".dot") && !inkButton.querySelector("svg"), "画笔前面是小圆点，不是钢笔图标");
-  assert.equal(inkButton.querySelector(".reader-bar-tool-label").textContent, "画笔", "底栏带字");
+  assert.ok(inkButton.querySelector(".dot") && !inkButton.querySelector("svg"), "给了 mark 就画 mark，不画 Icon");
+  assert.equal(inkButton.getAttribute("aria-label"), "画笔", "只有图标，名字在 aria-label 里");
   await click(inkButton);
   assert.equal(pen, 1, "主按钮照旧进出画笔");
   assert.equal(doc.querySelector(".pen-options"), null, "平时不展开选项");

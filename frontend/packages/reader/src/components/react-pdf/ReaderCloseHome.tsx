@@ -7,6 +7,7 @@
 
 import type { ReactNode } from "react";
 import { ChevronLeft } from "lucide-react";
+import { BAR_ICON } from "./bar-icon.js";
 import { SOFT_READER_CLOSE_MESSAGE } from "../../shared/navigation/soft-reader.js";
 
 function homeIndexUrl() {
@@ -100,7 +101,7 @@ export function ReaderCloseHome({ onBeforeClose }: { onBeforeClose?: () => void 
 
   return (
     <ReaderTrayButton id="reader-close-home-btn" className="reader-close-home-btn" label="返回主页" onClick={close}>
-      <ChevronLeft className="reader-close-home-icon" size={18} strokeWidth={2.25} aria-hidden />
+      <ChevronLeft className="reader-close-home-icon" {...BAR_ICON} aria-hidden />
       <span className="reader-close-home-label">返回</span>
     </ReaderTrayButton>
   );

@@ -7,6 +7,7 @@
 // 窄屏没地方，浮在书页上，点卡外、按 Esc 收起。以前（11-27）默认浮着、栏头图钉钉住，原型里没有图钉，去掉了。
 import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { Search, X } from "lucide-react";
+import { BAR_ICON } from "./bar-icon.js";
 import { Button, Input } from "@retainpdf/ui";
 
 import { searchReaderRegions, stepFindHit } from "../../shared/content/reader-find.js";
@@ -18,7 +19,7 @@ const TAB_TITLES: Record<ReaderFinderTab, string> = { search: "搜索", bookmark
 
 const NO_REGIONS: never[] = [];
 
-/** 顶栏左段的「搜索」（照原型：放大镜 + 「搜索」+ 待改几处的灰数字）：开 / 收左栏，开的是上次那一页签。
+/** 顶栏左段的「搜索」（放大镜 + 待改几处的灰数字；2026-11-28 起两条栏只用图标，「搜索」两个字去掉）：开 / 收左栏，开的是上次那一页签。
  *  children 跟在后面（以前放「对比版本」，2026-11-20 挪进右下角的悬浮小球）。 */
 export function ReaderFinderToggles({
   open,
@@ -36,8 +37,7 @@ export function ReaderFinderToggles({
   return (
     <div className="reader-finder-toggles">
       <Button className="reader-finder-toggle" aria-label="左栏：搜索、书签、待改" aria-pressed={Boolean(open)} title={title} onClick={onToggle}>
-        <Search size={14} strokeWidth={2.1} aria-hidden />
-        <span className="reader-finder-toggle-label">搜索</span>
+        <Search {...BAR_ICON} aria-hidden />
         {issueCount ? <span className="reader-finder-toggle-count" aria-label={`待改 ${issueCount} 处`}>{issueCount}</span> : null}
       </Button>
       {children}

@@ -1,5 +1,7 @@
 // 快捷键说明：底栏键盘图标 + 浮层列表；h / ? 也可打开。
 
+import { CircleHelp } from "lucide-react";
+import { BAR_ICON } from "./bar-icon.js";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { READER_SHORTCUT_HELP } from "../../hooks/reader-keyboard-map.js";
 import { collectShortcutGroups, useReaderContributions } from "../../extensions/registry.js";
@@ -73,8 +75,8 @@ export function ReaderShortcutsHelp() {
         title="快捷键（H 或 ?）"
         onClick={() => setOpen((v) => !v)}
       >
-        {/* 一个轻的「?」字（2026-11-28：以前是键盘方框图标，底栏右边看着重）。 */}
-        <span className="reader-react-shortcuts-mark" aria-hidden>?</span>
+        {/* 圈里的问号，和底栏别的图标一套（bar-icon.ts；以前是键盘方框图标，中间试过一个「?」字）。 */}
+        <CircleHelp {...BAR_ICON} aria-hidden />
       </button>
       {open ? (
         <div

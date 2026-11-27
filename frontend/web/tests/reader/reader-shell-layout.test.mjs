@@ -120,27 +120,51 @@ test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待改个�
   assert.equal(declaration(["toolball.css"], ".reader-bar-tool", "border-radius"), radius);
   assert.doesNotMatch(css("chrome.css"), /backdrop-filter|min-height:\s*36px/, "顶栏还留着浮动胶囊的毛玻璃、36px 高");
   assert.match(read("src/ReaderAppReactPdf.tsx"), /<span className="reader-workspace-title"/, "顶栏左段的书名");
-  // 底栏：书签带轻字、紧挨着「收藏」入口；图标都是 14px，按钮 26px 高。
+  // 底栏：书签紧挨着「收藏」入口；图标都是 16px（bar-icon.ts），按钮 26px 高。
   const bookmark = read("src/components/react-pdf/ReaderBookmarkControl.tsx");
-  assert.match(bookmark, /<span className="reader-bottombar-label">\{marked \? "已加书签" : "书签"\}<\/span>\s*<\/button>\s*<ReaderFavoritesEntry \/>/);
-  assert.match(bookmark, /<span className="reader-bottombar-label">收藏<\/span>/);
-  assert.equal(declaration(["hud.css"], ".reader-bottombar svg", "width"), "14px");
+  assert.match(bookmark, /<BookmarkIcon filled=\{marked\} \/>\s*<\/button>\s*<ReaderFavoritesEntry \/>/);
+  assert.match(bookmark, /aria-label="收藏"/);
+  assert.equal(declaration(["hud.css"], ".reader-bottombar svg", "width"), "16px");
   assert.equal(declaration(["hud.css"], ".reader-bottombar .reader-react-hud-btn", "height"), "26px");
 });
 
-test("顶栏、底栏做减法（2026-11-28）：页签只有字；右边只有提问 / Markdown 胶囊和一个下载图标；对比版本在「对照」后面；底栏 ● 画笔、截图、?；目录不再切书页左边", () => {
-  const tabs = read("src/components/react-pdf/ReaderWorkspaceTabs.tsx");
-  assert.doesNotMatch(tabs, /<Icon\b|FileText|Columns2|Languages/, "页签前面不再有图标");
+test("顶栏、底栏只用图标（2026-11-28）：一个尺寸一种线宽（bar-icon.ts）、名字在 aria-label 里；页签 原文 / 对照 / 译文 是图标；右边提问 / Markdown 胶囊 + 下载图标；对比版本在「对照」后面；底栏 书签、收藏、深色、缩放、画笔（笔色小点）、截图、帮助；目录不切书页左边", async () => {
+  const { BAR_ICON } = await import("../../../packages/reader/src/components/react-pdf/bar-icon.ts");
+  assert.deepEqual(BAR_ICON, { size: 16, strokeWidth: 1.75 });
+  const files = {
+    tabs: "src/components/react-pdf/ReaderWorkspaceTabs.tsx",
+    home: "src/components/react-pdf/ReaderCloseHome.tsx",
+    finder: "src/components/react-pdf/ReaderFinder.tsx",
+    panels: "src/components/react-pdf/ReaderAssistantDock.tsx",
+    tools: "src/components/react-pdf/ReaderBarTools.tsx",
+    download: "src/components/react-pdf/ReaderDownloadActions.tsx",
+    zoom: "src/components/react-pdf/ReaderZoomHud.tsx",
+    bookmark: "src/components/react-pdf/ReaderBookmarkControl.tsx",
+    help: "src/components/react-pdf/ReaderShortcutsHelp.tsx",
+    ink: "src/extensions/builtin/ink.tsx",
+  };
+  for (const [name, file] of Object.entries(files)) {
+    const text = read(file);
+    assert.match(text, /\{\.\.\.BAR_ICON\}/, `${name} 用 BAR_ICON`);
+    assert.doesNotMatch(text, /reader-bottombar-label|reader-bar-tool-label|reader-finder-toggle-label|reader-panel-toggle-label|reader-workspace-tab-label/, `${name} 不再画字`);
+  }
+  // 两条栏里的图标不再自己写尺寸、线宽（▾ 用 BAR_CARET；面板 tab 条、左栏卡片里的不算）。
+  for (const name of ["tabs", "home", "tools", "download", "zoom", "bookmark", "help", "ink"]) {
+    assert.doesNotMatch(read(files[name]), /size=\{1[0-9]\} strokeWidth=|<svg /, `${name} 还有自己写尺寸的图标`);
+  }
+  const tabs = read(files.tabs);
+  assert.match(tabs, /\{ id: "source", label: "原文", Icon: FileText \}/);
   assert.match(tabs, /\{id === "compare" \? props\.compareExtra : null\}/, "对比版本紧跟在「对照」后面");
   assert.match(read("src/ReaderAppReactPdf.tsx"), /compareExtra=\{<ReaderBarTools place="compare" \/>\}/);
   assert.match(read("src/extensions/builtin/compare.tsx"), /place: "compare",/);
+  // 换掉的图标：提问是对话气泡、Markdown 是带字的书（不再是 M↓ 方框）、截图是取景框、帮助是圈里的问号、深色是半黑的圆。
+  assert.match(read("src/ask/ReaderAskExtension.tsx"), /Icon: MessageCircle,[\s\S]*Icon: Scan,/);
+  assert.match(read("src/extensions/builtin/markdown.tsx"), /Icon: BookText,/);
+  assert.match(read(files.help), /<CircleHelp \{\.\.\.BAR_ICON\} aria-hidden \/>/);
+  assert.match(read(files.zoom), /<Contrast \{\.\.\.BAR_ICON\} aria-hidden \/>/);
+  assert.match(read(files.ink), /<PenLine \{\.\.\.BAR_ICON\} \/>\s*<span className="reader-ink-dot"/, "画笔是钢笔图标加笔色小点");
   assert.match(declaration(["toolball.css"], ".reader-bar-tools.is-top", "border-radius"), /--reader-tab-radius/, "右边胶囊和页签胶囊一个圆角");
   assert.equal(declaration(["toolball.css"], ".reader-bar-tools.is-top", "background"), declaration(["chrome.css"], ".reader-workspace-tabs", "background"), "和页签胶囊一个底色");
-  const download = read("src/components/react-pdf/ReaderDownloadActions.tsx");
-  assert.doesNotMatch(download, /ChevronDown|reader-download-trigger-caret/, "下载只是一个图标");
-  assert.match(read("src/extensions/builtin/ink.tsx"), /mark: <span className="reader-ink-dot" style=\{\{ background: `var\(--\$\{ink\.color\}\)` \}\} aria-hidden \/>/, "画笔前面是当前笔色的小圆点");
-  const help = read("src/components/react-pdf/ReaderShortcutsHelp.tsx");
-  assert.doesNotMatch(help, /Keyboard className|from "lucide-react"/, "快捷键不再是键盘方框图标");
-  assert.match(help, /<span className="reader-react-shortcuts-mark" aria-hidden>\?<\/span>/);
+  assert.doesNotMatch(read(files.download), /ChevronDown|reader-download-trigger-caret/, "下载只是一个图标");
   assert.doesNotMatch(css("toc-minimap.css"), /reader-react-scroll-shell/, "目录不再切书页左边");
 });

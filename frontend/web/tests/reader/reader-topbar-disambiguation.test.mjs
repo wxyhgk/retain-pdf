@@ -49,11 +49,12 @@ test("顶栏是实占位的左-中-右三段网格（2026-11-28）：左右同�
   assert.match(APP, /end=\{<>[\s\S]*?<ReaderBarTools place="top"[\s\S]*?<ReaderDownloadActions \/>/, "右段：面板和看法、下载");
 });
 
-test("窄屏只收「下载」两个字，图标留着", () => {
-  const at720 = CHROME.slice(CHROME.indexOf("@media (max-width: 720px) {\n  .reader-download-trigger"));
-  const block = at720.slice(0, at720.indexOf("\n}\n\n"));
-  assert.match(block, /\.reader-download-trigger-label/, "断点里没在收文字");
-  assert.doesNotMatch(block, /display:\s*none/, "窄屏用 display:none 藏了整块");
+test("「下载」两个字一直收着（只给读屏），图标留着；不用 display:none 藏整块", () => {
+  // 2026-11-28 起两条栏只用图标，「下载」不分宽窄都只是一个图标。
+  const rule = CHROME.slice(CHROME.indexOf(".reader-download-trigger-label,"));
+  const block = rule.slice(0, rule.indexOf("}"));
+  assert.match(block, /clip:\s*rect\(0, 0, 0, 0\)/, "字没收成读屏才读得到");
+  assert.doesNotMatch(block, /display:\s*none/, "用 display:none 藏了整块");
 });
 
 test("每一路仍然有自己的图标 —— 窄屏只剩图标时要分得出来", () => {

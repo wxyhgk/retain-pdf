@@ -4,6 +4,7 @@
 // 2026-11-28 起画笔模式下不再在左下角常驻一条工具（三行壳层：底栏实占位，平时不展开工具栏，要换笔点 ▾）。
 import { useMemo, type ReactElement } from "react";
 import { PenLine } from "lucide-react";
+import { BAR_ICON } from "../../components/react-pdf/bar-icon.js";
 
 import { ReaderInkMenuSection, useInkShortcuts } from "../../components/react-pdf/ReaderInkPalette.js";
 import { useReaderInk, type ReaderInk } from "../../hooks/use-reader-ink.js";
@@ -25,8 +26,13 @@ export function inkContribution(ink: ReaderInk): ReaderContribution {
       label: "画笔",
       title: "画笔（P；书页上右键也能选笔和颜色）",
       Icon: PenLine,
-      // 底栏左右同密度（2026-11-28）：画笔前面是当前笔色的小圆点，不画钢笔线框图。
-      mark: <span className="reader-ink-dot" style={{ background: `var(--${ink.color})` }} aria-hidden />,
+      // 钢笔图标，右下角一个当前笔色的小点（2026-11-28：两条栏只用图标，单一个圆点认不出是画笔）。
+      mark: (
+        <span className="reader-ink-mark" aria-hidden>
+          <PenLine {...BAR_ICON} />
+          <span className="reader-ink-dot" style={{ background: `var(--${ink.color})` }} />
+        </span>
+      ),
       place: "bottom",
       pressed: Boolean(ink.tool),
       onClick: () => ink.setTool(ink.tool ? null : "pen"),

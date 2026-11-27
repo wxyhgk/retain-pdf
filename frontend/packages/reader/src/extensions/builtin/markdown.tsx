@@ -3,14 +3,14 @@
 import { lazy, Suspense, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 
-import { MarkdownIcon } from "../../components/react-pdf/MarkdownIcon.js";
+import { BookText } from "lucide-react";
 import { useMountedSinceFirstOpen } from "../../shared/react/use-mounted-since-first-open.js";
 import { useReaderApi } from "../registry.js";
 import type { ReaderExtension, ReaderPanelTab } from "../types.js";
 
 const ReaderMarkdownPanel = lazy(() => import("../../components/react-pdf/ReaderMarkdownPanel.js").then((m) => ({ default: m.ReaderMarkdownPanel })));
 
-export const MARKDOWN_PANEL: ReaderPanelTab = { id: "markdown", label: "Markdown", short: "MD", Icon: MarkdownIcon, needsJob: true };
+export const MARKDOWN_PANEL: ReaderPanelTab = { id: "markdown", label: "Markdown", short: "MD", Icon: BookText, needsJob: true };
 
 function MarkdownExtension(): ReactElement | null {
   const api = useReaderApi();

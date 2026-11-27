@@ -5,6 +5,7 @@ export type ReaderBookmarkControlProps = {
     numPages: number;
     regions?: readonly ReaderRegion[];
 };
+/** 书签图标：加过书签的页填实。 */
 export declare function BookmarkIcon({ filled }: {
     filled: boolean;
 }): import("react").JSX.Element;

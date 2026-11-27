@@ -1,1 +1,1 @@
-{"version":3,"file":"markdown.d.ts","sourceRoot":"","sources":["../../../src/extensions/builtin/markdown.tsx"],"names":[],"mappings":"AAQA,OAAO,KAAK,EAAE,eAAe,EAAE,cAAc,EAAE,MAAM,aAAa,CAAC;AAInE,eAAO,MAAM,cAAc,EAAE,cAAuG,CAAC;AAgBrI,eAAO,MAAM,uBAAuB,EAAE,eAKrC,CAAC"}
+{"version":3,"file":"markdown.d.ts","sourceRoot":"","sources":["../../../src/extensions/builtin/markdown.tsx"],"names":[],"mappings":"AAQA,OAAO,KAAK,EAAE,eAAe,EAAE,cAAc,EAAE,MAAM,aAAa,CAAC;AAInE,eAAO,MAAM,cAAc,EAAE,cAAmG,CAAC;AAgBjI,eAAO,MAAM,uBAAuB,EAAE,eAKrC,CAAC"}

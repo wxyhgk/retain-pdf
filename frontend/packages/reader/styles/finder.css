@@ -299,20 +299,10 @@
   padding: 0 8px 10px;
 }
 
-/* 顶栏「搜索」后面待改几处：灰的小数字，不画角标。 */
+/* 顶栏放大镜后面待改几处：灰的小数字，不画角标。 */
 .reader-finder-toggle-count {
   color: var(--muted);
   font-size: var(--ui-text-2xs, 10.5px);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
-}
-
-@media (max-width: 720px) {
-  .reader-finder-toggle-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
 }

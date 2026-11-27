@@ -1,17 +1,18 @@
 import { Fragment, type ReactElement, type ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
-import { ArrowDownToLine, CheckCircle2, Radio } from "lucide-react";
+import { ArrowDownToLine, CheckCircle2, Columns2, FileText, Languages, Radio } from "lucide-react";
+import { BAR_ICON } from "./bar-icon.js";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
 import { useReaderContext } from "./reader-context.js";
 
 export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "ai";
 export type ReaderWorkspaceMode = "source" | "compare" | "translated";
 
-// 只写字（2026-11-28：以前字前面各有一个图标，三个方框图标挨着，重复感最强，去掉了）。
+// 只画图标，名字在悬停和读屏里（2026-11-28 用户：先试过只写字，又要回图标、去掉字；顶栏、底栏都只用图标，见 bar-icon.ts）。
 const WORKSPACES = [
-  { id: "source", label: "原文" },
-  { id: "compare", label: "对照" },
-  { id: "translated", label: "译文" },
+  { id: "source", label: "原文", Icon: FileText },
+  { id: "compare", label: "对照", Icon: Columns2 },
+  { id: "translated", label: "译文", Icon: Languages },
 ] as const;
 
 export type ReaderWorkspaceTabsProps = {
@@ -95,7 +96,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
       {/* 进度那一组挂在页签右边（相对这一层定位），页签照旧居中（左右两段同宽的网格）。 */}
       <div className="reader-workspace-center">
         <div className="reader-workspace-tabs" role="tablist" aria-label="阅读工作区">
-          {WORKSPACES.map(({ id, label }) => {
+          {WORKSPACES.map(({ id, label, Icon }) => {
             const active = mode === id;
             const disabled = isReaderWorkspaceDisabled({
               id,
@@ -115,7 +116,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
                 disabled={disabled}
                 onClick={() => onModeChange(id)}
               >
-                <span className="reader-workspace-tab-label">{label}</span>
+                <Icon {...BAR_ICON} aria-hidden />
               </button>
               {id === "compare" ? props.compareExtra : null}
               </Fragment>
@@ -133,7 +134,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
                 || `${liveCopy}，${liveTranslation.visible ? "点一下看原文" : "点一下叠上译文"}`}
               onClick={liveTranslation.onToggle}
             >
-              <Radio size={14} strokeWidth={2.2} aria-hidden />
+              <Radio {...BAR_ICON} aria-hidden />
               <span className="reader-live-translation-toggle-label">{liveCopy}</span>
             </button>
             {liveTranslation.latestPage
@@ -145,7 +146,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
                   title={`跳到最新译好的第 ${liveTranslation.latestPage} 页`}
                   onClick={liveTranslation.onJumpToLatest}
                 >
-                  <ArrowDownToLine size={14} strokeWidth={2.2} aria-hidden />
+                  <ArrowDownToLine {...BAR_ICON} aria-hidden />
                   <span className="reader-live-translation-toggle-label">跳到最新</span>
                 </Button>
               ) : null}
@@ -157,7 +158,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
               title="翻译完成，左右对照看最终译文"
               onClick={completion.onOpenCompare}
             >
-              <CheckCircle2 size={14} strokeWidth={2.2} aria-hidden />
+              <CheckCircle2 {...BAR_ICON} aria-hidden />
               <span className="reader-live-translation-toggle-label">翻译完成 · 看对照</span>
             </Button>
           </div>
