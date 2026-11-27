@@ -92,3 +92,24 @@ test("打出来的 CSS（dist/css/ 每一份）里没有「:has() 祖先下面�
   const sources = walk(ASK_SRC).filter((file) => /group-has-/.test(readFileSync(file, "utf8")));
   assert.deepEqual(sources.map((file) => relative(FRONTEND, file)), [], "源码里不写 group-has-（Tailwind 扫到类名就生成规则，没用到的组件也算）");
 });
+
+test("ask.css 顶层没有写两处的选择器（2026-11-27：加功能往文件末尾追加同一个选择器，靠先后顺序覆盖，出过 dock 被思考发光盖掉、整段规则被复制一份）", () => {
+  const css = readFileSync(new URL("../../../packages/ask/styles/ask.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const seen = new Map();
+  let depth = 0;
+  let start = 0;
+  for (let index = 0; index < css.length; index += 1) {
+    if (css[index] === "{") {
+      if (depth === 0) {
+        const prelude = css.slice(start, index).trim().replace(/\s+/g, " ");
+        if (!prelude.startsWith("@")) seen.set(prelude, (seen.get(prelude) || 0) + 1);
+      }
+      depth += 1;
+    } else if (css[index] === "}") {
+      depth -= 1;
+      if (depth === 0) start = index + 1;
+    }
+  }
+  const twice = [...seen].filter(([, count]) => count > 1).map(([prelude]) => prelude);
+  assert.deepEqual(twice, [], `这些选择器在 ask.css 顶层写了不止一处，并到一处：${twice.join("、")}`);
+});
