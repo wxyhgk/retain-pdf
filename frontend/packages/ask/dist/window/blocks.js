@@ -8,6 +8,8 @@ import { Activity, ArrowDown, ArrowUp, BookOpen, Check, Clock, Coins, Cpu, Datab
 import { Button } from "@retainpdf/ui";
 import { turnFooterItems } from "../acp/parts.js";
 import { AskPageText } from "./AskPageLink.js";
+import { AskSendContext } from "./ask-send.js";
+import { AskConversationContext } from "./conversation.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/shadcn/popover.js";
 import { ToolFallback } from "../ui/elements/tool-fallback.aui.js";
@@ -168,8 +170,28 @@ const STARTERS = [
     { icon: Sigma, text: "式子怎么来的", prompt: "这里的式子是怎么推出来的？一步一步写。" },
     { icon: Languages, text: "译文准不准", prompt: "对照原文看看这段译文准不准，哪里要改。" },
 ];
+function StarterButtons({ send }) {
+    return (_jsx(_Fragment, { children: STARTERS.map(({ icon: Icon, text, prompt }) => (_jsxs(Button, { className: "ask-starter", title: prompt, onClick: () => send(prompt), children: [_jsx(Icon, { size: 13, "aria-hidden": true }), text] }, text))) }));
+}
+/**
+ * 输入框上面、出处下面的一排常问（2026-11-27）：带着书上的一处（刚右键「问这段」、窗口开着时新选了字）、输入框空着、没在答时才有，
+ * 点一下带这处直接问，问完出处清掉、这排跟着没了。对话一直延续（主对话），空白时的常问只在第一次看得到，所以挪到这里。
+ */
+export function PendingStarters() {
+    const { pending } = useContext(AskConversationContext);
+    const send = useContext(AskSendContext);
+    const empty = useAuiState((state) => state.composer.isEmpty);
+    const running = useAuiState((state) => state.thread.isRunning);
+    if (!pending || !send || !empty || running)
+        return null;
+    return (_jsx("div", { className: "ask-starters ask-pending-starters", role: "group", "aria-label": "\u5E38\u95EE", children: _jsx(StarterButtons, { send: send }) }));
+}
 export function makeWelcome(send) {
     return function Welcome() {
-        return (_jsx("div", { className: "ask-starters", children: STARTERS.map(({ icon: Icon, text, prompt }) => (_jsxs(Button, { className: "ask-starter", title: prompt, onClick: () => send(prompt), children: [_jsx(Icon, { size: 13, "aria-hidden": true }), text] }, text))) }));
+        // 带着出处时常问在输入框上面（PendingStarters），这里不再重复一排。
+        const { pending } = useContext(AskConversationContext);
+        if (pending)
+            return null;
+        return (_jsx("div", { className: "ask-starters", children: _jsx(StarterButtons, { send: send }) }));
     };
 }

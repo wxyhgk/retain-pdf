@@ -6,6 +6,7 @@ import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-run
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Quote, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
+import { PendingStarters } from "./blocks.js";
 import { PendingContextBar } from "./conversation.js";
 /** 引用最多带多少字（超出截断加「…」）。 */
 export const QUOTE_LIMIT = 600;
@@ -110,7 +111,7 @@ export function AnswerQuoteBar() {
 }
 /** 输入框上面的两条：引用的回答、书上的出处。 */
 export function ComposerBars() {
-    return (_jsxs(_Fragment, { children: [_jsx(AnswerQuoteBar, {}), _jsx(PendingContextBar, {})] }));
+    return (_jsxs(_Fragment, { children: [_jsx(AnswerQuoteBar, {}), _jsx(PendingContextBar, {}), _jsx(PendingStarters, {})] }));
 }
 /** 问题气泡里的字：开头的引用画成引用框。 */
 export function UserText({ text }) {

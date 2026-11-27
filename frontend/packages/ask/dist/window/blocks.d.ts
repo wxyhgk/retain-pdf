@@ -47,5 +47,10 @@ export declare class AskImageAttachmentAdapter extends SimpleImageAttachmentAdap
 }
 /** 回答底下的用量（Thread 的 MessageFooter 插槽，和复制、重新回答在同一排）：只一个图标，点开看模型、token、缓存、速度、用时。Extra 跟在后面（深挖……）。 */
 export declare function makeMessageFooter(agentName: () => string, Extra?: ComponentType): () => ReactElement | null;
-export declare function makeWelcome(send: (text: string) => void): () => ReactElement;
+/**
+ * 输入框上面、出处下面的一排常问（2026-11-27）：带着书上的一处（刚右键「问这段」、窗口开着时新选了字）、输入框空着、没在答时才有，
+ * 点一下带这处直接问，问完出处清掉、这排跟着没了。对话一直延续（主对话），空白时的常问只在第一次看得到，所以挪到这里。
+ */
+export declare function PendingStarters(): ReactElement | null;
+export declare function makeWelcome(send: (text: string) => void): () => ReactElement | null;
 export {};

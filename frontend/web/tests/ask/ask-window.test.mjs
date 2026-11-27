@@ -201,12 +201,16 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     document.querySelector(".ask-pending-label").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await until(() => document.querySelector(".ask-quote .katex"), "点开出处：引用里的公式画出来了");
     assert.ok(document.querySelector('.ask-install summary[aria-label="还能接的本机 agent"]'), "没装的 agent 收在插头图标里");
+    // 11-27：带着出处时常问在输入框上面（不只是空对话时才有），空白处不再重复一排。
+    assert.equal(document.querySelectorAll(".ask-starters").length, 1);
+    assert.ok(document.querySelector(".ask-pending-starters .ask-starter"), "常问跟着出处");
 
     document.querySelector(".ask-starter").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await until(() => document.querySelector(".aui-md-p .ask-page"), "回答里的页码");
     assert.equal(prompts.length, 1);
     assert.equal(prompts[0].blocks[0].text, "我在读一本书，第 56 页。", "这一问前面带宿主给的出处");
     await until(() => !document.querySelector(".ask-pending"), "发出去以后出处清掉");
+    assert.equal(document.querySelector(".ask-pending-starters"), null, "出处用掉了，常问跟着收起");
     assert.equal(document.querySelector(".ask-question-where")?.textContent, "第 56 页 · 2.1", "问题上面写问的是哪儿");
     document.querySelector(".aui-md-p .ask-page").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     assert.deepEqual(jumps, [12]);

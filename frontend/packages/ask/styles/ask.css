@@ -1178,3 +1178,13 @@
   margin: 0;
   overflow-wrap: anywhere;
 }
+
+/* 带着出处时输入框上面那排常问（PendingStarters）：靠左、小一点，不占常态空间（输入框有字、在答时就没了）。 */
+.ask-pending-starters {
+  justify-content: flex-start;
+  margin: 0 0 6px;
+  padding: 0 2px;
+}
+.ask-pending-starters .ask-starter {
+  padding: 3px 9px;
+}
