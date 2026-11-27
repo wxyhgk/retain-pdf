@@ -6,6 +6,7 @@
 #![cfg(unix)]
 
 use std::fs;
+use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
@@ -96,10 +97,12 @@ fn spawn_jobsd(root: &Path, port: u16, supervisor_pid: Option<u32>) -> KillOnDro
     KillOnDrop(command.spawn().expect("spawn retain-jobsd"))
 }
 
+/// 等 jobsd 真正开始服务：`/healthz` 回 200。只连上端口不够——jobsd 先占端口、再做启动对账、最后才开始服务，
+/// 对账之前插进去的 running 行会被当成上次遗留的任务落成 failed（2026-11-27 本地全套检查里两个用例轮流偶发红）。
 fn wait_for_jobsd(jobsd: &mut KillOnDrop, port: u16) {
     let deadline = Instant::now() + Duration::from_secs(10);
     loop {
-        if TcpStream::connect(("127.0.0.1", port)).is_ok() {
+        if healthz_ok(port) {
             return;
         }
         if let Some(status) = jobsd.child_mut().try_wait().expect("poll retain-jobsd") {
@@ -108,6 +111,16 @@ fn wait_for_jobsd(jobsd: &mut KillOnDrop, port: u16) {
         assert!(Instant::now() < deadline, "retain-jobsd startup timed out");
         thread::sleep(Duration::from_millis(20));
     }
+}
+
+fn healthz_ok(port: u16) -> bool {
+    let Ok(mut stream) = TcpStream::connect(("127.0.0.1", port)) else { return false };
+    let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
+    if stream.write_all(b"GET /healthz HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n").is_err() {
+        return false;
+    }
+    let mut head = [0u8; 12];
+    stream.read_exact(&mut head).is_ok() && head.starts_with(b"HTTP/1.") && &head[9..12] == b"200"
 }
 
 fn wait_for_exit(process: &mut KillOnDrop, what: &str) -> ExitStatus {
