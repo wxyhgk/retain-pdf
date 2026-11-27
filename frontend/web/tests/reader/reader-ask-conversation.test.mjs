@@ -65,7 +65,7 @@ test("库里的消息 → 提问窗：问题带问的是哪儿（别的书里问
   assert.equal(selectionContext(null, "doc-1"), null);
 });
 
-test("答完一轮 → 追加：问和答一起，幂等号、出处、书、agent、记下的记忆；出处里的书为准（两个不一样后端回 400）", () => {
+test("答完一轮 → 追加：问和答一起，幂等号、出处、书、agent、agent 会话、记下的记忆；出处里的书为准（两个不一样后端回 400）", () => {
   const selection = anchorSelection(ANCHOR, BOOK);
   const turn = {
     question: { role: "user", text: "这句？" },
@@ -76,13 +76,18 @@ test("答完一轮 → 追加：问和答一起，幂等号、出处、书、age
     memoryIds: ["mem-1"],
   };
   const [question, answer] = turnToAppend(turn, "doc-other", "c-1");
-  assert.deepEqual(question, { agent_id: "retainpdf", document_id: "doc-1", role: "user", text: "这句？", selection, client_message_id: "c-1-q" });
-  assert.deepEqual(answer, { agent_id: "retainpdf", document_id: "doc-1", role: "assistant", text: "是这样。", thought: "想一想", usage: { outputTokens: 3 }, client_message_id: "c-1-a", memory_ids: ["mem-1"] });
+  assert.deepEqual(question, { agent_id: "retainpdf", document_id: "doc-1", session_id: "s", role: "user", text: "这句？", selection, client_message_id: "c-1-q" });
+  assert.deepEqual(answer, { agent_id: "retainpdf", document_id: "doc-1", session_id: "s", role: "assistant", text: "是这样。", thought: "想一想", usage: { outputTokens: 3 }, client_message_id: "c-1-a", memory_ids: ["mem-1"] });
   const [plain, reply] = turnToAppend({ ...turn, context: null, memoryIds: [], answer: { role: "assistant", text: "好", usage: { big: "x".repeat(5000) } } }, "doc-1", "c-2");
   assert.equal(plain.selection, null, "没带出处");
   assert.equal(plain.document_id, "doc-1", "属于正在读的书");
   assert.equal(reply.usage, null, "用量写成 JSON 超过 4096 字节就不带");
   assert.equal(reply.thought, null);
+  assert.equal(plain.session_id, "s");
+  const [noSession, noSessionAnswer] = turnToAppend({ ...turn, sessionId: undefined }, "doc-1", "c-3");
+  assert.equal(noSession.session_id, null, "没开成会话不带");
+  assert.equal(noSessionAnswer.session_id, null);
+  assert.equal(turnToAppend({ ...turn, sessionId: "x".repeat(257) }, "doc-1", "c-4")[0].session_id, null, "超过 256 字不带（后端会回 400）");
 });
 
 test("「深挖」点的那条回答：带编号用编号；刚答完没编号的按正文从后往前找；标题从第一句截", () => {

@@ -9025,16 +9025,16 @@ ${o.text}`,
   });
 }
 function Eh(e, t, n, r) {
-  var c, l, u;
-  const o = ((u = (l = (c = e.context) == null ? void 0 : c.meta) == null ? void 0 : l.retainpdf) == null ? void 0 : u.selection) ?? null, a = (o == null ? void 0 : o.document_id) || t || null, s = { agent_id: e.agentId || null, document_id: a }, i = e.answer.usage && JSON.stringify(e.answer.usage).length <= 4096 ? e.answer.usage : null;
+  var l, u, f;
+  const o = ((f = (u = (l = e.context) == null ? void 0 : l.meta) == null ? void 0 : u.retainpdf) == null ? void 0 : f.selection) ?? null, a = (o == null ? void 0 : o.document_id) || t || null, s = e.sessionId && e.sessionId.length <= 256 ? e.sessionId : null, i = { agent_id: e.agentId || null, document_id: a, session_id: s }, c = e.answer.usage && JSON.stringify(e.answer.usage).length <= 4096 ? e.answer.usage : null;
   return [
-    { ...s, role: "user", text: Nn(e.question.text, No), selection: o, client_message_id: `${n}-q`, ...r ? { edited_from: r } : {} },
+    { ...i, role: "user", text: Nn(e.question.text, No), selection: o, client_message_id: `${n}-q`, ...r ? { edited_from: r } : {} },
     {
-      ...s,
+      ...i,
       role: "assistant",
       text: Nn(e.answer.text, No),
       thought: e.answer.thought ? Nn(e.answer.thought, wh) : null,
-      usage: i,
+      usage: c,
       client_message_id: `${n}-a`,
       memory_ids: e.memoryIds.slice(0, 10)
     }
@@ -9262,7 +9262,7 @@ function Ch({ port: e, documentId: t, resetKey: n, pointOf: r }) {
   }, [t]), u = L((f) => a((d) => d.filter((m) => m.key !== f)), []);
   return { marks: o, addRecords: l, removeMark: u };
 }
-const zh = Oo(() => import("./ReaderAskPanel-CBtSKLrh.js"));
+const zh = Oo(() => import("./ReaderAskPanel-A0H5egba.js"));
 function Oh({
   port: e,
   documentId: t,
@@ -9461,7 +9461,7 @@ function Hh({
     goBack: L(() => d("back"), [d])
   };
 }
-const Uh = Oo(() => import("./ReaderMarkdownPanel-CEbw5BzX.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Wh = [];
+const Uh = Oo(() => import("./ReaderMarkdownPanel-CNjL3o7E.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Wh = [];
 function Kh(e) {
   const t = e.sourceOnly || !e.translatedUrl, n = !!(e.overlayContentAvailable && e.liveTranslationVisible && !e.assistantOpen), o = e.assistantOpen && e.mode === "compare" ? "source" : e.mode, a = !t && (o === "translated" || o === "compare");
   return {
@@ -9854,4 +9854,4 @@ export {
   Sh as s,
   et as u
 };
-//# sourceMappingURL=ReaderApp-smKzw4A1.js.map
+//# sourceMappingURL=ReaderApp-B-mWfjP0.js.map

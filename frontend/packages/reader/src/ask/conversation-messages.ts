@@ -119,7 +119,9 @@ export function turnToAppend(turn: AskTurnRecord, documentId: string, clientId: 
   const selection = (turn.context?.meta as { retainpdf?: { selection?: AskSelectionInput } } | undefined)?.retainpdf?.selection ?? null;
   // 两处都给又不一样后端回 400：出处里有书就以出处为准。
   const book = selection?.document_id || documentId || null;
-  const common = { agent_id: turn.agentId || null, document_id: book };
+  // agent 会话编号（v44）：删对话时后端据此删 pi 的会话文件，问和答都带；超过 256 字后端回 400，就不带。
+  const session = turn.sessionId && turn.sessionId.length <= 256 ? turn.sessionId : null;
+  const common = { agent_id: turn.agentId || null, document_id: book, session_id: session };
   const usage = turn.answer.usage && JSON.stringify(turn.answer.usage).length <= 4096 ? turn.answer.usage : null;
   return [
     { ...common, role: "user", text: clip(turn.question.text, TEXT_LIMIT), selection, client_message_id: `${clientId}-q`, ...(editedFrom ? { edited_from: editedFrom } : {}) },

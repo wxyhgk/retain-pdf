@@ -3,7 +3,7 @@ import { useState as g, useCallback as P, useEffect as z, useMemo as M } from "r
 import I from "@retainpdf/ask/window";
 import { Check as k, X as B, Pencil as O, Trash2 as R, BookmarkCheck as D, Archive as F, Loader2 as U, ChevronRight as L } from "lucide-react";
 import { Sheet as q, Checkbox as Q, SegmentedControl as j, Input as T, Button as v } from "@retainpdf/ui";
-import { b as G, r as K, s as W } from "./ReaderApp-smKzw4A1.js";
+import { b as G, r as K, s as W } from "./ReaderApp-B-mWfjP0.js";
 const X = 4e3;
 function A(e, i = X) {
   const s = `${e || ""}`.trim();
@@ -237,4 +237,4 @@ function oe({ port: e, jobId: i, bookTitle: s, book: a, ask: t, onShowSelection:
 export {
   oe as default
 };
-//# sourceMappingURL=ReaderAskPanel-CBtSKLrh.js.map
+//# sourceMappingURL=ReaderAskPanel-A0H5egba.js.map
