@@ -41,7 +41,13 @@ export declare function resolveReaderPaneComposition(input: {
     overlayContentAvailable: boolean;
     liveTranslationVisible: boolean;
     assistantOpen: boolean;
+    /** 右边停着面板时书页区还放得下两栏（compareFitsStage）；不给当放得下。 */
+    compareFits?: boolean;
 }): ReaderPaneComposition;
+/** 右边停着面板时，书页区至少这么宽才排两栏对照（每栏 360px）。 */
+export declare const COMPARE_MIN_STAGE_PX = 720;
+/** 书页区放不放得下对照：右边没停面板、或还没量出宽度时都当放得下（不因为一帧没量到就收成单栏）。 */
+export declare function compareFitsStage(stageWidth: number, sideDocked: boolean): boolean;
 /**
  * 切换工作区页签时，是否自动开关实时译文叠加。
  * - 切到对照：仅在“实时译文真正可用（最终译文 PDF 未就绪）”时自动打开。

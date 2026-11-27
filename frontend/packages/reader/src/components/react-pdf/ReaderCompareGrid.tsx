@@ -50,7 +50,9 @@ export type ReaderCompareGridProps = {
   activeRegion?: ReaderRegion | null;
   regions?: ReaderRegion[];
   readerMetadata?: ReaderMetadata | null;
+  /** 右边停着 Markdown 面板。 */
   markdownSplit?: boolean;
+  /** 右边停着东西（面板，或扩展贴右边的浮层）：单栏读时页宽按两倍书页区算，50% 正好铺满剩下的那一栏。 */
   assistantSplit?: boolean;
   liveTranslation?: LiveTranslationState;
   /** 源栏右上角动作（如「译文」叠加开关）；挂在 pane="source" 容器内。 */
@@ -82,14 +84,12 @@ export function resolveReaderGridPresentation({
   // 不再强制单栏。右栏（最终译文 PDF）由 paneComposition.showTranslated
   // 保留，避免右栏消失像对照坏了。overlayOnSource 保留在签名中以兼容
   // 旧调用方（未使用）。
+  //
+  // 开着 Markdown 面板也不再在这里收成单栏（2026-11-27）：放不放得下两栏由 paneComposition 按书页区宽度定
+  // （compareFitsStage），这里照它排。markdownSplit 留在签名里给旧调用方。
   void overlayOnSource;
-  const splitSourceCompare = markdownSplit && mode === "compare";
-  return {
-    mode: splitSourceCompare ? "source" : mode,
-    compareMode: compareMode && !markdownSplit,
-    showSource: splitSourceCompare ? true : showSource,
-    showTranslated: splitSourceCompare ? false : showTranslated,
-  };
+  void markdownSplit;
+  return { mode, compareMode, showSource, showTranslated };
 }
 
 /** 页宽的基准。
@@ -222,7 +222,8 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
   const pageWidthBasis = shellMeasured
     ? resolveReaderPageWidthBasis(
       shellWidth,
-      markdownSplit || assistantSplit,
+      // 对照时两栏分书页区，按书页区算（50% = 一栏）；单栏才按两倍算（50% = 铺满剩下的那一栏）。
+      (markdownSplit || assistantSplit) && !presentation.compareMode,
       typeof document === "undefined" ? shellWidth * 2 : document.documentElement.clientWidth,
     )
     : null;
@@ -241,7 +242,7 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
     >
       <main
         className={`${READER_GRID_CLASS} reader-mode-${presentation.mode}`}
-        data-reader-mode={markdownSplit ? "markdown-split" : assistantSplit ? "assistant-split" : mode}
+        data-reader-mode={presentation.compareMode ? mode : markdownSplit ? "markdown-split" : assistantSplit ? "assistant-split" : mode}
       >
         {mountSource ? (
           <PdfDocumentPane

@@ -1,8 +1,9 @@
 /* 底栏 HUD：页码 / 缩放 / 快捷键帮助 / 模式图标 tab */
 
 /* —— R2 HUD / zoom —— */
+/* 在书页区（.reader-stage）里：left: 50% 就是书页区的正中，右边停着什么都不用另算。 */
 .reader-react-hud {
-  position: fixed;
+  position: absolute;
   left: 50%;
   bottom: 18px;
   z-index: 36;

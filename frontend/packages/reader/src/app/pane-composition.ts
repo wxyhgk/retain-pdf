@@ -45,6 +45,8 @@ export function resolveReaderPaneComposition(input: {
   overlayContentAvailable: boolean;
   liveTranslationVisible: boolean;
   assistantOpen: boolean;
+  /** 右边停着面板时书页区还放得下两栏（compareFitsStage）；不给当放得下。 */
+  compareFits?: boolean;
 }): ReaderPaneComposition {
   const sourceViewOnly = input.sourceOnly || !input.translatedUrl;
   // 单一真值：仅「有可叠加译文内容且用户主动开启且无助手接管」时，
@@ -54,8 +56,9 @@ export function resolveReaderPaneComposition(input: {
     && input.liveTranslationVisible
     && !input.assistantOpen,
   );
-  // 开着面板时把对照降级为单栏原文（以前 AI 还能从某栏选区发起、锁定那一栏，2026-11-03 随 AI 删了）。
-  const pdfMode = input.assistantOpen && input.mode === "compare" ? "source" : input.mode;
+  // 书页区放不下两栏时（右边停着面板、剩下的不到 COMPARE_MIN_STAGE_PX）对照收成单栏原文。
+  // 以前是「开着面板就收」，宽屏上也只剩一栏（2026-11-27 改成按宽度）。
+  const pdfMode = input.compareFits === false && input.mode === "compare" ? "source" : input.mode;
   const visibleMode = pdfMode;
   // 对照态叠加不再「消栏」：overlay 只在源栏叠加流式画布，右栏（最终译文）
   // 照常保留。compareMode / showTranslated 不再被 overlay 强制关闭。
@@ -87,6 +90,16 @@ export function resolveReaderPaneComposition(input: {
     sourceOnly: input.sourceOnly,
     sourceViewOnly,
   };
+}
+
+/** 右边停着面板时，书页区至少这么宽才排两栏对照（每栏 360px）。 */
+export const COMPARE_MIN_STAGE_PX = 720;
+
+/** 书页区放不放得下对照：右边没停面板、或还没量出宽度时都当放得下（不因为一帧没量到就收成单栏）。 */
+export function compareFitsStage(stageWidth: number, sideDocked: boolean): boolean {
+  if (!sideDocked) return true;
+  if (!Number.isFinite(stageWidth) || stageWidth <= 0) return true;
+  return stageWidth >= COMPARE_MIN_STAGE_PX;
 }
 
 /**

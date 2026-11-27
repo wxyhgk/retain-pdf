@@ -11,7 +11,7 @@ import {
 import { resolveReaderPaneComposition, type ReaderPaneComposition } from "./pane-composition.js";
 
 /** 叠不叠实时译文 + 由它派生的可见台面。三个 effect 的先后有讲究（复位在前、自动打开在后），整段原样搬来。 */
-export function useLiveTranslationOverlay(c: ReaderReactController, assistantOpen: boolean) {
+export function useLiveTranslationOverlay(c: ReaderReactController, assistantOpen: boolean, compareFits = true) {
   const { sessionFiles } = c;
   const [liveTranslationVisible, setLiveTranslationVisible] = useState(false);
   // 是否有「可叠加到原文 PDF 上的流式译文内容」：进行中（available）或已完成
@@ -26,6 +26,7 @@ export function useLiveTranslationOverlay(c: ReaderReactController, assistantOpe
     overlayContentAvailable: hasOverlayContent,
     liveTranslationVisible,
     assistantOpen,
+    compareFits,
   });
   // 叠层的两个开关分别摆在哪 —— 判断在 live-translation-state.ts 里，因为
   // 「收掉顶栏 pill 之后叠层还够得着吗」这个不变式要能单测（见那里的注释）。

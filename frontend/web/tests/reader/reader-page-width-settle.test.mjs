@@ -133,8 +133,9 @@ test("这个 effect 只有一个出口 —— 多一条 return 就多一处可�
     "唯一那个出口没有清定时器");
 });
 
-test("settle 时长要盖过 shell 的过渡 —— 不然过渡没完就提交，等于没防", () => {
-  const rule = CSS.slice(CSS.indexOf(".reader-react-scroll-shell"));
+test("settle 时长要盖过书页区的过渡 —— 不然过渡没完就提交，等于没防", () => {
+  // 2026-11-27 起让右边的是书页区（.reader-stage，滚动壳在里面铺满），过渡也在它上面。
+  const rule = CSS.slice(CSS.indexOf(".reader-stage {"));
   const match = /transition:\s*right\s+(\d+)ms/.exec(rule.slice(0, rule.indexOf("}")));
   assert.ok(match, "shell 的 right 过渡没了，这条门禁的前提变了");
   assert.ok(

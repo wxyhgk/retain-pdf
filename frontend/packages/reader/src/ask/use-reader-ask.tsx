@@ -41,6 +41,7 @@ export function useReaderAsk({
   pdfDocuments,
   currentPage,
   visibleMode,
+  activePanel = null,
 }: {
   port: ReaderAskPort | null;
   documentId: string;
@@ -61,6 +62,8 @@ export function useReaderAsk({
   pdfDocuments: { source: RegionPdfDocument | null; translated: RegionPdfDocument | null };
   currentPage: () => number;
   visibleMode: "source" | "compare" | "translated";
+  /** 阅读页右边停着的面板（Markdown）；停上了提问窗就不贴右边（右边只停一个）。 */
+  activePanel?: string | null;
 }) {
   const book = useMemo(() => ({ documentId, jobId, versionId }), [documentId, jobId, versionId]);
   const pointOf = useCallback((itemId: string | null, pane: "source" | "translated", page: number) => {
@@ -290,6 +293,7 @@ export function useReaderAsk({
         onJumpToPage={(page) => goToPage(page)}
         pageCount={pageCount}
         onLayout={onLayout}
+        dockTaken={activePanel !== null}
         onEditBlock={onEditBlock}
         canEditBlock={canEditBlock}
         attachTools={attachTools}

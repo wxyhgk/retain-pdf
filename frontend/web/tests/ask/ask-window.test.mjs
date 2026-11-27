@@ -196,9 +196,13 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     localStorage.setItem("retainpdf.ask.window.v1", JSON.stringify({ agentId: "gone" }));
     const CONTEXT = { page: 56, label: "第 56 页 · 2.1", quote: { source: "where $ M_{A} $ is the mass", translated: "其中质量" }, preamble: "我在读一本书，第 56 页。", meta: { retainpdf: { selection: { page: 56 } } } };
     // 宿主：下一问的出处发出去就清掉。
+    let setTaken = () => {};
     function Host() {
       const [context, setContext] = React.useState(CONTEXT);
+      const [dockTaken, setDockTaken] = React.useState(false);
+      setTaken = setDockTaken;
       return React.createElement(AskWindow, {
+        dockTaken,
         port,
         context,
         onContextUsed: () => setContext(null),
@@ -298,6 +302,19 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     button("还原").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await settle();
     assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "dock", "还原回到放大前的贴右边");
+    // 宿主右边停了别的（阅读页开了 Markdown 面板）：贴右边的窗口变回浮动，记住的摆法不改。
+    setTaken(true);
+    await settle();
+    assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "float", "右边让给宿主的面板");
+    assert.equal(layouts.at(-1).mode, "float", "宿主知道不用再让");
+    assert.equal(JSON.parse(localStorage.getItem("retainpdf.ask.window.v1")).mode, "dock", "下次打开照旧贴右边");
+    // 面板还开着时自己又点贴右边：留在右边（宿主那头按「后来的留下」关面板），不被 dockTaken 弹回去。
+    button("贴到右边").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await settle();
+    assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "dock", "后来的留下");
+    setTaken(false);
+    await settle();
+    assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "dock", "面板关了，照旧贴右边");
 
     // 开着弹层时 Esc 只关弹层，不关窗。
     const popper = document.createElement("div");

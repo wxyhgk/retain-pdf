@@ -35,13 +35,13 @@ import { useLiveTranslationControls, useLiveTranslationOverlay } from "./app/use
 import { BUILTIN_READER_EXTENSIONS } from "./extensions/builtin.js";
 import { collectMenuItems, ReaderExtensionOutlets, ReaderExtensionsProvider } from "./extensions/registry.js";
 import type { ReaderMenuItem } from "./extensions/types.js";
-import { useReaderExtensionHost } from "./app/use-reader-extension-host.js";
+import { useReaderContributionTable, useReaderExtensionHost, useRightDockSlot } from "./app/use-reader-extension-host.js";
 import { useReaderBlockEditing } from "./app/use-reader-block-editing.js";
 import { useReaderTranslationVersions } from "./hooks/use-reader-version-compare.js";
 import { useReaderFinder } from "./app/use-reader-finder.js";
 import { useReaderModePersistence } from "./app/use-reader-mode-persistence.js";
 import { useReaderPdfAssets } from "./app/use-reader-pdf-assets.js";
-import { resolveLiveTranslationVisibleOnWorkspaceChange } from "./app/pane-composition.js";
+import { compareFitsStage, resolveLiveTranslationVisibleOnWorkspaceChange } from "./app/pane-composition.js";
 
 export {
   resolveLiveTranslationVisibleOnWorkspaceChange,
@@ -60,8 +60,19 @@ export function ReaderAppReactPdf() {
   const setAssistantPanel = assistant.setPanel;
 
   const assistantOpen = assistantPanel !== null;
+  // 扩展登记的表（extensions/）。右边停着东西（面板，或扩展贴右边的浮层）时，书页区（.reader-stage）往左让出那么宽；
+  // 右边只停一个，后来的留下（useRightDockSlot）。剩下的书页区放不下两栏时对照收成单栏原文。
+  const table = useReaderContributionTable();
+  const { reserveRight } = table;
+  const sideDocked = assistantOpen || reserveRight > 0;
+  const closeAssistant = useCallback(() => {
+    setAssistantPanel(null);
+  }, []);
+  useRightDockSlot(reserveRight, assistantPanel, closeAssistant);
   // 实时译文叠不叠、可见台面（Grid / Tabs / 键盘 / HUD 的唯一真源）、两个开关摆哪：app/use-live-translation-overlay。
-  const { liveTranslationVisible, setLiveTranslationVisible, paneComposition, liveToggles, sourceViewOnly, visiblePdfMode } = useLiveTranslationOverlay(c, assistantOpen);
+  const { liveTranslationVisible, setLiveTranslationVisible, paneComposition, liveToggles, sourceViewOnly, visiblePdfMode } = useLiveTranslationOverlay(
+    c, assistantOpen, compareFitsStage(c.shell.shellWidth, sideDocked),
+  );
   useReaderModePersistence(c, sourceViewOnly);
   const workspaceView = assistantPanel || (c.mode === "compare" ? "compare" : "reading");
   // 键盘与 UI 共用同一「可见模式」真源：paneComposition.visibleMode。
@@ -79,9 +90,6 @@ export function ReaderAppReactPdf() {
     goToPage: c.goToPage,
     enabled: c.showHud,
   });
-  const closeAssistant = useCallback(() => {
-    setAssistantPanel(null);
-  }, []);
   const { latestLivePage, jumpToLatestLivePage, offerCompletion, setCompletionDismissedKey, sourcePaneAction } = useLiveTranslationControls(c, {
     liveTranslationVisible,
     setLiveTranslationVisible,
@@ -129,8 +137,8 @@ export function ReaderAppReactPdf() {
   // 贡献表（extensions/，app/use-reader-extension-host）：扩展读的阅读页接口、它们登记的右键菜单项 / 每页一层 / 文字层标记 /
   // 对照左栏 / 占着指针。
   const {
-    readerApi, contributionStore, contributions, pageLayers, compareVersion, textMarks, menuSections, pointerTakenId, reserveRight,
-  } = useReaderExtensionHost(c, {
+    readerApi, contributionStore, contributions, pageLayers, compareVersion, textMarks, menuSections, pointerTakenId,
+  } = useReaderExtensionHost(c, table, {
     translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments,
     editBlock: blockEdit.available && !blockEdit.blockedReason ? editBlock : null,
   });
@@ -275,16 +283,21 @@ export function ReaderAppReactPdf() {
           />
           <ReaderAssistantDock active={assistantPanel} />
           {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
-          <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={assistantOpen} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
-          {c.showHud ? (
-            <ReaderZoomHud
-              mode={visiblePdfMode}
-              modeControls={null}
-              bookmarkScope={c.viewStateKey}
-              issuesJobId={c.sourceOnly ? "" : session.jobId}
-              searchSlot={<ReaderSearchToggle open={finder} onToggle={toggleFinder} />}
-            />
-          ) : null}
+          {/* 书页区：顶栏以下、右边停着的东西以左（--reader-stage-right）。书页、底栏、小球都在里面按它自己定位，
+              不再各自拿视口宽减面板宽去算。 */}
+          <div className="reader-stage">
+            <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
+            {c.showHud ? (
+              <ReaderZoomHud
+                mode={visiblePdfMode}
+                modeControls={null}
+                bookmarkScope={c.viewStateKey}
+                issuesJobId={c.sourceOnly ? "" : session.jobId}
+                searchSlot={<ReaderSearchToggle open={finder} onToggle={toggleFinder} />}
+              />
+            ) : null}
+            <ReaderToolBall active={assistantPanel} />
+          </div>
           <ReaderOverlays
             session={session}
             zoomDocuments={zoomDocuments}
@@ -293,7 +306,6 @@ export function ReaderAppReactPdf() {
             closeZoom={closeZoom}
             visiblePdfMode={visiblePdfMode}
           />
-          <ReaderToolBall active={assistantPanel} />
           <ReaderPageMenu menu={pageMenu} onClose={closePageMenu} actions={menuItems} sections={menuSections} />
           <ReaderExtensionOutlets extensions={BUILTIN_READER_EXTENSIONS} />
           <ReaderPendingEditsPill edit={blockEdit} />

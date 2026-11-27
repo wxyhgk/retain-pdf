@@ -38,6 +38,8 @@ export type ReaderAskPanelProps = {
   attachRequest?: { id: number; files: readonly File[] } | null;
   /** 窗口摆法变了（贴右边时宽多少）：阅读页给书页让出右边。 */
   onLayout?: (layout: { mode: string; width: number }) => void;
+  /** 阅读页右边停着面板（Markdown）：刚停上时贴右边的提问窗变回浮动。 */
+  dockTaken?: boolean;
   /** 以前按书存的一次提问（只读看）；给了就不画主对话。 */
   legacy?: { anchor: ReaderAskAnchor; messages: readonly ReaderAskMessage[]; onClose: () => void; onDelete?: () => void } | null;
 };
@@ -168,7 +170,7 @@ function ArchivedMenu({ ask }: { ask: AskState }): ReactElement {
   );
 }
 
-export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, onEditBlock, canEditBlock, attachTools, attachRequest, contextOffer }: ReaderAskPanelProps): ReactElement {
+export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, dockTaken, onEditBlock, canEditBlock, attachTools, attachRequest, contextOffer }: ReaderAskPanelProps): ReactElement {
   const [memoryOpen, setMemoryOpen] = useState(false);
   const conversation = ask.view.conversation;
   const bound = legacy ? null : conversation ? { id: conversation.conversation_id, documentId: book.documentId } : null;
@@ -213,6 +215,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
         pageCount={pageCount}
         katexStylesheetUrl={katex}
         onLayout={onLayout}
+        dockTaken={dockTaken}
       />
     );
   }
@@ -260,6 +263,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       pageCount={pageCount}
       katexStylesheetUrl={katex}
       onLayout={onLayout}
+      dockTaken={dockTaken}
       answerAction={answerAction}
       attachTools={attachTools}
       attachRequest={attachRequest}

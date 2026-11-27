@@ -1,9 +1,12 @@
-/** dock 打开时，「居中」得按 PDF 栏算，不是按视口。
+/** 右边停着东西时，「居中」得按书页区算，不是按视口。
  *
  * 起因：`.reader-react-error` 和 `.reader-error-notice` 用 `left: 50%` +
  * `translateX(-50%)`。AI dock 打开后视口右半边是面板，50% 正好落在分栏线上 ——
  * 提示一半画在 PDF 上、一半画在面板上，而这两条偏偏是最需要读清楚的文案。
- * `.reader-react-hud` 是当时唯一做对的（走 --reader-ai-split-width）。
+ *
+ * 2026-11-27 起书页区是一个元素（.reader-stage，右边让出 --reader-stage-right）：底栏在它里面，
+ * left: 50% 按书页区算；两条提示在外面，按 --reader-stage-right 算。右边停的是 Markdown 面板
+ * （is-assistant-open）还是扩展贴右边的浮层（data-right-inset），都只设这一个变量。
  *
  * 断言方式：把 CSS 里的 `left` 表达式**算出像素值**再比中心点，不是去匹配某个
  * 字符串。换写法（改成 right、改成 margin-left、换个等价 calc）只要中心点对了
@@ -26,7 +29,6 @@ const read = (name) =>
 
 const VIEWPORT = 1000;
 const SPLIT = 400;
-const COLUMN = VIEWPORT - SPLIT;
 
 /** 顶层规则（不含 @media 内部）。 */
 function topLevelRules(css) {
@@ -66,14 +68,17 @@ function declaration(files, selector, property) {
   return found;
 }
 
-/** 把 CSS 长度表达式算成像素。position: fixed 的百分比按视口算。 */
-function px(expression) {
+/** 把 CSS 长度表达式算成像素。百分比按 percentBase 算（fixed 的是视口，书页区里 absolute 的是书页区宽）；
+ * stageRight 是根节点上 --reader-stage-right 那时的值。 */
+function px(expression, { stageRight = 0, percentBase = VIEWPORT } = {}) {
   let expr = expression
     .replace(/calc\(/g, "(")
     .replace(/var\(--reader-ai-split-width\)/g, String(SPLIT))
+    .replace(/var\(--reader-right-inset\)/g, String(SPLIT))
+    .replace(/var\(--reader-stage-right\)/g, String(stageRight))
     .replace(/(\d+(?:\.\d+)?)dvw/g, (_, n) => String((VIEWPORT * Number(n)) / 100))
     .replace(/(\d+(?:\.\d+)?)vw/g, (_, n) => String((VIEWPORT * Number(n)) / 100))
-    .replace(/(\d+(?:\.\d+)?)%/g, (_, n) => String((VIEWPORT * Number(n)) / 100))
+    .replace(/(\d+(?:\.\d+)?)%/g, (_, n) => String((percentBase * Number(n)) / 100))
     .replace(/(\d+(?:\.\d+)?)px/g, "$1")
     .replace(/\bmin\(/g, "Math.min(")
     .replace(/\bmax\(/g, "Math.max(");
@@ -87,12 +92,27 @@ function px(expression) {
 const CHROME_FILES = ["react-pdf.css", "hud.css", "chrome.css", "assistant-dock.css"];
 const DOCK_ONLY = ["assistant-dock.css"];
 
-/** 这三条都是 fixed + translateX(-50%)，所以 left 就是中心点。 */
+/** 这三条都靠 translateX(-50%) 居中，所以 left 就是中心点。 */
 const CENTERED = [
   ".reader-react-error",
   ".reader-error-notice",
   ".reader-react-hud",
 ];
+/** 在书页区里面（absolute，百分比按书页区宽）的。 */
+const IN_STAGE = new Set([".reader-react-hud"]);
+
+/** 三种状态下根节点的 --reader-stage-right：什么都没停、停着面板、扩展贴右边。 */
+const STATES = [
+  { name: "右边什么都没停", selector: ".reader-react-root", files: ["react-pdf.css"] },
+  { name: "停着面板（is-assistant-open）", selector: ".reader-react-root.is-assistant-open", files: DOCK_ONLY },
+  { name: "扩展贴右边（data-right-inset）", selector: ".reader-react-root[data-right-inset]", files: DOCK_ONLY },
+];
+
+function stageRightOf(state) {
+  const value = declaration(state.files, state.selector, "--reader-stage-right");
+  assert.ok(value, `${state.selector} 没有设 --reader-stage-right`);
+  return px(value);
+}
 
 test("三条浮动 chrome 都靠 translateX(-50%) 居中 —— 下面按中心点比才成立", () => {
   for (const selector of CENTERED) {
@@ -102,37 +122,39 @@ test("三条浮动 chrome 都靠 translateX(-50%) 居中 —— 下面按中心�
   }
 });
 
-test("dock 关着的时候居中在视口", () => {
-  for (const selector of CENTERED) {
-    const left = declaration(CHROME_FILES.filter((f) => f !== "assistant-dock.css"), selector, "left");
-    assert.ok(left, `${selector} 没有 left`);
-    assert.equal(px(left), VIEWPORT / 2, `${selector} 的基础规则不在视口中间`);
+test("书页区按 --reader-stage-right 让出右边；底栏、小球、滚动壳都在书页区里", () => {
+  const inset = declaration(["react-pdf.css"], ".reader-stage", "inset");
+  assert.ok(inset, ".reader-stage 没有 inset");
+  assert.match(inset, /var\(--reader-stage-right\)/);
+  assert.equal(declaration(["hud.css"], ".reader-react-hud", "position"), "absolute");
+  assert.equal(declaration(["toolball.css"], ".reader-toolball", "position"), "absolute");
+  const app = readFileSync(fileURLToPath(new URL("../../../../frontend/packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url)), "utf8");
+  const stage = app.slice(app.indexOf('<div className="reader-stage">'));
+  const end = stage.indexOf("</div>");
+  assert.ok(end > 0, "没有书页区");
+  for (const part of ["<ReaderCompareGrid", "<ReaderZoomHud", "<ReaderToolBall"]) {
+    const at = stage.indexOf(part);
+    assert.ok(at > 0 && at < end, `${part} 不在书页区里`);
   }
 });
 
-test("dock 打开的时候居中在 PDF 栏，而不是分栏线上", () => {
-  for (const selector of CENTERED) {
-    const left = declaration(DOCK_ONLY, `.reader-react-root.is-assistant-open ${selector}`, "left");
-    assert.ok(left, `${selector} 在 is-assistant-open 下没有重新定位 —— 中心会落在分栏线上`);
-    // 500 = 分栏线；300 = PDF 栏中心。
-    assert.equal(px(left), COLUMN / 2, `${selector} 的中心是 ${px(left)}，PDF 栏中心是 ${COLUMN / 2}`);
+test("三种状态下都居中在书页区，不在分栏线上；两条提示的宽度也收进书页区", () => {
+  for (const state of STATES) {
+    const right = stageRightOf(state);
+    const stageWidth = VIEWPORT - right;
+    for (const selector of CENTERED) {
+      const left = declaration(CHROME_FILES, selector, "left");
+      assert.ok(left, `${selector} 没有 left`);
+      const center = IN_STAGE.has(selector) ? px(left, { percentBase: stageWidth }) : px(left, { stageRight: right });
+      assert.equal(center, stageWidth / 2, `${state.name}：${selector} 的中心是 ${center}，书页区中心是 ${stageWidth / 2}`);
+    }
+    for (const selector of [".reader-react-error", ".reader-error-notice"]) {
+      const maxWidth = declaration(["react-pdf.css"], selector, "max-width");
+      const fitted = px(maxWidth, { stageRight: right });
+      assert.ok(fitted <= stageWidth - 32, `${state.name}：${selector} 算出来 ${fitted}，超出书页区可用宽度 ${stageWidth - 32}`);
+    }
   }
+  // 停着面板时书页区确实让了（不是 0）。
+  assert.equal(stageRightOf(STATES[1]), SPLIT);
+  assert.equal(stageRightOf(STATES[2]), SPLIT);
 });
-
-test("两条错误提示的宽度也收进 PDF 栏 —— 栏最窄 35vw，居中了照样溢出", () => {
-  for (const selector of [".reader-react-error", ".reader-error-notice"]) {
-    const maxWidth = declaration(
-      DOCK_ONLY,
-      `.reader-react-root.is-assistant-open ${selector}`,
-      "max-width",
-    );
-    assert.ok(maxWidth, `${selector} 在 is-assistant-open 下没有收窄`);
-    // 栏宽 600，两边各留 16 → 568；算出来不能超过这个数。
-    const fitted = px(maxWidth);
-    assert.ok(
-      fitted <= COLUMN - 32,
-      `${selector}: 算出来 ${fitted}，超出 PDF 栏可用宽度 ${COLUMN - 32}`,
-    );
-  }
-});
-

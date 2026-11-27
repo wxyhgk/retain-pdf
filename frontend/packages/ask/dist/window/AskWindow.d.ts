@@ -83,5 +83,7 @@ export type AskWindowProps = {
         mode: AskWindowMode;
         width: number;
     }) => void;
+    /** 宿主右边停了别的东西（阅读页的 Markdown 面板）：变成 true 的那一下，贴右边的窗口变回浮动。 */
+    dockTaken?: boolean;
 };
 export default function AskWindow(props: AskWindowProps): ReactElement;

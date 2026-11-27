@@ -125,7 +125,8 @@ export type ReaderContribution = {
     textMarks?: (text: string) => readonly ReaderTextMark[];
     /** 对照时左栏换成这一份；同时有几个扩展给，用第一个。 */
     comparedDocument?: ReaderComparedDocument | null;
-    /** 书页右边让出多宽（px）：扩展自己画的浮层贴在右边时（提问窗贴右边），书页、底栏、小球往左让，不被盖住；几个扩展给，取最大。 */
+    /** 书页右边让出多宽（px）：扩展自己画的浮层贴在右边时（提问窗贴右边），书页区（连同底栏、小球）往左让，不被盖住；几个扩展给，取最大。
+     * 右边只停一个：这个值从 0 变成正数时，阅读页关掉停着的面板；之后面板又打开了（activePanel 从 null 变成有），扩展要自己挪开。 */
     reserveRight?: number;
 };
 /**

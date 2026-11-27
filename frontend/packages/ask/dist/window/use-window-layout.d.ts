@@ -9,7 +9,7 @@ type Rect = {
 export declare function useWindowLayout(onLayout?: (layout: {
     mode: AskWindowMode;
     width: number;
-}) => void): {
+}) => void, dockTaken?: boolean): {
     mode: AskWindowMode;
     rect: Rect;
     changeMode: (next: AskWindowMode) => void;

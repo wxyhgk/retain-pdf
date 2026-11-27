@@ -1,6 +1,7 @@
 // 提问窗的摆法（2026-11-27 从 AskWindow 拆出）：浮动（自己的位置大小）、贴右边（占满右侧，左边框拖宽窄）、放大。
 // 浮动位置、贴右边的宽度、摆法记在本机（window-memory.ts），重开照旧；放大不记，「还原」回到放大前的摆法。
-// 摆法变了交给宿主（onLayout），宿主据此给书页让出右边。
+// 摆法变了交给宿主（onLayout），宿主据此给书页让出右边。宿主右边停了别的（dockTaken 刚变成 true），贴右边的窗口变回浮动、
+// 不改记住的摆法（下次打开照旧贴右边，宿主那边按「后来的留下」把它的面板关掉）。
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fitRect, loadWindowMemory, saveWindowMemory } from "./window-memory.js";
 /** 贴右边时顶上让出宿主页面的顶栏（RetainPDF 阅读页的顶栏约 64px）。 */
@@ -27,9 +28,10 @@ function layoutFor(mode, float, dockWidth) {
     }
     if (mode === "full")
         return { x: 16, y: 16, width: vw - 32, height: vh - 32 };
-    return float;
+    // 浏览器窗口变小了：浮动的窗口挪回屏幕里（不改记住的位置，窗口变回大的时候照旧）。
+    return fitRect(float, { width: vw, height: vh });
 }
-export function useWindowLayout(onLayout) {
+export function useWindowLayout(onLayout, dockTaken = false) {
     const [mode, setMode] = useState(() => loadWindowMemory().mode || "float");
     const [float, setFloat] = useState(floatRect);
     const [dockWidth, setDockWidth] = useState(() => loadWindowMemory().dockWidth || DOCK_WIDTH);
@@ -41,6 +43,14 @@ export function useWindowLayout(onLayout) {
             return target;
         });
     }, []);
+    // 只看 dockTaken 刚变成 true 的那一下：自己刚贴右边、宿主正要关它的面板时，dockTaken 还是 true，不能把自己挪走。
+    const takenBefore = useRef(dockTaken);
+    useEffect(() => {
+        const arrived = dockTaken && !takenBefore.current;
+        takenBefore.current = dockTaken;
+        if (arrived)
+            setMode((current) => (current === "dock" ? "float" : current));
+    }, [dockTaken]);
     // 浏览器窗口大小变了重新排。
     const [, setResized] = useState(0);
     useEffect(() => {

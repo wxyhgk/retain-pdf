@@ -3,6 +3,8 @@
 /* —— react-pdf engine (R1) —— */
 .reader-react-root {
   --reader-ai-split-width: 50vw;
+  /* 书页区右边让出多宽：右边停着的东西（面板 / 扩展贴右边的浮层）占的宽度，只在 assistant-dock.css 里按根节点状态设。 */
+  --reader-stage-right: 0px;
   position: relative;
   width: 100%;
   width: 100dvw;
@@ -13,16 +15,24 @@
   color: var(--ink);
 }
 
+/* 书页区（2026-11-27）：顶栏以下、右边停着的东西以左。滚动壳、底栏、小球都在里面，按它定位、居中，
+ * 不再各自拿 100dvw 减面板宽去算；以后左边加栏也只改这里的 inset。
+ * 不设 z-index、不裁剪：里面各块的层级照旧和根节点下的别的浮层比，底栏、小球弹出的东西不被裁。 */
+.reader-stage {
+  position: absolute;
+  inset: 60px var(--reader-stage-right) 0 0;
+  transition: right 180ms ease;
+}
+
 /* 唯一纵向滚动容器；双栏不各自 overflow */
 .reader-react-scroll-shell {
   position: absolute;
-  inset: 60px 0 0;
+  inset: 0;
   overflow: auto;
   background: var(--bg, var(--reader-page-bg));
   background-image: var(--reader-sheet-backdrop, none); /* 阅读区背景纹理，皮肤用 */
   scrollbar-width: none;
   -ms-overflow-style: none;
-  transition: right 180ms ease;
 }
 
 /* 工作区布局现由根类 is-workspace-{reading,compare,markdown,ai} 与
@@ -576,15 +586,16 @@
   font-weight: 600;
 }
 
+/* 两条提示在书页区外面（启动层画的），仍是 fixed：按书页区居中，宽度也按它算。 */
 .reader-react-error {
   position: fixed;
-  left: 50%;
+  left: calc((100dvw - var(--reader-stage-right)) / 2);
   bottom: 24px;
   z-index: 95;
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
   max-width: min(480px, calc(100vw - 32px));
-  max-width: min(480px, calc(100dvw - 32px));
+  max-width: min(480px, calc(100dvw - var(--reader-stage-right) - 32px));
   padding: 10px 14px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--ink) 92%, transparent);
@@ -615,7 +626,7 @@
 /* 可选产物失败：不遮挡阅读，仅在外壳上浮一行可关闭提示。 */
 .reader-error-notice {
   position: fixed;
-  left: 50%;
+  left: calc((100dvw - var(--reader-stage-right)) / 2);
   top: 56px;
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
@@ -623,7 +634,7 @@
   align-items: center;
   gap: 10px;
   max-width: min(520px, calc(100vw - 32px));
-  max-width: min(520px, calc(100dvw - 32px));
+  max-width: min(520px, calc(100dvw - var(--reader-stage-right) - 32px));
   padding: 8px 10px 8px 14px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);

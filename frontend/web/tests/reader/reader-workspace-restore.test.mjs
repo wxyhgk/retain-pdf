@@ -239,10 +239,16 @@ const compose = (patch) => resolveReaderPaneComposition({
   ...patch,
 });
 
-test("开着面板时对照退成单栏", () => {
-  const degraded = compose({ assistantOpen: true });
+test("开着面板时书页区放得下就照常对照，放不下才退成单栏（2026-11-27 起按宽度，不再一开面板就收）", async () => {
+  const { compareFitsStage, COMPARE_MIN_STAGE_PX } = await import("../../../packages/reader/src/app/pane-composition.ts");
+  assert.equal(compose({ assistantOpen: true }).visibleMode, "compare", "宽屏开着面板照样对照");
+  const degraded = compose({ assistantOpen: true, compareFits: false });
   assert.equal(degraded.visibleMode, "source");
-  assert.equal(degraded.showTranslated, false, "右栏确实让给了面板");
-
+  assert.equal(degraded.showTranslated, false, "放不下时右栏让给了面板");
   assert.equal(compose({}).visibleMode, "compare", "没开面板就还是对照");
+
+  assert.equal(compareFitsStage(COMPARE_MIN_STAGE_PX - 1, true), false, "停着面板、书页区不够两栏");
+  assert.equal(compareFitsStage(COMPARE_MIN_STAGE_PX, true), true);
+  assert.equal(compareFitsStage(300, false), true, "右边没停东西时窄屏也不在这里收（原来就不收）");
+  assert.equal(compareFitsStage(0, true), true, "还没量出宽度不收，免得一帧单栏");
 });

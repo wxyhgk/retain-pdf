@@ -1,7 +1,7 @@
 import type { ReaderReactController } from "../hooks/use-reader-react-controller.js";
 import { type ReaderPaneComposition } from "./pane-composition.js";
 /** 叠不叠实时译文 + 由它派生的可见台面。三个 effect 的先后有讲究（复位在前、自动打开在后），整段原样搬来。 */
-export declare function useLiveTranslationOverlay(c: ReaderReactController, assistantOpen: boolean): {
+export declare function useLiveTranslationOverlay(c: ReaderReactController, assistantOpen: boolean, compareFits?: boolean): {
     liveTranslationVisible: boolean;
     setLiveTranslationVisible: import("react").Dispatch<import("react").SetStateAction<boolean>>;
     paneComposition: ReaderPaneComposition;

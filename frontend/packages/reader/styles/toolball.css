@@ -1,9 +1,10 @@
 /* 右下角的悬浮小球（ReaderToolBall.tsx）：面板（Markdown）和「对比版本」的唯一入口。
  * 点开往上一列圆形图标按钮，名字在悬停里；「对比版本」的列表弹在这一列左边。
- * 面板开着时不藏（2026-09 删掉的那个圆钮就是被 is-assistant-open 藏掉、里面的功能进不去），挪到面板左边。 */
+ * 面板开着时不藏（2026-09 删掉的那个圆钮就是被 is-assistant-open 藏掉、里面的功能进不去）。
+ * 在书页区（.reader-stage）里按它的右下角摆：右边停着面板时自然在面板左边，不用另算。 */
 
 .reader-toolball {
-  position: fixed;
+  position: absolute;
   right: 22px;
   bottom: 20px;
   z-index: calc(var(--z-hud, 36) + 3);
@@ -11,11 +12,6 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  transition: right 180ms ease;
-}
-
-.reader-react-root.is-assistant-open .reader-toolball {
-  right: calc(var(--reader-ai-split-width, 0px) + 18px);
 }
 
 .reader-toolball-ball {

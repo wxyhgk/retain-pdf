@@ -158,8 +158,13 @@
   outline: none;
 }
 
-.reader-react-root.is-assistant-open .reader-react-scroll-shell {
-  right: var(--reader-ai-split-width);
+/* 面板停在右边：书页区让出面板那么宽（.reader-stage 用这个变量；书页、底栏、小球都在书页区里）。 */
+.reader-react-root.is-assistant-open {
+  --reader-stage-right: var(--reader-ai-split-width);
+}
+
+/* 拖分栏时书页区跟手，不要过渡（关面板时照旧滑回去）。 */
+.reader-react-root.is-assistant-open .reader-stage {
   transition: none;
 }
 
@@ -169,26 +174,8 @@
   padding-bottom: var(--reader-hud-room, 66px);
 }
 
-/* dock 打开时，视口右半边是面板，所以「居中」得按 PDF 栏算，不是按视口。
- *
- * 只有 HUD 一直是这么做的；两条错误提示原来留在 left: 50%，中心正好落在分栏线
- * 上 —— 一半画在 PDF 上、一半画在面板上，而它们偏偏是最需要读清楚的两条文案。
- */
-.reader-react-root.is-assistant-open .reader-react-hud,
-.reader-react-root.is-assistant-open .reader-react-error,
-.reader-react-root.is-assistant-open .reader-error-notice {
-  left: calc((100dvw - var(--reader-ai-split-width)) / 2);
-}
-
-/* 宽度也得按栏算：PDF 栏最窄到 35vw（见 reader-ai-split-constraints.ts），
- * 1280 宽的屏上只剩 448px，居中了照样两头溢到面板上。 */
-.reader-react-root.is-assistant-open .reader-react-error {
-  max-width: min(480px, calc(100dvw - var(--reader-ai-split-width) - 32px));
-}
-
-.reader-react-root.is-assistant-open .reader-error-notice {
-  max-width: min(520px, calc(100dvw - var(--reader-ai-split-width) - 32px));
-}
+/* dock 打开时「居中」按书页区算、不按视口：底栏在书页区里，left: 50% 就对；两条提示在书页区外，
+ * 按 --reader-stage-right 算（react-pdf.css）。以前这里一条条按 --reader-ai-split-width 写。 */
 
 .reader-react-root.is-assistant-open .reader-notes-panel--workspace,
 .reader-react-root.is-assistant-open .reader-float-ai.reader-notes-panel--workspace {
@@ -243,24 +230,8 @@
 }
 
 
-/* 扩展的浮层贴在右边时（提问窗贴右边，贡献表的 reserveRight，2026-11-27）：书页、底栏、小球往左让出 --reader-right-inset，
- * 不被盖住（以前贴右边只是浮在书页上，对照读时盖住译文栏）。和右边停靠的面板同时开着时按宽的那个让。
- * 写在 is-assistant-open 那几条后面：同样的权重，后写的赢。 */
-.reader-react-root[data-right-inset] .reader-react-scroll-shell {
-  right: var(--reader-right-inset);
-}
-.reader-react-root.is-assistant-open[data-right-inset] .reader-react-scroll-shell {
-  right: max(var(--reader-ai-split-width), var(--reader-right-inset));
-}
-.reader-react-root[data-right-inset] .reader-react-hud {
-  left: calc((100dvw - var(--reader-right-inset)) / 2);
-}
-.reader-react-root.is-assistant-open[data-right-inset] .reader-react-hud {
-  left: calc((100dvw - max(var(--reader-ai-split-width), var(--reader-right-inset))) / 2);
-}
-.reader-react-root[data-right-inset] .reader-toolball {
-  right: calc(var(--reader-right-inset) + 18px);
-}
-.reader-react-root.is-assistant-open[data-right-inset] .reader-toolball {
-  right: calc(max(var(--reader-ai-split-width), var(--reader-right-inset)) + 18px);
+/* 扩展的浮层贴在右边时（提问窗贴右边，贡献表的 reserveRight，2026-11-27）：书页区让出 --reader-right-inset。
+ * 右边只停一个（useRightDockSlot：后来的留下），所以和面板不会同时让；万一同一帧两个都在，写在后面的这条赢。 */
+.reader-react-root[data-right-inset] {
+  --reader-stage-right: var(--reader-right-inset);
 }

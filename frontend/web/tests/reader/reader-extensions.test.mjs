@@ -160,11 +160,45 @@ test("书页右边让位（reserveRight）：取几个扩展里最大的；阅�
   assert.match(app, /data-right-inset=\{reserveRight \? "true" : undefined\}/);
   assert.match(app, /"--reader-right-inset": `\$\{reserveRight\}px`/);
   const css = readFileSync(new URL("../../../packages/reader/styles/assistant-dock.css", import.meta.url), "utf8");
-  for (const target of ["reader-react-scroll-shell", "reader-react-hud", "reader-toolball"]) {
-    assert.match(css, new RegExp(`\\.reader-react-root\\[data-right-inset\\] \\.${target} \\{`), `${target} 要让`);
-  }
+  // 书页区让出那么宽（书页、底栏、小球都在书页区里，跟着让）。
+  assert.match(css, /\.reader-react-root\[data-right-inset\]\s*\{[^}]*--reader-stage-right:\s*var\(--reader-right-inset\)/);
   // 提问窗贴右边时才要，窄屏不让（让了书页就没地方了）。
   const ask = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
   assert.match(ask, /setDocked\(mode === "dock" && viewport - width >= 480 \? Math\.round\(width\) : 0\)/);
   assert.match(ask, /reserveRight: showing \? docked : 0/);
+});
+
+test("右边只停一个（useRightDockSlot）：扩展刚贴到右边时关掉停着的面板；面板后开时不去关它（扩展自己挪开）", async () => {
+  const env = installReaderDom();
+  try {
+    const React = await import("react");
+    const { act } = React;
+    const { createRoot } = await import("react-dom/client");
+    const { useRightDockSlot } = await import("../../../packages/reader/src/app/use-reader-extension-host.ts");
+    let closed = 0;
+    function Probe({ reserve, panel }) {
+      useRightDockSlot(reserve, panel, () => { closed += 1; });
+      return null;
+    }
+    const root = createRoot(document.getElementById("root"));
+    await act(async () => root.render(React.createElement(Probe, { reserve: 0, panel: "markdown" })));
+    assert.equal(closed, 0, "只开着面板，不关");
+    await act(async () => root.render(React.createElement(Probe, { reserve: 440, panel: "markdown" })));
+    assert.equal(closed, 1, "提问窗贴到右边：后来的留下，面板关掉");
+    await act(async () => root.render(React.createElement(Probe, { reserve: 440, panel: null })));
+    await act(async () => root.render(React.createElement(Probe, { reserve: 440, panel: "markdown" })));
+    assert.equal(closed, 1, "面板后开：阅读页不关它（提问窗看到 activePanel 自己挪开）");
+    await act(async () => root.render(React.createElement(Probe, { reserve: 0, panel: "markdown" })));
+    await act(async () => root.render(React.createElement(Probe, { reserve: 0, panel: "markdown" })));
+    assert.equal(closed, 1, "提问窗挪开以后面板留着");
+    await act(async () => root.unmount());
+  } finally {
+    env.restore();
+  }
+  // 提问窗那头：阅读页的面板开没开传给窗口（dockTaken）。
+  const { readFileSync } = await import("node:fs");
+  const ask = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
+  assert.match(ask, /dockTaken=\{activePanel !== null\}/);
+  const ext = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskExtension.tsx", import.meta.url), "utf8");
+  assert.match(ext, /activePanel: api\.activePanel/);
 });

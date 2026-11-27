@@ -30,7 +30,9 @@ export type ReaderCompareGridProps = {
     activeRegion?: ReaderRegion | null;
     regions?: ReaderRegion[];
     readerMetadata?: ReaderMetadata | null;
+    /** 右边停着 Markdown 面板。 */
     markdownSplit?: boolean;
+    /** 右边停着东西（面板，或扩展贴右边的浮层）：单栏读时页宽按两倍书页区算，50% 正好铺满剩下的那一栏。 */
     assistantSplit?: boolean;
     liveTranslation?: LiveTranslationState;
     /** 源栏右上角动作（如「译文」叠加开关）；挂在 pane="source" 容器内。 */

@@ -134,10 +134,12 @@ export type AskWindowProps = {
   answerAction?: AskAnswerAction;
   /** 窗口摆法变了（贴右边时宽多少）：宿主据此给书页让出右边（不盖字）。 */
   onLayout?: (layout: { mode: AskWindowMode; width: number }) => void;
+  /** 宿主右边停了别的东西（阅读页的 Markdown 面板）：变成 true 的那一下，贴右边的窗口变回浮动。 */
+  dockTaken?: boolean;
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -265,7 +267,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
   }, [onClose]);
 
   // 摆法（浮动 / 贴右边 / 放大）和记住它（use-window-layout.ts）。
-  const layout = useWindowLayout(onLayout);
+  const layout = useWindowLayout(onLayout, dockTaken);
   const { mode, rect } = layout;
   // 太宽的公式、表格：缩一点放得下就缩，再宽就横着滚、给一个「放大看」（wide-blocks.ts）。
   const wideBlocks = useWideBlocks(threadRoot);

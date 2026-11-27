@@ -16,6 +16,7 @@ function compose({
   liveVisible = true,
   assistantOpen = false,
   hasTranslated = true,
+  compareFits,
 }) {
   // sourceViewOnly 由 sourceOnly=无 job 或 translatedUrl 缺失达成：
   // hasTranslated 为假时用空 URL；为真时用 sourceOnly 表达「无 job」。
@@ -28,6 +29,7 @@ function compose({
     overlayContentAvailable: liveAvailable,
     liveTranslationVisible: liveVisible,
     assistantOpen,
+    compareFits,
   });
 }
 
@@ -95,8 +97,18 @@ test("pane composition matrix collapses to a single discriminated union", () => 
       },
     },
     {
-      name: "assistant open suppresses live overlay and degrades compare to source",
+      // 2026-11-27 起开着面板不再收对照：书页区放得下两栏就照常对照（只是不叠实时译文）。
+      name: "assistant open suppresses live overlay but keeps compare when it fits",
       input: { mode: "compare", sourceViewOnly: false, hasTranslated: true, liveAvailable: true, liveVisible: true, assistantOpen: true },
+      expected: {
+        kind: "final-compare",
+        sourceViewOnly: false,
+        panes: { compareMode: true, showSource: true, showTranslated: true, overlayOnSource: false, visibleMode: "compare" },
+      },
+    },
+    {
+      name: "compare degrades to source when the stage beside a panel is too narrow",
+      input: { mode: "compare", sourceViewOnly: false, hasTranslated: true, assistantOpen: true, compareFits: false },
       expected: {
         kind: "source-only",
         sourceViewOnly: false,

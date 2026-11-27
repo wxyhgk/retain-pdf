@@ -38,6 +38,7 @@ function ReaderAskExtension(): ReactElement | null {
     pdfDocuments: api.pdfDocuments,
     currentPage: api.currentPage,
     visibleMode: api.visibleMode,
+    activePanel: api.activePanel,
   });
   const { marks, onMark, menuItems, panel, overlay, cropping, enabled, toggle, showing, reserveRight } = ask;
   const contribution = useMemo<ReaderContribution>(() => (enabled ? {

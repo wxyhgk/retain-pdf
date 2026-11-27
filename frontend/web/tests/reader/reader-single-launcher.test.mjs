@@ -100,8 +100,11 @@ test("**只有一个**启动器：右下角的悬浮小球（2026-11-20 起，�
   assert.match(all, /\.reader-assistant-dock-tabs\b/, "启动器的 tab 条样式没了");
   assert.doesNotMatch(all, /\.reader-fab\b/, "旧圆钮的 CSS 又回来了");
   assert.doesNotMatch(APP, /ReaderFab|fabActiveTool/, "阅读页又挂了旧圆钮");
-  // 面板开着时小球挪到面板左边，不藏（旧圆钮就是被 is-assistant-open 藏掉的）。
-  assert.match(all, /\.reader-react-root\.is-assistant-open \.reader-toolball\s*\{[^}]*right:/);
+  // 面板开着时小球在面板左边，不藏（旧圆钮就是被 is-assistant-open 藏掉的）：2026-11-27 起小球在书页区（.reader-stage）里，
+  // 书页区让出面板的宽度，小球跟着在左边；面板开着时也不许有规则把它藏掉。
+  assert.match(all, /\.reader-toolball\s*\{[^}]*position:\s*absolute/);
+  assert.match(all, /\.reader-react-root\.is-assistant-open\s*\{[^}]*--reader-stage-right:/);
+  assert.doesNotMatch(all, /is-assistant-open[^{]*\.reader-(?:toolball|stage)\s*\{[^}]*(?:display:\s*none|visibility:\s*hidden|opacity:\s*0)/);
 });
 
 /** 2026-11-27 起面板由扩展带：扩展定义里的 panels 给启动器，扩展组件自己画面板、看 api.activePanel 开没开。
