@@ -153,7 +153,7 @@ function EffortSwitch({ thought, set }: { thought: AskConfigOption; set: AskConf
       <Brain size={14} aria-hidden />
       <span className="ask-effort-switch-text">
         <span className="ask-effort-switch-name">深度思考</span>
-        <span className="ask-effort-switch-hint">{checked ? "先想再答：慢一些，答得更好" : "直接答：快"}</span>
+        <span className="ask-effort-switch-hint">{(checked ? on : off).description || (checked ? "先想再答：慢一些，答得更好" : "直接答：快")}</span>
       </span>
       <Button
         role="switch"
@@ -171,19 +171,26 @@ function EffortSwitch({ thought, set }: { thought: AskConfigOption; set: AskConf
 /** 弹层里的思考强度：几档的是胶囊滑块，名字照 agent 给的（没起名的换中文），颜色按档位位置（effortColor），左右两头用图标（快 / 想得深）；
  * 只有两档的是开关（EffortSwitch）。 */
 export function EffortRow({ thought, set }: { thought: AskConfigOption; set: AskConfigState["set"] }): ReactElement {
-  if (isThinkingSwitch(thought)) return <EffortSwitch thought={thought} set={set} />;
+  // 这一项本身的说明（自带 agent 给；档位是猜的时候写「开关不一定起作用」），写在下面，不只藏在悬停里。
+  const note = thought.description ? <p className="ask-effort-note">{thought.description}</p> : null;
+  if (isThinkingSwitch(thought)) return <>{<EffortSwitch thought={thought} set={set} />}{note}</>;
+  const current = thought.options.find((choice) => choice.value === `${thought.currentValue}`);
   return (
-    <EffortSlider
-      className="ask-effort"
-      levels={thought.options.map((choice) => ({ id: choice.value, name: levelName(choice), ...(choice.description ? { description: choice.description } : {}) }))}
-      value={`${thought.currentValue}`}
-      onChange={(value) => set(thought.id, value)}
-      colorAt={effortColor}
-      label={<Brain size={13} aria-label={thought.name || "思考强度"} />}
-      start={<Zap size={12} aria-label="更快" />}
-      end={<Sparkles size={12} aria-label="想得更深" />}
-      aria-label={thought.name || "思考强度"}
-    />
+    <>
+      <EffortSlider
+        className="ask-effort"
+        levels={thought.options.map((choice) => ({ id: choice.value, name: levelName(choice), ...(choice.description ? { description: choice.description } : {}) }))}
+        value={`${thought.currentValue}`}
+        onChange={(value) => set(thought.id, value)}
+        colorAt={effortColor}
+        label={<Brain size={13} aria-label={thought.name || "思考强度"} />}
+        start={<Zap size={12} aria-label="更快" />}
+        end={<Sparkles size={12} aria-label="想得更深" />}
+        aria-label={thought.name || "思考强度"}
+      />
+      {current?.description ? <p className="ask-effort-hint">{current.description}</p> : null}
+      {note}
+    </>
   );
 }
 

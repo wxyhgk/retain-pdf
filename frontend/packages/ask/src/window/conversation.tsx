@@ -162,9 +162,12 @@ export function MessageAfter(): ReactElement | null {
     return [...fromTools, ...(extra || []).filter((memory) => !fromTools.some((known) => known.id === memory.id))];
   }, [content, extra]);
   const compacted = useAuiState((state) => Boolean((state.message.metadata?.custom as StoredCustom | undefined)?.stored?.marks?.compactedBefore));
-  if (!memories.length && !compacted) return null;
+  // 选了思考、模型却没真的思考（自带 agent 给的一句话，照原样显示；后端 2026-11-27）。
+  const thinkingNotice = useAuiState((state) => (state.message.metadata?.custom as { turn?: { usage?: { thinking?: { notice?: string } } } } | undefined)?.turn?.usage?.thinking?.notice || "");
+  if (!memories.length && !compacted && !thinkingNotice) return null;
   return (
     <div className="ask-after">
+      {thinkingNotice ? <p className="ask-thinking-notice" role="note">{thinkingNotice}</p> : null}
       {memories.map((memory) => <MemoryNotice key={memory.id} memory={memory} />)}
       {compacted ? (
         <div className="ask-compacted" role="separator" title="到这里为止的对话已经压缩成摘要，AI 之后看摘要；原文还在上面">

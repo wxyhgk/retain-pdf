@@ -74,9 +74,11 @@ export function MessageAfter() {
         return [...fromTools, ...(extra || []).filter((memory) => !fromTools.some((known) => known.id === memory.id))];
     }, [content, extra]);
     const compacted = useAuiState((state) => Boolean(state.message.metadata?.custom?.stored?.marks?.compactedBefore));
-    if (!memories.length && !compacted)
+    // 选了思考、模型却没真的思考（自带 agent 给的一句话，照原样显示；后端 2026-11-27）。
+    const thinkingNotice = useAuiState((state) => state.message.metadata?.custom?.turn?.usage?.thinking?.notice || "");
+    if (!memories.length && !compacted && !thinkingNotice)
         return null;
-    return (_jsxs("div", { className: "ask-after", children: [memories.map((memory) => _jsx(MemoryNotice, { memory: memory }, memory.id)), compacted ? (_jsx("div", { className: "ask-compacted", role: "separator", title: "\u5230\u8FD9\u91CC\u4E3A\u6B62\u7684\u5BF9\u8BDD\u5DF2\u7ECF\u538B\u7F29\u6210\u6458\u8981\uFF0CAI \u4E4B\u540E\u770B\u6458\u8981\uFF1B\u539F\u6587\u8FD8\u5728\u4E0A\u9762", children: "\u4E4B\u524D\u7684\u5DF2\u538B\u7F29\u6210\u6458\u8981" })) : null] }));
+    return (_jsxs("div", { className: "ask-after", children: [thinkingNotice ? _jsx("p", { className: "ask-thinking-notice", role: "note", children: thinkingNotice }) : null, memories.map((memory) => _jsx(MemoryNotice, { memory: memory }, memory.id)), compacted ? (_jsx("div", { className: "ask-compacted", role: "separator", title: "\u5230\u8FD9\u91CC\u4E3A\u6B62\u7684\u5BF9\u8BDD\u5DF2\u7ECF\u538B\u7F29\u6210\u6458\u8981\uFF0CAI \u4E4B\u540E\u770B\u6458\u8981\uFF1B\u539F\u6587\u8FD8\u5728\u4E0A\u9762", children: "\u4E4B\u524D\u7684\u5DF2\u538B\u7F29\u6210\u6458\u8981" })) : null] }));
 }
 /** 回答底下宿主加的动作：问题带着出处、宿主认这处才有。 */
 function AnswerAction({ text }) {

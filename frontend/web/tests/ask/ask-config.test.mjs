@@ -236,3 +236,35 @@ test("只有开 / 关的思考画成开关：点一下在两个值之间换，�
     dom.window.close();
   }
 });
+
+test("后端 2026-11-27 的思考提示：_meta.retainpdf.usage.thinking 读进用量（notice 去空白，没有不带）；开关、滑块下面写档位说明和这一项的说明", async () => {
+  const { usageFromMeta } = await import("../../../packages/ask/src/acp/parts.ts");
+  assert.deepEqual(usageFromMeta({ retainpdf: { usage: { thinking: { level: "on", thought: false, notice: " 选了思考，但这一问模型没有思考。 " } } } }).thinking,
+    { level: "on", thought: false, notice: "选了思考，但这一问模型没有思考。" });
+  assert.deepEqual(usageFromMeta({ retainpdf: { usage: { thinking: { level: "high", thought: true } } } }).thinking, { level: "high", thought: true });
+  assert.equal(usageFromMeta({ retainpdf: { usage: { thinking: { level: "on" } } } }).thinking, undefined, "没有 thought 不认");
+  const dom = new JSDOM("<!doctype html><html><body><div id='root'></div></body></html>", { url: "http://localhost/", pretendToBeVisual: true });
+  // 滑块的弹簧动画用 requestAnimationFrame。
+  const keys = ["window", "document", "HTMLElement", "Element", "Node", "Event", "MouseEvent", "requestAnimationFrame", "cancelAnimationFrame"];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  for (const key of keys) Object.defineProperty(globalThis, key, { value: typeof dom.window[key] === "function" && /^[a-z]/.test(key) ? dom.window[key].bind(dom.window) : dom.window[key], configurable: true, writable: true });
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  try {
+    const React = await import("react");
+    const { act } = React;
+    const { createRoot } = await import("react-dom/client");
+    const root = createRoot(document.getElementById("root"));
+    const guessed = { ...BUILTIN_SWITCH, description: "这个模型认不出来，开关不一定起作用；回答完会告诉你它有没有真的思考", options: [{ value: "off", name: "不思考", description: "直接答，最快、最省" }, { value: "on", name: "思考", description: "先想再答，慢一些、多花 token" }] };
+    await act(async () => root.render(React.createElement(EffortRow, { thought: guessed, set: () => {} })));
+    assert.match(document.querySelector(".ask-effort-switch-hint").textContent, /先想再答，慢一些、多花 token/, "开关下面用后端给的档位说明");
+    assert.match(document.querySelector(".ask-effort-note").textContent, /不一定起作用/, "这一项的说明写出来，不只在悬停里");
+    const levels = { ...BUILTIN_LEVELS, options: BUILTIN_LEVELS.options.map((choice) => ({ ...choice, description: `${choice.value} 的说明` })) };
+    await act(async () => root.render(React.createElement(EffortRow, { thought: levels, set: () => {} })));
+    assert.equal(document.querySelector(".ask-effort-hint").textContent, "high 的说明", "滑块下面写当前那档的说明");
+    assert.equal(document.querySelector(".ask-effort-note"), null, "这一项没说明就不画");
+    await act(async () => root.unmount());
+  } finally {
+    for (const [key, value] of Object.entries(previous)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
+    dom.window.close();
+  }
+});

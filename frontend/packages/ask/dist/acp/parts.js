@@ -96,6 +96,11 @@ export function usageFromMeta(meta) {
         out.model = usage.model;
     else if (claudeModel)
         out.model = claudeModel;
+    const thinking = usage.thinking;
+    if (thinking && typeof thinking === "object" && typeof thinking.thought === "boolean") {
+        const notice = typeof thinking.notice === "string" ? thinking.notice.trim() : "";
+        out.thinking = { level: typeof thinking.level === "string" ? thinking.level : "", thought: thinking.thought, ...(notice ? { notice } : {}) };
+    }
     return out;
 }
 /** 还没收尾的思考记上结束（后面来了别的内容，或这一轮答完了）。 */

@@ -64,6 +64,11 @@ export type AskUsage = {
   reasoningTokens?: number;
   /** 实际用的模型（自带 agent 在 _meta.retainpdf.usage.model 里给）。 */
   model?: string;
+  /**
+   * 这一问的思考（自带 agent 在 _meta.retainpdf.usage.thinking 里给，后端 2026-11-27 feat/ask-thinking-levels）：
+   * 档位、有没有真的思考；notice 只在「档位是猜的、选了思考、正常答完却没收到思考内容」时有，照原样显示在回答底下。
+   */
+  thinking?: { level: string; thought: boolean; notice?: string };
 };
 
 export type AskTurn = {
@@ -162,6 +167,11 @@ export function usageFromMeta(meta: unknown): Partial<AskUsage> {
   if (cacheWrite !== undefined) out.cacheWriteTokens = cacheWrite;
   if (typeof usage.model === "string" && usage.model) out.model = usage.model;
   else if (claudeModel) out.model = claudeModel;
+  const thinking = usage.thinking as { level?: unknown; thought?: unknown; notice?: unknown } | undefined;
+  if (thinking && typeof thinking === "object" && typeof thinking.thought === "boolean") {
+    const notice = typeof thinking.notice === "string" ? thinking.notice.trim() : "";
+    out.thinking = { level: typeof thinking.level === "string" ? thinking.level : "", thought: thinking.thought, ...(notice ? { notice } : {}) };
+  }
   return out;
 }
 

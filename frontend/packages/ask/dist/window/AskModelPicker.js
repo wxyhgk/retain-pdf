@@ -1,4 +1,4 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 /** 输入框那一行的「谁来答」（Thread 的 ComposerExtra 插槽）：assistant-ui 的 ModelSelector（../ui/elements/model-selector.tsx）——
  * 一个按钮写「模型 · 思考」，点开从上到下是 agent 那一排（agent-row.tsx，2026-11-27 从标题栏挪来，没装的也在这里）、带搜索的模型列表、
  * 思考强度（几档的是胶囊滑块，../ui/elements/effort-slider.tsx，仿 Claude 桌面版；只有开 / 关的是开关）；
@@ -111,14 +111,17 @@ export function currentModelBrand(options) {
 function EffortSwitch({ thought, set }) {
     const [off, on] = thought.options;
     const checked = `${thought.currentValue}` === on.value;
-    return (_jsxs("div", { className: "ask-effort ask-effort-switch", "data-on": checked ? "true" : "false", children: [_jsx(Brain, { size: 14, "aria-hidden": true }), _jsxs("span", { className: "ask-effort-switch-text", children: [_jsx("span", { className: "ask-effort-switch-name", children: "\u6DF1\u5EA6\u601D\u8003" }), _jsx("span", { className: "ask-effort-switch-hint", children: checked ? "先想再答：慢一些，答得更好" : "直接答：快" })] }), _jsx(Button, { role: "switch", "aria-checked": checked, "aria-label": `深度思考：${checked ? "开" : "关"}`, className: "ask-effort-switch-toggle", onClick: () => set(thought.id, checked ? off.value : on.value), children: _jsx("span", { "aria-hidden": true }) })] }));
+    return (_jsxs("div", { className: "ask-effort ask-effort-switch", "data-on": checked ? "true" : "false", children: [_jsx(Brain, { size: 14, "aria-hidden": true }), _jsxs("span", { className: "ask-effort-switch-text", children: [_jsx("span", { className: "ask-effort-switch-name", children: "\u6DF1\u5EA6\u601D\u8003" }), _jsx("span", { className: "ask-effort-switch-hint", children: (checked ? on : off).description || (checked ? "先想再答：慢一些，答得更好" : "直接答：快") })] }), _jsx(Button, { role: "switch", "aria-checked": checked, "aria-label": `深度思考：${checked ? "开" : "关"}`, className: "ask-effort-switch-toggle", onClick: () => set(thought.id, checked ? off.value : on.value), children: _jsx("span", { "aria-hidden": true }) })] }));
 }
 /** 弹层里的思考强度：几档的是胶囊滑块，名字照 agent 给的（没起名的换中文），颜色按档位位置（effortColor），左右两头用图标（快 / 想得深）；
  * 只有两档的是开关（EffortSwitch）。 */
 export function EffortRow({ thought, set }) {
+    // 这一项本身的说明（自带 agent 给；档位是猜的时候写「开关不一定起作用」），写在下面，不只藏在悬停里。
+    const note = thought.description ? _jsx("p", { className: "ask-effort-note", children: thought.description }) : null;
     if (isThinkingSwitch(thought))
-        return _jsx(EffortSwitch, { thought: thought, set: set });
-    return (_jsx(EffortSlider, { className: "ask-effort", levels: thought.options.map((choice) => ({ id: choice.value, name: levelName(choice), ...(choice.description ? { description: choice.description } : {}) })), value: `${thought.currentValue}`, onChange: (value) => set(thought.id, value), colorAt: effortColor, label: _jsx(Brain, { size: 13, "aria-label": thought.name || "思考强度" }), start: _jsx(Zap, { size: 12, "aria-label": "\u66F4\u5FEB" }), end: _jsx(Sparkles, { size: 12, "aria-label": "\u60F3\u5F97\u66F4\u6DF1" }), "aria-label": thought.name || "思考强度" }));
+        return _jsxs(_Fragment, { children: [_jsx(EffortSwitch, { thought: thought, set: set }), note] });
+    const current = thought.options.find((choice) => choice.value === `${thought.currentValue}`);
+    return (_jsxs(_Fragment, { children: [_jsx(EffortSlider, { className: "ask-effort", levels: thought.options.map((choice) => ({ id: choice.value, name: levelName(choice), ...(choice.description ? { description: choice.description } : {}) })), value: `${thought.currentValue}`, onChange: (value) => set(thought.id, value), colorAt: effortColor, label: _jsx(Brain, { size: 13, "aria-label": thought.name || "思考强度" }), start: _jsx(Zap, { size: 12, "aria-label": "\u66F4\u5FEB" }), end: _jsx(Sparkles, { size: 12, "aria-label": "\u60F3\u5F97\u66F4\u6DF1" }), "aria-label": thought.name || "思考强度" }), current?.description ? _jsx("p", { className: "ask-effort-hint", children: current.description }) : null, note] }));
 }
 /** 按钮上写的：自带的（宿主排第一的）agent 只写模型名；别的 agent 写「Claude Code · Opus」，一眼看出谁在答。 */
 function answererLabel(agent, lead, modelName) {

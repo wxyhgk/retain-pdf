@@ -1565,3 +1565,26 @@
 .ask-wide-open:hover {
   color: var(--ink);
 }
+
+/* 选了思考、模型却没真的思考（自带 agent 回答完给的一句话，conversation.tsx 的 MessageAfter）。 */
+.ask-thinking-notice {
+  margin: 4px 0 0;
+  padding: 6px 10px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--warn) 10%, var(--paper));
+  color: color-mix(in srgb, var(--warn) 55%, var(--ink));
+  font-size: var(--ui-text-xs, 11px);
+}
+
+/* 思考强度下面的两行字（AskModelPicker 的 EffortRow）：当前档的说明（快慢、花费），这一项本身的说明（档位是猜的时写「不一定起作用」）。 */
+.ask-effort-hint,
+.ask-effort-note {
+  margin: 0;
+  padding: 0 12px 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.ask-effort-note {
+  color: color-mix(in srgb, var(--warn) 55%, var(--ink));
+}
