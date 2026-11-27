@@ -25,6 +25,9 @@
 | `backend/packages/retainpdf-runner` | `retainpdf-runner` | `retainpdf_runner` | |
 | `backend/jobs` | `retainpdf-runnerd` | | `retain-jobsd` |
 | `backend/cli` | `retainpdf-cli` | | `retainpdf` |
+| `backend/relay` | `retainpdf-relay` | `retainpdf_relay` | `retainpdf-relay` |
+
+`backend/relay`（2026-11-27 新建）是按页卖翻译的中转服务，单独部署在海外服务器上，不进桌面安装包，不依赖 rust_api 和其他包；说明见 [`backend/relay/README.md`](../../../backend/relay/README.md)。
 
 Python 的翻译 agent 包 `retainpdf-translation-agent`（`backend/translation-agent`，2026-10-29 新建）：一次翻一整页、逐块校验、
 按重排 agent 的要求改稿，只用标准库；测试系统在 `backend/pipeline/devtools/agent_lab/`。以后的重排 agent 另建 `retainpdf-layout-agent`。
