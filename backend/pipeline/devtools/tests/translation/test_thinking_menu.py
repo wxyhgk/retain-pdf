@@ -84,8 +84,9 @@ def test_qwen3_on_other_hosts_is_a_switch(model):
 
 
 @pytest.mark.parametrize("model", ["Qwen3-235B-A22B-Instruct-2507", "qwen3-30b-a3b-thinking-2507", "qwen3-coder-plus", "qwen2.5-72b-instruct"])
-def test_qwen_without_switch_is_unknown(model):
-    assert model_wire.thinking_menu(protocol="openai", model=model, base_url="http://127.0.0.1:8000/v1") is None
+def test_qwen_without_switch_falls_back_to_the_generic_one(model):
+    menu = _menu("openai", model, "http://127.0.0.1:8000/v1")
+    assert menu.candidates("on")[0] == {"enable_thinking": True, "chat_template_kwargs": {"enable_thinking": True, "thinking": True}}
 
 
 def test_gpt_levels_by_model():
@@ -112,7 +113,24 @@ def test_glm_and_unknown_models():
     assert glm.candidates("off") == [{"thinking": {"type": "disabled"}}, {"reasoning_effort": "low"}, {}]
     assert glm.level_for("auto") == "low"
     assert model_wire.thinking_menu(protocol="openai", model="gpt-4o", base_url=OPENAI) is None
-    assert model_wire.thinking_menu(protocol="openai", model="some-model", base_url="https://llm.example.com/v1") is None
+    assert model_wire.thinking_menu(protocol="openai_responses", model="some-model", base_url="https://llm.example.com/v1") is None
+
+
+def test_unknown_models_get_a_generic_switch():
+    """认不出的模型（OpenAI Chat、不是 api.openai.com）给通用开关（2026-11-27）：几种常见写法一起发，回 400 再少发，最后不加。"""
+    menu = _menu("openai", "some-model", "https://llm.example.com/v1")
+    assert menu.values() == ["off", "on"]
+    template_off = {"chat_template_kwargs": {"enable_thinking": False, "thinking": False}}
+    assert menu.candidates("off") == [
+        {"enable_thinking": False, **template_off, "reasoning_effort": "none"},
+        {"enable_thinking": False, **template_off},
+        template_off,
+        {"enable_thinking": False},
+        {},
+    ]
+    template_on = {"chat_template_kwargs": {"enable_thinking": True, "thinking": True}}
+    assert menu.candidates("on") == [{"enable_thinking": True, **template_on}, template_on, {"enable_thinking": True}, {}]
+    assert menu.level_for("auto") == "on" and menu.level_for("off") == "off" and menu.level_for("high") == "on"
 
 
 MENUS = [

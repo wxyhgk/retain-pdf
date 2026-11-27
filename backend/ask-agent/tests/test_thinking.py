@@ -106,7 +106,22 @@ def test_engine_options_follow_the_model() -> None:
     assert deepseek["current"] == "on"
     gpt = engine.thinking_options(model="gpt-5-mini", base_url="https://api.openai.com/v1", protocol="openai_responses", thinking="off")
     assert [option["value"] for option in gpt["options"]] == ["minimal", "low", "medium", "high"] and gpt["current"] == "minimal"
-    assert engine.thinking_options(model="mystery", base_url="https://llm.example.com/v1", protocol="openai", thinking="") is None
+    # 认不出的模型（2026-11-27 起）：OpenAI Chat、不是 api.openai.com 的给通用开关；api.openai.com 上不推理的 gpt-4o 仍然不报
+    mystery = engine.thinking_options(model="mystery", base_url="https://llm.example.com/v1", protocol="openai", thinking="")
+    assert mystery == {"options": [{"value": "off", "name": "off"}, {"value": "on", "name": "on"}], "current": "on"}
+    assert engine.thinking_options(model="gpt-4o", base_url="https://api.openai.com/v1", protocol="openai", thinking="") is None
+
+
+def test_generic_switch_falls_back_on_400(posts) -> None:  # noqa: F811
+    """通用开关先几种写法一起发；服务回 400 就少发几样再试。"""
+    calls, replies = posts
+    fn = engine.make_stream_fn(model="mystery", base_url="https://llm.example.com/v1", api_key="sk-test", protocol="openai", thinking="")
+    replies.append(FakeResponse([], status=400, payload={"error": {"message": "unknown parameter: reasoning_effort"}}))
+    replies.append(FakeResponse(CHAT_OK))
+    list(fn(MESSAGES, threading.Event(), thinking_level="off"))
+    assert calls[-2]["body"]["reasoning_effort"] == "none"
+    assert "reasoning_effort" not in calls[-1]["body"]
+    assert calls[-1]["body"]["chat_template_kwargs"] == {"enable_thinking": False, "thinking": False}
 
 
 def test_qwen_level_changes_the_request_body(posts) -> None:  # noqa: F811
