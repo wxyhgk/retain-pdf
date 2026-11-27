@@ -943,16 +943,21 @@ def _qwen3_switch(on: bool) -> tuple[dict[str, Any], ...]:
     )
 
 
-def _generic_switch(on: bool) -> tuple[dict[str, Any], ...]:
-    """认不出的模型（OpenAI Chat 协议、不是 api.openai.com）给一个通用开关（2026-11-27 用户定「加入」）。不知道服务认哪种写法，
+def _generic_switch(on: bool, *, responses: bool = False) -> tuple[dict[str, Any], ...]:
+    """认不出的模型（地址不是 api.openai.com）给一个通用开关（2026-11-27 用户定「加入」）。不知道服务认哪种写法，
     挑几种常见的：顶层 ``enable_thinking``（DashScope 和照它写的中转）、``chat_template_kwargs`` 的 ``enable_thinking`` / ``thinking``
-    （vLLM、SGLang、llama.cpp 上的 Qwen3、GLM、DeepSeek 混合思考模型）；关的时候再带 ``reasoning_effort: none``（Ollama 等）。
-    先一起发，回 400 再少发几样，最后不加。服务一般忽略不认的字段，所以模型本身不思考、或服务不认这些写法时，这个开关不起作用。"""
+    （vLLM、SGLang、llama.cpp 上的 Qwen3、GLM、DeepSeek 混合思考模型）；关的时候再带 effort ``none``（Chat 是 ``reasoning_effort``，
+    Ollama 等认；Responses 是 ``reasoning.effort``，DashScope 的 /responses 实测能关）。
+    先一起发，回 400 再少发几样，最后不加。服务一般忽略不认的字段，所以模型本身不思考、或服务不认这些写法时，这个开关不起作用。
+    ``responses``：Responses 协议（2026-11-27，用户自定义的 Qwen3.8-27B-Uncensored 走的是它，Chat 那份覆盖不到）。"""
     template = {"chat_template_kwargs": {"enable_thinking": on, "thinking": on}}
+    effort_none = {"reasoning": {"effort": "none"}} if responses else {"reasoning_effort": "none"}
     candidates: list[dict[str, Any]] = []
     if not on:
-        candidates.append({"enable_thinking": False, **template, "reasoning_effort": "none"})
+        candidates.append({"enable_thinking": False, **template, **effort_none})
     candidates += [{"enable_thinking": on, **template}, template, {"enable_thinking": on}]
+    if not on and responses:
+        candidates.append(effort_none)
     return tuple(candidates)
 
 
@@ -966,8 +971,8 @@ def thinking_menu(*, protocol: Any, model: str, base_url: str) -> ThinkingMenu |
     - 智谱：off / low / medium / high / max（``reasoning_effort``；关思考是 ``thinking.type = disabled``，关不掉的退到 low）。
     - 别的地址上的 Qwen3（按模型名认，自己部署或中转的；2026-11-27）：off / on，见 ``_qwen3_switch``。auto 不加字段，按 Qwen3 默认开。
     - GPT（按模型名认，OpenAI Chat 和 Responses 都是）：见 ``_gpt_efforts``。
-    - 别的（OpenAI Chat 协议、地址不是 api.openai.com 的认不出的模型；2026-11-27）：通用的 off / on，见 ``_generic_switch``。auto 不加字段，报 on。
-      api.openai.com 上认不出的（gpt-4o 这类不推理的）和 Responses 协议上认不出的仍然是 None。
+    - 别的（地址不是 api.openai.com 的认不出的模型，OpenAI Chat 和 Responses 都算；2026-11-27）：通用的 off / on，见 ``_generic_switch``。
+      Responses 上名字带 qwen3 的也走它。auto 不加字段，报 on。api.openai.com 上认不出的（gpt-4o 这类不推理的）仍然是 None。
     """
     protocol = normalize_protocol(protocol)
     if protocol == PROTOCOL_ANTHROPIC:
@@ -989,8 +994,9 @@ def thinking_menu(*, protocol: Any, model: str, base_url: str) -> ThinkingMenu |
         return _switch_menu(_qwen3_switch(False), _qwen3_switch(True), auto="on")
     gpt = _gpt_efforts(name)
     if gpt is None:
-        if protocol == PROTOCOL_OPENAI and host != "api.openai.com":
-            return _switch_menu(_generic_switch(False), _generic_switch(True), auto="on")
+        if protocol in (PROTOCOL_OPENAI, PROTOCOL_OPENAI_RESPONSES) and host != "api.openai.com":
+            responses = protocol == PROTOCOL_OPENAI_RESPONSES
+            return _switch_menu(_generic_switch(False, responses=responses), _generic_switch(True, responses=responses), auto="on")
         return None
     efforts, default = gpt
     if protocol == PROTOCOL_OPENAI_RESPONSES:

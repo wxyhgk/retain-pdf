@@ -103,7 +103,7 @@
   `options` 是这个模型实际有的档位、从弱到强（按位置上色正好）。**没有 `category: "model"` 那一项**，模型照旧是前端合成的设置里存的连接，换模型带新握手参数重开会话。
 - `currentValue` 是握手的 `thinking` 换成的档位（换算写在接口文档里，和实际发的请求一致）。
 - `session/set_config_option(configId: "thought_level", value)` 只改下一问，回整份 `configOptions`；`value` 不在 `options` 里回 `-32602`。
-- 认不出的模型（不是 Claude、GPT，也不是 DashScope、DeepSeek、智谱的地址）：2026-11-27 起，OpenAI Chat 协议、地址不是 `api.openai.com` 的报通用的 `off` / `on`（名字带 qwen3 的走 Qwen3 的开关），前端照开关画，不用改；`api.openai.com` 上认不出的（`gpt-4o`）和 Responses 协议上认不出的仍然不报 `configOptions`，前端不显示这一栏。
+- 认不出的模型（不是 Claude、GPT，也不是 DashScope、DeepSeek、智谱的地址）：2026-11-27 起，地址不是 `api.openai.com` 的（OpenAI Chat 和 Responses 都算）报通用的 `off` / `on`（Chat 上名字带 qwen3 的走 Qwen3 的开关），前端照开关画，不用改；`api.openai.com` 上认不出的（`gpt-4o`）仍然不报 `configOptions`，前端不显示这一栏。
 
 **前端不用改**：`frontend/packages/ask/src/acp/adapter.ts` 现在的写法（收 `configOptions`、开会话后用 `set_config_option` 设回上次选的、
 不在 `options` 里的跳过、收 `config_option_update`）正好对上。要留意的几处：
