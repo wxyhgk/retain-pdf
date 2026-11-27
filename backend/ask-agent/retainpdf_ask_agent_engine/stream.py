@@ -12,7 +12,7 @@
 
 思考档位（2026-11-26）：没改过档位时按握手的思考深度换字段（``model_wire.setting_thinking_candidates``，和翻译一样）；会话里改过的
 （``thinking_level``）按档位表 ``model_wire.thinking_menu`` 发那一档。三种协议都按候选顺序发，服务商回 400 就换下一种写法，最后不加思考字段。
-``thinking_options`` 给核心报 ``configOptions`` 用的档位和当前档。
+``thinking_options`` 给核心报 ``configOptions`` 用的档位（中文名、说明）和当前档（记住的上次选的优先）。
 
 取消：每读一行看一次取消标记，叫停就关掉连接返回。HTTP 出错抛 ``RuntimeError``（服务商的状态码和一句说明，不带 key）。
 
@@ -487,14 +487,50 @@ def _wire_base_url(protocol: str, base_url: str) -> str:
     return base_url if protocol == model_wire.PROTOCOL_ANTHROPIC else (base_url or DEFAULT_BASE_URL)
 
 
-def thinking_options(*, model: str, base_url: str, protocol: str = "", thinking: str = "") -> dict[str, Any] | None:
-    """给核心的思考档位：``{"options": [{"value", "name"}], "current": 握手的思考深度对应的那一档}``（档位表见 ``model_wire.thinking_menu``）。
-    认不出的模型是 None（不报这一项）。"""
+# 每档给用户看的名字和一句说明（2026-11-27 用户：「只有开和关……太诡异了」，要看得懂快 / 准 / 费钱的差别，不要 effort 术语）。
+# 值照旧是模型那边的档位名（``session/set_config_option`` 用它）。
+THINKING_LABELS: dict[str, tuple[str, str]] = {
+    "off": ("不思考", "直接回答：最快、最省"),
+    "none": ("不思考", "直接回答：最快、最省"),
+    "on": ("思考", "先想再答：难题更准，慢一些、多花一些"),
+    "minimal": ("极浅", "几乎不想：很快、很省"),
+    "low": ("浅", "稍微想一下：快、省"),
+    "medium": ("中", "想得适中：速度和准确折中"),
+    "high": ("深", "想得久一些：难题更准，慢、费"),
+    "xhigh": ("很深", "想得更久：更慢、更费"),
+    "max": ("最深", "想到最透：最准，也最慢、最费"),
+}
+THINKING_DESCRIPTION = "想得越深，难题答得越准，但越慢、越费钱"
+GUESSED_DESCRIPTION = "这个模型认不出来，开关不一定起作用；回答完会告诉你它有没有真的思考"
+# 不思考的那几档：开了「猜的」开关却没见思考才提醒，这几档不提醒
+NO_THINKING_LEVELS = ("off", "none")
+
+
+def thinking_options(*, model: str, base_url: str, protocol: str = "", thinking: str = "", remembered: str = "") -> dict[str, Any] | None:
+    """给核心的思考档位（档位表见 ``model_wire.thinking_menu``）。认不出的模型是 None（不报这一项）::
+
+        {"options": [{"value", "name", "description"}], "current": 当前档, "description": 这一项的说明,
+         "guessed": 档位是不是猜的, "no_thinking": [不思考的那几档]}
+
+    当前档：``remembered``（用户在提问窗里上次选的，2026-11-27 用户定「记住上次选的」）还在这个模型的档位里就用它，
+    否则是握手的思考深度对应的那一档。"""
     profile = _profile(model=model, base_url=base_url, protocol=protocol, thinking=thinking)
     menu = model_wire.thinking_menu(protocol=profile.protocol, model=model, base_url=_wire_base_url(profile.protocol, base_url))
     if menu is None:
         return None
-    return {"options": [{"value": value, "name": value} for value in menu.values()], "current": menu.level_for(profile.thinking)}
+    values = menu.values()
+    options = []
+    for value in values:
+        name, description = THINKING_LABELS.get(value, (value, ""))
+        options.append({"value": value, "name": name, **({"description": description} if description else {})})
+    current = remembered if remembered in values else menu.level_for(profile.thinking)
+    return {
+        "options": options,
+        "current": current,
+        "description": GUESSED_DESCRIPTION if menu.guessed else THINKING_DESCRIPTION,
+        "guessed": menu.guessed,
+        "no_thinking": [value for value in values if value in NO_THINKING_LEVELS],
+    }
 
 
 def make_stream_fn(*, model: str, base_url: str, api_key: str, protocol: str = "", thinking: str = ""):
@@ -525,4 +561,4 @@ def make_stream_fn(*, model: str, base_url: str, api_key: str, protocol: str = "
     return stream
 
 
-__all__ = ["make_stream_fn", "thinking_options"]
+__all__ = ["THINKING_LABELS", "make_stream_fn", "thinking_options"]

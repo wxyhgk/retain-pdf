@@ -54,18 +54,22 @@ def test_claude_level_fields_are_the_translation_ones():
         menu.candidates("off")
 
 
-def test_qwen_and_deepseek_are_switches():
+def test_qwen_on_dashscope_has_budget_levels_and_deepseek_is_a_switch():
+    """DashScope 认思考预算（2026-11-27 起分档，以前只有开关）：每档发 thinking_budget，不认退到只开思考；和翻译按设置发的一样。"""
     qwen = _menu("openai", "qwen3.8-flash", DASHSCOPE)
-    assert qwen.values() == ["off", "on"]
+    assert qwen.values() == ["off", "low", "medium", "high", "max"]
+    assert not qwen.guessed
     assert qwen.candidates("off") == [{"enable_thinking": False}, {}]
-    assert qwen.candidates("on") == [{"enable_thinking": True}, {}]
-    # auto：qwen3.8-flash 实测关掉；别的 Qwen 不加字段，按服务商默认开
-    assert qwen.level_for("auto") == "off" and qwen.level_for("high") == "on" and qwen.level_for("off") == "off"
-    assert _menu("openai", "qwen-plus", DASHSCOPE).level_for("auto") == "on"
+    assert qwen.candidates("low") == [{"enable_thinking": True, "thinking_budget": 2048}, {"enable_thinking": True}, {}]
+    assert qwen.candidates("max")[0] == {"enable_thinking": True, "thinking_budget": 32768}
+    # auto：qwen3.8-flash 实测关掉；别的 Qwen 不加字段，按服务商默认开（预算不限，算 max）
+    assert [qwen.level_for(setting) for setting in ("auto", "off", "low", "medium", "high", "max")] == ["off", "off", "low", "medium", "high", "max"]
+    assert _menu("openai", "qwen-plus", DASHSCOPE).level_for("auto") == "max"
     deepseek = _menu("openai", "deepseek-chat", DEEPSEEK)
     assert deepseek.values() == ["off", "on"]
     assert deepseek.candidates("on") == [{"thinking": {"type": "enabled"}}, {}]
     assert deepseek.level_for("auto") == "off" and _menu("openai", "deepseek-reasoner", DEEPSEEK).level_for("auto") == "on"
+    assert not deepseek.guessed and not _menu("anthropic", "claude-haiku-5-5").guessed and not _menu("openai", "gpt-5", OPENAI).guessed
 
 
 @pytest.mark.parametrize("model", ["Qwen3.8-27B-Uncensored", "qwen/qwen3-32b", "Qwen3-30B-A3B"])
@@ -73,6 +77,7 @@ def test_qwen3_on_other_hosts_is_a_switch(model):
     """自己部署、中转的 Qwen3 按名字认（2026-11-27，用户自定义的 Qwen3.8-27B-Uncensored 以前没有档位）：两种写法一起发，回 400 再一个一个试。"""
     menu = _menu("openai", model, "http://127.0.0.1:8000/v1")
     assert menu.values() == ["off", "on"]
+    assert menu.guessed, "self-hosted servers may ignore the switch"
     assert menu.candidates("off") == [
         {"enable_thinking": False, "chat_template_kwargs": {"enable_thinking": False}},
         {"chat_template_kwargs": {"enable_thinking": False}},
@@ -121,6 +126,7 @@ def test_unknown_models_on_responses_get_a_generic_switch(model):
     """Responses 协议上认不出的也给通用开关（2026-11-27：用户自定义的 Qwen3.8-27B-Uncensored 走 Responses，Chat 那份覆盖不到）。
     关的时候 effort 写成 reasoning.effort，最后再单独试它（DashScope 的 /responses 实测 effort=none 能关）。"""
     menu = _menu("openai_responses", model, "http://127.0.0.1:1561/v1")
+    assert menu.guessed
     assert menu.values() == ["off", "on"]
     template_off = {"chat_template_kwargs": {"enable_thinking": False, "thinking": False}}
     assert menu.candidates("off") == [
@@ -139,6 +145,7 @@ def test_unknown_models_on_responses_get_a_generic_switch(model):
 def test_unknown_models_get_a_generic_switch():
     """认不出的模型（OpenAI Chat、不是 api.openai.com）给通用开关（2026-11-27）：几种常见写法一起发，回 400 再少发，最后不加。"""
     menu = _menu("openai", "some-model", "https://llm.example.com/v1")
+    assert menu.guessed
     assert menu.values() == ["off", "on"]
     template_off = {"chat_template_kwargs": {"enable_thinking": False, "thinking": False}}
     assert menu.candidates("off") == [
@@ -158,6 +165,7 @@ MENUS = [
     ("anthropic", "claude-sonnet-4-6", ""), ("openai", "glm-5.3-flash", BIGMODEL), ("openai", "glm-5", BIGMODEL),
     ("openai", "gpt-5", OPENAI), ("openai", "gpt-5.5-mini", OPENAI), ("openai", "o4-mini", OPENAI),
     ("openai_responses", "gpt-5-mini", OPENAI), ("openai_responses", "gpt-5.5", OPENAI),
+    ("openai", "qwen3.8-flash", DASHSCOPE), ("openai", "qwen-plus", DASHSCOPE),
 ]
 
 

@@ -41,6 +41,10 @@ pub const ASK_ENV_MODEL: &str = "RETAIN_ASK_MODEL";
 pub const ASK_ENV_BASE_URL: &str = "RETAIN_ASK_BASE_URL";
 pub const ASK_ENV_API_PROTOCOL: &str = "RETAIN_ASK_API_PROTOCOL";
 pub const ASK_ENV_THINKING: &str = "RETAIN_ASK_THINKING";
+/// 自带 agent 记用户在提问窗里上次选的思考档位的文件（2026-11-27，按模型连接记一档，下次默认它；读写在 agent 那边）。
+pub const ASK_ENV_THINKING_FILE: &str = "RETAIN_ASK_THINKING_FILE";
+/// 那个文件在数据目录下的位置。
+pub const ASK_THINKING_FILE: &str = "ask/thinking-levels.json";
 pub const ASK_ENV_API_KEY: &str = "RETAIN_ASK_API_KEY";
 /// 自带 agent 读书用（握手带了 `job_id` 才给）：读哪本书、书编号（原文页图）、后端自己的地址、读书用的密钥。
 pub const ASK_ENV_JOB_ID: &str = "RETAIN_ASK_JOB_ID";
@@ -319,6 +323,7 @@ fn builtin_process(
         (ASK_ENV_BASE_URL.into(), settings.base_url),
         (ASK_ENV_API_PROTOCOL.into(), settings.protocol),
         (ASK_ENV_THINKING.into(), settings.thinking),
+        (ASK_ENV_THINKING_FILE.into(), config.data_root.join(ASK_THINKING_FILE).to_string_lossy().into_owned()),
         (ASK_ENV_API_KEY.into(), settings.secret),
     ];
     env.extend(ask_backend_env(config, book, conversation_id));

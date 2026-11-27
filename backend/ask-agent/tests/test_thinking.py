@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import io
 import json
+import os
+import shutil
 import subprocess
+import tempfile
 import sys
 import threading
 from http.server import ThreadingHTTPServer
@@ -83,6 +86,62 @@ def test_bad_values_unknown_options_and_sessions_are_acp_errors() -> None:
     assert agent.sessions[session].thinking_level is None
 
 
+def test_config_options_carry_descriptions_and_changes_are_remembered() -> None:
+    remembered: list[str] = []
+    thinking = {"options": [{"value": "off", "name": "不思考", "description": "直接回答"}, {"value": "on", "name": "思考"}],
+                "current": "off", "description": "想得越深越准"}
+    agent = AskAgent(lambda messages, cancel, **options: iter(()), out=io.StringIO(), thinking=thinking,
+                     remember_thinking=remembered.append)
+    result = _new(agent)
+    option = result["configOptions"][0]
+    assert option["description"] == "想得越深越准"
+    assert option["options"] == [{"value": "off", "name": "不思考", "description": "直接回答"}, {"value": "on", "name": "思考"}]
+    _set(agent, result["sessionId"], "on")
+    _set(agent, result["sessionId"], "bogus", request_id=3)
+    assert remembered == ["on"], "only accepted changes are remembered"
+
+
+def _ask(agent: AskAgent, session: str, request_id: int = 9) -> dict:
+    agent.handle({"jsonrpc": "2.0", "id": request_id, "method": "session/prompt",
+                  "params": {"sessionId": session, "prompt": [{"type": "text", "text": "问"}]}})
+    _wait(agent)
+    return _lines(agent.out)[-1]["result"]["_meta"]["retainpdf"]["usage"]["thinking"]
+
+
+def test_each_answer_reports_whether_the_model_really_thought() -> None:
+    """回答完报这一问有没有真的思考；档位是猜的、开了却没思考才带给用户看的 notice（2026-11-27 用户定「用完看实际」）。"""
+    replies: list[list[tuple[str, object]]] = []
+
+    def stream(messages, cancel, **options):
+        yield from replies.pop(0)
+
+    guessed = {"options": [{"value": "off", "name": "不思考"}, {"value": "on", "name": "思考"}], "current": "on",
+               "guessed": True, "no_thinking": ["off"]}
+    agent = AskAgent(stream, out=io.StringIO(), thinking=guessed)
+    session = _new(agent)["sessionId"]
+    replies.append([("text", "答"), ("stop", "end_turn")])
+    report = _ask(agent, session)
+    assert report["level"] == "on" and report["thought"] is False and "notice" in report
+    replies.append([("thought", "想一想"), ("text", "答"), ("stop", "end_turn")])
+    assert _ask(agent, session, 10) == {"level": "on", "thought": True}
+    # 思考 token 大于 0、或者思考漏进了正文（自己部署没开推理解析的 vLLM）也算思考了
+    replies.append([("text", "答"), ("usage", {"output_tokens": 9, "reasoning_tokens": 5}), ("stop", "end_turn")])
+    assert _ask(agent, session, 11)["thought"] is True
+    replies.append([("text", "<think>嗯"), ("text", "</think>答"), ("stop", "end_turn")])
+    assert _ask(agent, session, 12)["thought"] is True
+    # 选了不思考：不提醒；答到一半被截断的不提醒
+    _set(agent, session, "off", request_id=13)
+    replies.append([("text", "答"), ("stop", "end_turn")])
+    assert "notice" not in _ask(agent, session, 14)
+    _set(agent, session, "on", request_id=15)
+    replies.append([("text", "答"), ("stop", "max_tokens")])
+    assert "notice" not in _ask(agent, session, 16)
+    # 档位不是猜的：不提醒（低档位不思考是正常的）
+    sure = AskAgent(stream, out=io.StringIO(), thinking={**guessed, "guessed": False})
+    replies.append([("text", "答"), ("stop", "end_turn")])
+    assert _ask(sure, _new(sure)["sessionId"]) == {"level": "on", "thought": False}
+
+
 def test_models_without_a_level_table_report_nothing() -> None:
     agent = AskAgent(lambda messages, cancel, **options: iter(()), out=io.StringIO(), thinking=None)
     result = _new(agent)
@@ -97,8 +156,13 @@ CHAT_OK = sse((None, {"choices": [{"delta": {"content": "好"}, "finish_reason":
 
 
 def test_engine_options_follow_the_model() -> None:
+    # DashScope 的 Qwen 按思考预算分档（2026-11-27），每档中文名和一句说明
     qwen = engine.thinking_options(model="qwen3.8-flash", base_url=DASHSCOPE, protocol="openai", thinking="auto")
-    assert qwen == {"options": [{"value": "off", "name": "off"}, {"value": "on", "name": "on"}], "current": "off"}
+    assert [(option["value"], option["name"]) for option in qwen["options"]] == [
+        ("off", "不思考"), ("low", "浅"), ("medium", "中"), ("high", "深"), ("max", "最深")]
+    assert all(option["description"] for option in qwen["options"])
+    assert qwen["current"] == "off" and qwen["guessed"] is False and qwen["no_thinking"] == ["off"]
+    assert qwen["description"] == engine.THINKING_DESCRIPTION
     claude = engine.thinking_options(model="claude-haiku-5-5", base_url="", protocol="anthropic", thinking="")
     assert [option["value"] for option in claude["options"]] == ["low", "medium", "high", "xhigh", "max"] and claude["current"] == "low"
     # OpenAI 协议没填地址按 DeepSeek（和真发请求一样）
@@ -108,7 +172,8 @@ def test_engine_options_follow_the_model() -> None:
     assert [option["value"] for option in gpt["options"]] == ["minimal", "low", "medium", "high"] and gpt["current"] == "minimal"
     # 认不出的模型（2026-11-27 起）：OpenAI Chat、不是 api.openai.com 的给通用开关；api.openai.com 上不推理的 gpt-4o 仍然不报
     mystery = engine.thinking_options(model="mystery", base_url="https://llm.example.com/v1", protocol="openai", thinking="")
-    assert mystery == {"options": [{"value": "off", "name": "off"}, {"value": "on", "name": "on"}], "current": "on"}
+    assert [(option["value"], option["name"]) for option in mystery["options"]] == [("off", "不思考"), ("on", "思考")]
+    assert mystery["current"] == "on" and mystery["guessed"] is True and mystery["description"] == engine.GUESSED_DESCRIPTION
     assert engine.thinking_options(model="gpt-4o", base_url="https://api.openai.com/v1", protocol="openai", thinking="") is None
 
 
@@ -131,8 +196,16 @@ def test_qwen_level_changes_the_request_body(posts) -> None:  # noqa: F811
     list(fn(MESSAGES, threading.Event()))
     assert calls[-1]["body"]["enable_thinking"] is False
     replies.append(FakeResponse(CHAT_OK))
-    list(fn(MESSAGES, threading.Event(), thinking_level="on"))
-    assert calls[-1]["body"]["enable_thinking"] is True and "thinking_budget" not in calls[-1]["body"]
+    list(fn(MESSAGES, threading.Event(), thinking_level="low"))
+    assert calls[-1]["body"]["enable_thinking"] is True and calls[-1]["body"]["thinking_budget"] == 2048
+
+
+def test_remembered_level_wins_when_the_model_still_has_it() -> None:
+    """记住上次选的（2026-11-27 用户定）：还在这个模型的档位里就用它，没有了（换了模型）按设置的思考深度。"""
+    kwargs = {"model": "qwen3.8-flash", "base_url": DASHSCOPE, "protocol": "openai", "thinking": "auto"}
+    assert engine.thinking_options(**kwargs, remembered="high")["current"] == "high"
+    assert engine.thinking_options(**kwargs, remembered="xhigh")["current"] == "off"
+    assert engine.thinking_options(**kwargs, remembered="")["current"] == "off"
 
 
 def test_claude_level_changes_effort_and_falls_back_on_400(posts) -> None:  # noqa: F811
@@ -167,7 +240,9 @@ def test_set_config_option_end_to_end_over_stdio() -> None:
     server.bodies = []  # type: ignore[attr-defined]
     threading.Thread(target=server.serve_forever, daemon=True).start()
     env = _env(f"http://127.0.0.1:{server.server_address[1]}/v1")
-    env.update({"RETAIN_ASK_MODEL": "gpt-5-mini", "RETAIN_ASK_THINKING": "auto"})
+    choice_dir = tempfile.mkdtemp(prefix="ask-thinking-")
+    choice_file = os.path.join(choice_dir, "ask", "thinking-levels.json")
+    env.update({"RETAIN_ASK_MODEL": "gpt-5-mini", "RETAIN_ASK_THINKING": "auto", "RETAIN_ASK_THINKING_FILE": choice_file})
     try:
         process = subprocess.Popen([sys.executable, "-m", "retainpdf_ask_agent"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, text=True, encoding="utf-8", env=env)
@@ -196,3 +271,12 @@ def test_set_config_option_end_to_end_over_stdio() -> None:
     first, second = server.bodies  # type: ignore[attr-defined]
     # 握手是 auto：第一问不带思考字段（服务商默认 medium）；改成 high 后带上
     assert "reasoning_effort" not in first and second["reasoning_effort"] == "high"
+    # 记住了：再开一个进程（下次打开提问窗），默认就是 high
+    with open(choice_file, encoding="utf-8") as file:
+        assert list(json.load(file)["levels"].values()) == ["high"]
+    again = subprocess.run([sys.executable, "-m", "retainpdf_ask_agent"], input=json.dumps(
+        {"jsonrpc": "2.0", "id": 1, "method": "session/new", "params": {}}) + "\n", capture_output=True, text=True,
+        encoding="utf-8", env=env, timeout=30)
+    reply = json.loads(again.stdout.splitlines()[0])
+    assert reply["result"]["configOptions"][0]["currentValue"] == "high"
+    shutil.rmtree(choice_dir, ignore_errors=True)
