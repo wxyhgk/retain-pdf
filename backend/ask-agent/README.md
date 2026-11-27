@@ -17,7 +17,8 @@ RetainPDF 阅读页提问的自带 agent：在 stdio 上说 [ACP](https://agentc
   只有防失控的上限（4 轮）。方案见 [自带 agent 读书](../../docs/ops/planning/reader-ask/20261125-自带agent读书.md)。
 
 - 思考强度（2026-11-26）：`session/new` 的结果带 ACP 的 `configOptions`（一项 `thought_level`，档位是这个模型实际有的，从翻译底座
-  `model_wire.thinking_menu` 来），`session/set_config_option` 改这个会话下一问的档位；认不出的模型不报。不报选模型那一项。
+  `model_wire.thinking_menu` 来），`session/set_config_option` 改这个会话下一问的档位；认不出的模型（OpenAI Chat、不是 api.openai.com）报通用的 off / on（2026-11-27），
+  api.openai.com 和 Responses 协议上认不出的不报。不报选模型那一项。
 
 - 回答里的互动块（2026-11-26，`openui.py`，只用标准库）：桥给了 `RETAIN_OPENUI_PROMPT` 等（说明文件 `contracts/openui/`、检查器
   `backend/openui-check`、Node）就开：系统提示词在 `ask_system.txt` 后面接 L0（运行时从说明文件读，不复制），工具多 `openui_spec`（按 id 取说明）、
