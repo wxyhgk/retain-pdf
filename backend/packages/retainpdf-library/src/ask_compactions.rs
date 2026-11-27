@@ -225,6 +225,7 @@ mod tests {
             superseded_at: None,
             edited_from: None,
             session_id: None,
+            extra_selections: vec![],
         }
     }
 
@@ -285,6 +286,7 @@ mod tests {
             memory_ids: vec![],
             edited_from: None,
             session_id: None,
+            extra_selections: vec![],
         };
         AppendAskMessagesInput { messages: vec![message("user"), message("assistant")] }
     }

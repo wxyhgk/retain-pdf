@@ -336,7 +336,11 @@ async fn main_conversation_messages_side_conversation_and_context() {
         "POST",
         &messages_uri,
         Some(json!({ "messages": [
-            { "role": "user", "text": "这句是什么意思？", "agent_id": "retainpdf", "selection": selection, "client_message_id": "c-1" },
+            { "role": "user", "text": "这句是什么意思？", "agent_id": "retainpdf", "selection": selection, "client_message_id": "c-1",
+              "extra_selections": [
+                  { "page": 57, "item_ids": ["p057-b0001"], "selected_text": "第二处", "pane": "translated" },
+                  { "document_id": book, "page": 60, "selected_text": "第三处" }
+              ] },
             { "role": "assistant", "text": "意思是……", "thought": "先看上下文", "usage": { "model": "claude-haiku-5-5" } }
         ]})),
     )
@@ -348,6 +352,10 @@ async fn main_conversation_messages_side_conversation_and_context() {
     assert_eq!((asked["job_id"].as_str(), asked["version_id"].as_str(), asked["pane"].as_str()), (Some("job-1"), Some("tv-1"), Some("translated")));
     assert_eq!(asked["selection"]["item_ids"], json!(["p056-b0003"]));
     assert!(asked["selection"].get("prefix").is_none(), "{asked}");
+    // 另外几处出处（2026-11-27）：按顺序存、整理过；回答没有，是空数组
+    assert_eq!(asked["extra_selections"][0]["item_ids"], json!(["p057-b0001"]));
+    assert_eq!(asked["extra_selections"][1]["document_id"], book.as_str());
+    assert_eq!(appended["messages"][1]["extra_selections"], json!([]));
     assert_eq!(appended["conversation"]["message_count"], 2);
     // 网络重试：幂等号一样，回原来那条
     let retried = ok_data(
@@ -370,6 +378,8 @@ async fn main_conversation_messages_side_conversation_and_context() {
     let marks = ok_data(&state, "GET", &format!("/api/v1/documents/{book}/ask-messages"), None).await;
     assert_definition(&marks, &contract, "DocumentAskMessagesView", "marks");
     assert_eq!(marks["messages"].as_array().unwrap().len(), 1);
+    let places: Vec<_> = marks["messages"][0]["extra_selections"].as_array().unwrap().iter().map(|place| place["page"].as_i64()).collect();
+    assert_eq!(places, vec![Some(57), Some(60)], "the book marks carry every place of the question");
 
     // 副对话：从回答分出来，结束时结论回到主对话
     let answer_id = appended["messages"][1]["message_id"].as_str().unwrap();
@@ -476,6 +486,10 @@ async fn bad_requests_are_refused() {
         ("bad job", json!({ "messages": [{ "role": "user", "text": "x", "selection": { "page": 1, "job_id": "a/b" } }] })),
         ("books differ", json!({ "messages": [{ "role": "user", "text": "x", "document_id": "a", "selection": { "page": 1, "document_id": "b" } }] })),
         ("usage not object", json!({ "messages": [{ "role": "assistant", "text": "x", "usage": [1] }] })),
+        ("extra places on an answer", json!({ "messages": [{ "role": "assistant", "text": "x", "extra_selections": [{ "page": 1 }] }] })),
+        ("extra places without the first", json!({ "messages": [{ "role": "user", "text": "x", "extra_selections": [{ "page": 1 }] }] })),
+        ("extra place from another book", json!({ "messages": [{ "role": "user", "text": "x", "selection": { "page": 1, "document_id": "a" }, "extra_selections": [{ "page": 2, "document_id": "b" }] }] })),
+        ("too many extra places", json!({ "messages": [{ "role": "user", "text": "x", "selection": { "page": 1 }, "extra_selections": [{ "page": 2 }, { "page": 3 }, { "page": 4 }, { "page": 5 }, { "page": 6 }] }] })),
     ] {
         let (status, payload) = send(&state, "POST", &messages_uri, Some(body)).await;
         assert_eq!(status, StatusCode::BAD_REQUEST, "{what}: {payload}");

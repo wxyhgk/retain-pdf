@@ -195,6 +195,17 @@ export interface AskConversationMessageInput {
    * 2026-11-26（v44）：答这条的 agent 会话（ACP 的 sessionId），最长 256 字；问和答都可以带。删对话时据此删掉 agent 自己存的那份。
    */
   session_id?: string | null;
+  /**
+   * 2026-11-27（v46）：一问带的另外几处出处（前端「再加一段」）。第一处照旧是 selection，这里按顺序放其余的；只有 user 能带，要先有 selection；每处和 selection 一样校验、整理，写了 document_id 的要和这条消息的书一样，不一样 400。
+   *
+   * @maxItems 4
+   */
+  extra_selections?:
+    | []
+    | [AskSelectionInput]
+    | [AskSelectionInput, AskSelectionInput]
+    | [AskSelectionInput, AskSelectionInput, AskSelectionInput]
+    | [AskSelectionInput, AskSelectionInput, AskSelectionInput, AskSelectionInput];
 }
 /**
  * 结构化出处（请求里的）：这一问问的是哪儿。和 ACP session/prompt 的 _meta.retainpdf.selection 同一个写法。只有 page 必填；编号类字段 1–200 个字母、数字、-_.:；空串当没给。pane 不认识、page 出范围 400；几段字超长截断。
@@ -379,6 +390,10 @@ export interface AskConversationMessageRecord {
    * 2026-11-26（v44）：答这条的 agent 会话（ACP 的 sessionId）；没带 null。删对话时据此删掉 agent 自己存的那份（retainpdf-pi 的会话文件）。后端总是带上；契约里没列为必填。
    */
   session_id?: string | null;
+  /**
+   * 2026-11-27（v46）：一问带的另外几处出处（整理过的，按顺序），书页上每处也画「?」；第一处在 selection。没有是空数组（老消息、回答）。后端总是带上；契约里没列为必填。
+   */
+  extra_selections?: AskSelectionRecord[];
 }
 /**
  * 结构化出处（返回里的）：整理过的，只有有值的键（document_id、job_id、translation_version、pane、selected_text、section、source_text、translated_text、prefix、suffix 没有就不出现）。
