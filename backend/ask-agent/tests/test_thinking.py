@@ -55,7 +55,7 @@ def test_session_new_reports_the_thought_level_and_set_config_option_changes_the
     result = _new(agent)
     session = result["sessionId"]
     assert result["configOptions"] == [{
-        "id": "thought_level", "name": "思考", "category": "thought_level", "type": "select", "currentValue": "off",
+        "id": "thought_level", "name": "Thinking", "category": "thought_level", "type": "select", "currentValue": "off",
         "options": [{"value": "off", "name": "off"}, {"value": "on", "name": "on"}],
     }]
     # 没改过：不传 thinking_level（接线按握手的思考深度发）
@@ -88,14 +88,14 @@ def test_bad_values_unknown_options_and_sessions_are_acp_errors() -> None:
 
 def test_config_options_carry_descriptions_and_changes_are_remembered() -> None:
     remembered: list[str] = []
-    thinking = {"options": [{"value": "off", "name": "不思考", "description": "直接回答"}, {"value": "on", "name": "思考"}],
+    thinking = {"options": [{"value": "off", "name": "Off", "description": "直接回答"}, {"value": "on", "name": "On"}],
                 "current": "off", "description": "想得越深越准"}
     agent = AskAgent(lambda messages, cancel, **options: iter(()), out=io.StringIO(), thinking=thinking,
                      remember_thinking=remembered.append)
     result = _new(agent)
     option = result["configOptions"][0]
     assert option["description"] == "想得越深越准"
-    assert option["options"] == [{"value": "off", "name": "不思考", "description": "直接回答"}, {"value": "on", "name": "思考"}]
+    assert option["options"] == [{"value": "off", "name": "Off", "description": "直接回答"}, {"value": "on", "name": "On"}]
     _set(agent, result["sessionId"], "on")
     _set(agent, result["sessionId"], "bogus", request_id=3)
     assert remembered == ["on"], "only accepted changes are remembered"
@@ -115,7 +115,7 @@ def test_each_answer_reports_whether_the_model_really_thought() -> None:
     def stream(messages, cancel, **options):
         yield from replies.pop(0)
 
-    guessed = {"options": [{"value": "off", "name": "不思考"}, {"value": "on", "name": "思考"}], "current": "on",
+    guessed = {"options": [{"value": "off", "name": "Off"}, {"value": "on", "name": "On"}], "current": "on",
                "guessed": True, "no_thinking": ["off"]}
     agent = AskAgent(stream, out=io.StringIO(), thinking=guessed)
     session = _new(agent)["sessionId"]
@@ -156,10 +156,10 @@ CHAT_OK = sse((None, {"choices": [{"delta": {"content": "好"}, "finish_reason":
 
 
 def test_engine_options_follow_the_model() -> None:
-    # DashScope 的 Qwen 按思考预算分档（2026-11-27），每档中文名和一句说明
+    # DashScope 的 Qwen 按思考预算分档（2026-11-27），每档英文名和一句中文说明
     qwen = engine.thinking_options(model="qwen3.8-flash", base_url=DASHSCOPE, protocol="openai", thinking="auto")
     assert [(option["value"], option["name"]) for option in qwen["options"]] == [
-        ("off", "不思考"), ("low", "浅"), ("medium", "中"), ("high", "深"), ("max", "最深")]
+        ("off", "Off"), ("low", "Low"), ("medium", "Medium"), ("high", "High"), ("max", "Max")]
     assert all(option["description"] for option in qwen["options"])
     assert qwen["current"] == "off" and qwen["guessed"] is False and qwen["no_thinking"] == ["off"]
     assert qwen["description"] == engine.THINKING_DESCRIPTION
@@ -172,7 +172,7 @@ def test_engine_options_follow_the_model() -> None:
     assert [option["value"] for option in gpt["options"]] == ["minimal", "low", "medium", "high"] and gpt["current"] == "minimal"
     # 认不出的模型（2026-11-27 起）：OpenAI Chat、不是 api.openai.com 的给通用开关；api.openai.com 上不推理的 gpt-4o 仍然不报
     mystery = engine.thinking_options(model="mystery", base_url="https://llm.example.com/v1", protocol="openai", thinking="")
-    assert [(option["value"], option["name"]) for option in mystery["options"]] == [("off", "不思考"), ("on", "思考")]
+    assert [(option["value"], option["name"]) for option in mystery["options"]] == [("off", "Off"), ("on", "On")]
     assert mystery["current"] == "on" and mystery["guessed"] is True and mystery["description"] == engine.GUESSED_DESCRIPTION
     assert engine.thinking_options(model="gpt-4o", base_url="https://api.openai.com/v1", protocol="openai", thinking="") is None
 

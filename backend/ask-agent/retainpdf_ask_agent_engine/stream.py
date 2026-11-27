@@ -488,18 +488,19 @@ def _wire_base_url(protocol: str, base_url: str) -> str:
     return base_url if protocol == model_wire.PROTOCOL_ANTHROPIC else (base_url or DEFAULT_BASE_URL)
 
 
-# 每档给用户看的名字和一句说明（2026-11-27 用户：「只有开和关……太诡异了」，要看得懂快 / 准 / 费钱的差别，不要 effort 术语）。
+# 每档给用户看的名字和一句说明（2026-11-27 用户：「只有开和关……太诡异了」，要看得懂快 / 准 / 费钱的差别）。
+# 名字用英文、首字母大写（同一天用户：「思考不要用中文!」，和 Claude 桌面版的 Effort 一样）；说明照旧中文。
 # 值照旧是模型那边的档位名（``session/set_config_option`` 用它）。
 THINKING_LABELS: dict[str, tuple[str, str]] = {
-    "off": ("不思考", "直接回答：最快、最省"),
-    "none": ("不思考", "直接回答：最快、最省"),
-    "on": ("思考", "先想再答：难题更准，慢一些、多花一些"),
-    "minimal": ("极浅", "几乎不想：很快、很省"),
-    "low": ("浅", "稍微想一下：快、省"),
-    "medium": ("中", "想得适中：速度和准确折中"),
-    "high": ("深", "想得久一些：难题更准，慢、费"),
-    "xhigh": ("很深", "想得更久：更慢、更费"),
-    "max": ("最深", "想到最透：最准，也最慢、最费"),
+    "off": ("Off", "直接回答：最快、最省"),
+    "none": ("Off", "直接回答：最快、最省"),
+    "on": ("On", "先想再答：难题更准，慢一些、多花一些"),
+    "minimal": ("Minimal", "几乎不想：很快、很省"),
+    "low": ("Low", "稍微想一下：快、省"),
+    "medium": ("Medium", "想得适中：速度和准确折中"),
+    "high": ("High", "想得久一些：难题更准，慢、费"),
+    "xhigh": ("XHigh", "想得更久：更慢、更费"),
+    "max": ("Max", "想到最透：最准，也最慢、最费"),
 }
 THINKING_DESCRIPTION = "想得越深，难题答得越准，但越慢、越费钱"
 GUESSED_DESCRIPTION = "这个模型认不出来，开关不一定起作用；回答完会告诉你它有没有真的思考"
