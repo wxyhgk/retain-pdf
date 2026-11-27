@@ -18,8 +18,6 @@ Ollama 只在像它的地址上问（端口 11434 或主机名带 ollama，见 `
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -27,6 +25,7 @@ from urllib.parse import quote, urlparse, urlunparse
 
 import requests
 
+from retainpdf_base.io import save_json_atomic
 from retainpdf_translation.llm.shared import model_wire
 
 TIMEOUT_SECONDS = 4
@@ -223,15 +222,9 @@ def _write_cache(path: str, entries: dict[str, Any]) -> None:
     target = Path(path)
     try:
         target.parent.mkdir(parents=True, exist_ok=True)
-        handle, temp = tempfile.mkstemp(prefix=".thinking-capabilities-", dir=target.parent)
+        save_json_atomic(target, {"version": 1, "entries": dict(list(entries.items())[-MAX_CACHE_ENTRIES:])}, compact=True, durable=False)
     except OSError:
-        return
-    try:
-        with os.fdopen(handle, "w", encoding="utf-8") as file:
-            json.dump({"version": 1, "entries": dict(list(entries.items())[-MAX_CACHE_ENTRIES:])}, file, ensure_ascii=False)
-        os.replace(temp, target)
-    except OSError:
-        Path(temp).unlink(missing_ok=True)
+        pass
 
 
 def provider_menu(*, protocol: str, base_url: str, model: str, api_key: str, cache_file: str = "",
