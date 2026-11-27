@@ -186,6 +186,11 @@ pub fn build_fts_rows_from_job_dir(job_root: &Path) -> Result<Vec<FtsBlockRow>> 
 
 /// 一份 OCR 文档 + 一个译文目录的索引行。`page_idx` 是 OCR 文档里的本地页号。
 pub fn build_fts_rows(normalized_path: &Path, translated_dir: &Path) -> Result<Vec<FtsBlockRow>> {
+    build_fts_rows_and_page_count(normalized_path, translated_dir).map(|(rows, _)| rows)
+}
+
+/// 同 [`build_fts_rows`]，另外返回 OCR 文档的页数（没字的页也算）。
+fn build_fts_rows_and_page_count(normalized_path: &Path, translated_dir: &Path) -> Result<(Vec<FtsBlockRow>, usize)> {
     let normalized_path = normalized_path.to_path_buf();
     let raw = std::fs::read_to_string(&normalized_path)
         .with_context(|| format!("read {}", normalized_path.display()))?;
@@ -222,13 +227,10 @@ pub fn build_fts_rows(normalized_path: &Path, translated_dir: &Path) -> Result<V
         }
     }
 
+    let pages = document.get("pages").and_then(|value| value.as_array()).map(|a| a.as_slice()).unwrap_or_default();
+    let page_count = pages.len();
     let mut rows = Vec::new();
-    for page in document
-        .get("pages")
-        .and_then(|value| value.as_array())
-        .map(|a| a.as_slice())
-        .unwrap_or_default()
-    {
+    for page in pages {
         let page_idx = value_as_i64(page.get("page_index")).unwrap_or(0);
         for (block_idx, block) in page
             .get("blocks")
@@ -260,7 +262,7 @@ pub fn build_fts_rows(normalized_path: &Path, translated_dir: &Path) -> Result<V
             });
         }
     }
-    Ok(rows)
+    Ok((rows, page_count))
 }
 
 // ── 整本书的索引 ───────────────────────────────────────────────────────────
@@ -391,7 +393,7 @@ pub fn build_document_fts_selected(
             .as_deref()
             .and_then(|raw| resolve_data_path(data_root, raw).ok())
             .unwrap_or_else(|| data_root.join("jobs").join(&job.job_id).join("translated"));
-        let Ok(mut rows) = build_fts_rows(&normalized, &translated_dir) else { continue };
+        let Ok((mut rows, page_count)) = build_fts_rows_and_page_count(&normalized, &translated_dir) else { continue };
         let rank_key = selection.rank_key(job);
         if rank_key.is_none() {
             // 只提供原文：去掉译文，只剩译文的行（原文为空）不要。
@@ -401,9 +403,12 @@ pub fn build_document_fts_selected(
             });
         }
         let max_local = rows.iter().map(|row| row.page_idx).max().unwrap_or(-1);
-        // 老任务没记 ocr_page_numbers：那时 OCR 都是整本，本地页 = 文档页 - 1。
+        // 老任务没记 ocr_page_numbers：那时 OCR 都是整本，本地页 = 文档页 - 1。页数按 OCR 文档的页数，不按最后一个有字的块：
+        // 书末几页没字时少算，整本翻译请求里的末页就超出去，这个任务被算成一页没翻、每页都归更早的任务，重翻的译文进不了索引，
+        // 启动回填还每次都判它过期、重建一遍（2026-11-27 真实数据：209 页的书算成 204 页，8 次重翻都没进索引）。
+        let page_count = (page_count as i64).max(max_local + 1);
         let ocr_pages: Vec<u32> = if artifacts.ocr_page_numbers.is_empty() {
-            (1..=(max_local + 1).max(0) as u32).collect()
+            (1..=page_count.max(0) as u32).collect()
         } else {
             artifacts.ocr_page_numbers.clone()
         };
