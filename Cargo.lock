@@ -1866,6 +1866,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "retainpdf-relay"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "chrono",
+ "clap",
+ "getrandom 0.2.17",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "retainpdf-runner"
 version = "0.1.0"
 dependencies = [
