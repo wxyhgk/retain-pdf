@@ -5,7 +5,7 @@
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts）和宿主列出的 agent。
  *
  * 只有两档的思考强度（Qwen3、DeepSeek 这类模型只能开 / 关，2026-11-27）画成一个开关，不画两格的滑块；
- * agent 没给档位起名字（名字就是值，自带 agent 报的 off / on / low …）时换成中文（levelName）。
+ * 档位名、说明照 agent 报的（自带 agent 报中文名和一句说明，档位个数按模型真实能力，2026-11-27 后端 feat/ask-thinking-levels）。
  */
 import { type ReactElement } from "react";
 import type { AskConfigOption } from "../contract.js";
@@ -21,7 +21,8 @@ export declare function splitConfig(options: readonly AskConfigOption[]): {
     thought: AskConfigOption;
     rest: AskConfigOption[];
 };
-/** 档位显示的名字：agent 起了名字就照它；名字就是值（没起）时认得的换成中文，认不得的照原样。 */
+/** 档位显示的名字：照 agent 报的（自带 agent 2026-11-27 起报中文：不思考 / 思考 / 极浅 / 浅 / 中 / 深 / 很深 / 最深）；没名字写值。
+ * 以前名字就是值时前端换中文，后端给了名字以后删掉（feat/ask-thinking-levels）。 */
 export declare function levelName(choice: {
     value: string;
     name?: string;

@@ -5,7 +5,7 @@
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts）和宿主列出的 agent。
  *
  * 只有两档的思考强度（Qwen3、DeepSeek 这类模型只能开 / 关，2026-11-27）画成一个开关，不画两格的滑块；
- * agent 没给档位起名字（名字就是值，自带 agent 报的 off / on / low …）时换成中文（levelName）。
+ * 档位名、说明照 agent 报的（自带 agent 报中文名和一句说明，档位个数按模型真实能力，2026-11-27 后端 feat/ask-thinking-levels）。
  */
 import { createContext, useContext, type ReactElement } from "react";
 import { Brain, SlidersHorizontal, Sparkles, Zap } from "lucide-react";
@@ -40,27 +40,10 @@ export function splitConfig(options: readonly AskConfigOption[]) {
   return { model, thought, rest };
 }
 
-/** 常见档位值的中文名：只在 agent 没起名字（名字就是值）时用。 */
-const LEVEL_NAMES: Record<string, string> = {
-  off: "不思考",
-  none: "不思考",
-  disabled: "不思考",
-  on: "思考",
-  enabled: "思考",
-  auto: "自动",
-  minimal: "最低",
-  low: "低",
-  medium: "中",
-  high: "高",
-  xhigh: "很高",
-  max: "最高",
-};
-
-/** 档位显示的名字：agent 起了名字就照它；名字就是值（没起）时认得的换成中文，认不得的照原样。 */
+/** 档位显示的名字：照 agent 报的（自带 agent 2026-11-27 起报中文：不思考 / 思考 / 极浅 / 浅 / 中 / 深 / 很深 / 最深）；没名字写值。
+ * 以前名字就是值时前端换中文，后端给了名字以后删掉（feat/ask-thinking-levels）。 */
 export function levelName(choice: { value: string; name?: string }): string {
-  const name = `${choice.name || ""}`.trim();
-  if (name && name !== choice.value) return name;
-  return LEVEL_NAMES[`${choice.value}`.trim().toLowerCase()] || name || choice.value;
+  return `${choice.name || ""}`.trim() || choice.value;
 }
 
 /** 只有两档（从弱到强：关、开）：画成开关，不画滑块。 */
@@ -70,13 +53,14 @@ export function isThinkingSwitch(thought: AskConfigOption | null): boolean {
 
 /** 按钮上、列表里写的档位名。开关关着时不写（按钮上只有模型名），开着写「思考」。 */
 function triggerLevelName(thought: AskConfigOption, index: number): string {
-  if (isThinkingSwitch(thought)) return index === 1 ? "思考" : "";
+  // 档位名不用中文（2026-11-27 用户：「思考不要用中文!」）。
+  if (isThinkingSwitch(thought)) return index === 1 ? "Thinking" : "";
   return levelName(thought.options[index]);
 }
 
 /** ModelSelector 要的模型列表：每个模型都带同一份思考强度档位（ACP 的思考强度是整个会话的，不分模型）。 */
 export function toModelOptions(model: AskConfigOption, thought: AskConfigOption | null): ModelOption[] {
-  // 档位照 agent 给的（几档、顺序、值）；名字没起的换成中文（levelName）。
+  // 档位照 agent 给的（几档、顺序、值、名字）。
   const efforts = thought ? thought.options.map((choice, index) => ({ id: choice.value, name: triggerLevelName(thought, index) })) : undefined;
   return model.options.map((choice) => ({
     id: choice.value,
@@ -144,7 +128,7 @@ export function currentModelBrand(options: readonly AskConfigOption[]): string {
   return brandFor(`${model.currentValue}`, choice?.name, choice?.group);
 }
 
-/** 只能开 / 关的思考：一行「深度思考」加一个开关。 */
+/** 只能开 / 关的思考：一行「Thinking」加一个开关（名字不用中文；下面一行说明照 agent 报的）。 */
 function EffortSwitch({ thought, set }: { thought: AskConfigOption; set: AskConfigState["set"] }): ReactElement {
   const [off, on] = thought.options;
   const checked = `${thought.currentValue}` === on.value;
@@ -152,13 +136,13 @@ function EffortSwitch({ thought, set }: { thought: AskConfigOption; set: AskConf
     <div className="ask-effort ask-effort-switch" data-on={checked ? "true" : "false"}>
       <Brain size={14} aria-hidden />
       <span className="ask-effort-switch-text">
-        <span className="ask-effort-switch-name">深度思考</span>
+        <span className="ask-effort-switch-name">Thinking</span>
         <span className="ask-effort-switch-hint">{(checked ? on : off).description || (checked ? "先想再答：慢一些，答得更好" : "直接答：快")}</span>
       </span>
       <Button
         role="switch"
         aria-checked={checked}
-        aria-label={`深度思考：${checked ? "开" : "关"}`}
+        aria-label={`Thinking：${checked ? "On" : "Off"}`}
         className="ask-effort-switch-toggle"
         onClick={() => set(thought.id, checked ? off.value : on.value)}
       >
@@ -183,10 +167,10 @@ export function EffortRow({ thought, set }: { thought: AskConfigOption; set: Ask
         value={`${thought.currentValue}`}
         onChange={(value) => set(thought.id, value)}
         colorAt={effortColor}
-        label={<Brain size={13} aria-label={thought.name || "思考强度"} />}
+        label={<Brain size={13} aria-label={thought.name || "Thinking"} />}
         start={<Zap size={12} aria-label="更快" />}
         end={<Sparkles size={12} aria-label="想得更深" />}
-        aria-label={thought.name || "思考强度"}
+        aria-label={thought.name || "Thinking"}
       />
       {current?.description ? <p className="ask-effort-hint">{current.description}</p> : null}
       {note}

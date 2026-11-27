@@ -423,6 +423,7 @@
   font-size: var(--ui-text-xs, 11px);
 }
 
+/* 这一项的说明后端每个模型都给（认不出的模型才是「不一定起作用」那句），所以不标成警告色。 */
 .ask-effort-note {
-  color: color-mix(in srgb, var(--warn) 55%, var(--ink));
+  padding-top: 0;
 }

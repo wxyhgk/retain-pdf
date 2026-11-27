@@ -6,7 +6,7 @@ import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-run
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts）和宿主列出的 agent。
  *
  * 只有两档的思考强度（Qwen3、DeepSeek 这类模型只能开 / 关，2026-11-27）画成一个开关，不画两格的滑块；
- * agent 没给档位起名字（名字就是值，自带 agent 报的 off / on / low …）时换成中文（levelName）。
+ * 档位名、说明照 agent 报的（自带 agent 报中文名和一句说明，档位个数按模型真实能力，2026-11-27 后端 feat/ask-thinking-levels）。
  */
 import { createContext, useContext } from "react";
 import { Brain, SlidersHorizontal, Sparkles, Zap } from "lucide-react";
@@ -24,27 +24,10 @@ export function splitConfig(options) {
     const rest = options.filter((option) => option !== model && option !== thought);
     return { model, thought, rest };
 }
-/** 常见档位值的中文名：只在 agent 没起名字（名字就是值）时用。 */
-const LEVEL_NAMES = {
-    off: "不思考",
-    none: "不思考",
-    disabled: "不思考",
-    on: "思考",
-    enabled: "思考",
-    auto: "自动",
-    minimal: "最低",
-    low: "低",
-    medium: "中",
-    high: "高",
-    xhigh: "很高",
-    max: "最高",
-};
-/** 档位显示的名字：agent 起了名字就照它；名字就是值（没起）时认得的换成中文，认不得的照原样。 */
+/** 档位显示的名字：照 agent 报的（自带 agent 2026-11-27 起报中文：不思考 / 思考 / 极浅 / 浅 / 中 / 深 / 很深 / 最深）；没名字写值。
+ * 以前名字就是值时前端换中文，后端给了名字以后删掉（feat/ask-thinking-levels）。 */
 export function levelName(choice) {
-    const name = `${choice.name || ""}`.trim();
-    if (name && name !== choice.value)
-        return name;
-    return LEVEL_NAMES[`${choice.value}`.trim().toLowerCase()] || name || choice.value;
+    return `${choice.name || ""}`.trim() || choice.value;
 }
 /** 只有两档（从弱到强：关、开）：画成开关，不画滑块。 */
 export function isThinkingSwitch(thought) {
@@ -52,13 +35,14 @@ export function isThinkingSwitch(thought) {
 }
 /** 按钮上、列表里写的档位名。开关关着时不写（按钮上只有模型名），开着写「思考」。 */
 function triggerLevelName(thought, index) {
+    // 档位名不用中文（2026-11-27 用户：「思考不要用中文!」）。
     if (isThinkingSwitch(thought))
-        return index === 1 ? "思考" : "";
+        return index === 1 ? "Thinking" : "";
     return levelName(thought.options[index]);
 }
 /** ModelSelector 要的模型列表：每个模型都带同一份思考强度档位（ACP 的思考强度是整个会话的，不分模型）。 */
 export function toModelOptions(model, thought) {
-    // 档位照 agent 给的（几档、顺序、值）；名字没起的换成中文（levelName）。
+    // 档位照 agent 给的（几档、顺序、值、名字）。
     const efforts = thought ? thought.options.map((choice, index) => ({ id: choice.value, name: triggerLevelName(thought, index) })) : undefined;
     return model.options.map((choice) => ({
         id: choice.value,
@@ -107,11 +91,11 @@ export function currentModelBrand(options) {
     const choice = model.options.find((entry) => entry.value === `${model.currentValue}`);
     return brandFor(`${model.currentValue}`, choice?.name, choice?.group);
 }
-/** 只能开 / 关的思考：一行「深度思考」加一个开关。 */
+/** 只能开 / 关的思考：一行「Thinking」加一个开关（名字不用中文；下面一行说明照 agent 报的）。 */
 function EffortSwitch({ thought, set }) {
     const [off, on] = thought.options;
     const checked = `${thought.currentValue}` === on.value;
-    return (_jsxs("div", { className: "ask-effort ask-effort-switch", "data-on": checked ? "true" : "false", children: [_jsx(Brain, { size: 14, "aria-hidden": true }), _jsxs("span", { className: "ask-effort-switch-text", children: [_jsx("span", { className: "ask-effort-switch-name", children: "\u6DF1\u5EA6\u601D\u8003" }), _jsx("span", { className: "ask-effort-switch-hint", children: (checked ? on : off).description || (checked ? "先想再答：慢一些，答得更好" : "直接答：快") })] }), _jsx(Button, { role: "switch", "aria-checked": checked, "aria-label": `深度思考：${checked ? "开" : "关"}`, className: "ask-effort-switch-toggle", onClick: () => set(thought.id, checked ? off.value : on.value), children: _jsx("span", { "aria-hidden": true }) })] }));
+    return (_jsxs("div", { className: "ask-effort ask-effort-switch", "data-on": checked ? "true" : "false", children: [_jsx(Brain, { size: 14, "aria-hidden": true }), _jsxs("span", { className: "ask-effort-switch-text", children: [_jsx("span", { className: "ask-effort-switch-name", children: "Thinking" }), _jsx("span", { className: "ask-effort-switch-hint", children: (checked ? on : off).description || (checked ? "先想再答：慢一些，答得更好" : "直接答：快") })] }), _jsx(Button, { role: "switch", "aria-checked": checked, "aria-label": `Thinking：${checked ? "On" : "Off"}`, className: "ask-effort-switch-toggle", onClick: () => set(thought.id, checked ? off.value : on.value), children: _jsx("span", { "aria-hidden": true }) })] }));
 }
 /** 弹层里的思考强度：几档的是胶囊滑块，名字照 agent 给的（没起名的换中文），颜色按档位位置（effortColor），左右两头用图标（快 / 想得深）；
  * 只有两档的是开关（EffortSwitch）。 */
@@ -121,7 +105,7 @@ export function EffortRow({ thought, set }) {
     if (isThinkingSwitch(thought))
         return _jsxs(_Fragment, { children: [_jsx(EffortSwitch, { thought: thought, set: set }), note] });
     const current = thought.options.find((choice) => choice.value === `${thought.currentValue}`);
-    return (_jsxs(_Fragment, { children: [_jsx(EffortSlider, { className: "ask-effort", levels: thought.options.map((choice) => ({ id: choice.value, name: levelName(choice), ...(choice.description ? { description: choice.description } : {}) })), value: `${thought.currentValue}`, onChange: (value) => set(thought.id, value), colorAt: effortColor, label: _jsx(Brain, { size: 13, "aria-label": thought.name || "思考强度" }), start: _jsx(Zap, { size: 12, "aria-label": "\u66F4\u5FEB" }), end: _jsx(Sparkles, { size: 12, "aria-label": "\u60F3\u5F97\u66F4\u6DF1" }), "aria-label": thought.name || "思考强度" }), current?.description ? _jsx("p", { className: "ask-effort-hint", children: current.description }) : null, note] }));
+    return (_jsxs(_Fragment, { children: [_jsx(EffortSlider, { className: "ask-effort", levels: thought.options.map((choice) => ({ id: choice.value, name: levelName(choice), ...(choice.description ? { description: choice.description } : {}) })), value: `${thought.currentValue}`, onChange: (value) => set(thought.id, value), colorAt: effortColor, label: _jsx(Brain, { size: 13, "aria-label": thought.name || "Thinking" }), start: _jsx(Zap, { size: 12, "aria-label": "\u66F4\u5FEB" }), end: _jsx(Sparkles, { size: 12, "aria-label": "\u60F3\u5F97\u66F4\u6DF1" }), "aria-label": thought.name || "Thinking" }), current?.description ? _jsx("p", { className: "ask-effort-hint", children: current.description }) : null, note] }));
 }
 /** 按钮上写的：自带的（宿主排第一的）agent 只写模型名；别的 agent 写「Claude Code · Opus」，一眼看出谁在答。 */
 function answererLabel(agent, lead, modelName) {

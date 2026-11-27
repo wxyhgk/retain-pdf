@@ -191,20 +191,20 @@ test("按设置项判断要不要重开：换模型重开，思考强度直接�
   assert.deepEqual(sets.at(-1), ["thought", "high"], "新会话把选过的思考强度再设一次（模型那项是握手定的，不再设）");
 });
 
-/** 自带 agent（backend/ask-agent）报的样子：档位名就是值；Qwen3、DeepSeek 只有 off / on（2026-11-27 用户截图：一个两格的滑块写着红的「on」）。 */
-const BUILTIN_SWITCH = { id: "thought_level", name: "思考强度", category: "thought_level", type: "select", currentValue: "on", options: [{ value: "off", name: "off" }, { value: "on", name: "on" }] };
-const BUILTIN_LEVELS = { id: "thought_level", name: "思考强度", category: "thought_level", type: "select", currentValue: "high", options: ["low", "medium", "high", "max"].map((value) => ({ value, name: value })) };
+/** 自带 agent（backend/ask-agent，2026-11-27 feat/ask-thinking-levels 起）报的样子：档位名英文（用户：「思考不要用中文!」），说明中文；
+ * 自己部署的 Qwen3 只有开 / 关，百炼上的 Qwen 五档。 */
+const BUILTIN_SWITCH = { id: "thought_level", name: "Thinking", category: "thought_level", type: "select", currentValue: "on", options: [{ value: "off", name: "Off" }, { value: "on", name: "On" }] };
+const BUILTIN_LEVELS = { id: "thought_level", name: "Thinking", category: "thought_level", type: "select", currentValue: "high", options: [["off", "Off"], ["low", "Low"], ["medium", "Medium"], ["high", "High"], ["max", "Max"]].map(([value, name]) => ({ value, name })) };
 
-test("档位名：agent 起了名字照它，名字就是值时认得的换中文；只有两档的是开关，按钮上开着写「思考」、关着不写", () => {
-  assert.equal(levelName({ value: "high", name: "High" }), "High", "agent 起了名字（Claude Code 的 High）照原样");
-  assert.equal(levelName({ value: "xhigh", name: "xhigh" }), "很高");
-  assert.equal(levelName({ value: "max", name: "" }), "最高");
-  assert.equal(levelName({ value: "turbo", name: "turbo" }), "turbo", "认不得的照原样");
+test("档位名照 agent 报的（前端不再换中文），没名字写值；档位个数照报的；只有两档的是开关，按钮上开着写「思考」、关着不写", () => {
+  assert.equal(levelName({ value: "high", name: "High" }), "High", "Claude Code 的 High 照原样");
+  assert.equal(levelName({ value: "xhigh", name: "很深" }), "很深");
+  assert.equal(levelName({ value: "max", name: "" }), "max", "没名字写值");
   assert.equal(isThinkingSwitch(BUILTIN_SWITCH), true);
   assert.equal(isThinkingSwitch(BUILTIN_LEVELS), false);
   const model = { id: "model", name: "模型", category: "model", type: "select", currentValue: "q", options: [{ value: "q", name: "Qwen3.8-27B" }] };
-  assert.deepEqual(toModelOptions(model, BUILTIN_SWITCH)[0].efforts, [{ id: "off", name: "" }, { id: "on", name: "思考" }]);
-  assert.deepEqual(toModelOptions(model, BUILTIN_LEVELS)[0].efforts.map((effort) => effort.name), ["低", "中", "高", "最高"]);
+  assert.deepEqual(toModelOptions(model, BUILTIN_SWITCH)[0].efforts, [{ id: "off", name: "" }, { id: "on", name: "Thinking" }], "开关：按钮上开着写 Thinking（不用中文）");
+  assert.deepEqual(toModelOptions(model, BUILTIN_LEVELS)[0].efforts.map((effort) => effort.name), ["Off", "Low", "Medium", "High", "Max"], "五档照报的画");
 });
 
 test("只有开 / 关的思考画成开关：点一下在两个值之间换，不画滑块", async () => {
@@ -224,7 +224,8 @@ test("只有开 / 关的思考画成开关：点一下在两个值之间换，�
     assert.ok(toggle, "是开关");
     assert.equal(document.querySelector(".aui-effort-slider"), null, "没有滑块");
     assert.equal(toggle.getAttribute("aria-checked"), "true");
-    assert.match(document.querySelector(".ask-effort-switch").textContent, /深度思考/);
+    assert.match(document.querySelector(".ask-effort-switch").textContent, /Thinking/, "开关那一行写 Thinking（2026-11-27 用户：思考不要用中文）");
+    assert.doesNotMatch(document.querySelector(".ask-effort-switch-name").textContent, /[\u4e00-\u9fff]/);
     await act(async () => toggle.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
     assert.deepEqual(calls, [["thought_level", "off"]]);
     await act(async () => root.render(React.createElement(EffortRow, { thought: { ...BUILTIN_SWITCH, currentValue: "off" }, set: (id, value) => calls.push([id, value]) })));
@@ -254,7 +255,7 @@ test("后端 2026-11-27 的思考提示：_meta.retainpdf.usage.thinking 读进�
     const { act } = React;
     const { createRoot } = await import("react-dom/client");
     const root = createRoot(document.getElementById("root"));
-    const guessed = { ...BUILTIN_SWITCH, description: "这个模型认不出来，开关不一定起作用；回答完会告诉你它有没有真的思考", options: [{ value: "off", name: "不思考", description: "直接答，最快、最省" }, { value: "on", name: "思考", description: "先想再答，慢一些、多花 token" }] };
+    const guessed = { ...BUILTIN_SWITCH, description: "这个模型认不出来，开关不一定起作用；回答完会告诉你它有没有真的思考", options: [{ value: "off", name: "Off", description: "直接答，最快、最省" }, { value: "on", name: "On", description: "先想再答，慢一些、多花 token" }] };
     await act(async () => root.render(React.createElement(EffortRow, { thought: guessed, set: () => {} })));
     assert.match(document.querySelector(".ask-effort-switch-hint").textContent, /先想再答，慢一些、多花 token/, "开关下面用后端给的档位说明");
     assert.match(document.querySelector(".ask-effort-note").textContent, /不一定起作用/, "这一项的说明写出来，不只在悬停里");
