@@ -135,3 +135,28 @@ test("悬停还没认出块（鼠标刚移过来、点在两段之间）：按�
   assert.equal(anchor.itemId, "top");
   assert.equal(anchor.sourceText, "t");
 });
+
+test("术语记忆加进术语表（11-27）：一句话拆成原文和译法；只认术语类或这本书里写成「X 译为 Y」的；同一个原文换成新译法、别的字段留着", async () => {
+  const { splitTermMemory } = await import("../../../packages/reader/src/ask/term-memory.ts");
+  assert.deepEqual(splitTermMemory("Hamiltonian 定译为哈密顿量"), { source: "Hamiltonian", target: "哈密顿量" });
+  assert.deepEqual(splitTermMemory("「Slater determinant」译作“斯莱特行列式”。"), { source: "Slater determinant", target: "斯莱特行列式" });
+  assert.deepEqual(splitTermMemory("Fock operator → Fock 算符，不要译成福克算子"), { source: "Fock operator", target: "Fock 算符" });
+  assert.deepEqual(splitTermMemory("exchange integral：交换积分"), { source: "exchange integral", target: "交换积分" });
+  assert.deepEqual(splitTermMemory("读到第三章了"), { source: "读到第三章了", target: "" }, "认不出：整句放原文");
+  const { isTermMemory } = await import("../../../packages/reader/src/ask/ReaderMemoryPanel.tsx");
+  assert.equal(isTermMemory({ category: "term", scope: "book", text: "随便" }), true);
+  assert.equal(isTermMemory({ category: "other", scope: "book", text: "spin 译为 自旋" }), true, "自己加的（记不了类别）");
+  assert.equal(isTermMemory({ category: "other", scope: "user", text: "spin 译为 自旋" }), false, "关于你的不算");
+  assert.equal(isTermMemory({ category: "progress", scope: "book", text: "读到第三章了" }), false);
+  const { mergeGlossaryEntry } = await import("../../src/features/reader/domain/ask-glossary-port.ts");
+  const entries = [{ source: "Spin", target: "旋", level: "canonical", match_mode: "exact" }, { source: "orbital", target: "轨道" }];
+  const replaced = mergeGlossaryEntry(entries, { source: "spin ", target: "自旋", note: "阅读页提问时定的" });
+  assert.equal(replaced.replaced, true);
+  assert.deepEqual(replaced.entries[0], { source: "spin ", target: "自旋", level: "canonical", match_mode: "exact", note: "阅读页提问时定的" });
+  assert.equal(replaced.entries.length, 2);
+  const added = mergeGlossaryEntry(entries, { source: "Fock operator", target: "Fock 算符" });
+  assert.equal(added.replaced, false);
+  assert.deepEqual(added.entries.at(-1), { source: "Fock operator", target: "Fock 算符" });
+  const host = readFileSync(new URL("../../src/features/reader/domain/ask-glossary-port.ts", import.meta.url), "utf8");
+  assert.match(host, /expected_updated_at: current\.updated_at/, "整份保存带 updated_at，不盖掉别处的改动");
+});

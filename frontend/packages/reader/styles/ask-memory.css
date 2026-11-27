@@ -80,3 +80,28 @@
   background: color-mix(in srgb, var(--ink) 6%, transparent);
   color: var(--ink);
 }
+
+/* 术语记忆「加进术语表」的那一小块（2026-11-27）：原文 / 译法一行，挑表 + 加进去一行。 */
+.reader-memory-glossary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.reader-memory-glossary-pair {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reader-memory-glossary-pair > input,
+.reader-memory-glossary-pair > .ui-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.reader-memory-note[data-tone="ok"] {
+  margin-top: 4px;
+  color: var(--ink);
+}

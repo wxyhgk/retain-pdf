@@ -5247,7 +5247,7 @@ function Sf({ port: e, documentId: t, resetKey: n, pointOf: r }) {
   }, [t]), u = A((m) => a((d) => d.filter((f) => f.key !== m)), []);
   return { marks: o, addRecords: l, removeMark: u };
 }
-const kf = zo(() => import("./ReaderAskPanel-CdOsuxxw.js"));
+const kf = zo(() => import("./ReaderAskPanel-CrEvLXpy.js"));
 function If({
   port: e,
   documentId: t,
@@ -5802,7 +5802,7 @@ function em(e) {
   const t = M(!1);
   return e && (t.current = !0), t.current;
 }
-const tm = zo(() => import("./ReaderMarkdownPanel-DJiUysbO.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Ca = { id: "markdown", label: "Markdown", short: "MD", Icon: Qf, needsJob: !0 };
+const tm = zo(() => import("./ReaderMarkdownPanel-W5uodOmm.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Ca = { id: "markdown", label: "Markdown", short: "MD", Icon: Qf, needsJob: !0 };
 function nm() {
   const e = Gt(), t = e.activePanel === Ca.id;
   return em(t) ? /* @__PURE__ */ p($o, { fallback: null, children: /* @__PURE__ */ p(tm, { open: t, jobId: e.jobId, sourceOnly: e.sourceOnly, side: "right", onClose: e.closePanel }) }) : null;
@@ -10224,4 +10224,4 @@ export {
   cg as s,
   Je as u
 };
-//# sourceMappingURL=ReaderApp-xMiGCGmE.js.map
+//# sourceMappingURL=ReaderApp-B6H7B-za.js.map

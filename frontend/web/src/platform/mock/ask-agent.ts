@@ -5,7 +5,7 @@
 import type { ContentBlock, SessionUpdate } from "@agentclientprotocol/sdk";
 import type { ReaderAskHandlers, ReaderAskPort, ReaderAskSession, ReaderAskThread, ReaderAskThreadsPort } from "@retainpdf/reader/contracts";
 
-import { mockAskConversations, mockAskMemories } from "./ask-conversations.js";
+import { mockAskConversations, mockAskGlossaries, mockAskMemories } from "./ask-conversations.js";
 
 const AGENTS = [
   { id: "retainpdf", name: "RetainPDF 自带模型", description: "用设置里配好的模型", available: true, acceptsImages: true },
@@ -218,4 +218,5 @@ export const mockAskPort: ReaderAskPort = {
   threads: mockThreads,
   conversations: mockAskConversations,
   memories: mockAskMemories,
+  glossaries: mockAskGlossaries,
 };

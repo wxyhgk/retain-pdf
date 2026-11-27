@@ -1,7 +1,7 @@
 // 演示模式的主对话、副对话（阅读页提问）：存在内存里（刷新就没了），照后端的规矩：主对话只有一个开着的、
 // 消息只追加、幂等号重复回原来那条、副对话结束时主对话末尾追加结论卡片。够演示「?」、深挖、结论卡片、看更早的。
 
-import type { ReaderAskConversationsPort, ReaderAskMemoriesPort } from "@retainpdf/reader/contracts";
+import type { ReaderAskConversationsPort, ReaderAskGlossaryPort, ReaderAskMemoriesPort } from "@retainpdf/reader/contracts";
 import type { AskConversationMessageInput, AskConversationMessageRecord, AskConversationRecord, AskMemoryRecord } from "@retainpdf/api/ai";
 
 const conversations = new Map<string, AskConversationRecord>();
@@ -150,5 +150,23 @@ export const mockAskMemories: ReaderAskMemoriesPort = {
   setEnabled: async (enabled) => {
     memoryEnabled = enabled;
     return { memory_enabled: enabled, updated_at: now() };
+  },
+};
+
+// 术语表也在内存里（记忆面板「加进术语表」演示用），规矩和网页端口一样：同一个原文换成新译法。
+const glossaries: { id: string; name: string; entries: { source: string; target: string; note?: string }[] }[] = [];
+
+export const mockAskGlossaries: ReaderAskGlossaryPort = {
+  list: async () => glossaries.map((table) => ({ id: table.id, name: table.name, entryCount: table.entries.length })),
+  addEntry: async (into, entry) => {
+    let table = "id" in into ? glossaries.find((candidate) => candidate.id === into.id) : undefined;
+    if (!table) {
+      table = { id: nextId("glossary"), name: "name" in into ? into.name : "术语表", entries: [] };
+      glossaries.push(table);
+    }
+    const at = table.entries.findIndex((existing) => existing.source.trim().toLowerCase() === entry.source.trim().toLowerCase());
+    if (at >= 0) table.entries[at] = { ...entry };
+    else table.entries.push({ ...entry });
+    return { id: table.id, name: table.name, replaced: at >= 0 };
   },
 };

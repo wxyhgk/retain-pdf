@@ -156,7 +156,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       onLayout={onLayout}
       answerAction={answerAction}
     />
-    {memories ? <ReaderMemoryPanel port={memories} documentId={book.documentId} open={memoryOpen} onOpenChange={setMemoryOpen} /> : null}
+    {memories ? <ReaderMemoryPanel port={memories} glossaries={port.glossaries} documentId={book.documentId} open={memoryOpen} onOpenChange={setMemoryOpen} /> : null}
     </>
   );
 }
