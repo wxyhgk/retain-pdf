@@ -45,7 +45,8 @@ pub use api::{
 pub use ask_compactions::{create_ask_compaction_view, list_ask_compactions_view, AskSummarizer};
 pub use ask_conversations::{
     append_ask_messages_view, ask_context_view, close_ask_conversation_view, create_side_ask_conversation_view,
-    delete_ask_conversation_view, document_ask_messages_view, ensure_main_ask_conversation_view, get_ask_conversation_view,
+    delete_ask_conversation_view, document_ask_messages_view, ensure_book_main_ask_conversation_view, ensure_main_ask_conversation_view,
+    get_ask_conversation_view,
     list_ask_conversations_view, list_ask_messages_view, patch_ask_conversation_view, supersede_ask_messages_view,
 };
 pub use ask_memories::{
@@ -61,7 +62,7 @@ pub use ask_views::{
     AskModelConnectionInput, CreateAskCompactionInput, CreateAskCompactionView, AskContextParentView, AskContextQuery, AskContextView,
     AskConversationDeleteResultView, AskConversationListView, AskConversationMessageInput, AskMemoryCreatedView,
     AskMemoryListView, AskMessagePageView, AskSelectionInput, CloseAskConversationInput, CloseAskConversationView,
-    CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery,
+    CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, EnsureAskMainConversationInput, ListAskConversationsQuery,
     ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput,
     SupersedeAskMessagesView,
 };

@@ -204,3 +204,141 @@ fn deleting_a_conversation_keeps_memories_and_appending_links_them() {
     assert_eq!((kept.status.as_str(), kept.source_conversation_id.clone(), kept.source_message_id.clone()), ("active", None, None));
     let _ = std::fs::remove_dir_all(root);
 }
+
+/// 2026-11-27 用户定主对话按书分：每本书各有一个开着的主对话，和全局那条（没有书的）互不影响；归档、重新打开按书算；
+/// 书不存在是 None；删书前先把这本书开着的主对话归档（不然书号置空后撞全局那条的唯一索引、书删不掉）。
+#[test]
+fn each_book_has_its_own_open_main_conversation() {
+    let (root, db) = fixture("main-per-book");
+    let (a, b) = (book(&db, "up-a"), book(&db, "up-b"));
+    let global = db.ensure_main_ask_conversation().unwrap();
+    let main_a = db.ensure_book_main_ask_conversation(&a).unwrap().unwrap();
+    let main_b = db.ensure_book_main_ask_conversation(&b).unwrap().unwrap();
+    assert_eq!(main_a.document_id.as_deref(), Some(a.as_str()));
+    assert!(global.document_id.is_none());
+    assert_ne!(main_a.conversation_id, main_b.conversation_id);
+    assert_ne!(main_a.conversation_id, global.conversation_id);
+    assert_eq!(db.ensure_book_main_ask_conversation(&a).unwrap().unwrap().conversation_id, main_a.conversation_id);
+    assert_eq!(db.ensure_main_ask_conversation().unwrap().conversation_id, global.conversation_id);
+    assert!(db.ensure_book_main_ask_conversation("doc-missing").unwrap().is_none());
+
+    // 归档这本书的，再要就是新的一条；旧的不能重新打开（这本书已经有开着的），别的书不受影响
+    let archive = AskConversationChanges { status: Some("archived"), ..Default::default() };
+    assert!(matches!(db.update_ask_conversation(&main_a.conversation_id, &archive).unwrap(), AskConversationUpdated::Updated(_)));
+    let next_a = db.ensure_book_main_ask_conversation(&a).unwrap().unwrap();
+    assert_ne!(next_a.conversation_id, main_a.conversation_id);
+    let reopen = AskConversationChanges { status: Some("open"), ..Default::default() };
+    assert!(matches!(db.update_ask_conversation(&main_a.conversation_id, &reopen).unwrap(), AskConversationUpdated::AnotherOpenMain));
+    let only_a = db.list_ask_conversations(&AskConversationFilter { kind: Some("main"), document_id: Some(&a), ..Default::default() }).unwrap();
+    let mut ids = only_a.iter().map(|c| c.conversation_id.as_str()).collect::<Vec<_>>();
+    ids.sort_unstable();
+    let mut expected = [next_a.conversation_id.as_str(), main_a.conversation_id.as_str()];
+    expected.sort_unstable();
+    assert_eq!(ids, expected, "按书筛只有这本书的（同一秒内的先后不定）");
+
+    // 删书：开着的主对话先归档、书号置空，删得掉；全局那条照旧开着
+    delete_book(&db, &b);
+    let gone = db.get_ask_conversation(&main_b.conversation_id).unwrap().unwrap();
+    assert_eq!((gone.status.as_str(), gone.document_id.as_deref()), ("archived", None));
+    assert_eq!(db.get_ask_conversation(&global.conversation_id).unwrap().unwrap().status, "open");
+    let _ = std::fs::remove_dir_all(root);
+}
+
+/// v45 把以前的全局主对话按书拆开（用户定「按书拆开」）：带书的消息挪到那本书的主对话里、按原来的顺序重新编号；
+/// 没书的留在原来那条；副对话跟着分叉的那条消息走，它的结论卡片跟着它；记忆的出处跟着消息；拆过的对话的压缩摘要作废。
+#[test]
+fn v45_splits_the_old_global_main_conversation_by_book() {
+    let (root, db) = fixture("main-split");
+    let (a, b) = (book(&db, "up-a"), book(&db, "up-b"));
+    let old = db.ensure_main_ask_conversation().unwrap();
+    let id = old.conversation_id.clone();
+    let turns = [
+        (ask("A 第一问", Some(&a), Some(1), None), answer("A 第一答")),
+        (ask("B 第一问", Some(&b), Some(2), None), answer("B 第一答")),
+        (ask("没书的问", None, None, None), answer("没书的答")),
+        (ask("A 第二问", Some(&a), Some(3), None), answer("A 第二答")),
+    ];
+    let mut messages = Vec::new();
+    for (question, reply) in turns {
+        // 旧数据里回答也带着书（前端追加一轮时问和答都带出处）
+        let reply = NewAskConversationMessage { document_id: question.document_id.clone(), ..reply };
+        messages.extend(appended(db.append_ask_conversation_messages(&id, &[question, reply], 100).unwrap()));
+    }
+    let side = match db
+        .create_side_ask_conversation(&NewAskSideConversation {
+            parent_id: &id,
+            forked_from_message_id: Some(&messages[6].message_id),
+            title: "A 的副对话",
+            document_id: None,
+        })
+        .unwrap()
+    {
+        AskSideCreated::Created(side) => side,
+        _ => panic!("side"),
+    };
+    let AskSideClosed::Closed(_, Some(card)) = db.close_side_ask_conversation(&side.conversation_id, Some("A 的结论")).unwrap() else {
+        panic!("closed")
+    };
+    let memory = NewAskMemory {
+        scope: "user".into(),
+        category: "preference".into(),
+        text: "喜欢先看结论".into(),
+        origin: "agent".into(),
+        source_conversation_id: Some(id.clone()),
+        source_message_id: Some(messages[3].message_id.clone()),
+        ..Default::default()
+    };
+    let AskMemoryCreated::Created(memory) = db.create_ask_memory(&memory, 100).unwrap() else { panic!("memory") };
+    let conn = db.connect().unwrap();
+    conn.execute(
+        "INSERT INTO ask_compactions (compaction_id, conversation_id, covers_to_seq, summary, created_at) VALUES ('cmp-1', ?1, 4, '混着两本书', ?2)",
+        rusqlite::params![id, now_iso()],
+    )
+    .unwrap();
+    // 倒回 v44 的样子（索引按 kind、没有触发器）再跑 v45
+    conn.execute_batch(
+        "DROP TRIGGER ask_main_archive_before_document_delete;
+         DROP INDEX idx_ask_conversations_one_open_main;
+         DROP INDEX idx_ask_conversations_main_document;
+         CREATE UNIQUE INDEX idx_ask_conversations_one_open_main ON ask_conversations(kind) WHERE kind = 'main' AND status = 'open';
+         PRAGMA user_version = 44;",
+    )
+    .unwrap();
+    drop(conn);
+    let db = Db::new(root.join("db.sqlite"), root.join("data"));
+    db.init().unwrap();
+
+    let mains = db.list_ask_conversations(&AskConversationFilter { kind: Some("main"), ..Default::default() }).unwrap();
+    assert_eq!(mains.len(), 3, "原来那条 + 两本书各一条");
+    let main_of = |document_id: &str| mains.iter().find(|c| c.document_id.as_deref() == Some(document_id)).unwrap().clone();
+    let (main_a, main_b) = (main_of(&a), main_of(&b));
+    assert!(mains.iter().all(|c| c.status == "open"));
+    let texts = |conversation_id: &str| {
+        db.list_ask_conversation_messages(conversation_id, None, 100)
+            .unwrap()
+            .into_iter()
+            .map(|m| (m.seq, m.text))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        texts(&main_a.conversation_id),
+        [(1, "A 第一问"), (2, "A 第一答"), (3, "A 第二问"), (4, "A 第二答"), (5, "A 的结论")]
+            .map(|(seq, text)| (seq, text.to_string()))
+    );
+    assert_eq!(texts(&main_b.conversation_id), [(1, "B 第一问".to_string()), (2, "B 第一答".to_string())]);
+    assert_eq!(texts(&id), [(5, "没书的问".to_string()), (6, "没书的答".to_string())]);
+    assert_eq!(db.get_ask_conversation_message(&card.message_id).unwrap().unwrap().conversation_id, main_a.conversation_id);
+    assert_eq!(db.get_ask_conversation(&side.conversation_id).unwrap().unwrap().parent_id.as_deref(), Some(main_a.conversation_id.as_str()));
+    assert_eq!(db.get_ask_memory(&memory.memory_id).unwrap().unwrap().source_conversation_id.as_deref(), Some(main_b.conversation_id.as_str()));
+    let superseded: Option<String> = db
+        .connect()
+        .unwrap()
+        .query_row("SELECT superseded_at FROM ask_compactions WHERE compaction_id = 'cmp-1'", [], |row| row.get(0))
+        .unwrap();
+    assert!(superseded.is_some(), "混着几本书的压缩摘要要作废");
+    // 拆完以后照旧按书取到同一条，往里追加接着编号
+    assert_eq!(db.ensure_book_main_ask_conversation(&a).unwrap().unwrap().conversation_id, main_a.conversation_id);
+    let next = appended(db.append_ask_conversation_messages(&main_a.conversation_id, &[ask("A 第三问", Some(&a), None, None)], 100).unwrap());
+    assert_eq!(next[0].seq, 6);
+    let _ = std::fs::remove_dir_all(root);
+}

@@ -18,7 +18,7 @@ use crate::ask_views::{
     AppendAskMessagesInput, AppendAskMessagesView, AskContextMemoriesView, AskContextParentView, AskContextQuery, AskContextView,
     AskCompactionPointView, AskConversationDeleteResultView, AskConversationListView, AskConversationMessageInput, AskMessagePageView,
     AskSelectionInput,
-    CloseAskConversationInput, CloseAskConversationView, CreateAskSideConversationInput, DocumentAskMessagesView,
+    CloseAskConversationInput, CloseAskConversationView, CreateAskSideConversationInput, DocumentAskMessagesView, EnsureAskMainConversationInput,
     ListAskConversationsQuery, ListAskMessagesQuery, PatchAskConversationInput, SupersedeAskMessagesView,
 };
 use crate::LibraryDeps;
@@ -243,8 +243,22 @@ fn checked_title(title: Option<&str>) -> Result<Option<String>, AppError> {
 
 // --- 对话 ---
 
+/// 全局主对话（不属于哪本书的）。
 pub fn ensure_main_ask_conversation_view(deps: &LibraryDeps<'_>) -> Result<AskConversationRecord, AppError> {
     Ok(deps.db.ensure_main_ask_conversation()?)
+}
+
+/// POST /ai/ask-conversations/main：带了 `document_id` 取或建这本书开着的主对话，不带是全局那条（2026-11-27 起主对话按书分）。
+pub fn ensure_book_main_ask_conversation_view(
+    deps: &LibraryDeps<'_>,
+    payload: &EnsureAskMainConversationInput,
+) -> Result<AskConversationRecord, AppError> {
+    let Some(document_id) = checked_id(payload.document_id.as_deref(), "document_id")? else {
+        return ensure_main_ask_conversation_view(deps);
+    };
+    deps.db
+        .ensure_book_main_ask_conversation(&document_id)?
+        .ok_or_else(|| AppError::not_found(format!("document not found: {document_id}")))
 }
 
 pub fn list_ask_conversations_view(
@@ -261,7 +275,13 @@ pub fn list_ask_conversations_view(
         return Err(AppError::bad_request("status must be open, closed or archived"));
     }
     let parent_id = checked_id(query.parent_id.as_deref(), "parent_id")?;
-    let filter = AskConversationFilter { kind: kind.as_deref(), status: status.as_deref(), parent_id: parent_id.as_deref() };
+    let document_id = checked_id(query.document_id.as_deref(), "document_id")?;
+    let filter = AskConversationFilter {
+        kind: kind.as_deref(),
+        status: status.as_deref(),
+        parent_id: parent_id.as_deref(),
+        document_id: document_id.as_deref(),
+    };
     Ok(AskConversationListView { conversations: deps.db.list_ask_conversations(&filter)? })
 }
 

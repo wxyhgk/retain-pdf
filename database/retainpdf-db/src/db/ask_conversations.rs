@@ -116,7 +116,7 @@ pub enum AskConversationUpdated {
     NotFound,
     /// 这种对话不能是这个状态（主对话没有 `closed`）。
     BadStatus,
-    /// 重新打开一个主对话时已经有一个开着的了。
+    /// 重新打开一个主对话时，同一本书（没有书的是全局那条）已经有一个开着的了。
     AnotherOpenMain,
 }
 
@@ -326,17 +326,34 @@ pub struct AskConversationFilter<'a> {
     pub kind: Option<&'a str>,
     pub status: Option<&'a str>,
     pub parent_id: Option<&'a str>,
+    /// 只要这本书的（主对话是这本书的那条，副对话是开在这本书的）。
+    pub document_id: Option<&'a str>,
 }
 
 impl Db {
-    /// 当前开着的主对话；没有就建一条空的（幂等：同一时间只有一个开着的主对话）。
+    /// 当前开着的全局主对话（不属于哪本书的）；没有就建一条空的。见 [`Db::ensure_book_main_ask_conversation`]。
     pub fn ensure_main_ask_conversation(&self) -> Result<AskConversationRecord> {
+        self.ensure_main_ask_conversation_in(None)?.context("global main ask conversation")
+    }
+
+    /// 这本书开着的主对话；没有就建一条空的（幂等：每本书同一时间只有一个开着的主对话，v45 起，2026-11-27 用户定主对话按书分）。
+    /// 书不存在是 None。
+    pub fn ensure_book_main_ask_conversation(&self, document_id: &str) -> Result<Option<AskConversationRecord>> {
+        self.ensure_main_ask_conversation_in(Some(document_id))
+    }
+
+    fn ensure_main_ask_conversation_in(&self, document_id: Option<&str>) -> Result<Option<AskConversationRecord>> {
         let mut conn = self.connect()?;
         let tx = conn.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        if let Some(document_id) = document_id {
+            if !document_exists(&tx, document_id)? {
+                return Ok(None);
+            }
+        }
         let existing: Option<String> = tx
             .query_row(
-                "SELECT conversation_id FROM ask_conversations WHERE kind = 'main' AND status = 'open'",
-                [],
+                "SELECT conversation_id FROM ask_conversations WHERE kind = 'main' AND status = 'open' AND document_id IS ?1",
+                params![document_id],
                 |row| row.get(0),
             )
             .optional()?;
@@ -346,16 +363,16 @@ impl Db {
                 let id = format!("conv-{}", build_job_id());
                 let now = now_iso();
                 tx.execute(
-                    "INSERT INTO ask_conversations (conversation_id, kind, status, created_at, updated_at)
-                     VALUES (?1, 'main', 'open', ?2, ?2)",
-                    params![id, now],
+                    "INSERT INTO ask_conversations (conversation_id, kind, status, document_id, created_at, updated_at)
+                     VALUES (?1, 'main', 'open', ?2, ?3, ?3)",
+                    params![id, document_id, now],
                 )?;
                 id
             }
         };
         let record = load_conversation(&tx, &conversation_id)?.context("load main ask conversation")?;
         tx.commit()?;
-        Ok(record)
+        Ok(Some(record))
     }
 
     /// 开一个副对话（父对话必须是主对话）。
@@ -397,7 +414,12 @@ impl Db {
         let conn = self.connect()?;
         let mut conditions: Vec<String> = Vec::new();
         let mut values: Vec<rusqlite::types::Value> = Vec::new();
-        for (column, value) in [("c.kind", filter.kind), ("c.status", filter.status), ("c.parent_id", filter.parent_id)] {
+        for (column, value) in [
+            ("c.kind", filter.kind),
+            ("c.status", filter.status),
+            ("c.parent_id", filter.parent_id),
+            ("c.document_id", filter.document_id),
+        ] {
             if let Some(value) = value {
                 values.push(value.to_string().into());
                 conditions.push(format!("{column} = ?{}", values.len()));

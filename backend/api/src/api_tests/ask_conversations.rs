@@ -14,6 +14,7 @@ use super::library_documents_contract::assert_request_fields_match;
 use super::library_paging::{seed_document, send};
 use crate::app::{build_app, build_state};
 use crate::models::api::{
+    EnsureAskMainConversationInput,
     AppendAskMessagesInput, AskContextQuery, AskConversationMessageInput, AskSelectionInput, CloseAskConversationInput, CreateAskMemoryInput, CreateAskSideConversationInput,
     ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput,
     PatchAskSettingsInput, AskModelConnectionInput, CreateAskCompactionInput,
@@ -43,6 +44,7 @@ fn request_bodies_and_queries_accept_exactly_the_contract_fields() {
     assert_request_fields_match::<AskConversationMessageInput>(&contract, "AskConversationMessageInput");
     assert_request_fields_match::<AskSelectionInput>(&contract, "AskSelectionInput");
     assert_request_fields_match::<CreateAskSideConversationInput>(&contract, "CreateAskSideConversationInput");
+    assert_request_fields_match::<EnsureAskMainConversationInput>(&contract, "EnsureAskMainConversationInput");
     assert_request_fields_match::<PatchAskConversationInput>(&contract, "PatchAskConversationInput");
     assert_request_fields_match::<CloseAskConversationInput>(&contract, "CloseAskConversationInput");
     assert_request_fields_match::<ListAskConversationsQuery>(&contract, "ListAskConversationsQuery");
@@ -54,6 +56,41 @@ fn request_bodies_and_queries_accept_exactly_the_contract_fields() {
     assert_request_fields_match::<PatchAskSettingsInput>(&contract, "PatchAskSettingsInput");
     assert_request_fields_match::<AskModelConnectionInput>(&contract, "AskModelConnectionInput");
     assert_request_fields_match::<CreateAskCompactionInput>(&contract, "CreateAskCompactionInput");
+}
+
+/// 主对话按书分（2026-11-27 用户定）：`POST …/main` 带 `{document_id}` 取或建这本书开着的主对话，不带请求体照旧是全局那条；
+/// 书不存在 404；请求体里不认识的字段 400；列对话能按书筛。
+#[tokio::test]
+async fn main_conversation_is_per_book_when_a_document_is_given() {
+    let state = test_state("ask-conversations-main-per-book");
+    let contract = contract(CONTRACT);
+    let (a, b) = (seed_document(&state, b"ask-main-book-a"), seed_document(&state, b"ask-main-book-b"));
+    let global = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", None).await;
+    assert!(global["document_id"].is_null());
+    let main_a = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", Some(json!({ "document_id": a }))).await;
+    assert_definition(&main_a, &contract, "AskConversationRecord", "main_a");
+    assert_eq!(main_a["document_id"], a.as_str());
+    let main_b = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", Some(json!({ "document_id": b }))).await;
+    assert_ne!(main_a["conversation_id"], main_b["conversation_id"]);
+    assert_ne!(main_a["conversation_id"], global["conversation_id"]);
+    let again = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", Some(json!({ "document_id": a }))).await;
+    assert_eq!(again["conversation_id"], main_a["conversation_id"]);
+    // 空的请求体、document_id 为 null 都是全局那条
+    let empty = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", Some(json!({}))).await;
+    assert_eq!(empty["conversation_id"], global["conversation_id"]);
+    let null = ok_data(&state, "POST", "/api/v1/ai/ask-conversations/main", Some(json!({ "document_id": null }))).await;
+    assert_eq!(null["conversation_id"], global["conversation_id"]);
+
+    let (status, payload) = send(&state, "POST", "/api/v1/ai/ask-conversations/main", Some(json!({ "document_id": "doc-missing" }))).await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "{payload}");
+    let (status, payload) = send(&state, "POST", "/api/v1/ai/ask-conversations/main", Some(json!({ "book": a }))).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{payload}");
+    assert_eq!(payload["error"]["details"]["reason"], "unknown_field");
+
+    let listed = ok_data(&state, "GET", &format!("/api/v1/ai/ask-conversations?kind=main&document_id={a}"), None).await;
+    assert_definition(&listed, &contract, "AskConversationListView", "listed");
+    let ids: Vec<&str> = listed["conversations"].as_array().unwrap().iter().map(|c| c["conversation_id"].as_str().unwrap()).collect();
+    assert_eq!(ids, [main_a["conversation_id"].as_str().unwrap()]);
 }
 
 /// 第二期（2026-11-26）：压缩接口。没东西可压时 409、不调模型；列压缩摘要；消息分页带压缩点（空的）；追加的返回带 compaction_due。
