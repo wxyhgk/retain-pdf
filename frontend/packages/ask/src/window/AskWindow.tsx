@@ -3,7 +3,7 @@
  * - 窗口：react-rnd。三种摆法：浮动（标题栏拖动、边角调大小）、贴右边（占满右侧，左边框拖宽窄）、放大；双击标题栏放大 / 还原。
  *   Esc / ✕ 关。标题栏见 AskHeader.tsx（图标为主）。
  * - 一直延续的对话（2026-11-26 主对话）：输入框上面是下一问带的出处、问题上面是问的哪儿、「深挖」、「已记住（撤销）」，见 conversation.tsx；
- *   每答完一轮交给宿主追加（use-turns.ts）。
+ *   每答完一轮交给宿主追加（use-turns.ts）。回答里选字，下一问引用那段（answer-quote.tsx）。
  * - 对话：整套照搬 assistant-ui 官方的 Thread（../ui/elements/thread.aui.tsx：复制、重新回答、改问题、版本切换、回到最下面、
  *   Markdown + KaTeX、思考、工具调用分组、许可），runtime 是 LocalRuntime + 我们的 ACP 适配（../acp/adapter.ts）。
  * - 我们往里塞的几块在 blocks.tsx：工具调用一行一个、工具分组的图标、计划 / 子 agent、「在想…」、用量（图标）、常问。
@@ -35,7 +35,8 @@ import { AskSendContext } from "./ask-send.js";
 import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand, type AskConfigState } from "./AskModelPicker.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
-import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, PendingContextBar, QuestionContextTag, type AskConversationUi } from "./conversation.js";
+import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag, type AskConversationUi } from "./conversation.js";
+import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
 import { useTurns } from "./use-turns.js";
 
 const KATEX_LINK_ID = "retainpdf-katex-css";
@@ -216,6 +217,9 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     forget: onForgetMemory,
     memories,
   }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories]);
+  // 回答里选字 → 下一问引用这段（answer-quote.tsx）。
+  const threadRoot = useRef<HTMLDivElement | null>(null);
+  const answerQuote = useAnswerQuote(threadRoot, !readOnly);
   const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
   // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
   const send = useMemo(() => (text: string) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);
@@ -229,11 +233,13 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       Welcome: makeWelcome(send),
       MessageFooter: makeMessageFooter(agentName, ConversationFooter),
       HistoryTop: EarlierHistory,
-      ComposerTop: PendingContextBar,
+      ComposerTop: ComposerBars,
       UserMessageTop: QuestionContextTag,
       MessageAfter,
+      prepareSend: answerQuote.prepareSend,
+      UserText,
     }),
-    [agents, runtime], // eslint-disable-line react-hooks/exhaustive-deps
+    [agents, runtime, answerQuote.prepareSend], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const pages = useMemo<AskPageJump | null>(() => (onJumpToPage ? { pageCount, jump: onJumpToPage } : null), [onJumpToPage, pageCount]);
 
@@ -304,10 +310,11 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
           <PermissionContext.Provider value={permissions}>
             <AskSendContext.Provider value={send}>
             <AskConfigContext.Provider value={configState}>
+            <AnswerQuoteProvider value={answerQuote.ui}>
             <AssistantRuntimeProvider runtime={runtime}>
               <PlanDataUI />
               <SubagentDataUI />
-              <div className="ask-thread">
+              <div className="ask-thread" ref={threadRoot}>
                 {brand ? (
                   <div className="ask-watermark" aria-hidden>
                     <BrandIcon brand={brand} size={200} />
@@ -316,6 +323,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
                 <Thread components={threadComponents} autoFocus />
               </div>
             </AssistantRuntimeProvider>
+            </AnswerQuoteProvider>
             </AskConfigContext.Provider>
             </AskSendContext.Provider>
           </PermissionContext.Provider>

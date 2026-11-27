@@ -45,6 +45,8 @@ import type { AskPort, AskContext, AskMessage, AskTurnRecord } from "@retainpdf/
 - **新会话的前文**：agent 报了 `capabilities.conversation`（自己取）就不带；宿主给了 `AskPort.conversationPreamble` 用它；不然拼窗口里看得到的前几轮。
 - **`AskSession.capabilities`** 是 `initialize` 里的 `agentCapabilities._meta.retainpdf`（`selection`、`conversation`、`memory`），`socket.ts` 读。
 - **`AskMessage`** 是存的格式（`role`、`text`、`thought`、`usage`，2026-11-26 加 `id`、`context`、`marks`）。字段只增不改。
+- **引用回复**：在回答上选字，输入框上面出「引用回答」，发问时写成「> …」放在问题前面，问题气泡里开头的引用画成引用框（`src/window/answer-quote.tsx`）。
+  照搬的 Thread 为它加了 `prepareSend`、`UserText` 两个插槽。
 - **「已记住」**：工具卡片完成时 `_meta.retainpdf.memory` 有值，回答正文下面画「已记住：……（撤销）」（`src/window/conversation.tsx`）。
 
 ## 里面有什么

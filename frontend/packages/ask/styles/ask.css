@@ -1008,6 +1008,31 @@
   margin: 0;
 }
 
+/* 回答里选字引用回复（answer-quote.tsx）：输入框上面点开看的那段、问题气泡开头的引用框。 */
+.ask-reply-quote-text,
+.ask-user-quote {
+  margin: 0;
+  padding: 2px 0 2px 8px;
+  border-left: 2px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  color: var(--muted);
+  font-size: 0.92em;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+.ask-reply-quote-text {
+  max-height: 8.5em;
+  overflow-y: auto;
+}
+
+.ask-user-quote {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-bottom: 6px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
 .ask-earlier {
   display: flex;
   justify-content: center;

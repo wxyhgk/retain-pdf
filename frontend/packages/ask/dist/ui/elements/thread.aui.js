@@ -5,6 +5,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 // 思考用时不取整；「回到最下面」挪到右边、变小（原来居中压在正文上）；边距收紧、输入框提示缩短（提问窗窄）；
 // 2026-11-26 加四个插槽：HistoryTop（消息上面：「更早的」）、ComposerTop（输入框上面：这一问的出处）、UserMessageTop（问题上面：问的是哪儿）、
 // MessageAfter（回答正文下面：「已记住」、压缩点）。
+// 2026-11-27 加 prepareSend（发问之前改一下输入框的字：带上回答里引用的那段，回车和发送键都走）、UserText（问题气泡里的字怎么画）。
 import { ComposerAddAttachment, ComposerAttachments, UserMessageAttachments, } from "./attachment.aui.js";
 import { File, getFileHref } from "./file.js";
 import { ThreadFollowupSuggestions } from "./follow-up-suggestions.aui.js";
@@ -17,7 +18,7 @@ import { TooltipIconButton } from "./tooltip-icon-button.js";
 import { Button } from "../shadcn/button.js";
 import { Skeleton } from "../shadcn/skeleton.js";
 import { cn } from "../lib/utils.js";
-import { ActionBarMorePrimitive, ActionBarPrimitive, AuiIf, BranchPickerPrimitive, ComposerPrimitive, ErrorPrimitive, groupPartByType, MessagePrimitive, SuggestionPrimitive, ThreadPrimitive, useAuiState, } from "@assistant-ui/react";
+import { ActionBarMorePrimitive, ActionBarPrimitive, AuiIf, BranchPickerPrimitive, ComposerPrimitive, ErrorPrimitive, groupPartByType, MessagePrimitive, SuggestionPrimitive, ThreadPrimitive, useAui, useAuiState, } from "@assistant-ui/react";
 import { ArrowDownIcon, ArrowUpIcon, AudioLinesIcon, CheckIcon, ChevronLeftIcon, ChevronRightIcon, CopyIcon, DownloadIcon, MicIcon, MoreHorizontalIcon, PencilIcon, PhoneIcon, RefreshCwIcon, TriangleAlertIcon, Loader2Icon, SquareIcon, PlayIcon, ThumbsDownIcon, ThumbsUpIcon, } from "lucide-react";
 import { createContext, useContext, useLayoutEffect, useRef, useState, } from "react";
 const DefaultToolGroup = ({ group, children, }) => {
@@ -28,6 +29,19 @@ const shouldShowComposerResume = (s) => !!s.thread.canResume && s.composer.type 
 const reasoningDuration = (timing) => timing?.completedAt === undefined
     ? undefined
     : (timing.completedAt - timing.startedAt) / 1000;
+/** RetainPDF：回车（表单提交）和发送键发出去之前，先让 prepareSend 改一下输入框的字。 */
+function useBeforeSend() {
+    const { prepareSend } = useContext(ThreadComponentsContext);
+    const aui = useAui();
+    return () => {
+        if (!prepareSend)
+            return;
+        const text = aui.composer.getState().text;
+        const next = prepareSend(text);
+        if (next !== text)
+            aui.composer.setText(next);
+    };
+}
 const messageGroupBy = groupPartByType({
     reasoning: ["group-chainOfThought", "group-reasoning"],
     "tool-call": ["group-chainOfThought", "group-tool"],
@@ -149,17 +163,19 @@ const ThreadSuggestionItem = () => {
     return (_jsx("div", { className: "aui-thread-welcome-suggestion-display fade-in slide-in-from-bottom-2 animate-in fill-mode-both duration-200", children: _jsx(SuggestionPrimitive.Trigger, { send: true, asChild: true, children: _jsxs("button", { type: "button", className: "aui-thread-welcome-suggestion group hover:bg-foreground/[0.03] focus-visible:ring-ring/50 flex w-full items-baseline gap-2.5 rounded-md px-2 py-2 text-start text-sm transition-colors outline-none focus-visible:ring-1 motion-reduce:transition-none", children: [_jsx("span", { "aria-hidden": true, className: "text-muted-foreground/60 group-hover:text-foreground font-mono text-xs transition-colors motion-reduce:transition-none", children: ">" }), _jsxs("span", { className: "min-w-0 flex-1 truncate", children: [_jsx(SuggestionPrimitive.Title, { className: "aui-thread-welcome-suggestion-text-1 text-foreground" }), " ", _jsx(SuggestionPrimitive.Description, { className: "aui-thread-welcome-suggestion-text-2 text-muted-foreground empty:hidden" })] })] }) }) }));
 };
 const Composer = ({ autoFocus }) => {
-    return (_jsx(ComposerPrimitive.Root, { className: "aui-composer-root relative flex w-full flex-col", children: _jsx(ComposerPrimitive.AttachmentDropzone, { asChild: true, children: _jsxs("div", { "data-slot": "aui_composer-shell", className: "border-foreground/10 focus-within:border-foreground/25 data-[dragging=true]:border-ring flex w-full cursor-text flex-col gap-2 rounded-(--composer-radius) border bg-(--composer-bg) p-(--composer-padding) transition-[border-color] data-[dragging=true]:border-dashed data-[dragging=true]:bg-[color-mix(in_oklab,var(--color-accent)_50%,var(--color-background))]", children: [_jsx(ComposerAttachments, {}), _jsx(ComposerPrimitive.Input, { placeholder: "\u95EE\u70B9\u4EC0\u4E48\u2026", className: "aui-composer-input caret-primary placeholder:text-muted-foreground/60 max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none", rows: 1, autoFocus: autoFocus, enterKeyHint: "send", "aria-label": "\u8F93\u5165\u95EE\u9898", title: "Enter \u53D1\u9001\uFF0CShift+Enter \u6362\u884C" }), _jsx(ComposerAction, {})] }) }) }));
+    const beforeSend = useBeforeSend();
+    return (_jsx(ComposerPrimitive.Root, { className: "aui-composer-root relative flex w-full flex-col", onSubmit: beforeSend, children: _jsx(ComposerPrimitive.AttachmentDropzone, { asChild: true, children: _jsxs("div", { "data-slot": "aui_composer-shell", className: "border-foreground/10 focus-within:border-foreground/25 data-[dragging=true]:border-ring flex w-full cursor-text flex-col gap-2 rounded-(--composer-radius) border bg-(--composer-bg) p-(--composer-padding) transition-[border-color] data-[dragging=true]:border-dashed data-[dragging=true]:bg-[color-mix(in_oklab,var(--color-accent)_50%,var(--color-background))]", children: [_jsx(ComposerAttachments, {}), _jsx(ComposerPrimitive.Input, { placeholder: "\u95EE\u70B9\u4EC0\u4E48\u2026", className: "aui-composer-input caret-primary placeholder:text-muted-foreground/60 max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none", rows: 1, autoFocus: autoFocus, enterKeyHint: "send", "aria-label": "\u8F93\u5165\u95EE\u9898", title: "Enter \u53D1\u9001\uFF0CShift+Enter \u6362\u884C" }), _jsx(ComposerAction, {})] }) }) }));
 };
 const ComposerAction = () => {
     const { ComposerExtra } = useContext(ThreadComponentsContext);
+    const beforeSend = useBeforeSend();
     // The stop control only cancels the send while no run it could stop is going.
     const isSending = useAuiState((s) => s.composer.submission !== undefined &&
         !(s.thread.isRunning && s.thread.capabilities.cancel));
     return (_jsxs("div", { className: "aui-composer-action-wrapper relative flex items-center justify-between", children: [ComposerExtra ? (_jsxs("div", { className: "aui-composer-action-start flex items-center gap-1.5", children: [_jsx(ComposerAddAttachment, {}), _jsx(ComposerExtra, {})] })) : (_jsx(ComposerAddAttachment, {})), _jsxs("div", { className: "flex items-center gap-1.5", children: [_jsxs(AuiIf, { condition: (s) => s.thread.capabilities.dictation, children: [_jsx(AuiIf, { condition: (s) => s.composer.dictation == null, children: _jsx(ComposerPrimitive.Dictate, { asChild: true, children: _jsx(TooltipIconButton, { tooltip: "\u8BED\u97F3\u8F93\u5165", side: "bottom", type: "button", variant: "ghost", size: "icon", className: "aui-composer-dictate text-muted-foreground hover:text-foreground size-7 rounded-full", "aria-label": "\u5F00\u59CB\u8BED\u97F3\u8F93\u5165", children: _jsx(MicIcon, { className: "aui-composer-dictate-icon size-4" }) }) }) }), _jsx(AuiIf, { condition: (s) => s.composer.dictation != null, children: _jsx(ComposerPrimitive.StopDictation, { asChild: true, children: _jsx(TooltipIconButton, { tooltip: "\u505C\u6B62\u542C\u5199", side: "bottom", type: "button", variant: "ghost", size: "icon", className: "aui-composer-stop-dictation text-destructive size-7 rounded-full", "aria-label": "\u505C\u6B62\u8BED\u97F3\u8F93\u5165", children: _jsx(SquareIcon, { className: "aui-composer-stop-dictation-icon size-3.5 animate-pulse fill-current" }) }) }) })] }), _jsx(AuiIf, { condition: (s) => (!s.composer.canCancel ||
                             (s.thread.voice !== undefined &&
                                 s.composer.submission === undefined)) &&
-                            !shouldShowComposerResume(s), children: _jsx(ComposerPrimitive.Send, { asChild: true, children: _jsx(TooltipIconButton, { tooltip: "\u53D1\u9001", side: "bottom", type: "button", variant: "default", size: "icon", className: "aui-composer-send size-7 rounded-full", "aria-label": "\u53D1\u9001", children: _jsx(ArrowUpIcon, { className: "aui-composer-send-icon size-4" }) }) }) }), _jsx(AuiIf, { condition: shouldShowComposerResume, children: _jsx(ComposerPrimitive.Resume, { asChild: true, children: _jsx(TooltipIconButton, { tooltip: "\u63A5\u7740\u751F\u6210", side: "bottom", type: "button", variant: "default", size: "icon", className: "aui-composer-resume size-7 rounded-full", "aria-label": "\u63A5\u7740\u751F\u6210", children: _jsx(PlayIcon, { className: "aui-composer-resume-icon size-4" }) }) }) }), _jsx(AuiIf, { condition: (s) => s.composer.canCancel &&
+                            !shouldShowComposerResume(s), children: _jsx(ComposerPrimitive.Send, { asChild: true, onClick: beforeSend, children: _jsx(TooltipIconButton, { tooltip: "\u53D1\u9001", side: "bottom", type: "button", variant: "default", size: "icon", className: "aui-composer-send size-7 rounded-full", "aria-label": "\u53D1\u9001", children: _jsx(ArrowUpIcon, { className: "aui-composer-send-icon size-4" }) }) }) }), _jsx(AuiIf, { condition: shouldShowComposerResume, children: _jsx(ComposerPrimitive.Resume, { asChild: true, children: _jsx(TooltipIconButton, { tooltip: "\u63A5\u7740\u751F\u6210", side: "bottom", type: "button", variant: "default", size: "icon", className: "aui-composer-resume size-7 rounded-full", "aria-label": "\u63A5\u7740\u751F\u6210", children: _jsx(PlayIcon, { className: "aui-composer-resume-icon size-4" }) }) }) }), _jsx(AuiIf, { condition: (s) => s.composer.canCancel &&
                             (s.thread.voice === undefined ||
                                 s.composer.submission !== undefined), children: _jsx(ComposerPrimitive.Cancel, { asChild: true, children: _jsx(Button, { type: "button", variant: "default", size: "icon", className: "aui-composer-cancel size-7 rounded-full", "aria-label": isSending ? "取消发送" : "停下", children: _jsx(SquareIcon, { className: "aui-composer-cancel-icon size-3.5 fill-current" }) }) }) })] })] }));
 };
@@ -225,8 +241,8 @@ const MessageFile = (part) => {
 const UserFilePart = (part) => (_jsx("div", { "data-slot": "aui_user-message-file", className: "py-1", children: _jsx(MessageFile, { ...part }) }));
 const UserImagePart = (part) => (_jsx("div", { "data-slot": "aui_user-message-image", className: "py-1", children: _jsx(MessageImage, { ...part }) }));
 const UserMessage = () => {
-    const { UserMessageTop } = useContext(ThreadComponentsContext);
-    return (_jsxs(MessagePrimitive.Root, { "data-slot": "aui_user-message-root", className: "fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto] [&:where(>*)]:col-start-2", "data-role": "user", children: [UserMessageTop ? _jsx(UserMessageTop, {}) : null, _jsx(UserMessageAttachments, {}), _jsxs("div", { className: "aui-user-message-content-wrapper relative col-start-2 min-w-0", children: [_jsx("div", { className: "aui-user-message-content peer bg-muted text-foreground rounded-(--composer-radius) px-4 py-2 wrap-break-word empty:hidden", children: _jsx(MessagePrimitive.Parts, { components: { File: UserFilePart, Image: UserImagePart } }) }), _jsx("div", { className: "aui-user-action-bar-wrapper absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full", children: _jsx(UserActionBar, {}) })] }), _jsx(BranchPicker, { "data-slot": "aui_user-branch-picker", className: "col-span-full col-start-1 -me-1 justify-end" })] }));
+    const { UserMessageTop, UserText } = useContext(ThreadComponentsContext);
+    return (_jsxs(MessagePrimitive.Root, { "data-slot": "aui_user-message-root", className: "fade-in slide-in-from-bottom-1 animate-in grid auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] content-start gap-y-2 px-2 duration-150 [contain-intrinsic-size:auto_200px] [content-visibility:auto] [&:where(>*)]:col-start-2", "data-role": "user", children: [UserMessageTop ? _jsx(UserMessageTop, {}) : null, _jsx(UserMessageAttachments, {}), _jsxs("div", { className: "aui-user-message-content-wrapper relative col-start-2 min-w-0", children: [_jsx("div", { className: "aui-user-message-content peer bg-muted text-foreground rounded-(--composer-radius) px-4 py-2 wrap-break-word empty:hidden", children: _jsx(MessagePrimitive.Parts, { components: { File: UserFilePart, Image: UserImagePart, ...(UserText ? { Text: UserText } : {}) } }) }), _jsx("div", { className: "aui-user-action-bar-wrapper absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full", children: _jsx(UserActionBar, {}) })] }), _jsx(BranchPicker, { "data-slot": "aui_user-branch-picker", className: "col-span-full col-start-1 -me-1 justify-end" })] }));
 };
 const UserActionBar = () => {
     return (_jsx(ActionBarPrimitive.Root, { hideWhenRunning: true, autohide: "not-last", className: "aui-user-action-bar-root flex flex-col items-end", children: _jsx(ActionBarPrimitive.Edit, { asChild: true, children: _jsx(TooltipIconButton, { tooltip: "\u6539\u8FD9\u4E2A\u95EE\u9898", className: "aui-user-action-edit", children: _jsx(PencilIcon, {}) }) }) }));

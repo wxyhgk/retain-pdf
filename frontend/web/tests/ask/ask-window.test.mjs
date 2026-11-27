@@ -9,6 +9,7 @@ import { compactNumber, emptyTurn, turnFooterItems } from "../../../packages/ask
 import { toInitialMessages, toStoredMessages } from "../../../packages/ask/src/acp/messages.ts";
 import { splitMath } from "../../../packages/ask/src/window/AskQuote.tsx";
 import { shortAgentName } from "../../../packages/ask/src/window/AskHeader.tsx";
+import { QUOTE_LIMIT, answerSelectionText, rangeText, splitQuote, withQuote } from "../../../packages/ask/src/window/answer-quote.tsx";
 
 const pages = (segments) => segments.filter((segment) => segment.type === "page").map((segment) => segment.page);
 
@@ -76,6 +77,39 @@ test("思考用时存进问答记录，重新打开放回思考那一段（标�
 test("名字短写：「RetainPDF 自带模型」→「自带模型」，别的不动", () => {
   assert.equal(shortAgentName("RetainPDF 自带模型"), "自带模型");
   assert.equal(shortAgentName("Claude Code"), "Claude Code");
+});
+
+test("回答里选字引用回复：引用写成「> 」放在问题前面、拆得回来；公式换回 TeX；只认回答里的选区；超长截断", () => {
+  const sent = withQuote("第一行\n第二行", "这句什么意思？");
+  assert.equal(sent, "> 第一行\n> 第二行\n\n这句什么意思？");
+  assert.deepEqual(splitQuote(sent), { quote: "第一行\n第二行", rest: "这句什么意思？" });
+  assert.equal(withQuote("引的", "  "), "  ", "问题是空的不加（发不出去）");
+  assert.equal(withQuote("", "问"), "问");
+  assert.equal(splitQuote("> 只是一行大于号开头的问题"), null, "后面没空行不算引用");
+  assert.equal(splitQuote("普通的问"), null);
+
+  const dom = new JSDOM(`<div id="win"><div data-role="assistant"><p>质能 <span class="katex"><span class="katex-mathml"><math><semantics><annotation encoding="application/x-tex">E=mc^2</annotation></semantics></math></span><span class="katex-html">E=mc2</span></span> 是</p><p>第二段</p></div><div data-role="user"><p>我的问</p></div></div>`);
+  const doc = dom.window.document;
+  const win = doc.getElementById("win");
+  const [first, second] = doc.querySelectorAll('[data-role="assistant"] p');
+  const range = doc.createRange();
+  range.setStart(first.firstChild, 0);
+  range.setEnd(second.firstChild, 3);
+  assert.equal(rangeText(range, doc), "质能 $E=mc^2$ 是\n第二段", "公式不重复、段落换行");
+  const selection = dom.window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  assert.equal(answerSelectionText(win, selection), "质能 $E=mc^2$ 是\n第二段");
+  const mine = doc.createRange();
+  mine.selectNodeContents(doc.querySelector('[data-role="user"] p'));
+  selection.removeAllRanges();
+  selection.addRange(mine);
+  assert.equal(answerSelectionText(win, selection), "", "选在自己的问题上不算");
+  assert.equal(answerSelectionText(null, selection), "");
+  first.textContent = "字".repeat(QUOTE_LIMIT + 20);
+  const long = doc.createRange();
+  long.selectNodeContents(first);
+  assert.equal([...rangeText(long, doc)].length, QUOTE_LIMIT + 1, "截断加「…」");
 });
 
 test("真把窗口画出来：常问一点就问；回答里的页码点了交给宿主跳页；引用的公式画出来；贴右边 / 放大切换；Esc 关", async () => {
@@ -173,6 +207,30 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     assert.ok(turn.answerId && turn.startedAt > 0, "交出回答的消息编号和开始时刻");
     document.querySelector(".ask-fork").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     assert.deepEqual(forks, [{ id: undefined, text: "见第 12 页。" }], "回答底下的「深挖」");
+
+    // 回答里选字 → 输入框上面「引用回答」→ 打字发出去：问题前面带「> 」引用，气泡里画成引用框。
+    const answerText = document.querySelector('[data-role="assistant"] .aui-md-p').firstChild;
+    const picked = document.createRange();
+    picked.setStart(answerText, 0);
+    picked.setEnd(answerText, 1);
+    document.getSelection().removeAllRanges();
+    document.getSelection().addRange(picked);
+    document.dispatchEvent(new dom.window.Event("selectionchange"));
+    await until(() => document.querySelector(".ask-reply-quote .ask-pending-label"), "输入框上面出引用");
+    assert.equal(document.querySelector(".ask-reply-quote .ask-pending-label").textContent, "引用回答 · 1 字");
+    const input = document.querySelector(".aui-composer-input");
+    Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, "value").set.call(input, "为什么？");
+    input.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+    await settle();
+    document.querySelector(".aui-composer-send").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await until(() => prompts.length === 2, "第二问发出去");
+    assert.equal(prompts[1].blocks.at(-1).text, "> 见\n\n为什么？", "引用放在问题前面");
+    await until(() => document.querySelector(".ask-user-quote"), "问题气泡里的引用框");
+    assert.equal(document.querySelector(".ask-user-quote").textContent, "见");
+    assert.equal(document.querySelector(".ask-reply-quote"), null, "发出去以后引用清掉");
+    document.dispatchEvent(new dom.window.Event("selectionchange"));
+    await settle(300);
+    assert.equal(document.querySelector(".ask-reply-quote"), null, "选区还在也不再冒出来");
 
     const button = (label) => [...document.querySelectorAll(".ask-head button")].find((element) => element.getAttribute("aria-label") === label);
     button("贴到右边").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));

@@ -1,4 +1,4 @@
-import { MessagePrimitive, type ToolCallMessagePartComponent } from "@assistant-ui/react";
+import { MessagePrimitive, type TextMessagePartComponent, type ToolCallMessagePartComponent } from "@assistant-ui/react";
 import { type ComponentType, type FC, type PropsWithChildren } from "react";
 export type ThreadGroupPart = MessagePrimitive.GroupedParts.GroupPart;
 /**
@@ -37,6 +37,10 @@ export type ThreadComponents = {
     UserMessageTop?: ComponentType | undefined;
     /** RetainPDF：回答正文下面、操作条上面（「已记住」、压缩点）。 */
     MessageAfter?: ComponentType | undefined;
+    /** RetainPDF：发问之前改输入框的字（带上回答里引用的那段）；返回原样就不改。 */
+    prepareSend?: ((text: string) => string) | undefined;
+    /** RetainPDF：问题气泡里的字（开头的引用画成引用框）。 */
+    UserText?: TextMessagePartComponent | undefined;
 };
 export type ThreadProps = {
     components?: ThreadComponents | undefined;

@@ -4,6 +4,7 @@
 // 思考用时不取整；「回到最下面」挪到右边、变小（原来居中压在正文上）；边距收紧、输入框提示缩短（提问窗窄）；
 // 2026-11-26 加四个插槽：HistoryTop（消息上面：「更早的」）、ComposerTop（输入框上面：这一问的出处）、UserMessageTop（问题上面：问的是哪儿）、
 // MessageAfter（回答正文下面：「已记住」、压缩点）。
+// 2026-11-27 加 prepareSend（发问之前改一下输入框的字：带上回答里引用的那段，回车和发送键都走）、UserText（问题气泡里的字怎么画）。
 
 import {
   ComposerAddAttachment,
@@ -47,6 +48,7 @@ import {
   type ImageMessagePartComponent,
   type TextMessagePartComponent,
   type ToolCallMessagePartComponent,
+  useAui,
   useAuiState,
 } from "@assistant-ui/react";
 import {
@@ -146,7 +148,23 @@ export type ThreadComponents = {
   UserMessageTop?: ComponentType | undefined;
   /** RetainPDF：回答正文下面、操作条上面（「已记住」、压缩点）。 */
   MessageAfter?: ComponentType | undefined;
+  /** RetainPDF：发问之前改输入框的字（带上回答里引用的那段）；返回原样就不改。 */
+  prepareSend?: ((text: string) => string) | undefined;
+  /** RetainPDF：问题气泡里的字（开头的引用画成引用框）。 */
+  UserText?: TextMessagePartComponent | undefined;
 };
+
+/** RetainPDF：回车（表单提交）和发送键发出去之前，先让 prepareSend 改一下输入框的字。 */
+function useBeforeSend(): () => void {
+  const { prepareSend } = useContext(ThreadComponentsContext);
+  const aui = useAui();
+  return () => {
+    if (!prepareSend) return;
+    const text = aui.composer.getState().text;
+    const next = prepareSend(text);
+    if (next !== text) aui.composer.setText(next);
+  };
+}
 
 const messageGroupBy = groupPartByType<ThreadGroupKey>({
   reasoning: ["group-chainOfThought", "group-reasoning"],
@@ -544,8 +562,9 @@ const ThreadSuggestionItem: FC = () => {
 };
 
 const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
+  const beforeSend = useBeforeSend();
   return (
-    <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
+    <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col" onSubmit={beforeSend}>
       <ComposerPrimitive.AttachmentDropzone asChild>
         <div
           data-slot="aui_composer-shell"
@@ -570,6 +589,7 @@ const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
 
 const ComposerAction: FC = () => {
   const { ComposerExtra } = useContext(ThreadComponentsContext);
+  const beforeSend = useBeforeSend();
   // The stop control only cancels the send while no run it could stop is going.
   const isSending = useAuiState(
     (s) =>
@@ -628,7 +648,7 @@ const ComposerAction: FC = () => {
             !shouldShowComposerResume(s)
           }
         >
-          <ComposerPrimitive.Send asChild>
+          <ComposerPrimitive.Send asChild onClick={beforeSend}>
             <TooltipIconButton
               tooltip="发送"
               side="bottom"
@@ -925,7 +945,7 @@ const UserImagePart: ImageMessagePartComponent = (part) => (
 );
 
 const UserMessage: FC = () => {
-  const { UserMessageTop } = useContext(ThreadComponentsContext);
+  const { UserMessageTop, UserText } = useContext(ThreadComponentsContext);
   return (
     <MessagePrimitive.Root
       data-slot="aui_user-message-root"
@@ -938,7 +958,7 @@ const UserMessage: FC = () => {
       <div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">
         <div className="aui-user-message-content peer bg-muted text-foreground rounded-(--composer-radius) px-4 py-2 wrap-break-word empty:hidden">
           <MessagePrimitive.Parts
-            components={{ File: UserFilePart, Image: UserImagePart }}
+            components={{ File: UserFilePart, Image: UserImagePart, ...(UserText ? { Text: UserText } : {}) }}
           />
         </div>
         <div className="aui-user-action-bar-wrapper absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full">
