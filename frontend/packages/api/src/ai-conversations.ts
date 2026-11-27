@@ -36,9 +36,9 @@ export type * from "@retainpdf/contracts/ask-conversations";
 
 type Prefix = string | undefined;
 
-/** 取或建当前的全局主对话（幂等）。 */
-export function getMainAskConversation(apiPrefix: Prefix, options?: RequestOptions): Promise<AskConversationRecord> {
-  return generated.getMainAskConversation(apiPrefix, {}, options);
+/** 取或建主对话（幂等）：给了书是这本书开着的那条（2026-11-27 起按书分），不给是全局那条。 */
+export function getMainAskConversation(apiPrefix: Prefix, documentId?: string | null, options?: RequestOptions): Promise<AskConversationRecord> {
+  return generated.getMainAskConversation(apiPrefix, { body: documentId ? { document_id: documentId } : {} }, options);
 }
 
 export function listAskConversations(apiPrefix: Prefix, query: ListAskConversationsQuery = {}, options?: RequestOptions): Promise<AskConversationListView> {

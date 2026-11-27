@@ -22,6 +22,7 @@ import type {
   CreateAskMemoryInput,
   CreateAskSideConversationInput,
   DocumentAskMessagesView,
+  EnsureAskMainConversationInput,
   ListAskConversationsQuery,
   ListAskMemoriesQuery,
   ListAskMessagesQuery,
@@ -35,10 +36,10 @@ import { encodePathParam, request, type RequestOptions } from "../request.js";
 /** POST /api/v1/ai/ask-conversations/main */
 export function getMainAskConversation(
   apiPrefix: string | undefined,
-  _args: Record<string, never> = {},
+  args: { body: EnsureAskMainConversationInput },
   options?: RequestOptions,
 ): Promise<AskConversationRecord> {
-  return request<AskConversationRecord>({ apiPrefix, method: "POST", path: `ai/ask-conversations/main`, options });
+  return request<AskConversationRecord>({ apiPrefix, method: "POST", path: `ai/ask-conversations/main`, body: args.body, options });
 }
 
 /** GET /api/v1/ai/ask-conversations */

@@ -2,8 +2,8 @@ import type { RequestOptions } from "./request.js";
 import type { AppendAskMessagesInput, AppendAskMessagesView, AskCompactionListView, AskContextQuery, AskContextView, AskConversationDeleteResultView, AskConversationListView, AskConversationRecord, AskMemoryCreatedView, AskMemoryListView, AskMemoryRecord, AskMessagePageView, AskModelConnectionInput, AskSettingsRecord, CloseAskConversationInput, CloseAskConversationView, CreateAskCompactionView, CreateAskMemoryInput, CreateAskSideConversationInput, DocumentAskMessagesView, ListAskConversationsQuery, ListAskMemoriesQuery, ListAskMessagesQuery, PatchAskConversationInput, PatchAskMemoryInput, PatchAskSettingsInput, SupersedeAskMessagesView } from "@retainpdf/contracts/ask-conversations";
 export type * from "@retainpdf/contracts/ask-conversations";
 type Prefix = string | undefined;
-/** 取或建当前的全局主对话（幂等）。 */
-export declare function getMainAskConversation(apiPrefix: Prefix, options?: RequestOptions): Promise<AskConversationRecord>;
+/** 取或建主对话（幂等）：给了书是这本书开着的那条（2026-11-27 起按书分），不给是全局那条。 */
+export declare function getMainAskConversation(apiPrefix: Prefix, documentId?: string | null, options?: RequestOptions): Promise<AskConversationRecord>;
 export declare function listAskConversations(apiPrefix: Prefix, query?: ListAskConversationsQuery, options?: RequestOptions): Promise<AskConversationListView>;
 /** 开副对话（从主对话某条消息分出来）。 */
 export declare function createAskSideConversation(apiPrefix: Prefix, body: CreateAskSideConversationInput, options?: RequestOptions): Promise<AskConversationRecord>;

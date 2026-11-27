@@ -5,7 +5,7 @@
 // - 「深挖」开副对话（面包屑「主对话 › 标题」），「结束」让后端写结论卡片回到主对话；卡片上能「看副对话」。
 // 宿主没给 conversations 端口（演示模式、局域网共享）：只记在这次打开里。
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AskMemoryNotice, AskMessage, AskTurnRecord } from "@retainpdf/ask";
 import type { AskCompactionPointView, AskConversationMessageRecord, AskConversationRecord } from "@retainpdf/api/ai";
 
@@ -87,7 +87,7 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
     setLoading(true);
     setError("");
     try {
-      const main = await conversations.main();
+      const main = await conversations.main(bookRef.current.documentId || undefined);
       await load(main, main);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : String(failure));
@@ -101,6 +101,19 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
     setPending(anchor);
     void openMain();
   }, [openMain]);
+
+  // 换了书（同一个阅读页里换任务）：主对话按书分（2026-11-27），窗口里上一本的对话、出处清掉；窗口开着就取这本的。
+  const shownBook = useRef(book.documentId);
+  useEffect(() => {
+    if (shownBook.current === book.documentId) return;
+    shownBook.current = book.documentId;
+    viewRef.current = EMPTY;
+    setView(EMPTY);
+    setPending(null);
+    setNotices(new Map());
+    storedIds.current.clear();
+    if (visible) void openMain();
+  }, [book.documentId, visible, openMain]);
 
   const loadEarlier = useCallback(async () => {
     const current = viewRef.current;
@@ -227,7 +240,7 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
     const main = viewRef.current.main;
     if (!conversations || !main) return;
     await conversations.archive(main.conversation_id);
-    const next = await conversations.main();
+    const next = await conversations.main(bookRef.current.documentId || undefined);
     await load(next, next);
   }, [conversations, load]);
 

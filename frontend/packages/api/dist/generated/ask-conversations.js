@@ -2,8 +2,8 @@
 // 重新生成：npm --prefix frontend/packages/api run generate:client
 import { encodePathParam, request } from "../request.js";
 /** POST /api/v1/ai/ask-conversations/main */
-export function getMainAskConversation(apiPrefix, _args = {}, options) {
-    return request({ apiPrefix, method: "POST", path: `ai/ask-conversations/main`, options });
+export function getMainAskConversation(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "POST", path: `ai/ask-conversations/main`, body: args.body, options });
 }
 /** GET /api/v1/ai/ask-conversations */
 export function listAskConversations(apiPrefix, args = {}, options) {

@@ -52,8 +52,8 @@ export type ReaderAskMemoriesPort = {
 
 /** 主对话、副对话（后端库是正本）。类型就是契约 ask-conversations.v1 的。 */
 export type ReaderAskConversationsPort = {
-  /** 取或建当前的全局主对话。 */
-  main: () => Promise<AskConversationRecord>;
+  /** 取或建这本书的主对话（2026-11-27 起每本书一个）；没有书是全局那条。 */
+  main: (documentId?: string) => Promise<AskConversationRecord>;
   get: (conversationId: string) => Promise<AskConversationRecord>;
   /** 消息分页（seq < beforeSeq 的最后 limit 条）。 */
   messages: (conversationId: string, page?: { beforeSeq?: number; limit?: number }) => Promise<AskMessagePageView>;

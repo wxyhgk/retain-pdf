@@ -67,7 +67,8 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
 
 test("主对话接线：打开取主对话、读最近一页；每答完一轮追加（该压了就压）；结束了的副对话接着问先再开；窗口开着时书页上选字更新下一问的出处", () => {
   const hook = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-conversation.ts", import.meta.url), "utf8");
-  assert.match(hook, /const main = await conversations\.main\(\);/);
+  assert.match(hook, /const main = await conversations\.main\(bookRef\.current\.documentId \|\| undefined\);/, "主对话按书取（11-27）");
+  assert.match(hook, /if \(shownBook\.current === book\.documentId\) return;/, "换书清掉上一本的对话");
   assert.match(hook, /conversations\.messages\(conversation\.conversation_id, \{ limit: PAGE/);
   assert.match(hook, /conversations\.append\(conversation\.conversation_id, input\)/);
   assert.match(hook, /if \(result\.compaction_due && conversation\.kind === "main"\) void conversations\.compact/);
