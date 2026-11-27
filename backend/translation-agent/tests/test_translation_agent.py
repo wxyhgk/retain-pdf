@@ -528,7 +528,7 @@ def test_the_http_transport_retries_network_errors_including_ssl(monkeypatch) ->
         def __exit__(self, *exc):
             return False
 
-    def urlopen(request, timeout):
+    def urlopen(request, timeout, context=None):
         if failures:
             raise failures.pop(0)
         return Reply(b'{"content": [{"type": "text", "text": "ok"}]}')
@@ -540,6 +540,33 @@ def test_the_http_transport_retries_network_errors_including_ssl(monkeypatch) ->
     assert len(waits) == 2
 
 
+
+def test_the_http_transport_verifies_with_the_given_ssl_context(monkeypatch) -> None:
+    """`ssl_context` 原样交给 urlopen（2026-11-27：桌面版的 Python 没有默认根证书，接线层传带 certifi 的进来）。"""
+    import io
+    import ssl
+    import urllib.request
+
+    from retainpdf_translation_agent.agent import make_http_transport
+
+    class Reply(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    seen: list = []
+
+    def urlopen(request, timeout, context=None):
+        seen.append(context)
+        return Reply(b'{"content": [{"type": "text", "text": "ok"}]}')
+
+    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    context = ssl.create_default_context()
+    make_http_transport("k", url="https://example.invalid/v1/messages", ssl_context=context)({"model": "m"})
+    make_http_transport("k", url="https://example.invalid/v1/messages")({"model": "m"})
+    assert seen[0] is context and seen[1] is None
 
 def test_the_http_transport_reports_rate_limit_waits(monkeypatch) -> None:
     """429/529 的退避等待经 on_wait 报出去：开始一次（带状态码、错误类型、秒数），等完一次 None；网络错误不报。"""
@@ -566,7 +593,7 @@ def test_the_http_transport_reports_rate_limit_waits(monkeypatch) -> None:
         def __exit__(self, *exc):
             return False
 
-    def urlopen(request, timeout):
+    def urlopen(request, timeout, context=None):
         if failures:
             raise failures.pop(0)
         return Reply(b'{"content": [{"type": "text", "text": "ok"}]}')

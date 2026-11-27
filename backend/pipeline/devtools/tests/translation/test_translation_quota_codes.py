@@ -311,7 +311,7 @@ def test_agent_anthropic_transport_stops_on_spend_cap_without_retry(monkeypatch)
     url = f"{ANTHROPIC}/messages"
     sent: list[int] = []
 
-    def urlopen(request, timeout):
+    def urlopen(request, timeout, context=None):
         sent.append(1)
         raise _http_error(url, 429, {"type": "error", "error": {"type": "rate_limit_error", "message": "x",
                                                                 "details": {"error_code": "enforced_spend_limit_reached"}}}, {})
@@ -336,7 +336,7 @@ def test_agent_anthropic_transport_still_retries_rate_limit(monkeypatch) -> None
         def __exit__(self, *exc):
             return False
 
-    def urlopen(request, timeout):
+    def urlopen(request, timeout, context=None):
         if replies:
             raise replies.pop(0)
         return Reply(b'{"content": [{"type": "text", "text": "ok"}]}')

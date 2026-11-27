@@ -365,7 +365,7 @@ def test_agent_anthropic_transport_stops_without_retry(monkeypatch, status, body
     url = f"{ANTHROPIC}/messages" if status != 403 else f"{OPENAI}/messages"
     sent: list[int] = []
 
-    def urlopen(request, timeout):
+    def urlopen(request, timeout, context=None):
         sent.append(1)
         raise _http_error(url, status, body)
 
@@ -385,7 +385,7 @@ def test_agent_anthropic_transport_stops_without_retry(monkeypatch, status, body
 
 
 def test_agent_without_classifier_still_stops_on_404(monkeypatch) -> None:
-    monkeypatch.setattr(urllib.request, "urlopen", lambda request, timeout: (_ for _ in ()).throw(_http_error("u", 404, {})))
+    monkeypatch.setattr(urllib.request, "urlopen", lambda request, timeout, context=None: (_ for _ in ()).throw(_http_error("u", 404, {})))
     with pytest.raises(ModelUnavailable):
         make_http_transport("k", url="https://relay.example.com/v1/messages", sleep=lambda _s: None)({"model": "m"})
 

@@ -22,6 +22,7 @@
 
 from __future__ import annotations
 
+import functools
 import os
 
 import hashlib
@@ -29,6 +30,7 @@ import threading
 import json
 import re
 import shutil
+import ssl
 from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Any
@@ -662,6 +664,22 @@ def _upstream_wait_reporter(base_url: str) -> Callable[[dict | None], None]:
     return on_wait
 
 
+@functools.lru_cache(maxsize=1)
+def tls_context() -> ssl.SSLContext:
+    """agent 自己发 Anthropic 请求（标准库 urllib）验证证书用的根证书：Python 默认的，再加上 certifi 的（共用请求层走 requests，本来就用 certifi）。
+
+    2026-11-27 用户报（桌面版 2026.11.23，macOS）：agent 翻译每次请求都 CERTIFICATE_VERIFY_FAILED，重试 6 次后被当成限流停下。
+    桌面版打包的是 python.org 的 Python，它不读 macOS 钥匙串，默认的证书文件（框架里的 etc/openssl/cert.pem）在用户机器上不存在；
+    经典翻译走 requests、带 certifi，所以没事。没装 certifi 就只用默认的（和以前一样）。"""
+    context = ssl.create_default_context()
+    try:
+        import certifi
+    except ImportError:
+        return context
+    context.load_verify_locations(cafile=certifi.where())
+    return context
+
+
 def _connection_transport(*, api_key: str, model: str, base_url: str) -> Callable[[dict], dict]:
     """按阶段入口登记的协议选：Anthropic 走 agent 自己的 Messages 请求，OpenAI 两种协议走共用请求层（agent_openai.py）。"""
     profile = model_wire.registered_profile(base_url=base_url, model=model)
@@ -672,6 +690,7 @@ def _connection_transport(*, api_key: str, model: str, base_url: str) -> Callabl
             url=messages_url(base_url),
             classify=agent_http_classifier,
             on_wait=_upstream_wait_reporter(base_url),
+            ssl_context=tls_context(),
         )
     return make_openai_transport(api_key=api_key, model=model, base_url=base_url, protocol=profile.protocol)
 
