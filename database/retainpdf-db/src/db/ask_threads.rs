@@ -260,11 +260,12 @@ impl Db {
         Ok(ids)
     }
 
-    /// 还有没有提问（任何一本书上）记着这个会话。
+    /// 还有没有提问（任何一本书上）或对话消息（v44）记着这个会话。
     pub fn ask_session_in_use(&self, session_id: &str) -> Result<bool> {
         let conn = self.connect()?;
         Ok(conn.query_row(
-            "SELECT EXISTS(SELECT 1 FROM ask_threads WHERE session_id = ?1)",
+            "SELECT EXISTS(SELECT 1 FROM ask_threads WHERE session_id = ?1)
+                 OR EXISTS(SELECT 1 FROM ask_conversation_messages WHERE session_id = ?1)",
             params![session_id],
             |row| row.get::<_, bool>(0),
         )?)

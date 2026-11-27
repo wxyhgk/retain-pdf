@@ -190,6 +190,10 @@ export interface AskConversationMessageInput {
    * 2026-11-26：改后重问——被改的那条问的编号（要先 POST …/messages/{message_id}/supersede 作废）。只有 user 能带；不是这个对话里作废的问 400。
    */
   edited_from?: string | null;
+  /**
+   * 2026-11-26（v44）：答这条的 agent 会话（ACP 的 sessionId），最长 256 字；问和答都可以带。删对话时据此删掉 agent 自己存的那份。
+   */
+  session_id?: string | null;
 }
 /**
  * 结构化出处（请求里的）：这一问问的是哪儿。和 ACP session/prompt 的 _meta.retainpdf.selection 同一个写法。只有 page 必填；编号类字段 1–200 个字母、数字、-_.:；空串当没给。pane 不认识、page 出范围 400；几段字超长截断。
@@ -370,6 +374,10 @@ export interface AskConversationMessageRecord {
    * 2026-11-26（v43）：改后重问的那条问指回被改的那条；别的 null。 后端总是带上；契约里没列为必填，前端旧的造数据不用跟着改。
    */
   edited_from?: string | null;
+  /**
+   * 2026-11-26（v44）：答这条的 agent 会话（ACP 的 sessionId）；没带 null。删对话时据此删掉 agent 自己存的那份（retainpdf-pi 的会话文件）。后端总是带上；契约里没列为必填。
+   */
+  session_id?: string | null;
 }
 /**
  * 结构化出处（返回里的）：整理过的，只有有值的键（document_id、job_id、translation_version、pane、selected_text、section、source_text、translated_text、prefix、suffix 没有就不出现）。

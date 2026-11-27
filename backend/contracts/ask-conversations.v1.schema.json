@@ -60,7 +60,7 @@
       "transport": "json",
       "output": "AskConversationDeleteResultView",
       "rust_view": "AskConversationDeleteResultView",
-      "note": "删对话：消息、它的副对话跟着删；记忆留着（出处置空）；副对话回到主对话的摘要卡片留着（side_conversation_id 置空）。开着的主对话不能删，409 ask_main_conversation_open：先归档（界面上只给「归档并开新的主对话」）；副对话不受限制。没有 404。"
+      "note": "删对话：消息、它的副对话跟着删；记忆留着（出处置空）；副对话回到主对话的摘要卡片留着（side_conversation_id 置空）。开着的主对话不能删，409 ask_main_conversation_open：先归档（界面上只给「归档并开新的主对话」）；副对话不受限制。没有 404。 消息记着的 agent 会话（session_id）没有别处在用的，retainpdf-pi 的会话文件一起删。"
     },
     {
       "method": "POST",
@@ -651,6 +651,13 @@
             "null"
           ],
           "description": "2026-11-26（v43）：改后重问的那条问指回被改的那条；别的 null。 后端总是带上；契约里没列为必填，前端旧的造数据不用跟着改。"
+        },
+        "session_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "2026-11-26（v44）：答这条的 agent 会话（ACP 的 sessionId）；没带 null。删对话时据此删掉 agent 自己存的那份（retainpdf-pi 的会话文件）。后端总是带上；契约里没列为必填。"
         }
       }
     },
@@ -841,6 +848,13 @@
             "null"
           ],
           "description": "2026-11-26：改后重问——被改的那条问的编号（要先 POST …/messages/{message_id}/supersede 作废）。只有 user 能带；不是这个对话里作废的问 400。"
+        },
+        "session_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "2026-11-26（v44）：答这条的 agent 会话（ACP 的 sessionId），最长 256 字；问和答都可以带。删对话时据此删掉 agent 自己存的那份。"
         }
       }
     },

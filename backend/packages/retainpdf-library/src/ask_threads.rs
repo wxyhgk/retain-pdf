@@ -33,7 +33,7 @@ const MAX_BLOCK_TEXT_CHARS: usize = 8_000;
 const MAX_SECTION_CHARS: usize = 200;
 const MAX_ITEM_ID_CHARS: usize = 200;
 const MAX_AGENT_ID_CHARS: usize = 64;
-const MAX_SESSION_ID_CHARS: usize = 256;
+pub(crate) const MAX_SESSION_ID_CHARS: usize = 256;
 /// 标题：第一句问，空白压成一个空格，最长几个字。
 const MAX_TITLE_CHARS: usize = 80;
 

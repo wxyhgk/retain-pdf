@@ -12,6 +12,14 @@
 
 ---
 
+## 阅读页提问：消息记 agent 会话、删对话清 pi 会话文件（fix/ask-conversation-pi-sessions）
+
+2026-11-27，只增不改。前端真机测出来的：删了对话，`retainpdf-pi` 的会话文件还在。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| 追加一轮（`POST /api/v1/ai/ask-conversations/{id}/messages`） | 不带会话 | 问和答都带 `session_id`：这一轮用的 ACP 会话的 `sessionId`（`session/new` 回的那个）。删对话时后端据此删 pi 的会话文件；不带就删不了。所有 agent 都带也没关系，没有会话文件的什么都不做 |
+
 ## 阅读页提问：改一条已发出的问（feat/ask-edit-message）
 
 2026-11-26，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「改一条已发出的问」。用户定：后面的作废，从这里重问。
