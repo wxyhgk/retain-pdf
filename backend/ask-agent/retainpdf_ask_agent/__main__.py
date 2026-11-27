@@ -73,6 +73,7 @@ def main() -> int:
         )
     from retainpdf_ask_agent.memory import make_memory_tools
     from retainpdf_ask_agent.openui import openui_tools_from_env
+    from retainpdf_ask_agent_engine import thinking_choice
     from retainpdf_ask_agent.server import AskAgent
     from retainpdf_ask_agent.tools import make_book_tools
     from retainpdf_ask_agent_engine.stream import make_stream_fn
@@ -84,9 +85,13 @@ def main() -> int:
         "protocol": protocol,
         "thinking": os.environ.get("RETAIN_ASK_THINKING", "").strip(),
     }
-    stream_fn = make_stream_fn(api_key=api_key, **connection)
-    # 这个模型的思考档位（session/new 报成 configOptions，会话里能改）；认不出的模型不报
-    thinking = thinking_options(**connection)
+    # 这个模型的思考档位（session/new 报成 configOptions，会话里能改）；认不出的模型不报。
+    # 用户在提问窗里上次选的档记在桥给的文件里（2026-11-27），下次默认它（报的当前档和第一问发的字段都是它）
+    choice_file = os.environ.get("RETAIN_ASK_THINKING_FILE", "").strip()
+    choice_key = thinking_choice.connection_key(protocol=protocol, base_url=connection["base_url"], model=model)
+    remembered = thinking_choice.load(choice_file, choice_key)
+    stream_fn = make_stream_fn(api_key=api_key, **connection, remembered=remembered)
+    thinking = thinking_options(**connection, remembered=remembered)
     context = int(os.environ.get("RETAIN_ASK_CONTEXT_WINDOW", "0") or 0) or DEFAULT_CONTEXT_WINDOW.get(protocol, FALLBACK_CONTEXT_WINDOW)
     tools = make_book_tools(
         job_id=os.environ.get("RETAIN_ASK_JOB_ID", "").strip(),
@@ -103,7 +108,8 @@ def main() -> int:
         job_id=os.environ.get("RETAIN_ASK_JOB_ID", "").strip(),
     )
     AskAgent(stream_fn, model=model, context_size=context, out=protocol_out, tools=tools, openui=openui, thinking=thinking,
-             memory=memory).serve(sys.stdin)
+             memory=memory,
+             remember_thinking=(lambda value: thinking_choice.save(choice_file, choice_key, value)) if choice_file else None).serve(sys.stdin)
     return 0
 
 
