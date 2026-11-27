@@ -73,7 +73,7 @@ function layoutFor(mode, float, dockWidth) {
     return float;
 }
 export default function AskWindow(props) {
-    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout } = props;
+    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction } = props;
     useKatexStylesheet(katexStylesheetUrl);
     const [agents, setAgents] = useState(null);
     const [agentId, setAgentId] = useState("");
@@ -136,6 +136,12 @@ export default function AskWindow(props) {
     // 每答完一轮交给宿主（use-turns.ts）。
     const currentAgent = useCallback(() => live.current.agentId, []);
     useTurns({ thread: runtime.thread, agentId: currentAgent, run: chat.lastRun, sessionId: chat.sessionId, onTurn, onTurnDone });
+    // 回答里选字 → 下一问引用这段（answer-quote.tsx）。
+    const threadRoot = useRef(null);
+    const answerQuote = useAnswerQuote(threadRoot, !readOnly);
+    const quoteNow = useRef(answerQuote.quote);
+    quoteNow.current = answerQuote.quote;
+    const answerSelection = useCallback(() => quoteNow.current, []);
     const conversationUi = useMemo(() => ({
         pending: context,
         clearPending: onContextClear,
@@ -146,10 +152,9 @@ export default function AskWindow(props) {
         openSide: onOpenSide,
         forget: onForgetMemory,
         memories,
-    }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories]);
-    // 回答里选字 → 下一问引用这段（answer-quote.tsx）。
-    const threadRoot = useRef(null);
-    const answerQuote = useAnswerQuote(threadRoot, !readOnly);
+        answerAction,
+        answerSelection,
+    }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories, answerAction, answerSelection]);
     const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
     // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
     const send = useMemo(() => (text) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);

@@ -5,6 +5,7 @@
 
 export type {
   AskAgent,
+  AskAnswerAction,
   AskAgentCapabilities,
   AskConfigChoice,
   AskConfigOption,

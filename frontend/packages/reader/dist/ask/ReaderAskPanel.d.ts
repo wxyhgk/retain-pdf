@@ -18,6 +18,10 @@ export type ReaderAskPanelProps = {
     }) => void;
     onJumpToPage?: (page: number) => void;
     pageCount?: number;
+    /** 回答底下的「改这段译文」：跳到问的那一块、打开编辑框，draft 是回答里建议的译文（没有是 null）。不给（这本书现在不能改）就没有。 */
+    onEditBlock?: ((itemId: string, draft: string | null) => void) | null;
+    /** 这一块能不能改（表格这类不能改）。 */
+    canEditBlock?: (itemId: string) => boolean;
     /** 窗口摆法变了（贴右边时宽多少）：阅读页给书页让出右边。 */
     onLayout?: (layout: {
         mode: string;
@@ -31,6 +35,6 @@ export type ReaderAskPanelProps = {
         onDelete?: () => void;
     } | null;
 };
-export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout }: ReaderAskPanelProps): ReactElement;
+export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, onEditBlock, canEditBlock }: ReaderAskPanelProps): ReactElement;
 export {};
 //# sourceMappingURL=ReaderAskPanel.d.ts.map

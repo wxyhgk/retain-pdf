@@ -10,6 +10,29 @@ import { normalizeReaderMetadata, normalizeReaderRegions } from "../../../packag
 
 const ANCHOR = { pane: "translated", page: 56, itemId: "p056-b0003", selection: "", sourceText: "H = -Σ ∇²/2", translatedText: "哈密顿量", section: "2.1 电子问题", point: { x: 0.2, y: 0.4 } };
 
+test("改这段译文（11-27）：出处两种写法都认出块；别的书、没块不算；建议的译文先取回答里选着的（截断的不算），再取 ```译文 代码块", async () => {
+  const { contextBlock, contextSelection, suggestedTranslation } = await import("../../../packages/reader/src/ask/conversation-messages.ts");
+  const stored = { page: 56, label: "第 56 页", data: { page: 56, document_id: "doc-1", item_ids: ["p056-b0003"] } };
+  const fresh = { page: 56, label: "第 56 页", data: { retainpdf: { selection: { page: 56, document_id: "doc-1", item_ids: ["p056-b0003"] } } } };
+  assert.equal(contextSelection(fresh).page, 56, "这次刚问的（_meta）也认，标签点了能跳");
+  assert.equal(contextBlock(stored, "doc-1"), "p056-b0003");
+  assert.equal(contextBlock(fresh, "doc-1"), "p056-b0003");
+  assert.equal(contextBlock(stored, "doc-2"), null, "别的书");
+  assert.equal(contextBlock({ page: 3, label: "第 3 页", data: { page: 3, item_ids: [] } }, "doc-1"), null, "没认出块");
+  assert.equal(contextBlock({ label: "x" }, "doc-1"), null);
+  const text = "这样改更好：\n\n```译文\n哈密顿量作用在波函数上。\n```\n\n或者：\n\n```zh\n第二版。\n```";
+  assert.equal(suggestedTranslation({ text, selection: "" }), "第二版。", "最后一个代码块");
+  assert.equal(suggestedTranslation({ text, selection: "  选的这句。 " }), "选的这句。", "选着的优先");
+  assert.equal(suggestedTranslation({ text, selection: "截断的…" }), "第二版。", "截断的选区不填");
+  assert.equal(suggestedTranslation({ text: "```python\nx = 1\n```", selection: "" }), null, "别的代码块不算");
+  const panel = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskPanel.tsx", import.meta.url), "utf8");
+  assert.match(panel, /const selection = contextSelection\(target\);/, "问题标签跳回去也用它");
+  const wiring = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
+  assert.match(wiring, /editBlock\(itemId, draft \?\? undefined\);\n    requestAnimationFrame\(\(\) => jumpToBlock\(itemId, "translated"\)\);/);
+  const editing = readFileSync(new URL("../../../packages/reader/src/app/use-reader-block-editing.ts", import.meta.url), "utf8");
+  assert.match(editing, /if \(draft\?\.trim\(\)\) drafts\.set\(itemId, draft\);\n    selectBlock\(itemId\);/, "建议先放进草稿，编辑框打开就是它");
+});
+
 test("出处：第一句前面带第几页、哪一节、原文译文、任务号和块号；没认出字就说可能是扫描页", () => {
   const preamble = anchorPreamble(ANCHOR, "job-1", "现代量子化学");
   assert.match(preamble, /我在读《现代量子化学》，第 56 页，「2\.1 电子问题」（译文栏）/);

@@ -173,6 +173,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     const records = [];
     const forks = [];
     const layouts = [];
+    const actions = [];
     localStorage.setItem("retainpdf.ask.window.v1", JSON.stringify({ agentId: "gone" }));
     const CONTEXT = { page: 56, label: "第 56 页 · 2.1", quote: { source: "where $ M_{A} $ is the mass", translated: "其中质量" }, preamble: "我在读一本书，第 56 页。", meta: { retainpdf: { selection: { page: 56 } } } };
     // 宿主：下一问的出处发出去就清掉。
@@ -189,6 +190,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
         onTurn: (turn) => records.push(turn),
         onFork: (message) => forks.push(message),
         onLayout: (layout) => layouts.push(layout),
+        answerAction: { label: "改这段译文", title: "改", available: (target) => target.page === 56, run: (target, answer) => actions.push({ page: target.page, data: target.data, ...answer }) },
         pageCount: 100,
       });
     }
@@ -225,6 +227,9 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     assert.ok(turn.answerId && turn.startedAt > 0, "交出回答的消息编号和开始时刻");
     document.querySelector(".ask-fork").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     assert.deepEqual(forks, [{ id: undefined, text: "见第 12 页。" }], "回答底下的「深挖」");
+    // 11-27：宿主加的动作（阅读页的「改这段译文」）：问题带着出处、宿主认这处才有；点了交回出处和回答。
+    document.querySelector(".ask-answer-action").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    assert.deepEqual(actions, [{ page: 56, data: { retainpdf: { selection: { page: 56 } } }, text: "见第 12 页。", selection: "" }]);
 
     // 回答里选字 → 输入框上面「引用回答」→ 打字发出去：问题前面带「> 」引用，气泡里画成引用框。
     const answerText = document.querySelector('[data-role="assistant"] .aui-md-p').firstChild;

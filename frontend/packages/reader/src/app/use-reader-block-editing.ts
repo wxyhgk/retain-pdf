@@ -20,11 +20,14 @@ export function useReaderBlockEditing(c: ReaderReactController, visiblePdfMode: 
   const selectBlock = blockEdit.select;
   const setModeKeepingPage = c.setModeKeepingPage;
   const regions = session.regions;
-  const editBlock = useCallback((itemId: string) => {
+  const drafts = blockEdit.memory.drafts;
+  /** draft：先填进编辑框的字（提问窗回答里的建议译文），存之前还能改。 */
+  const editBlock = useCallback((itemId: string, draft?: string) => {
     if (!isEditableReaderBlock(regions, itemId)) return; // 表格译文还不能改（block-edit 的 EDITABLE_KINDS）
     if (visiblePdfMode === "source") setModeKeepingPage("compare");
+    if (draft?.trim()) drafts.set(itemId, draft);
     selectBlock(itemId);
-  }, [regions, selectBlock, visiblePdfMode, setModeKeepingPage]);
+  }, [regions, selectBlock, visiblePdfMode, setModeKeepingPage, drafts]);
   useEditBlockShortcut(blockEdit.available ? editBlock : null, regionHover);
   const revisedBlocks = useMemo(() => {
     if (!blockEdit.savedCounts.size) return c.revisedBlocks;

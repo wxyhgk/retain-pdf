@@ -7,7 +7,7 @@
  * - 回答正文下面：agent 这一轮记下的记忆画成「已记住：……（撤销）」（工具卡片收起来也看得到）；压缩点画一条分隔线。
  */
 import { type ReactElement } from "react";
-import type { AskContext, AskMemoryNotice, AskMessageContext } from "../contract.js";
+import type { AskAnswerAction, AskContext, AskMemoryNotice, AskMessageContext } from "../contract.js";
 export type AskConversationUi = {
     /** 下一问要带的出处；没有是 null。 */
     pending: AskContext | null;
@@ -31,6 +31,10 @@ export type AskConversationUi = {
     forget?: (memoryId: string) => Promise<void>;
     /** 宿主事后查到的记忆（agent 不在工具卡片的 _meta 里报的，比如 RetainPDF + pi），按回答的消息编号。 */
     memories?: ReadonlyMap<string, readonly AskMemoryNotice[]>;
+    /** 回答底下宿主加的动作（「改这段译文」）。 */
+    answerAction?: AskAnswerAction;
+    /** 窗口里正选着的回答里的字（answer-quote 盯着的那段）。 */
+    answerSelection?: () => string;
 };
 export declare const AskConversationContext: import("react").Context<AskConversationUi>;
 /** 出处标签上的字：「第 56 页 · 选中 37 字」。 */
@@ -43,7 +47,7 @@ export declare function QuestionContextTag(): ReactElement | null;
 export declare function EarlierHistory(): ReactElement | null;
 /** 回答正文下面：这一轮记下的记忆（工具卡片的 artifact.memory）、压缩点。 */
 export declare function MessageAfter(): ReactElement | null;
-/** 回答底下：「深挖」、结论卡片的「看副对话」。 */
+/** 回答底下：「深挖」、结论卡片的「看副对话」、宿主加的动作（「改这段译文」）。 */
 export declare function ConversationFooter(): ReactElement | null;
 /** 工具卡片：「已记住：……（撤销）」。 */
 export declare function MemoryNotice({ memory }: {

@@ -4,7 +4,7 @@ import type { ReaderReactController } from "../hooks/use-reader-react-controller
 import type { ReaderTranslationVersions } from "../hooks/use-reader-version-compare.js";
 import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
 import type { RegionHoverStore } from "../shared/state/region-hover-store.js";
-export declare function useReaderExtensionHost(c: ReaderReactController, { translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments, }: {
+export declare function useReaderExtensionHost(c: ReaderReactController, { translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments, editBlock, }: {
     translationVersions: ReaderTranslationVersions;
     bookmarks: readonly PdfOutlineNode[];
     regionHover: RegionHoverStore;
@@ -14,6 +14,7 @@ export declare function useReaderExtensionHost(c: ReaderReactController, { trans
     changeWorkspace: ReaderApi["setWorkspace"];
     jumpToBlockIn: ReaderApi["jumpToBlock"];
     zoomDocuments: ReaderApi["pdfDocuments"];
+    editBlock: ReaderApi["editBlock"];
 }): {
     readerApi: ReaderApi;
     contributionStore: import("../extensions/registry.js").ReaderContributionStore;

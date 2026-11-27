@@ -132,6 +132,7 @@ export function ReaderAppReactPdf() {
     readerApi, contributionStore, contributions, pageLayers, compareVersion, textMarks, menuSections, pointerTakenId, reserveRight,
   } = useReaderExtensionHost(c, {
     translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments,
+    editBlock: blockEdit.available && !blockEdit.blockedReason ? editBlock : null,
   });
   const pointerTaken = Boolean(pointerTakenId);
   // 右键那一下各扩展给的菜单项（右键时算好，菜单开着时不再变）。

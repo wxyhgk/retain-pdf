@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { Rnd } from "react-rnd";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 
-import type { AskAgent, AskConfigOption, AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
+import type { AskAgent, AskAnswerAction, AskConfigOption, AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
 import { toInitialMessages } from "../acp/messages.js";
 import { PermissionStore, createAcpChatAdapter } from "../acp/adapter.js";
 import { Thread } from "../ui/elements/thread.aui.js";
@@ -138,12 +138,14 @@ export type AskWindowProps = {
   pageCount?: number;
   /** KaTeX 样式表的地址（宿主自己托管字体）；不给就不插，公式靠宿主页面已有的样式。 */
   katexStylesheetUrl?: string;
+  /** 回答底下宿主加的动作（阅读页：「改这段译文」），只出在问题带着出处、宿主认这处的回答下面。 */
+  answerAction?: AskAnswerAction;
   /** 窗口摆法变了（贴右边时宽多少）：宿主据此给书页让出右边（不盖字）。 */
   onLayout?: (layout: { mode: AskWindowMode; width: number }) => void;
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -211,6 +213,12 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
   // 每答完一轮交给宿主（use-turns.ts）。
   const currentAgent = useCallback(() => live.current.agentId, []);
   useTurns({ thread: runtime.thread as never, agentId: currentAgent, run: chat.lastRun, sessionId: chat.sessionId, onTurn, onTurnDone });
+  // 回答里选字 → 下一问引用这段（answer-quote.tsx）。
+  const threadRoot = useRef<HTMLDivElement | null>(null);
+  const answerQuote = useAnswerQuote(threadRoot, !readOnly);
+  const quoteNow = useRef(answerQuote.quote);
+  quoteNow.current = answerQuote.quote;
+  const answerSelection = useCallback(() => quoteNow.current, []);
   const conversationUi = useMemo<AskConversationUi>(() => ({
     pending: context,
     clearPending: onContextClear,
@@ -221,10 +229,9 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     openSide: onOpenSide,
     forget: onForgetMemory,
     memories,
-  }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories]);
-  // 回答里选字 → 下一问引用这段（answer-quote.tsx）。
-  const threadRoot = useRef<HTMLDivElement | null>(null);
-  const answerQuote = useAnswerQuote(threadRoot, !readOnly);
+    answerAction,
+    answerSelection,
+  }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories, answerAction, answerSelection]);
   const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
   // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
   const send = useMemo(() => (text: string) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);

@@ -9,7 +9,7 @@ import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-run
  */
 import { createContext, useContext, useMemo, useState } from "react";
 import { useAuiState } from "@assistant-ui/react";
-import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, PencilLine, Undo2, X } from "lucide-react";
+import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, PencilLine, SquarePen, Undo2, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 import { AskQuote } from "./AskQuote.js";
 export const AskConversationContext = createContext({ pending: null, contexts: new Map() });
@@ -71,7 +71,19 @@ export function MessageAfter() {
         return null;
     return (_jsxs("div", { className: "ask-after", children: [memories.map((memory) => _jsx(MemoryNotice, { memory: memory }, memory.id)), compacted ? (_jsx("div", { className: "ask-compacted", role: "separator", title: "\u5230\u8FD9\u91CC\u4E3A\u6B62\u7684\u5BF9\u8BDD\u5DF2\u7ECF\u538B\u7F29\u6210\u6458\u8981\uFF0CAI \u4E4B\u540E\u770B\u6458\u8981\uFF1B\u539F\u6587\u8FD8\u5728\u4E0A\u9762", children: "\u4E4B\u524D\u7684\u5DF2\u538B\u7F29\u6210\u6458\u8981" })) : null] }));
 }
-/** 回答底下：「深挖」、结论卡片的「看副对话」。 */
+/** 回答底下宿主加的动作：问题带着出处、宿主认这处才有。 */
+function AnswerAction({ text }) {
+    const { answerAction, answerSelection, contexts } = useContext(AskConversationContext);
+    // 这条回答的问题：前一条（问和答一对一对挨着）。
+    const question = useAuiState((state) => state.thread.messages[state.message.index - 1]);
+    if (!answerAction || !question || question.role !== "user")
+        return null;
+    const context = question.metadata?.custom?.context || contexts.get(question.id);
+    if (!context || !answerAction.available(context))
+        return null;
+    return (_jsx(Button, { className: "ask-icon ask-answer-action", "aria-label": answerAction.label, title: answerAction.title, onClick: () => answerAction.run(context, { text, selection: answerSelection?.() || "" }), children: _jsx(SquarePen, { size: 13, "aria-hidden": true }) }));
+}
+/** 回答底下：「深挖」、结论卡片的「看副对话」、宿主加的动作（「改这段译文」）。 */
 export function ConversationFooter() {
     const { fork, openSide } = useContext(AskConversationContext);
     const role = useAuiState((state) => state.message.role);
@@ -82,7 +94,7 @@ export function ConversationFooter() {
     if (role !== "assistant" || running)
         return null;
     const side = stored?.marks?.sideSummary;
-    return (_jsxs(_Fragment, { children: [side?.sideId && openSide ? (_jsx(Button, { className: "ask-icon ask-side-open", "aria-label": "\u770B\u526F\u5BF9\u8BDD", title: `看副对话${side.title ? `「${side.title}」` : ""}的来回`, onClick: () => openSide(side.sideId), children: _jsx(MessagesSquare, { size: 13, "aria-hidden": true }) })) : null, !side && fork && text.trim() ? (_jsx(Button, { className: "ask-icon ask-fork", "aria-label": "\u6DF1\u6316", title: "\u6DF1\u6316\uFF1A\u4ECE\u8FD9\u6761\u56DE\u7B54\u5F00\u4E00\u4E2A\u526F\u5BF9\u8BDD\uFF0C\u804A\u5B8C\u7ED3\u8BBA\u56DE\u5230\u8FD9\u91CC", onClick: () => fork({ id: stored?.id, text }), children: _jsx(GitBranch, { size: 13, "aria-hidden": true }) })) : null] }));
+    return (_jsxs(_Fragment, { children: [side?.sideId && openSide ? (_jsx(Button, { className: "ask-icon ask-side-open", "aria-label": "\u770B\u526F\u5BF9\u8BDD", title: `看副对话${side.title ? `「${side.title}」` : ""}的来回`, onClick: () => openSide(side.sideId), children: _jsx(MessagesSquare, { size: 13, "aria-hidden": true }) })) : null, !side && fork && text.trim() ? (_jsx(Button, { className: "ask-icon ask-fork", "aria-label": "\u6DF1\u6316", title: "\u6DF1\u6316\uFF1A\u4ECE\u8FD9\u6761\u56DE\u7B54\u5F00\u4E00\u4E2A\u526F\u5BF9\u8BDD\uFF0C\u804A\u5B8C\u7ED3\u8BBA\u56DE\u5230\u8FD9\u91CC", onClick: () => fork({ id: stored?.id, text }), children: _jsx(GitBranch, { size: 13, "aria-hidden": true }) })) : null, text.trim() ? _jsx(AnswerAction, { text: text }) : null] }));
 }
 /** 工具卡片：「已记住：……（撤销）」。 */
 export function MemoryNotice({ memory }) {

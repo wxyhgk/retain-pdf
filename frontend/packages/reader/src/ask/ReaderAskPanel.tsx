@@ -2,15 +2,14 @@
  * 单独一块，第一次提问才加载。以前按书存的问答（只读）也用它看。 */
 import { useMemo, useState, type ReactElement } from "react";
 import AskWindow from "@retainpdf/ask/window";
-import type { AskMessageContext } from "@retainpdf/ask";
-import type { AskSelectionRecord } from "@retainpdf/api/ai";
+import type { AskAnswerAction, AskMessageContext } from "@retainpdf/ask";
 import { Archive, BookmarkCheck, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
 import type { ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
 import { resolveKatexStylesheetUrl } from "../external.js";
 import { bindAskPort, toAskContext } from "./ask-context.js";
-import { anchorSelection, selectionAnchor, type AskBook } from "./conversation-messages.js";
+import { anchorSelection, contextBlock, contextSelection, selectionAnchor, suggestedTranslation, type AskBook } from "./conversation-messages.js";
 import { ReaderMemoryPanel } from "./ReaderMemoryPanel.js";
 import type { useAskConversation } from "./use-ask-conversation.js";
 
@@ -26,6 +25,10 @@ export type ReaderAskPanelProps = {
   onShowSelection?: (selection: { page: number; pane: "source" | "translated" }) => void;
   onJumpToPage?: (page: number) => void;
   pageCount?: number;
+  /** 回答底下的「改这段译文」：跳到问的那一块、打开编辑框，draft 是回答里建议的译文（没有是 null）。不给（这本书现在不能改）就没有。 */
+  onEditBlock?: ((itemId: string, draft: string | null) => void) | null;
+  /** 这一块能不能改（表格这类不能改）。 */
+  canEditBlock?: (itemId: string) => boolean;
   /** 窗口摆法变了（贴右边时宽多少）：阅读页给书页让出右边。 */
   onLayout?: (layout: { mode: string; width: number }) => void;
   /** 以前按书存的一次提问（只读看）；给了就不画主对话。 */
@@ -59,7 +62,7 @@ function Breadcrumb({ ask }: { ask: AskState }): ReactElement {
   );
 }
 
-export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout }: ReaderAskPanelProps): ReactElement {
+export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, onEditBlock, canEditBlock }: ReaderAskPanelProps): ReactElement {
   const [memoryOpen, setMemoryOpen] = useState(false);
   const conversation = ask.view.conversation;
   const bound = legacy ? null : conversation ? { id: conversation.conversation_id, documentId: book.documentId } : null;
@@ -68,11 +71,25 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
   const context = useMemo(() => (pending ? toAskContext(pending, jobId, bookTitle, anchorSelection(pending, book)) : null), [pending, jobId, bookTitle, book]);
   const showContext = onShowSelection
     ? (target: AskMessageContext) => {
-      const selection = target.data as AskSelectionRecord | undefined;
-      if (!selection?.page || (selection.document_id && book.documentId && selection.document_id !== book.documentId)) return;
+      // 读回来的是出处本身，这次刚问的是发问时的 _meta（11-27 以前这种点了不跳）。
+      const selection = contextSelection(target);
+      if (!selection || (selection.document_id && book.documentId && selection.document_id !== book.documentId)) return;
       onShowSelection({ page: selection.page, pane: selection.pane === "source" ? "source" : "translated" });
     }
     : undefined;
+  const documentId = book.documentId;
+  const answerAction = useMemo<AskAnswerAction | undefined>(() => (onEditBlock ? {
+    label: "改这段译文",
+    title: "改问的这段译文：回答里选着一段字就先填进去（不然填回答里的 ```译文 代码块），存之前还能改",
+    available: (target) => {
+      const itemId = contextBlock(target, documentId);
+      return Boolean(itemId && (!canEditBlock || canEditBlock(itemId)));
+    },
+    run: (target, answer) => {
+      const itemId = contextBlock(target, documentId);
+      if (itemId) onEditBlock(itemId, suggestedTranslation(answer));
+    },
+  } : undefined), [onEditBlock, canEditBlock, documentId]);
   const katex = resolveKatexStylesheetUrl() || undefined;
   if (legacy) {
     return (
@@ -137,6 +154,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       pageCount={pageCount}
       katexStylesheetUrl={katex}
       onLayout={onLayout}
+      answerAction={answerAction}
     />
     {memories ? <ReaderMemoryPanel port={memories} documentId={book.documentId} open={memoryOpen} onOpenChange={setMemoryOpen} /> : null}
     </>

@@ -31,6 +31,7 @@ export function useReaderExtensionHost(
     changeWorkspace,
     jumpToBlockIn,
     zoomDocuments,
+    editBlock,
   }: {
     translationVersions: ReaderTranslationVersions;
     bookmarks: readonly PdfOutlineNode[];
@@ -41,6 +42,7 @@ export function useReaderExtensionHost(
     changeWorkspace: ReaderApi["setWorkspace"];
     jumpToBlockIn: ReaderApi["jumpToBlock"];
     zoomDocuments: ReaderApi["pdfDocuments"];
+    editBlock: ReaderApi["editBlock"];
   },
 ) {
   const { session, panes } = c;
@@ -65,10 +67,11 @@ export function useReaderExtensionHost(
     shellEl: c.shell.shellEl,
     primaryPane: c.panes.primaryPane,
     pdfDocuments: zoomDocuments,
+    editBlock,
   }), [
     session.documentId, session.jobId, translationVersions, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages,
     c.viewStateKey, regionHover, c.goToPage, c.sourceOnly, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace,
-    jumpToBlockIn, c.shell.shellEl, c.panes.primaryPane, zoomDocuments,
+    jumpToBlockIn, c.shell.shellEl, c.panes.primaryPane, zoomDocuments, editBlock,
   ]);
   const [contributionStore] = useState(createContributionStore);
   const contributions = useReaderContributionsOf(contributionStore);

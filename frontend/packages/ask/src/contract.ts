@@ -103,6 +103,17 @@ export type AskMessageContext = {
   data?: unknown;
 };
 
+/**
+ * 回答底下宿主加的一个动作（阅读页：「改这段译文」），只出在问题带着出处、available 认这处的回答下面。
+ * 点了交回问的那一处、这条回答的全文、窗口里正选着的回答里的字（没有是 ""），宿主自己挑要用的那段。
+ */
+export type AskAnswerAction = {
+  label: string;
+  title: string;
+  available: (context: AskMessageContext) => boolean;
+  run: (context: AskMessageContext, answer: { text: string; selection: string }) => void;
+};
+
 /** 存下来的一条问答：问题，或者回答（带思考和用量）。宿主拿去存、下次原样交回来。 */
 export type AskMessage = {
   role: "user" | "assistant";

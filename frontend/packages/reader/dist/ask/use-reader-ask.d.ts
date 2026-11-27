@@ -4,7 +4,7 @@ import type { ReaderMenuContext, ReaderMenuItem } from "../extensions/types.js";
 import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
 import { type ReaderMetadata, type ReaderRegion } from "../shared/data/reader-regions.js";
 import type { AskMark } from "./ReaderAskMarks.js";
-export declare function useReaderAsk({ port, documentId, jobId, versionId, regions, metadata, bookmarks, hoveredItemId, resetKey, goToPage, pageCount, }: {
+export declare function useReaderAsk({ port, documentId, jobId, versionId, regions, metadata, bookmarks, hoveredItemId, resetKey, goToPage, pageCount, editBlock, jumpToBlock, }: {
     port: ReaderAskPort | null;
     documentId: string;
     jobId: string;
@@ -17,6 +17,9 @@ export declare function useReaderAsk({ port, documentId, jobId, versionId, regio
     resetKey: string;
     goToPage: (page: number, pane?: "source" | "translated") => void;
     pageCount: number;
+    /** 改这一块的译文（这本书现在不能改是 null）。 */
+    editBlock: ((itemId: string, draft?: string) => void) | null;
+    jumpToBlock: (itemId: string, pane?: "source" | "translated") => void;
 }): {
     marks: AskMark[];
     onMark: (mark: AskMark) => Promise<void>;

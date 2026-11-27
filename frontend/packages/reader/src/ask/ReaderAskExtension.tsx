@@ -33,6 +33,8 @@ function ReaderAskExtension(): ReactElement | null {
     resetKey: api.resetKey,
     goToPage: api.goToPage,
     pageCount: api.pageCount,
+    editBlock: api.editBlock,
+    jumpToBlock: api.jumpToBlock,
   });
   const { marks, onMark, menuItems, panel, enabled, toggle, showing, reserveRight } = ask;
   const contribution = useMemo<ReaderContribution>(() => (enabled ? {

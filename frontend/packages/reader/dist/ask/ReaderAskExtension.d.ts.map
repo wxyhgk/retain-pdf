@@ -1,1 +1,1 @@
-{"version":3,"file":"ReaderAskExtension.d.ts","sourceRoot":"","sources":["../../src/ask/ReaderAskExtension.tsx"],"names":[],"mappings":"AAQA,OAAO,KAAK,EAAsB,eAAe,EAAE,MAAM,wBAAwB,CAAC;AAiDlF,eAAO,MAAM,kBAAkB,EAAE,eAA2E,CAAC"}
+{"version":3,"file":"ReaderAskExtension.d.ts","sourceRoot":"","sources":["../../src/ask/ReaderAskExtension.tsx"],"names":[],"mappings":"AAQA,OAAO,KAAK,EAAsB,eAAe,EAAE,MAAM,wBAAwB,CAAC;AAmDlF,eAAO,MAAM,kBAAkB,EAAE,eAA2E,CAAC"}

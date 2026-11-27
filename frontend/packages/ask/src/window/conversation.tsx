@@ -8,10 +8,10 @@
  */
 import { createContext, useContext, useMemo, useState, type ReactElement } from "react";
 import { useAuiState } from "@assistant-ui/react";
-import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, PencilLine, Undo2, X } from "lucide-react";
+import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, PencilLine, SquarePen, Undo2, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
-import type { AskContext, AskMemoryNotice, AskMessage, AskMessageContext } from "../contract.js";
+import type { AskAnswerAction, AskContext, AskMemoryNotice, AskMessage, AskMessageContext } from "../contract.js";
 import { AskQuote } from "./AskQuote.js";
 
 export type AskConversationUi = {
@@ -31,6 +31,10 @@ export type AskConversationUi = {
   forget?: (memoryId: string) => Promise<void>;
   /** 宿主事后查到的记忆（agent 不在工具卡片的 _meta 里报的，比如 RetainPDF + pi），按回答的消息编号。 */
   memories?: ReadonlyMap<string, readonly AskMemoryNotice[]>;
+  /** 回答底下宿主加的动作（「改这段译文」）。 */
+  answerAction?: AskAnswerAction;
+  /** 窗口里正选着的回答里的字（answer-quote 盯着的那段）。 */
+  answerSelection?: () => string;
 };
 
 export const AskConversationContext = createContext<AskConversationUi>({ pending: null, contexts: new Map() });
@@ -153,7 +157,27 @@ export function MessageAfter(): ReactElement | null {
   );
 }
 
-/** 回答底下：「深挖」、结论卡片的「看副对话」。 */
+/** 回答底下宿主加的动作：问题带着出处、宿主认这处才有。 */
+function AnswerAction({ text }: { text: string }): ReactElement | null {
+  const { answerAction, answerSelection, contexts } = useContext(AskConversationContext);
+  // 这条回答的问题：前一条（问和答一对一对挨着）。
+  const question = useAuiState((state) => state.thread.messages[state.message.index - 1]);
+  if (!answerAction || !question || question.role !== "user") return null;
+  const context = (question.metadata?.custom as { context?: AskMessageContext } | undefined)?.context || contexts.get(question.id);
+  if (!context || !answerAction.available(context)) return null;
+  return (
+    <Button
+      className="ask-icon ask-answer-action"
+      aria-label={answerAction.label}
+      title={answerAction.title}
+      onClick={() => answerAction.run(context, { text, selection: answerSelection?.() || "" })}
+    >
+      <SquarePen size={13} aria-hidden />
+    </Button>
+  );
+}
+
+/** 回答底下：「深挖」、结论卡片的「看副对话」、宿主加的动作（「改这段译文」）。 */
 export function ConversationFooter(): ReactElement | null {
   const { fork, openSide } = useContext(AskConversationContext);
   const role = useAuiState((state) => state.message.role);
@@ -175,6 +199,7 @@ export function ConversationFooter(): ReactElement | null {
           <GitBranch size={13} aria-hidden />
         </Button>
       ) : null}
+      {text.trim() ? <AnswerAction text={text} /> : null}
     </>
   );
 }

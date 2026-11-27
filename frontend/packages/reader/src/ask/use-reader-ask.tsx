@@ -9,6 +9,7 @@ import type { ReaderMenuContext, ReaderMenuItem } from "../extensions/types.js";
 import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
 import { READER_PAGE_ATTR } from "../pdf/reader-dom-contract.js";
 import { projectReaderRegion, resolveReaderRegionHighlight, type ReaderMetadata, type ReaderRegion } from "../shared/data/reader-regions.js";
+import { isEditableReaderBlock } from "../shared/data/block-edit.js";
 import { buildAskAnchor, selectedPageText } from "./anchor.js";
 import type { AskMark } from "./ReaderAskMarks.js";
 import { useAskConversation } from "./use-ask-conversation.js";
@@ -30,6 +31,8 @@ export function useReaderAsk({
   resetKey,
   goToPage,
   pageCount,
+  editBlock,
+  jumpToBlock,
 }: {
   port: ReaderAskPort | null;
   documentId: string;
@@ -43,6 +46,9 @@ export function useReaderAsk({
   resetKey: string;
   goToPage: (page: number, pane?: "source" | "translated") => void;
   pageCount: number;
+  /** 改这一块的译文（这本书现在不能改是 null）。 */
+  editBlock: ((itemId: string, draft?: string) => void) | null;
+  jumpToBlock: (itemId: string, pane?: "source" | "translated") => void;
 }) {
   const book = useMemo(() => ({ documentId, jobId, versionId }), [documentId, jobId, versionId]);
   const pointOf = useCallback((itemId: string | null, pane: "source" | "translated", page: number) => {
@@ -160,6 +166,13 @@ export function useReaderAsk({
     } : undefined,
   } : null;
   // 主对话还没读回来时先不画窗口：不然先画一个空窗口、开一个会话，读回来换成主对话又重开一个（白开一个会话，11-27 真机看到）。
+  // 回答底下的「改这段译文」：先打开编辑框（只开着原文时会切到对照），排好版再跳到那一块。
+  const onEditBlock = useMemo(() => (editBlock ? (itemId: string, draft: string | null) => {
+    editBlock(itemId, draft ?? undefined);
+    requestAnimationFrame(() => jumpToBlock(itemId, "translated"));
+  } : null), [editBlock, jumpToBlock]);
+  const canEditBlock = useCallback((itemId: string) => isEditableReaderBlock(regions, itemId), [regions]);
+
   // 提问窗贴右边：书页让出那么宽（不盖住正在读的字）。窄屏（让了以后书页不到 480px）不让，照旧盖在上面。
   const [docked, setDocked] = useState(0);
   const onLayout = useCallback(({ mode, width }: { mode: string; width: number }) => {
@@ -179,6 +192,8 @@ export function useReaderAsk({
         onJumpToPage={(page) => goToPage(page)}
         pageCount={pageCount}
         onLayout={onLayout}
+        onEditBlock={onEditBlock}
+        canEditBlock={canEditBlock}
       />
     </Suspense>
   ) : null;
