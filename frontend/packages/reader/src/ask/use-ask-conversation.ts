@@ -13,6 +13,8 @@ import type { ReaderAskAnchor, ReaderAskPort } from "../contracts/ask.js";
 import { findForkSource, forkTitle, laterMemories, memoriesSince, recordsToMessages, turnToAppend, type AskBook } from "./conversation-messages.js";
 
 const PAGE = 50;
+/** 一问除了第一处，最多再带几处。 */
+export const MAX_EXTRAS = 2;
 
 export type AskConversationView = {
   conversation: AskConversationRecord | null;
@@ -46,7 +48,14 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [closingSide, setClosingSide] = useState<"idle" | "busy" | "failed">("idle");
-  const [pending, setPending] = useState<ReaderAskAnchor | null>(null);
+  const [pending, setPendingState] = useState<ReaderAskAnchor | null>(null);
+  // 同一问另外带的几处（「再加一段」，最多再加两处）；换了、清了下一问的出处就跟着清掉。
+  const [extras, setExtras] = useState<readonly ReaderAskAnchor[]>([]);
+  const setPending = useCallback((anchor: ReaderAskAnchor | null) => {
+    setPendingState(anchor);
+    setExtras([]);
+  }, []);
+  const addExtra = useCallback((anchor: ReaderAskAnchor) => setExtras((current) => [...current, anchor].slice(-MAX_EXTRAS)), []);
   // 一轮答完以后查到的「已记住」（按回答在窗口里的消息编号），和画过的记忆编号。
   const [notices, setNotices] = useState<ReadonlyMap<string, readonly AskMemoryNotice[]>>(() => new Map());
   const seenMemories = useRef(new Set<string>());
@@ -251,6 +260,8 @@ export function useAskConversation({ port, book, onAppended }: { port: ReaderAsk
     error,
     pending,
     setPending,
+    extras,
+    addExtra,
     closingSide,
     notices,
     persistent: Boolean(conversations),

@@ -28,6 +28,13 @@ export function PendingContextBar() {
     const hasQuote = Boolean(pending.quote?.selection || pending.quote?.source || pending.quote?.translated);
     return (_jsxs("div", { className: "ask-pending", "data-open": open ? "1" : "0", children: [_jsxs("div", { className: "ask-pending-chip", children: [_jsx(MapPin, { size: 12, "aria-hidden": true }), _jsx(Button, { className: "ask-pending-label", title: hasQuote ? "看引的那段" : pending.label, onClick: () => setOpen((value) => !value), disabled: !hasQuote, children: contextChipText(pending) }), clearPending ? (_jsx(Button, { className: "ask-icon ask-pending-clear", "aria-label": "\u8FD9\u4E00\u95EE\u4E0D\u5E26\u51FA\u5904", title: "\u8FD9\u4E00\u95EE\u4E0D\u5E26\u51FA\u5904", onClick: clearPending, children: _jsx(X, { size: 12, "aria-hidden": true }) })) : null] }), open && hasQuote ? _jsx(AskQuote, { quote: pending.quote }) : null] }));
 }
+/** 出处下面：书页上又选了一处（不再悄悄换掉已经带着的），换成它 / 再加上它 / 不要。 */
+export function ContextOfferBar() {
+    const { offer, pending } = useContext(AskConversationContext);
+    if (!offer || !pending)
+        return null;
+    return (_jsxs("div", { className: "ask-offer", role: "group", "aria-label": "\u65B0\u9009\u7684\u4E00\u5904", children: [_jsxs("span", { className: "ask-offer-label", title: offer.label, children: ["\u53C8\u9009\u4E86 ", offer.label] }), _jsx(Button, { className: "ask-offer-action", onClick: offer.replace, children: "\u6362\u6210\u8FD9\u6BB5" }), offer.add ? _jsx(Button, { className: "ask-offer-action", onClick: offer.add, children: "\u518D\u52A0\u4E00\u6BB5" }) : null, _jsx(Button, { className: "ask-icon ask-pending-clear", "aria-label": "\u4E0D\u8981\u8FD9\u6BB5", title: "\u4E0D\u8981\u8FD9\u6BB5", onClick: offer.dismiss, children: _jsx(X, { size: 12, "aria-hidden": true }) })] }));
+}
 /** 问题上面：这一问改过（「改过」，点开看原来的问和答）。 */
 function RewroteTag({ rewrote }) {
     const [open, setOpen] = useState(false);

@@ -11,6 +11,7 @@ export type {
   AskConfigChoice,
   AskConfigOption,
   AskContext,
+  AskContextOffer,
   AskHandlers,
   AskMemoryNotice,
   AskMessage,

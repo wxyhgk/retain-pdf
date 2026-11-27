@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { Rnd } from "react-rnd";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 
-import type { AskAgent, AskAnswerAction, AskAttachTool, AskConfigOption, AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
+import type { AskAgent, AskAnswerAction, AskAttachTool, AskConfigOption, AskContext, AskContextOffer, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
 import { toInitialMessages } from "../acp/messages.js";
 import { PermissionStore, createAcpChatAdapter } from "../acp/adapter.js";
 import { Thread } from "../ui/elements/thread.aui.js";
@@ -121,6 +121,8 @@ export type AskWindowProps = {
   pageCount?: number;
   /** KaTeX 样式表的地址（宿主自己托管字体）；不给就不插，公式靠宿主页面已有的样式。 */
   katexStylesheetUrl?: string;
+  /** 已经带着出处时宿主那边又选了一处（书页上新选的字）：输入框上面问换成它还是再加上它。 */
+  contextOffer?: AskContextOffer | null;
   /** 输入框那一行宿主加的「带上……」按钮（阅读页：带上这一页的截图）。 */
   attachTools?: readonly AskAttachTool[];
   /** 宿主从外面塞进来的附件（框选截图）：id 变了就加进输入框。 */
@@ -132,7 +134,7 @@ export type AskWindowProps = {
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -218,7 +220,8 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     memories,
     answerAction,
     answerSelection,
-  }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories, answerAction, answerSelection]);
+    offer: contextOffer,
+  }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories, answerAction, answerSelection, contextOffer]);
   const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
   // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
   const send = useMemo(() => (text: string) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);

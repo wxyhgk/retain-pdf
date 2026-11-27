@@ -107,7 +107,9 @@ test("主对话接线：打开取主对话、读最近一页；每答完一轮�
   assert.match(hook, /ask_conversation_not_open/);
   const wiring = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
   assert.match(wiring, /document\.addEventListener\("selectionchange", onChange\)/);
-  assert.match(wiring, /if \(anchor && anchor\.selection !== used\.current\) setPending\(anchor\)/, "发出去的那段不再带第二次");
+  assert.match(wiring, /if \(!anchor \|\| used\.current\.has\(anchor\.selection\)\) return;/, "发出去的、不要的那段不再冒出来");
+  // 11-27：已经带着一处就不悄悄换掉，输入框上面问「换成这段 / 再加一段」。
+  assert.match(wiring, /if \(pendingNow\.current\) setOffer\(anchor\);\n        else setPending\(anchor\);/);
   const marks = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-marks.ts", import.meta.url), "utf8");
   assert.match(marks, /port\.threads\?\.list\(documentId\)/, "以前按书存的照旧画");
   assert.match(marks, /port\.conversations\?\.bookMessages\(documentId\)/);
@@ -176,4 +178,18 @@ test("截图带进提问（11-27）：拖出的一块换成占这一页的比例
   assert.match(wiring, /blob = await renderRegionImage\(pdf, page, region\);/, "有 pdf.js 文档就重新画");
   const extension = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskExtension.tsx", import.meta.url), "utf8");
   assert.match(extension, /takesPointer: cropping,/, "截图时占着指针");
+});
+
+test("同一问带几处（11-27）：第一处进 _meta 和出处，另外几处写成一段字（认结构化出处的 agent 也带）；标签写「第 12 页 + 第 10 页」", async () => {
+  const { toAskContext, extraPreamble } = await import("../../../packages/reader/src/ask/ask-context.ts");
+  const second = { ...ANCHOR, page: 10, section: "", selection: "Fock operator", itemId: "p010-b0002" };
+  const context = toAskContext(ANCHOR, "job-1", "", { page: 56, item_ids: ["p056-b0003"] }, [second]);
+  assert.equal(context.label, "第 56 页 · 2.1 电子问题 + 第 10 页");
+  assert.deepEqual(context.meta, { retainpdf: { selection: { page: 56, item_ids: ["p056-b0003"] } } }, "_meta 只放第一处");
+  assert.match(context.extra, /^另外一处（2）：第 10 页（译文栏）。\n选中的这段：\nFock operator\n（块 p010-b0002）$/);
+  assert.equal(toAskContext(ANCHOR, "job-1").extra, undefined, "只有一处就没有");
+  assert.equal(toAskContext(ANCHOR, "job-1", "", undefined, [{ ...second, page: 56 }]).label, "第 56 页 · 2.1 电子问题 + 同页另一段");
+  assert.equal(extraPreamble([]), "");
+  const { MAX_EXTRAS } = await import("../../../packages/reader/src/ask/use-ask-conversation.ts");
+  assert.equal(MAX_EXTRAS, 2, "一问最多三处");
 });

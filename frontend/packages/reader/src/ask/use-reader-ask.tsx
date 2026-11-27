@@ -4,7 +4,7 @@
 // - 提问窗（ReaderAskPanel，第一次提问才加载）。
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { ImagePlus } from "lucide-react";
-import type { AskAttachTool } from "@retainpdf/ask";
+import type { AskAttachTool, AskContextOffer } from "@retainpdf/ask";
 
 import type { ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
 import type { ReaderMenuContext, ReaderMenuItem } from "../extensions/types.js";
@@ -17,7 +17,7 @@ import { isEditableReaderBlock } from "../shared/data/block-edit.js";
 import { buildAskAnchor, selectedPageText } from "./anchor.js";
 import { ReaderAskCrop, type AskCropResult } from "./ReaderAskCrop.js";
 import type { AskMark } from "./ReaderAskMarks.js";
-import { useAskConversation } from "./use-ask-conversation.js";
+import { MAX_EXTRAS, useAskConversation } from "./use-ask-conversation.js";
 import { useAskMarks } from "./use-ask-marks.js";
 
 const ReaderAskPanel = lazy(() => import("./ReaderAskPanel.js"));
@@ -115,14 +115,22 @@ export function useReaderAsk({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [port, selectionAnchor, openAsk]);
 
-  // 窗口开着时在书页上选字：下一问带上它（发出去的那段不再带第二次）。
-  const used = useRef("");
+  // 窗口开着时在书页上选字：还没带出处就带上它；已经带着一处（右键选好的、之前选的）不悄悄换掉（2026-11-27 用户：
+  // 想复制别处一个词、查个词，出处就跳了），输入框上面问一句「换成这段 / 再加一段」。发出去的、不要的那段不再冒出来。
+  const used = useRef(new Set<string>());
   const pendingText = ask.pending?.selection || "";
   useEffect(() => {
-    if (pendingText) used.current = pendingText;
+    if (pendingText) used.current.add(pendingText);
   }, [pendingText]);
   const watching = ask.visible && !legacy;
   const setPending = ask.setPending;
+  const [offer, setOffer] = useState<ReaderAskAnchor | null>(null);
+  const hasPending = Boolean(ask.pending);
+  useEffect(() => {
+    if (!hasPending) setOffer(null);
+  }, [hasPending]);
+  const pendingNow = useRef(ask.pending);
+  pendingNow.current = ask.pending;
   useEffect(() => {
     if (!watching) return undefined;
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -130,7 +138,9 @@ export function useReaderAsk({
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         const anchor = selectionAnchor();
-        if (anchor && anchor.selection !== used.current) setPending(anchor);
+        if (!anchor || used.current.has(anchor.selection)) return;
+        if (pendingNow.current) setOffer(anchor);
+        else setPending(anchor);
       }, 250);
     };
     document.addEventListener("selectionchange", onChange);
@@ -139,6 +149,28 @@ export function useReaderAsk({
       document.removeEventListener("selectionchange", onChange);
     };
   }, [watching, selectionAnchor, setPending]);
+
+  const addExtra = ask.addExtra;
+  const extraCount = ask.extras.length;
+  const contextOffer = useMemo<AskContextOffer | null>(() => {
+    if (!offer) return null;
+    const forget = () => {
+      used.current.add(offer.selection);
+      setOffer(null);
+    };
+    return {
+      label: `第 ${offer.page} 页 · ${[...offer.selection].length} 字`,
+      replace: () => {
+        forget();
+        setPending(offer);
+      },
+      ...(extraCount < MAX_EXTRAS ? { add: () => {
+        forget();
+        addExtra(offer);
+      } } : {}),
+      dismiss: forget,
+    };
+  }, [offer, extraCount, setPending, addExtra]);
 
   // 截图带进提问（2026-11-27）：输入框那一行「带上这一页」、右键「截一块问」。有这一栏的 pdf.js 文档就重新画（清楚），
   // 没有就从屏幕上那张画布裁。
@@ -262,6 +294,7 @@ export function useReaderAsk({
         canEditBlock={canEditBlock}
         attachTools={attachTools}
         attachRequest={attachRequest}
+        contextOffer={contextOffer}
       />
     </Suspense>
   ) : null;

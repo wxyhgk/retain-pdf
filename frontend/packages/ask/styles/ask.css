@@ -1188,3 +1188,32 @@
 .ask-pending-starters .ask-starter {
   padding: 3px 9px;
 }
+
+/* 已经带着出处时书页上又选了一处（ContextOfferBar，2026-11-27）：一行小字和两个小按钮，不悄悄换掉已经带着的。 */
+.ask-offer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  padding: 0 2px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+.ask-offer-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ask-offer-action {
+  flex: none;
+  padding: 1px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--ui-text-xs, 11px);
+}
+.ask-offer-action:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+}

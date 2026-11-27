@@ -11,7 +11,7 @@ import { useAuiState } from "@assistant-ui/react";
 import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, PencilLine, SquarePen, Undo2, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
-import type { AskAnswerAction, AskContext, AskMemoryNotice, AskMessage, AskMessageContext } from "../contract.js";
+import type { AskAnswerAction, AskContext, AskContextOffer, AskMemoryNotice, AskMessage, AskMessageContext } from "../contract.js";
 import { AskQuote } from "./AskQuote.js";
 
 export type AskConversationUi = {
@@ -35,6 +35,8 @@ export type AskConversationUi = {
   answerAction?: AskAnswerAction;
   /** 窗口里正选着的回答里的字（answer-quote 盯着的那段）。 */
   answerSelection?: () => string;
+  /** 已经带着出处时又选了一处：换成它还是再加上它。 */
+  offer?: AskContextOffer | null;
 };
 
 export const AskConversationContext = createContext<AskConversationUi>({ pending: null, contexts: new Map() });
@@ -66,6 +68,22 @@ export function PendingContextBar(): ReactElement | null {
         ) : null}
       </div>
       {open && hasQuote ? <AskQuote quote={pending.quote} /> : null}
+    </div>
+  );
+}
+
+/** 出处下面：书页上又选了一处（不再悄悄换掉已经带着的），换成它 / 再加上它 / 不要。 */
+export function ContextOfferBar(): ReactElement | null {
+  const { offer, pending } = useContext(AskConversationContext);
+  if (!offer || !pending) return null;
+  return (
+    <div className="ask-offer" role="group" aria-label="新选的一处">
+      <span className="ask-offer-label" title={offer.label}>又选了 {offer.label}</span>
+      <Button className="ask-offer-action" onClick={offer.replace}>换成这段</Button>
+      {offer.add ? <Button className="ask-offer-action" onClick={offer.add}>再加一段</Button> : null}
+      <Button className="ask-icon ask-pending-clear" aria-label="不要这段" title="不要这段" onClick={offer.dismiss}>
+        <X size={12} aria-hidden />
+      </Button>
     </div>
   );
 }

@@ -192,4 +192,14 @@ export type AskContext = {
     preamble?: string;
     /** 放进这一问 session/prompt 的 _meta（宿主的结构化出处，比如 {retainpdf: {selection}}）。 */
     meta?: Record<string, unknown>;
+    /** 另外几处出处（一段字）：认结构化出处的 agent 也照带（_meta 只放得下一处）。 */
+    extra?: string;
+};
+/** 输入框上面问一句：已经带着出处时，宿主那边又选了一处（书页上新选的字），换成它还是再加上它。 */
+export type AskContextOffer = {
+    label: string;
+    replace: () => void;
+    /** 再加一处；带满了不给。 */
+    add?: () => void;
+    dismiss: () => void;
 };

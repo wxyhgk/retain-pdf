@@ -7,7 +7,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { Quote, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 import { PendingStarters } from "./blocks.js";
-import { PendingContextBar } from "./conversation.js";
+import { ContextOfferBar, PendingContextBar } from "./conversation.js";
 /** 引用最多带多少字（超出截断加「…」）。 */
 export const QUOTE_LIMIT = 600;
 const BLOCK_TAGS = "p, li, h1, h2, h3, h4, h5, h6, pre, blockquote, tr, div.katex-display";
@@ -111,7 +111,7 @@ export function AnswerQuoteBar() {
 }
 /** 输入框上面的两条：引用的回答、书上的出处。 */
 export function ComposerBars() {
-    return (_jsxs(_Fragment, { children: [_jsx(AnswerQuoteBar, {}), _jsx(PendingContextBar, {}), _jsx(PendingStarters, {})] }));
+    return (_jsxs(_Fragment, { children: [_jsx(AnswerQuoteBar, {}), _jsx(PendingContextBar, {}), _jsx(ContextOfferBar, {}), _jsx(PendingStarters, {})] }));
 }
 /** 问题气泡里的字：开头的引用画成引用框。 */
 export function UserText({ text }) {

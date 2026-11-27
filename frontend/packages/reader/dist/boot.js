@@ -1,7 +1,7 @@
 import { jsx as t } from "react/jsx-runtime";
 import { createRoot as a } from "react-dom/client";
 import { ErrorBoundary as c } from "@retainpdf/ui";
-import { R as n } from "./ReaderApp-CNjz7-Fe.js";
+import { R as n } from "./ReaderApp-Cm0fjd1Y.js";
 import { bootTheme as i } from "@retainpdf/ui/theme";
 function m(o = document.body) {
   o.classList.add("reader-body", "reader-mode-compare"), globalThis.window && window.self !== window.top && o.classList.add("reader-embedded");

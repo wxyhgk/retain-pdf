@@ -2,6 +2,7 @@
  * 最后一个测试在 jsdom 里真把窗口画出来，用假 agent 点一遍。 */
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 
 import { PAGE_HREF_PREFIX, pageFromHref, remarkPageCitations, splitPageRefs } from "../../../packages/ask/src/window/page-citations.ts";
@@ -111,6 +112,12 @@ test("回答里选字引用回复：引用写成「> 」放在问题前面、拆
   const long = doc.createRange();
   long.selectNodeContents(first);
   assert.equal([...rangeText(long, doc)].length, QUOTE_LIMIT + 1, "截断加「…」");
+});
+
+test("另外几处出处（11-27）：认结构化出处的 agent 不带第一处那段字，但另外几处照带", () => {
+  const adapter = readFileSync(new URL("../../../packages/ask/src/acp/adapter.ts", import.meta.url), "utf8");
+  assert.match(adapter, /const preamble = context && !current\.capabilities\?\.selection \? /);
+  assert.match(adapter, /const extra = `\$\{context\?\.extra \|\| ""\}`\.trim\(\);\n      if \(extra\) blocks\.push\(\{ type: "text", text: extra \}\);/);
 });
 
 test("窗口记忆（11-27）：默认 agent 是上次用的（还能用才算）；记的浮动位置挪回屏幕里", () => {

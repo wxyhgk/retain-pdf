@@ -2,6 +2,8 @@ import type { AskMemoryNotice, AskMessage, AskTurnRecord } from "@retainpdf/ask"
 import type { AskCompactionPointView, AskConversationMessageRecord, AskConversationRecord } from "@retainpdf/api/ai";
 import type { ReaderAskAnchor, ReaderAskPort } from "../contracts/ask.js";
 import { type AskBook } from "./conversation-messages.js";
+/** 一问除了第一处，最多再带几处。 */
+export declare const MAX_EXTRAS = 2;
 export type AskConversationView = {
     conversation: AskConversationRecord | null;
     /** 主对话（副对话时是它的主对话，面包屑用）。 */
@@ -23,7 +25,9 @@ export declare function useAskConversation({ port, book, onAppended }: {
     loading: boolean;
     error: string;
     pending: ReaderAskAnchor;
-    setPending: import("react").Dispatch<import("react").SetStateAction<ReaderAskAnchor>>;
+    setPending: (anchor: ReaderAskAnchor | null) => void;
+    extras: readonly ReaderAskAnchor[];
+    addExtra: (anchor: ReaderAskAnchor) => void;
     closingSide: "busy" | "failed" | "idle";
     notices: ReadonlyMap<string, readonly AskMemoryNotice[]>;
     persistent: boolean;
