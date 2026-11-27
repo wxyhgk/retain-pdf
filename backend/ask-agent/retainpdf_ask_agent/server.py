@@ -40,7 +40,7 @@
 `thinking_level`（没改过不带，按握手的思考深度发）。不报 `category = "model"`：模型是用户在设置里存的连接，换模型重开会话。
 
 2026-11-27 用户：「只有开和关……太诡异了」。每档报中文名和一句说明（`options[].name` / `description`，这一项也有 `description`）；
-改了档位调用方给的 `remember_thinking` 记下（下次开会话默认这一档，见 `thinking_choice.py`）；每问答完 `_meta.retainpdf.usage.thinking`
+改了档位调用方给的 `remember_thinking` 记下（下次开会话默认这一档，读写在接线的 `thinking_choice.py`）；每问答完 `_meta.retainpdf.usage.thinking`
 报 `{level, thought}`（这一问有没有真的思考：收到思考内容、思考 token 大于 0、或者正文里有 `<think>`），档位是猜的（`thinking.guessed`）、
 开了思考却没思考时再带 `notice`（一句给用户看的话）。
 """
