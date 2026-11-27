@@ -311,7 +311,7 @@
   gap: 2px;
 }
 
-/* 底栏「书签」（类名和左栏书签树的展开箭头 .reader-bookmark-toggle 分开，那个只有 22px 宽）。 */
+/* 底栏「书签」（11-28 以前和左栏书签树的展开箭头同名 .reader-bookmark-toggle，被挤成 22px 宽）。 */
 .reader-bookmark-mark {
   white-space: nowrap;
 }

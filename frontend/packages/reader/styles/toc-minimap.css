@@ -1,0 +1,279 @@
+/* 书页区左缘的目录（ReaderTocMinimap.tsx，2026-11-28 照原型 reader-prototype.html）：
+ * 平时一排极淡的短横线，竖着居中贴在书页区左边；移上去（或 Tab 到、光标在过滤框里）换成目录卡。
+ * 只用墨色的深浅：没有彩色，当前节墨色、当前章深灰、别的淡灰。 */
+/* 有目录时书页往右让出一条边（照原型：短横线落在书页外的空白里，不压在纸上）。书页的滚动容器量的是自己的宽，
+ * 适应宽度、放不放得下对照都跟着算。底色和滚动容器一样。 */
+.reader-stage:has(> .reader-toc-minimap) {
+  background: var(--bg, var(--reader-page-bg));
+}
+
+.reader-stage:has(> .reader-toc-minimap) .reader-react-scroll-shell {
+  left: 48px;
+}
+
+.reader-toc-minimap {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  z-index: 30;
+  transform: translateY(-50%);
+}
+
+.reader-toc-bars {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 9px;
+  padding: 12px 8px;
+  border-radius: var(--ui-radius-sm, 6px);
+  cursor: pointer;
+  transition: opacity 140ms ease;
+}
+
+.reader-toc-bars:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.reader-toc-bar {
+  display: block;
+  height: 2.5px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+  transition: background 150ms ease, width 150ms ease;
+}
+
+.reader-toc-bar[data-kind="h1"] {
+  width: 16px;
+}
+
+.reader-toc-bar[data-kind="h2"] {
+  width: 9px;
+}
+
+.reader-toc-bar[data-state="chapter"] {
+  background: color-mix(in srgb, var(--ink) 36%, transparent);
+}
+
+.reader-toc-bar[data-state="current"] {
+  background: var(--ink);
+}
+
+.reader-toc-card {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  width: 268px;
+  height: min(480px, 72vh);
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-lg, 14px);
+  background: var(--paper);
+  box-shadow:
+    0 18px 44px color-mix(in srgb, var(--shadow-color, var(--ink)) 12%, transparent),
+    0 2px 10px color-mix(in srgb, var(--shadow-color, var(--ink)) 5%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%) scale(0.96);
+  transform-origin: left center;
+  transition: opacity 150ms ease, transform 150ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.reader-toc-card[data-compact="true"] {
+  height: auto;
+  max-height: min(480px, 72vh);
+}
+
+/* 鼠标在上面，或键盘焦点在里面（:focus-visible：鼠标点一条跳过去不算，移开就收；光标在过滤框里算，打字时不收）。 */
+.reader-toc-minimap:hover .reader-toc-card,
+.reader-toc-minimap:has(:focus-visible) .reader-toc-card {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(-50%) scale(1);
+}
+
+.reader-toc-minimap:hover .reader-toc-bars,
+.reader-toc-minimap:has(:focus-visible) .reader-toc-bars {
+  opacity: 0;
+}
+
+.reader-toc-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 10px 6px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.reader-toc-filter-input {
+  flex: 1;
+  min-width: 0;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 12px);
+  box-shadow: none;
+  outline: none;
+}
+
+.reader-toc-filter-clear {
+  height: 20px;
+  min-width: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.reader-toc-filter-clear:hover {
+  color: var(--ink);
+}
+
+.reader-toc-list {
+  flex: 1;
+  min-height: 0;
+  padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.reader-toc-chapter-row {
+  display: flex;
+  align-items: center;
+}
+
+.reader-toc-caret,
+.reader-toc-caret-space {
+  flex: none;
+  width: 18px;
+  height: 18px;
+}
+
+.reader-toc-caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 4px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.reader-toc-caret:hover {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--ink);
+}
+
+.reader-toc-entry {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--ui-radius-md, 8px);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.reader-toc-chapter-row .reader-toc-entry {
+  flex: 1;
+  padding-left: 4px;
+  color: color-mix(in srgb, var(--ink) 78%, transparent);
+  font-size: var(--ui-text-md, 13px);
+  font-weight: 500;
+}
+
+.reader-toc-entry[data-depth="2"] {
+  padding-left: 26px;
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.reader-toc-entry[data-depth="3"] {
+  padding-left: 38px;
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.reader-toc-entry:hover {
+  color: var(--ink);
+}
+
+.reader-toc-entry[aria-current="location"] {
+  background: color-mix(in srgb, var(--ink) 6.5%, transparent);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.reader-toc-entry:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.reader-toc-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 页码只在悬停和当前那一行出。 */
+.reader-toc-page {
+  flex: none;
+  color: var(--muted);
+  font-size: var(--ui-text-2xs, 10px);
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  transition: opacity 100ms ease;
+}
+
+.reader-toc-entry:hover .reader-toc-page,
+.reader-toc-entry[aria-current="location"] .reader-toc-page {
+  opacity: 0.75;
+}
+
+.reader-toc-empty {
+  margin: 0;
+  padding: 16px 12px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+  text-align: center;
+}
+
+/* 太窄的书页区（手机）：短横线照旧，卡片别比书页区还宽。 */
+@container reader-stage (max-width: 420px) {
+  .reader-toc-minimap {
+    left: 4px;
+  }
+
+  .reader-stage:has(> .reader-toc-minimap) .reader-react-scroll-shell {
+    left: 28px;
+  }
+
+  .reader-toc-card {
+    width: min(268px, calc(100cqi - 16px));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-toc-card,
+  .reader-toc-bars,
+  .reader-toc-bar,
+  .reader-toc-entry,
+  .reader-toc-page {
+    transition: none;
+  }
+}

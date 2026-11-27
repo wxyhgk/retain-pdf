@@ -1,10 +1,8 @@
 import type { ReaderFinderTab } from "../components/react-pdf/ReaderFinder.js";
 import type { ReaderReactController } from "../hooks/use-reader-react-controller.js";
-/** 窄于这个宽度钉住也当浮着。 */
+/** 窄于这个宽度左栏浮在书页上（占一栏书页就没地方了）。 */
 export declare const SIDEBAR_PIN_MIN_VIEWPORT = 900;
 type SidebarMemory = {
-    pinned: boolean;
-    open: boolean;
     tab: ReaderFinderTab;
 };
 export declare function loadSidebarMemory(): SidebarMemory;
@@ -14,9 +12,6 @@ export declare function useReaderFinder(c: ReaderReactController): {
     toggleFinder: (tab: ReaderFinderTab) => void;
     toggleSidebar: () => void;
     pinned: boolean;
-    pinnedChoice: boolean;
-    setPinned: (next: boolean) => void;
-    canPin: boolean;
     findQuery: string;
     setFindQuery: import("react").Dispatch<import("react").SetStateAction<string>>;
     findTerm: string;

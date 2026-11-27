@@ -101,10 +101,10 @@ test("书页区里的两条提示：按书页区居中（left: 50% + translateX(
   }
 });
 
-test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待处理角标不用黄色；顶栏按钮一套平的 32px；底栏书签、收藏带轻字", () => {
+test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待改个数不用黄色；顶栏按钮一套平的 32px；底栏书签、收藏带轻字", () => {
   // 左栏：打开阅读页总是收着（上次钉住、开着也一样），点开关或 ⌘F 才展开。
   assert.match(read("src/app/use-reader-finder.ts"), /useState<ReaderFinderTab \| null>\(null\)/);
-  for (const selector of [".reader-finder-toggle-badge", ".reader-finder-tab-count"]) {
+  for (const selector of [".reader-finder-toggle-count", ".reader-finder-tab-count"]) {
     assert.doesNotMatch(`${declaration(["finder.css"], selector, "background")} ${declaration(["finder.css"], selector, "color")}`, /--warn/, `${selector} 还是黄色`);
   }
   // 顶栏：返回、左栏开关、面板按钮、下载、提问都是 32px 高、同一种圆角、透明底；没有描边、阴影、毛玻璃。

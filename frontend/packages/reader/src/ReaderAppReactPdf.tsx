@@ -26,6 +26,7 @@ import {
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderBarTools } from "./components/react-pdf/ReaderBarTools.js";
 import { ReaderFinderToggles } from "./components/react-pdf/ReaderFinder.js";
+import { ReaderTocMinimap } from "./components/react-pdf/ReaderTocMinimap.js";
 import { useReaderIssueNav } from "./hooks/use-reader-issues.js";
 import { ReaderPageMenu, pageMenuFromContextMenu, type ReaderPageMenuState } from "./components/react-pdf/ReaderPageMenu.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
@@ -66,7 +67,7 @@ export function ReaderAppReactPdf() {
   const table = useReaderContributionTable();
   const { reserveRight } = table;
   const sideDocked = assistantOpen || reserveRight > 0;
-  // 左栏（目录 / 搜索 / 书签 / 待处理，app/use-reader-finder）：钉住、开着时书页区左边也让出一栏。
+  // 左栏（搜索 / 书签 / 待改，app/use-reader-finder）：开着、屏够宽时书页区左边也让出一栏。
   const finderState = useReaderFinder(c);
   const { finder, findTerm } = finderState;
   const leftDocked = Boolean(finder) && finderState.pinned;
@@ -291,8 +292,10 @@ export function ReaderAppReactPdf() {
             </>}
           />
           <div className="reader-workspace">
-            <ReaderFinderArea state={finderState} bookmarks={bookmarks} bookmarkScope={c.viewStateKey} issues={issueNav} />
+            <ReaderFinderArea state={finderState} bookmarkScope={c.viewStateKey} issues={issueNav} />
             <div className="reader-stage">
+              {/* 目录：书页区左缘一排短横线，移上去出目录卡（照原型 reader-prototype.html）。 */}
+              <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} />
               <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
               <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
             </div>
