@@ -77,6 +77,8 @@ def main() -> int:
     from retainpdf_ask_agent.server import AskAgent
     from retainpdf_ask_agent.tools import make_book_tools
     from retainpdf_ask_agent_engine.stream import make_stream_fn
+    from retainpdf_ask_agent_engine import thinking_probe
+    from retainpdf_ask_agent_engine.stream import resolve_menu
     from retainpdf_ask_agent_engine.stream import thinking_options
 
     connection = {
@@ -90,8 +92,10 @@ def main() -> int:
     choice_file = os.environ.get("RETAIN_ASK_THINKING_FILE", "").strip()
     choice_key = thinking_choice.connection_key(protocol=protocol, base_url=connection["base_url"], model=model)
     remembered = thinking_choice.load(choice_file, choice_key)
-    stream_fn = make_stream_fn(api_key=api_key, **connection, remembered=remembered)
-    thinking = thinking_options(**connection, remembered=remembered)
+    # 档位先问服务商的接口（能报的几家），问不到查我们维护的表和代码里的规则；结果缓存在记档位的文件旁边
+    menu = resolve_menu(**connection, api_key=api_key, cache_file=thinking_probe.cache_path(choice_file))
+    stream_fn = make_stream_fn(api_key=api_key, **connection, remembered=remembered, menu=menu)
+    thinking = thinking_options(**connection, remembered=remembered, menu=menu)
     context = int(os.environ.get("RETAIN_ASK_CONTEXT_WINDOW", "0") or 0) or DEFAULT_CONTEXT_WINDOW.get(protocol, FALLBACK_CONTEXT_WINDOW)
     tools = make_book_tools(
         job_id=os.environ.get("RETAIN_ASK_JOB_ID", "").strip(),

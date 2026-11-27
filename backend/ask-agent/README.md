@@ -22,6 +22,8 @@ RetainPDF 阅读页提问的自带 agent：在 stdio 上说 [ACP](https://agentc
   2026-11-27 用户：「只有开和关……太诡异了」。每档报中文名和一句说明（接线的 `THINKING_LABELS`）；DashScope 的 Qwen 按思考预算分五档；
   用户改过的档按模型连接记在桥给的 `RETAIN_ASK_THINKING_FILE` 里（`thinking_choice.py`），下次默认它；每问答完 `_meta.retainpdf.usage.thinking`
   报 `{level, thought}`，档位是猜的（自己部署的 Qwen3、通用开关）开了却没思考时多一句 `notice`。
+  档位先问服务商的接口（`thinking_probe.py`：Anthropic、OpenRouter、Ollama，结果缓存），问不到查我们维护的表
+  （翻译底座的 `thinking_models.json`，Qwen3.8 在那里），再是代码里的规则。
 
 - 回答里的互动块（2026-11-26，`openui.py`，只用标准库）：桥给了 `RETAIN_OPENUI_PROMPT` 等（说明文件 `contracts/openui/`、检查器
   `backend/openui-check`、Node）就开：系统提示词在 `ask_system.txt` 后面接 L0（运行时从说明文件读，不复制），工具多 `openui_spec`（按 id 取说明）、
