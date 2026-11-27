@@ -4,7 +4,7 @@ import type { ProtectedPdfFile } from "../../pdf/useProtectedPdfFile.js";
 import type { PageRowHeights } from "../../pdf/usePageRowSync.js";
 import { type ReaderMetadata, type ReaderRegion } from "../../shared/data/reader-regions.js";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
-import type { ReaderPaneComposition } from "../../ReaderAppReactPdf.js";
+import type { ReaderPaneComposition } from "../../app/pane-composition.js";
 export type ReaderCompareGridProps = {
     mode?: string;
     /** 以下 controller 透传值缺省时从 reader context 取 */

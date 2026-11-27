@@ -14,6 +14,24 @@ RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、阅�
 
 导入包根不会自动挂载 DOM。浏览器宿主需要先调用 `setReaderAdapters(...)`，再显式调用 `bootReader()`，或者自行渲染导出的 React 组件。
 
+## 阅读页主组件怎么分
+
+`src/ReaderAppReactPdf.tsx` 只做组装：谁和谁共享什么状态、reader context、渲染顺序。各块的状态和 effect 在 `src/app/` 下（2026-11-27 从原来 685 行的主组件里原样拆出，行为不变）：
+
+| 文件 | 管什么 |
+|---|---|
+| `pane-composition.ts` | 可见台面（几栏、叠不叠实时译文）的纯函数；主组件照旧导出 |
+| `use-live-translation-overlay.tsx` | 实时译文叠层：开没开、自动开 / 关、顶栏 pill 和源栏「译文」开关、「翻译完成 · 看对照」 |
+| `use-reader-mode-persistence.ts` | 原文 / 对照 / 译文按书恢复和存档 |
+| `use-reader-finder.ts`、`ReaderFinderArea.tsx` | 目录 / 书内搜索（防抖、Cmd/Ctrl+F、点了跳） |
+| `use-reader-pdf-assets.ts` | PDF 自带书签、各栏 PDF 对象、放大查看开着哪块 |
+| `use-reader-block-editing.ts` | 改译文和「改过几次」角标 |
+| `use-reader-compare-version.ts` | 对比版本 |
+| `use-reader-app-ask.ts` | 提问（接线在 `src/ask/`） |
+| `ReaderOverlays.tsx` | 交叉引用预览、「回到第 N 页」、放大查看 |
+
+新功能先在 `app/` 下写成一个 hook / 组件，主组件里只加调用和渲染位置。
+
 ## 宿主契约
 
 本包不直接依赖 `frontend/web/src/js/*`。宿主通过 `ReaderAdapters` 注入：

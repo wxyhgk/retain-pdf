@@ -25,6 +25,8 @@ const read = (relative) =>
 const DOWNLOADS = read("../../../packages/reader/src/components/react-pdf/ReaderDownloadActions.tsx");
 const CHROME = read("../../../packages/reader/styles/chrome.css");
 const APP = read("../../../packages/reader/src/ReaderAppReactPdf.tsx");
+// 2026-11-27 起叠层的两个开关在这里算（App 只用顶栏 pill 那个）。
+const OVERLAY = read("../../../packages/reader/src/app/use-live-translation-overlay.tsx");
 
 test("下载收成一颗「下载」按钮，和中间的模式页签分得开", () => {
   // 以前三路摊开、和模式页签同一套图标 + 都写着「对照」，靠一个 ⤓ 组前缀区分；
@@ -108,10 +110,12 @@ test("叠层画得出来，就一定至少有一个开关够得着", () => {
 });
 
 test("两个开关都真的接在这个函数上 —— 否则上面那条守的是没人调的代码", () => {
-  assert.match(APP, /resolveLiveTranslationToggles\(/, "组件没调这个函数");
+  assert.match(OVERLAY, /resolveLiveTranslationToggles\(/, "组件没调这个函数");
   assert.match(APP, /liveToggles\.topBarPill/, "顶栏 pill 没走 liveToggles");
-  assert.match(APP, /liveToggles\.sourcePaneToggle/, "源文栏开关没走 liveToggles");
+  assert.match(OVERLAY, /liveToggles\.sourcePaneToggle/, "源文栏开关没走 liveToggles");
   // 旧的自己拼条件的写法不能留着，留着就是两套真源。
-  assert.doesNotMatch(APP, /!hasOverlayContent \|\| !paneComposition\.showSource/,
-    "源文栏开关还在自己拼条件");
+  for (const source of [APP, OVERLAY]) {
+    assert.doesNotMatch(source, /!hasOverlayContent \|\| !paneComposition\.showSource/,
+      "源文栏开关还在自己拼条件");
+  }
 });

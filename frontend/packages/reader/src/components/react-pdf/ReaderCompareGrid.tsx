@@ -16,7 +16,7 @@ import {
   type ReaderRegion,
 } from "../../shared/data/reader-regions.js";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
-import type { ReaderPaneComposition } from "../../ReaderAppReactPdf.js";
+import type { ReaderPaneComposition } from "../../app/pane-composition.js";
 import { useReaderContext } from "./reader-context.js";
 import { ReaderPaneScrollbars } from "./ReaderPaneScrollbars.js";
 import { VersionWatermarks } from "./ReaderVersionCompare.js";

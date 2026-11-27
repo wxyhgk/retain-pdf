@@ -71,9 +71,14 @@ test("原来 FAB 菜单里的东西一个都没丢", () => {
 });
 
 test("ReaderAppReactPdf restores and persists reading mode with a sourceViewOnly guard", () => {
+  // 2026-11-27 从 ReaderAppReactPdf 拆到 app/use-reader-mode-persistence（App 里只调它）。
   const app = readerSource(
+    "../../../../frontend/packages/reader/src/app/use-reader-mode-persistence.ts",
+  );
+  const root = readerSource(
     "../../../../frontend/packages/reader/src/ReaderAppReactPdf.tsx",
   );
+  assert.match(root, /useReaderModePersistence\(c, sourceViewOnly\);/);
   assert.match(app, /modeScopeRef/);
   // 「存档优先 + sourceViewOnly 只许原文 + 窄屏默认译文」收进了 resolveReaderInitialMode，
   // 行为本身见 reader-narrow-viewport.test.mjs；这里只守 App 确实经它恢复。

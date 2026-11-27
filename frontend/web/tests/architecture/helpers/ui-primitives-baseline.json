@@ -1,5 +1,8 @@
 {
   "controls": {
+    "../packages/reader/src/app/use-live-translation-overlay.tsx": {
+      "button": 1
+    },
     "../packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx": {
       "button": 3
     },
@@ -34,9 +37,6 @@
       "input": 1
     },
     "../packages/reader/src/pdf/ReaderTextHoverLayer.tsx": {
-      "button": 1
-    },
-    "../packages/reader/src/ReaderAppReactPdf.tsx": {
       "button": 1
     },
     "src/app/home/HomeApp.tsx": {

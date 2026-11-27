@@ -1,0 +1,1 @@
+{"version":3,"file":"use-reader-finder.d.ts","sourceRoot":"","sources":["../../src/app/use-reader-finder.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,eAAe,EAAE,MAAM,yCAAyC,CAAC;AAE/E,OAAO,KAAK,EAAE,qBAAqB,EAAE,MAAM,yCAAyC,CAAC;AAGrF,wBAAgB,eAAe,CAAC,CAAC,EAAE,qBAAqB;;;wBAGf,eAAe;;;;;6BAiBV,MAAM;iCAKF,MAAM;EAKvD;AAED,MAAM,MAAM,iBAAiB,GAAG,UAAU,CAAC,OAAO,eAAe,CAAC,CAAC"}

@@ -194,13 +194,18 @@ test("final-compare keeps source left and translated right without live overlay"
 });
 
 test("源栏提供「译文」开关，直接叠在原文 PDF 上（不再另开窗口）", () => {
+  // 2026-11-27 起叠层的状态和开关在 app/use-live-translation-overlay，App 把 sourcePaneAction 交给 Grid。
   const app = readFileSync(
+    new URL("../../../../frontend/packages/reader/src/app/use-live-translation-overlay.tsx", import.meta.url),
+    "utf8",
+  );
+  const root = readFileSync(
     new URL("../../../../frontend/packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url),
     "utf8",
   );
   // 开关按钮 + 内容可用判定 + 传给 Grid 的源栏动作
-  assert.match(app, /reader-live-translation-toggle/);
-  assert.match(app, /sourcePaneAction/);
+  assert.match(app, /className=\{`reader-live-translation-toggle/);
+  assert.match(root, /sourcePaneAction=\{sourcePaneAction\}/);
   assert.match(app, /hasOverlayContent/);
   // 叠加仍叠在 source 栏，且由用户意图 liveTranslationVisible 控制
   assert.match(app, /overlayContentAvailable: hasOverlayContent/);
@@ -216,7 +221,7 @@ test("源栏提供「译文」开关，直接叠在原文 PDF 上（不再另开
 
 test("任务到终态自动取消「实时译文」选中", () => {
   const app = readFileSync(
-    new URL("../../../../frontend/packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url),
+    new URL("../../../../frontend/packages/reader/src/app/use-live-translation-overlay.tsx", import.meta.url),
     "utf8",
   );
   assert.match(app, /jobTerminal\)\s*setLiveTranslationVisible\(false\)/);
