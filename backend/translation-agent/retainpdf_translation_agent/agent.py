@@ -13,6 +13,7 @@ import json
 import os
 import random
 import re
+import ssl
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -276,15 +277,18 @@ def make_http_transport(
     sleep: Callable[[float], None] = time.sleep,
     classify: ErrorClassifier | None = None,
     on_wait: WaitCallback | None = None,
+    ssl_context: ssl.SSLContext | None = None,
 ) -> Transport:
     """正式流程用：密钥和地址由调用方给（任务的凭据和 base_url），不读环境变量。
     `classify`：先按业务码判断额度用完 / 套餐不能用（见 `ErrorClassifier`），判断不了再按状态码。
-    `on_wait`：被服务商限流退避等待时，开始等调一次（等待信息），等完调一次（None）；调度拿它往任务进度里报「等待中」。"""
+    `on_wait`：被服务商限流退避等待时，开始等调一次（等待信息），等完调一次（None）；调度拿它往任务进度里报「等待中」。
+    `ssl_context`：验证证书用的根证书。None 用 Python 默认的——桌面版打包的 python.org Python 不读 macOS 钥匙串、默认证书文件在用户机器上
+    不存在，会 CERTIFICATE_VERIFY_FAILED，所以正式流程由接线层传进来（加上 certifi 的，见引擎的 `tls_context`）。"""
     if not api_key:
         raise AuthFailed("model API key is empty")
 
     def transport(body: dict) -> dict:
-        return _post(body, key=api_key, url=url or API_URL, sleep=sleep, classify=classify, on_wait=on_wait)
+        return _post(body, key=api_key, url=url or API_URL, sleep=sleep, classify=classify, on_wait=on_wait, ssl_context=ssl_context)
 
     return transport
 
@@ -317,8 +321,10 @@ def _post(
     sleep: Callable[[float], None],
     classify: ErrorClassifier | None = None,
     on_wait: WaitCallback | None = None,
+    ssl_context: ssl.SSLContext | None = None,
 ) -> dict:
-    """用标准库发请求（不给流水线添依赖）。429、5xx 和网络错误退避重试；额度、密钥问题抛 `StopRun`。"""
+    """用标准库发请求（不给流水线添依赖）。429、5xx 和网络错误退避重试；额度、密钥问题抛 `StopRun`。
+    `ssl_context`：验证服务商证书用的根证书；None 用 Python 默认的（见 `make_http_transport`）。"""
     import http.client
     import urllib.error
     import urllib.request
@@ -332,7 +338,7 @@ def _post(
         wait_status = None
         wait_code = ""
         try:
-            with urllib.request.urlopen(request, timeout=300) as response:
+            with urllib.request.urlopen(request, timeout=300, context=ssl_context) as response:
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as error:
             full_text = error.read(ERROR_BODY_LIMIT).decode("utf-8", "replace")

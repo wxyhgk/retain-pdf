@@ -619,3 +619,19 @@ def test_a_page_kept_whole_in_the_original_is_saved_as_kept(tmp_path: Path, fake
     execute_translation_request(dc_replace(request, end_page=-1))
     note = _pages(tmp_path / "translated")["p003-b000"]
     assert (note["should_translate"], note["final_status"], note["skip_reason"]) == (False, "kept_origin", "skip_citation_only")
+
+
+def test_anthropic_requests_also_trust_certifi_roots(monkeypatch) -> None:
+    """agent 自己发的 Anthropic 请求带上 certifi 的根证书（2026-11-27 用户报：桌面版 macOS 每次请求 CERTIFICATE_VERIFY_FAILED，
+    打包的 python.org Python 没有默认根证书；共用请求层走 requests 本来就用 certifi）。"""
+    import ssl
+
+    import certifi
+
+    context = agent_flow.tls_context()
+    only_certifi = ssl.create_default_context(cafile=certifi.where())
+    assert len(context.get_ca_certs()) >= len(only_certifi.get_ca_certs()) > 0
+    seen: dict = {}
+    monkeypatch.setattr(agent_flow, "make_http_transport", lambda api_key, **options: seen.update(options) or (lambda body: {}))
+    agent_flow._connection_transport(api_key="k", model="claude-haiku-5-5", base_url="https://api.anthropic.com/v1")
+    assert seen["ssl_context"] is context
