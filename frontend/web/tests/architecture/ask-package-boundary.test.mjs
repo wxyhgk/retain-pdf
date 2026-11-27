@@ -78,3 +78,17 @@ test("提问窗包里自己写的文件不超过 380 行（照搬的 src/ui/ 不
     .filter(([, lines]) => lines > 380);
   assert.deepEqual(over, []);
 });
+
+// 2026-11-27 用户「ai 问答存在巨大的问题，很卡」：照搬的 shadcn 头像用了 group-has-…/avatar-group，生成 `:is(.x:has(…) *)`——
+// 「某个祖先 :has() 时它下面所有元素」。有这种规则，页面任何地方加减节点浏览器都要重查整棵树：开着提问窗翻书，pdf.js 文字层每加一个字块
+// 就把窗口里几千个节点重算一遍，滚动一下卡 1–2 秒（贴右边时整页重排，最长一帧 5 秒）。拿掉以后 ~80ms。
+test("打出来的 CSS（dist/css/ 每一份）里没有「:has() 祖先下面所有元素」这种规则（翻书时会把提问窗整棵树重算）", () => {
+  const cssDir = fileURLToPath(new URL("../../dist/css/", import.meta.url));
+  const bad = readdirSync(cssDir).filter((name) => name.endsWith(".css")).flatMap((name) => {
+    const css = readFileSync(join(cssDir, name), "utf8");
+    return [...css.matchAll(/[^{}]*:has\([^{}]*\)\s*\*\)?[^{}]*\{/g)].map((match) => `${name}: ${match[0].trim().slice(0, 140)}`);
+  });
+  assert.deepEqual(bad, [], "group-has-*/…、has-[…]: 之类后面跟后代 * 的写法会生成它，换成元素自己的 data-* 属性");
+  const sources = walk(ASK_SRC).filter((file) => /group-has-/.test(readFileSync(file, "utf8")));
+  assert.deepEqual(sources.map((file) => relative(FRONTEND, file)), [], "源码里不写 group-has-（Tailwind 扫到类名就生成规则，没用到的组件也算）");
+});
