@@ -5,24 +5,21 @@
 // 2026-09 删过一个圆钮：那时有两个启动器各管一半，而且开着面板时圆钮被 CSS 藏掉，里面的功能就进不去了。
 // 这个小球是唯一的启动器，面板开着时不藏，挪到面板左边（toolball.css）。
 import { Fragment, useEffect, useRef, useState, type ReactElement } from "react";
-import { LayoutGrid, PenLine, X } from "lucide-react";
+import { LayoutGrid, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
 import { BUILTIN_READER_EXTENSIONS } from "../../extensions/builtin.js";
 import { useReaderContributions } from "../../extensions/registry.js";
 import type { ReaderExtension, ReaderToolbarItem } from "../../extensions/types.js";
-import type { ReaderInk } from "../../hooks/use-reader-ink.js";
 import type { ReaderAssistantPanel } from "./reader-assistant-types.js";
 import { ReaderPanelToggles } from "./ReaderAssistantDock.js";
 import { readerDockTabs } from "./reader-dock-tabs.js";
 
 export function ReaderToolBall({
   active,
-  ink,
   extensions = BUILTIN_READER_EXTENSIONS,
 }: {
   active: ReaderAssistantPanel | null;
-  ink?: ReaderInk;
   extensions?: readonly ReaderExtension[];
 }): ReactElement {
   const [open, setOpen] = useState(false);
@@ -66,21 +63,6 @@ export function ReaderToolBall({
       {popup}
       {open ? (
         <div className="reader-toolball-stack" role="group" aria-label="工具">
-          {ink ? (
-            <Button
-              className="reader-toolball-item"
-              aria-label="画笔"
-              title="画笔（P；书页上右键也能选笔和颜色）"
-              aria-pressed={Boolean(ink.tool)}
-              data-toolball-item="ink"
-              onClick={() => {
-                ink.setTool(ink.tool ? null : "pen");
-                setOpen(false);
-              }}
-            >
-              <PenLine size={18} strokeWidth={2.1} aria-hidden />
-            </Button>
-          ) : null}
           {extensions.map((extension) => {
             const tabs = readerDockTabs([extension]);
             return (
@@ -117,7 +99,7 @@ export function ReaderToolBall({
       ) : null}
       <Button
         className="reader-toolball-ball"
-        aria-label={open ? "收起工具" : `工具：${[...(ink ? ["画笔"] : []), ...names].join("、")}`}
+        aria-label={open ? "收起工具" : `工具：${names.join("、")}`}
         title={open ? "收起" : "工具"}
         aria-expanded={open}
         data-active={active || pressed ? "true" : undefined}

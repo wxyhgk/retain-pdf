@@ -126,3 +126,27 @@ test("文字层标记（textMarks）：几个扩展的合在一起，重叠的�
   assert.equal(collectTextMarks([{ id: "a", title: "", contribution: {} }]), null, "没人给就不改文字层");
   assert.equal(renderMarkedText("a<b", [], ""), "a&lt;b");
 });
+
+test("画笔扩展的贡献：小球按钮跟着画笔开没开亮、点了进出画笔；画笔模式占着指针；离视口远的页不画笔迹；右键菜单里那一排", async () => {
+  const { inkContribution } = await import("../../../packages/reader/src/extensions/builtin/ink.tsx");
+  const { collectMenuSections, pointerTakenBy } = await registry();
+  let tool = null;
+  const ink = (current) => ({ tool: current, color: "ok", strokes: [], setTool: (next) => { tool = next; }, setColor() {}, add() {}, erase() {}, undo() {}, clearPage() {} });
+  const off = inkContribution(ink(null));
+  assert.equal(off.toolbarItems[0].key, "ink");
+  assert.equal(off.toolbarItems[0].pressed, false);
+  off.toolbarItems[0].onClick();
+  assert.equal(tool, "pen", "点了进画笔");
+  assert.equal(off.takesPointer, false);
+  const on = inkContribution(ink("pen"));
+  assert.equal(on.toolbarItems[0].pressed, true);
+  on.toolbarItems[0].onClick();
+  assert.equal(tool, null, "再点退出");
+  assert.equal(on.takesPointer, true);
+  assert.equal(on.pageLayer({ page: 1, width: 100, height: 140, pane: "source", active: false }), null, "没画的页不画笔迹");
+  assert.ok(on.pageLayer({ page: 1, width: 100, height: 140, pane: "compare", active: true }), "画着的页有笔迹层");
+  const entries = [{ id: "ask", title: "提问", contribution: {} }, { id: "ink", title: "画笔", contribution: on }];
+  assert.deepEqual(collectMenuSections(entries).map((section) => section.id), ["ink"]);
+  assert.equal(pointerTakenBy(entries), "ink");
+  assert.equal(pointerTakenBy([{ id: "ink", title: "画笔", contribution: off }]), null);
+});

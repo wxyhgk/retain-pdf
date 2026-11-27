@@ -88,11 +88,9 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
     ],
   },
   {
-    title: "画笔",
+    // 画笔、提问这些扩展自己的快捷键由扩展登记（快捷键说明里排在这几组后面）。
+    title: "右键",
     items: [
-      { actions: [], keys: "P", desc: "进入 / 退出画笔（书页上右键也能选笔和颜色）" },
-      { actions: [], keys: "Esc", desc: "退出画笔" },
-      { actions: [], keys: "⌘Z / Ctrl+Z", desc: "画笔模式下撤销" },
       { actions: [], keys: "Shift+右键", desc: "浏览器自己的右键菜单" },
     ],
   },

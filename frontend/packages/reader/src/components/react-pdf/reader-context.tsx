@@ -20,7 +20,6 @@ import type { ProtectedPdfFile } from "../../pdf/useProtectedPdfFile.js";
 import type { PageRowHeights } from "../../pdf/usePageRowSync.js";
 import type { ReaderAssistantPanel } from "./reader-assistant-types.js";
 import type { ReaderBlockEdit } from "../../hooks/use-reader-block-edit.js";
-import type { ReaderInk } from "../../hooks/use-reader-ink.js";
 
 export type ReaderContextValue = {
   // shell / zoom
@@ -68,8 +67,8 @@ export type ReaderContextValue = {
   editShowsSource?: boolean;
   /** 左栏搜索的词（防抖后）：书页文字层把命中标出来（PdfPageSlot）。空串不标。 */
   findTerm?: string;
-  /** 画笔：笔迹和当前工具（hooks/use-reader-ink.ts）；每页的 InkLayer 画出来、画笔模式下接住拖动。 */
-  ink?: ReaderInk;
+  /** 有扩展占着书页上的指针（画笔模式，贡献表的 takesPointer）：书页不出悬停框、双击不放大。 */
+  pointerTaken?: boolean;
   /** 「对比版本」：左栏换成这一份译文（地址、块；块的 source 已换成那一份的译文）。null = 左栏照常是原文。 */
   compareVersion?: ReaderComparedDocument | null;
   // 和 regions 走同一条路下去，因为它们用的是同一套 bbox 投影。

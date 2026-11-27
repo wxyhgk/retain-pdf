@@ -1,0 +1,1 @@
+{"version":3,"file":"ink.d.ts","sourceRoot":"","sources":["../../../src/extensions/builtin/ink.tsx"],"names":[],"mappings":"AAOA,OAAO,EAAgB,KAAK,SAAS,EAAE,MAAM,+BAA+B,CAAC;AAG7E,OAAO,KAAK,EAAE,kBAAkB,EAAE,eAAe,EAAE,MAAM,aAAa,CAAC;AAQvE,oCAAoC;AACpC,wBAAgB,eAAe,CAAC,GAAG,EAAE,SAAS,GAAG,kBAAkB,CAgBlE;AAWD,eAAO,MAAM,kBAAkB,EAAE,eAAqE,CAAC"}

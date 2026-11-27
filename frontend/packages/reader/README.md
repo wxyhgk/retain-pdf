@@ -26,9 +26,8 @@ RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、阅�
 | `use-reader-finder.ts`、`ReaderFinderArea.tsx` | 目录 / 书内搜索（防抖、Cmd/Ctrl+F、点了跳） |
 | `use-reader-pdf-assets.ts` | PDF 自带书签、各栏 PDF 对象、放大查看开着哪块 |
 | `use-reader-block-editing.ts` | 改译文和「改过几次」角标 |
-| `use-reader-compare-version.ts` | 对比版本 |
-| `use-reader-app-ask.ts` | 提问（接线在 `src/ask/`） |
-| `ReaderOverlays.tsx` | 交叉引用预览、「回到第 N 页」、放大查看 |
+| `use-reader-extension-host.ts` | 贡献表这一侧：给扩展看的阅读页接口、阅读页建的那张表、从表里收拢出来的东西 |
+| `ReaderOverlays.tsx` | 放大查看 |
 
 新功能先在 `app/` 下写成一个 hook / 组件，主组件里只加调用和渲染位置。
 
@@ -36,8 +35,12 @@ RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、阅�
 
 功能也可以写成**扩展**（2026-11-27 起，提问是第一个；方案见 `docs/ops/planning/reader-redesign/20261127-阅读页贡献表.md`）：
 一个组件，挂在阅读页根节点里浮层的位置，画出来的就是它的浮层；用 `useReaderApi()` 读阅读页（书、块、目录、页数、跳页），
-用 `useReaderContribution()` 往贡献表登记右键菜单项（`menuItems`）、每页一层（`pageLayer`）、快捷键说明（`shortcuts`）。
+用 `useReaderContribution()` 往贡献表登记：右键菜单项（`menuItems`）和菜单里的一块（`menuSection`）、每页一层（`pageLayer`）、
+文字层标记（`textMarks`）、小球里的按钮（`toolbarItems`）、对照左栏换成的那一份（`comparedDocument`）、占着指针（`takesPointer`）、
+快捷键说明（`shortcuts`）；右边停靠的面板写在扩展定义上（`panels`）。
 加一个扩展：写组件，在 `extensions/builtin.ts` 的列表里加一行。一个扩展出错只丢掉它自己。
+
+现在的内置扩展（按顺序）：画笔、Markdown、对比版本、交叉引用（`extensions/builtin/`）、提问（`ask/ReaderAskExtension.tsx`）。
 
 
 ## 宿主契约

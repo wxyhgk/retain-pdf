@@ -26,25 +26,16 @@ import {
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderSearchToggle } from "./components/react-pdf/ReaderFinder.js";
 import { ReaderToolBall } from "./components/react-pdf/ReaderToolBall.js";
-import { ReaderInkDock, ReaderInkMenu, inkMenuFromContextMenu, useInkShortcuts, type InkMenuState } from "./components/react-pdf/ReaderInkPalette.js";
-import { useReaderInk } from "./hooks/use-reader-ink.js";
+import { ReaderPageMenu, pageMenuFromContextMenu, type ReaderPageMenuState } from "./components/react-pdf/ReaderPageMenu.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
 import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
 import { ReaderFinderArea } from "./app/ReaderFinderArea.js";
 import { ReaderOverlays } from "./app/ReaderOverlays.js";
 import { useLiveTranslationControls, useLiveTranslationOverlay } from "./app/use-live-translation-overlay.js";
 import { BUILTIN_READER_EXTENSIONS } from "./extensions/builtin.js";
-import {
-  collectMenuItems,
-  collectPageLayers,
-  collectTextMarks,
-  pickComparedDocument,
-  createContributionStore,
-  ReaderExtensionOutlets,
-  ReaderExtensionsProvider,
-  useReaderContributionsOf,
-} from "./extensions/registry.js";
-import type { ReaderApi, ReaderMenuItem } from "./extensions/types.js";
+import { collectMenuItems, ReaderExtensionOutlets, ReaderExtensionsProvider } from "./extensions/registry.js";
+import type { ReaderMenuItem } from "./extensions/types.js";
+import { useReaderExtensionHost } from "./app/use-reader-extension-host.js";
 import { useReaderBlockEditing } from "./app/use-reader-block-editing.js";
 import { useReaderTranslationVersions } from "./hooks/use-reader-version-compare.js";
 import { useReaderFinder } from "./app/use-reader-finder.js";
@@ -130,47 +121,19 @@ export function ReaderAppReactPdf() {
   const { bookmarks, onPdfOutline, onPdfDocument, zoomItem, setZoomItem, zoomBlock, closeZoom, zoomDocuments } = useReaderPdfAssets(c);
   // 改译文（app/use-reader-block-editing）。
   const { blockEdit, editBlock, revisedBlocks } = useReaderBlockEditing(c, visiblePdfMode, regionHover);
-  // 画笔：笔迹按书存在本机（hooks/use-reader-ink），右键书页出小菜单，P 进出画笔模式。
-  const ink = useReaderInk(c.viewStateKey);
-  useInkShortcuts(ink);
-  const [inkMenu, setInkMenu] = useState<InkMenuState>(null);
-  const closeInkMenu = useCallback(() => setInkMenu(null), []);
+  // 右键书页的菜单：开在哪、第几页（菜单项和下面那几块是扩展登记的）。
+  const [pageMenu, setPageMenu] = useState<ReaderPageMenuState>(null);
+  const closePageMenu = useCallback(() => setPageMenu(null), []);
   // 这本书的几份译文、正在读哪一份（提问记读的是哪份；对比版本扩展列出来挑）。
   const translationVersions = useReaderTranslationVersions({ documentId: session.documentId, jobId: session.jobId });
-  // 贡献表（extensions/）：扩展读的阅读页接口、它们登记的右键菜单项 / 每页一层 / 浮层 / 快捷键说明。
-  const readerApi = useMemo<ReaderApi>(() => ({
-    documentId: session.documentId || "",
-    jobId: session.jobId,
-    versionId: translationVersions.readingVersionId || null,
-    translationVersions: translationVersions.versions,
-    regions: session.regions,
-    metadata: session.readerMetadata,
-    bookmarks,
-    pageCount: panes.hudNumPages || 0,
-    resetKey: c.viewStateKey,
-    hoveredItemId: () => regionHover.get().itemId,
-    goToPage: c.goToPage,
-    sourceOnly: c.sourceOnly,
-    activePanel: assistantPanel,
-    closePanel: closeAssistant,
-    visibleMode: visiblePdfMode,
-    setWorkspace: changeWorkspace,
-    jumpToBlock: jumpToBlockIn,
-    shellEl: c.shell.shellEl,
-    primaryPane: c.panes.primaryPane,
-    pdfDocuments: zoomDocuments,
-  }), [
-    session.documentId, session.jobId, translationVersions, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages,
-    c.viewStateKey, regionHover, c.goToPage, c.sourceOnly, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace,
-    jumpToBlockIn, c.shell.shellEl, c.panes.primaryPane, zoomDocuments,
-  ]);
-  const [contributionStore] = useState(createContributionStore);
-  const contributions = useReaderContributionsOf(contributionStore);
-  const pageLayers = useMemo(() => collectPageLayers(contributions), [contributions]);
-  // 对照时左栏换成的那一份（对比版本扩展给的）。
-  const compareVersion = useMemo(() => pickComparedDocument(contributions), [contributions]);
-  // 扩展给的文字层标记（交叉引用……）。
-  const textMarks = useMemo(() => collectTextMarks(contributions), [contributions]);
+  // 贡献表（extensions/，app/use-reader-extension-host）：扩展读的阅读页接口、它们登记的右键菜单项 / 每页一层 / 文字层标记 /
+  // 对照左栏 / 占着指针。
+  const {
+    readerApi, contributionStore, contributions, pageLayers, compareVersion, textMarks, menuSections, pointerTakenId,
+  } = useReaderExtensionHost(c, {
+    translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments,
+  });
+  const pointerTaken = Boolean(pointerTakenId);
   // 右键那一下各扩展给的菜单项（右键时算好，菜单开着时不再变）。
   const [menuItems, setMenuItems] = useState<readonly ReaderMenuItem[]>([]);
   const readerContext = useMemo<ReaderContextValue>(() => ({
@@ -204,7 +167,7 @@ export function ReaderAppReactPdf() {
     editShowsSource: visiblePdfMode !== "compare",
     findTerm: finder === "search" ? findTerm : "",
     compareVersion,
-    ink,
+    pointerTaken,
     sourceOnly: c.sourceOnly,
     sourceViewOnly,
     download: c.download,
@@ -236,7 +199,7 @@ export function ReaderAppReactPdf() {
     finder,
     findTerm,
     compareVersion,
-    ink,
+    pointerTaken,
     c.sourceOnly,
     sourceViewOnly,
     c.download,
@@ -267,13 +230,16 @@ export function ReaderAppReactPdf() {
           className={rootClasses}
           data-reader-engine="react-pdf"
           data-reader-workspace={workspaceView}
-          data-ink-mode={ink.tool || undefined}
+          data-pointer-taken={pointerTakenId || undefined}
           onContextMenu={(event) => {
-            const menu = inkMenuFromContextMenu(event);
+            const menu = pageMenuFromContextMenu(event);
             if (!menu) return;
+            const items = collectMenuItems(contributions, { target: event.target as Element, clientX: event.clientX, clientY: event.clientY, page: menu.page });
+            // 没有扩展往菜单里放东西：照旧是浏览器自己的菜单。
+            if (!items.length && !menuSections.length) return;
             event.preventDefault();
-            setMenuItems(collectMenuItems(contributions, { target: event.target as Element, clientX: event.clientX, clientY: event.clientY, page: menu.page }));
-            setInkMenu(menu);
+            setMenuItems(items);
+            setPageMenu(menu);
           }}
         >
           <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
@@ -324,15 +290,9 @@ export function ReaderAppReactPdf() {
             closeZoom={closeZoom}
             visiblePdfMode={visiblePdfMode}
           />
-          <ReaderToolBall active={assistantPanel} ink={ink} />
-          <ReaderInkMenu
-            ink={ink}
-            menu={inkMenu}
-            onClose={closeInkMenu}
-            actions={menuItems}
-          />
+          <ReaderToolBall active={assistantPanel} />
+          <ReaderPageMenu menu={pageMenu} onClose={closePageMenu} actions={menuItems} sections={menuSections} />
           <ReaderExtensionOutlets extensions={BUILTIN_READER_EXTENSIONS} />
-          <ReaderInkDock ink={ink} />
           <ReaderPendingEditsPill edit={blockEdit} />
           <DownloadToastHost />
         </div>

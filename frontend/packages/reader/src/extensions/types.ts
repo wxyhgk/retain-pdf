@@ -53,8 +53,17 @@ export type ReaderMenuContext = { target: Element; clientX: number; clientY: num
 /** 右键菜单画笔那一排上面的一项。 */
 export type ReaderMenuItem = { key: string; label: string; hint?: string; onSelect: () => void };
 
-/** 每一页上叠一层（页边的标记之类）：页码和这一页的原始高度（PDF 点）。 */
-export type ReaderPageLayerProps = { page: number; height: number };
+/**
+ * 每一页上叠一层（页边的标记、笔迹……）：页码、这一页画出来的宽高（像素）、哪一栏（对比版本时左栏是 "compare"）、
+ * 这一页现在画没画（离视口远的页只是占位，active 是 false，重的层可以先不画）。
+ */
+export type ReaderPageLayerProps = {
+  page: number;
+  width: number;
+  height: number;
+  pane: "source" | "translated" | "compare";
+  active: boolean;
+};
 
 /** 右下角小球里的一颗按钮。给了 popup 的点了在小球旁边弹出它（done 收起），没给的点了调 onClick 再收起小球。 */
 export type ReaderToolbarItem = {
@@ -86,6 +95,10 @@ export type ReaderContribution = {
   menuItems?: (context: ReaderMenuContext) => readonly ReaderMenuItem[];
   /** 每一页上画的一层。 */
   pageLayer?: (props: ReaderPageLayerProps) => ReactNode;
+  /** 右键菜单里菜单项下面的一块（画笔的笔和颜色那一排）：page 是右键的那一页（认不出是 0），close 收起菜单。 */
+  menuSection?: (context: { page: number; close: () => void }) => ReactNode;
+  /** 这个扩展正占着书页上的指针（画笔模式：拖动是画）：书页不出悬停框、双击不放大、文字层不让拖选。 */
+  takesPointer?: boolean;
   /** 快捷键说明里单独一组，组名是扩展的 title。 */
   shortcuts?: readonly ReaderShortcut[];
   /** 右下角小球里的按钮，按扩展顺序（带面板的扩展，面板按钮跟在它的按钮后面）。 */

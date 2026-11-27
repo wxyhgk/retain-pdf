@@ -71,6 +71,17 @@ export function collectPageLayers(contributions: ReaderContributions): ReaderPag
   return contributions.flatMap(({ id, contribution }) => (contribution.pageLayer ? [{ id, render: contribution.pageLayer }] : []));
 }
 
+export type ReaderMenuSection = { id: string; render: NonNullable<ReaderContribution["menuSection"]> };
+
+export function collectMenuSections(contributions: ReaderContributions): ReaderMenuSection[] {
+  return contributions.flatMap(({ id, contribution }) => (contribution.menuSection ? [{ id, render: contribution.menuSection }] : []));
+}
+
+/** 有没有扩展正占着书页上的指针。 */
+export function pointerTakenBy(contributions: ReaderContributions): string | null {
+  return contributions.find(({ contribution }) => contribution.takesPointer)?.id ?? null;
+}
+
 /** 几个扩展的文字层标记合成一个函数（没人给是 null，书页就不用自定义文字层）。 */
 export function collectTextMarks(contributions: ReaderContributions): ((text: string) => ReaderTextMark[]) | null {
   const sources = contributions.flatMap(({ id, contribution }) => (contribution.textMarks ? [{ id, marks: contribution.textMarks }] : []));
