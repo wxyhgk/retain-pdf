@@ -1,4 +1,5 @@
-// 底栏：页码（可点跳转）+ 缩放 +/- / 模式默认重置。
+// 底栏：页码（可点跳转）、给这一页加书签、深色文档、缩放 +/- / 模式默认重置、快捷键。
+// 2026-11-27 起搜索、书签列表、待处理挪进左栏（ReaderFinder），这里只留眼下这一页、这一屏的事。
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
@@ -15,7 +16,6 @@ import {
 import { clampPageNumber } from "../../pdf/scroll-to-page.js";
 import { ReaderShortcutsHelp } from "./ReaderShortcutsHelp.js";
 import { ReaderBookmarkControl } from "./ReaderBookmarkControl.js";
-import { ReaderIssuesControl } from "./ReaderIssuesControl.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
 import { useHudAutoHide } from "./use-hud-autohide.js";
 
@@ -31,9 +31,7 @@ export type ReaderZoomHudProps = {
   modeControls?: ReactNode;
   /** 书签按这本书存（和阅读位置同一个 scope）；不给就不显示书签。 */
   bookmarkScope?: string;
-  /** 「待处理」读哪个任务的问题段落；不给就不显示。 */
-  issuesJobId?: string;
-  /** 页码后面的「搜索」按钮（ReaderSearchToggle，2026-11-20 从顶栏挪下来）。 */
+  /** 页码后面放的按钮（宿主自己加；阅读页 2026-11-27 起不放，搜索在左栏）。 */
   searchSlot?: ReactNode;
 };
 
@@ -133,10 +131,8 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           currentPage={currentPage}
           numPages={numPages}
           regions={ctx?.regions}
-          onGoToPage={onGoToPage}
         />
       ) : null}
-      {props.issuesJobId ? <ReaderIssuesControl jobId={props.issuesJobId} currentPage={currentPage} /> : null}
       {ctx?.toggleDocDark ? (
         <div className="reader-react-hud-group" aria-label="显示">
           <Button

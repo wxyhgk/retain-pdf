@@ -113,3 +113,10 @@
     transform: none;
   }
 }
+
+/* 书页区窄（左栏钉住又开着右边的面板时只剩四百来宽）：底栏居中放不下小球，小球抬到底栏上面，不叠在一起。 */
+@container reader-stage (max-width: 560px) {
+  .reader-toolball {
+    bottom: 76px;
+  }
+}

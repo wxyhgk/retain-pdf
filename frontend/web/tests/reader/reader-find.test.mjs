@@ -194,3 +194,67 @@ test("目录、搜索是浮在书页上的卡：点卡外、按 Esc 收起；点
   assert.doesNotMatch(css, /is-finder-open[^{]*\{[^}]*left:/, "书页不再让出一栏");
   assert.match(css, /\.reader-finder\s*\{[^}]*border-radius[^}]*box-shadow/s, "浮着的卡：圆角加阴影");
 });
+
+test("左栏钉住（2026-11-27）：点书、Esc 不收，只有 × 收；四个页签（待处理有才出、带个数）；栏头钉住按钮；书页区让出一栏", async () => {
+  const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div><div id='page'></div></body></html>" });
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { act } = React;
+  const { ReaderFinder } = await import("../../../packages/reader/src/components/react-pdf/ReaderFinder.tsx");
+  const { ReaderProvider } = await import("../../../packages/reader/src/components/react-pdf/reader-context.tsx");
+  let closed = 0;
+  const pins = [];
+  const tabs = [];
+  const root = createRoot(dom.window.document.getElementById("root"));
+  const render = async (props) => {
+    await act(async () => {
+      root.render(React.createElement(ReaderProvider, { value: { regions: [region("p001-b0001", 1, "Intro", "引言")] }, hud: { currentPage: 1 } },
+        React.createElement(ReaderFinder, {
+          tab: "outline", onTab: (tab) => tabs.push(tab), onClose: () => { closed += 1; }, onJump: () => {}, query: "", onQuery: () => {}, term: "",
+          onPin: (next) => pins.push(next), bookmarkPane: React.createElement("p", { id: "bm" }, "书签列表"), ...props,
+        })));
+    });
+  };
+  await render({ pinned: true, issuesPane: React.createElement("p", { id: "is" }, "待处理列表"), issueCount: 3 });
+  const doc = dom.window.document;
+  const card = await waitFor(() => doc.querySelector('.reader-finder[data-pinned="true"]'), "钉住的栏");
+  assert.deepEqual([...card.querySelectorAll(".reader-finder-tab")].map((tab) => tab.textContent), ["目录", "搜索", "书签", "待处理3"]);
+  await act(async () => { doc.getElementById("page").dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
+  await act(async () => { doc.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+  assert.equal(closed, 0, "钉住时点书、Esc 都不收");
+  await act(async () => { doc.querySelector('.reader-finder-pin').dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); });
+  assert.deepEqual(pins, [false], "栏头那颗：不钉了");
+  await act(async () => { [...card.querySelectorAll(".reader-finder-tab")][2].dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); });
+  assert.deepEqual(tabs, ["bookmarks"]);
+  await render({ pinned: true, tab: "bookmarks" });
+  assert.ok(doc.getElementById("bm"), "书签页签画宿主给的列表");
+  await render({ pinned: false, tab: "issues" });
+  assert.equal(doc.getElementById("is"), null);
+  assert.equal(doc.querySelector(".reader-finder").getAttribute("data-finder-tab"), "outline", "待处理没了：开着的页签退回目录");
+  assert.equal([...doc.querySelectorAll(".reader-finder-tab")].some((tab) => tab.textContent.startsWith("待处理")), false, "没有待处理就没有这个页签");
+  await act(async () => { doc.getElementById("page").dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
+  assert.equal(closed, 1, "不钉时照旧点书收起");
+  root.unmount();
+  dom.window.close();
+  const { readFileSync } = await import("node:fs");
+  const css = readFileSync(new URL("../../../packages/reader/styles/finder.css", import.meta.url), "utf8");
+  assert.match(css, /\.reader-react-root\.is-sidebar-pinned\s*\{[^}]*--reader-stage-left:\s*var\(--reader-sidebar-width\)/, "钉住时书页区让出一栏");
+  assert.match(css, /\.reader-finder\[data-pinned="true"\]\s*\{[^}]*top:\s*60px[^}]*bottom:\s*0/s, "钉住是顶栏以下一整栏");
+  const app = readFileSync(new URL("../../../packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url), "utf8");
+  assert.match(app, /const leftDocked = Boolean\(finder\) && finderState\.pinned;/);
+  assert.match(app, /compareFitsStage\(c\.shell\.shellWidth, sideDocked \|\| leftDocked\)/, "钉住左栏也算进放不放得下对照");
+});
+
+test("左栏记在本机：钉没钉、钉住时开着没开、哪一页签；坏数据当没钉", async () => {
+  const dom = makeDom("", { html: "<!doctype html><html><body></body></html>", keys: ["window", "document", "localStorage"] });
+  const { loadSidebarMemory } = await import("../../../packages/reader/src/app/use-reader-finder.ts");
+  localStorage.clear();
+  assert.deepEqual(loadSidebarMemory(), { pinned: false, open: false, tab: "outline" });
+  localStorage.setItem("retainpdf.reader.sidebar.v1", JSON.stringify({ pinned: true, open: true, tab: "bookmarks" }));
+  assert.deepEqual(loadSidebarMemory(), { pinned: true, open: true, tab: "bookmarks" });
+  localStorage.setItem("retainpdf.reader.sidebar.v1", JSON.stringify({ pinned: "yes", tab: "nope" }));
+  assert.deepEqual(loadSidebarMemory(), { pinned: false, open: false, tab: "outline" });
+  localStorage.setItem("retainpdf.reader.sidebar.v1", "{坏");
+  assert.deepEqual(loadSidebarMemory(), { pinned: false, open: false, tab: "outline" });
+  dom.window.close();
+});

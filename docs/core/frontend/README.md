@@ -9,7 +9,7 @@
 - [主题皮肤系统](./theme-system/THEME_SYSTEM.md)
 - [主页与阅读器软导航](./reader-home-navigation/soft-reader-no-refresh.md)
 - [阅读页改译文](./reader-block-edit.md) —— 在译文的框里直接改一段、看修订历史，攒几处再点一次重新排版
-- [阅读页对比版本、待处理](./reader-version-compare-issues.md) —— 左栏换成另一份译文逐段对着看、一键换用；底栏列出没翻成和质检挑出问题的段落，N 跳下一处
+- [阅读页对比版本、待处理](./reader-version-compare-issues.md) —— 左栏换成另一份译文逐段对着看、一键换用；左栏「待处理」列出没翻成和质检挑出问题的段落（2026-11-27 以前在底栏），N 跳下一处
 - [上传弹窗（添加 PDF）](./upload-dialog.md) —— 标题、模式、普通 / Agent 翻译、流程条、拖放区，从上到下各是什么
 - [阅读页 Ctrl + 滚轮缩放、深色文档](./reader-zoom-dark.md) —— 手势中只做 CSS 预览、停手才重画，以鼠标为中心；书页黑底白字（底栏开关、D），画布反色、叠层换深色
 - [阅读页画笔](./reader-ink.md) —— 书页上右键出画笔小菜单（Shift+右键是浏览器菜单），P 进出画笔模式，笔迹按页按栏存在本机

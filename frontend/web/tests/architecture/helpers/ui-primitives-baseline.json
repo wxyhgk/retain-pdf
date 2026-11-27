@@ -11,7 +11,7 @@
       "input": 1
     },
     "../packages/reader/src/components/react-pdf/ReaderBookmarkControl.tsx": {
-      "button": 4
+      "button": 1
     },
     "../packages/reader/src/components/react-pdf/ReaderCloseHome.tsx": {
       "button": 1
@@ -245,8 +245,8 @@
       "borderRadius": 3
     },
     "../packages/reader/styles/hud.css": {
-      "fontSize": 16,
-      "borderRadius": 6
+      "fontSize": 12,
+      "borderRadius": 3
     },
     "../packages/reader/styles/layout.css": {
       "fontSize": 1
@@ -589,7 +589,6 @@
     "page_range_btn",
     "page_range_clear_btn",
     "page_range_close_btn",
-    "reader_bookmark_list_btn",
     "reader_close_home_btn",
     "reader_react_hud_btn",
     "reader_react_hud_page_btn",

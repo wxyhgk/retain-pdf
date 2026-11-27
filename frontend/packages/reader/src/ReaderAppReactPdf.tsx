@@ -24,7 +24,6 @@ import {
   type ReaderHudContextValue,
 } from "./components/react-pdf/reader-context.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
-import { ReaderSearchToggle } from "./components/react-pdf/ReaderFinder.js";
 import { ReaderToolBall } from "./components/react-pdf/ReaderToolBall.js";
 import { ReaderPageMenu, pageMenuFromContextMenu, type ReaderPageMenuState } from "./components/react-pdf/ReaderPageMenu.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
@@ -65,13 +64,17 @@ export function ReaderAppReactPdf() {
   const table = useReaderContributionTable();
   const { reserveRight } = table;
   const sideDocked = assistantOpen || reserveRight > 0;
+  // 左栏（目录 / 搜索 / 书签 / 待处理，app/use-reader-finder）：钉住、开着时书页区左边也让出一栏。
+  const finderState = useReaderFinder(c);
+  const { finder, findTerm } = finderState;
+  const leftDocked = Boolean(finder) && finderState.pinned;
   const closeAssistant = useCallback(() => {
     setAssistantPanel(null);
   }, []);
   useRightDockSlot(reserveRight, assistantPanel, closeAssistant);
   // 实时译文叠不叠、可见台面（Grid / Tabs / 键盘 / HUD 的唯一真源）、两个开关摆哪：app/use-live-translation-overlay。
   const { liveTranslationVisible, setLiveTranslationVisible, paneComposition, liveToggles, sourceViewOnly, visiblePdfMode } = useLiveTranslationOverlay(
-    c, assistantOpen, compareFitsStage(c.shell.shellWidth, sideDocked),
+    c, assistantOpen, compareFitsStage(c.shell.shellWidth, sideDocked || leftDocked),
   );
   useReaderModePersistence(c, sourceViewOnly);
   const workspaceView = assistantPanel || (c.mode === "compare" ? "compare" : "reading");
@@ -120,9 +123,6 @@ export function ReaderAppReactPdf() {
   // 外壳 Context：只装频繁下钻、且此前纯透传的值；currentPage/numPages 走 HUD
   // context，避免滚动带动整棵外壳重渲染。
   const [regionHover] = useState(createRegionHoverStore);
-  // 左栏的目录 / 搜索（app/use-reader-finder）。
-  const finderState = useReaderFinder(c);
-  const { finder, toggleFinder, findTerm } = finderState;
   const jumpToBlock = useCallback((itemId: string) => c.jumpToAnchor({ block_id: itemId }), [c.jumpToAnchor]);
   const jumpToBlockIn = useCallback((itemId: string, pane?: "source" | "translated") => c.jumpToAnchor({ block_id: itemId }, pane), [c.jumpToAnchor]);
   // PDF 自带的书签、各栏读好的 PDF 和放大查看（app/use-reader-pdf-assets）。
@@ -229,6 +229,7 @@ export function ReaderAppReactPdf() {
     `is-workspace-${workspaceView}`,
     assistantOpen ? "is-assistant-open" : "",
     finder ? "is-finder-open" : "",
+    leftDocked ? "is-sidebar-pinned" : "",
     paneComposition.overlayOnSource ? "is-live-translation-overlay" : "",
   ].filter(Boolean).join(" ");
 
@@ -254,7 +255,7 @@ export function ReaderAppReactPdf() {
           }}
         >
           <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
-          <ReaderFinderArea state={finderState} bookmarks={bookmarks} />
+          <ReaderFinderArea state={finderState} bookmarks={bookmarks} bookmarkScope={c.viewStateKey} issuesJobId={c.sourceOnly ? "" : session.jobId} />
           {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
               原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
           <div className="reader-chrome-tray">
@@ -292,8 +293,6 @@ export function ReaderAppReactPdf() {
                 mode={visiblePdfMode}
                 modeControls={null}
                 bookmarkScope={c.viewStateKey}
-                issuesJobId={c.sourceOnly ? "" : session.jobId}
-                searchSlot={<ReaderSearchToggle open={finder} onToggle={toggleFinder} />}
               />
             ) : null}
             <ReaderToolBall active={assistantPanel} />

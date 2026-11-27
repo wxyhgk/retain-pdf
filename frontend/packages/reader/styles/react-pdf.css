@@ -5,6 +5,8 @@
   --reader-ai-split-width: 50vw;
   /* 书页区右边让出多宽：右边停着的东西（面板 / 扩展贴右边的浮层）占的宽度，只在 assistant-dock.css 里按根节点状态设。 */
   --reader-stage-right: 0px;
+  /* 书页区左边让出多宽：左栏钉住、开着时是左栏的宽（finder.css）。 */
+  --reader-stage-left: 0px;
   position: relative;
   width: 100%;
   width: 100dvw;
@@ -19,9 +21,12 @@
  * 不再各自拿 100dvw 减面板宽去算；以后左边加栏也只改这里的 inset。
  * 不设 z-index、不裁剪：里面各块的层级照旧和根节点下的别的浮层比，底栏、小球弹出的东西不被裁。 */
 .reader-stage {
+  /* 容器查询用（toolball.css：书页区太窄时小球抬到底栏上面）。inline-size 只加样式和行向尺寸包含，不加布局包含，
+   * 里面 position: fixed 的东西照旧按视口摆。 */
+  container: reader-stage / inline-size;
   position: absolute;
-  inset: 60px var(--reader-stage-right) 0 0;
-  transition: right 180ms ease;
+  inset: 60px var(--reader-stage-right) 0 var(--reader-stage-left);
+  transition: right 180ms ease, left 180ms ease;
 }
 
 /* 唯一纵向滚动容器；双栏不各自 overflow */
@@ -589,13 +594,13 @@
 /* 两条提示在书页区外面（启动层画的），仍是 fixed：按书页区居中，宽度也按它算。 */
 .reader-react-error {
   position: fixed;
-  left: calc((100dvw - var(--reader-stage-right)) / 2);
+  left: calc(var(--reader-stage-left) + (100dvw - var(--reader-stage-left) - var(--reader-stage-right)) / 2);
   bottom: 24px;
   z-index: 95;
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
   max-width: min(480px, calc(100vw - 32px));
-  max-width: min(480px, calc(100dvw - var(--reader-stage-right) - 32px));
+  max-width: min(480px, calc(100dvw - var(--reader-stage-left) - var(--reader-stage-right) - 32px));
   padding: 10px 14px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--ink) 92%, transparent);
@@ -626,7 +631,7 @@
 /* 可选产物失败：不遮挡阅读，仅在外壳上浮一行可关闭提示。 */
 .reader-error-notice {
   position: fixed;
-  left: calc((100dvw - var(--reader-stage-right)) / 2);
+  left: calc(var(--reader-stage-left) + (100dvw - var(--reader-stage-left) - var(--reader-stage-right)) / 2);
   top: 56px;
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
@@ -634,7 +639,7 @@
   align-items: center;
   gap: 10px;
   max-width: min(520px, calc(100vw - 32px));
-  max-width: min(520px, calc(100dvw - var(--reader-stage-right) - 32px));
+  max-width: min(520px, calc(100dvw - var(--reader-stage-left) - var(--reader-stage-right) - 32px));
   padding: 8px 10px 8px 14px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);

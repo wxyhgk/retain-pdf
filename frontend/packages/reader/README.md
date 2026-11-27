@@ -23,7 +23,7 @@ RetainPDF 的独立 react-pdf 阅读器包。组件、hooks、PDF 加载、阅�
 | `pane-composition.ts` | 可见台面（几栏、叠不叠实时译文）的纯函数；主组件照旧导出 |
 | `use-live-translation-overlay.tsx` | 实时译文叠层：开没开、自动开 / 关、顶栏 pill 和源栏「译文」开关、「翻译完成 · 看对照」 |
 | `use-reader-mode-persistence.ts` | 原文 / 对照 / 译文按书恢复和存档 |
-| `use-reader-finder.ts`、`ReaderFinderArea.tsx` | 目录 / 书内搜索（防抖、Cmd/Ctrl+F、点了跳） |
+| `use-reader-finder.ts`、`ReaderFinderArea.tsx` | 左栏：目录 / 书内搜索（防抖、Cmd/Ctrl+F、点了跳）/ 书签 / 待处理（N 走下一处）；浮着或钉住（本机记住） |
 | `use-reader-pdf-assets.ts` | PDF 自带书签、各栏 PDF 对象、放大查看开着哪块 |
 | `use-reader-block-editing.ts` | 改译文和「改过几次」角标 |
 | `use-reader-extension-host.ts` | 贡献表这一侧：给扩展看的阅读页接口、阅读页建的那张表、从表里收拢出来的东西 |

@@ -240,14 +240,114 @@
   box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color, var(--ink)) 10%, transparent);
 }
 
-/* 「搜索」在底栏：卡从底栏往上弹，水平居中（2026-11-20）。 */
-.reader-finder[data-finder-tab="search"] {
-  top: auto;
-  bottom: 74px;
-  left: 50%;
-  max-height: min(560px, calc(100dvh - 160px));
-  transform-origin: 50% 100%;
-  translate: -50% 0;
+/* 钉在左边（2026-11-27）：左边一整栏，顶栏以下到窗口底；书页区让出这一栏（--reader-stage-left，根节点 is-sidebar-pinned）。
+ * 窄屏钉不住（use-reader-finder 的 SIDEBAR_PIN_MIN_VIEWPORT），所以不用另写 @media。 */
+.reader-react-root {
+  --reader-sidebar-width: 300px;
+}
+
+.reader-react-root.is-sidebar-pinned {
+  --reader-stage-left: var(--reader-sidebar-width);
+}
+
+.reader-finder[data-pinned="true"] {
+  top: 60px;
+  bottom: 0;
+  left: 0;
+  width: var(--reader-sidebar-width);
+  max-height: none;
+  border-width: 0 var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) 0 0;
+  border-color: var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: 0;
+  box-shadow: none;
+  /* 和书页区一层：不盖顶栏、底栏的弹出框。 */
+  z-index: var(--z-hud, 36);
+  animation: none;
+}
+
+/* 四个页签挤一行：栏窄时字小一点、间距收一点。 */
+.reader-finder-tabs .reader-finder-tab {
+  padding: 0 8px;
+}
+
+.reader-finder-tab-count,
+.reader-finder-toggle-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--warn) 18%, transparent);
+  color: color-mix(in srgb, var(--warn) 80%, var(--ink));
+  font-size: var(--ui-text-2xs, 10px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* 顶栏那颗的角标：贴在图标右上角。 */
+.reader-finder-toggles .reader-finder-toggle {
+  position: relative;
+}
+
+.reader-finder-toggle-badge {
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  margin: 0;
+}
+
+.reader-finder-pin[aria-pressed="true"] {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+/* 栏头：页签占左边，钉住、收起两颗靠右。 */
+.reader-finder-head .reader-finder-pin {
+  margin-left: auto;
+}
+
+/* 「书签」「待处理」两个页签（ReaderSidebarLists.tsx）。 */
+.reader-finder .reader-bookmark-list li {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.reader-finder .reader-bookmark-list .reader-bookmark-jump {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.reader-finder .reader-bookmark-remove {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.reader-finder .reader-bookmark-list li:hover .reader-bookmark-remove,
+.reader-finder .reader-bookmark-remove:focus-visible {
+  opacity: 1;
+}
+
+.reader-finder .reader-bookmark-remove:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.reader-finder .reader-issues {
+  min-height: 0;
+  overflow: auto;
+  padding: 0 8px 10px;
 }
 
 .reader-finder-toggles .reader-finder-toggle {

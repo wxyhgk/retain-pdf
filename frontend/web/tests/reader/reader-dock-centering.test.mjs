@@ -70,12 +70,14 @@ function declaration(files, selector, property) {
 
 /** 把 CSS 长度表达式算成像素。百分比按 percentBase 算（fixed 的是视口，书页区里 absolute 的是书页区宽）；
  * stageRight 是根节点上 --reader-stage-right 那时的值。 */
-function px(expression, { stageRight = 0, percentBase = VIEWPORT } = {}) {
+function px(expression, { stageRight = 0, stageLeft = 0, percentBase = VIEWPORT } = {}) {
   let expr = expression
     .replace(/calc\(/g, "(")
     .replace(/var\(--reader-ai-split-width\)/g, String(SPLIT))
     .replace(/var\(--reader-right-inset\)/g, String(SPLIT))
+    .replace(/var\(--reader-sidebar-width\)/g, String(SIDEBAR))
     .replace(/var\(--reader-stage-right\)/g, String(stageRight))
+    .replace(/var\(--reader-stage-left\)/g, String(stageLeft))
     .replace(/(\d+(?:\.\d+)?)dvw/g, (_, n) => String((VIEWPORT * Number(n)) / 100))
     .replace(/(\d+(?:\.\d+)?)vw/g, (_, n) => String((VIEWPORT * Number(n)) / 100))
     .replace(/(\d+(?:\.\d+)?)%/g, (_, n) => String((percentBase * Number(n)) / 100))
@@ -102,17 +104,28 @@ const CENTERED = [
 const IN_STAGE = new Set([".reader-react-hud"]);
 
 /** 三种状态下根节点的 --reader-stage-right：什么都没停、停着面板、扩展贴右边。 */
-const STATES = [
+/** 左栏钉住时的宽（finder.css 的 --reader-sidebar-width 换算用）。 */
+const SIDEBAR = 300;
+
+/** 右边：什么都没停、停着面板、扩展贴右边；左边：没钉、左栏钉住（2026-11-27）。 */
+const RIGHTS = [
   { name: "右边什么都没停", selector: ".reader-react-root", files: ["react-pdf.css"] },
   { name: "停着面板（is-assistant-open）", selector: ".reader-react-root.is-assistant-open", files: DOCK_ONLY },
   { name: "扩展贴右边（data-right-inset）", selector: ".reader-react-root[data-right-inset]", files: DOCK_ONLY },
 ];
+const LEFTS = [
+  { name: "左栏没钉", selector: ".reader-react-root", files: ["react-pdf.css"] },
+  { name: "左栏钉住（is-sidebar-pinned）", selector: ".reader-react-root.is-sidebar-pinned", files: ["finder.css"] },
+];
+const STATES = LEFTS.flatMap((left) => RIGHTS.map((right) => ({ name: `${left.name} + ${right.name}`, left, right })));
 
-function stageRightOf(state) {
-  const value = declaration(state.files, state.selector, "--reader-stage-right");
-  assert.ok(value, `${state.selector} 没有设 --reader-stage-right`);
+function insetOf(side, variable) {
+  const value = declaration(side.files, side.selector, variable);
+  assert.ok(value, `${side.selector} 没有设 ${variable}`);
   return px(value);
 }
+const stageRightOf = (state) => insetOf(state.right, "--reader-stage-right");
+const stageLeftOf = (state) => insetOf(state.left, "--reader-stage-left");
 
 test("三条浮动 chrome 都靠 translateX(-50%) 居中 —— 下面按中心点比才成立", () => {
   for (const selector of CENTERED) {
@@ -126,6 +139,7 @@ test("书页区按 --reader-stage-right 让出右边；底栏、小球、滚动�
   const inset = declaration(["react-pdf.css"], ".reader-stage", "inset");
   assert.ok(inset, ".reader-stage 没有 inset");
   assert.match(inset, /var\(--reader-stage-right\)/);
+  assert.match(inset, /var\(--reader-stage-left\)/);
   assert.equal(declaration(["hud.css"], ".reader-react-hud", "position"), "absolute");
   assert.equal(declaration(["toolball.css"], ".reader-toolball", "position"), "absolute");
   const app = readFileSync(fileURLToPath(new URL("../../../../frontend/packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url)), "utf8");
@@ -141,20 +155,26 @@ test("书页区按 --reader-stage-right 让出右边；底栏、小球、滚动�
 test("三种状态下都居中在书页区，不在分栏线上；两条提示的宽度也收进书页区", () => {
   for (const state of STATES) {
     const right = stageRightOf(state);
-    const stageWidth = VIEWPORT - right;
+    const leftInset = stageLeftOf(state);
+    const stageWidth = VIEWPORT - right - leftInset;
+    const stageCenter = leftInset + stageWidth / 2;
     for (const selector of CENTERED) {
       const left = declaration(CHROME_FILES, selector, "left");
       assert.ok(left, `${selector} 没有 left`);
-      const center = IN_STAGE.has(selector) ? px(left, { percentBase: stageWidth }) : px(left, { stageRight: right });
-      assert.equal(center, stageWidth / 2, `${state.name}：${selector} 的中心是 ${center}，书页区中心是 ${stageWidth / 2}`);
+      // 书页区里的按书页区算（再加上书页区左边的位置）；外面的 fixed 按视口算。
+      const center = IN_STAGE.has(selector)
+        ? leftInset + px(left, { percentBase: stageWidth })
+        : px(left, { stageRight: right, stageLeft: leftInset });
+      assert.equal(center, stageCenter, `${state.name}：${selector} 的中心是 ${center}，书页区中心是 ${stageCenter}`);
     }
     for (const selector of [".reader-react-error", ".reader-error-notice"]) {
       const maxWidth = declaration(["react-pdf.css"], selector, "max-width");
-      const fitted = px(maxWidth, { stageRight: right });
+      const fitted = px(maxWidth, { stageRight: right, stageLeft: leftInset });
       assert.ok(fitted <= stageWidth - 32, `${state.name}：${selector} 算出来 ${fitted}，超出书页区可用宽度 ${stageWidth - 32}`);
     }
   }
   // 停着面板时书页区确实让了（不是 0）。
   assert.equal(stageRightOf(STATES[1]), SPLIT);
   assert.equal(stageRightOf(STATES[2]), SPLIT);
+  assert.equal(stageLeftOf(STATES[3]), SIDEBAR, "左栏钉住时书页区左边让出一栏");
 });

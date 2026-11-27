@@ -51,7 +51,7 @@ test("书签名取这一页所在的章节：本页或之前最近的标题，�
   assert.equal(bookmarkLabelForPage(regions, 6), "实验设置");
 });
 
-test("底栏书签：加书签后列表里能看到，点一下跳页", async () => {
+test("底栏加书签、左栏「书签」页签列出来：两处同步，点一条跳页，× 删掉（2026-11-27 列表从底栏挪进左栏）", async () => {
   const dom = makeDomWith("", {
     html: "<!doctype html><html><body><div id='root'></div></body></html>",
     keys: ["window", "document", "HTMLElement", "HTMLButtonElement", "Element", "SVGElement", "Event", "MouseEvent", "PointerEvent", "KeyboardEvent", "Node", "MutationObserver", "localStorage"],
@@ -60,21 +60,27 @@ test("底栏书签：加书签后列表里能看到，点一下跳页", async ()
   const React = await import("react");
   const { createRoot } = await import("react-dom/client");
   const { ReaderBookmarkControl } = await import("../../../packages/reader/src/components/react-pdf/ReaderBookmarkControl.tsx");
+  const { ReaderBookmarkList } = await import("../../../packages/reader/src/components/react-pdf/ReaderSidebarLists.tsx");
   const jumps = [];
   const root = createRoot(dom.window.document.getElementById("root"));
   const regions = [{ regionType: "heading", source: { page: 1, text: "Intro" }, translated: { page: 1, text: "引言" } }];
-  root.render(React.createElement(ReaderBookmarkControl, {
-    scope: "document:test-bookmarks", currentPage: 8, numPages: 20, regions, onGoToPage: (page) => jumps.push(page),
-  }));
+  const scope = "document:test-bookmarks";
+  root.render(React.createElement(React.Fragment, null,
+    React.createElement(ReaderBookmarkControl, { scope, currentPage: 8, numPages: 20, regions }),
+    React.createElement(ReaderBookmarkList, { scope, regions, currentPage: 8, numPages: 20, onJumpPage: (page) => jumps.push(page) }),
+  ));
   const doc = dom.window.document;
   const toggle = await waitFor(() => doc.querySelector(".reader-bookmark-toggle"), "书签按钮");
   assert.equal(toggle.getAttribute("aria-pressed"), "false");
+  assert.match(doc.querySelector(".reader-finder-empty").textContent, /还没有书签/);
+  assert.equal(doc.querySelector(".reader-bookmark-list-btn"), null, "底栏不再有书签列表按钮");
   clickWithMouseDown(dom, toggle);
   await waitFor(() => doc.querySelector('.reader-bookmark-toggle[aria-pressed="true"]'), "加上了");
-  clickWithMouseDown(dom, doc.querySelector(".reader-bookmark-list-btn"));
-  const jump = await waitFor(() => doc.querySelector(".reader-bookmark-jump"), "列表");
-  assert.match(jump.textContent, /第 8 页.*引言/);
+  const jump = await waitFor(() => doc.querySelector(".reader-bookmark-jump"), "左栏列表跟着有了");
+  assert.match(jump.textContent, /引言.*8/);
   clickWithMouseDown(dom, jump);
   assert.deepEqual(jumps, [8]);
+  clickWithMouseDown(dom, doc.querySelector(".reader-bookmark-remove"));
+  await waitFor(() => doc.querySelector('.reader-bookmark-toggle[aria-pressed="false"]'), "左栏删了，底栏跟着变回没书签");
   root.unmount();
 });
