@@ -200,6 +200,21 @@ def test_qwen_level_changes_the_request_body(posts) -> None:  # noqa: F811
     assert calls[-1]["body"]["enable_thinking"] is True and calls[-1]["body"]["thinking_budget"] == 2048
 
 
+def test_remembered_level_is_what_the_first_question_sends(posts) -> None:  # noqa: F811
+    calls, replies = posts
+    fn = engine.make_stream_fn(model="qwen3.8-flash", base_url=DASHSCOPE, api_key="sk-test", protocol="openai", thinking="auto",
+                               remembered="medium")
+    replies.append(FakeResponse(CHAT_OK))
+    list(fn(MESSAGES, threading.Event()))
+    assert calls[-1]["body"]["thinking_budget"] == 8192
+    # 记的档这个模型没有：照设置发（auto 对 qwen3.8-flash 是关）
+    stale = engine.make_stream_fn(model="qwen3.8-flash", base_url=DASHSCOPE, api_key="sk-test", protocol="openai", thinking="auto",
+                                  remembered="xhigh")
+    replies.append(FakeResponse(CHAT_OK))
+    list(stale(MESSAGES, threading.Event()))
+    assert calls[-1]["body"]["enable_thinking"] is False
+
+
 def test_remembered_level_wins_when_the_model_still_has_it() -> None:
     """记住上次选的（2026-11-27 用户定）：还在这个模型的档位里就用它，没有了（换了模型）按设置的思考深度。"""
     kwargs = {"model": "qwen3.8-flash", "base_url": DASHSCOPE, "protocol": "openai", "thinking": "auto"}

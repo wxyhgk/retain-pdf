@@ -533,15 +533,19 @@ def thinking_options(*, model: str, base_url: str, protocol: str = "", thinking:
     }
 
 
-def make_stream_fn(*, model: str, base_url: str, api_key: str, protocol: str = "", thinking: str = ""):
+def make_stream_fn(*, model: str, base_url: str, api_key: str, protocol: str = "", thinking: str = "", remembered: str = ""):
     """按连接配置给核心一个 ``stream_fn(messages, cancel, *, tools=None, tool_choice=None, thinking_level=None)``。
 
     ``thinking_level`` 是会话里用 ``session/set_config_option`` 改过的档位（``thinking_options`` 报的值之一）：给了就按档位表发那一档的字段；
-    没给按握手的思考深度发（和翻译同一套换法，``auto`` 对没实测过的模型什么都不加）。"""
+    没给按握手的思考深度发（和翻译同一套换法，``auto`` 对没实测过的模型什么都不加）；``remembered``（上次选的，``thinking_options`` 报成了当前档）
+    还在档位表里就发那一档。"""
     profile = _profile(model=model, base_url=base_url, protocol=protocol, thinking=thinking)
     wire_base_url = _wire_base_url(profile.protocol, base_url)
     menu = model_wire.thinking_menu(protocol=profile.protocol, model=model, base_url=wire_base_url)
-    initial = model_wire.setting_thinking_candidates(protocol=profile.protocol, model=model, base_url=wire_base_url, thinking=profile.thinking)
+    if menu is not None and remembered in menu.values():
+        initial = menu.candidates(remembered)
+    else:
+        initial = model_wire.setting_thinking_candidates(protocol=profile.protocol, model=model, base_url=wire_base_url, thinking=profile.thinking)
     options = {"model": model, "base_url": base_url, "api_key": api_key}
     if profile.protocol == model_wire.PROTOCOL_ANTHROPIC:
         target = _anthropic
