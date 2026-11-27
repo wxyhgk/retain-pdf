@@ -97,13 +97,6 @@
   font-weight: 500;
 }
 
-.reader-ink-bar.is-dock {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: calc(var(--z-hud, 36) + 2);
-}
-
 .reader-ink-tool,
 .reader-ink-color {
   display: inline-grid;

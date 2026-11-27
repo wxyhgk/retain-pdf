@@ -1,8 +1,8 @@
 // 阅读页提问作为内置扩展（贡献表的第一个，2026-11-27）：宿主给了 ACP 端口才有。
-// 登记右键「在这里提问 / 问这段」、书页白边上的「?」、底栏工具里的「提问」（不带出处地打开这本书的主对话：问整本书、翻以前的对话、开记忆）、
+// 登记右键「在这里提问 / 问这段」、书页白边上的「?」、顶栏右边的「提问」（不带出处地打开这本书的主对话：问整本书、翻以前的对话、开记忆）、底栏右边的「截图」、
 // 快捷键说明（选着字按 ? 在 use-reader-ask 里自己监听）；提问窗是这个组件自己画的浮层。
 import { useMemo, type ReactElement } from "react";
-import { MessageCircleQuestion } from "lucide-react";
+import { Crop, MessageCircleQuestion } from "lucide-react";
 
 import { readerSessionDataPort } from "../external.js";
 import { useReaderApi, useReaderContribution } from "../extensions/registry.js";
@@ -40,7 +40,7 @@ function ReaderAskExtension(): ReactElement | null {
     visibleMode: api.visibleMode,
     activePanel: api.activePanel,
   });
-  const { marks, onMark, menuItems, panel, overlay, cropping, enabled, toggle, showing, reserveRight } = ask;
+  const { marks, onMark, menuItems, panel, overlay, cropping, toggleCrop, enabled, toggle, showing, reserveRight } = ask;
   const contribution = useMemo<ReaderContribution>(() => (enabled ? {
     toolbarItems: [{
       key: "ask",
@@ -49,6 +49,15 @@ function ReaderAskExtension(): ReactElement | null {
       Icon: MessageCircleQuestion,
       pressed: showing,
       onClick: toggle,
+    }, {
+      // 底栏右边：框出书页上的一块，截图带进提问（和右键「截一块问」一样）。
+      key: "crop",
+      label: "截图",
+      title: "截图：在书页上框出一块，带进提问（Esc 取消）",
+      Icon: Crop,
+      place: "bottom",
+      pressed: cropping,
+      onClick: toggleCrop,
     }],
     menuItems,
     pageLayer: marks.length
@@ -58,7 +67,7 @@ function ReaderAskExtension(): ReactElement | null {
     reserveRight,
     // 「截一块问」时占着书页上的指针：不出悬停框、不选字。
     takesPointer: cropping,
-  } : {}), [enabled, menuItems, marks, onMark, toggle, showing, reserveRight, cropping]);
+  } : {}), [enabled, menuItems, marks, onMark, toggle, showing, reserveRight, cropping, toggleCrop]);
   useReaderContribution(contribution);
   return <>{panel}{overlay}</>;
 }

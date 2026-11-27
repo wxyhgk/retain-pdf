@@ -35,9 +35,9 @@ test("assistant dock uses the library-owned resizable split", async () => {
   assert.match(app, /assistantOpen \? <ReaderAssistantSplitResizeHandle \/>/);
   assert.match(app, /is-workspace-\$\{workspaceView\}/);
   assert.match(css, /\.reader-ai-split-separator/);
-  // 书页区让出面板的宽度（滚动壳在书页区里）。
-  assert.match(dockCss, /\.reader-react-root\.is-assistant-open\s*\{[^}]*--reader-stage-right:\s*var\(--reader-ai-split-width\)/);
-  assert.match(css, /\.reader-stage\s*\{[^}]*inset:[^;]*var\(--reader-stage-right\)/);
+  // 右边停靠栏是中间工作区横排里实占的一栏，宽度就是拖出来的分栏宽（2026-11-28 三行壳层）。
+  assert.match(dockCss, /\.reader-dock\s*\{[^}]*width:\s*var\(--reader-ai-split-width\)/);
+  assert.match(css, /\.reader-stage\s*\{[^}]*flex:\s*1 1 auto/);
   assert.match(css, /\.reader-ai-split-separator[\s\S]*?cursor:\s*col-resize/);
   assert.match(css, /\.reader-ai-split-resizer \[data-panel\][\s\S]*?pointer-events:\s*none/);
   assert.equal(JSON.parse(manifest).dependencies["react-resizable-panels"], "4.12.1");

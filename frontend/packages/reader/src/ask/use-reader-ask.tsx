@@ -221,6 +221,11 @@ export function useReaderAsk({
     }
   }, [capture, anchorAt, openAsk]); // eslint-disable-line react-hooks/exhaustive-deps
   const cancelCrop = useCallback(() => setCropping(false), []);
+  // 底栏右边的「截图」和右键「截一块问」都从这里开始框选；再点一下收起。
+  const toggleCrop = useCallback(() => {
+    setCropError("");
+    setCropping((value) => !value);
+  }, []);
 
   const onMark = useCallback(async (mark: AskMark) => {
     if (mark.threadId && port?.threads && documentId) {
@@ -323,5 +328,5 @@ export function useReaderAsk({
     void ask.openMain();
   }, [showing, closeAsk, ask.openMain]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { marks: marks.marks, onMark, menuItems, panel, overlay, cropping, open: ask.openMain, toggle, showing, reserveRight: showing ? docked : 0, enabled: Boolean(port) };
+  return { marks: marks.marks, onMark, menuItems, panel, overlay, cropping, toggleCrop, open: ask.openMain, toggle, showing, reserveRight: showing ? docked : 0, enabled: Boolean(port) };
 }

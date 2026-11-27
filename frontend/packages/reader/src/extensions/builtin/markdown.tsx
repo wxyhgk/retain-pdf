@@ -1,5 +1,7 @@
 // Markdown 面板作为内置扩展（2026-11-27）：右边停靠的一个面板，第一次打开才加载，之后一直挂着（留滚动位置）。
+// 2026-11-28 起面板画进阅读页右边停靠栏（api.panelHost，中间工作区横排里实占的一栏），不再自己 fixed 盖在书上。
 import { lazy, Suspense, type ReactElement } from "react";
+import { createPortal } from "react-dom";
 
 import { MarkdownIcon } from "../../components/react-pdf/MarkdownIcon.js";
 import { useMountedSinceFirstOpen } from "../../shared/react/use-mounted-since-first-open.js";
@@ -16,11 +18,12 @@ function MarkdownExtension(): ReactElement | null {
   // 闸和面板用同一个 open：闸是单调的，接错了就成了「先开过别的面板才打得开」。
   const mounted = useMountedSinceFirstOpen(open);
   if (!mounted) return null;
-  return (
+  const panel = (
     <Suspense fallback={null}>
       <ReaderMarkdownPanel open={open} jobId={api.jobId} sourceOnly={api.sourceOnly} side="right" onClose={api.closePanel} />
     </Suspense>
   );
+  return api.panelHost ? createPortal(panel, api.panelHost) : panel;
 }
 
 export const readerMarkdownExtension: ReaderExtension = {

@@ -151,17 +151,15 @@ test("画笔扩展的贡献：小球按钮跟着画笔开没开亮、点了进�
   assert.equal(pointerTakenBy([{ id: "ink", title: "画笔", contribution: off }]), null);
 });
 
-test("书页右边让位（reserveRight）：取几个扩展里最大的；阅读页根节点带上宽度，书页、底栏、小球往左让", async () => {
+test("书页右边让位（reserveRight）：取几个扩展里最大的；中间工作区横排里留一栏一样宽的空位，书页自然让开", async () => {
   const { collectReserveRight } = await import("../../../packages/reader/src/extensions/registry.tsx");
   assert.equal(collectReserveRight([]), 0);
   assert.equal(collectReserveRight([{ id: "a", contribution: {} }, { id: "ask", contribution: { reserveRight: 440 } }, { id: "b", contribution: { reserveRight: 120 } }]), 440);
   const { readFileSync } = await import("node:fs");
   const app = readFileSync(new URL("../../../packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url), "utf8");
-  assert.match(app, /data-right-inset=\{reserveRight \? "true" : undefined\}/);
-  assert.match(app, /"--reader-right-inset": `\$\{reserveRight\}px`/);
-  const css = readFileSync(new URL("../../../packages/reader/styles/assistant-dock.css", import.meta.url), "utf8");
-  // 书页区让出那么宽（书页、底栏、小球都在书页区里，跟着让）。
-  assert.match(css, /\.reader-react-root\[data-right-inset\]\s*\{[^}]*--reader-stage-right:\s*var\(--reader-right-inset\)/);
+  // 2026-11-28 三行壳层：不再在根节点上写 --reader-right-inset 让书页区算偏移，而是横排里多一个空位。
+  assert.match(app, /\{reserveRight \? <div className="reader-dock-spacer" style=\{\{ width: reserveRight \}\} aria-hidden="true" \/> : null\}/);
+  assert.doesNotMatch(app, /--reader-right-inset|data-right-inset/);
   // 提问窗贴右边时才要，窄屏不让（让了书页就没地方了）。
   const ask = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
   assert.match(ask, /setDocked\(mode === "dock" && viewport - width >= 480 \? Math\.round\(width\) : 0\)/);

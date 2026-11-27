@@ -57,7 +57,7 @@ const SubagentDataUI = makeAssistantDataUI({ name: "subagent", render: SubagentB
 // 测试和别处照旧从这里取。
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
 export default function AskWindow(props) {
-    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, headerMenu, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken } = props;
+    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, headerMenu, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken, dockInsets } = props;
     useKatexStylesheet(katexStylesheetUrl);
     const [agents, setAgents] = useState(null);
     const [agentId, setAgentId] = useState("");
@@ -179,7 +179,7 @@ export default function AskWindow(props) {
         return () => window.removeEventListener("keydown", onKey);
     }, [onClose]);
     // 摆法（浮动 / 贴右边 / 放大）和记住它（use-window-layout.ts）。
-    const layout = useWindowLayout(onLayout, dockTaken);
+    const layout = useWindowLayout(onLayout, dockTaken, dockInsets);
     const { mode, rect } = layout;
     // 太宽的公式、表格：缩一点放得下就缩，再宽就横着滚、给一个「放大看」（wide-blocks.ts）。
     const wideBlocks = useWideBlocks(threadRoot);

@@ -85,27 +85,25 @@ test("每个面板都有标签和图标 —— 少一样那个 tab 要么空白�
   assert.equal(new Set(shorts).size, shorts.length, `竖条缩写有重复: ${shorts}`);
 });
 
-test("**只有一个**启动器：底栏右边的工具（2026-11-20 起是右下角的悬浮小球，11-27 并进底栏）；以前那个可拖圆钮连同它的 CSS 不回来", () => {
+test("**只有一个**启动器：顶栏右段的面板按钮（2026-11-28 三行壳层；以前是右下角悬浮小球、底栏浮条的工具）；以前那个可拖圆钮连同它的 CSS 不回来", () => {
   // 先证明「另一个东西存在」：启动器本身的样式必须真的在，否则下面那条
   // 「圆钮不存在」在任何情况下都绿（整份 CSS 都被删掉时也绿）。
   const all = allStyles();
   assert.match(all, /\.reader-panel-toggle\b/, "启动器的按钮样式没了");
-  assert.match(all, /\.reader-hud-tools\b/, "底栏工具的样式没了");
-  assert.doesNotMatch(all, /\.reader-toolball\b/, "悬浮小球又回来了：两个启动器");
+  assert.match(all, /\.reader-bar-tools\b/, "顶栏 / 底栏工具的样式没了");
+  assert.doesNotMatch(all, /\.reader-toolball\b|\.reader-hud-tools\b/, "悬浮小球、底栏浮条工具又回来了：两个启动器");
   assert.doesNotMatch(all, /\.reader-assistant-rail\b/, "右侧竖条又回来了");
-  const tools = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderHudTools.tsx", import.meta.url), "utf8");
-  assert.match(tools, /<ReaderPanelToggles\b/, "面板按钮不在底栏工具里");
-  assert.match(APP, /toolsSlot=\{<ReaderHudTools\b/, "阅读页底栏没挂工具");
-  const tray = APP.slice(APP.indexOf('className="reader-chrome-tray"'), APP.indexOf("</div>", APP.indexOf('className="reader-chrome-tray"')));
-  assert.doesNotMatch(tray, /<ReaderPanelToggles\b/, "顶栏托盘里又有一份面板按钮：两个启动器");
+  const tools = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderBarTools.tsx", import.meta.url), "utf8");
+  assert.match(tools, /place === "top" \? readerDockTabs\(\[extension\]\) : \[\]/, "面板按钮只在顶栏那一组");
+  assert.match(tools, /<ReaderPanelToggles\b/, "面板按钮不在工具里");
+  assert.match(APP, /<ReaderBarTools place="top" active=\{assistantPanel\} \/>/, "顶栏没挂面板和看法那一组");
+  assert.match(APP, /toolsSlot=\{<ReaderBarTools place="bottom" \/>\}/, "底栏没挂书页工具");
+  assert.equal((APP.match(/<ReaderPanelToggles\b/g) || []).length, 0, "阅读页另外又摆了一份面板按钮：两个启动器");
   assert.match(all, /\.reader-assistant-dock-tabs\b/, "启动器的 tab 条样式没了");
   assert.doesNotMatch(all, /\.reader-fab\b/, "旧圆钮的 CSS 又回来了");
   assert.doesNotMatch(APP, /ReaderFab|fabActiveTool/, "阅读页又挂了旧圆钮");
-  // 面板开着时工具在面板左边，不藏（旧圆钮就是被 is-assistant-open 藏掉的）：工具在底栏里、底栏在书页区（.reader-stage）里，
-  // 书页区让出面板的宽度，底栏跟着在左边；宽屏面板开着时不许有规则把它们藏掉。（窄屏面板铺满整屏时底栏照旧藏，关面板用面板头上的 ×。）
-  assert.match(all, /\.reader-react-root\.is-assistant-open\s*\{[^}]*--reader-stage-right:/);
-  const wide = all.replace(/@media \(max-width: 899px\)\s*\{[\s\S]*?\n\}/g, "");
-  assert.doesNotMatch(wide, /is-assistant-open[^{]*\.reader-(?:hud-tools|react-hud|stage)\s*\{[^}]*(?:display:\s*none|visibility:\s*hidden|opacity:\s*0)/);
+  // 面板开着时顶栏、底栏都在（旧圆钮就是被 is-assistant-open 藏掉的）：两条栏是实占位的一行，不许有规则在面板开着时把它们藏掉。
+  assert.doesNotMatch(all, /is-assistant-open[^{]*\.reader-(?:bar-tools|bottombar|workspace-bar)\s*\{[^}]*(?:display:\s*none|visibility:\s*hidden|opacity:\s*0)/);
 });
 
 /** 2026-11-27 起面板由扩展带：扩展定义里的 panels 给启动器，扩展组件自己画面板、看 api.activePanel 开没开。
@@ -140,7 +138,7 @@ test("懒加载面板的挂载闸守的就是它自己那个面板", () => {
 
 const LAUNCHER_SELECTORS = [
   ".reader-panel-toggle",
-  ".reader-hud-tools",
+  ".reader-bar-tools",
   ".reader-assistant-dock-header",
   ".reader-assistant-dock-tabs",
   ".reader-assistant-dock-tab",
@@ -197,14 +195,17 @@ test("三路下载仍然可达，而且不在启动器里 —— 它不该和面
   assert.deepEqual([...READER_DOWNLOAD_ORDER], ["source", "sideBySide", "translated"]);
   // 顶栏那一组常驻：面板开着也够得到（原来在圆钮里，圆钮一被藏就下不了）。
   assert.match(APP, /<ReaderDownloadActions\s*\/>/, "阅读页没挂顶栏下载组");
-  const tray = APP.slice(APP.indexOf('className="reader-chrome-tray"'), APP.indexOf("</div>", APP.indexOf('className="reader-chrome-tray"')));
-  assert.match(tray, /<ReaderDownloadActions/, "下载组不在顶栏那一组里");
-  assert.match(tray, /<ReaderCloseHome/, "顶栏那一组里没有「关闭回主页」");
-  // 这一组不能被 dock 的开合影响 —— 圆钮当年就死在这一点上。
+  // 2026-11-28 起下载在顶栏右段（end），「返回主页」在左段（start），顶栏是实占位的一行。
+  const end = APP.slice(APP.indexOf("end={<>"), APP.indexOf("</>}", APP.indexOf("end={<>")));
+  assert.match(end, /<ReaderDownloadActions/, "下载不在顶栏右段");
+  const start = APP.slice(APP.indexOf("start={<>"), APP.indexOf("</>}", APP.indexOf("start={<>")));
+  assert.match(start, /<ReaderCloseHome/, "顶栏左段没有「返回主页」");
+  // 下载不能被 dock 的开合影响 —— 圆钮当年就死在这一点上。
   const all = allStyles();
-  assert.match(all, /\.reader-chrome-tray\b/, "顶栏那一组没有样式");
   for (const rule of allRules(all)) {
-    if (!/\.reader-(chrome-tray|download-action)(?![\w-])/.test(rule.prelude)) continue;
+    if (!/\.reader-(download-actions|download-trigger|download-action)(?![\w-])/.test(rule.prelude)) continue;
+    // 伪元素（<details> 的小三角）藏掉是对的，不是藏入口。
+    if (/::/.test(rule.prelude)) continue;
     if (/:(hover|focus|active|disabled|focus-visible)\b/.test(rule.prelude)) continue;
     assert.doesNotMatch(
       rule.body,

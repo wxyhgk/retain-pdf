@@ -78,23 +78,28 @@ test("N / Shift+N：接着上一次跳到的走，到头绕回；还没跳过从
   assert.equal(stepIssue([], -1, 1, false), -1);
 });
 
-test("底栏工具（2026-11-27 起取代悬浮小球）：Markdown 和「对比版本」在一排；点对比弹版本列表；只有一份译文时没有对比；点外面收起", async () => {
+test("顶栏、底栏的工具（2026-11-28 三行壳层）：顶栏有 Markdown 和「对比版本」，点对比往下弹版本列表、点外面收起，只有一份译文时没有对比；底栏只有放在底栏的（画笔 ▾），▾ 弹出它的选项", async () => {
   const { makeDom } = await import("../helpers/dom.mjs");
   const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div><div id='page'></div></body></html>" });
   const React = await import("react");
   const { createRoot } = await import("react-dom/client");
   const { act } = React;
-  const { ReaderHudTools } = await import("../../../packages/reader/src/components/react-pdf/ReaderHudTools.tsx");
-  // 2026-11-27 起「对比版本」是扩展：按钮经贡献表进底栏工具。这里用扩展自己的那颗按钮登记进一张表。
+  const { ReaderBarTools } = await import("../../../packages/reader/src/components/react-pdf/ReaderBarTools.tsx");
+  // 「对比版本」是扩展：按钮经贡献表进顶栏。这里用扩展自己的那颗按钮登记进一张表；再登记一颗放底栏、带 ▾ 的。
   const { compareToolbarItem } = await import("../../../packages/reader/src/extensions/builtin/compare.tsx");
   const { createContributionStore, ReaderExtensionsProvider } = await import("../../../packages/reader/src/extensions/registry.tsx");
+  const { PenLine } = await import("lucide-react");
   const store = createContributionStore();
   const api = { documentId: "d", jobId: "j1", versionId: "tv-a", translationVersions: [], regions: [], metadata: null, bookmarks: [], pageCount: 1, resetKey: "k",
     hoveredItemId: () => null, goToPage() {}, sourceOnly: false, activePanel: null, closePanel() {}, visibleMode: "source", setWorkspace() {} };
-  const ball = (available) => {
+  let pen = 0;
+  const bars = (available) => {
     const item = compareToolbarItem(compare(available));
     store.set("compare", "对比版本", { toolbarItems: item ? [item] : [] });
-    return React.createElement(ReaderExtensionsProvider, { api, store }, React.createElement(ReaderHudTools, { active: null }));
+    store.set("ink", "画笔", { toolbarItems: [{ key: "ink", label: "画笔", Icon: PenLine, place: "bottom", onClick: () => { pen += 1; }, dropdown: () => React.createElement("div", { className: "pen-options" }, "笔和颜色") }] });
+    return React.createElement(ReaderExtensionsProvider, { api, store },
+      React.createElement("header", { id: "top" }, React.createElement(ReaderBarTools, { place: "top", active: null })),
+      React.createElement("footer", { id: "bottom" }, React.createElement(ReaderBarTools, { place: "bottom" })));
   };
   const compare = (available) => ({
     available,
@@ -105,18 +110,24 @@ test("底栏工具（2026-11-27 起取代悬浮小球）：Markdown 和「对比
   const root = createRoot(dom.window.document.getElementById("root"));
   const doc = dom.window.document;
   const click = async (el) => { await act(async () => { el.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); }); };
-  await act(async () => { root.render(ball(true)); });
-  assert.ok(doc.querySelector(".reader-hud-tools-row .reader-panel-toggle"), "Markdown 在底栏工具那一排");
-  assert.equal(doc.querySelector(".reader-hud-tools-stack"), null, "窄屏那一列平时不出");
-  await click(doc.querySelector('.reader-hud-tools-row [data-hud-tool="compare"]'));
-  assert.ok(doc.querySelector(".reader-hud-tools-popup .reader-version-compare-menu"), "版本列表弹在底栏上面");
-  assert.equal(doc.querySelector('[data-hud-tool="compare"]').getAttribute("aria-expanded"), "true", "开着弹出时底栏不自动收起（use-hud-autohide 看 aria-expanded）");
+  await act(async () => { root.render(bars(true)); });
+  const top = doc.getElementById("top");
+  const bottom = doc.getElementById("bottom");
+  assert.ok(top.querySelector(".reader-bar-tools.is-top .reader-panel-toggle"), "Markdown 在顶栏");
+  assert.equal(top.querySelector('[data-bar-tool="ink"]'), null, "放底栏的不出在顶栏");
+  assert.equal(bottom.querySelector(".reader-panel-toggle"), null, "面板按钮不出在底栏");
+  await click(top.querySelector('[data-bar-tool="compare"]'));
+  assert.ok(top.querySelector(".reader-bar-tools-popup .reader-version-compare-menu"), "版本列表从顶栏弹出来");
+  assert.equal(top.querySelector('[data-bar-tool="compare"]').getAttribute("aria-expanded"), "true");
   await act(async () => { doc.getElementById("page").dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true })); });
   assert.equal(doc.querySelector(".reader-version-compare-menu"), null, "点外面收起");
-  await click(doc.querySelector(".reader-hud-tools-more"));
-  assert.ok(doc.querySelector(".reader-hud-tools-stack .reader-panel-toggle"), "窄屏的「···」点开往上一列");
-  await act(async () => { root.render(ball(false)); });
-  assert.equal(doc.querySelector('[data-hud-tool="compare"]'), null, "只有一份译文时没有对比");
+  await click(bottom.querySelector('[data-bar-tool="ink"]'));
+  assert.equal(pen, 1, "主按钮照旧进出画笔");
+  assert.equal(doc.querySelector(".pen-options"), null, "平时不展开选项");
+  await click(bottom.querySelector('[data-bar-tool-caret="ink"]'));
+  assert.ok(bottom.querySelector(".reader-bar-tools-popup .pen-options"), "▾ 弹出画笔的选项");
+  await act(async () => { root.render(bars(false)); });
+  assert.equal(doc.querySelector('[data-bar-tool="compare"]'), null, "只有一份译文时没有对比");
   root.unmount();
   dom.window.close();
 });

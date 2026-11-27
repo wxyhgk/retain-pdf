@@ -1,13 +1,17 @@
 /* react-pdf 引擎：滚动壳 / 双栏网格 / 页槽 / 文本层 / 空态错误 */
 
 /* —— react-pdf engine (R1) —— */
+/* 三行壳层（2026-11-28）：顶栏（.reader-workspace-bar）、中间工作区（.reader-workspace）、底栏（.reader-bottombar）
+ * 是根节点竖排的三行，两条栏全宽、实占位，书页只在中间那一行里。以前是全屏堆叠：顶栏、底栏浮在书页上，
+ * 书页区用 --reader-stage-left / --reader-stage-right 算让谁，底栏和小球压着正文最后几行。
+ * 两条栏的高在这里定；JS 要用（提问窗贴右边时上下让出）的在 src/app/shell-metrics.ts，测试对着两边。 */
 .reader-react-root {
   --reader-ai-split-width: 50vw;
-  /* 书页区右边让出多宽：右边停着的东西（面板 / 扩展贴右边的浮层）占的宽度，只在 assistant-dock.css 里按根节点状态设。 */
-  --reader-stage-right: 0px;
-  /* 书页区左边让出多宽：左栏钉住、开着时是左栏的宽（finder.css）。 */
-  --reader-stage-left: 0px;
+  --reader-topbar-h: 54px;
+  --reader-bottombar-h: 36px;
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   width: 100dvw;
   height: 100vh;
@@ -17,16 +21,23 @@
   color: var(--ink);
 }
 
-/* 书页区（2026-11-27）：顶栏以下、右边停着的东西以左。滚动壳、底栏（连同工具）都在里面，按它定位、居中，
- * 不再各自拿 100dvw 减面板宽去算；以后左边加栏也只改这里的 inset。
- * 不设 z-index、不裁剪：里面各块的层级照旧和根节点下的别的浮层比，底栏弹出的东西不被裁。 */
+/* 中间工作区：横排，从左到右是左栏（钉住时实占一栏；浮着时盖在左上角）、书页区、右边停靠栏（面板开着时）或给贴右边的提问窗留的空位。
+ * 谁占多宽由 flex 自己排，不用谁去算谁的偏移。浮着的左栏、提问窗以它为准摆。 */
+.reader-workspace {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 书页区：只放书页（ReaderCompareGrid）和它的加载、出错提示。 */
 .reader-stage {
-  /* 容器查询用（toolball.css：书页区太窄时底栏工具收成「···」）。inline-size 只加样式和行向尺寸包含，不加布局包含，
-   * 里面 position: fixed 的东西照旧按视口摆。 */
+  /* 容器查询用。inline-size 只加样式和行向尺寸包含，不加布局包含，里面 position: fixed 的东西照旧按视口摆。 */
   container: reader-stage / inline-size;
-  position: absolute;
-  inset: 60px var(--reader-stage-right) 0 var(--reader-stage-left);
-  transition: right 180ms ease, left 180ms ease;
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* 唯一纵向滚动容器；双栏不各自 overflow */
@@ -591,16 +602,15 @@
   font-weight: 600;
 }
 
-/* 两条提示在书页区外面（启动层画的），仍是 fixed：按书页区居中，宽度也按它算。 */
+/* 两条提示在书页区里（启动层画在书页区里）：按书页区居中，宽度也按它算。 */
 .reader-react-error {
-  position: fixed;
-  left: calc(var(--reader-stage-left) + (100dvw - var(--reader-stage-left) - var(--reader-stage-right)) / 2);
-  bottom: 24px;
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
   z-index: 95;
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
-  max-width: min(480px, calc(100vw - 32px));
-  max-width: min(480px, calc(100dvw - var(--reader-stage-left) - var(--reader-stage-right) - 32px));
+  max-width: min(480px, calc(100% - 32px));
   padding: 10px 14px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--ink) 92%, transparent);
@@ -630,16 +640,15 @@
 
 /* 可选产物失败：不遮挡阅读，仅在外壳上浮一行可关闭提示。 */
 .reader-error-notice {
-  position: fixed;
-  left: calc(var(--reader-stage-left) + (100dvw - var(--reader-stage-left) - var(--reader-stage-right)) / 2);
-  top: 56px;
+  position: absolute;
+  left: 50%;
+  top: 12px;
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: min(520px, calc(100vw - 32px));
-  max-width: min(520px, calc(100dvw - var(--reader-stage-left) - var(--reader-stage-right) - 32px));
+  max-width: min(520px, calc(100% - 32px));
   padding: 8px 10px 8px 14px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);

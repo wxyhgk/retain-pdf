@@ -37,6 +37,7 @@ export declare function useReaderAsk({ port, documentId, jobId, versionId, regio
     panel: ReactElement<unknown, string | import("react").JSXElementConstructor<any>>;
     overlay: ReactElement<unknown, string | import("react").JSXElementConstructor<any>>;
     cropping: boolean;
+    toggleCrop: () => void;
     open: () => Promise<void>;
     toggle: () => void;
     showing: boolean;

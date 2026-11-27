@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
 import { ArrowDownToLine, CheckCircle2, Columns2, FileText, Languages, Radio } from "lucide-react";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
@@ -34,6 +34,10 @@ export type ReaderWorkspaceTabsProps = {
   } | null;
   /** 这次看着它翻完了：顶栏左边换成「翻译完成 · 看对照」。 */
   completion?: { onOpenCompare: () => void } | null;
+  /** 顶栏左段（2026-11-28 起顶栏是三段：左返回、左栏、书名；中原文 / 对照 / 译文；右面板和看法、下载）。 */
+  start?: ReactNode;
+  /** 顶栏右段。 */
+  end?: ReactNode;
 };
 
 export function liveTranslationStatusCopy(state: LiveTranslationState): string {
@@ -85,8 +89,8 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
       {/* 装饰位钩子：顶栏两端（装饰包 ornaments.reader-bar-left / reader-bar-right），绝对定位，不占位 */}
       <span className="theme-ornament" data-ornament="reader-bar-left" aria-hidden="true" />
       <span className="theme-ornament" data-ornament="reader-bar-right" aria-hidden="true" />
-      {/* 进度那一组挂在页签右边（相对这一层定位），页签照旧相对视口居中；
-          以前放在最左边，和「目录」按钮压在一起。 */}
+      <div className="reader-workspace-start">{props.start}</div>
+      {/* 进度那一组挂在页签右边（相对这一层定位），页签照旧居中（左右两段同宽的网格）。 */}
       <div className="reader-workspace-center">
         <div className="reader-workspace-tabs" role="tablist" aria-label="阅读工作区">
           {WORKSPACES.map(({ id, label, Icon }) => {
@@ -156,6 +160,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
           </div>
         ) : null}
       </div>
+      <div className="reader-workspace-end">{props.end}</div>
     </header>
   );
 }

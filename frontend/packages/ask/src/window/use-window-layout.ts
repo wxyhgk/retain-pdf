@@ -8,9 +8,10 @@ import type { DraggableData, Position, ResizableDelta } from "react-rnd";
 import type { AskWindowMode } from "./AskHeader.js";
 import { fitRect, loadWindowMemory, saveWindowMemory } from "./window-memory.js";
 
-/** 贴右边时顶上让出宿主页面的顶栏：RetainPDF 阅读页的顶栏 60px（chrome.css 的 .reader-workspace-bar，书页区、Markdown 面板也从 60 起）。
- * 以前写 64，顶栏下面和窗口之间露一条 4px 的缝（2026-11-27）。 */
-const DOCK_TOP = 60;
+/** 贴右边时上下让出宿主页面的栏（宿主不给时：上面让 60px，下面不让）。RetainPDF 阅读页 2026-11-28 起是三行壳层，
+ * 给 { top: 顶栏高, bottom: 底栏高 }，贴右边的窗口正好落在中间工作区的右边那一栏。 */
+export type AskDockInsets = { top: number; bottom: number };
+export const DEFAULT_DOCK_INSETS: AskDockInsets = { top: 60, bottom: 0 };
 const DOCK_WIDTH = 440;
 
 type Rect = { x: number; y: number; width: number; height: number };
@@ -28,19 +29,19 @@ function floatRect(): Rect {
   return { x: Math.max(16, vw - width - 24), y: 72, width, height };
 }
 
-/** 三种摆法的位置：浮动用自己记的；贴右边占满右侧（宽可以拖）；放大差不多占满屏。 */
-function layoutFor(mode: AskWindowMode, float: Rect, dockWidth: number): Rect {
+/** 三种摆法的位置：浮动用自己记的；贴右边占满右侧上下两栏之间（宽可以拖）；放大差不多占满屏。 */
+function layoutFor(mode: AskWindowMode, float: Rect, dockWidth: number, insets: AskDockInsets): Rect {
   const { width: vw, height: vh } = viewport();
   if (mode === "dock") {
     const width = Math.min(dockWidth, vw - 16);
-    return { x: vw - width, y: DOCK_TOP, width, height: vh - DOCK_TOP };
+    return { x: vw - width, y: insets.top, width, height: vh - insets.top - insets.bottom };
   }
   if (mode === "full") return { x: 16, y: 16, width: vw - 32, height: vh - 32 };
   // 浏览器窗口变小了：浮动的窗口挪回屏幕里（不改记住的位置，窗口变回大的时候照旧）。
   return fitRect(float, { width: vw, height: vh });
 }
 
-export function useWindowLayout(onLayout?: (layout: { mode: AskWindowMode; width: number }) => void, dockTaken = false) {
+export function useWindowLayout(onLayout?: (layout: { mode: AskWindowMode; width: number }) => void, dockTaken = false, dockInsets: AskDockInsets = DEFAULT_DOCK_INSETS) {
   const [mode, setMode] = useState<AskWindowMode>(() => loadWindowMemory().mode || "float");
   const [float, setFloat] = useState<Rect>(floatRect);
   const [dockWidth, setDockWidth] = useState(() => loadWindowMemory().dockWidth || DOCK_WIDTH);
@@ -65,7 +66,7 @@ export function useWindowLayout(onLayout?: (layout: { mode: AskWindowMode; width
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
-  const rect = layoutFor(mode, float, dockWidth);
+  const rect = layoutFor(mode, float, dockWidth, dockInsets);
   const listener = useRef(onLayout);
   listener.current = onLayout;
   useEffect(() => {

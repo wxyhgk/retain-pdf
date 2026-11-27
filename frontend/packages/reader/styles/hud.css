@@ -1,33 +1,39 @@
-/* 底栏 HUD：页码 / 缩放 / 快捷键帮助 / 模式图标 tab */
-
-/* —— R2 HUD / zoom —— */
-/* 在书页区（.reader-stage）里：left: 50% 就是书页区的正中，右边停着什么都不用另算。 */
-.reader-react-hud {
-  position: absolute;
-  left: 50%;
-  bottom: 18px;
+/* 底栏（ReaderZoomHud.tsx，2026-11-28 起三行壳层的最下面一行）：全宽、实占位、任何模式都不变形——
+ * 左：给这一页加书签、改了译文还没排进 PDF 的提示；中：页码、深色文档、缩放；右：画笔 ▾、截图、快捷键（?）。
+ * 以前是浮在书页上的一个白药丸（往下翻书时收起），和右下角的工具一起压着正文最后几行。
+ * 左右两段同宽（1fr），中间那段正好在视口中间。 */
+.reader-bottombar {
+  position: relative;
   z-index: 36;
   z-index: var(--z-hud, 36);
-  display: flex;
+  display: grid;
+  flex: none;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   gap: 10px;
-  padding: 6px 10px;
-  border: var(--reader-hud-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-hud-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
-  border-radius: var(--reader-hud-radius, var(--shape-radius-control, 999px));
-  /* 书页铺到窗口底以后这一条浮在字上：实底。半透明加 backdrop-filter 在 WebKit 里底下的字会清清楚楚透上来（96% 也是）。 */
+  height: var(--reader-bottombar-h, 36px);
+  padding: 0 10px;
+  border-top: var(--reader-hud-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-hud-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
   background: var(--paper);
-  box-shadow: var(--reader-hud-shadow, var(--shape-shadow-md, 0 10px 28px color-mix(in srgb, var(--shadow-color) 12%, transparent)));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transform: translateX(-50%);
-  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms ease;
+  font-size: var(--ui-text-sm, 12px);
 }
 
-/* 往下翻书时收到窗口底下（use-hud-autohide）：往回翻、鼠标移到底部时回来。 */
-.reader-react-hud[data-hud-hidden="true"] {
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, calc(100% + 24px));
+.reader-bottombar-start,
+.reader-bottombar-center,
+.reader-bottombar-end {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.reader-bottombar-end {
+  justify-content: flex-end;
+}
+
+/* 底栏一行 36px：按钮收到 26px 高。 */
+.reader-bottombar .reader-react-hud-btn {
+  height: 26px;
 }
 
 .reader-react-hud-modes {
@@ -246,8 +252,6 @@
 /* —— 书签（ReaderBookmarkControl）：页码旁一个「给这一页加书签」。书签列表 2026-11-27 挪进左栏（finder.css）。 —— */
 .reader-bookmarks {
   position: relative;
-  padding-left: 7px;
-  border-left: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
 }
 
 .reader-bookmark-toggle {

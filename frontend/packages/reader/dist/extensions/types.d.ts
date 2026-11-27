@@ -43,6 +43,8 @@ export type ReaderApi = {
     sourceOnly: boolean;
     /** 开着哪个面板（扩展定义里 panels 的 id），没开是 null。 */
     activePanel: ReaderAssistantPanel | null;
+    /** 右侧停靠栏里放面板的那个元素（2026-11-28 起面板在中间工作区的横排里实占一栏）：扩展用 createPortal 把面板画进去；还没挂上是 null。 */
+    panelHost: HTMLElement | null;
     closePanel: () => void;
     /** 现在看的是原文 / 对照 / 译文。 */
     visibleMode: "source" | "compare" | "translated";
@@ -74,17 +76,22 @@ export type ReaderPageLayerProps = {
     pane: "source" | "translated" | "compare";
     active: boolean;
 };
-/** 底栏工具（ReaderHudTools，2026-11-27 以前是右下角小球）里的一颗按钮。给了 popup 的点了在底栏上面弹出它（done 收起），没给的点了调 onClick。 */
+/** 顶栏右边或底栏右边的一颗按钮（ReaderBarTools，2026-11-28 起三行壳层：顶栏、底栏都是全宽实占位的栏）。
+ * 给了 popup 的点了弹出它（done 收起），没给的点了调 onClick；给了 dropdown 的旁边多一个 ▾，点 ▾ 弹出它（画笔的笔型、颜色、撤销）。 */
 export type ReaderToolbarItem = {
     key: string;
     label: string;
     /** 悬停说明；不给用 label。 */
     title?: string;
     Icon: LucideIcon;
-    /** 按下的样子（开着、正在用）；窄屏收成「···」时它也带个点。 */
+    /** 放哪：顶栏右边（打开面板、换看法的：提问、Markdown、对比版本，默认）或底栏右边（在书页上动手的：画笔、截图）。 */
+    place?: "top" | "bottom";
+    /** 按下的样子（开着、正在用）。 */
     pressed?: boolean;
     onClick?: () => void;
     popup?: (done: () => void) => ReactNode;
+    /** 旁边的 ▾ 弹出的东西（主按钮照旧 onClick）。 */
+    dropdown?: (done: () => void) => ReactNode;
 };
 /** 对照时左栏换成的另一份 PDF（对比版本）：地址、块（source 已换成那一份的字）、两栏书页上的水印。 */
 export type ReaderComparedDocument = {

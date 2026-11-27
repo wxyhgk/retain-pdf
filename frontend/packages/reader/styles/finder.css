@@ -1,15 +1,10 @@
-/* 目录、搜索（ReaderFinder.tsx）：顶栏左边两颗，点开是浮在书页上的一张卡（挂在按钮下面）。
- *
- * 2026-11-20 起浮着：以前是左边一整栏，阅读区让出这一栏、书页挤到右边。现在书页不动，卡盖在左上角；
- * 点卡外、按 Esc、在目录里点一条跳过去都会收起（搜索时留着，好接着按回车走下一处）。 */
+/* 左栏（ReaderFinder.tsx：目录、搜索、书签、待处理）：开关在顶栏左段，点开默认浮在中间工作区左上角
+ * （2026-11-20 起浮着：点卡外、按 Esc、在目录里点一条跳过去都会收起；搜索时留着，好接着按回车走下一处）；
+ * 钉住时是中间工作区横排里实占的一栏（2026-11-28 起三行壳层：以前 fixed、书页区靠 --reader-stage-left 让）。 */
 
 .reader-finder-toggles {
-  position: fixed;
-  top: 12px;
-  left: 14px;
-  z-index: var(--z-hud, 36);
   display: flex;
-  gap: 4px;
+  gap: 2px;
 }
 
 .reader-finder-toggle {
@@ -35,14 +30,14 @@
 }
 
 .reader-finder {
-  position: fixed;
-  top: 64px;
-  left: 12px;
-  /* 比底栏、顶栏的按钮高一层：卡盖在它们上面。 */
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  /* 浮着时盖在书页上。 */
   z-index: calc(var(--z-hud, 36) + 2);
   display: flex;
   width: var(--reader-finder-width, 340px);
-  max-height: min(640px, calc(100dvh - 88px));
+  max-height: min(640px, calc(100% - 16px));
   flex-direction: column;
   overflow: hidden;
   border: var(--reader-float-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-float-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 9%, transparent)));
@@ -219,41 +214,29 @@
   font-size: var(--ui-text-md, 13px);
 }
 
-/* 顶栏左边一组（目录 / 搜索 / 对比版本）：一个浅底分组，按钮不再各带边框（2026-11-20，见 chrome.css 同一节）。 */
-.reader-finder-toggles {
-  gap: 2px;
-  padding: 3px;
-  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 7%, transparent)));
-  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, var(--ui-radius-pill, 999px)));
-  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 3%);
-}
-
+/* 顶栏左段里的左栏开关：和顶栏别的按钮一个样子，没有边框、阴影，悬停 / 开着是浅墨底。 */
 .reader-finder-toggles .reader-finder-toggle {
-  height: 30px;
+  height: 32px;
   border-color: transparent;
   background: transparent;
 }
 
 .reader-finder-toggles .reader-finder-toggle:hover,
 .reader-finder-toggles .reader-finder-toggle[aria-pressed="true"] {
-  background: var(--paper);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color, var(--ink)) 10%, transparent);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
 }
 
-/* 钉在左边（2026-11-27）：左边一整栏，顶栏以下到窗口底；书页区让出这一栏（--reader-stage-left，根节点 is-sidebar-pinned）。
+/* 钉在左边（2026-11-27）：中间工作区横排里最左边实占的一栏，书页区自然变窄。
  * 窄屏钉不住（use-reader-finder 的 SIDEBAR_PIN_MIN_VIEWPORT），所以不用另写 @media。 */
 .reader-react-root {
   --reader-sidebar-width: 300px;
 }
 
-.reader-react-root.is-sidebar-pinned {
-  --reader-stage-left: var(--reader-sidebar-width);
-}
-
 .reader-finder[data-pinned="true"] {
-  top: 60px;
-  bottom: 0;
-  left: 0;
+  position: relative;
+  top: auto;
+  left: auto;
+  flex: none;
   width: var(--reader-sidebar-width);
   max-height: none;
   border-width: 0 var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) 0 0;

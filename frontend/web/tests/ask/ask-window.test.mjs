@@ -335,9 +335,12 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
   }
 });
 
-test("贴右边是页面的一栏（2026-11-27）：从顶栏下沿（60）起、压在顶栏下面、外框不随思考强度发光、× 不贴边", () => {
+test("贴右边是页面的一栏（2026-11-27）：上下让出宿主的栏（默认上 60、下 0）、压在顶栏下面、外框不随思考强度发光、× 不贴边", async () => {
+  const { DEFAULT_DOCK_INSETS } = await import("../../../packages/ask/src/window/use-window-layout.ts");
+  assert.deepEqual(DEFAULT_DOCK_INSETS, { top: 60, bottom: 0 });
   const layout = readFileSync(new URL("../../../packages/ask/src/window/use-window-layout.ts", import.meta.url), "utf8");
-  assert.match(layout, /const DOCK_TOP = 60;/);
+  // 贴右边上下让出宿主的栏：不给时上 60、下 0；阅读页（三行壳层）给顶栏、底栏的高，见 reader-shell-layout.test.mjs。
+  assert.match(layout, /return \{ x: vw - width, y: insets\.top, width, height: vh - insets\.top - insets\.bottom \};/);
   const win = readFileSync(new URL("../../../packages/ask/src/window/AskWindow.tsx", import.meta.url), "utf8");
   assert.match(win, /className=\{`ask-window ask-window--\$\{mode\}`\}/);
   // 2026-11-27 起 ask.css 按组件拆开：窗口外框（层级、贴右边、思考染边）在 ask/window.css。

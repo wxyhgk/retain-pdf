@@ -10,6 +10,7 @@ import type { ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contra
 import { resolveKatexStylesheetUrl } from "../external.js";
 import { bindAskPort, toAskContext } from "./ask-context.js";
 import { anchorSelection, contextBlock, contextSelection, selectionAnchor, suggestedTranslation, type AskBook } from "./conversation-messages.js";
+import { READER_DOCK_INSETS } from "../app/shell-metrics.js";
 import { ReaderAskConversationMenu } from "./ReaderAskConversationMenu.js";
 import { ReaderMemoryPanel } from "./ReaderMemoryPanel.js";
 import type { useAskConversation } from "./use-ask-conversation.js";
@@ -105,6 +106,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
         katexStylesheetUrl={katex}
         onLayout={onLayout}
         dockTaken={dockTaken}
+        dockInsets={READER_DOCK_INSETS}
       />
     );
   }
@@ -151,6 +153,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       katexStylesheetUrl={katex}
       onLayout={onLayout}
       dockTaken={dockTaken}
+        dockInsets={READER_DOCK_INSETS}
       answerAction={answerAction}
       attachTools={attachTools}
       attachRequest={attachRequest}

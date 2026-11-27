@@ -4,9 +4,7 @@
 // 不改记住的摆法（下次打开照旧贴右边，宿主那边按「后来的留下」把它的面板关掉）。
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fitRect, loadWindowMemory, saveWindowMemory } from "./window-memory.js";
-/** 贴右边时顶上让出宿主页面的顶栏：RetainPDF 阅读页的顶栏 60px（chrome.css 的 .reader-workspace-bar，书页区、Markdown 面板也从 60 起）。
- * 以前写 64，顶栏下面和窗口之间露一条 4px 的缝（2026-11-27）。 */
-const DOCK_TOP = 60;
+export const DEFAULT_DOCK_INSETS = { top: 60, bottom: 0 };
 const DOCK_WIDTH = 440;
 function viewport() {
     return { width: globalThis.innerWidth || 1200, height: globalThis.innerHeight || 800 };
@@ -20,19 +18,19 @@ function floatRect() {
     const height = Math.min(640, vh - 120);
     return { x: Math.max(16, vw - width - 24), y: 72, width, height };
 }
-/** 三种摆法的位置：浮动用自己记的；贴右边占满右侧（宽可以拖）；放大差不多占满屏。 */
-function layoutFor(mode, float, dockWidth) {
+/** 三种摆法的位置：浮动用自己记的；贴右边占满右侧上下两栏之间（宽可以拖）；放大差不多占满屏。 */
+function layoutFor(mode, float, dockWidth, insets) {
     const { width: vw, height: vh } = viewport();
     if (mode === "dock") {
         const width = Math.min(dockWidth, vw - 16);
-        return { x: vw - width, y: DOCK_TOP, width, height: vh - DOCK_TOP };
+        return { x: vw - width, y: insets.top, width, height: vh - insets.top - insets.bottom };
     }
     if (mode === "full")
         return { x: 16, y: 16, width: vw - 32, height: vh - 32 };
     // 浏览器窗口变小了：浮动的窗口挪回屏幕里（不改记住的位置，窗口变回大的时候照旧）。
     return fitRect(float, { width: vw, height: vh });
 }
-export function useWindowLayout(onLayout, dockTaken = false) {
+export function useWindowLayout(onLayout, dockTaken = false, dockInsets = DEFAULT_DOCK_INSETS) {
     const [mode, setMode] = useState(() => loadWindowMemory().mode || "float");
     const [float, setFloat] = useState(floatRect);
     const [dockWidth, setDockWidth] = useState(() => loadWindowMemory().dockWidth || DOCK_WIDTH);
@@ -59,7 +57,7 @@ export function useWindowLayout(onLayout, dockTaken = false) {
         window.addEventListener("resize", onResize);
         return () => window.removeEventListener("resize", onResize);
     }, []);
-    const rect = layoutFor(mode, float, dockWidth);
+    const rect = layoutFor(mode, float, dockWidth, dockInsets);
     const listener = useRef(onLayout);
     listener.current = onLayout;
     useEffect(() => {

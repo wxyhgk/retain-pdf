@@ -6,7 +6,7 @@
 // 3) 深链直达 → location.assign(index.html)
 
 import type { ReactNode } from "react";
-import { X } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { SOFT_READER_CLOSE_MESSAGE } from "../../shared/navigation/soft-reader.js";
 
 function homeIndexUrl() {
@@ -100,8 +100,8 @@ export function ReaderCloseHome({ onBeforeClose }: { onBeforeClose?: () => void 
 
   return (
     <ReaderTrayButton id="reader-close-home-btn" className="reader-close-home-btn" label="返回主页" onClick={close}>
-      <X className="reader-close-home-icon" size={18} strokeWidth={2.25} aria-hidden />
-      <span className="reader-close-home-label">关闭</span>
+      <ChevronLeft className="reader-close-home-icon" size={18} strokeWidth={2.25} aria-hidden />
+      <span className="reader-close-home-label">返回</span>
     </ReaderTrayButton>
   );
 }

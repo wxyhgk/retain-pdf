@@ -36,6 +36,7 @@ import type { AskPort, AskContext, AskMessage, AskTurnRecord } from "@retainpdf/
   katexStylesheetUrl={url}          // KaTeX 样式（宿主托管字体）
   onLayout={({ mode, width }) => …}  // 摆法变了（浮动 / 贴右边 / 放大）：宿主据此给页面让出右边
   dockTaken={…}                      // 宿主右边停了别的：变成 true 的那一下，贴右边的窗口变回浮动（记住的摆法不改）
+  dockInsets={{ top, bottom }}       // 贴右边时上下让出宿主的栏（阅读页：顶栏 54、底栏 36）；不给是上 60、下 0
   answerAction={action}             // AskAnswerAction：回答底下宿主加的一个动作（阅读页「改这段译文」）
   attachTools={[tool]}              // AskAttachTool[]：输入框那一行「带上……」（阅读页「带上这一页」的截图）
   attachRequest={{ id, files }}     // 宿主从外面塞进来的附件（框选截图），id 变了就加

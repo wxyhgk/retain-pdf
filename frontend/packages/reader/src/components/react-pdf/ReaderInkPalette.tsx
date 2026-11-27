@@ -92,21 +92,11 @@ function InkTools({ ink, page = 0, onPick }: { ink: ReaderInk; page?: number; on
   );
 }
 
-/** 右键菜单里画笔那一排（画笔扩展登记的 menuSection；菜单本身是 ReaderPageMenu）。 */
-export function ReaderInkMenuSection({ ink, page, onPick }: { ink: ReaderInk; page: number; onPick: () => void }): ReactElement {
+/** 画笔那一排：右键菜单里（画笔扩展登记的 menuSection；菜单本身是 ReaderPageMenu）和底栏「画笔 ▾」弹出来的都是它。 */
+export function ReaderInkMenuSection({ ink, page, onPick }: { ink: ReaderInk; page?: number; onPick: () => void }): ReactElement {
   return (
     <div className="reader-ink-bar is-menu" role="menu" aria-label="画笔">
       <InkTools ink={ink} page={page} onPick={onPick} />
-    </div>
-  );
-}
-
-/** 画笔模式下左下角常驻的那一条。 */
-export function ReaderInkDock({ ink }: { ink: ReaderInk }): ReactElement | null {
-  if (!ink.tool) return null;
-  return (
-    <div className="reader-ink-bar is-dock" role="toolbar" aria-label="画笔" data-ink-dock="true">
-      <InkTools ink={ink} />
     </div>
   );
 }

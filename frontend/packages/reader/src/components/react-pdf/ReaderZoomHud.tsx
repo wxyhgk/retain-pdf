@@ -1,7 +1,10 @@
-// 底栏：页码（可点跳转）、给这一页加书签、深色文档、缩放 +/- / 模式默认重置、快捷键；竖线后面是工具（toolsSlot：提问、画笔、Markdown、对比版本）。
-// 2026-11-27 起搜索、书签列表、待处理挪进左栏（ReaderFinder），这里只留眼下这一页、这一屏的事。
+// 底栏（2026-11-28 起三行壳层的最下面一行：全宽、实占位、任何模式都不变形，不再浮在书页上、不再往下翻时收起）：
+// - 左：给这一页加书签、改了译文还没排进 PDF 的提示（leftSlot）；
+// - 中：页码（可点跳转）、深色文档、缩放 −/百分比/+；
+// - 右：书页工具（toolsSlot：画笔 ▾、截图）、快捷键（?）。
+// 搜索、书签列表、待处理在左栏（ReaderFinder）；提问、Markdown、对比版本在顶栏右边。
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
 import {
   readerViewportWidth,
@@ -17,7 +20,6 @@ import { clampPageNumber } from "../../pdf/scroll-to-page.js";
 import { ReaderShortcutsHelp } from "./ReaderShortcutsHelp.js";
 import { ReaderBookmarkControl } from "./ReaderBookmarkControl.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
-import { useHudAutoHide } from "./use-hud-autohide.js";
 
 export type ReaderZoomHudProps = {
   /** 以下显示值缺省时从 reader context / hud context 取 */
@@ -31,9 +33,11 @@ export type ReaderZoomHudProps = {
   modeControls?: ReactNode;
   /** 书签按这本书存（和阅读位置同一个 scope）；不给就不显示书签。 */
   bookmarkScope?: string;
-  /** 页码后面放的按钮（宿主自己加；阅读页 2026-11-27 起不放，搜索在左栏）。 */
+  /** 页码后面放的按钮（宿主自己加；阅读页不放，搜索在左栏）。 */
   searchSlot?: ReactNode;
-  /** 最右边、竖线后面那组工具（阅读页：ReaderHudTools，提问、画笔、Markdown、对比版本；2026-11-27 起取代右下角的小球）。 */
+  /** 左边书签后面（阅读页：改了译文还没排进 PDF 的提示）。 */
+  leftSlot?: ReactNode;
+  /** 右边快捷键前面（阅读页：ReaderBarTools place="bottom"，画笔 ▾、截图）。 */
   toolsSlot?: ReactNode;
 };
 
@@ -53,9 +57,6 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
   const resetZoom = defaultZoomForMode(mode, readerViewportWidth());
   // 窄屏单栏的默认是铺满（见 reader-zoom.ts 的 READER_NARROW_VIEWPORT_PX）。
   const resetLabel = resetZoom >= READER_ZOOM_MAX ? "恢复默认大小（铺满阅读区）" : "恢复默认大小（对照时左右各占一半）";
-  // 往下翻书时收起、往回翻或鼠标移到底部时出来（use-hud-autohide），不再一直压着正文最后几行。
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const autoHidden = useHudAutoHide(rootRef);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(`${currentPage}`);
@@ -76,7 +77,19 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
   };
 
   return (
-    <div ref={rootRef} className="reader-react-hud" data-reader-hud="true" data-hud-hidden={autoHidden ? "true" : undefined}>
+    <footer className="reader-bottombar" data-reader-hud="true">
+      <div className="reader-bottombar-start">
+        {props.bookmarkScope ? (
+          <ReaderBookmarkControl
+            scope={props.bookmarkScope}
+            currentPage={currentPage}
+            numPages={numPages}
+            regions={ctx?.regions}
+          />
+        ) : null}
+        {props.leftSlot}
+      </div>
+      <div className="reader-bottombar-center">
       {modeControls ? <div className="reader-react-hud-group reader-react-hud-modes">{modeControls}</div> : null}
       <div className="reader-react-hud-group" aria-label="页码">
         {editing ? (
@@ -127,14 +140,6 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
         )}
       </div>
       {props.searchSlot ? <div className="reader-react-hud-group" aria-label="搜索">{props.searchSlot}</div> : null}
-      {props.bookmarkScope ? (
-        <ReaderBookmarkControl
-          scope={props.bookmarkScope}
-          currentPage={currentPage}
-          numPages={numPages}
-          regions={ctx?.regions}
-        />
-      ) : null}
       {ctx?.toggleDocDark ? (
         <div className="reader-react-hud-group" aria-label="显示">
           <Button
@@ -177,11 +182,14 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           +
         </button>
       </div>
-      <div className="reader-react-hud-group reader-react-hud-help" aria-label="帮助">
-        <ReaderShortcutsHelp />
       </div>
-      {props.toolsSlot}
-    </div>
+      <div className="reader-bottombar-end">
+        {props.toolsSlot}
+        <div className="reader-react-hud-group reader-react-hud-help" aria-label="帮助">
+          <ReaderShortcutsHelp />
+        </div>
+      </div>
+    </footer>
   );
 }
 

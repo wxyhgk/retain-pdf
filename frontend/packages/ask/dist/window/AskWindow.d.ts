@@ -14,6 +14,7 @@ import { type ReactElement, type ReactNode } from "react";
 import type { AskAnswerAction, AskAttachTool, AskContext, AskContextOffer, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
 import type { AskHeaderMenuItem } from "./head-menu.js";
 import type { AskWindowMode } from "./AskHeader.js";
+import { type AskDockInsets } from "./use-window-layout.js";
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
 export type AskWindowProps = {
     port: AskPort;
@@ -88,5 +89,7 @@ export type AskWindowProps = {
     }) => void;
     /** 宿主右边停了别的东西（阅读页的 Markdown 面板）：变成 true 的那一下，贴右边的窗口变回浮动。 */
     dockTaken?: boolean;
+    /** 贴右边时上下让出宿主的栏（阅读页：顶栏、底栏的高）；不给是上 60、下 0。 */
+    dockInsets?: AskDockInsets;
 };
 export default function AskWindow(props: AskWindowProps): ReactElement;

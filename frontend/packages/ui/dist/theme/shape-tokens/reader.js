@@ -24,8 +24,6 @@ export const READER_SHAPE_TOKENS = [
     // —— hud ——
     { name: "--reader-hud-edge-width", kind: "length", description: "底部页码缩放条的描边粗细", fallback: "var(--shape-edge-width, 1px)" },
     { name: "--reader-hud-edge-color", kind: "color", description: "底部页码缩放条的描边颜色", fallback: "var(--shape-edge-color, 墨色 8% 透明)" },
-    { name: "--reader-hud-shadow", kind: "shadow", description: "底部页码缩放条的阴影", fallback: "var(--shape-shadow-md, 0 10px 28px 的淡阴影)" },
-    { name: "--reader-hud-radius", kind: "length", description: "底部页码缩放条的圆角", fallback: "var(--shape-radius-control, 999px)" },
     { name: "--reader-hud-key-radius", kind: "length", description: "底部条里页码、缩放、翻页小按钮的圆角", fallback: "var(--shape-radius-control, 999px)" },
     { name: "--reader-hud-press-transform", kind: "transform", description: "底部条小按钮按下时的位移", fallback: "var(--shape-press-transform, scale(0.96))" },
     // —— float ——

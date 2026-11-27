@@ -1,7 +1,7 @@
 // 从 frontend/web 迁入的 React-pdf 视图真值，现为 @retainpdf/reader 主入口。
 // 2026-11-27 拆开：这里只把各块接起来（谁和谁共享什么状态、context、渲染顺序）；各块的状态和 effect 在 ./app/ 下，
 // 可见台面的纯函数在 app/pane-composition.ts（这里照旧导出，老的引用不用改）。
-import { useCallback, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useReaderReactController } from "./hooks/use-reader-react-controller.js";
 import { useReaderKeyboard } from "./hooks/use-reader-keyboard.js";
 import {
@@ -24,7 +24,9 @@ import {
   type ReaderHudContextValue,
 } from "./components/react-pdf/reader-context.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
-import { ReaderHudTools } from "./components/react-pdf/ReaderHudTools.js";
+import { ReaderBarTools } from "./components/react-pdf/ReaderBarTools.js";
+import { ReaderFinderToggles } from "./components/react-pdf/ReaderFinder.js";
+import { useReaderIssueNav } from "./hooks/use-reader-issues.js";
 import { ReaderPageMenu, pageMenuFromContextMenu, type ReaderPageMenuState } from "./components/react-pdf/ReaderPageMenu.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
 import { useReaderDocTheme } from "./hooks/use-reader-doc-theme.js";
@@ -59,7 +61,7 @@ export function ReaderAppReactPdf() {
   const setAssistantPanel = assistant.setPanel;
 
   const assistantOpen = assistantPanel !== null;
-  // 扩展登记的表（extensions/）。右边停着东西（面板，或扩展贴右边的浮层）时，书页区（.reader-stage）往左让出那么宽；
+  // 扩展登记的表（extensions/）。右边停着东西（面板，或扩展贴右边的浮层）时，中间工作区的横排里多一栏，书页区（.reader-stage）自然变窄；
   // 右边只停一个，后来的留下（useRightDockSlot）。剩下的书页区放不下两栏时对照收成单栏原文。
   const table = useReaderContributionTable();
   const { reserveRight } = table;
@@ -124,6 +126,10 @@ export function ReaderAppReactPdf() {
   // context，避免滚动带动整棵外壳重渲染。
   const [regionHover] = useState(createRegionHoverStore);
   const jumpToBlock = useCallback((itemId: string) => c.jumpToAnchor({ block_id: itemId }), [c.jumpToAnchor]);
+  // 待处理（没翻成、内容问题、版面放不下）：顶栏左栏开关的角标和左栏「待处理」页签用同一份；N / Shift+N 在里面监听。
+  const issueNav = useReaderIssueNav(c.sourceOnly ? "" : session.jobId, c.currentPage, jumpToBlock);
+  // 右边停靠栏里放面板的元素（扩展从 api.panelHost 拿，用 createPortal 画进去）。
+  const [panelHost, setPanelHost] = useState<HTMLDivElement | null>(null);
   const jumpToBlockIn = useCallback((itemId: string, pane?: "source" | "translated") => c.jumpToAnchor({ block_id: itemId }, pane), [c.jumpToAnchor]);
   // PDF 自带的书签、各栏读好的 PDF 和放大查看（app/use-reader-pdf-assets）。
   const { bookmarks, onPdfOutline, onPdfDocument, zoomItem, setZoomItem, zoomBlock, closeZoom, zoomDocuments } = useReaderPdfAssets(c);
@@ -141,6 +147,7 @@ export function ReaderAppReactPdf() {
   } = useReaderExtensionHost(c, table, {
     translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments,
     editBlock: blockEdit.available && !blockEdit.blockedReason ? editBlock : null,
+    panelHost,
   });
   const pointerTaken = Boolean(pointerTakenId);
   // 右键那一下各扩展给的菜单项（右键时算好，菜单开着时不再变）。
@@ -241,8 +248,6 @@ export function ReaderAppReactPdf() {
           data-reader-engine="react-pdf"
           data-reader-workspace={workspaceView}
           data-pointer-taken={pointerTakenId || undefined}
-          data-right-inset={reserveRight ? "true" : undefined}
-          style={reserveRight ? ({ "--reader-right-inset": `${reserveRight}px` } as CSSProperties) : undefined}
           onContextMenu={(event) => {
             const menu = pageMenuFromContextMenu(event);
             if (!menu) return;
@@ -254,14 +259,8 @@ export function ReaderAppReactPdf() {
             setPageMenu(menu);
           }}
         >
-          <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
-          <ReaderFinderArea state={finderState} bookmarks={bookmarks} bookmarkScope={c.viewStateKey} issuesJobId={c.sourceOnly ? "" : session.jobId} />
-          {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
-              原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
-          <div className="reader-chrome-tray">
-            <ReaderDownloadActions />
-            <ReaderCloseHome onBeforeClose={session.prepareClose} />
-          </div>
+          {/* 三行壳层（2026-11-28）：顶栏、中间工作区、底栏都是全宽、实占位的一行，书页只在中间那一行里，
+              不再被浮在上面的栏、胶囊、小球盖住，也不再拿 --reader-stage-* 去算谁让谁。 */}
           <ReaderWorkspaceTabs
             mode={visiblePdfMode}
             documentReady={Boolean(session.jobId)}
@@ -281,22 +280,39 @@ export function ReaderAppReactPdf() {
                 changeWorkspace("compare");
               },
             } : null}
+            start={<>
+              <ReaderCloseHome onBeforeClose={session.prepareClose} />
+              <ReaderFinderToggles open={finder} onToggle={finderState.toggleSidebar} issueCount={issueNav.issues.length} />
+              {session.title ? <span className="reader-workspace-title" title={session.title}>{session.title}</span> : null}
+            </>}
+            end={<>
+              <ReaderBarTools place="top" active={assistantPanel} />
+              <ReaderDownloadActions />
+            </>}
           />
-          <ReaderAssistantDock active={assistantPanel} />
-          {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
-          {/* 书页区：顶栏以下、左右停着的东西之间（--reader-stage-left / --reader-stage-right）。书页、底栏（连同工具）都在里面按它自己定位，
-              不再各自拿视口宽减面板宽去算。 */}
-          <div className="reader-stage">
-            <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
-            {c.showHud ? (
-              <ReaderZoomHud
-                mode={visiblePdfMode}
-                modeControls={null}
-                bookmarkScope={c.viewStateKey}
-                toolsSlot={<ReaderHudTools active={assistantPanel} />}
-              />
-            ) : null}
+          <div className="reader-workspace">
+            <ReaderFinderArea state={finderState} bookmarks={bookmarks} bookmarkScope={c.viewStateKey} issues={issueNav} />
+            <div className="reader-stage">
+              <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
+              <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
+            </div>
+            {/* 右边停靠栏：面板开着时实占一栏（宽度拖分栏线改），扩展把面板画进 .reader-dock-body（api.panelHost）。
+                面板关了这一栏只是藏起来不卸掉：Markdown 面板第一次打开后一直挂着，留着滚动位置。 */}
+            <aside className="reader-dock" hidden={!assistantOpen} aria-label="阅读辅助面板">
+              <ReaderAssistantDock active={assistantPanel} />
+              <div className="reader-dock-body" ref={setPanelHost} />
+            </aside>
+            {/* 扩展的浮层贴右边（提问窗贴右边）：占一栏一样宽的空位，书页自然让开；提问窗本身照旧是它自己摆的浮层。 */}
+            {reserveRight ? <div className="reader-dock-spacer" style={{ width: reserveRight }} aria-hidden="true" /> : null}
           </div>
+          {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
+          <ReaderZoomHud
+            mode={visiblePdfMode}
+            modeControls={null}
+            bookmarkScope={c.viewStateKey}
+            leftSlot={<ReaderPendingEditsPill edit={blockEdit} />}
+            toolsSlot={<ReaderBarTools place="bottom" />}
+          />
           <ReaderOverlays
             session={session}
             zoomDocuments={zoomDocuments}
@@ -307,7 +323,6 @@ export function ReaderAppReactPdf() {
           />
           <ReaderPageMenu menu={pageMenu} onClose={closePageMenu} actions={menuItems} sections={menuSections} />
           <ReaderExtensionOutlets extensions={BUILTIN_READER_EXTENSIONS} />
-          <ReaderPendingEditsPill edit={blockEdit} />
           <DownloadToastHost />
         </div>
       </ReaderProvider>

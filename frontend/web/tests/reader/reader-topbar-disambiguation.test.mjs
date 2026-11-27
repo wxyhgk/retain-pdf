@@ -37,16 +37,20 @@ test("下载收成一颗「下载」按钮，和中间的模式页签分得开",
   assert.doesNotMatch(DOWNLOADS, /reader-download-actions-prefix/, "组前缀那套已经不需要了");
 });
 
-test("顶栏两边对称留位：模式页签相对视口居中，又不会滑到托盘底下", () => {
-  // 以前左 72px、右 300px，页签相对「除去托盘的那块」居中，1440px 下往左偏 114px。
+test("顶栏是实占位的左-中-右三段网格（2026-11-28）：左右同宽，模式页签相对视口居中；不再 fixed、不再给托盘留位", () => {
+  // 以前顶栏 fixed 盖在书页上，两头的按钮各自 fixed 浮着，靠 --reader-tray-width 两边对称留位（更早是左 72、右 300，页签偏 114px）。
   const bar = CHROME.slice(CHROME.indexOf(".reader-workspace-bar {"));
   const block = bar.slice(0, bar.indexOf("\n}\n"));
-  assert.match(block, /padding-inline:\s*var\(--reader-tray-width, 200px\);/, "顶栏不是两边对称留位");
-  assert.doesNotMatch(CHROME, /padding-inline:\s*(?:72px|12px) var\(--reader-tray-width/, "又回到只给右边留位");
+  assert.match(block, /grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\);/, "顶栏不是左右同宽的三段");
+  assert.match(block, /height:\s*var\(--reader-topbar-h, 54px\);/);
+  assert.doesNotMatch(block, /position:\s*fixed/, "顶栏又浮回书页上了");
+  assert.doesNotMatch(CHROME.replace(/\/\*[\s\S]*?\*\//g, ""), /--reader-tray-width/, "又回到给托盘留位");
+  assert.match(APP, /start=\{<>[\s\S]*?<ReaderCloseHome[\s\S]*?<ReaderFinderToggles[\s\S]*?reader-workspace-title/, "左段：返回、左栏开关、书名");
+  assert.match(APP, /end=\{<>[\s\S]*?<ReaderBarTools place="top"[\s\S]*?<ReaderDownloadActions \/>/, "右段：面板和看法、下载");
 });
 
 test("窄屏只收「下载」两个字，图标留着", () => {
-  const at720 = CHROME.slice(CHROME.indexOf("@media (max-width: 720px) {\n  .reader-react-root"));
+  const at720 = CHROME.slice(CHROME.indexOf("@media (max-width: 720px) {\n  .reader-download-trigger"));
   const block = at720.slice(0, at720.indexOf("\n}\n\n"));
   assert.match(block, /\.reader-download-trigger-label/, "断点里没在收文字");
   assert.doesNotMatch(block, /display:\s*none/, "窄屏用 display:none 藏了整块");

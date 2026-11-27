@@ -238,8 +238,9 @@ test("左栏钉住（2026-11-27）：点书、Esc 不收，只有 × 收；四�
   dom.window.close();
   const { readFileSync } = await import("node:fs");
   const css = readFileSync(new URL("../../../packages/reader/styles/finder.css", import.meta.url), "utf8");
-  assert.match(css, /\.reader-react-root\.is-sidebar-pinned\s*\{[^}]*--reader-stage-left:\s*var\(--reader-sidebar-width\)/, "钉住时书页区让出一栏");
-  assert.match(css, /\.reader-finder\[data-pinned="true"\]\s*\{[^}]*top:\s*60px[^}]*bottom:\s*0/s, "钉住是顶栏以下一整栏");
+  // 2026-11-28 三行壳层：钉住时是中间工作区横排里实占的一栏（不再 fixed、不再让书页区算 --reader-stage-left）。
+  assert.match(css, /\.reader-finder\[data-pinned="true"\]\s*\{[^}]*position:\s*relative[^}]*flex:\s*none[^}]*width:\s*var\(--reader-sidebar-width\)/s, "钉住时实占一栏");
+  assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /--reader-stage-left/);
   const app = readFileSync(new URL("../../../packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url), "utf8");
   assert.match(app, /const leftDocked = Boolean\(finder\) && finderState\.pinned;/);
   assert.match(app, /compareFitsStage\(c\.shell\.shellWidth, sideDocked \|\| leftDocked\)/, "钉住左栏也算进放不放得下对照");
