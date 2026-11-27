@@ -647,6 +647,37 @@ fn a_page_translated_twice_is_indexed_once_from_the_newer_job() {
 }
 
 
+/// 老任务没记 ocr_page_numbers、书的最后一页没字：页数按 OCR 文档算，不按最后一个有字的块（2026-11-27）。以前整本重翻的
+/// 末页（请求里写的是真实的最后一页）超出算少了的页数，重翻的任务被算成一页没翻，索引一直是更早那次的译文；启动回填还每次都
+/// 判它过期、重建一遍（真实数据里那本书 debug 版重建要 40 多秒，jobsd 过了 30 秒启动时限被杀掉重启，起不来）。
+#[test]
+fn a_whole_book_retranslation_is_indexed_even_if_the_last_page_has_no_text() {
+    let fs = TestDbFs::new("fts-blank-last-page");
+    let db = fs.db();
+    db.init().expect("init");
+    let document_id = seed_document(&db, "up-1", b"blank last page book");
+    let pages = |first: &'static str| [("one", first), ("", "")];
+    seed_fts_job(&db, &fs.data_root, &document_id, "job-first", "2026-10-01T00:00:00", "job-first", &[], &pages("旧的第一页"));
+    seed_fts_job(&db, &fs.data_root, &document_id, "job-again", "2026-10-02T00:00:00", "job-first", &[], &pages("新的第一页"));
+    let mut again = db.get_job("job-again").expect("job");
+    again.request_payload.translation.end_page = 1; // 两页的书，末页（从 0 数）是 1
+    db.save_job(&again).expect("save");
+    db.connect()
+        .unwrap()
+        .execute("UPDATE jobs SET document_id = ?1 WHERE job_id = 'job-again'", params![document_id])
+        .unwrap();
+    db.set_document_active_job(&document_id, "job-again", None).expect("active");
+
+    db.rebuild_document_fts(&document_id).expect("rebuild");
+    assert_eq!(
+        db.search_blocks("新的第一页", 10, None).unwrap().first().map(|hit| hit.job_id.clone()),
+        Some("job-again".to_string()),
+        "整本重翻的译文没进索引"
+    );
+    assert!(db.search_blocks("旧的第一页", 10, None).unwrap().is_empty());
+    assert!(backfill::fts_backfill_targets(&db).unwrap().is_empty(), "重建过了，启动回填不该再判它过期");
+}
+
 /// 索引停在旧任务上、而有更新的任务成功了(老代码对没有 upload_id 的任务结束时不重建):
 /// 启动回填要把它补上。原来只补「完全没有索引行」的书,过期的永不自愈。
 #[test]
