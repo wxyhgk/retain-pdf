@@ -23,5 +23,6 @@ export declare function useReaderExtensionHost(c: ReaderReactController, { trans
     textMarks: (text: string) => import("../shared/content/reader-text-marks.js").ReaderTextMark[];
     menuSections: import("../extensions/registry.js").ReaderMenuSection[];
     pointerTakenId: string;
+    reserveRight: number;
 };
 //# sourceMappingURL=use-reader-extension-host.d.ts.map

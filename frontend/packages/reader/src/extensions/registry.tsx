@@ -96,6 +96,11 @@ export function collectTextMarks(contributions: ReaderContributions): ((text: st
   });
 }
 
+/** 书页右边要让出的宽度：几个扩展里最大的（没人要是 0）。 */
+export function collectReserveRight(contributions: ReaderContributions): number {
+  return contributions.reduce((most, { contribution }) => Math.max(most, contribution.reserveRight || 0), 0);
+}
+
 /** 对照时左栏换成的那一份：第一个给了的扩展。 */
 export function pickComparedDocument(contributions: ReaderContributions): ReaderComparedDocument | null {
   for (const { contribution } of contributions) if (contribution.comparedDocument) return contribution.comparedDocument;

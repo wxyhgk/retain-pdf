@@ -10,6 +10,7 @@ import { toInitialMessages, toStoredMessages } from "../../../packages/ask/src/a
 import { splitMath } from "../../../packages/ask/src/window/AskQuote.tsx";
 import { shortAgentName } from "../../../packages/ask/src/window/AskHeader.tsx";
 import { QUOTE_LIMIT, answerSelectionText, rangeText, splitQuote, withQuote } from "../../../packages/ask/src/window/answer-quote.tsx";
+import { fitRect, pickAgent } from "../../../packages/ask/src/window/window-memory.ts";
 
 const pages = (segments) => segments.filter((segment) => segment.type === "page").map((segment) => segment.page);
 
@@ -112,9 +113,19 @@ test("回答里选字引用回复：引用写成「> 」放在问题前面、拆
   assert.equal([...rangeText(long, doc)].length, QUOTE_LIMIT + 1, "截断加「…」");
 });
 
+test("窗口记忆（11-27）：默认 agent 是上次用的（还能用才算）；记的浮动位置挪回屏幕里", () => {
+  const agents = [{ id: "a", available: true }, { id: "pi", available: true }, { id: "codex", available: false }];
+  assert.equal(pickAgent(agents, "pi"), "pi", "上次用的");
+  assert.equal(pickAgent(agents, "codex"), "a", "上次用的没装了：第一个能用的");
+  assert.equal(pickAgent(agents, undefined), "a");
+  assert.equal(pickAgent([], "pi"), "");
+  assert.deepEqual(fitRect({ x: 1800, y: 900, width: 500, height: 640 }, { width: 1200, height: 800 }), { x: 700, y: 160, width: 500, height: 640 }, "换了小屏：挪回来");
+  assert.deepEqual(fitRect({ x: 10, y: 10, width: 2000, height: 100 }, { width: 1200, height: 800 }), { x: 10, y: 10, width: 1184, height: 280 }, "太宽缩回、太矮撑到最小");
+});
+
 test("真把窗口画出来：常问一点就问；回答里的页码点了交给宿主跳页；引用的公式画出来；贴右边 / 放大切换；Esc 关", async () => {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/", pretendToBeVisual: true });
-  const keys = ["window", "document", "navigator", "HTMLElement", "HTMLButtonElement", "HTMLTextAreaElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "MutationObserver", "NodeFilter", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame", "addEventListener", "removeEventListener", "dispatchEvent", "innerWidth", "innerHeight"];
+  const keys = ["window", "document", "navigator", "HTMLElement", "HTMLButtonElement", "HTMLTextAreaElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "MutationObserver", "NodeFilter", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame", "addEventListener", "removeEventListener", "dispatchEvent", "innerWidth", "innerHeight", "localStorage"];
   const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
   for (const key of keys) {
     const value = typeof dom.window[key] === "function" && /^[a-z]/.test(key) ? dom.window[key].bind(dom.window) : dom.window[key];
@@ -161,6 +172,8 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     };
     const records = [];
     const forks = [];
+    const layouts = [];
+    localStorage.setItem("retainpdf.ask.window.v1", JSON.stringify({ agentId: "gone" }));
     const CONTEXT = { page: 56, label: "第 56 页 · 2.1", quote: { source: "where $ M_{A} $ is the mass", translated: "其中质量" }, preamble: "我在读一本书，第 56 页。", meta: { retainpdf: { selection: { page: 56 } } } };
     // 宿主：下一问的出处发出去就清掉。
     function Host() {
@@ -175,6 +188,7 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
         onTurnDone: (messages, agentId, sessionId) => turns.push({ count: messages.length, agentId, sessionId }),
         onTurn: (turn) => records.push(turn),
         onFork: (message) => forks.push(message),
+        onLayout: (layout) => layouts.push(layout),
         pageCount: 100,
       });
     }
@@ -236,9 +250,15 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     button("贴到右边").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await settle();
     assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "dock");
+    assert.equal(layouts.at(-1).mode, "dock", "摆法交给宿主（书页让出右边）");
+    assert.equal(JSON.parse(localStorage.getItem("retainpdf.ask.window.v1")).mode, "dock", "贴右边记在本机");
     button("放大").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await settle();
     assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "full");
+    assert.equal(JSON.parse(localStorage.getItem("retainpdf.ask.window.v1")).mode, "dock", "放大不记");
+    button("还原").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await settle();
+    assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "dock", "还原回到放大前的贴右边");
 
     // 开着弹层时 Esc 只关弹层，不关窗。
     const popper = document.createElement("div");

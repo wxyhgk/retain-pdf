@@ -26,6 +26,8 @@ export type ReaderAskPanelProps = {
   onShowSelection?: (selection: { page: number; pane: "source" | "translated" }) => void;
   onJumpToPage?: (page: number) => void;
   pageCount?: number;
+  /** 窗口摆法变了（贴右边时宽多少）：阅读页给书页让出右边。 */
+  onLayout?: (layout: { mode: string; width: number }) => void;
   /** 以前按书存的一次提问（只读看）；给了就不画主对话。 */
   legacy?: { anchor: ReaderAskAnchor; messages: readonly ReaderAskMessage[]; onClose: () => void; onDelete?: () => void } | null;
 };
@@ -57,7 +59,7 @@ function Breadcrumb({ ask }: { ask: AskState }): ReactElement {
   );
 }
 
-export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy }: ReaderAskPanelProps): ReactElement {
+export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout }: ReaderAskPanelProps): ReactElement {
   const [memoryOpen, setMemoryOpen] = useState(false);
   const conversation = ask.view.conversation;
   const bound = legacy ? null : conversation ? { id: conversation.conversation_id, documentId: book.documentId } : null;
@@ -86,6 +88,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
         onJumpToPage={onJumpToPage}
         pageCount={pageCount}
         katexStylesheetUrl={katex}
+        onLayout={onLayout}
       />
     );
   }
@@ -133,6 +136,7 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       onJumpToPage={onJumpToPage}
       pageCount={pageCount}
       katexStylesheetUrl={katex}
+      onLayout={onLayout}
     />
     {memories ? <ReaderMemoryPanel port={memories} documentId={book.documentId} open={memoryOpen} onOpenChange={setMemoryOpen} /> : null}
     </>

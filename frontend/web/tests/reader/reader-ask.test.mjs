@@ -57,12 +57,15 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
   assert.ok(BUILTIN_READER_EXTENSIONS.some((extension) => extension.id === "ask" && extension.title === "提问"), "提问不在内置扩展里");
   const extension = readFileSync(new URL("../../../packages/reader/src/ask/ReaderAskExtension.tsx", import.meta.url), "utf8");
   assert.match(extension, /const contribution = useMemo<ReaderContribution>\(\(\) => \(enabled \? \{/, "没端口就什么都不登记");
+  // 11-27：小球里有「提问」，不带出处地开 / 关这本书的主对话（新书还没问过时也找得到入口）。
+  assert.match(extension, /toolbarItems: \[\{\n      key: "ask",\n      label: "提问",[\s\S]*?pressed: showing,\n      onClick: toggle,/);
   const wiring = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
   assert.match(wiring, /if \(!picked\.text \|\| !picked\.element \|\| !picked\.rect\) return null;/);
   assert.match(wiring, /window\.addEventListener\("keydown", onKey, true\)/);
   assert.match(wiring, /lazy\(\(\) => import\("\.\/ReaderAskPanel\.js"\)\)/);
   assert.match(wiring, /const panel: ReactElement \| null = port && \(\(ask\.visible && ready\) \|\| legacy\)/);
   assert.match(wiring, /const ready = !ask\.persistent \|\| Boolean\(ask\.view\.conversation\) \|\| Boolean\(ask\.error\);/, "主对话读回来才画窗口（不白开一个会话）");
+  assert.match(wiring, /if \(showing\) \{\n      setLegacy\(null\);\n      closeAsk\(\);\n      return;\n    \}\n    void ask\.openMain\(\);/, "小球的提问：开着关、关着开主对话");
   assert.match(wiring, /const menuItems = useCallback\(\(context: ReaderMenuContext\): ReaderMenuItem\[\] => \{\n    if \(!port\) return \[\];/);
   const host = readFileSync(new URL("../../src/features/reader/domain/ask-port.ts", import.meta.url), "utf8");
   assert.match(host, /if \(isMockMode\(\)\) return mockAskPort;/, "演示模式给假 agent");

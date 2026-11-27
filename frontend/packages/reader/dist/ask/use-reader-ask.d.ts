@@ -23,6 +23,9 @@ export declare function useReaderAsk({ port, documentId, jobId, versionId, regio
     menuItems: (context: ReaderMenuContext) => ReaderMenuItem[];
     panel: ReactElement<unknown, string | import("react").JSXElementConstructor<any>>;
     open: () => Promise<void>;
+    toggle: () => void;
+    showing: boolean;
+    reserveRight: number;
     enabled: boolean;
 };
 //# sourceMappingURL=use-reader-ask.d.ts.map

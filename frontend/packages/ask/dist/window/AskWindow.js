@@ -24,6 +24,7 @@ import { AskSendContext } from "./ask-send.js";
 import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand } from "./AskModelPicker.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
+import { fitRect, loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
 import { useTurns } from "./use-turns.js";
@@ -52,6 +53,9 @@ function viewport() {
     return { width: globalThis.innerWidth || 1200, height: globalThis.innerHeight || 800 };
 }
 function floatRect() {
+    const remembered = loadWindowMemory().float;
+    if (remembered)
+        return fitRect(remembered, viewport());
     const { width: vw, height: vh } = viewport();
     const width = Math.min(500, vw - 32);
     const height = Math.min(640, vh - 120);
@@ -69,7 +73,7 @@ function layoutFor(mode, float, dockWidth) {
     return float;
 }
 export default function AskWindow(props) {
-    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
+    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout } = props;
     useKatexStylesheet(katexStylesheetUrl);
     const [agents, setAgents] = useState(null);
     const [agentId, setAgentId] = useState("");
@@ -84,7 +88,7 @@ export default function AskWindow(props) {
             if (cancelled)
                 return;
             setAgents(list);
-            setAgentId((current) => current || list.find((agent) => agent.available !== false)?.id || "");
+            setAgentId((current) => current || pickAgent(list, loadWindowMemory().agentId));
         }, (error) => !cancelled && setLoadError(error instanceof Error ? error.message : String(error)));
         return () => {
             cancelled = true;
@@ -181,10 +185,23 @@ export default function AskWindow(props) {
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [onClose]);
-    // 摆法：浮动记自己的位置大小；贴右边记宽度；窗口大小变了重新排。
-    const [mode, setMode] = useState("float");
+    // 摆法：浮动记自己的位置大小；贴右边记宽度；窗口大小变了重新排。都记在本机（window-memory.ts），重开照旧；放大不记。
+    const [mode, setMode] = useState(() => loadWindowMemory().mode || "float");
     const [float, setFloat] = useState(floatRect);
-    const [dockWidth, setDockWidth] = useState(DOCK_WIDTH);
+    const [dockWidth, setDockWidth] = useState(() => loadWindowMemory().dockWidth || DOCK_WIDTH);
+    const chooseAgent = useCallback((id) => {
+        setAgentId(id);
+        saveWindowMemory({ agentId: id });
+    }, []);
+    const changeMode = useCallback((next) => {
+        // 放大以后「还原」回到放大之前的摆法（可能是贴右边），不一律回浮动。
+        setMode((current) => {
+            const target = current === "full" && next === "float" ? loadWindowMemory().mode || "float" : next;
+            if (target !== "full")
+                saveWindowMemory({ mode: target });
+            return target;
+        });
+    }, []);
     const [, setResized] = useState(0);
     useEffect(() => {
         const onResize = () => setResized((value) => value + 1);
@@ -192,15 +209,29 @@ export default function AskWindow(props) {
         return () => window.removeEventListener("resize", onResize);
     }, []);
     const rect = layoutFor(mode, float, dockWidth);
+    const layoutListener = useRef(onLayout);
+    layoutListener.current = onLayout;
+    useEffect(() => {
+        layoutListener.current?.({ mode, width: rect.width });
+    }, [mode, rect.width]);
     // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
     const effort = currentEffort(config);
     const shownAgent = agents?.find((agent) => agent.id === agentId);
     const brand = currentModelBrand(config) || (shownAgent ? brandFor(shownAgent.id, shownAgent.name) : "");
     const tint = (effort ? { "--ask-effort-color": effort.color } : {});
-    return (_jsx(Rnd, { className: "ask-window", position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: (_event, data) => setFloat((current) => ({ ...current, x: data.x, y: data.y })), onResizeStop: (_event, _direction, element, _delta, position) => {
-            if (mode === "dock")
+    return (_jsx(Rnd, { className: "ask-window", position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: (_event, data) => setFloat((current) => {
+            const next = { ...current, x: data.x, y: data.y };
+            saveWindowMemory({ float: next });
+            return next;
+        }), onResizeStop: (_event, _direction, element, _delta, position) => {
+            if (mode === "dock") {
                 setDockWidth(element.offsetWidth);
-            else
-                setFloat({ x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight });
-        }, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, agents: agents, agentId: agentId, onAgent: setAgentId, mode: mode, onMode: setMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [brand ? (_jsx("div", { className: "ask-watermark", "aria-hidden": true, children: _jsx(BrandIcon, { brand: brand, size: 200 }) })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }), footer] })] }) }));
+                saveWindowMemory({ dockWidth: element.offsetWidth });
+            }
+            else if (mode === "float") {
+                const next = { x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight };
+                setFloat(next);
+                saveWindowMemory({ float: next });
+            }
+        }, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, agents: agents, agentId: agentId, onAgent: chooseAgent, mode: mode, onMode: changeMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [brand ? (_jsx("div", { className: "ask-watermark", "aria-hidden": true, children: _jsx(BrandIcon, { brand: brand, size: 200 }) })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }), footer] })] }) }));
 }

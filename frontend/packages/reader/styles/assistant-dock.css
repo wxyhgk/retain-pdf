@@ -242,3 +242,25 @@
   }
 }
 
+
+/* 扩展的浮层贴在右边时（提问窗贴右边，贡献表的 reserveRight，2026-11-27）：书页、底栏、小球往左让出 --reader-right-inset，
+ * 不被盖住（以前贴右边只是浮在书页上，对照读时盖住译文栏）。和右边停靠的面板同时开着时按宽的那个让。
+ * 写在 is-assistant-open 那几条后面：同样的权重，后写的赢。 */
+.reader-react-root[data-right-inset] .reader-react-scroll-shell {
+  right: var(--reader-right-inset);
+}
+.reader-react-root.is-assistant-open[data-right-inset] .reader-react-scroll-shell {
+  right: max(var(--reader-ai-split-width), var(--reader-right-inset));
+}
+.reader-react-root[data-right-inset] .reader-react-hud {
+  left: calc((100dvw - var(--reader-right-inset)) / 2);
+}
+.reader-react-root.is-assistant-open[data-right-inset] .reader-react-hud {
+  left: calc((100dvw - max(var(--reader-ai-split-width), var(--reader-right-inset))) / 2);
+}
+.reader-react-root[data-right-inset] .reader-toolball {
+  right: calc(var(--reader-right-inset) + 18px);
+}
+.reader-react-root.is-assistant-open[data-right-inset] .reader-toolball {
+  right: calc(max(var(--reader-ai-split-width), var(--reader-right-inset)) + 18px);
+}

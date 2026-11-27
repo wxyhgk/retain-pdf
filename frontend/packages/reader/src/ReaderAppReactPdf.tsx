@@ -1,7 +1,7 @@
 // 从 frontend/web 迁入的 React-pdf 视图真值，现为 @retainpdf/reader 主入口。
 // 2026-11-27 拆开：这里只把各块接起来（谁和谁共享什么状态、context、渲染顺序）；各块的状态和 effect 在 ./app/ 下，
 // 可见台面的纯函数在 app/pane-composition.ts（这里照旧导出，老的引用不用改）。
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import { useReaderReactController } from "./hooks/use-reader-react-controller.js";
 import { useReaderKeyboard } from "./hooks/use-reader-keyboard.js";
 import {
@@ -129,7 +129,7 @@ export function ReaderAppReactPdf() {
   // 贡献表（extensions/，app/use-reader-extension-host）：扩展读的阅读页接口、它们登记的右键菜单项 / 每页一层 / 文字层标记 /
   // 对照左栏 / 占着指针。
   const {
-    readerApi, contributionStore, contributions, pageLayers, compareVersion, textMarks, menuSections, pointerTakenId,
+    readerApi, contributionStore, contributions, pageLayers, compareVersion, textMarks, menuSections, pointerTakenId, reserveRight,
   } = useReaderExtensionHost(c, {
     translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments,
   });
@@ -231,6 +231,8 @@ export function ReaderAppReactPdf() {
           data-reader-engine="react-pdf"
           data-reader-workspace={workspaceView}
           data-pointer-taken={pointerTakenId || undefined}
+          data-right-inset={reserveRight ? "true" : undefined}
+          style={reserveRight ? ({ "--reader-right-inset": `${reserveRight}px` } as CSSProperties) : undefined}
           onContextMenu={(event) => {
             const menu = pageMenuFromContextMenu(event);
             if (!menu) return;

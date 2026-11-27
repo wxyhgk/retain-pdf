@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import type { ReaderAssistantPanel } from "../components/react-pdf/index.js";
 import {
   collectMenuSections,
+  collectReserveRight,
   collectPageLayers,
   collectTextMarks,
   createContributionStore,
@@ -79,5 +80,7 @@ export function useReaderExtensionHost(
   const menuSections = useMemo(() => collectMenuSections(contributions), [contributions]);
   // 有扩展占着书页上的指针（画笔模式）：书页不出悬停框，根节点带 data-pointer-taken（文字层不让拖选）。
   const pointerTakenId = pointerTakenBy(contributions);
-  return { readerApi, contributionStore, contributions, pageLayers, compareVersion, textMarks, menuSections, pointerTakenId };
+  // 扩展的浮层贴在右边（提问窗贴右边）：书页让出的宽度。
+  const reserveRight = collectReserveRight(contributions);
+  return { readerApi, contributionStore, contributions, pageLayers, compareVersion, textMarks, menuSections, pointerTakenId, reserveRight };
 }

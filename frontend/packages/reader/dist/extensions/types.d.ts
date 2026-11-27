@@ -121,6 +121,8 @@ export type ReaderContribution = {
     textMarks?: (text: string) => readonly ReaderTextMark[];
     /** 对照时左栏换成这一份；同时有几个扩展给，用第一个。 */
     comparedDocument?: ReaderComparedDocument | null;
+    /** 书页右边让出多宽（px）：扩展自己画的浮层贴在右边时（提问窗贴右边），书页、底栏、小球往左让，不被盖住；几个扩展给，取最大。 */
+    reserveRight?: number;
 };
 /**
  * 扩展的一个面板（右边停靠的那种，同一时间只开一个）：启动器（右下角小球）上一颗按钮、开着时顶上的 tab。

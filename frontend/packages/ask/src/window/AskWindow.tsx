@@ -35,6 +35,7 @@ import { AskSendContext } from "./ask-send.js";
 import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand, type AskConfigState } from "./AskModelPicker.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
+import { fitRect, loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag, type AskConversationUi } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
 import { useTurns } from "./use-turns.js";
@@ -71,6 +72,8 @@ function viewport() {
 }
 
 function floatRect(): Rect {
+  const remembered = loadWindowMemory().float;
+  if (remembered) return fitRect(remembered, viewport());
   const { width: vw, height: vh } = viewport();
   const width = Math.min(500, vw - 32);
   const height = Math.min(640, vh - 120);
@@ -135,10 +138,12 @@ export type AskWindowProps = {
   pageCount?: number;
   /** KaTeX 样式表的地址（宿主自己托管字体）；不给就不插，公式靠宿主页面已有的样式。 */
   katexStylesheetUrl?: string;
+  /** 窗口摆法变了（贴右边时宽多少）：宿主据此给书页让出右边（不盖字）。 */
+  onLayout?: (layout: { mode: AskWindowMode; width: number }) => void;
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -154,7 +159,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       (list) => {
         if (cancelled) return;
         setAgents(list);
-        setAgentId((current) => current || list.find((agent) => agent.available !== false)?.id || "");
+        setAgentId((current) => current || pickAgent(list, loadWindowMemory().agentId));
       },
       (error) => !cancelled && setLoadError(error instanceof Error ? error.message : String(error)),
     );
@@ -257,10 +262,22 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // 摆法：浮动记自己的位置大小；贴右边记宽度；窗口大小变了重新排。
-  const [mode, setMode] = useState<AskWindowMode>("float");
+  // 摆法：浮动记自己的位置大小；贴右边记宽度；窗口大小变了重新排。都记在本机（window-memory.ts），重开照旧；放大不记。
+  const [mode, setMode] = useState<AskWindowMode>(() => loadWindowMemory().mode || "float");
   const [float, setFloat] = useState<Rect>(floatRect);
-  const [dockWidth, setDockWidth] = useState(DOCK_WIDTH);
+  const [dockWidth, setDockWidth] = useState(() => loadWindowMemory().dockWidth || DOCK_WIDTH);
+  const chooseAgent = useCallback((id: string) => {
+    setAgentId(id);
+    saveWindowMemory({ agentId: id });
+  }, []);
+  const changeMode = useCallback((next: AskWindowMode) => {
+    // 放大以后「还原」回到放大之前的摆法（可能是贴右边），不一律回浮动。
+    setMode((current) => {
+      const target = current === "full" && next === "float" ? loadWindowMemory().mode || "float" : next;
+      if (target !== "full") saveWindowMemory({ mode: target });
+      return target;
+    });
+  }, []);
   const [, setResized] = useState(0);
   useEffect(() => {
     const onResize = () => setResized((value) => value + 1);
@@ -268,6 +285,11 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     return () => window.removeEventListener("resize", onResize);
   }, []);
   const rect = layoutFor(mode, float, dockWidth);
+  const layoutListener = useRef(onLayout);
+  layoutListener.current = onLayout;
+  useEffect(() => {
+    layoutListener.current?.({ mode, width: rect.width });
+  }, [mode, rect.width]);
   // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
   const effort = currentEffort(config);
   const shownAgent = agents?.find((agent) => agent.id === agentId);
@@ -286,10 +308,20 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       cancel=".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul"
       disableDragging={mode !== "float"}
       enableResizing={mode === "full" ? false : mode === "dock" ? { left: true } : true}
-      onDragStop={(_event, data) => setFloat((current) => ({ ...current, x: data.x, y: data.y }))}
+      onDragStop={(_event, data) => setFloat((current) => {
+        const next = { ...current, x: data.x, y: data.y };
+        saveWindowMemory({ float: next });
+        return next;
+      })}
       onResizeStop={(_event, _direction, element, _delta, position) => {
-        if (mode === "dock") setDockWidth(element.offsetWidth);
-        else setFloat({ x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight });
+        if (mode === "dock") {
+          setDockWidth(element.offsetWidth);
+          saveWindowMemory({ dockWidth: element.offsetWidth });
+        } else if (mode === "float") {
+          const next = { x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight };
+          setFloat(next);
+          saveWindowMemory({ float: next });
+        }
       }}
     >
       <section className="ask-panel" role="dialog" aria-label="提问" data-mode={mode} data-readonly={readOnly ? "1" : undefined} data-effort={effort?.on ? "on" : "off"} style={tint}>
@@ -298,9 +330,9 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
           actions={headerActions}
           agents={agents}
           agentId={agentId}
-          onAgent={setAgentId}
+          onAgent={chooseAgent}
           mode={mode}
-          onMode={setMode}
+          onMode={changeMode}
           onDelete={onDelete}
           onClose={onClose}
         />

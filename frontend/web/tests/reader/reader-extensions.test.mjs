@@ -150,3 +150,21 @@ test("画笔扩展的贡献：小球按钮跟着画笔开没开亮、点了进�
   assert.equal(pointerTakenBy(entries), "ink");
   assert.equal(pointerTakenBy([{ id: "ink", title: "画笔", contribution: off }]), null);
 });
+
+test("书页右边让位（reserveRight）：取几个扩展里最大的；阅读页根节点带上宽度，书页、底栏、小球往左让", async () => {
+  const { collectReserveRight } = await import("../../../packages/reader/src/extensions/registry.tsx");
+  assert.equal(collectReserveRight([]), 0);
+  assert.equal(collectReserveRight([{ id: "a", contribution: {} }, { id: "ask", contribution: { reserveRight: 440 } }, { id: "b", contribution: { reserveRight: 120 } }]), 440);
+  const { readFileSync } = await import("node:fs");
+  const app = readFileSync(new URL("../../../packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url), "utf8");
+  assert.match(app, /data-right-inset=\{reserveRight \? "true" : undefined\}/);
+  assert.match(app, /"--reader-right-inset": `\$\{reserveRight\}px`/);
+  const css = readFileSync(new URL("../../../packages/reader/styles/assistant-dock.css", import.meta.url), "utf8");
+  for (const target of ["reader-react-scroll-shell", "reader-react-hud", "reader-toolball"]) {
+    assert.match(css, new RegExp(`\\.reader-react-root\\[data-right-inset\\] \\.${target} \\{`), `${target} 要让`);
+  }
+  // 提问窗贴右边时才要，窄屏不让（让了书页就没地方了）。
+  const ask = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
+  assert.match(ask, /setDocked\(mode === "dock" && viewport - width >= 480 \? Math\.round\(width\) : 0\)/);
+  assert.match(ask, /reserveRight: showing \? docked : 0/);
+});

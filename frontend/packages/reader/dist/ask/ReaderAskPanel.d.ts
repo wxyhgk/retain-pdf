@@ -18,6 +18,11 @@ export type ReaderAskPanelProps = {
     }) => void;
     onJumpToPage?: (page: number) => void;
     pageCount?: number;
+    /** 窗口摆法变了（贴右边时宽多少）：阅读页给书页让出右边。 */
+    onLayout?: (layout: {
+        mode: string;
+        width: number;
+    }) => void;
     /** 以前按书存的一次提问（只读看）；给了就不画主对话。 */
     legacy?: {
         anchor: ReaderAskAnchor;
@@ -26,6 +31,6 @@ export type ReaderAskPanelProps = {
         onDelete?: () => void;
     } | null;
 };
-export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy }: ReaderAskPanelProps): ReactElement;
+export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout }: ReaderAskPanelProps): ReactElement;
 export {};
 //# sourceMappingURL=ReaderAskPanel.d.ts.map

@@ -160,6 +160,12 @@ export function useReaderAsk({
     } : undefined,
   } : null;
   // 主对话还没读回来时先不画窗口：不然先画一个空窗口、开一个会话，读回来换成主对话又重开一个（白开一个会话，11-27 真机看到）。
+  // 提问窗贴右边：书页让出那么宽（不盖住正在读的字）。窄屏（让了以后书页不到 480px）不让，照旧盖在上面。
+  const [docked, setDocked] = useState(0);
+  const onLayout = useCallback(({ mode, width }: { mode: string; width: number }) => {
+    const viewport = globalThis.innerWidth || 0;
+    setDocked(mode === "dock" && viewport - width >= 480 ? Math.round(width) : 0);
+  }, []);
   const ready = !ask.persistent || Boolean(ask.view.conversation) || Boolean(ask.error);
   const panel: ReactElement | null = port && ((ask.visible && ready) || legacy) ? (
     <Suspense fallback={null}>
@@ -172,9 +178,22 @@ export function useReaderAsk({
         onShowSelection={({ page, pane }) => goToPage(page, pane)}
         onJumpToPage={(page) => goToPage(page)}
         pageCount={pageCount}
+        onLayout={onLayout}
       />
     </Suspense>
   ) : null;
 
-  return { marks: marks.marks, onMark, menuItems, panel, open: ask.openMain, enabled: Boolean(port) };
+  /** 小球里的「提问」：开着就关，关着就打开这本书的主对话（不带出处，问整本书、翻以前的对话）。 */
+  const showing = (ask.visible && ready) || Boolean(legacy);
+  const closeAsk = ask.close;
+  const toggle = useCallback(() => {
+    if (showing) {
+      setLegacy(null);
+      closeAsk();
+      return;
+    }
+    void ask.openMain();
+  }, [showing, closeAsk, ask.openMain]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { marks: marks.marks, onMark, menuItems, panel, open: ask.openMain, toggle, showing, reserveRight: showing ? docked : 0, enabled: Boolean(port) };
 }
