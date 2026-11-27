@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from retainpdf_ask_agent import thinking_choice
+from retainpdf_ask_agent_engine import thinking_choice
 
 
 def test_levels_are_kept_per_connection(tmp_path: Path) -> None:

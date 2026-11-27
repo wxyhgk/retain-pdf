@@ -73,7 +73,7 @@ def main() -> int:
         )
     from retainpdf_ask_agent.memory import make_memory_tools
     from retainpdf_ask_agent.openui import openui_tools_from_env
-    from retainpdf_ask_agent import thinking_choice
+    from retainpdf_ask_agent_engine import thinking_choice
     from retainpdf_ask_agent.server import AskAgent
     from retainpdf_ask_agent.tools import make_book_tools
     from retainpdf_ask_agent_engine.stream import make_stream_fn

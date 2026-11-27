@@ -1,16 +1,17 @@
-"""记住用户在提问窗里上次选的思考档位（只用标准库，2026-11-27 用户定「记住上次选的」）。
+"""记住用户在提问窗里上次选的思考档位（2026-11-27 用户定「记住上次选的」）。在接线这边（核心只用标准库，原子写要用底座包的
+``save_json_atomic``：「临时文件再换名」全仓库只许一份实现）；核心经 ``remember_thinking`` 回调调它。
 
 后端的 ACP 桥起自带 agent 时给 ``RETAIN_ASK_THINKING_FILE``（``<数据目录>/ask/thinking-levels.json``）；文件里按模型连接
 （协议、地址、模型名）记一档：``{"version": 1, "levels": {"<连接>": "<档位值>"}}``。没给路径就不记。
 从没选过、或者记的那档这个模型已经没有了，按设置里的思考深度（见接线 ``thinking_options``）。
-几个 agent 进程同时写，后写的赢（写临时文件再换名，不会写坏）。读不了、写不了都当没有，不影响提问。
+几个 agent 进程同时写，后写的赢（原子写，不会写坏）。读不了、写不了都当没有，不影响提问。
 """
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from pathlib import Path
+
+from retainpdf_base.io import save_json_atomic
 
 MAX_ENTRIES = 200
 
@@ -50,16 +51,9 @@ def save(path: str, key: str, value: str) -> bool:
         levels[key] = value
         # 只留最近的（字典按插入顺序，刚写的在最后）
         levels = dict(list(levels.items())[-MAX_ENTRIES:])
-        handle, temp = tempfile.mkstemp(prefix=".thinking-levels-", dir=target.parent)
-    except OSError:
-        return False
-    try:
-        with os.fdopen(handle, "w", encoding="utf-8") as file:
-            json.dump({"version": 1, "levels": levels}, file, ensure_ascii=False, indent=1)
-        os.replace(temp, target)
+        save_json_atomic(target, {"version": 1, "levels": levels}, indent=1, durable=False)
         return True
     except OSError:
-        Path(temp).unlink(missing_ok=True)
         return False
 
 
