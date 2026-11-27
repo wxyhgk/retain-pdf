@@ -113,7 +113,27 @@ def test_glm_and_unknown_models():
     assert glm.candidates("off") == [{"thinking": {"type": "disabled"}}, {"reasoning_effort": "low"}, {}]
     assert glm.level_for("auto") == "low"
     assert model_wire.thinking_menu(protocol="openai", model="gpt-4o", base_url=OPENAI) is None
-    assert model_wire.thinking_menu(protocol="openai_responses", model="some-model", base_url="https://llm.example.com/v1") is None
+    assert model_wire.thinking_menu(protocol="openai_responses", model="gpt-4o", base_url=OPENAI) is None
+
+
+@pytest.mark.parametrize("model", ["Qwen3.8-27B-Uncensored", "some-model"])
+def test_unknown_models_on_responses_get_a_generic_switch(model):
+    """Responses 协议上认不出的也给通用开关（2026-11-27：用户自定义的 Qwen3.8-27B-Uncensored 走 Responses，Chat 那份覆盖不到）。
+    关的时候 effort 写成 reasoning.effort，最后再单独试它（DashScope 的 /responses 实测 effort=none 能关）。"""
+    menu = _menu("openai_responses", model, "http://127.0.0.1:1561/v1")
+    assert menu.values() == ["off", "on"]
+    template_off = {"chat_template_kwargs": {"enable_thinking": False, "thinking": False}}
+    assert menu.candidates("off") == [
+        {"enable_thinking": False, **template_off, "reasoning": {"effort": "none"}},
+        {"enable_thinking": False, **template_off},
+        template_off,
+        {"enable_thinking": False},
+        {"reasoning": {"effort": "none"}},
+        {},
+    ]
+    template_on = {"chat_template_kwargs": {"enable_thinking": True, "thinking": True}}
+    assert menu.candidates("on") == [{"enable_thinking": True, **template_on}, template_on, {"enable_thinking": True}, {}]
+    assert menu.level_for("auto") == "on"
 
 
 def test_unknown_models_get_a_generic_switch():
