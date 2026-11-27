@@ -96,6 +96,17 @@ def test_anthropic_marks_the_previous_answer_for_caching_and_falls_back_on_400(p
     assert previous["role"] == "assistant" and previous["content"][-1]["cache_control"] == {"type": "ephemeral"}
 
 
+@pytest.mark.parametrize(("level", "expected"), [("low", 16384), ("medium", 24576), ("high", 32768), ("xhigh", 49152), ("max", 64000)])
+def test_anthropic_higher_efforts_leave_room_for_the_answer(posts, level, expected):
+    """max 档以前固定 16384，思考全部吃掉、回答空的（2026-11-27 真机）：档位越高 max_tokens 越高。"""
+    calls, replies = posts
+    replies.append(FakeResponse(sse(("message_delta", {"type": "message_delta", "delta": {"stop_reason": "end_turn"}, "usage": {"output_tokens": 1}}))))
+    fn = engine.make_stream_fn(model="claude-haiku-5-5", base_url="", api_key="sk-test", protocol="anthropic", thinking="low")
+    list(fn(MESSAGES, threading.Event(), thinking_level=level))
+    assert calls[0]["body"]["output_config"] == {"effort": level}
+    assert calls[0]["body"]["max_tokens"] == expected
+
+
 def test_openai_chat_reasoning_content_and_cached_tokens(posts):
     calls, replies = posts
     replies.append(FakeResponse(sse(
