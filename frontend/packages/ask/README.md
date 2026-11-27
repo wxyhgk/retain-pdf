@@ -34,6 +34,11 @@ import type { AskPort, AskContext, AskMessage, AskTurnRecord } from "@retainpdf/
   onJumpToPage={(page) => goTo(page)}  // 回答里的页码点了
   pageCount={481}                   // 越界的数字不当页码
   katexStylesheetUrl={url}          // KaTeX 样式（宿主托管字体）
+  onLayout={({ mode, width }) => …}  // 摆法变了（浮动 / 贴右边 / 放大）：宿主据此给页面让出右边
+  answerAction={action}             // AskAnswerAction：回答底下宿主加的一个动作（阅读页「改这段译文」）
+  attachTools={[tool]}              // AskAttachTool[]：输入框那一行「带上……」（阅读页「带上这一页」的截图）
+  attachRequest={{ id, files }}     // 宿主从外面塞进来的附件（框选截图），id 变了就加
+  contextOffer={offer}              // AskContextOffer | null：已经带着出处时宿主又选了一处，问「换成 / 再加 / 不要」
 />
 ```
 
@@ -47,6 +52,11 @@ import type { AskPort, AskContext, AskMessage, AskTurnRecord } from "@retainpdf/
 - **`AskMessage`** 是存的格式（`role`、`text`、`thought`、`usage`，2026-11-26 加 `id`、`context`、`marks`）。字段只增不改。
 - **引用回复**：在回答上选字，输入框上面出「引用回答」，发问时写成「> …」放在问题前面，问题气泡里开头的引用画成引用框（`src/window/answer-quote.tsx`）。
   照搬的 Thread 为它加了 `prepareSend`、`UserText` 两个插槽。
+- **2026-11-27 加的**（[方案](../../../docs/ops/planning/reader-ask/20261127-提问窗七处改进.md)）：
+  - 窗口的摆法、浮动位置大小、贴右边的宽度、上次用的 agent 记在本机（`window-memory.ts`，`use-window-layout.ts`）；放大不记。
+  - 带着出处、输入框空着时，出处下面一排常问（`PendingStarters`）；空白对话带着出处时不再在下面重复。
+  - `AskContext.extra`：另外几处出处（一段字），认结构化出处的 agent 也照带（`_meta` 只放第一处）。
+  - 回答里太宽的独立公式、表格：1.5 倍以内缩到放得下（`style.zoom`），再宽横着滚、对话区出「放大看」（`wide-blocks.ts`）。
 - **「已记住」**：工具卡片完成时 `_meta.retainpdf.memory` 有值，回答正文下面画「已记住：……（撤销）」（`src/window/conversation.tsx`）。
 
 ## 里面有什么
