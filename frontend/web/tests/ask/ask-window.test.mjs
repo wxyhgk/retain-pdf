@@ -332,3 +332,19 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     dom.window.close();
   }
 });
+
+test("贴右边是页面的一栏（2026-11-27）：从顶栏下沿（60）起、压在顶栏下面、外框不随思考强度发光、× 不贴边", () => {
+  const layout = readFileSync(new URL("../../../packages/ask/src/window/use-window-layout.ts", import.meta.url), "utf8");
+  assert.match(layout, /const DOCK_TOP = 60;/);
+  const win = readFileSync(new URL("../../../packages/ask/src/window/AskWindow.tsx", import.meta.url), "utf8");
+  assert.match(win, /className=\{`ask-window ask-window--\$\{mode\}`\}/);
+  const css = readFileSync(new URL("../../../packages/ask/styles/ask.css", import.meta.url), "utf8");
+  const dockZ = /\.ask-window\.ask-window--dock\s*\{[^}]*z-index:\s*(\d+)/.exec(css);
+  assert.ok(dockZ && Number(dockZ[1]) < 35, "贴右边压在阅读页顶栏（z-index 35）下面");
+  // 发光那条在 dock 覆盖之前，dock 覆盖写在后面：同样权重后写的赢。
+  const glow = css.indexOf('.ask-panel[data-effort="on"] {');
+  const dockGlow = css.indexOf('.ask-panel[data-mode="dock"][data-effort="on"] {');
+  assert.ok(glow >= 0 && dockGlow > glow, "贴右边的外框覆盖写在发光那条后面");
+  assert.doesNotMatch(css.slice(dockGlow, css.indexOf("}", dockGlow)), /ask-effort-color/, "贴右边的外框不带思考强度的颜色");
+  assert.match(css, /\.ask-panel\[data-mode="dock"\] \.ask-head\s*\{[^}]*padding-right:\s*10px/);
+});

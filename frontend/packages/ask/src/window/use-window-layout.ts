@@ -8,8 +8,9 @@ import type { DraggableData, Position, ResizableDelta } from "react-rnd";
 import type { AskWindowMode } from "./AskHeader.js";
 import { fitRect, loadWindowMemory, saveWindowMemory } from "./window-memory.js";
 
-/** 贴右边时顶上让出宿主页面的顶栏（RetainPDF 阅读页的顶栏约 64px）。 */
-const DOCK_TOP = 64;
+/** 贴右边时顶上让出宿主页面的顶栏：RetainPDF 阅读页的顶栏 60px（chrome.css 的 .reader-workspace-bar，书页区、Markdown 面板也从 60 起）。
+ * 以前写 64，顶栏下面和窗口之间露一条 4px 的缝（2026-11-27）。 */
+const DOCK_TOP = 60;
 const DOCK_WIDTH = 440;
 
 type Rect = { x: number; y: number; width: number; height: number };

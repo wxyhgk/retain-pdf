@@ -283,7 +283,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
 
   return (
     <Rnd
-      className="ask-window"
+      className={`ask-window ask-window--${mode}`}
       position={{ x: rect.x, y: rect.y }}
       size={{ width: rect.width, height: rect.height }}
       minWidth={320}

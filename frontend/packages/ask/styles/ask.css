@@ -5,6 +5,12 @@
   z-index: calc(var(--z-hud, 36) + 6);
 }
 
+/* 贴右边是页面的一栏，不是浮窗（2026-11-27）：压在宿主顶栏（阅读页 35）下面，顶栏弹出的菜单（下载）不被它盖住；
+ * 浮动、放大照旧在最上面。 */
+.ask-window.ask-window--dock {
+  z-index: 34;
+}
+
 .ask-panel {
   display: flex;
   flex-direction: column;
@@ -40,6 +46,11 @@
 .ask-panel[data-mode="dock"] .ask-head,
 .ask-panel[data-mode="full"] .ask-head {
   cursor: default;
+}
+
+/* 贴右边时右上角的 × 不贴着窗口边。 */
+.ask-panel[data-mode="dock"] .ask-head {
+  padding-right: 10px;
 }
 
 .ask-head:active {
@@ -836,6 +847,13 @@
     0 18px 48px color-mix(in srgb, var(--shadow-color, var(--ink)) 24%, transparent),
     0 0 0 1px color-mix(in srgb, var(--ask-effort-color) 18%, transparent),
     0 0 36px -6px color-mix(in srgb, var(--ask-effort-color) 35%, transparent);
+}
+
+/* 贴右边是页面的一栏：外框不发光，照旧只有左边一根线和往左的淡阴影；思考强度的颜色只留在输入框和发送按钮上
+ * （以前这条写在 dock 那条后面、同样的权重，把 dock 的阴影换成四面红光，贴边的面板看着像悬在半空的弹窗）。 */
+.ask-panel[data-mode="dock"][data-effort="on"] {
+  border-color: var(--line);
+  box-shadow: -8px 0 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 12%, transparent);
 }
 
 .ask-panel [data-slot="aui_composer-shell"] {
