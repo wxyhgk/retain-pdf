@@ -919,11 +919,27 @@ def _gpt_efforts(model: str) -> tuple[list[str], str] | None:
     return ["minimal", "low", "medium", "high"], "medium"
 
 
-def _switch_menu(off: dict[str, Any], on: dict[str, Any], *, auto: str) -> ThinkingMenu:
-    """只有开关的模型（Qwen、DeepSeek）：off 是关，low…max 都是开；auto 按实测规则或服务商默认。"""
-    levels = [_level("off", off), _level("on", on)]
+def _switch_menu(off: tuple[dict[str, Any], ...], on: tuple[dict[str, Any], ...], *, auto: str) -> ThinkingMenu:
+    """只有开关的模型（Qwen、DeepSeek）：off 是关，low…max 都是开；auto 按实测规则或服务商默认。``off`` / ``on`` 是按偏好排的字段候选。"""
+    levels = [_level("off", *off), _level("on", *on)]
     mapping = (("auto", auto), ("off", "off"), *((setting, "on") for setting in ("low", "medium", "high", "max")))
     return ThinkingMenu(levels=tuple(levels), by_setting=mapping)
+
+
+def _is_hybrid_qwen3(name: str) -> bool:
+    """能开关思考的 Qwen3（名字带 qwen3，大小写不管，比如用户自定义的 Qwen3.8-27B-Uncensored）。2507 起分出来的 Instruct（不思考）、
+    Thinking（关不掉）和 Coder 没有开关，不算。"""
+    return "qwen3" in name and not re.search(r"instruct|thinking|coder", name)
+
+
+def _qwen3_switch(on: bool) -> tuple[dict[str, Any], ...]:
+    """Qwen3 开关思考的字段：vLLM、SGLang、llama.cpp 这些自己部署的认 ``chat_template_kwargs.enable_thinking``，DashScope 和照它写的中转认
+    顶层 ``enable_thinking``。不认的字段这些服务一般忽略，所以先两个一起发；严格的服务回 400 再一个一个试，最后不加。"""
+    return (
+        {"enable_thinking": on, "chat_template_kwargs": {"enable_thinking": on}},
+        {"chat_template_kwargs": {"enable_thinking": on}},
+        {"enable_thinking": on},
+    )
 
 
 def thinking_menu(*, protocol: Any, model: str, base_url: str) -> ThinkingMenu | None:
@@ -934,6 +950,7 @@ def thinking_menu(*, protocol: Any, model: str, base_url: str) -> ThinkingMenu |
     - DashScope（Qwen）：off / on（``enable_thinking``）。auto 对 qwen3.8-flash 是 off（实测规则），其余按开（服务商默认）。
     - DeepSeek：off / on（``thinking.type``）。auto 不加字段：名字带 reasoner 的按开，其余按关（服务商默认）。
     - 智谱：off / low / medium / high / max（``reasoning_effort``；关思考是 ``thinking.type = disabled``，关不掉的退到 low）。
+    - 别的地址上的 Qwen3（按模型名认，自己部署或中转的；2026-11-27）：off / on，见 ``_qwen3_switch``。auto 不加字段，按 Qwen3 默认开。
     - GPT（按模型名认，OpenAI Chat 和 Responses 都是）：见 ``_gpt_efforts``。
     """
     protocol = normalize_protocol(protocol)
@@ -943,15 +960,17 @@ def thinking_menu(*, protocol: Any, model: str, base_url: str) -> ThinkingMenu |
     name = str(model or "").strip().lower()
     if protocol == PROTOCOL_OPENAI and host == "dashscope.aliyuncs.com":
         auto = "off" if _auto_openai_thinking(model=model, host=host).get("enable_thinking") is False else "on"
-        return _switch_menu({"enable_thinking": False}, {"enable_thinking": True}, auto=auto)
+        return _switch_menu(({"enable_thinking": False},), ({"enable_thinking": True},), auto=auto)
     if protocol == PROTOCOL_OPENAI and host == "api.deepseek.com":
-        return _switch_menu({"thinking": {"type": "disabled"}}, {"thinking": {"type": "enabled"}},
+        return _switch_menu(({"thinking": {"type": "disabled"}},), ({"thinking": {"type": "enabled"}},),
                             auto="on" if "reasoner" in name else "off")
     if protocol == PROTOCOL_OPENAI and host == "open.bigmodel.cn":
         levels = [_level("off", {"thinking": {"type": "disabled"}}, {"reasoning_effort": "low"})]
         levels += [_level(effort, {"reasoning_effort": effort}) for effort in ("low", "medium", "high", "max")]
         # 不传时的默认：glm-5.3-flash 实测是 max（见 _auto_openai_thinking），别的 GLM 按同样算
         return _menu(levels, lambda setting: openai_thinking_candidates(model=model, base_url=base_url, thinking=setting), default="max")
+    if protocol == PROTOCOL_OPENAI and _is_hybrid_qwen3(name):
+        return _switch_menu(_qwen3_switch(False), _qwen3_switch(True), auto="on")
     gpt = _gpt_efforts(name)
     if gpt is None:
         return None
