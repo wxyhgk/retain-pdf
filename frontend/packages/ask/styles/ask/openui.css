@@ -1,0 +1,73 @@
+/* @retainpdf/ask 提问窗的样式：回答里的互动块（../../src/openui/OpenUIBlock.tsx）的外框。
+ * 由 ../ask.css 按固定顺序引入（2026-11-27 从一整份 ask.css 拆出）。 */
+
+/* 回答里的互动块（../src/openui/OpenUIBlock.tsx）：OpenUI 的组件自己带样式（CSS-in-JS），这里只给外框。 */
+.ask-openui-slot {
+  margin: 10px 0;
+}
+
+.ask-openui {
+  overflow-x: auto;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+  background: var(--paper);
+}
+
+.ask-openui-loading {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-openui-fallback {
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-openui-fallback-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--ink);
+}
+
+.ask-openui-fix {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-openui-fix:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+}
+
+.ask-openui-fallback ul {
+  margin: 6px 0;
+  padding-left: 18px;
+  color: var(--danger, var(--ink));
+}
+
+.ask-openui-fallback pre {
+  max-height: 14em;
+  margin: 6px 0 0;
+  overflow: auto;
+  padding: 8px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  font-size: var(--ui-text-xs, 11px);
+  white-space: pre-wrap;
+}

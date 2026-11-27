@@ -1,0 +1,36 @@
+/* @retainpdf/ask 提问窗的样式：照搬的 assistant-ui Thread 在提问窗里的字号、Markdown、公式（从外面改它内部的 .aui-* 类名，只许在这一份里）。
+ * 由 ../ask.css 按固定顺序引入（2026-11-27 从一整份 ask.css 拆出）。 */
+
+.ask-panel .aui-md-h1 { font-size: var(--ui-text-lg, 16px); }
+
+.ask-panel .aui-md-h2 { font-size: var(--ui-text-base, 14px); }
+
+.ask-panel .aui-md-h3,
+.ask-panel .aui-md-h4 { font-size: var(--ui-text-md, 13px); }
+
+.ask-panel .aui-md-h5,
+.ask-panel .aui-md-h6 { font-size: var(--ui-text-sm, 12px); }
+
+.ask-panel .aui-md-p { margin: 0.6em 0; line-height: 1.7; }
+
+.ask-panel .aui-md-pre { font-size: var(--ui-text-sm, 12px); }
+
+.ask-panel .aui-reasoning-trigger,
+.ask-panel .aui-message-error-root,
+.ask-panel .aui-action-bar-more-item { font-size: var(--ui-text-sm, 12px); }
+
+.ask-panel .aui-reasoning-trigger svg { width: 14px; height: 14px; }
+
+/* 长的独立公式横着滚，不撑破窗口。 */
+.ask-panel .katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 0;
+}
+
+.ask-panel .ask-thread > .aui-thread-root,
+.ask-panel .ask-thread .aui-thread-root {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}

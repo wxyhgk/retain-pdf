@@ -1,0 +1,36 @@
+/* @retainpdf/ask 提问窗的样式：回答底下的用量（一个图标，点开一张小表）。
+ * 由 ../ask.css 按固定顺序引入（2026-11-27 从一整份 ask.css 拆出）。 */
+
+/* 回答底下的用量：一个图标，点开是一张小表。 */
+.ask-usage-trigger {
+  width: 26px;
+  height: 26px;
+  margin-left: 2px;
+}
+
+.ask-usage-panel {
+  display: grid;
+  gap: 6px;
+  width: auto;
+  min-width: 200px;
+  max-width: 320px;
+  padding: 10px 12px;
+  font-size: var(--ui-text-sm, 12px);
+  font-variant-numeric: tabular-nums;
+}
+
+.ask-usage-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+}
+
+.ask-usage-row svg {
+  flex: none;
+  color: var(--muted);
+}
+
+[data-radix-popper-content-wrapper]:has(.ask-usage-panel) {
+  z-index: calc(var(--z-hud, 36) + 10) !important;
+}

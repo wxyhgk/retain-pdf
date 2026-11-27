@@ -93,8 +93,16 @@ test("打出来的 CSS（dist/css/ 每一份）里没有「:has() 祖先下面�
   assert.deepEqual(sources.map((file) => relative(FRONTEND, file)), [], "源码里不写 group-has-（Tailwind 扫到类名就生成规则，没用到的组件也算）");
 });
 
-test("ask.css 顶层没有写两处的选择器（2026-11-27：加功能往文件末尾追加同一个选择器，靠先后顺序覆盖，出过 dock 被思考发光盖掉、整段规则被复制一份）", () => {
-  const css = readFileSync(new URL("../../../packages/ask/styles/ask.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+/** 提问窗样式（2026-11-27 起按组件拆在 styles/ask/ 下，styles/ask.css 只按顺序 @import）。 */
+const ASK_STYLE_DIR = new URL("../../../packages/ask/styles/ask/", import.meta.url);
+
+function askStyleFiles() {
+  return readdirSync(ASK_STYLE_DIR).filter((name) => name.endsWith(".css")).sort()
+    .map((name) => ({ name, css: readFileSync(new URL(name, ASK_STYLE_DIR), "utf8").replace(/\/\*[\s\S]*?\*\//g, "") }));
+}
+
+/** 顶层（不在 @media 里）的规则：选择器 → 次数。 */
+function topLevelPreludes(css) {
   const seen = new Map();
   let depth = 0;
   let start = 0;
@@ -110,6 +118,39 @@ test("ask.css 顶层没有写两处的选择器（2026-11-27：加功能往文�
       if (depth === 0) start = index + 1;
     }
   }
-  const twice = [...seen].filter(([, count]) => count > 1).map(([prelude]) => prelude);
-  assert.deepEqual(twice, [], `这些选择器在 ask.css 顶层写了不止一处，并到一处：${twice.join("、")}`);
+  return seen;
+}
+
+test("ask.css 只按顺序引入 styles/ask/ 下的几份，ask/ 下每一份都被引入了", () => {
+  const index = readFileSync(new URL("../../../packages/ask/styles/ask.css", import.meta.url), "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+  const imported = [...index.matchAll(/@import "\.\/ask\/([\w-]+\.css)";/g)].map((match) => match[1]);
+  assert.equal(index.replace(/@import "[^"]+";/g, "").trim(), "", "ask.css 里只放 @import，规则写进 ask/ 下对应的那份");
+  assert.deepEqual([...imported].sort(), askStyleFiles().map((file) => file.name), "ask/ 下有没被引入的，或引了不存在的");
+});
+
+test("提问窗每个组件的类名只在自己那一份里当主角（2026-11-27：以前一整份，别的组件的样式顺手写在一起，靠先后顺序互相覆盖）", () => {
+  // 「主角」= 选择器最后那一段里的类（.ask-panel .aui-md-p 里 .ask-panel 只是范围，不算）。
+  const owner = new Map();
+  for (const { name, css } of askStyleFiles()) {
+    for (const match of css.matchAll(/([^{}@;]+)\{/g)) {
+      const prelude = match[1].trim();
+      if (/^(from|to|\d+%)/.test(prelude)) continue;
+      for (const selector of prelude.split(",")) {
+        const parts = selector.trim().split(/\s*[>+~\s]\s*/).filter(Boolean);
+        for (const klass of (parts.at(-1) || "").match(/\.[a-zA-Z][\w-]*/g) || []) {
+          if (!owner.has(klass)) owner.set(klass, new Set());
+          owner.get(klass).add(name);
+        }
+      }
+    }
+  }
+  const shared = [...owner].filter(([, files]) => files.size > 1).map(([klass, files]) => `${klass}（${[...files].join("、")}）`);
+  assert.deepEqual(shared, [], `这些类在几份里都当主角，挪到它组件的那一份：${shared.join("；")}`);
+});
+
+test("提问窗每一份样式顶层没有写两处的选择器（2026-11-27：加功能往文件末尾追加同一个选择器，靠先后顺序覆盖，出过 dock 被思考发光盖掉、整段规则被复制一份）", () => {
+  for (const { name, css } of askStyleFiles()) {
+    const twice = [...topLevelPreludes(css)].filter(([, count]) => count > 1).map(([prelude]) => prelude);
+    assert.deepEqual(twice, [], `${name} 里这些选择器写了不止一处，并到一处：${twice.join("、")}`);
+  }
 });

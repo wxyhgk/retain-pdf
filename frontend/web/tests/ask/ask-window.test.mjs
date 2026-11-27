@@ -340,7 +340,8 @@ test("贴右边是页面的一栏（2026-11-27）：从顶栏下沿（60）起�
   assert.match(layout, /const DOCK_TOP = 60;/);
   const win = readFileSync(new URL("../../../packages/ask/src/window/AskWindow.tsx", import.meta.url), "utf8");
   assert.match(win, /className=\{`ask-window ask-window--\$\{mode\}`\}/);
-  const css = readFileSync(new URL("../../../packages/ask/styles/ask.css", import.meta.url), "utf8");
+  // 2026-11-27 起 ask.css 按组件拆开：窗口外框（层级、贴右边、思考染边）在 ask/window.css。
+  const css = readFileSync(new URL("../../../packages/ask/styles/ask/window.css", import.meta.url), "utf8");
   const dockZ = /\.ask-window\.ask-window--dock\s*\{[^}]*z-index:\s*(\d+)/.exec(css);
   assert.ok(dockZ && Number(dockZ[1]) < 35, "贴右边压在阅读页顶栏（z-index 35）下面");
   // 发光那条在 dock 覆盖之前，dock 覆盖写在后面：同样权重后写的赢。

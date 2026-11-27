@@ -1,0 +1,475 @@
+/* @retainpdf/ask 提问窗的样式：输入框那一行：「谁来答」（agent 一排、模型列表、思考滑块 / 开关）、「更多设置」、输入框字号，
+ * 以及思考强度染输入框、发送按钮和窗口边。
+ * 由 ../ask.css 按固定顺序引入（2026-11-27 从一整份 ask.css 拆出）。 */
+
+/* 「谁来答」弹层最上面那一排 agent（agent-row.tsx）。 */
+.ask-answerer {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ask-answerer-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.ask-answerer-agents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ask-answerer-agent {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: transparent;
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 12px);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-answerer-agent[aria-checked="true"] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--paper));
+  font-weight: 600;
+}
+
+.ask-answerer-agent[data-missing="true"] {
+  color: var(--muted);
+  border-style: dashed;
+}
+
+.ask-answerer-agent > small {
+  color: var(--muted);
+  font-size: var(--ui-text-2xs, 10px);
+}
+
+/* 安装命令一行、复制按钮在它右边；上面一行说明。 */
+.ask-answerer-install {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.ask-answerer-install > span {
+  grid-column: 1 / -1;
+}
+
+.ask-answerer-install code {
+  min-width: 0;
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: var(--ui-radius-sm, 4px);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 输入框那颗「谁来答」按钮：图标、名字（长了截断）、思考档位。 */
+.ask-config-icon {
+  display: inline-flex;
+  flex: none;
+}
+
+.ask-config-label {
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+}
+
+/* 照搬的 Thread 用 Tailwind 的 rem 字号，在提问窗里偏大：统一按窗口的字号缩一档。 */
+.ask-panel .aui-composer-input,
+.ask-panel .aui-edit-composer-input {
+  min-height: 0;
+  font-size: var(--ui-text-md, 13px);
+  line-height: 1.6;
+}
+
+/* 输入框那一行的 agent 设置（../src/window/AskModelPicker.tsx）：模型和思考强度一个按钮，别的收进「更多」。 */
+.ask-config {
+  display: flex;
+  /* 输入框那一行放不下时（窗口窄）换行，不挤掉发送按钮。 */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ask-panel .ask-config-trigger {
+  max-width: 220px;
+  height: 26px;
+  padding: 0 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-panel .ask-config-trigger:hover,
+.ask-panel .ask-config-trigger[data-state="open"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+/* 选模型的弹层（Radix 挂在 body 上）：照搬组件的 bg-accent 在我们的皮肤里是深色，选中、高亮改成浅底。 */
+[data-slot="model-selector-content"] {
+  font-size: var(--ui-text-md, 13px);
+}
+
+[data-slot="model-selector-content"] [cmdk-item][data-selected="true"],
+[data-slot="model-selector-content"] [cmdk-item][aria-selected="true"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+/* 选模型弹层底下的思考强度胶囊滑块（../src/ui/elements/effort-slider.tsx，改自 zanwei/claude-model-selector，MIT）。
+ * 弹层挂在 body 上，颜色变量组件自己带：--effort-color 当前那档、--effort-top-color 最强那档、--effort-progress 0~1。 */
+.aui-effort-slider {
+  --effort-thumb-w: 22px;
+  --effort-thumb-h: 22px;
+  --effort-pad: 1px;
+  padding: 10px 12px 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.aui-effort-slider-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+}
+
+.aui-effort-slider-stage {
+  display: inline-grid;
+  color: color-mix(in srgb, var(--effort-color) 85%, var(--ink));
+  font-weight: 600;
+  transition: color 180ms ease;
+}
+
+.aui-effort-slider-stage > span {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+}
+
+/* 换档：新的从下面（往强）或上面（往弱）淡入，旧的反方向淡出，原作 180ms、错开 24ms。 */
+.aui-effort-slider-in[data-animate="true"] {
+  animation: aui-effort-in 180ms cubic-bezier(0.2, 0, 0, 1) 24ms both;
+}
+
+.aui-effort-slider-out {
+  animation: aui-effort-out 180ms cubic-bezier(0.2, 0, 0, 1) both;
+  pointer-events: none;
+}
+
+.aui-effort-slider-in[data-forward="false"] { --effort-enter-y: -3px; }
+
+.aui-effort-slider-out[data-forward="false"] { --effort-exit-y: 3px; }
+
+@keyframes aui-effort-in {
+  from { opacity: 0; transform: translateY(var(--effort-enter-y, 3px)); filter: blur(2px); }
+}
+
+@keyframes aui-effort-out {
+  to { opacity: 0; transform: translateY(var(--effort-exit-y, -3px)); filter: blur(2px); }
+}
+
+.aui-effort-slider-axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.aui-effort-slider-track-shell {
+  position: relative;
+  height: 32px;
+  margin-top: 4px;
+}
+
+.aui-effort-slider-track {
+  position: absolute;
+  inset: 5px 0;
+  overflow: hidden;
+  border-radius: var(--ui-radius-md, 10px);
+  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+/* 走过的那段：从灰渐到当前那档的颜色；到最强那档整条亮起来。 */
+.aui-effort-slider-fill {
+  position: absolute;
+  inset: 0 auto 0 var(--effort-pad);
+  width: calc((100% - var(--effort-pad) * 2 - var(--effort-thumb-w)) * var(--effort-progress, 0) + var(--effort-thumb-w) * 0.5);
+  border-radius: var(--ui-radius-md, 10px) 0 0 var(--ui-radius-md, 10px);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--muted) 14%, var(--paper)), color-mix(in srgb, var(--effort-color) 38%, var(--paper)));
+  pointer-events: none;
+}
+
+.aui-effort-slider-ticks {
+  position: absolute;
+  inset: 0 calc(var(--effort-pad) + var(--effort-thumb-w) * 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.aui-effort-slider-ticks > span {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  transition: opacity 180ms ease;
+}
+
+.aui-effort-slider-ticks > span[data-passed="true"] {
+  opacity: 0;
+}
+
+.aui-effort-slider-ticks > span:last-child {
+  background: var(--effort-top-color);
+  opacity: 1;
+}
+
+.aui-effort-slider-range {
+  position: absolute;
+  inset: 0 var(--effort-pad);
+  width: calc(100% - var(--effort-pad) * 2);
+  height: 100%;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.aui-effort-slider-range::-webkit-slider-runnable-track {
+  height: var(--effort-thumb-h);
+  border: 0;
+  background: transparent;
+}
+
+.aui-effort-slider-range::-moz-range-track {
+  height: var(--effort-thumb-h);
+  border: 0;
+  background: transparent;
+}
+
+.aui-effort-slider-range::-webkit-slider-thumb {
+  width: var(--effort-thumb-w);
+  height: var(--effort-thumb-h);
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid color-mix(in srgb, var(--effort-color) 45%, var(--line));
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent), 0 4px 10px color-mix(in srgb, var(--effort-color) 22%, transparent);
+  transition: transform 150ms ease-out, border-color 180ms ease;
+}
+
+.aui-effort-slider-range::-moz-range-thumb {
+  width: var(--effort-thumb-w);
+  height: var(--effort-thumb-h);
+  border: 1px solid color-mix(in srgb, var(--effort-color) 45%, var(--line));
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent), 0 4px 10px color-mix(in srgb, var(--effort-color) 22%, transparent);
+  transition: transform 150ms ease-out, border-color 180ms ease;
+}
+
+.aui-effort-slider-range:active::-webkit-slider-thumb { transform: scale(0.96); }
+
+.aui-effort-slider-range:active::-moz-range-thumb { transform: scale(0.96); }
+
+.aui-effort-slider-range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--effort-color) 30%, transparent), 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+.aui-effort-slider-range:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--effort-color) 30%, transparent), 0 1px 2px color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aui-effort-slider-in,
+  .aui-effort-slider-out { animation: none; }
+  .aui-effort-slider-out { display: none; }
+  .aui-effort-slider-stage,
+  .aui-effort-slider-ticks > span,
+  .aui-effort-slider-range::-webkit-slider-thumb,
+  .aui-effort-slider-range::-moz-range-thumb { transition: none; }
+}
+
+/* 只能开 / 关的思考（AskModelPicker 的 EffortSwitch，Qwen3、DeepSeek 这类）：一行字加一个开关，不画两格的滑块。
+ * 弹层挂在 body 上，不能靠 .ask-panel 下的变量。 */
+.ask-effort-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  color: var(--muted);
+}
+
+.ask-effort-switch[data-on="true"] > svg {
+  color: var(--warn);
+}
+
+.ask-effort-switch-text {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 1px;
+}
+
+.ask-effort-switch-name {
+  color: var(--ink);
+  font-size: var(--ui-text-md, 13px);
+  font-weight: 600;
+}
+
+.ask-effort-switch-hint {
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.ask-effort-switch-toggle {
+  position: relative;
+  flex: none;
+  width: 34px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: color-mix(in srgb, var(--ink) 16%, var(--paper));
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.ask-effort-switch-toggle > span {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-color, var(--ink)) 25%, transparent);
+  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.ask-effort-switch-toggle[aria-checked="true"] {
+  background: var(--warn);
+}
+
+.ask-effort-switch-toggle[aria-checked="true"] > span {
+  transform: translateX(14px);
+}
+
+.ask-effort-switch-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--warn) 60%, transparent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-effort-switch-toggle,
+  .ask-effort-switch-toggle > span { transition: none; }
+}
+
+/* 按钮上「模型 · 档位」的档位跟着上色。 */
+.ask-panel .ask-config-trigger [data-slot="model-selector-value"] > .text-muted-foreground,
+.ask-panel .ask-config-effort-name {
+  color: var(--ask-effort-color, var(--muted));
+  font-weight: 600;
+}
+
+/* 思考强度染输入框和发送按钮（AskWindow 在窗口上写 --ask-effort-color、data-effort）；窗口边框跟着染的那两条在 window.css。 */
+.ask-panel [data-slot="aui_composer-shell"] {
+  transition: border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.ask-panel[data-effort="on"] [data-slot="aui_composer-shell"] {
+  border-color: color-mix(in srgb, var(--ask-effort-color) 60%, var(--line));
+  background: color-mix(in srgb, var(--ask-effort-color) 4%, var(--paper));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--ask-effort-color) 14%, transparent),
+    0 8px 28px -10px color-mix(in srgb, var(--ask-effort-color) 55%, transparent);
+}
+
+.ask-panel[data-effort="on"] .aui-composer-send:not(:disabled) {
+  background: var(--ask-effort-color);
+  color: var(--paper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-panel [data-slot="aui_composer-shell"] { transition: none; }
+}
+
+/* 输入框那一行放不下时（窗口窄）换行，不挤掉发送按钮（.ask-config 自己也换行）。 */
+.ask-panel .aui-composer-action-wrapper {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.ask-config-more {
+  width: 26px;
+  height: 26px;
+}
+
+.ask-panel .ask-config-effort select {
+  min-height: 26px;
+  padding: 0 22px 0 8px;
+  border: 0;
+  background-color: transparent;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+/* 「更多」弹层（Radix Popover 挂在 body 上，不在 .ask-panel 里面）。 */
+.ask-config-panel {
+  display: grid;
+  gap: 8px;
+  width: 240px;
+  padding: 10px 12px;
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-config-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+/* Radix 弹层（选模型、更多设置）要压在提问窗上面。 */
+[data-radix-popper-content-wrapper]:has([data-slot="model-selector-content"]),
+[data-radix-popper-content-wrapper]:has(.ask-config-panel) {
+  z-index: calc(var(--z-hud, 36) + 10) !important;
+}
+
+/* 思考强度下面的两行字（AskModelPicker 的 EffortRow）：当前档的说明（快慢、花费），这一项本身的说明（档位是猜的时写「不一定起作用」）。 */
+.ask-effort-hint,
+.ask-effort-note {
+  margin: 0;
+  padding: 0 12px 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.ask-effort-note {
+  color: color-mix(in srgb, var(--warn) 55%, var(--ink));
+}

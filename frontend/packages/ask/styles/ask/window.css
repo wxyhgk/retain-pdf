@@ -1,0 +1,199 @@
+/* @retainpdf/ask 提问窗的样式：窗口本身：外框（浮动 / 贴右边 / 放大，层级）、标题栏、图标按钮、聊天区占满、水印、品牌图标、转圈、出错提示。
+ * 几个组件都用的小件（.ask-icon、.ask-spin、.ask-brand）也在这里。
+ * 由 ../ask.css 按固定顺序引入（2026-11-27 从一整份 ask.css 拆出）。 */
+
+.ask-window {
+  z-index: calc(var(--z-hud, 36) + 6);
+}
+
+/* 贴右边是页面的一栏，不是浮窗（2026-11-27）：压在宿主顶栏（阅读页 35）下面，顶栏弹出的菜单（下载）不被它盖住；
+ * 浮动、放大照旧在最上面。 */
+.ask-window.ask-window--dock {
+  z-index: 34;
+}
+
+.ask-panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-lg, 14px);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--ui-text-md, 13px);
+  box-shadow: 0 18px 48px color-mix(in srgb, var(--shadow-color, var(--ink)) 24%, transparent);
+  /* 思考强度染窗口边（下面 data-effort 那几条）时渐变过去。 */
+  transition: border-color 240ms ease, box-shadow 240ms ease;
+}
+
+/* 贴右边：右上右下不要圆角，只留左边框；放大：照旧圆角。 */
+.ask-panel[data-mode="dock"] {
+  border-width: 0 0 0 1px;
+  border-radius: 0;
+  box-shadow: -8px 0 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 12%, transparent);
+}
+
+/* 思考强度染窗口边（AskWindow 在窗口上写 --ask-effort-color、data-effort；输入框、发送按钮那几条在 composer.css）：越强越暖。 */
+.ask-panel[data-effort="on"] {
+  border-color: color-mix(in srgb, var(--ask-effort-color) 35%, var(--line));
+  box-shadow:
+    0 18px 48px color-mix(in srgb, var(--shadow-color, var(--ink)) 24%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--ask-effort-color) 18%, transparent),
+    0 0 36px -6px color-mix(in srgb, var(--ask-effort-color) 35%, transparent);
+}
+
+/* 贴右边是页面的一栏：外框不发光，照旧只有左边一根线和往左的淡阴影；思考强度的颜色只留在输入框和发送按钮上
+ * （以前这条写在 dock 那条后面、同样的权重，把 dock 的阴影换成四面红光，贴边的面板看着像悬在半空的弹窗）。 */
+.ask-panel[data-mode="dock"][data-effort="on"] {
+  border-color: var(--line);
+  box-shadow: -8px 0 32px color-mix(in srgb, var(--shadow-color, var(--ink)) 12%, transparent);
+}
+
+.ask-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 6px 6px 12px;
+  border-bottom: 1px solid var(--line);
+  cursor: grab;
+  user-select: none;
+}
+
+.ask-panel[data-mode="dock"] .ask-head,
+.ask-panel[data-mode="full"] .ask-head {
+  cursor: default;
+}
+
+/* 贴右边时右上角的 × 不贴着窗口边。 */
+.ask-panel[data-mode="dock"] .ask-head {
+  padding-right: 10px;
+}
+
+.ask-head:active {
+  cursor: grabbing;
+}
+
+.ask-logo {
+  flex: none;
+  color: var(--accent);
+}
+
+.ask-head-gap {
+  flex: 1 1 auto;
+}
+
+.ask-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--muted);
+  list-style: none;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-icon::-webkit-details-marker { display: none; }
+
+.ask-icon:hover,
+.ask-icon[data-active="true"] {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+.ask-thread {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Thread（assistant-ui 照搬）自己用 Tailwind 排版；这里只让它占满窗口剩下的高度。 */
+.ask-thread > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.ask-empty,
+.ask-error {
+  margin: 8px 0;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 13px);
+  line-height: 1.6;
+}
+
+.ask-error {
+  padding: 0 14px;
+  color: var(--danger, var(--ink));
+}
+
+.ask-spin {
+  animation: ask-spin 0.8s linear infinite;
+}
+
+@keyframes ask-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-spin { animation: none; }
+}
+
+/* 聊天背景的水印：当前模型厂商的标志，很淡、在字后面、点不到。 */
+.ask-watermark {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 96px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0.07;
+  filter: grayscale(0.2);
+  user-select: none;
+}
+
+.ask-watermark .ask-brand,
+.ask-watermark svg {
+  width: min(48%, 220px);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+/* agent、模型的品牌图标（../src/window/BrandIcon.tsx）：彩色的是 <img>，单色的用 mask 跟着字的颜色走。 */
+.ask-brand {
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+}
+
+.ask-brand-mono {
+  background-color: currentColor;
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+}
+
+/* —— 主对话（2026-11-26）：标题、下一问的出处、问题上面的小标签、看更早的、深挖、结论卡片、压缩点、已记住、副对话的「结束」 —— */
+.ask-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 13px);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-panel { transition: none; }
+}
