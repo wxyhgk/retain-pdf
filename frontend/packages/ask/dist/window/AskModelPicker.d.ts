@@ -2,6 +2,9 @@
  * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下是思考强度的胶囊滑块（../ui/elements/effort-slider.tsx，仿 Claude 桌面版）；
  * 别的设置项（模式、快速……）收在「更多」里。思考强度的颜色还染输入框和周围、模型厂商的标志做聊天背景的水印（AskWindow）。
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts），agent 不给就什么都不画。
+ *
+ * 只有两档的思考强度（Qwen3、DeepSeek 这类模型只能开 / 关，2026-11-27）画成一个开关，不画两格的滑块；
+ * agent 没给档位起名字（名字就是值，自带 agent 报的 off / on / low …）时换成中文（levelName）。
  */
 import { type ReactElement } from "react";
 import type { AskConfigOption } from "../contract.js";
@@ -17,6 +20,13 @@ export declare function splitConfig(options: readonly AskConfigOption[]): {
     thought: AskConfigOption;
     rest: AskConfigOption[];
 };
+/** 档位显示的名字：agent 起了名字就照它；名字就是值（没起）时认得的换成中文，认不得的照原样。 */
+export declare function levelName(choice: {
+    value: string;
+    name?: string;
+}): string;
+/** 只有两档（从弱到强：关、开）：画成开关，不画滑块。 */
+export declare function isThinkingSwitch(thought: AskConfigOption | null): boolean;
 /** ModelSelector 要的模型列表：每个模型都带同一份思考强度档位（ACP 的思考强度是整个会话的，不分模型）。 */
 export declare function toModelOptions(model: AskConfigOption, thought: AskConfigOption | null): ModelOption[];
 /**
@@ -31,4 +41,10 @@ export declare function currentEffort(options: readonly AskConfigOption[]): {
 } | null;
 /** 当前模型的厂商（水印用）；没有模型这一项是空串。 */
 export declare function currentModelBrand(options: readonly AskConfigOption[]): string;
+/** 弹层里的思考强度：几档的是胶囊滑块，名字照 agent 给的（没起名的换中文），颜色按档位位置（effortColor），左右两头用图标（快 / 想得深）；
+ * 只有两档的是开关（EffortSwitch）。 */
+export declare function EffortRow({ thought, set }: {
+    thought: AskConfigOption;
+    set: AskConfigState["set"];
+}): ReactElement;
 export declare function AskAgentSettings(): ReactElement | null;

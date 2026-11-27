@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 
 import { normalizeConfigOptions, pendingConfig } from "../../../packages/ask/src/acp/config.ts";
 import { PermissionStore, createAcpChatAdapter } from "../../../packages/ask/src/acp/adapter.ts";
-import { currentEffort, currentModelBrand, effortColor, splitConfig, toModelOptions } from "../../../packages/ask/src/window/AskModelPicker.tsx";
+import { EffortRow, currentEffort, currentModelBrand, effortColor, isThinkingSwitch, levelName, splitConfig, toModelOptions } from "../../../packages/ask/src/window/AskModelPicker.tsx";
+import { JSDOM } from "jsdom";
 
 /** 本机 Claude Code 适配器（claude-agent-acp）session/new 真给的样子（2026-11-26 本机握手抄的，选项删短了）。 */
 const CLAUDE_CODE = [
@@ -45,7 +46,7 @@ test("思考强度的颜色只看档位在 agent 列表里的位置：第一档�
   assert.equal(effortColor(1, 5), "color-mix(in srgb, var(--warn) 50%, var(--ok))");
   assert.equal(effortColor(2, 5), "color-mix(in srgb, var(--warn) 100%, var(--ok))");
   assert.equal(effortColor(4, 5), "color-mix(in srgb, var(--danger) 100%, var(--warn))");
-  assert.equal(effortColor(1, 2), "color-mix(in srgb, var(--danger) 100%, var(--warn))", "两档：第二档就是最强");
+  assert.equal(effortColor(1, 2), "var(--warn)", "只有开 / 关：开着是橙色，不是最强的红（2026-11-27）");
   assert.equal(effortColor(-1, 3), "var(--muted)", "当前值不在列表里");
 });
 
@@ -188,4 +189,50 @@ test("按设置项判断要不要重开：换模型重开，思考强度直接�
   await chat.prepare();
   assert.deepEqual(opens.at(-1), { thought: "high", model: "b" }, "新会话按新模型开");
   assert.deepEqual(sets.at(-1), ["thought", "high"], "新会话把选过的思考强度再设一次（模型那项是握手定的，不再设）");
+});
+
+/** 自带 agent（backend/ask-agent）报的样子：档位名就是值；Qwen3、DeepSeek 只有 off / on（2026-11-27 用户截图：一个两格的滑块写着红的「on」）。 */
+const BUILTIN_SWITCH = { id: "thought_level", name: "思考强度", category: "thought_level", type: "select", currentValue: "on", options: [{ value: "off", name: "off" }, { value: "on", name: "on" }] };
+const BUILTIN_LEVELS = { id: "thought_level", name: "思考强度", category: "thought_level", type: "select", currentValue: "high", options: ["low", "medium", "high", "max"].map((value) => ({ value, name: value })) };
+
+test("档位名：agent 起了名字照它，名字就是值时认得的换中文；只有两档的是开关，按钮上开着写「思考」、关着不写", () => {
+  assert.equal(levelName({ value: "high", name: "High" }), "High", "agent 起了名字（Claude Code 的 High）照原样");
+  assert.equal(levelName({ value: "xhigh", name: "xhigh" }), "很高");
+  assert.equal(levelName({ value: "max", name: "" }), "最高");
+  assert.equal(levelName({ value: "turbo", name: "turbo" }), "turbo", "认不得的照原样");
+  assert.equal(isThinkingSwitch(BUILTIN_SWITCH), true);
+  assert.equal(isThinkingSwitch(BUILTIN_LEVELS), false);
+  const model = { id: "model", name: "模型", category: "model", type: "select", currentValue: "q", options: [{ value: "q", name: "Qwen3.8-27B" }] };
+  assert.deepEqual(toModelOptions(model, BUILTIN_SWITCH)[0].efforts, [{ id: "off", name: "" }, { id: "on", name: "思考" }]);
+  assert.deepEqual(toModelOptions(model, BUILTIN_LEVELS)[0].efforts.map((effort) => effort.name), ["低", "中", "高", "最高"]);
+});
+
+test("只有开 / 关的思考画成开关：点一下在两个值之间换，不画滑块", async () => {
+  const dom = new JSDOM("<!doctype html><html><body><div id='root'></div></body></html>", { url: "http://localhost/" });
+  const keys = ["window", "document", "HTMLElement", "Element", "Node", "Event", "MouseEvent"];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  for (const key of keys) Object.defineProperty(globalThis, key, { value: dom.window[key], configurable: true, writable: true });
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  try {
+    const React = await import("react");
+    const { act } = React;
+    const { createRoot } = await import("react-dom/client");
+    const calls = [];
+    const root = createRoot(document.getElementById("root"));
+    await act(async () => root.render(React.createElement(EffortRow, { thought: BUILTIN_SWITCH, set: (id, value) => calls.push([id, value]) })));
+    const toggle = document.querySelector('.ask-effort-switch-toggle[role="switch"]');
+    assert.ok(toggle, "是开关");
+    assert.equal(document.querySelector(".aui-effort-slider"), null, "没有滑块");
+    assert.equal(toggle.getAttribute("aria-checked"), "true");
+    assert.match(document.querySelector(".ask-effort-switch").textContent, /深度思考/);
+    await act(async () => toggle.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    assert.deepEqual(calls, [["thought_level", "off"]]);
+    await act(async () => root.render(React.createElement(EffortRow, { thought: { ...BUILTIN_SWITCH, currentValue: "off" }, set: (id, value) => calls.push([id, value]) })));
+    await act(async () => document.querySelector(".ask-effort-switch-toggle").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    assert.deepEqual(calls.at(-1), ["thought_level", "on"]);
+    await act(async () => root.unmount());
+  } finally {
+    for (const [key, value] of Object.entries(previous)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
+    dom.window.close();
+  }
 });

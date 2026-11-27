@@ -3,10 +3,13 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
  * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下是思考强度的胶囊滑块（../ui/elements/effort-slider.tsx，仿 Claude 桌面版）；
  * 别的设置项（模式、快速……）收在「更多」里。思考强度的颜色还染输入框和周围、模型厂商的标志做聊天背景的水印（AskWindow）。
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts），agent 不给就什么都不画。
+ *
+ * 只有两档的思考强度（Qwen3、DeepSeek 这类模型只能开 / 关，2026-11-27）画成一个开关，不画两格的滑块；
+ * agent 没给档位起名字（名字就是值，自带 agent 报的 off / on / low …）时换成中文（levelName）。
  */
 import { createContext, useContext } from "react";
 import { Brain, SlidersHorizontal, Sparkles, Zap } from "lucide-react";
-import { Select } from "@retainpdf/ui";
+import { Button, Select } from "@retainpdf/ui";
 import { EffortSlider } from "../ui/elements/effort-slider.js";
 import { ModelSelectorContent, ModelSelectorList, ModelSelectorRoot, ModelSelectorSearch, ModelSelectorTrigger, } from "../ui/elements/model-selector.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
@@ -19,10 +22,42 @@ export function splitConfig(options) {
     const rest = options.filter((option) => option !== model && option !== thought);
     return { model, thought, rest };
 }
+/** 常见档位值的中文名：只在 agent 没起名字（名字就是值）时用。 */
+const LEVEL_NAMES = {
+    off: "不思考",
+    none: "不思考",
+    disabled: "不思考",
+    on: "思考",
+    enabled: "思考",
+    auto: "自动",
+    minimal: "最低",
+    low: "低",
+    medium: "中",
+    high: "高",
+    xhigh: "很高",
+    max: "最高",
+};
+/** 档位显示的名字：agent 起了名字就照它；名字就是值（没起）时认得的换成中文，认不得的照原样。 */
+export function levelName(choice) {
+    const name = `${choice.name || ""}`.trim();
+    if (name && name !== choice.value)
+        return name;
+    return LEVEL_NAMES[`${choice.value}`.trim().toLowerCase()] || name || choice.value;
+}
+/** 只有两档（从弱到强：关、开）：画成开关，不画滑块。 */
+export function isThinkingSwitch(thought) {
+    return Boolean(thought && thought.options.length === 2);
+}
+/** 按钮上、列表里写的档位名。开关关着时不写（按钮上只有模型名），开着写「思考」。 */
+function triggerLevelName(thought, index) {
+    if (isThinkingSwitch(thought))
+        return index === 1 ? "思考" : "";
+    return levelName(thought.options[index]);
+}
 /** ModelSelector 要的模型列表：每个模型都带同一份思考强度档位（ACP 的思考强度是整个会话的，不分模型）。 */
 export function toModelOptions(model, thought) {
-    // 档位和名字都照 agent 给的（ACP configOptions），前端不认值、不翻译。
-    const efforts = thought ? thought.options.map((choice) => ({ id: choice.value, name: choice.name })) : undefined;
+    // 档位照 agent 给的（几档、顺序、值）；名字没起的换成中文（levelName）。
+    const efforts = thought ? thought.options.map((choice, index) => ({ id: choice.value, name: triggerLevelName(thought, index) })) : undefined;
     return model.options.map((choice) => ({
         id: choice.value,
         name: choice.name,
@@ -46,6 +81,9 @@ function OtherSettings({ options, set }) {
 export function effortColor(index, count) {
     if (count <= 1 || index <= 0)
         return "var(--muted)";
+    // 只有开 / 关：开着是中间那个橙色，不是「最强」的红（2026-11-27 用户看到一个红的 on 觉得诡异）。
+    if (count === 2)
+        return "var(--warn)";
     const t = Math.min(1, index / (count - 1));
     if (t <= 0.5)
         return `color-mix(in srgb, var(--warn) ${Math.round((t / 0.5) * 100)}%, var(--ok))`;
@@ -67,14 +105,26 @@ export function currentModelBrand(options) {
     const choice = model.options.find((entry) => entry.value === `${model.currentValue}`);
     return brandFor(`${model.currentValue}`, choice?.name, choice?.group);
 }
-/** 弹层里的思考强度：胶囊滑块，档位和名字照 agent 给的，颜色按档位位置（effortColor）；左右两头用图标（快 / 想得深）。 */
-function EffortRow({ thought, set }) {
-    return (_jsx(EffortSlider, { className: "ask-effort", levels: thought.options.map((choice) => ({ id: choice.value, name: choice.name, ...(choice.description ? { description: choice.description } : {}) })), value: `${thought.currentValue}`, onChange: (value) => set(thought.id, value), colorAt: effortColor, label: _jsx(Brain, { size: 13, "aria-label": thought.name || "思考强度" }), start: _jsx(Zap, { size: 12, "aria-label": "\u66F4\u5FEB" }), end: _jsx(Sparkles, { size: 12, "aria-label": "\u60F3\u5F97\u66F4\u6DF1" }), "aria-label": thought.name || "思考强度" }));
+/** 只能开 / 关的思考：一行「深度思考」加一个开关。 */
+function EffortSwitch({ thought, set }) {
+    const [off, on] = thought.options;
+    const checked = `${thought.currentValue}` === on.value;
+    return (_jsxs("div", { className: "ask-effort ask-effort-switch", "data-on": checked ? "true" : "false", children: [_jsx(Brain, { size: 14, "aria-hidden": true }), _jsxs("span", { className: "ask-effort-switch-text", children: [_jsx("span", { className: "ask-effort-switch-name", children: "\u6DF1\u5EA6\u601D\u8003" }), _jsx("span", { className: "ask-effort-switch-hint", children: checked ? "先想再答：慢一些，答得更好" : "直接答：快" })] }), _jsx(Button, { role: "switch", "aria-checked": checked, "aria-label": `深度思考：${checked ? "开" : "关"}`, className: "ask-effort-switch-toggle", onClick: () => set(thought.id, checked ? off.value : on.value), children: _jsx("span", { "aria-hidden": true }) })] }));
+}
+/** 弹层里的思考强度：几档的是胶囊滑块，名字照 agent 给的（没起名的换中文），颜色按档位位置（effortColor），左右两头用图标（快 / 想得深）；
+ * 只有两档的是开关（EffortSwitch）。 */
+export function EffortRow({ thought, set }) {
+    if (isThinkingSwitch(thought))
+        return _jsx(EffortSwitch, { thought: thought, set: set });
+    return (_jsx(EffortSlider, { className: "ask-effort", levels: thought.options.map((choice) => ({ id: choice.value, name: levelName(choice), ...(choice.description ? { description: choice.description } : {}) })), value: `${thought.currentValue}`, onChange: (value) => set(thought.id, value), colorAt: effortColor, label: _jsx(Brain, { size: 13, "aria-label": thought.name || "思考强度" }), start: _jsx(Zap, { size: 12, "aria-label": "\u66F4\u5FEB" }), end: _jsx(Sparkles, { size: 12, "aria-label": "\u60F3\u5F97\u66F4\u6DF1" }), "aria-label": thought.name || "思考强度" }));
 }
 export function AskAgentSettings() {
     const state = useContext(AskConfigContext);
     if (!state?.options.length)
         return null;
     const { model, thought, rest } = splitConfig(state.options);
-    return (_jsxs("div", { className: "ask-config", children: [model ? (_jsxs(ModelSelectorRoot, { models: toModelOptions(model, thought), value: `${model.currentValue}`, onValueChange: (value) => state.set(model.id, value), ...(thought ? { effort: `${thought.currentValue}`, onEffortChange: (value) => state.set(thought.id, value) } : {}), children: [_jsx(ModelSelectorTrigger, { variant: "ghost", size: "sm", className: "ask-config-trigger" }), _jsxs(ModelSelectorContent, { side: "top", searchable: model.options.length > 8, children: [model.options.length > 8 ? _jsx(ModelSelectorSearch, {}) : null, _jsx(ModelSelectorList, {}), thought ? _jsx(EffortRow, { thought: thought, set: state.set }) : null] })] })) : thought ? (_jsxs(ModelSelectorRoot, { models: [{ id: "_", name: "", efforts: toModelOptions({ ...thought, options: [{ value: "_", name: "" }] }, thought)[0].efforts }], value: "_", effort: `${thought.currentValue}`, onEffortChange: (value) => state.set(thought.id, value), children: [_jsxs(ModelSelectorTrigger, { variant: "ghost", size: "sm", className: "ask-config-trigger", children: [_jsx(Brain, { size: 13, "aria-hidden": true }), _jsx("span", { className: "ask-config-effort-name", children: thought.options.find((choice) => choice.value === `${thought.currentValue}`)?.name })] }), _jsx(ModelSelectorContent, { side: "top", children: _jsx(EffortRow, { thought: thought, set: state.set }) })] })) : null, _jsx(OtherSettings, { options: rest, set: state.set })] }));
+    return (_jsxs("div", { className: "ask-config", children: [model ? (_jsxs(ModelSelectorRoot, { models: toModelOptions(model, thought), value: `${model.currentValue}`, onValueChange: (value) => state.set(model.id, value), ...(thought ? { effort: `${thought.currentValue}`, onEffortChange: (value) => state.set(thought.id, value) } : {}), children: [_jsx(ModelSelectorTrigger, { variant: "ghost", size: "sm", className: "ask-config-trigger" }), _jsxs(ModelSelectorContent, { side: "top", searchable: model.options.length > 8, children: [model.options.length > 8 ? _jsx(ModelSelectorSearch, {}) : null, _jsx(ModelSelectorList, {}), thought ? _jsx(EffortRow, { thought: thought, set: state.set }) : null] })] })) : thought ? (_jsxs(ModelSelectorRoot, { models: [{ id: "_", name: "", efforts: toModelOptions({ ...thought, options: [{ value: "_", name: "" }] }, thought)[0].efforts }], value: "_", effort: `${thought.currentValue}`, onEffortChange: (value) => state.set(thought.id, value), children: [_jsxs(ModelSelectorTrigger, { variant: "ghost", size: "sm", className: "ask-config-trigger", children: [_jsx(Brain, { size: 13, "aria-hidden": true }), _jsx("span", { className: "ask-config-effort-name", children: (() => {
+                                    const index = thought.options.findIndex((choice) => choice.value === `${thought.currentValue}`);
+                                    return index >= 0 ? triggerLevelName(thought, index) || "不思考" : "";
+                                })() })] }), _jsx(ModelSelectorContent, { side: "top", children: _jsx(EffortRow, { thought: thought, set: state.set }) })] })) : null, _jsx(OtherSettings, { options: rest, set: state.set })] }));
 }

@@ -2,10 +2,13 @@
  * 一个按钮写「模型 · 思考强度」，点开是带搜索、分组的模型列表，底下是思考强度的胶囊滑块（../ui/elements/effort-slider.tsx，仿 Claude 桌面版）；
  * 别的设置项（模式、快速……）收在「更多」里。思考强度的颜色还染输入框和周围、模型厂商的标志做聊天背景的水印（AskWindow）。
  * 数据是 ACP 的 configOptions（agent 开会话时给，见 ../acp/config.ts），agent 不给就什么都不画。
+ *
+ * 只有两档的思考强度（Qwen3、DeepSeek 这类模型只能开 / 关，2026-11-27）画成一个开关，不画两格的滑块；
+ * agent 没给档位起名字（名字就是值，自带 agent 报的 off / on / low …）时换成中文（levelName）。
  */
 import { createContext, useContext, type ReactElement } from "react";
 import { Brain, SlidersHorizontal, Sparkles, Zap } from "lucide-react";
-import { Select } from "@retainpdf/ui";
+import { Button, Select } from "@retainpdf/ui";
 
 import type { AskConfigOption } from "../contract.js";
 import { EffortSlider } from "../ui/elements/effort-slider.js";
@@ -35,10 +38,44 @@ export function splitConfig(options: readonly AskConfigOption[]) {
   return { model, thought, rest };
 }
 
+/** 常见档位值的中文名：只在 agent 没起名字（名字就是值）时用。 */
+const LEVEL_NAMES: Record<string, string> = {
+  off: "不思考",
+  none: "不思考",
+  disabled: "不思考",
+  on: "思考",
+  enabled: "思考",
+  auto: "自动",
+  minimal: "最低",
+  low: "低",
+  medium: "中",
+  high: "高",
+  xhigh: "很高",
+  max: "最高",
+};
+
+/** 档位显示的名字：agent 起了名字就照它；名字就是值（没起）时认得的换成中文，认不得的照原样。 */
+export function levelName(choice: { value: string; name?: string }): string {
+  const name = `${choice.name || ""}`.trim();
+  if (name && name !== choice.value) return name;
+  return LEVEL_NAMES[`${choice.value}`.trim().toLowerCase()] || name || choice.value;
+}
+
+/** 只有两档（从弱到强：关、开）：画成开关，不画滑块。 */
+export function isThinkingSwitch(thought: AskConfigOption | null): boolean {
+  return Boolean(thought && thought.options.length === 2);
+}
+
+/** 按钮上、列表里写的档位名。开关关着时不写（按钮上只有模型名），开着写「思考」。 */
+function triggerLevelName(thought: AskConfigOption, index: number): string {
+  if (isThinkingSwitch(thought)) return index === 1 ? "思考" : "";
+  return levelName(thought.options[index]);
+}
+
 /** ModelSelector 要的模型列表：每个模型都带同一份思考强度档位（ACP 的思考强度是整个会话的，不分模型）。 */
 export function toModelOptions(model: AskConfigOption, thought: AskConfigOption | null): ModelOption[] {
-  // 档位和名字都照 agent 给的（ACP configOptions），前端不认值、不翻译。
-  const efforts = thought ? thought.options.map((choice) => ({ id: choice.value, name: choice.name })) : undefined;
+  // 档位照 agent 给的（几档、顺序、值）；名字没起的换成中文（levelName）。
+  const efforts = thought ? thought.options.map((choice, index) => ({ id: choice.value, name: triggerLevelName(thought, index) })) : undefined;
   return model.options.map((choice) => ({
     id: choice.value,
     name: choice.name,
@@ -82,6 +119,8 @@ function OtherSettings({ options, set }: { options: readonly AskConfigOption[]; 
  */
 export function effortColor(index: number, count: number): string {
   if (count <= 1 || index <= 0) return "var(--muted)";
+  // 只有开 / 关：开着是中间那个橙色，不是「最强」的红（2026-11-27 用户看到一个红的 on 觉得诡异）。
+  if (count === 2) return "var(--warn)";
   const t = Math.min(1, index / (count - 1));
   if (t <= 0.5) return `color-mix(in srgb, var(--warn) ${Math.round((t / 0.5) * 100)}%, var(--ok))`;
   return `color-mix(in srgb, var(--danger) ${Math.round(((t - 0.5) / 0.5) * 100)}%, var(--warn))`;
@@ -103,12 +142,38 @@ export function currentModelBrand(options: readonly AskConfigOption[]): string {
   return brandFor(`${model.currentValue}`, choice?.name, choice?.group);
 }
 
-/** 弹层里的思考强度：胶囊滑块，档位和名字照 agent 给的，颜色按档位位置（effortColor）；左右两头用图标（快 / 想得深）。 */
-function EffortRow({ thought, set }: { thought: AskConfigOption; set: AskConfigState["set"] }): ReactElement {
+/** 只能开 / 关的思考：一行「深度思考」加一个开关。 */
+function EffortSwitch({ thought, set }: { thought: AskConfigOption; set: AskConfigState["set"] }): ReactElement {
+  const [off, on] = thought.options;
+  const checked = `${thought.currentValue}` === on.value;
+  return (
+    <div className="ask-effort ask-effort-switch" data-on={checked ? "true" : "false"}>
+      <Brain size={14} aria-hidden />
+      <span className="ask-effort-switch-text">
+        <span className="ask-effort-switch-name">深度思考</span>
+        <span className="ask-effort-switch-hint">{checked ? "先想再答：慢一些，答得更好" : "直接答：快"}</span>
+      </span>
+      <Button
+        role="switch"
+        aria-checked={checked}
+        aria-label={`深度思考：${checked ? "开" : "关"}`}
+        className="ask-effort-switch-toggle"
+        onClick={() => set(thought.id, checked ? off.value : on.value)}
+      >
+        <span aria-hidden />
+      </Button>
+    </div>
+  );
+}
+
+/** 弹层里的思考强度：几档的是胶囊滑块，名字照 agent 给的（没起名的换中文），颜色按档位位置（effortColor），左右两头用图标（快 / 想得深）；
+ * 只有两档的是开关（EffortSwitch）。 */
+export function EffortRow({ thought, set }: { thought: AskConfigOption; set: AskConfigState["set"] }): ReactElement {
+  if (isThinkingSwitch(thought)) return <EffortSwitch thought={thought} set={set} />;
   return (
     <EffortSlider
       className="ask-effort"
-      levels={thought.options.map((choice) => ({ id: choice.value, name: choice.name, ...(choice.description ? { description: choice.description } : {}) }))}
+      levels={thought.options.map((choice) => ({ id: choice.value, name: levelName(choice), ...(choice.description ? { description: choice.description } : {}) }))}
       value={`${thought.currentValue}`}
       onChange={(value) => set(thought.id, value)}
       colorAt={effortColor}
@@ -150,7 +215,10 @@ export function AskAgentSettings(): ReactElement | null {
         >
           <ModelSelectorTrigger variant="ghost" size="sm" className="ask-config-trigger">
             <Brain size={13} aria-hidden />
-            <span className="ask-config-effort-name">{thought.options.find((choice) => choice.value === `${thought.currentValue}`)?.name}</span>
+            <span className="ask-config-effort-name">{(() => {
+              const index = thought.options.findIndex((choice) => choice.value === `${thought.currentValue}`);
+              return index >= 0 ? triggerLevelName(thought, index) || "不思考" : "";
+            })()}</span>
           </ModelSelectorTrigger>
           <ModelSelectorContent side="top">
             <EffortRow thought={thought} set={state.set} />
