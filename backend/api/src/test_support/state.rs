@@ -47,6 +47,7 @@ pub(crate) fn assemble_app_state(config: Arc<AppConfig>) -> AppState {
         config,
         db,
         download_generation: Arc::default(),
+        reader_layout_backfill: Arc::default(),
         query_execution: Arc::default(),
         canceled_jobs: Arc::new(RwLock::new(HashSet::new())),
         job_slots: Arc::new(Semaphore::new(1)),
