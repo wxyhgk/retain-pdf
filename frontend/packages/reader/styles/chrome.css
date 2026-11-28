@@ -9,7 +9,9 @@
  * 这一层本身透明、不接点击（书页照常点、选字），只有两颗胶囊接：
  * 左上：返回（一颗纸色小胶囊，和右缘竖条一个样子；书名 11-28 用户说不要，不画了）；正上方：原文 / 对照 / 译文（对比版本的 ▾、实时译文那一组挂在右边）。
  * 右段空着，只为让页签居中。三段写死在哪一列：左上那颗没有时（测试里可能没有）页签不跑到第一列。
- * 一直显示，不自动收起（模式页签用得多）。书页第一页上面让出 --reader-float-bar-room（react-pdf.css），刚打开时不压字。
+ * 读的时候藏着（11-28 用户：「停留的时候，不应该显示顶部的三个按钮……心流更强」，返回「要一起藏」）：鼠标到书页区顶上才出来，
+ * 离开一会儿淡掉（use-topbar-reveal.ts 写 data-revealed）；下面「藏着」那条写了哪几种不藏。
+ * 书页第一页上面照旧让出 --reader-float-bar-room（react-pdf.css）：出来、藏起不让书页上下跳。
  * 叠放比右缘竖条（30）低一档：窄屏停靠栏铺满中间工作区（30）时盖住它们。
  * 以前（11-28 上午）是全宽、实占一行 54px 的三段网格；更早顶栏 fixed 盖在整个窗口上，两头的按钮各自 fixed，靠 --reader-tray-width 给页签留位。 */
 .reader-workspace-bar {
@@ -45,6 +47,29 @@
 
 .reader-workspace-end {
   grid-column: 3;
+}
+
+/* 藏着：两颗胶囊淡掉、不接点击（还在 Tab 顺序里，Tab 到上面时 use-topbar-reveal.ts 让它出来）。这几种不藏：
+ * 「对照」▾ 开着、翻译进行中或刚翻完的那一组挂着（进度要看得到）；
+ * 触屏没有悬停，鼠标那套出不来，只在 (hover: hover) 的设备上藏。 */
+.reader-workspace-start,
+.reader-workspace-center {
+  transition: opacity 180ms ease;
+}
+
+@media (hover: hover) {
+  .reader-workspace-bar[data-revealed="false"]:not(:has(.reader-bar-tools-popup, .reader-live-strip)) > .reader-workspace-start,
+  .reader-workspace-bar[data-revealed="false"]:not(:has(.reader-bar-tools-popup, .reader-live-strip)) > .reader-workspace-center {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-workspace-start,
+  .reader-workspace-center {
+    transition: none;
+  }
 }
 
 /* 返回在胶囊里圆一点，和胶囊同一种圆角。 */

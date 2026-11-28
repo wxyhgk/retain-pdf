@@ -90,6 +90,26 @@ test("不再拿偏移算谁让谁：样式里没有 --reader-stage-*、--reader-
   }
 });
 
+test("浮着的顶栏读的时候藏着（2026-11-28 用户：停留时不显示顶上的按钮，返回一起藏）：鼠标到书页区顶上或滚动时才出来；进度、▾ 开着时不藏；触屏不藏", async () => {
+  const reveal = await import("../../../packages/reader/src/components/react-pdf/use-topbar-reveal.ts");
+  assert.equal(reveal.TOPBAR_REVEAL_ZONE_PX, 72);
+  assert.equal(reveal.isInRevealZone(60, 0), true, "顶上 60px 应该出来");
+  assert.equal(reveal.isInRevealZone(200, 0), false, "书页中间动鼠标不该出来");
+  assert.equal(reveal.isInRevealZone(130, 100), true, "按书页区的顶算，不按窗口");
+  const tabs = read("src/components/react-pdf/ReaderWorkspaceTabs.tsx");
+  assert.match(tabs, /useTopBarReveal\(bar, mode\)/);
+  assert.match(tabs, /data-revealed=\{shown \? "true" : "false"\}/);
+  const chrome = css("chrome.css");
+  const hide = chrome.slice(chrome.indexOf("@media (hover: hover)"), chrome.indexOf("@media (prefers-reduced-motion: reduce)"));
+  assert.match(hide, /\[data-revealed="false"\]:not\(:has\(\.reader-bar-tools-popup, \.reader-live-strip\)\) > \.reader-workspace-start/, "返回没跟着藏，或者进度、▾ 开着也藏了");
+  assert.match(hide, /> \.reader-workspace-center \{\s*opacity: 0;\s*pointer-events: none;/);
+  // 不能用 CSS 的 :focus-visible 留住：点过页签再按 1 / 2 / 3，浏览器把那颗按钮改算成 :focus-visible，顶栏就一直挂着。
+  assert.doesNotMatch(hide, /focus-visible/);
+  assert.match(read("src/components/react-pdf/use-topbar-reveal.ts"), /addEventListener\("focusin"/, "键盘 Tab 到上面出不来");
+  // 11-28 用户：「滚动的时候得出现这些按钮，不然用户可能看不到」——scroll 不冒泡，在书页区上用捕获听。
+  assert.match(read("src/components/react-pdf/use-topbar-reveal.ts"), /stage\.addEventListener\("scroll", onScroll, \{ capture: true, passive: true \}\)/, "滚动时不出来");
+});
+
 test("页面结构：中间工作区（左栏、书页区、右边停靠栏）→ 底栏；浮着的顶栏在书页区里；书页区里只有顶栏、目录、竖条、书页和它的加载、出错", () => {
   const app = read("src/ReaderAppReactPdf.tsx");
   const order = ['<div className="reader-workspace">', "<ReaderFinderArea", '<div className="reader-stage">', "<ReaderWorkspaceTabs", "<ReaderCompareGrid", "<ReaderReactBoot", "<aside", 'className="reader-dock"', 'className="reader-dock-body"', "<ReaderZoomHud"];

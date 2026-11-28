@@ -1,9 +1,10 @@
-import { Fragment, type ReactElement, type ReactNode } from "react";
+import { Fragment, useRef, type ReactElement, type ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
 import { ArrowDownToLine, CheckCircle2, Columns2, FileText, Languages, Radio } from "lucide-react";
 import { BAR_ICON } from "./bar-icon.js";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
 import { useReaderContext } from "./reader-context.js";
+import { useTopBarReveal } from "./use-topbar-reveal.js";
 
 export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "ai";
 export type ReaderWorkspaceMode = "source" | "compare" | "translated";
@@ -85,10 +86,13 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
   } = props;
   const sourceViewOnly = props.sourceViewOnly ?? ctx?.sourceViewOnly ?? false;
   const liveCopy = liveTranslation ? liveTranslationStatusCopy(liveTranslation.state) : "";
+  const bar = useRef<HTMLElement | null>(null);
+  const shown = useTopBarReveal(bar, mode);
   return (
     // 浮在书页区顶上（2026-11-28 用户：「顶部的 bar 不要保留了，用悬浮的方式……更有沉浸感」）：
     // 这一层本身透明、不接点击，只有左上的胶囊和正中的页签接；左右两段同宽，页签在书页区正中。
-    <header className="reader-workspace-bar">
+    // 读的时候藏着，鼠标到书页区顶上才出来（use-topbar-reveal.ts；不藏的几种在 chrome.css）。
+    <header className="reader-workspace-bar" ref={bar} data-revealed={shown ? "true" : "false"}>
       {/* 装饰位钩子：顶栏两端（装饰包 ornaments.reader-bar-left / reader-bar-right），绝对定位，不占位 */}
       <span className="theme-ornament" data-ornament="reader-bar-left" aria-hidden="true" />
       <span className="theme-ornament" data-ornament="reader-bar-right" aria-hidden="true" />
