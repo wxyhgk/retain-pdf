@@ -119,7 +119,7 @@ function HtmlPageExtension(): ReactElement | null {
             {text === "translated" && generating ? (
               <>
                 <span className="reader-html-page-menu-sep" aria-hidden />
-                <p className="reader-html-page-menu-note">正在排版，排好自动换上…</p>
+                <p className="reader-html-page-menu-note">正在排版（不花钱），先按识别的框画，排好自动换上…</p>
               </>
             ) : null}
             {layout ? (

@@ -3,6 +3,7 @@
 // 字体：要带授权，先取回字节再交给 FontFace（FontFace 直接给地址不带授权头）。主字体（第一个字族）每个字重都装上才照版面画，
 // 清单里没有字体（2026-11-28 以前排的、后端没装 fontTools）也不照版面画——用本机字体画出来和译文 PDF 对不上，退回按 OCR 的框塞字。
 // 没有版面时给出原因和补排的请求（照原样发，原地重新渲染，不花钱）；发了以后每 5 秒再要一次清单，排好就照版面画。
+// 后端自己在补（reason 是 backfill_queued / job_active，#245：旧书打开时后端在后台原地补排）：不发请求，也是每 5 秒再要清单。
 // 补排回的任务号和这本不一样（后端 #244 合之前，retry-stage 不写 create_new_job 会新建一个只做渲染的任务，原任务的清单永远等不到，
 // 2026-11-28 用户：「一直显示"正在排版，排好自动换上…"」）：同时等那个新任务的清单，先好的那个就用——同一本书原文页是同一份，
 // 新任务的版面、底图叠在这本的原文页上对得上。
@@ -12,6 +13,7 @@ import { defaultReaderDataPort, resolveResourceUrl } from "../external.js";
 import {
   loadRenderLayoutFromApi,
   loadRenderLayoutManifest,
+  RENDER_LAYOUT_PENDING_REASONS,
   renderLayoutSourceFromDocument,
   type RenderLayoutFont,
   type RenderLayoutGenerate,
@@ -73,7 +75,8 @@ export type RenderLayoutState =
   | { status: "generating" };
 
 const POLL_MS = 5000;
-const POLL_LIMIT = 120;
+/** 最多等 30 分钟：后端补旧书一次补一本，排在后面的要等前面的（#245）。 */
+const POLL_LIMIT = 360;
 
 type DataPort = { apiPrefix: string; fetchProtected: typeof fetch };
 
@@ -118,8 +121,9 @@ export function useRenderLayout(jobId: string, enabled: boolean): RenderLayoutSt
         const manifest = await loadRenderLayoutFromApi(layoutJobId, { apiPrefix: port!.apiPrefix || "/api/v1", fetcher: port!.fetchProtected });
         if (!manifest.source) {
           if (alive) {
-            setState((current) => (current.status === "generating"
-              ? current
+            const pending = RENDER_LAYOUT_PENDING_REASONS.has(manifest.reason || "");
+            setState((current) => (current.status === "generating" || pending
+              ? { status: "generating" }
               : { status: "unavailable", reason: manifest.reason || "not_kept", generate: manifest.generate }));
           }
           return;
@@ -149,7 +153,7 @@ export function useRenderLayout(jobId: string, enabled: boolean): RenderLayoutSt
     };
   }, [devUrl, enabled, layoutJobId, port, attempt]);
 
-  // 补排：照清单给的请求原样发，然后每 5 秒再要一次清单，排好就照版面画（最多等 10 分钟）。
+  // 补排：照清单给的请求原样发，然后每 5 秒再要一次清单，排好就照版面画（最多等 30 分钟）。
   const generate = state.status === "unavailable" ? state.generate : null;
   const generateNow = useCallback(() => {
     if (!generate || !port) return;

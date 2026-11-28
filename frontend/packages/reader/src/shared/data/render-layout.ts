@@ -152,8 +152,14 @@ export type RenderLayoutManifest = {
   source: RenderLayoutSource | null;
 };
 
-/** 认得的「没有版面」原因；认不得的当 not_kept（后端约定以后可能加值）。 */
-const KNOWN_REASONS = new Set(["no_translated_pdf", "not_engine_route", "unsupported_render", "merged_reading", "not_kept"]);
+/**
+ * 认得的「没有版面」原因；认不得的当 not_kept（后端约定以后可能加值）。
+ * backfill_queued / job_active（后端 #245，2026-11-28）：旧书没留版面时后端自己在后台原地补排，排上了 / 正在跑，跑完清单就是 available。
+ */
+const KNOWN_REASONS = new Set(["no_translated_pdf", "not_engine_route", "unsupported_render", "merged_reading", "not_kept", "backfill_queued", "job_active"]);
+
+/** 这几种是后端正在补，前端只要隔几秒再问清单。 */
+export const RENDER_LAYOUT_PENDING_REASONS: ReadonlySet<string> = new Set(["backfill_queued", "job_active"]);
 
 export function renderLayoutReason(value: unknown): string {
   const reason = `${value || ""}`.trim();

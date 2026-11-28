@@ -218,3 +218,14 @@ test("接口地址补全、底图用书页同一份 pdf.js（2026-11-28 实测�
   assert.match(bg, /range: createPdfRangeTransport\(file\.ranged\)/, "大底图没按段取");
   assert.doesNotMatch(read("src/extensions/builtin/html-page.tsx"), /loadPdfDocument/, "又用回另一份 pdf.js");
 });
+
+test("后端在补旧书（#245：reason 是 backfill_queued / job_active）：不发补排请求，按 OCR 框画、每 5 秒再要清单，最多等 30 分钟", async () => {
+  const { renderLayoutReason, RENDER_LAYOUT_PENDING_REASONS } = await import("../../../packages/reader/src/shared/data/render-layout.ts");
+  assert.equal(renderLayoutReason("backfill_queued"), "backfill_queued");
+  assert.equal(renderLayoutReason("job_active"), "job_active");
+  assert.deepEqual([...RENDER_LAYOUT_PENDING_REASONS].sort(), ["backfill_queued", "job_active"]);
+  const hook = read("src/hooks/use-render-layout.ts");
+  assert.match(hook, /const pending = RENDER_LAYOUT_PENDING_REASONS\.has\(manifest\.reason \|\| ""\);/);
+  assert.match(hook, /current\.status === "generating" \|\| pending\s*\? \{ status: "generating" \}/, "后端在补时没去等");
+  assert.match(hook, /const POLL_LIMIT = 360;/);
+});

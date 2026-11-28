@@ -91,6 +91,8 @@ export type RenderLayoutManifest = {
     generate: RenderLayoutGenerate | null;
     source: RenderLayoutSource | null;
 };
+/** 这几种是后端正在补，前端只要隔几秒再问清单。 */
+export declare const RENDER_LAYOUT_PENDING_REASONS: ReadonlySet<string>;
 export declare function renderLayoutReason(value: unknown): string;
 /** 字体在浏览器里的名字：加 RPR 前缀，不和本机装的同名字体（思源宋体……）混。 */
 export declare const layoutFontFamily: (family: string) => string;
