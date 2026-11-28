@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "about": [
+    "我们自己维护的模型思考档位表（2026-11-27 用户定：问不到接口的，比如 Qwen3.8，我们自己维护表）。阅读页提问的自带 agent 用它报档位。",
+    "查的顺序：先问服务商的接口（Anthropic、OpenRouter、Ollama 能报，见 retainpdf_ask_agent_engine/thinking_probe.py），再查这张表（从上往下，第一条对上的算），",
+    "最后才是 model_wire.thinking_menu 里写在代码里的规则和通用开关。",
+    "match：protocols（openai / openai_responses / anthropic，不写是都算）、hosts（地址的主机名，不写是都算）、model（模型名的正则，不分大小写）。",
+    "levels 从弱到强：value 是档位名（off / none / on / minimal / low / medium / high / xhigh / max），fields 是这一档按偏好排的请求字段，服务回 400 就换下一个，最后什么都不加。",
+    "auto：设置里思考深度是「自动」时报哪一档（第一问就发这一档）。checked：怎么核实的、哪天；空的算「猜的」，回答完没见思考会提醒用户开关可能没起作用。"
+  ],
+  "models": [
+    {
+      "name": "Qwen3.8 Flash（阿里云百炼）",
+      "match": {"protocols": ["openai"], "hosts": ["dashscope.aliyuncs.com"], "model": "^qwen3\\.8-flash"},
+      "levels": [
+        {"value": "off", "fields": [{"enable_thinking": false}]},
+        {"value": "low", "fields": [{"enable_thinking": true, "thinking_budget": 2048}, {"enable_thinking": true}]},
+        {"value": "medium", "fields": [{"enable_thinking": true, "thinking_budget": 8192}, {"enable_thinking": true}]},
+        {"value": "high", "fields": [{"enable_thinking": true, "thinking_budget": 16384}, {"enable_thinking": true}]},
+        {"value": "max", "fields": [{"enable_thinking": true, "thinking_budget": 32768}, {"enable_thinking": true}]}
+      ],
+      "auto": "off",
+      "checked": "2026-10-31 翻译实测：默认思考，enable_thinking=false 能关；thinking_budget 是百炼的思考预算"
+    },
+    {
+      "name": "Qwen3.8 其他型号（阿里云百炼）",
+      "match": {"protocols": ["openai"], "hosts": ["dashscope.aliyuncs.com"], "model": "^qwen3\\.8(?!.*(instruct|thinking|coder))"},
+      "levels": [
+        {"value": "off", "fields": [{"enable_thinking": false}]},
+        {"value": "low", "fields": [{"enable_thinking": true, "thinking_budget": 2048}, {"enable_thinking": true}]},
+        {"value": "medium", "fields": [{"enable_thinking": true, "thinking_budget": 8192}, {"enable_thinking": true}]},
+        {"value": "high", "fields": [{"enable_thinking": true, "thinking_budget": 16384}, {"enable_thinking": true}]},
+        {"value": "max", "fields": [{"enable_thinking": true, "thinking_budget": 32768}, {"enable_thinking": true}]}
+      ],
+      "auto": "max",
+      "checked": "百炼文档：混合思考模型用 enable_thinking 开关、thinking_budget 限思考长度"
+    },
+    {
+      "name": "Qwen3.8 自己部署（vLLM、SGLang、llama.cpp，OpenAI Chat）",
+      "match": {"protocols": ["openai"], "model": "qwen3\\.8(?!.*(instruct|thinking|coder))"},
+      "levels": [
+        {"value": "off", "fields": [
+          {"enable_thinking": false, "chat_template_kwargs": {"enable_thinking": false}},
+          {"chat_template_kwargs": {"enable_thinking": false}},
+          {"enable_thinking": false}
+        ]},
+        {"value": "on", "fields": [
+          {"enable_thinking": true, "chat_template_kwargs": {"enable_thinking": true}},
+          {"chat_template_kwargs": {"enable_thinking": true}},
+          {"enable_thinking": true}
+        ]}
+      ],
+      "auto": "on",
+      "checked": ""
+    },
+    {
+      "name": "Qwen3.8 自己部署（OpenAI Responses）",
+      "match": {"protocols": ["openai_responses"], "model": "qwen3\\.8(?!.*(instruct|thinking|coder))"},
+      "levels": [
+        {"value": "off", "fields": [
+          {"enable_thinking": false, "chat_template_kwargs": {"enable_thinking": false}, "reasoning": {"effort": "none"}},
+          {"enable_thinking": false, "chat_template_kwargs": {"enable_thinking": false}},
+          {"chat_template_kwargs": {"enable_thinking": false}},
+          {"reasoning": {"effort": "none"}}
+        ]},
+        {"value": "on", "fields": [
+          {"enable_thinking": true, "chat_template_kwargs": {"enable_thinking": true}},
+          {"chat_template_kwargs": {"enable_thinking": true}},
+          {"enable_thinking": true}
+        ]}
+      ],
+      "auto": "on",
+      "checked": ""
+    }
+  ]
+}
