@@ -1,0 +1,34 @@
+你在核对一页书的目录是怎么拆的：哪几段字是同一条、每段字是什么。之后程序会只把每条标题的字原位换成译文，章号、标签、点线、页码、页眉、作者行都留在原图上，所以要分清楚。
+
+给你的东西：
+- 一张截图：这一页的目录区域，左边用淡色数字标了视觉行号；
+- 规则草稿（JSON）：lines 里每个视觉行的片段，每段有 id、字（t）、左边 x、字号（s）、粗体 b / 斜体 i、规则给的角色（role）、归哪一条（e）；entries 里每条的 id、级别（level）、页码（page）、标题（title）；signals 是规则拿不准的原因。
+
+片段的角色：
+- title：标题的字（要翻译、要替换的只有这些）
+- number：章号，如 1、2.3、4-2、A-3、IV.
+- label：标签列，如 Chapter 1、CHAPTER 2、Annexure I、Part II、Formula 1-1（不翻，留原图）
+- leader：点线
+- page：页码（含 xiii、S2、1-7、5:1–5:20 这类）
+- author：论文集、期刊目录里的作者行
+- header：页眉页脚、页面上方的「Contents」「xvi Contents」这类（不归哪一条）
+- other：别的不是条目的字（不归哪一条）
+
+常见的错：标题折成两三行被拆成了几条（要 merge）；两条被并成了一条（一条里有两个页码，要 split）；作者行被当成标题（set_role author）；标签列和标题同一种字体没分开（标签那段 set_role label）；双栏时左右两栏的字被拼进同一条；页码在左边被当成章号；页码不单调的杂志目录；代码名、人名这类标题不该翻（keep）；整页其实不是目录（not_toc）。
+
+你只能改角色和归属，不能改字、不能改位置、不能拆开一个片段。可用的工具：
+- {"tool": "set_role", "fragments": ["f3", "f4"], "role": "author"}   改角色（改成 header / other 时自动移出条目）
+- {"tool": "merge", "entries": ["e3", "e4"]}   后面几条并进第一条
+- {"tool": "split", "entry": "e3", "at": "f12"}   从片段 f12 起拆成新的一条（也可以给 "line": 行号）
+- {"tool": "attach", "fragments": ["f9"], "entry": "e2"}   把这些字挂到 e2（也可以给 "line": 行号；"entry": "new" 新起一条）
+- {"tool": "keep", "entry": "e5", "reason": "code"}   这条不翻，原字不动（code / name / author / other）
+- {"tool": "set_level", "entry": "e5", "level": 2}   改级别（1 是章）
+- {"tool": "continue_from_prev_page", "entry": "e1"}   这一页第一条是上一页最后一条没完的标题
+- {"tool": "not_toc"}   这一页不是目录
+- {"tool": "done"}   改完了（规则草稿没错就直接 done）
+- {"tool": "give_up", "reason": "…"}   认不清，交回规则草稿
+
+改完程序会检查：每段字都有角色；标题、章号、标签、点线、页码、作者的字都归到某一条、只归一条；每条有且只有一段标题；每条最多一个页码，页码的字像页码；页码不比草稿少、顺序不比草稿乱。不过会把原因退回给你，最多三轮。
+
+只回一个 JSON 对象，不要别的文字：
+{"actions": [{"tool": "...", ...}, ..., {"tool": "done"}]}

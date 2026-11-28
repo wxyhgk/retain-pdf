@@ -424,3 +424,66 @@ def test_entry_blocks_carry_the_title_lines_for_in_place_replacement():
     assert line["text"] == "Analyzing the Audience" and line["baseline"] == 100 and line["bbox"][0] >= 89
     # 条目的文字、框和以前一样（默认的排法不变）
     assert entries[0]["text"] == "1 Analyzing the Audience" and entries[0]["bbox"][0] <= 60 + 0.5
+
+
+# ---- 2026-11-28 认上下文（R2）的规则草稿：每段字的角色、条目归属；规则不认的块也给候选；按草稿重建和拆的时候一样 ----
+
+
+def test_page_draft_gives_every_fragment_a_role():
+    from retainpdf_pipeline.ocr.document_schema.toc_pages import page_draft
+
+    lines = [(330, 40, "Contents", 9), (60, 100, "1", 11), (90, 100, "Analyzing the Audience . . . . . .", 11),
+             (350, 100, "1", 11), (90, 122, "References", 11), (350, 122, "13", 11), (60, 144, "2", 11),
+             (90, 144, "Balancing Precision", 11), (350, 144, "15", 11)]
+    with _page(lines) as pdf:
+        draft = page_draft(pdf[0], [50, 20, 380, 160])
+    assert draft["accepted"] and draft["reason"] == ""
+    roles = [(fragment["line"], fragment["role"], fragment["text"]) for fragment in draft["fragments"]]
+    assert roles == [(1, "header", "Contents"), (2, "number", "1"), (2, "title", "Analyzing the Audience"),
+                     (2, "leader", ". . . . . ."), (2, "page", "1"), (3, "title", "References"), (3, "page", "13"),
+                     (4, "number", "2"), (4, "title", "Balancing Precision"), (4, "page", "15")]
+    by_id = {fragment["id"]: fragment["text"] for fragment in draft["fragments"]}
+    assert [[by_id[f] for f in entry["fragments"]] for entry in draft["entries"]] == [
+        ["1", "Analyzing the Audience", ". . . . . .", "1"], ["References", "13"], ["2", "Balancing Precision", "15"]]
+    assert [entry["level"] for entry in draft["entries"]] == [1, 2, 1]
+
+
+def test_page_draft_gives_a_candidate_for_a_block_the_rules_reject():
+    from retainpdf_pipeline.ocr.document_schema.toc_pages import page_draft
+
+    lines = [(90, 100, "Preface", 11), (350, 100, "vii", 11), (90, 122, "Introduction", 11), (350, 122, "1", 11)]
+    with _page(lines) as pdf:
+        assert split_toc_page(pdf[0], [50, 80, 380, 140]) is None
+        draft = page_draft(pdf[0], [50, 80, 380, 140])
+    assert draft["accepted"] is False and draft["reason"] == "few_entries" and len(draft["entries"]) == 2
+    with fitz.open() as pdf:
+        pdf.new_page()
+        assert page_draft(pdf[0], [50, 80, 380, 140]) is None
+
+
+def test_rebuilding_from_an_unchanged_draft_matches_the_split():
+    import copy
+
+    from retainpdf_pipeline.ocr.document_schema.toc_pages import apply_toc_context
+    from retainpdf_pipeline.ocr.document_schema.toc_pages import context_drafts
+
+    document = _document([50, 80, 380, 240])
+    with _toc_pdf(wrapped=True) as pdf:
+        split_toc_blocks_with_text_layer(document, pdf)
+        drafts, no_text = context_drafts(document, pdf)
+    assert no_text == [] and len(drafts) == 1 and drafts[0]["accepted"]
+    assert drafts[0]["parent_block_id"] == "p001-b0001" and drafts[0]["region"] == [50.0, 80.0, 380.0, 240.0]
+    rebuilt = copy.deepcopy(document)
+    assert apply_toc_context(rebuilt, [{"status": "model", "effect": "rebuild", "draft": drafts[0]}]) == 1
+    keys = ("toc_entry_title", "toc_entry_title_lines", "toc_entry_number", "toc_entry_number_bbox", "toc_entry_page_label",
+            "toc_entry_page_bbox", "toc_entry_level", "toc_entry_label", "toc_entry_line_count", "toc_split_parent_block_id",
+            "toc_split_parent_bbox", "toc_page_label", "fixed_translation")
+
+    def shape(doc):
+        # 草稿里的框记到 0.01pt：框只比到 0.1pt
+        return [(block["block_id"], block["structure_role"], block["text"], [round(v, 1) for v in block["bbox"]], block.get("policy"),
+                 {key: block["metadata"].get(key) for key in keys}) for block in doc["pages"][0]["blocks"]]
+
+    assert shape(rebuilt) == shape(document)
+    entry = next(block for block in rebuilt["pages"][0]["blocks"] if block["structure_role"] == "toc_entry")
+    assert entry["metadata"]["toc_entry_context_source"] == "model" and entry["metadata"]["toc_entry_keep_original"] is False

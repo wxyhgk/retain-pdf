@@ -454,7 +454,8 @@
         "retainpdf_pipeline/render/visual_profile/sampler.py",
         "retainpdf_pipeline/render/visual_profile/text_spans.py",
         "retainpdf_pipeline/render/workflow/modes.py",
-        "retainpdf_pipeline/translate/tables_stage.py"
+        "retainpdf_pipeline/translate/tables_stage.py",
+        "retainpdf_pipeline/translate/toc_context_stage.py"
       ],
       "devtool_files": [
         "devtools/agent_lab/sample_conference.py",
@@ -540,6 +541,7 @@
         "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_domain_prewarm.py",
         "devtools/tests/translation/test_tables_stage.py",
+        "devtools/tests/translation/test_toc_context_stage.py",
         "devtools/tests/translation/test_translation_toc_entries.py"
       ],
       "runtime_required": true,
@@ -729,6 +731,7 @@
         "devtools/tests/translation/test_structured_failure_upstream.py",
         "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_thinking_menu.py",
+        "devtools/tests/translation/test_toc_context_stage.py",
         "devtools/tests/translation/test_translation_auth_fail_fast.py",
         "devtools/tests/translation/test_translation_batch_metrics_contract.py",
         "devtools/tests/translation/test_translation_cache_context_contract.py",
@@ -865,6 +868,7 @@
         "retainpdf_pipeline/translate/entrypoints/from_ocr_pipeline.py",
         "retainpdf_pipeline/translate/entrypoints/translate_only_pipeline.py",
         "retainpdf_pipeline/translate/tables_stage.py",
+        "retainpdf_pipeline/translate/toc_context_stage.py",
         "retainpdf_pipeline/translate/translation_stage.py"
       ],
       "devtool_files": [
@@ -966,6 +970,7 @@
       "runtime_files": [],
       "devtool_files": [],
       "test_files": [
+        "devtools/tests/translation/test_toc_context_stage.py",
         "devtools/tests/translation/test_translation_toc_entries.py"
       ],
       "runtime_required": false,
@@ -975,6 +980,7 @@
       "import_name": "retainpdf_toc_agent_engine",
       "package_name": "retainpdf_toc_agent_engine",
       "runtime_files": [
+        "retainpdf_pipeline/translate/toc_context_stage.py",
         "retainpdf_pipeline/translate/toc_stage.py"
       ],
       "devtool_files": [],
@@ -1113,6 +1119,7 @@
         "devtools/tests/translation/test_term_protection_respects_math.py",
         "devtools/tests/translation/test_term_review.py",
         "devtools/tests/translation/test_thinking_menu.py",
+        "devtools/tests/translation/test_toc_context_stage.py",
         "devtools/tests/translation/test_translation_abstract_groups.py",
         "devtools/tests/translation/test_translation_agent_repair_pipeline.py",
         "devtools/tests/translation/test_translation_agent_runtime.py",

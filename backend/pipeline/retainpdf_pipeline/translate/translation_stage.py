@@ -9,6 +9,7 @@ from retainpdf_translation.public import TranslationExecutionRequest
 from retainpdf_translation.public import execute_translation_request
 
 from retainpdf_pipeline.translate.tables_stage import translate_tables
+from retainpdf_pipeline.translate.toc_context_stage import run_toc_context
 from retainpdf_pipeline.translate.toc_stage import toc_fixed_translations_fn
 
 
@@ -48,7 +49,21 @@ def translate_book_pipeline(
     ocr_stream_dir: Path | None = None,
     tables: str = "keep",
     toc: str = "agent",
+    toc_context: str | None = None,
 ) -> dict:
+    # 目录页认上下文（R2）：翻译开始前核对规则拿不准的目录页，改了就写回归一化文档。子开关默认 off（环境变量
+    # RETAINPDF_TOC_CONTEXT，translate/toc_context_stage.py），off 时什么都不做
+    toc_context_summary = run_toc_context(
+        toc_mode=toc,
+        context_mode=toc_context,
+        source_json_path=source_json_path,
+        source_pdf_path=source_pdf_path,
+        output_dir=output_dir,
+        api_key=api_key,
+        model=model,
+        base_url=base_url,
+        ocr_stream_dir=ocr_stream_dir,
+    )
     result = execute_translation_request(
         TranslationExecutionRequest(
             source_json_path=source_json_path,
@@ -95,6 +110,8 @@ def translate_book_pipeline(
             ),
         )
     )
+    if toc_context_summary.get("status") != "off":
+        result["toc_context"] = toc_context_summary
     if tables == "translate":
         # 表格翻译（T3）：正文翻完再翻表格，术语记忆用上正文定下的译法。结果在 translated/tables.v1.json。
         document_path = source_json_path

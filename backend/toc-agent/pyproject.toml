@@ -26,6 +26,7 @@ retainpdf-translation = { workspace = true }
 where = ["."]
 include = [
   "retainpdf_toc_agent",
+  "retainpdf_toc_agent.context",
   "retainpdf_toc_agent.prompts",
   "retainpdf_toc_agent_engine",
 ]
