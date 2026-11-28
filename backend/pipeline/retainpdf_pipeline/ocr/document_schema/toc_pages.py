@@ -83,8 +83,14 @@ LABEL_START_RE = re.compile(
 # 只记下来，条目文字照旧带着它
 LABEL_PREFIX_RE = re.compile(
     r"^\s*((?i:appendix|annex|annexure|attachment|supplement|chapter|part|приложение|глава|раздел|часть)"
-    r"\s*(?:\d{1,3}(?:[.\-–]\d{1,3})*|[IVXLC]{1,6}|[ivx]{1,4}|[A-Z])[.:]?)(?=\s|$)"  # 编号区分大小写：「Part a story」不算
+    r"\s*(?:\d{1,3}(?:[.\-–]\d{1,3})*|(?i:(?=[ivxlc])c{0,3}(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3}))|[A-Z])[.:]?)(?=\s|$)"  # 罗马数字不分大小写（小型大写的文字层读成「iV」「Xii」）；字母编号区分：「Part a story」不算
 )
+# OCR 漏掉的目录行（2026-11-29，80c3ad：第一章那一行不在任何块里、「Preface / Acknowledgements」被框成一段正文）：
+# 目录块上下这么多行高以内、页码和目录的页码列对齐（±4pt）的文字层行并进目录
+ADJACENT_GAP_LINES = 2.5
+PAGE_ALIGN = 4.0
+ADJACENT_X_MARGIN = 30.0
+ABSORBABLE_ROLES = frozenset({"body", "paragraph", "text", ""})
 # 比正在攒的那条起点往左缩出去这么多，就是新的一条
 OUTDENT = 8.0
 # 页码排成一列：这么多的页码左边或右边对齐（±3pt）
@@ -686,6 +692,92 @@ def page_draft(pdf_page, block_bbox: list[float]) -> dict | None:
             "accepted": not reason, "reason": reason, "fragments": fragments, "entries": entries}
 
 
+def _line_box(line: _Line) -> list[float]:
+    return [min(s.x0 for s in line.spans), min(s.y0 for s in line.spans), max(s.x1 for s in line.spans), max(s.y1 for s in line.spans)]
+
+
+def _inside(point: tuple[float, float], box: list[float], pad: float = 1.0) -> bool:
+    return box[0] - pad <= point[0] <= box[2] + pad and box[1] - pad <= point[1] <= box[3] + pad
+
+
+def _absorbable(block: dict) -> bool:
+    """能整块并进目录的：普通正文块（OCR 把几条目录框成一段正文）。标题、图、表、页眉这些不动。"""
+    roles = {str(block.get(key) or "").lower() for key in ("structure_role", "layout_role", "sub_type")}
+    return str(block.get("type") or "text") == "text" and roles <= ABSORBABLE_ROLES
+
+
+def adjacent_toc_lines(pdf_page, block_bbox: list[float], result: TocPageSplit,
+                       others: list[dict]) -> tuple[list[float], list[dict]]:
+    """目录块上下紧挨着、OCR 没框进来的目录行：回（扩大后的框，要整块并进来的正文块）。没有就回原框。
+
+    一行要：离目录块（或上一条并进来的行）不超过 2.5 个行高、读得出页码，页码在右边一列（或前面有点线），
+    或者和这一块里某个页码左边或右边对齐；
+    压着别的块时那块得是普通正文、而且它的每一行都并得进来（不然这块整个不动，并到它前面为止）。"""
+    bbox = [float(value) for value in block_bbox]
+    page_boxes = [entry.page_box for entry in result.entries if entry.page_box]
+    if len(page_boxes) < MIN_ENTRIES:
+        return bbox, []
+
+    def median(values: list[float]) -> float:
+        values = sorted(values)
+        return values[len(values) // 2]
+
+    rights, lefts = [box[2] for box in page_boxes], [box[0] for box in page_boxes]
+    line_height = max(median([box[3] - box[1] for box in page_boxes]), 4.0)
+    page_height = float(pdf_page.rect.height)
+    page_column_from = bbox[0] + (bbox[2] - bbox[0]) * PAGE_COLUMN_FRACTION
+    spans = _spans_in(pdf_page, [bbox[0] - ADJACENT_X_MARGIN, 0.0, bbox[2] + ADJACENT_X_MARGIN, page_height])
+    lines = [line for line in _visual_lines(spans) if not bbox[1] <= line.y <= bbox[3]]
+    others = [other for other in others if other.get("bbox")]
+
+    def covers(other: dict, line: _Line) -> bool:
+        box = [float(v) for v in other["bbox"]]
+        return any(_inside(((span.x0 + span.x1) / 2, (span.y0 + span.y1) / 2), box) for span in line.spans)
+
+    def covering(line: _Line) -> list[dict]:
+        return [other for other in others if covers(other, line)]
+
+    accepted: list[_Line] = []
+    absorbed: list[dict] = []
+    for upward in (True, False):
+        ordered = sorted((line for line in lines if (line.y < bbox[1]) == upward), key=lambda line: line.y, reverse=upward)
+        edge = bbox[1] if upward else bbox[3]
+        taken: list[tuple[_Line, list[dict]]] = []
+        for line in ordered:
+            box = _line_box(line)
+            if (edge - box[3] if upward else box[1] - edge) > ADJACENT_GAP_LINES * line_height:
+                break
+            cover = covering(line)
+            if any(not _absorbable(other) for other in cover):
+                break
+            parsed = _parse_line(line, page_column_from, page_height)
+            page = parsed.page_span
+            aligned = (any(abs(page.x1 - value) <= PAGE_ALIGN for value in rights)
+                       or any(abs(page.x0 - value) <= PAGE_ALIGN for value in lefts)) if page is not None else False
+            # 页码要靠得住：和块里的页码对齐，或者在右边一列、前面有点线（strong）
+            letters = sum(char.isalpha() for span in parsed.words for char in span.text)
+            if parsed.header or page is None or parsed.page_strength != "strong" and not aligned or letters < 3:
+                break
+            taken.append((line, cover))
+            edge = box[1] if upward else box[3]
+        # 压着的正文块要每一行都并进来；有一行没并进来，就并到这块前面为止
+        taken_ids = {id(line) for line, _cover in taken}
+        for index, (_line, cover) in enumerate(taken):
+            whole = all(id(other_line) in taken_ids for other in cover for other_line in lines if covers(other, other_line))
+            if not whole:
+                taken = taken[:index]
+                break
+        for line, cover in taken:
+            accepted.append(line)
+            absorbed.extend(other for other in cover if all(other is not seen for seen in absorbed))
+    if not accepted:
+        return bbox, []
+    boxes = [_line_box(line) for line in accepted]
+    grown = [min([bbox[0]] + [box[0] for box in boxes]), min([bbox[1]] + [box[1] for box in boxes]),
+             max([bbox[2]] + [box[2] for box in boxes]), max([bbox[3]] + [box[3] for box in boxes])]
+    return grown, absorbed
+
+
 def _number_level(number: str) -> int:
     """「1」「A」「IV」一级，「1.2」「4-2」「A-3」二级，往下按分隔符数。"""
     return len(re.findall(r"[.\-–]", number.rstrip("."))) + 1
@@ -841,13 +933,38 @@ def split_toc_blocks_with_text_layer(document: dict, pdf) -> int:
         blocks = page.get("blocks") or []
         if not any(_is_toc_block(block) for block in blocks):
             continue
+        # 先读每个目录块：OCR 漏在块外的目录行并进来（漏掉的行不在任何块里，紧挨着的几条被框成一段正文的整块并进来）
+        results: dict[int, TocPageSplit] = {}
+        absorbed_ids: set[int] = set()
+        for block in blocks:
+            if not _is_toc_block(block):
+                continue
+            result = split_toc_page(pdf[page_index], block.get("bbox") or [0, 0, 0, 0])
+            if result is None:
+                continue
+            others = [other for other in blocks if other is not block and id(other) not in absorbed_ids]
+            grown, absorbed = adjacent_toc_lines(pdf[page_index], block.get("bbox") or [0, 0, 0, 0], result, others)
+            if grown != [float(value) for value in block.get("bbox") or [0, 0, 0, 0]]:
+                bigger = split_toc_page(pdf[page_index], grown)
+                # 框变大以后原来读出的条目要一条不差（页码列的位置跟着框变，可能把原来的行读坏）；
+                # 原来没读出页码、现在读出来的算对（80c3ad 第二章的页码在原框外面）
+                after = {(entry.number, entry.title): entry.page_label for entry in bigger.entries} if bigger else {}
+                if (bigger is not None and len(bigger.entries) > len(result.entries)
+                        and all((entry.number, entry.title) in after
+                                and entry.page_label in ("", after[(entry.number, entry.title)])
+                                for entry in result.entries)):
+                    result = bigger
+                    absorbed_ids.update(id(other) for other in absorbed)
+            results[id(block)] = result
         rebuilt: list[dict] = []
         page_split = 0
         for block in blocks:
+            if id(block) in absorbed_ids:
+                continue
             if not _is_toc_block(block):
                 rebuilt.append(block)
                 continue
-            result = split_toc_page(pdf[page_index], block.get("bbox") or [0, 0, 0, 0])
+            result = results.get(id(block))
             if result is None:
                 rebuilt.append(block)
                 continue
