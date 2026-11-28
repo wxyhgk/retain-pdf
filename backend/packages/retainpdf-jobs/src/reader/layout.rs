@@ -18,10 +18,14 @@ use retainpdf_core::models::domain::{JobSnapshot, JobStatusKind, DEFAULT_RENDER_
 use retainpdf_core::storage_paths::MergedJobId;
 
 use crate::files::downloads::{stored_path, StoredFile};
-use crate::views::{ReaderLayoutGenerateView, ReaderLayoutPageEntryView, ReaderLayoutView};
+use retainpdf_files::FileDownload;
+
+use crate::views::{ReaderLayoutBackgroundView, ReaderLayoutGenerateView, ReaderLayoutPageEntryView, ReaderLayoutView};
 
 const MANIFEST_FILE: &str = "manifest.json";
 const MANIFEST_SCHEMA: &str = "reader_layout_v1";
+/// 底图文件名，和 Python `reader_layout.py` 的 `BACKGROUND_FILE` 一致。
+const BACKGROUND_FILE: &str = "background.pdf";
 /// 一页的 JSON 解压后最多这么大（防坏文件撑爆内存；一页正常几十 KB）。
 const MAX_PAGE_BYTES: u64 = 32 * 1024 * 1024;
 
@@ -43,6 +47,16 @@ struct Manifest {
     engine_commit: String,
     #[serde(default)]
     pages: Vec<ManifestPage>,
+    /// 底图（去掉原字的渲染源，只含有版面的页）；渲染源就是原件时 null。
+    #[serde(default)]
+    background: Option<ManifestBackground>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ManifestBackground {
+    file: String,
+    #[serde(default)]
+    pages: Vec<u32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -111,6 +125,7 @@ fn unavailable(reason: &str, generate: Option<ReaderLayoutGenerateView>) -> Read
         engine_commit: None,
         page_count: 0,
         pages: Vec::new(),
+        background: None,
         fonts: Vec::new(),
         generate,
     }
@@ -136,6 +151,13 @@ pub(crate) fn load_reader_layout_view(data_root: &Path, job: &JobSnapshot, base_
                     blocks: page.blocks,
                 })
                 .collect();
+            let background = manifest
+                .background
+                .filter(|background| background.file == BACKGROUND_FILE)
+                .map(|background| ReaderLayoutBackgroundView {
+                    url: format!("{base_url}/api/v1/jobs/{}/reader/layout/background", job.job_id),
+                    pages: background.pages,
+                });
             return ReaderLayoutView {
                 available: true,
                 reason: None,
@@ -144,6 +166,7 @@ pub(crate) fn load_reader_layout_view(data_root: &Path, job: &JobSnapshot, base_
                 engine_commit: Some(manifest.engine_commit),
                 page_count: pages.len(),
                 pages,
+                background,
                 fonts: Vec::new(),
                 generate: None,
             };
@@ -165,6 +188,24 @@ pub(crate) fn load_reader_layout_view(data_root: &Path, job: &JobSnapshot, base_
         return unavailable(REASON_NOT_ENGINE_ROUTE, can_generate(true));
     }
     unavailable(REASON_NOT_KEPT, can_generate(false))
+}
+
+/// 底图 PDF（`reader/layout/background`）：清单里写了才有，否则 404。按 PDF 发，支持分段读。
+pub(crate) fn reader_layout_background(data_root: &Path, job: &JobSnapshot) -> Result<FileDownload, AppError> {
+    let not_found = || AppError::not_found("no reader layout background");
+    let dir = layout_dir(data_root, job).ok_or_else(not_found)?;
+    let manifest = read_manifest(&dir).ok_or_else(not_found)?;
+    manifest
+        .background
+        .filter(|background| background.file == BACKGROUND_FILE)
+        .ok_or_else(not_found)?;
+    let path = dir.join(BACKGROUND_FILE);
+    if !path.is_file() {
+        return Err(not_found());
+    }
+    Ok(FileDownload::new(path, "application/pdf", None)
+        .with_inline_name(format!("{}-background.pdf", job.job_id))
+        .with_job_id_header(job.job_id.clone()))
 }
 
 /// 清单里这页的 etag（304 用，不读页文件）。

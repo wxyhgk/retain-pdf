@@ -299,6 +299,10 @@ export interface ReaderLayoutView {
     engine_commit: string | null;
     page_count: number;
     pages: ReaderLayoutPageEntry[];
+    /**
+     * 底图：译文 PDF 的底（去掉原字的原文页）。渲染源就是原件（扫描件）时 null，用原文页做底
+     */
+    background: ReaderLayoutBackground | null;
     fonts: ReaderLayoutFont[];
     generate: ReaderLayoutGenerate | null;
 }
@@ -315,6 +319,16 @@ export interface ReaderLayoutPageEntry {
     etag: string;
     blocks: number;
     url: string;
+}
+export interface ReaderLayoutBackground {
+    /**
+     * PDF，支持 Range
+     */
+    url: string;
+    /**
+     * 底图第 n 页是原文第 pages[n] 页（从 0 起）
+     */
+    pages: number[];
 }
 /**
  * 画字用的字体（按书子集化的 woff2）。还没做，现在 fonts 是空数组。

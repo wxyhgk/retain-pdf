@@ -43,6 +43,12 @@ impl JobQueries<'_> {
         Ok(crate::reader::layout::load_reader_layout_view(self.data_root, &job, base_url))
     }
 
+    /// 版面的底图 PDF；没有是 404。
+    pub fn reader_layout_background(&self, job_id: &str) -> Result<retainpdf_files::FileDownload, AppError> {
+        let job = load_supported_job(self.db, self.data_root, job_id)?;
+        crate::reader::layout::reader_layout_background(self.data_root, &job)
+    }
+
     /// 一页版面：`(etag, 这页)`。浏览器带来的 ETag 一样就不读文件（`None`，路由回 304）。
     pub fn reader_layout_page_if_changed(
         &self,

@@ -36,7 +36,7 @@ pub mod api {
         MarkdownImageView, NormalizationSummaryView,
         OcrAmbiguityReceiptFieldView, OcrAmbiguityResolutionKind, OcrAmbiguityResolutionRequest,
         OcrAmbiguityResolutionView, OcrAmbiguityView, OcrJobSummaryView, PagePreviewQuery,
-        ReaderDocumentMetadataView, ReaderLayoutFontView, ReaderLayoutGenerateView,
+        ReaderDocumentMetadataView, ReaderLayoutBackgroundView, ReaderLayoutFontView, ReaderLayoutGenerateView,
     ReaderLayoutPageEntryView, ReaderLayoutView, ReaderMetadataView, ReaderPageMetadataView, ReaderRegionBoxView,
         ReaderRegionItemView, ReaderRegionsView, RefineRetryRequest, RetryStageKind, RetryStageRequest,
         RetryStageSubmissionView, ReviseTranslationItemRequest, StageActionsView,

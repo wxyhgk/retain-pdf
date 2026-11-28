@@ -18,7 +18,7 @@ pub use types::{
     JobStageSnapshotView, NormalizationSummaryView,
     OcrAmbiguityReceiptFieldView, OcrAmbiguityResolutionKind, OcrAmbiguityResolutionRequest,
     OcrAmbiguityResolutionView, OcrAmbiguityView, OcrJobSummaryView, LayoutDocxQuery, PagePreviewQuery,
-    ReaderDocumentMetadataView, ReaderLayoutFontView, ReaderLayoutGenerateView,
+    ReaderDocumentMetadataView, ReaderLayoutBackgroundView, ReaderLayoutFontView, ReaderLayoutGenerateView,
     ReaderLayoutPageEntryView, ReaderLayoutView, ReaderMetadataView, ReaderPageMetadataView, ReaderRegionBoxView,
     ReaderRegionItemView, ReaderRegionsView, RefineRetryRequest, RetryStageKind, RetryStageRequest,
     EscalatedItemView, LastRefineView, RetryStageSubmissionView, StageActionsView, StageRetryActionLinkView,

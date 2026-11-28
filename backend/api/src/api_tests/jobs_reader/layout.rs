@@ -35,6 +35,7 @@ fn write_layout(rendered: &Path) {
     let manifest = json!({
         "schema": "reader_layout_v1", "layout_schema": "rpr_layout_v1",
         "engine_version": "0.3.0", "engine_commit": "417a441", "output_pdf": "translated.pdf",
+        "background": {"file": "background.pdf", "pages": [1]},
         "pages": [
             {"index": 1, "width": 612.0, "height": 792.0, "etag": "0123456789abcdef", "blocks": 1, "file": "pages/00001.json.gz"},
             // 清单里写着跳出目录的文件名：不认
@@ -42,6 +43,7 @@ fn write_layout(rendered: &Path) {
         ]
     });
     fs::write(dir.join("manifest.json"), manifest.to_string()).unwrap();
+    fs::write(dir.join("background.pdf"), minimal_pdf_bytes(612, 792)).unwrap();
 }
 
 struct Setup {
@@ -96,6 +98,10 @@ async fn reader_layout_lists_the_kept_pages_and_serves_one_page_with_an_etag() {
     assert_eq!(data["schema"], "rpr_layout_v1");
     assert_eq!(data["engine_commit"], "417a441");
     assert_eq!(data["fonts"], json!([]));
+    assert_reader_view(&data["background"], "ReaderLayoutBackground", "layout.background");
+    assert_eq!(data["background"]["pages"], json!([1]));
+    let background_url = data["background"]["url"].as_str().unwrap().to_string();
+    assert!(background_url.ends_with(&format!("/api/v1/jobs/{job_id}/reader/layout/background")));
     // 跳出目录的那页不认
     assert_eq!(data["page_count"], 1);
     let entry = &data["pages"][0];
@@ -115,6 +121,11 @@ async fn reader_layout_lists_the_kept_pages_and_serves_one_page_with_an_etag() {
 
     let response = get(&app, &uri, Some("W/\"0123456789abcdef\"")).await;
     assert_eq!(response.status(), StatusCode::NOT_MODIFIED);
+
+    let response = get(&app, &format!("/api/v1/jobs/{job_id}/reader/layout/background"), None).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.headers()[header::CONTENT_TYPE], "application/pdf");
+    assert_eq!(response.headers()[header::ACCEPT_RANGES], "bytes");
 
     for missing in [2, 7] {
         let response = get(&app, &format!("/api/v1/jobs/{job_id}/reader/layout/pages/{missing}"), None).await;
@@ -148,6 +159,10 @@ async fn reader_layout_says_why_there_is_none_and_how_to_generate_it() {
         .unwrap()
         .ends_with(&format!("/api/v1/jobs/{}/actions/retry-stage", kept_not.job_id)));
     assert_eq!(data["generate"]["body"], json!({"stage": "render"}));
+
+    assert_eq!(data["background"], Value::Null);
+    let response = get(&app, &format!("/api/v1/jobs/{}/reader/layout/background", kept_not.job_id), None).await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
     let data = read_json(get(&app, &view(&typst), None).await).await["data"].clone();
     assert_eq!(data["reason"], "not_engine_route");

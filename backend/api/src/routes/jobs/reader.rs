@@ -13,7 +13,7 @@ use crate::routes::common::{
     build_jobs_download_route_deps, build_jobs_query_route_deps, ok_json, request_base_url, run_job_query,
     run_job_query_once, ApiPath,
 };
-use crate::routes::download_response::markdown_document_response;
+use crate::routes::download_response::{file_download_response, markdown_document_response};
 use crate::routes::job_helpers::if_none_match_values;
 
 /// 带 ETag（弱校验，响应可能压缩）：浏览器带着上次的 ETag 来、译文和原文结构都没变就回 304，大书不用再传
@@ -97,6 +97,19 @@ pub async fn get_reader_layout_page(
     }
     headers.insert(header::CACHE_CONTROL, HeaderValue::from_static("private, no-cache"));
     Ok(response)
+}
+
+/// 版面的底图 PDF，支持分段读；清单里没有底图是 404。
+pub async fn get_reader_layout_background(
+    State(state): State<AppState>,
+    ApiPath(job_id): ApiPath<String>,
+    headers: HeaderMap,
+) -> Result<Response, AppError> {
+    let download = run_job_query_once(&state, format!("reader-layout-background:{job_id}"), move |jobs| {
+        jobs.reader_layout_background(&job_id)
+    })
+    .await?;
+    file_download_response(download, &headers).await
 }
 
 /// 原文 Markdown 的 JSON 视图，图片链接已换成绝对地址。

@@ -88,6 +88,9 @@ pub struct ReaderLayoutView {
     pub page_count: usize,
     /// 有版面的页，按原文页号（从 0 起）排；没有译文的页不在里面。
     pub pages: Vec<ReaderLayoutPageEntryView>,
+    /// 底图：译文 PDF 的底（去掉原字的原文页），只含 `pages` 里这些页、按页号从小到大排。渲染源就是原件
+    /// （扫描件）时 null，用原文页做底。
+    pub background: Option<ReaderLayoutBackgroundView>,
     /// 画字用的字体（按书子集化的 woff2），还没做，现在是空的。
     pub fonts: Vec<ReaderLayoutFontView>,
     /// 补排：照原样发这个请求（原地重新渲染，不调模型、不花钱），跑完版面就有了。补不了时 null。
@@ -104,6 +107,14 @@ pub struct ReaderLayoutPageEntryView {
     pub etag: String,
     pub blocks: u32,
     pub url: String,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ReaderLayoutBackgroundView {
+    /// PDF，支持分段读。
+    pub url: String,
+    /// 底图第 n 页是原文第 `pages[n]` 页（从 0 起）。
+    pub pages: Vec<u32>,
 }
 
 #[derive(Debug, Serialize, Clone, PartialEq)]

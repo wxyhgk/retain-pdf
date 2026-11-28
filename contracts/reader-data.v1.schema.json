@@ -62,6 +62,12 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/jobs/:job_id/reader/layout/background",
+      "transport": "binary",
+      "note": "版面的底图 PDF（2026-11-28）：译文 PDF 的底（去掉原字的原文页），只含清单 background.pages 里的页、按页号从小到大排；支持 Range。清单里 background 是 null 时 404。"
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/jobs/:job_id/progress/layout",
       "client_name": "getLiveLayout",
       "transport": "json",
@@ -268,6 +274,15 @@
         }
       }
     },
+    "ReaderLayoutBackground": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "pages"],
+      "properties": {
+        "url": {"type": "string", "description": "PDF，支持 Range"},
+        "pages": {"type": "array", "items": {"type": "integer", "minimum": 0}, "description": "底图第 n 页是原文第 pages[n] 页（从 0 起）"}
+      }
+    },
     "ReaderLayoutFont": {
       "type": "object",
       "additionalProperties": false,
@@ -309,7 +324,7 @@
     "ReaderLayoutView": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["available", "reason", "schema", "engine_version", "engine_commit", "page_count", "pages", "fonts", "generate"],
+      "required": ["available", "reason", "schema", "engine_version", "engine_commit", "page_count", "pages", "background", "fonts", "generate"],
       "properties": {
         "available": {
           "type": "boolean"
@@ -366,6 +381,10 @@
           "items": {
             "$ref": "#/definitions/ReaderLayoutPageEntry"
           }
+        },
+        "background": {
+          "anyOf": [{"$ref": "#/definitions/ReaderLayoutBackground"}, {"type": "null"}],
+          "description": "底图：译文 PDF 的底（去掉原字的原文页）。渲染源就是原件（扫描件）时 null，用原文页做底"
         },
         "fonts": {
           "type": "array",

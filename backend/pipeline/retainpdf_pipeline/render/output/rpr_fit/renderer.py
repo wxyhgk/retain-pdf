@@ -192,10 +192,20 @@ def _copy_outline(
         return 0
 
 
-def _keep_reader_layout(run, output_pdf_path: Path, engine_info: dict, runtime: RprEngineRuntime) -> dict[str, object]:
-    """最后一遍排版的 layout.json 按页存到译文 PDF 旁边（reader_layout.py），给阅读页的 HTML 页照着画。
+def _keep_reader_layout(
+    run,
+    output_pdf_path: Path,
+    engine_info: dict,
+    runtime: RprEngineRuntime,
+    *,
+    source_pdf_path: Path,
+    original_pdf_path: Path | None,
+    restored_regions: list[tuple[int, list[float]]],
+) -> dict[str, object]:
+    """最后一遍排版的 layout.json 按页存到译文 PDF 旁边，连同底图（reader_layout.py），给阅读页的 HTML 页照着画。
 
-    公式查不过重排了一遍时，存的是重排那一遍的（改回原文的块不在里面，PDF 上那块盖回了原件）。存不成只记一笔。"""
+    公式查不过重排了一遍时，存的是重排那一遍的（改回原文的块不在里面，PDF 上那块盖回了原件，底图也照样盖回）。
+    存不成只记一笔。"""
     layout_path = Path(run.overlay_pdf).parent / "layout.json"
     try:
         saved = save_reader_layout(
@@ -203,6 +213,9 @@ def _keep_reader_layout(run, output_pdf_path: Path, engine_info: dict, runtime: 
             output_pdf_path=Path(output_pdf_path),
             engine_version=str(engine_info.get("version") or runtime.engine_version or ""),
             engine_commit=str(engine_info.get("commit") or ""),
+            source_pdf_path=Path(source_pdf_path),
+            original_pdf_path=Path(original_pdf_path) if original_pdf_path is not None else None,
+            restored_regions=restored_regions,
         )
     except Exception as exc:  # noqa: BLE001 - 版面是附带产物，坏了不连累译文
         print(f"rpr_fit reader layout not kept: {type(exc).__name__}: {exc}", flush=True)
@@ -391,7 +404,15 @@ def build_book_rpr_fit_pdf(
 
     report = run.report
     engine_info = dict(report.get("engine") or {})
-    diagnostics["rpr_fit_reader_layout"] = _keep_reader_layout(run, output_pdf_path, engine_info, runtime)
+    diagnostics["rpr_fit_reader_layout"] = _keep_reader_layout(
+        run,
+        output_pdf_path,
+        engine_info,
+        runtime,
+        source_pdf_path=source_pdf_path,
+        original_pdf_path=original_pdf_path,
+        restored_regions=[(int(kept_item["page"]) - 1, bboxes[kept_item["item_id"]]) for kept_item in kept],
+    )
     fit_payload = build_rpr_fit_fit_report_payload(
         report,
         render_path=f"rpr_fit_{mode}",

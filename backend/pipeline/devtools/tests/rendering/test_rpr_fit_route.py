@@ -613,3 +613,58 @@ def test_a_page_that_is_no_longer_laid_out_is_dropped_from_the_kept_layout(tmp_p
     manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
     assert [page["index"] for page in manifest["pages"]] == [0]
     assert sorted(path.name for path in (target / "pages").iterdir()) == ["00000.json.gz"]
+
+
+def _stripped_copy(source_pdf: Path, target: Path) -> Path:
+    """去字的渲染源：页数一样，原文的字没了（只留一条线），和流水线去文字层以后的底图一样。"""
+    doc = fitz.open()
+    with fitz.open(source_pdf) as source:
+        for page in source:
+            stripped = doc.new_page(width=page.rect.width, height=page.rect.height)
+            stripped.draw_line((20, 200), (280, 200))
+    doc.save(target)
+    doc.close()
+    return target
+
+
+def test_the_text_stripped_background_is_kept_for_the_laid_out_pages(tmp_path: Path, monkeypatch) -> None:
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path)
+    stripped = _stripped_copy(source_pdf, tmp_path / "stripped.pdf")
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _pages, diagnostics, calls = _dispatch(context, mode="typst", source_pdf_path=stripped, translated_pages=translated)
+    assert calls == []
+    target = _reader_layout(context)
+    manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["background"] == {"file": "background.pdf", "pages": [0, 1]}
+    assert diagnostics["rpr_fit_reader_layout"]["background_bytes"] > 0
+    with fitz.open(target / "background.pdf") as background:
+        assert background.page_count == 2
+        assert "source text" not in background[0].get_text(), "the background is the stripped render source"
+
+
+def test_a_formula_block_put_back_from_the_original_is_put_back_on_the_background_too(tmp_path: Path, monkeypatch) -> None:
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path, texts=("RAWTEX \\frac{a}{b} end", "第二页译文"))
+    translated[0][0]["bbox"] = [10, 30, 280, 80]
+    stripped = _stripped_copy(source_pdf, tmp_path / "stripped.pdf")
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _pages, diagnostics, calls = _dispatch(context, mode="typst", source_pdf_path=stripped, translated_pages=translated)
+    assert calls == []
+    assert [entry["item_id"] for entry in diagnostics["rpr_fit_formula_check"]["kept_origin"]] == ["p001-b001"]
+    with fitz.open(_reader_layout(context) / "background.pdf") as background:
+        assert "source text 0" in background[0].get_text(), "the original block is back on the background"
+        assert "source text 1" not in background[1].get_text()
+
+
+def test_no_background_is_kept_when_the_render_source_is_the_upload_itself(tmp_path: Path, monkeypatch) -> None:
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _dispatch(context, mode="typst", source_pdf_path=_stripped_copy(source_pdf, tmp_path / "stripped.pdf"), translated_pages=translated)
+    assert (_reader_layout(context) / "background.pdf").is_file()
+    # 扫描件：渲染源就是原件，阅读页直接用原文页；上一次留下的底图删掉
+    _dispatch(context, mode="typst", source_pdf_path=source_pdf, translated_pages=translated)
+    manifest = json.loads((_reader_layout(context) / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["background"] is None
+    assert not (_reader_layout(context) / "background.pdf").exists()
