@@ -31,7 +31,8 @@
   background-color: var(--reader-doc-dark-paper) !important;
 }
 
-:root[data-reader-doc="dark"] .reader-live-translation-overlay {
+:root[data-reader-doc="dark"] .reader-live-translation-overlay,
+:root[data-reader-doc="dark"] .reader-html-page {
   --reader-overlay-paper: var(--reader-doc-dark-paper);
   --reader-overlay-ink: var(--reader-doc-dark-ink);
 }

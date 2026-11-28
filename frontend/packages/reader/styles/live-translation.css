@@ -196,3 +196,47 @@
   font-weight: 620;
   pointer-events: none;
 }
+
+/* HTML 页（pdf/HtmlPageLayer.tsx，2026-11-28）：原文页上叠一层，每个有字的块用纸色盖住原字、再用 HTML 画字。
+ * 盖得实（实时译文那层是 96%，底下透一点原文）；刚打开时按阅读顺序一块块浮出来（沿用实时译文到达的那一下，每块晚 18ms，最多 0.6 秒）。 */
+.reader-html-page {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  /* 盖在 PDF 页上用页自己的颜色（白底深字），和实时译文那层一样；深色文档在 doc-theme.css 换。 */
+  --reader-overlay-paper: #fff;
+  --reader-overlay-ink: #171719;
+}
+
+.reader-html-block {
+  display: contents;
+}
+
+.reader-html-page .reader-live-translation-item {
+  background: var(--reader-overlay-paper);
+}
+
+.reader-html-page .reader-live-translation-item.is-changed,
+.reader-html-page .reader-live-translation-item.is-changed::after {
+  animation-delay: min(calc(var(--reader-html-order, 0) * 18ms), 600ms);
+}
+
+/* 右缘竖条「HTML 页」点开的小菜单：关 / 画译文 / 画原文。 */
+.reader-html-page-menu {
+  display: grid;
+  min-width: 120px;
+  padding: 4px;
+}
+
+.reader-html-page-choice {
+  justify-content: flex-start;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--ui-radius-sm, 6px);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.reader-html-page-choice[aria-checked="true"] {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  font-weight: 600;
+}
