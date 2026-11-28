@@ -85,7 +85,7 @@ type DataPort = { apiPrefix: string; fetchProtected: typeof fetch };
  * 接口给的地址是 /api/v1/… 这种相对的：先按宿主的后端地址补全（resolveResourceUrl），不然请求落到前端的静态服务器上
  * （2026-11-28 实测开发栈：前端 40001、后端 41000，清单 404）。
  */
-function readDataPort(): DataPort | null {
+export function readRenderLayoutPort(): DataPort | null {
   try {
     const fetchProtected = defaultReaderDataPort.fetchProtected;
     return {
@@ -106,7 +106,7 @@ export function useRenderLayout(jobId: string, enabled: boolean): RenderLayoutSt
   useEffect(() => setLayoutJobId(jobId), [jobId]);
   const followJob = useRef("");
   const devUrl = useRef(manifestUrlFromLocation()).current;
-  const port = useRef(readDataPort()).current;
+  const port = useRef(readRenderLayoutPort()).current;
 
   useEffect(() => {
     if (!devUrl && (!enabled || !layoutJobId || !port)) return undefined;

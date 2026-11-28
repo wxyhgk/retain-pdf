@@ -37,6 +37,7 @@ import { EditedTranslationOverlay } from "./EditedTranslationOverlay.js";
 import { inHoverToolsZone, useHoverPresentation } from "./hover-presentation.js";
 import { READER_INLINE_EDIT_CLASS, ReaderInlineBlockEditor } from "./ReaderInlineBlockEditor.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
+import { LayoutPageHost } from "./LayoutPageLayer.js";
 import { useReaderContext } from "../components/react-pdf/reader-context.js";
 import { highlightFindTerm } from "../shared/content/reader-find.js";
 import type { ReaderLiveTranslationLayoutPage as LiveTranslationLayoutPage } from "../contracts/live-translation.js";
@@ -108,6 +109,9 @@ function PdfPageSlotInner({
   const findTerm = readerContext?.findTerm || "";
   // 扩展的页面层看的栏：对比版本时左栏放的是另一份译文（"compare"），画笔按栏存笔迹要分开。
   const layerPane = pane === "translated" ? "translated" : readerContext?.compareVersion ? "compare" : "source";
+  // 译文栏用 HTML 画：这一页在版面里就盖上版面、不挂原文的文字层（不然选中、搜到的是底下的原文）。
+  const translatedLayout = pane === "translated" ? readerContext?.translatedLayout ?? null : null;
+  const layoutCovers = Boolean(translatedLayout?.source.pages.has(pageNumber));
   // 扩展标出来的几段（贡献表的 textMarks，例如书里的引用「图 2.1」）包成 <mark>（reader-text-marks.ts）；悬停、点了怎样由扩展自己接。
   const textMarks = readerContext?.textMarks;
   const customTextRenderer = useMemo(
@@ -273,7 +277,7 @@ function PdfPageSlotInner({
           pageNumber={pageNumber}
           width={width}
           devicePixelRatio={devicePixelRatio}
-          renderTextLayer={textLayer}
+          renderTextLayer={textLayer && !layoutCovers}
           customTextRenderer={customTextRenderer}
           renderAnnotationLayer={false}
           className={READER_PDF_PAGE_CLASS}
@@ -353,6 +357,19 @@ function PdfPageSlotInner({
             />
           ))}
         </div>
+      ) : null}
+      {active && translatedLayout && layoutCovers ? (
+        <LayoutPageHost
+          source={translatedLayout.source}
+          page={pageNumber}
+          width={width}
+          height={naturalHeight}
+          fontFamily={translatedLayout.fontFamily}
+          arrivedAt={0}
+          backgroundPdf={null}
+          findTerm={findTerm}
+          coverWhileLoading
+        />
       ) : null}
       {readerContext?.pageLayers?.map((layer) => (
         <Fragment key={layer.id}>

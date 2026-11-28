@@ -7,6 +7,7 @@
 import { type ReactElement } from "react";
 import { type ReaderMetadata, type ReaderRegion } from "../../shared/data/reader-regions.js";
 import { type RegionFraction, type RegionPdfDocument } from "../../pdf/RegionCanvas.js";
+import type { TranslatedLayout } from "../../hooks/reader-session/translated-layout.js";
 export type ZoomPane = "source" | "translated";
 export type ReaderZoomDocuments = Partial<Record<ZoomPane, RegionPdfDocument | null>>;
 /** 一块在某一栏里画哪一页的哪一块（比例）；这一栏没有位置或没有页面尺寸时为 null。 */
@@ -22,13 +23,15 @@ export declare function zoomUnionIn(regions: readonly ReaderRegion[], metadata: 
 export declare function zoomFitWidth(columnWidth: number, availableHeight: number, aspects: readonly number[]): number;
 /** 书里同一类的块（图和表算一类「图表」，公式一类，文字一类），按阅读顺序。← → 在里面走。 */
 export declare function zoomSiblings(regions: readonly ReaderRegion[], current: ReaderRegion): ReaderRegion[];
-export declare function ReaderZoomViewer({ itemId, regions, metadata, documents, panes, onNavigate, onClose, }: {
+export declare function ReaderZoomViewer({ itemId, regions, metadata, documents, panes, translatedLayout, onNavigate, onClose, }: {
     itemId: string;
     regions: readonly ReaderRegion[];
     metadata: ReaderMetadata | null;
     documents: ReaderZoomDocuments;
     /** 画哪几栏（对照时两栏，否则当前那一栏）。 */
     panes: readonly ZoomPane[];
+    /** 译文栏用 HTML 画时（没有译文 PDF）：译文那一块用原文页裁出来、再盖上同一块版面。 */
+    translatedLayout?: TranslatedLayout | null;
     onNavigate: (itemId: string) => void;
     onClose: () => void;
 }): ReactElement | null;

@@ -1,3 +1,4 @@
+import type { TranslatedLayout } from "./translated-layout.js";
 import type { ReaderSessionDataPort, ReaderOptionalArtifactErrors, LinkedDocumentRecord } from "../../contracts/session.js";
 import type { ReaderMetadata, ReaderRegion } from "../../shared/data/reader-regions.js";
 import type { ProtectedPdfFile } from "../../pdf/useProtectedPdfFile.js";
@@ -39,6 +40,8 @@ export type ReaderSessionState = {
   /** 预下载完成的 PDF 字节；展示前已就绪 */
   sourceFile: ProtectedPdfFile | null;
   translatedFile: ProtectedPdfFile | null;
+  /** 译文栏用 HTML 画（原文 PDF + 排版引擎的版面，hooks/reader-session/translated-layout.ts）；有它时没下载译文 PDF。 */
+  translatedLayout: TranslatedLayout | null;
   /** 下载完成、可以挂载 Document */
   assetsReady: boolean;
   boot: {

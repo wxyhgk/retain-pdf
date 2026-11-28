@@ -178,9 +178,11 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
   // 「对比版本」开着：左栏换成另一份译文（hooks/use-reader-version-compare）。
   const compareVersion = ctx?.compareVersion ?? null;
   const sourceUrl = compareVersion?.url ?? props.sourceUrl ?? ctx?.sourceUrl ?? "";
-  const translatedUrl = props.translatedUrl ?? ctx?.translatedUrl ?? "";
+  // 译文栏用 HTML 画（translatedLayout）：挂原文 PDF（左栏已经下好的那份），版面盖在上面（PdfPageSlot）。
+  const translatedLayout = ctx?.translatedLayout ?? null;
+  const translatedUrl = translatedLayout ? props.sourceUrl ?? ctx?.sourceUrl ?? "" : props.translatedUrl ?? ctx?.translatedUrl ?? "";
   const sourceFile = compareVersion ? null : props.sourceFile ?? ctx?.sourceFile ?? null;
-  const translatedFile = props.translatedFile ?? ctx?.translatedFile ?? null;
+  const translatedFile = translatedLayout ? props.sourceFile ?? ctx?.sourceFile ?? null : props.translatedFile ?? ctx?.translatedFile ?? null;
   const onMetrics = props.onMetrics ?? ctx?.onMetrics;
   const onNumPagesChange = props.onNumPagesChange ?? ctx?.onNumPagesChange;
   const onPdfOutline = ctx?.onPdfOutline;
@@ -297,6 +299,7 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
         {mountTranslated ? (
           <PdfDocumentPane
             pane="translated"
+            key={translatedLayout ? "translated-html" : "translated"}
             url={translatedUrl}
             preloadedFile={translatedFile}
             userZoom={userZoom}
@@ -307,8 +310,9 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
             onMetrics={onMetrics}
             emptyLabel="暂无译文 PDF"
             onNumPagesChange={onNumPagesChange}
-            onOutline={onPdfOutline}
-            onDocument={onPdfDocument}
+            // 译文栏挂的是原文 PDF 时，书签、放大查看不拿它当译文 PDF。
+            onOutline={translatedLayout ? undefined : onPdfOutline}
+            onDocument={translatedLayout ? undefined : onPdfDocument}
             activeRegion={activeRegion}
             regions={regions}
             readerMetadata={readerMetadata}

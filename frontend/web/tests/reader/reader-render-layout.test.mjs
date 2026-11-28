@@ -94,7 +94,7 @@ test("接到 HTML 页上：「画译文」有版面就照版面画，版面里�
   assert.match(ext, /if \(text === "translated" && layout\) \{\s*return \(\s*<LayoutPageHost/);
   assert.match(ext, /\/>\s*\);\s*\}\s*return \(\s*<HtmlPageLayer/);
   // 版面里没有的页什么都不画（看到的是原文页）。
-  assert.match(read("src/pdf/LayoutPageLayer.tsx"), /if \(!has \|\| !layoutPage\) return null;/);
+  assert.match(read("src/pdf/LayoutPageLayer.tsx"), /if \(!has\) return null;/);
   // 后端接口出来之前只有开发时地址上带 ?render_layout= 才读。
   assert.match(read("src/hooks/use-render-layout.ts"), /\.get\("render_layout"\)/);
 });
@@ -206,7 +206,7 @@ test("版面接进 HTML 页：开了「画译文」才要清单；字体要带�
   assert.ok(layer.indexOf("<RegionCanvas pdf={backgroundPdf}") < layer.indexOf("<LayoutPageLayer\n"), "底图要画在版面底下");
   assert.match(layer, /fontFamily=\{item\.font && fontByKey\?\.get\(item\.font\)/);
   assert.match(layer, /if \(!svg \|\| !loadMath\) return mathSvg\(tex\);/);
-  assert.match(read("styles/live-translation.css"), /:root\[data-reader-doc="dark"\] \.reader-layout-page \{\s*filter: var\(--reader-doc-dark-filter\);/, "深色文档时版面没跟着反色");
+  assert.match(read("styles/live-translation.css"), /:root\[data-reader-doc="dark"\] \.reader-layout-page,\s*:root\[data-reader-doc="dark"\] \.reader-layout-loading \{\s*filter: var\(--reader-doc-dark-filter\);/, "深色文档时版面没跟着反色");
 });
 
 test("接口地址补全、底图用书页同一份 pdf.js（2026-11-28 实测：相对地址落到前端静态服务器 404；另一份 pdf.js 模块路径解析不到，底图画不出）", () => {

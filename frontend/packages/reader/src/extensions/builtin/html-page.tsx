@@ -7,6 +7,7 @@
 // 动效（只在照版面画时有）：菜单里「逐行浮现」开关（11-28 先做的逐字太慢，改成逐行）；点公式分步展开一直有（LayoutPageLayer）。
 // 版面从正式接口来（2026-11-28 后端 #241 / #242）：开了「画译文」才去要清单；没有版面时菜单里说为什么，能补排就给「生成 HTML 排版」
 // （照清单给的请求原样发，原地重新渲染，不花钱），排好自动照版面画。底图（去掉原字的原文页）在版面底下画。
+// 译文栏本身也用 HTML 画（有完整版面时，hooks/reader-session/translated-layout.ts）：菜单里「译文栏用 PDF」退回译文 PDF（这次打开里有效）。
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { CodeXml } from "lucide-react";
 import { Button } from "@retainpdf/ui";
@@ -64,7 +65,7 @@ function HtmlPageExtension(): ReactElement | null {
     return () => controller.abort();
   }, [backgroundUrl]);
   const hasTranslation = !api.sourceOnly;
-  const { metadata, visibleMode, setWorkspace } = api;
+  const { metadata, visibleMode, setWorkspace, translatedPane } = api;
 
   const contribution = useMemo<ReaderContribution>(() => {
     const choose = (next: HtmlPageText | null) => {
@@ -122,6 +123,23 @@ function HtmlPageExtension(): ReactElement | null {
                 <p className="reader-html-page-menu-note">正在排版（不花钱），先按识别的框画，排好自动换上…</p>
               </>
             ) : null}
+            {translatedPane.canHtml ? (
+              <>
+                <span className="reader-html-page-menu-sep" aria-hidden />
+                <Button
+                  className="reader-html-page-choice"
+                  role="menuitemcheckbox"
+                  aria-checked={translatedPane.usePdf}
+                  title="译文栏现在用 HTML 画（原文 PDF 加排版引擎的版面，不下载译文 PDF）；勾上照旧用译文 PDF"
+                  onClick={() => {
+                    translatedPane.setUsePdf(!translatedPane.usePdf);
+                    done();
+                  }}
+                >
+                  译文栏用 PDF
+                </Button>
+              </>
+            ) : null}
             {layout ? (
               <>
                 <span className="reader-html-page-menu-sep" aria-hidden />
@@ -175,7 +193,7 @@ function HtmlPageExtension(): ReactElement | null {
         }
         : undefined,
     };
-  }, [text, arrivedAt, byPage, metadata, hasTranslation, visibleMode, setWorkspace, layout, charRise, unavailable, generating, generateNow, backgroundPdf]);
+  }, [text, arrivedAt, byPage, metadata, hasTranslation, visibleMode, setWorkspace, layout, charRise, unavailable, generating, generateNow, backgroundPdf, translatedPane]);
   useReaderContribution(contribution);
   return null;
 }

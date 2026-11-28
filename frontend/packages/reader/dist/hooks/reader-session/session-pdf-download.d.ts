@@ -38,7 +38,8 @@ export type JobPdfDownloadResult = {
 /** 先下完所有 PDF 再返回；任一下载抛错时直接抛给调用方处理。 */
 export declare function downloadJobPdfs(options: {
     sourceFinal: string;
-    translatedFinal: string;
+    /** 可以是个 Promise：译文 PDF 要不要下载等别的先定（译文栏用 HTML 画时是空串，hooks/reader-session/translated-layout.ts）。 */
+    translatedFinal: string | Promise<string>;
     fence: SessionLoadFence;
     setBoot: BootSetter;
 }): Promise<JobPdfDownloadResult>;

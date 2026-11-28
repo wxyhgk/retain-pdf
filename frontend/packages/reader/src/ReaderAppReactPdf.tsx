@@ -146,6 +146,13 @@ export function ReaderAppReactPdf() {
   const closePageMenu = useCallback(() => setPageMenu(null), []);
   // 这本书的几份译文、正在读哪一份（提问记读的是哪份；对比版本扩展列出来挑）。
   const translationVersions = useReaderTranslationVersions({ documentId: session.documentId, jobId: session.jobId });
+  // 译文栏用 HTML 画（原文 PDF + 排版引擎的版面，hooks/reader-session/translated-layout.ts）；用户可以在 HTML 页菜单里退回译文 PDF。
+  const [translatedUsePdf, setTranslatedUsePdf] = useState(false);
+  const translatedLayout = translatedUsePdf ? null : session.translatedLayout;
+  const translatedPane = useMemo(
+    () => ({ canHtml: Boolean(session.translatedLayout), usePdf: translatedUsePdf, setUsePdf: setTranslatedUsePdf }),
+    [session.translatedLayout, translatedUsePdf],
+  );
   // 贡献表（extensions/，app/use-reader-extension-host）：扩展读的阅读页接口、它们登记的右键菜单项 / 每页一层 / 文字层标记 /
   // 对照左栏 / 占着指针。
   const {
@@ -153,6 +160,7 @@ export function ReaderAppReactPdf() {
   } = useReaderExtensionHost(c, table, {
     translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments,
     editBlock: blockEdit.available && !blockEdit.blockedReason ? editBlock : null,
+    translatedPane,
     panelHost,
   });
   const pointerTaken = Boolean(pointerTakenId);
@@ -189,6 +197,7 @@ export function ReaderAppReactPdf() {
     editShowsSource: visiblePdfMode !== "compare",
     findTerm: finder === "search" ? findTerm : "",
     compareVersion,
+    translatedLayout,
     pointerTaken,
     sourceOnly: c.sourceOnly,
     sourceViewOnly,
@@ -221,6 +230,7 @@ export function ReaderAppReactPdf() {
     finder,
     findTerm,
     compareVersion,
+    translatedLayout,
     pointerTaken,
     c.sourceOnly,
     sourceViewOnly,
@@ -335,6 +345,7 @@ export function ReaderAppReactPdf() {
           <ReaderOverlays
             session={session}
             zoomDocuments={zoomDocuments}
+            translatedLayout={translatedLayout}
             zoomItem={zoomItem}
             setZoomItem={setZoomItem}
             closeZoom={closeZoom}

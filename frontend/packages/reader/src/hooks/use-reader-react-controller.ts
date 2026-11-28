@@ -187,6 +187,7 @@ export function useReaderReactController(): ReaderReactController {
       translatedUrl: session.translatedUrl,
       sourceFile: session.sourceFile,
       translatedFile: session.translatedFile,
+      translatedHtml: Boolean(session.translatedLayout),
     },
     { userZoom, shellWidth, identityKey: readerContentKey },
   );

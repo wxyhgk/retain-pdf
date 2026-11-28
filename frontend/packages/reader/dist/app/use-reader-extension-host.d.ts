@@ -15,7 +15,7 @@ export type ReaderContributionTable = ReturnType<typeof useReaderContributionTab
 /** 右边只停一个：扩展的浮层刚贴到右边时，关掉停着的面板（Markdown）；面板刚打开时，扩展从 activePanel 看到、自己挪开
  * （提问窗变回浮动，见 use-reader-ask 的 dockTaken）。两头都只看「刚变」的那一下，后来的那个留下。 */
 export declare function useRightDockSlot(reserveRight: number, assistantPanel: unknown, closeAssistant: () => void): void;
-export declare function useReaderExtensionHost(c: ReaderReactController, table: ReaderContributionTable, { translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments, editBlock, panelHost, }: {
+export declare function useReaderExtensionHost(c: ReaderReactController, table: ReaderContributionTable, { translationVersions, bookmarks, regionHover, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace, jumpToBlockIn, zoomDocuments, editBlock, translatedPane, panelHost, }: {
     translationVersions: ReaderTranslationVersions;
     bookmarks: readonly PdfOutlineNode[];
     regionHover: RegionHoverStore;
@@ -26,6 +26,7 @@ export declare function useReaderExtensionHost(c: ReaderReactController, table: 
     jumpToBlockIn: ReaderApi["jumpToBlock"];
     zoomDocuments: ReaderApi["pdfDocuments"];
     editBlock: ReaderApi["editBlock"];
+    translatedPane: ReaderApi["translatedPane"];
     panelHost?: HTMLElement | null;
 }): {
     readerApi: ReaderApi;

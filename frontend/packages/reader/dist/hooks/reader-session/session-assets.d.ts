@@ -2,11 +2,14 @@ import type { ProtectedPdfFile } from "../../pdf/useProtectedPdfFile.js";
 import { type ReaderMetadata, type ReaderRegion } from "../../shared/data/reader-regions.js";
 import type { CommittedDocumentSource, ReaderMode, ReaderOptionalArtifactErrors, ReaderSessionState } from "./types.js";
 import type { SessionIdentityEvent } from "./job-identity.js";
+import { type TranslatedLayout } from "./translated-layout.js";
 export type SessionAssets = {
     sourceUrl: string;
     translatedUrl: string;
     sourceFile: ProtectedPdfFile | null;
     translatedFile: ProtectedPdfFile | null;
+    /** 译文栏用 HTML 画（原文 PDF + 排版引擎的版面）：版面完整时有，这时没下载译文 PDF（translatedFile 是 null，translatedUrl 照旧给下载用）。 */
+    translatedLayout: TranslatedLayout | null;
     assetsReady: boolean;
     title: string;
     regions: ReaderRegion[];
