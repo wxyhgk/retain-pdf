@@ -129,7 +129,47 @@ test("摆在书页区左缘、竖着居中；平时只有短横线，悬停 / �
   assert.match(entry, /@import "\.\/toc-minimap\.css" layer\(pages\);/);
   const app = readFileSync(new URL("../../../packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url), "utf8");
   const stage = app.slice(app.indexOf('<div className="reader-stage">'), app.indexOf("<ReaderCompareGrid"));
-  assert.match(stage, /<ReaderTocMinimap bookmarks=\{bookmarks\} onJumpPage=\{c\.goToPage\} onJumpBlock=\{jumpToBlock\} \/>/, "在书页区里");
+  assert.match(stage, /<ReaderTocMinimap bookmarks=\{bookmarks\} onJumpPage=\{c\.goToPage\} onJumpBlock=\{jumpToBlock\} pinned=\{tocPinned\} onUnpin=\{unpinToc\} \/>/, "在书页区里");
   const finder = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderFinder.tsx", import.meta.url), "utf8");
   assert.match(finder, /const TAB_TITLES: Record<ReaderFinderTab, string> = \{ search: "搜索", bookmarks: "书签", issues: "待改" \};/, "左栏没有目录页签");
+});
+
+test("顶栏「目录」按钮钉住目录卡（2026-11-28）：钉住时卡片一直开着、按 Esc 收起；书里没有目录时按钮灰掉", async () => {
+  const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div></body></html>" });
+  const React = await import("react");
+  const { act } = React;
+  const { createRoot } = await import("react-dom/client");
+  const { ReaderTocMinimap, ReaderTocToggle } = await import("../../../packages/reader/src/components/react-pdf/ReaderTocMinimap.tsx");
+  const { ReaderProvider } = await import("../../../packages/reader/src/components/react-pdf/reader-context.tsx");
+  const root = createRoot(dom.window.document.getElementById("root"));
+  const doc = dom.window.document;
+  let unpinned = 0;
+  let toggled = 0;
+  const render = async (pinned, available = true) => {
+    await act(async () => {
+      root.render(React.createElement(ReaderProvider, { value: { regions: [] }, hud: { currentPage: 95 } },
+        React.createElement(ReaderTocToggle, { pinned, available, onToggle: () => { toggled += 1; } }),
+        React.createElement(ReaderTocMinimap, { bookmarks: BIG, onJumpPage() {}, onJumpBlock() {}, pinned, onUnpin: () => { unpinned += 1; } })));
+    });
+  };
+  await render(false);
+  const nav = doc.querySelector(".reader-toc-minimap");
+  assert.equal(nav.dataset.pinned, undefined);
+  const button = doc.querySelector(".reader-toc-toggle");
+  assert.equal(button.getAttribute("aria-label"), "目录");
+  assert.equal(button.getAttribute("aria-pressed"), "false");
+  await act(async () => { button.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); });
+  assert.equal(toggled, 1);
+  await render(true);
+  assert.equal(nav.dataset.pinned, "true");
+  assert.equal(doc.querySelector(".reader-toc-toggle").getAttribute("aria-pressed"), "true");
+  assert.ok(nav.querySelector('[aria-label="收起「第 4 章」"]'), "一钉住就展开当前章");
+  await act(async () => { nav.querySelector(".reader-toc-entry").dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
+  assert.equal(unpinned, 1, "钉住时按 Esc 收起");
+  await render(false, false);
+  assert.equal(doc.querySelector(".reader-toc-toggle").disabled, true, "没有目录时灰掉");
+  root.unmount();
+  dom.window.close();
+  const css = readFileSync(new URL("../../../packages/reader/styles/toc-minimap.css", import.meta.url), "utf8");
+  assert.match(css, /\.reader-toc-minimap\[data-pinned="true"\] \.reader-toc-card,[^{]*\{[^}]*opacity:\s*1/s, "钉住时卡片开着");
 });

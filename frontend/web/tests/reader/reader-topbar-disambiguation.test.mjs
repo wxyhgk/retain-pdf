@@ -45,8 +45,9 @@ test("顶栏是实占位的左-中-右三段网格（2026-11-28）：左右同�
   assert.match(block, /height:\s*var\(--reader-topbar-h, 54px\);/);
   assert.doesNotMatch(block, /position:\s*fixed/, "顶栏又浮回书页上了");
   assert.doesNotMatch(CHROME.replace(/\/\*[\s\S]*?\*\//g, ""), /--reader-tray-width/, "又回到给托盘留位");
-  assert.match(APP, /start=\{<>[\s\S]*?<ReaderCloseHome[\s\S]*?<ReaderFinderToggles[\s\S]*?reader-workspace-title/, "左段：返回、左栏开关、书名");
-  assert.match(APP, /end=\{<>[\s\S]*?<ReaderBarTools place="top"[\s\S]*?<ReaderDownloadActions \/>/, "右段：面板和看法、下载");
+  assert.match(APP, /start=\{<>[\s\S]*?<ReaderCloseHome[\s\S]*?<ReaderTocToggle[\s\S]*?<ReaderFinderToggles[\s\S]*?reader-workspace-title/, "左段：返回、目录、搜索、书名");
+  // 右段空着（2026-11-28：提问、Markdown、下载挪去书页区右缘的竖条），留着让页签在正中。
+  assert.doesNotMatch(APP, /\bend=\{/, "顶栏右段又放东西了");
 });
 
 test("「下载」两个字一直收着（只给读屏），图标留着；不用 display:none 藏整块", () => {

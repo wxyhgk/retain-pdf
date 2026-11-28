@@ -76,7 +76,7 @@ export type ReaderPageLayerProps = {
     pane: "source" | "translated" | "compare";
     active: boolean;
 };
-/** 顶栏右边或底栏右边的一颗按钮（ReaderBarTools，2026-11-28 起三行壳层：顶栏、底栏都是全宽实占位的栏）。
+/** 书页区右缘竖条或底栏右边的一颗按钮（ReaderBarTools，2026-11-28 起三行壳层：顶栏、底栏都是全宽实占位的栏）。
  * 给了 popup 的点了弹出它（done 收起），没给的点了调 onClick；给了 dropdown 的旁边多一个 ▾，点 ▾ 弹出它（画笔的笔型、颜色、撤销）。 */
 export type ReaderToolbarItem = {
     key: string;
@@ -86,9 +86,9 @@ export type ReaderToolbarItem = {
     Icon: LucideIcon;
     /** 画在 Icon 的位置上的东西（画笔：当前笔色的小圆点，2026-11-28）；不给画 Icon。 */
     mark?: ReactNode;
-    /** 放哪：顶栏右边（打开面板的：提问、Markdown，默认）、底栏右边（在书页上动手的：画笔、截图），
+    /** 放哪：书页区右缘的竖条（打开面板的：提问、Markdown，默认；2026-11-28 以前在顶栏右边）、底栏右边（在书页上动手的：画笔、截图），
      *  或顶栏中间「对照」后面的 ▾（换对照的看法：对比版本，2026-11-28 从顶栏右边挪过来）。 */
-    place?: "top" | "bottom" | "compare";
+    place?: "side" | "bottom" | "compare";
     /** 按下的样子（开着、正在用）。 */
     pressed?: boolean;
     onClick?: () => void;

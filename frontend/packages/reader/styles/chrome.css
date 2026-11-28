@@ -5,7 +5,8 @@
  * 取代（ReaderWorkspaceTabs.tsx），且无任何 JS/TSX 写入者，删除防复活。 */
 
 /* 顶栏（2026-11-28 起三行壳层的最上面一行）：全宽、实占位，左-中-右三段网格——
- * 左：返回、左栏开关（目录 / 搜索 / 书签 / 待处理）、书名；中：原文 / 对照 / 译文（和实时译文那一组）；右：提问、Markdown、对比版本、下载。
+ * 左：返回、目录（钉住左缘的目录卡）、搜索（左栏开关）、书名；中：原文 / 对照 / 译文（对比版本的 ▾、实时译文那一组）；
+ * 右：空着（提问、Markdown、下载 11-28 挪去书页区右缘的竖条），留着这一段让页签正好在中间。
  * 左右两段同宽（1fr），页签正好在视口中间；以前顶栏 fixed 盖在书页上，两头的按钮各自 fixed 浮在上面，靠 --reader-tray-width 给页签留位。 */
 .reader-workspace-bar {
   position: relative;
@@ -52,10 +53,11 @@
   }
 }
 
-/* 顶栏按钮一套（2026-11-28 收口回黑白纸墨）：返回、左栏开关、提问 / Markdown / 对比、下载都是这一个样子——
+/* 顶栏按钮一套（2026-11-28 收口回黑白纸墨）：返回、目录、左栏开关都是这一个样子（提问 / Markdown、下载 11-28 挪去书页区右缘的竖条，side-rail.css）——
  * 高 32px、同一种圆角、透明底，悬停浅墨底、按下（面板开着、菜单开着）深一点的浅墨底；没有描边、阴影、毛玻璃。
  * 左栏开关、顶栏工具的类各在 finder.css、toolball.css，尺寸、圆角、颜色都照这里。 */
 .reader-close-home-btn,
+.reader-toc-toggle,
 .reader-panel-toggle,
 .reader-download-trigger {
   display: inline-flex;
@@ -80,6 +82,7 @@
 }
 
 .reader-close-home-btn:hover,
+.reader-toc-toggle:hover:not(:disabled),
 .reader-panel-toggle:hover,
 .reader-download-trigger:hover,
 .reader-download-trigger:focus-visible {
@@ -88,6 +91,7 @@
   outline: none;
 }
 
+.reader-toc-toggle[aria-pressed="true"],
 .reader-panel-toggle[aria-pressed="true"],
 .reader-panel-toggle[aria-pressed="true"]:hover,
 .reader-download-actions[open] .reader-download-trigger {
@@ -95,6 +99,7 @@
   color: var(--ink);
 }
 
+.reader-toc-toggle:disabled,
 .reader-panel-toggle:disabled {
   cursor: default;
   opacity: 0.45;

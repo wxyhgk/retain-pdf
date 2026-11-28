@@ -128,12 +128,13 @@ test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待改个�
   assert.equal(declaration(["hud.css"], ".reader-bottombar .reader-react-hud-btn", "height"), "26px");
 });
 
-test("顶栏、底栏只用图标（2026-11-28）：一个尺寸一种线宽（bar-icon.ts）、名字在 aria-label 里；页签 原文 / 对照 / 译文 是图标；右边提问 / Markdown 胶囊 + 下载图标；对比版本在「对照」后面；底栏 书签、收藏、深色、缩放、画笔（笔色小点）、截图、帮助；目录不切书页左边", async () => {
+test("顶栏、底栏只用图标（2026-11-28）：一个尺寸一种线宽（bar-icon.ts）、名字在 aria-label 里；页签 原文 / 对照 / 译文 是图标；目录按钮；提问 / Markdown / 下载在右缘竖条；对比版本在「对照」后面；底栏 书签、收藏、深色、缩放、画笔（笔色小点）、截图、帮助；目录不切书页左边", async () => {
   const { BAR_ICON } = await import("../../../packages/reader/src/components/react-pdf/bar-icon.ts");
   assert.deepEqual(BAR_ICON, { size: 16, strokeWidth: 1.75 });
   const files = {
     tabs: "src/components/react-pdf/ReaderWorkspaceTabs.tsx",
     home: "src/components/react-pdf/ReaderCloseHome.tsx",
+    toc: "src/components/react-pdf/ReaderTocMinimap.tsx",
     finder: "src/components/react-pdf/ReaderFinder.tsx",
     panels: "src/components/react-pdf/ReaderAssistantDock.tsx",
     tools: "src/components/react-pdf/ReaderBarTools.tsx",
@@ -163,8 +164,23 @@ test("顶栏、底栏只用图标（2026-11-28）：一个尺寸一种线宽（b
   assert.match(read(files.help), /<CircleHelp \{\.\.\.BAR_ICON\} aria-hidden \/>/);
   assert.match(read(files.zoom), /<Contrast \{\.\.\.BAR_ICON\} aria-hidden \/>/);
   assert.match(read(files.ink), /<PenLine \{\.\.\.BAR_ICON\} \/>\s*<span className="reader-ink-dot"/, "画笔是钢笔图标加笔色小点");
-  assert.match(declaration(["toolball.css"], ".reader-bar-tools.is-top", "border-radius"), /--reader-tab-radius/, "右边胶囊和页签胶囊一个圆角");
-  assert.equal(declaration(["toolball.css"], ".reader-bar-tools.is-top", "background"), declaration(["chrome.css"], ".reader-workspace-tabs", "background"), "和页签胶囊一个底色");
+  assert.match(declaration(["side-rail.css"], ".reader-side-rail", "border-radius"), /--reader-tab-radius/, "右缘竖条和页签胶囊一个圆角");
   assert.doesNotMatch(read(files.download), /ChevronDown|reader-download-trigger-caret/, "下载只是一个图标");
   assert.doesNotMatch(css("toc-minimap.css"), /reader-react-scroll-shell/, "目录不再切书页左边");
+});
+
+test("书页区右缘的竖条（2026-11-28 用户：顶栏右边的 AI 回答 / Markdown、下载挪到右侧，悬浮）：浮在书页区右边竖着居中，不占栏；面板按钮在上、一道细线、下载在下，下载往左弹", () => {
+  const app = read("src/ReaderAppReactPdf.tsx");
+  const stage = app.slice(app.indexOf('<div className="reader-stage">'), app.indexOf("<ReaderCompareGrid"));
+  assert.match(stage, /<ReaderSideRail active=\{assistantPanel\} \/>/, "在书页区里");
+  const rail = read("src/components/react-pdf/ReaderSideRail.tsx");
+  assert.match(rail, /<ReaderBarTools place="side" active=\{active\} \/>\s*<span className="reader-side-rail-sep" aria-hidden \/>\s*<ReaderDownloadActions \/>/);
+  const block = css("side-rail.css").slice(css("side-rail.css").indexOf(".reader-side-rail {"));
+  const rule = block.slice(0, block.indexOf("}"));
+  assert.match(rule, /position:\s*absolute;[\s\S]*top:\s*50%;[\s\S]*right:\s*14px;/, "浮在右缘、竖着居中");
+  assert.match(rule, /flex-direction:\s*column/);
+  assert.equal(declaration(["side-rail.css"], ".reader-side-rail .reader-bar-tools .reader-bar-tool", "width"), "30px");
+  assert.match(css("side-rail.css"), /\.reader-side-rail \.reader-download-menu,[^{]*\{[^}]*right:\s*calc\(100% \+ 10px\)/, "下载菜单往左弹");
+  assert.match(read("styles/entry.css"), /@import "\.\/side-rail\.css" layer\(pages\);/);
+  assert.doesNotMatch(css("side-rail.css"), /#[0-9a-f]{3,6}\b|--accent|--warn|--blue/i, "不用彩色");
 });

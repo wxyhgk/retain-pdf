@@ -94,9 +94,12 @@ test("**只有一个**启动器：顶栏右段的面板按钮（2026-11-28 三�
   assert.doesNotMatch(all, /\.reader-toolball\b|\.reader-hud-tools\b/, "悬浮小球、底栏浮条工具又回来了：两个启动器");
   assert.doesNotMatch(all, /\.reader-assistant-rail\b/, "右侧竖条又回来了");
   const tools = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderBarTools.tsx", import.meta.url), "utf8");
-  assert.match(tools, /place === "top" \? readerDockTabs\(\[extension\]\) : \[\]/, "面板按钮只在顶栏那一组");
+  assert.match(tools, /place === "side" \? readerDockTabs\(\[extension\]\) : \[\]/, "面板按钮只在右缘竖条那一组");
   assert.match(tools, /<ReaderPanelToggles\b/, "面板按钮不在工具里");
-  assert.match(APP, /<ReaderBarTools place="top" active=\{assistantPanel\} \/>/, "顶栏没挂面板和看法那一组");
+  // 2026-11-28 起面板按钮在书页区右缘的竖条（ReaderSideRail，用户要的；类名不是以前删掉的 .reader-assistant-rail，那是两个启动器之一）。
+  const rail = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderSideRail.tsx", import.meta.url), "utf8");
+  assert.match(rail, /<ReaderBarTools place="side" active=\{active\} \/>/, "右缘竖条没挂面板那一组");
+  assert.match(APP, /<ReaderSideRail active=\{assistantPanel\} \/>/, "阅读页没挂右缘竖条");
   assert.match(APP, /toolsSlot=\{<ReaderBarTools place="bottom" \/>\}/, "底栏没挂书页工具");
   assert.equal((APP.match(/<ReaderPanelToggles\b/g) || []).length, 0, "阅读页另外又摆了一份面板按钮：两个启动器");
   assert.match(all, /\.reader-assistant-dock-tabs\b/, "启动器的 tab 条样式没了");
@@ -193,11 +196,11 @@ test("启动器的两种形态都真的渲染出可点的东西", () => {
 
 test("三路下载仍然可达，而且不在启动器里 —— 它不该和面板抢位置", () => {
   assert.deepEqual([...READER_DOWNLOAD_ORDER], ["source", "sideBySide", "translated"]);
-  // 顶栏那一组常驻：面板开着也够得到（原来在圆钮里，圆钮一被藏就下不了）。
-  assert.match(APP, /<ReaderDownloadActions\s*\/>/, "阅读页没挂顶栏下载组");
-  // 2026-11-28 起下载在顶栏右段（end），「返回主页」在左段（start），顶栏是实占位的一行。
-  const end = APP.slice(APP.indexOf("end={<>"), APP.indexOf("</>}", APP.indexOf("end={<>")));
-  assert.match(end, /<ReaderDownloadActions/, "下载不在顶栏右段");
+  // 常驻：面板开着也够得到（原来在圆钮里，圆钮一被藏就下不了）。
+  // 2026-11-28 起下载在书页区右缘的竖条最下面（ReaderSideRail，以前在顶栏右段），「返回主页」在顶栏左段（start）。
+  const rail = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderSideRail.tsx", import.meta.url), "utf8");
+  assert.match(rail, /<ReaderDownloadActions\s*\/>/, "右缘竖条没有下载");
+  assert.match(APP, /<ReaderSideRail\b/, "阅读页没挂右缘竖条");
   const start = APP.slice(APP.indexOf("start={<>"), APP.indexOf("</>}", APP.indexOf("start={<>")));
   assert.match(start, /<ReaderCloseHome/, "顶栏左段没有「返回主页」");
   // 下载不能被 dock 的开合影响 —— 圆钮当年就死在这一点上。

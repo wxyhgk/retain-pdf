@@ -12,7 +12,6 @@ import {
   ReaderReactBoot,
   ReaderCompareGrid,
   ReaderZoomHud,
-  ReaderDownloadActions,
 } from "./components/react-pdf/index.js";
 import type { ReaderAssistantPanel, ReaderWorkspaceMode } from "./components/react-pdf/index.js";
 import { useReaderAssistantPanel } from "./hooks/use-reader-assistant-panel.js";
@@ -26,7 +25,10 @@ import {
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderBarTools } from "./components/react-pdf/ReaderBarTools.js";
 import { ReaderFinderToggles } from "./components/react-pdf/ReaderFinder.js";
-import { ReaderTocMinimap } from "./components/react-pdf/ReaderTocMinimap.js";
+import { ReaderTocMinimap, ReaderTocToggle } from "./components/react-pdf/ReaderTocMinimap.js";
+import { ReaderSideRail } from "./components/react-pdf/ReaderSideRail.js";
+import { readerOutline } from "./shared/content/reader-find.js";
+import { readerToc } from "./shared/content/reader-toc.js";
 import { useReaderIssueNav } from "./hooks/use-reader-issues.js";
 import { ReaderPageMenu, pageMenuFromContextMenu, type ReaderPageMenuState } from "./components/react-pdf/ReaderPageMenu.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
@@ -134,6 +136,10 @@ export function ReaderAppReactPdf() {
   const jumpToBlockIn = useCallback((itemId: string, pane?: "source" | "translated") => c.jumpToAnchor({ block_id: itemId }, pane), [c.jumpToAnchor]);
   // PDF 自带的书签、各栏读好的 PDF 和放大查看（app/use-reader-pdf-assets）。
   const { bookmarks, onPdfOutline, onPdfDocument, zoomItem, setZoomItem, zoomBlock, closeZoom, zoomDocuments } = useReaderPdfAssets(c);
+  // 目录：顶栏左边的「目录」按钮钉住 / 收起书页区左缘的目录卡（没钉住时悬停照样出）。没有目录时按钮灰掉。
+  const hasToc = useMemo(() => readerToc(bookmarks, readerOutline(session.regions)).length > 0, [bookmarks, session.regions]);
+  const [tocPinned, setTocPinned] = useState(false);
+  const unpinToc = useCallback(() => setTocPinned(false), []);
   // 改译文（app/use-reader-block-editing）。
   const { blockEdit, editBlock, revisedBlocks } = useReaderBlockEditing(c, visiblePdfMode, regionHover);
   // 右键书页的菜单：开在哪、第几页（菜单项和下面那几块是扩展登记的）。
@@ -284,19 +290,18 @@ export function ReaderAppReactPdf() {
             } : null}
             start={<>
               <ReaderCloseHome onBeforeClose={session.prepareClose} />
+              <ReaderTocToggle pinned={tocPinned && hasToc} available={hasToc} onToggle={() => setTocPinned((pinned) => !pinned)} />
               <ReaderFinderToggles open={finder} onToggle={finderState.toggleSidebar} issueCount={issueNav.issues.length} />
               {session.title ? <span className="reader-workspace-title" title={session.title}>{session.title}</span> : null}
-            </>}
-            end={<>
-              <ReaderBarTools place="top" active={assistantPanel} />
-              <ReaderDownloadActions />
             </>}
           />
           <div className="reader-workspace">
             <ReaderFinderArea state={finderState} bookmarkScope={c.viewStateKey} issues={issueNav} />
             <div className="reader-stage">
-              {/* 目录：书页区左缘一排短横线，移上去出目录卡（照原型 reader-prototype.html）。 */}
-              <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} />
+              {/* 目录：书页区左缘一排短横线，移上去出目录卡（照原型 reader-prototype.html）；顶栏「目录」按钮钉住它。 */}
+              <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} pinned={tocPinned} onUnpin={unpinToc} />
+              {/* 右缘竖条：AI 回答、Markdown、下载（2026-11-28 从顶栏右边挪过来，悬浮不占栏）。 */}
+              <ReaderSideRail active={assistantPanel} />
               <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
               <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
             </div>

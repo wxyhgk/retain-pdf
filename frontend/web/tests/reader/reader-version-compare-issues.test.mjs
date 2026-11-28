@@ -78,7 +78,7 @@ test("N / Shift+N：接着上一次跳到的走，到头绕回；还没跳过从
   assert.equal(stepIssue([], -1, 1, false), -1);
 });
 
-test("顶栏、底栏的工具（2026-11-28 三行壳层）：顶栏右边只有面板（Markdown），「对比版本」是「对照」后面的 ▾，点了往下弹版本列表、点外面收起，只有一份译文时没有；底栏只有放在底栏的（画笔 ▾，只有图标），▾ 弹出它的选项", async () => {
+test("顶栏、底栏的工具（2026-11-28 三行壳层）：右缘竖条只有面板（Markdown），「对比版本」是「对照」后面的 ▾，点了往下弹版本列表、点外面收起，只有一份译文时没有；底栏只有放在底栏的（画笔 ▾，只有图标），▾ 弹出它的选项", async () => {
   const { makeDom } = await import("../helpers/dom.mjs");
   const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div><div id='page'></div></body></html>" });
   const React = await import("react");
@@ -98,7 +98,7 @@ test("顶栏、底栏的工具（2026-11-28 三行壳层）：顶栏右边只有
     store.set("compare", "对比版本", { toolbarItems: item ? [item] : [] });
     store.set("ink", "画笔", { toolbarItems: [{ key: "ink", label: "画笔", Icon: PenLine, mark: React.createElement("span", { className: "dot" }), place: "bottom", onClick: () => { pen += 1; }, dropdown: () => React.createElement("div", { className: "pen-options" }, "笔和颜色") }] });
     return React.createElement(ReaderExtensionsProvider, { api, store },
-      React.createElement("header", { id: "top" }, React.createElement(ReaderBarTools, { place: "top", active: null }), React.createElement("div", { id: "tabs" }, React.createElement(ReaderBarTools, { place: "compare" }))),
+      React.createElement("header", { id: "top" }, React.createElement(ReaderBarTools, { place: "side", active: null }), React.createElement("div", { id: "tabs" }, React.createElement(ReaderBarTools, { place: "compare" }))),
       React.createElement("footer", { id: "bottom" }, React.createElement(ReaderBarTools, { place: "bottom" })));
   };
   const compare = (available) => ({
@@ -113,10 +113,10 @@ test("顶栏、底栏的工具（2026-11-28 三行壳层）：顶栏右边只有
   await act(async () => { root.render(bars(true)); });
   const top = doc.getElementById("top");
   const bottom = doc.getElementById("bottom");
-  assert.ok(top.querySelector(".reader-bar-tools.is-top .reader-panel-toggle"), "Markdown 在顶栏");
+  assert.ok(top.querySelector(".reader-bar-tools.is-side .reader-panel-toggle"), "Markdown 在右缘竖条");
   assert.equal(top.querySelector('[data-bar-tool="ink"]'), null, "放底栏的不出在顶栏");
   assert.equal(bottom.querySelector(".reader-panel-toggle"), null, "面板按钮不出在底栏");
-  assert.equal(top.querySelector('.reader-bar-tools.is-top [data-bar-tool="compare"]'), null, "顶栏右边不再有对比版本");
+  assert.equal(top.querySelector('.reader-bar-tools.is-side [data-bar-tool="compare"]'), null, "右缘竖条没有对比版本");
   const tabs = doc.getElementById("tabs");
   await click(tabs.querySelector('.reader-bar-tools.is-compare [data-bar-tool="compare"]'));
   assert.ok(tabs.querySelector(".reader-bar-tools-popup .reader-version-compare-menu"), "版本列表从「对照」后面弹出来");

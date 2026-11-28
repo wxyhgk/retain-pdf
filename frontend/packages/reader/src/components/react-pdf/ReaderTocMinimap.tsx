@@ -1,25 +1,47 @@
 // 书页区左缘的目录（2026-11-28 照原型 reader-prototype.html「适配百页大书的左侧 Minimap 目录」）：
 // 平时只是一排极淡的短横线（章长、节短，当前节墨色、当前章深灰）；鼠标移上去（或键盘 Tab 到）换成目录卡，
 // 当前章展开、别的章收着（▸ / ▾），页码只在悬停和当前那一行出；条目多（> 15）时卡片顶上有过滤框，光标在框里时卡片不收。
+// 顶栏左边的「目录」按钮（ReaderTocToggle）把卡片钉住：鼠标移开也不收，点一条跳过去也不收，再点一下按钮或在卡片里按 Esc 收起。
 // 以前目录是左栏的一个页签（11-27），要先点开左栏再切页签，还占着左边 300px。
 // 数据（章 + 节、眼下在哪、画哪几根）在 shared/content/reader-toc.ts。
-import { useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import { ChevronDown, ChevronRight, Search, X } from "lucide-react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { ChevronDown, ChevronRight, ListTree, Search, X } from "lucide-react";
 import { Button, Input } from "@retainpdf/ui";
 
 import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
 import { readerOutline } from "../../shared/content/reader-find.js";
 import { filterToc, readerToc, tocBars, tocCurrent, tocSize, TOC_FILTER_MIN, type ReaderTocNode } from "../../shared/content/reader-toc.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
+import { BAR_ICON } from "./bar-icon.js";
 
 const NO_REGIONS: never[] = [];
 
-export function ReaderTocMinimap({ bookmarks, onJumpPage, onJumpBlock }: {
+/** 顶栏左边的「目录」按钮：钉住 / 收起左缘的目录卡。书里没有目录（没书签、也没认出标题）时灰掉。 */
+export function ReaderTocToggle({ pinned, available, onToggle }: { pinned: boolean; available: boolean; onToggle: () => void }): ReactElement {
+  return (
+    <Button
+      className="reader-toc-toggle"
+      aria-label="目录"
+      aria-pressed={pinned}
+      disabled={!available}
+      title={available ? (pinned ? "收起目录" : "展开目录（钉住，移开鼠标也不收）") : "这本书没有目录"}
+      onClick={onToggle}
+    >
+      <ListTree {...BAR_ICON} aria-hidden />
+    </Button>
+  );
+}
+
+export function ReaderTocMinimap({ bookmarks, onJumpPage, onJumpBlock, pinned = false, onUnpin }: {
   /** PDF 自带的书签（有就按它列）。 */
   bookmarks: readonly PdfOutlineNode[];
   onJumpPage: (page: number) => void;
   /** 按标题来的目录跳到那一块。 */
   onJumpBlock: (itemId: string) => void;
+  /** 顶栏「目录」按钮钉住了：卡片一直开着。 */
+  pinned?: boolean;
+  /** 钉住时在卡片里按 Esc。 */
+  onUnpin?: () => void;
 }): ReactElement | null {
   const regions = useReaderContext()?.regions ?? NO_REGIONS;
   const currentPage = useReaderHudContext()?.currentPage ?? 1;
@@ -37,6 +59,11 @@ export function ReaderTocMinimap({ bookmarks, onJumpPage, onJumpBlock }: {
     if (current.chapterId && !expanded.has(current.chapterId)) setExpanded((set) => new Set(set).add(current.chapterId!));
     scrollToCurrent.current = true;
   };
+  // 一钉住就和悬停一样：展开当前章、滚到当前节。
+  useEffect(() => {
+    if (pinned) open();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在钉住的那一下
+  }, [pinned]);
   useLayoutEffect(() => {
     if (!scrollToCurrent.current) return;
     scrollToCurrent.current = false;
@@ -74,10 +101,14 @@ export function ReaderTocMinimap({ bookmarks, onJumpPage, onJumpBlock }: {
     <nav
       className="reader-toc-minimap"
       aria-label="目录"
-      onPointerEnter={open}
+      data-pinned={pinned ? "true" : undefined}
+      onPointerEnter={pinned ? undefined : open}
+      onKeyDown={(event) => {
+        if (pinned && event.key === "Escape") onUnpin?.();
+      }}
       // 只在焦点从外面进来时算「打开」（在卡片里 Tab 来 Tab 去不再滚回当前节）。
       onFocus={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) open();
+        if (!pinned && !event.currentTarget.contains(event.relatedTarget as Node | null)) open();
       }}
     >
       <div className="reader-toc-bars" tabIndex={0} aria-label={`目录，${total} 条（移上去或按 Tab 展开）`}>
@@ -99,7 +130,10 @@ export function ReaderTocMinimap({ bookmarks, onJumpPage, onJumpBlock }: {
                 event.stopPropagation();
                 if (event.key === "Escape") {
                   if (query) setQuery("");
-                  else event.currentTarget.blur();
+                  else {
+                    event.currentTarget.blur();
+                    if (pinned) onUnpin?.();
+                  }
                 }
               }}
             />

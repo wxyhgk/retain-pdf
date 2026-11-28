@@ -75,7 +75,8 @@
   max-height: min(480px, 72vh);
 }
 
-/* 鼠标在上面，或键盘焦点在里面（:focus-visible：鼠标点一条跳过去不算，移开就收；光标在过滤框里算，打字时不收）。 */
+/* 顶栏「目录」钉住了（data-pinned）、鼠标在上面，或键盘焦点在里面（:focus-visible：鼠标点一条跳过去不算，移开就收；光标在过滤框里算，打字时不收）。 */
+.reader-toc-minimap[data-pinned="true"] .reader-toc-card,
 .reader-toc-minimap:hover .reader-toc-card,
 .reader-toc-minimap:has(:focus-visible) .reader-toc-card {
   opacity: 1;
@@ -83,6 +84,7 @@
   transform: translateY(-50%) scale(1);
 }
 
+.reader-toc-minimap[data-pinned="true"] .reader-toc-bars,
 .reader-toc-minimap:hover .reader-toc-bars,
 .reader-toc-minimap:has(:focus-visible) .reader-toc-bars {
   opacity: 0;
