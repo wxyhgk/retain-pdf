@@ -1,7 +1,7 @@
 """目录 agent 的模型调用：走翻译共用的 ``request_chat_content``（同一套重试、协议、Rust 执行器开关）。
 
 - 每次请求开一个稳定的单元范围（``toc_translate`` + 消息的哈希），Rust 执行器模式下也能发；
-- 请求标签 ``toc-translate``，用量台账记成 ``toc_translation`` 阶段；
+- 请求标签 ``toc-translate``（认上下文的请求 ``toc-translate-context``，带目录页截图），用量台账都记成 ``toc_translation`` 阶段；
 - 同一次运行里这组 Key 被上游 401/402/403 拒过，不再发。
 """
 from __future__ import annotations
@@ -18,6 +18,9 @@ from retainpdf_translation.llm.shared.upstream_resilience import raise_if_creden
 from retainpdf_toc_agent.contract import ChatResult
 
 REQUEST_LABEL = "toc-translate"
+# 认上下文（R2）的请求：标签前缀还是 toc-translate，用量台账照旧记在目录翻译下
+CONTEXT_REQUEST_LABEL = "toc-translate-context"
+_LABELS = {"toc_context": CONTEXT_REQUEST_LABEL}
 REQUEST_TIMEOUT_SECS = 180
 REQUEST_MAX_ATTEMPTS = 2
 
@@ -54,7 +57,7 @@ def toc_chat_fn(
                 temperature=0.0,
                 response_format=response_format,
                 timeout=REQUEST_TIMEOUT_SECS,
-                request_label=REQUEST_LABEL,
+                request_label=_LABELS.get(purpose, REQUEST_LABEL),
                 max_attempts=REQUEST_MAX_ATTEMPTS,
                 protocol=protocol or None,
                 thinking=thinking or None,
@@ -70,4 +73,4 @@ def _usage(diagnostics: TranslationRunDiagnostics) -> dict[str, Any]:
     return dict(diagnostics.build_summary().get("token_usage") or {})
 
 
-__all__ = ["REQUEST_LABEL", "toc_chat_fn"]
+__all__ = ["CONTEXT_REQUEST_LABEL", "REQUEST_LABEL", "toc_chat_fn"]

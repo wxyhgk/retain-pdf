@@ -34,6 +34,18 @@ def split_number(text: str) -> tuple[str, str]:
     return (match.group(1), match.group(2)) if match else ("", str(text or ""))
 
 
+def title_variants(text: str) -> set[str]:
+    """一个标题的比较键：整句，去掉章号、「Chapter 1:」「Appendix A」前缀的（认上下文时比目录条目和正文标题用）。"""
+    flat = " ".join(str(text or "").split())
+    keys = {title_key(flat)}
+    for pattern in (_NUMBER_PREFIX, _CHAPTER_PREFIX, _APPENDIX_PREFIX):
+        match = pattern.match(flat)
+        if match:
+            keys.add(title_key(match.group(2)))
+    keys.discard("")
+    return keys
+
+
 def heading_translation(text: str, translations_by_key: dict[str, str]) -> str | None:
     """正文标题的译文：整句对上用整句；去掉章号对上，就是「章号 译名」。"""
     whole = translations_by_key.get(title_key(text))
@@ -52,4 +64,4 @@ def heading_translation(text: str, translations_by_key: dict[str, str]) -> str |
     return None
 
 
-__all__ = ["heading_translation", "split_number", "title_key"]
+__all__ = ["heading_translation", "split_number", "title_key", "title_variants"]

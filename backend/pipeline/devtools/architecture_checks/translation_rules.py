@@ -49,6 +49,8 @@ TRANSLATION_SHELL_ALLOWED_FILES = {
     # 目录 agent（2026-11-25）：translation.toc=agent 时把 backend/toc-agent 交给翻译请求（和普通翻译同步跑）。
     # 翻译包不认识目录 agent（它依赖翻译包），只能在外壳这一层接
     "toc_stage.py",
+    # 目录页认上下文（R2，2026-11-28）：翻译开始前用流水线的拆条目规则出草稿、交目录 agent 核对、写回归一化文档
+    "toc_context_stage.py",
 }
 TRANSLATION_WORKFLOW_ALLOWED_DIRS = {
     "__pycache__",

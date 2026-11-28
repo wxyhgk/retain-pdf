@@ -28,6 +28,11 @@ OCR 把一页目录给成一整块、每行的框是估的，翻译后排成左�
 不翻、留原图）。条目的文字和框照旧（默认的重排不变）。标题自带的句号（「Summary. . . .」）不当点线。
 
 文字层读不出条目（扫描件、页码倒退、条目太少、大半条目没有页码）时什么都不改，照旧是一整块。方案见 docs/ops/planning/toc-agent/。
+
+认上下文（R2，2026-11-28，docs/ops/planning/toc-agent/20261128-R2：认上下文的agent.md）：``page_draft`` 给出同一套规则的草稿
+（每段字的角色 number / label / title / leader / page / header / other、归哪一条；规则不认的块也给候选），目录 agent 核对拿不准的页；
+``apply_toc_context`` 按它改过的草稿重建条目块（字段和这里拆出来的一样，另加 ``toc_entry_keep_original`` 等）。拆出的条目另记
+原目录块的框 ``toc_split_parent_bbox``，重读时用。
 """
 from __future__ import annotations
 
@@ -116,6 +121,8 @@ class _Span:
     size: float
     chars: tuple = ()  # 每个字的（字，左，右）；和 text 一一对应
     baseline: float = 0.0  # 基线的 y（文字层的 origin）；没有时用框的底边
+    font: str = ""  # 字体名（认上下文时给模型看粗斜体、数字体种类，2026-11-28）
+    flags: int = 0  # 文字层的字体标志（2 斜体、16 粗体）
 
 
 @dataclass
@@ -169,6 +176,8 @@ class TocEntry:
     label_box: list[float] | None = None
     title_only: str = ""  # 去掉章号、标签的标题
     title_lines: list[dict] = field(default_factory=list)  # 标题每一行只框标题的字：{bbox, baseline, size, text}
+    # 认上下文（R2，2026-11-28）用：这一条的每段字和角色（视觉行号，角色，片段）；角色 number / label / title / page
+    fragments: list[tuple[int, str, "_Span"]] = field(default_factory=list)
 
 
 @dataclass
@@ -205,7 +214,8 @@ def _spans_in(pdf_page, bbox: list[float]) -> list[_Span]:
                 cx, cy = (sx0 + sx1) / 2, (sy0 + sy1) / 2
                 if x0 - 2 <= cx <= x1 + 2 and y0 - 2 <= cy <= y1 + 2:
                     origin = span.get("origin") or (sx0, sy1)
-                    spans.append(_Span(text, sx0, sy0, sx1, sy1, float(span.get("size") or 0), chars, float(origin[1])))
+                    spans.append(_Span(text, sx0, sy0, sx1, sy1, float(span.get("size") or 0), chars, float(origin[1]),
+                                       str(span.get("font") or ""), int(span.get("flags") or 0)))
     return spans
 
 
@@ -248,7 +258,7 @@ def _merge_words(spans: list[_Span]) -> list[_Span]:
             last = merged[-1]
             chars = last.chars + span.chars if len(last.chars) == len(last.text) and len(span.chars) == len(span.text) else ()
             merged[-1] = _Span(last.text + span.text, last.x0, min(last.y0, span.y0), span.x1, max(last.y1, span.y1),
-                               max(last.size, span.size), chars, last.baseline)
+                               max(last.size, span.size), chars, last.baseline, last.font, last.flags)
         else:
             merged.append(span)
     return merged
@@ -267,7 +277,7 @@ def _slice(span: _Span, start: int, end: int) -> _Span | None:
         chars = ()
         width, count = span.x1 - span.x0, max(1, len(span.text))
         x0, x1 = span.x0 + width * start / count, span.x0 + width * end / count
-    return _Span(text, x0, span.y0, x1, span.y1, span.size, tuple(chars), span.baseline)
+    return _Span(text, x0, span.y0, x1, span.y1, span.size, tuple(chars), span.baseline, span.font, span.flags)
 
 
 def _is_header(line: _Line, page_height: float) -> bool:
@@ -367,7 +377,7 @@ def _split_label(words: list[_Span], *, title_follows: bool = False) -> tuple[st
             if number is None:
                 continue
             label_span = _Span(joined[:end].strip(), first.x0, min(first.y0, number.y0), number.x1,
-                               max(first.y1, number.y1), first.size, (), first.baseline)
+                               max(first.y1, number.y1), first.size, (), first.baseline, first.font, first.flags)
             rest = ([tail] if tail is not None else []) + words[2:]
         else:
             label_span = _slice(words[0], 0, end)
@@ -465,9 +475,10 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
     result = TocPageSplit()
     pending: list[tuple[str, _Span | None, list[_Span]]] = []  # 还没碰到页码的多行标题：（章号，章号片段，标题片段）
     pending_x0: list[float] = []
+    pending_lines: list[int] = []  # 每一项来自第几个视觉行（认上下文时用）
     page_column_x0s: list[float] = []
 
-    def flush(page_label: str, page_span: _Span | None = None) -> None:
+    def flush(page_label: str, page_span: _Span | None = None, page_line: int = -1) -> None:
         if not pending:
             return
         number = next((item[0] for item in pending if item[0]), "")
@@ -475,6 +486,7 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
         if not title_spans:
             pending.clear()
             pending_x0.clear()
+            pending_lines.clear()
             return
         title = _clean(" ".join(" ".join(span.text for span in spans_) for _n, _s, spans_ in pending))
         bbox = [min(s.x0 for s in title_spans), min(s.y0 for s in title_spans),
@@ -485,12 +497,20 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
                       for _n, _s, spans_ in pending if spans_]
         number_span = next((item[1] for item in pending if item[1] is not None), None)
         label, label_span, title_lines = "", None, []
-        for index, (_n, _s, spans_) in enumerate(pending):
+        fragments: list[tuple[int, str, _Span]] = []
+        for index, ((_n, number_span_, spans_), line_index) in enumerate(zip(pending, pending_lines)):
+            if number_span_ is not None:
+                fragments.append((line_index, "number", number_span_))
             if spans_ and not title_lines and not label:
                 label, label_span, spans_ = _split_label(
                     spans_, title_follows=any(later for _n2, _s2, later in pending[index + 1:]))
+                if label_span is not None:
+                    fragments.append((line_index, "label", label_span))
             if spans_:
                 title_lines.append(_title_line(spans_))
+                fragments.extend((line_index, "title", span) for span in spans_)
+        if page_span is not None:
+            fragments.append((page_line if page_line >= 0 else pending_lines[-1], "page", page_span))
         title_only = _clean(" ".join(line["text"] for line in title_lines))
         result.entries.append(TocEntry(title=title, number=number, page_label=page_label, level=0, bbox=bbox,
                                        font_size=sizes[len(sizes) // 2], line_count=len(pending), number_x0=number_x0,
@@ -499,11 +519,12 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
                                        page_font_size=page_span.size if page_span else None,
                                        number_box=_box(number_span) if number_span is not None else None,
                                        label=label, label_box=_box(label_span) if label_span is not None else None,
-                                       title_only=title_only, title_lines=title_lines))
+                                       title_only=title_only, title_lines=title_lines, fragments=fragments))
         pending.clear()
         pending_x0.clear()
+        pending_lines.clear()
 
-    for line in parsed:
+    for line_index, line in enumerate(parsed):
         if line.header:
             result.header_lines.append(line.header)
             continue
@@ -515,7 +536,7 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
                 # 只有页码（或点线加页码）的一行：上面折行的标题到头了
                 if line.page_x0 is not None:
                     page_column_x0s.append(line.page_x0)
-                flush(page_label, line.page_span)
+                flush(page_label, line.page_span, line_index)
             continue
         x0 = line.x0 if line.x0 is not None else (words[0].x0 if words else 0.0)
         # 往左缩出去的行：没章号的条目（论文集里标题上面一行作者）到这里结束；带章号的条目折行常从章号列
@@ -525,10 +546,11 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
             flush("")  # 新的一条开始，上面没等到页码的标题单独成一条
         pending.append((line.number, line.number_span, words))
         pending_x0.append(x0)
+        pending_lines.append(line_index)
         if page_label:
             if line.page_x0 is not None:
                 page_column_x0s.append(line.page_x0)
-            flush(page_label, line.page_span)
+            flush(page_label, line.page_span, line_index)
         elif line.has_leader:
             flush("")  # 有点线没页码：这一条也到头了
     flush("")
@@ -537,34 +559,137 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
 
 
 def _acceptable(result: TocPageSplit) -> bool:
+    return not _reject_reason(result)
+
+
+def _reject_reason(result: TocPageSplit) -> str:
+    """规则为什么不认这一块（认上下文时交模型核对的原因）；认了回空串。"""
     entries = result.entries
     if len(entries) < MIN_ENTRIES:
-        return False
+        return "few_entries"
     # 三分之二以上的条目没有页码的不是目录（项目符号列表、正文段落被认成目录块）；
     # 论文集的目录每篇下面一行作者、不带页码，占一半上下，照样认
     labeled = sum(1 for entry in entries if entry.page_label)
     if labeled < 2 or labeled * 3 < len(entries):
-        return False
-    return _monotonic(entries)
+        return "few_page_labels"
+    return "" if _monotonic(entries) else "pages_not_monotonic"
 
 
 def split_toc_page(pdf_page, block_bbox: list[float]) -> TocPageSplit | None:
     """从文字层读出这一块目录的条目。读不出（没文字层、条目太少、页码倒退）回 None。"""
+    parsed_block = _parse_block(pdf_page, block_bbox)
+    if parsed_block is None:
+        return None
+    _lines, _parsed, result = parsed_block
+    if not _acceptable(result):
+        return None
+    _assign_levels(result.entries)
+    return result
+
+
+def _parse_block(pdf_page, block_bbox: list[float]) -> tuple[list[_Line], list[_ParsedLine], TocPageSplit] | None:
     spans = _spans_in(pdf_page, block_bbox)
     if not spans:
         return None
     block_x0, block_x1 = float(block_bbox[0]), float(block_bbox[2])
     page_column_from = block_x0 + (block_x1 - block_x0) * PAGE_COLUMN_FRACTION
-    page_height = float(pdf_page.rect.height)
-    parsed = [_parse_line(line, page_column_from, page_height) for line in _visual_lines(spans)]
+    lines = _visual_lines(spans)
+    parsed = [_parse_line(line, page_column_from, float(pdf_page.rect.height)) for line in lines]
     use_weak = _use_weak_pages(parsed)
     result = _group(parsed, use_weak=use_weak)
     if use_weak and not _acceptable(result):
         result = _group(parsed, use_weak=False)
-    if not _acceptable(result):
+    return lines, parsed, result
+
+
+# 认上下文（R2，2026-11-28）：片段的角色。number 章号、label 标签列、title 标题的字、leader 点线、page 页码、header 页眉、
+# author 作者行、other 别的（落单的页码、规则没归到哪一条的字）。规则只给前六种和 other，author 由模型改
+FRAGMENT_ROLES = ("number", "label", "title", "leader", "page", "header", "author", "other")
+
+
+def _fragment(span: _Span, role: str, line_number: int) -> dict:
+    return {"line": line_number, "text": _clean(span.text), "bbox": _box(span), "size": round(span.size, 2),
+            "baseline": round(span.baseline or span.y1, 2), "font": span.font,
+            "bold": bool(span.flags & 16) or "bold" in span.font.lower(),
+            "italic": bool(span.flags & 2) or "italic" in span.font.lower() or "oblique" in span.font.lower(),
+            "role": role}
+
+
+def _is_leader_text(text: str) -> bool:
+    """点线（中间夹着空格、零星短横也算）；一个「…」也算。"""
+    compact = "".join(str(text or "").split())
+    return bool(compact) and set(compact) <= set(".·•…‥⋯∙_-–—") and (len(compact) >= 2 or compact in "…‥⋯")
+
+
+def _leftovers(line: _Line, taken: list[_Span]) -> list[_Span]:
+    """一行里没归到哪一段的字（点线、落单的字）：按字的位置找出来，连着的拼成一段。"""
+    def covered(x0: float, x1: float) -> bool:
+        center = (x0 + x1) / 2
+        return any(span.x0 - 0.5 <= center <= span.x1 + 0.5 for span in taken)
+
+    found: list[_Span] = []
+    for word in _merge_words(line.spans):
+        if len(word.chars) != len(word.text):
+            if not any(min(word.x1, span.x1) - max(word.x0, span.x0) > 0 for span in taken):
+                found.append(word)
+            continue
+        start = None
+        for index, (char, x0, x1) in enumerate((*word.chars, ("", 0.0, 0.0))):
+            free = index < len(word.chars) and (not char.strip() or not covered(x0, x1))
+            if free and start is None and char.strip():
+                start = index
+            elif not free and start is not None:
+                piece = _slice(word, start, index)
+                if piece is not None:
+                    found.append(piece)
+                start = None
+    return found
+
+
+def page_draft(pdf_page, block_bbox: list[float]) -> dict | None:
+    """规则草稿：这一块目录每个视觉行的片段（字、位置、字号、粗斜体、规则给的角色）和条目归属，规则认不认这一块。
+    给目录 agent 认上下文（backend/toc-agent 的 ``context``）：规则拿不准时交模型核对，规则不认的块也照样给出候选。
+    没有文字层回 None。"""
+    parsed_block = _parse_block(pdf_page, block_bbox)
+    if parsed_block is None:
         return None
-    _assign_levels(result.entries)
-    return result
+    lines, parsed, result = parsed_block
+    reason = _reject_reason(result)
+    if result.entries:
+        _assign_levels(result.entries)
+    per_line: dict[int, list[tuple[str, _Span, int]]] = {}
+    for entry_index, entry in enumerate(result.entries):
+        for line_index, role, span in entry.fragments:
+            per_line.setdefault(line_index, []).append((role, span, entry_index))
+    fragments: list[dict] = []
+    entry_fragments: list[list[str]] = [[] for _ in result.entries]
+    for line_index, line in enumerate(lines):
+        taken = per_line.get(line_index, [])
+        if parsed[line_index].header:
+            pieces = [("header", span, -1) for span in _merge_words(line.spans)]
+        else:
+            loose = _leftovers(line, [span for _role, span, _entry in taken])
+            pieces = taken + [("leader" if _is_leader_text(span.text) else "other", span, -1) for span in loose]
+        for role, span, entry_index in sorted(pieces, key=lambda item: item[1].x0):
+            fragment = _fragment(span, role, line_index + 1)
+            fragment["id"] = f"f{len(fragments) + 1}"
+            fragments.append(fragment)
+            if entry_index >= 0:
+                entry_fragments[entry_index].append(fragment["id"])
+    # 点线挨着哪一条的标题就归哪一条（同一行有这一条的字）
+    by_id = {fragment["id"]: fragment for fragment in fragments}
+    line_entry = {}
+    for entry_index, ids in enumerate(entry_fragments):
+        for fragment_id in ids:
+            line_entry.setdefault(by_id[fragment_id]["line"], entry_index)
+    for fragment in fragments:
+        if fragment["role"] == "leader" and fragment["line"] in line_entry:
+            entry_fragments[line_entry[fragment["line"]]].append(fragment["id"])
+    order = {fragment["id"]: index for index, fragment in enumerate(fragments)}
+    entries = [{"fragments": sorted(ids, key=order.get), "level": entry.level} for entry, ids in zip(result.entries, entry_fragments)]
+    return {"region": [round(float(value), 2) for value in block_bbox],
+            "page_size": [round(float(pdf_page.rect.width), 2), round(float(pdf_page.rect.height), 2)],
+            "accepted": not reason, "reason": reason, "fragments": fragments, "entries": entries}
 
 
 def _line_box(line: _Line) -> list[float]:
@@ -745,6 +870,8 @@ def _entry_block(parent: dict, entry: TocEntry, block_id: str, right_edge: float
         toc_entry_label=entry.label,
         toc_entry_label_bbox=entry.label_box,
         toc_split_parent_block_id=str(parent.get("block_id") or ""),
+        # 拆之前那一块目录的框：认上下文（R2）照这个框重读文字层，和拆条目时读到的一样
+        toc_split_parent_bbox=[round(float(value), 2) for value in parent.get("bbox") or []] or None,
         structure_role=ENTRY_STRUCTURE_ROLE,
         layout_role="toc",
         semantic_role="unknown",
@@ -857,6 +984,205 @@ def split_toc_blocks_with_text_layer(document: dict, pdf) -> int:
     return split
 
 
+def _group_region(blocks: list[dict]) -> list[float] | None:
+    """已经拆开的一组条目的原目录块框：条目里记着就用它（2026-11-28 起），以前拆的用条目和页码框合起来的框。"""
+    for block in blocks:
+        bbox = (block.get("metadata") or {}).get("toc_split_parent_bbox")
+        if isinstance(bbox, list) and len(bbox) == 4:
+            return [float(value) for value in bbox]
+    boxes = [[float(v) for v in block.get("bbox") or []] for block in blocks]
+    boxes = [box for box in boxes if len(box) == 4]
+    if not boxes:
+        return None
+    return [min(b[0] for b in boxes) - 2, min(b[1] for b in boxes) - 2, max(b[2] for b in boxes) + 2, max(b[3] for b in boxes) + 2]
+
+
+def context_drafts(document: dict, pdf) -> tuple[list[dict], list[int]]:
+    """每一块目录的规则草稿（认上下文用，``page_draft``）：已经拆成条目的按原目录块重读，规则不认、还是一整块的也给出候选。
+    回（草稿列表，读不出字的页：没有文字层的扫描件）。草稿带 ``page_index``、``parent_block_id``。"""
+    drafts: list[dict] = []
+    no_text: list[int] = []
+    for page_index, page in enumerate(document.get("pages") or []):
+        if page_index >= len(pdf):
+            break
+        groups: dict[str, list[dict]] = {}
+        whole: list[dict] = []
+        for block in page.get("blocks") or []:
+            role = str(block.get("structure_role") or "")
+            if role in SPLIT_STRUCTURE_ROLES:
+                parent_id = str((block.get("metadata") or {}).get("toc_split_parent_block_id") or "")
+                groups.setdefault(parent_id, []).append(block)
+            elif _is_toc_block(block):
+                whole.append(block)
+        targets = [(parent_id, _group_region(blocks), True) for parent_id, blocks in groups.items()]
+        targets += [(str(block.get("block_id") or ""), [float(v) for v in block.get("bbox") or [0, 0, 0, 0]], False)
+                    for block in whole]
+        for parent_id, region, split in targets:
+            if region is None:
+                continue
+            draft = page_draft(pdf[page_index], region)
+            if draft is None:
+                no_text.append(page_index)
+                continue
+            if split and not draft["accepted"]:
+                continue  # 重读的和拆的时候对不上（以前拆的、框是估的）：不动它
+            draft.update(page_index=page_index, parent_block_id=parent_id)
+            drafts.append(draft)
+    return drafts, sorted(set(no_text))
+
+
+def _span_of(fragment: dict) -> _Span:
+    x0, y0, x1, y1 = (float(value) for value in fragment["bbox"])
+    return _Span(str(fragment.get("text") or ""), x0, y0, x1, y1, float(fragment.get("size") or 0.0), (),
+                 float(fragment.get("baseline") or y1), str(fragment.get("font") or ""), 0)
+
+
+def _entry_from_draft(entry: dict, fragments: dict[str, dict]) -> TocEntry | None:
+    """认上下文改过的一条 → 条目（和拆条目时一样的字段）。标题的字按行分；章号、标签、页码各取第一段。"""
+    parts = [fragments[fragment_id] for fragment_id in entry.get("fragments") or [] if fragment_id in fragments]
+    titles = [part for part in parts if part.get("role") == "title"]
+    if not titles:
+        return None
+    first = {role: next((part for part in parts if part.get("role") == role), None) for role in ("number", "label", "page")}
+    number, label, page = first["number"], first["label"], first["page"]
+    by_line: dict[int, list[_Span]] = {}
+    for part in titles:
+        by_line.setdefault(int(part.get("line") or 0), []).append(_span_of(part))
+    title_lines = [_title_line(spans) for _line, spans in sorted(by_line.items())]
+    named = ([label] if label is not None else []) + titles
+    line_boxes: dict[int, list[float]] = {}
+    for part in named:
+        span = _span_of(part)
+        box = line_boxes.setdefault(int(part.get("line") or 0), [span.x0, span.y0, span.x1, span.y1])
+        box[:] = [min(box[0], span.x0), min(box[1], span.y0), max(box[2], span.x1), max(box[3], span.y1)]
+    spans = [_span_of(part) for part in named]
+    title_only = _clean(" ".join(line["text"] for line in title_lines))
+    label_text = _clean(str(label.get("text") or "")) if label is not None else ""
+    sizes = sorted(span.size for span in spans)
+    lines = {int(part.get("line") or 0) for part in parts if part.get("role") in ("number", "label", "title")}
+    return TocEntry(
+        title=_clean(f"{label_text} {title_only}"),
+        number=_clean(str(number.get("text") or "")) if number is not None else "",
+        page_label=_clean(str(page.get("text") or "")) if page is not None else "",
+        level=int(entry.get("level") or 1),
+        bbox=[min(s.x0 for s in spans), min(s.y0 for s in spans), max(s.x1 for s in spans), max(s.y1 for s in spans)],
+        font_size=sizes[len(sizes) // 2],
+        line_count=max(1, len(lines)),
+        number_x0=float(number["bbox"][0]) if number is not None else None,
+        line_boxes=[box for _line, box in sorted(line_boxes.items())],
+        page_box=[float(v) for v in page["bbox"]] if page is not None else None,
+        page_font_size=float(page.get("size") or 0.0) if page is not None else None,
+        number_box=[round(float(v), 2) for v in number["bbox"]] if number is not None else None,
+        label=label_text,
+        label_box=[round(float(v), 2) for v in label["bbox"]] if label is not None else None,
+        title_only=title_only,
+        title_lines=title_lines,
+    )
+
+
+# 认上下文写回（2026-11-28）：不翻的条目、整页保留原文的页，policy 改成不翻（翻译不发请求，排版不擦不画，原字留着）
+CONTEXT_KEEP_TRANSLATE_REASON = "toc_context_keep"
+
+
+def _keep_policy(block: dict) -> None:
+    policy = dict(block.get("policy") or {})
+    policy.update(translate=False, translate_reason=CONTEXT_KEEP_TRANSLATE_REASON)
+    block["policy"] = policy
+
+
+def _context_metadata(block: dict, *, source: str, keep: str, continues: bool, text_layer: str,
+                      authors: list[dict] | None = None) -> None:
+    metadata = block.setdefault("metadata", {})
+    metadata.update(
+        toc_entry_context_source=source,
+        toc_entry_keep_original=bool(keep),
+        toc_entry_keep_reason=keep,
+        toc_entry_continues_prev_page=bool(continues),
+        toc_entry_text_layer=text_layer,
+        toc_entry_author_lines=list(authors or []),
+    )
+    if keep:
+        _keep_policy(block)
+
+
+def apply_toc_context(document: dict, pages: list[dict]) -> int:
+    """把认上下文的结果写回文档，回改了几块目录。``pages`` 是目录 agent 每页的结果记录（``PageOutcome.to_record``）：
+
+    - ``effect = rebuild``：按模型改过的草稿重建这一块的条目和页码小块（规则不认的整块也按它拆开），整页重编块号；
+    - ``effect = keep_page``：这一块的条目整页保留原文（不翻、不擦不画，页码小块也不重画）；规则不认的整块不动；
+    - 其余不动。"""
+    changed = 0
+    touched: set[int] = set()
+    page_list = document.get("pages") or []
+    for record in pages:
+        effect = str(record.get("effect") or "none")
+        draft = record.get("draft") or {}
+        if effect not in ("rebuild", "keep_page"):
+            continue
+        page_index = int(draft.get("page_index", -1))
+        parent_id = str(draft.get("parent_block_id") or "")
+        if not 0 <= page_index < len(page_list):
+            continue
+        blocks = page_list[page_index].get("blocks") or []
+        group = [index for index, block in enumerate(blocks)
+                 if (str(block.get("structure_role") or "") in SPLIT_STRUCTURE_ROLES
+                     and str((block.get("metadata") or {}).get("toc_split_parent_block_id") or "") == parent_id)
+                 or (_is_toc_block(block) and str(block.get("block_id") or "") == parent_id)]
+        if not group:
+            continue
+        split = str(blocks[group[0]].get("structure_role") or "") in SPLIT_STRUCTURE_ROLES
+        text_layer = str(draft.get("text_layer") or "visible")
+        status = str(record.get("status") or "rules")
+        if effect == "keep_page":
+            if not split:
+                continue
+            for index in group:
+                if blocks[index].get("structure_role") == ENTRY_STRUCTURE_ROLE:
+                    _context_metadata(blocks[index], source=status, keep=status, continues=False, text_layer=text_layer)
+                else:
+                    _keep_policy(blocks[index])
+            changed += 1
+            continue
+        fragments = {str(fragment.get("id")): fragment for fragment in draft.get("fragments") or []}
+        template = next((blocks[index] for index in group if blocks[index].get("structure_role") != PAGE_LABEL_STRUCTURE_ROLE),
+                        blocks[group[0]])
+        parent = copy.deepcopy(template)
+        parent["block_id"] = parent_id
+        parent["bbox"] = [float(v) for v in draft.get("region") or template.get("bbox") or [0, 0, 0, 0]]
+        parent["metadata"] = {key: value for key, value in (template.get("metadata") or {}).items()
+                              if not key.startswith(("toc_entry_", "toc_page_label", "toc_split_", "fixed_translation"))}
+        built = [(entry, _entry_from_draft(entry, fragments)) for entry in draft.get("entries") or []]
+        built = [(entry, toc_entry) for entry, toc_entry in built if toc_entry is not None]
+        if not built:
+            continue
+        page_x0s = [toc_entry.page_box[0] for _entry, toc_entry in built if toc_entry.page_box]
+        right_edge = (min(page_x0s) - TITLE_RIGHT_GAP) if page_x0s else float(parent["bbox"][2])
+        rebuilt: list[dict] = []
+        for entry, toc_entry in built:
+            block = _entry_block(parent, toc_entry, parent_id, right_edge)
+            authors = [_title_line([_span_of(fragments[f])]) for f in entry.get("fragments") or []
+                       if f in fragments and fragments[f].get("role") == "author"]
+            _context_metadata(block, source=status, keep=str(entry.get("keep") or ""),
+                              continues=bool(entry.get("continues_prev_page")), text_layer=text_layer, authors=authors)
+            rebuilt.append(block)
+            label_block = _page_label_block(parent, toc_entry, parent_id)
+            if label_block is not None:
+                if entry.get("keep"):
+                    _keep_policy(label_block)
+                rebuilt.append(label_block)
+        members = set(group)
+        kept = [block for index, block in enumerate(blocks) if index not in members]
+        first = group[0]
+        page_list[page_index]["blocks"] = kept[:first] + rebuilt + kept[first:]
+        touched.add(page_index)
+        changed += 1
+    for page_index in sorted(touched):
+        blocks = _drop_crowded_page_labels(page_list[page_index]["blocks"])
+        page_list[page_index]["blocks"] = blocks
+        _renumber_page_blocks(document, page_index, blocks)
+    return changed
+
+
 def _overlap_area(a: list[float], b: list[float]) -> float:
     width = min(a[2], b[2]) - max(a[0], b[0])
     height = min(a[3], b[3]) - max(a[1], b[1])
@@ -930,4 +1256,5 @@ def _is_toc_block(block: dict) -> bool:
     )
 
 
-__all__ = ["ENTRY_STRUCTURE_ROLE", "PAGE_LABEL_FIXED_TRANSLATION_SOURCE", "PAGE_LABEL_STRUCTURE_ROLE", "TocEntry", "TocPageSplit", "split_toc_blocks_with_text_layer", "split_toc_page"]
+__all__ = ["ENTRY_STRUCTURE_ROLE", "FRAGMENT_ROLES", "PAGE_LABEL_FIXED_TRANSLATION_SOURCE", "PAGE_LABEL_STRUCTURE_ROLE", "TocEntry",
+           "TocPageSplit", "apply_toc_context", "context_drafts", "page_draft", "split_toc_blocks_with_text_layer", "split_toc_page"]
