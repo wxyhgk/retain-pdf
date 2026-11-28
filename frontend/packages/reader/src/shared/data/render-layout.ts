@@ -29,7 +29,25 @@ export type RenderLayoutBlock = {
   lines: RenderLayoutLine[];
 };
 
-export type RenderLayoutPage = { index: number; width: number; height: number; covers: RenderLayoutCover[]; blocks: RenderLayoutBlock[] };
+/** 一个实心框（盖原字、表格线）：rect 是 [x0, y0, x1, y1]（pt）。 */
+export type RenderLayoutPaint = { rect: [number, number, number, number]; fill: [number, number, number] };
+
+/** 一张表（后端 #246，2026-11-28）：cover 盖原表，rules 是新画的表格线，blocks 和正文的块一样（id 是 <表格块 id>:r<行>c<列>）。 */
+export type RenderLayoutTable = { id: string; cover: RenderLayoutPaint | null; rules: RenderLayoutPaint[]; blocks: RenderLayoutBlock[] };
+
+/**
+ * 一页。erase（后端 #246）：渲染前在去字 PDF 里抹掉、又不在 covers 下面的原字（英文小标题这类），一行一个框；
+ * 画法：底（原文页）→ erase → covers → 每张表的 cover → rules → 正文和表格的字。以前存的版面没有 erase、tables（空数组）。
+ */
+export type RenderLayoutPage = {
+  index: number;
+  width: number;
+  height: number;
+  covers: RenderLayoutCover[];
+  blocks: RenderLayoutBlock[];
+  erase: RenderLayoutPaint[];
+  tables: RenderLayoutTable[];
+};
 
 /** 字体：key 对应字簇的 font；family 是装到浏览器里的名字（加 RPR 前缀，不和本机装的同名字体混）。 */
 export type RenderLayoutFont = { key?: string; family: string; weight: number; url: string };
@@ -72,7 +90,29 @@ export function normalizeRenderLayoutPage(raw: unknown): RenderLayoutPage | null
       ? [{ block: `${cover.block || ""}`, rect: rect as [number, number, number, number], fill: triple(cover.fill) }]
       : [];
   });
-  const blocks: RenderLayoutBlock[] = (Array.isArray(page.blocks) ? page.blocks : []).flatMap((rawBlock) => {
+  const blocks = normalizeBlocks(page.blocks);
+  const erase = normalizePaints(page.erase);
+  const tables: RenderLayoutTable[] = (Array.isArray(page.tables) ? page.tables : []).flatMap((rawTable) => {
+    const table = rawTable as Record<string, unknown>;
+    const id = `${table.id || ""}`;
+    if (!id) return [];
+    return [{ id, cover: normalizePaints([table.cover])[0] ?? null, rules: normalizePaints(table.rules), blocks: normalizeBlocks(table.blocks) }];
+  });
+  return { index, width: num(page.width), height: num(page.height), covers, blocks, erase, tables };
+}
+
+function normalizePaints(raw: unknown): RenderLayoutPaint[] {
+  return (Array.isArray(raw) ? raw : []).flatMap((rawPaint) => {
+    const paint = rawPaint && typeof rawPaint === "object" ? (rawPaint as Record<string, unknown>) : null;
+    const rect = Array.isArray(paint?.rect) ? (paint!.rect as unknown[]).map(num) : [];
+    return rect.length === 4 && rect[2] > rect[0] && rect[3] > rect[1]
+      ? [{ rect: rect as [number, number, number, number], fill: triple(paint!.fill) }]
+      : [];
+  });
+}
+
+function normalizeBlocks(raw: unknown): RenderLayoutBlock[] {
+  return (Array.isArray(raw) ? raw : []).flatMap((rawBlock): RenderLayoutBlock[] => {
     const block = rawBlock as Record<string, unknown>;
     const fontSize = num(block.fontSize);
     if (!(fontSize > 0)) return [];
@@ -99,7 +139,7 @@ export function normalizeRenderLayoutPage(raw: unknown): RenderLayoutPage | null
     });
     return [{ id: `${block.id || ""}`, fontSize, weight: block.weight === "bold" ? "bold" : "regular", color: triple(block.color), lines }];
   });
-  return { index, width: num(page.width), height: num(page.height), covers, blocks };
+
 }
 
 /** layout.json（整份）→ 按页码（从 1 起）的版面；看不懂的项丢掉，不让一项坏的拖垮整页。 */
@@ -132,6 +172,8 @@ export type RenderLayoutGenerate = { method: string; url: string; body: unknown 
 
 export type RenderLayoutSource = {
   schema: string;
+  /** 版面带了哪些（后端 #246：erase、tables）；空的是以前存的版面。 */
+  features: ReadonlySet<string>;
   /** 有版面的页（阅读页的页码，从 1 起）。 */
   pages: ReadonlySet<number>;
   fonts: readonly RenderLayoutFont[];
@@ -200,7 +242,9 @@ export async function loadRenderLayoutFromApi(
       ? [{ key: `${font.key || ""}` || undefined, family: layoutFontFamily(`${font.family}`), weight: num(font.weight) || 400, url: `${font.url}` }]
       : [];
   });
-  const bg = view.background && typeof view.background === "object" ? (view.background as Record<string, unknown>) : null;
+  const features = new Set((Array.isArray(view.features) ? view.features : []).map((value) => `${value}`));
+  // 版面带了 erase（要抹掉的原字）就不用底图：原文页上先画 erase 再画 covers，和底图一样，少下载一份 PDF（「阅读页只加载原文 PDF」）。
+  const bg = !features.has("erase") && view.background && typeof view.background === "object" ? (view.background as Record<string, unknown>) : null;
   const bgPages = Array.isArray(bg?.pages) ? (bg!.pages as unknown[]).map((value) => Math.floor(num(value))) : [];
   const background = bg?.url
     ? {
@@ -215,6 +259,7 @@ export async function loadRenderLayoutFromApi(
   const mathCache = new Map<string, Promise<string | null>>();
   const source: RenderLayoutSource = {
     schema: `${view.schema || "rpr_layout_v1"}`,
+    features,
     pages: new Set(pageUrls.keys()),
     fonts,
     background,
@@ -253,6 +298,7 @@ export async function loadRenderLayoutFromApi(
 export function renderLayoutSourceFromDocument(doc: RenderLayoutDocument, fetcher: typeof fetch = fetch): RenderLayoutSource {
   return {
     schema: doc.schema,
+    features: new Set(),
     pages: new Set(doc.pages.keys()),
     fonts: doc.fonts,
     background: null,

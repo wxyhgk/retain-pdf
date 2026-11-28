@@ -33,12 +33,30 @@ export type RenderLayoutBlock = {
     color: [number, number, number];
     lines: RenderLayoutLine[];
 };
+/** 一个实心框（盖原字、表格线）：rect 是 [x0, y0, x1, y1]（pt）。 */
+export type RenderLayoutPaint = {
+    rect: [number, number, number, number];
+    fill: [number, number, number];
+};
+/** 一张表（后端 #246，2026-11-28）：cover 盖原表，rules 是新画的表格线，blocks 和正文的块一样（id 是 <表格块 id>:r<行>c<列>）。 */
+export type RenderLayoutTable = {
+    id: string;
+    cover: RenderLayoutPaint | null;
+    rules: RenderLayoutPaint[];
+    blocks: RenderLayoutBlock[];
+};
+/**
+ * 一页。erase（后端 #246）：渲染前在去字 PDF 里抹掉、又不在 covers 下面的原字（英文小标题这类），一行一个框；
+ * 画法：底（原文页）→ erase → covers → 每张表的 cover → rules → 正文和表格的字。以前存的版面没有 erase、tables（空数组）。
+ */
 export type RenderLayoutPage = {
     index: number;
     width: number;
     height: number;
     covers: RenderLayoutCover[];
     blocks: RenderLayoutBlock[];
+    erase: RenderLayoutPaint[];
+    tables: RenderLayoutTable[];
 };
 /** 字体：key 对应字簇的 font；family 是装到浏览器里的名字（加 RPR 前缀，不和本机装的同名字体混）。 */
 export type RenderLayoutFont = {
@@ -70,6 +88,8 @@ export type RenderLayoutGenerate = {
 };
 export type RenderLayoutSource = {
     schema: string;
+    /** 版面带了哪些（后端 #246：erase、tables）；空的是以前存的版面。 */
+    features: ReadonlySet<string>;
     /** 有版面的页（阅读页的页码，从 1 起）。 */
     pages: ReadonlySet<number>;
     fonts: readonly RenderLayoutFont[];

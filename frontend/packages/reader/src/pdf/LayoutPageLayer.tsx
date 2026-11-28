@@ -107,7 +107,8 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
 }): ReactElement {
   const texList = useMemo(() => {
     const map = new Map<string, string | undefined>();
-    for (const block of page.blocks) for (const line of block.lines) for (const item of line.items) if ("tex" in item) map.set(item.tex, item.svg);
+    const allBlocks = [...page.blocks, ...page.tables.flatMap((table) => table.blocks)];
+    for (const block of allBlocks) for (const line of block.lines) for (const item of line.items) if ("tex" in item) map.set(item.tex, item.svg);
     return [...map];
   }, [page]);
   const [maths, setMaths] = useState<ReadonlyMap<string, MathSvg | null>>(() => new Map());
@@ -168,6 +169,10 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
       preserveAspectRatio="none"
       style={{ fontFamily }}
     >
+      {/* 画法（后端 #246）：底 → erase（渲染前抹掉的原字）→ covers → 每张表的 cover → 表格线 → 正文和表格的字。 */}
+      {page.erase.map((paint, index) => (
+        <rect key={`erase:${index}`} x={paint.rect[0]} y={paint.rect[1]} width={paint.rect[2] - paint.rect[0]} height={paint.rect[3] - paint.rect[1]} fill={layoutColor(paint.fill)} />
+      ))}
       {page.covers.map((cover, index) => (
         <rect
           key={`${cover.block}:${index}`}
@@ -178,7 +183,15 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
           fill={layoutColor(cover.fill)}
         />
       ))}
-      {page.blocks.map((block, order) => {
+      {page.tables.flatMap((table) => [
+        ...(table.cover ? [table.cover] : []).map((paint) => (
+          <rect key={`${table.id}:cover`} x={paint.rect[0]} y={paint.rect[1]} width={paint.rect[2] - paint.rect[0]} height={paint.rect[3] - paint.rect[1]} fill={layoutColor(paint.fill)} />
+        )),
+        ...table.rules.map((paint, index) => (
+          <rect key={`${table.id}:rule:${index}`} x={paint.rect[0]} y={paint.rect[1]} width={paint.rect[2] - paint.rect[0]} height={paint.rect[3] - paint.rect[1]} fill={layoutColor(paint.fill)} />
+        )),
+      ])}
+      {[...page.blocks, ...page.tables.flatMap((table) => table.blocks)].map((block, order) => {
         const color = layoutColor(block.color);
         return (
           <g

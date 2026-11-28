@@ -229,3 +229,38 @@ test("后端在补旧书（#245：reason 是 backfill_queued / job_active）：�
   assert.match(hook, /current\.status === "generating" \|\| pending\s*\? \{ status: "generating" \}/, "后端在补时没去等");
   assert.match(hook, /const POLL_LIMIT = 360;/);
 });
+
+test("只加载原文 PDF（后端 #246）：版面带 erase 时不用底图；画法 原文页 → erase → covers → 表格 cover → 表格线 → 正文和表格的字", async () => {
+  const { loadRenderLayoutFromApi, normalizeRenderLayoutPage } = await import("../../../packages/reader/src/shared/data/render-layout.ts");
+  const page = normalizeRenderLayoutPage({
+    index: 2, width: 600, height: 800,
+    erase: [{ rect: [50, 100, 200, 112], fill: [1, 1, 1] }, { rect: [1, 1, 1, 1], fill: [0, 0, 0] }],
+    covers: [{ block: "p003-b0001", rect: [50, 120, 300, 200], fill: [1, 1, 1] }],
+    blocks: [{ id: "p003-b0001", fontSize: 10, weight: "regular", color: [0, 0, 0], lines: [{ text: "正文", x: 50, baseline: 130, width: 20, items: [{ x: 50, t: "正", font: "serif-regular" }] }] }],
+    tables: [{
+      id: "p003-b0009",
+      cover: { rect: [48, 300, 552, 420], fill: [1, 1, 1] },
+      rules: [{ rect: [50, 300, 550, 300.5], fill: [0, 0, 0] }],
+      blocks: [{ id: "p003-b0009:r0c1", fontSize: 9, weight: "regular", color: [0, 0, 0], lines: [{ text: "表", x: 60, baseline: 312, width: 9, items: [{ x: 60, t: "表" }] }] }],
+    }, { cover: null }],
+  });
+  assert.deepEqual(page.erase, [{ rect: [50, 100, 200, 112], fill: [1, 1, 1] }], "坏框丢掉");
+  assert.equal(page.tables.length, 1, "没有 id 的表丢掉");
+  assert.equal(page.tables[0].blocks[0].id, "p003-b0009:r0c1");
+  assert.equal(normalizeRenderLayoutPage({ index: 0, width: 1, height: 1 }).tables.length, 0, "以前存的版面没有这两项");
+
+  const html = renderToStaticMarkup(createElement(LayoutPageLayer, { page, width: 600, height: 800, fontFamily: "serif", arrivedAt: 0 }));
+  const at = (needle) => html.indexOf(needle);
+  assert.ok(at('y="100"') < at('y="120"'), "erase 要在 covers 前面画");
+  assert.ok(at('y="120"') < at('y="300" width="504"'), "表格 cover 要在 covers 后面画");
+  assert.ok(at('y="300" width="504"') < at('width="500" height="0.5"'), "表格线要在表格 cover 后面画");
+  assert.ok(at('width="500" height="0.5"') < at('data-html-block="p003-b0001"'), "字要在表格线后面画");
+  assert.match(html, /data-html-block="p003-b0009:r0c1"/, "表格的字没画");
+
+  const json = (body) => ({ ok: true, status: 200, json: async () => body });
+  const withErase = await loadRenderLayoutFromApi("j", { fetcher: async () => json({ data: { available: true, features: ["erase", "tables"], pages: [], fonts: [], background: { url: "/bg.pdf", pages: [0] } } }) });
+  assert.equal(withErase.source.background, null, "带了 erase 还去下载底图");
+  assert.ok(withErase.source.features.has("tables"));
+  const old = await loadRenderLayoutFromApi("j", { fetcher: async () => json({ data: { available: true, features: [], pages: [], fonts: [], background: { url: "/bg.pdf", pages: [0] } } }) });
+  assert.equal(old.source.background.url, "/bg.pdf", "以前存的版面照旧用底图");
+});
