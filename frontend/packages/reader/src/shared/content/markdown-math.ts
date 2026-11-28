@@ -327,6 +327,26 @@ function loadMathJaxEngine(): Promise<MathJaxEngine> {
   return enginePromise;
 }
 
+/**
+ * 一条公式画成 MathJax 的 SVG（和 Markdown、实时译文同一个引擎、同一套包）；画不出来是 null（失败计数照记）。
+ * HTML 页照排版引擎的 layout.json 摆公式用（pdf/LayoutPageLayer.tsx，2026-11-28）。
+ */
+export async function renderTexToSvg(tex: string, display: boolean): Promise<string | null> {
+  let engine: MathJaxEngine;
+  try {
+    engine = await loadMathJaxEngine();
+  } catch (error) {
+    reportMathFailure("engine-load", error);
+    return null;
+  }
+  try {
+    return engine.convert(tex, display);
+  } catch (error) {
+    reportMathFailure("convert", error, tex);
+    return null;
+  }
+}
+
 export function renderMathFallbackHtml(tex: string, display: boolean): string {
   const body = `<code class="reader-md-math-error" title="公式渲染失败">${escapeHtml(tex)}</code>`;
   if (display) {

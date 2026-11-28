@@ -1,0 +1,98 @@
+/** HTML 页照排版引擎的版面（layout.json，rpr_layout_v1）画（2026-11-28 用户：「为什么这里的 html 渲染和我们自己的 html 排版不一样？
+ * 能不能一样？」）：一页一个 SVG，viewBox 是版面的 pt，盖原字的块、字簇按 x 和基线摆、公式塞进盒子。
+ * 原型用本地 c8bcf5 那本的 layout.json 和译文 PDF 逐像素比过，见 docs/ops/planning/reader-redesign/20261128-HTML页照版面画-原型.md。 */
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+
+import { layoutColor, normalizeRenderLayout } from "../../../packages/reader/src/shared/data/render-layout.ts";
+import { LayoutPageLayer, parseMathSvg } from "../../../packages/reader/src/pdf/LayoutPageLayer.tsx";
+import { renderLayoutFontFamily } from "../../../packages/reader/src/hooks/use-render-layout.ts";
+
+const READER = new URL("../../../packages/reader/", import.meta.url);
+const read = (relative) => readFileSync(fileURLToPath(new URL(relative, READER)), "utf8");
+
+// 照 c8bcf5 那本第 1 页的样子（数字取自真文件）。
+const RAW = {
+  schema: "rpr_layout_v1",
+  pages: [{
+    index: 0, width: 607.408, height: 800.901,
+    covers: [{ block: "p001-b0014", rect: [46.809, 286.117, 325.743, 432.442], fill: [0.95686, 0.95686, 0.95686] }],
+    blocks: [{
+      id: "p001-b0014", fontSize: 9.98, weight: "regular", color: [0, 0, 0],
+      lines: [{ text: "摘要：MHAT$^{1,2}$", x: 51.544, baseline: 294.827, width: 267.464, justified: true, items: [
+        { x: 51.544, t: "摘" },
+        { x: 61.822, t: "要" },
+        { x: 72.1, t: "MHAT", mode: "dflt" },
+        { x: 280.187, tex: "^{1,2}", display: false, w: 0.9865, h: 0.834, d: 0 },
+        { x: 290, bogus: true },
+      ] }],
+    }, { id: "p001-b0001", fontSize: 0, weight: "bold", color: [0, 0, 0], lines: [] }],
+  }, { index: -1, width: 1, height: 1, covers: [], blocks: [] }],
+};
+
+test("读版面：页码按阅读页的从 1 起；看不懂的项、字号为 0 的块、坏页丢掉；不是 rpr_layout_ 的不认", () => {
+  const doc = normalizeRenderLayout(RAW);
+  assert.equal(doc.schema, "rpr_layout_v1");
+  assert.deepEqual([...doc.pages.keys()], [1]);
+  const page = doc.pages.get(1);
+  assert.equal(page.covers.length, 1);
+  assert.deepEqual(page.blocks.map((block) => block.id), ["p001-b0014"]);
+  assert.deepEqual(page.blocks[0].lines[0].items.map((item) => ("tex" in item ? `tex:${item.tex}` : item.mode ? `${item.t}/${item.mode}` : item.t)), ["摘", "要", "MHAT/dflt", "tex:^{1,2}"]);
+  assert.equal(normalizeRenderLayout({ schema: "other", pages: [] }), null);
+  assert.equal(normalizeRenderLayout(null), null);
+});
+
+test("颜色：引擎给的是 0–1，>1 的当 0–255", () => {
+  assert.equal(layoutColor([0.95686, 0.95686, 0.95686]), "rgb(244, 244, 244)");
+  assert.equal(layoutColor([0, 0, 0]), "rgb(0, 0, 0)");
+  assert.equal(layoutColor([255, 128, 0]), "rgb(255, 128, 0)");
+});
+
+test("一页一个 SVG：viewBox 是版面的 pt，先画盖原字的块，字簇按 x 和基线摆，每块一个带块 id 的 <g>", () => {
+  const page = normalizeRenderLayout(RAW).pages.get(1);
+  const html = renderToStaticMarkup(createElement(LayoutPageLayer, { page, width: 776, height: 1023, fontFamily: '"RPR Source Han Serif SC", serif', arrivedAt: 0 }));
+  assert.match(html, /<svg class="reader-layout-page" data-html-page="1" viewBox="0 0 607.408 800.901" width="776" height="1023" preserveAspectRatio="none"/);
+  assert.match(html, /<rect x="46.809" y="286.117" width="278.93\d*" height="146.32\d*" fill="rgb\(244, 244, 244\)"/);
+  assert.match(html, /<g class="reader-layout-block" data-html-block="p001-b0014" fill="rgb\(0, 0, 0\)" font-size="9.98" font-weight="400"/);
+  assert.match(html, /<text x="51.544" y="294.827" lang="zh-Hans">摘<\/text>/);
+  assert.match(html, /<text x="72.1" y="294.827" lang="en">MHAT<\/text>/);
+  assert.ok(html.indexOf("<rect") < html.indexOf("<g"), "盖原字的块要先画");
+});
+
+test("公式：MathJax 的 SVG 拆成 viewBox 和里面那层，套进版面的盒子（宽 w、高 h + 深 d，按字号的 em；盒子底边在基线下 d）", () => {
+  assert.deepEqual(parseMathSvg('<mjx-container class="MathJax"><svg style="vertical-align: 0" viewBox="0 -750 1200 950" width="2ex"><g fill="currentColor"><path d="M0 0"/></g></svg></mjx-container>'), {
+    viewBox: "0 -750 1200 950",
+    inner: '<g fill="currentColor"><path d="M0 0"/></g>',
+  });
+  assert.equal(parseMathSvg("<span>没有 svg</span>"), null);
+  assert.equal(parseMathSvg(null), null);
+  const layer = read("src/pdf/LayoutPageLayer.tsx");
+  assert.match(layer, /y=\{line\.baseline - item\.h \* size\}/);
+  assert.match(layer, /width=\{Math\.max\(0\.01, item\.w \* size\)\}/);
+  assert.match(layer, /height=\{Math\.max\(0\.01, \(item\.h \+ item\.d\) \* size\)\}/);
+  // 引擎按非行间公式画（maths.get(tex, false)），这里也一样。
+  assert.match(layer, /renderTexToSvg\(tex, false\)/);
+});
+
+test("字体：清单里的字族按顺序当后备（和引擎的 FontChain 一样逐字找）；主字体没装全不照版面画", () => {
+  assert.equal(renderLayoutFontFamily([
+    { family: "RPR Source Han Serif SC", weight: 400, url: "a" },
+    { family: "RPR Source Han Serif SC", weight: 700, url: "b" },
+    { family: "RPR Libertinus Serif", weight: 400, url: "c" },
+  ]), '"RPR Source Han Serif SC", "RPR Libertinus Serif", serif');
+  const hook = read("src/hooks/use-render-layout.ts");
+  assert.match(hook, /results\.every\(\(\{ font, ok \}\) => ok \|\| font\.family !== primary\)/, "主字体缺字重会被别的字重顶上");
+  assert.match(hook, /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/, "大字体读断不重试");
+});
+
+test("接到 HTML 页上：「画译文」有版面就照版面画，版面里没有的页是原页；没有版面退回按 OCR 的框塞字", () => {
+  const ext = read("src/extensions/builtin/html-page.tsx");
+  assert.match(ext, /if \(text === "translated" && layout\) \{\s*const layoutPage = layout\.pages\.get\(page\);\s*return layoutPage \? <LayoutPageLayer/);
+  assert.match(ext, /: null;\s*\}\s*return \(\s*<HtmlPageLayer/);
+  // 后端接口出来之前只有开发时地址上带 ?render_layout= 才读。
+  assert.match(read("src/hooks/use-render-layout.ts"), /\.get\("render_layout"\)/);
+});

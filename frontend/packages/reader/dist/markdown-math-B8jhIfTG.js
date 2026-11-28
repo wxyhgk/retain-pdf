@@ -1,10 +1,10 @@
 const k = "RP_MATH_";
-let m = null, f = null;
+let m = null, $ = null;
 function Z(e) {
-  f = e, m = null;
+  $ = e, m = null;
 }
 function B() {
-  f = null, m = null;
+  $ = null, m = null;
 }
 function b(e) {
   return `${e}`.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
@@ -12,38 +12,38 @@ function b(e) {
 function N(e) {
   return `${k}${e}`;
 }
-const F = /[0-9A-Za-z\\{}_^()\[\]|+\-=,.:;'~*/<>!\u00b0\u00b1\u00d7\u00f7\u2212\u2202\u03b1-\u03c9\u0391-\u03a9]+/g, H = /\\[A-Za-z]+|[_^]\{/;
-function S(e, t) {
-  const n = new RegExp(`${k}\\d+`, "g"), a = (i) => i.replace(
-    F,
-    (c) => H.test(c) ? t(c, !1) : c
+const S = /[0-9A-Za-z\\{}_^()\[\]|+\-=,.:;'~*/<>!\u00b0\u00b1\u00d7\u00f7\u2212\u2202\u03b1-\u03c9\u0391-\u03a9]+/g, F = /\\[A-Za-z]+|[_^]\{/;
+function H(e, t) {
+  const n = new RegExp(`${k}\\d+`, "g"), a = (c) => c.replace(
+    S,
+    (i) => F.test(i) ? t(i, !1) : i
   );
   let r = "", o = 0, l;
   for (; (l = n.exec(e)) !== null; )
     r += a(e.slice(o, l.index)) + l[0], o = l.index + l[0].length;
   return r += a(e.slice(o)), r;
 }
-const y = /<([futnvc]\d+-[0-9a-z]{3})\/>/g;
-function P(e) {
+const P = /<([futnvc]\d+-[0-9a-z]{3})\/>/g;
+function L(e) {
   let t = 0;
-  return { text: `${e ?? ""}`.replace(y, (a, r) => (t += 1, `[未还原 token ${r}]`)), count: t };
+  return { text: `${e ?? ""}`.replace(P, (a, r) => (t += 1, `[未还原 token ${r}]`)), count: t };
 }
-function L(e, t = {}) {
-  const n = [], a = P(`${e ?? ""}`);
+function j(e, t = {}) {
+  const n = [], a = L(`${e ?? ""}`);
   a.count && (s.protectedTokens += a.count, s.protectedTokens <= 5 && console.warn(
     `[markdown-math] 译文里有 ${a.count} 个未还原的保护 token，已原样显示`
   ));
   let r = a.text;
-  const o = (l, i) => {
-    const c = `${l ?? ""}`.trim();
-    if (!c)
-      return i ? `$$${l}$$` : `$${l}$`;
+  const o = (l, c) => {
+    const i = `${l ?? ""}`.trim();
+    if (!i)
+      return c ? `$$${l}$$` : `$${l}$`;
     const g = N(n.length);
-    return n.push({ token: g, tex: c, display: i }), g;
+    return n.push({ token: g, tex: i, display: c }), g;
   };
-  return r = r.replace(/\$\$([\s\S]+?)\$\$/g, (l, i) => o(i, !0)), r = r.replace(new RegExp("(?<![\\\\$])\\$(?!\\$)((?:\\\\.|[^$\\n])+?)\\$(?!\\$)", "g"), (l, i) => `${i}`.trim() ? o(i, !1) : l), t.bareLatex && (r = S(r, o)), { text: r, slots: n };
+  return r = r.replace(/\$\$([\s\S]+?)\$\$/g, (l, c) => o(c, !0)), r = r.replace(new RegExp("(?<![\\\\$])\\$(?!\\$)((?:\\\\.|[^$\\n])+?)\\$(?!\\$)", "g"), (l, c) => `${c}`.trim() ? o(c, !1) : l), t.bareLatex && (r = H(r, o)), { text: r, slots: n };
 }
-const j = 20, I = /data-mml-node="mtext"[^>]*fill="red"/;
+const I = 20, O = /data-mml-node="mtext"[^>]*fill="red"/;
 function d(e, t) {
   var o;
   const n = e, a = n == null ? void 0 : n[t];
@@ -54,7 +54,7 @@ function d(e, t) {
     return r;
   throw new Error(`mathjax-full 未导出 ${t}（CJS/ESM 互操作问题）`);
 }
-async function O() {
+async function z() {
   const [e, t, n, a, r, o] = await Promise.all([
     import("mathjax-full/js/mathjax.js"),
     import("mathjax-full/js/input/tex.js"),
@@ -62,10 +62,10 @@ async function O() {
     import("mathjax-full/js/adaptors/liteAdaptor.js"),
     import("mathjax-full/js/handlers/html.js"),
     import("mathjax-full/js/input/tex/AllPackages.js")
-  ]), l = d(e, "mathjax"), i = d(t, "TeX"), c = d(n, "SVG"), g = d(a, "liteAdaptor"), _ = d(r, "RegisterHTMLHandler"), T = d(o, "AllPackages"), $ = g();
-  _($);
-  const A = l.document("", {
-    InputJax: new i({
+  ]), l = d(e, "mathjax"), c = d(t, "TeX"), i = d(n, "SVG"), g = d(a, "liteAdaptor"), T = d(r, "RegisterHTMLHandler"), A = d(o, "AllPackages"), w = g();
+  T(w);
+  const v = l.document("", {
+    InputJax: new c({
       // 方案 C：宽容渲染。`unicode` 包让 Unicode 数学符号（⟨⟩、希腊字母、
       // 运算符等）尽量直接渲染，减少严格 TeX 的报错面。
       //
@@ -80,18 +80,18 @@ async function O() {
       //
       // 代价：文档里真有 `\href` 时不再渲染成链接，退化成失败回退显示原文。渲染
       // PDF 的 mitex 本来也不支持 `\href`，两边因此一致。
-      packages: T.filter((u) => u !== "html").concat("unicode")
+      packages: A.filter((h) => h !== "html").concat("unicode")
     }),
-    OutputJax: new c({ fontCache: "none" })
+    OutputJax: new i({ fontCache: "none" })
   });
   return {
-    convert(u, v) {
-      const R = A.convert(u, { display: v }), p = $.outerHTML(R);
+    convert(h, R) {
+      const y = v.convert(h, { display: R }), p = w.outerHTML(y);
       if (!/<svg[\s>]/i.test(p))
         throw new Error("mathjax produced no svg");
       if (/data-mjx-error|merror/i.test(p))
         throw new Error("mathjax error node");
-      if (I.test(p))
+      if (O.test(p))
         throw new Error("mathjax undefined command");
       return p;
     }
@@ -110,20 +110,33 @@ try {
   globalThis.__retainMathFailures = s;
 } catch {
 }
-function w(e, t, n = "") {
+function u(e, t, n = "") {
   const a = `${(t == null ? void 0 : t.message) || t}`;
   if (s.lastReason = a, e === "engine-load") {
     s.engineLoad += 1, console.warn("[markdown-math] MathJax 引擎加载失败，公式将退回纯文本：", a);
     return;
   }
-  s.convert += 1, s.samples.length < j && s.samples.push(n), s.convert <= 5 && console.warn(`[markdown-math] 公式渲染失败（第 ${s.convert} 条）：`, n, a);
+  s.convert += 1, s.samples.length < I && s.samples.push(n), s.convert <= 5 && console.warn(`[markdown-math] 公式渲染失败（第 ${s.convert} 条）：`, n, a);
 }
-function z() {
-  return m || (m = (f ?? O)().catch((t) => {
+function E() {
+  return m || (m = ($ ?? z)().catch((t) => {
     throw m = null, t;
   })), m;
 }
-function h(e, t) {
+async function G(e, t) {
+  let n;
+  try {
+    n = await E();
+  } catch (a) {
+    return u("engine-load", a), null;
+  }
+  try {
+    return n.convert(e, t);
+  } catch (a) {
+    return u("convert", a, e), null;
+  }
+}
+function f(e, t) {
   const n = `<code class="reader-md-math-error" title="公式渲染失败">${b(e)}</code>`;
   return t ? `<div class="reader-md-math reader-md-math-display reader-md-math-failed">${n}</div>` : `<span class="reader-md-math reader-md-math-inline reader-md-math-failed">${n}</span>`;
 }
@@ -231,15 +244,15 @@ function C(e) {
       continue;
     }
     const o = M(t, a + 1);
-    let l = o.arg, i = o.next;
-    for (; i < t.length; ) {
-      let c = i;
-      for (; c < t.length && t[c] === " "; ) c += 1;
-      if (t[c] !== r) break;
-      const g = M(t, c + 1);
-      l = `${l}${t.slice(i, c)}${r}${g.arg}`, i = g.next;
+    let l = o.arg, c = o.next;
+    for (; c < t.length; ) {
+      let i = c;
+      for (; i < t.length && t[i] === " "; ) i += 1;
+      if (t[i] !== r) break;
+      const g = M(t, i + 1);
+      l = `${l}${t.slice(c, i)}${r}${g.arg}`, c = g.next;
     }
-    n += `${r}{${l}}`, a = i;
+    n += `${r}{${l}}`, a = c;
   }
   return n;
 }
@@ -248,9 +261,9 @@ async function K(e, t) {
     return e;
   let n = null;
   try {
-    n = await z();
+    n = await E();
   } catch (o) {
-    n = null, w("engine-load", o);
+    n = null, u("engine-load", o);
   }
   const a = /* @__PURE__ */ new Map();
   let r = 0;
@@ -259,16 +272,16 @@ async function K(e, t) {
     if (n)
       try {
         l = D(n.convert(J(o.tex), o.display), o.display);
-      } catch (i) {
-        l = h(o.tex, o.display), w("convert", i, o.tex);
+      } catch (c) {
+        l = f(o.tex, o.display), u("convert", c, o.tex);
       }
     else
-      l = h(o.tex, o.display);
-    a.set(o.token, l), r += 1, r % 24 === 0 && await new Promise((i) => setTimeout(i, 0));
+      l = f(o.tex, o.display);
+    a.set(o.token, l), r += 1, r % 24 === 0 && await new Promise((c) => setTimeout(c, 0));
   }
-  return E(`${e ?? ""}`, t, a);
+  return _(`${e ?? ""}`, t, a);
 }
-function E(e, t, n) {
+function _(e, t, n) {
   if (!t.length) return e;
   const a = new RegExp(
     t.map((r) => r.token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|"),
@@ -276,27 +289,28 @@ function E(e, t, n) {
   );
   return e.replace(a, (r) => n.get(r) || r);
 }
-function G(e, t) {
+function q(e, t) {
   const n = new Map(
-    t.map((a) => [a.token, h(a.tex, a.display)])
+    t.map((a) => [a.token, f(a.tex, a.display)])
   );
-  return E(`${e ?? ""}`, t, n);
+  return _(`${e ?? ""}`, t, n);
 }
-async function q(e, t) {
-  const { text: n, slots: a } = L(e), r = t(n);
+async function V(e, t) {
+  const { text: n, slots: a } = j(e), r = t(n);
   return K(r, a);
 }
 export {
   K as a,
   s as b,
-  B as c,
-  P as d,
-  L as e,
-  G as m,
+  G as c,
+  B as d,
+  j as e,
+  L as f,
+  q as m,
   J as n,
-  q as p,
-  h as r,
+  V as p,
+  f as r,
   Z as s,
   D as w
 };
-//# sourceMappingURL=markdown-math-XkF5urpn.js.map
+//# sourceMappingURL=markdown-math-B8jhIfTG.js.map

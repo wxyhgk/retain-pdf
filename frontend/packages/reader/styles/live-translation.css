@@ -240,3 +240,26 @@
   background: color-mix(in srgb, var(--ink) 8%, transparent);
   font-weight: 600;
 }
+
+/* HTML 页照排版引擎的版面画（pdf/LayoutPageLayer.tsx）：一页一个 SVG，盖在原文页上；字簇里的空格照原样留着。
+ * 每块一个 <g>，刚打开时和按 OCR 框那版一样按顺序浮出来。 */
+.reader-layout-page {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  white-space: pre;
+  text-rendering: geometricPrecision;
+  font-kerning: normal;
+}
+
+.reader-layout-block.is-arriving {
+  animation: reader-live-translation-arrive 420ms cubic-bezier(.2, .75, .25, 1) both;
+  animation-delay: min(calc(var(--reader-html-order, 0) * 18ms), 600ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-layout-block.is-arriving {
+    animation: none;
+  }
+}

@@ -50,7 +50,7 @@ test("作为内置扩展接上：右缘竖条一颗按钮，点开 关 / 画译�
   assert.match(ext, /label: "HTML 页"/);
   assert.match(ext, /\{ value: "translated", label: "画译文"/);
   assert.match(ext, /\{ value: "source", label: "画原文"/);
-  assert.match(ext, /active && pane === "source" \?/, "画到了别的栏");
+  assert.match(ext, /if \(!active \|\| pane !== "source"\) return null;/, "画到了别的栏");
   assert.match(ext, /if \(next && visibleMode === "translated"\) setWorkspace\("source"\);/);
   // 每块是一个带块 id 的 DOM 元素：以后的动效、3D 挂在这上面。
   const layer = read("src/pdf/HtmlPageLayer.tsx");

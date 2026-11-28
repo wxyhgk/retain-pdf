@@ -2,11 +2,15 @@
 // 书页区右缘竖条上一颗按钮（CodeXml），点开往左弹：关 / 画译文 / 画原文。开着时原文栏的每一页上叠一层 HTML。
 // 只画在原文栏（底下是原文页的图形）：开着时如果在看「译文」就切到「原文」；对照时左边是 HTML 页、右边是译文 PDF，正好对着看。
 // 对比版本时左栏是另一份译文的 PDF（layerPane 是 "compare"），不画。开关只在这次打开里有效，不写本机。
+// 「画译文」有排版引擎的版面（layout.json，hooks/use-render-layout.ts）时照版面画（pdf/LayoutPageLayer.tsx，和译文 PDF 一样）；
+// 版面里没有的页是原页（整页图、不翻的参考文献）。没有版面时退回按 OCR 的框塞字（pdf/HtmlPageLayer.tsx）。
 import { useMemo, useState, type ReactElement } from "react";
 import { CodeXml } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
+import { renderLayoutFontFamily, useRenderLayout } from "../../hooks/use-render-layout.js";
 import { HtmlPageLayer, regionsByPage, type HtmlPageText } from "../../pdf/HtmlPageLayer.js";
+import { LayoutPageLayer } from "../../pdf/LayoutPageLayer.js";
 import { useReaderApi, useReaderContribution } from "../registry.js";
 import type { ReaderContribution, ReaderExtension } from "../types.js";
 
@@ -21,6 +25,8 @@ function HtmlPageExtension(): ReactElement | null {
   const [text, setText] = useState<HtmlPageText | null>(null);
   const [arrivedAt, setArrivedAt] = useState(0);
   const byPage = useMemo(() => regionsByPage(api.regions), [api.regions]);
+  const layout = useRenderLayout();
+  const layoutFont = useMemo(() => renderLayoutFontFamily(layout?.fonts ?? []), [layout]);
   const hasTranslation = !api.sourceOnly;
   const { metadata, visibleMode, setWorkspace } = api;
 
@@ -34,7 +40,9 @@ function HtmlPageExtension(): ReactElement | null {
       toolbarItems: [{
         key: "html-page",
         label: "HTML 页",
-        title: text ? `HTML 页：${text === "translated" ? "画译文" : "画原文"}（点开换）` : "HTML 页：按 OCR 的框把书页用 HTML 画出来",
+        title: text
+          ? `HTML 页：${text === "translated" ? (layout ? "画译文（照排版引擎的版面）" : "画译文") : "画原文"}（点开换）`
+          : "HTML 页：把书页用 HTML 画出来",
         Icon: CodeXml,
         pressed: Boolean(text),
         popup: (done) => (
@@ -58,20 +66,27 @@ function HtmlPageExtension(): ReactElement | null {
         ),
       }],
       pageLayer: text
-        ? ({ page, width, height, pane, active }) => (active && pane === "source" ? (
-          <HtmlPageLayer
-            page={page}
-            width={width}
-            height={height}
-            regions={byPage.get(page) ?? []}
-            metadata={metadata}
-            text={text}
-            arrivedAt={arrivedAt}
-          />
-        ) : null)
+        ? ({ page, width, height, pane, active }) => {
+          if (!active || pane !== "source") return null;
+          if (text === "translated" && layout) {
+            const layoutPage = layout.pages.get(page);
+            return layoutPage ? <LayoutPageLayer page={layoutPage} width={width} height={height} fontFamily={layoutFont} arrivedAt={arrivedAt} /> : null;
+          }
+          return (
+            <HtmlPageLayer
+              page={page}
+              width={width}
+              height={height}
+              regions={byPage.get(page) ?? []}
+              metadata={metadata}
+              text={text}
+              arrivedAt={arrivedAt}
+            />
+          );
+        }
         : undefined,
     };
-  }, [text, arrivedAt, byPage, metadata, hasTranslation, visibleMode, setWorkspace]);
+  }, [text, arrivedAt, byPage, metadata, hasTranslation, visibleMode, setWorkspace, layout, layoutFont]);
   useReaderContribution(contribution);
   return null;
 }
