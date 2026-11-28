@@ -42,6 +42,8 @@ pub use deps::{
     CommandJobsDeps, ControlDeps, JobSubmitDeps, QueryJobsDeps, ReplayDeps, SnapshotBuildDeps,
 };
 pub use facade::{build_jobs_facade, JobsFacade};
+// 阅读页 HTML 页的版面目录里按名字取的文件（字体子集、公式 SVG）。
+pub use reader::layout::ReaderLayoutAsset;
 // 书的编号（先看上传记录，再查任务表），任务视图和书库视图拼封面地址都用它。
 pub use presentation::book_document_id;
 pub use files::{

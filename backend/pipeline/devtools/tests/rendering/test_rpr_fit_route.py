@@ -668,3 +668,48 @@ def test_no_background_is_kept_when_the_render_source_is_the_upload_itself(tmp_p
     manifest = json.loads((_reader_layout(context) / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["background"] is None
     assert not (_reader_layout(context) / "background.pdf").exists()
+
+
+def test_the_kept_layout_carries_the_book_subset_fonts_and_the_formula_svgs(tmp_path: Path, monkeypatch) -> None:
+    from fontTools.ttLib import TTFont
+
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path, texts=("Abc $x^2$", "xyz"))
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _pages, diagnostics, calls = _dispatch(context, mode="typst", source_pdf_path=source_pdf, translated_pages=translated)
+    assert calls == []
+    kept = diagnostics["rpr_fit_reader_layout"]
+    assert kept["fonts_skipped"] == "" and kept["math"] == 1
+    target = _reader_layout(context)
+    manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    [face] = manifest["fonts"]
+    assert face["key"] == "LibertinusSerif-Regular" and face["file"] == "fonts/LibertinusSerif-Regular.woff2"
+    assert face["family"] == "Libertinus Serif" and face["weight"] == 400 and len(face["etag"]) == 16
+    woff2 = target / face["file"]
+    assert woff2.read_bytes()[:4] == b"wOF2"
+    cmap = TTFont(str(woff2)).getBestCmap()
+    # 只留这本书版面里用到的字（两页的字簇：Abc $x^2$、xyz）
+    assert {chr(cp) for cp in cmap} >= set("Abcxyz$^2")
+    assert "Q" not in {chr(cp) for cp in cmap}
+    assert (target / "math" / "00112233aabbccdd.svg").is_file()
+
+
+def test_without_fonttools_the_layout_is_kept_without_fonts(tmp_path: Path, monkeypatch) -> None:
+    import builtins
+
+    real_import = builtins.__import__
+
+    def no_fonttools(name, *args, **kwargs):
+        if name.startswith("fontTools"):
+            raise ImportError(name)
+        return real_import(name, *args, **kwargs)
+
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    monkeypatch.setattr(builtins, "__import__", no_fonttools)
+    source_pdf, document_path, translated = _job(tmp_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _pages, diagnostics, calls = _dispatch(context, mode="typst", source_pdf_path=source_pdf, translated_pages=translated)
+    assert calls == []
+    assert diagnostics["rpr_fit_reader_layout"]["fonts_skipped"] == "fonttools_missing"
+    manifest = json.loads((_reader_layout(context) / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["fonts"] == [] and len(manifest["pages"]) == 2

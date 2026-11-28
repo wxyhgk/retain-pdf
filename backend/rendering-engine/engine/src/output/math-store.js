@@ -27,10 +27,14 @@ class MathStore {
   // renderer: { texToSVG(tex, display) } (default: mathjax-node).
   // files: write each formula's SVG under math/ (the Typst output draws
   // them from there); the PDF output only needs entry.svg.
-  constructor(outDir, { stamps = false, renderer = null, files = true } = {}) {
+  // pad: pad SVGs that contain <text> so Typst does not clip it (padTextSVG);
+  // the PDF output writes the files for other renderers (a browser) and
+  // keeps MathJax's own box, so it turns this off.
+  constructor(outDir, { stamps = false, renderer = null, files = true, pad = true } = {}) {
     this.outDir = outDir;
     this.dir = path.join(outDir, "math");
     this.files = files;
+    this.pad = pad;
     if (files) fs.mkdirSync(this.dir, { recursive: true });
     this.renderer = renderer || defaultRenderer();
     this.stats = { formulas: 0, failed: [], ms: 0 };
@@ -81,7 +85,7 @@ class MathStore {
     }
     else {
       const name = `${crypto.createHash("sha1").update(key).digest("hex").slice(0, 16)}.svg`;
-      const padded = padTextSVG(result.svg);
+      const padded = this.pad ? padTextSVG(result.svg) : { svg: String(result.svg), pad: null };
       if (this.files) fs.writeFileSync(path.join(this.dir, name), padded.svg);
       entry = {
         ok: true, tex, file: this.files ? `math/${name}` : null, svg: result.svg,

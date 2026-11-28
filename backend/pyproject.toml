@@ -8,7 +8,8 @@ dependencies = [
   "retainpdf-base",
   "retainpdf-math",
   # scan-ocr：扫描件的公式编号截图识别（rapidocr + onnxruntime），Docker、CI、开发环境都装
-  "retainpdf-pipeline[scan-ocr]",
+  # reader-fonts：阅读页 HTML 页的字体按书切子集转 woff2（fonttools + brotli），同上
+  "retainpdf-pipeline[scan-ocr,reader-fonts]",
   "retainpdf-table-agent",
   "retainpdf-toc-agent",
   "retainpdf-translation",
