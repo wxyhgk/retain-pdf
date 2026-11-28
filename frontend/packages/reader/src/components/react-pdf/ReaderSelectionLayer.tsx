@@ -17,9 +17,11 @@ import { Button } from "@retainpdf/ui";
 import type { ReaderMenuContext, ReaderMenuItem } from "../../extensions/types.js";
 import { useReaderFavorites } from "../../hooks/use-reader-favorites.js";
 import { READER_PAGE_ATTR, READER_PANE_ATTR, READER_PDF_PANE_CLASS, READER_ROOT_CLASS } from "../../pdf/reader-dom-contract.js";
-import { cleanPdfSelectionText, formulaRunAt, mergeSelectionRects, type FormulaToken, type SelectionRect } from "../../shared/content/selection-text.js";
+import { SELECTABLE_LAYER, selectionCleanText, selectionLayerOf } from "../../pdf/page-selection.js";
+import { formulaRunAt, mergeSelectionRects, type FormulaToken, type SelectionRect } from "../../shared/content/selection-text.js";
 import { addReaderFavorite, findReaderFavorite, readReaderFavorites } from "../../shared/state/reader-favorites.js";
 
+/** pdf.js 的文字层：行内公式整个选只在这一层认（HTML 页照版面画的那层里公式本来就是一整个）。 */
 const TEXT_LAYER = ".textLayer";
 /** 浮条离选区多远、多高（放不下上面就放下面）。 */
 const BAR_GAP = 8;
@@ -41,13 +43,13 @@ function elementOf(node: Node | null): Element | null {
   return node.nodeType === 1 ? (node as Element) : node.parentElement;
 }
 
-/** 现在书页文字层里选着的字；没选着、选的不是书页上的字是 null。 */
+/** 现在书页上选着的字（pdf.js 文字层、HTML 页的两层，page-selection.ts）；没选着、选的不是书页上的字是 null。 */
 export function readPageSelection(selection: Selection | null = globalThis.getSelection?.() ?? null): ReaderPageSelection | null {
   if (!selection || selection.isCollapsed || !selection.rangeCount) return null;
   const range = selection.getRangeAt(0);
-  const layer = elementOf(range.startContainer)?.closest(TEXT_LAYER) ?? elementOf(range.endContainer)?.closest(TEXT_LAYER);
+  const layer = selectionLayerOf(range);
   if (!layer) return null;
-  const text = cleanPdfSelectionText(`${selection}`);
+  const text = selectionCleanText(selection);
   if (!text) return null;
   const slot = layer.closest(`[${READER_PAGE_ATTR}]`);
   return {
@@ -170,7 +172,7 @@ function selectionBands(selection: Selection | null): SelectionRect[] {
   const rects: SelectionRect[] = [];
   const clips = new Map<Element, DOMRect>();
   for (const node of nodes) {
-    const layer = node.parentElement?.closest(TEXT_LAYER);
+    const layer = node.parentElement?.closest(SELECTABLE_LAYER);
     if (!layer) continue;
     const pane = layer.closest(`.${READER_PDF_PANE_CLASS}`) ?? layer;
     let clip = clips.get(pane);
@@ -189,6 +191,13 @@ function selectionBands(selection: Selection | null): SelectionRect[] {
       const right = Math.min(rect.right, clip.right);
       if (right - left > 0.5) rects.push({ left, top: rect.top, right, bottom: rect.bottom });
     }
+  }
+  // HTML 页照版面画的那层里，公式是一个嵌套的 SVG（没有字）：选区碰到它就整个算进色带。
+  const scope = common.nodeType === 1 ? (common as Element) : common.parentElement;
+  for (const math of scope?.querySelectorAll<SVGElement>(".reader-layout-page svg.reader-layout-math") ?? []) {
+    if (!range.intersectsNode(math)) continue;
+    const rect = math.getBoundingClientRect();
+    if (rect.width > 0.5) rects.push({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
   }
   return mergeSelectionRects(rects);
 }

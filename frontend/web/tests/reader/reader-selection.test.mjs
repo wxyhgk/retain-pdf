@@ -134,7 +134,8 @@ test("提问窗开着时选字不再悄悄带进提问（不听 selectionchange�
   assert.doesNotMatch(ask.replace(/\/\/[^\n]*/g, ""), /selectionchange/, "又在听选字");
   assert.doesNotMatch(ask, /contextOffer/);
   assert.doesNotMatch(read("src/ask/ReaderAskPanel.tsx"), /contextOffer/);
-  assert.match(read("src/ask/anchor.ts"), /cleanPdfSelectionText\(`\$\{selection\}`\)/);
+  // 2026-11-28 下午起和复制走同一份（pdf/page-selection.ts 的 selectionCleanText，HTML 页那两层也认）。
+  assert.match(read("src/ask/anchor.ts"), /selectionCleanText\(selection\)/);
 });
 
 test("左下角「收藏」是真的列表：点一条翻回那一页，悬停出 × 删掉；没有收藏时说怎么收", () => {

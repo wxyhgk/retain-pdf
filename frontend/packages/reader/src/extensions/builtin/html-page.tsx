@@ -4,6 +4,7 @@
 // 对比版本时左栏是另一份译文的 PDF（layerPane 是 "compare"），不画。开关只在这次打开里有效，不写本机。
 // 「画译文」有排版引擎的版面（layout.json，hooks/use-render-layout.ts）时照版面画（pdf/LayoutPageLayer.tsx，和译文 PDF 一样）；
 // 版面里没有的页是原页（整页图、不翻的参考文献）。没有版面时退回按 OCR 的框塞字（pdf/HtmlPageLayer.tsx）。
+// 动效（只在照版面画时有）：菜单里「逐字浮现」开关；点公式分步展开一直有（LayoutPageLayer）。
 import { useMemo, useState, type ReactElement } from "react";
 import { CodeXml } from "lucide-react";
 import { Button } from "@retainpdf/ui";
@@ -24,6 +25,7 @@ function HtmlPageExtension(): ReactElement | null {
   const api = useReaderApi();
   const [text, setText] = useState<HtmlPageText | null>(null);
   const [arrivedAt, setArrivedAt] = useState(0);
+  const [charRise, setCharRise] = useState(false);
   const byPage = useMemo(() => regionsByPage(api.regions), [api.regions]);
   const layout = useRenderLayout();
   const layoutFont = useMemo(() => renderLayoutFontFamily(layout?.fonts ?? []), [layout]);
@@ -62,6 +64,25 @@ function HtmlPageExtension(): ReactElement | null {
                 {choice.label}
               </Button>
             ))}
+            {layout ? (
+              <>
+                <span className="reader-html-page-menu-sep" aria-hidden />
+                <Button
+                  className="reader-html-page-choice"
+                  role="menuitemcheckbox"
+                  aria-checked={charRise}
+                  title="一段话滚进来时，字一个接一个浮上来"
+                  onClick={() => {
+                    setCharRise((value) => !value);
+                    if (!text) choose("translated");
+                    done();
+                  }}
+                >
+                  逐字浮现
+                </Button>
+                <p className="reader-html-page-menu-note">点公式会分步展开</p>
+              </>
+            ) : null}
           </div>
         ),
       }],
@@ -70,7 +91,7 @@ function HtmlPageExtension(): ReactElement | null {
           if (!active || pane !== "source") return null;
           if (text === "translated" && layout) {
             const layoutPage = layout.pages.get(page);
-            return layoutPage ? <LayoutPageLayer page={layoutPage} width={width} height={height} fontFamily={layoutFont} arrivedAt={arrivedAt} /> : null;
+            return layoutPage ? <LayoutPageLayer page={layoutPage} width={width} height={height} fontFamily={layoutFont} arrivedAt={arrivedAt} charRise={charRise} /> : null;
           }
           return (
             <HtmlPageLayer
@@ -86,7 +107,7 @@ function HtmlPageExtension(): ReactElement | null {
         }
         : undefined,
     };
-  }, [text, arrivedAt, byPage, metadata, hasTranslation, visibleMode, setWorkspace, layout, layoutFont]);
+  }, [text, arrivedAt, byPage, metadata, hasTranslation, visibleMode, setWorkspace, layout, layoutFont, charRise]);
   useReaderContribution(contribution);
   return null;
 }

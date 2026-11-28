@@ -76,3 +76,26 @@
     display: none;
   }
 }
+
+/* HTML 页的两层（照版面画的 SVG、按 OCR 框塞字的那层）也是自己画选区：浏览器那层透明，色带照常画。
+ * 照版面画的那页，底下 pdf.js 的文字层是被盖住的原文：不让选（不然拖在行缝里会选中看不见的英文）。 */
+.reader-layout-page ::selection,
+.reader-html-page ::selection {
+  background: transparent;
+}
+
+.reader-layout-page text {
+  cursor: text;
+}
+
+[data-reader-page]:has(> .reader-layout-page) .textLayer {
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.reader-react-root[data-select-pane="source"] [data-reader-pane="translated"] :is(.reader-layout-page, .reader-html-page),
+.reader-react-root[data-select-pane="translated"] [data-reader-pane="source"] :is(.reader-layout-page, .reader-html-page) {
+  -webkit-user-select: none;
+  user-select: none;
+}

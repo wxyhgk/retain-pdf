@@ -8,7 +8,7 @@ export type ReaderPageSelection = {
     /** 选区开头所在的文字层（给扩展的右键项认是哪一页）。 */
     layer: Element;
 };
-/** 现在书页文字层里选着的字；没选着、选的不是书页上的字是 null。 */
+/** 现在书页上选着的字（pdf.js 文字层、HTML 页的两层，page-selection.ts）；没选着、选的不是书页上的字是 null。 */
 export declare function readPageSelection(selection?: Selection | null): ReaderPageSelection | null;
 /** 写剪贴板：先用 clipboard API；不行（局域网 http 打开的页面没有）就让浏览器复制现在的选区，copy 事件里换成收拾过的字。 */
 export declare function copySelectionText(text: string): Promise<boolean>;

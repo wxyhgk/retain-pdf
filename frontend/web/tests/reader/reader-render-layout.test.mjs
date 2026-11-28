@@ -58,8 +58,8 @@ test("一页一个 SVG：viewBox 是版面的 pt，先画盖原字的块，字�
   assert.match(html, /<svg class="reader-layout-page" data-html-page="1" viewBox="0 0 607.408 800.901" width="776" height="1023" preserveAspectRatio="none"/);
   assert.match(html, /<rect x="46.809" y="286.117" width="278.93\d*" height="146.32\d*" fill="rgb\(244, 244, 244\)"/);
   assert.match(html, /<g class="reader-layout-block" data-html-block="p001-b0014" fill="rgb\(0, 0, 0\)" font-size="9.98" font-weight="400"/);
-  assert.match(html, /<text x="51.544" y="294.827" lang="zh-Hans">摘<\/text>/);
-  assert.match(html, /<text x="72.1" y="294.827" lang="en">MHAT<\/text>/);
+  assert.match(html, /<text x="51.544" y="294.827" lang="zh-Hans" style="--i:0">摘<\/text>/);
+  assert.match(html, /<text x="72.1" y="294.827" lang="en" style="--i:2">MHAT<\/text>/);
   assert.ok(html.indexOf("<rect") < html.indexOf("<g"), "盖原字的块要先画");
 });
 
@@ -95,4 +95,53 @@ test("接到 HTML 页上：「画译文」有版面就照版面画，版面里�
   assert.match(ext, /: null;\s*\}\s*return \(\s*<HtmlPageLayer/);
   // 后端接口出来之前只有开发时地址上带 ?render_layout= 才读。
   assert.match(read("src/hooks/use-render-layout.ts"), /\.get\("render_layout"\)/);
+});
+
+test("HTML 页上选字（2026-11-28 用户：「继续做下面的两个」）：版面层按版面拼——换行、换块、西文补空格、公式整个写成 $LaTeX$；三层都认", async () => {
+  const { JSDOM } = await import("jsdom");
+  const dom = new JSDOM(`<!doctype html><body><div data-reader-page="5" data-reader-pane="source">
+    <svg class="reader-layout-page" viewBox="0 0 600 800">
+      <g class="reader-layout-block" data-html-block="b1" font-size="10">
+        <text x="50" y="100">寿</text><text x="60" y="100">命</text><text x="70" y="100">为</text>
+        <svg class="reader-layout-math" x="80" width="40" data-tex="1.5 \\pm 0.3" data-baseline="100"></svg>
+        <text x="125" y="100" lang="en">ps</text><text x="140" y="100">，</text>
+        <text x="50" y="114">对</text><text x="60" y="114">应</text>
+      </g>
+      <g class="reader-layout-block" data-html-block="b2" font-size="10">
+        <text x="50" y="140" lang="en">Co-H</text><text x="80" y="140" lang="en">MHAT</text>
+      </g>
+    </svg></div></body>`);
+  const { layoutSelectionText } = await import("../../../packages/reader/src/pdf/page-selection.ts");
+  const doc = dom.window.document;
+  const svg = doc.querySelector(".reader-layout-page");
+  const texts = svg.querySelectorAll("text");
+  const range = doc.createRange();
+  range.setStart(texts[0].firstChild, 0);
+  range.setEnd(texts[texts.length - 1].firstChild, 4);
+  assert.equal(layoutSelectionText(range, svg), "寿命为$1.5 \\pm 0.3$ps，\n对应\n\nCo-H MHAT");
+  dom.window.close();
+  const shared = read("src/pdf/page-selection.ts");
+  assert.match(shared, /export const SELECTABLE_LAYER = "\.textLayer, \.reader-layout-page, \.reader-html-page";/);
+  // 复制、浮条、提问取出处都走同一份。
+  assert.match(read("src/components/react-pdf/ReaderSelectionLayer.tsx"), /const text = selectionCleanText\(selection\);/);
+  assert.match(read("src/ask/anchor.ts"), /const text = selectionCleanText\(selection\)\.slice\(0, SELECTION_LIMIT\);/);
+  // 照版面画的那页，底下被盖住的 pdf.js 文字层不让选。
+  assert.match(read("styles/selection.css"), /\[data-reader-page\]:has\(> \.reader-layout-page\) \.textLayer \{[^}]*user-select: none;[^}]*pointer-events: none;/);
+});
+
+test("动效：逐字浮现（菜单开关，按 data-risen 不按 class——重画会把 class 写回去）；点公式分步展开（MathJax 顶层几项依次出来、闪浅蓝）", async () => {
+  const layer = read("src/pdf/LayoutPageLayer.tsx");
+  assert.match(layer, /entry\.target\.setAttribute\("data-risen", ""\)/);
+  assert.doesNotMatch(layer, /classList\.add\("has-risen"\)/, "React 重画会把 class 写回去，浮过的块又藏起来");
+  assert.match(layer, /style=\{\{ "--i": charIndex \} as CSSProperties\}/);
+  assert.match(layer, /onClick=\{onMathClick\}/);
+  const css = read("styles/live-translation.css");
+  assert.match(css, /\.reader-layout-block\[data-risen\] :is\(text, \.reader-layout-math\) \{\s*animation: reader-layout-char-rise/);
+  assert.match(css, /animation-delay: min\(calc\(var\(--i, 0\) \* 14ms\), 1600ms\);/);
+  assert.match(read("src/extensions/builtin/html-page.tsx"), /逐字浮现/);
+  const { JSDOM } = await import("jsdom");
+  const dom = new JSDOM(`<!doctype html><svg class="reader-layout-math"><g data-mml-node="math"><g data-mml-node="mrow"><g data-mml-node="mn"></g><g data-mml-node="mo"></g><g data-mml-node="mn"></g></g></g></svg>`);
+  const { formulaTerms } = await import("../../../packages/reader/src/pdf/LayoutPageLayer.tsx");
+  assert.deepEqual(formulaTerms(dom.window.document.querySelector("svg")).map((term) => term.getAttribute("data-mml-node")), ["mn", "mo", "mn"], "只有一个 mrow 时往下一层拆");
+  dom.window.close();
 });
