@@ -407,6 +407,8 @@ def build_book_rpr_fit_pdf(
 
     report = run.report
     engine_info = dict(report.get("engine") or {})
+    # 正文用的字重：引擎报告 font.weight（--pdf-font-weight，细体），没写就是常规体 400
+    diagnostics["rpr_fit_pdf_font_weight"] = int((report.get("font") or {}).get("weight") or 400)
     diagnostics["rpr_fit_reader_layout"] = _keep_reader_layout(
         run,
         output_pdf_path,

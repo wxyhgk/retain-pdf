@@ -255,3 +255,46 @@ def test_the_old_rpr_value_renders_with_rpr_fit(tmp_path: Path) -> None:
         _, diagnostics, calls = _dispatch(_context(tmp_path, render_engine="rpr"), mode="overlay")
     resolve.assert_called_once_with("rpr-fit.js")
     assert calls == ["overlay"] and diagnostics["render_engine_requested"] == "rpr_fit"
+
+
+def _light_font_setup(tmp_path: Path, monkeypatch, *, table: bool = True, font: bool = True) -> Path:
+    """引擎里有没有 300 的字宽表、字体目录里有没有 300 的细体。返回那个字体目录。"""
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    if table:
+        tables = tmp_path / "engine" / "engine" / "data" / "fonts"
+        tables.mkdir(parents=True, exist_ok=True)
+        (tables / "source-han-serif-sc-w300.json").write_text("{}", encoding="utf-8")
+    fonts = tmp_path / "fonts"
+    fonts.mkdir()
+    if font:
+        (fonts / "RetainPDFSerifSC-W300.otf").write_bytes(b"otf")
+    monkeypatch.delenv(engine_cli.PDF_FONT_WEIGHT_ENV_VAR, raising=False)
+    return fonts
+
+
+def _engine_argv(tmp_path: Path, fonts: Path) -> list[str]:
+    runtime = engine_cli.resolve_engine_runtime()
+    engine_cli.run_engine(runtime, input_path=_minimal_input(tmp_path), out_dir=tmp_path / "out", font_paths=[fonts])
+    return json.loads((tmp_path / "out" / "argv.json").read_text(encoding="utf-8"))["argv"]
+
+
+def test_the_pdf_body_text_is_drawn_with_the_light_instance(tmp_path: Path, monkeypatch) -> None:
+    # 2026-11-28 用户看样张定 300：PDF 阅读器会把嵌入字体画粗
+    argv = _engine_argv(tmp_path, _light_font_setup(tmp_path, monkeypatch))
+    assert argv[argv.index("--pdf-font-weight") + 1] == "300"
+
+
+@pytest.mark.parametrize("missing", ["table", "font"])
+def test_without_the_light_font_or_its_table_the_pdf_keeps_regular(tmp_path: Path, monkeypatch, missing: str) -> None:
+    # 桌面版的字体是按需下载的，没带上细体时照旧用常规体，不因此排失败
+    # （直接给字体目录：仓库自己的 resources/fonts 里有细体）
+    fonts = _light_font_setup(tmp_path, monkeypatch, **{missing: False})
+    runtime = engine_cli.resolve_engine_runtime()
+    assert engine_cli.pdf_font_weight(runtime, [fonts]) == 400
+    assert engine_cli.pdf_font_weight_args(runtime, [fonts]) == []
+
+
+def test_the_pdf_font_weight_can_be_set_back_to_regular(tmp_path: Path, monkeypatch) -> None:
+    fonts = _light_font_setup(tmp_path, monkeypatch)
+    monkeypatch.setenv(engine_cli.PDF_FONT_WEIGHT_ENV_VAR, "400")
+    assert "--pdf-font-weight" not in _engine_argv(tmp_path, fonts)

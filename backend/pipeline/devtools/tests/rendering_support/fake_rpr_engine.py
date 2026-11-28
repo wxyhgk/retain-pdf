@@ -36,7 +36,7 @@ def main(argv):
     index = 0
     while index < len(argv):
         key = argv[index]
-        if key in ("--input", "--out-dir", "--typst", "--font-path", "--output"):
+        if key in ("--input", "--out-dir", "--typst", "--font-path", "--output", "--pdf-font-weight"):
             args.setdefault(key, []).append(argv[index + 1])
         else:
             sys.stderr.write(json.dumps({"error": f"unknown argument {key}"}) + "\n")

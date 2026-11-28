@@ -11,9 +11,14 @@ module.exports = {
   // Advance table of the default face (Source Han Serif SC), for
   // Text.createMeasurer({ metrics }): weight "regular" (default) or "bold"
   // (headings in the retain profile, FitModel measurers.bold). Browser/Zotero
-  // hosts load the same JSON files themselves.
+  // hosts load the same JSON files themselves. A number other than 400 is a
+  // static instance of the variable font at that weight (the PDF output's
+  // pdfFontWeight): data/fonts/source-han-serif-sc-w<N>.json, built by
+  // scripts/build-advance-table.js from that instance; it throws when absent.
   defaultFontTable(weight = "regular") {
-    const file = weight === "bold" ? "source-han-serif-sc-bold.json" : "source-han-serif-sc-regular.json";
+    const file = weight === "bold" ? "source-han-serif-sc-bold.json"
+      : typeof weight === "number" && weight !== 400 ? `source-han-serif-sc-w${weight}.json`
+        : "source-han-serif-sc-regular.json";
     return require(path.join(__dirname, "..", "data", "fonts", file));
   }
 };
