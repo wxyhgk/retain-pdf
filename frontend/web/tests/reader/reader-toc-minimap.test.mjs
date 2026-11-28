@@ -129,12 +129,16 @@ test("摆在书页区左缘、竖着居中；平时只有短横线，悬停 / �
   assert.match(entry, /@import "\.\/toc-minimap\.css" layer\(pages\);/);
   const app = readFileSync(new URL("../../../packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url), "utf8");
   const stage = app.slice(app.indexOf('<div className="reader-stage">'), app.indexOf("<ReaderCompareGrid"));
-  assert.match(stage, /<ReaderTocMinimap bookmarks=\{bookmarks\} onJumpPage=\{c\.goToPage\} onJumpBlock=\{jumpToBlock\} pinned=\{tocPinned\} onUnpin=\{unpinToc\} \/>/, "在书页区里");
+  assert.match(stage, /\{tocDocked \? null : <ReaderTocMinimap bookmarks=\{bookmarks\} onJumpPage=\{c\.goToPage\} onJumpBlock=\{jumpToBlock\} pinned=\{tocPinned\} onPinChange=\{setTocPinned\} \/>\}/, "在书页区里（没固定成一栏时）");
+  const workspace = app.slice(app.indexOf('<div className="reader-workspace">'), app.indexOf('<div className="reader-stage">'));
+  assert.match(workspace, /\{tocDocked \? <ReaderTocMinimap [^>]*pinned docked onPinChange=\{setTocPinned\} \/> : null\}\s*<ReaderFinderArea/, "固定成一栏时在中间工作区最左边");
+  assert.match(app, /const tocDocked = tocPinned && finderState\.pinned;/, "屏够宽才固定成一栏（和左栏同一条线）");
+  assert.match(app, /compareFitsStage\(c\.shell\.shellWidth, sideDocked \|\| leftDocked \|\| tocDocked\)/, "固定的目录也算让位");
   const finder = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderFinder.tsx", import.meta.url), "utf8");
   assert.match(finder, /const TAB_TITLES: Record<ReaderFinderTab, string> = \{ search: "搜索", bookmarks: "书签", issues: "待改" \};/, "左栏没有目录页签");
 });
 
-test("顶栏「目录」按钮钉住目录卡（2026-11-28）：钉住时卡片一直开着、按 Esc 收起；书里没有目录时按钮灰掉", async () => {
+test("固定目录（2026-11-28）：卡片顶上的图钉、顶栏「目录」按钮是同一个开关；浮着固定时卡片一直开着、按 Esc 收起；固定成一栏时不画短横线；没有目录时按钮灰掉", async () => {
   const dom = makeDom("", { html: "<!doctype html><html><body><div id='root'></div></body></html>" });
   const React = await import("react");
   const { act } = React;
@@ -143,13 +147,13 @@ test("顶栏「目录」按钮钉住目录卡（2026-11-28）：钉住时卡片�
   const { ReaderProvider } = await import("../../../packages/reader/src/components/react-pdf/reader-context.tsx");
   const root = createRoot(dom.window.document.getElementById("root"));
   const doc = dom.window.document;
-  let unpinned = 0;
+  const pins = [];
   let toggled = 0;
-  const render = async (pinned, available = true) => {
+  const render = async (pinned, available = true, docked = false) => {
     await act(async () => {
       root.render(React.createElement(ReaderProvider, { value: { regions: [] }, hud: { currentPage: 95 } },
         React.createElement(ReaderTocToggle, { pinned, available, onToggle: () => { toggled += 1; } }),
-        React.createElement(ReaderTocMinimap, { bookmarks: BIG, onJumpPage() {}, onJumpBlock() {}, pinned, onUnpin: () => { unpinned += 1; } })));
+        React.createElement(ReaderTocMinimap, { bookmarks: BIG, onJumpPage() {}, onJumpBlock() {}, pinned, docked, onPinChange: (next) => pins.push(next) })));
     });
   };
   await render(false);
@@ -160,16 +164,28 @@ test("顶栏「目录」按钮钉住目录卡（2026-11-28）：钉住时卡片�
   assert.equal(button.getAttribute("aria-pressed"), "false");
   await act(async () => { button.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); });
   assert.equal(toggled, 1);
+  const pin = nav.querySelector(".reader-toc-head .reader-toc-pin");
+  assert.equal(pin.getAttribute("aria-label"), "固定在左边");
+  await act(async () => { pin.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); });
+  assert.deepEqual(pins.splice(0), [true], "点图钉固定");
   await render(true);
   assert.equal(nav.dataset.pinned, "true");
   assert.equal(doc.querySelector(".reader-toc-toggle").getAttribute("aria-pressed"), "true");
   assert.ok(nav.querySelector('[aria-label="收起「第 4 章」"]'), "一钉住就展开当前章");
+  assert.equal(nav.querySelector(".reader-toc-pin").getAttribute("aria-label"), "取消固定");
   await act(async () => { nav.querySelector(".reader-toc-entry").dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); });
-  assert.equal(unpinned, 1, "钉住时按 Esc 收起");
+  assert.deepEqual(pins.splice(0), [false], "浮着固定时按 Esc 收起");
+  await render(true, true, true);
+  assert.equal(doc.querySelector(".reader-toc-minimap"), null, "固定成一栏时不画短横线");
+  const dock = doc.querySelector("nav.reader-toc-dock");
+  assert.ok(dock.querySelector('[aria-label="收起「第 4 章」"]'), "一栏里也展开当前章");
+  await act(async () => { dock.querySelector(".reader-toc-pin").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })); });
+  assert.deepEqual(pins.splice(0), [false], "一栏里点图钉取消固定");
   await render(false, false);
   assert.equal(doc.querySelector(".reader-toc-toggle").disabled, true, "没有目录时灰掉");
   root.unmount();
   dom.window.close();
   const css = readFileSync(new URL("../../../packages/reader/styles/toc-minimap.css", import.meta.url), "utf8");
-  assert.match(css, /\.reader-toc-minimap\[data-pinned="true"\] \.reader-toc-card,[^{]*\{[^}]*opacity:\s*1/s, "钉住时卡片开着");
+  assert.match(css, /\.reader-toc-minimap\[data-pinned="true"\] \.reader-toc-card,[^{]*\{[^}]*opacity:\s*1/s, "固定时卡片开着");
+  assert.match(css, /\.reader-toc-dock\s*\{[^}]*flex:\s*none;[^}]*width:\s*var\(--reader-sidebar-width, 248px\)/s, "一栏和左栏一样宽、实占");
 });

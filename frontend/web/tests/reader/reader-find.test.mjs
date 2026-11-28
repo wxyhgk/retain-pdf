@@ -241,7 +241,7 @@ test("屏够宽时左栏实占一栏（2026-11-28 照原型）：点书、Esc �
   assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ""), /--reader-stage-left|reader-finder-pin|reader-bookmark-tree|reader-finder-switch|--warn/);
   const app = readFileSync(new URL("../../../packages/reader/src/ReaderAppReactPdf.tsx", import.meta.url), "utf8");
   assert.match(app, /const leftDocked = Boolean\(finder\) && finderState\.pinned;/);
-  assert.match(app, /compareFitsStage\(c\.shell\.shellWidth, sideDocked \|\| leftDocked\)/, "左栏开着也算进放不放得下对照");
+  assert.match(app, /compareFitsStage\(c\.shell\.shellWidth, sideDocked \|\| leftDocked \|\| tocDocked\)/, "左栏开着也算进放不放得下对照");
   const finder = readFileSync(new URL("../../../packages/reader/src/app/use-reader-finder.ts", import.meta.url), "utf8");
   assert.match(finder, /const pinned = wide;/, "屏够宽就实占一栏，没有图钉");
 });

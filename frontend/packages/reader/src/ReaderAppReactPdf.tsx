@@ -73,13 +73,17 @@ export function ReaderAppReactPdf() {
   const finderState = useReaderFinder(c);
   const { finder, findTerm } = finderState;
   const leftDocked = Boolean(finder) && finderState.pinned;
+  // 目录固定了：屏够宽（和左栏同一条线，finderState.pinned）时是中间工作区最左边实占的一栏，窄屏只是卡片一直开着。
+  // 只在这一次打开里记着（2026-11-28 左栏也是一进来收着）。
+  const [tocPinned, setTocPinned] = useState(false);
+  const tocDocked = tocPinned && finderState.pinned;
   const closeAssistant = useCallback(() => {
     setAssistantPanel(null);
   }, []);
   useRightDockSlot(reserveRight, assistantPanel, closeAssistant);
   // 实时译文叠不叠、可见台面（Grid / Tabs / 键盘 / HUD 的唯一真源）、两个开关摆哪：app/use-live-translation-overlay。
   const { liveTranslationVisible, setLiveTranslationVisible, paneComposition, liveToggles, sourceViewOnly, visiblePdfMode } = useLiveTranslationOverlay(
-    c, assistantOpen, compareFitsStage(c.shell.shellWidth, sideDocked || leftDocked),
+    c, assistantOpen, compareFitsStage(c.shell.shellWidth, sideDocked || leftDocked || tocDocked),
   );
   useReaderModePersistence(c, sourceViewOnly);
   const workspaceView = assistantPanel || (c.mode === "compare" ? "compare" : "reading");
@@ -136,10 +140,8 @@ export function ReaderAppReactPdf() {
   const jumpToBlockIn = useCallback((itemId: string, pane?: "source" | "translated") => c.jumpToAnchor({ block_id: itemId }, pane), [c.jumpToAnchor]);
   // PDF 自带的书签、各栏读好的 PDF 和放大查看（app/use-reader-pdf-assets）。
   const { bookmarks, onPdfOutline, onPdfDocument, zoomItem, setZoomItem, zoomBlock, closeZoom, zoomDocuments } = useReaderPdfAssets(c);
-  // 目录：顶栏左边的「目录」按钮钉住 / 收起书页区左缘的目录卡（没钉住时悬停照样出）。没有目录时按钮灰掉。
+  // 目录：卡片顶上的图钉、顶栏左边的「目录」按钮固定 / 收起它（没固定时悬停照样出）。没有目录时按钮灰掉。
   const hasToc = useMemo(() => readerToc(bookmarks, readerOutline(session.regions)).length > 0, [bookmarks, session.regions]);
-  const [tocPinned, setTocPinned] = useState(false);
-  const unpinToc = useCallback(() => setTocPinned(false), []);
   // 改译文（app/use-reader-block-editing）。
   const { blockEdit, editBlock, revisedBlocks } = useReaderBlockEditing(c, visiblePdfMode, regionHover);
   // 右键书页的菜单：开在哪、第几页（菜单项和下面那几块是扩展登记的）。
@@ -244,6 +246,7 @@ export function ReaderAppReactPdf() {
     assistantOpen ? "is-assistant-open" : "",
     finder ? "is-finder-open" : "",
     leftDocked ? "is-sidebar-pinned" : "",
+    tocDocked && hasToc ? "is-toc-docked" : "",
     paneComposition.overlayOnSource ? "is-live-translation-overlay" : "",
   ].filter(Boolean).join(" ");
 
@@ -296,10 +299,11 @@ export function ReaderAppReactPdf() {
             </>}
           />
           <div className="reader-workspace">
+            {tocDocked ? <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} pinned docked onPinChange={setTocPinned} /> : null}
             <ReaderFinderArea state={finderState} bookmarkScope={c.viewStateKey} issues={issueNav} />
             <div className="reader-stage">
-              {/* 目录：书页区左缘一排短横线，移上去出目录卡（照原型 reader-prototype.html）；顶栏「目录」按钮钉住它。 */}
-              <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} pinned={tocPinned} onUnpin={unpinToc} />
+              {/* 目录：书页区左缘一排短横线，移上去出目录卡（照原型 reader-prototype.html）；固定成一栏时画在上面工作区最左边。 */}
+              {tocDocked ? null : <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} pinned={tocPinned} onPinChange={setTocPinned} />}
               {/* 右缘竖条：AI 回答、Markdown、下载（2026-11-28 从顶栏右边挪过来，悬浮不占栏）。 */}
               <ReaderSideRail active={assistantPanel} />
               <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />

@@ -90,11 +90,61 @@
   opacity: 0;
 }
 
+/* 卡片顶上一行：「目录」和图钉（2026-11-28 用户要的：点了固定在左边）。 */
+.reader-toc-head {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 4px 14px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+  font-weight: 600;
+}
+
+.reader-toc-pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.reader-toc-pin:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+.reader-toc-pin[aria-pressed="true"] {
+  color: var(--ink);
+}
+
+/* 固定成一栏（屏够宽时）：中间工作区最左边实占，和左栏（finder.css 的 data-pinned）一个样子——
+ * 全高、纸色底、右边一道线，没有圆角和投影；书页往右让。 */
+.reader-toc-dock {
+  position: relative;
+  z-index: var(--z-hud, 36);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  width: var(--reader-sidebar-width, 248px);
+  min-height: 0;
+  border-right: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  background: var(--paper);
+}
+
 .reader-toc-filter {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 10px 10px 6px;
+  padding: 4px 10px 6px;
   border-bottom: 1px solid var(--line);
   color: var(--muted);
 }
