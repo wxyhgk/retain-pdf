@@ -4,6 +4,7 @@
   "runtime_python_packages": [
     "Pillow",
     "PyMuPDF",
+    "brotli",
     "fontTools",
     "pikepdf",
     "rapidocr",
@@ -288,6 +289,17 @@
       "devtool_required": true
     },
     {
+      "import_name": "brotli",
+      "package_name": "brotli",
+      "runtime_files": [
+        "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py"
+      ],
+      "devtool_files": [],
+      "test_files": [],
+      "runtime_required": true,
+      "devtool_required": false
+    },
+    {
       "import_name": "certifi",
       "package_name": "certifi",
       "runtime_files": [],
@@ -535,10 +547,13 @@
       "import_name": "fontTools",
       "package_name": "fontTools",
       "runtime_files": [
-        "retainpdf_pipeline/foundation/config/fonts.py"
+        "retainpdf_pipeline/foundation/config/fonts.py",
+        "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py"
       ],
       "devtool_files": [],
-      "test_files": [],
+      "test_files": [
+        "devtools/tests/rendering/test_rpr_fit_route.py"
+      ],
       "runtime_required": true,
       "devtool_required": false
     },

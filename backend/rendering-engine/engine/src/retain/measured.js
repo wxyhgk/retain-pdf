@@ -331,7 +331,7 @@ function runMeasured(input, options = {}) {
   const fontPaths = (options.typst && options.typst.fontPaths) || [];
   // Fail before any work when the PDF output cannot find its font files.
   const fonts = output === "pdf" ? { ...findFamily(fontPaths, "Source Han Serif SC"), fallbacks: findFallbacks(fontPaths) } : null;
-  const maths = output === "pdf" ? new MathStore(outDir, { files: false }) : new MathStore(outDir, { stamps: true });
+  const maths = output === "pdf" ? new MathStore(outDir, { pad: false }) : new MathStore(outDir, { stamps: true });
   const { job, model, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow, measurers } = fitInput(input, { maths, timings });
 
   let mark = performance.now();

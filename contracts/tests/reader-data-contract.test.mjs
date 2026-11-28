@@ -17,6 +17,8 @@ test("reader data schema publishes the complete independent read surfaces", () =
   const binary = contract.endpoints.filter((endpoint) => endpoint.transport === "binary");
   assert.deepEqual(binary.map(({ method, path, output }) => [method, path, output]), [
     ["GET", "/api/v1/jobs/:job_id/reader/layout/background", undefined],
+    ["GET", "/api/v1/jobs/:job_id/reader/layout/fonts/:name", undefined],
+    ["GET", "/api/v1/jobs/:job_id/reader/layout/math/:name", undefined],
     ["GET", "/api/v1/jobs/:job_id/files/output/*name", undefined],
   ]);
   assert.deepEqual(
@@ -46,6 +48,9 @@ test("reader layout: the manifest says why there is none and each page is rpr_la
   assert.equal(definitions.ReaderLayoutView.properties.generate.anyOf[1].type, "null");
   assert.equal(definitions.ReaderLayoutView.properties.background.anyOf[1].type, "null");
   assert.deepEqual(definitions.ReaderLayoutBackground.required, ["url", "pages"]);
+  assert.deepEqual(definitions.ReaderLayoutFont.required, ["key", "family", "weight", "url"]);
+  assert.equal(definitions.ReaderLayoutItem.properties.font.type, "string");
+  assert.equal(definitions.ReaderLayoutItem.properties.svg.type, "string");
   assert.deepEqual(definitions.ReaderLayoutPage.required, ["index", "width", "height", "covers", "blocks"]);
   // 版面以后只加字段（比如字簇的 font）：一页里的对象不封口
   for (const name of ["ReaderLayoutPage", "ReaderLayoutCover", "ReaderLayoutBlock", "ReaderLayoutLine", "ReaderLayoutItem"]) {

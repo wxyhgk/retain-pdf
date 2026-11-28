@@ -12,6 +12,17 @@
 
 ---
 
+## 阅读页 HTML 页：照排版引擎的版面画（feat/reader-layout、feat/reader-layout-fonts）
+
+2026-11-28，只增不改。前端需求 `docs/ops/planning/reader-redesign/20261128-HTML页照排版结果画-后端需求.md`，接口见
+[阅读接口](../../api/12-阅读/01-阅读接口.md)「排版引擎的版面」。契约 `reader-data.v1` 加了 `ReaderLayoutView`、`ReaderLayoutPage` 等。
+新接口没写 `client_name`：前端接时连同生成客户端一起加，跑 `npm --prefix frontend/packages/api run generate:client`。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| HTML 页的渲染器 | 开发时读 `?render_layout=<清单>` | 读 `GET /jobs/{id}/reader/layout`，按页取 `…/pages/{page_idx}`；先画 `background`（null 用原文页），再画 `covers`、字；字体用清单 `fonts`（字簇 `font` 对 `key`），公式贴 `…/reader/layout/<svg>`；`available: false` 时有 `generate` 就给「生成 HTML 排版」按钮 |
+| 桌面安装包的 Python 依赖（`frontend/desktop/requirements-desktop-*.txt`，`sync_backend_python_requirements.py` 生成） | 没有 fontTools、brotli | 要不要带由前端定。带上（pipeline 的 extra `reader-fonts`：`fonttools==4.68.0`、`brotli==1.2.1`，约 5 MB）桌面版才有按书切的字体；不带时清单 `fonts` 是空的，HTML 页退回本机字体，译文 PDF 不受影响。后端工作区、Docker 已经带了 |
+
 ## 阅读页提问：思考档位给用户看得懂的名字、记住上次选的、报有没有真的思考（feat/ask-thinking-levels）
 
 2026-11-27，只增不改。用户：「自带的 ai 对话为什么只有两个开和关的思考模式？太诡异了」「思考部分让后端去搞」。见 [阅读页提问](../../api/16-AI/01-阅读页提问.md)

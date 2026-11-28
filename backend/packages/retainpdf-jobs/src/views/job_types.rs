@@ -91,7 +91,8 @@ pub struct ReaderLayoutView {
     /// 底图：译文 PDF 的底（去掉原字的原文页），只含 `pages` 里这些页、按页号从小到大排。渲染源就是原件
     /// （扫描件）时 null，用原文页做底。
     pub background: Option<ReaderLayoutBackgroundView>,
-    /// 画字用的字体（按书子集化的 woff2），还没做，现在是空的。
+    /// 画字用的字体：和引擎画 PDF 用的同一份，只留这本书用到的字、转 woff2；主字体在前。版面里字簇的 `font`
+    /// 是这里的 `key`。后端没装 fontTools 时是空的。
     pub fonts: Vec<ReaderLayoutFontView>,
     /// 补排：照原样发这个请求（原地重新渲染，不调模型、不花钱），跑完版面就有了。补不了时 null。
     pub generate: Option<ReaderLayoutGenerateView>,

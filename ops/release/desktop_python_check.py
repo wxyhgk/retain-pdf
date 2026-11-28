@@ -25,7 +25,14 @@ import traceback
 
 # 源码里 import 了、但安装包里可以没有的第三方库：只在 try 里用，没有就跳过那项功能。
 OPTIONAL_IMPORTS = {
-    "fontTools": "foundation/config/fonts.py 读字体家族名时先试 fontTools，没装就退回内置的名字表",
+    "fontTools": (
+        "foundation/config/fonts.py 读字体家族名时先试 fontTools，没装就退回内置的名字表；"
+        "render/output/rpr_fit/reader_layout.py 给阅读页 HTML 页按书切字体子集（retainpdf-pipeline[reader-fonts]），没装就不切"
+    ),
+    "brotli": (
+        "render/output/rpr_fit/reader_layout.py 把字体子集转 woff2 要它（retainpdf-pipeline[reader-fonts]），"
+        "没装就不切字体、清单的 fonts 是空的，HTML 页退回本机字体"
+    ),
     "rapidocr": (
         "ocr/document_schema/formula_number_ocr.py 扫描件的公式编号截图识别（retainpdf-pipeline[scan-ocr]），"
         "没装就跳过这一步、统计里记 ocr_engine_unavailable"

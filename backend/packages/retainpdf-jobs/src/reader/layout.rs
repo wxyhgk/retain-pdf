@@ -20,7 +20,9 @@ use retainpdf_core::storage_paths::MergedJobId;
 use crate::files::downloads::{stored_path, StoredFile};
 use retainpdf_files::FileDownload;
 
-use crate::views::{ReaderLayoutBackgroundView, ReaderLayoutGenerateView, ReaderLayoutPageEntryView, ReaderLayoutView};
+use crate::views::{
+    ReaderLayoutBackgroundView, ReaderLayoutFontView, ReaderLayoutGenerateView, ReaderLayoutPageEntryView, ReaderLayoutView,
+};
 
 const MANIFEST_FILE: &str = "manifest.json";
 const MANIFEST_SCHEMA: &str = "reader_layout_v1";
@@ -50,6 +52,40 @@ struct Manifest {
     /// 底图（去掉原字的渲染源，只含有版面的页）；渲染源就是原件时 null。
     #[serde(default)]
     background: Option<ManifestBackground>,
+    /// 按书切的字体子集（woff2），主字体在前；没装 fontTools 时空的。
+    #[serde(default)]
+    fonts: Vec<ManifestFont>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ManifestFont {
+    key: String,
+    #[serde(default)]
+    family: String,
+    #[serde(default)]
+    weight: u32,
+    file: String,
+    #[serde(default)]
+    etag: String,
+}
+
+/// 版面目录里可以按名字取的文件：字体子集、公式 SVG。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReaderLayoutAsset {
+    Font,
+    Math,
+}
+
+/// 字体子集的文件名：`<key>.woff2`，key 只有字母、数字、`-`、`_`。
+fn font_file_name(key: &str) -> Option<String> {
+    (!key.is_empty() && key.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_'))
+        .then(|| format!("{key}.woff2"))
+}
+
+/// 公式 SVG 的文件名：16 位十六进制 + `.svg`（引擎 MathStore 起的名）。
+fn math_file_is_safe(name: &str) -> bool {
+    name.strip_suffix(".svg")
+        .is_some_and(|stem| stem.len() == 16 && stem.bytes().all(|b| b.is_ascii_hexdigit()))
 }
 
 #[derive(Debug, Deserialize)]
@@ -158,6 +194,22 @@ pub(crate) fn load_reader_layout_view(data_root: &Path, job: &JobSnapshot, base_
                     url: format!("{base_url}/api/v1/jobs/{}/reader/layout/background", job.job_id),
                     pages: background.pages,
                 });
+            let fonts = manifest
+                .fonts
+                .into_iter()
+                .filter_map(|font| {
+                    let name = font_file_name(&font.key)?;
+                    (font.file == format!("fonts/{name}")).then(|| ReaderLayoutFontView {
+                        url: format!(
+                            "{base_url}/api/v1/jobs/{}/reader/layout/fonts/{name}?v={}",
+                            job.job_id, font.etag
+                        ),
+                        key: font.key,
+                        family: font.family,
+                        weight: font.weight,
+                    })
+                })
+                .collect();
             return ReaderLayoutView {
                 available: true,
                 reason: None,
@@ -167,7 +219,7 @@ pub(crate) fn load_reader_layout_view(data_root: &Path, job: &JobSnapshot, base_
                 page_count: pages.len(),
                 pages,
                 background,
-                fonts: Vec::new(),
+                fonts,
                 generate: None,
             };
         }
@@ -208,6 +260,44 @@ pub(crate) fn reader_layout_background(data_root: &Path, job: &JobSnapshot) -> R
         .with_job_id_header(job.job_id.clone()))
 }
 
+/// 版面目录里的字体子集（`fonts/<key>.woff2`，只认清单里列了的）、公式 SVG（`math/<16 位十六进制>.svg`）。
+/// 文件名带内容指纹或地址带 `?v=`，重新渲染就换，所以让浏览器长缓存。
+pub(crate) fn reader_layout_asset(
+    data_root: &Path,
+    job: &JobSnapshot,
+    asset: ReaderLayoutAsset,
+    name: &str,
+) -> Result<FileDownload, AppError> {
+    let not_found = || AppError::not_found(format!("no reader layout file {name}"));
+    let dir = layout_dir(data_root, job).ok_or_else(not_found)?;
+    let (relative, content_type) = match asset {
+        ReaderLayoutAsset::Font => {
+            let manifest = read_manifest(&dir).ok_or_else(not_found)?;
+            let listed = manifest
+                .fonts
+                .iter()
+                .any(|font| font_file_name(&font.key).as_deref() == Some(name) && font.file == format!("fonts/{name}"));
+            if !listed {
+                return Err(not_found());
+            }
+            (format!("fonts/{name}"), "font/woff2")
+        }
+        ReaderLayoutAsset::Math => {
+            if !math_file_is_safe(name) {
+                return Err(not_found());
+            }
+            (format!("math/{name}"), "image/svg+xml")
+        }
+    };
+    let path = dir.join(relative);
+    if !path.is_file() {
+        return Err(not_found());
+    }
+    let mut download = FileDownload::new(path, content_type, None);
+    download.cache_control = Some("private, max-age=31536000, immutable");
+    Ok(download)
+}
+
 /// 清单里这页的 etag（304 用，不读页文件）。
 pub(crate) fn reader_layout_page_etag(data_root: &Path, job: &JobSnapshot, index: u32) -> Option<String> {
     let manifest = read_manifest(&layout_dir(data_root, job)?)?;
@@ -242,6 +332,19 @@ pub(crate) fn load_reader_layout_page(
 #[cfg(test)]
 mod tests {
     use super::page_file_is_safe;
+
+    #[test]
+    fn only_plain_font_keys_and_hashed_math_names_are_served() {
+        use super::{font_file_name, math_file_is_safe};
+        assert_eq!(font_file_name("SourceHanSerifSC-Regular").as_deref(), Some("SourceHanSerifSC-Regular.woff2"));
+        for bad in ["", "../x", "a/b", "a.b", "a b"] {
+            assert_eq!(font_file_name(bad), None, "{bad}");
+        }
+        assert!(math_file_is_safe("00112233aabbccdd.svg"));
+        for bad in ["00112233aabbccd.svg", "00112233aabbccdg.svg", "../00112233aabbccdd.svg", "00112233aabbccdd.svgz"] {
+            assert!(!math_file_is_safe(bad), "{bad}");
+        }
+    }
 
     #[test]
     fn only_numbered_page_files_inside_the_layout_dir_are_read() {

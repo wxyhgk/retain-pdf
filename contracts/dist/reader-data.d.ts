@@ -255,7 +255,7 @@ export interface ReaderLayoutLine {
     items: ReaderLayoutItem[];
 }
 /**
- * 字簇 {x, t, mode?} 或公式 {x, tex, display, w, h, d}。以后可能加字段（比如 font）。
+ * 字簇 {x, t, mode?, font?} 或公式 {x, tex, display, w, h, d, svg?}。以后可能再加字段。
  */
 export interface ReaderLayoutItem {
     x: number;
@@ -284,6 +284,14 @@ export interface ReaderLayoutItem {
      * 基线以下深，em
      */
     d?: number;
+    /**
+     * 字簇用哪个字体画：清单 fonts[].key（2026-11-28 起的引擎写；mode "dflt" 的段、缺字时的后备字体都写明）
+     */
+    font?: string;
+    /**
+     * 公式的 MathJax SVG，形如 math/<16 位十六进制>.svg；取 /api/v1/jobs/:job_id/reader/layout/<svg>（2026-11-28 起的引擎写）。颜色是 currentColor
+     */
+    svg?: string;
 }
 export interface ReaderLayoutView {
     available: boolean;
@@ -331,9 +339,12 @@ export interface ReaderLayoutBackground {
     pages: number[];
 }
 /**
- * 画字用的字体（按书子集化的 woff2）。还没做，现在 fonts 是空数组。
+ * 画字用的字体：和引擎画 PDF 用的同一份文件，只留这本书用到的字、转 woff2。主字体在前（前端按这个顺序当字体栈）。url 带 ?v=，重新渲染就换，可长缓存。后端没装 fontTools 时 fonts 是空数组
  */
 export interface ReaderLayoutFont {
+    /**
+     * 版面里字簇的 font 就是它
+     */
     key: string;
     family: string;
     weight: number;

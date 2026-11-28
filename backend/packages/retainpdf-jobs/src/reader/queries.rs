@@ -49,6 +49,17 @@ impl JobQueries<'_> {
         crate::reader::layout::reader_layout_background(self.data_root, &job)
     }
 
+    /// 版面目录里的字体子集、公式 SVG；没有是 404。
+    pub fn reader_layout_asset(
+        &self,
+        job_id: &str,
+        asset: crate::reader::layout::ReaderLayoutAsset,
+        name: &str,
+    ) -> Result<retainpdf_files::FileDownload, AppError> {
+        let job = load_supported_job(self.db, self.data_root, job_id)?;
+        crate::reader::layout::reader_layout_asset(self.data_root, &job, asset, name)
+    }
+
     /// 一页版面：`(etag, 这页)`。浏览器带来的 ETag 一样就不读文件（`None`，路由回 304）。
     pub fn reader_layout_page_if_changed(
         &self,

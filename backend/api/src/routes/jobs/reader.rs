@@ -6,7 +6,7 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 
 use crate::error::AppError;
-use crate::models::api::{ApiResponse, ReaderLayoutView, ReaderMetadataView, ReaderRegionsView};
+use crate::models::api::{ApiResponse, ReaderLayoutAsset, ReaderLayoutView, ReaderMetadataView, ReaderRegionsView};
 use crate::AppState;
 
 use crate::routes::common::{
@@ -110,6 +110,38 @@ pub async fn get_reader_layout_background(
     })
     .await?;
     file_download_response(download, &headers).await
+}
+
+/// 版面用的字体子集（woff2）。只认清单里列了的，长缓存（地址带 `?v=`，重新渲染就换）。
+pub async fn get_reader_layout_font(
+    State(state): State<AppState>,
+    ApiPath((job_id, name)): ApiPath<(String, String)>,
+    headers: HeaderMap,
+) -> Result<Response, AppError> {
+    reader_layout_asset(&state, job_id, ReaderLayoutAsset::Font, name, &headers).await
+}
+
+/// 版面里公式的 MathJax SVG（`math/<16 位十六进制>.svg`），长缓存。
+pub async fn get_reader_layout_math(
+    State(state): State<AppState>,
+    ApiPath((job_id, name)): ApiPath<(String, String)>,
+    headers: HeaderMap,
+) -> Result<Response, AppError> {
+    reader_layout_asset(&state, job_id, ReaderLayoutAsset::Math, name, &headers).await
+}
+
+async fn reader_layout_asset(
+    state: &AppState,
+    job_id: String,
+    asset: ReaderLayoutAsset,
+    name: String,
+    headers: &HeaderMap,
+) -> Result<Response, AppError> {
+    let download = run_job_query_once(state, format!("reader-layout-asset:{job_id}:{asset:?}:{name}"), move |jobs| {
+        jobs.reader_layout_asset(&job_id, asset, &name)
+    })
+    .await?;
+    file_download_response(download, headers).await
 }
 
 /// 原文 Markdown 的 JSON 视图，图片链接已换成绝对地址。

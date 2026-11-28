@@ -8,3 +8,5 @@ requests==2.32.5
 urllib3==2.5.0
 onnxruntime==1.32.0
 rapidocr==3.10.0
+brotli==1.2.1
+fonttools==4.68.0

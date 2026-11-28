@@ -8,6 +8,7 @@ Regenerate with:
 
 - `Pillow`
 - `PyMuPDF`
+- `brotli`
 - `fontTools`
 - `pikepdf`
 - `rapidocr`
@@ -42,10 +43,11 @@ Regenerate with:
 | Import | Package | Runtime | Test | Example refs |
 | --- | --- | --- | --- | --- |
 | `PIL` | `Pillow` | yes | yes | `retainpdf_pipeline/ocr/document_schema/formula_number_ocr.py`, `retainpdf_pipeline/render/layout/inline_content/fallback/png_renderer.py`, `retainpdf_pipeline/render/source/background/extract.py` |
+| `brotli` | `brotli` | yes | no | `retainpdf_pipeline/render/output/rpr_fit/reader_layout.py` |
 | `certifi` | `certifi` | no | yes | `devtools/tests/translation/test_agent_flow.py` |
 | `docx` | `docx` | no | yes | `devtools/tests/rendering/test_word_export.py` |
 | `fitz` | `PyMuPDF` | yes | yes | `retainpdf_pipeline/ocr/document_schema/formula_number_ocr.py`, `retainpdf_pipeline/ocr/document_schema/pdf_geometry.py`, `retainpdf_pipeline/ocr/document_schema/pdf_text_recovery.py` |
-| `fontTools` | `fontTools` | yes | no | `retainpdf_pipeline/foundation/config/fonts.py` |
+| `fontTools` | `fontTools` | yes | yes | `retainpdf_pipeline/foundation/config/fonts.py`, `retainpdf_pipeline/render/output/rpr_fit/reader_layout.py` |
 | `pikepdf` | `pikepdf` | yes | yes | `retainpdf_pipeline/render/document/link_relocation.py`, `retainpdf_pipeline/render/document/pikepdf_outline.py`, `retainpdf_pipeline/render/document/pikepdf_overlay.py` |
 | `pytest` | `pytest` | no | yes | `devtools/tests/agent_lab/test_agent_lab.py`, `devtools/tests/agent_lab/test_sample_conference.py`, `devtools/tests/agent_lab/test_sample_essay.py` |
 | `rapidocr` | `rapidocr` | yes | no | `retainpdf_pipeline/ocr/document_schema/formula_number_ocr.py` |

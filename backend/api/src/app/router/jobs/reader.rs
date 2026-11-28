@@ -16,6 +16,10 @@ crate::endpoints! {
     GET "/api/v1/jobs/:job_id/reader/layout/pages/:page_idx" => reader::get_reader_layout_page, signed by(web);
     /// 版面的底图 PDF（去掉原字的原文页，只含有版面的页；扫描件没有）
     GET "/api/v1/jobs/:job_id/reader/layout/background" => reader::get_reader_layout_background, signed by(web);
+    /// 版面用的字体子集（woff2，按书切），清单 fonts[].url 指着它
+    GET "/api/v1/jobs/:job_id/reader/layout/fonts/:name" => reader::get_reader_layout_font, signed by(web);
+    /// 版面里公式的 MathJax SVG，版面公式项的 svg 指着它
+    GET "/api/v1/jobs/:job_id/reader/layout/math/:name" => reader::get_reader_layout_math, signed by(web);
     /// 原文 Markdown 的 JSON 视图（图片链接已换成绝对地址）
     GET "/api/v1/jobs/:job_id/reader/markdown" => reader::get_markdown_document, signed by(web);
 }

@@ -44,6 +44,7 @@ from retainpdf_pipeline.render.output.rpr_fit.reader_layout import save_reader_l
 from retainpdf_pipeline.render.output.rpr_fit.report import build_rpr_fit_fit_report_payload
 from retainpdf_pipeline.render.output.rpr_fit.toc_entries import toc_entry_layout_document
 from retainpdf_pipeline.render.output.typst.block_renderer import sanitize_typst_markdown_for_compile
+from retainpdf_pipeline.render.output.typst.compiler import _resolved_font_paths
 from retainpdf_pipeline.render.output.typst.book_support import prepare_background_work_dir
 from retainpdf_pipeline.render.output.typst.fit_report import record_fit_report_payload
 from retainpdf_base.events import emit_render_compile_progress
@@ -216,6 +217,8 @@ def _keep_reader_layout(
             source_pdf_path=Path(source_pdf_path),
             original_pdf_path=Path(original_pdf_path) if original_pdf_path is not None else None,
             restored_regions=restored_regions,
+            # 引擎的 --font-path，再加引擎自带的后备字体（engine/data/fonts/fallback，src/output/pdf/fonts.js 的 BUNDLED_FONT_DIRS）
+            font_dirs=[*_resolved_font_paths(), Path(runtime.entry).parent.parent / "data" / "fonts" / "fallback"],
         )
     except Exception as exc:  # noqa: BLE001 - 版面是附带产物，坏了不连累译文
         print(f"rpr_fit reader layout not kept: {type(exc).__name__}: {exc}", flush=True)
