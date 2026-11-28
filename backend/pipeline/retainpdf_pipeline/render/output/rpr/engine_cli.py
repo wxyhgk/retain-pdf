@@ -40,6 +40,12 @@ ENGINE_DIR_ENV_VAR = "RETAIN_RPR_ENGINE_DIR"
 NODE_ENV_VAR = "RETAINPDF_NODE_BIN"
 ENGINE_TIMEOUT_ENV_VAR = "RETAIN_RPR_ENGINE_TIMEOUT_SECONDS"
 ENGINE_OUTPUT_ENV_VAR = "RETAIN_RPR_ENGINE_OUTPUT"
+PDF_FONT_WEIGHT_ENV_VAR = "RETAIN_RPR_PDF_FONT_WEIGHT"
+# 译文 PDF 的正文用思源宋体可变字体切出的 300 静态实例（resources/fonts/RetainPDFSerifSC-W300.otf；OFL 保留了
+# 「Source」这个名字，切出来的修改版改叫 RetainPDF Serif SC）：
+# PDF 阅读器（macOS 的预览、Acrobat）把嵌入字体交给系统画，字体平滑会加粗，同样的常规体看着比阅读页 HTML 页粗。
+# 2026-11-28 用户看了 400/380/360/340/300 的样张定 300。粗体照旧。
+DEFAULT_PDF_FONT_WEIGHT = 300
 ENGINE_OUTPUTS = ("pdf", "typst")
 MIN_NODE_VERSION = (22, 8, 0)
 DEFAULT_TIMEOUT_SECONDS = 1800
@@ -224,6 +230,27 @@ def engine_output() -> str:
     return value if value in ENGINE_OUTPUTS else "pdf"
 
 
+def pdf_font_weight(runtime: RprEngineRuntime, font_paths: list[Path]) -> int:
+    """译文 PDF 正文用的字重。默认 300，``RETAIN_RPR_PDF_FONT_WEIGHT`` 可改（400 就是常规体）。
+
+    要字体目录里有 ``RetainPDFSerifSC-W<字重>.otf``、引擎里有这个字重的字宽表才用，缺一样就 400：
+    桌面版的字体是按需下载的（runtime_assets.json），没带上这份细体时照旧用常规体，不因此排失败。"""
+    raw = os.environ.get(PDF_FONT_WEIGHT_ENV_VAR, "").strip()
+    weight = int(raw) if raw.isdigit() else DEFAULT_PDF_FONT_WEIGHT
+    if weight == 400:
+        return 400
+    table = runtime.engine_dir / ENGINE_ENTRY_RELATIVE.parent.parent / "data" / "fonts" / f"source-han-serif-sc-w{weight}.json"
+    font_name = f"RetainPDFSerifSC-W{weight}.otf"
+    if not table.is_file() or not any((Path(path) / font_name).is_file() for path in font_paths):
+        return 400
+    return weight
+
+
+def pdf_font_weight_args(runtime: RprEngineRuntime, font_paths: list[Path]) -> list[str]:
+    weight = pdf_font_weight(runtime, font_paths)
+    return [] if weight == 400 else ["--pdf-font-weight", str(weight)]
+
+
 def run_engine(
     runtime: RprEngineRuntime,
     *,
@@ -239,8 +266,11 @@ def run_engine(
             command.extend(["--typst", resolve_typst_bin()])
         except ExternalToolNotFound as exc:
             raise RprEngineUnavailable("typst_not_found", str(exc)) from exc
-    for font_path in _resolved_font_paths(font_paths):
+    resolved_fonts = _resolved_font_paths(font_paths)
+    for font_path in resolved_fonts:
         command.extend(["--font-path", str(font_path)])
+    if output == "pdf":
+        command.extend(pdf_font_weight_args(runtime, resolved_fonts))
     started = time.perf_counter()
     try:
         result = subprocess.run(

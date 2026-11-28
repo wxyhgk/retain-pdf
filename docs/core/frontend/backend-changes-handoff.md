@@ -12,6 +12,17 @@
 
 ---
 
+## 译文 PDF 的正文细一档（feat/pdf-font-weight-300）
+
+2026-11-28，用户看了 400/380/360/340/300 的样张定 300。只改下载的译文 PDF：正文用思源宋体可变字体切出的 300 静态实例
+（`resources/fonts/RetainPDFSerifSC-W300.otf`，OFL 保留了「Source」这个名字，切出来的修改版改叫 RetainPDF Serif SC），
+表格的常规字也一样；粗体照旧。接口没变。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| HTML 页的字体 | 字簇 `font` 一般是 `SourceHanSerifSC-Regular` | 重新渲染过的书会是 `RetainPDFSerifSC-W300`。清单 `fonts[]` 里这个 `key` 给的是常规体的子集（`weight` 400），照 `key` 对上就行，不要写死字体名 |
+| 桌面版 | — | 桌面版的字体是按需下载的（`runtime_assets.json` 的 npm 包），包里还没有这份细体，所以桌面版照旧是常规体；发新版字体包后才变细 |
+
 ## 阅读页只加载原文 PDF：版面里写明要抹掉的原字、表格进版面（feat/reader-layout-erase-tables）
 
 2026-11-28，只增不改。前端方案 `docs/ops/planning/reader-redesign/20261128-阅读页只加载原文PDF.md` 的第 1、2 条，接口见
