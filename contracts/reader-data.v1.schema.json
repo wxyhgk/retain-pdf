@@ -45,6 +45,7 @@
     {
       "method": "GET",
       "path": "/api/v1/jobs/:job_id/reader/layout",
+      "client_name": "getReaderLayout",
       "transport": "json",
       "output": "ReaderLayoutView",
       "rust_view": "ReaderLayoutView",
@@ -54,6 +55,7 @@
     {
       "method": "GET",
       "path": "/api/v1/jobs/:job_id/reader/layout/pages/:page_idx",
+      "client_name": "getReaderLayoutPage",
       "transport": "json",
       "output": "ReaderLayoutPage",
       "rust_view": "serde_json::Value（rpr_layout_v1 的一页，原样）",
