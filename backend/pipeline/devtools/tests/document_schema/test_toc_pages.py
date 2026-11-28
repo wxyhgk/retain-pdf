@@ -351,3 +351,76 @@ def test_page_labels_inherit_the_toc_block_policy():
         split_toc_blocks_with_text_layer(document, pdf)
     labels = [b for b in document["pages"][0]["blocks"] if b["structure_role"] == "toc_page_label"]
     assert labels and all(b["policy"] == {"translate": False, "translate_reason": "provider_non_body"} for b in labels)
+
+
+# ---- 2026-11-28 原位替换：每条记下只框标题的字的每一行、章号和标签的框（标签、章号、点线、页码留在原图上） ----
+
+
+def test_title_lines_frame_only_the_title_and_sit_on_the_baseline():
+    lines = [
+        (60, 100, "1.1", 10), (90, 100, "First Section", 10), (170, 100, ". . . . . . . . . . . .", 10), (400, 100, "3", 10),
+        (60, 114, "1.2", 10), (90, 114, "Second Section . . . . . . . . . . 7", 10),
+        (60, 128, "1.3", 10), (90, 128, "A Title That Wraps", 10), (90, 142, "Onto Two Lines", 10), (400, 142, "9", 10),
+    ]
+    with _page(lines) as pdf:
+        result = split_toc_page(pdf[0], [50, 85, 420, 150])
+    assert result is not None
+    first, second, wrapped = result.entries
+    [line] = first.title_lines
+    assert line["text"] == "First Section" and line["baseline"] == 100 and line["size"] == 10
+    assert line["bbox"][0] >= 90 - 0.5 and line["bbox"][2] < 170  # 章号、点线不在里面
+    assert first.number_box is not None and first.number_box[2] < 90
+    # 标题、点线、页码在同一个片段里：按字切开，框到标题最后一个字
+    [line] = second.title_lines
+    assert line["text"] == "Second Section" and line["bbox"][2] < 90 + 10 * 0.6 * len("Second Section . ")
+    assert [line["text"] for line in wrapped.title_lines] == ["A Title That Wraps", "Onto Two Lines"]
+    assert [line["baseline"] for line in wrapped.title_lines] == [128, 142]
+    assert wrapped.title_only == "A Title That Wraps Onto Two Lines"
+
+
+def test_a_title_keeps_its_own_period_before_spaced_dot_leaders():
+    lines = [(60, 100 + 14 * i, f"{title} . . . . . . . . . . . . . . {page}", 10)
+             for i, (title, page) in enumerate([("Summary.", "3"), ("Problems", "5"), ("Notes.", "8")])]
+    lines.append((60, 142, "Answers......................... 11", 10))  # 点挨着点：分不出来，照旧全算点线
+    with _page(lines) as pdf:
+        result = split_toc_page(pdf[0], [50, 85, 420, 150])
+    assert result is not None
+    assert [e.title for e in result.entries] == ["Summary.", "Problems", "Notes.", "Answers"]
+    assert result.entries[0].title_lines[0]["text"] == "Summary."
+
+
+def test_label_column_is_recorded_apart_from_the_title():
+    lines = [
+        (60, 100, "Chapter 1 Introduction", 10), (400, 100, "1", 10),
+        (60, 114, "Chapter 2", 10), (120, 114, "Methods", 10), (400, 114, "9", 10),
+        (60, 128, "Annexure", 10), (110, 128, "IV", 10), (130, 128, "Raw Data", 10), (400, 128, "20", 10),
+        (60, 142, "Appendix A", 10), (400, 142, "31", 10),
+        (60, 156, "Chapter summary", 10), (400, 156, "40", 10),
+    ]
+    with _page(lines) as pdf:
+        result = split_toc_page(pdf[0], [50, 85, 420, 165])
+    assert result is not None
+    got = [(e.title, e.label, e.title_only) for e in result.entries]
+    assert got == [
+        ("Chapter 1 Introduction", "Chapter 1", "Introduction"),  # 条目文字照旧带着标签
+        ("Chapter 2 Methods", "Chapter 2", "Methods"),
+        ("Annexure IV Raw Data", "Annexure IV", "Raw Data"),
+        ("Appendix A", "", "Appendix A"),  # 整条只有标签：它就是标题
+        ("Chapter summary", "", "Chapter summary"),  # 后面不是编号：不是标签
+    ]
+    chapter_one = result.entries[0]
+    assert chapter_one.label_box is not None and chapter_one.label_box[2] <= chapter_one.title_lines[0]["bbox"][0]
+
+
+def test_entry_blocks_carry_the_title_lines_for_in_place_replacement():
+    document = _document([50, 80, 380, 240])
+    with _toc_pdf() as pdf:
+        split_toc_blocks_with_text_layer(document, pdf)
+    entries = [block for block in document["pages"][0]["blocks"] if block["structure_role"] == "toc_entry"]
+    first = entries[0]["metadata"]
+    assert first["toc_entry_title"] == "Analyzing the Audience"
+    assert first["toc_entry_number_bbox"] is not None and first["toc_entry_label"] == ""
+    [line] = first["toc_entry_title_lines"]
+    assert line["text"] == "Analyzing the Audience" and line["baseline"] == 100 and line["bbox"][0] >= 89
+    # 条目的文字、框和以前一样（默认的排法不变）
+    assert entries[0]["text"] == "1 Analyzing the Audience" and entries[0]["bbox"][0] <= 60 + 0.5

@@ -23,6 +23,10 @@ OCR 把一页目录给成一整块、每行的框是估的，翻译后排成左�
 - 新的一条从哪里开始：有章号的行、Appendix/Annexure/Chapter/Part（附录、Приложение 等）开头的行、
   比正在攒的没章号的那条起点往左缩出去的行；其余没碰到页码的行当成标题折行，接着攒。
 
+原位替换（2026-11-28 用户定，docs/ops/planning/toc-agent/20261128-用户定：目录页原位替换.md）要知道哪些字是标题：每条另记
+``toc_entry_title_lines``（只框标题的字的每一行：框、基线、字号、文字）、章号的框、标签列（「Chapter 1」「Annexure I」，
+不翻、留原图）。条目的文字和框照旧（默认的重排不变）。标题自带的句号（「Summary. . . .」）不当点线。
+
 文字层读不出条目（扫描件、页码倒退、条目太少、大半条目没有页码）时什么都不改，照旧是一整块。方案见 docs/ops/planning/toc-agent/。
 """
 from __future__ import annotations
@@ -70,6 +74,12 @@ LABEL_START_RE = re.compile(
     r"|附录|附錄|付録)\b",
     re.IGNORECASE,
 )
+# 标签列：「Chapter 1」「Annexure I」「Part II」「Appendix A」（标签词 + 编号）。原位替换时留在原图上不翻（2026-11-28 用户定），
+# 只记下来，条目文字照旧带着它
+LABEL_PREFIX_RE = re.compile(
+    r"^\s*((?i:appendix|annex|annexure|attachment|supplement|chapter|part|приложение|глава|раздел|часть)"
+    r"\s*(?:\d{1,3}(?:[.\-–]\d{1,3})*|[IVXLC]{1,6}|[ivx]{1,4}|[A-Z])[.:]?)(?=\s|$)"  # 编号区分大小写：「Part a story」不算
+)
 # 比正在攒的那条起点往左缩出去这么多，就是新的一条
 OUTDENT = 8.0
 # 页码排成一列：这么多的页码左边或右边对齐（±3pt）
@@ -99,6 +109,7 @@ class _Span:
     y1: float
     size: float
     chars: tuple = ()  # 每个字的（字，左，右）；和 text 一一对应
+    baseline: float = 0.0  # 基线的 y（文字层的 origin）；没有时用框的底边
 
 
 @dataclass
@@ -147,6 +158,11 @@ class TocEntry:
     line_boxes: list[list[float]] = field(default_factory=list)  # 标题每一行的框（多行标题）
     page_box: list[float] | None = None  # 页码的框（读出页码时）
     page_font_size: float | None = None  # 页码的字号（读出页码时）
+    number_box: list[float] | None = None  # 章号的框（有章号时）
+    label: str = ""  # 标签列（「Chapter 1」），没有时空
+    label_box: list[float] | None = None
+    title_only: str = ""  # 去掉章号、标签的标题
+    title_lines: list[dict] = field(default_factory=list)  # 标题每一行只框标题的字：{bbox, baseline, size, text}
 
 
 @dataclass
@@ -182,7 +198,8 @@ def _spans_in(pdf_page, bbox: list[float]) -> list[_Span]:
                 sx0, sy0, sx1, sy1 = span["bbox"]
                 cx, cy = (sx0 + sx1) / 2, (sy0 + sy1) / 2
                 if x0 - 2 <= cx <= x1 + 2 and y0 - 2 <= cy <= y1 + 2:
-                    spans.append(_Span(text, sx0, sy0, sx1, sy1, float(span.get("size") or 0), chars))
+                    origin = span.get("origin") or (sx0, sy1)
+                    spans.append(_Span(text, sx0, sy0, sx1, sy1, float(span.get("size") or 0), chars, float(origin[1])))
     return spans
 
 
@@ -225,7 +242,7 @@ def _merge_words(spans: list[_Span]) -> list[_Span]:
             last = merged[-1]
             chars = last.chars + span.chars if len(last.chars) == len(last.text) and len(span.chars) == len(span.text) else ()
             merged[-1] = _Span(last.text + span.text, last.x0, min(last.y0, span.y0), span.x1, max(last.y1, span.y1),
-                               max(last.size, span.size), chars)
+                               max(last.size, span.size), chars, last.baseline)
         else:
             merged.append(span)
     return merged
@@ -244,7 +261,7 @@ def _slice(span: _Span, start: int, end: int) -> _Span | None:
         chars = ()
         width, count = span.x1 - span.x0, max(1, len(span.text))
         x0, x1 = span.x0 + width * start / count, span.x0 + width * end / count
-    return _Span(text, x0, span.y0, x1, span.y1, span.size, tuple(chars))
+    return _Span(text, x0, span.y0, x1, span.y1, span.size, tuple(chars), span.baseline)
 
 
 def _is_header(line: _Line, page_height: float) -> bool:
@@ -253,6 +270,15 @@ def _is_header(line: _Line, page_height: float) -> bool:
     words = [_clean(span.text) for span in _merge_words(line.spans)]
     rest = [word for word in words if not PAGE_TOKEN_RE.match(word)]
     return bool(rest) and " ".join(rest).lower() in HEADER_WORDS
+
+
+def _leaders_from(text: str, start: int) -> int:
+    """点线从哪个字开始：标题自带的句号（紧贴着字母、后面隔着空格才是一个个点：「Summary. . . .」）留在标题里。
+    点挨着点的（「Summary.....」）分不出来，照旧全算点线。"""
+    if (0 < start < len(text) - 1 and text[start] == "." and (text[start - 1].isalnum() or text[start - 1] in ")]\"'’”")
+            and text[start + 1].isspace()):
+        return start + 1
+    return start
 
 
 def _strip_trailing_leaders(words: list[_Span]) -> tuple[list[_Span], bool]:
@@ -265,7 +291,7 @@ def _strip_trailing_leaders(words: list[_Span]) -> tuple[list[_Span], bool]:
     if words:
         match = TRAILING_LEADER_RE.search(words[-1].text)
         if match and LEADER_ONLY_RE.match(re.sub(r"[\-–—]", "", match.group(0)) or ""):
-            head = _slice(words[-1], 0, match.start())
+            head = _slice(words[-1], 0, _leaders_from(words[-1].text, match.start()))
             words[-1:] = [head] if head is not None else []
             found = True
     return words, found
@@ -293,7 +319,7 @@ def _take_page(words: list[_Span], page_column_from: float) -> tuple[list[_Span]
         return words, "", None, ""
     leader = bool(LEADER_ONLY_RE.match(match.group("sep")))
     page = match.group("page")
-    head_text = match.group("head")
+    head_text = last.text[:_leaders_from(last.text, match.start("sep"))] if leader else match.group("head")
     if not leader and (not PLAIN_PAGE_RE.match(page) or not head_text.strip()):
         return words, "", None, ""
     page_span = _slice(last, match.start("page"), match.end("page"))
@@ -304,6 +330,49 @@ def _take_page(words: list[_Span], page_column_from: float) -> tuple[list[_Span]
     if leader or more_leader or page_span.x0 >= page_column_from:
         return rest, page, page_span, "strong"
     return rest, page, page_span, "weak"
+
+
+def _box(span: _Span) -> list[float]:
+    return [round(span.x0, 2), round(span.y0, 2), round(span.x1, 2), round(span.y1, 2)]
+
+
+def _split_label(words: list[_Span]) -> tuple[str, _Span | None, list[_Span]]:
+    """标题第一行开头的标签（「Chapter 1」）切出来：回（标签，标签片段，剩下的标题片段）。标签后面没有标题字的不切
+    （整条就是「Appendix A」时它就是标题）。标签和编号可以在一个片段里、也可以是两个片段。"""
+    if not words:
+        return "", None, words
+    for count in (1, 2):
+        if len(words) < count:
+            break
+        joined = " ".join(span.text for span in words[:count])
+        match = LABEL_PREFIX_RE.match(joined)
+        if not match:
+            continue
+        end = match.end(1)
+        if count == 2:
+            if end < len(joined.rstrip()):
+                continue  # 编号片段里还带着标题字：两段拼起来切不准，不切
+            first, second = words[0], words[1]
+            label_span = _Span(joined.strip(), first.x0, min(first.y0, second.y0), second.x1, max(first.y1, second.y1),
+                               first.size, (), first.baseline)
+            rest = words[2:]
+        else:
+            label_span = _slice(words[0], 0, end)
+            tail = _slice(words[0], end, len(words[0].text))
+            rest = ([tail] if tail is not None else []) + words[1:]
+        if label_span is not None and any(span.text.strip() for span in rest):
+            return _clean(match.group(1)), label_span, rest
+    return "", None, words
+
+
+def _title_line(spans: list[_Span]) -> dict:
+    """一行标题只框标题的字（章号、标签、点线、页码已经切掉）：原位替换按这个框擦字、按基线写译文。"""
+    baseline = max((span.baseline for span in spans), default=0.0) or max(span.y1 for span in spans)
+    sizes = sorted(span.size for span in spans)
+    return {"bbox": [round(min(s.x0 for s in spans), 2), round(min(s.y0 for s in spans), 2),
+                     round(max(s.x1 for s in spans), 2), round(max(s.y1 for s in spans), 2)],
+            "baseline": round(baseline, 2), "size": round(sizes[len(sizes) // 2], 2),
+            "text": _clean(" ".join(span.text for span in spans))}
 
 
 def _take_number(words: list[_Span]) -> tuple[list[_Span], str, _Span | None]:
@@ -401,11 +470,22 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
         number_x0 = next((item[1].x0 for item in pending if item[1] is not None), None)
         line_boxes = [[min(s.x0 for s in spans_), min(s.y0 for s in spans_), max(s.x1 for s in spans_), max(s.y1 for s in spans_)]
                       for _n, _s, spans_ in pending if spans_]
+        number_span = next((item[1] for item in pending if item[1] is not None), None)
+        label, label_span, title_lines = "", None, []
+        for _n, _s, spans_ in pending:
+            if spans_ and not title_lines and not label:
+                label, label_span, spans_ = _split_label(spans_)
+            if spans_:
+                title_lines.append(_title_line(spans_))
+        title_only = _clean(" ".join(line["text"] for line in title_lines))
         result.entries.append(TocEntry(title=title, number=number, page_label=page_label, level=0, bbox=bbox,
                                        font_size=sizes[len(sizes) // 2], line_count=len(pending), number_x0=number_x0,
                                        line_boxes=line_boxes,
                                        page_box=[page_span.x0, page_span.y0, page_span.x1, page_span.y1] if page_span else None,
-                                       page_font_size=page_span.size if page_span else None))
+                                       page_font_size=page_span.size if page_span else None,
+                                       number_box=_box(number_span) if number_span is not None else None,
+                                       label=label, label_box=_box(label_span) if label_span is not None else None,
+                                       title_only=title_only, title_lines=title_lines))
         pending.clear()
         pending_x0.clear()
 
@@ -558,6 +638,12 @@ def _entry_block(parent: dict, entry: TocEntry, block_id: str, right_edge: float
         toc_entry_line_count=entry.line_count,
         # 页码在原图上的框（页码不在条目里；擦原文时它和标题在同一个绘字指令里会被一起擦掉；后面跟着的页码小块就用这个框在原处重画）
         toc_entry_page_bbox=[round(value, 2) for value in entry.page_box] if entry.page_box else None,
+        # 原位替换用（2026-11-28）：只框标题的字的每一行（擦这些字、在原基线上写译文），章号、标签的框留在原图上不动
+        toc_entry_title=entry.title_only,
+        toc_entry_title_lines=[dict(line) for line in entry.title_lines],
+        toc_entry_number_bbox=entry.number_box,
+        toc_entry_label=entry.label,
+        toc_entry_label_bbox=entry.label_box,
         toc_split_parent_block_id=str(parent.get("block_id") or ""),
         structure_role=ENTRY_STRUCTURE_ROLE,
         layout_role="toc",
