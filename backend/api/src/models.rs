@@ -20,7 +20,7 @@ pub mod api {
     };
     pub use retainpdf_ingest::{UploadView, upload_to_response};
     // 阅读页 HTML 页的版面目录里按名字取的文件（字体子集、公式 SVG）
-    pub use retainpdf_jobs::ReaderLayoutAsset;
+    pub use retainpdf_jobs::{ReaderLayoutAsset, READER_LAYOUT_BACKFILL_QUEUED, READER_LAYOUT_JOB_ACTIVE, READER_LAYOUT_NOT_KEPT};
     pub use retainpdf_jobs::{
         AmbiguousRequestPolicy, BookSummaryView, DeleteJobQuery, DocumentJobListView,
         EditorialEventListView, EditorialEventsQuery,

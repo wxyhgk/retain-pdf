@@ -308,7 +308,7 @@ export interface ReaderLayoutItem {
 export interface ReaderLayoutView {
   available: boolean;
   /**
-   * 没有版面的原因：no_translated_pdf 还没有译文 PDF；not_engine_route 这次不是 rpr_fit 排的（Typst）；unsupported_render 引擎排不了的设置（双栏对照、字体不是思源宋体）；merged_reading 合并阅读的虚拟任务；not_kept 引擎排的但版面没留下（2026-11-28 以前的任务、或回退了 Typst）。有版面时 null。以后可能加值。
+   * 没有版面的原因：no_translated_pdf 还没有译文 PDF；not_engine_route 这次不是 rpr_fit 排的（Typst）；unsupported_render 引擎排不了的设置（双栏对照、字体不是思源宋体）；merged_reading 合并阅读的虚拟任务；not_kept 引擎排的但版面没留下（2026-11-28 以前的任务、或回退了 Typst）。backfill_queued 旧书排进了自动补排（打开清单时后端登记，后台一次补一本、原地重新渲染，不花钱）；job_active 任务在排队或在跑（比如正在补排），跑完再看。有版面时 null。以后可能加值。
    */
   reason:
     | (
@@ -317,6 +317,8 @@ export interface ReaderLayoutView {
         | "unsupported_render"
         | "merged_reading"
         | "not_kept"
+        | "backfill_queued"
+        | "job_active"
       )
     | null;
   /**
