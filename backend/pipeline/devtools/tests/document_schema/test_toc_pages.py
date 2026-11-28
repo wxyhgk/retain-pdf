@@ -448,3 +448,60 @@ def test_label_number_sharing_a_span_with_the_title_and_label_on_its_own_line():
     ]
     annex = result.entries[0]
     assert annex.label_box[2] < annex.title_lines[0]["bbox"][0]  # 标签框到「IV」为止
+
+
+# ---- 2026-11-29 OCR 漏在目录块外面的目录行（80c3ad：第一章那行不在任何块里，Preface / Acknowledgements 被框成一段正文） ----
+
+
+def _missed_rows_page():
+    lines = [(60, 50, "Contents", 16),
+             (60, 100, "Preface", 10), (400, 100, "vii", 10),
+             (60, 112, "Acknowledgements", 10), (400, 112, "viii", 10),
+             (60, 134, "1.", 10), (80, 134, "WAVE MECHANICS AND ATOMS", 10), (400, 134, "1", 10)]
+    y = 150
+    for number, title, page_label in [("1.1", "Towards Quantum Theory", "1"), ("1.2", "Wave Nature", "22"),
+                                      ("1.3", "Wave Theory", "30"), ("1.4", "Translational Energy", "37")]:
+        lines += [(80, y, number, 10), (110, y, title, 10), (400, y, page_label, 10)]
+        y += 12
+    lines += [(60, 300, "--------", 10), (400, 300, "9", 10)]  # 离得远、没有字：不并
+    return _page(lines)
+
+
+def _missed_rows_document():
+    def block(block_id, text, box, role="body"):
+        return {"block_id": block_id, "type": "text", "sub_type": role, "bbox": box, "text": text, "layout_role": role,
+                "semantic_role": role, "structure_role": role, "metadata": {}, "policy": {"translate": True},
+                "lines": [], "segments": [], "content": {"kind": "text", "text": text}}
+
+    return {"pages": [{"blocks": [
+        block("p001-b0000", "Contents", [58, 35, 140, 55], role="heading"),
+        block("p001-b0001", "Preface Acknowledgements", [58, 90, 160, 115]),  # 只框了标题，页码在外面
+        {**block("p001-b0002", "toc", [55, 140, 410, 200]), "sub_type": "table_of_contents", "layout_role": "toc",
+         "structure_role": "table_of_contents"},
+    ]}], "derived": {}}
+
+
+def test_rows_ocr_left_outside_the_toc_block_are_taken_in():
+    document = _missed_rows_document()
+    with _missed_rows_page() as pdf:
+        split_toc_blocks_with_text_layer(document, pdf)
+    blocks = document["pages"][0]["blocks"]
+    entries = [(b["metadata"]["toc_entry_number"], b["metadata"]["toc_entry_title"], b["metadata"]["toc_entry_page_label"])
+               for b in blocks if b["structure_role"] == "toc_entry"]
+    assert entries[:3] == [("", "Preface", "vii"), ("", "Acknowledgements", "viii"), ("1.", "WAVE MECHANICS AND ATOMS", "1")]
+    assert len(entries) == 7
+    # 被框成正文的那块整块并进来，不再单独翻；大标题照旧
+    assert [b["text"] for b in blocks if b["structure_role"] not in ("toc_entry", "toc_page_label")] == ["Contents"]
+
+
+def test_a_body_block_that_is_not_all_toc_rows_is_left_alone():
+    document = _missed_rows_document()
+    document["pages"][0]["blocks"][1]["bbox"] = [58, 60, 160, 115]  # 这块上面还有一行不是目录的字
+    with _missed_rows_page() as pdf:
+        pdf[0].insert_text((60, 70), "Some paragraph text that is not a toc row", fontsize=10)
+        split_toc_blocks_with_text_layer(document, pdf)
+    blocks = document["pages"][0]["blocks"]
+    titles = [b["metadata"]["toc_entry_title"] for b in blocks if b["structure_role"] == "toc_entry"]
+    assert "Preface" not in titles and "Acknowledgements" not in titles
+    assert titles[0] == "WAVE MECHANICS AND ATOMS"  # 不在任何块里的那一行照样并进来
+    assert any(b["text"] == "Preface Acknowledgements" for b in blocks)
