@@ -141,7 +141,8 @@ fn engine_cannot_render(job: &JobSnapshot) -> bool {
 }
 
 fn generate_request(base_url: &str, job: &JobSnapshot, switch_engine: bool) -> ReaderLayoutGenerateView {
-    let mut body = json!({ "stage": "render" });
+    // 原地重新渲染：retry-stage 不写 create_new_job 时 render 默认新建任务，阅读页就等不到这个任务的版面
+    let mut body = json!({ "stage": "render", "create_new_job": false });
     if switch_engine {
         body["overrides"] = json!({ "render": { "engine": DEFAULT_RENDER_ENGINE } });
     }

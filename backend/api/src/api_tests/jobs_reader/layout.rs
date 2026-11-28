@@ -196,7 +196,7 @@ async fn reader_layout_says_why_there_is_none_and_how_to_generate_it() {
         .as_str()
         .unwrap()
         .ends_with(&format!("/api/v1/jobs/{}/actions/retry-stage", kept_not.job_id)));
-    assert_eq!(data["generate"]["body"], json!({"stage": "render"}));
+    assert_eq!(data["generate"]["body"], json!({"stage": "render", "create_new_job": false}));
 
     assert_eq!(data["background"], Value::Null);
     let response = get(&app, &format!("/api/v1/jobs/{}/reader/layout/background", kept_not.job_id), None).await;
@@ -206,7 +206,7 @@ async fn reader_layout_says_why_there_is_none_and_how_to_generate_it() {
     assert_eq!(data["reason"], "not_engine_route");
     assert_eq!(
         data["generate"]["body"],
-        json!({"stage": "render", "overrides": {"render": {"engine": "rpr_fit"}}})
+        json!({"stage": "render", "create_new_job": false, "overrides": {"render": {"engine": "rpr_fit"}}})
     );
 
     let data = read_json(get(&app, &view(&running), None).await).await["data"].clone();
