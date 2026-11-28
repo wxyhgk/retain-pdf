@@ -1,5 +1,6 @@
 Pillow
 PyMuPDF
+brotli
 fontTools
 pikepdf
 rapidocr

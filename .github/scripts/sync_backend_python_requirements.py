@@ -14,7 +14,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 # pipeline 的 extra，后端工作区（backend/pyproject.toml 依赖 retainpdf-pipeline[scan-ocr]，Docker 用 uv export 装）带着：
 # Docker 的两份清单也带上。桌面的清单只放必装的，要不要带由前端定（docs/core/frontend/backend-changes-handoff.md）。
-DOCKER_PIPELINE_EXTRAS = ("scan-ocr",)
+DOCKER_PIPELINE_EXTRAS = ("scan-ocr", "reader-fonts")
 
 DESKTOP_MACOS_EXTRA_HEADER = [
     "# Legacy compatibility copy. CI should stay aligned with requirements-desktop-posix.txt.",

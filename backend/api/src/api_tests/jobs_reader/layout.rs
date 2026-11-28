@@ -36,6 +36,12 @@ fn write_layout(rendered: &Path) {
         "schema": "reader_layout_v1", "layout_schema": "rpr_layout_v1",
         "engine_version": "0.3.0", "engine_commit": "417a441", "output_pdf": "translated.pdf",
         "background": {"file": "background.pdf", "pages": [1]},
+        "fonts": [
+            {"key": "SourceHanSerifSC-Regular", "postscript": "SourceHanSerifSC-Regular", "family": "Source Han Serif SC",
+             "weight": 400, "mono": false, "file": "fonts/SourceHanSerifSC-Regular.woff2", "etag": "aaaabbbbccccdddd"},
+            // 文件名对不上 key 的：不认
+            {"key": "Evil", "family": "x", "weight": 400, "file": "../translated.pdf", "etag": "0"}
+        ],
         "pages": [
             {"index": 1, "width": 612.0, "height": 792.0, "etag": "0123456789abcdef", "blocks": 1, "file": "pages/00001.json.gz"},
             // 清单里写着跳出目录的文件名：不认
@@ -44,6 +50,11 @@ fn write_layout(rendered: &Path) {
     });
     fs::write(dir.join("manifest.json"), manifest.to_string()).unwrap();
     fs::write(dir.join("background.pdf"), minimal_pdf_bytes(612, 792)).unwrap();
+    fs::create_dir_all(dir.join("fonts")).unwrap();
+    fs::write(dir.join("fonts/SourceHanSerifSC-Regular.woff2"), b"wOF2fake").unwrap();
+    fs::write(dir.join("fonts/Unlisted.woff2"), b"wOF2fake").unwrap();
+    fs::create_dir_all(dir.join("math")).unwrap();
+    fs::write(dir.join("math/00112233aabbccdd.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"/>").unwrap();
 }
 
 struct Setup {
@@ -97,7 +108,16 @@ async fn reader_layout_lists_the_kept_pages_and_serves_one_page_with_an_etag() {
     assert_eq!(data["generate"], Value::Null);
     assert_eq!(data["schema"], "rpr_layout_v1");
     assert_eq!(data["engine_commit"], "417a441");
-    assert_eq!(data["fonts"], json!([]));
+    let fonts = data["fonts"].as_array().unwrap();
+    assert_eq!(fonts.len(), 1, "{fonts:?}");
+    assert_reader_view(&fonts[0], "ReaderLayoutFont", "layout.fonts[0]");
+    assert_eq!(fonts[0]["key"], "SourceHanSerifSC-Regular");
+    assert_eq!(fonts[0]["family"], "Source Han Serif SC");
+    assert_eq!(fonts[0]["weight"], 400);
+    assert!(fonts[0]["url"]
+        .as_str()
+        .unwrap()
+        .ends_with(&format!("/api/v1/jobs/{job_id}/reader/layout/fonts/SourceHanSerifSC-Regular.woff2?v=aaaabbbbccccdddd")));
     assert_reader_view(&data["background"], "ReaderLayoutBackground", "layout.background");
     assert_eq!(data["background"]["pages"], json!([1]));
     let background_url = data["background"]["url"].as_str().unwrap().to_string();
@@ -126,6 +146,24 @@ async fn reader_layout_lists_the_kept_pages_and_serves_one_page_with_an_etag() {
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(response.headers()[header::CONTENT_TYPE], "application/pdf");
     assert_eq!(response.headers()[header::ACCEPT_RANGES], "bytes");
+
+    let response = get(&app, &format!("/api/v1/jobs/{job_id}/reader/layout/fonts/SourceHanSerifSC-Regular.woff2"), None).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.headers()[header::CONTENT_TYPE], "font/woff2");
+    assert_eq!(response.headers()[header::CACHE_CONTROL], "private, max-age=31536000, immutable");
+    let response = get(&app, &format!("/api/v1/jobs/{job_id}/reader/layout/math/00112233aabbccdd.svg"), None).await;
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.headers()[header::CONTENT_TYPE], "image/svg+xml");
+    assert_eq!(response.headers()[header::CONTENT_SECURITY_POLICY], "sandbox");
+    for missing in [
+        "fonts/Unlisted.woff2",
+        "fonts/Evil.woff2",
+        "math/00112233aabbccd.svg",
+        "math/ffffffffffffffff.svg",
+    ] {
+        let response = get(&app, &format!("/api/v1/jobs/{job_id}/reader/layout/{missing}"), None).await;
+        assert_eq!(response.status(), StatusCode::NOT_FOUND, "{missing}");
+    }
 
     for missing in [2, 7] {
         let response = get(&app, &format!("/api/v1/jobs/{job_id}/reader/layout/pages/{missing}"), None).await;

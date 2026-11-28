@@ -22,6 +22,11 @@
 //           items: [{ x, t }                      // a cluster: its text, drawn at x
 //                   | { x, t, mode: "dflt" }      // ... in a run of punctuation / digits only
 //                   | { x, tex, display, w, h, d } ] }] }] }] }  // a formula: box in em of fontSize
+// Written by the PDF output (overlay-pdf.js), additive: a cluster's `font`
+// (a key of the top-level `fonts`, the face it was drawn with), a formula's
+// `svg` (its MathJax SVG file, relative to the output directory) and
+// `fonts: [{ key, postscript, family, weight, mono, file }]` (main face
+// first) -- so a browser can draw the same page as DOM with the same faces.
 // A line's `text` is for reading and searching only (formulas as $...$); the
 // items are what is drawn. Numbers keep full precision, so a file written and
 // read back draws the identical PDF.

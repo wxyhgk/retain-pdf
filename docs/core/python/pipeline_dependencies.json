@@ -4,6 +4,7 @@
   "runtime_python_packages": [
     "Pillow",
     "PyMuPDF",
+    "brotli",
     "fontTools",
     "pikepdf",
     "rapidocr",
@@ -199,6 +200,7 @@
       "retainpdf_pipeline/render/layout/text_analysis/__init__.py",
       "retainpdf_pipeline/render/layout/text_analysis/service.py",
       "retainpdf_pipeline/render/output/rpr/engine_cli.py",
+      "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py",
       "retainpdf_pipeline/render/output/rpr_fit/renderer.py",
       "retainpdf_pipeline/render/output/rpr_fit/report.py",
       "retainpdf_pipeline/render/output/tables/overlay.py",
@@ -285,6 +287,17 @@
       ],
       "runtime_required": true,
       "devtool_required": true
+    },
+    {
+      "import_name": "brotli",
+      "package_name": "brotli",
+      "runtime_files": [
+        "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py"
+      ],
+      "devtool_files": [],
+      "test_files": [],
+      "runtime_required": true,
+      "devtool_required": false
     },
     {
       "import_name": "certifi",
@@ -534,10 +547,13 @@
       "import_name": "fontTools",
       "package_name": "fontTools",
       "runtime_files": [
-        "retainpdf_pipeline/foundation/config/fonts.py"
+        "retainpdf_pipeline/foundation/config/fonts.py",
+        "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py"
       ],
       "devtool_files": [],
-      "test_files": [],
+      "test_files": [
+        "devtools/tests/rendering/test_rpr_fit_route.py"
+      ],
       "runtime_required": true,
       "devtool_required": false
     },
@@ -809,6 +825,7 @@
         "retainpdf_pipeline/ocr/ocr_provider/provider_pipeline.py",
         "retainpdf_pipeline/ocr/retry.py",
         "retainpdf_pipeline/render/layout/inline_content/fallback/png_renderer.py",
+        "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py",
         "retainpdf_pipeline/render/output/rpr_fit/renderer.py",
         "retainpdf_pipeline/render/output/typst/book_renderer.py",
         "retainpdf_pipeline/render/output/typst/compiler.py",

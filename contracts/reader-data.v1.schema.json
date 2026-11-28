@@ -68,6 +68,18 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/jobs/:job_id/reader/layout/fonts/:name",
+      "transport": "binary",
+      "note": "版面用的字体子集（font/woff2），清单 fonts[].url 指着它；只认清单里列了的。长缓存"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/reader/layout/math/:name",
+      "transport": "binary",
+      "note": "版面里公式的 MathJax SVG（image/svg+xml），name 是公式项 svg 去掉 math/ 前缀。长缓存"
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/jobs/:job_id/progress/layout",
       "client_name": "getLiveLayout",
       "transport": "json",
@@ -289,7 +301,8 @@
       "required": ["key", "family", "weight", "url"],
       "properties": {
         "key": {
-          "type": "string"
+          "type": "string",
+          "description": "版面里字簇的 font 就是它"
         },
         "family": {
           "type": "string"
@@ -301,7 +314,7 @@
           "type": "string"
         }
       },
-      "description": "画字用的字体（按书子集化的 woff2）。还没做，现在 fonts 是空数组。"
+      "description": "画字用的字体：和引擎画 PDF 用的同一份文件，只留这本书用到的字、转 woff2。主字体在前（前端按这个顺序当字体栈）。url 带 ?v=，重新渲染就换，可长缓存。后端没装 fontTools 时 fonts 是空数组"
     },
     "ReaderLayoutGenerate": {
       "type": "object",
@@ -466,9 +479,17 @@
         "d": {
           "type": "number",
           "description": "基线以下深，em"
+        },
+        "font": {
+          "type": "string",
+          "description": "字簇用哪个字体画：清单 fonts[].key（2026-11-28 起的引擎写；mode \"dflt\" 的段、缺字时的后备字体都写明）"
+        },
+        "svg": {
+          "type": "string",
+          "description": "公式的 MathJax SVG，形如 math/<16 位十六进制>.svg；取 /api/v1/jobs/:job_id/reader/layout/<svg>（2026-11-28 起的引擎写）。颜色是 currentColor"
         }
       },
-      "description": "字簇 {x, t, mode?} 或公式 {x, tex, display, w, h, d}。以后可能加字段（比如 font）。"
+      "description": "字簇 {x, t, mode?, font?} 或公式 {x, tex, display, w, h, d, svg?}。以后可能再加字段。"
     },
     "ReaderLayoutLine": {
       "type": "object",

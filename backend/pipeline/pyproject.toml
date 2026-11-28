@@ -43,6 +43,13 @@ scan-ocr = [
   "onnxruntime==1.32.0",
   "rapidocr==3.10.0",
 ]
+# 阅读页 HTML 页的字体（2026-11-28，render/output/rpr_fit/reader_layout.py）：rpr_fit 排完把版面用到的字按书切成子集、
+# 转 woff2（思源宋体整份 24 MB；有的后备字体 .otf 浏览器装不上）。做成 extra：没装时不切，清单的 fonts 是空的、
+# 阅读页退回本机字体，译文 PDF 照常。后端工作区（Docker、CI、开发环境）装上；桌面安装包的依赖清单另由前端接。
+reader-fonts = [
+  "brotli==1.2.1",
+  "fonttools==4.68.0",
+]
 test = [
   "pytest==9.0.3",
   # 只用来在测试里检查产出的 docx；文档现在由 retainpdf2doc（Node）生成。
