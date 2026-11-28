@@ -6,6 +6,8 @@ import type {
   LiveTranslationLayout,
   LiveTranslationPageSnapshot,
   MarkdownDocumentView,
+  ReaderLayoutPage,
+  ReaderLayoutView,
   ReaderMetadataView,
   ReaderRegionsView,
 } from "@retainpdf/contracts/reader-data";
@@ -45,6 +47,24 @@ export function getReaderMetadata(
   options?: RequestOptions,
 ): Promise<ReaderMetadataView> {
   return request<ReaderMetadataView>({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reader/metadata`, options });
+}
+
+/** GET /api/v1/jobs/:job_id/reader/layout */
+export function getReaderLayout(
+  apiPrefix: string | undefined,
+  args: { job_id: string },
+  options?: RequestOptions,
+): Promise<ReaderLayoutView> {
+  return request<ReaderLayoutView>({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reader/layout`, options });
+}
+
+/** GET /api/v1/jobs/:job_id/reader/layout/pages/:page_idx */
+export function getReaderLayoutPage(
+  apiPrefix: string | undefined,
+  args: { job_id: string; page_idx: string },
+  options?: RequestOptions,
+): Promise<ReaderLayoutPage> {
+  return request<ReaderLayoutPage>({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reader/layout/pages/${encodePathParam(args.page_idx)}`, options });
 }
 
 /** GET /api/v1/jobs/:job_id/progress/layout */
