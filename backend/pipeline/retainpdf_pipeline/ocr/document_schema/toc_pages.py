@@ -336,9 +336,11 @@ def _box(span: _Span) -> list[float]:
     return [round(span.x0, 2), round(span.y0, 2), round(span.x1, 2), round(span.y1, 2)]
 
 
-def _split_label(words: list[_Span]) -> tuple[str, _Span | None, list[_Span]]:
-    """标题第一行开头的标签（「Chapter 1」）切出来：回（标签，标签片段，剩下的标题片段）。标签后面没有标题字的不切
-    （整条就是「Appendix A」时它就是标题）。标签和编号可以在一个片段里、也可以是两个片段。"""
+def _split_label(words: list[_Span], *, title_follows: bool = False) -> tuple[str, _Span | None, list[_Span]]:
+    """标题第一行开头的标签（「Chapter 1」）切出来：回（标签，标签片段，剩下的标题片段）。标签和编号可以在一个片段里、
+    也可以是两个片段（「Annexure」｜「IV Commutators …」：编号和标题在一段里的，按字切开）。
+    标签后面没有标题字的不切（整条就是「Appendix A」时它就是标题）；但标题在下面几行（「CHAPTER 2」单独一行，
+    ``title_follows``）时，这一行整行是标签。"""
     if not words:
         return "", None, words
     for count in (1, 2):
@@ -350,17 +352,22 @@ def _split_label(words: list[_Span]) -> tuple[str, _Span | None, list[_Span]]:
             continue
         end = match.end(1)
         if count == 2:
-            if end < len(joined.rstrip()):
-                continue  # 编号片段里还带着标题字：两段拼起来切不准，不切
             first, second = words[0], words[1]
-            label_span = _Span(joined.strip(), first.x0, min(first.y0, second.y0), second.x1, max(first.y1, second.y1),
-                               first.size, (), first.baseline)
-            rest = words[2:]
+            cut = end - len(first.text) - 1  # 标签在第二段里到哪个字
+            if cut <= 0:
+                continue
+            number = _slice(second, 0, cut)
+            tail = _slice(second, cut, len(second.text))
+            if number is None:
+                continue
+            label_span = _Span(joined[:end].strip(), first.x0, min(first.y0, number.y0), number.x1,
+                               max(first.y1, number.y1), first.size, (), first.baseline)
+            rest = ([tail] if tail is not None else []) + words[2:]
         else:
             label_span = _slice(words[0], 0, end)
             tail = _slice(words[0], end, len(words[0].text))
             rest = ([tail] if tail is not None else []) + words[1:]
-        if label_span is not None and any(span.text.strip() for span in rest):
+        if label_span is not None and (any(span.text.strip() for span in rest) or title_follows):
             return _clean(match.group(1)), label_span, rest
     return "", None, words
 
@@ -472,9 +479,10 @@ def _group(parsed: list[_ParsedLine], *, use_weak: bool) -> TocPageSplit:
                       for _n, _s, spans_ in pending if spans_]
         number_span = next((item[1] for item in pending if item[1] is not None), None)
         label, label_span, title_lines = "", None, []
-        for _n, _s, spans_ in pending:
+        for index, (_n, _s, spans_) in enumerate(pending):
             if spans_ and not title_lines and not label:
-                label, label_span, spans_ = _split_label(spans_)
+                label, label_span, spans_ = _split_label(
+                    spans_, title_follows=any(later for _n2, _s2, later in pending[index + 1:]))
             if spans_:
                 title_lines.append(_title_line(spans_))
         title_only = _clean(" ".join(line["text"] for line in title_lines))
