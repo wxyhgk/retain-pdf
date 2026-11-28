@@ -116,6 +116,11 @@ function makeHost({ regionsGate, regionsFail = false, pdfStatus = 200 }) {
     resolveReaderArtifactUrl: () => "",
   };
   const fetchPdf = async (url) => {
+    // 打开书时先要排版引擎的版面清单（译文栏能不能用 HTML 画，hooks/reader-session/translated-layout.ts）：这里没有版面。
+    if (`${url}`.includes("/reader/layout")) {
+      events.push("layout");
+      return { ok: false, status: 404, json: async () => ({}) };
+    }
     pdfFetches.push(url);
     events.push(`pdf:${url}`);
     return { ok: pdfStatus === 200, status: pdfStatus, arrayBuffer: async () => PDF_BYTES.buffer.slice(0) };

@@ -53,12 +53,15 @@ import {
   downloadOnePdf,
 } from "./session-pdf-download.js";
 import { reopenExpiredMergedReading } from "./merged-reading-recovery.js";
+import { probeTranslatedLayout, type TranslatedLayout } from "./translated-layout.js";
 
 export type SessionAssets = {
   sourceUrl: string;
   translatedUrl: string;
   sourceFile: ProtectedPdfFile | null;
   translatedFile: ProtectedPdfFile | null;
+  /** 译文栏用 HTML 画（原文 PDF + 排版引擎的版面）：版面完整时有，这时没下载译文 PDF（translatedFile 是 null，translatedUrl 照旧给下载用）。 */
+  translatedLayout: TranslatedLayout | null;
   assetsReady: boolean;
   title: string;
   regions: ReaderRegion[];
@@ -127,6 +130,7 @@ export function useSessionAssets(options: {
   const [translatedUrl, setTranslatedUrl] = useState("");
   const [sourceFile, setSourceFile] = useState<ProtectedPdfFile | null>(null);
   const [translatedFile, setTranslatedFile] = useState<ProtectedPdfFile | null>(null);
+  const [translatedLayout, setTranslatedLayout] = useState<TranslatedLayout | null>(null);
   const [assetsReady, setAssetsReady] = useState(false);
   const [title, setTitle] = useState("");
   const [regions, setRegions] = useState<ReaderRegion[]>([]);
@@ -391,12 +395,17 @@ export function useSessionAssets(options: {
       // 拆开加载可选产物时，PDF 下载先发出去，再等 regions / metadata —— 两者并行。
       // 下载的失败要等发布完可选产物后在下面的 await 里照旧抛出；先挂一个空
       // catch，免得等 regions 的这段时间里被当成未处理的 rejection。
-      const startDownloads = () => downloadJobPdfs({
-        sourceFinal: sourceFinal || "",
-        translatedFinal,
-        fence,
-        setBoot,
-      });
+      // 译文 PDF 要不要下载：先要版面清单（hooks/reader-session/translated-layout.ts），版面完整就不下载。
+      let layoutPromise: Promise<TranslatedLayout | null> | null = null;
+      const startDownloads = () => {
+        layoutPromise = translatedFinal ? probeTranslatedLayout(sessionJobId, { signal: fence.signal }) : Promise.resolve(null);
+        return downloadJobPdfs({
+          sourceFinal: sourceFinal || "",
+          translatedFinal: layoutPromise.then((layout) => (layout ? "" : translatedFinal)),
+          fence,
+          setBoot,
+        });
+      };
       const hasPdf = Boolean(sourceFinal || translatedFinal);
       const earlyDownload = optionalPromise && hasPdf ? startDownloads() : null;
       earlyDownload?.catch(() => {});
@@ -437,6 +446,7 @@ export function useSessionAssets(options: {
 
       setSourceFile(result.sourceBytes);
       setTranslatedFile(result.translatedBytes);
+      setTranslatedLayout((await layoutPromise) ?? null);
       readyBoot();
       // URL 锚点跳页见 useUrlAnchorJump（react-pdf 控制器）
     }
@@ -445,6 +455,7 @@ export function useSessionAssets(options: {
       setAssetsReady(false);
       setSourceFile(null);
       setTranslatedFile(null);
+      setTranslatedLayout(null);
       setRegions([]);
       setRegionsSettled(false);
       setReaderMetadata({ source: null, translated: null });
@@ -519,6 +530,7 @@ export function useSessionAssets(options: {
     translatedUrl,
     sourceFile,
     translatedFile,
+    translatedLayout,
     assetsReady,
     title,
     regions,

@@ -83,11 +83,12 @@ export type JobPdfDownloadResult =
 /** 先下完所有 PDF 再返回；任一下载抛错时直接抛给调用方处理。 */
 export async function downloadJobPdfs(options: {
   sourceFinal: string;
-  translatedFinal: string;
+  /** 可以是个 Promise：译文 PDF 要不要下载等别的先定（译文栏用 HTML 画时是空串，hooks/reader-session/translated-layout.ts）。 */
+  translatedFinal: string | Promise<string>;
   fence: SessionLoadFence;
   setBoot: BootSetter;
 }): Promise<JobPdfDownloadResult> {
-  const { sourceFinal, translatedFinal, fence, setBoot } = options;
+  const { sourceFinal, fence, setBoot } = options;
   setBootProgress(setBoot, 25, "正在下载 PDF…", "download");
   const tasks: Promise<void>[] = [];
   let sourceBytes: ProtectedPdfFile | null = null;
@@ -107,6 +108,10 @@ export async function downloadJobPdfs(options: {
       }),
     );
   }
+  // 原文先开始下，译文等定下来再下（不用下就不下）。
+  // 等的时候原文下载失败也不能报「没处理的 rejection」（下面 Promise.all 照旧抛给调用方）。
+  for (const task of tasks) task.catch(() => {});
+  const translatedFinal = await options.translatedFinal;
   if (translatedFinal) {
     tasks.push(
       downloadOnePdf({

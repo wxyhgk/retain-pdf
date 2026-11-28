@@ -152,6 +152,7 @@ export function useReaderSession(): ReaderSessionState {
     translatedUrl: assets.translatedUrl,
     sourceFile: assets.sourceFile,
     translatedFile: assets.translatedFile,
+    translatedLayout: assets.translatedLayout,
     assetsReady: assets.assetsReady,
     boot: assets.boot,
     title: assets.title,

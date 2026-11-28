@@ -12,7 +12,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactElement } from "react";
 
 import { renderTexToSvg } from "../shared/content/markdown-math.js";
-import { layoutColor, type RenderLayoutPage, type RenderLayoutSource } from "../shared/data/render-layout.js";
+import { layoutColor, type RenderLayoutLine, type RenderLayoutPage, type RenderLayoutSource } from "../shared/data/render-layout.js";
 import { RegionCanvas, type RegionPdfDocument } from "./RegionCanvas.js";
 import { FULL_PAGE } from "./region-image.js";
 
@@ -91,7 +91,7 @@ function layoutMathSvg(tex: string, svg: string | undefined, loadMath: ((svg: st
   return loadMath(svg).then((text) => parseMathSvg(text) ?? mathSvg(tex));
 }
 
-export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, charRise = false, loadMath, fontByKey }: {
+export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, charRise = false, loadMath, fontByKey, findTerm = "" }: {
   page: RenderLayoutPage;
   width: number;
   height: number;
@@ -104,6 +104,8 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
   loadMath?: (svg: string) => Promise<string | null>;
   /** 字簇的 font（清单 fonts[].key）→ 浏览器里的字体名：版面写明了用哪个字体就照它画（后面还接着整个字体栈）。 */
   fontByKey?: ReadonlyMap<string, string>;
+  /** 左栏搜索的词：命中的字底下画一块底色（和 PDF 文字层的 mark.reader-find-mark 一样）。 */
+  findTerm?: string;
 }): ReactElement {
   const texList = useMemo(() => {
     const map = new Map<string, string | undefined>();
@@ -205,6 +207,17 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
           >
             {block.lines.map((line, lineIndex) => (
               <g key={lineIndex} className="reader-layout-line" style={{ "--l": lineIndex } as CSSProperties}>
+              {findTerm ? layoutFindSpans(line, findTerm).map(([x0, x1], index) => (
+                <rect
+                  key={`find:${index}`}
+                  className="reader-layout-find-mark"
+                  x={x0}
+                  y={line.baseline - block.fontSize * 0.9}
+                  width={x1 - x0}
+                  height={block.fontSize * 1.2}
+                  rx={block.fontSize * 0.15}
+                />
+              )) : null}
               {line.items.map((item, itemIndex) => {
               const key = `${lineIndex}:${itemIndex}`;
               if ("tex" in item) {
@@ -250,10 +263,44 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
 }
 
 /**
+ * 一行里搜索词命中的横向范围（pt）：把行里的字簇接成一串找（不分大小写），命中的字簇从它的 x 到下一个字簇的 x
+ * （最后一个到行尾）。公式不参与。
+ */
+export function layoutFindSpans(line: RenderLayoutLine, term: string): [number, number][] {
+  const needle = term.replace(/\s+/gu, " ").trim().toLowerCase();
+  if (!needle) return [];
+  const starts: number[] = [];
+  let text = "";
+  for (const item of line.items) {
+    starts.push(text.length);
+    text += "tex" in item ? "\u0000" : item.t;
+  }
+  const lower = text.toLowerCase();
+  const end = (index: number) => {
+    const next = line.items[index + 1];
+    const item = line.items[index];
+    if (next) return next.x;
+    return Math.max(line.x + line.width, item.x);
+  };
+  const itemAt = (offset: number) => {
+    let found = 0;
+    for (let index = 0; index < starts.length; index += 1) if (starts[index] <= offset) found = index;
+    return found;
+  };
+  const spans: [number, number][] = [];
+  for (let at = lower.indexOf(needle); at >= 0; at = lower.indexOf(needle, at + needle.length)) {
+    const first = itemAt(at);
+    const last = itemAt(at + needle.length - 1);
+    spans.push([line.items[first].x, end(last)]);
+  }
+  return spans;
+}
+
+/**
  * 一页：从版面来源取这一页（按页取，接口有 ETag），先画底图（去掉原字的原文页；没有底图就是底下的原文页），再画版面。
  * 版面里没有这一页（整页图、不翻的参考文献）就什么都不画，看到的是原文页。
  */
-export function LayoutPageHost({ source, page, width, height, fontFamily, arrivedAt, charRise, backgroundPdf }: {
+export function LayoutPageHost({ source, page, width, height, fontFamily, arrivedAt, charRise, backgroundPdf, findTerm, coverWhileLoading = false }: {
   source: RenderLayoutSource;
   page: number;
   width: number;
@@ -263,14 +310,18 @@ export function LayoutPageHost({ source, page, width, height, fontFamily, arrive
   charRise?: boolean;
   /** 底图的 PDF（读好了才有）。 */
   backgroundPdf: RegionPdfDocument | null;
+  findTerm?: string;
+  /** 这一页还在取时整页盖上纸色（译文栏：不让底下的原文先露出来）。 */
+  coverWhileLoading?: boolean;
 }): ReactElement | null {
-  const [layoutPage, setLayoutPage] = useState<RenderLayoutPage | null>(null);
+  // 记着取的是哪一页、哪份版面：换了页（或版面）还没取回来时不画上一页的。
+  const [loaded, setLoaded] = useState<{ source: RenderLayoutSource; page: number; data: RenderLayoutPage | null } | null>(null);
   const has = source.pages.has(page);
   useEffect(() => {
     if (!has) return undefined;
     let alive = true;
-    void source.loadPage(page).then((next) => {
-      if (alive) setLayoutPage(next);
+    void source.loadPage(page).then((data) => {
+      if (alive) setLoaded({ source, page, data });
     });
     return () => {
       alive = false;
@@ -278,7 +329,12 @@ export function LayoutPageHost({ source, page, width, height, fontFamily, arrive
   }, [source, page, has]);
   const fontByKey = useMemo(() => new Map(source.fonts.flatMap((font) => (font.key ? [[font.key, font.family] as const] : []))), [source]);
   const loadMath = useMemo(() => (svg: string) => source.loadMath(svg), [source]);
-  if (!has || !layoutPage) return null;
+  if (!has) return null;
+  const current = loaded?.source === source && loaded.page === page;
+  if (!current) return coverWhileLoading ? <div className="reader-layout-loading" data-layout-loading={page} aria-hidden="true" /> : null;
+  const layoutPage = loaded.data;
+  // 这一页没取到（接口出错）：露出底下的原文页，比一张白纸强。
+  if (!layoutPage) return null;
   const backgroundPage = source.background?.pageFor(page) ?? null;
   return (
     <>
@@ -294,6 +350,7 @@ export function LayoutPageHost({ source, page, width, height, fontFamily, arrive
         charRise={charRise}
         loadMath={loadMath}
         fontByKey={fontByKey}
+        findTerm={findTerm}
       />
     </>
   );

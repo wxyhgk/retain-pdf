@@ -56,6 +56,7 @@ export function useReaderExtensionHost(
     jumpToBlockIn,
     zoomDocuments,
     editBlock,
+    translatedPane,
     panelHost = null,
   }: {
     translationVersions: ReaderTranslationVersions;
@@ -68,6 +69,7 @@ export function useReaderExtensionHost(
     jumpToBlockIn: ReaderApi["jumpToBlock"];
     zoomDocuments: ReaderApi["pdfDocuments"];
     editBlock: ReaderApi["editBlock"];
+    translatedPane: ReaderApi["translatedPane"];
     panelHost?: HTMLElement | null;
   },
 ) {
@@ -99,10 +101,11 @@ export function useReaderExtensionHost(
     pdfDocuments: zoomDocuments,
     editBlock,
     currentPage,
+    translatedPane,
   }), [
     session.documentId, session.jobId, translationVersions, session.regions, session.readerMetadata, bookmarks, panes.hudNumPages,
     c.viewStateKey, regionHover, c.goToPage, c.sourceOnly, assistantPanel, closeAssistant, visiblePdfMode, changeWorkspace,
-    jumpToBlockIn, c.shell.shellEl, c.panes.primaryPane, zoomDocuments, editBlock, panelHost,
+    jumpToBlockIn, c.shell.shellEl, c.panes.primaryPane, zoomDocuments, editBlock, panelHost, translatedPane,
   ]);
   const { contributionStore, contributions, reserveRight } = table;
   const pageLayers = useMemo(() => collectPageLayers(contributions), [contributions]);

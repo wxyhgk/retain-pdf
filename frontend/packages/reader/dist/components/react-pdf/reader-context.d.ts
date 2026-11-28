@@ -12,6 +12,7 @@ import type { ProtectedPdfFile } from "../../pdf/useProtectedPdfFile.js";
 import type { PageRowHeights } from "../../pdf/usePageRowSync.js";
 import type { ReaderAssistantPanel } from "./reader-assistant-types.js";
 import type { ReaderBlockEdit } from "../../hooks/use-reader-block-edit.js";
+import type { TranslatedLayout } from "../../hooks/reader-session/translated-layout.js";
 export type ReaderContextValue = {
     bindShell: (node: HTMLDivElement | null) => void;
     shellEl: HTMLElement | null;
@@ -58,6 +59,11 @@ export type ReaderContextValue = {
     pointerTaken?: boolean;
     /** 「对比版本」：左栏换成这一份译文（地址、块；块的 source 已换成那一份的译文）。null = 左栏照常是原文。 */
     compareVersion?: ReaderComparedDocument | null;
+    /**
+     * 译文栏用 HTML 画（hooks/reader-session/translated-layout.ts）：有它时译文栏挂的是原文 PDF，版面里有的页盖上版面（PdfPageSlot），
+     * 那几页不挂 pdf.js 的文字层（选字、搜索都在版面的 SVG 字上）。null = 照旧挂译文 PDF。
+     */
+    translatedLayout?: TranslatedLayout | null;
     /**
      * 真源语义 =「无 job」：判断 Markdown / AI / 收藏等需要任务的能力。
      * 仅 FAB 工具禁用等「无 job」场景取用；不要用它判断能否并排。

@@ -12,6 +12,8 @@ type ReaderPaneModelInput = {
   translatedUrl: string;
   sourceFile: ProtectedPdfFile | null;
   translatedFile: ProtectedPdfFile | null;
+  /** 译文栏用 HTML 画（hooks/reader-session/translated-layout.ts）：没下载译文 PDF 也有译文栏。 */
+  translatedHtml?: boolean;
 };
 
 type ReaderPaneFlags = {
@@ -99,7 +101,7 @@ export function useReaderPaneModel(
     sourceOnly,
     assetsReady,
     hasSource: Boolean(sourceFile) || Boolean(sourceUrl),
-    hasTranslated: Boolean(translatedFile),
+    hasTranslated: Boolean(translatedFile) || Boolean(input.translatedHtml),
   });
   const { primaryPane } = flags;
 

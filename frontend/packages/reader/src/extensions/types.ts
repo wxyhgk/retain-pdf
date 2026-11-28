@@ -51,6 +51,11 @@ export type ReaderApi = {
   visibleMode: "source" | "compare" | "translated";
   /** 切原文 / 对照 / 译文（保持读到的页）。 */
   setWorkspace: (mode: "source" | "compare" | "translated") => void;
+  /**
+   * 译文栏怎么画（hooks/reader-session/translated-layout.ts）：canHtml 是这本有完整版面、能用 HTML 画；
+   * usePdf 是用户选了照旧用译文 PDF（只在这次打开里有效）。HTML 页菜单里的「译文栏用 PDF」用它。
+   */
+  translatedPane: { canHtml: boolean; usePdf: boolean; setUsePdf: (usePdf: boolean) => void };
 };
 
 /** 右键书页的那一下：点在哪个元素、屏幕坐标、第几页（认不出是 0）。 */

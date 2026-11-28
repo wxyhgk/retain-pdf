@@ -324,10 +324,26 @@
 
 /* 深色文档（doc-theme.css 给原文页的画布套反色滤镜）：底图和版面也套同一个，不然在黑页上盖一张白页。 */
 :root[data-reader-doc="dark"] .reader-layout-background canvas,
-:root[data-reader-doc="dark"] .reader-layout-page {
+:root[data-reader-doc="dark"] .reader-layout-page,
+:root[data-reader-doc="dark"] .reader-layout-loading {
   filter: var(--reader-doc-dark-filter);
 }
 
 .reader-region-canvas.reader-layout-background[data-status="loading"] {
   visibility: hidden;
+}
+
+/* 译文栏用 HTML 画（PdfPageSlot 的 translatedLayout）：这一页的版面还在取时整页盖上纸色，不让底下的原文先露出来。 */
+.reader-layout-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: var(--reader-page, var(--paper, #fff));
+  pointer-events: none;
+}
+
+/* HTML 版面上左栏搜索的命中（LayoutPageLayer 的 layoutFindSpans）：和 PDF 文字层的 mark.reader-find-mark 同色，画在字底下。 */
+.reader-layout-find-mark {
+  fill: color-mix(in srgb, var(--warn) 55%, transparent);
+  pointer-events: none;
 }

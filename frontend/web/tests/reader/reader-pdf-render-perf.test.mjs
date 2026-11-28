@@ -95,7 +95,8 @@ test("pane owns the IntersectionObservers: one for window + canvas activeness, o
   assert.equal((pane.match(/new IntersectionObserver/g) || []).length, 2);
   assert.match(pane, /const TEXT_ROOT_MARGIN = "25% 0px"/);
   assert.match(pane, /textLayer=\{!textWindowed \|\| textPages\.has\(pageNumber\)\}/);
-  assert.match(slot, /renderTextLayer=\{textLayer\}/);
+  // 译文栏用 HTML 画时，版面盖住的页不挂原文的文字层（2026-11-28）。
+  assert.match(slot, /renderTextLayer=\{textLayer && !layoutCovers\}/);
   assert.match(pane, /const ACTIVE_ROOT_MARGIN = "120% 0px"/);
   assert.match(pane, /const ACTIVE_LEAVE_MS = 120/);
   assert.match(pane, /activePages\.has\(pageNumber\)/);

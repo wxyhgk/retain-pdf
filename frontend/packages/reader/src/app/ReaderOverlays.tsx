@@ -3,6 +3,7 @@ import type { ReactElement } from "react";
 
 import { ReaderZoomViewer } from "../components/react-pdf/ReaderZoomViewer.js";
 import type { ReaderReactController } from "../hooks/use-reader-react-controller.js";
+import type { TranslatedLayout } from "../hooks/reader-session/translated-layout.js";
 import type { ReaderPaneComposition } from "./pane-composition.js";
 import type { useReaderPdfAssets } from "./use-reader-pdf-assets.js";
 
@@ -15,6 +16,7 @@ export function ReaderOverlays({
   setZoomItem,
   closeZoom,
   visiblePdfMode,
+  translatedLayout = null,
 }: {
   session: Pick<ReaderReactController["session"], "regions" | "readerMetadata">;
   zoomDocuments: Assets["zoomDocuments"];
@@ -22,6 +24,8 @@ export function ReaderOverlays({
   setZoomItem: (itemId: string | null) => void;
   closeZoom: () => void;
   visiblePdfMode: ReaderPaneComposition["visibleMode"];
+  /** 译文栏用 HTML 画（没有译文 PDF）：放大译文那一块时用原文页加版面。 */
+  translatedLayout?: TranslatedLayout | null;
 }): ReactElement {
   return (
     <>
@@ -32,6 +36,7 @@ export function ReaderOverlays({
           metadata={session.readerMetadata}
           documents={zoomDocuments}
           panes={visiblePdfMode === "compare" ? ["source", "translated"] : visiblePdfMode === "translated" ? ["translated"] : ["source"]}
+          translatedLayout={translatedLayout}
           onNavigate={setZoomItem}
           onClose={closeZoom}
         />

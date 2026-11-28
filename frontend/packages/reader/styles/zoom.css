@@ -180,3 +180,18 @@
     border-radius: 0;
   }
 }
+
+/* 译文栏用 HTML 画时放大的译文那一块（ReaderZoomViewer 的 ZoomLayoutBlock）：原文页裁出的一块，上面盖着挪好位置的整页版面，外面裁掉。 */
+.reader-zoom-layout {
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+}
+
+.reader-zoom-layout > .reader-region-canvas {
+  display: block;
+}
+
+.reader-zoom-layout-page {
+  position: absolute;
+}
