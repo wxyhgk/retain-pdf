@@ -13,7 +13,7 @@ export const READER_SHAPE_TOKENS: ShapeToken[] = [
   { name: "--reader-chrome-edge-width", kind: "length", description: "顶栏、托盘、下载按钮和菜单、目录搜索分组、实时译文胶囊的描边粗细", fallback: "var(--shape-edge-width, 1px)" },
   { name: "--reader-chrome-edge-color", kind: "color", description: "同上这些的描边颜色", fallback: "var(--shape-edge-color, 墨色 7–9% 透明)" },
   { name: "--reader-chrome-shadow", kind: "shadow", description: "实时译文那几块浮条的阴影（顶栏按钮 2026-11-28 起是平的，不再用它）", fallback: "var(--shape-shadow-sm, 0 10px 28px 的淡阴影)" },
-  { name: "--reader-chrome-bar-shadow", kind: "shadow", description: "顶栏整条的底部阴影", fallback: "0 1px 0 纸色 72% 透明" },
+  { name: "--reader-chrome-bar-shadow", kind: "shadow", description: "顶栏两颗浮着的胶囊（返回和书名、原文 / 对照 / 译文）的阴影（2026-11-28 下午以前是整条顶栏的底部阴影）", fallback: "0 2px 10px 墨色 6%" },
   { name: "--reader-chrome-radius", kind: "length", description: "托盘、下载/关闭按钮、画笔条、待提交药丸等胶囊的圆角", fallback: "var(--shape-radius-control, 999px)" },
   // —— tab ——
   { name: "--reader-tab-edge-width", kind: "length", description: "顶栏「原文 / 对照 / 译文」页签的描边粗细；分组外框也用它", fallback: "页签 0；分组外框 var(--shape-edge-width, 1px)" },

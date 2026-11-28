@@ -37,18 +37,21 @@ test("下载收成一颗「下载」按钮，和中间的模式页签分得开",
   assert.doesNotMatch(DOWNLOADS, /reader-download-actions-prefix/, "组前缀那套已经不需要了");
 });
 
-test("顶栏是实占位的左-中-右三段网格（2026-11-28）：左右同宽，模式页签相对视口居中；不再 fixed、不再给托盘留位", () => {
-  // 以前顶栏 fixed 盖在书页上，两头的按钮各自 fixed 浮着，靠 --reader-tray-width 两边对称留位（更早是左 72、右 300，页签偏 114px）。
+test("顶栏浮在书页区顶上的左-中-右三段网格（2026-11-28 下午）：左右同宽，模式页签在书页区正中；不 fixed、不给托盘留位", () => {
+  // 11-28 上午是实占一行 54px 的三段网格；更早顶栏 fixed 盖在整个窗口上，两头的按钮各自 fixed 浮着，靠 --reader-tray-width 两边对称留位。
+  // 现在画在 .reader-stage 里、absolute，只盖书页区，左右两边固定的栏不被盖、页签不用算偏移。
   const bar = CHROME.slice(CHROME.indexOf(".reader-workspace-bar {"));
   const block = bar.slice(0, bar.indexOf("\n}\n"));
   assert.match(block, /grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\);/, "顶栏不是左右同宽的三段");
-  assert.match(block, /height:\s*var\(--reader-topbar-h, 54px\);/);
-  assert.doesNotMatch(block, /position:\s*fixed/, "顶栏又浮回书页上了");
+  assert.match(block, /position:\s*absolute;/);
+  assert.doesNotMatch(block, /position:\s*fixed/, "顶栏又盖到整个窗口上了");
+  const stage = APP.slice(APP.indexOf('<div className="reader-stage">'), APP.indexOf("<ReaderCompareGrid"));
+  assert.match(stage, /<ReaderWorkspaceTabs/, "顶栏不在书页区里");
   assert.doesNotMatch(CHROME.replace(/\/\*[\s\S]*?\*\//g, ""), /--reader-tray-width/, "又回到给托盘留位");
   // 2026-11-28 用户：顶栏左边去掉「目录」「搜索」——目录固定用目录卡上的图钉，搜索挪到底栏左边。
-  const start = APP.slice(APP.indexOf("start={<>"), APP.indexOf("</>}", APP.indexOf("start={<>")));
-  assert.match(start, /<ReaderCloseHome[\s\S]*?reader-workspace-title/, "左段：返回、书名");
-  assert.doesNotMatch(start, /ReaderTocToggle|ReaderFinderToggles/, "顶栏左段又有目录、搜索了");
+  // 2026-11-28 下午用户：「左侧的返回按钮不要给书籍的标题」——左上那颗胶囊只有返回。
+  assert.match(APP, /start=\{<ReaderCloseHome onBeforeClose=\{session\.prepareClose\} \/>\}/, "左上只有返回");
+  assert.doesNotMatch(APP, /reader-workspace-title/, "左上又画了书名");
   assert.match(APP, /startSlot=\{<ReaderFinderToggles open=\{finder\} onToggle=\{finderState\.toggleSidebar\} issueCount=\{issueNav\.issues\.length\} \/>\}/, "搜索在底栏左边");
   // 右段空着（2026-11-28：提问、Markdown、下载挪去书页区右缘的竖条），留着让页签在正中。
   assert.doesNotMatch(APP, /\bend=\{/, "顶栏右段又放东西了");

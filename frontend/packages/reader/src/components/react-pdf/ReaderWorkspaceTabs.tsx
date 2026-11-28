@@ -35,10 +35,8 @@ export type ReaderWorkspaceTabsProps = {
   } | null;
   /** 这次看着它翻完了：顶栏左边换成「翻译完成 · 看对照」。 */
   completion?: { onOpenCompare: () => void } | null;
-  /** 顶栏左段（2026-11-28 起顶栏是三段：左返回、左栏、书名；中原文 / 对照 / 译文；右面板和看法、下载）。 */
+  /** 左上角的胶囊：返回（2026-11-28 起顶栏不再占一行，浮在书页区上面：左上一颗胶囊、正上方页签）。 */
   start?: ReactNode;
-  /** 顶栏右段。 */
-  end?: ReactNode;
   /** 「对照」后面紧跟的东西（对比版本的 ▾，ReaderBarTools place="compare"；只有一份译文时没有）。 */
   compareExtra?: ReactNode;
 };
@@ -88,11 +86,13 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
   const sourceViewOnly = props.sourceViewOnly ?? ctx?.sourceViewOnly ?? false;
   const liveCopy = liveTranslation ? liveTranslationStatusCopy(liveTranslation.state) : "";
   return (
+    // 浮在书页区顶上（2026-11-28 用户：「顶部的 bar 不要保留了，用悬浮的方式……更有沉浸感」）：
+    // 这一层本身透明、不接点击，只有左上的胶囊和正中的页签接；左右两段同宽，页签在书页区正中。
     <header className="reader-workspace-bar">
       {/* 装饰位钩子：顶栏两端（装饰包 ornaments.reader-bar-left / reader-bar-right），绝对定位，不占位 */}
       <span className="theme-ornament" data-ornament="reader-bar-left" aria-hidden="true" />
       <span className="theme-ornament" data-ornament="reader-bar-right" aria-hidden="true" />
-      <div className="reader-workspace-start">{props.start}</div>
+      {props.start ? <div className="reader-workspace-start">{props.start}</div> : null}
       {/* 进度那一组挂在页签右边（相对这一层定位），页签照旧居中（左右两段同宽的网格）。 */}
       <div className="reader-workspace-center">
         <div className="reader-workspace-tabs" role="tablist" aria-label="阅读工作区">
@@ -164,7 +164,8 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
           </div>
         ) : null}
       </div>
-      <div className="reader-workspace-end">{props.end}</div>
+      {/* 右段空着（提问、Markdown、下载在书页区右缘的竖条），只为让页签居中。 */}
+      <span className="reader-workspace-end" aria-hidden="true" />
     </header>
   );
 }

@@ -690,7 +690,8 @@ function makeScrollRootWithPages(pageCount = 5, pageHeight = 200) {
 test("scrollShellToPage moves shared shell scrollTop near page top", () => {
   const { root, dom } = makeScrollRootWithPages(5, 200);
   assert.equal(scrollShellToPage(root, 3, "auto", "source"), true);
-  assert.ok(Math.abs(root.scrollTop - 352) < 2, `scrollTop=${root.scrollTop}`);
+  // 第 3 页顶在 400，减去阅读线 READER_SCROLL_FOCUS_PX（2026-11-28 顶栏改成浮着的，48 → 56）。
+  assert.ok(Math.abs(root.scrollTop - 344) < 2, `scrollTop=${root.scrollTop}`);
   dom.window.close();
 });
 

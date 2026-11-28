@@ -4,53 +4,52 @@
  * .reader-workspace-bar / .reader-workspace-tabs / .reader-workspace-tab
  * 取代（ReaderWorkspaceTabs.tsx），且无任何 JS/TSX 写入者，删除防复活。 */
 
-/* 顶栏（2026-11-28 起三行壳层的最上面一行）：全宽、实占位，左-中-右三段网格——
- * 左：返回、书名（目录的固定在目录卡的图钉上，搜索在底栏左边，2026-11-28）；中：原文 / 对照 / 译文（对比版本的 ▾、实时译文那一组）；
- * 右：空着（提问、Markdown、下载 11-28 挪去书页区右缘的竖条），留着这一段让页签正好在中间。
- * 左右两段同宽（1fr），页签正好在视口中间；以前顶栏 fixed 盖在书页上，两头的按钮各自 fixed 浮在上面，靠 --reader-tray-width 给页签留位。 */
+/* 顶栏（2026-11-28 下午起不占行，浮在书页区顶上；用户：「顶部的 bar 不要保留了，用悬浮的方式……更有沉浸感」）：
+ * 画在 .reader-stage 里（ReaderAppReactPdf），所以只盖书页区——左边固定的目录、搜索栏和右边的停靠栏都不被盖，页签在书页区正中。
+ * 这一层本身透明、不接点击（书页照常点、选字），只有两颗胶囊接：
+ * 左上：返回（一颗纸色小胶囊，和右缘竖条一个样子；书名 11-28 用户说不要，不画了）；正上方：原文 / 对照 / 译文（对比版本的 ▾、实时译文那一组挂在右边）。
+ * 右段空着，只为让页签居中。三段写死在哪一列：左上那颗没有时（测试里可能没有）页签不跑到第一列。
+ * 一直显示，不自动收起（模式页签用得多）。书页第一页上面让出 --reader-float-bar-room（react-pdf.css），刚打开时不压字。
+ * 叠放比右缘竖条（30）低一档：窄屏停靠栏铺满中间工作区（30）时盖住它们。
+ * 以前（11-28 上午）是全宽、实占一行 54px 的三段网格；更早顶栏 fixed 盖在整个窗口上，两头的按钮各自 fixed，靠 --reader-tray-width 给页签留位。 */
 .reader-workspace-bar {
-  position: relative;
-  z-index: 35;
-  z-index: var(--z-chrome, 35);
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  left: 12px;
+  z-index: 29;
   display: grid;
-  flex: none;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   gap: 10px;
-  height: var(--reader-topbar-h, 54px);
-  padding: 0 12px;
-  border-bottom: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
-  background: var(--paper);
-  box-shadow: var(--reader-chrome-bar-shadow, none);
+  pointer-events: none;
 }
 
-.reader-workspace-start,
-.reader-workspace-end {
+.reader-workspace-start {
   display: flex;
+  grid-column: 1;
+  justify-self: start;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  max-width: 100%;
   min-width: 0;
+  height: 40px;
+  padding: 3px;
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  background: var(--paper);
+  box-shadow: var(--reader-chrome-bar-shadow, 0 2px 10px color-mix(in srgb, var(--shadow-color, var(--ink)) 6%, transparent));
+  box-sizing: border-box;
+  pointer-events: auto;
 }
 
 .reader-workspace-end {
-  justify-content: flex-end;
+  grid-column: 3;
 }
 
-/* 书名：灰一点、太长截断（窄屏收掉）。 */
-.reader-workspace-title {
-  min-width: 0;
-  margin-left: 6px;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: var(--ui-text-sm, 12px);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-@media (max-width: 720px) {
-  .reader-workspace-title {
-    display: none;
-  }
+/* 返回在胶囊里圆一点，和胶囊同一种圆角。 */
+.reader-workspace-start .reader-close-home-btn {
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
 }
 
 /* 顶栏按钮一套（2026-11-28 收口回黑白纸墨）：返回是这一个样子（目录、搜索 11-28 也拿掉了）（提问 / Markdown、下载 11-28 挪去书页区右缘的竖条，side-rail.css）——
@@ -144,6 +143,15 @@
 .reader-workspace-center {
   position: relative;
   display: inline-flex;
+  grid-column: 2;
+  pointer-events: auto;
+}
+
+/* 页签浮在书页上：纸色底、和左上那颗一样的细边和淡影（占一行时是浅墨底）。 */
+.reader-workspace-bar .reader-workspace-tabs {
+  border-color: var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  background: var(--paper);
+  box-shadow: var(--reader-chrome-bar-shadow, 0 2px 10px color-mix(in srgb, var(--shadow-color, var(--ink)) 6%, transparent));
 }
 
 /* 挂在页签右边：不占流式位置，页签照旧居中。以前放在 left 28px，正好压在「目录」上。 */
@@ -155,11 +163,10 @@
   white-space: nowrap;
 }
 
-/* 窄屏页签右边放不下（会压到右上角的托盘），挪到顶栏下面居中。 */
+/* 窄屏页签右边放不下，挪到页签下面居中。 */
 @media (max-width: 720px) {
   .reader-workspace-bar .reader-live-strip {
-    position: fixed;
-    top: calc(var(--reader-topbar-h, 54px) + 8px);
+    top: calc(100% + 8px);
     left: 50%;
     translate: -50% 0;
   }

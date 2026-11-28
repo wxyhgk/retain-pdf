@@ -265,37 +265,35 @@ export function ReaderAppReactPdf() {
             setPageMenu(menu);
           }}
         >
-          {/* 三行壳层（2026-11-28）：顶栏、中间工作区、底栏都是全宽、实占位的一行，书页只在中间那一行里，
-              不再被浮在上面的栏、胶囊、小球盖住，也不再拿 --reader-stage-* 去算谁让谁。 */}
-          <ReaderWorkspaceTabs
-            mode={visiblePdfMode}
-            documentReady={Boolean(session.jobId)}
-            sourceViewOnly={sourceViewOnly}
-            onModeChange={changeWorkspace}
-            compareExtra={<ReaderBarTools place="compare" />}
-            liveTranslation={liveToggles.topBarPill ? {
-              visible: liveTranslationVisible,
-              state: c.liveTranslation,
-              onToggle: () => setLiveTranslationVisible((visible) => !visible),
-              latestPage: liveTranslationVisible ? latestLivePage : null,
-              currentPage: c.currentPage,
-              onJumpToLatest: jumpToLatestLivePage,
-            } : null}
-            completion={offerCompletion ? {
-              onOpenCompare: () => {
-                setCompletionDismissedKey(c.viewStateKey);
-                changeWorkspace("compare");
-              },
-            } : null}
-            start={<>
-              <ReaderCloseHome onBeforeClose={session.prepareClose} />
-              {session.title ? <span className="reader-workspace-title" title={session.title}>{session.title}</span> : null}
-            </>}
-          />
+          {/* 壳层（2026-11-28）：中间工作区、底栏是全宽、实占位的两行，书页只在中间那一行里，不再拿 --reader-stage-* 去算谁让谁。
+              顶栏 11-28 下午起不占行：返回、原文 / 对照 / 译文浮在书页区顶上（ReaderWorkspaceTabs 画在 .reader-stage 里）。 */}
           <div className="reader-workspace">
             {tocDocked ? <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} pinned docked onPinChange={setTocPinned} /> : null}
             <ReaderFinderArea state={finderState} bookmarkScope={c.viewStateKey} issues={issueNav} />
             <div className="reader-stage">
+              {/* 浮在书页区顶上：左上一颗返回，正上方原文 / 对照 / 译文（2026-11-28 下午起不再是占一行的顶栏；用户：「左侧的返回按钮不要给书籍的标题」，书名不再画）。 */}
+              <ReaderWorkspaceTabs
+                mode={visiblePdfMode}
+                documentReady={Boolean(session.jobId)}
+                sourceViewOnly={sourceViewOnly}
+                onModeChange={changeWorkspace}
+                compareExtra={<ReaderBarTools place="compare" />}
+                liveTranslation={liveToggles.topBarPill ? {
+                  visible: liveTranslationVisible,
+                  state: c.liveTranslation,
+                  onToggle: () => setLiveTranslationVisible((visible) => !visible),
+                  latestPage: liveTranslationVisible ? latestLivePage : null,
+                  currentPage: c.currentPage,
+                  onJumpToLatest: jumpToLatestLivePage,
+                } : null}
+                completion={offerCompletion ? {
+                  onOpenCompare: () => {
+                    setCompletionDismissedKey(c.viewStateKey);
+                    changeWorkspace("compare");
+                  },
+                } : null}
+                start={<ReaderCloseHome onBeforeClose={session.prepareClose} />}
+              />
               {/* 目录：书页区左缘一排短横线，移上去出目录卡（照原型 reader-prototype.html）；固定成一栏时画在上面工作区最左边。 */}
               {tocDocked ? null : <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} pinned={tocPinned} onPinChange={setTocPinned} />}
               {/* 右缘竖条：AI 回答、Markdown、下载（2026-11-28 从顶栏右边挪过来，悬浮不占栏）。 */}

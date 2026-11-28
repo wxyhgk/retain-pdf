@@ -1,13 +1,14 @@
 /* react-pdf 引擎：滚动壳 / 双栏网格 / 页槽 / 文本层 / 空态错误 */
 
 /* —— react-pdf engine (R1) —— */
-/* 三行壳层（2026-11-28）：顶栏（.reader-workspace-bar）、中间工作区（.reader-workspace）、底栏（.reader-bottombar）
- * 是根节点竖排的三行，两条栏全宽、实占位，书页只在中间那一行里。以前是全屏堆叠：顶栏、底栏浮在书页上，
+/* 壳层（2026-11-28）：中间工作区（.reader-workspace）、底栏（.reader-bottombar）是根节点竖排的两行，底栏全宽、实占位，
+ * 书页只在中间那一行里。顶栏 11-28 上午也是实占的一行（54px），下午起改成浮在书页区顶上的两颗胶囊（chrome.css），
+ * 书页第一页上面让出 --reader-float-bar-room（8 + 胶囊 40 + 8）。以前是全屏堆叠：顶栏、底栏浮在书页上，
  * 书页区用 --reader-stage-left / --reader-stage-right 算让谁，底栏和小球压着正文最后几行。
- * 两条栏的高在这里定；JS 要用（提问窗贴右边时上下让出）的在 src/app/shell-metrics.ts，测试对着两边。 */
+ * 底栏的高在这里定；JS 要用（提问窗贴右边时让出底栏）的在 src/app/shell-metrics.ts，测试对着两边。 */
 .reader-react-root {
   --reader-ai-split-width: 50vw;
-  --reader-topbar-h: 54px;
+  --reader-float-bar-room: 56px;
   --reader-bottombar-h: 36px;
   position: relative;
   display: flex;
@@ -211,10 +212,11 @@
   cursor: grabbing;
 }
 
-/* 源栏右上角动作（如「译文」叠加开关）：放在 pane 内，不随内容滚动。 */
+/* 源栏右上角动作（如「译文」叠加开关）：放在 pane 内，不随内容滚动。对照时源栏右上角正好在书页区正中，
+ * 往下让过浮着的页签（--reader-float-bar-room）。 */
 .reader-react-pdf-pane-action {
   position: absolute;
-  top: 8px;
+  top: var(--reader-float-bar-room, 56px);
   right: 8px;
   z-index: 6;
   pointer-events: none;
@@ -489,8 +491,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 8px 20vh;
-  padding: 12px 8px 20dvh;
+  /* 上面让出浮着的顶栏（返回、页签），刚打开时第一页的页头不被压住。 */
+  padding: var(--reader-float-bar-room, 56px) 8px 20vh;
+  padding: var(--reader-float-bar-room, 56px) 8px 20dvh;
   box-sizing: border-box;
   width: max-content;
   min-width: 100%;

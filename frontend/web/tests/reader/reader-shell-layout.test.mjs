@@ -1,4 +1,5 @@
-/** 阅读页的三行壳层（2026-11-28）：顶栏、中间工作区、底栏是根节点竖排的三行，两条栏全宽、实占位，书页只在中间那一行里；
+/** 阅读页的壳层（2026-11-28）：中间工作区、底栏是根节点竖排的两行，底栏全宽、实占位，书页只在中间那一行里；
+ * 顶栏上午也是实占的一行，下午起（用户：「顶部的 bar 不要保留了，用悬浮的方式」）浮在书页区顶上：左上一颗返回（不画书名）、正上方页签；
  * 中间工作区横排：左栏（钉住时）、书页区、右边停靠栏（Markdown 或贴右边的提问窗，11-28 起提问窗也画进这一栏），谁多宽由 flex 排。
  *
  * 以前是全屏堆叠：顶栏 fixed 盖在书页上，底栏、小球浮在书页底部，书页区用 --reader-stage-left / --reader-stage-right 算让谁，
@@ -41,30 +42,44 @@ function declaration(files, selector, property) {
   return found;
 }
 
-test("根节点竖排三行：两条栏的高在 CSS 和 JS 里是同一个数（提问窗贴右边时上下让出它们）", async () => {
+test("根节点竖排：中间工作区、底栏；底栏的高在 CSS 和 JS 里是同一个数（提问窗贴右边时让出底栏，上面不用让）", async () => {
   assert.equal(declaration(["react-pdf.css"], ".reader-react-root", "display"), "flex");
   assert.equal(declaration(["react-pdf.css"], ".reader-react-root", "flex-direction"), "column");
-  const top = declaration(["react-pdf.css"], ".reader-react-root", "--reader-topbar-h");
+  assert.equal(declaration(["react-pdf.css"], ".reader-react-root", "--reader-topbar-h"), null, "顶栏又占一行了");
   const bottom = declaration(["react-pdf.css"], ".reader-react-root", "--reader-bottombar-h");
   const metrics = await import("../../../packages/reader/src/app/shell-metrics.ts");
-  assert.equal(top, `${metrics.READER_TOPBAR_HEIGHT}px`);
+  assert.equal(metrics.READER_TOPBAR_HEIGHT, undefined);
   assert.equal(bottom, `${metrics.READER_BOTTOMBAR_HEIGHT}px`);
-  assert.deepEqual(metrics.READER_DOCK_INSETS, { top: metrics.READER_TOPBAR_HEIGHT, bottom: metrics.READER_BOTTOMBAR_HEIGHT });
-  assert.match(read("src/ask/ReaderAskPanel.tsx"), /dockInsets=\{READER_DOCK_INSETS\}/, "提问窗贴右边没让出两条栏");
+  assert.deepEqual(metrics.READER_DOCK_INSETS, { top: 0, bottom: metrics.READER_BOTTOMBAR_HEIGHT });
+  assert.match(read("src/ask/ReaderAskPanel.tsx"), /dockInsets=\{READER_DOCK_INSETS\}/, "提问窗贴右边没让出底栏");
 });
 
-test("两条栏实占位：不 fixed、不 absolute，高度用变量；中间工作区 flex: 1 撑满、自己裁掉溢出", () => {
-  for (const [file, selector, height] of [["chrome.css", ".reader-workspace-bar", "var(--reader-topbar-h, 54px)"], ["hud.css", ".reader-bottombar", "var(--reader-bottombar-h, 36px)"]]) {
-    assert.equal(declaration([file], selector, "position"), "relative", `${selector} 又浮起来了`);
-    assert.equal(declaration([file], selector, "flex"), "none");
-    assert.equal(declaration([file], selector, "height"), height);
-  }
+test("底栏实占位：不 fixed、不 absolute，高度用变量；中间工作区 flex: 1 撑满、自己裁掉溢出", () => {
+  assert.equal(declaration(["hud.css"], ".reader-bottombar", "position"), "relative", "底栏又浮起来了");
+  assert.equal(declaration(["hud.css"], ".reader-bottombar", "flex"), "none");
+  assert.equal(declaration(["hud.css"], ".reader-bottombar", "height"), "var(--reader-bottombar-h, 36px)");
   assert.equal(declaration(["react-pdf.css"], ".reader-workspace", "flex"), "1 1 auto");
   assert.equal(declaration(["react-pdf.css"], ".reader-workspace", "min-height"), "0");
   assert.equal(declaration(["react-pdf.css"], ".reader-workspace", "overflow"), "hidden");
   assert.equal(declaration(["react-pdf.css"], ".reader-stage", "flex"), "1 1 auto");
   assert.equal(declaration(["react-pdf.css"], ".reader-stage", "min-width"), "0");
   assert.equal(declaration(["react-pdf.css"], ".reader-react-scroll-shell", "inset"), "0");
+});
+
+test("顶栏浮在书页区顶上（2026-11-28 下午）：这一层透明、不接点击，只有左上胶囊和页签接；书页第一页、源栏右上角的开关让出它", () => {
+  assert.equal(declaration(["chrome.css"], ".reader-workspace-bar", "position"), "absolute");
+  assert.equal(declaration(["chrome.css"], ".reader-workspace-bar", "pointer-events"), "none", "透明的那一层挡住了书页");
+  assert.equal(declaration(["chrome.css"], ".reader-workspace-start", "pointer-events"), "auto");
+  assert.equal(declaration(["chrome.css"], ".reader-workspace-center", "pointer-events"), "auto");
+  // 窄屏停靠栏铺满中间工作区（z 30）时盖住浮着的顶栏，不是反过来压在 Markdown 的页签上。
+  const narrowDock = css("assistant-dock.css").match(/@media \(max-width: 899px\)[\s\S]*?\.reader-dock[^{]*\{[^}]*z-index:\s*(\d+)/);
+  assert.ok(narrowDock, "窄屏停靠栏的 z-index 没找到");
+  assert.ok(Number(declaration(["chrome.css"], ".reader-workspace-bar", "z-index")) < Number(narrowDock[1]), "浮着的顶栏压在窄屏停靠栏上");
+  assert.equal(declaration(["react-pdf.css"], ".reader-react-root", "--reader-float-bar-room"), "56px");
+  assert.match(declaration(["react-pdf.css"], ".reader-react-pdf-wrap", "padding"), /^var\(--reader-float-bar-room, 56px\) /, "第一页顶上没让出浮着的顶栏");
+  assert.equal(declaration(["react-pdf.css"], ".reader-react-pdf-pane-action", "top"), "var(--reader-float-bar-room, 56px)", "源栏右上角的开关压在页签底下");
+  // 翻到某一页时页顶停在阅读线，和第一页一样让出浮着的顶栏（同一个数）。
+  assert.match(read("src/pdf/scroll-to-page.ts"), /READER_SCROLL_FOCUS_PX = 56;/);
 });
 
 test("不再拿偏移算谁让谁：样式里没有 --reader-stage-*、--reader-right-inset、托盘留位、底栏留空", () => {
@@ -75,16 +90,17 @@ test("不再拿偏移算谁让谁：样式里没有 --reader-stage-*、--reader-
   }
 });
 
-test("页面结构：顶栏 → 中间工作区（左栏、书页区、右边停靠栏）→ 底栏；书页区里只有书页和它的加载、出错", () => {
+test("页面结构：中间工作区（左栏、书页区、右边停靠栏）→ 底栏；浮着的顶栏在书页区里；书页区里只有顶栏、目录、竖条、书页和它的加载、出错", () => {
   const app = read("src/ReaderAppReactPdf.tsx");
-  const order = ["<ReaderWorkspaceTabs", '<div className="reader-workspace">', "<ReaderFinderArea", '<div className="reader-stage">', "<ReaderCompareGrid", "<ReaderReactBoot", "<aside", 'className="reader-dock"', 'className="reader-dock-body"', "<ReaderZoomHud"];
+  const order = ['<div className="reader-workspace">', "<ReaderFinderArea", '<div className="reader-stage">', "<ReaderWorkspaceTabs", "<ReaderCompareGrid", "<ReaderReactBoot", "<aside", 'className="reader-dock"', 'className="reader-dock-body"', "<ReaderZoomHud"];
   let last = -1;
   for (const part of order) {
     const at = app.indexOf(part);
     assert.ok(at > last, `${part} 不在该在的位置`);
     last = at;
   }
-  const stage = app.slice(app.indexOf('<div className="reader-stage">'), app.indexOf('className="reader-dock"'));
+  // 「对照」后面的 ▾（ReaderBarTools place="compare"）跟着页签在书页区里，别的工具不放进来。
+  const stage = app.slice(app.indexOf('<div className="reader-stage">'), app.indexOf('className="reader-dock"')).replace('<ReaderBarTools place="compare" />', "");
   assert.doesNotMatch(stage, /<ReaderZoomHud|<ReaderBarTools/, "书页区里又放了底栏或工具");
   // 2026-11-28：提问窗贴右边也画进这一栏（和 Markdown 共用），停靠栏照它的宽度；不再另留空位。
   assert.match(app, /style=\{!assistantOpen && reserveRight \? \(\{ "--reader-dock-width": `\$\{reserveRight\}px` \} as CSSProperties\) : undefined\}/, "提问窗贴右边时停靠栏和它一样宽");
@@ -120,7 +136,6 @@ test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待改个�
   assert.equal(declaration(["finder.css"], ".reader-finder-toggle", "border-radius"), radius);
   assert.equal(declaration(["toolball.css"], ".reader-bar-tool", "border-radius"), radius);
   assert.doesNotMatch(css("chrome.css"), /backdrop-filter|min-height:\s*36px/, "顶栏还留着浮动胶囊的毛玻璃、36px 高");
-  assert.match(read("src/ReaderAppReactPdf.tsx"), /<span className="reader-workspace-title"/, "顶栏左段的书名");
   // 底栏：书签紧挨着「收藏」入口；图标都是 16px（bar-icon.ts），按钮 26px 高。
   const bookmark = read("src/components/react-pdf/ReaderBookmarkControl.tsx");
   assert.match(bookmark, /<BookmarkIcon filled=\{marked\} \/>\s*<\/button>\s*<ReaderFavoritesEntry \/>/);

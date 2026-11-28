@@ -24,10 +24,8 @@ export type ReaderWorkspaceTabsProps = {
     completion?: {
         onOpenCompare: () => void;
     } | null;
-    /** 顶栏左段（2026-11-28 起顶栏是三段：左返回、左栏、书名；中原文 / 对照 / 译文；右面板和看法、下载）。 */
+    /** 左上角的胶囊：返回（2026-11-28 起顶栏不再占一行，浮在书页区上面：左上一颗胶囊、正上方页签）。 */
     start?: ReactNode;
-    /** 顶栏右段。 */
-    end?: ReactNode;
     /** 「对照」后面紧跟的东西（对比版本的 ▾，ReaderBarTools place="compare"；只有一份译文时没有）。 */
     compareExtra?: ReactNode;
 };

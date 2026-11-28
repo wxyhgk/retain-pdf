@@ -197,12 +197,11 @@ test("启动器的两种形态都真的渲染出可点的东西", () => {
 test("三路下载仍然可达，而且不在启动器里 —— 它不该和面板抢位置", () => {
   assert.deepEqual([...READER_DOWNLOAD_ORDER], ["source", "sideBySide", "translated"]);
   // 常驻：面板开着也够得到（原来在圆钮里，圆钮一被藏就下不了）。
-  // 2026-11-28 起下载在书页区右缘的竖条最下面（ReaderSideRail，以前在顶栏右段），「返回主页」在顶栏左段（start）。
+  // 2026-11-28 起下载在书页区右缘的竖条最下面（ReaderSideRail，以前在顶栏右段），「返回主页」是书页区左上浮着的那一颗（start）。
   const rail = readFileSync(new URL("../../../packages/reader/src/components/react-pdf/ReaderSideRail.tsx", import.meta.url), "utf8");
   assert.match(rail, /<ReaderDownloadActions\s*\/>/, "右缘竖条没有下载");
   assert.match(APP, /<ReaderSideRail\b/, "阅读页没挂右缘竖条");
-  const start = APP.slice(APP.indexOf("start={<>"), APP.indexOf("</>}", APP.indexOf("start={<>")));
-  assert.match(start, /<ReaderCloseHome/, "顶栏左段没有「返回主页」");
+  assert.match(APP, /start=\{<ReaderCloseHome\b/, "左上没有「返回主页」");
   // 下载不能被 dock 的开合影响 —— 圆钮当年就死在这一点上。
   const all = allStyles();
   for (const rule of allRules(all)) {
