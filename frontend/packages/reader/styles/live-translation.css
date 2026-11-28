@@ -264,20 +264,21 @@
   }
 }
 
-/* 逐字浮现（LayoutPageLayer 的 is-char-rise）：块还没滚进来时字先藏着，滚进来（data-risen）后一个接一个浮上来。 */
-.reader-layout-page.is-char-rise .reader-layout-block:not([data-risen]) :is(text, .reader-layout-math) {
+/* 逐行浮现（LayoutPageLayer 的 is-char-rise）：块还没滚进来时字先藏着，滚进来（data-risen="run"）后一行接一行浮上来，
+ * 浮完（data-risen="done"）没有动画。一行一个动画：逐字的话一屏 1600 多个动画，滚动卡死（2026-11-28 实测）。 */
+.reader-layout-page.is-char-rise .reader-layout-block:not([data-risen]) .reader-layout-line {
   opacity: 0;
 }
 
-.reader-layout-page.is-char-rise .reader-layout-block[data-risen] :is(text, .reader-layout-math) {
-  animation: reader-layout-char-rise 520ms cubic-bezier(.2, .75, .25, 1) both;
-  animation-delay: min(calc(var(--i, 0) * 14ms), 1600ms);
+.reader-layout-page.is-char-rise .reader-layout-block[data-risen="run"] .reader-layout-line {
+  animation: reader-layout-line-rise 520ms cubic-bezier(.2, .75, .25, 1) both;
+  animation-delay: min(calc(var(--l, 0) * 70ms), 1400ms);
 }
 
-@keyframes reader-layout-char-rise {
+@keyframes reader-layout-line-rise {
   0% {
     opacity: 0;
-    transform: translateY(3px);
+    transform: translateY(4px);
   }
   100% {
     opacity: 1;
@@ -291,7 +292,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reader-layout-page.is-char-rise .reader-layout-block :is(text, .reader-layout-math) {
+  .reader-layout-page.is-char-rise .reader-layout-block .reader-layout-line {
     opacity: 1;
     animation: none;
   }

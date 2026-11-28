@@ -5,7 +5,9 @@
 // 字体和引擎同一份（清单里的字体，按清单顺序当后备，浏览器逐字找，和引擎的 FontChain 一样）。
 // 每块一个 <g data-html-block>：动效挂在这上面；刚打开时按顺序浮出来。
 // 两个动效（2026-11-28 用户：「继续做下面的两个」——在版面层上试真正的动效）：
-// - 逐字浮现（开关在 HTML 页的菜单里）：一块滚进来时，字一个接一个浮上来（每字晚 14ms，一块最多 1.6 秒）；浮过的块不再浮。
+// - 逐行浮现（开关在 HTML 页的菜单里）：一块滚进来时，一行接一行浮上来（每行晚 70ms，一块最多 1.4 秒才开始）；浮过的块不再浮。
+//   2026-11-28 先做的是逐字（每个字一个动画），用户说「html 排版速度特别慢」：一屏 1600 多个动画，SVG 的字合不了层，每帧整页重画，
+//   滚 15 下主线程卡 12.8 秒。改成一行一个动画（一页几十个），浮完撤掉。
 // - 点公式分步展开：点一下公式，MathJax 画出来的各项（data-mml-node 的顶层几项）一项一项出来，公式颜色闪一下。
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactElement } from "react";
 
@@ -49,6 +51,11 @@ export function formulaTerms(svg: Element): Element[] {
 }
 
 const FORMULA_FLASH = "rgb(40, 110, 215)";
+
+/** 逐行浮现：每行晚 RISE_LINE_MS，一块最多 RISE_MAX_DELAY_MS 才开始，每行浮 RISE_DURATION_MS（和 live-translation.css 里的一样）。 */
+const RISE_LINE_MS = 70;
+const RISE_MAX_DELAY_MS = 1400;
+const RISE_DURATION_MS = 520;
 
 const reducedMotion = () => {
   try {
@@ -103,19 +110,6 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
     for (const block of page.blocks) for (const line of block.lines) for (const item of line.items) if ("tex" in item) map.set(item.tex, item.svg);
     return [...map];
   }, [page]);
-  // 每块里每一行第一个字是这块的第几个字（逐字浮现按它排先后）。
-  const charIndexes = useMemo(() => {
-    const map = new Map<string, number[]>();
-    for (const block of page.blocks) {
-      let count = 0;
-      map.set(block.id, block.lines.map((line) => {
-        const start = count;
-        count += line.items.length;
-        return start;
-      }));
-    }
-    return map;
-  }, [page]);
   const [maths, setMaths] = useState<ReadonlyMap<string, MathSvg | null>>(() => new Map());
   useEffect(() => {
     let alive = true;
@@ -136,15 +130,27 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
     if (!charRise || !svg || typeof IntersectionObserver === "undefined") return undefined;
     const blocks = [...svg.querySelectorAll<SVGGElement>(".reader-layout-block")];
     for (const block of blocks) block.removeAttribute("data-risen");
+    const timers = new Set<ReturnType<typeof setTimeout>>();
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
-        entry.target.setAttribute("data-risen", "");
-        observer.unobserve(entry.target);
+        const block = entry.target;
+        block.setAttribute("data-risen", "run");
+        observer.unobserve(block);
+        // 浮完把动画撤掉（data-risen="done" 没有动画）：放完的动画留着，以后每次样式变化都要再算一遍（2026-11-28 实测拖慢滚动）。
+        const lines = block.querySelectorAll(".reader-layout-line").length;
+        const timer = setTimeout(() => {
+          timers.delete(timer);
+          block.setAttribute("data-risen", "done");
+        }, Math.min(lines * RISE_LINE_MS, RISE_MAX_DELAY_MS) + RISE_DURATION_MS + 100);
+        timers.add(timer);
       }
     }, { threshold: 0.2 });
     for (const block of blocks) observer.observe(block);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      for (const timer of timers) clearTimeout(timer);
+    };
   }, [charRise, page]);
   const onMathClick = (event: MouseEvent<SVGSVGElement>) => {
     if (`${globalThis.getSelection?.() || ""}`.trim()) return;
@@ -184,9 +190,10 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
             fontWeight={block.weight === "bold" ? 700 : 400}
             style={{ "--reader-html-order": order, color } as CSSProperties}
           >
-            {block.lines.map((line, lineIndex) => line.items.map((item, itemIndex) => {
+            {block.lines.map((line, lineIndex) => (
+              <g key={lineIndex} className="reader-layout-line" style={{ "--l": lineIndex } as CSSProperties}>
+              {line.items.map((item, itemIndex) => {
               const key = `${lineIndex}:${itemIndex}`;
-              const charIndex = (charIndexes.get(block.id)?.[lineIndex] ?? 0) + itemIndex;
               if ("tex" in item) {
                 const svg = maths.get(item.tex);
                 const size = block.fontSize;
@@ -203,7 +210,6 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
                     preserveAspectRatio="none"
                     data-tex={item.tex}
                     data-baseline={line.baseline}
-                    style={{ "--i": charIndex } as CSSProperties}
                     onClick={onMathClick}
                     dangerouslySetInnerHTML={{ __html: svg.inner }}
                   />
@@ -216,12 +222,13 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
                   y={line.baseline}
                   lang={item.mode === "dflt" ? "en" : "zh-Hans"}
                   fontFamily={item.font && fontByKey?.get(item.font) ? `"${fontByKey.get(item.font)}", ${fontFamily}` : undefined}
-                  style={{ "--i": charIndex } as CSSProperties}
                 >
                   {item.t}
                 </text>
               );
-            }))}
+              })}
+              </g>
+            ))}
           </g>
         );
       })}

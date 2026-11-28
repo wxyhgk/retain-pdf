@@ -58,8 +58,8 @@ test("一页一个 SVG：viewBox 是版面的 pt，先画盖原字的块，字�
   assert.match(html, /<svg class="reader-layout-page" data-html-page="1" viewBox="0 0 607.408 800.901" width="776" height="1023" preserveAspectRatio="none"/);
   assert.match(html, /<rect x="46.809" y="286.117" width="278.93\d*" height="146.32\d*" fill="rgb\(244, 244, 244\)"/);
   assert.match(html, /<g class="reader-layout-block" data-html-block="p001-b0014" fill="rgb\(0, 0, 0\)" font-size="9.98" font-weight="400"/);
-  assert.match(html, /<text x="51.544" y="294.827" lang="zh-Hans" style="--i:0">摘<\/text>/);
-  assert.match(html, /<text x="72.1" y="294.827" lang="en" style="--i:2">MHAT<\/text>/);
+  assert.match(html, /<g class="reader-layout-line" style="--l:0"><text x="51.544" y="294.827" lang="zh-Hans">摘<\/text>/);
+  assert.match(html, /<text x="72.1" y="294.827" lang="en">MHAT<\/text>/);
   assert.ok(html.indexOf("<rect") < html.indexOf("<g"), "盖原字的块要先画");
 });
 
@@ -131,16 +131,19 @@ test("HTML 页上选字（2026-11-28 用户：「继续做下面的两个」）�
   assert.match(read("styles/selection.css"), /\[data-reader-page\]:has\(> \.reader-layout-page\) \.textLayer \{[^}]*user-select: none;[^}]*pointer-events: none;/);
 });
 
-test("动效：逐字浮现（菜单开关，按 data-risen 不按 class——重画会把 class 写回去）；点公式分步展开（MathJax 顶层几项依次出来、闪浅蓝）", async () => {
+test("动效：逐行浮现（菜单开关；一行一个动画、浮完撤掉——2026-11-28 先做的逐字一屏 1600 多个动画，滚动卡 12.8 秒）；点公式分步展开（MathJax 顶层几项依次出来、闪浅蓝）", async () => {
   const layer = read("src/pdf/LayoutPageLayer.tsx");
-  assert.match(layer, /entry\.target\.setAttribute\("data-risen", ""\)/);
+  assert.match(layer, /block\.setAttribute\("data-risen", "run"\)/);
+  assert.match(layer, /block\.setAttribute\("data-risen", "done"\)/, "浮完没撤掉动画");
   assert.doesNotMatch(layer, /classList\.add\("has-risen"\)/, "React 重画会把 class 写回去，浮过的块又藏起来");
-  assert.match(layer, /style=\{\{ "--i": charIndex \} as CSSProperties\}/);
+  assert.doesNotMatch(layer, /"--i"/, "又回到一个字一个动画");
+  assert.match(layer, /<g key=\{lineIndex\} className="reader-layout-line" style=\{\{ "--l": lineIndex \} as CSSProperties\}>/);
   assert.match(layer, /onClick=\{onMathClick\}/);
   const css = read("styles/live-translation.css");
-  assert.match(css, /\.reader-layout-block\[data-risen\] :is\(text, \.reader-layout-math\) \{\s*animation: reader-layout-char-rise/);
-  assert.match(css, /animation-delay: min\(calc\(var\(--i, 0\) \* 14ms\), 1600ms\);/);
-  assert.match(read("src/extensions/builtin/html-page.tsx"), /逐字浮现/);
+  assert.match(css, /\.reader-layout-block\[data-risen="run"\] \.reader-layout-line \{\s*animation: reader-layout-line-rise/);
+  assert.match(css, /animation-delay: min\(calc\(var\(--l, 0\) \* 70ms\), 1400ms\);/);
+  assert.doesNotMatch(css, /data-risen\] :is\(text/, "又给每个字一个动画");
+  assert.match(read("src/extensions/builtin/html-page.tsx"), /逐行浮现/);
   const { JSDOM } = await import("jsdom");
   const dom = new JSDOM(`<!doctype html><svg class="reader-layout-math"><g data-mml-node="math"><g data-mml-node="mrow"><g data-mml-node="mn"></g><g data-mml-node="mo"></g><g data-mml-node="mn"></g></g></g></svg>`);
   const { formulaTerms } = await import("../../../packages/reader/src/pdf/LayoutPageLayer.tsx");

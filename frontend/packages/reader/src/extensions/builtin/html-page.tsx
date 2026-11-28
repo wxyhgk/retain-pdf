@@ -4,7 +4,7 @@
 // 对比版本时左栏是另一份译文的 PDF（layerPane 是 "compare"），不画。开关只在这次打开里有效，不写本机。
 // 「画译文」有排版引擎的版面（layout.json，hooks/use-render-layout.ts）时照版面画（pdf/LayoutPageLayer.tsx，和译文 PDF 一样）；
 // 版面里没有的页是原页（整页图、不翻的参考文献）。没有版面时退回按 OCR 的框塞字（pdf/HtmlPageLayer.tsx）。
-// 动效（只在照版面画时有）：菜单里「逐字浮现」开关；点公式分步展开一直有（LayoutPageLayer）。
+// 动效（只在照版面画时有）：菜单里「逐行浮现」开关（11-28 先做的逐字太慢，改成逐行）；点公式分步展开一直有（LayoutPageLayer）。
 // 版面从正式接口来（2026-11-28 后端 #241 / #242）：开了「画译文」才去要清单；没有版面时菜单里说为什么，能补排就给「生成 HTML 排版」
 // （照清单给的请求原样发，原地重新渲染，不花钱），排好自动照版面画。底图（去掉原字的原文页）在版面底下画。
 import { useEffect, useMemo, useState, type ReactElement } from "react";
@@ -129,14 +129,14 @@ function HtmlPageExtension(): ReactElement | null {
                   className="reader-html-page-choice"
                   role="menuitemcheckbox"
                   aria-checked={charRise}
-                  title="一段话滚进来时，字一个接一个浮上来"
+                  title="一段话滚进来时，一行接一行浮上来"
                   onClick={() => {
                     setCharRise((value) => !value);
                     if (!text) choose("translated");
                     done();
                   }}
                 >
-                  逐字浮现
+                  逐行浮现
                 </Button>
                 <p className="reader-html-page-menu-note">点公式会分步展开</p>
               </>
