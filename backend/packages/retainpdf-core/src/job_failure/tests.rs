@@ -457,3 +457,41 @@ fn ocr_stage_quota_error_is_still_quota_exhausted() {
     let failure = classify_job_failure(&job).expect("failure");
     assert_eq!(failure.category, "upstream_quota_exhausted");
 }
+
+/// 2026-11-27 用户报的桌面版（2026.11.23，macOS）那条：没有结构化失败时，Rust 兜底按文字认出证书验证失败，
+/// 不再落到「未识别的异常」；翻译阶段出的错从翻译续跑（OCR 已经做完）；不能原样重试。
+#[test]
+fn the_desktop_certificate_failure_is_classified_and_resumes_at_translation() {
+    let mut job = JobSnapshot::new("job-tls".to_string(), CreateJobInput::default(), vec!["python".to_string()]);
+    job.status = JobStatusKind::Failed;
+    job.stage = Some("translation".to_string());
+    job.error = Some(
+        "translation agent stopped: reason=rate_limited pages_done=0/11 | model API still failing after 6 attempts: \
+         URLError: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1006)>"
+            .to_string(),
+    );
+    let failure = classify_job_failure(&job).expect("failure");
+    assert_eq!(failure.category, "tls_certificate_untrusted");
+    assert_eq!(failure.failure_category.as_deref(), Some("network"));
+    assert!(!failure.retryable);
+    assert_eq!(failure.resume_from.as_deref(), Some("translation"));
+    assert!(failure.recovery_hint.as_deref().is_some_and(|hint| hint.contains("不会重复调用 OCR")));
+    assert!(failure.suggestion.as_deref().is_some_and(|text| text.contains("代理")));
+
+    // 本机模型服务没开：连接被拒，可以重试
+    job.error = Some("model API unreachable after 6 attempts: URLError: <urlopen error [Errno 61] Connection refused>".to_string());
+    let refused = classify_job_failure(&job).expect("failure");
+    assert_eq!(refused.category, "connection_refused");
+    assert!(refused.retryable);
+    assert_eq!(refused.resume_from.as_deref(), Some("translation"));
+}
+
+/// #38：安全软件拦了联网（报错里有 Connection aborted），Rust 兜底也照旧归本机权限，不归「连接被断开」。
+#[test]
+fn a_local_permission_denial_with_connection_words_stays_local() {
+    let mut job = JobSnapshot::new("job-perm".to_string(), CreateJobInput::default(), vec!["python".to_string()]);
+    job.status = JobStatusKind::Failed;
+    job.stage = Some("translation".to_string());
+    job.error = Some("ConnectionError: ('Connection aborted.', PermissionError(13, 'Permission denied'))".to_string());
+    assert_eq!(classify_job_failure(&job).expect("failure").category, "local_permission_denied");
+}

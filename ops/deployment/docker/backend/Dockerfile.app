@@ -18,6 +18,7 @@ COPY database/retainpdf-db ./database/retainpdf-db
 COPY backend/api ./backend/api
 COPY backend/cli ./backend/cli
 COPY backend/jobs ./backend/jobs
+COPY backend/relay ./backend/relay
 COPY backend/packages/retainpdf-config ./backend/packages/retainpdf-config
 COPY backend/packages/retainpdf-core ./backend/packages/retainpdf-core
 COPY backend/packages/retainpdf-data ./backend/packages/retainpdf-data
@@ -49,6 +50,7 @@ COPY database/retainpdf-db ./database/retainpdf-db
 COPY backend/api ./backend/api
 COPY backend/cli ./backend/cli
 COPY backend/jobs ./backend/jobs
+COPY backend/relay ./backend/relay
 COPY backend/packages/retainpdf-config ./backend/packages/retainpdf-config
 COPY backend/packages/retainpdf-core ./backend/packages/retainpdf-core
 COPY backend/packages/retainpdf-data ./backend/packages/retainpdf-data

@@ -157,6 +157,125 @@ def _extract_provider_stage(text: str) -> str:
     return ""
 
 
+# —— 网络失败的判据（2026-11-27）：都是小写子串，对着「异常类型 + 说明 + traceback」的小写全文找。
+# 覆盖三种写法：标准库 urllib / ssl / socket（agent 自己发请求）、requests / urllib3（共用请求层）、Rust 的 reqwest / rustls / hyper
+# （Rust 执行器、OCR 服务商，报错原样带回来）；errno 写了 macOS、Linux、Windows 三家的号。
+NETWORK_FAILURE_CODES = frozenset(
+    {
+        "dns_resolution_failed",
+        "tls_certificate_untrusted",
+        "tls_handshake_failed",
+        "proxy_failed",
+        "connection_refused",
+        "network_unreachable",
+        "connection_reset",
+    }
+)
+TLS_CERTIFICATE_TOKENS = (
+    "certificate_verify_failed",
+    "certificate verify failed",
+    "sslcertverificationerror",
+    "invalid peer certificate",
+    "unknownissuer",
+    "unable to get local issuer certificate",
+    "self signed certificate",
+    "self-signed certificate",
+    "certificate has expired",
+    "certificate is not valid for",
+    "notvalidforname",
+    "hostname mismatch",
+)
+PROXY_FAILURE_TOKENS = (
+    "proxyerror",
+    "unable to connect to proxy",
+    "cannot connect to proxy",
+    "tunnel connection failed",
+    "proxy authentication required",
+)
+DNS_FAILURE_TOKENS = (
+    "failed to resolve",
+    "temporary failure in name resolution",
+    "nameresolutionerror",
+    "socket.gaierror",
+    "nodename nor servname provided",
+    "name or service not known",
+    "getaddrinfo failed",
+    "no address associated with hostname",
+    "failed to lookup address information",
+    "dns error",
+)
+CONNECTION_REFUSED_TOKENS = (
+    "connection refused",
+    "connectionrefusederror",
+    "errno 61]",
+    "errno 111]",
+    "winerror 10061",
+    "os error 61)",
+    "os error 111)",
+    "os error 10061)",
+    "actively refused",
+    "积极拒绝",
+)
+NETWORK_UNREACHABLE_TOKENS = (
+    "network is unreachable",
+    "no route to host",
+    "host is down",
+    "errno 51]",
+    "errno 65]",
+    "errno 101]",
+    "errno 113]",
+    "winerror 10051",
+    "winerror 10065",
+    "os error 51)",
+    "os error 101)",
+)
+TIMEOUT_TOKENS = ("readtimeout", "connecttimeout", "timed out", "timeouterror")
+TLS_HANDSHAKE_TOKENS = (
+    "sslerror",
+    "[ssl:",
+    "wrong_version_number",
+    "wrong version number",
+    "eof occurred in violation of protocol",
+    "unexpected_eof_while_reading",
+    "unexpected eof while reading",
+    "tlsv1 alert",
+    "sslv3 alert",
+    "handshake failure",
+    "record layer failure",
+    "tls handshake",
+)
+CONNECTION_RESET_TOKENS = (
+    "connection reset",
+    "connectionreseterror",
+    "connection aborted",
+    "connectionabortederror",
+    "remotedisconnected",
+    "remote end closed connection",
+    "incompleteread",
+    "connection closed before message completed",
+    "errno 54]",
+    "errno 104]",
+    "winerror 10054",
+    "os error 54)",
+    "os error 104)",
+    "os error 10054)",
+)
+TLS_UNTRUSTED_ISSUER_SUGGESTION = (
+    "这台机器不认这个服务的 HTTPS 证书，原样重试没用。常见原因：公司网络、代理、VPN 或杀毒软件拦截了 HTTPS（换成了它们自己的证书），"
+    "或者自建的服务用的是自签证书。可以先关掉代理 / VPN 或换个网络再试；自建服务请换成受信任的证书。"
+    "桌面版 2026.11.23 及更早的版本在 macOS 上用 agent 翻译时会误报这个错，升级到新版即可。"
+)
+
+
+def _tls_certificate_suggestion(lowered: str) -> str:
+    """证书验证失败按原因给说法：过期先看本机时间，名字对不上看接口地址，其余（不认签发者、自签）看代理和证书。"""
+    if "certificate has expired" in lowered or ("expired" in lowered and "certificate" in lowered):
+        return "证书过期了：先确认这台机器的日期和时间是否正确（时间不对会把有效证书当成过期）；时间没问题就是服务商的证书过期了，联系服务商或稍后再试。"
+    if any(token in lowered for token in ("hostname mismatch", "notvalidforname", "certificate is not valid for", "doesn't match")):
+        return "证书上的域名和接口地址对不上：检查接口地址（base_url）有没有写错，或者是不是被代理改写了。"
+    return TLS_UNTRUSTED_ISSUER_SUGGESTION
+
+
 def _failure_category_for(*, failure_code: str, failed_stage: str) -> str:
     if failure_code in LOCAL_ENVIRONMENT_FAILURE_CODES:
         return "environment"
@@ -166,7 +285,7 @@ def _failure_category_for(*, failure_code: str, failed_stage: str) -> str:
         return "auth"
     if failure_code in {"upstream_quota_exhausted"}:
         return "billing"
-    if failure_code in {"dns_resolution_failed"}:
+    if failure_code in NETWORK_FAILURE_CODES:
         return "network"
     if failure_code in {"upstream_timeout"}:
         return "timeout"
@@ -203,8 +322,23 @@ def _suggestion_for(*, failure_code: str, failure_category: str, provider: str) 
     suggestions = {
         "auth_failed": f"检查 {provider_label} 凭据、模型 API Key 或相关访问令牌是否有效。",
         "upstream_quota_exhausted": "上游账户余额不足或欠费，请充值或检查账户额度后重试。",
-        "dns_resolution_failed": "检查当前机器的 DNS / 网络连通性，确认目标域名可解析后再重试。",
+        "dns_resolution_failed": (
+            "查不到服务地址里的域名：检查网络是否连上、接口地址（base_url）里的域名有没有拼错；"
+            "开着代理、VPN 或改过 DNS 的，换一下再重试。"
+        ),
         "upstream_timeout": "检查网络质量、上游服务负载或适当增大超时后再重试。",
+        "tls_certificate_untrusted": TLS_UNTRUSTED_ISSUER_SUGGESTION,
+        "tls_handshake_failed": (
+            "和服务建立加密连接时失败，多半是网络不稳或代理、VPN 干扰，可以直接重试；报 wrong version number 的，"
+            "多半是接口地址的 http / https 写反了，或者代理端口不对。"
+        ),
+        "proxy_failed": "代理连不上或拒绝转发：检查系统或 RetainPDF 里设置的代理地址、端口和账号；不需要代理就关掉再重试。",
+        "connection_refused": (
+            "对方地址上没有服务在监听：检查接口地址（base_url）和端口是否写对；用本机模型服务（Ollama、vLLM、LM Studio 等）的，"
+            "确认服务已经启动、监听的地址和端口对得上。"
+        ),
+        "network_unreachable": "这台机器现在连不上网络：检查网线、Wi-Fi、VPN 是否连着，网络恢复后重试。",
+        "connection_reset": "连接被中途断开，多半是网络不稳、代理或 VPN 断线、服务端重启，可以直接重试；反复出现请换个网络或检查代理。",
         "upstream_rate_limited": f"{provider_label} 当前限流，请稍后重试或降低并发。",
         "upstream_bad_request": "检查请求参数、输入文件和上游接口约束，修正后再重试。",
         "upstream_model_unavailable": (
@@ -484,6 +618,11 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
     error_type = "python_unhandled_exception"
     summary = "任务失败，但暂未识别出明确根因"
     retryable = True
+    suggestion_override = ""
+    local_denied = _is_local_permission_denied(exc_chain, lowered)
+
+    def network_text(tokens: tuple[str, ...]) -> bool:
+        return not local_denied and any(token in lowered for token in tokens)
 
     # 本机环境类排在最前：它们的证据是异常类型本身，比后面按文字、状态码猜的分支可靠；
     # 也免得 import 期崩溃因为 traceback 里有 typst 字样被认成渲染失败（#135）。
@@ -513,12 +652,6 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         error_type = declared
         summary = "上游服务拒绝请求" if declared == "upstream_bad_request" else "外部服务请求失败"
         retryable = declared != "upstream_bad_request"
-    elif any(token in lowered for token in ("failed to resolve", "temporary failure in name resolution", "nameresolutionerror", "socket.gaierror")):
-        error_type = "dns_resolution_failed"
-        summary = "外部服务域名解析失败"
-    elif any(token in lowered for token in ("readtimeout", "connecttimeout", "timed out")):
-        error_type = "upstream_timeout"
-        summary = "外部服务请求超时"
     elif stage == "render" and any(token in lowered for token in ("filenotfounderror", "no such file or directory")):
         error_type = "render_failed"
         summary = "排版或编译阶段失败"
@@ -550,7 +683,40 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
         error_type = "upstream_region_unsupported"
         summary = "所在地区不支持这个翻译服务商"
         retryable = False
-    elif http_status_code == 429 or any(token in lowered for token in ("rate limited", "rate limit", "too many requests", "retry-after")):
+    # —— 网络（2026-11-27 细分，以前除了域名解析、超时都落到兜底，agent 还把它们报成限流）——
+    # 本机拒绝了网络访问（#38：ConnectionError('Connection aborted.', PermissionError(13, ...))，安全软件拦截）不算，留给后面的本机权限。
+    # 排在服务商声明的归类（额度、Key、模型、地区）后面：那些报错链里可能夹着更早一次网络重试的异常；排在按状态码猜的前面。
+    # 顺序有讲究：证书验证失败最先（它的报错里也有 SSL 字样）；代理在域名解析前（代理连不上时 requests 的报错里也可能带域名）；
+    # 超时在握手失败前（「The handshake operation timed out」是超时）；连接被断开最后（握手中途断开归握手）。
+    elif network_text(TLS_CERTIFICATE_TOKENS):
+        error_type = "tls_certificate_untrusted"
+        summary = "无法验证模型或 OCR 服务的 HTTPS 证书"
+        retryable = False
+        suggestion_override = _tls_certificate_suggestion(lowered)
+    elif network_text(PROXY_FAILURE_TOKENS):
+        error_type = "proxy_failed"
+        summary = "代理连不上或拒绝转发"
+    elif network_text(DNS_FAILURE_TOKENS):
+        error_type = "dns_resolution_failed"
+        summary = "外部服务域名解析失败"
+    elif network_text(CONNECTION_REFUSED_TOKENS):
+        error_type = "connection_refused"
+        summary = "连不上服务：对方地址没有服务在监听"
+    elif network_text(NETWORK_UNREACHABLE_TOKENS):
+        error_type = "network_unreachable"
+        summary = "这台机器现在连不上网络"
+    elif network_text(TIMEOUT_TOKENS):
+        error_type = "upstream_timeout"
+        summary = "外部服务请求超时"
+    elif network_text(TLS_HANDSHAKE_TOKENS):
+        error_type = "tls_handshake_failed"
+        summary = "和服务建立 HTTPS 加密连接失败"
+    elif network_text(CONNECTION_RESET_TOKENS):
+        error_type = "connection_reset"
+        summary = "连接被中途断开"
+    elif http_status_code == 429 or any(
+        token in lowered for token in ("rate limited", "rate limit", "rate_limited", "too many requests", "retry-after")
+    ):
         error_type = "upstream_rate_limited"
         summary = "外部服务请求被限流"
     elif http_status_code in {401, 403} or any(
@@ -638,7 +804,7 @@ def classify_exception(exc: BaseException, *, default_stage: str, provider: str 
     failure_category = _failure_category_for(failure_code=error_type, failed_stage=stage)
     if provider.strip() and failure_category == "internal" and provider.strip() != "translation":
         failure_category = "provider"
-    suggestion = _failure_override(exc_chain, "failure_suggestion") or _suggestion_for(
+    suggestion = _failure_override(exc_chain, "failure_suggestion") or suggestion_override or _suggestion_for(
         failure_code=error_type,
         failure_category=failure_category,
         provider=provider,

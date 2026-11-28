@@ -42,6 +42,9 @@
 @import "./layout.css" layer(pages);
 @import "./chrome.css" layer(pages);
 @import "./finder.css" layer(pages);
+@import "./toc-minimap.css" layer(pages);
+@import "./side-rail.css" layer(pages);
+@import "./selection.css" layer(pages);
 @import "./assistant-dock.css" layer(pages);
 @import "./content.css" layer(pages);
 @import "./react-pdf.css" layer(pages);
@@ -56,6 +59,7 @@
 @import "./ink.css" layer(pages);
 /* 深色文档（书页黑底白字），放在 react-pdf / live-translation 后面盖住它们的底色 */
 @import "./zoom.css" layer(pages);
+@import "./ask-host.css" layer(pages);
 @import "../../ask/styles/ask.css" layer(pages);
 @import "./ask-marks.css" layer(pages);
 @import "./ask-memory.css" layer(pages);

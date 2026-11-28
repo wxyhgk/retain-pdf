@@ -196,3 +196,137 @@
   font-weight: 620;
   pointer-events: none;
 }
+
+/* HTML 页（pdf/HtmlPageLayer.tsx，2026-11-28）：原文页上叠一层，每个有字的块用纸色盖住原字、再用 HTML 画字。
+ * 盖得实（实时译文那层是 96%，底下透一点原文）；刚打开时按阅读顺序一块块浮出来（沿用实时译文到达的那一下，每块晚 18ms，最多 0.6 秒）。 */
+.reader-html-page {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  /* 盖在 PDF 页上用页自己的颜色（白底深字），和实时译文那层一样；深色文档在 doc-theme.css 换。 */
+  --reader-overlay-paper: #fff;
+  --reader-overlay-ink: #171719;
+}
+
+.reader-html-block {
+  display: contents;
+}
+
+.reader-html-page .reader-live-translation-item {
+  background: var(--reader-overlay-paper);
+}
+
+.reader-html-page .reader-live-translation-item.is-changed,
+.reader-html-page .reader-live-translation-item.is-changed::after {
+  animation-delay: min(calc(var(--reader-html-order, 0) * 18ms), 600ms);
+}
+
+/* 右缘竖条「HTML 页」点开的小菜单：关 / 画译文 / 画原文。 */
+.reader-html-page-menu {
+  display: grid;
+  min-width: 120px;
+  padding: 4px;
+}
+
+.reader-html-page-choice {
+  justify-content: flex-start;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: var(--ui-radius-sm, 6px);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.reader-html-page-choice[aria-checked="true"] {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  font-weight: 600;
+}
+
+/* HTML 页照排版引擎的版面画（pdf/LayoutPageLayer.tsx）：一页一个 SVG，盖在原文页上；字簇里的空格照原样留着。
+ * 每块一个 <g>，刚打开时和按 OCR 框那版一样按顺序浮出来。 */
+.reader-layout-page {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  overflow: hidden;
+  white-space: pre;
+  text-rendering: geometricPrecision;
+  font-kerning: normal;
+}
+
+.reader-layout-block.is-arriving {
+  animation: reader-live-translation-arrive 420ms cubic-bezier(.2, .75, .25, 1) both;
+  animation-delay: min(calc(var(--reader-html-order, 0) * 18ms), 600ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-layout-block.is-arriving {
+    animation: none;
+  }
+}
+
+/* 逐字浮现（LayoutPageLayer 的 is-char-rise）：块还没滚进来时字先藏着，滚进来（data-risen）后一个接一个浮上来。 */
+.reader-layout-page.is-char-rise .reader-layout-block:not([data-risen]) :is(text, .reader-layout-math) {
+  opacity: 0;
+}
+
+.reader-layout-page.is-char-rise .reader-layout-block[data-risen] :is(text, .reader-layout-math) {
+  animation: reader-layout-char-rise 520ms cubic-bezier(.2, .75, .25, 1) both;
+  animation-delay: min(calc(var(--i, 0) * 14ms), 1600ms);
+}
+
+@keyframes reader-layout-char-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 点公式分步展开。 */
+.reader-layout-math {
+  cursor: var(--cursor-pointer, pointer);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-layout-page.is-char-rise .reader-layout-block :is(text, .reader-layout-math) {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+/* HTML 页菜单里「动效」那一节：一道细线隔开，下面是开关。 */
+.reader-html-page-menu-sep {
+  height: 1px;
+  margin: 4px 6px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.reader-html-page-menu-note {
+  margin: 2px 10px 4px;
+  color: var(--muted);
+  font-size: var(--ui-text-2xs, 10.5px);
+  line-height: 1.5;
+}
+
+/* HTML 页照版面画时的底图（去掉原字的原文页，LayoutPageHost）：盖在原文页上、版面底下；没画好之前看到的是原文页。 */
+.reader-region-canvas.reader-layout-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+/* 深色文档（doc-theme.css 给原文页的画布套反色滤镜）：底图和版面也套同一个，不然在黑页上盖一张白页。 */
+:root[data-reader-doc="dark"] .reader-layout-background canvas,
+:root[data-reader-doc="dark"] .reader-layout-page {
+  filter: var(--reader-doc-dark-filter);
+}
+
+.reader-region-canvas.reader-layout-background[data-status="loading"] {
+  visibility: hidden;
+}

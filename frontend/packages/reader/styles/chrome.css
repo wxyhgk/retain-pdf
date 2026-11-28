@@ -4,46 +4,145 @@
  * .reader-workspace-bar / .reader-workspace-tabs / .reader-workspace-tab
  * 取代（ReaderWorkspaceTabs.tsx），且无任何 JS/TSX 写入者，删除防复活。 */
 
-/* 顶栏右上角那一组（下载 + 关闭）的宽度。
- *
- * 它是 `position: fixed` 且 z-index 比顶栏高，会**压在**顶栏上。顶栏里的东西
- * 靠 `justify-content: center` 居中，窄屏下就会滑到它底下 —— 用真浏览器扫过：
- * 420px 起「翻译文件」页签就点不到了（iPhone SE 的 375px 在最坏那一档）。
- * 一个一个控件去算 max-width 是守不住的，改成顶栏统一给托盘留位。
- */
-.reader-react-root {
-  /* 托盘现在只有「下载」「关闭」两颗图标（2026-11-20 起面板按钮进了右下角的小球）：约 100px + 右边距。 */
-  --reader-tray-width: 150px;
+/* 顶栏（2026-11-28 下午起不占行，浮在书页区顶上；用户：「顶部的 bar 不要保留了，用悬浮的方式……更有沉浸感」）：
+ * 画在 .reader-stage 里（ReaderAppReactPdf），所以只盖书页区——左边固定的目录、搜索栏和右边的停靠栏都不被盖，页签在书页区正中。
+ * 这一层本身透明、不接点击（书页照常点、选字），只有两颗胶囊接：
+ * 左上：返回（一颗纸色小胶囊，和右缘竖条一个样子；书名 11-28 用户说不要，不画了）；正上方：原文 / 对照 / 译文（对比版本的 ▾、实时译文那一组挂在右边）。
+ * 右段空着，只为让页签居中。三段写死在哪一列：左上那颗没有时（测试里可能没有）页签不跑到第一列。
+ * 读的时候藏着（11-28 用户：「停留的时候，不应该显示顶部的三个按钮……心流更强」，返回「要一起藏」）：鼠标到书页区顶上才出来，
+ * 离开一会儿淡掉（use-topbar-reveal.ts 写 data-revealed）；下面「藏着」那条写了哪几种不藏。
+ * 书页第一页上面照旧让出 --reader-float-bar-room（react-pdf.css）：出来、藏起不让书页上下跳。
+ * 叠放比右缘竖条（30）低一档：窄屏停靠栏铺满中间工作区（30）时盖住它们。
+ * 以前（11-28 上午）是全宽、实占一行 54px 的三段网格；更早顶栏 fixed 盖在整个窗口上，两头的按钮各自 fixed，靠 --reader-tray-width 给页签留位。 */
+.reader-workspace-bar {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  left: 12px;
+  z-index: 29;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  pointer-events: none;
 }
 
-/* Reader 顶栏只放场景预设；窗格的自由组合由各自的小选择器负责。 */
-.reader-workspace-bar {
-  position: fixed;
-  inset: 0 0 auto;
-  z-index: 35;
+.reader-workspace-start {
   display: flex;
+  grid-column: 1;
+  justify-self: start;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+  min-width: 0;
+  height: 40px;
+  padding: 3px;
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  background: var(--paper);
+  box-shadow: var(--reader-chrome-bar-shadow, 0 2px 10px color-mix(in srgb, var(--shadow-color, var(--ink)) 6%, transparent));
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.reader-workspace-end {
+  grid-column: 3;
+}
+
+/* 藏着：两颗胶囊淡掉、不接点击（还在 Tab 顺序里，Tab 到上面时 use-topbar-reveal.ts 让它出来）。这几种不藏：
+ * 「对照」▾ 开着、翻译进行中或刚翻完的那一组挂着（进度要看得到）；
+ * 触屏没有悬停，鼠标那套出不来，只在 (hover: hover) 的设备上藏。 */
+.reader-workspace-start,
+.reader-workspace-center {
+  transition: opacity 180ms ease;
+}
+
+@media (hover: hover) {
+  .reader-workspace-bar[data-revealed="false"]:not(:has(.reader-bar-tools-popup, .reader-live-strip)) > .reader-workspace-start,
+  .reader-workspace-bar[data-revealed="false"]:not(:has(.reader-bar-tools-popup, .reader-live-strip)) > .reader-workspace-center {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-workspace-start,
+  .reader-workspace-center {
+    transition: none;
+  }
+}
+
+/* 返回在胶囊里圆一点，和胶囊同一种圆角。 */
+.reader-workspace-start .reader-close-home-btn {
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+}
+
+/* 顶栏按钮一套（2026-11-28 收口回黑白纸墨）：返回是这一个样子（目录、搜索 11-28 也拿掉了）（提问 / Markdown、下载 11-28 挪去书页区右缘的竖条，side-rail.css）——
+ * 高 32px、同一种圆角、透明底，悬停浅墨底、按下（面板开着、菜单开着）深一点的浅墨底；没有描边、阴影、毛玻璃。
+ * 左栏开关、顶栏工具的类各在 finder.css、toolball.css，尺寸、圆角、颜色都照这里。 */
+.reader-close-home-btn,
+.reader-panel-toggle,
+.reader-download-trigger {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  height: 60px;
-  /* 两边都给托盘留同样的宽度：页签才是**相对视口**居中，同时不会滑到托盘底下。
-     以前只给右边留（左 72px、右 300px），页签相对「除去托盘的那块」居中，1440px 下
-     往左偏了 114px。托盘收窄（下载收成一颗按钮）之后，两边对称留位放得下。 */
-  padding-inline: var(--reader-tray-width, 200px);
-  border-bottom: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
-  background: color-mix(in srgb, var(--paper) 94%, transparent);
-  box-shadow: var(--reader-chrome-bar-shadow, 0 1px 0 color-mix(in srgb, var(--paper) 72%, transparent));
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  gap: 5px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--reader-chrome-radius, var(--ui-radius-md, 8px));
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  font-weight: 600;
+  line-height: 1;
+  cursor: var(--cursor-pointer, pointer);
+  appearance: none;
+  list-style: none;
+  user-select: none;
 }
 
-/* 手机宽度：托盘多了面板按钮（Markdown）以后约 140px，两边都留这么宽，中间放不下原文 / 对照 / 译文（390px 宽时压在托盘上）。
-   左边只用让开「目录 / 搜索」（约 80px），两边不再对称，页签在剩下那块里居中。 */
-@media (max-width: 440px) {
-  .reader-workspace-bar {
-    /* 左边只剩「目录」一颗图标（搜索在底栏），约 52px。 */
-    padding-inline: 66px var(--reader-tray-width, 200px);
-  }
+.reader-close-home-btn:hover,
+.reader-panel-toggle:hover,
+.reader-download-trigger:hover,
+.reader-download-trigger:focus-visible {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+  outline: none;
+}
+
+.reader-panel-toggle[aria-pressed="true"],
+.reader-panel-toggle[aria-pressed="true"]:hover,
+.reader-download-actions[open] .reader-download-trigger {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink);
+}
+
+.reader-panel-toggle:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+/* 「返回」「下载」只有图标，名字在悬停里。 */
+.reader-download-trigger-label,
+.reader-close-home-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.reader-close-home-btn {
+  width: 32px;
+  padding: 0;
+}
+
+.reader-close-home-icon {
+  display: block;
+  flex: 0 0 auto;
 }
 
 .reader-workspace-tabs {
@@ -69,6 +168,15 @@
 .reader-workspace-center {
   position: relative;
   display: inline-flex;
+  grid-column: 2;
+  pointer-events: auto;
+}
+
+/* 页签浮在书页上：纸色底、和左上那颗一样的细边和淡影（占一行时是浅墨底）。 */
+.reader-workspace-bar .reader-workspace-tabs {
+  border-color: var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  background: var(--paper);
+  box-shadow: var(--reader-chrome-bar-shadow, 0 2px 10px color-mix(in srgb, var(--shadow-color, var(--ink)) 6%, transparent));
 }
 
 /* 挂在页签右边：不占流式位置，页签照旧居中。以前放在 left 28px，正好压在「目录」上。 */
@@ -80,11 +188,10 @@
   white-space: nowrap;
 }
 
-/* 窄屏页签右边放不下（会压到右上角的托盘），挪到顶栏下面居中。 */
+/* 窄屏页签右边放不下，挪到页签下面居中。 */
 @media (max-width: 720px) {
   .reader-workspace-bar .reader-live-strip {
-    position: fixed;
-    top: 68px;
+    top: calc(100% + 8px);
     left: 50%;
     translate: -50% 0;
   }
@@ -104,19 +211,19 @@
   }
 }
 
+/* 实时译文那几颗（翻译进行中才有，挂在页签右边）：和顶栏别的按钮一套高度、圆角，细描边、不带阴影。 */
 .reader-live-translation-toggle {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 34px;
-  padding: 0 11px;
-  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 9%, transparent)));
-  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, 999px));
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: var(--reader-chrome-radius, var(--ui-radius-md, 8px));
   color: color-mix(in srgb, var(--ink) 58%, var(--muted));
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 8px 24px color-mix(in srgb, var(--shadow-color) 7%, transparent)));
+  background: transparent;
   font: inherit;
-  font-size: 11.5px;
+  font-size: var(--ui-text-xs, 11px);
   font-weight: 650;
   cursor: pointer;
   transition: color 140ms ease, background 140ms ease, border-color 140ms ease, transform 100ms ease;
@@ -143,12 +250,7 @@
 
 .reader-live-translation-toggle:hover {
   color: var(--ink);
-  background: var(--paper);
-}
-
-.reader-live-translation-toggle:active {
-  transform: var(--reader-chrome-press-transform, var(--shape-press-transform, scale(0.97)));
-  box-shadow: var(--reader-chrome-press-shadow, var(--shape-press-shadow, 0 8px 24px color-mix(in srgb, var(--shadow-color) 7%, transparent)));
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
 }
 
 @keyframes reader-live-translation-pulse {
@@ -158,7 +260,7 @@
 
 @media (max-width: 720px) {
   .reader-live-translation-toggle {
-    width: 36px;
+    width: 32px;
     padding: 0;
     justify-content: center;
   }
@@ -177,9 +279,10 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-width: 34px;
+  /* 只有图标（2026-11-28；名字在悬停里，bar-icon.ts）：方的。 */
+  width: 34px;
   min-height: 30px;
-  padding: 0 11px 0 9px;
+  padding: 0;
   border: var(--reader-tab-edge-width, 0) solid var(--reader-tab-edge-color, transparent);
   border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
   background: transparent;
@@ -189,30 +292,6 @@
   font-weight: 650;
   cursor: pointer;
   transition: background 130ms ease, color 130ms ease, transform 100ms ease;
-}
-
-.reader-workspace-tab-label {
-  white-space: nowrap;
-}
-
-/* 窄到放不下字（两边给托盘留了位）：只剩图标，字留给读屏。 */
-@media (max-width: 639px) {
-  .reader-workspace-tab {
-    gap: 0;
-    width: 34px;
-    padding: 0;
-  }
-
-  .reader-workspace-tab-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
-  }
 }
 
 .reader-workspace-tab:hover:not(:disabled) {
@@ -235,78 +314,20 @@
   cursor: default;
 }
 
-/* 顶栏右上角这一组：三路下载 + 「关闭 → 主页」。
- *
- * 下载原来住在可拖动圆钮（FAB）的菜单里，而圆钮被
- * `.is-assistant-open .reader-fab { opacity: 0 }` 在任何 dock 面板开着时整个
- * 吃掉 —— 开着 Markdown 就下不了 PDF。搬到这一组后它和「关闭」同层常驻。
- *
- * 这一组自己定位，关闭按钮因此改成 static：两处都写 fixed 的话，谁在右边
- * 只看谁的 right 更小，加一个按钮就得重算一次偏移。
- */
-.reader-chrome-tray {
-  position: fixed;
-  top: 12px;
-  right: clamp(12px, 2.2vw, 28px);
-  z-index: 36;
-  z-index: var(--z-hud, 36);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 手机宽度：托盘三颗按钮之间收到 4px，原文 / 对照 / 译文才放得下（360px 宽时差 8px）。写在基础规则后面，不然被盖回 8px。 */
-@media (max-width: 440px) {
-  .reader-chrome-tray {
-    gap: 4px;
-  }
-}
-
 /* 「下载」按钮 + 点开的菜单（原文 / 对照 / 译文 PDF）。<details> 实现，见
    ReaderDownloadActions.tsx。 */
 .reader-download-actions {
   position: relative;
 }
 
-.reader-download-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 36px;
-  padding: 0 12px;
-  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
-  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, 999px));
-  color: color-mix(in srgb, var(--ink) 70%, var(--muted));
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent)));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  font-size: 12px;
-  font-weight: 650;
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-}
-
 .reader-download-trigger::-webkit-details-marker {
   display: none;
 }
 
-.reader-download-trigger:hover,
-.reader-download-trigger:focus-visible,
-.reader-download-actions[open] .reader-download-trigger {
-  color: var(--ink);
-  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
-  outline: none;
-}
-
-.reader-download-trigger-caret {
-  opacity: 0.6;
-  transition: transform 130ms ease;
-}
-
-.reader-download-actions[open] .reader-download-trigger-caret {
-  transform: rotate(180deg);
+/* 「下载」只是一个图标按钮（2026-11-28：去掉了旁边的 ▾，点了照旧弹出原文 / 对照 / 译文 PDF）。 */
+.reader-download-trigger {
+  width: 32px;
+  padding: 0;
 }
 
 .reader-download-menu {
@@ -378,122 +399,6 @@
   opacity: 0.6;
 }
 
-/* 窄屏「下载」两个字收掉，只留图标；托盘跟着变窄，顶栏两边的留位一起收。 */
-@media (max-width: 720px) {
-  .reader-react-root {
-    --reader-tray-width: 150px;
-  }
-
-
-
-  .reader-download-trigger {
-    padding: 0 9px;
-  }
-
-  .reader-download-trigger-label,
-  .reader-panel-toggle-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-  }
-
-  .reader-panel-toggle {
-    width: 36px;
-    padding: 0;
-  }
-}
-
-/* 面板按钮（Markdown，只有图标，见 ReaderPanelToggles）和「关闭」一个样子；按下（面板开着）时填成墨色。 */
-.reader-close-home-btn,
-.reader-panel-toggle {
-  position: static;
-  z-index: 36;
-  z-index: var(--z-hud, 36);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-height: 36px;
-  min-width: 36px;
-  padding: 0 12px 0 10px;
-  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
-  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, 999px));
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 10px 28px color-mix(in srgb, var(--shadow-color) 10%, transparent)));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  color: var(--ink, var(--ink));
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  appearance: none;
-  transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
-}
-
-.reader-close-home-btn:hover,
-.reader-panel-toggle:hover {
-  background: var(--paper);
-  box-shadow: var(--reader-chrome-shadow, var(--shape-shadow-sm, 0 12px 30px color-mix(in srgb, var(--shadow-color) 14%, transparent)));
-}
-
-.reader-close-home-btn:active,
-.reader-panel-toggle:active {
-  transform: var(--reader-chrome-press-transform, var(--shape-press-transform, scale(0.97)));
-  box-shadow: var(--reader-chrome-press-shadow, var(--shape-press-shadow, 0 12px 30px color-mix(in srgb, var(--shadow-color) 14%, transparent)));
-}
-
-/* 宽屏：图标 + 名字（「Markdown」）；窄屏（≤ 720px）名字收掉，只剩 36px 的圆钮。 */
-.reader-panel-toggle {
-  padding: 0 12px 0 10px;
-}
-
-.reader-panel-toggle-label {
-  line-height: 1;
-}
-
-.reader-panel-toggle:disabled {
-  cursor: default;
-  opacity: 0.45;
-}
-
-.reader-panel-toggle[aria-pressed="true"],
-.reader-panel-toggle[aria-pressed="true"]:hover {
-  background: var(--ink);
-  color: var(--paper);
-}
-
-/* 托盘多一个带名字的面板按钮（约 110px）：给分栏切换让出的宽度跟着加。 */
-
-
-.reader-close-home-icon {
-  display: block;
-  flex: 0 0 auto;
-}
-
-.reader-close-home-label {
-  line-height: 1;
-}
-
-@media (max-width: 520px) {
-  /* 「关闭」也只剩图标：托盘约 90px。 */
-  .reader-react-root {
-    --reader-tray-width: 104px;
-  }
-
-
-
-  .reader-close-home-btn {
-    padding: 0;
-    width: 36px;
-  }
-
-  .reader-close-home-label {
-    display: none;
-  }
-}
-
 .reader-boot-loading {
   position: fixed;
   inset: 0;
@@ -537,58 +442,4 @@
   border-radius: inherit;
   background: linear-gradient(90deg, var(--ink) 0%, var(--ink) 100%);
   transition: width 0.24s ease;
-}
-
-/* —— 顶栏两边收成分组（2026-11-20）——
- * 以前左边「目录 / 搜索 / 对比版本」、右边「Markdown / 下载 / 关闭」各是一颗带边框带阴影的胶囊，加上中间的分段切换，
- * 顶栏上七块各自浮着，看着乱。现在两边各收进一个浅底分组（和中间「原文 / 对照 / 译文」同一个样子），按钮本身不再有边框、阴影。 */
-.reader-chrome-tray {
-  gap: 2px;
-  padding: 3px;
-  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 7%, transparent)));
-  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, var(--ui-radius-pill, 999px)));
-  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 3%);
-}
-
-.reader-chrome-tray .reader-close-home-btn,
-.reader-chrome-tray .reader-panel-toggle,
-.reader-chrome-tray .reader-download-trigger {
-  min-height: 30px;
-  border: 1px solid transparent;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.reader-chrome-tray .reader-close-home-btn:hover,
-.reader-chrome-tray .reader-panel-toggle:hover:not([aria-pressed="true"]),
-.reader-chrome-tray .reader-download-trigger:hover,
-.reader-chrome-tray .reader-download-actions[open] .reader-download-trigger {
-  background: var(--paper);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color, var(--ink)) 10%, transparent);
-}
-
-.reader-chrome-tray .reader-panel-toggle {
-  min-width: 30px;
-}
-
-/* 托盘只剩图标：「下载」「关闭」的字收掉，名字在悬停里（2026-11-20，顶栏按钮太多）。 */
-.reader-chrome-tray .reader-download-trigger-label,
-.reader-chrome-tray .reader-close-home-label {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-}
-
-.reader-chrome-tray .reader-close-home-btn {
-  width: 30px;
-  min-width: 30px;
-  padding: 0;
-}
-
-.reader-chrome-tray .reader-download-trigger {
-  padding: 0 8px;
 }

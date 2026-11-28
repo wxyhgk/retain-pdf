@@ -5,6 +5,9 @@
 // 2026-11-26 加四个插槽：HistoryTop（消息上面：「更早的」）、ComposerTop（输入框上面：这一问的出处）、UserMessageTop（问题上面：问的是哪儿）、
 // MessageAfter（回答正文下面：「已记住」、压缩点）。
 // 2026-11-27 加 prepareSend（发问之前改一下输入框的字：带上回答里引用的那段，回车和发送键都走）、UserText（问题气泡里的字怎么画）。
+// 2026-11-27（提问窗样式拆开）：以前 ask.css 从外面用 .aui-* / [data-slot] 改这里的字号、背景、输入框，改成直接写在这里的 className：
+// 输入框、编辑框、出错提示、「更多」菜单按提问窗的字号；聊天区背景透明、压在水印上面；输入框外壳和发送键读提问窗定的颜色变量
+// （--ask-composer-edge / -bg / -glow、--ask-send-bg / -fg / -hover，没定时照原样），思考强度靠它染色；加 readOnly：不画输入框和操作条。
 
 import {
   ComposerAddAttachment,
@@ -152,6 +155,8 @@ export type ThreadComponents = {
   prepareSend?: ((text: string) => string) | undefined;
   /** RetainPDF：问题气泡里的字（开头的引用画成引用框）。 */
   UserText?: TextMessagePartComponent | undefined;
+  /** RetainPDF：只读（以前的对话）：不画输入框和问答上的操作条（以前画出来再由宿主的 CSS 藏掉）。 */
+  readOnly?: boolean | undefined;
 };
 
 /** RetainPDF：回车（表单提交）和发送键发出去之前，先让 prepareSend 改一下输入框的字。 */
@@ -257,11 +262,11 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
   isEmpty,
   autoFocus,
 }) => {
-  const { Welcome = ThreadWelcome, HistoryTop, ComposerTop } = useContext(ThreadComponentsContext);
+  const { Welcome = ThreadWelcome, HistoryTop, ComposerTop, readOnly } = useContext(ThreadComponentsContext);
 
   return (
     <ThreadPrimitive.Root
-      className="aui-root aui-thread-root bg-background @container flex h-full flex-col"
+      className="aui-root aui-thread-root relative z-[1] bg-transparent @container flex h-full flex-col"
       style={{
         ["--thread-max-width" as string]: "44rem",
         ["--composer-bg" as string]:
@@ -310,7 +315,7 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
             <ThreadScrollToBottom />
             <ThreadFollowupSuggestions />
             {ComposerTop ? <ComposerTop /> : null}
-            <Composer autoFocus={autoFocus} />
+            {readOnly ? null : <Composer autoFocus={autoFocus} />}
             <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}>
               <ThreadSuggestions />
             </AuiIf>
@@ -568,12 +573,12 @@ const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
       <ComposerPrimitive.AttachmentDropzone asChild>
         <div
           data-slot="aui_composer-shell"
-          className="border-foreground/10 focus-within:border-foreground/25 data-[dragging=true]:border-ring flex w-full cursor-text flex-col gap-2 rounded-(--composer-radius) border bg-(--composer-bg) p-(--composer-padding) transition-[border-color] data-[dragging=true]:border-dashed data-[dragging=true]:bg-[color-mix(in_oklab,var(--color-accent)_50%,var(--color-background))]"
+          className="border-[color:var(--ask-composer-edge,color-mix(in_oklab,var(--color-foreground)_10%,transparent))] focus-within:border-[color:var(--ask-composer-edge,color-mix(in_oklab,var(--color-foreground)_25%,transparent))] data-[dragging=true]:border-ring flex w-full cursor-text flex-col gap-2 rounded-(--composer-radius) border bg-[var(--ask-composer-bg,var(--composer-bg))] p-(--composer-padding) [box-shadow:var(--ask-composer-glow,none)] [transition:border-color_240ms_ease,box-shadow_240ms_ease] motion-reduce:[transition:none] data-[dragging=true]:border-dashed data-[dragging=true]:bg-[color-mix(in_oklab,var(--color-accent)_50%,var(--color-background))]"
         >
           <ComposerAttachments />
           <ComposerPrimitive.Input
             placeholder="问点什么…"
-            className="aui-composer-input caret-primary placeholder:text-muted-foreground/60 max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none"
+            className="aui-composer-input caret-primary placeholder:text-muted-foreground/60 max-h-48 min-h-0 w-full resize-none bg-transparent px-2.5 py-1 text-[length:var(--ui-text-md,13px)] leading-[1.6] outline-none"
             rows={1}
             autoFocus={autoFocus}
             enterKeyHint="send"
@@ -598,7 +603,7 @@ const ComposerAction: FC = () => {
   );
 
   return (
-    <div className="aui-composer-action-wrapper relative flex items-center justify-between">
+    <div className="aui-composer-action-wrapper relative flex flex-wrap items-center justify-between gap-1">
       {ComposerExtra ? (
         <div className="aui-composer-action-start flex items-center gap-1.5">
           <ComposerAddAttachment />
@@ -655,7 +660,7 @@ const ComposerAction: FC = () => {
               type="button"
               variant="default"
               size="icon"
-              className="aui-composer-send size-7 rounded-full"
+              className="aui-composer-send size-7 rounded-full enabled:bg-[var(--ask-send-bg,var(--color-primary))] enabled:text-[color:var(--ask-send-fg,var(--color-primary-foreground))] enabled:hover:bg-[var(--ask-send-hover,color-mix(in_oklab,var(--color-primary)_90%,transparent))]"
               aria-label="发送"
             >
               <ArrowUpIcon className="aui-composer-send-icon size-4" />
@@ -704,7 +709,7 @@ const ComposerAction: FC = () => {
 const MessageError: FC = () => {
   return (
     <MessagePrimitive.Error>
-      <ErrorPrimitive.Root className="aui-message-error-root group/error border-destructive bg-destructive/10 text-destructive dark:bg-destructive/5 data-[run-state=in-progress]:border-border data-[run-state=in-progress]:bg-muted/40 data-[run-state=in-progress]:text-muted-foreground mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border p-3 text-sm data-[run-state=stale]:border-amber-500/40 data-[run-state=stale]:bg-amber-500/10 data-[run-state=stale]:text-amber-800 dark:text-red-200 dark:data-[run-state=stale]:bg-amber-500/5 dark:data-[run-state=stale]:text-amber-200">
+      <ErrorPrimitive.Root className="aui-message-error-root group/error border-destructive bg-destructive/10 text-destructive dark:bg-destructive/5 data-[run-state=in-progress]:border-border data-[run-state=in-progress]:bg-muted/40 data-[run-state=in-progress]:text-muted-foreground mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border p-3 text-[length:var(--ui-text-sm,12px)] leading-[calc(1.25/0.875)] data-[run-state=stale]:border-amber-500/40 data-[run-state=stale]:bg-amber-500/10 data-[run-state=stale]:text-amber-800 dark:text-red-200 dark:data-[run-state=stale]:bg-amber-500/5 dark:data-[run-state=stale]:text-amber-200">
         <TriangleAlertIcon className="hidden size-4 shrink-0 group-data-[run-state=stale]/error:block" />
         <Loader2Icon className="hidden size-4 shrink-0 animate-spin group-data-[run-state=in-progress]/error:block motion-reduce:animate-none" />
         <ErrorPrimitive.Message className="aui-message-error-message line-clamp-2 min-w-0 flex-1" />
@@ -742,6 +747,7 @@ const AssistantMessage: FC = () => {
     TaskGroup: TaskGroupComponent,
     MessageFooter,
     MessageAfter,
+    readOnly,
   } = useContext(ThreadComponentsContext);
   const groupBy = TaskGroupComponent ? taskAwareGroupBy : messageGroupBy;
 
@@ -840,7 +846,7 @@ const AssistantMessage: FC = () => {
         className={cn("ms-2 flex items-center", ACTION_BAR_HEIGHT)}
       >
         <BranchPicker />
-        <AssistantActionBar />
+        {readOnly ? null : <AssistantActionBar />}
         {MessageFooter ? <MessageFooter /> : null}
       </div>
     </MessagePrimitive.Root>
@@ -903,7 +909,7 @@ const AssistantActionBar: FC = () => {
           className="aui-action-bar-more-content bg-popover text-popover-foreground data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=closed]:animate-out data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 min-w-[8rem] overflow-hidden rounded-xl border p-1.5"
         >
           <ActionBarPrimitive.ExportMarkdown asChild>
-            <ActionBarMorePrimitive.Item className="aui-action-bar-more-item hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm outline-none select-none">
+            <ActionBarMorePrimitive.Item className="aui-action-bar-more-item hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[length:var(--ui-text-sm,12px)] leading-[calc(1.25/0.875)] outline-none select-none">
               <DownloadIcon className="size-4" />
               导出成 Markdown
             </ActionBarMorePrimitive.Item>
@@ -945,7 +951,7 @@ const UserImagePart: ImageMessagePartComponent = (part) => (
 );
 
 const UserMessage: FC = () => {
-  const { UserMessageTop, UserText } = useContext(ThreadComponentsContext);
+  const { UserMessageTop, UserText, readOnly } = useContext(ThreadComponentsContext);
   return (
     <MessagePrimitive.Root
       data-slot="aui_user-message-root"
@@ -961,9 +967,11 @@ const UserMessage: FC = () => {
             components={{ File: UserFilePart, Image: UserImagePart, ...(UserText ? { Text: UserText } : {}) }}
           />
         </div>
-        <div className="aui-user-action-bar-wrapper absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full">
-          <UserActionBar />
-        </div>
+        {readOnly ? null : (
+          <div className="aui-user-action-bar-wrapper absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full">
+            <UserActionBar />
+          </div>
+        )}
       </div>
 
       <BranchPicker
@@ -998,7 +1006,7 @@ const EditComposer: FC = () => {
     >
       <ComposerPrimitive.Root className="aui-edit-composer-root border-foreground/10 focus-within:border-foreground/25 ms-auto flex w-full max-w-[85%] cursor-text flex-col rounded-(--composer-radius) border bg-(--composer-bg) transition-[border-color]">
         <ComposerPrimitive.Input
-          className="aui-edit-composer-input text-foreground min-h-14 w-full resize-none bg-transparent px-4 pt-3 pb-1 text-base outline-none"
+          className="aui-edit-composer-input text-foreground min-h-0 w-full resize-none bg-transparent px-4 pt-3 pb-1 text-[length:var(--ui-text-md,13px)] leading-[1.6] outline-none"
           autoFocus
         />
         <div className="aui-edit-composer-footer mx-2.5 mb-2.5 flex items-center gap-1.5 self-end">

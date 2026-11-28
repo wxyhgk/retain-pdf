@@ -1,8 +1,6 @@
-/** 目录读 PDF 自带的书签（issue #146、#133）：多级、能折叠，眼下这一节标出来；没有书签退回 OCR 认出的标题。 */
+/** 目录读 PDF 自带的书签（issue #146、#133）：读书签、算眼下在哪一节。目录怎么画（书页区左缘的 Minimap）见 reader-toc-minimap.test.mjs。 */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 
 import {
   OUTLINE_LIMIT,
@@ -11,8 +9,6 @@ import {
   flattenOutline,
   readPdfOutline,
 } from "../../../packages/reader/src/pdf/pdf-outline.ts";
-import { ReaderBookmarkTree } from "../../../packages/reader/src/components/react-pdf/ReaderBookmarkTree.tsx";
-import { ReaderFinder } from "../../../packages/reader/src/components/react-pdf/ReaderFinder.tsx";
 
 const REF = (num) => ({ num, gen: 0 });
 
@@ -88,24 +84,4 @@ test("眼下在哪一节：页码不超过当前页的最后一条，同一页�
   ];
   assert.equal(currentBookmark(samePage, 10), "0.0", "第一条的下级同页 → 走到第一个下级，不跳到最后");
   assert.deepEqual(ancestorIds(null), []);
-});
-
-test("书签树：眼下这一节和它的上级展开、标出来，别的章收着；没页码的点不了", () => {
-  const html = renderToStaticMarkup(createElement(ReaderBookmarkTree, { nodes: TREE, currentPage: 130, onJumpPage: () => {} }));
-  assert.match(html, /aria-current="location"[^>]*>.*?3\.1\.2/);
-  assert.match(html, /aria-expanded="true"[^>]*aria-label="收起「第 3 章」"|aria-label="收起「第 3 章」"[^>]*aria-expanded="true"/);
-  assert.match(html, /aria-label="展开「第 2 章」"/, "别的章收着");
-  assert.doesNotMatch(html, />2\.1</, "收着的章不画下级");
-  assert.match(html, /disabled=""[^>]*title="这条书签没有指到页"/);
-});
-
-test("目录卡：有书签默认按书签；书签和标题都有时能切；没书签照旧按标题", () => {
-  const props = { tab: "outline", onTab: () => {}, onClose: () => {}, onJump: () => {}, query: "", onQuery: () => {}, term: "" };
-  const withBoth = renderToStaticMarkup(createElement(ReaderFinder, { ...props, bookmarks: TREE, onJumpPage: () => {} }));
-  // 没有 reader context 时没有段落数据（标题为空），只出书签、不出切换。
-  assert.match(withBoth, /reader-bookmark-tree/);
-  assert.doesNotMatch(withBoth, /按标题/);
-  const noBookmarks = renderToStaticMarkup(createElement(ReaderFinder, { ...props }));
-  assert.doesNotMatch(noBookmarks, /reader-bookmark-tree/);
-  assert.match(noBookmarks, /这本书还没有段落数据/);
 });

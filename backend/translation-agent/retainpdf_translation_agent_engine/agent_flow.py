@@ -160,7 +160,13 @@ class AgentRegionUnsupported(AgentAuthFailed):
     failure_suggestion = REGION_FAILURE_SUGGESTION
 
 
+class AgentNetworkFailed(AgentRunStopped):
+    """网络层的错（连不上、被断开、域名查不到、超时、证书验证不过；2026-11-27 以前报成限流）。不写死失败码：说明里带着原始报错，
+    结构化失败按它细分（``tls_certificate_untrusted``、``connection_refused``、``dns_resolution_failed``……）。"""
+
+
 _STOP_ERRORS = {
+    "network_error": AgentNetworkFailed,
     "quota_exhausted": AgentQuotaExhausted,
     "auth_failed": AgentAuthFailed,
     "model_unavailable": AgentModelUnavailable,

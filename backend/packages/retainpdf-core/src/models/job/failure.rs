@@ -310,7 +310,14 @@ fn infer_failure_category(failure_code: &str, failed_stage: &str) -> Option<Stri
         "auth_failed" => "auth",
         // 模型不可用、地区不支持也是去设置里改、重试没用，和 Python 的 _failure_category_for 一致（2026-11-24 补）
         "upstream_model_unavailable" | "upstream_region_unsupported" => "auth",
-        "dns_resolution_failed" => "network",
+        // 网络（2026-11-27 细分），和 Python 的 NETWORK_FAILURE_CODES 一致
+        "dns_resolution_failed"
+        | "tls_certificate_untrusted"
+        | "tls_handshake_failed"
+        | "proxy_failed"
+        | "connection_refused"
+        | "network_unreachable"
+        | "connection_reset" => "network",
         "ocr_request_ambiguous" => "provider",
         "upstream_timeout" => "timeout",
         "rate_limited" => "provider",

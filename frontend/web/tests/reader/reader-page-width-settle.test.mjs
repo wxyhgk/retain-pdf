@@ -133,14 +133,16 @@ test("这个 effect 只有一个出口 —— 多一条 return 就多一处可�
     "唯一那个出口没有清定时器");
 });
 
-test("settle 时长要盖过 shell 的过渡 —— 不然过渡没完就提交，等于没防", () => {
-  const rule = CSS.slice(CSS.indexOf(".reader-react-scroll-shell"));
-  const match = /transition:\s*right\s+(\d+)ms/.exec(rule.slice(0, rule.indexOf("}")));
-  assert.ok(match, "shell 的 right 过渡没了，这条门禁的前提变了");
-  assert.ok(
-    READER_WIDTH_SETTLE_MS >= Number(match[1]),
-    `settle ${READER_WIDTH_SETTLE_MS}ms 短于过渡 ${match[1]}ms`,
-  );
+test("书页区的宽度有过渡的话，settle 时长要盖过它 —— 不然过渡没完就提交，等于没防", () => {
+  // 2026-11-28 三行壳层起书页区是 flex 里的一栏，开关面板时宽度直接变、没有过渡（以前 absolute + right 过渡 180ms）。
+  // 以后谁给它加宽度过渡，settle 还得盖得住。
+  const rule = CSS.slice(CSS.indexOf(".reader-stage {"));
+  const body = rule.slice(0, rule.indexOf("}"));
+  const match = /transition:[^;]*?(?:right|left|width|flex)[^;]*?(\d+)ms/.exec(body);
+  if (match) {
+    assert.ok(READER_WIDTH_SETTLE_MS >= Number(match[1]), `settle ${READER_WIDTH_SETTLE_MS}ms 短于过渡 ${match[1]}ms`);
+  }
+  assert.ok(READER_WIDTH_SETTLE_MS > 0);
 });
 
 test("首屏交上去的第一个宽度必须是真实测量，不能是硬编码的种子", () => {

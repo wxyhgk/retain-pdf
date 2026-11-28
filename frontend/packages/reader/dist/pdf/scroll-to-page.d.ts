@@ -1,8 +1,10 @@
 import { type ReaderPaneId } from "./reader-dom-contract.js";
 import type { PageScrollProgress } from "../shared/types/reader-scroll.js";
 export type { PageScrollProgress } from "../shared/types/reader-scroll.js";
-/** 视口内「阅读线」相对滚动容器顶的偏移（与 measure/apply / HUD 当前页必须一致） */
-export declare const READER_SCROLL_FOCUS_PX = 48;
+/** 视口内「阅读线」相对滚动容器顶的偏移（与 measure/apply / HUD 当前页必须一致）。
+ * 跳到某一页时页顶停在这儿：2026-11-28 顶栏改成浮在书页区顶上（8 + 胶囊 40），48 → 56，页顶和第一页一样离胶囊 8px
+ * （和 react-pdf.css 的 --reader-float-bar-room 同一个数）。 */
+export declare const READER_SCROLL_FOCUS_PX = 56;
 /** Y coordinate of reading focus line in viewport coords */
 export declare function readingFocusY(root: HTMLElement, readingOffsetPx?: number): number;
 /**

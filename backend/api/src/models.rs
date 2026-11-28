@@ -19,6 +19,8 @@ pub mod api {
         job_ocr_markdown_path, job_translated_pdf_path,
     };
     pub use retainpdf_ingest::{UploadView, upload_to_response};
+    // 阅读页 HTML 页的版面目录里按名字取的文件（字体子集、公式 SVG）
+    pub use retainpdf_jobs::ReaderLayoutAsset;
     pub use retainpdf_jobs::{
         AmbiguousRequestPolicy, BookSummaryView, DeleteJobQuery, DocumentJobListView,
         EditorialEventListView, EditorialEventsQuery,
@@ -36,7 +38,8 @@ pub mod api {
         MarkdownImageView, NormalizationSummaryView,
         OcrAmbiguityReceiptFieldView, OcrAmbiguityResolutionKind, OcrAmbiguityResolutionRequest,
         OcrAmbiguityResolutionView, OcrAmbiguityView, OcrJobSummaryView, PagePreviewQuery,
-        ReaderDocumentMetadataView, ReaderMetadataView, ReaderPageMetadataView, ReaderRegionBoxView,
+        ReaderDocumentMetadataView, ReaderLayoutBackgroundView, ReaderLayoutFontView, ReaderLayoutGenerateView,
+    ReaderLayoutPageEntryView, ReaderLayoutView, ReaderMetadataView, ReaderPageMetadataView, ReaderRegionBoxView,
         ReaderRegionItemView, ReaderRegionsView, RefineRetryRequest, RetryStageKind, RetryStageRequest,
         RetryStageSubmissionView, ReviseTranslationItemRequest, StageActionsView,
         StageRetryActionLinkView, StageRetryActionView, TranslationDebugIndexView,

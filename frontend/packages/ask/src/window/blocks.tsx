@@ -33,6 +33,8 @@ import { Button } from "@retainpdf/ui";
 
 import { turnFooterItems, type AskSubagent, type AskToolCall, type AskTurn, type FooterItem } from "../acp/parts.js";
 import { AskPageText } from "./AskPageLink.js";
+import { AskSendContext } from "./ask-send.js";
+import { AskConversationContext } from "./conversation.js";
 import { BrandIcon, brandFor } from "./BrandIcon.js";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/shadcn/popover.js";
 import type { PermissionStore } from "../acp/adapter.js";
@@ -241,8 +243,9 @@ export function makeMessageFooter(agentName: () => string, Extra?: ComponentType
     return (
       <>
       <Popover>
-        <PopoverTrigger className="ask-icon ask-usage-trigger" aria-label="这一轮的用量" title={["用量", elapsed?.title].filter(Boolean).join(" · ")}>
-          {model ? <BrandIcon brand={brandFor(model.text, model.title)} size={13} title={model.title} /> : <Activity size={13} aria-hidden />}
+        <PopoverTrigger className="ask-icon ask-usage-trigger" aria-label="这一轮的用量" title={["用量", model?.title, elapsed?.title].filter(Boolean).join(" · ")}>
+          {/* 2026-11-28 收口回黑白：不再用模型厂商的彩色标志，一个灰的图标；哪个模型写在点开的小表里。 */}
+          <Activity size={13} aria-hidden />
         </PopoverTrigger>
         <PopoverContent align="start" side="top" className="ask-usage-panel">
           {items.map((item) => {
@@ -269,16 +272,44 @@ const STARTERS: { icon: IconType; text: string; prompt: string }[] = [
   { icon: Languages, text: "译文准不准", prompt: "对照原文看看这段译文准不准，哪里要改。" },
 ];
 
+function StarterButtons({ send }: { send: (text: string) => void }): ReactElement {
+  return (
+    <>
+      {STARTERS.map(({ icon: Icon, text, prompt }) => (
+        <Button key={text} className="ask-starter" title={prompt} onClick={() => send(prompt)}>
+          <Icon size={13} aria-hidden />
+          {text}
+        </Button>
+      ))}
+    </>
+  );
+}
+
+/**
+ * 输入框上面、出处下面的一排常问（2026-11-27）：带着书上的一处（刚右键「问这段」、窗口开着时新选了字）、输入框空着、没在答时才有，
+ * 点一下带这处直接问，问完出处清掉、这排跟着没了。对话一直延续（主对话），空白时的常问只在第一次看得到，所以挪到这里。
+ */
+export function PendingStarters(): ReactElement | null {
+  const { pending } = useContext(AskConversationContext);
+  const send = useContext(AskSendContext);
+  const empty = useAuiState((state) => state.composer.isEmpty);
+  const running = useAuiState((state) => state.thread.isRunning);
+  if (!pending || !send || !empty || running) return null;
+  return (
+    <div className="ask-starters ask-pending-starters" role="group" aria-label="常问">
+      <StarterButtons send={send} />
+    </div>
+  );
+}
+
 export function makeWelcome(send: (text: string) => void) {
-  return function Welcome(): ReactElement {
+  return function Welcome(): ReactElement | null {
+    // 带着出处时常问在输入框上面（PendingStarters），这里不再重复一排。
+    const { pending } = useContext(AskConversationContext);
+    if (pending) return null;
     return (
       <div className="ask-starters">
-        {STARTERS.map(({ icon: Icon, text, prompt }) => (
-          <Button key={text} className="ask-starter" title={prompt} onClick={() => send(prompt)}>
-            <Icon size={13} aria-hidden />
-            {text}
-          </Button>
-        ))}
+        <StarterButtons send={send} />
       </div>
     );
   };

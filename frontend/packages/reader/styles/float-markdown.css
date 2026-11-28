@@ -18,13 +18,14 @@
   font-size: 14px;
   line-height: 1.68;
 }
+/* 面板底部的搜索条和目录（2026-11-28 起面板在右边停靠栏里，按面板定位：以前 fixed、按视口右半边算）。 */
 .reader-notes-panel--workspace .reader-markdown-nav {
-  position: fixed;
+  position: absolute;
   top: auto;
-  right: max(18px, calc(25vw - 230px));
+  right: max(18px, calc(50% - 230px));
   bottom: 13px;
-  z-index: 36;
-  width: min(460px, calc(50vw - 36px));
+  z-index: 3;
+  width: min(460px, calc(100% - 36px));
   margin: 0;
   padding: 5px;
   border: var(--reader-float-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-float-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 9%, transparent)));
@@ -43,26 +44,13 @@
   border-radius: 999px;
 }
 .reader-notes-panel--workspace .reader-markdown-outline {
-  position: fixed;
-  right: max(18px, calc(25vw - 230px));
+  position: absolute;
+  right: max(18px, calc(50% - 230px));
   bottom: 58px;
-  z-index: 37;
-  width: min(460px, calc(50vw - 36px));
+  z-index: 4;
+  width: min(460px, calc(100% - 36px));
   margin: 0;
   box-shadow: var(--reader-float-card-shadow, var(--shape-shadow-md, 0 14px 34px color-mix(in srgb, var(--shadow-color) 12%, transparent)));
-}
-.reader-notes-panel--workspace.is-pane-left .reader-markdown-nav,
-.reader-notes-panel--workspace.is-pane-left .reader-markdown-outline {
-  left: max(18px, calc(25vw - 230px));
-  right: auto;
-}
-@media (max-width: 899px) {
-  .reader-notes-panel--workspace .reader-markdown-nav,
-  .reader-notes-panel--workspace .reader-markdown-outline {
-    right: 16px;
-    width: calc(100vw - 32px);
-    width: calc(100dvw - 32px);
-  }
 }
 /* 逗号列表逐段带命名空间前缀（css-page-namespace 测试逐段校验），:where 保持特异性不变 */
 .reader-float-markdown-content :where(h1),

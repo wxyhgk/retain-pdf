@@ -154,6 +154,8 @@ fn builtin_agent_gets_the_model_config_and_key_through_its_environment() {
     assert_eq!(env[ASK_ENV_MODEL], "claude-haiku-5-5");
     assert_eq!(env[ASK_ENV_API_PROTOCOL], "anthropic");
     assert_eq!(env[ASK_ENV_THINKING], "low");
+    // 上次在提问窗里选的思考档位记在数据目录下（2026-11-27）
+    assert_eq!(PathBuf::from(&env[ASK_ENV_THINKING_FILE]), server.data_root.join(ASK_THINKING_FILE));
     assert_eq!(env[ASK_ENV_API_KEY], "synthetic-secret-value");
     // 没给书：不给读书的东西（和以前一样只靠 prompt 里的上下文）；后端地址和密钥照给（记忆工具用，2026-11-26），没给对话不给对话编号
     assert!(!env.contains_key(ASK_ENV_JOB_ID) && !env.contains_key(ASK_ENV_DOCUMENT_ID));

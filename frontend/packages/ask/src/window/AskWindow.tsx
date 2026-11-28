@@ -1,7 +1,7 @@
 /** 提问窗（@retainpdf/ask/window；宿主懒加载这一块）。
  *
  * - 窗口：react-rnd。三种摆法：浮动（标题栏拖动、边角调大小）、贴右边（占满右侧，左边框拖宽窄）、放大；双击标题栏放大 / 还原。
- *   Esc / ✕ 关。标题栏见 AskHeader.tsx（图标为主）。
+ *   Esc / ✕ 关。标题栏见 AskHeader.tsx（对话、「···」、窗口摆法）；谁来答（agent、模型、思考）在输入框那颗按钮（AskModelPicker.tsx）。
  * - 一直延续的对话（2026-11-26 主对话）：输入框上面是下一问带的出处、问题上面是问的哪儿、「深挖」、「已记住（撤销）」，见 conversation.tsx；
  *   每答完一轮交给宿主追加（use-turns.ts）。回答里选字，下一问引用那段（answer-quote.tsx）。
  * - 对话：整套照搬 assistant-ui 官方的 Thread（../ui/elements/thread.aui.tsx：复制、重新回答、改问题、版本切换、回到最下面、
@@ -11,10 +11,13 @@
  * 宿主给什么、能改什么：见包的 README.md。
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { Rnd } from "react-rnd";
+import { Maximize2 } from "lucide-react";
+import { Button } from "@retainpdf/ui";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 
-import type { AskAgent, AskConfigOption, AskContext, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
+import type { AskAgent, AskAnswerAction, AskAttachTool, AskConfigOption, AskContext, AskContextOffer, AskMemoryNotice, AskMessage, AskMessageContext, AskPort, AskTurnRecord } from "../contract.js";
 import { toInitialMessages } from "../acp/messages.js";
 import { PermissionStore, createAcpChatAdapter } from "../acp/adapter.js";
 import { Thread } from "../ui/elements/thread.aui.js";
@@ -29,14 +32,21 @@ import {
   makeMessageFooter,
   makeWelcome,
 } from "./blocks.js";
-import { AskHeader, type AskWindowMode } from "./AskHeader.js";
+import { AskHeader } from "./AskHeader.js";
+import { AskAgentsContext, type AskAgentsState } from "./agent-row.js";
+import type { AskHeaderMenuItem } from "./head-menu.js";
+import type { AskWindowMode } from "./AskHeader.js";
 import { AskPageContext, type AskPageJump } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
-import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand, type AskConfigState } from "./AskModelPicker.js";
-import { BrandIcon, brandFor } from "./BrandIcon.js";
+import { AskAgentSettings, AskConfigContext, currentEffort, type AskConfigState } from "./AskModelPicker.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
+import { loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
+import { useWindowLayout, type AskDockInsets } from "./use-window-layout.js";
+import { HostedDock } from "./dock-host.js";
+import { useWideBlocks } from "./wide-blocks.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag, type AskConversationUi } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
+import { AttachTools, AttachToolsContext, useHostAttachments } from "./attach-tools.js";
 import { useTurns } from "./use-turns.js";
 
 const KATEX_LINK_ID = "retainpdf-katex-css";
@@ -53,40 +63,22 @@ function useKatexStylesheet(href: string | undefined) {
   }, [href]);
 }
 
+/** 输入框那一行：宿主的「带上……」按钮，再是 agent 的设置（模型、思考强度）。 */
+function ComposerExtra(): ReactElement {
+  return (
+    <>
+      <AttachTools />
+      <AskAgentSettings />
+    </>
+  );
+}
+
 // 计划、子 agent 是 data 部件：按 assistant-ui 的办法注册渲染（挂在 runtime 里面才生效）。
 const PlanDataUI = makeAssistantDataUI({ name: "plan", render: PlanBlock });
 const SubagentDataUI = makeAssistantDataUI({ name: "subagent", render: SubagentBlock });
 
 // 测试和别处照旧从这里取。
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
-
-/** 贴右边时顶上让出宿主页面的顶栏（RetainPDF 阅读页的顶栏约 64px）。 */
-const DOCK_TOP = 64;
-const DOCK_WIDTH = 440;
-
-type Rect = { x: number; y: number; width: number; height: number };
-
-function viewport() {
-  return { width: globalThis.innerWidth || 1200, height: globalThis.innerHeight || 800 };
-}
-
-function floatRect(): Rect {
-  const { width: vw, height: vh } = viewport();
-  const width = Math.min(500, vw - 32);
-  const height = Math.min(640, vh - 120);
-  return { x: Math.max(16, vw - width - 24), y: 72, width, height };
-}
-
-/** 三种摆法的位置：浮动用自己记的；贴右边占满右侧（宽可以拖）；放大差不多占满屏。 */
-function layoutFor(mode: AskWindowMode, float: Rect, dockWidth: number): Rect {
-  const { width: vw, height: vh } = viewport();
-  if (mode === "dock") {
-    const width = Math.min(dockWidth, vw - 16);
-    return { x: vw - width, y: DOCK_TOP, width, height: vh - DOCK_TOP };
-  }
-  if (mode === "full") return { x: 16, y: 16, width: vw - 32, height: vh - 32 };
-  return float;
-}
 
 export type AskWindowProps = {
   port: AskPort;
@@ -101,8 +93,10 @@ export type AskWindowProps = {
   onClose: () => void;
   /** 标题栏左边（主对话 / 副对话的面包屑）。 */
   title?: ReactNode;
-  /** 标题栏右边多放的按钮（记忆、归档……）。 */
+  /** 标题栏右边多放的按钮（旧写法；不常用的放 headerMenu）。 */
   headerActions?: ReactNode;
+  /** 标题栏「···」里的项（不常用的：阅读页的记忆）。 */
+  headerMenu?: readonly AskHeaderMenuItem[];
   /** 对话下面、输入框外面多放的一条（副对话的「结束」）。 */
   footer?: ReactNode;
   /** 点问题上面的小标签：回到问的那一处。 */
@@ -135,10 +129,26 @@ export type AskWindowProps = {
   pageCount?: number;
   /** KaTeX 样式表的地址（宿主自己托管字体）；不给就不插，公式靠宿主页面已有的样式。 */
   katexStylesheetUrl?: string;
+  /** 已经带着出处时宿主那边又选了一处（书页上新选的字）：输入框上面问换成它还是再加上它。 */
+  contextOffer?: AskContextOffer | null;
+  /** 输入框那一行宿主加的「带上……」按钮（阅读页：带上这一页的截图）。 */
+  attachTools?: readonly AskAttachTool[];
+  /** 宿主从外面塞进来的附件（框选截图）：id 变了就加进输入框。 */
+  attachRequest?: { id: number; files: readonly File[] } | null;
+  /** 回答底下宿主加的动作（阅读页：「改这段译文」），只出在问题带着出处、宿主认这处的回答下面。 */
+  answerAction?: AskAnswerAction;
+  /** 窗口摆法变了（贴右边时宽多少）：宿主据此给书页让出右边（不盖字）。 */
+  onLayout?: (layout: { mode: AskWindowMode; width: number }) => void;
+  /** 宿主右边停了别的东西（阅读页的 Markdown 面板）：变成 true 的那一下，贴右边的窗口变回浮动。 */
+  dockTaken?: boolean;
+  /** 贴右边时上下让出宿主的栏（阅读页：顶栏、底栏的高）；不给是上 60、下 0。宿主给了 dockHost 时用不着。 */
+  dockInsets?: AskDockInsets;
+  /** 宿主的停靠栏（阅读页 .reader-dock 里那一格）：贴右边时窗口画进去，是页面的一栏而不是浮窗；不给就照旧浮在右边。 */
+  dockHost?: HTMLElement | null;
 };
 
 export default function AskWindow(props: AskWindowProps): ReactElement {
-  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
+  const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, headerMenu, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken, dockInsets, dockHost } = props;
   useKatexStylesheet(katexStylesheetUrl);
   const [agents, setAgents] = useState<AskAgent[] | null>(null);
   const [agentId, setAgentId] = useState("");
@@ -154,7 +164,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       (list) => {
         if (cancelled) return;
         setAgents(list);
-        setAgentId((current) => current || list.find((agent) => agent.available !== false)?.id || "");
+        setAgentId((current) => current || pickAgent(list, loadWindowMemory().agentId));
       },
       (error) => !cancelled && setLoadError(error instanceof Error ? error.message : String(error)),
     );
@@ -206,6 +216,12 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
   // 每答完一轮交给宿主（use-turns.ts）。
   const currentAgent = useCallback(() => live.current.agentId, []);
   useTurns({ thread: runtime.thread as never, agentId: currentAgent, run: chat.lastRun, sessionId: chat.sessionId, onTurn, onTurnDone });
+  // 回答里选字 → 下一问引用这段（answer-quote.tsx）。
+  const threadRoot = useRef<HTMLDivElement | null>(null);
+  const answerQuote = useAnswerQuote(threadRoot, !readOnly);
+  const quoteNow = useRef(answerQuote.quote);
+  quoteNow.current = answerQuote.quote;
+  const answerSelection = useCallback(() => quoteNow.current, []);
   const conversationUi = useMemo<AskConversationUi>(() => ({
     pending: context,
     clearPending: onContextClear,
@@ -216,10 +232,10 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     openSide: onOpenSide,
     forget: onForgetMemory,
     memories,
-  }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories]);
-  // 回答里选字 → 下一问引用这段（answer-quote.tsx）。
-  const threadRoot = useRef<HTMLDivElement | null>(null);
-  const answerQuote = useAnswerQuote(threadRoot, !readOnly);
+    answerAction,
+    answerSelection,
+    offer: contextOffer,
+  }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories, answerAction, answerSelection, contextOffer]);
   const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
   // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
   const send = useMemo(() => (text: string) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);
@@ -229,7 +245,7 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       ToolFallback: ToolCard,
       ToolGroup: AskToolGroup,
       Indicator: Waiting,
-      ComposerExtra: AskAgentSettings,
+      ComposerExtra: ComposerExtra,
       Welcome: makeWelcome(send),
       MessageFooter: makeMessageFooter(agentName, ConversationFooter),
       HistoryTop: EarlierHistory,
@@ -238,9 +254,12 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
       MessageAfter,
       prepareSend: answerQuote.prepareSend,
       UserText,
+      readOnly,
     }),
-    [agents, runtime, answerQuote.prepareSend], // eslint-disable-line react-hooks/exhaustive-deps
+    [agents, runtime, answerQuote.prepareSend, readOnly], // eslint-disable-line react-hooks/exhaustive-deps
   );
+  // 宿主的「带上……」按钮、塞进来的附件（attach-tools.tsx）。
+  const { attachUi, attachError } = useHostAttachments(runtime, attachTools, attachRequest);
   const pages = useMemo<AskPageJump | null>(() => (onJumpToPage ? { pageCount, jump: onJumpToPage } : null), [onJumpToPage, pageCount]);
 
   useEffect(() => {
@@ -257,73 +276,59 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // 摆法：浮动记自己的位置大小；贴右边记宽度；窗口大小变了重新排。
-  const [mode, setMode] = useState<AskWindowMode>("float");
-  const [float, setFloat] = useState<Rect>(floatRect);
-  const [dockWidth, setDockWidth] = useState(DOCK_WIDTH);
-  const [, setResized] = useState(0);
-  useEffect(() => {
-    const onResize = () => setResized((value) => value + 1);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+  // 摆法（浮动 / 贴右边 / 放大）和记住它（use-window-layout.ts）。
+  const layout = useWindowLayout(onLayout, dockTaken, dockInsets);
+  const { mode, rect } = layout;
+  // 太宽的公式、表格：缩一点放得下就缩，再宽就横着滚、给一个「放大看」（wide-blocks.ts）。
+  const wideBlocks = useWideBlocks(threadRoot);
+  const chooseAgent = useCallback((id: string) => {
+    setAgentId(id);
+    saveWindowMemory({ agentId: id });
   }, []);
-  const rect = layoutFor(mode, float, dockWidth);
-  // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
+  // 「谁来答」里的 agent 那一排（agent-row.tsx，输入框那颗按钮的弹层里）。
+  const agentsUi = useMemo<AskAgentsState | null>(() => (agents?.length ? { agents, agentId, onAgent: chooseAgent } : null), [agents, agentId, chooseAgent]);
+  // 思考强度（ask.css 读 --ask-effort-color、data-effort）：开着时输入框一圈细边、按钮上一个小点。
+  // 2026-11-28 收口回黑白纸墨：聊天区正中的彩色模型水印、输入框大片发光、窗口边发光都去掉了。
   const effort = currentEffort(config);
-  const shownAgent = agents?.find((agent) => agent.id === agentId);
-  const brand = currentModelBrand(config) || (shownAgent ? brandFor(shownAgent.id, shownAgent.name) : "");
   const tint = (effort ? { "--ask-effort-color": effort.color } : {}) as CSSProperties;
+  const hosted = mode === "dock" && Boolean(dockHost);
 
-  return (
-    <Rnd
-      className="ask-window"
-      position={{ x: rect.x, y: rect.y }}
-      size={{ width: rect.width, height: rect.height }}
-      minWidth={320}
-      minHeight={280}
-      bounds="window"
-      dragHandleClassName="ask-head"
-      cancel=".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul"
-      disableDragging={mode !== "float"}
-      enableResizing={mode === "full" ? false : mode === "dock" ? { left: true } : true}
-      onDragStop={(_event, data) => setFloat((current) => ({ ...current, x: data.x, y: data.y }))}
-      onResizeStop={(_event, _direction, element, _delta, position) => {
-        if (mode === "dock") setDockWidth(element.offsetWidth);
-        else setFloat({ x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight });
-      }}
-    >
-      <section className="ask-panel" role="dialog" aria-label="提问" data-mode={mode} data-readonly={readOnly ? "1" : undefined} data-effort={effort?.on ? "on" : "off"} style={tint}>
+  const panel = (
+      <section className="ask-panel" role="dialog" aria-label="提问" data-mode={mode} data-hosted={hosted ? "true" : undefined} data-readonly={readOnly ? "1" : undefined} data-effort={effort?.on ? "on" : "off"} style={tint}>
         <AskHeader
           title={title}
           actions={headerActions}
-          agents={agents}
-          agentId={agentId}
-          onAgent={setAgentId}
+          menu={headerMenu}
           mode={mode}
-          onMode={setMode}
+          onMode={layout.changeMode}
           onDelete={onDelete}
           onClose={onClose}
         />
         <AskPageContext.Provider value={pages}>
           {loadError ? <p className="ask-error">列不出能用的 agent：{loadError}</p> : null}
+          {attachError ? <p className="ask-error">{attachError}</p> : null}
           <AskConversationContext.Provider value={conversationUi}>
           <PermissionContext.Provider value={permissions}>
             <AskSendContext.Provider value={send}>
             <AskConfigContext.Provider value={configState}>
+            <AskAgentsContext.Provider value={agentsUi}>
+            <AttachToolsContext.Provider value={attachUi}>
             <AnswerQuoteProvider value={answerQuote.ui}>
             <AssistantRuntimeProvider runtime={runtime}>
               <PlanDataUI />
               <SubagentDataUI />
               <div className="ask-thread" ref={threadRoot}>
-                {brand ? (
-                  <div className="ask-watermark" aria-hidden>
-                    <BrandIcon brand={brand} size={200} />
-                  </div>
+                {wideBlocks && mode !== "full" ? (
+                  <Button className="ask-wide-open" title="有公式或表格太宽，要横着滚：放大窗口看" onClick={() => layout.changeMode("full")}>
+                    <Maximize2 size={12} aria-hidden /> 放大看
+                  </Button>
                 ) : null}
                 <Thread components={threadComponents} autoFocus />
               </div>
             </AssistantRuntimeProvider>
             </AnswerQuoteProvider>
+            </AttachToolsContext.Provider>
+            </AskAgentsContext.Provider>
             </AskConfigContext.Provider>
             </AskSendContext.Provider>
           </PermissionContext.Provider>
@@ -331,6 +336,28 @@ export default function AskWindow(props: AskWindowProps): ReactElement {
           {footer}
         </AskPageContext.Provider>
       </section>
+  );
+
+  // 贴右边、宿主给了停靠栏：画进去，是页面的一栏。
+  if (hosted && dockHost) {
+    return createPortal(<HostedDock width={rect.width} onResize={layout.resizeDock}>{panel}</HostedDock>, dockHost);
+  }
+  return (
+    <Rnd
+      className={`ask-window ask-window--${mode}`}
+      position={{ x: rect.x, y: rect.y }}
+      size={{ width: rect.width, height: rect.height }}
+      minWidth={320}
+      minHeight={280}
+      bounds="window"
+      dragHandleClassName="ask-head"
+      cancel=".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-head-menu-body"
+      disableDragging={mode !== "float"}
+      enableResizing={mode === "full" ? false : mode === "dock" ? { left: true } : true}
+      onDragStop={layout.onDragStop}
+      onResizeStop={layout.onResizeStop}
+    >
+      {panel}
     </Rnd>
   );
 }

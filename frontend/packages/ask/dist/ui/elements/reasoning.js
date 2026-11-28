@@ -2,6 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 // 照搬 assistant-ui 官方组件（MIT，https://r.assistant-ui.com；shadcn/ 下是 shadcn/ui，MIT）。只改了引用路径（@/ 别名换成相对路径）。
 // 别的不改，方便对着上游更新；我们的改动写在外面（../window/）。
 // RetainPDF 的改动（提示文字换中文；用时写成「思考 · 0.8s」，不到 1 秒也写（原来取整成 0 就不显示））。
+// 2026-11-27（提问窗样式拆开）：以前 ask.css 从外面用 .aui-* 改「思考」那一行的字号和图标大小（14px），改成直接写在这里的 className。
 import { createContext, forwardRef, useCallback, useContext, useEffect, useRef, useState, } from "react";
 import { useIsomorphicLayoutEffect } from "../utils/useIsomorphicLayoutEffect.js";
 import { cva } from "class-variance-authority";
@@ -60,7 +61,7 @@ function ReasoningFade({ side = "bottom", className, ...props }) {
 }
 function ReasoningTrigger({ active, duration, label = "思考", className, ...props }) {
     const durationText = duration === undefined ? "" : ` · ${duration < 10 ? duration.toFixed(1) : Math.round(duration)}s`;
-    return (_jsxs(CollapsibleTrigger, { "data-slot": "reasoning-trigger", className: cn("aui-reasoning-trigger group/trigger text-muted-foreground hover:text-foreground flex max-w-[75%] origin-left items-center gap-2 py-1.5 text-sm transition-[color,scale] active:scale-[0.98]", className), ...props, children: [_jsx(BrainIcon, { "data-slot": "reasoning-trigger-icon", className: "aui-reasoning-trigger-icon size-4 shrink-0" }), _jsxs("span", { "data-slot": "reasoning-trigger-label", className: cn("aui-reasoning-trigger-label-wrapper inline-block leading-none tabular-nums", active && "shimmer motion-reduce:animate-none"), children: [label, durationText] }), _jsx(ChevronDownIcon, { "data-slot": "reasoning-trigger-chevron", className: cn("aui-reasoning-trigger-chevron mt-0.5 size-4 shrink-0", "transition-transform duration-(--animation-duration) ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none", "-rotate-90", "group-data-open/trigger:rotate-0", "group-data-panel-open/trigger:rotate-0") })] }));
+    return (_jsxs(CollapsibleTrigger, { "data-slot": "reasoning-trigger", className: cn("aui-reasoning-trigger group/trigger text-muted-foreground hover:text-foreground flex max-w-[75%] origin-left items-center gap-2 py-1.5 text-[length:var(--ui-text-sm,12px)] leading-[calc(1.25/0.875)] transition-[color,scale] active:scale-[0.98]", className), ...props, children: [_jsx(BrainIcon, { "data-slot": "reasoning-trigger-icon", className: "aui-reasoning-trigger-icon size-3.5 shrink-0" }), _jsxs("span", { "data-slot": "reasoning-trigger-label", className: cn("aui-reasoning-trigger-label-wrapper inline-block leading-none tabular-nums", active && "shimmer motion-reduce:animate-none"), children: [label, durationText] }), _jsx(ChevronDownIcon, { "data-slot": "reasoning-trigger-chevron", className: cn("aui-reasoning-trigger-chevron mt-0.5 size-3.5 shrink-0", "transition-transform duration-(--animation-duration) ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none", "-rotate-90", "group-data-open/trigger:rotate-0", "group-data-panel-open/trigger:rotate-0") })] }));
 }
 function ReasoningContent({ className, children, ...props }) {
     const isPreview = useContext(ReasoningPreviewContext);

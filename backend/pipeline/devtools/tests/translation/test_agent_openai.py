@@ -22,6 +22,7 @@ from retainpdf_translation_agent_engine.agent_openai import make_openai_transpor
 from retainpdf_translation.workflow.execution import execute_translation_request
 from retainpdf_translation_agent import AuthFailed
 from retainpdf_translation_agent import QuotaExhausted
+from retainpdf_translation_agent import NetworkFailed
 from retainpdf_translation_agent import RateLimited
 from retainpdf_translation_agent import format_answer
 
@@ -136,7 +137,10 @@ def _http_error(status: int) -> requests.HTTPError:
         (_http_error(402), QuotaExhausted),
         (_http_error(429), RateLimited),
         (_http_error(503), RateLimited),
-        (requests.ConnectionError("reset"), RateLimited),
+        # 网络层的错（2026-11-27 起不再报成限流）：连不上、超时、证书验证不过
+        (requests.ConnectionError("reset"), NetworkFailed),
+        (requests.Timeout("Read timed out"), NetworkFailed),
+        (requests.exceptions.SSLError("[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed"), NetworkFailed),
     ],
 )
 def test_upstream_failures_stop_the_run_so_progress_is_kept(error: BaseException, expected: type) -> None:

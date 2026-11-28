@@ -7,7 +7,7 @@ export declare function splitVersionName(name: string): {
     engine: string;
     model: string;
 };
-/** 小球里「对比版本」点开的那张卡。 */
+/** 底栏工具里「对比版本」点开的那张卡。 */
 export declare function VersionCompareMenu({ compare, onDone }: {
     compare: VersionCompare;
     onDone: () => void;

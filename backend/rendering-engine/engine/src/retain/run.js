@@ -145,7 +145,7 @@ function runRetain(input, options = {}) {
   const measurer = Text.createMeasurer({ metrics: fontTable("regular") });
   const measurers = { bold: Text.createMeasurer({ metrics: fontTable("bold") }) };
   const fitter = createRetainFitter({ measurer, measurers });
-  const maths = output === "pdf" ? new MathStore(outDir, { files: false }) : new MathStore(outDir, { stamps: true });
+  const maths = output === "pdf" ? new MathStore(outDir, { pad: false }) : new MathStore(outDir, { stamps: true });
   const renderMathBox = (tex, display) => maths.renderMathBox(tex, display);
 
   // Sizes (retain-pdf's policy), then the engine sets every line.

@@ -1,57 +1,21 @@
-// 提问窗的标题栏：图标为主。标题（主对话 / 副对话的面包屑）、选 agent、没装的 agent（插头图标，点开看安装命令）、
-// 浮动 / 贴右边 / 放大、删、关。字都放悬停提示里。
+// 提问窗的标题栏（2026-11-27 按「对话」收拾）：左边是这是哪个对话（宿主画，阅读页是「主对话 ▾」那个对话菜单），
+// 右边只留不常用的「···」和窗口怎么摆（贴右边 / 放大 / 关）。以前一行十个图标（选 agent、插头、记忆、历史、归档……）：
+// 选 agent 和没装的 agent 挪进输入框那颗「谁来答」（agent-row.tsx），历史、归档进对话菜单，记忆进「···」。字都放悬停提示里。
 import type { ReactElement, ReactNode } from "react";
-import { Copy, Maximize2, MessageCircleQuestion, Minimize2, PanelRight, PanelRightClose, Plug, Trash2, X } from "lucide-react";
+import { Maximize2, MessageCircleQuestion, Minimize2, PanelRight, PanelRightClose, Trash2, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
 import type { AskAgent } from "../contract.js";
-import { useCopyToClipboard } from "../ui/hooks/use-copy-to-clipboard.js";
-import { ModelSelectorContent, ModelSelectorRoot, ModelSelectorTrigger } from "../ui/elements/model-selector.js";
 import type { ModelOption } from "../ui/utils/model-selection.js";
 import { AgentIcon } from "./BrandIcon.js";
+import { shortAgentName } from "./agent-row.js";
+import { AskMoreMenu, type AskHeaderMenuItem } from "./head-menu.js";
+
+export { shortAgentName } from "./agent-row.js";
 
 export type AskWindowMode = "float" | "dock" | "full";
 
-/** 下拉里写短一点：「RetainPDF 自带模型」→「自带模型」。 */
-export function shortAgentName(name: string): string {
-  return name.replace(/^RetainPDF\s*/, "") || name;
-}
-
-function InstallRow({ agent }: { agent: AskAgent }): ReactElement {
-  const { isCopied, copyToClipboard } = useCopyToClipboard();
-  return (
-    <li>
-      <span>{agent.name}</span>
-      <code title={agent.install}>{agent.install}</code>
-      <Button
-        className="ask-icon"
-        aria-label={`复制「${agent.name}」的安装命令`}
-        title={isCopied ? "已复制" : "复制安装命令，在终端里跑一次"}
-        onClick={() => copyToClipboard(agent.install || "")}
-      >
-        <Copy size={13} aria-hidden />
-      </Button>
-    </li>
-  );
-}
-
-/** 没装的本机 agent：插头图标，点开写安装命令（在终端跑一次），可以复制。 */
-function InstallMenu({ agents }: { agents: readonly AskAgent[] | null }): ReactElement | null {
-  const missing = (agents || []).filter((agent) => agent.available === false && agent.install);
-  if (!missing.length) return null;
-  return (
-    <details className="ask-install">
-      <summary className="ask-icon" aria-label="还能接的本机 agent" title={`还能接本机的 ${missing.map((agent) => agent.name).join("、")}（要先装）`}>
-        <Plug size={14} aria-hidden />
-      </summary>
-      <ul>
-        {missing.map((agent) => <InstallRow key={agent.id} agent={agent} />)}
-      </ul>
-    </details>
-  );
-}
-
-/** 选 agent：按钮上只有图标（悬停写名字），点开是带图标的列表（assistant-ui 的 ModelSelector，agent 多时能搜）。没装的灰着。 */
+/** agent 列表换成 ModelSelector 的选项（没装的灰着）；留给宿主自己摆选择器用。 */
 export function agentOptions(agents: readonly AskAgent[]): ModelOption[] {
   return agents.map((agent) => ({
     id: agent.id,
@@ -63,45 +27,30 @@ export function agentOptions(agents: readonly AskAgent[]): ModelOption[] {
   }));
 }
 
-function AgentPicker({ agents, agentId, onAgent }: { agents: readonly AskAgent[] | null; agentId: string; onAgent: (id: string) => void }): ReactElement {
-  const list = agents || [];
-  const current = list.find((agent) => agent.id === agentId);
-  return (
-    <ModelSelectorRoot models={agentOptions(list)} value={agentId} onValueChange={onAgent}>
-      <ModelSelectorTrigger variant="ghost" size="sm" className="ask-agent-trigger" aria-label={current ? `用的 agent：${current.name}` : "选 agent"} title={current?.name || "选 agent"} disabled={!list.length}>
-        {current ? <AgentIcon id={current.id} name={current.name} size={16} /> : null}
-      </ModelSelectorTrigger>
-      <ModelSelectorContent align="start" searchable={list.length > 8} className="ask-agent-list" />
-    </ModelSelectorRoot>
-  );
-}
-
 export type AskHeaderProps = {
-  /** 左边的标题（主对话 / 副对话的面包屑）。 */
+  /** 左边的标题（阅读页：对话菜单）。 */
   title?: ReactNode;
-  /** 右边多放的按钮（记忆、归档……）。 */
+  /** 右边多放的按钮（旧写法，宿主还能用；常用的不多，尽量放进 menu）。 */
   actions?: ReactNode;
-  agents: readonly AskAgent[] | null;
-  agentId: string;
-  onAgent: (id: string) => void;
+  /** 「···」里的项（不常用的：记忆……）。 */
+  menu?: readonly AskHeaderMenuItem[];
   mode: AskWindowMode;
   onMode: (mode: AskWindowMode) => void;
   onDelete?: () => void;
   onClose: () => void;
 };
 
-export function AskHeader({ title, actions, agents, agentId, onAgent, mode, onMode, onDelete, onClose }: AskHeaderProps): ReactElement {
+export function AskHeader({ title, actions, menu = [], mode, onMode, onDelete, onClose }: AskHeaderProps): ReactElement {
   return (
     <header className="ask-head" onDoubleClick={(event) => {
-      if ((event.target as HTMLElement).closest("button, select, summary, .ui-select")) return;
+      if ((event.target as HTMLElement).closest("button, select, summary, .ui-select, .ask-head-menu-body")) return;
       onMode(mode === "full" ? "float" : "full");
     }}>
       <MessageCircleQuestion size={15} className="ask-logo" aria-label="提问" />
       {title ? <div className="ask-title">{title}</div> : null}
-      <AgentPicker agents={agents} agentId={agentId} onAgent={onAgent} />
-      <InstallMenu agents={agents} />
       <span className="ask-head-gap" />
       {actions}
+      <AskMoreMenu items={menu} />
       <Button
         className="ask-icon"
         aria-label={mode === "dock" ? "改回浮动" : "贴到右边"}

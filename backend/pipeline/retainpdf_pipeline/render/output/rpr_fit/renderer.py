@@ -40,9 +40,11 @@ from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineRuntime
 from retainpdf_pipeline.render.output.rpr.engine_cli import run_engine
 from retainpdf_pipeline.render.output.rpr.text import markdown_to_engine_text
 from retainpdf_pipeline.render.output.rpr_fit import formula_check
+from retainpdf_pipeline.render.output.rpr_fit.reader_layout import save_reader_layout
 from retainpdf_pipeline.render.output.rpr_fit.report import build_rpr_fit_fit_report_payload
 from retainpdf_pipeline.render.output.rpr_fit.toc_entries import toc_entry_layout_document
 from retainpdf_pipeline.render.output.typst.block_renderer import sanitize_typst_markdown_for_compile
+from retainpdf_pipeline.render.output.typst.compiler import _resolved_font_paths
 from retainpdf_pipeline.render.output.typst.book_support import prepare_background_work_dir
 from retainpdf_pipeline.render.output.typst.fit_report import record_fit_report_payload
 from retainpdf_base.events import emit_render_compile_progress
@@ -189,6 +191,39 @@ def _copy_outline(
     except Exception as exc:  # noqa: BLE001 - 书签是附带的，坏了不连累译文
         print(f"rpr_fit outline copy failed: {type(exc).__name__}: {exc}", flush=True)
         return 0
+
+
+def _keep_reader_layout(
+    run,
+    output_pdf_path: Path,
+    engine_info: dict,
+    runtime: RprEngineRuntime,
+    *,
+    source_pdf_path: Path,
+    original_pdf_path: Path | None,
+    restored_regions: list[tuple[int, list[float]]],
+) -> dict[str, object]:
+    """最后一遍排版的 layout.json 按页存到译文 PDF 旁边，连同底图（reader_layout.py），给阅读页的 HTML 页照着画。
+
+    公式查不过重排了一遍时，存的是重排那一遍的（改回原文的块不在里面，PDF 上那块盖回了原件，底图也照样盖回）。
+    存不成只记一笔。"""
+    layout_path = Path(run.overlay_pdf).parent / "layout.json"
+    try:
+        saved = save_reader_layout(
+            layout_path=layout_path,
+            output_pdf_path=Path(output_pdf_path),
+            engine_version=str(engine_info.get("version") or runtime.engine_version or ""),
+            engine_commit=str(engine_info.get("commit") or ""),
+            source_pdf_path=Path(source_pdf_path),
+            original_pdf_path=Path(original_pdf_path) if original_pdf_path is not None else None,
+            restored_regions=restored_regions,
+            # 引擎的 --font-path，再加引擎自带的后备字体（engine/data/fonts/fallback，src/output/pdf/fonts.js 的 BUNDLED_FONT_DIRS）
+            font_dirs=[*_resolved_font_paths(), Path(runtime.entry).parent.parent / "data" / "fonts" / "fallback"],
+        )
+    except Exception as exc:  # noqa: BLE001 - 版面是附带产物，坏了不连累译文
+        print(f"rpr_fit reader layout not kept: {type(exc).__name__}: {exc}", flush=True)
+        return {"kept": False, "error": f"{type(exc).__name__}: {exc}"[:500]}
+    return {"kept": True, **saved}
 
 
 def build_book_rpr_fit_pdf(
@@ -372,6 +407,15 @@ def build_book_rpr_fit_pdf(
 
     report = run.report
     engine_info = dict(report.get("engine") or {})
+    diagnostics["rpr_fit_reader_layout"] = _keep_reader_layout(
+        run,
+        output_pdf_path,
+        engine_info,
+        runtime,
+        source_pdf_path=source_pdf_path,
+        original_pdf_path=original_pdf_path,
+        restored_regions=[(int(kept_item["page"]) - 1, bboxes[kept_item["item_id"]]) for kept_item in kept],
+    )
     fit_payload = build_rpr_fit_fit_report_payload(
         report,
         render_path=f"rpr_fit_{mode}",

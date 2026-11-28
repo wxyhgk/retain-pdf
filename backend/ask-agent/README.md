@@ -19,11 +19,20 @@ RetainPDF 阅读页提问的自带 agent：在 stdio 上说 [ACP](https://agentc
 - 思考强度（2026-11-26）：`session/new` 的结果带 ACP 的 `configOptions`（一项 `thought_level`，档位是这个模型实际有的，从翻译底座
   `model_wire.thinking_menu` 来），`session/set_config_option` 改这个会话下一问的档位；认不出的模型（OpenAI Chat 和 Responses、不是 api.openai.com）报通用的 off / on（2026-11-27），
   api.openai.com 上认不出的不报。不报选模型那一项。
+  2026-11-27 用户：「只有开和关……太诡异了」。每档报英文名（Off / On / Low …，用户：「思考不要用中文!」）和一句中文说明（接线的 `THINKING_LABELS`）；DashScope 的 Qwen 按思考预算分五档；
+  用户改过的档按模型连接记在桥给的 `RETAIN_ASK_THINKING_FILE` 里（接线的 `thinking_choice.py`），下次默认它；每问答完 `_meta.retainpdf.usage.thinking`
+  报 `{level, thought}`，档位是猜的（自己部署的 Qwen3、通用开关）开了却没思考时多一句 `notice`。
+  档位先问服务商的接口（`thinking_probe.py`：Anthropic、OpenRouter、Ollama，结果缓存），问不到查我们维护的表
+  （翻译底座的 `thinking_models.json`，Qwen3.8 在那里），再是代码里的规则。
 
 - 回答里的互动块（2026-11-26，`openui.py`，只用标准库）：桥给了 `RETAIN_OPENUI_PROMPT` 等（说明文件 `contracts/openui/`、检查器
   `backend/openui-check`、Node）就开：系统提示词在 `ask_system.txt` 后面接 L0（运行时从说明文件读，不复制），工具多 `openui_spec`（按 id 取说明）、
   `openui_check`（起 Node 跑 `@openuidev/lang-core` 的解析器，关掉遥测），没有书也有。额度和读书分开：取说明 2 次、检查 3 次。
   方案见 [互动块后端实现](../../docs/ops/planning/reader-ask/20261126-互动块后端实现.md)。
+
+- 改译（2026-11-27）：用户问译文准不准、要改译时，系统提示词让模型把建议的整段译文单独放进 ```` ```译文 ```` 代码块（只放译文）。
+  前端回答底下的「改这段译文」取最后一个 `译文` / `translation` / `zh` / `zh-CN` 代码块，填进那一块的编辑框，用户自己保存。
+  pi（`backend/pi-agent`）用的是同一个 `ask_system.txt`，不用另改。
 
 包里两个 Python 包：
 

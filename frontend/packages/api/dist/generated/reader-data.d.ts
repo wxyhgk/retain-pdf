@@ -1,4 +1,4 @@
-import type { JobFilesView, LiveTranslationLayout, LiveTranslationPageSnapshot, MarkdownDocumentView, ReaderMetadataView, ReaderRegionsView } from "@retainpdf/contracts/reader-data";
+import type { JobFilesView, LiveTranslationLayout, LiveTranslationPageSnapshot, MarkdownDocumentView, ReaderLayoutPage, ReaderLayoutView, ReaderMetadataView, ReaderRegionsView } from "@retainpdf/contracts/reader-data";
 import { type RequestOptions } from "../request.js";
 /** GET /api/v1/jobs/:job_id/files */
 export declare function listJobFiles(apiPrefix: string | undefined, args: {
@@ -16,6 +16,15 @@ export declare function getReaderRegions(apiPrefix: string | undefined, args: {
 export declare function getReaderMetadata(apiPrefix: string | undefined, args: {
     job_id: string;
 }, options?: RequestOptions): Promise<ReaderMetadataView>;
+/** GET /api/v1/jobs/:job_id/reader/layout */
+export declare function getReaderLayout(apiPrefix: string | undefined, args: {
+    job_id: string;
+}, options?: RequestOptions): Promise<ReaderLayoutView>;
+/** GET /api/v1/jobs/:job_id/reader/layout/pages/:page_idx */
+export declare function getReaderLayoutPage(apiPrefix: string | undefined, args: {
+    job_id: string;
+    page_idx: string;
+}, options?: RequestOptions): Promise<ReaderLayoutPage>;
 /** GET /api/v1/jobs/:job_id/progress/layout */
 export declare function getLiveLayout(apiPrefix: string | undefined, args: {
     job_id: string;

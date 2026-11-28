@@ -6,7 +6,7 @@
 //   原文是扫描版时没有文字层，只有译文栏（我们排的 PDF）里有。
 
 import { readerRegionKindForRegion, type ReaderRegion } from "../data/reader-regions.js";
-import { highlightFindTerm } from "./reader-find.js";
+import { renderMarkedText, type ReaderTextMark } from "./reader-text-marks.js";
 
 export type XrefKind = "figure" | "table" | "equation";
 
@@ -139,25 +139,17 @@ export function findXrefs(text: string, index: XrefIndex): XrefMatch[] {
   return kept;
 }
 
-function escapeAttr(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+/** 一段字里认出的引用 → 文字层要标的几段（贡献表的 textMarks，交叉引用扩展登记）：<mark class="reader-xref" data-xref="figure:2.1">。 */
+export function xrefTextMarks(text: string, index: XrefIndex): ReaderTextMark[] {
+  return findXrefs(text, index).map((match) => ({ start: match.start, end: match.end, className: READER_XREF_CLASS, attrs: { [READER_XREF_ATTR]: match.key } }));
 }
 
 /**
  * 文字层一段字 → HTML：认出的引用包 <mark class="reader-xref" data-xref="figure:2.1">，搜索词照旧包 <mark>（highlightFindTerm）。
+ * 2026-11-27 起书页走通用的 renderMarkedText（几个扩展的标记合在一起），这个留着给只有引用的地方用。
  */
 export function renderXrefText(text: string, index: XrefIndex, findTerm = ""): string {
-  const matches = findXrefs(text, index);
-  if (!matches.length) return highlightFindTerm(text, findTerm);
-  let out = "";
-  let from = 0;
-  for (const match of matches) {
-    out += highlightFindTerm(text.slice(from, match.start), findTerm);
-    // 用 <mark> 不用 <span>：文字层的 span 都是绝对定位（每个 span 是一段字），套一层 span 会错位。
-    out += `<mark class="${READER_XREF_CLASS}" ${READER_XREF_ATTR}="${escapeAttr(match.key)}">${highlightFindTerm(text.slice(match.start, match.end), findTerm)}</mark>`;
-    from = match.end;
-  }
-  return out + highlightFindTerm(text.slice(from), findTerm);
+  return renderMarkedText(text, xrefTextMarks(text, index), findTerm);
 }
 
 const KIND_NAME: Record<XrefKind, string> = { figure: "图", table: "表", equation: "式" };

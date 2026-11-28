@@ -1,0 +1,101 @@
+/* @retainpdf/ask 提问窗的样式：标题栏的下拉（../../src/window/head-menu.tsx）：左边对话菜单、右边「···」。
+ * 由 ../ask.css 按固定顺序引入（2026-11-27 从一整份 ask.css 拆出）。 */
+
+/* 标题栏的下拉（head-menu.tsx，2026-11-27）：左边对话菜单、右边「···」。<details> 做的，下拉铺在标题栏下面（左右各留 8px）。 */
+.ask-head-menu {
+  position: static;
+  flex: none;
+  min-width: 0;
+}
+
+.ask-head-menu > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: var(--ui-radius-sm, 6px);
+  color: color-mix(in srgb, var(--ink) 70%, var(--muted));
+  list-style: none;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-head-menu > summary::-webkit-details-marker { display: none; }
+
+.ask-head-menu > summary:hover,
+.ask-head-menu[open] > summary {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  color: var(--ink);
+}
+
+.ask-head-menu-body {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 4px);
+  right: 8px;
+  left: 8px;
+  display: grid;
+  gap: 2px;
+  max-height: min(420px, 60vh);
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 10px);
+  background: var(--paper);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color, var(--ink)) 18%, transparent);
+  color: var(--ink);
+  font-size: var(--ui-text-sm, 12px);
+  cursor: default;
+}
+
+.ask-head-menu-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-head-menu-item:hover,
+.ask-head-menu-item[data-current="true"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.ask-head-menu-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.ask-head-menu-icon {
+  display: inline-flex;
+  flex: none;
+  margin-top: 1px;
+  color: var(--muted);
+}
+
+.ask-head-menu-text {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 1px;
+}
+
+.ask-head-menu-text > small {
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+/* 一项右边再放的一点东西（以前的对话的条数）。 */
+.ask-head-menu-trailing {
+  flex: none;
+  align-self: center;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
