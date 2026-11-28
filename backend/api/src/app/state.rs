@@ -30,6 +30,8 @@ pub struct AppState {
     pub(crate) backup: Arc<crate::services::platform::BackupService>,
     /// 账号、会话（多用户模式）；单机模式下只用来报告模式。
     pub(crate) accounts: Arc<crate::services::accounts::AccountsService>,
+    /// 阅读页 HTML 页的旧书补排（2026-11-28）：清单接口登记、后台一次补一本（见 `reader_layout_backfill.rs`）。
+    pub(crate) reader_layout_backfill: Arc<std::sync::Mutex<super::reader_layout_backfill::ReaderLayoutBackfill>>,
 }
 
 pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
@@ -97,6 +99,7 @@ pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
         config: config.clone(),
         db,
         download_generation: Arc::default(),
+        reader_layout_backfill: Arc::default(),
         query_execution: Arc::default(),
         canceled_jobs,
         job_slots: Arc::new(Semaphore::new(config.max_running_jobs)),

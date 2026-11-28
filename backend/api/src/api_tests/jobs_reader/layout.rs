@@ -183,9 +183,18 @@ async fn reader_layout_says_why_there_is_none_and_how_to_generate_it() {
         job.request_payload.render.render_mode = "dual".to_string();
     });
     let no_pdf = seed(&state, "layout-no-pdf", false, |_| {});
+    let state_for_backfill = state.clone();
     let app = build_app(state);
 
     let view = |setup: &Setup| format!("/api/v1/jobs/{}/reader/layout", setup.job_id);
+    // 先占掉这本的自动补排（测的是「补不了时」给的按钮）
+    crate::app::reader_layout_backfill::request(&state_for_backfill, &kept_not.job_id, json!({}));
+    tokio::task::spawn_blocking({
+        let state = state_for_backfill.clone();
+        move || crate::app::reader_layout_backfill::run_once(&state)
+    })
+    .await
+    .unwrap();
     let data = read_json(get(&app, &view(&kept_not), None).await).await["data"].clone();
     assert_reader_view(&data, "ReaderLayoutView", "layout");
     assert_eq!(data["available"], false);
@@ -210,7 +219,7 @@ async fn reader_layout_says_why_there_is_none_and_how_to_generate_it() {
     );
 
     let data = read_json(get(&app, &view(&running), None).await).await["data"].clone();
-    assert_eq!(data["reason"], "not_kept");
+    assert_eq!(data["reason"], "job_active");
     assert_eq!(data["generate"], Value::Null, "a running job gets its layout when it finishes");
 
     let data = read_json(get(&app, &view(&dual), None).await).await["data"].clone();
@@ -220,4 +229,43 @@ async fn reader_layout_says_why_there_is_none_and_how_to_generate_it() {
     let data = read_json(get(&app, &view(&no_pdf), None).await).await["data"].clone();
     assert_eq!(data["reason"], "no_translated_pdf");
     assert_eq!(data["generate"], Value::Null);
+}
+
+/// 旧书（引擎排的、版面没留下）打开清单时登记自动补排：回 backfill_queued、不再给按钮；后台一次补一本，
+/// 补不成（这里没有译文可重排，重跑被拒）就跳过，这个进程里不再自动登记，留给按钮。
+#[tokio::test]
+async fn an_old_book_is_queued_for_backfill_once_and_left_to_the_button_when_it_cannot_run() {
+    let state = test_state("reader-layout-backfill");
+    let old = seed(&state, "layout-backfill-old", true, |_| {});
+    let typst = seed(&state, "layout-backfill-typst", true, |job| {
+        job.request_payload.render.engine = "typst".to_string();
+    });
+    let app = build_app(state.clone());
+    let view = |setup: &Setup| format!("/api/v1/jobs/{}/reader/layout", setup.job_id);
+
+    let data = read_json(get(&app, &view(&old), None).await).await["data"].clone();
+    assert_reader_view(&data, "ReaderLayoutView", "layout");
+    assert_eq!(data["reason"], "backfill_queued");
+    assert_eq!(data["generate"], Value::Null);
+    // 再问一次：还排着
+    let data = read_json(get(&app, &view(&old), None).await).await["data"].clone();
+    assert_eq!(data["reason"], "backfill_queued");
+    // Typst 排的书不自动换引擎
+    let data = read_json(get(&app, &view(&typst), None).await).await["data"].clone();
+    assert_eq!(data["reason"], "not_engine_route");
+    assert!(data["generate"].is_object());
+
+    // 后台走一步：这本没有译文可重排，重跑被拒，跳过
+    let started = tokio::task::spawn_blocking({
+        let state = state.clone();
+        move || crate::app::reader_layout_backfill::run_once(&state)
+    })
+    .await
+    .unwrap();
+    assert_eq!(started, None);
+    assert!(!crate::app::reader_layout_backfill::is_queued(&state, &old.job_id));
+    // 这个进程里不再自动登记：回 not_kept 和按钮
+    let data = read_json(get(&app, &view(&old), None).await).await["data"].clone();
+    assert_eq!(data["reason"], "not_kept");
+    assert!(data["generate"].is_object());
 }

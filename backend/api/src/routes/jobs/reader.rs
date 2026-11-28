@@ -6,9 +6,11 @@ use axum::response::{IntoResponse, Response};
 use axum::Json;
 
 use crate::error::AppError;
-use crate::models::api::{ApiResponse, ReaderLayoutAsset, ReaderLayoutView, ReaderMetadataView, ReaderRegionsView};
+use crate::models::api::{ApiResponse, ReaderLayoutAsset, ReaderLayoutView,
+    READER_LAYOUT_BACKFILL_QUEUED, READER_LAYOUT_NOT_KEPT, ReaderMetadataView, ReaderRegionsView};
 use crate::AppState;
 
+use crate::app::reader_layout_backfill;
 use crate::routes::common::{
     build_jobs_download_route_deps, build_jobs_query_route_deps, ok_json, request_base_url, run_job_query,
     run_job_query_once, ApiPath,
@@ -57,6 +59,10 @@ pub async fn get_reader_metadata(
 }
 
 /// rpr_fit 排的版面清单。没有版面不是错误：`available: false`、`reason`，能补排时带 `generate`。
+///
+/// 旧书（引擎排的、版面没留下，`not_kept`）在这里登记自动补排（2026-11-28 用户定），回 `backfill_queued`：
+/// 后台一次补一本、原地重新渲染（`app/reader_layout_backfill.rs`），开跑后是 `job_active`，跑完清单就有版面。
+/// 每本在这个进程里只自动试一次；Typst 排的书不自动换引擎，留给 `generate`。
 pub async fn get_reader_layout(
     State(state): State<AppState>,
     ApiPath(job_id): ApiPath<String>,
@@ -64,10 +70,21 @@ pub async fn get_reader_layout(
 ) -> Result<Json<ApiResponse<ReaderLayoutView>>, AppError> {
     let deps = build_jobs_query_route_deps(&state);
     let base_url = request_base_url(&headers, deps.default_port, &deps.bind_host);
-    let view = run_job_query(&state, format!("reader-layout:{job_id}:{base_url}"), move |jobs| {
-        jobs.reader_layout_view(&base_url, &job_id)
+    let query_job_id = job_id.clone();
+    let mut view = run_job_query(&state, format!("reader-layout:{job_id}:{base_url}"), move |jobs| {
+        jobs.reader_layout_view(&base_url, &query_job_id)
     })
     .await?;
+    if view.reason.as_deref() == Some(READER_LAYOUT_NOT_KEPT) {
+        if let Some(generate) = view.generate.as_ref() {
+            if reader_layout_backfill::request(&state, &job_id, generate.body.clone())
+                || reader_layout_backfill::is_queued(&state, &job_id)
+            {
+                view.reason = Some(READER_LAYOUT_BACKFILL_QUEUED.to_string());
+                view.generate = None;
+            }
+        }
+    }
     Ok(ok_json(view))
 }
 

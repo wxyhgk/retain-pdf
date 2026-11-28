@@ -37,6 +37,10 @@ pub const REASON_NOT_ENGINE_ROUTE: &str = "not_engine_route";
 pub const REASON_UNSUPPORTED_RENDER: &str = "unsupported_render";
 pub const REASON_MERGED_READING: &str = "merged_reading";
 pub const REASON_NOT_KEPT: &str = "not_kept";
+/// 任务在排队或在跑（比如正在补排）：跑完再看。
+pub const REASON_JOB_ACTIVE: &str = "job_active";
+/// 旧书排进了自动补排的队列，还没开跑（后端 `app/reader_layout_backfill.rs`，一次补一本）。
+pub const REASON_BACKFILL_QUEUED: &str = "backfill_queued";
 
 #[derive(Debug, Deserialize)]
 struct Manifest {
@@ -172,6 +176,11 @@ pub(crate) fn load_reader_layout_view(data_root: &Path, job: &JobSnapshot, base_
     if MergedJobId::parse(&job.job_id).is_some() {
         return unavailable(REASON_MERGED_READING, None);
     }
+    let idle = !matches!(job.status, JobStatusKind::Queued | JobStatusKind::Running);
+    if !idle {
+        // 重新渲染期间上一份 PDF 挪开了，版面也正在换：跑完再看
+        return unavailable(REASON_JOB_ACTIVE, None);
+    }
     let has_pdf = stored_path(job, data_root, StoredFile::TranslatedPdf).is_some_and(|path| path.is_file());
     if has_pdf {
         if let Some(manifest) = layout_dir(data_root, job).and_then(|dir| read_manifest(&dir)) {
@@ -225,10 +234,9 @@ pub(crate) fn load_reader_layout_view(data_root: &Path, job: &JobSnapshot, base_
             };
         }
     }
-    let idle = !matches!(job.status, JobStatusKind::Queued | JobStatusKind::Running);
-    // 重新渲染要有译文 PDF 可重排；在跑的任务等它跑完再说（跑完自己就会有）
+    // 重新渲染要有译文 PDF 可重排
     let can_generate = |switch_engine: bool| {
-        (idle && has_pdf && !engine_cannot_render(job)).then(|| generate_request(base_url, job, switch_engine))
+        (has_pdf && !engine_cannot_render(job)).then(|| generate_request(base_url, job, switch_engine))
     };
     if !has_pdf {
         return unavailable(REASON_NO_TRANSLATED_PDF, None);

@@ -2,6 +2,7 @@ mod cleanup;
 pub(crate) mod endpoints;
 mod idempotency;
 mod jobs;
+pub(crate) mod reader_layout_backfill;
 mod request_log;
 mod response_compression;
 mod response_headers;

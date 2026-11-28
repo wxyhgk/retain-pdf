@@ -43,7 +43,7 @@ test("reader data schema publishes the complete independent read surfaces", () =
 
 test("reader layout: the manifest says why there is none and each page is rpr_layout_v1 as the engine wrote it (2026-11-28)", () => {
   assert.deepEqual(definitions.ReaderLayoutView.properties.reason.anyOf[0].enum, [
-    "no_translated_pdf", "not_engine_route", "unsupported_render", "merged_reading", "not_kept",
+    "no_translated_pdf", "not_engine_route", "unsupported_render", "merged_reading", "not_kept", "backfill_queued", "job_active",
   ]);
   assert.equal(definitions.ReaderLayoutView.properties.generate.anyOf[1].type, "null");
   assert.equal(definitions.ReaderLayoutView.properties.background.anyOf[1].type, "null");

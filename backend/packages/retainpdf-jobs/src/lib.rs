@@ -43,7 +43,7 @@ pub use deps::{
 };
 pub use facade::{build_jobs_facade, JobsFacade};
 // 阅读页 HTML 页的版面目录里按名字取的文件（字体子集、公式 SVG）。
-pub use reader::layout::ReaderLayoutAsset;
+pub use reader::layout::{ReaderLayoutAsset, REASON_BACKFILL_QUEUED as READER_LAYOUT_BACKFILL_QUEUED, REASON_JOB_ACTIVE as READER_LAYOUT_JOB_ACTIVE, REASON_NOT_KEPT as READER_LAYOUT_NOT_KEPT};
 // 书的编号（先看上传记录，再查任务表），任务视图和书库视图拼封面地址都用它。
 pub use presentation::book_document_id;
 pub use files::{
