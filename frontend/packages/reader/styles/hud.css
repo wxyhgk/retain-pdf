@@ -34,6 +34,7 @@
 /* 底栏按钮一套（2026-11-28）：高 26，只有图标（16px、线宽 1.75，bar-icon.ts），名字在悬停里；左中右三段一个密度。
  * 页码、缩放百分比这种数字照旧是字。 */
 .reader-bottombar .reader-react-hud-btn,
+.reader-bottombar .reader-finder-toggle,
 .reader-bottombar .reader-react-hud-page-btn {
   display: inline-flex;
   white-space: nowrap;
@@ -54,14 +55,18 @@
   height: 16px;
 }
 
-/* 底栏图标平时灰一点，悬停、按下（加了书签、开着画笔）变墨色。 */
+/* 底栏图标平时灰一点，悬停、按下（加了书签、开着画笔、左栏开着）变墨色。
+ * 搜索（.reader-finder-toggle，2026-11-28 从顶栏左边挪下来）的悬停、按下底色照 finder.css。 */
 .reader-bottombar .reader-react-hud-btn,
+.reader-bottombar .reader-finder-toggle,
 .reader-bottombar .reader-bar-tool {
   color: color-mix(in srgb, var(--ink) 62%, var(--muted));
 }
 
 .reader-bottombar .reader-react-hud-btn:hover,
 .reader-bottombar .reader-react-hud-btn[aria-pressed="true"],
+.reader-bottombar .reader-finder-toggle:hover,
+.reader-bottombar .reader-finder-toggle[aria-pressed="true"],
 .reader-bottombar .reader-bar-tool:hover,
 .reader-bottombar .reader-bar-tool[aria-pressed="true"] {
   color: var(--ink);

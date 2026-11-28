@@ -45,7 +45,11 @@ test("顶栏是实占位的左-中-右三段网格（2026-11-28）：左右同�
   assert.match(block, /height:\s*var\(--reader-topbar-h, 54px\);/);
   assert.doesNotMatch(block, /position:\s*fixed/, "顶栏又浮回书页上了");
   assert.doesNotMatch(CHROME.replace(/\/\*[\s\S]*?\*\//g, ""), /--reader-tray-width/, "又回到给托盘留位");
-  assert.match(APP, /start=\{<>[\s\S]*?<ReaderCloseHome[\s\S]*?<ReaderTocToggle[\s\S]*?<ReaderFinderToggles[\s\S]*?reader-workspace-title/, "左段：返回、目录、搜索、书名");
+  // 2026-11-28 用户：顶栏左边去掉「目录」「搜索」——目录固定用目录卡上的图钉，搜索挪到底栏左边。
+  const start = APP.slice(APP.indexOf("start={<>"), APP.indexOf("</>}", APP.indexOf("start={<>")));
+  assert.match(start, /<ReaderCloseHome[\s\S]*?reader-workspace-title/, "左段：返回、书名");
+  assert.doesNotMatch(start, /ReaderTocToggle|ReaderFinderToggles/, "顶栏左段又有目录、搜索了");
+  assert.match(APP, /startSlot=\{<ReaderFinderToggles open=\{finder\} onToggle=\{finderState\.toggleSidebar\} issueCount=\{issueNav\.issues\.length\} \/>\}/, "搜索在底栏左边");
   // 右段空着（2026-11-28：提问、Markdown、下载挪去书页区右缘的竖条），留着让页签在正中。
   assert.doesNotMatch(APP, /\bend=\{/, "顶栏右段又放东西了");
 });

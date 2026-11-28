@@ -1,4 +1,4 @@
-/* 左栏（ReaderFinder.tsx：搜索、书签、待改）：开关是顶栏左段的「搜索」。2026-11-28 照原型 reader-prototype.html：
+/* 左栏（ReaderFinder.tsx：搜索、书签、待改）：开关是底栏左边的「搜索」（2026-11-28 从顶栏左段挪下来）。2026-11-28 照原型 reader-prototype.html：
  * 屏够宽时是中间工作区横排里实占的一栏（248px，data-pinned）；窄屏浮在中间工作区左上角，点卡外、按 Esc 收起。
  * 目录挪去书页区左缘（toc-minimap.css），这里不再有目录树、「按 PDF 目录 / 按标题」切换和图钉。 */
 
@@ -7,7 +7,7 @@
   gap: 2px;
 }
 
-/* 顶栏左段的左栏开关：和顶栏别的按钮一套（chrome.css 的「顶栏按钮一套」：高 32、同一种圆角、透明底）。 */
+/* 左栏开关（底栏左边的「搜索」）：高、颜色照底栏（hud.css 的「底栏按钮一套」），圆角、悬停和按下的底色在这里。 */
 .reader-finder-toggle {
   display: inline-flex;
   align-items: center;

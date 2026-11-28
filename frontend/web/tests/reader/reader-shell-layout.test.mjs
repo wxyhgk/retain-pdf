@@ -113,7 +113,8 @@ test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待改个�
     assert.equal(declaration(["chrome.css"], selector, "box-shadow"), null, `${selector} 还有阴影`);
     assert.equal(declaration(["chrome.css"], selector, "border"), "0");
   }
-  assert.equal(declaration(["finder.css"], ".reader-finder-toggle", "height"), "32px");
+  // 左栏开关（搜索）2026-11-28 挪到底栏左边：高照底栏 26px，圆角照顶栏按钮。
+  assert.equal(declaration(["hud.css"], ".reader-bottombar .reader-finder-toggle", "height"), "26px");
   assert.equal(declaration(["toolball.css"], ".reader-bar-tool", "height"), "32px");
   const radius = declaration(["chrome.css"], ".reader-close-home-btn", "border-radius");
   assert.equal(declaration(["finder.css"], ".reader-finder-toggle", "border-radius"), radius);
@@ -128,13 +129,12 @@ test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待改个�
   assert.equal(declaration(["hud.css"], ".reader-bottombar .reader-react-hud-btn", "height"), "26px");
 });
 
-test("顶栏、底栏只用图标（2026-11-28）：一个尺寸一种线宽（bar-icon.ts）、名字在 aria-label 里；页签 原文 / 对照 / 译文 是图标；目录按钮；提问 / Markdown / 下载在右缘竖条；对比版本在「对照」后面；底栏 书签、收藏、深色、缩放、画笔（笔色小点）、截图、帮助；目录不切书页左边", async () => {
+test("顶栏、底栏只用图标（2026-11-28）：一个尺寸一种线宽（bar-icon.ts）、名字在 aria-label 里；页签 原文 / 对照 / 译文 是图标；提问 / Markdown / 下载在右缘竖条；对比版本在「对照」后面；底栏 搜索、书签、收藏、深色、缩放、画笔（笔色小点）、截图、帮助；目录不切书页左边", async () => {
   const { BAR_ICON } = await import("../../../packages/reader/src/components/react-pdf/bar-icon.ts");
   assert.deepEqual(BAR_ICON, { size: 16, strokeWidth: 1.75 });
   const files = {
     tabs: "src/components/react-pdf/ReaderWorkspaceTabs.tsx",
     home: "src/components/react-pdf/ReaderCloseHome.tsx",
-    toc: "src/components/react-pdf/ReaderTocMinimap.tsx",
     finder: "src/components/react-pdf/ReaderFinder.tsx",
     panels: "src/components/react-pdf/ReaderAssistantDock.tsx",
     tools: "src/components/react-pdf/ReaderBarTools.tsx",

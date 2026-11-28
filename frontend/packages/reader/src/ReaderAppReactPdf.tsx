@@ -25,10 +25,8 @@ import {
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderBarTools } from "./components/react-pdf/ReaderBarTools.js";
 import { ReaderFinderToggles } from "./components/react-pdf/ReaderFinder.js";
-import { ReaderTocMinimap, ReaderTocToggle } from "./components/react-pdf/ReaderTocMinimap.js";
+import { ReaderTocMinimap } from "./components/react-pdf/ReaderTocMinimap.js";
 import { ReaderSideRail } from "./components/react-pdf/ReaderSideRail.js";
-import { readerOutline } from "./shared/content/reader-find.js";
-import { readerToc } from "./shared/content/reader-toc.js";
 import { useReaderIssueNav } from "./hooks/use-reader-issues.js";
 import { ReaderPageMenu, pageMenuFromContextMenu, type ReaderPageMenuState } from "./components/react-pdf/ReaderPageMenu.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
@@ -73,7 +71,7 @@ export function ReaderAppReactPdf() {
   const finderState = useReaderFinder(c);
   const { finder, findTerm } = finderState;
   const leftDocked = Boolean(finder) && finderState.pinned;
-  // 目录固定了：屏够宽（和左栏同一条线，finderState.pinned）时是中间工作区最左边实占的一栏，窄屏只是卡片一直开着。
+  // 目录固定了（目录卡顶上的图钉；2026-11-28 顶栏的「目录」按钮去掉了）：屏够宽（和左栏同一条线，finderState.pinned）时是中间工作区最左边实占的一栏，窄屏只是卡片一直开着。
   // 只在这一次打开里记着（2026-11-28 左栏也是一进来收着）。
   const [tocPinned, setTocPinned] = useState(false);
   const tocDocked = tocPinned && finderState.pinned;
@@ -140,8 +138,6 @@ export function ReaderAppReactPdf() {
   const jumpToBlockIn = useCallback((itemId: string, pane?: "source" | "translated") => c.jumpToAnchor({ block_id: itemId }, pane), [c.jumpToAnchor]);
   // PDF 自带的书签、各栏读好的 PDF 和放大查看（app/use-reader-pdf-assets）。
   const { bookmarks, onPdfOutline, onPdfDocument, zoomItem, setZoomItem, zoomBlock, closeZoom, zoomDocuments } = useReaderPdfAssets(c);
-  // 目录：卡片顶上的图钉、顶栏左边的「目录」按钮固定 / 收起它（没固定时悬停照样出）。没有目录时按钮灰掉。
-  const hasToc = useMemo(() => readerToc(bookmarks, readerOutline(session.regions)).length > 0, [bookmarks, session.regions]);
   // 改译文（app/use-reader-block-editing）。
   const { blockEdit, editBlock, revisedBlocks } = useReaderBlockEditing(c, visiblePdfMode, regionHover);
   // 右键书页的菜单：开在哪、第几页（菜单项和下面那几块是扩展登记的）。
@@ -246,7 +242,7 @@ export function ReaderAppReactPdf() {
     assistantOpen ? "is-assistant-open" : "",
     finder ? "is-finder-open" : "",
     leftDocked ? "is-sidebar-pinned" : "",
-    tocDocked && hasToc ? "is-toc-docked" : "",
+    tocDocked ? "is-toc-docked" : "",
     paneComposition.overlayOnSource ? "is-live-translation-overlay" : "",
   ].filter(Boolean).join(" ");
 
@@ -293,8 +289,6 @@ export function ReaderAppReactPdf() {
             } : null}
             start={<>
               <ReaderCloseHome onBeforeClose={session.prepareClose} />
-              <ReaderTocToggle pinned={tocPinned && hasToc} available={hasToc} onToggle={() => setTocPinned((pinned) => !pinned)} />
-              <ReaderFinderToggles open={finder} onToggle={finderState.toggleSidebar} issueCount={issueNav.issues.length} />
               {session.title ? <span className="reader-workspace-title" title={session.title}>{session.title}</span> : null}
             </>}
           />
@@ -328,6 +322,7 @@ export function ReaderAppReactPdf() {
             mode={visiblePdfMode}
             modeControls={null}
             bookmarkScope={c.viewStateKey}
+            startSlot={<ReaderFinderToggles open={finder} onToggle={finderState.toggleSidebar} issueCount={issueNav.issues.length} />}
             leftSlot={<ReaderPendingEditsPill edit={blockEdit} />}
             toolsSlot={<ReaderBarTools place="bottom" />}
           />

@@ -1,38 +1,21 @@
 // 书页区左缘的目录（2026-11-28 照原型 reader-prototype.html「适配百页大书的左侧 Minimap 目录」）：
 // 平时只是一排极淡的短横线（章长、节短，当前节墨色、当前章深灰）；鼠标移上去（或键盘 Tab 到）换成目录卡，
 // 当前章展开、别的章收着（▸ / ▾），页码只在悬停和当前那一行出；条目多（> 15）时卡片顶上有过滤框，光标在框里时卡片不收。
-// 固定（2026-11-28 用户：「目录的弹窗增加一个 pin 按钮，这样就能左侧固定了」）：卡片顶上的图钉、或顶栏左边的「目录」按钮（ReaderTocToggle）。
+// 固定（2026-11-28 用户：「目录的弹窗增加一个 pin 按钮，这样就能左侧固定了」）：卡片顶上的图钉（顶栏的「目录」按钮同一天去掉了）。
 // 屏够宽（≥ 900，和左栏同一条线）时固定成中间工作区最左边实占的一栏（docked，书页往右让），短横线不再画；
 // 窄屏固定只是卡片一直开着（浮在书页上），按 Esc 收起。再点图钉或顶栏按钮取消。
 // 以前目录是左栏的一个页签（11-27），要先点开左栏再切页签，还占着左边 300px。
 // 数据（章 + 节、眼下在哪、画哪几根）在 shared/content/reader-toc.ts。
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactElement } from "react";
-import { ChevronDown, ChevronRight, ListTree, Pin, PinOff, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, Pin, PinOff, Search, X } from "lucide-react";
 import { Button, Input } from "@retainpdf/ui";
 
 import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
 import { readerOutline } from "../../shared/content/reader-find.js";
 import { filterToc, readerToc, tocBars, tocCurrent, tocSize, TOC_FILTER_MIN, type ReaderTocNode } from "../../shared/content/reader-toc.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
-import { BAR_ICON } from "./bar-icon.js";
 
 const NO_REGIONS: never[] = [];
-
-/** 顶栏左边的「目录」按钮：固定 / 收起目录（和卡片顶上的图钉同一个开关）。书里没有目录（没书签、也没认出标题）时灰掉。 */
-export function ReaderTocToggle({ pinned, available, onToggle }: { pinned: boolean; available: boolean; onToggle: () => void }): ReactElement {
-  return (
-    <Button
-      className="reader-toc-toggle"
-      aria-label="目录"
-      aria-pressed={pinned}
-      disabled={!available}
-      title={available ? (pinned ? "收起目录" : "把目录固定在左边") : "这本书没有目录"}
-      onClick={onToggle}
-    >
-      <ListTree {...BAR_ICON} aria-hidden />
-    </Button>
-  );
-}
 
 export function ReaderTocMinimap({ bookmarks, onJumpPage, onJumpBlock, pinned = false, docked = false, onPinChange }: {
   /** PDF 自带的书签（有就按它列）。 */
@@ -40,7 +23,7 @@ export function ReaderTocMinimap({ bookmarks, onJumpPage, onJumpBlock, pinned = 
   onJumpPage: (page: number) => void;
   /** 按标题来的目录跳到那一块。 */
   onJumpBlock: (itemId: string) => void;
-  /** 固定了（图钉、顶栏「目录」按钮）：卡片一直开着。 */
+  /** 固定了（卡片顶上的图钉）：卡片一直开着。 */
   pinned?: boolean;
   /** 固定成实占的一栏（屏够宽时阅读页把它摆进中间工作区最左边）：不画短横线，只画卡片的内容。 */
   docked?: boolean;
