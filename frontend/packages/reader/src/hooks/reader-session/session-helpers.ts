@@ -47,12 +47,19 @@ export function isJobIdLikeTitle(title: string, jobId = ""): boolean {
   return false;
 }
 
+/**
+ * 顶栏书名。后端任务详情（GET /jobs/:id）顶层没有书名，书名在 book_summary.title（书库里显示的那个，可能是自动认出的论文标题；
+ * 没有时后端填任务号，由 isJobIdLikeTitle 滤掉）。2026-11-28 以前漏读它：只有带上传记录的任务才有 source_file_name，
+ * 重排版、续跑出来的任务顶栏没有书名，左边一片空。
+ */
 export function pickDisplayTitle(jobPayload: Record<string, unknown> | null | undefined, jobId: string): string {
+  const book = (jobPayload as { book_summary?: { title?: string; source_file_name?: string } } | null)?.book_summary;
   const candidates = [
     jobPayload?.title,
     jobPayload?.display_name,
+    book?.title,
     jobPayload?.source_file_name,
-    (jobPayload as { book_summary?: { source_file_name?: string } } | null)?.book_summary?.source_file_name,
+    book?.source_file_name,
   ];
   for (const raw of candidates) {
     const text = `${raw || ""}`.trim();

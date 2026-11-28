@@ -72,13 +72,15 @@ function declarationsFor(css, selector) {
   return found.join(";");
 }
 
-test("≤899px 面板铺满全屏时，底部 HUD 隐藏（不再压在 Markdown 工具条上）", () => {
+test("≤899px 面板铺满中间工作区（盖在书页上），底栏照旧在下面一行、不压面板", () => {
   const narrow = mediaBodies(ASSISTANT_DOCK_CSS, "@media (max-width: 899px)");
   assert.ok(narrow, "assistant-dock.css 里没有 ≤899px 的媒体查询了 —— 前提变了，重看这条测试");
-  // 前提：面板确实是铺满全宽、PDF 栏确实被藏掉的。
-  assert.match(declarationsFor(narrow, ".reader-react-root.is-assistant-open .reader-react-scroll-shell"), /visibility\s*:\s*hidden/);
-  const hud = declarationsFor(narrow, ".reader-react-root.is-assistant-open .reader-react-hud");
-  assert.match(hud, /display\s*:\s*none/, "面板全屏覆盖时 HUD 仍然显示，会盖住面板底部的视图切换和搜索框");
+  // 2026-11-28 三行壳层：停靠栏在中间工作区里铺满（absolute inset 0），底栏是工作区下面实占的一行，碰不到面板底部的搜索条。
+  // 以前底栏浮在书页上，面板全屏时要把它藏掉，不然压着面板底部的视图切换和搜索框。
+  const dock = declarationsFor(narrow, ".reader-dock");
+  assert.match(dock, /position\s*:\s*absolute/);
+  assert.match(dock, /inset\s*:\s*0/);
+  assert.doesNotMatch(ASSISTANT_DOCK_CSS, /reader-react-hud|reader-bottombar[^{]*\{[^}]*display\s*:\s*none/, "面板开着时不该再藏底栏");
 });
 
 // ---------------------------------------------------------------- 默认模式

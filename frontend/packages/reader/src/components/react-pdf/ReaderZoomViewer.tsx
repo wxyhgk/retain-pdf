@@ -16,6 +16,8 @@ import {
   type ReaderRegion,
 } from "../../shared/data/reader-regions.js";
 import { RegionCanvas, padRegion, type RegionFraction, type RegionPdfDocument } from "../../pdf/RegionCanvas.js";
+import { LayoutPageHost } from "../../pdf/LayoutPageLayer.js";
+import type { TranslatedLayout } from "../../hooks/reader-session/translated-layout.js";
 
 export type ZoomPane = "source" | "translated";
 
@@ -86,6 +88,7 @@ export function ReaderZoomViewer({
   metadata,
   documents,
   panes,
+  translatedLayout = null,
   onNavigate,
   onClose,
 }: {
@@ -95,6 +98,8 @@ export function ReaderZoomViewer({
   documents: ReaderZoomDocuments;
   /** 画哪几栏（对照时两栏，否则当前那一栏）。 */
   panes: readonly ZoomPane[];
+  /** 译文栏用 HTML 画时（没有译文 PDF）：译文那一块用原文页裁出来、再盖上同一块版面。 */
+  translatedLayout?: TranslatedLayout | null;
   onNavigate: (itemId: string) => void;
   onClose: () => void;
 }): ReactElement | null {
@@ -168,7 +173,11 @@ export function ReaderZoomViewer({
   if (!region) return null;
   const kind = readerRegionKindForRegion(region);
   const shown = panes
-    .map((pane) => ({ pane, pdf: documents[pane] ?? null, where: zoomRegionIn(region, metadata, pane) }))
+    .map((pane) => ({
+      pane,
+      pdf: (pane === "translated" && translatedLayout ? documents.source : documents[pane]) ?? null,
+      where: zoomRegionIn(region, metadata, pane),
+    }))
     .filter((entry): entry is { pane: ZoomPane; pdf: RegionPdfDocument; where: ZoomPlace } => Boolean(entry.pdf && entry.where));
   const gap = 16;
   // 框最高 min(880, 90vh)，减去顶栏、留白、「原文 / 译文」那行字。
@@ -232,14 +241,18 @@ export function ReaderZoomViewer({
               {shown.map(({ pane, pdf, where }) => (
                 <figure key={pane} className="reader-zoom-column">
                   {shown.length > 1 ? <figcaption>{pane === "source" ? "原文" : "译文"}</figcaption> : null}
-                  <RegionCanvas
-                    className="reader-zoom-canvas"
-                    pdf={pdf}
-                    page={where.page}
-                    region={where.fraction}
-                    cssWidth={columnWidth * zoom}
-                    label={`${pane === "source" ? "原文" : "译文"}第 ${where.page} 页`}
-                  />
+                  {pane === "translated" && translatedLayout ? (
+                    <ZoomLayoutBlock layout={translatedLayout} pdf={pdf} where={where} cssWidth={columnWidth * zoom} />
+                  ) : (
+                    <RegionCanvas
+                      className="reader-zoom-canvas"
+                      pdf={pdf}
+                      page={where.page}
+                      region={where.fraction}
+                      cssWidth={columnWidth * zoom}
+                      label={`${pane === "source" ? "原文" : "译文"}第 ${where.page} 页`}
+                    />
+                  )}
                 </figure>
               ))}
             </div>
@@ -248,6 +261,41 @@ export function ReaderZoomViewer({
           )}
         </div>
       </section>
+    </div>
+  );
+}
+
+/**
+ * 译文栏用 HTML 画时放大的那一块：原文页裁出这一块（RegionCanvas），整页的版面按同样的比例放大、挪到这一块的位置盖上去，
+ * 外面裁掉。版面里没有这一页（整页图、不翻的参考文献）就只有原文页，和译文栏一样。
+ */
+function ZoomLayoutBlock({ layout, pdf, where, cssWidth }: {
+  layout: TranslatedLayout;
+  pdf: RegionPdfDocument;
+  where: ZoomPlace;
+  cssWidth: number;
+}): ReactElement {
+  const cssHeight = cssWidth * where.aspect;
+  const pageWidth = cssWidth / Math.max(1e-6, where.fraction.width);
+  const pageHeight = cssHeight / Math.max(1e-6, where.fraction.height);
+  return (
+    <div className="reader-zoom-layout" style={{ width: cssWidth, height: cssHeight }}>
+      <RegionCanvas className="reader-zoom-canvas" pdf={pdf} page={where.page} region={where.fraction} cssWidth={cssWidth} label={`译文第 ${where.page} 页`} />
+      <div
+        className="reader-zoom-layout-page"
+        style={{ left: -where.fraction.left * pageWidth, top: -where.fraction.top * pageHeight, width: pageWidth, height: pageHeight }}
+      >
+        <LayoutPageHost
+          source={layout.source}
+          page={where.page}
+          width={pageWidth}
+          height={pageHeight}
+          fontFamily={layout.fontFamily}
+          arrivedAt={0}
+          backgroundPdf={null}
+          coverWhileLoading
+        />
+      </div>
     </div>
   );
 }

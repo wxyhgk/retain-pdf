@@ -18,7 +18,7 @@ agent 包（``retainpdf-translation-agent``）只认 Anthropic 的请求、回�
   token 换成 Anthropic 的字段名交回，agent 自己的计数、编辑部事件照常；
 - 错误：Key 被拒（401/403）→ ``AuthFailed``，402 和业务码说余额、额度用完的 429 等 → ``QuotaExhausted``（第一次就停，
   不当限流退避），模型不可用（404、各家的码）→ ``ModelUnavailable``，地区不支持 → ``RegionUnsupported``，
-  一直限流、5xx、网络断 → ``RateLimited``，
+  一直限流、5xx → ``RateLimited``，网络断、连不上、证书验证不过 → ``NetworkFailed``（2026-11-27 以前也报成限流），
   都是 agent 的 ``StopRun``：保存进度、阶段失败，修好重试从断点接着翻。别的错误原样抛。
 
 回答不完整（2026-11-23）：共用请求层看 ``finish_reason`` / Responses ``status``，被长度截断、被内容过滤、服务商中途停了时
@@ -46,6 +46,7 @@ from retainpdf_translation.llm.shared.provider_runtime import request_chat_conte
 from retainpdf_translation_agent import AuthFailed
 from retainpdf_translation_agent import ModelUnavailable
 from retainpdf_translation_agent import QuotaExhausted
+from retainpdf_translation_agent import NetworkFailed
 from retainpdf_translation_agent import RateLimited
 from retainpdf_translation_agent import RegionUnsupported
 
@@ -168,6 +169,9 @@ def _stop_error(error: BaseException) -> BaseException | None:
         return RegionUnsupported(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
     if upstream_resilience.is_auth_error(error):
         return AuthFailed(f"model API HTTP {status}: {upstream_resilience.describe_upstream_error(error)}")
+    if status is None and isinstance(error, (requests.ConnectionError, requests.Timeout)):
+        # 网络层的错（含证书验证失败 requests.exceptions.SSLError）：2026-11-27 起不再报成限流
+        return NetworkFailed(f"model API unreachable: {upstream_resilience.describe_upstream_error(error)}")
     if status in {429, 500, 502, 503, 504, 529} or isinstance(error, (requests.ConnectionError, requests.Timeout)):
         return RateLimited(f"model API still failing: {upstream_resilience.describe_upstream_error(error)}")
     return None

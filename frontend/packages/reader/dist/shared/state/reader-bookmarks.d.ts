@@ -7,6 +7,8 @@ export type ReaderBookmark = {
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
 /** 按页码从小到大，同一页只留一个。 */
 export declare function readReaderBookmarks(scope: string, storage?: StorageLike | null): ReaderBookmark[];
+/** 这本书（scope）的书签变了就调 listener；返回取消订阅。 */
+export declare function subscribeReaderBookmarks(scope: string, listener: () => void): () => void;
 /** 这一页有书签就去掉，没有就加上；返回新的列表。 */
 export declare function toggleReaderBookmark(scope: string, page: number, label?: string, { storage, now }?: {
     storage?: StorageLike | null;

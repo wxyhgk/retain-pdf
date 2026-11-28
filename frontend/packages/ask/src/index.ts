@@ -5,10 +5,13 @@
 
 export type {
   AskAgent,
+  AskAnswerAction,
+  AskAttachTool,
   AskAgentCapabilities,
   AskConfigChoice,
   AskConfigOption,
   AskContext,
+  AskContextOffer,
   AskHandlers,
   AskMemoryNotice,
   AskMessage,

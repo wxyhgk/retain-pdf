@@ -5,7 +5,7 @@ import { JSDOM } from "jsdom";
 
 import { appendPoint, onPane, strokesHitByEraser } from "../../../packages/reader/src/hooks/use-reader-ink.ts";
 import { inkPath } from "../../../packages/reader/src/pdf/InkLayer.tsx";
-import { inkMenuFromContextMenu } from "../../../packages/reader/src/components/react-pdf/ReaderInkPalette.tsx";
+import { pageMenuFromContextMenu } from "../../../packages/reader/src/components/react-pdf/ReaderPageMenu.tsx";
 
 const stroke = (id, page, pane, points) => ({ id, page, pane, tool: "pen", color: "danger", width: 0.0035, points });
 
@@ -36,14 +36,14 @@ test("拖动时太密的点丢掉；路径按页的像素宽高放大，单个�
   assert.equal(inkPath([], 100, 100), "");
 });
 
-test("右键：书页区里出画笔菜单（带页码）；Shift+右键、输入框里、书页外照旧是浏览器的菜单", () => {
+test("右键：书页区里出书页菜单（带页码，画笔那一排是画笔扩展放进去的）；Shift+右键、输入框里、书页外照旧是浏览器的菜单", () => {
   const dom = new JSDOM(`<body>
     <div class="reader-react-scroll-shell"><div data-reader-page="31"><span id="text">字</span></div><input id="box"></div>
     <header id="top">顶栏</header></body>`);
   const doc = dom.window.document;
   globalThis.Element = dom.window.Element;
   try {
-    const at = (id, shiftKey = false) => inkMenuFromContextMenu({ shiftKey, target: doc.getElementById(id), clientX: 10, clientY: 20 });
+    const at = (id, shiftKey = false) => pageMenuFromContextMenu({ shiftKey, target: doc.getElementById(id), clientX: 10, clientY: 20 });
     assert.deepEqual(at("text"), { x: 10, y: 20, page: 31 });
     assert.equal(at("text", true), null, "Shift+右键给浏览器");
     assert.equal(at("box"), null, "输入框里给浏览器");

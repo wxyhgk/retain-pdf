@@ -25,6 +25,8 @@ const read = (relative) =>
 const DOWNLOADS = read("../../../packages/reader/src/components/react-pdf/ReaderDownloadActions.tsx");
 const CHROME = read("../../../packages/reader/styles/chrome.css");
 const APP = read("../../../packages/reader/src/ReaderAppReactPdf.tsx");
+// 2026-11-27 起叠层的两个开关在这里算（App 只用顶栏 pill 那个）。
+const OVERLAY = read("../../../packages/reader/src/app/use-live-translation-overlay.tsx");
 
 test("下载收成一颗「下载」按钮，和中间的模式页签分得开", () => {
   // 以前三路摊开、和模式页签同一套图标 + 都写着「对照」，靠一个 ⤓ 组前缀区分；
@@ -35,19 +37,32 @@ test("下载收成一颗「下载」按钮，和中间的模式页签分得开",
   assert.doesNotMatch(DOWNLOADS, /reader-download-actions-prefix/, "组前缀那套已经不需要了");
 });
 
-test("顶栏两边对称留位：模式页签相对视口居中，又不会滑到托盘底下", () => {
-  // 以前左 72px、右 300px，页签相对「除去托盘的那块」居中，1440px 下往左偏 114px。
+test("顶栏浮在书页区顶上的左-中-右三段网格（2026-11-28 下午）：左右同宽，模式页签在书页区正中；不 fixed、不给托盘留位", () => {
+  // 11-28 上午是实占一行 54px 的三段网格；更早顶栏 fixed 盖在整个窗口上，两头的按钮各自 fixed 浮着，靠 --reader-tray-width 两边对称留位。
+  // 现在画在 .reader-stage 里、absolute，只盖书页区，左右两边固定的栏不被盖、页签不用算偏移。
   const bar = CHROME.slice(CHROME.indexOf(".reader-workspace-bar {"));
   const block = bar.slice(0, bar.indexOf("\n}\n"));
-  assert.match(block, /padding-inline:\s*var\(--reader-tray-width, 200px\);/, "顶栏不是两边对称留位");
-  assert.doesNotMatch(CHROME, /padding-inline:\s*(?:72px|12px) var\(--reader-tray-width/, "又回到只给右边留位");
+  assert.match(block, /grid-template-columns:\s*minmax\(0, 1fr\) auto minmax\(0, 1fr\);/, "顶栏不是左右同宽的三段");
+  assert.match(block, /position:\s*absolute;/);
+  assert.doesNotMatch(block, /position:\s*fixed/, "顶栏又盖到整个窗口上了");
+  const stage = APP.slice(APP.indexOf('<div className="reader-stage">'), APP.indexOf("<ReaderCompareGrid"));
+  assert.match(stage, /<ReaderWorkspaceTabs/, "顶栏不在书页区里");
+  assert.doesNotMatch(CHROME.replace(/\/\*[\s\S]*?\*\//g, ""), /--reader-tray-width/, "又回到给托盘留位");
+  // 2026-11-28 用户：顶栏左边去掉「目录」「搜索」——目录固定用目录卡上的图钉，搜索挪到底栏左边。
+  // 2026-11-28 下午用户：「左侧的返回按钮不要给书籍的标题」——左上那颗胶囊只有返回。
+  assert.match(APP, /start=\{<ReaderCloseHome onBeforeClose=\{session\.prepareClose\} \/>\}/, "左上只有返回");
+  assert.doesNotMatch(APP, /reader-workspace-title/, "左上又画了书名");
+  assert.match(APP, /startSlot=\{<ReaderFinderToggles open=\{finder\} onToggle=\{finderState\.toggleSidebar\} issueCount=\{issueNav\.issues\.length\} \/>\}/, "搜索在底栏左边");
+  // 右段空着（2026-11-28：提问、Markdown、下载挪去书页区右缘的竖条），留着让页签在正中。
+  assert.doesNotMatch(APP, /\bend=\{/, "顶栏右段又放东西了");
 });
 
-test("窄屏只收「下载」两个字，图标留着", () => {
-  const at720 = CHROME.slice(CHROME.indexOf("@media (max-width: 720px) {\n  .reader-react-root"));
-  const block = at720.slice(0, at720.indexOf("\n}\n\n"));
-  assert.match(block, /\.reader-download-trigger-label/, "断点里没在收文字");
-  assert.doesNotMatch(block, /display:\s*none/, "窄屏用 display:none 藏了整块");
+test("「下载」两个字一直收着（只给读屏），图标留着；不用 display:none 藏整块", () => {
+  // 2026-11-28 起两条栏只用图标，「下载」不分宽窄都只是一个图标。
+  const rule = CHROME.slice(CHROME.indexOf(".reader-download-trigger-label,"));
+  const block = rule.slice(0, rule.indexOf("}"));
+  assert.match(block, /clip:\s*rect\(0, 0, 0, 0\)/, "字没收成读屏才读得到");
+  assert.doesNotMatch(block, /display:\s*none/, "用 display:none 藏了整块");
 });
 
 test("每一路仍然有自己的图标 —— 窄屏只剩图标时要分得出来", () => {
@@ -108,10 +123,12 @@ test("叠层画得出来，就一定至少有一个开关够得着", () => {
 });
 
 test("两个开关都真的接在这个函数上 —— 否则上面那条守的是没人调的代码", () => {
-  assert.match(APP, /resolveLiveTranslationToggles\(/, "组件没调这个函数");
+  assert.match(OVERLAY, /resolveLiveTranslationToggles\(/, "组件没调这个函数");
   assert.match(APP, /liveToggles\.topBarPill/, "顶栏 pill 没走 liveToggles");
-  assert.match(APP, /liveToggles\.sourcePaneToggle/, "源文栏开关没走 liveToggles");
+  assert.match(OVERLAY, /liveToggles\.sourcePaneToggle/, "源文栏开关没走 liveToggles");
   // 旧的自己拼条件的写法不能留着，留着就是两套真源。
-  assert.doesNotMatch(APP, /!hasOverlayContent \|\| !paneComposition\.showSource/,
-    "源文栏开关还在自己拼条件");
+  for (const source of [APP, OVERLAY]) {
+    assert.doesNotMatch(source, /!hasOverlayContent \|\| !paneComposition\.showSource/,
+      "源文栏开关还在自己拼条件");
+  }
 });

@@ -1,8 +1,9 @@
 import { type ReactNode } from "react";
 import type { PdfOutlineNode } from "../../pdf/pdf-outline.js";
 import type { RegionPdfDocument } from "../../pdf/RegionCanvas.js";
-import type { XrefIndex } from "../../shared/content/reader-xrefs.js";
-import type { AskMark } from "../../ask/ReaderAskMarks.js";
+import type { ReaderTextMark } from "../../shared/content/reader-text-marks.js";
+import type { ReaderPageLayer } from "../../extensions/registry.js";
+import type { ReaderComparedDocument } from "../../extensions/types.js";
 import type { ReaderPaneModel } from "../../hooks/use-reader-pane-model.js";
 import type { ReaderDownloadContext } from "../../hooks/use-reader-session.js";
 import type { ReaderMetadata, ReaderRegion } from "../../shared/data/reader-regions.js";
@@ -11,7 +12,7 @@ import type { ProtectedPdfFile } from "../../pdf/useProtectedPdfFile.js";
 import type { PageRowHeights } from "../../pdf/usePageRowSync.js";
 import type { ReaderAssistantPanel } from "./reader-assistant-types.js";
 import type { ReaderBlockEdit } from "../../hooks/use-reader-block-edit.js";
-import type { ReaderInk } from "../../hooks/use-reader-ink.js";
+import type { TranslatedLayout } from "../../hooks/reader-session/translated-layout.js";
 export type ReaderContextValue = {
     bindShell: (node: HTMLDivElement | null) => void;
     shellEl: HTMLElement | null;
@@ -42,11 +43,10 @@ export type ReaderContextValue = {
     onPdfDocument?: (pdf: RegionPdfDocument, pane: "source" | "translated") => void;
     /** 放大查看这一块（悬停框的「放大」、双击图片）。 */
     zoomBlock?: (itemId: string) => void;
-    /** 这次打开里问过的地方（书页左边白边画「?」），点了重新打开那次问答。 */
-    askMarks?: readonly AskMark[];
-    onAskMark?: (mark: AskMark) => void;
-    /** 书里的引用（「图 2.1」「式 (3.21)」）认得出去处的那些；文字层把它们包成可悬停、可点的 span。 */
-    xrefIndex?: XrefIndex;
+    /** 扩展登记的每页一层（贡献表的 pageLayer，例如提问的「?」），按扩展顺序叠在书页上。 */
+    pageLayers?: readonly ReaderPageLayer[];
+    /** 扩展给的文字层标记（贡献表的 textMarks 合在一起，例如交叉引用）：书页文字层把这些段包成 <mark>。没人给是 null。 */
+    textMarks?: ((text: string) => readonly ReaderTextMark[]) | null;
     /** 译文栏悬停框的「改」：这一段变成编辑框。不能改时不给。 */
     editBlock?: (itemId: string) => void;
     /** 改译文的状态：正在改哪一段（译文栏在那里画编辑框）、写回了还没排进 PDF 的译文（先盖在 PDF 上）。 */
@@ -55,22 +55,15 @@ export type ReaderContextValue = {
     editShowsSource?: boolean;
     /** 左栏搜索的词（防抖后）：书页文字层把命中标出来（PdfPageSlot）。空串不标。 */
     findTerm?: string;
-    /** 画笔：笔迹和当前工具（hooks/use-reader-ink.ts）；每页的 InkLayer 画出来、画笔模式下接住拖动。 */
-    ink?: ReaderInk;
+    /** 有扩展占着书页上的指针（画笔模式，贡献表的 takesPointer）：书页不出悬停框、双击不放大。 */
+    pointerTaken?: boolean;
     /** 「对比版本」：左栏换成这一份译文（地址、块；块的 source 已换成那一份的译文）。null = 左栏照常是原文。 */
-    compareVersion?: {
-        url: string;
-        regions: ReaderRegion[];
-        /** 两栏书页上的水印：左边对比的那份、右边正在读的那份。 */
-        left: {
-            name: string;
-            createdAt: string;
-        };
-        right: {
-            name: string;
-            createdAt: string;
-        };
-    } | null;
+    compareVersion?: ReaderComparedDocument | null;
+    /**
+     * 译文栏用 HTML 画（hooks/reader-session/translated-layout.ts）：有它时译文栏挂的是原文 PDF，版面里有的页盖上版面（PdfPageSlot），
+     * 那几页不挂 pdf.js 的文字层（选字、搜索都在版面的 SVG 字上）。null = 照旧挂译文 PDF。
+     */
+    translatedLayout?: TranslatedLayout | null;
     /**
      * 真源语义 =「无 job」：判断 Markdown / AI / 收藏等需要任务的能力。
      * 仅 FAB 工具禁用等「无 job」场景取用；不要用它判断能否并排。

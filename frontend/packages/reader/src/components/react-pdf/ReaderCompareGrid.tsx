@@ -16,7 +16,7 @@ import {
   type ReaderRegion,
 } from "../../shared/data/reader-regions.js";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
-import type { ReaderPaneComposition } from "../../ReaderAppReactPdf.js";
+import type { ReaderPaneComposition } from "../../app/pane-composition.js";
 import { useReaderContext } from "./reader-context.js";
 import { ReaderPaneScrollbars } from "./ReaderPaneScrollbars.js";
 import { VersionWatermarks } from "./ReaderVersionCompare.js";
@@ -50,7 +50,9 @@ export type ReaderCompareGridProps = {
   activeRegion?: ReaderRegion | null;
   regions?: ReaderRegion[];
   readerMetadata?: ReaderMetadata | null;
+  /** 右边停着 Markdown 面板。 */
   markdownSplit?: boolean;
+  /** 右边停着东西（面板，或扩展贴右边的浮层）：单栏读时页宽按两倍书页区算，50% 正好铺满剩下的那一栏。 */
   assistantSplit?: boolean;
   liveTranslation?: LiveTranslationState;
   /** 源栏右上角动作（如「译文」叠加开关）；挂在 pane="source" 容器内。 */
@@ -82,14 +84,12 @@ export function resolveReaderGridPresentation({
   // 不再强制单栏。右栏（最终译文 PDF）由 paneComposition.showTranslated
   // 保留，避免右栏消失像对照坏了。overlayOnSource 保留在签名中以兼容
   // 旧调用方（未使用）。
+  //
+  // 开着 Markdown 面板也不再在这里收成单栏（2026-11-27）：放不放得下两栏由 paneComposition 按书页区宽度定
+  // （compareFitsStage），这里照它排。markdownSplit 留在签名里给旧调用方。
   void overlayOnSource;
-  const splitSourceCompare = markdownSplit && mode === "compare";
-  return {
-    mode: splitSourceCompare ? "source" : mode,
-    compareMode: compareMode && !markdownSplit,
-    showSource: splitSourceCompare ? true : showSource,
-    showTranslated: splitSourceCompare ? false : showTranslated,
-  };
+  void markdownSplit;
+  return { mode, compareMode, showSource, showTranslated };
 }
 
 /** 页宽的基准。
@@ -178,9 +178,11 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
   // 「对比版本」开着：左栏换成另一份译文（hooks/use-reader-version-compare）。
   const compareVersion = ctx?.compareVersion ?? null;
   const sourceUrl = compareVersion?.url ?? props.sourceUrl ?? ctx?.sourceUrl ?? "";
-  const translatedUrl = props.translatedUrl ?? ctx?.translatedUrl ?? "";
+  // 译文栏用 HTML 画（translatedLayout）：挂原文 PDF（左栏已经下好的那份），版面盖在上面（PdfPageSlot）。
+  const translatedLayout = ctx?.translatedLayout ?? null;
+  const translatedUrl = translatedLayout ? props.sourceUrl ?? ctx?.sourceUrl ?? "" : props.translatedUrl ?? ctx?.translatedUrl ?? "";
   const sourceFile = compareVersion ? null : props.sourceFile ?? ctx?.sourceFile ?? null;
-  const translatedFile = props.translatedFile ?? ctx?.translatedFile ?? null;
+  const translatedFile = translatedLayout ? props.sourceFile ?? ctx?.sourceFile ?? null : props.translatedFile ?? ctx?.translatedFile ?? null;
   const onMetrics = props.onMetrics ?? ctx?.onMetrics;
   const onNumPagesChange = props.onNumPagesChange ?? ctx?.onNumPagesChange;
   const onPdfOutline = ctx?.onPdfOutline;
@@ -222,7 +224,8 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
   const pageWidthBasis = shellMeasured
     ? resolveReaderPageWidthBasis(
       shellWidth,
-      markdownSplit || assistantSplit,
+      // 对照时两栏分书页区，按书页区算（50% = 一栏）；单栏才按两倍算（50% = 铺满剩下的那一栏）。
+      (markdownSplit || assistantSplit) && !presentation.compareMode,
       typeof document === "undefined" ? shellWidth * 2 : document.documentElement.clientWidth,
     )
     : null;
@@ -241,7 +244,7 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
     >
       <main
         className={`${READER_GRID_CLASS} reader-mode-${presentation.mode}`}
-        data-reader-mode={markdownSplit ? "markdown-split" : assistantSplit ? "assistant-split" : mode}
+        data-reader-mode={presentation.compareMode ? mode : markdownSplit ? "markdown-split" : assistantSplit ? "assistant-split" : mode}
       >
         {mountSource ? (
           <PdfDocumentPane
@@ -296,6 +299,7 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
         {mountTranslated ? (
           <PdfDocumentPane
             pane="translated"
+            key={translatedLayout ? "translated-html" : "translated"}
             url={translatedUrl}
             preloadedFile={translatedFile}
             userZoom={userZoom}
@@ -306,8 +310,9 @@ export function ReaderCompareGrid(props: ReaderCompareGridProps): ReactElement {
             onMetrics={onMetrics}
             emptyLabel="暂无译文 PDF"
             onNumPagesChange={onNumPagesChange}
-            onOutline={onPdfOutline}
-            onDocument={onPdfDocument}
+            // 译文栏挂的是原文 PDF 时，书签、放大查看不拿它当译文 PDF。
+            onOutline={translatedLayout ? undefined : onPdfOutline}
+            onDocument={translatedLayout ? undefined : onPdfDocument}
             activeRegion={activeRegion}
             regions={regions}
             readerMetadata={readerMetadata}

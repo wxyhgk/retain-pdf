@@ -351,3 +351,157 @@ def test_page_labels_inherit_the_toc_block_policy():
         split_toc_blocks_with_text_layer(document, pdf)
     labels = [b for b in document["pages"][0]["blocks"] if b["structure_role"] == "toc_page_label"]
     assert labels and all(b["policy"] == {"translate": False, "translate_reason": "provider_non_body"} for b in labels)
+
+
+# ---- 2026-11-28 原位替换：每条记下只框标题的字的每一行、章号和标签的框（标签、章号、点线、页码留在原图上） ----
+
+
+def test_title_lines_frame_only_the_title_and_sit_on_the_baseline():
+    lines = [
+        (60, 100, "1.1", 10), (90, 100, "First Section", 10), (170, 100, ". . . . . . . . . . . .", 10), (400, 100, "3", 10),
+        (60, 114, "1.2", 10), (90, 114, "Second Section . . . . . . . . . . 7", 10),
+        (60, 128, "1.3", 10), (90, 128, "A Title That Wraps", 10), (90, 142, "Onto Two Lines", 10), (400, 142, "9", 10),
+    ]
+    with _page(lines) as pdf:
+        result = split_toc_page(pdf[0], [50, 85, 420, 150])
+    assert result is not None
+    first, second, wrapped = result.entries
+    [line] = first.title_lines
+    assert line["text"] == "First Section" and line["baseline"] == 100 and line["size"] == 10
+    assert line["bbox"][0] >= 90 - 0.5 and line["bbox"][2] < 170  # 章号、点线不在里面
+    assert first.number_box is not None and first.number_box[2] < 90
+    # 标题、点线、页码在同一个片段里：按字切开，框到标题最后一个字
+    [line] = second.title_lines
+    assert line["text"] == "Second Section" and line["bbox"][2] < 90 + 10 * 0.6 * len("Second Section . ")
+    assert [line["text"] for line in wrapped.title_lines] == ["A Title That Wraps", "Onto Two Lines"]
+    assert [line["baseline"] for line in wrapped.title_lines] == [128, 142]
+    assert wrapped.title_only == "A Title That Wraps Onto Two Lines"
+
+
+def test_a_title_keeps_its_own_period_before_spaced_dot_leaders():
+    lines = [(60, 100 + 14 * i, f"{title} . . . . . . . . . . . . . . {page}", 10)
+             for i, (title, page) in enumerate([("Summary.", "3"), ("Problems", "5"), ("Notes.", "8")])]
+    lines.append((60, 142, "Answers......................... 11", 10))  # 点挨着点：分不出来，照旧全算点线
+    with _page(lines) as pdf:
+        result = split_toc_page(pdf[0], [50, 85, 420, 150])
+    assert result is not None
+    assert [e.title for e in result.entries] == ["Summary.", "Problems", "Notes.", "Answers"]
+    assert result.entries[0].title_lines[0]["text"] == "Summary."
+
+
+def test_label_column_is_recorded_apart_from_the_title():
+    lines = [
+        (60, 100, "Chapter 1 Introduction", 10), (400, 100, "1", 10),
+        (60, 114, "Chapter 2", 10), (120, 114, "Methods", 10), (400, 114, "9", 10),
+        (60, 128, "Annexure", 10), (110, 128, "IV", 10), (130, 128, "Raw Data", 10), (400, 128, "20", 10),
+        (60, 142, "Appendix A", 10), (400, 142, "31", 10),
+        (60, 156, "Chapter summary", 10), (400, 156, "40", 10),
+    ]
+    with _page(lines) as pdf:
+        result = split_toc_page(pdf[0], [50, 85, 420, 165])
+    assert result is not None
+    got = [(e.title, e.label, e.title_only) for e in result.entries]
+    assert got == [
+        ("Chapter 1 Introduction", "Chapter 1", "Introduction"),  # 条目文字照旧带着标签
+        ("Chapter 2 Methods", "Chapter 2", "Methods"),
+        ("Annexure IV Raw Data", "Annexure IV", "Raw Data"),
+        ("Appendix A", "", "Appendix A"),  # 整条只有标签：它就是标题
+        ("Chapter summary", "", "Chapter summary"),  # 后面不是编号：不是标签
+    ]
+    chapter_one = result.entries[0]
+    assert chapter_one.label_box is not None and chapter_one.label_box[2] <= chapter_one.title_lines[0]["bbox"][0]
+
+
+def test_entry_blocks_carry_the_title_lines_for_in_place_replacement():
+    document = _document([50, 80, 380, 240])
+    with _toc_pdf() as pdf:
+        split_toc_blocks_with_text_layer(document, pdf)
+    entries = [block for block in document["pages"][0]["blocks"] if block["structure_role"] == "toc_entry"]
+    first = entries[0]["metadata"]
+    assert first["toc_entry_title"] == "Analyzing the Audience"
+    assert first["toc_entry_number_bbox"] is not None and first["toc_entry_label"] == ""
+    [line] = first["toc_entry_title_lines"]
+    assert line["text"] == "Analyzing the Audience" and line["baseline"] == 100 and line["bbox"][0] >= 89
+    # 条目的文字、框和以前一样（默认的排法不变）
+    assert entries[0]["text"] == "1 Analyzing the Audience" and entries[0]["bbox"][0] <= 60 + 0.5
+
+
+def test_label_number_sharing_a_span_with_the_title_and_label_on_its_own_line():
+    # 80c3ad：「Annexure」斜体一段，「IV Commutators …」一段；14e352：「CHAPTER 2」单独一行，标题在下一行
+    lines = [
+        (60, 100, "Annexure", 10), (110, 100, "IV Commutators of Operators", 10), (400, 100, "177", 10),
+        (60, 114, "Annexure", 10), (110, 114, "V Transformation", 10), (400, 114, "183", 10),
+        (60, 136, "CHAPTER 2", 10),
+        (60, 150, "Electric Potential", 10), (400, 150, "190", 10),
+        (60, 172, "CHAPTER 3", 10),
+        (60, 186, "Capacitance", 10), (400, 186, "210", 10),
+    ]
+    with _page(lines) as pdf:
+        result = split_toc_page(pdf[0], [50, 85, 420, 195])
+    assert result is not None
+    got = [(e.label, e.title_only, [line["text"] for line in e.title_lines]) for e in result.entries]
+    assert got == [
+        ("Annexure IV", "Commutators of Operators", ["Commutators of Operators"]),
+        ("Annexure V", "Transformation", ["Transformation"]),
+        ("CHAPTER 2", "Electric Potential", ["Electric Potential"]),
+        ("CHAPTER 3", "Capacitance", ["Capacitance"]),
+    ]
+    annex = result.entries[0]
+    assert annex.label_box[2] < annex.title_lines[0]["bbox"][0]  # 标签框到「IV」为止
+
+
+# ---- 2026-11-29 OCR 漏在目录块外面的目录行（80c3ad：第一章那行不在任何块里，Preface / Acknowledgements 被框成一段正文） ----
+
+
+def _missed_rows_page():
+    lines = [(60, 50, "Contents", 16),
+             (60, 100, "Preface", 10), (400, 100, "vii", 10),
+             (60, 112, "Acknowledgements", 10), (400, 112, "viii", 10),
+             (60, 134, "1.", 10), (80, 134, "WAVE MECHANICS AND ATOMS", 10), (400, 134, "1", 10)]
+    y = 150
+    for number, title, page_label in [("1.1", "Towards Quantum Theory", "1"), ("1.2", "Wave Nature", "22"),
+                                      ("1.3", "Wave Theory", "30"), ("1.4", "Translational Energy", "37")]:
+        lines += [(80, y, number, 10), (110, y, title, 10), (400, y, page_label, 10)]
+        y += 12
+    lines += [(60, 300, "--------", 10), (400, 300, "9", 10)]  # 离得远、没有字：不并
+    return _page(lines)
+
+
+def _missed_rows_document():
+    def block(block_id, text, box, role="body"):
+        return {"block_id": block_id, "type": "text", "sub_type": role, "bbox": box, "text": text, "layout_role": role,
+                "semantic_role": role, "structure_role": role, "metadata": {}, "policy": {"translate": True},
+                "lines": [], "segments": [], "content": {"kind": "text", "text": text}}
+
+    return {"pages": [{"blocks": [
+        block("p001-b0000", "Contents", [58, 35, 140, 55], role="heading"),
+        block("p001-b0001", "Preface Acknowledgements", [58, 90, 160, 115]),  # 只框了标题，页码在外面
+        {**block("p001-b0002", "toc", [55, 140, 410, 200]), "sub_type": "table_of_contents", "layout_role": "toc",
+         "structure_role": "table_of_contents"},
+    ]}], "derived": {}}
+
+
+def test_rows_ocr_left_outside_the_toc_block_are_taken_in():
+    document = _missed_rows_document()
+    with _missed_rows_page() as pdf:
+        split_toc_blocks_with_text_layer(document, pdf)
+    blocks = document["pages"][0]["blocks"]
+    entries = [(b["metadata"]["toc_entry_number"], b["metadata"]["toc_entry_title"], b["metadata"]["toc_entry_page_label"])
+               for b in blocks if b["structure_role"] == "toc_entry"]
+    assert entries[:3] == [("", "Preface", "vii"), ("", "Acknowledgements", "viii"), ("1.", "WAVE MECHANICS AND ATOMS", "1")]
+    assert len(entries) == 7
+    # 被框成正文的那块整块并进来，不再单独翻；大标题照旧
+    assert [b["text"] for b in blocks if b["structure_role"] not in ("toc_entry", "toc_page_label")] == ["Contents"]
+
+
+def test_a_body_block_that_is_not_all_toc_rows_is_left_alone():
+    document = _missed_rows_document()
+    document["pages"][0]["blocks"][1]["bbox"] = [58, 60, 160, 115]  # 这块上面还有一行不是目录的字
+    with _missed_rows_page() as pdf:
+        pdf[0].insert_text((60, 70), "Some paragraph text that is not a toc row", fontsize=10)
+        split_toc_blocks_with_text_layer(document, pdf)
+    blocks = document["pages"][0]["blocks"]
+    titles = [b["metadata"]["toc_entry_title"] for b in blocks if b["structure_role"] == "toc_entry"]
+    assert "Preface" not in titles and "Acknowledgements" not in titles
+    assert titles[0] == "WAVE MECHANICS AND ATOMS"  # 不在任何块里的那一行照样并进来
+    assert any(b["text"] == "Preface Acknowledgements" for b in blocks)

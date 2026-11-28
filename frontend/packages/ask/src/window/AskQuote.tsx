@@ -57,7 +57,7 @@ export function AskQuote({ quote }: { quote?: AskQuoteValue }): ReactElement | n
       <div className="ask-quote-tools">
         {both ? (
           <Button
-            className="ask-icon"
+            className="ask-icon ask-quote-tool"
             aria-label={side === "source" ? "看译文" : "看原文"}
             title={side === "source" ? "看译文" : "看原文"}
             data-active={side === "translated" ? "true" : "false"}
@@ -66,7 +66,7 @@ export function AskQuote({ quote }: { quote?: AskQuoteValue }): ReactElement | n
             <Languages size={13} aria-hidden />
           </Button>
         ) : null}
-        <Button className="ask-icon ask-quote-toggle" aria-label={open ? "收起" : "展开"} title={open ? "收起" : "展开"} aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Button className="ask-icon ask-quote-tool ask-quote-toggle" aria-label={open ? "收起" : "展开"} title={open ? "收起" : "展开"} aria-expanded={open} onClick={() => setOpen(!open)}>
           <ChevronDown size={14} aria-hidden />
         </Button>
       </div>

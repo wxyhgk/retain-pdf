@@ -223,7 +223,7 @@ function headingNumberSpace(text) {
 // with the spaces after it (group 1).
 const TRANSLATED_MARKER = /^\s*((?:[(（](?:[a-zA-Z]|[ivxIVX]{1,4}|\d{1,2})[)）]|(?:[a-zA-Z]|[ivxIVX]{1,4}|\d{1,2})(?:[)、]|\.(?!\d))|[-•·–▪◦●∙*])[\s\u00a0\u3000]*)(?=\S)/;
 
-function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
+function fitInput(input, { maths, timings = {}, fitOptions = {}, fontWeight = 400 } = {}) {
   validate(input);
   const job = jobFromInput(input);
 
@@ -247,7 +247,8 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
     bodyLineHeight: PRESET.bodyLineHeight
   });
   timings.modelMs = Math.round(performance.now() - mark - maths.stats.ms);
-  const base = Text.createMeasurer({ metrics: defaultFontTable() });
+  // The body face's widths: Regular, or the static instance the PDF is drawn with (pdfFontWeight)
+  const base = Text.createMeasurer({ metrics: defaultFontTable(fontWeight === 400 ? "regular" : fontWeight) });
   // A formula MathJax cannot render stays a formula here (failedMath "box"), so it is cut as one piece
   // and written back as $tex$; the fitter then sets it as plain text as before.
   const splitContent = text => Text.contentFromText(text, { renderMathBox, failedMath: "box" })
@@ -320,6 +321,13 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
   return { job, model, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow, measurers: { regular: base, bold } };
 }
 
+function pdfFontWeight(options, output) {
+  const weight = options.pdfFontWeight == null ? 400 : Number(options.pdfFontWeight);
+  if (!Number.isInteger(weight) || weight < 100 || weight > 900) throw new InputError(`pdfFontWeight must be an integer 100-900, got ${JSON.stringify(options.pdfFontWeight)}`);
+  if (weight !== 400 && output !== "pdf") throw new InputError("pdfFontWeight needs output pdf");
+  return weight;
+}
+
 function runMeasured(input, options = {}) {
   validate(input);
   const output = options.output || "typst";
@@ -330,9 +338,14 @@ function runMeasured(input, options = {}) {
   const timings = {};
   const fontPaths = (options.typst && options.typst.fontPaths) || [];
   // Fail before any work when the PDF output cannot find its font files.
-  const fonts = output === "pdf" ? { ...findFamily(fontPaths, "Source Han Serif SC"), fallbacks: findFallbacks(fontPaths) } : null;
-  const maths = output === "pdf" ? new MathStore(outDir, { files: false }) : new MathStore(outDir, { stamps: true });
-  const { job, model, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow, measurers } = fitInput(input, { maths, timings });
+  // pdfFontWeight: draw (and measure) the regular text with a static instance
+  // of Source Han Serif's variable font at this weight (e.g. 360, lighter than
+  // Regular in PDF viewers that embolden with font smoothing). PDF output only;
+  // bold text keeps the Bold face.
+  const fontWeight = pdfFontWeight(options, output);
+  const fonts = output === "pdf" ? { ...findFamily(fontPaths, "Source Han Serif SC", { regularWeight: fontWeight }), fallbacks: findFallbacks(fontPaths) } : null;
+  const maths = output === "pdf" ? new MathStore(outDir, { pad: false }) : new MathStore(outDir, { stamps: true });
+  const { job, model, paint, stats, vectors, fitted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow, measurers } = fitInput(input, { maths, timings, fontWeight });
 
   let mark = performance.now();
   let painted;
@@ -363,7 +376,7 @@ function runMeasured(input, options = {}) {
   }
   timings.mathjaxMs = Math.round(maths.stats.ms);
 
-  const report = buildReport({ job, model, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow });
+  const report = buildReport({ job, model, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened, continuation, titleFollow, annotationFollow, fontWeight });
   timings.totalMs = Math.round(performance.now() - started);
   report.timings = timings;
   report.output = output === "pdf" ? { kind: "pdf", layout: "layout.json", stats: outputStats } : { kind: "typst" };
@@ -371,7 +384,7 @@ function runMeasured(input, options = {}) {
   return { report, overlayPdf: path.join(outDir, "overlay.pdf"), outDir };
 }
 
-function buildReport({ job, model = null, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened = [], continuation = [], titleFollow = null, annotationFollow = null }) {
+function buildReport({ job, model = null, input, fitted, paint, stats, vectors, maths, painted, bodyMaxFont, seeds, fillPlan, widened = [], continuation = [], titleFollow = null, annotationFollow = null, fontWeight = 400 }) {
   const itemFor = (pageIndex, id) => job.translations.get(`${pageIndex}:${blockNumber(id)}`) || null;
   // streams holding several items (lists grouped by retain/list-groups.js): first id -> all ids
   const groupMembers = new Map();
@@ -446,7 +459,8 @@ function buildReport({ job, model = null, input, fitted, paint, stats, vectors, 
     schema: FIT_REPORT_SCHEMA,
     engine: engineInfo(),
     preset: "retain",
-    font: { family: SUPPORTED_FONT_FAMILY },
+    // weight: only with pdfFontWeight (the regular text drawn lighter than 400)
+    font: fontWeight === 400 ? { family: SUPPORTED_FONT_FAMILY } : { family: SUPPORTED_FONT_FAMILY, weight: fontWeight },
     pages,
     blocks,
     painted,

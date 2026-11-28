@@ -17,7 +17,17 @@
 //   });
 //   result / paint: as for overlayDocument (output/overlay.js).
 //   maths: a MathStore (output/math-store.js); its entries carry the SVG.
+//
+// Writing also records, on the layout it draws, what a second renderer (a
+// browser drawing the same page as DOM) needs to look identical: each
+// cluster's `font` (a key of layout.fonts: which face shaping.js picked,
+// so "dflt" runs and fallback glyphs need no guessing), each formula's `svg`
+// (its MathJax file under the MathStore's math/, when the store writes
+// files), and layout.fonts, the faces used, main face first:
+// [{ key, postscript, family, weight, mono, file }] (file: the font file's
+// base name; the host maps it to its own copy).
 
+const path = require("node:path");
 const { PdfFile, name, num } = require("./pdf-file");
 const { PdfFont, hex4 } = require("./pdf-font");
 const { SvgPainter } = require("./svg-pdf");
@@ -78,6 +88,16 @@ class LayoutPdfWriter {
     this.pdf = new PdfFile();
     this.chain = new FontChain({ regular: options.fonts.regular, bold: options.fonts.bold || null }, options.fonts.fallbacks || []);
     this.pdfFonts = new Map(); // fontkit font -> PdfFont
+    // fontkit font -> { file, weight, mono, rank }: what layout.fonts says about a face.
+    this.faces = new Map();
+    const files = options.fonts.files || {};
+    this.faces.set(options.fonts.regular, { file: files.regular || null, weight: 400, mono: false, rank: 0 });
+    if (options.fonts.bold) this.faces.set(options.fonts.bold, { file: files.bold || null, weight: 700, mono: false, rank: 1 });
+    (options.fonts.fallbacks || []).forEach((face, index) => {
+      if (!this.faces.has(face.font)) this.faces.set(face.font, { file: face.file || null, weight: face.weight, mono: Boolean(face.mono), rank: 2 + index });
+    });
+    this.usedFaces = new Map(); // key -> layout.fonts entry
+    this.lastFont = null;
     this.painter = new SvgPainter(this.pdf, (text, size) => this.textGlyphs(text, size, false));
     this.stats = { pages: 0, lines: 0, clusters: 0, formulas: 0, fallbackFormulas: 0 };
   }
@@ -95,6 +115,7 @@ class LayoutPdfWriter {
   // mode: the shaping mode of the run it belongs to (shaping.js).
   clusterItems(text, x, y, size, bold, items, mode = "zh") {
     const shaped = this.chain.shape(text, bold, mode);
+    this.lastFont = shaped.font;
     const pdfFont = this.pdfFont(shaped.font);
     const unit = size / shaped.font.unitsPerEm;
     let width = 0;
@@ -114,6 +135,26 @@ class LayoutPdfWriter {
     let pen = 0;
     for (const ch of String(text)) pen += this.clusterItems(ch, pen, 0, size, bold, items);
     return { items, width: pen };
+  }
+
+  // The layout.fonts key of a face this writer drew with (its PostScript name).
+  fontKey(font) {
+    const key = String(font.postscriptName || font.fullName || "font");
+    if (!this.usedFaces.has(key)) {
+      const face = this.faces.get(font) || { file: null, weight: 400, mono: false, rank: 1000 };
+      this.usedFaces.set(key, {
+        key, postscript: String(font.postscriptName || ""), family: String(font.familyName || ""),
+        weight: face.weight, mono: face.mono, file: face.file ? path.basename(face.file) : null, rank: face.rank
+      });
+    }
+    return key;
+  }
+
+  // layout.fonts: the faces used, main face first (then bold, then fallbacks
+  // in shaping priority).
+  usedFonts() {
+    return [...this.usedFaces.values()].sort((a, b) => a.rank - b.rank || a.key.localeCompare(b.key))
+      .map(({ rank, ...face }) => face);
   }
 
   // A formula box: MathJax outlines plus its LaTeX as invisible text, or the
@@ -162,9 +203,13 @@ class LayoutPdfWriter {
         if (item.tex !== undefined) {
           flush();
           this.formula({ tex: item.tex, display: item.display, widthEm: item.w }, x, baseline, size, color, maths, ops);
+          const entry = maths ? maths.get(String(item.tex || ""), false) : null;
+          if (entry && entry.ok && entry.file) item.svg = entry.file;
+          else delete item.svg;
           continue;
         }
         this.clusterItems(String(item.t), x, baseline, size, bold, items, item.mode === "dflt" ? "dflt" : "zh");
+        item.font = this.fontKey(this.lastFont);
       }
       flush();
       this.stats.lines += 1;
@@ -204,6 +249,7 @@ class LayoutPdfWriter {
     for (const pdfFont of this.pdfFonts.values()) fonts[pdfFont.resource] = pdfFont.write(this.pdf);
     this.pdf.set(resourcesRef, { Font: fonts, XObject: this.painter.xobjects() });
     this.pdf.set(pagesRef, { Type: name("Pages"), Kids: kids, Count: kids.length });
+    layout.fonts = this.usedFonts();
     const catalog = this.pdf.add({ Type: name("Catalog"), Pages: pagesRef });
     const info = this.pdf.add({ Producer: "retain-pdf-rendering" });
     return {

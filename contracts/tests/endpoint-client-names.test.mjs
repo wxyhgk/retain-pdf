@@ -70,6 +70,9 @@ test("phase-1a endpoints carry the client names from the frontend list over the 
     ["token-usage.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reports/usage", "getJobUsage", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/progress/layout", "getLiveLayout", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/progress/pages/:page", "getLivePage", "json"],
+    // HTML 页照排版结果画（2026-11-28；前端接时加 client_name）
+    ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reader/layout", "getReaderLayout", "json"],
+    ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reader/layout/pages/:page_idx", "getReaderLayoutPage", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reader/markdown", "getReaderMarkdown", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reader/metadata", "getReaderMetadata", "json"],
     ["reader-data.v1.schema.json", "GET", "/api/v1/jobs/:job_id/reader/regions", "getReaderRegions", "json"],

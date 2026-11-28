@@ -3,6 +3,7 @@
 // RetainPDF 的改动（按 assistant-ui 的 LaTeX 文档加 remark-math / rehype-katex 和 normalizeMathDelimiters；打字光标的 dot.css 改在 styles/entry.css 里引入；
 // 加 remarkPageCitations，a 组件认出页码链接画成能点的页码标签（../../window/page-citations.ts、../../window/AskPageLink.tsx）；
 // ```openui-lang 代码块默认画成互动块（../../window/openui-fence.tsx））。
+// 2026-11-27（提问窗样式拆开）：以前 ask.css 从外面用 .aui-* 改标题、段落、代码块的字号（段落上下 0.6em、行高 1.7），改成直接写在这里的 className。
 
 
 import {
@@ -109,7 +110,7 @@ const defaultComponents = memoizeMarkdownComponents({
   h1: ({ className, ...props }) => (
     <h1
       className={cn(
-        "aui-md-h1 mt-5 mb-2 scroll-m-20 text-xl font-semibold first:mt-0 last:mb-0",
+        "aui-md-h1 mt-5 mb-2 scroll-m-20 text-[length:var(--ui-text-lg,16px)] leading-[calc(1.75/1.25)] font-semibold first:mt-0 last:mb-0",
         className,
       )}
       {...props}
@@ -118,7 +119,7 @@ const defaultComponents = memoizeMarkdownComponents({
   h2: ({ className, ...props }) => (
     <h2
       className={cn(
-        "aui-md-h2 mt-5 mb-2 scroll-m-20 text-lg font-semibold first:mt-0 last:mb-0",
+        "aui-md-h2 mt-5 mb-2 scroll-m-20 text-[length:var(--ui-text-base,14px)] leading-[calc(1.75/1.125)] font-semibold first:mt-0 last:mb-0",
         className,
       )}
       {...props}
@@ -127,7 +128,7 @@ const defaultComponents = memoizeMarkdownComponents({
   h3: ({ className, ...props }) => (
     <h3
       className={cn(
-        "aui-md-h3 mt-4 mb-1.5 scroll-m-20 text-base font-semibold first:mt-0 last:mb-0",
+        "aui-md-h3 mt-4 mb-1.5 scroll-m-20 text-[length:var(--ui-text-md,13px)] leading-[1.5] font-semibold first:mt-0 last:mb-0",
         className,
       )}
       {...props}
@@ -136,7 +137,7 @@ const defaultComponents = memoizeMarkdownComponents({
   h4: ({ className, ...props }) => (
     <h4
       className={cn(
-        "aui-md-h4 mt-3.5 mb-1 scroll-m-20 text-base font-medium first:mt-0 last:mb-0",
+        "aui-md-h4 mt-3.5 mb-1 scroll-m-20 text-[length:var(--ui-text-md,13px)] leading-[1.5] font-medium first:mt-0 last:mb-0",
         className,
       )}
       {...props}
@@ -145,7 +146,7 @@ const defaultComponents = memoizeMarkdownComponents({
   h5: ({ className, ...props }) => (
     <h5
       className={cn(
-        "aui-md-h5 mt-3 mb-1 text-sm font-semibold first:mt-0 last:mb-0",
+        "aui-md-h5 mt-3 mb-1 text-[length:var(--ui-text-sm,12px)] leading-[calc(1.25/0.875)] font-semibold first:mt-0 last:mb-0",
         className,
       )}
       {...props}
@@ -154,7 +155,7 @@ const defaultComponents = memoizeMarkdownComponents({
   h6: ({ className, ...props }) => (
     <h6
       className={cn(
-        "aui-md-h6 mt-3 mb-1 text-sm font-medium first:mt-0 last:mb-0",
+        "aui-md-h6 mt-3 mb-1 text-[length:var(--ui-text-sm,12px)] leading-[calc(1.25/0.875)] font-medium first:mt-0 last:mb-0",
         className,
       )}
       {...props}
@@ -163,7 +164,7 @@ const defaultComponents = memoizeMarkdownComponents({
   p: ({ className, ...props }) => (
     <p
       className={cn(
-        "aui-md-p my-3 leading-relaxed first:mt-0 last:mb-0",
+        "aui-md-p my-[0.6em] leading-[1.7]",
         className,
       )}
       {...props}
@@ -271,7 +272,7 @@ const defaultComponents = memoizeMarkdownComponents({
   pre: ({ className, ...props }) => (
     <pre
       className={cn(
-        "aui-md-pre border-border/50 bg-muted/30 overflow-x-auto rounded-t-none rounded-b-xl border border-t-0 p-3.5 text-[13px] leading-relaxed",
+        "aui-md-pre border-border/50 bg-muted/30 overflow-x-auto rounded-t-none rounded-b-xl border border-t-0 p-3.5 text-[length:var(--ui-text-sm,12px)] leading-relaxed",
         className,
       )}
       {...props}

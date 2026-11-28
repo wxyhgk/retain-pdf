@@ -19,8 +19,8 @@
   cursor: cell;
 }
 
-/* 画笔模式下不让拖动选中文字（拖动是画）。 */
-.reader-react-root[data-ink-mode] .textLayer {
+/* 画笔模式下不让拖动选中文字（拖动是画）。2026-11-27 起根节点标的是通用的 data-pointer-taken（扩展占着指针，值是扩展 id）。 */
+.reader-react-root[data-pointer-taken] .textLayer {
   user-select: none;
 }
 
@@ -95,13 +95,6 @@
   font: inherit;
   font-size: var(--ui-text-xs, 11px);
   font-weight: 500;
-}
-
-.reader-ink-bar.is-dock {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: calc(var(--z-hud, 36) + 2);
 }
 
 .reader-ink-tool,

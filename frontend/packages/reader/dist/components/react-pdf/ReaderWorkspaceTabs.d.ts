@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { type ReactElement, type ReactNode } from "react";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
 export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "ai";
 export type ReaderWorkspaceMode = "source" | "compare" | "translated";
@@ -24,6 +24,10 @@ export type ReaderWorkspaceTabsProps = {
     completion?: {
         onOpenCompare: () => void;
     } | null;
+    /** 左上角的胶囊：返回（2026-11-28 起顶栏不再占一行，浮在书页区上面：左上一颗胶囊、正上方页签）。 */
+    start?: ReactNode;
+    /** 「对照」后面紧跟的东西（对比版本的 ▾，ReaderBarTools place="compare"；只有一份译文时没有）。 */
+    compareExtra?: ReactNode;
 };
 export declare function liveTranslationStatusCopy(state: LiveTranslationState): string;
 export declare function isReaderWorkspaceDisabled(input: {

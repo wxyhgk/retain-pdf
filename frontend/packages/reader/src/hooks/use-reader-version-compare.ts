@@ -6,7 +6,7 @@
 // 「用这一份」= 设成这本书阅读用的版本（PUT translation-version），再把地址里的 job_id 换成那一份的任务，
 // 阅读页按地址重新载入（route-identity 监听 replaceState）。
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { ReaderTranslationVersionsPort, ReaderVersionOption } from "../contracts/session.js";
 import { readerSessionDataPort } from "../external.js";
@@ -63,18 +63,19 @@ export function readerUrlWithJob(href: string, jobId: string): string {
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
-export function useReaderVersionCompare({ documentId, jobId }: { documentId: string; jobId: string }): VersionCompare {
+export type ReaderTranslationVersions = {
+  versions: ReaderVersionOption[];
+  /** 正在读的那一份（任务落在哪一份；找不到用书的当前版本）；没有是空串。 */
+  readingVersionId: string;
+};
+
+/** 这本书的几份译文和正在读哪一份：阅读页自己的（提问要记读的是哪份、对比版本要列出来），2026-11-27 从对比版本里拆出。 */
+export function useReaderTranslationVersions({ documentId, jobId }: { documentId: string; jobId: string }): ReaderTranslationVersions {
   const [versions, setVersions] = useState<ReaderVersionOption[]>([]);
   const [currentVersionId, setCurrentVersionId] = useState<string | null>(null);
-  const [compared, setCompared] = useState<ComparedVersion | null>(null);
-  const [loading, setLoading] = useState("");
-  const [error, setError] = useState("");
-  const request = useRef(0);
 
   useEffect(() => {
     setVersions([]);
-    setCompared(null);
-    setError("");
     const port = versionsPort();
     if (!port || !documentId) return undefined;
     let disposed = false;
@@ -86,6 +87,25 @@ export function useReaderVersionCompare({ documentId, jobId }: { documentId: str
       })
       .catch(() => {});
     return () => { disposed = true; };
+  }, [documentId, jobId]);
+
+  const readingVersionId = readingVersionOf(versions, jobId, currentVersionId);
+  return useMemo(() => ({ versions, readingVersionId }), [versions, readingVersionId]);
+}
+
+/** 对比版本（扩展 extensions/builtin/compare）：几份译文和正在读哪份从阅读页来（useReaderTranslationVersions）。 */
+export function useReaderVersionCompare({ documentId, jobId, versions, readingVersionId }: { documentId: string; jobId: string } & ReaderTranslationVersions): VersionCompare {
+  const [compared, setCompared] = useState<ComparedVersion | null>(null);
+  const [loading, setLoading] = useState("");
+  const [error, setError] = useState("");
+  const request = useRef(0);
+
+  // 换书、换任务：丢掉上一本的对比（还在载的那次也作废）。
+  useEffect(() => {
+    request.current += 1;
+    setCompared(null);
+    setLoading("");
+    setError("");
   }, [documentId, jobId]);
 
   const choose = useCallback((versionId: string) => {
@@ -130,15 +150,16 @@ export function useReaderVersionCompare({ documentId, jobId }: { documentId: str
     setCompared(null);
   }, [compared, documentId]);
 
-  return {
+  // 同一个对象，扩展拿它登记贡献时不会每画一次就换一份。
+  return useMemo(() => ({
     available: versions.length >= 2,
     versions,
-    readingVersionId: readingVersionOf(versions, jobId, currentVersionId),
+    readingVersionId,
     compared,
     loading,
     error,
     choose,
     clear,
     adopt,
-  };
+  }), [versions, readingVersionId, compared, loading, error, choose, clear, adopt]);
 }

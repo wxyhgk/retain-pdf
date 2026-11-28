@@ -17,6 +17,14 @@ export function getReaderRegions(apiPrefix, args, options) {
 export function getReaderMetadata(apiPrefix, args, options) {
     return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reader/metadata`, options });
 }
+/** GET /api/v1/jobs/:job_id/reader/layout */
+export function getReaderLayout(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reader/layout`, options });
+}
+/** GET /api/v1/jobs/:job_id/reader/layout/pages/:page_idx */
+export function getReaderLayoutPage(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reader/layout/pages/${encodePathParam(args.page_idx)}`, options });
+}
 /** GET /api/v1/jobs/:job_id/progress/layout */
 export function getLiveLayout(apiPrefix, args, options) {
     return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/progress/layout`, options });

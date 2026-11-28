@@ -41,6 +41,8 @@ export type ThreadComponents = {
     prepareSend?: ((text: string) => string) | undefined;
     /** RetainPDF：问题气泡里的字（开头的引用画成引用框）。 */
     UserText?: TextMessagePartComponent | undefined;
+    /** RetainPDF：只读（以前的对话）：不画输入框和问答上的操作条（以前画出来再由宿主的 CSS 藏掉）。 */
+    readOnly?: boolean | undefined;
 };
 export type ThreadProps = {
     components?: ThreadComponents | undefined;

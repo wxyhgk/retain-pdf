@@ -47,6 +47,8 @@ async fn serve_with_shutdown(
     }
     // 只在真实服务里开（和下面的清理一样），单测里的 build_state 不带后台任务。
     let _driverless_sweep_handle = start_driverless_sweeper(&state);
+    // 阅读页 HTML 页的旧书补排：清单接口登记，这里一次补一本（原地重新渲染，不花钱）。单测不开，直接调 run_once。
+    let _reader_layout_backfill_handle = super::reader_layout_backfill::spawn(state.clone());
 
     // Retention/cleanup is operational maintenance, not startup correctness
     // (unlike `reconcile_owned_runtime` inside `build_state`), so it only runs here - once when the real

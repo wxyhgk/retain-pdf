@@ -5,6 +5,12 @@
 // engine decides every size by measurement (fit-model, retain profile).
 //
 //   node bin/rpr-fit.js --input in.json --out-dir DIR [--output typst|pdf] [--typst BIN] [--font-path DIR]...
+//                       [--pdf-font-weight N]
+//
+// --pdf-font-weight N (PDF output; default 400): draw the regular text with a
+// static instance of Source Han Serif SC's variable font at weight N, found
+// in the font paths by its weight, and measure it with
+// data/fonts/source-han-serif-sc-w<N>.json. Bold text keeps the Bold face.
 //
 // Reads rpr_fit_input_v1 (src/retain/measured.js). Large parts may be given
 // as files instead of inline: document_path, translations_path,
@@ -33,9 +39,10 @@ function parseArgs(argv) {
     else if (arg === "--typst") options.typst = value();
     else if (arg === "--output") options.output = value();
     else if (arg === "--font-path") options.fontPaths.push(path.resolve(value()));
+    else if (arg === "--pdf-font-weight") options.pdfFontWeight = Number(value());
     else throw new UsageError(`unknown argument ${arg}`);
   }
-  if (!options.input || !options.outDir) throw new UsageError("usage: rpr-fit.js --input <in.json> --out-dir <DIR> [--output typst|pdf] [--typst <bin>] [--font-path <dir>]...");
+  if (!options.input || !options.outDir) throw new UsageError("usage: rpr-fit.js --input <in.json> --out-dir <DIR> [--output typst|pdf] [--typst <bin>] [--font-path <dir>]... [--pdf-font-weight <N>]");
   return options;
 }
 
@@ -60,7 +67,7 @@ function main() {
   try {
     const options = parseArgs(process.argv.slice(2));
     const input = resolveFiles(readJSON(options.input, "input"), options.input);
-    const { report } = runMeasured(input, { outDir: options.outDir, output: options.output, typst: { bin: options.typst, fontPaths: options.fontPaths } });
+    const { report } = runMeasured(input, { outDir: options.outDir, output: options.output, pdfFontWeight: options.pdfFontWeight, typst: { bin: options.typst, fontPaths: options.fontPaths } });
     process.stdout.write(JSON.stringify({
       ok: true,
       overlay: path.join(options.outDir, "overlay.pdf"),

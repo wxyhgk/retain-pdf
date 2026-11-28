@@ -2,6 +2,7 @@
  * 最后一个测试在 jsdom 里真把窗口画出来，用假 agent 点一遍。 */
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
 
 import { PAGE_HREF_PREFIX, pageFromHref, remarkPageCitations, splitPageRefs } from "../../../packages/ask/src/window/page-citations.ts";
@@ -10,6 +11,7 @@ import { toInitialMessages, toStoredMessages } from "../../../packages/ask/src/a
 import { splitMath } from "../../../packages/ask/src/window/AskQuote.tsx";
 import { shortAgentName } from "../../../packages/ask/src/window/AskHeader.tsx";
 import { QUOTE_LIMIT, answerSelectionText, rangeText, splitQuote, withQuote } from "../../../packages/ask/src/window/answer-quote.tsx";
+import { fitRect, pickAgent } from "../../../packages/ask/src/window/window-memory.ts";
 
 const pages = (segments) => segments.filter((segment) => segment.type === "page").map((segment) => segment.page);
 
@@ -112,9 +114,37 @@ test("回答里选字引用回复：引用写成「> 」放在问题前面、拆
   assert.equal([...rangeText(long, doc)].length, QUOTE_LIMIT + 1, "截断加「…」");
 });
 
+test("另外几处出处（11-27）：认结构化出处的 agent 不带第一处那段字，但另外几处照带", () => {
+  const adapter = readFileSync(new URL("../../../packages/ask/src/acp/adapter.ts", import.meta.url), "utf8");
+  assert.match(adapter, /const preamble = context && !current\.capabilities\?\.selection \? /);
+  assert.match(adapter, /const extra = `\$\{context\?\.extra \|\| ""\}`\.trim\(\);\n      if \(extra\) blocks\.push\(\{ type: "text", text: extra \}\);/);
+});
+
+test("太宽的公式、表格（11-27）：宽得不多缩到放得下，再宽横着滚（窗口里给「放大看」）", async () => {
+  const { fitPlan, MIN_FIT } = await import("../../../packages/ask/src/window/wide-blocks.ts");
+  assert.deepEqual(fitPlan(400, 420), { mode: "fits", zoom: 1 });
+  assert.deepEqual(fitPlan(421, 420), { mode: "fits", zoom: 1 }, "差一像素不算");
+  assert.deepEqual(fitPlan(600, 420), { mode: "fit", zoom: 0.7 });
+  assert.equal(fitPlan(900, 420).mode, "scroll", "缩到一半以下字太小，照旧横着滚");
+  assert.ok(Math.abs(MIN_FIT - 2 / 3) < 1e-9);
+  assert.deepEqual(fitPlan(500, 0), { mode: "fits", zoom: 1 }, "还没排版（量不出宽）不动");
+  const window = readFileSync(new URL("../../../packages/ask/src/window/AskWindow.tsx", import.meta.url), "utf8");
+  assert.match(window, /\{wideBlocks && mode !== "full" \? \(/, "放大了就不用再提示");
+});
+
+test("窗口记忆（11-27）：默认 agent 是上次用的（还能用才算）；记的浮动位置挪回屏幕里", () => {
+  const agents = [{ id: "a", available: true }, { id: "pi", available: true }, { id: "codex", available: false }];
+  assert.equal(pickAgent(agents, "pi"), "pi", "上次用的");
+  assert.equal(pickAgent(agents, "codex"), "a", "上次用的没装了：第一个能用的");
+  assert.equal(pickAgent(agents, undefined), "a");
+  assert.equal(pickAgent([], "pi"), "");
+  assert.deepEqual(fitRect({ x: 1800, y: 900, width: 500, height: 640 }, { width: 1200, height: 800 }), { x: 700, y: 160, width: 500, height: 640 }, "换了小屏：挪回来");
+  assert.deepEqual(fitRect({ x: 10, y: 10, width: 2000, height: 100 }, { width: 1200, height: 800 }), { x: 10, y: 10, width: 1184, height: 280 }, "太宽缩回、太矮撑到最小");
+});
+
 test("真把窗口画出来：常问一点就问；回答里的页码点了交给宿主跳页；引用的公式画出来；贴右边 / 放大切换；Esc 关", async () => {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost/", pretendToBeVisual: true });
-  const keys = ["window", "document", "navigator", "HTMLElement", "HTMLButtonElement", "HTMLTextAreaElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "MutationObserver", "NodeFilter", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame", "addEventListener", "removeEventListener", "dispatchEvent", "innerWidth", "innerHeight"];
+  const keys = ["window", "document", "navigator", "HTMLElement", "HTMLButtonElement", "HTMLTextAreaElement", "Element", "Node", "Event", "MouseEvent", "KeyboardEvent", "MutationObserver", "NodeFilter", "getComputedStyle", "requestAnimationFrame", "cancelAnimationFrame", "addEventListener", "removeEventListener", "dispatchEvent", "innerWidth", "innerHeight", "localStorage"];
   const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
   for (const key of keys) {
     const value = typeof dom.window[key] === "function" && /^[a-z]/.test(key) ? dom.window[key].bind(dom.window) : dom.window[key];
@@ -161,11 +191,18 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     };
     const records = [];
     const forks = [];
+    const layouts = [];
+    const actions = [];
+    localStorage.setItem("retainpdf.ask.window.v1", JSON.stringify({ agentId: "gone" }));
     const CONTEXT = { page: 56, label: "第 56 页 · 2.1", quote: { source: "where $ M_{A} $ is the mass", translated: "其中质量" }, preamble: "我在读一本书，第 56 页。", meta: { retainpdf: { selection: { page: 56 } } } };
     // 宿主：下一问的出处发出去就清掉。
+    let setTaken = () => {};
     function Host() {
       const [context, setContext] = React.useState(CONTEXT);
+      const [dockTaken, setDockTaken] = React.useState(false);
+      setTaken = setDockTaken;
       return React.createElement(AskWindow, {
+        dockTaken,
         port,
         context,
         onContextUsed: () => setContext(null),
@@ -175,24 +212,33 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
         onTurnDone: (messages, agentId, sessionId) => turns.push({ count: messages.length, agentId, sessionId }),
         onTurn: (turn) => records.push(turn),
         onFork: (message) => forks.push(message),
+        onLayout: (layout) => layouts.push(layout),
+        attachTools: [{ key: "page", label: "带上这一页", title: "带上这一页", icon: null, run: async () => new File([new Uint8Array([137, 80, 78, 71])], "第56页.png", { type: "image/png" }) }],
+        answerAction: { label: "改这段译文", title: "改", available: (target) => target.page === 56, run: (target, answer) => actions.push({ page: target.page, data: target.data, ...answer }) },
         pageCount: 100,
       });
     }
     root.render(React.createElement(Host));
-    await until(() => document.querySelector(".ask-starter") && /RetainPDF 自带模型/.test(document.querySelector(".ask-agent-trigger")?.getAttribute("title") || ""), "常问按钮和 agent 列表");
+    // 11-27：「谁来答」在输入框那颗按钮上（agent 不给模型时按钮写 agent 名），标题栏不再选 agent。
+    await until(() => document.querySelector(".ask-starter") && /谁来答：RetainPDF 自带模型/.test(document.querySelector(".ask-config-trigger")?.getAttribute("title") || ""), "常问按钮和「谁来答」");
+    assert.equal(document.querySelector(".ask-head .ask-config-trigger, .ask-head [aria-label^='用的 agent']"), null, "标题栏不再有选 agent");
     const panel = document.querySelector(".ask-panel");
     assert.equal(panel.getAttribute("data-mode"), "float");
     assert.equal(document.querySelector(".ask-pending-label")?.textContent, "第 56 页 · 2.1", "输入框上面是下一问带的出处");
     assert.equal(document.querySelector(".ask-quote"), null, "引的那段收着");
     document.querySelector(".ask-pending-label").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await until(() => document.querySelector(".ask-quote .katex"), "点开出处：引用里的公式画出来了");
-    assert.ok(document.querySelector('.ask-install summary[aria-label="还能接的本机 agent"]'), "没装的 agent 收在插头图标里");
+    assert.equal(document.querySelector(".ask-install"), null, "没装的 agent 不再是标题栏的插头图标（在「谁来答」里）");
+    // 11-27：带着出处时常问在输入框上面（不只是空对话时才有），空白处不再重复一排。
+    assert.equal(document.querySelectorAll(".ask-starters").length, 1);
+    assert.ok(document.querySelector(".ask-pending-starters .ask-starter"), "常问跟着出处");
 
     document.querySelector(".ask-starter").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await until(() => document.querySelector(".aui-md-p .ask-page"), "回答里的页码");
     assert.equal(prompts.length, 1);
     assert.equal(prompts[0].blocks[0].text, "我在读一本书，第 56 页。", "这一问前面带宿主给的出处");
     await until(() => !document.querySelector(".ask-pending"), "发出去以后出处清掉");
+    assert.equal(document.querySelector(".ask-pending-starters"), null, "出处用掉了，常问跟着收起");
     assert.equal(document.querySelector(".ask-question-where")?.textContent, "第 56 页 · 2.1", "问题上面写问的是哪儿");
     document.querySelector(".aui-md-p .ask-page").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     assert.deepEqual(jumps, [12]);
@@ -207,6 +253,9 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     assert.ok(turn.answerId && turn.startedAt > 0, "交出回答的消息编号和开始时刻");
     document.querySelector(".ask-fork").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     assert.deepEqual(forks, [{ id: undefined, text: "见第 12 页。" }], "回答底下的「深挖」");
+    // 11-27：宿主加的动作（阅读页的「改这段译文」）：问题带着出处、宿主认这处才有；点了交回出处和回答。
+    document.querySelector(".ask-answer-action").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    assert.deepEqual(actions, [{ page: 56, data: { retainpdf: { selection: { page: 56 } } }, text: "见第 12 页。", selection: "" }]);
 
     // 回答里选字 → 输入框上面「引用回答」→ 打字发出去：问题前面带「> 」引用，气泡里画成引用框。
     const answerText = document.querySelector('[data-role="assistant"] .aui-md-p').firstChild;
@@ -232,13 +281,42 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     await settle(300);
     assert.equal(document.querySelector(".ask-reply-quote"), null, "选区还在也不再冒出来");
 
+    // 11-27：输入框那一行宿主的「带上这一页」：截图当附件跟下一问发出去（ACP 的 image 块）。
+    document.querySelector('.ask-attach-tool[aria-label="带上这一页"]').dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await until(() => document.querySelector('[class*="aui-attachment"]'), "截图进了输入框");
+    Object.getOwnPropertyDescriptor(dom.window.HTMLTextAreaElement.prototype, "value").set.call(input, "图里是什么？");
+    input.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+    await settle();
+    document.querySelector(".aui-composer-send").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await until(() => prompts.length === 3, "第三问发出去");
+    assert.ok(prompts[2].blocks.some((block) => block.type === "image" && block.mimeType === "image/png"), "截图作为 image 块发出去");
+
     const button = (label) => [...document.querySelectorAll(".ask-head button")].find((element) => element.getAttribute("aria-label") === label);
     button("贴到右边").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await settle();
     assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "dock");
+    assert.equal(layouts.at(-1).mode, "dock", "摆法交给宿主（书页让出右边）");
+    assert.equal(JSON.parse(localStorage.getItem("retainpdf.ask.window.v1")).mode, "dock", "贴右边记在本机");
     button("放大").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
     await settle();
     assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "full");
+    assert.equal(JSON.parse(localStorage.getItem("retainpdf.ask.window.v1")).mode, "dock", "放大不记");
+    button("还原").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await settle();
+    assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "dock", "还原回到放大前的贴右边");
+    // 宿主右边停了别的（阅读页开了 Markdown 面板）：贴右边的窗口变回浮动，记住的摆法不改。
+    setTaken(true);
+    await settle();
+    assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "float", "右边让给宿主的面板");
+    assert.equal(layouts.at(-1).mode, "float", "宿主知道不用再让");
+    assert.equal(JSON.parse(localStorage.getItem("retainpdf.ask.window.v1")).mode, "dock", "下次打开照旧贴右边");
+    // 面板还开着时自己又点贴右边：留在右边（宿主那头按「后来的留下」关面板），不被 dockTaken 弹回去。
+    button("贴到右边").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await settle();
+    assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "dock", "后来的留下");
+    setTaken(false);
+    await settle();
+    assert.equal(document.querySelector(".ask-panel").getAttribute("data-mode"), "dock", "面板关了，照旧贴右边");
 
     // 开着弹层时 Esc 只关弹层，不关窗。
     const popper = document.createElement("div");
@@ -255,4 +333,81 @@ test("真把窗口画出来：常问一点就问；回答里的页码点了交�
     for (const [key, value] of Object.entries(previous)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
     dom.window.close();
   }
+});
+
+test("贴右边是页面的一栏（2026-11-27；11-28 画进宿主的停靠栏）：上下让出宿主的栏（默认上 60、下 0）、压在顶栏下面、没有投影和发光、× 不贴边", async () => {
+  const { DEFAULT_DOCK_INSETS } = await import("../../../packages/ask/src/window/use-window-layout.ts");
+  assert.deepEqual(DEFAULT_DOCK_INSETS, { top: 60, bottom: 0 });
+  const layout = readFileSync(new URL("../../../packages/ask/src/window/use-window-layout.ts", import.meta.url), "utf8");
+  // 贴右边上下让出宿主的栏：不给时上 60、下 0；阅读页（三行壳层）给顶栏、底栏的高，见 reader-shell-layout.test.mjs。
+  assert.match(layout, /return \{ x: vw - width, y: insets\.top, width, height: vh - insets\.top - insets\.bottom \};/);
+  const win = readFileSync(new URL("../../../packages/ask/src/window/AskWindow.tsx", import.meta.url), "utf8");
+  assert.match(win, /className=\{`ask-window ask-window--\$\{mode\}`\}/);
+  // 2026-11-27 起 ask.css 按组件拆开：窗口外框（层级、贴右边、思考染边）在 ask/window.css。
+  const css = readFileSync(new URL("../../../packages/ask/styles/ask/window.css", import.meta.url), "utf8");
+  // 层级由宿主定：提问窗写 var(--ask-z-dock)，阅读页设成顶栏（--z-chrome，35）减一。
+  assert.match(css, /\.ask-window\.ask-window--dock\s*\{[^}]*z-index:\s*var\(--ask-z-dock,/);
+  const host = readFileSync(new URL("../../../packages/reader/styles/ask-host.css", import.meta.url), "utf8");
+  assert.match(host, /--ask-z-dock:\s*calc\(var\(--z-chrome, 35\) - 1\);/, "贴右边压在阅读页顶栏下面");
+  // 2026-11-28 收口回黑白纸墨：贴右边没有投影；思考强度只给输入框一圈细边，不染窗口边、不发光、不染发送键。
+  const block = (selector) => {
+    const at = css.indexOf(`${selector} {`);
+    assert.ok(at >= 0, `${selector} 没写`);
+    return css.slice(at, css.indexOf("}", at));
+  };
+  assert.match(block('.ask-panel[data-mode="dock"]'), /box-shadow:\s*none/);
+  const effort = block('.ask-panel[data-effort="on"]');
+  assert.match(effort, /--ask-composer-edge:/);
+  assert.doesNotMatch(effort, /box-shadow|border-color|--ask-composer-glow|--ask-composer-bg|--ask-send-/, "思考强度只留输入框细边");
+  assert.doesNotMatch(css, /\.ask-watermark/, "聊天区正中的彩色水印去掉了");
+  assert.doesNotMatch(win, /ask-watermark/);
+  // 宿主给了停靠栏（dockHost）时画进去，铺满那一格、层级照贴右边。
+  assert.match(win, /if \(hosted && dockHost\) \{\s*return createPortal\(<HostedDock/);
+  assert.match(block(".ask-window.ask-window--hosted"), /z-index:\s*var\(--ask-z-dock,/);
+  assert.match(css, /\.ask-panel\[data-mode="dock"\] \.ask-head\s*\{[^}]*padding-right:\s*10px/);
+});
+
+test("「谁来答」的 agent 那一排（2026-11-27 从标题栏挪进输入框按钮的弹层）：能用的点了换，没装的写「要先装」、点了给安装命令；只有一个 agent 不画", async () => {
+  const dom = new JSDOM("<!doctype html><html><body><div id='root'></div></body></html>", { url: "http://localhost/" });
+  const keys = ["window", "document", "navigator", "HTMLElement", "Element", "Node", "Event", "MouseEvent"];
+  const previous = Object.fromEntries(keys.map((key) => [key, globalThis[key]]));
+  for (const key of keys) Object.defineProperty(globalThis, key, { value: dom.window[key], configurable: true, writable: true });
+  globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+  try {
+    const React = await import("react");
+    const { act } = React;
+    const { createRoot } = await import("react-dom/client");
+    const { AgentRow } = await import("../../../packages/ask/src/window/agent-row.tsx");
+    const chosen = [];
+    const agents = [
+      { id: "retainpdf", name: "RetainPDF 自带模型", available: true },
+      { id: "claude-code", name: "Claude Code", available: true },
+      { id: "codex", name: "Codex", available: false, install: "npm install -g codex-acp" },
+    ];
+    const root = createRoot(document.getElementById("root"));
+    await act(async () => root.render(React.createElement(AgentRow, { agents, agentId: "retainpdf", onAgent: (id) => chosen.push(id) })));
+    const buttons = [...document.querySelectorAll(".ask-answerer-agent")];
+    assert.deepEqual(buttons.map((button) => button.textContent), ["自带模型", "Claude Code", "Codex要先装"]);
+    assert.equal(buttons[0].getAttribute("aria-checked"), "true");
+    await act(async () => buttons[1].dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    assert.deepEqual(chosen, ["claude-code"]);
+    await act(async () => buttons[2].dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true })));
+    assert.deepEqual(chosen, ["claude-code"], "没装的点了不换");
+    assert.match(document.querySelector(".ask-answerer-install").textContent, /npm install -g codex-acp/);
+    await act(async () => root.render(React.createElement(AgentRow, { agents: agents.slice(0, 1), agentId: "retainpdf", onAgent: () => {} })));
+    assert.equal(document.querySelector(".ask-answerer"), null, "只有一个 agent：不画这一排");
+    await act(async () => root.unmount());
+  } finally {
+    for (const [key, value] of Object.entries(previous)) Object.defineProperty(globalThis, key, { value, configurable: true, writable: true });
+    dom.window.close();
+  }
+});
+
+test("标题栏（2026-11-27 按「对话」收拾）：左边标题、右边「···」和窗口摆法；不常用的进「···」，点一项收起再做", async () => {
+  const header = readFileSync(new URL("../../../packages/ask/src/window/AskHeader.tsx", import.meta.url), "utf8");
+  assert.doesNotMatch(header, /AgentPicker|InstallMenu|Plug/, "选 agent、插头不在标题栏");
+  assert.match(header, /<AskMoreMenu items=\{menu\} \/>/);
+  const menu = readFileSync(new URL("../../../packages/ask/src/window/head-menu.tsx", import.meta.url), "utf8");
+  assert.match(menu, /if \(!items\.length\) return null;/, "没有项就不画「···」");
+  assert.match(menu, /event\.preventDefault\(\);\s*setOpen\(false\);/, "Esc 只收下拉、不关窗");
 });

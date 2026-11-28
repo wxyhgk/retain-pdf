@@ -36,7 +36,7 @@ def main(argv):
     index = 0
     while index < len(argv):
         key = argv[index]
-        if key in ("--input", "--out-dir", "--typst", "--font-path", "--output"):
+        if key in ("--input", "--out-dir", "--typst", "--font-path", "--output", "--pdf-font-weight"):
             args.setdefault(key, []).append(argv[index + 1])
         else:
             sys.stderr.write(json.dumps({"error": f"unknown argument {key}"}) + "\n")
@@ -71,10 +71,13 @@ def main(argv):
     doc = fitz.open()
     blocks = []
     math_failed = []
+    layout_pages = []
     for page in rendered:
         index = int(page["page_index"])
         assert str(index) in drawings, f"drawings missing page {index}"
         pdf_page = doc.new_page(width=page["width"], height=page["height"])
+        layout_page = {"index": index, "width": page["width"], "height": page["height"], "covers": [], "blocks": []}
+        layout_pages.append(layout_page)
         for block in page.get("blocks", []):
             number = int(str(block["block_id"]).rsplit("-b", 1)[-1])
             item = items.get((index, number))
@@ -83,6 +86,16 @@ def main(argv):
                 continue
             x0, y0, x1, y1 = block["bbox"]
             pdf_page.insert_text((x0 + 1, y0 + 8), "FIT", fontsize=6)
+            layout_page["covers"].append({"block": block["block_id"], "rect": [x0, y0, x1, y1], "fill": [1, 1, 1]})
+            layout_items = [{"x": x0 + 10 * k, "t": ch, "font": "LibertinusSerif-Regular"} for k, ch in enumerate(text)]
+            if "$" in text:
+                (out_dir / "math").mkdir(exist_ok=True)
+                (out_dir / "math" / "00112233aabbccdd.svg").write_text('<svg xmlns="http://www.w3.org/2000/svg"/>', encoding="utf-8")
+                layout_items.append({"x": x1 - 20, "tex": "x^2", "display": False, "w": 1.0, "h": 0.8, "d": 0.1,
+                                     "svg": "math/00112233aabbccdd.svg"})
+            layout_page["blocks"].append({"id": block["block_id"], "fontSize": 10, "weight": "regular", "color": [0, 0, 0],
+                                          "lines": [{"text": text, "x": x0, "baseline": y0 + 8, "width": x1 - x0, "justified": False,
+                                                     "items": layout_items}]})
             if "RAWTEX" in text or "MJFAIL" in text:
                 pdf_page.insert_text((x0 + 1, y0 + 20), text, fontsize=6)
             if "MJFAIL" in text and text.count("$") >= 2:
@@ -96,6 +109,9 @@ def main(argv):
     for _ in range(max(0, int(os.environ.get("FAKE_RPR_PAGES_DELTA", "0") or 0))):
         doc.new_page(width=100, height=100)
     doc.save(out_dir / "overlay.pdf")
+    fonts = [{"key": "LibertinusSerif-Regular", "postscript": "LibertinusSerif-Regular", "family": "Libertinus Serif",
+              "weight": 400, "mono": False, "file": "LibertinusSerif-Regular.otf"}]
+    (out_dir / "layout.json").write_text(json.dumps({"schema": "rpr_layout_v1", "pages": layout_pages, "fonts": fonts}, ensure_ascii=False), encoding="utf-8")
     report = {
         "schema": "rpr_fit_report_v1",
         "engine": {"name": "retain-pdf-rendering", "version": "%(version)s", "commit": "fakecommit"},
@@ -131,12 +147,20 @@ exec(code, {{"__name__": "__main__", "__file__": script}})
 """
 
 
+REAL_ENGINE_FALLBACK_FONTS = Path(__file__).resolve().parents[4] / "rendering-engine" / "engine" / "data" / "fonts" / "fallback"
+
+
 def install_fake_rpr_engine(root: Path, monkeypatch=None, *, with_mathjax: bool = True) -> Path:
     """在 root 下搭一个假引擎；给了 monkeypatch 就顺手设好环境变量并 stub 掉 typst 定位。"""
     root.mkdir(parents=True, exist_ok=True)
     engine = root / "engine"
     (engine / "bin").mkdir(parents=True, exist_ok=True)
     (engine / "bin" / "rpr-fit.js").write_text(_FAKE_FIT_CLI, encoding="utf-8")
+    # 引擎自带的后备字体（阅读页的字体子集从这里找 LibertinusSerif-Regular.otf）
+    fallback = engine / "data" / "fonts" / "fallback"
+    if not fallback.exists():
+        fallback.parent.mkdir(parents=True, exist_ok=True)
+        fallback.symlink_to(REAL_ENGINE_FALLBACK_FONTS, target_is_directory=True)
     (engine / "package.json").write_text(
         json.dumps({"name": "retain-pdf-rendering", "version": FAKE_ENGINE_VERSION}), encoding="utf-8"
     )

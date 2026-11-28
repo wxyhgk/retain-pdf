@@ -210,6 +210,8 @@ export function createAcpChatAdapter(options: AcpChatOptions) {
       // 这一问的出处：agent 认结构化出处（_meta）就不写那段字。
       const preamble = context && !current.capabilities?.selection ? `${context.preamble || ""}`.trim() : "";
       if (preamble) blocks.push({ type: "text", text: preamble });
+      const extra = `${context?.extra || ""}`.trim();
+      if (extra) blocks.push({ type: "text", text: extra });
       blocks.push({ type: "text", text: question || "（看图）" });
       blocks.push(...imageBlocks(last as never));
 

@@ -4,7 +4,10 @@ export type ReaderBookmarkControlProps = {
     currentPage: number;
     numPages: number;
     regions?: readonly ReaderRegion[];
-    onGoToPage?: (page: number) => void;
 };
-export declare function ReaderBookmarkControl({ scope, currentPage, numPages, regions, onGoToPage }: ReaderBookmarkControlProps): import("react").JSX.Element;
+/** 书签图标：加过书签的页填实。 */
+export declare function BookmarkIcon({ filled }: {
+    filled: boolean;
+}): import("react").JSX.Element;
+export declare function ReaderBookmarkControl({ scope, currentPage, numPages, regions }: ReaderBookmarkControlProps): import("react").JSX.Element;
 //# sourceMappingURL=ReaderBookmarkControl.d.ts.map

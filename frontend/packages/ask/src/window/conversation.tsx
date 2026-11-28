@@ -8,10 +8,10 @@
  */
 import { createContext, useContext, useMemo, useState, type ReactElement } from "react";
 import { useAuiState } from "@assistant-ui/react";
-import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, PencilLine, Undo2, X } from "lucide-react";
+import { BookmarkCheck, ChevronUp, GitBranch, Loader2, MapPin, MessagesSquare, PencilLine, SquarePen, Undo2, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
-import type { AskContext, AskMemoryNotice, AskMessage, AskMessageContext } from "../contract.js";
+import type { AskAnswerAction, AskContext, AskContextOffer, AskMemoryNotice, AskMessage, AskMessageContext } from "../contract.js";
 import { AskQuote } from "./AskQuote.js";
 
 export type AskConversationUi = {
@@ -31,6 +31,12 @@ export type AskConversationUi = {
   forget?: (memoryId: string) => Promise<void>;
   /** 宿主事后查到的记忆（agent 不在工具卡片的 _meta 里报的，比如 RetainPDF + pi），按回答的消息编号。 */
   memories?: ReadonlyMap<string, readonly AskMemoryNotice[]>;
+  /** 回答底下宿主加的动作（「改这段译文」）。 */
+  answerAction?: AskAnswerAction;
+  /** 窗口里正选着的回答里的字（answer-quote 盯着的那段）。 */
+  answerSelection?: () => string;
+  /** 已经带着出处时又选了一处：换成它还是再加上它。 */
+  offer?: AskContextOffer | null;
 };
 
 export const AskConversationContext = createContext<AskConversationUi>({ pending: null, contexts: new Map() });
@@ -62,6 +68,22 @@ export function PendingContextBar(): ReactElement | null {
         ) : null}
       </div>
       {open && hasQuote ? <AskQuote quote={pending.quote} /> : null}
+    </div>
+  );
+}
+
+/** 出处下面：书页上又选了一处（不再悄悄换掉已经带着的），换成它 / 再加上它 / 不要。 */
+export function ContextOfferBar(): ReactElement | null {
+  const { offer, pending } = useContext(AskConversationContext);
+  if (!offer || !pending) return null;
+  return (
+    <div className="ask-offer" role="group" aria-label="新选的一处">
+      <span className="ask-offer-label" title={offer.label}>又选了 {offer.label}</span>
+      <Button className="ask-offer-action" onClick={offer.replace}>换成这段</Button>
+      {offer.add ? <Button className="ask-offer-action" onClick={offer.add}>再加一段</Button> : null}
+      <Button className="ask-icon ask-pending-clear" aria-label="不要这段" title="不要这段" onClick={offer.dismiss}>
+        <X size={12} aria-hidden />
+      </Button>
     </div>
   );
 }
@@ -140,9 +162,12 @@ export function MessageAfter(): ReactElement | null {
     return [...fromTools, ...(extra || []).filter((memory) => !fromTools.some((known) => known.id === memory.id))];
   }, [content, extra]);
   const compacted = useAuiState((state) => Boolean((state.message.metadata?.custom as StoredCustom | undefined)?.stored?.marks?.compactedBefore));
-  if (!memories.length && !compacted) return null;
+  // 选了思考、模型却没真的思考（自带 agent 给的一句话，照原样显示；后端 2026-11-27）。
+  const thinkingNotice = useAuiState((state) => (state.message.metadata?.custom as { turn?: { usage?: { thinking?: { notice?: string } } } } | undefined)?.turn?.usage?.thinking?.notice || "");
+  if (!memories.length && !compacted && !thinkingNotice) return null;
   return (
     <div className="ask-after">
+      {thinkingNotice ? <p className="ask-thinking-notice" role="note">{thinkingNotice}</p> : null}
       {memories.map((memory) => <MemoryNotice key={memory.id} memory={memory} />)}
       {compacted ? (
         <div className="ask-compacted" role="separator" title="到这里为止的对话已经压缩成摘要，AI 之后看摘要；原文还在上面">
@@ -153,7 +178,27 @@ export function MessageAfter(): ReactElement | null {
   );
 }
 
-/** 回答底下：「深挖」、结论卡片的「看副对话」。 */
+/** 回答底下宿主加的动作：问题带着出处、宿主认这处才有。 */
+function AnswerAction({ text }: { text: string }): ReactElement | null {
+  const { answerAction, answerSelection, contexts } = useContext(AskConversationContext);
+  // 这条回答的问题：前一条（问和答一对一对挨着）。
+  const question = useAuiState((state) => state.thread.messages[state.message.index - 1]);
+  if (!answerAction || !question || question.role !== "user") return null;
+  const context = (question.metadata?.custom as { context?: AskMessageContext } | undefined)?.context || contexts.get(question.id);
+  if (!context || !answerAction.available(context)) return null;
+  return (
+    <Button
+      className="ask-icon ask-answer-action"
+      aria-label={answerAction.label}
+      title={answerAction.title}
+      onClick={() => answerAction.run(context, { text, selection: answerSelection?.() || "" })}
+    >
+      <SquarePen size={13} aria-hidden />
+    </Button>
+  );
+}
+
+/** 回答底下：「深挖」、结论卡片的「看副对话」、宿主加的动作（「改这段译文」）。 */
 export function ConversationFooter(): ReactElement | null {
   const { fork, openSide } = useContext(AskConversationContext);
   const role = useAuiState((state) => state.message.role);
@@ -175,6 +220,7 @@ export function ConversationFooter(): ReactElement | null {
           <GitBranch size={13} aria-hidden />
         </Button>
       ) : null}
+      {text.trim() ? <AnswerAction text={text} /> : null}
     </>
   );
 }

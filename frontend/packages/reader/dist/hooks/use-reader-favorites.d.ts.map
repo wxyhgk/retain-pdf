@@ -1,0 +1,1 @@
+{"version":3,"file":"use-reader-favorites.d.ts","sourceRoot":"","sources":["../../src/hooks/use-reader-favorites.ts"],"names":[],"mappings":"AAGA,OAAO,EAKL,KAAK,cAAc,EACpB,MAAM,qCAAqC,CAAC;AAE7C,wBAAgB,kBAAkB,CAAC,KAAK,EAAE,MAAM;;iBAOpC;QAAE,IAAI,EAAE,MAAM,CAAC;QAAC,IAAI,EAAE,MAAM,CAAC;QAAC,IAAI,EAAE,QAAQ,GAAG,YAAY,CAAA;KAAE;iBAGvC,MAAM;EAEvC"}

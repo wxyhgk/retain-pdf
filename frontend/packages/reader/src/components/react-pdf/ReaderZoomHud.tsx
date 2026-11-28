@@ -1,7 +1,13 @@
-// 底栏：页码（可点跳转）+ 缩放 +/- / 模式默认重置。
+// 底栏（2026-11-28 起三行壳层的最下面一行：全宽、实占位、任何模式都不变形，不再浮在书页上、不再往下翻时收起）：
+// - 左：给这一页加书签、改了译文还没排进 PDF 的提示（leftSlot）；
+// - 中：页码（可点跳转）、深色文档、缩放 −/百分比/+；
+// - 右：书页工具（toolsSlot：画笔 ▾、截图）、快捷键（?）。
+// 搜索、书签列表、待处理在左栏（ReaderFinder）；提问、Markdown、对比版本在顶栏右边。
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
+import { Contrast, Minus, Plus } from "lucide-react";
+import { BAR_ICON } from "./bar-icon.js";
 import {
   readerViewportWidth,
   READER_ZOOM_DEFAULT,
@@ -15,9 +21,7 @@ import {
 import { clampPageNumber } from "../../pdf/scroll-to-page.js";
 import { ReaderShortcutsHelp } from "./ReaderShortcutsHelp.js";
 import { ReaderBookmarkControl } from "./ReaderBookmarkControl.js";
-import { ReaderIssuesControl } from "./ReaderIssuesControl.js";
 import { useReaderContext, useReaderHudContext } from "./reader-context.js";
-import { useHudAutoHide } from "./use-hud-autohide.js";
 
 export type ReaderZoomHudProps = {
   /** 以下显示值缺省时从 reader context / hud context 取 */
@@ -31,10 +35,14 @@ export type ReaderZoomHudProps = {
   modeControls?: ReactNode;
   /** 书签按这本书存（和阅读位置同一个 scope）；不给就不显示书签。 */
   bookmarkScope?: string;
-  /** 「待处理」读哪个任务的问题段落；不给就不显示。 */
-  issuesJobId?: string;
-  /** 页码后面的「搜索」按钮（ReaderSearchToggle，2026-11-20 从顶栏挪下来）。 */
+  /** 页码后面放的按钮（宿主自己加；阅读页不放，搜索在左栏）。 */
   searchSlot?: ReactNode;
+  /** 左边最前面、书签前面（阅读页：搜索——打开左栏，2026-11-28 从顶栏左边挪下来）。 */
+  startSlot?: ReactNode;
+  /** 左边书签后面（阅读页：改了译文还没排进 PDF 的提示）。 */
+  leftSlot?: ReactNode;
+  /** 右边快捷键前面（阅读页：ReaderBarTools place="bottom"，画笔 ▾、截图）。 */
+  toolsSlot?: ReactNode;
 };
 
 export function ReaderZoomHud(props: ReaderZoomHudProps) {
@@ -53,9 +61,6 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
   const resetZoom = defaultZoomForMode(mode, readerViewportWidth());
   // 窄屏单栏的默认是铺满（见 reader-zoom.ts 的 READER_NARROW_VIEWPORT_PX）。
   const resetLabel = resetZoom >= READER_ZOOM_MAX ? "恢复默认大小（铺满阅读区）" : "恢复默认大小（对照时左右各占一半）";
-  // 往下翻书时收起、往回翻或鼠标移到底部时出来（use-hud-autohide），不再一直压着正文最后几行。
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const autoHidden = useHudAutoHide(rootRef);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(`${currentPage}`);
@@ -76,7 +81,20 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
   };
 
   return (
-    <div ref={rootRef} className="reader-react-hud" data-reader-hud="true" data-hud-hidden={autoHidden ? "true" : undefined}>
+    <footer className="reader-bottombar" data-reader-hud="true">
+      <div className="reader-bottombar-start">
+        {props.startSlot}
+        {props.bookmarkScope ? (
+          <ReaderBookmarkControl
+            scope={props.bookmarkScope}
+            currentPage={currentPage}
+            numPages={numPages}
+            regions={ctx?.regions}
+          />
+        ) : null}
+        {props.leftSlot}
+      </div>
+      <div className="reader-bottombar-center">
       {modeControls ? <div className="reader-react-hud-group reader-react-hud-modes">{modeControls}</div> : null}
       <div className="reader-react-hud-group" aria-label="页码">
         {editing ? (
@@ -127,16 +145,6 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
         )}
       </div>
       {props.searchSlot ? <div className="reader-react-hud-group" aria-label="搜索">{props.searchSlot}</div> : null}
-      {props.bookmarkScope ? (
-        <ReaderBookmarkControl
-          scope={props.bookmarkScope}
-          currentPage={currentPage}
-          numPages={numPages}
-          regions={ctx?.regions}
-          onGoToPage={onGoToPage}
-        />
-      ) : null}
-      {props.issuesJobId ? <ReaderIssuesControl jobId={props.issuesJobId} currentPage={currentPage} /> : null}
       {ctx?.toggleDocDark ? (
         <div className="reader-react-hud-group" aria-label="显示">
           <Button
@@ -146,7 +154,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
             title={ctx.docDark ? "换回白底黑字（D）" : "深色文档：书页黑底白字（D）"}
             onClick={ctx.toggleDocDark}
           >
-            <DocDarkIcon />
+            <Contrast {...BAR_ICON} aria-hidden />
           </Button>
         </div>
       ) : null}
@@ -158,7 +166,7 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           disabled={!canZoomOut}
           onClick={() => onZoomChange(stepReaderZoom(userZoom, -1))}
         >
-          −
+          <Minus {...BAR_ICON} aria-hidden />
         </button>
         <button
           type="button"
@@ -176,22 +184,17 @@ export function ReaderZoomHud(props: ReaderZoomHudProps) {
           disabled={!canZoomIn}
           onClick={() => onZoomChange(stepReaderZoom(userZoom, 1))}
         >
-          +
+          <Plus {...BAR_ICON} aria-hidden />
         </button>
       </div>
-      <div className="reader-react-hud-group reader-react-hud-help" aria-label="帮助">
-        <ReaderShortcutsHelp />
       </div>
-    </div>
+      <div className="reader-bottombar-end">
+        {props.toolsSlot}
+        <div className="reader-react-hud-group reader-react-hud-help" aria-label="帮助">
+          <ReaderShortcutsHelp />
+        </div>
+      </div>
+    </footer>
   );
 }
 
-/** 半边黑的圆：深色文档开关。 */
-function DocDarkIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-      <circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" />
-    </svg>
-  );
-}

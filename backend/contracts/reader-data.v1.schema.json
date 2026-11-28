@@ -44,6 +44,44 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/jobs/:job_id/reader/layout",
+      "client_name": "getReaderLayout",
+      "transport": "json",
+      "output": "ReaderLayoutView",
+      "rust_view": "ReaderLayoutView",
+      "ts_consumer": "@retainpdf/contracts/reader-data :: ReaderLayoutView",
+      "note": "rpr_fit 排版引擎排的版面清单（2026-11-28），阅读页的 HTML 页照它画、和译文 PDF 一样。没有版面不是错误：available=false 带 reason，能补排时 generate 给出原地重新渲染的请求。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/reader/layout/pages/:page_idx",
+      "client_name": "getReaderLayoutPage",
+      "transport": "json",
+      "output": "ReaderLayoutPage",
+      "rust_view": "serde_json::Value（rpr_layout_v1 的一页，原样）",
+      "ts_consumer": "@retainpdf/contracts/reader-data :: ReaderLayoutPage",
+      "note": "一页版面，page_idx 是原文页号（从 0 起）。带弱 ETag（等于清单里这页的 etag），If-None-Match 一样回 304；没有这页 404。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/reader/layout/background",
+      "transport": "binary",
+      "note": "版面的底图 PDF（2026-11-28）：译文 PDF 的底（去掉原字的原文页），只含清单 background.pages 里的页、按页号从小到大排；支持 Range。清单里 background 是 null 时 404。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/reader/layout/fonts/:name",
+      "transport": "binary",
+      "note": "版面用的字体子集（font/woff2），清单 fonts[].url 指着它；只认清单里列了的。长缓存"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/reader/layout/math/:name",
+      "transport": "binary",
+      "note": "版面里公式的 MathJax SVG（image/svg+xml），name 是公式项 svg 去掉 math/ 前缀。长缓存"
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/jobs/:job_id/progress/layout",
       "client_name": "getLiveLayout",
       "transport": "json",
@@ -220,6 +258,411 @@
         "source": { "anyOf": [{ "$ref": "#/definitions/ReaderDocumentMetadata" }, { "type": "null" }] },
         "translated": { "anyOf": [{ "$ref": "#/definitions/ReaderDocumentMetadata" }, { "type": "null" }] }
       }
+    },
+    "ReaderLayoutPageEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "width", "height", "etag", "blocks", "tables", "url"],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "原文页号，从 0 起"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "etag": {
+          "type": "string",
+          "description": "这页版面的指纹，取这页时的 ETag 就是它"
+        },
+        "blocks": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tables": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "这页有几张表格（页里的 tables）"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "ReaderLayoutBackground": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "pages"],
+      "properties": {
+        "url": {"type": "string", "description": "PDF，支持 Range"},
+        "pages": {"type": "array", "items": {"type": "integer", "minimum": 0}, "description": "底图第 n 页是原文第 pages[n] 页（从 0 起）"}
+      }
+    },
+    "ReaderLayoutFont": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "family", "weight", "url"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "版面里字簇的 font 就是它"
+        },
+        "family": {
+          "type": "string"
+        },
+        "weight": {
+          "type": "integer"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "description": "画字用的字体：和引擎画 PDF 用的同一份文件，只留这本书用到的字、转 woff2。主字体在前（前端按这个顺序当字体栈）。url 带 ?v=，重新渲染就换，可长缓存。后端没装 fontTools 时 fonts 是空数组"
+    },
+    "ReaderLayoutGenerate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "url", "body"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["POST"]
+        },
+        "url": {
+          "type": "string"
+        },
+        "body": {
+          "type": "object",
+          "description": "照原样发：retry-stage 的请求体（stage=render、create_new_job=false，原地重新渲染这个任务；任务原来不是 rpr_fit 路线时还带 overrides.render.engine=rpr_fit）"
+        }
+      }
+    },
+    "ReaderLayoutView": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["available", "reason", "schema", "engine_version", "engine_commit", "page_count", "pages", "background", "fonts", "features", "generate"],
+      "properties": {
+        "available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "enum": ["no_translated_pdf", "not_engine_route", "unsupported_render", "merged_reading", "not_kept", "backfill_queued", "job_active"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "没有版面的原因：no_translated_pdf 还没有译文 PDF；not_engine_route 这次不是 rpr_fit 排的（Typst）；unsupported_render 引擎排不了的设置（双栏对照、字体不是思源宋体）；merged_reading 合并阅读的虚拟任务；not_kept 引擎排的但版面没留下（2026-11-28 以前的任务、或回退了 Typst）。backfill_queued 旧书排进了自动补排（打开清单时后端登记，后台一次补一本、原地重新渲染，不花钱）；job_active 任务在排队或在跑（比如正在补排），跑完再看。有版面时 null。以后可能加值。"
+        },
+        "schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "版面格式，现在是 rpr_layout_v1"
+        },
+        "engine_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "engine_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "page_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "pages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutPageEntry"
+          }
+        },
+        "background": {
+          "anyOf": [{"$ref": "#/definitions/ReaderLayoutBackground"}, {"type": "null"}],
+          "description": "底图：译文 PDF 的底（去掉原字的原文页）。渲染源就是原件（扫描件）时 null，用原文页做底"
+        },
+        "fonts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutFont"
+          }
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "页里多出来的几项（2026-11-28 起存的版面有）：erase 要抹掉的原字（有了它不用底图，原文页做底、先画 erase）；tables 表格。空的是以前存的版面：照旧用底图，表格是原文。以后可能加值"
+        },
+        "generate": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ReaderLayoutGenerate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ReaderLayoutCover": {
+      "type": "object",
+      "required": ["block", "rect", "fill"],
+      "properties": {
+        "block": {
+          "type": "string",
+          "description": "块 id，和 /reader/regions 的 item_id 同一套"
+        },
+        "rect": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "[x0, y0, x1, y1]，pt，原点在页左上、y 向下"
+        },
+        "fill": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "RGB，各分量 0–1"
+        }
+      }
+    },
+    "ReaderLayoutPaint": {
+      "type": "object",
+      "required": ["rect", "fill"],
+      "properties": {
+        "rect": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "[x0, y0, x1, y1]，pt，原点在页左上、y 向下"
+        },
+        "fill": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "RGB，各分量 0–1"
+        }
+      },
+      "description": "一个实心矩形：要抹掉的原字（填的是估的底色）、表格线"
+    },
+    "ReaderLayoutTable": {
+      "type": "object",
+      "required": ["id", "cover", "rules", "blocks"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "表格块 id，和 /reader/regions 的 item_id 同一套"
+        },
+        "cover": {
+          "$ref": "#/definitions/ReaderLayoutPaint",
+          "description": "盖掉原表（字和线）：原表的框往外放 2pt，填的是估的底色"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutPaint"
+          },
+          "description": "新画的表格线（细长的实心矩形）"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutBlock"
+          },
+          "description": "每个格子一块，id 是 <表格块 id>:r<行>c<列>；和正文的块一样画"
+        }
+      },
+      "description": "rpr-table 排进原表框里的一张表（译文 PDF 上叠的就是它）"
+    },
+    "ReaderLayoutItem": {
+      "type": "object",
+      "required": ["x"],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "t": {
+          "type": "string",
+          "description": "一个字簇，画在 x、行的基线上"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["dflt"],
+          "description": "只有标点、数字的一段，按西文整形"
+        },
+        "tex": {
+          "type": "string",
+          "description": "公式的 LaTeX（有 tex 就是公式，没有 t）"
+        },
+        "display": {
+          "type": "boolean"
+        },
+        "w": {
+          "type": "number",
+          "description": "公式盒宽，按字号的 em"
+        },
+        "h": {
+          "type": "number",
+          "description": "基线以上高，em"
+        },
+        "d": {
+          "type": "number",
+          "description": "基线以下深，em"
+        },
+        "font": {
+          "type": "string",
+          "description": "字簇用哪个字体画：清单 fonts[].key（2026-11-28 起的引擎写；mode \"dflt\" 的段、缺字时的后备字体都写明）"
+        },
+        "svg": {
+          "type": "string",
+          "description": "公式的 MathJax SVG，形如 math/<16 位十六进制>.svg；取 /api/v1/jobs/:job_id/reader/layout/<svg>（2026-11-28 起的引擎写）。颜色是 currentColor"
+        }
+      },
+      "description": "字簇 {x, t, mode?, font?} 或公式 {x, tex, display, w, h, d, svg?}。以后可能再加字段。"
+    },
+    "ReaderLayoutLine": {
+      "type": "object",
+      "required": ["text", "x", "baseline", "width", "justified", "items"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "只给读和搜（公式写成 $...$），画的是 items"
+        },
+        "x": {
+          "type": "number"
+        },
+        "baseline": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        },
+        "justified": {
+          "type": "boolean"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutItem"
+          }
+        }
+      }
+    },
+    "ReaderLayoutBlock": {
+      "type": "object",
+      "required": ["id", "fontSize", "weight", "color", "lines"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "块 id，和 /reader/regions 的 item_id 同一套；跨页、跨栏续段每一截各一块"
+        },
+        "fontSize": {
+          "type": "number"
+        },
+        "weight": {
+          "type": "string",
+          "enum": ["regular", "bold"]
+        },
+        "color": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3,
+          "description": "RGB，各分量 0–1"
+        },
+        "lines": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutLine"
+          }
+        }
+      }
+    },
+    "ReaderLayoutPage": {
+      "type": "object",
+      "required": ["index", "width", "height", "covers", "blocks"],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "原文页号，从 0 起"
+        },
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        },
+        "covers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutCover"
+          },
+          "description": "先画：盖掉原文的块（填色是估的原页底色）"
+        },
+        "blocks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutBlock"
+          }
+        },
+        "erase": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutPaint"
+          },
+          "description": "拿原文页做底时最先画：渲染前抹掉、又不在 covers 下面的原字（比如英文小标题），一行一个框，填的是底图那块的底色。用底图做底时不用画。2026-11-28 起存的版面有（清单 features 含 erase）"
+        },
+        "tables": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReaderLayoutTable"
+          },
+          "description": "表格：在 covers 之后画，先 cover、再 rules、再 blocks。2026-11-28 起存的版面有（清单 features 含 tables）"
+        }
+      },
+      "description": "rpr_layout_v1 的一页（引擎 src/output/pdf/layout.js），原样返回。坐标单位 pt，原点在页左上、y 向下。以后只加字段。"
     },
     "LiveTranslationTypography": {
       "type": "object",

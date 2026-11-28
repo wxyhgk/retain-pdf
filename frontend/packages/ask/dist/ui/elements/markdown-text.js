@@ -4,6 +4,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 // RetainPDF 的改动（按 assistant-ui 的 LaTeX 文档加 remark-math / rehype-katex 和 normalizeMathDelimiters；打字光标的 dot.css 改在 styles/entry.css 里引入；
 // 加 remarkPageCitations，a 组件认出页码链接画成能点的页码标签（../../window/page-citations.ts、../../window/AskPageLink.tsx）；
 // ```openui-lang 代码块默认画成互动块（../../window/openui-fence.tsx））。
+// 2026-11-27（提问窗样式拆开）：以前 ask.css 从外面用 .aui-* 改标题、段落、代码块的字号（段落上下 0.6em、行高 1.7），改成直接写在这里的 className。
 import { MarkdownTextPrimitive, normalizeMathDelimiters, memoizeMarkdownComponents, useIsMarkdownCodeBlock, } from "@assistant-ui/react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -52,13 +53,13 @@ const CodeHeader = ({ language, code }) => {
     return (_jsxs("div", { className: "aui-code-header-root border-border/50 bg-muted/50 mt-3 flex items-center justify-between rounded-t-xl border border-b-0 px-3.5 py-1.5 text-xs", children: [_jsx("span", { className: "aui-code-header-language text-muted-foreground font-medium lowercase", children: language }), _jsxs(TooltipIconButton, { tooltip: "\u590D\u5236", onClick: onCopy, children: [!isCopied && (_jsx(CopyIcon, { className: "animate-in zoom-in-75 fade-in duration-150" })), isCopied && (_jsx(CheckIcon, { className: "animate-in zoom-in-50 fade-in duration-200 ease-out" }))] })] }));
 };
 const defaultComponents = memoizeMarkdownComponents({
-    h1: ({ className, ...props }) => (_jsx("h1", { className: cn("aui-md-h1 mt-5 mb-2 scroll-m-20 text-xl font-semibold first:mt-0 last:mb-0", className), ...props })),
-    h2: ({ className, ...props }) => (_jsx("h2", { className: cn("aui-md-h2 mt-5 mb-2 scroll-m-20 text-lg font-semibold first:mt-0 last:mb-0", className), ...props })),
-    h3: ({ className, ...props }) => (_jsx("h3", { className: cn("aui-md-h3 mt-4 mb-1.5 scroll-m-20 text-base font-semibold first:mt-0 last:mb-0", className), ...props })),
-    h4: ({ className, ...props }) => (_jsx("h4", { className: cn("aui-md-h4 mt-3.5 mb-1 scroll-m-20 text-base font-medium first:mt-0 last:mb-0", className), ...props })),
-    h5: ({ className, ...props }) => (_jsx("h5", { className: cn("aui-md-h5 mt-3 mb-1 text-sm font-semibold first:mt-0 last:mb-0", className), ...props })),
-    h6: ({ className, ...props }) => (_jsx("h6", { className: cn("aui-md-h6 mt-3 mb-1 text-sm font-medium first:mt-0 last:mb-0", className), ...props })),
-    p: ({ className, ...props }) => (_jsx("p", { className: cn("aui-md-p my-3 leading-relaxed first:mt-0 last:mb-0", className), ...props })),
+    h1: ({ className, ...props }) => (_jsx("h1", { className: cn("aui-md-h1 mt-5 mb-2 scroll-m-20 text-[length:var(--ui-text-lg,16px)] leading-[calc(1.75/1.25)] font-semibold first:mt-0 last:mb-0", className), ...props })),
+    h2: ({ className, ...props }) => (_jsx("h2", { className: cn("aui-md-h2 mt-5 mb-2 scroll-m-20 text-[length:var(--ui-text-base,14px)] leading-[calc(1.75/1.125)] font-semibold first:mt-0 last:mb-0", className), ...props })),
+    h3: ({ className, ...props }) => (_jsx("h3", { className: cn("aui-md-h3 mt-4 mb-1.5 scroll-m-20 text-[length:var(--ui-text-md,13px)] leading-[1.5] font-semibold first:mt-0 last:mb-0", className), ...props })),
+    h4: ({ className, ...props }) => (_jsx("h4", { className: cn("aui-md-h4 mt-3.5 mb-1 scroll-m-20 text-[length:var(--ui-text-md,13px)] leading-[1.5] font-medium first:mt-0 last:mb-0", className), ...props })),
+    h5: ({ className, ...props }) => (_jsx("h5", { className: cn("aui-md-h5 mt-3 mb-1 text-[length:var(--ui-text-sm,12px)] leading-[calc(1.25/0.875)] font-semibold first:mt-0 last:mb-0", className), ...props })),
+    h6: ({ className, ...props }) => (_jsx("h6", { className: cn("aui-md-h6 mt-3 mb-1 text-[length:var(--ui-text-sm,12px)] leading-[calc(1.25/0.875)] font-medium first:mt-0 last:mb-0", className), ...props })),
+    p: ({ className, ...props }) => (_jsx("p", { className: cn("aui-md-p my-[0.6em] leading-[1.7]", className), ...props })),
     a: ({ className, ...props }) => {
         const page = pageFromHref(props.href);
         if (page)
@@ -76,7 +77,7 @@ const defaultComponents = memoizeMarkdownComponents({
     li: ({ className, ...props }) => (_jsx("li", { className: cn("aui-md-li leading-relaxed", className), ...props })),
     strong: ({ className, ...props }) => (_jsx("strong", { className: cn("aui-md-strong font-semibold", className), ...props })),
     sup: ({ className, ...props }) => (_jsx("sup", { className: cn("aui-md-sup [&>a]:text-xs [&>a]:no-underline", className), ...props })),
-    pre: ({ className, ...props }) => (_jsx("pre", { className: cn("aui-md-pre border-border/50 bg-muted/30 overflow-x-auto rounded-t-none rounded-b-xl border border-t-0 p-3.5 text-[13px] leading-relaxed", className), ...props })),
+    pre: ({ className, ...props }) => (_jsx("pre", { className: cn("aui-md-pre border-border/50 bg-muted/30 overflow-x-auto rounded-t-none rounded-b-xl border border-t-0 p-3.5 text-[length:var(--ui-text-sm,12px)] leading-relaxed", className), ...props })),
     code: function Code({ className, ...props }) {
         const isCodeBlock = useIsMarkdownCodeBlock();
         return (_jsx("code", { className: cn(!isCodeBlock &&

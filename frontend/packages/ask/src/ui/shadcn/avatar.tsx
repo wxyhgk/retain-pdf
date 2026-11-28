@@ -1,5 +1,8 @@
 // 照搬 assistant-ui 官方组件（MIT，https://r.assistant-ui.com；shadcn/ 下是 shadcn/ui，MIT）。只改了引用路径（@/ 别名换成相对路径）。
 // 别的不改，方便对着上游更新；我们的改动写在外面（../window/）。
+// 2026-11-27 改了一处：AvatarGroupCount 的大小不再用上游那种「祖先组里有 data-size 的头像」的 Tailwind 变体（生成「:has() 祖先下面所有元素」
+// 的规则，页面上任何地方加减节点浏览器都要重算整棵树：开着提问窗翻书，pdf.js 文字层每加一个字块就重算一遍窗口里几千个节点，
+// 卡到秒级），改成自己身上的 data-size。见 frontend/web/tests/architecture/ask-package-boundary.test.mjs 的守卫。
 
 import * as React from "react"
 import { cn } from "../lib/utils.js"
@@ -91,7 +94,7 @@ function AvatarGroupCount({
     <div
       data-slot="avatar-group-count"
       className={cn(
-        "relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background group-has-data-[size=lg]/avatar-group:size-10 group-has-data-[size=sm]/avatar-group:size-6 [&>svg]:size-4 group-has-data-[size=lg]/avatar-group:[&>svg]:size-5 group-has-data-[size=sm]/avatar-group:[&>svg]:size-3",
+        "relative flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-sm text-muted-foreground ring-2 ring-background [&>svg]:size-4 data-[size=lg]:size-10 data-[size=sm]:size-6 data-[size=lg]:[&>svg]:size-5 data-[size=sm]:[&>svg]:size-3",
         className
       )}
       {...props}

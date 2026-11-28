@@ -38,30 +38,48 @@ function weightOf(font) {
   return /bold/i.test(font.subfamilyName || "") ? 700 : 400;
 }
 
+// Static instances of a family's variable font, made for --pdf-font-weight
+// (scripts/instance-source-han-serif.py). They carry another family name: the
+// OFL reserves "Source" for Adobe's own fonts, so a modified version (an
+// instance) may not be called Source Han Serif.
+const LIGHT_FAMILIES = { "Source Han Serif SC": "RetainPDF Serif SC" };
+
 // -> { regular, bold } fontkit fonts (bold may be null); throws when the
-// family has no regular face in the directories.
-function findFamily(fontPaths, family) {
+// family has no regular face in the directories. regularWeight: the weight
+// the body text is drawn with (default 400); other than 400 it must be a face
+// of exactly that weight -- the family's own, or a static instance of its
+// variable font (LIGHT_FAMILIES, e.g. RetainPDFSerifSC-W300) -- never the
+// nearest one: the layout was measured with that face's widths.
+function findFamily(fontPaths, family, { regularWeight = 400 } = {}) {
   const fontkit = require("fontkit");
   const wanted = normalize(family);
+  const light = regularWeight !== 400 && LIGHT_FAMILIES[family] ? normalize(LIGHT_FAMILIES[family]) : null;
   const faces = [];
+  const lightFaces = [];
   // Opening a font reads the whole file (Source Han Serif: 23 MB), so only
   // files whose name could be the family are opened.
-  const nameLike = file => normalize(path.basename(file)).startsWith(wanted.slice(0, 8));
+  const nameLike = file => {
+    const base = normalize(path.basename(file));
+    return base.startsWith(wanted.slice(0, 8)) || Boolean(light && base.startsWith(light.slice(0, 8)));
+  };
   for (const dir of withBundled(fontPaths)) {
     for (const file of fontFiles(dir).filter(nameLike)) {
       let opened;
       try { opened = fontkit.openSync(file); }
       catch { continue; }
       for (const font of opened.fonts || [opened]) {
-        if (normalize(font.familyName) === wanted || normalize(font.postscriptName).startsWith(wanted)) {
-          if (!/italic|oblique/i.test(font.subfamilyName || "")) faces.push({ font, weight: weightOf(font), file });
-        }
+        if (/italic|oblique/i.test(font.subfamilyName || "")) continue;
+        if (normalize(font.familyName) === wanted || normalize(font.postscriptName).startsWith(wanted)) faces.push({ font, weight: weightOf(font), file });
+        else if (light && normalize(font.familyName) === light) lightFaces.push({ font, weight: weightOf(font), file });
       }
     }
   }
   const nearest = target => faces.slice().sort((a, b) => Math.abs(a.weight - target) - Math.abs(b.weight - target))[0];
-  const regular = nearest(400);
-  if (!regular) throw new Error(`font family ${JSON.stringify(family)} not found in ${JSON.stringify(withBundled(fontPaths))} (pass --font-path)`);
+  if (!faces.length) throw new Error(`font family ${JSON.stringify(family)} not found in ${JSON.stringify(withBundled(fontPaths))} (pass --font-path)`);
+  const regular = regularWeight === 400 ? nearest(400) : [...faces, ...lightFaces].find(face => face.weight === regularWeight);
+  if (!regular) {
+    throw new Error(`font family ${JSON.stringify(family)} has no face of weight ${regularWeight} in ${JSON.stringify(withBundled(fontPaths))} (pass --font-path)`);
+  }
   const bold = nearest(700);
   return { regular: regular.font, bold: bold && bold.weight >= 600 ? bold.font : null, files: { regular: regular.file, bold: bold && bold.weight >= 600 ? bold.file : null } };
 }
@@ -100,4 +118,4 @@ function findFallbacks(fontPaths) {
     .map(face => ({ ...byName.get(face.postscript), weight: face.weight, mono: face.mono }));
 }
 
-module.exports = { findFamily, findFallbacks, FALLBACK_FACES, BUNDLED_FONT_DIRS };
+module.exports = { findFamily, findFallbacks, FALLBACK_FACES, BUNDLED_FONT_DIRS, LIGHT_FAMILIES };
