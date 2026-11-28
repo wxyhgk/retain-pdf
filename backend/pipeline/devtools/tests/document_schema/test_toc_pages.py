@@ -487,3 +487,26 @@ def test_rebuilding_from_an_unchanged_draft_matches_the_split():
     assert shape(rebuilt) == shape(document)
     entry = next(block for block in rebuilt["pages"][0]["blocks"] if block["structure_role"] == "toc_entry")
     assert entry["metadata"]["toc_entry_context_source"] == "model" and entry["metadata"]["toc_entry_keep_original"] is False
+
+def test_label_number_sharing_a_span_with_the_title_and_label_on_its_own_line():
+    # 80c3ad：「Annexure」斜体一段，「IV Commutators …」一段；14e352：「CHAPTER 2」单独一行，标题在下一行
+    lines = [
+        (60, 100, "Annexure", 10), (110, 100, "IV Commutators of Operators", 10), (400, 100, "177", 10),
+        (60, 114, "Annexure", 10), (110, 114, "V Transformation", 10), (400, 114, "183", 10),
+        (60, 136, "CHAPTER 2", 10),
+        (60, 150, "Electric Potential", 10), (400, 150, "190", 10),
+        (60, 172, "CHAPTER 3", 10),
+        (60, 186, "Capacitance", 10), (400, 186, "210", 10),
+    ]
+    with _page(lines) as pdf:
+        result = split_toc_page(pdf[0], [50, 85, 420, 195])
+    assert result is not None
+    got = [(e.label, e.title_only, [line["text"] for line in e.title_lines]) for e in result.entries]
+    assert got == [
+        ("Annexure IV", "Commutators of Operators", ["Commutators of Operators"]),
+        ("Annexure V", "Transformation", ["Transformation"]),
+        ("CHAPTER 2", "Electric Potential", ["Electric Potential"]),
+        ("CHAPTER 3", "Capacitance", ["Capacitance"]),
+    ]
+    annex = result.entries[0]
+    assert annex.label_box[2] < annex.title_lines[0]["bbox"][0]  # 标签框到「IV」为止
