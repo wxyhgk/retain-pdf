@@ -3,6 +3,9 @@
 // 字体：要带授权，先取回字节再交给 FontFace（FontFace 直接给地址不带授权头）。主字体（第一个字族）每个字重都装上才照版面画，
 // 清单里没有字体（2026-11-28 以前排的、后端没装 fontTools）也不照版面画——用本机字体画出来和译文 PDF 对不上，退回按 OCR 的框塞字。
 // 没有版面时给出原因和补排的请求（照原样发，原地重新渲染，不花钱）；发了以后每 5 秒再要一次清单，排好就照版面画。
+// 补排回的任务号和这本不一样（后端 #244 合之前，retry-stage 不写 create_new_job 会新建一个只做渲染的任务，原任务的清单永远等不到，
+// 2026-11-28 用户：「一直显示"正在排版，排好自动换上…"」）：同时等那个新任务的清单，先好的那个就用——同一本书原文页是同一份，
+// 新任务的版面、底图叠在这本的原文页上对得上。
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { defaultReaderDataPort, resolveResourceUrl } from "../external.js";
@@ -95,11 +98,15 @@ function readDataPort(): DataPort | null {
 export function useRenderLayout(jobId: string, enabled: boolean): RenderLayoutState & { generateNow: () => void } {
   const [state, setState] = useState<RenderLayoutState>({ status: "idle" });
   const [attempt, setAttempt] = useState(0);
+  // 版面从哪个任务要：平时是这本；补排新建了任务、那边先排好时换成那个任务。
+  const [layoutJobId, setLayoutJobId] = useState(jobId);
+  useEffect(() => setLayoutJobId(jobId), [jobId]);
+  const followJob = useRef("");
   const devUrl = useRef(manifestUrlFromLocation()).current;
   const port = useRef(readDataPort()).current;
 
   useEffect(() => {
-    if (!devUrl && (!enabled || !jobId || !port)) return undefined;
+    if (!devUrl && (!enabled || !layoutJobId || !port)) return undefined;
     let alive = true;
     setState((current) => (current.status === "generating" ? current : { status: "loading" }));
     (async () => {
@@ -108,7 +115,7 @@ export function useRenderLayout(jobId: string, enabled: boolean): RenderLayoutSt
         const doc = await loadRenderLayoutManifest(devUrl);
         source = doc ? renderLayoutSourceFromDocument(doc) : null;
       } else {
-        const manifest = await loadRenderLayoutFromApi(jobId, { apiPrefix: port!.apiPrefix || "/api/v1", fetcher: port!.fetchProtected });
+        const manifest = await loadRenderLayoutFromApi(layoutJobId, { apiPrefix: port!.apiPrefix || "/api/v1", fetcher: port!.fetchProtected });
         if (!manifest.source) {
           if (alive) {
             setState((current) => (current.status === "generating"
@@ -140,7 +147,7 @@ export function useRenderLayout(jobId: string, enabled: boolean): RenderLayoutSt
     return () => {
       alive = false;
     };
-  }, [devUrl, enabled, jobId, port, attempt]);
+  }, [devUrl, enabled, layoutJobId, port, attempt]);
 
   // 补排：照清单给的请求原样发，然后每 5 秒再要一次清单，排好就照版面画（最多等 10 分钟）。
   const generate = state.status === "unavailable" ? state.generate : null;
@@ -151,8 +158,16 @@ export function useRenderLayout(jobId: string, enabled: boolean): RenderLayoutSt
       method: generate.method || "POST",
       headers: { "Content-Type": "application/json" },
       body: generate.body == null ? undefined : JSON.stringify(generate.body),
-    }).then((res) => {
+    }).then(async (res) => {
       if (!res.ok) throw new Error(`补排 HTTP ${res.status}`);
+      // 回的是新任务（后端没原地重排）：记下来，下面轮询时一起等它。
+      try {
+        const payload = await res.json() as { data?: { job_id?: unknown }; job_id?: unknown };
+        const created = `${payload?.data?.job_id ?? payload?.job_id ?? ""}`.trim();
+        followJob.current = created && created !== jobId ? created : "";
+      } catch {
+        followJob.current = "";
+      }
     }).catch((error) => {
       console.warn("[render-layout] 补排没发出去：", error);
       setState({ status: "unavailable", reason: "failed", generate });
@@ -168,14 +183,18 @@ export function useRenderLayout(jobId: string, enabled: boolean): RenderLayoutSt
         setState({ status: "unavailable", reason: "failed", generate: null });
         return;
       }
-      void loadRenderLayoutFromApi(jobId, { apiPrefix: port.apiPrefix || "/api/v1", fetcher: port.fetchProtected })
-        .then((manifest) => {
-          if (!manifest.available) return;
-          clearInterval(timer);
-          setState({ status: "loading" });
-          setAttempt((value) => value + 1);
-        })
-        .catch(() => {});
+      const candidates = [jobId, followJob.current].filter(Boolean);
+      for (const candidate of candidates) {
+        void loadRenderLayoutFromApi(candidate, { apiPrefix: port.apiPrefix || "/api/v1", fetcher: port.fetchProtected })
+          .then((manifest) => {
+            if (!manifest.available) return;
+            clearInterval(timer);
+            setLayoutJobId(candidate);
+            setState({ status: "loading" });
+            setAttempt((value) => value + 1);
+          })
+          .catch(() => {});
+      }
     }, POLL_MS);
     return () => clearInterval(timer);
   }, [state.status, jobId, port]);
