@@ -18,6 +18,9 @@
 4. 换上：排进了的表，擦掉原表框里的字和表格线（不填底色、图片不动），把引擎画的那一层叠上去（字嵌子集字体）。
    排不进的表不动（以后交给排版 agent，见 docs/ops/planning/layout-agent/）；引擎用不了（没有 node、缺依赖）也不动。
 
+5. 阅读页的版面：这次是 rpr_fit 排的（译文 PDF 旁边有 ``reader-layout/``），把叠上去的表格（引擎写的 layout.json）
+   补进版面（``rpr_fit/reader_layout.py`` 的 ``add_reader_layout_tables``），阅读页的 HTML 页照着画表。
+
 出错只记一笔，照常交出排好的 PDF（和挪链接一样，见 ``render/workflow/executor.py``）。
 """
 
@@ -324,6 +327,13 @@ def output_page_indices(source_page_count: int, output_page_count: int, page_ind
     return {index: offset for offset, index in enumerate(indices)}
 
 
+def _engine_font_dirs(runtime) -> list[Path]:
+    """引擎找字体的目录：``--font-path`` 加引擎自带的后备字体（engine/data/fonts/fallback）。"""
+    from retainpdf_pipeline.render.output.typst.compiler import _resolved_font_paths
+
+    return [*_resolved_font_paths(), Path(runtime.entry).parent.parent / "data" / "fonts" / "fallback"]
+
+
 def run_table_engine(pages: list[dict], work_dir: Path) -> tuple[Path, dict]:
     """rpr 引擎排表：一张表一页（页面大小同译文 PDF 那一页），返回叠加层 PDF 和报告。"""
     from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineFailed
@@ -332,7 +342,7 @@ def run_table_engine(pages: list[dict], work_dir: Path) -> tuple[Path, dict]:
 
     runtime = resolve_engine_runtime("rpr-table.js")
     input_path = work_dir / "table-input.json"
-    out_dir = work_dir / "table-engine"
+    out_dir = work_dir / "table-engine"  # 版面（layout.json、math/）阅读页要用：_add_to_reader_layout 按这个目录取
     input_path.write_text(json.dumps({"schema": ENGINE_INPUT_SCHEMA, "pages": pages}, ensure_ascii=False), encoding="utf-8")
     command = [runtime.node, str(runtime.entry), "--input", str(input_path), "--out-dir", str(out_dir)]
     for font_dir in _resolved_font_paths():
@@ -378,10 +388,30 @@ def apply_table_translations(
         with fitz.open(output_pdf_path) as doc:
             summary = _overlay_document(doc, tables, source_count, selected, work_dir, temp_pdf, body_font_size)
         summary["body_font_size"] = body_font_size
+        placements = summary.pop("placements", [])
         if summary.get("tables_written"):
             # 先存到旁边，关掉原文件再换掉：存一半出错不留半个文件
             os.replace(temp_pdf, output_pdf_path)
+            summary["reader_layout"] = _add_to_reader_layout(output_pdf_path, Path(source_pdf_path), work_dir, placements)
     return summary
+
+
+def _add_to_reader_layout(output_pdf_path: Path, source_pdf_path: Path, work_dir: Path, placements: list[dict]) -> dict:
+    """叠上去的表格补进阅读页的版面（只有 rpr_fit 排的书有版面）。出错只记一笔。"""
+    from retainpdf_pipeline.render.output.rpr.engine_cli import resolve_engine_runtime
+    from retainpdf_pipeline.render.output.rpr_fit.reader_layout import add_reader_layout_tables
+
+    try:
+        return add_reader_layout_tables(
+            output_pdf_path=output_pdf_path,
+            table_layout_path=work_dir / "table-engine" / "layout.json",
+            placements=placements,
+            original_pdf_path=source_pdf_path,
+            font_dirs=_engine_font_dirs(resolve_engine_runtime("rpr-table.js")),
+        )
+    except Exception as exc:  # noqa: BLE001 — 版面是附带产物，坏了不连累译文
+        print(f"table overlay: reader layout not updated: {type(exc).__name__}: {exc}", flush=True)
+        return {"error": f"{type(exc).__name__}: {exc}"[:500]}
 
 
 def _overlay_document(doc, tables, source_count, selected, work_dir: Path, temp_pdf: Path, body_font_size: float | None = None) -> dict:
@@ -390,7 +420,7 @@ def _overlay_document(doc, tables, source_count, selected, work_dir: Path, temp_
     results: list[dict] = []
     mapping = output_page_indices(source_count, len(doc), selected)
     pages: list[dict] = []  # 一张表一页
-    targets: list[tuple[int, dict, fitz.Rect]] = []
+    targets: list[tuple[int, dict, fitz.Rect, int, str]] = []
     for table in tables:
         page_index = int((table.get("model") or {}).get("page_index", table.get("page_index", -1)))
         if page_index not in mapping or mapping[page_index] >= len(doc):
@@ -406,7 +436,7 @@ def _overlay_document(doc, tables, source_count, selected, work_dir: Path, temp_
             continue
         spec = engine_table(table, style)
         pages.append({"index": len(pages), "width": round(page.rect.width, 3), "height": round(page.rect.height, 3), "tables": [spec]})
-        targets.append((mapping[page_index], stats, fitz.Rect(spec["rect"])))
+        targets.append((mapping[page_index], stats, fitz.Rect(spec["rect"]), page_index, spec["id"]))
     summary = {"tables": len(tables), "tables_written": 0, "details": results}
     if not pages:
         return summary
@@ -414,15 +444,16 @@ def _overlay_document(doc, tables, source_count, selected, work_dir: Path, temp_
         overlay_pdf, report = run_table_engine(pages, work_dir)
     except RprEngineUnavailable as exc:
         print(f"table overlay: rpr engine unavailable ({exc}), tables kept", flush=True)
-        for _, stats, _ in targets:
-            stats["skipped"] = "engine_unavailable"
+        for target in targets:
+            target[1]["skipped"] = "engine_unavailable"
         return summary
     entries = report.get("tables") or []
     if len(entries) != len(targets):
         raise RuntimeError(f"rpr-table reported {len(entries)} tables, expected {len(targets)}")
     written = 0
+    placements: list[dict] = []  # 叠上去的表：补进阅读页的版面用
     with fitz.open(overlay_pdf) as overlay:
-        for index, ((page_number, stats, rect), entry) in enumerate(zip(targets, entries)):
+        for index, ((page_number, stats, rect, page_index, table_id), entry) in enumerate(zip(targets, entries)):
             stats.update({
                 "font_size": entry.get("font_size"), "line_height": entry.get("line_height"), "padding_y": entry.get("padding_y"),
                 "height": round(float(entry.get("height") or 0), 1), "box_height": round(rect.height, 1),
@@ -434,7 +465,9 @@ def _overlay_document(doc, tables, source_count, selected, work_dir: Path, temp_
             _erase(page, rect)
             page.show_pdf_page(page.rect, overlay, index, overlay=True)
             written += 1
+            placements.append({"engine_page": index, "page_index": page_index, "id": table_id, "rect": list(rect)})
     summary["tables_written"] = written
+    summary["placements"] = placements
     if written:
         doc.save(str(temp_pdf), garbage=3, deflate=True)
     return summary

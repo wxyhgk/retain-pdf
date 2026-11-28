@@ -94,6 +94,9 @@ pub struct ReaderLayoutView {
     /// 画字用的字体：和引擎画 PDF 用的同一份，只留这本书用到的字、转 woff2；主字体在前。版面里字簇的 `font`
     /// 是这里的 `key`。后端没装 fontTools 时是空的。
     pub fonts: Vec<ReaderLayoutFontView>,
+    /// 页文件里多出来的几项：`erase`（要抹掉的原字，有了它不用底图，原文页做底就行）、`tables`（表格）。
+    /// 2026-11-28 以前存的版面是空的：那时没有这两项，要照旧用底图、表格是原文。
+    pub features: Vec<String>,
     /// 补排：照原样发这个请求（原地重新渲染，不调模型、不花钱），跑完版面就有了。补不了时 null。
     pub generate: Option<ReaderLayoutGenerateView>,
 }
@@ -107,6 +110,8 @@ pub struct ReaderLayoutPageEntryView {
     /// 这页版面的指纹，取一页时的 ETag 也是它。
     pub etag: String,
     pub blocks: u32,
+    /// 这页有几张表格（页文件的 `tables`）。
+    pub tables: u32,
     pub url: String,
 }
 

@@ -218,6 +218,14 @@ export interface ReaderLayoutPage {
    */
   covers: ReaderLayoutCover[];
   blocks: ReaderLayoutBlock[];
+  /**
+   * 拿原文页做底时最先画：渲染前抹掉、又不在 covers 下面的原字（比如英文小标题），一行一个框，填的是底图那块的底色。用底图做底时不用画。2026-11-28 起存的版面有（清单 features 含 erase）
+   */
+  erase?: ReaderLayoutPaint[];
+  /**
+   * 表格：在 covers 之后画，先 cover、再 rules、再 blocks。2026-11-28 起存的版面有（清单 features 含 tables）
+   */
+  tables?: ReaderLayoutTable[];
 }
 export interface ReaderLayoutCover {
   /**
@@ -305,6 +313,62 @@ export interface ReaderLayoutItem {
    */
   svg?: string;
 }
+/**
+ * 一个实心矩形：要抹掉的原字（填的是估的底色）、表格线
+ */
+export interface ReaderLayoutPaint {
+  /**
+   * [x0, y0, x1, y1]，pt，原点在页左上、y 向下
+   *
+   * @minItems 4
+   * @maxItems 4
+   */
+  rect: [number, number, number, number];
+  /**
+   * RGB，各分量 0–1
+   *
+   * @minItems 3
+   * @maxItems 3
+   */
+  fill: [number, number, number];
+}
+/**
+ * rpr-table 排进原表框里的一张表（译文 PDF 上叠的就是它）
+ */
+export interface ReaderLayoutTable {
+  /**
+   * 表格块 id，和 /reader/regions 的 item_id 同一套
+   */
+  id: string;
+  cover: ReaderLayoutPaint1;
+  /**
+   * 新画的表格线（细长的实心矩形）
+   */
+  rules: ReaderLayoutPaint[];
+  /**
+   * 每个格子一块，id 是 <表格块 id>:r<行>c<列>；和正文的块一样画
+   */
+  blocks: ReaderLayoutBlock[];
+}
+/**
+ * 一个实心矩形：要抹掉的原字（填的是估的底色）、表格线
+ */
+export interface ReaderLayoutPaint1 {
+  /**
+   * [x0, y0, x1, y1]，pt，原点在页左上、y 向下
+   *
+   * @minItems 4
+   * @maxItems 4
+   */
+  rect: [number, number, number, number];
+  /**
+   * RGB，各分量 0–1
+   *
+   * @minItems 3
+   * @maxItems 3
+   */
+  fill: [number, number, number];
+}
 export interface ReaderLayoutView {
   available: boolean;
   /**
@@ -334,6 +398,10 @@ export interface ReaderLayoutView {
    */
   background: ReaderLayoutBackground | null;
   fonts: ReaderLayoutFont[];
+  /**
+   * 页里多出来的几项（2026-11-28 起存的版面有）：erase 要抹掉的原字（有了它不用底图，原文页做底、先画 erase）；tables 表格。空的是以前存的版面：照旧用底图，表格是原文。以后可能加值
+   */
+  features: string[];
   generate: ReaderLayoutGenerate | null;
 }
 export interface ReaderLayoutPageEntry {
@@ -348,6 +416,10 @@ export interface ReaderLayoutPageEntry {
    */
   etag: string;
   blocks: number;
+  /**
+   * 这页有几张表格（页里的 tables）
+   */
+  tables: number;
   url: string;
 }
 export interface ReaderLayoutBackground {

@@ -213,3 +213,53 @@ def test_a_table_that_does_not_fit_is_kept(tmp_path):
     result = overlay.apply_table_translations(output_pdf_path=pdf, source_pdf_path=source, translations_dir=tmp_path, page_indices=[0])
     assert result["tables_written"] == 0 and result["details"][0]["skipped"] == "does_not_fit"
     assert pdf.read_bytes() == before
+
+
+@pytest.mark.skipif(not _engine_available(), reason="rpr 引擎（node + 依赖 + rpr-table.js）不在本机")
+def test_the_redrawn_table_is_added_to_the_reader_layout(tmp_path):
+    import gzip
+
+    from retainpdf_pipeline.render.output.rpr_fit.reader_layout import reader_layout_dir
+    from retainpdf_pipeline.render.output.rpr_fit.reader_layout import save_reader_layout
+
+    pdf, _ = _table(tmp_path)
+    source = tmp_path / "source.pdf"
+    source.write_bytes(pdf.read_bytes())
+    # 正文那一遍存下的版面：这页没有正文块
+    layout = tmp_path / "engine" / "layout.json"
+    layout.parent.mkdir()
+    layout.write_text(json.dumps({"schema": "rpr_layout_v1", "pages": [{"index": 0, "width": 400, "height": 300, "covers": [], "blocks": []}]}))
+    save_reader_layout(layout_path=layout, output_pdf_path=pdf, engine_version="0", engine_commit="x", original_pdf_path=source)
+    target = reader_layout_dir(pdf)
+
+    result = overlay.apply_table_translations(output_pdf_path=pdf, source_pdf_path=source, translations_dir=tmp_path, page_indices=[0])
+    assert result["tables_written"] == 1, result
+    assert result["reader_layout"]["tables"] == 1, result["reader_layout"]
+    manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    [entry] = manifest["pages"]
+    assert entry["tables"] == 1
+    page = json.loads(gzip.decompress((target / entry["file"]).read_bytes()))
+    [table] = page["tables"]
+    assert table["id"] == "p001-b0001"
+    # 盖原表：原表的框往外放 2pt（原表的线压在框边上），白底
+    assert table["cover"] == {"rect": [53.0, 85.0, 307.0, 138.0], "fill": [1.0, 1.0, 1.0]}
+    # 三线表：新画的三条线
+    assert len(table["rules"]) == 3 and all(rule["fill"] == [0.0, 0.0, 0.0] for rule in table["rules"])
+    texts = {block["id"]: "".join(line["text"] for line in block["lines"]) for block in table["blocks"]}
+    assert texts["p001-b0001:r0c0"] == "样品" and texts["p001-b0001:r1c1"] == "268.4"
+    # 每个字簇都有字体，字体子集里有表格的字
+    keys = {item["font"] for block in table["blocks"] for line in block["lines"] for item in line["items"] if "t" in item}
+    assert keys and keys <= {face["key"] for face in manifest["fonts"]}
+    assert all((target / face["file"]).read_bytes()[:4] == b"wOF2" for face in manifest["fonts"])
+    with fitz.open(pdf) as doc:
+        assert "样品" in doc[0].get_text()
+
+
+def test_without_a_reader_layout_the_table_step_leaves_none(tmp_path):
+    from retainpdf_pipeline.render.output.rpr_fit.reader_layout import add_reader_layout_tables
+
+    result = add_reader_layout_tables(
+        output_pdf_path=tmp_path / "out.pdf", table_layout_path=tmp_path / "layout.json", placements=[], original_pdf_path=None
+    )
+    assert result == {"skipped": "no_reader_layout"}
+    assert not (tmp_path / "reader-layout").exists()
