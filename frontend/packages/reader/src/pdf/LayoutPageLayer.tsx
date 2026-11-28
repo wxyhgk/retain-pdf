@@ -10,7 +10,9 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactElement } from "react";
 
 import { renderTexToSvg } from "../shared/content/markdown-math.js";
-import { layoutColor, type RenderLayoutPage } from "../shared/data/render-layout.js";
+import { layoutColor, type RenderLayoutPage, type RenderLayoutSource } from "../shared/data/render-layout.js";
+import { RegionCanvas, type RegionPdfDocument } from "./RegionCanvas.js";
+import { FULL_PAGE } from "./region-image.js";
 
 type MathSvg = { viewBox: string; inner: string };
 
@@ -76,7 +78,13 @@ export function playFormula(svg: SVGElement): void {
   );
 }
 
-export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, charRise = false }: {
+/** 公式：版面给了后端存的 SVG（和 PDF 里同一份 MathJax 输出）就用它，没有或取不到再前端自己画。 */
+function layoutMathSvg(tex: string, svg: string | undefined, loadMath: ((svg: string) => Promise<string | null>) | undefined): Promise<MathSvg | null> {
+  if (!svg || !loadMath) return mathSvg(tex);
+  return loadMath(svg).then((text) => parseMathSvg(text) ?? mathSvg(tex));
+}
+
+export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, charRise = false, loadMath, fontByKey }: {
   page: RenderLayoutPage;
   width: number;
   height: number;
@@ -85,11 +93,15 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
   arrivedAt: number;
   /** 逐字浮现（HTML 页菜单里的开关）。 */
   charRise?: boolean;
+  /** 取后端存的公式 SVG（版面来源的 loadMath）。 */
+  loadMath?: (svg: string) => Promise<string | null>;
+  /** 字簇的 font（清单 fonts[].key）→ 浏览器里的字体名：版面写明了用哪个字体就照它画（后面还接着整个字体栈）。 */
+  fontByKey?: ReadonlyMap<string, string>;
 }): ReactElement {
   const texList = useMemo(() => {
-    const set = new Set<string>();
-    for (const block of page.blocks) for (const line of block.lines) for (const item of line.items) if ("tex" in item) set.add(item.tex);
-    return [...set];
+    const map = new Map<string, string | undefined>();
+    for (const block of page.blocks) for (const line of block.lines) for (const item of line.items) if ("tex" in item) map.set(item.tex, item.svg);
+    return [...map];
   }, [page]);
   // 每块里每一行第一个字是这块的第几个字（逐字浮现按它排先后）。
   const charIndexes = useMemo(() => {
@@ -107,13 +119,13 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
   const [maths, setMaths] = useState<ReadonlyMap<string, MathSvg | null>>(() => new Map());
   useEffect(() => {
     let alive = true;
-    void Promise.all(texList.map(async (tex) => [tex, await mathSvg(tex)] as const)).then((entries) => {
+    void Promise.all(texList.map(async ([tex, svg]) => [tex, await layoutMathSvg(tex, svg, loadMath)] as const)).then((entries) => {
       if (alive) setMaths(new Map(entries));
     });
     return () => {
       alive = false;
     };
-  }, [texList]);
+  }, [texList, loadMath]);
   const arriving = Date.now() - arrivedAt < 1500;
 
   // 逐字浮现：每块第一次滚进来时标 data-risen（直接改 DOM，不重画）；关了再开从头来。
@@ -198,7 +210,14 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
                 );
               }
               return (
-                <text key={key} x={item.x} y={line.baseline} lang={item.mode === "dflt" ? "en" : "zh-Hans"} style={{ "--i": charIndex } as CSSProperties}>
+                <text
+                  key={key}
+                  x={item.x}
+                  y={line.baseline}
+                  lang={item.mode === "dflt" ? "en" : "zh-Hans"}
+                  fontFamily={item.font && fontByKey?.get(item.font) ? `"${fontByKey.get(item.font)}", ${fontFamily}` : undefined}
+                  style={{ "--i": charIndex } as CSSProperties}
+                >
                   {item.t}
                 </text>
               );
@@ -207,5 +226,55 @@ export function LayoutPageLayer({ page, width, height, fontFamily, arrivedAt, ch
         );
       })}
     </svg>
+  );
+}
+
+/**
+ * 一页：从版面来源取这一页（按页取，接口有 ETag），先画底图（去掉原字的原文页；没有底图就是底下的原文页），再画版面。
+ * 版面里没有这一页（整页图、不翻的参考文献）就什么都不画，看到的是原文页。
+ */
+export function LayoutPageHost({ source, page, width, height, fontFamily, arrivedAt, charRise, backgroundPdf }: {
+  source: RenderLayoutSource;
+  page: number;
+  width: number;
+  height: number;
+  fontFamily: string;
+  arrivedAt: number;
+  charRise?: boolean;
+  /** 底图的 PDF（读好了才有）。 */
+  backgroundPdf: RegionPdfDocument | null;
+}): ReactElement | null {
+  const [layoutPage, setLayoutPage] = useState<RenderLayoutPage | null>(null);
+  const has = source.pages.has(page);
+  useEffect(() => {
+    if (!has) return undefined;
+    let alive = true;
+    void source.loadPage(page).then((next) => {
+      if (alive) setLayoutPage(next);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [source, page, has]);
+  const fontByKey = useMemo(() => new Map(source.fonts.flatMap((font) => (font.key ? [[font.key, font.family] as const] : []))), [source]);
+  const loadMath = useMemo(() => (svg: string) => source.loadMath(svg), [source]);
+  if (!has || !layoutPage) return null;
+  const backgroundPage = source.background?.pageFor(page) ?? null;
+  return (
+    <>
+      {backgroundPdf && backgroundPage ? (
+        <RegionCanvas pdf={backgroundPdf} page={backgroundPage} region={FULL_PAGE} cssWidth={width} className="reader-layout-background" label="底图" />
+      ) : null}
+      <LayoutPageLayer
+        page={layoutPage}
+        width={width}
+        height={height}
+        fontFamily={fontFamily}
+        arrivedAt={arrivedAt}
+        charRise={charRise}
+        loadMath={loadMath}
+        fontByKey={fontByKey}
+      />
+    </>
   );
 }

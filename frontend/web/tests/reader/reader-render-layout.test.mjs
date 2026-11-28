@@ -91,8 +91,10 @@ test("字体：清单里的字族按顺序当后备（和引擎的 FontChain 一
 
 test("接到 HTML 页上：「画译文」有版面就照版面画，版面里没有的页是原页；没有版面退回按 OCR 的框塞字", () => {
   const ext = read("src/extensions/builtin/html-page.tsx");
-  assert.match(ext, /if \(text === "translated" && layout\) \{\s*const layoutPage = layout\.pages\.get\(page\);\s*return layoutPage \? <LayoutPageLayer/);
-  assert.match(ext, /: null;\s*\}\s*return \(\s*<HtmlPageLayer/);
+  assert.match(ext, /if \(text === "translated" && layout\) \{\s*return \(\s*<LayoutPageHost/);
+  assert.match(ext, /\/>\s*\);\s*\}\s*return \(\s*<HtmlPageLayer/);
+  // 版面里没有的页什么都不画（看到的是原文页）。
+  assert.match(read("src/pdf/LayoutPageLayer.tsx"), /if \(!has \|\| !layoutPage\) return null;/);
   // 后端接口出来之前只有开发时地址上带 ?render_layout= 才读。
   assert.match(read("src/hooks/use-render-layout.ts"), /\.get\("render_layout"\)/);
 });
@@ -144,4 +146,62 @@ test("动效：逐字浮现（菜单开关，按 data-risen 不按 class——�
   const { formulaTerms } = await import("../../../packages/reader/src/pdf/LayoutPageLayer.tsx");
   assert.deepEqual(formulaTerms(dom.window.document.querySelector("svg")).map((term) => term.getAttribute("data-mml-node")), ["mn", "mo", "mn"], "只有一个 mrow 时往下一层拆");
   dom.window.close();
+});
+
+test("正式接口（2026-11-28 后端 #241 / #242）：清单 → 版面来源；按页取、公式 SVG、字体都走带授权的 fetch；底图页码对上；字体名加 RPR 前缀", async () => {
+  const { loadRenderLayoutFromApi, renderLayoutReason } = await import("../../../packages/reader/src/shared/data/render-layout.ts");
+  const calls = [];
+  const json = (body) => ({ ok: true, status: 200, json: async () => body, text: async () => JSON.stringify(body), arrayBuffer: async () => new ArrayBuffer(8) });
+  const fetcher = async (url, init) => {
+    calls.push([url, init?.method || "GET"]);
+    if (url === "/api/v1/jobs/job%201/reader/layout") {
+      return json({ code: 0, data: {
+        available: true, reason: null, schema: "rpr_layout_v1",
+        pages: [{ index: 0, width: 607, height: 800, etag: "w/1", url: "/api/v1/jobs/job%201/reader/layout/pages/0" }, { index: 4, width: 607, height: 800, etag: "w/2" }],
+        background: { url: "/api/v1/jobs/job%201/reader/layout/background", pages: [0, 4] },
+        fonts: [{ key: "serif-regular", family: "Source Han Serif SC", weight: 400, url: "/api/v1/jobs/job%201/reader/layout/fonts/serif-regular.woff2?v=1" }],
+        generate: null,
+      } });
+    }
+    if (url.endsWith("/pages/0")) return json({ code: 0, data: RAW.pages[0] });
+    if (url.endsWith("/math/abc.svg")) return { ok: true, status: 200, text: async () => '<svg viewBox="0 0 1 1"><g/></svg>' };
+    return { ok: false, status: 404, json: async () => ({}), text: async () => "" };
+  };
+  const manifest = await loadRenderLayoutFromApi("job 1", { fetcher });
+  assert.equal(manifest.available, true);
+  const source = manifest.source;
+  assert.deepEqual([...source.pages], [1, 5], "页码按阅读页的从 1 起");
+  assert.deepEqual(source.fonts, [{ key: "serif-regular", family: "RPR Source Han Serif SC", weight: 400, url: "/api/v1/jobs/job%201/reader/layout/fonts/serif-regular.woff2?v=1" }]);
+  assert.equal(source.background.pageFor(5), 2, "原文第 5 页是底图第 2 页");
+  assert.equal(source.background.pageFor(2), null);
+  const page = await source.loadPage(1);
+  assert.equal(page.blocks[0].id, "p001-b0014");
+  assert.equal(await source.loadPage(3), null, "版面里没有的页");
+  assert.equal(await source.loadMath("math/abc.svg"), '<svg viewBox="0 0 1 1"><g/></svg>');
+  await source.loadPage(1);
+  assert.equal(calls.filter(([url]) => url.endsWith("/pages/0")).length, 1, "同一页只取一次");
+
+  const missing = await loadRenderLayoutFromApi("j", { fetcher: async () => json({ available: false, reason: "something_new", generate: { method: "POST", url: "/api/v1/jobs/j/actions/retry-stage", body: { stage: "render" } } }) });
+  assert.equal(missing.source, null);
+  assert.equal(missing.reason, "not_kept", "认不得的原因当 not_kept");
+  assert.deepEqual(missing.generate, { method: "POST", url: "/api/v1/jobs/j/actions/retry-stage", body: { stage: "render" } });
+  assert.equal(renderLayoutReason("not_engine_route"), "not_engine_route");
+});
+
+test("版面接进 HTML 页：开了「画译文」才要清单；字体要带授权取字节再装，清单没有字体就不照版面画；没有版面时菜单说为什么、能补排给按钮；底图画在版面底下；字簇按 font 用对应字体、公式先用后端的 SVG", () => {
+  const hook = read("src/hooks/use-render-layout.ts");
+  assert.match(hook, /new FontFace\(font\.family, await load\(font\), \{ weight: `\$\{font\.weight\}` \}\)/, "FontFace 直接给地址不带授权头");
+  assert.match(hook, /return Boolean\(primary\) && results\.every/, "清单没有字体也照版面画了");
+  assert.match(hook, /reason: "no_fonts"/);
+  assert.match(hook, /body: generate\.body == null \? undefined : JSON\.stringify\(generate\.body\)/, "补排没照原样发");
+  const ext = read("src/extensions/builtin/html-page.tsx");
+  assert.match(ext, /useRenderLayout\(api\.jobId, text === "translated"\)/);
+  assert.match(ext, /生成 HTML 排版/);
+  assert.match(ext, /<LayoutPageHost/);
+  const layer = read("src/pdf/LayoutPageLayer.tsx");
+  assert.match(layer, /<RegionCanvas pdf=\{backgroundPdf\} page=\{backgroundPage\} region=\{FULL_PAGE\}/);
+  assert.ok(layer.indexOf("<RegionCanvas pdf={backgroundPdf}") < layer.indexOf("<LayoutPageLayer\n"), "底图要画在版面底下");
+  assert.match(layer, /fontFamily=\{item\.font && fontByKey\?\.get\(item\.font\)/);
+  assert.match(layer, /if \(!svg \|\| !loadMath\) return mathSvg\(tex\);/);
+  assert.match(read("styles/live-translation.css"), /:root\[data-reader-doc="dark"\] \.reader-layout-page \{\s*filter: var\(--reader-doc-dark-filter\);/, "深色文档时版面没跟着反色");
 });
