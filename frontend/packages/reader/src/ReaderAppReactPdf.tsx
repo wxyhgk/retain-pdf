@@ -265,8 +265,8 @@ export function ReaderAppReactPdf() {
             setPageMenu(menu);
           }}
         >
-          {/* 壳层（2026-11-28）：中间工作区、底栏是全宽、实占位的两行，书页只在中间那一行里，不再拿 --reader-stage-* 去算谁让谁。
-              顶栏 11-28 下午起不占行：返回、原文 / 对照 / 译文浮在书页区顶上（ReaderWorkspaceTabs 画在 .reader-stage 里）。 */}
+          {/* 壳层（2026-11-28）：根节点里只有中间工作区一行（左栏、书页区、右边停靠栏），不再拿 --reader-stage-* 去算谁让谁。
+              顶栏、底栏 11-28 下午起都不占行，浮在书页区的顶上、底下（ReaderWorkspaceTabs、ReaderZoomHud 画在 .reader-stage 里）。 */}
           <div className="reader-workspace">
             {tocDocked ? <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} pinned docked onPinChange={setTocPinned} /> : null}
             <ReaderFinderArea state={finderState} bookmarkScope={c.viewStateKey} issues={issueNav} />
@@ -300,6 +300,15 @@ export function ReaderAppReactPdf() {
               <ReaderSideRail active={assistantPanel} />
               <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
               <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
+              {/* 底栏也浮在书页区底下（2026-11-28 用户：「继续往下做底部栏的」）：左、中、右三颗胶囊，只盖书页区。 */}
+              <ReaderZoomHud
+                mode={visiblePdfMode}
+                modeControls={null}
+                bookmarkScope={c.viewStateKey}
+                startSlot={<ReaderFinderToggles open={finder} onToggle={finderState.toggleSidebar} issueCount={issueNav.issues.length} />}
+                leftSlot={<ReaderPendingEditsPill edit={blockEdit} />}
+                toolsSlot={<ReaderBarTools place="bottom" />}
+              />
             </div>
             {/* 右边停靠栏：Markdown 面板开着、或提问窗贴右边时实占一栏，扩展把面板画进 .reader-dock-body（api.panelHost）。
                 同一时间只停一个（useRightDockSlot）。Markdown 的宽度拖分栏线改（--reader-ai-split-width），提问窗的宽度它自己记、
@@ -316,14 +325,6 @@ export function ReaderAppReactPdf() {
             </aside>
           </div>
           {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
-          <ReaderZoomHud
-            mode={visiblePdfMode}
-            modeControls={null}
-            bookmarkScope={c.viewStateKey}
-            startSlot={<ReaderFinderToggles open={finder} onToggle={finderState.toggleSidebar} issueCount={issueNav.issues.length} />}
-            leftSlot={<ReaderPendingEditsPill edit={blockEdit} />}
-            toolsSlot={<ReaderBarTools place="bottom" />}
-          />
           <ReaderOverlays
             session={session}
             zoomDocuments={zoomDocuments}

@@ -7,7 +7,8 @@
   position: absolute;
   top: 50%;
   right: 14px;
-  z-index: 30;
+  /* 比浮着的顶栏、底栏（29）低一档：底栏右边的快捷键说明、画笔 ▾ 往上弹时盖在竖条上（2026-11-28 底栏挪进书页区时改，以前 30）。 */
+  z-index: 28;
   display: flex;
   flex-direction: column;
   align-items: center;

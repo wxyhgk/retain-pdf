@@ -1,4 +1,3 @@
-// 壳层的高（2026-11-28）：底栏实占一行，CSS 里是 --reader-bottombar-h（react-pdf.css）；顶栏 11-28 下午起不占行，
-// 改成浮在书页区顶上的两颗胶囊，所以上面不用让。JS 要用的地方（提问窗贴右边时让出底栏）从这里拿；两边的数字由测试对着（reader-shell-layout.test.mjs）。
-export const READER_BOTTOMBAR_HEIGHT = 36;
-export const READER_DOCK_INSETS = { top: 0, bottom: READER_BOTTOMBAR_HEIGHT } as const;
+// 壳层（2026-11-28）：顶栏、底栏下午起都不占行，浮在书页区的顶上、底下（chrome.css、hud.css），提问窗贴右边时上下都不用让。
+// 以前两条栏实占一行（54px、36px），这里给提问窗算让出多少（reader-shell-layout.test.mjs 对着 CSS）。
+export const READER_DOCK_INSETS = { top: 0, bottom: 0 } as const;

@@ -1,21 +1,23 @@
-/* 底栏（ReaderZoomHud.tsx，2026-11-28 起三行壳层的最下面一行）：全宽、实占位、任何模式都不变形——
- * 左：给这一页加书签、改了译文还没排进 PDF 的提示；中：页码、深色文档、缩放；右：画笔 ▾、截图、快捷键（?）。
- * 以前是浮在书页上的一个白药丸（往下翻书时收起），和右下角的工具一起压着正文最后几行。
- * 左右两段同宽（1fr），中间那段正好在视口中间。 */
+/* 底栏（ReaderZoomHud.tsx）：2026-11-28 下午起不占行，浮在书页区底下（用户：「继续往下做底部栏的」，接着顶栏改成悬浮之后）——
+ * 画在 .reader-stage 里（ReaderAppReactPdf），只盖书页区，左边固定的目录、搜索栏和右边停靠栏不被盖，中间那颗按书页区居中。
+ * 这一层本身透明、不接点击，三颗纸色胶囊接（和顶上两颗、右缘竖条一个样子）：
+ * 左：搜索、书签、收藏（改了译文还没排进 PDF 时的提示也在这一颗）；中：页码、深色文档、缩放；右：画笔 ▾、截图、快捷键（?）。
+ * 一直显示（页码要看得到；顶栏读的时候藏，底栏不藏）。书页区窄（< 600，按书页区量）时三颗放不下，合成一颗横贯的。
+ * 叠放和顶栏一样 29：窄屏停靠栏铺满中间工作区（30）时盖住它们。书页底下本来就留了 20vh，最后一页能翻到胶囊上面；
+ * 栏内横向滚动条、出错提示往上让出 --reader-float-bottom-room（react-pdf.css）。
+ * 上午是全宽、实占一行 36px 的三段网格；更早是浮在书页上的一个白药丸（往下翻书时收起）。 */
 .reader-bottombar {
-  position: relative;
-  z-index: 36;
-  z-index: var(--z-hud, 36);
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  left: 12px;
+  z-index: 29;
   display: grid;
-  flex: none;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
+  align-items: end;
   gap: 10px;
-  height: var(--reader-bottombar-h, 36px);
-  padding: 0 10px;
-  border-top: var(--reader-hud-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-hud-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
-  background: var(--paper);
   font-size: var(--ui-text-sm, 12px);
+  pointer-events: none;
 }
 
 .reader-bottombar-start,
@@ -23,12 +25,69 @@
 .reader-bottombar-end {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 2px;
   min-width: 0;
+  height: 34px;
+  padding: 3px;
+  border: var(--reader-hud-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-hud-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  background: var(--paper);
+  box-shadow: var(--reader-chrome-bar-shadow, 0 2px 10px color-mix(in srgb, var(--shadow-color, var(--ink)) 6%, transparent));
+  box-sizing: border-box;
+  pointer-events: auto;
+}
+
+.reader-bottombar-start {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.reader-bottombar-center {
+  grid-column: 2;
+  gap: 4px;
 }
 
 .reader-bottombar-end {
-  justify-content: flex-end;
+  grid-column: 3;
+  justify-self: end;
+}
+
+/* 书页区窄：三颗合成一颗横贯的（左中右照旧三段，中间那段不再强求正中）。 */
+@container reader-stage (max-width: 600px) {
+  .reader-bottombar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 6px;
+    height: 34px;
+    padding: 3px;
+    border: var(--reader-hud-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-hud-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+    border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+    background: var(--paper);
+    box-shadow: var(--reader-chrome-bar-shadow, 0 2px 10px color-mix(in srgb, var(--shadow-color, var(--ink)) 6%, transparent));
+    box-sizing: border-box;
+    align-items: center;
+    pointer-events: auto;
+  }
+
+  .reader-bottombar-start,
+  .reader-bottombar-center,
+  .reader-bottombar-end {
+    height: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .reader-bottombar-center {
+    justify-content: center;
+  }
+}
+
+/* 再窄（手机竖着）一行放不下：快捷键说明的 ? 收掉（按 ? 键照样打开；触屏上本来也用不着快捷键）。 */
+@container reader-stage (max-width: 420px) {
+  .reader-bottombar .reader-react-hud-help {
+    display: none;
+  }
 }
 
 /* 底栏按钮一套（2026-11-28）：高 26，只有图标（16px、线宽 1.75，bar-icon.ts），名字在悬停里；左中右三段一个密度。
@@ -230,6 +289,10 @@
   position: absolute;
   right: 0;
   bottom: calc(100% + 12px);
+  /* 条目多，窗口矮时顶会出窗口：限高、里面滚（2026-11-28 底栏浮起来时发现）。 */
+  max-height: calc(100vh - 72px);
+  max-height: calc(100dvh - 72px);
+  overflow-y: auto;
   width: min(320px, calc(100vw - 32px));
   width: min(320px, calc(100dvw - 32px));
   padding: 12px 12px 10px;

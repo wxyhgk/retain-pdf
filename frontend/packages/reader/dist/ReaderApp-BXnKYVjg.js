@@ -2361,7 +2361,7 @@ const Bl = [
       { actions: ["next-page"], keys: "J · ↓ · PgDn", desc: "下一页" },
       { actions: ["prev-page"], keys: "K · ↑ · PgUp", desc: "上一页" },
       { actions: ["first-page", "last-page"], keys: "Home / End", desc: "首页 / 末页" },
-      { actions: [], keys: "点底栏页码", desc: "输入页码跳转" }
+      { actions: [], keys: "点底下的页码", desc: "输入页码跳转" }
     ]
   },
   {
@@ -2397,7 +2397,7 @@ const Bl = [
   {
     title: "待处理",
     items: [
-      { actions: [], keys: "N / Shift+N", desc: "跳到下一处 / 上一处要看一眼的段落（底栏「待处理」）" }
+      { actions: [], keys: "N / Shift+N", desc: "跳到下一处 / 上一处要看一眼的段落（左栏「待改」）" }
     ]
   },
   {
@@ -5447,7 +5447,7 @@ function em({ port: e, documentId: t, resetKey: n, pointOf: r }) {
   }, [t]), u = A((f) => a((d) => d.filter((m) => m.key !== f)), []);
   return { marks: o, addRecords: l, removeMark: u };
 }
-const tm = Yo(() => import("./ReaderAskPanel-CaNHS6mS.js"));
+const tm = Yo(() => import("./ReaderAskPanel-CX5bWC3h.js"));
 function nm({
   port: e,
   documentId: t,
@@ -6077,7 +6077,7 @@ function Nm(e) {
   const t = N(!1);
   return e && (t.current = !0), t.current;
 }
-const Am = Yo(() => import("./ReaderMarkdownPanel-ldG-Y79M.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Qa = { id: "markdown", label: "Markdown", short: "MD", Icon: ci, needsJob: !0 };
+const Am = Yo(() => import("./ReaderMarkdownPanel-CWLdh7-o.js").then((e) => ({ default: e.ReaderMarkdownPanel }))), Qa = { id: "markdown", label: "Markdown", short: "MD", Icon: ci, needsJob: !0 };
 function xm() {
   const e = en(), t = e.activePanel === Qa.id;
   if (!Nm(t)) return null;
@@ -9857,7 +9857,7 @@ function qp({ scope: e, regions: t, currentPage: n, numPages: r, onJumpPage: o }
       }
     ),
     /* @__PURE__ */ p(se, { className: "reader-bookmark-remove", "aria-label": `删除第 ${i.page} 页的书签`, title: "删除这个书签", onClick: () => s(i.page), children: "×" })
-  ] }, i.page)) }) : /* @__PURE__ */ p("p", { className: "reader-finder-empty", children: "还没有书签。底栏的书签按钮给眼下这一页加一个。" });
+  ] }, i.page)) }) : /* @__PURE__ */ p("p", { className: "reader-finder-empty", children: "还没有书签。左下角的书签按钮给眼下这一页加一个。" });
 }
 function Jp({ nav: e }) {
   const { issues: t, last: n, goTo: r } = e;
@@ -10521,7 +10521,18 @@ function Rg() {
             I ? null : /* @__PURE__ */ p(qo, { bookmarks: Me, onJumpPage: e.goToPage, onJumpBlock: G, pinned: h, onPinChange: y }),
             /* @__PURE__ */ p(Lp, { active: a }),
             /* @__PURE__ */ p(ef, { paneComposition: v, markdownSplit: i, assistantSplit: u, liveTranslation: e.liveTranslation, sourcePaneAction: W }),
-            /* @__PURE__ */ p(Yh, { loading: t.loading, failed: t.failed, text: t.text, percent: t.percent, regionsError: !!r.readerErrors.regions, metadataError: !!r.readerErrors.metadata, onRetry: r.refreshJobArtifacts })
+            /* @__PURE__ */ p(Yh, { loading: t.loading, failed: t.failed, text: t.text, percent: t.percent, regionsError: !!r.readerErrors.regions, metadataError: !!r.readerErrors.metadata, onRetry: r.refreshJobArtifacts }),
+            /* @__PURE__ */ p(
+              bp,
+              {
+                mode: R,
+                modeControls: null,
+                bookmarkScope: e.viewStateKey,
+                startSlot: /* @__PURE__ */ p(Ep, { open: d, onToggle: f.toggleSidebar, issueCount: ce.issues.length }),
+                leftSlot: /* @__PURE__ */ p(Up, { edit: oe }),
+                toolsSlot: /* @__PURE__ */ p(rr, { place: "bottom" })
+              }
+            )
           ] }),
           /* @__PURE__ */ D(
             "aside",
@@ -10539,17 +10550,6 @@ function Rg() {
           )
         ] }),
         i ? /* @__PURE__ */ p(Gh, {}) : null,
-        /* @__PURE__ */ p(
-          bp,
-          {
-            mode: R,
-            modeControls: null,
-            bookmarkScope: e.viewStateKey,
-            startSlot: /* @__PURE__ */ p(Ep, { open: d, onToggle: f.toggleSidebar, issueCount: ce.issues.length }),
-            leftSlot: /* @__PURE__ */ p(Up, { edit: oe }),
-            toolsSlot: /* @__PURE__ */ p(rr, { place: "bottom" })
-          }
-        ),
         /* @__PURE__ */ p(
           Xp,
           {
@@ -10585,4 +10585,4 @@ export {
   Gg as s,
   Ge as u
 };
-//# sourceMappingURL=ReaderApp-DSzeJv4f.js.map
+//# sourceMappingURL=ReaderApp-BXnKYVjg.js.map

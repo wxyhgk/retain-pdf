@@ -1,15 +1,15 @@
 /* react-pdf 引擎：滚动壳 / 双栏网格 / 页槽 / 文本层 / 空态错误 */
 
 /* —— react-pdf engine (R1) —— */
-/* 壳层（2026-11-28）：中间工作区（.reader-workspace）、底栏（.reader-bottombar）是根节点竖排的两行，底栏全宽、实占位，
- * 书页只在中间那一行里。顶栏 11-28 上午也是实占的一行（54px），下午起改成浮在书页区顶上的两颗胶囊（chrome.css），
- * 书页第一页上面让出 --reader-float-bar-room（8 + 胶囊 40 + 8）。以前是全屏堆叠：顶栏、底栏浮在书页上，
+/* 壳层（2026-11-28）：根节点里只有中间工作区（.reader-workspace）一行。顶栏、底栏上午是实占的两行（54px、36px），
+ * 下午起都浮在书页区上：顶上两颗胶囊（chrome.css），书页第一页上面让出 --reader-float-bar-room（8 + 胶囊 40 + 8）；
+ * 底下三颗胶囊（hud.css），栏内横向滚动条、出错提示往上让出 --reader-float-bottom-room（8 + 胶囊 34 + 8）。以前是全屏堆叠：顶栏、底栏浮在书页上，
  * 书页区用 --reader-stage-left / --reader-stage-right 算让谁，底栏和小球压着正文最后几行。
- * 底栏的高在这里定；JS 要用（提问窗贴右边时让出底栏）的在 src/app/shell-metrics.ts，测试对着两边。 */
+ * 提问窗贴右边时上下都不用让（src/app/shell-metrics.ts 的 READER_DOCK_INSETS 是 0）。 */
 .reader-react-root {
   --reader-ai-split-width: 50vw;
   --reader-float-bar-room: 56px;
-  --reader-bottombar-h: 36px;
+  --reader-float-bottom-room: 50px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -186,7 +186,8 @@
 }
 .reader-pane-scrollbar {
   position: absolute;
-  bottom: 6px;
+  /* 让过底下浮着的三颗胶囊（2026-11-28；以前底栏实占一行时贴底 6px）。 */
+  bottom: var(--reader-float-bottom-room, 50px);
   height: 10px;
   border-radius: var(--ui-radius-pill, 999px);
   background: var(--reader-pane-scrollbar-track, color-mix(in srgb, var(--ink) 7%, transparent));
@@ -609,7 +610,8 @@
 .reader-react-error {
   position: absolute;
   left: 50%;
-  bottom: 16px;
+  /* 让过底下浮着的三颗胶囊（2026-11-28）。 */
+  bottom: calc(var(--reader-float-bottom-room, 50px) + 8px);
   z-index: 95;
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
@@ -645,7 +647,8 @@
 .reader-error-notice {
   position: absolute;
   left: 50%;
-  top: 12px;
+  /* 在顶上浮着的页签下面（2026-11-28 顶栏改成悬浮以前贴顶 12px，会压在页签上）。 */
+  top: var(--reader-float-bar-room, 56px);
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
   display: flex;

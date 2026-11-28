@@ -18,7 +18,7 @@ export function ReaderBookmarkList({ scope, regions, currentPage, numPages, onJu
 }): ReactElement {
   const { bookmarks, remove } = useReaderBookmarks(scope, regions);
   if (!bookmarks.length) {
-    return <p className="reader-finder-empty">还没有书签。底栏的书签按钮给眼下这一页加一个。</p>;
+    return <p className="reader-finder-empty">还没有书签。左下角的书签按钮给眼下这一页加一个。</p>;
   }
   return (
     <ol className="reader-finder-list reader-bookmark-list">

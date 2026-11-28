@@ -61,7 +61,7 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
       { actions: ["next-page"], keys: "J · ↓ · PgDn", desc: "下一页" },
       { actions: ["prev-page"], keys: "K · ↑ · PgUp", desc: "上一页" },
       { actions: ["first-page", "last-page"], keys: "Home / End", desc: "首页 / 末页" },
-      { actions: [], keys: "点底栏页码", desc: "输入页码跳转" },
+      { actions: [], keys: "点底下的页码", desc: "输入页码跳转" },
     ],
   },
   {
@@ -97,7 +97,7 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
   {
     title: "待处理",
     items: [
-      { actions: [], keys: "N / Shift+N", desc: "跳到下一处 / 上一处要看一眼的段落（底栏「待处理」）" },
+      { actions: [], keys: "N / Shift+N", desc: "跳到下一处 / 上一处要看一眼的段落（左栏「待改」）" },
     ],
   },
   {
