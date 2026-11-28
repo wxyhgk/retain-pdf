@@ -69,7 +69,9 @@ def build_fonts(spec: dict, out: Path) -> Path:
     package = _package_json(
         spec["package"],
         spec["package_version"],
-        f"Source Han Serif SC {spec['version']} (Adobe, unmodified) for RetainPDF's on-demand runtime assets.",
+        # RetainPDFSerifSC-W*.otf：可变字体切出的细体（修改版，OFL 保留了 Source 这个名字，所以改了名），见 resources/fonts/README.md
+        f"Source Han Serif SC 2.003R (Adobe, unmodified), plus RetainPDF Serif SC (static instances of its variable font, "
+        f"renamed as the OFL requires) for RetainPDF's on-demand runtime assets.",
         spec["files"],
         "OFL-1.1",
     )

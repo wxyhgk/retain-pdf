@@ -8,12 +8,13 @@
   "assets": {
     "fonts": {
       "title": "思源宋体",
-      "version": "2.003R",
+      "version": "2.003R-w300",
       "package": "@retainpdf/font-source-han-serif-sc",
-      "package_version": "2.3.0",
+      "package_version": "2.4.0",
       "files": [
         {"path": "SourceHanSerifSC-Regular.otf", "sha256": "78aa7a328fd974df2d688c8a9fd74a33d8334dfa84ab24d9d11efb2ffc464117", "size": 24543332},
         {"path": "SourceHanSerifSC-Bold.otf", "sha256": "706b8c0de2deff6cbc0c87e2cdedfd33a78b7ffd76cebb4549012f197ba611fe", "size": 25521732},
+        {"path": "RetainPDFSerifSC-W300.otf", "sha256": "1df6d4f8eea80b25d9401e943a9982a853cf41739e22dd448e857f029ae72970", "size": 27791944},
         {"path": "LICENSE-OFL-1.1.txt", "sha256": "9ff5bb567e1b92c801fc1069e5fbf992ff8efccacb9db94e5959a5b3ba9bb903", "size": 4463}
       ]
     },
