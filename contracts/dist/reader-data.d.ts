@@ -5,7 +5,7 @@
 /**
  * Endpoint input, query, and output DTOs published by reader-data.v1.schema.json.
  */
-export type ReaderDataSchema = JobFilesView | LiveTranslationCommitEvent | LiveTranslationLayout | LiveTranslationPageSnapshot | MarkdownDocumentView | ReaderMetadataView | ReaderRegionsView;
+export type ReaderDataSchema = JobFilesView | LiveTranslationCommitEvent | LiveTranslationLayout | LiveTranslationPageSnapshot | MarkdownDocumentView | ReaderLayoutPage | ReaderLayoutView | ReaderMetadataView | ReaderRegionsView;
 export interface JobFilesView {
     job_id: string;
     /**
@@ -190,6 +190,148 @@ export interface MarkdownImageView {
     url: string;
     content_type: string;
     size_bytes: number | null;
+}
+/**
+ * rpr_layout_v1 的一页（引擎 src/output/pdf/layout.js），原样返回。坐标单位 pt，原点在页左上、y 向下。以后只加字段。
+ */
+export interface ReaderLayoutPage {
+    /**
+     * 原文页号，从 0 起
+     */
+    index: number;
+    width: number;
+    height: number;
+    /**
+     * 先画：盖掉原文的块（填色是估的原页底色）
+     */
+    covers: ReaderLayoutCover[];
+    blocks: ReaderLayoutBlock[];
+}
+export interface ReaderLayoutCover {
+    /**
+     * 块 id，和 /reader/regions 的 item_id 同一套
+     */
+    block: string;
+    /**
+     * [x0, y0, x1, y1]，pt，原点在页左上、y 向下
+     *
+     * @minItems 4
+     * @maxItems 4
+     */
+    rect: [number, number, number, number];
+    /**
+     * RGB，各分量 0–1
+     *
+     * @minItems 3
+     * @maxItems 3
+     */
+    fill: [number, number, number];
+}
+export interface ReaderLayoutBlock {
+    /**
+     * 块 id，和 /reader/regions 的 item_id 同一套；跨页、跨栏续段每一截各一块
+     */
+    id: string;
+    fontSize: number;
+    weight: "regular" | "bold";
+    /**
+     * RGB，各分量 0–1
+     *
+     * @minItems 3
+     * @maxItems 3
+     */
+    color: [number, number, number];
+    lines: ReaderLayoutLine[];
+}
+export interface ReaderLayoutLine {
+    /**
+     * 只给读和搜（公式写成 $...$），画的是 items
+     */
+    text: string;
+    x: number;
+    baseline: number;
+    width: number;
+    justified: boolean;
+    items: ReaderLayoutItem[];
+}
+/**
+ * 字簇 {x, t, mode?} 或公式 {x, tex, display, w, h, d}。以后可能加字段（比如 font）。
+ */
+export interface ReaderLayoutItem {
+    x: number;
+    /**
+     * 一个字簇，画在 x、行的基线上
+     */
+    t?: string;
+    /**
+     * 只有标点、数字的一段，按西文整形
+     */
+    mode?: "dflt";
+    /**
+     * 公式的 LaTeX（有 tex 就是公式，没有 t）
+     */
+    tex?: string;
+    display?: boolean;
+    /**
+     * 公式盒宽，按字号的 em
+     */
+    w?: number;
+    /**
+     * 基线以上高，em
+     */
+    h?: number;
+    /**
+     * 基线以下深，em
+     */
+    d?: number;
+}
+export interface ReaderLayoutView {
+    available: boolean;
+    /**
+     * 没有版面的原因：no_translated_pdf 还没有译文 PDF；not_engine_route 这次不是 rpr_fit 排的（Typst）；unsupported_render 引擎排不了的设置（双栏对照、字体不是思源宋体）；merged_reading 合并阅读的虚拟任务；not_kept 引擎排的但版面没留下（2026-11-28 以前的任务、或回退了 Typst）。有版面时 null。以后可能加值。
+     */
+    reason: ("no_translated_pdf" | "not_engine_route" | "unsupported_render" | "merged_reading" | "not_kept") | null;
+    /**
+     * 版面格式，现在是 rpr_layout_v1
+     */
+    schema: string | null;
+    engine_version: string | null;
+    engine_commit: string | null;
+    page_count: number;
+    pages: ReaderLayoutPageEntry[];
+    fonts: ReaderLayoutFont[];
+    generate: ReaderLayoutGenerate | null;
+}
+export interface ReaderLayoutPageEntry {
+    /**
+     * 原文页号，从 0 起
+     */
+    index: number;
+    width: number;
+    height: number;
+    /**
+     * 这页版面的指纹，取这页时的 ETag 就是它
+     */
+    etag: string;
+    blocks: number;
+    url: string;
+}
+/**
+ * 画字用的字体（按书子集化的 woff2）。还没做，现在 fonts 是空数组。
+ */
+export interface ReaderLayoutFont {
+    key: string;
+    family: string;
+    weight: number;
+    url: string;
+}
+export interface ReaderLayoutGenerate {
+    method: "POST";
+    url: string;
+    /**
+     * 照原样发：retry-stage 的请求体（stage=render；任务原来不是 rpr_fit 路线时还带 overrides.render.engine=rpr_fit）
+     */
+    body: {};
 }
 export interface ReaderMetadataView {
     source: ReaderDocumentMetadata | null;

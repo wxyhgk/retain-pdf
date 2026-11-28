@@ -25,6 +25,8 @@ test("reader data schema publishes the complete independent read surfaces", () =
       "MarkdownDocumentView",
       "ReaderRegionsView",
       "ReaderMetadataView",
+      "ReaderLayoutView",
+      "ReaderLayoutPage",
       "LiveTranslationLayout",
       "LiveTranslationPageSnapshot",
       "LiveTranslationCommitEvent",
@@ -33,6 +35,18 @@ test("reader data schema publishes the complete independent read surfaces", () =
 
   for (const definitionName of contract.endpoints.filter((endpoint) => endpoint.output).map((endpoint) => endpoint.output)) {
     assert.ok(Object.hasOwn(definitions, definitionName), `missing ${definitionName}`);
+  }
+});
+
+test("reader layout: the manifest says why there is none and each page is rpr_layout_v1 as the engine wrote it (2026-11-28)", () => {
+  assert.deepEqual(definitions.ReaderLayoutView.properties.reason.anyOf[0].enum, [
+    "no_translated_pdf", "not_engine_route", "unsupported_render", "merged_reading", "not_kept",
+  ]);
+  assert.equal(definitions.ReaderLayoutView.properties.generate.anyOf[1].type, "null");
+  assert.deepEqual(definitions.ReaderLayoutPage.required, ["index", "width", "height", "covers", "blocks"]);
+  // 版面以后只加字段（比如字簇的 font）：一页里的对象不封口
+  for (const name of ["ReaderLayoutPage", "ReaderLayoutCover", "ReaderLayoutBlock", "ReaderLayoutLine", "ReaderLayoutItem"]) {
+    assert.equal(definitions[name].additionalProperties, undefined, name);
   }
 });
 

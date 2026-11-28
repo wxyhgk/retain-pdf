@@ -71,10 +71,13 @@ def main(argv):
     doc = fitz.open()
     blocks = []
     math_failed = []
+    layout_pages = []
     for page in rendered:
         index = int(page["page_index"])
         assert str(index) in drawings, f"drawings missing page {index}"
         pdf_page = doc.new_page(width=page["width"], height=page["height"])
+        layout_page = {"index": index, "width": page["width"], "height": page["height"], "covers": [], "blocks": []}
+        layout_pages.append(layout_page)
         for block in page.get("blocks", []):
             number = int(str(block["block_id"]).rsplit("-b", 1)[-1])
             item = items.get((index, number))
@@ -83,6 +86,10 @@ def main(argv):
                 continue
             x0, y0, x1, y1 = block["bbox"]
             pdf_page.insert_text((x0 + 1, y0 + 8), "FIT", fontsize=6)
+            layout_page["covers"].append({"block": block["block_id"], "rect": [x0, y0, x1, y1], "fill": [1, 1, 1]})
+            layout_page["blocks"].append({"id": block["block_id"], "fontSize": 10, "weight": "regular", "color": [0, 0, 0],
+                                          "lines": [{"text": text, "x": x0, "baseline": y0 + 8, "width": x1 - x0, "justified": False,
+                                                     "items": [{"x": x0 + 10 * k, "t": ch} for k, ch in enumerate(text)]}]})
             if "RAWTEX" in text or "MJFAIL" in text:
                 pdf_page.insert_text((x0 + 1, y0 + 20), text, fontsize=6)
             if "MJFAIL" in text and text.count("$") >= 2:
@@ -96,6 +103,7 @@ def main(argv):
     for _ in range(max(0, int(os.environ.get("FAKE_RPR_PAGES_DELTA", "0") or 0))):
         doc.new_page(width=100, height=100)
     doc.save(out_dir / "overlay.pdf")
+    (out_dir / "layout.json").write_text(json.dumps({"schema": "rpr_layout_v1", "pages": layout_pages}, ensure_ascii=False), encoding="utf-8")
     report = {
         "schema": "rpr_fit_report_v1",
         "engine": {"name": "retain-pdf-rendering", "version": "%(version)s", "commit": "fakecommit"},

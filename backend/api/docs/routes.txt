@@ -3,7 +3,7 @@
 # cli 命令行 / ops 运维调试 / multiuser 只有已停的多用户版 / agent AI 专用密钥能调 / none 还没有调用方）。
 # 由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
-# 124 条路径，159 个接口
+# 126 条路径，161 个接口
 GET    /api/v1/account/pages  signed  accounts  by multiuser
 GET    /api/v1/admin/invites  admin  accounts  by multiuser
 POST   /api/v1/admin/invites  admin  accounts  by multiuser
@@ -125,6 +125,8 @@ GET    /api/v1/jobs/:job_id/progress/events  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/progress/layout  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/progress/pages/:page  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/progress/stream  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reader/layout  signed  jobs  by web
+GET    /api/v1/jobs/:job_id/reader/layout/pages/:page_idx  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reader/markdown  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reader/metadata  signed  jobs  by web
 GET    /api/v1/jobs/:job_id/reader/regions  signed  jobs  by web,agent

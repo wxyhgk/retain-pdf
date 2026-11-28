@@ -554,3 +554,62 @@ def test_a_page_tiled_from_thousands_of_small_images_also_gets_coarse_ink(tmp_pa
     scanned = extract_drawings(pdf, [0], obstacle_boxes={0: []}, text_boxes={0: []})["0"]
     assert scanned["dense"] is True and scanned["images"] == []
     assert scanned["drawings"] and all(entry.get("synthetic") == "dense-ink" for entry in scanned["drawings"])
+
+
+def _reader_layout(context) -> Path:
+    return Path(context.output_pdf_path).parent / "reader-layout"
+
+
+@pytest.mark.parametrize("mode", ["overlay", "typst"])
+def test_rpr_fit_keeps_the_layout_page_by_page_for_the_reader(tmp_path: Path, monkeypatch, mode: str) -> None:
+    import gzip
+
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _pages, diagnostics, calls = _dispatch(context, mode=mode, source_pdf_path=source_pdf, translated_pages=translated)
+    assert calls == []
+    assert diagnostics["rpr_fit_reader_layout"]["kept"] is True
+    target = _reader_layout(context)
+    manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["schema"] == "reader_layout_v1" and manifest["layout_schema"] == "rpr_layout_v1"
+    assert manifest["engine_commit"] == "fakecommit"
+    assert manifest["output_pdf"] == "out.pdf"
+    # 页号是原文页号，不是输出 PDF 里的位置
+    assert [page["index"] for page in manifest["pages"]] == [0, 1]
+    first = manifest["pages"][0]
+    assert first["file"] == "pages/00000.json.gz" and len(first["etag"]) == 16 and first["blocks"] == 1
+    page = json.loads(gzip.decompress((target / first["file"]).read_bytes()))
+    assert page["index"] == 0 and page["blocks"][0]["id"] == "p001-b0001"
+    assert page["covers"][0]["block"] == "p001-b0001"
+
+
+def test_a_typst_render_removes_the_layout_left_by_an_earlier_rpr_fit_render(tmp_path: Path, monkeypatch) -> None:
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
+    assert (_reader_layout(context) / "manifest.json").is_file()
+    # 换 Typst 路线重渲染：上一次的版面对不上这次的 PDF
+    typst = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf, render_engine="typst")
+    _dispatch(typst, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
+    assert not _reader_layout(context).exists()
+    # rpr_fit 失败回退 Typst 也删
+    _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
+    monkeypatch.setenv("FAKE_RPR_EXIT", "1")
+    _pages, diagnostics, calls = _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
+    assert calls == ["overlay"] and diagnostics["render_engine"] == "typst"
+    assert not _reader_layout(context).exists()
+
+
+def test_a_page_that_is_no_longer_laid_out_is_dropped_from_the_kept_layout(tmp_path: Path, monkeypatch) -> None:
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
+    translated[1] = []
+    _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
+    target = _reader_layout(context)
+    manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    assert [page["index"] for page in manifest["pages"]] == [0]
+    assert sorted(path.name for path in (target / "pages").iterdir()) == ["00000.json.gz"]

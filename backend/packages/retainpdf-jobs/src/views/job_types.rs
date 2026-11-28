@@ -74,6 +74,53 @@ pub struct ReaderMetadataView {
     pub translated: Option<ReaderDocumentMetadataView>,
 }
 
+/// `GET /jobs/:id/reader/layout`：rpr_fit 引擎排的版面清单，阅读页的 HTML 页照它画（2026-11-28）。
+/// 没有版面时 `available: false`、`reason` 说为什么，能补排时 `generate` 给出补排的请求。
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ReaderLayoutView {
+    pub available: bool,
+    /// `no_translated_pdf` | `not_engine_route` | `unsupported_render` | `merged_reading` | `not_kept`；有版面时 null。
+    pub reason: Option<String>,
+    /// 版面格式，现在是 `rpr_layout_v1`。
+    pub schema: Option<String>,
+    pub engine_version: Option<String>,
+    pub engine_commit: Option<String>,
+    pub page_count: usize,
+    /// 有版面的页，按原文页号（从 0 起）排；没有译文的页不在里面。
+    pub pages: Vec<ReaderLayoutPageEntryView>,
+    /// 画字用的字体（按书子集化的 woff2），还没做，现在是空的。
+    pub fonts: Vec<ReaderLayoutFontView>,
+    /// 补排：照原样发这个请求（原地重新渲染，不调模型、不花钱），跑完版面就有了。补不了时 null。
+    pub generate: Option<ReaderLayoutGenerateView>,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ReaderLayoutPageEntryView {
+    /// 原文页号，从 0 起。
+    pub index: u32,
+    pub width: f64,
+    pub height: f64,
+    /// 这页版面的指纹，取一页时的 ETag 也是它。
+    pub etag: String,
+    pub blocks: u32,
+    pub url: String,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ReaderLayoutFontView {
+    pub key: String,
+    pub family: String,
+    pub weight: u32,
+    pub url: String,
+}
+
+#[derive(Debug, Serialize, Clone, PartialEq)]
+pub struct ReaderLayoutGenerateView {
+    pub method: String,
+    pub url: String,
+    pub body: serde_json::Value,
+}
+
 #[derive(Debug, Serialize)]
 pub struct JobStageContractArtifactView {
     pub artifact_key: String,
