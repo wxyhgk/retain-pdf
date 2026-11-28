@@ -15,7 +15,7 @@ import { useRenderLayout } from "../../hooks/use-render-layout.js";
 import { HtmlPageLayer, regionsByPage, type HtmlPageText } from "../../pdf/HtmlPageLayer.js";
 import { LayoutPageHost } from "../../pdf/LayoutPageLayer.js";
 import type { RegionPdfDocument } from "../../pdf/RegionCanvas.js";
-import { loadPdfDocument } from "../../shared/data/pdf-document.js";
+import { loadLayoutBackground } from "../../pdf/layout-background.js";
 import { useReaderApi, useReaderContribution } from "../registry.js";
 import type { ReaderContribution, ReaderExtension } from "../types.js";
 
@@ -53,15 +53,15 @@ function HtmlPageExtension(): ReactElement | null {
   useEffect(() => {
     setBackgroundPdf(null);
     if (!backgroundUrl) return undefined;
-    let alive = true;
-    void loadPdfDocument({ itemOrUrl: backgroundUrl })
+    const controller = new AbortController();
+    void loadLayoutBackground(backgroundUrl, controller.signal)
       .then((pdf) => {
-        if (alive && pdf) setBackgroundPdf(pdf as RegionPdfDocument);
+        if (!controller.signal.aborted && pdf) setBackgroundPdf(pdf);
       })
-      .catch((error) => console.warn("[html-page] 底图没读到，用原文页做底：", error));
-    return () => {
-      alive = false;
-    };
+      .catch((error) => {
+        if (!controller.signal.aborted) console.warn("[html-page] 底图没读到，用原文页做底：", error);
+      });
+    return () => controller.abort();
   }, [backgroundUrl]);
   const hasTranslation = !api.sourceOnly;
   const { metadata, visibleMode, setWorkspace } = api;

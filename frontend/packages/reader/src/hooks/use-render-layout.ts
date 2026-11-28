@@ -5,7 +5,7 @@
 // 没有版面时给出原因和补排的请求（照原样发，原地重新渲染，不花钱）；发了以后每 5 秒再要一次清单，排好就照版面画。
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { defaultReaderDataPort } from "../external.js";
+import { defaultReaderDataPort, resolveResourceUrl } from "../external.js";
 import {
   loadRenderLayoutFromApi,
   loadRenderLayoutManifest,
@@ -74,10 +74,18 @@ const POLL_LIMIT = 120;
 
 type DataPort = { apiPrefix: string; fetchProtected: typeof fetch };
 
-/** 宿主没给数据端口（单测、纯本地 PDF）时是 null。 */
+/**
+ * 宿主没给数据端口（单测、纯本地 PDF）时是 null。
+ * 接口给的地址是 /api/v1/… 这种相对的：先按宿主的后端地址补全（resolveResourceUrl），不然请求落到前端的静态服务器上
+ * （2026-11-28 实测开发栈：前端 40001、后端 41000，清单 404）。
+ */
 function readDataPort(): DataPort | null {
   try {
-    return { apiPrefix: defaultReaderDataPort.apiPrefix, fetchProtected: defaultReaderDataPort.fetchProtected };
+    const fetchProtected = defaultReaderDataPort.fetchProtected;
+    return {
+      apiPrefix: defaultReaderDataPort.apiPrefix,
+      fetchProtected: ((input: RequestInfo | URL, init?: RequestInit) => fetchProtected(typeof input === "string" ? resolveResourceUrl(input) : input, init)) as typeof fetch,
+    };
   } catch {
     return null;
   }

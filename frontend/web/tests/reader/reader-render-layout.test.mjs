@@ -205,3 +205,13 @@ test("版面接进 HTML 页：开了「画译文」才要清单；字体要带�
   assert.match(layer, /if \(!svg \|\| !loadMath\) return mathSvg\(tex\);/);
   assert.match(read("styles/live-translation.css"), /:root\[data-reader-doc="dark"\] \.reader-layout-page \{\s*filter: var\(--reader-doc-dark-filter\);/, "深色文档时版面没跟着反色");
 });
+
+test("接口地址补全、底图用书页同一份 pdf.js（2026-11-28 实测：相对地址落到前端静态服务器 404；另一份 pdf.js 模块路径解析不到，底图画不出）", () => {
+  const hook = read("src/hooks/use-render-layout.ts");
+  assert.match(hook, /fetchProtected\(typeof input === "string" \? resolveResourceUrl\(input\) : input, init\)/, "相对地址没补全成后端地址");
+  const bg = read("src/pdf/layout-background.ts");
+  assert.match(bg, /import \{ pdfjs \} from "react-pdf";/);
+  assert.match(bg, /loadProtectedPdfFile\(resolveResourceUrl\(url\), undefined, \{ signal \}\)/);
+  assert.match(bg, /range: createPdfRangeTransport\(file\.ranged\)/, "大底图没按段取");
+  assert.doesNotMatch(read("src/extensions/builtin/html-page.tsx"), /loadPdfDocument/, "又用回另一份 pdf.js");
+});
