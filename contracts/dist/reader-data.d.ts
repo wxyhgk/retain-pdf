@@ -354,7 +354,7 @@ export interface ReaderLayoutGenerate {
     method: "POST";
     url: string;
     /**
-     * 照原样发：retry-stage 的请求体（stage=render；任务原来不是 rpr_fit 路线时还带 overrides.render.engine=rpr_fit）
+     * 照原样发：retry-stage 的请求体（stage=render、create_new_job=false，原地重新渲染这个任务；任务原来不是 rpr_fit 路线时还带 overrides.render.engine=rpr_fit）
      */
     body: {};
 }
