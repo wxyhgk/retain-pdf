@@ -21,7 +21,7 @@
 | 文件 | 现在 | 要改成 |
 |---|---|---|
 | HTML 页的字体 | 字簇 `font` 一般是 `SourceHanSerifSC-Regular` | 重新渲染过的书会是 `RetainPDFSerifSC-W300`。清单 `fonts[]` 里这个 `key` 给的是常规体的子集（`weight` 400），照 `key` 对上就行，不要写死字体名 |
-| 桌面版 | — | 桌面版的字体是按需下载的（`runtime_assets.json` 的 npm 包），包里还没有这份细体，所以桌面版照旧是常规体；发新版字体包后才变细 |
+| 桌面版 | — | 桌面版的字体是按需下载的（`runtime_assets.json` 的 npm 包）。字体包 2.4.0 带上了这份细体（feat/runtime-fonts-w300，资源版本 `2.003R-w300`），桌面版启动时自动下新包（约 58 MB），下好以前照旧是常规体；前端不用改 |
 
 ## 阅读页只加载原文 PDF：版面里写明要抹掉的原字、表格进版面（feat/reader-layout-erase-tables）
 

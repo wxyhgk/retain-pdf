@@ -20,7 +20,7 @@ async fn runtime_assets_report_their_state_without_downloading() {
     assert_eq!(payload["data"]["downloads_enabled"], false);
     let assets = payload["data"]["assets"].as_array().expect("assets");
     let fonts = assets.iter().find(|asset| asset["id"] == "fonts").expect("fonts listed");
-    assert_eq!(fonts["version"], "2.003R");
+    assert_eq!(fonts["version"], "2.003R-w300");
     assert!(["bundled", "missing"].contains(&fonts["state"].as_str().unwrap()), "{fonts}");
     assert!(fonts["bytes_total"].as_u64().unwrap() > 40_000_000);
 
