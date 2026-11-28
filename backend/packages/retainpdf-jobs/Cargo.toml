@@ -23,6 +23,7 @@ axum = "0.7"
 base64 = "0.22"
 chrono = { version = "0.4", features = ["serde", "clock"] }
 fastrand = "2"
+flate2 = "1"
 lopdf = "0.32"
 mime_guess = "2"
 regex = "1"

@@ -21,6 +21,30 @@ export type ReaderAskPort = {
     conversations?: ReaderAskConversationsPort | null;
     /** 记忆面板、「让 AI 使用记忆」开关。不给就没有记忆面板。 */
     memories?: ReaderAskMemoriesPort | null;
+    /** 用户的术语表：记忆面板里「这本书」的术语能加进去（2026-11-27）。不给就没有这个按钮。 */
+    glossaries?: ReaderAskGlossaryPort | null;
+};
+/** 用户自己的术语表（契约 glossaries.v1）：翻译时选了这张表才用上。 */
+export type ReaderAskGlossaryPort = {
+    list: () => Promise<{
+        id: string;
+        name: string;
+        entryCount: number;
+    }[]>;
+    /** 加一条；同一个原文（不分大小写）已经有了就换成这次的译法。into 给 id 是加进那张表，给 name 是新建一张。 */
+    addEntry: (into: {
+        id: string;
+    } | {
+        name: string;
+    }, entry: {
+        source: string;
+        target: string;
+        note?: string;
+    }) => Promise<{
+        id: string;
+        name: string;
+        replaced: boolean;
+    }>;
 };
 /** 记忆（用户层、书层）和「让 AI 使用记忆」总开关（存在后端库里，不在浏览器设置里）。类型就是契约 ask-conversations.v1 的。 */
 export type ReaderAskMemoriesPort = {
@@ -57,6 +81,8 @@ export type ReaderAskConversationsPort = {
     reopen: (conversationId: string) => Promise<AskConversationRecord>;
     /** 归档主对话（之后再取主对话会建新的）。 */
     archive: (conversationId: string) => Promise<AskConversationRecord>;
+    /** 这本书归档了的主对话（新的在前；没有书是全局的那些）。不给就没有「以前的对话」。 */
+    archived?: (documentId: string) => Promise<AskConversationRecord[]>;
     /** 主对话太长了：让后端用设置里的模型压缩（没配模型不压）。失败不用管，下次再试。 */
     compact: (conversationId: string) => Promise<void>;
     /** 这本书上问过的地方（书页上的「?」）。 */

@@ -1,10 +1,10 @@
 // 单页：对齐旧 createManualPageElement + setManualPageSize（固定宽高）
 // 对照时 syncedMinHeight 来自 syncReaderPageRows 的 max 高度
 
-import { ReaderAskMarks } from "../ask/ReaderAskMarks.js";
-import { renderXrefText } from "../shared/content/reader-xrefs.js";
+import { renderMarkedText } from "../shared/content/reader-text-marks.js";
 import { readerRegionKindForRegion } from "../shared/data/reader-regions.js";
 import {
+  Fragment,
   memo,
   useEffect,
   useLayoutEffect,
@@ -35,7 +35,6 @@ import {
 } from "./ReaderTextHoverLayer.js";
 import { EditedTranslationOverlay } from "./EditedTranslationOverlay.js";
 import { inHoverToolsZone, useHoverPresentation } from "./hover-presentation.js";
-import { InkLayer } from "./InkLayer.js";
 import { READER_INLINE_EDIT_CLASS, ReaderInlineBlockEditor } from "./ReaderInlineBlockEditor.js";
 import { LiveTranslationOverlay } from "./LiveTranslationOverlay.js";
 import { useReaderContext } from "../components/react-pdf/reader-context.js";
@@ -107,13 +106,15 @@ function PdfPageSlotInner({
   // 左栏搜索的词：文字层里每处命中包一个 <mark>（reader-find.ts 的 highlightFindTerm）。没有词时不给 renderer，
   // react-pdf 照原样画文字层，不多一遍 innerHTML。
   const findTerm = readerContext?.findTerm || "";
-  // 书里的引用（「图 2.1」「式 (3.21)」）包一层 span（reader-xrefs.ts），悬停预览、点了跳过去由 use-reader-xrefs 接。
-  const xrefIndex = readerContext?.xrefIndex;
+  // 扩展的页面层看的栏：对比版本时左栏放的是另一份译文（"compare"），画笔按栏存笔迹要分开。
+  const layerPane = pane === "translated" ? "translated" : readerContext?.compareVersion ? "compare" : "source";
+  // 扩展标出来的几段（贡献表的 textMarks，例如书里的引用「图 2.1」）包成 <mark>（reader-text-marks.ts）；悬停、点了怎样由扩展自己接。
+  const textMarks = readerContext?.textMarks;
   const customTextRenderer = useMemo(
-    () => (xrefIndex?.size
-      ? ({ str }: { str: string }) => renderXrefText(str, xrefIndex, findTerm)
+    () => (textMarks
+      ? ({ str }: { str: string }) => renderMarkedText(str, textMarks(str), findTerm)
       : findTerm ? ({ str }: { str: string }) => highlightFindTerm(str, findTerm) : undefined),
-    [findTerm, xrefIndex],
+    [findTerm, textMarks],
   );
   const aspectRef = useRef(cachedAspect ?? DEFAULT_ASPECT);
   const [aspect, setAspect] = useState(aspectRef.current);
@@ -188,8 +189,8 @@ function PdfPageSlotInner({
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
     // 触屏没有悬停：手指滑动（滚动）不该换框，框由点按决定（见 handlePointerDown）。
     if (event.pointerType === "touch") return;
-    // 画笔模式：拖动是画，不出悬停框。
-    if (readerContext?.ink?.tool) {
+    // 有扩展占着指针（画笔模式：拖动是画），不出悬停框。
+    if (readerContext?.pointerTaken) {
       setHoveredTextId(null);
       return;
     }
@@ -252,7 +253,7 @@ function PdfPageSlotInner({
       // 双击图片放大看（文字块的双击留给浏览器选词）。
       onDoubleClick={(event) => {
         const zoom = readerContext?.zoomBlock;
-        if (!zoom || readerContext?.ink?.tool || !hoveredTextTarget) return;
+        if (!zoom || readerContext?.pointerTaken || !hoveredTextTarget) return;
         if (readerRegionKindForRegion(hoveredTextTarget.highlight.region) !== "figure") return;
         event.preventDefault();
         zoom(hoveredTextTarget.itemId);
@@ -353,20 +354,13 @@ function PdfPageSlotInner({
           ))}
         </div>
       ) : null}
-      {active && readerContext?.ink ? (
-        <InkLayer
-          page={pageNumber}
-          pane={pane === "translated" ? "translated" : readerContext.compareVersion ? "compare" : "source"}
-          width={width}
-          height={naturalHeight}
-          ink={readerContext.ink}
-        />
-      ) : null}
-      {readerContext?.askMarks?.length && readerContext.onAskMark ? (
-        <ReaderAskMarks marks={readerContext.askMarks} page={pageNumber} height={naturalHeight} onOpen={readerContext.onAskMark} />
-      ) : null}
+      {readerContext?.pageLayers?.map((layer) => (
+        <Fragment key={layer.id}>
+          {layer.render({ page: pageNumber, width, height: naturalHeight, pane: layerPane, active })}
+        </Fragment>
+      ))}
       <ReaderTextHoverLayer
-        target={active && !readerContext?.ink?.tool && hoveredTextTarget?.itemId !== editingTarget?.itemId ? hoveredTextTarget : null}
+        target={active && !readerContext?.pointerTaken && hoveredTextTarget?.itemId !== editingTarget?.itemId ? hoveredTextTarget : null}
         pane={pane === "translated" ? "translated" : "source"}
         revisedCount={hoveredTextTarget ? revisedBlocks?.get(hoveredTextTarget.itemId) || 0 : 0}
         onEdit={editBlock}

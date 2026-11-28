@@ -6,7 +6,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { Quote, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
-import { PendingContextBar } from "./conversation.js";
+import { PendingStarters } from "./blocks.js";
+import { ContextOfferBar, PendingContextBar } from "./conversation.js";
 
 /** 引用最多带多少字（超出截断加「…」）。 */
 export const QUOTE_LIMIT = 600;
@@ -128,6 +129,8 @@ export function ComposerBars(): ReactElement {
     <>
       <AnswerQuoteBar />
       <PendingContextBar />
+      <ContextOfferBar />
+      <PendingStarters />
     </>
   );
 }

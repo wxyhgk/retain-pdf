@@ -1,6 +1,7 @@
 """档位表（``model_wire.thinking_menu``，2026-11-26）：每类模型报哪些档、每档发什么字段、设置里的思考深度换成哪一档。
 
 阅读页提问的自带 agent 用它报 ACP 的 ``thought_level``；换算要和按设置发的字段（翻译同一套）对得上。"""
+import json
 import re
 from pathlib import Path
 
@@ -54,18 +55,22 @@ def test_claude_level_fields_are_the_translation_ones():
         menu.candidates("off")
 
 
-def test_qwen_and_deepseek_are_switches():
+def test_qwen_on_dashscope_has_budget_levels_and_deepseek_is_a_switch():
+    """DashScope 认思考预算（2026-11-27 起分档，以前只有开关）：每档发 thinking_budget，不认退到只开思考；和翻译按设置发的一样。"""
     qwen = _menu("openai", "qwen3.8-flash", DASHSCOPE)
-    assert qwen.values() == ["off", "on"]
+    assert qwen.values() == ["off", "low", "medium", "high", "max"]
+    assert not qwen.guessed
     assert qwen.candidates("off") == [{"enable_thinking": False}, {}]
-    assert qwen.candidates("on") == [{"enable_thinking": True}, {}]
-    # auto：qwen3.8-flash 实测关掉；别的 Qwen 不加字段，按服务商默认开
-    assert qwen.level_for("auto") == "off" and qwen.level_for("high") == "on" and qwen.level_for("off") == "off"
-    assert _menu("openai", "qwen-plus", DASHSCOPE).level_for("auto") == "on"
+    assert qwen.candidates("low") == [{"enable_thinking": True, "thinking_budget": 2048}, {"enable_thinking": True}, {}]
+    assert qwen.candidates("max")[0] == {"enable_thinking": True, "thinking_budget": 32768}
+    # auto：qwen3.8-flash 实测关掉；别的 Qwen 不加字段，按服务商默认开（预算不限，算 max）
+    assert [qwen.level_for(setting) for setting in ("auto", "off", "low", "medium", "high", "max")] == ["off", "off", "low", "medium", "high", "max"]
+    assert _menu("openai", "qwen-plus", DASHSCOPE).level_for("auto") == "max"
     deepseek = _menu("openai", "deepseek-chat", DEEPSEEK)
     assert deepseek.values() == ["off", "on"]
     assert deepseek.candidates("on") == [{"thinking": {"type": "enabled"}}, {}]
     assert deepseek.level_for("auto") == "off" and _menu("openai", "deepseek-reasoner", DEEPSEEK).level_for("auto") == "on"
+    assert not deepseek.guessed and not _menu("anthropic", "claude-haiku-5-5").guessed and not _menu("openai", "gpt-5", OPENAI).guessed
 
 
 @pytest.mark.parametrize("model", ["Qwen3.8-27B-Uncensored", "qwen/qwen3-32b", "Qwen3-30B-A3B"])
@@ -73,6 +78,7 @@ def test_qwen3_on_other_hosts_is_a_switch(model):
     """自己部署、中转的 Qwen3 按名字认（2026-11-27，用户自定义的 Qwen3.8-27B-Uncensored 以前没有档位）：两种写法一起发，回 400 再一个一个试。"""
     menu = _menu("openai", model, "http://127.0.0.1:8000/v1")
     assert menu.values() == ["off", "on"]
+    assert menu.guessed, "self-hosted servers may ignore the switch"
     assert menu.candidates("off") == [
         {"enable_thinking": False, "chat_template_kwargs": {"enable_thinking": False}},
         {"chat_template_kwargs": {"enable_thinking": False}},
@@ -116,11 +122,12 @@ def test_glm_and_unknown_models():
     assert model_wire.thinking_menu(protocol="openai_responses", model="gpt-4o", base_url=OPENAI) is None
 
 
-@pytest.mark.parametrize("model", ["Qwen3.8-27B-Uncensored", "some-model"])
+@pytest.mark.parametrize("model", ["Qwen3-30B-A3B", "some-model"])
 def test_unknown_models_on_responses_get_a_generic_switch(model):
     """Responses 协议上认不出的也给通用开关（2026-11-27：用户自定义的 Qwen3.8-27B-Uncensored 走 Responses，Chat 那份覆盖不到）。
     关的时候 effort 写成 reasoning.effort，最后再单独试它（DashScope 的 /responses 实测 effort=none 能关）。"""
     menu = _menu("openai_responses", model, "http://127.0.0.1:1561/v1")
+    assert menu.guessed
     assert menu.values() == ["off", "on"]
     template_off = {"chat_template_kwargs": {"enable_thinking": False, "thinking": False}}
     assert menu.candidates("off") == [
@@ -139,6 +146,7 @@ def test_unknown_models_on_responses_get_a_generic_switch(model):
 def test_unknown_models_get_a_generic_switch():
     """认不出的模型（OpenAI Chat、不是 api.openai.com）给通用开关（2026-11-27）：几种常见写法一起发，回 400 再少发，最后不加。"""
     menu = _menu("openai", "some-model", "https://llm.example.com/v1")
+    assert menu.guessed
     assert menu.values() == ["off", "on"]
     template_off = {"chat_template_kwargs": {"enable_thinking": False, "thinking": False}}
     assert menu.candidates("off") == [
@@ -158,6 +166,7 @@ MENUS = [
     ("anthropic", "claude-sonnet-4-6", ""), ("openai", "glm-5.3-flash", BIGMODEL), ("openai", "glm-5", BIGMODEL),
     ("openai", "gpt-5", OPENAI), ("openai", "gpt-5.5-mini", OPENAI), ("openai", "o4-mini", OPENAI),
     ("openai_responses", "gpt-5-mini", OPENAI), ("openai_responses", "gpt-5.5", OPENAI),
+    ("openai", "qwen3.8-flash", DASHSCOPE), ("openai", "qwen-plus", DASHSCOPE),
 ]
 
 
@@ -189,3 +198,50 @@ def test_pi_models_json_uses_the_same_claude_lists():
 
     assert rust_list("CLAUDE_XHIGH_MODELS") == model_wire.ANTHROPIC_XHIGH_MODELS
     assert rust_list("CLAUDE_THINKS_BY_DEFAULT_MODELS") == model_wire.ANTHROPIC_THINKS_BY_DEFAULT_MODELS
+
+
+# ---- 我们维护的表（thinking_models.json，2026-11-27 用户定：问不到接口的我们自己维护） ----
+
+
+def test_the_table_file_is_well_formed():
+    """每条都有名字、match、至少两档（档位名认得、每档有字段、不带最后的 {}）、auto 是其中一档。"""
+    data = json.loads(model_wire.THINKING_TABLE_FILE.read_text(encoding="utf-8"))
+    known = {"off", "none", "on", *model_wire._LEVEL_ORDER}
+    assert data["version"] == 1 and data["models"]
+    for entry in data["models"]:
+        values = [level["value"] for level in entry["levels"]]
+        assert entry["name"] and entry["match"] and len(values) >= 2, entry["name"]
+        assert set(values) <= known and entry["auto"] in values, entry["name"]
+        assert all(level["fields"] and {} not in level["fields"] for level in entry["levels"]), entry["name"]
+        assert set(entry["match"]) <= {"protocols", "hosts", "model"}, entry["name"]
+        assert set(entry["match"].get("protocols", [])) <= set(model_wire.PROTOCOLS), entry["name"]
+
+
+def test_qwen38_comes_from_the_table():
+    """Qwen3.8：百炼上按预算分档（flash 自动是关），自己部署的只有开关、还没核实（算猜的）；Instruct 这类不在表里。"""
+    flash = _menu("openai", "qwen3.8-flash", DASHSCOPE)
+    assert flash.source == "table" and not flash.guessed
+    assert flash.values() == ["off", "low", "medium", "high", "max"] and flash.level_for("auto") == "off"
+    assert flash.candidates("medium") == [{"enable_thinking": True, "thinking_budget": 8192}, {"enable_thinking": True}, {}]
+    plus = _menu("openai", "qwen3.8-plus", DASHSCOPE)
+    assert plus.source == "table" and plus.level_for("auto") == "max" and plus.level_for("low") == "low"
+    hosted = _menu("openai", "Qwen3.8-27B-Uncensored", "http://10.0.0.8:8000/v1")
+    assert hosted.source == "table" and hosted.guessed and hosted.values() == ["off", "on"]
+    assert hosted.candidates("on")[0] == {"enable_thinking": True, "chat_template_kwargs": {"enable_thinking": True}}
+    responses = _menu("openai_responses", "Qwen3.8-27B-Uncensored", "http://10.0.0.8:8000/v1")
+    assert responses.source == "table" and responses.candidates("off")[0]["reasoning"] == {"effort": "none"}
+    assert [responses.level_for(setting) for setting in ("auto", "off", "low", "max")] == ["on", "off", "on", "on"]
+    # 不在表里的照旧走代码里的规则
+    assert _menu("openai", "qwen3.8-27b-instruct", "http://10.0.0.8:8000/v1").source == "code"
+    assert _menu("openai", "qwen-plus", DASHSCOPE).source == "code"
+
+
+def test_specs_map_settings_to_the_nearest_level():
+    spec = {"levels": [{"value": "low", "fields": [{"e": "low"}]}, {"value": "high", "fields": [{"e": "high"}]},
+                       {"value": "max", "fields": [{"e": "max"}]}], "auto": "high"}
+    menu = model_wire.menu_from_spec(spec, source="api:test")
+    assert menu.source == "api:test" and menu.candidates("high") == [{"e": "high"}, {}]
+    # off 没有不思考那档取最低；medium 没有取低一档；xhigh 不是设置里的值，max 同名
+    assert [menu.level_for(setting) for setting in ("auto", "off", "low", "medium", "high", "max")] == ["high", "low", "low", "low", "high", "max"]
+    assert model_wire.menu_from_spec({"levels": [{"value": "on", "fields": [{"x": 1}]}]}, source="t") is None
+    assert model_wire.menu_from_spec({"levels": []}, source="t") is None

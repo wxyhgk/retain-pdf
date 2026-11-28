@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import random
 import socket
+import ssl
 
 import requests
 
@@ -235,6 +236,20 @@ def is_non_retryable_client_error(exc: BaseException) -> bool:
     return http_status_of(exc) in NON_RETRYABLE_STATUS_CODES or bool(rejection_kind(exc))
 
 
+def is_certificate_error(exc: BaseException) -> bool:
+    """HTTPS 证书验证失败（不认签发者、自签、过期、域名对不上）：`ssl.SSLCertVerificationError` 在异常链上，
+    或 requests / urllib3 把它压成了文字（``CERTIFICATE_VERIFY_FAILED``）。"""
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    while current is not None and id(current) not in seen:
+        seen.add(id(current))
+        if isinstance(current, ssl.SSLCertVerificationError):
+            return True
+        current = current.__cause__ or current.__context__
+    text = str(exc).lower()
+    return "certificate_verify_failed" in text or "certificate verify failed" in text
+
+
 def is_transient_upstream_error(exc: BaseException) -> bool:
     """True for errors worth a limited retry: Timeout/429/5xx/connection."""
     if isinstance(exc, (ValueError, KeyError)):
@@ -248,6 +263,9 @@ def is_transient_upstream_error(exc: BaseException) -> bool:
         pass
     if rejection_kind(exc):
         # 429 里的余额、额度用完：重试没用
+        return False
+    if is_certificate_error(exc):
+        # 证书验证不过，重试多少次都一样（2026-11-27）：第一次就失败，失败分类归 tls_certificate_untrusted
         return False
     status = http_status_of(exc)
     if status is not None:

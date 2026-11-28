@@ -5,6 +5,7 @@ members = [
   "backend/api",
   "backend/cli",
   "backend/jobs",
+  "backend/relay",
   "backend/packages/retainpdf-config",
   "backend/packages/retainpdf-api-base",
   "backend/packages/retainpdf-accounts",

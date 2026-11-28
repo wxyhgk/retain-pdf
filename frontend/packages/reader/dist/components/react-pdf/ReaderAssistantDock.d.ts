@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import { type ReaderDockTab } from "./reader-dock-tabs.js";
 import type { ReaderAssistantPanel } from "./reader-assistant-types.js";
 export type { ReaderAssistantPanel } from "./reader-assistant-types.js";
 export type ReaderAssistantDockProps = {
@@ -18,7 +19,10 @@ export type ReaderAssistantDockProps = {
 };
 /** 顶栏托盘里的面板按钮（图标 + 名字；窄屏只剩图标，名字在悬停里）：点了开、再点收；没有任务时禁用并说明原因。
  *  2026-11-20 以前宽屏也只有图标，不悬停看不出是「Markdown」。 */
-export declare function ReaderPanelToggles(props: Pick<ReaderAssistantDockProps, "active" | "sourceOnly" | "onSelect" | "onClose">): ReactElement;
+export declare function ReaderPanelToggles(props: Pick<ReaderAssistantDockProps, "active" | "sourceOnly" | "onSelect" | "onClose"> & {
+    /** 只画这几个（底栏工具里按扩展分开排）；不给是全部。 */
+    tabs?: readonly ReaderDockTab[];
+}): ReactElement;
 /** 面板开着时顶上的 tab 条和关闭；关着时什么都不画（按钮在顶栏托盘里，见 ReaderPanelToggles）。 */
 export declare function ReaderAssistantDock(props: ReaderAssistantDockProps): ReactElement | null;
 //# sourceMappingURL=ReaderAssistantDock.d.ts.map

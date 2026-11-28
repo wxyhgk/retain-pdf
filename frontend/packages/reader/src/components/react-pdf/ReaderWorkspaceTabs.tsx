@@ -1,13 +1,15 @@
-import type { ReactElement } from "react";
+import { Fragment, useRef, type ReactElement, type ReactNode } from "react";
 import { Button } from "@retainpdf/ui";
 import { ArrowDownToLine, CheckCircle2, Columns2, FileText, Languages, Radio } from "lucide-react";
+import { BAR_ICON } from "./bar-icon.js";
 import type { LiveTranslationState } from "../../shared/data/live-translation-state.js";
 import { useReaderContext } from "./reader-context.js";
+import { useTopBarReveal } from "./use-topbar-reveal.js";
 
 export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "ai";
 export type ReaderWorkspaceMode = "source" | "compare" | "translated";
 
-// 页签上写着字（窄屏只剩图标，见 chrome.css）：只有图标时看不出哪颗是哪颗。
+// 只画图标，名字在悬停和读屏里（2026-11-28 用户：先试过只写字，又要回图标、去掉字；顶栏、底栏都只用图标，见 bar-icon.ts）。
 const WORKSPACES = [
   { id: "source", label: "原文", Icon: FileText },
   { id: "compare", label: "对照", Icon: Columns2 },
@@ -34,6 +36,10 @@ export type ReaderWorkspaceTabsProps = {
   } | null;
   /** 这次看着它翻完了：顶栏左边换成「翻译完成 · 看对照」。 */
   completion?: { onOpenCompare: () => void } | null;
+  /** 左上角的胶囊：返回（2026-11-28 起顶栏不再占一行，浮在书页区上面：左上一颗胶囊、正上方页签）。 */
+  start?: ReactNode;
+  /** 「对照」后面紧跟的东西（对比版本的 ▾，ReaderBarTools place="compare"；只有一份译文时没有）。 */
+  compareExtra?: ReactNode;
 };
 
 export function liveTranslationStatusCopy(state: LiveTranslationState): string {
@@ -80,13 +86,18 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
   } = props;
   const sourceViewOnly = props.sourceViewOnly ?? ctx?.sourceViewOnly ?? false;
   const liveCopy = liveTranslation ? liveTranslationStatusCopy(liveTranslation.state) : "";
+  const bar = useRef<HTMLElement | null>(null);
+  const shown = useTopBarReveal(bar, mode);
   return (
-    <header className="reader-workspace-bar">
+    // 浮在书页区顶上（2026-11-28 用户：「顶部的 bar 不要保留了，用悬浮的方式……更有沉浸感」）：
+    // 这一层本身透明、不接点击，只有左上的胶囊和正中的页签接；左右两段同宽，页签在书页区正中。
+    // 读的时候藏着，鼠标到书页区顶上才出来（use-topbar-reveal.ts；不藏的几种在 chrome.css）。
+    <header className="reader-workspace-bar" ref={bar} data-revealed={shown ? "true" : "false"}>
       {/* 装饰位钩子：顶栏两端（装饰包 ornaments.reader-bar-left / reader-bar-right），绝对定位，不占位 */}
       <span className="theme-ornament" data-ornament="reader-bar-left" aria-hidden="true" />
       <span className="theme-ornament" data-ornament="reader-bar-right" aria-hidden="true" />
-      {/* 进度那一组挂在页签右边（相对这一层定位），页签照旧相对视口居中；
-          以前放在最左边，和「目录」按钮压在一起。 */}
+      {props.start ? <div className="reader-workspace-start">{props.start}</div> : null}
+      {/* 进度那一组挂在页签右边（相对这一层定位），页签照旧居中（左右两段同宽的网格）。 */}
       <div className="reader-workspace-center">
         <div className="reader-workspace-tabs" role="tablist" aria-label="阅读工作区">
           {WORKSPACES.map(({ id, label, Icon }) => {
@@ -98,8 +109,8 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
               liveTranslationAvailable: Boolean(liveTranslation),
             });
             return (
+              <Fragment key={id}>
               <button
-                key={id}
                 type="button"
                 className={`reader-workspace-tab${active ? " is-active" : ""}`}
                 role="tab"
@@ -109,9 +120,10 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
                 disabled={disabled}
                 onClick={() => onModeChange(id)}
               >
-                <Icon size={15} strokeWidth={2.2} aria-hidden />
-                <span className="reader-workspace-tab-label">{label}</span>
+                <Icon {...BAR_ICON} aria-hidden />
               </button>
+              {id === "compare" ? props.compareExtra : null}
+              </Fragment>
             );
           })}
         </div>
@@ -126,7 +138,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
                 || `${liveCopy}，${liveTranslation.visible ? "点一下看原文" : "点一下叠上译文"}`}
               onClick={liveTranslation.onToggle}
             >
-              <Radio size={14} strokeWidth={2.2} aria-hidden />
+              <Radio {...BAR_ICON} aria-hidden />
               <span className="reader-live-translation-toggle-label">{liveCopy}</span>
             </button>
             {liveTranslation.latestPage
@@ -138,7 +150,7 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
                   title={`跳到最新译好的第 ${liveTranslation.latestPage} 页`}
                   onClick={liveTranslation.onJumpToLatest}
                 >
-                  <ArrowDownToLine size={14} strokeWidth={2.2} aria-hidden />
+                  <ArrowDownToLine {...BAR_ICON} aria-hidden />
                   <span className="reader-live-translation-toggle-label">跳到最新</span>
                 </Button>
               ) : null}
@@ -150,12 +162,14 @@ export function ReaderWorkspaceTabs(props: ReaderWorkspaceTabsProps): ReactEleme
               title="翻译完成，左右对照看最终译文"
               onClick={completion.onOpenCompare}
             >
-              <CheckCircle2 size={14} strokeWidth={2.2} aria-hidden />
+              <CheckCircle2 {...BAR_ICON} aria-hidden />
               <span className="reader-live-translation-toggle-label">翻译完成 · 看对照</span>
             </Button>
           </div>
         ) : null}
       </div>
+      {/* 右段空着（提问、Markdown、下载在书页区右缘的竖条），只为让页签居中。 */}
+      <span className="reader-workspace-end" aria-hidden="true" />
     </header>
   );
 }

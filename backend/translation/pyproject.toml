@@ -35,3 +35,5 @@ include = [
 # prompt_loader 用 importlib.resources 读提示词；漏声明会让 wheel 丢掉 *.txt，翻译一调模型就 FileNotFoundError。
 "retainpdf_translation.prompts" = ["*.txt", "*.md"]
 "retainpdf_translation.services.quality.qa" = ["*.json"]
+# 思考档位表（thinking_models.json，2026-11-27）：model_wire 按文件路径读，漏声明 wheel 里就没有，档位退回写在代码里的规则
+"retainpdf_translation.llm.shared" = ["*.json"]

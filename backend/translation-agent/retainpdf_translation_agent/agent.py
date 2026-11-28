@@ -173,7 +173,16 @@ class AuthFailed(StopRun):
 
 
 class RateLimited(StopRun):
+    """一直被限流、过载或服务端出错（429、5xx）：重试用完了还是这样。网络连不上不算这个（见 `NetworkFailed`）。"""
+
     reason = "rate_limited"
+
+
+class NetworkFailed(StopRun):
+    """网络层的错：连不上、被断开、域名查不到、超时、证书验证不过（2026-11-27 从 `RateLimited` 分出来，以前一律报成限流）。
+    说明里带原始报错，失败分类按它细分到具体的网络失败码。"""
+
+    reason = "network_error"
 
 
 class ModelUnavailable(StopRun):
@@ -332,6 +341,7 @@ def _post(
     headers = {"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"}
     data = json.dumps(body, ensure_ascii=False).encode("utf-8")
     last_error = ""
+    last_network = False
     for attempt in range(MAX_ATTEMPTS):
         request = urllib.request.Request(url, data=data, headers=headers, method="POST")
         retry_after = None
@@ -362,6 +372,7 @@ def _post(
                 raise RequestRejected(f"model API HTTP {error.code}: {text}", status_code=error.code) from None
             retry_after = error.headers.get("retry-after") if error.headers else None
             last_error = f"HTTP {error.code}"
+            last_network = False
             if error.code in UPSTREAM_WAIT_STATUSES:
                 wait_status, wait_code = error.code, _error_code(text)
         except (OSError, http.client.HTTPException) as error:
@@ -369,6 +380,10 @@ def _post(
             # 2026-11-18 读回答时碰到 ssl.SSLError（record layer failure），它不是 ConnectionError，以前直接把整个阶段弄崩了。
             # OSError 包括 URLError、超时、连接错误和 SSL 错误
             last_error = f"{type(error).__name__}: {error}"
+            last_network = True
+            if _is_certificate_error(error):
+                # 证书验证不过，重试多少次都一样（2026-11-27 桌面版缺根证书时白等了 6 轮退避）：第一次就停
+                raise NetworkFailed(f"model API TLS certificate verification failed: {last_error}") from None
         delay = retry_wait(attempt, retry_after)
         if on_wait is None or wait_status is None:
             sleep(delay)
@@ -387,7 +402,14 @@ def _post(
             sleep(delay)
         finally:
             on_wait(None)
+    if last_network:
+        raise NetworkFailed(f"model API unreachable after {MAX_ATTEMPTS} attempts: {last_error}")
     raise RateLimited(f"model API still failing after {MAX_ATTEMPTS} attempts: {last_error}")
+
+
+def _is_certificate_error(error: BaseException) -> bool:
+    """证书验证失败：`ssl.SSLCertVerificationError` 本身，或 urllib 把它包在 `URLError.reason` 里。"""
+    return isinstance(error, ssl.SSLCertVerificationError) or isinstance(getattr(error, "reason", None), ssl.SSLCertVerificationError)
 
 
 class TranslationAgent:

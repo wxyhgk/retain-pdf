@@ -1,5 +1,7 @@
 #[path = "job_failure_fallback.rs"]
 mod job_failure_fallback;
+#[path = "job_failure_network.rs"]
+mod job_failure_network;
 #[path = "job_failure_ocr_provider.rs"]
 mod job_failure_ocr_provider;
 #[path = "job_failure_structured.rs"]
@@ -200,63 +202,16 @@ fn classify_job_failure_inner(job: &JobSnapshot) -> Option<JobFailureInfo> {
         return Some(environment_failure);
     }
 
-    if haystack.contains("Failed to resolve")
-        || haystack.contains("NameResolutionError")
-        || haystack.contains("Temporary failure in name resolution")
-        || haystack.contains("socket.gaierror")
-    {
-        return Some(build_failure(
-            failed_stage,
-            "dns_resolution_failed",
-            None,
-            "外部模型服务域名解析失败",
-            Some("容器在当前时刻无法解析上游模型服务域名，任务在翻译阶段中断".to_string()),
-            true,
-            extract_upstream_host(&haystack),
-            provider_name(diagnostics),
-            Some("优先重试一次；若持续失败，请检查 Docker DNS、宿主机网络或代理配置".to_string()),
-            select_relevant_log_line(
-                job,
-                error,
-                &[
-                    "Temporary failure in name resolution",
-                    "NameResolutionError",
-                    "Failed to resolve",
-                    "socket.gaierror",
-                ],
-            ),
-            first_error_excerpt(error, &haystack),
-            raw_diagnostic.clone(),
-        ));
-    }
-
-    if haystack.contains("ReadTimeout")
-        || haystack.contains("ConnectTimeout")
-        || haystack.contains("timed out")
-    {
-        return Some(build_failure(
-            failed_stage,
-            "upstream_timeout",
-            None,
-            "外部服务请求超时",
-            Some("任务调用 OCR 或模型服务时等待过久，超过超时阈值".to_string()),
-            true,
-            extract_upstream_host(&haystack),
-            provider_name(diagnostics),
-            Some("可直接重试；若频繁发生，建议降低并发或检查网络稳定性".to_string()),
-            select_relevant_log_line(
-                job,
-                error,
-                &[
-                    "ReadTimeout",
-                    "ConnectTimeout",
-                    "timed out",
-                    "api.deepseek.com",
-                ],
-            ),
-            first_error_excerpt(error, &haystack),
-            raw_diagnostic.clone(),
-        ));
+    // 网络（2026-11-27 细分：证书、代理、域名解析、拒绝连接、断网、超时、握手、被断开），判据和 Python 的 structured_errors.py 一致
+    if let Some(network_failure) = job_failure_network::classify_network_failure(
+        &failed_stage,
+        job,
+        error,
+        &haystack,
+        diagnostics,
+        raw_diagnostic.as_ref(),
+    ) {
+        return Some(network_failure);
     }
 
     if job

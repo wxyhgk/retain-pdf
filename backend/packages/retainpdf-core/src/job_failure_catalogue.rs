@@ -70,6 +70,32 @@ const CATALOGUE: &[(&str, FailureRecovery)] = &[
         resume_from: None,
         hint: "解析上游域名失败，通常是网络问题。检查网络后重试。",
     }),
+    // —— 网络（2026-11-27 细分；两边都会产生：Python 按异常和报错文字认，Rust 兜底按文字认 job_failure_network.rs）——
+    // 翻译阶段的见下面 STAGE_OVERRIDES：OCR 已经做完，从翻译续跑。
+    ("tls_certificate_untrusted", FailureRecovery {
+        resume_from: None,
+        hint: "无法验证服务的 HTTPS 证书，原样重试会一样失败。先按失败详情里的建议处理（代理、VPN、本机时间、接口地址），再重试。",
+    }),
+    ("tls_handshake_failed", FailureRecovery {
+        resume_from: None,
+        hint: "建立 HTTPS 加密连接失败，多半是网络不稳或代理干扰。可以直接重试。",
+    }),
+    ("proxy_failed", FailureRecovery {
+        resume_from: None,
+        hint: "代理连不上或拒绝转发。检查代理设置（不需要就关掉）后重试。",
+    }),
+    ("connection_refused", FailureRecovery {
+        resume_from: None,
+        hint: "对方地址上没有服务在监听。核对接口地址和端口，本机模型服务请先启动，再重试。",
+    }),
+    ("network_unreachable", FailureRecovery {
+        resume_from: None,
+        hint: "这台机器连不上网络。网络恢复后重试。",
+    }),
+    ("connection_reset", FailureRecovery {
+        resume_from: None,
+        hint: "连接被中途断开，多半是网络不稳。可以直接重试。",
+    }),
     ("upstream_timeout", FailureRecovery {
         resume_from: None,
         hint: "等待上游服务超时。文件可能已提交给服务方，重试会重新计费。",
@@ -220,6 +246,43 @@ const STAGE_OVERRIDES: &[(&str, &str, FailureRecovery)] = &[
     ("auth_failed", "translation", FailureRecovery {
         resume_from: Some(ResumeFrom::Translation),
         hint: "翻译 API Key 无效或没有权限。OCR 产物完好，在设置里换 Key 后从翻译阶段续跑，不会重复调用 OCR。",
+    }),
+    // 网络、限流（2026-11-27）：翻译阶段才出的错，OCR 已经做完
+    ("dns_resolution_failed", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "查不到翻译服务的域名，通常是网络问题。OCR 产物完好，检查网络后从翻译阶段续跑，不会重复调用 OCR。",
+    }),
+    ("upstream_timeout", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "等待翻译服务超时。OCR 产物完好，从翻译阶段续跑，不会重复调用 OCR；已经翻完的部分不会重翻。",
+    }),
+    ("tls_certificate_untrusted", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "无法验证翻译服务的 HTTPS 证书，原样重试会一样失败。按失败详情里的建议处理后，从翻译阶段续跑，不会重复调用 OCR。",
+    }),
+    ("tls_handshake_failed", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "和翻译服务建立加密连接失败，多半是网络不稳或代理干扰。OCR 产物完好，从翻译阶段续跑，不会重复调用 OCR。",
+    }),
+    ("proxy_failed", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "代理连不上或拒绝转发。检查代理设置后从翻译阶段续跑，不会重复调用 OCR。",
+    }),
+    ("connection_refused", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "翻译服务的地址上没有服务在监听。核对接口地址和端口（本机模型服务请先启动）后，从翻译阶段续跑，不会重复调用 OCR。",
+    }),
+    ("network_unreachable", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "这台机器连不上网络。网络恢复后从翻译阶段续跑，不会重复调用 OCR。",
+    }),
+    ("connection_reset", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "和翻译服务的连接被中途断开。OCR 产物完好，从翻译阶段续跑，不会重复调用 OCR。",
+    }),
+    ("upstream_rate_limited", "translation", FailureRecovery {
+        resume_from: Some(ResumeFrom::Translation),
+        hint: "翻译服务一直限流。稍等一会儿后从翻译阶段续跑，不会重复调用 OCR；已经翻完的部分不会重翻。",
     }),
 ];
 

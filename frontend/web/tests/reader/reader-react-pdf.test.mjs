@@ -115,12 +115,14 @@ test("reader workspace bar keeps only three icon-only reading modes", () => {
     onModeChange() {},
   }));
   assert.match(markup, /aria-label="阅读工作区"/);
-  assert.match(markup, />原文</);
-  assert.match(markup, />对照</);
-  assert.match(markup, />译文</);
+  // 2026-11-28 起只画图标，名字在 aria-label / title 里。
+  assert.match(markup, /aria-label="原文"/);
+  assert.match(markup, /aria-label="对照"/);
+  assert.match(markup, /aria-label="译文"/);
   assert.doesNotMatch(markup, />Markdown</);
   assert.doesNotMatch(markup, />AI</);
-  assert.match(markup, /reader-workspace-tab-label/);
+  assert.doesNotMatch(markup, /reader-workspace-tab-label/);
+  assert.equal((markup.match(/<svg/g) || []).length, 3, "三个页签各一个图标");
   assert.match(markup, /aria-selected="true"[^>]*aria-label="对照"/);
 });
 
@@ -278,16 +280,19 @@ test("assistant dock keeps the PDF mounted and owns Markdown or AI independently
   assert.match(source, /<ReaderCompareGrid/);
   assert.match(source, /<ReaderAssistantDock\s+active=\{assistantPanel\}/);
   assert.match(source, /assistantOpen \? <ReaderAssistantSplitResizeHandle \/>/);
-  assert.match(source, /markdownSplit=\{markdownSlot\.open\}/);
-  assert.match(source, /assistantSplit=\{assistantOpen\}/);
+  assert.match(source, /markdownSplit=\{assistantOpen\}/);
+  // 右边停着东西（面板，或扩展贴右边的浮层）都算侧栏：单栏读时页宽按两倍书页区算。
+  assert.match(source, /assistantSplit=\{sideDocked\}/);
+  assert.match(source, /const sideDocked = assistantOpen \|\| reserveRight > 0;/);
   assert.match(source, /modeControls=\{null\}/);
   assert.doesNotMatch(source, /<ReaderPaneSelector/);
   assert.doesNotMatch(source, /setAssistantPanel\(next\)[\s\S]{0,120}setModeKeepingPage/);
 });
 
-test("Markdown split turns PDF compare into source PDF + Markdown", () => {
+test("Markdown split no longer collapses compare here: the pane composition decides by stage width", () => {
   assert.equal(resolveReaderPageWidthBasis(600, true), 1200);
   assert.equal(resolveReaderPageWidthBasis(1200, false), 1200);
+  // 2026-11-27 起开着 Markdown 也照 paneComposition 排：它说对照就是对照（放不下时它已经收成单栏）。
   assert.deepEqual(
     resolveReaderGridPresentation({
       mode: "compare",
@@ -297,12 +302,18 @@ test("Markdown split turns PDF compare into source PDF + Markdown", () => {
       markdownSplit: true,
     }),
     {
-      mode: "source",
-      compareMode: false,
+      mode: "compare",
+      compareMode: true,
       showSource: true,
-      showTranslated: false,
+      showTranslated: true,
     },
   );
+  // 对照时页宽按书页区算（两栏分），单栏才按两倍算。
+  const grid = readFileSync(
+    new URL("../../../../frontend/packages/reader/src/components/react-pdf/ReaderCompareGrid.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(grid, /\(markdownSplit \|\| assistantSplit\) && !presentation\.compareMode/);
   assert.deepEqual(
     resolveReaderGridPresentation({
       mode: "translated",
@@ -679,7 +690,8 @@ function makeScrollRootWithPages(pageCount = 5, pageHeight = 200) {
 test("scrollShellToPage moves shared shell scrollTop near page top", () => {
   const { root, dom } = makeScrollRootWithPages(5, 200);
   assert.equal(scrollShellToPage(root, 3, "auto", "source"), true);
-  assert.ok(Math.abs(root.scrollTop - 352) < 2, `scrollTop=${root.scrollTop}`);
+  // 第 3 页顶在 400，减去阅读线 READER_SCROLL_FOCUS_PX（2026-11-28 顶栏改成浮着的，48 → 56）。
+  assert.ok(Math.abs(root.scrollTop - 344) < 2, `scrollTop=${root.scrollTop}`);
   dom.window.close();
 });
 

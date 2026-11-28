@@ -16,6 +16,9 @@ use retainpdf_core::storage_paths::{
     resolve_translation_request_journal,
 };
 
+/// 版面目录名，和 Python `render/output/rpr_fit/reader_layout.py` 的 `READER_LAYOUT_DIR` 一致。
+const READER_LAYOUT_DIR: &str = "reader-layout";
+
 /// 内部要读的产物。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StoredFile {
@@ -42,6 +45,9 @@ pub enum StoredFile {
     TranslationRequestJournal,
     /// 翻译 agent 的编辑部事件（editorial.v1，jsonl）；legacy 引擎的任务没有。
     AgentEditorialEvents,
+    /// rpr_fit 引擎排的版面（目录 `reader-layout/`：清单 `manifest.json`、按页 `pages/*.json.gz`），在译文 PDF 旁边，
+    /// 阅读页的 HTML 页照它画；Typst 排的任务没有（2026-11-28）。
+    ReaderLayoutDir,
 }
 
 /// 这个任务的这份产物存放的位置；任务里没有登记就是 `None`。
@@ -58,5 +64,7 @@ pub fn stored_path(job: &JobSnapshot, data_root: &Path, file: StoredFile) -> Opt
         StoredFile::TranslationDebugIndex => resolve_translation_debug_index(job, data_root),
         StoredFile::TranslationRequestJournal => resolve_translation_request_journal(job, data_root),
         StoredFile::AgentEditorialEvents => resolve_agent_editorial_events(job, data_root),
+        StoredFile::ReaderLayoutDir => resolve_output_pdf(job, data_root)
+            .and_then(|pdf| pdf.parent().map(|dir| dir.join(READER_LAYOUT_DIR))),
     }
 }

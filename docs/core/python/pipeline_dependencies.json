@@ -4,6 +4,7 @@
   "runtime_python_packages": [
     "Pillow",
     "PyMuPDF",
+    "brotli",
     "fontTools",
     "pikepdf",
     "rapidocr",
@@ -199,6 +200,7 @@
       "retainpdf_pipeline/render/layout/text_analysis/__init__.py",
       "retainpdf_pipeline/render/layout/text_analysis/service.py",
       "retainpdf_pipeline/render/output/rpr/engine_cli.py",
+      "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py",
       "retainpdf_pipeline/render/output/rpr_fit/renderer.py",
       "retainpdf_pipeline/render/output/rpr_fit/report.py",
       "retainpdf_pipeline/render/output/tables/overlay.py",
@@ -285,6 +287,17 @@
       ],
       "runtime_required": true,
       "devtool_required": true
+    },
+    {
+      "import_name": "brotli",
+      "package_name": "brotli",
+      "runtime_files": [
+        "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py"
+      ],
+      "devtool_files": [],
+      "test_files": [],
+      "runtime_required": true,
+      "devtool_required": false
     },
     {
       "import_name": "certifi",
@@ -534,10 +547,13 @@
       "import_name": "fontTools",
       "package_name": "fontTools",
       "runtime_files": [
-        "retainpdf_pipeline/foundation/config/fonts.py"
+        "retainpdf_pipeline/foundation/config/fonts.py",
+        "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py"
       ],
       "devtool_files": [],
-      "test_files": [],
+      "test_files": [
+        "devtools/tests/rendering/test_rpr_fit_route.py"
+      ],
       "runtime_required": true,
       "devtool_required": false
     },
@@ -705,6 +721,7 @@
         "devtools/tests/translation/test_standalone_fast_path.py",
         "devtools/tests/translation/test_streaming_translation.py",
         "devtools/tests/translation/test_strict_json_schemas.py",
+        "devtools/tests/translation/test_structured_errors_network.py",
         "devtools/tests/translation/test_structured_failure_upstream.py",
         "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_thinking_menu.py",
@@ -769,6 +786,7 @@
         "devtools/tests/translation/test_output_limits.py",
         "devtools/tests/translation/test_rust_executor_client.py",
         "devtools/tests/translation/test_structured_errors_local_env.py",
+        "devtools/tests/translation/test_structured_errors_network.py",
         "devtools/tests/translation/test_structured_failure_upstream.py",
         "devtools/tests/translation/test_tables_stage.py",
         "devtools/tests/translation/test_translation_auth_fail_fast.py",
@@ -807,6 +825,7 @@
         "retainpdf_pipeline/ocr/ocr_provider/provider_pipeline.py",
         "retainpdf_pipeline/ocr/retry.py",
         "retainpdf_pipeline/render/layout/inline_content/fallback/png_renderer.py",
+        "retainpdf_pipeline/render/output/rpr_fit/reader_layout.py",
         "retainpdf_pipeline/render/output/rpr_fit/renderer.py",
         "retainpdf_pipeline/render/output/typst/book_renderer.py",
         "retainpdf_pipeline/render/output/typst/compiler.py",
@@ -1082,6 +1101,7 @@
         "devtools/tests/translation/test_standalone_fast_path.py",
         "devtools/tests/translation/test_streaming_translation.py",
         "devtools/tests/translation/test_strict_json_schemas.py",
+        "devtools/tests/translation/test_structured_errors_network.py",
         "devtools/tests/translation/test_structured_failure_upstream.py",
         "devtools/tests/translation/test_style_hint_contract_fields.py",
         "devtools/tests/translation/test_tables_stage.py",
@@ -1197,6 +1217,7 @@
         "devtools/tests/translation/test_fixed_translations.py",
         "devtools/tests/translation/test_output_limits.py",
         "devtools/tests/translation/test_strict_json_schemas.py",
+        "devtools/tests/translation/test_structured_errors_network.py",
         "devtools/tests/translation/test_translation_quota_codes.py",
         "devtools/tests/translation/test_translation_request_rejections.py",
         "devtools/tests/translation/test_translation_revision.py",

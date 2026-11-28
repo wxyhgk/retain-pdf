@@ -68,9 +68,9 @@ const KEY = "document:restore-yield";
 
 /** 钉到第 N 页顶部时的 scrollTop。
  *
- * `applyPageScrollProgress` 会减去 READER_SCROLL_FOCUS_PX（48）—— 让目标页顶稍微
+ * `applyPageScrollProgress` 会减去 READER_SCROLL_FOCUS_PX（56）—— 让目标页顶稍微
  * 离开视口上沿，否则页眉贴边很难读。 */
-const topOf = (page) => (page - 1) * 800 - 48;
+const topOf = (page) => (page - 1) * 800 - 56;
 
 async function mountWithStoredAnchor(shell, anchor) {
   // 用 saveReaderViewState，不手写 JSON：normalizeReaderViewState 要求

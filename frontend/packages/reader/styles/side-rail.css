@@ -1,0 +1,79 @@
+/* 书页区右缘的竖图标条（ReaderSideRail.tsx，2026-11-28 用户：顶栏右边的「AI 回答 / Markdown」和「下载」挪到右侧，悬浮）。
+ * 和左缘的目录短横线（toc-minimap.css）对称：竖着居中浮在书页区右边，不占一栏、书页不让位。
+ * 一个纸色竖胶囊、一道细边，按钮和两条栏一个尺寸（30px 方、图标 16 / 1.75），开着的面板那颗浅墨底；
+ * 面板按钮和下载中间一道细线。只用墨色深浅，没有彩色。
+ * 选择器多带一层 .reader-bar-tools：toolball.css 的通用按钮规则（32px）排在后面，同权重会盖过这里。 */
+.reader-side-rail {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  /* 比浮着的顶栏、底栏（29）低一档：底栏右边的快捷键说明、画笔 ▾ 往上弹时盖在竖条上（2026-11-28 底栏挪进书页区时改，以前 30）。 */
+  z-index: 28;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  background: var(--paper);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--shadow-color, var(--ink)) 6%, transparent);
+  transform: translateY(-50%);
+}
+
+.reader-bar-tools.is-side {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.reader-side-rail .reader-bar-tools .reader-bar-tool,
+.reader-side-rail .reader-bar-tools .reader-panel-toggle,
+.reader-side-rail .reader-download-trigger {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  color: var(--muted);
+}
+
+.reader-side-rail .reader-bar-tools .reader-bar-tool:hover,
+.reader-side-rail .reader-bar-tools .reader-panel-toggle:hover,
+.reader-side-rail .reader-download-trigger:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
+.reader-side-rail .reader-bar-tools .reader-bar-tool[aria-pressed="true"],
+.reader-side-rail .reader-bar-tools .reader-panel-toggle[aria-pressed="true"],
+.reader-side-rail .reader-download-actions[open] .reader-download-trigger {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink);
+}
+
+.reader-side-rail-sep {
+  width: 16px;
+  height: 1px;
+  margin: 3px 0;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+}
+
+/* 弹出的东西往左弹（下载的原文 / 对照 / 译文 PDF；面板按钮将来带 popup 的也一样），底边和按钮对齐。 */
+.reader-side-rail .reader-download-menu,
+.reader-bar-tools.is-side .reader-bar-tools-popup {
+  top: auto;
+  right: calc(100% + 10px);
+  bottom: 0;
+}
+
+.reader-bar-tools.is-side .reader-bar-tools-popup {
+  top: 0;
+  bottom: auto;
+}
+
+@media print {
+  .reader-side-rail {
+    display: none;
+  }
+}

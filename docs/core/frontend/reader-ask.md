@@ -37,7 +37,8 @@
 | `packages/reader/src/ask/conversation-messages.ts` | 纯函数：书上的位置 → 结构化出处；库里的消息 → 提问窗（问题上的小标签、副对话结论卡片、压缩点）；答完一轮 → 追加请求（问和答一起、幂等号、`memory_ids`）；「深挖」认那条回答 |
 | `packages/reader/src/ask/use-ask-conversation.ts` | 主对话：打开取主对话、读最近 50 条，「看更早的」再往前取；每答完一轮追加（`compaction_due` 就让后端压）；「深挖」开副对话、「结束」让后端写结论；归档主对话 |
 | `packages/reader/src/ask/use-ask-marks.ts`、`ReaderAskMarks.tsx`、`styles/ask-marks.css` | 书页左边白边的「?」：主对话里这本书的问（`GET /documents/{id}/ask-messages`，画在问的那一块上沿，点了打开主对话），以前按书存的（点了只读地看那一次） |
-| `packages/reader/src/ask/use-reader-ask.tsx` | 接到阅读页上：右键菜单、`?` 键、窗口开着时跟着书页选区更新出处、「?」点了开哪个、懒加载的 `ReaderAskPanel` |
+| `packages/reader/src/ask/ReaderAskExtension.tsx` | 提问作为阅读页的内置扩展（2026-11-27 起，[阅读页贡献表](../../ops/planning/reader-redesign/20261127-阅读页贡献表.md)）：往贡献表登记右键菜单项、每页的「?」、快捷键说明，提问窗是它自己画的；阅读页主组件不再直接接提问 |
+| `packages/reader/src/ask/use-reader-ask.tsx` | 提问的接线：右键菜单项（右键那一下算）、`?` 键、窗口开着时跟着书页选区更新出处、「?」点了开哪个、懒加载的 `ReaderAskPanel` |
 | `packages/reader/src/ask/ReaderAskPanel.tsx` | 把上面这些接到 `@retainpdf/ask/window` 的 `AskWindow` 上（标题栏的面包屑「主对话 › 副对话」、副对话的「结束，带回结论」）；**单独一块，第一次提问才加载** |
 | `web/src/features/reader/domain/ask-port.ts`、`ask-conversations-port.ts` | 宿主端口：列 agent（`GET /api/v1/ai/agents`），拼 WebSocket 地址（api_key；自带类 agent 再带模型配置、凭据引用、job_id、`conversation_id`）交给 `@retainpdf/ask/acp` 的 `openAcpWebSocketSession`；主对话接口（压缩、副对话结论带设置里那条模型连接） |
 
@@ -136,6 +137,31 @@ RetainPDF 的自带类 agent 由网页端口合成「模型」一项（设置里
 回答整段发来、段数少（所以段数少于 5 不算速度）；分项 token 在 `session/prompt` 结果的 `usage`，模型名在 `_meta["_claude/model"]`；
 会自己调 `retainpdf mcp` 的 `view_page` 看这一页；这次没要许可（shell 命令直接跑了，失败）。
 
+## 2026-11-27 一轮改进
+
+用户贴来七条（入口太隐蔽、窗口不记、常问只在空白时有、问完译文改不回去、看图得自己截、选字覆盖出处、归档手滑），逐条做了，
+方案和取舍见 [提问窗七处改进](../../ops/planning/reader-ask/20261127-提问窗七处改进.md)。
+
+- **入口**：右下角小球里多「提问」（提问扩展的 `toolbarItems`），不带出处地开 / 关这本书的主对话；用户指南 `frontend/web/guide/reader.md` 补「问 AI」。
+- **窗口记住**：摆法、浮动位置大小、贴右边的宽度、上次用的 agent 记在本机；**贴右边时书页让位**：贡献表的 `reserveRight` 口子，
+  阅读页根节点带 `--reader-right-inset`，书页、底栏、小球往左让（窄屏让了书页不到 480px 就不让）。
+  同一天改成书页区（`.reader-stage`）让出 `--reader-stage-right`；右边只停一个：提问窗贴右边时 Markdown 面板关掉，Markdown 后开时
+  提问窗变回浮动（`dockTaken`），见 [书页区和右边一个停靠位](../../ops/planning/reader-redesign/20261127-书页区和右边一个停靠位.md)。
+- **常问跟着出处**：带着出处、输入框空着时出处下面一排「讲讲这段 / 式子怎么来的 / 译文准不准」，点了直接带这处问。
+- **改这段译文**：问题认出了块、这本书能改、这块能改时，回答底下一个按钮：跳到那块、打开编辑框，先填回答里选着的字
+  （不然最后一个 ```` ```译文 ```` 代码块）；存还是自己点。阅读页接口加 `editBlock(itemId, draft?)`。
+  顺手修了：这次打开刚问的问题，标签点了不跳（`contextSelection` 两种写法都认）。
+- **术语加进术语表**：记忆面板里术语类（或这本书里写成「X 译为 Y」的）记忆多「加进术语表」，原文、译法先拆好，挑一张表或新建
+  「阅读时定的术语」；同一个原文换成新译法，整份保存带 `expected_updated_at`。端口 `glossaries`。
+- **截图**：右键「截一块问」拖出一块（罩子 `ReaderAskCrop.tsx`，截图时占着指针），输入框那一行「带上这一页」；有 pdf.js 文档按 1600 像素宽
+  重新画，没有从屏幕画布裁（`pdf/region-image.ts`），走和「+」同一个附件适配器，发 ACP 的 image 块。
+- **选字不覆盖**：已经带着出处时书页上新选的字不再悄悄换掉，输入框上面问「换成这段 / 再加一段 / ×」；一问最多三处，另外几处写进 `AskContext.extra`。
+- **归档**：先在标题栏里确认；「以前的对话」列这本书归档了的主对话，点了只读地看。端口 `conversations.archived`。
+- **太宽的公式、表格**：1.5 倍以内缩到放得下，再宽横着滚、对话区「放大看」。
+
+交给后端（还没做）：自带 agent 的提示词在给改译建议时，把建议的整段译文写进 ```` ```译文 ```` 代码块，「改这段译文」就能直接填；
+现在要用户自己在回答里选那段字。
+
 ## 还没做
 
 - 本机 Codex、Gemini 真机试（要先装 ACP 适配器）。
@@ -143,3 +169,15 @@ RetainPDF 的自带类 agent 由网页端口合成「模型」一项（设置里
 - agent 那边接着上次的会话（ACP `session/load`，后端开了再接）。
 - 追问建议（ACP `prompt_suggestions_update`）、换模型 / 思考强度（`config_option_update`、`session/set_model`）、本书提问列表。
 - 白板：回答以后进白板（[以 PDF 为主体](../../ops/planning/learning-system/20261125-以PDF为主体的提问白板笔记.md)）。
+
+## 2026-11-27 标题栏和「谁来答」
+
+按使用者收拾了一遍（[方案](../../ops/planning/reader-redesign/20261127-按使用者收拾提问窗标题栏和底栏.md)）：
+
+- 标题栏只剩「主对话 ▾」（`ReaderAskConversationMenu`：开个新对话、以前的对话、回主对话）、「···」（记忆）、贴边、放大、关。
+  以前的面包屑、「以前的对话」图标、「归档」图标、选 agent、插头都收掉了。
+- 「谁来答」只在输入框那颗按钮：弹层最上面一排 agent（没装的点了给安装命令），下面模型、思考。只有两档的思考画成开关。
+- 入口：底栏右边工具里的「提问」（排第一），右下角的小球没了。
+
+2026-11-28 起阅读页是三行壳层（[方案](../../ops/planning/reader-redesign/20261128-三行壳层.md)）：「提问」在顶栏右段，「截图」在底栏右段；
+提问窗贴右边时上下让出顶栏、底栏（`AskWindow` 的 `dockInsets`），中间工作区横排里给它留一栏一样宽的空位。

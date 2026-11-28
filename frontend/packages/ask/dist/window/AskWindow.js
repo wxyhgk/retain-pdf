@@ -1,8 +1,8 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Fragment as _Fragment, jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 /** 提问窗（@retainpdf/ask/window；宿主懒加载这一块）。
  *
  * - 窗口：react-rnd。三种摆法：浮动（标题栏拖动、边角调大小）、贴右边（占满右侧，左边框拖宽窄）、放大；双击标题栏放大 / 还原。
- *   Esc / ✕ 关。标题栏见 AskHeader.tsx（图标为主）。
+ *   Esc / ✕ 关。标题栏见 AskHeader.tsx（对话、「···」、窗口摆法）；谁来答（agent、模型、思考）在输入框那颗按钮（AskModelPicker.tsx）。
  * - 一直延续的对话（2026-11-26 主对话）：输入框上面是下一问带的出处、问题上面是问的哪儿、「深挖」、「已记住（撤销）」，见 conversation.tsx；
  *   每答完一轮交给宿主追加（use-turns.ts）。回答里选字，下一问引用那段（answer-quote.tsx）。
  * - 对话：整套照搬 assistant-ui 官方的 Thread（../ui/elements/thread.aui.tsx：复制、重新回答、改问题、版本切换、回到最下面、
@@ -12,20 +12,28 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
  * 宿主给什么、能改什么：见包的 README.md。
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Rnd } from "react-rnd";
+import { Maximize2 } from "lucide-react";
+import { Button } from "@retainpdf/ui";
 import { AssistantRuntimeProvider, makeAssistantDataUI, useLocalRuntime } from "@assistant-ui/react";
 import { toInitialMessages } from "../acp/messages.js";
 import { PermissionStore, createAcpChatAdapter } from "../acp/adapter.js";
 import { Thread } from "../ui/elements/thread.aui.js";
 import { AskImageAttachmentAdapter, AskToolGroup, PermissionContext, PlanBlock, SubagentBlock, ToolCard, Waiting, makeMessageFooter, makeWelcome, } from "./blocks.js";
 import { AskHeader } from "./AskHeader.js";
+import { AskAgentsContext } from "./agent-row.js";
 import { AskPageContext } from "./AskPageLink.js";
 import { AskSendContext } from "./ask-send.js";
-import { AskAgentSettings, AskConfigContext, currentEffort, currentModelBrand } from "./AskModelPicker.js";
-import { BrandIcon, brandFor } from "./BrandIcon.js";
+import { AskAgentSettings, AskConfigContext, currentEffort } from "./AskModelPicker.js";
 import { loadDesiredConfig, saveDesiredConfig } from "./config-memory.js";
+import { loadWindowMemory, pickAgent, saveWindowMemory } from "./window-memory.js";
+import { useWindowLayout } from "./use-window-layout.js";
+import { HostedDock } from "./dock-host.js";
+import { useWideBlocks } from "./wide-blocks.js";
 import { AskConversationContext, ConversationFooter, EarlierHistory, MessageAfter, QuestionContextTag } from "./conversation.js";
 import { AnswerQuoteProvider, ComposerBars, UserText, useAnswerQuote } from "./answer-quote.js";
+import { AttachTools, AttachToolsContext, useHostAttachments } from "./attach-tools.js";
 import { useTurns } from "./use-turns.js";
 const KATEX_LINK_ID = "retainpdf-katex-css";
 /** KaTeX 的样式表（字体）由宿主给地址（桌面版离线也能用），打开窗口时插一个 <link>。 */
@@ -40,36 +48,17 @@ function useKatexStylesheet(href) {
         document.head.appendChild(link);
     }, [href]);
 }
+/** 输入框那一行：宿主的「带上……」按钮，再是 agent 的设置（模型、思考强度）。 */
+function ComposerExtra() {
+    return (_jsxs(_Fragment, { children: [_jsx(AttachTools, {}), _jsx(AskAgentSettings, {})] }));
+}
 // 计划、子 agent 是 data 部件：按 assistant-ui 的办法注册渲染（挂在 runtime 里面才生效）。
 const PlanDataUI = makeAssistantDataUI({ name: "plan", render: PlanBlock });
 const SubagentDataUI = makeAssistantDataUI({ name: "subagent", render: SubagentBlock });
 // 测试和别处照旧从这里取。
 export { ASK_IMAGE_MAX_BYTES, ASK_IMAGE_TYPES, ASK_SLOW_HINT_MS } from "./blocks.js";
-/** 贴右边时顶上让出宿主页面的顶栏（RetainPDF 阅读页的顶栏约 64px）。 */
-const DOCK_TOP = 64;
-const DOCK_WIDTH = 440;
-function viewport() {
-    return { width: globalThis.innerWidth || 1200, height: globalThis.innerHeight || 800 };
-}
-function floatRect() {
-    const { width: vw, height: vh } = viewport();
-    const width = Math.min(500, vw - 32);
-    const height = Math.min(640, vh - 120);
-    return { x: Math.max(16, vw - width - 24), y: 72, width, height };
-}
-/** 三种摆法的位置：浮动用自己记的；贴右边占满右侧（宽可以拖）；放大差不多占满屏。 */
-function layoutFor(mode, float, dockWidth) {
-    const { width: vw, height: vh } = viewport();
-    if (mode === "dock") {
-        const width = Math.min(dockWidth, vw - 16);
-        return { x: vw - width, y: DOCK_TOP, width, height: vh - DOCK_TOP };
-    }
-    if (mode === "full")
-        return { x: 16, y: 16, width: vw - 32, height: vh - 32 };
-    return float;
-}
 export default function AskWindow(props) {
-    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl } = props;
+    const { port, context, onContextUsed, onContextClear, onClose, title, headerActions, headerMenu, footer, onShowContext, initialMessages, earlier, onTurn, onTurnDone, onFork, onOpenSide, onForgetMemory, onRewrite, memories, readOnly, onDelete, onJumpToPage, pageCount = 0, katexStylesheetUrl, onLayout, answerAction, attachTools, attachRequest, contextOffer, dockTaken, dockInsets, dockHost } = props;
     useKatexStylesheet(katexStylesheetUrl);
     const [agents, setAgents] = useState(null);
     const [agentId, setAgentId] = useState("");
@@ -84,7 +73,7 @@ export default function AskWindow(props) {
             if (cancelled)
                 return;
             setAgents(list);
-            setAgentId((current) => current || list.find((agent) => agent.available !== false)?.id || "");
+            setAgentId((current) => current || pickAgent(list, loadWindowMemory().agentId));
         }, (error) => !cancelled && setLoadError(error instanceof Error ? error.message : String(error)));
         return () => {
             cancelled = true;
@@ -132,6 +121,12 @@ export default function AskWindow(props) {
     // 每答完一轮交给宿主（use-turns.ts）。
     const currentAgent = useCallback(() => live.current.agentId, []);
     useTurns({ thread: runtime.thread, agentId: currentAgent, run: chat.lastRun, sessionId: chat.sessionId, onTurn, onTurnDone });
+    // 回答里选字 → 下一问引用这段（answer-quote.tsx）。
+    const threadRoot = useRef(null);
+    const answerQuote = useAnswerQuote(threadRoot, !readOnly);
+    const quoteNow = useRef(answerQuote.quote);
+    quoteNow.current = answerQuote.quote;
+    const answerSelection = useCallback(() => quoteNow.current, []);
     const conversationUi = useMemo(() => ({
         pending: context,
         clearPending: onContextClear,
@@ -142,10 +137,10 @@ export default function AskWindow(props) {
         openSide: onOpenSide,
         forget: onForgetMemory,
         memories,
-    }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories]);
-    // 回答里选字 → 下一问引用这段（answer-quote.tsx）。
-    const threadRoot = useRef(null);
-    const answerQuote = useAnswerQuote(threadRoot, !readOnly);
+        answerAction,
+        answerSelection,
+        offer: contextOffer,
+    }), [context, onContextClear, asked, onShowContext, earlier, onFork, onOpenSide, onForgetMemory, memories, answerAction, answerSelection, contextOffer]);
     const agentName = () => agents?.find((agent) => agent.id === live.current.agentId)?.name || "";
     // 替用户发一句：常问、互动块里的 @ToAssistant、「让它修」。
     const send = useMemo(() => (text) => runtime.thread.append({ role: "user", content: [{ type: "text", text }] }), [runtime]);
@@ -154,7 +149,7 @@ export default function AskWindow(props) {
         ToolFallback: ToolCard,
         ToolGroup: AskToolGroup,
         Indicator: Waiting,
-        ComposerExtra: AskAgentSettings,
+        ComposerExtra: ComposerExtra,
         Welcome: makeWelcome(send),
         MessageFooter: makeMessageFooter(agentName, ConversationFooter),
         HistoryTop: EarlierHistory,
@@ -163,7 +158,10 @@ export default function AskWindow(props) {
         MessageAfter,
         prepareSend: answerQuote.prepareSend,
         UserText,
-    }), [agents, runtime, answerQuote.prepareSend]);
+        readOnly,
+    }), [agents, runtime, answerQuote.prepareSend, readOnly]);
+    // 宿主的「带上……」按钮、塞进来的附件（attach-tools.tsx）。
+    const { attachUi, attachError } = useHostAttachments(runtime, attachTools, attachRequest);
     const pages = useMemo(() => (onJumpToPage ? { pageCount, jump: onJumpToPage } : null), [onJumpToPage, pageCount]);
     useEffect(() => {
         const onKey = (event) => {
@@ -181,26 +179,26 @@ export default function AskWindow(props) {
         window.addEventListener("keydown", onKey);
         return () => window.removeEventListener("keydown", onKey);
     }, [onClose]);
-    // 摆法：浮动记自己的位置大小；贴右边记宽度；窗口大小变了重新排。
-    const [mode, setMode] = useState("float");
-    const [float, setFloat] = useState(floatRect);
-    const [dockWidth, setDockWidth] = useState(DOCK_WIDTH);
-    const [, setResized] = useState(0);
-    useEffect(() => {
-        const onResize = () => setResized((value) => value + 1);
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
+    // 摆法（浮动 / 贴右边 / 放大）和记住它（use-window-layout.ts）。
+    const layout = useWindowLayout(onLayout, dockTaken, dockInsets);
+    const { mode, rect } = layout;
+    // 太宽的公式、表格：缩一点放得下就缩，再宽就横着滚、给一个「放大看」（wide-blocks.ts）。
+    const wideBlocks = useWideBlocks(threadRoot);
+    const chooseAgent = useCallback((id) => {
+        setAgentId(id);
+        saveWindowMemory({ agentId: id });
     }, []);
-    const rect = layoutFor(mode, float, dockWidth);
-    // 思考强度染输入框和周围（ask.css 读 --ask-effort-color、data-effort）；当前模型厂商的标志做聊天背景的水印。
+    // 「谁来答」里的 agent 那一排（agent-row.tsx，输入框那颗按钮的弹层里）。
+    const agentsUi = useMemo(() => (agents?.length ? { agents, agentId, onAgent: chooseAgent } : null), [agents, agentId, chooseAgent]);
+    // 思考强度（ask.css 读 --ask-effort-color、data-effort）：开着时输入框一圈细边、按钮上一个小点。
+    // 2026-11-28 收口回黑白纸墨：聊天区正中的彩色模型水印、输入框大片发光、窗口边发光都去掉了。
     const effort = currentEffort(config);
-    const shownAgent = agents?.find((agent) => agent.id === agentId);
-    const brand = currentModelBrand(config) || (shownAgent ? brandFor(shownAgent.id, shownAgent.name) : "");
     const tint = (effort ? { "--ask-effort-color": effort.color } : {});
-    return (_jsx(Rnd, { className: "ask-window", position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-install ul", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: (_event, data) => setFloat((current) => ({ ...current, x: data.x, y: data.y })), onResizeStop: (_event, _direction, element, _delta, position) => {
-            if (mode === "dock")
-                setDockWidth(element.offsetWidth);
-            else
-                setFloat({ x: position.x, y: position.y, width: element.offsetWidth, height: element.offsetHeight });
-        }, children: _jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, agents: agents, agentId: agentId, onAgent: setAgentId, mode: mode, onMode: setMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [brand ? (_jsx("div", { className: "ask-watermark", "aria-hidden": true, children: _jsx(BrandIcon, { brand: brand, size: 200 }) })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }), footer] })] }) }));
+    const hosted = mode === "dock" && Boolean(dockHost);
+    const panel = (_jsxs("section", { className: "ask-panel", role: "dialog", "aria-label": "\u63D0\u95EE", "data-mode": mode, "data-hosted": hosted ? "true" : undefined, "data-readonly": readOnly ? "1" : undefined, "data-effort": effort?.on ? "on" : "off", style: tint, children: [_jsx(AskHeader, { title: title, actions: headerActions, menu: headerMenu, mode: mode, onMode: layout.changeMode, onDelete: onDelete, onClose: onClose }), _jsxs(AskPageContext.Provider, { value: pages, children: [loadError ? _jsxs("p", { className: "ask-error", children: ["\u5217\u4E0D\u51FA\u80FD\u7528\u7684 agent\uFF1A", loadError] }) : null, attachError ? _jsx("p", { className: "ask-error", children: attachError }) : null, _jsx(AskConversationContext.Provider, { value: conversationUi, children: _jsx(PermissionContext.Provider, { value: permissions, children: _jsx(AskSendContext.Provider, { value: send, children: _jsx(AskConfigContext.Provider, { value: configState, children: _jsx(AskAgentsContext.Provider, { value: agentsUi, children: _jsx(AttachToolsContext.Provider, { value: attachUi, children: _jsx(AnswerQuoteProvider, { value: answerQuote.ui, children: _jsxs(AssistantRuntimeProvider, { runtime: runtime, children: [_jsx(PlanDataUI, {}), _jsx(SubagentDataUI, {}), _jsxs("div", { className: "ask-thread", ref: threadRoot, children: [wideBlocks && mode !== "full" ? (_jsxs(Button, { className: "ask-wide-open", title: "\u6709\u516C\u5F0F\u6216\u8868\u683C\u592A\u5BBD\uFF0C\u8981\u6A2A\u7740\u6EDA\uFF1A\u653E\u5927\u7A97\u53E3\u770B", onClick: () => layout.changeMode("full"), children: [_jsx(Maximize2, { size: 12, "aria-hidden": true }), " \u653E\u5927\u770B"] })) : null, _jsx(Thread, { components: threadComponents, autoFocus: true })] })] }) }) }) }) }) }) }) }), footer] })] }));
+    // 贴右边、宿主给了停靠栏：画进去，是页面的一栏。
+    if (hosted && dockHost) {
+        return createPortal(_jsx(HostedDock, { width: rect.width, onResize: layout.resizeDock, children: panel }), dockHost);
+    }
+    return (_jsx(Rnd, { className: `ask-window ask-window--${mode}`, position: { x: rect.x, y: rect.y }, size: { width: rect.width, height: rect.height }, minWidth: 320, minHeight: 280, bounds: "window", dragHandleClassName: "ask-head", cancel: ".ask-head button, .ask-head select, .ask-head summary, .ask-head .ui-select, .ask-head-menu-body", disableDragging: mode !== "float", enableResizing: mode === "full" ? false : mode === "dock" ? { left: true } : true, onDragStop: layout.onDragStop, onResizeStop: layout.onResizeStop, children: panel }));
 }

@@ -12,6 +12,46 @@
 
 ---
 
+## 阅读页 HTML 页：照排版引擎的版面画（feat/reader-layout、feat/reader-layout-fonts）
+
+2026-11-28，只增不改。前端需求 `docs/ops/planning/reader-redesign/20261128-HTML页照排版结果画-后端需求.md`，接口见
+[阅读接口](../../api/12-阅读/01-阅读接口.md)「排版引擎的版面」。契约 `reader-data.v1` 加了 `ReaderLayoutView`、`ReaderLayoutPage` 等。
+新接口没写 `client_name`：前端接时连同生成客户端一起加，跑 `npm --prefix frontend/packages/api run generate:client`。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| HTML 页的渲染器 | 开发时读 `?render_layout=<清单>` | 读 `GET /jobs/{id}/reader/layout`，按页取 `…/pages/{page_idx}`；先画 `background`（null 用原文页），再画 `covers`、字；字体用清单 `fonts`（字簇 `font` 对 `key`），公式贴 `…/reader/layout/<svg>`；`available: false` 时有 `generate` 就给「生成 HTML 排版」按钮 |
+| 桌面安装包的 Python 依赖（`frontend/desktop/requirements-desktop-*.txt`，`sync_backend_python_requirements.py` 生成） | 没有 fontTools、brotli | **已带上**（2026-11-28 用户定）：脚本加了 `DESKTOP_PIPELINE_EXTRAS = ("reader-fonts",)`，三份桌面清单多了 `brotli==1.2.1`、`fonttools==4.68.0`（约 5 MB），桌面版也有按书切的字体。`scan-ocr` 桌面还没定，不带 |
+
+## 阅读页提问：思考档位给用户看得懂的名字、记住上次选的、报有没有真的思考（feat/ask-thinking-levels）
+
+2026-11-27，只增不改。用户：「自带的 ai 对话为什么只有两个开和关的思考模式？太诡异了」「思考部分让后端去搞」。见 [阅读页提问](../../api/16-AI/01-阅读页提问.md)
+的「思考强度」。握手参数、契约都没变（ACP 消息不在契约里）。
+
+- `configOptions` 的 `options[].name` 是给用户看的英文名（Off / On / Minimal / Low / Medium / High / XHigh / Max，首字母大写；用户：「思考不要用中文!」），
+  这一项的 `name` 是 `Thinking`；多了 `options[].description`（一句中文说明快慢和花费），这一项也多了 `description`。前端临时换中文的那段可以不要了，照报的显示。
+- DashScope 的 Qwen 从两档变五档：`off` / `low` / `medium` / `high` / `max`（按思考预算）。自己部署的 Qwen3、认不出的模型照旧两档。
+- 记住上次选的：用户在提问窗里改了档位，后端按模型连接记下，下次开会话 `currentValue` 就是它（设置里的思考深度不变）。前端开会话后用
+  `set_config_option` 设回上次选的那段照旧能用，不冲突。
+- 每问答完 `_meta.retainpdf.usage.thinking`：`{level, thought, notice?}`。`thought` 是这一问有没有真的思考；**`notice` 有的时候请照原样显示在那条回答底下**
+  （档位是猜的模型开了思考、却没收到思考内容，比如自己部署的 Qwen3 服务不认开关）。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| 提问窗的思考档位（`frontend/packages/ask` 里画 `thought_level` 的地方） | `name` 等于 `value` 时换中文 | 照报的 `name` 显示，`description` 可以放在提示里；这一项的 `description` 也可以放 |
+| 回答底下的用量（读 `_meta.retainpdf.usage` 的地方） | 不看 `thinking` | 有 `usage.thinking.notice` 就在回答底下显示这句话（灰色小字即可） |
+
+## 阅读页提问：一问带多处出处（feat/ask-extra-selections）
+
+2026-11-27，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「消息」。前端交接的第 2 件（`docs/ops/planning/reader-ask/20261127-提问窗七处改进.md`「交给后端」）：
+「再加一段」的另外几处以前只在发给 agent 的那段字里（`AskContext.extra`），没进消息，书页上只有第一处画「?」、重开或改问时丢了。
+契约 `ask-conversations.v1`：`AskConversationMessageInput` 和 `AskConversationMessageRecord` 都多了 `extra_selections`（数据库 v46）。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| 追加一轮（`POST /api/v1/ai/ask-conversations/{id}/messages`）的问 | 只带第一处 `selection` | 另外几处按顺序放进 `extra_selections: AskSelectionInput[]`（最多 4 处，写法和 `selection` 一样）；第一处照旧是 `selection`。只有问能带，要先有 `selection`，写了 `document_id` 的要是同一本书，不然 `400`。**老后端不认这个字段（400），前后端一起合** |
+| 书上画「?」（`GET /api/v1/documents/{id}/ask-messages`）、重开对话、改问 | 只用 `selection` / `page` | 每条问多了 `extra_selections: AskSelectionRecord[]`（没有是 `[]`），每处也画「?」、改问时还原。按页排的是第一处的页 |
+
 ## 阅读页提问：主对话按书分（feat/ask-main-per-book）
 
 2026-11-27，只增不改（前端已接：`feat/ask-main-per-book-web`，取主对话带这本书的 `document_id`、换书清掉窗口），见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「主对话按书分」，决定 [主对话按书分](../../ops/planning/reader-ask/20261127-主对话按书分.md)。

@@ -56,4 +56,5 @@ futures-util = "0.3"
 retainpdf-api-base = { path = "../packages/retainpdf-api-base", features = ["test-fixtures"] }
 retainpdf-ingest = { path = "../packages/retainpdf-ingest", features = ["test-fixtures"] }
 retainpdf-jobs = { path = "../packages/retainpdf-jobs", features = ["test-fixtures"] }
+flate2 = "1"
 tower = { version = "0.5", features = ["util"] }

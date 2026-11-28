@@ -29,8 +29,19 @@ export declare function asComparePaneRegions(regions: readonly ReaderRegion[]): 
 export declare function readingVersionOf(versions: readonly ReaderVersionOption[], jobId: string, currentVersionId: string | null): string;
 /** 把地址里的 job_id 换掉（保留读到的页），阅读页按地址重新载入。 */
 export declare function readerUrlWithJob(href: string, jobId: string): string;
-export declare function useReaderVersionCompare({ documentId, jobId }: {
+export type ReaderTranslationVersions = {
+    versions: ReaderVersionOption[];
+    /** 正在读的那一份（任务落在哪一份；找不到用书的当前版本）；没有是空串。 */
+    readingVersionId: string;
+};
+/** 这本书的几份译文和正在读哪一份：阅读页自己的（提问要记读的是哪份、对比版本要列出来），2026-11-27 从对比版本里拆出。 */
+export declare function useReaderTranslationVersions({ documentId, jobId }: {
     documentId: string;
     jobId: string;
-}): VersionCompare;
+}): ReaderTranslationVersions;
+/** 对比版本（扩展 extensions/builtin/compare）：几份译文和正在读哪份从阅读页来（useReaderTranslationVersions）。 */
+export declare function useReaderVersionCompare({ documentId, jobId, versions, readingVersionId }: {
+    documentId: string;
+    jobId: string;
+} & ReaderTranslationVersions): VersionCompare;
 //# sourceMappingURL=use-reader-version-compare.d.ts.map

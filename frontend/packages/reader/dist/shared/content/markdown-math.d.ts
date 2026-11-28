@@ -51,6 +51,11 @@ export declare const mathFailureStats: {
     /** 译文里漏还原的后端保护 token 数量。不是渲染失败，是上游漏了一步。 */
     protectedTokens: number;
 };
+/**
+ * 一条公式画成 MathJax 的 SVG（和 Markdown、实时译文同一个引擎、同一套包）；画不出来是 null（失败计数照记）。
+ * HTML 页照排版引擎的 layout.json 摆公式用（pdf/LayoutPageLayer.tsx，2026-11-28）。
+ */
+export declare function renderTexToSvg(tex: string, display: boolean): Promise<string | null>;
 export declare function renderMathFallbackHtml(tex: string, display: boolean): string;
 export declare function wrapMathSvgHtml(svgHtml: string, display: boolean): string;
 export declare function normalizeMathTex(tex: string): string;

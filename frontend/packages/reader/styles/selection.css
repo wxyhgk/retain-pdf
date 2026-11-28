@@ -1,0 +1,101 @@
+/* 书页上选字（ReaderSelectionLayer.tsx，2026-11-28）：
+ * - 选区自己画：每行一条齐整的色带（.reader-selection-band），浅冷色（用户：把黄色换成浅冷色）；浏览器的那层在文字层里透明（react-pdf.css）。
+ *   画在书页区里一层，不接鼠标；超出书页区的裁掉。
+ * - 对照时按下在哪一栏（根节点 data-select-pane），另一栏的文字层这一下不让选，拖过栏缝不串过去。
+ * - 松手后选区上面一条浮条：复制 · 收藏 · 提问，纸色小胶囊，和书页区上别的浮着的一个样子。 */
+
+.reader-selection-paint {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.reader-selection-band {
+  position: absolute;
+  background: rgba(64, 140, 230, 0.24);
+}
+
+/* 深色文档（书页黑底白字）：冷色亮一点、淡一点，不糊在白字上。 */
+:root[data-reader-doc="dark"] .reader-selection-band {
+  background: rgba(120, 180, 255, 0.28);
+}
+
+.reader-react-root[data-select-pane="source"] [data-reader-pane="translated"] .textLayer,
+.reader-react-root[data-select-pane="translated"] [data-reader-pane="source"] .textLayer {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.reader-selection-bar {
+  position: absolute;
+  z-index: 31;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  background: var(--paper);
+  box-shadow: var(--reader-chrome-bar-shadow, 0 2px 10px color-mix(in srgb, var(--shadow-color, var(--ink)) 6%, transparent));
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.reader-selection-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--reader-tab-radius, var(--shape-radius-control, 999px));
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 72%, var(--muted));
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  font-weight: 500;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-selection-action:hover,
+.reader-selection-action:focus-visible {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+  outline: none;
+}
+
+.reader-selection-action[aria-pressed="true"] {
+  color: var(--ink);
+}
+
+@media print {
+  .reader-selection-paint,
+  .reader-selection-bar {
+    display: none;
+  }
+}
+
+/* HTML 页的两层（照版面画的 SVG、按 OCR 框塞字的那层）也是自己画选区：浏览器那层透明，色带照常画。
+ * 照版面画的那页，底下 pdf.js 的文字层是被盖住的原文：不让选（不然拖在行缝里会选中看不见的英文）。 */
+.reader-layout-page ::selection,
+.reader-html-page ::selection {
+  background: transparent;
+}
+
+.reader-layout-page text {
+  cursor: text;
+}
+
+[data-reader-page]:has(> .reader-layout-page) .textLayer {
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.reader-react-root[data-select-pane="source"] [data-reader-pane="translated"] :is(.reader-layout-page, .reader-html-page),
+.reader-react-root[data-select-pane="translated"] [data-reader-pane="source"] :is(.reader-layout-page, .reader-html-page) {
+  -webkit-user-select: none;
+  user-select: none;
+}

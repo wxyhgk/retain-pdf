@@ -14,7 +14,10 @@ except ModuleNotFoundError:  # pragma: no cover
 
 # pipeline 的 extra，后端工作区（backend/pyproject.toml 依赖 retainpdf-pipeline[scan-ocr]，Docker 用 uv export 装）带着：
 # Docker 的两份清单也带上。桌面的清单只放必装的，要不要带由前端定（docs/core/frontend/backend-changes-handoff.md）。
-DOCKER_PIPELINE_EXTRAS = ("scan-ocr",)
+DOCKER_PIPELINE_EXTRAS = ("scan-ocr", "reader-fonts")
+# 桌面的清单带的 extra（前端定）：reader-fonts（fontTools、brotli，约 5 MB），阅读页 HTML 页按书切字体子集要它（2026-11-28 用户定带上）。
+# scan-ocr（onnxruntime、rapidocr）桌面还没定，不带。
+DESKTOP_PIPELINE_EXTRAS = ("reader-fonts",)
 
 DESKTOP_MACOS_EXTRA_HEADER = [
     "# Legacy compatibility copy. CI should stay aligned with requirements-desktop-posix.txt.",
@@ -193,6 +196,9 @@ def main() -> None:
         requirement for extra in DOCKER_PIPELINE_EXTRAS for requirement in _load_optional_group(pipeline_path, extra)
     ]
     docker_with_test = docker_runtime + pipeline_test
+    desktop_runtime = pipeline_runtime + [
+        requirement for extra in DESKTOP_PIPELINE_EXTRAS for requirement in _load_optional_group(pipeline_path, extra)
+    ]
 
     targets = {
         repo_root / "ops" / "deployment" / "docker" / "requirements-app.txt": _render_requirements(
@@ -204,15 +210,15 @@ def main() -> None:
             source=pipeline_source,
         ),
         repo_root / "frontend" / "desktop" / "requirements-desktop-posix.txt": _render_requirements(
-            pipeline_runtime,
+            desktop_runtime,
             source=pipeline_source,
         ),
         repo_root / "frontend" / "desktop" / "requirements-desktop-windows.txt": _render_requirements(
-            pipeline_runtime,
+            desktop_runtime,
             source=pipeline_source,
         ),
         repo_root / "frontend" / "desktop" / "requirements-desktop-macos.txt": _render_requirements(
-            pipeline_runtime,
+            desktop_runtime,
             source=pipeline_source,
             extra_header=DESKTOP_MACOS_EXTRA_HEADER,
         ),

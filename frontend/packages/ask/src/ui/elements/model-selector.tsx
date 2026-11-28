@@ -1,6 +1,8 @@
 // 照搬 assistant-ui 官方组件（MIT，https://r.assistant-ui.com；shadcn/ 下是 shadcn/ui，MIT）。只改了引用路径（@/ 别名换成相对路径）。
 // 别的不改，方便对着上游更新；我们的改动写在外面（../window/）。
 // RetainPDF 的改动（界面文字换中文）。
+// 2026-11-27（提问窗样式拆开）：以前 ask.css 从外面用 [data-slot="model-selector-content"]、[cmdk-item] 改弹层字号和选中的底色
+// （照搬的 bg-accent 在我们的皮肤里是深色），改成直接写在这里的 className：字号按提问窗、选中 / 高亮是浅墨底。
 
 import { type ComponentPropsWithoutRef, type ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
@@ -251,7 +253,7 @@ function ModelSelectorContent({
       side={renderedSide ?? side ?? "bottom"}
       sideOffset={sideOffset}
       className={cn(
-        "bg-popover w-72 min-w-(--radix-popover-trigger-width) overflow-hidden rounded-xl p-0",
+        "bg-popover w-72 min-w-(--radix-popover-trigger-width) overflow-hidden rounded-xl p-0 text-[length:var(--ui-text-md,13px)]",
         className,
       )}
       {...props}
@@ -382,7 +384,7 @@ function ModelSelectorItem({
         onSelect?.(selectedValue);
       }}
       className={cn(
-        "relative items-start gap-2 rounded-lg py-2 ps-3 pe-9 [&_svg:not([class*='size-'])]:size-3.5",
+        "relative items-start gap-2 rounded-lg py-2 ps-3 pe-9 [&_svg:not([class*='size-'])]:size-3.5 data-[selected=true]:bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] data-[selected=true]:text-(--ink) aria-selected:bg-[color-mix(in_srgb,var(--ink)_6%,transparent)] aria-selected:text-(--ink)",
         className,
       )}
       {...props}

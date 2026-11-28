@@ -1,8 +1,10 @@
 // 快捷键说明：底栏键盘图标 + 浮层列表；h / ? 也可打开。
 
-import { useEffect, useId, useRef, useState } from "react";
-import { Keyboard } from "lucide-react";
+import { CircleHelp } from "lucide-react";
+import { BAR_ICON } from "./bar-icon.js";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { READER_SHORTCUT_HELP } from "../../hooks/reader-keyboard-map.js";
+import { collectShortcutGroups, useReaderContributions } from "../../extensions/registry.js";
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -16,6 +18,9 @@ export function ReaderShortcutsHelp() {
   const [open, setOpen] = useState(false);
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement | null>(null);
+  // 阅读页自己的几组 + 扩展登记的（贡献表的 shortcuts，组名是扩展名）。
+  const contributions = useReaderContributions();
+  const groups = useMemo(() => [...READER_SHORTCUT_HELP, ...collectShortcutGroups(contributions)], [contributions]);
 
   useEffect(() => {
     if (!open) return;
@@ -70,7 +75,8 @@ export function ReaderShortcutsHelp() {
         title="快捷键（H 或 ?）"
         onClick={() => setOpen((v) => !v)}
       >
-        <Keyboard className="reader-react-shortcuts-icon" size={16} strokeWidth={2.25} aria-hidden />
+        {/* 圈里的问号，和底栏别的图标一套（bar-icon.ts；以前是键盘方框图标，中间试过一个「?」字）。 */}
+        <CircleHelp {...BAR_ICON} aria-hidden />
       </button>
       {open ? (
         <div
@@ -91,7 +97,7 @@ export function ReaderShortcutsHelp() {
             </button>
           </div>
           <div className="reader-react-shortcuts-body">
-            {READER_SHORTCUT_HELP.map((group) => (
+            {groups.map((group) => (
               <section key={group.title} className="reader-react-shortcuts-group">
                 <h3>{group.title}</h3>
                 <ul>
