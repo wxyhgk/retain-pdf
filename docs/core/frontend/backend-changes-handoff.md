@@ -12,6 +12,24 @@
 
 ---
 
+## 阅读页提问：思考档位给用户看得懂的名字、记住上次选的、报有没有真的思考（feat/ask-thinking-levels）
+
+2026-11-27，只增不改。用户：「自带的 ai 对话为什么只有两个开和关的思考模式？太诡异了」「思考部分让后端去搞」。见 [阅读页提问](../../api/16-AI/01-阅读页提问.md)
+的「思考强度」。握手参数、契约都没变（ACP 消息不在契约里）。
+
+- `configOptions` 的 `options[].name` 是给用户看的英文名（Off / On / Minimal / Low / Medium / High / XHigh / Max，首字母大写；用户：「思考不要用中文!」），
+  这一项的 `name` 是 `Thinking`；多了 `options[].description`（一句中文说明快慢和花费），这一项也多了 `description`。前端临时换中文的那段可以不要了，照报的显示。
+- DashScope 的 Qwen 从两档变五档：`off` / `low` / `medium` / `high` / `max`（按思考预算）。自己部署的 Qwen3、认不出的模型照旧两档。
+- 记住上次选的：用户在提问窗里改了档位，后端按模型连接记下，下次开会话 `currentValue` 就是它（设置里的思考深度不变）。前端开会话后用
+  `set_config_option` 设回上次选的那段照旧能用，不冲突。
+- 每问答完 `_meta.retainpdf.usage.thinking`：`{level, thought, notice?}`。`thought` 是这一问有没有真的思考；**`notice` 有的时候请照原样显示在那条回答底下**
+  （档位是猜的模型开了思考、却没收到思考内容，比如自己部署的 Qwen3 服务不认开关）。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| 提问窗的思考档位（`frontend/packages/ask` 里画 `thought_level` 的地方） | `name` 等于 `value` 时换中文 | 照报的 `name` 显示，`description` 可以放在提示里；这一项的 `description` 也可以放 |
+| 回答底下的用量（读 `_meta.retainpdf.usage` 的地方） | 不看 `thinking` | 有 `usage.thinking.notice` 就在回答底下显示这句话（灰色小字即可） |
+
 ## 阅读页提问：一问带多处出处（feat/ask-extra-selections）
 
 2026-11-27，只增不改，见 [主对话和记忆](../../api/16-AI/02-主对话和记忆.md) 的「消息」。前端交接的第 2 件（`docs/ops/planning/reader-ask/20261127-提问窗七处改进.md`「交给后端」）：
