@@ -9,6 +9,7 @@ from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.foundation.config import runtime
 from retainpdf_pipeline.render.document.link_relocation import relocate_translated_links
 from retainpdf_pipeline.render.output.tables.overlay import apply_table_translations
+from retainpdf_pipeline.render.output.toc_replace import apply_toc_replace
 from retainpdf_base.output_layout import ARTIFACTS_DIR_NAME
 from retainpdf_pipeline.render.prepare.hooks import prepare_hooks
 from retainpdf_pipeline.render.prepare.routes import route_prepare_needs
@@ -140,6 +141,44 @@ def _apply_table_translations_best_effort(output_pdf_path: Path, render_plan: Re
             flush=True,
         )
     return result
+
+
+def _apply_toc_replace_best_effort(output_pdf_path: Path, render_plan: RenderPlan) -> dict:
+    """目录原位替换（toc_mode = replace，render/output/toc_replace）：正文排完以后照计划擦标题的字、写译文。
+    出错只记一笔，照常交出排好的 PDF（那时目录条目还是原文）。"""
+    if render_plan.toc_replace is None:
+        return {"error": f"plan: {render_plan.toc_replace_error}"}
+    if not Path(output_pdf_path).is_file():
+        return {"skipped": "pdf_missing"}
+    try:
+        result = apply_toc_replace(
+            output_pdf_path=Path(output_pdf_path),
+            source_pdf_path=render_plan.render_inputs.source_pdf_path,
+            plan=render_plan.toc_replace,
+            page_indices=render_plan.selected_pages.keys(),
+            original_pdf_path=render_plan.render_inputs.source_pdf_path,
+            font_dirs=_reader_font_dirs(),
+        )
+    except Exception as exc:  # noqa: BLE001 — 目录换不了字不该让整个排版失败
+        print(f"toc replace skipped: {type(exc).__name__}: {exc}", flush=True)
+        return {"error": f"{type(exc).__name__}: {exc}"[:500]}
+    print("toc replace:", {key: result.get(key) for key in ("entries", "reflow_pages", "totals")}, flush=True)
+    return result
+
+
+def _reader_font_dirs() -> list[Path]:
+    """阅读页版面切字体子集时找字体的目录（和引擎一样：--font-path 加引擎自带的后备字体）。"""
+    from retainpdf_pipeline.render.output.typst.compiler import _resolved_font_paths
+
+    dirs = list(_resolved_font_paths())
+    try:
+        from retainpdf_pipeline.render.output.rpr.engine_cli import ENGINE_ENTRY_RELATIVE
+        from retainpdf_pipeline.render.output.rpr.engine_cli import resolve_engine_dir
+
+        dirs.append(resolve_engine_dir() / ENGINE_ENTRY_RELATIVE.parent.parent / "data" / "fonts" / "fallback")
+    except Exception:  # noqa: BLE001 - 后备字体可有可无
+        pass
+    return dirs
 
 
 def _body_font_size(render_diagnostics: dict) -> float | None:
@@ -462,6 +501,8 @@ def execute_render_plan(
             context=context,
             extract_selected_pages=extract_selected_pages,
         )
+        if render_plan.toc_replace is not None or render_plan.toc_replace_error:
+            render_diagnostics["toc_replace"] = _apply_toc_replace_best_effort(output_pdf_path, render_plan)
         render_diagnostics["table_overlay"] = _apply_table_translations_best_effort(output_pdf_path, render_plan, render_diagnostics)
         render_diagnostics["link_relocation"] = _relocate_links_best_effort(
             output_pdf_path, render_plan.render_inputs.source_pdf_path, render_plan.selected_pages

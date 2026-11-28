@@ -25,6 +25,8 @@ rpr_fit 引擎每次排完写一份 ``layout.json``（``rpr_layout_v1``，见引
     以后另一遍）。``cover`` 盖掉原表（框往外放 2pt，原表的线压在框边上；``fill`` 取原文页那块最多的颜色），
     ``rules`` 是新画的表格线（细长的实心矩形 ``{rect, fill}``），``blocks`` 和正文的块一样（``id`` 是
     ``<表格块号>:r<行>c<列>``）。表格那一遍在 :func:`add_reader_layout_tables` 里补进来。
+  - 目录原位替换（渲染参数 ``toc_mode = replace``，``render/output/toc_replace``，2026-11-28）在正文排完以后另一遍：
+    标题原字的框加进 ``erase``，目录的块加进 ``blocks``（:func:`add_reader_layout_toc`）。
 
 页号 ``index`` 是原文页号（从 0 起）；没有译文条目的页（整页图、不翻的参考文献）不在里面。没走 rpr_fit（选了
 Typst、回退 Typst）时删掉这个目录，免得留着上一次的版面对不上这次的 PDF。后端经 ``StoredFile::ReaderLayoutDir``
@@ -536,11 +538,27 @@ def add_reader_layout_tables(
         entries[index], _, _ = _write_page(target, page)
     _save_math(target, table_layout, Path(table_layout_path).parent, clear=False)
     # 字体子集按全书（正文加表格）用到的字重切：表格可能用到正文没有的字、粗体
+    fonts, fonts_skipped = _refresh_fonts(target, manifest, entries, table_layout.get("fonts") or [], font_dirs)
+    return {
+        "tables": sum(len(tables) for tables in by_page.values()),
+        "pages": sorted(by_page),
+        "fonts": [{key: face[key] for key in ("key", "chars", "bytes")} for face in fonts],
+        "fonts_skipped": fonts_skipped,
+    }
+
+
+def _refresh_fonts(
+    target: Path, manifest: dict, entries: dict[int, dict], extra_faces: list, font_dirs, lead_faces: list | None = None
+) -> tuple[list[dict], str]:
+    """后补进版面的字（表格、目录）并进字体子集，按全书用到的字重切一遍，连同页清单写回清单。
+    ``lead_faces`` 排在最前面（主字体：清单里还没有正文的常规体时，目录那一遍补上）。"""
     faces: dict[str, dict] = {}
+    for face in lead_faces or []:
+        faces[str(face.get("key") or "")] = face
     for face in manifest.get("fonts") or []:
         if face.get("source_file"):
             faces[str(face["key"])] = {**face, "file": face["source_file"]}
-    for face in table_layout.get("fonts") or []:
+    for face in extra_faces:
         faces.setdefault(str(face.get("key") or ""), face)
     whole = {
         "fonts": list(faces.values()),
@@ -550,9 +568,93 @@ def add_reader_layout_tables(
     manifest["pages"] = [entries[index] for index in sorted(entries)]
     manifest["fonts"] = _manifest_fonts(fonts)
     _write_manifest(target, manifest)
+    return fonts, fonts_skipped
+
+
+def _regular_face(faces: list, font_file: Path | None) -> dict | None:
+    """正文常规体在清单里的那一项（细体静态实例或思源宋体常规体）。清单里没有（这几页引擎只画了粗体标题）时
+    按画目录用的字体文件造一项，和引擎写的一样（key 是 PostScript 名）。"""
+    for face in faces:
+        names = (str(face.get("key") or ""), str(face.get("postscript") or ""), str(face.get("source_file") or face.get("file") or ""))
+        if any(name.startswith(LIGHT_FACE_PREFIX) or name.startswith(REGULAR_FACE[0]) for name in names) and not face.get("mono"):
+            return face
+    if font_file is None or not Path(font_file).is_file():
+        return None
+    try:
+        from fontTools.ttLib import TTFont
+
+        font = TTFont(str(font_file), lazy=True)
+        postscript = str(font["name"].getDebugName(6) or Path(font_file).stem)
+        family = str(font["name"].getDebugName(1) or "")
+        weight = int(font["OS/2"].usWeightClass or 400)
+    except Exception:  # noqa: BLE001 - 没装 fontTools：字体子集反正切不了
+        return None
+    return {"key": postscript, "postscript": postscript, "family": family, "weight": weight, "mono": False, "file": Path(font_file).name}
+
+
+def add_reader_layout_toc(
+    *,
+    output_pdf_path: Path,
+    placements: list[dict],
+    original_pdf_path: Path | None,
+    font_dirs: list[Path] | None = None,
+    font_file: Path | None = None,
+) -> dict[str, object]:
+    """目录原位替换（``render/output/toc_replace``，正文排完以后那一遍）补进版面：每页 ``{page_index, blocks, erase}``。
+
+    ``erase`` 是标题原字的框（阅读页拿原文页做底，先盖掉）：``fill`` 是 None 的按原文页那块最多的颜色取，扫描件给的就是
+    盖字的底色。``blocks`` 和正文的块一样，字簇的 ``font`` 填正文常规体的 key（字体子集按它收字；清单里还没有常规体就按
+    ``font_file``——画目录 PDF 用的那份字体——补一项排在最前面）。没有版面就跳过。"""
+    target = reader_layout_dir(output_pdf_path)
+    manifest_path = target / READER_LAYOUT_MANIFEST
+    if not manifest_path.is_file():
+        return {"skipped": "no_reader_layout"}
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("schema") != READER_LAYOUT_SCHEMA:
+        return {"skipped": "no_reader_layout"}
+    import fitz
+
+    regular = _regular_face(manifest.get("fonts") or [], font_file)
+    main_key = str(regular.get("key") or "") if regular else ""
+    lead = [regular] if regular and not any(face.get("key") == main_key for face in manifest.get("fonts") or []) else []
+    entries = {int(entry["index"]): entry for entry in manifest.get("pages") or []}
+    original = fitz.open(original_pdf_path) if original_pdf_path is not None and Path(original_pdf_path).is_file() else None
+    written_blocks = 0
+    try:
+        for placement in placements:
+            index = int(placement["page_index"])
+            page = _read_page(target, index) if index in entries else None
+            source_page = original[index] if original is not None and index < len(original) else None
+            if page is None:
+                if source_page is None:
+                    continue
+                page = {"index": index, "width": round(source_page.rect.width, 3), "height": round(source_page.rect.height, 3),
+                        "covers": [], "blocks": [], "erase": [], "tables": []}
+            erase = list(page.get("erase") or [])
+            for paint in placement.get("erase") or []:
+                rect = fitz.Rect(paint["rect"])
+                fill = paint.get("fill")
+                if fill is None:
+                    fill = _fill_of(_pixmap(source_page, rect & source_page.rect)) if source_page is not None else [1.0, 1.0, 1.0]
+                erase.append({"rect": [round(value, 2) for value in rect], "fill": list(fill)})
+            ids = {str(block.get("id")) for block in placement.get("blocks") or []}
+            blocks = [block for block in page.get("blocks") or [] if str(block.get("id")) not in ids]
+            for block in placement.get("blocks") or []:
+                if main_key:
+                    block = {**block, "lines": [{**line, "items": [{**item, "font": main_key} for item in line["items"]]}
+                                                for line in block.get("lines") or []]}
+                blocks.append(block)
+                written_blocks += 1
+            page.update({"erase": erase, "blocks": blocks})
+            page.setdefault("tables", [])
+            entries[index], _, _ = _write_page(target, page)
+    finally:
+        if original is not None:
+            original.close()
+    fonts, fonts_skipped = _refresh_fonts(target, manifest, entries, [], font_dirs, lead)
     return {
-        "tables": sum(len(tables) for tables in by_page.values()),
-        "pages": sorted(by_page),
+        "pages": sorted(int(placement["page_index"]) for placement in placements),
+        "blocks": written_blocks,
         "fonts": [{key: face[key] for key in ("key", "chars", "bytes")} for face in fonts],
         "fonts_skipped": fonts_skipped,
     }
@@ -571,6 +673,7 @@ __all__ = [
     "READER_LAYOUT_MANIFEST",
     "READER_LAYOUT_SCHEMA",
     "add_reader_layout_tables",
+    "add_reader_layout_toc",
     "clear_reader_layout",
     "page_erase",
     "page_file_name",

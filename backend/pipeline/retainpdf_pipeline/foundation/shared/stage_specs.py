@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from retainpdf_pipeline.foundation.config import fonts
+from retainpdf_pipeline.foundation.config.layout import TOC_MODE_REFLOW
+from retainpdf_pipeline.foundation.config.layout import normalize_toc_mode
 from retainpdf_pipeline.foundation.shared.job_dirs import JobDirs, resolve_job_dirs
 from retainpdf_pipeline.ocr.ocr_provider_config import (
     paddle_default_model,
@@ -544,6 +546,8 @@ class RenderStageParams:
     credential_ref: str
     refine: RenderStageRefineParams = field(default_factory=RenderStageRefineParams)
     engine: str = DEFAULT_RENDER_ENGINE
+    # 目录页怎么排：reflow（默认，整条重排）/ replace（原位替换，只换标题的字）。旧 spec 没有：reflow
+    toc_mode: str = TOC_MODE_REFLOW
     # 翻译模型的接口协议与思考深度（精修用）。旧 spec 没有：openai / auto。
     api_protocol: str = "openai"
     thinking: str = "auto"
@@ -640,6 +644,7 @@ class RenderStageSpec:
             credential_ref=str(params_payload.get("credential_ref", "") or ""),
             refine=RenderStageRefineParams.from_payload(params_payload.get("refine")),
             engine=normalize_render_engine(params_payload.get("engine")),
+            toc_mode=normalize_toc_mode(params_payload.get("toc_mode")),
             api_protocol=str(params_payload.get("api_protocol", "openai") or "openai").strip().lower(),
             thinking=str(params_payload.get("thinking", "auto") or "auto").strip().lower(),
         )
@@ -742,6 +747,7 @@ class ProviderStageRenderParams:
     font_unify_mode: str
     source_cleanup_strategy: str
     engine: str = DEFAULT_RENDER_ENGINE
+    toc_mode: str = TOC_MODE_REFLOW
 
 
 @dataclass(frozen=True)
@@ -914,6 +920,7 @@ class ProviderStageSpec:
             .strip()
             .lower(),
             engine=normalize_render_engine(render_payload.get("engine")),
+            toc_mode=normalize_toc_mode(render_payload.get("toc_mode")),
         )
         return cls(
             schema_version=schema_version,
@@ -994,6 +1001,7 @@ class BookStageRenderParams:
     font_unify_mode: str
     source_cleanup_strategy: str
     engine: str = DEFAULT_RENDER_ENGINE
+    toc_mode: str = TOC_MODE_REFLOW
 
 
 @dataclass(frozen=True)
@@ -1139,6 +1147,7 @@ class BookStageSpec:
             .strip()
             .lower(),
             engine=normalize_render_engine(render_payload.get("engine")),
+            toc_mode=normalize_toc_mode(render_payload.get("toc_mode")),
         )
         return cls(
             schema_version=schema_version,

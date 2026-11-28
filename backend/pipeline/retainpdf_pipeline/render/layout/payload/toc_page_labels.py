@@ -38,13 +38,15 @@ def _entry_is_redrawn(entry: dict | None) -> bool:
     return entry is not None and not item_is_marked_non_translated(entry) and bool(render_protected_translation_text(entry))
 
 
-def _held(label: dict) -> dict:
-    held = dict(label)
+def held_item(item: dict, flag: str = "toc_page_label_held") -> dict:
+    """这一块改成保留原文（译文清空、``final_status = kept_origin``）：正文排版不擦不画。``flag`` 记下是谁改的。
+    目录原位替换（render/output/toc_replace）也用它把条目和页码小块留给排完以后那一遍。"""
+    held = dict(item)
     for key in _TRANSLATION_KEYS:
         if key in held:
             held[key] = ""
     held["final_status"] = "kept_origin"
-    held["toc_page_label_held"] = True
+    held[flag] = True
     return held
 
 
@@ -62,10 +64,10 @@ def hold_toc_page_labels_of_untranslated_entries(pages: dict[int, list[dict]]) -
                 index = _block_idx(item)
                 entry = entries.get(index - 1) if index is not None else None
                 if not _entry_is_redrawn(entry):
-                    item = _held(item)
+                    item = held_item(item)
             patched.append(item)
         result[page_idx] = patched
     return result
 
 
-__all__ = ["hold_toc_page_labels_of_untranslated_entries"]
+__all__ = ["held_item", "hold_toc_page_labels_of_untranslated_entries"]

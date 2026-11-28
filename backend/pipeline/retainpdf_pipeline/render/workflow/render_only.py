@@ -86,6 +86,7 @@ def main() -> None:
         inner_bbox_dense_shrink_y=args.inner_bbox_dense_shrink_y,
         font_unify_mode=args.font_unify_mode,
         source_cleanup_strategy=args.source_cleanup_strategy,
+        toc_mode=spec.params.toc_mode,
     )
 
     job_dirs = job_dirs_from_explicit_args(args)

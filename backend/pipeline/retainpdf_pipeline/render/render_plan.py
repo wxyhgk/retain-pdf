@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from retainpdf_pipeline.foundation.config import layout
+
 from retainpdf_pipeline.render.layout.title_source_size import annotate_title_source_font_sizes
 from retainpdf_pipeline.render.layout.payload.toc_page_labels import hold_toc_page_labels_of_untranslated_entries
 from retainpdf_pipeline.render.render_inputs import RenderInputs
@@ -16,6 +18,9 @@ class RenderPlan:
     render_inputs: RenderInputs
     selected_pages: dict[int, list[dict]]
     effective_render_mode: str
+    # 目录原位替换的计划（toc_mode = replace 时；render/output/toc_replace）。正文排完由 executor 照它换字
+    toc_replace: object | None = None
+    toc_replace_error: str = ""
 
     @property
     def render_total(self) -> int:
@@ -89,6 +94,10 @@ def build_render_plan(
         end_page=end_page,
         render_mode=render_mode,
     )
+    # 目录原位替换（toc_mode = replace）：定好的页，目录条目和页码小块在正文排版里当保留原文，排完再换字
+    toc_replace, toc_replace_error = _plan_toc_replace(render_inputs, selected_pages)
+    if toc_replace is not None:
+        selected_pages = toc_replace.hold(selected_pages)
     # 目录条目没有译文要排的，它的页码小块也不擦不画（同一条绘字指令，擦页码会把标题擦掉）
     selected_pages = hold_toc_page_labels_of_untranslated_entries(selected_pages)
     # 标题按原文字号排（Typst 路线和 rpr_fit 引擎同一个值），读原 PDF 的文字层，读不到按框反推
@@ -99,4 +108,29 @@ def build_render_plan(
         render_inputs=render_inputs,
         selected_pages=selected_pages,
         effective_render_mode=effective_render_mode,
+        toc_replace=toc_replace,
+        toc_replace_error=toc_replace_error,
     )
+
+
+def _plan_toc_replace(render_inputs: RenderInputs, selected_pages: dict[int, list[dict]]):
+    """toc_mode = replace 时定目录原位替换的计划；定不了（出错）整本照旧重排，只记一笔。"""
+    if layout.TOC_MODE != layout.TOC_MODE_REPLACE:
+        return None, ""
+    from retainpdf_pipeline.render.output.toc_replace import plan_toc_replace
+    from retainpdf_pipeline.render.output.toc_replace import resolve_font_file
+    from retainpdf_pipeline.render.output.typst.compiler import _resolved_font_paths
+    from retainpdf_pipeline.render.workflow.prepare_stage import document_path_for_render
+
+    try:
+        plan = plan_toc_replace(
+            selected_pages,
+            source_pdf_path=render_inputs.source_pdf_path,
+            document_path=document_path_for_render(render_inputs.translations_dir, explicit=render_inputs.document_path),
+            font_path=resolve_font_file(_resolved_font_paths()),
+        )
+    except Exception as exc:  # noqa: BLE001 - 原位替换是可选的，定不了就照旧重排
+        print(f"toc replace plan failed: {type(exc).__name__}: {exc}", flush=True)
+        return None, f"{type(exc).__name__}: {exc}"[:500]
+    print(f"toc replace plan: {plan.diagnostics()['entries']} reflow_pages={sorted(plan.reflow_pages)}", flush=True)
+    return plan, ""
