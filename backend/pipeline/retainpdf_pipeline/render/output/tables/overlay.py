@@ -363,10 +363,29 @@ def run_table_engine(pages: list[dict], work_dir: Path) -> tuple[Path, dict]:
     return overlay, report
 
 
+# 按字的中心擦字：每个字在中心点放一个这么大的涂抹框（pt）
+_CHAR_PROBE_PT = 0.1
+
+
 def _erase(page: fitz.Page, rect: fitz.Rect) -> None:
-    """擦掉原表：框里的字（不填底色），以及框里（含框外一点）整条落在里面的线。图片不动。"""
-    page.add_redact_annot(rect, fill=False)
-    page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=fitz.PDF_REDACT_LINE_ART_NONE, text=fitz.PDF_REDACT_TEXT_REMOVE)
+    """擦掉原表：框里的字（不填底色），以及框里（含框外一点）整条落在里面的线。图片不动。
+
+    字按中心点算：中心在框里的才擦。涂抹框碰到字框就整个字擦掉，紧贴表格的译文（表注、正文的最后一行）
+    字框常和表格框重一点点，拿整个框涂抹会把它们一起擦了（2026-11-28 editable-tables 的表注）。"""
+    probes = []
+    for block in page.get_text("rawdict", clip=rect).get("blocks", []):
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                for char in span.get("chars", []):
+                    box = fitz.Rect(char["bbox"])
+                    center = fitz.Point((box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2)
+                    if box.is_empty or not rect.contains(center):
+                        continue
+                    probes.append(fitz.Rect(center, center) + (-_CHAR_PROBE_PT, -_CHAR_PROBE_PT, _CHAR_PROBE_PT, _CHAR_PROBE_PT))
+    if probes:
+        for probe in probes:
+            page.add_redact_annot(probe, fill=False)
+        page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=fitz.PDF_REDACT_LINE_ART_NONE, text=fitz.PDF_REDACT_TEXT_REMOVE)
     page.add_redact_annot(rect + (-RULE_MARGIN_PT, -RULE_MARGIN_PT, RULE_MARGIN_PT, RULE_MARGIN_PT), fill=False)
     page.apply_redactions(images=fitz.PDF_REDACT_IMAGE_NONE, graphics=fitz.PDF_REDACT_LINE_ART_REMOVE_IF_COVERED, text=fitz.PDF_REDACT_TEXT_NONE)
 

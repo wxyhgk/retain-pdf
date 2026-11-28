@@ -263,3 +263,25 @@ def test_without_a_reader_layout_the_table_step_leaves_none(tmp_path):
     )
     assert result == {"skipped": "no_reader_layout"}
     assert not (tmp_path / "reader-layout").exists()
+
+
+@pytest.mark.skipif(not _engine_available(), reason="rpr 引擎（node + 依赖 + rpr-table.js）不在本机")
+def test_text_right_under_the_table_is_not_erased_with_it(tmp_path):
+    # 紧贴表格的译文（表注、正文）字框和表格框重了一点点：以前擦原表时整行跟着擦掉（828df8 第 2、3 页的表注）。
+    # 只擦字的中心在表格框里的字
+    pdf, _ = _table(tmp_path)
+    with fitz.open(pdf) as doc:
+        doc[0].insert_text((60, 145), "Footnote under the table", fontname="helv", fontsize=10)
+        doc.saveIncr()
+    with fitz.open(pdf) as doc:
+        note = doc[0].search_for("Footnote under the table")[0]
+    assert note.y0 < 136 < (note.y0 + note.y1) / 2, "the note's box reaches into the table box, its middle does not"
+    source = tmp_path / "source.pdf"
+    source.write_bytes(pdf.read_bytes())
+    result = overlay.apply_table_translations(output_pdf_path=pdf, source_pdf_path=source, translations_dir=tmp_path, page_indices=[0])
+    assert result["tables_written"] == 1, result
+    with fitz.open(pdf) as doc:
+        text = doc[0].get_text()
+    assert "Footnote under the table" in text
+    for word in ("Sample", "Capacity", "Pristine", "Coated"):
+        assert word not in text
