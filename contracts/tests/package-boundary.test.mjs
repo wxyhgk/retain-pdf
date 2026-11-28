@@ -231,6 +231,8 @@ test("generated Reader DTO entry exposes host-port read model types", () => {
     "LiveTranslationLayout",
     "LiveTranslationPageSnapshot",
     "MarkdownDocumentView",
+    "ReaderLayoutPage",
+    "ReaderLayoutView",
     "ReaderMetadataView",
     "ReaderRegionsView",
   ]) {

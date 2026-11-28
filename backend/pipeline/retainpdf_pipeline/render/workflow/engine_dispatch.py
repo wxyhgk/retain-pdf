@@ -27,6 +27,7 @@ from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineFailed
 from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineUnavailable
 from retainpdf_pipeline.render.output.rpr.engine_cli import resolve_engine_runtime
 from retainpdf_pipeline.render.output.rpr_fit.renderer import RPR_FIT_SUPPORTED_MODES
+from retainpdf_pipeline.render.output.rpr_fit.reader_layout import clear_reader_layout
 from retainpdf_pipeline.render.output.rpr_fit.renderer import build_book_rpr_fit_pdf
 from retainpdf_pipeline.render.output.typst.fit_report import note_fit_report_reason
 from retainpdf_pipeline.render.prepare.obstacle_scan import load_obstacle_scan
@@ -116,6 +117,8 @@ def dispatch_with_render_engine(
 ) -> tuple[int, dict[str, object]]:
     requested = normalize_render_engine(context.render_engine)
     if requested != RENDER_ENGINE_RPR_FIT:
+        # 阅读页的版面只有 rpr_fit 排的才有；上一次留下的对不上这次的 PDF
+        clear_reader_layout(context.output_pdf_path)
         return typst_dispatch()
     started = time.perf_counter()
     code, message = _precheck(mode=mode, context=context, extract_selected_pages=extract_selected_pages)
@@ -163,6 +166,7 @@ def dispatch_with_render_engine(
     warning = f"{requested} 引擎未使用，已回退 Typst（{code}）：{message}"
     print(warning, flush=True)
     note_fit_report_reason(f"rpr_fallback:{code}")
+    clear_reader_layout(context.output_pdf_path)
     rpr_elapsed = time.perf_counter() - started
     pages, diagnostics = typst_dispatch()
     diagnostics = dict(diagnostics)
