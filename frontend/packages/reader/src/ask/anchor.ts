@@ -5,6 +5,7 @@ import type { ReaderAskAnchor } from "../contracts/ask.js";
 import { currentBookmark, flattenOutline, type PdfOutlineNode } from "../pdf/pdf-outline.js";
 import { READER_PAGE_ATTR, READER_PANE_ATTR } from "../pdf/reader-dom-contract.js";
 import { projectReaderRegion, resolveReaderRegionHighlight, type ReaderMetadata, type ReaderRegion } from "../shared/data/reader-regions.js";
+import { cleanPdfSelectionText } from "../shared/content/selection-text.js";
 
 const SELECTION_LIMIT = 4000;
 
@@ -30,7 +31,8 @@ export function selectedPageText(selection: Selection | null): { text: string; e
   const start = range.startContainer;
   const element = (start.nodeType === 1 ? (start as Element) : start.parentElement)?.closest?.(`[${READER_PAGE_ATTR}]`) ?? null;
   if (!element) return { text: "", element: null, rect: null };
-  const text = `${selection}`.replace(/\s+\n/g, "\n").trim().slice(0, SELECTION_LIMIT);
+  // PDF 断行、行尾连字符、数学字母收拾好再带去问（2026-11-28，selection-text.ts）。
+  const text = cleanPdfSelectionText(`${selection}`).slice(0, SELECTION_LIMIT);
   return { text, element, rect: range.getBoundingClientRect() };
 }
 

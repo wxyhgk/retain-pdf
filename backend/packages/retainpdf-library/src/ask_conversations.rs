@@ -44,6 +44,8 @@ const MAX_ID_CHARS: usize = 200;
 const MAX_CLIENT_ID_CHARS: usize = 128;
 const MAX_MEMORY_IDS: usize = 10;
 const MAX_ITEM_IDS: usize = 50;
+/// 一问带的另外几处出处（2026-11-27，前端现在一问最多三处：第一处加两处；留点余量）。
+const MAX_EXTRA_SELECTIONS: usize = 4;
 const MAX_PAGE: u32 = 100_000;
 /// 出处里的几段字超长就截断（只是出处）。
 const MAX_SELECTED_CHARS: usize = 4_000;
@@ -77,31 +79,31 @@ fn optional_text(value: &Option<String>, max: usize) -> Option<String> {
     value.as_deref().map(str::trim).filter(|text| !text.is_empty()).map(|text| truncate_chars(text, max))
 }
 
-/// 校验、截断出处，存成整理过的 JSON 对象（只留有值的键）。
-fn checked_selection(selection: &AskSelectionInput) -> Result<(serde_json::Value, CheckedSelection), AppError> {
+/// 校验、截断出处，存成整理过的 JSON 对象（只留有值的键）。`field` 是报错里的字段名（`selection`、`extra_selections[1]`）。
+fn checked_selection(selection: &AskSelectionInput, field: &str) -> Result<(serde_json::Value, CheckedSelection), AppError> {
     if selection.page < 1 || selection.page > MAX_PAGE {
-        return Err(AppError::bad_request(format!("selection.page must be between 1 and {MAX_PAGE}")));
+        return Err(AppError::bad_request(format!("{field}.page must be between 1 and {MAX_PAGE}")));
     }
     let pane = match selection.pane.as_deref().map(str::trim).filter(|pane| !pane.is_empty()) {
         None => None,
         Some(pane @ ("source" | "translated")) => Some(pane.to_string()),
-        Some(_) => return Err(AppError::bad_request("selection.pane must be source or translated")),
+        Some(_) => return Err(AppError::bad_request(format!("{field}.pane must be source or translated"))),
     };
     if selection.item_ids.len() > MAX_ITEM_IDS {
-        return Err(AppError::bad_request(format!("selection.item_ids holds at most {MAX_ITEM_IDS} ids")));
+        return Err(AppError::bad_request(format!("{field}.item_ids holds at most {MAX_ITEM_IDS} ids")));
     }
     let mut item_ids = Vec::with_capacity(selection.item_ids.len());
     for item_id in &selection.item_ids {
-        if let Some(item_id) = checked_id(Some(item_id), "selection.item_ids[]")? {
+        if let Some(item_id) = checked_id(Some(item_id), &format!("{field}.item_ids[]"))? {
             if !item_ids.contains(&item_id) {
                 item_ids.push(item_id);
             }
         }
     }
     let checked = CheckedSelection {
-        document_id: checked_id(selection.document_id.as_deref(), "selection.document_id")?,
-        job_id: checked_id(selection.job_id.as_deref(), "selection.job_id")?,
-        version_id: checked_id(selection.translation_version.as_deref(), "selection.translation_version")?,
+        document_id: checked_id(selection.document_id.as_deref(), &format!("{field}.document_id"))?,
+        job_id: checked_id(selection.job_id.as_deref(), &format!("{field}.job_id"))?,
+        version_id: checked_id(selection.translation_version.as_deref(), &format!("{field}.translation_version"))?,
         pane,
         page: selection.page,
     };
@@ -186,7 +188,7 @@ fn checked_message(message: &AskConversationMessageInput, index: usize) -> Resul
     let document_id = checked_id(message.document_id.as_deref(), "document_id")?;
     let (selection, checked) = match &message.selection {
         Some(selection) => {
-            let (value, checked) = checked_selection(selection)?;
+            let (value, checked) = checked_selection(selection, "selection")?;
             (Some(value), Some(checked))
         }
         None => (None, None),
@@ -197,6 +199,7 @@ fn checked_message(message: &AskConversationMessageInput, index: usize) -> Resul
             return Err(AppError::bad_request(format!("messages[{index}].document_id and selection.document_id differ")));
         }
     }
+    let extra_selections = checked_extra_selections(message, index, document_id.as_ref().or(selection_document.as_ref()))?;
     Ok(NewAskConversationMessage {
         role: message.role.clone(),
         text: message.text.clone(),
@@ -214,7 +217,43 @@ fn checked_message(message: &AskConversationMessageInput, index: usize) -> Resul
         memory_ids,
         edited_from,
         session_id: session_id.map(str::to_string),
+        extra_selections,
     })
+}
+
+/// 另外几处出处（2026-11-27）：只有问（`user`）能带、要先有第一处 `selection`、最多 [`MAX_EXTRA_SELECTIONS`] 处；
+/// 每处和 `selection` 一样校验、整理；写了书的要和这条消息的书一样（一问只问一本书）。
+fn checked_extra_selections(
+    message: &AskConversationMessageInput,
+    index: usize,
+    document_id: Option<&String>,
+) -> Result<Vec<serde_json::Value>, AppError> {
+    if message.extra_selections.is_empty() {
+        return Ok(Vec::new());
+    }
+    if message.role != "user" {
+        return Err(AppError::bad_request(format!("messages[{index}].extra_selections is only for user messages")));
+    }
+    if message.selection.is_none() {
+        return Err(AppError::bad_request(format!("messages[{index}].extra_selections needs selection (the first place)")));
+    }
+    if message.extra_selections.len() > MAX_EXTRA_SELECTIONS {
+        return Err(AppError::bad_request(format!(
+            "messages[{index}].extra_selections holds at most {MAX_EXTRA_SELECTIONS} places"
+        )));
+    }
+    let mut values = Vec::with_capacity(message.extra_selections.len());
+    for (position, selection) in message.extra_selections.iter().enumerate() {
+        let field = format!("extra_selections[{position}]");
+        let (value, checked) = checked_selection(selection, &field)?;
+        if let (Some(extra_document), Some(document_id)) = (&checked.document_id, document_id) {
+            if extra_document != document_id {
+                return Err(AppError::bad_request(format!("messages[{index}].{field}.document_id is a different book")));
+            }
+        }
+        values.push(value);
+    }
+    Ok(values)
 }
 
 fn not_found(conversation_id: &str) -> AppError {
@@ -702,23 +741,24 @@ mod tests {
             memory_ids: vec![],
             edited_from: None,
             session_id: None,
+            extra_selections: vec![],
         }
     }
 
     #[test]
     fn selections_are_normalized_and_bad_ones_refused() {
-        let (value, checked) = checked_selection(&selection(3)).unwrap();
+        let (value, checked) = checked_selection(&selection(3), "selection").unwrap();
         assert_eq!(value["item_ids"], serde_json::json!(["p1-b2"]));
         assert_eq!(value["selected_text"].as_str().unwrap().chars().count(), MAX_SELECTED_CHARS);
         assert!(value.get("section").is_none() && value.get("translation_version").is_none());
         assert_eq!((checked.document_id.as_deref(), checked.page), (Some("doc-1"), 3));
-        assert!(checked_selection(&selection(0)).is_err());
+        assert!(checked_selection(&selection(0), "selection").is_err());
         let mut bad = selection(1);
         bad.pane = Some("left".into());
-        assert!(checked_selection(&bad).is_err());
+        assert!(checked_selection(&bad, "selection").is_err());
         bad = selection(1);
         bad.job_id = Some("../etc".into());
-        assert!(checked_selection(&bad).is_err());
+        assert!(checked_selection(&bad, "selection").is_err());
     }
 
     #[test]
@@ -732,6 +772,42 @@ mod tests {
         let mut usage = message("assistant");
         usage.usage = Some(serde_json::json!([1]));
         assert!(checked_message(&usage, 0).is_err());
+    }
+
+    /// 另外几处出处（2026-11-27）：整理后按顺序存；只有问能带、要先有第一处、最多 4 处、不能是别的书；报错指明哪一处。
+    #[test]
+    fn extra_selections_are_checked_and_kept_in_order() {
+        let mut ask = message("user");
+        let mut other = selection(7);
+        other.document_id = None;
+        ask.extra_selections = vec![selection(5), other];
+        let checked = checked_message(&ask, 0).unwrap();
+        assert_eq!(checked.extra_selections.len(), 2);
+        assert_eq!(checked.extra_selections[0]["page"], 5);
+        assert_eq!(checked.extra_selections[0]["item_ids"], serde_json::json!(["p1-b2"]));
+        assert_eq!(checked.extra_selections[1]["page"], 7);
+        assert!(checked.extra_selections[1].get("document_id").is_none());
+        assert_eq!(checked.page, Some(3), "the first place still fills page");
+
+        let mut answer = message("assistant");
+        answer.extra_selections = vec![selection(5)];
+        assert!(checked_message(&answer, 0).is_err());
+        let mut no_first = message("user");
+        no_first.selection = None;
+        no_first.extra_selections = vec![selection(5)];
+        assert!(checked_message(&no_first, 0).is_err());
+        let mut too_many = message("user");
+        too_many.extra_selections = (1..=MAX_EXTRA_SELECTIONS as u32 + 1).map(selection).collect();
+        assert!(checked_message(&too_many, 0).is_err());
+        let mut other_book = message("user");
+        let mut elsewhere = selection(5);
+        elsewhere.document_id = Some("doc-2".into());
+        other_book.extra_selections = vec![selection(4), elsewhere];
+        let error = checked_message(&other_book, 0).unwrap_err();
+        assert!(error.to_string().contains("extra_selections[1].document_id"), "{error}");
+        let mut bad_page = message("user");
+        bad_page.extra_selections = vec![selection(0)];
+        assert!(checked_message(&bad_page, 0).unwrap_err().to_string().contains("extra_selections[0].page"));
     }
 
     fn record(seq: i64, text: &str) -> AskConversationMessageRecord {
@@ -756,6 +832,7 @@ mod tests {
             superseded_at: None,
             edited_from: None,
             session_id: None,
+            extra_selections: vec![],
         }
     }
 

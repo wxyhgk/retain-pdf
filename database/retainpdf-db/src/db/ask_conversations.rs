@@ -61,6 +61,8 @@ pub struct AskConversationMessageRecord {
     pub edited_from: Option<String>,
     /// 答这条的 agent 会话（ACP 会话编号，v44）；删对话时据此删 agent 自己存的那份。
     pub session_id: Option<String>,
+    /// 一问带的另外几处出处（v46，整理过的 JSON 对象，按顺序）；第一处在 `selection`。没有是空数组。
+    pub extra_selections: Vec<serde_json::Value>,
 }
 
 /// 要追加的一条消息（调用方校验过）。`memory_ids`：这条回答里记下的记忆，出处还空着的补上这条消息。
@@ -83,6 +85,8 @@ pub struct NewAskConversationMessage {
     /// 改后重问：被改的那条（要是这个对话里已经作废的问）。
     pub edited_from: Option<String>,
     pub session_id: Option<String>,
+    /// 另外几处出处（v46）；空数组存成 NULL。
+    pub extra_selections: Vec<serde_json::Value>,
 }
 
 /// 开副对话要的东西（调用方校验过）。
@@ -165,7 +169,8 @@ const CONVERSATION_COLUMNS: &str = "c.conversation_id, c.kind, c.parent_id, c.fo
      (SELECT COALESCE(MAX(seq), 0) FROM ask_conversation_messages m WHERE m.conversation_id = c.conversation_id)";
 
 const MESSAGE_COLUMNS: &str = "message_id, conversation_id, seq, role, text, thought, usage_json, agent_id, side_conversation_id,
-     document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at, superseded_at, edited_from, session_id";
+     document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at, superseded_at, edited_from, session_id,
+     extra_selections_json";
 
 fn row_to_conversation(row: &rusqlite::Row<'_>) -> rusqlite::Result<AskConversationRecord> {
     Ok(AskConversationRecord {
@@ -211,6 +216,10 @@ fn row_to_message(row: &rusqlite::Row<'_>) -> rusqlite::Result<AskConversationMe
         superseded_at: row.get(17)?,
         edited_from: row.get(18)?,
         session_id: row.get(19)?,
+        extra_selections: match json_column(row.get(20)?) {
+            Some(serde_json::Value::Array(items)) => items,
+            _ => Vec::new(),
+        },
     })
 }
 
@@ -275,11 +284,13 @@ fn insert_message(conn: &Connection, conversation_id: &str, message: &NewAskConv
     let message_id = format!("msg-{}", build_job_id());
     let usage = message.usage.as_ref().map(serde_json::to_string).transpose()?;
     let selection = message.selection.as_ref().map(serde_json::to_string).transpose()?;
+    let extra_selections =
+        if message.extra_selections.is_empty() { None } else { Some(serde_json::to_string(&message.extra_selections)?) };
     conn.execute(
         "INSERT INTO ask_conversation_messages (message_id, conversation_id, seq, role, text, thought, usage_json, agent_id,
              side_conversation_id, document_id, job_id, version_id, pane, page, selection_json, client_message_id, created_at,
-             edited_from, session_id)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
+             edited_from, session_id, extra_selections_json)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20)",
         params![
             message_id,
             conversation_id,
@@ -300,6 +311,7 @@ fn insert_message(conn: &Connection, conversation_id: &str, message: &NewAskConv
             now_iso(),
             message.edited_from,
             message.session_id,
+            extra_selections,
         ],
     )?;
     for memory_id in &message.memory_ids {

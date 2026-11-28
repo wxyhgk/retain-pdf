@@ -1,9 +1,18 @@
 /* react-pdf 引擎：滚动壳 / 双栏网格 / 页槽 / 文本层 / 空态错误 */
 
 /* —— react-pdf engine (R1) —— */
+/* 壳层（2026-11-28）：根节点里只有中间工作区（.reader-workspace）一行。顶栏、底栏上午是实占的两行（54px、36px），
+ * 下午起都浮在书页区上：顶上两颗胶囊（chrome.css），书页第一页上面让出 --reader-float-bar-room（8 + 胶囊 40 + 8）；
+ * 底下三颗胶囊（hud.css），栏内横向滚动条、出错提示往上让出 --reader-float-bottom-room（8 + 胶囊 34 + 8）。以前是全屏堆叠：顶栏、底栏浮在书页上，
+ * 书页区用 --reader-stage-left / --reader-stage-right 算让谁，底栏和小球压着正文最后几行。
+ * 提问窗贴右边时上下都不用让（src/app/shell-metrics.ts 的 READER_DOCK_INSETS 是 0）。 */
 .reader-react-root {
   --reader-ai-split-width: 50vw;
+  --reader-float-bar-room: 56px;
+  --reader-float-bottom-room: 50px;
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: 100%;
   width: 100dvw;
   height: 100vh;
@@ -13,16 +22,34 @@
   color: var(--ink);
 }
 
+/* 中间工作区：横排，从左到右是左栏（钉住时实占一栏；浮着时盖在左上角）、书页区、右边停靠栏（面板开着时）或给贴右边的提问窗留的空位。
+ * 谁占多宽由 flex 自己排，不用谁去算谁的偏移。浮着的左栏、提问窗以它为准摆。 */
+.reader-workspace {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 书页区：只放书页（ReaderCompareGrid）和它的加载、出错提示。 */
+.reader-stage {
+  /* 容器查询用。inline-size 只加样式和行向尺寸包含，不加布局包含，里面 position: fixed 的东西照旧按视口摆。 */
+  container: reader-stage / inline-size;
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* 唯一纵向滚动容器；双栏不各自 overflow */
 .reader-react-scroll-shell {
   position: absolute;
-  inset: 60px 0 0;
+  inset: 0;
   overflow: auto;
   background: var(--bg, var(--reader-page-bg));
   background-image: var(--reader-sheet-backdrop, none); /* 阅读区背景纹理，皮肤用 */
   scrollbar-width: none;
   -ms-overflow-style: none;
-  transition: right 180ms ease;
 }
 
 /* 工作区布局现由根类 is-workspace-{reading,compare,markdown,ai} 与
@@ -159,7 +186,8 @@
 }
 .reader-pane-scrollbar {
   position: absolute;
-  bottom: 6px;
+  /* 让过底下浮着的三颗胶囊（2026-11-28；以前底栏实占一行时贴底 6px）。 */
+  bottom: var(--reader-float-bottom-room, 50px);
   height: 10px;
   border-radius: var(--ui-radius-pill, 999px);
   background: var(--reader-pane-scrollbar-track, color-mix(in srgb, var(--ink) 7%, transparent));
@@ -185,10 +213,11 @@
   cursor: grabbing;
 }
 
-/* 源栏右上角动作（如「译文」叠加开关）：放在 pane 内，不随内容滚动。 */
+/* 源栏右上角动作（如「译文」叠加开关）：放在 pane 内，不随内容滚动。对照时源栏右上角正好在书页区正中，
+ * 往下让过浮着的页签（--reader-float-bar-room）。 */
 .reader-react-pdf-pane-action {
   position: absolute;
-  top: 8px;
+  top: var(--reader-float-bar-room, 56px);
   right: 8px;
   z-index: 6;
   pointer-events: none;
@@ -463,8 +492,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 8px 20vh;
-  padding: 12px 8px 20dvh;
+  /* 上面让出浮着的顶栏（返回、页签），刚打开时第一页的页头不被压住。 */
+  padding: var(--reader-float-bar-room, 56px) 8px 20vh;
+  padding: var(--reader-float-bar-room, 56px) 8px 20dvh;
   box-sizing: border-box;
   width: max-content;
   min-width: 100%;
@@ -554,14 +584,17 @@
 .reader-react-pdf-page .textLayer mark.reader-xref:hover {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
-/* 普通文字使用 PDF 原生选区（只留复制，不弹菜单）。 */
+/* 书页上的选区自己画（2026-11-28，ReaderSelectionLayer + selection.css：每行一条齐整的浅冷色色带，公式不再一截一截）：
+ * 浏览器按字画的那层在文字层里透明。以前这里写的是半透明的黄色（--warn 45%），其实一直没生效：阅读页还挂着 pdf.js 自带的
+ * pdf_viewer.css，它不在任何 @layer 里，它的 .textLayer ::selection（系统强调色 25%）压过所有分层的样式；字框又互相叠着，
+ * 叠的地方深一块（公式里最明显）。分层的样式要压过不分层的只能 !important。 */
 .reader-react-pdf-page .textLayer ::selection {
-  background: color-mix(in srgb, var(--warn) 45%, transparent);
-  color: transparent;
+  background: transparent !important;
+  color: transparent !important;
 }
 .reader-react-pdf-page .textLayer ::-moz-selection {
-  background: color-mix(in srgb, var(--warn) 45%, transparent);
-  color: transparent;
+  background: transparent !important;
+  color: transparent !important;
 }
 
 .reader-react-pdf-empty,
@@ -576,15 +609,16 @@
   font-weight: 600;
 }
 
+/* 两条提示在书页区里（启动层画在书页区里）：按书页区居中，宽度也按它算。 */
 .reader-react-error {
-  position: fixed;
+  position: absolute;
   left: 50%;
-  bottom: 24px;
+  /* 让过底下浮着的三颗胶囊（2026-11-28）。 */
+  bottom: calc(var(--reader-float-bottom-room, 50px) + 8px);
   z-index: 95;
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
-  max-width: min(480px, calc(100vw - 32px));
-  max-width: min(480px, calc(100dvw - 32px));
+  max-width: min(480px, calc(100% - 32px));
   padding: 10px 14px;
   border-radius: 12px;
   background: color-mix(in srgb, var(--ink) 92%, transparent);
@@ -614,16 +648,16 @@
 
 /* 可选产物失败：不遮挡阅读，仅在外壳上浮一行可关闭提示。 */
 .reader-error-notice {
-  position: fixed;
+  position: absolute;
   left: 50%;
-  top: 56px;
+  /* 在顶上浮着的页签下面（2026-11-28 顶栏改成悬浮以前贴顶 12px，会压在页签上）。 */
+  top: var(--reader-float-bar-room, 56px);
   z-index: var(--z-dialog, 95);
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 10px;
-  max-width: min(520px, calc(100vw - 32px));
-  max-width: min(520px, calc(100dvw - 32px));
+  max-width: min(520px, calc(100% - 32px));
   padding: 8px 10px 8px 14px;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);

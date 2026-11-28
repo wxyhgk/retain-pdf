@@ -26,6 +26,7 @@ import { loadBrowserStoredConfig, savePersistedBrowserStoredConfig } from "@/pla
 import { createCredential, updateCredential } from "@/platform/api/domains/credentials.js";
 import { mockAskPort } from "@/platform/mock/ask-agent.js";
 import { askMemoriesPort, createAskConversationsPort } from "./ask-conversations-port.js";
+import { askGlossaryPort } from "./ask-glossary-port.js";
 
 export const BUILTIN_AGENT_ID = "retainpdf";
 export const PI_AGENT_ID = "retainpdf-pi";
@@ -299,6 +300,7 @@ function createRealAskPort(): ReaderAskPort {
     threads: askThreadsPort,
     conversations: createAskConversationsPort(askModelConnection),
     memories: askMemoriesPort,
+    glossaries: askGlossaryPort,
   };
 }
 

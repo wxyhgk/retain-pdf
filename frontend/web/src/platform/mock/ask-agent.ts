@@ -5,7 +5,7 @@
 import type { ContentBlock, SessionUpdate } from "@agentclientprotocol/sdk";
 import type { ReaderAskHandlers, ReaderAskPort, ReaderAskSession, ReaderAskThread, ReaderAskThreadsPort } from "@retainpdf/reader/contracts";
 
-import { mockAskConversations, mockAskMemories } from "./ask-conversations.js";
+import { mockAskConversations, mockAskGlossaries, mockAskMemories } from "./ask-conversations.js";
 
 const AGENTS = [
   { id: "retainpdf", name: "RetainPDF 自带模型", description: "用设置里配好的模型", available: true, acceptsImages: true },
@@ -60,8 +60,16 @@ function fakeConfig(agentId: string): FakeConfig {
       ],
     },
     {
-      id: "effort", name: "思考强度", category: "thought_level", type: "select", currentValue: "medium",
-      options: ["off", "low", "medium", "high", "max"].map((value) => ({ value, name: value })),
+      // 照自带 agent 报的样子：档位名英文（2026-11-27 用户：「思考不要用中文!」）、每档一句中文说明（后端 feat/ask-thinking-levels）。
+      id: "effort", name: "Thinking", category: "thought_level", type: "select", currentValue: "medium",
+      description: "想得越深答得越好，但慢一些、多花 token",
+      options: [
+        { value: "off", name: "Off", description: "直接答：最快、最省" },
+        { value: "low", name: "Low", description: "稍微想一下：快、省" },
+        { value: "medium", name: "Medium", description: "想一想再答：速度和花费居中" },
+        { value: "high", name: "High", description: "多想一会儿：慢一些、多花 token" },
+        { value: "max", name: "Max", description: "想到底：最慢、最费" },
+      ],
     },
   ];
   if (agentId === "claude-code") {
@@ -218,4 +226,5 @@ export const mockAskPort: ReaderAskPort = {
   threads: mockThreads,
   conversations: mockAskConversations,
   memories: mockAskMemories,
+  glossaries: mockAskGlossaries,
 };

@@ -34,6 +34,13 @@ import type { AskPort, AskContext, AskMessage, AskTurnRecord } from "@retainpdf/
   onJumpToPage={(page) => goTo(page)}  // 回答里的页码点了
   pageCount={481}                   // 越界的数字不当页码
   katexStylesheetUrl={url}          // KaTeX 样式（宿主托管字体）
+  onLayout={({ mode, width }) => …}  // 摆法变了（浮动 / 贴右边 / 放大）：宿主据此给页面让出右边
+  dockTaken={…}                      // 宿主右边停了别的：变成 true 的那一下，贴右边的窗口变回浮动（记住的摆法不改）
+  dockInsets={{ top, bottom }}       // 贴右边时上下让出宿主的栏（阅读页：顶栏 54、底栏 36）；不给是上 60、下 0
+  answerAction={action}             // AskAnswerAction：回答底下宿主加的一个动作（阅读页「改这段译文」）
+  attachTools={[tool]}              // AskAttachTool[]：输入框那一行「带上……」（阅读页「带上这一页」的截图）
+  attachRequest={{ id, files }}     // 宿主从外面塞进来的附件（框选截图），id 变了就加
+  contextOffer={offer}              // AskContextOffer | null：已经带着出处时宿主又选了一处，问「换成 / 再加 / 不要」
 />
 ```
 
@@ -47,6 +54,11 @@ import type { AskPort, AskContext, AskMessage, AskTurnRecord } from "@retainpdf/
 - **`AskMessage`** 是存的格式（`role`、`text`、`thought`、`usage`，2026-11-26 加 `id`、`context`、`marks`）。字段只增不改。
 - **引用回复**：在回答上选字，输入框上面出「引用回答」，发问时写成「> …」放在问题前面，问题气泡里开头的引用画成引用框（`src/window/answer-quote.tsx`）。
   照搬的 Thread 为它加了 `prepareSend`、`UserText` 两个插槽。
+- **2026-11-27 加的**（[方案](../../../docs/ops/planning/reader-ask/20261127-提问窗七处改进.md)）：
+  - 窗口的摆法、浮动位置大小、贴右边的宽度、上次用的 agent 记在本机（`window-memory.ts`，`use-window-layout.ts`）；放大不记。
+  - 带着出处、输入框空着时，出处下面一排常问（`PendingStarters`）；空白对话带着出处时不再在下面重复。
+  - `AskContext.extra`：另外几处出处（一段字），认结构化出处的 agent 也照带（`_meta` 只放第一处）。
+  - 回答里太宽的独立公式、表格：1.5 倍以内缩到放得下（`style.zoom`），再宽横着滚、对话区出「放大看」（`wide-blocks.ts`）。
 - **「已记住」**：工具卡片完成时 `_meta.retainpdf.memory` 有值，回答正文下面画「已记住：……（撤销）」（`src/window/conversation.tsx`）。
 
 ## 里面有什么
@@ -62,7 +74,7 @@ import type { AskPort, AskContext, AskMessage, AskTurnRecord } from "@retainpdf/
 | `src/openui/` | 回答里的互动块：```` ```openui-lang ```` 代码块用 OpenUI 的渲染器画成能动手的界面（`OpenUIBlock.tsx`，单独一块懒加载）；组件库去掉了 `Image`、YouTube（`library.ts`） |
 | `scripts/openui-spec.mjs` | 从同一个组件库生成给后端的分层说明 `contracts/openui/`（`npm run generate:openui`）；组件库或 OpenUI 升级了要重新生成 |
 | `src/ui/` | **照搬** assistant-ui 官方组件（MIT，https://r.assistant-ui.com）；思考强度滑块 `elements/effort-slider.tsx` 改自 [zanwei/claude-model-selector](https://github.com/zanwei/claude-model-selector)（MIT）。每个文件开头写了改了什么，别处不动，方便对着上游更新 |
-| `styles/ask.css` | 窗口的样式。颜色、字号、圆角只用宿主的皮肤变量（`--paper`、`--ink`、`--ui-text-*`、`--ui-radius-*`） |
+| `styles/ask.css` | 窗口的样式入口：只按固定顺序 `@import` `styles/ask/` 下按组件分的几份（window、menus、conversation、tools、openui、composer、usage）。颜色、字号、圆角只用宿主的皮肤变量（`--paper`、`--ink`、`--ui-text-*`、`--ui-radius-*`） |
 | `styles/tailwind.css` | 照搬组件要的 Tailwind 部分（动画、流光、打字光标，并扫这个包的源码） |
 
 依赖：`@assistant-ui/react`（对话）、`@assistant-ui/react-markdown` + remark-math / rehype-katex（Markdown 和公式）、
@@ -111,12 +123,33 @@ agent 在回答里写 ```` ```openui-lang ```` 代码块，窗口用 [OpenUI](ht
 
 shadcn 那套主题变量（`--color-muted`、`--color-foreground` 等）由宿主给（RetainPDF 在阅读器的 `styles/shadcn-theme.css`）。
 
+层级由宿主定（提问窗不认识宿主的层级），没设时只保证提问窗自己几样的先后：
+
+```css
+:root {
+  --ask-z-float: …;    /* 浮动、放大的窗口 */
+  --ask-z-dock: …;     /* 贴右边（页面的一栏，通常压在宿主顶栏下面） */
+  --ask-z-popover: …;  /* 弹层：谁来答、更多设置、用量（挂在 body 上，要在窗口上面） */
+}
+```
+
+RetainPDF 阅读页在 `packages/reader/styles/ask-host.css` 里设。
+
+宿主自己的下拉要和标题栏下拉一个样子，用 `@retainpdf/ask/window` 的 `AskHeadMenu`、`AskHeadMenuItem`；转圈用 `AskSpinner`。
+不要在宿主里写这个包的类名（`.ask-*`），改了这边会碰坏宿主。
+
 ## 改的时候守的规矩
 
 - 不引宿主：不许 `import` 阅读器、web、`@retainpdf/api`，相对路径不出 `src/`。要宿主的东西，加到 `AskWindowProps` 或 `AskPort` 上。
 - 宿主只从三个出口引：`@retainpdf/ask`、`@retainpdf/ask/window`、`@retainpdf/ask/acp`。
 - 自己写的文件（`src/ui/` 以外）每个不超过 380 行。
 - 按钮、下拉框用 `@retainpdf/ui`，不写原生控件；CSS 不写死字号、圆角（`src/ui/` 照搬的除外）。
+- 样式按组件分在 `styles/ask/` 下：一个类只在它组件那一份里当主角，每份顶层不写两处同一个选择器。
+- 不从外面改照搬的组件（`src/ui/`）：不写 `.aui-*`、`[data-slot]`、`[cmdk-*]`、Radix 弹层外壳、Tailwind 工具类、`!important`；
+  要改就改照搬组件自己的 `className`（在文件头记一笔）。照搬的输入框外壳、发送键读窗口上的颜色变量
+  （`--ask-composer-edge / -bg / -glow`、`--ask-send-bg / -fg / -hover`，思考强度靠它染色，`styles/ask/window.css` 里定）。
+- 层级只写 `var(--ask-z-*, 默认)`，不引宿主的层级变量。
+- 以上几条 `web/tests/architecture/ask-package-boundary.test.mjs` 守着。
 - 界面文字用简体中文，图标为主、字放悬停提示里，整窗 13px。
 - 改了接口（`contract.ts`、`AskWindowProps`），同时改 `packages/reader/src/ask/ReaderAskPanel.tsx`（阅读页怎么接）和这份 README。
 

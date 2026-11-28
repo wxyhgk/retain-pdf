@@ -1,0 +1,128 @@
+/* @retainpdf/ask 提问窗的样式：工具调用（../../src/window/blocks.tsx 的 ToolCard / 分组）和「在想…」。
+ * 由 ../ask.css 按固定顺序引入（2026-11-27 从一整份 ask.css 拆出）。 */
+
+/* 工具调用：一行一个（ask-blocks 的 ToolCard），点开看结果和参数。 */
+.ask-tool {
+  margin: 2px 0;
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-tool > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 6px;
+  border-radius: var(--ui-radius-sm, 6px);
+  color: var(--muted);
+  list-style: none;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.ask-tool > summary::-webkit-details-marker { display: none; }
+
+.ask-tool > summary:hover {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  color: var(--ink);
+}
+
+.ask-tool-icon { flex: none; }
+
+.ask-tool-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ask-tool-sum {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ask-tool-sum::before {
+  content: "· ";
+}
+
+.ask-tool-state {
+  display: inline-grid;
+  flex: none;
+  margin-left: auto;
+  place-items: center;
+}
+
+.ask-tool[data-status="completed"] .ask-tool-state { color: var(--success, var(--accent)); }
+
+.ask-tool[data-status="failed"] .ask-tool-state { color: var(--danger, var(--ink)); }
+
+.ask-tool-time {
+  flex: none;
+  font-size: var(--ui-text-2xs, 10px);
+  font-variant-numeric: tabular-nums;
+}
+
+.ask-tool-detail {
+  max-height: 16em;
+  margin: 2px 0 6px 25px;
+  overflow: auto;
+  padding: 6px 8px;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* 工具分组的标题：几种工具的图标 + 一个的写标题 + 次数。 */
+.ask-toolgroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ask-toolgroup-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ask-toolgroup-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 「在想…」（Thread 的正在回答指示，window/blocks.tsx 的 Waiting）。 */
+.ask-waiting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.ask-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--accent);
+  animation: ask-pulse 1s ease-in-out infinite;
+}
+
+@keyframes ask-pulse {
+  0%, 100% { opacity: 0.25; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-dot { animation: none; }
+}

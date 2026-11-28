@@ -178,6 +178,9 @@ export function createAcpChatAdapter(options) {
             const preamble = context && !current.capabilities?.selection ? `${context.preamble || ""}`.trim() : "";
             if (preamble)
                 blocks.push({ type: "text", text: preamble });
+            const extra = `${context?.extra || ""}`.trim();
+            if (extra)
+                blocks.push({ type: "text", text: extra });
             blocks.push({ type: "text", text: question || "（看图）" });
             blocks.push(...imageBlocks(last));
             let turn = emptyTurn(now());

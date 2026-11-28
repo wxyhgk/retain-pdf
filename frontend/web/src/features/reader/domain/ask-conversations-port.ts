@@ -14,6 +14,7 @@ import {
   getAskSettings,
   getMainAskConversation,
   listAskConversationMessages,
+  listAskConversations,
   listAskMemories,
   listDocumentAskMessages,
   supersedeAskConversationMessage,
@@ -49,6 +50,9 @@ export function createAskConversationsPort(connection: () => Promise<AskModelCon
     },
     reopen: (conversationId) => updateAskConversation(API_PREFIX, conversationId, { status: "open" }),
     archive: (conversationId) => updateAskConversation(API_PREFIX, conversationId, { status: "archived" }),
+    archived: async (documentId) => (await listAskConversations(API_PREFIX, { kind: "main", status: "archived", ...(documentId ? { document_id: documentId } : {}) })).conversations
+      .filter((record) => (record.document_id || "") === (documentId || ""))
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at)),
     compact: async (conversationId) => {
       const model = await connection();
       if (model) await createAskCompaction(API_PREFIX, conversationId, model);

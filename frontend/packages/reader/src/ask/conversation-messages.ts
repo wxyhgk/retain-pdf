@@ -55,6 +55,37 @@ export function selectionContext(selection: AskConversationMessageRecord["select
   return { page: selection.page, label, data: selection };
 }
 
+type SelectionRecord = NonNullable<AskConversationMessageRecord["selection"]>;
+
+/**
+ * 问题上的出处 → 结构化出处。两种写法都认：读回来的是出处本身（selectionContext 的 data），这次打开刚问的是
+ * 发问时的 _meta（{ retainpdf: { selection } }，AskWindow 的 onAsked 原样记下的）。认不出是 null。
+ */
+export function contextSelection(context: AskMessageContext | null | undefined): SelectionRecord | null {
+  const data = context?.data as { retainpdf?: { selection?: SelectionRecord } } & Partial<SelectionRecord> | undefined;
+  const selection = data?.retainpdf?.selection ?? (data && typeof data.page === "number" ? (data as SelectionRecord) : null);
+  return selection && selection.page ? selection : null;
+}
+
+/** 问题问的是这本书里的哪一块（改这段译文用）：别的书、没认出块是 null。 */
+export function contextBlock(context: AskMessageContext | null | undefined, documentId: string): string | null {
+  const selection = contextSelection(context);
+  if (!selection || (selection.document_id && documentId && selection.document_id !== documentId)) return null;
+  return selection.item_ids?.[0] || null;
+}
+
+/**
+ * 回答里建议的译文（「改这段译文」先填进编辑框的字）：回答里选着的那段（没被截断的），不然回答里最后一个 ```译文 代码块
+ * （也认 translation、zh、zh-CN），都没有是 null（照原样打开编辑框）。
+ */
+export function suggestedTranslation(answer: { text: string; selection: string }): string | null {
+  const picked = answer.selection.trim();
+  if (picked && !picked.endsWith("…")) return picked;
+  const fences = [...answer.text.matchAll(/```[ \t]*(译文|translation|zh|zh-CN)[ \t]*\n([\s\S]*?)\n```/gi)];
+  const last = fences.at(-1)?.[2]?.trim();
+  return last || null;
+}
+
 /** 一条改过的问原来问的、原来答的（作废的那条问和紧跟它的回答）。 */
 function rewroteFrom(records: readonly AskConversationMessageRecord[], editedFrom: string | null | undefined) {
   if (!editedFrom) return undefined;

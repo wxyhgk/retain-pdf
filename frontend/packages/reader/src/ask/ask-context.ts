@@ -26,11 +26,26 @@ export function anchorPreamble(anchor: ReaderAskAnchor, jobId: string, bookTitle
   return lines.join("\n");
 }
 
-/** selection 给了就放进这一问的 _meta.retainpdf.selection（自带 agent 认结构化出处，追加消息也存它）。 */
-export function toAskContext(anchor: ReaderAskAnchor, jobId: string, bookTitle = "", selection?: AskSelectionInput): AskContext {
+/** 同一问另外带的几处（「再加一段」）：一段字，认结构化出处的 agent 也照带（_meta 只放得下第一处）。 */
+export function extraPreamble(extras: readonly ReaderAskAnchor[]): string {
+  return extras.map((anchor, index) => {
+    const lines = [`另外一处（${index + 2}）：第 ${anchor.page} 页${anchor.section ? `，「${anchor.section}」` : ""}（${anchor.pane === "source" ? "原文" : "译文"}栏）。`];
+    if (anchor.selection) lines.push("选中的这段：", clip(anchor.selection));
+    else if (anchor.sourceText || anchor.translatedText) {
+      if (anchor.sourceText) lines.push("这一块的原文：", clip(anchor.sourceText));
+      if (anchor.translatedText) lines.push("这一块的译文：", clip(anchor.translatedText));
+    }
+    if (anchor.itemId) lines.push(`（块 ${anchor.itemId}）`);
+    return lines.join("\n");
+  }).join("\n\n");
+}
+
+/** selection 给了就放进这一问的 _meta.retainpdf.selection（自带 agent 认结构化出处，追加消息也存它）。extras 是另外带的几处。 */
+export function toAskContext(anchor: ReaderAskAnchor, jobId: string, bookTitle = "", selection?: AskSelectionInput, extras: readonly ReaderAskAnchor[] = []): AskContext {
+  const main = [`第 ${anchor.page} 页`, anchor.section].filter(Boolean).join(" · ");
   return {
     page: anchor.page,
-    label: [`第 ${anchor.page} 页`, anchor.section].filter(Boolean).join(" · "),
+    label: [main, ...extras.map((extra) => (extra.page === anchor.page ? "同页另一段" : `第 ${extra.page} 页`))].join(" + "),
     quote: {
       selection: anchor.selection || undefined,
       source: anchor.sourceText || undefined,
@@ -39,6 +54,7 @@ export function toAskContext(anchor: ReaderAskAnchor, jobId: string, bookTitle =
     },
     preamble: anchorPreamble(anchor, jobId, bookTitle),
     ...(selection ? { meta: { retainpdf: { selection } } } : {}),
+    ...(extras.length ? { extra: extraPreamble(extras) } : {}),
   };
 }
 

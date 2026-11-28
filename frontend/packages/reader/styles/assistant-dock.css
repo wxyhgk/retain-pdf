@@ -17,14 +17,11 @@
      是唯一安全的查询对象。 */
   container-type: inline-size;
   container-name: reader-dock;
-  position: fixed;
-  top: 60px;
-  right: 0;
-  z-index: 36;
+  position: relative;
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
-  width: var(--reader-ai-split-width);
   height: 48px;
   padding: 0 12px 0 14px;
   border-bottom: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 7%, transparent)));
@@ -158,87 +155,44 @@
   outline: none;
 }
 
-.reader-react-root.is-assistant-open .reader-react-scroll-shell {
-  right: var(--reader-ai-split-width);
-  transition: none;
-}
-
-/* 书页铺到窗口底，页码缩放那一条浮在书页上（2026-11-06 用户要的：以前底下给它留出 66px 一条灰带，书页截在灰带上面）。
- * 书末尾垫出同样高的空白：滚到最后一页，最后几行能滚到浮条上面，不被它压着。 */
-.reader-react-grid {
-  padding-bottom: var(--reader-hud-room, 66px);
-}
-
-/* dock 打开时，视口右半边是面板，所以「居中」得按 PDF 栏算，不是按视口。
- *
- * 只有 HUD 一直是这么做的；两条错误提示原来留在 left: 50%，中心正好落在分栏线
- * 上 —— 一半画在 PDF 上、一半画在面板上，而它们偏偏是最需要读清楚的两条文案。
- */
-.reader-react-root.is-assistant-open .reader-react-hud,
-.reader-react-root.is-assistant-open .reader-react-error,
-.reader-react-root.is-assistant-open .reader-error-notice {
-  left: calc((100dvw - var(--reader-ai-split-width)) / 2);
-}
-
-/* 宽度也得按栏算：PDF 栏最窄到 35vw（见 reader-ai-split-constraints.ts），
- * 1280 宽的屏上只剩 448px，居中了照样两头溢到面板上。 */
-.reader-react-root.is-assistant-open .reader-react-error {
-  max-width: min(480px, calc(100dvw - var(--reader-ai-split-width) - 32px));
-}
-
-.reader-react-root.is-assistant-open .reader-error-notice {
-  max-width: min(520px, calc(100dvw - var(--reader-ai-split-width) - 32px));
-}
-
-.reader-react-root.is-assistant-open .reader-notes-panel--workspace,
-.reader-react-root.is-assistant-open .reader-float-ai.reader-notes-panel--workspace {
-  inset: 108px 0 0 auto;
+/* 右边停靠栏（ReaderAppReactPdf 的 .reader-dock，2026-11-28 起三行壳层）：中间工作区横排里实占一栏。
+ * 放 Markdown 面板时宽度是分栏线拖出来的 --reader-ai-split-width，上面是 tab 条和关闭；放贴右边的提问窗时宽度写在元素上
+ * （提问窗自己记、左边缘拖）。下面 .reader-dock-body 放面板（扩展从 api.panelHost 拿、用 createPortal 画进来）。
+ * 面板关了这一栏 hidden（不卸掉：Markdown 面板留着滚动位置）。以前 tab 条、面板各自 fixed 盖在书页右半边，书页区靠 --reader-stage-right 让。 */
+.reader-dock {
+  display: flex;
+  flex: none;
+  flex-direction: column;
   width: var(--reader-ai-split-width);
-  height: calc(100dvh - 108px);
+  min-width: 0;
+  min-height: 0;
   border-left: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  background: var(--paper);
 }
 
-.reader-react-root.is-assistant-open .reader-notes-panel--workspace .reader-markdown-nav {
-  right: max(18px, calc(var(--reader-ai-split-width) / 2 - 230px));
-  width: min(460px, calc(var(--reader-ai-split-width) - 36px));
+/* 放贴右边的提问窗：宽度是提问窗自己记的（ReaderAppReactPdf 写 --reader-dock-width）。 */
+.reader-dock[data-dock="extension"] {
+  width: var(--reader-dock-width, var(--reader-ai-split-width));
 }
 
-.reader-react-root.is-assistant-open .reader-notes-panel--workspace .reader-markdown-outline {
-  right: max(18px, calc(var(--reader-ai-split-width) / 2 - 230px));
-  width: min(460px, calc(var(--reader-ai-split-width) - 36px));
+.reader-dock[hidden] {
+  display: none;
 }
 
+.reader-dock-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* 窄屏（< 900px）面板铺满中间工作区：盖在书页上（书页那么窄也没法读）。 */
 @media (max-width: 899px) {
-  .reader-assistant-dock-header {
-    top: 58px;
-    width: 100dvw;
+  .reader-dock,
+  .reader-dock[data-dock="extension"] {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    width: auto;
     border-left: 0;
-  }
-
-  .reader-react-root.is-assistant-open .reader-react-scroll-shell {
-    visibility: hidden;
-    pointer-events: none;
-  }
-
-  /* 面板铺满全屏时 PDF 栏整个藏掉了，HUD 控制的东西看不见；它还按「PDF 栏中心」
-   * 定位，正好压在 Markdown 面板底部的「译文/原文/双语」和搜索框上，375 宽时
-   * 页码按钮直接跑到屏幕外（left=-29）。关面板 HUD 就回来。 */
-  .reader-react-root.is-assistant-open .reader-react-hud {
-    display: none;
-  }
-
-  .reader-react-root.is-assistant-open .reader-notes-panel--workspace,
-  .reader-react-root.is-assistant-open .reader-float-ai.reader-notes-panel--workspace {
-    inset: 106px 0 0;
-    width: 100dvw;
-    height: calc(100dvh - 106px);
-    border-left: 0;
-  }
-
-  .reader-react-root.is-assistant-open .reader-notes-panel--workspace .reader-markdown-nav,
-  .reader-react-root.is-assistant-open .reader-notes-panel--workspace .reader-markdown-outline {
-    right: 16px;
-    width: calc(100dvw - 32px);
   }
 }
-

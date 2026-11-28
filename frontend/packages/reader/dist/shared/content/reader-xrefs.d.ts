@@ -1,4 +1,5 @@
 import { type ReaderRegion } from "../data/reader-regions.js";
+import { type ReaderTextMark } from "./reader-text-marks.js";
 export type XrefKind = "figure" | "table" | "equation";
 export type XrefTarget = {
     key: string;
@@ -24,8 +25,11 @@ export type XrefMatch = {
 };
 /** 一段文字里认得出去处的引用（按出现顺序，不重叠）。 */
 export declare function findXrefs(text: string, index: XrefIndex): XrefMatch[];
+/** 一段字里认出的引用 → 文字层要标的几段（贡献表的 textMarks，交叉引用扩展登记）：<mark class="reader-xref" data-xref="figure:2.1">。 */
+export declare function xrefTextMarks(text: string, index: XrefIndex): ReaderTextMark[];
 /**
  * 文字层一段字 → HTML：认出的引用包 <mark class="reader-xref" data-xref="figure:2.1">，搜索词照旧包 <mark>（highlightFindTerm）。
+ * 2026-11-27 起书页走通用的 renderMarkedText（几个扩展的标记合在一起），这个留着给只有引用的地方用。
  */
 export declare function renderXrefText(text: string, index: XrefIndex, findTerm?: string): string;
 export declare function xrefTitle(target: XrefTarget): string;

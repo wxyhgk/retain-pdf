@@ -1,48 +1,48 @@
-/* 目录、搜索（ReaderFinder.tsx）：顶栏左边两颗，点开是浮在书页上的一张卡（挂在按钮下面）。
- *
- * 2026-11-20 起浮着：以前是左边一整栏，阅读区让出这一栏、书页挤到右边。现在书页不动，卡盖在左上角；
- * 点卡外、按 Esc、在目录里点一条跳过去都会收起（搜索时留着，好接着按回车走下一处）。 */
+/* 左栏（ReaderFinder.tsx：搜索、书签、待改）：开关是底栏左边的「搜索」（2026-11-28 从顶栏左段挪下来）。2026-11-28 照原型 reader-prototype.html：
+ * 屏够宽时是中间工作区横排里实占的一栏（248px，data-pinned）；窄屏浮在中间工作区左上角，点卡外、按 Esc 收起。
+ * 目录挪去书页区左缘（toc-minimap.css），这里不再有目录树、「按 PDF 目录 / 按标题」切换和图钉。 */
 
 .reader-finder-toggles {
-  position: fixed;
-  top: 12px;
-  left: 14px;
-  z-index: var(--z-hud, 36);
   display: flex;
-  gap: 4px;
+  gap: 2px;
 }
 
+/* 左栏开关（底栏左边的「搜索」）：高、颜色照底栏（hud.css 的「底栏按钮一套」），圆角、悬停和按下的底色在这里。 */
 .reader-finder-toggle {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 34px;
-  padding: 0 11px 0 9px;
-  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
-  border-radius: var(--ui-radius-pill, 999px);
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  color: color-mix(in srgb, var(--ink) 70%, var(--muted));
+  height: 32px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--reader-chrome-radius, var(--ui-radius-md, 8px));
+  background: transparent;
+  color: color-mix(in srgb, var(--ink) 78%, var(--muted));
   font: inherit;
   font-size: var(--ui-text-md, 13px);
   font-weight: 600;
   cursor: pointer;
 }
 
-.reader-finder-toggle:hover,
+.reader-finder-toggle:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+
 .reader-finder-toggle[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--ink) 7%, var(--paper));
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
   color: var(--ink);
 }
 
 .reader-finder {
-  position: fixed;
-  top: 64px;
-  left: 12px;
-  /* 比底栏、顶栏的按钮高一层：卡盖在它们上面。 */
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  /* 浮着时盖在书页上。 */
   z-index: calc(var(--z-hud, 36) + 2);
   display: flex;
   width: var(--reader-finder-width, 340px);
-  max-height: min(640px, calc(100dvh - 88px));
+  max-height: min(640px, calc(100% - 16px));
   flex-direction: column;
   overflow: hidden;
   border: var(--reader-float-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-float-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 9%, transparent)));
@@ -122,16 +122,18 @@
   padding: 2px 10px 6px;
 }
 
+/* 照原型：小字、细边（2026-11-28）。 */
 .reader-finder-input {
   width: 100%;
-  height: 32px;
+  height: 30px;
   padding: 0 10px;
-  border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
-  border-radius: var(--ui-radius-sm, 6px);
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md, 8px);
   background: var(--paper);
   color: var(--ink);
   font: inherit;
-  font-size: var(--ui-text-base, 14px);
+  font-size: var(--ui-text-sm, 12px);
+  box-shadow: none;
 }
 
 .reader-finder-input:focus {
@@ -219,137 +221,88 @@
   font-size: var(--ui-text-md, 13px);
 }
 
-/* 顶栏左边一组（目录 / 搜索 / 对比版本）：一个浅底分组，按钮不再各带边框（2026-11-20，见 chrome.css 同一节）。 */
-.reader-finder-toggles {
-  gap: 2px;
-  padding: 3px;
-  border: var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) solid var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 7%, transparent)));
-  border-radius: var(--reader-chrome-radius, var(--shape-radius-control, var(--ui-radius-pill, 999px)));
-  background: color-mix(in srgb, var(--paper) 92%, var(--ink) 3%);
+/* 屏够宽时（use-reader-finder 的 SIDEBAR_PIN_MIN_VIEWPORT）：中间工作区横排里最左边实占的一栏，书页区自然变窄。 */
+.reader-react-root {
+  --reader-sidebar-width: 248px;
 }
 
-.reader-finder-toggles .reader-finder-toggle {
-  height: 30px;
-  border-color: transparent;
-  background: transparent;
-}
-
-.reader-finder-toggles .reader-finder-toggle:hover,
-.reader-finder-toggles .reader-finder-toggle[aria-pressed="true"] {
-  background: var(--paper);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color, var(--ink)) 10%, transparent);
-}
-
-/* 「搜索」在底栏：卡从底栏往上弹，水平居中（2026-11-20）。 */
-.reader-finder[data-finder-tab="search"] {
+.reader-finder[data-pinned="true"] {
+  position: relative;
   top: auto;
-  bottom: 74px;
-  left: 50%;
-  max-height: min(560px, calc(100dvh - 160px));
-  transform-origin: 50% 100%;
-  translate: -50% 0;
+  left: auto;
+  flex: none;
+  width: var(--reader-sidebar-width);
+  max-height: none;
+  border-width: 0 var(--reader-chrome-edge-width, var(--shape-edge-width, 1px)) 0 0;
+  border-color: var(--reader-chrome-edge-color, var(--shape-edge-color, color-mix(in srgb, var(--ink) 8%, transparent)));
+  border-radius: 0;
+  box-shadow: none;
+  /* 和书页区一层：不盖顶栏、底栏的弹出框。 */
+  z-index: var(--z-hud, 36);
+  animation: none;
 }
 
-.reader-finder-toggles .reader-finder-toggle {
-  width: 34px;
-  padding: 0;
-  justify-content: center;
+/* 页签（照原型：小字、选中的浅墨底）。 */
+.reader-finder-tabs .reader-finder-tab {
+  height: 24px;
+  padding: 0 8px;
+  font-size: var(--ui-text-xs, 11.5px);
 }
 
-/* —— 书签：PDF 自带的目录（ReaderBookmarkTree），多级、能折叠 —— */
-.reader-bookmark-tree,
-.reader-bookmark-children {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* 页签上「待改」的个数：灰的小数字（2026-11-28 照原型，不画圆底角标）。 */
+.reader-finder-tab-count {
+  margin-left: 3px;
+  color: var(--muted);
+  font-size: var(--ui-text-2xs, 10px);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
-.reader-bookmark-children {
-  padding-left: 14px;
-}
-
-.reader-bookmark-row {
+/* 「书签」「待改」两个页签（ReaderSidebarLists.tsx）。 */
+.reader-finder .reader-bookmark-list li {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 2px;
 }
 
-/* 层级靠嵌套缩进，书签里不再用标题那套 data-level 的左边距。 */
-.reader-bookmark-entry.reader-finder-entry[data-level] {
-  padding-left: 6px;
+.reader-finder .reader-bookmark-list .reader-bookmark-jump {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.reader-bookmark-entry[data-level="1"] {
-  font-weight: 600;
-}
-
-.reader-bookmark-entry:disabled {
-  cursor: default;
-  color: var(--muted);
-}
-
-.reader-bookmark-toggle,
-.reader-bookmark-spacer {
+.reader-finder .reader-bookmark-remove {
   flex: none;
-  width: 22px;
-  height: 28px;
-}
-
-.reader-bookmark-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  width: 26px;
+  height: 26px;
   padding: 0;
   border: 0;
   border-radius: var(--ui-radius-sm, 6px);
   background: transparent;
   color: var(--muted);
   cursor: pointer;
+  opacity: 0;
 }
 
-.reader-bookmark-toggle:hover {
+.reader-finder .reader-bookmark-list li:hover .reader-bookmark-remove,
+.reader-finder .reader-bookmark-remove:focus-visible {
+  opacity: 1;
+}
+
+.reader-finder .reader-bookmark-remove:hover {
+  color: var(--ink);
   background: color-mix(in srgb, var(--ink) 6%, transparent);
-  color: var(--ink);
 }
 
-.reader-bookmark-toggle svg {
-  transition: transform 120ms ease;
+.reader-finder .reader-issues {
+  min-height: 0;
+  overflow: auto;
+  padding: 0 8px 10px;
 }
 
-.reader-bookmark-toggle.is-open svg {
-  transform: rotate(90deg);
-}
-
-/* 「按书签 / 按标题」 */
-.reader-finder-switch {
-  display: flex;
-  gap: 4px;
-  margin: 0 0 6px;
-  padding: 2px;
-  border-radius: var(--ui-radius-sm, 6px);
-  background: color-mix(in srgb, var(--ink) 5%, transparent);
-}
-
-.reader-finder-switch-option {
-  flex: 1;
-  padding: 3px 8px;
-  border: 0;
-  border-radius: var(--ui-radius-sm, 6px);
-  background: transparent;
+/* 顶栏放大镜后面待改几处：灰的小数字，不画角标。 */
+.reader-finder-toggle-count {
   color: var(--muted);
-  font: inherit;
-  font-size: var(--ui-text-sm, 12px);
-  cursor: pointer;
-}
-
-.reader-finder-switch-option[aria-checked="true"] {
-  background: var(--paper);
-  color: var(--ink);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-color, var(--ink)) 14%, transparent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .reader-bookmark-toggle svg {
-    transition: none;
-  }
+  font-size: var(--ui-text-2xs, 10.5px);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }

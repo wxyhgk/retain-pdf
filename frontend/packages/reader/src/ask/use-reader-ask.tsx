@@ -1,14 +1,21 @@
-// 阅读页提问接到阅读页上的那一层（ReaderAppReactPdf 只调这一个）：
-// - 问的是哪儿：右键（「在这里提问 / 问这段」）、选着书页上的字按 ?；窗口开着时在书页上选字，下一问就带上它（不弹任何东西）。
+// 阅读页提问接到阅读页上的那一层（扩展 ask/ReaderAskExtension 只调这一个，2026-11-27 起经贡献表接进阅读页）：
+// - 问的是哪儿：右键（「在这里提问 / 问这段」）、选字浮条上的「提问」、选着书页上的字按 ?（选字本身不往提问里带东西，2026-11-28）。
 // - 书页上的「?」（use-ask-marks）：主对话里的点了打开主对话，以前按书存的只读地看。
 // - 提问窗（ReaderAskPanel，第一次提问才加载）。
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { ImagePlus } from "lucide-react";
+import type { AskAttachTool } from "@retainpdf/ask";
 
 import type { ReaderAskAnchor, ReaderAskMessage, ReaderAskPort } from "../contracts/ask.js";
+import type { ReaderMenuContext, ReaderMenuItem } from "../extensions/types.js";
 import type { PdfOutlineNode } from "../pdf/pdf-outline.js";
-import { READER_PAGE_ATTR } from "../pdf/reader-dom-contract.js";
+import { READER_PAGE_ATTR, READER_PANE_ATTR } from "../pdf/reader-dom-contract.js";
+import type { RegionFraction, RegionPdfDocument } from "../pdf/RegionCanvas.js";
+import { FULL_PAGE, cropCanvasImage, regionImageName, renderRegionImage } from "../pdf/region-image.js";
 import { projectReaderRegion, resolveReaderRegionHighlight, type ReaderMetadata, type ReaderRegion } from "../shared/data/reader-regions.js";
+import { isEditableReaderBlock } from "../shared/data/block-edit.js";
 import { buildAskAnchor, selectedPageText } from "./anchor.js";
+import { ReaderAskCrop, type AskCropResult } from "./ReaderAskCrop.js";
 import type { AskMark } from "./ReaderAskMarks.js";
 import { useAskConversation } from "./use-ask-conversation.js";
 import { useAskMarks } from "./use-ask-marks.js";
@@ -29,6 +36,13 @@ export function useReaderAsk({
   resetKey,
   goToPage,
   pageCount,
+  editBlock,
+  jumpToBlock,
+  pdfDocuments,
+  currentPage,
+  visibleMode,
+  activePanel = null,
+  panelHost = null,
 }: {
   port: ReaderAskPort | null;
   documentId: string;
@@ -42,6 +56,17 @@ export function useReaderAsk({
   resetKey: string;
   goToPage: (page: number, pane?: "source" | "translated") => void;
   pageCount: number;
+  /** 改这一块的译文（这本书现在不能改是 null）。 */
+  editBlock: ((itemId: string, draft?: string) => void) | null;
+  jumpToBlock: (itemId: string, pane?: "source" | "translated") => void;
+  /** 各栏读好的 PDF（截图按要的清晰度重新画）。 */
+  pdfDocuments: { source: RegionPdfDocument | null; translated: RegionPdfDocument | null };
+  currentPage: () => number;
+  visibleMode: "source" | "compare" | "translated";
+  /** 阅读页右边停着的面板（Markdown）；停上了提问窗就不贴右边（右边只停一个）。 */
+  activePanel?: string | null;
+  /** 阅读页右边停靠栏里放面板的元素：提问窗贴右边时画进去。 */
+  panelHost?: HTMLElement | null;
 }) {
   const book = useMemo(() => ({ documentId, jobId, versionId }), [documentId, jobId, versionId]);
   const pointOf = useCallback((itemId: string | null, pane: "source" | "translated", page: number) => {
@@ -96,30 +121,60 @@ export function useReaderAsk({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [port, selectionAnchor, openAsk]);
 
-  // 窗口开着时在书页上选字：下一问带上它（发出去的那段不再带第二次）。
-  const used = useRef("");
-  const pendingText = ask.pending?.selection || "";
-  useEffect(() => {
-    if (pendingText) used.current = pendingText;
-  }, [pendingText]);
-  const watching = ask.visible && !legacy;
-  const setPending = ask.setPending;
-  useEffect(() => {
-    if (!watching) return undefined;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    const onChange = () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        const anchor = selectionAnchor();
-        if (anchor && anchor.selection !== used.current) setPending(anchor);
-      }, 250);
-    };
-    document.addEventListener("selectionchange", onChange);
-    return () => {
-      if (timer) clearTimeout(timer);
-      document.removeEventListener("selectionchange", onChange);
-    };
-  }, [watching, selectionAnchor, setPending]);
+  // 以前窗口开着时在书页上选字，下一问就悄悄带上它（11-27 改成已带着一处时问「换成这段 / 再加一段」）。2026-11-28 用户：
+  // 「取消开着 AI 时 selectionchange 自动偷塞出处」——选字只是选字；要问就点选字浮条上的「提问」、右键「问这段」或按 ?。
+
+  // 截图带进提问（2026-11-27）：输入框那一行「带上这一页」、右键「截一块问」。有这一栏的 pdf.js 文档就重新画（清楚），
+  // 没有就从屏幕上那张画布裁。
+  const docs = useRef(pdfDocuments);
+  docs.current = pdfDocuments;
+  const capture = useCallback(async ({ page, pane, region, canvas }: { page: number; pane: "source" | "translated"; region: RegionFraction; canvas?: HTMLCanvasElement | null }) => {
+    const pdf = docs.current[pane];
+    let blob: Blob;
+    if (pdf) {
+      blob = await renderRegionImage(pdf, page, region);
+    } else {
+      const onScreen = canvas ?? document.querySelector<HTMLCanvasElement>(`[${READER_PANE_ATTR}="${pane}"] [${READER_PAGE_ATTR}="${page}"] canvas`);
+      if (!onScreen) throw new Error(`第 ${page} 页还没画出来，翻到那一页再试`);
+      blob = await cropCanvasImage(onScreen, region);
+    }
+    return new File([blob], regionImageName(page, region), { type: "image/png" });
+  }, []);
+  const [attachRequest, setAttachRequest] = useState<{ id: number; files: File[] } | null>(null);
+  const pendingRef = useRef(ask.pending);
+  pendingRef.current = ask.pending;
+  const attachTools = useMemo<AskAttachTool[]>(() => [{
+    key: "page",
+    label: "带上这一页",
+    title: "带上这一页的截图（问的那一页，没有就是现在读的这页）：公式、图表、表格让 AI 直接看图",
+    icon: <ImagePlus size={14} aria-hidden />,
+    run: () => {
+      const pending = pendingRef.current;
+      const pane = pending?.pane || (visibleMode === "translated" ? "translated" : "source");
+      return capture({ page: pending?.page || currentPage() || 1, pane, region: FULL_PAGE });
+    },
+  }], [capture, currentPage, visibleMode]);
+  const [cropping, setCropping] = useState(false);
+  const [cropError, setCropError] = useState("");
+  const onCrop = useCallback(async (result: AskCropResult) => {
+    setCropping(false);
+    setCropError("");
+    try {
+      const file = await capture(result);
+      const anchor = anchorAt(result.point.target, result.point.x, result.point.y, "");
+      setAttachRequest((current) => ({ id: (current?.id || 0) + 1, files: [file] }));
+      if (anchor) openAsk({ ...anchor, itemId: null, sourceText: "", translatedText: "" });
+      else void ask.openMain();
+    } catch (failure) {
+      setCropError(failure instanceof Error ? failure.message : String(failure));
+    }
+  }, [capture, anchorAt, openAsk]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cancelCrop = useCallback(() => setCropping(false), []);
+  // 底栏右边的「截图」和右键「截一块问」都从这里开始框选；再点一下收起。
+  const toggleCrop = useCallback(() => {
+    setCropError("");
+    setCropping((value) => !value);
+  }, []);
 
   const onMark = useCallback(async (mark: AskMark) => {
     if (mark.threadId && port?.threads && documentId) {
@@ -135,19 +190,27 @@ export function useReaderAsk({
     void ask.openMain();
   }, [port, documentId, ask.openMain]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** 右键菜单里的「在这里提问 / 问这段」。 */
-  const [menuAnchor, setMenuAnchor] = useState<ReaderAskAnchor | null>(null);
-  const captureMenu = useCallback((target: Element, clientX: number, clientY: number) => {
-    if (!port) return;
+  /** 右键菜单里的「在这里提问 / 问这段」：右键那一下就记下问的是哪儿（选着书页上的字就问这段）。 */
+  const menuItems = useCallback((context: ReaderMenuContext): ReaderMenuItem[] => {
+    if (!port) return [];
     const picked = selectedPageText(globalThis.getSelection?.() ?? null);
-    setMenuAnchor(anchorAt(target, clientX, clientY, picked.element ? picked.text : ""));
-  }, [port, anchorAt]);
-  const menuActions = port && menuAnchor ? [{
-    key: "ask",
-    label: menuAnchor.selection ? "问这段" : "在这里提问",
-    hint: menuAnchor.selection ? "?" : undefined,
-    onSelect: () => openAsk(menuAnchor),
-  }] : [];
+    const anchor = anchorAt(context.target, context.clientX, context.clientY, picked.element ? picked.text : "");
+    return anchor ? [{
+      key: "ask",
+      label: anchor.selection ? "问这段" : "在这里提问",
+      hint: anchor.selection ? "?" : undefined,
+      // 选着字时也出现在选字浮条上（「复制 · 收藏 · 提问」，ReaderSelectionLayer）。
+      inSelectionBar: anchor.selection ? "提问" : undefined,
+      onSelect: () => openAsk(anchor),
+    }, {
+      key: "crop",
+      label: "截一块问",
+      onSelect: () => {
+        setCropError("");
+        setCropping(true);
+      },
+    }] : [];
+  }, [port, anchorAt, openAsk]);
 
   const legacyView = legacy ? {
     anchor: legacy.anchor,
@@ -160,6 +223,19 @@ export function useReaderAsk({
     } : undefined,
   } : null;
   // 主对话还没读回来时先不画窗口：不然先画一个空窗口、开一个会话，读回来换成主对话又重开一个（白开一个会话，11-27 真机看到）。
+  // 回答底下的「改这段译文」：先打开编辑框（只开着原文时会切到对照），排好版再跳到那一块。
+  const onEditBlock = useMemo(() => (editBlock ? (itemId: string, draft: string | null) => {
+    editBlock(itemId, draft ?? undefined);
+    requestAnimationFrame(() => jumpToBlock(itemId, "translated"));
+  } : null), [editBlock, jumpToBlock]);
+  const canEditBlock = useCallback((itemId: string) => isEditableReaderBlock(regions, itemId), [regions]);
+
+  // 提问窗贴右边：画进阅读页右边停靠栏（dockHost），停靠栏那么宽、书页自然让开（2026-11-28 起是页面的一栏，不是浮窗）。
+  // 窄屏停靠栏铺满中间工作区（assistant-dock.css），所以不再按宽度判断让不让。
+  const [docked, setDocked] = useState(0);
+  const onLayout = useCallback(({ mode, width }: { mode: string; width: number }) => {
+    setDocked(mode === "dock" ? Math.round(width) : 0);
+  }, []);
   const ready = !ask.persistent || Boolean(ask.view.conversation) || Boolean(ask.error);
   const panel: ReactElement | null = port && ((ask.visible && ready) || legacy) ? (
     <Suspense fallback={null}>
@@ -172,9 +248,36 @@ export function useReaderAsk({
         onShowSelection={({ page, pane }) => goToPage(page, pane)}
         onJumpToPage={(page) => goToPage(page)}
         pageCount={pageCount}
+        onLayout={onLayout}
+        dockTaken={activePanel !== null}
+        dockHost={panelHost}
+        onEditBlock={onEditBlock}
+        canEditBlock={canEditBlock}
+        attachTools={attachTools}
+        attachRequest={attachRequest}
       />
     </Suspense>
   ) : null;
+  const overlay: ReactElement | null = cropping || cropError ? (
+    <>
+      {cropping ? <ReaderAskCrop onDone={(result) => void onCrop(result)} onCancel={cancelCrop} /> : null}
+      {cropError ? (
+        <p className="reader-ask-crop-error" role="alert" onClick={() => setCropError("")}>截图没成：{cropError}</p>
+      ) : null}
+    </>
+  ) : null;
 
-  return { marks: marks.marks, onMark, captureMenu, menuActions, panel, open: ask.openMain };
+  /** 底栏工具里的「提问」：开着就关，关着就打开这本书的主对话（不带出处，问整本书、翻以前的对话）。 */
+  const showing = (ask.visible && ready) || Boolean(legacy);
+  const closeAsk = ask.close;
+  const toggle = useCallback(() => {
+    if (showing) {
+      setLegacy(null);
+      closeAsk();
+      return;
+    }
+    void ask.openMain();
+  }, [showing, closeAsk, ask.openMain]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return { marks: marks.marks, onMark, menuItems, panel, overlay, cropping, toggleCrop, open: ask.openMain, toggle, showing, reserveRight: showing ? docked : 0, enabled: Boolean(port) };
 }

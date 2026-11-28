@@ -51,15 +51,28 @@ export function readReaderBookmarks(scope: string, storage: StorageLike | null =
   }
 }
 
+/** 书签变了告诉谁：底栏的「加书签」和左栏的书签列表是两处，一处改了另一处跟着变。 */
+const listeners = new Set<(scope: string) => void>();
+
+/** 这本书（scope）的书签变了就调 listener；返回取消订阅。 */
+export function subscribeReaderBookmarks(scope: string, listener: () => void): () => void {
+  const wrapped = (changed: string) => { if (changed === scope) listener(); };
+  listeners.add(wrapped);
+  return () => { listeners.delete(wrapped); };
+}
+
 function write(scope: string, bookmarks: ReaderBookmark[], storage: StorageLike | null): ReaderBookmark[] {
   const key = keyOf(scope);
   const sorted = [...bookmarks].sort((a, b) => a.page - b.page).slice(0, MAX_BOOKMARKS);
-  if (!key || !storage) return sorted;
-  try {
-    storage.setItem(key, JSON.stringify(sorted));
-  } catch {
-    // 存不下就只在这次打开里有效。
+  if (key && storage) {
+    try {
+      storage.setItem(key, JSON.stringify(sorted));
+    } catch {
+      // 存不下就只在这次打开里有效。
+    }
   }
+  // 存好了再告诉别处（它们从存储里重新读）。
+  for (const listener of [...listeners]) listener(scope);
   return sorted;
 }
 

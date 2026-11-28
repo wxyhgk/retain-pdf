@@ -12,7 +12,7 @@
 
 思考档位（2026-11-26）：没改过档位时按握手的思考深度换字段（``model_wire.setting_thinking_candidates``，和翻译一样）；会话里改过的
 （``thinking_level``）按档位表 ``model_wire.thinking_menu`` 发那一档。三种协议都按候选顺序发，服务商回 400 就换下一种写法，最后不加思考字段。
-``thinking_options`` 给核心报 ``configOptions`` 用的档位和当前档。
+``thinking_options`` 给核心报 ``configOptions`` 用的档位（中文名、说明）和当前档（记住的上次选的优先）。
 
 取消：每读一行看一次取消标记，叫停就关掉连接返回。HTTP 出错抛 ``RuntimeError``（服务商的状态码和一句说明，不带 key）。
 
@@ -29,6 +29,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import json
 import threading
 import uuid
@@ -487,25 +488,101 @@ def _wire_base_url(protocol: str, base_url: str) -> str:
     return base_url if protocol == model_wire.PROTOCOL_ANTHROPIC else (base_url or DEFAULT_BASE_URL)
 
 
-def thinking_options(*, model: str, base_url: str, protocol: str = "", thinking: str = "") -> dict[str, Any] | None:
-    """给核心的思考档位：``{"options": [{"value", "name"}], "current": 握手的思考深度对应的那一档}``（档位表见 ``model_wire.thinking_menu``）。
-    认不出的模型是 None（不报这一项）。"""
+# 每档给用户看的名字和一句说明（2026-11-27 用户：「只有开和关……太诡异了」，要看得懂快 / 准 / 费钱的差别）。
+# 名字用英文、首字母大写（同一天用户：「思考不要用中文!」，和 Claude 桌面版的 Effort 一样）；说明照旧中文。
+# 值照旧是模型那边的档位名（``session/set_config_option`` 用它）。
+THINKING_LABELS: dict[str, tuple[str, str]] = {
+    "off": ("Off", "直接回答：最快、最省"),
+    "none": ("Off", "直接回答：最快、最省"),
+    "on": ("On", "先想再答：难题更准，慢一些、多花一些"),
+    "minimal": ("Minimal", "几乎不想：很快、很省"),
+    "low": ("Low", "稍微想一下：快、省"),
+    "medium": ("Medium", "想得适中：速度和准确折中"),
+    "high": ("High", "想得久一些：难题更准，慢、费"),
+    "xhigh": ("XHigh", "想得更久：更慢、更费"),
+    "max": ("Max", "想到最透：最准，也最慢、最费"),
+}
+THINKING_DESCRIPTION = "想得越深，难题答得越准，但越慢、越费钱"
+GUESSED_DESCRIPTION = "这个模型认不出来，开关不一定起作用；回答完会告诉你它有没有真的思考"
+# 不思考的那几档：开了「猜的」开关却没见思考才提醒，这几档不提醒
+NO_THINKING_LEVELS = ("off", "none")
+
+
+_DEFAULT_MENU: Any = object()
+
+
+def resolve_menu(*, model: str, base_url: str, protocol: str = "", thinking: str = "", api_key: str = "",
+                 cache_file: str = "") -> model_wire.ThinkingMenu | None:
+    """这个连接的思考档位表（2026-11-27）：先问服务商的接口（``thinking_probe``，Anthropic、OpenRouter、Ollama 能报），
+    问不到再查我们维护的表和代码里的规则（``model_wire.thinking_menu``）。接口明说不思考的是 None。
+    接口报的档位，设置「自动」时按代码里实测过的那档（还在接口报的档位里的话），不然按接口的默认。"""
+    from retainpdf_ask_agent_engine import thinking_probe
+
     profile = _profile(model=model, base_url=base_url, protocol=protocol, thinking=thinking)
-    menu = model_wire.thinking_menu(protocol=profile.protocol, model=model, base_url=_wire_base_url(profile.protocol, base_url))
+    wire_base_url = _wire_base_url(profile.protocol, base_url)
+    known = model_wire.thinking_menu(protocol=profile.protocol, model=model, base_url=wire_base_url)
+    if not api_key:
+        return known
+    asked, says_none = thinking_probe.provider_menu(protocol=profile.protocol, base_url=wire_base_url, model=model,
+                                                     api_key=api_key, cache_file=cache_file)
+    if says_none:
+        return None
+    if asked is None:
+        return known
+    if known is not None and known.level_for("auto") in asked.values():
+        mapping = tuple((setting, known.level_for("auto") if setting == "auto" else level) for setting, level in asked.by_setting)
+        asked = dataclasses.replace(asked, by_setting=mapping)
+    return asked
+
+
+def thinking_options(*, model: str, base_url: str, protocol: str = "", thinking: str = "", remembered: str = "",
+                     menu: Any = _DEFAULT_MENU) -> dict[str, Any] | None:
+    """给核心的思考档位（档位表见 ``model_wire.thinking_menu``）。认不出的模型是 None（不报这一项）::
+
+        {"options": [{"value", "name", "description"}], "current": 当前档, "description": 这一项的说明,
+         "guessed": 档位是不是猜的, "no_thinking": [不思考的那几档]}
+
+    当前档：``remembered``（用户在提问窗里上次选的，2026-11-27 用户定「记住上次选的」）还在这个模型的档位里就用它，
+    否则是握手的思考深度对应的那一档。``menu`` 是 ``resolve_menu`` 查好的（不给就只查表和代码里的规则，不问接口）。"""
+    profile = _profile(model=model, base_url=base_url, protocol=protocol, thinking=thinking)
+    if menu is _DEFAULT_MENU:
+        menu = model_wire.thinking_menu(protocol=profile.protocol, model=model, base_url=_wire_base_url(profile.protocol, base_url))
     if menu is None:
         return None
-    return {"options": [{"value": value, "name": value} for value in menu.values()], "current": menu.level_for(profile.thinking)}
+    values = menu.values()
+    options = []
+    for value in values:
+        name, description = THINKING_LABELS.get(value, (value, ""))
+        options.append({"value": value, "name": name, **({"description": description} if description else {})})
+    current = remembered if remembered in values else menu.level_for(profile.thinking)
+    return {
+        "options": options,
+        "current": current,
+        "description": GUESSED_DESCRIPTION if menu.guessed else THINKING_DESCRIPTION,
+        "guessed": menu.guessed,
+        "source": menu.source,
+        "no_thinking": [value for value in values if value in NO_THINKING_LEVELS],
+    }
 
 
-def make_stream_fn(*, model: str, base_url: str, api_key: str, protocol: str = "", thinking: str = ""):
+def make_stream_fn(*, model: str, base_url: str, api_key: str, protocol: str = "", thinking: str = "", remembered: str = "",
+                   menu: Any = _DEFAULT_MENU):
     """按连接配置给核心一个 ``stream_fn(messages, cancel, *, tools=None, tool_choice=None, thinking_level=None)``。
 
     ``thinking_level`` 是会话里用 ``session/set_config_option`` 改过的档位（``thinking_options`` 报的值之一）：给了就按档位表发那一档的字段；
-    没给按握手的思考深度发（和翻译同一套换法，``auto`` 对没实测过的模型什么都不加）。"""
+    没给按握手的思考深度发（和翻译同一套换法，``auto`` 对没实测过的模型什么都不加）；``remembered``（上次选的，``thinking_options`` 报成了当前档）
+    还在档位表里就发那一档；档位表是问接口问到的或我们维护的表里的（``menu.source`` 不是 code），没改过也按报的当前档发那一档的字段
+    （报的和发的一致；代码里的规则照旧按设置换字段，和翻译一样）。"""
     profile = _profile(model=model, base_url=base_url, protocol=protocol, thinking=thinking)
     wire_base_url = _wire_base_url(profile.protocol, base_url)
-    menu = model_wire.thinking_menu(protocol=profile.protocol, model=model, base_url=wire_base_url)
-    initial = model_wire.setting_thinking_candidates(protocol=profile.protocol, model=model, base_url=wire_base_url, thinking=profile.thinking)
+    if menu is _DEFAULT_MENU:
+        menu = model_wire.thinking_menu(protocol=profile.protocol, model=model, base_url=wire_base_url)
+    if menu is not None and remembered in menu.values():
+        initial = menu.candidates(remembered)
+    elif menu is not None and menu.source != "code":
+        initial = menu.candidates(menu.level_for(profile.thinking))
+    else:
+        initial = model_wire.setting_thinking_candidates(protocol=profile.protocol, model=model, base_url=wire_base_url, thinking=profile.thinking)
     options = {"model": model, "base_url": base_url, "api_key": api_key}
     if profile.protocol == model_wire.PROTOCOL_ANTHROPIC:
         target = _anthropic
@@ -525,4 +602,4 @@ def make_stream_fn(*, model: str, base_url: str, api_key: str, protocol: str = "
     return stream
 
 
-__all__ = ["make_stream_fn", "thinking_options"]
+__all__ = ["THINKING_LABELS", "make_stream_fn", "resolve_menu", "thinking_options"]

@@ -226,6 +226,11 @@ pub(super) fn assert_contract_view(value: &Value, file_name: &str, name: &str, p
     assert_object_keys_allowing_absent(value, &contract, name, path, &optional);
 }
 
+/// 只核对类型和必填键（不管多出来的键），契约是 reader-data.v1：给原样返回、以后只加字段的数据用（版面的一页）。
+pub(super) fn assert_reader_definition(value: &Value, name: &str, path: &str) {
+    assert_definition(value, &contract("reader-data.v1.schema.json"), name, path);
+}
+
 /// 同上，契约是 reader-data.v1（阅读页、实时译文的读模型）。
 pub(super) fn assert_reader_view(value: &Value, name: &str, path: &str) {
     assert_contract_view(value, "reader-data.v1.schema.json", name, path);

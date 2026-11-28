@@ -1,5 +1,5 @@
 use retainpdf_api_base::error::AppError;
-use crate::views::{ReaderMetadataView, ReaderRegionsView};
+use crate::views::{ReaderLayoutView, ReaderMetadataView, ReaderRegionsView};
 
 use crate::reader::reader_regions::{
     load_reader_metadata_view, load_reader_regions_view,
@@ -35,6 +35,35 @@ impl JobQueries<'_> {
     pub fn reader_metadata_view(&self, job_id: &str) -> Result<ReaderMetadataView, AppError> {
         let job = load_supported_job(self.db, self.data_root, job_id)?;
         load_reader_metadata_view(self.data_root, &job)
+    }
+
+    /// rpr_fit 排的版面清单（2026-11-28）；没有时 `available: false`，不是 404。
+    pub fn reader_layout_view(&self, base_url: &str, job_id: &str) -> Result<ReaderLayoutView, AppError> {
+        let job = load_supported_job(self.db, self.data_root, job_id)?;
+        Ok(crate::reader::layout::load_reader_layout_view(self.data_root, &job, base_url))
+    }
+
+    /// 版面的底图 PDF；没有是 404。
+    pub fn reader_layout_background(&self, job_id: &str) -> Result<retainpdf_files::FileDownload, AppError> {
+        let job = load_supported_job(self.db, self.data_root, job_id)?;
+        crate::reader::layout::reader_layout_background(self.data_root, &job)
+    }
+
+    /// 一页版面：`(etag, 这页)`。浏览器带来的 ETag 一样就不读文件（`None`，路由回 304）。
+    pub fn reader_layout_page_if_changed(
+        &self,
+        job_id: &str,
+        index: u32,
+        known_etags: &[String],
+    ) -> Result<(String, Option<serde_json::Value>), AppError> {
+        let job = load_supported_job(self.db, self.data_root, job_id)?;
+        if let Some(etag) = crate::reader::layout::reader_layout_page_etag(self.data_root, &job, index) {
+            if known_etags.iter().any(|known| known == &etag) {
+                return Ok((etag, None));
+            }
+        }
+        let (etag, page) = crate::reader::layout::load_reader_layout_page(self.data_root, &job, index)?;
+        Ok((etag, Some(page)))
     }
 
     /// 阅读页提问的自带 agent 读哪本书（2026-11-25）：任务在不在（合并阅读的虚拟任务 `merged-…` 也认，和阅读页同一个

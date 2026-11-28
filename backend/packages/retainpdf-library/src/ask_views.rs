@@ -59,6 +59,9 @@ pub struct AskConversationMessageInput {
     pub document_id: Option<String>,
     #[serde(default)]
     pub selection: Option<AskSelectionInput>,
+    /// 一问带的另外几处出处（2026-11-27，v46）：第一处照旧是 `selection`，这里按顺序放其余的；只有 `user` 能带，最多 4 处。
+    #[serde(default)]
+    pub extra_selections: Vec<AskSelectionInput>,
     /// 幂等号：同一个对话里重复的不再追加，回原来那条。
     #[serde(default)]
     pub client_message_id: Option<String>,

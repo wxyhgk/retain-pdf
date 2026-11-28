@@ -66,14 +66,19 @@ test("原来 FAB 菜单里的东西一个都没丢", () => {
   // 当年那份菜单里有 Markdown 和 AI 问答两样。AI 问答面板后来整个删了（阅读页
   // 只留一扇 AI 的门，就是终端里的 agent），所以这里只能要求 Markdown ——
   // 把已经删掉的功能写进「没丢」的清单，守的是一个不存在的东西。
-  const ids = readerDockTabs(() => true).map((tab) => tab.id);
+  const ids = readerDockTabs().map((tab) => tab.id);
   assert.ok(ids.includes("markdown"), `markdown 不在启动器清单里: ${ids}`);
 });
 
 test("ReaderAppReactPdf restores and persists reading mode with a sourceViewOnly guard", () => {
+  // 2026-11-27 从 ReaderAppReactPdf 拆到 app/use-reader-mode-persistence（App 里只调它）。
   const app = readerSource(
+    "../../../../frontend/packages/reader/src/app/use-reader-mode-persistence.ts",
+  );
+  const root = readerSource(
     "../../../../frontend/packages/reader/src/ReaderAppReactPdf.tsx",
   );
+  assert.match(root, /useReaderModePersistence\(c, sourceViewOnly\);/);
   assert.match(app, /modeScopeRef/);
   // 「存档优先 + sourceViewOnly 只许原文 + 窄屏默认译文」收进了 resolveReaderInitialMode，
   // 行为本身见 reader-narrow-viewport.test.mjs；这里只守 App 确实经它恢复。

@@ -1,5 +1,8 @@
 {
   "controls": {
+    "../packages/reader/src/app/use-live-translation-overlay.tsx": {
+      "button": 1
+    },
     "../packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx": {
       "button": 3
     },
@@ -8,7 +11,7 @@
       "input": 1
     },
     "../packages/reader/src/components/react-pdf/ReaderBookmarkControl.tsx": {
-      "button": 4
+      "button": 1
     },
     "../packages/reader/src/components/react-pdf/ReaderCloseHome.tsx": {
       "button": 1
@@ -34,9 +37,6 @@
       "input": 1
     },
     "../packages/reader/src/pdf/ReaderTextHoverLayer.tsx": {
-      "button": 1
-    },
-    "../packages/reader/src/ReaderAppReactPdf.tsx": {
       "button": 1
     },
     "src/app/home/HomeApp.tsx": {
@@ -227,7 +227,7 @@
       "borderRadius": 3
     },
     "../packages/reader/styles/chrome.css": {
-      "fontSize": 7,
+      "fontSize": 4,
       "borderRadius": 2
     },
     "../packages/reader/styles/core/ambient-surface-home.css": {
@@ -245,8 +245,8 @@
       "borderRadius": 3
     },
     "../packages/reader/styles/hud.css": {
-      "fontSize": 16,
-      "borderRadius": 6
+      "fontSize": 12,
+      "borderRadius": 3
     },
     "../packages/reader/styles/layout.css": {
       "fontSize": 1
@@ -589,7 +589,6 @@
     "page_range_btn",
     "page_range_clear_btn",
     "page_range_close_btn",
-    "reader_bookmark_list_btn",
     "reader_close_home_btn",
     "reader_react_hud_btn",
     "reader_react_hud_page_btn",

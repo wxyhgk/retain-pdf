@@ -25,16 +25,15 @@
 
 /* 面板是 Reader 的右侧工作区，不伪装成悬浮对话框。
  * 面板没有自己的标题栏（dock 顶上的 tab 条已经写着你在哪个面板、并带关闭），
- * 所以行模板只有「可选的工具条 + 正文」两种。 */
+ * 所以行模板只有「可选的工具条 + 正文」两种。
+ * 2026-11-28 起画在右边停靠栏的 .reader-dock-body 里，铺满它（以前 fixed 在视口右半边、顶上让 60px）。 */
 .reader-notes-panel--workspace {
-  position: fixed;
+  position: absolute;
   display: grid;
   grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
-  inset: 60px 0 0 auto;
-  z-index: 24;
-  width: 50vw;
-  width: 50dvw;
+  inset: 0;
+  width: auto;
   height: auto;
   max-height: none;
   border: 0;
@@ -48,26 +47,12 @@
   grid-template-rows: auto minmax(0, 1fr);
 }
 
-.reader-notes-panel--workspace.is-pane-left {
-  inset-inline: 0 auto;
-}
-
-.reader-notes-panel--workspace.is-pane-right {
-  inset-inline: auto 0;
-}
-
 @keyframes reader-workspace-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 520px) {
-  .reader-notes-panel--workspace {
-    inset: 58px 0 0;
-    width: 100vw;
-    width: 100dvw;
-  }
-}
+
 
 @media (prefers-reduced-motion: reduce) {
   .reader-notes-panel--workspace {

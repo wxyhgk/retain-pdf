@@ -38,6 +38,11 @@
 `id = category = "thought_level"`）。`session/set_config_option(configId="thought_level", value)` 只改这个会话下一问的档位，
 不重开会话，回整份 `configOptions`；不认识的 `configId`、不在 `options` 里的 `value` 回 -32602。改过档位后问模型时 `options` 多
 `thinking_level`（没改过不带，按握手的思考深度发）。不报 `category = "model"`：模型是用户在设置里存的连接，换模型重开会话。
+
+2026-11-27 用户：「只有开和关……太诡异了」。每档报英文名（Off / On / Low …，用户：「思考不要用中文!」）和一句中文说明（`options[].name` / `description`，这一项也有 `description`）；
+改了档位调用方给的 `remember_thinking` 记下（下次开会话默认这一档，读写在接线的 `thinking_choice.py`）；每问答完 `_meta.retainpdf.usage.thinking`
+报 `{level, thought}`（这一问有没有真的思考：收到思考内容、思考 token 大于 0、或者正文里有 `<think>`），档位是猜的（`thinking.guessed`）、
+开了思考却没思考时再带 `notice`（一句给用户看的话）。
 """
 from __future__ import annotations
 
@@ -98,7 +103,9 @@ PARSE_ERROR = -32700
 RESOURCE_NOT_FOUND = -32002
 # ACP session config option：思考强度这一项的 id 和 category
 THOUGHT_LEVEL = "thought_level"
-THOUGHT_LEVEL_NAME = "思考"
+THOUGHT_LEVEL_NAME = "Thinking"
+# 档位是猜的模型开了思考、这一问却没见思考时给用户看的话（`_meta.retainpdf.usage.thinking.notice`）
+THINKING_NOT_SEEN_NOTICE = "这一问没收到思考内容：这个服务可能不认思考开关，开不开都一样。"
 
 StreamFn = Callable[..., Iterator[tuple[str, Any]]]
 
@@ -192,8 +199,9 @@ class Session:
 class AskAgent:
     def __init__(self, stream_fn: StreamFn, *, model: str = "", context_size: int = 0, out: TextIO | None = None,
                  tools: Tools | None = None, openui: OpenUiTools | None = None, thinking: dict[str, Any] | None = None,
-                 memory: MemoryTools | None = None):
+                 memory: MemoryTools | None = None, remember_thinking: Callable[[str], Any] | None = None):
         self.stream_fn = stream_fn
+        self.remember_thinking = remember_thinking
         self.memory = memory
         self.thinking = thinking if thinking and thinking.get("options") else None
         self.tools = tools
@@ -307,13 +315,16 @@ class AskAgent:
     def _config_options(self, session: Session) -> list[dict[str, Any]]:
         if self.thinking is None:
             return []
+        description = str(self.thinking.get("description") or "")
         return [{
             "id": THOUGHT_LEVEL,
             "name": THOUGHT_LEVEL_NAME,
+            **({"description": description} if description else {}),
             "category": THOUGHT_LEVEL,
             "type": "select",
             "currentValue": self._thinking_level(session),
-            "options": [{"value": str(option["value"]), "name": str(option.get("name") or option["value"])}
+            "options": [{"value": str(option["value"]), "name": str(option.get("name") or option["value"]),
+                         **({"description": str(option["description"])} if option.get("description") else {})}
                         for option in self.thinking["options"]],
         }]
 
@@ -331,8 +342,13 @@ class AskAgent:
         if not isinstance(value, str) or value not in allowed:
             self._error(request_id, INVALID_PARAMS, f"{THOUGHT_LEVEL} must be one of {', '.join(allowed)}")
             return
-        # 正在答的这一问不受影响（开问时已经定了档位），下一问起用新的
+        # 正在答的这一问不受影响（开问时已经定了档位），下一问起用新的；记下来，下次开会话默认这一档
         session.thinking_level = value
+        if self.remember_thinking is not None:
+            try:
+                self.remember_thinking(value)
+            except Exception:  # noqa: BLE001 - 记不下不影响改档位
+                pass
         self._result(request_id, {"configOptions": self._config_options(session)})
 
     # 一问 ---------------------------------------------------------------
@@ -439,6 +455,7 @@ class AskAgent:
         # 这一问的思考档位：开问时定下（答的中途改档位不影响这一问）。没改过不传，接线按握手的思考深度发
         thinking_level = session.thinking_level
         current_level = self._thinking_level(session)
+        thought_seen = False
         try:
             while not session.cancel.is_set():
                 rounds += 1
@@ -462,6 +479,7 @@ class AskAgent:
                         if first_token_ms is None:
                             first_token_ms = int((time.monotonic() - started) * 1000)
                         update = "agent_thought_chunk" if kind == "thought" else "agent_message_chunk"
+                        thought_seen = thought_seen or kind == "thought" or (kind == "text" and "<think>" in value)
                         self._update(session.id, {"sessionUpdate": update, "content": {"type": "text", "text": value}})
                         if kind == "text":
                             texts.append(value)
@@ -517,9 +535,11 @@ class AskAgent:
             *([{"role": "assistant", "content": text}] if text else []),
         ])
         del session.history[:-MAX_HISTORY_MESSAGES]
+        thought_seen = thought_seen or int(totals.get("reasoning_tokens") or 0) > 0 or "<think>" in text
         meta = {
             "model": self.model,
             **({"thinking_level": current_level} if current_level else {}),
+            **({"thinking": self._thinking_report(current_level, thought_seen, stop_reason)} if current_level else {}),
             "elapsed_ms": int((time.monotonic() - started) * 1000),
             **({"first_token_ms": first_token_ms} if first_token_ms is not None else {}),
             **totals,
@@ -538,6 +558,15 @@ class AskAgent:
             })
         session.busy = False
         self._result(request_id, {"stopReason": stop_reason, "_meta": {"retainpdf": {"usage": meta}}})
+
+    def _thinking_report(self, level: str, thought: bool, stop_reason: str) -> dict[str, Any]:
+        """这一问的思考：档位、有没有真的思考；档位是猜的、开了却没思考（正常答完的）时带一句给用户看的话。"""
+        report: dict[str, Any] = {"level": level, "thought": thought}
+        thinking = self.thinking or {}
+        if (thinking.get("guessed") and not thought and stop_reason == "end_turn"
+                and level not in (thinking.get("no_thinking") or [])):
+            report["notice"] = THINKING_NOT_SEEN_NOTICE
+        return report
 
     def _run_tool(self, session: Session, call: dict[str, Any], round_number: int) -> dict[str, Any]:
         """跑一个工具，前后各发一条 ACP 更新（`tool_call` 进行中 → `tool_call_update` 完成 / 失败），返回给模型的 tool 消息。

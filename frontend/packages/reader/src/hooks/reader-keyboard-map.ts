@@ -61,7 +61,7 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
       { actions: ["next-page"], keys: "J · ↓ · PgDn", desc: "下一页" },
       { actions: ["prev-page"], keys: "K · ↑ · PgUp", desc: "上一页" },
       { actions: ["first-page", "last-page"], keys: "Home / End", desc: "首页 / 末页" },
-      { actions: [], keys: "点底栏页码", desc: "输入页码跳转" },
+      { actions: [], keys: "点底下的页码", desc: "输入页码跳转" },
     ],
   },
   {
@@ -88,18 +88,16 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
     ],
   },
   {
-    title: "画笔",
+    // 画笔、提问这些扩展自己的快捷键由扩展登记（快捷键说明里排在这几组后面）。
+    title: "右键",
     items: [
-      { actions: [], keys: "P", desc: "进入 / 退出画笔（书页上右键也能选笔和颜色）" },
-      { actions: [], keys: "Esc", desc: "退出画笔" },
-      { actions: [], keys: "⌘Z / Ctrl+Z", desc: "画笔模式下撤销" },
       { actions: [], keys: "Shift+右键", desc: "浏览器自己的右键菜单" },
     ],
   },
   {
     title: "待处理",
     items: [
-      { actions: [], keys: "N / Shift+N", desc: "跳到下一处 / 上一处要看一眼的段落（底栏「待处理」）" },
+      { actions: [], keys: "N / Shift+N", desc: "跳到下一处 / 上一处要看一眼的段落（左栏「待改」）" },
     ],
   },
   {
@@ -116,13 +114,6 @@ export const READER_SHORTCUT_HELP: readonly ReaderShortcutHelpGroup[] = [
       { actions: [], keys: "E", desc: "改鼠标停着的那一段" },
       { actions: [], keys: "Alt+↑ / Alt+↓", desc: "改上一段 / 下一段" },
       { actions: [], keys: "⌘Enter / Ctrl+Enter", desc: "保存" },
-    ],
-  },
-  {
-    title: "引用（「图 2.1」「式 (3.21)」）",
-    items: [
-      { actions: [], keys: "Alt+←", desc: "点了引用跳过去以后，回到原处" },
-      { actions: [], keys: "Alt+→", desc: "再跳回去" },
     ],
   },
 ];

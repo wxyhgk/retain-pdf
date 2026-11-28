@@ -80,3 +80,152 @@
   background: color-mix(in srgb, var(--ink) 6%, transparent);
   color: var(--ink);
 }
+
+/* 术语记忆「加进术语表」的那一小块（2026-11-27）：原文 / 译法一行，挑表 + 加进去一行。 */
+.reader-memory-glossary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.reader-memory-glossary-pair {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reader-memory-glossary-pair > input,
+.reader-memory-glossary-pair > .ui-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.reader-memory-note[data-tone="ok"] {
+  margin-top: 4px;
+  color: var(--ink);
+}
+
+/* 提问窗标题栏左边的对话菜单（ReaderAskConversationMenu，2026-11-27）：开新对话前的确认、「以前的对话」列表。
+ * 下拉本身是 @retainpdf/ask 的 .ask-head-menu。 */
+.reader-ask-conversations > summary {
+  max-width: 220px;
+  font-weight: 600;
+}
+
+.reader-ask-conversations .reader-ask-crumb {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reader-ask-confirm {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 8px;
+  color: var(--ink);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.reader-ask-confirm > span {
+  flex: 1 1 auto;
+}
+
+.reader-ask-confirm-yes,
+.reader-ask-confirm-no {
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-sm, 6px);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--ui-text-xs, 11px);
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-ask-confirm-yes {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+  color: var(--accent);
+}
+
+.reader-ask-history {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.reader-ask-history:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.reader-ask-history-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 2px 8px 4px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+.reader-ask-history-note {
+  margin: 0;
+  padding: 4px 8px;
+  color: var(--muted);
+  font-size: var(--ui-text-xs, 11px);
+}
+
+/* 标题栏左边写的是哪段对话（对话菜单的按钮里、以前按书存的提问的标题）：太长截断。2026-11-27 以前借提问窗的 .ask-crumb。 */
+.reader-ask-crumb {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 副对话底下那一条（ReaderAskPanel 的 SideBar）：「聊完了？结论会带回主对话」+「结束，带回结论」。2026-11-27 以前借提问窗的 .ask-side-bar。 */
+.reader-ask-side-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 6px 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--ui-text-sm, 12px);
+}
+
+.reader-ask-side-bar > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.reader-ask-side-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-pill, 999px);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+/* 对话读写出错（ReaderAskPanel 的 footer）。和提问窗自己的 .ask-error 一个样子。 */
+.reader-ask-error {
+  margin: 8px 0;
+  padding: 0 14px;
+  color: var(--danger, var(--ink));
+  font-size: var(--ui-text-sm, 13px);
+  line-height: 1.6;
+}
