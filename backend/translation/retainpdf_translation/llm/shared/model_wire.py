@@ -29,11 +29,13 @@ Anthropic 换成 ``text`` / ``image``（base64 或网址）。system 消息只�
 from __future__ import annotations
 
 import base64
+import functools
 import json
 import os
 import re
 import threading
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -861,6 +863,8 @@ class ThinkingMenu:
     levels: tuple[ThinkingLevel, ...]
     by_setting: tuple[tuple[str, str], ...]
     guessed: bool = False
+    # 档位从哪来：code（下面写在代码里的规则）、table（我们维护的 thinking_models.json）、api:<服务商>（问服务商接口问到的）
+    source: str = "code"
 
     def values(self) -> list[str]:
         return [level.value for level in self.levels]
@@ -974,8 +978,87 @@ def _generic_switch(on: bool, *, responses: bool = False) -> tuple[dict[str, Any
     return tuple(candidates)
 
 
+# 档位从弱到强的顺序（设置里的思考深度按它找最近的一档）；on 是只有开关的「开」
+_LEVEL_ORDER = ("minimal", "low", "medium", "high", "xhigh", "max")
+_OFF_LEVELS = ("off", "none")
+THINKING_TABLE_FILE = Path(__file__).with_name("thinking_models.json")
+
+
+def _nearest_level(setting: str, values: list[str], auto: str) -> str:
+    """设置里的思考深度换成这张表的一档：auto 是表里写的；off 是不思考那档（没有就最低档）；只有开关的 low…max 都是 on；
+    别的同名，没有同名的取最近的低一档（再没有取最低的）。"""
+    if setting == "auto":
+        return auto
+    if setting == "off":
+        return next((value for value in values if value in _OFF_LEVELS), values[0])
+    if "on" in values:
+        return "on"
+    if setting in values:
+        return setting
+    graded = [value for value in values if value in _LEVEL_ORDER]
+    if not graded:
+        return values[-1]
+    lower = [value for value in graded if _LEVEL_ORDER.index(value) <= _LEVEL_ORDER.index(setting)]
+    return lower[-1] if lower else graded[0]
+
+
+def menu_from_spec(spec: dict[str, Any], *, source: str) -> ThinkingMenu | None:
+    """按写好的档位建档位表（我们维护的表、问接口问到的都是这个写法）::
+
+        {"levels": [{"value": "off", "fields": [{...}, ...]}, ...], "auto": "on", "guessed": false}
+
+    ``fields`` 不用写最后的 ``{}``（自动加上）。没有档位（模型不思考）、或只有一档（没得选）是 None。"""
+    raw_levels = spec.get("levels") if isinstance(spec, dict) else None
+    if not isinstance(raw_levels, list):
+        return None
+    levels: list[ThinkingLevel] = []
+    for item in raw_levels:
+        if not isinstance(item, dict) or not str(item.get("value") or "").strip():
+            continue
+        fields = [dict(field) for field in item.get("fields") or [] if isinstance(field, dict) and field]
+        levels.append(_level(str(item["value"]).strip(), *fields))
+    if len(levels) < 2:
+        return None
+    values = [level.value for level in levels]
+    auto = str(spec.get("auto") or "")
+    if auto not in values:
+        auto = "on" if "on" in values else ("high" if "high" in values else values[-1])
+    mapping = tuple((setting, _nearest_level(setting, values, auto)) for setting in THINKING_LEVELS)
+    return ThinkingMenu(levels=tuple(levels), by_setting=mapping, guessed=bool(spec.get("guessed")), source=source)
+
+
+@functools.lru_cache(maxsize=1)
+def _thinking_table() -> tuple[dict[str, Any], ...]:
+    try:
+        data = json.loads(THINKING_TABLE_FILE.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return ()
+    models = data.get("models") if isinstance(data, dict) else None
+    return tuple(item for item in models or [] if isinstance(item, dict))
+
+
+def table_thinking_menu(*, protocol: Any, model: str, base_url: str) -> ThinkingMenu | None:
+    """我们维护的表（``thinking_models.json``）里第一条对上这个连接的；没有是 None。``checked`` 空的算猜的。"""
+    protocol = normalize_protocol(protocol)
+    host = hostname(base_url)
+    name = str(model or "").strip()
+    for entry in _thinking_table():
+        match = entry.get("match") or {}
+        if match.get("protocols") and protocol not in match["protocols"]:
+            continue
+        if match.get("hosts") and host not in match["hosts"]:
+            continue
+        pattern = match.get("model")
+        if pattern and not re.search(str(pattern), name, re.IGNORECASE):
+            continue
+        return menu_from_spec({**entry, "guessed": not str(entry.get("checked") or "").strip()}, source="table")
+    return None
+
+
 def thinking_menu(*, protocol: Any, model: str, base_url: str) -> ThinkingMenu | None:
     """这个连接（协议 + 地址 + 模型）的思考档位表；认不出是 None。``base_url`` 要传实际用的地址（OpenAI 协议没填时调用方的默认地址）。
+
+    先查我们维护的表（``thinking_models.json``，2026-11-27 起，Qwen3.8 在那里），没对上再按下面写在代码里的规则：
 
     - Anthropic：low / medium / high / max，Opus 4.7 起的新模型多 xhigh；不发就不思考的模型多 off（什么都不加）。
       设置的 off 和以前一样换成 low（见 ``anthropic_thinking_candidates``）。
@@ -990,6 +1073,9 @@ def thinking_menu(*, protocol: Any, model: str, base_url: str) -> ThinkingMenu |
       Responses 上名字带 qwen3 的也走它。auto 不加字段，报 on。``guessed``。api.openai.com 上认不出的（gpt-4o 这类不推理的）仍然是 None。
     """
     protocol = normalize_protocol(protocol)
+    table = table_thinking_menu(protocol=protocol, model=model, base_url=base_url)
+    if table is not None:
+        return table
     if protocol == PROTOCOL_ANTHROPIC:
         return _anthropic_menu(model)
     host = hostname(base_url)
@@ -1043,6 +1129,9 @@ __all__ = [
     "PROTOCOL_OPENAI",
     "PROTOCOL_OPENAI_RESPONSES",
     "THINKING_LEVELS",
+    "ThinkingMenu",
+    "menu_from_spec",
+    "table_thinking_menu",
     "anthropic_body",
     "anthropic_content",
     "anthropic_headers",
