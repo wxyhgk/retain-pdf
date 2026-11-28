@@ -22,7 +22,14 @@ fn page_json() -> Value {
         "blocks": [{"id": "p002-b0002", "fontSize": 10.4, "weight": "regular", "color": [0, 0, 0],
             "lines": [{"text": "我们 $x$", "x": 50.2, "baseline": 600.1, "width": 240.0, "justified": true,
                 "items": [{"x": 50.2, "t": "我"}, {"x": 60.7, "t": "们"}, {"x": 71.1, "t": "1.", "mode": "dflt"},
-                          {"x": 80.0, "tex": "x", "display": false, "w": 0.57, "h": 0.44, "d": 0.01}]}]}]
+                          {"x": 80.0, "tex": "x", "display": false, "w": 0.57, "h": 0.44, "d": 0.01}]}]}],
+        "erase": [{"rect": [72.0, 90.5, 180.2, 102.1], "fill": [1, 1, 1]}],
+        "tables": [{"id": "p002-b0005",
+            "cover": {"rect": [44.0, 300.0, 520.0, 420.0], "fill": [1, 1, 1]},
+            "rules": [{"rect": [46.0, 301.55, 518.0, 302.45], "fill": [0, 0, 0]}],
+            "blocks": [{"id": "p002-b0005:r0c0", "fontSize": 9.0, "weight": "bold", "color": [0, 0, 0],
+                "lines": [{"text": "样品", "x": 50.0, "baseline": 312.0, "width": 18.0, "justified": false,
+                    "items": [{"x": 50.0, "t": "样", "font": "SourceHanSerifSC-Bold"}, {"x": 59.0, "t": "品", "font": "SourceHanSerifSC-Bold"}]}]}]}]
     })
 }
 
@@ -36,6 +43,7 @@ fn write_layout(rendered: &Path) {
         "schema": "reader_layout_v1", "layout_schema": "rpr_layout_v1",
         "engine_version": "0.3.0", "engine_commit": "417a441", "output_pdf": "translated.pdf",
         "background": {"file": "background.pdf", "pages": [1]},
+        "features": ["erase", "tables"],
         "fonts": [
             {"key": "SourceHanSerifSC-Regular", "postscript": "SourceHanSerifSC-Regular", "family": "Source Han Serif SC",
              "weight": 400, "mono": false, "file": "fonts/SourceHanSerifSC-Regular.woff2", "etag": "aaaabbbbccccdddd"},
@@ -43,7 +51,7 @@ fn write_layout(rendered: &Path) {
             {"key": "Evil", "family": "x", "weight": 400, "file": "../translated.pdf", "etag": "0"}
         ],
         "pages": [
-            {"index": 1, "width": 612.0, "height": 792.0, "etag": "0123456789abcdef", "blocks": 1, "file": "pages/00001.json.gz"},
+            {"index": 1, "width": 612.0, "height": 792.0, "etag": "0123456789abcdef", "blocks": 1, "tables": 1, "file": "pages/00001.json.gz"},
             // 清单里写着跳出目录的文件名：不认
             {"index": 2, "width": 612.0, "height": 792.0, "etag": "fedcba9876543210", "blocks": 1, "file": "../translated.pdf"}
         ]
@@ -128,6 +136,8 @@ async fn reader_layout_lists_the_kept_pages_and_serves_one_page_with_an_etag() {
     assert_reader_view(entry, "ReaderLayoutPageEntry", "layout.pages[0]");
     assert_eq!(entry["index"], 1);
     assert_eq!(entry["etag"], "0123456789abcdef");
+    assert_eq!(entry["tables"], 1);
+    assert_eq!(data["features"], json!(["erase", "tables"]));
     assert!(entry["url"].as_str().unwrap().ends_with(&format!("/api/v1/jobs/{job_id}/reader/layout/pages/1")));
 
     let uri = format!("/api/v1/jobs/{job_id}/reader/layout/pages/1");

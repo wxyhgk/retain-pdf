@@ -59,6 +59,9 @@ struct Manifest {
     /// 按书切的字体子集（woff2），主字体在前；没装 fontTools 时空的。
     #[serde(default)]
     fonts: Vec<ManifestFont>,
+    /// 页文件里有 `erase`、`tables`（2026-11-28 起）。
+    #[serde(default)]
+    features: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -107,6 +110,8 @@ struct ManifestPage {
     etag: String,
     #[serde(default)]
     blocks: u32,
+    #[serde(default)]
+    tables: u32,
     file: String,
 }
 
@@ -168,6 +173,7 @@ fn unavailable(reason: &str, generate: Option<ReaderLayoutGenerateView>) -> Read
         pages: Vec::new(),
         background: None,
         fonts: Vec::new(),
+        features: Vec::new(),
         generate,
     }
 }
@@ -195,6 +201,7 @@ pub(crate) fn load_reader_layout_view(data_root: &Path, job: &JobSnapshot, base_
                     height: page.height,
                     etag: page.etag,
                     blocks: page.blocks,
+                    tables: page.tables,
                 })
                 .collect();
             let background = manifest
@@ -230,6 +237,7 @@ pub(crate) fn load_reader_layout_view(data_root: &Path, job: &JobSnapshot, base_
                 pages,
                 background,
                 fonts,
+                features: manifest.features,
                 generate: None,
             };
         }

@@ -10,7 +10,9 @@
 //   { schema: "rpr_table_input_v1",
 //     pages: [{ index, width, height, tables: [ <table, see src/table/layout.js> ] }] }
 // Writes DIR/overlay.pdf, DIR/layout.json (rpr_layout_v1: redraw with
-// bin/rpr-layout-pdf.js) and DIR/report.json (rpr_table_report_v1: per table
+// bin/rpr-layout-pdf.js; annotated like the body text's, each cluster's font,
+// each formula's svg under DIR/math/, the faces used in layout.fonts, so a
+// browser can draw the same table) and DIR/report.json (rpr_table_report_v1: per table
 // fits / fontSize / width / height / columns / line_height / padding_y). Cells are text with "$...$"
 // formulas (MathJax, like the body text). Fonts: every --font-path, then the
 // bundled data/fonts. Exit 0 on success; otherwise non-zero with one JSON
@@ -79,7 +81,7 @@ function main() {
       bold: Text.createMeasurer({ metrics: fontTable("bold") })
     };
     fs.mkdirSync(options.outDir, { recursive: true });
-    const maths = new MathStore(options.outDir, { files: false });
+    const maths = new MathStore(options.outDir, { pad: false });
     const renderMathBox = (tex, display) => maths.renderMathBox(tex, display);
     // Formulas inside a cell are inline.
     const contentFor = text => Text.contentFromText(text, { renderMathBox }).map(run => (run.type === "math" ? { ...run, display: false } : run));

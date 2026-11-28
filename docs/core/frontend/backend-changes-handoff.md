@@ -12,6 +12,17 @@
 
 ---
 
+## 阅读页只加载原文 PDF：版面里写明要抹掉的原字、表格进版面（feat/reader-layout-erase-tables）
+
+2026-11-28，只增不改。前端方案 `docs/ops/planning/reader-redesign/20261128-阅读页只加载原文PDF.md` 的第 1、2 条，接口见
+[阅读接口](../../api/12-阅读/01-阅读接口.md)「排版引擎的版面」。契约 `reader-data.v1`：清单加 `features`、每页条目加 `tables`，
+页加 `erase`、`tables`（新定义 `ReaderLayoutPaint`、`ReaderLayoutTable`）。引擎同步到表格版面也带字体和公式 SVG 的提交。
+
+| 文件 | 现在 | 要改成 |
+|---|---|---|
+| HTML 页 / 译文栏的渲染器 | 底图（`background`）→ `covers` → 字；表格是原文 | 清单 `features` 有 `erase` 时不下载底图：原文页 → `erase` → `covers` → 每张表 `cover`、`rules` → 正文和表格的字（表格的块和正文的块一样画，字体、公式 SVG 同一套）。`features` 空（以前存的版面）照旧用底图 |
+| 搜索、悬停框 | 只看 `blocks` | 表格的字在 `tables[].blocks`（块 `id` 是 `<表格块 id>:r<行>c<列>`），要一起算 |
+
 ## 阅读页 HTML 页：照排版引擎的版面画（feat/reader-layout、feat/reader-layout-fonts）
 
 2026-11-28，只增不改。前端需求 `docs/ops/planning/reader-redesign/20261128-HTML页照排版结果画-后端需求.md`，接口见

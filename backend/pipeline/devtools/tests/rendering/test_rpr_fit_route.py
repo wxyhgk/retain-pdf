@@ -643,6 +643,36 @@ def test_the_text_stripped_background_is_kept_for_the_laid_out_pages(tmp_path: P
         assert "source text" not in background[0].get_text(), "the background is the stripped render source"
 
 
+def _page_file(target: Path, index: int) -> dict:
+    import gzip
+
+    return json.loads(gzip.decompress((target / "pages" / f"{index:05d}.json.gz").read_bytes()))
+
+
+def test_stripped_text_outside_the_covers_is_listed_as_erase_so_the_reader_needs_no_background(tmp_path: Path, monkeypatch) -> None:
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path)
+    # 一行英文小标题，不在译文块里：去字 PDF 抹掉了它，只有底图知道
+    with fitz.open(source_pdf) as doc:
+        doc[0].insert_text((20, 150), "INTRODUCTION", fontsize=12)
+        doc.saveIncr()
+    stripped = _stripped_copy(source_pdf, tmp_path / "stripped.pdf")
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _pages, diagnostics, _calls = _dispatch(context, mode="typst", source_pdf_path=stripped, translated_pages=translated)
+    target = _reader_layout(context)
+    manifest = json.loads((target / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["features"] == ["erase", "tables"]
+    assert [page["tables"] for page in manifest["pages"]] == [0, 0]
+    first, second = _page_file(target, 0), _page_file(target, 1)
+    [erase] = first["erase"]
+    with fitz.open(source_pdf) as doc:
+        heading = doc[0].search_for("INTRODUCTION")[0]
+    assert fitz.Rect(erase["rect"]).contains(heading) and erase["fill"] == [1.0, 1.0, 1.0]
+    # 正文那行在译文块的 cover 下面，交给 cover
+    assert second["erase"] == [] and first["tables"] == [] and second["tables"] == []
+    assert diagnostics["rpr_fit_reader_layout"]["erase"] == 1
+
+
 def test_a_formula_block_put_back_from_the_original_is_put_back_on_the_background_too(tmp_path: Path, monkeypatch) -> None:
     install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
     source_pdf, document_path, translated = _job(tmp_path, texts=("RAWTEX \\frac{a}{b} end", "第二页译文"))
