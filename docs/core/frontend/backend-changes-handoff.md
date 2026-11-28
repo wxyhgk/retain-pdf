@@ -21,7 +21,7 @@
 | 文件 | 现在 | 要改成 |
 |---|---|---|
 | HTML 页的渲染器 | 开发时读 `?render_layout=<清单>` | 读 `GET /jobs/{id}/reader/layout`，按页取 `…/pages/{page_idx}`；先画 `background`（null 用原文页），再画 `covers`、字；字体用清单 `fonts`（字簇 `font` 对 `key`），公式贴 `…/reader/layout/<svg>`；`available: false` 时有 `generate` 就给「生成 HTML 排版」按钮 |
-| 桌面安装包的 Python 依赖（`frontend/desktop/requirements-desktop-*.txt`，`sync_backend_python_requirements.py` 生成） | 没有 fontTools、brotli | 要不要带由前端定。带上（pipeline 的 extra `reader-fonts`：`fonttools==4.68.0`、`brotli==1.2.1`，约 5 MB）桌面版才有按书切的字体；不带时清单 `fonts` 是空的，HTML 页退回本机字体，译文 PDF 不受影响。后端工作区、Docker 已经带了 |
+| 桌面安装包的 Python 依赖（`frontend/desktop/requirements-desktop-*.txt`，`sync_backend_python_requirements.py` 生成） | 没有 fontTools、brotli | **已带上**（2026-11-28 用户定）：脚本加了 `DESKTOP_PIPELINE_EXTRAS = ("reader-fonts",)`，三份桌面清单多了 `brotli==1.2.1`、`fonttools==4.68.0`（约 5 MB），桌面版也有按书切的字体。`scan-ocr` 桌面还没定，不带 |
 
 ## 阅读页提问：思考档位给用户看得懂的名字、记住上次选的、报有没有真的思考（feat/ask-thinking-levels）
 
