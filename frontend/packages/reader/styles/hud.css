@@ -131,7 +131,7 @@
   color: var(--ink);
 }
 
-/* 「收藏」入口点开的小卡（功能还在做，只说一句）。 */
+/* 「收藏」点开往上弹的列表（选字收的段落，2026-11-28）：每条两行截断、后面灰的页码，悬停出 ×。 */
 .reader-favorites {
   position: relative;
   display: inline-flex;
@@ -139,23 +139,105 @@
 
 .reader-favorites-card {
   position: absolute;
-  bottom: calc(100% + 8px);
-  left: 0;
+  bottom: calc(100% + 12px);
+  left: -4px;
   display: grid;
-  gap: 4px;
-  width: 240px;
-  padding: 10px 12px;
+  gap: 6px;
+  width: min(320px, calc(100vw - 32px));
+  max-height: min(420px, calc(100dvh - 96px));
+  padding: 10px 8px 8px 12px;
   border: 1px solid color-mix(in srgb, var(--ink) 9%, transparent);
   border-radius: var(--reader-float-radius, var(--ui-radius-md, 8px));
   background: var(--paper);
   color: var(--ink);
   font-size: var(--ui-text-xs, 11px);
   line-height: 1.6;
+  grid-template-rows: auto minmax(0, 1fr);
 }
 
 .reader-favorites-card p {
   margin: 0;
+  padding-right: 4px;
   color: var(--muted);
+}
+
+.reader-favorites-count {
+  margin-left: 6px;
+  color: var(--muted);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.reader-favorites-list {
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.reader-favorites-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.reader-favorites-jump {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 2px;
+  padding: 6px 6px;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-sm, 12px);
+  line-height: 1.5;
+  text-align: left;
+  cursor: var(--cursor-pointer, pointer);
+}
+
+.reader-favorites-jump:hover {
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+}
+
+.reader-favorites-text {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.reader-favorites-page {
+  color: var(--muted);
+  font-size: var(--ui-text-2xs, 10.5px);
+  font-variant-numeric: tabular-nums;
+}
+
+.reader-favorites-remove {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-top: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ui-radius-sm, 6px);
+  background: transparent;
+  color: var(--muted);
+  cursor: var(--cursor-pointer, pointer);
+  opacity: 0;
+}
+
+.reader-favorites-list li:hover .reader-favorites-remove,
+.reader-favorites-remove:focus-visible {
+  opacity: 1;
+}
+
+.reader-favorites-remove:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
 }
 
 .reader-react-hud-modes {

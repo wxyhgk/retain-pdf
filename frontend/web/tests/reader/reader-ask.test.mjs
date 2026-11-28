@@ -97,7 +97,7 @@ test("接线：宿主不给端口就没有提问入口；? 只在选着书页上
   assert.match(vite, /@retainpdf\\\/ask/, "提问窗的包不打进阅读器 dist");
 });
 
-test("主对话接线：打开取主对话、读最近一页；每答完一轮追加（该压了就压）；结束了的副对话接着问先再开；窗口开着时书页上选字更新下一问的出处", () => {
+test("主对话接线：打开取主对话、读最近一页；每答完一轮追加（该压了就压）；结束了的副对话接着问先再开；书页上选字不再悄悄带进提问", () => {
   const hook = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-conversation.ts", import.meta.url), "utf8");
   assert.match(hook, /const main = await conversations\.main\(bookRef\.current\.documentId \|\| undefined\);/, "主对话按书取（11-27）");
   assert.match(hook, /if \(shownBook\.current === book\.documentId\) return;/, "换书清掉上一本的对话");
@@ -106,10 +106,9 @@ test("主对话接线：打开取主对话、读最近一页；每答完一轮�
   assert.match(hook, /if \(result\.compaction_due && conversation\.kind === "main"\) void conversations\.compact/);
   assert.match(hook, /ask_conversation_not_open/);
   const wiring = readFileSync(new URL("../../../packages/reader/src/ask/use-reader-ask.tsx", import.meta.url), "utf8");
-  assert.match(wiring, /document\.addEventListener\("selectionchange", onChange\)/);
-  assert.match(wiring, /if \(!anchor \|\| used\.current\.has\(anchor\.selection\)\) return;/, "发出去的、不要的那段不再冒出来");
-  // 11-27：已经带着一处就不悄悄换掉，输入框上面问「换成这段 / 再加一段」。
-  assert.match(wiring, /if \(pendingNow\.current\) setOffer\(anchor\);\n        else setPending\(anchor\);/);
+  // 11-27 起窗口开着时选字会带进下一问（带着一处时问「换成这段 / 再加一段」）；2026-11-28 用户：「取消开着 AI 时
+  // selectionchange 自动偷塞出处」——要问点选字浮条的「提问」、右键「问这段」或按 ?（reader-selection.test.mjs）。
+  assert.doesNotMatch(wiring.replace(/\/\/[^\n]*/g, ""), /selectionchange/, "又在听选字");
   const marks = readFileSync(new URL("../../../packages/reader/src/ask/use-ask-marks.ts", import.meta.url), "utf8");
   assert.match(marks, /port\.threads\?\.list\(documentId\)/, "以前按书存的照旧画");
   assert.match(marks, /port\.conversations\?\.bookMessages\(documentId\)/);

@@ -1,12 +1,15 @@
-// 底栏左边：「书签」（给当前页加 / 取消书签，按书存在本机，见 reader-bookmarks.ts；书签列表在左栏「书签」页签）和紧挨着的「收藏」入口。
-// 2026-11-28 两条栏只用图标（bar-icon.ts，名字在悬停里）。「收藏」功能还没做，点开只说一句还在做（用户要先留入口）。
+// 底栏左边：「书签」（给当前页加 / 取消书签，按书存在本机，见 reader-bookmarks.ts；书签列表在左栏「书签」页签）和紧挨着的「收藏」。
+// 2026-11-28 两条栏只用图标（bar-icon.ts，名字在悬停里）。「收藏」11-28 先只留入口，同一天做出来：书页上选一段字，
+// 浮条或右键「收藏」收进来（reader-favorites.ts），这里点开往上弹一张列表，点一条翻回那一页，悬停出 × 删掉。
 
 import { useEffect, useRef, useState } from "react";
-import { Bookmark, Star } from "lucide-react";
+import { Bookmark, Star, X } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 import { BAR_ICON } from "./bar-icon.js";
 
 import { useReaderBookmarks } from "../../hooks/use-reader-bookmarks.js";
+import { useReaderFavorites } from "../../hooks/use-reader-favorites.js";
+import { useReaderContext } from "./reader-context.js";
 import type { ReaderRegion } from "../../shared/data/reader-regions.js";
 
 export type ReaderBookmarkControlProps = {
@@ -39,15 +42,17 @@ export function ReaderBookmarkControl({ scope, currentPage, numPages, regions }:
       >
         <BookmarkIcon filled={marked} />
       </button>
-      <ReaderFavoritesEntry />
+      <ReaderFavoritesEntry scope={scope} />
     </div>
   );
 }
 
-/** 「收藏」入口：功能还没做，点开一张小卡说明（点外面、Esc 收起）。 */
-function ReaderFavoritesEntry() {
+/** 「收藏」：点开往上弹这本书收的段落（新收的在上面），点一条翻回去；点外面、Esc 收起。 */
+function ReaderFavoritesEntry({ scope }: { scope: string }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLSpanElement | null>(null);
+  const { favorites, remove } = useReaderFavorites(scope);
+  const goToPage = useReaderContext()?.goToPage;
   useEffect(() => {
     if (!open) return undefined;
     const onPointer = (event: PointerEvent) => {
@@ -63,22 +68,51 @@ function ReaderFavoritesEntry() {
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
+  const count = favorites.length;
   return (
     <span className="reader-favorites" ref={root}>
       <Button
         className="reader-react-hud-btn reader-favorites-toggle"
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label="收藏"
-        title="收藏（还在做）"
+        aria-label={count ? `收藏（${count} 段）` : "收藏"}
+        title={count ? `收藏的段落（${count} 段）` : "收藏：书页上选一段字，点浮条上的「收藏」"}
         onClick={() => setOpen((value) => !value)}
       >
-        <Star {...BAR_ICON} aria-hidden />
+        <Star {...BAR_ICON} fill={count ? "currentColor" : "none"} aria-hidden />
       </Button>
       {open ? (
         <div className="reader-favorites-card reader-floating-surface" role="dialog" aria-label="收藏">
-          <strong>收藏</strong>
-          <p>还在做：以后可以把喜欢的段落、整页收在这里，按书分好，随时翻回来。现在先用「书签」记页。</p>
+          <strong>收藏{count ? <span className="reader-favorites-count">{count}</span> : null}</strong>
+          {count ? (
+            <ul className="reader-favorites-list">
+              {favorites.map((favorite) => (
+                <li key={favorite.id}>
+                  <Button
+                    className="reader-favorites-jump"
+                    title={`翻到第 ${favorite.page} 页`}
+                    onClick={() => {
+                      goToPage?.(favorite.page, favorite.pane);
+                      setOpen(false);
+                    }}
+                  >
+                    <span className="reader-favorites-text">{favorite.text}</span>
+                    <span className="reader-favorites-page">p.{favorite.page}{favorite.pane === "translated" ? " · 译文" : ""}</span>
+                  </Button>
+                  <Button
+                    className="reader-favorites-remove"
+                    aria-label={`删掉第 ${favorite.page} 页这段收藏`}
+                    title="删掉"
+                    onClick={() => remove(favorite.id)}
+                  >
+                    <X size={13} aria-hidden />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>还没有收藏。在书页上选一段字，点浮条上的「收藏」（或右键「收藏这段」），就收在这里，随时翻回来。</p>
+          )}
         </div>
       ) : null}
     </span>

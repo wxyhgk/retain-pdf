@@ -1,1 +1,1 @@
-{"version":3,"file":"ReaderAppReactPdf.d.ts","sourceRoot":"","sources":["../src/ReaderAppReactPdf.tsx"],"names":[],"mappings":"AA+CA,OAAO,EACL,8CAA8C,EAC9C,4BAA4B,EAC5B,KAAK,qBAAqB,GAC3B,MAAM,2BAA2B,CAAC;AAGnC,wBAAgB,iBAAiB,gCAgShC"}
+{"version":3,"file":"ReaderAppReactPdf.d.ts","sourceRoot":"","sources":["../src/ReaderAppReactPdf.tsx"],"names":[],"mappings":"AAgDA,OAAO,EACL,8CAA8C,EAC9C,4BAA4B,EAC5B,KAAK,qBAAqB,GAC3B,MAAM,2BAA2B,CAAC;AAGnC,wBAAgB,iBAAiB,gCAsShC"}

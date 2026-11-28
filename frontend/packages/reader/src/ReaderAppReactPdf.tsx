@@ -27,6 +27,7 @@ import { ReaderBarTools } from "./components/react-pdf/ReaderBarTools.js";
 import { ReaderFinderToggles } from "./components/react-pdf/ReaderFinder.js";
 import { ReaderTocMinimap } from "./components/react-pdf/ReaderTocMinimap.js";
 import { ReaderSideRail } from "./components/react-pdf/ReaderSideRail.js";
+import { ReaderSelectionLayer, selectionMenuItems } from "./components/react-pdf/ReaderSelectionLayer.js";
 import { useReaderIssueNav } from "./hooks/use-reader-issues.js";
 import { ReaderPageMenu, pageMenuFromContextMenu, type ReaderPageMenuState } from "./components/react-pdf/ReaderPageMenu.js";
 import { ReaderPendingEditsPill } from "./components/react-pdf/ReaderPendingEditsPill.js";
@@ -257,7 +258,11 @@ export function ReaderAppReactPdf() {
           onContextMenu={(event) => {
             const menu = pageMenuFromContextMenu(event);
             if (!menu) return;
-            const items = collectMenuItems(contributions, { target: event.target as Element, clientX: event.clientX, clientY: event.clientY, page: menu.page });
+            // 选着书页上的字：最上面是「复制」「收藏这段」（2026-11-28，ReaderSelectionLayer），扩展的（「问这段」……）跟在后面。
+            const items = [
+              ...selectionMenuItems(c.viewStateKey),
+              ...collectMenuItems(contributions, { target: event.target as Element, clientX: event.clientX, clientY: event.clientY, page: menu.page }),
+            ];
             // 没有扩展往菜单里放东西：照旧是浏览器自己的菜单。
             if (!items.length && !menuSections.length) return;
             event.preventDefault();
@@ -298,6 +303,8 @@ export function ReaderAppReactPdf() {
               {tocDocked ? null : <ReaderTocMinimap bookmarks={bookmarks} onJumpPage={c.goToPage} onJumpBlock={jumpToBlock} pinned={tocPinned} onPinChange={setTocPinned} />}
               {/* 右缘竖条：AI 回答、Markdown、下载（2026-11-28 从顶栏右边挪过来，悬浮不占栏）。 */}
               <ReaderSideRail active={assistantPanel} />
+              {/* 选字：清洗复制的字、对照时锁住按下的那一栏、行内公式整个选、每行一条浅冷色色带、松手出「复制 · 收藏 · 提问」浮条。 */}
+              <ReaderSelectionLayer scope={c.viewStateKey} menuItemsAt={(context) => collectMenuItems(contributions, context)} />
               <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={assistantOpen} assistantSplit={sideDocked} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
               <ReaderReactBoot loading={boot.loading} failed={boot.failed} text={boot.text} percent={boot.percent} regionsError={Boolean(session.readerErrors.regions)} metadataError={Boolean(session.readerErrors.metadata)} onRetry={session.refreshJobArtifacts} />
               {/* 底栏也浮在书页区底下（2026-11-28 用户：「继续往下做底部栏的」）：左、中、右三颗胶囊，只盖书页区。 */}

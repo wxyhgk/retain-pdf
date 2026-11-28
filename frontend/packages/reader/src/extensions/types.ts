@@ -56,8 +56,11 @@ export type ReaderApi = {
 /** 右键书页的那一下：点在哪个元素、屏幕坐标、第几页（认不出是 0）。 */
 export type ReaderMenuContext = { target: Element; clientX: number; clientY: number; page: number };
 
-/** 右键菜单画笔那一排上面的一项。 */
-export type ReaderMenuItem = { key: string; label: string; hint?: string; onSelect: () => void };
+/**
+ * 右键菜单画笔那一排上面的一项。inSelectionBar：书页上选着字时也放进选字浮条（「复制 · 收藏 · 提问」那一条，
+ * ReaderSelectionLayer），值是浮条上写的字（2026-11-28，提问的「问这段」在浮条上写「提问」）。
+ */
+export type ReaderMenuItem = { key: string; label: string; hint?: string; inSelectionBar?: string; onSelect: () => void };
 
 /**
  * 每一页上叠一层（页边的标记、笔迹……）：页码、这一页画出来的宽高（像素）、哪一栏（对比版本时左栏是 "compare"）、

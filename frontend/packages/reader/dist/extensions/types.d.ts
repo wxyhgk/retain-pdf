@@ -58,11 +58,15 @@ export type ReaderMenuContext = {
     clientY: number;
     page: number;
 };
-/** 右键菜单画笔那一排上面的一项。 */
+/**
+ * 右键菜单画笔那一排上面的一项。inSelectionBar：书页上选着字时也放进选字浮条（「复制 · 收藏 · 提问」那一条，
+ * ReaderSelectionLayer），值是浮条上写的字（2026-11-28，提问的「问这段」在浮条上写「提问」）。
+ */
 export type ReaderMenuItem = {
     key: string;
     label: string;
     hint?: string;
+    inSelectionBar?: string;
     onSelect: () => void;
 };
 /**

@@ -584,14 +584,17 @@
 .reader-react-pdf-page .textLayer mark.reader-xref:hover {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
-/* 普通文字使用 PDF 原生选区（只留复制，不弹菜单）。 */
+/* 书页上的选区自己画（2026-11-28，ReaderSelectionLayer + selection.css：每行一条齐整的浅冷色色带，公式不再一截一截）：
+ * 浏览器按字画的那层在文字层里透明。以前这里写的是半透明的黄色（--warn 45%），其实一直没生效：阅读页还挂着 pdf.js 自带的
+ * pdf_viewer.css，它不在任何 @layer 里，它的 .textLayer ::selection（系统强调色 25%）压过所有分层的样式；字框又互相叠着，
+ * 叠的地方深一块（公式里最明显）。分层的样式要压过不分层的只能 !important。 */
 .reader-react-pdf-page .textLayer ::selection {
-  background: color-mix(in srgb, var(--warn) 45%, transparent);
-  color: transparent;
+  background: transparent !important;
+  color: transparent !important;
 }
 .reader-react-pdf-page .textLayer ::-moz-selection {
-  background: color-mix(in srgb, var(--warn) 45%, transparent);
-  color: transparent;
+  background: transparent !important;
+  color: transparent !important;
 }
 
 .reader-react-pdf-empty,

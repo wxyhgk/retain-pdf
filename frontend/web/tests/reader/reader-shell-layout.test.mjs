@@ -180,7 +180,7 @@ test("收口回黑白纸墨（2026-11-28）：左栏一进来收着、待改个�
   assert.doesNotMatch(css("chrome.css"), /backdrop-filter|min-height:\s*36px/, "顶栏还留着浮动胶囊的毛玻璃、36px 高");
   // 底栏：书签紧挨着「收藏」入口；图标都是 16px（bar-icon.ts），按钮 26px 高。
   const bookmark = read("src/components/react-pdf/ReaderBookmarkControl.tsx");
-  assert.match(bookmark, /<BookmarkIcon filled=\{marked\} \/>\s*<\/button>\s*<ReaderFavoritesEntry \/>/);
+  assert.match(bookmark, /<BookmarkIcon filled=\{marked\} \/>\s*<\/button>\s*<ReaderFavoritesEntry scope=\{scope\} \/>/);
   assert.match(bookmark, /aria-label="收藏"/);
   assert.equal(declaration(["hud.css"], ".reader-bottombar svg", "width"), "16px");
   assert.equal(declaration(["hud.css"], ".reader-bottombar .reader-react-hud-btn", "height"), "26px");

@@ -44,6 +44,7 @@
 @import "./finder.css" layer(pages);
 @import "./toc-minimap.css" layer(pages);
 @import "./side-rail.css" layer(pages);
+@import "./selection.css" layer(pages);
 @import "./assistant-dock.css" layer(pages);
 @import "./content.css" layer(pages);
 @import "./react-pdf.css" layer(pages);

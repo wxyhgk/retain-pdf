@@ -2,7 +2,7 @@
  * 单独一块，第一次提问才加载。以前按书存的问答（只读）也用它看。 */
 import { useMemo, useState, type ReactElement } from "react";
 import AskWindow, { AskSpinner } from "@retainpdf/ask/window";
-import type { AskAnswerAction, AskAttachTool, AskContextOffer, AskMessageContext } from "@retainpdf/ask";
+import type { AskAnswerAction, AskAttachTool, AskMessageContext } from "@retainpdf/ask";
 import { BookmarkCheck } from "lucide-react";
 import { Button } from "@retainpdf/ui";
 
@@ -31,8 +31,6 @@ export type ReaderAskPanelProps = {
   onEditBlock?: ((itemId: string, draft: string | null) => void) | null;
   /** 这一块能不能改（表格这类不能改）。 */
   canEditBlock?: (itemId: string) => boolean;
-  /** 已经带着出处时书页上又选了一处：换成它还是再加上它。 */
-  contextOffer?: AskContextOffer | null;
   /** 输入框那一行的「带上这一页」。 */
   attachTools?: readonly AskAttachTool[];
   /** 「截一块问」截好的图：id 变了就加进输入框。 */
@@ -62,7 +60,7 @@ function SideBar({ ask }: { ask: AskState }): ReactElement | null {
   );
 }
 
-export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, dockTaken, dockHost, onEditBlock, canEditBlock, attachTools, attachRequest, contextOffer }: ReaderAskPanelProps): ReactElement {
+export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onShowSelection, onJumpToPage, pageCount, legacy, onLayout, dockTaken, dockHost, onEditBlock, canEditBlock, attachTools, attachRequest }: ReaderAskPanelProps): ReactElement {
   const [memoryOpen, setMemoryOpen] = useState(false);
   const conversation = ask.view.conversation;
   const bound = legacy ? null : conversation ? { id: conversation.conversation_id, documentId: book.documentId } : null;
@@ -161,7 +159,6 @@ export default function ReaderAskPanel({ port, jobId, bookTitle, book, ask, onSh
       answerAction={answerAction}
       attachTools={attachTools}
       attachRequest={attachRequest}
-      contextOffer={contextOffer}
     />
     {memories ? <ReaderMemoryPanel port={memories} glossaries={port.glossaries} documentId={book.documentId} open={memoryOpen} onOpenChange={setMemoryOpen} /> : null}
     </>
