@@ -60,3 +60,40 @@ def test_an_invisible_text_layer_that_was_stripped_is_not_erased():
     # 扫描件的隐藏文字层：抹不抹页面看着都一样，不盖底色
     original, stripped = _pages(hidden=True)
     assert page_erase(original[0], stripped[0], COVERS) == []
+
+
+def test_the_reader_keeps_regular_where_the_pdf_uses_the_light_instance(tmp_path):
+    # 下载的 PDF 用细体（RetainPDFSerifSC-W300），阅读页的 HTML 页照旧用常规体：字簇的 font 还是细体的 key，
+    # 那个 key 的字体文件从常规体切
+    import json
+    from pathlib import Path
+
+    from fontTools.ttLib import TTFont
+
+    from retainpdf_pipeline.render.output.rpr_fit.reader_layout import save_reader_layout
+
+    fonts_dir = Path(__file__).resolve().parents[5] / "resources" / "fonts"
+    if not (fonts_dir / "SourceHanSerifSC-Regular.otf").is_file():
+        pytest.skip("no Source Han Serif in resources/fonts")
+    layout = tmp_path / "engine" / "layout.json"
+    layout.parent.mkdir()
+    layout.write_text(json.dumps({
+        "schema": "rpr_layout_v1",
+        "fonts": [{"key": "RetainPDFSerifSC-W300", "postscript": "RetainPDFSerifSC-W300", "family": "RetainPDF Serif SC",
+                   "weight": 300, "mono": False, "file": "RetainPDFSerifSC-W300.otf"}],
+        "pages": [{"index": 0, "width": 300, "height": 400, "covers": [], "blocks": [{
+            "id": "p001-b0001", "fontSize": 10, "weight": "regular", "color": [0, 0, 0],
+            "lines": [{"text": "中文", "x": 10, "baseline": 20, "width": 20, "justified": False,
+                       "items": [{"x": 10, "t": "中", "font": "RetainPDFSerifSC-W300"}, {"x": 20, "t": "文", "font": "RetainPDFSerifSC-W300"}]}]}]}],
+    }), encoding="utf-8")
+    out = tmp_path / "rendered" / "translated.pdf"
+    out.parent.mkdir()
+    saved = save_reader_layout(layout_path=layout, output_pdf_path=out, engine_version="0", engine_commit="x", font_dirs=[fonts_dir])
+    assert saved["fonts_skipped"] == ""
+    manifest = json.loads((out.parent / "reader-layout" / "manifest.json").read_text(encoding="utf-8"))
+    [face] = manifest["fonts"]
+    assert face["key"] == "RetainPDFSerifSC-W300" and face["file"] == "fonts/RetainPDFSerifSC-W300.woff2"
+    assert face["postscript"] == "SourceHanSerifSC-Regular" and face["weight"] == 400
+    assert face["source_file"] == "SourceHanSerifSC-Regular.otf"
+    subset = TTFont(str(out.parent / "reader-layout" / face["file"]))
+    assert subset["OS/2"].usWeightClass == 400 and {chr(cp) for cp in subset.getBestCmap()} >= {"中", "文"}

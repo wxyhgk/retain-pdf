@@ -54,6 +54,10 @@ BACKGROUND_FILE = "background.pdf"
 FONTS_DIR = "fonts"
 MATH_DIR = "math"
 _KEY_CHARS = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+# 译文 PDF 正文用的细体（思源宋体可变字体切出的静态实例，engine_cli.DEFAULT_PDF_FONT_WEIGHT）：阅读页照旧给常规体，
+# 只有下载的 PDF 变细（HTML 页浏览器自己画，不会像 PDF 阅读器那样加粗）。版面里字簇的 font 还是细体的 key。
+LIGHT_FACE_PREFIX = "RetainPDFSerifSC-W"
+REGULAR_FACE = ("SourceHanSerifSC-Regular", "SourceHanSerifSC-Regular.otf")
 # 页文件里有 erase、tables 两项（阅读页据此不下载底图、画表格）
 FEATURES = ["erase", "tables"]
 # 要抹掉的原字：行框往外放这么多（pt），盖住字的边
@@ -316,6 +320,11 @@ def _save_fonts(target: Path, layout: dict, font_dirs: list[Path]) -> tuple[list
     for face in faces:
         key = str(face.get("key") or "")
         file_name = Path(str(face.get("file") or "")).name
+        postscript = str(face.get("postscript") or "")
+        weight = int(face.get("weight") or 400)
+        if postscript.startswith(LIGHT_FACE_PREFIX) and postscript[len(LIGHT_FACE_PREFIX):].isdigit():
+            postscript, file_name = REGULAR_FACE
+            weight = 400
         if not key or not set(key) <= _KEY_CHARS or not file_name or key not in chars:
             continue
         source = _find_font_file(file_name, font_dirs)
@@ -329,9 +338,9 @@ def _save_fonts(target: Path, layout: dict, font_dirs: list[Path]) -> tuple[list
         saved.append(
             {
                 "key": key,
-                "postscript": str(face.get("postscript") or ""),
+                "postscript": postscript,
                 "family": str(face.get("family") or ""),
-                "weight": int(face.get("weight") or 400),
+                "weight": weight,
                 "mono": bool(face.get("mono")),
                 "file": f"{FONTS_DIR}/{name}",
                 # 切子集用的那份字体文件名：表格那一遍补字时要重切（后端不读）

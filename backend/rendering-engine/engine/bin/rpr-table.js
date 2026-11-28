@@ -4,7 +4,10 @@
 // rpr-table: set translated tables into the boxes of the original ones and
 // draw them as an overlay PDF (one transparent page per input page).
 //
-//   node bin/rpr-table.js --input in.json --out-dir DIR [--font-path DIR]...
+//   node bin/rpr-table.js --input in.json --out-dir DIR [--font-path DIR]... [--pdf-font-weight N]
+//
+// --pdf-font-weight N: regular cell text drawn and measured with the static
+// instance at weight N, like bin/rpr-fit.js (default 400); bold cells keep Bold.
 //
 // in.json (rpr_table_input_v1):
 //   { schema: "rpr_table_input_v1",
@@ -45,14 +48,20 @@ function parseArgs(argv) {
     if (arg === "--input") options.input = path.resolve(value());
     else if (arg === "--out-dir") options.outDir = path.resolve(value());
     else if (arg === "--font-path") options.fontPaths.push(path.resolve(value()));
+    else if (arg === "--pdf-font-weight") options.pdfFontWeight = Number(value());
     else throw new UsageError(`unknown argument ${arg}`);
   }
-  if (!options.input || !options.outDir) throw new UsageError("usage: rpr-table.js --input <in.json> --out-dir <DIR> [--font-path <dir>]...");
+  if (!options.input || !options.outDir) throw new UsageError("usage: rpr-table.js --input <in.json> --out-dir <DIR> [--font-path <dir>]... [--pdf-font-weight <N>]");
+  const weight = options.pdfFontWeight == null ? 400 : options.pdfFontWeight;
+  if (!Number.isInteger(weight) || weight < 100 || weight > 900) throw new UsageError(`--pdf-font-weight must be an integer 100-900, got ${options.pdfFontWeight}`);
+  options.pdfFontWeight = weight;
   return options;
 }
 
 function fontTable(weight) {
-  const file = weight === "bold" ? "source-han-serif-sc-bold.json" : "source-han-serif-sc-regular.json";
+  const file = weight === "bold" ? "source-han-serif-sc-bold.json"
+    : typeof weight === "number" && weight !== 400 ? `source-han-serif-sc-w${weight}.json`
+      : "source-han-serif-sc-regular.json";
   return JSON.parse(fs.readFileSync(path.join(ENGINE_ROOT, "data", "fonts", file), "utf8"));
 }
 
@@ -75,9 +84,9 @@ function main() {
     const input = readInput(options.input);
     const started = performance.now();
     const fontPaths = [...options.fontPaths, ...BUNDLED_FONT_DIRS.slice(0, 1)];
-    const fonts = { ...findFamily(fontPaths, FAMILY), fallbacks: findFallbacks(fontPaths) };
+    const fonts = { ...findFamily(fontPaths, FAMILY, { regularWeight: options.pdfFontWeight }), fallbacks: findFallbacks(fontPaths) };
     const measurers = {
-      regular: Text.createMeasurer({ metrics: fontTable("regular") }),
+      regular: Text.createMeasurer({ metrics: fontTable(options.pdfFontWeight) }),
       bold: Text.createMeasurer({ metrics: fontTable("bold") })
     };
     fs.mkdirSync(options.outDir, { recursive: true });

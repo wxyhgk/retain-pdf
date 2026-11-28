@@ -345,8 +345,13 @@ def run_table_engine(pages: list[dict], work_dir: Path) -> tuple[Path, dict]:
     out_dir = work_dir / "table-engine"  # 版面（layout.json、math/）阅读页要用：_add_to_reader_layout 按这个目录取
     input_path.write_text(json.dumps({"schema": ENGINE_INPUT_SCHEMA, "pages": pages}, ensure_ascii=False), encoding="utf-8")
     command = [runtime.node, str(runtime.entry), "--input", str(input_path), "--out-dir", str(out_dir)]
-    for font_dir in _resolved_font_paths():
+    from retainpdf_pipeline.render.output.rpr.engine_cli import pdf_font_weight_args
+
+    font_dirs = _resolved_font_paths()
+    for font_dir in font_dirs:
         command.extend(["--font-path", str(font_dir)])
+    # 表格的常规字和正文一样细（engine_cli.DEFAULT_PDF_FONT_WEIGHT）
+    command.extend(pdf_font_weight_args(runtime, font_dirs))
     try:
         result = subprocess.run(command, capture_output=True, text=True, timeout=ENGINE_TIMEOUT_SECONDS, env=runtime.env(), cwd=str(work_dir))
     except subprocess.TimeoutExpired as exc:

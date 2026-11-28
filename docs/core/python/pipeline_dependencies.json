@@ -554,6 +554,7 @@
       ],
       "devtool_files": [],
       "test_files": [
+        "devtools/tests/rendering/test_reader_layout_erase.py",
         "devtools/tests/rendering/test_rpr_fit_route.py"
       ],
       "runtime_required": true,
