@@ -8,6 +8,12 @@ INNER_BBOX_DENSE_SHRINK_Y = 0.0
 FONT_UNIFY_MODE = "role_min"
 SOURCE_CLEANUP_STRATEGY = "pikepdf_text_strip"
 DEFAULT_TEXT_OVERLAY_COVER_FILL = True
+# 目录页怎么排（渲染参数 toc_mode，2026-11-28）：reflow = 整条重排 + 页码补画（默认）；replace = 原位替换，
+# 只把标题的字换成译文（render/output/toc_replace）
+TOC_MODE_REFLOW = "reflow"
+TOC_MODE_REPLACE = "replace"
+TOC_MODES = (TOC_MODE_REFLOW, TOC_MODE_REPLACE)
+TOC_MODE = TOC_MODE_REFLOW
 SOURCE_CLEANUP_TYPST_FILL = "typst_fill"
 SOURCE_CLEANUP_PIKEPDF_TEXT_STRIP = "pikepdf_text_strip"
 SOURCE_CLEANUP_BBOX_TEXT_STRIP_ALIASES = {
@@ -33,6 +39,7 @@ def apply_layout_tuning(
     font_unify_mode: str | None = None,
     source_cleanup_strategy: str | None = None,
     default_text_overlay_cover_fill: bool | None = None,
+    toc_mode: str | None = None,
 ) -> None:
     global BODY_FONT_SIZE_FACTOR
     global BODY_LEADING_FACTOR
@@ -43,6 +50,7 @@ def apply_layout_tuning(
     global FONT_UNIFY_MODE
     global SOURCE_CLEANUP_STRATEGY
     global DEFAULT_TEXT_OVERLAY_COVER_FILL
+    global TOC_MODE
 
     if body_font_size_factor is not None:
         BODY_FONT_SIZE_FACTOR = body_font_size_factor
@@ -63,6 +71,14 @@ def apply_layout_tuning(
         SOURCE_CLEANUP_STRATEGY = normalize_source_cleanup_strategy(source_cleanup_strategy)
     if default_text_overlay_cover_fill is not None:
         DEFAULT_TEXT_OVERLAY_COVER_FILL = bool(default_text_overlay_cover_fill)
+    if toc_mode is not None:
+        TOC_MODE = normalize_toc_mode(toc_mode)
+
+
+def normalize_toc_mode(value: str | None) -> str:
+    """缺省、不认识的取值都是 reflow（默认不变）。"""
+    mode = str(value or "").strip().lower()
+    return mode if mode in TOC_MODES else TOC_MODE_REFLOW
 
 
 def normalize_source_cleanup_strategy(value: str | None) -> str:

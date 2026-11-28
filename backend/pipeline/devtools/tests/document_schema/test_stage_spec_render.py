@@ -175,3 +175,10 @@ def test_render_only_passes_engine_to_render_stage(tmp_path: Path) -> None:
 
     spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"engine": "typst"}))
     assert _args_from_spec(spec).render_engine == "typst"
+
+
+def test_render_stage_spec_toc_mode_defaults_to_reflow(tmp_path: Path) -> None:
+    """目录页怎么排（2026-11-28）：缺省、不认识的取值都是 reflow，replace 才是原位替换。"""
+    assert RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {})).params.toc_mode == "reflow"
+    assert RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"toc_mode": " Replace "})).params.toc_mode == "replace"
+    assert RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"toc_mode": "relayout"})).params.toc_mode == "reflow"

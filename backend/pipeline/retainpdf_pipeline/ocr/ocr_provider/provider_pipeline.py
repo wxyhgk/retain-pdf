@@ -420,6 +420,7 @@ def main() -> None:
         inner_bbox_dense_shrink_y=args.inner_bbox_dense_shrink_y,
         font_unify_mode=args.font_unify_mode,
         source_cleanup_strategy=args.source_cleanup_strategy,
+        toc_mode=spec.render.toc_mode,
     )
     with pipeline_event_writer_scope(event_writer):
         emit_stage_transition(
